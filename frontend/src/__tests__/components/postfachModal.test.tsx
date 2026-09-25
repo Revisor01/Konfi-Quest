@@ -84,6 +84,7 @@ import { pushZielMelden } from '../../utils/pushNavigation';
 import { getIconFromIoniconsName } from '../../utils/badgeIcons';
 import {
   ICON_ABZEICHEN_GEFUELLT,
+  ICON_MAIL_GEFUELLT,
   ICON_ORGANISATION_GEFUELLT,
   ICON_SCHLIESSEN,
   ICON_TERMIN_GEFUELLT,
@@ -306,13 +307,19 @@ describe('PostfachModal', () => {
       expect(zeilen[0].querySelector('.app-list-item__subtitle')?.textContent).toBe('Text 3');
     });
 
-    it('ungelesen traegt "Neu" im Eselsohr, gelesen nicht', async () => {
+    it('ungelesen traegt den Umschlag im Eselsohr (kein Wort), gelesen nicht', async () => {
+      // Eck-Badges zeigen Symbole, keine Woerter (Simon, 25.09.2026). Der
+      // Klartext haengt fuer Vorlesehilfen an title/aria-label.
       mockGet.mockResolvedValue(antwort([eintrag(12), eintrag(11, { read_at: '2026-09-24T10:00:00.000Z' })]));
       const { container } = render(<PostfachModal />);
       await oeffnen();
       await screen.findByText('Mitteilung 12');
       const zeilen = container.querySelectorAll('.app-postfach-eintrag');
-      expect(zeilen[0].querySelector('.app-corner-badge')?.textContent).toBe('Neu');
+      const badge = zeilen[0].querySelector('.app-corner-badge') as HTMLElement;
+      expect(badge.textContent).toBe('');
+      expect(badge.querySelector('[data-icon]')?.getAttribute('data-icon')).toBe(ICON_MAIL_GEFUELLT);
+      expect(badge.getAttribute('title')).toBe('Neu — ungelesen');
+      expect(badge.getAttribute('aria-label')).toBe('Neu — ungelesen');
       expect(zeilen[1].querySelector('.app-corner-badge')).toBeNull();
     });
 

@@ -20,6 +20,7 @@ import {
   ICON_AKTION_GEFUELLT,
   ICON_APPS,
   ICON_BENACHRICHTIGUNG,
+  ICON_HAKEN_GEFUELLT,
   ICON_DATEI_GEFUELLT,
   ICON_FUNKELN,
   ICON_GRUPPE_GEFUELLT,
@@ -260,13 +261,18 @@ const AdminSettingsPage: React.FC = () => {
                   overflow: 'hidden'
                 }}
               >
+                {/* Haken statt "Aktiviert" -- dasselbe Zeichen wie 'Aktiv' in
+                    der Status-Karte (StatusBadge); das Wort steht in title/aria-label. */}
                 {pushNotificationsPermission === 'granted' && (
                   <div className="app-corner-badges">
                     <div
                       className="app-corner-badge"
-                      style={{ backgroundColor: 'var(--app-color-success-strong)' }}
+                      style={{ backgroundColor: 'var(--app-color-success-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+                      title="Aktiviert"
+                      role="img"
+                      aria-label="Aktiviert"
                     >
-                      Aktiviert
+                      <IonIcon icon={ICON_HAKEN_GEFUELLT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                     </div>
                   </div>
                 )}

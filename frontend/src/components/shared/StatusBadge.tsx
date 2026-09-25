@@ -64,7 +64,15 @@ const STATUS_ICON_MAP: Record<string, string> = {
   // Screenshots oder älteren Ansichten auftauchen und verlöre sonst sein
   // Symbol.
   'Genehmigt': ICON_ZUSAGE_GEFUELLT,
+  // Die Konfi-Antragsliste sagt 'Angerechnet' (Reiter und Badge gleich).
+  // Fehlte hier -- deshalb fiel das Eck-Badge dort auf den Text zurueck,
+  // waehrend 'Offen' und 'Abgelehnt' daneben Symbole zeigten (25.09.2026).
+  'Angerechnet': ICON_ZUSAGE_GEFUELLT,
   'Abgelehnt': ICON_ABSAGE,
+  // Konfirmation: ein anderer Termin ist schon gebucht, dieser ist fuer
+  // mich zu. Gleiches Schloss wie 'Ausgebucht' und 'Geschlossen' -- die
+  // Aussage ist dieselbe: keine Anmeldung moeglich.
+  'Anderer Termin': ICON_SPERRE_GEFUELLT,
   // Badges / generische Zustände (keine Text-Corner-Badges mehr)
   'Geheim': ICON_VERBORGEN_GEFUELLT,
   'Sichtbar': ICON_SICHTBAR_GEFUELLT,
@@ -111,7 +119,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ statusText, statusColor }) =>
   }
 
   return (
-    <div className="app-corner-badge" style={{ backgroundColor: statusColor }}>
+    <div className="app-corner-badge" style={{ backgroundColor: statusColor }} title={statusText}>
       {statusText}
     </div>
   );

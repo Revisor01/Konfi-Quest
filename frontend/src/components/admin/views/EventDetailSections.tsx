@@ -546,9 +546,17 @@ export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
               className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'} app-event-detail__series-link`}
               onClick={() => onNavigate(seriesEvent.id)}
             >
+              {/* Symbol statt "Voll"/"Frei" -- dieselbe Darstellung wie bei den
+                  Zeitfenstern weiter unten; das Wort steht in title/aria-label. */}
               <div className="app-corner-badges">
-                <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
-                  {isFull ? 'Voll' : 'Frei'}
+                <div
+                  className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+                  title={isFull ? 'Voll' : 'Frei'}
+                  role="img"
+                  aria-label={isFull ? 'Voll' : 'Frei'}
+                >
+                  <IonIcon icon={isFull ? ICON_ABSAGE : ICON_ZUSAGE_GEFUELLT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                 </div>
               </div>
               <div className="app-list-item__row">

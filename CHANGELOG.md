@@ -92,6 +92,15 @@ Versionsüberschrift.
   wann und wann zuletzt. Die Einzelfälle stehen weiterhin darunter.
 
 ### Geändert
+- Die kleinen Marken in der Ecke von Karten zeigen jetzt durchgehend Symbole
+  statt Wörter: die Rolle in der Benutzerliste (Schlüssel, Schild, Person),
+  „Voll"/„Frei" bei Serienterminen (Kreuz/Haken), „Aktiviert" bei den
+  Benachrichtigungen (Haken), „Neu" im Postfach (geschlossener Umschlag) und
+  die Restlaufzeit von Einladungscodes (Zahl der Tage plus Uhr, abgelaufen ein
+  rotes Warnzeichen). In der Antragsliste der Konfis und bei gesperrten
+  Konfirmationsterminen erschien als Einzige noch ein Wort — auch dort steht
+  jetzt das Symbol. Wer mit dem Finger darauf bleibt oder eine Vorlesehilfe
+  nutzt, bekommt weiterhin den ganzen Satz.
 - Mitteilungen über Punkte — aus einem Termin, als Bonus oder für eine
   eingetragene Aktivität — führen beim Antippen in die Punkte-Übersicht statt
   zum Termin oder auf die Startseite. Ein Stempel führt zu den Challenges,

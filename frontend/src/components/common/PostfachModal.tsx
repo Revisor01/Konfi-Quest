@@ -33,6 +33,7 @@ import {
   ICON_CHATS_GEFUELLT,
   ICON_CHALLENGE_GEFUELLT,
   ICON_INFO_GEFUELLT,
+  ICON_MAIL_GEFUELLT,
   ICON_ORGANISATION_GEFUELLT,
   ICON_SCHLIESSEN,
 } from '../shared/icons';
@@ -362,16 +363,21 @@ const PostfachModal: React.FC = () => {
                         }
                       }}
                     >
-                      {/* Eselsohr wie der Status in der Antragsliste: "Neu"
-                          in der Ecke statt eines Punkts vor der Zeile. */}
+                      {/* Eselsohr wie der Status in der Antragsliste: ein
+                          geschlossener Umschlag in der Ecke statt eines Punkts
+                          vor der Zeile. Symbol statt "Neu" (Eck-Badges zeigen in
+                          der Regel Symbole, Simon 25.09.2026); der Klartext
+                          steht in title/aria-label. */}
                       {ungelesenerEintrag && (
                         <div className="app-corner-badges">
                           <div
                             className="app-corner-badge"
-                            style={{ background: 'var(--ion-color-primary)' }}
-                            aria-label="ungelesen"
+                            style={{ background: 'var(--ion-color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+                            title="Neu — ungelesen"
+                            role="img"
+                            aria-label="Neu — ungelesen"
                           >
-                            Neu
+                            <IonIcon icon={ICON_MAIL_GEFUELLT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                           </div>
                         </div>
                       )}

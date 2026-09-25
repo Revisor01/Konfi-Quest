@@ -35,7 +35,9 @@ import {
   ICON_QRCODE_GEFUELLT,
   ICON_SCHLIESSEN,
   ICON_TEILEN,
+  ICON_UHRZEIT,
   ICON_UHRZEIT_GEFUELLT,
+  ICON_WARNHINWEIS_GEFUELLT,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -378,11 +380,29 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                                 borderLeftColor: 'var(--app-color-success-strong)'
                               }}
                             >
-                              {/* Corner Badge - Gültigkeit */}
+                              {/* Gueltigkeit: Zahl der Resttage plus Uhr statt
+                                  "Noch 5 Tage gültig" -- wie die offenen Freigaben
+                                  in der Challenge-Liste. Abgelaufen: rotes
+                                  Warnzeichen wie in der Konfi-Detailansicht. Der
+                                  ganze Satz steht in title/aria-label. */}
                               <div className="app-corner-badges">
-                                <div className="app-corner-badge" style={{ backgroundColor: 'var(--app-color-success-strong)' }}>
-                                  {formatExpiryDate(invite.expires_at)}
-                                </div>
+                                {(() => {
+                                  const resttage = tageBis(new Date(invite.expires_at));
+                                  const satz = formatExpiryDate(invite.expires_at);
+                                  const abgelaufen = resttage < 0;
+                                  return (
+                                    <div
+                                      className="app-corner-badge"
+                                      style={{ backgroundColor: abgelaufen ? 'var(--app-color-danger)' : 'var(--app-color-success-strong)', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+                                      title={satz}
+                                      role="img"
+                                      aria-label={satz}
+                                    >
+                                      {!abgelaufen && resttage}
+                                      <IonIcon icon={abgelaufen ? ICON_WARNHINWEIS_GEFUELLT : ICON_UHRZEIT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
+                                    </div>
+                                  );
+                                })()}
                               </div>
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">

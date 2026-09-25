@@ -11,6 +11,7 @@ import {
   ICON_PERSON,
   ICON_PERSON_GEFUELLT,
   ICON_SCHILD_GEFUELLT,
+  ICON_SCHLUESSEL_GEFUELLT,
   ICON_SUCHE_GEFUELLT,
   ICON_UHRZEIT_GEFUELLT,
 } from '../shared/icons';
@@ -184,6 +185,8 @@ const UsersView: React.FC<UsersViewProps> = ({
       >
         {filteredAndSortedUsers.map((user, index) => {
               const roleColor = getRoleColor(user.role_name);
+              const rolleText = user.role_name === 'org_admin' ? 'Org-Admin' : user.role_name === 'admin' ? 'Admin' : 'Teamer:in';
+              const rolleIcon = user.role_name === 'org_admin' ? ICON_SCHLUESSEL_GEFUELLT : user.role_name === 'admin' ? ICON_SCHILD_GEFUELLT : ICON_PERSON_GEFUELLT;
 
               return (
               <IonItemSliding
@@ -210,12 +213,19 @@ const UsersView: React.FC<UsersViewProps> = ({
                     style={{ borderLeftColor: roleColor, opacity: user.is_active ? 1 : 0.6 }}
                   >
                     {/* Eselsohr-Style Corner Badge */}
+                    {/* Rolle als Symbol statt Wort (Eck-Badges zeigen in der
+                        Regel Symbole, Simon 25.09.2026): Schluessel = Org-Admin,
+                        Schild = Admin, Person = Teamer:in. Das Wort steht in
+                        title/aria-label. */}
                     <div className="app-corner-badges">
                       <div
                         className="app-corner-badge"
-                        style={{ backgroundColor: roleColor }}
+                        style={{ backgroundColor: roleColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+                        title={rolleText}
+                        role="img"
+                        aria-label={rolleText}
                       >
-                        {user.role_name === 'org_admin' ? 'Org-Admin' : user.role_name === 'admin' ? 'Admin' : 'Teamer:in'}
+                        <IonIcon icon={rolleIcon} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                       </div>
                     </div>
 
