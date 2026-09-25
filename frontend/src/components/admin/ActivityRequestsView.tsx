@@ -210,6 +210,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                                   className="app-corner-badge"
                                   style={{ backgroundColor: 'var(--app-color-teamer)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                                   title="Team-Aktivität"
+                                  role="img"
+                                  aria-label="Team-Aktivität"
                                 >
                                   <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                                 </div>

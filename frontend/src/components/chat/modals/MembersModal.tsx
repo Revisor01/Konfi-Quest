@@ -338,6 +338,8 @@ const MembersModal: React.FC<MembersModalProps> = ({
             className="app-corner-badge"
             style={{ backgroundColor: badgeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
             title={roleText}
+            role="img"
+            aria-label={roleText}
           >
             <IonIcon icon={isTeam ? ICON_GRUPPE_GEFUELLT : ICON_PERSON_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
           </div>

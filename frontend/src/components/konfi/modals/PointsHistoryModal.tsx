@@ -217,6 +217,11 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                       {filteredHistory.map((entry) => {
                         const categoryColor = getCategoryColor(entry.category);
                         const typeBadgeColor = getTypeBadgeColor(entry.source_type);
+                        // Herkunft der Punkte fuer title/aria-label des Symbol-Badges --
+                        // dieselben Worte wie in der Konfi-Detailansicht der Leitung.
+                        const typeBadgeLabel = entry.source_type === 'bonus' ? 'Bonus'
+                          : entry.source_type === 'event' ? 'Event'
+                          : undefined;
 
                         // Farbe basiert auf category (blau/gruen)
                         const listItemClass = entry.category === 'gottesdienst' ? 'app-list-item--gottesdienst' : 'app-list-item--activities';
@@ -233,7 +238,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                               {/* Typ-Badge (Bonus/Event) */}
                               {typeBadgeColor && getTypeBadgeIcon(entry.source_type) && (
                                 <>
-                                  <div className="app-corner-badge" style={{ backgroundColor: typeBadgeColor }}>
+                                  <div className="app-corner-badge" title={typeBadgeLabel} role="img" aria-label={typeBadgeLabel} style={{ backgroundColor: typeBadgeColor }}>
                                     <IonIcon icon={getTypeBadgeIcon(entry.source_type)!} />
                                   </div>
                                   <div className="app-corner-badges__separator" />

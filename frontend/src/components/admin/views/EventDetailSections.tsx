@@ -842,7 +842,9 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                 <div className="app-corner-badges">
                   <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
-                    title={isFull ? 'Voll' : 'Frei'}>
+                    title={isFull ? 'Voll' : 'Frei'}
+                    role="img"
+                    aria-label={isFull ? 'Voll' : 'Frei'}>
                     <IonIcon icon={isFull ? ICON_ABSAGE : ICON_ZUSAGE_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                   </div>
                 </div>
@@ -887,6 +889,8 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                                 className={`app-corner-badge ${cornerBadgeClass}`}
                                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                                 title={statusText}
+                                role="img"
+                                aria-label={statusText}
                               >
                                 <IonIcon icon={getStatusIcon(statusText) || ICON_GRUPPE_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                               </div>
@@ -995,7 +999,9 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                         <div className="app-corner-badges">
                           <div className="app-corner-badge app-corner-badge--warning"
                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
-                            title="Warteliste">
+                            title="Warteliste"
+                            role="img"
+                            aria-label="Warteliste">
                             <IonIcon icon={ICON_UHRZEIT_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                           </div>
                         </div>

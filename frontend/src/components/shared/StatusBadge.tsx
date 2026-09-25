@@ -16,6 +16,7 @@ import {
   ICON_UHRZEIT,
   ICON_VERBORGEN_GEFUELLT,
   ICON_WARTEND,
+  ICON_WECHSEL,
   ICON_ZUSAGE_GEFUELLT,
 } from './icons';
 
@@ -69,10 +70,14 @@ const STATUS_ICON_MAP: Record<string, string> = {
   // waehrend 'Offen' und 'Abgelehnt' daneben Symbole zeigten (25.09.2026).
   'Angerechnet': ICON_ZUSAGE_GEFUELLT,
   'Abgelehnt': ICON_ABSAGE,
-  // Konfirmation: ein anderer Termin ist schon gebucht, dieser ist fuer
-  // mich zu. Gleiches Schloss wie 'Ausgebucht' und 'Geschlossen' -- die
-  // Aussage ist dieselbe: keine Anmeldung moeglich.
-  'Anderer Termin': ICON_SPERRE_GEFUELLT,
+  // Konfirmation: die Konfi ist an einem anderen Termin derselben Reihe
+  // angemeldet. Der Doppelpfeil sagt "woanders / wechseln" -- genau das,
+  // was die Detailansicht erklaert ("melde dich zuerst vom bisherigen
+  // Termin ab, bevor du einen neuen buchst"). Das Schloss davor (bis
+  // 26.09.2026) sagte nur "zu" und war von 'Ausgebucht' nicht zu
+  // unterscheiden; der Kalender waere in einer Terminliste nichtssagend.
+  // Das Zeichen steht in der App schon fuer Wechseln (Gemeinde-Auswahl).
+  'Anderer Termin': ICON_WECHSEL,
   // Badges / generische Zustände (keine Text-Corner-Badges mehr)
   'Geheim': ICON_VERBORGEN_GEFUELLT,
   'Sichtbar': ICON_SICHTBAR_GEFUELLT,
@@ -112,6 +117,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ statusText, statusColor }) =>
           padding: 'var(--app-abstand-mini) var(--app-abstand-eng)'
         }}
         title={statusText}
+        role="img"
+        aria-label={statusText}
       >
         <IonIcon icon={icon} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
       </div>

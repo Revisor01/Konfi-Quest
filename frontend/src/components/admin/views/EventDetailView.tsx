@@ -1209,6 +1209,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 className={`app-corner-badge ${cornerBadgeClass}`}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                 title={statusText}
+                role="img"
+                aria-label={statusText}
               >
                 <IonIcon icon={getStatusIcon(statusText) || ICON_GRUPPE_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
               </div>

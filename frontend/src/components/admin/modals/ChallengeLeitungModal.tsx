@@ -913,6 +913,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                       className="app-corner-badge"
                                       style={{ backgroundColor: consent.color, padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
                                       title={consent.label}
+                                      role="img"
+                                      aria-label={consent.label}
                                     >
                                       <IonIcon icon={consent.icon} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
                                     </div>
@@ -923,6 +925,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                   className="app-corner-badge"
                                   style={{ backgroundColor: status.color, padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
                                   title={status.label}
+                                  role="img"
+                                  aria-label={status.label}
                                 >
                                   <IonIcon icon={status.icon} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
                                 </div>

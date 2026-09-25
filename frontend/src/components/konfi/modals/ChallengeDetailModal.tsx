@@ -234,6 +234,8 @@ const SubmissionCard: React.FC<{
           className="app-corner-badge"
           style={{ backgroundColor: statusBadge.color, padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
           title={statusBadge.label}
+          role="img"
+          aria-label={statusBadge.label}
         >
           <IonIcon icon={statusBadge.icon} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
         </div>

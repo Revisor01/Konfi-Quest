@@ -218,6 +218,8 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                           className="app-corner-badge app-corner-badge--queue"
                           style={{ backgroundColor: 'var(--app-color-challenges)' }}
                           title="Du hast bereits eingereicht"
+                          role="img"
+                          aria-label="Du hast bereits eingereicht"
                         >
                           <IonIcon icon={ICON_SENDEN} />
                         </div>
@@ -315,6 +317,8 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                             className="app-corner-badge app-corner-badge--queue"
                             style={{ backgroundColor: 'var(--app-color-challenges)' }}
                             title="Du hast bereits eingereicht"
+                            role="img"
+                            aria-label="Du hast bereits eingereicht"
                           >
                             <IonIcon icon={ICON_SENDEN} />
                           </div>

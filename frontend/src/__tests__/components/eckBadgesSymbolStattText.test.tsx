@@ -23,10 +23,11 @@ import {
   ICON_ABSAGE,
   ICON_HAKEN_GEFUELLT,
   ICON_MAIL_GEFUELLT,
-  ICON_SCHLUESSEL_GEFUELLT,
+  ICON_ORGANISATION_GEFUELLT,
   ICON_SPERRE_GEFUELLT,
   ICON_UHRZEIT,
   ICON_WARNHINWEIS_GEFUELLT,
+  ICON_WECHSEL,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../components/shared/icons';
 
@@ -55,9 +56,13 @@ describe('Status-Karte: die zwei Worte, die als Text zurueckfielen', () => {
     expect(getStatusIcon('Verbucht')).toBe(ICON_ZUSAGE_GEFUELLT);
   });
 
-  it('Anderer Termin traegt das Schloss wie Ausgebucht', () => {
-    expect(getStatusIcon('Anderer Termin')).toBe(ICON_SPERRE_GEFUELLT);
+  // Simon, 26.09.2026: "schloss für anders wäre auch was anderes besser". Der
+  // Doppelpfeil sagt "woanders / wechseln" -- das Schloss sagte nur "zu" und
+  // war von 'Ausgebucht' nicht zu unterscheiden.
+  it('Anderer Termin traegt den Doppelpfeil (wechseln), nicht das Schloss von Ausgebucht', () => {
+    expect(getStatusIcon('Anderer Termin')).toBe(ICON_WECHSEL);
     expect(getStatusIcon('Ausgebucht')).toBe(ICON_SPERRE_GEFUELLT);
+    expect(ICON_WECHSEL).not.toBe(ICON_SPERRE_GEFUELLT);
   });
 
   it.each(['Angerechnet', 'Anderer Termin'])('%s rendert als Symbol mit dem Wort im title', (wort) => {
@@ -88,11 +93,15 @@ describe('Benutzerliste: Rolle als Symbol', () => {
     expect(block).not.toContain("'Teamer:in'");
   });
 
-  it('drei Rollen, drei Zeichen: Schluessel, Schild, Person', () => {
+  // Simon, 26.09.2026, zum Schluessel: "andere Idee?". Das Gebaeude ist in der
+  // App das Zeichen fuer die Gemeinde (Gemeinde-Auswahl, Gemeinde-Einstellungen,
+  // Postfach) -- der Org-Admin ist die Rolle fuer die ganze Gemeinde.
+  it('drei Rollen, drei Zeichen: Gebaeude, Schild, Person', () => {
     const quelle = code(pfad);
     expect(quelle).toContain("const rolleText = user.role_name === 'org_admin' ? 'Org-Admin' : user.role_name === 'admin' ? 'Admin' : 'Teamer:in';");
-    expect(quelle).toContain("const rolleIcon = user.role_name === 'org_admin' ? ICON_SCHLUESSEL_GEFUELLT : user.role_name === 'admin' ? ICON_SCHILD_GEFUELLT : ICON_PERSON_GEFUELLT;");
-    expect(ICON_SCHLUESSEL_GEFUELLT.length).toBeGreaterThan(0);
+    expect(quelle).toContain("const rolleIcon = user.role_name === 'org_admin' ? ICON_ORGANISATION_GEFUELLT : user.role_name === 'admin' ? ICON_SCHILD_GEFUELLT : ICON_PERSON_GEFUELLT;");
+    expect(quelle).not.toContain('ICON_SCHLUESSEL');
+    expect(ICON_ORGANISATION_GEFUELLT.length).toBeGreaterThan(0);
   });
 });
 
@@ -106,12 +115,13 @@ describe('Serientermine der Leitung: Voll/Frei als Symbol', () => {
   });
 });
 
+// 'Aktiviert' in den Einstellungen (AdminSettingsPage) stand hier bis zum
+// 26.09.2026 ebenfalls. Das Badge ist mit der Push-Auswahl (f250af8c)
+// entfallen -- die Benachrichtigungen haben dort keine Karte mit Eck-Badge
+// mehr. Bleibt geprueft: 'Aktiv' traegt in der Status-Karte den Haken.
 describe('Einstellungen: Benachrichtigungen aktiviert', () => {
-  it('Haken statt "Aktiviert", Wort in title und aria-label', () => {
-    const block = badgeBlock('src/components/admin/pages/AdminSettingsPage.tsx', 'title="Aktiviert"');
-    expect(block).toContain('<IonIcon icon={ICON_HAKEN_GEFUELLT}');
-    expect(block).toContain('aria-label="Aktiviert"');
-    expect(block).not.toMatch(/>\s*Aktiviert\s*</);
+  it('kein Eck-Badge mehr in den Einstellungen; Aktiv bleibt der Haken', () => {
+    expect(code('src/components/admin/pages/AdminSettingsPage.tsx')).not.toContain('app-corner-badge');
     expect(getStatusIcon('Aktiv')).toBe(ICON_HAKEN_GEFUELLT);
   });
 });
@@ -131,8 +141,8 @@ describe('Einladungscodes: Resttage als Zahl plus Uhr', () => {
 
   it('Zahl plus Uhr wie die offenen Freigaben, der Satz in title und aria-label', () => {
     const block = badgeBlock(pfad, 'title={satz}');
-    expect(block).toContain('{!abgelaufen && resttage}');
-    expect(block).toContain('<IonIcon icon={abgelaufen ? ICON_WARNHINWEIS_GEFUELLT : ICON_UHRZEIT}');
+    expect(block).toContain('{resttage > 0 && resttage}');
+    expect(block).toContain('<IonIcon icon={abgelaufen || letzterTag ? ICON_WARNHINWEIS_GEFUELLT : ICON_UHRZEIT}');
     expect(block).toContain('aria-label={satz}');
     expect(block).toContain('role="img"');
     // Der Satz kommt weiter aus formatExpiryDate -- er wird nicht mehr als
@@ -143,7 +153,23 @@ describe('Einladungscodes: Resttage als Zahl plus Uhr', () => {
 
   it('abgelaufen: rotes Warnzeichen ohne Zahl', () => {
     const block = badgeBlock(pfad, 'title={satz}');
-    expect(block).toContain("abgelaufen ? 'var(--app-color-danger)' : 'var(--app-color-success-strong)'");
+    expect(block).toContain("abgelaufen ? 'var(--app-color-danger)' : letzterTag ? 'var(--app-color-warning)' : 'var(--app-color-success-strong)'");
+    expect(block).toContain('const abgelaufen = resttage < 0;');
     expect(ICON_WARNHINWEIS_GEFUELLT).not.toBe(ICON_UHRZEIT);
+  });
+
+  // Simon, 26.09.2026: "0 irritiert muss besser." Am letzten Tag stand eine
+  // "0" plus Uhr in der Ecke. Jetzt: Warnzeichen ohne Zahl, orange statt rot --
+  // der Code gilt heute noch und laesst sich noch verlaengern.
+  it('letzter Tag: oranges Warnzeichen ohne "0", der Satz sagt "Läuft heute ab"', () => {
+    const block = badgeBlock(pfad, 'title={satz}');
+    expect(block).toContain('const letzterTag = resttage === 0;');
+    // Die Zahl erscheint nur bei echten Resttagen -- nie eine 0.
+    expect(block).not.toContain('{!abgelaufen && resttage}');
+    expect(block).toContain('{resttage > 0 && resttage}');
+    // Der Satz aus formatExpiryDate: 0 Resttage -> "Läuft heute ab".
+    const quelle = code(pfad);
+    expect(quelle).toContain("if (diffDays === 0) return 'Läuft heute ab';");
+    expect(quelle).toContain("if (diffDays < 0) return 'Abgelaufen';");
   });
 });

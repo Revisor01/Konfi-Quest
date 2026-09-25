@@ -320,6 +320,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                           className="app-corner-badge app-corner-badge--queue"
                           style={{ backgroundColor: 'var(--app-color-challenges)' }}
                           title="Du hast bereits eingereicht"
+                          role="img"
+                          aria-label="Du hast bereits eingereicht"
                         >
                           <IonIcon icon={ICON_SENDEN} />
                         </div>
@@ -331,6 +333,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                       className="app-corner-badge"
                       style={{ backgroundColor: statusColor, padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
                       title={STATUS_LABEL[status]}
+                      role="img"
+                      aria-label={STATUS_LABEL[status]}
                     >
                       <IonIcon icon={STATUS_ICON[status]} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
                     </div>
