@@ -59,6 +59,8 @@ Versionsüberschrift.
   Seite, nicht mehr nur in der Konfi-Liste. Wer über einen Push oder das
   Postfach in eine andere Gemeinde gewechselt ist, sieht überall, wo er gerade
   arbeitet, und kommt von jeder Seite zurück.
+- Glocke und Gemeinde-Umschalter stehen jetzt auch im Chat, in jedem Chatraum
+  und bei den Challenges — die einzigen Seiten, auf denen sie noch fehlten.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 - Große Dateien laufen zuverlässiger durch: Fotos, Sprachaufnahmen und

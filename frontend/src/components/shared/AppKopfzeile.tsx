@@ -52,6 +52,14 @@ export interface AppKopfzeileProps {
   gemeindeUmschalter?: boolean;
   /** Glocke zeigen (Vorgabe: ja). */
   glocke?: boolean;
+  /**
+   * Durchscheinende Kopfzeile (Vorgabe: ja). Sie setzt voraus, dass der
+   * IonContent darunter fullscreen ist. Ein Chatraum ist das nicht -- unten
+   * steht die Fusszeile mit dem Eingabefeld -- und mit durchscheinender
+   * Kopfzeile sass sie dort unter Notch und Statusleiste (f40e3687,
+   * 30.06.2026). Der Chat schaltet sie deshalb ab.
+   */
+  translucent?: boolean;
 }
 
 const AppKopfzeile: React.FC<AppKopfzeileProps> = ({
@@ -61,8 +69,9 @@ const AppKopfzeile: React.FC<AppKopfzeileProps> = ({
   rechts,
   gemeindeUmschalter = true,
   glocke = true,
+  translucent = true,
 }) => (
-  <IonHeader translucent={true}>
+  <IonHeader translucent={translucent}>
     <IonToolbar>
       {(onZurueck || links) && (
         <IonButtons slot="start">

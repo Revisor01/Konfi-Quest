@@ -4,9 +4,6 @@ import { useAppLocation } from '../../navigation/useAppLocation';
 import { FARBEN } from '../../theme/colors';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonItem,
   IonInput,
@@ -16,7 +13,6 @@ import {
   IonCard,
   IonCardContent,
   IonButton,
-  IonButtons,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
@@ -30,6 +26,7 @@ import {
   useIonAlert,
   useIonViewWillEnter
 } from '@ionic/react';
+import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
 import {
   ICON_CHATS,
   ICON_CHATS_GEFUELLT,
@@ -411,23 +408,17 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonTitle>Chat</IonTitle>
-          <IonButtons slot="end">
-            <IonButton aria-label="Neuen Chat starten" onClick={handleCreateNewChat}>
-              <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-      
+      <AppKopfzeile
+        titel="Chat"
+        rechts={(
+          <IonButton aria-label="Neuen Chat starten" onClick={handleCreateNewChat}>
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
+          </IonButton>
+        )}
+      />
+
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Chat</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Chat" />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refresh();

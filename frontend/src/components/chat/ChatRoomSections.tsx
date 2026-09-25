@@ -7,15 +7,11 @@ import {
   ICON_LOESCHEN,
   ICON_MEHR_VERTIKAL,
   ICON_SENDEN_GEFUELLT,
-  ICON_ZURUECK,
 } from '../shared/icons';
 import React from 'react';
 import {
-  IonHeader,
   IonToolbar,
-  IonTitle,
   IonButton,
-  IonButtons,
   IonIcon,
   IonTextarea,
   IonFooter,
@@ -24,6 +20,7 @@ import {
 import { Message, ChatUserType } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
 import { Capacitor } from '@capacitor/core';
+import AppKopfzeile from '../shared/AppKopfzeile';
 
 // Validiert URLs für img src, erlaubt nur sichere Protokolle (blob: und data:)
 export const getSafePreviewUrl = (url: string | null | undefined): string | null => {
@@ -63,18 +60,17 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
   onClearChat
 }) => {
   return (
-    // translucent bewusst AUS: Der Chat-Content ist nicht fullscreen (Footer mit
-    // Eingabefeld), daher wuerde ein translucent-Header die Safe-Area oben falsch
-    // behandeln -> Header sitzt unter Notch/Statusbar. Opaker Header sitzt korrekt.
-    <IonHeader>
-      <IonToolbar>
-        <IonButtons slot="start">
-          <IonButton aria-label="Zurück" onClick={onBack}>
-            <IonIcon icon={ICON_ZURUECK} />
-          </IonButton>
-        </IonButtons>
-        <IonTitle>{roomName}</IonTitle>
-        <IonButtons slot="end">
+    // Die gemeinsame Kopfzeile (Glocke, Gemeinde-Umschalter) -- ein Chatraum
+    // ist eine Seite mit eigener Route, kein Modal. translucent bewusst AUS:
+    // Der Chat-Content ist nicht fullscreen (Footer mit Eingabefeld), daher
+    // wuerde ein translucent-Header die Safe-Area oben falsch behandeln ->
+    // Header sitzt unter Notch/Statusbar. Opaker Header sitzt korrekt.
+    <AppKopfzeile
+      titel={roomName}
+      onZurueck={onBack}
+      translucent={false}
+      rechts={(
+        <>
           {/* Befund 12 aus dem Rollen-Bericht (26.08.2026): Mitgliederliste
               und Umfragen hingen am SELBEN isAdmin-Gate — zwei verschiedene
               Rechte an einem Schalter. Das Backend gibt die Teilnehmerliste
@@ -108,9 +104,9 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
               <IonIcon icon={ICON_MEHR_VERTIKAL} />
             </IonButton>
           )}
-        </IonButtons>
-      </IonToolbar>
-    </IonHeader>
+        </>
+      )}
+    />
   );
 });
 

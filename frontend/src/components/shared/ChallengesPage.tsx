@@ -1,19 +1,16 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonRefresher,
   IonRefresherContent,
-  IonButtons,
   IonButton,
   IonIcon,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
 import { ICON_HINZUFUEGEN_GEFUELLT } from './icons';
+import AppKopfzeile, { AppKopfzeileGross } from './AppKopfzeile';
 import { useBadge } from '../../contexts/BadgeContext';
 import { useModalPage } from '../../contexts/ModalContext';
 import { useLiveRefresh } from '../../contexts/LiveUpdateContext';
@@ -250,22 +247,16 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonTitle>Challenges</IonTitle>
-          <IonButtons slot="end">
-            <IonButton aria-label="Neue Challenge anlegen" onClick={openCreate} title="Neue Challenge">
-              <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel="Challenges"
+        rechts={(
+          <IonButton aria-label="Neue Challenge anlegen" onClick={openCreate} title="Neue Challenge">
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
+          </IonButton>
+        )}
+      />
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Challenges</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Challenges" />
 
         <IonRefresher
           slot="fixed"

@@ -150,7 +150,8 @@ sondern der Betrieb von Konfi Quest.
 
 Oben links in der Kopfzeile steht dann auf **jeder Seite** der Name der
 Gemeinde, in der man gerade arbeitet — in der Konfi-Liste ebenso wie in der
-Termin-Detailansicht, unter „Mehr" oder in der Materialverwaltung. Ein Tippen
+Termin-Detailansicht, im Chat und in jedem Chatraum, bei den Challenges, unter
+„Mehr" oder in der Materialverwaltung. Ein Tippen
 darauf öffnet die Liste aller eigenen Gemeinden; die aktive ist mit einem Haken
 markiert. Nach dem Wechsel laden alle Ansichten frisch in der gewählten
 Gemeinde. Wer nur einer Gemeinde angehört, sieht den Namen nicht.

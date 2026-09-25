@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ReactNode } from 'react';
 
@@ -16,7 +16,8 @@ import type { ReactNode } from 'react';
 type StubProps = { children?: ReactNode };
 
 vi.mock('@ionic/react', () => ({
-  IonHeader: (props: StubProps & { collapse?: string }) => <div data-testid={props.collapse ? 'kopfzeile-gross' : 'kopfzeile'}>{props.children}</div>,
+  IonHeader: (props: StubProps & { collapse?: string; translucent?: boolean }) =>
+    <div data-testid={props.collapse ? 'kopfzeile-gross' : 'kopfzeile'} data-translucent={String(props.translucent)}>{props.children}</div>,
   IonToolbar: (props: StubProps) => <div>{props.children}</div>,
   IonTitle: (props: StubProps & { size?: string }) => <div data-testid={props.size === 'large' ? 'titel-gross' : 'titel'}>{props.children}</div>,
   IonButtons: (props: StubProps & { slot?: string }) => <div data-testid={`knoepfe-${props.slot}`}>{props.children}</div>,
@@ -68,6 +69,17 @@ describe('AppKopfzeile', () => {
     render(<AppKopfzeile titel="Profil" onZurueck={zurueck} />);
     fireEvent.click(screen.getByLabelText('Zurück'));
     expect(zurueck).toHaveBeenCalledTimes(1);
+  });
+
+  it('ist durchscheinend, solange die Seite nichts anderes sagt -- der Chat schaltet das ab', () => {
+    // Ein Chatraum hat unten die Fusszeile mit dem Eingabefeld, sein Inhalt
+    // ist nicht fullscreen; mit durchscheinender Kopfzeile sass sie unter
+    // Notch und Statusleiste (f40e3687). Deshalb pro Seite abschaltbar.
+    const { unmount } = render(<AppKopfzeile titel="Chat" />);
+    expect(screen.getByTestId('kopfzeile').getAttribute('data-translucent')).toBe('true');
+    unmount();
+    render(<AppKopfzeile titel="Jahrgang 2026" translucent={false} />);
+    expect(screen.getByTestId('kopfzeile').getAttribute('data-translucent')).toBe('false');
   });
 
   it('die grosse Zweitzeile traegt denselben Titel im Condense-Kopf', () => {
@@ -346,5 +358,130 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
     expect(zaehle(einladen, '<IonHeader>')).toBe(1);
     expect(einladen).toContain('aria-label="Schließen"');
     expect(lies('src/components/admin/pages/AdminSettingsPage.tsx')).toContain('useIonModal(AdminInvitePage, {');
+  });
+});
+
+describe('Chat und Challenges bauen keine eigene Kopfzeile mehr', () => {
+  // Simon am Geraet (25.09.2026): "Chat und challenges hat keinen org
+  // switcher." Die drei Umstellungen liefen verzeichnisweise (konfi/, teamer/,
+  // admin/) -- der Chat liegt aber unter components/chat, die gemeinsame
+  // Challenge-Seite von Leitung und Team unter components/shared. Beide
+  // fielen durch. Dieser Block haelt die Nachzuegler fest.
+  const zaehle = (quelle: string, muster: string) => quelle.split(muster).length - 1;
+  const zaehleKopfzeilen = (quelle: string) => (quelle.match(/<AppKopfzeile\s/g) || []).length;
+
+  const nachzuegler: Array<[string, number]> = [
+    // [Datei, Kopfzeilen-Zustaende (<AppKopfzeile )]
+    ['src/components/chat/ChatOverview.tsx', 1],
+    ['src/components/shared/ChallengesPage.tsx', 1],
+    ['src/components/chat/views/ChatRoomView.tsx', 1],   // Fehlerseite
+    ['src/components/chat/ChatRoom.tsx', 1],             // Ladezustand
+    ['src/components/chat/ChatRoomSections.tsx', 1],     // ChatHeader (der Raum)
+  ];
+
+  it('alle fuenf Dateien nutzen AppKopfzeile -- fuer jeden Zustand, keine baut mehr selbst', () => {
+    expect(nachzuegler.length).toBe(5);
+    for (const [datei, zustaende] of nachzuegler) {
+      const quelle = lies(datei);
+      expect(zaehleKopfzeilen(quelle), datei).toBe(zustaende);
+      expect(quelle, datei).not.toContain('<IonHeader');
+      expect(quelle, datei).not.toContain('<IonTitle');
+      expect(quelle, datei).not.toContain('collapse="condense"');
+      expect(quelle, datei).not.toContain('ICON_ZURUECK');
+      // Seiten, keine Modale: niemand schaltet Glocke oder Umschalter ab.
+      expect(quelle, datei).not.toContain('glocke={false}');
+      expect(quelle, datei).not.toContain('gemeindeUmschalter={false}');
+      expect(quelle, datei).not.toContain('OrgSwitcherButton');
+    }
+  });
+
+  it('Chat-Liste und Challenge-Liste sind Reiter-Seiten: Zweitzeile, Plus-Knopf rechts, kein Zurueck', () => {
+    const chat = lies('src/components/chat/ChatOverview.tsx');
+    expect(zaehle(chat, '<AppKopfzeileGross titel="Chat" />')).toBe(1);
+    expect(chat).toContain('aria-label="Neuen Chat starten" onClick={handleCreateNewChat}');
+    expect(chat).not.toContain('onZurueck=');
+    // Der rote Zaehler an den einzelnen Raeumen bleibt unangetastet.
+    expect(zaehle(chat, '<ZaehlerKugel')).toBe(1);
+
+    const challenges = lies('src/components/shared/ChallengesPage.tsx');
+    expect(zaehle(challenges, '<AppKopfzeileGross titel="Challenges" />')).toBe(1);
+    expect(challenges).toContain('aria-label="Neue Challenge anlegen" onClick={openCreate} title="Neue Challenge"');
+    expect(challenges).not.toContain('onZurueck=');
+    // Leitung UND Team kommen ueber diese eine Datei (Befund N7); die Huellen
+    // bauen keine Kopfzeile.
+    for (const huelle of ['src/components/admin/pages/AdminChallengesPage.tsx', 'src/components/teamer/pages/TeamerChallengesPage.tsx']) {
+      expect(lies(huelle), huelle).not.toContain('IonHeader');
+      expect(lies(huelle), huelle).not.toContain('AppKopfzeile');
+    }
+  });
+
+  it('der Chatraum traegt Raumname, Zurueck und alle Knoepfe -- opak, weil der Inhalt nicht fullscreen ist', () => {
+    const kopf = lies('src/components/chat/ChatRoomSections.tsx');
+    expect(kopf).toContain('titel={roomName}');
+    expect(kopf).toContain('onZurueck={onBack}');
+    expect(zaehle(kopf, 'translucent={false}')).toBe(1);
+    // Nichts verloren: vier Knoepfe mit ihren Bedingungen, wie vorher.
+    expect(kopf).toContain("{roomType !== 'direct' && (");
+    expect(kopf).toContain('aria-label="Mitglieder anzeigen" onClick={onOpenMembers}');
+    expect(kopf).toContain('{isAdmin && (');
+    expect(kopf).toContain('aria-label="Umfrage erstellen" onClick={onOpenPoll}');
+    expect(kopf).toContain('{onClearChat && (');
+    expect(kopf).toContain('aria-label={isOnline ? "Team-Chat leeren" : "Team-Chat leeren — Ohne Internetverbindung nicht möglich"}');
+    expect(kopf).toContain('{canLeave && (');
+    expect(kopf).toContain('aria-label={isOnline ? "Weitere Chat-Optionen" : "Weitere Chat-Optionen — Ohne Internetverbindung nicht möglich"}');
+    // Die Knoepfe stehen im rechts-Slot, VOR der Glocke (die Kopfzeile haengt
+    // sie hinten an).
+    const rechts = kopf.slice(kopf.indexOf('rechts={('), kopf.indexOf('</>', kopf.indexOf('rechts={(')));
+    expect(zaehle(rechts, '<IonButton ')).toBe(4);
+    // Die Fusszeile mit dem Eingabefeld behaelt ihre eigene Toolbar.
+    expect(zaehle(kopf, '<IonFooter')).toBe(1);
+    expect(zaehle(kopf, '<IonToolbar')).toBe(1);
+
+    // Ladezustand und Fehlerseite: derselbe Zurueck-Weg, ebenfalls opak --
+    // sonst springt die Kopfzeile beim Wechsel zum Raum.
+    expect(lies('src/components/chat/ChatRoom.tsx')).toContain('<AppKopfzeile titel="Chat wird geladen..." onZurueck={onBack} translucent={false} />');
+    expect(lies('src/components/chat/views/ChatRoomView.tsx')).toContain('<AppKopfzeile titel="Fehler" onZurueck={onBack} translucent={false} />');
+    // Der Raum ist eine Seite mit Route (kein Modal), darum Glocke und Umschalter.
+    expect(lies('src/navigation/rollenBaeume.ts')).toContain("page: ChatRoomView, param: 'roomId', propName: 'roomId'");
+  });
+
+  it('im ganzen Frontend hat keine Seite mehr eine eigene Kopfzeile -- nur Modale und das Geruest selbst', () => {
+    // Die Umstellung lief verzeichnisweise und liess zwei Verzeichnisse aus.
+    // Deshalb hier die Gesamtprobe ueber ALLE Komponenten: Wo noch ein
+    // <IonHeader steht, muss es ein Modal sein (per useIonModal praesentiert,
+    // eine *Modal.tsx oder eine Modal-Komponente innerhalb einer Seite) oder
+    // die Kopfzeile selbst. Ein <IonHeader translucent (das Kennzeichen einer
+    // Seite) darf es ausserhalb von AppKopfzeile nicht mehr geben.
+    const sammle = (dir: string): string[] => readdirSync(dir).flatMap((name) => {
+      const voll = join(dir, name);
+      return statSync(voll).isDirectory() ? sammle(voll) : voll.endsWith('.tsx') ? [voll] : [];
+    });
+    const dateien = sammle(join(process.cwd(), 'src/components'));
+    expect(dateien.length).toBeGreaterThan(100);
+    const mitTranslucent = dateien
+      .filter((d) => readFileSync(d, 'utf8').includes('<IonHeader translucent'))
+      .map((d) => d.slice(process.cwd().length + 1));
+    expect(mitTranslucent).toEqual(['src/components/shared/AppKopfzeile.tsx']);
+    const mitCondense = dateien
+      .filter((d) => readFileSync(d, 'utf8').includes('collapse="condense"'))
+      .map((d) => d.slice(process.cwd().length + 1));
+    expect(mitCondense).toEqual(['src/components/shared/AppKopfzeile.tsx']);
+
+    // Die verbliebenen <IonHeader> ausserhalb von modals/-Ordnern und
+    // *Modal.tsx-Dateien: genau diese, alle mit Begruendung.
+    const verbliebene = dateien
+      .filter((d) => !d.includes('/modals/') && !/Modal\.tsx$/.test(d))
+      .filter((d) => readFileSync(d, 'utf8').includes('<IonHeader'))
+      .map((d) => d.slice(process.cwd().length + 1))
+      .sort();
+    expect(verbliebene).toEqual([
+      'src/components/admin/pages/AdminCategoriesPage.tsx',    // CategoryModal (Innen-Komponente)
+      'src/components/admin/pages/AdminCertificatesPage.tsx',  // CertificateModal (Innen-Komponente)
+      'src/components/admin/pages/AdminInvitePage.tsx',        // per useIonModal aus "Mehr"
+      'src/components/admin/pages/AdminJahrgaengeePage.tsx',   // JahrgangModal (Innen-Komponente)
+      'src/components/admin/pages/AdminWrappedPage.tsx',       // <IonModal> "Neuer Rückblick"
+      'src/components/admin/views/KonfiDetailView.tsx',        // PhotoModal (Innen-Komponente)
+      'src/components/shared/AppKopfzeile.tsx',                // das Geruest selbst
+    ]);
   });
 });

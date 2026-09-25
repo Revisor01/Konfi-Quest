@@ -1,12 +1,7 @@
-import { ICON_AUFKLAPPEN_GEFUELLT, ICON_ZURUECK } from '../shared/icons';
+import { ICON_AUFKLAPPEN_GEFUELLT } from '../shared/icons';
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonButton,
-  IonButtons,
   IonIcon,
   IonRefresher,
   IonRefresherContent,
@@ -35,6 +30,7 @@ import {
 import { safeUUID } from '../../utils/uuid';
 import { networkMonitor } from '../../services/networkMonitor';
 import { ChatHeader, MessageInput, autoCapitalize } from './ChatRoomSections';
+import AppKopfzeile from '../shared/AppKopfzeile';
 import { haptik, triggerPullHaptic, ImpactStyle } from '../../utils/haptics';
 import { useChatScroll } from './useChatScroll';
 import { useChatSocket } from './useChatSocket';
@@ -577,16 +573,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   if (!room) {
     return (
       <>
-        <IonHeader>
-          <IonToolbar>
-            <IonButtons slot="start">
-              <IonButton aria-label="Zurück" onClick={onBack}>
-                <IonIcon icon={ICON_ZURUECK} />
-              </IonButton>
-            </IonButtons>
-            <IonTitle>Chat wird geladen...</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        {/* Opak wie der ChatHeader danach, sonst springt die Kopfzeile beim
+            Wechsel vom Laden zum Raum. */}
+        <AppKopfzeile titel="Chat wird geladen..." onZurueck={onBack} translucent={false} />
         <IonContent className="app-gradient-background" fullscreen>
           <div style={{ textAlign: 'center', padding: 'var(--app-abstand-riesig)' }}>
             <p>Chat wird geladen...</p>
