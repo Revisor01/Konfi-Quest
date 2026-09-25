@@ -33,6 +33,7 @@ const { nachAntwort } = require('../../utils/nachAntwort');
 const { validateTeamerQuota, pruefeAnmeldeschluss } = require('./validierung');
 const { formatDatum } = require('../../utils/zeitformat');
 const { darfTermin, darfJahrgang } = require('../../utils/jahrgangsZugriff');
+const { loescheMitteilungenZuTermin } = require('../../utils/postfachAufraeumen');
 
 module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
@@ -902,6 +903,12 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
  console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
         }
       }
+
+      // Mitteilungen zum Termin gehen mit ihm (utils/postfachAufraeumen.js):
+      // Anmeldung, Absage, Teilnahme, Team-Buchung -- jede zeigt beim
+      // Antippen auf diesen Termin, und den gibt es gleich nicht mehr. In
+      // derselben Transaktion, damit bei einem ROLLBACK auch sie stehen bleiben.
+      await loescheMitteilungenZuTermin(client, id);
 
       // Finally, delete the event itself
       const { rowCount } = await client.query("DELETE FROM events WHERE id = $1", [id]);

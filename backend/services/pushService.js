@@ -11,12 +11,24 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // 25.09.2026 fragte jede Leitungs-Meldung hier nur die Stamm-Organisation --
 // wer mehrere Gemeinden betreut, bekam aus den anderen nichts.
 const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
+// Postfach (25.09.2026): Welche Arten neben dem Push auch einen Eintrag in
+// der Tabelle notifications bekommen, steht in EINER Positivliste
+// (utils/postfachArten.js). Geschrieben wird zentral in sendToUser und
+// sendToMultipleUsers -- nicht an den rund vierzig Aufrufstellen.
+const { schreibePostfach } = require('../utils/postfachArten');
 
 /**
  * Push Notification Type Registry
  *
  * Alle Push-Types werden durch statische Methoden in dieser Klasse definiert.
  * Zum Deaktivieren eines Types: Aufruf in der jeweiligen Route auskommentieren.
+ *
+ * POSTFACH (25.09.2026): Ob eine Art zusaetzlich als Mitteilung in der
+ * Tabelle notifications landet, steht NICHT hier, sondern in der
+ * Positivliste utils/postfachArten.js (POSTFACH_ARTEN, mit den bewusst
+ * ausgenommenen Arten in NICHT_IM_POSTFACH). sendToUser und
+ * sendToMultipleUsers schreiben den Eintrag vor dem Versand -- auch dann,
+ * wenn die Person kein Push-Geraet hat.
  *
  * Type                        | Methode                              | Empfaenger      | Enabled
  * ----------------------------|--------------------------------------|-----------------|--------
@@ -638,6 +650,19 @@ class PushService {
   }
 
   /**
+   * Postfach-Eintrag zu einem Push -- fuer eine oder viele Personen.
+   *
+   * Als Methode hier, damit Tests sie per vi.spyOn abklemmen oder
+   * beobachten koennen (dasselbe Muster wie bei den Versand-Methoden).
+   * Die Regel, welche Art schreibt, liegt in utils/postfachArten.js.
+   *
+   * @returns {Promise<number>} Anzahl geschriebener Eintraege
+   */
+  static async schreibePostfach(db, userIds, notification) {
+    return schreibePostfach(db, userIds, notification);
+  }
+
+  /**
    * Helper: Sendet Push an einen User
    *
    * @param {object} [vorberechnet] Optional, nur vom Versand an viele belegt:
@@ -647,6 +672,24 @@ class PushService {
    */
   static async sendToUser(db, userId, notification, vorberechnet = null) {
     try {
+      // Postfach ZUERST, vor der Token-Pruefung (25.09.2026): Wer kein
+      // Push-Geraet hat oder Push abgeschaltet hat, bekommt unten "No tokens
+      // found" -- und soll die Mitteilung trotzdem im Postfach finden. Das
+      // ist der ganze Zweck des Postfachs. Ausserdem VOR der Badge-Rechnung,
+      // damit die neue ungelesene Mitteilung in der Zahl am App-Symbol schon
+      // mitzaehlt (utils/appIconBadge.js), die dieser Push traegt.
+      //
+      // Beim Versand an viele hat sendToMultipleUsers den Eintrag schon fuer
+      // den ganzen Block geschrieben (vorberechnet gesetzt) -- dann nicht
+      // noch einmal je Kopf.
+      //
+      // Eigener Fehlerfang: Ein fehlgeschlagener Eintrag darf den Push nicht
+      // kippen -- und umgekehrt haengt der Eintrag nicht am Push.
+      if (!vorberechnet) {
+        await this.schreibePostfach(db, [userId], notification)
+          .catch((err) => console.error('Postfach-Eintrag fehlgeschlagen:', err.message));
+      }
+
       // Beim Versand an viele stehen die Tokens schon aus der gemeinsamen
       // Abfrage bereit -- das war nach der Badge-Rechnung die groesste
       // verbliebene Abfrage je Kopf.
@@ -760,6 +803,13 @@ class PushService {
     const ergebnisse = [];
     for (let i = 0; i < userIds.length; i += this.EMPFAENGER_BLOCK) {
       const block = userIds.slice(i, i + this.EMPFAENGER_BLOCK);
+
+      // Postfach-Eintrag fuer den ganzen Block in EINER Abfrage, und zwar
+      // VOR der Badge-Rechnung, damit die neue Mitteilung in der Zahl am
+      // App-Symbol mitzaehlt (siehe sendToUser). sendToUser schreibt unten
+      // nicht erneut, weil vorberechnet gesetzt ist.
+      await this.schreibePostfach(db, block, notification)
+        .catch((err) => console.error('Postfach-Eintrag fehlgeschlagen:', err.message));
 
       // Badge-Zahl, Organisationen und Tokens JE BLOCK in wenigen Abfragen --
       // statt je Kopf, aber auch nicht fuer alle Empfaenger auf einmal. Bei
@@ -1277,7 +1327,12 @@ class PushService {
   /**
    * Konfi hat sich von Event abgemeldet - Push an alle Admins der Organisation
    */
-  static async sendEventUnregistrationToAdmins(db, organizationId, konfiName, eventName, reason = null) {
+  // eventId optional und am Ende (25.09.2026): Die Meldung geht seit dem
+  // Postfach nicht nur als Push raus, sondern bleibt als Mitteilung stehen --
+  // und stirbt mit dem Termin (utils/postfachAufraeumen.js). Dafuer braucht
+  // sie seine Kennung. Ausserdem springt der Tap damit an den Termin statt
+  // auf die Liste (frontend utils/pushNavigation.ts).
+  static async sendEventUnregistrationToAdmins(db, organizationId, konfiName, eventName, reason = null, eventId = null) {
     try {
 
       // Hole alle Admins der Organisation
@@ -1298,6 +1353,7 @@ class PushService {
           type: 'event_unregistration',
           event_name: eventName,
           konfi_name: konfiName,
+          ...(eventId != null ? { event_id: String(eventId) } : {}),
           organization_id: String(organizationId)
         }
       };
@@ -2045,7 +2101,11 @@ class PushService {
    * automatisch gelöscht. Wir nennen es bewusst "gelöscht" (das interne Archiv
    * bleibt unerwaehnt). Hinweis aufs Befoerdern der Konfis zu Teamer:innen.
    */
-  static async sendJahrgangDeletionWarningToAdmins(db, organizationId, jahrgangName, daysLeft) {
+  // jahrgangId optional und am Ende (25.09.2026): Die Warnung steht seit dem
+  // Postfach als Mitteilung und geht mit dem Jahrgang, sobald er geloescht
+  // ist (utils/postfachAufraeumen.js) -- eine Warnung vor etwas, das schon
+  // passiert ist, waere Rauschen.
+  static async sendJahrgangDeletionWarningToAdmins(db, organizationId, jahrgangName, daysLeft, jahrgangId = null) {
     try {
       const admins = await ladeLeitungDerOrganisation(db, organizationId);
 
@@ -2061,6 +2121,7 @@ class PushService {
           type: 'jahrgang_deletion_warning',
           jahrgang_name: jahrgangName,
           days_left: String(daysLeft),
+          ...(jahrgangId != null ? { jahrgang_id: String(jahrgangId) } : {}),
           organization_id: String(organizationId)
         }
       };

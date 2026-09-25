@@ -1806,7 +1806,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Push-Notification an ALLE Admins senden
       try {
-        await PushService.sendEventUnregistrationToAdmins(db, req.user.organization_id, konfiName, event.name, reason);
+        await PushService.sendEventUnregistrationToAdmins(db, req.user.organization_id, konfiName, event.name, reason, eventId);
       } catch (pushErr) {
  console.error('Error sending event unregistration push to admins:', pushErr);
       }

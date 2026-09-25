@@ -167,8 +167,10 @@ zeigen, nur je Gemeinde getrennt. So siehst du, wo Arbeit liegt, ohne erst
 hineinzuwechseln. Was mitzählt, hängt von deiner Rolle **in dieser Gemeinde**
 ab: als Leitung offene Anträge, unverbuchte Termine, wartende
 Challenge-Beiträge und ungelesene Chats; als Teamer:in wartende Beiträge,
-Chats und neue Abzeichen. Bist du an Jahrgänge gebunden, zählt nur, was du
-dort auch sehen darfst. Eine Gemeinde ohne Zahl hat nichts Offenes.
+Chats und neue Abzeichen. Dazu in jeder Rolle die ungelesenen Mitteilungen
+aus dieser Gemeinde im [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen).
+Bist du an Jahrgänge gebunden, zählt nur, was du dort auch sehen darfst. Eine
+Gemeinde ohne Zahl hat nichts Offenes.
 
 Weil der Umschalter auf jeder Seite steht, auf der ein Push oder eine
 Mitteilung landen kann, gibt es auch immer einen Rückweg: Ein angetippter Push

@@ -1761,9 +1761,17 @@ paths:
         Seit 25.09.2026 kommt postfach additiv dazu: die Zahl ungelesener
         Postfach-Mitteilungen des KONTOS ueber alle Organisationen (dieselbe
         Zaehlung wie GET /api/notifications/postfach.ungelesen). Sie speist
-        die Glocke -- einen eigenen Zaehler neben den Reitern -- und geht
-        BEWUSST NICHT in die App-Icon-Summe (utils/appIconBadge.js) ein.
-        Kein bestehendes Feld aendert sich.
+        die Glocke -- und seit demselben Tag auch die Zahl am App-Symbol:
+        Der Client addiert sie in allen drei Rollen zu den Reiter-Zahlen,
+        der Server rechnet dieselbe Summe fuer den Push (utils/appIconBadge.js,
+        postfachZaehler; Paritaetstest appIconBadgeParitaet.test.js).
+        Gemessen vorher am Geraet: Glocke 23, Challenges 9, Chat 3, Symbol 12
+        -- jetzt 35. Ungelesene Mitteilungen zaehlen ALLE, auch die, deren
+        Gegenstand ein Reiter schon zaehlt (offener Antrag + "Neuer Antrag
+        eingegangen"); Begruendung in backend/utils/postfachArten.js.
+        Kein bestehendes Feld aendert sich. Store-Apps 2.2.x addieren das
+        Postfach nicht: Sie zeigen nach dem Oeffnen die kleinere Summe der
+        Reiter, bis die naechste Fassung im Store ist.
       responses:
         '200':
           description: Zähler
@@ -1824,7 +1832,8 @@ paths:
                       Postfach-Mitteilungen (notifications.read_at IS NULL)
                       des Kontos ueber ALLE Organisationen -- bewusst ohne
                       Org-Filter, siehe GET /api/notifications/postfach.
-                      Nicht Teil der App-Icon-Summe.
+                      Zahl an der Glocke UND Anteil des Postfachs an der
+                      App-Icon-Summe (seit 25.09.2026).
                     properties:
                       ungelesen: { type: integer }
         '500': { description: Datenbankfehler }
@@ -1910,6 +1919,34 @@ paths:
         Teamer-Meldungen), aber nirgends gelesen -- wer eine Push-Nachricht
         wegwischte, hatte sie verloren. Diese Route macht daraus ein
         Postfach.
+        WAS DRINSTEHT (seit 25.09.2026, zweiter Schritt): Neben den vier
+        alten Arten (badge_earned, new_activity_request,
+        activity_request_submitted, activity_request_decision) schreibt der
+        Push-Weg selbst (PushService.sendToUser/sendToMultipleUsers) 21
+        weitere Arten mit -- gesteuert ueber die Positivliste in
+        backend/utils/postfachArten.js: event_attendance, bonus_points,
+        activity_assigned, level_up, challenge_badge_earned,
+        waitlist_promotion, event_cancelled, event_changed,
+        event_reactivated, event_registered, event_unregistered,
+        challenge_submission_hidden (Konfis/Teamer:innen);
+        event_unregistration, teamer_event_booking,
+        teamer_event_cancellation, events_pending_approval,
+        new_konfi_registration, challenge_submission,
+        jahrgang_deletion_warning, event_opt_out, event_opt_in (Leitung und
+        Team). Der Eintrag entsteht VOR der Token-Pruefung -- auch wer keinen
+        Push bekommt, hat ihn. Bewusst NICHT im Postfach: event_reminder,
+        new_event, mandatory_event_created, challenge_started, chat (eigene
+        Listen und Zaehler); wrapped und certificate sind nicht entschieden.
+        events_pending_approval ersetzt die noch ungelesene Mitteilung
+        derselben Person und Gemeinde vom Vortag, statt sich taeglich zu
+        stapeln. `data` traegt die Kennungen des Pushes (event_id bzw.
+        eventId, challengeId, jahrgang_id, request_id, badge_id); die App
+        navigiert damit wie bei einem Push-Tap. Mitteilungen sterben mit
+        ihrem Gegenstand (backend/utils/postfachAufraeumen.js): mit dem
+        Termin alle Termin-Arten, mit der Challenge Stempel/ausgeblendet/
+        neuer Beitrag, mit dem Jahrgang die Loeschwarnung, mit dem Antrag
+        die Zustandsmeldungen, mit dem Abzeichen "Neues Badge erhalten".
+        Nach 365 Tagen werden Mitteilungen nachts entfernt.
         ENTSCHEIDUNG ORG-BEZUG: Das Postfach ist persoenlich wie das
         Mitteilungszentrum des Handys; Push-Nachrichten kommen ja auch
         unabhaengig von der aktiven Gemeinde an. Wer mehrere Gemeinden
@@ -1960,7 +1997,7 @@ paths:
                         id: { type: integer }
                         title: { type: string }
                         message: { type: [string, 'null'] }
-                        type: { type: string, description: "z.B. badge_earned, activity_request_decision" }
+                        type: { type: string, description: "Art der Mitteilung, z.B. badge_earned, activity_request_decision, bonus_points, event_attendance, event_registered -- die Liste steht in description" }
                         data:
                           type: object
                           description: Immer ein Objekt; {} wenn in der Datenbank NULL steht

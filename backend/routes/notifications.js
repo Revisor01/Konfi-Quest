@@ -252,10 +252,14 @@ module.exports = (db, verifyTokenRBAC) => {
       // Postfach (25.09.2026): ungelesene Mitteilungen des KONTOS ueber alle
       // Organisationen -- dieselbe Zaehlung wie GET /postfach.ungelesen, damit
       // Glocke und Liste nie auseinanderlaufen. Bewusst OHNE Org-Filter (siehe
-      // Begruendung an der Postfach-Route). Bewusst NICHT in die
-      // App-Icon-Summe (utils/appIconBadge.js) eingerechnet: Die Glocke ist ein
-      // eigener Zaehler neben den Reitern, keine Reiter-Zahl; die
-      // Paritaetstests (appIconBadgeParitaet.test.js) bleiben unangetastet.
+      // Begruendung an der Postfach-Route).
+      //
+      // Diese Zahl geht seit dem 25.09.2026 in die Zahl am App-Symbol ein --
+      // auf dem Server (utils/appIconBadge.js, postfachZaehler) wie im Client
+      // (BadgeContext.totalBadgeCount). Simon: "lass es dagegen zaehlen".
+      // Gemessen vorher: Glocke 23, Reiter 12, Symbol 12. Jetzt 35. Warum
+      // ALLE ungelesenen zaehlen und nicht nur die Arten ohne eigenen Reiter,
+      // steht in utils/postfachArten.js.
       const postfachPromise = db.query(
         `SELECT COUNT(*)::int AS c FROM notifications WHERE user_id = $1 AND read_at IS NULL`,
         [userId]
@@ -313,9 +317,10 @@ module.exports = (db, verifyTokenRBAC) => {
         // NEU 25.09.2026, additiv: dieselbe Summe wie pendingChallenges,
         // dazu die Aufschluesselung je Challenge fuer den Listeneintrag.
         challengeApprovals: { total: freigabenTotal, byChallenge: freigabenByChallenge },
-        // NEU 25.09.2026, additiv: ungelesene Postfach-Mitteilungen (Glocke).
-        // Nur ein Objekt, damit spaeter Aufschluesselungen dazukommen koennen,
-        // ohne die Form zu aendern.
+        // NEU 25.09.2026, additiv: ungelesene Postfach-Mitteilungen -- die
+        // Zahl an der Glocke UND der Anteil des Postfachs an der Zahl am
+        // App-Symbol. Nur ein Objekt, damit spaeter Aufschluesselungen
+        // dazukommen koennen, ohne die Form zu aendern.
         postfach: { ungelesen: postfachRes.rows[0]?.c || 0 }
       });
     } catch (err) {

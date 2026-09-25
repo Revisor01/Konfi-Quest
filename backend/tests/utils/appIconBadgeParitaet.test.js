@@ -40,16 +40,29 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
   afterAll(async () => { await closePool(); });
 
   // Bildet totalBadgeCount aus BadgeContext.tsx nach.
+  //
+  // Seit 25.09.2026 fuer ALLE Rollen plus die ungelesenen Postfach-
+  // Mitteilungen (Simon: "lass es dagegen zaehlen"). Bewusst ohne Fallback
+  // -- fehlt das Feld, soll der Test fallen, nicht 0 addieren.
   const clientSumme = (body, rolle) => {
+    const postfach = body.postfach.ungelesen;
     if (rolle === 'admin') {
-      return body.chat.total + body.pendingRequests + body.pendingEvents + body.pendingChallenges;
+      return body.chat.total + body.pendingRequests + body.pendingEvents + body.pendingChallenges + postfach;
     }
     if (rolle === 'teamer') {
-      return body.chat.total + body.pendingChallenges + body.newBadges;
+      return body.chat.total + body.pendingChallenges + body.newBadges + postfach;
     }
-    // Konfi (seit 24.09.2026): plus Challenge-Neuigkeiten. Bewusst ohne
-    // Fallback -- fehlt das Feld, soll der Test fallen, nicht 0 addieren.
-    return body.chat.total + body.newBadges + body.challengeUpdates.total;
+    // Konfi (seit 24.09.2026): plus Challenge-Neuigkeiten.
+    return body.chat.total + body.newBadges + body.challengeUpdates.total + postfach;
+  };
+
+  /** Eine Postfach-Mitteilung, wie die Schreibstellen sie anlegen. */
+  const mitteilung = async (userId, type, data = {}, gelesen = false) => {
+    await db.query(
+      `INSERT INTO notifications (user_id, title, message, type, data, organization_id, read_at)
+       VALUES ($1, 'T', 'M', $2, $3::jsonb, $4, $5)`,
+      [userId, type, JSON.stringify(data), ORGS.testGemeinde.id, gelesen ? new Date() : null]
+    );
   };
 
   const vergleiche = async (user, rolle, tokenName) => {
@@ -159,6 +172,127 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
     expect(server).toBe(client);
     // Und zwar beide 0 — der fremde Antrag zaehlt weder am Icon noch am Reiter.
     expect(server).toBe(0);
+  });
+
+  // ------------------------------------------------------------------
+  // Postfach am App-Symbol (25.09.2026)
+  // ------------------------------------------------------------------
+
+  it('Simons Messung (Leitung, Konto 41): Postfach 23 + Challenges 9 + Chat 3 = 35, nicht 12', async () => {
+    // Vorher zeigte das Symbol 12 -- die 23 fehlten vollstaendig, weil
+    // totalBadgeCount das Postfach in keinem Zweig addierte. Nachgestellt
+    // mit orgAdmin1 (org-weit, wie Konto 41).
+    // 23 ungelesene Mitteilungen zu laengst entschiedenen Antraegen: keine
+    // davon ist noch offen, pendingRequests bleibt 0 -- genau wie gemessen.
+    for (let i = 0; i < 23; i++) {
+      await mitteilung(USERS.orgAdmin1.id, 'new_activity_request', { request_id: 1000 + i });
+    }
+    // 9 offene Freigaben in einer Challenge der Organisation.
+    const { rows: [{ id: challengeId }] } = await db.query(
+      `INSERT INTO challenges (organization_id, title, description, badge_name,
+                               starts_at, ends_at, is_draft, audience, moderated)
+       VALUES ($1, 'Freigaben', 'B', 'Stempel', NOW() - interval '1 day',
+               NOW() + interval '7 days', false, 'konfis', true) RETURNING id`,
+      [ORGS.testGemeinde.id]
+    );
+    for (let i = 0; i < 9; i++) {
+      await db.query(
+        `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, moderation_status)
+         VALUES ($1, $2, $3, 'text', 'pending')`,
+        [challengeId, i % 2 === 0 ? USERS.konfi1.id : USERS.konfi2.id, ORGS.testGemeinde.id]
+      );
+    }
+    // 3 ungelesene Chat-Nachrichten von jemand anderem in einem Raum, in dem
+    // orgAdmin1 sitzt.
+    await db.query(
+      `INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (3, $1, 'admin')`,
+      [USERS.orgAdmin1.id]
+    );
+    await db.query(
+      `INSERT INTO chat_messages (room_id, user_id, user_type, content) VALUES
+       (3, $1, 'teamer', 'A'), (3, $1, 'teamer', 'B'), (3, $1, 'teamer', 'C')`,
+      [USERS.teamer1.id]
+    );
+
+    const res = await request(app)
+      .get('/api/notifications/badge-counts')
+      .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`);
+    expect(res.status).toBe(200);
+    expect(res.body.postfach.ungelesen).toBe(23);
+    expect(res.body.pendingChallenges).toBe(9);
+    expect(res.body.chat.total).toBe(3);
+    expect(res.body.pendingRequests).toBe(0);
+    expect(res.body.pendingEvents).toBe(0);
+
+    const server = await berechneAppIconSumme(db, {
+      id: USERS.orgAdmin1.id, type: 'admin', role_name: 'org_admin',
+      organization_id: ORGS.testGemeinde.id, assigned_jahrgaenge: []
+    });
+    expect(clientSumme(res.body, 'admin')).toBe(35);
+    expect(server).toBe(35);
+  });
+
+  it('Postfach: gelesene Mitteilungen zaehlen auf keiner Seite', async () => {
+    await mitteilung(USERS.konfi1.id, 'bonus_points', { points: '2' }, true);
+    await mitteilung(USERS.konfi1.id, 'bonus_points', { points: '3' }, false);
+
+    const { server, client, body } = await vergleiche(USERS.konfi1, 'konfi', 'konfi1');
+    expect(body.postfach.ungelesen).toBe(1);
+    expect(server).toBe(client);
+    expect(server).toBe(1);
+  });
+
+  it('Konfi: "Punkte erhalten" zaehlt am Symbol -- vorher gab es dafuer nur den Push', async () => {
+    await mitteilung(USERS.konfi1.id, 'bonus_points', { points: '5' });
+    await mitteilung(USERS.konfi1.id, 'event_attendance', { event_id: '1', points: '2' });
+    await mitteilung(USERS.konfi1.id, 'level_up', { level_id: '2' });
+
+    const { server, client, body } = await vergleiche(USERS.konfi1, 'konfi', 'konfi1');
+    expect(body.newBadges).toBe(0);
+    expect(body.challengeUpdates.total).toBe(0);
+    expect(server).toBe(client);
+    expect(server).toBe(3);
+  });
+
+  it('Leitung: offener Antrag UND seine ungelesene Mitteilung -> 2 auf beiden Seiten (Reiter + Glocke, bewusst)', async () => {
+    // Die Ueberlappung besteht, solange der Antrag offen UND die Mitteilung
+    // ungelesen ist -- dann zeigt die App auch zwei Zahlen (Reiter 1,
+    // Glocke 1), und das Symbol verspricht nicht mehr als das. Warum kein
+    // Ausschluss je Art: utils/postfachArten.js.
+    const { rows: [{ id: requestId }] } = await db.query(
+      `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id)
+       VALUES ($1, $2, '2026-08-27', 'pending', $3) RETURNING id`,
+      [USERS.konfi1.id, ACTIVITIES.sonntagsgottesdienst.id, ORGS.testGemeinde.id]
+    );
+    await mitteilung(USERS.admin1.id, 'new_activity_request', { request_id: requestId });
+
+    const { server, client, body } = await vergleiche(USERS.admin1, 'admin', 'admin1');
+    expect(body.pendingRequests).toBe(1);
+    expect(body.postfach.ungelesen).toBe(1);
+    expect(server).toBe(client);
+    expect(server).toBe(2);
+  });
+
+  it('Postfach zaehlt ueber alle Gemeinden -- auf beiden Seiten', async () => {
+    // orgAdmin1 bekommt eine Mitteilung aus Org 2 (Zweit-Gemeinde).
+    await db.query(
+      `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+       VALUES ($1, 'T', 'M', 'event_opt_out', '{}', $2)`,
+      [USERS.orgAdmin1.id, ORGS.andereGemeinde.id]
+    );
+    await mitteilung(USERS.orgAdmin1.id, 'event_opt_out', {});
+
+    const res = await request(app)
+      .get('/api/notifications/badge-counts')
+      .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`);
+    expect(res.body.postfach.ungelesen).toBe(2);
+
+    const server = await berechneAppIconSumme(db, {
+      id: USERS.orgAdmin1.id, type: 'admin', role_name: 'org_admin',
+      organization_id: ORGS.testGemeinde.id, assigned_jahrgaenge: []
+    });
+    expect(server).toBe(clientSumme(res.body, 'admin'));
+    expect(server).toBe(2);
   });
 
   it('Teamer: mit Chat', async () => {

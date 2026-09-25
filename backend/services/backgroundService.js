@@ -1098,6 +1098,24 @@ class BackgroundService {
    * niemand ein "Antrag eingereicht". Konten, die per Auto-Loeschung
    * verschwinden, nehmen ihre Mitteilungen ohnehin ueber den FK mit; dieser
    * Schritt raeumt bei den Konten auf, die bleiben (Leitung, Teamer:innen).
+   *
+   * HOCHRECHNUNG NACH DEM AUSBAU DES POSTFACHS (25.09.2026, seit dem der
+   * Push-Weg 21 weitere Arten schreibt, utils/postfachArten.js). Gemessen in
+   * Produktion am selben Tag, letzte 30 Tage bei 108 Konfis und 14
+   * Leitungskonten in 6 Gemeinden: 588 Mitteilungen (alte vier Arten),
+   * 451 Buchungen, 120 Aktivitaeten, 118 Challenge-Beitraege, 77 Termine,
+   * 70 Antraege, 40 Verbuchungen per Check-in, 5 Bonusvergaben. Daraus je
+   * Monat grob: ~1.200 neue Konfi-Mitteilungen (Anmeldung, Teilnahme,
+   * Punkte, Stempel, Termin-Aenderungen) und ~700 an Team und Leitung
+   * (Faecher ~2,3 Leitungskonten je Gemeinde) -- zusammen rund 2.500 statt
+   * 588, also gut das Vierfache. Bei 610 Byte je Zeile samt Indizes
+   * (827 KB / 1.356 Zeilen) sind das ~30.000 Zeilen und ~18 MB je Jahr. Mit
+   * dem EKD-weiten Rollout (Faktor ~110) ~3,3 Mio. Zeilen und ~2 GB je Jahr.
+   * Die Frist von 365 Tagen bleibt: Ein Konfi-Jahr ist die natuerliche
+   * Einheit, und 18 MB sind kein Grund, sie zu kuerzen. Ab ~1 GB (also erst
+   * nach dem Rollout) waere der naechste Schritt, GELESENE Zustands-
+   * Mitteilungen (Anmeldung, Aenderung, Team-Buchung) nach 180 Tagen zu
+   * entfernen und Verlauf (Punkte, Entscheidungen) ein Jahr zu behalten.
    */
   static async cleanupAlteMitteilungen(db) {
     const { rowCount } = await db.query(
@@ -1372,7 +1390,7 @@ class BackgroundService {
           // Push an alle Org-Admins (zuverlaessiger Kanal, kein externer SMTP).
           let pushSent = false;
           try {
-            const pushRes = await PushService.sendJahrgangDeletionWarningToAdmins(db, jg.organization_id, jg.name, daysLeft);
+            const pushRes = await PushService.sendJahrgangDeletionWarningToAdmins(db, jg.organization_id, jg.name, daysLeft, jg.id);
             // sendToMultipleUsers liefert kein einheitliches Erfolgsflag; wir
             // werten "kein Fehler geworfen" als zugestellt-versucht. Ein echtes
             // false (z.B. keine Admins) liefert {success:false}.

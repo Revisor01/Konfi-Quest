@@ -45,10 +45,12 @@ interface BadgeContextType {
   challengeUpdatesTotal: number;
   /**
    * Ungelesene Mitteilungen im Postfach (25.09.2026), ueber alle Gemeinden
-   * des Kontos. Speist die Zahl an der Glocke in der Kopfzeile. BEWUSST NICHT
-   * Teil von totalBadgeCount: Die Glocke ist ein eigener Zaehler neben den
-   * Reitern, und das App-Icon summiert nur die Reiter (Paritaet mit
-   * utils/appIconBadge.js auf dem Server, Befund B2b).
+   * des Kontos. Speist die Zahl an der Glocke in der Kopfzeile UND zaehlt in
+   * totalBadgeCount mit -- fuer alle Rollen. Simon: "lass es dagegen
+   * zaehlen, bitte! Das, was an Benachrichtigungen drin ist, wird mit
+   * reingezaehlt, damit es logisch konsistent bleibt." Gemessen vorher am
+   * Geraet: Glocke 23, Reiter 12, Symbol 12 -- die 23 fehlten. Der Server
+   * addiert dieselbe Zahl (utils/appIconBadge.js, Paritaet B2b).
    */
   postfachUngelesen: number;
   /**
@@ -101,10 +103,17 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   // totalBadgeCount: Admin = chat + requests + events + challenges,
   // Teamer = chat + challenges + badges, Konfi = chat + badges + Challenge-Neuigkeiten
+  // -- und fuer ALLE Rollen plus die ungelesenen Postfach-Mitteilungen.
   // Seit 27.08.2026 zaehlen die ungesehenen Abzeichen mit: Vorher fehlten sie
   // im App-Icon, obwohl sie an einem Reiter als rote Zahl standen -- das Icon
   // stimmte nie mit der Summe der Reiter ueberein (Befund B2a).
   // Seit 24.09.2026 kommen fuer Konfis die Challenge-Neuigkeiten dazu.
+  // Seit 25.09.2026 zaehlt das Postfach mit (Simons Messung am Geraet:
+  // Glocke 23 + Challenges 9 + Chat 3, das Symbol zeigte 12 -- jetzt 35).
+  // Das Symbol ist die Summe ALLER Zahlen, die die App zeigt: Reiter UND
+  // Glocke. Warum auch die Mitteilungen zaehlen, deren Gegenstand ein Reiter
+  // schon zaehlt (offener Antrag + "Neuer Antrag eingegangen"), steht in
+  // backend/utils/postfachArten.js.
   //
   // DIESELBE ZUSAMMENSETZUNG steht serverseitig in utils/appIconBadge.js
   // (App-Icon-Zahl im Push bei geschlossener App). Wer hier etwas aendert,
@@ -113,13 +122,13 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   // die Reiter (Befund B2b, 27.08.2026).
   const totalBadgeCount = useMemo(() => {
     if (isAdmin) {
-      return chatUnreadTotal + pendingRequestsCount + pendingEventsCount + pendingChallengesCount;
+      return chatUnreadTotal + pendingRequestsCount + pendingEventsCount + pendingChallengesCount + postfachUngelesen;
     }
     if (isLeadership) {
-      return chatUnreadTotal + pendingChallengesCount + newBadgesCount;
+      return chatUnreadTotal + pendingChallengesCount + newBadgesCount + postfachUngelesen;
     }
-    return chatUnreadTotal + newBadgesCount + challengeUpdatesTotal;
-  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount, challengeUpdatesTotal, isAdmin, isLeadership]);
+    return chatUnreadTotal + newBadgesCount + challengeUpdatesTotal + postfachUngelesen;
+  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount, challengeUpdatesTotal, postfachUngelesen, isAdmin, isLeadership]);
 
   // Zentraler Refresh aller Counts. Nutzt den leichtgewichtigen Zähler-Endpoint
   // (Audit Achse 4, Fund 3) statt der frueheren drei Voll-Fetches (/chat/rooms +
@@ -167,8 +176,9 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       // Badges-Reiter nie, waehrend der Server sie ins App-Icon summierte.
       // Genau der Widerspruch Icon <-> Reiter, den B2b ausschliessen sollte.
       setNewBadgesCount(Number(data?.newBadges) || 0);
-      // Postfach (25.09.2026): fuer alle Rollen, ueber alle Gemeinden.
-      // Aeltere Server ohne das Feld: 0, keine Zahl an der Glocke, kein Fehler.
+      // Postfach (25.09.2026): fuer alle Rollen, ueber alle Gemeinden --
+      // Glocke und Anteil am App-Symbol. Aeltere Server ohne das Feld: 0,
+      // keine Zahl an der Glocke, kein Fehler.
       setPostfachUngelesen(Number(data?.postfach?.ungelesen) || 0);
 
       if (isLeadership) {

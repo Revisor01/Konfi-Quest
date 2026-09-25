@@ -36,6 +36,7 @@ const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { deleteChallengeFile } = require('../utils/photoStorage');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { loescheMitteilungenZuChallenge } = require('../utils/postfachAufraeumen');
 const { pruefeMusikLink, holeLinkMetadaten, ERLAUBTE_DIENSTE_TEXT } = require('../utils/musikLinks');
 
 const MEDIA_TYPES = ['text', 'photo', 'audio', 'video', 'link'];
@@ -1635,6 +1636,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         await db.query('DELETE FROM challenges WHERE id = $1 AND organization_id = $2',
           [challengeId, req.user.organization_id]);
+        // Stempel, "Beitrag ausgeblendet" und "Neuer Beitrag" zu dieser
+        // Challenge zeigen auf nichts mehr (utils/postfachAufraeumen.js).
+        await loescheMitteilungenZuChallenge(db, challengeId);
 
         for (const f of files) {
           await deleteChallengeFile(f.file_path);

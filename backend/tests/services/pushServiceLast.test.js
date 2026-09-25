@@ -135,7 +135,14 @@ describe('PushService unter Last', () => {
       // bleibt damit unberuehrt: Der Aufwand waechst nicht linear je Empfaenger.
       // Genau das prueft der naechste Test ("je zusaetzlichem Empfaenger kommt
       // genau 1 Abfrage dazu") unabhaengig von dieser absoluten Zahl.
-      expect(zaehler).toBeLessThanOrEqual(22);
+      // 25.09.2026: 22 -> 24. Das Postfach kam als Baustein in die App-Icon-
+      // Summe (utils/appIconBadge.js, postfachZaehler): EINE Abfrage je
+      // Summenlauf, nicht eine je Kopf -- und die Summe laeuft hier zweimal
+      // (Stamm-Organisationen und Zweit-Organisationen, siehe
+      // berechneBadgesFuerAlle), also zwei. new_event selbst schreibt keinen
+      // Postfach-Eintrag (utils/postfachArten.js), sonst kaeme noch eine
+      // konstante Abfrage je Block dazu.
+      expect(zaehler).toBeLessThanOrEqual(24);
     });
 
     it('die Token-Abfrage laeuft EINMAL fuer alle, nicht je Empfaenger', async () => {
@@ -210,15 +217,21 @@ describe('PushService unter Last', () => {
         [USERS.admin1.id]
       );
 
+      // new_event statt bonus_points (25.09.2026): bonus_points schreibt
+      // seit dem Postfach je Versand eine ungelesene Mitteilung, die in der
+      // Zahl am App-Icon mitzaehlt -- der zweite Versand haette dann
+      // zwangslaeufig eine hoehere Zahl als der erste. Hier geht es um den
+      // Rechenweg, nicht um die Art; new_event laesst das Postfach unberuehrt
+      // (utils/postfachArten.js).
       await PushService.sendToUser(db, USERS.konfi1.id, {
-        title: 'a', body: 'b', data: { type: 'bonus_points' }
+        title: 'a', body: 'b', data: { type: 'new_event' }
       });
       const einzeln = sendFirebasePushNotification.mock.calls
         .map(([, p]) => p.badge);
       sendFirebasePushNotification.mockClear();
 
       await PushService.sendToMultipleUsers(db, [USERS.konfi1.id], {
-        title: 'a', body: 'b', data: { type: 'bonus_points' }
+        title: 'a', body: 'b', data: { type: 'new_event' }
       });
       const inMenge = sendFirebasePushNotification.mock.calls
         .map(([, p]) => p.badge);

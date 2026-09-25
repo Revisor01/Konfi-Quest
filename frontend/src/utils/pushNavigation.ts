@@ -216,9 +216,20 @@ export const buildPushTargetUrl = (
       // Dashboard (Punkte/Level)
       return userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
 
-    case 'event_unregistration':
+    case 'event_unregistration': {
+      // Konfi-Abmeldung bei der Leitung: seit dem 25.09.2026 traegt sie die
+      // Termin-Kennung (Postfach: die Mitteilung bleibt stehen und soll an
+      // den Termin fuehren, nicht auf die Liste). Aeltere Pushes ohne
+      // Kennung landen wie bisher auf der Liste.
+      const evId = data?.event_id || data?.eventId;
+      if (evId) {
+        return `${routePrefix}/events/${evId}`;
+      }
+      return `${routePrefix}/events`;
+    }
+
     case 'events_pending_approval':
-      // Admin: Event-Abmeldungen / ausstehende Verbuchungen
+      // Admin: ausstehende Verbuchungen
       return userType === 'admin' ? '/admin/events' : `${routePrefix}/events`;
 
     case 'new_konfi_registration':

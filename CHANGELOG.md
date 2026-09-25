@@ -20,6 +20,27 @@ Versionsüberschrift.
   Ungelesenes ist markiert, Antippen führt an die passende Stelle, „Alle
   gelesen" räumt auf. Wer in mehreren Gemeinden mitarbeitet, sieht die
   Mitteilungen aller Gemeinden an einem Ort, jede mit ihrem Gemeindenamen.
+- Das Postfach enthält jetzt alles, was bisher nur als Push kam: Punkte aus
+  einem Termin, Bonuspunkte, zugewiesene Aktivitäten, Level-Aufstiege,
+  Stempel, Anmeldungen, Abmeldungen, Nachrücken von der Warteliste, abgesagte,
+  geänderte und wieder stattfindende Termine, ausgeblendete Beiträge. Für
+  Team und Leitung: Abmeldungen von Konfis, Buchungen und Absagen des Teams,
+  Termine, die auf Verbuchung warten, neue Registrierungen, Beiträge zur
+  Freigabe, die Warnung vor dem Löschen eines Jahrgangs sowie Ab- und
+  Wieder-Anmeldungen von Pflichtterminen. Wer kein Push-Gerät hat oder
+  Mitteilungen abgeschaltet hat, findet all das trotzdem hier. Nicht im
+  Postfach: die Termin-Erinnerung „morgen"/„gleich", neue Termine, gestartete
+  Challenges und Chat-Nachrichten — dafür gibt es eigene Listen und Zähler.
+- Die Zahl am App-Symbol zählt die ungelesenen Mitteilungen im Postfach mit.
+  Vorher fehlten sie dort: Wer 23 ungelesene Mitteilungen, 9 wartende
+  Beiträge und 3 Chat-Nachrichten hatte, sah am Symbol eine 12. Jetzt steht
+  dort 35 — die Summe aller Zahlen, die die App zeigt, Reiter und Glocke.
+  Eine Mitteilung „Termine warten auf Verbuchung" ersetzt die vom Vortag,
+  solange die noch ungelesen ist, statt sich täglich zu stapeln.
+- Mitteilungen zu einem Termin, einer Challenge oder einem Jahrgang
+  verschwinden mit, wenn der Termin, die Challenge oder der Jahrgang gelöscht
+  wird — statt beim Antippen ins Leere zu führen. Die Meldung „Konfi hat sich
+  abgemeldet" führt die Leitung jetzt direkt an den Termin.
 - Die Zahl an der Glocke zählt zusammen, was ungelesen ist und was noch aus
   einer Funklücke gesendet wird; ein endgültig gescheiterter Vorgang färbt sie
   rot.

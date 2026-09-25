@@ -107,12 +107,12 @@ export const postfachPraesentationsElement = (): HTMLElement | undefined =>
  * 'activities' ist die Aktivitaeten- und Antragsfarbe (--app-color-activities,
  * dieselbe wie .app-list-item--requests), 'badges' die Abzeichenfarbe.
  *
- * In Produktion gibt es vier Arten (gemessen 25.09.2026: badge_earned 617,
- * new_activity_request 369, activity_request_submitted 171,
- * activity_request_decision 167). Die uebrigen Zweige decken die Push-Arten
- * ab, die utils/pushNavigation kennt, falls sie je ins Postfach geschrieben
- * werden -- eine unbekannte Art bekommt die neutrale Hinweisfarbe, nie eine
- * geratene.
+ * Bis zum 25.09.2026 gab es in Produktion vier Arten (gemessen: badge_earned
+ * 617, new_activity_request 369, activity_request_submitted 171,
+ * activity_request_decision 167). Seitdem schreibt der Push-Weg alle Arten
+ * aus backend/utils/postfachArten.js mit -- Termine, Punkte, Level, Stempel,
+ * Team-Buchungen. Die Zweige unten decken sie ueber ihre Praefixe ab; eine
+ * unbekannte Art bekommt die neutrale Hinweisfarbe, nie eine geratene.
  */
 export type PostfachBereich = 'badges' | 'activities' | 'events' | 'chat' | 'challenges' | 'info';
 

@@ -21,7 +21,7 @@
 const { challengeNeuigkeitenJeChallenge } = require('./challengeNeuigkeiten');
 
 /**
- * Die sechs Bausteine der Summe -- jeder als EINE Abfrage ueber viele
+ * Die Bausteine der Summe -- jeder als EINE Abfrage ueber viele
  * Personen (`= ANY($1)`), nicht als Abfrage pro Person.
  *
  * Genau hier liegt der Grund fuer den Zuschnitt: Einzel- und Bulk-Weg teilen
@@ -237,6 +237,40 @@ async function abzeichenZaehler(db, personen) {
   )).rows;
 }
 
+// Ungelesene Postfach-Mitteilungen (25.09.2026, Simon: "lass es dagegen
+// zaehlen, bitte! Das, was an Benachrichtigungen drin ist, wird mit
+// reingezaehlt, damit es logisch konsistent bleibt").
+//
+// ALLE ungelesenen, ohne Ausschluss je Art -- auch die, deren Gegenstand
+// die Rolle schon ueber einen Reiter zaehlt (offener Antrag, Freigabe,
+// ungesehenes Abzeichen). Warum, steht ausfuehrlich in
+// utils/postfachArten.js: Gemessen am Geraet fehlten 23 Mitteilungen zu
+// laengst entschiedenen Antraegen; ein Ausschluss je Art haette genau die
+// weiter unterschlagen. Das Symbol ist die Summe der Zahlen, die die App
+// zeigt -- Reiter UND Glocke -- und badge-counts.postfach.ungelesen ist
+// dieselbe Zahl, die der Client addiert.
+//
+// OHNE Org-Join, anders als die Zaehler oben: Das Postfach ist persoenlich
+// und liest ueber alle Gemeinden des Kontos (GET /notifications/postfach).
+// Die Zeilen kommen trotzdem je organization_id, damit
+// appIconSummenJeOrganisation sie der richtigen Gemeinde zuordnen kann; in
+// appIconSummenFuerAlle werden sie ueber alle Gemeinden addiert.
+//
+// Der Index idx_notifications_unread (user_id, read_at) WHERE read_at IS
+// NULL traegt genau diese Abfrage.
+async function postfachZaehler(db, personen) {
+  if (personen.length === 0) return [];
+  return (await db.query(
+    `SELECT n.user_id, z.user_type, n.organization_id, COUNT(*)::int AS c
+       FROM notifications n
+       JOIN unnest($1::int[], $2::text[]) AS z(user_id, user_type)
+              ON z.user_id = n.user_id
+      WHERE n.read_at IS NULL
+      GROUP BY n.user_id, z.user_type, n.organization_id`,
+    [personen.map((p) => p.id), personen.map((p) => p.type)]
+  )).rows;
+}
+
 /** Zerlegt die Empfaengerliste in die drei parallelen Arrays fuer `unnest`. */
 function spalten(personen) {
   return [
@@ -341,7 +375,7 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   // hat am selben Reiter ihre Freigaben, beides in einer Zahl waere unlesbar.
   const konfis = empfaenger.filter((p) => p.type === 'konfi');
 
-  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten] = await Promise.all([
+  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, postfach] = await Promise.all([
     chatZaehler(db, empfaenger),
     antragZaehlerProOrg(db, leitungsOrgs),
     terminZaehlerProOrg(db, leitungsOrgs),
@@ -354,7 +388,9 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
     abzeichenZaehler(db, mitAbzeichen),
     // Dieselbe SQL-Fassung wie badge-counts.challengeUpdates -- die Zeilen
     // kommen je Challenge, hier werden sie je Person aufsummiert.
-    challengeNeuigkeitenJeChallenge(db, konfis)
+    challengeNeuigkeitenJeChallenge(db, konfis),
+    // Postfach fuer ALLE Rollen, alle ungelesenen.
+    postfachZaehler(db, empfaenger)
   ]);
 
   const addiere = (userId, userType, orgId, wert) => {
@@ -367,6 +403,7 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   for (const r of gebundeneAntraege) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneTermine) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of abzeichen) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  for (const r of postfach) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of neuigkeiten) {
     addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c);
   }
@@ -399,6 +436,10 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
  *              (seit 24.09.2026: neue Challenge, fremde Galerie-Beitraege,
  *              Moderation eigener Beitraege -- je seit dem letzten Oeffnen,
  *              nur laufende Challenges des eigenen Jahrgangs)
+ *   alle       + ungelesene Postfach-Mitteilungen (seit 25.09.2026), ueber
+ *              alle Gemeinden -- dieselbe Zahl wie
+ *              badge-counts.postfach.ungelesen (Begruendung in
+ *              utils/postfachArten.js)
  *
  * Fuer super_admin gilt der Konfi-Zweig (org-fremde Rolle, hat weder
  * Antraege noch Abzeichen noch Challenge-Neuigkeiten) -- der Client

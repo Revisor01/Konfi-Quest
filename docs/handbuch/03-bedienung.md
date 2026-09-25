@@ -34,10 +34,24 @@ Summe aller Reiter steht als Zahl am App-Symbol.
 ### Mitteilungen im Postfach nachlesen
 
 Oben rechts steht eine **Glocke**. Dahinter liegt das Postfach: alles, was die
-App dir mitteilen will, an einem Ort — ein verliehenes Abzeichen, dein
-eingereichter Antrag, die Entscheidung des Teams dazu, ein neuer Antrag, der
-auf deine Entscheidung wartet. Was als Push kam, steht hier auch; was du als
-Push verpasst hast, ebenfalls.
+App dir mitteilen will, an einem Ort. Was als Push kam, steht hier auch; was
+du als Push verpasst hast, ebenfalls — und wer kein Push-Gerät hat oder
+Mitteilungen abgeschaltet hat, findet hier trotzdem alles.
+
+Als Konfi landen hier deine Punkte (aus einem Termin, als Bonus oder für eine
+zugewiesene Aktivität), Level-Aufstiege, Abzeichen und Stempel, deine
+eingereichten Anträge samt Entscheidung, deine Anmeldungen und Abmeldungen,
+das Nachrücken von der Warteliste, abgesagte, geänderte und wieder
+stattfindende Termine und ausgeblendete Beiträge. Als Teamer:in oder Leitung
+zusätzlich: neue Anträge, Abmeldungen von Konfis, Buchungen und Absagen des
+Teams, Termine, die auf Verbuchung warten, neue Registrierungen, Beiträge zur
+Freigabe, Ab- und Wieder-Anmeldungen von Pflichtterminen und die Warnung vor
+dem Löschen eines Jahrgangs.
+
+**Nicht** im Postfach stehen die Erinnerung „morgen"/„gleich" vor einem Termin
+(sie wäre sofort veraltet), neue Termine (sie stehen in der Terminliste),
+gestartete Challenges (die Challenge-Liste zählt selbst) und Chat-Nachrichten
+(der Chat zählt selbst).
 
 Eine **Zahl an der Glocke** sagt, wie viel Neues wartet. Sie zählt zwei Dinge
 zusammen: ungelesene Mitteilungen und Vorgänge, die noch aus einer Funklücke
@@ -46,17 +60,27 @@ Die Farbe verrät, wie dringend es ist: ruhig bei Mitteilungen, orange, solange
 etwas gesendet wird, **rot**, wenn ein Vorgang endgültig nicht durchkam — das
 ist eine Aufgabe, kein Hinweis.
 
+Die ungelesenen Mitteilungen zählen auch in der **Zahl am App-Symbol** mit:
+Sie ist die Summe aller Zahlen, die die App zeigt — die Reiter und die Glocke.
+Ein offener Antrag, zu dem noch „Neuer Antrag eingegangen" ungelesen ist,
+steht deshalb zweimal darin — am Reiter und an der Glocke — und beides muss
+weg, bevor das Symbol auf null geht. „Termine warten auf Verbuchung" kommt
+täglich; die neue Mitteilung ersetzt die vom Vortag, solange die noch
+ungelesen ist.
+
 Im Postfach steht Ungelesenes fett und mit „Neu" in der Ecke. **Antippen**
 markiert die Mitteilung als gelesen und führt an die passende Stelle: zum
-Abzeichen, in die Antragsliste. **„Alle gelesen"** räumt auf einmal auf.
+Abzeichen, in die Antragsliste, an den Termin, zur Challenge, auf das
+Dashboard mit den Punkten. **„Alle gelesen"** räumt auf einmal auf.
 **„Ältere Mitteilungen laden"** holt, was weiter zurückliegt; nach einem Jahr
 werden Mitteilungen nachts entfernt. Das Kreuz oben links schließt das
 Postfach.
 
 Jede Mitteilung trägt die Farbe ihres Bereichs, wie überall in der App:
-Abzeichen in der Abzeichenfarbe, Anträge in der Aktivitätenfarbe. Im Kreis
-davor steht bei einem Abzeichen dessen eigenes Symbol, bei einem Antrag der
-Stand (offen, verbucht, abgelehnt). Darunter das Datum mit Kalendersymbol und
+Abzeichen in der Abzeichenfarbe, Anträge in der Aktivitätenfarbe, Termine in
+der Terminfarbe, Challenges in der Challenge-Farbe. Im Kreis davor steht bei
+einem Abzeichen dessen eigenes Symbol, bei einem Antrag der Stand (offen,
+verbucht, abgelehnt). Darunter das Datum mit Kalendersymbol und
 — wer in mehreren Gemeinden mitarbeitet — die Gemeinde mit Gebäudesymbol. Die
 Vorgänge aus der Funklücke darüber stehen orange („Wird gesendet…") und rot
 („Nicht gesendet").
@@ -64,8 +88,12 @@ Vorgänge aus der Funklücke darüber stehen orange („Wird gesendet…") und r
 Verschwindet der Gegenstand einer Mitteilung, verschwindet die Mitteilung
 mit: Ziehst du einen Antrag zurück, ist „Antrag eingereicht" bei dir und
 „Neuer Antrag eingegangen" bei der Leitung weg; löscht die Leitung ein
-Abzeichen, geht „Neues Badge erhalten" dazu. Entscheidungen bleiben —
-„Antrag verbucht" und „Antrag abgelehnt" sind Verlauf, auch wenn der
+Abzeichen, geht „Neues Badge erhalten" dazu. Wird ein Termin gelöscht, gehen
+alle Mitteilungen zu ihm — Anmeldung, Absage, Teilnahme, Buchungen des Teams;
+mit einer gelöschten Challenge gehen Stempel, „Beitrag ausgeblendet" und
+„Neuer Beitrag", mit einem gelöschten Jahrgang die Warnung vor seiner
+Löschung. Entscheidungen und Punkte bleiben — „Antrag verbucht", „Antrag
+abgelehnt", Bonuspunkte und Level-Aufstiege sind Verlauf, auch wenn der
 abgelehnte Antrag später aufgeräumt wird.
 
 Wer in **mehreren Gemeinden** mitarbeitet, sieht die Mitteilungen aller

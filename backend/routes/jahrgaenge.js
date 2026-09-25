@@ -7,6 +7,7 @@ const emailService = require('../services/emailService');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { darfJahrgang } = require('../utils/jahrgangsZugriff');
 const { canManageRole } = require('../utils/roleHierarchy');
+const { loescheMitteilungenZuJahrgang } = require('../utils/postfachAufraeumen');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten, NUR org_admin darf anlegen
 module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeamer }) => {
@@ -446,6 +447,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
       }
+
+      // Die Warnung "Jahrgang wird bald geloescht" ist erledigt -- weg damit
+      // aus dem Postfach der Leitung (utils/postfachAufraeumen.js).
+      await loescheMitteilungenZuJahrgang(db, jahrgangId);
 
       res.json({ message: 'Jahrgang erfolgreich gelöscht' });
 
