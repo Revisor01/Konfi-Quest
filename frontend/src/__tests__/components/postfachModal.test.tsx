@@ -34,7 +34,8 @@ vi.mock('@ionic/react', () => ({
   ),
   IonLabel: (props: StubProps) => <div>{props.children}</div>,
   IonSpinner: () => <span data-testid="spinner" />,
-  IonCard: (props: StubProps) => <div>{props.children}</div>,
+  IonCard: (props: StubProps & { style?: Record<string, string>; 'data-testid'?: string }) =>
+    <div data-testid={props['data-testid']} style={props.style}>{props.children}</div>,
   IonCardContent: (props: StubProps) => <div>{props.children}</div>,
   IonIcon: (props: { icon?: string }) => <span data-testid="icon" data-icon={props.icon} />,
 }));
@@ -342,6 +343,15 @@ describe('PostfachModal', () => {
       } finally {
         outlet.remove();
       }
+    });
+
+    it('die Karte der Mitteilungen ist ausdruecklich weiss -- auf dem Geraet war sie es nicht', async () => {
+      mockGet.mockResolvedValue(antwort([eintrag(1)]));
+      render(<PostfachModal />);
+      await oeffnen();
+      await screen.findByText('Mitteilung 1');
+      const karte = screen.getByTestId('postfach-karte') as HTMLElement;
+      expect(karte.style.getPropertyValue('--background')).toBe('white');
     });
 
     it('vor der Anmeldung gibt es keinen Outlet -- dann ohne presentingElement, ohne Absturz', async () => {
