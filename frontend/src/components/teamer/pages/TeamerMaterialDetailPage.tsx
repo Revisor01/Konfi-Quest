@@ -1,11 +1,7 @@
 import React, { useRef } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonButtons,
   IonButton,
   IonIcon,
   IonLabel,
@@ -34,6 +30,7 @@ import {
   ICON_VIDEO,
   ICON_WELT,
 } from '../../shared/icons';
+import AppKopfzeile from '../../shared/AppKopfzeile';
 // Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
@@ -171,16 +168,21 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} aria-label="Schließen">
-              <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>{material?.title || 'Material'}</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      {/* Diese Seite wird als Modal praesentiert (useIonModal in
+          TeamerEventsPage und admin/views/EventDetailView). Deshalb OHNE
+          Glocke und Gemeinde-Umschalter: Das Postfach ist selbst ein Modal
+          und wuerde ueber diesem liegen, ein Gemeinde-Wechsel baute den Router
+          unter dem offenen Modal um. Der Schliessen-Knopf bleibt links. */}
+      <AppKopfzeile
+        titel={material?.title || 'Material'}
+        glocke={false}
+        gemeindeUmschalter={false}
+        links={(
+          <IonButton className="app-modal-close-btn" onClick={onClose} aria-label="Schließen">
+            <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
+          </IonButton>
+        )}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
 

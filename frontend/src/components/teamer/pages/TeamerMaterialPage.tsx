@@ -17,14 +17,11 @@ import {
   ICON_TEXT,
   ICON_VIDEO,
   ICON_WELT,
-  ICON_ZURUECK,
 } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import React, { useState, useMemo, useRef } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonRefresher,
   IonRefresherContent,
@@ -36,8 +33,6 @@ import {
   IonCardContent,
   IonItem,
   IonItemGroup,
-  IonButtons,
-  IonButton,
   IonInput,
   IonSelect,
   IonSelectOption,
@@ -271,25 +266,13 @@ const TeamerMaterialPage: React.FC = () => {
     if (!selectedMaterial) return null;
     return (
       <IonPage>
-        <IonHeader translucent={true}>
-          <IonToolbar>
-            {!hideBackButton && (
-              <IonButtons slot="start">
-                <IonButton onClick={() => setSelectedMaterial(null)} aria-label="Zurück zur Material-Liste">
-                  <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
-                </IonButton>
-              </IonButtons>
-            )}
-            <IonTitle>{selectedMaterial.title}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile
+          titel={selectedMaterial.title}
+          onZurueck={hideBackButton ? undefined : () => setSelectedMaterial(null)}
+        />
 
         <IonContent className="app-gradient-background" fullscreen>
-          <IonHeader collapse="condense">
-            <IonToolbar className="app-condense-toolbar">
-              <IonTitle size="large">{selectedMaterial.title}</IonTitle>
-            </IonToolbar>
-          </IonHeader>
+          <AppKopfzeileGross titel={selectedMaterial.title} />
 
           <IonRefresher slot="fixed" onIonRefresh={async (e) => {
             try {
@@ -581,25 +564,12 @@ const TeamerMaterialPage: React.FC = () => {
 
   const renderList = () => (
     <IonPage>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          {!istEigenerTab && (
-            <IonButtons slot="start">
-              <IonButton onClick={() => window.history.back()} aria-label="Zurück">
-                <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
-              </IonButton>
-            </IonButtons>
-          )}
-          <IonTitle>Material</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      {/* Zurueck nur, wenn Material NICHT als eigener Reiter laeuft --
+          dann kam man von der Startseite hierher. */}
+      <AppKopfzeile titel="Material" onZurueck={istEigenerTab ? undefined : () => window.history.back()} />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Material</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Material" />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await Promise.all([refreshMaterial(), refreshJahrgaenge()]);

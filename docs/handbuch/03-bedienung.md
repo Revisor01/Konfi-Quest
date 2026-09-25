@@ -57,9 +57,9 @@ Gemeinden im selben Postfach, jede mit dem Namen ihrer Gemeinde. Antippen
 wechselt bei Bedarf zuerst in diese Gemeinde — so, wie es ein angetippter Push
 auch tut.
 
-> Die Glocke steht vorerst in der Konfi-Ansicht. Team und Leitung sehen bis zur
-> Umstellung ihrer Seiten weiter den runden Knopf unten links, sobald etwas
-> gesendet wird; er öffnet dasselbe Postfach.
+> Die Glocke steht vorerst in der Konfi- und in der Team-Ansicht. Die Leitung
+> sieht bis zur Umstellung ihrer Seiten weiter den runden Knopf unten links,
+> sobald etwas gesendet wird; er öffnet dasselbe Postfach.
 
 ### Das eigene Profil
 
@@ -202,8 +202,9 @@ später los:
 
 Du siehst diese Vorgänge im [Postfach](#mitteilungen-im-postfach-nachlesen)
 hinter der Glocke unter **„Wird gesendet…"**, mit einem Uhr-Symbol; die Zahl
-an der Glocke färbt sich orange. Auf der Mitmachen-Seite steht dieselbe Karte
-direkt bei den Anträgen. Sobald wieder Netz da ist, gehen die Vorgänge
+an der Glocke färbt sich orange. Bei den Anträgen — Konfis unter „Mitmachen",
+das Team im Termine-Reiter — steht dieselbe Karte direkt in der Liste. Sobald
+wieder Netz da ist, gehen die Vorgänge
 automatisch raus — auch wenn du die App zwischendurch geschlossen hast. Klappt
 etwas endgültig nicht, stehen sie unter **„Nicht gesendet"**, die Glocke wird
 rot, und du kannst sie wegwischen.

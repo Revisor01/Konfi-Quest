@@ -29,14 +29,14 @@ import {
   ICON_UHRZEIT_GEFUELLT,
   ICON_UNENDLICH,
   ICON_WARTEND_GEFUELLT,
-  ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import { hatAbgesagt, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonItem, IonItemGroup, IonInput, IonButtons, IonNote, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
+import { IonPage, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonItem, IonItemGroup, IonInput, IonNote, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { useIonRouter } from '@ionic/react';
 
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
@@ -899,17 +899,14 @@ const TeamerEventsPage: React.FC = () => {
 
     return (
       <IonPage ref={pageRef}>
-        <IonHeader translucent={true}>
-          <IonToolbar>
-            {!hideBackButton && (
-              <IonButtons slot="start">
-                <IonButton onClick={() => setSelectedEvent(null)} aria-label="Zurück zur Event-Liste">
-                  <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
-                </IonButton>
-              </IonButtons>
-            )}
-            <IonTitle>{selectedEvent.name}</IonTitle>
-            <IonButtons slot="end">
+        {/* Zurueck-Knopf nur, wenn die Liste nicht ohnehin daneben steht
+            (iPad-Split-View: hideBackButton). Rechts der Event-Chat und der
+            QR-Code, dahinter setzt AppKopfzeile die Glocke. */}
+        <AppKopfzeile
+          titel={selectedEvent.name}
+          onZurueck={hideBackButton ? undefined : () => setSelectedEvent(null)}
+          rechts={(
+            <>
               {/* Einstieg in den Event-Chat — bisher hatte ihn nur die Leitung
                   (`admin/views/EventDetailView.tsx`), obwohl Teamer:innen beim
                   Buchen ohnehin Mitglied des Raums werden (`addToEventChat`).
@@ -934,16 +931,12 @@ const TeamerEventsPage: React.FC = () => {
               >
                 <IonIcon icon={ICON_QRCODE} slot="icon-only" />
               </IonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonHeader>
+            </>
+          )}
+        />
 
         <IonContent className="app-gradient-background" fullscreen>
-          <IonHeader collapse="condense">
-            <IonToolbar className="app-condense-toolbar">
-              <IonTitle size="large">{selectedEvent.name}</IonTitle>
-            </IonToolbar>
-          </IonHeader>
+          <AppKopfzeileGross titel={selectedEvent.name} />
 
           {/* HERUNTERZIEHEN HOLT DEN TERMIN, NICHT DIE LISTE (17.09.2026).
               Hier stand vorher `safeEvents.find(...)` -- gelesen aus der
@@ -1651,10 +1644,10 @@ const TeamerEventsPage: React.FC = () => {
   // Events-Liste als render-Funktion (früher early-return).
   const renderList = () => (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonTitle>{pageTitle}</IonTitle>
-          <IonButtons slot="end">
+      <AppKopfzeile
+        titel={pageTitle}
+        rechts={(
+          <>
             {isAntraege && (
               <IonButton onClick={handleAddRequest} aria-label="Neue Aktivität melden">
                 <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
@@ -1674,16 +1667,12 @@ const TeamerEventsPage: React.FC = () => {
                 <IonIcon icon={ICON_SCANNEN} />
               </IonButton>
             )}
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+          </>
+        )}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">{pageTitle}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel={pageTitle} />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           if (isAntraege) {
@@ -2029,16 +2018,7 @@ const TeamerEventsPage: React.FC = () => {
   // handledEventId verhindert, dass der Effekt oben sofort wieder nachfragt.
   const renderJahrgangHinweis = () => (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={() => setJahrgangHinweis(false)} aria-label="Zurück zur Event-Liste">
-              <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Termin</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile titel="Termin" onZurueck={() => setJahrgangHinweis(false)} />
       <IonContent className="app-gradient-background" fullscreen>
         <EmptyState
           icon={ICON_JAHRGANG}

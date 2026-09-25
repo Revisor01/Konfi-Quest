@@ -115,6 +115,14 @@ interface AbsageProps { onAbsage?: (grund: string) => void; grundPflicht?: boole
 let absageProps: AbsageProps | null = null;
 vi.mock('../../components/teamer/modals/TeamerAbsageModal', () => ({ default: () => null }));
 
+// Die gemeinsame Kopfzeile (AppKopfzeile, 25.09.2026) bringt Glocke und
+// Gemeinde-Umschalter mit -- beide haengen an Warteschlange und Router, die
+// hier nicht Thema sind. Die Kopfzeile hat eigene Tests (appKopfzeile.test).
+vi.mock('../../components/shared/AppKopfzeile', () => ({
+  default: () => null,
+  AppKopfzeileGross: () => null,
+}));
+
 vi.mock('@ionic/react', async () => {
   const passthrough = ({ children }: { children?: React.ReactNode }) =>
     React.createElement(React.Fragment, null, children);

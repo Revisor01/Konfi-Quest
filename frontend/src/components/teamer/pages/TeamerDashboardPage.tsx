@@ -2,11 +2,9 @@ import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonIcon,
+  IonButton,
   IonRefresher,
   IonRefresherContent,
   useIonPopover,
@@ -20,6 +18,7 @@ import {
   ICON_HILFE_GEFUELLT,
   ICON_MATERIAL,
   ICON_ORT_GEFUELLT,
+  ICON_PROFIL,
   ICON_SCHLIESSEN,
   ICON_SICHTBAR,
   ICON_TERMIN_GEFUELLT,
@@ -41,7 +40,8 @@ import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import WrappedModal from '../../wrapped/WrappedModal';
-import { ProfileHeaderButton, TrialBanner, StoreUpdateBanner, AbsageBlock, istAbgesagt, titelDekoration } from '../../shared';
+import { TrialBanner, StoreUpdateBanner, AbsageBlock, istAbgesagt, titelDekoration } from '../../shared';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/sectionOrder';
 import KonfispruchSelectModal from '../../konfi/modals/KonfispruchSelectModal';
@@ -499,11 +499,7 @@ const TeamerDashboardPage: React.FC = () => {
   if (loading) {
     return (
       <IonPage>
-        <IonHeader translucent={true}>
-          <IonToolbar>
-            <IonTitle>Konfi Quest</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile titel="Konfi Quest" />
         <IonContent className="app-gradient-background" fullscreen>
           <LoadingSpinner message="Dashboard wird geladen..." />
         </IonContent>
@@ -513,19 +509,21 @@ const TeamerDashboardPage: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonTitle>Konfi Quest</IonTitle>
-          <ProfileHeaderButton href="/teamer/profile" variant="teamer" />
-        </IonToolbar>
-      </IonHeader>
+      {/* Der Profil-Knopf stand bisher als ProfileHeaderButton (eigene
+          IonButtons-Gruppe) in der Kopfzeile. AppKopfzeile bringt die Gruppe
+          rechts selbst mit, deshalb hier nur noch der Knopf -- Farbe wie
+          vorher ueber die Token-Klasse app-icon-color--teamer. */}
+      <AppKopfzeile
+        titel="Konfi Quest"
+        rechts={(
+          <IonButton onClick={() => router.push('/teamer/profile')} aria-label="Profil öffnen">
+            <IonIcon slot="icon-only" icon={ICON_PROFIL} className="app-icon-color--teamer" style={{ fontSize: 'var(--app-anzeige-basis)' }} />
+          </IonButton>
+        )}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Konfi Quest</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Konfi Quest" />
 
         <IonRefresher
           slot="fixed"

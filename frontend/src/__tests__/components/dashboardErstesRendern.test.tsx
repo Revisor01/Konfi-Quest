@@ -104,6 +104,14 @@ vi.mock('../../utils/badgeIcons', () => ({ getIconFromString: () => 'icon' }));
 // IonPage als echtes DOM-Element mit weitergereichter ref: nur so laesst sich
 // pruefen, ob React dasselbe Element behaelt oder ein neues baut.
 const gesehenePages: HTMLElement[] = [];
+// Die gemeinsame Kopfzeile (AppKopfzeile, 25.09.2026) bringt Glocke und
+// Gemeinde-Umschalter mit -- beide haengen an Warteschlange und Router, die
+// hier nicht Thema sind. Die Kopfzeile hat eigene Tests (appKopfzeile.test).
+vi.mock('../../components/shared/AppKopfzeile', () => ({
+  default: () => null,
+  AppKopfzeileGross: () => null,
+}));
+
 vi.mock('@ionic/react', () => {
   const passthrough = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
   const IonPage = React.forwardRef<HTMLDivElement, { children?: React.ReactNode }>(

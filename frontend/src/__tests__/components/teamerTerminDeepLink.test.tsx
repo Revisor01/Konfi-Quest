@@ -106,6 +106,17 @@ vi.mock('../../components/teamer/modals/TeamerAbsageModal', () => ({ default: ()
 vi.mock('../../components/teamer/pages/TeamerMaterialDetailPage', () => ({ default: () => null }));
 vi.mock('../../components/shared/WartendeVorgaengeKarte', () => ({ default: () => null }));
 
+// Die gemeinsame Kopfzeile (AppKopfzeile, 25.09.2026) bringt Glocke und
+// Gemeinde-Umschalter mit -- beide haengen an Warteschlange und Router, die
+// hier nicht Thema sind. Die Kopfzeile hat eigene Tests (appKopfzeile.test).
+// Hier braucht es nur den Zurueck-Knopf, den die Kopfzeile aus onZurueck baut
+// (aria-label "Zurück", wie im Original).
+vi.mock('../../components/shared/AppKopfzeile', () => ({
+  default: ({ onZurueck }: { onZurueck?: () => void }) =>
+    onZurueck ? <button type="button" aria-label="Zurück" onClick={onZurueck} /> : null,
+  AppKopfzeileGross: () => null,
+}));
+
 vi.mock('@ionic/react', async () => {
   const passthrough = ({ children }: { children?: React.ReactNode }) =>
     React.createElement(React.Fragment, null, children);
@@ -293,7 +304,7 @@ describe('Zurueck aus dem per Link geoeffneten Termin', () => {
     await waitFor(() => expect(screen.getByText('Mia Sommer')).toBeTruthy());
 
     await act(async () => {
-      fireEvent.click(screen.getByLabelText('Zurück zur Event-Liste'));
+      fireEvent.click(screen.getByLabelText('Zurück'));
     });
     await tick();
     await tick();
@@ -312,7 +323,7 @@ describe('Zurueck aus dem per Link geoeffneten Termin', () => {
     const { rerender } = render(<TeamerEventsPage />);
     await waitFor(() => expect(screen.getByText('Mia Sommer')).toBeTruthy());
     await act(async () => {
-      fireEvent.click(screen.getByLabelText('Zurück zur Event-Liste'));
+      fireEvent.click(screen.getByLabelText('Zurück'));
     });
 
     aktuelleSuche = '';
@@ -373,7 +384,7 @@ describe('Termin aus einem Jahrgang, dem die Person nicht zugewiesen ist', () =>
     await waitFor(() => expect(screen.getByText(HINWEIS_TITEL)).toBeTruthy());
 
     await act(async () => {
-      fireEvent.click(screen.getByLabelText('Zurück zur Event-Liste'));
+      fireEvent.click(screen.getByLabelText('Zurück'));
     });
     await tick();
 

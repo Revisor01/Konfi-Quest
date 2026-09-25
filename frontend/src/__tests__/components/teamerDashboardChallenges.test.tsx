@@ -120,6 +120,14 @@ vi.mock('../../hooks/useOnboardingOnce', () => ({
 vi.mock('../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 vi.mock('../../utils/badgeIcons', () => ({ getIconFromString: () => 'icon' }));
 
+// Die gemeinsame Kopfzeile (AppKopfzeile, 25.09.2026) bringt Glocke und
+// Gemeinde-Umschalter mit -- beide haengen an Warteschlange und Router, die
+// hier nicht Thema sind. Die Kopfzeile hat eigene Tests (appKopfzeile.test).
+vi.mock('../../components/shared/AppKopfzeile', () => ({
+  default: () => null,
+  AppKopfzeileGross: () => null,
+}));
+
 vi.mock('@ionic/react', () => {
   const passthrough = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
   return {
@@ -128,6 +136,7 @@ vi.mock('@ionic/react', () => {
     IonToolbar: passthrough,
     IonTitle: passthrough,
     IonContent: passthrough,
+    IonButton: passthrough,
     IonIcon: () => null,
     IonRefresher: () => null,
     IonRefresherContent: () => null,

@@ -16,18 +16,12 @@ import {
   ICON_UHRZEIT,
   ICON_UHRZEIT_GEFUELLT,
   ICON_WUERFEL,
-  ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonButtons,
-  IonButton,
   IonRefresher,
   IonRefresherContent,
   IonCard,
@@ -39,6 +33,7 @@ import {
   useIonModal,
   useIonPopover
 } from '@ionic/react';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -157,16 +152,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
   if (!konfiData) {
     return (
       <IonPage>
-        <IonHeader>
-          <IonToolbar>
-            <IonButtons slot="start">
-              <IonButton onClick={() => window.history.back()} aria-label="Zurück">
-                <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
-              </IonButton>
-            </IonButtons>
-            <IonTitle>Konfi-Historie</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile titel="Konfi-Historie" onZurueck={() => window.history.back()} />
         <IonContent className="ion-padding">
           <div style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-m)' }}>
             <p>Keine Konfi-Daten vorhanden</p>
@@ -180,23 +166,10 @@ const TeamerKonfiStatsPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()} aria-label="Zurück">
-              <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Konfi-Historie</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile titel="Konfi-Historie" onZurueck={() => window.history.back()} />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Konfi-Historie</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Konfi-Historie" />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refresh();

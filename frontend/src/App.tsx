@@ -258,10 +258,10 @@ const AppContent: React.FC = () => {
             utils/postfach). Neben dem Router, nicht darin: kein Seitenwechsel,
             und es ueberlebt den Remount bei einem Gemeinde-Wechsel. */}
         <PostfachModal />
-        {/* Der schwebende Warteschlangen-Knopf bleibt NUR fuer Team und
-            Leitung, bis auch deren Kopfzeilen auf AppKopfzeile umgestellt sind
-            (gestufte Umstellung, 25.09.2026). Konfis haben die Glocke. */}
-        {user?.type !== 'konfi' && <WartendeVorgaengeLeiste />}
+        {/* Der schwebende Warteschlangen-Knopf bleibt NUR fuer die Leitung,
+            bis auch deren Kopfzeilen auf AppKopfzeile umgestellt sind
+            (gestufte Umstellung, 25.09.2026). Konfis und Team haben die Glocke. */}
+        {user?.type !== 'konfi' && user?.type !== 'teamer' && <WartendeVorgaengeLeiste />}
       </>
     );
   })();

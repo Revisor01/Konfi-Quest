@@ -13,15 +13,12 @@ import {
   ICON_STERN_GEFUELLT,
   ICON_TERMIN,
   ICON_UHRZEIT,
-  ICON_ZURUECK,
 } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonRefresher,
   IonRefresherContent,
@@ -33,7 +30,6 @@ import {
   IonCard,
   IonCardContent,
   IonButton,
-  IonButtons,
   useIonModal,
   useIonAlert,
   useIonRouter
@@ -272,23 +268,10 @@ const TeamerProfilePage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()} aria-label="Zurück">
-              <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Profil</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile titel="Profil" onZurueck={() => window.history.back()} />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Profil</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Profil" />
 
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refresh().then(() => e.detail.complete());

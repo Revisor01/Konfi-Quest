@@ -41,8 +41,9 @@ describe('Gruppenbezeichnung: die Gruppe heisst "Team"', () => {
   });
 
   it('Komposita behalten "Teamer-"', () => {
+    // Der Titel steht seit der gemeinsamen Kopfzeile (25.09.2026) als Prop.
     expect(lies('src/components/teamer/pages/TeamerBadgesPage.tsx'))
-      .toContain('<IonTitle>Teamer-Badges</IonTitle>');
+      .toContain('titel="Teamer-Badges"');
     expect(lies('src/components/admin/BadgesView.tsx'))
       .toContain("'Teamer-Jahre'");
     expect(lies('src/components/admin/pages/AdminCertificatesPage.tsx'))

@@ -78,13 +78,15 @@ describe('Material-Seite: kein Zurueck im eigenen Tab', () => {
   });
 
   it('zeigt den Zurueck-Knopf der Liste nur ausserhalb des Tabs', () => {
-    expect(material).toContain('{!istEigenerTab && (');
+    // Seit der gemeinsamen Kopfzeile (25.09.2026) baut AppKopfzeile den
+    // Knopf aus onZurueck; im Tab bekommt sie undefined und laesst ihn weg.
+    expect(material).toContain('onZurueck={istEigenerTab ? undefined : () => window.history.back()}');
   });
 
   it('behaelt den Zurueck-Weg aus der Detailansicht', () => {
     // Der zweite Knopf ist ein anderer: Er fuehrt aus dem Material-Detail
-    // zurueck in die Liste und muss bleiben — auch im Tab.
-    expect(material).toContain('setSelectedMaterial(null)');
-    expect(material).toContain('aria-label="Zurück zur Material-Liste"');
+    // zurueck in die Liste und muss bleiben — auch im Tab (nur im
+    // iPad-Split-View entfaellt er, weil die Liste daneben steht).
+    expect(material).toContain('onZurueck={hideBackButton ? undefined : () => setSelectedMaterial(null)}');
   });
 });
