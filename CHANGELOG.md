@@ -75,6 +75,13 @@ Versionsüberschrift.
   behalten ihre Zahl.
 
 ### Behoben
+- Wer mehrere Gemeinden betreut, bekommt die Mitteilungen an die Leitung jetzt
+  aus allen — neue Anträge, Ab- und Anmeldungen, Challenge-Beiträge, Buchungen
+  des Teams, Registrierungen, Lösch-Warnungen für Jahrgänge. Bisher kamen sie
+  nur aus der Stamm-Gemeinde, obwohl die App die anderen längst anzeigte. Die
+  Rolle zählt dabei je Gemeinde: Wer in der zweiten nur Teamer:in ist, bekommt
+  dort keine Leitungs-Meldungen. Dasselbe gilt für die Mitteilungen in der App
+  und die Warn-Mail vor dem Löschen eines Jahrgangs.
 - Beim Eintragen von Hand bietet die Auswahl nur noch Personen an, die zu
   einem Jahrgang des Termins gehören — bei Konfis wie beim Team und der
   Leitung. Ein Hinweis nennt die Jahrgänge des Termins, damit klar ist, warum

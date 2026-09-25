@@ -141,6 +141,33 @@ Wer einen weiteren Org-Admin braucht, muss also einen Org-Admin fragen.
 Wie Konten angelegt werden und wie jede Rolle zu einem Passwort kommt, steht im
 Kapitel [Passwörter und Zugänge](35-passwoerter.md).
 
+## In mehreren Gemeinden mitarbeiten
+
+Wer mehrere Gemeinden betreut, hat in jeder eine eigene Mitgliedschaft mit
+eigener Rolle — in der einen Org-Admin, in der anderen vielleicht nur
+Teamer:in. Eine zweite Mitgliedschaft richtet nicht die Gemeinde selbst ein,
+sondern der Betrieb von Konfi Quest.
+
+Oben links in der Leitungsansicht steht dann der Name der Gemeinde, in der man
+gerade arbeitet. Ein Tippen darauf öffnet die Liste aller eigenen Gemeinden;
+die aktive ist mit einem Haken markiert. Nach dem Wechsel laden alle Ansichten
+frisch in der gewählten Gemeinde.
+
+**Mitteilungen kommen aus allen Gemeinden**, in denen jemand die passende
+Rolle hat — nicht nur aus der Stamm-Gemeinde:
+
+- Meldungen an die Leitung (neue Anträge, Ab- und Anmeldungen von Konfis,
+  Challenge-Beiträge, Buchungen des Teams, Registrierungen, die Warnung vor
+  dem Löschen eines Jahrgangs) aus jeder Gemeinde, in der die Person Admin
+  oder Org-Admin ist.
+- Beitrags-Meldungen als Teamer:in aus jeder Gemeinde, in der sie Teamer:in
+  mit Zuweisung auf den betreffenden Jahrgang ist.
+
+Die Rolle zählt je Gemeinde: Wer in der zweiten Gemeinde nur Teamer:in ist,
+bekommt dort keine Leitungs-Meldungen. Ein Tippen auf eine Mitteilung wechselt
+in die Gemeinde, aus der sie stammt, und öffnet dort das Ziel. Die Zahl am
+App-Symbol zählt über alle Gemeinden zusammen.
+
 ## Eine Rolle ändern
 
 Eine Konfi lässt sich **zur Teamer:in befördern**. Punkte und Abzeichen bleiben

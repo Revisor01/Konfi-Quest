@@ -11,6 +11,7 @@ const { beantworteTageslosung } = require('../services/losungService');
 const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
 const { deletePhotoFile, istSichererDateiname } = require('../utils/photoStorage');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
+const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach } = require('../utils/bookingUtils');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
@@ -718,21 +719,18 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         // In-App-Mitteilung an die GESAMTE Leitung (admin UND org_admin) —
         // identisch zum Push-Versand in PushService.sendNewActivityRequestToAdmins.
         // Vorher stand hier nur r.name='admin', org_admin ging leer aus (M6).
-        const { rows: admins } = await db.query(
-          `SELECT u.id, u.display_name
-           FROM users u
-           JOIN roles r ON u.role_id = r.id
-           WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
-          [req.user.organization_id]
-        );
+        // Seit 25.09.2026 ueber beide Quellen der Zugehoerigkeit (Stamm-Org
+        // UND user_organizations, Rolle je Organisation) -- sonst fehlt die
+        // Mitteilung bei allen, die diese Gemeinde als Zweit-Organisation
+        // betreuen (utils/orgMitglieder.js).
+        const adminIds = await ladeLeitungDerOrganisation(db, req.user.organization_id);
 
         const { rows: [konfiData] } = await db.query(
           "SELECT display_name FROM users WHERE id = $1",
           [konfiId]
         );
 
-        if (admins.length > 0) {
-          const adminIds = admins.map(a => a.id);
+        if (adminIds.length > 0) {
           await db.query(
             `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
              SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,

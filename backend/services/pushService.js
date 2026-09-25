@@ -6,6 +6,11 @@ const firebase = require('../push/firebase');
 const { appIconSummeOderNull, appIconSummenFuerAlle } = require('../utils/appIconBadge');
 const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
 const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
+// Empfaenger je Organisation ueber BEIDE Quellen der Zugehoerigkeit
+// (users.organization_id UND user_organizations, Rolle je Quelle). Bis zum
+// 25.09.2026 fragte jede Leitungs-Meldung hier nur die Stamm-Organisation --
+// wer mehrere Gemeinden betreut, bekam aus den anderen nichts.
+const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
 
 /**
  * Push Notification Type Registry
@@ -37,6 +42,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
  * event_attendance            | sendEventAttendanceToKonfi           | Konfi           | ja
  * events_pending_approval     | sendEventsPendingApprovalToAdmins    | Org-Admins      | ja
  * new_konfi_registration      | sendNewKonfiRegistrationToAdmins     | Jahrgangs-Admins| ja
+ * jahrgang_deletion_warning   | sendJahrgangDeletionWarningToAdmins  | Org-Admins      | ja
  * event_opt_out               | sendEventOptOutToAdmins              | Org-Admins      | ja
  * event_opt_in                | sendEventOptInToAdmins               | Org-Admins      | ja
  * teamer_event_booking        | sendTeamerEventBookingToAdmins       | Org-Admins      | ja
@@ -58,6 +64,12 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
  * Antippen automatisch in diese Organisation, bevor er navigiert. Fehlt die
  * Content-Org an der Aufrufstelle, setzt sendToUser die Primär-Org des
  * Empfängers ein (für Single-Org-Empfänger identisch).
+ *
+ * Multi-Org, Empfängerseite (25.09.2026): "Org-Admins", "Jahrgangs-Admins"
+ * und "Leitung" werden über utils/orgMitglieder.js ermittelt — Stamm-
+ * Organisation UND user_organizations, die Rolle gilt je Organisation. Wer
+ * hier eine neue Empfänger-Abfrage mit `u.organization_id = $1` schreibt,
+ * baut den Fehler wieder ein, den Nutzer 41 in Produktion gezeigt hat.
  */
 
 class PushService {
@@ -1005,16 +1017,11 @@ class PushService {
    */
   static async sendToOrgAdmins(db, organizationId, notification) {
     try {
-      const { rows: admins } = await db.query(
-        `SELECT u.id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
-        [organizationId]
-      );
+      const admins = await ladeLeitungDerOrganisation(db, organizationId);
       if (admins.length === 0) {
         return { success: false, message: 'No admins found' };
       }
-      const adminIds = admins.map(a => a.id);
+      const adminIds = admins;
       // Content-Org in den Payload: Admins können Multi-Org sein, der Tap
       // muss in DIESE Organisation wechseln (nicht in ihre Primär-Org).
       const enriched = {
@@ -1035,19 +1042,14 @@ class PushService {
     try {
 
       // Hole alle Admins der Organisation
-      const { rows: admins } = await db.query(
-        `SELECT u.id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
-        [organizationId]
-      );
+      const admins = await ladeLeitungDerOrganisation(db, organizationId);
 
       if (admins.length === 0) {
  console.warn('Keine Admins für Organisation gefunden');
         return { success: false, message: 'No admins found' };
       }
 
-      const adminIds = admins.map(a => a.id);
+      const adminIds = admins;
       const notification = {
         title: 'Neuer Antrag',
         body: `${konfiName} hat einen Antrag für "${activityName}" (${points}P) eingereicht`,
@@ -1279,19 +1281,14 @@ class PushService {
     try {
 
       // Hole alle Admins der Organisation
-      const { rows: admins } = await db.query(
-        `SELECT u.id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
-        [organizationId]
-      );
+      const admins = await ladeLeitungDerOrganisation(db, organizationId);
 
       if (admins.length === 0) {
  console.warn('Keine Admins für Organisation gefunden');
         return { success: false, message: 'No admins found' };
       }
 
-      const adminIds = admins.map(a => a.id);
+      const adminIds = admins;
       const notification = {
         title: 'Event-Abmeldung',
         body: reason
@@ -1952,22 +1949,19 @@ class PushService {
       await this.sendToOrgAdmins(db, organizationId, notification);
 
       // Teamer hängen über user_jahrgang_assignments an den Jahrgängen der
-      // Challenge und werden von sendToOrgAdmins nicht erfasst.
-      const { rows: teamers } = await db.query(
-        `SELECT DISTINCT u.id
-         FROM users u
-         JOIN roles r ON u.role_id = r.id
-         JOIN user_jahrgang_assignments uja ON uja.user_id = u.id
-         JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = uja.jahrgang_id
-         WHERE r.name = 'teamer'
-           AND u.organization_id = $1
-           AND u.deleted_at IS NULL
-           AND cja.challenge_id = $2`,
-        [organizationId, challengeId]
+      // Challenge und werden von sendToOrgAdmins nicht erfasst. Auch hier
+      // beide Quellen der Zugehoerigkeit: Wer in DIESER Organisation nur ueber
+      // user_organizations Teamer:in ist, hat die Zuweisung genauso.
+      const { rows: jahrgaenge } = await db.query(
+        'SELECT jahrgang_id FROM challenge_jahrgang_assignments WHERE challenge_id = $1',
+        [challengeId]
       );
+      const teamers = await ladeMitgliederDerOrganisation(db, organizationId, ['teamer'], {
+        jahrgangIds: jahrgaenge.map(j => j.jahrgang_id)
+      });
 
       if (teamers.length > 0) {
-        await this.sendToMultipleUsers(db, teamers.map(t => t.id), notification);
+        await this.sendToMultipleUsers(db, teamers, notification);
       }
 
       return { success: true };
@@ -2022,18 +2016,13 @@ class PushService {
   static async sendEventsPendingApprovalToAdmins(db, organizationId, eventCount) {
     try {
 
-      const { rows: admins } = await db.query(
-        `SELECT u.id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
-        [organizationId]
-      );
+      const admins = await ladeLeitungDerOrganisation(db, organizationId);
 
       if (admins.length === 0) {
         return { success: false, message: 'No admins found' };
       }
 
-      const adminIds = admins.map(a => a.id);
+      const adminIds = admins;
       const notification = {
         title: 'Events warten auf Verbuchung',
         body: `${eventCount} Event${eventCount > 1 ? 's' : ''} warten auf Anwesenheitsverbuchung`,
@@ -2058,18 +2047,13 @@ class PushService {
    */
   static async sendJahrgangDeletionWarningToAdmins(db, organizationId, jahrgangName, daysLeft) {
     try {
-      const { rows: admins } = await db.query(
-        `SELECT u.id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1 AND u.is_active = true`,
-        [organizationId]
-      );
+      const admins = await ladeLeitungDerOrganisation(db, organizationId);
 
       if (admins.length === 0) {
         return { success: false, message: 'No admins found' };
       }
 
-      const adminIds = admins.map(a => a.id);
+      const adminIds = admins;
       const notification = {
         title: 'Jahrgang wird bald gelöscht',
         body: `Der Jahrgang "${jahrgangName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} gelöscht. Letzte Chance, Konfis zu Teamer:innen zu befördern.`,
@@ -2093,28 +2077,14 @@ class PushService {
    */
   static async sendNewKonfiRegistrationToAdmins(db, organizationId, jahrgangId, konfiName, jahrgangName) {
     try {
-      // Admins des Jahrgangs finden
-      const { rows: admins } = await db.query(`
-        SELECT DISTINCT u.id FROM users u
-        JOIN roles r ON u.role_id = r.id
-        JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
-        WHERE r.name IN ('admin', 'org_admin')
-          AND u.organization_id = $1
-          AND uja.jahrgang_id = $2
-      `, [organizationId, jahrgangId]);
+      // Admins des Jahrgangs finden -- ueber beide Quellen der Zugehoerigkeit,
+      // die Rolle gilt je Organisation (utils/orgMitglieder.js).
+      const admins = await ladeLeitungDerOrganisation(db, organizationId, { jahrgangIds: [jahrgangId] });
 
       // Fallback: Alle Org-Admins wenn kein Jahrgangs-Admin
-      let adminIds;
-      if (admins.length === 0) {
-        const { rows: allAdmins } = await db.query(`
-          SELECT u.id FROM users u
-          JOIN roles r ON u.role_id = r.id
-          WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1
-        `, [organizationId]);
-        adminIds = allAdmins.map(a => a.id);
-      } else {
-        adminIds = admins.map(a => a.id);
-      }
+      const adminIds = admins.length === 0
+        ? await ladeLeitungDerOrganisation(db, organizationId)
+        : admins;
 
       if (adminIds.length === 0) return { success: false, message: 'No admins found' };
 
@@ -2144,19 +2114,14 @@ class PushService {
    */
   static async sendEventOptOutToAdmins(db, organizationId, konfiName, eventName, reason, eventId = null) {
     try {
-      const { rows: admins } = await db.query(
-        `SELECT u.id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
-        [organizationId]
-      );
+      const admins = await ladeLeitungDerOrganisation(db, organizationId);
 
       if (admins.length === 0) {
         console.warn('Keine Admins für Organisation gefunden');
         return { success: false, message: 'No admins found' };
       }
 
-      const adminIds = admins.map(a => a.id);
+      const adminIds = admins;
       const notification = {
         title: `Abmeldung: ${eventName}`,
         body: `${konfiName} hat sich von '${eventName}' abgemeldet. Grund: ${reason}`,
@@ -2182,19 +2147,14 @@ class PushService {
    */
   static async sendEventOptInToAdmins(db, organizationId, konfiName, eventName, eventId = null) {
     try {
-      const { rows: admins } = await db.query(
-        `SELECT u.id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
-        [organizationId]
-      );
+      const admins = await ladeLeitungDerOrganisation(db, organizationId);
 
       if (admins.length === 0) {
         console.warn('Keine Admins für Organisation gefunden');
         return { success: false, message: 'No admins found' };
       }
 
-      const adminIds = admins.map(a => a.id);
+      const adminIds = admins;
       const notification = {
         title: `Wieder angemeldet: ${eventName}`,
         body: `${konfiName} hat sich wieder für '${eventName}' angemeldet`,

@@ -7,6 +7,7 @@ const apm = require('../utils/apm');
 const { formatUhrzeit, heuteBerlin } = require('../utils/zeitformat');
 const { appIconSummenFuerAlle } = require('../utils/appIconBadge');
 const { abzeichenFingerabdruecke } = require('../utils/abzeichenKandidaten');
+const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -1310,14 +1311,16 @@ class BackgroundService {
 
           const daysLeft = SOFT_DELETE_DAY - age; // Tage bis zur Loeschung
 
-          // Org-Admins mit E-Mail laden
-          const { rows: admins } = await db.query(
+          // Org-Admins mit E-Mail laden -- ueber beide Quellen der
+          // Zugehoerigkeit (Stamm-Org UND user_organizations, Rolle je
+          // Organisation), wie der Push darunter (utils/orgMitglieder.js).
+          const leitungIds = await ladeLeitungDerOrganisation(db, jg.organization_id);
+          const { rows: admins } = leitungIds.length === 0 ? { rows: [] } : await db.query(
             `SELECT u.display_name, u.email
-               FROM users u JOIN roles r ON u.role_id = r.id
-              WHERE u.organization_id = $1 AND u.is_active = true
-                AND r.name IN ('admin', 'org_admin')
+               FROM users u
+              WHERE u.id = ANY($1::bigint[])
                 AND u.email IS NOT NULL AND u.email <> ''`,
-            [jg.organization_id]
+            [leitungIds]
           );
 
           const { rows: [org] } = await db.query('SELECT display_name FROM organizations WHERE id = $1', [jg.organization_id]);

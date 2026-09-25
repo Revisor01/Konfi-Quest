@@ -14,6 +14,7 @@ const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
 const { heuteBerlin } = require('../utils/zeitformat');
+const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -1296,19 +1297,17 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Fehler werden nur geloggt — die Antwort ist bereits raus.
       (async () => {
         try {
-          const { rows: admins } = await db.query(
-            `SELECT u.id FROM users u
-             JOIN roles r ON u.role_id = r.id
-             WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
-            [req.user.organization_id]
-          );
+          // Leitung ueber beide Quellen der Zugehoerigkeit (Stamm-Org UND
+          // user_organizations, Rolle je Organisation) -- wie beim Push
+          // (utils/orgMitglieder.js, 25.09.2026).
+          const adminIds = await ladeLeitungDerOrganisation(db, req.user.organization_id);
 
-          if (admins.length > 0) {
+          if (adminIds.length > 0) {
             await db.query(
               `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
                SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
               [
-                admins.map(a => a.id),
+                adminIds,
                 'Neuer Antrag eingegangen',
                 `${req.user.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
                 'new_activity_request',
