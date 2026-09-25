@@ -3,13 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonRefresher,
   IonRefresherContent,
-  IonButtons,
   IonButton,
   IonIcon,
   IonSegment,
@@ -24,6 +20,7 @@ import {
 
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
 import { ICON_HINZUFUEGEN_GEFUELLT, ICON_QRCODE } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { zaehltAlsMeiner } from '../../shared';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -319,30 +316,20 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonTitle>{pageTitle}</IonTitle>
-          <IonButtons slot="end">
-            {isAntraege ? (
-              <IonButton onClick={handleAddRequest} aria-label="Neue Aktivität melden">
-                <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-              </IonButton>
-            ) : (
-              <IonButton onClick={() => presentScannerModal()} aria-label="QR-Code scannen">
-                <IonIcon icon={ICON_QRCODE} />
-              </IonButton>
-            )}
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel={pageTitle}
+        rechts={isAntraege ? (
+          <IonButton onClick={handleAddRequest} aria-label="Neue Aktivität melden">
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
+          </IonButton>
+        ) : (
+          <IonButton onClick={() => presentScannerModal()} aria-label="QR-Code scannen">
+            <IonIcon icon={ICON_QRCODE} />
+          </IonButton>
+        )}
+      />
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">
-              {pageTitle}
-            </IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel={pageTitle} />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           if (isAntraege) {

@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonRefresher,
   IonRefresherContent
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { useBadge } from '../../../contexts/BadgeContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -184,18 +182,10 @@ const KonfiBadgesPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonTitle>Badges</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile titel="Badges" />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Badges</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Badges" />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await Promise.all([refreshBadges(), refreshProfile()]);

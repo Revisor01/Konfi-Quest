@@ -1,15 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonRefresher,
   IonRefresherContent,
   useIonModal
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { useBadge } from '../../../contexts/BadgeContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -89,18 +87,10 @@ const KonfiChallengesPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonTitle>Challenges</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile titel="Challenges" />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Challenges</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Challenges" />
 
         <IonRefresher
           slot="fixed"

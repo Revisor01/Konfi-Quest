@@ -10,6 +10,15 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
+- Ein Postfach: Oben rechts steht jetzt eine Glocke, die alles sammelt, was
+  die App dir mitteilen will — verliehene Abzeichen, eingereichte Anträge und
+  die Entscheidungen dazu. Auch was du als Push verpasst hast, steht dort.
+  Ungelesenes ist markiert, Antippen führt an die passende Stelle, „Alle
+  gelesen" räumt auf. Wer in mehreren Gemeinden mitarbeitet, sieht die
+  Mitteilungen aller Gemeinden an einem Ort, jede mit ihrem Gemeindenamen.
+- Die Zahl an der Glocke zählt zusammen, was ungelesen ist und was noch aus
+  einer Funklücke gesendet wird; ein endgültig gescheiterter Vorgang färbt sie
+  rot. Vorerst bei Konfis — Team und Leitung folgen.
 - Die Zahl mit Uhr an der einzelnen Challenge, die Leitung und Team offene
   Freigaben anzeigt, geht jetzt sofort mit — auch ohne Neuladen der Liste und
   immer im Gleichklang mit der Zahl am Reiter.
@@ -38,6 +47,10 @@ Versionsüberschrift.
   wann und wann zuletzt. Die Einzelfälle stehen weiterhin darunter.
 
 ### Geändert
+- Bei Konfis ist der runde Knopf unten links verschwunden, der anzeigte, dass
+  noch etwas gesendet wird: Die Warteschlange steht jetzt im Postfach hinter
+  der Glocke oben rechts. Auf der Mitmachen-Seite bleibt die Karte „Wird
+  gesendet…" mit den einzelnen Vorgängen.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 - Große Dateien laufen zuverlässiger durch: Fotos, Sprachaufnahmen und
@@ -52,6 +65,7 @@ Versionsüberschrift.
   einschaltet.
 
 ### Sonstiges
+- Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.
 - Die iPhone-App ist auf das Startverfahren umgestellt, das neuere
   iOS-Fassungen verlangen. Für die Bedienung ändert sich nichts — ohne die
   Umstellung ließe sich die App künftig aber nicht mehr öffnen.

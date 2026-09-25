@@ -17,6 +17,14 @@ vi.mock('../../services/writeQueue', () => ({
   writeQueue: { enqueue: vi.fn() },
 }));
 
+// Die gemeinsame Kopfzeile (AppKopfzeile, 25.09.2026) bringt Glocke und
+// Gemeinde-Umschalter mit -- beide haengen an Warteschlange und Router, die
+// hier nicht Thema sind. Die Kopfzeile hat eigene Tests (appKopfzeile.test).
+vi.mock('../../components/shared/AppKopfzeile', () => ({
+  default: () => null,
+  AppKopfzeileGross: () => null,
+}));
+
 vi.mock('../../services/networkMonitor', () => ({
   networkMonitor: { isOnline: true, subscribe: vi.fn(() => () => {}) },
 }));

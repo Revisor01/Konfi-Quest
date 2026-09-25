@@ -31,6 +31,36 @@ für Team und Leitung Beiträge, die auf Freigabe warten (siehe
 [Offene Freigaben erkennen](80-challenges.md#offene-freigaben-erkennen)). Die
 Summe aller Reiter steht als Zahl am App-Symbol.
 
+### Mitteilungen im Postfach nachlesen
+
+Oben rechts steht eine **Glocke**. Dahinter liegt das Postfach: alles, was die
+App dir mitteilen will, an einem Ort — ein verliehenes Abzeichen, dein
+eingereichter Antrag, die Entscheidung des Teams dazu, ein neuer Antrag, der
+auf deine Entscheidung wartet. Was als Push kam, steht hier auch; was du als
+Push verpasst hast, ebenfalls.
+
+Eine **Zahl an der Glocke** sagt, wie viel Neues wartet. Sie zählt zwei Dinge
+zusammen: ungelesene Mitteilungen und Vorgänge, die noch aus einer Funklücke
+gesendet werden (siehe [Ohne Internet weiterarbeiten](#ohne-internet-weiterarbeiten)).
+Die Farbe verrät, wie dringend es ist: ruhig bei Mitteilungen, orange, solange
+etwas gesendet wird, **rot**, wenn ein Vorgang endgültig nicht durchkam — das
+ist eine Aufgabe, kein Hinweis.
+
+Im Postfach steht Ungelesenes mit einem Punkt davor und fett. **Antippen**
+markiert die Mitteilung als gelesen und führt an die passende Stelle: zum
+Abzeichen, in die Antragsliste. **„Alle gelesen"** räumt auf einmal auf.
+**„Ältere Mitteilungen laden"** holt, was weiter zurückliegt; nach einem Jahr
+werden Mitteilungen nachts entfernt.
+
+Wer in **mehreren Gemeinden** mitarbeitet, sieht die Mitteilungen aller
+Gemeinden im selben Postfach, jede mit dem Namen ihrer Gemeinde. Antippen
+wechselt bei Bedarf zuerst in diese Gemeinde — so, wie es ein angetippter Push
+auch tut.
+
+> Die Glocke steht vorerst in der Konfi-Ansicht. Team und Leitung sehen bis zur
+> Umstellung ihrer Seiten weiter den runden Knopf unten links, sobald etwas
+> gesendet wird; er öffnet dasselbe Postfach.
+
 ### Das eigene Profil
 
 **Konfis und Teamer:innen** tippen dafür oben rechts auf das Personen-Symbol.
@@ -170,10 +200,13 @@ später los:
 - als Leitung: Termine, Aktivitäten, Abzeichen, Level, Material und Kategorien
   **anlegen oder bearbeiten**, Bonuspunkte vergeben
 
-Du siehst diese Vorgänge unter **„Wird gesendet…"**, mit einem Uhr-Symbol.
-Sobald wieder Netz da ist, gehen sie automatisch raus — auch wenn du die App
-zwischendurch geschlossen hast. Klappt etwas endgültig nicht, stehen sie unter
-**„Nicht gesendet"**, und du kannst sie wegwischen.
+Du siehst diese Vorgänge im [Postfach](#mitteilungen-im-postfach-nachlesen)
+hinter der Glocke unter **„Wird gesendet…"**, mit einem Uhr-Symbol; die Zahl
+an der Glocke färbt sich orange. Auf der Mitmachen-Seite steht dieselbe Karte
+direkt bei den Anträgen. Sobald wieder Netz da ist, gehen die Vorgänge
+automatisch raus — auch wenn du die App zwischendurch geschlossen hast. Klappt
+etwas endgültig nicht, stehen sie unter **„Nicht gesendet"**, die Glocke wird
+rot, und du kannst sie wegwischen.
 
 ### Was Netz braucht
 
@@ -204,6 +237,6 @@ Was sich wirklich nicht zeigen lässt, sagt die App als graue Zeile mit einem
 Wolken-Symbol, etwa: „Die Teilnehmerliste ist offline nicht verfügbar."
 
 > **Eine App-weite Anzeige „Du bist offline" gibt es nicht.** Du merkst es an
-> den Knöpfen und an der Karte „Wird gesendet…". Kleinigkeiten im Hintergrund —
+> den Knöpfen und an der Zahl an der Glocke. Kleinigkeiten im Hintergrund —
 > etwa dass du deine Abzeichen angesehen hast — wandern still mit und tauchen
 > dort nicht auf.

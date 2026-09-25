@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonRefresher,
   IonRefresherContent,
   IonIcon,
-  IonButtons,
   IonButton,
   useIonModal,
   useIonRouter
 } from '@ionic/react';
 import { ICON_FUNKELN_GEFUELLT, ICON_PROFIL, ICON_SCHLIESSEN } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
 import KonfiUpdate220WalkthroughModal from '../modals/KonfiUpdate220WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
@@ -339,11 +336,7 @@ const KonfiDashboardPage: React.FC = () => {
   if (loading || !dashboardData) {
     return (
       <IonPage ref={pageRef}>
-        <IonHeader translucent={true}>
-          <IonToolbar>
-            <IonTitle>Konfi Quest</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile titel="Konfi Quest" />
         <IonContent className="app-gradient-background" fullscreen>
           {loading ? (
             <LoadingSpinner message="Konfi Quest wird geladen..." />
@@ -393,16 +386,14 @@ const KonfiDashboardPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonTitle>Konfi Quest</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={() => router.push('/konfi/profile')} aria-label="Profil öffnen">
-              <IonIcon slot="icon-only" icon={ICON_PROFIL} style={{ color: 'var(--app-color-wrapped)', fontSize: 'var(--app-anzeige-basis)' }} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel="Konfi Quest"
+        rechts={(
+          <IonButton onClick={() => router.push('/konfi/profile')} aria-label="Profil öffnen">
+            <IonIcon slot="icon-only" icon={ICON_PROFIL} style={{ color: 'var(--app-color-wrapped)', fontSize: 'var(--app-anzeige-basis)' }} />
+          </IonButton>
+        )}
+      />
 
       <IonContent
         fullscreen
@@ -412,13 +403,7 @@ const KonfiDashboardPage: React.FC = () => {
           '--background': 'var(--app-surface-soft)'
         }}
       >
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">
-              Konfi Quest
-            </IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Konfi Quest" />
 
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />

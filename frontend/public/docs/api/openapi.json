@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n254 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n257 Operationen."
   },
   "servers": [
     {
@@ -9869,7 +9869,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Leichtgewichtige Badge-Zähler für die Tab-Leiste",
-        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage. Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst \"nicht abgesagt\"). Der Verbuchen-Tab blendet sie aus, die Zahl stand also vor einer leeren Liste. Dieselbe Bedingung gilt in der App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich zaehlen. Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes Feld aendert Form oder Typ, aeltere Apps ignorieren es): die Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das Gegenstueck zu chat.byRoom/chat.total. Fuer Team und Leitung ist es 0/leer; ihr Challenge-Reiter zaehlt pendingChallenges. Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen), aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der Leitung. pendingChallenges bleibt unveraendert eine Zahl -- die Store-Apps 2.2.x lesen sie so. Fuer Konfis ist challengeApprovals 0/leer; Neuigkeiten (Konfis) und offene Freigaben (Leitung) werden nie in ein Feld gemischt.\n",
+        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage. Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst \"nicht abgesagt\"). Der Verbuchen-Tab blendet sie aus, die Zahl stand also vor einer leeren Liste. Dieselbe Bedingung gilt in der App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich zaehlen. Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes Feld aendert Form oder Typ, aeltere Apps ignorieren es): die Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das Gegenstueck zu chat.byRoom/chat.total. Fuer Team und Leitung ist es 0/leer; ihr Challenge-Reiter zaehlt pendingChallenges. Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen), aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der Leitung. pendingChallenges bleibt unveraendert eine Zahl -- die Store-Apps 2.2.x lesen sie so. Fuer Konfis ist challengeApprovals 0/leer; Neuigkeiten (Konfis) und offene Freigaben (Leitung) werden nie in ein Feld gemischt. Seit 25.09.2026 kommt postfach additiv dazu: die Zahl ungelesener Postfach-Mitteilungen des KONTOS ueber alle Organisationen (dieselbe Zaehlung wie GET /api/notifications/postfach.ungelesen). Sie speist die Glocke -- einen eigenen Zaehler neben den Reitern -- und geht BEWUSST NICHT in die App-Icon-Summe (utils/appIconBadge.js) ein. Kein bestehendes Feld aendert sich.\n",
         "responses": {
           "200": {
             "description": "Zähler",
@@ -9935,6 +9935,15 @@
                           }
                         }
                       }
+                    },
+                    "postfach": {
+                      "type": "object",
+                      "description": "NEU 25.09.2026, additiv, fuer alle Rollen. Ungelesene Postfach-Mitteilungen (notifications.read_at IS NULL) des Kontos ueber ALLE Organisationen -- bewusst ohne Org-Filter, siehe GET /api/notifications/postfach. Nicht Teil der App-Icon-Summe.\n",
+                      "properties": {
+                        "ungelesen": {
+                          "type": "integer"
+                        }
+                      }
                     }
                   }
                 }
@@ -9956,7 +9965,278 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert — Rolle admin seit 01.09.2026 auf zugewiesene Jahrgaenge begrenzt (Zaehler und Listen zaehlen gleich)"
+          "objekt-pruefung": "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert — Rolle admin seit 01.09.2026 auf zugewiesene Jahrgaenge begrenzt (Zaehler und Listen zaehlen gleich). postfach.ungelesen ist die einzige Zahl OHNE Org-Bezug (nur user_id)."
+        }
+      }
+    },
+    "/api/notifications/postfach": {
+      "get": {
+        "tags": [
+          "Benachrichtigungen"
+        ],
+        "summary": "Postfach lesen (eigene Mitteilungen, alle Gemeinden)",
+        "description": "NEU 25.09.2026. Die Tabelle notifications wurde bis dahin an sechs Stellen geschrieben (Antragsentscheid, Abzeichen, Konfi- und Teamer-Meldungen), aber nirgends gelesen -- wer eine Push-Nachricht wegwischte, hatte sie verloren. Diese Route macht daraus ein Postfach. ENTSCHEIDUNG ORG-BEZUG: Das Postfach ist persoenlich wie das Mitteilungszentrum des Handys; Push-Nachrichten kommen ja auch unabhaengig von der aktiven Gemeinde an. Wer mehrere Gemeinden betreut (org_admin in Org 1, 2 und 4), muss einen \"Neuen Antrag\" aus Gemeinde 2 sehen, waehrend er in Gemeinde 1 arbeitet. Deshalb liest die Route ueber ALLE Organisationen des Kontos (nur notifications.user_id = eigene id, kein Filter auf die aktive Org). Jeder Eintrag traegt organization_id und organization_name (COALESCE(display_name, name), null wenn die Organisation fehlt); die App wechselt beim Antippen bei Bedarf die Gemeinde ueber den vorhandenen Push-Weg. Neueste zuerst (ORDER BY id DESC). Cursor ueber `vor` (nur id < vor): stabil auch, wenn waehrend des Blaetterns neue Eintraege dazukommen. `data` ist IMMER ein Objekt (jsonb; NULL wird zu {}). `ungelesen` ist die Gesamtzahl ungelesener Mitteilungen des Kontos, unabhaengig von der Seite -- dieselbe Zahl wie badge-counts.postfach.ungelesen. `weitere` sagt, ob es aeltere Eintraege gibt.\n",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            },
+            "description": "Eintraege je Seite. Groessere Werte werden still auf 100 gekappt, ungueltige (nicht-numerisch, 0, negativ) fallen auf 30 zurueck.\n"
+          },
+          {
+            "name": "vor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Cursor: nur Eintraege mit id < vor (die kleinste id der vorigen Seite). Ungueltige Werte werden ignoriert (erste Seite).\n"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eine Seite des Postfachs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "eintraege",
+                    "ungelesen",
+                    "weitere"
+                  ],
+                  "properties": {
+                    "eintraege": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "description": "z.B. badge_earned, activity_request_decision"
+                          },
+                          "data": {
+                            "type": "object",
+                            "description": "Immer ein Objekt; {} wenn in der Datenbank NULL steht"
+                          },
+                          "read_at": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "organization_id": {
+                            "type": "integer"
+                          },
+                          "organization_name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "COALESCE(display_name, name) der Organisation"
+                          }
+                        }
+                      }
+                    },
+                    "ungelesen": {
+                      "type": "integer",
+                      "description": "Alle ungelesenen des Kontos, unabhaengig von der Seite"
+                    },
+                    "weitere": {
+                      "type": "boolean",
+                      "description": "true, wenn es aeltere Eintraege als die letzte dieser Seite gibt"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token fehlt oder ungueltig"
+          },
+          "500": {
+            "description": "Datenbankfehler"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer",
+            "konfi"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Nur eigene Mitteilungen (notifications.user_id aus dem geprueften Token). org-scope BEWUSST false: gelesen wird ueber alle Organisationen des Kontos, weil das Postfach persoenlich ist und nicht an die aktive Gemeinde gebunden (Begruendung in description).\n"
+        }
+      }
+    },
+    "/api/notifications/postfach/gelesen": {
+      "put": {
+        "tags": [
+          "Benachrichtigungen"
+        ],
+        "summary": "Alle eigenen Mitteilungen als gelesen markieren",
+        "description": "NEU 25.09.2026. Setzt read_at = NOW() auf allen eigenen Mitteilungen mit read_at IS NULL -- ueber alle Organisationen des Kontos, wie das Postfach selbst. `anzahl` ist die Zahl der tatsaechlich geaenderten Zeilen; bereits gelesene zaehlen nicht mit. Ohne Body.\n",
+        "responses": {
+          "200": {
+            "description": "Markiert",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "anzahl"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "anzahl": {
+                      "type": "integer",
+                      "description": "Anzahl der soeben als gelesen markierten Mitteilungen"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token fehlt oder ungueltig"
+          },
+          "500": {
+            "description": "Datenbankfehler"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer",
+            "konfi"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Nur eigene Mitteilungen (user_id aus dem Token); fremde bleiben ungelesen. org-scope bewusst false, siehe GET /api/notifications/postfach."
+        }
+      }
+    },
+    "/api/notifications/postfach/{id}/gelesen": {
+      "put": {
+        "tags": [
+          "Benachrichtigungen"
+        ],
+        "summary": "Eine eigene Mitteilung als gelesen markieren",
+        "description": "NEU 25.09.2026. Setzt read_at = NOW() auf genau einer eigenen Mitteilung. Idempotent: Eine bereits gelesene Mitteilung liefert 200 mit dem VORHANDENEN read_at, nicht einem neuen. Fremde und nicht vorhandene Mitteilungen antworten beide mit 404 -- ein 403 wuerde verraten, dass die id existiert. Ohne Body.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Mitteilungs-ID; nicht-numerisch -> 400"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gelesen (neu markiert oder bereits gelesen)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "id",
+                    "read_at"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "read_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "id ist keine positive Ganzzahl"
+          },
+          "401": {
+            "description": "Token fehlt oder ungueltig"
+          },
+          "404": {
+            "description": "Mitteilung nicht gefunden -- auch bei fremden Mitteilungen (kein 403)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "const": "Mitteilung nicht gefunden"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Datenbankfehler"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer",
+            "konfi"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "UPDATE ... WHERE id = $1 AND user_id = $2 -- fremde Mitteilungen 404 und unveraendert (Test: erlaubter und verbotener Fall). org-scope bewusst false, siehe GET /api/notifications/postfach."
         }
       }
     },

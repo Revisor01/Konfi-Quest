@@ -1074,9 +1074,39 @@ class BackgroundService {
       } catch (e) {
         console.error('Auto-Deletion-Cron failed:', e);
       }
+      // Dritter, eigenstaendig fehler-isolierter Schritt: alte
+      // Postfach-Mitteilungen. Ein Fehler hier darf die Konto-Loeschung
+      // oben nicht beruehren und umgekehrt.
+      try {
+        await this.cleanupAlteMitteilungen(db);
+      } catch (e) {
+        console.error('Mitteilungs-Aufraeum-Cron failed:', e);
+      }
     }, {
       timezone: 'Europe/Berlin'
     });
+  }
+
+  /**
+   * Loescht Postfach-Mitteilungen (Tabelle notifications), die aelter als
+   * ein Jahr sind. Gibt die Anzahl geloeschter Zeilen zurueck.
+   *
+   * Begruendung (25.09.2026): Die Tabelle wuchs bisher ohne Grenze -- sie
+   * wurde an sechs Stellen geschrieben und nirgends geloescht. Gemessen in
+   * Produktion am 25.09.2026: 1.324 Zeilen, davon 570 aus den letzten 30
+   * Tagen. Ein Jahr deckt den ganzen Konfi-Jahrgang ab; aelter braucht
+   * niemand ein "Antrag eingereicht". Konten, die per Auto-Loeschung
+   * verschwinden, nehmen ihre Mitteilungen ohnehin ueber den FK mit; dieser
+   * Schritt raeumt bei den Konten auf, die bleiben (Leitung, Teamer:innen).
+   */
+  static async cleanupAlteMitteilungen(db) {
+    const { rowCount } = await db.query(
+      `DELETE FROM notifications WHERE created_at < NOW() - INTERVAL '365 days'`
+    );
+    if (rowCount > 0) {
+      console.log(`Mitteilungs-Aufraeumen: ${rowCount} Mitteilungen aelter als ein Jahr geloescht`);
+    }
+    return rowCount;
   }
 
   /**

@@ -3650,6 +3650,72 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 
 
 /* ====================================================================
+   Glocke in der Kopfzeile und Postfach (25.09.2026)
+
+   Die Glocke steht rechts aussen in jeder Kopfzeile (shared/AppKopfzeile)
+   und traegt die Zahl aus zwei Quellen: ungelesene Mitteilungen und die
+   Offline-Warteschlange. Farbe nur an der Zahl, wie beim frueheren
+   schwebenden Knopf: ruhig fuer Nachrichten, orange waehrend gesendet wird,
+   rot fuer einen endgueltig gescheiterten Vorgang -- der ist eine Aufgabe.
+   ==================================================================== */
+.app-postfach-glocke {
+  position: relative;
+}
+.app-postfach-glocke__zahl {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--app-abstand-mini);
+  box-sizing: border-box;
+  border-radius: var(--app-radius-knopf);
+  background: var(--ion-color-primary);
+  color: var(--app-weiss);
+  font-size: var(--app-text-winzig);
+  font-weight: var(--app-schrift-fett);
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+}
+.app-postfach-glocke[data-variante="warning"] .app-postfach-glocke__zahl {
+  background: var(--app-color-warning);
+}
+.app-postfach-glocke[data-variante="danger"] .app-postfach-glocke__zahl {
+  background: var(--app-color-danger);
+}
+.app-postfach-glocke[data-variante="danger"] ion-icon {
+  color: var(--app-color-danger);
+}
+
+/* Der Punkt vor einer ungelesenen Mitteilung; bei gelesenen bleibt der Platz
+   stehen, damit die Zeilen buendig sind. */
+.app-postfach-punkt {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--app-radius-kreis);
+  background: transparent;
+  flex-shrink: 0;
+  margin-right: var(--app-abstand-eng);
+}
+.app-postfach-eintrag--ungelesen .app-postfach-punkt {
+  background: var(--ion-color-primary);
+}
+.app-postfach-eintrag--ungelesen ion-label h3 {
+  font-weight: var(--app-schrift-fett);
+}
+.app-postfach-eintrag__meta {
+  color: var(--ion-color-medium, #92949c);
+  font-size: var(--app-text-meta);
+}
+.app-postfach__laedt {
+  display: flex;
+  justify-content: center;
+  padding: var(--app-abstand-weit);
+}
+
+
+/* ====================================================================
    Offline-Platzhalter (30.08.2026)
 
    Ersetzt Abschnitte, die offline kommentarlos verschwanden, durch eine

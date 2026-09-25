@@ -155,6 +155,11 @@ export {
   infinite as ICON_UNENDLICH,
   pulseOutline as ICON_PULS,
   notifications as ICON_BENACHRICHTIGUNG,
+  // Glocke in der Kopfzeile (25.09.2026, Simon: "die Glocke drauf legen"):
+  // oeffnet das Postfach mit Mitteilungen und Warteschlange. Kontur, weil
+  // sie neben den anderen Kopfzeilen-Knoepfen steht, die ebenfalls
+  // Strich-Glyphen tragen (Profil, Zurueck).
+  notificationsOutline as ICON_GLOCKE,
 
   // --- Termine & Zeit ---
   calendar as ICON_TERMIN_GEFUELLT,

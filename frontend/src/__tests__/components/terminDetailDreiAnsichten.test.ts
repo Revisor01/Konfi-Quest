@@ -89,7 +89,10 @@ describe('N6: Einstieg in den Event-Chat auch fuer Konfis und Teamer:innen', () 
   it('der Knopf erscheint nur, wenn es einen Raum gibt', () => {
     // chat_room_id liefert das Backend nur bei bestehender Mitgliedschaft.
     // Ohne diesen Guard entstuende ein Knopf, der ins 403 laeuft.
-    expect(konfiDetail).toMatch(/\{eventData\.chat_room_id && \(/);
+    // Seit der gemeinsamen Kopfzeile (25.09.2026) haengt der Knopf als
+    // `rechts`-Prop an AppKopfzeile; der Guard steht jetzt als Bedingung
+    // davor -- ohne Raum wird undefined uebergeben und nichts gerendert.
+    expect(konfiDetail).toMatch(/rechts=\{eventData\.chat_room_id \? \(/);
     expect(teamerSeite).toMatch(/\{selectedEvent\.chat_room_id && \(/);
   });
 

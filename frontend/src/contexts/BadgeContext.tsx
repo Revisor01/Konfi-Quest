@@ -44,6 +44,14 @@ interface BadgeContextType {
   challengeUpdatesByChallenge: Record<number, number>;
   challengeUpdatesTotal: number;
   /**
+   * Ungelesene Mitteilungen im Postfach (25.09.2026), ueber alle Gemeinden
+   * des Kontos. Speist die Zahl an der Glocke in der Kopfzeile. BEWUSST NICHT
+   * Teil von totalBadgeCount: Die Glocke ist ein eigener Zaehler neben den
+   * Reitern, und das App-Icon summiert nur die Reiter (Paritaet mit
+   * utils/appIconBadge.js auf dem Server, Befund B2b).
+   */
+  postfachUngelesen: number;
+  /**
    * Meldet eine Challenge als geoeffnet -- wie markRoomAsRead fuer den Chat:
    * optimistisch sofort auf 0, dann POST. Fuer Team und Leitung ein No-op.
    */
@@ -84,6 +92,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const [newBadgesCount, setNewBadgesCount] = useState(0);
   const [challengeUpdatesByChallenge, setChallengeUpdatesByChallenge] = useState<Record<number, number>>({});
   const [challengeUpdatesTotal, setChallengeUpdatesTotal] = useState(0);
+  const [postfachUngelesen, setPostfachUngelesen] = useState(0);
 
   const isAdmin = user?.type === 'admin' && user?.role_name !== 'super_admin';
   // Challenge-Freigaben betreffen die ganze Leitung — Teamer moderieren ihre
@@ -158,6 +167,9 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       // Badges-Reiter nie, waehrend der Server sie ins App-Icon summierte.
       // Genau der Widerspruch Icon <-> Reiter, den B2b ausschliessen sollte.
       setNewBadgesCount(Number(data?.newBadges) || 0);
+      // Postfach (25.09.2026): fuer alle Rollen, ueber alle Gemeinden.
+      // Aeltere Server ohne das Feld: 0, keine Zahl an der Glocke, kein Fehler.
+      setPostfachUngelesen(Number(data?.postfach?.ungelesen) || 0);
 
       if (isLeadership) {
         // pendingChallenges bleibt die Quelle fuer den Reiter (Altfeld, das
@@ -436,6 +448,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       newBadgesCount,
       challengeUpdatesByChallenge,
       challengeUpdatesTotal,
+      postfachUngelesen,
       totalBadgeCount,
       refreshAllCounts,
       markRoomAsRead,

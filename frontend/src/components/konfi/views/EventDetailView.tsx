@@ -22,18 +22,13 @@ import {
   ICON_UNENDLICH,
   ICON_WARNUNG_GEFUELLT,
   ICON_WARTEND_GEFUELLT,
-  ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonButtons,
   IonButton,
   IonIcon,
   IonCard,
@@ -58,6 +53,7 @@ import { track } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { SectionHeader, AbsageBlock, formatEventDateLong as formatDate, formatEventTime as formatTime, zeitraumText, istVergangen, istAbgesagt } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
@@ -526,18 +522,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <IonHeader translucent>
-          <IonToolbar>
-            {!hideBackButton && (
-              <IonButtons slot="start">
-                <IonButton aria-label="Zurück" onClick={onBack}>
-                  <IonIcon icon={ICON_ZURUECK} />
-                </IonButton>
-              </IonButtons>
-            )}
-            <IonTitle>Event Details</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile titel="Event Details" onZurueck={hideBackButton ? undefined : onBack} />
         <IonContent fullscreen>
           <LoadingSpinner message="Event wird geladen..." />
         </IonContent>
@@ -548,18 +533,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (!eventData) {
     return (
       <IonPage ref={pageRef}>
-        <IonHeader translucent>
-          <IonToolbar>
-            {!hideBackButton && (
-              <IonButtons slot="start">
-                <IonButton aria-label="Zurück" onClick={onBack}>
-                  <IonIcon icon={ICON_ZURUECK} />
-                </IonButton>
-              </IonButtons>
-            )}
-            <IonTitle>Event nicht gefunden</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile titel="Event nicht gefunden" onZurueck={hideBackButton ? undefined : onBack} />
         <IonContent fullscreen />
       </IonPage>
     );
@@ -597,43 +571,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent>
-        <IonToolbar>
-          {!hideBackButton && (
-            <IonButtons slot="start">
-              <IonButton aria-label="Zurück" onClick={onBack}>
-                <IonIcon icon={ICON_ZURUECK} />
-              </IonButton>
-            </IonButtons>
-          )}
-          <IonTitle>{eventData.name}</IonTitle>
-          {/* Einstieg in den Event-Chat — bisher hatte ihn nur die Leitung
-              (`admin/views/EventDetailView.tsx`), obwohl Konfis beim Buchen
-              ohnehin Mitglied des Raums werden (`addToEventChat`). Sie fanden
-              ihn nur ueber die Chat-Uebersicht.
-              Der Knopf erscheint nur, wenn es einen Raum gibt UND diese Konfi
-              darin Mitglied ist: `chat_room_id` kommt aus `/konfi/events` und
-              ist sonst null (konfi.js). Erstellen bleibt der Leitung
-              vorbehalten (`POST /events/:id/chat` verlangt requireTeamer). */}
-          {eventData.chat_room_id && (
-            <IonButtons slot="end">
-              <IonButton
-                aria-label="Event-Chat öffnen"
-                onClick={() => router.push(`/konfi/chat/room/${eventData.chat_room_id}`, 'root')}
-              >
-                <IonIcon icon={ICON_CHAT} slot="icon-only" />
-              </IonButton>
-            </IonButtons>
-          )}
-        </IonToolbar>
-      </IonHeader>
+      {/* Einstieg in den Event-Chat rechts — bisher hatte ihn nur die Leitung
+          (`admin/views/EventDetailView.tsx`), obwohl Konfis beim Buchen
+          ohnehin Mitglied des Raums werden (`addToEventChat`). Sie fanden
+          ihn nur ueber die Chat-Uebersicht.
+          Der Knopf erscheint nur, wenn es einen Raum gibt UND diese Konfi
+          darin Mitglied ist: `chat_room_id` kommt aus `/konfi/events` und
+          ist sonst null (konfi.js). Erstellen bleibt der Leitung
+          vorbehalten (`POST /events/:id/chat` verlangt requireTeamer). */}
+      <AppKopfzeile
+        titel={eventData.name}
+        onZurueck={hideBackButton ? undefined : onBack}
+        rechts={eventData.chat_room_id ? (
+          <IonButton
+            aria-label="Event-Chat öffnen"
+            onClick={() => router.push(`/konfi/chat/room/${eventData.chat_room_id}`, 'root')}
+          >
+            <IonIcon icon={ICON_CHAT} slot="icon-only" />
+          </IonButton>
+        ) : undefined}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">{eventData.name}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel={eventData.name} />
 
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshEvents();

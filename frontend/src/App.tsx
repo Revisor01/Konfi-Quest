@@ -19,6 +19,7 @@ import MainTabs from './components/layout/MainTabs';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import GlobalToasts from './components/common/GlobalToasts';
 import WartendeVorgaengeLeiste from './components/common/WartendeVorgaengeLeiste';
+import PostfachModal from './components/common/PostfachModal';
 import AppSperrbildschirm from './components/common/AppSperrbildschirm';
 import AppAbdeckung from './components/common/AppAbdeckung';
 import { useAppSperre } from './hooks/useAppSperre';
@@ -252,7 +253,15 @@ const AppContent: React.FC = () => {
           </IonRouterOutlet>
         </IonReactRouter>
         <GlobalToasts />
-        <WartendeVorgaengeLeiste />
+        {/* Das Postfach (Mitteilungen + Warteschlange) haengt EINMAL hier und
+            wird von der Glocke in der Kopfzeile geoeffnet (shared/PostfachGlocke,
+            utils/postfach). Neben dem Router, nicht darin: kein Seitenwechsel,
+            und es ueberlebt den Remount bei einem Gemeinde-Wechsel. */}
+        <PostfachModal />
+        {/* Der schwebende Warteschlangen-Knopf bleibt NUR fuer Team und
+            Leitung, bis auch deren Kopfzeilen auf AppKopfzeile umgestellt sind
+            (gestufte Umstellung, 25.09.2026). Konfis haben die Glocke. */}
+        {user?.type !== 'konfi' && <WartendeVorgaengeLeiste />}
       </>
     );
   })();

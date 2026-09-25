@@ -86,7 +86,9 @@ describe('Zentrale Icon-Datei: eine Stelle fuer alle Icons', () => {
     // Hinweiskarten" keinen Pfeil mehr. Die gefuellte Fassung
     // (ICON_WEITER_GEFUELLT) bleibt -- sie traegt die "Alle ... anzeigen"-Zeilen
     // auf beiden Dashboards.
-    expect(namen.length).toBe(187);
+    // 25.09.2026: 187 -> 188. ICON_GLOCKE kommt dazu: die Glocke in der
+    // Kopfzeile, die das Postfach oeffnet (Simon: "die Glocke drauf legen").
+    expect(namen.length).toBe(188);
   });
 
   it('keine Konstante ist verwaist — jede wird auch benutzt', () => {

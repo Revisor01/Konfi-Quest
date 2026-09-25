@@ -124,8 +124,17 @@ export const buildPushTargetUrl = (
       }
       return `${routePrefix}/chat`;
 
+    // activity_request_submitted und activity_request_decision sind die
+    // beiden In-App-Mitteilungen zum Antrag (Tabelle notifications,
+    // 25.09.2026): "Antrag eingereicht" an die antragstellende Person und
+    // die Entscheidung der Leitung. Sie kamen nie als Push, sondern nur ins
+    // Postfach -- und das navigiert seit dem 25.09.2026 ueber dieselbe
+    // Funktion wie ein Push-Tap. Ziel wie beim Push zum selben Vorgang: die
+    // Antragsliste der Rolle.
     case 'activity_request_status':
     case 'new_activity_request':
+    case 'activity_request_submitted':
+    case 'activity_request_decision':
       // Antrags-Ansicht je Rolle. Der Kommentar hier sagte bis 27.08.2026
       // "Teamer hat keine Requests-Page" und schickte sie aufs Dashboard --
       // /teamer/requests existiert inzwischen (Befund N1, Push-Bericht).

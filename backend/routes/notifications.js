@@ -247,13 +247,26 @@ module.exports = (db, verifyTokenRBAC) => {
         ? challengeNeuigkeitenJeChallenge(db, [{ id: userId, type: userType, organization_id: organizationId }])
         : Promise.resolve([]);
 
-      const [chatRes, requestsRes, eventsRes, challengesRes, badgesRes, neuigkeiten] = await Promise.all([
+      // Postfach (25.09.2026): ungelesene Mitteilungen des KONTOS ueber alle
+      // Organisationen -- dieselbe Zaehlung wie GET /postfach.ungelesen, damit
+      // Glocke und Liste nie auseinanderlaufen. Bewusst OHNE Org-Filter (siehe
+      // Begruendung an der Postfach-Route). Bewusst NICHT in die
+      // App-Icon-Summe (utils/appIconBadge.js) eingerechnet: Die Glocke ist ein
+      // eigener Zaehler neben den Reitern, keine Reiter-Zahl; die
+      // Paritaetstests (appIconBadgeParitaet.test.js) bleiben unangetastet.
+      const postfachPromise = db.query(
+        `SELECT COUNT(*)::int AS c FROM notifications WHERE user_id = $1 AND read_at IS NULL`,
+        [userId]
+      );
+
+      const [chatRes, requestsRes, eventsRes, challengesRes, badgesRes, neuigkeiten, postfachRes] = await Promise.all([
         db.query(chatQuery, [userId, userType, organizationId]),
         requestsPromise,
         eventsPromise,
         challengesPromise,
         badgesPromise,
-        neuigkeitenPromise
+        neuigkeitenPromise,
+        postfachPromise
       ]);
 
       const byRoom = {};
@@ -297,10 +310,178 @@ module.exports = (db, verifyTokenRBAC) => {
         challengeUpdates: { total: neuigkeitenTotal, byChallenge },
         // NEU 25.09.2026, additiv: dieselbe Summe wie pendingChallenges,
         // dazu die Aufschluesselung je Challenge fuer den Listeneintrag.
-        challengeApprovals: { total: freigabenTotal, byChallenge: freigabenByChallenge }
+        challengeApprovals: { total: freigabenTotal, byChallenge: freigabenByChallenge },
+        // NEU 25.09.2026, additiv: ungelesene Postfach-Mitteilungen (Glocke).
+        // Nur ein Objekt, damit spaeter Aufschluesselungen dazukommen koennen,
+        // ohne die Form zu aendern.
+        postfach: { ungelesen: postfachRes.rows[0]?.c || 0 }
       });
     } catch (err) {
       console.error('Database error in GET /notifications/badge-counts:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // ==========================================================================
+  // POSTFACH (25.09.2026)
+  //
+  // Die Tabelle notifications wurde bis dahin an sechs Stellen GESCHRIEBEN
+  // (Antragsentscheid, Abzeichen, Konfi- und Teamer-Meldungen), aber nirgends
+  // gelesen: Wer eine Push-Nachricht wegwischte, hatte sie verloren. Diese
+  // Routen machen daraus ein Postfach.
+  //
+  // ENTSCHEIDUNG ORG-BEZUG: Das Postfach ist PERSOENLICH wie das
+  // Mitteilungszentrum des Handys -- Push-Nachrichten kommen ja auch
+  // unabhaengig von der gerade aktiven Gemeinde an. Simon betreut drei
+  // Gemeinden (org_admin in Org 1, 2 und 4); ein "Neuer Antrag" aus Gemeinde 2
+  // muss sichtbar sein, waehrend er in Gemeinde 1 arbeitet. Deshalb liest die
+  // Route ueber ALLE Organisationen des Kontos (nur user_id, KEIN Filter auf
+  // req.user.organization_id). Jeder Eintrag traegt organization_id und
+  // organization_name; die App wechselt beim Antippen bei Bedarf die Gemeinde
+  // ueber den vorhandenen Push-Weg (resolveOrgForPush).
+  //
+  // Sicherheitsgrenze ist ausschliesslich notifications.user_id aus dem
+  // geprueften Token -- dieselbe Grenze wie bei device-token und preferences.
+  // ==========================================================================
+
+  const POSTFACH_LIMIT_DEFAULT = 30;
+  const POSTFACH_LIMIT_MAX = 100;
+
+  // Liefert eine positive Ganzzahl oder null. Query-Parameter kommen als
+  // Strings; "30abc" oder "-5" gelten als ungueltig, nicht als 30 bzw. 5.
+  const positiveGanzzahl = (wert) => {
+    if (typeof wert !== 'string' || !/^\d+$/.test(wert)) return null;
+    const zahl = parseInt(wert, 10);
+    return zahl > 0 && Number.isSafeInteger(zahl) ? zahl : null;
+  };
+
+  // data ist jsonb (prod-schema.sql): pg liefert bereits ein Objekt oder
+  // null. Die App verlaesst sich auf "immer ein Objekt" -- deshalb NULL -> {}.
+  // Der String-Zweig faengt den Fall ab, dass eine Schreibstelle doppelt
+  // serialisiert hat (jsonb mit einem JSON-String als Wert); ein Parse-Fehler
+  // ergibt ebenfalls {}, nie einen 500er fuer die ganze Liste.
+  const alsObjekt = (data) => {
+    if (data === null || data === undefined) return {};
+    if (typeof data === 'string') {
+      try {
+        const geparst = JSON.parse(data);
+        return geparst && typeof geparst === 'object' && !Array.isArray(geparst) ? geparst : {};
+      } catch {
+        return {};
+      }
+    }
+    return typeof data === 'object' && !Array.isArray(data) ? data : {};
+  };
+
+  // GET /postfach?limit=30&vor=<id>
+  // Neueste zuerst, Cursor ueber die id (monoton steigend, deshalb stabil
+  // auch wenn waehrend des Blaetterns neue Eintraege dazukommen -- ein
+  // OFFSET wuerde dann Eintraege doppelt oder gar nicht zeigen).
+  router.get('/postfach', verifyTokenRBAC, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const limit = Math.min(positiveGanzzahl(req.query.limit) || POSTFACH_LIMIT_DEFAULT, POSTFACH_LIMIT_MAX);
+      const vor = positiveGanzzahl(req.query.vor);
+
+      const params = [userId];
+      let cursorFilter = '';
+      if (vor !== null) {
+        params.push(vor);
+        cursorFilter = `AND n.id < $${params.length}`;
+      }
+      // limit + 1: ein Eintrag mehr als angezeigt verraet, ob es weitere gibt,
+      // ohne eine zweite COUNT-Abfrage.
+      params.push(limit + 1);
+
+      const [eintraegeRes, ungelesenRes] = await Promise.all([
+        db.query(
+          `SELECT n.id, n.title, n.message, n.type, n.data, n.read_at, n.created_at,
+                  n.organization_id,
+                  COALESCE(o.display_name, o.name) AS organization_name
+           FROM notifications n
+           LEFT JOIN organizations o ON o.id = n.organization_id
+           WHERE n.user_id = $1 ${cursorFilter}
+           ORDER BY n.id DESC
+           LIMIT $${params.length}`,
+          params
+        ),
+        // Unabhaengig von der Seite: die Glocke zeigt alles Ungelesene, nicht
+        // nur das der ersten 30.
+        db.query(
+          `SELECT COUNT(*)::int AS c FROM notifications WHERE user_id = $1 AND read_at IS NULL`,
+          [userId]
+        )
+      ]);
+
+      const weitere = eintraegeRes.rows.length > limit;
+      const eintraege = eintraegeRes.rows.slice(0, limit).map((r) => ({
+        id: r.id,
+        title: r.title,
+        message: r.message,
+        type: r.type,
+        data: alsObjekt(r.data),
+        read_at: r.read_at,
+        created_at: r.created_at,
+        organization_id: r.organization_id,
+        organization_name: r.organization_name ?? null
+      }));
+
+      res.json({ eintraege, ungelesen: ungelesenRes.rows[0]?.c || 0, weitere });
+    } catch (err) {
+      console.error('Database error in GET /notifications/postfach:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // PUT /postfach/gelesen -- alle eigenen ungelesenen auf einmal.
+  // Steht bewusst VOR /postfach/:id/gelesen. Die Pfade kollidieren zwar nicht
+  // (zwei gegen drei Segmente), aber so kann "gelesen" nie als :id gelesen
+  // werden, falls die Einzelroute je auf zwei Segmente gekuerzt wird.
+  router.put('/postfach/gelesen', verifyTokenRBAC, async (req, res) => {
+    try {
+      const { rowCount } = await db.query(
+        `UPDATE notifications SET read_at = NOW() WHERE user_id = $1 AND read_at IS NULL`,
+        [req.user.id]
+      );
+      res.json({ success: true, anzahl: rowCount });
+    } catch (err) {
+      console.error('Database error in PUT /notifications/postfach/gelesen:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // PUT /postfach/:id/gelesen -- eine eigene Mitteilung.
+  // Idempotent: eine bereits gelesene Mitteilung liefert 200 mit dem
+  // vorhandenen read_at. Fremde und nicht vorhandene Mitteilungen sind beide
+  // 404 -- ein 403 wuerde verraten, dass die id existiert.
+  router.put('/postfach/:id/gelesen', verifyTokenRBAC, async (req, res) => {
+    const id = positiveGanzzahl(req.params.id);
+    if (id === null) {
+      return res.status(400).json({ error: 'Ungültige Mitteilungs-ID' });
+    }
+    try {
+      const userId = req.user.id;
+      const { rows } = await db.query(
+        `UPDATE notifications SET read_at = NOW()
+         WHERE id = $1 AND user_id = $2 AND read_at IS NULL
+         RETURNING read_at`,
+        [id, userId]
+      );
+      if (rows.length > 0) {
+        return res.json({ success: true, id, read_at: rows[0].read_at });
+      }
+      // 0 Zeilen: entweder schon gelesen (dann idempotent 200) oder nicht
+      // vorhanden bzw. fremd (404).
+      const { rows: vorhanden } = await db.query(
+        `SELECT read_at FROM notifications WHERE id = $1 AND user_id = $2`,
+        [id, userId]
+      );
+      if (vorhanden.length === 0) {
+        return res.status(404).json({ error: 'Mitteilung nicht gefunden' });
+      }
+      res.json({ success: true, id, read_at: vorhanden[0].read_at });
+    } catch (err) {
+      console.error('Database error in PUT /notifications/postfach/:id/gelesen:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
