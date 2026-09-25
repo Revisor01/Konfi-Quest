@@ -211,3 +211,27 @@ describe('Design-Tokens: Abstaende, Radien, Schatten (05.09.2026)', () => {
     expect([...definiert].filter((t) => !verwendet.has(t)).sort()).toEqual([]);
   });
 });
+
+describe('Komponenten-Stylesheets haengen an der Abstands-Skala', () => {
+  // Bestandsaufnahme 25.09.2026: In den .css-Dateien unter components/ stand
+  // genau ein roher px-Abstand ausserhalb des Wrapped (FileViewerModal:
+  // "+ 12px" in einem calc). Der Wrapped bleibt aussen vor -- seine
+  // Story-Folien sind ein pixelfestes Layout mit eigenen Tokens (--w-*),
+  // die ShareCard ein 1080x1920-Renderer mit eigenem Massstab.
+  it('kein Komponenten-CSS (ausser wrapped/) setzt px-Abstaende ohne Token', () => {
+    const dateien = dateienUnter('src/components', '.css').filter(d => !d.includes('/wrapped/'));
+    const funde: string[] = [];
+    for (const datei of dateien) {
+      const zeilen = ohneKommentare(lies(datei)).split('\n');
+      zeilen.forEach((zeile, i) => {
+        const m = zeile.match(/^\s*(padding|margin|gap|row-gap|column-gap)(-[a-z]+)?:\s*(.+);/);
+        if (!m) return;
+        // px ausserhalb von var(...) -- auch innerhalb von calc(); "0px" als
+        // env()-Rueckfall ist kein Abstand und bleibt erlaubt
+        const ohneVar = m[3].replace(/var\([^)]*\)/g, '');
+        if (/(?<![\d.])[1-9]\d*px/.test(ohneVar)) funde.push(`${datei}:${i + 1}: ${zeile.trim()}`);
+      });
+    }
+    expect(funde).toEqual([]);
+  });
+});

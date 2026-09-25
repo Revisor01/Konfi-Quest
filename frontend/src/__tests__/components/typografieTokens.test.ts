@@ -183,3 +183,22 @@ describe('Auch die Stylesheets haengen an der Skala', () => {
     expect(fontDeklarationen(css, 'font-weight').filter(w => !w.startsWith('var('))).toEqual([]);
   });
 });
+
+describe('Wrapped: die eigene px-Skala (--w-*) wird auch genutzt', () => {
+  // Der Rueckblick hat bewusst eigene pixelfeste Tokens (Kopfkommentar in
+  // WrappedModal.css). Bestandsaufnahme 25.09.2026: neun Regeln setzten
+  // 11/12/17px roh, obwohl --w-marke/--w-label/--w-text genau diese Werte
+  // tragen -- zwei Pflegestellen fuer denselben Wert.
+  it('kein font-size wiederholt den Wert eines --w-Tokens als rohe Zahl', () => {
+    const css = lies('src/components/wrapped/WrappedModal.css');
+    const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const pxTokens = [...ohneKommentare.matchAll(/(--w-[\w-]+):\s*(\d+px);/g)].map(m => m[2]);
+    expect(pxTokens.length).toBeGreaterThanOrEqual(3);
+    const funde: string[] = [];
+    ohneKommentare.split('\n').forEach((zeile, i) => {
+      const m = zeile.match(/^\s*font-size:\s*(\d+px);/);
+      if (m && pxTokens.includes(m[1])) funde.push(`${i + 1}: ${zeile.trim()}`);
+    });
+    expect(funde).toEqual([]);
+  });
+});

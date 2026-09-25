@@ -1248,7 +1248,7 @@ ion-modal.wrapped-modal-fullscreen {
 
 /* Kleines Label ganz oben ueber der Zahl. */
 .kat-auge {
-  font-size: 12px;
+  font-size: var(--w-label);
   font-weight: var(--app-schrift-fett);
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1263,7 +1263,7 @@ ion-modal.wrapped-modal-fullscreen {
    ordnet ein, wo diese Konfi-Zeit stattgefunden hat -- tragen soll die
    Seite weiterhin Simons Botschaft. */
 .kat-gemeinde {
-  font-size: 17px;
+  font-size: var(--w-text);
   font-weight: var(--app-schrift-halbfett);
   line-height: 1.3;
   color: rgba(255, 255, 255, 0.88);
@@ -1299,7 +1299,7 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 .kat-nachsatz {
-  font-size: 17px;
+  font-size: var(--w-text);
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.93);
   max-width: 22em;
@@ -1307,7 +1307,7 @@ ion-modal.wrapped-modal-fullscreen {
 
 .kat-fussnote {
   margin-top: var(--app-abstand-schmal);
-  font-size: 12px;
+  font-size: var(--w-label);
   font-weight: var(--app-schrift-halbfett);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1528,7 +1528,7 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 .seltenstes-slide .selt-auge {
-  font-size: 12px;
+  font-size: var(--w-label);
   font-weight: var(--app-schrift-fett);
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -1650,7 +1650,7 @@ ion-modal.wrapped-modal-fullscreen {
 
 .w-merkzettel__label {
   display: block;
-  font-size: 11px;
+  font-size: var(--w-marke);
   font-weight: var(--app-schrift-fett);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1660,7 +1660,7 @@ ion-modal.wrapped-modal-fullscreen {
 .w-merkzettel__wert {
   display: block;
   margin-top: var(--app-abstand-mini);
-  font-size: 17px;
+  font-size: var(--w-text);
   font-weight: var(--app-schrift-fett);
   color: #fff;
 }
@@ -1897,7 +1897,7 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 .moment-polaroid__link {
-  font-size: 11px;
+  font-size: var(--w-marke);
   font-weight: var(--app-schrift-halbfett);
   color: rgba(0, 0, 0, 0.6);
   word-break: break-word;
@@ -1921,7 +1921,7 @@ ion-modal.wrapped-modal-fullscreen {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: var(--w-marke);
 }
 
 .moment-polaroid__titel {

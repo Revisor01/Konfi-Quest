@@ -23,7 +23,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--app-abstand-mittel) var(--app-abstand-basis);
-  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + var(--app-abstand-mittel));
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
