@@ -46,14 +46,18 @@ Die Farbe verrät, wie dringend es ist: ruhig bei Mitteilungen, orange, solange
 etwas gesendet wird, **rot**, wenn ein Vorgang endgültig nicht durchkam — das
 ist eine Aufgabe, kein Hinweis.
 
-Im Postfach steht Ungelesenes mit einem Punkt davor und fett. **Antippen**
+Im Postfach steht Ungelesenes fett und mit „Neu" in der Ecke. **Antippen**
 markiert die Mitteilung als gelesen und führt an die passende Stelle: zum
 Abzeichen, in die Antragsliste. **„Alle gelesen"** räumt auf einmal auf.
 **„Ältere Mitteilungen laden"** holt, was weiter zurückliegt; nach einem Jahr
-werden Mitteilungen nachts entfernt.
+werden Mitteilungen nachts entfernt. Das Kreuz oben links schließt das
+Postfach.
 
 Jede Mitteilung trägt die Farbe ihres Bereichs, wie überall in der App:
-Abzeichen in der Abzeichenfarbe, Anträge in der Aktivitätenfarbe. Die
+Abzeichen in der Abzeichenfarbe, Anträge in der Aktivitätenfarbe. Im Kreis
+davor steht bei einem Abzeichen dessen eigenes Symbol, bei einem Antrag der
+Stand (offen, verbucht, abgelehnt). Darunter das Datum mit Kalendersymbol und
+— wer in mehreren Gemeinden mitarbeitet — die Gemeinde mit Gebäudesymbol. Die
 Vorgänge aus der Funklücke darüber stehen orange („Wird gesendet…") und rot
 („Nicht gesendet").
 

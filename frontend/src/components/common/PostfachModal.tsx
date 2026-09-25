@@ -33,13 +33,18 @@ import {
   ICON_CHATS_GEFUELLT,
   ICON_CHALLENGE_GEFUELLT,
   ICON_INFO_GEFUELLT,
+  ICON_ORGANISATION_GEFUELLT,
+  ICON_SCHLIESSEN,
 } from '../shared/icons';
+import { getIconFromIoniconsName, istEmojiIcon } from '../../utils/badgeIcons';
 import {
   POSTFACH_OEFFNEN_EVENT,
   PostfachAntwort,
   PostfachBereich,
   PostfachEintrag,
+  mitteilungsTitel,
   postfachBereich,
+  postfachPraesentationsElement,
   zeitpunktText,
 } from '../../utils/postfach';
 import {
@@ -52,30 +57,46 @@ import {
 /** Wie viele Mitteilungen je Seite geladen werden. */
 export const POSTFACH_SEITENGROESSE = 30;
 
+/** Was im Farbkreis steht: ein Ionicon -- oder ein Emoji als Text. */
+type EintragSymbol = { icon: string; emoji?: undefined } | { emoji: string; icon?: undefined };
+
 /**
  * Das Symbol im Farbkreis einer Mitteilung. Je Bereich eines; bei
  * Antraegen sagt es zusaetzlich, was Sache ist -- offen, verbucht oder
  * abgelehnt -- mit denselben Symbolen wie die Antragsliste der Leitung
  * (admin/ActivityRequestsView).
+ *
+ * Abzeichen zeigen IHR Symbol, nicht das generische Band (Simon, 25.09.2026:
+ * "Im Postfach werden die Icons nicht genutzt bei Badges"). Die Schreibstelle
+ * (badges.js) legt badge_icon in data ab -- gemessen in Produktion am
+ * 25.09.2026: alle 629 Abzeichen-Mitteilungen tragen es. Aufgeloest wird der
+ * gespeicherte Name ueber utils/badgeIcons wie ueberall sonst; Emoji (⛪, 👶
+ * -- 54 der 629) kommen als Text, weil IonIcon sie nicht kann. Fehlt das
+ * Feld, bleibt das Band.
  */
-const eintragIcon = (eintrag: PostfachEintrag, bereich: PostfachBereich): string => {
+const eintragSymbol = (eintrag: PostfachEintrag, bereich: PostfachBereich): EintragSymbol => {
   switch (bereich) {
-    case 'badges':
-      return ICON_ABZEICHEN_GEFUELLT;
+    case 'badges': {
+      const gespeichert = eintrag.data?.badge_icon;
+      if (typeof gespeichert === 'string' && istEmojiIcon(gespeichert)) {
+        return { emoji: gespeichert.trim() };
+      }
+      return { icon: getIconFromIoniconsName(typeof gespeichert === 'string' ? gespeichert : null, ICON_ABZEICHEN_GEFUELLT) };
+    }
     case 'activities': {
       if (eintrag.type === 'activity_request_decision' || eintrag.type === 'activity_request_status') {
-        return eintrag.data?.status === 'approved' ? ICON_ZUSAGE_GEFUELLT : ICON_ABSAGE;
+        return { icon: eintrag.data?.status === 'approved' ? ICON_ZUSAGE_GEFUELLT : ICON_ABSAGE };
       }
-      return ICON_WARTEND_GEFUELLT;
+      return { icon: ICON_WARTEND_GEFUELLT };
     }
     case 'events':
-      return ICON_TERMIN_GEFUELLT;
+      return { icon: ICON_TERMIN_GEFUELLT };
     case 'chat':
-      return ICON_CHATS_GEFUELLT;
+      return { icon: ICON_CHATS_GEFUELLT };
     case 'challenges':
-      return ICON_CHALLENGE_GEFUELLT;
+      return { icon: ICON_CHALLENGE_GEFUELLT };
     default:
-      return ICON_INFO_GEFUELLT;
+      return { icon: ICON_INFO_GEFUELLT };
   }
 };
 
@@ -134,6 +155,8 @@ const PostfachModal: React.FC = () => {
   const { wartend, gescheitert, vergessen, alleVergessen } = useWartendeVorgaenge();
 
   const [offen, setOffen] = useState(false);
+  // Das Element, das auf iOS hinter die Karte zuruecktritt (utils/postfach).
+  const [praesentiertVon, setPraesentiertVon] = useState<HTMLElement | undefined>(undefined);
   const [eintraege, setEintraege] = useState<PostfachEintrag[]>([]);
   const [ungelesen, setUngelesen] = useState(0);
   const [weitere, setWeitere] = useState(false);
@@ -144,7 +167,10 @@ const PostfachModal: React.FC = () => {
   const mehrereGemeinden = (organizations?.length ?? 0) > 1;
 
   useEffect(() => {
-    const auf = () => setOffen(true);
+    const auf = () => {
+      setPraesentiertVon(postfachPraesentationsElement());
+      setOffen(true);
+    };
     window.addEventListener(POSTFACH_OEFFNEN_EVENT, auf);
     return () => window.removeEventListener(POSTFACH_OEFFNEN_EVENT, auf);
   }, []);
@@ -228,16 +254,25 @@ const PostfachModal: React.FC = () => {
   const listeLeer = eintraege.length === 0;
 
   return (
-    <IonModal isOpen={offen} onDidDismiss={schliessen}>
+    // presentingElement: Auf iOS die Karte mit Abdunklung, wie jedes andere
+    // Modal der App (Begruendung bei postfachPraesentationsElement).
+    <IonModal isOpen={offen} onDidDismiss={schliessen} presentingElement={praesentiertVon}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Postfach</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={schliessen}>Fertig</IonButton>
+          {/* Schliessen-Symbol links wie in InfoModal, PointsHistoryModal und
+              allen anderen Modalen -- kein Text-Knopf "Fertig" (Simon,
+              25.09.2026: "machen ein Symbol wie ueberall"). */}
+          <IonButtons slot="start">
+            <IonButton className="app-modal-close-btn" onClick={schliessen} aria-label="Schließen">
+              <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
+            </IonButton>
           </IonButtons>
+          <IonTitle>Postfach</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="app-postfach">
+      {/* Der Verlauf-Hintergrund aller Seiten und Modale; die Inhalte stehen
+          darauf in Karten (app-card), wie ueberall sonst. */}
+      <IonContent className="app-gradient-background">
         {hatWarteschlange && (
           <section aria-label="Warteschlange" data-testid="postfach-warteschlange">
             <WartendeVorgaengeKarte
@@ -291,10 +326,9 @@ const PostfachModal: React.FC = () => {
                 {eintraege.map(eintrag => {
                   const ungelesenerEintrag = !eintrag.read_at;
                   const bereich = postfachBereich(eintrag.type);
-                  const meta = [
-                    zeitpunktText(eintrag.created_at),
-                    mehrereGemeinden && eintrag.organization_name ? eintrag.organization_name : null,
-                  ].filter(Boolean).join(' · ');
+                  const symbol = eintragSymbol(eintrag, bereich);
+                  const zeitpunkt = zeitpunktText(eintrag.created_at);
+                  const gemeinde = mehrereGemeinden && eintrag.organization_name ? eintrag.organization_name : null;
                   const klassen = [
                     'app-list-item',
                     `app-list-item--${bereich}`,
@@ -333,21 +367,32 @@ const PostfachModal: React.FC = () => {
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
                           <div className={`app-icon-circle app-icon-circle--${bereich}`}>
-                            <IonIcon icon={eintragIcon(eintrag, bereich)} />
+                            {symbol.emoji !== undefined
+                              ? <span data-testid="postfach-emoji" style={{ fontSize: 'var(--app-text-untertitel)', lineHeight: 1 }}>{symbol.emoji}</span>
+                              : <IonIcon icon={symbol.icon} />}
                           </div>
                           <div className="app-list-item__content">
                             <div
                               className="app-list-item__title"
                               style={ungelesenerEintrag ? { paddingRight: 'var(--app-freiraum-aktion-m)' } : undefined}
                             >
-                              {eintrag.title}
+                              {mitteilungsTitel(eintrag)}
                             </div>
                             <div className="app-list-item__subtitle">{eintrag.message}</div>
-                            {meta && (
-                              <div className="app-list-item__meta">
-                                <span className="app-list-item__meta-item">{meta}</span>
-                              </div>
-                            )}
+                            {/* Datum und Gemeinde mit Symbol, wie Datum und Ort in
+                                den Terminlisten (konfi/views/EventsView). */}
+                            <div className="app-list-item__meta">
+                              <span className="app-list-item__meta-item" data-testid="postfach-zeitpunkt">
+                                <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-icon-color--events" />
+                                {zeitpunkt}
+                              </span>
+                              {gemeinde && (
+                                <span className="app-list-item__meta-item" data-testid="postfach-gemeinde">
+                                  <IonIcon icon={ICON_ORGANISATION_GEFUELLT} className="app-icon-color--organizations" />
+                                  {gemeinde}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

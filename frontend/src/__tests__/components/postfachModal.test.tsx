@@ -12,14 +12,18 @@ import type { PostfachAntwort, PostfachEintrag } from '../../utils/postfach';
 type StubProps = { children?: ReactNode };
 
 vi.mock('@ionic/react', () => ({
-  IonModal: (props: StubProps & { isOpen?: boolean }) =>
-    (props.isOpen ? <div data-testid="modal">{props.children}</div> : null),
+  // presentingElement wird als Attribut sichtbar gemacht: Der Test prueft,
+  // dass das Postfach auf iOS ein Element hat, hinter das es als Karte geht.
+  IonModal: (props: StubProps & { isOpen?: boolean; presentingElement?: HTMLElement }) =>
+    (props.isOpen
+      ? <div data-testid="modal" data-presenting={props.presentingElement?.tagName?.toLowerCase() ?? ''}>{props.children}</div>
+      : null),
   IonHeader: (props: StubProps) => <div>{props.children}</div>,
   IonToolbar: (props: StubProps) => <div>{props.children}</div>,
   IonTitle: (props: StubProps) => <div>{props.children}</div>,
   IonButtons: (props: StubProps) => <div>{props.children}</div>,
-  IonButton: (props: StubProps & { onClick?: () => void; disabled?: boolean }) =>
-    <button type="button" onClick={props.onClick} disabled={props.disabled}>{props.children}</button>,
+  IonButton: (props: StubProps & { onClick?: () => void; disabled?: boolean; className?: string; 'aria-label'?: string }) =>
+    <button type="button" onClick={props.onClick} disabled={props.disabled} className={props.className} aria-label={props['aria-label']}>{props.children}</button>,
   IonContent: (props: StubProps) => <div>{props.children}</div>,
   IonList: (props: StubProps) => <div>{props.children}</div>,
   IonListHeader: (props: StubProps) => <div>{props.children}</div>,
@@ -74,8 +78,15 @@ vi.mock('../../utils/pushNavigation', async (original) => {
 });
 
 import PostfachModal, { POSTFACH_SEITENGROESSE } from '../../components/common/PostfachModal';
-import { oeffnePostfach, postfachBereich } from '../../utils/postfach';
+import { mitteilungsTitel, oeffnePostfach, postfachBereich } from '../../utils/postfach';
 import { pushZielMelden } from '../../utils/pushNavigation';
+import { getIconFromIoniconsName } from '../../utils/badgeIcons';
+import {
+  ICON_ABZEICHEN_GEFUELLT,
+  ICON_ORGANISATION_GEFUELLT,
+  ICON_SCHLIESSEN,
+  ICON_TERMIN_GEFUELLT,
+} from '../../components/shared/icons';
 
 const eintrag = (id: number, teil: Partial<PostfachEintrag> = {}): PostfachEintrag => ({
   id,
@@ -313,6 +324,133 @@ describe('PostfachModal', () => {
       expect(zeile.getAttribute('role')).toBe('button');
       fireEvent.keyDown(zeile, { key: 'Enter' });
       await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/konfi/badges'));
+    });
+  });
+
+  // Simons Befunde am iPhone (25.09.2026): Vollbild ohne Abdunklung, ein
+  // Text-Knopf "Fertig", Datum und Gemeinde ohne Symbol, alle Abzeichen mit
+  // demselben Band -- und "sunny-outline" im Titel.
+  describe('Befunde vom Geraet (25.09.2026)', () => {
+    it('geht auf iOS als Karte vor dem Router-Outlet auf (presentingElement), nicht als Vollbild', async () => {
+      const outlet = document.createElement('ion-router-outlet');
+      document.body.appendChild(outlet);
+      try {
+        mockGet.mockResolvedValue(antwort([]));
+        render(<PostfachModal />);
+        await oeffnen();
+        expect(screen.getByTestId('modal').getAttribute('data-presenting')).toBe('ion-router-outlet');
+      } finally {
+        outlet.remove();
+      }
+    });
+
+    it('vor der Anmeldung gibt es keinen Outlet -- dann ohne presentingElement, ohne Absturz', async () => {
+      mockGet.mockResolvedValue(antwort([]));
+      render(<PostfachModal />);
+      await oeffnen();
+      expect(screen.getByTestId('modal').getAttribute('data-presenting')).toBe('');
+    });
+
+    it('schliesst ueber das Symbol wie jedes andere Modal -- kein "Fertig"', async () => {
+      mockGet.mockResolvedValue(antwort([]));
+      render(<PostfachModal />);
+      await oeffnen();
+      expect(screen.queryByText('Fertig')).toBeNull();
+      const knopf = screen.getByLabelText('Schließen');
+      expect(knopf.classList.contains('app-modal-close-btn')).toBe(true);
+      expect(knopf.querySelector('[data-icon]')?.getAttribute('data-icon')).toBe(ICON_SCHLIESSEN);
+      fireEvent.click(knopf);
+      await waitFor(() => expect(screen.queryByTestId('modal')).toBeNull());
+    });
+
+    it('Datum und Gemeinde tragen ein Symbol, wie Datum und Ort in der Terminliste', async () => {
+      mockOrganizations = [
+        { id: 1, name: 'Test-Gemeinde', role_name: 'konfi' },
+        { id: 2, name: 'Andere Gemeinde', role_name: 'teamer' },
+      ];
+      // Weit genug zurueck, dass zeitpunktText das Datum nennt und nicht "vor n Std.".
+      mockGet.mockResolvedValue(antwort([eintrag(1, {
+        organization_id: 2, organization_name: 'Andere Gemeinde', created_at: '2026-01-05T08:00:00.000Z',
+      })]));
+      render(<PostfachModal />);
+      await oeffnen();
+      await screen.findByText('Mitteilung 1');
+      const zeit = screen.getByTestId('postfach-zeitpunkt');
+      expect(zeit.querySelector('[data-icon]')?.getAttribute('data-icon')).toBe(ICON_TERMIN_GEFUELLT);
+      expect(zeit.textContent).toBe('05.01.2026');
+      const gemeinde = screen.getByTestId('postfach-gemeinde');
+      expect(gemeinde.querySelector('[data-icon]')?.getAttribute('data-icon')).toBe(ICON_ORGANISATION_GEFUELLT);
+      expect(gemeinde.textContent).toBe('Andere Gemeinde');
+    });
+
+    it('bei einer Gemeinde bleibt das Datum mit Symbol, die Gemeinde-Zeile fehlt', async () => {
+      mockGet.mockResolvedValue(antwort([eintrag(1)]));
+      render(<PostfachModal />);
+      await oeffnen();
+      await screen.findByText('Mitteilung 1');
+      expect(screen.getByTestId('postfach-zeitpunkt')).toBeTruthy();
+      expect(screen.queryByTestId('postfach-gemeinde')).toBeNull();
+    });
+
+    it('ein Abzeichen zeigt SEIN Symbol aus data.badge_icon -- aufgeloest wie ueberall (utils/badgeIcons)', async () => {
+      mockGet.mockResolvedValue(antwort([
+        eintrag(3, { data: { badge_id: 3, badge_icon: 'sunny-outline' } }),
+        eintrag(2, { data: { badge_id: 2, badge_icon: 'trophy' } }),
+      ]));
+      const { container } = render(<PostfachModal />);
+      await oeffnen();
+      await screen.findByText('Mitteilung 3');
+      const kreise = container.querySelectorAll('.app-icon-circle--badges');
+      expect(kreise.length).toBe(2);
+      expect(kreise[0].querySelector('[data-icon]')?.getAttribute('data-icon')).toBe(getIconFromIoniconsName('sunny-outline'));
+      expect(kreise[1].querySelector('[data-icon]')?.getAttribute('data-icon')).toBe(getIconFromIoniconsName('trophy'));
+      // Zwei verschiedene Abzeichen, zwei verschiedene Symbole -- nicht zweimal das Band.
+      expect(kreise[0].querySelector('[data-icon]')?.getAttribute('data-icon'))
+        .not.toBe(kreise[1].querySelector('[data-icon]')?.getAttribute('data-icon'));
+      expect(kreise[0].querySelector('[data-icon]')?.getAttribute('data-icon')).not.toBe(ICON_ABZEICHEN_GEFUELLT);
+    });
+
+    it('ein Emoji-Abzeichen (⛪, 54 von 629 in Produktion) steht als Text im Kreis', async () => {
+      mockGet.mockResolvedValue(antwort([eintrag(1, { data: { badge_id: 1, badge_icon: '⛪' } })]));
+      const { container } = render(<PostfachModal />);
+      await oeffnen();
+      await screen.findByText('Mitteilung 1');
+      const kreis = container.querySelector('.app-icon-circle--badges') as HTMLElement;
+      expect(kreis.querySelector('[data-testid="postfach-emoji"]')?.textContent).toBe('⛪');
+      expect(kreis.querySelector('[data-icon]')).toBeNull();
+    });
+
+    it('ohne badge_icon bleibt das Band', async () => {
+      mockGet.mockResolvedValue(antwort([eintrag(1, { data: { badge_id: 1 } })]));
+      const { container } = render(<PostfachModal />);
+      await oeffnen();
+      await screen.findByText('Mitteilung 1');
+      expect(container.querySelector('.app-icon-circle--badges [data-icon]')?.getAttribute('data-icon')).toBe(ICON_ABZEICHEN_GEFUELLT);
+    });
+
+    it('der technische Icon-Name aus aelteren Titeln ("... sunny-outline") wird nicht gezeigt', async () => {
+      mockGet.mockResolvedValue(antwort([
+        eintrag(1, { title: 'Neues Badge erhalten! sunny-outline', data: { badge_id: 1, badge_icon: 'sunny-outline' } }),
+      ]));
+      const { container } = render(<PostfachModal />);
+      await oeffnen();
+      await waitFor(() => expect(container.querySelector('.app-list-item__title')?.textContent).toBe('Neues Badge erhalten!'));
+      expect(screen.queryByText(/sunny-outline/)).toBeNull();
+    });
+  });
+
+  describe('mitteilungsTitel -- der Anhang faellt nur, wenn er das gespeicherte Symbol ist', () => {
+    it('schneidet genau den badge_icon-Anhang ab, auch ein Emoji', () => {
+      expect(mitteilungsTitel({ title: 'Neues Badge erhalten! sunny-outline', data: { badge_icon: 'sunny-outline' } })).toBe('Neues Badge erhalten!');
+      expect(mitteilungsTitel({ title: 'Neues Badge erhalten! ⛪', data: { badge_icon: '⛪' } })).toBe('Neues Badge erhalten!');
+    });
+
+    it('laesst jeden anderen Titel unangetastet', () => {
+      expect(mitteilungsTitel({ title: 'Neues Badge erhalten!', data: { badge_icon: 'star' } })).toBe('Neues Badge erhalten!');
+      expect(mitteilungsTitel({ title: 'Antrag genehmigt!', data: { request_id: 4 } })).toBe('Antrag genehmigt!');
+      expect(mitteilungsTitel({ title: 'Neues Badge erhalten! star', data: {} })).toBe('Neues Badge erhalten! star');
+      // Ein Titel, der nur zufaellig so endet wie ein anderes Symbol, bleibt.
+      expect(mitteilungsTitel({ title: 'Neues Badge erhalten! star', data: { badge_icon: 'trophy' } })).toBe('Neues Badge erhalten! star');
     });
   });
 

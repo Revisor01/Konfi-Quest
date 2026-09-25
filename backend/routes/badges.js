@@ -739,7 +739,14 @@ async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds,
         "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
         [
           userId,
-          `Neues Badge erhalten! ${badge.icon}`,
+          // Nur der Satz -- KEIN badge.icon dahinter. Bis zum 25.09.2026 hing
+          // das Symbol am Titel ("Neues Badge erhalten! ${badge.icon}"), gedacht
+          // fuer Emoji-Zeiten; seit die Abzeichen Ionicons-Namen tragen, stand
+          // "sunny-outline" im Nutzertext (Simons Bildschirmfoto, Postfach).
+          // Das Symbol steht in data.badge_icon, die App zeigt es im Farbkreis.
+          // Der Push (PushService.sendBadgeEarnedToKonfi) hatte den Titel schon
+          // immer ohne Anhang.
+          'Neues Badge erhalten!',
           `Herzlichen Glückwunsch! Du hast das Badge "${badge.name}" erhalten: ${badge.description}`,
           'badge_earned',
           JSON.stringify({

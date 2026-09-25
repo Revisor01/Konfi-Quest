@@ -61,6 +61,41 @@ export const zeitpunktText = (iso: string, jetzt: Date = new Date()): string => 
 };
 
 /**
+ * Der Titel einer Mitteilung, so wie er gezeigt wird.
+ *
+ * Bis zum 25.09.2026 schrieb badges.js den Titel als
+ * "Neues Badge erhalten! ${badge.icon}" -- gedacht fuer Emoji ("... 🏆"),
+ * aber seit die Abzeichen Ionicons-Namen tragen, stand "sunny-outline" im
+ * Nutzertext (Simons Bildschirmfoto vom 25.09.2026). Die Schreibstelle ist
+ * korrigiert; in Produktion liegen aber 629 aeltere Zeilen mit Anhang, und
+ * die bleiben unveraendert (Datenbestand). Hier wird der Anhang beim Zeigen
+ * abgeschnitten -- nur wenn er genau dem gespeicherten badge_icon entspricht,
+ * damit kein anderer Titel je angeschnitten wird.
+ */
+export const mitteilungsTitel = (eintrag: Pick<PostfachEintrag, 'title' | 'data'>): string => {
+  const titel = eintrag.title ?? '';
+  const icon = eintrag.data?.badge_icon;
+  if (typeof icon !== 'string' || icon.trim() === '') return titel;
+  const anhang = ` ${icon.trim()}`;
+  return titel.endsWith(anhang) ? titel.slice(0, -anhang.length).trimEnd() : titel;
+};
+
+/**
+ * Das Element, hinter dem das Postfach auf iOS als Karte aufgeht.
+ *
+ * Alle anderen Modale der App bekommen ihr presentingElement von der Seite,
+ * die sie oeffnet (contexts/ModalContext, useModalPage). Das Postfach haengt
+ * aber ausserhalb des Routers (App.tsx) und hat keine Seite -- ohne
+ * presentingElement stand es auf iOS als Vollbild ohne Abdunklung da (Simon,
+ * 25.09.2026: "muss sich korrekt mit backdrop auf iOS verhalten"). Der
+ * aeussere ion-router-outlet enthaelt die ganze App samt Tab-Leiste; er
+ * tritt zurueck, das Postfach legt sich als Karte davor. Erst beim Oeffnen
+ * nachgeschlagen: Vor der Anmeldung gibt es den Outlet noch nicht.
+ */
+export const postfachPraesentationsElement = (): HTMLElement | undefined =>
+  (typeof document !== 'undefined' ? document.querySelector<HTMLElement>('ion-router-outlet') : null) ?? undefined;
+
+/**
  * Welcher Bereich der App hinter einer Mitteilung steht -- und damit ihre
  * Farbe in der Liste.
  *

@@ -23,6 +23,14 @@ Versionsüberschrift.
 - Die Zahl an der Glocke zählt zusammen, was ungelesen ist und was noch aus
   einer Funklücke gesendet wird; ein endgültig gescheiterter Vorgang färbt sie
   rot.
+- Im Postfach zeigt jede Abzeichen-Mitteilung das Symbol des Abzeichens statt
+  eines allgemeinen Bands; Datum und Gemeinde tragen ein Symbol wie in den
+  Terminlisten. Auf dem iPhone geht das Postfach als Karte mit abgedunkeltem
+  Hintergrund auf und schließt über das Kreuz, wie jedes andere Fenster der
+  App.
+- Eine Abzeichen-Mitteilung heißt nur noch „Neues Badge erhalten!" — vorher
+  hing der technische Symbolname am Titel („… sunny-outline"), auch bei
+  älteren Mitteilungen wird er nicht mehr gezeigt.
 - Das Postfach räumt sich selbst auf: Ziehst du einen Antrag zurück oder
   löscht die Leitung ein Abzeichen, verschwinden die Mitteilungen dazu — bei
   dir und bei der Leitung. Entscheidungen („verbucht", „abgelehnt") bleiben

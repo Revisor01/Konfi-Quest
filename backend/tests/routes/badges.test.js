@@ -1546,6 +1546,24 @@ describe('Badges Routes', () => {
       expect(nachrichten.length).toBe(0);
     });
 
+    it('Die Mitteilung traegt den Satz als Titel und das Symbol NUR in data (kein "sunny-outline" im Nutzertext)', async () => {
+      // Simons Bildschirmfoto (25.09.2026): "Neues Badge erhalten! sunny-outline".
+      // Der Ionicons-Name gehoert in data.badge_icon, nicht in den Titel.
+      const badge = await erfuelltesBadgeOhneVergabe('Sichtbar');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      const { rows } = await db.query(
+        "SELECT title, data FROM notifications WHERE user_id = $1 AND type = 'badge_earned'",
+        [USERS.konfi1.id]
+      );
+      expect(rows.length).toBe(1);
+      expect(rows[0].title).toBe('Neues Badge erhalten!');
+      expect(rows[0].data.badge_icon).toBe('star');
+      expect(rows[0].data.badge_id).toBe(badge.id);
+    });
+
     it('Der regulaere Weg benachrichtigt weiterhin (Gegenprobe zur Stille)', async () => {
       const badge = await erfuelltesBadgeOhneVergabe('Laut');
 
