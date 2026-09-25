@@ -470,13 +470,14 @@ describe('Notifications Routes', () => {
         );
       };
 
-      const zaehler = async (token) => {
+      const antwort = async (token) => {
         const res = await request(app)
           .get('/api/notifications/badge-counts')
           .set('Authorization', `Bearer ${token}`);
         expect(res.status).toBe(200);
-        return res.body.pendingChallenges;
+        return res.body;
       };
+      const zaehler = async (token) => (await antwort(token)).pendingChallenges;
 
       it('zaehlt offene Beitraege einer nur-Team-Challenge', async () => {
         const id = await challengeAnlegen('nur_team');
@@ -528,6 +529,98 @@ describe('Notifications Routes', () => {
         await einreichung(eigene);
         await einreichung(ohneJahrgang);
         expect(await zaehler(adminToken)).toBe(2);
+      });
+
+      // Je Challenge (25.09.2026, Simon: "Auf der Challenge muss auch ein
+      // Badge sein wie bei den Chats"): challengeApprovals schluesselt
+      // dieselbe Zaehlung nach Challenge auf -- das Gegenstueck zu
+      // challengeUpdates.byChallenge der Konfis. pendingChallenges bleibt
+      // als Zahl bestehen (Store-Apps 2.2.x lesen sie).
+      describe('challengeApprovals: dieselbe Zaehlung je Challenge', () => {
+        it('die Leitung sieht die Zahl an der richtigen Challenge, eine ohne offene Beitraege fehlt', async () => {
+          const mitZwei = await challengeAnlegen('konfis');
+          const mitEiner = await challengeAnlegen('nur_team');
+          const ohne = await challengeAnlegen('konfis');
+          await einreichung(mitZwei);
+          await einreichung(mitZwei);
+          await einreichung(mitEiner);
+
+          const body = await antwort(orgAdminToken);
+          expect(body.challengeApprovals).toEqual({
+            total: 3,
+            byChallenge: { [mitZwei]: 2, [mitEiner]: 1 }
+          });
+          expect(body.challengeApprovals.byChallenge[ohne]).toBeUndefined();
+          // Summe und Altfeld sind dieselbe Zahl.
+          expect(body.pendingChallenges).toBe(3);
+        });
+
+        it('Teamer:in sieht nur Challenges ihrer Jahrgaenge (und nur-Team), org-weit fremde nicht', async () => {
+          // teamer1 ist jahrgang1 zugewiesen (Seed).
+          const eigene = await challengeAnlegen('konfis');
+          await db.query(
+            'INSERT INTO challenge_jahrgang_assignments (challenge_id, jahrgang_id) VALUES ($1, $2)',
+            [eigene, JAHRGAENGE.jahrgang1.id]
+          );
+          const team = await challengeAnlegen('nur_team');
+          const fremd = await challengeAnlegen('konfis');
+          await db.query(
+            'INSERT INTO challenge_jahrgang_assignments (challenge_id, jahrgang_id) VALUES ($1, $2)',
+            [fremd, JAHRGAENGE.jahrgang2.id]
+          );
+          await einreichung(eigene);
+          await einreichung(team);
+          await einreichung(fremd);
+
+          const body = await antwort(teamerToken);
+          expect(body.challengeApprovals).toEqual({
+            total: 2,
+            byChallenge: { [eigene]: 1, [team]: 1 }
+          });
+          expect(body.pendingChallenges).toBe(2);
+          // Gegenprobe: org-weit sind es drei.
+          expect((await antwort(orgAdminToken)).challengeApprovals.total).toBe(3);
+        });
+
+        it('bereits moderierte Beitraege fallen auch aus der Aufschluesselung heraus', async () => {
+          const id = await challengeAnlegen('nur_team');
+          await einreichung(id);
+          await einreichung(id);
+          await db.query(
+            "UPDATE challenge_submissions SET moderation_status = 'approved' WHERE challenge_id = $1 AND id = (SELECT MIN(id) FROM challenge_submissions WHERE challenge_id = $1)",
+            [id]
+          );
+          const body = await antwort(teamerToken);
+          expect(body.challengeApprovals).toEqual({ total: 1, byChallenge: { [id]: 1 } });
+        });
+
+        it('ohne offene Freigaben: 0 und leer, kein Fehler', async () => {
+          await challengeAnlegen('nur_team');
+          const body = await antwort(orgAdminToken);
+          expect(body.challengeApprovals).toEqual({ total: 0, byChallenge: {} });
+          expect(body.pendingChallenges).toBe(0);
+        });
+
+        it('Konfis bekommen 0/leer -- ihre Zahl sind die Neuigkeiten, nicht die Freigaben', async () => {
+          const id = await challengeAnlegen('konfis');
+          await db.query(
+            'INSERT INTO challenge_jahrgang_assignments (challenge_id, jahrgang_id) VALUES ($1, $2)',
+            [id, JAHRGAENGE.jahrgang1.id]
+          );
+          // Ein fremder Beitrag wartet auf Freigabe: fuer die Leitung eine
+          // offene Freigabe, fuer die Konfi weder Freigabe noch Neuigkeit.
+          await db.query(
+            `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, moderation_status)
+             VALUES ($1, $2, $3, 'text', 'pending')`,
+            [id, USERS.konfi2.id, ORGS.testGemeinde.id]
+          );
+          const body = await antwort(konfiToken);
+          expect(body.challengeApprovals).toEqual({ total: 0, byChallenge: {} });
+          expect(body.pendingChallenges).toBe(0);
+          // Die Neuigkeiten-Seite bleibt, wie sie war: die nie geoeffnete
+          // Challenge zaehlt 1, der wartende Beitrag nicht.
+          expect(body.challengeUpdates).toEqual({ total: 1, byChallenge: { [id]: 1 } });
+        });
       });
     });
 

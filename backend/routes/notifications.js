@@ -95,13 +95,21 @@ module.exports = (db, verifyTokenRBAC) => {
       const eigeneJahrgangIds = (userType === 'teamer' || istGebundenerAdmin)
         ? (req.user.assigned_jahrgaenge || []).filter(j => j.can_view).map(j => j.id)
         : [];
-      let challengesPromise = zero;
+      // JE CHALLENGE gruppiert (25.09.2026, Simon: "Auf der Challenge muss
+      // auch ein Badge sein wie bei den Chats"): Die Summe speist weiter
+      // pendingChallenges (Alt-App-Vertrag, Zahl bleibt Zahl), die Zeilen
+      // je Challenge das neue Feld challengeApprovals.byChallenge -- das
+      // Gegenstueck zu challengeUpdates.byChallenge der Konfis. Welche
+      // Beitraege als offen gelten und wessen Challenges zaehlen, aendert
+      // sich hier NICHT: dieselben WHERE-Bedingungen wie zuvor.
+      let challengesPromise = Promise.resolve({ rows: [] });
       if (isAdminType && !istGebundenerAdmin) {
         challengesPromise = db.query(
-          `SELECT COUNT(*)::int AS c
+          `SELECT cs.challenge_id, COUNT(*)::int AS c
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
-           WHERE c.organization_id = $1 AND cs.moderation_status = 'pending'`,
+           WHERE c.organization_id = $1 AND cs.moderation_status = 'pending'
+           GROUP BY cs.challenge_id`,
           [organizationId]
         );
       } else if (userType === 'teamer' || istGebundenerAdmin) {
@@ -118,7 +126,7 @@ module.exports = (db, verifyTokenRBAC) => {
         // Team-Runde moderieren, wurde aber nie per Reiter-Zaehler darauf
         // gestossen (Befund H4).
         challengesPromise = db.query(
-          `SELECT COUNT(*)::int AS c
+          `SELECT cs.challenge_id, COUNT(*)::int AS c
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
            WHERE c.organization_id = $1
@@ -129,7 +137,8 @@ module.exports = (db, verifyTokenRBAC) => {
                  SELECT 1 FROM challenge_jahrgang_assignments cja
                  WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($2::int[])
                )
-             )`,
+             )
+           GROUP BY cs.challenge_id`,
           [organizationId, eigeneJahrgangIds]
         );
       }
@@ -264,15 +273,31 @@ module.exports = (db, verifyTokenRBAC) => {
         neuigkeitenTotal += r.c;
       });
 
+      // Offene Freigaben der Leitung, dieselbe Form. Fuer Konfis bleibt es
+      // leer/0 -- ihr Anteil steht in challengeUpdates. Die beiden Zahlen
+      // meinen Verschiedenes (Neuigkeiten vs. zu erledigende Freigaben) und
+      // werden deshalb NIE in ein Feld gemischt; der Server liefert je
+      // Rolle nur den passenden Anteil.
+      const freigabenByChallenge = {};
+      let freigabenTotal = 0;
+      challengesRes.rows.forEach((r) => {
+        freigabenByChallenge[r.challenge_id] = r.c;
+        freigabenTotal += r.c;
+      });
+
       res.json({
         chat: { total, byRoom },
         pendingRequests: requestsRes.rows[0]?.c || 0,
         pendingEvents: eventsRes.rows[0]?.c || 0,
-        pendingChallenges: challengesRes.rows[0]?.c || 0,
+        // Unveraendert eine Zahl: Store-Apps 2.2.x lesen sie so.
+        pendingChallenges: freigabenTotal,
         newBadges: badgesRes.rows[0]?.c || 0,
         // NEU 24.09.2026, additiv (Alt-App-Vertrag: kein bestehendes Feld
         // aendert Form oder Typ; aeltere Apps ignorieren das Feld).
-        challengeUpdates: { total: neuigkeitenTotal, byChallenge }
+        challengeUpdates: { total: neuigkeitenTotal, byChallenge },
+        // NEU 25.09.2026, additiv: dieselbe Summe wie pendingChallenges,
+        // dazu die Aufschluesselung je Challenge fuer den Listeneintrag.
+        challengeApprovals: { total: freigabenTotal, byChallenge: freigabenByChallenge }
       });
     } catch (err) {
       console.error('Database error in GET /notifications/badge-counts:', err);

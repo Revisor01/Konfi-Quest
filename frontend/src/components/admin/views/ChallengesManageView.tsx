@@ -31,9 +31,10 @@ import {
 } from '../../shared/icons';
 import { SectionHeader, ListSection, ChallengeLegendModal, EmptyState } from '../../shared';
 import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
+import ZaehlerKugel from '../../shared/ZaehlerKugel';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { anzahlBeitraege, wartenAufFreigabe } from '../../../utils/challengeTexte';
+import { anzahlBeitraege } from '../../../utils/challengeTexte';
 
 // Gemeinsame Verwaltungs-Ansicht für Admin UND Teamer. Bewusst ohne eigenen
 // Datenzugriff: Laden/Modale liegen in der jeweiligen Seite, hier nur Darstellung
@@ -72,6 +73,14 @@ interface ChallengesManageViewProps {
    * dasselbe Muster wie in KonfisView.
    */
   ohneJahrgang?: boolean;
+  /**
+   * Offene Freigaben je Challenge-ID (BadgeContext.pendingChallengesByChallenge):
+   * die rote Kugel am Symbol des Eintrags, wie beim Chat-Raum und wie die
+   * Neuigkeiten in der Konfi-Liste (25.09.2026, Simon: "Auf der Challenge
+   * muss auch ein Badge sein wie bei den Chats"). Optional, weil aeltere
+   * Server die Aufschluesselung nicht liefern.
+   */
+  offeneFreigaben?: Record<number, number>;
 }
 
 // Status wird NICHT gespeichert, sondern aus is_draft/starts_at/ends_at abgeleitet
@@ -184,7 +193,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   headerSlot,
   marks: marksRaw = [],
   offeneStempel: offeneStempelRaw = [],
-  ohneJahrgang = false
+  ohneJahrgang = false,
+  offeneFreigaben = {}
 }) => {
   // Fehlt die Jahrgangs-Zuweisung, ist JEDER Reiter aus demselben Grund
   // leer — deshalb bekommen alle drei denselben erklaerenden Text.
@@ -229,7 +239,10 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           const status = getChallengeStatus(challenge);
           const statusColor = STATUS_COLOR[status];
           const isArchived = status === 'ended';
-          const pending = challenge.pending_count || 0;
+          // Aus dem BadgeContext, nicht aus pending_count der geladenen
+          // Liste: dieselbe Quelle wie der Reiter, damit Reiter und Eintrag
+          // nie verschiedene Zahlen zeigen und die Kugel live mitgeht.
+          const pending = offeneFreigaben[challenge.id] ?? 0;
 
           return (
             <IonItemSliding
@@ -262,24 +275,14 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   }}
                 >
                   <div className="app-corner-badges">
-                    {/* Nur Zahl plus Uhr statt "{n} offen" (Nutzerentscheid
-                        24.08.2026) — was gemeint ist, sagen title/aria-label
-                        weiterhin in ganzen Worten. */}
-                    {pending > 0 && (
-                      <>
-                        <div
-                          className="app-corner-badge"
-                          style={{ backgroundColor: 'var(--app-color-warning)', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)' }}
-                          title={wartenAufFreigabe(pending)}
-                          role="img"
-                          aria-label={wartenAufFreigabe(pending)}
-                        >
-                          {pending}
-                          <IonIcon icon={ICON_UHRZEIT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
-                        </div>
-                        <div className="app-corner-badges__separator" />
-                      </>
-                    )}
+                    {/* Die offenen Freigaben standen hier bis 25.09.2026 als
+                        oranges Eck-Badge (Zahl + Uhr). Sie sitzen jetzt als
+                        rote Kugel am Symbol des Eintrags -- dieselbe
+                        ZaehlerKugel wie am Chat-Raum und an der Challenge in
+                        der Konfi-Liste, aus derselben Quelle wie der Reiter
+                        (BadgeContext). Zwei Darstellungen derselben Zahl
+                        nebeneinander waeren die naechste Stelle, an der
+                        etwas auseinanderlaeuft. */}
                     {/* Eigener Beitrag vorhanden — dasselbe Papierflieger-Badge
                         wie in der Konfi-Sicht (11.08.).
                         Befund M3: Hier stand `has_badge`, das seit dem
@@ -318,11 +321,22 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
-                      <div
-                        className="app-icon-circle app-icon-circle--lg"
-                        style={{ backgroundColor: statusColor }}
-                      >
-                        <IonIcon icon={STATUS_ICON[status]} />
+                      {/* Symbol mit Freigaben-Kugel -- wie das Raum-Symbol in
+                          der Chat-Liste (ChatOverview) und das Challenge-
+                          Symbol in der Konfi-Liste (ChallengesView). Der
+                          Text nennt, was gezaehlt wird: "1 Beitrag wartet
+                          auf Freigabe" (wartenAufFreigabe). */}
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <div
+                          className="app-icon-circle app-icon-circle--lg"
+                          style={{ backgroundColor: statusColor }}
+                        >
+                          <IonIcon icon={STATUS_ICON[status]} />
+                        </div>
+                        <ZaehlerKugel
+                          anzahl={pending}
+                          label={pending === 1 ? 'Beitrag wartet auf Freigabe' : 'Beiträge warten auf Freigabe'}
+                        />
                       </div>
 
                       <div className="app-list-item__content">
@@ -330,9 +344,10 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                           className="app-list-item__title"
                           style={{
                             color: isArchived ? 'var(--app-text-muted)' : undefined,
-                            // Das Zähler-Badge ist seit dem Umbau auf Zahl+Uhr
-                            // schmaler als das alte "{n} offen".
-                            paddingRight: pending > 0 ? 'var(--app-freiraum-aktion-xxl-plus)' : 'var(--app-freiraum-aktion-xl)'
+                            // Rechts stehen nur noch Status- und
+                            // Eingereicht-Badge; der Freigaben-Zaehler sitzt
+                            // seit 25.09.2026 am Symbol links.
+                            paddingRight: 'var(--app-freiraum-aktion-xl)'
                           }}
                         >
                           {challenge.title}

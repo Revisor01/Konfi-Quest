@@ -24,6 +24,15 @@ interface BadgeContextType {
   pendingEventsCount: number;
   // Leitung (Admin + Teamer): offene Challenge-Freigaben
   pendingChallengesCount: number;
+  /**
+   * Offene Freigaben je Challenge (nur Team und Leitung) -- fuer die Kugel
+   * am Listeneintrag, wie chatUnreadByRoom fuer den Chat. Der Server
+   * liefert sie in challengeApprovals.byChallenge; die Summe ist
+   * pendingChallengesCount. Konfis bekommen hier immer leer: ihre Zahl an
+   * der Challenge sind die Neuigkeiten (challengeUpdatesByChallenge), das
+   * ist etwas anderes und wird nicht vermischt.
+   */
+  pendingChallengesByChallenge: Record<number, number>;
   /** Ungesehene Abzeichen (Konfis und Teamer:innen). Die Leitung kann keine verdienen -> immer 0. */
   newBadgesCount: number;
   /**
@@ -71,6 +80,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [pendingEventsCount, setPendingEventsCount] = useState(0);
   const [pendingChallengesCount, setPendingChallengesCount] = useState(0);
+  const [pendingChallengesByChallenge, setPendingChallengesByChallenge] = useState<Record<number, number>>({});
   const [newBadgesCount, setNewBadgesCount] = useState(0);
   const [challengeUpdatesByChallenge, setChallengeUpdatesByChallenge] = useState<Record<number, number>>({});
   const [challengeUpdatesTotal, setChallengeUpdatesTotal] = useState(0);
@@ -150,7 +160,24 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       setNewBadgesCount(Number(data?.newBadges) || 0);
 
       if (isLeadership) {
+        // pendingChallenges bleibt die Quelle fuer den Reiter (Altfeld, das
+        // auch aeltere Server liefern). Die Aufschluesselung je Challenge
+        // (25.09.2026) kommt additiv in challengeApprovals -- aeltere Server
+        // ohne das Feld: keine Kugel am Eintrag, kein Fehler.
         setPendingChallengesCount(Number(data?.pendingChallenges) || 0);
+        const byChallengeRaw: Record<string, number> = data?.challengeApprovals?.byChallenge || {};
+        const freigaben: Record<number, number> = {};
+        Object.entries(byChallengeRaw).forEach(([challengeId, count]) => {
+          const n = Number(count) || 0;
+          if (n > 0) freigaben[Number(challengeId)] = n;
+        });
+        setPendingChallengesByChallenge(prev => {
+          const prevKeys = Object.keys(prev);
+          const nextKeys = Object.keys(freigaben);
+          const unveraendert = prevKeys.length === nextKeys.length
+            && nextKeys.every(k => prev[Number(k)] === freigaben[Number(k)]);
+          return unveraendert ? prev : freigaben;
+        });
       } else {
         // Konfis (24.09.2026): Challenge-Neuigkeiten wie chat.byRoom -- Zahl
         // je Challenge fuer den Listeneintrag, Summe fuer Reiter und Icon.
@@ -391,6 +418,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       setPendingRequestsCount(0);
       setPendingEventsCount(0);
       setPendingChallengesCount(0);
+      setPendingChallengesByChallenge({});
       setNewBadgesCount(0);
       setChallengeUpdatesByChallenge({});
       setChallengeUpdatesTotal(0);
@@ -404,6 +432,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       pendingRequestsCount,
       pendingEventsCount,
       pendingChallengesCount,
+      pendingChallengesByChallenge,
       newBadgesCount,
       challengeUpdatesByChallenge,
       challengeUpdatesTotal,

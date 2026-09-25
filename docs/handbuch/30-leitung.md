@@ -132,7 +132,9 @@ im Punkte-Kapitel.
 
 ![Die Challenges-Verwaltung der Leitung.](/docs/bilder/iphone/leitung-challenges.png)
 
-Drei Reiter: **Aktuell**, **Geplant**, **Archiv**.
+Drei Reiter: **Aktuell**, **Geplant**, **Archiv**. Eine rote Zahl am Symbol
+einer Challenge sagt dir, wie viele Beiträge dort auf Freigabe warten — siehe
+[Offene Freigaben erkennen](80-challenges.md#offene-freigaben-erkennen).
 
 Beim [Anlegen](80-challenges.md#eine-challenge-anlegen) legst du fest, wer
 mitmacht, [welche Medienarten](80-challenges.md#festlegen-womit-geantwortet-werden-darf)

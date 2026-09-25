@@ -77,7 +77,9 @@ export const gehoertInsStempelraster = (
 };
 
 const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }) => {
-  const { refreshAllCounts } = useBadge();
+  // pendingChallengesByChallenge: offene Freigaben je Challenge fuer die
+  // Kugel am Listeneintrag (25.09.2026) -- dieselbe Quelle wie der Reiter.
+  const { refreshAllCounts, pendingChallengesByChallenge } = useBadge();
   const { pageRef, presentingElement } = useModalPage(modalPageId);
 
   // Admin/Teamer ohne Jahrgangs-Zuweisung bekommt vom Server eine leere
@@ -280,6 +282,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
             ohneJahrgang={ohneJahrgang}
             marks={marks}
             offeneStempel={offeneStempel}
+            offeneFreigaben={pendingChallengesByChallenge}
             onSelectChallenge={openModeration}
             onEditChallenge={openEdit}
             onDeleteChallenge={handleDelete}

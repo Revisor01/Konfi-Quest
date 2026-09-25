@@ -273,8 +273,10 @@ describe('Challenge-Neuigkeiten (Konfi-Zaehler wie beim Chat)', () => {
       .set('Authorization', `Bearer ${teamerToken}`);
     expect(res.status).toBe(200);
     expect(res.body.challengeUpdates).toEqual({ total: 0, byChallenge: {} });
-    // Gegenprobe: die Freigabe steht bei ihr sehr wohl am Reiter.
+    // Gegenprobe: die Freigabe steht bei ihr sehr wohl am Reiter -- und
+    // seit 25.09.2026 auch an der Challenge selbst (challengeApprovals).
     expect(res.body.pendingChallenges).toBe(1);
+    expect(res.body.challengeApprovals).toEqual({ total: 1, byChallenge: { [id]: 1 } });
   });
 
   it('die uebrigen Felder von badge-counts bleiben unveraendert (Alt-App-Vertrag)', async () => {
@@ -288,6 +290,7 @@ describe('Challenge-Neuigkeiten (Konfi-Zaehler wie beim Chat)', () => {
     expect(res.body.pendingEvents).toBe(0);
     expect(res.body.pendingChallenges).toBe(0);
     expect(res.body.newBadges).toBe(0);
+    expect(res.body.challengeApprovals).toEqual({ total: 0, byChallenge: {} });
   });
 
   // --- Die Route, die den Lesezeitpunkt setzt ---------------------------------

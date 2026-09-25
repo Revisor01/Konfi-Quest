@@ -1751,6 +1751,13 @@ paths:
         Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das
         Gegenstueck zu chat.byRoom/chat.total. Fuer Team und Leitung ist es
         0/leer; ihr Challenge-Reiter zaehlt pendingChallenges.
+        Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe
+        Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen),
+        aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der
+        Leitung. pendingChallenges bleibt unveraendert eine Zahl -- die
+        Store-Apps 2.2.x lesen sie so. Fuer Konfis ist challengeApprovals
+        0/leer; Neuigkeiten (Konfis) und offene Freigaben (Leitung) werden
+        nie in ein Feld gemischt.
       responses:
         '200':
           description: Zähler
@@ -1786,6 +1793,23 @@ paths:
                       byChallenge:
                         type: object
                         description: Challenge-ID -> Anzahl; nur Challenges mit Anzahl > 0
+                        additionalProperties: { type: integer }
+                  challengeApprovals:
+                    type: object
+                    description: >
+                      NEU 25.09.2026, nur fuer Team und Leitung gefuellt. Die
+                      offenen Freigaben (challenge_submissions.moderation_status
+                      = 'pending') je Challenge -- dieselbe Zaehlung wie
+                      pendingChallenges mit denselben Grenzen: org_admin
+                      org-weit, Teamer:innen und gebundene Admins nur
+                      Challenges ihrer zugewiesenen Jahrgaenge sowie
+                      nur_team-Challenges. total ist stets gleich
+                      pendingChallenges.
+                    properties:
+                      total: { type: integer }
+                      byChallenge:
+                        type: object
+                        description: Challenge-ID -> Anzahl wartender Beitraege; nur Challenges mit Anzahl > 0
                         additionalProperties: { type: integer }
         '500': { description: Datenbankfehler }
       x-berechtigung:

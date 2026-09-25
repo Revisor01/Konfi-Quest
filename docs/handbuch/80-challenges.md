@@ -434,6 +434,19 @@ entfernt werden soll."
 
 ---
 
+## Offene Freigaben erkennen
+
+Eine rote Zahl am Reiter **Challenges** und am Symbol der einzelnen Challenge
+zeigt, wie viele Beiträge dort auf eure Freigabe warten — wie im Chat. Sie
+zählt nur Challenges, die ihr selbst freigeben dürft: Teamer:innen ihre
+zugewiesenen Jahrgänge und die Challenges nur fürs Team, die Leitung alle der
+Gemeinde. Sobald ihr einen Beitrag freigebt oder ausblendet, geht die Zahl
+zurück; bei null verschwindet sie.
+
+Konfis sehen an derselben Stelle etwas anderes: ihre
+[Neuigkeiten](10-konfis.md#neuigkeiten-an-challenges-erkennen). Die beiden
+Zahlen werden nicht vermischt.
+
 ## Nachsehen, wer was mitbekommt
 
 - **Die Konfis der Jahrgänge** bekommen eine Mitteilung, sobald eine geplante
@@ -448,7 +461,8 @@ entfernt werden soll."
   Challenge, neue Beiträge in der Galerie oder eure Entscheidung über ihren
   eigenen Beitrag; siehe
   [Neuigkeiten an Challenges erkennen](10-konfis.md#neuigkeiten-an-challenges-erkennen).
-  Bei euch zählt derselbe Reiter stattdessen die offenen Freigaben.
+  Bei euch zählen Reiter und Symbol stattdessen die
+  [offenen Freigaben](#offene-freigaben-erkennen).
 - **Alle Konfis der Jahrgänge** sehen ohne Neuladen, wenn eine Challenge startet,
   sich ändert oder ein Beitrag in der Galerie erscheint. Ohne Netz bleibt der
   zuletzt geladene Stand stehen, Einreichen geht dann nicht — siehe

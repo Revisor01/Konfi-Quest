@@ -53,7 +53,9 @@ Du arbeitest hier wie die Leitung, begrenzt auf deine zugewiesenen Jahrgänge:
 [anlegen und bearbeiten](80-challenges.md#eine-challenge-anlegen),
 [löschen](80-challenges.md#eine-challenge-loeschen), Beiträge
 [freigeben, anonymisieren oder ausblenden](80-challenges.md#beitraege-freigeben-ausblenden-loeschen)
-— und selbst mitmachen.
+— und selbst mitmachen. Eine rote Zahl am Symbol einer Challenge sagt dir,
+wie viele Beiträge dort auf deine Freigabe warten — siehe
+[Offene Freigaben erkennen](80-challenges.md#offene-freigaben-erkennen).
 
 Es gibt auch Challenges nur fürs Team; die sehen Konfis gar nicht. Was nach dem
 Start noch änderbar ist, steht unter
