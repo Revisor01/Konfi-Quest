@@ -33,8 +33,11 @@ describe('SectionHeader', () => {
     );
     const banner = container.querySelector('.app-header-banner') as HTMLElement;
     expect(banner).toBeTruthy();
-    // events preset: primary=#dc2626, secondary=#b91c1c
-    expect(banner.style.background).toContain('rgb(220, 38, 38)');
+    // Seit 25.09.2026 als CSS-Variable, damit der Kopf dem Dunkelmodus folgt
+    // (vorher stand hier der helle Hexwert #dc2626, einmal beim Laden gelesen).
+    expect(banner.style.background).toContain('var(--app-color-events)');
+    expect(banner.style.background).toContain('var(--app-color-events-dunkel)');
+    expect(banner.style.boxShadow).toContain('rgba(var(--app-color-events-rgb), 0.25)');
   });
 
   it('nutzt custom colors wenn uebergeben', () => {
@@ -46,6 +49,8 @@ describe('SectionHeader', () => {
     );
     const banner = container.querySelector('.app-header-banner') as HTMLElement;
     expect(banner.style.background).toContain('rgb(0, 255, 0)');
+    // Hexwert eines Aufrufers: Schatten wird weiterhin aus dem Hex gerechnet.
+    expect(banner.style.boxShadow).toContain('rgba(0, 255, 0, 0.25)');
   });
 
   it('rendert die korrekte Anzahl von Stats-Items', () => {

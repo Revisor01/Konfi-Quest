@@ -13,6 +13,16 @@
  * (und umgekehrt), sonst wird der Test rot. Anlass: Drei Mal (11.08.,
  * zweimal 05.09.2026) lebte eine Rollen-Farbe unbemerkt in mehreren
  * abweichenden Kopien.
+ *
+ * ABER (Dunkelmodus, 25.09.2026): Die Hexwerte hier sind die HELLEN Werte.
+ * Sie folgen der Systemeinstellung nicht. Wer eine Farbe als Textfarbe,
+ * Rahmen oder feine Linie braucht, nimmt `var(--app-color-x)` direkt
+ * (und `rgba(var(--app-color-x-rgb), a)` statt Alpha-Suffix) — das geht
+ * ueberall, wo die Farbe in ein style={{}} fliesst. FARBEN ist nur noch
+ * fuer Flaechen mit weissem Text darauf (Abzeichen-Stufen, Level-Kacheln)
+ * und fuer Bibliotheken, die selbst malen (QR). Der Test
+ * __tests__/components/dunkelmodusJsFarben.test.ts fuehrt die erlaubten
+ * Stellen mit Begruendung.
  */
 
 /** Spiegel von --app-color-* bzw. --app-text-* aus variables.css. */
@@ -108,15 +118,17 @@ export const WRAPPED_KONFETTI = [
 
 /**
  * Ampel der Admin-Metrikseite (Antwortzeiten/Statuscodes). Interne
- * Diagnoseseite mit eigener, feinerer Abstufung als die Status-Tokens —
- * zentralisiert statt verstreut (05.09.2026).
+ * Diagnoseseite mit eigener, feinerer Abstufung als die Status-Tokens.
+ * Seit 25.09.2026 als CSS-Variablen: Die Werte stehen als Text- und
+ * Symbolfarbe auf Karten und muessen im Dunkelmodus heller werden — das
+ * leisten die Tokens in variables.css, kein JS-Hexwert kann das.
  */
 export const METRIK_AMPEL = {
-  gut: '#28a745',
-  maessig: '#f0ad4e',
-  erhoeht: '#fd7e14', // eigener Ampel-Ton; das gleichlautende
-                      // --app-color-warteliste ist am 05.09.2026 in
-                      // --app-color-bonus aufgegangen
-  kritisch: '#dc3545', // == --app-color-danger
-  blass: '#b0b0b5', // gedaempfte Nebenwerte
+  gut: 'var(--app-color-success-klassisch)',
+  maessig: 'var(--app-color-ampel-maessig)',
+  erhoeht: 'var(--app-color-ampel-erhoeht)', // eigener Ampel-Ton; das
+                      // gleichlautende --app-color-warteliste ist am
+                      // 05.09.2026 in --app-color-bonus aufgegangen
+  kritisch: 'var(--app-color-danger)',
+  blass: 'var(--app-color-ampel-blass)', // gedaempfte Nebenwerte
 } as const;

@@ -1,4 +1,3 @@
-import { FARBEN } from '../../../theme/colors';
 import {
   ICON_ABSAGE,
   ICON_ANHANG,
@@ -834,8 +833,8 @@ const TeamerEventsPage: React.FC = () => {
     const bonus = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
     const info = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' };
     const teamer = { primary: 'var(--app-color-teamer)', secondary: 'var(--app-color-teamer)' };
-    const past = { primary: FARBEN.neutral, secondary: FARBEN.neutral };
-    const neutral = { primary: FARBEN.neutralHell, secondary: FARBEN.neutralHell };
+    const past = { primary: 'var(--app-color-neutral)', secondary: 'var(--app-color-neutral)' };
+    const neutral = { primary: 'var(--app-color-neutral-hell)', secondary: 'var(--app-color-neutral-hell)' };
 
     const isPastEvent = istVergangen(event);
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';

@@ -894,7 +894,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     height: '36px',
                     borderRadius: 'var(--app-radius-kreis)',
                     cursor: 'pointer',
-                    backgroundColor: userHasThisReaction ? `${data.color}18` : 'transparent',
+                    backgroundColor: userHasThisReaction ? `rgba(${data.rgb}, 0.1)` : 'transparent',
                     border: userHasThisReaction ? `2px solid ${data.color}` : '2px solid transparent',
                     display: 'flex',
                     alignItems: 'center',

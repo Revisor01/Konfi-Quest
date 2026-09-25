@@ -181,5 +181,8 @@ export interface ReactionEmojiData {
   outline: string;
   filled: string;
   label: string;
+  /** CSS-Farbe (var(--app-color-…)), folgt dem Dunkelmodus. */
   color: string;
+  /** Das -rgb-Tripel desselben Tokens fuer rgba()-Hintergruende. */
+  rgb: string;
 }

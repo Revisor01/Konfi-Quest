@@ -55,8 +55,9 @@ const HEX = /#[0-9a-fA-F]{3,8}\b/g;
 describe('Farben kommen aus Tokens', () => {
   it('keine .tsx-Komponente enthaelt eine rohe Hexfarbe', () => {
     // JS-Sonderfaelle (SVG-Attribute, QR, Alpha-Suffix-Rechnungen) liegen
-    // in theme/colors.ts bzw. utils/badgeCriteria.ts und
-    // components/chat/constants.ts — alles .ts, kein Komponentencode.
+    // in theme/colors.ts bzw. utils/badgeCriteria.ts — alles .ts, kein
+    // Komponentencode. Welche Komponenten diese Hexwerte noch beziehen
+    // duerfen, fuehrt dunkelmodusJsFarben.test.ts mit Begruendung.
     const treffer: string[] = [];
     for (const datei of dateienUnter('src', '.tsx')) {
       const code = ohneKommentare(lies(datei));

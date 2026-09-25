@@ -1,4 +1,3 @@
-import { FARBEN } from '../../../theme/colors';
 import {
   ICON_ABSAGE,
   ICON_ANTWORTEN,
@@ -684,7 +683,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const danger = { primary: 'var(--app-color-danger)', secondary: 'var(--app-color-danger)' };
     const konfirm = { primary: 'var(--app-color-konfis)', secondary: 'var(--app-color-konfis)' }; // Konfirmation = lila
     const info = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' };
-    const past = { primary: FARBEN.neutral, secondary: FARBEN.neutral };
+    const past = { primary: 'var(--app-color-neutral)', secondary: 'var(--app-color-neutral)' };
     const waitlist = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
     const success = { primary: 'var(--app-color-success)', secondary: 'var(--app-color-success)' };
     const upcoming = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };

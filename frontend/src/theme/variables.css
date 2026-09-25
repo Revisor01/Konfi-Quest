@@ -316,8 +316,14 @@ ion-list-header ion-label {
   --app-text-mittelgrau: #555555;
   --app-color-success-frisch: #22c55e;
   --app-color-danger-hell: #ef4444;
+  --app-color-danger-hell-rgb: 239, 68, 68;
   --app-color-success-klassisch: #28a745;
   --app-color-success-tief: #155724;
+  /* Ampel der Admin-Metrikseite: feinere Abstufung als die Status-Tokens
+     (gut == success-klassisch, kritisch == danger); Textfarben auf Karten. */
+  --app-color-ampel-maessig: #f0ad4e;
+  --app-color-ampel-erhoeht: #fd7e14;
+  --app-color-ampel-blass: #b0b0b5;
   /* RGB-Formen fuer rgba()-Schatten (06.09.2026) */
   --app-text-system-rgb: 142, 142, 147;
   --app-aurora-tuerkis-rgb: 34, 211, 238;
@@ -3560,6 +3566,10 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-color-danger: #ff453a;
     --app-color-danger-rgb: 255, 69, 58;
     --app-color-danger-hell: #f87171;
+    --app-color-danger-hell-rgb: 248, 113, 113;
+    --app-color-ampel-maessig: #f6c26e;
+    --app-color-ampel-erhoeht: #ff9a4d;
+    --app-color-ampel-blass: #98989d;
     --app-color-info: #0a84ff;
     --app-color-info-rgb: 10, 132, 255;
     --app-color-neutral: #9ca3af;

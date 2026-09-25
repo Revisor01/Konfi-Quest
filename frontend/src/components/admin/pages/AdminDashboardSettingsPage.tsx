@@ -1,7 +1,6 @@
 import { ICON_APPS } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import React, { useState } from 'react';
-import { FARBEN } from '../../../theme/colors';
 import {
   IonPage,
   IonContent,
@@ -262,7 +261,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
           title="Dashboard"
           subtitle="Sichtbare Bereiche konfigurieren"
           icon={ICON_APPS}
-          colors={{ primary: FARBEN.users, secondary: FARBEN.usersDunkel }}
+          colors={{ primary: 'var(--app-color-users)', secondary: 'var(--app-color-users-dunkel)' }}
           stats={[
             // Die Kacheln entsprechen den beiden Reitern und schalten dorthin.
             { value: Object.values(dashboardConfig).filter(Boolean).length, label: 'Konfi', onClick: () => setDashboardSegment('konfi'), active: dashboardSegment === 'konfi' },

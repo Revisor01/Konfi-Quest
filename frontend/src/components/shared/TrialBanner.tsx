@@ -3,7 +3,6 @@ import { IonIcon } from '@ionic/react';
 import { ICON_UHRZEIT, ICON_WARNHINWEIS } from './icons';
 import { useApp } from '../../contexts/AppContext';
 import { tageBis } from './eventFormatting';
-import { FARBEN } from '../../theme/colors';
 
 /**
  * Hinweis-Banner für laufende Testphasen.
@@ -28,9 +27,13 @@ const TrialBanner: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
   if (days < 0) return null;
 
   const isUrgent = days <= 7;
-  // Echte Hexwerte: unten wird `${accent}33` gerechnet — var() geht nicht.
-  const accent = isUrgent ? FARBEN.events : FARBEN.users;
-  const bg = isUrgent ? 'rgba(var(--app-color-events-rgb), 0.08)' : 'rgba(var(--app-color-users-rgb), 0.08)';
+  // Tokens statt Hexwerte (25.09.2026): accent steht als TEXTFARBE auf der
+  // Karte und muss im Dunkelmodus heller werden; der Rahmen nimmt das
+  // -rgb-Tripel desselben Tokens statt eines Alpha-Suffixes.
+  const tokenName = isUrgent ? 'events' : 'users';
+  const accent = `var(--app-color-${tokenName})`;
+  const rahmen = `rgba(var(--app-color-${tokenName}-rgb), 0.2)`;
+  const bg = `rgba(var(--app-color-${tokenName}-rgb), 0.08)`;
 
   return (
     <div
@@ -41,7 +44,7 @@ const TrialBanner: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
         margin: '0 var(--app-abstand-basis) var(--app-abstand-mittel)',
         padding: 'var(--app-abstand-mittel) var(--app-abstand-mittelweit)',
         background: bg,
-        border: `1px solid ${accent}33`,
+        border: `1px solid ${rahmen}`,
         borderRadius: 'var(--app-radius-karte)',
         ...style
       }}

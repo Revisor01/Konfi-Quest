@@ -13,7 +13,9 @@ Versionsüberschrift.
 - Die App folgt dem Dunkelmodus des Handys: Steht das Gerät auf Dunkel,
   werden Hintergründe, Karten, Listen und Texte dunkel, die Bereichsfarben
   bleiben erkennbar. Umschalten geht in den Systemeinstellungen, nicht in
-  der App.
+  der App. Auch Chat-Reaktionen, Rollenfarben, der Testphasen-Hinweis, die
+  Ampel der Kennzahlen und die farbigen Kopfbereiche folgen dem Wechsel —
+  sie hielten zunächst an den hellen Farben fest.
 - Wer mehrere Gemeinden betreut, sieht in der Gemeinde-Auswahl oben links an
   jeder Gemeinde eine rote Zahl, wenn dort etwas offen ist — Anträge, Termine,
   Beiträge, Chats, je nach eigener Rolle in dieser Gemeinde. So ist klar, wo
@@ -35,6 +37,8 @@ Versionsüberschrift.
   Mitteilungen abgeschaltet hat, findet all das trotzdem hier. Nicht im
   Postfach: die Termin-Erinnerung „morgen"/„gleich", neue Termine, gestartete
   Challenges und Chat-Nachrichten — dafür gibt es eigene Listen und Zähler.
+- Auch der freigegebene Jahresrückblick und ein neues Zertifikat stehen im
+  Postfach. Antippen des Rückblicks öffnet genau die Ausgabe, um die es geht.
 - Die Zahl am App-Symbol zählt die ungelesenen Mitteilungen im Postfach mit.
   Vorher fehlten sie dort: Wer 23 ungelesene Mitteilungen, 9 wartende
   Beiträge und 3 Chat-Nachrichten hatte, sah am Symbol eine 12. Jetzt steht
@@ -88,6 +92,11 @@ Versionsüberschrift.
   wann und wann zuletzt. Die Einzelfälle stehen weiterhin darunter.
 
 ### Geändert
+- Mitteilungen über Punkte — aus einem Termin, als Bonus oder für eine
+  eingetragene Aktivität — führen beim Antippen in die Punkte-Übersicht statt
+  zum Termin oder auf die Startseite. Ein Stempel führt zu den Challenges,
+  wo die Stempel stehen, nicht mehr zu den Abzeichen. Der Jahresrückblick
+  öffnet den jeweiligen Rückblick im Profil statt der Startseite.
 - Eine neue Gemeinde startet mit denselben sechs Levels wie die bestehenden —
   mit geschlechtsneutralen Titeln (Noviz:in, Lehrling, Unterstützung,
   Expert:in, Meisterschaft, Legende). Sie sind ein Startpunkt und lassen sich

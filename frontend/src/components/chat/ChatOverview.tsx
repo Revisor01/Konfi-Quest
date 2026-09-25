@@ -1,7 +1,6 @@
 import { fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useAppLocation } from '../../navigation/useAppLocation';
-import { FARBEN } from '../../theme/colors';
 import {
   IonPage,
   IonContent,
@@ -431,7 +430,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           title="Deine Chats"
           subtitle="Nachrichten und Gruppen"
           icon={ICON_CHATS_GEFUELLT}
-          colors={{ primary: FARBEN.chat, secondary: FARBEN.chatDunkel }}
+          colors={{ primary: 'var(--app-color-chat)', secondary: 'var(--app-color-chat-dunkel)' }}
           stats={[
             // CHATS und UNGELESEN entsprechen je einem Reiter und schalten
             // dorthin (gleiches Muster wie Challenges/Anfragen/Nutzende).

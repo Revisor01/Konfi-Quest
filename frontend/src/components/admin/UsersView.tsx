@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { IonIcon, IonItem, IonItemGroup, IonLabel, IonList, IonListHeader, IonItemSliding, IonItemOptions, IonItemOption, IonInput, IonSegment, IonSegmentButton, IonRefresher, IonRefresherContent } from '@ionic/react';
-import { FARBEN } from '../../theme/colors';
 import {
   ICON_AKTENTASCHE_GEFUELLT,
   ICON_AT_ZEICHEN,
@@ -79,16 +78,18 @@ const UsersView: React.FC<UsersViewProps> = ({
   const getAdminUsers = () => users.filter(user => user.role_name === 'admin' || user.role_name === 'org_admin');
   const getTeamerUsers = () => users.filter(user => user.role_name === 'teamer');
 
-  // Echte Hexwerte (theme/colors.ts): Die Rollenfarbe wird teils per
-  // Alpha-Suffix weiterverrechnet, var()-Strings scheiden aus (05.09.2026).
-  const getRoleColor = (roleName: string) => {
+  // Rollenfarbe als Token (25.09.2026): Sie steht als linker Rahmen auf der
+  // Karte und muss im Dunkelmodus heller werden. Der durchscheinende
+  // Hintergrund rechnet mit dem -rgb-Tripel statt mit einem Alpha-Suffix.
+  const getRoleToken = (roleName: string) => {
     switch (roleName) {
-      case 'org_admin': return FARBEN.users;
-      case 'admin': return FARBEN.users;
-      case 'teamer': return FARBEN.teamer;
-      default: return FARBEN.neutral;
+      case 'org_admin': return 'users';
+      case 'admin': return 'users';
+      case 'teamer': return 'teamer';
+      default: return 'neutral';
     }
   };
+  const getRoleColor = (roleName: string) => `var(--app-color-${getRoleToken(roleName)})`;
 
 
   const formatDate = (dateString: string) => {

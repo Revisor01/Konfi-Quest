@@ -259,7 +259,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                     {/* Progress Circle */}
                     <div style={{ width: '48px', height: '48px', position: 'relative' }}>
                       <svg width="48" height="48" style={{ transform: 'rotate(-90deg)' }}>
-                        <circle cx="24" cy="24" r="20" fill="none" stroke={FARBEN.silberHell} strokeWidth="4" />
+                        <circle cx="24" cy="24" r="20" fill="none" style={{ stroke: 'var(--app-border)' }} strokeWidth="4" />
                         <circle cx="24" cy="24" r="20" fill="none" stroke={category.color} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${progressPercent * 1.257} 125.7`} />
                       </svg>
                       <span style={{
@@ -298,7 +298,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                         symbolZusatz: hasProgress ? (
                           <svg style={{ position: 'absolute', top: '-4px', left: '-4px', width: '60px', height: '60px', transform: 'rotate(-90deg)' }}>
                             <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="3" />
-                            <circle cx="30" cy="30" r="26" fill="none" stroke={FARBEN.abzeichenFallback} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(badge.progress_percentage || 0) * 1.63} 163`} />
+                            <circle cx="30" cy="30" r="26" fill="none" style={{ stroke: 'var(--app-color-users)' }} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(badge.progress_percentage || 0) * 1.63} 163`} />
                           </svg>
                         ) : undefined,
                         // Eselsohr fuer geheime, bereits erreichte Abzeichen.

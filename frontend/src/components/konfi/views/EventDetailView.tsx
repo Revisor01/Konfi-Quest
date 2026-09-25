@@ -1,4 +1,3 @@
-import { FARBEN } from '../../../theme/colors';
 import {
   ICON_ABSAGE,
   ICON_CHAT,
@@ -468,7 +467,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const info = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' }; // Konfirmation=blau, Pflicht-angemeldet=blau
     const success = { primary: 'var(--app-color-success)', secondary: 'var(--app-color-success)' };
     const bonus = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
-    const past = { primary: FARBEN.neutral, secondary: FARBEN.neutral };
+    const past = { primary: 'var(--app-color-neutral)', secondary: 'var(--app-color-neutral)' };
 
     if (!eventData) return events;
 

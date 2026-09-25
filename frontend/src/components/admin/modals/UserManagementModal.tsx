@@ -1,6 +1,5 @@
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
-import { FARBEN } from '../../../theme/colors';
 import {
   IonHeader,
   IonToolbar,
@@ -330,16 +329,19 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     return roles.filter(role => canAssignRole(role.name));
   };
 
-  // Echte Hexwerte (theme/colors.ts): Die Rollenfarbe wird teils per
-  // Alpha-Suffix weiterverrechnet, var()-Strings scheiden aus (05.09.2026).
-  const getRoleColor = (roleName: string) => {
+  // Rollenfarbe als Token (25.09.2026): Sie steht als linker Rahmen auf der
+  // Karte und muss im Dunkelmodus heller werden. Der durchscheinende
+  // Hintergrund rechnet mit dem -rgb-Tripel statt mit einem Alpha-Suffix.
+  const getRoleToken = (roleName: string) => {
     switch (roleName) {
-      case 'org_admin': return FARBEN.users;
-      case 'admin': return FARBEN.users;
-      case 'teamer': return FARBEN.teamer;
-      default: return FARBEN.neutral;
+      case 'org_admin': return 'users';
+      case 'admin': return 'users';
+      case 'teamer': return 'teamer';
+      default: return 'neutral';
     }
   };
+  const getRoleColor = (roleName: string) => `var(--app-color-${getRoleToken(roleName)})`;
+  const getRoleTint = (roleName: string) => `rgba(var(--app-color-${getRoleToken(roleName)}-rgb), 0.08)`;
 
   const getRoleDisplayName = (roleName: string) => {
     switch (roleName) {
@@ -519,7 +521,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           justifyContent: 'space-between',
                           marginBottom: '0',
                           borderLeftColor: roleColor,
-                          background: isSelected ? `${roleColor}15` : undefined
+                          background: isSelected ? getRoleTint(role.name) : undefined
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}>
