@@ -163,7 +163,7 @@ const AdminLevelsPage: React.FC = () => {
               emptyIcon={ICON_POKAL_GEFUELLT}
               emptyTitle="Keine Level gefunden"
               emptyMessage="Noch keine Level angelegt"
-              emptyIconColor="var(--app-color-konfis)"
+              emptyIconColor="var(--app-color-level)"
             >
                       {(levels || []).map((level, index) => (
                         <IonItemSliding

@@ -217,6 +217,18 @@ describe('Leerzustaende tragen die Farbe ihres Bereichs', () => {
     const seite = lies('src/components/admin/views/ChallengesManageView.tsx');
     expect(seite).not.toContain('var(--app-color-teamer)');
   });
+
+  // Simon, 25.09.2026, an einer Gemeinde ohne Level: "Bei Level wenn es keine
+  // gibt ist leider das Icon in der falschen Farben. Nicht das Level Design
+  // Farbe." Der Leerzustand zog sein Icon aus --app-color-konfis (Violett),
+  // Kopfzeile und Liste derselben Seite aus --app-color-level (Pink). Fiel
+  // erst auf, weil Hennstedt bis dahin keine Level hatte -- bei allen anderen
+  // Gemeinden war der Leerzustand nie zu sehen.
+  it('die Level-Verwaltung nutzt die Level-Farbe', () => {
+    const seite = lies('src/components/admin/pages/AdminLevelsPage.tsx');
+    const treffer = [...seite.matchAll(/emptyIconColor="([^"]+)"/g)].map((m) => m[1]);
+    expect(treffer).toEqual(['var(--app-color-level)']);
+  });
 });
 
 describe('Chat: erst filtern, dann suchen', () => {
