@@ -63,6 +63,10 @@ Versionsüberschrift.
   wann und wann zuletzt. Die Einzelfälle stehen weiterhin darunter.
 
 ### Geändert
+- Eine neue Gemeinde startet mit denselben sechs Levels wie die bestehenden —
+  mit geschlechtsneutralen Titeln (Noviz:in, Lehrling, Unterstützung,
+  Expert:in, Meisterschaft, Legende). Sie sind ein Startpunkt und lassen sich
+  wie bisher umbenennen, umfärben und in den Punkten ändern.
 - Der runde Knopf unten links ist verschwunden, der anzeigte, dass noch etwas
   gesendet wird: Die Warteschlange steht jetzt im Postfach hinter der Glocke
   oben rechts. Bei den Anträgen bleibt die Karte „Wird gesendet…" mit den
@@ -112,6 +116,9 @@ Versionsüberschrift.
   Zahl in der Kachel anzuzeigen. Sie stand ohnehin schon in den Profildaten.
 
 ### Entfernt
+- Der Eintrag „Absturzmeldung prüfen" in den Leitungs-Einstellungen ist weg. Er
+  ließ die App absichtlich abstürzen, um die Absturzmeldung einmalig
+  einzurichten — das ist erledigt. Echte Abstürze werden weiterhin gemeldet.
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
   Es hatte weder Skala noch Zeitmarken und keine ablesbaren Werte. Die
   Aufrufzahlen stehen als Zahl in den Kennzahlen, die Fehler mit Zeitpunkt
@@ -124,6 +131,8 @@ Versionsüberschrift.
   behalten ihre Zahl.
 
 ### Behoben
+- Hat eine Gemeinde noch keine Level, trägt das Symbol im leeren Zustand jetzt
+  die Level-Farbe wie der Rest der Seite — nicht mehr das Violett der Konfis.
 - Wer mehrere Gemeinden betreut, bekommt die Mitteilungen an die Leitung jetzt
   aus allen — neue Anträge, Ab- und Anmeldungen, Challenge-Beiträge, Buchungen
   des Teams, Registrierungen, Lösch-Warnungen für Jahrgänge. Bisher kamen sie
