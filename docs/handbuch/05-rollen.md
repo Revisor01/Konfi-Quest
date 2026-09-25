@@ -153,6 +153,9 @@ gerade arbeitet. Ein Tippen darauf öffnet die Liste aller eigenen Gemeinden;
 die aktive ist mit einem Haken markiert. Nach dem Wechsel laden alle Ansichten
 frisch in der gewählten Gemeinde.
 
+Im [Chat](90-chat.md#wer-wen-anschreiben-darf) steht die Person in der
+Team-Kontaktliste jeder ihrer Gemeinden — mit der Rolle, die sie dort hat.
+
 **Mitteilungen kommen aus allen Gemeinden**, in denen jemand die passende
 Rolle hat — nicht nur aus der Stamm-Gemeinde:
 

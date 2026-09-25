@@ -164,6 +164,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Nur für Team und Admins' });
       }
 
+      // Mitgliedschaft und Rolle ueber TEAM_MITGLIED_ROLLE (Stamm-Org ODER
+      // user_organizations, Rolle je Organisation) statt ueber
+      // `u.organization_id = $2` (Befund 25.09.2026). Bis dahin fehlte in der
+      // Zweit-Gemeinde jede Person, die sie nur ueber user_organizations
+      // betreut -- in Produktion gemessen: Organisation 2 hat ihre gesamte
+      // Leitung ausschliesslich dort, die Teamer:in sah eine Liste ohne
+      // Leitung. Die Konfi-Kontaktlisten (/admins, /available-users) loesen
+      // seit dem 01.09.2026 so auf; diese Route war die letzte ohne.
+      // $1 = Aufrufer, $2 = aktive Organisation (Reihenfolge wie dort).
       const query = `
         SELECT u.id, u.display_name, r.name AS role_name,
                COALESCE(NULLIF(u.role_title, ''),
@@ -173,15 +182,14 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
                  END
                ) AS role_description
           FROM users u
-          JOIN roles r ON u.role_id = r.id
-         WHERE u.organization_id = $1
-           AND r.name IN ('admin', 'org_admin', 'teamer')
+          ${TEAM_MITGLIED_ROLLE}
+         WHERE r.name IN ('admin', 'org_admin', 'teamer')
            AND u.is_active = true
            AND u.deleted_at IS NULL
-           AND u.id != $2
+           AND u.id != $1
          ORDER BY u.display_name
       `;
-      const { rows } = await db.query(query, [req.user.organization_id, req.user.id]);
+      const { rows } = await db.query(query, [req.user.id, req.user.organization_id]);
       res.json(rows);
 
     } catch (err) {

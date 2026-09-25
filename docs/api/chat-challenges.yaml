@@ -23,7 +23,11 @@
 # 1. WER DARF WEN ANSCHREIBEN?
 #    Kontaktlisten:
 #    - GET /chat/team-contacts: nur admin/org_admin/teamer. Liefert ALLE
-#      aktiven admin/org_admin/teamer der EIGENEN Org (ohne E-Mail/Login-Daten).
+#      aktiven admin/org_admin/teamer der AKTIVEN Org (ohne E-Mail/Login-Daten).
+#      Seit 2026-09-25 zaehlt auch eine Mitgliedschaft via user_organizations,
+#      mit der dortigen EFFEKTIVEN Rolle (TEAM_MITGLIED_ROLLE, wie /admins);
+#      vorher nur Stamm-Konten (u.organization_id) -- Multi-Org-Leitungen
+#      fehlten in der Team-Liste ihrer Zweit-Gemeinde (behoben 2026-09-25).
 #    - GET /chat/admins: nur Konfis. Liefert org_admin (immer, auch
 #      Multi-Org-Leitungen via user_organizations), Konten mit
 #      is_super_admin-Flag sowie die Admins und Teamer:innen des eigenen
@@ -379,9 +383,13 @@ paths:
       tags: ["Chat"]
       summary: Team-Kontaktliste für Direktchats
       description: >
-        Liefert alle aktiven Admins, Org-Admins und Teamer:innen der eigenen
+        Liefert alle aktiven Admins, Org-Admins und Teamer:innen der aktiven
         Organisation (ohne den Aufrufer selbst) — bewusst nur die für einen
-        Chat noetigen Felder, keine E-Mail/Login-Daten.
+        Chat noetigen Felder, keine E-Mail/Login-Daten. Mitgliedschaft und
+        Rolle werden wie bei /chat/admins ueber Stamm-Organisation ODER
+        user_organizations aufgeloest (Rolle je Organisation); Multi-Org-
+        Mitglieder erscheinen damit auch im Team ihrer Zweit-Gemeinde
+        (seit 2026-09-25, vorher nur Stamm-Konten).
       responses:
         '200':
           description: Liste der Team-Mitglieder

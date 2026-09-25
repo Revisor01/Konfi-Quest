@@ -7181,7 +7181,7 @@
           "Chat"
         ],
         "summary": "Team-Kontaktliste für Direktchats",
-        "description": "Liefert alle aktiven Admins, Org-Admins und Teamer:innen der eigenen Organisation (ohne den Aufrufer selbst) — bewusst nur die für einen Chat noetigen Felder, keine E-Mail/Login-Daten.\n",
+        "description": "Liefert alle aktiven Admins, Org-Admins und Teamer:innen der aktiven Organisation (ohne den Aufrufer selbst) — bewusst nur die für einen Chat noetigen Felder, keine E-Mail/Login-Daten. Mitgliedschaft und Rolle werden wie bei /chat/admins ueber Stamm-Organisation ODER user_organizations aufgeloest (Rolle je Organisation); Multi-Org- Mitglieder erscheinen damit auch im Team ihrer Zweit-Gemeinde (seit 2026-09-25, vorher nur Stamm-Konten).\n",
         "responses": {
           "200": {
             "description": "Liste der Team-Mitglieder",

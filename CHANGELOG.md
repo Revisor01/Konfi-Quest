@@ -82,6 +82,10 @@ Versionsüberschrift.
   Rolle zählt dabei je Gemeinde: Wer in der zweiten nur Teamer:in ist, bekommt
   dort keine Leitungs-Meldungen. Dasselbe gilt für die Mitteilungen in der App
   und die Warn-Mail vor dem Löschen eines Jahrgangs.
+- Wer mehrere Gemeinden betreut, steht jetzt auch in der Team-Kontaktliste des
+  Chats seiner zweiten Gemeinde — mit der Rolle, die er dort hat. Bisher fehlte
+  er dort, und umgekehrt zeigte ihm die Liste nach dem Wechsel das Team der
+  Stamm-Gemeinde statt der gewählten.
 - Beim Eintragen von Hand bietet die Auswahl nur noch Personen an, die zu
   einem Jahrgang des Termins gehören — bei Konfis wie beim Team und der
   Leitung. Ein Hinweis nennt die Jahrgänge des Termins, damit klar ist, warum
