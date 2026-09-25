@@ -10,6 +10,13 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
+- Auswählen, welche Mitteilungen aufs Handy kommen — auf iPhone und Android
+  gleich, in der App statt in den Systemeinstellungen: Unter
+  „Benachrichtigungen" im Profil beziehungsweise unter „Mehr" lassen sich
+  Nachrichten, Termine, Punkte und Abzeichen sowie (für Team und Leitung)
+  Anfragen und Freigaben einzeln ab- und anschalten, dazu ein Hauptschalter
+  für alles. Abgeschaltet wird nur der Weg aufs Handy — im Postfach unter der
+  Glocke steht jede Mitteilung weiterhin.
 - Die App folgt dem Dunkelmodus des Handys: Steht das Gerät auf Dunkel,
   werden Hintergründe, Karten, Listen und Texte dunkel, die Bereichsfarben
   bleiben erkennbar. Umschalten geht in den Systemeinstellungen, nicht in
@@ -93,14 +100,19 @@ Versionsüberschrift.
 
 ### Geändert
 - Die kleinen Marken in der Ecke von Karten zeigen jetzt durchgehend Symbole
-  statt Wörter: die Rolle in der Benutzerliste (Schlüssel, Schild, Person),
-  „Voll"/„Frei" bei Serienterminen (Kreuz/Haken), „Aktiviert" bei den
-  Benachrichtigungen (Haken), „Neu" im Postfach (geschlossener Umschlag) und
-  die Restlaufzeit von Einladungscodes (Zahl der Tage plus Uhr, abgelaufen ein
-  rotes Warnzeichen). In der Antragsliste der Konfis und bei gesperrten
-  Konfirmationsterminen erschien als Einzige noch ein Wort — auch dort steht
-  jetzt das Symbol. Wer mit dem Finger darauf bleibt oder eine Vorlesehilfe
-  nutzt, bekommt weiterhin den ganzen Satz.
+  statt Wörter: die Rolle in der Benutzerliste (Gebäude für Org-Admin, Schild
+  für Admin, Person für Teamer:in), „Voll"/„Frei" bei Serienterminen
+  (Kreuz/Haken), „Aktiviert" bei den Benachrichtigungen (Haken), „Neu" im
+  Postfach (geschlossener Umschlag) und die Restlaufzeit von Einladungscodes
+  (Zahl der Tage plus Uhr; am letzten Tag ein oranges, abgelaufen ein rotes
+  Warnzeichen). In der Antragsliste der Konfis erschien als Einzige noch ein
+  Wort — auch dort steht jetzt das Symbol. Ein Konfirmationstermin, der nicht
+  mehr wählbar ist, weil schon ein anderer gebucht ist, trägt einen
+  Doppelpfeil („woanders angemeldet") statt eines Schlosses. Wer mit dem
+  Finger darauf bleibt, bekommt weiterhin den ganzen Satz.
+- Alle Symbol-Marken in den Ecken der Karten sind jetzt für Vorlesehilfen
+  beschriftet — der Satz, der beim Verweilen erscheint, wird auch vorgelesen.
+  Bisher galt das nur für einen Teil von ihnen.
 - Mitteilungen über Punkte — aus einem Termin, als Bonus oder für eine
   eingetragene Aktivität — führen beim Antippen in die Punkte-Übersicht statt
   zum Termin oder auf die Startseite. Ein Stempel führt zu den Challenges,
@@ -157,6 +169,10 @@ Versionsüberschrift.
   steht in der Datenschutzerklärung.
 - Das Konfi-Profil lädt die Abzeichen nicht mehr ein zweites Mal, nur um die
   Zahl in der Kachel anzuzeigen. Sie stand ohnehin schon in den Profildaten.
+- Die iPhone-App legt Apple gegenüber offen, was sie erhebt: anonyme
+  Nutzungsstatistik ohne Personenbezug, die Geräte-Kennung für Mitteilungen
+  und Absturzberichte — und dass nichts davon zur Nachverfolgung über andere
+  Apps oder Anbieter dient.
 
 ### Entfernt
 - Der Eintrag „Absturzmeldung prüfen" in den Leitungs-Einstellungen ist weg. Er
