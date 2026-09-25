@@ -46,7 +46,6 @@ import AdminUpdate220WalkthroughModal from '../modals/AdminUpdate220WalkthroughM
 import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral über useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
-import AbsturzTest from '../../shared/AbsturzTest';
 import SpiritFooter from '../../shared/SpiritFooter';
 import { useIonRouter } from '@ionic/react';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
@@ -570,18 +569,6 @@ const AdminSettingsPage: React.FC = () => {
             </IonCard>
           </IonList>
         )}
-
-
-        {/* Absturzmeldung pruefen (24.09.2026). Blendet sich selbst aus:
-            nur super_admin, nur in der App.
-            Die frueher danebenstehende Push-Diagnose ("Mitteilungen pruefen")
-            ist weg — Simons Ansage: "Du kannst sie ganz weg. Bei Teamer Admin
-            Konfi einfach bei allen." Sie hatte keine Rollenpruefung und zeigte
-            Konfis Push-Zustand und Token-Auszuege, mit denen sie nichts
-            anfangen koennen. */}
-        <div className="app-segment-wrapper">
-          <AbsturzTest variante="danger" />
-        </div>
 
         <div className="app-segment-wrapper">
           <IonButton
