@@ -38,6 +38,7 @@ import {
   ICON_VIDEO,
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useBadge } from '../../../contexts/BadgeContext';
 
 /** Reiter im Challenge-Detail: Gruppen-Feed oder eigene Beitraege. */
 type KonfiReiter = 'feed' | 'meins';
@@ -318,8 +319,18 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   onSubmit
 }) => {
   const { setError } = useApp();
+  const { markChallengeAsRead } = useBadge();
   const [detail, setDetail] = useState<KonfiChallengeDetail | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Beim Oeffnen als gelesen melden -- wie ChatRoom beim Betreten eines
+  // Raums. Ab jetzt zaehlt der Neuigkeiten-Zaehler neu; ohne den Aufruf
+  // bliebe die rote Zahl am Eintrag, am Reiter und am App-Symbol stehen,
+  // egal wie oft man hineinsieht. Die Huelle remountet pro Challenge (key),
+  // deshalb feuert das je geoeffneter Challenge genau einmal.
+  useEffect(() => {
+    markChallengeAsRead(challenge.id);
+  }, [challenge.id, markChallengeAsRead]);
 
   const loadDetail = useCallback(async () => {
     try {

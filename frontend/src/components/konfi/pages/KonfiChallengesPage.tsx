@@ -10,6 +10,7 @@ import {
   useIonModal
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
+import { useBadge } from '../../../contexts/BadgeContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -26,6 +27,9 @@ const EMPTY_RESPONSE: KonfiChallengesResponse = { active: [], archive: [], marks
 
 const KonfiChallengesPage: React.FC = () => {
   const { user } = useApp();
+  // Neuigkeiten je Challenge aus derselben Quelle wie die Zahl am Reiter --
+  // der Eintrag zeigt, WO es Neues gibt, der Reiter WIE VIEL insgesamt.
+  const { challengeUpdatesByChallenge } = useBadge();
   const { pageRef, presentingElement } = useModalPage('konfi-challenges');
 
   const { data, loading, refresh, refreshLive } = useOfflineQuery<KonfiChallengesResponse>(
@@ -117,6 +121,7 @@ const KonfiChallengesPage: React.FC = () => {
             archive={archive}
             marks={marks}
             offeneStempel={offeneStempel}
+            neuigkeiten={challengeUpdatesByChallenge}
             onSelectChallenge={handleSelectChallenge}
           />
         )}

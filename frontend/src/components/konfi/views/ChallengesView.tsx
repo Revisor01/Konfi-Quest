@@ -20,6 +20,7 @@ import {
 } from '../../shared/icons';
 import { EmptyState, SectionHeader } from '../../shared';
 import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
+import ZaehlerKugel from '../../shared/ZaehlerKugel';
 import type { KonfiChallenge, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { getIconFromString } from '../../../utils/badgeIcons';
 
@@ -43,6 +44,13 @@ interface ChallengesViewProps {
   /** Noch nicht erhaltene Stempel (grau). Fehlt bei aelteren Servern. */
   offeneStempel?: OffenerStempel[];
   onSelectChallenge: (challenge: KonfiChallenge) => void;
+  /**
+   * Neuigkeiten je Challenge-ID (BadgeContext.challengeUpdatesByChallenge):
+   * rote Zahl am Symbol des Eintrags, wie der Ungelesen-Zaehler in der
+   * Chat-Liste. Nur laufende Challenges tragen eine -- der Server zaehlt
+   * fuer das Archiv nichts.
+   */
+  neuigkeiten?: Record<number, number>;
   // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (Leitungs-Sicht:
   // Verwalten|Mitmachen). Gleiches Muster wie EventsView/RequestsView.
   headerSlot?: React.ReactNode;
@@ -108,6 +116,7 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
   marks,
   offeneStempel = [],
   onSelectChallenge,
+  neuigkeiten = {},
   headerSlot
 }) => {
   // Aktive Challenges: die knappste Frist zuerst — was zuerst endet, steht oben.
@@ -195,6 +204,7 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                   Listen-Item wie bei Events/Badges — keine Leitkarte mehr. */}
               {sortedActive.map((challenge) => {
                 const author = getAuthorLabel(challenge);
+                const neu = neuigkeiten[challenge.id] ?? 0;
                 return (
                   <div
                     key={challenge.id}
@@ -215,8 +225,13 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                     )}
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle app-icon-circle--challenges">
-                          <IonIcon icon={getChallengeBadgeIcon(challenge.badge_icon)} />
+                        {/* Symbol mit Neuigkeiten-Kugel -- wie das Raum-Symbol
+                            in der Chat-Liste (ChatOverview). */}
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          <div className="app-icon-circle app-icon-circle--challenges">
+                            <IonIcon icon={getChallengeBadgeIcon(challenge.badge_icon)} />
+                          </div>
+                          <ZaehlerKugel anzahl={neu} label="Neuigkeiten" />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title" style={{ paddingRight: challenge.has_submission ? 'var(--app-freiraum-aktion-xs)' : '0' }}>

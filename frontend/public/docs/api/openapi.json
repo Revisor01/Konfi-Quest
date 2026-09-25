@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n253 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n254 Operationen."
   },
   "servers": [
     {
@@ -8990,6 +8990,53 @@
         }
       }
     },
+    "/api/challenges/konfi/{id}/mark-read": {
+      "post": {
+        "tags": [
+          "Challenges (Konfis)"
+        ],
+        "summary": "Challenge als geoeffnet markieren (Neuigkeiten-Zaehler zuruecksetzen)",
+        "description": "NEU 24.09.2026. Gegenstueck zu POST /api/chat/rooms/{roomId}/mark-read: Die Detailansicht ruft es beim Oeffnen. challenge_read_status merkt sich den Zeitpunkt je Challenge und Person; challengeUpdates in GET /api/notifications/badge-counts zaehlt ab dann neu (neue Galerie-Beitraege, Moderation eigener Beitraege). Zugriffsregeln wie GET /api/challenges/konfi/{id}: Wer die Challenge nicht oeffnen darf, kann sie auch nicht als gelesen markieren. Team-Rollen duerfen rufen (dieselbe Detailansicht), fuer sie wird aber nichts gezaehlt.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID der Challenge"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gelesen-Zeitpunkt gesetzt"
+          },
+          "403": {
+            "description": "Rolle ohne Zugriff ODER Jahrgang/Zuweisung passt nicht"
+          },
+          "404": {
+            "description": "Nicht gefunden / Entwurf / nicht gestartet / nur_team fuer Konfi"
+          },
+          "500": {
+            "description": "Datenbankfehler"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "konfi",
+            "teamer",
+            "admin",
+            "org_admin"
+          ],
+          "middleware": [
+            "rbacVerifier"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "participantMayAccess wie GET /api/challenges/konfi/{id}; Entwuerfe, ungestartete und (fuer Konfis) nur_team -> 404"
+        }
+      }
+    },
     "/api/challenges/konfi/{id}/submissions": {
       "post": {
         "tags": [
@@ -9822,7 +9869,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Leichtgewichtige Badge-Zähler für die Tab-Leiste",
-        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage. Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst \"nicht abgesagt\"). Der Verbuchen-Tab blendet sie aus, die Zahl stand also vor einer leeren Liste. Dieselbe Bedingung gilt in der App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich zaehlen.\n",
+        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage. Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst \"nicht abgesagt\"). Der Verbuchen-Tab blendet sie aus, die Zahl stand also vor einer leeren Liste. Dieselbe Bedingung gilt in der App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich zaehlen. Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes Feld aendert Form oder Typ, aeltere Apps ignorieren es): die Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das Gegenstueck zu chat.byRoom/chat.total. Fuer Team und Leitung ist es 0/leer; ihr Challenge-Reiter zaehlt pendingChallenges.\n",
         "responses": {
           "200": {
             "description": "Zähler",
@@ -9856,6 +9903,22 @@
                     },
                     "newBadges": {
                       "type": "integer"
+                    },
+                    "challengeUpdates": {
+                      "type": "object",
+                      "description": "NEU 24.09.2026, nur fuer Konfis gefuellt. Je laufender Challenge des eigenen Jahrgangs, was seit dem letzten Oeffnen (POST /api/challenges/konfi/{id}/mark-read) dazukam: die Challenge selbst, wenn nie geoeffnet; fremde sichtbare Galerie-Beitraege; Freigabe oder Ausblenden eigener Beitraege durch andere. Dieselbe Rechnung (utils/challengeNeuigkeiten.js) speist die App-Icon-Summe in utils/appIconBadge.js.\n",
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "byChallenge": {
+                          "type": "object",
+                          "description": "Challenge-ID -> Anzahl; nur Challenges mit Anzahl > 0",
+                          "additionalProperties": {
+                            "type": "integer"
+                          }
+                        }
+                      }
                     }
                   }
                 }

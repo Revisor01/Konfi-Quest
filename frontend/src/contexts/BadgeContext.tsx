@@ -26,6 +26,19 @@ interface BadgeContextType {
   pendingChallengesCount: number;
   /** Ungesehene Abzeichen (Konfis und Teamer:innen). Die Leitung kann keine verdienen -> immer 0. */
   newBadgesCount: number;
+  /**
+   * Challenge-Neuigkeiten (nur Konfis), das Gegenstueck zu chatUnreadByRoom:
+   * je laufender Challenge, was seit dem letzten Oeffnen dazukam -- die
+   * Challenge selbst, fremde Galerie-Beitraege, Moderation eigener Beitraege.
+   * Team und Leitung bekommen hier immer leer/0: ihr Reiter zaehlt Freigaben.
+   */
+  challengeUpdatesByChallenge: Record<number, number>;
+  challengeUpdatesTotal: number;
+  /**
+   * Meldet eine Challenge als geoeffnet -- wie markRoomAsRead fuer den Chat:
+   * optimistisch sofort auf 0, dann POST. Fuer Team und Leitung ein No-op.
+   */
+  markChallengeAsRead: (challengeId: number) => Promise<void>;
   // Gesamt (Role-abhaengig)
   totalBadgeCount: number;
   // Actions
@@ -59,6 +72,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const [pendingEventsCount, setPendingEventsCount] = useState(0);
   const [pendingChallengesCount, setPendingChallengesCount] = useState(0);
   const [newBadgesCount, setNewBadgesCount] = useState(0);
+  const [challengeUpdatesByChallenge, setChallengeUpdatesByChallenge] = useState<Record<number, number>>({});
+  const [challengeUpdatesTotal, setChallengeUpdatesTotal] = useState(0);
 
   const isAdmin = user?.type === 'admin' && user?.role_name !== 'super_admin';
   // Challenge-Freigaben betreffen die ganze Leitung — Teamer moderieren ihre
@@ -66,10 +81,17 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const isLeadership = isAdmin || user?.type === 'teamer';
 
   // totalBadgeCount: Admin = chat + requests + events + challenges,
-  // Teamer = chat + challenges, Konfi = nur chat
+  // Teamer = chat + challenges + badges, Konfi = chat + badges + Challenge-Neuigkeiten
   // Seit 27.08.2026 zaehlen die ungesehenen Abzeichen mit: Vorher fehlten sie
   // im App-Icon, obwohl sie an einem Reiter als rote Zahl standen -- das Icon
   // stimmte nie mit der Summe der Reiter ueberein (Befund B2a).
+  // Seit 24.09.2026 kommen fuer Konfis die Challenge-Neuigkeiten dazu.
+  //
+  // DIESELBE ZUSAMMENSETZUNG steht serverseitig in utils/appIconBadge.js
+  // (App-Icon-Zahl im Push bei geschlossener App). Wer hier etwas aendert,
+  // zieht dort nach -- tests/utils/appIconBadgeParitaet.test.js haelt beide
+  // Seiten fest. Laufen sie auseinander, zeigt das Icon eine andere Zahl als
+  // die Reiter (Befund B2b, 27.08.2026).
   const totalBadgeCount = useMemo(() => {
     if (isAdmin) {
       return chatUnreadTotal + pendingRequestsCount + pendingEventsCount + pendingChallengesCount;
@@ -77,8 +99,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     if (isLeadership) {
       return chatUnreadTotal + pendingChallengesCount + newBadgesCount;
     }
-    return chatUnreadTotal + newBadgesCount;
-  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount, isAdmin, isLeadership]);
+    return chatUnreadTotal + newBadgesCount + challengeUpdatesTotal;
+  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount, challengeUpdatesTotal, isAdmin, isLeadership]);
 
   // Zentraler Refresh aller Counts. Nutzt den leichtgewichtigen Zähler-Endpoint
   // (Audit Achse 4, Fund 3) statt der frueheren drei Voll-Fetches (/chat/rooms +
@@ -120,9 +142,42 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
         setPendingRequestsCount(Number(data?.pendingRequests) || 0);
         setPendingEventsCount(Number(data?.pendingEvents) || 0);
       }
+      // Abzeichen fuer ALLE Rollen uebernehmen (die Leitung bekommt vom Server
+      // 0). Befund 25.09.2026: Seit der Konsolidierung vom 27.08.2026 stand
+      // diese Zeile im Leitungs-Zweig darunter -- Konfis bekamen die Zahl am
+      // Badges-Reiter nie, waehrend der Server sie ins App-Icon summierte.
+      // Genau der Widerspruch Icon <-> Reiter, den B2b ausschliessen sollte.
+      setNewBadgesCount(Number(data?.newBadges) || 0);
+
       if (isLeadership) {
         setPendingChallengesCount(Number(data?.pendingChallenges) || 0);
-        setNewBadgesCount(Number(data?.newBadges) || 0);
+      } else {
+        // Konfis (24.09.2026): Challenge-Neuigkeiten wie chat.byRoom -- Zahl
+        // je Challenge fuer den Listeneintrag, Summe fuer Reiter und Icon.
+        // Nur im Konfi-Zweig, wie pendingRequests nur im Admin-Zweig: Der
+        // Server liefert das Feld fuer Team und Leitung ohnehin leer, aber
+        // die Rollen-Aufteilung soll HIER lesbar sein, nicht nur dort.
+        // Aeltere Server ohne das Feld: leer, keine Zahl, kein Fehler.
+        const byChallengeRaw: Record<string, number> = data?.challengeUpdates?.byChallenge || {};
+        const neuigkeiten: Record<number, number> = {};
+        let neuigkeitenTotal = 0;
+        Object.entries(byChallengeRaw).forEach(([challengeId, count]) => {
+          const n = Number(count) || 0;
+          if (n > 0) {
+            neuigkeiten[Number(challengeId)] = n;
+            neuigkeitenTotal += n;
+          }
+        });
+        // Referenz stabil halten, wenn sich inhaltlich nichts geaendert hat
+        // (dasselbe Argument wie bei chatUnreadByRoom oben).
+        setChallengeUpdatesByChallenge(prev => {
+          const prevKeys = Object.keys(prev);
+          const nextKeys = Object.keys(neuigkeiten);
+          const unveraendert = prevKeys.length === nextKeys.length
+            && nextKeys.every(k => prev[Number(k)] === neuigkeiten[Number(k)]);
+          return unveraendert ? prev : neuigkeiten;
+        });
+        setChallengeUpdatesTotal(neuigkeitenTotal);
       }
     } catch (error) {
       console.error('BadgeContext: refreshAllCounts fehlgeschlagen:', error);
@@ -206,6 +261,45 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
         console.error('BadgeContext: markRoomAsRead API fehlgeschlagen:', err);
       });
   }, [chatUnreadByRoom, user?.id]);
+
+  // markChallengeAsRead: das Gegenstueck zu markRoomAsRead fuer Challenges.
+  // Optimistisch die Zahl dieser Challenge herausnehmen, dann den Server
+  // informieren -- ab jetzt zaehlt utils/challengeNeuigkeiten.js neu.
+  // Nur Konfis tragen den Zaehler; fuer Team und Leitung passiert nichts
+  // (kein Request fuer eine Zahl, die es fuer sie nicht gibt).
+  const markChallengeAsRead = useCallback(async (challengeId: number): Promise<void> => {
+    if (user?.type !== 'konfi') return;
+
+    // Beide Zaehler aus DERSELBEN Quelle bedienen -- dasselbe Muster wie in
+    // markRoomAsRead (Befund 02.09.2026): der erste Updater merkt sich, was
+    // tatsaechlich abgezogen wurde, der zweite rechnet damit.
+    let abgezogen = 0;
+    setChallengeUpdatesByChallenge(prev => {
+      abgezogen = prev[challengeId] || 0;
+      if (abgezogen === 0) return prev;
+      const next = { ...prev };
+      delete next[challengeId];
+      return next;
+    });
+    setChallengeUpdatesTotal(prev => Math.max(0, prev - abgezogen));
+
+    if (!networkMonitor.isOnline) {
+      writeQueue.enqueue({
+        method: 'POST',
+        url: `/challenges/konfi/${challengeId}/mark-read`,
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: `challenge-mark-read-${challengeId}-${Date.now()}`, label: 'Challenge gelesen' },
+      });
+      return;
+    }
+    // AWAIT wie bei markRoomAsRead (Befund 03.09.2026): Wer danach die
+    // Zaehler neu laedt, muss den verbuchten Stand bekommen.
+    await api.post(`/challenges/konfi/${challengeId}/mark-read`)
+      .catch(err => {
+        console.error('BadgeContext: markChallengeAsRead API fehlgeschlagen:', err);
+      });
+  }, [user?.type]);
 
   // Sync Device Badge bei Änderung von totalBadgeCount.
   // Nur auf nativen Plattformen: im Desktop-Browser existiert navigator.setAppBadge/
@@ -298,6 +392,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       setPendingEventsCount(0);
       setPendingChallengesCount(0);
       setNewBadgesCount(0);
+      setChallengeUpdatesByChallenge({});
+      setChallengeUpdatesTotal(0);
     }
   }, [user]);
 
@@ -309,9 +405,12 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       pendingEventsCount,
       pendingChallengesCount,
       newBadgesCount,
+      challengeUpdatesByChallenge,
+      challengeUpdatesTotal,
       totalBadgeCount,
       refreshAllCounts,
       markRoomAsRead,
+      markChallengeAsRead,
       // Legacy Alias
       badgeCount: chatUnreadTotal,
       refreshFromAPI: refreshAllCounts,

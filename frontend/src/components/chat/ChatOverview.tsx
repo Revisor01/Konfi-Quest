@@ -47,6 +47,7 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { useBadge } from '../../contexts/BadgeContext';
+import ZaehlerKugel from '../shared/ZaehlerKugel';
 import { SectionHeader, EmptyState } from '../shared';
 import { useModalPage } from '../../contexts/ModalContext';
 import { useOfflineQuery } from '../../hooks/useOfflineQuery';
@@ -570,31 +571,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                   >
                                     <IonIcon icon={getRoomIcon(room)} />
                                   </div>
-                                  {(() => {
-                                    const unread = chatUnreadByRoom[room.id] ?? room.unread_count ?? 0;
-                                    return unread > 0 ? (
-                                      <span style={{
-                                        position: 'absolute',
-                                        top: '0px',
-                                        right: '0px',
-                                        fontSize: 'var(--app-text-winzig)',
-                                        color: 'white',
-                                        fontWeight: 'var(--app-schrift-fett)',
-                                        backgroundColor: 'var(--app-color-danger)',
-                                        width: unread > 9 ? '18px' : '16px',
-                                        height: '16px',
-                                        borderRadius: 'var(--app-radius-kreis)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        boxShadow: 'var(--app-schatten-flach-stark)',
-                                        border: '2px solid white',
-                                        zIndex: 2
-                                      }}>
-                                        {unread > 9 ? '9+' : unread}
-                                      </span>
-                                    ) : null;
-                                  })()}
+                                  <ZaehlerKugel
+                                    anzahl={chatUnreadByRoom[room.id] ?? room.unread_count ?? 0}
+                                    label="ungelesene Nachrichten"
+                                  />
                                 </div>
 
                                 {/* Content */}

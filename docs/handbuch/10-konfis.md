@@ -60,6 +60,16 @@ manche Beiträge werden erst nach Freigabe durch das Team sichtbar. Was dabei
 gilt, steht im Kapitel
 [Challenges](80-challenges.md#wissen-was-konfis-koennen-und-was-nicht).
 
+### Neuigkeiten an Challenges erkennen
+
+Eine rote Zahl am Reiter **Challenges** und am Symbol der einzelnen Challenge
+zeigt, was dort seit deinem letzten Blick dazugekommen ist — wie im Chat: eine
+neue Challenge, neue Beiträge in der Galerie und die Entscheidung des Teams
+über deinen eigenen Beitrag. Dieselbe Zahl steckt im Zähler am App-Symbol.
+
+Zurückgesetzt wird beim Öffnen der Challenge. Beendete Challenges im Archiv
+zählen nicht mit; deine eigene Einreichung auch nicht.
+
 ## Dich zu Terminen an- und abmelden
 
 Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und

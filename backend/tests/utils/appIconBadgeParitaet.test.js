@@ -47,7 +47,9 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
     if (rolle === 'teamer') {
       return body.chat.total + body.pendingChallenges + body.newBadges;
     }
-    return body.chat.total + body.newBadges;
+    // Konfi (seit 24.09.2026): plus Challenge-Neuigkeiten. Bewusst ohne
+    // Fallback -- fehlt das Feld, soll der Test fallen, nicht 0 addieren.
+    return body.chat.total + body.newBadges + body.challengeUpdates.total;
   };
 
   const vergleiche = async (user, rolle, tokenName) => {
@@ -71,8 +73,28 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
       assigned_jahrgaenge: zuweisungen
     });
 
-    return { server, client: clientSumme(res.body, rolle) };
+    return { server, client: clientSumme(res.body, rolle), body: res.body };
   };
+
+  it('Konfi: mit Challenge-Neuigkeiten (24.09.2026)', async () => {
+    // Laufende Challenge fuer konfi1s Jahrgang, nie geoeffnet -> zaehlt 1.
+    const { rows: [{ id }] } = await db.query(
+      `INSERT INTO challenges (organization_id, title, description, badge_name,
+                               starts_at, ends_at, is_draft, audience)
+       VALUES ($1, 'Neuigkeit', 'B', 'Stempel', NOW() - interval '1 day',
+               NOW() + interval '7 days', false, 'konfis') RETURNING id`,
+      [ORGS.testGemeinde.id]
+    );
+    await db.query(
+      'INSERT INTO challenge_jahrgang_assignments (challenge_id, jahrgang_id) VALUES ($1, $2)',
+      [id, JAHRGAENGE.jahrgang1.id]
+    );
+
+    const { server, client, body } = await vergleiche(USERS.konfi1, 'konfi', 'konfi1');
+    expect(body.challengeUpdates.total).toBe(1);
+    expect(server).toBe(client);
+    expect(server).toBeGreaterThan(0);
+  });
 
   it('Konfi: leer', async () => {
     const { server, client } = await vergleiche(USERS.konfi1, 'konfi', 'konfi1');

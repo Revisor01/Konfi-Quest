@@ -25,7 +25,10 @@ Konfis und Teamer:innen haben dieselbe Reihenfolge. Bei der Leitung sind
 
 Eine kleine Zahl am Reiter zeigt, dass dort etwas Neues wartet: im Chat
 ungelesene Nachrichten, bei den Abzeichen neu verliehene, bei den Challenges
-Beiträge, die auf Freigabe warten.
+für Konfis Neuigkeiten in ihren laufenden Challenges (siehe
+[Neuigkeiten an Challenges erkennen](10-konfis.md#neuigkeiten-an-challenges-erkennen)),
+für Team und Leitung Beiträge, die auf Freigabe warten. Die Summe aller
+Reiter steht als Zahl am App-Symbol.
 
 ### Das eigene Profil
 

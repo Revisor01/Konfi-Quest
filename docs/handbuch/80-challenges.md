@@ -443,6 +443,12 @@ entfernt werden soll."
 - **Die einreichende Person** bekommt eine Mitteilung, sobald sie den Stempel
   erhält, und eine, wenn ihr Beitrag ausgeblendet wird — mit eurer Begründung,
   falls ihr eine eingetragen habt.
+- **Die Konfis der Jahrgänge** sehen am Reiter und am Symbol der einzelnen
+  Challenge eine rote Zahl, sobald dort etwas Neues wartet — eine neue
+  Challenge, neue Beiträge in der Galerie oder eure Entscheidung über ihren
+  eigenen Beitrag; siehe
+  [Neuigkeiten an Challenges erkennen](10-konfis.md#neuigkeiten-an-challenges-erkennen).
+  Bei euch zählt derselbe Reiter stattdessen die offenen Freigaben.
 - **Alle Konfis der Jahrgänge** sehen ohne Neuladen, wenn eine Challenge startet,
   sich ändert oder ein Beitrag in der Galerie erscheint. Ohne Netz bleibt der
   zuletzt geladene Stand stehen, Einreichen geht dann nicht — siehe

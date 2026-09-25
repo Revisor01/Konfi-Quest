@@ -11,6 +11,12 @@ vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ setError: vi.fn() })
 }));
 
+// Das Detail meldet sich beim Oeffnen als gelesen (Neuigkeiten-Zaehler,
+// 24.09.2026) -- hier nicht Gegenstand, nur stillgelegt.
+vi.mock('../../../contexts/BadgeContext', () => ({
+  useBadge: () => ({ markChallengeAsRead: vi.fn() })
+}));
+
 const detailAntwort = (challenge: Record<string, unknown>) => ({
   data: { challenge, gallery: [], own_submissions: [] }
 });

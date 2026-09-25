@@ -10,6 +10,11 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
+- Konfis sehen jetzt, wo es bei den Challenges etwas Neues gibt — wie im Chat:
+  eine rote Zahl am Reiter, am App-Symbol und an der einzelnen Challenge. Sie
+  zählt, was seit dem letzten Öffnen dazukam: eine neue Challenge, neue
+  Beiträge in der Galerie und die Entscheidung des Teams über den eigenen
+  Beitrag. Öffnen setzt die Zahl zurück.
 - Android: Einladungslinks, der Link aus der Passwort-vergessen-Mail und der
   Anmelde-Link der Webseite öffnen direkt die App, wenn sie installiert ist —
   ohne Nachfrage und ohne Umweg über den Browser. Webseite, Datenschutz und

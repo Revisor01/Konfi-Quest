@@ -291,7 +291,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
     tabs: [
       { tab: 'dashboard', href: '/konfi/dashboard', icon: ICON_STARTSEITE_GEFUELLT, label: 'Start' },
       { tab: 'chat', href: '/konfi/chat', icon: ICON_CHATS_GEFUELLT, label: 'Chat', badge: 'chat' },
-      { tab: 'challenges', href: '/konfi/challenges', icon: ICON_CHALLENGE_GEFUELLT, label: 'Challenges' },
+      { tab: 'challenges', href: '/konfi/challenges', icon: ICON_CHALLENGE_GEFUELLT, label: 'Challenges', badge: 'challenges' },
       { tab: 'events', href: '/konfi/events', icon: ICON_TERMIN_GEFUELLT, label: 'Mitmachen' },
       { tab: 'badges', href: '/konfi/badges', icon: ICON_ABZEICHEN_GEFUELLT, label: 'Badges', badge: 'badges' },
     ],

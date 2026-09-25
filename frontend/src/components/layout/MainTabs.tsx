@@ -154,7 +154,7 @@ const MainTabs: React.FC = () => {
   // Genau daran krankte der Konfi-Zaehler seit dem 03.07.2026 unbemerkt
   // (Befund B1): mark-seen setzte 'seen', aber niemand stiess eine
   // Aktualisierung an, und die rote Zahl blieb die ganze Sitzung stehen.
-  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount } = useBadge();
+  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, challengeUpdatesTotal, newBadgesCount } = useBadge();
   // super_admin bekommt eine eigene, reduzierte Navigation
   const isSuperAdmin = user?.role_name === 'super_admin';
   const location = useAppLocation();
@@ -297,7 +297,11 @@ const MainTabs: React.FC = () => {
   const zaehler: Record<BadgeKey, number> = {
     chat: chatUnreadTotal,
     events: pendingEventsCount + pendingRequestsCount,
-    challenges: pendingChallengesCount,
+    // Ein Reiter, eine Bedeutung je Rolle: Team und Leitung zaehlen offene
+    // Freigaben, Konfis ihre Challenge-Neuigkeiten (24.09.2026). Der Server
+    // liefert je Rolle nur den einen Anteil, der andere ist 0 -- die Summe
+    // ist also nie eine Mischung.
+    challenges: pendingChallengesCount + challengeUpdatesTotal,
     badges: newBadgesCount,
   };
 
