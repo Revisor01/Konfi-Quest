@@ -9,9 +9,11 @@ import {
   IonContent,
   IonList,
   IonListHeader,
-  IonItem,
   IonLabel,
   IonSpinner,
+  IonCard,
+  IonCardContent,
+  IonIcon,
 } from '@ionic/react';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
@@ -20,11 +22,24 @@ import { useWartendeVorgaenge } from '../../hooks/useWartendeVorgaenge';
 import WartendeVorgaengeKarte from '../shared/WartendeVorgaengeKarte';
 import EmptyState from '../shared/EmptyState';
 import OfflinePlatzhalter from '../shared/OfflinePlatzhalter';
-import { ICON_GLOCKE } from '../shared/icons';
+import {
+  ICON_GLOCKE,
+  ICON_BENACHRICHTIGUNG,
+  ICON_ABZEICHEN_GEFUELLT,
+  ICON_WARTEND_GEFUELLT,
+  ICON_ZUSAGE_GEFUELLT,
+  ICON_ABSAGE,
+  ICON_TERMIN_GEFUELLT,
+  ICON_CHATS_GEFUELLT,
+  ICON_CHALLENGE_GEFUELLT,
+  ICON_INFO_GEFUELLT,
+} from '../shared/icons';
 import {
   POSTFACH_OEFFNEN_EVENT,
   PostfachAntwort,
+  PostfachBereich,
   PostfachEintrag,
+  postfachBereich,
   zeitpunktText,
 } from '../../utils/postfach';
 import {
@@ -36,6 +51,33 @@ import {
 
 /** Wie viele Mitteilungen je Seite geladen werden. */
 export const POSTFACH_SEITENGROESSE = 30;
+
+/**
+ * Das Symbol im Farbkreis einer Mitteilung. Je Bereich eines; bei
+ * Antraegen sagt es zusaetzlich, was Sache ist -- offen, verbucht oder
+ * abgelehnt -- mit denselben Symbolen wie die Antragsliste der Leitung
+ * (admin/ActivityRequestsView).
+ */
+const eintragIcon = (eintrag: PostfachEintrag, bereich: PostfachBereich): string => {
+  switch (bereich) {
+    case 'badges':
+      return ICON_ABZEICHEN_GEFUELLT;
+    case 'activities': {
+      if (eintrag.type === 'activity_request_decision' || eintrag.type === 'activity_request_status') {
+        return eintrag.data?.status === 'approved' ? ICON_ZUSAGE_GEFUELLT : ICON_ABSAGE;
+      }
+      return ICON_WARTEND_GEFUELLT;
+    }
+    case 'events':
+      return ICON_TERMIN_GEFUELLT;
+    case 'chat':
+      return ICON_CHATS_GEFUELLT;
+    case 'challenges':
+      return ICON_CHALLENGE_GEFUELLT;
+    default:
+      return ICON_INFO_GEFUELLT;
+  }
+};
 
 /**
  * Das Postfach: ein Ort fuer alles, was die App jemandem mitteilen will.
@@ -61,6 +103,21 @@ export const POSTFACH_SEITENGROESSE = 30;
  *    einer komischen Stelle", "falsch im Layout". Er geht in der Glocke auf.
  *    Die Karte auf den Terminseiten (WartendeVorgaengeKarte) BLEIBT dort:
  *    Die Glocke sagt "da ist noch was", die Karte sagt "und zwar das".
+ *
+ * DIE FORM DER LISTE (Simon, 25.09.2026, am Geraet): "Dann sollte es die
+ * Listen so aussehen wie alle unsere Listen. Ionen-Card im Hintergrund /
+ * Listen obendrauf / Aktivitaeten mit der klassischen Aktivitaetenfarbe /
+ * Events mit der klassischen Eventsfarbe / Chat mit der klassischen
+ * Chatfarbe und so weiter." Die erste Fassung war eine schlichte IonList mit
+ * IonItems und einem Punkt davor -- anders als jede andere Liste der App.
+ * Jetzt derselbe Bauplan wie ChatOverview, TeamerProfilePage und die
+ * Warteschlange direkt darueber: IonList inset mit IonListHeader, darin eine
+ * IonCard, darin je Mitteilung ein .app-list-item mit farbigem linken Rand
+ * (.app-list-item--<bereich>) und Farbkreis (.app-icon-circle--<bereich>).
+ * Welche Farbe: utils/postfach.postfachBereich -- Abzeichen in der
+ * Abzeichenfarbe, Antraege in der Aktivitaetenfarbe. Die Warteschlange
+ * traegt ihre Farben schon (orange fuer "wird gesendet", rot fuer
+ * "nicht gesendet", WartendeVorgaengeKarte), das bleibt unveraendert.
  *
  * Antippen einer Mitteilung markiert sie als gelesen und fuehrt zum Ziel —
  * ueber denselben Weg wie ein angetippter Push (utils/pushNavigation):
@@ -168,6 +225,7 @@ const PostfachModal: React.FC = () => {
 
   const hatWarteschlange = wartend.length > 0 || gescheitert.length > 0;
   const aeltesteId = eintraege.length > 0 ? eintraege[eintraege.length - 1].id : undefined;
+  const listeLeer = eintraege.length === 0;
 
   return (
     <IonModal isOpen={offen} onDidDismiss={schliessen}>
@@ -200,6 +258,9 @@ const PostfachModal: React.FC = () => {
         <section aria-label="Mitteilungen" data-testid="postfach-mitteilungen">
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
+              <div className="app-section-icon app-section-icon--info">
+                <IonIcon icon={ICON_BENACHRICHTIGUNG} />
+              </div>
               <IonLabel>Mitteilungen</IonLabel>
               {ungelesen > 0 && (
                 <IonButton size="small" fill="clear" onClick={alleGelesen}>
@@ -207,54 +268,94 @@ const PostfachModal: React.FC = () => {
                 </IonButton>
               )}
             </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: listeLeer ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
+                {laedt && listeLeer && (
+                  <div className="app-postfach__laedt">
+                    <IonSpinner name="crescent" />
+                  </div>
+                )}
 
-            {laedt && eintraege.length === 0 && (
-              <div className="app-postfach__laedt">
-                <IonSpinner name="crescent" />
-              </div>
-            )}
+                {ladefehler && listeLeer && (
+                  <OfflinePlatzhalter was="Deine Mitteilungen" />
+                )}
 
-            {ladefehler && eintraege.length === 0 && (
-              <OfflinePlatzhalter was="Deine Mitteilungen" />
-            )}
-
-            {!laedt && !ladefehler && eintraege.length === 0 && (
-              <EmptyState
-                icon={ICON_GLOCKE}
-                title="Nichts Neues"
-                message="Hier landen Abzeichen, Anträge und Entscheidungen — auch die, deren Push du verpasst hast."
-              />
-            )}
-
-            {eintraege.map(eintrag => {
-              const ungelesenerEintrag = !eintrag.read_at;
-              const meta = [
-                zeitpunktText(eintrag.created_at),
-                mehrereGemeinden && eintrag.organization_name ? eintrag.organization_name : null,
-              ].filter(Boolean).join(' · ');
-              return (
-                <IonItem
-                  key={eintrag.id}
-                  button
-                  detail={false}
-                  onClick={() => antippen(eintrag)}
-                  className={ungelesenerEintrag ? 'app-postfach-eintrag app-postfach-eintrag--ungelesen' : 'app-postfach-eintrag'}
-                  data-ungelesen={ungelesenerEintrag ? 'true' : 'false'}
-                >
-                  <span
-                    slot="start"
-                    className="app-postfach-punkt"
-                    aria-label={ungelesenerEintrag ? 'ungelesen' : undefined}
-                    aria-hidden={ungelesenerEintrag ? undefined : true}
+                {!laedt && !ladefehler && listeLeer && (
+                  <EmptyState
+                    icon={ICON_GLOCKE}
+                    title="Nichts Neues"
+                    message="Hier landen Abzeichen, Anträge und Entscheidungen — auch die, deren Push du verpasst hast."
                   />
-                  <IonLabel className="ion-text-wrap">
-                    <h3>{eintrag.title}</h3>
-                    <p>{eintrag.message}</p>
-                    {meta && <p className="app-postfach-eintrag__meta">{meta}</p>}
-                  </IonLabel>
-                </IonItem>
-              );
-            })}
+                )}
+
+                {eintraege.map(eintrag => {
+                  const ungelesenerEintrag = !eintrag.read_at;
+                  const bereich = postfachBereich(eintrag.type);
+                  const meta = [
+                    zeitpunktText(eintrag.created_at),
+                    mehrereGemeinden && eintrag.organization_name ? eintrag.organization_name : null,
+                  ].filter(Boolean).join(' · ');
+                  const klassen = [
+                    'app-list-item',
+                    `app-list-item--${bereich}`,
+                    'app-postfach-eintrag',
+                    ungelesenerEintrag ? 'app-postfach-eintrag--ungelesen' : null,
+                  ].filter(Boolean).join(' ');
+                  return (
+                    <div
+                      key={eintrag.id}
+                      role="button"
+                      tabIndex={0}
+                      className={klassen}
+                      data-ungelesen={ungelesenerEintrag ? 'true' : 'false'}
+                      data-bereich={bereich}
+                      onClick={() => antippen(eintrag)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          antippen(eintrag);
+                        }
+                      }}
+                    >
+                      {/* Eselsohr wie der Status in der Antragsliste: "Neu"
+                          in der Ecke statt eines Punkts vor der Zeile. */}
+                      {ungelesenerEintrag && (
+                        <div className="app-corner-badges">
+                          <div
+                            className="app-corner-badge"
+                            style={{ background: 'var(--ion-color-primary)' }}
+                            aria-label="ungelesen"
+                          >
+                            Neu
+                          </div>
+                        </div>
+                      )}
+                      <div className="app-list-item__row">
+                        <div className="app-list-item__main">
+                          <div className={`app-icon-circle app-icon-circle--${bereich}`}>
+                            <IonIcon icon={eintragIcon(eintrag, bereich)} />
+                          </div>
+                          <div className="app-list-item__content">
+                            <div
+                              className="app-list-item__title"
+                              style={ungelesenerEintrag ? { paddingRight: 'var(--app-freiraum-aktion-m)' } : undefined}
+                            >
+                              {eintrag.title}
+                            </div>
+                            <div className="app-list-item__subtitle">{eintrag.message}</div>
+                            {meta && (
+                              <div className="app-list-item__meta">
+                                <span className="app-list-item__meta-item">{meta}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </IonCardContent>
+            </IonCard>
           </IonList>
 
           {weitere && !ladefehler && (

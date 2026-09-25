@@ -3630,25 +3630,19 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   color: var(--app-color-danger);
 }
 
-/* Der Punkt vor einer ungelesenen Mitteilung; bei gelesenen bleibt der Platz
-   stehen, damit die Zeilen buendig sind. */
-.app-postfach-punkt {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--app-radius-kreis);
-  background: transparent;
-  flex-shrink: 0;
-  margin-right: var(--app-abstand-eng);
+/* Die Mitteilungen sind .app-list-item wie jede andere Liste der App (Farbe
+   ueber .app-list-item--<bereich>, siehe common/PostfachModal). Ungelesen
+   heisst: Titel fett und "Neu" im Eselsohr; gelesen nur der Titel. Die Zeile
+   ist ein Knopf -- Tastatur und Vorleseprogramm sollen sie finden. */
+.app-postfach-eintrag {
+  cursor: pointer;
 }
-.app-postfach-eintrag--ungelesen .app-postfach-punkt {
-  background: var(--ion-color-primary);
+.app-postfach-eintrag:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
 }
-.app-postfach-eintrag--ungelesen ion-label h3 {
+.app-postfach-eintrag--ungelesen .app-list-item__title {
   font-weight: var(--app-schrift-fett);
-}
-.app-postfach-eintrag__meta {
-  color: var(--ion-color-medium, #92949c);
-  font-size: var(--app-text-meta);
 }
 .app-postfach__laedt {
   display: flex;

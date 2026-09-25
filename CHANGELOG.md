@@ -61,6 +61,10 @@ Versionsüberschrift.
   arbeitet, und kommt von jeder Seite zurück.
 - Glocke und Gemeinde-Umschalter stehen jetzt auch im Chat, in jedem Chatraum
   und bei den Challenges — die einzigen Seiten, auf denen sie noch fehlten.
+- Die Mitteilungen im Postfach sehen aus wie jede andere Liste der App: Karte
+  im Hintergrund, farbiger Rand und Symbol je Bereich — Abzeichen in der
+  Abzeichenfarbe, Anträge in der Aktivitätenfarbe. Ungelesenes trägt ein
+  „Neu" in der Ecke.
 - Die Zahl an der Glocke wird nicht mehr an der Rundung der Knopfleiste
   angeschnitten; sie sitzt jetzt ganz auf der Glocke.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich

@@ -52,6 +52,11 @@ Abzeichen, in die Antragsliste. **„Alle gelesen"** räumt auf einmal auf.
 **„Ältere Mitteilungen laden"** holt, was weiter zurückliegt; nach einem Jahr
 werden Mitteilungen nachts entfernt.
 
+Jede Mitteilung trägt die Farbe ihres Bereichs, wie überall in der App:
+Abzeichen in der Abzeichenfarbe, Anträge in der Aktivitätenfarbe. Die
+Vorgänge aus der Funklücke darüber stehen orange („Wird gesendet…") und rot
+(„Nicht gesendet").
+
 Wer in **mehreren Gemeinden** mitarbeitet, sieht die Mitteilungen aller
 Gemeinden im selben Postfach, jede mit dem Namen ihrer Gemeinde. Antippen
 wechselt bei Bedarf zuerst in diese Gemeinde — so, wie es ein angetippter Push

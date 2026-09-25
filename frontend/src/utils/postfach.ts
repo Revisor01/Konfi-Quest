@@ -59,3 +59,46 @@ export const zeitpunktText = (iso: string, jetzt: Date = new Date()): string => 
   if (dann.toDateString() === gestern.toDateString()) return 'gestern';
   return dann.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
+
+/**
+ * Welcher Bereich der App hinter einer Mitteilung steht -- und damit ihre
+ * Farbe in der Liste.
+ *
+ * Simon (25.09.2026): "Aktivitäten mit der klassischen Aktivitätenfarbe,
+ * Events mit der klassischen Eventsfarbe, Chat mit der klassischen Chatfarbe
+ * und so weiter." Die Namen sind die Suffixe der bestehenden Farbklassen
+ * (theme/variables.css: .app-list-item--<bereich>, .app-icon-circle--<bereich>),
+ * die alle anderen Listen der App schon tragen. Nichts davon ist hier neu:
+ * 'activities' ist die Aktivitaeten- und Antragsfarbe (--app-color-activities,
+ * dieselbe wie .app-list-item--requests), 'badges' die Abzeichenfarbe.
+ *
+ * In Produktion gibt es vier Arten (gemessen 25.09.2026: badge_earned 617,
+ * new_activity_request 369, activity_request_submitted 171,
+ * activity_request_decision 167). Die uebrigen Zweige decken die Push-Arten
+ * ab, die utils/pushNavigation kennt, falls sie je ins Postfach geschrieben
+ * werden -- eine unbekannte Art bekommt die neutrale Hinweisfarbe, nie eine
+ * geratene.
+ */
+export type PostfachBereich = 'badges' | 'activities' | 'events' | 'chat' | 'challenges' | 'info';
+
+export const postfachBereich = (type: string | undefined | null): PostfachBereich => {
+  switch (type) {
+    case 'badge_earned':
+      return 'badges';
+    case 'new_activity_request':
+    case 'activity_request_submitted':
+    case 'activity_request_decision':
+    case 'activity_request_status':
+      return 'activities';
+    case 'chat':
+      return 'chat';
+    default:
+      if (typeof type === 'string' && (type.startsWith('event_') || type === 'new_event' || type === 'waitlist_promotion')) {
+        return 'events';
+      }
+      if (typeof type === 'string' && type.startsWith('challenge')) {
+        return 'challenges';
+      }
+      return 'info';
+  }
+};

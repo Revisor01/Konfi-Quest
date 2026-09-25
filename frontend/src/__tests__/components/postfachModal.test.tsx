@@ -74,7 +74,7 @@ vi.mock('../../utils/pushNavigation', async (original) => {
 });
 
 import PostfachModal, { POSTFACH_SEITENGROESSE } from '../../components/common/PostfachModal';
-import { oeffnePostfach } from '../../utils/postfach';
+import { oeffnePostfach, postfachBereich } from '../../utils/postfach';
 import { pushZielMelden } from '../../utils/pushNavigation';
 
 const eintrag = (id: number, teil: Partial<PostfachEintrag> = {}): PostfachEintrag => ({
@@ -258,5 +258,84 @@ describe('PostfachModal', () => {
     await oeffnen();
     expect(await screen.findByText(/Deine Mitteilungen/)).toBeTruthy();
     expect(screen.getByText('Abmeldung Sommerfest')).toBeTruthy();
+  });
+  // Simon (25.09.2026, am Geraet): "Dann sollte es die Listen so aussehen
+  // wie alle unsere Listen ... Aktivitaeten mit der klassischen
+  // Aktivitaetenfarbe." Die Farbe haengt an denselben Klassen wie in jeder
+  // anderen Liste (.app-list-item--<bereich>, .app-icon-circle--<bereich>).
+  describe('Listenform wie alle Listen der App', () => {
+    it('jede Mitteilung ist ein app-list-item in einer Karte, mit Farbrand und Farbkreis je Bereich', async () => {
+      mockGet.mockResolvedValue(antwort([
+        eintrag(3, { type: 'badge_earned' }),
+        eintrag(2, { type: 'new_activity_request', data: { request_id: 9 } }),
+        eintrag(1, { type: 'activity_request_decision', data: { request_id: 8, status: 'approved' } }),
+      ]));
+      const { container } = render(<PostfachModal />);
+      await oeffnen();
+      await screen.findByText('Mitteilung 3');
+
+      const zeilen = container.querySelectorAll('.app-postfach-eintrag');
+      expect(zeilen.length).toBe(3);
+      zeilen.forEach(z => expect(z.classList.contains('app-list-item')).toBe(true));
+
+      // Abzeichen in der Abzeichenfarbe, Antraege in der Aktivitaetenfarbe.
+      expect(zeilen[0].classList.contains('app-list-item--badges')).toBe(true);
+      expect(zeilen[0].querySelector('.app-icon-circle--badges')).not.toBeNull();
+      expect(zeilen[1].classList.contains('app-list-item--activities')).toBe(true);
+      expect(zeilen[1].querySelector('.app-icon-circle--activities')).not.toBeNull();
+      expect(zeilen[2].classList.contains('app-list-item--activities')).toBe(true);
+      // Keine Zeile traegt eine geratene zweite Farbe.
+      zeilen.forEach(z => {
+        const farben = [...z.classList].filter(k => k.startsWith('app-list-item--'));
+        expect(farben.length).toBe(1);
+      });
+      // Titel, Text und Meta in den Feldern der Listenzeile.
+      expect(zeilen[0].querySelector('.app-list-item__title')?.textContent).toBe('Mitteilung 3');
+      expect(zeilen[0].querySelector('.app-list-item__subtitle')?.textContent).toBe('Text 3');
+    });
+
+    it('ungelesen traegt "Neu" im Eselsohr, gelesen nicht', async () => {
+      mockGet.mockResolvedValue(antwort([eintrag(12), eintrag(11, { read_at: '2026-09-24T10:00:00.000Z' })]));
+      const { container } = render(<PostfachModal />);
+      await oeffnen();
+      await screen.findByText('Mitteilung 12');
+      const zeilen = container.querySelectorAll('.app-postfach-eintrag');
+      expect(zeilen[0].querySelector('.app-corner-badge')?.textContent).toBe('Neu');
+      expect(zeilen[1].querySelector('.app-corner-badge')).toBeNull();
+    });
+
+    it('die Zeile ist ein Knopf: Enter fuehrt zum Ziel wie ein Tipp', async () => {
+      mockGet.mockResolvedValue(antwort([eintrag(12)]));
+      const { container } = render(<PostfachModal />);
+      await oeffnen();
+      await screen.findByText('Mitteilung 12');
+      const zeile = container.querySelector('.app-postfach-eintrag') as HTMLElement;
+      expect(zeile.getAttribute('role')).toBe('button');
+      fireEvent.keyDown(zeile, { key: 'Enter' });
+      await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/konfi/badges'));
+    });
+  });
+
+  describe('postfachBereich -- die Farbregel, ohne Rendern', () => {
+    it('ordnet die vier Arten aus Produktion zu', () => {
+      expect(postfachBereich('badge_earned')).toBe('badges');
+      expect(postfachBereich('new_activity_request')).toBe('activities');
+      expect(postfachBereich('activity_request_submitted')).toBe('activities');
+      expect(postfachBereich('activity_request_decision')).toBe('activities');
+    });
+
+    it('kennt die Push-Arten fuer Termine, Chat und Challenges', () => {
+      expect(postfachBereich('event_reminder')).toBe('events');
+      expect(postfachBereich('new_event')).toBe('events');
+      expect(postfachBereich('waitlist_promotion')).toBe('events');
+      expect(postfachBereich('chat')).toBe('chat');
+      expect(postfachBereich('challenge_new')).toBe('challenges');
+    });
+
+    it('eine unbekannte Art bekommt die neutrale Hinweisfarbe -- nie eine geratene', () => {
+      expect(postfachBereich('irgendwas')).toBe('info');
+      expect(postfachBereich(undefined)).toBe('info');
+      expect(postfachBereich(null)).toBe('info');
+    });
   });
 });
