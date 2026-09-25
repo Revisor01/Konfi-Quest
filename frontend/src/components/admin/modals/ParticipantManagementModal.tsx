@@ -31,13 +31,21 @@ import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import type { Participant } from '../../../types/event';
+// Die Jahrgangsregel liegt in utils/jahrgangsPassung.ts (25.09.2026) — sie
+// spiegelt gehoertZumTermin im Backend und hat dort ihre Erklaerung.
+import { passtZumTermin } from '../../../utils/jahrgangsPassung';
 
 interface Konfi {
   id: number;
   name: string;
+  // Konfis: EIN Jahrgang (konfi_profiles). Team und Leitung: MEHRERE
+  // (user_jahrgang_assignments) — /admin/konfis/teamer und /admin/konfis/leitung
+  // liefern sie seit dem 25.09.2026 als jahrgang_ids.
   jahrgang_id?: number;
+  jahrgang_ids?: number[];
   jahrgang_name?: string;
   role_name?: string;
+  is_super_admin?: boolean;
 }
 
 // Participant kommt zentral aus types/event. Die fruehere Fassung hier kannte
@@ -60,10 +68,12 @@ interface EventJahrgang {
 interface Event {
   has_timeslots?: boolean;
   timeslots?: Timeslot[];
+  teamer_only?: boolean;
   jahrgang_id?: number;
   jahrgang_name?: string;
   jahrgaenge?: EventJahrgang[];
 }
+
 
 interface ParticipantManagementModalProps {
   eventId: number;
@@ -124,7 +134,12 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   // Event-Jahrgänge ermitteln (für Filter)
   const eventJahrgaenge = eventData?.jahrgaenge?.map(j => j.name) ||
     (eventData?.jahrgang_name ? [eventData.jahrgang_name] : []);
+  const eventJahrgangIds: number[] = eventData?.jahrgaenge?.map(j => j.id) ||
+    (eventData?.jahrgang_id ? [eventData.jahrgang_id] : []);
   const hasEventJahrgaenge = eventJahrgaenge.length > 0;
+  // Greift die Jahrgangsgrenze fuer die Auswahl? Nicht bei 'Nur Team' und
+  // nicht ohne Jahrgang — dann steht auch kein Hinweis auf der Seite.
+  const jahrgangsGrenzeAktiv = hasEventJahrgaenge && !eventData?.teamer_only;
 
   const loadAvailableKonfis = async (participantsList?: Participant[]) => {
     try {
@@ -185,15 +200,18 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
     if (!matchesSearch) return false;
 
-    // Teamer:innen und Leitung sind immer sichtbar (kein Jahrgang-Filter)
+    // Wer zu keinem Jahrgang des Termins gehoert, wird gar nicht erst
+    // angeboten — Konfis, Team und Leitung gleichermassen (25.09.2026). Bis
+    // dahin galt hier "Teamer:innen und Leitung sind immer sichtbar", und
+    // nur die Konfis wurden ueber den Namen des Jahrgangs gefiltert.
+    if (!passtZumTermin(konfi, eventData, eventJahrgangIds)) return false;
+
+    // Der Jahrgangs-Filter im Kopf betrifft nur Konfis: Team und Leitung
+    // tragen mehrere Jahrgaenge und stehen ohnehin nur bei Ueberschneidung hier.
     if (konfi.role_name !== 'konfi') return true;
 
-    // Wenn Event Jahrgänge hat, nur diese Konfis zeigen (außer "alle" gewählt)
-    if (hasEventJahrgaenge && selectedJahrgang === 'alle') {
-      // Bei "alle" trotzdem nur Event-Jahrgänge zeigen
-      return eventJahrgaenge.includes(konfi.jahrgang_name || '');
-    } else if (selectedJahrgang !== 'alle') {
-      // Spezifischer Jahrgang gewählt
+    // Spezifischer Jahrgang gewählt (bei "alle" reicht passtZumTermin oben)
+    if (selectedJahrgang !== 'alle') {
       return konfi.jahrgang_name === selectedJahrgang;
     }
 
@@ -257,8 +275,11 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         setCurrentParticipants(updatedParticipants);
         await loadAvailableKonfis(updatedParticipants);
         onSuccess();
-      } catch {
-        setError('Fehler beim Hinzufügen der Teilnehmer:innen');
+      } catch (err) {
+        // Die Meldung des Servers zeigen, wenn er eine hat — etwa "… gehört
+        // zu keinem Jahrgang dieses Termins" (403). Sonst der Sammelbegriff.
+        const meldung = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+        setError(meldung || 'Fehler beim Hinzufügen der Teilnehmer:innen');
       } finally {
         setLoading(false);
       }
@@ -404,6 +425,21 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
+                {/* Warum jemand fehlt: Eine leere oder kuerzere Liste ohne
+                    Erklaerung liesse die Leitung nach der Person suchen. */}
+                {jahrgangsGrenzeAktiv && (
+                  <p
+                    data-testid="jahrgangs-hinweis"
+                    style={{
+                      margin: '0 0 var(--app-abstand-basis) 0',
+                      fontSize: 'var(--app-text-klein)',
+                      color: 'var(--app-text-secondary)'
+                    }}
+                  >
+                    Angeboten werden nur Personen aus {eventJahrgaenge.length === 1 ? 'dem Jahrgang' : 'den Jahrgängen'} dieses
+                    Termins ({eventJahrgaenge.join(', ')}). Die Gemeindeleitung ist davon ausgenommen.
+                  </p>
+                )}
                 {filteredKonfis.length === 0 ? (
                   <div style={{
                     padding: 'var(--app-abstand-riesig) var(--app-abstand-gross)',
@@ -411,7 +447,11 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                     color: 'var(--app-text-secondary)'
                   }}>
                     <IonIcon icon={ICON_SUCHE_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-riesig)', opacity: 0.3, marginBottom: 'var(--app-abstand-basis)' }} />
-                    <p style={{ margin: '0', fontSize: 'var(--app-text-standard)' }}>Keine Personen gefunden</p>
+                    <p style={{ margin: '0', fontSize: 'var(--app-text-standard)' }}>
+                      {jahrgangsGrenzeAktiv
+                        ? 'Keine passenden Personen — nur wer zu einem Jahrgang dieses Termins gehört, lässt sich eintragen'
+                        : 'Keine Personen gefunden'}
+                    </p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>

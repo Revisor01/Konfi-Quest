@@ -1,4 +1,5 @@
 const { addToEventChat } = require('./eventChat');
+const { gehoertZumTermin } = require('./jahrgangsZugriff');
 
 // Shared Booking-Logik für Event-Buchungen
 // Wird von konfi.js und events.js genutzt
@@ -777,23 +778,11 @@ async function zaehleBestaetigte(db, bereich, seite) {
  */
 async function darfTeamerAnDiesenTermin(client, event, userId) {
   if (event.teamer_only) return true;
-  const { rows: [zugang] } = await client.query(
-    `SELECT
-       EXISTS (SELECT 1 FROM event_jahrgang_assignments WHERE event_id = $1) AS hat_jahrgang,
-       EXISTS (
-         SELECT 1 FROM event_jahrgang_assignments eja
-         JOIN user_jahrgang_assignments uja
-           ON uja.jahrgang_id = eja.jahrgang_id AND uja.user_id = $2
-         WHERE eja.event_id = $1
-       ) AS darf,
-       EXISTS (
-         SELECT 1 FROM users u JOIN roles r ON u.role_id = r.id
-         WHERE u.id = $2 AND (r.name IN ('org_admin', 'super_admin') OR u.is_super_admin = true)
-       ) AS vollzugriff`,
-    [event.id, userId]
-  );
-  if (!zugang) return true;
-  return !zugang.hat_jahrgang || zugang.darf || zugang.vollzugriff;
+  // Seit dem 25.09.2026 EIN Baustein fuer beide Fragen — "darf die buchende
+  // Teamer:in an diesen Termin" und "passt die von der Leitung eingetragene
+  // Person zu diesem Termin" (routes/events/teilnehmer.js). Die Semantik ist
+  // dieselbe; das SQL stand vorher hier und lag ab dann an zwei Stellen.
+  return gehoertZumTermin(client, userId, event.id);
 }
 
 const JAHRGANG_FREMD = 'Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist';

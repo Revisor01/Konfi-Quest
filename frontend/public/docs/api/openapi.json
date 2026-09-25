@@ -4951,7 +4951,8 @@
           "org-scope": true,
           "objekt-pruefung": "Event UND Ziel-User müssen zur eigenen Org gehören",
           "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf diesen Termin\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
-          "hinweis": "BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — eine Teamer:in konnte Personen in einen Termin eintragen, den sie selbst nicht sah.\n"
+          "hinweis": "BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — eine Teamer:in konnte Personen in einen Termin eintragen, den sie selbst nicht sah.\n",
+          "jahrgang-der-person": "Seit 25.09.2026: gehoertZumTermin (utils/jahrgangsZugriff.js) prueft zusaetzlich die HINZUGEFUEGTE Person (user_id), nicht nur den Aufrufer. Sie braucht EINEN gemeinsamen Jahrgang mit dem Termin (Termine sind n:m ueber event_jahrgang_assignments). Konfis ueber konfi_profiles.jahrgang_id, Team und Leitung ueber user_jahrgang_assignments (can_view/can_edit spielen keine Rolle, es geht um Zugehoerigkeit). Ausgenommen: teamer_only, Termine ohne Jahrgang, org_admin/super_admin (Rolle oder Flag). Bei Verstoss 403 { error: \"<Name> gehört zu keinem Jahrgang dieses Termins\", error_code: \"person_jahrgang_fremd\" }. BEHOBEN 25.09.2026 (war: die eingetragene Person wurde nur ueber organization_id geholt — ein Konfi aus Jahrgang B liess sich in einen Termin von Jahrgang A eintragen, eine Teamer:in ohne Zuweisung ebenso; die Selbstanmeldung prueft das seit 08.09.2026, nur dieser Weg nicht). Dieselbe Semantik nutzt seither auch bucheTermin/setzeTeamerZusage (darfTeamerAnDiesenTermin delegiert). Ausgelieferte Apps (2.2.x) filterten die Konfi-Auswahl schon ueber den Jahrgangsnamen; nur die Team-Auswahl konnte in die neue 403 laufen — sie faengt jeden Fehler mit einer Sammelmeldung ab.\n"
         },
         "parameters": [
           {
@@ -5003,7 +5004,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "description": "Kein Zugriff auf diesen Termin (seit 14.09.2026, fremder Jahrgang)"
+            "description": "Kein Zugriff auf diesen Termin (seit 14.09.2026, Aufrufer ohne den Jahrgang) — oder seit 25.09.2026 '<Name> gehört zu keinem Jahrgang dieses Termins' mit error_code person_jahrgang_fremd (die eingetragene Person passt nicht)"
           },
           "404": {
             "description": "Event/Benutzer/Zeitslot nicht gefunden"
@@ -5183,7 +5184,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Teilnehmer zwischen bestaetigt und Warteliste verschieben",
-        "description": "status confirmed <-> waitlist. Degradierung auf waitlist löscht attendance_status und nimmt vergebene Event-Punkte zurück; Befoerderung von der Warteliste pusht an die betroffene Person. BEHOBEN 15.09.2026: Die Degradierung gibt einen bestaetigten Platz frei — dort rueckt jetzt die naechste wartende Person derselben Kontingent-Seite nach (Push, war_auf_warteliste, Termin-Chat). Die gerade Herabgestufte kann sich dabei nicht selbst zurueckholen. Die Befoerderung VON HAND setzt jetzt ebenfalls war_auf_warteliste (Migration 145) — sie folgt bewusst nicht FIFO, die Leitung waehlt die Person aus. An einem abgesagten Termin rueckt niemand nach.\n\nABGESAGTE TERMINE seit 16.09.2026: Die Befoerderung auf 'confirmed' wird mit 400 \"Dieser Termin ist abgesagt\" abgelehnt — sie ist eine Anmeldung wie jede andere. Der Weg auf die WARTELISTE bleibt offen: Das ist keine Anmeldung, sondern das Gegenteil, und der damit verbundene Punkteentzug muss auch an einem abgesagten Termin moeglich bleiben.\n\nBEHOBEN 16.09.2026 — KAPAZITAET: Die Befoerderung auf 'confirmed' hatte KEINE Kapazitaetspruefung. Solange nichts automatisch nachrueckte, fiel das nicht auf; seit dem Nachruecken vom 15.09. buchte der Weg \"herabstufen, dann wieder bestaetigen\" den Termin still ueber (beim Herabstufen rueckt Y nach, beim Bestaetigen kommt X ungeprueft dazu). Ist das Kontingent voll, antwortet die Route jetzt 400 \"Der Termin ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.\" Gezaehlt wird pro Kontingent-Seite (Konfi/Team) und ggf. pro Zeitfenster, ueber denselben Helfer wie das Nachruecken. Ohne Obergrenze (0/NULL) aendert sich nichts. Der Weg auf die Warteliste bleibt ungeprueft. Bewusstes Ueberbuchen laeuft ueber das Erhoehen der Teilnehmerzahl.\n\nGEPRUEFT 16.09.2026 — war_auf_warteliste: Die Spalte wird beim Bestaetigen nur gesetzt, wenn die Buchung wirklich auf 'waitlist' stand. Der Verdacht, sie werde auch bei einer Befoerderung aus 'excused' gesetzt, hat sich am Code NICHT bestaetigt; ein Test haelt das jetzt fest.\n",
+        "description": "status confirmed <-> waitlist. Degradierung auf waitlist löscht attendance_status und nimmt vergebene Event-Punkte zurück; Befoerderung von der Warteliste pusht an die betroffene Person. BEHOBEN 15.09.2026: Die Degradierung gibt einen bestaetigten Platz frei — dort rueckt jetzt die naechste wartende Person derselben Kontingent-Seite nach (Push, war_auf_warteliste, Termin-Chat). Die gerade Herabgestufte kann sich dabei nicht selbst zurueckholen. Die Befoerderung VON HAND setzt jetzt ebenfalls war_auf_warteliste (Migration 145) — sie folgt bewusst nicht FIFO, die Leitung waehlt die Person aus. An einem abgesagten Termin rueckt niemand nach.\n\nABGESAGTE TERMINE seit 16.09.2026: Die Befoerderung auf 'confirmed' wird mit 400 \"Dieser Termin ist abgesagt\" abgelehnt — sie ist eine Anmeldung wie jede andere. Der Weg auf die WARTELISTE bleibt offen: Das ist keine Anmeldung, sondern das Gegenteil, und der damit verbundene Punkteentzug muss auch an einem abgesagten Termin moeglich bleiben.\n\nBEHOBEN 16.09.2026 — KAPAZITAET: Die Befoerderung auf 'confirmed' hatte KEINE Kapazitaetspruefung. Solange nichts automatisch nachrueckte, fiel das nicht auf; seit dem Nachruecken vom 15.09. buchte der Weg \"herabstufen, dann wieder bestaetigen\" den Termin still ueber (beim Herabstufen rueckt Y nach, beim Bestaetigen kommt X ungeprueft dazu). Ist das Kontingent voll, antwortet die Route jetzt 400 \"Der Termin ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.\" Gezaehlt wird pro Kontingent-Seite (Konfi/Team) und ggf. pro Zeitfenster, ueber denselben Helfer wie das Nachruecken. Ohne Obergrenze (0/NULL) aendert sich nichts. Der Weg auf die Warteliste bleibt ungeprueft. Bewusstes Ueberbuchen laeuft ueber das Erhoehen der Teilnehmerzahl.\n\nGEPRUEFT 16.09.2026 — war_auf_warteliste: Die Spalte wird beim Bestaetigen nur gesetzt, wenn die Buchung wirklich auf 'waitlist' stand. Der Verdacht, sie werde auch bei einer Befoerderung aus 'excused' gesetzt, hat sich am Code NICHT bestaetigt; ein Test haelt das jetzt fest.\n\nGEPRUEFT 25.09.2026 — Jahrgang der betroffenen Person: BEWUSST NICHT geprueft. Der Riegel sitzt beim Eintragen (POST /api/events/{id}/participants); wer hier steht, ist bereits eingetragen. Der Weg auf die Warteliste ist das Gegenteil einer Anmeldung und muss offen bleiben (Punkteentzug). Die Befoerderung einer Altbuchung, die vor dem 25.09.2026 oder durch einen spaeteren Jahrgangswechsel nicht mehr passt, wuerde sonst dauerhaft haengen — weder bestaetigen noch anders aufloesen als durch Loeschen. Der Jahrgangswechsel eines Konfis raeumt kuenftige Buchungen fremder Jahrgangstermine ohnehin selbst ab (PUT /api/admin/konfis/{id}).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6416,7 +6417,7 @@
         },
         "responses": {
           "200": {
-            "description": "Array (id, name, username, teamer_since, jahrgang_name, badge_count, cert_count)"
+            "description": "Array (id, name, username, teamer_since, jahrgang_name, jahrgang_ids, badge_count, cert_count). ADDITIV 25.09.2026: jahrgang_ids (integer[], leer ohne Zuweisung) — die Teilnehmerauswahl am Termin bietet nur Personen aus den Jahrgaengen des Termins an und braucht die IDs statt der zusammengefuegten Namen."
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -6453,7 +6454,7 @@
         },
         "responses": {
           "200": {
-            "description": "Array (id, name, username, role_name)"
+            "description": "Array (id, name, username, role_name, is_super_admin, jahrgang_ids). ADDITIV 25.09.2026: is_super_admin (boolean) und jahrgang_ids (integer[]) — die Teilnehmerauswahl am Termin zeigt Leitung mit Rolle admin nur bei gemeinsamem Jahrgang; org_admin und das Flag sind ausgenommen."
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"

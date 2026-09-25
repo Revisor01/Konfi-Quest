@@ -10,7 +10,7 @@ const { rueckeNach, takeBackEventPoints, freiePlaetze } = require('../../utils/b
 const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
-const { darfTermin } = require('../../utils/jahrgangsZugriff');
+const { darfTermin, gehoertZumTermin } = require('../../utils/jahrgangsZugriff');
 
 //
 // TERMINVERWALTUNG IST LEITUNGSSACHE (16.09.2026, Simon woertlich):
@@ -65,11 +65,34 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       }
 
       // 2. Validate user
-      const { rows: [user] } = await client.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [user_id, req.user.organization_id]);
+      const { rows: [user] } = await client.query("SELECT id, display_name FROM users WHERE id = $1 AND organization_id = $2", [user_id, req.user.organization_id]);
       if (!user) {
         await client.query('ROLLBACK');
         client.release();
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
+
+      // 2a. Passt die HINZUGEFUEGTE Person zum Jahrgang des Termins?
+      //     (25.09.2026, siehe utils/jahrgangsZugriff.js, gehoertZumTermin)
+      //
+      //     darfTermin oben prueft den handelnden Admin. Die Person, die er
+      //     eintraegt, wurde bis hierher nur ueber organization_id geholt —
+      //     ein Konfi aus Jahrgang B liess sich in einen Termin von Jahrgang A
+      //     eintragen, eine Teamer:in ohne Zuweisung ebenso. Die Selbst-
+      //     anmeldung (bucheTermin) prueft das laengst; nur dieser Weg nicht.
+      //
+      //     Eigene Meldung mit Namen: Die handelnde Person IST berechtigt,
+      //     die Ablehnung betrifft jemand anderen — "dem du nicht zugewiesen
+      //     bist" (JAHRGANG_FREMD) waere hier schlicht falsch.
+      //     Konfi und Team laufen durch dieselbe Pruefung; Termine ohne
+      //     Jahrgang, 'Nur Team' und die Gemeindeleitung sind ausgenommen.
+      if (!(await gehoertZumTermin(client, user_id, eventId))) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(403).json({
+          error: `${user.display_name} gehört zu keinem Jahrgang dieses Termins`,
+          error_code: 'person_jahrgang_fremd'
+        });
       }
 
       // 3. Validate timeslot if provided

@@ -165,4 +165,69 @@ async function darfTermin(db, req, eventId, { edit = false } = {}) {
   return { gefunden: true, erlaubt: ids.some(id => darfJahrgang(req, id, { edit })) };
 }
 
-module.exports = { darfJahrgang, darfKonfi, darfTermin };
+/**
+ * Gehoert diese PERSON zu diesem Termin? — die Frage nach der hinzugefuegten
+ * oder buchenden Person, nicht nach dem Aufrufer (dafuer: darfTermin).
+ *
+ * Simons Ansage (25.09.2026): "Das muss fuer die Konfi-Hinzufuegen-Liste
+ * gelten, und das muss fuer die Team-Hinzufuegen-Liste gelten. Es muss
+ * geprueft werden, ob dieser Termin zu den zugewiesenen Jahrgaengen passt.
+ * Denkt daran: Ein Termin kann auch mehrere Jahrgaenge haben."
+ *
+ * Bis dahin pruefte POST /events/:id/participants nur den HANDELNDEN Admin
+ * (darfTermin) und holte die hinzugefuegte Person allein ueber
+ * organization_id — ein Konfi aus Jahrgang B liess sich in einen Termin von
+ * Jahrgang A eintragen, eine Teamer:in ohne jede Zuweisung ebenso.
+ *
+ * Dieselbe Semantik wie darfTeamerAnDiesenTermin (utils/bookingUtils.js), das
+ * seit dem 25.09.2026 hierher delegiert — zwei Wege zu derselben Antwort
+ * liefen sonst wieder auseinander:
+ *   - teamer_only: immer ja (haengt an keinem Jahrgang)
+ *   - Termin ohne Jahrgangszuordnung: immer ja (nichts zu schuetzen)
+ *   - org_admin / super_admin (Rolle ODER Flag): immer ja
+ *   - sonst: EIN gemeinsamer Jahrgang genuegt (Termine sind n:m)
+ *
+ * ZWEI DATENWEGE fuer die Jahrgaenge der Person, deshalb das UNION:
+ *   - Konfis tragen EINEN Jahrgang in konfi_profiles.jahrgang_id
+ *   - Teamer:innen und Admins tragen MEHRERE in user_jahrgang_assignments
+ * Ein Konfi hat keine user_jahrgang_assignments, eine Teamer:in kein
+ * konfi_profiles — das UNION liefert also fuer jede Rolle genau ihren Weg.
+ * can_view/can_edit spielen hier KEINE Rolle: Es geht um Zugehoerigkeit zum
+ * Jahrgang, nicht um ein Zugriffsrecht (wie in darfTeamerAnDiesenTermin).
+ *
+ * In SQL statt ueber req, weil die geprueften Personen nie der Aufrufer sind.
+ *
+ * @param {object} db            Pool oder Client (muss .query haben).
+ * @param {number|string} userId Die Person, um die es geht.
+ * @param {number|string} eventId
+ * @returns {Promise<boolean>}   true = passt zum Termin. Ein unbekannter
+ *                               Termin ergibt true — der Aufrufer hat ihn
+ *                               vorher selbst geladen und 404 gesendet.
+ */
+async function gehoertZumTermin(db, userId, eventId) {
+  const { rows: [zugang] } = await db.query(
+    `SELECT
+       e.teamer_only,
+       EXISTS (SELECT 1 FROM event_jahrgang_assignments WHERE event_id = $1) AS hat_jahrgang,
+       EXISTS (
+         SELECT 1 FROM event_jahrgang_assignments eja
+         WHERE eja.event_id = $1
+           AND eja.jahrgang_id IN (
+             SELECT uja.jahrgang_id FROM user_jahrgang_assignments uja WHERE uja.user_id = $2
+             UNION
+             SELECT kp.jahrgang_id FROM konfi_profiles kp
+              WHERE kp.user_id = $2 AND kp.jahrgang_id IS NOT NULL
+           )
+       ) AS gemeinsam,
+       EXISTS (
+         SELECT 1 FROM users u JOIN roles r ON u.role_id = r.id
+         WHERE u.id = $2 AND (r.name IN ('org_admin', 'super_admin') OR u.is_super_admin = true)
+       ) AS vollzugriff
+     FROM events e WHERE e.id = $1`,
+    [eventId, userId]
+  );
+  if (!zugang) return true;
+  return Boolean(zugang.teamer_only || !zugang.hat_jahrgang || zugang.gemeinsam || zugang.vollzugriff);
+}
+
+module.exports = { darfJahrgang, darfKonfi, darfTermin, gehoertZumTermin };

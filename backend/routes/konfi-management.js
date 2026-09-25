@@ -121,6 +121,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             const query = `
                 SELECT u.id, u.display_name as name, u.username, u.teamer_since,
                        STRING_AGG(DISTINCT j.name, ', ' ORDER BY j.name) as jahrgang_name,
+                       -- ADDITIV (25.09.2026): die IDs zu den Namen. Die
+                       -- Teilnehmerauswahl am Termin bietet nur Personen aus
+                       -- den Jahrgaengen des Termins an und braucht dafuer
+                       -- die IDs statt der zusammengefuegten Namen.
+                       ARRAY_REMOVE(ARRAY_AGG(DISTINCT j.id), NULL) as jahrgang_ids,
                        COALESCE(badge_counts.badge_count, 0)::int as badge_count,
                        COALESCE(cert_counts.cert_count, 0)::int as cert_count
                 FROM users u
@@ -171,12 +176,21 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     router.get('/leitung', rbacVerifier, requireTeamer, async (req, res) => {
         try {
             const { rows } = await db.query(
-                `SELECT u.id, u.display_name as name, u.username, r.name as role_name
+                `SELECT u.id, u.display_name as name, u.username, r.name as role_name,
+                        -- ADDITIV (25.09.2026): Jahrgaenge und Vollzugriffs-Flag,
+                        -- damit die Teilnehmerauswahl am Termin nur Leitung
+                        -- aus den Jahrgaengen des Termins anbietet. org_admin
+                        -- und super_admin sind davon ausgenommen — das Flag
+                        -- steht deshalb mit dabei.
+                        u.is_super_admin,
+                        ARRAY_REMOVE(ARRAY_AGG(DISTINCT uja.jahrgang_id), NULL) as jahrgang_ids
                    FROM users u
                    JOIN roles r ON u.role_id = r.id
+                   LEFT JOIN user_jahrgang_assignments uja ON uja.user_id = u.id
                   WHERE r.name IN ('admin', 'org_admin')
                     AND u.organization_id = $1
                     AND u.deleted_at IS NULL
+                  GROUP BY u.id, u.display_name, u.username, r.name, u.is_super_admin
                   ORDER BY u.display_name`,
                 [req.user.organization_id]
             );

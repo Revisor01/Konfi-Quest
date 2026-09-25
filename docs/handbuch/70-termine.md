@@ -1071,6 +1071,13 @@ Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
 - Ein Konfi lässt sich nicht in einen reinen Team-Termin eintragen
 - Bei Zeitfenster-Terminen musst du ein Fenster auswählen
 - Doppelte Anmeldungen werden abgewiesen
+- Wer eingetragen wird, muss zu einem Jahrgang des Termins gehören — als
+  Konfi, Teamer:in oder Leitung. Die Auswahl zeigt deshalb nur Personen aus
+  diesen Jahrgängen; ein Hinweis über der Liste nennt sie. Hat der Termin
+  mehrere Jahrgänge, genügt einer davon. Termine ohne Jahrgang und „Nur
+  Team"-Termine stehen allen offen, die Gemeindeleitung lässt sich immer
+  eintragen. Wer trotzdem über einen anderen Weg jemanden eintragen will,
+  bekommt eine Meldung mit dem Namen der Person.
 
 **Wer eingetragen wird, bekommt einen Push** — Konfis, Teamer:innen und
 Leitung gleichermaßen, mit derselben Meldung wie bei der Selbstanmeldung. Ist
