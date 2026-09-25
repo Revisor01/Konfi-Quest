@@ -79,6 +79,30 @@ const config: CapacitorConfig = {
       : {}),
   },
   plugins: {
+    // Systemleisten auf Android (Status- und Navigationsleiste, 25.09.2026).
+    //
+    // MALTES BEFUND (Android, Telefon im Dunkelmodus): "unten das Android
+    // Menue ist im Handy Darkmode unsichtbar. In einem Chat lustigerweise
+    // leicht sichtbar."
+    //
+    // URSACHE, aus der Capacitor-8-Quelle (SystemBars.java, getStyleForTheme):
+    // Das eingebaute SystemBars-Plugin richtet die Farbe der Leisten-Symbole
+    // mit der Voreinstellung DEFAULT nach dem THEMA DES TELEFONS -- nicht nach
+    // der App. Telefon dunkel -> weisse Symbole. Die App hat aber keinen
+    // Dunkelmodus (der Block in theme/variables.css ist abgeschaltet), sie
+    // bleibt hell. Seit Capacitor 8 liegt die Oberflaeche randlos unter den
+    // durchsichtigen Leisten -- weisse Symbole auf heller App: unsichtbar.
+    // Im Chatraum ist der Inhalt nicht randlos (Eingabe-Fusszeile, f40e3687),
+    // dort liegt eine andere Flaeche unter der Leiste -- deshalb "leicht
+    // sichtbar". Maltes Beobachtung ist genau das.
+    //
+    // LIGHT heisst "helle Leisten": dunkle Symbole, passend zur hellen App,
+    // unabhaengig vom Telefon. Die Option gilt laut Capacitor NUR fuer
+    // Android; iOS bleibt unberuehrt. Bekommt die App einen Dunkelmodus,
+    // muss das hier mitgehen -- der Test systemBars.test.ts koppelt beides.
+    SystemBars: {
+      style: 'LIGHT',
+    },
     Keyboard: {
       // 'ionic' (Ionic passt Padding an). 'native' wurde am 04.07. probiert
       // (Build 76) und sah SCHLECHTER aus (WebView-Frame springt unanimiert).

@@ -229,7 +229,7 @@ describe('Zahl an der Glocke: auf der Ecke des Symbols, Pille und Knopf beschnei
     expect(abstandZurKnopfmitte(0, 0)).toBeCloseTo(15.56, 1);
     expect(abstandZurKnopfmitte(0, 0)).toBeGreaterThan(SICHTBAR_IM_KNOPF);
     expect(block('ion-buttons:has(> .app-postfach-glocke)')).toMatch(/overflow:\s*visible/);
-    expect(block('.app-postfach-glocke.ios::part(native)')).toMatch(/overflow:\s*visible/);
+    expect(block('.app-postfach-glocke::part(native)')).toMatch(/overflow:\s*visible/);
   });
 
   it('Gegenprobe der Formel: 1/2 (749d39c3) ragte schon 0,45px hinaus, 4/4 lag auf dem Symbol', () => {
@@ -249,10 +249,49 @@ describe('Zahl an der Glocke: auf der Ecke des Symbols, Pille und Knopf beschnei
     expect(pillen).toEqual(['ion-buttons:has(> .app-postfach-glocke)']);
   });
 
-  it('Android bleibt, wie es war: top -8 / right 2, und der Knopf beschneidet weiter (Ripple)', () => {
+  // Android (MD3): Knopf 48x48 (Kreis Radius 24), .button-inner 24px hoch
+  // und mittig (12px Einzug oben), Symbol 24px, Zahl 18px an .button-inner.
+  // Malte (25.09.2026): "auf android ist der blaue badge abgeschnitten."
+  const MD = { KNOPF: 48, INNER_OBEN: 12, INNER_HOEHE: 24 };
+  const mdAbstandZurKnopfmitte = (top: number, right: number): number => {
+    const mitte = { x: MD.KNOPF - right - ZAHL / 2, y: MD.INNER_OBEN + top + ZAHL / 2 };
+    return Math.hypot(mitte.x - MD.KNOPF / 2, mitte.y - MD.KNOPF / 2);
+  };
+
+  it('Android: top -8 / right 2 bleibt -- die Zahl ragt 2,03px aus dem Knopfkreis, deshalb gibt der Knopf auch dort frei', () => {
     const md = block('.app-postfach-glocke.md .app-postfach-glocke__zahl');
     expect(wert(md, 'top')).toBe(-8);
     expect(wert(md, 'right')).toBe(2);
-    expect(ohneKommentare).not.toMatch(/\.app-postfach-glocke(\.md)?::part\(native\)/);
+    const abstand = mdAbstandZurKnopfmitte(-8, 2);
+    expect(abstand).toBeCloseTo(17.03, 1);
+    expect(abstand + ZAHL / 2 - MD.KNOPF / 2).toBeCloseTo(2.03, 1); // so weit stand die Spitze im Beschnitt
+    // Die Freigabe gilt ohne Plattform-Klasse -- fuer .md wie fuer .ios.
+    expect(ohneKommentare).not.toMatch(/\.app-postfach-glocke\.(ios|md)::part\(native\)/);
+    expect(block('.app-postfach-glocke::part(native)')).toMatch(/overflow:\s*visible/);
+  });
+
+  it('Android: die verworfene Alternative top -7 / right 4 laege ganz im Kreis, aber 10x11px auf dem Symbol', () => {
+    expect(mdAbstandZurKnopfmitte(-7, 4)).toBeCloseTo(14.87, 1);
+    expect(mdAbstandZurKnopfmitte(-7, 4) + ZAHL / 2).toBeLessThan(MD.KNOPF / 2);
+    // Symbolkasten 24px mittig im Knopf: Ecke oben rechts bei (36, 12).
+    const mitte = { x: MD.KNOPF - 4 - ZAHL / 2, y: MD.INNER_OBEN - 7 + ZAHL / 2 };
+    expect(36 - (mitte.x - ZAHL / 2)).toBe(10);
+    expect(mitte.y + ZAHL / 2 - 12).toBe(11);
+  });
+
+  it('die Freigabe kostet auf Android keinen Ripple: Ionic zeichnet ihn "unbounded" bis maxDim, also genau bis zum Knopfkreis', () => {
+    // Die Annahme steht in Ionics Quelle. Aendert Ionic sie, faellt dieser
+    // Test -- dann ist der Ripple neu zu messen, nicht die Regel zu kippen.
+    const ionic = 'node_modules/@ionic/core/dist/collection/components/';
+    const ripple = readFileSync(join(process.cwd(), ionic, 'ripple-effect/ripple-effect.js'), 'utf8');
+    const button = readFileSync(join(process.cwd(), ionic, 'button/button.js'), 'utf8');
+    expect(ripple).toMatch(/const maxRadius = this\.unbounded \? maxDim :/);
+    expect(ripple).toMatch(/posX = width \* 0\.5;\s*posY = height \* 0\.5;/);
+    expect(ripple).toMatch(/surfaces for unbounded ripples should have it set to visible/);
+    expect(button).toMatch(/if \(hasClearFill && this\.hasIconOnly && this\.inToolbar\) \{\s*return 'unbounded';/);
+    // MD3 macht den Knopf rund: Kreis mit Radius 24 bei 48x48 -- derselbe Kreis wie der Ripple.
+    const md3 = readFileSync(join(process.cwd(), 'node_modules/@rdlabo/ionic-theme-md3/dist/css/ionic-theme-md3.css'), 'utf8');
+    expect(md3).toMatch(/ion-button\.md:not\(\.md3-disabled\)\{[^}]*--border-radius: 999px/);
+    expect(md3).toMatch(/ion-toolbar\.md:not\(\.md3-disabled\) ion-button\.button-has-icon-only:not\(\.button-small\):not\(\.button-large\)::part\(native\)\{width:48px;height:48px\}/);
   });
 });

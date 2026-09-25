@@ -152,6 +152,12 @@ Versionsüberschrift.
   behalten ihre Zahl.
 
 ### Behoben
+- Auf Android waren die Knöpfe der Systemleiste unter der App (Zurück, Start,
+  Übersicht) unsichtbar, sobald das Telefon im Dunkelmodus lief: Die Symbole
+  wurden weiß, die App darunter blieb hell. Sie sind jetzt immer dunkel und
+  damit lesbar — die App hat keinen Dunkelmodus, also passt das überall.
+- Auf Android war die blaue Zahl an der Glocke an der äußeren Spitze
+  angeschnitten. Sie ist jetzt ganz zu sehen.
 - Hat eine Gemeinde noch keine Level, trägt das Symbol im leeren Zustand jetzt
   die Level-Farbe wie der Rest der Seite — nicht mehr das Violett der Konfis.
 - Die Sprechblase, die beim Antippen eines Abzeichens, Stempels oder Levels

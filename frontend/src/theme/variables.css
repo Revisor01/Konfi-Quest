@@ -3706,11 +3706,17 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
      - .button-native auf iOS: keine Kinder ausser .button-inner (Symbol
        und Zahl). Bild in Ruhe byte-identisch, gedrueckt (ion-activated)
        15 von 65.340 Pixeln um Kanaldelta 1 -- Rauschen.
-     - .button-native auf ANDROID dagegen NICHT: dort liegt der unbounded
-       Ripple im Knopf, den genau dieses overflow hidden auf den runden
-       Knopf begrenzt. Mit overflow visible wird der ganze Knopf sichtbar
-       dunkler (gemessen ueber sechs Frames bis 700ms, Mitte und Ecke).
-       Deshalb gilt ::part(native) { overflow: visible } nur fuer .ios.
+     - .button-native auf ANDROID: dort liegt der Ripple im Knopf. Die
+       Ionic-Quelle (ripple-effect.js) sagt, wie weit er reicht: Fuer den
+       Knopf mit nur einem Symbol in einer Toolbar ist er "unbounded", geht
+       von der Knopfmitte aus und endet bei maxDim = 48px -- ein Kreis mit
+       Radius 24 um die Mitte, also GENAU der Knopfkreis (MD3: border-radius
+       999px bei 48x48). Ionic selbst schreibt dazu: "surfaces for unbounded
+       ripples should have overflow set to visible". Das overflow hidden
+       begrenzt hier also nichts, was nicht schon der Kreis begrenzt; ein
+       frueherer Befund ("ganzer Knopf dunkler", c409fe23) ist mit dieser
+       Geometrie nicht vereinbar und wurde nicht reproduziert -- am Geraet
+       nachsehen (Malte).
 
    Damit kann die Zahl auf iOS "drueber laufen": Ihr Mittelpunkt (18px,
    Radius 9) sitzt genau auf der rechten oberen Ecke des Symbolkastens
@@ -3728,11 +3734,16 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
    nur 24px hoch und mittig (y 75-99 bei Knopf-Oberkante 63), Symbol 24px
    bei x 341-365. top -8 / right 2 setzt die Zahl-Mitte 1px rechts und 1px
    unter die Symbolecke (x 366, y 76) -- praktisch dieselbe Lage wie iOS.
-   Der Knopfkreis (Radius 24 um x 353 / y 87) schneidet davon 4,6 % an der
-   aeusseren Spitze (Abstand 17,03 + 9 = 26 > 24) -- war schon so, und
-   laesst sich ohne Ripple-Schaden nicht aufheben; naeher zur Mitte
-   (top -7 / right 4, Abstand 14,87) waere 100 % sichtbar, laege aber
-   11x11px auf dem Symbol. Bewusst unveraendert gelassen.
+   Der Knopfkreis (Radius 24 um x 353 / y 87) schnitt davon 4,6 % an der
+   aeusseren Spitze ab (Abstand 17,03 + 9 = 26,03 > 24, also 2,03px) --
+   Malte (25.09.2026): "auf android ist der blaue badge abgeschnitten".
+   Deshalb gibt ::part(native) jetzt auf BEIDEN Plattformen frei; die Lage
+   bleibt. Verworfen: top -7 / right 4 (Abstand 14,87, 100 % im Kreis, aber
+   10x11px auf dem Symbol -- Simon: "es muss ueber das Icon gehen", nicht
+   darauf) und die Zahl ausserhalb des Knopfes (braeuchte einen Anker um
+   den Knopf herum; die Pillen-Regel oben und die iOS-Geometrie im Test
+   haengen am direkten Kind von ion-buttons -- ein Umbau, der iOS anfasst,
+   fuer ein Android-Problem, das eine Zeile loest).
 
    Die Zahlen stehen als Vertrag im Test (postfachGlocke.test.tsx).
    ==================================================================== */
@@ -3746,7 +3757,7 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
 ion-buttons:has(> .app-postfach-glocke) {
   overflow: visible;
 }
-.app-postfach-glocke.ios::part(native) {
+.app-postfach-glocke::part(native) {
   overflow: visible;
 }
 .app-postfach-glocke__zahl {
