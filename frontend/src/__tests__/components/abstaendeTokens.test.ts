@@ -155,6 +155,7 @@ describe('Design-Tokens: Abstaende, Radien, Schatten (05.09.2026)', () => {
       '--app-schatten-karte': '0 2px 8px rgba(0, 0, 0, 0.1)',
       '--app-schatten-karte-stark': '0 2px 8px rgba(0, 0, 0, 0.15)',
       '--app-schatten-schwebend': '0 4px 12px rgba(0, 0, 0, 0.1)',
+      '--app-schatten-schwebend-weich': '0 4px 16px rgba(0, 0, 0, 0.1)',
       '--app-schatten-schwebend-stark': '0 4px 16px rgba(0, 0, 0, 0.15)',
       '--app-schatten-hoch': '0 8px 24px rgba(0, 0, 0, 0.12)',
       '--app-schatten-modal': '0 10px 28px rgba(0, 0, 0, 0.18)',
@@ -184,16 +185,77 @@ describe('Design-Tokens: Abstaende, Radien, Schatten (05.09.2026)', () => {
     expect(verstoesse).toEqual([]);
   });
 
-  it('neutrale Schwarz-Schatten kommen nur noch als Token vor', () => {
+  // Bis 26.09.2026 pruefte dieser Test nur `boxShadow:` -- die Ionic-Variante
+  // `'--box-shadow': '0 4px 16px rgba(0,0,0,0.1)'` (Datumswaehler in vier
+  // Modalen, sechs Stellen) blieb unsichtbar, derselbe blinde Fleck wie bei
+  // `'--padding-start'`. Seit dem Dunkelmodus zaehlt das doppelt: ein roher
+  // Schwarz-Schatten kennt die dunkle Entsprechung des Tokens nicht.
+  const SCHATTEN_PROPS = "boxShadow|'--box-shadow'";
+  const AUSGENOMMENE_SCHATTEN = [
+    // weisser Knopf auf Farbflaeche, gleicher Schatten in beiden Modi; Einzelwert
+    { datei: 'OnboardingTour.tsx', fund: "'--box-shadow': '0 6px 18px rgba(0,0,0,0.18)'" },
+  ];
+
+  it('neutrale Schwarz-Schatten kommen nur noch als Token vor (boxShadow UND --box-shadow)', () => {
     const verstoesse: string[] = [];
+    const muster = new RegExp(`(?<![-'"\\w])(${SCHATTEN_PROPS})\\s*:\\s*'[^']*rgba\\(0,\\s*0,\\s*0[^']*'`, 'g');
     for (const datei of dateienUnter('src/components')) {
       if (AUSGENOMMENE_DATEIEN.some((a) => datei.endsWith(a))) continue;
       const rein = ohneKommentare(lies(datei));
-      for (const [fund] of rein.matchAll(/boxShadow\s*:[^,}\n]*rgba\(0,\s*0,\s*0[^,}\n]*/g)) {
-        verstoesse.push(`${datei}: ${fund.trim()}`);
+      for (const [fund] of rein.matchAll(muster)) {
+        const ausgenommen = AUSGENOMMENE_SCHATTEN.some(
+          (a) => datei.endsWith(a.datei) && fund.replace(/\s*:\s*/, ': ') === a.fund
+        );
+        if (!ausgenommen) verstoesse.push(`${datei}: ${fund.trim()}`);
       }
     }
     expect(verstoesse).toEqual([]);
+  });
+
+  it('die Prueffunktion erkennt beide Schreibweisen (Gegenprobe fuer den Test selbst)', () => {
+    const muster = new RegExp(`(?<![-'"\\w])(${SCHATTEN_PROPS})\\s*:\\s*'[^']*rgba\\(0,\\s*0,\\s*0[^']*'`, 'g');
+    expect([..."{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }".matchAll(muster)]).toHaveLength(1);
+    expect([..."{ '--box-shadow': '0 4px 16px rgba(0, 0, 0, 0.1)' }".matchAll(muster)]).toHaveLength(1);
+    expect([..."{ '--box-shadow': 'var(--app-schatten-karte)' }".matchAll(muster)]).toHaveLength(0);
+    expect([..."{ '--box-shadow': '0 2px 8px rgba(var(--app-color-chat-rgb), 0.35)' }".matchAll(muster)]).toHaveLength(0);
+  });
+
+  it('kein Komponenten-CSS (ausser wrapped/) setzt Schwarz-Schatten ohne Token', () => {
+    const funde: string[] = [];
+    for (const datei of dateienUnter('src/components', '.css').filter((d) => !d.includes('/wrapped/'))) {
+      ohneKommentare(lies(datei)).split('\n').forEach((zeile, i) => {
+        if (/^\s*(?:--)?box-shadow:.*rgba\(0,\s*0,\s*0/.test(zeile)) funde.push(`${datei}:${i + 1}: ${zeile.trim()}`);
+      });
+    }
+    expect(funde).toEqual([]);
+  });
+
+  it('jeder neutrale Schatten hat im Dunkelblock dieselbe Geometrie mit hoeherer Deckkraft', () => {
+    // Im Dunkeln verschwindet ein Schatten mit 10 % Schwarz auf #1c1c1e. Die
+    // dunkle Entsprechung darf nur die Deckkraft anheben -- ein anderer Versatz
+    // oder eine andere Weichzeichnung waere eine Layout-Aenderung durch die
+    // Hintertuer.
+    const variablesCss = ohneKommentare(lies('src/theme/variables.css'));
+    const dunkelBlock = variablesCss.match(/@media \(prefers-color-scheme: dark\) \{([\s\S]*?)\n\}\n/)?.[1] ?? '';
+    const zerlege = (wert: string) => {
+      const m = wert.match(/^(\d+ \d+px \d+px) rgba\(0, 0, 0, (0?\.\d+)\)$/);
+      return m ? { geometrie: m[1], alpha: Number(m[2]) } : null;
+    };
+    const hell = [...ohneKommentare(tokensCss).matchAll(/(--app-schatten-[a-z-]+):\s*([^;]+);/g)]
+      .map(([, name, wert]) => ({ name, wert: wert.trim() }))
+      .filter(({ wert }) => zerlege(wert));
+    expect(hell.length).toBe(11);
+    const abweichungen: string[] = [];
+    for (const { name, wert } of hell) {
+      const dunkel = dunkelBlock.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1].trim();
+      if (!dunkel) { abweichungen.push(`${name}: fehlt im Dunkelblock`); continue; }
+      const h = zerlege(wert)!, d = zerlege(dunkel);
+      if (!d) { abweichungen.push(`${name}: dunkler Wert ${dunkel} ist kein Schwarz-Schatten`); continue; }
+      if (d.geometrie !== h.geometrie) abweichungen.push(`${name}: Geometrie ${d.geometrie} != ${h.geometrie}`);
+      if (!(d.alpha > h.alpha)) abweichungen.push(`${name}: Deckkraft ${d.alpha} nicht groesser als ${h.alpha}`);
+      if (d.alpha > 0.6) abweichungen.push(`${name}: Deckkraft ${d.alpha} ueber dem Deckel 0.6`);
+    }
+    expect(abweichungen).toEqual([]);
   });
 
   it('alle drei Rollen nutzen dieselben Kern-Tokens', () => {

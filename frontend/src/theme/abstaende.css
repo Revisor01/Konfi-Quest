@@ -90,6 +90,7 @@
   --app-schatten-karte: 0 2px 8px rgba(0, 0, 0, 0.1);
   --app-schatten-karte-stark: 0 2px 8px rgba(0, 0, 0, 0.15);
   --app-schatten-schwebend: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --app-schatten-schwebend-weich: 0 4px 16px rgba(0, 0, 0, 0.1); /* Datumswaehler in Modalen */
   --app-schatten-schwebend-stark: 0 4px 16px rgba(0, 0, 0, 0.15);
   --app-schatten-hoch: 0 8px 24px rgba(0, 0, 0, 0.12);
   --app-schatten-modal: 0 10px 28px rgba(0, 0, 0, 0.18);

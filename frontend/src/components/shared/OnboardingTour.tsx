@@ -181,7 +181,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ slides, onClose, displa
               '--background-hover': 'white',
               '--color': slides[index].color,
               '--ripple-color': slides[index].color,
-              '--box-shadow': '0 6px 18px rgba(0,0,0,0.18)',
+              '--box-shadow': '0 6px 18px rgba(0,0,0,0.18)', /* roh: weisser Knopf auf Farbflaeche, gleicher Schatten in beiden Modi; Einzelwert ohne Token */
               '--border-radius': 'var(--app-radius-weich)',
               height: '52px', fontWeight: 'var(--app-schrift-fett)'
             }}

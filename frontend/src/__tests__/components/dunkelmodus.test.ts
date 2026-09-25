@@ -43,6 +43,9 @@ const css = ohneKommentare(lies('src/theme/variables.css'));
 /** Alle @media-(dark)-Bloecke, jeweils der Text innerhalb der aeusseren Klammern. */
 const dunkelBloecke = [...css.matchAll(/@media \(prefers-color-scheme: dark\) \{([\s\S]*?)\n\}\n/g)].map((m) => m[1]);
 const hell = css.replace(/@media \(prefers-color-scheme: dark\) \{[\s\S]*?\n\}\n/g, '');
+// Die Schatten-Skala lebt in theme/abstaende.css, ihre dunklen Werte stehen
+// aber im einen Dunkelblock hier (26.09.2026) -- sonst gaelten sie als verwaist.
+const hellMitSchatten = hell + '\n' + ohneKommentare(lies('src/theme/abstaende.css'));
 
 /** Token-Definitionen (Name -> erster Wert) aus einem CSS-Ausschnitt. */
 function tokens(quelle: string): Map<string, string> {
@@ -97,9 +100,11 @@ const GLEICH_IN_BEIDEN_MODI: Record<string, string> = {
   '--app-gradient-rakete-quer': 'farbige Kachel mit weissem Text',
   '--app-gradient-aurora': 'Sperr- und Abdeckflaeche, bewusst farbig',
   '--app-gradient-nacht': 'ist schon ein Nachtverlauf',
+  '--app-schatten-punkt-erfolg': 'gruener Glow des Status-Punkts, haengt an der Erfolgsfarbe',
+  '--app-schatten-glow-challenges': 'farbiger Glow, folgt der Bereichsfarbe ueber ihr -rgb-Token',
 };
 
-const helleTokens = tokens(hell);
+const helleTokens = tokens(hellMitSchatten);
 const helleFarbTokens = [...helleTokens.entries()].filter(([, wert]) => istFarbe(wert)).map(([name]) => name);
 
 describe('Dunkelmodus: Grundlage', () => {

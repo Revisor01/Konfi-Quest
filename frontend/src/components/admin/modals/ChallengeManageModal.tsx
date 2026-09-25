@@ -777,7 +777,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           minuteValues="0,15,30,45"
           firstDayOfWeek={1}
           onIonChange={(e) => setFormData({ ...formData, starts_at: e.detail.value as string })}
-          style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }}
+          style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': 'var(--app-schatten-schwebend-weich)' }}
         />
       </IonModal>
       <IonModal keepContentsMounted={true}>
@@ -788,7 +788,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           minuteValues="0,15,30,45"
           firstDayOfWeek={1}
           onIonChange={(e) => setFormData({ ...formData, ends_at: e.detail.value as string })}
-          style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }}
+          style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': 'var(--app-schatten-schwebend-weich)' }}
         />
       </IonModal>
     </IonPage>

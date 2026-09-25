@@ -3621,6 +3621,25 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
        Deckkraft steht in den Regeln der Leisten, hier nur der Ton. */
     --app-glasleiste-rgb: 28, 28, 30;
     --ion-toolbar-color: var(--app-weiss);
+
+    /* Schatten: Ein schwarzer Schatten mit 10 % Deckkraft verschwindet auf
+       #1c1c1e -- Karten und Popover verloren im Dunkeln ihre Tiefe. Die
+       Geometrie (Versatz, Weichzeichnung) bleibt exakt die der hellen Skala
+       aus theme/abstaende.css, nur die Deckkraft steht auf dem Dreifachen,
+       gedeckelt bei 0.6. Kein heller Schein: der wuerde auf Material und
+       iOS-Grund wie ein Rand wirken, nicht wie Hoehe. Farbige Schatten
+       (Glow, Erfolgs-Punkt) haengen an Bereichsfarben und bleiben. */
+    --app-schatten-fein: 0 1px 4px rgba(0, 0, 0, 0.18);
+    --app-schatten-flach: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --app-schatten-flach-stark: 0 1px 3px rgba(0, 0, 0, 0.6);
+    --app-schatten-hauch: 0 2px 8px rgba(0, 0, 0, 0.15);
+    --app-schatten-karte: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --app-schatten-karte-stark: 0 2px 8px rgba(0, 0, 0, 0.45);
+    --app-schatten-schwebend: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --app-schatten-schwebend-weich: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --app-schatten-schwebend-stark: 0 4px 16px rgba(0, 0, 0, 0.45);
+    --app-schatten-hoch: 0 8px 24px rgba(0, 0, 0, 0.36);
+    --app-schatten-modal: 0 10px 28px rgba(0, 0, 0, 0.54);
   }
 }
 
@@ -4335,7 +4354,7 @@ ion-segment.md ion-segment-button {
 }
 .app-kachel--gesperrt .app-kachel__symbol {
   background: var(--app-gradient-badge-gesperrt);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--app-schatten-karte);
 }
 .app-kachel--gesperrt .app-kachel__symbol ion-icon {
   color: var(--app-text-muted);

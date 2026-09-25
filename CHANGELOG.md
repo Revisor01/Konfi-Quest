@@ -174,6 +174,9 @@ Versionsüberschrift.
   behalten ihre Zahl.
 
 ### Behoben
+- Im Dunkelmodus verloren Karten, Popover und der Datumswähler ihre Tiefe, weil
+  ihre Schatten auf dunklem Grund unsichtbar wurden. Sie sind im Dunkeln jetzt
+  kräftiger; im hellen Modus ändert sich nichts.
 - Auf Android waren die Knöpfe der Systemleiste unter der App (Zurück, Start,
   Übersicht) unsichtbar, sobald das Telefon im Dunkelmodus lief: Die Symbole
   wurden weiß, die App darunter blieb hell. Sie sind jetzt immer dunkel und
