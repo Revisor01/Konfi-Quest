@@ -70,14 +70,16 @@ describe('MD3-Layout: die deutschen Beschriftungen passen', () => {
   });
 
   describe('Der iOS-Look bleibt unberuehrt', () => {
-    it('alle MD3-Regeln sind auf .md eingegrenzt', () => {
-      // Eine Regel ohne .md-Praefix traefe beide Looks — und die drei
-      // Probleme gibt es unter iOS gar nicht.
+    it('jede Reiter- und Segment-Regel ist auf EINEN Look eingegrenzt', () => {
+      // Eine Regel ohne .md- oder .ios-Bindung traefe beide Looks — und die
+      // drei Probleme gibt es unter iOS gar nicht. Eine auf .ios eingegrenzte
+      // Regel (Zaehler-Position, 25.09.2026) ist das Gegenstueck dazu und
+      // erlaubt: Sie trifft Android nicht.
       for (const regel of ['ion-tab-bar', 'ion-segment']) {
         const treffer = [...css.matchAll(new RegExp(`^${regel}[^,{\\n]*\\{`, 'gm'))]
           .map(m => m[0])
           .filter(z => z.includes('ion-tab-button') || z.includes('ion-segment-button'))
-          .filter(z => !z.includes('.md'));
+          .filter(z => !/\.(md|ios)\b/.test(z));
         expect(treffer).toEqual([]);
       }
     });

@@ -3075,7 +3075,41 @@ ion-button.app-modal-submit-btn--bonus {
   margin: 0 var(--app-abstand-kompakt);
 }
 
-/* Tab-Badge Overflow Fix */
+/* === Zaehler an den Reitern (ion-badge im ion-tab-button) ===
+   Der Badge ist absolut positioniert. Sein Bezugskasten ist NICHT der
+   Reiter selbst, sondern `.button-inner` im Shadow-DOM des Knopfs (position:
+   relative; der Slot liegt direkt darin). Wo `top: 4px` landet, haengt also
+   davon ab, wo das Symbol innerhalb von `.button-inner` steht — und das ist
+   je Look verschieden. Gemessen am 25.09.2026 im Browser, Ionic 9.0.3 mit
+   den beiden Themes in Import-Reihenfolge, Reiter mit Symbol und Text:
+
+     Android (MD, MD3-Theme, Leiste 56px, Knopf ohne Innenabstand, Inhalt
+     zentriert): Symbol-Kasten margin-top 6px + padding 4px -> die Symbol-
+     Oberkante liegt 10px unter .button-inner. Badge (16px hoch) bei top: 4px
+     beginnt 6px UEBER dem Symbol, seine Mitte 2px darunter. Passt — von
+     Simon im Emulator bestaetigt.
+
+     iOS (ios27-Theme, Leiste 54px + 4px Rand, Knopf --padding-top 7px,
+     justify-content: flex-start, Symbol 26px ohne Rand): .button-inner
+     beginnt 7px unter der Knopf-Oberkante, das Symbol direkt an dessen
+     Oberkante. Derselbe `top: 4px` beginnt damit 4px UNTER der Symbol-
+     Oberkante und endet bei 20px — mitten auf dem 26px-Symbol. Simons
+     Befund: "haengen ganz schoen tief, fast mittig auf dem Icon".
+
+   Ein Wert fuer beide geht nicht ohne CSS-Anker-Positionierung (erst ab
+   Safari 26, Ziel ist iOS 16.4) — die Verschiebung des Symbols kommt aus
+   Rand und Innenabstand des Themes, nicht aus einer Variablen, die wir
+   verrechnen koennten. Deshalb ein eigener Wert fuer iOS, hergeleitet aus
+   derselben Beziehung wie auf Android: Badge-Oberkante = Symbol-Oberkante
+   - 6px. Auf iOS steht das Symbol bei 0 -> top: -6px. Der Badge bleibt
+   dabei 1px unter der Knopf- und 5px unter der Leisten-Oberkante, wird
+   also nicht abgeschnitten (das Theme setzt ::part(native) auf
+   overflow: visible; nachgemessen).
+
+   Waagerecht stimmt es auf beiden: `right: calc(50% - 24px)` setzt die
+   rechte Badge-Kante 24px rechts der Knopfmitte; das Symbol endet bei
+   +12px (MD, 24px breit) bzw. +13px (iOS, 26px breit) — der Badge ragt
+   also auf beiden um 11–12px ueber die rechte Symbolkante hinaus. */
 ion-tab-button {
   overflow: visible;
 }
@@ -3090,6 +3124,10 @@ ion-tab-button ion-badge {
   line-height: 16px;
   padding: 0 var(--app-abstand-mini);
   border-radius: var(--app-radius-klein);
+}
+/* iOS: siehe Herleitung oben. Nur `top`, alles andere bleibt gemeinsam. */
+ion-tab-bar.ios ion-tab-button ion-badge {
+  top: -6px;
 }
 
 /* === Zertifikat-Karten === */

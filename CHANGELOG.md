@@ -168,6 +168,8 @@ Versionsüberschrift.
   vorgesehen. Bisher war sie durchsichtig und doppelt so hoch — die Liste
   schien hinter den Beschriftungen durch, und die Zähler an den Reitern
   schwebten weit über ihren Symbolen.
+- iOS: Die Zähler an den Reitern sitzen wieder oben rechts am Symbol. Bisher
+  hingen sie zu tief und lagen fast mittig auf dem Symbol.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
