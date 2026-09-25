@@ -295,7 +295,7 @@ describe('Organizations Routes', () => {
       expect(res.body.id).toBeDefined();
       expect(res.body.admin_user_id).toBeDefined();
       expect(res.body.default_badges_created).toBeGreaterThan(0);
-      expect(res.body.default_levels_created).toBeGreaterThan(0);
+      expect(res.body.default_levels_created).toBe(6);
       expect(res.body.default_challenges_created).toBe(3);
 
       // Alle 4 System-Rollen müssen existieren — insbesondere 'konfi',
@@ -334,12 +334,43 @@ describe('Organizations Routes', () => {
         expect(erlaubt).toContain(criteria_type);
       }
 
-      // Default-Levels angelegt
+      // Default-Levels angelegt -- die konkrete Liste, nicht nur die Zahl.
+      // Hennstedt (Org 2 in Produktion, angelegt 05.12.2025) stand am
+      // 25.09.2026 ohne ein einziges Level da: aelter als dieser Block
+      // (11.06.2026). Simon: "Die muessen standardmaessig in jeder Org
+      // angelegt werden." Vorlage ist Kirchspiel West (Org 1).
       const { rows: levels } = await db.query(
-        'SELECT COUNT(*)::int AS c FROM levels WHERE organization_id = $1',
+        `SELECT name, title, points_required, icon, color, is_active, created_by
+         FROM levels WHERE organization_id = $1 ORDER BY points_required`,
         [res.body.id]
       );
-      expect(levels[0].c).toBe(6);
+      expect(levels.map(l => [l.name, l.title, l.points_required])).toEqual([
+        ['novize',   'Noviz:in',      2],
+        ['lehrling', 'Lehrling',      5],
+        ['gehilfe',  'Unterstützung', 10],
+        ['experte',  'Expert:in',     15],
+        ['meister',  'Meisterschaft', 20],
+        ['legende',  'Legende',       30]
+      ]);
+      for (const l of levels) {
+        expect(l.is_active).toBe(true);
+        expect(l.created_by).toBe(res.body.admin_user_id);
+        expect(l.icon).toMatch(/^[a-zA-Z]+$/);       // Ionicon-Name, kein Emoji
+        expect(l.color).toMatch(/^#[0-9a-f]{6}$/);
+      }
+
+      // Dieselbe Frage fuer die uebrigen Grunddaten: Was die Antwort meldet,
+      // muss auch in der Datenbank liegen -- je Tabelle, nicht nur summiert.
+      const zaehle = async (tabelle) => (await db.query(
+        `SELECT COUNT(*)::int AS c FROM ${tabelle} WHERE organization_id = $1`,
+        [res.body.id]
+      )).rows[0].c;
+      expect(await zaehle('categories')).toBe(res.body.default_categories_created);
+      expect(await zaehle('certificate_types')).toBe(res.body.default_certificates_created);
+      expect(await zaehle('activities')).toBe(res.body.default_activities_created);
+      expect(await zaehle('challenges')).toBe(res.body.default_challenges_created);
+      expect(res.body.default_categories_created).toBeGreaterThanOrEqual(10);
+      expect(res.body.default_certificates_created).toBe(4);
 
       // Drei Beispiel-Challenges als Entwuerfe, ohne Jahrgangs-Zuweisung
       // (neue Org hat noch keine Jahrgänge).

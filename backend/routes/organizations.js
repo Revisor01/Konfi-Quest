@@ -455,12 +455,19 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       }
 
       // 6. Create default levels (Startpunkt zum Anpassen — Werte wie Referenz-Org)
+      //
+      // Titel, Punkte, Icons und Farben sind die von Kirchspiel West (Org 1),
+      // gemessen am 25.09.2026. Die Titel sind geschlechtsneutral (Noviz:in,
+      // Expert:in), wie die uebrige App. Anlass: Hennstedt (Org 2, angelegt am
+      // 05.12.2025) hatte KEINE Level -- die Org ist aelter als dieser Block
+      // (11.06.2026). Simon: "Die muessen standardmaessig in jeder Org angelegt
+      // werden." Der Test zur Org-Anlage prueft seither die konkrete Liste.
       const defaultLevels = [
-        { name: 'novize', title: 'Novize', points_required: 2, icon: 'pin', color: '#f5b981' },
+        { name: 'novize', title: 'Noviz:in', points_required: 2, icon: 'pin', color: '#f5b981' },
         { name: 'lehrling', title: 'Lehrling', points_required: 5, icon: 'hammer', color: '#3b82f6' },
-        { name: 'gehilfe', title: 'Gehilfe', points_required: 10, icon: 'personAdd', color: '#8b5cf6' },
-        { name: 'experte', title: 'Experte', points_required: 15, icon: 'school', color: '#f59e0b' },
-        { name: 'meister', title: 'Meister', points_required: 20, icon: 'construct', color: '#ef4444' },
+        { name: 'gehilfe', title: 'Unterstützung', points_required: 10, icon: 'personAdd', color: '#8b5cf6' },
+        { name: 'experte', title: 'Expert:in', points_required: 15, icon: 'school', color: '#f59e0b' },
+        { name: 'meister', title: 'Meisterschaft', points_required: 20, icon: 'construct', color: '#ef4444' },
         { name: 'legende', title: 'Legende', points_required: 30, icon: 'medal', color: '#7c3aed' }
       ];
 
