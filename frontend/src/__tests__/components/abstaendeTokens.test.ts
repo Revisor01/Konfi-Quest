@@ -40,13 +40,10 @@ function ohneKommentare(quelle: string): string {
 // - WeiterSoSlide: dasselbe Mass. Sie steht an DERSELBEN Stelle der
 //   Dramaturgie (der Blick nach vorn) und muss deshalb denselben Abstand
 //   halten -- ein anderer Wert waere an genau dieser Stelle sichtbar.
-// - ChatRoomSections: Senden-Knopf 38px hoch, Radius 19px = halbe Hoehe,
-//   also exakt rund. Kein Skalenwert trifft das; 16 oder 20 waeren sichtbar.
 const AUSGENOMMENE_DATEIEN = ['ShareCard.tsx'];
 const AUSGENOMMENE_FUNDE = [
   { datei: 'WerdeTeamerSlide.tsx', fund: 'marginTop: 22' },
   { datei: 'WeiterSoSlide.tsx', fund: 'marginTop: 22' },
-  { datei: 'ChatRoomSections.tsx', fund: "--border-radius: '19px'" },
   // UEBERGANGSWEISE (25.09.2026): 22 Info-Knoepfe mit 6px. Die Datei war bei
   // der Umstellung in fremder Bearbeitung und blieb deshalb roh. Beim naechsten
   // Anfassen auf var(--app-abstand-kompakt) umstellen und diese zwei Zeilen

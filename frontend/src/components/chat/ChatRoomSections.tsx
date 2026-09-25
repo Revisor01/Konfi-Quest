@@ -409,9 +409,11 @@ export const MessageInput = React.memo<MessageInputProps>(({
             '--background-hover': 'var(--app-color-chat-dunkel)',
             '--height': '38px',
             '--min-height': '38px',
-            // 19px = halbe Hoehe (38px) -> exakt rund. Bewusst ausserhalb der Radius-Skala,
-            // im Test als Ausnahme gefuehrt; ein Skalenwert waere hier sichtbar.
-            '--border-radius': '19px',
+            // Rund ueber das Kreis-Token statt ueber 19px (= halbe Hoehe). Bei 38x38
+            // rendert beides gleich, aber der feste Wert haette bei einer anderen
+            // Hoehe still nicht mehr gestimmt (Simon, 25.09.2026: "Eine Stelle,
+            // alles geaendert was eh gleich aussehen soll").
+            '--border-radius': 'var(--app-radius-kreis)',
             '--padding-start': '0',
             '--padding-end': '0',
             '--box-shadow': '0 2px 8px rgba(var(--app-color-chat-rgb), 0.35)',
