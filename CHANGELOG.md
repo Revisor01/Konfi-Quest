@@ -60,9 +60,13 @@ Versionsüberschrift.
   oben rechts. Bei den Anträgen bleibt die Karte „Wird gesendet…" mit den
   einzelnen Vorgängen.
 - Für die Leitung steht der Gemeinde-Umschalter oben links jetzt auf jeder
-  Seite, nicht mehr nur in der Konfi-Liste. Wer über einen Push oder das
-  Postfach in eine andere Gemeinde gewechselt ist, sieht überall, wo er gerade
-  arbeitet, und kommt von jeder Seite zurück.
+  Seite, nicht mehr nur in der Konfi-Liste — außer auf Profil, Benutzer:innen,
+  Organisationen und Betrieb, wo ein Gemeindewechsel nichts zu suchen hat. Wer
+  über einen Push oder das Postfach in eine andere Gemeinde gewechselt ist,
+  sieht überall, wo er gerade arbeitet, und kommt von jeder Seite zurück.
+- In der Gemeinde-Auswahl steht die aktive Gemeinde fett und leicht
+  hinterlegt statt mit grünem Haken; der Gemeindename am Knopf ist kleiner und
+  nimmt in der Kopfzeile weniger Platz ein.
 - Glocke und Gemeinde-Umschalter stehen jetzt auch im Chat, in jedem Chatraum
   und bei den Challenges — die einzigen Seiten, auf denen sie noch fehlten.
 - Die Mitteilungen im Postfach sehen aus wie jede andere Liste der App: Karte

@@ -374,9 +374,11 @@ const AdminMetricsPage: React.FC = () => {
 
   return (
     <IonPage>
+      {/* Kein Gemeinde-Umschalter: die Seite ist gemeindeuebergreifend (Betrieb). */}
       <AppKopfzeile
         titel="Betrieb"
         onZurueck={() => window.history.back()}
+        gemeindeUmschalter={false}
         rechts={<IonButton aria-label="Daten neu laden" onClick={() => load(true)}><IonIcon icon={ICON_AKTUALISIEREN} /></IonButton>}
       />
       <IonContent className="app-gradient-background" fullscreen>

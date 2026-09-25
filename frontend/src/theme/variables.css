@@ -3367,11 +3367,28 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .app-org-switcher-btn::part(native) {
   text-transform: none;
 }
+/* Der Name am Knopf: eine Stufe kleiner als Listen-Untertext und in der
+   Breite gedeckelt -- Simon (25.09.2026): "kuerzer und kleiner, das nimmt
+   viel Platz weg". Der volle Name steht im aria-label und in der Liste. */
 .app-org-switcher-btn .app-org-switcher-btn__name {
-  font-size: var(--app-text-sekundaer);
+  font-size: var(--app-text-klein);
   font-weight: var(--app-schrift-halbfett);
   margin-left: var(--app-abstand-mini);
   white-space: nowrap;
+  max-width: 7em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Die aktive Gemeinde in der Auswahlliste: fett und leicht hinterlegt, wie
+   app-list-item--selected in jeder anderen Auswahl der App -- kein Haken.
+   Die Regel steht hinter "ion-popover:not(.ios) ion-item", damit sie deren
+   weissen Hintergrund ueberstimmt. */
+ion-popover ion-item.app-org-switcher__eintrag--aktiv {
+  --background: rgba(var(--app-color-users-rgb), 0.08);
+}
+ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
+  font-weight: var(--app-schrift-fett);
 }
 
 /* Chat-Eingabefeld: max. ~5 Zeilen, danach scrollt der Inhalt IM Feld. Bei

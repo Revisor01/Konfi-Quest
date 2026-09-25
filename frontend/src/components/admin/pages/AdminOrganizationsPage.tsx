@@ -122,9 +122,11 @@ const AdminOrganizationsPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
+      {/* Kein Gemeinde-Umschalter: die Seite ist gemeindeuebergreifend (Betrieb). */}
       <AppKopfzeile
         titel="Organisationen"
         onZurueck={() => window.history.back()}
+        gemeindeUmschalter={false}
         rechts={(
           <IonButton aria-label="Neue Organisation anlegen" onClick={presentOrganizationModal}>
             <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />

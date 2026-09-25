@@ -12,10 +12,12 @@ Oben trägt jede Seite dieselbe Kopfzeile: rechts die **Glocke** mit dem
 mehrere Gemeinden betreut — der **Name der Gemeinde**, in der du gerade
 arbeitest (siehe [In mehreren Gemeinden
 mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)). Ein Tippen auf
-den Namen zeigt alle deine Gemeinden, jede mit einer roten Zahl, wenn dort
-etwas offen ist (siehe [Sehen, wo etwas offen
-ist](05-rollen.md#sehen-wo-etwas-offen-ist)). Dazwischen der Titel, daneben
-die Knöpfe der jeweiligen Seite, etwa das Plus zum Anlegen.
+den Namen zeigt alle deine Gemeinden, die aktive fett, jede mit einer roten
+Zahl, wenn dort etwas offen ist (siehe [Sehen, wo etwas offen
+ist](05-rollen.md#sehen-wo-etwas-offen-ist)). Auf **Profil**,
+**Benutzer:innen**, **Organisationen** und **Betrieb** fehlt der Name — dort
+gibt es nichts, was an der Gemeinde hinge. Dazwischen der Titel, daneben die
+Knöpfe der jeweiligen Seite, etwa das Plus zum Anlegen.
 
 Die Leitung hat zwei Stufen: **Admins** kümmern sich um den laufenden Betrieb,
 **Org-Admins** zusätzlich um Benutzer:innen, Jahrgangs-Zuweisungen und die

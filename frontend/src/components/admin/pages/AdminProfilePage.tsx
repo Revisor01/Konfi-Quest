@@ -119,7 +119,8 @@ const AdminProfilePage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <AppKopfzeile titel="Admin-Profil" onZurueck={() => window.history.back()} />
+      {/* Kein Gemeinde-Umschalter: das Profil gehoert zum Konto, nicht zur Gemeinde. */}
+      <AppKopfzeile titel="Admin-Profil" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
 
       <IonContent className="app-gradient-background" fullscreen>
         <AppKopfzeileGross titel="Admin-Profil" />

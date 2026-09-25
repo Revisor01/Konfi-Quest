@@ -98,9 +98,11 @@ const AdminUsersPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
+      {/* Kein Gemeinde-Umschalter auf dieser Unterseite (Simon, 25.09.2026). */}
       <AppKopfzeile
         titel="Benutzer:innen"
         onZurueck={() => window.history.back()}
+        gemeindeUmschalter={false}
         rechts={user?.role_name === 'org_admin' ? (
           <IonButton aria-label="Neue Benutzer:in anlegen" onClick={presentUserModal}>
             <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />

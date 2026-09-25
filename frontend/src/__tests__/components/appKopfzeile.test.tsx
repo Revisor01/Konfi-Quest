@@ -262,14 +262,37 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
     }
   });
 
-  it('der Gemeinde-Umschalter kommt auf allen 18 Seiten aus dem Geruest -- keine baut ihn selbst, keine schaltet ihn ab', () => {
+  // Simon am Geraet (25.09.2026): "Im Admin muss der Switcher weg auf den
+  // Unterseiten: Profil / Benutzerinnen / Organisationen / Betrieb." Das
+  // Profil gehoert zum Konto, nicht zur Gemeinde; Organisationen und Betrieb
+  // sind gemeindeuebergreifend. Push und Postfach zielen nur auf
+  // /admin/konfis und /admin/events (utils/pushNavigation.ts) -- der Rueckweg
+  // nach einem Gemeindewechsel braucht diese vier Seiten nicht.
+  const ohneUmschalter = new Set([
+    'src/components/admin/pages/AdminProfilePage.tsx',
+    'src/components/admin/pages/AdminUsersPage.tsx',
+    'src/components/admin/pages/AdminOrganizationsPage.tsx',
+    'src/components/admin/pages/AdminMetricsPage.tsx',
+  ]);
+
+  it('der Gemeinde-Umschalter kommt aus dem Geruest -- keine Seite baut ihn selbst, genau vier schalten ihn ab', () => {
+    expect(ohneUmschalter.size).toBe(4);
+    let abgeschaltet = 0;
     for (const [seite] of leitungsSeiten) {
       const quelle = lies(seite);
       // Vorher: import { OrgSwitcherButton } from '../../shared' NUR in AdminKonfisPage.
       expect(quelle, seite).not.toContain('OrgSwitcherButton');
-      expect(quelle, seite).not.toContain('gemeindeUmschalter={false}');
       expect(quelle, seite).not.toContain('glocke={false}');
+      const anzahl = zaehle(quelle, 'gemeindeUmschalter={false}');
+      if (ohneUmschalter.has(seite)) {
+        // Jede der vier hat genau EINE Kopfzeile -- und die schaltet ab.
+        expect(anzahl, seite).toBe(1);
+        abgeschaltet += 1;
+      } else {
+        expect(anzahl, seite).toBe(0);
+      }
     }
+    expect(abgeschaltet).toBe(4);
   });
 
   it('der Zurueck-Knopf kommt aus der Kopfzeile -- kein ICON_ZURUECK mehr in den Leitungs-Seiten', () => {
