@@ -263,6 +263,17 @@ Zwei Ausnahmen:
   dann keine Kennung mit, damit niemand auf einer Seite landet, die es nicht
   mehr gibt.
 
+Ein Termin aus einem Jahrgang, dem du nicht zugewiesen bist, geht auch über
+eine Mitteilung oder einen Link nicht auf: Was in deiner Terminliste fehlt,
+bleibt auch auf diesem Weg verborgen. Statt des Termins steht dann „Nicht
+deinem Jahrgang zugeordnet" mit dem Hinweis, dass die Leitung deiner Gemeinde
+die Zuweisung in den Einstellungen ändern kann — für Teamer:innen und Admins
+gleich. Das passiert etwa, wenn dich die Leitung an einen Jahrgangstermin
+setzt, dessen Jahrgang dir fehlt: Die Mitteilung kommt, der Termin selbst
+bleibt zu, bis die [Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert) stimmt.
+Nur Termine „Nur Team" und Termine ohne Jahrgang sind für alle da; die
+Gemeindeleitung sieht alles.
+
 ### Wissen, bis wann Konfis sich abmelden können
 
 **Zwei Tage vor dem Termin ist Schluss.** Danach ist der Abmelden-Knopf

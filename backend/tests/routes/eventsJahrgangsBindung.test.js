@@ -319,4 +319,137 @@ describe('Jahrgangs-Bindung der Termin-Schreibrouten', () => {
       expect(rows.length).toBe(0);
     });
   });
+
+  // LESEN eines einzelnen Termins (24.09.2026). Die Liste verschweigt fremde
+  // Termine seit dem 22.08./01.09.2026, die Schreibrouten oben pruefen seit
+  // dem 14.09. -- nur GET /api/events/:id gab bis hierher JEDEN Termin der
+  // Organisation heraus, samt Klarnamen der Teilnehmenden und ihren
+  // Abmeldegruenden. Die API-Doku fuehrte das sogar als offenen Hinweis
+  // ("Teamer: KEIN Jahrgang-Check"). Anlass, es jetzt zu schliessen: Mit der
+  // App-Route /teamer/events/:id wandert die Kennung erstmals per Push-Link
+  // herum -- ein Termin, den die Liste verschweigt, darf am Link nicht doch
+  // aufgehen.
+  describe('GET /api/events/:id (Detail lesen)', () => {
+    it('VERBOTEN: Teamer:in liest keinen Termin aus fremdem Jahrgang — 403 ohne Teilnehmerliste', async () => {
+      const id = await terminAnlegen({ jahrgangId: JG_B });
+
+      const res = await request(app)
+        .get(`/api/events/${id}`)
+        .set('Authorization', `Bearer ${teamerMitJgToken}`);
+
+      expect(res.status).toBe(403);
+      // Dieselbe Meldung wie bei PUT/DELETE /api/events/:id, dazu der Grund
+      // als error_code (25.09.2026) -- und NUR das: kein Feld des Termins,
+      // keine participants[]. `error` bleibt unveraendert, die Store-Apps
+      // lesen nur dieses Feld.
+      expect(res.body).toEqual({
+        error: 'Kein Zugriff auf diesen Termin',
+        error_code: 'jahrgang_nicht_zugewiesen'
+      });
+    });
+
+    it('VERBOTEN: Admin liest keinen Termin aus fremdem Jahrgang — 403', async () => {
+      const id = await terminAnlegen({ jahrgangId: JG_B });
+
+      const res = await request(app)
+        .get(`/api/events/${id}`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({
+        error: 'Kein Zugriff auf diesen Termin',
+        error_code: 'jahrgang_nicht_zugewiesen'
+      });
+    });
+
+    it('VERBOTEN: Admin OHNE Jahrgang, selbst am Termin eingetragen — 403 mit Grund (Simons Fall)', async () => {
+      // Simon (25.09.2026): "Konkret fuege ich einen Admin zu einem
+      // Jahrgangstermin hinzu, und der Admin selbst hat keinen Jahrgang.
+      // Kriegt er einen Push, er klickt auf den Push und kommt dann aber
+      // nicht auf das Event." Die eigene Buchung aendert an der Regel
+      // nichts -- sie prueft die Jahrgangszuweisung, nicht die Teilnahme.
+      // Der error_code ist das, woran die App die Erklaerung festmacht.
+      const ADMIN_OHNE_JG = 403;
+      await db.query(
+        `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active)
+         VALUES ($1, 'ev_admin_ohne', 'x', 'EV Admin ohne Jahrgang', 3, 1, true)`,
+        [ADMIN_OHNE_JG]
+      );
+      require('../../middleware/rbac').invalidateUserCache(ADMIN_OHNE_JG);
+      const id = await terminAnlegen({ jahrgangId: JG_B });
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id)
+         VALUES ($1, $2, 'confirmed', 1)`,
+        [ADMIN_OHNE_JG, id]
+      );
+
+      const res = await request(app)
+        .get(`/api/events/${id}`)
+        .set('Authorization', `Bearer ${tokenFuer(ADMIN_OHNE_JG, 3)}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({
+        error: 'Kein Zugriff auf diesen Termin',
+        error_code: 'jahrgang_nicht_zugewiesen'
+      });
+    });
+
+    it('ERLAUBT: Teamer:in liest im eigenen Jahrgang — 200 mit Teilnehmerliste', async () => {
+      const id = await terminAnlegen({ jahrgangId: JG_A });
+
+      const res = await request(app)
+        .get(`/api/events/${id}`)
+        .set('Authorization', `Bearer ${teamerMitJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(id);
+      expect(res.body.name).toBe('Testtermin');
+      // Teamer:innen bekommen die Teilnehmerliste weiterhin (nur Konfis nicht).
+      expect(Array.isArray(res.body.participants)).toBe(true);
+    });
+
+    it('ERLAUBT: allgemeiner Termin ohne Jahrgang — 200 fuer Teamer:in und Admin', async () => {
+      const id = await terminAnlegen();
+
+      for (const token of [teamerMitJgToken, adminMitJgToken]) {
+        const res = await request(app)
+          .get(`/api/events/${id}`)
+          .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(res.body.id).toBe(id);
+      }
+    });
+
+    it('ERLAUBT: reiner Teamer-Termin an fremdem Jahrgang — 200 (Ausnahme der Regel)', async () => {
+      const id = await terminAnlegen({ jahrgangId: JG_B, teamerOnly: true });
+
+      const res = await request(app)
+        .get(`/api/events/${id}`)
+        .set('Authorization', `Bearer ${teamerMitJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(id);
+      expect(res.body.teamer_only).toBe(true);
+    });
+
+    it('REGRESSION: org_admin liest in JEDEM Jahrgang — 200', async () => {
+      const id = await terminAnlegen({ jahrgangId: JG_B });
+
+      const res = await request(app)
+        .get(`/api/events/${id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(id);
+    });
+
+    it('unbekannte Kennung bleibt 404 — die Jahrgangspruefung kommt erst danach', async () => {
+      const res = await request(app)
+        .get('/api/events/999999')
+        .set('Authorization', `Bearer ${teamerMitJgToken}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Event nicht gefunden' });
+    });
+  });
 });

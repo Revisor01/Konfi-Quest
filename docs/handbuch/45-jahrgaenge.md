@@ -193,7 +193,7 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Konfi löschen, befördern, Passwort zurücksetzen (Admin) | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
 | Punkte vergeben und zurücknehmen | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
 | Nachweisfotos zu Aktivitäten | nur für Verantwortliche der betreffenden Jahrgänge sichtbar |
-| Termine | jahrgangsgebundene Termine sind unsichtbar und nicht buchbar |
+| Termine | jahrgangsgebundene Termine sind unsichtbar und nicht buchbar; führt eine Mitteilung oder ein Link auf einen solchen Termin, steht dort der Grund („Nicht deinem Jahrgang zugeordnet") |
 | Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
 | Anwesenheits- und Spruchlisten (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Jahresrückblick: Liste der Ausgaben | zeigt nur Ausgaben der eigenen Jahrgänge; ohne jede Zuweisung bleibt sie leer und nennt den Grund („Kein Jahrgang zugewiesen“) |

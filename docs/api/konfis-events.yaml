@@ -1468,12 +1468,29 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Event org-gescopt; Konfi-Response ohne qr_token/participants/unregistrations; series_events[] ohne qr_token fuer alle Rollen"
-        hinweis: "Teamer: KEIN Jahrgang-Check - Teilnehmer-Klarnamen und Opt-out-Gruende aller Org-Events einsehbar (siehe Analyse Punkt 2)."
+        objekt-pruefung: "Event org-gescopt; teamer und admin (nicht super_admin): Jahrgangs-Bindung ueber darfTermin (utils/jahrgangsZugriff.js) -- teamer_only und Termine ohne Jahrgang immer, sonst nur bei gemeinsamem can_view-Jahrgang, sonst 403; org_admin ungefiltert; Konfi-Response ohne qr_token/participants/unregistrations; series_events[] ohne qr_token fuer alle Rollen"
+        hinweis: >
+          BEHOBEN 24.09.2026 (war: "Teamer: KEIN Jahrgang-Check -
+          Teilnehmer-Klarnamen und Opt-out-Gruende aller Org-Events
+          einsehbar", Analyse Punkt 2). Die Liste filterte seit dem
+          22.08./01.09.2026, die Schreibrouten pruefen seit dem 14.09.2026 --
+          nur diese Leseroute gab jeden Termin der Organisation heraus, samt
+          Klarnamen. Anlass: Mit der neuen App-Route /teamer/events/:id wird
+          die Termin-Kennung erstmals per Link (Push) herumgereicht.
+          Antwort bei fremdem Jahrgang: 403 { error: "Kein Zugriff auf
+          diesen Termin", error_code: "jahrgang_nicht_zugewiesen" } --
+          dieselbe Meldung wie bei PUT/DELETE /api/events/:id. Der error_code
+          kam am 25.09.2026 ADDITIV dazu (`error` unveraendert, Store-Apps
+          lesen nur dieses Feld): Ein Push traegt die Kennung auch zu
+          Personen, die den Termin nicht sehen duerfen -- die App erklaert
+          daran den Grund ("Nicht deinem Jahrgang zugeordnet") statt "Fehler
+          beim Laden". Ausgelieferte Apps rufen die Route nur fuer Termine
+          aus ihrer bereits gefilterten Liste auf; die liefern weiterhin 200.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Event-Objekt + participants[], timeslots[], series_events[], jahrgaenge[], categories[], unregistrations[], Zaehler, booking_status, is_registered, chat_room_id, registration_status, teamer_registration_status" }
         "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "teamer/admin ohne gemeinsamen can_view-Jahrgang: { error: 'Kein Zugriff auf diesen Termin', error_code: 'jahrgang_nicht_zugewiesen' } -- kein Feld des Termins, keine participants[]" }
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     put:

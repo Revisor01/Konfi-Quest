@@ -6,6 +6,7 @@
 // sonst würde Express "cancelled" als :id Parameter interpretieren.
 const express = require('express');
 const { anmeldeStatusSql, kapazitaetSql, ZEITFENSTER_SQL } = require('../../utils/terminAnmeldeStatus');
+const { darfTermin } = require('../../utils/jahrgangsZugriff');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
   const router = express.Router();
@@ -620,6 +621,42 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
 
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
+      // Jahrgangs-Bindung auch beim LESEN (24.09.2026). Die Liste oben
+      // filtert Teamer:innen und Admins seit dem 22.08. bzw. 01.09.2026 auf
+      // ihre can_view-Jahrgaenge; die Schreibrouten pruefen seit dem 14.09.
+      // ueber darfTermin. Diese Route war die Luecke dazwischen -- in der
+      // API-Doku stand sie sogar ausdruecklich als Hinweis: "Teamer: KEIN
+      // Jahrgang-Check - Teilnehmer-Klarnamen und Opt-out-Gruende aller
+      // Org-Events einsehbar". Mit der neuen Detailroute /teamer/events/:id
+      // wird die Kennung zum ersten Mal per Link herumgereicht; ein Termin,
+      // den die Liste verschweigt, darf hier nicht doch aufgehen.
+      //
+      // Dieselbe Bedingung wie der Listenfilter (Rolle teamer/admin, kein
+      // super_admin) und dieselbe Regel wie beim Schreiben (darfTermin:
+      // teamer_only und Termine ohne Jahrgang immer, org_admin ausgenommen).
+      // Konfis bleiben unberuehrt -- fuer sie gilt weiter nur der Org-Riegel.
+      //
+      // Ausgelieferte Apps: Sie rufen diese Route nur fuer Termine aus ihrer
+      // (bereits gefilterten) Liste auf -- die bekommen weiterhin 200. 403
+      // trifft ausschliesslich Aufrufe mit fremder Kennung.
+      if (!req.user.is_super_admin && ['teamer', 'admin'].includes(req.user.role_name)) {
+        const zugriff = await darfTermin(db, req, eventId);
+        if (!zugriff.erlaubt) {
+          // error_code zusaetzlich (25.09.2026): Ein Push traegt die Kennung
+          // auch zu Personen, die den Termin nicht sehen duerfen -- Simons
+          // Fall: Admin ohne Jahrgang wird einem Jahrgangstermin zugeordnet,
+          // tippt den Push an und landet im 403. Die App soll dann sagen,
+          // WARUM ("dem Jahrgang nicht zugewiesen") statt "Fehler beim
+          // Laden". Dasselbe Muster wie auth.js (user_inactive) und
+          // verwaltung.js (event_delete_confirm): Feld im Rumpf, `error`
+          // bleibt unveraendert -- die Store-Apps lesen nur das.
+          return res.status(403).json({
+            error: 'Kein Zugriff auf diesen Termin',
+            error_code: 'jahrgang_nicht_zugewiesen'
+          });
+        }
       }
 
       // Get participants

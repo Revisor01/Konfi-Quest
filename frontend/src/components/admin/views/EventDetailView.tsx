@@ -9,6 +9,7 @@ import {
   ICON_GESPERRT,
   ICON_GRUPPE_GEFUELLT,
   ICON_HAKEN_GEFUELLT,
+  ICON_JAHRGANG,
   ICON_LOESCHEN_GEFUELLT,
   ICON_PERSON_HINZUFUEGEN_GEFUELLT,
   ICON_QRCODE,
@@ -18,7 +19,7 @@ import {
   ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
-import { fehlerText } from '../../../utils/fehler';
+import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import { darfTermineVerwalten } from '../../../utils/terminRechte';
 import { kopiereTermin } from '../../../utils/terminVorbelegung';
 import { welcheKnoepfe, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
@@ -38,7 +39,7 @@ import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { absageZuruecknehmenFragen } from '../../../utils/absageZuruecknehmen';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import api from '../../../services/api';
-import { SectionHeader, AbsageBlock, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt } from '../../shared';
+import { SectionHeader, AbsageBlock, EmptyState, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
@@ -95,6 +96,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
+  // Der Server hat den Termin verweigert, weil dieser Zugang dem Jahrgang
+  // nicht zugewiesen ist (GET /events/:id -> 403, error_code
+  // jahrgang_nicht_zugewiesen). Simons Fall (25.09.2026): Ein Admin ohne
+  // Jahrgang wird einem Jahrgangstermin zugeordnet, bekommt den Push, tippt
+  // ihn an -- und sah bis hierher nur den roten Kasten "Fehler beim Laden
+  // der Event-Daten" ueber einer leeren Seite. Jetzt steht der Grund da,
+  // mit dem Ausweg, im Wortlaut der Listen (KonfisView: "Kein Jahrgang
+  // zugewiesen").
+  const [jahrgangFehlt, setJahrgangFehlt] = useState(false);
 
   // ====================================================================
   // EIGENE AN-/ABMELDUNG (Simon, 03.09.2026)
@@ -536,6 +546,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     setUnregistrations([]);
     setEventData(null);
     setEventMaterials([]);
+    setJahrgangFehlt(false);
     setError('');
     setLoading(true);
   }, [eventId]);
@@ -603,6 +614,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     try {
       const eventRes = await api.get(`/events/${fuerEventId}`);
       if (!gilt()) return;
+      setJahrgangFehlt(false);
       setEventData(eventRes.data);
       setParticipants(eventRes.data.participants || []);
       setUnregistrations(eventRes.data.unregistrations || []);
@@ -613,7 +625,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         if (gilt()) setEventMaterials([]);
       }
     } catch (err) {
-      if (gilt()) setError('Fehler beim Laden der Event-Daten', { ort: 'event-detail-laden', fehler: err });
+      if (!gilt()) return;
+      // Kein Fehler der App, sondern eine Antwort mit Grund: Der Termin
+      // gehoert zu einem Jahrgang, dem dieser Zugang nicht zugewiesen ist
+      // (lesen.js). Dann KEIN roter Kasten und keine Fehlermessung --
+      // stattdessen die Erklaerung auf der Seite (siehe jahrgangFehlt).
+      if (fehlerStatus(err) === 403 && fehlerDaten(err)?.error_code === 'jahrgang_nicht_zugewiesen') {
+        setJahrgangFehlt(true);
+        return;
+      }
+      setError('Fehler beim Laden der Event-Daten', { ort: 'event-detail-laden', fehler: err });
     } finally {
       if (gilt()) setLoading(false);
     }
@@ -1320,6 +1341,35 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         </IonHeader>
         <IonContent fullscreen>
           <LoadingSpinner message="Event wird geladen..." />
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  // Termin aus einem fremden Jahrgang (Push oder Link): den Grund nennen und
+  // den Weg hinaus, statt der leeren Seite mit Platzhaltertitel. Dieselbe
+  // Seite gibt es fuer Teamer:innen in TeamerEventsPage (renderJahrgangHinweis)
+  // -- gleicher Wortlaut, damit beide Rollen dasselbe lesen.
+  if (jahrgangFehlt) {
+    return (
+      <IonPage ref={pageRef}>
+        <IonHeader translucent={true}>
+          <IonToolbar>
+            {!hideBackButton && (
+              <IonButtons slot="start">
+                <IonButton aria-label="Zurück" onClick={onBack}><IonIcon icon={ICON_ZURUECK} /></IonButton>
+              </IonButtons>
+            )}
+            <IonTitle>Termin</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="app-gradient-background" fullscreen>
+          <EmptyState
+            icon={ICON_JAHRGANG}
+            title="Nicht deinem Jahrgang zugeordnet"
+            message="Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
+            iconColor="var(--app-color-events)"
+          />
         </IonContent>
       </IonPage>
     );

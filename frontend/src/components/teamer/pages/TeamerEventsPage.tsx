@@ -11,6 +11,7 @@ import {
   ICON_GRUPPE_GEFUELLT,
   ICON_HINZUFUEGEN_GEFUELLT,
   ICON_INFO_GEFUELLT,
+  ICON_JAHRGANG,
   ICON_KATEGORIE_GEFUELLT,
   ICON_KOPIEREN_GEFUELLT,
   ICON_LINK,
@@ -31,7 +32,7 @@ import {
   ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
-import { fehlerText } from '../../../utils/fehler';
+import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import { hatAbgesagt, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
@@ -63,7 +64,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, zeitraumText, istVergangen, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
+import { SectionHeader, ListSection, EmptyState, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, zeitraumText, istVergangen, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -109,7 +110,15 @@ const TeamerEventsPage: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [initialEventHandled, setInitialEventHandled] = useState(false);
+  /** Kennung des zuletzt per ?eventId= geoeffneten Termins, siehe Effekt unten. */
+  const [handledEventId, setHandledEventId] = useState<string | null>(null);
+  /**
+   * Der per ?eventId= angeforderte Termin gehoert zu einem Jahrgang, dem
+   * diese Person nicht zugewiesen ist (GET /events/:id -> 403, error_code
+   * jahrgang_nicht_zugewiesen). Dann zeigt die Seite statt der Liste den
+   * Grund und den Weg hinaus -- siehe Effekt unten und renderJahrgangHinweis.
+   */
+  const [jahrgangHinweis, setJahrgangHinweis] = useState(false);
   const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [eventTimeslots, setEventTimeslots] = useState<Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number; waitlist_count?: number }>>([]);
   /** Teilnehmerliste aus GET /events/:id -- nur zum Lesen, siehe Effekt unten. */
@@ -368,16 +377,63 @@ const TeamerEventsPage: React.FC = () => {
     }
   }, [selectedEvent?.id, selectedEvent?.has_timeslots]);
 
-  // Wenn von Dashboard mit selectedEventId navigiert wurde, Event direkt öffnen
+  // Deep-Link auf einen Termin: ?eventId= kommt vom Dashboard und -- seit dem
+  // 24.09.2026 -- ueber die Umleitung /teamer/events/:id aus den Termin-Pushes
+  // (rollenBaeume.ts).
+  //
+  // Gemerkt wird die KENNUNG, nicht ein Ja/Nein. Der alte Schalter
+  // (initialEventHandled) stand nach dem ersten Deep-Link fuer immer auf
+  // "erledigt": Die Seite bleibt im Tab montiert, ein zweiter Link auf einen
+  // ANDEREN Termin lief deshalb ins Leere und zeigte weiter die Liste. Jetzt
+  // oeffnet jede neue Kennung ihren Termin. Dieselbe Kennung oeffnet ihn
+  // NICHT erneut -- sonst spraenge der Zurueck-Knopf (setSelectedEvent(null))
+  // sofort wieder hinein, weil die Adresse den Parameter behaelt. Faellt der
+  // Parameter aus der Adresse (Tab angetippt), wird der Merker geloescht,
+  // damit derselbe Termin spaeter wieder per Link aufgeht.
+  //
+  // Ausgewaehlt wird aus der LISTE (GET /events), nicht per Detailabruf: Die
+  // Liste ist bereits nach den zugewiesenen Jahrgaengen gefiltert. Ein
+  // Termin, den diese Teamer:in nicht sehen darf, steht nicht darin -- und
+  // geht damit auch ueber einen Link nicht auf. GET /events/:id folgt erst
+  // danach, und nur fuer einen Termin aus der Liste.
+  //
+  // Steht der Termin NICHT in der Liste, wird einmal nachgefragt, WARUM
+  // (25.09.2026): Simons Fall ist ein Push zu einem Termin, dessen Jahrgang
+  // dieser Person nicht zugewiesen ist. Ohne die Nachfrage bliebe still die
+  // Liste stehen, und wer den Push angetippt hat, wuesste nicht, was los ist.
+  // Der Server antwortet dann 403 mit error_code jahrgang_nicht_zugewiesen
+  // (lesen.js) -- und nur darauf zeigt die Seite die Erklaerung. Alles
+  // andere (404 fuer einen geloeschten Termin, Netzfehler) bleibt wie bisher
+  // bei der Liste. Ein 200 kann hier nicht kommen: Was der Server herausgibt,
+  // steht auch in der Liste.
+  //
+  // Die Liste darf dabei leer sein: Genau die Person OHNE jeden Jahrgang hat
+  // oft gar keinen sichtbaren Termin -- und ist zugleich die, um die es geht.
   useEffect(() => {
-    if (!initialEventHandled && !loading && events && events.length > 0 && queryEventId) {
-      const eventToSelect = events.find(e => e.id === parseInt(queryEventId, 10));
-      if (eventToSelect) {
-        setSelectedEvent(eventToSelect);
-      }
-      setInitialEventHandled(true);
+    if (!queryEventId) {
+      setHandledEventId(null);
+      setJahrgangHinweis(false);
+      return;
     }
-  }, [loading, events, queryEventId, initialEventHandled]);
+    if (loading || !events || queryEventId === handledEventId) return;
+    const eventToSelect = events.find(e => e.id === parseInt(queryEventId, 10));
+    if (eventToSelect) {
+      setSelectedEvent(eventToSelect);
+    } else {
+      void pruefeJahrgangsgrund(queryEventId);
+    }
+    setHandledEventId(queryEventId);
+  }, [loading, events, queryEventId, handledEventId]);
+
+  const pruefeJahrgangsgrund = async (eventId: string) => {
+    try {
+      await api.get(`/events/${eventId}`);
+    } catch (err) {
+      if (fehlerStatus(err) === 403 && fehlerDaten(err)?.error_code === 'jahrgang_nicht_zugewiesen') {
+        setJahrgangHinweis(true);
+      }
+    }
+  };
 
   // Formatierung
   // Sortierung: naechstes Event zuerst, vergangene am Ende
@@ -1966,7 +2022,36 @@ const TeamerEventsPage: React.FC = () => {
     </IonPage>
   );
 
+  // Termin aus einem fremden Jahrgang (Push oder Link): Grund und Ausweg
+  // statt der stummen Liste. Dieselbe Seite wie in der Leitungsansicht
+  // (admin/views/EventDetailView.tsx, jahrgangFehlt) -- gleicher Wortlaut,
+  // damit beide Rollen dasselbe lesen. Zurueck fuehrt zur Liste; der Merker
+  // handledEventId verhindert, dass der Effekt oben sofort wieder nachfragt.
+  const renderJahrgangHinweis = () => (
+    <IonPage ref={pageRef}>
+      <IonHeader translucent={true}>
+        <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton onClick={() => setJahrgangHinweis(false)} aria-label="Zurück zur Event-Liste">
+              <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
+            </IonButton>
+          </IonButtons>
+          <IonTitle>Termin</IonTitle>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="app-gradient-background" fullscreen>
+        <EmptyState
+          icon={ICON_JAHRGANG}
+          title="Nicht deinem Jahrgang zugeordnet"
+          message="Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
+          iconColor="var(--app-color-events)"
+        />
+      </IonContent>
+    </IonPage>
+  );
+
   // Detail ersetzt die Liste (selectedEvent-State steuert die Ansicht).
+  if (jahrgangHinweis) return renderJahrgangHinweis();
   return selectedEvent ? renderDetail() : renderList();
 };
 

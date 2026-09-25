@@ -553,6 +553,17 @@ describe('Teamer: Zusage und Absage', () => {
       await zusage({ dabei: true });
       await zusage({ dabei: false, reason: 'Bin verreist' });
 
+      // GET /events/:id prueft seit dem 24.09.2026 die Jahrgangs-Bindung
+      // (lesen.js, darfTermin): admin1 hat im Seed keinen Jahrgang, der
+      // Termin haengt an jahrgang1 -- ohne Zuweisung kaeme 403 statt der
+      // Antwortform, um die es hier geht.
+      await db.query(
+        `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit)
+         VALUES ($1, 1, true, true)`,
+        [USERS.admin1.id]
+      );
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+
       const res = await request(app)
         .get(`/api/events/${EVENTS.gottesdienstEvent.id}`)
         .set('Authorization', `Bearer ${generateToken('admin1')}`);

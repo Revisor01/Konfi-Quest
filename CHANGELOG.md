@@ -70,6 +70,15 @@ Versionsüberschrift.
   behalten ihre Zahl.
 
 ### Behoben
+- Ein zweiter Link auf einen anderen Termin öffnet bei Teamer:innen jetzt
+  auch den zweiten Termin. Bisher wirkte nur der erste Link nach dem Start.
+- Ein Termin aus einem fremden Jahrgang lässt sich von Teamer:innen und
+  Leitung nicht mehr über seine Kennung abrufen — samt Teilnehmerliste und
+  Abmeldegründen. Sichtbar ist nur, was auch in der eigenen Terminliste steht.
+- Wer aus einer Termin-Mitteilung auf einen Termin kommt, dessen Jahrgang
+  ihm nicht zugewiesen ist, liest jetzt den Grund und den Weg hinaus („Nicht
+  deinem Jahrgang zugeordnet") — statt einer allgemeinen Fehlermeldung über
+  einer leeren Seite oder einer stummen Terminliste.
 - Beim Eintragen von Hand bietet die Auswahl nur noch Personen an, die zu
   einem Jahrgang des Termins gehören — bei Konfis wie beim Team und der
   Leitung. Ein Hinweis nennt die Jahrgänge des Termins, damit klar ist, warum
