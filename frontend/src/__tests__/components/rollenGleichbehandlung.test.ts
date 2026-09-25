@@ -229,6 +229,17 @@ describe('Leerzustaende tragen die Farbe ihres Bereichs', () => {
     const treffer = [...seite.matchAll(/emptyIconColor="([^"]+)"/g)].map((m) => m[1]);
     expect(treffer).toEqual(['var(--app-color-level)']);
   });
+
+  // Dieselbe Fehlerklasse an der Zertifikat-Verwaltung (Simon, 25.09.2026:
+  // "Die leerzustände bitte reparieren"): Der Leerzustand zog sein Icon aus
+  // --app-color-teamer (Pink-Rot), obwohl es --app-color-zertifikate gibt.
+  // Gegenprobe beim Aufraeumen: KonfisView zieht fuer die TEAM-Liste bewusst
+  // die Teamer-Farbe -- dort ist sie richtig, das ist kein Fehler derselben Art.
+  it('die Zertifikat-Verwaltung nutzt die Zertifikat-Farbe', () => {
+    const seite = lies('src/components/admin/pages/AdminCertificatesPage.tsx');
+    const treffer = [...seite.matchAll(/emptyIconColor="([^"]+)"/g)].map((m) => m[1]);
+    expect(treffer).toEqual(['var(--app-color-zertifikate)']);
+  });
 });
 
 describe('Chat: erst filtern, dann suchen', () => {

@@ -390,7 +390,7 @@ const AdminCertificatesPage: React.FC = () => {
           emptyIcon={ICON_ABZEICHEN_GEFUELLT}
           emptyTitle="Keine Zertifikate"
           emptyMessage="Noch keine Zertifikate angelegt"
-          emptyIconColor="var(--app-color-teamer)"
+          emptyIconColor="var(--app-color-zertifikate)"
         >
           {(certificateTypes || []).map((certType, index) => (
             <IonItemSliding
