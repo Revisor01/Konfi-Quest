@@ -158,13 +158,19 @@ export const buildPushTargetUrl = (
     // Die Kennung kam in all diesen Pushes immer schon mit; sie wurde hier
     // nur nie gelesen. event_changed und event_cancelled machen es laengst
     // so -- das Muster war da, nur nicht ueberall ausgerollt.
+    //
+    // Fuer ALLE drei Rollen (seit 24.09.2026): Teamer:innen bekamen hier
+    // bewusst die Liste, weil /teamer/events/:id fehlte -- ein Link dorthin
+    // fiel in den Catch-all und landete auf dem Dashboard. Die Route gibt es
+    // jetzt (rollenBaeume.ts, Umleitung auf ?eventId=), also dasselbe Ziel
+    // wie bei Konfi und Leitung.
     case 'event_registered':
     case 'event_unregistered':
     case 'waitlist_promotion':
     case 'event_attendance':
     case 'event_reminder': {
       const evId = data?.event_id || data?.eventId;
-      if (evId && (userType === 'konfi' || userType === 'admin')) {
+      if (evId) {
         return `${routePrefix}/events/${evId}`;
       }
       return `${routePrefix}/events`;
@@ -177,19 +183,19 @@ export const buildPushTargetUrl = (
     case 'event_cancelled': {
       // Absage: zum Termin, wenn die Kennung mitkommt. Dort steht der Grund
       // ausfuehrlich und darunter, wer abgesagt hat — auf der Liste steht nur
-      // "Abgesagt". Konfi und Leitung haben eine Detailroute, Teamer:innen
-      // nicht (siehe rollenBaeume.ts), die bleiben auf ihrer Liste.
+      // "Abgesagt". Seit dem 24.09.2026 fuer alle drei Rollen: Teamer:innen
+      // haben ihre Detailroute (rollenBaeume.ts, /teamer/events/:id).
       //
-      // Der Termin ist abgesagt, aber nicht weg: Beide Detailansichten
-      // oeffnen abgesagte Termine, und die Konfi-Liste, aus der die
-      // Detailseite ihren Termin nimmt, behaelt abgesagte Termine fuer die
-      // Angemeldeten — also fuer genau die, die diesen Push bekommen haben.
+      // Der Termin ist abgesagt, aber nicht weg: Alle Detailansichten
+      // oeffnen abgesagte Termine, und die Listen, aus denen Konfi- und
+      // Teamer-Detail ihren Termin nehmen, behalten abgesagte Termine fuer
+      // die Angemeldeten — also fuer genau die, die diesen Push bekommen haben.
       //
       // Wird ein GELOESCHTER Termin gemeldet, schickt der Server keine
       // Kennung mit (pushService): Dann bleibt es bei der Liste, statt auf
       // eine Seite zu springen, die es nicht mehr gibt.
       const evId = data?.event_id || data?.eventId;
-      if (evId && (userType === 'konfi' || userType === 'admin')) {
+      if (evId) {
         return `${routePrefix}/events/${evId}`;
       }
       return `${routePrefix}/events`;
@@ -235,10 +241,11 @@ export const buildPushTargetUrl = (
     case 'event_opt_in':
     case 'event_opt_out':
     case 'mandatory_event_created': {
-      // Termin-Detail, wenn die ID mitkommt und die Rolle eine Detailroute
-      // hat (Konfi und Leitung -- Teamer:innen haben keine, siehe MainTabs).
+      // Termin-Detail, wenn die ID mitkommt. Bis zum 24.09.2026 nur fuer
+      // Konfi und Leitung -- Teamer:innen hatten keine Detailroute; seit
+      // /teamer/events/:id (rollenBaeume.ts) gilt es fuer alle drei Rollen.
       const evId = data?.event_id || data?.eventId;
-      if (evId && (userType === 'konfi' || userType === 'admin')) {
+      if (evId) {
         return `${routePrefix}/events/${evId}`;
       }
       return `${routePrefix}/events`;

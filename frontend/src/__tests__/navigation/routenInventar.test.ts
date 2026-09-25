@@ -52,6 +52,11 @@ const UMLEITUNGEN = [
   ['/admin/requests', '/admin/events?segment=antraege'],
   ['/teamer/requests', '/teamer/events?segment=antraege'],
   ['/konfi/requests', '/konfi/events?segment=antraege'],
+  // Termin-Detail der Teamer:innen (24.09.2026): Die Termin-Pushes bauen
+  // fuer alle Rollen /<rolle>/events/<id>; bei Teamer:innen fuehrt das auf
+  // die Liste mit geoeffnetem Termin. Der Platzhalter :id wird beim Umleiten
+  // gefuellt (MainTabs, umleitungsZiel).
+  ['/teamer/events/:id', '/teamer/events?eventId=:id'],
 ] as const;
 
 describe('Routen-Bestand je Rollenbaum', () => {

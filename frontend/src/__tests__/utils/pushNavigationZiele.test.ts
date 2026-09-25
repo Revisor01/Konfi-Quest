@@ -57,9 +57,15 @@ describe('M2: Die Ziele passen zur Rolle', () => {
     expect(buildPushTargetUrl('event_changed', {}, 'konfi')).toBe('/konfi/events');
   });
 
-  it('Teamer:innen haben keine Termin-Detailroute, also die Liste', () => {
-    // MainTabs kennt /teamer/events, aber kein /teamer/events/:id.
-    expect(buildPushTargetUrl('event_changed', { event_id: 7 }, 'teamer')).toBe('/teamer/events');
+  it('Teamer:innen kommen ebenfalls zum Termin -- seit es /teamer/events/:id gibt', () => {
+    // Bis zum 24.09.2026 stand hier die Liste: rollenBaeume kannte kein
+    // /teamer/events/:id, ein Link dorthin fiel in den Catch-all und landete
+    // auf dem Dashboard. Die Route gibt es jetzt (Umleitung auf ?eventId=).
+    expect(buildPushTargetUrl('event_changed', { event_id: 7 }, 'teamer')).toBe('/teamer/events/7');
+  });
+
+  it('Teamer:innen ohne Kennung bleiben auf der Liste', () => {
+    expect(buildPushTargetUrl('event_changed', {}, 'teamer')).toBe('/teamer/events');
   });
 
   it('Absage fuehrt zum Termin, wenn die Kennung mitkommt', () => {
@@ -77,8 +83,9 @@ describe('M2: Die Ziele passen zur Rolle', () => {
     expect(buildPushTargetUrl('event_cancelled', {}, 'admin')).toBe('/admin/events');
   });
 
-  it('Absage bei Teamer:innen bleibt auf der Liste — sie haben keine Detailroute', () => {
-    expect(buildPushTargetUrl('event_cancelled', { event_id: 7 }, 'teamer')).toBe('/teamer/events');
+  it('Absage fuehrt auch Teamer:innen zum Termin', () => {
+    expect(buildPushTargetUrl('event_cancelled', { event_id: 7 }, 'teamer')).toBe('/teamer/events/7');
+    expect(buildPushTargetUrl('event_cancelled', {}, 'teamer')).toBe('/teamer/events');
   });
 
   it('Zuruecknahme der Absage fuehrt zum Termin — dort meldet man sich ab', () => {
@@ -87,7 +94,7 @@ describe('M2: Die Ziele passen zur Rolle', () => {
     // der Liste. Dasselbe Ziel wie die Absage, aus demselben Grund.
     expect(buildPushTargetUrl('event_reactivated', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
     expect(buildPushTargetUrl('event_reactivated', { event_id: 7 }, 'admin')).toBe('/admin/events/7');
-    expect(buildPushTargetUrl('event_reactivated', { event_id: 7 }, 'teamer')).toBe('/teamer/events');
+    expect(buildPushTargetUrl('event_reactivated', { event_id: 7 }, 'teamer')).toBe('/teamer/events/7');
   });
 
   it('Zuruecknahme ohne Kennung fuehrt zur Liste', () => {
@@ -109,13 +116,15 @@ describe('M2: Die Ziele passen zur Rolle', () => {
   // Liste zurueckgegeben -- waehrend event_changed und event_cancelled es
   // laengst richtig machen. Dasselbe Muster, nur nicht ueberall ausgerollt.
   //
-  // Teamer:innen bleiben ueberall auf der Liste: /teamer/events/:id gibt es
-  // nicht (rollenBaeume.ts:232-244). Ein Link dorthin faellt in den Catch-all
-  // und landet auf /teamer/dashboard -- schlechter als die Liste.
+  // Teamer:innen blieben bis zum 24.09.2026 ueberall auf der Liste, weil
+  // /teamer/events/:id fehlte -- ein Link dorthin fiel in den Catch-all und
+  // landete auf /teamer/dashboard, schlechter als die Liste. Seit die Route
+  // existiert (rollenBaeume.ts, Umleitung auf ?eventId=), gilt fuer alle
+  // drei Rollen dasselbe Ziel.
   it('Anmeldebestaetigung fuehrt zum Termin', () => {
     expect(buildPushTargetUrl('event_registered', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
     expect(buildPushTargetUrl('event_registered', { event_id: 7 }, 'admin')).toBe('/admin/events/7');
-    expect(buildPushTargetUrl('event_registered', { event_id: 7 }, 'teamer')).toBe('/teamer/events');
+    expect(buildPushTargetUrl('event_registered', { event_id: 7 }, 'teamer')).toBe('/teamer/events/7');
   });
 
   it('Abmeldung, Nachrueckung, Teilnahme und Erinnerung fuehren zum Termin', () => {
@@ -123,6 +132,18 @@ describe('M2: Die Ziele passen zur Rolle', () => {
     expect(buildPushTargetUrl('waitlist_promotion', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
     expect(buildPushTargetUrl('event_attendance', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
     expect(buildPushTargetUrl('event_reminder', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
+  });
+
+  it('Alle Termin-Pushes mit Kennung fuehren Teamer:innen zum Termin', () => {
+    // Die sechs Typen aus dem Befund vom 24.09.2026 -- vorher endeten sie
+    // fuer Teamer:innen ausnahmslos auf der Liste.
+    for (const typ of [
+      'event_registered', 'waitlist_promotion', 'event_cancelled',
+      'event_reactivated', 'event_changed', 'event_reminder',
+    ]) {
+      expect(buildPushTargetUrl(typ, { event_id: 7 }, 'teamer'), typ).toBe('/teamer/events/7');
+      expect(buildPushTargetUrl(typ, {}, 'teamer'), `${typ} ohne Kennung`).toBe('/teamer/events');
+    }
   });
 
   it('Ohne Kennung bleibt es bei der Liste', () => {

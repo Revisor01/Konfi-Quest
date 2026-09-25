@@ -60,6 +60,24 @@ const SeiteMitChunk: React.FC<{
     : <Seite />
 );
 
+// Platzhalter einer Umleitung aus den URL-Parametern fuellen:
+// '/teamer/events?eventId=:id' mit { id: '7' } -> '/teamer/events?eventId=7'.
+// Ein Platzhalter ohne Wert faellt weg, statt woertlich in der Adresse zu
+// stehen -- die Zielseite sieht dann schlicht keinen Parameter.
+export const umleitungsZiel = (
+  to: string,
+  params: Readonly<Record<string, string | undefined>>
+): string => to.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, (_, name: string) => params[name] ?? '');
+
+// Eine Umleitung aus rollenBaeume.ts. <Navigate> allein kennt keine
+// Parameter: '/teamer/events/:id' -> '/teamer/events?eventId=:id' haette
+// woertlich ":id" in die Adresse geschrieben. Statische Umleitungen ohne
+// Platzhalter laufen unveraendert durch.
+export const Umleitung: React.FC<{ to: string }> = ({ to }) => {
+  const params = useParams();
+  return <Navigate to={umleitungsZiel(to, params)} replace />;
+};
+
 // Uebergeordnete Seite einer Parameter-Route: '/konfi/chat/room/:roomId'
 // wird zu '/konfi/chat'. Dorthin fuehrt der Zurueck-Knopf, wenn es keinen
 // Verlauf gibt. Die Segmente ab dem Parameter fallen weg.
@@ -309,7 +327,7 @@ const MainTabs: React.FC = () => {
         />
       ))}
       {baum.redirects.map(({ from, to }) => (
-        <Route key={from} path={from} element={<Navigate to={to} replace />} />
+        <Route key={from} path={from} element={<Umleitung to={to} />} />
       ))}
       <Route path="/login" element={<Navigate to={baum.home} replace />} />
       <Route path="/" element={<Navigate to={baum.home} replace />} />

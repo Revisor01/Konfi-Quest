@@ -245,6 +245,17 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
     redirects: [
       { from: '/teamer', to: '/teamer/dashboard' },
       { from: '/teamer/requests', to: '/teamer/events?segment=antraege' },
+      // Termin-Detail fuer Teamer:innen (24.09.2026). Ihre Detailansicht
+      // lebt IN der Terminliste (TeamerEventsPage, selectedEvent) und wird
+      // dort seit jeher ueber ?eventId= geoeffnet -- so springt das
+      // Dashboard hinein. Die Termin-Pushes bauen dagegen fuer alle Rollen
+      // /<rolle>/events/<id>; ohne diese Route fiel der Link in den Catch-all
+      // und landete auf dem Dashboard, schlechter noch als die Liste. Der
+      // Platzhalter :id wird beim Umleiten aus der URL gefuellt (MainTabs,
+      // Umleitung). Kein zweites Termin-Detail: Eine eigene Seite unter
+      // dieser Route haette die 1.900 Zeilen Detailansicht dupliziert oder
+      // die Liste zweimal montiert.
+      { from: '/teamer/events/:id', to: '/teamer/events?eventId=:id' },
     ],
     tabs: [
       { tab: 'teamer-dashboard', href: '/teamer/dashboard', icon: ICON_STARTSEITE_GEFUELLT, label: 'Start' },
