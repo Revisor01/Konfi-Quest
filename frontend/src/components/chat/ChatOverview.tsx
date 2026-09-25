@@ -555,8 +555,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">
-                                {/* Icon mit Unread-Badge */}
-                                <div style={{ position: 'relative', flexShrink: 0 }}>
+                                {/* Symbol mit Zaehler-Kugel; Lage siehe .app-zaehler-anker */}
+                                <div className="app-zaehler-anker">
                                   <div
                                     className={`app-icon-circle app-icon-circle--lg app-icon-circle--${colorClass}`}
                                   >

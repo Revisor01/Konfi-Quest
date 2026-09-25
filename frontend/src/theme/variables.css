@@ -869,6 +869,79 @@ ion-list[inset] ion-list-header {
 .app-list-item__main--centered {
   align-items: center;
 }
+/* === Rote Zaehler-Kugel am Listen-Symbol (shared/ZaehlerKugel) ===
+   Chat-Raum mit ungelesenen Nachrichten, Challenge mit Neuigkeiten. Der
+   Anker (.app-zaehler-anker) umschliesst den Symbolkreis und die Kugel; er
+   ist so breit wie der Kreis (28px, im Chat --lg 32px) und um dessen
+   margin-top (4px) hoeher.
+
+   WO SIE STEHT (25.09.2026, Simon am iPhone, zwei Runden):
+     "darf etwas hoeher und etwas weiter nach rechts, dass es staerker am
+      Rand des Icons liegt, aber noch darueber" -- danach:
+     "weiter hoch, weiter rechts und in beiden Ansichten gleich positioniert
+      auf dem Icon. Die weissen Anteile muessten schmaler."
+
+   Vertrag: Der Kugelmittelpunkt liegt auf der 45-Grad-Diagonale des
+   Kreises, 3px AUSSERHALB des Kreisrands -- 5 der 16px liegen also auf dem
+   Symbol, in beiden Listen gleich (auf 0,05px). Aus Radius r folgt der
+   Versatz (r + 3) / sqrt(2) vom Kreismittelpunkt:
+     r 14: 12,02 -> Mitte bei x 26,0 / y 6,0 im Anker -> top -2px,
+           Mitte 2px links der rechten Ankerkante. Abstand 16,97, 45 Grad.
+     r 16: 13,44 -> Mitte bei x 29,4 / y 6,6            -> top -1,4px,
+           Mitte 2,6px links der Kante.                Abstand 18,94, 45 Grad.
+   Die Mitte haengt ueber `left` + translateX(-50%), nicht ueber `right`:
+   "9+" ist breiter als "2", und mit `right` wanderte die Mitte je Breite
+   um einen halben Pixel -- der Chat zeigt oefter "9+" als die Challenges.
+   Vorher (749d39c3, top 0 / right -4): Mitte AUF dem Rand (14,14 / 16,28),
+   die Kugel zur Haelfte ueber dem Symbol, Chat 0,8px anders als Challenge.
+
+   Hoeher als top 0 ging bisher nicht: .app-list-item__main beschneidet mit
+   overflow: hidden (seit d457325e fuer das TN-Modal: min-width 0 plus
+   overflow hidden, damit Text schrumpft statt die Checkbox zu verdraengen).
+   Das Schrumpfen macht min-width: 0; das overflow hidden ist an dieser
+   Stelle nur Sicherheitsnetz, und .app-list-item__content beschneidet
+   seinen Text ohnehin selbst. Deshalb hebt die Zeile das Beschneiden nur
+   dort auf, wo ein Anker in ihr steht. Die Karte darum (.app-list-item,
+   overflow hidden, 12px Innenabstand) bleibt: Die Kugel liegt 11px unter
+   ihrer Oberkante (gemessen), 100 % sichtbar in beiden Listen.
+
+   Weisser Rand 1px statt 2px (Simon: "weisse Anteile schmaler"): der rote
+   Kern waechst von 12 auf 14px, die Kugel bleibt 16px.
+   Vertrag im Test: zaehlerKugel.test.tsx. */
+.app-zaehler-anker {
+  position: relative;
+  flex-shrink: 0;
+}
+.app-list-item__main:has(> .app-zaehler-anker) {
+  overflow: visible;
+}
+.app-zaehler-kugel {
+  position: absolute;
+  top: -2px;
+  left: calc(100% - 2px);
+  transform: translateX(-50%);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 var(--app-abstand-mini);
+  box-sizing: border-box;
+  border-radius: var(--app-radius-knopf);
+  border: 1px solid var(--app-weiss);
+  background: var(--app-color-danger);
+  color: var(--app-weiss);
+  font-size: var(--app-text-winzig);
+  font-weight: var(--app-schrift-fett);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--app-schatten-flach-stark);
+  z-index: 2;
+  pointer-events: none;
+}
+/* Chat-Liste: Kreis --lg (32px), Herleitung oben. */
+.app-zaehler-anker:has(> .app-icon-circle--lg) > .app-zaehler-kugel {
+  top: -1.4px;
+  left: calc(100% - 2.6px);
+}
 .app-list-item__content {
   flex: 1;
   min-width: 0;
@@ -3599,59 +3672,87 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
    schwebenden Knopf: ruhig fuer Nachrichten, orange waehrend gesendet wird,
    rot fuer einen endgueltig gescheiterten Vorgang -- der ist eine Aufgabe.
 
-   WO DIE ZAHL STEHT -- und warum sie einmal angeschnitten war (25.09.2026,
-   Simons Befund am Geraet: "der blaue Indikator ist oben abgeschnitten").
-   Vermutet war die Stapelreihenfolge; gemessen im Browser (Ionic 9.0.3 mit
-   beiden Themes, Kopfzeile mit Zurueck, Plus und Glocke, 393px breit) war
-   es eine BESCHNEIDUNG durch einen Elternknoten, wie am 25.09. schon bei
-   der Reiterleiste -- nur ein anderer Elternknoten:
+   WO DIE ZAHL STEHT -- drei Befunde von Simon am Geraet (25.09.2026), alle
+   im Browser nachgemessen (Ionic 9.0.3, ios27- und md3-Theme, Kopfzeile
+   mit Zurueck, Plus und Glocke, 393px breit, Playwright):
 
-     iOS (ios27-Theme): Die Knoepfe rechts liegen in einer Glas-Pille
-     (ion-buttons, border-radius 25px, overflow hidden). Gemessen: Pille
-     90x46px, Kappe damit ein Halbkreis mit Radius 23; der Glocken-Knopf
-     44x44px ganz rechts, sein .button-inner 40x40px bei 2px Einzug. Die
-     Zahl (18x18px) haengt an .button-inner (position: relative) und stand
-     mit top: 2px / right: 0 bei x 356-374, y 63-81 -- ihre rechte obere
-     Ecke lag ausserhalb des Halbkreises: 4,9 % der Flaeche weg, die Ecke
-     sichtbar abgeschnitten. Die Pille braucht ihr overflow: hidden fuer
-     den Glaslook (Theme-Mixin theme-buttons), also muss die ZAHL in den
-     Halbkreis: Ihr rechtes Kappenzentrum (Radius 9) darf hoechstens
-     14px (23 - 9) vom Kappenmittelpunkt der Pille (x 354, y 81) entfernt
-     sein. Der Symbolmittelpunkt ist derselbe Punkt (Symbol 22x22px bei
-     x 343-365, y 70-92) -- die Zahl kann also nie ganz ueber dem Symbol
-     stehen, hoechstens so weit zur Ecke, wie der Kreis erlaubt.
+     1. "der blaue Indikator ist oben abgeschnitten."
+     2. "liegt jetzt zu sehr auf dem Icon. Es muss ueber das Icon gehen."
+     3. "Postfach badge wird durch die Rundung des Icon abgeschnitten, kann
+        man das nicht drueber laufen lassen."
 
-     top: 4px / right: 4px (erster Versuch) lag bei 9,9px: 100 % sichtbar,
-     aber 13x13px auf dem Symbol -- Simon: "liegt jetzt zu sehr auf dem
-     Icon. Es muss ueber das Icon gehen." Gemessene Kandidaten:
-       top 1 / right 2   Abstand 13,45  100 % sichtbar  Oberkante 7,8px
-                         ueber dem Symbol, 6,8px rechts darueber hinaus,
-                         Ueberdeckung 11x10px            <- gewaehlt
-       top 1 / right 1   Abstand 14,14  99,8 %          Haarlinie weg
-       top 0 / right 2   Abstand 14,21  99,7 %          Haarlinie weg
-       top 0 / right 3   Abstand 13,6   100 %           Oberkante 8,8px,
-                         aber nur 5,8px nach rechts
-     Zweistellig ("23", "99+") wird die Zahl nach LINKS breiter; das rechte
-     Kappenzentrum bleibt bei right: 2px dasselbe -- gemessen 100 %.
+   Es war nie die Stapelreihenfolge, sondern BESCHNEIDUNG -- und zwar durch
+   ZWEI Knoten mit demselben Mittelpunkt (x 354, y 81), der zugleich der
+   Symbolmittelpunkt ist:
 
-     Android (MD3-Theme): keine Pille (overflow visible, kein Radius), der
-     Knopf ist 48x48px, aber .button-inner nur 24px hoch und mittig (y 75-99
-     bei Knopf-Oberkante 63). Dieselben top-Werte landen dort also 12px
-     tiefer, neben dem Symbol statt darueber. Deshalb ein eigener Wert wie
-     bei den Reitern: top: -8px hebt die Zahl auf y 67-85, innerhalb des
-     Knopfs (overflow hidden ab y 63), auf die rechte obere Ecke des
-     24px-Symbols.
+     a) Die Glas-Pille des ios27-Themes um die Knoepfe rechts (ion-buttons,
+        border-radius 25px, overflow hidden; Mixin theme-buttons). Gemessen
+        90x46px, Kappe ein Halbkreis mit Radius 23.
+     b) Der Knopf selbst: .button-native im Shadow-DOM von ion-button hat
+        overflow: hidden, auf iOS mit border-radius 24px bei 44x44px, also
+        ein Kreis mit Radius 22 -- ENGER als die Pille. Das ist "die
+        Rundung des Icons", die Simon sieht. Die frueheren Messungen (3fd90ad6,
+        749d39c3) rechneten nur gegen die Pille (erlaubt 14) und hielten
+        top 1 / right 2 (Abstand 13,45) fuer 100 % sichtbar; gegen den
+        Knopfkreis (erlaubt 13) ragt die Spitze 0,45px hinaus -- am Geraet
+        mit Anti-Aliasing eine sichtbar abgeschnittene Ecke.
 
-   Die Zahlen stehen als Vertrag im Test (postfachGlocke.test.tsx): Wer
-   right oder top wieder Richtung 0 schiebt, bekommt die Kappe zurueck.
+   Beide Knoten brauchen ihr overflow: hidden NICHT fuer den Glaslook:
+     - Pille: Glas kommt aus backdrop-filter, Hintergrund, Rand und
+       Schatten (Mixins glass-control-background, light-rim); border-radius
+       beschneidet Hintergrund und backdrop-filter von sich aus. Bild der
+       Pille ohne Zahl mit overflow hidden vs. visible: byte-identisch
+       (iOS und Android).
+     - .button-native auf iOS: keine Kinder ausser .button-inner (Symbol
+       und Zahl). Bild in Ruhe byte-identisch, gedrueckt (ion-activated)
+       15 von 65.340 Pixeln um Kanaldelta 1 -- Rauschen.
+     - .button-native auf ANDROID dagegen NICHT: dort liegt der unbounded
+       Ripple im Knopf, den genau dieses overflow hidden auf den runden
+       Knopf begrenzt. Mit overflow visible wird der ganze Knopf sichtbar
+       dunkler (gemessen ueber sechs Frames bis 700ms, Mitte und Ecke).
+       Deshalb gilt ::part(native) { overflow: visible } nur fuer .ios.
+
+   Damit kann die Zahl auf iOS "drueber laufen": Ihr Mittelpunkt (18px,
+   Radius 9) sitzt genau auf der rechten oberen Ecke des Symbolkastens
+   (22,4x22,4px bei x 342,8-365,2 / y 69,8-92,2): top 0 / right 0 an
+   .button-inner (40x40, Einzug 2) -> Zahl x 356-374, y 61-79, Mittelpunkt
+   (365, 70) gegen Symbolecke (365,2 / 69,8): 0,2px daneben. 100 % sichtbar
+   (Treffertest, 0,5px-Raster) -- ohne die beiden overflow-Regeln 93,3 %.
+   Ueberdeckung mit dem Symbolkasten 9x9px (vorher 11x10); Abstand zur
+   Knopfmitte 15,56 (vorher 13,45). Zweistellig wird die Zahl nach LINKS
+   breiter, das rechte Kappenzentrum bleibt. Die Zahl bleibt innerhalb des
+   Pillen-Rechtecks (Pille y ab 58, x bis 377) -- nichts ragt aus der
+   Kopfzeile.
+
+   Android (MD3-Theme): keine Pille, der Knopf ist 48x48px, .button-inner
+   nur 24px hoch und mittig (y 75-99 bei Knopf-Oberkante 63), Symbol 24px
+   bei x 341-365. top -8 / right 2 setzt die Zahl-Mitte 1px rechts und 1px
+   unter die Symbolecke (x 366, y 76) -- praktisch dieselbe Lage wie iOS.
+   Der Knopfkreis (Radius 24 um x 353 / y 87) schneidet davon 4,6 % an der
+   aeusseren Spitze (Abstand 17,03 + 9 = 26 > 24) -- war schon so, und
+   laesst sich ohne Ripple-Schaden nicht aufheben; naeher zur Mitte
+   (top -7 / right 4, Abstand 14,87) waere 100 % sichtbar, laege aber
+   11x11px auf dem Symbol. Bewusst unveraendert gelassen.
+
+   Die Zahlen stehen als Vertrag im Test (postfachGlocke.test.tsx).
    ==================================================================== */
 .app-postfach-glocke {
   position: relative;
 }
+/* iOS: Pille und Knopf beschneiden die Zahl nicht mehr (Herleitung oben).
+   Nur die Pille, in der die Glocke steht -- andere Pillen bleiben, wie das
+   Theme sie baut. Auf Android hat die Pille kein overflow hidden; die Regel
+   ist dort wirkungslos. */
+ion-buttons:has(> .app-postfach-glocke) {
+  overflow: visible;
+}
+.app-postfach-glocke.ios::part(native) {
+  overflow: visible;
+}
 .app-postfach-glocke__zahl {
   position: absolute;
-  top: 1px;
-  right: 2px;
+  top: 0;
+  right: 0;
   min-width: 18px;
   height: 18px;
   padding: 0 var(--app-abstand-mini);
@@ -3665,9 +3766,11 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
   text-align: center;
   pointer-events: none;
 }
-/* Android: siehe Herleitung oben. Nur `top`, alles andere bleibt gemeinsam. */
+/* Android: siehe Herleitung oben. Eigene Werte, damit die Lage dort exakt
+   die bisherige bleibt. */
 .app-postfach-glocke.md .app-postfach-glocke__zahl {
   top: -8px;
+  right: 2px;
 }
 .app-postfach-glocke[data-variante="warning"] .app-postfach-glocke__zahl {
   background: var(--app-color-warning);

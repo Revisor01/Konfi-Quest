@@ -226,8 +226,9 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         {/* Symbol mit Neuigkeiten-Kugel -- wie das Raum-Symbol
-                            in der Chat-Liste (ChatOverview). */}
-                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                            in der Chat-Liste (ChatOverview); Lage siehe
+                            .app-zaehler-anker in variables.css. */}
+                        <div className="app-zaehler-anker">
                           <div className="app-icon-circle app-icon-circle--challenges">
                             <IonIcon icon={getChallengeBadgeIcon(challenge.badge_icon)} />
                           </div>

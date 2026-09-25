@@ -159,77 +159,100 @@ describe('PostfachGlocke', () => {
 
 // Wo die Zahl steht -- als Vertrag mit den gemessenen Massen (25.09.2026).
 //
-// Zwei Befunde von Simon am Geraet, am selben Tag:
-//  1. "der blaue Indikator ist oben abgeschnitten." -- Die Glas-Pille des
-//     ios27-Themes um die Knoepfe rechts (ion-buttons, border-radius 25px,
-//     overflow hidden) beschneidet: Pille 46px hoch, Kappe ein Halbkreis
-//     mit Radius 23. Die Zahl (18px, Radius 9) ist nur dann ganz sichtbar,
-//     wenn ihr rechtes Kappenzentrum hoechstens 14px (23 - 9) vom
-//     Kappenmittelpunkt der Pille entfernt liegt.
-//  2. Mit top 4 / right 4 (Abstand 9,9): "liegt jetzt zu sehr auf dem Icon.
-//     Es muss ueber das Icon gehen." -- Der Symbolmittelpunkt IST der
-//     Kappenmittelpunkt; ganz ueber dem Symbol geht also nicht. Das Beste
-//     ist die Ecke: so weit nach oben rechts, wie der 14px-Kreis erlaubt.
+// Drei Befunde von Simon am Geraet, am selben Tag:
+//  1. "der blaue Indikator ist oben abgeschnitten."
+//  2. "liegt jetzt zu sehr auf dem Icon. Es muss ueber das Icon gehen."
+//  3. "Postfach badge wird durch die Rundung des Icon abgeschnitten, kann man
+//     das nicht drueber laufen lassen."
+//
+// Gemessen (Ionic 9.0.3, ios27-Theme, 393px, Playwright): Es beschneiden
+// ZWEI Knoten mit demselben Mittelpunkt wie das Symbol -- die Glas-Pille
+// (ion-buttons, Radius 23) und der Knopf selbst (.button-native im
+// Shadow-DOM, overflow hidden, border-radius 24px bei 44px: Kreis mit
+// Radius 22, also enger). Die Zahl (18px, Radius 9) waere im Knopfkreis nur
+// bis Abstand 13 ganz sichtbar; top 1 / right 2 (749d39c3) lag bei 13,45 --
+// die Spitze ragte 0,45px hinaus, am Geraet die abgeschnittene Ecke.
+//
+// Beide Knoten brauchen ihr overflow hidden auf iOS nicht (Bildvergleich:
+// Pille ohne Zahl byte-identisch, Knopf in Ruhe byte-identisch, gedrueckt
+// 15 von 65.340 Pixeln um Kanaldelta 1). Also geben beide frei, und die
+// Zahl steht mit top 0 / right 0 genau auf der rechten oberen Ecke des
+// Symbolkastens: Mitte (365, 70) gegen Ecke (365,2 / 69,8). Auf Android
+// begrenzt dasselbe overflow hidden den Ripple; dort bleibt alles wie es
+// war (eigene Werte top -8 / right 2, Lage 1px neben der Ecke).
 //
 // jsdom rechnet kein Layout, deshalb prueft der Test die CSS-Werte gegen
-// dieselbe Geometrie. Vertrag: Abstand zwischen 13 (an der Ecke) und 14
-// (nicht angeschnitten). Wer Richtung 0/0 schiebt, faellt an 14; wer
-// zurueck Richtung 4/4 geht, faellt an 13.
-describe('Zahl an der Glocke: an der Ecke des Symbols, ganz in der Glas-Pille', () => {
+// dieselbe Geometrie.
+describe('Zahl an der Glocke: auf der Ecke des Symbols, Pille und Knopf beschneiden nicht', () => {
   const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8');
-  const block = css.match(/\.app-postfach-glocke__zahl \{([^}]*)\}/)?.[1] ?? '';
-  const wert = (name: string): number => {
-    const m = block.match(new RegExp(`\\b${name}:\\s*(-?[\\d.]+)px`));
-    if (!m) throw new Error(`${name} fehlt am Block .app-postfach-glocke__zahl`);
+  const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const block = (selektor: string): string => {
+    const treffer = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter((m) => m[1].trim().replace(/\s+/g, ' ') === selektor);
+    if (treffer.length !== 1) throw new Error(`${selektor}: ${treffer.length} Bloecke`);
+    return treffer[0][2];
+  };
+  const zahl = block('.app-postfach-glocke__zahl');
+  const wert = (quelle: string, name: string): number => {
+    const m = quelle.match(new RegExp(`\\b${name}:\\s*(-?[\\d.]+)(px|;)`));
+    if (!m) throw new Error(`${name} fehlt im Block`);
     return parseFloat(m[1]);
   };
 
-  // Gemessen im Browser: Pille 46px hoch, Knopf 44px, .button-inner 40px
-  // (Einzug 2px), Zahl 18px. Der Kappenmittelpunkt liegt 23px von Pillen-
-  // Oberkante und rechter Kante; die Zahl haengt an .button-inner, dessen
-  // Oberkante 3px und rechte Kante 3px innerhalb der Pille liegen.
-  const PILLE_RADIUS = 23;
-  const INNER_EINZUG = 3;
+  // Gemessen im Browser, iOS: Knopf 44x44 (Kreis Radius 22 um seine Mitte),
+  // .button-inner 40x40 bei 2px Einzug, Symbol 22,4px mittig darin (Ecke
+  // oben rechts bei 31,2 / 8,8 im .button-inner), Zahl 18px. Die Zahl haengt
+  // an .button-inner.
+  const INNER = 40;
+  const SYMBOL = 22.39;
+  const KNOPF_RADIUS = 22;
   const ZAHL = 18;
-
-  // Abstand des rechten Kappenzentrums der Zahl vom Kappenmittelpunkt der
-  // Pille, beide Achsen von der Pillenkante aus gerechnet. Bei mehr als
-  // einer Ziffer wird die Zahl nach links breiter -- das rechte Zentrum
-  // bleibt.
-  const abstand = (top: number, right: number): number => {
-    const dx = PILLE_RADIUS - (INNER_EINZUG + right + ZAHL / 2);
-    const dy = PILLE_RADIUS - (INNER_EINZUG + top + ZAHL / 2);
-    return Math.hypot(dx, dy);
+  const symbolEcke = { x: (INNER + SYMBOL) / 2, y: (INNER - SYMBOL) / 2 };
+  const knopfMitte = { x: INNER / 2, y: INNER / 2 };
+  const zahlMitte = (top: number, right: number) => ({ x: INNER - right - ZAHL / 2, y: top + ZAHL / 2 });
+  const abstandZurKnopfmitte = (top: number, right: number) => {
+    const m = zahlMitte(top, right);
+    return Math.hypot(m.x - knopfMitte.x, m.y - knopfMitte.y);
   };
-  const SICHTBAR = PILLE_RADIUS - ZAHL / 2; // 14: alles darueber wird angeschnitten
-  const AN_DER_ECKE = 13;                   // darunter liegt sie wieder auf dem Symbol
+  const SICHTBAR_IM_KNOPF = KNOPF_RADIUS - ZAHL / 2; // 13
 
-  it('die Werte sind die gemessenen: top 1px, right 2px, 18px gross', () => {
-    expect(wert('top')).toBe(1);
-    expect(wert('right')).toBe(2);
-    expect(wert('height')).toBe(ZAHL);
-    expect(wert('min-width')).toBe(ZAHL);
+  it('iOS: top 0 / right 0 -- die Mitte der Zahl liegt auf der Symbolecke (0,2px daneben)', () => {
+    expect(wert(zahl, 'top')).toBe(0);
+    expect(wert(zahl, 'right')).toBe(0);
+    expect(wert(zahl, 'height')).toBe(ZAHL);
+    expect(wert(zahl, 'min-width')).toBe(ZAHL);
+    const m = zahlMitte(0, 0);
+    expect(Math.hypot(m.x - symbolEcke.x, m.y - symbolEcke.y)).toBeLessThan(0.3);
   });
 
-  it('ganz sichtbar UND an der Ecke: Abstand 13,45 -- zwischen 13 und 14', () => {
-    const a = abstand(wert('top'), wert('right'));
-    expect(a).toBeCloseTo(13.45, 1);
-    expect(a).toBeLessThanOrEqual(SICHTBAR);
-    expect(a).toBeGreaterThanOrEqual(AN_DER_ECKE);
+  it('dort ragt sie aus dem Knopfkreis (Abstand 15,56 > 13) -- deshalb muessen Pille UND Knopf freigeben', () => {
+    expect(abstandZurKnopfmitte(0, 0)).toBeCloseTo(15.56, 1);
+    expect(abstandZurKnopfmitte(0, 0)).toBeGreaterThan(SICHTBAR_IM_KNOPF);
+    expect(block('ion-buttons:has(> .app-postfach-glocke)')).toMatch(/overflow:\s*visible/);
+    expect(block('.app-postfach-glocke.ios::part(native)')).toMatch(/overflow:\s*visible/);
   });
 
-  it('Gegenprobe der Formel: 2/0 und 1/1 schneiden an, 4/4 liegt auf dem Symbol', () => {
-    // Der Ausgangszustand (Simon: "oben abgeschnitten") und der naechste
-    // ganze Pixel Richtung Ecke.
-    expect(abstand(2, 0)).toBeGreaterThan(SICHTBAR);
-    expect(abstand(1, 1)).toBeGreaterThan(SICHTBAR);
-    // Der erste Versuch (Simon: "zu sehr auf dem Icon").
-    expect(abstand(4, 4)).toBeCloseTo(9.9, 1);
-    expect(abstand(4, 4)).toBeLessThan(AN_DER_ECKE);
+  it('Gegenprobe der Formel: 1/2 (749d39c3) ragte schon 0,45px hinaus, 4/4 lag auf dem Symbol', () => {
+    expect(abstandZurKnopfmitte(1, 2)).toBeCloseTo(13.45, 1);
+    expect(abstandZurKnopfmitte(1, 2)).toBeGreaterThan(SICHTBAR_IM_KNOPF);
+    // 4/4: 9,9 vom Mittelpunkt, Ueberdeckung 13x13 -- Simon: "zu sehr auf dem Icon".
+    expect(abstandZurKnopfmitte(4, 4)).toBeCloseTo(9.9, 1);
+    const m = zahlMitte(4, 4);
+    expect(symbolEcke.x - m.x).toBeGreaterThan(4);
+    expect(m.y - symbolEcke.y).toBeGreaterThan(4);
   });
 
-  it('Android hebt die Zahl an, weil .button-inner dort 12px tiefer beginnt', () => {
-    const md = css.match(/\.app-postfach-glocke\.md \.app-postfach-glocke__zahl \{([^}]*)\}/)?.[1] ?? '';
-    expect(md).toMatch(/top:\s*-8px/);
+  it('nur die Pille mit der Glocke gibt frei -- nicht jede Pille im Theme', () => {
+    const pillen = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter((m) => /(^|[\s,])ion-buttons(\.|:|\s*\{|\s*$)/.test(m[1]) && /overflow:\s*visible/.test(m[2]))
+      .map((m) => m[1].trim());
+    expect(pillen).toEqual(['ion-buttons:has(> .app-postfach-glocke)']);
+  });
+
+  it('Android bleibt, wie es war: top -8 / right 2, und der Knopf beschneidet weiter (Ripple)', () => {
+    const md = block('.app-postfach-glocke.md .app-postfach-glocke__zahl');
+    expect(wert(md, 'top')).toBe(-8);
+    expect(wert(md, 'right')).toBe(2);
+    expect(ohneKommentare).not.toMatch(/\.app-postfach-glocke(\.md)?::part\(native\)/);
   });
 });

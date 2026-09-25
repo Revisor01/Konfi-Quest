@@ -138,11 +138,11 @@ Versionsüberschrift.
   Inhalt über die Glasblase hinaus, und der Pfeil zeigte neben die Kachel.
 - In der Level-Sprechblase bricht die Zeile mit den nötigen Punkten nicht mehr
   mitten im Satz um.
-- Die rote Zahl am Symbol eines Chat-Raums oder einer Challenge sitzt jetzt am
-  Rand des Symbols statt darauf.
-- iOS: Die Zahl an der Glocke oben rechts sitzt auf der oberen rechten Ecke
-  des Symbols — so weit außen, wie es die runde Knopf-Pille zulässt, ohne sie
-  anzuschneiden.
+- iOS: Die Zahl an der Glocke oben rechts sitzt jetzt auf der Ecke des Symbols
+  und wird nicht mehr von der Rundung des Knopfs angeschnitten.
+- Die rote Zahl am Symbol eines Chat-Raums oder einer Challenge sitzt höher und
+  weiter rechts auf der Symbolecke, in beiden Listen an derselben Stelle, mit
+  schmalerem weißen Rand.
 - Wer mehrere Gemeinden betreut, bekommt die Mitteilungen an die Leitung jetzt
   aus allen — neue Anträge, Ab- und Anmeldungen, Challenge-Beiträge, Buchungen
   des Teams, Registrierungen, Lösch-Warnungen für Jahrgänge. Bisher kamen sie

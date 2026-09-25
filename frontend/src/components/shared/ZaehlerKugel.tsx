@@ -3,7 +3,10 @@ import React from 'react';
 /**
  * Rote Zaehler-Kugel oben rechts an einem Listen-Symbol -- fuer Eintraege,
  * die Neues tragen: ein Chat-Raum mit ungelesenen Nachrichten, eine
- * Challenge mit Neuigkeiten. Der Elternknoten braucht `position: relative`.
+ * Challenge mit Neuigkeiten. Sie steht als Geschwister des Symbolkreises
+ * in einem `.app-zaehler-anker` (position: relative, so breit wie der
+ * Kreis); alles Weitere -- Lage, Groesse, Rand -- regelt das Stylesheet
+ * (variables.css, Abschnitt "Rote Zaehler-Kugel am Listen-Symbol").
  *
  * Ab 10 steht "9+", genau wie an den Reitern in MainTabs. Bei 0 wird nichts
  * gerendert.
@@ -13,16 +16,12 @@ import React from 'react';
  * Chat-Uebersicht. Eine zweite Abschrift fuer die Challenges waere die
  * naechste Stelle, an der beide mit der Zeit auseinanderlaufen.
  *
- * WO SIE STEHT (25.09.2026, Simon am iPhone: "darf etwas hoeher und etwas
- * weiter nach rechts, dass es staerker am Rand des Icons liegt, aber noch
- * darueber"). Gemessen im Browser: Der Elternknoten ist so breit wie der
- * Symbolkreis (28px, im Chat 32px) und um dessen margin-top (4px) hoeher.
- * Mit right: 0 lag der Mittelpunkt der Kugel (16px) 11,7px bzw. 14,4px vom
- * Kreismittelpunkt entfernt -- INNERHALB des Kreisradius (14 bzw. 16), also
- * auf dem Symbol. Mit right: -4px liegt er bei 14,1 bzw. 17,0px: auf dem
- * Kreisrand, die Kugel zur Haelfte darueber. Hoeher geht nicht: top: 0 ist
- * die Oberkante von .app-list-item__main (overflow: hidden) -- ab -2px wird
- * die Kugel oben beschnitten (gemessen). Vertrag: zaehlerKugel.test.tsx.
+ * WARUM KEINE INLINE-STYLES MEHR (25.09.2026, Simon: "in beiden Ansichten
+ * gleich positioniert auf dem Icon"): Die Symbolkreise sind verschieden
+ * gross (28px, im Chat 32px). Dieselbe Lage relativ zum KREISRAND braucht
+ * je Groesse eigene Werte, und die kennt nur der Anker -- ueber
+ * `:has(> .app-icon-circle--lg)` im Stylesheet. Ein Inline-Style hier
+ * wuerde diese Regel ueberstimmen. Vertrag: zaehlerKugel.test.tsx.
  */
 interface ZaehlerKugelProps {
   anzahl: number;
@@ -33,27 +32,7 @@ interface ZaehlerKugelProps {
 const ZaehlerKugel: React.FC<ZaehlerKugelProps> = ({ anzahl, label }) => {
   if (!(anzahl > 0)) return null;
   return (
-    <span
-      aria-label={`${anzahl} ${label}`}
-      style={{
-        position: 'absolute',
-        top: '0px',
-        right: '-4px',
-        fontSize: 'var(--app-text-winzig)',
-        color: 'white',
-        fontWeight: 'var(--app-schrift-fett)',
-        backgroundColor: 'var(--app-color-danger)',
-        width: anzahl > 9 ? '18px' : '16px',
-        height: '16px',
-        borderRadius: 'var(--app-radius-kreis)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: 'var(--app-schatten-flach-stark)',
-        border: '2px solid white',
-        zIndex: 2
-      }}
-    >
+    <span className="app-zaehler-kugel" aria-label={`${anzahl} ${label}`}>
       {anzahl > 9 ? '9+' : anzahl}
     </span>
   );

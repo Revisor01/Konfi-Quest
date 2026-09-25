@@ -77,10 +77,9 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     const { getByLabelText, container } = renderListe({ 31: 3 });
     const badge = getByLabelText('3 Beiträge warten auf Freigabe');
     expect(badge.closest('.app-corner-badges')).not.toBeNull();
-    // Die rote Kugel (ZaehlerKugel) legt sich als span ans Symbol; hier keine.
-    const kugeln = Array.from(container.querySelectorAll('span[aria-label]'))
-      .filter((el) => (el as HTMLElement).style.backgroundColor === 'var(--app-color-danger)');
-    expect(kugeln).toHaveLength(0);
+    // Die rote Kugel (ZaehlerKugel) legt sich als span.app-zaehler-kugel ans
+    // Symbol; hier keine.
+    expect(container.querySelectorAll('.app-zaehler-kugel')).toHaveLength(0);
   });
 
   it('haelt den Titel vom Badge frei: breiterer Freiraum nur mit offenen Freigaben', () => {
