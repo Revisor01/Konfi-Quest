@@ -55,7 +55,9 @@ werden Mitteilungen nachts entfernt.
 Wer in **mehreren Gemeinden** mitarbeitet, sieht die Mitteilungen aller
 Gemeinden im selben Postfach, jede mit dem Namen ihrer Gemeinde. Antippen
 wechselt bei Bedarf zuerst in diese Gemeinde — so, wie es ein angetippter Push
-auch tut.
+auch tut. Was in den anderen Gemeinden noch offen ist, zeigt der
+Gemeinde-Umschalter oben links an jedem Eintrag (siehe [Sehen, wo etwas offen
+ist](05-rollen.md#sehen-wo-etwas-offen-ist)).
 
 ### Das eigene Profil
 

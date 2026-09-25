@@ -155,6 +155,17 @@ darauf öffnet die Liste aller eigenen Gemeinden; die aktive ist mit einem Haken
 markiert. Nach dem Wechsel laden alle Ansichten frisch in der gewählten
 Gemeinde. Wer nur einer Gemeinde angehört, sieht den Namen nicht.
 
+### Sehen, wo etwas offen ist
+
+In dieser Liste trägt jede Gemeinde eine **rote Zahl**, wenn dort etwas auf
+dich wartet — dieselbe Zahl, die die Reiter und das App-Symbol zusammen
+zeigen, nur je Gemeinde getrennt. So siehst du, wo Arbeit liegt, ohne erst
+hineinzuwechseln. Was mitzählt, hängt von deiner Rolle **in dieser Gemeinde**
+ab: als Leitung offene Anträge, unverbuchte Termine, wartende
+Challenge-Beiträge und ungelesene Chats; als Teamer:in wartende Beiträge,
+Chats und neue Abzeichen. Bist du an Jahrgänge gebunden, zählt nur, was du
+dort auch sehen darfst. Eine Gemeinde ohne Zahl hat nichts Offenes.
+
 Weil der Umschalter überall steht, gibt es auch immer einen Rückweg: Ein
 angetippter Push oder eine Mitteilung aus dem
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) wechselt in die

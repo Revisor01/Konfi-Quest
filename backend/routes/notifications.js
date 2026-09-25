@@ -2,6 +2,8 @@ const express = require('express');
 const { body } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { challengeNeuigkeitenJeChallenge } = require('../utils/challengeNeuigkeiten');
+const { appIconSummenJeOrganisation } = require('../utils/appIconBadge');
+const { ladeMitgliedschaftenDerPerson } = require('../utils/orgMitglieder');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -318,6 +320,65 @@ module.exports = (db, verifyTokenRBAC) => {
       });
     } catch (err) {
       console.error('Database error in GET /notifications/badge-counts:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // GET /badge-counts/je-organisation (25.09.2026)
+  //
+  // Was JE GEMEINDE offen ist -- fuer die Indikatoren in der Auswahlliste des
+  // Gemeinde-Umschalters. Simon: "Koennen wir an den Switcher der Orgs an jede
+  // Org einen Indikator haengen? Das wuerde helfen, wenn was offen ist." Wer
+  // drei Gemeinden betreut, sieht so, wo Arbeit liegt, statt erst
+  // hineinzuwechseln.
+  //
+  // EIGENE ROUTE, NICHT IN badge-counts: badge-counts wird bei jeder Zaehler-
+  // Aktualisierung von JEDEM Konto abgefragt -- auch von den vielen Konfis,
+  // die nur eine Gemeinde haben und den Umschalter nie sehen. Die Auflistung
+  // hier braucht nur, wer den Umschalter oeffnet; die App fragt sie genau dann.
+  // badge-counts bleibt unveraendert (Alt-App-Vertrag, Store-Apps 2.2.x).
+  //
+  // "Offen" heisst dasselbe wie am App-Symbol (utils/appIconBadge.js): je
+  // Rolle die Summe aus Chat, Antraegen, Terminen, Freigaben, Abzeichen und
+  // Neuigkeiten -- Zahl am Symbol und Zahl an der Gemeinde meinen so dieselbe
+  // Sache (Audit-Befund B1: der Server rechnet das Symbol ueber ALLE
+  // Gemeinden, hier steht die Aufteilung dazu).
+  //
+  // DIE ROLLE GILT JE GEMEINDE (utils/orgMitglieder.js): org_admin in A und
+  // Teamer:in in B -> fuer B die Teamer-Zaehler. Die Jahrgangsbindung gilt
+  // ebenso je Gemeinde, ueber die Zuweisungen auf DEREN Jahrgaenge.
+  //
+  // Zwei Abfragen fuer die Zugehoerigkeit plus EINE Zaehlrunde ueber alle
+  // Gemeinden zusammen -- nicht eine Runde je Gemeinde.
+  //
+  // Sicherheitsgrenze: ausschliesslich req.user.id aus dem Token. Es gibt
+  // keinen Parameter, mit dem sich eine fremde Gemeinde erfragen liesse; wer
+  // einer Gemeinde nicht angehoert, bekommt fuer sie keinen Eintrag.
+  router.get('/badge-counts/je-organisation', verifyTokenRBAC, async (req, res) => {
+    try {
+      const mitgliedschaften = await ladeMitgliedschaftenDerPerson(db, req.user.id);
+      const empfaenger = mitgliedschaften.map((m) => ({
+        id: req.user.id,
+        type: m.type,
+        role_name: m.role_name,
+        organization_id: m.organization_id,
+        assigned_jahrgaenge: m.assigned_jahrgaenge
+      }));
+      const summen = await appIconSummenJeOrganisation(db, empfaenger);
+
+      // Ein Objekt je Gemeinde (nicht nur eine Zahl), damit spaeter eine
+      // Aufschluesselung dazukommen kann, ohne die Form zu aendern. Auch
+      // Gemeinden mit 0 stehen drin: So kann die App "nichts offen" von
+      // "keine Angabe" unterscheiden.
+      const jeOrganisation = {};
+      for (const e of empfaenger) {
+        jeOrganisation[e.organization_id] = {
+          offen: summen.get(`${e.id}_${e.type}_${e.organization_id}`) || 0
+        };
+      }
+      res.json({ jeOrganisation });
+    } catch (err) {
+      console.error('Database error in GET /notifications/badge-counts/je-organisation:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

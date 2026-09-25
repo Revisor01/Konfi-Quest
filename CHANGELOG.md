@@ -10,6 +10,10 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
+- Wer mehrere Gemeinden betreut, sieht in der Gemeinde-Auswahl oben links an
+  jeder Gemeinde eine rote Zahl, wenn dort etwas offen ist — Anträge, Termine,
+  Beiträge, Chats, je nach eigener Rolle in dieser Gemeinde. So ist klar, wo
+  Arbeit liegt, ohne erst hineinzuwechseln.
 - Ein Postfach: Oben rechts steht jetzt eine Glocke, die alles sammelt, was
   die App dir mitteilen will — verliehene Abzeichen, eingereichte Anträge und
   die Entscheidungen dazu. Auch was du als Push verpasst hast, steht dort.

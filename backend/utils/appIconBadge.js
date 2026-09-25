@@ -37,10 +37,16 @@ const { challengeNeuigkeitenJeChallenge } = require('./challengeNeuigkeiten');
 //
 // Die Zuordnung laeuft ueber (user_id, user_type): Ein und dieselbe id kann
 // es in zwei Typen geben, deshalb reicht die id allein nicht als Schluessel.
+//
+// Alle personenbezogenen Zaehler liefern seit dem 25.09.2026 zusaetzlich
+// z.organization_id und gruppieren danach. Fuer die Summe je Person aendert
+// das nichts (die Zeilen einer Person werden ohnehin addiert); es erlaubt
+// aber die Aufschluesselung je Gemeinde (appIconSummenJeOrganisation) in
+// DENSELBEN Abfragen -- statt einer Abfragerunde pro Gemeinde.
 async function chatZaehler(db, personen) {
   if (personen.length === 0) return [];
   return (await db.query(
-    `SELECT p.user_id, p.user_type,
+    `SELECT p.user_id, p.user_type, z.organization_id,
             COALESCE(SUM(
               (SELECT COUNT(*)
                  FROM chat_messages m
@@ -56,7 +62,7 @@ async function chatZaehler(db, personen) {
        JOIN unnest($1::int[], $2::text[], $3::int[]) AS z(user_id, user_type, organization_id)
               ON z.user_id = p.user_id AND z.user_type = p.user_type
       WHERE r.organization_id = z.organization_id
-      GROUP BY p.user_id, p.user_type`,
+      GROUP BY p.user_id, p.user_type, z.organization_id`,
     spalten(personen)
   )).rows;
 }
@@ -114,7 +120,7 @@ async function terminZaehlerProOrg(db, orgIds) {
 async function antragZaehlerGebunden(db, personen) {
   if (personen.length === 0) return [];
   return (await db.query(
-    `SELECT z.user_id, z.user_type, COUNT(ar.id)::int AS c
+    `SELECT z.user_id, z.user_type, z.organization_id, COUNT(ar.id)::int AS c
        FROM unnest($1::int[], $2::text[], $3::int[], $4::text[])
               AS z(user_id, user_type, organization_id, jahrgaenge)
        LEFT JOIN activities a ON a.organization_id = z.organization_id
@@ -129,7 +135,7 @@ async function antragZaehlerGebunden(db, personen) {
                     AND kp.jahrgang_id = ANY(z.jahrgaenge::int[])
                )
              )
-      GROUP BY z.user_id, z.user_type`,
+      GROUP BY z.user_id, z.user_type, z.organization_id`,
     [...spalten(personen), jahrgangsSpalte(personen)]
   )).rows;
 }
@@ -142,7 +148,7 @@ async function antragZaehlerGebunden(db, personen) {
 async function terminZaehlerGebunden(db, personen) {
   if (personen.length === 0) return [];
   return (await db.query(
-    `SELECT z.user_id, z.user_type, COUNT(e.id)::int AS c
+    `SELECT z.user_id, z.user_type, z.organization_id, COUNT(e.id)::int AS c
        FROM unnest($1::int[], $2::text[], $3::int[], $4::text[])
               AS z(user_id, user_type, organization_id, jahrgaenge)
        LEFT JOIN events e
@@ -163,7 +169,7 @@ async function terminZaehlerGebunden(db, personen) {
                            WHERE eja.event_id = e.id
                              AND eja.jahrgang_id = ANY(z.jahrgaenge::int[]))
              )
-      GROUP BY z.user_id, z.user_type`,
+      GROUP BY z.user_id, z.user_type, z.organization_id`,
     [...spalten(personen), jahrgangsSpalte(personen)]
   )).rows;
 }
@@ -192,7 +198,7 @@ async function teamerFreigabeZaehler(db, teamer) {
   if (teamer.length === 0) return [];
   const jahrgangsListen = jahrgangsSpalte(teamer);
   return (await db.query(
-    `SELECT z.user_id, z.user_type, COUNT(cs.id)::int AS c
+    `SELECT z.user_id, z.user_type, z.organization_id, COUNT(cs.id)::int AS c
        FROM unnest($1::int[], $2::text[], $3::int[], $4::text[])
               AS z(user_id, user_type, organization_id, jahrgaenge)
        LEFT JOIN challenges c
@@ -208,7 +214,7 @@ async function teamerFreigabeZaehler(db, teamer) {
                     AND cja.jahrgang_id = ANY(z.jahrgaenge::int[])
                )
              )
-      GROUP BY z.user_id, z.user_type`,
+      GROUP BY z.user_id, z.user_type, z.organization_id`,
     [...spalten(teamer), jahrgangsListen]
   )).rows;
 }
@@ -219,14 +225,14 @@ async function teamerFreigabeZaehler(db, teamer) {
 async function abzeichenZaehler(db, personen) {
   if (personen.length === 0) return [];
   return (await db.query(
-    `SELECT ub.user_id, z.user_type, COUNT(*)::int AS c
+    `SELECT ub.user_id, z.user_type, z.organization_id, COUNT(*)::int AS c
        FROM user_badges ub
        JOIN custom_badges cb ON ub.badge_id = cb.id
        JOIN unnest($1::int[], $2::text[], $3::int[]) AS z(user_id, user_type, organization_id)
               ON z.user_id = ub.user_id AND z.organization_id = ub.organization_id
       WHERE ub.seen = false
         AND COALESCE(cb.target_role, 'konfi') = z.user_type
-      GROUP BY ub.user_id, z.user_type`,
+      GROUP BY ub.user_id, z.user_type, z.organization_id`,
     spalten(personen)
   )).rows;
 }
@@ -275,10 +281,49 @@ function istLeitung(empfaenger) {
  * @returns {Promise<Map<string, number>>}  Schluessel `${id}_${type}`, Wert nie negativ
  */
 async function appIconSummenFuerAlle(db, empfaenger) {
+  return summenBerechnen(db, empfaenger, (id, type) => schluessel(id, type));
+}
+
+/**
+ * Dieselben Bausteine, aber JE GEMEINDE aufgeschluesselt (25.09.2026, Simon:
+ * "an jede Org einen Indikator haengen -- das wuerde helfen, wenn was offen
+ * ist"). Der Gemeinde-Umschalter zeigt damit an jedem Eintrag, wo Arbeit
+ * liegt, bevor man hineinwechselt.
+ *
+ * Die Empfaengerliste traegt DIESELBE Person einmal je Gemeinde -- mit der
+ * Rolle und den Jahrgaengen, die sie DORT hat (orgMitglieder.js:
+ * ladeMitgliedschaftenDerPerson). Wer in Gemeinde A org_admin und in B nur
+ * Teamer:in ist, bekommt fuer B die Teamer-Zaehler. Bei
+ * `appIconSummenFuerAlle` kaemen diese Eintraege auf EINEN Schluessel und
+ * wuerden addiert; hier bleibt jede Gemeinde fuer sich.
+ *
+ * Eine Abfragerunde fuer alle Gemeinden zusammen, nicht eine je Gemeinde --
+ * das ist der Grund, warum die personenbezogenen Zaehler oben
+ * z.organization_id mitliefern.
+ *
+ * @returns {Promise<Map<string, number>>}  Schluessel `${id}_${type}_${organization_id}`
+ */
+async function appIconSummenJeOrganisation(db, empfaenger) {
+  return summenBerechnen(db, empfaenger, (id, type, orgId) => `${schluessel(id, type)}_${orgId}`);
+}
+
+// Der gemeinsame Rechenkern. `schluesselVon(id, type, organization_id)`
+// bestimmt, wie fein die Summe aufgeloest wird -- je Person oder je Person
+// und Gemeinde. Die Zaehler-Abfragen und die Rollenregeln sind in beiden
+// Faellen dieselben; es gibt absichtlich keine zweite Fassung davon.
+async function summenBerechnen(db, empfaenger, schluesselVon) {
   const summen = new Map();
   if (!empfaenger || empfaenger.length === 0) return summen;
 
-  for (const p of empfaenger) summen.set(schluessel(p.id, p.type), 0);
+  for (const p of empfaenger) summen.set(schluesselVon(p.id, p.type, p.organization_id), 0);
+
+  // Challenge-Neuigkeiten kommen ohne organization_id zurueck (Konfis sind
+  // immer Single-Org). Die Gemeinde dafuer aus der Empfaengerliste nehmen.
+  const orgJeKonfi = new Map();
+  for (const p of empfaenger) {
+    const k = schluessel(p.id, p.type);
+    if (!orgJeKonfi.has(k)) orgJeKonfi.set(k, p.organization_id);
+  }
 
   const leitung = empfaenger.filter(istLeitung);
   // Jahrgangs-Bindung (01.09.2026): Nur org_admin zaehlt org-weit; die Rolle
@@ -312,17 +357,19 @@ async function appIconSummenFuerAlle(db, empfaenger) {
     challengeNeuigkeitenJeChallenge(db, konfis)
   ]);
 
-  const addiere = (userId, userType, wert) => {
-    const k = schluessel(userId, userType);
+  const addiere = (userId, userType, orgId, wert) => {
+    const k = schluesselVon(userId, userType, orgId);
     if (summen.has(k)) summen.set(k, summen.get(k) + (wert || 0));
   };
 
-  for (const r of chat) addiere(r.user_id, r.user_type, r.c);
-  for (const r of gebundeneFreigaben) addiere(r.user_id, r.user_type, r.c);
-  for (const r of gebundeneAntraege) addiere(r.user_id, r.user_type, r.c);
-  for (const r of gebundeneTermine) addiere(r.user_id, r.user_type, r.c);
-  for (const r of abzeichen) addiere(r.user_id, r.user_type, r.c);
-  for (const r of neuigkeiten) addiere(r.user_id, r.user_type, r.c);
+  for (const r of chat) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  for (const r of gebundeneFreigaben) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  for (const r of gebundeneAntraege) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  for (const r of gebundeneTermine) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  for (const r of abzeichen) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  for (const r of neuigkeiten) {
+    addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c);
+  }
 
   // Die org-weiten Zahlen auf jede ORG-WEITE Leitung dieser Organisation
   // verteilen (gebundene Admins haben ihre Zahlen oben schon bekommen).
@@ -330,7 +377,7 @@ async function appIconSummenFuerAlle(db, empfaenger) {
   for (const reihe of [antraege, termine, freigaben]) {
     for (const r of reihe) proOrg.set(r.organization_id, (proOrg.get(r.organization_id) || 0) + r.c);
   }
-  for (const p of leitungOrgWeit) addiere(p.id, p.type, proOrg.get(p.organization_id) || 0);
+  for (const p of leitungOrgWeit) addiere(p.id, p.type, p.organization_id, proOrg.get(p.organization_id) || 0);
 
   for (const [k, wert] of summen) summen.set(k, Math.max(0, wert));
   return summen;
@@ -383,4 +430,4 @@ async function appIconSummeOderNull(db, empfaenger) {
   }
 }
 
-module.exports = { berechneAppIconSumme, appIconSummeOderNull, appIconSummenFuerAlle };
+module.exports = { berechneAppIconSumme, appIconSummeOderNull, appIconSummenFuerAlle, appIconSummenJeOrganisation };

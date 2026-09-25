@@ -1834,6 +1834,72 @@ paths:
         org-scope: true
         objekt-pruefung: "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert — Rolle admin seit 01.09.2026 auf zugewiesene Jahrgaenge begrenzt (Zaehler und Listen zaehlen gleich). postfach.ungelesen ist die einzige Zahl OHNE Org-Bezug (nur user_id)."
 
+  /api/notifications/badge-counts/je-organisation:
+    get:
+      tags: ["Benachrichtigungen"]
+      summary: Was je Gemeinde offen ist (Indikatoren am Gemeinde-Umschalter)
+      description: >
+        NEU 25.09.2026. Fuer jede Gemeinde, der die Person angehoert
+        (Stamm-Organisation plus user_organizations, gesperrte Organisationen
+        ausgenommen), die Zahl dessen, was dort offen ist -- damit die
+        Auswahlliste des Gemeinde-Umschalters zeigt, wo Arbeit liegt, bevor
+        man hineinwechselt.
+        "Offen" meint dasselbe wie die App-Icon-Summe (utils/appIconBadge.js):
+        je Rolle Chat, offene Antraege, unverarbeitete Termine,
+        Challenge-Freigaben, ungesehene Abzeichen und Challenge-Neuigkeiten.
+        Audit-Befund B1 (25.09.2026): Der Server rechnet das Icon ueber ALLE
+        Gemeinden, die App zeigt nur die aktive -- diese Route ist die
+        Aufteilung dieser Summe je Gemeinde.
+        DIE ROLLE GILT JE GEMEINDE (utils/orgMitglieder.js,
+        ladeMitgliedschaftenDerPerson): org_admin in A und Teamer:in in B
+        ergibt fuer B die Teamer-Zaehler. Die Jahrgangsbindung gebundener
+        Admins und Teamer:innen gilt ebenso je Gemeinde ueber die Zuweisungen
+        auf DEREN Jahrgaenge (utils/jahrgangsZugriff.js) -- gezaehlt wird nur,
+        was die Person dort auch sehen darf.
+        EIGENE ROUTE statt eines weiteren Felds in badge-counts: badge-counts
+        fragt jedes Konto bei jeder Zaehler-Aktualisierung ab, auch die vielen
+        Single-Org-Konfis, die den Umschalter nie sehen. Diese Route ruft die
+        App nur beim Oeffnen der Auswahlliste. badge-counts bleibt unveraendert
+        (Alt-App-Vertrag, Store-Apps 2.2.x).
+        Kosten: zwei Abfragen fuer die Zugehoerigkeit plus eine Zaehlrunde
+        ueber alle Gemeinden zusammen (`= ANY`/unnest), nicht eine je Gemeinde.
+        Unabhaengig von X-Active-Organization: dieselbe Aufteilung, egal in
+        welcher Gemeinde die Person gerade arbeitet.
+      responses:
+        '200':
+          description: Je Gemeinde ein Eintrag, auch bei 0
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jeOrganisation:
+                    type: object
+                    description: >
+                      Organisations-ID -> Eintrag. Genau die Gemeinden der
+                      Person; eine Gemeinde ohne Zugehoerigkeit fehlt, auch
+                      wenn dort etwas offen ist. Ein Objekt je Gemeinde (nicht
+                      nur eine Zahl), damit spaeter eine Aufschluesselung
+                      dazukommen kann, ohne die Form zu aendern. Eintraege mit
+                      offen = 0 stehen drin: "nichts offen" und "keine Angabe"
+                      bleiben unterscheidbar.
+                    additionalProperties:
+                      type: object
+                      properties:
+                        offen: { type: integer, description: Summe wie am App-Symbol, nie negativ }
+              example:
+                jeOrganisation:
+                  "1": { offen: 2 }
+                  "2": { offen: 1 }
+                  "4": { offen: 0 }
+        '401': { description: Kein oder ungueltiges Token }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Ausschliesslich req.user.id aus dem Token; kein Parameter, mit dem sich eine fremde Gemeinde erfragen liesse. Rolle und Jahrgangsbindung je Gemeinde (Tests: tests/routes/badgeJeOrganisation.test.js)."
+
   /api/notifications/postfach:
     get:
       tags: ["Benachrichtigungen"]

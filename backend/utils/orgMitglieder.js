@@ -88,4 +88,80 @@ function ladeLeitungDerOrganisation(db, organizationId, opt) {
   return ladeMitgliederDerOrganisation(db, organizationId, LEITUNGSROLLEN, opt);
 }
 
-module.exports = { ladeMitgliederDerOrganisation, ladeLeitungDerOrganisation, LEITUNGSROLLEN };
+/**
+ * Die Gegenrichtung: alle Gemeinden EINER Person, jede mit der Rolle und den
+ * Jahrgangs-Zuweisungen, die sie DORT hat (25.09.2026, fuer die Zaehler am
+ * Gemeinde-Umschalter).
+ *
+ * Dieselben zwei Quellen wie oben und wie GET /auth/my-organizations:
+ * Stamm-Organisation mit users.role_id, Zusatzzugehoerigkeiten mit
+ * uo.role_id. Fuehrt user_organizations die Stamm-Organisation doppelt,
+ * gewinnt die Rolle am Nutzerkonto (wie in my-organizations). Gesperrte
+ * Organisationen fallen heraus, wie dort.
+ *
+ * Die Jahrgaenge kommen ueber jahrgaenge.organization_id an ihre Gemeinde --
+ * ein Jahrgang gehoert genau einer Organisation. Damit kann eine Zuweisung
+ * aus Gemeinde A nie in Gemeinde B mitzaehlen (Jahrgangsbindung, siehe
+ * utils/jahrgangsZugriff.js).
+ *
+ * Zwei Abfragen, unabhaengig von der Anzahl der Gemeinden.
+ *
+ * @param {object} db
+ * @param {number} userId
+ * @returns {Promise<Array<{organization_id:number, role_name:string, type:string,
+ *   assigned_jahrgaenge:Array<{id:number, can_view:boolean, can_edit:boolean}>}>>}
+ *   type wie im Token: konfi, teamer oder admin (alle Leitungsrollen).
+ */
+async function ladeMitgliedschaftenDerPerson(db, userId) {
+  const [{ rows: zeilen }, { rows: jahrgaenge }] = await Promise.all([
+    db.query(
+      `
+      SELECT m.organization_id, m.role_name
+        FROM (
+          SELECT u.organization_id, r.name AS role_name, true AS is_primary
+            FROM users u
+            JOIN roles r ON r.id = u.role_id
+            JOIN organizations o ON o.id = u.organization_id
+           WHERE u.id = $1 AND COALESCE(o.is_active, true) = true
+          UNION ALL
+          SELECT uo.organization_id, r.name AS role_name, false AS is_primary
+            FROM user_organizations uo
+            JOIN roles r ON r.id = uo.role_id
+            JOIN organizations o ON o.id = uo.organization_id
+           WHERE uo.user_id = $1 AND COALESCE(o.is_active, true) = true
+        ) m
+       ORDER BY m.organization_id, m.is_primary DESC
+      `,
+      [userId]
+    ),
+    db.query(
+      `SELECT uja.jahrgang_id AS id, uja.can_view, uja.can_edit, j.organization_id
+         FROM user_jahrgang_assignments uja
+         JOIN jahrgaenge j ON j.id = uja.jahrgang_id
+        WHERE uja.user_id = $1`,
+      [userId]
+    )
+  ]);
+
+  const jahrgaengeJeOrg = new Map();
+  for (const j of jahrgaenge) {
+    if (!jahrgaengeJeOrg.has(j.organization_id)) jahrgaengeJeOrg.set(j.organization_id, []);
+    jahrgaengeJeOrg.get(j.organization_id).push({ id: j.id, can_view: j.can_view, can_edit: j.can_edit });
+  }
+
+  const mitgliedschaften = [];
+  const gesehen = new Set();
+  for (const z of zeilen) {
+    if (gesehen.has(z.organization_id)) continue;
+    gesehen.add(z.organization_id);
+    mitgliedschaften.push({
+      organization_id: z.organization_id,
+      role_name: z.role_name,
+      type: z.role_name === 'konfi' ? 'konfi' : (z.role_name === 'teamer' ? 'teamer' : 'admin'),
+      assigned_jahrgaenge: jahrgaengeJeOrg.get(z.organization_id) || []
+    });
+  }
+  return mitgliedschaften;
+}
+
+module.exports = { ladeMitgliederDerOrganisation, ladeLeitungDerOrganisation, ladeMitgliedschaftenDerPerson, LEITUNGSROLLEN };

@@ -11,8 +11,11 @@ Oben trägt jede Seite dieselbe Kopfzeile: rechts die **Glocke** mit dem
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen), links — wer
 mehrere Gemeinden betreut — der **Name der Gemeinde**, in der du gerade
 arbeitest (siehe [In mehreren Gemeinden
-mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)). Dazwischen der
-Titel, daneben die Knöpfe der jeweiligen Seite, etwa das Plus zum Anlegen.
+mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)). Ein Tippen auf
+den Namen zeigt alle deine Gemeinden, jede mit einer roten Zahl, wenn dort
+etwas offen ist (siehe [Sehen, wo etwas offen
+ist](05-rollen.md#sehen-wo-etwas-offen-ist)). Dazwischen der Titel, daneben
+die Knöpfe der jeweiligen Seite, etwa das Plus zum Anlegen.
 
 Die Leitung hat zwei Stufen: **Admins** kümmern sich um den laufenden Betrieb,
 **Org-Admins** zusätzlich um Benutzer:innen, Jahrgangs-Zuweisungen und die
