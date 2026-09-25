@@ -129,6 +129,8 @@ im Kapitel [Abzeichen](60-badges.md#die-passende-bedingung-waehlen).
 - **E-Mail-Adresse ändern** und **Passwort ändern**
 - **Bibelübersetzung** — welche Übersetzung du bei der Tageslosung siehst
 - **App-Tour ansehen** — die Einführung noch einmal
+- **Benachrichtigungen** — welche Mitteilungen aufs Handy kommen; siehe
+  [Auswählen, welche Mitteilungen aufs Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen)
 - **Medien-Cache leeren** — Dateien aus dem Chat bleiben nach dem ersten Laden
   auf dem Gerät, damit sie beim nächsten Mal sofort da sind. Hier lässt sich
   dieser Speicher leeren; die Dateien laden dann beim nächsten Antippen neu.

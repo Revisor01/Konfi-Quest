@@ -383,8 +383,6 @@ const AdminWrappedPage: React.FC = () => {
                               className="app-corner-badge"
                               style={{ backgroundColor: 'var(--app-color-success)' }}
                               title="Freigegeben"
-                              role="img"
-                              aria-label="Freigegeben"
                             >
                               <IonIcon icon={ICON_SICHTBAR_GEFUELLT} />
                             </div>

@@ -25,6 +25,7 @@ import { SectionHeader } from '../../shared';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
+import PushAuswahlEintrag from '../../shared/PushAuswahl';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
@@ -649,6 +650,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                   Blendet sich selbst aus, wenn das Geraet keine eingerichtete
                   Biometrie hat. */}
               <AppSperreSchalter variante="purple" />
+              <PushAuswahlEintrag variante="purple" presentingRef={pageRef} presentingElement={presentingElement} />
 
 
               {/* Medien-Cache leeren */}

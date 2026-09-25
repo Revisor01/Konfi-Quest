@@ -411,6 +411,107 @@ describe('Notifications Routes', () => {
 
       expect(res.status).toBe(400);
     });
+
+    // ---- Gruppen-Auswahl (25.09.2026), additiv zum Hauptschalter ----
+
+    it('GET: Konfi bekommt drei Gruppen ohne Verwaltung, alle aktiv, stumm leer', async () => {
+      const res = await request(app)
+        .get('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.push_enabled).toBe(true);
+      expect(res.body.stumm).toEqual([]);
+      expect(res.body.gruppen.map((g) => g.id)).toEqual(['konfi_chat', 'konfi_termine', 'konfi_fortschritt']);
+      expect(res.body.gruppen.every((g) => g.aktiv === true)).toBe(true);
+      expect(res.body.gruppen[1]).toEqual({
+        id: 'konfi_termine',
+        name: 'Termine',
+        beschreibung: 'Anmeldungen, Änderungen, Absagen und Erinnerungen',
+        aktiv: true
+      });
+    });
+
+    it('GET: Teamer:in und Leitung bekommen alle vier Gruppen', async () => {
+      for (const token of [teamerToken, adminToken]) {
+        const res = await request(app)
+          .get('/api/notifications/preferences')
+          .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(res.body.gruppen.map((g) => g.id)).toEqual(
+          ['konfi_chat', 'konfi_termine', 'konfi_fortschritt', 'konfi_verwaltung']
+        );
+      }
+    });
+
+    it('PUT stumm speichert die Abwahl, laesst den Hauptschalter unangetastet und GET spiegelt sie', async () => {
+      const put = await request(app)
+        .put('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stumm: ['konfi_verwaltung', 'konfi_chat'] });
+
+      expect(put.status).toBe(200);
+      expect(put.body).toEqual({ success: true, push_enabled: true, stumm: ['konfi_chat', 'konfi_verwaltung'] });
+
+      const get = await request(app)
+        .get('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(get.body.stumm).toEqual(['konfi_chat', 'konfi_verwaltung']);
+      expect(get.body.gruppen.map((g) => g.aktiv)).toEqual([false, true, true, false]);
+
+      const { rows } = await db.query('SELECT push_enabled, push_gruppen_stumm FROM users WHERE id = $1', [USERS.admin1.id]);
+      expect(rows[0].push_enabled).toBe(true);
+      expect(rows[0].push_gruppen_stumm).toEqual(['konfi_chat', 'konfi_verwaltung']);
+    });
+
+    it('PUT push_enabled allein (Alt-Form) laesst die Abwahl stehen', async () => {
+      await db.query(`UPDATE users SET push_gruppen_stumm = '{konfi_termine}' WHERE id = $1`, [USERS.konfi1.id]);
+
+      const res = await request(app)
+        .put('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ push_enabled: false });
+
+      expect(res.status).toBe(200);
+      expect(res.body.push_enabled).toBe(false);
+      expect(res.body.stumm).toEqual(['konfi_termine']);
+    });
+
+    it('PUT stumm: leere Liste schaltet alles wieder an', async () => {
+      await db.query(`UPDATE users SET push_gruppen_stumm = '{konfi_termine,konfi_chat}' WHERE id = $1`, [USERS.konfi1.id]);
+      const res = await request(app)
+        .put('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ stumm: [] });
+      expect(res.status).toBe(200);
+      expect(res.body.stumm).toEqual([]);
+    });
+
+    it('PUT stumm mit unbekannter Gruppe -> 400, nichts gespeichert', async () => {
+      const res = await request(app)
+        .put('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ stumm: ['konfi_chat', 'alles'] });
+      expect(res.status).toBe(400);
+      const { rows } = await db.query('SELECT push_gruppen_stumm FROM users WHERE id = $1', [USERS.konfi1.id]);
+      expect(rows[0].push_gruppen_stumm).toEqual([]);
+    });
+
+    it('PUT stumm als String statt Liste -> 400', async () => {
+      const res = await request(app)
+        .put('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ stumm: 'konfi_chat' });
+      expect(res.status).toBe(400);
+    });
+
+    it('PUT ohne beides -> 400', async () => {
+      const res = await request(app)
+        .put('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({});
+      expect(res.status).toBe(400);
+    });
   });
 
   // ================================================================

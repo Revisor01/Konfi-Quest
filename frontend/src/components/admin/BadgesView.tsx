@@ -393,8 +393,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                   className="app-corner-badge"
                                   style={{ backgroundColor: visibilityColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                                   title={visibilityText}
-                                  role="img"
-                                  aria-label={visibilityText}
                                 >
                                   <IonIcon icon={badge.is_hidden ? ICON_VERBORGEN_GEFUELLT : ICON_SICHTBAR_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                                 </div>
@@ -404,8 +402,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                   className="app-corner-badge"
                                   style={{ backgroundColor: activeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                                   title={activeText}
-                                  role="img"
-                                  aria-label={activeText}
                                 >
                                   <IonIcon icon={badge.is_active ? ICON_HAKEN_GEFUELLT : ICON_SCHLIESSEN_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                                 </div>

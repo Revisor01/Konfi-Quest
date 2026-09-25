@@ -208,8 +208,6 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)'
                             }}
                             title="Testversion"
-                            role="img"
-                            aria-label="Testversion"
                           >
                             <IonIcon icon={ICON_EXPERIMENT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                           </div>
@@ -223,8 +221,6 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)'
                         }}
                         title={organization.is_active ? 'Aktiv' : 'Inaktiv'}
-                        role="img"
-                        aria-label={organization.is_active ? 'Aktiv' : 'Inaktiv'}
                       >
                         <IonIcon icon={organization.is_active ? ICON_ZUSAGE_GEFUELLT : ICON_ABSAGE} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                       </div>

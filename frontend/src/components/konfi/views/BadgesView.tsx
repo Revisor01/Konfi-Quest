@@ -314,8 +314,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                 padding: 'var(--app-abstand-mini) var(--app-abstand-eng)'
                               }}
                               title="Geheimes Badge"
-                              role="img"
-                              aria-label="Geheimes Badge"
                             >
                               <IonIcon icon={ICON_VERBORGEN_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                             </div>

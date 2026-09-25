@@ -196,11 +196,44 @@ wenn du es genau wissen willst.
 > Auf der Seite mit den **Einladungscodes** fehlt die Geste. Wer dort einen
 > frischen Stand braucht, verlässt die Seite und öffnet sie erneut.
 
-## Einstellen, worüber das Handy Bescheid gibt
+## Auswählen, welche Mitteilungen aufs Handy kommen
 
-Auf Android sortiert Konfi Quest seine Mitteilungen in vier Gruppen. In den
+Konfi Quest sortiert seine Mitteilungen in vier Gruppen. In der App lässt sich
+jede davon ab- und anschalten — auf dem iPhone genauso wie auf Android. Den
+Eintrag **Benachrichtigungen** findest du im Profil (Konfis und Team) bzw.
+unter *Mehr → Konto* (Leitung). Er öffnet die Auswahl:
+
+| Gruppe | Was darüber kommt |
+|---|---|
+| Nachrichten | Neue Nachrichten in den Chats |
+| Termine | Anmeldungen, Änderungen, Absagen und Erinnerungen |
+| Punkte und Abzeichen | Punkte, Abzeichen, Level, Challenges und der Rückblick |
+| Anfragen und Freigaben | Was auf deine Entscheidung wartet — nur für Leitung und Team |
+
+Konfis sehen nur die ersten drei: Bei ihnen kommt in „Anfragen und Freigaben"
+nichts an, ein Schalter dafür führte ins Leere. Ganz oben steht ein
+Hauptschalter **Mitteilungen aufs Handy** für alles auf einmal; ist er aus,
+sind die Gruppen darunter gesperrt.
+
+Jede Änderung gilt sofort und für alle Geräte, auf denen du angemeldet bist.
+Neue Konten haben alles an.
+
+> **Abgeschaltet wird nur der Weg aufs Handy.** Was du hier abwählst, steht
+> weiterhin im [Postfach](#mitteilungen-im-postfach-nachlesen) unter der Glocke — mit
+> Markierung für Ungelesenes und dem Sprung an die passende Stelle. Wer die
+> Terminmeldungen nicht aufs Handy will, verpasst sie deshalb nicht, sondern
+> liest sie, wenn er die App öffnet. Die Zahl am App-Symbol zählt sie weiter.
+
+Solange das Gerät der App noch keine Mitteilungen erlaubt, steht in der
+Auswahl ein Hinweis mit einem Knopf, der die Erlaubnis anfordert. Die Auswahl
+selbst gilt dann, sobald sie erteilt ist.
+
+## Zusätzlich auf Android: Ton und Lautstärke je Gruppe
+
+Auf Android sind die vier Gruppen außerdem Kanäle des Systems. In den
 Android-Einstellungen unter *Apps → Konfi Quest → Benachrichtigungen* lässt
-sich jede einzeln lauter, leiser oder ganz stumm stellen:
+sich jede einzeln lauter, leiser oder ganz stumm stellen — mit denselben Namen
+wie oben:
 
 | Gruppe | Was darüber kommt |
 |---|---|
@@ -217,8 +250,10 @@ Es tauchen nur die Gruppen auf, in denen auch etwas ankommt. Konfis sehen
 „Anfragen und Freigaben" deshalb gar nicht erst; Android führt ungenutzte
 Gruppen weiter unten unter „Nicht verwendete Kategorien".
 
-Auf dem iPhone gibt es diese Aufteilung nicht: Dort lässt sich unter
+Auf dem iPhone gibt es diese Aufteilung im System nicht: Dort lässt sich unter
 *Einstellungen → Mitteilungen → Konfi Quest* nur die App als Ganzes einstellen.
+Welche Gruppen ankommen, entscheidest du dort über die
+[Auswahl in der App](#auswaehlen-welche-mitteilungen-aufs-handy-kommen).
 
 ## Benachrichtigungen wieder zum Laufen bringen
 

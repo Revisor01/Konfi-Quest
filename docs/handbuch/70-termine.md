@@ -188,9 +188,7 @@ abgelehnt:
 > „Du bist bereits zu einem Konfirmationstermin angemeldet (…). Melde dich
 > dort zuerst ab, um einen anderen Termin zu wählen."
 
-In der App sind die anderen Konfirmationstermine dann ausgegraut und tragen in
-der Ecke einen Doppelpfeil: „Anderer Termin" — die Konfi ist woanders angemeldet
-und müsste erst wechseln.
+In der App sind die anderen Konfirmationstermine dann ausgegraut.
 
 | | Pflicht-Event | Konfirmation |
 |---|---|---|

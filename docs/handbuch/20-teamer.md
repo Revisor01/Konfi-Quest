@@ -140,6 +140,8 @@ Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
   oder „Jugendmitarbeiter". Sie steht neben deinem Namen im Chat.
 - **E-Mail-Adresse ändern** und **Passwort ändern**
 - **Bibelübersetzung** für die Tageslosung
+- **Benachrichtigungen** — welche Mitteilungen aufs Handy kommen; siehe
+  [Auswählen, welche Mitteilungen aufs Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen)
 - **App-Tour ansehen** und **Medien-Cache leeren** — Letzteres wirft die
   Chat-Dateien weg, die zum schnelleren Öffnen auf dem Gerät liegen (siehe
   [Chat](90-chat.md#eine-datei-mitschicken))

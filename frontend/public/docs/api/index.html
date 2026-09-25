@@ -936,11 +936,11 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip r-konfi">Konfi</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur eigene Mitteilungen (user_id aus dem Token); fremde bleiben ungelesen. org-scope bewusst false, siehe GET /api/notifications/postfach.</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/notifications/preferences</code></div>
-        <p class="summary">Push-Master-Schalter lesen</p>
+        <p class="summary">Push-Einstellungen lesen (Hauptschalter und stummgeschaltete Gruppen)</p>
         <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip r-konfi">Konfi</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur eigener User-Datensatz</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/notifications/preferences</code></div>
-        <p class="summary">Push-Master-Schalter setzen</p>
+        <p class="summary">Push-Hauptschalter und/oder stummgeschaltete Gruppen setzen</p>
         <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip r-konfi">Konfi</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur eigener User-Datensatz</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/notifications/push-diagnose</code></div>

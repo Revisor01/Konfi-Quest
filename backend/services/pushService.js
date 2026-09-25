@@ -16,6 +16,14 @@ const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation } = require('.
 // (utils/postfachArten.js). Geschrieben wird zentral in sendToUser und
 // sendToMultipleUsers -- nicht an den rund vierzig Aufrufstellen.
 const { schreibePostfach } = require('../utils/postfachArten');
+// Push-Gruppen (25.09.2026): Nutzende koennen in der App einzelne Gruppen
+// (Nachrichten, Termine, Punkte und Abzeichen, Anfragen und Freigaben)
+// stummschalten -- users.push_gruppen_stumm, gefuellt ueber PUT
+// /notifications/preferences. Die Gruppe einer Art bestimmt
+// utils/pushGruppen.js; geprueft wird sie in den Token-Abfragen, neben dem
+// Hauptschalter push_enabled. Der Postfach-Eintrag entsteht davor und
+// unabhaengig davon.
+const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
 
 /**
  * Push Notification Type Registry
@@ -269,9 +277,15 @@ class PushService {
   /**
    * Helper: Holt alle Push-Tokens für einen User
    */
-  static async getTokensForUser(db, userId) {
+  static async getTokensForUser(db, userId, art = null) {
     // Master-Schalter: Hat der User Push global deaktiviert, gar keine Tokens
     // zurueckgeben -> es wird nichts gesendet (gilt für alle Push-Typen).
+    //
+    // Stummgeschaltete Gruppe (25.09.2026): Ist `art` angegeben (data.type des
+    // Pushs) und hat die Person die Gruppe dieser Art abgewaehlt, ebenfalls
+    // keine Tokens. OHNE `art` greift die Abwahl nicht -- so laeuft der stille
+    // badge_update (nur die Zahl am App-Symbol) immer durch. Der Postfach-
+    // Eintrag ist zu diesem Zeitpunkt schon geschrieben (sendToUser).
     //
     // Ebenso fuer gesperrte und geloeschte Konten (Befund 28.08.2026). Vorher
     // pruefte das nur ein Teil der Empfaenger-Abfragen selbst — elf von
@@ -287,6 +301,7 @@ class PushService {
       JOIN users u ON pt.user_id = u.id
       WHERE pt.user_id = $1
         AND u.push_enabled = true
+        AND ($2::text IS NULL OR NOT ($2::text = ANY(u.push_gruppen_stumm)))
         AND u.is_active = true
         AND u.deleted_at IS NULL
         AND pt.id IN (
@@ -297,7 +312,7 @@ class PushService {
         )
       ORDER BY pt.token, pt.id DESC
     `;
-    const { rows: tokens } = await db.query(query, [userId]);
+    const { rows: tokens } = await db.query(query, [userId, art ? gruppeFuerArt(art) : null]);
     return tokens || [];
   }
 
@@ -319,7 +334,7 @@ class PushService {
    *
    * @returns {Promise<Map<number, Array<object>>>} je userId die Token-Zeilen
    */
-  static async getTokensForUsers(db, userIds) {
+  static async getTokensForUsers(db, userIds, art = null) {
     const jeUser = new Map();
     const eindeutige = [...new Set(userIds)];
     if (eindeutige.length === 0) return jeUser;
@@ -330,6 +345,7 @@ class PushService {
          JOIN users u ON pt.user_id = u.id
         WHERE pt.user_id = ANY($1::bigint[])
           AND u.push_enabled = true
+          AND ($2::text IS NULL OR NOT ($2::text = ANY(u.push_gruppen_stumm)))
           AND u.is_active = true
           AND u.deleted_at IS NULL
           AND pt.id IN (
@@ -338,7 +354,7 @@ class PushService {
              GROUP BY user_id, device_id, platform
           )
         ORDER BY pt.user_id, pt.token, pt.id DESC`,
-      [eindeutige]
+      [eindeutige, art ? gruppeFuerArt(art) : null]
     );
 
     for (const zeile of rows) {
@@ -693,9 +709,12 @@ class PushService {
       // Beim Versand an viele stehen die Tokens schon aus der gemeinsamen
       // Abfrage bereit -- das war nach der Badge-Rechnung die groesste
       // verbliebene Abfrage je Kopf.
+      // Mit der Art des Pushs: Hat die Person die Gruppe dieser Art
+      // stummgeschaltet, kommen keine Tokens -- der Postfach-Eintrag oben
+      // steht da schon.
       const tokens = (vorberechnet && vorberechnet.tokens)
         ? vorberechnet.tokens
-        : await this.getTokensForUser(db, userId);
+        : await this.getTokensForUser(db, userId, notification.data && notification.data.type);
 
       if (tokens.length === 0) {
  console.warn(`Keine Push-Tokens für User ${userId} gefunden`);
@@ -820,7 +839,7 @@ class PushService {
       const { badges, orgs } = braucheVorarbeit
         ? await this.berechneBadgesFuerAlle(db, block)
         : { badges: new Map(), orgs: new Map() };
-      const tokensJeUser = await this.getTokensForUsers(db, block);
+      const tokensJeUser = await this.getTokensForUsers(db, block, notification.data && notification.data.type);
 
       const teil = await Promise.all(
         block.map(async (userId) => {
@@ -884,6 +903,7 @@ class PushService {
       // Neuestes Token pro Device verwenden
       // UND Sender-Tokens ausschließen (für den Fall dass gleicher Token bei verschiedenen Accounts)
       // UND Master-Schalter prüfen (u.push_enabled): bei false keine Tokens.
+      // UND die Gruppe "Nachrichten" darf nicht stummgeschaltet sein ($3).
       // UND gesperrte/geloeschte Konten ausschliessen — gleiche Bedingung wie
       // in getTokensForUser, das diese Abfrage bewusst nicht nutzt (Sender-
       // Ausschluss). Beide muessen zusammen gepflegt werden.
@@ -894,6 +914,7 @@ class PushService {
         JOIN users u ON pt.user_id = u.id
         WHERE pt.user_id = $1
           AND u.push_enabled = true
+          AND NOT ($3::text = ANY(u.push_gruppen_stumm))
           AND u.is_active = true
           AND u.deleted_at IS NULL
           AND pt.id IN (
@@ -906,11 +927,11 @@ class PushService {
 
       // Sender-Tokens ausschliessen wenn vorhanden
       if (senderTokenList.length > 0) {
-        query += ` AND pt.token NOT IN (${senderTokenList.map((_, i) => `$${i + 3}`).join(', ')})`;
+        query += ` AND pt.token NOT IN (${senderTokenList.map((_, i) => `$${i + 4}`).join(', ')})`;
       }
       query += ` ORDER BY pt.token, pt.id DESC`;
 
-      const queryParams = [userId, userId, ...senderTokenList];
+      const queryParams = [userId, userId, GRUPPE_CHAT, ...senderTokenList];
       const { rows: tokens } = await db.query(query, queryParams);
 
       if (!tokens || tokens.length === 0) {

@@ -19,8 +19,6 @@ import {
   ICON_ABZEICHEN_GEFUELLT,
   ICON_AKTION_GEFUELLT,
   ICON_APPS,
-  ICON_BENACHRICHTIGUNG,
-  ICON_HAKEN_GEFUELLT,
   ICON_DATEI_GEFUELLT,
   ICON_FUNKELN,
   ICON_GRUPPE_GEFUELLT,
@@ -48,6 +46,7 @@ import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral über useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
 import SpiritFooter from '../../shared/SpiritFooter';
+import PushAuswahlEintrag from '../../shared/PushAuswahl';
 import { useIonRouter } from '@ionic/react';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
@@ -55,7 +54,7 @@ import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 
 const AdminSettingsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-settings');
-  const { user, pushNotificationsPermission, requestPushPermissions, signOut } = useApp();
+  const { user, signOut } = useApp();
   const [presentAlert] = useIonAlert();
   const router = useIonRouter();
 
@@ -252,42 +251,10 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div
-                className="app-list-item app-list-item--users"
-                onClick={() => pushNotificationsPermission !== 'granted' && requestPushPermissions()}
-                style={{
-                  cursor: pushNotificationsPermission !== 'granted' ? 'pointer' : 'default',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                {/* Haken statt "Aktiviert" -- dasselbe Zeichen wie 'Aktiv' in
-                    der Status-Karte (StatusBadge); das Wort steht in title/aria-label. */}
-                {pushNotificationsPermission === 'granted' && (
-                  <div className="app-corner-badges">
-                    <div
-                      className="app-corner-badge"
-                      style={{ backgroundColor: 'var(--app-color-success-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
-                      title="Aktiviert"
-                      role="img"
-                      aria-label="Aktiviert"
-                    >
-                      <IonIcon icon={ICON_HAKEN_GEFUELLT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
-                    </div>
-                  </div>
-                )}
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
-                  <IonIcon icon={ICON_BENACHRICHTIGUNG} />
-                  </div>
-                  <div className="app-list-item__content">
-                  <div className="app-list-item__title">Benachrichtigungen</div>
-                  <div className="app-list-item__meta"><span className="app-list-item__meta-item">Chat-Nachrichten und Updates</span></div>
-                  </div>
-                  </div>
-                </div>
-              </div>
+              {/* Auswahl, welche Push-Gruppen aufs Handy kommen -- gemeinsame
+                  Komponente aller drei Rollen; fordert die Berechtigung des
+                  Geraets weiterhin an, solange sie fehlt. */}
+              <PushAuswahlEintrag variante="users" presentingRef={pageRef} />
 
               {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
               <div

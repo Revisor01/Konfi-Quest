@@ -10377,10 +10377,11 @@
         "tags": [
           "Benachrichtigungen"
         ],
-        "summary": "Push-Master-Schalter lesen",
+        "summary": "Push-Einstellungen lesen (Hauptschalter und stummgeschaltete Gruppen)",
+        "description": "ADDITIV 25.09.2026: Bis dahin nur `push_enabled`. Neu `stumm` (rohe Kennungen der abgewaehlten Gruppen) und `gruppen` -- die Gruppen, die DIESE Rolle zur Auswahl bekommt (Konfis ohne konfi_verwaltung), mit Text und aktuellem Stand. Die Gruppen sind die Android-Kanaele (backend/utils/pushGruppen.js). Die Abwahl unterdrueckt nur den Versand aufs Geraet; der Postfach-Eintrag entsteht unabhaengig davon. Store-Apps 2.2.x rufen die Route nicht.\n",
         "responses": {
           "200": {
-            "description": "push_enabled (Default true, wenn kein Datensatz)",
+            "description": "push_enabled (Default true), stumm (Default leer), gruppen je Rolle",
             "content": {
               "application/json": {
                 "schema": {
@@ -10388,6 +10389,38 @@
                   "properties": {
                     "push_enabled": {
                       "type": "boolean"
+                    },
+                    "stumm": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "konfi_chat",
+                          "konfi_termine",
+                          "konfi_fortschritt",
+                          "konfi_verwaltung"
+                        ]
+                      }
+                    },
+                    "gruppen": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "beschreibung": {
+                            "type": "string"
+                          },
+                          "aktiv": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -10416,19 +10449,29 @@
         "tags": [
           "Benachrichtigungen"
         ],
-        "summary": "Push-Master-Schalter setzen",
+        "summary": "Push-Hauptschalter und/oder stummgeschaltete Gruppen setzen",
+        "description": "ADDITIV 25.09.2026: `push_enabled` war Pflicht, jetzt reicht eines von `push_enabled` und `stumm`. Was nicht mitgeschickt wird, bleibt wie es ist. `stumm` ersetzt die gesamte Abwahl-Liste (leere Liste = alles an); nur bekannte Gruppen-Kennungen, sonst 400. Eine Kennung, die die Rolle nicht zur Auswahl hat, ist erlaubt und wirkungslos.\n",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "push_enabled"
-                ],
                 "properties": {
                   "push_enabled": {
                     "type": "boolean"
+                  },
+                  "stumm": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "konfi_chat",
+                        "konfi_termine",
+                        "konfi_fortschritt",
+                        "konfi_verwaltung"
+                      ]
+                    }
                   }
                 }
               }
@@ -10437,10 +10480,33 @@
         },
         "responses": {
           "200": {
-            "description": "Gespeichert"
+            "description": "Gespeichert",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "push_enabled": {
+                      "type": "boolean"
+                    },
+                    "stumm": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
-            "description": "push_enabled kein Boolean"
+            "description": "push_enabled kein Boolean",
+            "stumm keine Liste oder unbekannte Gruppe": null,
+            "oder beides fehlt": null
           },
           "500": {
             "description": "Datenbankfehler"

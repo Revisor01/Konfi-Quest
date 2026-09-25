@@ -1460,8 +1460,6 @@ const TeamerEventsPage: React.FC = () => {
                       className={`app-corner-badge ${eckBadgeKlasse(darstellung)}`}
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                       title={darstellung.statusText}
-                      role="img"
-                      aria-label={darstellung.statusText}
                     >
                       <IonIcon icon={getStatusIcon(darstellung.statusText) || ICON_GRUPPE_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                     </div>

@@ -547,8 +547,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                 className={`app-corner-badge app-corner-badge--${colorClass}`}
                                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                                 title={getRoomSubtitle(room)}
-                                role="img"
-                                aria-label={getRoomSubtitle(room)}
                               >
                                 <IonIcon icon={getRoomTypeIcon(room)} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                               </div>

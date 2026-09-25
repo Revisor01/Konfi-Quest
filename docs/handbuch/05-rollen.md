@@ -138,11 +138,6 @@ Angelegt und bearbeitet wird immer nur nach unten:
 
 Wer einen weiteren Org-Admin braucht, muss also einen Org-Admin fragen.
 
-In der Benutzerliste zeigt die Marke in der Ecke jeder Karte die Rolle als
-Symbol: ein Gebäude für den Org-Admin (zuständig für die ganze Gemeinde), ein
-Schild für den Admin, eine Person für Teamer:innen. Wer mit dem Finger darauf
-bleibt, liest das Wort.
-
 Wie Konten angelegt werden und wie jede Rolle zu einem Passwort kommt, steht im
 Kapitel [Passwörter und Zugänge](35-passwoerter.md).
 

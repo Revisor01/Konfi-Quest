@@ -1,4 +1,5 @@
 const express = require('express');
+const { gruppenFuerRolle, bereinigeStumm } = require('../utils/pushGruppen');
 const { body } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { challengeNeuigkeitenJeChallenge } = require('../utils/challengeNeuigkeiten');
@@ -552,32 +553,75 @@ module.exports = (db, verifyTokenRBAC) => {
     }
   });
 
-  // Liefert den globalen Push-Master-Schalter des eingeloggten Users
+  // Push-Einstellungen des eingeloggten Users: Hauptschalter UND die
+  // stummgeschalteten Gruppen (25.09.2026).
+  //
+  // ANTWORTFORM ADDITIV: `push_enabled` steht unveraendert an erster Stelle
+  // (die Form vor dem 25.09.2026 war genau dieses eine Feld). Neu dazu:
+  // `gruppen` -- die Gruppen, die DIESE Rolle zur Auswahl bekommt, mit Text
+  // und aktuellem Stand -- und `stumm`, die rohen Kennungen der Abwahl.
+  // Konfis sehen "Anfragen und Freigaben" nicht: Dort kommt bei ihnen nie
+  // etwas an (utils/pushGruppen.js, gruppenFuerRolle).
   router.get('/preferences', verifyTokenRBAC, async (req, res) => {
     try {
       const { rows: [row] } = await db.query(
-        'SELECT push_enabled FROM users WHERE id = $1',
+        'SELECT push_enabled, push_gruppen_stumm FROM users WHERE id = $1',
         [req.user.id]
       );
-      res.json({ push_enabled: row ? row.push_enabled : true });
+      const stumm = (row && row.push_gruppen_stumm) || [];
+      res.json({
+        push_enabled: row ? row.push_enabled : true,
+        stumm,
+        gruppen: gruppenFuerRolle(req.user.type).map((g) => ({
+          id: g.id,
+          name: g.name,
+          beschreibung: g.beschreibung,
+          aktiv: !stumm.includes(g.id)
+        }))
+      });
     } catch (err) {
       console.error('Database error in GET /preferences:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
-  // Setzt den globalen Push-Master-Schalter des eingeloggten Users
+  // Setzt Hauptschalter und/oder stummgeschaltete Gruppen.
+  //
+  // `push_enabled` war bis zum 25.09.2026 Pflicht; jetzt reicht EINES von
+  // beiden. Wer nur `stumm` schickt, laesst den Hauptschalter, wie er ist --
+  // und umgekehrt. `stumm` nimmt ausschliesslich bekannte Gruppen-Kennungen
+  // an (400 sonst); eine Kennung, die die Rolle gar nicht zur Auswahl hat,
+  // ist erlaubt und wirkungslos -- sie sperrt nichts, was nie kaeme.
+  // Antwort wie bisher `{ success, push_enabled }`, additiv `stumm`.
   router.put('/preferences', verifyTokenRBAC, [
-    body('push_enabled').isBoolean().withMessage('push_enabled muss true oder false sein'),
+    body('push_enabled').optional().isBoolean().withMessage('push_enabled muss true oder false sein'),
+    body('stumm').optional().isArray().withMessage('stumm muss eine Liste sein'),
     handleValidationErrors
   ], async (req, res) => {
     const { push_enabled } = req.body;
+    const hatSchalter = typeof push_enabled === 'boolean';
+    const hatStumm = req.body.stumm !== undefined;
+    if (!hatSchalter && !hatStumm) {
+      return res.status(400).json({ error: 'push_enabled oder stumm erforderlich' });
+    }
+    const stumm = hatStumm ? bereinigeStumm(req.body.stumm) : null;
+    if (hatStumm && stumm === null) {
+      return res.status(400).json({ error: 'stumm enthaelt eine unbekannte Gruppe' });
+    }
     try {
-      await db.query(
-        'UPDATE users SET push_enabled = $1 WHERE id = $2',
-        [push_enabled, req.user.id]
+      const { rows: [row] } = await db.query(
+        `UPDATE users
+            SET push_enabled = COALESCE($1::boolean, push_enabled),
+                push_gruppen_stumm = COALESCE($2::text[], push_gruppen_stumm)
+          WHERE id = $3
+      RETURNING push_enabled, push_gruppen_stumm`,
+        [hatSchalter ? push_enabled : null, stumm, req.user.id]
       );
-      res.json({ success: true, push_enabled });
+      res.json({
+        success: true,
+        push_enabled: row ? row.push_enabled : push_enabled,
+        stumm: row ? row.push_gruppen_stumm : (stumm || [])
+      });
     } catch (err) {
       console.error('Database error in PUT /preferences:', err);
       res.status(500).json({ error: 'Datenbankfehler' });

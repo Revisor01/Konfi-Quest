@@ -169,8 +169,10 @@ Der fünfte Reiter sammelt alles, was du seltener anfasst, in drei Abschnitten.
 
 ### Konto
 
-**Profil** (Passwort und E-Mail ändern), **Benachrichtigungen** und **App-Tour
-ansehen**.
+**Profil** (Passwort und E-Mail ändern), **Benachrichtigungen** (welche
+Mitteilungen aufs Handy kommen, siehe [Auswählen, welche Mitteilungen aufs
+Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen))
+und **App-Tour ansehen**.
 
 ### Verwaltung (nur Org-Admin)
 
