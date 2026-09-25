@@ -8,7 +8,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, ORGS } = require('../helpers/seed');
+const { seed, USERS, ORGS, ACTIVITIES, BADGES, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Postfach Routes', () => {
@@ -16,6 +16,7 @@ describe('Postfach Routes', () => {
   let db;
   let konfi1Token;
   let konfi2Token;
+  let teamerToken;
 
   beforeAll(async () => {
     db = getTestPool();
@@ -27,6 +28,7 @@ describe('Postfach Routes', () => {
     await seed(db);
     konfi1Token = generateToken('konfi1');
     konfi2Token = generateToken('konfi2');
+    teamerToken = generateToken('teamer1');
   });
 
   afterAll(async () => {
@@ -430,6 +432,243 @@ describe('Postfach Routes', () => {
         .get('/api/notifications/badge-counts')
         .set('Authorization', `Bearer ${konfi1Token}`);
       expect(res.body.postfach).toEqual({ ungelesen: 0 });
+    });
+  });
+  // ================================================================
+  // Mitteilungen sterben mit ihrem Gegenstand (25.09.2026)
+  //
+  // Gemessen vor der Aenderung: kein DELETE FROM notifications in
+  // activities.js, badges.js, konfi.js, teamer.js, challenges.js. Wurde ein
+  // Antrag zurueckgezogen, blieb "Neuer Antrag eingegangen" bei der Leitung
+  // stehen und fuehrte beim Antippen ins Leere.
+  //
+  // Die Regel (utils/postfachAufraeumen.js): Was einen ZUSTAND meldet
+  // ("eingereicht", "neuer Antrag wartet"), geht mit dem Antrag. Was eine
+  // ENTSCHEIDUNG festhaelt ("genehmigt", "abgelehnt"), bleibt als Verlauf.
+  // ================================================================
+  describe('Mitteilungen sterben mit ihrem Gegenstand', () => {
+    // org_admin, nicht admin: Die Rolle admin ist seit 01.09.2026 an ihre
+    // Jahrgaenge gebunden (403 ohne Zuweisung) -- hier geht es nicht darum.
+    const leitungToken = generateToken('orgAdmin1');
+
+    // Schreibt die drei Mitteilungen so, wie die Schreibstellen es tun:
+    // "Antrag eingereicht" an die Person, "Neuer Antrag eingegangen" an die
+    // Leitung (request_id als ZAHL wie in konfi.js/teamer.js), und -- auf
+    // Wunsch -- die Entscheidung (request_id als TEXT wie in activities.js,
+    // wo sie aus req.params kommt).
+    async function mitteilungenZumAntrag(requestId, { userId = USERS.konfi1.id, mitEntscheidung = false } = {}) {
+      const ids = {};
+      ids.eingereicht = await mitteilung({
+        userId, title: 'Antrag eingereicht', type: 'activity_request_submitted',
+        data: { request_id: requestId, activity_name: 'Kirchenchor', points: 1 }
+      });
+      ids.neu = await mitteilung({
+        userId: USERS.admin1.id, title: 'Neuer Antrag eingegangen', type: 'new_activity_request',
+        data: { request_id: requestId, konfi_id: userId, activity_name: 'Kirchenchor', points: 1 }
+      });
+      if (mitEntscheidung) {
+        ids.entscheidung = await mitteilung({
+          userId, title: 'Antrag abgelehnt', type: 'activity_request_decision',
+          data: { request_id: String(requestId), activity_name: 'Kirchenchor', status: 'rejected', points: 1 }
+        });
+      }
+      return ids;
+    }
+
+    async function vorhanden(...ids) {
+      const { rows } = await db.query('SELECT id FROM notifications WHERE id = ANY($1::int[]) ORDER BY id', [ids]);
+      return rows.map(r => r.id);
+    }
+
+    async function antragAnlegen(status, userId = USERS.konfi1.id, activityId = ACTIVITIES.kirchenchor.id) {
+      const { rows: [r] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, status, organization_id, requested_date)
+         VALUES ($1, $2, $3, $4, CURRENT_DATE) RETURNING id`,
+        [userId, activityId, status, ORGS.testGemeinde.id]
+      );
+      return r.id;
+    }
+
+    it('Konfi zieht offenen Antrag zurueck: Eingang und Einreichung gehen, ein anderer Antrag bleibt', async () => {
+      const weg = await antragAnlegen('pending');
+      const bleibt = await antragAnlegen('pending');
+      const zuWeg = await mitteilungenZumAntrag(weg);
+      const zuBleibt = await mitteilungenZumAntrag(bleibt);
+
+      const res = await request(app)
+        .delete(`/api/konfi/requests/${weg}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.status).toBe(200);
+
+      expect(await vorhanden(zuWeg.eingereicht, zuWeg.neu)).toEqual([]);
+      expect(await vorhanden(zuBleibt.eingereicht, zuBleibt.neu)).toEqual([zuBleibt.eingereicht, zuBleibt.neu]);
+      expect(await ungeleseneInDb(USERS.admin1.id)).toBe(1);
+    });
+
+    it('der echte Schreibweg (POST /konfi/requests) und der Loeschweg passen zusammen', async () => {
+      // Kein von Hand gebautes data: Die Route schreibt request_id selbst.
+      const post = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ activity_id: ACTIVITIES.sonntagsgottesdienst.id, requested_date: '2026-06-01' });
+      expect(post.status).toBe(201);
+      const requestId = post.body.id;
+
+      // Die Leitungs-Mitteilung entsteht NACH der Antwort -- kurz pollen,
+      // dann HART pruefen (wie in konfi.test.js).
+      let leitung = [];
+      for (let i = 0; i < 40 && leitung.length === 0; i++) {
+        ({ rows: leitung } = await db.query(
+          "SELECT id FROM notifications WHERE type = 'new_activity_request'"
+        ));
+        if (leitung.length === 0) await new Promise(r => setTimeout(r, 50));
+      }
+      expect(leitung.length).toBe(3); // admin1, orgAdmin1, orgAdminSuper
+      const { rows: eigene } = await db.query(
+        "SELECT id FROM notifications WHERE type = 'activity_request_submitted' AND user_id = $1", [USERS.konfi1.id]
+      );
+      expect(eigene.length).toBe(1);
+
+      const res = await request(app)
+        .delete(`/api/konfi/requests/${requestId}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.status).toBe(200);
+
+      const { rows: [{ c }] } = await db.query('SELECT COUNT(*)::int AS c FROM notifications');
+      expect(c).toBe(0);
+    });
+
+    it('Leitung loescht abgelehnten Antrag: die Entscheidung bleibt als Verlauf, Eingang und Einreichung gehen', async () => {
+      const id = await antragAnlegen('rejected');
+      const zu = await mitteilungenZumAntrag(id, { mitEntscheidung: true });
+
+      const res = await request(app)
+        .delete(`/api/admin/activities/requests/${id}`)
+        .set('Authorization', `Bearer ${leitungToken}`);
+      expect(res.status).toBe(200);
+
+      expect(await vorhanden(zu.eingereicht, zu.neu, zu.entscheidung)).toEqual([zu.entscheidung]);
+      // Und sie steht der Konfi weiter im Postfach.
+      const postfach = await request(app)
+        .get('/api/notifications/postfach')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(postfach.body.eintraege.map(e => e.title)).toEqual(['Antrag abgelehnt']);
+    });
+
+    it('Teamer:in loescht eigenen Antrag: beide Zustands-Mitteilungen gehen', async () => {
+      const { rows: [akt] } = await db.query(
+        `INSERT INTO activities (name, points, type, target_role, organization_id)
+         VALUES ('Teamer-Schulung', 0, 'gemeinde', 'teamer', $1) RETURNING id`, [ORGS.testGemeinde.id]
+      );
+      const id = await antragAnlegen('pending', USERS.teamer1.id, akt.id);
+      const zu = await mitteilungenZumAntrag(id, { userId: USERS.teamer1.id });
+
+      const res = await request(app)
+        .delete(`/api/teamer/requests/${id}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(200);
+
+      expect(await vorhanden(zu.eingereicht, zu.neu)).toEqual([]);
+    });
+
+    it('Aktivitaet mit abgelehnten Antraegen loeschen: deren Zustands-Mitteilungen gehen, Ablehnungen bleiben', async () => {
+      const { rows: [akt] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id)
+         VALUES ('Doppelt angelegt', 1, 'gemeinde', $1) RETURNING id`, [ORGS.testGemeinde.id]
+      );
+      const a = await antragAnlegen('rejected', USERS.konfi1.id, akt.id);
+      const b = await antragAnlegen('rejected', USERS.konfi2.id, akt.id);
+      const zuA = await mitteilungenZumAntrag(a, { mitEntscheidung: true });
+      const zuB = await mitteilungenZumAntrag(b, { userId: USERS.konfi2.id, mitEntscheidung: true });
+
+      const res = await request(app)
+        .delete(`/api/admin/activities/${akt.id}`)
+        .set('Authorization', `Bearer ${leitungToken}`);
+      expect(res.status).toBe(200);
+
+      expect(await vorhanden(zuA.eingereicht, zuA.neu, zuB.eingereicht, zuB.neu)).toEqual([]);
+      expect(await vorhanden(zuA.entscheidung, zuB.entscheidung)).toEqual([zuA.entscheidung, zuB.entscheidung]);
+    });
+
+    it('Abzeichen loeschen: "Neues Badge erhalten" dazu geht, das zu einem anderen Abzeichen bleibt', async () => {
+      const weg = await mitteilung({
+        userId: USERS.konfi1.id, title: 'Neues Badge erhalten! flame', type: 'badge_earned',
+        data: { badge_id: BADGES.streak.id, badge_name: 'Fleissig' }
+      });
+      const bleibt = await mitteilung({
+        userId: USERS.konfi1.id, title: 'Neues Badge erhalten! church', type: 'badge_earned',
+        data: { badge_id: BADGES.categoryBased.id, badge_name: 'Gottesdienst-Profi' }
+      });
+
+      const res = await request(app)
+        .delete(`/api/admin/badges/${BADGES.streak.id}`)
+        .set('Authorization', `Bearer ${leitungToken}`);
+      expect(res.status).toBe(200);
+
+      expect(await vorhanden(weg, bleibt)).toEqual([bleibt]);
+    });
+
+    it('Abzeichen einer fremden Organisation (404): nichts wird geloescht -- die Transaktion rollt zurueck', async () => {
+      const bleibt = await mitteilung({
+        userId: USERS.konfi1.id, title: 'Neues Badge erhalten!', type: 'badge_earned',
+        data: { badge_id: BADGES.streak2.id }
+      });
+      const res = await request(app)
+        .delete(`/api/admin/badges/${BADGES.streak2.id}`)
+        .set('Authorization', `Bearer ${leitungToken}`); // Org 1, Abzeichen aus Org 2
+      expect(res.status).toBe(404);
+      expect(await vorhanden(bleibt)).toEqual([bleibt]);
+    });
+
+    it('Befoerderung zur Teamer:in nimmt die Mitteilungen zu den geloeschten offenen Antraegen mit', async () => {
+      const neu = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${leitungToken}`)
+        .send({ name: 'Bald Teamerin', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+      expect(neu.status).toBe(201);
+      const konfiId = neu.body.id;
+      await db.query('DELETE FROM chat_participants WHERE user_id = $1', [konfiId]);
+      const offen = await antragAnlegen('pending', konfiId);
+      const zu = await mitteilungenZumAntrag(offen, { userId: konfiId });
+
+      const res = await request(app)
+        .post(`/api/admin/konfis/${konfiId}/promote-teamer`)
+        .set('Authorization', `Bearer ${leitungToken}`);
+      expect(res.status).toBe(200);
+
+      expect(await vorhanden(zu.eingereicht, zu.neu)).toEqual([]);
+    });
+
+    it('Konfi loeschen nimmt "Neuer Antrag eingegangen" bei der Leitung mit', async () => {
+      const offen = await antragAnlegen('pending', USERS.konfi2.id);
+      const zu = await mitteilungenZumAntrag(offen, { userId: USERS.konfi2.id });
+      // Eine Mitteilung der Leitung zu einem ANDEREN Konfi bleibt.
+      const anderer = await antragAnlegen('pending', USERS.konfi1.id);
+      const zuAnderem = await mitteilungenZumAntrag(anderer);
+
+      const res = await request(app)
+        .delete(`/api/admin/konfis/${USERS.konfi2.id}`)
+        .set('Authorization', `Bearer ${leitungToken}`);
+      expect(res.status).toBe(200);
+
+      expect(await vorhanden(zu.neu)).toEqual([]);
+      expect(await vorhanden(zuAnderem.eingereicht, zuAnderem.neu)).toEqual([zuAnderem.eingereicht, zuAnderem.neu]);
+    });
+
+    it('Konto einer Teamer:in loeschen (users.js) nimmt "Neuer Antrag eingegangen" bei der Leitung mit', async () => {
+      const { rows: [akt] } = await db.query(
+        `INSERT INTO activities (name, points, type, target_role, organization_id)
+         VALUES ('Teamer-Schulung', 0, 'gemeinde', 'teamer', $1) RETURNING id`, [ORGS.testGemeinde.id]
+      );
+      const offen = await antragAnlegen('pending', USERS.teamer1.id, akt.id);
+      const zu = await mitteilungenZumAntrag(offen, { userId: USERS.teamer1.id });
+
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`);
+      expect(res.status).toBe(200);
+
+      expect(await vorhanden(zu.neu)).toEqual([]);
     });
   });
 });

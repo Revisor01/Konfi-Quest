@@ -13,6 +13,7 @@ const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { deletePhotoFile, deleteChallengeFile, deleteChatFile } = require('../utils/photoStorage');
 const liveUpdate = require('../utils/liveUpdate');
+const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
@@ -509,12 +510,18 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // Nachweisfotos der Anträge dieses Users einsammeln, BEVOR activity_requests
       // im Purge unten gelöscht wird — sonst blieben die Dateien als Leichen liegen.
       // Entfernt werden sie erst nach erfolgreichem COMMIT.
+      // Dabei auch die Kennungen der Antraege einsammeln: "Neuer Antrag
+      // eingegangen" liegt im Postfach der LEITUNG und wuerde sonst auf einen
+      // Antrag zeigen, den es nach dem Purge nicht mehr gibt (25.09.2026,
+      // utils/postfachAufraeumen.js).
+      let antragIds = [];
       try {
         const { rows } = await client.query(
-          "SELECT photo_filename FROM activity_requests WHERE user_id = $1 AND photo_filename IS NOT NULL",
+          "SELECT id, photo_filename FROM activity_requests WHERE user_id = $1",
           [id]
         );
-        photoFilenames = rows.map(r => r.photo_filename);
+        antragIds = rows.map(r => r.id);
+        photoFilenames = rows.map(r => r.photo_filename).filter(Boolean);
       } catch (photoErr) {
         // activity_requests evtl. nicht vorhanden (Schema-Varianz) — nicht kippen
         if (photoErr.code !== '42703' && photoErr.code !== '42P01') throw photoErr;
@@ -565,6 +572,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
           if (histErr.code !== '42703' && histErr.code !== '42P01') throw histErr;
         }
       }
+      // Postfach (25.09.2026): siehe Einsammeln der Kennungen oben.
+      await loescheMitteilungenZuAntraegen(client, antragIds);
 
       // Delete user
       const deleteUserResult = await client.query("DELETE FROM users WHERE id = $1 AND organization_id = $2", [id, organizationId]);

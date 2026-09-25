@@ -9,6 +9,7 @@ const { computeCurrentStreak } = require('../utils/streakCalculation');
 const { nachAntwort } = require('../utils/nachAntwort');
 // Single Source of Truth: welche Events zählen für Badges (Konfi vs. Teamer).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
+const { loescheMitteilungenZuAbzeichen } = require('../utils/postfachAufraeumen');
 // Single Source of Truth: aus welchen Kategorien war jemand dabei (category_combination).
 const {
   KONFI_KATEGORIE_NAMEN_SQL,
@@ -1144,6 +1145,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       await client.query('BEGIN');
 
       await client.query("DELETE FROM user_badges WHERE badge_id = $1", [req.params.id]);
+      // Postfach (25.09.2026): "Neues Badge erhalten" zu diesem Abzeichen geht
+      // mit -- das Abzeichen verschwindet samt Exemplaren aus allen Profilen,
+      // die Mitteilung zeigte danach auf nichts (utils/postfachAufraeumen.js).
+      // Innerhalb der Transaktion, VOR der Org-Pruefung unten: Bei 404 rollt
+      // alles zurueck, auch das hier.
+      await loescheMitteilungenZuAbzeichen(client, req.params.id);
 
       const { rowCount } = await client.query("DELETE FROM custom_badges WHERE id = $1 AND organization_id = $2", [req.params.id, req.user.organization_id]);
 

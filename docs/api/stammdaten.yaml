@@ -292,6 +292,11 @@ paths:
     delete:
       tags: ["Abzeichen"]
       summary: Abzeichen löschen (inklusive aller bereits vergebenen Exemplare)
+      description: >
+        Loescht das Abzeichen samt user_badges in einer Transaktion. Seit
+        25.09.2026 gehen auch die Postfach-Mitteilungen "Neues Badge erhalten"
+        zu diesem Abzeichen mit (data.badge_id; utils/postfachAufraeumen.js) —
+        bei 404 rollt alles zurueck, auch das.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Abzeichens" }
       responses:

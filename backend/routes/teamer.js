@@ -15,6 +15,7 @@ const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antrag
 const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
 const { heuteBerlin } = require('../utils/zeitformat');
 const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
+const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -1365,6 +1366,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       }
 
       await db.query('DELETE FROM activity_requests WHERE id = $1', [requestId]);
+      // Postfach (25.09.2026): "Antrag eingereicht" bei der Teamer:in und
+      // "Neuer Antrag eingegangen" bei der Leitung gehen mit dem Antrag --
+      // sonst fuehrte die Mitteilung in eine Liste ohne ihn
+      // (utils/postfachAufraeumen.js).
+      await loescheMitteilungenZuAntraegen(db, [requestId]);
 
       // Nachweisfoto vom Dateisystem entfernen — NACH dem DB-Delete und nicht
       // blockierend, wie im Konfi-Pfad (konfi.js). Vorher blieb die Datei als

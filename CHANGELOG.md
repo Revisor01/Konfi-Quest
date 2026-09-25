@@ -23,6 +23,10 @@ Versionsüberschrift.
 - Die Zahl an der Glocke zählt zusammen, was ungelesen ist und was noch aus
   einer Funklücke gesendet wird; ein endgültig gescheiterter Vorgang färbt sie
   rot.
+- Das Postfach räumt sich selbst auf: Ziehst du einen Antrag zurück oder
+  löscht die Leitung ein Abzeichen, verschwinden die Mitteilungen dazu — bei
+  dir und bei der Leitung. Entscheidungen („verbucht", „abgelehnt") bleiben
+  als Verlauf stehen.
 - Die Zahl mit Uhr an der einzelnen Challenge, die Leitung und Team offene
   Freigaben anzeigt, geht jetzt sofort mit — auch ohne Neuladen der Liste und
   immer im Gleichklang mit der Zahl am Reiter.

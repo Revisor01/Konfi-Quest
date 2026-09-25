@@ -10,6 +10,7 @@ const { decryptFileToStream } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
+const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
@@ -268,17 +269,21 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       try {
         await client.query('BEGIN');
         if (requestCheck.rejected > 0) {
-          const { rows: fotos } = await client.query(
-            `SELECT photo_filename FROM activity_requests
+          const { rows: abgelehnte } = await client.query(
+            `SELECT id, photo_filename FROM activity_requests
               WHERE activity_id = $1 AND organization_id = $2
-                AND status = 'rejected' AND photo_filename IS NOT NULL`,
+                AND status = 'rejected'`,
             [activityId, req.user.organization_id]
           );
-          fotosZumLoeschen = fotos.map(f => f.photo_filename);
+          fotosZumLoeschen = abgelehnte.map(f => f.photo_filename).filter(Boolean);
           await client.query(
             "DELETE FROM activity_requests WHERE activity_id = $1 AND organization_id = $2 AND status = 'rejected'",
             [activityId, req.user.organization_id]
           );
+          // Postfach (25.09.2026): "Neuer Antrag" und "Antrag eingereicht"
+          // zu diesen Antraegen gehen mit; die Ablehnung selbst bleibt als
+          // Verlauf stehen (utils/postfachAufraeumen.js).
+          await loescheMitteilungenZuAntraegen(client, abgelehnte.map(a => a.id));
         }
         const res2 = await client.query(
           "DELETE FROM activities WHERE id = $1 AND organization_id = $2",
@@ -443,6 +448,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         }
 
         await db.query('DELETE FROM activity_requests WHERE id = $1', [requestId]);
+        // Postfach (25.09.2026): Die Zustands-Mitteilungen zum Antrag gehen
+        // mit ("Neuer Antrag eingegangen" bei der Leitung, "Antrag
+        // eingereicht" bei der antragstellenden Person). Die Entscheidung
+        // "Antrag abgelehnt" BLEIBT -- sie ist Verlauf, und ihr Ziel, die
+        // Antragsliste, gibt es weiter (utils/postfachAufraeumen.js).
+        await loescheMitteilungenZuAntraegen(db, [requestId]);
 
         if (antrag.photo_filename) {
           await deletePhotoFile(antrag.photo_filename).catch(err =>

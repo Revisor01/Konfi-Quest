@@ -19,6 +19,7 @@ const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { rueckeNach } = require('../utils/bookingUtils');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
+const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 const router = express.Router();
 
 // Konfis: Teamer darf ansehen, Admin darf bearbeiten
@@ -1587,11 +1588,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // damit die Dateien nach dem COMMIT vom Dateisystem entfernt
             // werden können — sonst blieben sie als Waisen liegen
             // (gleiche Fehlerklasse wie Befund M5, 26.08.2026).
-            const { rows: pendingFotos } = await client.query(
-                "SELECT photo_filename FROM activity_requests WHERE user_id = $1 AND status = 'pending' AND photo_filename IS NOT NULL",
+            const { rows: offeneAntraege } = await client.query(
+                "SELECT id, photo_filename FROM activity_requests WHERE user_id = $1 AND status = 'pending'",
                 [konfiId]
             );
+            const pendingFotos = offeneAntraege.filter(a => a.photo_filename);
             await client.query("DELETE FROM activity_requests WHERE user_id = $1 AND status = 'pending'", [konfiId]);
+            // Postfach (25.09.2026): Die Mitteilungen zu den geloeschten
+            // offenen Antraegen gehen mit -- "Neuer Antrag eingegangen" bei
+            // der Leitung und "Antrag eingereicht" bei der befoerderten
+            // Person (utils/postfachAufraeumen.js).
+            await loescheMitteilungenZuAntraegen(client, offeneAntraege.map(a => a.id));
 
             // 6. KEINE automatische Jahrgangs-Zuweisung mehr (01.09.2026).
             //

@@ -57,6 +57,13 @@ Abzeichen in der Abzeichenfarbe, Anträge in der Aktivitätenfarbe. Die
 Vorgänge aus der Funklücke darüber stehen orange („Wird gesendet…") und rot
 („Nicht gesendet").
 
+Verschwindet der Gegenstand einer Mitteilung, verschwindet die Mitteilung
+mit: Ziehst du einen Antrag zurück, ist „Antrag eingereicht" bei dir und
+„Neuer Antrag eingegangen" bei der Leitung weg; löscht die Leitung ein
+Abzeichen, geht „Neues Badge erhalten" dazu. Entscheidungen bleiben —
+„Antrag verbucht" und „Antrag abgelehnt" sind Verlauf, auch wenn der
+abgelehnte Antrag später aufgeräumt wird.
+
 Wer in **mehreren Gemeinden** mitarbeitet, sieht die Mitteilungen aller
 Gemeinden im selben Postfach, jede mit dem Namen ihrer Gemeinde. Antippen
 wechselt bei Bedarf zuerst in diese Gemeinde — so, wie es ein angetippter Push

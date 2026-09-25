@@ -6,6 +6,7 @@
 
 const { deletePhotoFile, deleteChallengeFile, deleteChatFile } = require('./photoStorage');
 const { rueckeNach } = require('./bookingUtils');
+const { loescheMitteilungenZuAntraegen } = require('./postfachAufraeumen');
 
 /**
  * Loescht einen Konfi und alle 16 abhaengigen Tabellen in der korrekten
@@ -69,11 +70,17 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   await client.query("DELETE FROM user_badges WHERE user_id = $1", [userId]);
   // Nachweisfotos der Anträge dieses Konfis vor dem DB-Delete einsammeln,
   // damit die Dateien anschliessend vom Dateisystem entfernt werden können.
-  const { rows: photoRows } = await client.query(
-    "SELECT photo_filename FROM activity_requests WHERE user_id = $1 AND organization_id = $2 AND photo_filename IS NOT NULL",
+  const { rows: eigeneAntraege } = await client.query(
+    "SELECT id, photo_filename FROM activity_requests WHERE user_id = $1 AND organization_id = $2",
     [userId, organizationId]
   );
+  const photoRows = eigeneAntraege.filter(a => a.photo_filename);
   await client.query("DELETE FROM activity_requests WHERE user_id = $1 AND organization_id = $2", [userId, organizationId]);
+  // Postfach (25.09.2026): Die eigenen Mitteilungen der Person gehen unten
+  // mit dem Konto. "Neuer Antrag eingegangen" liegt aber bei der LEITUNG --
+  // und zeigte nach der Loeschung auf einen Antrag, den es nicht mehr gibt
+  // (utils/postfachAufraeumen.js).
+  await loescheMitteilungenZuAntraegen(client, eigeneAntraege.map(a => a.id));
   // Challenge-Einreichungen: Dateipfade VOR dem User-Delete einsammeln — die
   // DB-Zeilen kaskadieren beim DELETE FROM users, die verschluesselten Dateien
   // auf der Platte aber nicht (DSGVO Art. 17, Security-Review 04.08.2026).

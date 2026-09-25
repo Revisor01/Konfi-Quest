@@ -519,7 +519,11 @@ paths:
     delete:
       tags: ["Aktivitäten & Anträge"]
       summary: Eigenen offenen Antrag löschen
-      description: Nur Anträge mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht.
+      description: >
+        Nur Anträge mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht.
+        Seit 25.09.2026 gehen die Postfach-Mitteilungen zum Antrag mit
+        ("Antrag eingereicht" bei der Konfi, "Neuer Antrag eingegangen" bei der
+        Leitung; utils/postfachAufraeumen.js). Entscheidungen bleiben als Verlauf.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -2792,6 +2796,10 @@ paths:
         Loescht eine Aktivität. Existieren bereits Zuordnungen zu Konfis
         (user_activities), wird mit 409 abgelehnt. Anträge werden nach
         Gewicht unterschieden aufgeraeumt bzw. blockieren das Löschen.
+        Seit 25.09.2026 gehen mit den abgelehnten Anträgen auch deren
+        Zustands-Mitteilungen im Postfach ("Neuer Antrag eingegangen",
+        "Antrag eingereicht"); die Ablehnungen selbst bleiben als Verlauf
+        (utils/postfachAufraeumen.js).
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateDeleteActivity]
@@ -2896,7 +2904,11 @@ paths:
       tags: ["Aktivitäten & Anträge"]
       summary: Abgelehnten Antrag endgueltig löschen
       description: >
-        Entfernt einen abgelehnten Antrag samt Nachweisfoto. Offene Anträge
+        Entfernt einen abgelehnten Antrag samt Nachweisfoto. Seit 25.09.2026
+        gehen die Zustands-Mitteilungen im Postfach mit ("Neuer Antrag
+        eingegangen", "Antrag eingereicht"); die Entscheidung "Antrag
+        abgelehnt" bleibt der Konfi als Verlauf erhalten
+        (utils/postfachAufraeumen.js). Offene Anträge
         (409) und genehmigte Anträge (409) sind bewusst geschuetzt:
         offene werden entschieden, genehmigte zuerst zurückgesetzt.
       x-berechtigung:
@@ -3296,6 +3308,10 @@ paths:
         eine wartende Konfi geht. Die Funktion liefert die Nachgerueckten
         zurueck, der Push geht nach dem COMMIT raus. An abgesagten Terminen
         rueckt niemand nach.
+        Seit 25.09.2026 nimmt deleteKonfiCascade auch die Postfach-Mitteilungen
+        "Neuer Antrag eingegangen" bei der LEITUNG mit, die auf Anträge der
+        geloeschten Person zeigten (die eigenen Mitteilungen gingen schon immer
+        mit dem Konto; utils/postfachAufraeumen.js).
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
@@ -3602,6 +3618,10 @@ paths:
         frei — dort rueckt jetzt die naechste wartende KONFI nach (fest
         'konfi', nicht aus der bereits gewechselten Rolle abgeleitet). An
         abgesagten Terminen rueckt niemand nach.
+        Seit 25.09.2026 gehen mit den geloeschten offenen Anträgen auch deren
+        Postfach-Mitteilungen ("Neuer Antrag eingegangen" bei der Leitung,
+        "Antrag eingereicht" bei der befoerderten Person;
+        utils/postfachAufraeumen.js).
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]

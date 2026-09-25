@@ -2087,7 +2087,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "User löschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)",
-        "description": "Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unlöschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt.\n",
+        "description": "Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unlöschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen \"Neuer Antrag eingegangen\" bei der Leitung mit, die auf Anträge der geloeschten Person zeigten (utils/postfachAufraeumen.js).\n",
         "parameters": [
           {
             "name": "id",
@@ -3377,7 +3377,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Eigenen offenen Antrag löschen",
-        "description": "Nur Anträge mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht.",
+        "description": "Nur Anträge mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht. Seit 25.09.2026 gehen die Postfach-Mitteilungen zum Antrag mit (\"Antrag eingereicht\" bei der Konfi, \"Neuer Antrag eingegangen\" bei der Leitung; utils/postfachAufraeumen.js). Entscheidungen bleiben als Verlauf.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -5848,7 +5848,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Aktivität löschen (nur ohne Zuordnungen)",
-        "description": "Loescht eine Aktivität. Existieren bereits Zuordnungen zu Konfis (user_activities), wird mit 409 abgelehnt. Anträge werden nach Gewicht unterschieden aufgeraeumt bzw. blockieren das Löschen.\n",
+        "description": "Loescht eine Aktivität. Existieren bereits Zuordnungen zu Konfis (user_activities), wird mit 409 abgelehnt. Anträge werden nach Gewicht unterschieden aufgeraeumt bzw. blockieren das Löschen. Seit 25.09.2026 gehen mit den abgelehnten Anträgen auch deren Zustands-Mitteilungen im Postfach (\"Neuer Antrag eingegangen\", \"Antrag eingereicht\"); die Ablehnungen selbst bleiben als Verlauf (utils/postfachAufraeumen.js).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6031,7 +6031,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Abgelehnten Antrag endgueltig löschen",
-        "description": "Entfernt einen abgelehnten Antrag samt Nachweisfoto. Offene Anträge (409) und genehmigte Anträge (409) sind bewusst geschuetzt: offene werden entschieden, genehmigte zuerst zurückgesetzt.\n",
+        "description": "Entfernt einen abgelehnten Antrag samt Nachweisfoto. Seit 25.09.2026 gehen die Zustands-Mitteilungen im Postfach mit (\"Neuer Antrag eingegangen\", \"Antrag eingereicht\"); die Entscheidung \"Antrag abgelehnt\" bleibt der Konfi als Verlauf erhalten (utils/postfachAufraeumen.js). Offene Anträge (409) und genehmigte Anträge (409) sind bewusst geschuetzt: offene werden entschieden, genehmigte zuerst zurückgesetzt.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6584,7 +6584,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Konfi löschen (inkl. abhaengiger Daten)",
-        "description": "Loescht den Konfi und die daran haengenden Daten über deleteKonfiCascade (Aktivitäten, Bonuspunkte, Buchungen, Anträge, Chat-Mitgliedschaften, seit 24.08.2026 auch erhaltene Urkunden — deren Fremdschlüssel blockierte das Löschen vorher mit 500). Dieselbe Funktion trägt die Selbstloeschung über POST /auth/delete-account, dort für jede Rolle. BEHOBEN 15.09.2026: deleteKonfiCascade sammelt die bestaetigten Buchungen VOR dem Loeschen ein und laesst auf jeden frei gewordenen Platz die naechste wartende Person nachruecken — Kontingent-Seite nach der Rolle der geloeschten Person, damit ein Team-Platz nie an eine wartende Konfi geht. Die Funktion liefert die Nachgerueckten zurueck, der Push geht nach dem COMMIT raus. An abgesagten Terminen rueckt niemand nach.\n",
+        "description": "Loescht den Konfi und die daran haengenden Daten über deleteKonfiCascade (Aktivitäten, Bonuspunkte, Buchungen, Anträge, Chat-Mitgliedschaften, seit 24.08.2026 auch erhaltene Urkunden — deren Fremdschlüssel blockierte das Löschen vorher mit 500). Dieselbe Funktion trägt die Selbstloeschung über POST /auth/delete-account, dort für jede Rolle. BEHOBEN 15.09.2026: deleteKonfiCascade sammelt die bestaetigten Buchungen VOR dem Loeschen ein und laesst auf jeden frei gewordenen Platz die naechste wartende Person nachruecken — Kontingent-Seite nach der Rolle der geloeschten Person, damit ein Team-Platz nie an eine wartende Konfi geht. Die Funktion liefert die Nachgerueckten zurueck, der Push geht nach dem COMMIT raus. An abgesagten Terminen rueckt niemand nach. Seit 25.09.2026 nimmt deleteKonfiCascade auch die Postfach-Mitteilungen \"Neuer Antrag eingegangen\" bei der LEITUNG mit, die auf Anträge der geloeschten Person zeigten (die eigenen Mitteilungen gingen schon immer mit dem Konto; utils/postfachAufraeumen.js).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -7133,7 +7133,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Konfi zur Teamer:in befoerdern",
-        "description": "Setzt die Rolle auf teamer und teamer_since auf heute und löscht Event-Buchungen und offene Anträge. Seit 01.09.2026 wird der Konfi-Jahrgang NICHT mehr automatisch nach user_jahrgang_assignments uebertragen: Die frisch befoerderte Person bekam dadurch view+edit auf ihren alten Jahrgang (die eigene Peergroup) — Simons Regel sagt, Teamer:innen existieren auch ohne Jahrgang und die Zuweisung kommt bewusst spaeter ueber die Benutzerverwaltung. Die eigenen eingefrorenen Konfi-Daten bleiben davon unberuehrt (haengen an konfi_profiles, nicht an der Zuweisung). BEHOBEN 15.09.2026: Die geloeschten Buchungen geben Konfi-Plaetze frei — dort rueckt jetzt die naechste wartende KONFI nach (fest 'konfi', nicht aus der bereits gewechselten Rolle abgeleitet). An abgesagten Terminen rueckt niemand nach.\n",
+        "description": "Setzt die Rolle auf teamer und teamer_since auf heute und löscht Event-Buchungen und offene Anträge. Seit 01.09.2026 wird der Konfi-Jahrgang NICHT mehr automatisch nach user_jahrgang_assignments uebertragen: Die frisch befoerderte Person bekam dadurch view+edit auf ihren alten Jahrgang (die eigene Peergroup) — Simons Regel sagt, Teamer:innen existieren auch ohne Jahrgang und die Zuweisung kommt bewusst spaeter ueber die Benutzerverwaltung. Die eigenen eingefrorenen Konfi-Daten bleiben davon unberuehrt (haengen an konfi_profiles, nicht an der Zuweisung). BEHOBEN 15.09.2026: Die geloeschten Buchungen geben Konfi-Plaetze frei — dort rueckt jetzt die naechste wartende KONFI nach (fest 'konfi', nicht aus der bereits gewechselten Rolle abgeleitet). An abgesagten Terminen rueckt niemand nach. Seit 25.09.2026 gehen mit den geloeschten offenen Anträgen auch deren Postfach-Mitteilungen (\"Neuer Antrag eingegangen\" bei der Leitung, \"Antrag eingereicht\" bei der befoerderten Person; utils/postfachAufraeumen.js).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11890,7 +11890,7 @@
           "Teamer:innen"
         ],
         "summary": "Eigenen offenen Teamer-Antrag löschen",
-        "description": "Nur Anträge mit status pending. Danach Live-Update an die Leitung.",
+        "description": "Nur Anträge mit status pending. Danach Live-Update an die Leitung. Seit 25.09.2026 gehen die Postfach-Mitteilungen zum Antrag mit (\"Antrag eingereicht\" bei der Teamer:in, \"Neuer Antrag eingegangen\" bei der Leitung; utils/postfachAufraeumen.js).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -13289,6 +13289,7 @@
           "Abzeichen"
         ],
         "summary": "Abzeichen löschen (inklusive aller bereits vergebenen Exemplare)",
+        "description": "Loescht das Abzeichen samt user_badges in einer Transaktion. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen \"Neues Badge erhalten\" zu diesem Abzeichen mit (data.badge_id; utils/postfachAufraeumen.js) — bei 404 rollt alles zurueck, auch das.\n",
         "parameters": [
           {
             "name": "id",

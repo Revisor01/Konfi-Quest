@@ -1042,7 +1042,11 @@ paths:
     delete:
       tags: ["Teamer:innen"]
       summary: Eigenen offenen Teamer-Antrag löschen
-      description: Nur Anträge mit status pending. Danach Live-Update an die Leitung.
+      description: >
+        Nur Anträge mit status pending. Danach Live-Update an die Leitung.
+        Seit 25.09.2026 gehen die Postfach-Mitteilungen zum Antrag mit
+        ("Antrag eingereicht" bei der Teamer:in, "Neuer Antrag eingegangen"
+        bei der Leitung; utils/postfachAufraeumen.js).
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "param('id').isInt", handleValidationErrors]

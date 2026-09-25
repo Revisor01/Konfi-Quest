@@ -26,6 +26,7 @@ const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
 const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, loeseKonfspruchAuf } = require('../utils/konfspruch');
+const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -948,6 +949,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         "DELETE FROM activity_requests WHERE id = $1 AND user_id = $2 AND organization_id = $3",
         [requestId, konfiId, req.user.organization_id]
       );
+      // Postfach (25.09.2026): "Antrag eingereicht" (eigene) und "Neuer
+      // Antrag eingegangen" (Leitung) gehen mit dem Antrag. Vorher blieb die
+      // Mitteilung bei der Leitung stehen und fuehrte beim Antippen in eine
+      // Liste, in der der Antrag nicht mehr war (utils/postfachAufraeumen.js).
+      await loescheMitteilungenZuAntraegen(db, [requestId]);
 
       // Nachweisfoto vom Dateisystem entfernen (kein Orphan, Datensparsamkeit).
       // Bewusst NACH dem DB-Delete und nicht blockierend.
