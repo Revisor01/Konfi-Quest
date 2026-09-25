@@ -61,6 +61,8 @@ Versionsüberschrift.
   arbeitet, und kommt von jeder Seite zurück.
 - Glocke und Gemeinde-Umschalter stehen jetzt auch im Chat, in jedem Chatraum
   und bei den Challenges — die einzigen Seiten, auf denen sie noch fehlten.
+- Die Zahl an der Glocke wird nicht mehr an der Rundung der Knopfleiste
+  angeschnitten; sie sitzt jetzt ganz auf der Glocke.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 - Große Dateien laufen zuverlässiger durch: Fotos, Sprachaufnahmen und

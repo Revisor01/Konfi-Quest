@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import type { ReactNode } from 'react';
@@ -152,5 +154,65 @@ describe('PostfachGlocke', () => {
     fireEvent.click(container.querySelector('.app-postfach-glocke')!);
     expect(gehoert).toHaveBeenCalledTimes(1);
     window.removeEventListener(POSTFACH_OEFFNEN_EVENT, gehoert);
+  });
+});
+
+// Wo die Zahl steht -- als Vertrag mit den gemessenen Massen (25.09.2026).
+//
+// Simons Befund am Geraet: "der blaue Indikator ist oben abgeschnitten."
+// Gemessen war es keine Stapelreihenfolge, sondern die Glas-Pille des
+// ios27-Themes um die Knoepfe rechts (ion-buttons, border-radius 25px,
+// overflow hidden): Pille 46px hoch, Kappe also ein Halbkreis mit Radius
+// 23; die Zahl (18px) mit top 2 / right 0 ragte mit der rechten oberen
+// Ecke hinaus (4,9 % der Flaeche). jsdom rechnet kein Layout, deshalb
+// prueft der Test die CSS-Werte gegen dieselbe Geometrie: Der Mittelpunkt
+// der Zahl muss innerhalb von (Radius - halbe Zahl) um den Kappenmittelpunkt
+// liegen. Wer right oder top wieder Richtung 0 schiebt, faellt hier durch.
+describe('Zahl an der Glocke: liegt in der Glas-Pille des iOS-Themes', () => {
+  const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8');
+  const block = css.match(/\.app-postfach-glocke__zahl \{([^}]*)\}/)?.[1] ?? '';
+  const wert = (name: string): number => {
+    const m = block.match(new RegExp(`\\b${name}:\\s*(-?[\\d.]+)px`));
+    if (!m) throw new Error(`${name} fehlt am Block .app-postfach-glocke__zahl`);
+    return parseFloat(m[1]);
+  };
+
+  // Gemessen im Browser: Pille 46px hoch, Knopf 44px, .button-inner 40px
+  // (Einzug 2px), Zahl 18px. Der Kappenmittelpunkt liegt 23px von Pillen-
+  // Oberkante und rechter Kante; die Zahl haengt an .button-inner, dessen
+  // Oberkante 3px und rechte Kante 3px innerhalb der Pille liegen.
+  const PILLE_RADIUS = 23;
+  const INNER_EINZUG = 3;
+  const ZAHL = 18;
+
+  it('die Werte sind die gemessenen: top 4px, right 4px, 18px gross', () => {
+    expect(wert('top')).toBe(4);
+    expect(wert('right')).toBe(4);
+    expect(wert('height')).toBe(ZAHL);
+    expect(wert('min-width')).toBe(ZAHL);
+  });
+
+  it('der Mittelpunkt der Zahl liegt mit Luft innerhalb der Kappe', () => {
+    const top = wert('top');
+    const right = wert('right');
+    // Abstand des Zahl-Mittelpunkts vom Kappenmittelpunkt, beide Achsen von
+    // der Pillenkante aus gerechnet.
+    const dx = PILLE_RADIUS - (INNER_EINZUG + right + ZAHL / 2);
+    const dy = PILLE_RADIUS - (INNER_EINZUG + top + ZAHL / 2);
+    const abstand = Math.hypot(dx, dy);
+    const erlaubt = PILLE_RADIUS - ZAHL / 2; // 14
+    expect(abstand).toBeCloseTo(9.9, 1);
+    expect(abstand).toBeLessThanOrEqual(erlaubt - 4); // mindestens 4px Luft
+  });
+
+  it('die alten Werte (top 2, right 0) haetten die Kappe getroffen -- Gegenprobe der Formel', () => {
+    const dx = PILLE_RADIUS - (INNER_EINZUG + 0 + ZAHL / 2);
+    const dy = PILLE_RADIUS - (INNER_EINZUG + 2 + ZAHL / 2);
+    expect(Math.hypot(dx, dy)).toBeGreaterThan(PILLE_RADIUS - ZAHL / 2);
+  });
+
+  it('Android hebt die Zahl an, weil .button-inner dort 12px tiefer beginnt', () => {
+    const md = css.match(/\.app-postfach-glocke\.md \.app-postfach-glocke__zahl \{([^}]*)\}/)?.[1] ?? '';
+    expect(md).toMatch(/top:\s*-8px/);
   });
 });

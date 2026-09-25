@@ -3564,14 +3564,45 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
    Offline-Warteschlange. Farbe nur an der Zahl, wie beim frueheren
    schwebenden Knopf: ruhig fuer Nachrichten, orange waehrend gesendet wird,
    rot fuer einen endgueltig gescheiterten Vorgang -- der ist eine Aufgabe.
+
+   WO DIE ZAHL STEHT -- und warum sie einmal angeschnitten war (25.09.2026,
+   Simons Befund am Geraet: "der blaue Indikator ist oben abgeschnitten").
+   Vermutet war die Stapelreihenfolge; gemessen im Browser (Ionic 9.0.3 mit
+   beiden Themes, Kopfzeile mit Zurueck, Plus und Glocke, 393px breit) war
+   es eine BESCHNEIDUNG durch einen Elternknoten, wie am 25.09. schon bei
+   der Reiterleiste -- nur ein anderer Elternknoten:
+
+     iOS (ios27-Theme): Die Knoepfe rechts liegen in einer Glas-Pille
+     (ion-buttons, border-radius 25px, overflow hidden). Gemessen: Pille
+     90x46px, Kappe damit ein Halbkreis mit Radius 23; der Glocken-Knopf
+     44x44px ganz rechts, sein .button-inner 40x40px bei 2px Einzug. Die
+     Zahl (18x18px) haengt an .button-inner (position: relative) und stand
+     mit top: 2px / right: 0 bei x 356-374, y 63-81 -- ihre rechte obere
+     Ecke lag ausserhalb des Halbkreises: 4,9 % der Flaeche weg, die Ecke
+     sichtbar abgeschnitten. Die Pille braucht ihr overflow: hidden fuer
+     den Glaslook, also rueckt die ZAHL nach innen: Mit top: 4px / right: 4px
+     liegt ihr Mittelpunkt 9,9px vom Kappenmittelpunkt entfernt, erlaubt
+     sind 14px (23 - 9) -- 4px Luft, 100 % sichtbar, und sie sitzt auf der
+     rechten oberen Ecke der Glocke (Symbol 22x22px bei x 343-365, y 70-92).
+
+     Android (MD3-Theme): keine Pille (overflow visible, kein Radius), der
+     Knopf ist 48x48px, aber .button-inner nur 24px hoch und mittig (y 75-99
+     bei Knopf-Oberkante 63). Dieselben top-Werte landen dort also 12px
+     tiefer, neben dem Symbol statt darueber. Deshalb ein eigener Wert wie
+     bei den Reitern: top: -8px hebt die Zahl auf y 67-85, innerhalb des
+     Knopfs (overflow hidden ab y 63), auf die rechte obere Ecke des
+     24px-Symbols.
+
+   Die Zahlen stehen als Vertrag im Test (postfachGlocke.test.tsx): Wer
+   right oder top wieder Richtung 0 schiebt, bekommt die Kappe zurueck.
    ==================================================================== */
 .app-postfach-glocke {
   position: relative;
 }
 .app-postfach-glocke__zahl {
   position: absolute;
-  top: 2px;
-  right: 0;
+  top: 4px;
+  right: 4px;
   min-width: 18px;
   height: 18px;
   padding: 0 var(--app-abstand-mini);
@@ -3584,6 +3615,10 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   line-height: 18px;
   text-align: center;
   pointer-events: none;
+}
+/* Android: siehe Herleitung oben. Nur `top`, alles andere bleibt gemeinsam. */
+.app-postfach-glocke.md .app-postfach-glocke__zahl {
+  top: -8px;
 }
 .app-postfach-glocke[data-variante="warning"] .app-postfach-glocke__zahl {
   background: var(--app-color-warning);
