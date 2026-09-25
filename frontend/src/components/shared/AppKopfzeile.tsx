@@ -32,12 +32,9 @@ import PostfachGlocke from './PostfachGlocke';
  * gemeindeUmschalter={false}), etwa in einer Detailansicht, in der links
  * schon ein Zurueck-Knopf steht und rechts der Platz knapp ist.
  *
- * Umstellung GESTUFT (Simons Entscheidung 25.09.2026): zuerst nur die
- * Konfi-Rolle, Team und Leitung folgen, wenn das Ergebnis angesehen ist.
- * Kurz vor einer Store-Einreichung sollen nicht 32 Seiten gleichzeitig
- * wackeln. Bis dahin behalten Team und Leitung den schwebenden
- * Warteschlangen-Knopf (WartendeVorgaengeLeiste) — App.tsx blendet ihn nur
- * fuer Konfis aus, weil dort die Glocke seine Aufgabe uebernimmt.
+ * Seit dem 25.09.2026 tragen alle drei Rollen diese Kopfzeile auf jeder
+ * Seite. Der fruehere schwebende Warteschlangen-Knopf links unten ist damit
+ * entfallen; seine Aufgabe uebernimmt die Glocke (PostfachGlocke).
  *
  * Die eingeklappte Zweitzeile (grosser Titel beim Herunterziehen) muss in
  * Ionic INNERHALB von IonContent stehen, deshalb ist sie eine eigene

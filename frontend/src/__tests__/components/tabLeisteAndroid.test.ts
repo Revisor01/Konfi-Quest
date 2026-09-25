@@ -77,14 +77,4 @@ describe('Android-Tab-Leiste: Inset einfach, Hintergrund deckend', () => {
       expect(glasRegeln[0].regeln).toMatch(/rgba\(247, 247, 247, 0\.72\)/);
     });
   });
-
-  it('die wartende Leiste rechnet mit derselben Gesamthoehe (56px + Inset)', () => {
-    // Sie sitzt ueber der Tab-Leiste; wuerde dort ein anderer Wert stehen,
-    // laege sie auf den Reitern oder in der Luft.
-    // Zwei Bloecke: die Regel selbst und `transition: none` unter
-    // prefers-reduced-motion. Nur einer davon setzt `bottom`.
-    const leiste = bloecke('.app-wartende-leiste').filter((b) => /bottom:/.test(b));
-    expect(leiste).toHaveLength(1);
-    expect(leiste[0]).toMatch(/bottom:\s*calc\(56px \+ var\(--ion-safe-area-bottom, 0px\) \+ 12px\)/);
-  });
 });
