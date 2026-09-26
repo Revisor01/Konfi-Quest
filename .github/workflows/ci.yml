@@ -408,19 +408,11 @@ jobs:
           # der before-Commit eines Multi-Commit-Pushes nicht im Clone (Bug 09.06.2026).
           fetch-depth: 0
 
-      - name: Redeploy via Portainer-API (pullImage) + Commit-Verify
+      - name: Backend-Aenderung erkennen
+        id: diff
         env:
-          P_URL: ${{ secrets.PORTAINER_URL }}
-          P_KEY: ${{ secrets.PORTAINER_API_KEY }}
-          STACK_ID: "249"
-          ENDPOINT_ID: "1"
           GIT_SHA: ${{ github.sha }}
         run: |
-          # Der Stack-WEBHOOK zieht bei diesem file-basierten (nicht-git) Stack das
-          # neue Image NICHT zuverlaessig. Zuverlaessig ist NUR update_stack mit
-          # pullImage:true ueber die Portainer-API (PUT /api/stacks/249).
-          set -e
-
           # Hat dieser Push das Backend geaendert? Dann MUSS /api/status danach den
           # neuen Commit melden (GIT_SHA ist ins Backend-Image gebaut). Sonst reicht
           # db:ok (Frontend-only-Commit -> Backend-Image + Commit bleiben unveraendert).
@@ -436,112 +428,38 @@ jobs:
           fi
           echo "Backend-Diff-Range: $DIFF_RANGE"
           if git diff --name-only $DIFF_RANGE | grep -q '^backend/'; then
-            BACKEND_CHANGED=1; echo "Backend geaendert -> Commit-Verify gegen ${GIT_SHA:0:12}"
+            echo "backend_changed=1" >> "$GITHUB_OUTPUT"; echo "Backend geaendert -> Commit-Verify gegen ${GIT_SHA:0:12}"
           else
-            BACKEND_CHANGED=0; echo "Kein Backend-Change -> nur Health-Verify"
+            echo "backend_changed=0" >> "$GITHUB_OUTPUT"; echo "Kein Backend-Change -> nur Health-Verify"
           fi
 
-          # Image-Tag: docker/metadata-action (type=sha,prefix=) pusht den KURZEN
-          # 7-stelligen SHA-Tag (z.B. cb0331c) — NICHT den vollen github.sha. Der
-          # Tag-Rewrite muss daher den kurzen nehmen, sonst -> manifest unknown / HTTP 500.
-          # GIT_SHA (voll) bleibt fuer den Commit-Verify (/api/status liefert den vollen,
-          # da Build-Arg GIT_SHA=github.sha).
-          IMG_TAG="${GIT_SHA:0:7}"
-          echo "Image-Tag (kurz): $IMG_TAG"
-
-          # compose-Content vom Stack holen (einmal, fuer alle Redeploy-Runden)
-          curl -sf -H "X-API-Key: $P_KEY" "$P_URL/api/stacks/$STACK_ID/file" \
-            | python3 -c "import sys,json;open('compose.yml','w').write(json.load(sys.stdin)['StackFileContent'])"
-          test -s compose.yml || { echo "::error::compose leer"; exit 1; }
-
-          # IMMUTABLE TAGS: die konfi-quest-Images im compose auf den konkreten
-          # Commit-SHA-Tag dieses Builds umschreiben (docker/metadata-action pusht den
-          # per type=sha,prefix= ohnehin). Portainers pullImage:true zieht ein :latest
-          # unzuverlaessig (Docker behaelt das lokale :latest, meldet aber "pull
-          # successful" -> alter Container; Portainer #13173/#6289). Ein eindeutiger Tag
-          # ZWINGT den korrekten Pull. github.sha ist der volle 40-stellige SHA.
-          # WICHTIG: JEDEN bestehenden Tag ersetzen (:latest ODER ein frueherer :sha aus
-          # dem letzten Deploy), nicht nur :latest -> sonst greift der 2. Deploy nicht.
-          # Owner-agnostisch matchen: github.repository_owner ist 'Revisor01' (mixed case),
-          # der ghcr-Image-Pfad aber lowercase 'revisor01' -> ein Pattern mit dem Owner
-          # wuerde NIE matchen. Stattdessen am eindeutigen 'konfi-quest-(backend|frontend)'
-          # ankern. IMG_TAG ueber die Umgebung an perl (keine Shell-Interpolation von $1).
-          #
-          # NUR die Dienste backend, backend2 und frontend (26.09.2026, Release-Audit
-          # CI BF-03). Bis dahin traf das Muster JEDE konfi-quest-backend-Zeile, also
-          # auch backend-test (Tag test-latest, gebaut von test-backend.yml). Nach
-          # jedem Push lief test-api damit auf demselben SHA wie Live, und ein danach
-          # gebautes test-latest wurde vom Stack nicht mehr referenziert. perl merkt
-          # sich den Dienstblock (Dienstnamen stehen mit zwei Leerzeichen Einzug
-          # unter services:) und schreibt nur in den drei Live-Diensten um.
-          bt_vorher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
-          IMG_TAG="$IMG_TAG" perl -i -pe '
-            BEGIN { $svc = "" }
-            $svc = ""  if /^\S/;
-            $svc = $1  if /^  ([A-Za-z0-9_.-]+):\s*(?:#.*)?$/;
-            s#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g
-              if $svc =~ /^(?:backend|backend2|frontend)$/;
-          ' compose.yml
-          echo "compose images nach Tag-Rewrite:"; grep -E "image:.*konfi-quest" compose.yml
-          grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
-          grep -q "konfi-quest-frontend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
-          # Gegenprobe: Die image-Zeile von backend-test muss unveraendert sein --
-          # sonst hat der Rewrite wieder zu weit gegriffen, und wir deployen NICHT.
-          bt_nachher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
-          if [ "$bt_vorher" != "$bt_nachher" ]; then
-            echo "::error::Tag-Rewrite hat backend-test angefasst ($bt_vorher -> $bt_nachher). Abbruch."; exit 1
-          fi
-          case "$bt_nachher" in
-            ""|*:test-*) ;;
-            *) echo "::warning::backend-test steht auf $bt_nachher statt auf test-latest -- Altlast des frueheren Rewrites. Im Portainer-Stack von Hand auf test-latest zurueckstellen." ;;
-          esac
-
-          redeploy() {
-            python3 <<'PY'
-          import json,os,urllib.request,urllib.error
-          url,key=os.environ["P_URL"],os.environ["P_KEY"]
-          sid,eid=os.environ["STACK_ID"],os.environ["ENDPOINT_ID"]
-          compose=open("compose.yml").read()
-          body=json.dumps({"stackFileContent":compose,"env":[],"prune":False,"pullImage":True}).encode()
-          req=urllib.request.Request(f"{url}/api/stacks/{sid}?endpointId={eid}",data=body,method="PUT")
-          req.add_header("X-API-Key",key); req.add_header("Content-Type","application/json")
-          try:
-              r=urllib.request.urlopen(req,timeout=180); print(r.status)
-          except urllib.error.HTTPError as e:
-              print(e.code)
-          PY
-          }
-
-          # Bis zu 3 Redeploy-Runden: faengt das ghcr-Propagations-Race ab (Image
-          # evtl. erst Sekunden nach Build verfuegbar -> erster Pull zieht altes).
-          for round in 1 2 3; do
-            echo "== Deploy-Runde $round =="
-            code=$(redeploy); echo "Redeploy HTTP $code"
-            [ "$code" = "200" ] || { echo "::warning::Redeploy HTTP $code"; sleep 15; continue; }
-            # bis ~2 Min auf gesunden + (falls Backend-Change) richtigen Commit warten
-            for i in $(seq 1 12); do
-              sleep 10
-              s=$(curl -s https://konfi-quest.de/api/status || echo "")
-              db=$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('checks',{}).get('database',''))" 2>/dev/null || echo "")
-              live=$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('commit',''))" 2>/dev/null || echo "")
-              # Migrationsstand (26.09.2026, Audit Datenbank BF-04): Eine beim
-              # Start uebersprungene Migration meldet /api/status als
-              # checks.migrations=fehler -- bei database=ok. Vorher stand das
-              # nur im Container-Log, und der Verify war gruen.
-              mig=$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('checks',{}).get('migrations','ok'))" 2>/dev/null || echo "ok")
-              if [ "$mig" = "fehler" ] && [ "$live" = "$GIT_SHA" ]; then
-                echo "::error::Migration beim Start uebersprungen -- Schema und Code passen nicht zusammen: $s"; exit 1
-              fi
-              if [ "$db" = "ok" ]; then
-                if [ "$BACKEND_CHANGED" = "0" ] || [ "$live" = "$GIT_SHA" ]; then
-                  echo "OK Deploy verifiziert: $s"; exit 0
-                fi
-                echo "  db ok, aber Commit noch ${live:0:12} (erwarte ${GIT_SHA:0:12})..."
-              else
-                echo "  warte auf gesunden Status... ($i)"
-              fi
-            done
-            echo "Runde $round ohne Erfolg -> neuer Redeploy (Image evtl. jetzt da)"
-          done
-          echo "::error::Deploy nicht verifiziert (db != ok oder Commit != $GIT_SHA nach 3 Runden)"
-          exit 1
+      # Rollender Deploy ueber die Portainer-API (26.09.2026, Release-Audit
+      # Betrieb BF-12 / Sammelbefund S-11). Bis dahin ersetzte EIN update_stack
+      # beide Backend-Replicas gleichzeitig: 10-20 s ohne API bei jedem Push
+      # auf main, alle Sockets getrennt, danach ein Push-Sturm. deploy/rollend.sh
+      # schreibt den Image-Tag in ZWEI Stufen um (erst backend + frontend, dann
+      # backend2) und ruft je Stufe update_stack; Docker Compose erstellt nur
+      # Dienste mit geaenderter Konfiguration neu, die andere Replica traegt
+      # derweil den Traffic. Der zweite Tausch beginnt erst, wenn der NEUE
+      # Container der ersten Replica laut Docker-Healthcheck gesund ist. Zum
+      # Schluss der oeffentliche Verify (mehrfach, weil Traefik verteilt):
+      # database ok, keine uebersprungene Migration, Commit = GIT_SHA.
+      #
+      # Der Stack-WEBHOOK zieht bei diesem file-basierten (nicht-git) Stack das
+      # neue Image NICHT zuverlaessig. Zuverlaessig ist NUR update_stack mit
+      # pullImage:true ueber die Portainer-API (PUT /api/stacks/249) -- und mit
+      # festem Commit-SHA-Tag statt :latest (Portainer #13173/#6289).
+      #
+      # Nur in Produktion pruefbar: dass Portainers update_stack ohne
+      # --force-recreate arbeitet. Das Skript vergleicht die Container-ID von
+      # backend2 vor und nach Stufe 1 und warnt, falls sie sich geaendert hat.
+      - name: Rollender Deploy via Portainer-API + Commit-Verify
+        env:
+          P_URL: ${{ secrets.PORTAINER_URL }}
+          P_KEY: ${{ secrets.PORTAINER_API_KEY }}
+          STACK_ID: "249"
+          ENDPOINT_ID: "1"
+          GIT_SHA: ${{ github.sha }}
+          BACKEND_CHANGED: ${{ steps.diff.outputs.backend_changed }}
+          STATUS_URL: https://konfi-quest.de/api/status
+        run: bash deploy/rollend.sh

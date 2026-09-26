@@ -14,9 +14,11 @@ version: '3.8'
 # Lastverteilung verifiziert ~50/50. Der Stack laeuft auf FESTEM Commit-SHA-Tag
 # (das CI schreibt den Tag beim Deploy um); :latest ist auf ghcr unzuverlaessig.
 #
-# Der LUECKENLOSE (rollende) Deploy ist NOCH NICHT scharf — siehe deploy/rolling-deploy.sh
-# (2 offene Punkte: Traefik-Drain-Timing + fester-SHA-statt-latest). Bis dahin deployt
-# das CI weiter per update_stack (kurze Luecke; nachts unkritisch).
+# Rollender Deploy seit dem 26.09.2026 (deploy/rollend.sh, aus ci.yml aufgerufen):
+# update_stack in ZWEI Stufen -- erst backend (+ frontend) auf den neuen Tag, warten
+# bis der neue Container gesund ist, dann backend2. Dazu der Drain in server.js
+# (SHUTDOWN_DRAIN_MS unten). Der fruehere Entwurf deploy/rolling-deploy.sh ist damit
+# ersetzt.
 # <TAG> wird beim Deploy durch den aktuellen Commit-SHA ersetzt.
 services:
   postgres:
