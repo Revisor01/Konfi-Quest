@@ -26,8 +26,9 @@ Versionsüberschrift.
   steht auf den Hauptseiten und zeigt je Gemeinde, wo etwas offen ist;
   Mitteilungen, Postfach und Team-Kontaktliste umfassen alle Gemeinden. Wer
   in einer Gemeinde mitarbeitet, ist dort auch verwaltbar und bekommt dort
-  Jahrgänge zugewiesen. Eine zweite Mitgliedschaft wird beim Betrieb von
-  Konfi Quest beantragt; das bestehende Konto bleibt erhalten.
+  Jahrgänge zugewiesen. Eine zweite Mitgliedschaft entsteht über die Einladung
+  der Gemeindeleitung (siehe oben) oder über den Betrieb von Konfi Quest; das
+  bestehende Konto bleibt erhalten.
 - Der Jahresrückblick fürs Team wird je Gemeinde erstellt: Wer in zwei
   Gemeinden im Team ist, bekommt in jeder einen eigenen Rückblick mit den
   Zahlen genau dieser Gemeinde. Bisher gab es nur den der Stamm-Gemeinde.
@@ -221,9 +222,6 @@ Versionsüberschrift.
   kennt diese Einstellung bereits und bleibt, wie er ist.
 
 ### Entfernt
-- Der Eintrag „Absturzmeldung prüfen" in den Leitungs-Einstellungen ist weg. Er
-  ließ die App absichtlich abstürzen, um die Absturzmeldung einmalig
-  einzurichten — das ist erledigt. Echte Abstürze werden weiterhin gemeldet.
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
   Es hatte weder Skala noch Zeitmarken und keine ablesbaren Werte. Die
   Aufrufzahlen stehen als Zahl in den Kennzahlen, die Fehler mit Zeitpunkt
