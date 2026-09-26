@@ -330,7 +330,7 @@ Vertragsbruch.
 
 ### BF-14: Produktions-SSH-Ziel im öffentlichen Repo
 - **Schwere:** NIEDRIG
-- **Fundstelle:** `backend/tests/schema/refresh-schema.sh:23-24` (`SERVER="${KQ_PROD_SSH:-root@kkd-fahrtenbuch.de}"`, `CONTAINER="${KQ_PROD_DB_CONTAINER:-kq-postgres}"`); `CLAUDE.md` „Betriebswissen (Serveradressen, Zugangsdaten, SSH) gehört nicht hierher"
+- **Fundstelle:** `backend/tests/schema/refresh-schema.sh:23-24` (`SERVER="${KQ_PROD_SSH:-root@<host>}"`, `CONTAINER="${KQ_PROD_DB_CONTAINER:-kq-postgres}"`); `CLAUDE.md` „Betriebswissen (Serveradressen, Zugangsdaten, SSH) gehört nicht hierher"
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Hostname, Root-Login und Containername der Produktionsdatenbank stehen
   als Vorgabewerte im Repo. Kein Geheimnis, aber Angriffsfläche und ein Verstoß gegen die

@@ -594,7 +594,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 - **SMTP-Grenzen:** `emailService.js` sendet ohne Warteschlange, Rate oder Pooling
   (`nodemailer.createTransport` ohne `pool: true`); heute gehen nur Lizenz-, Lösch- und
   Passwort-Mails hinaus (Dutzende je Tag). Bei einem Massenversand wäre das Limit des
-  Anbieters (`server.godsapp.de`) die Grenze — unbekannt.
+  Anbieters (`server.<anbieter>`) die Grenze — unbekannt.
 - **`X-Real-IP` wird ungeprüft übernommen** (`server.js:261–265`): Die IP-basierten
   Limiter (Login, Registrierung, Doku) lassen sich mit einem selbstgesetzten Header
   umgehen, falls Apache/Traefik den Header nicht überschreiben. Ob sie das tun, steht

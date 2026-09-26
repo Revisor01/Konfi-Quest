@@ -81,7 +81,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-02: Apple-Signaturschlüssel und Server-Zugang in der öffentlichen Git-Historie
 - **Schwere:** HOCH (KRITISCH, falls die Schlüssel nicht widerrufen sind)
-- **Fundstelle:** Commit `02c8b37f` (23.03.2026) fügt `docs/AuthKey_7AQA623H3T.p8` und `docs/AuthKey_A29U7SN796.p8` hinzu (je 257 Byte, Blobs `9e82395a…`, `600830143…`); Commit `cb4d4372` (24.03.2026) entfernt sie nur aus dem Arbeitsbaum. Derselbe Commit `02c8b37f` fügt `backend/.claude/settings.local.json` mit `ssh root@server.godsapp.de …` und Container-/DB-Namen hinzu.
+- **Fundstelle:** Commit `02c8b37f` (23.03.2026) fügt `docs/AuthKey_7AQA623H3T.p8` und `docs/AuthKey_A29U7SN796.p8` hinzu (je 257 Byte, Blobs `9e82395a…`, `600830143…`); Commit `cb4d4372` (24.03.2026) entfernt sie nur aus dem Arbeitsbaum. Derselbe Commit `02c8b37f` fügt `backend/.claude/settings.local.json` mit `ssh root@server.<anbieter> …` und Container-/DB-Namen hinzu.
 - **Kennzeichnung:** reproduziert — `git log --all --diff-filter=A -- 'docs/AuthKey_*.p8'`, `git log --all -S'BEGIN PRIVATE KEY'` (2 Treffer, beide diese Dateien), `curl https://api.github.com/repos/Revisor01/Konfi-Quest` → `"private": false, "visibility": "public"`.
 - **Beschreibung:** Ein `.p8`-Schlüssel (APNs-Auth-Key oder App-Store-Connect-API-Key) ist ein Signaturschlüssel des Apple-Entwicklerkontos; einmal öffentlich, gilt er als kompromittiert, bis er im Apple-Portal widerrufen wird. Das Entfernen aus dem Tracking ändert an der Historie nichts. Die historische `portainer-stack.yml` enthielt nur `${…}`-Platzhalter (0 Klartextwerte), das ist in Ordnung.
 - **Auswirkung aus Nutzersicht:** Mit einem gültigen APNs-Key kann ein Dritter Push-Nachrichten im Namen der App an alle iOS-Geräte senden (Phishing-Text an Konfis); mit einem App-Store-Connect-Key sind je nach Rolle Builds und Metadaten zugänglich.
@@ -172,7 +172,8 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-12: Serveradressen, IP und SMTP-Nutzer im öffentlichen Repo
 - **Schwere:** MITTEL
-- **Fundstelle:** `deploy/compose.konfi_quest.yml:74` (`SMTP_HOST: server.godsapp.de`), `:76` (`SMTP_USER: moin@…`), `:85`, `:146`, `:221` (`extra_hosts: "server.godsapp.de:213.109.162.132"`), `backend/server.js:226,230` und `backend/services/emailService.js:32` (Fallback-Host/-Nutzer im Code), `docs/api/ABRISS.md:70,186`; historisch `backend/.claude/settings.local.json` mit `ssh root@server.godsapp.de`
+- **Status:** teilweise behoben 26.09.2026 — Compose-Referenz mit Stack-Variablen statt Klartext (Host, Mail-Login, IP), Abrissliste und `refresh-schema.sh` ohne Zugangsziel, Adressen in den Audit-Berichten geschwärzt; die Fallback-Werte im Code (`server.js`, `emailService.js`) entfernt Paket E zusammen mit BF-09. Die Git-Historie behält die Adressen (siehe BF-02, Widerruf statt Umschreiben).
+- **Fundstelle:** `deploy/compose.konfi_quest.yml:74` (`SMTP_HOST: server.<anbieter>`), `:76` (`SMTP_USER: moin@…`), `:85`, `:146`, `:221` (`extra_hosts: "server.<anbieter>:<ip>"`), `backend/server.js:226,230` und `backend/services/emailService.js:32` (Fallback-Host/-Nutzer im Code), `docs/api/ABRISS.md:70,186`; historisch `backend/.claude/settings.local.json` mit `ssh root@server.<anbieter>`
 - **Kennzeichnung:** reproduziert (grep, `git show 02c8b37f:backend/.claude/settings.local.json`)
 - **Beschreibung:** CLAUDE.md: „Passwörter, Tokens, Serveradressen und Betriebsdoku gehören nicht hinein." Die Compose-Datei nennt Host, IP und Login-Namen des Mailkontos; der Code trägt denselben Host als Default. Zusammen mit BF-04/BF-05 (Brute-Force) ist der Mail-Login-Name der halbe Zugang zum Postausgang, der Reset-Links verschickt.
 - **Auswirkung aus Nutzersicht:** keine direkte; Angriffsfläche des Betriebs.

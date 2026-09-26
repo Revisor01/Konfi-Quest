@@ -67,7 +67,7 @@ Traefik dagegen protokolliert jede Anfrage als JSON-Zeile mit
 ### Zählung je Route
 
 ```bash
-ssh root@server.godsapp.de
+ssh <betriebszugang>   # user@host aus der Betriebsdoku, nicht im Repo
 
 # Alle Pfade der Produktion, IDs zusammengefasst, absteigend gezählt:
 docker logs --since 336h traefik 2>&1 \

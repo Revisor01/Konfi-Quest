@@ -519,6 +519,9 @@ Versionsüberschrift.
 - Die API-Referenz nennt an fünf Routen die Rollen, die der Server tatsächlich
   prüft, und führt zwei bisher fehlende Routen (Einladung zurückziehen, Jahre
   des Team-Rückblicks).
+- Die Referenz-Konfiguration des Servers, die Abrissliste und ein Wartungsskript
+  im öffentlichen Repo nennen keine Betriebsadressen mehr; sie kommen aus den
+  Stack-Variablen des Betriebs.
 
 ## [2.2.0] - 2026-09-18
 

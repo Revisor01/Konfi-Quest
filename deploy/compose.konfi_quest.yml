@@ -2,6 +2,11 @@ version: '3.8'
 # Konfi-Quest Stack (Portainer Stack 249) — Referenzkopie im Repo.
 # QUELLE DER WAHRHEIT bleibt der Portainer-Stack; diese Datei dokumentiert die Struktur.
 #
+# KEINE BETRIEBSADRESSEN IM REPO (CLAUDE.md; Release-Audit 26.09.2026, Sicherheit BF-12):
+# Mail-Host, Mail-Login und die Host-IP fuer extra_hosts kommen als Stack-Variablen aus
+# Portainer (SMTP_HOST, SMTP_USER, SMTP_HOST_IP, SMTP_PASS) -- hier stehen nur die
+# Platzhalter. Wer diese Datei in den Stack kopiert, setzt die Variablen dort.
+#
 # STAND 21.06.2026: Das Backend laeuft als ZWEI Replicas (backend + backend2) hinter
 # Traefik (gemeinsamer Service konfi-api + loadbalancer.healthcheck -> nur gesunde
 # Replicas bekommen Traffic). Cron-Leader: nur backend (backend2 RUN_BACKGROUND_JOBS=false).
@@ -71,9 +76,9 @@ services:
       PGDATABASE: konfi_db
       PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}
       PGPORT: 5432
-      SMTP_HOST: server.godsapp.de
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST fehlt}
       SMTP_PORT: 465
-      SMTP_USER: moin@konfi-quest.de
+      SMTP_USER: ${SMTP_USER:?SMTP_USER fehlt}
       SMTP_PASS: ${SMTP_PASS:?SMTP_PASS fehlt}
       # Metrics-Aggregation: /api/metrics fragt BEIDE Replicas (interne Compose-
       # Servicenamen im internal-Netz) ab und mergt sie zu einem Gesamtbild.
@@ -82,7 +87,7 @@ services:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
     extra_hosts:
-      - "server.godsapp.de:213.109.162.132"
+      - "${SMTP_HOST:?SMTP_HOST fehlt}:${SMTP_HOST_IP:?SMTP_HOST_IP fehlt}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -143,7 +148,7 @@ services:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
     extra_hosts:
-      - "server.godsapp.de:213.109.162.132"
+      - "${SMTP_HOST:?SMTP_HOST fehlt}:${SMTP_HOST_IP:?SMTP_HOST_IP fehlt}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -218,7 +223,7 @@ services:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
     extra_hosts:
-      - "server.godsapp.de:213.109.162.132"
+      - "${SMTP_HOST:?SMTP_HOST fehlt}:${SMTP_HOST_IP:?SMTP_HOST_IP fehlt}"
     depends_on:
       postgres:
         condition: service_healthy
