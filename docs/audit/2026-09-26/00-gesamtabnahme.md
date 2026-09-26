@@ -466,7 +466,7 @@ Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit d
 
 ## Behebungsstand (fortlaufend)
 
-Stand 26.09.2026, 16:55 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
+Stand 26.09.2026, 17:25 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
 jeder Befund trägt im Bereichsbericht eine Status-Zeile mit Datum. Regeln für jeden Fix: Test
 für den verbotenen und den erlaubten Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG,
 Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
@@ -500,11 +500,13 @@ Zum Vergleich die Baseline vor dem Audit: Backend 139 Dateien / 3.399 Tests, Fro
 | Koordination, Hygiene | Betriebsadressen aus Compose, Abrissliste, Skript und Berichten; Gesamtabnahme-Nachträge | S-15, Sicherheit BF-12 | eingebaut |
 | I1 Skalierung B1 | Chat-Nachricht 2.002 → 22 Abfragen (150 Teilnehmende), `newMessage` je Client einmal, Erinnerungen je Termin vorgemerkt und gesammelt (200 Zusagen: 1.802 → 35 Abfragen), App-Icon-Lauf ohne Push-Sturm nach Neustart, Registrierungs-Pushes in Blöcken von 20 | Betrieb BF-02/04/05/08/15 | eingebaut |
 | I2 Skalierung B2 | Limiter-Zähler in der Datenbank (Migration 167, auch Passwort-Reset), Cron-Leader per Advisory-Lock mit Übernahme und Sichtbarkeit in `/api/status`, Graceful Shutdown Exit 1 nach 10 s → Exit 0 nach < 1 s, Wrapped-Parallelität 3 (Pool-Warteschlange 46 → 0), Deploy in zwei Stufen mit Gesundheitsprüfung (`deploy/rollend.sh`), Postgres 2 CPU / 3 GB und Pool-Vorgaben in der Compose-Referenz, Migrationslauf ohne 30-s-Grenze mit Stand in `/api/status`, `metrics/history` 33 MB → 116 kB, Startseeding idempotent, Sicherungsdoku `docs/betrieb/sicherung.md` | Betrieb BF-06/07/09/10/12/13/14/16, Datenbank BF-03/04/05/07, S-10, S-11, S-18, S-19 (BF-11 offen: Log-Sammelzeilen) | eingebaut; Deploy-Ablauf nur in GitHub prüfbar |
-| K Dunkelmodus systematisch | Flächen-Stufenleiter, Text-Token je Bereichsfarbe (234 Stellen), Grautöne, Messung als Test | darkmode BF-04/05/06/09/11, UI BF-04, S-26 | **läuft** |
+| K Dunkelmodus systematisch | Bausteine 1–3 eingebaut: Ionics Flächenvariablen je Plattform an die App-Tokens gebunden (iOS-Listen nicht mehr tiefschwarz), Text-Token-Familie `--app-text-<bereich>` für 20 Bereiche per Codemod, Grautöne hell und dunkel ≥ 4,5:1 (`colors.ts` nachgezogen). Baustein 4 (gerenderte Messung als Test, `dunkelmodus-messen.mjs`) blieb unfertig im Arbeitsbaum des Agenten, der am Sitzungslimit abbrach — die Verstoß-Zahl nach dem Umbau ist noch nicht gemessen | darkmode BF-04/05/06/11, UI BF-04 (teilweise), S-26; BF-09 offen | eingebaut, Messung offen |
 
-**Noch nicht begonnen:** Barrierefreiheit über die Anmeldeseiten hinaus (Punkt 33: rund 150
-Felder, 147 klickbare `div`, Berührungsziele, Modalnamen — nach Paket K, weil beide dieselben
-Komponenten anfassen), Handbuch-Bilder aus dem Store-Bundle (S-17), Feature-Empfehlungen A
+**Abgebrochen (Sitzungslimit des Werkzeugs, 26.09. 17:10 UTC):** Paket M, Barrierefreiheit über die
+Anmeldeseiten hinaus (Punkt 33: rund 150 Felder, 147 klickbare `div`, Berührungsziele, Modalnamen,
+Bewegungsreduktion, Datumsformate, Dynamic Type) — gestartet, nichts committet; neu zu starten.
+
+**Noch nicht begonnen:** Handbuch-Bilder aus dem Store-Bundle (S-17), Feature-Empfehlungen A
 (Punkt 32), Rechenschaft/Datenschutz (Punkt 28, Produkt- und Rechtsfragen), CHANGELOG-Doppelabschnitte
 (Punkt 19, zum Schluss durch die Koordination), NIEDRIG-Befunde (Punkt 36).
 
