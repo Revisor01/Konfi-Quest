@@ -102,9 +102,11 @@ jobs:
         working-directory: backend
         run: npm ci
 
+      # Ab "high" rot (26.09.2026, Release-Audit Toolchain BF-08); vorher erst ab
+      # "critical". Gemessen am 26.09.2026: 0 Schwachstellen.
       - name: Security audit
         working-directory: backend
-        run: npm audit --audit-level=critical
+        run: npm audit --audit-level=high
 
       - name: Run tests
         working-directory: backend
@@ -113,7 +115,11 @@ jobs:
           JWT_SECRET: test-secret-ci
           ACTIVITY_PHOTO_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
           NODE_ENV: test
-        run: npx vitest run --config tests/vitest.config.ts --passWithNoTests
+        # KEIN --passWithNoTests (26.09.2026, Release-Audit Tests BF-08 / CI BF-12):
+        # Vitest 4 bricht ohne gefundene Tests von selbst mit Exit 1 ab. Das Flag
+        # hob genau diesen Schutz auf -- ein Tippfehler im include-Muster oder ein
+        # Umzug des Testordners haette Build und Deploy mit NULL Tests durchgelassen.
+        run: npx vitest run --config tests/vitest.config.ts
 
   frontend-test:
     runs-on: ubuntu-latest
@@ -139,43 +145,44 @@ jobs:
         # Ionic nicht vertraegt.
         run: npm ci
 
-      # Lint NUR fuer die im PR geaenderten Frontend-Dateien: Der Altbestand
-      # (273 Meldungen, Stand 31.08.2026 — von 1098 heruntergearbeitet) bleibt
-      # unangetastet, aber wer eine Datei anfasst, hinterlaesst sie sauber.
-      # Bewusst KEINE Baseline-Datei: die muesste bei jedem Fix neu erzeugt
-      # werden und produziert Dauer-Merge-Konflikte. Auch kein --max-warnings
-      # ueber alles: eine Gesamtzahl ortet den Verursacher nicht.
-      # SCHARF seit 31.08.2026: Ein Verstoss in einer geaenderten Datei laesst
-      # den Job fehlschlagen.
+      # Lint ueber den GANZEN Frontend-Baum, bei Push UND Pull Request.
       #
-      # Bewertet werden nur FEHLER, nicht Warnungen (kein --max-warnings 0).
-      # Grund: Die rund 230 react-hooks-Meldungen wurden einzeln durchgesehen
-      # und begruendet als harmlos eingestuft (siehe eslint.config.js); sie
-      # liegen in 84 der 235 Quelldateien, darunter jede der acht am
-      # haeufigsten angefassten. Mit --max-warnings 0 wuerde praktisch jeder
-      # PR an geprueftem Altbestand scheitern — und der schnellste Ausweg
-      # waere ein eslint-disable, also genau die falsche Gewohnheit.
+      # Bis zum 26.09.2026 lief der Schritt nur bei pull_request und nur ueber
+      # die im PR geaenderten Dateien. Seit dem 31.08.2026 ging aber kein PR
+      # mehr durch -- alle Commits gehen direkt auf main -- und der Schritt
+      # lief vier Wochen kein einziges Mal (Release-Audit: Tests BF-07,
+      # Toolchain BF-01). Der Bestand wuchs derweil auf 19 Fehler (15x
+      # no-unused-vars, 3x react-hooks/globals, 1x no-require-imports); die
+      # sind am 26.09.2026 behoben, der Baum steht auf 0 Fehlern.
       #
-      # Neue Verstoesse gegen no-explicit-any und no-unused-vars sind FEHLER
-      # und blockieren weiterhin. Beide stehen aktuell auf null.
-      - name: Lint (nur im PR geaenderte Dateien)
-        if: github.event_name == 'pull_request'
+      # Bewertet werden nur FEHLER, nicht Warnungen (kein --max-warnings).
+      # Grund: Die rund 200 react-hooks-Meldungen der sechs herabgestuften
+      # Regeln wurden einzeln durchgesehen und begruendet als harmlos
+      # eingestuft (siehe eslint.config.js). Mit --max-warnings 0 wuerde
+      # praktisch jeder Push an geprueftem Altbestand scheitern -- und der
+      # schnellste Ausweg waere ein eslint-disable, also genau die falsche
+      # Gewohnheit. Warnungen bleiben im Log sichtbar.
+      #
+      # Ganzer Baum statt Diff: Bei 0 Fehlern im Bestand ortet ESLint jeden
+      # neuen Fehler selbst (Datei:Zeile); ein Diff gegen github.event.before
+      # braucht es dafuer nicht -- und der hat bei Force-Push und erstem Push
+      # eines Branches Sonderfaelle. Laufzeit rund eine Minute.
+      - name: Lint
+        working-directory: frontend
+        run: npx eslint .
+
+      # Typpruefung und Web-Build, BEVOR das Test-Gate gruen wird (26.09.2026,
+      # Release-Audit CI BF-07). Vitest prueft keine Typen und laesst kein CSS
+      # durch den Bundler. Am 26.09.2026 brach eine fehlende Klammer im
+      # Dunkelblock (36b8f7ce) erst in build-and-push auf main: Tests gruen,
+      # kein Image, kein Deploy -- und nichts hat es gemeldet. Bis dahin lief
+      # der Build ausschliesslich im Docker-Image, also NACH dem Gate.
+      # Gemessen am 26.09.2026 lokal: tsc 14 s, vite build 17 s.
+      - name: Typpruefung und Web-Build
+        working-directory: frontend
         run: |
-          git fetch --no-tags origin "${{ github.base_ref }}"
-          # HEAD ist bei pull_request der Merge-Commit von Base+PR — der
-          # Zwei-Punkt-Diff gegen die Base-Spitze ergibt genau die PR-Aenderungen.
-          mapfile -t files < <(git diff --name-only --diff-filter=ACMR \
-            "origin/${{ github.base_ref }}" HEAD -- \
-            'frontend/src/**/*.ts' 'frontend/src/**/*.tsx' \
-            | sed 's|^frontend/||')
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "Keine geaenderten Frontend-Quelldateien — Lint uebersprungen."
-            exit 0
-          fi
-          echo "Gelintet werden ${#files[@]} Datei(en):"
-          printf ' - %s\n' "${files[@]}"
-          cd frontend
-          npx eslint --no-error-on-unmatched-pattern "${files[@]}"
+          npx tsc --noEmit
+          npx vite build --logLevel warn
 
       # Die API-Referenz unter frontend/public/docs/api/ wird eingecheckt, damit
       # sie im Docker-Build landet (dessen Kontext ist ./frontend — docs/api/
@@ -221,13 +228,20 @@ jobs:
           fi
           echo "Handbuch ist aktuell."
 
+      # Ab "high" rot, und zwar WIRKLICH (26.09.2026, Release-Audit CI BF-12 /
+      # Toolchain BF-08). Bis dahin stand hier `|| true`: Der Schritt konnte nie
+      # fehlschlagen, auch nicht bei einer kuenftigen kritischen Meldung. Die drei
+      # bekannten moderate-Meldungen zu react-router 6 (Ionic 9 verlangt genau
+      # diese Hauptversion, siehe CLAUDE.md) liegen unter der Schwelle und
+      # blockieren nicht. Gemessen am 26.09.2026: Frontend 3 moderate, Exit 0.
       - name: Security audit
         working-directory: frontend
-        run: npm audit --audit-level=critical || true
+        run: npm audit --audit-level=high
 
+      # KEIN --passWithNoTests -- Begruendung beim Backend-Job.
       - name: Run tests
         working-directory: frontend
-        run: npx vitest run --passWithNoTests
+        run: npx vitest run
 
   e2e-test:
     runs-on: ubuntu-latest
@@ -372,6 +386,19 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Deploys laufen NACHEINANDER (26.09.2026, Release-Audit CI BF-04). Ohne
+    # diese Gruppe liefen zwei kurz aufeinander folgende Pushes parallel, und
+    # der aeltere konnte sein PUT /api/stacks NACH dem neueren absetzen --
+    # Produktion stand dann wieder auf dem aelteren SHA, und beide Verifies
+    # waren gruen. cancel-in-progress: false, weil ein laufender Deploy nie
+    # abgebrochen werden darf; ein WARTENDER wird durch den naechsten ersetzt
+    # (GitHub haelt je Gruppe genau einen Wartenden -- der ersetzte Lauf
+    # erscheint als "cancelled", das ist kein Fehler). Die Gruppe serialisiert,
+    # sie ordnet nicht: Braucht der aeltere Push laenger fuer seine Tests,
+    # kommt sein Deploy weiterhin NACH dem neueren an die Reihe.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
     steps:
       - name: Checkout (fuer Backend-Diff-Erkennung)
         uses: actions/checkout@v7
@@ -438,11 +465,36 @@ jobs:
           # Owner-agnostisch matchen: github.repository_owner ist 'Revisor01' (mixed case),
           # der ghcr-Image-Pfad aber lowercase 'revisor01' -> ein Pattern mit dem Owner
           # wuerde NIE matchen. Stattdessen am eindeutigen 'konfi-quest-(backend|frontend)'
-          # ankern. GIT_SHA via -s an perl uebergeben (keine Shell-Interpolation von $1).
-          IMG_TAG="$IMG_TAG" perl -i -pe 's#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g' compose.yml
+          # ankern. IMG_TAG ueber die Umgebung an perl (keine Shell-Interpolation von $1).
+          #
+          # NUR die Dienste backend, backend2 und frontend (26.09.2026, Release-Audit
+          # CI BF-03). Bis dahin traf das Muster JEDE konfi-quest-backend-Zeile, also
+          # auch backend-test (Tag test-latest, gebaut von test-backend.yml). Nach
+          # jedem Push lief test-api damit auf demselben SHA wie Live, und ein danach
+          # gebautes test-latest wurde vom Stack nicht mehr referenziert. perl merkt
+          # sich den Dienstblock (Dienstnamen stehen mit zwei Leerzeichen Einzug
+          # unter services:) und schreibt nur in den drei Live-Diensten um.
+          bt_vorher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
+          IMG_TAG="$IMG_TAG" perl -i -pe '
+            BEGIN { $svc = "" }
+            $svc = ""  if /^\S/;
+            $svc = $1  if /^  ([A-Za-z0-9_.-]+):\s*(?:#.*)?$/;
+            s#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g
+              if $svc =~ /^(?:backend|backend2|frontend)$/;
+          ' compose.yml
           echo "compose images nach Tag-Rewrite:"; grep -E "image:.*konfi-quest" compose.yml
           grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
           grep -q "konfi-quest-frontend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
+          # Gegenprobe: Die image-Zeile von backend-test muss unveraendert sein --
+          # sonst hat der Rewrite wieder zu weit gegriffen, und wir deployen NICHT.
+          bt_nachher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
+          if [ "$bt_vorher" != "$bt_nachher" ]; then
+            echo "::error::Tag-Rewrite hat backend-test angefasst ($bt_vorher -> $bt_nachher). Abbruch."; exit 1
+          fi
+          case "$bt_nachher" in
+            ""|*:test-*) ;;
+            *) echo "::warning::backend-test steht auf $bt_nachher statt auf test-latest -- Altlast des frueheren Rewrites. Im Portainer-Stack von Hand auf test-latest zurueckstellen." ;;
+          esac
 
           redeploy() {
             python3 <<'PY'

@@ -93,9 +93,25 @@ jobs:
             | python3 -c "import sys,json;open('compose.yml','w').write(json.load(sys.stdin)['StackFileContent'])"
           test -s compose.yml || { echo "::error::compose leer"; exit 1; }
 
-          IMG_TAG="$IMG_TAG" perl -i -pe 's#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g' compose.yml
+          # NUR die Dienste backend, backend2 und frontend (26.09.2026, Release-Audit
+          # CI BF-03, Nebenbefund): Derselbe Rewrite wie in ci.yml. Bis dahin traf das
+          # Muster auch backend-test (Tag test-latest) -- ein Notfall-Deploy haette die
+          # Test-Umgebung mit auf den Live-Stand gestellt.
+          bt_vorher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
+          IMG_TAG="$IMG_TAG" perl -i -pe '
+            BEGIN { $svc = "" }
+            $svc = ""  if /^\S/;
+            $svc = $1  if /^  ([A-Za-z0-9_.-]+):\s*(?:#.*)?$/;
+            s#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g
+              if $svc =~ /^(?:backend|backend2|frontend)$/;
+          ' compose.yml
           echo "compose images nach Tag-Rewrite:"; grep -E "image:.*konfi-quest" compose.yml
-          grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite fehlgeschlagen"; exit 1; }
+          grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
+          grep -q "konfi-quest-frontend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
+          bt_nachher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
+          if [ "$bt_vorher" != "$bt_nachher" ]; then
+            echo "::error::Tag-Rewrite hat backend-test angefasst ($bt_vorher -> $bt_nachher). Abbruch."; exit 1
+          fi
 
           redeploy() {
             python3 <<'PY'
