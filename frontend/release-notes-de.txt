@@ -1,9 +1,11 @@
-Push-Nachrichten kommen wieder an — für Chat und Termine. Wer betroffen war, bekommt sie ab dem nächsten Start.
+In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde. Die Leitung lädt jemanden mit bestehendem Konto ein; die Person entscheidet selbst.
 
-Termine kopieren statt neu tippen. Absagen mit Grund, und die Absage lässt sich zurücknehmen: alle Anmeldungen kommen zurück.
+Der Jahresrückblick fürs Team wird je Gemeinde erstellt.
 
-Anwesenheit kennt jetzt „Abgemeldet" mit Grund und Notiz. Das Team sieht, wer kommt.
+Auswählen, welche Mitteilungen aufs Handy kommen.
 
-App-Sperre mit Fingerabdruck.
+Dunkelmodus: Karten und Listen setzen sich deutlicher ab.
 
-Dazu alles aus 2.1: Jahresrückblick fürs Team, Offline-Verbesserungen, schnellerer Start.
+Ein laufender Termin steht schon unter „Verbuchen", nicht erst nach seinem Ende.
+
+Behoben: Zähler nahmen beim Gemeindewechsel die Zahlen der vorigen Gemeinde mit.
