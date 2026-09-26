@@ -449,6 +449,8 @@ Versionsüberschrift.
   danach.
 - Ein Prüflauf, der keine Tests findet, gilt nicht mehr als bestanden; bekannte
   Sicherheitslücken in Abhängigkeiten stoppen ihn ab der Stufe „hoch".
+- Die Code-Regeln werden bei jeder Änderung geprüft, nicht mehr nur bei
+  Pull Requests; der Altbestand an Regelverstößen ist abgebaut.
 
 ## [2.2.0] - 2026-09-18
 

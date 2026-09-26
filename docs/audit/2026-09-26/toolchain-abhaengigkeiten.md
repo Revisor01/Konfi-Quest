@@ -65,6 +65,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-01: Lint-Gate der CI ist seit dem 31.08.2026 nicht mehr aktiv; der Fehlerbestand wächst
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — 19 Fehler behoben, Lint läuft bei jedem Push und PR über den ganzen Baum (`npx eslint .` — Fehler blockieren, Warnungen nicht); die Kommentare in `ci.yml` und `eslint.config.js` beschreiben den tatsächlichen Stand.
 - **Fundstelle:** `.github/workflows/ci.yml:161` (`if: github.event_name == 'pull_request'`),
   `.github/workflows/ci.yml:150-159` (Kommentar „Beide stehen aktuell auf null"),
   `frontend/eslint.config.js:23-43`
