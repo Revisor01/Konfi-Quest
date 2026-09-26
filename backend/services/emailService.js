@@ -5,15 +5,19 @@
 
 const nodemailer = require('nodemailer');
 const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
-const { smtpTlsOptionen } = require('../utils/smtpTls');
+const { smtpKonfiguration } = require('../utils/smtpKonfiguration');
 
 // Gecachter Transporter (wird einmalig erstellt und wiederverwendet)
 let cachedTransporter = null;
 
-// SMTP-Credentials prüfen
+// SMTP-Konfiguration prüfen. Host und Nutzer kommen AUSSCHLIESSLICH aus der
+// Umgebung (Audit 26.09.2026, Sicherheit BF-12 / S-15): Hier stand ein
+// eingebauter Fallback-Host -- Betriebsdaten im oeffentlichen Repo, und ein
+// Versand, der bei fehlender Konfiguration still an eine eingebaute Adresse
+// ging. Fehlt etwas, scheitert der Versand mit dieser klaren Meldung.
 const validateSmtpConfig = () => {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.error('SMTP-Credentials nicht konfiguriert (SMTP_USER, SMTP_PASS)');
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.error('SMTP nicht konfiguriert (SMTP_HOST, SMTP_USER, SMTP_PASS)');
     return false;
   }
   return true;
@@ -26,21 +30,13 @@ const getTransporter = () => {
   }
 
   if (!validateSmtpConfig()) {
-    throw new Error('SMTP-Credentials nicht konfiguriert. SMTP_USER und SMTP_PASS müssen als Umgebungsvariablen gesetzt sein.');
+    throw new Error('SMTP nicht konfiguriert. SMTP_HOST, SMTP_USER und SMTP_PASS müssen als Umgebungsvariablen gesetzt sein.');
   }
 
-  cachedTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'server.godsapp.de',
-    port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: process.env.SMTP_SECURE !== 'false', // Default: true (Port 465 mit TLS)
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    },
-    // Zertifikat wird geprueft (Audit 26.09.2026, Sicherheit BF-09). Hier
-    // stand `rejectUnauthorized: false`. Notnagel und Begruendung: utils/smtpTls.js.
-    tls: smtpTlsOptionen()
-  });
+  // Dieselbe Konfiguration wie der Transport in server.js: Zertifikat wird
+  // geprueft (BF-09; hier stand `rejectUnauthorized: false`), kein
+  // eingebauter Host (BF-12). Begruendung: utils/smtpKonfiguration.js.
+  cachedTransporter = nodemailer.createTransport(smtpKonfiguration());
 
   return cachedTransporter;
 };
@@ -56,7 +52,9 @@ const getTransporter = () => {
 const sendEmail = async ({ to, subject, text, html }) => {
   const transporter = getTransporter();
 
-  const smtpFrom = process.env.SMTP_FROM || `Konfi Quest <${process.env.SMTP_USER || 'noreply@konfi-quest.de'}>`;
+  // Absender aus SMTP_FROM, sonst der SMTP-Nutzer -- kein eingebauter
+  // Fallback mehr (BF-12); getTransporter() hat SMTP_USER bereits verlangt.
+  const smtpFrom = process.env.SMTP_FROM || `Konfi Quest <${process.env.SMTP_USER}>`;
 
   const mailOptions = {
     from: smtpFrom,

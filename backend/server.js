@@ -235,28 +235,29 @@ liveUpdate.init(io, db);
 // SMTP CONFIGURATION
 // ====================================================================
 
-const { smtpTlsOptionen } = require('./utils/smtpTls');
+const { smtpKonfiguration } = require('./utils/smtpKonfiguration');
 
-const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || 'server.godsapp.de',
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: process.env.SMTP_SECURE !== 'false',
-  auth: {
-    user: process.env.SMTP_USER || 'noreply@konfi-quest.de',
-    pass: process.env.SMTP_PASS
-  },
-  // Zertifikat wird geprueft (Audit 26.09.2026, Sicherheit BF-09). Hier
-  // stand `rejectUnauthorized: false`. Notnagel und Begruendung: utils/smtpTls.js.
-  tls: smtpTlsOptionen()
-};
+// Host, Port, Nutzer, Passwort und TLS kommen aus der Umgebung -- ohne
+// eingebauten Fallback-Host oder -Nutzer (Audit 26.09.2026, Sicherheit
+// BF-12 / S-15; hier standen ein Hostname und eine Absenderadresse im Code)
+// und mit Zertifikatspruefung (BF-09; hier stand `rejectUnauthorized: false`).
+// Fehlen SMTP_HOST oder SMTP_USER, warnt smtpKonfiguration() beim Start;
+// Begruendung und Notnagel stehen in utils/smtpKonfiguration.js.
+const SMTP_CONFIG = smtpKonfiguration();
+const smtpKonfiguriert = Boolean(SMTP_CONFIG.host && SMTP_CONFIG.auth.user && SMTP_CONFIG.auth.pass);
 
 const transporter = nodemailer.createTransport(SMTP_CONFIG);
 
-transporter.verify(function(error, success) {
-  if (error) {
-    console.error('SMTP connection failed:', error);
-  }
-});
+// Nur pruefen, wenn es etwas zu pruefen gibt: Ohne Host liefe der Versuch
+// gegen localhost und meldete einen irrefuehrenden Verbindungsfehler statt
+// der Warnung von oben.
+if (smtpKonfiguriert) {
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.error('SMTP connection failed:', error);
+    }
+  });
+}
 
 // ====================================================================
 // RATE LIMITING
@@ -505,7 +506,7 @@ try {
 }
 
 const uploadsDir = require('path').join(__dirname, 'uploads');
-const smtpStatus = SMTP_CONFIG.auth.pass ? 'Konfiguriert' : 'Nicht konfiguriert';
+const smtpStatus = smtpKonfiguriert ? 'Konfiguriert' : 'Nicht konfiguriert';
 
 server.listen(PORT, () => {
   console.log('========================================');

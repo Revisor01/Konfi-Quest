@@ -564,6 +564,9 @@ Versionsüberschrift.
   anzunehmen. Über diesen Weg gehen Reset-Links und Listen mit Namen; wer sich
   dazwischenschaltete, hätte mitlesen können. Für den Notfall lässt sich die
   Prüfung im Betrieb abschalten, dann steht eine Warnung im Server-Log.
+- Der Mailversand kennt keine eingebaute Serveradresse und keinen eingebauten
+  Absender mehr; beides kommt nur noch aus der Betriebskonfiguration. Fehlt
+  es, meldet der Server das klar, statt still eine falsche Adresse zu nutzen.
 
 ## [2.2.0] - 2026-09-18
 
