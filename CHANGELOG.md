@@ -468,6 +468,10 @@ Versionsüberschrift.
   Live-Verbindung. Jetzt bleiben die Server erreichbar, verbinden sich von
   selbst wieder mit der Datenbank, und Chat-Nachrichten und
   Live-Aktualisierungen kommen danach wieder auf allen Geräten an.
+- Im Dunkelmodus waren auf den Anmeldeseiten die Überschrift und die Links
+  („Passwort vergessen?", „Noch keinen Account?", „Zurück zum Login") kaum zu
+  erkennen — dunkles Lila auf dunkler Karte. Sie sind jetzt aufgehellt und
+  lesbar; im Hellen bleibt alles wie zuvor.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

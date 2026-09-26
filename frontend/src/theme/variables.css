@@ -355,6 +355,15 @@ ion-list-header ion-label {
   --app-text-emphasis: #1a1a1a; /* kraeftige Titel/Werte (Chat, Legenden) */
   --app-text-body: #4a4a4a; /* Fliesstext in Legenden-Karten */
   --app-text-ios: #3c3c43; /* iOS-Sekundaerton (Beschreibungen) */
+  /* Bereichsfarbe als TEXT (26.09.2026, Dunkelmodus-Audit BF-01): Die
+     Bereichsfarben (--app-color-*) sind Flaechenfarben und bleiben in beiden
+     Modi gleich (Begruendung im Dunkelblock). Wer sie als Schrift auf eine
+     Karte schreibt, braucht im Dunkeln einen aufgehellten Ton -- dafuer je
+     Bereich ein Text-Token, hell identisch mit der Bereichsfarbe. Bisher nur
+     fuer Konfi-Lila (Anmeldeseiten); weitere Bereiche folgen nach demselben
+     Muster, sobald ihre Textstellen umgestellt werden. */
+  --app-text-konfis: #5b21b6;
+  --app-text-konfis-rgb: 91, 33, 182;
 
   /* Flaechen und Linien — vorher lose Hexwerte in den Komponenten */
   /* Kartengrund (25.09.2026): Bis hierher stand `white` 4x im Stylesheet und
@@ -2633,7 +2642,9 @@ ion-button.app-modal-submit-btn--bonus {
   font-weight: var(--app-schrift-normal);
   letter-spacing: 3px;
   margin: 0;
-  color: var(--app-color-konfis);
+  /* Text-Token, nicht die Flaechenfarbe: Die Karte ist im Dunkeln #242426,
+     und Konfi-Lila darauf waere 1,72:1 (BF-01, 26.09.2026). */
+  color: var(--app-text-konfis);
 }
 
 .app-auth-card__heading p {
@@ -2669,7 +2680,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-input__label {
-  color: var(--app-color-konfis);
+  color: var(--app-text-konfis);
   font-weight: var(--app-schrift-fett);
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -2769,15 +2780,16 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-link {
-  /* Links liegen auf der weissen Card -> Lila statt Weiss (sonst unsichtbar) */
-  color: var(--app-color-konfis);
+  /* Links liegen auf der Karte -> Lila statt Weiss; als Text-Token, damit
+     das Lila im Dunkeln aufhellt (hell 8,98:1, dunkel 8,39:1 statt 1,72:1). */
+  color: var(--app-text-konfis);
   cursor: pointer;
   font-size: var(--app-text-basis);
   font-weight: var(--app-schrift-halbfett);
 }
 
 .app-auth-link--muted {
-  color: rgba(var(--app-color-requests-rgb), 0.7);
+  color: rgba(var(--app-text-konfis-rgb), 0.7);
   font-size: var(--app-text-hinweis);
 }
 
@@ -3704,6 +3716,11 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-text-ios: #ebebf5;
     --app-text-dunkelgrau: #e5e7eb;
     --app-text-mittelgrau: #b0b0b5;
+    /* Bereichsfarbe als Text: Konfi-Lila #5b21b6 kommt auf der Karte #242426
+       nur auf 1,72:1 (gemessen 26.09.2026, Anmeldeseite). #c4b5fd sind
+       8,39:1, mit 0,7 Deckkraft (gedaempfte Anmelde-Links) noch 4,89:1. */
+    --app-text-konfis: #c4b5fd;
+    --app-text-konfis-rgb: 196, 181, 253;
 
     /* Flaechen und Linien: die Stufenleiter ueber dem Seitengrund.
        Grund < Karte < gedaempfte Flaeche < Ladeflaeche.

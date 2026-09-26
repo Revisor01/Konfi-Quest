@@ -69,6 +69,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-01: Anmeldeseiten — Überschrift und Links in Bereichs-Lila auf dunkler Karte unlesbar
 
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — Text-Token `--app-text-konfis` (hell = Bereichsfarbe `#5b21b6`, dunkel `#c4b5fd`) eingeführt; Überschrift, Feldbeschriftungen und Links der Anmeldeseiten (`.app-auth-card__heading h2`, `.app-auth-input__label`, `.app-auth-link`, `--muted`) schreiben damit. Gemessen dunkel, iOS und Android gleich: „Anmelden“ 1,72 → 8,39:1, „Passwort vergessen?“ 1,40 → 4,89:1, „Noch keinen Account?“ 1,72 → 8,39:1; `messen.cjs --only public` meldet 0 statt 16 Verstöße. Hell unverändert 8,98:1.
 - **Fundstelle:** `frontend/src/theme/variables.css:2636` (`.app-auth-card__heading h2 { color: var(--app-color-konfis) }`),
   `:2771-2782` (`.app-auth-link`, `.app-auth-link--muted`), `:2599` (Kartengrund seit 8665b80 `var(--app-surface-card)`)
 - **Kennzeichnung:** reproduziert — `node scratchpad/darkmode/messen.cjs --only public`; Bilder

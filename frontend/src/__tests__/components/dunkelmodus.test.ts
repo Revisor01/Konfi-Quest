@@ -222,7 +222,7 @@ describe('Dunkelmodus: jedes Farbtoken hat eine dunkle Entsprechung', () => {
   it('Text auf Kartengrund ist lesbar: mindestens 4,5:1', () => {
     const grund = dunkleTokens.get('--app-surface-card')!;
     const schwach: string[] = [];
-    for (const name of ['--app-text-primary', '--app-text-secondary', '--app-text-tertiary', '--app-text-system', '--app-text-emphasis', '--app-text-body', '--app-text-ios', '--app-text-dunkelgrau', '--app-text-mittelgrau']) {
+    for (const name of ['--app-text-primary', '--app-text-secondary', '--app-text-tertiary', '--app-text-system', '--app-text-emphasis', '--app-text-body', '--app-text-ios', '--app-text-dunkelgrau', '--app-text-mittelgrau', '--app-text-konfis']) {
       const k = kontrast(dunkleTokens.get(name)!, grund);
       if (k < 4.5) schwach.push(`${name}: ${k.toFixed(2)}`);
     }
@@ -557,6 +557,51 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
   });
 });
 
+describe('Dunkelmodus: Bereichsfarbe als Text (Anmeldeseiten)', () => {
+  // GEMESSEN am 26.09.2026 (Dunkelmodus-Audit BF-01, messen.cjs, iOS und
+  // Android identisch): "Anmelden" in Konfi-Lila #5b21b6 auf der dunklen
+  // Karte #242426 = 1,72:1; "Passwort vergessen?" (0,7 Deckkraft) = 1,40:1;
+  // "Noch keinen Account?", "Zurueck zum Login" = 1,72:1. Hell 8,98:1.
+  //
+  // Die Bereichsfarben bleiben in beiden Modi gleich (Test oben) -- sie sind
+  // FLAECHEN. Als SCHRIFT auf einer Karte brauchen sie ein eigenes Text-Token,
+  // das im Dunkeln aufhellt; hell ist es die Bereichsfarbe selbst, damit sich
+  // dort nichts aendert. Erstes Token dieser Art: --app-text-konfis.
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const regel = (selektor: string) => {
+    const roh = selektor.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
+    const m = css.match(new RegExp(`(?:^|\\n)${roh} \\{([^}]*)\\}`));
+    expect(m, `${selektor} nicht gefunden`).toBeTruthy();
+    return m![1];
+  };
+
+  it('das Text-Token ist hell die Bereichsfarbe selbst -- im Hellen aendert sich nichts', () => {
+    expect(helleTokens.get('--app-text-konfis')).toBe(helleTokens.get('--app-color-konfis'));
+    expect(helleTokens.get('--app-text-konfis-rgb')).toBe(helleTokens.get('--app-color-konfis-rgb'));
+  });
+
+  it('dunkel liest es sich auf der Karte: mindestens 4,5:1, auch mit 0,7 Deckkraft', () => {
+    const karte = dunkel.get('--app-surface-card')!;
+    const text = dunkel.get('--app-text-konfis')!;
+    expect(kontrast(text, karte)).toBeGreaterThanOrEqual(4.5);
+    // .app-auth-link--muted legt das Token mit 0,7 Deckkraft auf die Karte.
+    expect(kontrast(mische(text, 0.7, karte), karte)).toBeGreaterThanOrEqual(4.5);
+    // Und es ist wirklich ein eigener, hellerer Ton -- kein Alias der Flaeche.
+    expect(text).not.toBe(dunkel.get('--app-color-konfis'));
+  });
+
+  it('Ueberschrift, Feldbeschriftung und Links der Anmeldeseiten schreiben mit dem Text-Token', () => {
+    for (const selektor of ['.app-auth-card__heading h2', '.app-auth-input__label', '.app-auth-link']) {
+      const r = regel(selektor);
+      expect(r, selektor).toMatch(/color:\s*var\(--app-text-konfis\)/);
+      expect(r, selektor).not.toMatch(/--app-color-(?:konfis|requests|purple)\b/);
+    }
+    const gedaempft = regel('.app-auth-link--muted');
+    expect(gedaempft).toMatch(/color:\s*rgba\(var\(--app-text-konfis-rgb\),\s*0\.7\)/);
+    expect(gedaempft).not.toMatch(/--app-color-(?:konfis|requests|purple)-rgb/);
+  });
+});
+
 /* --- WCAG-Rechnung --------------------------------------------------- */
 
 function hexZuRgb(hex: string): [number, number, number] {
@@ -576,6 +621,13 @@ function relativeHelligkeit(hex: string): number {
 function kontrast(a: string, b: string): number {
   const [l1, l2] = [relativeHelligkeit(a), relativeHelligkeit(b)].sort((x, y) => y - x);
   return (l1 + 0.05) / (l2 + 0.05);
+}
+
+/** Farbe `oben` mit Deckkraft `alpha` auf `unten` gelegt -- so rechnet der Browser rgba(). */
+function mische(oben: string, alpha: number, unten: string): string {
+  const o = hexZuRgb(oben);
+  const u = hexZuRgb(unten);
+  return '#' + o.map((c, i) => Math.round(c * alpha + u[i] * (1 - alpha)).toString(16).padStart(2, '0')).join('');
 }
 
 /**
