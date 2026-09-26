@@ -16,8 +16,8 @@ echten Bildern, für alle drei Rollen (Konfi, Teamer:in, Leitung) auf zwei Platt
   iPhone- bzw. Android-User-Agent): 16 Anmeldeseiten, 108 Konfi, 92 Teamer, 184 Leitung, darunter
   104 Modals/Overlays (Onboarding-Tour, Änderungsanzeige, Postfach, Konfispruch, Punkte-Übersicht,
   E-Mail/Passwort/Bibel, Push-Auswahl, Abmelden/Cache-Alert, Account löschen, Antrag stellen/Detail,
-  Farblegende, Challenge-Detail, Neue Direktnachricht, Mitglieder, Badge-Popover, Rückblick,
-  Anlege-Modale der Leitung, Anwesenheit). Jedes Bild wurde angesehen. Die Bilder liegen unter
+  Farblegende, Challenge-Detail, Neue Direktnachricht, Mitglieder, Badge-Popover, Rückblick-Intro,
+  Chat-Langdruck, Anlege-Modale der Leitung, Anwesenheit). Jedes Bild wurde angesehen. Die Bilder liegen unter
   `scratchpad/darkmode/shots/<schema>-<plattform>-<rolle>-<screen>.png` (nicht im Repo).
 - **Messung statt Schätzung:** ein Skript (`scratchpad/darkmode/messen.cjs`) läuft im Dunkelmodus
   über 47 Seitenzustände × 2 Plattformen = **94 Zustände**, liest für jedes sichtbare Element die
@@ -222,7 +222,8 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
   `:3562-3568`, festgeschrieben in `dunkelmodus.test.ts:475`
 - **Kennzeichnung:** reproduziert — Bilder `dark-ios-konfi-m-email-aendern.png` (Hinweiskasten lila
   auf dunkel), `dark-ios-admin-m-wrapped-anlegen.png` (Hinweis violett), `dark-ios-teamer-m-push-einstellungen.png`
-  (E-Mail-Hinweis beerenrot), `dark-ios-admin-konfis.png` („Gesamt“ unter dem Balken)
+  (trotz des Dateinamens das Modal „E-Mail ändern“ der Teamer:in — Hinweis beerenrot),
+  `dark-ios-admin-konfis.png` („Gesamt“ unter dem Balken)
 - **Beschreibung:** Die Bereichsfarben sind als **Flächen** für Kopfbereiche mit weißem Text
   gewählt und bleiben — Simons Entscheidung — in beiden Modi gleich. Dieselben Tokens dienen an 234
   Stellen als **Textfarbe** auf Karten und Hinweiskästen. Im Hellen funktioniert das (Lila auf Weiß
@@ -366,7 +367,8 @@ der Grenze; BF-Nummern = sichtbar betroffen; „–“ = für die Rolle nicht vo
 | Punkte-Übersicht, Konfispruch, Bibelübersetzung (Modale) | ok | ok | – | – | – | – |
 | E-Mail ändern (Modal) | BF-06 | BF-06 | BF-06 | BF-06 | – | – |
 | Passwort ändern, Account löschen (Modale) | ok | ok | ok | ok | ok | ok |
-| Push-Auswahl (Modal) | BF-06 | BF-06 | BF-06 | BF-06 | – | – |
+| Push-Auswahl (Modal) | nicht erfasst | nicht erfasst | nicht erfasst | nicht erfasst | – | – |
+| Chat-Langdruck (Aktionsleiste unter der Blase) | ok | ok | – | – | – | – |
 | Abmelden-/Cache-Alert | ok | ok | ok | ok | ok | ok |
 | Rückblick (Intro-Folie) | ok | – | – | – | – | – |
 | Material | – | – | BF-03 BF-05 | BF-05 | BF-03 BF-04 BF-05 | BF-05 |
@@ -505,8 +507,9 @@ Einzelfix erreicht, weil sie an 2 bzw. 234 Stellen sitzen.
 - **Overlays:** Alerts (iOS-Glas, Android MD3), Badge-Popover, Postfach-Modal, alle Formular-Modale
   der Leitung (Konfi/Event/Aktivität/Badge/Challenge/Jahrgang/Kategorie/Level/Rückblick anlegen),
   Antrag stellen/Detail, Aktivität prüfen, Challenge-Detail, Direktnachricht, Mitglieder, Passwort/
-  E-Mail/Bibel/Konfispruch/Punkte, Account löschen, Push-Auswahl — Karten und Felder dunkel, Text
-  hell (Ausnahmen in BF-04/06 genannt).
+  E-Mail/Bibel/Konfispruch/Punkte, Account löschen — Karten und Felder dunkel, Text hell (Ausnahmen
+  in BF-04/06 genannt). Chat-Langdruck: die Aktionsleiste (+, Antworten, Teilen) unter der Blase ist
+  dunkel und lesbar (`dark-ios-konfi-m-chat-longpress.png`, `dark-android-konfi-m-chat-longpress.png`).
 - **Onboarding-Tour, Änderungsanzeige, Rückblick-Folien:** eigene dunkle Verläufe, weiße Schrift, in beiden Modi gleich (Absicht laut Test-Ausnahmeliste).
 - **Hinweiskarten „Was ist neu“ / „Events und Aktivitäten“:** Verlauf mit weißer Schrift, ok.
 - **Chat:** Datumsmarke, Eingabezeile, fremde Blasen `#242426` mit `--app-text-emphasis`, Sendeknopf — ok (Fix 8665b80 greift); nur Reaktionszähler (BF-07).
@@ -517,7 +520,10 @@ Einzelfix erreicht, weil sie an 2 bzw. 234 Stellen sitzen.
 ## Nicht geprüft
 
 - Toasts (kein Auslöser ohne Netzfehler erreicht; „Cache leeren“ öffnet einen Alert, keinen Toast),
-  ActionSheet beim langen Druck auf eine Chat-Nachricht, Umfrage-Modal, Datei-Viewer
+  das Push-Auswahl-Modal („Welche Mitteilungen aufs Handy kommen“ — der Textklick traf die
+  „Was ist neu“-Karte, die denselben Wortlaut trägt), die Rückblick-Folien nach der Intro-Folie
+  (Swiper reagiert headless nicht auf Tipp/Pfeiltaste), das ActionSheet aus `useIonActionSheet`
+  im Chat, Umfrage-Modal, Datei-Viewer
   (`FileViewerModal.css`, eigenständig schwarz gestaltet), QR-Scanner/QR-Anzeige, Kamera-Aufnahme,
   Org-Wechsler-Popover, Pull-to-Refresh-Spinner (nur während der Geste sichtbar), Ladeflächen.
 - Super-Admin-Rolle (Organisationen/Betrieb wurden als Leitung mit 403 gesehen — Fehlerzustand dunkel ok).
