@@ -235,6 +235,8 @@ liveUpdate.init(io, db);
 // SMTP CONFIGURATION
 // ====================================================================
 
+const { smtpTlsOptionen } = require('./utils/smtpTls');
+
 const SMTP_CONFIG = {
   host: process.env.SMTP_HOST || 'server.godsapp.de',
   port: parseInt(process.env.SMTP_PORT || '465'),
@@ -243,9 +245,9 @@ const SMTP_CONFIG = {
     user: process.env.SMTP_USER || 'noreply@konfi-quest.de',
     pass: process.env.SMTP_PASS
   },
-  tls: {
-    rejectUnauthorized: false
-  }
+  // Zertifikat wird geprueft (Audit 26.09.2026, Sicherheit BF-09). Hier
+  // stand `rejectUnauthorized: false`. Notnagel und Begruendung: utils/smtpTls.js.
+  tls: smtpTlsOptionen()
 };
 
 const transporter = nodemailer.createTransport(SMTP_CONFIG);

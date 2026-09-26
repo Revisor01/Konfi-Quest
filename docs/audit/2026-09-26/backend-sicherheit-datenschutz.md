@@ -149,6 +149,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-09: SMTP ohne Zertifikatsprüfung
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — beide Transporte (`server.js`, `services/emailService.js`) beziehen `tls` aus `utils/smtpTls.js`: Standard `rejectUnauthorized: true`; nur `SMTP_TLS_REJECT_UNAUTHORIZED=false` schaltet die Prüfung ab, mit Warnzeile im Log bei jedem Transport-Aufbau. Tests in `tests/utils/smtpTls.test.js` (ohne Variable streng, andere Werte streng, `false` → aus mit Warnung; `emailService` übergibt genau diese Optionen an nodemailer). **Vor dem Deploy** das Zertifikat des Anbieters gegen den Hostnamen prüfen (unten Nr. 11) — sonst geht nach dem Deploy keine Mail mehr raus.
 - **Fundstelle:** `backend/server.js:233-235` und `backend/services/emailService.js:39-41` (`tls: { rejectUnauthorized: false }`)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Der Mailversand akzeptiert jedes Zertifikat. Über diesen Kanal gehen Passwort-Reset-Links (`auth.js:705`), Gemeinde-Einladungen und die Anwesenheits-/Konfispruch-Listen ganzer Jahrgänge (`emailService.js:370-393`, Namen Minderjähriger).
@@ -318,4 +319,4 @@ bestätigen, sonst ebenfalls blockierend.
 8. **Waisen in `uploads/challenges/` (BF-19):** Dateinamen im Verzeichnis gegen `SELECT file_path FROM challenge_submissions` abgleichen.
 9. **Refresh-Token-Bestand (BF-08):** `SELECT user_id, COUNT(*) FROM refresh_tokens WHERE revoked_at IS NULL GROUP BY user_id ORDER BY 2 DESC LIMIT 20;`
 10. **JWT_SECRET-Länge:** im Portainer-Stack prüfen (`echo -n "$JWT_SECRET" | wc -c` ≥ 32 Byte); der Code erzwingt nur „nicht leer".
-11. **SMTP-Zertifikat (BF-09):** `openssl s_client -connect <SMTP_HOST>:465 -servername <SMTP_HOST> </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates` — ist es gültig, kann `rejectUnauthorized: false` einfach weg.
+11. **SMTP-Zertifikat (BF-09):** `openssl s_client -connect <SMTP_HOST>:465 -servername <SMTP_HOST> </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates` — ist es gültig, kann `rejectUnauthorized: false` einfach weg. *Nachtrag 26.09.2026:* Der Code prüft jetzt standardmäßig streng — die Messung muss deshalb **vor** dem Deploy laufen. Entscheidend ist die Zeile `Verify return code: 0 (ok)` in `openssl s_client -connect <SMTP_HOST>:465 -servername <SMTP_HOST> </dev/null` (bei STARTTLS auf 587: `openssl s_client -starttls smtp -connect <SMTP_HOST>:587 -servername <SMTP_HOST>`), und `subject`/`subjectAltName` müssen den in `SMTP_HOST` verwendeten Namen tragen. Passt etwas nicht: im Stack `SMTP_TLS_REJECT_UNAUTHORIZED=false` setzen (Warnzeile im Log) und beim Anbieter ein passendes Zertifikat einfordern.

@@ -80,6 +80,12 @@ services:
       SMTP_PORT: 465
       SMTP_USER: ${SMTP_USER:?SMTP_USER fehlt}
       SMTP_PASS: ${SMTP_PASS:?SMTP_PASS fehlt}
+      # Der Mailversand prueft seit dem 26.09.2026 das Zertifikat des
+      # Mailservers (Audit Sicherheit BF-09). Passt es nicht zum SMTP_HOST,
+      # geht keine Mail mehr raus -- vor dem Deploy pruefen:
+      #   openssl s_client -connect <SMTP_HOST>:465 -servername <SMTP_HOST> </dev/null
+      # Nur als Notnagel, bis das Zertifikat stimmt (Warnzeile im Log):
+      # SMTP_TLS_REJECT_UNAUTHORIZED: "false"
       # Metrics-Aggregation: /api/metrics fragt BEIDE Replicas (interne Compose-
       # Servicenamen im internal-Netz) ab und mergt sie zu einem Gesamtbild.
       METRICS_PEERS: "http://backend:5000,http://backend2:5000"

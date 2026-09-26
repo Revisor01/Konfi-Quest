@@ -557,6 +557,10 @@ Versionsüberschrift.
   Header des eigenen Proxys nur noch, wenn die Anfrage auch wirklich von dort
   kommt. Vorher hätte ein Client, der den Proxy umgeht, jede Grenze mit einer
   selbst gesetzten Adresse aushebeln können.
+- Der Mailversand prüft jetzt das Zertifikat des Mailservers, statt jedes
+  anzunehmen. Über diesen Weg gehen Reset-Links und Listen mit Namen; wer sich
+  dazwischenschaltete, hätte mitlesen können. Für den Notfall lässt sich die
+  Prüfung im Betrieb abschalten, dann steht eine Warnung im Server-Log.
 
 ## [2.2.0] - 2026-09-18
 

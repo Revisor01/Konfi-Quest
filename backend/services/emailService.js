@@ -5,6 +5,7 @@
 
 const nodemailer = require('nodemailer');
 const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
+const { smtpTlsOptionen } = require('../utils/smtpTls');
 
 // Gecachter Transporter (wird einmalig erstellt und wiederverwendet)
 let cachedTransporter = null;
@@ -36,9 +37,9 @@ const getTransporter = () => {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
     },
-    tls: {
-      rejectUnauthorized: false
-    }
+    // Zertifikat wird geprueft (Audit 26.09.2026, Sicherheit BF-09). Hier
+    // stand `rejectUnauthorized: false`. Notnagel und Begruendung: utils/smtpTls.js.
+    tls: smtpTlsOptionen()
   });
 
   return cachedTransporter;
