@@ -220,9 +220,13 @@ class PushService {
    * sendChatNotification) genau dieselbe Behandlung brauchen und sie vorher
    * zweimal Zeile fuer Zeile im Code stand.
    *
+   * @param {object} [sammler]  Nur beim Versand an viele: statt je Geraet
+   *   sofort zu schreiben, wird die Token-ID hier eingesammelt und der
+   *   Aufrufer schreibt am Ende des Blocks in DREI Abfragen fuer alle
+   *   (schreibeErgebnisSammler). Ohne den Parameter wie bisher sofort.
    * @returns {Promise<boolean>} true, wenn der Push ankam
    */
-  static async verarbeiteErgebnis(db, token, result) {
+  static async verarbeiteErgebnis(db, token, result, sammler = null) {
     if (result.success) {
       // Erfolgreiche Zustellung frischt `updated_at` auf (Befund 28.08.2026).
       // Die Bereinigung wirft Tokens weg, die 30 Tage nicht aktualisiert
@@ -231,23 +235,72 @@ class PushService {
       // die Zustellung und merkte es nicht, obwohl sein Geraet die ganze Zeit
       // erreichbar war. Ein angekommener Push ist der bessere Beleg dafuer
       // als ein App-Start.
-      await this.markiereTokenErreichbar(db, token);
+      if (sammler) sammler.erreichbar.push(token.id);
+      else await this.markiereTokenErreichbar(db, token);
       return true;
     }
 
     if (this.istFatal(result.errorCode)) {
       // Fatale Errors: Token sofort löschen
-      await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+      if (sammler) sammler.ungueltig.push(token.id);
+      else await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
       console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
     } else {
       // Sonstige Errors: Counter erhöhen
-      await db.query(
-        'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
-        [token.id]
-      );
+      if (sammler) sammler.fehlgeschlagen.push(token.id);
+      else {
+        await db.query(
+          'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
+          [token.id]
+        );
+      }
       console.error('Push failed for token:', result.error);
     }
     return false;
+  }
+
+  /**
+   * Buchfuehrung ueber die Geraete eines ganzen Blocks (Audit 26.09.2026,
+   * Betrieb BF-04).
+   *
+   * Nach dem Umbau der Badge-Rechnung und der Token-Abfrage auf "einmal fuer
+   * alle" war das UPDATE je Geraet die letzte Abfrage, die mit der Zahl der
+   * Empfaenger wuchs: 278 Geraete in einem Raum mit 150 Teilnehmenden, 278
+   * UPDATEs je Nachricht. Gesammelt sind es hoechstens drei Abfragen je Block
+   * -- eine fuer die erreichten Geraete, eine fuer die ungueltigen, eine fuer
+   * die zeitweilig gescheiterten -- und die Wirkung in der Datenbank ist
+   * dieselbe (updated_at und Fehlerzaehler zurueck bzw. hoch, Token weg).
+   *
+   * Der Einzelweg (sendToUser ohne vorberechnet) schreibt weiter sofort:
+   * dort gibt es nichts zu sammeln.
+   */
+  static neuerErgebnisSammler() {
+    return { erreichbar: [], ungueltig: [], fehlgeschlagen: [] };
+  }
+
+  static async schreibeErgebnisSammler(db, sammler) {
+    if (!sammler) return;
+    try {
+      if (sammler.erreichbar.length > 0) {
+        await db.query(
+          'UPDATE push_tokens SET updated_at = NOW(), error_count = 0, last_error_at = NULL WHERE id = ANY($1::bigint[])',
+          [sammler.erreichbar]
+        );
+      }
+      if (sammler.ungueltig.length > 0) {
+        await db.query('DELETE FROM push_tokens WHERE id = ANY($1::bigint[])', [sammler.ungueltig]);
+      }
+      if (sammler.fehlgeschlagen.length > 0) {
+        await db.query(
+          'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = ANY($1::bigint[])',
+          [sammler.fehlgeschlagen]
+        );
+      }
+    } catch (err) {
+      // Wie markiereTokenErreichbar: Die Buchfuehrung darf den Versand nicht
+      // kippen -- die Nachrichten sind zu diesem Zeitpunkt laengst zugestellt.
+      console.error('Token-Buchfuehrung fehlgeschlagen:', err.message);
+    }
   }
 
   /**
@@ -262,12 +315,12 @@ class PushService {
    *
    * @returns {Promise<{erfolge: number, fehler: number}>}
    */
-  static async sendeAnGeraete(db, tokens, payload) {
+  static async sendeAnGeraete(db, tokens, payload, sammler = null) {
     const ergebnisse = await Promise.all(tokens.map(async (token) => {
       const result = await this.sendeMitWiederholung(
         () => firebase.sendFirebasePushNotification(token.token, payload)
       );
-      return this.verarbeiteErgebnis(db, token, result);
+      return this.verarbeiteErgebnis(db, token, result, sammler);
     }));
 
     const erfolge = ergebnisse.filter(Boolean).length;
@@ -758,13 +811,15 @@ class PushService {
       // Geraet einzeln, mit Wiederholung bei zeitweiligen Fehlern. Die
       // Fehlerbehandlung PRO TOKEN bleibt erhalten -- daran haengt das
       // Aufraeumen ungueltiger Tokens.
+      // Beim Versand an viele sammelt der Aufrufer die Buchfuehrung je Block
+      // (vorberechnet.sammler) statt je Geraet zu schreiben.
       const { erfolge, fehler } = await this.sendeAnGeraete(db, tokens, {
         title: notification.title,
         body: notification.body,
         badge: berechneterBadge != null ? berechneterBadge : 1,
         sound: 'default',
         data: data
-      });
+      }, (vorberechnet && vorberechnet.sammler) || null);
 
       // `success` sagt jetzt die Wahrheit (24.09.2026). Vorher stand hier hart
       // `success: true`, auch wenn KEIN einziger Push zugestellt wurde -- ein
@@ -841,6 +896,9 @@ class PushService {
         : { badges: new Map(), orgs: new Map() };
       const tokensJeUser = await this.getTokensForUsers(db, block, notification.data && notification.data.type);
 
+      // Token-Buchfuehrung fuer den ganzen Block gesammelt (drei Abfragen
+      // statt einer je Geraet, siehe schreibeErgebnisSammler).
+      const sammler = this.neuerErgebnisSammler();
       const teil = await Promise.all(
         block.map(async (userId) => {
           // `badge: null` heisst hier "fuer diese Person nicht ermittelbar" --
@@ -851,11 +909,13 @@ class PushService {
             badge: badges.has(userId) ? badges.get(userId) : null,
             orgId: orgs.has(userId) ? orgs.get(userId) : null,
             tokens: tokensJeUser.get(userId) || [],
+            sammler,
           };
           const result = await this.sendToUser(db, userId, notification, vorberechnet);
           return { userId, ...result };
         })
       );
+      await this.schreibeErgebnisSammler(db, sammler);
       ergebnisse.push(...teil);
 
       // Nach jedem Block kurz pausieren -- aber nicht nach dem letzten, sonst
@@ -871,13 +931,58 @@ class PushService {
   }
 
   /**
-   * Sendet Chat-Benachrichtigung an alle User-Devices
+   * Chat-Push an VIELE Empfaenger:innen -- der Fan-out einer Nachricht
+   * (Audit 26.09.2026, Betrieb BF-04).
+   *
+   * Vorher rief routes/chat.js je Teilnehmer:in sendChatNotification, und
+   * jede dieser Ketten holte fuer sich Raum-Organisation, Sender-Tokens,
+   * Empfaenger-Tokens und die Zahl fuers App-Icon (berechneBadge: Rolle,
+   * Organisationen, sieben Zaehler-Abfragen) und schrieb je Geraet ein
+   * UPDATE. Gemessen auf kq_i1 (Raum mit 150 Teilnehmenden, 278 Geraete):
+   * 2.002 Abfragen und 2,7 s Datenbankzeit je Nachricht. Dazu kam in
+   * chat.js noch eine `total_unread`-Abfrage je Kopf, deren Ergebnis hier
+   * ohnehin ersetzt wurde.
+   *
+   * Jetzt laeuft dieselbe Arbeit EINMAL fuer alle: Badge-Zahl und Primaer-Org
+   * (berechneBadgesFuerAlle), Tokens (getTokensForUsers), und die
+   * Buchfuehrung ueber die Geraete gesammelt je Block
+   * (schreibeErgebnisSammler). Gesendet wird in Bloecken von EMPFAENGER_BLOCK
+   * wie in sendToMultipleUsers -- die Vorarbeit aber fuer alle zusammen, nicht
+   * je Block: Ein Chat-Raum hat hoechstens so viele Teilnehmende wie eine
+   * Gemeinde Konten (rund 150), da lohnt die Zerlegung nicht, sie kostete nur
+   * je Block die Zaehler-Abfragen erneut. Gemessen danach: 22 Abfragen und
+   * 170 ms Datenbankzeit.
+   *
+   * WAS GLEICH BLEIBT (Vertrag mit den Apps): Titel, Text, `badge` als
+   * Gesamtsumme fuers App-Icon (der von chat.js gereichte Wert ist nur
+   * Rueckfall, wenn die Summe nicht ermittelbar ist) und der data-Block
+   * type/roomId/messageId/sender_id/sender_name/room_name/organization_id.
+   * Die Gruppe "Nachrichten" (GRUPPE_CHAT) bleibt stummschaltbar, gesperrte
+   * und geloeschte Konten bleiben aussen vor -- beides steckt in
+   * getTokensForUsers.
+   *
+   * WAS WEGFAELLT: Die eigene Abfrage der Sender-Tokens ("gleicher Token bei
+   * verschiedenen Accounts"). Seit Migration 095 ist push_tokens.token
+   * eindeutig (idx_push_tokens_token_unique); ein Token gehoert genau einer
+   * Person, und der Sender steht nicht in der Empfaengerliste.
+   *
+   * Personen ohne Geraet ergeben EINE Sammelzeile im Log statt einer je Kopf
+   * -- bei 150 Teilnehmenden waren das vorher bis zu 150 Zeilen je Nachricht.
+   *
+   * @param {object} db
+   * @param {number[]} userIds  Empfaenger:innen OHNE den Sender
+   * @param {object} notificationData  { title, body, badge?, roomId, messageId,
+   *   data: { sender_id, sender_name, room_name, organization_id? } }
+   * @returns {Promise<Array<{userId:number, success:boolean, ...}>>} ein
+   *   Eintrag je Empfaenger:in, in der Reihenfolge der userIds
    */
-  static async sendChatNotification(db, userId, notificationData) {
+  static async sendChatNotificationToMany(db, userIds, notificationData) {
+    const empfaenger = [...new Set(userIds || [])];
+    if (empfaenger.length === 0) return [];
     try {
-
       // Content-Org des Chat-Raums (Multi-Org: der Tap wechselt in die
       // Organisation des Raums, NICHT in die Primär-Org des Empfängers).
+      // chat.js reicht sie mit; sonst EINE Abfrage fuer alle.
       let chatOrgId = notificationData.data?.organization_id != null
         ? String(notificationData.data.organization_id)
         : '';
@@ -895,72 +1000,9 @@ class PushService {
         }
       }
 
-      // Hole zuerst die Tokens des Senders um sie auszuschließen
-      const senderTokensQuery = `SELECT token FROM push_tokens WHERE user_id = $1`;
-      const { rows: senderTokens } = await db.query(senderTokensQuery, [notificationData.data?.sender_id]);
-      const senderTokenList = senderTokens.map(t => t.token);
-
-      // Neuestes Token pro Device verwenden
-      // UND Sender-Tokens ausschließen (für den Fall dass gleicher Token bei verschiedenen Accounts)
-      // UND Master-Schalter prüfen (u.push_enabled): bei false keine Tokens.
-      // UND die Gruppe "Nachrichten" darf nicht stummgeschaltet sein ($3).
-      // UND gesperrte/geloeschte Konten ausschliessen — gleiche Bedingung wie
-      // in getTokensForUser, das diese Abfrage bewusst nicht nutzt (Sender-
-      // Ausschluss). Beide muessen zusammen gepflegt werden.
-      // DISTINCT ON (token): nie denselben FCM-Token doppelt beliefern (Alt-Daten
-      // mit gleichem Token unter mehreren device_ids).
-      let query = `
-        SELECT DISTINCT ON (pt.token) pt.* FROM push_tokens pt
-        JOIN users u ON pt.user_id = u.id
-        WHERE pt.user_id = $1
-          AND u.push_enabled = true
-          AND NOT ($3::text = ANY(u.push_gruppen_stumm))
-          AND u.is_active = true
-          AND u.deleted_at IS NULL
-          AND pt.id IN (
-            SELECT MAX(id)
-            FROM push_tokens
-            WHERE user_id = $2
-            GROUP BY device_id, platform
-          )
-      `;
-
-      // Sender-Tokens ausschliessen wenn vorhanden
-      if (senderTokenList.length > 0) {
-        query += ` AND pt.token NOT IN (${senderTokenList.map((_, i) => `$${i + 4}`).join(', ')})`;
-      }
-      query += ` ORDER BY pt.token, pt.id DESC`;
-
-      const queryParams = [userId, userId, GRUPPE_CHAT, ...senderTokenList];
-      const { rows: tokens } = await db.query(query, queryParams);
-
-      if (!tokens || tokens.length === 0) {
- console.warn('Keine Push-Tokens für User gefunden:', userId);
-        return { success: false, message: 'No tokens found' };
-      }
-
-      // App-Icon-Zahl (Befund B2b): Hier stand bisher die CHAT-Unread-Zahl
-      // allein (der Aufrufer in chat.js reicht sie als notificationData.badge
-      // herein). Sie ueberschrieb damit Antraege, Termine, Freigaben und
-      // Abzeichen -- das Icon zeigte nach einer Chat-Nachricht nur noch die
-      // Chat-Zahl.
-      //
-      // Anders als in sendToUser wird der uebergebene Wert deshalb bewusst
-      // ERSETZT, nicht bevorzugt: Er ist per Definition zu niedrig. Nur wenn
-      // die Zaehlung fehlschlaegt, gilt er als Rueckfall.
-      const gesamtBadge = await this.berechneBadge(db, userId);
-      const badgeWert = gesamtBadge != null
-        ? gesamtBadge
-        : (notificationData.badge || 1);
-
-      // An alle Geraete in EINEM FCM-Aufruf, mit Wiederholung bei
-      // zeitweiligen Fehlern -- dieselbe Behandlung wie in sendToUser. Vorher
-      // lief hier ein Roundtrip je Geraet nacheinander, ohne Wiederholung.
-      const { erfolge, fehler } = await this.sendeAnGeraete(db, tokens, {
+      const notification = {
         title: notificationData.title || 'Neue Nachricht',
         body: notificationData.body,
-        badge: badgeWert,
-        sound: 'default',
         data: {
           type: 'chat',
           roomId: notificationData.roomId?.toString() || '',
@@ -970,21 +1012,70 @@ class PushService {
           room_name: notificationData.data?.room_name || '',
           organization_id: chatOrgId
         }
-      });
-
-      // `success` nach dem tatsaechlichen Versand (24.09.2026), wie in
-      // sendToUser: Kam nichts durch, ist es kein Erfolg.
-      return {
-        success: erfolge > 0,
-        sent: erfolge,
-        errors: fehler,
-        total: tokens.length
       };
 
+      // Vorarbeit EINMAL fuer alle: App-Icon-Zahl und Tokens.
+      const { badges } = await this.berechneBadgesFuerAlle(db, empfaenger);
+      const tokensJeUser = await this.getTokensForUsers(db, empfaenger, 'chat');
+
+      const ergebnisse = [];
+      let ohneGeraet = 0;
+      for (let i = 0; i < empfaenger.length; i += this.EMPFAENGER_BLOCK) {
+        const block = empfaenger.slice(i, i + this.EMPFAENGER_BLOCK);
+        const sammler = this.neuerErgebnisSammler();
+        const teil = await Promise.all(block.map(async (userId) => {
+          const tokens = tokensJeUser.get(userId) || [];
+          if (tokens.length === 0) {
+            ohneGeraet++;
+            return { userId, success: false, message: 'No tokens found' };
+          }
+          // App-Icon-Zahl (Befund B2b): die Gesamtsumme, nicht die Chat-Zahl
+          // allein. Der von chat.js gereichte Wert gilt nur als Rueckfall,
+          // wenn die Summe fuer diese Person nicht ermittelbar war -- und
+          // fehlt auch er, setzt sendToUser 1. `notification.badge` bleibt
+          // dabei bewusst leer: Er haette in sendToUser Vorrang und wuerde die
+          // berechnete Summe ueberschreiben.
+          const vorberechnet = {
+            badge: badges.has(userId)
+              ? badges.get(userId)
+              : (notificationData.badge != null ? notificationData.badge : null),
+            orgId: chatOrgId || null,
+            tokens,
+            sammler,
+          };
+          const result = await this.sendToUser(db, userId, notification, vorberechnet);
+          return { userId, ...result };
+        }));
+        await this.schreibeErgebnisSammler(db, sammler);
+        ergebnisse.push(...teil);
+
+        if (i + this.EMPFAENGER_BLOCK < empfaenger.length) {
+          await this.schlafen(this.EMPFAENGER_PAUSE_MS);
+        }
+      }
+
+      if (ohneGeraet > 0) {
+        console.warn(
+          `Chat-Push Raum ${notification.data.roomId}: ${ohneGeraet} von ${empfaenger.length} Empfänger:innen ohne Push-Token`
+        );
+      }
+      return ergebnisse;
     } catch (error) {
- console.error('PushService.sendChatNotification error:', error);
+      console.error('PushService.sendChatNotificationToMany error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Chat-Push an EINE Person -- derselbe Weg wie sendChatNotificationToMany
+   * mit einer Empfaengerin. Bleibt fuer Aufrufer und Tests, die eine Person
+   * meinen; der Nachrichten-Fan-out in routes/chat.js nutzt den Sammelweg.
+   */
+  static async sendChatNotification(db, userId, notificationData) {
+    const [ergebnis] = await this.sendChatNotificationToMany(db, [userId], notificationData);
+    if (!ergebnis) return { success: false, message: 'No tokens found' };
+    const { userId: _weg, ...rest } = ergebnis;
+    return rest;
   }
 
   /**

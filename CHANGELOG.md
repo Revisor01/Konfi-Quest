@@ -223,6 +223,11 @@ Versionsüberschrift.
   aller Gemeinden. An den angezeigten Zahlen ändert sich nichts.
 - Die App gibt Deutsch als ihre Sprache an. Vorlesefunktionen wie VoiceOver
   und TalkBack lesen sie deshalb mit deutscher Stimme vor statt mit englischer.
+- Nachrichten in großen Gruppen kommen schneller an: Die Mitteilungen aufs
+  Handy werden für alle Teilnehmenden zusammen vorbereitet statt für jede
+  Person einzeln. Wer die Nachricht bekommt, was darin steht und welche Zahl
+  am App-Symbol erscheint, bleibt gleich — auch bei vielen Gemeinden in
+  derselben Datenbank bleibt der Rest der App dabei flüssig.
 
 ### Behoben
 - Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war

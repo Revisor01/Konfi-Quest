@@ -158,14 +158,17 @@ describe('PushService unter Last', () => {
       expect(anzahlMit('FROM push_tokens pt')).toBe(1);
     });
 
-    it('je zusaetzlichem Empfaenger kommt genau 1 Abfrage dazu, nicht 8', async () => {
-      // Die eigentliche Aussage in Zahlen, ohne absolute Grenze: Was je Kopf
-      // bleibt, ist genau EINE Abfrage -- den Token als erreichbar vermerken.
-      // Die ist unvermeidlich, sie schreibt je Geraet eine eigene Zeile.
-      // Alles andere laeuft einmal fuer alle.
+    it('je zusaetzlichem Empfaenger kommt KEINE Abfrage dazu (vorher 1, davor 8)', async () => {
+      // Die eigentliche Aussage in Zahlen, ohne absolute Grenze: Nichts
+      // waechst mehr mit der Zahl der Koepfe. Alles laeuft einmal fuer alle
+      // -- seit dem 26.09.2026 (Audit Betrieb BF-04) auch die Buchfuehrung
+      // "Token erreichbar", die bis dahin je Geraet eine eigene UPDATE-Zeile
+      // schrieb und deshalb als EINE Abfrage je Kopf uebrig blieb. Sie laeuft
+      // jetzt gesammelt je Block (schreibeErgebnisSammler): drei Abfragen
+      // hoechstens, egal ob 2 oder 50 Geraete im Block.
       //
       // Vorher waren es 7 bis 8 je Kopf (gemessen 24.09.2026: 7 bei einem
-      // Empfaenger, 21 bei drei, 40 bei fuenf).
+      // Empfaenger, 21 bei drei, 40 bei fuenf), danach genau 1.
       //
       // Bewusst Konfis EINER Organisation mit je EINEM Geraet: Dann ist der
       // Unterschied zwischen zwei und vier Empfaengern genau der Aufwand je
@@ -203,8 +206,8 @@ describe('PushService unter Last', () => {
       );
       const beiVier = zaehler;
 
-      // Zwei Empfaenger mehr -> zwei Abfragen mehr (eine je Kopf).
-      expect(beiVier - beiZwei).toBe(2);
+      // Zwei Empfaenger mehr -> keine Abfrage mehr.
+      expect(beiVier - beiZwei).toBe(0);
     });
 
     it('die Zahl am App-Icon bleibt dieselbe wie beim Einzelversand', async () => {

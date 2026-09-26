@@ -29,19 +29,37 @@ describe('Der Push-Weg verwendet die berechnete Summe (B2b)', () => {
 
   it('beide Sendestellen nutzen einen berechneten Wert', () => {
     expect(quelle).toContain('badge: berechneterBadge != null ? berechneterBadge : 1');
-    expect(quelle).toContain('badge: badgeWert,');
+    // Der Chat-Weg (seit 26.09.2026 sendChatNotificationToMany, Betrieb
+    // BF-04) rechnet die Summe einmal fuer alle und reicht sie je Kopf als
+    // vorberechneten Wert an sendToUser.
+    const chatStelle = quelle.slice(
+      quelle.indexOf('static async sendChatNotificationToMany('),
+      quelle.indexOf('static async sendChatNotification(')
+    );
+    expect(chatStelle).toContain('await this.berechneBadgesFuerAlle(db, empfaenger)');
+    expect(chatStelle).toContain('badges.get(userId)');
   });
 
   it('die Chat-Stelle ERSETZT den uebergebenen Wert, statt ihn zu bevorzugen', () => {
     // Wichtiger Unterschied zu sendToUser: Der von chat.js gereichte Wert ist
     // per Definition zu niedrig (nur Chat) und darf nicht gewinnen. Er gilt
     // nur als Rueckfall, wenn die Zaehlung fehlschlaegt.
-    const stelle = quelle.slice(
-      quelle.indexOf('const gesamtBadge = await this.berechneBadge'),
-      quelle.indexOf('badge: badgeWert,')
+    //
+    // In sendToUser hat `notification.badge` Vorrang vor allem Berechneten.
+    // Der Chat-Weg darf den gereichten Wert deshalb NICHT in die notification
+    // schreiben -- nur als Rueckfall in `vorberechnet.badge`, wenn die Summe
+    // fuer diese Person fehlt.
+    const chatStelle = quelle.slice(
+      quelle.indexOf('static async sendChatNotificationToMany('),
+      quelle.indexOf('static async sendChatNotification(')
     );
-    expect(stelle).toContain('gesamtBadge != null');
-    expect(stelle).toContain('notificationData.badge || 1');
+    const notification = chatStelle.slice(
+      chatStelle.indexOf('const notification = {'),
+      chatStelle.indexOf('data: {')
+    );
+    expect(notification).not.toContain('badge');
+    expect(chatStelle).toContain('badges.has(userId)');
+    expect(chatStelle).toContain('notificationData.badge != null ? notificationData.badge : null');
   });
 
   it('sendToUser laesst einen ausdruecklich uebergebenen Wert gewinnen', () => {

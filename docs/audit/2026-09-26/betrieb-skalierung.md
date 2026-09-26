@@ -296,6 +296,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-04: Eine Chat-Nachricht kostet 1.086 Datenbankabfragen und 66 Einzel-Pushes
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — Fan-out über `PushService.sendChatNotificationToMany` (Badge und Tokens einmal für alle, Token-Buchführung gesammelt je Block statt UPDATE je Gerät, `total_unread`-Schleife gestrichen, eine Sammelzeile statt einer Log-Zeile je Person ohne Gerät; Nacharbeit über `nachAntwort`). Gemessen auf `kq_i1` (Raum 1 mit 150 Teilnehmenden, 278 Geräte, 490.400 Nachrichten): 2.002 Abfragen und 2.665 ms Datenbankzeit je Nachricht → 22 Abfragen und 170 ms; Nachlauf 2.050 ms → 546 ms. FCM bleibt ein Aufruf je Gerät (278): die Zahl am App-Icon ist je Person verschieden, `sendEach` in firebase-admin ≥ 12 ist intern ebenfalls ein HTTP-Aufruf je Nachricht. Test `tests/routes/chatPushFanout.test.js` (150 Teilnehmende: < 50 Abfragen — 22 gemessen, vorher 1.581; ein Push je Gerät, Sender ausgenommen; Badge gleich dem Einzelweg; Buchführung wirkt wie zuvor; Stummschaltung; Umfrage).
 - **Fundstelle:** `backend/routes/chat.js:1240–1300` (Schleife je Teilnehmer:
   `total_unread`-Abfrage + `sendChatNotification`), `backend/services/pushService.js:876–1000`
   (`sendChatNotification`: Raum-Org, Sender-Tokens, Empfänger-Tokens, `berechneBadge` mit

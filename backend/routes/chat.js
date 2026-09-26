@@ -14,6 +14,7 @@ const { syncJahrgangChat, roleToParticipantType } = require('../utils/jahrgangCh
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
+const { nachAntwort } = require('../utils/nachAntwort');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -67,6 +68,81 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     `room_${roomId}`,
     ...teilnehmer.map((p) => `user_${p.user_type}_${p.user_id}`),
   ];
+
+  // Nacharbeit zu einer neuen Nachricht (oder Umfrage), NACH der Antwort:
+  // Teilnehmende einmal laden, EIN Socket-Broadcast, EIN Sammel-Push.
+  //
+  // Audit 26.09.2026, Betrieb BF-04: Vorher lief hier je Teilnehmer:in eine
+  // Kette -- eine `total_unread`-Abfrage (26,5 ms, Join ueber alle Raeume der
+  // Person; ihr Ergebnis wurde im Push-Dienst ohnehin durch die Gesamtsumme
+  // ersetzt) und sendChatNotification mit Raum-Org, Sender-Tokens,
+  // Empfaenger-Tokens, berechneBadge (sieben Zaehler-Abfragen) und einem
+  // UPDATE je Geraet. Gemessen auf kq_i1 (Raum mit 150 Teilnehmenden, 278
+  // Geraete): 2.002 Abfragen und 2,7 s Datenbankzeit je Nachricht -- bei
+  // 0,3 CPU fuer die Datenbank saettigten 0,65 Nachrichten je Sekunde ueber
+  // alle Gemeinden alles andere. Jetzt rechnet sendChatNotificationToMany
+  // Badge und Tokens einmal fuer alle: 22 Abfragen und 170 ms, unabhaengig
+  // von der Teilnehmerzahl.
+  //
+  // Ueber nachAntwort statt einer nackten async-IIFE: Fehler werden gemeldet
+  // statt als unbehandelte Ablehnung zu enden, und Tests koennen den Nachlauf
+  // abwarten (utils/nachAntwort.js).
+  //
+  // @param {object} req
+  // @param {object} arg
+  // @param {number|string} arg.roomId
+  // @param {{id:number, type:string, name:string}} arg.sender
+  // @param {number} arg.messageId
+  // @param {(message:object) => object} arg.payload  Socket-Payload `message`
+  // @param {(raum:{roomName:string, isDirectChat:boolean}) => {title:string, body:string}} arg.textFuer
+  const nachNeuerNachricht = (req, { roomId, sender, messageId, payload, textFuer }) =>
+    nachAntwort(req, async () => {
+      const { rows: teilnehmer } = await db.query(
+        'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+        [roomId]
+      );
+
+      // WebSocket: EIN Broadcast an den Raum (offene Chats) und die
+      // persoenlichen Raeume aller Teilnehmenden (Zaehler, Raumliste) --
+      // je Client genau einmal, siehe zielRaeumeFuerNachricht.
+      if (io) {
+        io.to(zielRaeumeFuerNachricht(roomId, teilnehmer)).emit('newMessage', {
+          roomId: parseInt(roomId),
+          message: payload
+        });
+      }
+
+      // Push an alle anderen Teilnehmenden -- gesammelt, nicht je Kopf.
+      const empfaenger = teilnehmer
+        .filter((p) => !(Number(p.user_id) === Number(sender.id) && p.user_type === sender.type))
+        .map((p) => p.user_id);
+      if (empfaenger.length === 0) return;
+
+      const { rows: [room] } = await db.query(
+        'SELECT name, type, organization_id FROM chat_rooms WHERE id = $1',
+        [roomId]
+      );
+      const roomName = room?.name || 'Chat';
+      const isDirectChat = room?.type === 'direct';
+      const { title, body } = textFuer({ roomName, isDirectChat });
+
+      await PushService.sendChatNotificationToMany(db, empfaenger, {
+        title,
+        body,
+        roomId,
+        messageId,
+        data: {
+          sender_id: sender.id,
+          sender_name: sender.name,
+          room_name: roomName,
+          room_type: room?.type || 'unknown',
+          // Content-Org des Raums (Multi-Org: der Tap wechselt in die
+          // Organisation des Raums) -- mitgereicht, damit der Push-Dienst
+          // sie nicht erneut nachsehen muss.
+          organization_id: room?.organization_id
+        }
+      });
+    }, 'Chat-Push');
 
   // Hilfsfunktion: Nach einem Vote den aktuellen Poll-Stand einsammeln und per
   // 'pollUpdated' an den Raum senden, damit alle offenen Chats die neuen Votes
@@ -1265,80 +1341,26 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       
       res.json(message); // Respond immediately
 
-      // WebSocket: EIN Broadcast an den Raum (offene Chats) und die
-      // persoenlichen Raeume aller Teilnehmenden (Zaehler, Raumliste) --
-      // je Client genau einmal, siehe zielRaeumeFuerNachricht.
-      if (io) {
-        const participantsQuery = `
-          SELECT user_id, user_type FROM chat_participants
-          WHERE room_id = $1
-        `;
-        const { rows: allParticipants } = await db.query(participantsQuery, [roomId]);
-        io.to(zielRaeumeFuerNachricht(roomId, allParticipants)).emit('newMessage', {
-          roomId: parseInt(roomId),
-          message: message
-        });
-      }
-
-      // Asynchronously send push notifications
-      (async () => {
-        try {
-          const getParticipantsQuery = `
-          SELECT user_id, user_type FROM chat_participants
-          WHERE room_id = $1 AND NOT (user_id = $2 AND user_type = $3)
-        `;
-          const { rows: participants } = await db.query(getParticipantsQuery, [roomId, userId, userType]);
-          if (!participants) return;
-          
-          const { rows: [room] } = await db.query('SELECT name, type FROM chat_rooms WHERE id = $1', [roomId]);
-          const roomName = room?.name || 'Chat';
-          const isDirectChat = room?.type === 'direct';
-          const pushTitle = isDirectChat ? message.sender_name : roomName;
+      // Socket-Broadcast und Push nach der Antwort (siehe nachNeuerNachricht).
+      nachNeuerNachricht(req, {
+        roomId,
+        sender: { id: userId, type: userType, name: message.sender_name },
+        messageId: message.id,
+        payload: message,
+        textFuer: ({ roomName, isDirectChat }) => ({
+          title: isDirectChat ? message.sender_name : roomName,
           // Text der Mitteilung: siehe utils/pushText.js — dort steht auch,
           // warum es KEINE echte Bildvorschau gibt.
-          const pushBody = chatPushText({
+          body: chatPushText({
             content,
             messageType: message.message_type,
             fileName: message.file_name,
             senderName: message.sender_name,
             isDirectChat,
-          });
-          
-          for (const p of participants) {
-            const badgeQuery = `
-            SELECT COUNT(DISTINCT cm.id) as total_unread
-            FROM chat_messages cm
-            JOIN chat_participants cp ON cm.room_id = cp.room_id
-            LEFT JOIN chat_read_status crs ON cm.room_id = crs.room_id AND crs.user_id = $1 AND crs.user_type = $2
-            WHERE cp.user_id = $1
-            AND cp.user_type = $2
-            AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
-            AND cm.created_at <= NOW()
-            AND cm.deleted_at IS NULL
-            AND NOT (cm.user_id = $1 AND cm.user_type = $2)
-          `;
-            const { rows: [badgeResult] } = await db.query(badgeQuery, [p.user_id, p.user_type]);
-            const badgeCount = parseInt(badgeResult?.total_unread || '0', 10);
-            
-            await PushService.sendChatNotification(db, p.user_id, {
-              title: pushTitle,
-              body: pushBody,
-              badge: badgeCount,
-              roomId: roomId,
-              messageId: message.id,
-              data: {
-                sender_id: userId,
-                sender_name: message.sender_name,
-                room_name: roomName,
-                room_type: room?.type || 'unknown'
-              }
-            });
-          }
-        } catch (pushError) {
- console.error('Failed to send chat push notification:', pushError);
-        }
-      })();
-      
+          }),
+        }),
+      });
+
     } catch (err) {
       // Race Condition: Nachricht wurde zwischen Check und Insert eingefügt
       if (err.code === '23505' && err.detail?.includes('client_id')) {
@@ -2064,104 +2086,48 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // Struktur, die GET /messages für Poll-Nachrichten liefert (message_type
       // 'poll', options als Array, Poll-Metadaten, leere votes), damit der
       // ChatRoom-newMessage-Handler die Umfrage sofort rendern kann.
-      if (io) {
-        try {
-          const { rows: [sender] } = await db.query(
-            'SELECT display_name, username FROM users WHERE id = $1',
-            [userId]
-          );
-          const pollMessage = {
-            id: messageId,
-            room_id: parseInt(roomId),
-            user_id: userId,
-            user_type: userType,
-            sender_id: userId,
-            sender_type: userType,
-            sender_name: sender?.display_name || 'Unbekannt',
-            sender_username: sender?.username || null,
-            message_type: 'poll',
-            content: question,
-            created_at: new Date().toISOString(),
-            // Poll-Daten wie in GET /messages
-            poll_id: newPoll.id,
-            question: question,
-            options: validOptions,
-            multiple_choice: isMultipleChoice,
-            anonymous: Boolean(anonymous),
-            exclusive_options: Boolean(exclusive_options),
-            expires_at: expiresAt,
-            votes: [],
-            reactions: []
-          };
+      nachAntwort(req, async () => {
+        const { rows: [sender] } = await db.query(
+          'SELECT display_name, username FROM users WHERE id = $1',
+          [userId]
+        );
+        const senderName = sender?.display_name || 'Unbekannt';
+        const pollMessage = {
+          id: messageId,
+          room_id: parseInt(roomId),
+          user_id: userId,
+          user_type: userType,
+          sender_id: userId,
+          sender_type: userType,
+          sender_name: senderName,
+          sender_username: sender?.username || null,
+          message_type: 'poll',
+          content: question,
+          created_at: new Date().toISOString(),
+          // Poll-Daten wie in GET /messages
+          poll_id: newPoll.id,
+          question: question,
+          options: validOptions,
+          multiple_choice: isMultipleChoice,
+          anonymous: Boolean(anonymous),
+          exclusive_options: Boolean(exclusive_options),
+          expires_at: expiresAt,
+          votes: [],
+          reactions: []
+        };
 
-          // An den Raum (offene Chats) UND an alle Teilnehmer-User-Räume
-          // (Badge/Overview) in EINEM Broadcast, exakt nach dem Muster des
-          // Nachrichten-Handlers (zielRaeumeFuerNachricht).
-          const { rows: allParticipants } = await db.query(
-            'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
-            [roomId]
-          );
-          io.to(zielRaeumeFuerNachricht(roomId, allParticipants)).emit('newMessage', {
-            roomId: parseInt(roomId),
-            message: pollMessage
-          });
-        } catch (emitErr) {
-          console.error('Failed to emit poll newMessage:', emitErr);
-        }
-      }
-
-      // Push-Benachrichtigung analog zum Nachrichten-Handler: Umfrage ist eine
-      // wichtige Nachricht. Asynchron, blockiert die Antwort nicht.
-      (async () => {
-        try {
-          const { rows: participants } = await db.query(
-            `SELECT user_id, user_type FROM chat_participants
-             WHERE room_id = $1 AND NOT (user_id = $2 AND user_type = $3)`,
-            [roomId, userId, userType]
-          );
-          if (!participants || participants.length === 0) return;
-
-          const { rows: [room2] } = await db.query('SELECT name, type FROM chat_rooms WHERE id = $1', [roomId]);
-          const roomName = room2?.name || 'Chat';
-          const { rows: [sender] } = await db.query('SELECT display_name FROM users WHERE id = $1', [userId]);
-          const senderName = sender?.display_name || 'Unbekannt';
-          const pushTitle = roomName;
-          const pushBody = `${senderName}: [Umfrage] ${question}`;
-
-          for (const p of participants) {
-            const badgeQuery = `
-              SELECT COUNT(DISTINCT cm.id) as total_unread
-              FROM chat_messages cm
-              JOIN chat_participants cp ON cm.room_id = cp.room_id
-              LEFT JOIN chat_read_status crs ON cm.room_id = crs.room_id AND crs.user_id = $1 AND crs.user_type = $2
-              WHERE cp.user_id = $1
-              AND cp.user_type = $2
-              AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
-            AND cm.created_at <= NOW()
-              AND cm.deleted_at IS NULL
-              AND NOT (cm.user_id = $1 AND cm.user_type = $2)
-            `;
-            const { rows: [badgeResult] } = await db.query(badgeQuery, [p.user_id, p.user_type]);
-            const badgeCount = parseInt(badgeResult?.total_unread || '0', 10);
-
-            await PushService.sendChatNotification(db, p.user_id, {
-              title: pushTitle,
-              body: pushBody,
-              badge: badgeCount,
-              roomId: roomId,
-              messageId: messageId,
-              data: {
-                sender_id: userId,
-                sender_name: senderName,
-                room_name: roomName,
-                room_type: room2?.type || 'unknown'
-              }
-            });
-          }
-        } catch (pushError) {
-          console.error('Failed to send poll push notification:', pushError);
-        }
-      })();
+        // Broadcast und Push exakt nach dem Muster des Nachrichten-Handlers.
+        await nachNeuerNachricht(req, {
+          roomId,
+          sender: { id: userId, type: userType, name: senderName },
+          messageId,
+          payload: pollMessage,
+          textFuer: ({ roomName }) => ({
+            title: roomName,
+            body: `${senderName}: [Umfrage] ${question}`,
+          }),
+        });
+      }, 'Umfrage-Nacharbeit');
 
     } catch (err) {
       console.error('Database error in POST /rooms/:roomId/polls:', err);
