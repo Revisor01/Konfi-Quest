@@ -400,6 +400,15 @@ function createApp(db, options = {}) {
     } catch (e) {
       dbOk = false;
     }
+    // Migrationsstand (Audit 26.09.2026, Datenbank BF-04): Eine beim Start
+    // uebersprungene Migration stand bisher nur im Container-Log, waehrend
+    // hier "database: ok" stand -- und genau die Routen, die die neue Spalte
+    // brauchen, liefen auf 500. Jetzt additiv: checks.migrations ('ok' |
+    // 'fehler' | 'laeuft') und die Namen der fehlgeschlagenen Dateien. Der
+    // Status bleibt 200: Die Datenbank ist da, der Deploy-Verify prueft das
+    // Feld getrennt. Fehlt db.migrationsstand (Test-Pool, eigenes db-Objekt),
+    // fehlen die Felder.
+    const migrationen = typeof db.migrationsstand === 'function' ? db.migrationsstand() : undefined;
     const body = {
       status: dbOk ? 'OK' : 'DEGRADED',
       version: process.env.npm_package_version || require('./package.json').version,
@@ -407,7 +416,17 @@ function createApp(db, options = {}) {
       uptimeSeconds: Math.round(process.uptime()),
       checks: {
         database: dbOk ? 'ok' : 'error',
+        ...(migrationen !== undefined ? {
+          migrations: migrationen === null ? 'laeuft' : (migrationen.fehlgeschlagen.length === 0 ? 'ok' : 'fehler'),
+        } : {}),
       },
+      ...(migrationen ? {
+        migrationen: {
+          gesamt: migrationen.gesamt,
+          neu: migrationen.neu,
+          fehlgeschlagen: migrationen.fehlgeschlagen.map(f => f.file),
+        },
+      } : {}),
       responseTimeMs: Date.now() - startedAt,
     };
     res.status(dbOk ? 200 : 503).json(body);

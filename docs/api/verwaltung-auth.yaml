@@ -1720,9 +1720,20 @@ paths:
       description: >
         Prueft die Datenbank mit SELECT 1 und liefert 200 bei gesunder DB,
         sonst 503. Getrennt von /health, weil er echte Abhaengigkeiten prüft.
+
+        MIGRATIONSSTAND (26.09.2026, Audit Datenbank BF-04, additiv): Eine beim
+        Start uebersprungene Migration stand vorher nur im Container-Log,
+        waehrend hier `database: ok` stand. Jetzt zusaetzlich
+        `checks.migrations` (`ok` | `fehler` | `laeuft`) und `migrationen`
+        `{gesamt, neu, fehlgeschlagen[]}` mit den Dateinamen der
+        uebersprungenen Migrationen (die Fehlermeldung selbst bleibt im Log,
+        der Pfad ist oeffentlich). Der HTTP-Status bleibt bei `fehler` 200 --
+        die Datenbank ist da; der Deploy-Verify in ci.yml prueft das Feld
+        getrennt und bricht ab. Beide Felder fehlen, wenn der Prozess keinen
+        Migrationslauf kennt (Testaufbau).
       security: []
       responses:
-        "200": { description: "status, version, commit, uptimeSeconds, checks.database, responseTimeMs" }
+        "200": { description: "status, version, commit, uptimeSeconds, checks.database, checks.migrations, migrationen{gesamt, neu, fehlgeschlagen[]}, responseTimeMs" }
         "503": { description: "DEGRADED — Datenbank nicht erreichbar" }
       x-berechtigung:
         rollen: [oeffentlich]

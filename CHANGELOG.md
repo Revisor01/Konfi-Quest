@@ -618,6 +618,10 @@ Versionsüberschrift.
 - Der Mailversand kennt keine eingebaute Serveradresse und keinen eingebauten
   Absender mehr; beides kommt nur noch aus der Betriebskonfiguration. Fehlt
   es, meldet der Server das klar, statt still eine falsche Adresse zu nutzen.
+- Eine große Datenbank-Anpassung beim Start bricht nicht mehr nach kurzer
+  Zeit ab, und ein zweiter Server, der auf sie wartet, beendet sich dabei
+  nicht mehr mit der irreführenden Meldung „Datenbank nicht erreichbar". Ob
+  beim Start eine Anpassung übersprungen wurde, steht in der Statusabfrage.
 
 ## [2.2.0] - 2026-09-18
 

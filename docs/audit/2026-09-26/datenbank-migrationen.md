@@ -138,6 +138,7 @@ Vertragsbruch.
 
 ### BF-03: Zweite Replika stirbt beim Warten auf den Migrations-Lock nach 30 s — mit der Meldung „DB nicht erreichbar"
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Der Migrationslauf ist aus `database.js` nach `backend/utils/migrationslauf.js` gezogen; die Lock-Verbindung läuft dort mit `SET statement_timeout = 0` und einem `query_timeout` von sechs Stunden (statt der 30 s des Pools) und wird danach verworfen statt in den Pool zurückgegeben. Ein abgebrochener Lock-Aufruf heißt jetzt „Migrations-Lock nicht bekommen", nicht mehr „DB nicht erreichbar". Vitest `backend/tests/utils/migrationslauf.test.js` (Pool mit 500-ms-Grenze, Lock-Halter 1,2 s: der Lauf wartet und läuft durch; ohne die Freischaltung fällt er mit `Migrations-Lock nicht bekommen: canceling statement due to statement timeout`).
 - **Fundstelle:** `backend/database.js:58-59` (Pool-weiter `statement_timeout`/`query_timeout` 30 s), `database.js:86` (`pg_advisory_lock` auf einer Pool-Verbindung), `database.js:174-182` (Fehlerpfad → `process.exit(1)`)
 - **Kennzeichnung:** reproduziert:
   ```
@@ -165,6 +166,7 @@ Vertragsbruch.
 
 ### BF-04: Migrationen laufen unter 30-s-`statement_timeout`, ein Fehlschlag ist nicht-blockierend und außer im Container-Log unsichtbar
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Die Migrationsverbindung läuft ohne `statement_timeout` (0) und mit `lock_timeout` (`PG_MIGRATION_LOCK_TIMEOUT`, Standard 10 s), `query_timeout` sechs Stunden; nach dem Lauf wird sie verworfen, damit keine App-Abfrage ohne Grenze auf einer dieser Verbindungen landet (`backend/utils/migrationslauf.js`). Das Ergebnis des Laufs steht additiv in `GET /api/status`: `checks.migrations` (`ok` | `fehler` | `laeuft`) und `migrationen.fehlgeschlagen[]` (Dateinamen; die Fehlermeldung bleibt im Log, der Pfad ist öffentlich); der Deploy-Verify in `ci.yml` bricht bei `fehler` ab. Vitest `backend/tests/utils/migrationslauf.test.js` (eine Migration mit `pg_sleep` über der Pool-Grenze läuft durch — ohne den Fix `canceling statement due to statement timeout`; eine fehlerhafte wird gemeldet und übersprungen; spätere Pool-Verbindungen tragen wieder die Grenze) und `backend/tests/routes/statusBetrieb.test.js` (Felder in `/api/status`). Nicht-blockierend bleibt der Lauf wie gefordert (Incident 13.06.2026).
 - **Fundstelle:** `backend/database.js:53-63` (Pool-Optionen gelten für alle Verbindungen, auch die Migrationsverbindung), `database.js:136-152` (Fehler → `failed.push`, Server startet), `backend/createApp.js:436-505` (`/api/status`, `/api/metrics*` kennen keinen Migrationsstand; `schema_migrations` wird außerhalb von `database.js` nirgends gelesen), `deploy/compose.konfi_quest.yml` (Logs `json-file`, 3 × 10 MB)
 - **Kennzeichnung:** aus Code gelesen; Größenordnung gemessen (`CREATE INDEX` über 490.400 Zeilen: 139–180 ms auf unbegrenzter CPU)
 - **Beschreibung:** Jede Migration läuft korrekt in einer Transaktion und wird bei Fehler

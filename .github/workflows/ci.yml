@@ -524,6 +524,14 @@ jobs:
               s=$(curl -s https://konfi-quest.de/api/status || echo "")
               db=$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('checks',{}).get('database',''))" 2>/dev/null || echo "")
               live=$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('commit',''))" 2>/dev/null || echo "")
+              # Migrationsstand (26.09.2026, Audit Datenbank BF-04): Eine beim
+              # Start uebersprungene Migration meldet /api/status als
+              # checks.migrations=fehler -- bei database=ok. Vorher stand das
+              # nur im Container-Log, und der Verify war gruen.
+              mig=$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('checks',{}).get('migrations','ok'))" 2>/dev/null || echo "ok")
+              if [ "$mig" = "fehler" ] && [ "$live" = "$GIT_SHA" ]; then
+                echo "::error::Migration beim Start uebersprungen -- Schema und Code passen nicht zusammen: $s"; exit 1
+              fi
               if [ "$db" = "ok" ]; then
                 if [ "$BACKEND_CHANGED" = "0" ] || [ "$live" = "$GIT_SHA" ]; then
                   echo "OK Deploy verifiziert: $s"; exit 0

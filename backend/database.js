@@ -1,5 +1,3 @@
-const path = require('path');
-const fs = require('fs');
 const { Pool } = require('pg');
 
 // Configure pg to parse bigint as integer
@@ -70,108 +68,26 @@ pool.on('error', (err) => {
   console.error('Postgres-Pool: Fehler auf leerlaufender Verbindung:', err.message);
 });
 
-// App-weite Lock-ID für den Migrations-Advisory-Lock (beliebig, aber fest).
-const MIGRATION_ADVISORY_LOCK_ID = 723001;
-
-async function runMigrations(pool) {
-  // Advisory-Lock (Audit 03.07.2026): Beide Backend-Replikas starten beim Deploy
-  // PARALLEL und rasten sonst um neue Migrationen (beobachtet bei Migration 109:
-  // eine Replika gewann, die andere warf duplicate-key auf pg_type). Der Lock
-  // serialisiert die Läufe; die zweite Replika liest danach die frisch
-  // eingetragenen schema_migrations und ueberspringt sauber.
-  // Session-Lock auf dedizierter Connection — wird im finally freigegeben,
-  // bei Prozess-Tod räumt Postgres den Lock automatisch.
-  const lockClient = await pool.connect();
-  try {
-    await lockClient.query('SELECT pg_advisory_lock($1)', [MIGRATION_ADVISORY_LOCK_ID]);
-
-    // Tracking-Tabelle sicherstellen (idempotent)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS schema_migrations (
-        name TEXT PRIMARY KEY,
-        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-
-    await runMigrationsLocked(pool);
-  } finally {
-    try {
-      await lockClient.query('SELECT pg_advisory_unlock($1)', [MIGRATION_ADVISORY_LOCK_ID]);
-    } catch (unlockErr) {
-      // Connection evtl. tot — Postgres gibt Session-Locks dann selbst frei.
-      console.error('Migrations-Lock unlock fehlgeschlagen:', unlockErr.message);
-    }
-    lockClient.release();
-  }
-}
-
-async function runMigrationsLocked(pool) {
-  const migrationsDir = path.join(__dirname, 'migrations');
-  const files = fs.readdirSync(migrationsDir)
-    .filter(f => f.endsWith('.sql'))
-    .sort();
-
-  // Bereits ausgefuehrte Migrationen laden — bewusst NACH dem Advisory-Lock,
-  // damit die zweite Replika die Eintraege der ersten sieht.
-  const { rows: applied } = await pool.query('SELECT name FROM schema_migrations');
-  const appliedSet = new Set(applied.map(r => r.name));
-
-  let newCount = 0;
-  const failed = [];
-  for (const file of files) {
-    if (appliedSet.has(file)) {
-      continue; // Bereits ausgefuehrt, ueberspringen
-    }
-    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
-
-    // Jede Migration läuft in EINER Transaktion auf EINER dedizierten Connection
-    // (pool.query() kann sonst verschiedene Connections nutzen -> Multi-Statement-SQL
-    // wäre nicht transaktional). Schlaegt eine Migration mittendrin fehl, wird sie
-    // KOMPLETT zurueckgerollt — kein Halb-Zustand mehr (Lehre aus Incident 13.06.2026:
-    // 097/098/099 wurden ausgeführt aber nicht sauber als applied vermerkt).
-    // Migration + schema_migrations-INSERT liegen in DERSELBEN Transaktion, damit
-    // beides atomar gemeinsam committed oder gemeinsam verworfen wird.
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      await client.query(sql);
-      await client.query('INSERT INTO schema_migrations (name) VALUES ($1)', [file]);
-      await client.query('COMMIT');
-      newCount++;
-      console.log(`Migration applied: ${file}`);
-    } catch (err) {
-      try { await client.query('ROLLBACK'); } catch (_) { /* Connection evtl. tot */ }
-      // NICHT-BLOCKIEREND (User-Forderung, Incident 13.06.2026): eine fehlerhafte
-      // Migration darf NIE den Serverstart killen und damit alle Logins blockieren.
-      // Wir loggen laut, merken sie als fehlgeschlagen vor und machen mit den
-      // nächsten Migrationen weiter. Der Server kommt hoch, App bleibt erreichbar.
-      // Fehlgeschlagene Migration wird NICHT als applied vermerkt -> wird beim
-      // nächsten Start (nach Fix) erneut versucht.
-      console.error(`Migration FAILED (uebersprungen, Server startet trotzdem): ${file}`, err.message);
-      failed.push({ file, message: err.message });
-    } finally {
-      client.release();
-    }
-  }
-  if (newCount > 0) {
-    console.log(`Migrations applied: ${newCount} new (${files.length} total)`);
-  } else {
-    console.log(`Migrations: keine neuen (${files.length} total)`);
-  }
-  if (failed.length > 0) {
-    console.error(`ACHTUNG: ${failed.length} Migration(en) fehlgeschlagen und uebersprungen:`);
-    failed.forEach(f => console.error(`  - ${f.file}: ${f.message}`));
-    console.error('Server laeuft weiter. Bitte fehlgeschlagene Migration(en) pruefen und fixen.');
-  }
-}
+// Migrationslauf: Advisory-Lock, dann jede offene Datei in einer Transaktion.
+// Seit dem 26.09.2026 in utils/migrationslauf.js (Audit Datenbank BF-03/BF-04):
+// Lock- und Migrationsverbindung laufen dort OHNE die 30-s-Grenzen dieses
+// Pools und werden danach verworfen statt zurueckgegeben. Vorher brach eine
+// wartende Replica nach 30 s mit "DB nicht erreichbar" ab, und ein einzelnes
+// Migrations-Statement ueber 30 s scheiterte -- der Server startete trotzdem,
+// mit dem alten Schema.
+const { fuehreMigrationenAus, ergebnisLetzterLauf } = require('./utils/migrationslauf');
 
 // Einmaliger Test beim Starten der Anwendung, um sicherzustellen, dass die DB erreichbar ist.
-// Migrationsfehler killen den Start NICHT mehr (siehe runMigrations) — nur eine
-// voellig unerreichbare DB ist noch ein harter Startup-Fehler.
+// Migrationsfehler killen den Start NICHT mehr (siehe migrationslauf.js) — nur eine
+// voellig unerreichbare DB (oder ein nicht zu bekommender Migrations-Lock) ist
+// noch ein harter Startup-Fehler.
 pool.query('SELECT NOW()')
-  .then(() => runMigrations(pool))
+  .then(() => fuehreMigrationenAus(pool))
   .catch(err => {
-    console.error('Database startup failed (DB nicht erreichbar):', err);
+    const grund = /Migrations-Lock/.test(err && err.message)
+      ? 'Migrations-Lock nicht bekommen'
+      : 'DB nicht erreichbar';
+    console.error(`Database startup failed (${grund}):`, err);
     // In Tests NICHT den Prozess killen: Dieser Selbsttest laeuft beim
     // MODUL-LADEN als unbeaufsichtigter Promise. utils/liveUpdate.js laedt das
     // Singleton lazy mitten im Testlauf; schlaegt der Test dann fehl (z.B.
@@ -210,4 +126,11 @@ module.exports = {
     wartend: pool.waitingCount,
     max: pool.options.max,
   }),
+
+  /**
+   * Ergebnis des Migrationslaufs beim Start (oder null, solange er laeuft).
+   * GET /api/status zeigt daraus checks.migrations -- eine uebersprungene
+   * Migration stand sonst nur im Container-Log (Audit 26.09.2026, DB BF-04).
+   */
+  migrationsstand: () => ergebnisLetzterLauf(),
 };
