@@ -527,6 +527,11 @@ berechnet wurde. Ein Tippen öffnet **genau den gespeicherten Stand** von damals
 > Der Abschnitt „Meine Rückblicke“ erscheint **nur**, wenn es mindestens einen
 > Rückblick gibt. Ist keiner da, fehlt er ganz — das ist kein Fehler.
 
+Wer [in mehreren Gemeinden mitarbeitet](05-rollen.md#in-mehreren-gemeinden-mitarbeiten),
+sieht die Karte auf dem Dashboard und die Liste im Profil **je Gemeinde**: In
+der Gemeinde, in der man gerade arbeitet, stehen nur deren Rückblicke. Hat sie
+noch keinen, fehlt auch die Karte — die andere Gemeinde zeigt ihren weiterhin.
+
 ### Im Profil einer Konfi oder Teamer:in nachsehen
 
 Öffnest du das Profil einer Konfi oder einer Teamer:in, siehst du **alle ihre

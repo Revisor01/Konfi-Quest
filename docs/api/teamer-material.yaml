@@ -881,7 +881,10 @@ paths:
         Konfispruch aus konfi_profiles (aufgeloeste Listen-Wahl oder
         Freitext, null ohne Eintrag oder bei abgeschaltetem Schalter — dann
         wird die Tabelle gar nicht erst abgefragt). Zuletzt wird geprüft,
-        ob ein Teamer-Wrapped-Snapshot vorliegt. Die Challenges-Teaser
+        ob ein Teamer-Wrapped-Snapshot in der AKTIVEN Organisation vorliegt
+        (has_wrapped; BEHOBEN 26.09.2026, Audit Chat BF-06: vorher ohne
+        Org-Filter, die Flagge stand in Gemeinde B auf true, obwohl nur
+        Gemeinde A einen Rueckblick hatte). Die Challenges-Teaser
         selbst laedt das Frontend separat über GET /api/challenges/admin.
         GEAENDERT 15.09.2026 — ABGESAGTE TERMINE: Bis dahin filterte die
         Abfrage sie hart weg (AND e.cancelled IS NOT TRUE), und die
@@ -1611,17 +1614,19 @@ paths:
       x-berechtigung:
         rollen: ["alle authentifizierten"]
         middleware: [verifyTokenRBAC]
-        org-scope: false
-        objekt-pruefung: "nur eigene Daten (WHERE user_id = req.user.id)"
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten in der AKTIVEN Org (WHERE user_id = req.user.id AND organization_id = req.user.organization_id)"
         hinweis: >
-          # BEFUND W1: Die Abfrage filtert NICHT auf organization_id. Bei
-          Multi-Org-Nutzung kommt der neueste Snapshot unabhaengig von der
-          aktiven Organisation zurück. Es sind immer eigene Daten, aber der
-          Org-Kontext wird ignoriert. Ausserdem gibt es keinen Rollen-Guard:
+          # BEFUND W1 -- BEHOBEN 26.09.2026 (Audit Chat BF-06): Die Abfrage
+          filterte NICHT auf organization_id. Bei Multi-Org-Nutzung kam der
+          neueste Snapshot unabhaengig von der aktiven Organisation zurueck --
+          das Teamer-Dashboard zeigte in Gemeinde B die Zahlen aus Gemeinde A.
+          Jetzt zaehlt die aktive Org (req.user.organization_id); additiv
+          traegt die Antwort organization_id. Weiterhin kein Rollen-Guard:
           jede authentifizierte Rolle darf die Route aufrufen (für
           org_admin/admin/super_admin ist das Ergebnis in aller Regel 404).
       responses:
-        "200": { description: "data (Snapshot-JSON), computed_at, year, wrapped_type" }
+        "200": { description: "data (Snapshot-JSON), computed_at, year, wrapped_type, ausgabe_id, titel; additiv seit 26.09.2026 organization_id" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Konfi-Wrapped noch nicht freigegeben (Freigabe-Gate seit 26.08.2026)" }
         "404": { description: Kein Wrapped-Snapshot vorhanden }
@@ -1921,9 +1926,13 @@ paths:
         rollen: [konfi, teamer, admin, org_admin, super_admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "nur eigene Snapshots (user_id = req.user.id)"
+        objekt-pruefung: "nur eigene Snapshots der AKTIVEN Org (user_id = req.user.id AND organization_id = req.user.organization_id)"
+        # BEHOBEN 26.09.2026 (Audit Chat BF-06): Bis dahin ohne Org-Filter --
+        # eine Teamer:in in zwei Gemeinden sah hier beide Listen vermischt,
+        # ohne Gemeindeangabe. Jetzt nur die aktive Org; additiv
+        # organization_id und organization_name je Eintrag.
       responses:
-        "200": { description: "Array: snapshot_id, ausgabe_id, titel, year, zeitraum_start, zeitraum_ende, computed_at" }
+        "200": { description: "Array: snapshot_id, ausgabe_id, titel, year, zeitraum_start, zeitraum_ende, computed_at; additiv seit 26.09.2026 organization_id, organization_name" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "500": { $ref: '#/components/responses/ServerError' }
 

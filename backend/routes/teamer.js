@@ -835,12 +835,15 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       }
 
       // Wrapped-Verfuegbarkeit prüfen (Teamer: direkt auf wrapped_snapshots)
+      // -- in der AKTIVEN Gemeinde (Audit 26.09.2026, Chat BF-06): Sonst
+      // hiess es in Gemeinde B "Dein Team-Jahr ist da", und GET /wrapped/me
+      // zeigte dort die Zahlen aus Gemeinde A.
       const { rows: [wrappedResult] } = await db.query(
         `SELECT EXISTS(
           SELECT 1 FROM wrapped_snapshots
-          WHERE user_id = $1 AND wrapped_type = 'teamer'
+          WHERE user_id = $1 AND wrapped_type = 'teamer' AND organization_id = $2
         ) as has_wrapped`,
-        [userId]
+        [userId, orgId]
       );
       const has_wrapped = wrappedResult?.has_wrapped || false;
 

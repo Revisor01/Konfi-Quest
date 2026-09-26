@@ -2179,16 +2179,23 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       //
       // Alt-Snapshots haben keine ausgabe_id -- fuer sie bleibt titel null
       // und die App zeigt wie bisher ihre eigene Ueberschrift.
+      //
+      // NUR DIE AKTIVE GEMEINDE (Audit 26.09.2026, Chat BF-06):
+      // req.user.organization_id ist die aktive Gemeinde (rbac.js). Ohne den
+      // Filter sah eine Teamer:in in Gemeinde B den Rueckblick aus Gemeinde
+      // A, sobald dessen Ausgabe juenger war -- die Zahlen der falschen
+      // Gemeinde unter der richtigen Ueberschrift.
       const { rows } = await db.query(
-        `SELECT s.data, s.computed_at, s.year,
+        `SELECT s.data, s.computed_at, s.year, s.organization_id,
                 a.id AS ausgabe_id, a.titel, a.freigegeben_at
            FROM wrapped_snapshots s
            LEFT JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
           WHERE s.user_id = $1 AND s.wrapped_type = $2
+            AND s.organization_id = $3
             AND (a.id IS NULL OR a.freigegeben_at IS NOT NULL)
           ORDER BY COALESCE(a.freigegeben_at, s.computed_at) DESC, s.year DESC
           LIMIT 1`,
-        [req.user.id, wrappedType]
+        [req.user.id, wrappedType, req.user.organization_id]
       );
 
       if (rows.length === 0) {
@@ -2225,7 +2232,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         wrapped_type: wrappedType,
         // Additiv -- alte Apps ignorieren die Felder und zeigen wie bisher.
         ausgabe_id: rows[0].ausgabe_id || null,
-        titel: rows[0].titel || null
+        titel: rows[0].titel || null,
+        // Additiv (26.09.2026): welcher Gemeinde der Rueckblick gehoert.
+        organization_id: rows[0].organization_id
       });
     } catch (err) {
       console.error('Error loading wrapped snapshot:', err);
@@ -2678,19 +2687,28 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   //
   // Zeigt ausschliesslich FREIGEGEBENE Ausgaben: Was die Leitung noch nicht
   // freigegeben hat, bleibt unsichtbar.
+  //
+  // NUR DIE AKTIVE GEMEINDE (Audit 26.09.2026, Chat BF-06), wie GET /me und
+  // GET /history/:userId: Eine Teamer:in in zwei Gemeinden sah hier die
+  // Rueckblicke beider Gemeinden ohne Unterschied. Additiv kommen
+  // organization_id und organization_name mit, damit die App sagen kann,
+  // woher ein Rueckblick stammt.
   router.get('/meine', rbacVerifier, async (req, res) => {
     try {
       const wrappedType = (req.user.role_name === 'teamer') ? 'teamer' : 'konfi';
       const { rows } = await db.query(
-        `SELECT s.id, s.year, s.computed_at,
+        `SELECT s.id, s.year, s.computed_at, s.organization_id,
+                o.name AS organization_name,
                 a.id AS ausgabe_id, a.titel, a.freigegeben_at,
                 a.zeitraum_start, a.zeitraum_ende
            FROM wrapped_snapshots s
            LEFT JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
+           LEFT JOIN organizations o ON o.id = s.organization_id
           WHERE s.user_id = $1 AND s.wrapped_type = $2
+            AND s.organization_id = $3
             AND (a.id IS NULL OR a.freigegeben_at IS NOT NULL)
           ORDER BY COALESCE(a.freigegeben_at, s.computed_at) DESC`,
-        [req.user.id, wrappedType]
+        [req.user.id, wrappedType, req.user.organization_id]
       );
       res.json(rows.map(r => ({
         snapshot_id: r.id,
@@ -2699,7 +2717,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         year: r.year,
         zeitraum_start: r.zeitraum_start,
         zeitraum_ende: r.zeitraum_ende,
-        computed_at: r.computed_at
+        computed_at: r.computed_at,
+        organization_id: r.organization_id,
+        organization_name: r.organization_name
       })));
     } catch (err) {
       console.error('Error loading own wrapped list:', err);

@@ -534,6 +534,11 @@ Versionsüberschrift.
   Rückblick, und nachholen ließ er sich nicht, weil das Jahr als erledigt
   galt. Jetzt bekommt jede Teamer:in in jeder ihrer Gemeinden ihren eigenen
   Rückblick, auch beim automatischen Lauf; gesperrte Konten bleiben außen vor.
+- Wer in zwei Gemeinden im Team ist, bekam auf der Startseite der zweiten
+  Gemeinde „Dein Team-Jahr ist da" angezeigt und sah beim Antippen die Zahlen
+  der anderen Gemeinde. Rückblick, Liste der eigenen Rückblicke und der
+  Hinweis auf der Startseite gehören jetzt zur Gemeinde, in der man gerade
+  arbeitet; gibt es dort keinen, gibt es auch keinen Hinweis.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
