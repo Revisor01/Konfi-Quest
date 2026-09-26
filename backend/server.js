@@ -57,6 +57,7 @@ const io = new Server(server, {
 // über die Tabelle socket_io_attachments (Migration 109).
 const { createAdapter: createPgAdapter } = require('@socket.io/postgres-adapter');
 const { Pool: PgPool } = require('pg');
+const { mitVerbindungsschutz } = require('./utils/socketAdapterVerbindung');
 
 // Eigener kleiner Pool für den Adapter (dedizierte LISTEN-Connection + Queries),
 // getrennt vom App-Pool in database.js, damit die dauerhafte LISTEN-Verbindung
@@ -64,11 +65,23 @@ const { Pool: PgPool } = require('pg');
 const socketAdapterPool = new PgPool({
   connectionString: process.env.DATABASE_URL,
   max: parseInt(process.env.PG_SOCKET_ADAPTER_POOL_MAX || '2', 10),
+  // Wie der App-Pool (database.js): Nach einem Datenbank-Ausfall versucht der
+  // Adapter alle 1-3 s eine Neuverbindung; ohne Grenze hinge ein einzelner
+  // Versuch gegen einen nicht erreichbaren Host minutenlang im TCP-Timeout.
+  connectionTimeoutMillis: parseInt(process.env.PG_CONN_TIMEOUT || '5000', 10),
 });
+// Nur fuer LEERLAUFENDE Pool-Verbindungen. Die dauerhaft ausgecheckte
+// LISTEN-Verbindung des Adapters hoert hier NICHT mit -- dafuer die Huelle.
 socketAdapterPool.on('error', (err) => {
   console.error('Socket.IO-Adapter-Pool Fehler:', err.message);
 });
-io.adapter(createPgAdapter(socketAdapterPool, {
+// Huelle (Audit 26.09.2026, Betrieb BF-01): Der Adapter bindet an seinen
+// LISTEN-Client kein 'error'. Riss die Datenbankverbindung ab (Neustart,
+// OOM-Kill, Failover), warf Node uncaughtException, und gracefulShutdown unten
+// beendete JEDE Replica im selben Moment -- Totalausfall bis Docker neu
+// startete. Die Huelle loggt den Abbruch, laesst den Adapter neu verbinden und
+// gibt den toten Client an den Pool zurueck (utils/socketAdapterVerbindung.js).
+io.adapter(createPgAdapter(mitVerbindungsschutz(socketAdapterPool), {
   errorHandler: (err) => console.error('Socket.IO-Postgres-Adapter Fehler:', err.message),
 }));
 

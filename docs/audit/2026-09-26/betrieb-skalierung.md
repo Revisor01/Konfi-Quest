@@ -200,6 +200,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-01: Verbindungsabbruch zur Datenbank beendet alle Backend-Replicas gleichzeitig
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — `backend/utils/socketAdapterVerbindung.js` kapselt den Adapter-Pool (`connect()`/`query()`): Jeder ausgecheckte LISTEN-Client bekommt einen `error`-Zuhörer (loggen statt sterben), auf `end` geht der tote Client mit Fehler an den Pool zurück (sonst wäre der Pool mit max 2 nach dem zweiten Abbruch erschöpft und die Neuverbindung des Adapters hinge ewig), `release()` ist gegen Doppelaufruf gesichert; `server.js` reicht den Pool nur noch durch die Hülle und setzt `connectionTimeoutMillis` (5 s) für die Neuverbindung. Nachweis mit zwei Instanzen (Ports 6437/6537, `pg_terminate_backend` auf alle Verbindungen): vorher `Prozesse leben: A=NEIN B=NEIN`, Health `HTTP 000`; nachher `A=ja B=ja`, Health `200`, zwei LISTEN-Verbindungen neu aufgebaut, Chat-Nachricht über A erreicht den Client an B wieder. Vitest `backend/tests/utils/socketAdapterVerbindung.test.js` (zwei Socket.IO-Server mit Adapter auf derselben Datenbank, zweimaliger Abbruch, Zustellung in beide Richtungen; ohne Hülle zwei `uncaughtException`, ohne Rückgabe des toten Clients hängt die zweite Runde).
 - **Fundstelle:** `backend/server.js:64–73` (Adapter-Pool ohne Client-Fehlerbehandlung),
   `backend/server.js:567–570` (`uncaughtException` → Shutdown),
   `backend/node_modules/@socket.io/postgres-adapter/dist/util.js:65–99` (LISTEN-Client

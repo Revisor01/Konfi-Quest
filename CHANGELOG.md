@@ -462,6 +462,12 @@ Versionsüberschrift.
   angemeldet" abgewiesen werden, obwohl sie längst stand. Wiederholt wird
   jetzt nur noch, was folgenlos wiederholbar ist (Laden, Ändern, Löschen);
   Speichern und Anlegen gehen genau einmal hinaus.
+- Ein kurzer Aussetzer der Datenbank (etwa ein Neustart) legte bisher den
+  gesamten Dienst lahm: Alle Server beendeten sich im selben Moment, die App
+  zeigte für einige Zeit Verbindungsfehler, offene Chats verloren die
+  Live-Verbindung. Jetzt bleiben die Server erreichbar, verbinden sich von
+  selbst wieder mit der Datenbank, und Chat-Nachrichten und
+  Live-Aktualisierungen kommen danach wieder auf allen Geräten an.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
