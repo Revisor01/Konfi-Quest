@@ -321,6 +321,7 @@ Vertragsbruch.
 
 ### BF-13: Veraltete Doku und Kommentare zum Schema
 - **Schwere:** NIEDRIG
+- **Status:** teilweise behoben 26.09.2026 — `docs/offene-befunde.md` #12 als behoben markiert, mit dem Messwert 0 Diff-Zeilen (Doku-Paket); die drei Kommentare in `init-scripts/README.md`, `globalSetup.js`, `refresh-schema.sh` und `007_levels.sql` gehören zum Datenbank-Paket.
 - **Fundstelle:** `docs/offene-befunde.md:429` (#12 „IN ARBEIT" — behoben mit Commit `a5230d86`, 16.09.2026; heute 0 Diff-Zeilen), `init-scripts/README.md:48`, `backend/tests/globalSetup.js:37`, `backend/tests/schema/refresh-schema.sh:7` (dreimal „für daily_verses, activities.category … existiert nirgends ein DDL" — `124_daily_verses_und_activities_category.sql` liefert es seit 22.08.2026; nur `password_plain` hat weiter keins), `backend/init-scripts/007_levels.sql` (tot: nirgends eingebunden, `INTEGER`/`TIMESTAMP`-Typen, wird per `COPY . .` ins Image kopiert; Kommentar in `085_…:2` verweist noch darauf)
 - **Kennzeichnung:** reproduziert (Diff `kq_neu` vs. `kq_prod` = 0 Zeilen; Grep)
 - **Auswirkung aus Nutzersicht:** keine; die nächste Sitzung sucht an falscher Stelle.

@@ -6,9 +6,17 @@ gegenstandslos erwiesene Befunde bleiben stehen und werden im Titel als
 solche markiert; sonst liest sich die Liste wie eine Reihe offener Lücken,
 die längst zu sind.
 
+Zuletzt gegen den Code geprüft: **26.09.2026** im Release-Audit
+(`docs/audit/2026-09-26/`, je Bereich ein Abschnitt „Alte Befunde
+nachgeprüft"). Jeder Eintrag trägt den dort festgestellten Stand als erste
+Zeile.
+
 ---
 
 ## 1. Chat: Ungelesen-Markierung verschwindet nicht (02.09.2026) — BEHOBEN
+
+> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt — `BadgeContext`
+> verwirft den Raumlisten-Cache beim Lesen (Doku-Bericht, „Alte Befunde").
 
 > **Behoben am 02.09.2026.** Zwei Fehler in
 > `BadgeContext.markRoomAsRead`, beide im Frontend:
@@ -116,6 +124,14 @@ den Fehler durchlassen. Auf den konkreten Wert prüfen.
 
 ## 2. Sicherheitsmeldungen zu react-router (07.09.2026) — GEPRÜFT, TRIFFT UNS NICHT
 
+> **Stand 26.09.2026 (Release-Audit):** weiter offen, trifft weiter nicht —
+> `npm audit` zeigt dieselben zwei Meldungen für react-router 6.30.6, der Fix
+> liegt nur in 7 und 8, `@ionic/react-router@9.0.3` verlangt weiter `<7`.
+> Präzisierung zur Gegenprobe unten: Push-Ziele setzen Kennungen **mittig**
+> in feste Pfade ein (`utils/pushNavigation.ts`), App-Links laufen durch eine
+> Erlaubnisliste (`utils/deepLinks.ts`); kein Ziel beginnt mit Nutzerdaten
+> (Grundgerüst- und Toolchain-Bericht).
+
 Zwei Meldungen zu `react-router` 6.30.6 stehen offen und lassen sich nicht
 durch ein Update schließen. Nachgemessen am 07.09.2026:
 
@@ -152,6 +168,11 @@ Erwartet: ausschließlich feste Pfade mit eingesetzten IDs.
 ---
 
 ## 3. Nächtlicher Datenbank-Dump war leer (10.09.2026) — BEHOBEN
+
+> **Stand 26.09.2026 (Release-Audit):** aus dem Repo nicht prüfbar —
+> Sicherungsskript und Überwachung liegen auf dem Server. Was im Repo fehlt,
+> ist eine Beschreibung von Sicherung und Wiederherstellung (Datenbank-Bericht
+> BF-05, Betrieb BF-13).
 
 In der Nacht des Ausfalls vom 09./10.09. lief der nächtliche Dump um 2:30,
 während die Container verschwunden waren. Er hinterließ eine Datei von
@@ -210,6 +231,12 @@ niemand, bis die Sicherung gebraucht wird.
 ---
 
 ## 4. Screenshots zeigten die falsche Seite (10.09.2026) — BEHOBEN
+
+> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt — 42 Bilder,
+> 0 Dubletten, kein Ladezustand, die Android-Kennung greift. Die Bilder
+> zeigen aber den Stand vom 10.09. (ohne Glocke und Gemeinde-Umschalter) und
+> müssen vor 2.3.0 neu gezogen werden (UI-Bericht BF-09; Liste in
+> `docs/store-texte-2.3.0.md`).
 
 Drei Fehler im Aufnahmeskript, alle **am Bild** aufgefallen und keiner am
 Protokoll — das meldete durchweg Erfolg.
@@ -273,6 +300,10 @@ beweist nichts: Zwei identische Bilder waren beide „richtig groß".
 
 ## 5. CodeQL-Meldungen vor dem Release (11.09.2026) — GEPRÜFT, KEINE BLOCKIERT
 
+> **Stand 26.09.2026 (Release-Audit):** weiter zutreffend — `linkifyText`
+> erzwingt `https://`, `mediaPreview` kommt aus `URL.createObjectURL`, der
+> globale Limiter steht vor allen Routen (Doku-Bericht, „Alte Befunde").
+
 Acht offene Code-Scanning-Meldungen, vor dem Release Build 182 einzeln am Code
 nachgesehen. Keine hält einer Prüfung stand; die Liste steht hier, damit die
 nächste Sitzung nicht von vorn anfängt.
@@ -296,6 +327,9 @@ Tabelle oben gilt nur für die genannten Orte.
 ---
 
 ## 6. Rückblick las die falsche Kategorie-Quelle (02.09.2026) — BEHOBEN
+
+> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt —
+> `tests/utils/wrappedKategorien.test.js` sichert die Quelle ab.
 
 > **Behoben.** `routes/wrapped.js` liest die Kategorien seit dem Umbau aus
 > `activity_categories` bzw. `event_categories`; die Begründung steht als
@@ -328,6 +362,9 @@ deshalb auf **Inhalt**, nicht auf die Existenz der Kategorie.
 ---
 
 ## 7. Zwei tote Stellen im Konfi- und Teamer-Profil (12.09.2026) — BEHOBEN
+
+> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt — `next_badge` und
+> `recent_activities` haben in `frontend/src` 0 Treffer.
 
 Beim Einbau der Stempel ins Profil aufgefallen, beide am Code nachgesehen.
 Keiner davon ist ein Fehler, den jemand gemeldet hat — aber beide führen dazu,
@@ -385,6 +422,10 @@ verlässt.
 
 ## 8. Erinnerungen gingen an Abgemeldete (15.09.2026) — BEHOBEN
 
+> **Stand 26.09.2026 (Release-Audit):** laut API-Doku behoben
+> (`konfis-events.yaml`, Erinnerungen); das Verhalten selbst wurde im Audit
+> nicht erneut ausgeführt.
+
 Wer sich von einem Termin abgemeldet hatte, bekam die Erinnerung trotzdem.
 Die Abmeldung war damit folgenlos für alles, was danach noch verschickt wurde.
 
@@ -394,6 +435,11 @@ tatsächlich zugesagt haben.
 ---
 
 ## 9. Warteliste rückte an sechs Stellen nicht nach (15.09.2026) — BEHOBEN
+
+> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt — `rueckeNach` an
+> allen sechs Wegen, `nachrueckenLuecken.test.js` grün. Dabei eine **siebte**
+> Lücke gefunden: Wird die Konfi-Kapazität eines Termins auf „unbegrenzt"
+> gesetzt, bleibt die Warteliste stehen (Punkte/Termine-Bericht BF-06, offen).
 
 Wurde ein Platz frei, blieb er frei: Die Warteliste rückte nicht
 selbstständig nach. Betroffen waren sechs verschiedene Wege, auf denen ein
@@ -407,6 +453,10 @@ gleich nach.
 
 ## 10. Abgesagte Termine fielen aus allen drei Reitern (15.09.2026) — BEHOBEN
 
+> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt — abgesagte Termine
+> bleiben in den Listen (`konfi.js`, `events/lesen.js`); Handbuch und
+> CHANGELOG 2.2.0 decken sich damit.
+
 Ein abgesagter Termin verschwand vollständig aus der Liste — für Konfis,
 Teamer:innen und Leitung gleichermaßen. Wer angemeldet war, sah nur, dass
 der Termin weg war, nicht dass er abgesagt wurde.
@@ -418,6 +468,11 @@ abgesagt gekennzeichnet.
 
 ## 11. Absage ließ bereits Verbuchte unangetastet (16.09.2026) — GEÄNDERT
 
+> **Stand 26.09.2026 (Release-Audit):** bestätigt — die Absage nimmt Punkte,
+> Beleg und Zähler in einer Transaktion zurück (`utils/bookingUtils.js`,
+> `absageMeldetAb.test.js`). Offener Randfall: abgemeldet **und** trotzdem als
+> anwesend verbucht (Punkte/Termine-Bericht, „Unklar").
+
 Wurde ein Termin abgesagt, blieben bereits verbuchte Punkte und
 Teilnahmen stehen. Simon hat am 16.09.2026 entschieden, dass das nicht so
 bleiben soll.
@@ -426,18 +481,32 @@ bleiben soll.
 
 ---
 
-## 12. init-scripts weicht vom Produktionsschema ab (16.09.2026) — IN ARBEIT
+## 12. init-scripts weicht vom Produktionsschema ab (16.09.2026) — BEHOBEN 16.09.2026
 
-Das Schema in `init-scripts/` deckt sich nicht mit dem, was in Produktion
-steht. Das trifft jeden, der die Datenbank frisch aufsetzt: Er bekommt einen
-anderen Stand als den, gegen den die App läuft.
+Das Schema in `init-scripts/` deckte sich nicht mit dem, was in Produktion
+steht. Das traf jeden, der die Datenbank frisch aufsetzt: Er bekam einen
+anderen Stand als den, gegen den die App läuft — 25 Tabellen statt 57,
+darunter drei, die es in Produktion längst nicht mehr gab.
 
-**Stand 16.09.2026: in Arbeit.** Der Abgleich läuft; Einzelheiten stehen
-hier, sobald er abgeschlossen ist.
+**Behoben am 16.09.2026.** `init-scripts/01-create-schema.sql` ist seither
+der `pg_dump --schema-only` der Produktion — dieselbe Datei, aus der auch die
+Testsuite ihre Datenbank baut —, `02-migrationsstand.sql` trägt die darin
+schon enthaltenen Migrationen ein, und der Wächter
+`backend/tests/schema/neuinstallation.test.js` baut bei jedem Testlauf eine
+Wegwerf-Datenbank aus beiden Dateien, lässt die Migrationen laufen und
+vergleicht das Ergebnis mit dem Produktionsschema. Der Weg steht in
+`init-scripts/README.md`.
+
+**Nachgemessen im Release-Audit 26.09.2026** (Datenbank-Bericht):
+Neuinstallation und Deploy-Weg ergeben identische Schemata — `diff`
+**0 Zeilen**, 59 Tabellen, 1 View. Am 26.09.2026 noch einmal gegengeprüft:
+`init-scripts/01-create-schema.sql` und `backend/tests/schema/prod-schema.sql`
+sind ohne Kommentarzeilen identisch (0 Diff-Zeilen). Dieser Eintrag stand bis
+dahin auf „in Arbeit" (Doku-Bericht BF-12).
 
 ---
 
-## 13. Teamer-Oberfläche bot 9 von 17 erlaubten Termin-Aktionen nicht an (16.09.2026) — AUFGELÖST
+## 13. Teamer-Oberfläche bot 9 von 17 erlaubten Termin-Aktionen nicht an (16.09.2026) — BEHOBEN 16.09.2026
 
 Die Berechtigungen erlaubten Teamer:innen 17 Aktionen an Terminen, die
 Oberfläche bot davon nur 8 an. Die übrigen 9 waren serverseitig offen, aber
@@ -445,5 +514,19 @@ nirgends erreichbar.
 
 **Aufgelöst am 16.09.2026** durch Simons Entscheidung, dass Teamer:innen
 Termine gar nicht verwalten sollen. Damit entfällt die Lücke, statt
-geschlossen zu werden: Die Rechte werden auf das eingeschränkt, was die
-Oberfläche anbietet. Der Umbau läuft.
+geschlossen zu werden: Die Rechte wurden auf das eingeschränkt, was die
+Oberfläche anbietet.
+
+**Umgesetzt, bestätigt im Release-Audit 26.09.2026** (Sicherheits- und
+Punkte/Termine-Bericht): Alle Schreibwege an Terminen — anlegen, ändern,
+absagen, löschen, Teilnehmende ein- und austragen, Anwesenheit, Serien —
+verlangen `requireAdmin` (`routes/events/verwaltung.js`, `teilnehmer.js`,
+`anwesenheit.js`, `serien.js`; Test `rbacTermine.test.js`, sieben Aktionen
+als Teamer:in ergeben 403). Die Teamer-Oberfläche bindet den Absage-Dialog
+nicht mehr ein; CHANGELOG 2.2.0 nennt es unter „Geändert". Dieser Eintrag
+stand bis zum 26.09.2026 auf „Der Umbau läuft" (Doku-Bericht BF-12).
+
+**Rest, zu entscheiden:** `POST /events/:id/generate-qr` und der Live-Zähler
+`attendance-count` stehen Teamer:innen weiter offen (`routes/events/checkin.js`,
+`requireTeamer`). Ob der Check-in vor Ort bewusst beim Team bleibt, ist
+nirgends festgehalten (Sicherheits-Bericht BF-21).

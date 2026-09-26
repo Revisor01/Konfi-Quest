@@ -396,6 +396,7 @@ abreißt.
 
 ### BF-12: `docs/offene-befunde.md` führt #12 und #13 als offen, beide sind seit dem 16.09.2026 erledigt
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — #12 und #13 im Titel als „BEHOBEN 16.09.2026" markiert, mit Fundstellen (Dump, Migrationsstand, Wächter; `requireAdmin` an allen Schreibwegen, `rbacTermine.test.js`) und dem Messwert Schema-Diff 0 Zeilen (heute gegengeprüft); der Rest von #13 (`generate-qr`, `attendance-count` für Teamer:innen, Sicherheit BF-21) steht als offene Entscheidung im Eintrag. Alle 13 Einträge tragen jetzt den im Audit festgestellten Stand als erste Zeile.
 - **Fundstelle:** `docs/offene-befunde.md:429-438` (#12 „IN ARBEIT"), `:440-449`
   (#13 „Der Umbau läuft"); `init-scripts/README.md`, Commit `a5230d86` (16.09.2026),
   `backend/tests/schema/neuinstallation.test.js`; `backend/routes/events/index.js:3-14`,

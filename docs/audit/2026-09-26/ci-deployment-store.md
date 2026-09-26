@@ -392,6 +392,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-15: Hygiene in Workflows und Deploy-Referenz (Sammelbefund)
 - **Schwere:** NIEDRIG
+- **Status:** teilweise behoben 26.09.2026 — `docs/offene-befunde.md` #12 als behoben markiert (Doku-Paket); die übrigen Punkte dieses Sammelbefunds (Action-Pinning, `test-backend.yml`, `frontend.yml`, Compose-`version`, Kommentar in `ci.yml`, `Info.plist`) gehören zum CI-Paket.
 - **Fundstelle:** alle `uses:` in `.github/workflows/*.yml` (Tag-Pinning `@v7`/`@v4`, kein SHA);
   `test-backend.yml:22` (`default: 'feat/ionic-9'`, Branch längst gemergt — Lauf 7 vom 01.09.2026);
   `frontend.yml:4-5` (manueller Deploy ohne Tests, mit Portainer-Zugriff, aus jedem Branch; zuletzt

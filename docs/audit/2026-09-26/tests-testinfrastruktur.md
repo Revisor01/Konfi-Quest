@@ -193,6 +193,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-11: Doku- und Kommentar-Drift in der Testinfrastruktur
 - **Schwere:** NIEDRIG
+- **Status:** teilweise behoben 26.09.2026 — README-Testzahlen auf 3.788 / 3.399 gesetzt und `docs/offene-befunde.md` #12 als behoben markiert (Doku-Paket); die Zahlen in `vitest.config.ts`, `testApp.js`, `db.js` und `ci.yml` gehören zum Test-Paket.
 - **Fundstelle:** `README.md:131` („1625 Tests“), `:138` („2470 Tests“), `backend/tests/vitest.config.ts:6` („alle 24 Suites“), `backend/tests/helpers/testApp.js:43` („65 Testdateien“), `backend/tests/helpers/db.js:60` und `.github/workflows/ci.yml:75` („~45 Tabellen“), `ci.yml:76` („truncateAll laeuft 111 Mal“), `ci.yml:124/137` („273 Meldungen“, „auf null“), `ci.yml:214` („32/32“), `docs/offene-befunde.md:429` (Nr. 12 „IN ARBEIT“)
 - **Kennzeichnung:** reproduziert (gezählt)
 - **Beschreibung:** Frontend heute 264 Dateien / 3788 Tests (Koordination), Backend 139 Dateien / 3296 statische `it` + 17 `it.each`; 58 Tabellen in der TRUNCATE-Liste; `truncateAll` steht 119-mal in 107 Dateien; Lint 336 Meldungen; E2E 34 Tests. Befund Nr. 12 (init-scripts) ist erledigt: `init-scripts/01-create-schema.sql` und `backend/tests/schema/prod-schema.sql` sind bis auf Kommentare identisch (`diff` leer), der Migrationsstand ebenso, der Wächter `neuinstallation.test.js` existiert — die Doku sagt noch „in Arbeit“. `init-scripts/README.md` stimmt dagegen mit dem heutigen Verhalten überein.
