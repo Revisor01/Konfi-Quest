@@ -89,6 +89,12 @@ services:
       # Metrics-Aggregation: /api/metrics fragt BEIDE Replicas (interne Compose-
       # Servicenamen im internal-Netz) ab und mergt sie zu einem Gesamtbild.
       METRICS_PEERS: "http://backend:5000,http://backend2:5000"
+      # Drain vor dem Stopp (26.09.2026, Betrieb BF-07/BF-12): Nach SIGTERM
+      # meldet /api/health 6 s lang 503, waehrend die Replica alle anderen
+      # Anfragen weiter beantwortet -- Traefik (Pruefintervall 5 s) nimmt sie
+      # so aus dem Pool, BEVOR der Server schliesst. Danach Exit 0 in unter
+      # einer Sekunde; alles innerhalb von stop_grace_period 30s.
+      SHUTDOWN_DRAIN_MS: "6000"
     volumes:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro

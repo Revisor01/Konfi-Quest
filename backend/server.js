@@ -446,9 +446,21 @@ const app = createApp(db, {
 //
 // Der Fix behaelt die Reihenfolge bei (Socket.IO zuerst, siehe oben) und
 // prueft nur, ob die Antwort schon steht.
+// Waehrend des Herunterfahrens (siehe gracefulShutdown) meldet der
+// Gesundheitspfad 503, damit Traefik diese Replica aus dem Pool nimmt,
+// BEVOR der Server keine Verbindungen mehr annimmt. Alle anderen Anfragen
+// werden in dieser Zeit noch normal beantwortet. Zwei Felder wie im
+// gesunden Fall (createApp.js), nur mit anderem Status.
+let wirdBeendet = false;
+
 server.on('request', (req, res) => {
   // Engine.IO hat bereits geantwortet (Handshake abgelehnt) -> nichts tun.
   if (res.headersSent || res.writableEnded) return;
+  if (wirdBeendet && req.url === '/api/health') {
+    res.writeHead(503, { 'Content-Type': 'application/json', Connection: 'close' });
+    res.end(JSON.stringify({ status: 'STOPPING', message: 'Konfi Points API wird beendet' }));
+    return;
+  }
   app(req, res);
 });
 
@@ -532,29 +544,86 @@ server.listen(PORT, () => {
 // exitCode: 0 bei einem regulaeren Signal, 1 nach einem Absturz. Sonst meldet
 // der Container "sauber beendet", obwohl eine unbehandelte Exception ihn
 // heruntergefahren hat — in der Neustart-Statistik nicht mehr unterscheidbar.
-const gracefulShutdown = (signal, exitCode = 0) => {
-  console.warn(`${signal} empfangen - Graceful Shutdown...`);
-  server.close(async () => {
-    console.warn('HTTP-Server geschlossen.');
-    try {
-      await db.end();
-      console.warn('Datenbankverbindung geschlossen.');
-    } catch (err) {
-      console.error('Fehler beim Schliessen der Datenbankverbindung:', err.message);
-    }
-    try {
-      await socketAdapterPool.end();
-      console.warn('Socket.IO-Adapter-Pool geschlossen.');
-    } catch (err) {
-      console.error('Fehler beim Schliessen des Adapter-Pools:', err.message);
-    }
-    process.exit(exitCode);
-  });
+//
+// REIHENFOLGE (Audit 26.09.2026, Betrieb BF-07). Bis dahin stand hier
+// server.close() -> db.end() -> socketAdapterPool.end(), und JEDER Stopp
+// endete nach exakt 10 s mit Exit 1: Der Socket.IO-Postgres-Adapter haelt
+// fuer LISTEN dauerhaft einen Client aus socketAdapterPool ausgecheckt und
+// gibt ihn nur ueber io.close() zurueck. pool.end() wartet auf die Rueckgabe
+// aller Clients -- also ewig --, waehrend der 30-s-Aufraeumtimer des Adapters
+// weiter DELETE auf den geschlossenen Pool absetzte ("Cannot use a pool
+// after calling end on the pool"). Nach 10 s griff der Notausstieg mit
+// Exit 1. Gemessen: Exit 1 nach 10 014 ms, bei jedem Deploy, je Replica.
+//
+// Jetzt: (1) Gesundheitspfad auf 503 und optional SHUTDOWN_DRAIN_MS warten,
+// damit Traefik (Pruefintervall 5 s) die Replica aus dem Pool nimmt, solange
+// sie noch antwortet; (2) Hintergrund-Jobs anhalten; (3) io.close() -- trennt
+// die Sockets, schliesst den Adapter (LISTEN-Client zurueck, Timer aus) und
+// den HTTP-Server; leerlaufende Keep-Alive-Verbindungen werden sofort
+// geschlossen, laufende Anfragen bekommen SHUTDOWN_REQUEST_GRACE_MS;
+// (4) erst dann die Pools. Der Notausstieg bleibt als letztes Netz.
+const SHUTDOWN_DRAIN_MS = parseInt(process.env.SHUTDOWN_DRAIN_MS || '0', 10);
+const SHUTDOWN_REQUEST_GRACE_MS = parseInt(process.env.SHUTDOWN_REQUEST_GRACE_MS || '5000', 10);
+const SHUTDOWN_TIMEOUT_MS = 10000;
+const schlafen = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  setTimeout(() => {
+let shutdownLaeuft = false;
+const gracefulShutdown = async (signal, exitCode = 0) => {
+  if (shutdownLaeuft) return; // zweites Signal waehrend des Herunterfahrens
+  shutdownLaeuft = true;
+  const begonnen = Date.now();
+  console.warn(`${signal} empfangen - Graceful Shutdown...`);
+
+  const notausstieg = setTimeout(() => {
     console.error('Shutdown-Timeout erreicht - erzwinge Beendigung');
     process.exit(1);
-  }, 10000);
+  }, SHUTDOWN_TIMEOUT_MS);
+  notausstieg.unref();
+
+  // (1) Aus dem Traefik-Pool nehmen lassen, solange noch geantwortet wird.
+  wirdBeendet = true;
+  if (SHUTDOWN_DRAIN_MS > 0) {
+    await schlafen(SHUTDOWN_DRAIN_MS);
+  }
+
+  // (2) Keine neuen Job-Laeufe mehr anstossen.
+  try {
+    BackgroundService.stopAllServices();
+  } catch (err) {
+    console.error('Fehler beim Anhalten der Hintergrund-Jobs:', err.message);
+  }
+
+  // (3) Sockets, Adapter, HTTP-Server.
+  try {
+    const ioZu = io.close();
+    if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
+    const abbruch = setTimeout(() => {
+      if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
+    }, SHUTDOWN_REQUEST_GRACE_MS);
+    abbruch.unref();
+    await ioZu;
+    clearTimeout(abbruch);
+    console.warn('HTTP-Server und Socket.IO geschlossen.');
+  } catch (err) {
+    console.error('Fehler beim Schliessen von HTTP-Server/Socket.IO:', err.message);
+  }
+
+  // (4) Pools -- jetzt haelt niemand mehr einen Client.
+  try {
+    await db.end();
+    console.warn('Datenbankverbindung geschlossen.');
+  } catch (err) {
+    console.error('Fehler beim Schliessen der Datenbankverbindung:', err.message);
+  }
+  try {
+    await socketAdapterPool.end();
+    console.warn('Socket.IO-Adapter-Pool geschlossen.');
+  } catch (err) {
+    console.error('Fehler beim Schliessen des Adapter-Pools:', err.message);
+  }
+
+  console.warn(`Shutdown abgeschlossen nach ${Date.now() - begonnen} ms (Exit ${exitCode}).`);
+  process.exit(exitCode);
 };
 
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));

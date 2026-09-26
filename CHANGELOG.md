@@ -566,6 +566,10 @@ Versionsüberschrift.
   anmeldbar, kamen alle „Anmeldung möglich"-Mitteilungen in einem Schwall.
   Sie gehen jetzt nach und nach hinaus, die am längsten offenen zuerst; im
   Alltag ändert sich nichts.
+- Ein Server-Neustart (etwa bei einer Auslieferung) dauert nicht mehr länger
+  als nötig und wird nicht mehr als Absturz gezählt. Solange ein Server
+  herunterfährt, nimmt er sich selbst aus der Verteilung, statt Anfragen ins
+  Leere laufen zu lassen.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

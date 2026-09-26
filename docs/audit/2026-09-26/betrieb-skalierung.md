@@ -382,6 +382,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-07: Graceful Shutdown hängt immer 10 s und endet mit Exit-Code 1
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — `server.js` fährt in fester Reihenfolge herunter: `/api/health` meldet 503 (optional `SHUTDOWN_DRAIN_MS` warten, im Compose 6 s, damit Traefik die Replica aus dem Pool nimmt, solange sie noch antwortet), Hintergrund-Jobs anhalten, `io.close()` (trennt Sockets, schließt den Adapter samt LISTEN-Client und Aufräumtimer und den HTTP-Server; leerlaufende Keep-Alive-Verbindungen sofort, laufende nach `SHUTDOWN_REQUEST_GRACE_MS`), erst dann `db.end()` und `socketAdapterPool.end()`. Gemessen (Port 6439, Test-DB): vorher Exit 1 nach 10 014 ms mit „Cannot use a pool after calling end on the pool", nachher Exit 0 nach 833 ms. Vitest `backend/tests/utils/gracefulShutdown.test.js` startet `server.js` als Prozess, hält eine Keep-Alive-Verbindung, sendet SIGTERM (Exit 0 in < 3 s, keine Adapter-Fehlerzeile) und prüft die Drain-Phase (503 auf `/api/health`, `/api/status` antwortet weiter); mit der alten Reihenfolge fällt er mit `expected 1 to be +0` nach 10,8 s.
 - **Fundstelle:** `backend/server.js:518–541` (`db.end()`, dann `socketAdapterPool.end()`,
   10-s-Notausstieg mit Exit 1), `node_modules/@socket.io/postgres-adapter/dist/util.js:47–56`
   (Aufräum-Timer läuft weiter, LISTEN-Client bleibt ausgecheckt)
