@@ -288,7 +288,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
   }, [messageText, resizeTextarea]);
 
   return (
-  <IonFooter style={{ backgroundColor: 'rgba(248, 249, 250, 0.95)', backdropFilter: 'blur(10px)' }}>
+  <IonFooter style={{ backgroundColor: 'var(--app-surface-soft)', backdropFilter: 'blur(10px)' }}>
     {/* Reply Preview */}
     {replyToMessage && (
       <ReplyPreview replyToMessage={replyToMessage} onClear={onClearReply} />

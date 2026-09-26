@@ -159,7 +159,7 @@ const renderRow = (entry: LegendEntry, i: number) => (
     key={i}
     style={{
       display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittelweit)',
-      background: 'rgba(255,255,255,0.7)', borderRadius: 'var(--app-radius-weich)',
+      background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)',
       padding: 'var(--app-abstand-mittel) var(--app-abstand-mittelweit)', boxShadow: 'var(--app-schatten-hauch)'
     }}
   >

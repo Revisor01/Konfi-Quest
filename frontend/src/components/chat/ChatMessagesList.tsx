@@ -96,7 +96,7 @@ const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
               >
                 <span style={{
                   fontSize: 'var(--app-text-meta)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-body)',
-                  background: 'rgba(245,245,247,0.95)',
+                  background: 'var(--app-surface-muted)',
                   padding: 'var(--app-abstand-mini) var(--app-abstand-mittelweit)', borderRadius: 'var(--app-radius-karte)', boxShadow: 'var(--app-schatten-flach)'
                 }}>
                   {formatDayDivider(created!)}

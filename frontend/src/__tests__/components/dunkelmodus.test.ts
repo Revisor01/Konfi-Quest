@@ -42,6 +42,17 @@ const css = ohneKommentare(lies('src/theme/variables.css'));
 
 /** Alle @media-(dark)-Bloecke, jeweils der Text innerhalb der aeusseren Klammern. */
 const dunkelBloecke = [...css.matchAll(/@media \(prefers-color-scheme: dark\) \{([\s\S]*?)\n\}\n/g)].map((m) => m[1]);
+// Signalfarben (success/warning/danger/info/neutral/ampel) stehen als Text und
+// feine Flaeche -- sie werden weiterhin aufgehellt. Bereichsfarben sind grosse
+// Flaechen (Kopfbereiche, Dashboard-Verlaeufe) und bleiben seit 26.09.2026
+// original, sonst blenden sie auf schwarzem Grund.
+const SIGNAL = ['success', 'warning', 'danger', 'info', 'neutral', 'ampel'];
+const istBereichsfarbe = (name: string) => {
+  if (!name.startsWith('--app-color-')) return false;
+  const kern = name.slice('--app-color-'.length);
+  return !SIGNAL.some((sig) => kern.startsWith(sig));
+};
+
 const hell = css.replace(/@media \(prefers-color-scheme: dark\) \{[\s\S]*?\n\}\n/g, '');
 // Die Schatten-Skala lebt in theme/abstaende.css, ihre dunklen Werte stehen
 // aber im einen Dunkelblock hier (26.09.2026) -- sonst gaelten sie als verwaist.
@@ -162,7 +173,17 @@ describe('Dunkelmodus: jedes Farbtoken hat eine dunkle Entsprechung', () => {
 
   it('die dunklen Werte unterscheiden sich von den hellen', () => {
     // Eine Kopie des hellen Werts waere kein Dunkelmodus, sondern Ballast.
-    const gleich = [...dunkleTokens.entries()].filter(([n, w]) => helleTokens.get(n) === w).map(([n]) => n);
+    //
+    // AUSGENOMMEN seit 26.09.2026 die BEREICHSFARBEN: Sie sollen ausdruecklich
+    // gleich bleiben (Simon am Geraet: "Die Farben sind furchtbar, koennen
+    // original bleiben"). Sie stehen als grosse Flaeche -- ein aufgehellter
+    // Wert laesst den Kopfbereich auf schwarzem Grund blenden. Der Test
+    // darunter haelt fest, dass sie WIRKLICH gleich sind; hier geht es nur
+    // darum, dass jedes andere Token seinen eigenen dunklen Wert hat.
+    const gleich = [...dunkleTokens.entries()]
+      .filter(([n, w]) => helleTokens.get(n) === w)
+      .map(([n]) => n)
+      .filter((n) => !istBereichsfarbe(n));
     expect(gleich).toEqual([]);
   });
 
@@ -181,16 +202,21 @@ describe('Dunkelmodus: jedes Farbtoken hat eine dunkle Entsprechung', () => {
     expect(abweichungen).toEqual([]);
   });
 
-  it('die Bereichs-Bezeichner tragen im Dunkeln hellere Toene als im Hellen', () => {
-    // "Nicht invertieren, sondern eine Stufe heller" -- fuer die Bereiche,
-    // die als Symbol- und Textfarbe auf dunklem Grund stehen.
-    const zuDunkel: string[] = [];
+  it('die Bereichs-Bezeichner tragen im Dunkeln denselben Ton wie im Hellen', () => {
+    // UMGEDREHT AM 26.09.2026. Bis dahin forderte dieser Test das Gegenteil:
+    // "Nicht invertieren, sondern eine Stufe heller" -- gedacht fuer Symbol-
+    // und Textfarben auf dunklem Grund. Am Geraet kippte die Rechnung, weil
+    // dieselben Tokens die grossen Farbflaechen tragen (SectionHeader und die
+    // Dashboard-Verlaeufe lesen sie per var()): Start-, Chat- und Badges-Kopf
+    // leuchteten im Dunkeln HELLER als im Hellmodus. Simons Befund: "Die
+    // Farben sind furchtbar, koennen original bleiben."
+    const abweichend: string[] = [];
     for (const name of ['events', 'activities', 'konfis', 'teamer', 'challenges', 'users', 'badges', 'jahrgang', 'categories', 'chat', 'level']) {
-      const h = relativeHelligkeit(helleTokens.get(`--app-color-${name}`)!);
-      const d = relativeHelligkeit(dunkleTokens.get(`--app-color-${name}`)!);
-      if (d <= h) zuDunkel.push(`${name}: ${d.toFixed(3)} <= ${h.toFixed(3)}`);
+      const h = helleTokens.get(`--app-color-${name}`)!;
+      const d = dunkleTokens.get(`--app-color-${name}`)!;
+      if (h.trim() !== d.trim()) abweichend.push(`${name}: hell ${h}, dunkel ${d}`);
     }
-    expect(zuDunkel).toEqual([]);
+    expect(abweichend).toEqual([]);
   });
 
   it('Text auf Kartengrund ist lesbar: mindestens 4,5:1', () => {
@@ -240,6 +266,133 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
   it('das Kartengrund-Token ist hell weiss und dunkel nicht', () => {
     expect(helleTokens.get('--app-surface-card')).toBe('#ffffff');
     expect(relativeHelligkeit(tokens(dunkelBloecke[0] ?? '').get('--app-surface-card')!)).toBeLessThan(0.05);
+  });
+
+  // BEFUND AM GERAET (Simon, 26.09.2026): "Dark Mode Login Seite und
+  // vermutlich auch User erstellen Passwort etc. sind noch hell!"
+  //
+  // Die Pruefung darueber fand es nicht: Sie sucht die LITERALE white/#fff.
+  // `.app-auth-card` schrieb aber `background: var(--app-weiss)` — ein Token,
+  // das bewusst KEINE dunkle Entsprechung hat (echtes Weiss fuer QR-Codes und
+  // Text auf Farbflaechen). Als Flaechenhintergrund ist es damit ein fest
+  // eingebautes Weiss, das der Dunkelmodus nie erreicht. Dasselbe gilt fuer
+  // --app-surface-dark als Textfarbe: dunkel auf dunkel.
+  //
+  // Die Anmeldeseiten stehen ausserhalb der App-Struktur (eigene Seiten vor
+  // dem Login), deshalb fielen sie beim Einbau durch.
+  const NUR_AUF_FARBFLAECHE = ['--app-weiss'];
+
+  // Weisse Elemente AUF einer Farbflaeche sind richtig so -- sie liegen auf
+  // dem lila Anmelde-Verlauf beziehungsweise dem Sperrbildschirm, die in
+  // beiden Modi farbig bleiben. Nur Flaechen, die den Seitenhintergrund
+  // bilden, muessen dem Dunkelmodus folgen.
+  const WEISS_AUF_FARBFLAECHE = [
+    '.app-auth-hero__divider-icon',  // Raute auf dem Anmelde-Verlauf
+    '.app-sperrbildschirm__knopf',   // weisser Knopf auf dem Verlauf
+  ];
+
+  it('kein Weiss-Token dient als Flaechenhintergrund im Stylesheet', () => {
+    const treffer: string[] = [];
+    for (const datei of ['src/theme/variables.css', 'src/theme/typografie.css', 'src/theme/abstaende.css']) {
+      const zeilen = ohneKommentare(lies(datei)).split('\n');
+      let selektor = '';
+      zeilen.forEach((zeile, i) => {
+        const t = zeile.trim();
+        const auf = t.match(/^([.#a-zA-Z:[][^{]*)\{/);
+        if (auf) selektor = auf[1].trim();
+        if (t.startsWith('--app-weiss:')) return; // die Definition selbst
+        if (WEISS_AUF_FARBFLAECHE.some((s) => selektor.includes(s))) return;
+        for (const token of NUR_AUF_FARBFLAECHE) {
+          if (!/^(?:--)?background(?:-color)?\s*:/.test(t) || !t.includes(`var(${token})`)) continue;
+          // Als RUECKFALL ist es in Ordnung: `var(--ion-background-color,
+          // var(--app-weiss))` nimmt Ionics Wert, sobald er da ist, und faellt
+          // nur vor dem Laden auf Weiss zurueck (.app-laedt, Startbildschirm).
+          // Getroffen wird nur, wo --app-weiss die erste Wahl ist.
+          if (new RegExp(`var\\([^,)]+,\\s*var\\(${token}\\)`).test(t)) continue;
+          treffer.push(`${datei}:${i + 1} ${selektor} -> ${t}`);
+        }
+      });
+    }
+    expect(treffer).toEqual([]);
+  });
+
+  // SIMONS BEFUND (26.09.2026): "Kann es sein das wir hier grau ueber das
+  // weiss des popover legen aber nicht ueber den Pfeil. Der ist auf meinem
+  // Handy weiss."
+  //
+  // Ionic faerbt die Pfeilspitze in .popover-arrow::after mit
+  // `background: var(--background)` (popover.ios.css:284-294). Wer die Blase
+  // ueber ::part(content) einfaerbt, statt --background zu setzen, laesst die
+  // Spitze zurueck -- sie ist per clip-path gestanzt und faellt als helle Ecke
+  // auf. Der Test haelt fest: Wer ::part(content) faerbt, faerbt den Pfeil mit.
+  it('wer die Popover-Blase faerbt, faerbt die Pfeilspitze mit', () => {
+    const blase = [...css.matchAll(/([^\n{}]*::part\(content\)[^{]*)\{([^}]*)\}/g)]
+      .filter(([, , regeln]) => /(?:^|[\s;])background\s*:/.test(regeln));
+
+    for (const [, selektor] of blase) {
+      const basis = selektor.trim().replace(/::part\(content\).*$/, '');
+      const faerbtPfeil = new RegExp(
+        `${basis.replace(/[.*+?^$()|[\]\\]/g, '\\$&')}[^\\n{}]*::part\\(arrow\\)`
+      ).test(css);
+      const setztBackground = new RegExp(
+        `${basis.replace(/[.*+?^$()|[\]\\]/g, '\\$&')}\\s*\\{[^}]*--background\\s*:`
+      ).test(css);
+      expect(
+        faerbtPfeil || setztBackground,
+        `"${selektor.trim()}" faerbt die Blase, aber weder den Pfeil noch --background`
+      ).toBe(true);
+    }
+  });
+
+  // SIMONS BEFUND AM GERAET (26.09.2026): "Die Farben sind furchtbar, koennen
+  // original bleiben." Die Bereichsfarben waren im Dunkelblock um eine Stufe
+  // aufgehellt -- gedacht als Kontrastausgleich. Weil SectionHeader und die
+  // Dashboard-Verlaeufe sie per var() live lesen, leuchteten Start-, Chat- und
+  // Badges-Kopf im Dunkeln HELLER als im Hellmodus.
+  //
+  // Signalfarben sind ausgenommen: success/warning/danger/info/neutral/ampel
+  // stehen als Text und feine Flaeche, nicht als grosser Farbblock.
+  it('die Bereichsfarben bleiben im Dunkeln unveraendert', () => {
+    const dunkel = tokens(dunkelBloecke[0] ?? '');
+    const abweichend: string[] = [];
+    for (const [name, wert] of dunkel) {
+      if (!istBereichsfarbe(name)) continue;
+      const hellWert = helleTokens.get(name);
+      if (hellWert && hellWert.trim() !== wert.trim()) {
+        abweichend.push(`${name}: hell ${hellWert}, dunkel ${wert}`);
+      }
+    }
+    expect(abweichend).toEqual([]);
+  });
+
+  // SIMONS BEFUND (26.09.2026): "auf dem Dashboard bei Badges ist der Pfeil
+  // unten durchsichtig. Bei Stempel (alle Rollen), bei Badges im Dashboard
+  // Konfi und Teamer und bei Badges auf der Seite bei Konfi und Teamer."
+  //
+  // Gemessen im Theme-Stylesheet: ion-popover.ios setzt
+  // `--background: rgba(<glas>, 0.67)`, und ::part(arrow)::after bekommt dort
+  // NUR clip-path und backdrop-filter -- kein eigenes background. Die
+  // gestanzte Spitze erbt also das Glas und zeigt, was darunter liegt.
+  it('die Abzeichen-Sprechblase ist deckend, Blase wie Pfeilspitze', () => {
+    const regel = css.match(/\.badge-popover-auto-width,\s*\n\.badge-detail-popover \{([\s\S]*?)\}/);
+    expect(regel, '.badge-detail-popover nicht gefunden').toBeTruthy();
+    // Deckende Flaeche statt Theme-Glas -- die Spitze erbt sie mit.
+    expect(regel![1]).toMatch(/--background:\s*var\(--app-surface-card\)/);
+    // Und ausdruecklich noch einmal fuer die Spitze, falls jemand spaeter
+    // ::part(content) faerbt statt --background.
+    expect(css).toMatch(/\.badge-detail-popover::part\(arrow\)::after/);
+  });
+
+  it('die Anmelde-Karte folgt dem Dunkelmodus', () => {
+    // Sie ist von `ion-card.app-card` ausgenommen (eigene Breite und
+    // Zentrierung) und braucht die Oberflaechen-Tokens deshalb selbst.
+    const regel = css.match(/\.app-auth-card \{([\s\S]*?)\}/);
+    expect(regel, '.app-auth-card nicht gefunden').toBeTruthy();
+    expect(regel![1]).toMatch(/--background:\s*var\(--app-surface-card\)/);
+    expect(regel![1]).not.toMatch(/var\(--app-weiss\)/);
+    // Textfarbe: --app-surface-dark ist der Video-Platzhalter (#1e1e1e) und
+    // bleibt im Dunkeln dunkel -- unlesbar auf dunklem Grund.
+    expect(regel![1]).not.toMatch(/--color:\s*var\(--app-surface-dark\)/);
   });
 });
 

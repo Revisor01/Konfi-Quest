@@ -640,7 +640,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           }}>
             <span style={{
               fontSize: 'var(--app-text-meta)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-body)',
-              background: 'rgba(245,245,247,0.95)', backdropFilter: 'blur(4px)',
+              background: 'var(--app-surface-muted)', backdropFilter: 'blur(4px)',
               padding: 'var(--app-abstand-mini) var(--app-abstand-mittelweit)', borderRadius: 'var(--app-radius-karte)', boxShadow: 'var(--app-schatten-flach)'
             }}>
               {floatingDay}
@@ -679,7 +679,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              backgroundColor: 'rgba(255,255,255,0.95)',
+              backgroundColor: 'var(--app-surface-card)',
               backdropFilter: 'blur(10px)',
               boxShadow: 'var(--app-schatten-karte-stark)'
             }}
