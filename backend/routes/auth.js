@@ -536,7 +536,30 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // (Entscheidung 27.08.2026). Ohne diese Angabe kann sie das nicht
       // wissen. Fuer `org_admin` ist die Liste bedeutungslos: die Rolle sieht
       // ohnehin alle Jahrgaenge der Organisation.
-      res.json({ ...user, assigned_jahrgaenge: req.user.assigned_jahrgaenge || [] });
+      // DIE ROLLE DER AKTIVEN GEMEINDE, nicht die am Konto (26.09.2026).
+      //
+      // Die Abfrage oben liest u.role_id -- das ist die Rolle der
+      // STAMM-Gemeinde. Wer ueber user_organizations in einer zweiten
+      // Gemeinde eine andere Rolle hat (in A Leitung, in B Teamer:in), bekam
+      // hier trotzdem die Rolle vom Konto gemeldet: rbacVerifier hatte sie
+      // fuer die aktive Gemeinde laengst aufgeloest (rbac.js, Migration 101),
+      // diese Route ignorierte das Ergebnis und fragte neu.
+      //
+      // Das war ein ANZEIGEFEHLER, keine Rechteausweitung: Die Rechte haengen
+      // an req.user.role_name (requireRole/requireAdmin/requireOrgAdmin lesen
+      // genau das), und der Wert war dort korrekt. Die App richtet ihre
+      // Oberflaeche aber nach dieser Antwort -- sie haette der Person in der
+      // Zweitgemeinde eine Leitungsansicht gezeigt, deren Knoepfe der Server
+      // dann mit 403 abweist.
+      //
+      // Antwortform unveraendert (ausgelieferte Apps lesen sie): dieselben
+      // Felder, dieselben Typen -- nur die Werte stimmen jetzt.
+      res.json({
+        ...user,
+        role_name: req.user.role_name ?? user.role_name,
+        role_display_name: req.user.role_display_name ?? user.role_display_name,
+        assigned_jahrgaenge: req.user.assigned_jahrgaenge || []
+      });
 
     } catch (err) {
  console.error('Database error in GET /api/auth/me:', err);

@@ -61,15 +61,22 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const userId = req.user.id;
 
       // User-Daten aus DB laden (inkl. email, role_title, teamer_since)
+      //
+      // DIE AKTIVE GEMEINDE, nicht die am Konto (26.09.2026): Der Join lief
+      // ueber u.organization_id -- wer ueber user_organizations in einer
+      // zweiten Gemeinde arbeitet, las im Profil trotzdem den Namen seiner
+      // Stamm-Gemeinde. req.user.organization_id traegt die aktive Gemeinde
+      // (rbac.js loest sie gegen user_organizations auf).
+      // Antwortform unveraendert -- nur der Wert stimmt jetzt.
       const userQuery = `
         SELECT u.display_name, u.username, u.email, u.role_title, u.teamer_since,
                u.bible_translation,
                o.name as organization_name
         FROM users u
-        LEFT JOIN organizations o ON u.organization_id = o.id
+        LEFT JOIN organizations o ON o.id = $2
         WHERE u.id = $1
       `;
-      const { rows: [userData] } = await db.query(userQuery, [userId]);
+      const { rows: [userData] } = await db.query(userQuery, [userId, req.user.organization_id]);
 
       // Konfi-Profildaten (eingefroren nach Transition)
       const profileQuery = `
