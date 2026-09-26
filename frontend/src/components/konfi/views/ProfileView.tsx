@@ -33,7 +33,7 @@ import SpiritFooter from '../../shared/SpiritFooter';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
-import KonfiUpdate220WalkthroughModal from '../modals/KonfiUpdate220WalkthroughModal';
+import KonfiUpdate230WalkthroughModal from '../modals/KonfiUpdate230WalkthroughModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { safeUUID } from '../../../utils/uuid';
 import { useAppLocation } from '../../../navigation/useAppLocation';
@@ -719,7 +719,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           displayName: Die Begrüßung mit Namen gehört zur Onboarding-Tour,
           nicht zur Änderungsanzeige. */}
       {showUpdateWalkthrough && (
-        <KonfiUpdate220WalkthroughModal
+        <KonfiUpdate230WalkthroughModal
           onClose={() => setShowUpdateWalkthrough(false)}
         />
       )}

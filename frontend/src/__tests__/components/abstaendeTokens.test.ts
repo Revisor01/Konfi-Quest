@@ -44,12 +44,6 @@ const AUSGENOMMENE_DATEIEN = ['ShareCard.tsx'];
 const AUSGENOMMENE_FUNDE = [
   { datei: 'WerdeTeamerSlide.tsx', fund: 'marginTop: 22' },
   { datei: 'WeiterSoSlide.tsx', fund: 'marginTop: 22' },
-  // UEBERGANGSWEISE (25.09.2026): 22 Info-Knoepfe mit 6px. Die Datei war bei
-  // der Umstellung in fremder Bearbeitung und blieb deshalb roh. Beim naechsten
-  // Anfassen auf var(--app-abstand-kompakt) umstellen und diese zwei Zeilen
-  // streichen -- sie sind kein Freibrief, sondern ein offener Posten.
-  { datei: 'AdminSettingsPage.tsx', fund: "--padding-start: '6px'" },
-  { datei: 'AdminSettingsPage.tsx', fund: "--padding-end: '6px'" },
 ];
 
 const ABSTAND_PROPS =

@@ -88,7 +88,9 @@ describe('Zentrale Icon-Datei: eine Stelle fuer alle Icons', () => {
     // auf beiden Dashboards.
     // 25.09.2026: 187 -> 188. ICON_GLOCKE kommt dazu: die Glocke in der
     // Kopfzeile, die das Postfach oeffnet (Simon: "die Glocke drauf legen").
-    expect(namen.length).toBe(188);
+    // 26.09.2026: 188 -> 189. ICON_MOND kommt dazu: die Dunkelmodus-Folie
+    // der Aenderungsanzeige 2.3.0 in allen drei Rollen.
+    expect(namen.length).toBe(189);
   });
 
   it('keine Konstante ist verwaist — jede wird auch benutzt', () => {

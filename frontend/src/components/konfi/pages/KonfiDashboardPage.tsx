@@ -12,7 +12,7 @@ import {
 import { ICON_FUNKELN_GEFUELLT, ICON_PROFIL, ICON_SCHLIESSEN } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
-import KonfiUpdate220WalkthroughModal from '../modals/KonfiUpdate220WalkthroughModal';
+import KonfiUpdate230WalkthroughModal from '../modals/KonfiUpdate230WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
@@ -517,12 +517,12 @@ const KonfiDashboardPage: React.FC = () => {
           Onboarding-Tour schließen sich gegenseitig aus; die Neuigkeiten-
           Karte bleibt weg, solange sie offen ist. */}
       {showNeuerungen && (
-        <KonfiUpdate220WalkthroughModal onClose={schliesseNeuerungen} />
+        <KonfiUpdate230WalkthroughModal onClose={schliesseNeuerungen} />
       )}
 
       {/* Derselbe Walkthrough — hier über die Neuigkeiten-Karte geöffnet. */}
       {showUpdateWalkthrough && (
-        <KonfiUpdate220WalkthroughModal
+        <KonfiUpdate230WalkthroughModal
           onClose={() => setShowUpdateWalkthrough(false)}
         />
       )}

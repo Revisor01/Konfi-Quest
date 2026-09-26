@@ -41,7 +41,7 @@ import AdminOnboardingModal from '../modals/AdminOnboardingModal';
 // Diese Seite war die einzige der sechs Einbindungen, die beim Update auf
 // 2.1.1 nicht mitgezogen wurde -- Dashboard, Profil und Konfis-Seite zeigten
 // laengst den neuen.
-import AdminUpdate220WalkthroughModal from '../modals/AdminUpdate220WalkthroughModal';
+import AdminUpdate230WalkthroughModal from '../modals/AdminUpdate230WalkthroughModal';
 import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral über useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -304,7 +304,7 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Admins, Team und Rollen verwalten</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Benutzer:innen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.users); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Benutzer:innen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.users); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
@@ -325,7 +325,7 @@ const AdminSettingsPage: React.FC = () => {
                       <div className="app-list-item__meta"><span className="app-list-item__meta-item">Sichtbare Bereiche für Konfis und Team</span></div>
                       </div>
                       </div>
-                      <IonButton fill="clear" aria-label="Info zum Dashboard" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-color-organizations)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                      <IonButton fill="clear" aria-label="Info zum Dashboard" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-color-organizations)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                       <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                       </IonButton>
                     </div>
@@ -346,7 +346,7 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">QR-Code für Selbstregistrierung</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Konfis einladen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.invite); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Konfis einladen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.invite); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
@@ -387,7 +387,7 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Aktivitäten und Punkte verwalten</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Aktivitäten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.activities); }} style={{ '--color': 'var(--app-color-activities)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Aktivitäten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.activities); }} style={{ '--color': 'var(--app-color-activities)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
@@ -407,7 +407,7 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Auszeichnungen und Erfolge verwalten</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Badges" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.badges); }} style={{ '--color': 'var(--app-color-badges)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Badges" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.badges); }} style={{ '--color': 'var(--app-color-badges)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
@@ -430,7 +430,7 @@ const AdminSettingsPage: React.FC = () => {
                   <IonButton
                     fill="clear"
                     onClick={(e) => { e.stopPropagation(); openInfo(INFOS.jahrgaenge); }}
-                    style={{ '--color': 'var(--app-color-jahrgang)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}
+                    style={{ '--color': 'var(--app-color-jahrgang)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}
                     aria-label="Info zu Jahrgängen"
                   >
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
@@ -452,7 +452,7 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Kategorien für Aktivitäten und Events</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Kategorien" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.categories); }} style={{ '--color': 'var(--app-color-categories)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Kategorien" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.categories); }} style={{ '--color': 'var(--app-color-categories)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
@@ -472,7 +472,7 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Punkte-Level und Belohnungen</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Level" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.levels); }} style={{ '--color': 'var(--app-color-level)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Level" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.levels); }} style={{ '--color': 'var(--app-color-level)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
@@ -492,7 +492,7 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Materialien und Dokumente verwalten</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Material" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.material); }} style={{ '--color': 'var(--app-color-material)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Material" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.material); }} style={{ '--color': 'var(--app-color-material)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
@@ -512,7 +512,7 @@ const AdminSettingsPage: React.FC = () => {
                         <div className="app-list-item__meta"><span className="app-list-item__meta-item">Ausgaben anlegen, benennen und freigeben</span></div>
                       </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-color-wrapped)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-color-wrapped)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                       <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
@@ -532,7 +532,7 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Zertifikate fürs Team verwalten</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Zertifikaten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.certificates); }} style={{ '--color': 'var(--app-color-teamer)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Zertifikaten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.certificates); }} style={{ '--color': 'var(--app-color-teamer)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
@@ -569,7 +569,7 @@ const AdminSettingsPage: React.FC = () => {
       )}
 
       {showUpdateWalkthrough && (
-        <AdminUpdate220WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+        <AdminUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
       )}
 
       {showMitmachenErklaerung && (

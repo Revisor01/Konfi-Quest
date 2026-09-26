@@ -28,7 +28,7 @@ import AttendanceMatrixModal from '../modals/AttendanceMatrixModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
-import AdminUpdate220WalkthroughModal from '../modals/AdminUpdate220WalkthroughModal';
+import AdminUpdate230WalkthroughModal from '../modals/AdminUpdate230WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
@@ -437,12 +437,12 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
           Onboarding-Tour schließen sich gegenseitig aus; die Neuigkeiten-
           Karte bleibt weg, solange sie offen ist. */}
       {showNeuerungen && (
-        <AdminUpdate220WalkthroughModal onClose={schliesseNeuerungen} />
+        <AdminUpdate230WalkthroughModal onClose={schliesseNeuerungen} />
       )}
 
       {/* Derselbe Walkthrough — hier über die Neuigkeiten-Karte geöffnet. */}
       {showUpdateWalkthrough && (
-        <AdminUpdate220WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+        <AdminUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
       )}
 
       {showMitmachenErklaerung && (

@@ -1,8 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import NeuerungenBanner from '../../../components/shared/NeuerungenBanner';
+import { NEUERUNGEN_VERSION } from '../../../hooks/useOnboardingOnce';
 
-const UPDATE = 'Was ist neu in Version 2.2? Die Neuerungen ansehen';
+// Folgt NEUERUNGEN_VERSION statt die Zahl festzuschreiben (26.09.2026).
+const UPDATE = `Was ist neu in Version ${NEUERUNGEN_VERSION.replace('_', '.')}? Die Neuerungen ansehen`;
 const MITMACHEN = 'Events und Aktivitäten: So funktioniert der Mitmachen-Tab';
 
 describe('NeuerungenBanner', () => {

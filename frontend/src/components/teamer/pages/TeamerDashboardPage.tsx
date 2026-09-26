@@ -46,7 +46,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/sectionOrder';
 import KonfispruchSelectModal from '../../konfi/modals/KonfispruchSelectModal';
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
-import TeamerUpdate220WalkthroughModal from '../modals/TeamerUpdate220WalkthroughModal';
+import TeamerUpdate230WalkthroughModal from '../modals/TeamerUpdate230WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
@@ -1275,12 +1275,12 @@ const TeamerDashboardPage: React.FC = () => {
           Onboarding-Tour schließen sich gegenseitig aus; die Neuigkeiten-
           Karte bleibt weg, solange sie offen ist. */}
       {showNeuerungen && (
-        <TeamerUpdate220WalkthroughModal onClose={schliesseNeuerungen} />
+        <TeamerUpdate230WalkthroughModal onClose={schliesseNeuerungen} />
       )}
 
       {/* Derselbe Walkthrough — hier über die Neuigkeiten-Karte geöffnet. */}
       {showUpdateWalkthrough && (
-        <TeamerUpdate220WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+        <TeamerUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
       )}
 
       {showMitmachenErklaerung && (

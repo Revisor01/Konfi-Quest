@@ -299,6 +299,7 @@ export {
   prismOutline as ICON_PRISMA,
   flask as ICON_EXPERIMENT,
   sunny as ICON_SONNE,
+  moon as ICON_MOND,
   arrowUpCircleOutline as ICON_UPGRADE,
 
 } from 'ionicons/icons';
