@@ -770,7 +770,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       </IonContent>
 
       {/* DateTime-Modals — wie im Event-Modal direkt unter IonPage, nicht im Content */}
-      <IonModal keepContentsMounted={true}>
+      <IonModal aria-label="Start wählen" keepContentsMounted={true}>
         <IonDatetime
           aria-label="Start"
           id="challenge-start-picker"
@@ -782,7 +782,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': 'var(--app-schatten-schwebend-weich)' }}
         />
       </IonModal>
-      <IonModal keepContentsMounted={true}>
+      <IonModal aria-label="Ende wählen" keepContentsMounted={true}>
         <IonDatetime
           aria-label="Ende"
           id="challenge-end-picker"

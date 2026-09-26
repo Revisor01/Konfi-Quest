@@ -1399,7 +1399,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <IonItem lines="full" style={{ '--background': 'transparent' }}>
                       <IonLabel position="stacked">Enddatum</IonLabel>
                       <IonDatetimeButton datetime="trial-date-picker" />
-                      <IonModal keepContentsMounted={true}>
+                      <IonModal aria-label="Enddatum wählen" keepContentsMounted={true}>
                         <IonDatetime aria-label="Enddatum"
                           id="trial-date-picker"
                           presentation="date"

@@ -1062,7 +1062,7 @@ export const TeamerSinceSection = React.memo<TeamerSinceSectionProps>(({
       </IonCardContent>
     </IonCard>
 
-    <IonModal keepContentsMounted={true}>
+    <IonModal aria-label="Teamer:in seit: Datum wählen" keepContentsMounted={true}>
       <IonDatetime aria-label="Teamer:in seit"
         id="teamer-since-date"
         presentation="date"

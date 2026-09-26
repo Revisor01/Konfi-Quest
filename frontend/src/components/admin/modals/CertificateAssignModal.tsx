@@ -144,7 +144,7 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
             <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
               <p className="app-text-sub" style={{ marginBottom: 'var(--app-abstand-mini)' }}>Erhalten</p>
               <IonDatetimeButton datetime="cert-start-date" style={{ justifyContent: 'flex-start' }} />
-              <IonModal keepContentsMounted={true}>
+              <IonModal aria-label="Erhalten am: Datum wählen" keepContentsMounted={true}>
                 <IonDatetime aria-label="Erhalten am"
                   id="cert-start-date"
                   presentation="date"

@@ -460,6 +460,7 @@ const AdminWrappedPage: React.FC = () => {
             Speichern-Haken rechts, IonListHeader mit Section-Icon je
             Abschnitt, Felder in einer app-card. */}
         <IonModal
+          aria-labelledby="wrapped-neu-titel"
           isOpen={modalOffen}
           onDidDismiss={() => setModalOffen(false)}
           presentingElement={presentingElement || undefined}
@@ -471,7 +472,7 @@ const AdminWrappedPage: React.FC = () => {
                   <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
                 </IonButton>
               </IonButtons>
-              <IonTitle>Neuer Rückblick</IonTitle>
+              <IonTitle id="wrapped-neu-titel">Neuer Rückblick</IonTitle>
               <IonButtons slot="end">
                 <IonButton onClick={erzeugen} disabled={erzeugt} aria-label="Rückblick erstellen und freigeben">
                   {erzeugt ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} slot="icon-only" />}

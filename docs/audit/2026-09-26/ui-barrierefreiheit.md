@@ -200,6 +200,7 @@ Dazu kommen Kontraste unter AA im Hellmodus (drei Text-Grautöne mit 2,85–3,54
 ### BF-16: 16 Modale ohne Namen
 
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — alle 17 `<IonModal>` (inzwischen eins mehr als im Bericht) tragen einen Namen: Postfach und „Neuer Rückblick" `aria-labelledby` auf die `id` ihrer `IonTitle`, die 15 Datumswähler-Modale `aria-label="<Feld> wählen"` aus dem Namen des `IonDatetime` darin. Gemessen (grep `<IonModal` in `components/`): 17 ohne Namen → 0. Tests `modaleBenannt.test.ts` (Zählung, `aria-labelledby`-Ziele vorhanden) und `modaleBenanntGerendert.test.tsx` (Bonus- und Aktivitäts-Modal, Postfach). Offen bleibt außerhalb der Zählung: die 92 per `useIonModal` geöffneten Modale erhalten ihren Namen nur über `htmlAttributes` je Aufruf — als Nebenbefund gemeldet.
 - **Fundstelle:** 16 `<IonModal>` in `components/`, 0 mit `aria-label`/`aria-labelledby` (grep).
 - **Kennzeichnung:** aus Code gelesen.
 - **Beschreibung:** Ionic rendert `role="dialog"`; ohne Namen kündigt die Vorlesehilfe nur „Dialog“ an, nicht „Termin bearbeiten“. Der Titel steht als `IonTitle` im Modal — `aria-labelledby` auf dessen `id` reicht.

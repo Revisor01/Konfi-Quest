@@ -608,6 +608,9 @@ Versionsüberschrift.
   Aktionen und Reaktionen im Chat. Tab erreicht sie, Enter oder Leertaste
   löst sie aus, ein Ring zeigt, wo man ist. Vorher waren sie am Rechner
   unerreichbar und wurden nur als Text vorgelesen.
+- Das Postfach, der neue Rückblick und die Datumswähler in den Formularen
+  melden sich der Vorlesefunktion mit Namen („Postfach", „Datum wählen")
+  statt nur als „Dialog".
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

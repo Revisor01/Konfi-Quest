@@ -531,12 +531,12 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
                     <IonLabel position="stacked">Endzeit</IonLabel>
                     <IonDatetimeButton datetime={`timeslot-end-${index}`} />
                   </IonItem>
-                  <IonModal keepContentsMounted={true}>
+                  <IonModal aria-label="Startzeit wählen" keepContentsMounted={true}>
                     <IonDatetime aria-label="Startzeit" id={`timeslot-start-${index}`} presentation="time" value={timeslot.start_time}
                       onIonChange={(e) => { const v = e.detail.value as string; if (v) updateTimeslot(index, 'start_time', v); }}
                       minuteValues="0,15,30,45" disabled={loading} />
                   </IonModal>
-                  <IonModal keepContentsMounted={true}>
+                  <IonModal aria-label="Endzeit wählen" keepContentsMounted={true}>
                     <IonDatetime aria-label="Endzeit" id={`timeslot-end-${index}`} presentation="time" value={timeslot.end_time}
                       onIonChange={(e) => { const v = e.detail.value as string; if (v) updateTimeslot(index, 'end_time', v); }}
                       minuteValues="0,15,30,45" disabled={loading} />
@@ -591,7 +591,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
       </IonContent>
 
       {/* DateTime Modals */}
-      <IonModal keepContentsMounted={true}>
+      <IonModal aria-label="Datum und Uhrzeit wählen" keepContentsMounted={true}>
         <IonDatetime aria-label="Event Datum & Uhrzeit" id="event-date-picker" value={formData.event_date}
           max={datePickerMax}
           onIonChange={(e) => {
@@ -617,21 +617,21 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
           presentation="date-time" minuteValues="0,15,30,45" firstDayOfWeek={1}
           style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': 'var(--app-schatten-schwebend-weich)' }} />
       </IonModal>
-      <IonModal keepContentsMounted={true}>
+      <IonModal aria-label="Endzeit wählen" keepContentsMounted={true}>
         <IonDatetime aria-label="Endzeit (optional)" id="end-time-picker" value={formData.event_end_time || formData.event_date}
           max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, event_end_time: e.detail.value as string })}
           presentation="date-time" minuteValues="0,15,30,45" firstDayOfWeek={1}
           style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': 'var(--app-schatten-schwebend-weich)' }} />
       </IonModal>
-      <IonModal keepContentsMounted={true}>
+      <IonModal aria-label="Anmeldung ab: Datum wählen" keepContentsMounted={true}>
         <IonDatetime aria-label="Anmeldung ab" id="registration-opens-picker" value={formData.registration_opens_at}
           max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, registration_opens_at: e.detail.value as string })}
           presentation="date-time" minuteValues="0,15,30,45" firstDayOfWeek={1}
           style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': 'var(--app-schatten-schwebend-weich)' }} />
       </IonModal>
-      <IonModal keepContentsMounted={true}>
+      <IonModal aria-label="Anmeldeschluss wählen" keepContentsMounted={true}>
         <IonDatetime aria-label="Anmeldeschluss" id="registration-closes-picker" value={formData.registration_closes_at}
           max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, registration_closes_at: e.detail.value as string })}

@@ -259,7 +259,7 @@ const PostfachModal: React.FC = () => {
   return (
     // presentingElement: Auf iOS die Karte mit Abdunklung, wie jedes andere
     // Modal der App (Begruendung bei postfachPraesentationsElement).
-    <IonModal isOpen={offen} onDidDismiss={schliessen} presentingElement={praesentiertVon}>
+    <IonModal aria-labelledby="postfach-modal-titel" isOpen={offen} onDidDismiss={schliessen} presentingElement={praesentiertVon}>
       <IonHeader>
         <IonToolbar>
           {/* Schliessen-Symbol links wie in InfoModal, PointsHistoryModal und
@@ -270,7 +270,7 @@ const PostfachModal: React.FC = () => {
               <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
             </IonButton>
           </IonButtons>
-          <IonTitle>Postfach</IonTitle>
+          <IonTitle id="postfach-modal-titel">Postfach</IonTitle>
         </IonToolbar>
       </IonHeader>
       {/* Der Verlauf-Hintergrund aller Seiten und Modale; die Inhalte stehen

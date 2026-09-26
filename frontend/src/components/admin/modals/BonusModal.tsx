@@ -169,7 +169,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
 
               <p className="app-text-sub" style={{ marginTop: 'var(--app-abstand-basis)', marginBottom: 'var(--app-abstand-mini)' }}>Datum *</p>
               <IonDatetimeButton datetime="bonus-date" style={{ justifyContent: 'flex-start' }} />
-              <IonModal keepContentsMounted={true}>
+              <IonModal aria-label="Datum wählen" keepContentsMounted={true}>
                 <IonDatetime aria-label="Datum" aria-required="true"
                   id="bonus-date"
                   presentation="date"

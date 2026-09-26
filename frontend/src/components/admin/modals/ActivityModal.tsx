@@ -199,7 +199,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
             <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
               <p className="app-text-sub" style={{ marginBottom: 'var(--app-abstand-mini)' }}>Datum *</p>
               <IonDatetimeButton datetime="activity-date" style={{ justifyContent: 'flex-start' }} />
-              <IonModal keepContentsMounted={true}>
+              <IonModal aria-label="Datum wählen" keepContentsMounted={true}>
                 <IonDatetime aria-label="Datum" aria-required="true"
                   id="activity-date"
                   presentation="date"

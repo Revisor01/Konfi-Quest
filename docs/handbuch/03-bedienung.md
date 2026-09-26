@@ -181,6 +181,10 @@ Nachricht und die Reaktionen. Die Vorlesefunktion nennt sie „Schaltfläche"
 und sagt bei Auswahlzeilen, ob sie gewählt sind; ein Ring zeigt, welches
 Element gerade den Fokus hat.
 
+Öffnet sich ein Fenster — das Postfach, ein Datumswähler, ein Formular —,
+nennt die Vorlesefunktion seinen Namen („Postfach, Dialog"), sodass klar ist,
+wo man gelandet ist.
+
 ## Nachlesen, was sich geändert hat
 
 Nach einem Update meldet sich beim ersten Öffnen **einmal** eine kurze

@@ -398,7 +398,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
             <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonDatetimeButton datetime="date-picker" />
-                <IonModal keepContentsMounted={true}>
+                <IonModal aria-label="Datum wählen" keepContentsMounted={true}>
                   <IonDatetime aria-label="Datum wählen"
                     id="date-picker"
                     value={formData.requested_date}
