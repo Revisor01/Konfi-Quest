@@ -73,6 +73,7 @@ abreißt.
 
 ### BF-01: README „Selbst betreiben" beschreibt einen Weg, der nicht funktioniert, und nennt falsche Zahlen
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Abschnitt „Selbst betreiben" neu: Schema aus `init-scripts/` (psql oder Docker-Entrypoint), Variablen in der Umgebung statt `.env` (`JWT_SECRET`/`QR_SECRET` beenden den Start, `ACTIVITY_PHOTO_ENCRYPTION_KEY` beim ersten Foto — am Code geprüft, Start ohne `JWT_SECRET` endet mit Exit 1), `VITE_API_URL` fürs Frontend, erstes Konto über den Test-Seed, Hinweis auf `docker-compose.e2e.yml`; Testzahlen 3.788 / 3.399 mit Datum; „Handbuch in der App" → Handbuch auf der Website mit Quelle und Erzeugnis. Nicht gegen eine frische Datenbank durchgespielt (dem Paket war kein Datenbank-Port zugewiesen).
 - **Fundstelle:** `README.md:101-118` (Installation), `README.md:122-140` (Aufbau), `README.md:61`,
   `backend/server.js:16-19`, `backend/database.js:108-140`, `backend/migrations/`
   (erste Datei `064_…`), `init-scripts/README.md:53-71`

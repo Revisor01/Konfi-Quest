@@ -58,7 +58,9 @@ den Überblick — auch über mehrere Gemeinden hinweg, sauber voneinander getre
 - **Ohne Netz nutzbar** — Eingetragenes wird gespeichert und später gesendet
 - **Benachrichtigungen** — für Nachrichten, Termine, Punkte und Freigaben
 - **Anmeldung per Face ID, Touch ID oder Fingerabdruck**
-- **Handbuch in der App** — [auch online lesbar](https://konfi-quest.de/docs/)
+- **Handbuch** für alle drei Rollen — [konfi-quest.de/docs](https://konfi-quest.de/docs/),
+  erreichbar über die Website; Quelle ist `docs/handbuch/`, ausgeliefert wird
+  das Erzeugnis unter `frontend/public/docs/`
 
 ## Installation
 
@@ -100,21 +102,70 @@ fassen jede Version zusammen.
 
 ## Selbst betreiben
 
+Zum Ausprobieren auf dem eigenen Rechner — die Lizenz erlaubt das. Nötig
+sind Node 22 oder neuer, npm und PostgreSQL 15 oder 16.
+
 ```bash
 git clone https://github.com/Revisor01/Konfi-Quest.git
 cd Konfi-Quest
-
-# Backend
-cd backend && npm install && npm start
-
-# Frontend (zweites Terminal)
-cd frontend && npm install && npm run dev
 ```
 
-Das Backend braucht PostgreSQL 15 und eine `.env` mit `DATABASE_URL`,
-`JWT_SECRET`, `QR_SECRET` und `ACTIVITY_PHOTO_ENCRYPTION_KEY`. Für
-Benachrichtigungen und E-Mail kommen Firebase- und SMTP-Zugangsdaten dazu;
-ohne sie läuft alles andere weiter.
+**1. Datenbank anlegen.** Das Grundschema kommt aus `init-scripts/` — ein
+Dump des Produktionsschemas, siehe [init-scripts/README.md](init-scripts/README.md).
+Die Migrationskette in `backend/migrations/` beginnt erst bei `064`; gegen
+eine leere Datenbank liefe der Server ins Leere.
+
+```bash
+createdb konfi_quest
+psql -d konfi_quest -f init-scripts/01-create-schema.sql
+psql -d konfi_quest -f init-scripts/02-migrationsstand.sql
+```
+
+Mit Docker geht das in einem Schritt: Das offizielle `postgres`-Image führt
+beim ersten Start alles aus, was unter `/docker-entrypoint-initdb.d` liegt
+(`-v "$PWD/init-scripts:/docker-entrypoint-initdb.d"`).
+
+**2. Backend starten.** Es liest keine `.env`-Datei — die Variablen müssen
+in der Umgebung stehen. Ohne `JWT_SECRET` und `QR_SECRET` beendet sich der
+Server sofort; `ACTIVITY_PHOTO_ENCRYPTION_KEY` (64 Hex-Zeichen) braucht er,
+sobald das erste Nachweis-Foto verschlüsselt wird. Beim Start führt er alle
+noch nicht vermerkten Migrationen aus.
+
+```bash
+cd backend && npm install
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/konfi_quest \
+JWT_SECRET=$(openssl rand -hex 32) \
+QR_SECRET=$(openssl rand -hex 32) \
+ACTIVITY_PHOTO_ENCRYPTION_KEY=$(openssl rand -hex 32) \
+npm start
+# hört auf Port 5000 — Probe: curl http://localhost:5000/api/health
+```
+
+Für Benachrichtigungen und E-Mail kommen Firebase- und SMTP-Zugangsdaten
+dazu (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`); ohne
+sie läuft alles andere weiter, es wird nur nichts verschickt.
+
+**3. Frontend starten.** Die Oberfläche spricht sonst die Produktions-API
+an; für den lokalen Server die Adresse mitgeben.
+
+```bash
+cd frontend && npm install
+VITE_API_URL=http://localhost:5000/api npm run dev
+# öffnet http://localhost:5173
+```
+
+**4. Ein erstes Konto.** Eine frische Datenbank enthält weder Gemeinde noch
+Konto. Für einen Testlauf legt der Seed der Backend-Tests zwei Gemeinden mit
+allen Rollen an (`backend/tests/helpers/seed.js` — Benutzernamen und das
+gemeinsame Passwort stehen dort):
+
+```bash
+cd backend && DATABASE_URL=postgresql://postgres:postgres@localhost:5432/konfi_quest \
+node -e "const { Pool } = require('pg'); const { seed } = require('./tests/helpers/seed.js'); const p = new Pool({ connectionString: process.env.DATABASE_URL }); seed(p).then(() => p.end())"
+```
+
+Wer den ganzen Stack samt Datenbank, Schema und Seed in Containern will,
+nimmt `docker-compose.e2e.yml` — so laufen auch die Playwright-Tests.
 
 Die Mitarbeit am Projekt beschreibt [CLAUDE.md](CLAUDE.md) — vor allem die
 Regel, dass ausgelieferte App-Versionen niemals brechen dürfen.
@@ -128,14 +179,15 @@ Konfi-Quest
 │   │   ├── components/  — nach Rolle getrennt: konfi, teamer, admin, shared
 │   │   ├── contexts/    — App-Zustand, Abzeichen, Anmeldung
 │   │   ├── services/    — API, Offline-Warteschlange, Biometrie, Push
-│   │   └── __tests__/   — 1625 Tests
+│   │   └── __tests__/   — 3.788 Tests (Stand 26.09.2026)
 │   ├── ios/ · android/  — Capacitor 8
 │   └── public/docs/     — erzeugtes Handbuch und API-Referenz
-├── backend/           — Node 22 + Express 5, PostgreSQL 15
+├── backend/           — Node 22+ und Express 5, PostgreSQL 15
 │   ├── routes/          — nach Bereich getrennt, RBAC je Route
 │   ├── services/        — Push, Abzeichen, Rückblick, E-Mail
 │   ├── migrations/      — additiv, nie zerstörend
-│   └── tests/           — 2470 Tests gegen eine echte Datenbank
+│   └── tests/           — 3.399 Tests gegen eine echte Datenbank (Stand 26.09.2026)
+├── init-scripts/      — Grundschema einer neuen Instanz (Produktions-Dump)
 ├── docs/              — Quelle für Handbuch, API-Doku und Store-Texte
 └── e2e/               — Playwright, gegen den vollen Stack
 ```
