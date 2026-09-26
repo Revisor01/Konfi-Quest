@@ -466,7 +466,7 @@ Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit d
 
 ## Behebungsstand (fortlaufend)
 
-Stand 26.09.2026, 17:45 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
+Stand 26.09.2026, 20:20 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
 jeder Befund trägt im Bereichsbericht eine Status-Zeile mit Datum. Regeln für jeden Fix: Test
 für den verbotenen und den erlaubten Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG,
 Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
@@ -501,10 +501,15 @@ Zum Vergleich die Baseline vor dem Audit: Backend 139 Dateien / 3.399 Tests, Fro
 | I1 Skalierung B1 | Chat-Nachricht 2.002 → 22 Abfragen (150 Teilnehmende), `newMessage` je Client einmal, Erinnerungen je Termin vorgemerkt und gesammelt (200 Zusagen: 1.802 → 35 Abfragen), App-Icon-Lauf ohne Push-Sturm nach Neustart, Registrierungs-Pushes in Blöcken von 20 | Betrieb BF-02/04/05/08/15 | eingebaut |
 | I2 Skalierung B2 | Limiter-Zähler in der Datenbank (Migration 167, auch Passwort-Reset), Cron-Leader per Advisory-Lock mit Übernahme und Sichtbarkeit in `/api/status`, Graceful Shutdown Exit 1 nach 10 s → Exit 0 nach < 1 s, Wrapped-Parallelität 3 (Pool-Warteschlange 46 → 0), Deploy in zwei Stufen mit Gesundheitsprüfung (`deploy/rollend.sh`), Postgres 2 CPU / 3 GB und Pool-Vorgaben in der Compose-Referenz, Migrationslauf ohne 30-s-Grenze mit Stand in `/api/status`, `metrics/history` 33 MB → 116 kB, Startseeding idempotent, Sicherungsdoku `docs/betrieb/sicherung.md` | Betrieb BF-06/07/09/10/12/13/14/16, Datenbank BF-03/04/05/07, S-10, S-11, S-18, S-19 (BF-11 offen: Log-Sammelzeilen) | eingebaut; Deploy-Ablauf nur in GitHub prüfbar |
 | K Dunkelmodus systematisch | Bausteine 1–3 eingebaut: Ionics Flächenvariablen je Plattform an die App-Tokens gebunden (iOS-Listen nicht mehr tiefschwarz), Text-Token-Familie `--app-text-<bereich>` für 20 Bereiche per Codemod, Grautöne hell und dunkel ≥ 4,5:1 (`colors.ts` nachgezogen). Nachgemessen mit dem Audit-Skript über dieselben 94 Zustände: **104 → 33 Verstöße**, 0 helle Flächen; 16 der 33 sind die eigene Chat-Blase (2,43:1 in beiden Modi, kein Dunkelmodus-Thema), der Rest sind vier Muster (Anmelde-Knopf im Termindetail 1,36:1, Punkte-Chips, Level-Punkte, Abzeichen-Prozent), alle mit dem Text-Token-Muster lösbar. Baustein 4 (gerenderte Messung als wiederholbarer Test) blieb unfertig im Arbeitsbaum des Agenten, der am Sitzungslimit abbrach | darkmode BF-04/05/06/11, UI BF-04 (teilweise), S-26; BF-09 offen | eingebaut, Messung offen |
+| M Barrierefreiheit über die Anmeldeseiten hinaus | Alle Formularfelder nennen der Vorlesefunktion ihren Namen (Zählmethode des Berichts 186/170 → 186/0, 50 Dateien per Codemod aus dem sichtbaren Label, ~20 von Hand); 135 von 140 klickbaren Elementen ohne Tastaturbedienung → 0 (`role="button"`, `tabIndex`, Enter/Leertaste; 19 Stellen „Knopf im Knopf" als `presentation` mit innerem Knopf, im Test namentlich); 17 Modale mit Namen (17/17), die 92 per `useIonModal` geöffneten bleiben außerhalb der Zählmethode; Berührungsziele an 10 Stellen auf ≥ 44 px gemessen (Auge 20×20 → 44×45, Chat-Senden 39×48 → 44×48), Optik unverändert; „Bewegung reduzieren" wirkt app-weit (Seitenübergänge, Einführung, Ladepunkte, Puls). Gegenproben je Befund dokumentiert (Fix raus → 2–6 Tests rot). Nicht geprüft: echtes VoiceOver/TalkBack | UI BF-01 (Rest), BF-03, BF-12, BF-13, BF-16 | eingebaut (`53bf4658`–`6f60abb7`) |
+| Gerätebefunde 26.09. abends (Simon, Kollege) | Rückwechsel in die Stamm-Gemeinde scheiterte bei Konten, die nach Migration 101 angelegt wurden: `switch-org` prüfte nur `user_organizations`, die Liste zeigte die Stamm-Gemeinde aus `users.organization_id` — hing am Alter des Kontos, nicht an Android; Route löst beide Quellen auf, Antwortform gleich, Store-Apps profitieren mit. Einladungskarte der Leitung stand auf „Mehr", Push und Postfach führten ins Profil — jetzt bei allen drei Rollen im Profil, Test hält Ziel und Karte zusammen | neu, außerhalb der Berichte | eingebaut (`b9b58257`, `42943efe`) |
 
-**Abgebrochen (Sitzungslimit des Werkzeugs, 26.09. 17:10 UTC):** Paket M, Barrierefreiheit über die
-Anmeldeseiten hinaus (Punkt 33: rund 150 Felder, 147 klickbare `div`, Berührungsziele, Modalnamen,
-Bewegungsreduktion, Datumsformate, Dynamic Type) — gestartet, nichts committet; neu zu starten.
+**Neu gestartet nach Abbruch (Sitzungslimit des Werkzeugs, 26.09. 17:10 UTC):** Paket M lief im
+zweiten Anlauf durch (Zeile oben). Aus Punkt 33 offen bleiben Datumsformate und Dynamic Type
+(UI BF-07, BF-14) — nicht Teil des Pakets.
+
+**Läuft:** Paket K2, Dunkelmodus-Rest (die vier Muster aus der Nachmessung, Messung als wiederholbarer
+Test) — zwei Commits im Arbeitsbaum, Messskript in Arbeit.
 
 **Noch nicht begonnen:** Handbuch-Bilder aus dem Store-Bundle (S-17), Feature-Empfehlungen A
 (Punkt 32), Rechenschaft/Datenschutz (Punkt 28, Produkt- und Rechtsfragen), CHANGELOG-Doppelabschnitte
