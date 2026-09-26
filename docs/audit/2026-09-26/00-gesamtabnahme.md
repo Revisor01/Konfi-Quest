@@ -466,18 +466,21 @@ Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit d
 
 ## Behebungsstand (fortlaufend)
 
-Stand 26.09.2026, 17:20 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
+Stand 26.09.2026, 16:55 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
 jeder Befund trägt im Bereichsbericht eine Status-Zeile mit Datum. Regeln für jeden Fix: Test
 für den verbotenen und den erlaubten Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG,
 Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
 
-**Volle Suiten auf dem zusammengeführten Stand (Commit `fac0b361`, 71 Commits):**
+**Volle Suiten auf dem zusammengeführten Stand:**
 
-| Suite | Ergebnis |
-|---|---|
-| Frontend (`vitest`, jsdom) | 271 Dateien, 3.864 Tests grün, 149 s |
-| Backend (`vitest`, echte DB, Migrationen 160–166) | 153 Dateien, 3.593 Tests grün, 1.336 s |
-| Typprüfung, ESLint (`--quiet`, jetzt CI-Gate) | grün |
+| Suite | Stand | Ergebnis |
+|---|---|---|
+| Frontend (`vitest`, jsdom) | `fac0b361` (71 Commits) | 271 Dateien, 3.864 Tests grün, 149 s |
+| Backend (`vitest`, echte DB, Migrationen 160–166) | `fac0b361` | 153 Dateien, 3.593 Tests grün, 1.336 s |
+| Backend (Migrationen 160–167, nach Paketen I1, I2, J, L) | `0cac428e` (95 Commits) | 169 Dateien, 3.698 Tests grün, 1.251 s |
+| Typprüfung, ESLint (`--quiet`, jetzt CI-Gate) | laufend nach jedem Paket | grün |
+
+Zum Vergleich die Baseline vor dem Audit: Backend 139 Dateien / 3.399 Tests, Frontend 264 / 3.788.
 
 **Pakete:**
 
