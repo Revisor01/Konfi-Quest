@@ -130,7 +130,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="zugriff"><span class="chip r-alle">alle Angemeldeten</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur eigene Mitgliedschaften</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/refresh</code></div>
-        <p class="summary">Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window)</p>
+        <p class="summary">Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window genau einmal)</p>
         <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login</div><div class="hinweis">token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/switch-org</code></div>

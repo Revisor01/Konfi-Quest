@@ -510,6 +510,12 @@ Versionsüberschrift.
   weiter anmelden, im Jahrgangs-Chat schreiben und Termine buchen — für die
   Leitung unsichtbar. Jetzt ist die Anmeldung ab diesem Zeitpunkt gesperrt wie
   bei einem deaktivierten Konto, und laufende Sitzungen enden.
+- Der Schlüssel, mit dem ein Gerät seine Anmeldung im Hintergrund verlängert,
+  ließ sich nach dem Tausch fünf Minuten lang beliebig oft erneut einlösen —
+  wer ihn abgriff, blieb monatelang unbemerkt angemeldet. Jetzt geht das genau
+  einmal (für den Fall, dass die App den neuen Schlüssel nicht mehr speichern
+  konnte). Ein weiterer Versuch beendet alle Anmeldungen des Kontos, weil dann
+  jemand anderes den Schlüssel haben könnte.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

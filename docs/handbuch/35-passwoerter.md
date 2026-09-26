@@ -112,6 +112,14 @@ angemeldet war, muss sich überall neu anmelden, und die ausgesperrten Geräte
 bekommen auch keine Push-Nachrichten mehr. Das ist Absicht: Hatte jemand
 Fremdes Zugriff, ist er damit sofort draußen.
 
+**Plötzlich überall abgemeldet?** Jedes Gerät hält im Hintergrund einen
+Schlüssel, mit dem es die Anmeldung stillschweigend verlängert; bei jeder
+Verlängerung wird er gegen einen neuen getauscht. Taucht ein bereits
+getauschter Schlüssel kurz darauf ein zweites Mal auf, hat ihn außer dem
+eigenen Gerät noch jemand — dann beendet die App zur Sicherheit alle
+Anmeldungen des Kontos, auf jedem Gerät. Neu anmelden genügt; wer sich das
+nicht erklären kann, ändert danach das Passwort.
+
 ## Die App mit Face ID sperren lassen
 
 **Die Sperre ist ein Schloss vor der angemeldeten App, kein Ersatz für die

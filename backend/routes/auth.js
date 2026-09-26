@@ -1247,25 +1247,74 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         // Android-Process-Kills nicht mehr persistieren konnte und erst beim NAECHSTEN
         // App-Oeffnen wieder mit dem alten Token ankommt. 30s deckten das nicht ab
         // (Ursache des Android-Session-/Push-/Chat-Totalausfalls ab 1.5.0). Aelter
-        // als 5 Min -> echtes 401. Der alte Token bleibt einmalig+kurz nutzbar.
-        const { rows: [recent] } = await db.query(
-          `SELECT id, user_id, expires_at FROM refresh_tokens
-           WHERE token_hash = $1 AND revoked_at IS NOT NULL
-             AND revoked_at > NOW() - INTERVAL '5 minutes'
-             AND expires_at > NOW()`,
+        // als 5 Min -> echtes 401.
+        //
+        // GENAU EINMAL (Audit 26.09.2026, Sicherheit BF-08): "einmalig" stand hier
+        // schon immer im Kommentar, der Code liess das alte Token aber fuenf Minuten
+        // lang beliebig oft gelten -- dreimal derselbe Token: 200, 200, 200 und drei
+        // offene 90-Tage-Tokens. Damit fehlte, was Rotation leisten soll: die
+        // Erkennung einer Wiederverwendung (Diebstahl) und der Widerruf. Jetzt:
+        //  1. Die Gnadenfrist gilt einmal (gnade_genutzt_at). Dabei wird der
+        //     Nachfolger aus der ersten Rotation (ersetzt_durch) widerrufen UND
+        //     sofort ablaufen gelassen, damit er nicht selbst in die Gnadenfrist
+        //     faellt -- je Geraet bleibt genau EIN Token offen. Der Client, der den
+        //     Nachfolger verloren hat, arbeitet mit dem neuen weiter; der, der ihn
+        //     noch haette, waere der Angreifer.
+        //  2. Kommt das Token ein drittes Mal, hat es zwei Parteien benutzt: 401,
+        //     und ALLE Refresh-Tokens des Kontos werden widerrufen. Die Person
+        //     meldet sich neu an, der Angreifer nicht.
+        //  3. Nach Ablauf des Fensters bleibt es ein schlichtes 401 ohne Widerruf:
+        //     Ein Geraet, das nach einem Prozess-Kill erst Stunden spaeter mit dem
+        //     alten Token kommt, ist genau der Fall von oben -- es darf die uebrigen
+        //     Geraete nicht aussperren.
+        // Ein Token, das per Logout widerrufen wurde, traegt expires_at = NOW() und
+        // faellt weder in die Gnadenfrist noch unter das Diebstahl-Signal.
+        //
+        // Der parallele Burst (mehrere Anfragen mit demselben Token in derselben
+        // Sekunde) lesen gnade_genutzt_at moeglicherweise alle als NULL und gehen
+        // alle den Gnadenpfad -- dann bleiben kurz mehrere Tokens offen, aber
+        // niemand wird ausgesperrt. Bewusst so: Die App verhindert parallele
+        // Refreshes ohnehin (isRefreshing in services/api.ts); ein falscher Alarm
+        // waere hier teurer als ein zweites Token fuer fuenf Minuten.
+        const { rows: [alt] } = await db.query(
+          `SELECT id, user_id, ersetzt_durch, gnade_genutzt_at,
+                  (revoked_at > NOW() - INTERVAL '5 minutes' AND expires_at > NOW()) AS im_fenster
+             FROM refresh_tokens
+            WHERE token_hash = $1 AND revoked_at IS NOT NULL`,
           [tokenHash]
         );
-        if (!recent) {
+        if (!alt) {
           return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token' });
         }
-        // Im Grace-Fenster: weiter wie mit einem gueltigen Token (kein erneutes Revoke nötig)
-        return await issueRefreshedTokens(db, res, recent.user_id, activeOrgId);
+        if (alt.gnade_genutzt_at) {
+          await db.query(
+            `UPDATE refresh_tokens
+                SET revoked_at = COALESCE(revoked_at, NOW()), expires_at = NOW()
+              WHERE user_id = $1 AND expires_at > NOW()`,
+            [alt.user_id]
+          );
+          console.warn(`Refresh-Token-Wiederverwendung erkannt: alle Refresh-Tokens von User ${alt.user_id} widerrufen`);
+          return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token' });
+        }
+        if (!alt.im_fenster) {
+          return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token' });
+        }
+        await db.query('UPDATE refresh_tokens SET gnade_genutzt_at = NOW() WHERE id = $1', [alt.id]);
+        if (alt.ersetzt_durch) {
+          await db.query(
+            `UPDATE refresh_tokens
+                SET revoked_at = COALESCE(revoked_at, NOW()), expires_at = NOW()
+              WHERE id = $1`,
+            [alt.ersetzt_durch]
+          );
+        }
+        return await issueRefreshedTokens(db, res, alt.user_id, activeOrgId, alt.id);
       }
 
       // Altes Token sofort revoken (Rotation)
       await db.query('UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1', [existing.id]);
 
-      return await issueRefreshedTokens(db, res, existing.user_id, activeOrgId);
+      return await issueRefreshedTokens(db, res, existing.user_id, activeOrgId, existing.id);
     } catch (err) {
       console.error('Database error in POST /api/auth/refresh:', err);
       res.status(500).json({ error: 'Fehler beim Token-Refresh' });
@@ -1277,7 +1326,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   // activeOrgId (optional): aktive Multi-Org, kommt beim Refresh aus dem Header
   // X-Active-Organization. Sie wird (nach Mitgliedschafts-Prüfung) als Claim ins
   // neue Access-Token geschrieben, damit der Org-Kontext den Refresh ueberlebt.
-  async function issueRefreshedTokens(db, res, userId, activeOrgId = null) {
+  // vorgaengerId (optional): das Refresh-Token, an dessen Stelle das neue tritt.
+  // Es bekommt ersetzt_durch gesetzt, damit die Gnadenfrist den Nachfolger
+  // widerrufen kann (Migration 166).
+  async function issueRefreshedTokens(db, res, userId, activeOrgId = null, vorgaengerId = null) {
     const { rows: [user] } = await db.query(`
       SELECT u.id, u.username, u.display_name, u.organization_id, u.email, u.role_id,
              u.is_super_admin, u.is_active as user_active, u.deleted_at,
@@ -1344,10 +1396,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     const newRefreshToken = generateRefreshToken();
     const newRefreshHash = hashToken(newRefreshToken);
     const newRefreshExpiry = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
-    await db.query(
-      'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+    const { rows: [neu] } = await db.query(
+      'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3) RETURNING id',
       [user.id, newRefreshHash, newRefreshExpiry]
     );
+    if (vorgaengerId) {
+      await db.query('UPDATE refresh_tokens SET ersetzt_durch = $1 WHERE id = $2', [neu.id, vorgaengerId]);
+    }
 
     return res.json({ token: newAccessToken, refresh_token: newRefreshToken });
   }

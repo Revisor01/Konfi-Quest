@@ -58,6 +58,9 @@
 #      POST /reset-password           NUR globaler General-Limiter (2000/15min)
 #      POST /refresh                  NUR General-Limiter; Refresh-Token-
 #                                     Rotation mit 5-Minuten-Grace-Window
+#                                     (seit 26.09.2026 genau einmal nutzbar;
+#                                     dritte Verwendung widerruft alle
+#                                     Refresh-Tokens des Kontos, BF-08)
 #      GET  /check-username/:username NUR General-Limiter
 #      GET  /validate-invite/:code    NUR General-Limiter
 #    # LÜCKE (NEU): check-username, validate-invite, reset-password und
@@ -750,7 +753,7 @@ paths:
   /api/auth/refresh:
     post:
       tags: ["Anmeldung & Konto"]
-      summary: Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window)
+      summary: Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window genau einmal)
       parameters:
         - { name: X-Active-Organization, in: header, required: false, schema: { type: integer }, description: "Aktive Multi-Org — wird nach Mitgliedschafts-Pruefung als Claim uebernommen" }
       requestBody:
@@ -763,8 +766,8 @@ paths:
               properties:
                 refresh_token: { type: string }
       responses:
-        "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert (bleibt 5 Min im Grace-Window nutzbar)" }
-        "401": { description: "Refresh-Token ungueltig/abgelaufen/zu lange revoziert" }
+        "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt" }
+        "401": { description: "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung" }
         "403": { description: "User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt / Trial abgelaufen (super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung). Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt" }
       x-berechtigung:
         rollen: [oeffentlich]
@@ -772,6 +775,13 @@ paths:
         org-scope: false
         objekt-pruefung: "SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login"
         hinweis: "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
+        # BEHOBEN 26.09.2026 (Audit Sicherheit BF-08): Das Grace-Window war
+        # unbegrenzt oft nutzbar -- dreimal derselbe rotierte Token: 200, 200,
+        # 200 und drei offene 90-Tage-Tokens; ein abgegriffenes Refresh-Token
+        # gab 90 Tage Zugriff, ohne aufzufallen. Jetzt genau eine Wieder-
+        # verwendung (Migration 166: ersetzt_durch, gnade_genutzt_at), danach
+        # Widerruf aller Refresh-Tokens des Kontos. Antwortform unveraendert.
+        # OFFEN bleibt die Geraetebindung (device_id) aus derselben Empfehlung.
 
   /api/auth/logout:
     post:

@@ -1108,7 +1108,7 @@
         "tags": [
           "Anmeldung & Konto"
         ],
-        "summary": "Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window)",
+        "summary": "Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window genau einmal)",
         "parameters": [
           {
             "name": "X-Active-Organization",
@@ -1140,10 +1140,10 @@
         },
         "responses": {
           "200": {
-            "description": "Neues Token-Paar; altes Refresh-Token revoziert (bleibt 5 Min im Grace-Window nutzbar)"
+            "description": "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt"
           },
           "401": {
-            "description": "Refresh-Token ungueltig/abgelaufen/zu lange revoziert"
+            "description": "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung"
           },
           "403": {
             "description": "User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt / Trial abgelaufen (super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung). Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt"
