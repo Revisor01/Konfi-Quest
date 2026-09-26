@@ -23,7 +23,11 @@ const lies = (pfad: string) =>
 const adminDetail = lies('src/components/admin/views/EventDetailSections.tsx');
 const konfiDetail = lies('src/components/konfi/views/EventDetailView.tsx');
 const handbuch = lies('../docs/handbuch/70-termine.md');
-const backend = lies('../backend/routes/konfi.js');
+// Die Konfi-Stornoregeln (Frist, Pflicht, Anwesenheit) liegen seit dem
+// 26.09.2026 in EINER Funktion (pruefeKonfiStorno in bookingUtils.js), die
+// beide Abmeldewege nutzen -- die Konstante steht deshalb dort, nicht mehr
+// in der Route.
+const backend = lies('../backend/utils/bookingUtils.js');
 // Der Abmeldeweg des TEAMS -- bewusst ohne Frist (siehe Test unten).
 const teamerAbmeldung = lies('../backend/routes/events/buchung.js');
 
