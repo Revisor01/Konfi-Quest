@@ -80,12 +80,22 @@
 #      (Header X-Active-Organization) kommt damit der neueste Snapshot
 #      zurück, egal aus welcher Organisation er stammt. Es sind immer die
 #      EIGENEN Daten, aber der Org-Kontext wird ignoriert.
-#    - # HINWEIS W2: GET /api/wrapped/history/{userId} prüft die
-#      Org-Zugehoerigkeit der Zielperson gegen users.organization_id, also
-#      gegen die PRIMAER-Organisation, nicht gegen die aktive Org aus dem
-#      Header. Die Snapshot-Query selbst filtert ebenfalls nur auf user_id.
-#      Bei Multi-Org-Setups kann ein Admin damit Snapshots sehen, die in einer
-#      anderen Organisation entstanden sind.
+#    - # HINWEIS W2 (BEHOBEN am 26.09.2026): GET /api/wrapped/history/{userId}
+#      prüfte die Org-Zugehoerigkeit der Zielperson gegen
+#      users.organization_id, also gegen die PRIMAER-Organisation. Die
+#      Wirkung war umgekehrt zur urspruenglichen Annahme: NICHT zu viel,
+#      sondern zu wenig -- eine Leitung sah die Historie einer Person NICHT,
+#      die ueber user_organizations in ihrer Gemeinde arbeitet (403).
+#      Geprueft werden jetzt beide Quellen, und die Rolle der Zielperson wird
+#      fuer DIESE Gemeinde aufgeloest (uo.role_id), damit die
+#      Jahrgangs-Bindung am richtigen Wert greift. Fremde Personen bleiben
+#      gesperrt (Test: profilInZweitgemeinde.test.js).
+#      Am selben Tag nachgezogen (Simon: "Profil nur den Rueckblick der
+#      aktuellen Gemeinde"): Die Snapshot-Query filtert jetzt zusaetzlich auf
+#      s.organization_id. Vorher stand im Profil einer Person, die in zwei
+#      Gemeinden arbeitet, die Rueckblicke beider untereinander -- die eigenen
+#      Daten, aber ohne Hinweis, welcher woher stammt. Antwortform
+#      unveraendert (dasselbe Array, nur kuerzer).
 #    - # HINWEIS W3 (BEHOBEN am 01.09.2026): DELETE /api/wrapped/{jahrgangId}
 #      löschte über `jahrgang_id = $1 AND organization_id = $2`.
 #      Teamer-Snapshots haben kein jahrgang_id und wurden deshalb von dieser
@@ -153,7 +163,12 @@
 #       am 31.08.2026 um die benannte Freigabe fuer alle Teamer:innen
 #       (ist_global) erweitert.
 #   W1  GET /api/wrapped/me ohne organization_id-Filter (Multi-Org).
-#   W2  GET /api/wrapped/history/{userId} prüft Primaer-Org statt aktiver Org.
+#   W2  BEHOBEN am 26.09.2026: GET /api/wrapped/history/{userId} prüfte die
+#       Primaer-Org statt der aktiven. Folge war kein zu weiter, sondern ein
+#       zu enger Zugriff: Die Leitung sah die Historie von Personen aus
+#       user_organizations nicht (403). Jetzt ueber beide Quellen, Rolle je
+#       Gemeinde aufgeloest -- und die Snapshots selbst auf die aktive
+#       Gemeinde gefiltert (vorher nur user_id).
 #   W3  BEHOBEN am 01.09.2026: DELETE /api/wrapped/{jahrgangId} erreichte
 #       Teamer-Snapshots nicht (kein jahrgang_id), Teamer-Wrapped war damit
 #       ueberhaupt nicht loeschbar. Neue Route DELETE /api/wrapped/teamer.
@@ -319,7 +334,16 @@ paths:
       summary: Eigenes Teamer-Profil inkl. eingefrorener Konfi-Vergangenheit
       description: >
         Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail,
-        role_title, teamer_since, Organisation, bible_translation). Existiert
+        role_title, teamer_since, Organisation, bible_translation).
+
+        BEHOBEN 26.09.2026: organization_name kam ueber
+        `LEFT JOIN organizations o ON u.organization_id = o.id`, also aus der
+        STAMM-Gemeinde. Wer ueber user_organizations in einer zweiten Gemeinde
+        arbeitet, las im Profil trotzdem den Namen seiner Stamm-Gemeinde.
+        Jetzt wird die AKTIVE Gemeinde (req.user.organization_id) genommen.
+        Antwortform unveraendert -- nur der Wert stimmt.
+
+        Existiert
         ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als
         konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals
         erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am
@@ -1690,11 +1714,25 @@ paths:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]
         org-scope: true
-        objekt-pruefung: "nur Teamer:innen mit users.organization_id = aktive Org"
+        objekt-pruefung: "alle Teamer:innen der aktiven Org ueber BEIDE Quellen (users.organization_id ODER user_organizations), Rolle je Quelle"
         hinweis: >
-          Die Teamer-Auswahl filtert nicht auf deleted_at (anders als die
-          Konfi-Variante). Geloeschte Teamer:innen bekaemen also weiterhin
-          einen Snapshot, sofern die Zeile noch existiert.
+          GEAENDERT 26.09.2026: Die Auswahl las zuvor allein
+          users.organization_id. Wer ueber user_organizations in einer
+          zweiten Gemeinde im Team ist, bekam dort keinen Rueckblick —
+          obwohl die Zahlen darin laengst je Gemeinde gerechnet werden
+          (generateTeamerSnapshot bekommt die orgId und filtert durchgehend
+          danach). Jetzt laeuft die Auswahl ueber
+          utils/orgMitglieder.js, wie bei den Push-Empfaengern.
+          Dieselbe Person bekommt damit in jeder Gemeinde einen eigenen
+          Rueckblick mit eigener ausgabe_id; die Rolle zaehlt je Gemeinde
+          (wer hier org_admin ist, steht nicht im TEAM-Rueckblick).
+          Antwortform unveraendert.
+
+          BEHOBEN 26.09.2026: Die Teamer-Auswahl filterte nicht auf
+          deleted_at (anders als die Konfi-Variante) — geloeschte
+          Teamer:innen bekamen weiterhin einen Snapshot. orgMitglieder.js
+          filtert `is_active = true AND deleted_at IS NULL` in beiden
+          Zweigen.
       requestBody:
         required: false
         content:

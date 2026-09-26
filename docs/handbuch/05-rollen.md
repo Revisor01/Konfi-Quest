@@ -148,16 +148,25 @@ Kapitel [Passwörter und Zugänge](35-passwoerter.md).
 
 ## In mehreren Gemeinden mitarbeiten
 
-Wer mehrere Gemeinden betreut, hat in jeder eine eigene Mitgliedschaft mit
-eigener Rolle — in der einen Org-Admin, in der anderen vielleicht nur
-Teamer:in. Eine zweite Mitgliedschaft richtet nicht die Gemeinde selbst ein,
-sondern der Betrieb von Konfi Quest.
+Ein Konto kann in mehreren Gemeinden mitarbeiten — mit **eigener Rolle je
+Gemeinde**. Wer in der einen die Gemeindeleitung stellt, kann in der anderen
+Teamer:in sein; die Rechte richten sich immer nach der Gemeinde, in der man
+gerade arbeitet, nie nach der Gemeinde am Konto.
+
+Eine zweite Mitgliedschaft wird beim Betrieb von Konfi Quest beantragt: Die
+Gemeindeleitung meldet, wer aufgenommen werden soll und mit welcher Rolle.
+Die Person behält ihr bestehendes Konto samt Benutzername und Passwort.
 
 Oben links in der Kopfzeile steht dann der Name der Gemeinde, in der man
-gerade arbeitet — in der Konfi-Liste ebenso wie in der Termin-Detailansicht,
-im Chat und in jedem Chatraum, bei den Challenges, unter „Mehr" oder in der
-Materialverwaltung. Nur vier Seiten der Leitung tragen ihn nicht, weil ein
-Gemeindewechsel dort keinen Sinn ergibt: das **Profil** (es gehört zum Konto,
+gerade arbeitet — in der Konfi-Liste ebenso wie in den Terminlisten, im Chat
+und in jedem Chatraum, bei den Challenges, unter „Mehr" oder in der
+Materialverwaltung.
+
+Zwei Arten von Seiten tragen ihn nicht. **Detailansichten** zeigen einen
+einzelnen Gegenstand, der zu genau einer Gemeinde gehört — ein Termin, ein
+Material. Ein Wechsel würde dort ins Leere führen, weil es den Gegenstand in
+der anderen Gemeinde nicht gibt. Und **vier Seiten der Leitung**, bei denen
+ein Gemeindewechsel keinen Sinn ergibt: das **Profil** (es gehört zum Konto,
 nicht zur Gemeinde), **Benutzer:innen** sowie **Organisationen** und
 **Betrieb** (beide gemeindeübergreifend). Ein Tippen auf den Namen öffnet die
 Liste aller eigenen Gemeinden mit ihren vollen Namen; die aktive steht **fett**
@@ -200,6 +209,28 @@ Die Rolle zählt je Gemeinde: Wer in der zweiten Gemeinde nur Teamer:in ist,
 bekommt dort keine Leitungs-Meldungen. Ein Tippen auf eine Mitteilung wechselt
 in die Gemeinde, aus der sie stammt, und öffnet dort das Ziel. Die Zahl am
 App-Symbol zählt über alle Gemeinden zusammen.
+
+### Mitarbeitende der eigenen Gemeinde verwalten
+
+Wer in einer Gemeinde mitarbeitet, ist dort auch verwaltbar — unabhängig
+davon, welche Gemeinde an seinem Konto steht. Die Leitung findet die Person
+unter **Mehr › Benutzer:innen**, öffnet sie und weist ihr Jahrgänge zu wie
+jeder anderen.
+
+Angezeigt und geprüft wird dabei immer die Rolle, die die Person **in dieser
+Gemeinde** hat. Wer hier Org-Admin ist und anderswo Teamer:in, gilt hier als
+Org-Admin — ein Admin kann ihn also nicht bearbeiten. Zugewiesen werden
+können nur Jahrgänge dieser Gemeinde; die Zuweisungen der anderen Gemeinden
+bleiben unberührt und werden hier auch nicht angezeigt.
+
+### Den Jahresrückblick fürs Team erstellen
+
+Der Team-Rückblick wird je Gemeinde erstellt und erfasst alle, die **in
+dieser Gemeinde** Teamer:in sind. Wer in zwei Gemeinden im Team ist, bekommt
+in jeder einen eigenen Rückblick mit den Zahlen genau dieser Gemeinde. Wer
+hier Leitung und nur anderswo Teamer:in ist, steht hier nicht im
+Team-Rückblick. Wie er erstellt und freigegeben wird, steht im Kapitel
+[Jahresrückblick](95-wrapped.md).
 
 ## Eine Rolle ändern
 

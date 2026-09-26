@@ -10,6 +10,20 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
+- In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde: Wer in der
+  einen die Leitung stellt, kann in der anderen Teamer:in sein — die Rechte
+  richten sich nach der Gemeinde, in der man gerade arbeitet. Der Umschalter
+  steht auf jeder Seite und zeigt je Gemeinde, wo etwas offen ist;
+  Mitteilungen, Postfach und Team-Kontaktliste umfassen alle Gemeinden. Wer
+  in einer Gemeinde mitarbeitet, ist dort auch verwaltbar und bekommt dort
+  Jahrgänge zugewiesen. Eine zweite Mitgliedschaft wird beim Betrieb von
+  Konfi Quest beantragt; das bestehende Konto bleibt erhalten.
+- Der Jahresrückblick fürs Team wird je Gemeinde erstellt: Wer in zwei
+  Gemeinden im Team ist, bekommt in jeder einen eigenen Rückblick mit den
+  Zahlen genau dieser Gemeinde. Bisher gab es nur den der Stamm-Gemeinde.
+- Eine Übersicht nach dem Update zeigt, was sich in dieser Fassung geändert
+  hat — je Rolle das, was dort ankommt. Nachlesen geht jederzeit über „Was ist
+  neu?" im Profil beziehungsweise unter „Mehr".
 - Auswählen, welche Mitteilungen aufs Handy kommen — auf iPhone und Android
   gleich, in der App statt in den Systemeinstellungen: Unter
   „Benachrichtigungen" im Profil beziehungsweise unter „Mehr" lassen sich
@@ -131,6 +145,9 @@ Versionsüberschrift.
   Organisationen und Betrieb, wo ein Gemeindewechsel nichts zu suchen hat. Wer
   über einen Push oder das Postfach in eine andere Gemeinde gewechselt ist,
   sieht überall, wo er gerade arbeitet, und kommt von jeder Seite zurück.
+- In der Ansicht eines einzelnen Termins und eines einzelnen Materials steht
+  der Gemeinde-Umschalter nicht mehr: Was dort zu sehen ist, gehört zu genau
+  einer Gemeinde, ein Wechsel führte ins Leere. In den Listen bleibt er.
 - In der Gemeinde-Auswahl steht die aktive Gemeinde fett und leicht
   hinterlegt statt mit grünem Haken; der Gemeindename am Knopf ist kleiner und
   nimmt in der Kopfzeile weniger Platz ein.
@@ -190,6 +207,17 @@ Versionsüberschrift.
   behalten ihre Zahl.
 
 ### Behoben
+- Im Dunkelmodus blieben die Anmeldeseiten hell — Anmeldung, Passwort vergessen,
+  neues Passwort und die Registrierung über einen Einladungslink.
+- Im Dunkelmodus leuchteten die farbigen Kopfbereiche greller als im hellen
+  Modus. Die Bereichsfarben sind jetzt in beiden Modi dieselben.
+- Im Dunkelmodus waren die Ränder von Karten und Listen nicht mehr zu erkennen,
+  und im Chat blieben die Datumsmarken und die Eingabezeile hell.
+- Die Sprechblase an Abzeichen und Stempeln ist wieder durchgehend deckend —
+  ihre Spitze war durchsichtig und zeigte, was darunter lag.
+- Die Zahl an der Glocke wird auf dem iPhone nicht mehr angeschnitten.
+- Unter „Benachrichtigungen" stand derselbe Hinweis zweimal; jetzt steht er
+  einmal, in derselben Form wie die Hinweise überall sonst.
 - Im Dunkelmodus verloren Karten, Popover und der Datumswähler ihre Tiefe, weil
   ihre Schatten auf dunklem Grund unsichtbar wurden. Sie sind im Dunkeln jetzt
   kräftiger; im hellen Modus ändert sich nichts.
@@ -211,6 +239,20 @@ Versionsüberschrift.
 - Die rote Zahl am Symbol eines Chat-Raums oder einer Challenge sitzt höher und
   weiter rechts auf der Symbolecke, in beiden Listen an derselben Stelle, mit
   schmalerem weißen Rand.
+- Wer in einer zweiten Gemeinde eine andere Rolle hat, sieht dort jetzt auch
+  die Ansicht dieser Rolle. Bisher zeigte die App die Rolle der Stamm-Gemeinde
+  — wer in der zweiten Gemeinde Teamer:in ist, bekam die Leitungsansicht mit
+  Knöpfen, die der Server dann ablehnte. Die Rechte waren immer richtig, nur
+  die Anzeige nicht.
+- Im Profil steht jetzt der Name der Gemeinde, in der man gerade arbeitet.
+  Bisher stand dort immer die Gemeinde des Kontos.
+- Die Leitung sieht die Jahresrückblicke auch von Personen, die über eine
+  zweite Mitgliedschaft in ihrer Gemeinde arbeiten. Bisher blieb die Liste
+  dort verschlossen.
+- Im Profil stehen nur noch die Jahresrückblicke der Gemeinde, in der man
+  gerade ist. Wer in mehreren mitarbeitet, sah bisher alle untereinander.
+- Öffnet man einen Termin aus dem Postfach, führt der Zurück-Knopf wieder
+  dorthin zurück, wo man war. Bisher war er ohne Funktion.
 - Wer mehrere Gemeinden betreut, bekommt die Mitteilungen an die Leitung jetzt
   aus allen — neue Anträge, Ab- und Anmeldungen, Challenge-Beiträge, Buchungen
   des Teams, Registrierungen, Lösch-Warnungen für Jahrgänge. Bisher kamen sie

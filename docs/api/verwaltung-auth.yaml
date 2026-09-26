@@ -323,14 +323,26 @@ paths:
         einen fremden Jahrgang, verschwindet sie aus seiner Liste. Die
         Oberflaeche warnt davor, bevor gespeichert wird. Ohne Zuweisung ein
         leeres Array, nie undefined.
+
+        BEHOBEN 26.09.2026: role_name und role_display_name galten fuer die
+        STAMM-Gemeinde (die Abfrage las u.role_id), nicht fuer die aktive.
+        Wer ueber user_organizations in einer zweiten Gemeinde eine andere
+        Rolle hat, bekam hier trotzdem die Rolle vom Konto gemeldet --
+        rbacVerifier hatte sie fuer die aktive Gemeinde laengst aufgeloest,
+        diese Route ignorierte das Ergebnis. Ein ANZEIGEFEHLER, keine
+        Rechteausweitung: Die Rechte haengen an req.user.role_name
+        (requireRole/requireAdmin/requireOrgAdmin lesen genau das) und waren
+        korrekt. Die App richtet ihre Oberflaeche aber nach dieser Antwort und
+        zeigte in der Zweitgemeinde eine Leitungsansicht, deren Knoepfe der
+        Server mit 403 abwies. Antwortform unveraendert.
       responses:
         "200": { description: "id, username, display_name, email, role_title, role_name, is_super_admin, trial_ends_at, is_trial, assigned_jahrgaenge[]" }
         "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
-        org-scope: false
-        objekt-pruefung: "Nur eigene Daten"
+        org-scope: true
+        objekt-pruefung: "Nur eigene Daten; role_name/role_display_name gelten fuer die AKTIVE Organisation"
 
   /api/auth/my-organizations:
     get:
@@ -1042,7 +1054,14 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('view')"]
         org-scope: true
-        objekt-pruefung: "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle)"
+        objekt-pruefung: "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org)"
+        hinweis: >
+          GEAENDERT 26.09.2026: role_id, role_name und assigned_jahrgaenge
+          gelten fuer die AKTIVE Organisation. Wer hier org_admin und in
+          seiner Stamm-Gemeinde Teamer:in ist, wird als org_admin angezeigt;
+          die Jahrgaenge der anderen Gemeinden stehen nicht in der Antwort.
+          Die Antwortform ist unveraendert (dieselben Felder, dieselben Typen)
+          — nur die Werte beziehen sich jetzt auf die richtige Gemeinde."
     put:
       tags: ["Benutzer & Rollen"]
       summary: User bearbeiten (Felder optional; Rolle, is_active, Passwort)
@@ -1071,9 +1090,18 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateUpdateUser]
         org-scope: true
-        objekt-pruefung: "Ziel-User in eigener Org; canManageRole + canCreateRole für neue Rolle"
+        objekt-pruefung: "Ziel-User in der STAMM-Org (users.organization_id); canManageRole + canCreateRole für neue Rolle"
         # BEHOBEN 22.08.2026 (war N7): das optionale password-Feld wird vor
         # dem Hashen gegen validatePassword geprüft.
+        hinweis: >
+          BEWUSST enger als GET und die Jahrgangs-Routen (26.09.2026): Die
+          Middleware laesst seither auch Personen durch, die ueber
+          user_organizations in der aktiven Org arbeiten — diese Route weist
+          sie danach trotzdem mit 404 ab. Bearbeitet werden hier Konto-Daten
+          (Name, Mail, Rolle am Konto, is_active), die der GANZEN Person
+          gehoeren und nicht einer einzelnen Gemeinde. Eine Zweitgemeinde
+          darf sie nicht umschreiben. Was je Gemeinde gilt, laeuft ueber die
+          Jahrgangs-Routen."
     delete:
       tags: ["Benutzer & Rollen"]
       summary: User löschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)
@@ -1100,7 +1128,12 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('delete')", validateUserId]
         org-scope: true
-        objekt-pruefung: "Eigene Org; Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz"
+        objekt-pruefung: "STAMM-Org (users.organization_id); Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz"
+        hinweis: >
+          BEWUSST enger als GET und die Jahrgangs-Routen (26.09.2026), wie
+          bei PUT: Geloescht wird die ganze Person samt aller Gemeinden. Das
+          darf nur die Gemeinde, an der das Konto haengt. Der Letzter-
+          org_admin-Schutz zaehlt ebenfalls ueber users.organization_id."
 
   /api/users/{id}/jahrgaenge:
     get:
@@ -1111,18 +1144,24 @@ paths:
       responses:
         "200": { description: "Array (jahrgang, can_view, can_edit, assigned_by_name)" }
         "403": { description: "Hierarchie: Ziel-Rolle nicht einsehbar (canManageRole)" }
-        "404": { description: "Ziel-User nicht in eigener Organisation" }
+        "404": { description: "Ziel-User arbeitet nicht in der aktiven Organisation" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('view')"]
         org-scope: true
-        objekt-pruefung: "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle); Jahrgänge auf eigene Org gefiltert"
+        objekt-pruefung: "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org); Jahrgänge auf die aktive Org gefiltert"
         hinweis: >
           GEAENDERT 31.08.2026: war requireOrgAdmin. admin darf die Zuweisungen
           der von ihm verwalteten Personen (teamer, konfi) sehen — die von
           anderen Admins und von Org-Admins nicht (403), fremde Organisationen
           gar nicht (404). requireAdmin allein waere eine Rechteausweitung
-          gewesen; die Grenze zieht checkUserHierarchy."
+          gewesen; die Grenze zieht checkUserHierarchy.
+          BEHOBEN 26.09.2026: checkUserHierarchy suchte den Ziel-User allein
+          ueber users.organization_id. Wer ueber user_organizations in der
+          Gemeinde arbeitet, war dort nicht verwaltbar (404) — obwohl das
+          Handbuch den Vorgang beschreibt. Jetzt zaehlen beide Quellen, und
+          die Hierarchie prueft die Rolle DIESER Organisation (uo.role_id),
+          nicht die am Nutzerkonto."
     post:
       tags: ["Benutzer & Rollen"]
       summary: Jahrgangs-Zuweisungen setzen (transaktional, Chat-Sync; fuer admin nur die eigenen Jahrgaenge)
@@ -1155,10 +1194,11 @@ paths:
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateJahrgangAssignments]
         org-scope: true
         objekt-pruefung: >
-          Ziel-User in eigener Org; canManageRole(eigene Rolle, Ziel-Rolle);
-          alle Jahrgang-IDs müssen zur eigenen Org gehören; seit 31.08.2026
-          fuer admin zusaetzlich zu seinen eigenen Zuweisungen (can_edit) —
-          sonst 403. org_admin und super_admin ausgenommen.
+          Ziel-User muss in der aktiven Org arbeiten (users.organization_id
+          ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle
+          DIESER Org); alle Jahrgang-IDs müssen zur aktiven Org gehören; seit
+          31.08.2026 fuer admin zusaetzlich zu seinen eigenen Zuweisungen
+          (can_edit) — sonst 403. org_admin und super_admin ausgenommen.
         hinweis: >
           GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung.
           Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben
@@ -1172,7 +1212,14 @@ paths:
           seine eigenen Jahrgaenge; fremde bleiben unberuehrt, und ein
           fremder Ziel-Jahrgang wird mit 403 abgewiesen. org_admin ersetzt
           weiterhin alle. Zusaetzlich wird der Benutzer-Cache geleert, damit
-          eine neue Zuweisung sofort greift statt erst nach 30 Sekunden."
+          eine neue Zuweisung sofort greift statt erst nach 30 Sekunden.
+          BEHOBEN 26.09.2026: Die Existenzpruefung suchte den Ziel-User allein
+          ueber users.organization_id — wer ueber user_organizations in der
+          Gemeinde arbeitet, bekam 404 und war dort nicht verwaltbar. Jetzt
+          zaehlen beide Quellen (dasselbe Muster wie utils/orgMitglieder.js
+          bei den Push-Empfaengern). Die Zuweisungen der ANDEREN Gemeinden
+          bleiben dabei unberuehrt: Das DELETE ist seit 31.08.2026 an die
+          Organisation gebunden."
 
   /api/users/me/jahrgaenge:
     get:

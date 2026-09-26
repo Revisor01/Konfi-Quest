@@ -368,7 +368,7 @@
           "Anmeldung & Konto"
         ],
         "summary": "Eigenes Profil (inkl. is_super_admin-Flag, Trial-Status der Org)",
-        "description": "NEU 27.08.2026: assigned_jahrgaenge kommt mit — die eigenen Jahrgangs-Zuweisungen (id, name, can_view, can_edit), ohne zusaetzliche Abfrage (rbacVerifier laedt sie ohnehin). Wofuer: Ein `admin` sieht nur Konfis seiner zugewiesenen Jahrgaenge; verschiebt er eine Konfi in einen fremden Jahrgang, verschwindet sie aus seiner Liste. Die Oberflaeche warnt davor, bevor gespeichert wird. Ohne Zuweisung ein leeres Array, nie undefined.\n",
+        "description": "NEU 27.08.2026: assigned_jahrgaenge kommt mit — die eigenen Jahrgangs-Zuweisungen (id, name, can_view, can_edit), ohne zusaetzliche Abfrage (rbacVerifier laedt sie ohnehin). Wofuer: Ein `admin` sieht nur Konfis seiner zugewiesenen Jahrgaenge; verschiebt er eine Konfi in einen fremden Jahrgang, verschwindet sie aus seiner Liste. Die Oberflaeche warnt davor, bevor gespeichert wird. Ohne Zuweisung ein leeres Array, nie undefined.\nBEHOBEN 26.09.2026: role_name und role_display_name galten fuer die STAMM-Gemeinde (die Abfrage las u.role_id), nicht fuer die aktive. Wer ueber user_organizations in einer zweiten Gemeinde eine andere Rolle hat, bekam hier trotzdem die Rolle vom Konto gemeldet -- rbacVerifier hatte sie fuer die aktive Gemeinde laengst aufgeloest, diese Route ignorierte das Ergebnis. Ein ANZEIGEFEHLER, keine Rechteausweitung: Die Rechte haengen an req.user.role_name (requireRole/requireAdmin/requireOrgAdmin lesen genau das) und waren korrekt. Die App richtet ihre Oberflaeche aber nach dieser Antwort und zeigte in der Zweitgemeinde eine Leitungsansicht, deren Knoepfe der Server mit 403 abwies. Antwortform unveraendert.\n",
         "responses": {
           "200": {
             "description": "id, username, display_name, email, role_title, role_name, is_super_admin, trial_ends_at, is_trial, assigned_jahrgaenge[]"
@@ -384,8 +384,8 @@
           "middleware": [
             "verifyTokenRBAC"
           ],
-          "org-scope": false,
-          "objekt-pruefung": "Nur eigene Daten"
+          "org-scope": true,
+          "objekt-pruefung": "Nur eigene Daten; role_name/role_display_name gelten fuer die AKTIVE Organisation"
         }
       }
     },
@@ -1994,7 +1994,8 @@
             "userHierarchyMiddleware('view')"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle)"
+          "objekt-pruefung": "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org)",
+          "hinweis": "GEAENDERT 26.09.2026: role_id, role_name und assigned_jahrgaenge gelten fuer die AKTIVE Organisation. Wer hier org_admin und in seiner Stamm-Gemeinde Teamer:in ist, wird als org_admin angezeigt; die Jahrgaenge der anderen Gemeinden stehen nicht in der Antwort. Die Antwortform ist unveraendert (dieselben Felder, dieselben Typen) — nur die Werte beziehen sich jetzt auf die richtige Gemeinde.\"\n"
         }
       },
       "put": {
@@ -2079,7 +2080,8 @@
             "validateUpdateUser"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User in eigener Org; canManageRole + canCreateRole für neue Rolle"
+          "objekt-pruefung": "Ziel-User in der STAMM-Org (users.organization_id); canManageRole + canCreateRole für neue Rolle",
+          "hinweis": "BEWUSST enger als GET und die Jahrgangs-Routen (26.09.2026): Die Middleware laesst seither auch Personen durch, die ueber user_organizations in der aktiven Org arbeiten — diese Route weist sie danach trotzdem mit 404 ab. Bearbeitet werden hier Konto-Daten (Name, Mail, Rolle am Konto, is_active), die der GANZEN Person gehoeren und nicht einer einzelnen Gemeinde. Eine Zweitgemeinde darf sie nicht umschreiben. Was je Gemeinde gilt, laeuft ueber die Jahrgangs-Routen.\"\n"
         }
       },
       "delete": {
@@ -2128,7 +2130,8 @@
             "validateUserId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Eigene Org; Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz"
+          "objekt-pruefung": "STAMM-Org (users.organization_id); Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz",
+          "hinweis": "BEWUSST enger als GET und die Jahrgangs-Routen (26.09.2026), wie bei PUT: Geloescht wird die ganze Person samt aller Gemeinden. Das darf nur die Gemeinde, an der das Konto haengt. Der Letzter- org_admin-Schutz zaehlt ebenfalls ueber users.organization_id.\"\n"
         }
       }
     },
@@ -2157,7 +2160,7 @@
             "description": "Hierarchie: Ziel-Rolle nicht einsehbar (canManageRole)"
           },
           "404": {
-            "description": "Ziel-User nicht in eigener Organisation"
+            "description": "Ziel-User arbeitet nicht in der aktiven Organisation"
           }
         },
         "x-berechtigung": {
@@ -2171,8 +2174,8 @@
             "userHierarchyMiddleware('view')"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle); Jahrgänge auf eigene Org gefiltert",
-          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin. admin darf die Zuweisungen der von ihm verwalteten Personen (teamer, konfi) sehen — die von anderen Admins und von Org-Admins nicht (403), fremde Organisationen gar nicht (404). requireAdmin allein waere eine Rechteausweitung gewesen; die Grenze zieht checkUserHierarchy.\"\n"
+          "objekt-pruefung": "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org); Jahrgänge auf die aktive Org gefiltert",
+          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin. admin darf die Zuweisungen der von ihm verwalteten Personen (teamer, konfi) sehen — die von anderen Admins und von Org-Admins nicht (403), fremde Organisationen gar nicht (404). requireAdmin allein waere eine Rechteausweitung gewesen; die Grenze zieht checkUserHierarchy. BEHOBEN 26.09.2026: checkUserHierarchy suchte den Ziel-User allein ueber users.organization_id. Wer ueber user_organizations in der Gemeinde arbeitet, war dort nicht verwaltbar (404) — obwohl das Handbuch den Vorgang beschreibt. Jetzt zaehlen beide Quellen, und die Hierarchie prueft die Rolle DIESER Organisation (uo.role_id), nicht die am Nutzerkonto.\"\n"
         }
       },
       "post": {
@@ -2254,8 +2257,8 @@
             "validateJahrgangAssignments"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User in eigener Org; canManageRole(eigene Rolle, Ziel-Rolle); alle Jahrgang-IDs müssen zur eigenen Org gehören; seit 31.08.2026 fuer admin zusaetzlich zu seinen eigenen Zuweisungen (can_edit) — sonst 403. org_admin und super_admin ausgenommen.\n",
-          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung. Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig. admin kommt damit an teamer und konfi, NICHT an andere Admins oder Org-Admins (403) und nicht an fremde Organisationen (404). BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht verantwortet. Seither ersetzt ein admin NUR die Zuweisungen auf seine eigenen Jahrgaenge; fremde bleiben unberuehrt, und ein fremder Ziel-Jahrgang wird mit 403 abgewiesen. org_admin ersetzt weiterhin alle. Zusaetzlich wird der Benutzer-Cache geleert, damit eine neue Zuweisung sofort greift statt erst nach 30 Sekunden.\"\n"
+          "objekt-pruefung": "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org); alle Jahrgang-IDs müssen zur aktiven Org gehören; seit 31.08.2026 fuer admin zusaetzlich zu seinen eigenen Zuweisungen (can_edit) — sonst 403. org_admin und super_admin ausgenommen.\n",
+          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung. Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig. admin kommt damit an teamer und konfi, NICHT an andere Admins oder Org-Admins (403) und nicht an fremde Organisationen (404). BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht verantwortet. Seither ersetzt ein admin NUR die Zuweisungen auf seine eigenen Jahrgaenge; fremde bleiben unberuehrt, und ein fremder Ziel-Jahrgang wird mit 403 abgewiesen. org_admin ersetzt weiterhin alle. Zusaetzlich wird der Benutzer-Cache geleert, damit eine neue Zuweisung sofort greift statt erst nach 30 Sekunden. BEHOBEN 26.09.2026: Die Existenzpruefung suchte den Ziel-User allein ueber users.organization_id — wer ueber user_organizations in der Gemeinde arbeitet, bekam 404 und war dort nicht verwaltbar. Jetzt zaehlen beide Quellen (dasselbe Muster wie utils/orgMitglieder.js bei den Push-Empfaengern). Die Zuweisungen der ANDEREN Gemeinden bleiben dabei unberuehrt: Das DELETE ist seit 31.08.2026 an die Organisation gebunden.\"\n"
         }
       }
     },
@@ -10738,7 +10741,7 @@
           "Teamer:innen"
         ],
         "summary": "Eigenes Teamer-Profil inkl. eingefrorener Konfi-Vergangenheit",
-        "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation). Existiert ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\nkonfi_data.badges enthaelt ausschliesslich Abzeichen mit custom_badges.target_role = 'konfi' aus der EIGENEN Organisation (BEHOBEN 2026-09-16): Vorher fehlte beides. user_badges kennt die Art eines Abzeichens nicht, die steht allein in custom_badges.target_role - Teamer-Abzeichen (z. B. criteria_type 'teamer_year') landeten dadurch in der Konfi-Historie. Teamer-Abzeichen liefert GET /api/teamer/badges/v2.\n",
+        "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation).\nBEHOBEN 26.09.2026: organization_name kam ueber `LEFT JOIN organizations o ON u.organization_id = o.id`, also aus der STAMM-Gemeinde. Wer ueber user_organizations in einer zweiten Gemeinde arbeitet, las im Profil trotzdem den Namen seiner Stamm-Gemeinde. Jetzt wird die AKTIVE Gemeinde (req.user.organization_id) genommen. Antwortform unveraendert -- nur der Wert stimmt.\nExistiert ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\nkonfi_data.badges enthaelt ausschliesslich Abzeichen mit custom_badges.target_role = 'konfi' aus der EIGENEN Organisation (BEHOBEN 2026-09-16): Vorher fehlte beides. user_badges kennt die Art eines Abzeichens nicht, die steht allein in custom_badges.target_role - Teamer-Abzeichen (z. B. criteria_type 'teamer_year') landeten dadurch in der Konfi-Historie. Teamer-Abzeichen liefert GET /api/teamer/badges/v2.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -12695,8 +12698,8 @@
             "requireOrgAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "nur Teamer:innen mit users.organization_id = aktive Org",
-          "hinweis": "Die Teamer-Auswahl filtert nicht auf deleted_at (anders als die Konfi-Variante). Geloeschte Teamer:innen bekaemen also weiterhin einen Snapshot, sofern die Zeile noch existiert.\n"
+          "objekt-pruefung": "alle Teamer:innen der aktiven Org ueber BEIDE Quellen (users.organization_id ODER user_organizations), Rolle je Quelle",
+          "hinweis": "GEAENDERT 26.09.2026: Die Auswahl las zuvor allein users.organization_id. Wer ueber user_organizations in einer zweiten Gemeinde im Team ist, bekam dort keinen Rueckblick — obwohl die Zahlen darin laengst je Gemeinde gerechnet werden (generateTeamerSnapshot bekommt die orgId und filtert durchgehend danach). Jetzt laeuft die Auswahl ueber utils/orgMitglieder.js, wie bei den Push-Empfaengern. Dieselbe Person bekommt damit in jeder Gemeinde einen eigenen Rueckblick mit eigener ausgabe_id; die Rolle zaehlt je Gemeinde (wer hier org_admin ist, steht nicht im TEAM-Rueckblick). Antwortform unveraendert.\nBEHOBEN 26.09.2026: Die Teamer-Auswahl filterte nicht auf deleted_at (anders als die Konfi-Variante) — geloeschte Teamer:innen bekamen weiterhin einen Snapshot. orgMitglieder.js filtert `is_active = true AND deleted_at IS NULL` in beiden Zweigen.\n"
         },
         "requestBody": {
           "required": false,
