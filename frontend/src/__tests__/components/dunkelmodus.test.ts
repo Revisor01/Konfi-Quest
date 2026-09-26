@@ -1106,6 +1106,76 @@ describe('Dunkelmodus: Grautoene lesbar -- hell wie dunkel (Baustein 3)', () => 
   });
 });
 
+describe('Dunkelmodus: Eck-Marken -- weisse Schrift auf Datenfarbe (Paket K2)', () => {
+  // GEMESSEN am 26.09.2026 (Nachmessung nach den Bausteinen 1-3, 94
+  // Zustaende dunkel, iOS = Android): Die kleinen Pillen (.app-corner-badge,
+  // `color: white`) tragen ihre Flaechenfarbe inline aus den Daten --
+  // Kategorie-, Level- oder Bereichsfarbe, in beiden Modi dieselbe. Weiss
+  // darauf: "20P" auf #f59e0b 2,15:1, "0P" auf #10b981 2,54, "+1P" auf
+  // #0a84ff 3,65, "5P"/"+3P" auf #3b82f6 3,68, "+2P" auf #059669 3,77, "10P"
+  // auf #8b5cf6 4,23 -- acht Stellen. Eine Regel kann eine Inline-Farbe nicht
+  // ersetzen, wohl aber ueberlagern: Im Dunkeln liegt eine flache schwarze
+  // Schicht als background-image auf jeder Marke. Hell bleibt die Marke, wie
+  // sie ist (UI-Audit BF-04, Eck-Marken, offen).
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const DATENFARBEN: Record<string, string> = {
+    '#10b981': 'Level "Novize" 0P',
+    '#3b82f6': 'Level "Lehrling" 5P, Bonus "+3P"',
+    '#8b5cf6': 'Level "Gehilfe" 10P',
+    '#f59e0b': 'Level "Experte" 20P',
+    '#059669': 'Aktivitaet "+2P"',
+    '#0a84ff': 'Aktivitaet "+1P"',
+  };
+  const markeHell = regeln(hell).filter((r) => r.selektor === '.app-corner-badge');
+  const markeDunkel = regeln(dunkelBloecke[0] ?? '').filter((r) => r.selektor === '.app-corner-badge');
+  /** Deckkraft der schwarzen Schicht im Dunkeln -- 0, wenn es keine gibt. */
+  function deckkraft(): number {
+    const m = /background-image:\s*linear-gradient\(\s*rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*([\d.]+)\s*\)\s*,\s*rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*([\d.]+)\s*\)\s*\)/.exec(markeDunkel.map((r) => r.rumpf).join('\n'));
+    return m && m[1] === m[2] ? +m[1] : 0;
+  }
+  const unterSchicht = (farbe: string) => mische('#000000', deckkraft(), farbe);
+
+  it('die Marke schreibt weiss -- das ist die Paarung, gegen die gerechnet wird', () => {
+    expect(markeHell).toHaveLength(1);
+    expect(markeHell[0].rumpf).toMatch(/color:\s*white/);
+  });
+
+  it('hell bleibt die Marke unveraendert: keine Schicht ausserhalb des Dunkelblocks', () => {
+    expect(markeHell[0].rumpf).not.toMatch(/background-image/);
+  });
+
+  it('dunkel liegt eine flache schwarze Schicht darauf: ein Verlauf mit zwei gleichen Stops', () => {
+    expect(deckkraft()).toBeGreaterThan(0);
+    expect(deckkraft()).toBeLessThan(0.6); // darueber ist von der Farbe nichts mehr zu erkennen
+  });
+
+  it('Weiss haelt unter der Schicht auf jeder Datenfarbe der Messung mindestens 4,5:1 -- ohne Schicht keine', () => {
+    const schwach: string[] = [];
+    const bestandOhne: string[] = [];
+    for (const [farbe, wo] of Object.entries(DATENFARBEN)) {
+      const k = kontrast('#ffffff', unterSchicht(farbe));
+      if (k < 4.5) schwach.push(`${wo}: Weiss auf ${farbe} unter der Schicht (${unterSchicht(farbe)}) ${k.toFixed(2)}`);
+      // Gegenprobe der Messung: jede dieser Farben fiel OHNE Schicht durch.
+      if (kontrast('#ffffff', farbe) >= 4.5) bestandOhne.push(`${wo}: ${farbe} bestand schon ohne Schicht`);
+    }
+    expect(schwach).toEqual([]);
+    expect(bestandOhne).toEqual([]);
+  });
+
+  it('... und auf jeder Klassenfarbe der Marken (.app-corner-badge--*), mit ihrem dunklen Wert', () => {
+    const varianten = [...hell.matchAll(/\.app-corner-badge--([a-z-]+)\s*\{\s*background-color:\s*var\((--app-color-[a-z-]+)\)/g)];
+    expect(varianten.length).toBeGreaterThanOrEqual(15);
+    const schwach: string[] = [];
+    for (const [, variante, token] of varianten) {
+      const farbe = dunkel.get(token) ?? helleTokens.get(token);
+      expect(farbe, `${token} ohne Wert`).toMatch(/^#[0-9a-f]{6}$/i);
+      const k = kontrast('#ffffff', unterSchicht(farbe!));
+      if (k < 4.5) schwach.push(`--${variante} (${token} ${farbe}): ${k.toFixed(2)}`);
+    }
+    expect(schwach).toEqual([]);
+  });
+});
+
 /* --- WCAG-Rechnung --------------------------------------------------- */
 
 function hexZuRgb(hex: string): [number, number, number] {

@@ -131,6 +131,8 @@ Chat — sind auf den farbigen Flächen dieselben wie im Hellen: So leuchten die
 Kopfbereiche auf dunklem Grund nicht heller als am Tag. Steht eine
 Bereichsfarbe dagegen als Schrift oder Symbol auf einer Karte, nimmt sie im
 Dunkeln eine hellere Stufe desselben Tons, damit sie lesbar bleibt.
+Die kleinen Marken an Listeneinträgen — Punkte, Level, Status — werden im
+Dunkeln eine Stufe tiefer, damit ihre weiße Schrift lesbar bleibt.
 
 Einen eigenen Schalter gibt es in der App nicht. Umgeschaltet wird in den
 Systemeinstellungen des Handys (iOS: *Anzeige & Helligkeit*, Android:

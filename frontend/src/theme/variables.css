@@ -4026,6 +4026,27 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --ion-toolbar-background: inherit;
     --ion-toolbar-border-color: inherit;
   }
+
+  /* Eck-Marken (Paket K2, 26.09.2026): kleine Pillen mit weisser Schrift
+     (.app-corner-badge, `color: white`) auf einer Farbe, die inline aus den
+     Daten kommt -- Kategorie-, Level- oder Bereichsfarbe -- und in beiden
+     Modi dieselbe ist. Gemessen (94 Zustaende dunkel, iOS = Android): "20P"
+     Weiss auf #f59e0b 2,15:1, "0P" auf #10b981 2,54, "+1P" auf #0a84ff 3,65,
+     "5P" und "+3P" auf #3b82f6 3,68, "+2P" auf #059669 3,77, "10P" auf
+     #8b5cf6 4,23 -- acht Stellen. Eine Regel kann die Inline-Farbe nicht
+     ersetzen, wohl aber ueberlagern: Im Dunkeln liegt Schwarz mit 40 %
+     Deckkraft auf jeder Marke, als background-image (ein Verlauf mit zwei
+     gleichen Stops; die gerenderte Messung rechnet ihn als flache Schicht).
+     Danach: #f59e0b -> #935f07 5,41:1, #10b981 -> #0a6f4d 6,19, #0a84ff ->
+     #064f99 8,12, #3b82f6 -> #234e94 8,11, #059669 -> #035a3f 8,27, #8b5cf6
+     -> #533794 8,97; auch jede Klassenfarbe der Marken haelt so mindestens
+     4,5:1 (--app-color-success dunkel #30d158 -> 5,20, --app-color-warning
+     #ff9f0a -> 5,26). Hell bleibt die Marke unveraendert -- dort steht sie
+     im UI-Audit (BF-04, Eck-Marken). dunkelmodus.test.ts rechnet Weiss unter
+     der Schicht gegen jede Klassen- und Datenfarbe nach. */
+  .app-corner-badge {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4));
+  }
 }
 
 /* ============================================

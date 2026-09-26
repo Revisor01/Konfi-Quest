@@ -698,6 +698,10 @@ Versionsüberschrift.
   eine Sicherung geprüft wird, wie sie in eine leere Datenbank zurückgespielt
   wird und wie die Rückspielprobe läuft — samt Prüfliste für den Betrieb und
   einem Referenzskript.
+- Im Dunkelmodus sind die kleinen farbigen Marken an Listeneinträgen —
+  Punkte („+2P"), Level („20P"), Status — jetzt lesbar: Sie werden eine Stufe
+  tiefer, damit die weiße Schrift darauf genug Kontrast hat. Im Hellen
+  ändert sich nichts.
 
 ## [2.2.0] - 2026-09-18
 
