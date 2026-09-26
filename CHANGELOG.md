@@ -624,6 +624,9 @@ Versionsüberschrift.
   beim Start eine Anpassung übersprungen wurde, steht in der Statusabfrage.
 - Zwei gleichzeitig startende Server legen die Standard-Zertifikatstypen
   nicht mehr um die Wette an.
+- Das Erstellen des Jahresrückblicks für einen ganzen Jahrgang belegt nicht
+  mehr alle Datenbankverbindungen auf einmal; die App bleibt währenddessen
+  für alle anderen flüssig.
 
 ## [2.2.0] - 2026-09-18
 

@@ -357,6 +357,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-06: Wrapped-Erzeugung belegt den gesamten Verbindungspool und bremst alle anderen
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — `routes/wrapped.js` erzeugt die Konfi-Snapshots über `begrenztParallel` (`backend/utils/begrenztParallel.js`, Ergebnisform wie `Promise.allSettled`) mit `WRAPPED_PARALLEL` = 3 Arbeitern statt einer Kette je Konfi; drei Arbeiter plus der äußere Client belegen vier Pool-Plätze, der Rest bleibt der App. Gemessen im Vitest `backend/tests/routes/wrappedParallelitaet.test.js` (50 Konfis, Test-Pool 5, `pool.waitingCount` jede Millisekunde abgetastet): vorher Spitze **46 wartend**, nachher **0**, alle 50 Snapshots entstehen (`generated: 50, errors: 0`); Gegenprobe mit `Promise.allSettled` fällt mit `expected 46 to be +0`. Dazu `backend/tests/utils/begrenztParallel.test.js` (nie mehr als `grenze` gleichzeitig, Reihenfolge, Fehler je Aufgabe). Nicht geändert: Die Freigabe wird weiterhin auch bei `errors > 0` gesetzt (Produktentscheidung, siehe Empfehlung).
 - **Fundstelle:** `backend/routes/wrapped.js:2405–2409` (`Promise.allSettled` über alle
   Konfis, jeder mit eigenem `getClient()`), `:2139–2162` (je Konfi ~30 Abfragen in einer
   Transaktion), `backend/database.js:57` (`connectionTimeoutMillis` 5 s gilt auch für das

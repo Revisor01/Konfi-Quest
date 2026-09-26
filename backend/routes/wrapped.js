@@ -7,6 +7,12 @@ const { waehleKacheln, waehleTeamerKacheln, teamerJahrIstLeer } = require('../ut
 const { waehleSegen } = require('../utils/wrappedSegen');
 const { seiteFuerKategorie, datumsFenster, orgHatSommerfreizeit, STAVANGER_VON, STAVANGER_BIS } = require('../utils/wrappedKategorien');
 const { ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
+const { begrenztParallel } = require('../utils/begrenztParallel');
+
+// Wie viele Konfi-Snapshots gleichzeitig entstehen (Betrieb BF-06, 26.09.2026).
+// Jeder belegt einen Pool-Client; drei plus der aeussere Client der Route
+// sind vier von 20 Plaetzen -- der Rest bleibt fuer die App frei.
+const WRAPPED_PARALLEL = Math.max(1, parseInt(process.env.WRAPPED_PARALLEL || '3', 10) || 3);
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireAdmin, requireOrgAdmin } = roleHelpers;
@@ -2411,9 +2417,21 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           [jahrgangId]
         );
 
-        // Parallele Snapshot-Generierung (jeder Konfi holt eigenen DB-Client)
-        const results = await Promise.allSettled(
-          konfis.map(konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear, ausgabe.id, zeitraumVorgabe))
+        // Snapshot-Generierung mit BEGRENZTER Parallelitaet (jeder Konfi holt
+        // einen eigenen DB-Client, aber hoechstens WRAPPED_PARALLEL zugleich).
+        //
+        // Bis zum 26.09.2026 stand hier Promise.allSettled ueber ALLE Konfis:
+        // 58 Ketten holten gleichzeitig je einen Pool-Client (Pool 20). Der
+        // Pool war die ganze Zeit voll (gesamt 20, frei 0, wartend 20), ein
+        // gleichzeitiger Dashboard-Aufruf brauchte 754 ms statt 17 ms, und auf
+        // der Produktions-Datenbank liefen die wartenden Ketten UND alle
+        // API-Anfragen dieser Replica in den 5-s-Verbindungs-Timeout (Audit
+        // 26.09.2026, Betrieb BF-06). Drei Arbeiter plus der aeussere Client
+        // belegen vier Plaetze; der Rest des Pools bleibt der App.
+        const results = await begrenztParallel(
+          konfis,
+          WRAPPED_PARALLEL,
+          konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear, ausgabe.id, zeitraumVorgabe)
         );
         const generated = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
         const errors = results.length - generated;
