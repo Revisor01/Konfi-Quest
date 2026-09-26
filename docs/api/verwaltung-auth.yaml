@@ -86,9 +86,14 @@
 #      Teamer sehen die eigenen Zertifikate über ihr Dashboard.
 #
 # NEUE LUECKEN (zusaetzlich zu den bekannten, Details an den Routen):
-#  N1  PUT /users/:id/reset-password schuetzt Ziel-User mit is_super_admin-
-#      Flag NICHT: org_admin derselben Org kann dessen Passwort setzen und
-#      so Super-Admin-Rechte uebernehmen (Privilege Escalation).
+#  N1  BEHOBEN 26.09.2026. PUT /users/:id/reset-password, PUT /users/:id,
+#      DELETE /users/:id und POST /users/:id/jahrgaenge weisen ein Ziel mit
+#      Rolle super_admin ODER Flag is_super_admin mit 403 ab, sofern der
+#      Aufrufer nicht selbst Super-Admin ist (istSuperAdminKonto in
+#      utils/roleHierarchy.js, in checkUserHierarchy und inline im Reset).
+#      Vorher konnte ein org_admin derselben Org dessen Passwort setzen und
+#      so Super-Admin-Rechte uebernehmen (Privilege Escalation; Audit
+#      26.09.2026, Sicherheit BF-01, reproduziert).
 #  N2  BEHOBEN. Passwort-Änderung/-Reset revoziert bestehende Refresh-Tokens
 #      (90 Tage) und setzt token_invalidated_at: change-password und
 #      auth/reset-password am 22.08.2026, die Push-Tokens am 01.09.2026,
@@ -1370,13 +1375,14 @@ paths:
         rollen: [super_admin, org_admin]
         middleware: [verifyTokenRBAC, validateResetPassword]
         org-scope: true
-        objekt-pruefung: "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten"
-        # LÜCKE (N1): der Ziel-User wird NICHT auf is_super_admin/super_admin
-        # geprüft. Ein org_admin kann so das Passwort eines org_admins MIT
-        # is_super_admin-Flag in seiner Org setzen und dessen Super-Admin-
-        # Rechte uebernehmen (Privilege Escalation). Der Kommentar "nur
-        # super_admin ist geschuetzt" stimmt nur für die Rolle (org=NULL),
-        # nicht für das Flag.
+        objekt-pruefung: "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten -- aber kein Konto mit Rolle super_admin oder Flag is_super_admin (403, seit 26.09.2026)"
+        # BEHOBEN 26.09.2026 (war N1): der Ziel-User wird jetzt auf
+        # super_admin-Rolle ODER is_super_admin-Flag geprueft; nur ein
+        # Super-Admin darf ein solches Konto zuruecksetzen. Vorher konnte ein
+        # org_admin das Passwort eines org_admins MIT is_super_admin-Flag in
+        # seiner Org setzen und dessen Super-Admin-Rechte uebernehmen
+        # (Privilege Escalation). Der Kommentar "nur super_admin ist
+        # geschuetzt" stimmte nur für die Rolle (org=NULL), nicht für das Flag.
         # BEHOBEN 14.09.2026 (war N2): der Reset setzt jetzt
         # token_invalidated_at, widerruft alle Refresh-Tokens des Ziel-Users
         # und loescht dessen Push-Tokens. Vorher lief die alte Sitzung weiter

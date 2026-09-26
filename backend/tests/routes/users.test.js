@@ -1298,4 +1298,116 @@ describe('Users Routes', () => {
       expect(res.status).toBe(403);
     });
   });
+
+  // ================================================================
+  // Super-Admin-Konten sind fuer Org-Admins unantastbar
+  //
+  // Audit 26.09.2026 (Sicherheit BF-01, KRITISCH): Ein Org-Admin konnte das
+  // Passwort jedes Super-Admin-Kontos setzen, das dieselbe Stamm-Gemeinde
+  // traegt -- ueber reset-password (prueft nur Rolle des Aufrufers und
+  // Org-Gleichheit) und ueber PUT/DELETE (checkUserHierarchy sah nur die
+  // Rolle org_admin, nicht das Flag is_super_admin). Danach Login als
+  // Super-Admin, alle Gemeinden sichtbar. Hier der verbotene UND der
+  // erlaubte Fall je Weg.
+  // ================================================================
+  describe('Super-Admin-Konten sind fuer Org-Admins unantastbar', () => {
+    const neuesPasswort = 'Sicheres-Passwort-2026!';
+
+    const passwortHash = async (id) => {
+      const { rows: [u] } = await db.query('SELECT password_hash FROM users WHERE id = $1', [id]);
+      return u.password_hash;
+    };
+
+    it('org_admin setzt KEIN Passwort fuer ein super_admin-Konto derselben Org -> 403', async () => {
+      const vorher = await passwortHash(USERS.superAdmin.id);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.superAdmin.id}/reset-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: neuesPasswort });
+
+      expect(res.status).toBe(403);
+      expect(await passwortHash(USERS.superAdmin.id)).toBe(vorher);
+    });
+
+    it('org_admin setzt KEIN Passwort fuer ein org_admin-Konto MIT is_super_admin-Flag -> 403', async () => {
+      const vorher = await passwortHash(USERS.orgAdminSuper.id);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.orgAdminSuper.id}/reset-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: neuesPasswort });
+
+      expect(res.status).toBe(403);
+      expect(await passwortHash(USERS.orgAdminSuper.id)).toBe(vorher);
+    });
+
+    it('org_admin bearbeitet KEIN Konto mit is_super_admin-Flag -> 403', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.orgAdminSuper.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ display_name: 'Uebernommen', password: neuesPasswort });
+
+      expect(res.status).toBe(403);
+      const { rows: [u] } = await db.query('SELECT display_name FROM users WHERE id = $1', [USERS.orgAdminSuper.id]);
+      expect(u.display_name).toBe(USERS.orgAdminSuper.display_name);
+    });
+
+    it('org_admin loescht KEIN Konto mit is_super_admin-Flag -> 403', async () => {
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.orgAdminSuper.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(403);
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1 AND deleted_at IS NULL', [USERS.orgAdminSuper.id]);
+      expect(rows).toHaveLength(1);
+    });
+
+    it('org_admin weist einem Konto mit is_super_admin-Flag KEINE Jahrgaenge zu -> 403', async () => {
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.orgAdminSuper.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahrgang_assignments: [{ jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: true }] });
+
+      expect(res.status).toBe(403);
+    });
+
+    // ---- der erlaubte Fall --------------------------------------------------
+
+    it('super_admin setzt das Passwort eines org_admin MIT Flag -> 200', async () => {
+      const vorher = await passwortHash(USERS.orgAdminSuper.id);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.orgAdminSuper.id}/reset-password`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({ password: neuesPasswort });
+
+      expect(res.status).toBe(200);
+      expect(await passwortHash(USERS.orgAdminSuper.id)).not.toBe(vorher);
+    });
+
+    it('org_admin setzt weiterhin das Passwort eines Admins derselben Org -> 200', async () => {
+      const vorher = await passwortHash(USERS.admin1.id);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.admin1.id}/reset-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: neuesPasswort });
+
+      expect(res.status).toBe(200);
+      expect(await passwortHash(USERS.admin1.id)).not.toBe(vorher);
+    });
+
+    it('org_admin bearbeitet weiterhin einen anderen org_admin OHNE Flag -> 200', async () => {
+      const { rows: [zweiter] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
+         VALUES ('orgadmin.zwei', 'Zweite Leitung', 'x', $1, $2) RETURNING id`,
+        [USERS.orgAdmin1.role_id, ORGS.testGemeinde.id]
+      );
+      const res = await request(app)
+        .put(`/api/admin/users/${zweiter.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ display_name: 'Zweite Leitung (neu)' });
+
+      expect(res.status).toBe(200);
+      const { rows: [u] } = await db.query('SELECT display_name FROM users WHERE id = $1', [zweiter.id]);
+      expect(u.display_name).toBe('Zweite Leitung (neu)');
+    });
+  });
 });

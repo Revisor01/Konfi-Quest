@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
-const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHierarchy');
+const { checkUserHierarchy, filterUsersByHierarchy, istSuperAdminKonto } = require('../utils/roleHierarchy');
 const { validatePassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { invalidateUserCache } = require('../middleware/rbac');
@@ -915,7 +915,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     try {
       // Prüfen ob User existiert
       const { rows: [targetUser] } = await db.query(`
-        SELECT u.id, u.organization_id, r.name as role_name
+        SELECT u.id, u.organization_id, u.is_super_admin, r.name as role_name
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
         WHERE u.id = $1
@@ -939,8 +939,16 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         return res.status(403).json({ error: 'Keine Berechtigung' });
       }
 
-      // org_admin darf andere org_admins in seiner Org resetten (neue Regel)
-      // Nur super_admin ist geschützt
+      // org_admin darf andere org_admins in seiner Org resetten -- aber KEIN
+      // Konto mit Super-Admin-Rechten. Bis zum 26.09.2026 stand hier nur der
+      // Kommentar "Nur super_admin ist geschuetzt", ohne Pruefung: Ein
+      // Org-Admin setzte das Passwort jedes Super-Admin-Kontos derselben
+      // Stamm-Gemeinde (Rolle super_admin ODER Flag is_super_admin), meldete
+      // sich damit an und sah alle Gemeinden (Audit, Sicherheit BF-01,
+      // KRITISCH). Dieselbe Regel wie in checkUserHierarchy fuer PUT/DELETE.
+      if (istSuperAdminKonto(targetUser) && !isSuperAdmin) {
+        return res.status(403).json({ error: 'Super-Admin-Konten kann nur ein Super-Admin bearbeiten.' });
+      }
 
       const hashedPassword = await bcrypt.hash(password, 10);
       // org-gescopt: id ist eindeutig, organization_id als defensiver Zusatzfilter (matcht den oben geladenen targetUser)

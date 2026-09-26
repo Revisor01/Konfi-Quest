@@ -406,6 +406,10 @@ Versionsüberschrift.
   eigene Gemeinde zurück — dabei blieben bis zuletzt Zähler und bereits
   geöffnete Listen der verlorenen Gemeinde stehen. Jetzt laden auch in diesem
   Fall alle Ansichten frisch.
+- Konten mit Super-Admin-Rechten kann nur noch ein Super-Admin bearbeiten.
+  Bisher konnte die Leitung einer Gemeinde, in der ein solches Konto zuhause
+  ist, dessen Passwort setzen, es sperren oder löschen — und damit Zugriff auf
+  alle Gemeinden erlangen.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

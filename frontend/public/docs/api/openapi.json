@@ -2540,7 +2540,7 @@
             "validateResetPassword"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten"
+          "objekt-pruefung": "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten -- aber kein Konto mit Rolle super_admin oder Flag is_super_admin (403, seit 26.09.2026)"
         }
       }
     },

@@ -42,6 +42,10 @@ anmelden — auch wenn dieses Gerät jemand anderem gehört. Genau darum geht es
 wenn ein Passwort zurückgesetzt wird, weil ein Konto in falsche Hände geraten
 ist. Dasselbe gilt, wenn ein Org-Admin ein Leitungspasswort setzt.
 
+Konten mit Super-Admin-Rechten kann nur ein Super-Admin bearbeiten — auch
+dann, wenn ein solches Konto in deiner Gemeinde zuhause ist. Passwort, Name,
+Sperre und Löschung sind für die Gemeindeleitung dort gesperrt.
+
 **Leitungskonten laufen anders:** Für Admins und Org-Admins gibt es kein
 Einmalpasswort. Ein Org-Admin öffnet
 **[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-admin)**, wählt die
