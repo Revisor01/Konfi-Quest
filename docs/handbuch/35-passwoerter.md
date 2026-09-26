@@ -374,6 +374,15 @@ Passwort. Ein Org-Admin aktiviert es unter
 **[Mehr → Benutzer:innen](30-leitung.md#verwaltung-nur-org-admin)** wieder.
 Sich selbst kann niemand deaktivieren.
 
+**Die Konfi-Zeit ist vorbei.** 60 Tage nach der Konfirmation nimmt die App
+ehemalige Konfis automatisch aus den Listen der Leitung, nach 120 Tagen werden
+ihre Konten endgültig gelöscht. Dazwischen ist die Anmeldung ebenso gesperrt
+wie bei einem deaktivierten Konto — die App meldet „Dein Zugang wurde
+deaktiviert", und wer noch angemeldet war, wird abgemeldet. Wer nach der
+Konfirmation weiter dabei sein soll, wird vorher
+[zur Teamer:in befördert](05-rollen.md#eine-rolle-aendern); Teamer:innen sind
+von der Löschung ausgenommen.
+
 **Jemand wurde aus der Gemeinde entfernt.** Der Zugang endet sofort, auch auf
 bereits geöffneten Geräten.
 

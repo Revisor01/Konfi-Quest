@@ -8,6 +8,8 @@ const { formatUhrzeit } = require('../utils/zeitformat');
 const { appIconSummenFuerAlle } = require('../utils/appIconBadge');
 const { abzeichenFingerabdruecke } = require('../utils/abzeichenKandidaten');
 const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
+const { invalidateUserCache } = require('../middleware/rbac');
+const liveUpdate = require('../utils/liveUpdate');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -1544,6 +1546,15 @@ class BackgroundService {
           [jg.id, stichtag, jg.organization_id]
         );
         totalSoft += softUpdated.length;
+
+        // Die Sperre soll SOFORT gelten, nicht erst nach dem 30-Sekunden-
+        // Cache von rbac.js oder beim naechsten Socket-Verbindungsaufbau
+        // (Audit 26.09.2026, Sicherheit BF-07/BF-10). Wirkt auf dieser
+        // Replica; die anderen laufen in den TTL.
+        for (const { id } of softUpdated) {
+          invalidateUserCache(id);
+          liveUpdate.disconnectUserSockets(id);
+        }
       } catch (jgErr) {
         // Fehler pro Jahrgang isolieren -> Job läuft weiter (D-15).
         console.error(`Auto-Deletion: Jahrgang ${jg.id} fehlgeschlagen:`, jgErr.message);

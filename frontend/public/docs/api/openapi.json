@@ -138,7 +138,7 @@
             "description": "Ungueltige Anmeldedaten (User unbekannt oder Passwort falsch — gleiche Meldung)"
           },
           "403": {
-            "description": "User deaktiviert (user_inactive), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin ausgenommen"
+            "description": "User deaktiviert ODER soft-geloescht (deleted_at; beides user_inactive, identische Antwort), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung"
           },
           "429": {
             "description": "authLimiter: 300 Fehlversuche/15min pro Client-IP"
@@ -153,7 +153,7 @@
             "validateLogin"
           ],
           "org-scope": false,
-          "objekt-pruefung": "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide",
+          "objekt-pruefung": "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide; deleted_at IS NOT NULL -> 403 user_inactive fuer jede Rolle",
           "hinweis": "Offene Route; setzt last_login_at"
         }
       }
@@ -1146,7 +1146,7 @@
             "description": "Refresh-Token ungueltig/abgelaufen/zu lange revoziert"
           },
           "403": {
-            "description": "User deaktiviert / Org gesperrt / Trial abgelaufen (super_admin ausgenommen)"
+            "description": "User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt / Trial abgelaufen (super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung). Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt"
           }
         },
         "x-berechtigung": {

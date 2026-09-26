@@ -189,7 +189,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     try {
       const userQuery = `
         SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email, u.role_id,
-               u.is_super_admin, u.is_active as user_active,
+               u.is_super_admin, u.is_active as user_active, u.deleted_at,
                o.name as organization_name, o.slug as organization_slug,
                COALESCE(o.is_active, true) as organization_active, o.trial_ends_at, o.is_trial,
                r.name as role_name, r.display_name as role_display_name,
@@ -209,7 +209,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
  console.warn(`Login fehlgeschlagen: Benutzer '${username}' not found`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
-      
+
       const passwordMatch = await bcrypt.compare(password, user.password_hash);
       if (!passwordMatch) {
  console.warn(`Login fehlgeschlagen: Falsches Passwort für '${username}'`);
@@ -218,6 +218,19 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       // Zugriffs-Sperren — super_admin (ohne Org) ist ausgenommen.
       const isSuperAdmin = user.is_super_admin === true || user.role_name === 'super_admin';
+
+      // Soft-geloescht (deleted_at; der Auto-Loeschlauf setzt es 60 Tage
+      // nach der Konfirmation, hart geloescht wird ab Tag 120). Die Person
+      // ist fuer die Leitung laengst unsichtbar -- jede Liste filtert
+      // deleted_at IS NULL --, konnte sich aber weiter anmelden und im Chat
+      // schreiben (Audit 26.09.2026, Sicherheit BF-07). Antwort exakt wie
+      // beim deaktivierten Konto, damit der Fehler nicht verraet, dass es das
+      // Konto noch gibt. Gilt fuer jede Rolle: Loeschung kennt keine Ausnahme.
+      if (user.deleted_at) {
+ console.warn(`Login blockiert: Benutzer '${username}' ist geloescht (Soft-Delete)`);
+        return res.status(403).json({ error: 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.', error_code: 'user_inactive' });
+      }
+
       if (!isSuperAdmin) {
         // User deaktiviert
         if (user.user_active === false) {
@@ -1267,7 +1280,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   async function issueRefreshedTokens(db, res, userId, activeOrgId = null) {
     const { rows: [user] } = await db.query(`
       SELECT u.id, u.username, u.display_name, u.organization_id, u.email, u.role_id,
-             u.is_super_admin, u.is_active as user_active,
+             u.is_super_admin, u.is_active as user_active, u.deleted_at,
              COALESCE(o.is_active, true) as organization_active, o.trial_ends_at,
              r.name as role_name,
              kp.jahrgang_id, j.name as jahrgang_name,
@@ -1285,17 +1298,23 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
 
     // Zugriffs-Sperre beim Refresh — super_admin ausgenommen.
+    //
+    // Soft-geloeschte Konten (deleted_at) zaehlen hier wie deaktivierte und
+    // bekommen dieselbe Antwort (Audit 26.09.2026, Sicherheit BF-07) -- der
+    // Refresh war neben Login und rbac.js die dritte Stelle, die deleted_at
+    // nicht kannte und einem ausgeblendeten Konto 90 Tage lang frische
+    // Access-Tokens ausstellte. Die Loeschung gilt fuer jede Rolle.
     const isSuperAdmin = user.is_super_admin === true || user.role_name === 'super_admin';
-    if (!isSuperAdmin) {
-      const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
-      if (user.user_active === false || user.organization_active === false || trialExpired) {
-        return res.status(403).json({
-          error: trialExpired
-            ? 'Die Testphase dieser Organisation ist abgelaufen.'
-            : 'Diese Organisation ist derzeit gesperrt. Bitte wende dich an deine Gemeinde.',
-          error_code: trialExpired ? 'org_trial_expired' : (user.user_active === false ? 'user_inactive' : 'org_inactive')
-        });
-      }
+    const kontoGesperrt = Boolean(user.deleted_at) || (!isSuperAdmin && user.user_active === false);
+    const trialExpired = !isSuperAdmin && user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
+    const orgGesperrt = !isSuperAdmin && (user.organization_active === false || trialExpired);
+    if (kontoGesperrt || orgGesperrt) {
+      return res.status(403).json({
+        error: trialExpired
+          ? 'Die Testphase dieser Organisation ist abgelaufen.'
+          : 'Diese Organisation ist derzeit gesperrt. Bitte wende dich an deine Gemeinde.',
+        error_code: trialExpired ? 'org_trial_expired' : (kontoGesperrt ? 'user_inactive' : 'org_inactive')
+      });
     }
 
     // Aktive Org nur uebernehmen, wenn sie von der Primaer-Org abweicht UND der

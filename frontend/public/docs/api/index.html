@@ -115,7 +115,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/login</code></div>
         <p class="summary">Login für alle Rollen (case-insensitiver Username)</p>
-        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>authLimiter</code> · <code>validateLogin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide</div><div class="hinweis">Offene Route; setzt last_login_at</div>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>authLimiter</code> · <code>validateLogin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide; deleted_at IS NOT NULL -&gt; 403 user_inactive fuer jede Rolle</div><div class="hinweis">Offene Route; setzt last_login_at</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/logout</code></div>
         <p class="summary">Logout — Refresh-Token revozieren und Push-Token des Geraets entfernen (best effort, immer 200)</p>

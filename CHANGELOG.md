@@ -505,6 +505,11 @@ Versionsüberschrift.
   nichts mehr; geleert wurde sie bisher nur, wenn die Leitung ein neues
   Einmalpasswort erzeugte — alle anderen Einträge blieben stehen und wanderten
   mit jeder Sicherung mit.
+- Ehemalige Konfis, die 60 Tage nach der Konfirmation automatisch aus den
+  Listen der Leitung genommen wurden, konnten sich bis zur endgültigen Löschung
+  weiter anmelden, im Jahrgangs-Chat schreiben und Termine buchen — für die
+  Leitung unsichtbar. Jetzt ist die Anmeldung ab diesem Zeitpunkt gesperrt wie
+  bei einem deaktivierten Konto, und laufende Sitzungen enden.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
