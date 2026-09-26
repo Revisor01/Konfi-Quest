@@ -262,9 +262,10 @@ für den gesamten Projektcode leer.
 ### Vor EKD-Ausrollung — Betriebsmodell, Betrieb je Instanz, Rechenschaft
 
 *Nachtrag 26.09.: Die Skalierungspunkte der ersten Fassung (S-04, Betrieb BF-02/BF-03/BF-04/
-BF-06/BF-11 und der CPU-Anteil von S-18) stehen jetzt unter „Danach", Punkt 37 — bei
-höchstens 150 Teilnehmenden je Instanz haben sie keine Nutzerwirkung. Die Nummern 25–31 sind
-neu belegt, 32–36 unverändert.*
+BF-06/BF-11 und der CPU-Anteil von S-18) stehen gesammelt unter Punkt 37. Nach Simons
+Entscheidung, alle Gemeinden in einer Datenbank zu betreiben (Punkt 25), gelten sie wieder in
+voller Schwere und gehören vor die Ausrollung. Die Nummern 25–31 sind neu belegt, 32–36
+unverändert.*
 
 25. **Betriebsmodell der Einzelinstanzen klären (Unklar, entscheidend):** Die Store-App spricht
     genau eine API-Adresse: `VITE_API_URL` zur Bauzeit, sonst `https://konfi-quest.de/api`
@@ -277,6 +278,12 @@ neu belegt, 32–36 unverändert.*
     beim ersten Start, QR-Code, Subdomain je Instanz) oder je Instanz einen eigenen Build samt
     Store-Eintrag, und davon existiert heute nichts. Vor jedem weiteren Ausrollschritt
     entscheiden und im Repo festhalten.
+    **Entschieden 26.09. (Simon): Lesart (a) — alle Gemeinden in einer Datenbank, jede
+    Gemeinde eine Organisation mit höchstens 150 Teilnehmenden.** Damit gelten die
+    Skalierungsbefunde aus Punkt 37 wieder in voller Schwere und gehören vor die
+    Ausrollung; ihre Behebung läuft als eigenes Paket (Indizes, Terminlisten,
+    Replica-Absturz zuerst, dann Chat-Fan-out, Limiter-Store, Cron-Leader,
+    Postgres-Ressourcen, Deploy-Lücke).
 26. **Betrieb je Instanz (S-18 Rest, Datenbank BF-05/BF-07, Betrieb BF-02/BF-10/BF-12):**
     Sicherung und Wiederherstellung beschreiben und einmal üben; `PG_POOL_MAX` ins Compose;
     Deploy-Lücke schließen; Cron-Leader mit Sichtbarkeit; App-Icon-Lauf nach Neustart mit
@@ -323,7 +330,8 @@ neu belegt, 32–36 unverändert.*
     Backend-Lint einführen; Frontend-Tests von Quelltext- auf gerenderte Prüfungen umstellen;
     Vorlagenkatalog, Kalender-Export, CSV-Import und die übrigen Feature-Empfehlungen B/C nach
     Produktentscheidung.
-37. **Skalierungspunkte (Nachtrag 26.09.):** S-04 (Terminlisten ohne View-Materialisierung,
+37. **Skalierungspunkte (Nachtrag 26.09.) — nach Simons Entscheidung „alles in einer
+    Datenbank" wieder VOR der EKD-Ausrollung, siehe Punkt 25:** S-04 (Terminlisten ohne View-Materialisierung,
     gemessen 100 ms → 1,2 ms), Betrieb BF-03/BF-04 (1.086 Abfragen und 66 Einzel-Pushes je
     Chat-Nachricht), BF-06 (Wrapped-Parallelität), BF-11 (Log-Volumen), BF-13 CPU-Anteil
     (Postgres ≥ 2 CPU, 2–4 GB, `shared_buffers`). Bei ≤ 150 Teilnehmenden je Instanz ohne
@@ -436,7 +444,7 @@ Bewertung in dieser Abnahme ändert sich wie folgt.
 | Sicherheit BF-01 Super-Admin-Übernahme | KRITISCH, „Übernahme aller Gemeinden" | KRITISCH, Übernahme einer Instanz | Schwere als Rechteausweitung unverändert, Tragweite je Instanz begrenzt |
 | Chat BF-01 `direct`-Raum ohne Leitungszugriff | HOCH, Blocker 5 | HOCH, Blocker 5 — einzige Lücke in der Moderationszusage | siehe oben |
 | S-20 Datenschutz-Dokumentation | MITTEL, vor Ausrollung HOCH | MITTEL, je Instanz und Träger (Punkt 28) | von der Größe unabhängig |
-| Neu: Betriebsmodell der Instanzen | — | **Unklar, entscheidend** (Punkt 25) | eine API-Adresse je Build; Instanz = Organisation oder Instanz = Installation ist aus dem Repo nicht ablesbar |
+| Neu: Betriebsmodell der Instanzen | — | **entschieden: eine Datenbank, Instanz = Organisation** (Punkt 25) | Simons Antwort vom 26.09.; damit kehren S-04, S-18 und Betrieb BF-03/BF-04/BF-06/BF-11/BF-13 in voller Schwere vor die Ausrollung zurück |
 
 **Was gleich bleibt:** die vier Blocker, alle Auflagen 8–24, die Release-Entscheidung.
 Die Zählung „216 Befunde" bleibt, weil die Bereichsberichte nicht verändert wurden; die
