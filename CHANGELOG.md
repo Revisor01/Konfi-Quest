@@ -500,6 +500,11 @@ Versionsüberschrift.
   Versuch. Die Grenze gilt jetzt je Gerät oder Netz; zusätzlich sind für
   dieselbe E-Mail-Adresse höchstens drei Anfragen pro Stunde möglich, damit
   niemand ein fremdes Postfach mit Reset-Mails flutet.
+- Eine alte Spalte, in der frühere Versionen die Einmalpasswörter von Konfis
+  im Klartext ablegten, wird beim Update geleert. Gelesen hat sie schon lange
+  nichts mehr; geleert wurde sie bisher nur, wenn die Leitung ein neues
+  Einmalpasswort erzeugte — alle anderen Einträge blieben stehen und wanderten
+  mit jeder Sicherung mit.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
