@@ -44,6 +44,7 @@ import api from '../../../services/api';
 import { ChatUser } from '../../../types/user';
 import { EigenerJahrgang, KonfiEintrag, TeamKontakt, VerfuegbarerPartner } from '../../../types/chat';
 import { istTeamTyp } from '../../../utils/chatRoles';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface SimpleCreateChatModalProps {
   onClose: () => void;
@@ -524,7 +525,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                       const isAdmin = istTeamTyp(targetUser.type);
 
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={participantId}
                           className={`app-list-item ${isAdmin ? 'app-list-item--team' : 'app-list-item--konfi'}`}
                           onClick={() => {

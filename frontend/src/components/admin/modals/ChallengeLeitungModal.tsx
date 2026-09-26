@@ -992,7 +992,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                 // Audio-/Video-Steuerung braucht ihre eigenen Klicks
                                 // (Play, Scrubben) — ohne diesen Stopper landet jeder
                                 // Griff zum Player im Aktions-Menue des Items.
-                                <div onClick={(e) => e.stopPropagation()}>
+                                <div role="presentation" onClick={(e) => e.stopPropagation()}>
                                   <ChallengeMedia
                                     filePath={submission.file_path}
                                     fileName={submission.file_name}

@@ -18,3 +18,29 @@ export const beiEnter = (aktion: () => void) => (ereignis: KeyboardEvent<HTMLEle
   ereignis.preventDefault();
   aktion();
 };
+
+/**
+ * Enter ODER Leertaste lösen die Aktion aus — das Tastaturverhalten eines
+ * Knopfs, für Elemente mit role="button", die kein <button> sind (klickbare
+ * Listenzeilen, Kacheln, Chips). Die Leertaste würde sonst die Seite
+ * scrollen, deshalb preventDefault.
+ *
+ * Nur, wenn die Taste auf dem Element SELBST gedrückt wurde: Ein Knopf im
+ * Inneren (etwa das Info-Symbol rechts in einer Zeile) behandelt seine
+ * Tasten selbst; sein Enter darf nicht zusätzlich die Zeile auslösen.
+ */
+export const beiEnterOderLeertaste = (aktion: (ereignis: KeyboardEvent<HTMLElement>) => void) =>
+  (ereignis: KeyboardEvent<HTMLElement>): void => {
+    if (ereignis.target !== ereignis.currentTarget) return;
+    if (ereignis.key !== 'Enter' && ereignis.key !== ' ') return;
+    ereignis.preventDefault();
+    aktion(ereignis);
+  };
+
+/**
+ * Enter oder Leertaste klicken das Element — derselbe Weg wie Finger und
+ * Maus, also derselbe onClick mit einem echten Klick-Ereignis (Popover
+ * finden ihr Ziel über event.target). Ein onKeyDown für jedes
+ * <div role="button" tabIndex={0} onClick=…> (Audit 26.09.2026, UI BF-03).
+ */
+export const tastaturKlick = beiEnterOderLeertaste((ereignis) => ereignis.currentTarget.click());

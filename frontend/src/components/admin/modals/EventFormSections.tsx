@@ -25,6 +25,7 @@ import {
 } from '../../shared/icons';
 import { Category, Jahrgang } from '../../../types/event';
 import { istPunkteartAktiv, PUNKTEART_NAME, type Punkteart } from '../../../utils/punktearten';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 // ---- Shared form data type ----
 
@@ -379,7 +380,7 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
             </IonItem>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
               {verfuegbareArten.map((art) => (
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={formData.point_type === art}
                   key={art}
                   className={`app-list-item app-list-item--${art}${formData.point_type === art ? ' app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, point_type: art })}
@@ -449,7 +450,7 @@ export const CategoriesTargetSection = React.memo<CategoriesTargetSectionProps>(
                   {categories.map((category) => {
                     const isSelected = formData.category_ids.includes(category.id);
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                         key={category.id}
                         className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
                         onClick={() => {
@@ -495,7 +496,7 @@ export const CategoriesTargetSection = React.memo<CategoriesTargetSectionProps>(
           {jahrgaenge.map((jahrgang) => {
             const isSelected = formData.jahrgang_ids.includes(jahrgang.id);
             return (
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                 key={jahrgang.id}
                 className={`app-list-item app-list-item--jahrgang${isSelected ? ' app-list-item--selected' : ''}`}
                 onClick={() => {

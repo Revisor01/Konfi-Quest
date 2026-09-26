@@ -170,6 +170,17 @@ Schieberegler") — in allen Formularen der App, vom Termin der Leitung bis zur
 Umfrage im Chat. Pflichtfelder, die mit einem Stern markiert sind, meldet sie
 als erforderlich.
 
+### Listen, Kacheln und Chat-Aktionen bedienen
+
+Was sich mit dem Finger antippen lässt, erreicht **Tab** und löst **Enter**
+oder die **Leertaste** aus: die Einträge unter „Mehr" und im Profil, die
+Auswahlzeilen in den Formularen der Leitung (Punkteart, Rolle, Jahrgang,
+Kategorien), Abzeichen- und Stempel-Kacheln, die Termin-Karten der Startseite
+sowie im Chat die Antwort-, Teilen- und Löschen-Knöpfe unter einer gewählten
+Nachricht und die Reaktionen. Die Vorlesefunktion nennt sie „Schaltfläche"
+und sagt bei Auswahlzeilen, ob sie gewählt sind; ein Ring zeigt, welches
+Element gerade den Fokus hat.
+
 ## Nachlesen, was sich geändert hat
 
 Nach einem Update meldet sich beim ersten Öffnen **einmal** eine kurze

@@ -60,6 +60,7 @@ import { Event } from '../../../types/event';
 import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -819,7 +820,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               {eventData.location && (
                 <div className="app-info-row">
                   <IonIcon icon={ICON_ORT_GEFUELLT} className="app-info-row__icon app-icon-color--location" />
-                  <div
+                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     onClick={() => {
                       if (eventData.location_maps_url) {
                         window.open(eventData.location_maps_url, '_blank');

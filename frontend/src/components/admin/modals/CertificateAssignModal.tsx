@@ -6,6 +6,7 @@ import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import { ICON_CHOICES } from '../../../utils/badgeIcons';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 
 interface CertificateAssignModalProps {
@@ -100,7 +101,7 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
                   const iconData = ct.icon ? ICON_CHOICES[ct.icon] : null;
                   const isSelected = selectedTypeId === ct.id;
                   return (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={ct.id}
                       className="app-list-item"
                       onClick={() => setSelectedTypeId(ct.id)}

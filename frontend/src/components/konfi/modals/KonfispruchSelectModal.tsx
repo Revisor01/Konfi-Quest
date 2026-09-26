@@ -34,6 +34,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 type Translation = 'luther2017' | 'bigs' | 'gute_nachricht' | 'elberfelder';
 
@@ -285,7 +286,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                         const text = spruch.uebersetzungen?.[translation] || '';
                         const isSelected = selectedSpruchId === spruch.id;
                         return (
-                          <div
+                          <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                             key={spruch.id}
                             className={`app-list-item app-list-item--purple ${isSelected ? 'app-list-item--selected' : ''}`}
                             onClick={() => setSelectedSpruchId(spruch.id)}

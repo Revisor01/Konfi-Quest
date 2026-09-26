@@ -37,6 +37,7 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import type { UseIonModalResult } from '@ionic/react';
 import type { AxiosInstance } from 'axios';
 import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 /**
  * Die "present"-Funktion aus useIonModal — erste Haelfte des Rueckgabepaars.
@@ -497,6 +498,8 @@ export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspr
             onClick={onOpenMatrix}
             style={onOpenMatrix ? { cursor: 'pointer' } : undefined}
             role={onOpenMatrix ? 'button' : undefined}
+            tabIndex={onOpenMatrix ? 0 : undefined}
+            onKeyDown={onOpenMatrix ? tastaturKlick : undefined}
           >
             <IonIcon icon={ICON_ZUSAGE_GEFUELLT} className="app-info-row__icon app-icon-color--konfis" />
             <div style={{ flex: 1 }}>

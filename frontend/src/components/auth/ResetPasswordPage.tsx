@@ -270,7 +270,7 @@ const ResetPasswordPage: React.FC = () => {
                       type="button"
                       slot="end"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="app-auth-input__toggle app-auth-knopf-nackt"
+                      className="app-auth-input__toggle app-knopf-nackt"
                       aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
                       aria-pressed={showPassword}
                     >
@@ -312,7 +312,7 @@ const ResetPasswordPage: React.FC = () => {
                       type="button"
                       slot="end"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="app-auth-input__toggle app-auth-knopf-nackt"
+                      className="app-auth-input__toggle app-knopf-nackt"
                       aria-label={showConfirmPassword ? 'Passwortbestätigung verbergen' : 'Passwortbestätigung anzeigen'}
                       aria-pressed={showConfirmPassword}
                     >

@@ -49,6 +49,7 @@ import { safeUUID } from '../../../utils/uuid';
 import { compressForUpload } from '../../../services/mediaCompression';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface Activity {
   id: number;
@@ -344,7 +345,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
                         filteredActivities.map(activity => {
                           const isSelected = formData.activity_id === activity.id.toString();
                           return (
-                            <div
+                            <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                               key={activity.id}
                               className={`app-list-item app-list-item--teamer${isSelected ? ' app-list-item--selected' : ''}`}
                               onClick={() => {
@@ -445,7 +446,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
-              <div
+              <div role="presentation"
                 onClick={handlePhotoSelect}
                 style={{
                   padding: 'var(--app-abstand-basis)',
@@ -458,7 +459,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
               >
                 {photoPreview ? (
                   <div className="app-settings-item" style={{ justifyContent: 'space-between' }}>
-                    <div className="app-settings-item" style={{ gap: 'var(--app-abstand-eng)' }}>
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label="Anderes Foto wählen" className="app-settings-item" style={{ gap: 'var(--app-abstand-eng)' }}>
                       <IonIcon
                         icon={ICON_ZUSAGE_GEFUELLT}
                         className="app-icon-color--teamer"
@@ -481,7 +482,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
                     </IonButton>
                   </div>
                 ) : (
-                  <div className="app-settings-item" style={{ justifyContent: 'center' }}>
+                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-settings-item" style={{ justifyContent: 'center' }}>
                     <IonIcon
                       icon={ICON_KAMERA_GEFUELLT}
                       className="app-icon-color--teamer"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getMediaObjectUrl, getCachedObjectUrl } from '../../services/mediaCache';
+import { tastaturKlick } from '../../utils/tastatur';
 
 interface LazyImageProps {
   filePath: string;
@@ -84,7 +85,7 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
   }, [filePath]);
 
   return (
-    <div
+    <div role={imageSrc ? 'button' : undefined} tabIndex={imageSrc ? 0 : undefined} onKeyDown={imageSrc ? tastaturKlick : undefined} aria-label={imageSrc ? `Bild öffnen: ${fileName}` : undefined}
       ref={imgRef}
       style={{
         maxWidth: '100%',

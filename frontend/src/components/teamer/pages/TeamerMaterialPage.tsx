@@ -53,6 +53,7 @@ import { haptik, triggerPullHaptic, ImpactStyle } from '../../../utils/haptics';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
 import { materialStats } from '../../../utils/materialStats';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface Material {
   id: number;
@@ -394,7 +395,7 @@ const TeamerMaterialPage: React.FC = () => {
                 <IonCardContent>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {materialLinks(selectedMaterial).map((url) => (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={url}
                         className="app-list-item"
                         style={{ borderLeftColor: 'var(--app-color-material)', cursor: 'pointer' }}
@@ -443,7 +444,7 @@ const TeamerMaterialPage: React.FC = () => {
                   />
                 ) : (
                   selectedMaterial.files.map((file, index) => (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={file.id}
                       className="app-list-item"
                       style={{

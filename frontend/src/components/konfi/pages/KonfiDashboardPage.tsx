@@ -33,6 +33,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { TrialBanner, StoreUpdateBanner, istVergangen } from '../../shared';
 import { track } from '../../../services/analytics';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface PointConfig {
   gottesdienst_enabled: boolean;
@@ -438,7 +439,7 @@ const KonfiDashboardPage: React.FC = () => {
               sich wieder, ein weggeklickter bleibt weg. Erreichbar bleibt er
               im Profil unter "Meine Rueckblicke". */}
         {dashboardData.has_wrapped && !wrappedHinweisWeg && (
-          <div onClick={openWrapped} style={{
+          <div role="presentation" onClick={openWrapped} style={{
             margin: '0 var(--app-abstand-basis) var(--app-abstand-basis)',
             padding: 'var(--app-abstand-gross)',
             borderRadius: 'var(--app-radius-gross)',
@@ -450,7 +451,7 @@ const KonfiDashboardPage: React.FC = () => {
           }}>
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}>
               <IonIcon icon={ICON_FUNKELN_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-zahl)' }} />
-              <div style={{ minWidth: 0 }}>
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick} style={{ minWidth: 0 }}>
                 <h3 className="app-headline" style={{ margin: 0, fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-fett)' }}>
                   {dashboardData.wrapped_titel || 'Dein Jahresrückblick ist da!'}
                 </h3>

@@ -22,6 +22,7 @@ import { ICON_BENACHRICHTIGUNG, ICON_SCHLIESSEN } from './icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
 import { fehlerText } from '../../utils/fehler';
+import { tastaturKlick } from '../../utils/tastatur';
 
 /**
  * Auswahl, welche Push-Mitteilungen aufs Handy kommen -- fuer alle drei
@@ -302,7 +303,7 @@ const PushAuswahlEintrag: React.FC<EintragProps> = ({ variante, presentingRef, p
   };
 
   return (
-    <div
+    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
       className={`app-list-item app-list-item--${variante}`}
       style={{ width: '100%', cursor: 'pointer' }}
       onClick={oeffnen}

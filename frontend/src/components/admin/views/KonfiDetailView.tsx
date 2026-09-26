@@ -64,6 +64,7 @@ import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface KonfiDetailViewProps {
   konfiId: number;
@@ -853,7 +854,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 {wrappedListe.map((eintrag, i) => (
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   key={eintrag.id}
                   className="app-list-item"
                   style={{

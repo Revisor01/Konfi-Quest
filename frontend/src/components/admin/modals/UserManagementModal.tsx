@@ -33,6 +33,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { AdminUser } from '../../../types/user';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface Role {
   id: number;
@@ -522,7 +523,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     const roleColor = getRoleColor(role.name);
 
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={role.id}
                         className="app-list-item"
                         onClick={() => !isSubmitting && setFormData({ ...formData, role_id: role.id })}
@@ -624,7 +625,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   const isAssigned = jahrgangAssignments[jahrgang.id] || false;
 
                   return (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={jahrgang.id}
                       className={`app-list-item app-list-item--${farbe}`}
                       onClick={() => !isSubmitting && handleJahrgangAssignment(jahrgang.id, !isAssigned)}

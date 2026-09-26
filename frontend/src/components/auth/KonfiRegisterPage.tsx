@@ -540,7 +540,7 @@ const KonfiRegisterPage: React.FC = () => {
                       type="button"
                       slot="end"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="app-auth-input__toggle app-auth-knopf-nackt"
+                      className="app-auth-input__toggle app-knopf-nackt"
                       aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
                       aria-pressed={showPassword}
                     >
@@ -585,7 +585,7 @@ const KonfiRegisterPage: React.FC = () => {
                       type="button"
                       slot="end"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="app-auth-input__toggle app-auth-knopf-nackt"
+                      className="app-auth-input__toggle app-knopf-nackt"
                       aria-label={showConfirmPassword ? 'Passwortbestätigung verbergen' : 'Passwortbestätigung anzeigen'}
                       aria-pressed={showConfirmPassword}
                     >
@@ -609,7 +609,7 @@ const KonfiRegisterPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => { setError(null); setIsNetworkError(false); }}
-                        className="app-auth-error__close app-auth-knopf-nackt"
+                        className="app-auth-error__close app-knopf-nackt"
                         aria-label="Meldung schließen"
                       >
                         <IonIcon icon={ICON_ABSAGE} aria-hidden="true" />

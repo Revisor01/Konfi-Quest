@@ -601,6 +601,13 @@ Versionsüberschrift.
   „Schalter". Bisher galt das nur auf den Anmeldeseiten; jetzt lassen sich
   auch Termin-, Konfi-, Benutzer- und Umfrage-Formulare mit VoiceOver und
   TalkBack ausfüllen. Sichtbar ändert sich nichts.
+- Alles, was sich antippen lässt, lässt sich auch mit der Tastatur bedienen
+  und heißt für die Vorlesefunktion „Schaltfläche": die Einträge unter
+  „Mehr" und im Profil, die Auswahlzeilen in den Formularen der Leitung,
+  Abzeichen- und Stempel-Kacheln, Termin-Karten auf der Startseite, die
+  Aktionen und Reaktionen im Chat. Tab erreicht sie, Enter oder Leertaste
+  löst sie aus, ein Ring zeigt, wo man ist. Vorher waren sie am Rechner
+  unerreichbar und wurden nur als Text vorgelesen.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

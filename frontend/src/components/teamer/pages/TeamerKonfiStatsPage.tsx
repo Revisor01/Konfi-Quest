@@ -70,6 +70,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import KachelRaster from '../../shared/KachelRaster';
 import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopoverContent';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 
 
@@ -179,7 +180,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
         </IonRefresher>
 
         {/* Punkte-Header */}
-        <div onClick={() => presentPointsModal({ presentingElement: presentingElement || undefined })}>
+        <div role="button" tabIndex={0} onKeyDown={tastaturKlick} onClick={() => presentPointsModal({ presentingElement: presentingElement || undefined })}>
           <SectionHeader
             title={konfiData.jahrgang_name ? `Jahrgang ${konfiData.jahrgang_name}` : 'Konfi-Zeit'}
             subtitle="Konfi-Punkte-Historie"
@@ -198,7 +199,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
           <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className="app-list-item"
                   style={{ width: '100%', cursor: 'pointer', borderLeftColor: 'var(--app-color-konfis)' }}
                   onClick={() => {

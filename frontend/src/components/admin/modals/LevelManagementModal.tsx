@@ -30,6 +30,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { ICON_CHOICES as LEVEL_ICONS, getIconFromString } from '../../../utils/badgeIcons';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 
 
@@ -277,7 +278,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                           </span>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 'var(--app-abstand-eng)' }}>
                             {group.icons.map(({ key, data }) => (
-                              <div
+                              <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label={data.name} aria-pressed={formData.icon === key}
                                 key={key}
                                 onClick={() => setFormData({ ...formData, icon: key })}
                                 style={{

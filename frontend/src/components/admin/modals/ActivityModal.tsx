@@ -19,6 +19,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { istPunkteartAktiv, type PunkteartFlags } from '../../../utils/punktearten';
 import { trackHandlung } from '../../../services/analytics';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface Activity {
   id: number;
@@ -269,7 +270,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                       : (activity.type === 'gottesdienst' ? 'var(--app-color-gottesdienst-rgb)' : 'var(--app-color-gemeinde-rgb)');
 
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={activity.id}
                         className={`app-list-item app-list-item--${sectionClass}`}
                         onClick={() => !isSubmitting && setSelectedActivity(activity.id)}

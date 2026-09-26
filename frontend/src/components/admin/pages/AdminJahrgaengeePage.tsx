@@ -57,6 +57,7 @@ import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -446,7 +447,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   {zuweisbare.map((person, index) => {
                     const istGewaehlt = ausgewaehlt[person.id] || false;
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={person.id}
                         className="app-list-item app-list-item--jahrgang"
                         onClick={() => !loading && setAusgewaehlt(prev => ({ ...prev, [person.id]: !istGewaehlt }))}

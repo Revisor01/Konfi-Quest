@@ -55,6 +55,7 @@ import {
   istNurTeam,
   zeitraumFehler
 } from '../../../utils/challengeForm';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 // Icon-Auswahl: gemeinsamer Vorrat aus utils/badgeIcons, damit
 // Challenge-Stempel, Abzeichen und Zertifikate dieselbe Bildsprache haben.
@@ -417,7 +418,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                 <IonCardContent>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {AUDIENCE_OPTIONS.map((option) => (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={formData.audience === option.value}
                         key={option.value}
                         className={`app-list-item app-list-item--challenges${formData.audience === option.value ? ' app-list-item--selected' : ''}`}
                         onClick={() => !loading && !isStarted && setFormData({ ...formData, audience: option.value })}
@@ -464,7 +465,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     {MEDIA_OPTIONS.map((option) => {
                       const isSelected = formData.allowed_media.includes(option.value);
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                           key={option.value}
                           className={`app-list-item app-list-item--challenges${isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => toggleMedia(option.value)}
@@ -504,7 +505,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                       (Nutzerentscheid 24.08.2026). */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {VISIBILITY_OPTIONS.map((option) => (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={formData.visibility === option.value}
                         key={option.value}
                         className={`app-list-item app-list-item--challenges${formData.visibility === option.value ? ' app-list-item--selected' : ''}`}
                         onClick={() => !loading && !isStarted && setFormData({ ...formData, visibility: option.value })}
@@ -611,7 +612,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                               </IonText>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 'var(--app-abstand-eng)' }}>
                                 {group.icons.map(({ key, data }) => (
-                                  <div
+                                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label={data.name} aria-pressed={formData.badge_icon === key}
                                     key={key}
                                     onClick={() => !loading && setFormData({ ...formData, badge_icon: key })}
                                     style={{
@@ -676,7 +677,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     {jahrgaenge.map((jahrgang) => {
                       const isSelected = formData.jahrgang_ids.includes(jahrgang.id);
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                           key={jahrgang.id}
                           className={`app-list-item app-list-item--jahrgang${isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => toggleJahrgang(jahrgang.id)}

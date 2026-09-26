@@ -53,6 +53,7 @@ import type {
   ChallengeMediaType,
   ChallengeConsent
 } from '../../../types/challenges';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 // Einreich-Modal für eine Challenge. Zeigt nur die von der Challenge erlaubten
 // Medienarten (allowed_media). Bei visibility='konfi_choice' entscheidet der
@@ -493,7 +494,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                   {availableOptions.map((option) => {
                     const isSelected = option.value === mediaType;
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                         key={option.value}
                         className={`app-list-item app-list-item--challenges${isSelected ? ' app-list-item--selected' : ''}`}
                         onClick={() => handleMediaTypeChange(option.value)}
@@ -596,7 +597,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'photo' && (
                 <>
-                  <div
+                  <div role={mediaPreview ? undefined : 'button'} tabIndex={mediaPreview ? undefined : 0} onKeyDown={tastaturKlick}
                     onClick={() => !pickingMedia && !mediaPreview && pickPhoto()}
                     style={{
                       padding: mediaPreview ? '0' : 'var(--app-abstand-basis)',
@@ -661,7 +662,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'video' && (
                 <>
-                  <div
+                  <div role={mediaPreview ? undefined : 'button'} tabIndex={mediaPreview ? undefined : 0} onKeyDown={tastaturKlick}
                     onClick={() => !pickingMedia && !mediaPreview && pickVideo()}
                     style={{
                       padding: mediaPreview ? '0' : 'var(--app-abstand-basis)',
@@ -726,7 +727,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'audio' && (
                 <>
-                  <div
+                  <div role={mediaPreview ? undefined : 'button'} tabIndex={mediaPreview ? undefined : 0} onKeyDown={tastaturKlick}
                     onClick={() => {
                       if (mediaPreview) return;
                       if (isRecording) stopRecording();
@@ -816,7 +817,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                   {CONSENT_OPTIONS.map((option) => {
                     const isSelected = option.value === consent;
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                         key={option.value}
                         className={`app-list-item app-list-item--challenges${isSelected ? ' app-list-item--selected' : ''}`}
                         onClick={() => setConsent(option.value)}

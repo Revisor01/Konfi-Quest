@@ -23,6 +23,7 @@ import { safeUUID } from '../../../utils/uuid';
 import { ICON_CHOICES as BADGE_ICONS } from '../../../utils/badgeIcons';
 import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBACK_COLOR } from '../../../utils/badgeCriteria';
 import type { BadgeKriteriumExtra } from '../../../utils/badgeCriteria';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 
 
@@ -454,7 +455,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     {activities.map(activity => {
                       const isSelected = extraCriteria.activity_id === activity.id;
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={activity.id}
                           className={activityItemClass(activity, isSelected)}
                           onClick={() => !loading && setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
@@ -513,7 +514,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     {categories.map(category => {
                       const isSelected = extraCriteria.required_category === category.name;
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                           key={category.id}
                           className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => !loading && setExtraCriteria({ ...extraCriteria, required_category: category.name })}
@@ -571,7 +572,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     {categories.map(category => {
                       const isSelected = gewaehlteKategorien.includes(category.name);
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                           key={category.id}
                           className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => {
@@ -658,7 +659,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       const isSelected = activityIds.includes(activity.id);
 
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={activity.id}
                           className={activityItemClass(activity, isSelected)}
                           onClick={() => {
@@ -798,7 +799,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                 {/* Jede Zielgruppe in IHRER Farbe (Konfi-Lila, Teamer-Pink)
                     statt beide in Orange — wie ueberall sonst in der App. */}
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className={`app-list-item app-list-item--purple${formData.target_role === 'konfi' ? ' app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, target_role: 'konfi', criteria_type: 'total_points', criteria_value: 10, color: getCategoryColor('total_points') })}
                   style={{
@@ -817,7 +818,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     </div>
                   </div>
                 </div>
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className={`app-list-item app-list-item--teamer${formData.target_role === 'teamer' ? ' app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, target_role: 'teamer', criteria_type: 'activity_count', criteria_value: 5, color: getCategoryColor('activity_count') })}
                   style={{
@@ -907,7 +908,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                           </IonText>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 'var(--app-abstand-eng)' }}>
                             {group.icons.map(({ key, data }) => (
-                              <div
+                              <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label={data.name} aria-pressed={formData.icon === key}
                                 key={key}
                                 onClick={() => setFormData({ ...formData, icon: key })}
                                 style={{
@@ -1042,7 +1043,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       const labelWithoutEmoji = type.label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
 
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={value}
                           className="app-list-item"
                           onClick={() => {

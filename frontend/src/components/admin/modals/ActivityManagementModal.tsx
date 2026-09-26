@@ -14,6 +14,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface Activity {
   id: number;
@@ -293,7 +294,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           <IonCard className="app-card">
             <IonCardContent>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className="app-list-item"
                   onClick={() => !loading && setFormData({ ...formData, target_role: 'konfi', points: formData.target_role === 'teamer' ? 1 : formData.points, type: formData.target_role === 'teamer' ? 'gottesdienst' : formData.type })}
                   style={{
@@ -308,7 +309,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 >
                   <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>Konfis</span>
                 </div>
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className="app-list-item"
                   onClick={() => !loading && setFormData({ ...formData, target_role: 'teamer', points: 0, type: '' })}
                   style={{
@@ -389,7 +390,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                   <span style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-secondary)', padding: '0 var(--app-abstand-basis)' }}>Typ *</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
-                  <div
+                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     className="app-list-item"
                     onClick={() => !loading && setFormData({ ...formData, type: 'gottesdienst' })}
                     style={{
@@ -405,7 +406,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                   >
                     <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>Gottesdienst</span>
                   </div>
-                  <div
+                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     className="app-list-item"
                     onClick={() => !loading && setFormData({ ...formData, type: 'gemeinde' })}
                     style={{
@@ -447,7 +448,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 {categories.map((category, index) => {
                   const isChecked = formData.category_ids.includes(category.id);
                   return (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={category.id}
                       className="app-list-item app-list-item--categories"
                       onClick={() => {

@@ -30,6 +30,7 @@ import {
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import type { KonfiFormDaten } from '../../../types/user';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface Jahrgang {
   id: number;
@@ -193,7 +194,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
                     const isSelected = jahrgangId === jg.id;
 
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                         key={jg.id}
                         className={`app-list-item app-list-item--purple${isSelected ? ' app-list-item--selected' : ''}`}
                         onClick={() => !isSubmitting && setJahrgangId(jg.id)}

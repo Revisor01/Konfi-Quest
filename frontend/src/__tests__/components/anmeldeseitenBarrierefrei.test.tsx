@@ -352,7 +352,7 @@ describe('Sichtbarer Fokus (Stylesheet)', () => {
 
   it('Links und nackte Knoepfe bekommen bei Tastaturfokus einen Ring', () => {
     expect(css).toMatch(/\.app-auth-link:focus-visible[^{]*\{[^}]*outline:\s*2px solid currentColor/);
-    expect(css).toMatch(/\.app-auth-knopf-nackt:focus-visible/);
+    expect(css).toMatch(/\.app-knopf-nackt:focus-visible/);
   });
 
   it('das Stylesheet wird nach variables.css geladen', () => {

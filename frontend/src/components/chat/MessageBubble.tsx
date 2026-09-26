@@ -21,6 +21,7 @@ import { REACTION_EMOJIS } from './constants';
 import { formatFileSize } from '../../utils/helpers';
 import VideoPreview from './VideoPreview';
 import LazyImage from './LazyImage';
+import { tastaturKlick } from '../../utils/tastatur';
 
 const getMimeFromFileName = (fileName: string): string => {
   const ext = (fileName.split('.').pop() || '').toLowerCase();
@@ -208,7 +209,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         </IonAvatar>
       )}
 
-      <div
+      <div role="presentation"
         style={{
           maxWidth: '70%',
           backgroundColor: isOwnMessage ? 'var(--app-color-chat)' : 'var(--app-surface-soft)',
@@ -283,7 +284,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {/* Reply Anzeige */}
         {message.reply_to_id && (
-          <div
+          <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label="Zur beantworteten Nachricht springen"
             onClick={(e) => {
               e.stopPropagation();
               const replyElement = window.document.getElementById(`msg-${message.reply_to_id}`);
@@ -427,7 +428,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               const voterNames = optionVotes.map(v => v.user_name).filter(Boolean) as string[];
 
               return (
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={userVoted} aria-disabled={takenByOther}
                   key={index}
                   onClick={() => { if (!takenByOther) onVoteInPoll(message.id, index); }}
                   style={{
@@ -577,7 +578,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 onError={(error) => onError('Fehler beim Laden des Videos: ' + error)}
               />
             ) : (
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 style={{
                   border: '1px solid rgba(255,255,255,0.3)',
                   borderRadius: 'var(--app-radius-klein)',
@@ -678,14 +679,22 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             <IonIcon icon={ICON_HAKEN_GEFUELLT} style={{ fontSize: 'var(--app-text-klein)', marginLeft: 'var(--app-abstand-mini)', verticalAlign: 'middle', opacity: 0.7 }} />
           )}
           {message.queueStatus === 'error' && (
-            <IonIcon
-              icon={ICON_WARNHINWEIS}
-              style={{ fontSize: 'var(--app-text-klein)', marginLeft: 'var(--app-abstand-mini)', color: 'var(--app-color-danger)', verticalAlign: 'middle', cursor: 'pointer' }}
+            <button
+              type="button"
+              className="app-knopf-nackt"
+              aria-label="Nachricht erneut senden"
+              style={{ marginLeft: 'var(--app-abstand-mini)', verticalAlign: 'middle', cursor: 'pointer' }}
               onClick={(e) => {
                 e.stopPropagation();
                 if (onRetry) onRetry(message);
               }}
-            />
+            >
+              <IonIcon
+                icon={ICON_WARNHINWEIS}
+                aria-hidden="true"
+                style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-color-danger)', display: 'block' }}
+              />
+            </button>
           )}
         </div>
 
@@ -735,7 +744,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 r => r.user_id === user?.id && r.user_type === user?.type
               );
               return (
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={userHasReacted}
                   key={emoji}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -785,7 +794,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {/* Inline Aktionsleiste unter ausgewählter Nachricht */}
         {selectedMessage?.id === message.id && !showReactionPicker && (
-          <div
+          <div role="presentation"
             style={{
               display: 'flex',
               gap: 'var(--app-abstand-mini)',
@@ -794,7 +803,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div
+            <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label="Reaktion hinzufügen"
               onClick={() => onOpenReactionPicker(message)}
               style={{
                 width: '32px',
@@ -809,7 +818,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             >
               <IonIcon icon={ICON_HINZUFUEGEN} style={{ fontSize: 'var(--app-text-gross)', color: isOwnMessage ? 'white' : 'var(--app-text-secondary)' }} />
             </div>
-            <div
+            <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label="Antworten"
               onClick={() => {
                 onReply(message);
                 onDeselectMessage();
@@ -828,7 +837,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             >
               <IonIcon icon={ICON_RUECKGAENGIG} style={{ fontSize: 'var(--app-text-standard)', color: isOwnMessage ? 'white' : 'var(--app-text-secondary)' }} />
             </div>
-            <div
+            <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label="Teilen"
               onClick={() => onShare(message)}
               style={{
                 width: '32px',
@@ -852,7 +861,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               ['admin', 'org_admin'].includes(user.role_name) ||
               (user.role_name === 'teamer' && isOwnMessage)
             ) && (
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label="Nachricht löschen"
                 onClick={() => {
                   onDelete(message.id);
                   onDeselectMessage();
@@ -876,7 +885,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {/* Inline Reaktions-Picker */}
         {showReactionPicker && reactionTargetMessage?.id === message.id && (
-          <div
+          <div role="presentation"
             style={{
               display: 'flex',
               gap: 'var(--app-abstand-winzig)',
@@ -894,7 +903,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 r => r.user_id === user?.id && r.user_type === user?.type && r.emoji === emoji
               );
               return (
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={userHasThisReaction} aria-label={`Mit ${emoji} reagieren`}
                   key={emoji}
                   onClick={() => onToggleReaction(message.id, emoji)}
                   style={{

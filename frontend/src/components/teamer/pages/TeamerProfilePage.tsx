@@ -65,6 +65,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { safeUUID } from '../../../utils/uuid';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface TeamerProfile {
   user: {
@@ -371,7 +372,7 @@ const TeamerProfilePage: React.FC = () => {
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 {wrappedHistory.map((entry) => (
-                  <div
+                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     key={entry.id}
                     className="app-list-item"
                     style={{ width: '100%', cursor: 'pointer', marginBottom: 'var(--app-abstand-eng)', borderLeftColor: 'var(--app-color-teamer)' }}
@@ -528,7 +529,7 @@ const TeamerProfilePage: React.FC = () => {
                     .app-list-item selbst -- von Hand gesetzt wuerde er auch
                     dann stehen bleiben, wenn der Eintrag einmal ans Ende der
                     Liste rutscht. */}
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className="app-list-item app-list-item--teamer"
                   onClick={() => setShowOnboarding(true)}
                 >
@@ -594,7 +595,7 @@ const TeamerProfilePage: React.FC = () => {
             <IonCardContent>
               {/* Abzeichen (Simon, 04.09.2026): Aus der Tab-Leiste ins
                   Profil geholt -- unter "Inhalt" steht danach nur noch das. */}
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--badges"
                 onClick={() => router.push('/teamer/badges')}
               >
@@ -623,7 +624,7 @@ const TeamerProfilePage: React.FC = () => {
                   haben konfi_data=null und sehen den Einstieg weiterhin
                   nicht — er fuehrte fuer sie ins Leere. */}
               {profile.konfi_data && (
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className="app-list-item app-list-item--konfi"
                   onClick={() => router.push('/teamer/profile/konfi-stats')}
                 >

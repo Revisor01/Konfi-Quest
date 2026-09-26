@@ -50,6 +50,7 @@ import PushAuswahlEintrag from '../../shared/PushAuswahl';
 import { useIonRouter } from '@ionic/react';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
+import { tastaturKlick } from '../../../utils/tastatur';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 const AdminSettingsPage: React.FC = () => {
@@ -234,7 +235,7 @@ const AdminSettingsPage: React.FC = () => {
           <IonCard className="app-card">
             <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--users"
                 onClick={() => router.push('/admin/profile')}
               >
@@ -261,7 +262,7 @@ const AdminSettingsPage: React.FC = () => {
               <PushAuswahlEintrag variante="users" presentingRef={pageRef} />
 
               {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--users"
                 onClick={() => setShowOnboarding(true)}
               >
@@ -294,12 +295,12 @@ const AdminSettingsPage: React.FC = () => {
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--users"
                   onClick={() => router.push('/admin/users')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                     <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
                     </div>
@@ -315,12 +316,12 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
 
                 {user?.role_name === 'org_admin' && (
-                  <div
+                  <div role="presentation"
                     className="app-list-item app-list-item--users"
                     onClick={() => router.push('/admin/settings/dashboard')}
                   >
                     <div className="app-list-item__row">
-                      <div className="app-list-item__main">
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                       <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                       <IonIcon icon={ICON_APPS} />
                       </div>
@@ -336,12 +337,12 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 )}
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--users"
                   onClick={() => presentInviteModal({ presentingElement: presentingElement })}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                     <IonIcon icon={ICON_QRCODE_GEFUELLT} />
                     </div>
@@ -377,12 +378,12 @@ const AdminSettingsPage: React.FC = () => {
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--activities"
                   onClick={() => router.push('/admin/activities')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
                     <IonIcon icon={ICON_AKTION_GEFUELLT} />
                     </div>
@@ -397,12 +398,12 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--badges"
                   onClick={() => router.push('/admin/badges')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
                     <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
                     </div>
@@ -417,12 +418,12 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--jahrgang"
                   onClick={() => router.push('/admin/settings/jahrgaenge')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
                     <IonIcon icon={ICON_JAHRGANG_GEFUELLT} />
                     </div>
@@ -442,12 +443,12 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--categories"
                   onClick={() => router.push('/admin/settings/categories')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--categories">
                     <IonIcon icon={ICON_KATEGORIE_GEFUELLT} />
                     </div>
@@ -462,12 +463,12 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--level"
                   onClick={() => router.push('/admin/settings/levels')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
                     <IonIcon icon={ICON_POKAL_GEFUELLT} />
                     </div>
@@ -482,12 +483,12 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--material"
                   onClick={() => router.push('/admin/material')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--material">
                     <IonIcon icon={ICON_DATEI_GEFUELLT} />
                     </div>
@@ -502,12 +503,12 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--wrapped"
                   onClick={() => router.push('/admin/wrapped')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                       <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'var(--app-color-wrapped)' }}>
                         <IonIcon icon={ICON_FUNKELN} style={{ color: 'white' }} />
                       </div>
@@ -522,12 +523,12 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--teamer"
                   onClick={() => router.push('/admin/settings/certificates')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer">
                     <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
                     </div>

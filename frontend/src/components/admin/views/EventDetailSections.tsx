@@ -45,6 +45,7 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
 import { teilnahmeDarstellung, listItemKlasse, iconKreisKlasse, eckBadgeKlasse } from '../../../utils/teilnahmeStatus';
 import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
 
@@ -381,7 +382,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {eventData.location && (
           <div className="app-info-row">
             <IonIcon icon={ICON_ORT_GEFUELLT} className="app-info-row__icon app-icon-color--location" />
-            <div
+            <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
               onClick={() => {
                 if (eventData.location_maps_url) {
                   window.open(eventData.location_maps_url, '_blank');
@@ -458,7 +459,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {eventMaterials && eventMaterials.length > 0 && onMaterialHinweisClick && (
           <div className="app-info-row">
             <IonIcon icon={ICON_DATEI_GEFUELLT} className="app-info-row__icon app-icon-color--material" />
-            <div onClick={onMaterialHinweisClick}>
+            <div role="button" tabIndex={0} onKeyDown={tastaturKlick} onClick={onMaterialHinweisClick}>
               <div className="app-info-row__label">Material</div>
               <div className="app-info-row__value app-event-detail__material-link">
                 {eventMaterials.length === 1
@@ -539,7 +540,7 @@ export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
           const seriesUnlimited = (seriesEvent.max_participants || 0) === 0;
           const isFull = !seriesUnlimited && (seriesEvent.registered_count || 0) >= seriesEvent.max_participants;
           return (
-            <div
+            <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
               key={seriesEvent.id}
               className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'} app-event-detail__series-link`}
               onClick={() => onNavigate(seriesEvent.id)}
@@ -657,7 +658,7 @@ export const EventMaterialSection = React.memo<EventMaterialSectionProps>(({
       <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
         {eventMaterials.map((mat) => (
-          <div
+          <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
             key={mat.id}
             className="app-list-item app-list-item--material"
             style={{ cursor: 'pointer' }}

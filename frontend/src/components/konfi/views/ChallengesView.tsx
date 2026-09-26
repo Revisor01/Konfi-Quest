@@ -23,6 +23,7 @@ import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
 import ZaehlerKugel from '../../shared/ZaehlerKugel';
 import type { KonfiChallenge, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { getIconFromString } from '../../../utils/badgeIcons';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 /**
  * Loest den gespeicherten Icon-Namen einer Challenge auf (Rueckfall: Flagge).
@@ -206,7 +207,7 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                 const author = getAuthorLabel(challenge);
                 const neu = neuigkeiten[challenge.id] ?? 0;
                 return (
-                  <div
+                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     key={challenge.id}
                     className="app-list-item app-list-item--challenges"
                     onClick={() => onSelectChallenge(challenge)}
@@ -305,7 +306,7 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                   // und tappbar, aber sichtbar von "erledigt" unterschieden.
                   const participated = !!challenge.has_submission;
                   return (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={challenge.id}
                       className="app-list-item app-list-item--challenges"
                       onClick={() => onSelectChallenge(challenge)}

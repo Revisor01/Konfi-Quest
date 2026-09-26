@@ -34,6 +34,7 @@ import type { Participant } from '../../../types/event';
 // Die Jahrgangsregel liegt in utils/jahrgangsPassung.ts (25.09.2026) — sie
 // spiegelt gehoertZumTermin im Backend und hat dort ihre Erklaerung.
 import { passtZumTermin } from '../../../utils/jahrgangsPassung';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface Konfi {
   id: number;
@@ -459,7 +460,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                       const isSelected = selectedKonfis.includes(konfi.id);
 
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={konfi.id}
                           className="app-list-item app-list-item--events"
                           onClick={() => handleKonfiSelection(konfi.id)}

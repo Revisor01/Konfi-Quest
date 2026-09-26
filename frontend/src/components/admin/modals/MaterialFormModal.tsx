@@ -54,6 +54,7 @@ import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istWebLink } from '../../../utils/linkDisplay';
 import { trackHandlung } from '../../../services/analytics';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface MaterialFile {
   id: number;
@@ -504,7 +505,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                         .map(ev => {
                           const isSelected = eventIds.includes(ev.id);
                           return (
-                            <div
+                            <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                               key={ev.id}
                               className="app-list-item"
                               onClick={() => {
@@ -559,7 +560,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                       {jahrgaenge.map(jg => {
                         const isSelected = jahrgangIds.includes(jg.id);
                         return (
-                          <div
+                          <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                             key={jg.id}
                             className="app-list-item"
                             onClick={() => {

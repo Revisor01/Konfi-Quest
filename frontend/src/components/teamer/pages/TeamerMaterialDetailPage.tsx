@@ -43,6 +43,7 @@ import { SectionHeader } from '../../shared';
 import FileViewerModal, { FileItem } from '../../shared/FileViewerModal';
 import { haptik, triggerPullHaptic, ImpactStyle } from '../../../utils/haptics';
 import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface MaterialFile {
   id: number;
@@ -304,7 +305,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   <IonCardContent>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                       {materialLinks(material).map((url) => (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={url}
                           className="app-list-item"
                           style={{ borderLeftColor: 'var(--app-color-material)', cursor: 'pointer' }}
@@ -354,7 +355,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {material.files.map((file) => (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={file.id}
                         className="app-list-item"
                         style={{

@@ -198,7 +198,7 @@ interface EventCardProps {
 export const EventCard = React.memo<EventCardProps>(({ event, onClick }) => {
   const isWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
   return (
-    <div
+    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
       onClick={onClick}
       className="app-dashboard-glass-card"
       style={{
@@ -294,6 +294,7 @@ import { RankingEntry as RankingEntryType, RankingZeile } from '../../../types/d
 import { getIconFromString } from '../../../utils/badgeIcons';
 import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopoverContent';
 import { formatTimeUntil } from '../../shared/eventFormatting';
+import { tastaturKlick } from '../../../utils/tastatur';
 // Re-Export für bestehende Verwender (Wrapped-Slides, KonfiDetailSections).
 export { getIconFromString };
 
@@ -535,7 +536,7 @@ export const LevelIconsRow = React.memo<LevelIconsRowProps>(({ allLevels, levelI
       const isReached = index < levelIndex;
       const isCurrent = index === levelIndex - 1;
       return (
-        <div
+        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
           key={level.id}
           onClick={(e) => {
             e.stopPropagation();

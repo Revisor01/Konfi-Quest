@@ -38,6 +38,7 @@ import {
   type PunkteartFlags,
 } from '../../../utils/punktearten';
 import { trackHandlung } from '../../../services/analytics';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface BonusModalProps {
   konfiId: number;
@@ -217,7 +218,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     ? 'rgba(var(--app-color-success-strong-rgb), 0.1)'
                     : 'rgba(var(--app-color-gottesdienst-rgb), 0.1)';
                   return (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={art}
                       className="app-list-item"
                       onClick={() => !isSubmitting && setType(art)}

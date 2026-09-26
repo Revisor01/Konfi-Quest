@@ -89,6 +89,7 @@ import { safeUUID } from '../../../utils/uuid';
 // unterschiedlicher Nullbarkeit haben genau dort gebissen. Der Modal-Typ ist
 // der genauere — er kennt Teamer-Antraege ohne Punkte und ohne Typ.
 import type { ActivityRequest } from '../../konfi/modals/RequestDetailModal';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
@@ -1156,7 +1157,7 @@ const TeamerEventsPage: React.FC = () => {
                 {selectedEvent.location && (
                   <div className="app-info-row">
                     <IonIcon icon={ICON_ORT_GEFUELLT} className="app-info-row__icon app-icon-color--location" />
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       onClick={() => {
                         if (selectedEvent.location_maps_url) {
                           window.open(selectedEvent.location_maps_url, '_blank');
@@ -1248,7 +1249,7 @@ const TeamerEventsPage: React.FC = () => {
                 {eventMaterials.length > 0 && (
                   <div className="app-info-row">
                     <IonIcon icon={ICON_DATEI_GEFUELLT} className="app-info-row__icon app-icon-color--material" />
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       onClick={() => {
                         if (eventMaterials.length === 1) {
                           materialIdRef.current = eventMaterials[0].id;
@@ -1572,7 +1573,7 @@ const TeamerEventsPage: React.FC = () => {
               <IonCard className="app-card">
                 <IonCardContent className="app-card-content">
                   {eventMaterials.map((mat) => (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={mat.id}
                       className="app-list-item app-list-item--material"
                       style={{ cursor: 'pointer', marginBottom: 'var(--app-abstand-eng)' }}
