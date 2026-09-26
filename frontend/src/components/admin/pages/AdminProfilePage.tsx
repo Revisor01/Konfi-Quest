@@ -34,6 +34,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
+import EinladungenKarte from '../../shared/EinladungenKarte';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
@@ -311,6 +312,13 @@ const AdminProfilePage: React.FC = () => {
 
                 {/* App-Sperre: Face ID / Fingerabdruck vor der laufenden App */}
                 <AppSperreSchalter variante="users" />
+                {/* Offene Einladungen in eine weitere Gemeinde -- im Profil
+                    wie bei Konfis und Team; Push und Postfach fuehren hierher
+                    (pushNavigation: gemeinde_einladung -> /admin/profile).
+                    Bis zum 26.09.2026 stand die Karte auf dem Reiter "Mehr",
+                    der Tipp auf die Mitteilung landete aber hier -- und fand
+                    nichts. */}
+                <EinladungenKarte variante="users" />
               </div>
             </IonCardContent>
           </IonCard>

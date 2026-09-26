@@ -14,7 +14,9 @@ Versionsüberschrift.
   einladen — unter „Mehr › Benutzer:innen" über den Knopf oben rechts. Dazu
   reicht der Benutzername oder die E-Mail-Adresse, und die Leitung gibt gleich
   die Rolle mit. Die eingeladene Person bekommt eine Mitteilung und eine
-  E-Mail und entscheidet selbst; erst mit ihrer Zusage gehört sie zur Gemeinde.
+  E-Mail, findet die Einladung in ihrem Profil — in jeder Rolle an derselben
+  Stelle, dorthin führen auch Mitteilung und Postfach — und entscheidet
+  selbst; erst mit ihrer Zusage gehört sie zur Gemeinde.
   Sie behält Benutzername und Passwort, ihre bisherige Gemeinde bleibt
   unverändert. Die Einladung gilt 14 Tage und lässt sich zurückziehen. Konfis
   werden weiterhin über einen Einladungscode aufgenommen.
