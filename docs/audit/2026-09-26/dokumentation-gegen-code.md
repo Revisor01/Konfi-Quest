@@ -181,6 +181,7 @@ abreißt.
 
 ### BF-05: Store-Texte für 2.3.0 fehlen, `release-notes-de.txt` ist schon umgestellt
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — `docs/store-texte-2.3.0.md` angelegt (iOS-Text 1.8 k Zeichen ohne Plattform-Wörter, Play-Text unter 500 Zeichen mit Postfach und Push-Reparatur, Screenshot-Liste, Konsolen-Angaben mit offener Datenschutz-Frage zur Multi-Gemeinde); `frontend/release-notes-de.txt` auf den Play-Text gesetzt.
 - **Fundstelle:** `docs/store-texte-2.2.0.md` (letzte Fassung), `frontend/release-notes-de.txt`
   (489 Zeichen, Inhalt 2.3.0), `.github/workflows/android-release.yml:120`,
   `.github/workflows/ios-release.yml:48-61`

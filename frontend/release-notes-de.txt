@@ -1,11 +1,5 @@
-In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde. Die Leitung lädt jemanden mit bestehendem Konto ein; die Person entscheidet selbst.
+Neu: Ein Postfach hinter der Glocke oben rechts sammelt alles, was die App dir mitteilt. Du wählst, welche Mitteilungen aufs Handy kommen.
 
-Der Jahresrückblick fürs Team wird je Gemeinde erstellt.
+In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde. Team-Rückblick je Gemeinde. Dunkelmodus folgt dem Gerät.
 
-Auswählen, welche Mitteilungen aufs Handy kommen.
-
-Dunkelmodus: Karten und Listen setzen sich deutlicher ab.
-
-Ein laufender Termin steht schon unter „Verbuchen", nicht erst nach seinem Ende.
-
-Behoben: Zähler nahmen beim Gemeindewechsel die Zahlen der vorigen Gemeinde mit.
+Behoben: Nach Update oder Neuanmeldung kamen keine Mitteilungen mehr. Antippen einer Mitteilung ließ die App abstürzen. Einladungs- und Passwort-Links öffnen direkt die App.

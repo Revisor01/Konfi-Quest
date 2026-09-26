@@ -267,6 +267,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-08: Store-Texte für 2.3.0 fehlen; Android-Notizen decken die größten Neuerungen nicht ab
 - **Schwere:** MITTEL
+- **Status:** teilweise behoben 26.09.2026 — `docs/store-texte-2.3.0.md` angelegt, `frontend/release-notes-de.txt` trägt jetzt Postfach/Glocke, Mitteilungs-Auswahl und die Push-Reparatur (437 Zeichen); die doppelten CHANGELOG-Abschnitte führt die Koordination zum Schluss zusammen, weil mehrere Pakete parallel in den Unreleased-Block schreiben.
 - **Fundstelle:** `docs/` (vorhanden: `store-texte-2.0.0.md`, `2.1.0`, `2.1.1`, `2.2.0`; kein `2.3.0`),
   `frontend/release-notes-de.txt` (Play-Text, 489 Zeichen), `CHANGELOG.md:9-…` (Unreleased 2.3.0),
   `.github/workflows/ios-release.yml:41-71` (Plattform-Check liest nur vorhandene `store-texte-*.md`).
