@@ -226,7 +226,7 @@ paths:
           description: "JWT (15 Min) + Refresh-Token (90 Tage, SHA-256-gehasht gespeichert) + User-Objekt (bei Konfi inkl. jahrgang und Punkten; bei `admin` seit 27.08.2026 zusaetzlich assigned_jahrgaenge[] fuer die Warnung beim Jahrgangswechsel)"
         "401": { description: "Ungueltige Anmeldedaten (User unbekannt oder Passwort falsch — gleiche Meldung)" }
         "403": { description: "User deaktiviert ODER soft-geloescht (deleted_at; beides user_inactive, identische Antwort), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung" }
-        "429": { description: "authLimiter: 300 Fehlversuche/15min pro Client-IP" }
+        "429": { description: "authLimiter: 300 Fehlversuche/15min pro Client-IP (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09)" }
       x-berechtigung:
         rollen: [oeffentlich]
         middleware: [authLimiter, validateLogin]
@@ -714,7 +714,7 @@ paths:
         "404": { description: "Code existiert nicht" }
         "409": { description: "Username vergeben" }
         "410": { description: "Code abgelaufen" }
-        "429": { description: "registerLimiter: 200/h pro IP" }
+        "429": { description: "registerLimiter: 200/h pro IP (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09)" }
       x-berechtigung:
         rollen: [oeffentlich]
         middleware: [registerLimiter, validateRegisterKonfi]
@@ -857,7 +857,7 @@ paths:
       responses:
         "200": { description: "Cookie kq_docs gesetzt (JWT 30 Tage, HttpOnly, Secure, SameSite=Lax)" }
         "401": { description: "Passwort falsch (zeitkonstanter Vergleich)" }
-        "429": { description: "docsLoginLimiter: 20 Fehlversuche/15min pro Client-IP; Erfolge zaehlen nicht" }
+        "429": { description: "docsLoginLimiter: 20 Fehlversuche/15min pro Client-IP; Erfolge zaehlen nicht (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09 — vorher galt das Limit je Replica, also doppelt)" }
         "503": { description: "DOCS_PASSWORD nicht gesetzt — Doku bleibt gesperrt statt offen" }
       x-berechtigung:
         rollen: [oeffentlich]

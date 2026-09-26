@@ -627,6 +627,10 @@ Versionsüberschrift.
 - Das Erstellen des Jahresrückblicks für einen ganzen Jahrgang belegt nicht
   mehr alle Datenbankverbindungen auf einmal; die App bleibt währenddessen
   für alle anderen flüssig.
+- Die Grenzen für Anmeldeversuche, Registrierungen, Chat-Nachrichten,
+  Buchungen und Uploads gelten jetzt für alle Server gemeinsam statt je
+  Server einzeln — sie waren dadurch doppelt so weit wie gedacht, und die
+  Meldung „Zu viele Anfragen" kam scheinbar zufällig.
 
 ## [2.2.0] - 2026-09-18
 

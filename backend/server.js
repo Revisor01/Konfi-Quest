@@ -26,6 +26,23 @@ if (!JWT_SECRET) {
 const db = require('./database');
 const { darfRaumBetreten } = require('./utils/chatRoomAccess');
 
+// Gemeinsamer Zaehler-Speicher fuer die Rate-Limiter (Audit 26.09.2026,
+// Betrieb BF-09 / S-10): Ohne `store` zaehlte express-rate-limit je Prozess
+// im Speicher, und hinter Traefik mit zwei Replicas galt jedes Limit doppelt
+// (40 statt 20 Doku-Passwort-Versuche, 600 statt 300 Login-Fehlversuche);
+// 429 kam scheinbar zufaellig. Der Store zaehlt in der vorhandenen Postgres
+// (Tabelle rate_limit_zaehler, Migration 167) und faellt bei einem
+// Datenbankausfall auf den Speicher je Prozess zurueck. Jeder Limiter
+// bekommt seine EIGENE Instanz mit eigenem Praefix.
+//
+// Bewusst NICHT geteilt: der allgemeine Flutschutz (generalLimiter, 2000 je
+// Viertelstunde). Er liegt vor JEDER Anfrage -- auch vor den
+// Gesundheitspruefungen von Traefik und Docker -- und ein Datenbankschreiben
+// je API-Aufruf waere fuer eine Bremse, die kein Passwort schuetzt, der
+// falsche Preis. Er zaehlt weiter je Replica; effektiv also das Doppelte.
+const { PostgresRateLimitStore } = require('./utils/rateLimitStore');
+const geteilterZaehler = (name) => new PostgresRateLimitStore(db, { prefix: name });
+
 // ====================================================================
 // HTTP SERVER (ohne App — App kommt nach Socket.IO Setup)
 // ====================================================================
@@ -309,6 +326,7 @@ const generalLimiter = rateLimit({
 // Hoch auf 300 Fehlversuche/15min (skipSuccessfulRequests: Erfolge zählen NICHT)
 // -> Gruppen-Onboarding läuft, echter Brute-Force wird weiter gebremst.
 const authLimiter = rateLimit({
+  store: geteilterZaehler('auth'),
   windowMs: 15 * 60 * 1000,
   max: 300,
   keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP), NICHT Proxy-IP
@@ -323,6 +341,7 @@ const authLimiter = rateLimit({
 // zu eng. Erfolgreiche Registrierungen zählen nicht mit, damit nur echte
 // Missbrauchs-Schleifen (Fehlversuche) gebremst werden.
 const registerLimiter = rateLimit({
+  store: geteilterZaehler('register'),
   windowMs: 60 * 60 * 1000,
   max: 200,
   keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP)
@@ -338,6 +357,7 @@ const registerLimiter = rateLimit({
 // (CodeQL-Befund 101, 24.08.2026). Erfolgreiche Anmeldungen zählen nicht,
 // 20 Fehlversuche pro Viertelstunde reichen für Vertipper locker.
 const docsLoginLimiter = rateLimit({
+  store: geteilterZaehler('docs'),
   windowMs: 15 * 60 * 1000,
   max: 20,
   keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP)
@@ -348,6 +368,7 @@ const docsLoginLimiter = rateLimit({
 });
 
 const chatMessageLimiter = rateLimit({
+  store: geteilterZaehler('chat'),
   windowMs: 60 * 1000,
   max: 60,
   keyGenerator: userOrIpKey,
@@ -357,6 +378,7 @@ const chatMessageLimiter = rateLimit({
 });
 
 const eventBookingLimiter = rateLimit({
+  store: geteilterZaehler('buchung'),
   windowMs: 15 * 60 * 1000,
   max: 60,
   keyGenerator: userOrIpKey,
@@ -366,6 +388,7 @@ const eventBookingLimiter = rateLimit({
 });
 
 const uploadLimiter = rateLimit({
+  store: geteilterZaehler('upload'),
   windowMs: 15 * 60 * 1000,
   max: 100,
   keyGenerator: userOrIpKey,
@@ -380,6 +403,7 @@ const uploadLimiter = rateLimit({
 // "Missing rate limiting" gemeldet (26.08.2026). Zehn Leerungen pro Viertel-
 // stunde reichen fuer jeden echten Bedarf der Leitung.
 const chatClearLimiter = rateLimit({
+  store: geteilterZaehler('chat-leeren'),
   windowMs: 15 * 60 * 1000,
   max: 10,
   keyGenerator: userOrIpKey,
@@ -389,6 +413,7 @@ const chatClearLimiter = rateLimit({
 });
 
 const orgLimiter = rateLimit({
+  store: geteilterZaehler('org'),
   // Deckt ALLE /api/organizations-Routen ab. GET (Lesen: Liste, Detail, Admins)
   // wird per skip ausgenommen und fällt auf den generalLimiter. Nur Schreib-Ops
   // (POST/PUT/PATCH/DELETE) zählen hier, pro User (nicht pro IP).

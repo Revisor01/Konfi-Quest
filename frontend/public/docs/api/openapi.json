@@ -141,7 +141,7 @@
             "description": "User deaktiviert ODER soft-geloescht (deleted_at; beides user_inactive, identische Antwort), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung"
           },
           "429": {
-            "description": "authLimiter: 300 Fehlversuche/15min pro Client-IP"
+            "description": "authLimiter: 300 Fehlversuche/15min pro Client-IP (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09)"
           }
         },
         "x-berechtigung": {
@@ -1038,7 +1038,7 @@
             "description": "Code abgelaufen"
           },
           "429": {
-            "description": "registerLimiter: 200/h pro IP"
+            "description": "registerLimiter: 200/h pro IP (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09)"
           }
         },
         "x-berechtigung": {
@@ -1268,7 +1268,7 @@
             "description": "Passwort falsch (zeitkonstanter Vergleich)"
           },
           "429": {
-            "description": "docsLoginLimiter: 20 Fehlversuche/15min pro Client-IP; Erfolge zaehlen nicht"
+            "description": "docsLoginLimiter: 20 Fehlversuche/15min pro Client-IP; Erfolge zaehlen nicht (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09 — vorher galt das Limit je Replica, also doppelt)"
           },
           "503": {
             "description": "DOCS_PASSWORD nicht gesetzt — Doku bleibt gesperrt statt offen"
