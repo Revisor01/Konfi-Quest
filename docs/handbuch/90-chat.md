@@ -389,9 +389,11 @@ Jahrgang, aus der Rolle, aus der Terminanmeldung. Wer es anderswo versucht,
 bekommt: *„Teilnehmer können nur zu Gruppenchats hinzugefügt werden"*
 beziehungsweise *„… aus Gruppenchats entfernt werden"*.
 
-Nur Personen aus der eigenen Organisation lassen sich hinzufügen, und ihre Rolle
-wird immer aus dem echten Konto ermittelt — niemand landet mit falschen Rechten
-in einer Gruppe.
+Nur Personen aus der eigenen Gemeinde lassen sich hinzufügen — dazu zählen
+auch Teamer:innen und Admins, die [über eine Einladung](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)
+hier mitarbeiten und in einer anderen Gemeinde zuhause sind. Ihre Rolle wird
+immer aus dem echten Konto ermittelt, und zwar die Rolle **in dieser
+Gemeinde** — niemand landet mit falschen Rechten in einer Gruppe.
 
 > **Achtung:** Beim nachträglichen Hinzufügen greift nur die Jahrgangsgrenze für
 > Konfis: Ein Admin kann nur Konfis seiner eigenen Jahrgänge eintragen. Alles

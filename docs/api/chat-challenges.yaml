@@ -590,7 +590,12 @@ paths:
                 name: { type: string }
                 participants:
                   type: array
-                  description: User-IDs (oder Objekte mit user_id); nur Org-Mitglieder werden uebernommen
+                  description: >
+                    User-IDs (oder Objekte mit user_id); nur Mitglieder der
+                    aktiven Org werden uebernommen -- ueber BEIDE Quellen
+                    (users.organization_id ODER user_organizations), user_type
+                    aus der Rolle DIESER Org. BEHOBEN 26.09.2026 (Audit Chat
+                    BF-08): vorher nur Stamm-Org, Eingeladene fielen still weg.
                   items: { type: [integer, object] }
                 jahrgang_id: { type: integer, description: Pflicht bei type=jahrgang }
       responses:
@@ -630,6 +635,11 @@ paths:
         # Gruppenraum, der ueberall als privates Zweiergespraech galt und den
         # die Leitung nicht lesen konnte. Jetzt genau eine weitere Person
         # (400 direct_nur_zu_zweit); Bestand ueber Migration 164 auf 'group'.
+        # BEHOBEN 26.09.2026 (Audit Chat BF-08): participants wurden allein
+        # ueber u.organization_id (Stamm-Org) aufgeloest -- wer ueber
+        # user_organizations in der aktiven Org mitarbeitet, stand in
+        # /team-contacts, fiel hier aber still heraus. Jetzt beide Quellen
+        # (TEAM_MITGLIED_ROLLE), user_type aus der Rolle DIESER Org.
         # WEITERHIN OFFEN: Jahrgangs-Chats lassen sich für JEDEN Jahrgang
         # der Org anlegen (keine Zuweisungspruefung bei type='jahrgang').
         hinweis: "Siehe LUECKE-Kommentar; emitRoomsChanged an alle finalen Teilnehmer"
@@ -938,7 +948,7 @@ paths:
         '201': { description: Hinzugefuegt (user_type serverseitig aus Rolle abgeleitet) }
         '400': { description: user_id fehlt ODER Raum ist kein Gruppenchat }
         '403': { description: "Aufrufer ist kein Admin-Typ ODER admin traegt einen Konfi ausserhalb der zugewiesenen Jahrgaenge ein" }
-        '404': { description: Raum oder Ziel-User nicht in eigener Org }
+        '404': { description: "Raum nicht in eigener Org, ODER Ziel-User weder Stamm-Mitglied noch ueber user_organizations in der aktiven Org" }
         '409': { description: Bereits Teilnehmer }
         '500': { description: Datenbankfehler }
       x-berechtigung:
@@ -946,11 +956,17 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: >
-          type='admin'; nur room.type='group'; Ziel-User org-gescopt.
+          type='admin'; nur room.type='group'; Ziel-User org-gescopt ueber
+          BEIDE Quellen (users.organization_id ODER user_organizations),
+          user_type aus der Rolle DIESER Org (TEAM_MITGLIED_ROLLE).
           Konfi-Ziele zusaetzlich gegen die Jahrgangsbindung des Aufrufers
           (seit 2026-09-01): admin nur mit zugewiesenem Jahrgang (can_view),
           org_admin/super_admin ausgenommen — sonst waere die Grenze aus
           POST /rooms per nachtraeglichem Eintragen umgehbar.
+        # BEHOBEN 26.09.2026 (Audit Chat BF-08): Der Ziel-User wurde allein
+        # ueber u.organization_id gesucht -- Eingeladene (user_organizations)
+        # bekamen 404 "nicht in deiner Organisation", obwohl sie in
+        # /team-contacts standen und Push aus dieser Org erhielten.
         hinweis: "teamer können keine Teilnehmer hinzufuegen (wohl aber Räume mit Teilnehmern ANLEGEN, siehe POST /rooms)"
 
   /api/chat/rooms/{roomId}/participants/{userId}/{userType}:

@@ -524,6 +524,11 @@ Versionsüberschrift.
   neuen Wert, und beim Zurücknehmen wurde der neue Wert abgezogen statt des
   gutgeschriebenen. Jede Vergabe merkt sich jetzt ihren Wert; ein geänderter
   Punktwert gilt nur für künftige Vergaben.
+- Wer über eine Einladung in einer weiteren Gemeinde mitarbeitet, ließ sich
+  dort nicht in Gruppenchats eintragen: Beim Anlegen einer Gruppe fehlte die
+  Person danach ohne Hinweis, beim nachträglichen Hinzufügen kam „nicht in
+  deiner Organisation" — obwohl sie in der Team-Kontaktliste stand. Jetzt
+  kommt sie hinein, mit der Rolle, die sie in dieser Gemeinde hat.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

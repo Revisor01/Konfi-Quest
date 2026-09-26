@@ -239,7 +239,10 @@ oder eine Mitteilung aus dem
 Gemeinde, aus der sie stammt, und dort steht der Umschalter wieder.
 
 Im [Chat](90-chat.md#wer-wen-anschreiben-darf) steht die Person in der
-Team-Kontaktliste jeder ihrer Gemeinden — mit der Rolle, die sie dort hat.
+Team-Kontaktliste jeder ihrer Gemeinden — mit der Rolle, die sie dort hat. In
+jeder dieser Gemeinden lässt sie sich auch in
+[Gruppenchats](90-chat.md#mitglieder-einer-gruppe-verwalten) aufnehmen, beim
+Anlegen wie nachträglich.
 
 **Mitteilungen kommen aus allen Gemeinden**, in denen jemand die passende
 Rolle hat — nicht nur aus der Stamm-Gemeinde:

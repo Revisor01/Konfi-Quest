@@ -630,10 +630,16 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           .map(p => parseInt(typeof p === 'object' ? p.user_id : p))
           .filter(uid => Number.isInteger(uid) && uid !== createdBy);
         if (participantIds.length > 0) {
+          // BEIDE Quellen der Zugehoerigkeit und die Rolle DIESER Gemeinde
+          // (Audit 26.09.2026, Chat BF-08). Bis dahin stand hier
+          // `u.organization_id = $2`: Wer ueber user_organizations hier
+          // mitarbeitet, stand in der Kontaktliste, fiel hier aber still
+          // heraus -- die Gruppe entstand ohne die Person.
           const { rows: partUsers } = await db.query(
             `SELECT u.id, r.name AS role_name
-               FROM users u JOIN roles r ON u.role_id = r.id
-              WHERE u.id = ANY($1::int[]) AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+               FROM users u
+               ${TEAM_MITGLIED_ROLLE}
+              WHERE u.id = ANY($1::int[]) AND u.deleted_at IS NULL`,
             [participantIds, organizationId]
           );
 
@@ -1607,11 +1613,14 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
       // user_type IMMER serverseitig aus der echten Rolle ableiten — NIE vom
       // Client uebernehmen (siehe /direct: Teamer:innen kamen als 'admin' rein
-      // und fanden den Raum nicht).
+      // und fanden den Raum nicht). Die Rolle ist die DIESER Gemeinde, die
+      // Mitgliedschaft kommt aus BEIDEN Quellen (Audit 26.09.2026, Chat
+      // BF-08; vorher `u.organization_id = $2` -> 404 fuer Eingeladene).
       const { rows: [targetUser] } = await db.query(
         `SELECT u.id, r.name AS role_name
-           FROM users u JOIN roles r ON u.role_id = r.id
-          WHERE u.id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+           FROM users u
+           ${TEAM_MITGLIED_ROLLE}
+          WHERE u.id = $1 AND u.deleted_at IS NULL`,
         [user_id, organizationId]
       );
       if (!targetUser) {
