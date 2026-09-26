@@ -221,6 +221,8 @@ Versionsüberschrift.
   viele Gemeinden dieselbe Datenbank teilen: Die Buchungszahlen je Termin
   werden nur noch für die eigenen Termine gezählt statt für alle Buchungen
   aller Gemeinden. An den angezeigten Zahlen ändert sich nichts.
+- Die App gibt Deutsch als ihre Sprache an. Vorlesefunktionen wie VoiceOver
+  und TalkBack lesen sie deshalb mit deutscher Stimme vor statt mit englischer.
 
 ### Behoben
 - Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war
