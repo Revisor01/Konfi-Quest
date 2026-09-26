@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
+const { clientIp } = require('../utils/clientIp');
 const { body, param } = require('express-validator');
 const validator = require('validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
@@ -15,11 +17,41 @@ const liveUpdate = require('../utils/liveUpdate');
 const { invalidateUserCache } = require('../middleware/rbac');
 const router = express.Router();
 
-// Eigener Rate-Limiter für Passwort-Reset (getrennt vom Login-Limiter)
+// Eigener Rate-Limiter für Passwort-Reset (getrennt vom Login-Limiter).
+//
+// SCHLUESSEL WIE ALLE ANDEREN IP-LIMITER (Audit 26.09.2026, Sicherheit
+// BF-05, HOCH): Dieser Limiter zaehlte auf req.ip -- und req.ip ist hinter
+// dem Proxy für ALLE Anfragen dieselbe Adresse (Produktionsbefund, siehe
+// server.js bei clientIp). Ergebnis: fünf Passwort-Reset-Anfragen je
+// Viertelstunde für die gesamte Plattform. Bei 10.000 bis 25.000
+// Nutzer:innen ist die Funktion damit praktisch nicht verfügbar, und ein
+// Dritter sperrt sie mit fünf Anfragen für alle. Die uebrigen Limiter waren
+// laengst auf clientIp() umgestellt, nur dieser hier nicht.
 const passwordResetLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 Minuten
-  max: 5, // Max 5 Reset-Anfragen pro 15 Minuten
+  max: 5, // Max 5 Reset-Anfragen pro 15 Minuten je Absender
+  keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP vom Proxy)
   message: { error: 'Zu viele Passwort-Reset-Anfragen. Bitte warte 15 Minuten.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Zweite Grenze JE ZIEL-ADRESSE: Sobald der Limiter oben je Absender zaehlt,
+// laesst sich ein einzelnes Konto von vielen Adressen aus mit Reset-Mails
+// bombardieren. Drei Anfragen je Stunde für dieselbe E-Mail reichen für
+// jeden echten Bedarf (Mail nicht angekommen, Spam-Ordner, noch einmal).
+//
+// Gezaehlt wird UNABHAENGIG davon, ob es ein Konto zu der Adresse gibt --
+// sonst wuerde ein 429 verraten, welche Adressen ein Konto haben, und die
+// neutrale Antwort der Route waere umsonst. Gross-/Kleinschreibung und
+// Leerraum zaehlen nicht als andere Adresse. Ohne E-Mail im Body greift die
+// Validierung dahinter (400); der Limiter laesst solche Anfragen durch.
+const passwordResetEmailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 Stunde
+  max: 3,
+  keyGenerator: (req) => `email:${String(req.body.email).trim().toLowerCase()}`,
+  skip: (req) => !req.body || typeof req.body.email !== 'string' || !req.body.email.trim(),
+  message: { error: 'Zu viele Passwort-Reset-Anfragen für diese E-Mail-Adresse. Bitte warte eine Stunde.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -677,7 +709,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   });
 
   // Request password reset (mit eigenem Rate-Limiter, getrennt vom Login-Limiter)
-  router.post('/request-password-reset', passwordResetLimiter, validateRequestPasswordReset, async (req, res) => {
+  router.post('/request-password-reset', passwordResetLimiter, passwordResetEmailLimiter, validateRequestPasswordReset, async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
     

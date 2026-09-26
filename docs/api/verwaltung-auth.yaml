@@ -49,8 +49,12 @@
 #                                     durch Invite-Code (8 Hex-Zeichen, 7 Tage
 #                                     gueltig, org-/jahrgangsgebunden) +
 #                                     Passwort-Policy + Konfi-Limit-Check
-#      POST /request-password-reset   eigener Limiter: 5/15min; neutrale
-#                                     Antwort (kein E-Mail-Enumeration-Leak)
+#      POST /request-password-reset   zwei eigene Limiter: 5/15min je Client-IP
+#                                     (clientIp, seit 26.09.2026 -- vorher
+#                                     req.ip, hinter dem Proxy fuer ALLE
+#                                     gleich; Audit Sicherheit BF-05) UND
+#                                     3/h je Ziel-E-Mail; neutrale Antwort
+#                                     (kein E-Mail-Enumeration-Leak)
 #      POST /reset-password           NUR globaler General-Limiter (2000/15min)
 #      POST /refresh                  NUR General-Limiter; Refresh-Token-
 #                                     Rotation mit 5-Minuten-Grace-Window
@@ -556,13 +560,19 @@ paths:
                 email: { type: string, format: email }
       responses:
         "200": { description: "Neutral: 'Falls ein Konto existiert, wurde eine E-Mail gesendet'" }
-        "429": { description: "passwordResetLimiter: 5/15min" }
+        "429": { description: "passwordResetLimiter: 5/15min je Client-IP (clientIp) ODER passwordResetEmailLimiter: 3/h je Ziel-E-Mail (normalisiert: trim + lowercase; zaehlt auch fuer unbekannte Adressen, damit der 429 kein Konto verraet)" }
         "500": { description: "Mail-Versand fehlgeschlagen (nur wenn Konto existiert — schwaecht die Neutralitaet leicht ab)" }
       x-berechtigung:
         rollen: [oeffentlich]
-        middleware: [passwordResetLimiter, validateRequestPasswordReset]
+        middleware: [passwordResetLimiter, passwordResetEmailLimiter, validateRequestPasswordReset]
         org-scope: false
         objekt-pruefung: "Token 32 Byte Hex, 24h gueltig"
+        # BEHOBEN 26.09.2026 (Audit Sicherheit BF-05, HOCH): passwordResetLimiter
+        # zaehlte auf req.ip -- hinter dem Proxy fuer ALLE dieselbe Adresse,
+        # also fuenf Reset-Anfragen je Viertelstunde fuer die ganze Plattform
+        # (reproduziert: 6x mit verschiedenen X-Real-IP -> 200,200,200,200,200,429).
+        # Jetzt ipKeyGenerator(clientIp(req)) wie alle uebrigen IP-Limiter,
+        # dazu passwordResetEmailLimiter je Ziel-Adresse.
         hinweis: "BEKANNT: Token wird unhashed in password_resets gespeichert"
 
   /api/auth/invite-code:

@@ -174,7 +174,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/request-password-reset</code></div>
         <p class="summary">Passwort-Reset-Mail anfordern (immer neutrale Antwort)</p>
-        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>passwordResetLimiter</code> · <code>validateRequestPasswordReset</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Token 32 Byte Hex, 24h gueltig</div><div class="hinweis">BEKANNT: Token wird unhashed in password_resets gespeichert</div>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>passwordResetLimiter</code> · <code>passwordResetEmailLimiter</code> · <code>validateRequestPasswordReset</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Token 32 Byte Hex, 24h gueltig</div><div class="hinweis">BEKANNT: Token wird unhashed in password_resets gespeichert</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/reset-password</code></div>
         <p class="summary">Passwort mit Reset-Token setzen (oeffentlich)</p>

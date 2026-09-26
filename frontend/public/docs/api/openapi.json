@@ -723,7 +723,7 @@
             "description": "Neutral: 'Falls ein Konto existiert, wurde eine E-Mail gesendet'"
           },
           "429": {
-            "description": "passwordResetLimiter: 5/15min"
+            "description": "passwordResetLimiter: 5/15min je Client-IP (clientIp) ODER passwordResetEmailLimiter: 3/h je Ziel-E-Mail (normalisiert: trim + lowercase; zaehlt auch fuer unbekannte Adressen, damit der 429 kein Konto verraet)"
           },
           "500": {
             "description": "Mail-Versand fehlgeschlagen (nur wenn Konto existiert — schwaecht die Neutralitaet leicht ab)"
@@ -735,6 +735,7 @@
           ],
           "middleware": [
             "passwordResetLimiter",
+            "passwordResetEmailLimiter",
             "validateRequestPasswordReset"
           ],
           "org-scope": false,

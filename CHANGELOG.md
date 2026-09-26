@@ -494,6 +494,12 @@ Versionsüberschrift.
   per Tab erreichbar, Enter schickt das Formular ab, der Fokus ist sichtbar,
   und Fehlermeldungen werden vorgelesen. Bisher kam man am Rechner nur bis zum
   Anmelde-Knopf und musste nach dem Passwort zur Maus greifen.
+- „Passwort vergessen" konnte alle Anfragen der gesamten Plattform
+  zusammenzählen: Nach fünf Anfragen in einer Viertelstunde — egal von wem —
+  bekam jede:r „Zu viele Passwort-Reset-Anfragen", auch beim ersten eigenen
+  Versuch. Die Grenze gilt jetzt je Gerät oder Netz; zusätzlich sind für
+  dieselbe E-Mail-Adresse höchstens drei Anfragen pro Stunde möglich, damit
+  niemand ein fremdes Postfach mit Reset-Mails flutet.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

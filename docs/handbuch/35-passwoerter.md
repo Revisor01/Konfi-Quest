@@ -93,8 +93,11 @@ nicht hinterlegt ist.
 **Der Link gilt 24 Stunden** und lässt sich nur einmal verwenden. Wer zu spät
 kommt, fordert einen neuen an.
 
-**Höchstens fünf Anfragen in 15 Minuten.** Danach meldet die App „Zu viele
-Passwort-Reset-Anfragen. Bitte warte 15 Minuten." Das ist kein Fehler.
+**Höchstens fünf Anfragen in 15 Minuten** von demselben Gerät oder Netz. Danach
+meldet die App „Zu viele Passwort-Reset-Anfragen. Bitte warte 15 Minuten." Das
+ist kein Fehler. Für dieselbe E-Mail-Adresse sind es außerdem höchstens drei
+Anfragen in einer Stunde — egal, von wo sie kommen. So kann niemand ein
+fremdes Postfach mit Reset-Mails fluten.
 
 **Prüfe den Spam-Ordner.** Die Mails kommen von `moin@konfi-quest.de`.
 
