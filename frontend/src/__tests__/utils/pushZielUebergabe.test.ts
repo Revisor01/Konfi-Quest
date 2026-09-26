@@ -53,14 +53,14 @@ describe('pushZielMelden: Uebergabe ohne harten Reload', () => {
     // Genau der Fall nach einem Org-Wechsel: Der Router-Subtree ist beim
     // Feuern abgebaut, die neue Komponente holt das Ziel beim Mount nach.
     pushZielMelden('/teamer/events');
-    expect(pushZielAbholen()).toBe('/teamer/events');
+    expect(pushZielAbholen()).toEqual({ ziel: '/teamer/events', herkunft: 'push' });
   });
 
   it('gibt das Ziel nur EINMAL heraus', () => {
     // Sonst navigierte die App bei jedem Neu-Montieren des Routers wieder
     // auf das alte Push-Ziel -- man kaeme nicht mehr weg davon.
     pushZielMelden('/admin/requests');
-    expect(pushZielAbholen()).toBe('/admin/requests');
+    expect(pushZielAbholen()).toEqual({ ziel: '/admin/requests', herkunft: 'push' });
     expect(pushZielAbholen()).toBeNull();
   });
 
@@ -85,7 +85,7 @@ describe('pushZielMelden: Uebergabe ohne harten Reload', () => {
     // Zwei Taps in Folge: Es gilt der letzte, nicht der erste.
     pushZielMelden('/konfi/events');
     pushZielMelden('/konfi/badges');
-    expect(pushZielAbholen()).toBe('/konfi/badges');
+    expect(pushZielAbholen()).toEqual({ ziel: '/konfi/badges', herkunft: 'push' });
     expect(pushZielAbholen()).toBeNull();
   });
 
@@ -95,7 +95,7 @@ describe('pushZielMelden: Uebergabe ohne harten Reload', () => {
     const vorher = window.location.href;
     pushZielMelden('/admin/events/12');
     expect(window.location.href).toBe(vorher);
-    expect(pushZielAbholen()).toBe('/admin/events/12');
+    expect(pushZielAbholen()).toEqual({ ziel: '/admin/events/12', herkunft: 'push' });
   });
 });
 

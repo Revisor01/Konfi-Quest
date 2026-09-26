@@ -235,7 +235,9 @@ const PostfachModal: React.FC = () => {
     const ziel = buildPushTargetUrl(eintrag.type, eintrag.data, zielTyp);
 
     schliessen();
-    if (ziel) pushZielMelden(ziel);
+    // 'inApp': Die App laeuft schon, und man kommt von einer Seite, zu der man
+    // zurueckwill -- der Seiten-Stack bleibt deshalb stehen (26.09.2026).
+    if (ziel) pushZielMelden(ziel, 'inApp');
   };
 
   const alleGelesen = async () => {

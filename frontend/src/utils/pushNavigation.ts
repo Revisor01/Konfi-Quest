@@ -88,17 +88,39 @@ export const PUSH_ZIEL_EVENT = 'push:navigate';
  * Das Ziel wird nur EINMAL herausgegeben — bliebe es stehen, sprang die App
  * bei jedem weiteren Montieren des Routers zurueck auf das alte Push-Ziel.
  */
-let wartendesZiel: string | null = null;
+let wartendesZiel: PushZiel | null = null;
 
-/** Ziel eines angetippten Pushes an den Router uebergeben. Leeres Ziel = nichts tun. */
-export const pushZielMelden = (ziel: string): void => {
+/**
+ * Woher der Sprung kommt — davon haengt der Rueckweg ab (26.09.2026,
+ * Simons Befund: "Event aus Postfach oeffnen. Zurueck klicken ohne Funktion").
+ *
+ * 'push'    Ein angetippter Push. Die App kommt womoeglich frisch hoch, und
+ *           im WebView darf keine gecachte Seite stehenbleiben -> der Stack
+ *           wird geleert ('root'/'replace'). Ein Zurueck-Knopf waere dort
+ *           ohnehin sinnlos: Es gibt keine Seite davor.
+ * 'inApp'   Aus der laufenden App, etwa aus dem Postfach. Die Seite, auf der
+ *           man stand, gehoert auf den Stack -- sonst zeigt die Zielseite
+ *           einen Zurueck-Knopf, der ins Leere greift.
+ */
+export type PushZielHerkunft = 'push' | 'inApp';
+
+export interface PushZiel {
+  ziel: string;
+  herkunft: PushZielHerkunft;
+}
+
+/**
+ * Ziel an den Router uebergeben. Leeres Ziel = nichts tun.
+ * `herkunft` steuert, ob der Seiten-Stack geleert wird (siehe oben).
+ */
+export const pushZielMelden = (ziel: string, herkunft: PushZielHerkunft = 'push'): void => {
   if (!ziel) return;
-  wartendesZiel = ziel;
-  window.dispatchEvent(new CustomEvent(PUSH_ZIEL_EVENT, { detail: { ziel } }));
+  wartendesZiel = { ziel, herkunft };
+  window.dispatchEvent(new CustomEvent(PUSH_ZIEL_EVENT, { detail: { ziel, herkunft } }));
 };
 
 /** Wartendes Ziel holen und dabei verbrauchen. Nichts da -> null. */
-export const pushZielAbholen = (): string | null => {
+export const pushZielAbholen = (): PushZiel | null => {
   const ziel = wartendesZiel;
   wartendesZiel = null;
   return ziel;

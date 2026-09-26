@@ -105,7 +105,7 @@ describe('deepLinksAnschliessen: Lauscher am Capacitor-App-Plugin', () => {
 
     lauscher({ url: 'https://konfi-quest.de/register?code=A3F09C21' });
 
-    expect(pushZielAbholen()).toBe('/register?code=A3F09C21');
+    expect(pushZielAbholen()).toEqual({ ziel: '/register?code=A3F09C21', herkunft: 'push' });
   });
 
   it('ein Link ohne Ziel legt NICHTS ab', async () => {

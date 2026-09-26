@@ -67,6 +67,30 @@ describe('PushZielNavigation', () => {
     expect(push).toHaveBeenCalledTimes(0);
     // Das Ziel bleibt im Merker liegen und wird beim naechsten Montieren
     // eingeloest — nichts geht verloren.
-    expect(pushZielAbholen()).toBe('/konfi/badges');
+    expect(pushZielAbholen()).toEqual({ ziel: '/konfi/badges', herkunft: 'push' });
+  });
+
+  // SIMONS BEFUND (26.09.2026): "Event aus Postfach oeffnen. Zurueck klicken
+  // ohne Funktion." Ursache war 'root'/'replace' -- richtig fuer einen
+  // angetippten Push (die App faehrt hoch, im WebView darf keine gecachte
+  // Seite stehenbleiben, Maltes Absturzbefund), falsch aus der laufenden App:
+  // Der geleerte Stack laesst den Zurueck-Knopf ins Leere greifen.
+  it('aus der laufenden App bleibt der Seiten-Stack stehen (Rueckweg)', async () => {
+    render(<PushZielNavigation />);
+    pushZielMelden('/konfi/events/42', 'inApp');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(push).toHaveBeenCalledWith('/konfi/events/42', 'forward', 'push');
+  });
+
+  it('ein angetippter Push leert den Stack weiterhin', async () => {
+    render(<PushZielNavigation />);
+    pushZielMelden('/konfi/events/42');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(push).toHaveBeenCalledWith('/konfi/events/42', 'root', 'replace');
+  });
+
+  it('ohne Angabe gilt "push" -- der bisherige Weg bleibt der Standard', () => {
+    pushZielMelden('/konfi/badges');
+    expect(pushZielAbholen()).toEqual({ ziel: '/konfi/badges', herkunft: 'push' });
   });
 });

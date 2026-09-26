@@ -178,7 +178,7 @@ describe('PostfachModal', () => {
     fireEvent.click(await screen.findByText('Mitteilung 12'));
 
     await waitFor(() => expect(mockPut).toHaveBeenCalledWith('/notifications/postfach/12/gelesen'));
-    await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/konfi/badges'));
+    await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/konfi/badges', 'inApp'));
     // Kein Gemeinde-Wechsel: Mitteilung und Konto gehoeren zu Gemeinde 1.
     expect(mockSwitchOrg).not.toHaveBeenCalled();
     // Danach ist das Postfach zu.
@@ -191,7 +191,7 @@ describe('PostfachModal', () => {
     await oeffnen();
     fireEvent.click(await screen.findByText('Mitteilung 5'));
 
-    await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/konfi/requests'));
+    await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/konfi/requests', 'inApp'));
     expect(mockPut).not.toHaveBeenCalled();
   });
 
@@ -210,7 +210,7 @@ describe('PostfachModal', () => {
     fireEvent.click(screen.getByText('Mitteilung 20'));
     await waitFor(() => expect(mockSwitchOrg).toHaveBeenCalledWith(2));
     // Die Route wird mit der Rolle in der ZIEL-Gemeinde gebaut.
-    await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/teamer/badges'));
+    await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/teamer/badges', 'inApp'));
   });
 
   it('bei nur einer Gemeinde steht kein Gemeindename an der Mitteilung', async () => {
@@ -331,7 +331,7 @@ describe('PostfachModal', () => {
       const zeile = container.querySelector('.app-postfach-eintrag') as HTMLElement;
       expect(zeile.getAttribute('role')).toBe('button');
       fireEvent.keyDown(zeile, { key: 'Enter' });
-      await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/konfi/badges'));
+      await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/konfi/badges', 'inApp'));
     });
   });
 

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useIonRouter } from '@ionic/react';
-import { PUSH_ZIEL_EVENT, pushZielAbholen } from '../utils/pushNavigation';
+import { PUSH_ZIEL_EVENT, pushZielAbholen, PushZiel } from '../utils/pushNavigation';
 
 /**
  * Navigiert dorthin, wohin ein angetippter Push zeigt — ueber den Router,
@@ -21,8 +21,14 @@ import { PUSH_ZIEL_EVENT, pushZielAbholen } from '../utils/pushNavigation';
  * AppContext hat keinen Router-Zugriff. Er meldet das Ziel deshalb ueber ein
  * CustomEvent (dasselbe Muster wie 'auth:relogin-required', 'org:switched',
  * 'push:received') und diese Komponente — innerhalb des Routers — navigiert.
- * 'root'/'replace' wie im OrgSwitcherButton: Der Seiten-Stack des vorherigen
- * Standes wird geleert, damit im WebView keine gecachte Seite stehenbleibt.
+ * Fuer einen angetippten Push 'root'/'replace' wie im OrgSwitcherButton: Der
+ * Seiten-Stack des vorherigen Standes wird geleert, damit im WebView keine
+ * gecachte Seite stehenbleibt.
+ *
+ * AUS DER LAUFENDEN APP (Postfach) gilt das NICHT: Dort steht man auf einer
+ * Seite, zu der man zurueckwill. Ein geleerter Stack laesst den Zurueck-Knopf
+ * der Zielseite ins Leere greifen (Simon am Geraet, 26.09.2026). Deshalb
+ * traegt jedes Ziel seine Herkunft ('push' | 'inApp').
  *
  * Das Ziel wird zusaetzlich aus dem Merker geholt, sobald diese Komponente
  * montiert: Ein Org-Wechsel vor der Navigation erhoeht orgVersion und montiert
@@ -35,9 +41,20 @@ const PushZielNavigation: React.FC = () => {
   const router = useIonRouter();
 
   useEffect(() => {
-    const hin = (ziel: string | null) => {
-      if (!ziel) return;
-      router.push(ziel, 'root', 'replace');
+    const hin = (eintrag: PushZiel | null) => {
+      if (!eintrag) return;
+      if (eintrag.herkunft === 'inApp') {
+        // Aus der laufenden App (Postfach): die Seite, auf der man stand,
+        // bleibt auf dem Stack -- sonst greift der Zurueck-Knopf der
+        // Zielseite ins Leere (Simon, 26.09.2026: "Event aus Postfach
+        // oeffnen. Zurueck klicken ohne Funktion"). Kein Neuaufbau noetig,
+        // die App laeuft ja schon.
+        router.push(eintrag.ziel, 'forward', 'push');
+        return;
+      }
+      // Angetippter Push: Stack leeren, damit im WebView keine gecachte
+      // Seite stehenbleibt (Maltes Absturzbefund, siehe Kopfkommentar).
+      router.push(eintrag.ziel, 'root', 'replace');
     };
 
     // 1. Beim Montieren: liegt schon ein Ziel bereit (Kaltstart ueber einen
