@@ -72,6 +72,7 @@ Vertragsbruch.
 
 ### BF-01: Fremdschlüssel `chat_messages.reply_to` ohne Index — Löschen von Nachrichten skaliert mit der Tabellengröße und reißt den `statement_timeout`
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — Migration `160_chat_messages_fk_indizes.sql` legt `idx_chat_messages_reply_to` (partiell, `reply_to IS NOT NULL`) und `idx_chat_messages_user_id` an (gewöhnlicher `CREATE INDEX IF NOT EXISTS`, weil der Migrationsläufer jede Datei in einer Transaktion ausführt und `CONCURRENTLY` dort scheitern würde; Aufbau 50 ms bzw. 147 ms auf 490.400 Zeilen). Nachgemessen auf einer Kopie von `kq_last`: 1000 Nachrichten eines Raums löschen **32,1 s → 10,0 ms** (Trigger `reply_to_fkey` 32,0 s → 3,5 ms). Schema-Test `backend/tests/schema/migration160ChatIndizes.test.js` (rot ohne die Migration).
 - **Fundstelle:** `backend/migrations/102_chat_rooms_cascade.sql:48-58` (ON DELETE SET NULL), `backend/migrations/064_add_missing_indexes.sql` (kein Index auf `reply_to`, keiner auf `user_id`), `backend/migrations/114_add_chat_fks.sql:7-9` (`fk_chat_messages_user` ohne Index), `backend/database.js:58` (`statement_timeout` 30 s). Harte Löschpfade: `backend/routes/chat.js:2532` (Team-Chat leeren), `chat.js:2447`, `chat.js:2453`, `chat.js:619/633/650` (Raum löschen), `backend/routes/users.js:510`, `backend/utils/konfiDeletion.js:112` (Konto- und Auto-Löschung), `backend/routes/events/verwaltung.js:909`, `backend/routes/jahrgaenge.js:409`, `backend/routes/organizations.js:777`.
 - **Kennzeichnung:** reproduziert (`kq_last`, 490.400 Nachrichten):
   ```

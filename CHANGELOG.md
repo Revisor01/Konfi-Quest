@@ -479,6 +479,10 @@ Versionsüberschrift.
   Sicherheitslücken in Abhängigkeiten stoppen ihn ab der Stufe „hoch".
 - Die Code-Regeln werden bei jeder Änderung geprüft, nicht mehr nur bei
   Pull Requests; der Altbestand an Regelverstößen ist abgebaut.
+- Chat-Nachrichten, Räume und Konten lassen sich auch bei sehr vielen
+  gespeicherten Nachrichten zügig löschen. Bisher konnte „Team-Chat leeren",
+  das Löschen eines Termins mit Termin-Chat oder eines Kontos bei großen
+  Nachrichtenmengen in einen Zeitüberschreitungsfehler laufen.
 
 ## [2.2.0] - 2026-09-18
 
