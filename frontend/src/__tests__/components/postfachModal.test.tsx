@@ -34,8 +34,8 @@ vi.mock('@ionic/react', () => ({
   ),
   IonLabel: (props: StubProps) => <div>{props.children}</div>,
   IonSpinner: () => <span data-testid="spinner" />,
-  IonCard: (props: StubProps & { style?: Record<string, string>; 'data-testid'?: string }) =>
-    <div data-testid={props['data-testid']} style={props.style}>{props.children}</div>,
+  IonCard: (props: StubProps & { className?: string; style?: Record<string, string>; 'data-testid'?: string }) =>
+    <div data-testid={props['data-testid']} className={props.className} style={props.style}>{props.children}</div>,
   IonCardContent: (props: StubProps) => <div>{props.children}</div>,
   IonIcon: (props: { icon?: string }) => <span data-testid="icon" data-icon={props.icon} />,
 }));
@@ -352,17 +352,22 @@ describe('PostfachModal', () => {
       }
     });
 
-    it('die Karte der Mitteilungen traegt ausdruecklich den Kartengrund -- auf dem Geraet war sie es nicht', async () => {
-      // Bis 25.09.2026 stand hier `white`; seit dem Dunkelmodus ist der
-      // Kartengrund ein Token (hell weiss, dunkel grau). Welcher Grauwert es
-      // ist, legt dunkelmodus.test.ts fest -- hier zaehlt nur, dass die Karte
-      // das Token nimmt und nicht wieder eine feste Farbe.
+    it('die Karte der Mitteilungen ist eine app-card ohne eigenen Kartengrund -- den liefert die Kartenregel', async () => {
+      // Bis 25.09.2026 stand hier `white`, danach bis 26.09.2026 ein Inline-
+      // Flicken `--background: var(--app-surface-card)`, weil die Karte auf
+      // dem iPhone nicht die Tokenfarbe trug. Die Ursache war nicht das Modal,
+      // sondern die Kartenregel ion-card.app-card, die auf iOS an Spezifitaet
+      // gegen das ios27-Theme verlor (Dunkelmodus-Audit BF-03). Seit sie das
+      // Theme schlaegt (dunkelmodus.test.ts rechnet es nach), braucht keine
+      // Karte einen Flicken -- und ein neuer wuerde die Ursache nur verdecken.
       mockGet.mockResolvedValue(antwort([eintrag(1)]));
       render(<PostfachModal />);
       await oeffnen();
       await screen.findByText('Mitteilung 1');
       const karte = screen.getByTestId('postfach-karte') as HTMLElement;
-      expect(karte.style.getPropertyValue('--background')).toBe('var(--app-surface-card)');
+      expect(karte.classList.contains('app-card')).toBe(true);
+      expect(karte.style.getPropertyValue('--background')).toBe('');
+      expect(karte.style.getPropertyValue('background')).toBe('');
     });
 
     it('vor der Anmeldung gibt es keinen Outlet -- dann ohne presentingElement, ohne Absturz', async () => {

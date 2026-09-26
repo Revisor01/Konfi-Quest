@@ -411,8 +411,21 @@ ion-list-header ion-label {
  * haben `max-width: 420px` und werden allein durch den Aussenabstand mittig
  * gehalten. `margin: 0` wuerde sie nach links kleben. Ihr Abstand ist weiter
  * unten eigens gesetzt.
+ *
+ * `:root.ios` / `:root.md` davor sind ebenso noetig (26.09.2026, Dunkelmodus-
+ * Audit BF-03): Das Theme setzt `ion-card.ios:not(.ios-theme-disabled,
+ * .ios26-disabled):not(.ion-color) { --background: var(--ion-card-background,
+ * ...) }` mit Spezifitaet (0,3,1). `ion-card.app-card:not(.ios-theme-disabled)`
+ * allein hat (0,2,1) und verlor auf iOS: Die Karten trugen im Dunkeln Ionics
+ * #1c1c1d statt --app-surface-card #242426, waehrend Android (ohne .ios an der
+ * Karte) das Token bekam. Im Hellen unsichtbar, weil beide Wege bei #ffffff
+ * enden -- deshalb fiel es seit dem Theme-Wechsel nie auf. Mit der Modus-
+ * Klasse an der Wurzel (Ionic setzt sie auf <html>) steht die Regel bei
+ * (0,4,1) und gewinnt unabhaengig von der Ladereihenfolge der Stylesheets;
+ * dunkelmodus.test.ts rechnet die Spezifitaet gegen das Theme nach.
  */
-ion-card.app-card:not(.ios-theme-disabled) {
+:root.ios ion-card.app-card:not(.ios-theme-disabled),
+:root.md ion-card.app-card:not(.ios-theme-disabled) {
   --background: var(--app-surface-card);
   /* Hell `none`, dunkel der Kartenschatten -- der Unterschied steckt im Token
      (Begruendung an seiner Definition in theme/abstaende.css). Hier stand bis

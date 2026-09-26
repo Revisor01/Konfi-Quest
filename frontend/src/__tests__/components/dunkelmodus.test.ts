@@ -359,10 +359,9 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
     // Farbe allein traegt den Unterschied nicht; im Hellmodus macht es der
     // Schatten (dL* 3,46 waere sonst nichts). Die Kartenregel darf deshalb
     // kein festes `box-shadow: none` mehr fuehren.
-    const regel = css.match(/ion-card\.app-card:not\(\.ios-theme-disabled\) \{([\s\S]*?)\}/);
-    expect(regel, 'Kartenregel nicht gefunden').toBeTruthy();
-    expect(regel![1]).toMatch(/box-shadow:\s*var\(--app-schatten-karte-flaeche\)/);
-    expect(regel![1]).not.toMatch(/box-shadow:\s*none/);
+    const { rumpf } = kartenRegel();
+    expect(rumpf).toMatch(/box-shadow:\s*var\(--app-schatten-karte-flaeche\)/);
+    expect(rumpf).not.toMatch(/box-shadow:\s*none/);
     // Hell ausdruecklich nichts, dunkel der Kartenschatten aus der Skala.
     expect(helleTokens.get('--app-schatten-karte-flaeche')).toBe('none');
     expect(tokens(dunkelBloecke[0] ?? '').get('--app-schatten-karte-flaeche'))
@@ -648,6 +647,91 @@ describe('Dunkelmodus: Dashboard-Verlaeufe enden auf Flaechen, nicht auf Text', 
   });
 });
 
+describe('Dunkelmodus: die Kartenregel schlaegt das iOS-Theme an Spezifitaet', () => {
+  // GEMESSEN am 26.09.2026 (Dunkelmodus-Audit BF-03, hell-karte.cjs): Auf iOS
+  // rendert ion-card.app-card im Dunkeln rgb(28,28,29) -- Ionics
+  // --ion-card-background --, nicht das Token #242426; auf Android #242426.
+  // Ursache: ionic-theme-ios27 setzt `ion-card.ios:not(.ios-theme-disabled,
+  // .ios26-disabled):not(.ion-color) { --background: var(--ion-card-background,
+  // …) }` mit Spezifitaet (0,3,1). Die App-Regel `ion-card.app-card:not(
+  // .ios-theme-disabled)` hatte (0,2,1) und verlor -- im Hellen unsichtbar,
+  // weil beide Wege bei #ffffff enden. Fuenf Karten wurden stattdessen per
+  // Inline-Style geflickt, 225 nicht.
+  //
+  // Der Text-Test kann das Rendering nicht sehen. Er kann aber rechnen, was
+  // der Browser rechnet: die Spezifitaet. Die Kartenregel muss JEDEN Karten-
+  // Selektor des Themes echt schlagen -- dann ist die Ladereihenfolge der
+  // Stylesheets egal, und der Fix haengt nicht an einem @import.
+  const THEME = 'node_modules/@rdlabo/ionic-theme-ios27/dist/css/ionic-theme-ios27.css';
+
+  /** Theme-Selektoren, die --background direkt an einer ion-card setzen. */
+  function themeKartenSelektoren(): string[] {
+    const raus: string[] = [];
+    for (const { selektor, rumpf } of regeln(ohneKommentare(lies(THEME)))) {
+      if (!/(?:^|;)\s*--background\s*:/.test(rumpf)) continue;
+      for (const einzeln of teileObersteEbene(selektor)) {
+        if (/^ion-card(?![\w-])/.test(letzterVerbund(einzeln.trim()))) raus.push(einzeln.trim());
+      }
+    }
+    return raus;
+  }
+
+  it('die Rechnung stimmt an bekannten Selektoren', () => {
+    expect(spezifitaet('ion-card.ios:not(.ios-theme-disabled,.ios26-disabled):not(.ion-color)')).toEqual([0, 3, 1]);
+    // Die alte Kartenregel: eine Klasse zu wenig -- genau der Befund.
+    expect(spezifitaet('ion-card.app-card:not(.ios-theme-disabled)')).toEqual([0, 2, 1]);
+    expect(spezifitaet(':root.ios ion-card.app-card:not(.ios-theme-disabled)')).toEqual([0, 4, 1]);
+    expect(spezifitaet('#a .b c::before:hover')).toEqual([1, 2, 2]);
+    expect(spezifitaet(':where(.a, #b) .c')).toEqual([0, 1, 0]);
+    expect(spezifitaet(':is(.a, #b) .c')).toEqual([1, 1, 0]);
+    expect(vergleich([0, 4, 1], [0, 3, 1])).toBeGreaterThan(0);
+    expect(vergleich([0, 3, 2], [0, 3, 1])).toBeGreaterThan(0);
+    expect(vergleich([0, 2, 9], [0, 3, 0])).toBeLessThan(0);
+  });
+
+  it('das Theme setzt --background an ion-card -- die Regel, gegen die gerechnet wird, existiert', () => {
+    // Faellt sie beim naechsten Theme-Update weg oder heisst anders, muss die
+    // Rechnung neu gemacht werden -- nicht still gruen bleiben.
+    const theme = themeKartenSelektoren();
+    expect(theme).toContain('ion-card.ios:not(.ios-theme-disabled,.ios26-disabled):not(.ion-color)');
+  });
+
+  it('jeder Selektor der Kartenregel ist spezifischer als jeder Karten-Selektor des Themes', () => {
+    const { selektoren, rumpf } = kartenRegel();
+    expect(rumpf).toMatch(/--background:\s*var\(--app-surface-card\)/);
+    // Beide Plattform-Wurzeln: Auf md gibt es heute keine Theme-Regel, aber
+    // eine Karte mit mode="ios" unter html.md traegt trotzdem .ios.
+    expect(selektoren.some((s) => s.startsWith(':root.ios '))).toBe(true);
+    expect(selektoren.some((s) => s.startsWith(':root.md '))).toBe(true);
+    const unterlegen: string[] = [];
+    for (const eigener of selektoren) {
+      for (const fremd of themeKartenSelektoren()) {
+        if (vergleich(spezifitaet(eigener), spezifitaet(fremd)) <= 0) {
+          unterlegen.push(`${eigener} (${spezifitaet(eigener)}) schlaegt nicht ${fremd} (${spezifitaet(fremd)})`);
+        }
+      }
+    }
+    expect(unterlegen).toEqual([]);
+  });
+
+  it('keine app-card traegt mehr einen Inline-Flicken fuer den Kartengrund', () => {
+    // PostfachModal.tsx hatte vom 25. bis 26.09.2026 `style={{ '--background':
+    // 'var(--app-surface-card)' }}` an der IonCard -- ein Symptom-Fix, der die
+    // Spezifitaetsfrage verdeckte. Seit die Kartenregel greift, ist er weg; ein
+    // neuer waere wieder einer.
+    const treffer: string[] = [];
+    for (const datei of dateienUnter('src', '.tsx')) {
+      const code = lies(datei).replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+      for (const m of code.matchAll(/<IonCard\b[^>]*>/g)) {
+        if (/className=["'{`][^"'}]*\bapp-card\b/.test(m[0]) && /'--background'\s*:/.test(m[0])) {
+          treffer.push(`${datei}: ${m[0].replace(/\s+/g, ' ').slice(0, 120)}`);
+        }
+      }
+    }
+    expect(treffer).toEqual([]);
+  });
+});
+
 /* --- WCAG-Rechnung --------------------------------------------------- */
 
 function hexZuRgb(hex: string): [number, number, number] {
@@ -674,6 +758,121 @@ function mische(oben: string, alpha: number, unten: string): string {
   const o = hexZuRgb(oben);
   const u = hexZuRgb(unten);
   return '#' + o.map((c, i) => Math.round(c * alpha + u[i] * (1 - alpha)).toString(16).padStart(2, '0')).join('');
+}
+
+/* --- CSS-Rechnung ---------------------------------------------------- */
+
+/**
+ * Alle Regeln eines Stylesheets als Selektor + Rumpf. At-Regeln (@media,
+ * @supports, @font-face) werden geoeffnet und ihr Inhalt normal gelesen;
+ * ihre eigene Kopfzeile ist keine Regel.
+ */
+function regeln(cssText: string): { selektor: string; rumpf: string }[] {
+  const raus: { selektor: string; rumpf: string }[] = [];
+  let kopf = '';
+  for (let i = 0; i < cssText.length; i++) {
+    const c = cssText[i];
+    if (c === '{') {
+      if (kopf.trim().startsWith('@')) { kopf = ''; continue; }
+      const ende = cssText.indexOf('}', i);
+      raus.push({ selektor: kopf.trim(), rumpf: cssText.slice(i + 1, ende) });
+      i = ende;
+      kopf = '';
+    } else if (c === '}') kopf = '';
+    else kopf += c;
+  }
+  return raus;
+}
+
+/** Die Kartenregel `ion-card.app-card` aus variables.css: ihre Selektoren einzeln und ihr Rumpf. */
+function kartenRegel(): { selektoren: string[]; rumpf: string } {
+  const treffer = regeln(css).filter((r) => r.selektor.includes('ion-card.app-card:not(.ios-theme-disabled)') && /--background\s*:/.test(r.rumpf));
+  expect(treffer, 'Kartenregel ion-card.app-card nicht gefunden').toHaveLength(1);
+  return { selektoren: teileObersteEbene(treffer[0].selektor).map((s) => s.trim()).filter(Boolean), rumpf: treffer[0].rumpf };
+}
+
+/** Eine Selektorliste an den Kommas der obersten Ebene trennen -- Kommas in :not(a, b) bleiben. */
+function teileObersteEbene(text: string): string[] {
+  const raus: string[] = [];
+  let tiefe = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '(' || c === '[') tiefe++;
+    else if (c === ')' || c === ']') tiefe--;
+    else if (c === ',' && tiefe === 0) { raus.push(text.slice(start, i)); start = i + 1; }
+  }
+  raus.push(text.slice(start));
+  return raus;
+}
+
+/** Der letzte Verbund-Selektor eines komplexen Selektors -- das Element, das die Regel trifft. */
+function letzterVerbund(selektor: string): string {
+  let tiefe = 0;
+  let start = 0;
+  for (let i = 0; i < selektor.length; i++) {
+    const c = selektor[i];
+    if (c === '(' || c === '[') tiefe++;
+    else if (c === ')' || c === ']') tiefe--;
+    else if (tiefe === 0 && /[\s>+~]/.test(c)) start = i + 1;
+  }
+  return selektor.slice(start);
+}
+
+/**
+ * Spezifitaet eines einzelnen komplexen Selektors als [IDs, Klassen, Elemente]
+ * nach Selectors Level 4: Klassen, Attribute und Pseudoklassen zaehlen gleich;
+ * :not()/:is()/:has() zaehlen wie ihr spezifischstes Argument, :where() nichts;
+ * Pseudoelemente zaehlen wie Elemente.
+ */
+function spezifitaet(selektor: string): [number, number, number] {
+  const s = selektor.trim();
+  let ids = 0;
+  let klassen = 0;
+  let elemente = 0;
+  let i = 0;
+  const name = () => {
+    const m = /^[\w-]+/.exec(s.slice(i));
+    if (!m) throw new Error(`Name erwartet in "${s}" an Stelle ${i}`);
+    i += m[0].length;
+    return m[0];
+  };
+  const klammer = () => {
+    let tiefe = 0;
+    const start = i + 1;
+    for (; i < s.length; i++) {
+      if (s[i] === '(') tiefe++;
+      else if (s[i] === ')' && --tiefe === 0) { const inhalt = s.slice(start, i); i++; return inhalt; }
+    }
+    throw new Error(`Klammer nicht geschlossen in "${s}"`);
+  };
+  while (i < s.length) {
+    const c = s[i];
+    if (c === '#') { i++; name(); ids++; }
+    else if (c === '.') { i++; name(); klassen++; }
+    else if (c === '[') { i = s.indexOf(']', i) + 1; klassen++; }
+    else if (c === ':' && s[i + 1] === ':') { i += 2; name(); if (s[i] === '(') klammer(); elemente++; }
+    else if (c === ':') {
+      i++;
+      const n = name();
+      if (s[i] !== '(') { klassen++; continue; }
+      const inhalt = klammer();
+      if (n === 'not' || n === 'is' || n === 'has') {
+        const max = teileObersteEbene(inhalt).map(spezifitaet).sort(vergleich).pop()!;
+        ids += max[0]; klassen += max[1]; elemente += max[2];
+      } else if (n !== 'where') klassen++;
+    }
+    else if (/[\s>+~*]/.test(c)) i++;
+    else if (/[a-zA-Z]/.test(c)) { name(); elemente++; }
+    else throw new Error(`Unerwartetes Zeichen "${c}" in "${s}"`);
+  }
+  return [ids, klassen, elemente];
+}
+
+/** Positiv, wenn a spezifischer ist als b; 0 bei Gleichstand (dann entscheidet die Reihenfolge). */
+function vergleich(a: [number, number, number], b: [number, number, number]): number {
+  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] - b[i];
+  return 0;
 }
 
 /**

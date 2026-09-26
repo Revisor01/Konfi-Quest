@@ -476,6 +476,10 @@ Versionsüberschrift.
   „Events" im Dunkelmodus unten in Mint beziehungsweise Rosa aus, und die
   weiße Schrift darauf war kaum zu lesen. Die Verläufe enden jetzt auch im
   Dunkeln auf einem dunklen Ton; im Hellen sehen sie aus wie bisher.
+- Auf dem iPhone bekamen die Karten im Dunkelmodus nicht den vorgesehenen
+  helleren Grauton, sondern blieben fast schwarz und hoben sich kaum vom
+  Hintergrund ab — Android zeigte ihn längst. Jetzt sind Karten auf beiden
+  Plattformen gleich abgesetzt, auch im Postfach.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
