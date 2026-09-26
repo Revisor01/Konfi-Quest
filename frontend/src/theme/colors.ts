@@ -67,7 +67,7 @@ export const FARBEN = {
   successFresh: '#10b981', // --app-color-success-fresh
   neutral: '#6c757d', // --app-color-neutral (vergangene/neutrale Zustaende)
   neutralHell: '#9ca3af', // --app-color-neutral-hell
-  textSystem: '#8e8e93', // --app-text-system
+  textSystem: '#6e6e73', // --app-text-system (hell; seit 26.09.2026 auf 4,5:1 gehoben)
 
   // Medaillen (Abzeichen-Stufen nach Punktewert)
   gold: '#ffd700', // --app-color-gold
