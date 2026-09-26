@@ -241,6 +241,10 @@ Versionsüberschrift.
   Level, Material und Jahresrückblick — steht kein Gemeinde-Umschalter mehr.
   Was dort zu sehen ist, gehört zu genau einer Gemeinde; ein Wechsel mitten
   darin führte auf fremde Einträge.
+- Ein laufender Termin steht jetzt schon unter „Verbuchen", nicht erst nach
+  seinem Ende. Bisher zeigte der Reiter „Mitmachen" während des Termins eine
+  rote Zahl, hinter der eine leere Liste wartete — wer mitten im Konfisamstag
+  jemanden verbuchen wollte, fand ihn dort nicht.
 - Die Zahl an der Glocke wird auf dem iPhone nicht mehr angeschnitten.
 - Unter „Benachrichtigungen" stand derselbe Hinweis zweimal; jetzt steht er
   einmal, in derselben Form wie die Hinweise überall sonst.

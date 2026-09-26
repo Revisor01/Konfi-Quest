@@ -285,12 +285,33 @@ const nachDatumAbsteigend = <T extends ReiterTermin>(a: T, b: T) =>
 export const aktuelleTermine = <T extends ReiterTermin>(offen: T[], abgesagt: T[]): T[] =>
   [...offen, ...abgesagt].filter(e => eventEnde(e) >= new Date()).sort(nachDatumAufsteigend);
 
-// Reiter "Verbuchen": beendete Termine mit offenen Buchungen. Abgesagte
+// Reiter "Verbuchen": BEGONNENE Termine mit offenen Buchungen. Abgesagte
 // gehoeren bewusst NICHT dazu -- an einem abgesagten Termin gibt es nichts
 // zu verbuchen.
+//
+// AB DEM BEGINN, NICHT ERST NACH DEM ENDE (Simon am Geraet, 26.09.2026):
+// "Ich habe in Hennstedt gerade Konfisamstag. Er zeigt mir auf 'Mitmachen'
+// jetzt gerade ein Badge, ein rotes Icon. Ich gehe auf 'Mitmachen', aber
+// unter 'Verbuchen' steht nirgendwo [etwas]." -- und zum Weg: "also soll er
+// es in verbuchen legen, das hilft mir."
+//
+// Gemessen (Termin 297, Org 2, 26.09.2026, 10:00-14:00, Abfrage um 10:59):
+// Der Reiter-Zaehler nimmt `e.event_date < NOW()` (routes/notifications.js,
+// utils/appIconBadge.js) -- also den BEGINN. Dieser Filter nahm bis hierhin
+// `eventEnde(e) < jetzt` -- das ENDE. Zwischen Beginn und Ende stand deshalb
+// eine rote Zahl am Reiter, hinter der eine leere Liste wartete.
+//
+// Beide Regeln waren fuer sich vertretbar, aber sie widersprachen einander.
+// Der Beginn ist die nuetzlichere: Wer waehrend des Konfisamstags jemanden
+// verbucht, findet den Termin dort, wo er ihn sucht. Ein laufender Termin
+// steht damit in "Aktuell" UND in "Verbuchen" -- er laeuft ja noch, und es
+// gibt schon etwas zu verbuchen.
+//
+// Ohne event_end_time faellt eventEnde ohnehin auf event_date zurueck; fuer
+// den Altbestand aendert sich also nichts.
 export const zuVerbuchendeTermine = <T extends ReiterTermin>(offen: T[]): T[] =>
   offen
-    .filter(e => eventEnde(e) < new Date() && hatOffeneBuchungen(e) && e.registration_status !== 'cancelled')
+    .filter(e => new Date(e.event_date) < new Date() && hatOffeneBuchungen(e) && e.registration_status !== 'cancelled')
     .sort(nachDatumAbsteigend);
 
 // Reiter "Vergangen": beendete Termine ohne offene Buchungen (fertig

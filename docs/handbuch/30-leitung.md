@@ -101,7 +101,10 @@ Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und
 
 Drei Reiter: **Aktuell**, **Verbuchen** und **Vergangen**. „Verbuchen" sammelt
 die Termine, bei denen noch
-[Anwesenheiten](70-termine.md#die-anwesenheit-verbuchen) einzutragen sind.
+[Anwesenheiten](70-termine.md#die-anwesenheit-verbuchen) einzutragen sind —
+sobald der Termin begonnen hat. Ein laufender Termin steht deshalb in beiden
+Reitern: unter „Aktuell", weil er noch läuft, und unter „Verbuchen", weil es
+schon etwas einzutragen gibt.
 
 Beim Anlegen eines Termins legst du fest:
 

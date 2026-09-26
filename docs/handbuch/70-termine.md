@@ -648,8 +648,9 @@ an den Punkten und am Abmeldegrund ändert das Löschen nichts.
 
 ### Alle auf einmal verbuchen
 
-Liegt ein Termin in der Vergangenheit und es gibt noch unverbuchte Anmeldungen,
-zeigt er oben den Status **„Verbuchen"**. Der Knopf „Alle bestätigen" setzt
+Hat ein Termin begonnen und es gibt noch unverbuchte Anmeldungen, zeigt er
+oben den Status **„Verbuchen"** — schon während er läuft, damit du Anwesende
+gleich eintragen kannst, statt bis zum Ende zu warten. Der Knopf „Alle bestätigen" setzt
 dann in einem Rutsch alle bestätigt angemeldeten Konfis ohne Anwesenheitsstatus
 auf „anwesend" — inklusive Punkten, Abzeichen- und Level-Prüfung und Push.
 
