@@ -33,6 +33,12 @@ Es gibt keinen Anlege-Schritt und keine zweite Direktnachricht zwischen
 denselben zwei Personen: Wer ein bestehendes Gespräch erneut öffnet, landet im
 alten. Verlassen lässt es sich nicht.
 
+Ein Zweiergespräch hat immer genau zwei Personen — das ist der Grund, warum die
+Leitung es nicht mitliest. Sollen mehrere Personen miteinander schreiben,
+entsteht eine [Gruppe](#eine-gruppe-anlegen), und die kann die Leitung öffnen.
+Einen „Direktchat" mit drei oder mehr Personen gibt es nicht; Konfis schreiben
+einander nur in Räumen, die die Leitung einsehen kann.
+
 ### Eine Gruppe anlegen
 
 Der einzige frei zusammenstellbare Raum. Über „Neuer Gruppenchat" geben Leitung,

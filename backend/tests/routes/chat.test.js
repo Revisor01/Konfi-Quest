@@ -216,6 +216,107 @@ describe('Chat Routes', () => {
     });
   });
 
+  // Audit 26.09.2026 (Chat BF-01, HOCH): Der Typ 'direct' kam ungeprueft vom
+  // Client. Wer kein Konfi war, konnte zwei Konfis in einen 'direct'-Raum
+  // setzen -- ein Gruppenraum, den keine Leitung lesen kann (darfRaumOeffnen
+  // behandelt 'direct' als privat) und in dem Konfis einander schreiben.
+  // Zweiergespraech heisst genau zwei Personen; fuer mehr gibt es 'group'.
+  describe('POST /api/chat/rooms — direct nur zu zweit', () => {
+    let orgAdmin1Token;
+    beforeEach(() => { orgAdmin1Token = generateToken('orgAdmin1'); });
+
+    const raeume = async () => (await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms')).rows[0].c;
+
+    it('Leitung setzt zwei Konfis in einen direct-Raum -> 400, kein Raum', async () => {
+      const vorher = await raeume();
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ type: 'direct', name: 'Geheim', participants: [USERS.konfi1.id, USERS.konfi2.id] });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error_code).toBe('direct_nur_zu_zweit');
+      expect(await raeume()).toBe(vorher);
+    });
+
+    it('Teamer:in ebenso -> 400 (auch als Objekte mit user_id)', async () => {
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ type: 'direct', name: 'Geheim', participants: [{ user_id: USERS.konfi1.id }, { user_id: USERS.konfi2.id }] });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error_code).toBe('direct_nur_zu_zweit');
+    });
+
+    it('direct ohne weitere Person -> 400', async () => {
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ type: 'direct', name: 'Allein', participants: [] });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error_code).toBe('direct_nur_zu_zweit');
+    });
+
+    it('direct mit genau einer Person -> 200, zwei Teilnehmende, fuer Dritte weiterhin privat', async () => {
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ type: 'direct', name: 'Zu zweit', participants: [USERS.konfi1.id] });
+
+      expect(res.status).toBe(200);
+      const { rows } = await db.query('SELECT user_id FROM chat_participants WHERE room_id = $1 ORDER BY user_id', [res.body.room_id]);
+      expect(rows.map(r => Number(r.user_id))).toEqual([USERS.konfi1.id, USERS.orgAdmin1.id]);
+
+      // admin1 ist nicht Teilnehmer: ein Zweiergespraech bleibt fuer ihn zu.
+      const lesen = await request(app)
+        .get(`/api/chat/rooms/${res.body.room_id}/messages`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(lesen.status).toBe(403);
+    });
+
+    it('mehrere Personen als group -> 200, und die Leitung kann mitlesen', async () => {
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ type: 'group', name: 'Kleingruppe', participants: [USERS.konfi1.id, USERS.konfi2.id] });
+
+      expect(res.status).toBe(200);
+      const lesen = await request(app)
+        .get(`/api/chat/rooms/${res.body.room_id}/messages`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(lesen.status).toBe(200);
+    });
+
+    // Der Bestand: Migration 164 macht aus 'direct'-Raeumen mit mehr als zwei
+    // Personen Gruppen. Raeume mit zwei oder einer Person (Partner:in hat
+    // das Konto geloescht) bleiben private Zweiergespraeche.
+    it('Migration 164 stellt nur direct-Raeume mit mehr als zwei Personen auf group', async () => {
+      const anlegen = async (teilnehmer) => {
+        const { rows: [r] } = await db.query(
+          "INSERT INTO chat_rooms (name, type, created_by, organization_id) VALUES ('Bestand', 'direct', $1, $2) RETURNING id",
+          [USERS.teamer1.id, ORGS.testGemeinde.id]
+        );
+        for (const [userId, userType] of teilnehmer) {
+          await db.query('INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)', [r.id, userId, userType]);
+        }
+        return r.id;
+      };
+      const drei = await anlegen([[USERS.teamer1.id, 'teamer'], [USERS.konfi1.id, 'konfi'], [USERS.konfi2.id, 'konfi']]);
+      const zwei = await anlegen([[USERS.teamer1.id, 'teamer'], [USERS.konfi1.id, 'konfi']]);
+      const eins = await anlegen([[USERS.konfi1.id, 'konfi']]);
+
+      const sql = fs.readFileSync(path.join(__dirname, '../../migrations/164_direct_raeume_nur_zu_zweit.sql'), 'utf8');
+      await db.query(sql);
+
+      const typ = async (id) => (await db.query('SELECT type FROM chat_rooms WHERE id = $1', [id])).rows[0].type;
+      expect(await typ(drei)).toBe('group');
+      expect(await typ(zwei)).toBe('direct');
+      expect(await typ(eins)).toBe('direct');
+    });
+  });
+
   // Admins und Teamer:innen duerfen nur Konfis ihrer zugewiesenen Jahrgaenge
   // direkt anschreiben — dieselbe Grenze, die darfJahrgang im Rest des
   // Systems zieht. Fuer Teamer:innen gilt sie seit dem 23.08.2026

@@ -533,7 +533,34 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (!['direct', 'group', 'jahrgang', 'admin_team'].includes(type)) {
         return res.status(400).json({ error: 'Ungültiger Chat-Typ' });
       }
-      
+
+      // ZWEIERGESPRAECH HEISST GENAU ZWEI PERSONEN (Audit 26.09.2026, Chat
+      // BF-01, HOCH). Der Typ 'direct' ist ueberall sonst das Signal "privat,
+      // auch vor der Leitung" (darfRaumOeffnen, Export, Loeschen, Umfragen).
+      // Bis hierher kam der Typ aber ungeprueft vom Client: Wer kein Konfi
+      // war, konnte zwei Konfis in einen 'direct'-Raum setzen -- ein
+      // Gruppenraum, den keine Leitung lesen kann und in dem Konfis einander
+      // schreiben. Genau das schliesst "alle Chats sind moderiert,
+      // Konfi-zu-Konfi-Chat gibt es nicht" aus. Der eigentliche Weg fuer
+      // Zweiergespraeche ist POST /direct; 'direct' bleibt hier nur fuer
+      // Clients erhalten, die diesen Weg nutzen (Antwortform ist Vertrag) --
+      // mit genau einer weiteren Person. Den Bestand richtet Migration 164
+      // (Raeume mit mehr als zwei Personen werden 'group' und damit fuer die
+      // Leitung lesbar).
+      if (type === 'direct') {
+        const weitere = new Set(
+          (Array.isArray(participants) ? participants : [])
+            .map(p => parseInt(typeof p === 'object' && p !== null ? p.user_id : p, 10))
+            .filter(uid => Number.isInteger(uid) && uid !== createdBy)
+        );
+        if (weitere.size !== 1) {
+          return res.status(400).json({
+            error: 'Ein Direktchat besteht aus genau zwei Personen. Für mehrere Personen lege eine Gruppe an.',
+            error_code: 'direct_nur_zu_zweit'
+          });
+        }
+      }
+
       // DATENSCHUTZ: Konfis dürfen NUR Direktnachrichten mit Admins erstellen (keine Gruppen, keine Konfi-zu-Konfi Chats)
       if (req.user.type === 'konfi') {
         if (type !== 'direct') {

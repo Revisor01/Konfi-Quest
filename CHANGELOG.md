@@ -415,6 +415,11 @@ Versionsüberschrift.
   jeder E-Mail-Adresse, ob ein Konto dazu existiert — auch bei Kindern
   fremder Gemeinden. Jetzt antwortet die App bei Konfis genauso wie bei einer
   unbekannten Kennung.
+- Ein Direktchat besteht aus genau zwei Personen. Bisher ließ sich über die
+  Schnittstelle ein „Direktchat" mit mehreren Konfis anlegen, den die Leitung
+  nicht einsehen konnte — obwohl Konfis einander nur in Räumen schreiben
+  sollen, die die Leitung mitliest. Solche Räume werden beim Update zu Gruppen
+  und damit für die Leitung sichtbar; echte Zweiergespräche bleiben privat.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

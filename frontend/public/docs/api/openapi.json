@@ -7618,7 +7618,7 @@
           "Chat"
         ],
         "summary": "Chat-Raum erstellen (group/direct/jahrgang)",
-        "description": "Erstellt einen Raum. Konfis duerfen nur type='direct'. Bei type='jahrgang' werden alle Konfis des Jahrgangs automatisch hinzugefuegt. Existiert der Jahrgangs-Chat schon, ist der Aufruf ein Beitritt: der vorhandene Raum kommt mit created=false zurueck und fehlende Konfis werden nachgetragen (BEHOBEN 30.08.2026 — vorher 409, wodurch spaeter angelegte Konfis nie in den Jahrgangschat kamen). participants werden org-gescopt validiert, user_type serverseitig aus der Rolle abgeleitet.\n",
+        "description": "Erstellt einen Raum. Konfis duerfen nur type='direct'. Bei type='jahrgang' werden alle Konfis des Jahrgangs automatisch hinzugefuegt. Existiert der Jahrgangs-Chat schon, ist der Aufruf ein Beitritt: der vorhandene Raum kommt mit created=false zurueck und fehlende Konfis werden nachgetragen (BEHOBEN 30.08.2026 — vorher 409, wodurch spaeter angelegte Konfis nie in den Jahrgangschat kamen). participants werden org-gescopt validiert, user_type serverseitig aus der Rolle abgeleitet.\ntype='direct' NUR ZU ZWEIT (BEHOBEN 26.09.2026, Audit Chat BF-01): participants muss genau EINE weitere Person enthalten, sonst 400 (error_code direct_nur_zu_zweit). Vorher kam der Typ ungeprueft vom Client; wer kein Konfi war, konnte zwei Konfis in einen 'direct'-Raum setzen -- ein Gruppenraum, den die Leitung wegen darfRaumOeffnen ('direct' = privat) weder lesen noch exportieren konnte und in dem Konfis einander schrieben. Der eigentliche Weg fuer Zweiergespraeche ist POST /chat/direct; 'direct' bleibt hier nur aus Vertragsgruenden erhalten. Bestand: Migration 164 stellt 'direct'-Raeume mit mehr als zwei Personen auf 'group'.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -7681,8 +7681,7 @@
             }
           },
           "400": {
-            "description": "Typ/Name fehlt",
-            "ungueltiger Typ oder jahrgang_id fehlt": null
+            "description": "Typ/Name fehlt, ungueltiger Typ, jahrgang_id fehlt, ODER type='direct' ohne genau eine weitere Person (error_code direct_nur_zu_zweit, seit 26.09.2026)"
           },
           "403": {
             "description": "Konfi mit type != direct, Jahrgang nicht in eigener Org, ODER Konfi-Teilnehmer ausserhalb der zugewiesenen Jahrgaenge (admin/teamer)"
