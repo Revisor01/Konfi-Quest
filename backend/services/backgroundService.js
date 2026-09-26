@@ -645,6 +645,73 @@ class BackgroundService {
   }
 
   /**
+   * Erinnerungen je Termin vormerken -- EIN INSERT je Termin, VOR dem Versand
+   * (Audit 26.09.2026, Betrieb BF-05).
+   *
+   * Die Abfragen oben liefern eine Zeile je (Termin, Empfaenger:in). Vorher
+   * lief die Schleife ueber genau diese Zeilen: je Kopf ein Push ueber
+   * sendToUser (Postfach-Pruefung, Tokens, Badge-Summe, UPDATE je Geraet) und
+   * DANACH ein INSERT. Gemessen: 14 Abfragen und 9,2 ms je Kopf; bei 6.000
+   * Empfaengern je Takt 55 s Datenbankzeit, mit FCM-Latenz rund zehn Minuten
+   * -- laenger als der Takt. Der Laufmerker faengt den naechsten Takt im
+   * selben Prozess ab, nicht aber eine zweite Replica, die zum Cron-Leader
+   * geworden ist.
+   *
+   * Deshalb hier je Termin: alle Empfaenger:innen in einem
+   * `INSERT ... ON CONFLICT DO NOTHING RETURNING user_id`. Zurueck kommen
+   * genau die, deren Zeile NEU war -- wer die Zeile setzt, sendet; wer sie
+   * schon vorfindet (zweiter Lauf, andere Replica), bekommt niemanden zurueck
+   * und sendet nichts. Der Push geht danach als EIN Sammelversand je Termin
+   * (der Text ist je Termin gleich; sendToMultipleUsers rechnet Tokens und
+   * Badge einmal fuer alle).
+   *
+   * Gemessen (tests/services/eventRemindersSammelversand.test.js, ein Termin
+   * mit 200 Zusagen): 200 Push-Aufrufe, 200 INSERTs und 1.802 Abfragen ->
+   * 1 Push-Aufruf, 1 INSERT, 35 Abfragen.
+   *
+   * Was UNVERAENDERT bleibt: Fenster, Laufmerker und die Auswahl, wer
+   * erinnert wird (die Abfragen oben). Schlaegt das Vormerken fuer einen
+   * Termin fehl, wird er geloggt und uebersprungen -- der naechste Takt
+   * findet seine Empfaenger:innen ueber NOT EXISTS wieder.
+   *
+   * @param {object} db
+   * @param {Array<{id:number, name:string, event_date:Date, organization_id:number, user_id:number}>} zeilen
+   * @param {'1_day'|'1_hour'} typ
+   * @returns {Promise<Array<{event: object, empfaenger: number[]}>>} nur Termine
+   *   mit mindestens einer neu vorgemerkten Person, in der Reihenfolge der Zeilen
+   */
+  static async erinnerungenVormerken(db, zeilen, typ) {
+    const jeTermin = new Map();
+    for (const z of zeilen) {
+      if (!jeTermin.has(z.id)) {
+        jeTermin.set(z.id, {
+          event: { id: z.id, name: z.name, event_date: z.event_date, organization_id: z.organization_id },
+          kandidaten: [],
+        });
+      }
+      jeTermin.get(z.id).kandidaten.push(z.user_id);
+    }
+
+    const ergebnis = [];
+    for (const { event, kandidaten } of jeTermin.values()) {
+      try {
+        const { rows } = await db.query(
+          `INSERT INTO event_reminders (event_id, user_id, reminder_type, sent_at)
+           SELECT $1, unnest($2::int[]), $3, NOW()
+           ON CONFLICT DO NOTHING
+           RETURNING user_id`,
+          [event.id, kandidaten, typ]
+        );
+        const empfaenger = rows.map((r) => r.user_id);
+        if (empfaenger.length > 0) ergebnis.push({ event, empfaenger });
+      } catch (err) {
+        console.error(`Erinnerungen (${typ}) für Termin ${event.id} konnten nicht vorgemerkt werden:`, err);
+      }
+    }
+    return ergebnis;
+  }
+
+  /**
    * Sendet Event-Erinnerungen (1 Tag und 1 Stunde vorher)
    *
    * Befund H1, 27.08.2026: Beide Queries filtern abgesagte Termine aus. Eine
@@ -712,13 +779,16 @@ class BackgroundService {
 
       const { rows: oneDayEvents } = await db.query(oneDayQuery, [oneDayWindowStart, oneDayWindowEnd]);
 
-      for (const event of oneDayEvents) {
+      // Je Termin: erst alle Empfaenger:innen in EINEM INSERT vormerken, dann
+      // EIN Sammel-Push an genau die, deren Zeile neu war (Begruendung an
+      // erinnerungenVormerken).
+      for (const { event, empfaenger } of await this.erinnerungenVormerken(db, oneDayEvents, '1_day')) {
         try {
           // Extrahiere Zeit aus event_date
           const eventTime = event.event_date ? formatUhrzeit(event.event_date) : null;
           await PushService.sendEventReminderToKonfi(
             db,
-            event.user_id,
+            empfaenger,
             event.name,
             event.event_date,
             eventTime,
@@ -726,14 +796,8 @@ class BackgroundService {
             event.organization_id,
             event.id
           );
-
-          // Erinnerung als gesendet markieren
-          await db.query(
-            `INSERT INTO event_reminders (event_id, user_id, reminder_type, sent_at) VALUES ($1, $2, '1_day', NOW())`,
-            [event.id, event.user_id]
-          );
         } catch (err) {
-          console.error(`1-day reminder failed for event ${event.id}, user ${event.user_id}:`, err);
+          console.error(`1-day reminder failed for event ${event.id} (${empfaenger.length} Empfänger):`, err);
         }
       }
 
@@ -760,12 +824,12 @@ class BackgroundService {
 
       const { rows: oneHourEvents } = await db.query(oneHourQuery, [oneHourWindowStart, oneHourWindowEnd]);
 
-      for (const event of oneHourEvents) {
+      for (const { event, empfaenger } of await this.erinnerungenVormerken(db, oneHourEvents, '1_hour')) {
         try {
           const eventTime = event.event_date ? formatUhrzeit(event.event_date) : null;
           await PushService.sendEventReminderToKonfi(
             db,
-            event.user_id,
+            empfaenger,
             event.name,
             event.event_date,
             eventTime,
@@ -773,13 +837,8 @@ class BackgroundService {
             event.organization_id,
             event.id
           );
-
-          await db.query(
-            `INSERT INTO event_reminders (event_id, user_id, reminder_type, sent_at) VALUES ($1, $2, '1_hour', NOW())`,
-            [event.id, event.user_id]
-          );
         } catch (err) {
-          console.error(`1-hour reminder failed for event ${event.id}, user ${event.user_id}:`, err);
+          console.error(`1-hour reminder failed for event ${event.id} (${empfaenger.length} Empfänger):`, err);
         }
       }
 

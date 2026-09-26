@@ -1572,6 +1572,15 @@ class PushService {
 
   /**
    * Event-Erinnerung - Push an Konfi (1 Tag oder 1 Stunde vorher)
+   *
+   * @param {number|number[]} konfiId  EINE Person oder die Liste aller
+   *   Empfaenger:innen eines Termins. Der Erinnerungslauf
+   *   (backgroundService.sendEventReminders) ruft seit dem 26.09.2026 je
+   *   Termin einmal mit der Liste (Audit Betrieb BF-05): Der Text ist je
+   *   Termin gleich, und sendToMultipleUsers rechnet Tokens und Badge einmal
+   *   fuer alle statt je Kopf. Mit einer einzelnen ID bleibt es der bisherige
+   *   Einzelweg -- Rueckgabe dann wie sendToUser, mit der Liste wie
+   *   sendToMultipleUsers (ein Array).
    */
   static async sendEventReminderToKonfi(db, konfiId, eventName, eventDate, eventTime, reminderType, organizationId = null, eventId = null) {
     try {
@@ -1591,6 +1600,9 @@ class PushService {
         }
       };
 
+      if (Array.isArray(konfiId)) {
+        return await this.sendToMultipleUsers(db, konfiId, notification);
+      }
       return await this.sendToUser(db, konfiId, notification);
     } catch (error) {
  console.error('sendEventReminderToKonfi error:', error);

@@ -228,6 +228,10 @@ Versionsüberschrift.
   Person einzeln. Wer die Nachricht bekommt, was darin steht und welche Zahl
   am App-Symbol erscheint, bleibt gleich — auch bei vielen Gemeinden in
   derselben Datenbank bleibt der Rest der App dabei flüssig.
+- Terminerinnerungen an viele Angemeldete gehen gesammelt je Termin hinaus
+  statt Person für Person. Wer erinnert wird und wann, bleibt gleich; ein
+  Erinnerungslauf mit vielen Terminen belastet die Datenbank nicht mehr
+  minutenlang.
 
 ### Behoben
 - Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war

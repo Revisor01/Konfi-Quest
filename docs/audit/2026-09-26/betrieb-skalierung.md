@@ -327,7 +327,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-05: Terminerinnerungen laufen sequentiell je Empfänger ohne Überlappungsschutz
 - **Schwere:** HOCH
-- **Status:** teilweise behoben 26.09.2026 — Laufmerker `eventReminderLaeuft` in `sendEventReminders`: ein Takt, der einen laufenden Vorgänger trifft, wird übersprungen (Test L1/L2); Mitternachts-Bündelung durch das 24-Stunden-Fenster aufgelöst (Chat BF-03). Offen: Sammelversand je Termin über `sendToMultipleUsers` und blockweises `INSERT … ON CONFLICT` (Umbau der Versandschleife, nicht Teil des Fachlogik-Pakets).
+- **Status:** behoben 26.09.2026 — Laufmerker `eventReminderLaeuft` in `sendEventReminders`: ein Takt, der einen laufenden Vorgänger trifft, wird übersprungen (Test L1/L2); Mitternachts-Bündelung durch das 24-Stunden-Fenster aufgelöst (Chat BF-03). Sammelversand: je Termin EIN `INSERT … ON CONFLICT DO NOTHING RETURNING user_id` VOR dem Versand (`erinnerungenVormerken`; wer die Zeile setzt, sendet — eine zweite Replica bekommt niemanden zurück) und EIN Sammel-Push je Termin über `sendToMultipleUsers` (`sendEventReminderToKonfi` nimmt die Empfängerliste). Gemessen (`tests/services/eventRemindersSammelversand.test.js`, ein Termin mit 200 Zusagen): 200 Push-Aufrufe, 200 INSERTs, 1.802 Abfragen → 1 Push-Aufruf, 1 INSERT, 35 Abfragen; jedes Gerät genau ein Push, je Person eine Zeile. `eventReminders.test.js` unverändert grün.
 - **Fundstelle:** `backend/services/backgroundService.js:467–474` (15-Minuten-`setInterval`
   ohne Laufmerker), `:692–715` und `:740–761` (Schleife: Push + Insert je Empfänger),
   `backend/services/pushService.js:1485` (`sendEventReminderToKonfi` → `sendToUser` je Kopf)
