@@ -113,6 +113,7 @@ Vertragsbruch.
 
 ### BF-02: Terminliste aggregiert die View `event_booking_stats` über alle Buchungen aller Gemeinden
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Die vier Listen (`GET /events`, `GET /events/cancelled`, Serienliste in `GET /events/:id`, `GET /konfi/events`) zählen je Termin direkt auf `event_bookings … WHERE eb.event_id = e.id` (`backend/utils/buchungszahlen.js`, Spalte für Spalte dieselbe Zählung wie die View); Antwortform unverändert. Nachgemessen auf `kq_last` (100.000 Buchungen, Gemeinde mit 50 Terminen): LATERAL auf die View **77 ms → 2,0 ms**, LEFT JOIN auf die View 62 ms → dieselbe Form. Die beiden Einzelabrufe (`lesen.js` GET /events/:id, `konfi.js` GET /konfi/events/:id/status) bleiben auf der View: mit konstanter Termin-ID schiebt der Planer den Filter, gemessen 0,10–0,16 ms. Test `backend/tests/routes/terminlistenBuchungszahlen.test.js` hält jede Zahl, jeden Typ und die Reihenfolge der Felder fest und verlangt Gleichheit mit der View.
 - **Fundstelle:** `backend/routes/events/lesen.js:163` (LATERAL auf die View in `GET /events`), `lesen.js:407`, `lesen.js:602`, `lesen.js:782`, `backend/routes/konfi.js:1258`, `konfi.js:1393`; View-Definition `backend/migrations/154_event_booking_stats_abmeldung.sql:60-107`
 - **Kennzeichnung:** reproduziert (`scratchpad/…/explain_events.sql` gegen `kq_last`)
 - **Beschreibung:** Die View gruppiert `event_bookings JOIN users LEFT JOIN roles` nach

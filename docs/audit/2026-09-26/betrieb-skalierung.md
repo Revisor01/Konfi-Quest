@@ -268,6 +268,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-03: Terminlisten materialisieren die gesamte View `event_booking_stats` je Aufruf
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — `GET /events`, `GET /events/cancelled`, die Serienliste in `GET /events/:id` und `GET /konfi/events` zählen je Termin direkt auf `event_bookings` (`backend/utils/buchungszahlen.js`), Spaltennamen und Antwortform unverändert; die Einzelabrufe bleiben auf der View (Planer schiebt die konstante Termin-ID, 0,10–0,16 ms). Nachgemessen auf `kq_last` (100.000 Buchungen, 50 Termine): **77 ms → 2,0 ms** je Liste, kein `Seq Scan on event_bookings` mehr im Plan. Test `backend/tests/routes/terminlistenBuchungszahlen.test.js`. Zusammen mit Datenbank BF-02.
 - **Fundstelle:** `backend/routes/konfi.js:1155 ff.` (LATERAL auf `event_booking_stats`),
   `backend/routes/events/lesen.js:135–170` (dito), View-Definition aus Migration 128
   (`GROUP BY eb.event_id` über **alle** Buchungen, Join auf `users` und `roles`)

@@ -6,6 +6,7 @@
 // sonst würde Express "cancelled" als :id Parameter interpretieren.
 const express = require('express');
 const { anmeldeStatusSql, kapazitaetSql, ZEITFENSTER_SQL } = require('../../utils/terminAnmeldeStatus');
+const { buchungszahlenJeTerminSql } = require('../../utils/buchungszahlen');
 const { darfTermin } = require('../../utils/jahrgangsZugriff');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
@@ -113,7 +114,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         FROM events e
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
         LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
-        -- Zahlen aus der View statt aus einer eigenen Kopie (28.08.2026).
+        -- Zahlen mit der Zaehlung der View statt aus einer eigenen Kopie
+        -- (28.08.2026).
         --
         -- event_booking_stats liegt seit Migration 128 bereit und wurde von
         -- keinem Endpunkt gelesen: Fuenf Stellen zaehlten dieselben Buchungen
@@ -121,10 +123,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         -- deckungsgleich, nur anders benannt; die Namen nach aussen bleiben,
         -- damit kein Aufrufer bricht.
         --
-        -- Eine Verhaltensaenderung ist dabei: Die alte Kopie hatte einen
+        -- Eine Verhaltensaenderung war dabei: Die alte Kopie hatte einen
         -- LEFT JOIN auf users ohne deleted_at-Filter und zaehlte Buchungen
         -- geloeschter Konten mit. Die View filtert sie heraus — das ist der
         -- Fehler, den ihr Kommentar (Migration 128) ausdruecklich meint.
+        --
+        -- JE TERMIN statt aus der View (Audit 26.09.2026, S-04): Im LATERAL
+        -- gegen die Liste berechnete der Planer die GANZE View -- alle
+        -- Buchungen aller Gemeinden, Seq Scan auf event_bookings und users --
+        -- und prüfte dann gegen die Termine dieser Gemeinde. 77 ms je
+        -- Listenaufruf bei 100.000 Buchungen, 2 ms als Aggregat je Termin
+        -- (utils/buchungszahlen.js, Spalte fuer Spalte dieselbe Zaehlung).
+        -- Ein Termin ohne Buchung liefert jetzt Nullen statt keiner Zeile;
+        -- das aeussere COALESCE bleibt, die Antwort ist dieselbe.
         LEFT JOIN LATERAL (
           SELECT
             COALESCE(ebs.konfi_confirmed, 0)   as registered_count,
@@ -160,8 +171,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
             -- andere Groesse als die Konfi-Zahl daneben.
             COALESCE(ebs.konfi_opted_out, 0)
               + COALESCE(ebs.konfi_excused, 0) as abgemeldet_count
-          FROM event_booking_stats ebs
-          WHERE ebs.event_id = e.id
+          FROM ${buchungszahlenJeTerminSql('e.id')} ebs
         ) bstats ON true
         LEFT JOIN LATERAL (
           -- Wie viele beim Zuruecknehmen der Absage wieder angemeldet wuerden
@@ -404,7 +414,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         FROM events e
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
         LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
-        LEFT JOIN event_booking_stats ebs ON ebs.event_id = e.id
+        -- Je Termin statt LEFT JOIN auf die View (Audit 26.09.2026, S-04):
+        -- Der Join gegen die Liste materialisierte die ganze View ueber alle
+        -- Buchungen aller Gemeinden (62 ms bei 100.000 Buchungen, 2 ms so).
+        -- Gleicher Alias, gleiche Spalten -- das GROUP BY unten bleibt.
+        LEFT JOIN LATERAL ${buchungszahlenJeTerminSql('e.id')} ebs ON true
         LEFT JOIN LATERAL (
           -- Geloeschte Konten zaehlen nicht mit: Sie bekommen keinen Push
           -- (getTokensForUser filtert sie) und stehen in keiner Liste.
@@ -779,7 +793,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           SELECT e.id, e.name, e.event_date, e.max_participants,
                  COALESCE(ebs.konfi_confirmed, 0) as registered_count
           FROM events e
-          LEFT JOIN event_booking_stats ebs ON ebs.event_id = e.id
+          -- Je Termin statt LEFT JOIN auf die View (Audit 26.09.2026, S-04),
+          -- dieselbe Zaehlung: utils/buchungszahlen.js.
+          LEFT JOIN LATERAL ${buchungszahlenJeTerminSql('e.id')} ebs ON true
           WHERE e.series_id = $1 AND e.organization_id = $2 AND e.id != $3
           ORDER BY e.event_date ASC
         `;

@@ -13,6 +13,7 @@ const { deletePhotoFile, istSichererDateiname } = require('../utils/photoStorage
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
 const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach, pruefeKonfiStorno } = require('../utils/bookingUtils');
+const { buchungszahlenJeTerminSql } = require('../utils/buchungszahlen');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
@@ -1265,8 +1266,14 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
             -- kennen es nicht und zeigen weiter, was sie bisher zeigten.
             COALESCE(ebs.konfi_opted_out, 0)
               + COALESCE(ebs.konfi_excused, 0) as abgemeldet_count
-          FROM event_booking_stats ebs
-          WHERE ebs.event_id = e.id
+          -- JE TERMIN statt aus der View (Audit 26.09.2026, S-04): Im
+          -- LATERAL gegen die Liste berechnete der Planer die GANZE View --
+          -- alle Buchungen aller Gemeinden, Seq Scan auf event_bookings und
+          -- users. 77 ms je Aufruf bei 100.000 Buchungen, 2 ms so. Spalte fuer
+          -- Spalte dieselbe Zaehlung wie die View (utils/buchungszahlen.js);
+          -- ein Termin ohne Buchung liefert Nullen statt keiner Zeile, das
+          -- aeussere COALESCE bleibt, die Antwort ist dieselbe.
+          FROM ${buchungszahlenJeTerminSql('e.id')} ebs
         ) bstats ON true
         LEFT JOIN LATERAL (
           SELECT STRING_AGG(DISTINCT c.id::text, ',') as category_ids,

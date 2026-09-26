@@ -217,6 +217,10 @@ Versionsüberschrift.
   und rasten darauf ein. Die Höchstwerte für Teilnehmende und Zeitfenster sind
   auf ein alltagstaugliches Maß gesetzt; bestehende Termine mit mehr Plätzen
   behalten ihre Zahl.
+- Die Terminlisten für Konfis, Team und Leitung laden spürbar schneller, wenn
+  viele Gemeinden dieselbe Datenbank teilen: Die Buchungszahlen je Termin
+  werden nur noch für die eigenen Termine gezählt statt für alle Buchungen
+  aller Gemeinden. An den angezeigten Zahlen ändert sich nichts.
 
 ### Behoben
 - Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war
