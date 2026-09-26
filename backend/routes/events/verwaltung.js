@@ -79,6 +79,29 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size
     } = req.body;
 
+    // PFLICHTTERMIN BRAUCHT EINEN JAHRGANG (26.09.2026).
+    //
+    // Simons Befund aus Hennstedt: Bei den Konfisamstagen standen nur 4 von 12
+    // Konfis, obwohl es Pflichttermine sind. Die Termine waren ohne
+    // Jahrgangs-Zuordnung entstanden -- und die Auto-Anmeldung weiter unten
+    // haengt genau daran. Kein Jahrgang, keine Buchung.
+    //
+    // Unbemerkt blieb es, weil ein Termin OHNE Jahrgang fuer ALLE Konfis
+    // sichtbar ist (lesen.js: "Allgemeine Events sind fuer alle sichtbar").
+    // Vier meldeten sich selbst an, waehrend die Automatik schwieg; der
+    // Termin sah aus wie jeder andere.
+    //
+    // Beide Regeln sind fuer sich richtig. Ihre Kombination ist die Falle --
+    // ein Pflichttermin ohne Jahrgang ist ein Widerspruch: "alle muessen"
+    // ohne "wer". Freiwillige Termine duerfen weiterhin ohne Jahrgang
+    // bestehen, das ist der gewollte Fall "ganze Gemeinde".
+    if (mandatory && (!Array.isArray(jahrgang_ids) || jahrgang_ids.length === 0)) {
+      return res.status(400).json({
+        error: 'Ein Pflichttermin braucht mindestens einen Jahrgang — sonst wird niemand automatisch angemeldet.',
+        error_code: 'pflicht_ohne_jahrgang'
+      });
+    }
+
     // Teamer-Felder validieren: gegenseitiger Ausschluss
     if (teamer_needed && teamer_only) {
       return res.status(400).json({ error: 'teamer_needed und teamer_only schließen sich gegenseitig aus' });
@@ -323,6 +346,29 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only,
       teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size
     } = req.body;
+
+    // PFLICHTTERMIN BRAUCHT EINEN JAHRGANG (26.09.2026).
+    //
+    // Simons Befund aus Hennstedt: Bei den Konfisamstagen standen nur 4 von 12
+    // Konfis, obwohl es Pflichttermine sind. Die Termine waren ohne
+    // Jahrgangs-Zuordnung entstanden -- und die Auto-Anmeldung weiter unten
+    // haengt genau daran. Kein Jahrgang, keine Buchung.
+    //
+    // Unbemerkt blieb es, weil ein Termin OHNE Jahrgang fuer ALLE Konfis
+    // sichtbar ist (lesen.js: "Allgemeine Events sind fuer alle sichtbar").
+    // Vier meldeten sich selbst an, waehrend die Automatik schwieg; der
+    // Termin sah aus wie jeder andere.
+    //
+    // Beide Regeln sind fuer sich richtig. Ihre Kombination ist die Falle --
+    // ein Pflichttermin ohne Jahrgang ist ein Widerspruch: "alle muessen"
+    // ohne "wer". Freiwillige Termine duerfen weiterhin ohne Jahrgang
+    // bestehen, das ist der gewollte Fall "ganze Gemeinde".
+    if (mandatory && (!Array.isArray(jahrgang_ids) || jahrgang_ids.length === 0)) {
+      return res.status(400).json({
+        error: 'Ein Pflichttermin braucht mindestens einen Jahrgang — sonst wird niemand automatisch angemeldet.',
+        error_code: 'pflicht_ohne_jahrgang'
+      });
+    }
 
     // Teamer-Felder validieren: gegenseitiger Ausschluss
     if (teamer_needed && teamer_only) {

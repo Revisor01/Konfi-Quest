@@ -215,6 +215,11 @@ Versionsüberschrift.
   behalten ihre Zahl.
 
 ### Behoben
+- Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war
+  das möglich — und dann wurde niemand automatisch angemeldet, obwohl der
+  Termin für alle sichtbar war. In einer Gemeinde standen dadurch nur vier von
+  zwölf Konfis an den Pflichtterminen. Termine ohne Pflicht dürfen weiterhin
+  ohne Jahrgang für die ganze Gemeinde gelten.
 - Im Dunkelmodus blieben die Anmeldeseiten hell — Anmeldung, Passwort vergessen,
   neues Passwort und die Registrierung über einen Einladungslink.
 - Im Dunkelmodus leuchteten die farbigen Kopfbereiche greller als im hellen
