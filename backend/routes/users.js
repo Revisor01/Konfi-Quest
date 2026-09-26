@@ -85,17 +85,45 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   router.get('/', rbacVerifier, requireAdmin, async (req, res) => {
     const organizationId = req.user.organization_id;
 
+    // BEIDE Quellen der Zugehoerigkeit (Audit 26.09.2026, Leitung BF-01).
+    // Bis dahin stand hier allein `u.organization_id = $1`: Wer ueber eine
+    // Gemeinde-Einladung (user_organizations) hier mitarbeitet, fehlte in
+    // "Benutzer:innen" -- der einzige Weg zur Detailansicht, zur Rolle und
+    // zu den Jahrgaengen. Eine eingeladene Admin hatte so nie einen Jahrgang,
+    // eine eingeladene Teamer:in erreichte keine Konfi. Detailroute,
+    // Jahrgangszuweisung und checkUserHierarchy kannten beide Quellen
+    // laengst; die Liste nicht.
+    //
+    // Die Rolle ist die DIESER Gemeinde (uo.role_id fuer Zusatzmitglieder),
+    // die Jahrgaenge zaehlen nur die dieser Gemeinde (j.organization_id),
+    // und `mitgliedschaft` ('stamm' | 'weitere') sagt der Oberflaeche, was
+    // hier verwaltbar ist: in einer weiteren Gemeinde nur Rolle und
+    // Jahrgaenge (PUT/DELETE unten). Additives Feld -- die Antwortform der
+    // Store-Apps bleibt.
     const query = `
+      WITH mitglieder AS (
+        SELECT u.id, u.role_id, 'stamm'::text AS mitgliedschaft
+          FROM users u
+         WHERE u.organization_id = $1
+        UNION ALL
+        SELECT uo.user_id AS id, uo.role_id, 'weitere'::text AS mitgliedschaft
+          FROM user_organizations uo
+          JOIN users u ON u.id = uo.user_id
+         WHERE uo.organization_id = $1 AND u.organization_id <> $1
+      )
       SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
              u.last_login_at, u.created_at, u.updated_at,
              r.name as role_name, r.display_name as role_display_name,
              r.description as role_description,
-             COUNT(DISTINCT uja.jahrgang_id) as assigned_jahrgaenge_count
-      FROM users u
-      LEFT JOIN roles r ON u.role_id = r.id
-      LEFT JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
-      WHERE u.organization_id = $1 AND r.name NOT IN ('konfi', 'super_admin')
-      GROUP BY u.id, r.name, r.display_name, r.description
+             m.mitgliedschaft,
+             COUNT(DISTINCT j.id) as assigned_jahrgaenge_count
+      FROM mitglieder m
+      JOIN users u ON u.id = m.id
+      LEFT JOIN roles r ON r.id = m.role_id
+      LEFT JOIN user_jahrgang_assignments uja ON uja.user_id = u.id
+      LEFT JOIN jahrgaenge j ON j.id = uja.jahrgang_id AND j.organization_id = $1
+      WHERE r.name NOT IN ('konfi', 'super_admin')
+      GROUP BY u.id, r.name, r.display_name, r.description, m.mitgliedschaft
       ORDER BY u.created_at DESC
     `;
 
@@ -130,7 +158,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
              u.last_login_at, u.created_at, u.updated_at,
              COALESCE(uo.role_id, u.role_id) as role_id,
-             r.name as role_name, r.display_name as role_display_name
+             r.name as role_name, r.display_name as role_display_name,
+             CASE WHEN u.organization_id = $2 THEN 'stamm' ELSE 'weitere' END AS mitgliedschaft
       FROM users u
       LEFT JOIN user_organizations uo
              ON uo.user_id = u.id AND uo.organization_id = $2
@@ -284,8 +313,20 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     const { username, email, display_name, role_title, role_id, is_active, password } = req.body;
 
     try {
-      // Check if user exists in organization
-      const { rows: [user] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [id, organizationId]);
+      // Gehoert die Person zu dieser Gemeinde? BEIDE Quellen (Audit
+      // 26.09.2026, Leitung BF-01): Stamm-Gemeinde am Konto ODER Mitglied
+      // ueber user_organizations. `stamm` entscheidet unten, WAS hier
+      // geaendert werden darf.
+      const { rows: [user] } = await db.query(
+        `SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
+                (u.organization_id = $2) AS stamm
+           FROM users u
+          WHERE u.id = $1
+            AND (u.organization_id = $2
+                 OR EXISTS (SELECT 1 FROM user_organizations uo
+                             WHERE uo.user_id = u.id AND uo.organization_id = $2))`,
+        [id, organizationId]
+      );
       if (!user) {
         return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
       }
@@ -295,6 +336,30 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         const { rows: [role] } = await db.query("SELECT id FROM roles WHERE id = $1 AND organization_id = $2", [role_id, organizationId]);
         if (!role) {
           return res.status(400).json({ error: 'Ungültige Rolle für diese Organisation' });
+        }
+      }
+
+      // IN EINER WEITEREN GEMEINDE NUR DIE ROLLE. Name, Benutzername, E-Mail,
+      // Passwort und Sperre haengen am Konto und damit an der Stamm-Gemeinde
+      // -- sonst koennte die Leitung von Gemeinde B ueber das Passwort einer
+      // eingeladenen Teamer:in in deren Stamm-Gemeinde A hineinkommen
+      // (dieselbe Klasse wie Sicherheit BF-01). Unveraenderte Kontofelder
+      // duerfen mitkommen, weil die Oberflaeche das ganze Formular schickt;
+      // ein geaenderter Wert ist ein 400, kein stilles Weglassen.
+      if (!user.stamm) {
+        const gleich = (neu, alt) => neu === undefined || (neu ?? null) === (alt ?? null);
+        const kontoUnveraendert =
+          gleich(username, user.username) && gleich(email, user.email) &&
+          gleich(display_name, user.display_name) && gleich(role_title, user.role_title) &&
+          gleich(is_active, user.is_active) && !password;
+        if (!kontoUnveraendert) {
+          return res.status(400).json({
+            error: 'In einer weiteren Gemeinde lässt sich nur die Rolle ändern. Name, Benutzername, E-Mail, Passwort und Sperre verwaltet die Stamm-Gemeinde.',
+            error_code: 'nur_rolle_in_weiterer_gemeinde'
+          });
+        }
+        if (role_id === undefined) {
+          return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
         }
       }
 
@@ -332,13 +397,23 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
       }
 
-      updateFields.push('updated_at = NOW()');
+      let rowCount;
+      if (user.stamm) {
+        updateFields.push('updated_at = NOW()');
 
-      updateParams.push(id, organizationId);
-      const whereClause = `WHERE id = $${updateParams.length - 1} AND organization_id = $${updateParams.length}`;
-      let updateQuery = `UPDATE users SET ${updateFields.join(', ')} ${whereClause}`;
+        updateParams.push(id, organizationId);
+        const whereClause = `WHERE id = $${updateParams.length - 1} AND organization_id = $${updateParams.length}`;
+        const updateQuery = `UPDATE users SET ${updateFields.join(', ')} ${whereClause}`;
 
-      const { rowCount } = await db.query(updateQuery, updateParams);
+        ({ rowCount } = await db.query(updateQuery, updateParams));
+      } else {
+        // Zusatzmitglied: Die Rolle gilt je Gemeinde und steht in
+        // user_organizations -- users.role_id (Stamm-Gemeinde) bleibt.
+        ({ rowCount } = await db.query(
+          'UPDATE user_organizations SET role_id = $1 WHERE user_id = $2 AND organization_id = $3',
+          [role_id, id, organizationId]
+        ));
+      }
 
       if (rowCount === 0) {
         // This case should theoretically not be hit due to the initial check, but is good for safety.
@@ -418,6 +493,68 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     // Prevent self-deletion
     if (parseInt(id) === req.user.id) {
       return res.status(400).json({ error: 'Du kannst dein eigenes Konto nicht löschen' });
+    }
+
+    // ZUSATZMITGLIED: HIER ENDET DIE MITGLIEDSCHAFT, NICHT DAS KONTO (Audit
+    // 26.09.2026, Leitung BF-01). Wer ueber eine Gemeinde-Einladung hier
+    // mitarbeitet, ist in einer anderen Gemeinde zuhause. Die Leitung dieser
+    // Gemeinde darf ihn aus IHRER Gemeinde entfernen -- Konto, Stamm-Gemeinde
+    // und alles dort bleiben. Mit der Mitgliedschaft gehen die Jahrgaenge
+    // dieser Gemeinde und die Plaetze in Team- und Jahrgangs-Chats.
+    try {
+      const { rows: [konto] } = await db.query('SELECT organization_id FROM users WHERE id = $1', [id]);
+      if (konto && Number(konto.organization_id) !== Number(organizationId)) {
+        const client = await db.getClient();
+        let betroffeneJahrgaenge = [];
+        try {
+          await client.query('BEGIN');
+          const { rows: jg } = await client.query(
+            `DELETE FROM user_jahrgang_assignments uja
+              USING jahrgaenge j
+              WHERE uja.jahrgang_id = j.id AND uja.user_id = $1 AND j.organization_id = $2
+              RETURNING j.id`,
+            [id, organizationId]
+          );
+          betroffeneJahrgaenge = jg.map(r => r.id);
+          const { rowCount } = await client.query(
+            'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+            [id, organizationId]
+          );
+          if (rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+          }
+          await client.query('COMMIT');
+        } catch (err) {
+          await client.query('ROLLBACK').catch(() => {});
+          console.error(`Database error in DELETE /users/${id} (Mitgliedschaft):`, err);
+          return res.status(500).json({ error: 'Datenbankfehler' });
+        } finally {
+          client.release();
+        }
+
+        res.json({ message: 'Mitgliedschaft in dieser Gemeinde beendet' });
+
+        // Danach wie bei jeder Aenderung an Rolle oder Zugehoerigkeit: Rechte-
+        // Cache, Chat-Mitgliedschaften, offene Sockets (der naechste Aufruf
+        // mit dieser Gemeinde im Token bekommt 403 und faellt zurueck).
+        invalidateUserCache(parseInt(id));
+        chatSyncCache.invalidate(organizationId, parseInt(id));
+        try {
+          await syncTeamChat(db, organizationId, req.user.id);
+          for (const jahrgangId of betroffeneJahrgaenge) {
+            await syncJahrgangChat(db, jahrgangId, organizationId, req.user.id);
+          }
+        } catch (syncErr) {
+          console.error('Chat-Sync nach Ende der Mitgliedschaft fehlgeschlagen:', syncErr.message);
+        }
+        liveUpdate.disconnectUserSockets(parseInt(id));
+        liveUpdate.sendToOrgAdmins(organizationId, 'users', 'delete', { userId: parseInt(id) });
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking membership source:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
     // Prüfe ob letzter Org-Admin

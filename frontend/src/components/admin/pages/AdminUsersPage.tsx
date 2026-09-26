@@ -71,8 +71,13 @@ const AdminUsersPage: React.FC = () => {
   const handleDeleteUser = async (userToDelete: AdminUser) => {
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
-      header: 'Benutzer löschen',
-      message: `Benutzer "${userToDelete.display_name}" (@${userToDelete.username}) wirklich löschen?`,
+      // Zusatzmitglied (Gemeinde-Einladung): Es endet nur die Mitgliedschaft
+      // in dieser Gemeinde, das Konto bleibt -- das muss der Dialog sagen,
+      // sonst klingt es nach Kontoloeschung (Audit 26.09.2026, Leitung BF-01).
+      header: userToDelete.mitgliedschaft === 'weitere' ? 'Mitgliedschaft beenden' : 'Benutzer löschen',
+      message: userToDelete.mitgliedschaft === 'weitere'
+        ? `"${userToDelete.display_name}" (@${userToDelete.username}) aus dieser Gemeinde entfernen? Das Konto und die Stamm-Gemeinde bleiben bestehen.`
+        : `Benutzer "${userToDelete.display_name}" (@${userToDelete.username}) wirklich löschen?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {

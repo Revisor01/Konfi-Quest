@@ -1410,4 +1410,161 @@ describe('Users Routes', () => {
       expect(u.display_name).toBe('Zweite Leitung (neu)');
     });
   });
+
+  // ================================================================
+  // Mitglieder aus weiteren Gemeinden (user_organizations)
+  //
+  // Audit 26.09.2026 (Leitung BF-01, HOCH): Wer ueber eine Gemeinde-Einladung
+  // mitarbeitet, fehlte in GET /users (nur Stamm-Gemeinde) und liess sich
+  // ueber PUT nicht bearbeiten -- eine eingeladene Admin bekam nie einen
+  // Jahrgang. Hier: teamer2 ist in Org 2 zuhause und arbeitet als Teamer:in
+  // in Org 1. Die Leitung von Org 1 sieht sie, aendert ihre Rolle und beendet
+  // die Mitgliedschaft -- aber nie Name, Passwort oder Konto.
+  // ================================================================
+  describe('Mitglieder aus weiteren Gemeinden (user_organizations)', () => {
+    beforeEach(async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.teamer2.id, ORGS.testGemeinde.id, ROLES.teamer.id]
+      );
+    });
+
+    const liste = async (token) => {
+      const res = await request(app).get('/api/admin/users').set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      return res.body;
+    };
+
+    it('GET /users zeigt die Person mit der Rolle DIESER Gemeinde und dem Kennzeichen "weitere"', async () => {
+      const users = await liste(orgAdminToken);
+      const teamer2 = users.find(u => u.id === USERS.teamer2.id);
+      const admin1 = users.find(u => u.id === USERS.admin1.id);
+
+      expect(teamer2).toBeDefined();
+      expect(teamer2.role_name).toBe('teamer');
+      expect(teamer2.mitgliedschaft).toBe('weitere');
+      expect(teamer2.can_edit).toBe(true);
+      // Ihr Jahrgang aus Org 2 zaehlt hier nicht mit.
+      expect(Number(teamer2.assigned_jahrgaenge_count)).toBe(0);
+      expect(admin1.mitgliedschaft).toBe('stamm');
+    });
+
+    it('in der Stamm-Gemeinde bleibt sie "stamm" und zaehlt ihre eigenen Jahrgaenge', async () => {
+      const users = await liste(orgAdmin2Token);
+      const teamer2 = users.find(u => u.id === USERS.teamer2.id);
+
+      expect(teamer2.mitgliedschaft).toBe('stamm');
+      expect(Number(teamer2.assigned_jahrgaenge_count)).toBe(1);
+      // Niemand aus Org 1 rutscht in die Liste von Org 2.
+      expect(users.find(u => u.id === USERS.admin1.id)).toBeUndefined();
+    });
+
+    it('GET /users/:id traegt das Kennzeichen', async () => {
+      const res = await request(app)
+        .get(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.mitgliedschaft).toBe('weitere');
+      expect(res.body.role_name).toBe('teamer');
+    });
+
+    it('PUT aendert die Rolle nur in DIESER Gemeinde', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ role_id: ROLES.admin.id });
+
+      expect(res.status).toBe(200);
+      const { rows: [uo] } = await db.query(
+        'SELECT role_id FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+        [USERS.teamer2.id, ORGS.testGemeinde.id]
+      );
+      expect(uo.role_id).toBe(ROLES.admin.id);
+      const { rows: [konto] } = await db.query('SELECT role_id FROM users WHERE id = $1', [USERS.teamer2.id]);
+      expect(konto.role_id).toBe(USERS.teamer2.role_id);
+    });
+
+    it('PUT mit UNVERAENDERTEN Kontofeldern (so schickt es die Oberflaeche) -> 200', async () => {
+      const { body: u } = await request(app)
+        .get(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          username: u.username, email: u.email, display_name: u.display_name,
+          role_title: u.role_title, is_active: u.is_active, role_id: ROLES.admin.id
+        });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('PUT mit geaendertem Namen -> 400, nichts geaendert', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ display_name: 'Umbenannt von Gemeinde 1', role_id: ROLES.admin.id });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error_code).toBe('nur_rolle_in_weiterer_gemeinde');
+      const { rows: [konto] } = await db.query('SELECT display_name FROM users WHERE id = $1', [USERS.teamer2.id]);
+      expect(konto.display_name).toBe(USERS.teamer2.display_name);
+      const { rows: [uo] } = await db.query(
+        'SELECT role_id FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+        [USERS.teamer2.id, ORGS.testGemeinde.id]
+      );
+      expect(uo.role_id).toBe(ROLES.teamer.id);
+    });
+
+    it('PUT mit Passwort -> 400', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: 'Sicheres-Passwort-2026!' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error_code).toBe('nur_rolle_in_weiterer_gemeinde');
+    });
+
+    it('reset-password setzt nur die Stamm-Gemeinde -> 403', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}/reset-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: 'Sicheres-Passwort-2026!' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('DELETE beendet die Mitgliedschaft samt Jahrgaengen dieser Gemeinde -- das Konto bleibt', async () => {
+      const zuweisung = await request(app)
+        .post(`/api/admin/users/${USERS.teamer2.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahrgang_assignments: [{ jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: true }] });
+      expect(zuweisung.status).toBe(200);
+
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Mitgliedschaft in dieser Gemeinde beendet');
+      const { rows: uo } = await db.query(
+        'SELECT 1 FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+        [USERS.teamer2.id, ORGS.testGemeinde.id]
+      );
+      expect(uo).toHaveLength(0);
+      const { rows: konto } = await db.query('SELECT id FROM users WHERE id = $1', [USERS.teamer2.id]);
+      expect(konto).toHaveLength(1);
+      const { rows: jahrgaenge } = await db.query(
+        'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1 ORDER BY jahrgang_id',
+        [USERS.teamer2.id]
+      );
+      // Der Jahrgang aus Org 1 ist weg, der aus der Stamm-Gemeinde (Seed) bleibt.
+      expect(jahrgaenge.map(j => j.jahrgang_id)).toEqual([JAHRGAENGE.jahrgang2.id]);
+      // Und in der Stamm-Gemeinde steht sie weiterhin in der Liste.
+      const org2 = await liste(orgAdmin2Token);
+      expect(org2.find(u => u.id === USERS.teamer2.id)).toBeDefined();
+    });
+  });
 });

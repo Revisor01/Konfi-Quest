@@ -2052,7 +2052,7 @@
         "summary": "Alle Verwaltungs-User der eigenen Org (ohne Konfis/super_admin), mit can_edit-Flag aus der Hierarchie",
         "responses": {
           "200": {
-            "description": "User-Array (Rolle, Jahrgangs-Zaehler, can_edit)"
+            "description": "User-Array (Rolle und Jahrgangs-Zaehler DIESER Gemeinde, can_edit, mitgliedschaft 'stamm'|'weitere' -- additiv seit 26.09.2026)"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -2068,7 +2068,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "keine weitere"
+          "objekt-pruefung": "BEIDE Quellen der Zugehoerigkeit (users.organization_id ODER user_organizations, Rolle je Gemeinde)"
         }
       },
       "post": {
@@ -2271,7 +2271,7 @@
             "validateUpdateUser"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User in der STAMM-Org (users.organization_id); canManageRole + canCreateRole für neue Rolle",
+          "objekt-pruefung": "Ziel-User in der aktiven Org ueber BEIDE Quellen; canManageRole + canCreateRole für neue Rolle. Zusatzmitglied (user_organizations): NUR role_id, geschrieben nach user_organizations.role_id; geaenderte Kontofelder oder Passwort -> 400 nur_rolle_in_weiterer_gemeinde (seit 26.09.2026)",
           "hinweis": "BEWUSST enger als GET und die Jahrgangs-Routen (26.09.2026): Die Middleware laesst seither auch Personen durch, die ueber user_organizations in der aktiven Org arbeiten — diese Route weist sie danach trotzdem mit 404 ab. Bearbeitet werden hier Konto-Daten (Name, Mail, Rolle am Konto, is_active), die der GANZEN Person gehoeren und nicht einer einzelnen Gemeinde. Eine Zweitgemeinde darf sie nicht umschreiben. Was je Gemeinde gilt, laeuft ueber die Jahrgangs-Routen.\"\n"
         }
       },
@@ -2321,8 +2321,8 @@
             "validateUserId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "STAMM-Org (users.organization_id); Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz",
-          "hinweis": "BEWUSST enger als GET und die Jahrgangs-Routen (26.09.2026), wie bei PUT: Geloescht wird die ganze Person samt aller Gemeinden. Das darf nur die Gemeinde, an der das Konto haengt. Der Letzter- org_admin-Schutz zaehlt ebenfalls ueber users.organization_id.\"\n"
+          "objekt-pruefung": "Stamm-Mitglied: Konto loeschen (users.organization_id), Selbst-Loeschungs-Sperre, Letzter-org_admin-Schutz. Zusatzmitglied (user_organizations): NUR die Mitgliedschaft in dieser Gemeinde endet (user_organizations-Zeile, Jahrgaenge dieser Gemeinde, Team-/Jahrgangs-Chats), Antwort 200 'Mitgliedschaft in dieser Gemeinde beendet' -- seit 26.09.2026",
+          "hinweis": "Geloescht wird die ganze Person nur durch die Gemeinde, an der das Konto haengt -- das darf keine andere. Fuer ein Zusatzmitglied bedeutet DELETE deshalb seit dem 26.09.2026 (Audit Leitung BF-01) das Ende der Mitgliedschaft, nicht des Kontos; vorher kam 404 und die Person liess sich aus der Gemeinde gar nicht entfernen. Der Letzter-org_admin-Schutz zaehlt weiterhin ueber users.organization_id.\n"
         }
       }
     },

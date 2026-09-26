@@ -1125,13 +1125,16 @@ paths:
       tags: ["Benutzer & Rollen"]
       summary: Alle Verwaltungs-User der eigenen Org (ohne Konfis/super_admin), mit can_edit-Flag aus der Hierarchie
       responses:
-        "200": { description: "User-Array (Rolle, Jahrgangs-Zaehler, can_edit)" }
+        "200": { description: "User-Array (Rolle und Jahrgangs-Zaehler DIESER Gemeinde, can_edit, mitgliedschaft 'stamm'|'weitere' -- additiv seit 26.09.2026)" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "keine weitere"
+        objekt-pruefung: "BEIDE Quellen der Zugehoerigkeit (users.organization_id ODER user_organizations, Rolle je Gemeinde)"
+        # BEHOBEN 26.09.2026 (Audit Leitung BF-01): Bis dahin nur die
+        # Stamm-Gemeinde -- wer ueber eine Gemeinde-Einladung mitarbeitete,
+        # fehlte in der Liste und bekam nie Rolle oder Jahrgaenge.
     post:
       tags: ["Benutzer & Rollen"]
       summary: Verwaltungs-User anlegen (Rolle aus eigener Org, volle Passwort-Policy)
@@ -1210,9 +1213,13 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateUpdateUser]
         org-scope: true
-        objekt-pruefung: "Ziel-User in der STAMM-Org (users.organization_id); canManageRole + canCreateRole für neue Rolle"
+        objekt-pruefung: "Ziel-User in der aktiven Org ueber BEIDE Quellen; canManageRole + canCreateRole für neue Rolle. Zusatzmitglied (user_organizations): NUR role_id, geschrieben nach user_organizations.role_id; geaenderte Kontofelder oder Passwort -> 400 nur_rolle_in_weiterer_gemeinde (seit 26.09.2026)"
         # BEHOBEN 22.08.2026 (war N7): das optionale password-Feld wird vor
         # dem Hashen gegen validatePassword geprüft.
+        # BEHOBEN 26.09.2026 (Audit Leitung BF-01): vorher nur STAMM-Org,
+        # Zusatzmitglieder bekamen 404. Kontofelder bleiben bewusst bei der
+        # Stamm-Gemeinde -- sonst kaeme die Leitung von Gemeinde B ueber das
+        # Passwort einer eingeladenen Teamer:in in deren Gemeinde A hinein.
         hinweis: >
           BEWUSST enger als GET und die Jahrgangs-Routen (26.09.2026): Die
           Middleware laesst seither auch Personen durch, die ueber
@@ -1248,12 +1255,14 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('delete')", validateUserId]
         org-scope: true
-        objekt-pruefung: "STAMM-Org (users.organization_id); Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz"
+        objekt-pruefung: "Stamm-Mitglied: Konto loeschen (users.organization_id), Selbst-Loeschungs-Sperre, Letzter-org_admin-Schutz. Zusatzmitglied (user_organizations): NUR die Mitgliedschaft in dieser Gemeinde endet (user_organizations-Zeile, Jahrgaenge dieser Gemeinde, Team-/Jahrgangs-Chats), Antwort 200 'Mitgliedschaft in dieser Gemeinde beendet' -- seit 26.09.2026"
         hinweis: >
-          BEWUSST enger als GET und die Jahrgangs-Routen (26.09.2026), wie
-          bei PUT: Geloescht wird die ganze Person samt aller Gemeinden. Das
-          darf nur die Gemeinde, an der das Konto haengt. Der Letzter-
-          org_admin-Schutz zaehlt ebenfalls ueber users.organization_id."
+          Geloescht wird die ganze Person nur durch die Gemeinde, an der das
+          Konto haengt -- das darf keine andere. Fuer ein Zusatzmitglied
+          bedeutet DELETE deshalb seit dem 26.09.2026 (Audit Leitung BF-01)
+          das Ende der Mitgliedschaft, nicht des Kontos; vorher kam 404 und
+          die Person liess sich aus der Gemeinde gar nicht entfernen. Der
+          Letzter-org_admin-Schutz zaehlt weiterhin ueber users.organization_id.
 
   /api/users/{id}/jahrgaenge:
     get:

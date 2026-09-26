@@ -169,6 +169,19 @@ Sie behält Benutzername und Passwort; ihre bisherige Gemeinde bleibt
 unverändert. Die Einladung gilt **14 Tage** und lässt sich zurückziehen,
 solange sie offen ist.
 
+### Mitglieder aus anderen Gemeinden verwalten
+
+Nach der Zusage steht die Person unter **Mehr › Benutzer:innen** — mit dem
+Vermerk „zuhause in einer anderen Gemeinde". Dort vergibst du ihre **Rolle**
+in deiner Gemeinde und ihre **Jahrgänge**. Name, Benutzername, E-Mail,
+Passwort und Sperre bleiben Sache ihrer Stamm-Gemeinde; diese Felder sind bei
+dir gesperrt, und auch ein neues Passwort setzt nur die Stamm-Gemeinde.
+
+Wischst du die Person in der Liste weg, endet nur ihre **Mitgliedschaft in
+deiner Gemeinde** — samt ihrer Jahrgänge und Plätze in Team- und
+Jahrgangs-Chats bei dir. Das Konto und die Stamm-Gemeinde bleiben, wie sie
+sind.
+
 **Konfis lassen sich so nicht aufnehmen** — weder die eigenen noch die einer
 anderen Gemeinde. Sie gehören zu einem Jahrgang und kommen über einen
 [Einladungscode](35-passwoerter.md) hinein. Trägst du den Benutzernamen oder

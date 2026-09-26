@@ -266,6 +266,14 @@ const UsersView: React.FC<UsersViewProps> = ({
                                 {user.role_title}
                               </span>
                             )}
+                            {/* Ueber eine Gemeinde-Einladung dabei: Konto und
+                                Stamm-Gemeinde liegen woanders, hier gibt es
+                                nur Rolle und Jahrgaenge (Audit 26.09.2026). */}
+                            {user.mitgliedschaft === 'weitere' && (
+                              <span className="app-list-item__meta-item">
+                                zuhause in einer anderen Gemeinde
+                              </span>
+                            )}
                           </div>
 
                           {/* Zeile 3: Jahrgänge + Login */}

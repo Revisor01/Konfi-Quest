@@ -424,6 +424,12 @@ Versionsüberschrift.
   Viertelstunde mit „Deine Sitzung ist abgelaufen", und sie mussten sich mit
   dem gerade gewählten Passwort neu anmelden. Die Registrierung meldet jetzt
   dauerhaft an, genau wie der Login.
+- Wer über eine Gemeinde-Einladung dazukam, fehlte danach unter „Mehr ›
+  Benutzer:innen" und bekam weder Rolle noch Jahrgänge. Jetzt steht die Person
+  dort mit dem Vermerk „zuhause in einer anderen Gemeinde"; die Leitung vergibt
+  Rolle und Jahrgänge, während Name, E-Mail, Passwort und Sperre bei der
+  Stamm-Gemeinde bleiben. Wegwischen beendet nur die Mitgliedschaft in dieser
+  Gemeinde, das Konto bleibt.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

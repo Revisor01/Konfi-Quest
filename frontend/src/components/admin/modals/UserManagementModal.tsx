@@ -114,6 +114,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [roles, setRoles] = useState<Role[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [user, setUser] = useState<AdminUser | null>(null);
+  // Ueber eine Gemeinde-Einladung dabei (Audit 26.09.2026, Leitung BF-01):
+  // Das Konto ist in einer anderen Gemeinde zuhause. Hier gibt es nur Rolle
+  // und Jahrgaenge; Name, Benutzername, E-Mail, Passwort und Sperre sind
+  // gesperrt, und gespeichert wird nur die Rolle -- das Backend weist alles
+  // andere mit 400 ab.
+  const nurRolle = !!userId && user?.mitgliedschaft === 'weitere';
 
   // Jahrgang assignments
   const [jahrgangAssignments, setJahrgangAssignments] = useState<{ [key: number]: boolean }>({});
@@ -288,7 +294,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
         let userIdForAssignments = userId;
         if (isEditMode) {
-          await api.put(`/users/${userId}`, userData);
+          await api.put(`/users/${userId}`, nurRolle ? { role_id: formData.role_id } : userData);
         } else {
           const response = await api.post('/users', userData);
           userIdForAssignments = response.data.id;
@@ -416,6 +422,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
+              {nurRolle && (
+                <p style={{ margin: '0 0 var(--app-abstand-basis) 0', color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)' }}>
+                  Diese Person ist in einer anderen Gemeinde zuhause. Hier änderst du
+                  nur ihre Rolle und ihre Jahrgänge; Name, Benutzername, E-Mail,
+                  Passwort und Sperre verwaltet ihre Stamm-Gemeinde.
+                </p>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Anzeigename *</IonLabel>
@@ -423,7 +436,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.display_name}
                     onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
                     placeholder="Max Mustermann"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || nurRolle}
                   />
                 </IonItem>
 
@@ -437,7 +450,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.username}
                     onIonInput={(e) => setFormData({ ...formData, username: e.detail.value! })}
                     placeholder="max.mustermann"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || nurRolle}
                   />
                 </IonItem>
                 )}
@@ -448,7 +461,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.role_title}
                     onIonInput={(e) => setFormData({ ...formData, role_title: e.detail.value! })}
                     placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || nurRolle}
                   />
                 </IonItem>
 
@@ -459,7 +472,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.email}
                     onIonInput={(e) => setFormData({ ...formData, email: e.detail.value! })}
                     placeholder="max@example.com"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || nurRolle}
                   />
                 </IonItem>
 
@@ -472,7 +485,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.password}
                     onIonInput={(e) => setFormData({ ...formData, password: e.detail.value! })}
                     placeholder={isEditMode ? "Leer lassen um nicht zu ändern" : "Passwort eingeben"}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || nurRolle}
                   />
                 </IonItem>
               </div>
@@ -571,7 +584,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   className={`app-toggle--${farbe}`}
                   checked={formData.is_active}
                   onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || nurRolle}
                 />
               </div>
               )}

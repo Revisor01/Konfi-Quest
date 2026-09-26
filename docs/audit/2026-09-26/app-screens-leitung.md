@@ -72,6 +72,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-01: Eingeladene Personen fehlen in „Benutzer:innen" und lassen sich dort nicht bearbeiten
 
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — `GET /users` liest beide Quellen (Rolle und Jahrgangszähler je Gemeinde, additives Feld `mitgliedschaft` = `stamm`/`weitere`); `PUT /users/:id` ändert für Zusatzmitglieder nur die Rolle in `user_organizations` (Kontofelder → 400 `nur_rolle_in_weiterer_gemeinde`); `DELETE /users/:id` beendet für sie die Mitgliedschaft samt Jahrgängen dieser Gemeinde statt das Konto zu löschen. Oberfläche: Vermerk in der Liste, gesperrte Kontofelder mit Hinweis im Dialog, angepasster Lösch-Dialog. Tests in `users.test.js` (9) und `benutzerlisteWeitereGemeinde.test.tsx`.
 - **Fundstelle:** `backend/routes/users.js:97` (GET /), `backend/routes/users.js:288`
   (PUT /:id); Aufrufer `frontend/src/components/admin/pages/AdminUsersPage.tsx:34-38`,
   `frontend/src/components/admin/pages/AdminJahrgaengeePage.tsx:167-172`,
