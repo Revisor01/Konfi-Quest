@@ -454,6 +454,7 @@ abreißt.
 
 ### BF-15: Code-Kommentare mit veralteten Zahlen und toten Dateiverweisen
 - **Schwere:** NIEDRIG
+- **Status:** teilweise behoben 26.09.2026 — `rbac.js`: 345 → 474 Stellen mit Zähldatum; `build-api-docs.mjs`: Kommentar sagt jetzt, dass bewusst kein Datum geschrieben wird; `build-handbuch.mjs`: „dreizehn Kapitel" → 14, „28 Abschnitte" → 27 (beide mit Zähldatum), „Zwölf Kapitel" als damaliger Stand gekennzeichnet; tote Verweise in `konfi-management.js` (`events.js: syncEventChat` → `utils/eventChat.js`) und `konfiStammdatenBearbeiten.test.ts` (`BAUSTELLEN.md`) ersetzt. Nicht angefasst: der CSS-Kommentar „zwoelf Punkte" im Handbuch-Stylesheet (er landet in allen 15 erzeugten Seiten — eine Textkorrektur, die 15 Erzeugnisse umschreibt, lohnt nicht) und die historischen `events.js:NNN`-Verweise in Tests und `EventDetailView.tsx` (Dateien anderer Pakete, Verweise als Historie lesbar); `openapi.js` war nicht mehr auffindbar.
 - **Fundstelle:** `backend/middleware/rbac.js:297` („345-mal … nur einmal aus der
   Anfrage"); `scripts/build-api-docs.mjs:191-195`; `scripts/build-handbuch.mjs:29,373,584-586`;
   Dateiverweise auf `routes/events.js`, `events.js`, `BAUSTELLEN.md`, `openapi.js`

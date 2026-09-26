@@ -10,7 +10,9 @@ import { resolve } from 'path';
 // Name UND Jahrgang.
 //
 // Der Jahrgangswechsel ist die heikle Haelfte. Was er ausloest, wurde vorher
-// gemessen; die Entscheidungen dazu stehen in BAUSTELLEN.md. Simons Leitsatz:
+// gemessen; die Entscheidungen dazu standen in der inzwischen entfallenen
+// BAUSTELLEN.md, die Regeln dazu heute im Handbuch (Kapitel Jahrgaenge).
+// Simons Leitsatz:
 // "Neuer Jahrgang, die Regeln des Jahrgangs gelten."
 //
 // Dieser Test haelt die Warnungen fest. Als Dateitest, weil der Fehler waere,

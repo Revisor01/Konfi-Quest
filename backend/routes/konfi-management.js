@@ -514,7 +514,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 const { rows: gebucht } = await client.query(enrollFutureEventsQuery, [req.params.id, req.user.organization_id, jahrgang_id]);
                 // In die Chats der neu gebuchten Pflichttermine eintreten —
                 // dieselbe Regel wie beim Nachbuchen eines Jahrgangs am Event
-                // (events.js: syncEventChat). Existiert kein Chat, passiert
+                // (utils/eventChat.js: syncEventChat, gerufen aus
+                // routes/events/verwaltung.js). Existiert kein Chat, passiert
                 // nichts (Anlage bleibt Sache der Leitung).
                 for (const row of gebucht) {
                   await addToEventChat(client, row.event_id, parseInt(req.params.id, 10), req.user.organization_id);

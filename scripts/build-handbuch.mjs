@@ -26,9 +26,9 @@ import { fileURLToPath } from 'node:url';
 const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const QUELLE = join(WURZEL, 'docs', 'handbuch');
 // Ein Verzeichnis, nicht eine Datei: Seit dem 24.08.2026 bekommt jedes Kapitel
-// eine eigene Seite. Zwoelf Kapitel in einem Dokument waren für Lesende zu
-// viel — man fand nicht wieder, wo man war, und konnte sich auf nichts
-// beziehen. Jetzt: nummerierte Kapitel, eine Seite pro Kapitel, unten
+// eine eigene Seite. Die damals zwoelf Kapitel (heute 14) in einem Dokument
+// waren für Lesende zu viel — man fand nicht wieder, wo man war, und konnte
+// sich auf nichts beziehen. Jetzt: nummerierte Kapitel, eine Seite pro Kapitel, unten
 // vor/zurück, davor eine Übersicht (index.html).
 const ZIEL_VERZ = process.argv[2]
   ? resolve(process.argv[2])
@@ -581,11 +581,11 @@ ${inhalt}
 
     // Inhaltsverzeichnis DES KAPITELS, direkt unter der Kapitelueberschrift
     // (Simon, 08.09.2026). Zwei Ebenen, die zweite eingerueckt. Es steht im
-    // Fluss und nicht in der Seitenleiste: Die traegt schon die dreizehn
-    // Kapitel, und auf dem Handy klappt sie ohnehin zu.
-    // Lange Verzeichnisse starten zugeklappt -- das Wrapped-Kapitel hat 28
-    // Abschnitte und fuellte sonst den ganzen ersten Bildschirm (gemessen
-    // 1048 px). <details open> im HTML heisst: ohne JavaScript ist alles
+    // Fluss und nicht in der Seitenleiste: Die traegt schon alle Kapitel
+    // (14, Stand 26.09.2026), und auf dem Handy klappt sie ohnehin zu.
+    // Lange Verzeichnisse starten zugeklappt -- das Wrapped-Kapitel hat 27
+    // Abschnitte (gezaehlt 26.09.2026) und fuellte sonst den ganzen ersten
+    // Bildschirm (gemessen 1048 px). <details open> im HTML heisst: ohne JavaScript ist alles
     // sichtbar; das Mini-Skript darunter nimmt das open bei langen Listen
     // weg. Kurze Kapitel bleiben offen.
     const langeListe = abschnitte.length > 8;

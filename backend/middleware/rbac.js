@@ -294,7 +294,8 @@ const requireTeamer = requireRole('org_admin', 'admin', 'teamer'); // Events, Pu
 // ============================================
 // Hier stand bis zum 10.09.2026 eine Middleware requireSameOrganization. Sie
 // war an keiner Route verdrahtet und deshalb wirkungslos. Die Trennung laeuft
-// tatsaechlich ueber die Abfragen: 345-mal wird die Organisation aus dem Token
+// tatsaechlich ueber die Abfragen: 474-mal (gezaehlt am 26.09.2026 in routes,
+// utils, services und createApp.js) wird die Organisation aus dem Token
 // genommen (req.user.organization_id), nur einmal aus der Anfrage -- in
 // POST /auth/switch-org, und dort prueft die Route die Mitgliedschaft selbst
 // gegen user_organizations und lehnt sonst mit 403 ab.
