@@ -38,6 +38,23 @@ class BackgroundService {
   // jeder Takt dieselbe Zahl erneut schickt, und erlaubt trotzdem das
   // Zuruecknehmen auf null (siehe updateAllUserBadges).
   static letzterZaehler = new Map();
+  // Ist der Merker seit dem Prozessstart einmal gefuellt worden? Der erste
+  // Lauf nach einem Neustart fuellt ihn nur und sendet NICHTS (Audit
+  // 26.09.2026, Betrieb BF-02): Mit leerem Merker "weicht" jeder Stand ab,
+  // und der Lauf schickte an JEDES Geraet einen stillen Push -- gemessen fuer
+  // 25.000 Konten mit 48.000 Tokens 214,8 s, 328.403 Abfragen und 96.000
+  // Log-Zeilen, nach jedem Deploy. Was waehrend der kurzen Auszeit an
+  // Zaehlern anfiel, traegt der jeweilige Push (Chat, Antrag, Termin) ohnehin
+  // selbst; der Hintergrundlauf holt nur nach, was der Client sonst nicht
+  // erfaehrt (Zuruecknehmen auf null), und das ab dem zweiten Lauf.
+  static zaehlerMerkerGefuellt = false;
+  // Laufmerker fuer updateAllUserBadges (Muster wie eventReminderLaeuft): die
+  // Promise des laufenden Laufs oder null. Der 5-Minuten-Takt ueberspringt,
+  // wenn noch einer laeuft; der Stundenlauf WARTET stattdessen -- beide Takte
+  // sind am Prozessstart verankert und treffen sich jede volle Stunde, der
+  // Zaehler-Takt ist zuerst registriert und startet zuerst. Wuerde der
+  // Stundenlauf dann uebersprungen, liefe die Abzeichen-Pruefung nie.
+  static badgeLauf = null;
   // Fingerabdruck der Datenlage je Person beim letzten Abzeichen-Lauf. Wer
   // denselben Abdruck hat wie vorher, kann kein Abzeichen neu verdient haben
   // und wird uebersprungen (Begruendung in utils/abzeichenKandidaten.js).
@@ -140,9 +157,34 @@ class BackgroundService {
    * @param {object} db
    * @param {{nurZaehler?: boolean}} optionen  nurZaehler = App-Icon-Zähler
    *        aktualisieren, die teure Abzeichen-Prüfung auslassen.
+   * @returns {Promise<{updated:number, total:number, geprueft:number, uebersprungen?: true}>}
+   *   `uebersprungen` nur, wenn ein Zaehler-Takt einen laufenden Vorgaenger
+   *   traf und deshalb nichts getan hat (siehe badgeLauf).
    */
   static async updateAllUserBadges(db, optionen = {}) {
     const { nurZaehler = false } = optionen;
+    while (this.badgeLauf) {
+      if (nurZaehler) {
+        console.warn('updateAllUserBadges: vorheriger Lauf noch aktiv — Zähler-Takt übersprungen');
+        return { updated: 0, total: 0, geprueft: 0, uebersprungen: true };
+      }
+      // Stundenlauf: warten, nicht ueberspringen (Begruendung an badgeLauf).
+      await this.badgeLauf.catch(() => {});
+    }
+    const lauf = this.zaehlerUndAbzeichenLauf(db, nurZaehler);
+    this.badgeLauf = lauf;
+    try {
+      return await lauf;
+    } finally {
+      if (this.badgeLauf === lauf) this.badgeLauf = null;
+    }
+  }
+
+  /**
+   * Der eigentliche Lauf -- nur ueber updateAllUserBadges aufrufen, das den
+   * Laufmerker fuehrt.
+   */
+  static async zaehlerUndAbzeichenLauf(db, nurZaehler) {
     try {
       // Alle Konfis und Teamer:innen laden — NICHT nur die mit Push-Token.
       //
@@ -365,6 +407,11 @@ class BackgroundService {
       }
 
       let geprueft = 0;
+      // Wer bekommt in diesem Takt einen stillen Push? Erst sammeln, dann
+      // EINMAL gesammelt senden (sendBadgeUpdates) -- nicht je Kopf in der
+      // Schleife. Beim ersten Lauf nach dem Start bleibt die Liste leer, der
+      // Merker wird nur gefuellt (zaehlerMerkerGefuellt).
+      const zuSendende = [];
       for (const user of users) {
         try {
           // App-Icon-Zähler nachfuehren. Nur für Geraete mit Token — ohne
@@ -387,9 +434,12 @@ class BackgroundService {
             const zuSenden = summen.get(schluessel);
 
             if (zuSenden != null && this.letzterZaehler.get(schluessel) !== zuSenden) {
-              await PushService.sendBadgeUpdate(db, user.user_id);
-              this.letzterZaehler.set(schluessel, zuSenden);
-              updatedCount++;
+              if (this.zaehlerMerkerGefuellt) {
+                zuSendende.push({ userId: user.user_id, badge: zuSenden, schluessel });
+              } else {
+                // Erster Lauf nach dem Start: nur merken, nicht senden.
+                this.letzterZaehler.set(schluessel, zuSenden);
+              }
             }
           }
 
@@ -423,6 +473,20 @@ class BackgroundService {
           console.error(`Badge update failed for user ${user.user_id}:`, error);
         }
       }
+
+      // Stille Pushes gesammelt: Tokens einmal fuer alle, die Zahl ist schon
+      // gerechnet (summen), Buchfuehrung je Block. Vorher rief die Schleife
+      // sendBadgeUpdate je Kopf, das Summe und Tokens erneut holte -- rund 7
+      // Abfragen je Person, 439 fuer eine Chat-Nachricht an 60 Teilnehmende.
+      // Der Merker wird erst NACH dem Versand fortgeschrieben: Scheitert der
+      // Versand als Ganzes, sieht der naechste Takt die Staende weiter als
+      // abweichend und holt sie nach (wie vorher beim Einzelweg).
+      if (zuSendende.length > 0) {
+        await PushService.sendBadgeUpdates(db, zuSendende);
+        for (const e of zuSendende) this.letzterZaehler.set(e.schluessel, e.badge);
+        updatedCount = zuSendende.length;
+      }
+      this.zaehlerMerkerGefuellt = true;
 
       // Den Merker erst NACH dem Lauf fortschreiben, und nur fuer die
       // Personen, die auch tatsaechlich geprueft wurden. Waere er vorher

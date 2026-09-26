@@ -239,6 +239,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-02: App-Icon-Lauf schreibt nach jedem Neustart alle Geräte an und überlappt sich
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — Der erste Lauf nach dem Start füllt nur den Merker und sendet nichts (`zaehlerMerkerGefuellt`); Laufmerker `badgeLauf` in `updateAllUserBadges`: ein 5-Minuten-Takt, der einen laufenden Vorgänger trifft, wird übersprungen, der Stundenlauf wartet (beide Takte treffen sich jede volle Stunde — überspränge er, liefe die Abzeichen-Prüfung nie); die stillen Pushes eines Takts gehen gesammelt über `PushService.sendBadgeUpdates` (Tokens einmal für alle, schon gerechnete Summe, Buchführung je Block) statt je Kopf über `sendBadgeUpdate`. Gemessen (`tests/services/appIconLaufNeustart.test.js`, 60 Personen mit Gerät in Raum 1): erster Lauf 60 stille Pushes → 0; eine neue Nachricht im nächsten Takt 439 Abfragen → 25 bei unverändert 59 Pushes (einer je Gerät, Summe wie der Einzelweg); zweiter Takt während eines laufenden kehrt sofort zurück (0 Abfragen).
 - **Fundstelle:** `backend/services/backgroundService.js:30` (`letzterZaehler` im
   Prozessspeicher), `:95–101` (5-Minuten-`setInterval` ohne Laufmerker),
   `:373–383` (Push, wenn Merker abweicht — beim ersten Lauf immer),

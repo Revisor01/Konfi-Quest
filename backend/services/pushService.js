@@ -1164,6 +1164,89 @@ class PushService {
     }
   }
 
+  /**
+   * Stiller App-Icon-Push an VIELE Personen mit schon gerechneter Zahl
+   * (Audit 26.09.2026, Betrieb BF-02).
+   *
+   * Der Hintergrunddienst (updateAllUserBadges) rechnet die Summe fuer alle
+   * Konten in wenigen Bulk-Abfragen -- und rief dann fuer jede Person, deren
+   * Stand sich geaendert hat, sendBadgeUpdate, das die Summe ERNEUT je Kopf
+   * rechnete (Rolle, Organisationen, Zaehler-Abfragen) und die Tokens je Kopf
+   * holte: rund 7 Abfragen je Person. Eine neue Chat-Nachricht in einem Raum
+   * mit 60 Teilnehmenden kostete im naechsten Takt 439 Abfragen
+   * (tests/services/appIconLaufNeustart.test.js, N3).
+   *
+   * Hier stattdessen: Tokens EINMAL fuer alle (getTokensForUsers, ohne Art --
+   * der stille Push traegt nur die Zahl und ist nicht stummschaltbar, wie in
+   * sendBadgeUpdate), je Geraet der stille Push mit der mitgegebenen Zahl,
+   * Buchfuehrung gesammelt je Block. Die Regeln je Geraet sind dieselben wie
+   * in sendBadgeUpdate: Erfolg setzt einen Fehlerzaehler zurueck (aber ruehrt
+   * updated_at NICHT an -- ein stiller Push ist kein Beleg, dass jemand die
+   * App noch nutzt), fatale Fehler loeschen den Token, sonstige zaehlen hoch.
+   *
+   * @param {object} db
+   * @param {Array<{userId:number, badge:number}>} eintraege
+   * @returns {Promise<{sent:number, errors:number, total:number}>}
+   */
+  static async sendBadgeUpdates(db, eintraege) {
+    let sent = 0;
+    let errors = 0;
+    let total = 0;
+    if (!eintraege || eintraege.length === 0) return { sent, errors, total };
+
+    for (let i = 0; i < eintraege.length; i += this.EMPFAENGER_BLOCK) {
+      const block = eintraege.slice(i, i + this.EMPFAENGER_BLOCK);
+      const tokensJeUser = await this.getTokensForUsers(db, block.map((e) => e.userId));
+      const sammler = { zurueckgesetzt: [], ungueltig: [], fehlgeschlagen: [] };
+
+      await Promise.all(block.map(async ({ userId, badge }) => {
+        const tokens = tokensJeUser.get(userId) || [];
+        for (const token of tokens) {
+          total++;
+          const result = await this.sendeMitWiederholung(
+            () => firebase.sendFirebaseSilentPush(token.token, badge)
+          );
+          if (result.success) {
+            sent++;
+            if (token.error_count > 0) sammler.zurueckgesetzt.push(token.id);
+          } else if (this.istFatal(result.errorCode)) {
+            sammler.ungueltig.push(token.id);
+            errors++;
+          } else {
+            sammler.fehlgeschlagen.push(token.id);
+            errors++;
+          }
+        }
+      }));
+
+      try {
+        if (sammler.zurueckgesetzt.length > 0) {
+          await db.query(
+            'UPDATE push_tokens SET error_count = 0, last_error_at = NULL WHERE id = ANY($1::bigint[])',
+            [sammler.zurueckgesetzt]
+          );
+        }
+        if (sammler.ungueltig.length > 0) {
+          await db.query('DELETE FROM push_tokens WHERE id = ANY($1::bigint[])', [sammler.ungueltig]);
+          console.warn(`${sammler.ungueltig.length} Token(s) gelöscht (von FCM abgelehnt, stiller Push)`);
+        }
+        if (sammler.fehlgeschlagen.length > 0) {
+          await db.query(
+            'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = ANY($1::bigint[])',
+            [sammler.fehlgeschlagen]
+          );
+        }
+      } catch (err) {
+        console.error('Token-Buchfuehrung (stiller Push) fehlgeschlagen:', err.message);
+      }
+
+      if (i + this.EMPFAENGER_BLOCK < eintraege.length) {
+        await this.schlafen(this.EMPFAENGER_PAUSE_MS);
+      }
+    }
+    return { sent, errors, total };
+  }
+
   // ====================================================================
   // ACTIVITY REQUEST NOTIFICATIONS
   // ====================================================================

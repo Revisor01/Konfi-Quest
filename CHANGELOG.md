@@ -556,6 +556,12 @@ Versionsüberschrift.
 - Eine neue Chat-Nachricht kam bei allen, die den Chat gerade offen hatten,
   doppelt an — unsichtbar, aber jedes Mal wurden die Zähler zweimal neu
   geladen. Sie kommt jetzt genau einmal.
+- Nach jedem Neustart des Servers wurde die Zahl am App-Symbol auf allen
+  Geräten auf einmal nachgeführt — bei vielen Gemeinden war die App danach
+  bis zu einer Stunde träge, und mehrere solcher Läufe konnten sich
+  überlappen. Der erste Lauf merkt sich jetzt nur die Stände; nachgeführt
+  wird weiterhin alle fünf Minuten, sobald sich bei jemandem etwas ändert,
+  und nie zwei Läufe gleichzeitig.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
