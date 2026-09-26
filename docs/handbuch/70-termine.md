@@ -243,7 +243,10 @@ Vergangenheit dagegen richtig und bleibt erlaubt.
 
 Sobald ein freiwilliger Termin anmeldbar wird, geht **genau ein** Push an die
 Konfis. Er kommt nicht beim Speichern, sondern von einem Hintergrundlauf, der
-jede Minute prüft — so kann er nicht doppelt kommen.
+jede Minute prüft — so kann er nicht doppelt kommen. Werden auf einmal sehr
+viele Termine anmeldbar (etwa nach einem Import), arbeitet der Lauf sie nach
+und nach ab, die am längsten offenen zuerst; ein einzelner Push kann dann
+einige Minuten später kommen.
 
 Schließt du die Anmeldung wieder (Fenster in die Zukunft verschoben, Termin
 abgesagt), wird die Merkung zurückgesetzt: Beim nächsten Öffnen kommt wieder

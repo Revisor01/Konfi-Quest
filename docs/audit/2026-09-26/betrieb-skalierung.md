@@ -556,6 +556,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-15: `sendRegistrationOpenPushes` schickt nach Rückstand alles auf einmal
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — höchstens `REGISTRIERUNG_MAX_JE_LAUF` (20) Termine je Minutenlauf, die am längsten offenen zuerst (`ORDER BY registration_opens_at NULLS FIRST, id LIMIT $1 FOR UPDATE SKIP LOCKED` im UPDATE-Subselect); der Rest folgt in den nächsten Minuten. Test `tests/services/registrationOpenDrosselung.test.js` (50 fällige Termine: 20/20/10/0 statt 50 in einem Lauf, Reihenfolge, NULL-Fenster zuerst, Regelbetrieb unverzögert, jeder Termin genau einmal). Handbuch 70-termine.md „Den „Anmeldung möglich"-Push einordnen". Offen (fachlich): ob Termine, deren Fenster seit mehr als 24 h offen ist, nach einem Ausfall überhaupt noch einen Push bekommen sollen — hier bewusst nicht geändert.
 - **Fundstelle:** `backend/services/backgroundService.js:541–559` (UPDATE … RETURNING über
   alle fälligen Termine, dann Push je Termin an alle Konfis der Gemeinde)
 - **Kennzeichnung:** reproduziert — `jobs-messen.js` mit 5.000 Terminen ohne gesetztes Flag

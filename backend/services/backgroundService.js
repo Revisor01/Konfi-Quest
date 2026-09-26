@@ -86,6 +86,17 @@ class BackgroundService {
   static ABZEICHEN_MAX_JE_LAUF = 800;
   static abzeichenZeiger = 0;
 
+  // Hoechstens so viele Termine je Minutenlauf bekommen den "Anmeldung
+  // moeglich"-Push (Audit 26.09.2026, Betrieb BF-15). Im Regelbetrieb flippt
+  // das Anlegen eines Termins das Flag sofort, der Lauf findet ein, zwei
+  // zeitgesteuerte Faelle je Minute -- die Grenze greift dann nie. Stauen
+  // sich faellige Termine (Import, langer Ausfall des Cron-Leaders,
+  // Migration mit false-Vorgabe), gingen vorher ALLE in einem Lauf hinaus:
+  // gemessen mit 5.000 Terminen 34,1 s, 50.365 Abfragen, 137.910 Log-Zeilen.
+  // Mit 20 je Minute sind 5.000 Termine in gut vier Stunden abgearbeitet,
+  // ohne dass ein einzelner Lauf die Datenbank blockiert.
+  static REGISTRIERUNG_MAX_JE_LAUF = 20;
+
   /**
    * Startet regelmäßige Badge Updates für alle User (alle 5 Minuten)
    */
@@ -612,17 +623,31 @@ class BackgroundService {
       // Eine einzige Zeile mit cancelled = NULL waere aber still aus dem
       // "Anmeldung moeglich"-Push gefallen, ohne Spur im Log. `IS NOT TRUE`
       // behandelt NULL wie "nicht abgesagt", genau wie an allen anderen Stellen.
+      //
+      // GEDROSSELT (Audit 26.09.2026, Betrieb BF-15): hoechstens
+      // REGISTRIERUNG_MAX_JE_LAUF Termine je Lauf, die am laengsten offenen
+      // zuerst (registration_opens_at, NULL = "schon immer offen" vorn). Der
+      // Rest kommt in den naechsten Minuten dran. FOR UPDATE SKIP LOCKED: ein
+      // zweiter Lauf, der zeitgleich dieselben Zeilen greift, ueberspringt die
+      // schon gesperrten statt auf sie zu warten; die Flanke bleibt atomar.
       const { rows: events } = await db.query(`
         UPDATE events
         SET registration_open_notified = true
-        WHERE registration_open_notified = false
-          AND cancelled IS NOT TRUE
-          AND (teamer_only IS NULL OR teamer_only = false)
-          AND (mandatory IS NULL OR mandatory = false)
-          AND (registration_opens_at IS NULL OR registration_opens_at <= NOW())
-          AND (registration_closes_at IS NULL OR registration_closes_at >= NOW())
+        WHERE id IN (
+          SELECT id FROM events
+          WHERE registration_open_notified = false
+            AND cancelled IS NOT TRUE
+            AND (teamer_only IS NULL OR teamer_only = false)
+            AND (mandatory IS NULL OR mandatory = false)
+            AND (registration_opens_at IS NULL OR registration_opens_at <= NOW())
+            AND (registration_closes_at IS NULL OR registration_closes_at >= NOW())
+          ORDER BY registration_opens_at NULLS FIRST, id
+          LIMIT $1
+          FOR UPDATE SKIP LOCKED
+        )
+          AND registration_open_notified = false
         RETURNING id, name, event_date, organization_id
-      `);
+      `, [this.REGISTRIERUNG_MAX_JE_LAUF]);
 
       for (const ev of events) {
         try {

@@ -562,6 +562,10 @@ Versionsüberschrift.
   überlappen. Der erste Lauf merkt sich jetzt nur die Stände; nachgeführt
   wird weiterhin alle fünf Minuten, sobald sich bei jemandem etwas ändert,
   und nie zwei Läufe gleichzeitig.
+- Werden nach einer Pause des Servers auf einmal sehr viele Termine
+  anmeldbar, kamen alle „Anmeldung möglich"-Mitteilungen in einem Schwall.
+  Sie gehen jetzt nach und nach hinaus, die am längsten offenen zuerst; im
+  Alltag ändert sich nichts.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
