@@ -2249,14 +2249,17 @@ describe('Challenges Routes', () => {
       expect(list.body.active.map((c) => c.id)).toContain(challenge.id);
     });
 
-    it("audience='nur_team': Org-Isolation haelt (Teamer einer FREMDEN Org -> 403)", async () => {
+    it("audience='nur_team': Org-Isolation haelt (Teamer einer FREMDEN Org -> 404)", async () => {
       const challenge = await createChallenge({ audience: 'nur_team' });
 
       const res = await request(app)
         .post(`/api/challenges/konfi/${challenge.id}/submissions`)
         .set('Authorization', `Bearer ${teamer2Token}`)
         .send({ media_type: 'text', text_content: 'Fremde Org' });
-      expect([403, 404]).toContain(res.status);
+      // loadChallenge filtert auf die Org des Aufrufers -> die Challenge
+      // existiert fuer Org 2 nicht -> 404 (Audit 26.09.2026, Tests BF-06).
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Challenge nicht gefunden');
     });
 
     it('audience nach Start aendern -> 409 (Konsens-Integritaet wie visibility)', async () => {

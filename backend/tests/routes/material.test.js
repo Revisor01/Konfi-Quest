@@ -460,8 +460,10 @@ describe('Material Routes', () => {
         .post(`/api/material/${materialId}/files`)
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
-      // Erwartet 400 (keine Dateien) oder ggf. einen anderen Fehler — kein 500 crash
-      expect(res.status).toBeLessThan(500);
+      // Frueher toBeLessThan(500): Ein 200 (Material ohne Datei angenommen)
+      // haette bestanden (Audit 26.09.2026, Tests BF-06).
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Keine Dateien hochgeladen');
     });
 
     it('Teamer bekommt 403', async () => {

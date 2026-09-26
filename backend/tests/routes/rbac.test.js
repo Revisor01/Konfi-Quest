@@ -464,14 +464,17 @@ describe('RBAC-Matrix + Cross-Org-Isolation', () => {
       expect(res.status).toBe(404);
     });
 
-    it('admin1 (Org 1) PUT Activity aus Org 2 -> nicht erfolgreich', async () => {
+    it('admin1 (Org 1) PUT Activity aus Org 2 -> 404', async () => {
+      // type mitschicken, sonst endet der Request schon in der Pflichtfeld-
+      // Pruefung (400) und erreicht den Gemeinde-Filter gar nicht.
       const res = await request(app)
         .put(`/api/admin/activities/${ACTIVITIES.gottesdienst2.id}`)
         .set('Authorization', `Bearer ${tokens.admin}`)
-        .send({ name: 'Manipuliert', points: 99 });
-      // PUT filtert ebenfalls WHERE organization_id = req.user.organization_id
-      // Entweder 404 (nicht gefunden) oder keine Änderung
-      expect([404, 400, 500]).toContain(res.status);
+        .send({ name: 'Manipuliert', points: 99, type: 'gottesdienst' });
+      // PUT filtert WHERE organization_id = req.user.organization_id ->
+      // rowCount 0 -> 404. Frueher stand hier [404, 400, 500]: Ein Absturz
+      // haette als bestanden gegolten (Audit 26.09.2026, Tests BF-06).
+      expect(res.status).toBe(404);
     });
   });
 });

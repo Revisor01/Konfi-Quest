@@ -78,7 +78,8 @@ describe('Auth Routes', () => {
         .post('/api/auth/login')
         .send({});
 
-      expect([400, 422]).toContain(res.status);
+      // handleValidationErrors antwortet mit 400 (Audit 26.09.2026, Tests BF-06).
+      expect(res.status).toBe(400);
     });
   });
 
@@ -763,7 +764,7 @@ describe('Auth Routes', () => {
       expect(res.body.user.display_name).toBe('Neuer Konfi');
     });
 
-    it('Registrierung mit ungueltigem Invite-Code gibt Fehler', async () => {
+    it('Registrierung mit ungueltigem Invite-Code gibt 404 not_found', async () => {
       const res = await request(app)
         .post('/api/auth/register-konfi')
         .send({
@@ -773,7 +774,10 @@ describe('Auth Routes', () => {
           password: 'TestPasswort123!',
         });
 
-      expect([400, 404]).toContain(res.status);
+      // Unbekannter Code -> 404 mit error_code not_found; abgelaufen waere
+      // 410 (Audit 26.09.2026, Tests BF-06).
+      expect(res.status).toBe(404);
+      expect(res.body.error_code).toBe('not_found');
     });
   });
 

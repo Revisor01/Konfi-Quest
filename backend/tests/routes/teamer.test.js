@@ -1138,12 +1138,23 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.greeting).toBeDefined();
-      expect(res.body.greeting.display_name).toBeDefined();
-      expect(res.body.certificates).toBeDefined();
-      expect(res.body.events).toBeDefined();
-      expect(res.body.badges).toBeDefined();
-      expect(res.body.config).toBeDefined();
+      // Form der Antwort, nicht nur Existenz der Felder: null oder {} kamen
+      // frueher mit toBeDefined() durch (Audit 26.09.2026, Tests BF-06).
+      expect(Object.keys(res.body.greeting)).toEqual(['display_name', 'hour']);
+      expect(res.body.greeting.display_name).toBe(USERS.teamer1.display_name);
+      // Seed: keine Zertifikat-Typen, keine Team-Termine, keine Team-Badges.
+      expect(res.body.certificates).toEqual([]);
+      expect(res.body.events).toEqual([]);
+      expect(res.body.badges).toEqual({ recent: [], earned_count: 0, total_count: 0 });
+      expect(res.body.config).toEqual({
+        show_zertifikate: true,
+        show_challenges: true,
+        show_konfispruch: true,
+        show_events: true,
+        show_badges: true,
+        show_losung: true,
+        section_order: ['losung', 'challenges', 'events', 'konfispruch', 'zertifikate', 'badges'],
+      });
     });
 
     // Befund H2 (26.08.2026): Die Events-Abfrage hatte zusaetzlich

@@ -4,7 +4,7 @@ const path = require('path');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS } = require('../helpers/seed');
-const { generateToken } = require('../helpers/auth');
+const { generateToken, generateTokenMitAlter } = require('../helpers/auth');
 
 describe('Organizations Routes', () => {
   let app;
@@ -1197,8 +1197,17 @@ describe('Organizations Routes', () => {
       // Der Entzug muss SOFORT gelten, nicht erst nach Ablauf des Tokens.
       // Der Membership-Check in rbac.js greift bei jedem Cache-Miss; zusaetzlich
       // wird der Cache geleert und ein Soft-Revoke gesetzt (Audit 22.08.2026).
-      it('nach dem Entzug endet der Zugriff auf die Organisation sofort', async () => {
+      //
+      // Zwei Riegel, zwei Tests (Audit 26.09.2026, Tests BF-06 Nr. 4): Die
+      // weiche Erwartung [401, 403] blieb gruen, egal ob der Soft-Revoke
+      // griff -- die Mitgliedschaftspruefung lieferte ohnehin 403. Jetzt
+      // prueft jeder Test genau EINEN Mechanismus.
+      it('nach dem Entzug sperrt der Soft-Revoke eine bestehende Sitzung sofort -> 401', async () => {
         const { invalidateUserCache } = require('../../middleware/rbac');
+        // Bestehende Sitzung: iat liegt VOR dem Entzug. rbac.js vergleicht
+        // sekundengenau; ein frisch erzeugtes Token laege in derselben
+        // Sekunde wie die Invalidierung.
+        const bestehendeSitzung = generateTokenMitAlter('admin1', 60);
 
         await request(app).post(`/api/organizations/2/members`)
           .set('Authorization', `Bearer ${superAdminToken}`)
@@ -1208,7 +1217,7 @@ describe('Organizations Routes', () => {
         // Beleg, dass der Zugriff VORHER funktioniert.
         const vorher = await request(app)
           .get('/api/events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${bestehendeSitzung}`)
           .set('X-Active-Organization', '2');
         expect(vorher.status).toBe(200);
 
@@ -1219,9 +1228,36 @@ describe('Organizations Routes', () => {
 
         const nachher = await request(app)
           .get('/api/events')
+          .set('Authorization', `Bearer ${bestehendeSitzung}`)
+          .set('X-Active-Organization', '2');
+        expect(nachher.status).toBe(401);
+        expect(nachher.body.error).toBe('Token invalidated');
+      });
+
+      it('ohne Mitgliedschaft weist die Mitgliedschaftspruefung auch ein frisches Token ab -> 403', async () => {
+        const { invalidateUserCache } = require('../../middleware/rbac');
+
+        await request(app).post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ user_id: 4, role_name: 'teamer' });
+        invalidateUserCache(4);
+
+        const entzug = await request(app)
+          .delete(`/api/organizations/2/members/4`)
+          .set('Authorization', `Bearer ${superAdminToken}`);
+        expect(entzug.status).toBe(200);
+
+        // Soft-Revoke bewusst zuruecknehmen: Hier soll ALLEIN die
+        // Mitgliedschaftspruefung antworten.
+        await db.query('UPDATE users SET token_invalidated_at = NULL WHERE id = 4');
+        invalidateUserCache(4);
+
+        const nachher = await request(app)
+          .get('/api/events')
           .set('Authorization', `Bearer ${adminToken}`)
           .set('X-Active-Organization', '2');
-        expect([401, 403]).toContain(nachher.status);
+        expect(nachher.status).toBe(403);
+        expect(nachher.body.error).toBe('Kein Zugriff auf diese Organisation');
       });
 
       it('setzt beim Entzug token_invalidated_at', async () => {

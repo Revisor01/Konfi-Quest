@@ -1045,7 +1045,7 @@ describe('Chat Routes', () => {
   // Datei-Endpoints (supertest file mock)
   // ================================================================
   describe('POST /api/chat/rooms/:roomId/messages (Datei)', () => {
-    it('Nachricht mit Datei-Anhang -> 200', async () => {
+    it('Datei-Anhang mit falschen Magic-Bytes -> 415', async () => {
       const res = await request(app)
         .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
         .set('Authorization', `Bearer ${konfi1Token}`)
@@ -1055,9 +1055,12 @@ describe('Chat Routes', () => {
           contentType: 'image/png',
         });
 
-      // Magic-Bytes von Buffer.from('PNG test content') sind keine echten PNG Magic-Bytes
-      // validateMagicBytes gibt 415 bei falschen Magic-Bytes zurück
-      expect([200, 400, 415]).toContain(res.status);
+      // Buffer.from('PNG test content') hat keine echten PNG-Magic-Bytes; die
+      // Pruefung in chat.js weist mit 415 ab. Frueher [200, 400, 415]: Eine
+      // angenommene Datei (200) haette bestanden -- der Test prueft die
+      // Magic-Byte-Pruefung jetzt wirklich (Audit 26.09.2026, Tests BF-06).
+      expect(res.status).toBe(415);
+      expect(res.body.error).toBe('Dateityp konnte nicht verifiziert werden');
     });
 
     it('Nachricht nur mit Datei (ohne content) -> 200', async () => {
