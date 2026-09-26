@@ -244,6 +244,11 @@ jeder dieser Gemeinden lässt sie sich auch in
 [Gruppenchats](90-chat.md#mitglieder-einer-gruppe-verwalten) aufnehmen, beim
 Anlegen wie nachträglich.
 
+Den [Team-Rückblick](95-wrapped.md#am-6-januar-geht-es-von-allein) bekommt
+eine Teamer:in in jeder Gemeinde, in der sie im Team ist — je einen eigenen,
+mit den Zahlen genau dieser Gemeinde, ob die Leitung ihn von Hand anlegt oder
+er am 6. Januar von allein entsteht.
+
 **Mitteilungen kommen aus allen Gemeinden**, in denen jemand die passende
 Rolle hat — nicht nur aus der Stamm-Gemeinde:
 

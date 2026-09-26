@@ -1585,7 +1585,12 @@ paths:
   # backend/routes/wrapped.js  (Prefix /api/wrapped)
   # Der Router exportiert zusaetzlich generateAllTeamerWrapped als Funktion
   # fuer den Cron am 6. Januar (backgroundService) - das ist KEINE HTTP-Route
-  # und daher hier nicht dokumentiert. Ein Gegenstueck fuer Konfis gibt es
+  # und daher hier nicht dokumentiert. BEHOBEN 26.09.2026 (Audit Chat BF-04):
+  # Der Cron-Weg las die Teamer:innen allein ueber users.organization_id
+  # (Stamm-Org, ohne is_active/deleted_at), waehrend POST /generate-teamer
+  # laengst beide Quellen nahm; jetzt dieselbe Empfaengerliste
+  # (utils/orgMitglieder.js), ohne Empfaenger kein Push.
+  # Ein Gegenstueck fuer Konfis gibt es
   # bewusst nicht mehr (entfallen 08.09.2026): Es war toter Code ohne jeden
   # Aufrufer, und der Konfi-Rueckblick laeuft nie automatisch - wann der
   # richtige Tag ist, weiss nur die Gemeinde.

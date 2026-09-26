@@ -17,7 +17,7 @@
 // denselben Rueckblick doppelt in seiner Liste.
 
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, ORGS, USERS } = require('../helpers/seed');
+const { seed, ORGS, USERS, ROLES } = require('../helpers/seed');
 const BackgroundService = require('../../services/backgroundService');
 const PushService = require('../../services/pushService');
 
@@ -190,6 +190,103 @@ describe('Team-Rueckblick am 6. Januar (Wrapped-Cron)', () => {
     expect(await ausgabenVon(ORGS.andereGemeinde.id)).toHaveLength(1);
     // Und die andere Gemeinde ist trotzdem versorgt.
     expect(await ausgabenVon(ORGS.testGemeinde.id)).toHaveLength(1);
+  });
+
+  // ================================================================
+  // Teamer:innen aus einer zweiten Gemeinde (Audit 26.09.2026, Chat BF-04)
+  // ================================================================
+  //
+  // Die CHANGELOG-Zusage von 2.3.0 -- "Wer in zwei Gemeinden im Team ist,
+  // bekommt in jeder einen eigenen Rueckblick" -- galt zunaechst nur fuer den
+  // Hand-Weg (POST /generate-teamer, ladeMitgliederDerOrganisation). Der
+  // Cron, den das Handbuch als Normalfall beschreibt, las weiter allein
+  // `u.organization_id = $1`: Die Zweitgemeinde-Teamer:in bekam am 6. Januar
+  // dort nichts -- und weil die Ausgabe danach existierte, konnte die Leitung
+  // es auch nicht mehr von Hand nachholen. Umgekehrt nahm der Cron gesperrte
+  // und geloeschte Konten mit (kein is_active/deleted_at-Filter).
+  describe('Teamer:innen aus einer zweiten Gemeinde', () => {
+    // IDs oberhalb des Seed-Bereichs
+    const GAST = 251;       // Stamm-Gemeinde Org 1, Teamer:in auch in Org 2
+    const GAST_CHEF = 252;  // Stamm-Gemeinde Org 1, in Org 2 org_admin
+
+    beforeEach(async () => {
+      await db.query(
+        `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active)
+         VALUES ($1, 'gast-teamer-cron', 'x', 'Gast Teamer Cron', $2, 1, true),
+                ($3, 'gast-chef-cron', 'x', 'Gast Chef Cron', $2, 1, true)`,
+        [GAST, ROLES.teamer.id, GAST_CHEF]
+      );
+      await db.query(
+        `INSERT INTO user_organizations (user_id, organization_id, role_id)
+         VALUES ($1, 2, $2), ($3, 2, $4)`,
+        [GAST, ROLES.teamer2.id, GAST_CHEF, ROLES.orgAdmin2.id]
+      );
+    });
+
+    /** Empfaenger des Team-Rueckblicks einer Organisation, aufsteigend. */
+    async function empfaenger(orgId) {
+      const { rows } = await db.query(
+        `SELECT user_id FROM wrapped_snapshots
+          WHERE organization_id = $1 AND wrapped_type = 'teamer'
+          ORDER BY user_id`,
+        [orgId]
+      );
+      return rows.map(r => Number(r.user_id));
+    }
+
+    it('die Zweitgemeinde-Teamer:in bekommt am 6. Januar in BEIDEN Gemeinden ihren Rueckblick', async () => {
+      await BackgroundService.checkWrappedTriggers(db);
+
+      // Org 1: Stamm-Teamer:in teamer1 plus GAST und GAST_CHEF (dort Teamer:innen).
+      expect(await empfaenger(ORGS.testGemeinde.id)).toEqual(
+        [USERS.teamer1.id, GAST, GAST_CHEF].sort((a, b) => a - b)
+      );
+      // Org 2: Stamm-Teamer:in teamer2 plus GAST ueber user_organizations.
+      expect(await empfaenger(ORGS.andereGemeinde.id)).toEqual(
+        [USERS.teamer2.id, GAST].sort((a, b) => a - b)
+      );
+    });
+
+    it('die Rolle gilt je Gemeinde: als org_admin der Zweitgemeinde kein Team-Rueckblick dort', async () => {
+      await BackgroundService.checkWrappedTriggers(db);
+
+      expect(await empfaenger(ORGS.andereGemeinde.id)).not.toContain(GAST_CHEF);
+    });
+
+    it('der Rueckblick der Zweitgemeinde haengt an DEREN Ausgabe, nicht an der Stamm-Gemeinde', async () => {
+      await BackgroundService.checkWrappedTriggers(db);
+
+      const { rows } = await db.query(
+        `SELECT s.organization_id, a.organization_id AS ausgabe_org
+           FROM wrapped_snapshots s JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
+          WHERE s.user_id = $1 AND s.wrapped_type = 'teamer'
+          ORDER BY s.organization_id`,
+        [GAST]
+      );
+      expect(rows.map(r => [Number(r.organization_id), Number(r.ausgabe_org)])).toEqual([[1, 1], [2, 2]]);
+    });
+
+    it('gesperrte und geloeschte Konten bekommen keinen Rueckblick und keine Mitteilung', async () => {
+      await db.query('UPDATE users SET is_active = false WHERE id = $1', [GAST]);
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.teamer2.id]);
+      const push = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      try {
+        await BackgroundService.checkWrappedTriggers(db);
+
+        // Org 2 hat damit niemanden mehr im Team -> leere Ausgabe, kein Push dorthin.
+        expect(await empfaenger(ORGS.andereGemeinde.id)).toEqual([]);
+        const anOrg2 = push.mock.calls.filter(c => Number(c[3]) === ORGS.andereGemeinde.id);
+        expect(anOrg2).toHaveLength(0);
+        // Org 1: teamer1 und GAST_CHEF, nicht der gesperrte GAST.
+        expect(await empfaenger(ORGS.testGemeinde.id)).toEqual([USERS.teamer1.id, GAST_CHEF]);
+        const anOrg1 = push.mock.calls.filter(c => Number(c[3]) === ORGS.testGemeinde.id);
+        expect(anOrg1).toHaveLength(1);
+        expect(anOrg1[0][1].map(Number).sort((a, b) => a - b)).toEqual([USERS.teamer1.id, GAST_CHEF]);
+      } finally {
+        push.mockRestore();
+      }
+    });
   });
 
   // ================================================================

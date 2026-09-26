@@ -3232,12 +3232,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       await client.query('BEGIN');
 
-      const { rows: teamers } = await client.query(
-        `SELECT u.id as user_id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE r.name = 'teamer' AND u.organization_id = $1`,
-        [orgId]
-      );
+      // Alle Teamer:innen der Gemeinde ueber BEIDE Quellen der Zugehoerigkeit
+      // -- dieselbe Empfaengerliste wie im Hand-Weg (POST /generate-teamer).
+      // Bis zum 26.09.2026 (Audit Chat BF-04) stand hier
+      // `u.organization_id = $1`, ohne is_active/deleted_at: Wer ueber
+      // user_organizations in dieser Gemeinde im Team ist, bekam am 6. Januar
+      // nichts -- und weil die Ausgabe danach existierte, konnte die Leitung
+      // es nicht mehr von Hand nachholen. Gesperrte und geloeschte Konten
+      // bekamen dagegen Snapshot und Push. Die Rolle gilt je Gemeinde
+      // (uo.role_id): Wer hier org_admin ist, gehoert nicht in den
+      // TEAM-Rueckblick.
+      const teamerIds = await ladeMitgliederDerOrganisation(client, orgId, ['teamer']);
+      const teamers = teamerIds.map((user_id) => ({ user_id }));
 
       // Die Ausgabe zuerst -- ihre id gehoert seit Migration 144 zum
       // Schluessel der Snapshots.
@@ -3292,12 +3298,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       await client.query('COMMIT');
 
-      // Push (fire-and-forget)
-      try {
-        const teamerIds = teamers.map(t => t.user_id);
-        await PushService.sendWrappedReleased(dbRef, teamerIds, 'teamer', orgId, ausgabe.id);
-      } catch (pushErr) {
-        console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
+      // Push (fire-and-forget) -- nur, wenn es Empfaenger gibt.
+      if (teamerIds.length > 0) {
+        try {
+          await PushService.sendWrappedReleased(dbRef, teamerIds, 'teamer', orgId, ausgabe.id);
+        } catch (pushErr) {
+          console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
+        }
       }
 
       return { generated, errors };

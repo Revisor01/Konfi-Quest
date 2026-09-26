@@ -529,6 +529,11 @@ Versionsüberschrift.
   Person danach ohne Hinweis, beim nachträglichen Hinzufügen kam „nicht in
   deiner Organisation" — obwohl sie in der Team-Kontaktliste stand. Jetzt
   kommt sie hinein, mit der Rolle, die sie in dieser Gemeinde hat.
+- Der automatische Team-Rückblick am 6. Januar übersah, wer über eine
+  Einladung in einer weiteren Gemeinde im Team ist — dort entstand kein
+  Rückblick, und nachholen ließ er sich nicht, weil das Jahr als erledigt
+  galt. Jetzt bekommt jede Teamer:in in jeder ihrer Gemeinden ihren eigenen
+  Rückblick, auch beim automatischen Lauf; gesperrte Konten bleiben außen vor.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

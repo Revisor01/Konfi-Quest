@@ -181,7 +181,11 @@ ist für Admins deshalb gesperrt.
 
 Der Team-Rückblick für das abgelaufene Jahr entsteht in **jeder Gemeinde**
 selbst, am 6. Januar um 6 Uhr früh. Ihr müsst nichts einstellen und nichts
-anstoßen.
+anstoßen. Er gilt allen, die in dieser Gemeinde als Teamer:in mitarbeiten —
+auch denen, die [über eine Einladung](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)
+dabei sind und in einer anderen Gemeinde zuhause sind. Wer in zwei Gemeinden im
+Team ist, bekommt zwei Rückblicke, jeder mit den Zahlen seiner Gemeinde.
+Gesperrte Konten bekommen keinen.
 
 Von Hand geht es trotzdem weiterhin. Wer den Rückblick auf 2026 am 3. Januar
 selbst erstellt, bekommt am 6. **keinen zweiten** — der Automatiklauf sieht, dass
