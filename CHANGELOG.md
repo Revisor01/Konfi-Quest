@@ -23,7 +23,7 @@ Versionsüberschrift.
 - In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde: Wer in der
   einen die Leitung stellt, kann in der anderen Teamer:in sein — die Rechte
   richten sich nach der Gemeinde, in der man gerade arbeitet. Der Umschalter
-  steht auf jeder Seite und zeigt je Gemeinde, wo etwas offen ist;
+  steht auf den Hauptseiten und zeigt je Gemeinde, wo etwas offen ist;
   Mitteilungen, Postfach und Team-Kontaktliste umfassen alle Gemeinden. Wer
   in einer Gemeinde mitarbeitet, ist dort auch verwaltbar und bekommt dort
   Jahrgänge zugewiesen. Eine zweite Mitgliedschaft wird beim Betrieb von
@@ -154,25 +154,25 @@ Versionsüberschrift.
   gesendet wird: Die Warteschlange steht jetzt im Postfach hinter der Glocke
   oben rechts. Bei den Anträgen bleibt die Karte „Wird gesendet…" mit den
   einzelnen Vorgängen.
-- Für die Leitung steht der Gemeinde-Umschalter oben links jetzt auf jeder
-  Seite, nicht mehr nur in der Konfi-Liste — außer auf Profil, Benutzer:innen,
-  Organisationen und Betrieb, wo ein Gemeindewechsel nichts zu suchen hat. Wer
-  über einen Push oder das Postfach in eine andere Gemeinde gewechselt ist,
-  sieht überall, wo er gerade arbeitet, und kommt von jeder Seite zurück.
-- In der Ansicht eines einzelnen Termins und eines einzelnen Materials steht
-  der Gemeinde-Umschalter nicht mehr: Was dort zu sehen ist, gehört zu genau
-  einer Gemeinde, ein Wechsel führte ins Leere. In den Listen bleibt er.
+- Der Gemeinde-Umschalter oben links steht auf allen Seiten, die über die
+  Leiste unten erreichbar sind — Konfis, Termine, Chat, Challenges und „Mehr"
+  für die Leitung, Startseite, Termine, Abzeichen, Challenges und Chat für
+  Konfis und Team —, nicht mehr nur in der Konfi-Liste. Wer über einen Push
+  oder das Postfach in eine andere Gemeinde gewechselt ist, sieht so, wo er
+  gerade arbeitet, und kommt von jeder dieser Seiten zurück. Nicht steht er in
+  Detailansichten (einzelner Termin, einzelne Konfi, einzelnes Material,
+  Chatraum), auf den Unterseiten unter „Mehr" (Aktivitäten, Abzeichen,
+  Jahrgänge, Level, Material, Jahresrückblick) sowie auf Profil,
+  Benutzer:innen, Organisationen und Betrieb: Was dort zu sehen ist, gehört zu
+  genau einer Gemeinde, ein Wechsel führte ins Leere. Die Glocke steht dagegen
+  auf jeder Seite, auch im Chatraum.
 - In der Gemeinde-Auswahl steht die aktive Gemeinde fett und leicht
   hinterlegt statt mit grünem Haken; der Gemeindename am Knopf ist kleiner und
   nimmt in der Kopfzeile weniger Platz ein.
-- Glocke und Gemeinde-Umschalter stehen jetzt auch im Chat, in jedem Chatraum
-  und bei den Challenges — die einzigen Seiten, auf denen sie noch fehlten.
 - Die Mitteilungen im Postfach sehen aus wie jede andere Liste der App: Karte
   im Hintergrund, farbiger Rand und Symbol je Bereich — Abzeichen in der
   Abzeichenfarbe, Anträge in der Aktivitätenfarbe. Ungelesenes trägt ein
   „Neu" in der Ecke.
-- Die Zahl an der Glocke wird nicht mehr an der Rundung der Knopfleiste
-  angeschnitten; sie sitzt jetzt ganz auf der Glocke.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 - Große Dateien laufen zuverlässiger durch: Fotos, Sprachaufnahmen und
@@ -195,42 +195,6 @@ Versionsüberschrift.
   der Lesbarkeitsgrenze für Fließtext, im Dunkeln war der zarteste sogar
   dunkler statt heller gesetzt und auf den Stempel-Kacheln kaum zu erkennen.
   Die Abstufung untereinander bleibt erhalten.
-
-### Hinzugefügt
-- Im Profil steht unter „Mitteilungen prüfen", ob Mitteilungen für die App
-  erlaubt sind und welche Fassung läuft. Kommt einmal nichts an, lässt sich das
-  vorlesen statt zu raten — und wenn die Erlaubnis fehlt, steht dort, wo man sie
-  einschaltet.
-
-### Sonstiges
-- Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.
-- Die iPhone-App ist auf das Startverfahren umgestellt, das neuere
-  iOS-Fassungen verlangen. Für die Bedienung ändert sich nichts — ohne die
-  Umstellung ließe sich die App künftig aber nicht mehr öffnen.
-- Der Server bricht eine Datenbankabfrage ab, die nicht mehr antwortet, statt
-  ihren Platz dauerhaft zu belegen. In der Auslastungsanzeige steht jetzt auch,
-  wie viele Anfragen gerade auf eine freie Datenbankverbindung warten.
-- Stürzt die App ab, wird das jetzt automatisch gemeldet, damit die Ursache
-  gefunden werden kann. Übertragen werden nur technische Angaben und die Rolle
-  in grober Einteilung — kein Name, keine Kennung. Was dabei an Google geht,
-  steht in der Datenschutzerklärung.
-- Das Konfi-Profil lädt die Abzeichen nicht mehr ein zweites Mal, nur um die
-  Zahl in der Kachel anzuzeigen. Sie stand ohnehin schon in den Profildaten.
-- Die iPhone-App legt Apple gegenüber offen, was sie erhebt: anonyme
-  Nutzungsstatistik ohne Personenbezug, die Geräte-Kennung für Mitteilungen
-  und Absturzberichte — und dass nichts davon zur Nachverfolgung über andere
-  Apps oder Anbieter dient.
-
-### Entfernt
-- Der Eintrag „Absturzmeldung prüfen" in den Leitungs-Einstellungen ist weg. Er
-  ließ die App absichtlich abstürzen, um die Absturzmeldung einmalig
-  einzurichten — das ist erledigt. Echte Abstürze werden weiterhin gemeldet.
-- Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
-  Es hatte weder Skala noch Zeitmarken und keine ablesbaren Werte. Die
-  Aufrufzahlen stehen als Zahl in den Kennzahlen, die Fehler mit Zeitpunkt
-  unter „Fehler".
-
-### Geändert
 - Die Regler für Punkte, Plätze und Wiederholungen zeigen jetzt Rastermarken
   und rasten darauf ein. Die Höchstwerte für Teilnehmende und Zeitfenster sind
   auf ein alltagstaugliches Maß gesetzt; bestehende Termine mit mehr Plätzen
@@ -256,6 +220,15 @@ Versionsüberschrift.
   Einführung — alles erscheint sofort an seinem Platz. Der Jahresrückblick
   kennt diese Einstellung bereits und bleibt, wie er ist.
 
+### Entfernt
+- Der Eintrag „Absturzmeldung prüfen" in den Leitungs-Einstellungen ist weg. Er
+  ließ die App absichtlich abstürzen, um die Absturzmeldung einmalig
+  einzurichten — das ist erledigt. Echte Abstürze werden weiterhin gemeldet.
+- Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
+  Es hatte weder Skala noch Zeitmarken und keine ablesbaren Werte. Die
+  Aufrufzahlen stehen als Zahl in den Kennzahlen, die Fehler mit Zeitpunkt
+  unter „Fehler".
+
 ### Behoben
 - Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war
   das möglich — und dann wurde niemand automatisch angemeldet, obwohl der
@@ -275,15 +248,10 @@ Versionsüberschrift.
 - Auf der Startseite fürs Team waren die Sprechblasen an Abzeichen und
   Urkunden schmaler als anderswo, sodass Texte unnötig umbrachen. Sie sind
   jetzt so breit wie überall sonst.
-- Auf den Unterseiten unter „Mehr" — Aktivitäten, Abzeichen, Jahrgänge,
-  Level, Material und Jahresrückblick — steht kein Gemeinde-Umschalter mehr.
-  Was dort zu sehen ist, gehört zu genau einer Gemeinde; ein Wechsel mitten
-  darin führte auf fremde Einträge.
 - Ein laufender Termin steht jetzt schon unter „Verbuchen", nicht erst nach
   seinem Ende. Bisher zeigte der Reiter „Mitmachen" während des Termins eine
   rote Zahl, hinter der eine leere Liste wartete — wer mitten im Konfisamstag
   jemanden verbuchen wollte, fand ihn dort nicht.
-- Die Zahl an der Glocke wird auf dem iPhone nicht mehr angeschnitten.
 - Unter „Benachrichtigungen" stand derselbe Hinweis zweimal; jetzt steht er
   einmal, in derselben Form wie die Hinweise überall sonst.
 - Im Dunkelmodus verloren Karten, Popover und der Datumswähler ihre Tiefe, weil
@@ -294,8 +262,6 @@ Versionsüberschrift.
   wurden weiß, die App darunter blieb hell. Die Symbole folgen jetzt dem
   Telefon — dunkel auf der hellen App, hell auf der dunklen — und sind damit in
   beiden Modi lesbar.
-- Auf Android war die blaue Zahl an der Glocke an der äußeren Spitze
-  angeschnitten. Sie ist jetzt ganz zu sehen.
 - Hat eine Gemeinde noch keine Level, trägt das Symbol im leeren Zustand jetzt
   die Level-Farbe wie der Rest der Seite — nicht mehr das Violett der Konfis.
 - Die Sprechblase, die beim Antippen eines Abzeichens, Stempels oder Levels
@@ -303,8 +269,6 @@ Versionsüberschrift.
   Inhalt über die Glasblase hinaus, und der Pfeil zeigte neben die Kachel.
 - In der Level-Sprechblase bricht die Zeile mit den nötigen Punkten nicht mehr
   mitten im Satz um.
-- iOS: Die Zahl an der Glocke oben rechts sitzt jetzt auf der Ecke des Symbols
-  und wird nicht mehr von der Rundung des Knopfs angeschnitten.
 - Die rote Zahl am Symbol eines Chat-Raums oder einer Challenge sitzt höher und
   weiter rechts auf der Symbolecke, in beiden Listen an derselben Stelle, mit
   schmalerem weißen Rand.
@@ -361,10 +325,6 @@ Versionsüberschrift.
 - Auswahllisten öffnen sich ohne den kleinen Zipfel am Rand.
 - Die Hinweise im Profil („Was ist neu", „Events und Aktivitäten") zeigen
   rechts keinen Pfeil mehr.
-- „Mitteilungen prüfen" ist aus dem Profil verschwunden. Die Anzeige war für
-  die Fehlersuche gedacht und half niemandem sonst weiter.
-- Die Symbole oben rechts stehen auf iPhones wieder in einer zusammenhängenden
-  Leiste statt als einzelne Punkte.
 - Der Umschalter zwischen Konfis und Team hat auf iPhones die milchige
   Glasfläche, die auch die Navigationsleiste unten verwendet.
 - Eine Mitteilung zu einem Termin führt beim Antippen zum Termin selbst statt
@@ -622,12 +582,30 @@ Versionsüberschrift.
   44 Punkte groß, die Knöpfe sehen aber aus wie zuvor.
 
 ### Sonstiges
+- Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.
+- Die iPhone-App ist auf das Startverfahren umgestellt, das neuere
+  iOS-Fassungen verlangen. Für die Bedienung ändert sich nichts — ohne die
+  Umstellung ließe sich die App künftig aber nicht mehr öffnen.
+- Der Server bricht eine Datenbankabfrage ab, die nicht mehr antwortet, statt
+  ihren Platz dauerhaft zu belegen. In der Auslastungsanzeige steht jetzt auch,
+  wie viele Anfragen gerade auf eine freie Datenbankverbindung warten.
+- Stürzt die App ab, wird das jetzt automatisch gemeldet, damit die Ursache
+  gefunden werden kann. Übertragen werden nur technische Angaben und die Rolle
+  in grober Einteilung — kein Name, keine Kennung. Was dabei an Google geht,
+  steht in der Datenschutzerklärung.
+- Das Konfi-Profil lädt die Abzeichen nicht mehr ein zweites Mal, nur um die
+  Zahl in der Kachel anzuzeigen. Sie stand ohnehin schon in den Profildaten.
+- Die iPhone-App legt Apple gegenüber offen, was sie erhebt: anonyme
+  Nutzungsstatistik ohne Personenbezug, die Geräte-Kennung für Mitteilungen
+  und Absturzberichte — und dass nichts davon zur Nachverfolgung über andere
+  Apps oder Anbieter dient.
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
   Platz auf dem Gerät und entspricht den Anforderungen von Google Play.
 - Ein nicht mehr benutztes Kamera-Modul ist aus der App geflogen; die
   Fotoauswahl lief ohnehin längst über die Dateiauswahl des Systems.
-- Innenabstände und Eckradien der Ionic-Bedienelemente hängen jetzt ebenfalls an
-  der gemeinsamen Abstands-Skala; ein Test wacht darüber. Nichts sieht anders aus.
+- Innenabstände und Eckradien der eingebauten Bedienelemente hängen jetzt
+  ebenfalls an der gemeinsamen Abstands-Skala; ein Test wacht darüber. Nichts
+  sieht anders aus.
 - Die Store-Fassungen für iPhone und Android werden nur noch aus geprüften Ständen
   gebaut: Der Bau wartet, bis die automatischen Prüfungen für genau diesen Stand
   bestanden sind, und bricht bei einem roten Ergebnis ab.
