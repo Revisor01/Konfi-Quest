@@ -1,10 +1,11 @@
 # =====================================================================
 # Konfi Quest API - OpenAPI 3.1 - BLOCK 2 von 3
-# Dokumentierte Dateien (Stand main, 22.08.2026, am Code verifiziert):
-#   backend/routes/konfi.js            -> Prefix /api/konfi            (24 Routen)
-#   backend/routes/events/ (aufgeteilt) -> Prefix /api/events          (21 Routen)
-#   backend/routes/konfi-management.js -> Prefix /api/admin/konfis     (16 Routen)
-#   backend/routes/activities.js       -> Prefix /api/admin/activities (10 Routen)
+# Dokumentierte Dateien (Stand main, 22.08.2026, am Code verifiziert;
+# Zaehlung nachgezogen am 26.09.2026 — die Generatoren zaehlen bei jedem Lauf nach):
+#   backend/routes/konfi.js            -> Prefix /api/konfi            (25 Operationen)
+#   backend/routes/events/ (aufgeteilt) -> Prefix /api/events          (23 Operationen)
+#   backend/routes/konfi-management.js -> Prefix /api/admin/konfis     (17 Operationen)
+#   backend/routes/activities.js       -> Prefix /api/admin/activities (11 Operationen)
 #
 # Rollen: super_admin, org_admin, admin, teamer, konfi
 # Middleware (backend/middleware/rbac.js):

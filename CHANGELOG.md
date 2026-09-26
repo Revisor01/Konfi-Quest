@@ -516,6 +516,9 @@ Versionsüberschrift.
 - Das Handbuch beschreibt den Wechsel der E-Mail-Adresse, die Challenge-Rechte
   des Teams, die Beförderung zur Teamer:in und den Gemeinde-Umschalter so, wie
   die App sich verhält.
+- Die API-Referenz nennt an fünf Routen die Rollen, die der Server tatsächlich
+  prüft, und führt zwei bisher fehlende Routen (Einladung zurückziehen, Jahre
+  des Team-Rückblicks).
 
 ## [2.2.0] - 2026-09-18
 

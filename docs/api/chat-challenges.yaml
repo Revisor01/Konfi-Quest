@@ -4,9 +4,10 @@
 # notifications.js), Stand Branch main, 2026-08-22.
 #
 # Mount-Punkte (backend/createApp.js):
-#   /api/chat           -> routes/chat.js           (24 Routen)
-#   /api/challenges     -> routes/challenges.js     (13 Routen)
-#   /api/notifications  -> routes/notifications.js  ( 9 Routen)
+#   /api/chat           -> routes/chat.js           (24 Operationen)
+#   /api/challenges     -> routes/challenges.js     (15 Operationen)
+#   /api/notifications  -> routes/notifications.js  (10 Operationen)
+#   (gezaehlt am 26.09.2026; die Generatoren zaehlen bei jedem Lauf nach)
 #
 # ROLLEN-MODELL (middleware/rbac.js):
 #   req.user.type = 'konfi'  für Rolle konfi
@@ -1602,15 +1603,16 @@ paths:
         - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] }, description: "true: auch eine bereits gestartete Challenge löschen — samt Beiträgen und Dateien" }
       responses:
         '200': { description: Geloescht inkl. aller Beitraege und Dateien }
-        '403': { description: requireTeamer / leadershipMayAccess }
+        '403': { description: requireAdmin / leadershipMayAccess }
         '404': { description: Challenge nicht in eigener Org }
         '409': { description: Bereits gestartet/beendet und force fehlt }
         '500': { description: Datenbankfehler }
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [rbacVerifier, requireTeamer]
+        rollen: [org_admin, admin]
+        middleware: [rbacVerifier, requireAdmin]
         org-scope: true
         objekt-pruefung: "leadershipMayAccess (wie PUT)"
+        hinweis: "Seit 28.08.2026 requireAdmin (Nutzerentscheid: Teamer:innen loeschen keine Challenges, Test in challenges.test.js). Anlegen, Bearbeiten und Moderieren bleiben requireTeamer. Die rollen-Zeile hier sagte bis zum 26.09.2026 noch teamer — nachgezogen (Audit Dokumentation BF-07)."
 
   /api/challenges/admin/{id}/submissions:
     get:
@@ -1697,14 +1699,15 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Beitrags" }
       responses:
         '200': { description: "{ message: 'Beitrag gelöscht' }" }
-        '403': { description: requireTeamer / leadershipMayAccess }
+        '403': { description: requireAdmin / leadershipMayAccess }
         '404': { description: Beitrag nicht in eigener Org }
         '500': { description: Datenbankfehler }
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [rbacVerifier, requireTeamer]
+        rollen: [org_admin, admin]
+        middleware: [rbacVerifier, requireAdmin]
         org-scope: true
         objekt-pruefung: "Submission org-gescopt + leadershipMayAccess auf die zugehoerige Challenge (wie moderate)"
+        hinweis: "Seit 28.08.2026 requireAdmin — Teamer:innen blenden Beitraege aus (moderate), loeschen sie aber nicht. rollen-Zeile nachgezogen am 26.09.2026 (Audit Dokumentation BF-07)."
 
   /api/challenges/admin/{id}/export:
     get:

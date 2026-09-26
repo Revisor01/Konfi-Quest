@@ -232,6 +232,7 @@ abreißt.
 
 ### BF-07: API-Referenz zeigt für fünf Routen Rollen, die nicht (mehr) gelten; drei Kopfaussagen sind veraltet
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — `rollen`/`middleware` an `GET /organizations/current`, `/{id}`, `/{id}/stats` (requireOrgVerwaltung, Konfi 403), an beiden Challenge-DELETEs (requireAdmin) und an `GET /wrapped/ausgaben`, `DELETE /wrapped/ausgabe/{id}` (ohne super_admin) korrigiert; Hinweis an `/current` als behoben datiert; Kopfzeilen (Zählung 67/49/76/28/44 Operationen, requireAdmin in der Benutzerverwaltung, Einladung durch den Org-Admin) nachgezogen, jeweils mit Datum statt gelöscht.
 - **Fundstelle:**
   - `docs/api/verwaltung-auth.yaml:881-895` (`GET /api/organizations/{id}`) und
     `:1089-1102` (`…/{id}/stats`): `rollen: [super_admin, "jede Rolle der eigenen Org"]`
@@ -317,6 +318,7 @@ abreißt.
 
 ### BF-09: Zwei Routen ohne API-Dokumentation — eine davon aus dem heutigen Feature-Commit
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — `DELETE /api/einladungen/{id}` (verwaltung-auth.yaml) und `GET /api/wrapped/team-jahre` (teamer-material.yaml) nachdokumentiert, gegen `einladungen.js` und `wrapped.js` gelesen; Generatoren zählen 265 Operationen.
 - **Fundstelle:** `backend/routes/einladungen.js:199` (`DELETE /api/einladungen/:id`,
   Commit `f770270f`, 26.09.2026); `backend/routes/wrapped.js:2824`
   (`GET /api/wrapped/team-jahre`, Commit `d5bd1b39`, 08.09.2026)
@@ -527,6 +529,7 @@ abreißt.
 
 ### BF-19: Zwei Netto-null-Einträge und ein Hinweis auf eine zweite Doku-Pflicht — CLAUDE.md-Verstöße in der Commit-Historie
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — die beiden fehlenden API-Doku-Einträge sind mit BF-09 nachgetragen; die Commit-Historie selbst lässt sich nicht ändern.
 - **Fundstelle:** Commits `d5bd1b39` (08.09., `team-jahre` ohne yaml), `f770270f`
   (26.09., `DELETE /einladungen/:id` ohne yaml), `0c8b7a11` (19.09., Android-Ausrichtung)
 - **Kennzeichnung:** aus git gelesen

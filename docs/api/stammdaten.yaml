@@ -1,7 +1,8 @@
 # ============================================================================
 # Konfi Quest API — Block 4: Stammdaten
 # Dokumentiert: badges, levels, categories, jahrgaenge, settings, roles
-# (27 Routen). organizations.js ist vollstaendig in verwaltung-auth.yaml
+# (28 Operationen, gezaehlt am 26.09.2026; die Generatoren zaehlen bei jedem
+# Lauf nach). organizations.js ist vollstaendig in verwaltung-auth.yaml
 # dokumentiert und wird hier bewusst NICHT wiederholt (Liste am Dateiende).
 # Stand: 2026-08-23, verifiziert am Code (Branch main-Stand des Repos)
 # ============================================================================

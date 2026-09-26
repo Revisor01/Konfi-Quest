@@ -1,8 +1,12 @@
 # ============================================================================
 # Konfi Quest API — Block 3: Verwaltung & Auth
-# Dokumentiert: auth, docs-auth, teamer, organizations, material, users,
-# jahrgaenge, badges, wrapped, levels, categories, roles, settings (112 Routen)
-# Stand: 2026-08-22, verifiziert am Code (Branch main-Stand des Repos)
+# Dokumentiert: auth, docs-auth, health/status/app-version, metrics,
+# organizations, users (beide Mounts), einladungen — 67 Operationen,
+# gezaehlt am 26.09.2026 (die Generatoren zaehlen bei jedem Lauf nach).
+# teamer, material und wrapped stehen in teamer-material.yaml; jahrgaenge,
+# badges, levels, categories, roles und settings in stammdaten.yaml.
+# Stand: 2026-08-22, verifiziert am Code (Branch main-Stand des Repos);
+# Kopfzeilen und Rollenangaben nachgezogen am 26.09.2026.
 # ============================================================================
 #
 # SCHWERPUNKT-ANALYSE
@@ -10,13 +14,17 @@
 # 1. RECHTEVERGABE (Wer darf wen anlegen/aendern/loeschen?)
 #    Rollenhierarchie (utils/roleHierarchy.js, Level 5..1):
 #      super_admin(5) > org_admin(4) > admin(3) > teamer(2) > konfi(1)
-#    - User-Verwaltung (/api/users bzw. /api/admin/users) ist komplett
-#      requireOrgAdmin; zusaetzlich checkUserHierarchy pro Operation:
-#        * super_admin darf alle Rollen außer super_admin verwalten
+#    - User-Verwaltung (/api/users bzw. /api/admin/users) ist requireAdmin
+#      (org_admin UND admin; Entscheidung 26.08.2026, bis dahin
+#      requireOrgAdmin — Kopfzeile nachgezogen am 26.09.2026); die
+#      Reichweite regelt checkUserHierarchy pro Operation:
+#        * super_admin darf alle Rollen außer super_admin anlegen; ein
+#          super_admin-Konto (Rolle ODER Flag is_super_admin) bearbeitet,
+#          loescht oder setzt nur ein Super-Admin zurueck (seit 26.09.2026)
 #        * org_admin darf ALLE Rollen der eigenen Org verwalten,
 #          AUCH andere org_admins (explizite Regel im Code)
-#        * admin duerfte teamer/konfi verwalten, teamer nur konfi —
-#          praktisch irrelevant, da die Routen requireOrgAdmin verlangen
+#        * admin verwaltet teamer und konfi (seine eigenen Jahrgaenge),
+#          teamer und konfi niemanden
 #    - Rollen-Zuweisung: role_id wird gegen roles der eigenen Org geprüft;
 #      bei Update mit Rollenwechsel prüft canCreateRole die Ziel-Rolle.
 #      GET /roles/list/assignable liefert nur zuweisbare Rollen
@@ -28,9 +36,11 @@
 #    - Letzter org_admin einer Org ist gegen Löschen geschuetzt (409).
 #    - Selbst-Löschung: über POST /auth/delete-account (jede Rolle, mit
 #      Passwort-Bestaetigung); DELETE /users/:id blockt Selbst-Löschung.
-#    - Multi-Org-Mitgliedschaften (user_organizations) vergibt NUR der
-#      super_admin (POST/DELETE /organizations/:id/members); konfi und
-#      super_admin sind als Mitglieds-Rolle explizit verboten.
+#    - Multi-Org-Mitgliedschaften (user_organizations) vergibt der
+#      super_admin direkt (POST/DELETE /organizations/:id/members) — und seit
+#      dem 26.09.2026 der org_admin per Einladung (POST /api/einladungen; die
+#      Mitgliedschaft entsteht erst mit der Annahme durch die Person). konfi
+#      und super_admin sind als Mitglieds-Rolle auf beiden Wegen verboten.
 #
 # 2. OFFENE ROUTEN (ohne Auth-Middleware) — alle unter /api/auth:
 #      POST /login                    authLimiter: 300/15min pro Client-IP,
@@ -424,6 +434,31 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: false
         objekt-pruefung: "Nur eigene Einladungen (user_id = req.user.id). BEWUSST org-uebergreifend: Die Einladung kommt aus einer Gemeinde, in der man noch NICHT Mitglied ist."
+
+  /api/einladungen/{id}:
+    delete:
+      tags: ["Benutzer & Rollen"]
+      summary: Offene Einladung zurueckziehen
+      description: >
+        Setzt status = 'zurueckgezogen' und beantwortet_at = NOW(). Kein
+        echtes Loeschen: Die Zeile bleibt als Verlauf stehen, und der
+        Teilindex (eine offene Einladung je Person und Gemeinde) gibt den
+        Platz fuer eine neue Einladung frei. Nur Einladungen der eigenen
+        Gemeinde im Status 'offen' — alles andere ergibt dieselbe 404, ohne
+        zu verraten, ob es die Einladung gibt.
+
+        Nachdokumentiert am 26.09.2026 (Audit Dokumentation BF-09): Die Route
+        kam mit dem Einladungs-Commit, blieb in der yaml aber aus.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: "message" }
+        "404": { description: "Nicht vorhanden, fremde Gemeinde oder nicht mehr offen — bewusst dieselbe Antwort" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "organization_id = aktive Org UND status = 'offen' im UPDATE selbst; 0 Zeilen -> 404"
 
   /api/einladungen/{id}/annehmen:
     post:
@@ -885,11 +920,11 @@ paths:
         "200": { description: "SELECT * der Org + user/konfi/jahrgang/activity/event/badge_count" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
-        rollen: [alle authentifizierten]
-        middleware: [verifyTokenRBAC]
+        rollen: [super_admin, org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireOrgVerwaltung]
         org-scope: true
         objekt-pruefung: "Immer req.user.organization_id"
-        hinweis: "Auch Konfis/Teamer sehen den vollen Org-Datensatz (Kontakt-/Trial-/Limit-Felder) — siehe N5"
+        hinweis: "BEHOBEN 22.08.2026 (war N5): requireOrgVerwaltung (= requireTeamer oder Super-Admin) — Konfis erhalten 403 statt Kontakt-, Trial- und Limit-Feldern. Der Hinweis hier las sich bis zum 26.09.2026 noch wie ein offener Befund."
 
   /api/organizations/{id}:
     get:
@@ -902,13 +937,14 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
-        rollen: [super_admin, "jede Rolle der eigenen Org"]
-        middleware: [verifyTokenRBAC]
+        rollen: [super_admin, org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireOrgVerwaltung]
         org-scope: true
         objekt-pruefung: "Inline: is_super_admin ODER organization_id === id"
         # BEHOBEN 22.08.2026 (war N5): Rollen-Check ergaenzt (super_admin ODER
         # Verwaltungsrolle). Konfis erhalten 403 statt Kontakt-, Trial- und
-        # Lizenzdaten der Gemeinde.
+        # Lizenzdaten der Gemeinde. Die rollen-Zeile oben sagte bis zum
+        # 26.09.2026 noch "jede Rolle der eigenen Org" — nachgezogen.
     put:
       tags: ["Organisationen"]
       summary: Organisation bearbeiten (Stammdaten; trial_ends_at/is_trial nur Super-Admin)
@@ -1109,16 +1145,16 @@ paths:
         "200": { description: "Zaehler-Objekt" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
-        rollen: [super_admin, "jede Rolle der eigenen Org"]
-        middleware: [verifyTokenRBAC]
+        rollen: [super_admin, org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireOrgVerwaltung]
         org-scope: true
         objekt-pruefung: "Inline: is_super_admin ODER eigene Org"
         # BEHOBEN 22.08.2026 (war N5): Rollen-Check ergaenzt; Konfis
-        # erhalten 403.
+        # erhalten 403. rollen-Zeile nachgezogen am 26.09.2026.
 
   # ==========================================================================
   # USERS (backend/routes/users.js — 9 Routen, Mount /api/users UND
-  # /api/admin/users; komplette Verwaltung nur org_admin + Rollenhierarchie)
+  # /api/admin/users; requireAdmin + Rollenhierarchie, siehe Dateikopf)
   # ==========================================================================
   /api/users:
     get:
