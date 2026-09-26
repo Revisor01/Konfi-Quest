@@ -107,8 +107,13 @@ jobs:
               text = open(datei, encoding='utf-8').read()
               if '## iOS' not in text:
                   continue
-              start = text.index('## iOS')
-              ende = text.index('## Android') if '## Android' in text else len(text)
+              # Ueberschriften nur am Zeilenanfang: Eine woertliche Nennung von
+              # "## Android" in einem Hinweisblock des iOS-Abschnitts liess die
+              # Pruefung sonst dort enden und fast nichts mehr pruefen
+              # (Release-Audit 26.09.2026, Nebenbefund Doku-Paket).
+              start = re.search(r'^## iOS', text, re.M).start()
+              android = re.search(r'^## Android', text[start:], re.M)
+              ende = start + android.start() if android else len(text)
               # Hinweisbloecke (Zeilen mit ">") sind Anweisungen an uns,
               # kein Store-Text — die duerfen die Woerter nennen.
               zeilen = [z for z in text[start:ende].split('\n')
