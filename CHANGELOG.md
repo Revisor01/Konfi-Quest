@@ -444,6 +444,9 @@ Versionsüberschrift.
 - Zwei Auslieferungen des Web-Stands laufen nicht mehr gleichzeitig, sondern
   nacheinander; die Test-Umgebung wird von einer Auslieferung nicht mehr mit
   umgestellt.
+- Typprüfung und Web-Build laufen bei jeder Änderung als Teil der Prüfungen mit:
+  Ein Stand, der sich nicht bauen lässt, fällt vor der Auslieferung auf statt still
+  danach.
 
 ## [2.2.0] - 2026-09-18
 

@@ -245,6 +245,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-07: Typprüfung und Web-Build laufen erst nach dem Merge — Build-Brüche erreichen `main` und stoppen still den Deploy
 - **Schwere:** MITTEL
+- **Status:** teilweise behoben 26.09.2026 — `frontend-test` führt jetzt `npx tsc --noEmit` und `npx vite build --logLevel warn` aus (lokal grün: 13,9 s bzw. 17,2 s); ein Typfehler oder eine kaputte CSS-Klammer macht den Test-Job rot, bevor `build-and-push` läuft. Nicht umgesetzt: eine zusätzliche aktive Benachrichtigung bei rotem `main` — es bleibt bei GitHubs Standard-Mail an den Committer.
 - **Fundstelle:** `.github/workflows/ci.yml:228-230` (frontend-test führt nur `vitest run` aus, kein
   `tsc --noEmit`, kein `vite build`), `:284-290` (der Build passiert erst in `build-and-push`, nur auf
   `main`/push), `frontend/package.json` (`"build": "tsc && vite build"`).
