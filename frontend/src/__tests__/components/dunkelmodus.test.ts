@@ -222,7 +222,9 @@ describe('Dunkelmodus: jedes Farbtoken hat eine dunkle Entsprechung', () => {
   it('Text auf Kartengrund ist lesbar: mindestens 4,5:1', () => {
     const grund = dunkleTokens.get('--app-surface-card')!;
     const schwach: string[] = [];
-    for (const name of ['--app-text-primary', '--app-text-secondary', '--app-text-tertiary', '--app-text-system', '--app-text-emphasis', '--app-text-body', '--app-text-ios', '--app-text-dunkelgrau', '--app-text-mittelgrau', '--app-text-konfis']) {
+    // --app-text-muted fehlte hier bis 26.09.2026 als einziges Grau-Token --
+    // und stand dunkel bei 3,74:1 auf der Karte (Audit BF-05).
+    for (const name of ['--app-text-primary', '--app-text-secondary', '--app-text-tertiary', '--app-text-muted', '--app-text-system', '--app-text-emphasis', '--app-text-body', '--app-text-ios', '--app-text-dunkelgrau', '--app-text-mittelgrau', '--app-text-konfis']) {
       const k = kontrast(dunkleTokens.get(name)!, grund);
       if (k < 4.5) schwach.push(`${name}: ${k.toFixed(2)}`);
     }
@@ -1048,6 +1050,59 @@ describe('Dunkelmodus: Text-Token-Familie je Bereichsfarbe (Baustein 2)', () => 
     expect(bereichsfarbenAlsText(`<div style={{ background: 'var(--app-color-events)', color: 'var(--app-color-danger)' }} />`)).toHaveLength(0);
     // Datenfelder ausserhalb von style={{}} zaehlen nicht (OnboardingTour legt sie auf einen weissen Knopf):
     expect(bereichsfarbenAlsText(`const SLIDES = [{ color: 'var(--app-color-konfis)' }];`)).toHaveLength(0);
+  });
+});
+
+describe('Dunkelmodus: Grautoene lesbar -- hell wie dunkel (Baustein 3)', () => {
+  // GEMESSEN am 26.09.2026: Dunkelmodus-Audit BF-05 -- --app-text-muted war
+  // dunkel #7c7c82 (fuer den Dunkelblock ABGEDUNKELT statt aufgehellt): auf
+  // der gedaempften Flaeche #323234 3,08:1, auf der Karte #242426 3,74:1, 44
+  // Stellen in 94 Zustaenden. UI-Audit BF-04 -- hell lagen --app-text-muted
+  // #999 (2,85:1), --app-text-system #8e8e93 (3,26:1) und --app-text-tertiary
+  // #888 (3,54:1) auf Weiss unter 4,5:1, 119 Stellen. Beide Modi muessen auf
+  // Karte UND Seitengrund halten; dunkel zusaetzlich auf der gedaempften
+  // Flaeche (Stempel-Kacheln, Platzhalter), auf der 22 der 44 Stellen lagen.
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const GRAU = ['--app-text-secondary', '--app-text-tertiary', '--app-text-muted', '--app-text-system'];
+
+  it('hell: mindestens 4,5:1 auf Karte, weichem und gedaempftem Grund und dem Ionic-Seitengrund', () => {
+    const schwach: string[] = [];
+    for (const name of GRAU) {
+      const t = helleTokens.get(name)!;
+      for (const [grundName, grund] of [['Karte', helleTokens.get('--app-surface-card')!], ['soft', helleTokens.get('--app-surface-soft')!], ['muted', helleTokens.get('--app-surface-muted')!], ['Seitengrund', '#f4f5f8']]) {
+        const k = kontrast(t, grund);
+        if (k < 4.5) schwach.push(`${name} ${t} auf ${grundName} ${grund}: ${k.toFixed(2)}`);
+      }
+    }
+    expect(schwach).toEqual([]);
+  });
+
+  it('dunkel: mindestens 4,5:1 auf Karte, gedaempfter Flaeche, Kopfzeile der Matrix und beiden Seitengruenden', () => {
+    const schwach: string[] = [];
+    for (const name of GRAU) {
+      const t = dunkel.get(name)!;
+      for (const [grundName, grund] of [['Karte', dunkel.get('--app-surface-card')!], ['muted', dunkel.get('--app-surface-muted')!], ['gedaempft', dunkel.get('--app-flaeche-gedaempft')!], ['iOS-Grund', '#000000'], ['Android-Grund', '#121212']]) {
+        const k = kontrast(t, grund);
+        if (k < 4.5) schwach.push(`${name} ${t} auf ${grundName} ${grund}: ${k.toFixed(2)}`);
+      }
+    }
+    expect(schwach).toEqual([]);
+  });
+
+  it('die Rangfolge bleibt: secondary am kraeftigsten, muted am zartesten -- in beiden Modi', () => {
+    // Hell heisst zarter = heller, dunkel heisst zarter = dunkler. Fallen zwei
+    // Stufen zusammen, ist die Hierarchie weg, obwohl jeder Wert allein besteht.
+    const hell = GRAU.map((n) => relativeHelligkeit(helleTokens.get(n)!));
+    expect(hell[0]).toBeLessThan(hell[1]); // secondary dunkler als tertiary
+    expect(hell[1]).toBeLessThan(hell[2]); // tertiary dunkler als muted
+    const dunk = GRAU.map((n) => relativeHelligkeit(dunkel.get(n)!));
+    expect(dunk[0]).toBeGreaterThan(dunk[1]);
+    expect(dunk[1]).toBeGreaterThan(dunk[2]);
+  });
+
+  it('das -rgb-Tripel von --app-text-system passt hell wie dunkel zum Hexwert', () => {
+    expect(helleTokens.get('--app-text-system-rgb')).toBe(hexZuRgb(helleTokens.get('--app-text-system')!).join(', '));
+    expect(dunkel.get('--app-text-system-rgb')).toBe(hexZuRgb(dunkel.get('--app-text-system')!).join(', '));
   });
 });
 

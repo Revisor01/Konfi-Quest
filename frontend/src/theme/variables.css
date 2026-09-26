@@ -335,7 +335,7 @@ ion-list-header ion-label {
   --app-color-ampel-erhoeht: #fd7e14;
   --app-color-ampel-blass: #b0b0b5;
   /* RGB-Formen fuer rgba()-Schatten (06.09.2026) */
-  --app-text-system-rgb: 142, 142, 147;
+  --app-text-system-rgb: 110, 110, 115;
   --app-aurora-tuerkis-rgb: 34, 211, 238;
   --app-color-trophy-rgb: 255, 149, 0;
   --app-color-gottesdienst-mittel-rgb: 37, 99, 235;
@@ -358,9 +358,22 @@ ion-list-header ion-label {
   --app-schwarz: #000000;
   --app-text-primary: #333;
   --app-text-secondary: #666;
-  --app-text-tertiary: #888;
-  --app-text-muted: #999;
-  --app-text-system: #8e8e93;
+  /* Grautoene ab hier (Baustein 3 des Dunkelmodus-Umbaus, 26.09.2026,
+     UI-Audit BF-04): Bis dahin standen tertiary #888 (3,54:1 auf Weiss),
+     muted #999 (2,85:1) und system #8e8e93 (3,26:1) an 119 Stellen unter
+     der WCAG-Grenze fuer Fliesstext -- Zeitstempel, Untertitel, Metazeilen.
+     Jetzt halten alle vier mindestens 4,5:1 auf der Karte (#ffffff), den
+     weichen und gedaempften Flaechen (#f8f9fa, #f5f5f5) und dem
+     Ionic-Seitengrund (#f4f5f8); die Rangfolge secondary < tertiary <
+     system < muted (dunkler -> zarter) bleibt, nur enger:
+       tertiary #6b6b70  5,30 auf Weiss / 4,86 auf #f4f5f8
+       system   #6e6e73  5,07 / 4,65   (der iOS-Blaustich bleibt)
+       muted    #707070  4,95 / 4,54
+     Auf der Ladeflaeche #f0f0f0 liegen system (4,45) und muted (4,35) knapp
+     darunter -- dort steht kein Text. dunkelmodus.test.ts rechnet nach. */
+  --app-text-tertiary: #6b6b70;
+  --app-text-muted: #707070;
+  --app-text-system: #6e6e73;
   /* Ergaenzungen 05.09.2026 — vorher lose Hexwerte in den Komponenten: */
   --app-text-emphasis: #1a1a1a; /* kraeftige Titel/Werte (Chat, Legenden) */
   --app-text-body: #4a4a4a; /* Fliesstext in Legenden-Karten */
@@ -3634,8 +3647,10 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
      -dunkel-Partner ruecken auf den alten Grundton nach, damit Verlaeufe
      mit weissem Text lesbar bleiben.
    - Text auf Kartengrund (#242426) mindestens 4,5:1 -- der Test
-     dunkelmodus.test.ts rechnet das nach. Das ist auch die Obergrenze des
-     Kartengrunds: bei #2c2c2e faellt --app-text-tertiary auf 4,27:1.
+     dunkelmodus.test.ts rechnet das nach; die Grautoene zusaetzlich auf der
+     gedaempften Flaeche (#323234), seit 26.09.2026 (Baustein 3). Das setzt
+     die Obergrenze der Flaechen: --app-text-muted (#9c9ca1) haelt auf
+     #323234 noch 4,68:1, eine Stufe heller nicht mehr.
    - Jede -rgb-Form traegt exakt das Tripel ihres Hexwerts (Test).
    - Tokens OHNE dunkle Entsprechung stehen in der Ausnahmeliste des Tests,
      mit Begruendung: Metallfarben, Anmelde- und Wrapped-Akzente (schon fuer
@@ -3789,10 +3804,24 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     /* Text: iOS-Grautoene fuer dunklen Grund */
     --app-text-primary: #e5e5ea;
     --app-text-secondary: #aeaeb2;
-    --app-text-tertiary: #8e8e93;
-    --app-text-muted: #7c7c82;
-    --app-text-system: #98989d;
-    --app-text-system-rgb: 152, 152, 157;
+    /* Grautoene (Baustein 3, Dunkelmodus-Audit BF-05): --app-text-muted stand
+       auf #7c7c82 -- fuer den Dunkelblock ABGEDUNKELT statt aufgehellt -- und
+       lag an 44 von 94 Zustaenden unter der Grenze: auf der gedaempften
+       Flaeche #323234 (Stempel-Kacheln) 3,08:1, auf der Karte #242426 3,74:1.
+       tertiary #8e8e93 hielt die Karte (4,75), nicht aber die gedaempfte
+       Flaeche (3,92). Jetzt halten alle vier mindestens 4,5:1 auf Karte,
+       gedaempfter Flaeche, Matrix-Kopfzeile (#2c2c2e) und beiden
+       Seitengruenden; Rangfolge secondary > system > tertiary > muted
+       (heller -> kraeftiger):
+         system   #a5a5aa  6,32 auf der Karte / 5,22 auf #323234
+         tertiary #a0a0a5  5,95 / 4,91
+         muted    #9c9ca1  5,67 / 4,68
+       Die Obergrenze des Kartengrunds (Kommentar am Flaechen-Block) haengt
+       damit nicht mehr an tertiary; die Leiter selbst bleibt unveraendert. */
+    --app-text-tertiary: #a0a0a5;
+    --app-text-muted: #9c9ca1;
+    --app-text-system: #a5a5aa;
+    --app-text-system-rgb: 165, 165, 170;
     --app-text-emphasis: #f2f2f7;
     --app-text-body: #c7c7cc;
     --app-text-ios: #ebebf5;
@@ -3875,10 +3904,11 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 
        Auf Android war der Schritt also nicht einmal halb so gross wie auf
        iOS -- dort war der Befund am schaerfsten, und er stand im Handoff
-       nicht. #242426 hebt beide Plattformen und bleibt unter der Grenze, die
-       der Text setzt: bei #2c2c2e faellt --app-text-tertiary (#8e8e93) auf
-       4,27:1 und reisst damit die 4,5:1 aus dunkelmodus.test.ts (21 Stellen
-       nutzen das Token). Auf #242426 sind es 4,75:1.
+       nicht. #242426 hebt beide Plattformen. (Bis 26.09.2026 stand hier die
+       Grenze, die --app-text-tertiary #8e8e93 setzte: auf #2c2c2e 4,27:1.
+       Seit Baustein 3 sind die Grautoene heller -- tertiary #a0a0a5 hielte
+       auch #2c2c2e mit 5,23:1 --, die Karte bleibt trotzdem bei #242426,
+       damit sie nicht mit --app-surface-muted #323234 zusammenfaellt.)
 
        Farbe allein traegt den Unterschied aber nicht, und sie soll es auch
        nicht: Im Hellmodus macht das der Schatten (dL* 3,46 waere sonst

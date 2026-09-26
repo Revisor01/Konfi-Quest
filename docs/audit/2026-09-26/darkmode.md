@@ -200,6 +200,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-05: `--app-text-muted` fällt an 45 Stellen unter 4,5:1
 
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — `--app-text-muted` dunkel `#7c7c82` → `#9c9ca1` (Karte 3,74 → 5,67:1, gedämpfte Fläche `#323234` 3,08 → 4,68:1), in der Rangfolge nachgezogen `--app-text-tertiary` `#8e8e93` → `#a0a0a5` (Karte 4,75 → 5,95:1, gedämpft 3,92 → 4,91:1) und `--app-text-system` `#98989d` → `#a5a5aa` (5,40 → 6,32:1); hell dieselben drei Tokens auf ≥ 4,5:1 (UI-Audit BF-04). Gemessen (94 Zustände dunkel): Messstellen mit `#7c7c82` 44 → 0 (Stempel-Namen, Leerzustände, „/ 20"-Zähler), Verstöße gesamt 77 → 33. Das Token steht jetzt in der Kartenprüfung des Tests; ein eigener Test rechnet die vier Grautöne dunkel gegen Karte, gedämpfte Fläche, Matrix-Kopfzeile und beide Seitengründe und hält die Rangfolge.
 - **Fundstelle:** `frontend/src/theme/variables.css:3699` (dunkel `#7c7c82`), Nutzer u. a. `:1467`
   (`.app-empty-state__text`), Stempel-/Badge-Kacheln (Name unter dem Symbol, auf `--app-surface-muted #323234`);
   `frontend/src/__tests__/components/dunkelmodus.test.ts:225` (Kontrastprüfung listet 9 Text-Tokens — `--app-text-muted` fehlt)

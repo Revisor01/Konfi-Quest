@@ -186,6 +186,13 @@ Versionsüberschrift.
   Konfi-Violett, Materialhinweise in Orange, Chat-Antworten in Türkis — sind
   im Dunkeln jetzt in einer aufgehellten Stufe ihrer Bereichsfarbe gesetzt
   und damit lesbar; im Hellen bleiben sie, wie sie sind.
+- Graue Nebentexte — Zeitstempel, Untertitel, Zähler, Leerzustände wie „Noch
+  keine Materialien vorhanden", die Namen noch nicht erreichter Stempel —
+  sind in beiden Modi etwas kräftiger und damit auch bei Sonne oder
+  schwächeren Augen lesbar. Im Hellen waren die drei zartesten Grautöne unter
+  der Lesbarkeitsgrenze für Fließtext, im Dunkeln war der zarteste sogar
+  dunkler statt heller gesetzt und auf den Stempel-Kacheln kaum zu erkennen.
+  Die Abstufung untereinander bleibt erhalten.
 
 ### Hinzugefügt
 - Im Profil steht unter „Mitteilungen prüfen", ob Mitteilungen für die App
