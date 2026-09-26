@@ -441,6 +441,9 @@ Versionsüberschrift.
 - Die Store-Fassungen für iPhone und Android werden nur noch aus geprüften Ständen
   gebaut: Der Bau wartet, bis die automatischen Prüfungen für genau diesen Stand
   bestanden sind, und bricht bei einem roten Ergebnis ab.
+- Zwei Auslieferungen des Web-Stands laufen nicht mehr gleichzeitig, sondern
+  nacheinander; die Test-Umgebung wird von einer Auslieferung nicht mehr mit
+  umgestellt.
 
 ## [2.2.0] - 2026-09-18
 

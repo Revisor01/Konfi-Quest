@@ -146,6 +146,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-03: CI-Deploy schreibt auch `backend-test` auf das Live-Image um — Test-Backend läuft danach auf `main`
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Der Tag-Rewrite in `ci.yml` folgt jetzt dem Dienstblock und schreibt nur in `backend`, `backend2` und `frontend` um; Gegenprobe im Workflow: die `image`-Zeile von `backend-test` muss vor und nach dem Rewrite identisch sein, sonst Abbruch ohne Deploy; steht sie nicht auf `test-…`, warnt der Lauf (Altlast des alten Rewrites — im Portainer-Stack von Hand auf `test-latest` zurückstellen, siehe „Auf Produktion nachzumessen"). Lokal gegen die Referenz-Compose in fünf Szenen geprüft (alter Rewrite reproduziert den Befund, Gegenprobe schlägt dabei an). `notfall-deploy.yml:96` trägt dasselbe alte Muster und ist nicht angefasst.
 - **Fundstelle:** `.github/workflows/ci.yml:442` (Regex `(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+`),
   `deploy/compose.konfi_quest.yml:203-205,212` („Das Image trägt den Tag test-latest … der Live-Redeploy
   zieht davon nichts"), `.github/workflows/test-backend.yml:9-11`.
@@ -171,6 +172,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-04: Kein `concurrency`-Schutz — parallele Deploys können sich überholen
 - **Schwere:** MITTEL
+- **Status:** teilweise behoben 26.09.2026 — `concurrency: deploy-production` (`cancel-in-progress: false`) auf dem `deploy`-Job: zwei Deploys laufen nie mehr gleichzeitig, ein wartender wird vom nächsten ersetzt. Offen bleibt die Reihenfolge: braucht der ältere Push länger für seine Tests, kommt sein Deploy weiterhin nach dem neueren an die Reihe und setzt den älteren SHA — eine Prüfung gegen den jüngsten erfolgreichen Lauf auf `main` fehlt. `cancel-in-progress` für Test-Jobs auf Nicht-`main`-Refs ist nicht umgesetzt.
 - **Fundstelle:** `.github/workflows/ci.yml` (kein `concurrency:`-Block auf Workflow- oder Job-Ebene;
   `grep -n concurrency .github/workflows/*.yml` → kein Treffer), Deploy-Schleife `ci.yml:465-485`.
 - **Kennzeichnung:** aus Code gelesen
