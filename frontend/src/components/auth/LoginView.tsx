@@ -26,6 +26,7 @@ import {
 import { biometrieIcon } from '../shared/biometrieSymbol';
 import { useApp } from '../../contexts/AppContext';
 import { loginWithAutoDetection, mitBiometrieAnmelden } from '../../services/auth';
+import { beiEnter } from '../../utils/tastatur';
 import { biometrieVerfuegbar, istBiometrieAktiv, BiometrieSinnbild } from '../../services/biometrics';
 import { BaseUser } from '../../types/user';
 
@@ -237,6 +238,10 @@ const LoginView: React.FC = () => {
     }
   };
 
+  // Enter im Feld sendet wie der Knopf -- und wie der Knopf nicht doppelt,
+  // solange ein Versuch laeuft.
+  const anmeldenPerTastatur = () => { if (!loading) void handleLogin(); };
+
   return (
     <IonPage>
       <IonContent className="app-auth-background">
@@ -298,14 +303,18 @@ const LoginView: React.FC = () => {
                 <p>Melde dich an um deine Quest fortzusetzen</p>
               </div>
 
+              {/* Feldnamen per aria-label: Ionic 9 bindet das Geschwister-IonLabel nicht mehr an das Feld;
+                  das sichtbare Label bleibt fuer das Layout (Audit 26.09.2026, UI BF-01). */}
               <IonItem lines="none" className="app-auth-input">
                 <IonIcon icon={ICON_PERSON_GEFUELLT} slot="start" color="medium" />
                 <IonLabel position="stacked" className="app-auth-input__label">
                   Benutzername
                 </IonLabel>
                 <IonInput
+                  aria-label="Benutzername"
                   value={username}
                   onIonInput={(e) => setUsername(e.detail.value!)}
+                  onKeyDown={beiEnter(anmeldenPerTastatur)}
                   placeholder="Dein Nutzername"
                   className="app-auth-input__value"
                   autocapitalize="none"
@@ -320,21 +329,27 @@ const LoginView: React.FC = () => {
                   Passwort
                 </IonLabel>
                 <IonInput
+                  aria-label="Passwort"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onIonInput={(e) => setPassword(e.detail.value!)}
+                  onKeyDown={beiEnter(anmeldenPerTastatur)}
                   placeholder="Dein Passwort"
                   className="app-auth-input__value"
                   autocapitalize="none"
                   autocorrect={false}
                   spellcheck={false}
                 />
-                <IonIcon
-                  icon={showPassword ? ICON_VERBORGEN : ICON_SICHTBAR}
+                <button
+                  type="button"
                   slot="end"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="app-auth-input__toggle"
-                />
+                  className="app-auth-input__toggle app-auth-knopf-nackt"
+                  aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                  aria-pressed={showPassword}
+                >
+                  <IonIcon icon={showPassword ? ICON_VERBORGEN : ICON_SICHTBAR} aria-hidden="true" />
+                </button>
               </IonItem>
 
               <IonButton
@@ -377,18 +392,18 @@ const LoginView: React.FC = () => {
 
               {/* Passwort vergessen Link - immer an fester Position direkt unter Button */}
               <div className="app-auth-footer">
-                <span
-                  onClick={() => router.push('/forgot-password')}
+                <a
+                  href="/forgot-password"
+                  onClick={(e) => { e.preventDefault(); router.push('/forgot-password'); }}
                   className="app-auth-link app-auth-link--muted"
-                  style={{ cursor: 'pointer' }}
                 >
                   Passwort vergessen?
-                </span>
+                </a>
               </div>
 
               {/* Fehlermeldung */}
               {loginError && (
-                <div className="app-auth-error app-auth-error--with-badge" style={{ gap: 'var(--app-abstand-mittel)' }}>
+                <div className="app-auth-error app-auth-error--with-badge" style={{ gap: 'var(--app-abstand-mittel)' }} role="alert">
                   <div className="app-auth-error__badge">
                     <IonIcon icon={ICON_WARNHINWEIS_GEFUELLT} className="app-auth-error__badge-icon" />
                   </div>
@@ -400,12 +415,15 @@ const LoginView: React.FC = () => {
                       {loginError}
                     </div>
                   </div>
-                  <IonIcon
-                    icon={ICON_ABSAGE}
+                  <button
+                    type="button"
                     onClick={() => { setLoginError(null); setIsNetworkError(false); }}
-                    className="app-auth-error__close"
+                    className="app-auth-error__close app-auth-knopf-nackt"
                     style={{ opacity: 0.7 }}
-                  />
+                    aria-label="Meldung schließen"
+                  >
+                    <IonIcon icon={ICON_ABSAGE} aria-hidden="true" />
+                  </button>
                 </div>
               )}
 
@@ -422,13 +440,14 @@ const LoginView: React.FC = () => {
 
               {/* Register-Link mit Trennlinie */}
               <div className="app-auth-footer app-auth-footer--separator">
-                <span
-                  onClick={() => router.push('/register')}
+                <a
+                  href="/register"
+                  onClick={(e) => { e.preventDefault(); router.push('/register'); }}
                   className="app-auth-link"
                   style={{ fontSize: 'var(--app-text-sekundaer)', display: 'block', lineHeight: 1.5 }}
                 >
                   Noch keinen Account?<br /><strong>Mit Einladungscode registrieren</strong>
-                </span>
+                </a>
               </div>
             </IonCardContent>
           </IonCard>

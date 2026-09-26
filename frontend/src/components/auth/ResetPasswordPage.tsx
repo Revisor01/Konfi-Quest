@@ -8,6 +8,7 @@ import {
   ICON_ZUSAGE_GEFUELLT,
 } from '../shared/icons';
 import { fehlerText } from '../../utils/fehler';
+import { beiEnter } from '../../utils/tastatur';
 import React, { useState, useEffect } from 'react';
 import { useAppLocation } from '../../navigation/useAppLocation';
 
@@ -120,6 +121,10 @@ const ResetPasswordPage: React.FC = () => {
     }
   };
 
+  // Enter im Feld sendet wie der Knopf; die Pruefungen in handleSubmit melden
+  // ein zu schwaches oder nicht uebereinstimmendes Passwort als Fehler.
+  const absendenPerTastatur = () => { if (!loading) void handleSubmit(); };
+
   return (
     <IonPage>
       <IonContent className="app-auth-background">
@@ -160,7 +165,7 @@ const ResetPasswordPage: React.FC = () => {
 
               {success ? (
                 // Erfolgsmeldung
-                <div style={{ textAlign: 'center' }}>
+                <div style={{ textAlign: 'center' }} role="status">
                   <div className="app-auth-success-circle--small">
                     <IonIcon icon={ICON_ZUSAGE_GEFUELLT} className="app-auth-success-circle__icon--small" />
                   </div>
@@ -195,7 +200,7 @@ const ResetPasswordPage: React.FC = () => {
                 </div>
               ) : !token ? (
                 // Kein Token - Pink/Magenta Cosmic-Variante statt klassisches Rot
-                <div style={{ textAlign: 'center' }}>
+                <div style={{ textAlign: 'center' }} role="alert">
                   <div style={{
                     width: '72px',
                     height: '72px',
@@ -242,27 +247,35 @@ const ResetPasswordPage: React.FC = () => {
               ) : (
                 // Formular
                 <>
+                  {/* Feldnamen per aria-label: Ionic 9 bindet das Geschwister-IonLabel nicht mehr an das Feld;
+                      das sichtbare Label bleibt fuer das Layout (Audit 26.09.2026, UI BF-01). */}
                   <IonItem lines="none" className="app-auth-input app-auth-input--compact">
                     <IonIcon icon={ICON_SPERRE} slot="start" style={{ color: 'var(--app-auth-akzent)' }} />
                     <IonLabel position="stacked" className="app-auth-input__label">
                       Neues Passwort
                     </IonLabel>
                     <IonInput
+                      aria-label="Neues Passwort"
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onIonInput={(e) => setPassword(e.detail.value!)}
+                      onKeyDown={beiEnter(absendenPerTastatur)}
                       placeholder="Neues Passwort"
                       className="app-auth-input__value"
                       autocapitalize="none"
                       autocorrect={false}
                       spellcheck={false}
                     />
-                    <IonIcon
-                      icon={showPassword ? ICON_VERBORGEN : ICON_SICHTBAR}
+                    <button
+                      type="button"
                       slot="end"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="app-auth-input__toggle"
-                    />
+                      className="app-auth-input__toggle app-auth-knopf-nackt"
+                      aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                      aria-pressed={showPassword}
+                    >
+                      <IonIcon icon={showPassword ? ICON_VERBORGEN : ICON_SICHTBAR} aria-hidden="true" />
+                    </button>
                   </IonItem>
 
                   {/* Passwort-Anforderungen */}
@@ -284,26 +297,32 @@ const ResetPasswordPage: React.FC = () => {
                       Passwort bestätigen
                     </IonLabel>
                     <IonInput
+                      aria-label="Passwort bestätigen"
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onIonInput={(e) => setConfirmPassword(e.detail.value!)}
+                      onKeyDown={beiEnter(absendenPerTastatur)}
                       placeholder="Passwort wiederholen"
                       className="app-auth-input__value"
                       autocapitalize="none"
                       autocorrect={false}
                       spellcheck={false}
                     />
-                    <IonIcon
-                      icon={showConfirmPassword ? ICON_VERBORGEN : ICON_SICHTBAR}
+                    <button
+                      type="button"
                       slot="end"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="app-auth-input__toggle"
-                    />
+                      className="app-auth-input__toggle app-auth-knopf-nackt"
+                      aria-label={showConfirmPassword ? 'Passwortbestätigung verbergen' : 'Passwortbestätigung anzeigen'}
+                      aria-pressed={showConfirmPassword}
+                    >
+                      <IonIcon icon={showConfirmPassword ? ICON_VERBORGEN : ICON_SICHTBAR} aria-hidden="true" />
+                    </button>
                   </IonItem>
 
                   {/* Passwörter stimmen nicht überein */}
                   {confirmPassword.length > 0 && !passwordsMatch && (
-                    <div className="app-auth-password-match-error">
+                    <div className="app-auth-password-match-error" role="status">
                       <IonIcon icon={ICON_WARNHINWEIS_GEFUELLT} style={{ fontSize: 'var(--app-text-standard)', color: 'var(--app-auth-rosa)' }} />
                       <span style={{ fontSize: 'var(--app-text-hinweis)', color: 'var(--app-auth-rosa-hell)' }}>
                         Die Passwörter stimmen nicht überein
@@ -312,7 +331,7 @@ const ResetPasswordPage: React.FC = () => {
                   )}
 
                   {error && (
-                    <div className="app-auth-error">
+                    <div className="app-auth-error" role="alert">
                       <IonIcon icon={ICON_WARNHINWEIS_GEFUELLT} className="app-auth-error__icon" />
                       <span className="app-auth-error__text">{error}</span>
                     </div>
@@ -332,10 +351,10 @@ const ResetPasswordPage: React.FC = () => {
                   </IonButton>
 
                   <div className="app-auth-footer">
-                    <span onClick={() => router.push('/login')} className="app-auth-link">
-                      <IonIcon icon={ICON_ZURUECK} />
+                    <a href="/login" onClick={(e) => { e.preventDefault(); router.push('/login'); }} className="app-auth-link">
+                      <IonIcon icon={ICON_ZURUECK} aria-hidden="true" />
                       Zurück zum Login
-                    </span>
+                    </a>
                   </div>
                 </>
               )}

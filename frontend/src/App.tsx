@@ -67,6 +67,9 @@ import '@ionic/react/css/palettes/dark.system.css';
 
 /* Theme variables */
 import './theme/variables.css';
+/* Fokusringe, nackte Knöpfe und Links der Anmeldeseiten -- muss NACH
+   variables.css kommen, siehe Kopf der Datei. */
+import './theme/barrierefreiheit.css';
 
 setupIonicReact({
   rippleEffect: true,

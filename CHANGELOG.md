@@ -487,6 +487,13 @@ Versionsüberschrift.
   Sie folgt jetzt der Textfarbe der Nachricht.
 - Der Knopf „Zur Teamer:in befördern" in der Konfi-Verwaltung zeigte im
   Dunkelmodus schwarze Schrift auf Lila; sie ist jetzt weiß wie im Hellen.
+- Die Anmeldeseiten — Anmelden, Passwort vergessen, neues Passwort setzen,
+  Registrieren mit Einladungscode — lassen sich mit Tastatur und
+  Vorlesefunktion bedienen: Jedes Feld hat einen Namen, der Augen-Knopf am
+  Passwortfeld sowie „Passwort vergessen?", „Zurück" und „Registrieren" sind
+  per Tab erreichbar, Enter schickt das Formular ab, der Fokus ist sichtbar,
+  und Fehlermeldungen werden vorgelesen. Bisher kam man am Rechner nur bis zum
+  Anmelde-Knopf und musste nach dem Passwort zur Maus greifen.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

@@ -1,0 +1,77 @@
+/* ===================================================================
+   Barrierefreiheit der Anmeldeseiten (Audit 26.09.2026, UI BF-02 / BF-08)
+
+   Eigene Datei statt variables.css: Dort laufen zeitgleich die
+   Dunkelmodus-Korrekturen derselben Seiten. App.tsx lädt diese Datei NACH
+   variables.css; sie setzt nur Eigenschaften, die die Auth-Klassen dort
+   nicht setzen, und ändert deshalb nichts am abgenommenen Layout.
+
+   1. Nackte Knöpfe. Der Augen-Umschalter am Passwortfeld und das
+      Schließen-Kreuz der Fehlermeldung sind echte <button>, damit sie
+      Rolle, Namen und Tastatur haben (vorher: ion-icon mit onClick, weder
+      fokussierbar noch benannt). Ionics normalize.css nimmt einem <button>
+      schon Rand, Innenabstand und Zeilenhöhe; hier fällt der
+      Systemhintergrund weg und das Symbol sitzt mittig. Der Knopf ist so
+      groß wie vorher das Symbol -- die Klassen .app-auth-input__toggle und
+      .app-auth-error__close liefern weiter Größe, Farbe und Abstand.
+
+   2. Links. „Passwort vergessen?", „Zurück zum Login" usw. sind <a href>
+      (vorher <span onClick>). Der Browser unterstreicht Links; die
+      Gestaltung der Seiten kennt keine Unterstreichung.
+
+   3. Sichtbarer Fokus, nur bei Tastaturbedienung (:focus-visible), nicht
+      bei Berührung. Für ion-button zusätzlich über Ionics Klasse
+      .ion-focused: Chromium lässt den Shadow-Host nicht auf :focus-visible
+      passen, wenn der innere Knopf den Fokus hält (gemessen 26.09.2026:
+      host.matches(':focus-visible') = false, classList hat ion-focused).
+      Am Hauptknopf ein zweifarbiger Ring -- Weiß direkt am Knopf, Lila
+      darum. Die Karte ist hell oder dunkel; einer der beiden Ringe hebt
+      sich immer von ihr ab, der andere vom Knopf (WCAG 2.4.7, 2.4.11).
+      Überall sonst currentColor: Die Textfarbe hat ohnehin Kontrast zur
+      Fläche, im Dunkeln wie im Hellen.
+   =================================================================== */
+
+.app-auth-knopf-nackt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+a.app-auth-link {
+  text-decoration: none;
+}
+
+.app-auth-link:focus-visible,
+.app-auth-knopf-nackt:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: var(--app-radius-fein);
+}
+
+.app-auth-button.ion-focused::part(native),
+.app-auth-button:focus-visible::part(native) {
+  outline: 3px solid var(--app-weiss);
+  outline-offset: 0;
+}
+/* Der äußere Ring liegt als Outline auf dem Host, nicht als box-shadow auf
+   dem inneren Knopf: Dessen box-shadow ist Ionics --box-shadow, und eine
+   Kette daraus fällt komplett weg, sobald die Variable ungültig ist
+   (gemessen 26.09.2026: box-shadow "none", kein Ring). Host und innerer
+   Knopf haben dieselbe Box, der Radius macht die Outline rund. */
+.app-auth-button.ion-focused,
+.app-auth-button:focus-visible {
+  outline: 3px solid var(--app-color-konfis);
+  outline-offset: 3px;
+  border-radius: var(--border-radius);
+}
+
+.app-auth-retry-button.ion-focused::part(native),
+.app-auth-retry-button:focus-visible::part(native),
+.app-auth-biometrie-button.ion-focused::part(native),
+.app-auth-biometrie-button:focus-visible::part(native) {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
