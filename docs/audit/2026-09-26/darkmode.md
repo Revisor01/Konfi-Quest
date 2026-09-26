@@ -287,7 +287,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-09: Die Dunkelmodus-Tests sind grün, obwohl 104 Stellen unter der Grenze liegen
 
 - **Schwere:** MITTEL (Verstoß gegen CLAUDE.md: „Ein grüner Test beweist nichts, wenn er den Fehlerfall nicht erreicht“)
-- **Status:** teilweise behoben 26.09.2026 — die Bausteine 1–3 sind eingebaut und nachgemessen (104 → 33 Verstöße, Abschnitt „Nachmessung"); der gerenderte Messlauf als wiederholbarer Test (Baustein 4) fehlt noch.
+- **Status:** behoben 26.09.2026 — Bausteine 1–3 eingebaut (104 → 33 Verstöße), Paket K2 hat die vier Restmuster geprüft, zwei behoben und eines als Messfehler entlarvt (Abschnitt „Nachmessung“, Unterabschnitt Paket K2). Baustein 4 steht als wiederholbarer Test: `npm --prefix frontend run dunkelmodus:messen -- --url <Vite>` (`frontend/scripts/dunkelmodus-messen.mjs`) misst gerendert 47 Seitenzustände × hell/dunkel × iOS/Android (188 Zustände) plus die Auflagen BF-01/02/03/04/07/08 in einem echten Chromium — Kontraste gegen den nächsten deckenden Grund inklusive Ionics Shadow-DOM-Flächen und flacher Überlagerungen, helle Flächen im Dunkeln —, schreibt eine Ergebnisdatei (`--out`), vergleicht gegen die begründete Restliste `frontend/scripts/dunkelmodus-restliste.json` und endet mit Exit 1 bei jedem Verstoß außerhalb der Liste. Kein CI-Anschluss (kein laufender Stack in der Pipeline); die Restliste selbst sichert `dunkelmodus.test.ts` (Grund je Eintrag, kein pauschaler Dunkel-Eintrag, Chat-Blase enthalten). Letzter voller Lauf 26.09.2026: dunkel 48 Messstellen in 12 von 94 Zuständen (16 eigene Chat-Blase, 30 Kopfbanner der Termindetails — beide in beiden Modi —, 2 Danger-Knopf „Event absagen“ 4,39:1 als einzige dunkelspezifische Stelle; alle drei Nebenbefunde mit Grund in der Restliste), 0 helle Flächen; hell 93 Messstellen in 23 Zuständen, alle in der Restliste (UI-Audit BF-04); Auflagen 0 offen; **Exit 0**, Laufzeit 697 s.
 - **Fundstelle:** `frontend/src/__tests__/components/dunkelmodus.test.ts` (39 Tests in drei Dateien, alle
   grün: `npx vitest run src/__tests__/components/dunkelmodus.test.ts src/__tests__/components/dunkelmodusJsFarben.test.ts src/__tests__/config/systemBars.test.ts`),
   Kontrastprüfung `:222-236` (9 Tokens auf einem Grund), Ausnahmeliste `GLEICH_IN_BEIDEN_MODI` mit **36**
@@ -582,3 +582,49 @@ Damit ist der Zielwert dieses Pakets (unter 15 Verstöße) **nicht** erreicht, d
 lösbar. Baustein 4 (gerenderte Messung als wiederholbarer Test, `frontend/scripts/dunkelmodus-messen.mjs`)
 blieb im Arbeitsbaum des Pakets unfertig (Abbruch am Sitzungslimit) und ist nicht eingebaut; die
 Messung hier lief mit dem Audit-Skript aus dem Scratchpad.
+
+### Paket K2 (26.09.2026): die vier Muster, die korrigierte Messung, Baustein 4
+
+Erst nachgemessen, dann gefixt — und ein Muster war keins:
+
+| Muster | Stellen | vorher (dunkel) | nachher (dunkel) | hell |
+|---|---|---|---|---|
+| Knopf „Anmelden (0/50)“ | 2 | **1,36:1 war ein Messfehler** — real Schwarz auf Ionics Erfolgsgrün `#2dd55b` **10,78:1** (Knopffläche im Shadow-DOM, `.button-native`) | unverändert 10,78:1; kein Fix, ein `--color: weiß` hätte 1,97:1 ergeben | 10,78:1 |
+| Eck-Marken „+1P“ … „20P“ (Aktivitäten, Konfi-Detail, Level) | 13 (7 Marken, iOS = Android; oben stand „8“) | 2,15 (`#f59e0b`) … 4,23 (`#8b5cf6`) | **5,41 … 8,97:1** (Schwarz 40 % über der Datenfarbe, Dunkelblock) | unverändert 2,15 … 4,23 (UI BF-04) |
+| Abzeichen-Ring „0%“ | 2 | 4,06 (`#eb445a` auf `#242426`) | **4,84:1** (`--app-text-kriterium-streak` `#ee6073`; time_based 5,87, Rückfall 5,27) | unverändert 3,81 (UI BF-04) |
+| eigene Chat-Blase | 16 | 2,43 | 2,43 — nicht angefasst (Produktentscheidung, UI-Bericht) | 2,43 |
+
+Das alte Messskript sah drei Dinge nicht: Ionics Flächen im Shadow-DOM als **Grund** (der Knopftext
+wurde gegen die Karte gerechnet — die falschen 1,36:1), dieselben Flächen als **Schriftfarbe** des
+Slot-Texts (der Host meldet hell Weiß, gerendert wird Ionics Kontrastfarbe) und jede Fläche mit
+`background-image` (übersprungen als „Verlauf“). Das korrigierte Skript
+(`frontend/scripts/dunkelmodus-messen.mjs`) rechnet alles drei ein und macht damit Stellen sichtbar,
+die im Audit nie gezählt wurden — **Nebenbefunde, nicht behoben, mit Grund in der Restliste:**
+
+- **Kopfbanner der Termindetails** (`SectionHeader` mit der Statusfarbe als Verlauf mit zwei gleichen
+  Stops): bei „Offen“ weiße Überschrift auf Erfolgsgrün `#30d158` 2,02:1, Untertitel 1,74,
+  Kennzahlen-Kacheln 1,63–1,79; bei „Nur Info“ auf Grau `#8b939e` 2,12–2,56 — in **beiden** Modi (hell
+  `#34c759` 2,22, `#9ca3af` 2,54), 30 Messstellen dunkel, 32 hell (hell fällt zusätzlich die Überschrift auf Grau unter 3:1). Kein Dunkelmodus-Befund, sondern einer für
+  das UI-Audit (BF-04, Statusflächen).
+- **Danger-Knopf „Event absagen“** (Termindetail der Leitung, `fill` clear/outline): Ionics dunkle
+  `--ion-color-danger` `#f24c58` als Schrift auf der Karte `#242426` **4,39:1** — die einzige
+  dunkelspezifische Stelle des Laufs (hell `#c5000f` auf Weiß 6,5:1); betrifft jeden solchen Knopf auf
+  einer Karte im Dunkeln. Lösung wäre eine dunkle Danger-Stufe der App oder `--color:
+  var(--app-text-fehler)` an diesen Knöpfen.
+
+Voller Lauf des Skripts nach den beiden Fixes (188 Zustände + 44 Auflagen-Messstellen, 697 s):
+
+| | dunkel | hell |
+|---|---|---|
+| Zustände | 94 | 94 |
+| Messstellen unter der Grenze | 48 in 12 Zuständen | 93 in 23 Zuständen |
+| davon nicht in der Restliste | **0** | **0** |
+| dunkelspezifisch (nur im Dunkeln unter der Grenze) | **2** („Event absagen“, Nebenbefund) | — |
+| helle Flächen im Dunkeln | 0 | — |
+
+Restliste-Treffer: eigene Chat-Blase 32 (beide Modi), Kopfbanner 62 (30 dunkel, 32 hell), „Event absagen“
+2 (dunkel), hell Eck-Marken 13, hell Bereichs-/Signal-/Kriterienfarbe als Schrift 30, hell
+„Passwort vergessen?“ 4 (inkl. Auflage BF-01). Auflagen: 44 Messstellen, 2 unter der Grenze (BF-01
+hell), 0 außerhalb der Restliste. Exit-Code **0**. Vergleichbar mit den 33 des alten Skripts bleiben im
+Dunkeln **16** Stellen — alle die eigene Chat-Blase; der Dunkelmodus-Anteil der vier Muster ist **0**.
+Hell an den vier Stellen: 20 von 20 Screenshots (iOS/Android, je Fix) byte-identisch.

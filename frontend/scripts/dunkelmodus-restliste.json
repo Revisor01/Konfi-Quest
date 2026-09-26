@@ -1,0 +1,39 @@
+{
+  "_hinweis": "Restliste der gerenderten Dunkelmodus-Messung (scripts/dunkelmodus-messen.mjs). Jeder Eintrag deckt Messstellen unter der WCAG-Grenze ab, die bewusst stehen bleiben -- mit Grund. Ein Eintrag passt, wenn ALLE seine Felder zutreffen: scheme (dark|light), platform (ios|android), seite (Teilstring des Pfads), vorder/hinter (Hexwert oder /RegExp/), text (/RegExp/ auf den Text), pfad (/RegExp/ auf den Elementpfad). Die Liste darf nur schrumpfen; Eintraege ohne Treffer meldet das Skript.",
+  "eintraege": [
+    {
+      "grund": "Eigene Chat-Sprechblase: weisse Schrift und Uhrzeit auf der Bereichsfarbe Chat #06b6d4, in BEIDEN Modi 2,43:1 (16 Stellen je Modus in den drei Chatraeumen). Bereichsfarben bleiben als Flaeche in beiden Modi gleich (Entscheidung Simon, 26.09.2026); steht im UI-Bericht (Barrierefreiheit), ist kein Dunkelmodus-Befund. Aenderung nur als Produktentscheidung: dunklere Chat-Flaeche oder dunkle Schrift auf der eigenen Blase.",
+      "vorder": "#ffffff",
+      "hinter": "#06b6d4"
+    },
+    {
+      "grund": "Hellmodus, Eck-Marken: weisse Schrift auf der Daten- oder Bereichsfarbe der kleinen Pillen (Punkte '+2P', Level '20P', Status) -- Weiss auf #f59e0b 2,15:1, auf #10b981 2,54, auf #3b82f6 3,68, auf #059669 3,77, auf #007aff 4,02, auf #8b5cf6 4,23. UI-Audit BF-04 (Eck-Marken), offen. Im DUNKELN liegt seit Paket K2 (26.09.2026) eine schwarze Schicht mit 40 % Deckkraft auf jeder Marke, dort halten alle mindestens 4,5:1; hell darf sich an den Farben nichts aendern.",
+      "scheme": "light",
+      "vorder": "#ffffff",
+      "pfad": "/app-corner-badge(?:\\.|$| )/"
+    },
+    {
+      "grund": "Hellmodus, Bereichs-, Signal- und Kriterienfarbe als Schrift auf Weiss oder hellem Grund: Das Text-Token je Bereich ist hell ABSICHTLICH die Bereichsfarbe selbst (Baustein 2 des Dunkelmodus-Umbaus, 26.09.2026: im Hellen aendert sich an den Farben nichts), ebenso das Text-Token je Abzeichen-Kriterium (Paket K2). Gemessen: Chat-Tuerkis #06b6d4 als Absendername auf der fremden Blase #f8f9fa 2,30:1, Gemeinde-Gruen #059669 3,77 und Godi-Blau #3b82f6 3,68 als Punkte-Legende, Neutral-Grau #6c757d im Statuskasten 4,26, Abzeichen-Ring #eb445a 3,81, #8e8e93 3,26, #667eea 3,66. UI-Audit BF-04, zweiter Teil, offen -- ein hellerer Hell-Wert je Farbe laesst sich an EINER Stelle setzen (variables.css, --app-text-<bereich> bzw. --app-text-kriterium-<typ>).",
+      "scheme": "light",
+      "vorder": "/^#(f59e0b|06b6d4|667eea|007aff|0ea5e9|f97316|d97706|ec4899|3b82f6|059669|dc2626|4f46e5|be185d|047857|7c3aed|5b21b6|10b981|22c55e|34c759|ff9500|dc3545|6c757d|ff6b9d|eb445a|8e8e93|ffd700|5856d6|3880ff|10dc60|7044ff|0cd1e8|0891b2|ffce00|e63946|b91c1c)$/"
+    },
+    {
+      "grund": "Hellmodus, gedaempfter Link 'Passwort vergessen?' auf der Anmeldeseite: Konfi-Lila mit 0,7 Deckkraft auf der weissen Karte, #8c64cc 4,37:1 (Nebenbefund des Dunkelmodus-Pakets, 26.09.2026; trifft auch die Auflage BF-01 hell). Im Dunkeln haelt derselbe Link 4,89:1. Hell nicht angefasst, weil Paket K2 die hellen Farben unveraendert laesst -- gehoert zum UI-Audit BF-04.",
+      "scheme": "light",
+      "seite": "/login",
+      "text": "/Passwort vergessen/"
+    },
+    {
+      "grund": "NEBENBEFUND Paket K2 (26.09.2026), NICHT behoben, an die Koordination gemeldet: Kopfbanner der Termindetails (SectionHeader mit der Statusfarbe als flachem Verlauf) -- bei 'Offen' Erfolgsgruen (--app-color-success, hell #34c759 / dunkel #30d158), bei 'Nur Info' Neutral-Grau (#9ca3af). Weisse Ueberschrift 2,02-2,54:1, heller Untertitel 1,74-2,56, die Kennzahlen-Kacheln (rgba(255,255,255,0.2) darauf) mit weisser Zahl und Beschriftung 1,63-2,12 -- in BEIDEN Modi, iOS = Android, drei Zustaende x 5-6 Stellen. Das Audit-Skript vom 26.09.2026 uebersprang jeden Verlauf und sah es nicht; die korrigierte Messung rechnet einen Verlauf mit gleichen Stops als Flaeche. Weisse Schrift auf Ionics Erfolgsgruen ist ein Befund fuer das UI-Audit (BF-04, Statusflaechen), kein Dunkelmodus-Befund; Loesung waere ein dunklerer Gruen- und Grauton fuer den Banner in beiden Modi. Der Eintrag ist auf die gemessenen Grundfarben begrenzt -- aendert sich der Banner, greift er nicht mehr.",
+      "seite": "/events",
+      "hinter": "/^#(30d158|59da79|34c759|5dd27a|8b939e|a2a9b1|9ca3af|b0b5bf)$/",
+      "pfad": "/app-header-banner/"
+    },
+    {
+      "grund": "NEBENBEFUND Paket K2 (26.09.2026), NICHT behoben, an die Koordination gemeldet, dunkelspezifisch: Ionics Dunkelpalette setzt --ion-color-danger auf #f24c58; als Schrift eines randlosen oder umrandeten Knopfs (fill clear/outline, color danger -- gemessen 'Event absagen' im Termindetail der Leitung) liegt es auf der Karte #242426 bei 4,39:1, knapp unter der Grenze (hell #c5000f auf Weiss 6,5:1). Betrifft jeden solchen Danger-Knopf auf einer Karte im Dunkeln; Loesung waere eine dunkle --ion-color-danger-Stufe der App oder --color: var(--app-text-fehler) an diesen Knoepfen. Erst sichtbar, seit die Messung die Schriftfarbe des Slot-Texts aus .button-native liest.",
+      "scheme": "dark",
+      "vorder": "#f24c58",
+      "hinter": "#242426"
+    }
+  ]
+}

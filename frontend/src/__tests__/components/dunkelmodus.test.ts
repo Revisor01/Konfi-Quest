@@ -1241,6 +1241,79 @@ describe('Dunkelmodus: Kriterienfarbe als Text im Abzeichen-Ring (Paket K2, Audi
   });
 });
 
+describe('Dunkelmodus: gerenderte Messung als wiederholbarer Test (Baustein 4, Audit BF-09)', () => {
+  // Die Tests in dieser Datei lesen das Stylesheet als Text. Was im Browser
+  // daraus wird -- Spezifitaet gegen das Theme, Flaechen im Shadow-DOM,
+  // gemischte Schichten -- misst scripts/dunkelmodus-messen.mjs in einem
+  // echten Chromium: 47 Seitenzustaende x hell/dunkel x iOS/Android, gegen
+  // die Restliste in scripts/dunkelmodus-restliste.json, Exit 1 bei einem
+  // Verstoss ausserhalb der Liste (Audit BF-09: 104 Verstoesse bei gruenen
+  // Tests). Es braucht einen laufenden Stack und laeuft deshalb nicht in der
+  // CI; hier steht, was ohne Stack pruefbar ist: Die Restliste ist
+  // wohlgeformt und begruendet, das Skript misst, was es verspricht.
+  const restliste = JSON.parse(lies('scripts/dunkelmodus-restliste.json')) as { eintraege: Record<string, string>[] };
+  const skript = lies('scripts/dunkelmodus-messen.mjs');
+  const MERKMALE = ['scheme', 'platform', 'seite', 'vorder', 'hinter', 'text', 'pfad'];
+
+  it('jeder Eintrag der Restliste nennt einen Grund und mindestens ein Merkmal, an dem er greift', () => {
+    expect(restliste.eintraege.length).toBeGreaterThan(0);
+    for (const e of restliste.eintraege) {
+      expect(typeof e.grund, JSON.stringify(e)).toBe('string');
+      expect(e.grund.length, e.grund).toBeGreaterThan(60);
+      expect(MERKMALE.filter((k) => k in e).length, `Eintrag ohne Merkmal: ${e.grund.slice(0, 60)}`).toBeGreaterThan(0);
+      expect(Object.keys(e).filter((k) => k !== 'grund' && !MERKMALE.includes(k)), e.grund.slice(0, 60)).toEqual([]);
+    }
+  });
+
+  it('jedes /RegExp/-Feld kompiliert, jeder feste Farbwert ist ein kleingeschriebener Hexwert', () => {
+    for (const e of restliste.eintraege) {
+      for (const k of ['vorder', 'hinter', 'text', 'pfad']) {
+        const w = e[k];
+        if (w === undefined) continue;
+        const m = /^\/(.*)\/([a-z]*)$/s.exec(w);
+        if (m) expect(() => new RegExp(m[1], m[2]), `${k}: ${w}`).not.toThrow();
+        else expect(w, `${k}: ${w}`).toMatch(k === 'vorder' || k === 'hinter' ? /^#[0-9a-f]{6}$/ : /^\/.*\/[a-z]*$/s);
+      }
+      if (e.scheme !== undefined) expect(['dark', 'light']).toContain(e.scheme);
+      if (e.platform !== undefined) expect(['ios', 'android']).toContain(e.platform);
+    }
+  });
+
+  it('die eigene Chat-Blase steht in der Restliste: Weiss auf Chat-Tuerkis, in beiden Modi, als Entscheidung', () => {
+    const chat = restliste.eintraege.find((e) => e.vorder === '#ffffff' && e.hinter === helleTokens.get('--app-color-chat'));
+    expect(chat).toBeDefined();
+    expect(chat!.scheme).toBeUndefined(); // gilt hell UND dunkel -- kein Dunkelmodus-Befund
+    expect(chat!.grund).toMatch(/Entscheidung/);
+  });
+
+  it('kein Eintrag deckt den Dunkelmodus pauschal ab -- ohne Farbe, Text oder Pfad', () => {
+    for (const e of restliste.eintraege) {
+      if (e.scheme === 'light') continue;
+      expect(['vorder', 'hinter', 'text', 'pfad'].some((k) => k in e), e.grund.slice(0, 60)).toBe(true);
+    }
+  });
+
+  it('das Skript misst die 47 Zustaende des Audits, beide Modi und Plattformen, liest genau diese Restliste und endet mit dem Exit-Code der Auswertung', () => {
+    const seiten = /const SEITEN = \{([\s\S]*?)\n\};/.exec(skript);
+    expect(seiten).not.toBeNull();
+    expect((seiten![1].match(/'\//g) ?? []).length).toBe(47);
+    expect(skript).toContain("'dunkelmodus-restliste.json'");
+    expect(skript).toMatch(/argWert\('schemes', 'dark,light'\)/);
+    expect(skript).toMatch(/argWert\('platforms', 'ios,android'\)/);
+    expect(skript).toMatch(/argWert\('out'/);
+    expect(skript).toMatch(/process\.exit\(ok \? 0 : 1\)/);
+    // Ionics Flaechen im Shadow-DOM und flache Schichten werden eingerechnet -- sonst
+    // misst es "Anmelden (0/50)" wieder gegen die Karte (1,36 statt 10,78:1).
+    expect(skript).toMatch(/\.button-native, \.item-native/);
+    expect(skript).toMatch(/flacheSchicht/);
+  });
+
+  it('npm run dunkelmodus:messen zeigt auf das Skript', () => {
+    const pkg = JSON.parse(lies('package.json')) as { scripts: Record<string, string> };
+    expect(pkg.scripts['dunkelmodus:messen']).toBe('node scripts/dunkelmodus-messen.mjs');
+  });
+});
+
 /* --- WCAG-Rechnung --------------------------------------------------- */
 
 function hexZuRgb(hex: string): [number, number, number] {

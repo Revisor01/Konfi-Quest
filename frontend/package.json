@@ -12,6 +12,7 @@
     "docs:api": "node ../scripts/build-api-docs.mjs",
     "docs:handbuch": "node ../scripts/build-handbuch.mjs",
     "docs:openapi": "node ../scripts/build-openapi.mjs",
+    "dunkelmodus:messen": "node scripts/dunkelmodus-messen.mjs",
     "preview": "vite preview",
     "test.unit": "vitest",
     "lint": "eslint"
