@@ -948,7 +948,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                   {istEigener && (
                                     <div style={{
                                       fontSize: 'var(--app-text-hinweis)', fontWeight: 'var(--app-schrift-fett)',
-                                      color: 'var(--app-color-challenges)',
+                                      color: 'var(--app-text-challenges)',
                                       textTransform: 'uppercase', letterSpacing: '0.03em'
                                     }}>
                                       Dein Beitrag

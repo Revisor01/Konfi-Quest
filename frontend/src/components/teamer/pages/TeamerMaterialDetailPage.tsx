@@ -243,7 +243,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                 <IonCardContent>
                   {material.ist_global && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_WELT} className="app-info-row__icon" style={{ color: 'var(--app-color-material)' }} />
+                      <IonIcon icon={ICON_WELT} className="app-info-row__icon" style={{ color: 'var(--app-text-material)' }} />
                       <div>
                         <div className="app-info-row__label">Sichtbar für</div>
                         <div className="app-info-row__value">Das ganze Team der Gemeinde</div>
@@ -252,7 +252,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   )}
                   {material.events && material.events.length > 0 && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-color-events)' }} />
+                      <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-text-events)' }} />
                       <div>
                         <div className="app-info-row__label">{material.events.length === 1 ? 'Event' : 'Events'}</div>
                         <div className="app-info-row__value">{material.events.map(e => e.name).join(', ')}</div>
@@ -261,7 +261,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   )}
                   {material.jahrgaenge && material.jahrgaenge.length > 0 && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-color-konfis)' }} />
+                      <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-text-konfis)' }} />
                       <div>
                         <div className="app-info-row__label">{material.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}</div>
                         <div className="app-info-row__value">{material.jahrgaenge.map(j => j.name).join(', ')}</div>
@@ -319,7 +319,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                                 <div className="app-list-item__title">{hostAus(url)}</div>
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={ICON_EXTERN_OEFFNEN} style={{ color: 'var(--app-color-material)' }} />
+                                    <IonIcon icon={ICON_EXTERN_OEFFNEN} style={{ color: 'var(--app-text-material)' }} />
                                     Im Browser öffnen
                                   </span>
                                 </div>

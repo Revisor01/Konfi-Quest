@@ -126,7 +126,7 @@ const ForgotPasswordPage: React.FC = () => {
                     fontWeight: 'var(--app-schrift-normal)',
                     letterSpacing: '3px',
                     margin: '0 0 var(--app-abstand-mittel) 0',
-                    color: 'var(--app-color-konfis)'
+                    color: 'var(--app-text-konfis)'
                   }}>
                     E-MAIL GESENDET
                   </h2>

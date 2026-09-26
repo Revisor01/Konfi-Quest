@@ -684,7 +684,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
               boxShadow: 'var(--app-schatten-karte-stark)'
             }}
           >
-            <IonIcon icon={ICON_AUFKLAPPEN_GEFUELLT} style={{ fontSize: 'var(--app-text-titel)', color: 'var(--app-color-chat)' }} />
+            <IonIcon icon={ICON_AUFKLAPPEN_GEFUELLT} style={{ fontSize: 'var(--app-text-titel)', color: 'var(--app-text-chat)' }} />
           </button>
         </div>
 

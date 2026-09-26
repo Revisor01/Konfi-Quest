@@ -485,7 +485,7 @@ export const CategoriesTargetSection = React.memo<CategoriesTargetSectionProps>(
           <IonLabel style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: formData.mandatory && formData.jahrgang_ids.length === 0 ? 'var(--app-color-danger)' : 'var(--app-text-secondary)' }}>
             Jahrgänge (mehrere möglich) *{formData.mandatory && formData.jahrgang_ids.length === 0 ? ' (Pflicht bei Pflicht-Events)' : ''}
             {formData.jahrgang_ids.length > 0 && (
-              <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-color-jahrgang)', fontWeight: 'var(--app-schrift-normal)' }}>
+              <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-jahrgang)', fontWeight: 'var(--app-schrift-normal)' }}>
                 ({formData.jahrgang_ids.length} ausgewählt)
               </span>
             )}

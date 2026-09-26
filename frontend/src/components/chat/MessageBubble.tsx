@@ -265,7 +265,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             fontSize: 'var(--app-text-klein)',
             fontWeight: 'var(--app-schrift-halbfett)',
             marginBottom: 'var(--app-abstand-mini)',
-            color: 'var(--app-color-chat)'
+            color: 'var(--app-text-chat)'
           }}>
             {message.sender_name || 'Unbekannter User'}
             {(message.sender_role_title || message.sender_role_display_name) && (
@@ -307,7 +307,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             <div style={{
               fontSize: 'var(--app-text-meta)',
               fontWeight: 'var(--app-schrift-halbfett)',
-              color: 'var(--app-color-chat)',
+              color: 'var(--app-text-chat)',
               marginBottom: 'var(--app-abstand-winzig)'
             }}>
               {message.reply_to_sender_name}
@@ -392,7 +392,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   padding: 'var(--app-abstand-eng) var(--app-abstand-mittel)',
                   background: isExpired ? 'rgba(var(--app-color-danger-rgb), 0.12)' : 'rgba(var(--app-color-chat-rgb), 0.1)',
                   borderRadius: 'var(--app-radius-klein)',
-                  color: isExpired ? 'var(--app-color-danger)' : 'var(--app-color-chat)',
+                  color: isExpired ? 'var(--app-color-danger)' : 'var(--app-text-chat)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 'var(--app-abstand-kompakt)'
@@ -491,7 +491,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     <div style={{
                       fontSize: 'var(--app-text-hinweis)',
                       fontWeight: 'var(--app-schrift-halbfett)',
-                      color: takenByOther ? 'var(--app-text-system)' : 'var(--app-color-chat)',
+                      color: takenByOther ? 'var(--app-text-system)' : 'var(--app-text-chat)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 'var(--app-abstand-mini)',
@@ -768,7 +768,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     icon={userHasReacted ? emojiData?.filled : emojiData?.outline}
                     style={{
                       fontSize: 'var(--app-text-basis)',
-                      color: emojiData?.color || 'var(--app-color-chat)'
+                      color: emojiData?.color || 'var(--app-text-chat)'
                     }}
                   />
                   <span style={{

@@ -369,11 +369,56 @@ ion-list-header ion-label {
      Bereichsfarben (--app-color-*) sind Flaechenfarben und bleiben in beiden
      Modi gleich (Begruendung im Dunkelblock). Wer sie als Schrift auf eine
      Karte schreibt, braucht im Dunkeln einen aufgehellten Ton -- dafuer je
-     Bereich ein Text-Token, hell identisch mit der Bereichsfarbe. Bisher nur
-     fuer Konfi-Lila (Anmeldeseiten); weitere Bereiche folgen nach demselben
-     Muster, sobald ihre Textstellen umgestellt werden. */
+     Bereich ein Text-Token, hell identisch mit der Bereichsfarbe -- im Hellen
+     aendert sich also nichts. Erstes Token war Konfi-Lila (Anmeldeseiten);
+     seit Baustein 2 des Dunkelmodus-Umbaus (26.09.2026, Audit BF-06) die
+     ganze Familie: jede Bereichsfarbe, die irgendwo als Schrift oder Symbol
+     steht. Aliasse wie im Flaechen-Block (requests/purple = konfis,
+     organizations = users, group = bonus). Die dunklen Werte stehen im
+     Dunkelblock; dunkelmodus.test.ts prueft hell = Bereichsfarbe und dunkel
+     mindestens 4,5:1 auf Karte und beiden Seitengruenden. Wer eine
+     Bereichsfarbe als `color` schreibt, nimmt das Text-Token -- der Test
+     zaehlt den Restbestand. */
   --app-text-konfis: #5b21b6;
   --app-text-konfis-rgb: 91, 33, 182;
+  --app-text-events: #dc2626;
+  --app-text-events-rgb: 220, 38, 38;
+  --app-text-activities: #047857;
+  --app-text-activities-rgb: 4, 120, 87;
+  --app-text-teamer: #be185d;
+  --app-text-teamer-rgb: 190, 24, 93;
+  --app-text-challenges: #4f46e5;
+  --app-text-challenges-rgb: 79, 70, 229;
+  --app-text-users: #667eea;
+  --app-text-users-rgb: 102, 126, 234;
+  --app-text-badges: #f59e0b;
+  --app-text-badges-rgb: 245, 158, 11;
+  --app-text-wrapped: #7c3aed;
+  --app-text-wrapped-rgb: 124, 58, 237;
+  --app-text-bonus: #f97316;
+  --app-text-bonus-rgb: 249, 115, 22;
+  --app-text-group: #f97316;
+  --app-text-group-rgb: 249, 115, 22;
+  --app-text-jahrgang: #007aff;
+  --app-text-jahrgang-rgb: 0, 122, 255;
+  --app-text-categories: #0ea5e9;
+  --app-text-categories-rgb: 14, 165, 233;
+  --app-text-material: #d97706;
+  --app-text-material-rgb: 217, 119, 6;
+  --app-text-chat: #06b6d4;
+  --app-text-chat-rgb: 6, 182, 212;
+  --app-text-level: #ec4899;
+  --app-text-level-rgb: 236, 72, 153;
+  --app-text-gottesdienst: #3b82f6;
+  --app-text-gottesdienst-rgb: 59, 130, 246;
+  --app-text-gemeinde: #059669;
+  --app-text-gemeinde-rgb: 5, 150, 105;
+  --app-text-organizations: #667eea;
+  --app-text-organizations-rgb: 102, 126, 234;
+  --app-text-requests: #5b21b6;
+  --app-text-requests-rgb: 91, 33, 182;
+  --app-text-purple: #5b21b6;
+  --app-text-purple-rgb: 91, 33, 182;
 
   /* Flaechen und Linien — vorher lose Hexwerte in den Komponenten */
   /* Kartengrund (25.09.2026): Bis hierher stand `white` 4x im Stylesheet und
@@ -640,7 +685,7 @@ ion-item-sliding:last-child {
 }
 .app-chip--events {
   background-color: rgba(var(--app-color-events-rgb), 0.15);
-  color: var(--app-color-events);
+  color: var(--app-text-events);
 }
 .app-chip--success {
   background-color: rgba(var(--app-color-success-rgb), 0.15);
@@ -656,20 +701,20 @@ ion-item-sliding:last-child {
 }
 .app-chip--info {
   background-color: rgba(var(--app-color-info-rgb), 0.15);
-  color: var(--app-color-jahrgang);
+  color: var(--app-text-jahrgang);
 }
 .app-chip--chat {
   background-color: rgba(var(--app-color-chat-rgb), 0.15);
-  color: var(--app-color-chat);
+  color: var(--app-text-chat);
 }
 .app-chip--purple {
   background-color: rgba(var(--app-color-requests-rgb), 0.15);
-  color: var(--app-color-konfis);
+  color: var(--app-text-konfis);
 }
 /* Challenges: Rosa bewusst nur als Akzent (Chip/Icon), nicht als Vollflaeche */
 .app-chip--challenges {
   background-color: rgba(var(--app-color-challenges-rgb), 0.12);
-  color: var(--app-color-challenges);
+  color: var(--app-text-challenges);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -888,19 +933,19 @@ ion-list[inset] ion-list-header {
 }
 .app-tag--events {
   background-color: rgba(var(--app-color-events-rgb), 0.12);
-  color: var(--app-color-events);
+  color: var(--app-text-events);
 }
 .app-tag--chat {
   background-color: rgba(var(--app-color-chat-rgb), 0.12);
-  color: var(--app-color-chat);
+  color: var(--app-text-chat);
 }
 .app-tag--purple {
   background-color: rgba(var(--app-color-requests-rgb), 0.12);
-  color: var(--app-color-konfis);
+  color: var(--app-text-konfis);
 }
 .app-tag--info {
   background-color: rgba(var(--app-color-info-rgb), 0.12);
-  color: var(--app-color-jahrgang);
+  color: var(--app-text-jahrgang);
 }
 .app-tag--success {
   background-color: rgba(var(--app-color-success-rgb), 0.12);
@@ -1574,7 +1619,7 @@ ion-item {
 .app-info-box--blue {
   background: rgba(var(--app-color-info-rgb), 0.08);
   border: 1px solid rgba(var(--app-color-info-rgb), 0.2);
-  color: var(--app-color-jahrgang);
+  color: var(--app-text-jahrgang);
 }
 .app-info-box--neutral {
   background: rgba(var(--app-text-system-rgb), 0.08);
@@ -1584,7 +1629,7 @@ ion-item {
 .app-info-box--purple {
   background: rgba(var(--app-color-konfis-rgb), 0.08);
   border: 1px solid rgba(var(--app-color-konfis-rgb), 0.2);
-  color: var(--app-color-konfis);
+  color: var(--app-text-konfis);
 }
 /* Jahresrueckblick (Simon, 06.09.2026): "die haben immer die Farbe ihrer
    Abteilung". --purple ist das Konfi-Violett, der Rueckblick hat sein
@@ -1592,17 +1637,17 @@ ion-item {
 .app-info-box--wrapped {
   background: rgba(var(--app-color-wrapped-rgb), 0.08);
   border: 1px solid rgba(var(--app-color-wrapped-rgb), 0.2);
-  color: var(--app-color-wrapped);
+  color: var(--app-text-wrapped);
 }
 .app-info-box--teamer {
   background: rgba(var(--app-color-teamer-rgb), 0.08);
   border: 1px solid rgba(var(--app-color-teamer-rgb), 0.2);
-  color: var(--app-color-teamer);
+  color: var(--app-text-teamer);
 }
 .app-info-box--challenges {
   background: rgba(var(--app-color-challenges-rgb), 0.08);
   border: 1px solid rgba(var(--app-color-challenges-rgb), 0.2);
-  color: var(--app-color-challenges);
+  color: var(--app-text-challenges);
 }
 
 /* === Progress Bars === */
@@ -2011,7 +2056,7 @@ ion-range.app-range--events {
 }
 ion-range.app-range--events + .app-range-row__value,
 .app-range-row .app-range--events ~ .app-range-row__value {
-  color: var(--app-color-events);
+  color: var(--app-text-events);
 }
 /* Toggle in Events-Rot für Konsistenz */
 ion-toggle.app-toggle--events {
@@ -2149,7 +2194,7 @@ ion-toggle.app-toggle--events {
 }
 .app-status-box--bonus {
   background-color: rgba(var(--app-color-bonus-rgb), 0.12);
-  color: var(--app-color-bonus);
+  color: var(--app-text-bonus);
   border-color: rgba(var(--app-color-bonus-rgb), 0.3);
 }
 .app-status-box--info {
@@ -2159,7 +2204,7 @@ ion-toggle.app-toggle--events {
 }
 .app-status-box--events {
   background-color: rgba(var(--app-color-events-rgb), 0.12);
-  color: var(--app-color-events);
+  color: var(--app-text-events);
   border-color: rgba(var(--app-color-events-rgb), 0.3);
 }
 
@@ -2184,7 +2229,7 @@ ion-toggle.app-toggle--events {
 
 /* Klickbarer Ort-Link */
 .app-event-detail__location-link {
-  color: var(--app-color-jahrgang);
+  color: var(--app-text-jahrgang);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -2192,7 +2237,7 @@ ion-toggle.app-toggle--events {
 /* Klickbarer Material-Hinweis in den Eckdaten (01.09.2026) — gleiche Optik
    wie der Ort-Link, eigener Name, damit die beiden unabhaengig bleiben. */
 .app-event-detail__material-link {
-  color: var(--app-color-jahrgang);
+  color: var(--app-text-jahrgang);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -2719,7 +2764,7 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-input__toggle {
   cursor: pointer;
   font-size: var(--app-text-untertitel);
-  color: var(--app-color-wrapped);
+  color: var(--app-text-wrapped);
   margin-top: var(--app-abstand-gross);
 }
 /* Eye-Toggle sitzt auf dem hellen Input -> lila bleibt lesbar */
@@ -2753,7 +2798,7 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-error__icon {
   font-size: var(--app-text-untertitel);
-  color: var(--app-color-events);
+  color: var(--app-text-events);
   flex-shrink: 0;
 }
 
@@ -2765,7 +2810,9 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-error__close {
   font-size: var(--app-text-gross);
-  color: var(--app-color-events-dunkel);
+  /* Text-Token der Fehlerflaeche, nicht die Bereichsfarbe: der Kasten ist
+     --app-flaeche-fehler, dunkel #3b1516 -- Termine-Dunkelrot darauf 2,39:1. */
+  color: var(--app-text-fehler);
   cursor: pointer;
 }
 
@@ -2799,7 +2846,7 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-error__detail {
   font-size: var(--app-text-hinweis);
-  color: var(--app-color-events-dunkel);
+  color: var(--app-text-fehler);
 }
 
 .app-auth-link {
@@ -2976,7 +3023,9 @@ ion-popover.badge-detail-popover::part(arrow)::after {
 .app-auth-username-status--available {
   background: var(--app-flaeche-erfolg);
   border-color: var(--app-rand-erfolg);
-  color: var(--app-color-activities-dunkel);
+  /* Text auf der Erfolgsflaeche: --app-color-success-tief hellt im Dunkeln
+     auf (#a7f3d0); Aktivitaeten-Dunkelgruen blieb dort bei 2,02:1. */
+  color: var(--app-color-success-tief);
 }
 
 .app-auth-username-status--taken {
@@ -2993,7 +3042,7 @@ ion-popover.badge-detail-popover::part(arrow)::after {
 
 .app-auth-retry-button {
   --background: transparent;
-  --color: var(--app-color-wrapped);
+  --color: var(--app-text-wrapped);
   --border-color: rgba(var(--app-color-wrapped-rgb), 0.4);
   --border-radius: var(--app-radius-knopf);
   --border-width: 1px;
@@ -3007,7 +3056,7 @@ ion-popover.badge-detail-popover::part(arrow)::after {
    Bewusst als Zweitaktion gestaltet: das Passwort bleibt der Hauptweg. */
 .app-auth-biometrie-button {
   --background: transparent;
-  --color: var(--app-color-wrapped);
+  --color: var(--app-text-wrapped);
   --border-color: rgba(var(--app-color-wrapped-rgb), 0.4);
   --border-radius: var(--app-radius-karte);
   --border-width: 1px;
@@ -3097,7 +3146,8 @@ ion-popover.badge-detail-popover::part(arrow)::after {
   font-size: var(--app-text-gross);
   flex-shrink: 0;
   margin-top: var(--app-abstand-haar);
-  color: var(--app-color-categories-dunkel);
+  /* Symbol auf der Hinweisflaeche: dasselbe Token wie der Text daneben. */
+  color: var(--app-text-hinweis-dunkel);
 }
 
 /* === Dashboard Sektionen === */
@@ -3753,6 +3803,53 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
        8,39:1, mit 0,7 Deckkraft (gedaempfte Anmelde-Links) noch 4,89:1. */
     --app-text-konfis: #c4b5fd;
     --app-text-konfis-rgb: 196, 181, 253;
+    /* Die ganze Familie (Baustein 2, Audit BF-06): je Bereich der aufgehellte
+       Ton aus derselben Farbreihe, der auf der Karte #242426 UND auf beiden
+       Seitengruenden (#000000, #121212) mindestens 4,5:1 haelt -- in Klammern
+       der Kontrast auf der Karte. Vorher lagen die Bereichsfarben selbst als
+       Schrift auf der Karte bei: events 3,21, activities 2,83, teamer 2,57,
+       challenges 2,46, users 4,23, wrapped 2,72, jahrgang 3,86, gottesdienst
+       4,21, gemeinde 4,11 (gemessen 26.09.2026). Nur badges (7,21), chat
+       (6,38), bonus (5,53) und material (4,86) bestanden schon; sie bekommen
+       trotzdem eine Stufe, damit die Familie einheitlich liest. */
+    --app-text-events: #f87171;       /* 5,60 */
+    --app-text-events-rgb: 248, 113, 113;
+    --app-text-activities: #34d399;   /* 8,06 */
+    --app-text-activities-rgb: 52, 211, 153;
+    --app-text-teamer: #f472b6;       /* 5,85 */
+    --app-text-teamer-rgb: 244, 114, 182;
+    --app-text-challenges: #818cf8;   /* 5,19 */
+    --app-text-challenges-rgb: 129, 140, 248;
+    --app-text-users: #a5b4fc;        /* 7,77 */
+    --app-text-users-rgb: 165, 180, 252;
+    --app-text-badges: #fbbf24;       /* 9,28 */
+    --app-text-badges-rgb: 251, 191, 36;
+    --app-text-wrapped: #a78bfa;      /* 5,69 */
+    --app-text-wrapped-rgb: 167, 139, 250;
+    --app-text-bonus: #fb923c;        /* 6,85 */
+    --app-text-bonus-rgb: 251, 146, 60;
+    --app-text-group: #fb923c;
+    --app-text-group-rgb: 251, 146, 60;
+    --app-text-jahrgang: #60a5fa;     /* 6,09 */
+    --app-text-jahrgang-rgb: 96, 165, 250;
+    --app-text-categories: #38bdf8;   /* 7,23 */
+    --app-text-categories-rgb: 56, 189, 248;
+    --app-text-material: #f59e0b;     /* 7,21 */
+    --app-text-material-rgb: 245, 158, 11;
+    --app-text-chat: #22d3ee;         /* 8,57 */
+    --app-text-chat-rgb: 34, 211, 238;
+    --app-text-level: #f9a8d4;        /* 8,54 */
+    --app-text-level-rgb: 249, 168, 212;
+    --app-text-gottesdienst: #60a5fa; /* 6,09 */
+    --app-text-gottesdienst-rgb: 96, 165, 250;
+    --app-text-gemeinde: #6ee7b7;     /* 10,16 */
+    --app-text-gemeinde-rgb: 110, 231, 183;
+    --app-text-organizations: #a5b4fc;
+    --app-text-organizations-rgb: 165, 180, 252;
+    --app-text-requests: #c4b5fd;
+    --app-text-requests-rgb: 196, 181, 253;
+    --app-text-purple: #c4b5fd;
+    --app-text-purple-rgb: 196, 181, 253;
 
     /* Flaechen und Linien: die Stufenleiter ueber dem Seitengrund.
        Grund < Karte < gedaempfte Flaeche < Ladeflaeche.
@@ -4470,6 +4567,9 @@ ion-segment.md ion-segment-button {
   --background: var(--app-weiss);
   --background-hover: var(--app-weiss);
   --background-activated: rgba(255, 255, 255, 0.85);
+  /* Bereichsfarbe, NICHT das Text-Token: Der Knopf ist in beiden Modi weiss,
+     das aufgehellte Lila (#c4b5fd) stuende im Dunkeln hell auf Weiss (1,6:1).
+     dunkelmodus.test.ts fuehrt diese Regel als Ausnahme mit Grund. */
   --color: var(--app-color-konfis);
   --border-radius: var(--app-radius-gross);
   --box-shadow: var(--app-schatten-hoch);
@@ -4696,7 +4796,7 @@ ion-segment.md ion-segment-button {
 .app-kachel__fortschritt {
   font-size: var(--app-text-mini);
   font-weight: var(--app-schrift-fett);
-  color: var(--app-color-users);
+  color: var(--app-text-users);
 }
 
 /* LADEBILDSCHIRM VOR DEM ROUTER (14.09.2026)

@@ -241,25 +241,25 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                           </div>
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: 'var(--app-color-konfis)' }} />
+                              <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: 'var(--app-text-konfis)' }} />
                               {organization.max_konfis != null
                                 ? `${organization.konfi_count} / ${organization.max_konfis} Konfis`
                                 : `${organization.konfi_count} Konfis`}
                             </span>
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={ICON_PERSON} style={{ color: 'var(--app-color-teamer)' }} />
+                              <IonIcon icon={ICON_PERSON} style={{ color: 'var(--app-text-teamer)' }} />
                               {organization.user_count} Team
                             </span>
                             <span className="app-list-item__meta-item">
                               {(() => {
                                 if (!organization.trial_ends_at) {
-                                  return <><IonIcon icon={ICON_UHRZEIT} style={{ color: 'var(--app-color-users)' }} />unbegrenzt</>;
+                                  return <><IonIcon icon={ICON_UHRZEIT} style={{ color: 'var(--app-text-users)' }} />unbegrenzt</>;
                                 }
                                 const end = new Date(organization.trial_ends_at);
                                 const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                                 return (
                                   <>
-                                    <IonIcon icon={ICON_UHRZEIT} style={{ color: days < 0 ? 'var(--app-color-events)' : 'var(--app-color-users)' }} />
+                                    <IonIcon icon={ICON_UHRZEIT} style={{ color: days < 0 ? 'var(--app-text-events)' : 'var(--app-text-users)' }} />
                                     {end.toLocaleDateString('de-DE')} {days >= 0 ? `(${days} Tag${days === 1 ? '' : 'e'})` : '(abgelaufen)'}
                                   </>
                                 );

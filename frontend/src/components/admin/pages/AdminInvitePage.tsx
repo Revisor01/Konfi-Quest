@@ -424,7 +424,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                                         {invite.invite_code}
                                       </span>
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: 'var(--app-color-users)' }} />
+                                        <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: 'var(--app-text-users)' }} />
                                         {invite.used_count || 0}
                                       </span>
                                     </div>

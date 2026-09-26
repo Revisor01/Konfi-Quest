@@ -106,7 +106,7 @@ const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
             {showNewDivider && (
               <div ref={newDividerRef} style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', margin: 'var(--app-abstand-schmal) var(--app-abstand-mittel)' }}>
                 <div style={{ flex: 1, height: '1px', background: 'var(--app-color-events)' }} />
-                <span style={{ fontSize: 'var(--app-text-meta)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-color-events)' }}>Neue Nachrichten</span>
+                <span style={{ fontSize: 'var(--app-text-meta)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-text-events)' }}>Neue Nachrichten</span>
                 <div style={{ flex: 1, height: '1px', background: 'var(--app-color-events)' }} />
               </div>
             )}

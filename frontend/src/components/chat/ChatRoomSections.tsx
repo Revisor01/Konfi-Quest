@@ -133,9 +133,9 @@ export const ReplyPreview = React.memo<ReplyPreviewProps>(({ replyToMessage, onC
     borderLeft: '3px solid var(--app-color-chat)',
     gap: 'var(--app-abstand-eng)'
   }}>
-    <IonIcon icon={ICON_ANTWORTEN} style={{ fontSize: 'var(--app-text-untertitel)', color: 'var(--app-color-chat)' }} />
+    <IonIcon icon={ICON_ANTWORTEN} style={{ fontSize: 'var(--app-text-untertitel)', color: 'var(--app-text-chat)' }} />
     <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontWeight: 'var(--app-schrift-halbfett)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-color-chat)' }}>
+      <div style={{ fontWeight: 'var(--app-schrift-halbfett)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-chat)' }}>
         {replyToMessage.sender_name}
       </div>
       <div style={{
@@ -213,7 +213,7 @@ export const FilePreviewBar = React.memo<FilePreviewBarProps>(({ selectedFile, s
         justifyContent: 'center',
         flexShrink: 0
       }}>
-        <IonIcon icon={ICON_ANHANG_GEFUELLT} style={{ fontSize: 'var(--app-text-titel-gross)', color: 'var(--app-color-chat)' }} />
+        <IonIcon icon={ICON_ANHANG_GEFUELLT} style={{ fontSize: 'var(--app-text-titel-gross)', color: 'var(--app-text-chat)' }} />
       </div>
     )}
     <div style={{ flex: 1, minWidth: 0 }}>
@@ -227,7 +227,7 @@ export const FilePreviewBar = React.memo<FilePreviewBarProps>(({ selectedFile, s
       }}>
         {selectedFile.name}
       </div>
-      <div style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-color-chat)', fontWeight: 'var(--app-schrift-mittel)' }}>
+      <div style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-chat)', fontWeight: 'var(--app-schrift-mittel)' }}>
         {formatFileSize(selectedFile.size)}
       </div>
     </div>
@@ -332,7 +332,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
           style={{
             '--padding-start': 'var(--app-abstand-mini)',
             '--padding-end': 'var(--app-abstand-mini)',
-            '--color': 'var(--app-color-chat)',
+            '--color': 'var(--app-text-chat)',
             '--height': '38px',
             '--min-height': '38px',
             fontSize: 'var(--app-icon-chat-anhang)'

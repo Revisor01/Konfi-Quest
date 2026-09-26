@@ -182,7 +182,10 @@ Versionsüberschrift.
   demselben dunklen Kartenton wie die Karten — auf iPhone und Android gleich.
   Auf dem iPhone waren Listen und Suchfelder bisher tiefschwarz und die Karten
   dunkler als vorgesehen, sodass bis zu fünf Grautöne auf einem Bildschirm
-  standen.
+  standen. Farbige Beschriftungen, Symbole und Hinweiskästen — „Gesamt" in
+  Konfi-Violett, Materialhinweise in Orange, Chat-Antworten in Türkis — sind
+  im Dunkeln jetzt in einer aufgehellten Stufe ihrer Bereichsfarbe gesetzt
+  und damit lesbar; im Hellen bleiben sie, wie sie sind.
 
 ### Hinzugefügt
 - Im Profil steht unter „Mitteilungen prüfen", ob Mitteilungen für die App

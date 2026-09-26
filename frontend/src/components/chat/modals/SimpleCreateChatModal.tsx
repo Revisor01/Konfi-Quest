@@ -569,7 +569,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 {isAdmin && targetUser.role_description && (
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-color-teamer)' }} />
+                                      <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-text-teamer)' }} />
                                       {targetUser.role_description}
                                     </span>
                                   </div>
@@ -577,7 +577,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 {!isAdmin && (targetUser.jahrgang_name || targetUser.jahrgang) && (
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-jahrgang)' }} />
+                                      <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-jahrgang)' }} />
                                       {targetUser.jahrgang_name || targetUser.jahrgang}
                                     </span>
                                   </div>

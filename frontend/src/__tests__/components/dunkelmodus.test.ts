@@ -907,6 +907,150 @@ describe('Dunkelmodus: EINE Flaechen-Stufenleiter -- Ionics Flaechenvariablen ha
   });
 });
 
+describe('Dunkelmodus: Text-Token-Familie je Bereichsfarbe (Baustein 2)', () => {
+  // GEMESSEN am 26.09.2026 (Dunkelmodus-Audit BF-06, messen.cjs, 94 Zustaende):
+  // Bereichsfarben standen an 234 Stellen als SCHRIFT auf Karten und
+  // Hinweiskaesten -- im Hellen lesbar (Konfi-Lila auf Weiss 8,98:1), im
+  // Dunkeln nicht (auf der Karte #242426: konfis 1,72, challenges 2,46,
+  // teamer 2,57, wrapped 2,72, activities 2,83, events 3,21, jahrgang 3,86,
+  // gemeinde 4,11, gottesdienst 4,21, users 4,23). Die Bereichsfarben selbst
+  // bleiben als FLAECHE in beiden Modi gleich (Test oben). Fuer Schrift gibt
+  // es je Bereich ein Text-Token: hell die Bereichsfarbe (im Hellen aendert
+  // sich nichts), dunkel ein aufgehellter Ton mit mindestens 4,5:1 auf der
+  // Karte UND auf beiden Seitengruenden. Die Textstellen wurden per Codemod
+  // umgestellt (nur `color`/`--color*` in style={{}} und im Stylesheet, keine
+  // Flaechen, keine Datenfelder).
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const FAMILIE = ['events', 'activities', 'konfis', 'teamer', 'challenges', 'users', 'badges', 'wrapped', 'bonus', 'group', 'jahrgang', 'categories', 'material', 'chat', 'level', 'gottesdienst', 'gemeinde', 'organizations', 'requests', 'purple'];
+  const GRUND_IOS = '#000000';
+  const GRUND_ANDROID = '#121212';
+
+  it('jede Bereichsfarbe, die als Text vorkommt, hat ein Text-Token -- hell UND dunkel, mit -rgb', () => {
+    const fehlend: string[] = [];
+    for (const b of FAMILIE) {
+      for (const name of [`--app-text-${b}`, `--app-text-${b}-rgb`]) {
+        if (!helleTokens.has(name)) fehlend.push(`${name} hell`);
+        if (!dunkel.has(name)) fehlend.push(`${name} dunkel`);
+      }
+    }
+    expect(fehlend).toEqual([]);
+  });
+
+  it('hell ist das Text-Token die Bereichsfarbe selbst -- im Hellen aendert sich nichts', () => {
+    const abweichend: string[] = [];
+    for (const b of FAMILIE) {
+      if (helleTokens.get(`--app-text-${b}`) !== helleTokens.get(`--app-color-${b}`)) abweichend.push(`${b}: ${helleTokens.get(`--app-text-${b}`)} != ${helleTokens.get(`--app-color-${b}`)}`);
+      if (helleTokens.get(`--app-text-${b}-rgb`) !== helleTokens.get(`--app-color-${b}-rgb`)) abweichend.push(`${b}-rgb`);
+    }
+    expect(abweichend).toEqual([]);
+  });
+
+  it('dunkel liest sich jedes Text-Token auf Karte und beiden Seitengruenden: mindestens 4,5:1', () => {
+    const schwach: string[] = [];
+    for (const b of FAMILIE) {
+      const t = dunkel.get(`--app-text-${b}`)!;
+      for (const [grundName, grund] of [['Karte', dunkel.get('--app-surface-card')!], ['iOS-Grund', GRUND_IOS], ['Android-Grund', GRUND_ANDROID], ['Verlaufsende', '#1f1f22']]) {
+        const k = kontrast(t, grund);
+        if (k < 4.5) schwach.push(`${b} ${t} auf ${grundName} ${grund}: ${k.toFixed(2)}`);
+      }
+      // Ein eigener, hellerer Ton -- kein Alias der Flaechenfarbe.
+      if (t === dunkel.get(`--app-color-${b}`)) schwach.push(`${b}: dunkel identisch mit der Flaechenfarbe`);
+    }
+    expect(schwach).toEqual([]);
+  });
+
+  it('die Aliasse tragen dieselben Toene wie ihr Original (requests/purple = konfis, organizations = users)', () => {
+    for (const [alias, original] of [['requests', 'konfis'], ['purple', 'konfis'], ['organizations', 'users']]) {
+      expect(dunkel.get(`--app-text-${alias}`), alias).toBe(dunkel.get(`--app-text-${original}`));
+    }
+  });
+
+  // Bestand, der bewusst bleibt -- jede Zeile mit Grund; die Liste darf nur schrumpfen.
+  const BEREICHSFARBE_ALS_TEXT_BESTAND: Record<string, number> = {
+    // ShareCard rendert ein Bild mit eigenem dunklen Grund in BEIDEN Modi;
+    // --app-color-wrapped-hell ist dort der helle Akzent und hat keine Text-Variante.
+    'src/components/wrapped/share/ShareCard.tsx': 3,
+    // Symbol auf dem dunklen Wrapped-Verlauf der Dashboard-Kachel, in beiden Modi gleich.
+    'src/components/teamer/pages/TeamerDashboardPage.tsx': 1,
+  };
+
+  /** Text-Eigenschaften in style={{ … }}-Bloecken, deren Wert eine Bereichsfarbe traegt. */
+  function bereichsfarbenAlsText(code: string): string[] {
+    const treffer: string[] = [];
+    for (const m of code.matchAll(/style=\{\{/g)) {
+      const start = m.index! + 'style={'.length;
+      let tiefe = 0; let anf: string | null = null; let ende = start;
+      for (let i = start; i < code.length; i++) {
+        const c = code[i];
+        if (anf) { if (c === anf && code[i - 1] !== '\\') anf = null; continue; }
+        if (c === "'" || c === '"' || c === '`') { anf = c; continue; }
+        if (c === '{' || c === '(' || c === '[') tiefe++;
+        else if (c === '}' || c === ')' || c === ']') { tiefe--; if (tiefe === 0) { ende = i; break; } }
+      }
+      const block = code.slice(start, ende + 1);
+      for (const p of block.matchAll(/(?:\bcolor|'--color(?:-checked|-hover|-focused|-activated)?')\s*:\s*([^,}]*(?:\([^)]*\)[^,}]*)*)/g)) {
+        for (const v of p[1].matchAll(/var\(--app-color-([a-z-]+?)(?:-rgb)?\)/g)) {
+          if (istBereichsfarbe(`--app-color-${v[1]}`)) treffer.push(`${p[0].trim().slice(0, 80)}`);
+        }
+      }
+    }
+    return treffer;
+  }
+
+  it('keine Bereichsfarbe steht mehr als Textfarbe in einem style-Block -- ausser dem gezaehlten Bestand', () => {
+    const gezaehlt: Record<string, number> = {};
+    for (const datei of dateienUnter('src', '.tsx')) {
+      const n = bereichsfarbenAlsText(lies(datei).replace(/\{\/\*[\s\S]*?\*\/\}/g, '')).length;
+      if (n) gezaehlt[datei] = n;
+    }
+    expect(gezaehlt).toEqual(BEREICHSFARBE_ALS_TEXT_BESTAND);
+  });
+
+  // Bereichsfarbe als Schrift auf einer Flaeche, die in BEIDEN Modi weiss ist:
+  // dort waere das aufgehellte Text-Token im Dunkeln unlesbar (#c4b5fd auf
+  // Weiss 1,6:1). Jede Zeile mit Grund; die Liste darf nur schrumpfen.
+  const BEREICHSFARBE_AUF_WEISS: Record<string, string> = {
+    '.app-sperrbildschirm__knopf': 'weisser Knopf (--app-weiss) auf dem Aurora-Verlauf, Konfi-Lila als Schrift in beiden Modi',
+  };
+
+  it('keine Bereichsfarbe steht mehr als Textfarbe im Stylesheet -- ausser auf Flaechen, die in beiden Modi weiss sind', () => {
+    // Zeilen `color:` / `--color*:` mit var(--app-color-<bereich>); Signalfarben
+    // (success/warning/danger/info/neutral/ampel) sind keine Bereichsfarben.
+    const treffer: string[] = [];
+    const ausnahmenGetroffen = new Set<string>();
+    let selektor = '';
+    css.split('\n').forEach((zeile, i) => {
+      const auf = zeile.trim().match(/^([.#a-zA-Z:[][^{]*)\{/);
+      if (auf) selektor = auf[1].trim();
+      const m = /^\s*(?:--color(?:-checked|-hover|-focused|-activated)?|color)\s*:\s*(.*)$/.exec(zeile);
+      if (!m) return;
+      for (const v of m[1].matchAll(/var\(--app-color-([a-z-]+?)(?:-rgb)?\)/g)) {
+        if (!istBereichsfarbe(`--app-color-${v[1]}`)) continue;
+        if (selektor in BEREICHSFARBE_AUF_WEISS) { ausnahmenGetroffen.add(selektor); continue; }
+        treffer.push(`variables.css:${i + 1} ${selektor} -> ${zeile.trim()}`);
+      }
+    });
+    expect(treffer).toEqual([]);
+    // Und jede Ausnahme trifft noch etwas -- sonst ist sie tot.
+    expect([...ausnahmenGetroffen].sort()).toEqual(Object.keys(BEREICHSFARBE_AUF_WEISS).sort());
+    // Die Ausnahme ist wirklich ein weisser Knopf, kein Freibrief.
+    for (const sel of Object.keys(BEREICHSFARBE_AUF_WEISS)) {
+      const rumpf = regeln(css).find((r) => r.selektor === sel)?.rumpf ?? '';
+      expect(rumpf, `${sel} traegt kein --background: var(--app-weiss)`).toMatch(/--background:\s*var\(--app-weiss\)/);
+    }
+  });
+
+  it('die Erkennung findet den Fehlerfall (Gegenprobe der Suchfunktion)', () => {
+    expect(bereichsfarbenAlsText(`<div style={{ color: 'var(--app-color-events)' }} />`)).toHaveLength(1);
+    expect(bereichsfarbenAlsText(`<div style={{ color: x ? 'var(--app-text-events)' : 'var(--app-color-chat)' }} />`)).toHaveLength(1);
+    expect(bereichsfarbenAlsText(`<IonButton style={{ '--color': 'var(--app-color-users)' }} />`)).toHaveLength(1);
+    // Flaechen und Signalfarben zaehlen nicht:
+    expect(bereichsfarbenAlsText(`<div style={{ background: 'var(--app-color-events)', color: 'var(--app-color-danger)' }} />`)).toHaveLength(0);
+    // Datenfelder ausserhalb von style={{}} zaehlen nicht (OnboardingTour legt sie auf einen weissen Knopf):
+    expect(bereichsfarbenAlsText(`const SLIDES = [{ color: 'var(--app-color-konfis)' }];`)).toHaveLength(0);
+  });
+});
+
 /* --- WCAG-Rechnung --------------------------------------------------- */
 
 function hexZuRgb(hex: string): [number, number, number] {

@@ -259,7 +259,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                                   <div className={`app-list-item__title ${typeBadgeColor ? 'app-list-item__title--punkte-badge-doppelt' : 'app-list-item__title--punkte-badge'}`}>{entry.title}</div>
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-events)' }} />
+                                      <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-events)' }} />
                                       {formatDate(entry.date)}
                                     </span>
                                   </div>

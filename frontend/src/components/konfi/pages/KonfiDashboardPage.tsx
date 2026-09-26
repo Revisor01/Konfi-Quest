@@ -390,7 +390,7 @@ const KonfiDashboardPage: React.FC = () => {
         titel="Konfi Quest"
         rechts={(
           <IonButton onClick={() => router.push('/konfi/profile')} aria-label="Profil öffnen">
-            <IonIcon slot="icon-only" icon={ICON_PROFIL} style={{ color: 'var(--app-color-wrapped)', fontSize: 'var(--app-anzeige-basis)' }} />
+            <IonIcon slot="icon-only" icon={ICON_PROFIL} style={{ color: 'var(--app-text-wrapped)', fontSize: 'var(--app-anzeige-basis)' }} />
           </IonButton>
         )}
       />

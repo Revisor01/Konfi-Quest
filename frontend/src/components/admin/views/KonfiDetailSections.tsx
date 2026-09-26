@@ -828,7 +828,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                           <div
                             className="app-list-item__title app-list-item__title--badge-space"
                             style={{
-                              color: activity.isPending ? 'var(--app-color-badges)' : undefined,
+                              color: activity.isPending ? 'var(--app-text-badges)' : undefined,
                               display: 'flex',
                               alignItems: 'center',
                               gap: 'var(--app-abstand-kompakt)'
@@ -1124,7 +1124,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
               padding: 'var(--app-abstand-schmal)',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: 'var(--app-text-untertitel)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-color-gottesdienst)' }}>{totals.gottesdienst}</div>
+              <div style={{ fontSize: 'var(--app-text-untertitel)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-text-gottesdienst)' }}>{totals.gottesdienst}</div>
               <div style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-color-neutral)', fontWeight: 'var(--app-schrift-halbfett)' }}>GOTTESDIENST</div>
             </div>
           )}
@@ -1136,7 +1136,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
               padding: 'var(--app-abstand-schmal)',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: 'var(--app-text-untertitel)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-color-gemeinde)' }}>{totals.gemeinde}</div>
+              <div style={{ fontSize: 'var(--app-text-untertitel)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-text-gemeinde)' }}>{totals.gemeinde}</div>
               <div style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-color-neutral)', fontWeight: 'var(--app-schrift-halbfett)' }}>GEMEINDE</div>
             </div>
           )}
@@ -1147,7 +1147,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
             padding: 'var(--app-abstand-schmal)',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: 'var(--app-text-untertitel)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-color-konfis)' }}>{totals.total}</div>
+            <div style={{ fontSize: 'var(--app-text-untertitel)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-text-konfis)' }}>{totals.total}</div>
             <div style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-color-neutral)', fontWeight: 'var(--app-schrift-halbfett)' }}>GESAMT</div>
           </div>
         </div>

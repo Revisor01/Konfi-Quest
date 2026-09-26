@@ -127,8 +127,10 @@ etwas heller als der Hintergrund und werfen einen leichten Schatten, damit
 sie sich abheben — auf iPhone und Android gleich, und ebenso bei Suchfeldern,
 Auswahllisten, Meldungen und den Fenstern, die sich über eine Seite legen.
 Die Farben der Bereiche — Rot für Termine, Violett für Konfis, Türkis für den
-Chat — sind dieselben wie im Hellen: So leuchten die farbigen Kopfbereiche
-auf dunklem Grund nicht heller als am Tag.
+Chat — sind auf den farbigen Flächen dieselben wie im Hellen: So leuchten die
+Kopfbereiche auf dunklem Grund nicht heller als am Tag. Steht eine
+Bereichsfarbe dagegen als Schrift oder Symbol auf einer Karte, nimmt sie im
+Dunkeln eine hellere Stufe desselben Tons, damit sie lesbar bleibt.
 
 Einen eigenen Schalter gibt es in der App nicht. Umgeschaltet wird in den
 Systemeinstellungen des Handys (iOS: *Anzeige & Helligkeit*, Android:

@@ -185,7 +185,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
               </IonModal>
 
               <p className="app-text-sub" style={{ marginTop: 'var(--app-abstand-basis)', marginBottom: 'var(--app-abstand-mini)' }}>
-                Punkte * <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-color-bonus)' }}>{points}</span>
+                Punkte * <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-text-bonus)' }}>{points}</span>
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', padding: '0 var(--app-abstand-eng)' }}>
                 <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>

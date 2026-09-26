@@ -263,7 +263,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                                       Punkte-Typ (GD/Gem.) anzeigen; stattdessen "Team"-Kennzeichnung. */}
                                   {request.activity_target_role === 'teamer' ? (
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: (isApproved || isRejected) ? 'var(--app-text-muted)' : 'var(--app-color-teamer)' }} />
+                                      <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: (isApproved || isRejected) ? 'var(--app-text-muted)' : 'var(--app-text-teamer)' }} />
                                       Team
                                     </span>
                                   ) : (

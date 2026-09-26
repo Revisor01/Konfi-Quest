@@ -676,7 +676,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 <IonCardContent className="app-card-content">
                   {organization.description && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_TEXTDOKUMENT} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <IonIcon icon={ICON_TEXTDOKUMENT} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                       <div>
                         <div className="app-info-row__label">Beschreibung</div>
                         <div className="app-info-row__value">{organization.description}</div>
@@ -685,7 +685,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   )}
 
                   <div className="app-info-row">
-                    <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                    <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                     <div>
                       <div className="app-info-row__label">Konfis</div>
                       <div className="app-info-row__value">
@@ -698,7 +698,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
                   {organization.contact_name && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_PERSON} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <IonIcon icon={ICON_PERSON} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                       <div>
                         <div className="app-info-row__label">Ansprechpartner:in</div>
                         <div className="app-info-row__value">{organization.contact_name}</div>
@@ -708,7 +708,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
                   {organization.contact_email && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_MAIL} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <IonIcon icon={ICON_MAIL} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                       <div>
                         <div className="app-info-row__label">E-Mail</div>
                         <div className="app-info-row__value">{organization.contact_email}</div>
@@ -718,7 +718,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
                   {organization.contact_phone && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_TELEFON} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <IonIcon icon={ICON_TELEFON} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                       <div>
                         <div className="app-info-row__label">Telefon</div>
                         <div className="app-info-row__value">{organization.contact_phone}</div>
@@ -728,7 +728,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
                   {organization.address && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_ORT} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <IonIcon icon={ICON_ORT} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                       <div>
                         <div className="app-info-row__label">Adresse</div>
                         <div className="app-info-row__value">{organization.address}</div>
@@ -738,7 +738,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
                   {organization.website_url && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_WELT} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <IonIcon icon={ICON_WELT} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                       <div>
                         <div className="app-info-row__label">Website</div>
                         <div className="app-info-row__value">{organization.website_url}</div>
@@ -748,7 +748,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
                   {isSuperAdmin && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_UHRZEIT} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <IonIcon icon={ICON_UHRZEIT} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                       <div>
                         <div className="app-info-row__label">Laufzeit</div>
                         <div className="app-info-row__value">
@@ -758,7 +758,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                                 const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                                 return days >= 0
                                   ? <span>{end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig){organization.is_trial ? ' · Testphase' : ''}</span>
-                                  : <span style={{ color: 'var(--app-color-events)' }}>{end.toLocaleDateString('de-DE')} (abgelaufen)</span>;
+                                  : <span style={{ color: 'var(--app-text-events)' }}>{end.toLocaleDateString('de-DE')} (abgelaufen)</span>;
                               })()
                             : <span>unbegrenzt</span>}
                         </div>
@@ -780,14 +780,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonCard className="app-card">
                 <IonCardContent className="app-card-content">
                   <div className="app-info-row">
-                    <IonIcon icon={ICON_UHRZEIT} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                    <IonIcon icon={ICON_UHRZEIT} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                     <div>
                       <div className="app-info-row__label">Erstellt</div>
                       <div className="app-info-row__value">{new Date(organization.created_at).toLocaleDateString('de-DE')}</div>
                     </div>
                   </div>
                   <div className="app-info-row">
-                    <IonIcon icon={ICON_TERMIN} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                    <IonIcon icon={ICON_TERMIN} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                     <div>
                       <div className="app-info-row__label">Aktualisiert</div>
                       <div className="app-info-row__value">{new Date(organization.updated_at).toLocaleDateString('de-DE')}</div>
@@ -986,9 +986,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 </IonButton>
 
                 <IonItem lines="none" style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-mittel)' }}>
-                  <IonIcon icon={ICON_SCHILD} slot="start" style={{ color: 'var(--app-color-users)' }} />
+                  <IonIcon icon={ICON_SCHILD} slot="start" style={{ color: 'var(--app-text-users)' }} />
                   <IonLabel>
-                    <p style={{ color: 'var(--app-color-users)', margin: 0, fontWeight: 'var(--app-schrift-mittel)', fontSize: 'var(--app-text-sekundaer)' }}>
+                    <p style={{ color: 'var(--app-text-users)', margin: 0, fontWeight: 'var(--app-schrift-mittel)', fontSize: 'var(--app-text-sekundaer)' }}>
                       Der Administrator kann die gesamte Organisation verwalten
                     </p>
                   </IonLabel>
@@ -1045,12 +1045,12 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                                   <div className="app-list-item__title">{admin.display_name}</div>
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_PERSON} style={{ color: 'var(--app-color-teamer)' }} />
+                                      <IonIcon icon={ICON_PERSON} style={{ color: 'var(--app-text-teamer)' }} />
                                       {admin.username}
                                     </span>
                                     {admin.email && (
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={ICON_MAIL} style={{ color: 'var(--app-color-teamer)' }} />
+                                        <IonIcon icon={ICON_MAIL} style={{ color: 'var(--app-text-teamer)' }} />
                                         {admin.email}
                                       </span>
                                     )}
@@ -1065,7 +1065,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   </div>
                 ) : (
                   <div style={{ textAlign: 'center', padding: 'var(--app-abstand-basis)', color: 'var(--app-text-secondary)' }}>
-                    <IonIcon icon={ICON_WARNHINWEIS} style={{ fontSize: 'var(--app-anzeige-zahl)', color: 'var(--app-color-badges)', marginBottom: 'var(--app-abstand-eng)', display: 'block' }} />
+                    <IonIcon icon={ICON_WARNHINWEIS} style={{ fontSize: 'var(--app-anzeige-zahl)', color: 'var(--app-text-badges)', marginBottom: 'var(--app-abstand-eng)', display: 'block' }} />
                     Kein Administrator vorhanden
                   </div>
                 )}
@@ -1321,9 +1321,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 </IonList>
 
                 <IonItem lines="none" style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-eng)' }}>
-                  <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-color-users)' }} />
+                  <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-text-users)' }} />
                   <IonLabel>
-                    <p style={{ color: 'var(--app-color-users)', margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>
+                    <p style={{ color: 'var(--app-text-users)', margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>
                       Bis zu 5 Konfis über dem Limit sind nach Bestätigung möglich. Danach ist ein Tarif-Upgrade nötig. Wird beim Speichern oben übernommen.
                     </p>
                   </IonLabel>
@@ -1346,14 +1346,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 {/* aktueller Status */}
                 <div style={{ marginBottom: 'var(--app-abstand-mittel)', fontSize: 'var(--app-text-basis)', color: 'var(--app-text-body)', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
-                  <IonIcon icon={ICON_UHRZEIT} style={{ color: 'var(--app-color-users)' }} />
+                  <IonIcon icon={ICON_UHRZEIT} style={{ color: 'var(--app-text-users)' }} />
                   {trialEndsAt
                     ? (() => {
                         const end = new Date(trialEndsAt);
                         const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                         return days >= 0
                           ? <span><strong>{end.toLocaleDateString('de-DE')}</strong> ({days} Tag{days === 1 ? '' : 'e'} übrig){isTrial ? ' · Testphase' : ''}</span>
-                          : <span style={{ color: 'var(--app-color-events)' }}><strong>{end.toLocaleDateString('de-DE')}</strong> (abgelaufen)</span>;
+                          : <span style={{ color: 'var(--app-text-events)' }}><strong>{end.toLocaleDateString('de-DE')}</strong> (abgelaufen)</span>;
                       })()
                     : <span><strong>unbegrenzt</strong></span>}
                 </div>
@@ -1425,9 +1425,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 </IonList>
 
                 <IonItem lines="none" style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-mittel)' }}>
-                  <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-color-users)' }} />
+                  <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-text-users)' }} />
                   <IonLabel>
-                    <p style={{ color: 'var(--app-color-users)', margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>
+                    <p style={{ color: 'var(--app-text-users)', margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>
                       Nach Ablauf des Zeitraums wird die Organisation automatisch gesperrt — niemand kann sich mehr anmelden. Ohne Datum bleibt der Zugang unbegrenzt. Wird beim Speichern oben übernommen.
                     </p>
                   </IonLabel>

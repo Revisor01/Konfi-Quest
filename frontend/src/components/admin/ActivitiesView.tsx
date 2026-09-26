@@ -289,7 +289,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                           <div className="app-list-item__meta">
                             {activity.categories && activity.categories.length > 0 && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={ICON_KATEGORIE_GEFUELLT} style={{ color: 'var(--app-color-categories)' }} />
+                                <IonIcon icon={ICON_KATEGORIE_GEFUELLT} style={{ color: 'var(--app-text-categories)' }} />
                                 {activity.categories.map(cat => cat.name).join(', ')}
                               </span>
                             )}

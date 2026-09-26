@@ -454,7 +454,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     <IonLabel style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: formData.allowed_media.length === 0 ? 'var(--app-color-danger)' : 'var(--app-text-secondary)' }}>
                       Mehrere möglich *
                       {formData.allowed_media.length > 0 && (
-                        <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-color-challenges)', fontWeight: 'var(--app-schrift-normal)' }}>
+                        <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-challenges)', fontWeight: 'var(--app-schrift-normal)' }}>
                           ({formData.allowed_media.length} ausgewählt)
                         </span>
                       )}
@@ -666,7 +666,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     <IonLabel style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: formData.jahrgang_ids.length === 0 ? 'var(--app-color-danger)' : 'var(--app-text-secondary)' }}>
                       Jahrgänge (mehrere möglich) *
                       {formData.jahrgang_ids.length > 0 && (
-                        <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-color-jahrgang)', fontWeight: 'var(--app-schrift-normal)' }}>
+                        <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-jahrgang)', fontWeight: 'var(--app-schrift-normal)' }}>
                           ({formData.jahrgang_ids.length} ausgewählt)
                         </span>
                       )}

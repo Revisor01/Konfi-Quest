@@ -215,8 +215,8 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
               {/* Option hinzufügen */}
               {options.length < 10 && (
                 <IonItem button onClick={addOption} detail={false}>
-                  <IonIcon icon={ICON_HINZUFUEGEN} slot="start" style={{ color: 'var(--app-color-chat)' }} />
-                  <IonLabel style={{ color: 'var(--app-color-chat)' }}>Option hinzufügen</IonLabel>
+                  <IonIcon icon={ICON_HINZUFUEGEN} slot="start" style={{ color: 'var(--app-text-chat)' }} />
+                  <IonLabel style={{ color: 'var(--app-text-chat)' }}>Option hinzufügen</IonLabel>
                 </IonItem>
               )}
             </IonItemGroup>
@@ -303,7 +303,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
 
               {hasExpiration && (
                 <IonItem>
-                  <IonIcon icon={ICON_UHRZEIT} slot="start" style={{ color: 'var(--app-color-chat)' }} />
+                  <IonIcon icon={ICON_UHRZEIT} slot="start" style={{ color: 'var(--app-text-chat)' }} />
                   <IonSelect
                     value={expirationHours}
                     onIonChange={(e) => setExpirationHours(e.detail.value)}

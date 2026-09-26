@@ -349,25 +349,25 @@ const AdminMaterialPage: React.FC = () => {
                                     <div className="app-list-item__meta">
                                       {mat.ist_global && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={ICON_WELT} style={{ color: 'var(--app-color-material)' }} />
+                                          <IonIcon icon={ICON_WELT} style={{ color: 'var(--app-text-material)' }} />
                                           Für alle
                                         </span>
                                       )}
                                       {((mat.link_count ?? (mat.link_url ? 1 : 0)) > 0) && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={ICON_LINK} style={{ color: 'var(--app-color-material)' }} />
+                                          <IonIcon icon={ICON_LINK} style={{ color: 'var(--app-text-material)' }} />
                                           {(mat.link_count ?? 1) === 1 ? 'Link' : `${mat.link_count} Links`}
                                         </span>
                                       )}
                                       {mat.file_count !== undefined && mat.file_count > 0 && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={ICON_ANHANG} style={{ color: 'var(--app-color-material)' }} />
+                                          <IonIcon icon={ICON_ANHANG} style={{ color: 'var(--app-text-material)' }} />
                                           {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
                                         </span>
                                       )}
                                       {(mat.event_count || 0) > 0 && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-events)' }} />
+                                          <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-events)' }} />
                                           {mat.event_count} {mat.event_count === 1 ? 'Event' : 'Events'}
                                         </span>
                                       )}

@@ -492,7 +492,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                         className="app-icon-color--gemeinde"
                         style={{ fontSize: 'var(--app-text-untertitel)' }}
                       />
-                      <span style={{ fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-color-gemeinde)' }}>
+                      <span style={{ fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-gemeinde)' }}>
                         Foto ausgewählt
                       </span>
                     </div>

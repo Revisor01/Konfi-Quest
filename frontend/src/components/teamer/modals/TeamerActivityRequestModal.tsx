@@ -464,7 +464,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
                         className="app-icon-color--teamer"
                         style={{ fontSize: 'var(--app-text-untertitel)' }}
                       />
-                      <span style={{ fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-color-teamer)' }}>
+                      <span style={{ fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-teamer)' }}>
                         Foto ausgewählt
                       </span>
                     </div>

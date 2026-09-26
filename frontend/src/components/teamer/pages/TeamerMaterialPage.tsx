@@ -325,7 +325,7 @@ const TeamerMaterialPage: React.FC = () => {
               <IonCardContent className="app-card-content">
                 {selectedMaterial.ist_global && (
                   <div className="app-info-row">
-                    <IonIcon icon={ICON_WELT} className="app-info-row__icon" style={{ color: 'var(--app-color-material)' }} />
+                    <IonIcon icon={ICON_WELT} className="app-info-row__icon" style={{ color: 'var(--app-text-material)' }} />
                     <div>
                       <div className="app-info-row__label">Sichtbar für</div>
                       <div className="app-info-row__value">Das ganze Team der Gemeinde</div>
@@ -334,7 +334,7 @@ const TeamerMaterialPage: React.FC = () => {
                 )}
                 {selectedMaterial.events && selectedMaterial.events.length > 0 && (
                   <div className="app-info-row">
-                    <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-color-events)' }} />
+                    <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-text-events)' }} />
                     <div>
                       <div className="app-info-row__label">
                         {selectedMaterial.events.length === 1 ? 'Event' : 'Events'}
@@ -347,7 +347,7 @@ const TeamerMaterialPage: React.FC = () => {
                 )}
                 {selectedMaterial.jahrgaenge && selectedMaterial.jahrgaenge.length > 0 && (
                   <div className="app-info-row">
-                    <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-color-konfis)' }} />
+                    <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-text-konfis)' }} />
                     <div>
                       <div className="app-info-row__label">
                         {selectedMaterial.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}
@@ -409,7 +409,7 @@ const TeamerMaterialPage: React.FC = () => {
                               <div className="app-list-item__title">{hostAus(url)}</div>
                               <div className="app-list-item__meta">
                                 <span className="app-list-item__meta-item">
-                                  <IonIcon icon={ICON_EXTERN_OEFFNEN} style={{ color: 'var(--app-color-material)' }} />
+                                  <IonIcon icon={ICON_EXTERN_OEFFNEN} style={{ color: 'var(--app-text-material)' }} />
                                   Im Browser öffnen
                                 </span>
                               </div>
@@ -533,25 +533,25 @@ const TeamerMaterialPage: React.FC = () => {
               <div className="app-list-item__meta">
                 {mat.ist_global && (
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={ICON_WELT} style={{ color: 'var(--app-color-material)' }} />
+                    <IonIcon icon={ICON_WELT} style={{ color: 'var(--app-text-material)' }} />
                     Für alle
                   </span>
                 )}
                 {mat.link_url && (
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={ICON_LINK} style={{ color: 'var(--app-color-material)' }} />
+                    <IonIcon icon={ICON_LINK} style={{ color: 'var(--app-text-material)' }} />
                     Link
                   </span>
                 )}
                 {mat.file_count !== undefined && mat.file_count > 0 && (
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={ICON_ANHANG} style={{ color: 'var(--app-color-material)' }} />
+                    <IonIcon icon={ICON_ANHANG} style={{ color: 'var(--app-text-material)' }} />
                     {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
                   </span>
                 )}
                 {(mat.event_count || 0) > 0 && (
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-events)' }} />
+                    <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-events)' }} />
                     {mat.event_count} {mat.event_count === 1 ? 'Event' : 'Events'}
                   </span>
                 )}

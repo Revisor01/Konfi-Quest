@@ -356,7 +356,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {isTeam && roleText && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-color-teamer)' }} />
+                    <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-text-teamer)' }} />
                     {roleText}
                   </span>
                 </div>
@@ -364,7 +364,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {!isTeam && jahrgang && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-jahrgang)' }} />
+                    <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-jahrgang)' }} />
                     {jahrgang}
                   </span>
                 </div>

@@ -671,7 +671,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                         gap: 'var(--app-abstand-schmal)'
                       }}
                     >
-                      <IonIcon icon={ICON_ZUSAGE_GEFUELLT} style={{ color: 'var(--app-color-users)', fontSize: 'var(--app-text-gross)', flexShrink: 0 }} />
+                      <IonIcon icon={ICON_ZUSAGE_GEFUELLT} style={{ color: 'var(--app-text-users)', fontSize: 'var(--app-text-gross)', flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ fontWeight: 'var(--app-schrift-mittel)', fontSize: 'var(--app-text-basis)', color: 'var(--app-text-primary)', display: 'block' }}>
                           {assignment.name}

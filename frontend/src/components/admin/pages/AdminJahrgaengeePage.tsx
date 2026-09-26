@@ -328,7 +328,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   />
                 </IonItem>
                 {!formData.gemeinde_enabled && formData.gottesdienst_enabled && (
-                  <div style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-color-badges)', marginTop: 'var(--app-abstand-mini)', paddingLeft: 'var(--app-abstand-basis)' }}>
+                  <div style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-badges)', marginTop: 'var(--app-abstand-mini)', paddingLeft: 'var(--app-abstand-basis)' }}>
                     Mindestens ein Punkt-Typ muss aktiv bleiben.{jahrgang?.konfi_count ? ` ${jahrgang.konfi_count} Konfis haben bereits Gottesdienst-Punkte.` : ''}
                   </div>
                 )}
@@ -360,7 +360,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   />
                 </IonItem>
                 {!formData.gottesdienst_enabled && formData.gemeinde_enabled && (
-                  <div style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-color-badges)', marginTop: 'var(--app-abstand-mini)', paddingLeft: 'var(--app-abstand-basis)' }}>
+                  <div style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-badges)', marginTop: 'var(--app-abstand-mini)', paddingLeft: 'var(--app-abstand-basis)' }}>
                     Mindestens ein Punkt-Typ muss aktiv bleiben.{jahrgang?.konfi_count ? ` ${jahrgang.konfi_count} Konfis haben bereits Gemeinde-Punkte.` : ''}
                   </div>
                 )}

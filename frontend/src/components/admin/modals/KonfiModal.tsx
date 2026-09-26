@@ -291,7 +291,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
             </IonListHeader>
             <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-konfis-rgb), 0.08)', border: '1px solid rgba(var(--app-color-konfis-rgb), 0.2)' }}>
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
-                <p style={{ margin: 0, fontSize: 'var(--app-text-basis)', lineHeight: '1.5', color: 'var(--app-color-konfis)' }}>
+                <p style={{ margin: 0, fontSize: 'var(--app-text-basis)', lineHeight: '1.5', color: 'var(--app-text-konfis)' }}>
                   Benutzername und Passwort werden automatisch generiert. Du kannst das Passwort später in der Detailansicht einsehen oder zurücksetzen.
                 </p>
               </IonCardContent>
@@ -312,7 +312,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
             </IonListHeader>
             <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-konfis-rgb), 0.08)', border: '1px solid rgba(var(--app-color-konfis-rgb), 0.2)' }}>
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
-                <p style={{ margin: 0, fontSize: 'var(--app-text-basis)', lineHeight: '1.5', color: 'var(--app-color-konfis)' }}>
+                <p style={{ margin: 0, fontSize: 'var(--app-text-basis)', lineHeight: '1.5', color: 'var(--app-text-konfis)' }}>
                   Der Benutzername zum Anmelden ändert sich nicht — auch dann
                   nicht, wenn du den Namen korrigierst.
                 </p>

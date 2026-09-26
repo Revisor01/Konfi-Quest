@@ -313,7 +313,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                               {activity.categories && activity.categories.length > 0 && (
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={ICON_KATEGORIE_GEFUELLT} style={{ color: 'var(--app-color-categories)' }} />
+                                    <IonIcon icon={ICON_KATEGORIE_GEFUELLT} style={{ color: 'var(--app-text-categories)' }} />
                                     {activity.categories.map(cat => cat.name).join(', ')}
                                   </span>
                                 </div>
