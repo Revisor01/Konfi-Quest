@@ -3121,7 +3121,7 @@
           "System & Monitoring"
         ],
         "summary": "Gespeicherte APM-Historie (nur super_admin)",
-        "description": "Liefert die persistierten Snapshots aus apm_snapshots der letzten N Tage, damit das Dashboard Deltas über Deploys hinweg bilden kann.\nZEITRAUM AUF ZWEI JAHRE ERWEITERT (14.09.2026): Vorher waren 30 Tage die Obergrenze. Die Aufbewahrung in services/backgroundService.js hält seit demselben Datum zwei Jahre vor (vorher ebenfalls 30 Tage) — gemessen 276 Zeilen und 1,8 MB je 30 Tage, also rund 44 MB für zwei Jahre. Die Snapshots entstehen zeitgesteuert alle fünf Minuten, NICHT je Nutzer:in; die Zeilenzahl wächst also nicht mit der Gemeindegrösse.\n",
+        "description": "Liefert die persistierten Snapshots aus apm_snapshots der letzten N Tage, damit das Dashboard Deltas über Deploys hinweg bilden kann.\nZEITRAUM AUF ZWEI JAHRE ERWEITERT (14.09.2026): Vorher waren 30 Tage die Obergrenze. Die Aufbewahrung in services/backgroundService.js hält seit demselben Datum zwei Jahre vor (vorher ebenfalls 30 Tage) — gemessen 276 Zeilen und 1,8 MB je 30 Tage, also rund 44 MB für zwei Jahre. Die Snapshots entstehen zeitgesteuert alle fünf Minuten, NICHT je Nutzer:in; die Zeilenzahl wächst also nicht mit der Gemeindegrösse.\nVERDICHTUNG AB 31 TAGEN (26.09.2026, Audit Betrieb BF-14 / S-19, additiv): `days=730` lieferte 210.000 Rohzeilen und 35 MB fuer ein Mobil-Dashboard. Jetzt: bis 30 Tage roh (alle fuenf Minuten), 31 bis 180 Tage ein Punkt je Stunde, darueber ein Punkt je Tag -- der Zwei-Jahres-Verlauf sind damit rund 730 Zeilen. Je Zeitfenster gilt der LETZTE Schnappschuss fuer die kumulierten Zaehler (total_requests, total_errors -- die Deltas des Dashboards bleiben damit richtig) und das MAXIMUM fuer max_in_flight und worst_p95_ms (samt der Route dieser Spitze). `snapshots` bleibt ein Array mit denselben Feldern; neu ist `aufloesung` (`5min` | `stunde` | `tag`).\n",
         "parameters": [
           {
             "name": "days",
@@ -3133,12 +3133,12 @@
               "maximum": 730,
               "default": 7
             },
-            "description": "Auf 1..730 begrenzt (zwei Jahre, so weit die Aufbewahrung reicht); ungueltige Werte und 0 fallen auf 7 zurück, negative auf 1.\n"
+            "description": "Auf 1..730 begrenzt (zwei Jahre, so weit die Aufbewahrung reicht); ungueltige Werte und 0 fallen auf 7 zurück, negative auf 1. Bis 30 roh, 31..180 stuendlich verdichtet, darueber taeglich.\n"
           }
         ],
         "responses": {
           "200": {
-            "description": "days und snapshots[] (captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)"
+            "description": "days, aufloesung (5min|stunde|tag) und snapshots[] (captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"

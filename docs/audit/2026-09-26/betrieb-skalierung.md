@@ -547,6 +547,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-14: `/api/metrics/history?days=730` liefert 35 MB
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — `createApp.js` verdichtet serverseitig: bis 30 Tage roh (das Dashboard fragt 14), 31–180 Tage ein Punkt je Stunde, darüber ein Punkt je Tag (`date_trunc`, je Fenster der letzte Stand der kumulierten Zähler und das Maximum von `max_in_flight`/`worst_p95_ms` samt Route). Antwortform additiv: `snapshots` bleibt ein Array mit denselben Feldern, neu `aufloesung` (`5min`|`stunde`|`tag`); die Obergrenze 730 bleibt. Gemessen auf 210 240 Schnappschüssen (zwei Jahre alle fünf Minuten, Test-DB): `days=730` vorher **210 239 Zeilen, 33 490 234 Byte, 835 ms** (Roh-Abfrage) → nachher **731 Zeilen, 116 486 Byte, 361 ms**; `days=180` → 4 321 Zeilen, 683 kB; `days=30` unverändert roh 8 639 Zeilen, 1,35 MB. Vitest `backend/tests/routes/metricsHistory.test.js`: Zeilenzahlen je Auflösung, Größe unter 200 kB, Fenster-Semantik (letzter Zählerstand, Spitze samt Route), Antwortform. Gegenprobe mit der Roh-Abfrage: `expected 210239 to be less than or equal to 731`.
 - **Fundstelle:** `backend/createApp.js:487–509`, `backend/services/backgroundService.js:1569`
   (Aufbewahrung 2 Jahre, ein Schnappschuss je 5 Minuten)
 - **Kennzeichnung:** reproduziert — `explain-harness.js`

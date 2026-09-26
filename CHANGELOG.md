@@ -634,6 +634,9 @@ Versionsüberschrift.
 - Die zeitgesteuerten Aufgaben (Erinnerungen, Aufräumen, Löschfristen,
   Rückblick) übernimmt automatisch ein anderer Server, wenn der zuständige
   ausfällt. Ob gerade einer zuständig ist, steht in der Statusabfrage.
+- Der Kennzahlen-Verlauf über lange Zeiträume kommt verdichtet (je Stunde
+  beziehungsweise je Tag) statt als Rohdaten, die die Auslastungsanzeige
+  mit vielen Megabyte überluden. Die letzten Wochen bleiben unverändert fein.
 
 ## [2.2.0] - 2026-09-18
 
