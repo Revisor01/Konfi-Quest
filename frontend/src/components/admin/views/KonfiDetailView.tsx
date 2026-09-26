@@ -732,6 +732,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         <AppKopfzeile
           titel={isTeamer ? 'Teamer:in Details' : 'Konfi Details'}
           onZurueck={hideBackButton ? undefined : onBack}
+          gemeindeUmschalter={false}
         />
         <IonContent fullscreen>
           <LoadingSpinner message={isTeamer ? 'Teamer:in wird geladen...' : 'Konfi wird geladen...'} />
@@ -745,6 +746,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       <AppKopfzeile
         titel={currentKonfi?.name || (isTeamer ? 'Teamer:in Details' : 'Konfi Details')}
         onZurueck={hideBackButton ? undefined : onBack}
+        /* Detailansicht EINER Person -- gehoert zu genau einer Gemeinde
+           (Simon, 26.09.2026). Ein Wechsel fuehrte auf einen Datensatz, den
+           es dort nicht gibt. */
+        gemeindeUmschalter={false}
         rechts={(
           <>
             {/* Bearbeiten nur bei Konfis: Teamer:innen haben keinen einzelnen

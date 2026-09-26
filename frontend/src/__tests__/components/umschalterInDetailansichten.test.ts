@@ -46,6 +46,7 @@ const DETAILANSICHTEN = [
   'src/components/konfi/views/EventDetailView.tsx',
   'src/components/admin/views/EventDetailView.tsx',
   'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
+  'src/components/admin/views/KonfiDetailView.tsx',
 ];
 
 // Seiten der Leitung, auf denen ein Wechsel nichts zu suchen hat

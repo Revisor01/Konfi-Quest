@@ -290,6 +290,9 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
     'src/components/admin/pages/AdminCategoriesPage.tsx',
     'src/components/admin/pages/AdminCertificatesPage.tsx',
     'src/components/admin/pages/AdminDashboardSettingsPage.tsx',
+    // Detailansicht EINER Person (26.09.2026, Simon: "Konfi Details im Admin
+    // hat auch nen switcher noch").
+    'src/components/admin/views/KonfiDetailView.tsx',
   ]);
 
   it('der Gemeinde-Umschalter kommt aus dem Geruest -- keine Seite baut ihn selbst, genau vier schalten ihn ab', () => {
