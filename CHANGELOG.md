@@ -410,6 +410,11 @@ Versionsüberschrift.
   Bisher konnte die Leitung einer Gemeinde, in der ein solches Konto zuhause
   ist, dessen Passwort setzen, es sperren oder löschen — und damit Zugriff auf
   alle Gemeinden erlangen.
+- Eine Gemeinde-Einladung an einen Konfi läuft ins Leere: Konfis anderer
+  Gemeinden ließen sich als Teamer:in einladen, und die Abfrage verriet zu
+  jeder E-Mail-Adresse, ob ein Konto dazu existiert — auch bei Kindern
+  fremder Gemeinden. Jetzt antwortet die App bei Konfis genauso wie bei einer
+  unbekannten Kennung.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

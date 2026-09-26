@@ -169,8 +169,13 @@ Sie behält Benutzername und Passwort; ihre bisherige Gemeinde bleibt
 unverändert. Die Einladung gilt **14 Tage** und lässt sich zurückziehen,
 solange sie offen ist.
 
-**Konfis lassen sich so nicht aufnehmen.** Sie gehören zu einem Jahrgang und
-kommen über einen [Einladungscode](35-passwoerter.md) hinein.
+**Konfis lassen sich so nicht aufnehmen** — weder die eigenen noch die einer
+anderen Gemeinde. Sie gehören zu einem Jahrgang und kommen über einen
+[Einladungscode](35-passwoerter.md) hinein. Trägst du den Benutzernamen oder
+die E-Mail-Adresse eines Konfis ein, meldet die App „Kein Konto mit diesem
+Benutzernamen oder dieser E-Mail-Adresse" — genau wie bei einer Kennung, die
+es nicht gibt. So lässt sich über die Einladung nicht herausfinden, ob ein Kind
+irgendwo ein Konto hat.
 
 Oben links in der Kopfzeile steht dann der Name der Gemeinde, in der man
 gerade arbeitet — in der Konfi-Liste ebenso wie in den Terminlisten, im Chat

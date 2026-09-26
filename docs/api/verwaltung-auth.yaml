@@ -369,6 +369,15 @@ paths:
         wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen
         ueber invite_codes.
 
+        AUCH ALS ZIEL (BEHOBEN 26.09.2026, Audit Sicherheit BF-03): Ist die
+        gefundene Person ein Konfi (Stammrolle), antwortet die Route mit
+        demselben 404 wie bei einer unbekannten Kennung -- ohne Name, ohne
+        Einladung, ohne Push und Mail. Vorher liess sich ein Konfi einer
+        fremden Gemeinde als Teamer:in einladen, und die Route bestaetigte zu
+        jeder E-Mail-Adresse im System, ob ein Konto existiert (Enumeration,
+        auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre
+        Einladung erscheint ohnehin in der Liste.
+
         Meldung an die eingeladene Person ueber Postfach, Push (Gruppe
         "Anfragen und Freigaben") und E-Mail, nach der Antwort (nachAntwort).
       requestBody:
@@ -385,7 +394,7 @@ paths:
         "201": { description: "id, user_id, display_name, username, role_id, role_name, status, expires_at" }
         "400": { description: "Rolle gehoert nicht zu dieser Gemeinde; konfi-Rolle (error_code konfi_nicht_moeglich); Selbst-Einladung" }
         "403": { description: "Nicht org_admin, oder Rolle laut Hierarchie nicht vergebbar" }
-        "404": { description: "Kein Konto mit dieser Kennung (error_code nicht_gefunden)" }
+        "404": { description: "Kein Konto mit dieser Kennung ODER die Person ist ein Konfi -- beides identisch (error_code nicht_gefunden)" }
         "409": { description: "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen)" }
       x-berechtigung:
         rollen: [org_admin]

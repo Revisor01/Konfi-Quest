@@ -395,7 +395,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Eine bestehende Person in die eigene Gemeinde einladen",
-        "description": "NEU 26.09.2026 (Simon: \"ORG Admin kann bestehenden anderen User hinzufuegen, der bekommt Einladung und bestaetigt. Schon ist der switcher da.\"). Gesucht wird EXAKT nach Benutzername oder E-Mail -- keine Teilsuche, sonst liesse sich der Bestand fremder Gemeinden durchblaettern. Die Einladung gilt 14 Tage.\nDIE MITGLIEDSCHAFT ENTSTEHT NICHT HIER, sondern erst mit der Annahme: Eine Zugehoerigkeit aendert, was jemand sieht und darf, und wird deshalb nicht ueber den Kopf der Person hinweg angelegt.\nKONFI IST AUSGESCHLOSSEN -- und zwar zusaetzlich zur Rollenhierarchie: canCreateRole('org_admin', 'konfi') liefert TRUE, die Hierarchie allein wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen ueber invite_codes.\nMeldung an die eingeladene Person ueber Postfach, Push (Gruppe \"Anfragen und Freigaben\") und E-Mail, nach der Antwort (nachAntwort).\n",
+        "description": "NEU 26.09.2026 (Simon: \"ORG Admin kann bestehenden anderen User hinzufuegen, der bekommt Einladung und bestaetigt. Schon ist der switcher da.\"). Gesucht wird EXAKT nach Benutzername oder E-Mail -- keine Teilsuche, sonst liesse sich der Bestand fremder Gemeinden durchblaettern. Die Einladung gilt 14 Tage.\nDIE MITGLIEDSCHAFT ENTSTEHT NICHT HIER, sondern erst mit der Annahme: Eine Zugehoerigkeit aendert, was jemand sieht und darf, und wird deshalb nicht ueber den Kopf der Person hinweg angelegt.\nKONFI IST AUSGESCHLOSSEN -- und zwar zusaetzlich zur Rollenhierarchie: canCreateRole('org_admin', 'konfi') liefert TRUE, die Hierarchie allein wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen ueber invite_codes.\nAUCH ALS ZIEL (BEHOBEN 26.09.2026, Audit Sicherheit BF-03): Ist die gefundene Person ein Konfi (Stammrolle), antwortet die Route mit demselben 404 wie bei einer unbekannten Kennung -- ohne Name, ohne Einladung, ohne Push und Mail. Vorher liess sich ein Konfi einer fremden Gemeinde als Teamer:in einladen, und die Route bestaetigte zu jeder E-Mail-Adresse im System, ob ein Konto existiert (Enumeration, auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre Einladung erscheint ohnehin in der Liste.\nMeldung an die eingeladene Person ueber Postfach, Push (Gruppe \"Anfragen und Freigaben\") und E-Mail, nach der Antwort (nachAntwort).\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -431,7 +431,7 @@
             "description": "Nicht org_admin, oder Rolle laut Hierarchie nicht vergebbar"
           },
           "404": {
-            "description": "Kein Konto mit dieser Kennung (error_code nicht_gefunden)"
+            "description": "Kein Konto mit dieser Kennung ODER die Person ist ein Konfi -- beides identisch (error_code nicht_gefunden)"
           },
           "409": {
             "description": "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen)"

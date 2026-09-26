@@ -211,6 +211,67 @@ describe('Einladung in eine weitere Gemeinde', () => {
     expect(res.body.error_code).toBe('nicht_gefunden');
   });
 
+  // Audit 26.09.2026 (Sicherheit BF-03, HOCH): Die Route pruefte nur die zu
+  // vergebende Rolle, nicht die Rolle der eingeladenen Person. konfi3 (Org 2)
+  // liess sich von orgAdmin1 als Teamer:in in Org 1 einladen -- und die
+  // Antwort verriet zu jeder E-Mail-Adresse im System Anzeigename und
+  // Benutzername, auch von Kindern fremder Gemeinden. Ein Konfi muss aussehen
+  // wie eine unbekannte Kennung: gleicher Status, gleiche Meldung, kein Name,
+  // keine Einladung, kein Push, keine Mail.
+  describe('Konfis sind kein Ziel -- und nicht von Unbekannten unterscheidbar', () => {
+    let orgAdmin1Token;
+    beforeEach(async () => {
+      orgAdmin1Token = generateToken('orgAdmin1');
+      await db.query("UPDATE users SET email = 'kind@example.org' WHERE id = $1", [USERS.konfi3.id]);
+    });
+
+    it('Konfi einer FREMDEN Gemeinde per Benutzername -> 404 wie unbekannt, keine Einladung', async () => {
+      const res = await einladen(orgAdmin1Token, { kennung: 'konfi3', role_id: ROLES.teamer.id });
+      await nachwehen();
+
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({
+        error: 'Kein Konto mit diesem Benutzernamen oder dieser E-Mail-Adresse.',
+        error_code: 'nicht_gefunden'
+      });
+      const { rows } = await db.query('SELECT id FROM org_einladungen');
+      expect(rows).toHaveLength(0);
+      expect(PushService.sendGemeindeEinladungToUser).not.toHaveBeenCalled();
+      expect(emailService.sendGemeindeEinladungEmail).not.toHaveBeenCalled();
+    });
+
+    it('Konfi einer FREMDEN Gemeinde per E-Mail -> 404, kein Anzeigename', async () => {
+      const res = await einladen(orgAdmin1Token, { kennung: 'Kind@example.org', role_id: ROLES.teamer.id });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error_code).toBe('nicht_gefunden');
+      expect(res.body.display_name).toBeUndefined();
+      expect(res.body.user_id).toBeUndefined();
+    });
+
+    it('Konfi der EIGENEN Gemeinde -> ebenfalls 404, nicht 409 "schon Mitglied"', async () => {
+      const res = await einladen(orgAdmin1Token, { kennung: USERS.konfi1.username, role_id: ROLES.teamer.id });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error_code).toBe('nicht_gefunden');
+    });
+
+    it('die Antwort auf einen Konfi und auf eine unbekannte Kennung ist identisch', async () => {
+      const konfi = await einladen(orgAdmin1Token, { kennung: 'konfi3', role_id: ROLES.teamer.id });
+      const niemand = await einladen(orgAdmin1Token, { kennung: 'niemand@example.org', role_id: ROLES.teamer.id });
+
+      expect(konfi.status).toBe(niemand.status);
+      expect(konfi.body).toEqual(niemand.body);
+    });
+
+    it('eine Teamer:in einer fremden Gemeinde bleibt einladbar -> 201', async () => {
+      const res = await einladen(orgAdmin1Token, { kennung: USERS.teamer2.username, role_id: ROLES.teamer.id });
+
+      expect(res.status).toBe(201);
+      expect(res.body.user_id).toBe(USERS.teamer2.id);
+    });
+  });
+
   it('nur org_admin darf einladen', async () => {
     for (const [name, status] of [['admin2', 403], ['teamer2', 403], ['konfi3', 403]]) {
       const res = await einladen(generateToken(name), {

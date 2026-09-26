@@ -89,14 +89,26 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Teilsuche: Sonst liesse sich der Bestand fremder Gemeinden
         // durchblaettern.
         const { rows: [ziel] } = await db.query(
-          `SELECT id, display_name, username, email
-             FROM users
-            WHERE deleted_at IS NULL
-              AND (LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1))
+          `SELECT u.id, u.display_name, u.username, u.email, r.name AS role_name
+             FROM users u
+             JOIN roles r ON r.id = u.role_id
+            WHERE u.deleted_at IS NULL
+              AND (LOWER(u.username) = LOWER($1) OR LOWER(u.email) = LOWER($1))
             LIMIT 1`,
           [kennung]
         );
-        if (!ziel) {
+        // KONFIS SIND KEIN ZIEL -- und sie sehen aus wie "nicht gefunden".
+        // Bis zum 26.09.2026 pruefte die Route nur die zu VERGEBENDE Rolle,
+        // nicht die Rolle der PERSON: Ein 13-jaehriger Konfi einer anderen
+        // Gemeinde liess sich als Teamer:in einladen und sah nach der Annahme
+        // deren Konfis, Antraege, Anwesenheit und Chats. Ausserdem beantwortete
+        // die Route jedem Org-Admin fuer jede E-Mail-Adresse im System, ob es
+        // ein Konto gibt -- samt Anzeigename, auch fuer Kinder fremder
+        // Gemeinden (Audit, Sicherheit BF-03). Deshalb dieselbe 404-Antwort
+        // wie bei einer unbekannten Kennung, ohne Name, ohne Einladung, ohne
+        // Push und Mail. Massgeblich ist die Stammrolle: Konfis koennen keine
+        // Zweitmitgliedschaft haben (organizations.js verbietet sie).
+        if (!ziel || ziel.role_name === 'konfi') {
           return res.status(404).json({
             error: 'Kein Konto mit diesem Benutzernamen oder dieser E-Mail-Adresse.',
             error_code: 'nicht_gefunden'
