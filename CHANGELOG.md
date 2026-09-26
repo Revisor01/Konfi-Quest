@@ -640,6 +640,10 @@ Versionsüberschrift.
 - Bei einer Auslieferung werden die beiden Server nacheinander getauscht,
   der zweite erst, wenn der erste wieder antwortet — statt beide zugleich,
   was die App für einige Sekunden „Verbindung fehlgeschlagen" melden ließ.
+- Die Betriebsvorlage bemisst die Datenbank für viele Gemeinden in einer
+  gemeinsamen Datenbank (mehr Rechenleistung, Speicher und
+  Verbindungen) und nennt die Verbindungs- und Zeitgrenzen der Server
+  ausdrücklich.
 
 ## [2.2.0] - 2026-09-18
 

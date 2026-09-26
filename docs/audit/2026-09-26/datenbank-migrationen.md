@@ -234,6 +234,7 @@ Vertragsbruch.
 
 ### BF-07: Postgres im Compose ist auf die heutige Gemeinde bemessen, nicht auf 10.000–25.000 Nutzer:innen
 - **Schwere:** MITTEL
+- **Status:** teilweise behoben 26.09.2026 — Referenzkopie `deploy/compose.konfi_quest.yml`: Postgres auf 2 CPU und 3 GB, `shared_buffers=768MB`, `effective_cache_size=2GB`, `work_mem=8MB`, `maintenance_work_mem=128MB`, `shared_preload_libraries=pg_stat_statements` (Extension einmal von Hand anlegen, Kommando im Compose), `max_connections=200` gegen 3 × (50 + 2) + 2 Leader-Verbindungen + 20 Reserve = 178 gerechnet; die Backends bekommen `PG_POOL_MAX=50`, `PG_IDLE_TIMEOUT`, `PG_CONN_TIMEOUT`, `PG_STATEMENT_TIMEOUT`, `PG_IDLE_TX_TIMEOUT` explizit ins Compose. Sicherung als Dienst im Stack: nicht umgesetzt (Referenzskript und Anleitung siehe BF-05). **Offen:** Die Referenzkopie ist nicht der Portainer-Stack — Simon muss den Stack von Hand angleichen und vorher prüfen, dass der Host 2 CPU und 3 GB zusätzlich frei hat (Kommentar im Compose vom 24.09.: 11,7 GB frei). Nachmessen des Sonntags-Lastfalls gegen den hinterlegten Datenbestand steht aus.
 - **Fundstelle:** `deploy/compose.konfi_quest.yml:17` (`postgres:15-alpine`), `:25` (`max_connections=200`), `:45-46` (`memory: 1G`, `cpus: '0.3'`), Kommentar `:18-24` („rechnerisch reichen sie für ~90 gleichzeitige")
 - **Kennzeichnung:** aus Code gelesen; alle Messwerte dieses Berichts entstanden auf einer unbegrenzten CPU und sind für 0,3 CPU nach unten zu korrigieren
 - **Beschreibung:** Die Datenbank für drei Backend-Container und die gesamte EKD teilt sich

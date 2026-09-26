@@ -30,7 +30,46 @@ services:
     # obendrauf -- ohne mehr Speicher waere max_connections eine Attrappe.
     # Die 200 sind dadurch nicht voll durch Speicher gedeckt (rechnerisch
     # reichen sie fuer ~90 gleichzeitige); die Pools schoepfen das nie aus.
-    command: ["postgres", "-c", "max_connections=200"]
+    #
+    # DIMENSIONIERUNG FUER EINE GEMEINSAME DATENBANK (26.09.2026, Release-
+    # Audit Betrieb BF-13 / Datenbank BF-07 / Sammelbefund S-18): Alle
+    # Gemeinden laufen in EINER Datenbank (10.000-25.000 Nutzer:innen). Der
+    # Engpass war die CPU-Grenze 0,3 -- 300 ms Rechenzeit je Sekunde fuer
+    # drei Backends zusammen, also rund 3 App-Starts je Sekunde. Jetzt:
+    #   - 2 CPU, 3 GB. Rechnung fuer den Speicher: shared_buffers 768 MB
+    #     (ein Viertel des RAM) + 178 Verbindungen x bis zu 10 MB = 2,5 GB
+    #     im Extremfall; realistisch liegen Pool-Verbindungen leer und
+    #     brauchen 2-5 MB.
+    #   - max_connections=200 gegen 3 Backends x (PG_POOL_MAX 50 + Adapter-
+    #     Pool 2) + 2 Cron-Leader-Verbindungen + 20 Reserve fuer psql,
+    #     Migrationen und Sicherung = 178 <= 197 nutzbare (3 sind fuer den
+    #     Superuser reserviert). Rechenweg in backend/database.js.
+    #   - effective_cache_size 2 GB (RAM abzueglich Prozesse) hilft dem
+    #     Planer, Indizes zu bevorzugen; work_mem 8 MB je Sortierung
+    #     (Standard 4) fuer die Terminlisten und Chat-Abfragen;
+    #     maintenance_work_mem 128 MB fuer CREATE INDEX in Migrationen und
+    #     Autovacuum auf chat_messages.
+    #   - pg_stat_statements vorgeladen, damit sich langsame Abfragen in
+    #     Produktion messen lassen. Die Extension einmal von Hand anlegen:
+    #       docker exec <postgres> psql -U konfi_user -d konfi_db \
+    #         -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+    # QUELLE DER WAHRHEIT IST DER PORTAINER-STACK: Diese Werte muessen dort
+    # von Hand nachgezogen werden -- und vorher ist zu pruefen, dass der Host
+    # 2 CPU und 3 GB zusaetzlich frei hat (24.09.2026: 11,7 GB frei).
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=768MB"
+      - "-c"
+      - "effective_cache_size=2GB"
+      - "-c"
+      - "work_mem=8MB"
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
     environment:
       POSTGRES_DB: konfi_db
       POSTGRES_USER: konfi_user
@@ -50,8 +89,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
-          cpus: '0.3'
+          # 26.09.2026 (Betrieb BF-13): vorher 1G / 0.3 -- Rechnung im
+          # Kommentar am command oben.
+          memory: 3G
+          cpus: '2'
     security_opt:
       - no-new-privileges:true
     logging:
@@ -79,6 +120,19 @@ services:
       PGDATABASE: konfi_db
       PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}
       PGPORT: 5432
+      # Verbindungspool und Zeitgrenzen EXPLIZIT (26.09.2026, Betrieb BF-13).
+      # Bis dahin stand nur PG_IDLE_TIMEOUT im Stack, der Pool lief auf dem
+      # Code-Standard 20. Rechenweg in backend/database.js: drei Backends x
+      # (50 + 2 Adapter) + 2 Cron-Leader + 20 Reserve = 178 <= 197 nutzbare
+      # Verbindungen bei max_connections=200 (oben). Die Zeitgrenzen sind die
+      # Code-Standards -- hier stehen sie, damit der Stack sie zeigt und
+      # eine Aenderung kein Deploy braucht.
+      PG_POOL_MAX: "50"
+      PG_IDLE_TIMEOUT: "600000"
+      PG_CONN_TIMEOUT: "5000"
+      PG_STATEMENT_TIMEOUT: "30000"
+      PG_IDLE_TX_TIMEOUT: "60000"
+      PG_SOCKET_ADAPTER_POOL_MAX: "2"
       SMTP_HOST: ${SMTP_HOST:?SMTP_HOST fehlt}
       SMTP_PORT: 465
       SMTP_USER: ${SMTP_USER:?SMTP_USER fehlt}

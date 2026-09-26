@@ -526,6 +526,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-13: Datenbank-Dimensionierung und Pool-Vorgabe passen nicht zum Ziel
 - **Schwere:** MITTEL
+- **Status:** teilweise behoben 26.09.2026 — Referenzkopie `deploy/compose.konfi_quest.yml`: Postgres auf **2 CPU / 3 GB**, `shared_buffers=768MB`, `effective_cache_size=2GB`, `work_mem=8MB`, `maintenance_work_mem=128MB`, `shared_preload_libraries=pg_stat_statements` (Extension einmal von Hand, Kommando im Compose); `max_connections=200` gegen 3 × (50 + 2) + 2 Cron-Leader + 20 Reserve = 178 ≤ 197 gerechnet; die Backends bekommen `PG_POOL_MAX=50`, `PG_IDLE_TIMEOUT`, `PG_CONN_TIMEOUT`, `PG_STATEMENT_TIMEOUT`, `PG_IDLE_TX_TIMEOUT`, `PG_SOCKET_ADAPTER_POOL_MAX` explizit. **Offen, weil nur Simon es kann:** Die Referenzkopie ist nicht der Portainer-Stack — der Stack muss von Hand angeglichen werden, und vorher ist zu prüfen, dass der Host 2 CPU und 3 GB zusätzlich frei hat (Kommentar vom 24.09.: 11,7 GB frei). Das Nachmessen des Sonntags-Lastfalls gegen den hinterlegten Datenbestand steht danach aus. Kein Test: eine Referenzdatei ohne Laufzeit; YAML-Parse geprüft.
 - **Fundstelle:** `deploy/compose.konfi_quest.yml:42–46` (Postgres 1 GB, **0,3 CPU**),
   `:25` (`max_connections=200`), `backend/database.js:9–18` (Kommentar vom 24.09.2026:
   „PG_POOL_MAX gehört ins Compose", Rechenweg für 50), Compose ohne `PG_POOL_MAX`,
