@@ -1,6 +1,8 @@
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
+// @ts-expect-error -- 'plist' bringt keine eigenen Typen mit (kommt ueber
+// Capacitor als Abhaengigkeit).
+import plist from 'plist';
 import { describe, it, expect } from 'vitest';
 
 /**
@@ -43,9 +45,13 @@ type Manifest = {
   }>;
 };
 
+// GELESEN OHNE plutil (26.09.2026): Das ist ein macOS-Werkzeug und fehlt auf
+// dem Linux-Runner der CI -- der Test fiel dort seit seiner Entstehung mit
+// "spawnSync plutil ENOENT" durch und uebersprang damit still den Deploy.
+// Lokal auf dem Mac lief er, deshalb blieb es unbemerkt. `plist` liegt ohnehin
+// im Baum (Abhaengigkeit von Capacitor) und liest dasselbe XML.
 function lesen(): Manifest {
-  const json = execFileSync('plutil', ['-convert', 'json', '-o', '-', MANIFEST], { encoding: 'utf8' });
-  return JSON.parse(json);
+  return plist.parse(readFileSync(MANIFEST, 'utf8')) as Manifest;
 }
 
 const datentyp = (m: Manifest, typ: string) =>
@@ -55,7 +61,9 @@ const api = (m: Manifest, typ: string) =>
 
 describe('Privacy Manifest der iOS-App (PrivacyInfo.xcprivacy)', () => {
   it('ist ein gueltiges Plist und liegt im Xcode-Projekt als Ressource', () => {
-    expect(() => execFileSync('plutil', ['-lint', MANIFEST])).not.toThrow();
+    // Ein kaputtes Plist wirft beim Parsen -- dieselbe Aussage wie
+    // `plutil -lint`, nur ohne macOS.
+    expect(() => lesen()).not.toThrow();
     const pbxproj = readFileSync(join(process.cwd(), 'ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
     expect(pbxproj).toContain('PrivacyInfo.xcprivacy in Resources');
   });
