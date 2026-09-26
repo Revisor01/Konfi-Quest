@@ -21,11 +21,17 @@
 // darf wegfallen oder umbenannt werden.
 
 // Aktivitaeten (Gottesdienst- & Gemeinde-Punkte)
+//
+// points ist der bei der Vergabe gutgeschriebene Wert (user_activities.points,
+// Migration 163) — nicht der aktuelle Wert der Aktivität. Bis 26.09.2026 stand
+// hier a.points: Änderte die Leitung den Punktwert, zeigte die Historie
+// Punkte, die nie gutgeschrieben wurden, und summierte sich nicht mehr zu
+// totals (Audit BF-02). Bestand ohne Wert fällt auf a.points zurück.
 const ACTIVITIES_QUERY = `
   SELECT
     ka.id,
     a.name as title,
-    a.points,
+    COALESCE(ka.points, a.points) AS points,
     a.type as category,
     ka.completed_date as date,
     ka.comment,

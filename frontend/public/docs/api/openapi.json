@@ -3478,6 +3478,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Eigene Punkte-Historie (Aktivitäten, Bonus, Events)",
+        "description": "Berechnung in backend/utils/punkteHistorie.js (gemeinsam mit GET /api/teamer/konfi-history). `points` eines activity-Eintrags ist seit 26.09.2026 der bei der Vergabe gutgeschriebene Wert (user_activities.points, Migration 163; Bestand ohne Wert faellt auf activities.points zurueck) — vorher der AKTUELLE Wert der Aktivität, wodurch die Historie nach einer Aenderung des Punktwerts nicht mehr zu totals passte (Punkte/Termine BF-02, behoben). Form unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -6016,7 +6017,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Aktivität ändern",
-        "description": "Aendert Name, Punkte, Typ, Zielrolle und Kategorien einer Aktivität der eigenen Organisation.\n",
+        "description": "Aendert Name, Punkte, Typ, Zielrolle und Kategorien einer Aktivität der eigenen Organisation. PUNKTWERT (Audit 26.09.2026, Punkte/Termine BF-02, behoben 26.09.2026): Ein geaenderter Punktwert gilt nur fuer KUENFTIGE Vergaben. Jede Zuordnung traegt seit Migration 163 den bei der Vergabe gutgeschriebenen Wert (user_activities.points); Historie, Detailansicht, Loeschen der Zuordnung und Antrags-Reset lesen diesen Wert. Bis dahin las alles activities.points — die Aenderung wirkte rueckwirkend auf Anzeige und Ruecknahme, obwohl die Zaehler den alten Wert trugen. Antwortform unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6208,7 +6209,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Antrag genehmigen oder ablehnen",
-        "description": "Setzt den Status eines ausstehenden Antrags auf approved oder rejected. Bei approved werden die Punkte gutgeschrieben und Badges geprüft. Bereits entschiedene Anträge werden mit 400 abgelehnt.\n",
+        "description": "Setzt den Status eines ausstehenden Antrags auf approved oder rejected. Bei approved werden die Punkte gutgeschrieben und Badges geprüft. Bereits entschiedene Anträge werden mit 400 abgelehnt. Die angelegte Zuordnung traegt seit 26.09.2026 den gutgeschriebenen Wert (user_activities.points = activities.points zum Zeitpunkt der Genehmigung, Migration 163; Punkte/Termine BF-02, behoben).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6325,7 +6326,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Entschiedenen Antrag auf ausstehend zuruecksetzen",
-        "description": "Setzt einen genehmigten oder abgelehnten Antrag zurück auf pending. Bei zuvor genehmigten Anträgen werden die gutgeschriebenen Punkte wieder abgezogen.\n",
+        "description": "Setzt einen genehmigten oder abgelehnten Antrag zurück auf pending. Bei zuvor genehmigten Anträgen werden die gutgeschriebenen Punkte wieder abgezogen. Abgezogen wird seit 26.09.2026 der Wert, der an der entfernten Zuordnung steht (user_activities.points, Migration 163) — nicht der aktuelle Wert der Aktivität (Punkte/Termine BF-02, behoben). Die Zuordnung ist weiterhin die juengste zu user/activity (eine eigene Verknuepfung Antrag -> Zuordnung gibt es nicht). Gibt es keine Zuordnung mehr (bereits ueber DELETE /api/admin/konfis/{id}/activities/{activityId} entfernt, dort wurden die Punkte abgezogen), wird nichts mehr abgezogen; vorher lief der Abzug ein zweites Mal.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6464,7 +6465,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Aktivität direkt einem Konfi zuweisen",
-        "description": "Vergibt eine Aktivität ohne Antragsweg. Punkte werden gutgeschrieben und die Badge-Prüfung ausgelöst.\n",
+        "description": "Vergibt eine Aktivität ohne Antragsweg. Punkte werden gutgeschrieben und die Badge-Prüfung ausgelöst. Die Zuordnung traegt seit 26.09.2026 den gutgeschriebenen Wert (user_activities.points, Migration 163; Punkte/Termine BF-02, behoben). Einen eigenen Punktwert nimmt die Route nicht an — es gilt der Wert der Aktivität.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6724,7 +6725,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Einzelner Konfi oder Teamer mit voller Historie",
-        "description": "Detailansicht: Stammdaten, Punkte, Aktivitäten, Bonuspunkte, Events, Abzeichen, Challenge-Stempel und aufgeloester Konfispruch. Für Teamer:innen als Zielobjekt zusaetzlich Zertifikate und Teamer-Historie. Seit 13.09.2026 liefert die Antwort zusaetzlich `challengeMarks`: die Challenges, zu denen die angesehene Person einen EIGENEN und FREIGEGEBENEN Beitrag hat (moderation_status='approved'), je Challenge genau einmal. Dieselbe Zaehlung wie GET /api/challenges/konfi (Feld `marks`). Rein additiv — kein bestehendes Feld faellt weg oder aendert seinen Typ. ERGAENZT 14.09.2026, ebenfalls additiv: Jeder Eintrag in `challengeMarks` traegt zusaetzlich `earned_at` (Zeitpunkt der Verleihung: der FRUEHESTE freigegebene eigene Beitrag, Rueckfall auf created_at bei Bestandszeilen vor Migration 146) und `description` (Challenge-Text) fuers Stempel-Popover. Daneben steht das neue Feld `offeneStempel`: die Challenges des Jahrgangs der angesehenen Person, die einen Stempel vergeben, zu denen sie aber KEINEN freigegebenen Beitrag hat — in der Oberflaeche grau. Laufende und abgelaufene, unterschieden ueber `status` (active|ended). Ohne Jahrgang (Teamer:innen haben keinen in konfi_profiles) bleibt die Liste leer statt org-weit zu werden. BEWUSST EIN EIGENES FELD statt eines Merkers in `challengeMarks`: die ausgelieferten Apps zeichnen jeden Eintrag daraus als erhaltenen Stempel.\n",
+        "description": "Detailansicht: Stammdaten, Punkte, Aktivitäten, Bonuspunkte, Events, Abzeichen, Challenge-Stempel und aufgeloester Konfispruch. Für Teamer:innen als Zielobjekt zusaetzlich Zertifikate und Teamer-Historie. Seit 13.09.2026 liefert die Antwort zusaetzlich `challengeMarks`: die Challenges, zu denen die angesehene Person einen EIGENEN und FREIGEGEBENEN Beitrag hat (moderation_status='approved'), je Challenge genau einmal. Dieselbe Zaehlung wie GET /api/challenges/konfi (Feld `marks`). Rein additiv — kein bestehendes Feld faellt weg oder aendert seinen Typ. ERGAENZT 14.09.2026, ebenfalls additiv: Jeder Eintrag in `challengeMarks` traegt zusaetzlich `earned_at` (Zeitpunkt der Verleihung: der FRUEHESTE freigegebene eigene Beitrag, Rueckfall auf created_at bei Bestandszeilen vor Migration 146) und `description` (Challenge-Text) fuers Stempel-Popover. Daneben steht das neue Feld `offeneStempel`: die Challenges des Jahrgangs der angesehenen Person, die einen Stempel vergeben, zu denen sie aber KEINEN freigegebenen Beitrag hat — in der Oberflaeche grau. Laufende und abgelaufene, unterschieden ueber `status` (active|ended). Ohne Jahrgang (Teamer:innen haben keinen in konfi_profiles) bleibt die Liste leer statt org-weit zu werden. BEWUSST EIN EIGENES FELD statt eines Merkers in `challengeMarks`: die ausgelieferten Apps zeichnen jeden Eintrag daraus als erhaltenen Stempel. `activities[].points` (und `konfiHistory` bei Teamer:innen) ist seit 26.09.2026 der bei der Vergabe gutgeschriebene Wert (user_activities.points, Migration 163), nicht mehr der aktuelle Wert der Aktivität (Punkte/Termine BF-02, behoben). Feldname und Typ unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -7186,7 +7187,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Aktivität nachtragen",
-        "description": "Traegt eine erledigte Aktivität nach, schreibt die Punkte gut und löst die Badge-Prüfung aus. Bei Konfi-Aktivitäten muss der Punkte-Typ für den Jahrgang aktiviert sein.\n",
+        "description": "Traegt eine erledigte Aktivität nach, schreibt die Punkte gut und löst die Badge-Prüfung aus. Bei Konfi-Aktivitäten muss der Punkte-Typ für den Jahrgang aktiviert sein. Die Zuordnung traegt seit 26.09.2026 den gutgeschriebenen Wert (user_activities.points, Migration 163; Punkte/Termine BF-02, behoben).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -7260,7 +7261,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Nachgetragene Aktivität entfernen",
-        "description": "Loescht die Zuordnung und zieht die gutgeschriebenen Punkte wieder ab.",
+        "description": "Loescht die Zuordnung und zieht die gutgeschriebenen Punkte wieder ab. Abgezogen wird seit 26.09.2026 der an der Zuordnung gespeicherte Wert (user_activities.points, Migration 163; Bestand ohne Wert: activities.points wie vorher) — bis dahin der aktuelle Wert der Aktivität, der nach einer Aenderung des Punktwerts nicht mehr zur Gutschrift passte (Punkte/Termine BF-02, behoben).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11207,7 +11208,7 @@
           "Teamer:innen"
         ],
         "summary": "Eigene Punkte-Historie aus der Konfi-Zeit",
-        "description": "Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und Event-Punkte aus der Konfi-Zeit, nach Datum absteigend zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles. Seit 01.09.2026 werden auch diese Summen auf die eigene Organisation gefiltert (Befund M1, behoben): Der organization_id-Filter stand vorher nur im Konfi-Pfad (GET /api/konfi/points-history), obwohl beide Routen dasselbe Frontend-Modal speisen. Berechnung seitdem in backend/utils/punkteHistorie.js, von beiden Routen genutzt. Antwortform unveraendert.\n",
+        "description": "Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und Event-Punkte aus der Konfi-Zeit, nach Datum absteigend zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles. Seit 01.09.2026 werden auch diese Summen auf die eigene Organisation gefiltert (Befund M1, behoben): Der organization_id-Filter stand vorher nur im Konfi-Pfad (GET /api/konfi/points-history), obwohl beide Routen dasselbe Frontend-Modal speisen. Berechnung seitdem in backend/utils/punkteHistorie.js, von beiden Routen genutzt. Antwortform unveraendert. `points` eines activity-Eintrags ist seit 26.09.2026 der bei der Vergabe gutgeschriebene Wert (user_activities.points, Migration 163), nicht mehr der aktuelle Wert der Aktivität (Punkte/Termine BF-02, behoben).\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"

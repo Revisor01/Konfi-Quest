@@ -190,7 +190,7 @@ und **App-Tour ansehen**.
 
 | Bereich | Wofür |
 |---|---|
-| **Aktivitäten** | Der Katalog dessen, was gemeldet werden kann, mit [Punkten](40-punkte.md#wissen-auf-welchen-drei-wegen-punkte-entstehen) |
+| **Aktivitäten** | Der Katalog dessen, was gemeldet werden kann, mit [Punkten](40-punkte.md#wissen-auf-welchen-drei-wegen-punkte-entstehen); ein [geänderter Punktwert](40-punkte.md#den-punktwert-einer-aktivitaet-aendern) gilt nur für künftige Vergaben |
 | **Badges** | [Abzeichen](60-badges.md#ein-abzeichen-anlegen) definieren, mit Bedingungen |
 | **Jahrgänge** | [Punkteziele](45-jahrgaenge.md#punkteziele-festlegen) und die [Konfispruch-Freigabe](45-jahrgaenge.md#den-konfispruch-freigeben) |
 | **Kategorien** | [Für Aktivitäten und Events](45-jahrgaenge.md#kategorien-anlegen-und-pflegen) |

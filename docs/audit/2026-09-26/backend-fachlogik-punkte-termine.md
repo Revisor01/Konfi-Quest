@@ -122,6 +122,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-02: Nachträglich geänderter Punktwert einer Aktivität verfälscht Rücknahme und Historie
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — Migration 163 legt `user_activities.points` an (Backfill aus `activities.points`, gemessen 7–10 s je 500.000 und 12,7 s je 1.000.000 Zeilen); Genehmigung, Direktvergabe und Nachtragen speichern den Wert der Aktivität zum Zeitpunkt der Vergabe, Historie, Detailliste, Löschen der Zuordnung und Antrags-Reset lesen `COALESCE(ua.points, a.points)`. Tests `tests/routes/punktwertAmZuordnungsdatensatz.test.js` (7). Der empfohlene `type` am Beleg ist nicht umgesetzt (Nebenbefund an die Koordination).
 - **Fundstelle:** `backend/routes/konfi-management.js:1396-1403` (liest
   `a.points` der Aktivität, nicht den vergebenen Wert), `:1441-1447`
   (zieht diesen Wert ab); `backend/routes/activities.js:503-509`

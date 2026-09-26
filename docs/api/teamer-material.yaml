@@ -487,6 +487,10 @@ paths:
         beide Routen dasselbe Frontend-Modal speisen. Berechnung seitdem in
         backend/utils/punkteHistorie.js, von beiden Routen genutzt.
         Antwortform unveraendert.
+        `points` eines activity-Eintrags ist seit 26.09.2026 der bei der
+        Vergabe gutgeschriebene Wert (user_activities.points, Migration 163),
+        nicht mehr der aktuelle Wert der Aktivität (Punkte/Termine BF-02,
+        behoben).
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]

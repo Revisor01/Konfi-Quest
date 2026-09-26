@@ -519,6 +519,11 @@ Versionsüberschrift.
 - „Zugang deaktivieren" und das Löschen eines Kontos wirken jetzt sofort.
   Bisher konnte die betroffene Person mit ihrer laufenden Sitzung noch bis zu
   einer halben Minute weiterarbeiten.
+- Änderte die Leitung den Punktwert einer Aktivität, wirkte das rückwirkend
+  auf alle, die sie schon bekommen hatten: Die Punktegeschichte zeigte den
+  neuen Wert, und beim Zurücknehmen wurde der neue Wert abgezogen statt des
+  gutgeschriebenen. Jede Vergabe merkt sich jetzt ihren Wert; ein geänderter
+  Punktwert gilt nur für künftige Vergaben.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

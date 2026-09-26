@@ -502,25 +502,36 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
         // SCHRITT 1: Alte Entscheidung rückgängig machen
         if (oldStatus === 'approved') {
-
-          // Punkte abziehen nur für Konfi-Activities (Teamer haben keine bekommen)
-          if (!isTeamerActivity) {
-            const pointField = getPointField(request.type);
-            await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [request.points, request.user_id]);
-          }
-
-          // konfi_activity Eintrag löschen
-          await client.query(
-            `DELETE FROM user_activities
-             WHERE id = (
-               SELECT id FROM user_activities
-               WHERE user_id = $1 AND activity_id = $2
-               ORDER BY completed_date DESC, id DESC
-               LIMIT 1
-             )`,
+          // Die Zuordnung, die die Genehmigung angelegt hat: die jüngste zu
+          // user/activity (eine eigene Verknüpfung Antrag -> Zuordnung gibt
+          // es nicht). Abgezogen wird der Wert, der an DIESER Zeile steht
+          // (user_activities.points, Migration 163) — nicht der aktuelle Wert
+          // der Aktivität. Bis 26.09.2026 zog das Zurücksetzen a.points ab:
+          // Hatte die Leitung den Punktwert nach der Genehmigung geändert,
+          // stimmte der Abzug nicht zur Gutschrift (Audit BF-02). Bestand
+          // ohne Wert fällt auf a.points zurück und verhält sich wie vorher.
+          // Gibt es keine Zuordnung mehr (schon über die Konfi-Verwaltung
+          // gelöscht — dort wurden die Punkte bereits abgezogen), wird auch
+          // nichts mehr abgezogen.
+          const { rows: [zuordnung] } = await client.query(
+            `SELECT ua.id, COALESCE(ua.points, a.points) AS points
+               FROM user_activities ua
+               JOIN activities a ON a.id = ua.activity_id
+              WHERE ua.user_id = $1 AND ua.activity_id = $2
+              ORDER BY ua.completed_date DESC, ua.id DESC
+              LIMIT 1`,
             [request.user_id, request.activity_id]
           );
 
+          if (zuordnung) {
+            // Punkte abziehen nur für Konfi-Activities (Teamer haben keine bekommen)
+            if (!isTeamerActivity && zuordnung.points) {
+              const pointField = getPointField(request.type);
+              await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [zuordnung.points, request.user_id]);
+            }
+
+            await client.query('DELETE FROM user_activities WHERE id = $1', [zuordnung.id]);
+          }
         }
 
         // SCHRITT 2: Status auf pending setzen, Kommentar löschen
@@ -610,7 +621,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         await client.query(updateRequestQuery, [status, admin_comment, req.user.id, requestId]);
 
         if (status === 'approved') {
-          await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
+          // points: der Wert der Aktivität JETZT, am Beleg festgehalten
+          // (Migration 163). Ändert die Leitung die Aktivität später, bleibt
+          // dieser Wert — Historie und Rücknahme lesen ihn (Audit 26.09.2026,
+          // BF-02).
+          await client.query(
+            "INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id, points) VALUES ($1, $2, $3, $4, $5, $6)",
+            [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id, request.points]
+          );
 
           // Punkte nur für Konfi-Activities (Teamer-Activities sind nur Nachweis)
           if (!isTeamerActivity) {
@@ -809,7 +827,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       try {
         await client.query('BEGIN');
 
-        await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [konfiId, activityId, req.user.id, date, req.user.organization_id]);
+        // points: Wert der Aktivität zum Zeitpunkt der Vergabe, am Beleg
+        // festgehalten (Migration 163, Audit 26.09.2026 BF-02).
+        await client.query(
+          "INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id, points) VALUES ($1, $2, $3, $4, $5, $6)",
+          [konfiId, activityId, req.user.id, date, req.user.organization_id, activity.points]
+        );
 
         if (!isTeamerActivity && activity.points && activity.type) {
           const pointField = getPointField(activity.type);

@@ -420,6 +420,14 @@ paths:
     get:
       tags: ["Aktivitäten & Anträge"]
       summary: Eigene Punkte-Historie (Aktivitäten, Bonus, Events)
+      description: >
+        Berechnung in backend/utils/punkteHistorie.js (gemeinsam mit
+        GET /api/teamer/konfi-history). `points` eines activity-Eintrags ist
+        seit 26.09.2026 der bei der Vergabe gutgeschriebene Wert
+        (user_activities.points, Migration 163; Bestand ohne Wert faellt auf
+        activities.points zurueck) — vorher der AKTUELLE Wert der Aktivität,
+        wodurch die Historie nach einer Aenderung des Punktwerts nicht mehr zu
+        totals passte (Punkte/Termine BF-02, behoben). Form unveraendert.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -2785,6 +2793,14 @@ paths:
       description: >
         Aendert Name, Punkte, Typ, Zielrolle und Kategorien einer Aktivität
         der eigenen Organisation.
+        PUNKTWERT (Audit 26.09.2026, Punkte/Termine BF-02, behoben
+        26.09.2026): Ein geaenderter Punktwert gilt nur fuer KUENFTIGE
+        Vergaben. Jede Zuordnung traegt seit Migration 163 den bei der
+        Vergabe gutgeschriebenen Wert (user_activities.points); Historie,
+        Detailansicht, Loeschen der Zuordnung und Antrags-Reset lesen diesen
+        Wert. Bis dahin las alles activities.points — die Aenderung wirkte
+        rueckwirkend auf Anzeige und Ruecknahme, obwohl die Zaehler den
+        alten Wert trugen. Antwortform unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateUpdateActivity]
@@ -2895,6 +2911,9 @@ paths:
         Setzt den Status eines ausstehenden Antrags auf approved oder
         rejected. Bei approved werden die Punkte gutgeschrieben und Badges
         geprüft. Bereits entschiedene Anträge werden mit 400 abgelehnt.
+        Die angelegte Zuordnung traegt seit 26.09.2026 den gutgeschriebenen
+        Wert (user_activities.points = activities.points zum Zeitpunkt der
+        Genehmigung, Migration 163; Punkte/Termine BF-02, behoben).
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateRequestUpdate]
@@ -2957,6 +2976,14 @@ paths:
         Setzt einen genehmigten oder abgelehnten Antrag zurück auf pending.
         Bei zuvor genehmigten Anträgen werden die gutgeschriebenen Punkte
         wieder abgezogen.
+        Abgezogen wird seit 26.09.2026 der Wert, der an der entfernten
+        Zuordnung steht (user_activities.points, Migration 163) — nicht der
+        aktuelle Wert der Aktivität (Punkte/Termine BF-02, behoben). Die
+        Zuordnung ist weiterhin die juengste zu user/activity (eine eigene
+        Verknuepfung Antrag -> Zuordnung gibt es nicht). Gibt es keine
+        Zuordnung mehr (bereits ueber DELETE /api/admin/konfis/{id}/activities/{activityId}
+        entfernt, dort wurden die Punkte abgezogen), wird nichts mehr
+        abgezogen; vorher lief der Abzug ein zweites Mal.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
@@ -3032,7 +3059,10 @@ paths:
       summary: Aktivität direkt einem Konfi zuweisen
       description: >
         Vergibt eine Aktivität ohne Antragsweg. Punkte werden gutgeschrieben
-        und die Badge-Prüfung ausgelöst.
+        und die Badge-Prüfung ausgelöst. Die Zuordnung traegt seit 26.09.2026
+        den gutgeschriebenen Wert (user_activities.points, Migration 163;
+        Punkte/Termine BF-02, behoben). Einen eigenen Punktwert nimmt die
+        Route nicht an — es gilt der Wert der Aktivität.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateAssignActivity]
@@ -3231,6 +3261,11 @@ paths:
         statt org-weit zu werden. BEWUSST EIN EIGENES FELD statt eines
         Merkers in `challengeMarks`: die ausgelieferten Apps zeichnen jeden
         Eintrag daraus als erhaltenen Stempel.
+        `activities[].points` (und `konfiHistory` bei Teamer:innen) ist seit
+        26.09.2026 der bei der Vergabe gutgeschriebene Wert
+        (user_activities.points, Migration 163), nicht mehr der aktuelle Wert
+        der Aktivität (Punkte/Termine BF-02, behoben). Feldname und Typ
+        unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -3531,7 +3566,9 @@ paths:
       description: >
         Traegt eine erledigte Aktivität nach, schreibt die Punkte gut und
         löst die Badge-Prüfung aus. Bei Konfi-Aktivitäten muss der
-        Punkte-Typ für den Jahrgang aktiviert sein.
+        Punkte-Typ für den Jahrgang aktiviert sein. Die Zuordnung traegt seit
+        26.09.2026 den gutgeschriebenen Wert (user_activities.points,
+        Migration 163; Punkte/Termine BF-02, behoben).
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateAddActivity]
@@ -3564,7 +3601,13 @@ paths:
     delete:
       tags: ["Konfis (Verwaltung)"]
       summary: Nachgetragene Aktivität entfernen
-      description: Loescht die Zuordnung und zieht die gutgeschriebenen Punkte wieder ab.
+      description: >
+        Loescht die Zuordnung und zieht die gutgeschriebenen Punkte wieder ab.
+        Abgezogen wird seit 26.09.2026 der an der Zuordnung gespeicherte Wert
+        (user_activities.points, Migration 163; Bestand ohne Wert:
+        activities.points wie vorher) — bis dahin der aktuelle Wert der
+        Aktivität, der nach einer Aenderung des Punktwerts nicht mehr zur
+        Gutschrift passte (Punkte/Termine BF-02, behoben).
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]

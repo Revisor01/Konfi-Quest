@@ -150,6 +150,31 @@ Direkt zuschreiben, löschen und Bonuspunkte zurücknehmen können nur die
 [Leitungsrollen](05-rollen.md#wer-darf-was). Teamer:innen kommen an die
 Konfi-Verwaltung nicht heran.
 
+## Den Punktwert einer Aktivität ändern
+
+Den Punktwert einer Aktivität stellst du unter **Mehr › Aktivitäten** um. Die
+Regel dabei: **Der neue Wert gilt für alles, was ab jetzt vergeben wird. Was
+schon gutgeschrieben ist, bleibt, wie es war.**
+
+Jede Vergabe merkt sich den Wert, den die Aktivität in diesem Moment hatte —
+egal, ob sie über einen genehmigten Antrag oder eine direkte Zuschreibung
+entstanden ist. Daran hängt alles Weitere:
+
+- Der **Punktestand** ändert sich durch die Umstellung nicht.
+- Die **Punktegeschichte** und die Aktivitätenliste in der Konfi-Verwaltung
+  zeigen bei jedem Eintrag den Wert, der damals gutgeschrieben wurde.
+- Wird eine Vergabe später zurückgenommen — durch Zurücksetzen des Antrags
+  oder Löschen der Zuordnung —, verschwinden genau diese Punkte wieder, nicht
+  der neue Wert.
+
+*Beispiel:* Der „Sonntagsgottesdienst" bringt 1 Punkt; du hebst ihn auf 2 an.
+Wer ihn vorher fünfmal gemeldet hat, steht weiter bei 5 Punkten. Die sechste
+Meldung bringt 2. Löschst du eine der ersten fünf Zuordnungen, geht 1 Punkt
+weg.
+
+Soll jemand rückwirkend den höheren Wert bekommen, gibst du die Differenz als
+[Bonuspunkte](#ueber-bonuspunkte).
+
 ## Punkte wieder wegnehmen
 
 **Es gibt keinen „Punkte abziehen"-Knopf.** Du kannst niemandem einfach so drei
@@ -168,6 +193,10 @@ sie erzeugt hat. Das sind alle Wege:
 - Eine bestätigte Buchung **zurück auf die Warteliste** setzen
 - Einen **ganzen Termin löschen** — dabei werden alle dafür vergebenen Punkte
   zurückgenommen
+
+Zurückgenommen wird immer der Wert, der bei der Vergabe gutgeschrieben wurde —
+auch wenn eine Aktivität [inzwischen anders bewertet](#den-punktwert-einer-aktivitaet-aendern)
+ist.
 
 > **Der Punktestand fällt nie unter 0.** Jede dieser Rücknahmen ist so gebaut,
 > dass sie bei null aufhört. Nimmst du mehr zurück, als noch da ist — etwa weil

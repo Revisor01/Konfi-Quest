@@ -763,8 +763,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 }
             }
 
+            // points = der bei der Vergabe gutgeschriebene Wert (Migration 163),
+            // Bestand ohne Wert fällt auf den Wert der Aktivität zurück. Steht
+            // BEWUSST hinter ka.* — pg nimmt bei gleichem Feldnamen die letzte
+            // Spalte. Feldname und Typ bleiben, die Store-Apps lesen `points`.
             const activitiesQuery = `
-                SELECT ka.*, a.name, a.points, a.type, a.target_role, u.display_name as admin_name
+                SELECT ka.*, a.name, COALESCE(ka.points, a.points) AS points, a.type, a.target_role, u.display_name as admin_name
                 FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 LEFT JOIN users u ON ka.admin_id = u.id
@@ -899,7 +903,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             if (konfi.role_name === 'teamer' && konfi.gottesdienst_points !== null) {
                 // Activities aus der Konfi-Zeit
                 const histActivities = `
-                    SELECT ka.id, a.name as title, a.points, a.type as category,
+                    SELECT ka.id, a.name as title, COALESCE(ka.points, a.points) AS points, a.type as category,
                            ka.completed_date as date, 'activity' as source_type
                     FROM user_activities ka
                     JOIN activities a ON ka.activity_id = a.id
@@ -1341,10 +1345,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             try {
                 await client.query('BEGIN');
 
+                // points: Wert der Aktivität zum Zeitpunkt der Vergabe, am Beleg
+                // festgehalten (Migration 163, Audit 26.09.2026 BF-02).
                 const query = `
-                    INSERT INTO user_activities (user_id, activity_id, completed_date, comment, admin_id, organization_id, created_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
-                await client.query(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id]);
+                    INSERT INTO user_activities (user_id, activity_id, completed_date, comment, admin_id, organization_id, created_at, points)
+                    VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)`;
+                await client.query(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id, activity.points]);
 
                 if (!isTeamerActivity && activity.points && activity.type) {
                     const updateField = getPointField(activity.type);
@@ -1400,8 +1406,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // org-gescopt und traf dann 0 Zeilen — das UPDATE auf konfi_profiles
             // lief aber trotzdem und zog dem fremden Konfi Punkte ab
             // (Audit 22.08.2026, gleiche Fehlerklasse wie assign-activity).
+            // points = was bei der Vergabe gutgeschrieben wurde (Migration 163),
+            // nicht der aktuelle Wert der Aktivität — sonst zieht das Löschen
+            // nach einer Änderung des Punktwerts zu viel oder zu wenig ab
+            // (Audit 26.09.2026, BF-02). Bestand ohne Wert: a.points wie vorher.
             const getActivityQuery = `
-                SELECT ka.*, a.points, a.type, a.target_role
+                SELECT ka.*, COALESCE(ka.points, a.points) AS points, a.type, a.target_role
                 FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 JOIN users u ON ka.user_id = u.id
