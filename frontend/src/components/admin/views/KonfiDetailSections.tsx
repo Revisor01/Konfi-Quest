@@ -1273,9 +1273,12 @@ export const PromoteSection = React.memo<PromoteSectionProps>(({
           Beim Befördern bleiben Konfi-Punkte und Badges als Historie erhalten. Event-Buchungen und offene Aktivitäten werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
         </p>
         <div className="app-event-detail__add-button-wrapper">
+          {/* --color ausdruecklich: Wer nur --background setzt, erbt Ionics
+              Kontrastfarbe der Primaerfarbe -- im Dunkeln #000, also Schwarz
+              auf Konfi-Lila, 2,34:1 (Dunkelmodus-Audit BF-08, 26.09.2026). */}
           <IonButton
             expand="block"
-            style={{ '--background': 'var(--app-color-konfis)', '--background-hover': 'var(--app-color-konfis-dunkel)' }}
+            style={{ '--background': 'var(--app-color-konfis)', '--background-hover': 'var(--app-color-konfis-dunkel)', '--color': 'var(--app-weiss)' }}
             disabled={!isOnline}
             onClick={handlePromoteToTeamer}
           >

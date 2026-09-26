@@ -264,6 +264,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-08: „Zur Teamer:in befördern“ — schwarze Schrift auf Lila
 
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — `'--color': 'var(--app-weiss)'` an beiden Knöpfen (`KonfiDetailSections.tsx`, `OrganizationManagementModal.tsx` „Hinzufügen“). Gemessen (iOS = Android): dunkel 2,34 → 8,98:1, hell unverändert 8,98:1. Test: `dunkelmodus.test.ts` verbietet `IonButton` mit inline `--background` ohne `--color` (vorher genau diese zwei Treffer, jetzt 0).
 - **Fundstelle:** `frontend/src/components/admin/views/KonfiDetailSections.tsx:1278`
   (`style={{ '--background': 'var(--app-color-konfis)', '--background-hover': … }}` ohne `--color`);
   gleiches Muster `admin/modals/OrganizationManagementModal.tsx:1124` (`users`, dort 5,74:1, also

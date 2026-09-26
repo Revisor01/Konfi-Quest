@@ -1121,7 +1121,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         expand="block"
                         onClick={handleAddAdmin}
                         disabled={!newAdminData.display_name.trim() || !newAdminData.username.trim() || !newAdminData.password.trim() || addingAdmin || !isOnline}
-                        style={{ flex: 1, '--background': 'var(--app-color-users)', '--background-activated': 'var(--app-color-users-dunkel)' }}
+                        style={{ flex: 1, '--background': 'var(--app-color-users)', '--background-activated': 'var(--app-color-users-dunkel)', '--color': 'var(--app-weiss)' }}
                       >
                         {!isOnline ? <><IonIcon icon={ICON_OFFLINE} /> Du bist offline</> : addingAdmin ? <IonSpinner name="crescent" /> : 'Hinzufügen'}
                       </IonButton>

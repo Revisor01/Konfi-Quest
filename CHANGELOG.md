@@ -483,6 +483,8 @@ Versionsüberschrift.
 - Im Chat war im Dunkelmodus an fremden Nachrichten nicht zu erkennen, wie
   viele reagiert haben: Die Zahl am Reaktions-Chip stand schwarz auf dunkel.
   Sie folgt jetzt der Textfarbe der Nachricht.
+- Der Knopf „Zur Teamer:in befördern" in der Konfi-Verwaltung zeigte im
+  Dunkelmodus schwarze Schrift auf Lila; sie ist jetzt weiß wie im Hellen.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

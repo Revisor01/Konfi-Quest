@@ -275,6 +275,34 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
     expect(gezaehlt).toEqual(SCHWARZ_MIT_DECKKRAFT_BESTAND);
   });
 
+  // Ein IonButton, der nur --background setzt, erbt Ionics Kontrastfarbe der
+  // Primaerfarbe -- hell Weiss, in der Dunkelpalette #000. "Zur Teamer:in
+  // befoerdern" tat das mit Konfi-Lila: schwarze Schrift auf #5b21b6, 2,34:1
+  // (Dunkelmodus-Audit BF-08, 26.09.2026); gleiches Muster am Knopf
+  // "Hinzufuegen" der Organisationsverwaltung. Erlaubt ist es nur, wo der
+  // Hintergrund Ionics Primaerfarbe SELBST ist -- dazu passt die geerbte
+  // Kontrastfarbe in beiden Paletten. Jede Ausnahme mit Grund; die Liste
+  // darf nur schrumpfen.
+  const HINTERGRUND_OHNE_COLOR_ERLAUBT: Record<string, number> = {
+    'src/components/admin/modals/MaterialFormModal.tsx': 1, // "Datei auswaehlen": --background ist var(--ion-color-primary), Ionics eigenes Paar
+  };
+
+  it('kein IonButton setzt inline --background ohne --color -- ausser auf Ionics eigener Primaerfarbe', () => {
+    const gezaehlt: Record<string, number> = {};
+    const fremd: string[] = [];
+    for (const datei of dateienUnter('src', '.tsx')) {
+      for (const tag of jsxOeffnendeTags(lies(datei), 'IonButton')) {
+        if (!/'--background'\s*:/.test(tag) || /'--color'\s*:/.test(tag)) continue;
+        gezaehlt[datei] = (gezaehlt[datei] ?? 0) + 1;
+        if (!/'--background'\s*:\s*'var\(--ion-color-primary\)'/.test(tag)) fremd.push(`${datei}: ${tag.replace(/\s+/g, ' ').slice(0, 100)}`);
+      }
+    }
+    // Kein Knopf mit eigener Flaechenfarbe ohne eigene Schriftfarbe ...
+    expect(fremd).toEqual([]);
+    // ... und der Bestand auf Ionics Primaerfarbe ist genau der bekannte.
+    expect(gezaehlt).toEqual(HINTERGRUND_OHNE_COLOR_ERLAUBT);
+  });
+
   it('keine Regel im Theme-Stylesheet setzt white/black als Hintergrund oder schwarzen Text', () => {
     const treffer: string[] = [];
     for (const datei of ['src/theme/variables.css', 'src/theme/typografie.css', 'src/theme/abstaende.css']) {
@@ -783,6 +811,30 @@ function mische(oben: string, alpha: number, unten: string): string {
   const o = hexZuRgb(oben);
   const u = hexZuRgb(unten);
   return '#' + o.map((c, i) => Math.round(c * alpha + u[i] * (1 - alpha)).toString(16).padStart(2, '0')).join('');
+}
+
+/* --- JSX lesen ------------------------------------------------------- */
+
+/**
+ * Alle oeffnenden JSX-Tags `<Name …>` einer Datei samt Attributen -- auch wenn
+ * in einem {…}-Ausdruck ein `>` steht (Pfeilfunktion, Vergleich) oder ein
+ * String eine Klammer enthaelt.
+ */
+function jsxOeffnendeTags(code: string, name: string): string[] {
+  const raus: string[] = [];
+  for (const m of code.matchAll(new RegExp(`<${name}(?=[\\s/>])`, 'g'))) {
+    let tiefe = 0;
+    let anfuehrung: string | null = null;
+    for (let i = m.index! + m[0].length; i < code.length; i++) {
+      const c = code[i];
+      if (anfuehrung) { if (c === anfuehrung && code[i - 1] !== '\\') anfuehrung = null; continue; }
+      if (tiefe > 0 && (c === '"' || c === "'" || c === '`')) { anfuehrung = c; continue; }
+      if (c === '{') tiefe++;
+      else if (c === '}') tiefe--;
+      else if (c === '>' && tiefe === 0) { raus.push(code.slice(m.index!, i + 1)); break; }
+    }
+  }
+  return raus;
 }
 
 /* --- CSS-Rechnung ---------------------------------------------------- */
