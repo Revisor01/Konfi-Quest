@@ -6,6 +6,7 @@ const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { waehleKacheln, waehleTeamerKacheln, teamerJahrIstLeer } = require('../utils/wrappedKacheln');
 const { waehleSegen } = require('../utils/wrappedSegen');
 const { seiteFuerKategorie, datumsFenster, orgHatSommerfreizeit, STAVANGER_VON, STAVANGER_BIS } = require('../utils/wrappedKategorien');
+const { ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireAdmin, requireOrgAdmin } = roleHelpers;
@@ -2553,13 +2554,20 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         await client.query('BEGIN');
 
-        // Alle Teamer der Organisation laden
-        const { rows: teamers } = await client.query(
-          `SELECT u.id as user_id FROM users u
-           JOIN roles r ON u.role_id = r.id
-           WHERE r.name = 'teamer' AND u.organization_id = $1`,
-          [req.user.organization_id]
+        // Alle Teamer:innen der Gemeinde -- ueber BEIDE Quellen der
+        // Zugehoerigkeit (26.09.2026). Vorher stand hier
+        // `u.organization_id = $1`, also nur die Stamm-Gemeinde: Wer in einer
+        // zweiten Gemeinde arbeitet, bekam dort keinen Rueckblick. Die Zahlen
+        // darin waren nie das Problem -- generateTeamerSnapshot bekommt die
+        // orgId und filtert durchgehend danach, jede Gemeinde rechnet also
+        // ihren eigenen Stand.
+        //
+        // Die Rolle gilt je Gemeinde (uo.role_id): Wer hier org_admin ist und
+        // in der Stamm-Gemeinde Teamer:in, gehoert nicht in den TEAM-Rueckblick.
+        const teamerIds = await ladeMitgliederDerOrganisation(
+          client, req.user.organization_id, ['teamer']
         );
+        const teamers = teamerIds.map((user_id) => ({ user_id }));
 
         // Die Ausgabe zuerst -- ihre id gehoert seit Migration 144 zum
         // Schluessel der Snapshots. Sonst ueberschreibt jeder Lauf den
@@ -3063,13 +3071,32 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           if (roleName !== 'admin' && roleName !== 'org_admin') {
             return res.status(403).json({ error: 'Keine Berechtigung' });
           }
-          // Admin: Pruefen ob User zur gleichen Org gehört
+          // Admin: Pruefen ob der User in DIESER Gemeinde arbeitet -- ueber
+          // BEIDE Quellen (26.09.2026). Vorher verglich die Zeile
+          // `targetUser.organization_id !== req.user.organization_id`, also
+          // allein die Stamm-Gemeinde: Die Leitung sah die Historie einer
+          // Person nicht, die ueber user_organizations bei ihr arbeitet.
+          // Dasselbe Muster wie bei den Push-Empfaengern
+          // (utils/orgMitglieder.js) und der Jahrgangs-Zuweisung.
+          //
+          // Die Rolle wird fuer DIESE Gemeinde aufgeloest (uo.role_id), damit
+          // die Jahrgangs-Pruefung darunter am richtigen Wert greift.
           const { rows: [targetUser] } = await db.query(
-            `SELECT u.organization_id, r.name AS role_name
-             FROM users u LEFT JOIN roles r ON u.role_id = r.id
-             WHERE u.id = $1`, [targetUserId]
+            `SELECT u.id, r.name AS role_name
+               FROM users u
+               JOIN roles r ON r.id = u.role_id
+              WHERE u.id = $1 AND u.organization_id = $2
+              UNION ALL
+             SELECT u.id, r.name AS role_name
+               FROM user_organizations uo
+               JOIN users u ON u.id = uo.user_id
+               JOIN roles r ON r.id = uo.role_id
+              WHERE uo.user_id = $1 AND uo.organization_id = $2
+                AND u.organization_id <> $2
+              LIMIT 1`,
+            [targetUserId, req.user.organization_id]
           );
-          if (!targetUser || targetUser.organization_id !== req.user.organization_id) {
+          if (!targetUser) {
             return res.status(403).json({ error: 'Keine Berechtigung' });
           }
 
@@ -3102,6 +3129,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Rechte bleiben unveraendert (Pruefung oben): Admin nur eigene
         // Jahrgaenge, Teamer:innen frei, org_admin alles.
         //
+        // NUR DIE AKTIVE GEMEINDE (Simon, 26.09.2026: "Profil nur den
+        // Rueckblick der aktuellen Gemeinde"). Die Abfrage filterte bis dahin
+        // allein auf user_id: Wer in zwei Gemeinden arbeitet, sah im Profil
+        // die Rueckblicke beider untereinander, ohne Hinweis, welcher woher
+        // stammt. Kein Sicherheitsproblem -- es waren die eigenen Daten --,
+        // aber die Liste log ueber ihren Zusammenhang.
+        // Die Antwortform bleibt: dasselbe Array, nur kuerzer.
+        //
         // ANTWORTFORM: weiterhin ein ARRAY mit denselben Feldern, nur zwei
         // additive dazu. Die ausgelieferte Leitungsansicht ruft .map()
         // darauf -- eine Umstellung auf ein Objekt haette sie zerlegt
@@ -3113,10 +3148,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
                   a.freigegeben_at
              FROM wrapped_snapshots s
              LEFT JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
-            WHERE s.user_id = $1
+            WHERE s.user_id = $1 AND s.organization_id = $2
             ORDER BY COALESCE(a.freigegeben_at, s.computed_at) DESC,
                      s.year DESC, s.wrapped_type`,
-          [targetUserId]
+          [targetUserId, req.user.organization_id]
         );
 
         res.json(rows);
