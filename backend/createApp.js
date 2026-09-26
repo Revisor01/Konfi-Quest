@@ -8,6 +8,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
+const { cronLeaderVorhanden } = require('./utils/cronLeader');
 
 // Upload-Limit für Challenge-Beitraege (Audio/Video sind deutlich größer als
 // Chat-Anhänge). Als Konstante, weil der zentrale Multer-Error-Handler weiter
@@ -35,6 +36,10 @@ function createApp(db, options = {}) {
     uploadsDir = path.join(__dirname, 'uploads'),
     corsOrigins = null,
     holeStoreVersion = null,
+    // Betrieb BF-10 (26.09.2026): () => boolean, ob DIESE Replica den
+    // Cron-Leader-Lock haelt. server.js reicht es durch; ohne die Funktion
+    // fehlt das Feld `cron_leader` in /api/status.
+    istCronLeader = null,
   } = options;
 
   const app = express();
@@ -409,16 +414,33 @@ function createApp(db, options = {}) {
     // Feld getrennt. Fehlt db.migrationsstand (Test-Pool, eigenes db-Objekt),
     // fehlen die Felder.
     const migrationen = typeof db.migrationsstand === 'function' ? db.migrationsstand() : undefined;
+    // Cron-Leader (Audit 26.09.2026, Betrieb BF-10), additiv: `cron_leader`
+    // sagt, ob DIESE Replica die Hintergrund-Jobs faehrt (nur, wenn server.js
+    // die Funktion durchreicht); `checks.cron_leader` sagt, ob IRGENDEINE
+    // sie faehrt -- aus pg_locks abgelesen, deshalb von jeder Replica aus
+    // gleich beantwortet und damit fuer eine externe Ueberwachung brauchbar
+    // (Traefik verteilt /api/status zufaellig). 'fehlt' heisst: niemand
+    // haelt den Lock -- Erinnerungen, Auto-Loeschung und Co. stehen.
+    let leaderVorhanden;
+    if (dbOk) {
+      try {
+        leaderVorhanden = (await cronLeaderVorhanden(db)) ? 'ok' : 'fehlt';
+      } catch (e) {
+        leaderVorhanden = 'unbekannt';
+      }
+    }
     const body = {
       status: dbOk ? 'OK' : 'DEGRADED',
       version: process.env.npm_package_version || require('./package.json').version,
       commit: process.env.GIT_SHA || 'unknown',
       uptimeSeconds: Math.round(process.uptime()),
+      ...(typeof istCronLeader === 'function' ? { cron_leader: istCronLeader() === true } : {}),
       checks: {
         database: dbOk ? 'ok' : 'error',
         ...(migrationen !== undefined ? {
           migrations: migrationen === null ? 'laeuft' : (migrationen.fehlgeschlagen.length === 0 ? 'ok' : 'fehler'),
         } : {}),
+        ...(leaderVorhanden !== undefined ? { cron_leader: leaderVorhanden } : {}),
       },
       ...(migrationen ? {
         migrationen: {

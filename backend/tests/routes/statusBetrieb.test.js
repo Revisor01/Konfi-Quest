@@ -34,7 +34,7 @@ describe('GET /api/status als Betriebsanzeige', () => {
       const res = await request(appMit({ neu: 2, gesamt: 90, fehlgeschlagen: [] })).get('/api/status');
 
       expect(res.status).toBe(200);
-      expect(res.body.checks).toEqual({ database: 'ok', migrations: 'ok' });
+      expect(res.body.checks).toEqual({ database: 'ok', migrations: 'ok', cron_leader: 'fehlt' });
       expect(res.body.migrationen).toEqual({ gesamt: 90, neu: 2, fehlgeschlagen: [] });
     });
 
@@ -68,7 +68,7 @@ describe('GET /api/status als Betriebsanzeige', () => {
       const res = await request(app).get('/api/status');
 
       expect(res.status).toBe(200);
-      expect(res.body.checks).toEqual({ database: 'ok' });
+      expect(res.body.checks).toEqual({ database: 'ok', cron_leader: 'fehlt' });
       expect(res.body.migrationen).toBeUndefined();
     });
 
@@ -83,6 +83,68 @@ describe('GET /api/status als Betriebsanzeige', () => {
       expect(Object.keys(res.body).sort()).toEqual(
         ['checks', 'commit', 'migrationen', 'responseTimeMs', 'status', 'uptimeSeconds', 'version']
       );
+    });
+  });
+
+  describe('Cron-Leader', () => {
+    const { Client } = require('pg');
+    const { starteCronLeaderWahl } = require('../../utils/cronLeader');
+    const ADMIN_URL = process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/postgres';
+    const TEST_DB_URL = ADMIN_URL.replace(/\/[^/]+$/, '/konfi_test');
+    const stumm = { warn: () => {}, error: () => {} };
+
+    const appMitLeader = (istCronLeader) => createApp(db, {
+      uploadsDir: require('os').tmpdir(),
+      ...(istCronLeader ? { istCronLeader } : {}),
+    });
+
+    it('meldet checks.cron_leader = fehlt, wenn keine Replica den Lock haelt', async () => {
+      const res = await request(appMitLeader(null)).get('/api/status');
+
+      expect(res.status).toBe(200);
+      expect(res.body.checks.cron_leader).toBe('fehlt');
+      // Ohne Funktion aus server.js kein Feld fuer DIESE Replica.
+      expect(res.body.cron_leader).toBeUndefined();
+    });
+
+    it('meldet cron_leader = true und checks.cron_leader = ok auf der Leader-Replica', async () => {
+      const wahl = starteCronLeaderWahl({
+        verbinde: () => new Client({ connectionString: TEST_DB_URL }),
+        taktMs: 60000,
+        log: stumm,
+      });
+      try {
+        await wahl.bereit;
+        expect(wahl.istLeader()).toBe(true);
+
+        const res = await request(appMitLeader(() => wahl.istLeader())).get('/api/status');
+
+        expect(res.status).toBe(200);
+        expect(res.body.cron_leader).toBe(true);
+        expect(res.body.checks.cron_leader).toBe('ok');
+      } finally {
+        await wahl.stopp();
+      }
+    });
+
+    it('meldet cron_leader = false, aber checks.cron_leader = ok auf der anderen Replica', async () => {
+      const wahl = starteCronLeaderWahl({
+        verbinde: () => new Client({ connectionString: TEST_DB_URL }),
+        taktMs: 60000,
+        log: stumm,
+      });
+      try {
+        await wahl.bereit;
+        // Die ANDERE Replica: haelt den Lock nicht, sieht ihn aber in pg_locks.
+        const res = await request(appMitLeader(() => false)).get('/api/status');
+
+        expect(res.body.cron_leader).toBe(false);
+        expect(res.body.checks.cron_leader).toBe('ok');
+      } finally {
+        await wahl.stopp();
+      }
+      const danach = await request(appMitLeader(() => false)).get('/api/status');
+      expect(danach.body.checks.cron_leader).toBe('fehlt');
     });
   });
 });

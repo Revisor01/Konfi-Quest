@@ -9,7 +9,8 @@ version: '3.8'
 #
 # STAND 21.06.2026: Das Backend laeuft als ZWEI Replicas (backend + backend2) hinter
 # Traefik (gemeinsamer Service konfi-api + loadbalancer.healthcheck -> nur gesunde
-# Replicas bekommen Traffic). Cron-Leader: nur backend (backend2 RUN_BACKGROUND_JOBS=false).
+# Replicas bekommen Traffic). Cron-Leader: per Advisory-Lock gewaehlt (26.09.2026),
+# backend und backend2 bewerben sich, backend-test nie (RUN_BACKGROUND_JOBS=false).
 # Lastverteilung verifiziert ~50/50. Der Stack laeuft auf FESTEM Commit-SHA-Tag
 # (das CI schreibt den Tag beim Deploy um); :latest ist auf ghcr unzuverlaessig.
 #
@@ -149,13 +150,16 @@ services:
       - internal
 
   # --- Backend-Replica 2 (identisch, anderer Service/Containername) ---
-  # WICHTIG: RUN_BACKGROUND_JOBS=false -> nur Replica 1 (backend) ist Cron-Leader,
-  # sonst liefen Auto-Deletion/Reminder/APM-Snapshots doppelt.
+  # Cron-Leader per Wahl (26.09.2026, Betrieb BF-10): backend und backend2
+  # bewerben sich beide um den Advisory-Lock (utils/cronLeader.js); genau eine
+  # faehrt die Hintergrund-Jobs, faellt sie aus, uebernimmt die andere beim
+  # naechsten Takt. Bis dahin stand hier RUN_BACKGROUND_JOBS=false und der
+  # Leader war fest -- fiel backend aus, standen Erinnerungen, Auto-Loeschung
+  # und Co. unbemerkt. Die Variable bleibt NUR bei backend-test (nie Jobs).
   backend2:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
     environment:
       <<: *backend_env
-      RUN_BACKGROUND_JOBS: "false"
     volumes:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
@@ -207,8 +211,9 @@ services:
   # Vier Punkte, die hier anders sind als bei backend/backend2:
   #  1. EIGENER Router-Name (konfi-api-test). Mit dem Live-Namen wuerde
   #     Traefik diesen Container in den Live-Pool aufnehmen.
-  #  2. RUN_BACKGROUND_JOBS=false — sonst laufen Auto-Loeschung, Erinnerungen
-  #     und APM-Snapshots DOPPELT gegen die echten Daten.
+  #  2. RUN_BACKGROUND_JOBS=false — dieser Container nimmt NICHT an der
+  #     Cron-Leader-Wahl teil; sonst koennte Testcode Auto-Loeschung,
+  #     Erinnerungen und APM-Snapshots gegen die echten Daten fahren.
   #  3. METRICS_PEERS leer — die Testmessung gehoert nicht in die Live-Zahlen.
   #  4. CORS macht ALLEIN der vHost (Apache). NICHT zusaetzlich im Backend
   #     ueber CORS_ORIGINS setzen: Dann schreiben BEIDE den Header, er steht

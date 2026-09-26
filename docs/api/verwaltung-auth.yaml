@@ -1731,9 +1731,20 @@ paths:
         die Datenbank ist da; der Deploy-Verify in ci.yml prueft das Feld
         getrennt und bricht ab. Beide Felder fehlen, wenn der Prozess keinen
         Migrationslauf kennt (Testaufbau).
+
+        CRON-LEADER (26.09.2026, Audit Betrieb BF-10, additiv): Die Replicas
+        waehlen die Replica, die die Hintergrund-Jobs faehrt, per
+        Postgres-Advisory-Lock (vorher fest per Umgebungsvariable, ohne
+        Ersatz bei Ausfall). `cron_leader` (boolean) sagt, ob DIESE Replica
+        den Lock haelt; `checks.cron_leader` (`ok` | `fehlt` | `unbekannt`)
+        sagt, ob IRGENDEINE ihn haelt -- aus pg_locks gelesen, deshalb von
+        jeder Replica aus gleich beantwortet und damit der Wert fuer eine
+        externe Ueberwachung (Traefik verteilt den Aufruf zufaellig).
+        `fehlt` heisst: niemand faehrt Erinnerungen, Auto-Loeschung,
+        Token-Bereinigung, APM-Schnappschuesse. Der HTTP-Status bleibt 200.
       security: []
       responses:
-        "200": { description: "status, version, commit, uptimeSeconds, checks.database, checks.migrations, migrationen{gesamt, neu, fehlgeschlagen[]}, responseTimeMs" }
+        "200": { description: "status, version, commit, uptimeSeconds, cron_leader, checks.database, checks.migrations, checks.cron_leader, migrationen{gesamt, neu, fehlgeschlagen[]}, responseTimeMs" }
         "503": { description: "DEGRADED — Datenbank nicht erreichbar" }
       x-berechtigung:
         rollen: [oeffentlich]

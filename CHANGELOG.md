@@ -631,6 +631,9 @@ Versionsüberschrift.
   Buchungen und Uploads gelten jetzt für alle Server gemeinsam statt je
   Server einzeln — sie waren dadurch doppelt so weit wie gedacht, und die
   Meldung „Zu viele Anfragen" kam scheinbar zufällig.
+- Die zeitgesteuerten Aufgaben (Erinnerungen, Aufräumen, Löschfristen,
+  Rückblick) übernimmt automatisch ein anderer Server, wenn der zuständige
+  ausfällt. Ob gerade einer zuständig ist, steht in der Statusabfrage.
 
 ## [2.2.0] - 2026-09-18
 

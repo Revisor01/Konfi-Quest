@@ -432,7 +432,12 @@ const orgLimiter = rateLimit({
 
 const { createApp } = require('./createApp');
 
+// Cron-Leader-Wahl (siehe unten); die Referenz steht vor createApp, damit
+// /api/status den Zustand DIESER Replica melden kann.
+let cronLeader = null;
+
 const app = createApp(db, {
+  istCronLeader: () => (cronLeader ? cronLeader.istLeader() : false),
   // Dieselbe Liste wie Socket.IO oben. Wirkt nur, wenn CORS_ORIGINS gesetzt
   // ist — in Produktion liegen Oberflaeche und API auf derselben Domain.
   corsOrigins: process.env.CORS_ORIGINS ? ALLOWED_ORIGINS : null,
@@ -517,15 +522,37 @@ server.on('request', (req, res) => {
 
 // Hintergrund-Jobs (Cron: Auto-Deletion, Reminder, APM-Snapshots, Token-Cleanup,
 // Wrapped) duerfen bei MEHREREN Backend-Replicas (Zero-Downtime-Setup) nur EINMAL
-// laufen, sonst gibt es Doppel-Pushes/-Loeschungen/-Snapshots. Nur die Replica mit
-// RUN_BACKGROUND_JOBS!=='false' startet sie. Default = an (Single-Replica/lokal
-// unverändert); im 2-Replica-Stack setzt nur backend2 RUN_BACKGROUND_JOBS=false.
+// laufen, sonst gibt es Doppel-Pushes/-Loeschungen/-Snapshots.
+//
+// Bis zum 26.09.2026 legte RUN_BACKGROUND_JOBS den Leader FEST: nur `backend`
+// fuhr die Jobs, `backend2` stand mit 'false' daneben. War `backend` weg oder
+// in einer Neustartschleife, liefen weder Erinnerungen noch Token-Bereinigung,
+// Auto-Loeschung, Lizenz-Erinnerungen, APM-Schnappschuesse noch der
+// Team-Rueckblick -- und von aussen war nichts zu sehen (Audit 26.09.2026,
+// Betrieb BF-10).
+//
+// Jetzt WAEHLEN die Replicas den Leader per Advisory-Lock (utils/cronLeader.js):
+// Jede Replica, die Jobs fahren DARF, versucht den Lock im Takt; wer ihn
+// haelt, startet die Jobs; stirbt sie, uebernimmt die naechste beim
+// naechsten Takt. RUN_BACKGROUND_JOBS='false' heisst weiterhin: NIE
+// (backend-test teilt sich die Datenbank mit Live und darf keine Jobs fahren).
+// Alles andere heisst: an der Wahl teilnehmen. Sichtbar in /api/status als
+// `cron_leader` (diese Replica) und `checks.cron_leader` (irgendjemand).
 const BackgroundService = require('./services/backgroundService');
 if (process.env.RUN_BACKGROUND_JOBS !== 'false') {
-  BackgroundService.startAllServices(db, { wrappedRouter: app.wrappedRouter });
-  console.warn('Hintergrund-Jobs gestartet (diese Replica ist der Cron-Leader).');
+  const { starteCronLeaderWahl } = require('./utils/cronLeader');
+  cronLeader = starteCronLeaderWahl({
+    beiUebernahme: () => {
+      BackgroundService.startAllServices(db, { wrappedRouter: app.wrappedRouter });
+      console.warn('Hintergrund-Jobs gestartet (diese Replica ist der Cron-Leader).');
+    },
+    beiVerlust: () => {
+      BackgroundService.stopAllServices();
+    },
+  });
+  console.warn('Cron-Leader-Wahl gestartet -- diese Replica bewirbt sich um die Hintergrund-Jobs.');
 } else {
-  console.warn('Hintergrund-Jobs DEAKTIVIERT (RUN_BACKGROUND_JOBS=false) — andere Replica ist Cron-Leader.');
+  console.warn('Hintergrund-Jobs DEAKTIVIERT (RUN_BACKGROUND_JOBS=false) — diese Replica nimmt nicht an der Leader-Wahl teil.');
 }
 
 // ====================================================================
@@ -611,8 +638,11 @@ const gracefulShutdown = async (signal, exitCode = 0) => {
     await schlafen(SHUTDOWN_DRAIN_MS);
   }
 
-  // (2) Keine neuen Job-Laeufe mehr anstossen.
+  // (2) Keine neuen Job-Laeufe mehr anstossen; den Leader-Lock abgeben, damit
+  // die andere Replica beim naechsten Takt uebernimmt, statt erst nach dem
+  // Verbindungsende dieses Prozesses.
   try {
+    if (cronLeader) await cronLeader.stopp();
     BackgroundService.stopAllServices();
   } catch (err) {
     console.error('Fehler beim Anhalten der Hintergrund-Jobs:', err.message);
