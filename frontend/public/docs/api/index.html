@@ -135,7 +135,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/switch-org</code></div>
         <p class="summary">Aktive Organisation wechseln — neues Access-Token mit active_organization_id-Claim</p>
-        <div class="zugriff"><span class="chip r-alle">alle Angemeldeten</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Mitgliedschaft in user_organizations + is_active der Ziel-Org</div><div class="hinweis">Trial-Ablauf der Ziel-Org wird hier NICHT geprüft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf</div>
+        <div class="zugriff"><span class="chip r-alle">alle Angemeldeten</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Mitgliedschaft über beide Quellen (Stamm-Gemeinde aus users.organization_id, weitere aus user_organizations; bis 26.09.2026 nur Letztere — der Rückwechsel in die Stamm-Gemeinde scheiterte bei Konten ohne Zeile) + is_active der Ziel-Org</div><div class="hinweis">Trial-Ablauf der Ziel-Org wird hier NICHT geprüft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/update-email</code></div>
         <p class="summary">Eigene E-Mail-Adresse setzen/entfernen (optional, ohne Verifikation)</p>

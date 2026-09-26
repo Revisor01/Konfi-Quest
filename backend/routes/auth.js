@@ -680,6 +680,16 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   // Mitgliedschaft und stellt ein neues Access-Token mit active_organization_id
   // als Claim aus (damit der Kontext den 15min-Refresh ueberlebt). Das Refresh-
   // Token bleibt gueltig; der Client sendet ab jetzt X-Active-Organization mit.
+  //
+  // ZWEI QUELLEN der Zugehoerigkeit, wie in GET /my-organizations und rbac.js:
+  // die Stamm-Gemeinde steht in users.organization_id (Rolle: users.role_id),
+  // jede weitere in user_organizations (Rolle: uo.role_id). Bis zum 26.09.2026
+  // fragte diese Route NUR user_organizations -- die Zeile fuer die Stamm-
+  // Gemeinde legte aber allein Migration 101 fuer die damals bestehenden
+  // Konten an; kein Anlegeweg seither tut das. Folge am Geraet: Ein Admin mit
+  // juengerem Konto kam aus der zweiten Gemeinde nicht mehr zurueck
+  // ("Organisation konnte nicht gewechselt werden"), obwohl die Liste die
+  // Stamm-Gemeinde zeigte. Aeltere Konten (mit Zeile) waren nicht betroffen.
   router.post('/switch-org', rbacVerifier, async (req, res) => {
     const targetOrgId = parseInt(req.body.organization_id);
     if (!Number.isInteger(targetOrgId)) {
@@ -691,11 +701,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         SELECT o.id, o.name, o.slug, r.name as role_name,
                COALESCE(o.is_active, true) as is_active,
                u.display_name, u.email, u.organization_id as primary_org_id, u.is_super_admin
-        FROM user_organizations uo
-        JOIN organizations o ON uo.organization_id = o.id
-        JOIN roles r ON uo.role_id = r.id
-        JOIN users u ON uo.user_id = u.id
-        WHERE uo.user_id = $1 AND uo.organization_id = $2
+        FROM users u
+        JOIN organizations o ON o.id = $2
+        LEFT JOIN user_organizations uo ON uo.user_id = u.id AND uo.organization_id = o.id
+        JOIN roles r ON r.id = CASE WHEN u.organization_id = o.id THEN u.role_id ELSE uo.role_id END
+        WHERE u.id = $1
+          AND (u.organization_id = o.id OR uo.user_id IS NOT NULL)
       `, [userId, targetOrgId]);
 
       if (!membership) {

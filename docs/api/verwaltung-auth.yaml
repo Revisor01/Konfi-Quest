@@ -553,7 +553,7 @@ paths:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
         org-scope: false
-        objekt-pruefung: "Mitgliedschaft in user_organizations + is_active der Ziel-Org"
+        objekt-pruefung: "Mitgliedschaft über beide Quellen (Stamm-Gemeinde aus users.organization_id, weitere aus user_organizations; bis 26.09.2026 nur Letztere — der Rückwechsel in die Stamm-Gemeinde scheiterte bei Konten ohne Zeile) + is_active der Ziel-Org"
         hinweis: "Trial-Ablauf der Ziel-Org wird hier NICHT geprüft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf"
 
   /api/auth/request-password-reset:

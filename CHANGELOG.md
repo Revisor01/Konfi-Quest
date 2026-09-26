@@ -438,6 +438,13 @@ Versionsüberschrift.
   eigene Gemeinde zurück — dabei blieben bis zuletzt Zähler und bereits
   geöffnete Listen der verlorenen Gemeinde stehen. Jetzt laden auch in diesem
   Fall alle Ansichten frisch.
+- Wer in zwei Gemeinden mitarbeitet, kam aus der zweiten nicht mehr in die
+  eigene zurück: Der Wechsel dorthin scheiterte mit „Organisation konnte nicht
+  gewechselt werden", auch nach Neustart der App; erst Abmelden und Anmelden
+  führte zurück. Betroffen waren Konten, die nach einer bestimmten Umstellung
+  angelegt wurden — ältere Konten konnten wechseln, darum fiel es je nach
+  Person auf oder nicht. Jetzt gilt die eigene Gemeinde beim Wechsel genauso
+  als Mitgliedschaft wie jede weitere.
 - Konten mit Super-Admin-Rechten kann nur noch ein Super-Admin bearbeiten.
   Bisher konnte die Leitung einer Gemeinde, in der ein solches Konto zuhause
   ist, dessen Passwort setzen, es sperren oder löschen — und damit Zugriff auf

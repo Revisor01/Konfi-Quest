@@ -1076,6 +1076,66 @@ describe('Auth Routes', () => {
       expect(res.status).toBe(403);
     });
 
+    it('switch-org zurueck in die Stamm-Gemeinde geht auch OHNE user_organizations-Eintrag', async () => {
+      // Befund vom Geraet (26.09.2026): Ein Admin in zwei Gemeinden kam von
+      // der zweiten nicht mehr in seine Stamm-Gemeinde zurueck -- "Organisation
+      // konnte nicht gewechselt werden". Sein Konto war nach Migration 101
+      // angelegt; die Zeile in user_organizations fuer die Stamm-Gemeinde gab
+      // es also nie. GET /my-organizations listet die Stamm-Gemeinde trotzdem
+      // (aus users.organization_id), switch-org verlangte aber die Zeile.
+      // admin2 (id 8): Stamm-Org 2, kein Mapping-Eintrag; zusaetzlich Org 1.
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES (8, 1, 3) ON CONFLICT DO NOTHING`);
+      invalidateUserCache(8);
+      const token = generateToken('admin2');
+
+      const hin = await request(app)
+        .post('/api/auth/switch-org')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ organization_id: 1 });
+      expect(hin.status).toBe(200);
+      expect(hin.body.is_primary).toBe(false);
+
+      const zurueck = await request(app)
+        .post('/api/auth/switch-org')
+        .set('Authorization', `Bearer ${hin.body.token}`)
+        .set('X-Active-Organization', '1')
+        .send({ organization_id: 2 });
+      expect(zurueck.status).toBe(200);
+      expect(zurueck.body.is_primary).toBe(true);
+      expect(zurueck.body.active_organization_id).toBe(2);
+      expect(zurueck.body.organization.id).toBe(2);
+      // In der Stamm-Gemeinde gilt die Rolle am Konto (users.role_id)
+      expect(zurueck.body.role_name).toBe('admin');
+      // Kein Org-Claim im Token: die Stamm-Gemeinde ist der Normalfall
+      expect(jwt.decode(zurueck.body.token).active_organization_id).toBeUndefined();
+
+      // Folgeanfrage ohne Header landet in der Stamm-Gemeinde
+      const current = await request(app)
+        .get('/api/organizations/current')
+        .set('Authorization', `Bearer ${zurueck.body.token}`);
+      expect(current.status).toBe(200);
+      expect(current.body.id).toBe(2);
+    });
+
+    it('switch-org in die Stamm-Gemeinde: gesperrte Stamm-Gemeinde bleibt 403', async () => {
+      // Gegenprobe zum Test davor: die zweite Quelle darf die Sperre nicht umgehen.
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES (8, 1, 3) ON CONFLICT DO NOTHING`);
+      await db.query('UPDATE organizations SET is_active = false WHERE id = 2');
+      invalidateUserCache(8);
+      const token = generateToken('admin2');
+      const res = await request(app)
+        .post('/api/auth/switch-org')
+        .set('Authorization', `Bearer ${token}`)
+        .set('X-Active-Organization', '1')
+        .send({ organization_id: 2 });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Diese Organisation ist derzeit gesperrt');
+    });
+
     it('X-Active-Organization schaltet org-isolierte Daten auf die aktive Org', async () => {
       await makeMultiOrgAdmin();
       const token = generateToken('admin1');
