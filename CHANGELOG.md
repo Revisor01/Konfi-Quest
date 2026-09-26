@@ -539,6 +539,11 @@ Versionsüberschrift.
   der anderen Gemeinde. Rückblick, Liste der eigenen Rückblicke und der
   Hinweis auf der Startseite gehören jetzt zur Gemeinde, in der man gerade
   arbeitet; gibt es dort keinen, gibt es auch keinen Hinweis.
+- Wurde jemandem die Mitgliedschaft in einer weiteren Gemeinde entzogen,
+  während er gerade dort arbeitete, zeigte die App bis zu einer Viertelstunde
+  lang in jeder Gemeinde nur leere Listen und Fehlermeldungen; erst Abmelden
+  und Neuanmelden half. Jetzt wechselt sie sofort sauber in die
+  Stamm-Gemeinde, und auch Chat und Live-Aktualisierungen laufen dort weiter.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

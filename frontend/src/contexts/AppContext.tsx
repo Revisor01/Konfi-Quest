@@ -614,12 +614,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [loadOrganizations, user?.id]);
 
   // Sicherheitsnetz: Wenn ein Request mit aktiver Org ein 403 "Kein Zugriff"
-  // bekommt (api.ts setzt dann die aktive Org auf null), hier die App auf die
-  // Primaer-Org zuruecksetzen und alle Views remounten.
+  // bekommt (api.ts setzt dann die aktive Org auf null und holt ein Token
+  // OHNE Org-Claim), hier die App auf die Primaer-Org zuruecksetzen, den
+  // Socket mit dem neuen Token neu aufbauen und alle Views remounten.
   useEffect(() => {
     const handler = async () => {
       setActiveOrgIdState(null);
       try { await offlineCache.clearAll(); } catch { /* best-effort */ }
+      // Wie beim bewussten Wechsel (switchOrg, Schritt 4b): Ohne Neuaufbau
+      // liefe der Socket mit dem Token der entzogenen Gemeinde weiter und
+      // der Server lehnte jeden Reconnect mit "Kein Zugriff auf diese
+      // Organisation" ab (Audit 26.09.2026, Grundgeruest BF-05).
+      try {
+        const frischesToken = getToken();
+        if (frischesToken) reconnectWithToken(frischesToken);
+      } catch (socketErr) {
+        console.error('Socket-Neuaufbau nach Gemeinde-Rueckfall fehlgeschlagen:', socketErr);
+      }
       setOrgVersion(v => v + 1);
     };
     window.addEventListener('auth:org-fallback', handler);

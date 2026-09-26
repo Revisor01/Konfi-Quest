@@ -268,6 +268,7 @@ so nicht haltbar.
 ### BF-05: 403-Rückfall auf die Stamm-Gemeinde lässt den Org-Claim im Token — bis 15 Minuten nur Fehler
 
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — `api.ts` holt im Rückfall nach `setActiveOrgId(null)` per `POST /auth/refresh` ohne `X-Active-Organization` ein Token ohne Org-Claim (wartet einen laufenden Refresh ab) und feuert `auth:org-fallback` erst danach; `AppContext` baut im Handler den Socket mit dem neuen Token neu auf (`reconnectWithToken`, wie beim bewussten Wechsel); `websocket.ts` wertet „Zugriff"/„Organisation" im Handshake-Fehler als Auth-Fehler (`socket:auth-error`). Tests: `services/apiOrgRueckfall.test.ts` (Refresh ohne Header, Reihenfolge Token vor Event, Refresh-Fehler ohne Relogin, anderes 403 unberührt, ohne aktive Org kein Rückfall), `contexts/appContextOrgRueckfall.test.tsx` (gerenderter Kontext, Socket-Neuaufbau), `services/websocket.test.ts` (Handshake-Meldung). Serverseitig unverändert — kein stiller Rückfall in `rbac.js`. Der Nutzer-State (Rolle, Gemeindename aus dem letzten `switchOrg`) wird im Rückfall weiterhin nicht auf die Stamm-Gemeinde zurückgeschrieben (Nebenbefund).
 - **Fundstelle:** `frontend/src/services/api.ts:198-208` (entfernt nur den Header),
   `contexts/AppContext.tsx:619-627` (Handler: State, Cache, Remount — kein Token),
   `backend/routes/auth.js:659-664` (switch-org setzt `active_organization_id` ins

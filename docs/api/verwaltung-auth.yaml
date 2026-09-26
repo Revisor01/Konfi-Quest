@@ -140,7 +140,9 @@
 #      Unique-Kollision erlaubt E-Mail-Enumeration durch eingeloggte User.
 #
 # BEKANNT (dokumentiert, nicht neu): Multi-Org-Claim-Nachwirkung nach
-# Mitgliedschafts-Entzug (Access-Token bis 15 Min + 30s-User-Cache);
+# Mitgliedschafts-Entzug (Access-Token bis 15 Min + 30s-User-Cache) --
+# clientseitig BEHOBEN 26.09.2026 (Audit Grundgeruest BF-05): die App holt
+# beim ersten 403 ein Token ohne Claim, siehe DELETE /organizations/{id}/members/{userId};
 # Passwort-Reset-Token unhashed in password_resets; org_admin darf is_active
 # der eigenen Org setzen (PUT /organizations/:id); Org-Anlage erlaubt
 # 6-Zeichen-Admin-Passwoerter.
@@ -1164,7 +1166,15 @@ paths:
         middleware: [verifyTokenRBAC, requireSuperAdmin]
         org-scope: false
         objekt-pruefung: "users.organization_id !== id (Primaer-Org-Schutz)"
-        hinweis: "BEKANNT: laufende Access-Tokens mit active_organization_id-Claim wirken bis Ablauf nach (max 15 Min + 30s Cache)"
+        hinweis: >
+          BEKANNT: laufende Access-Tokens mit active_organization_id-Claim
+          wirken serverseitig bis Ablauf nach (max 15 Min + 30s Cache).
+          BEHOBEN 26.09.2026 auf Client-Seite (Audit Grundgeruest BF-05): Die
+          App holt beim ersten 403 "Kein Zugriff auf diese Organisation" per
+          POST /auth/refresh OHNE X-Active-Organization ein Token ohne Claim,
+          baut den Socket damit neu auf und faellt sauber auf die Stamm-Org
+          zurueck; das alte Token wird nicht mehr weiterbenutzt. rbac.js
+          faellt weiterhin bewusst NICHT still zurueck.
 
   /api/organizations/{id}/stats:
     get:

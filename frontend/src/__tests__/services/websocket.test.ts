@@ -84,3 +84,46 @@ describe('websocket — Session-Ablauf trennt den Socket', () => {
     expect((ersterSocket as unknown as FakeSocket).disconnect).not.toHaveBeenCalled();
   });
 });
+
+// Org-Entzug am Socket erkennen (Audit 26.09.2026, Grundgeruest BF-05):
+// Wird die Mitgliedschaft in der aktiven Zweit-Gemeinde entzogen, lehnt der
+// Server den Handshake mit "Kein Zugriff auf diese Organisation" ab
+// (server.js). Diese Meldung enthielt keines der gesuchten Woerter (jwt,
+// token, auth, unauthorized) -- kein 'socket:auth-error', der Socket
+// verband alle <=30 s mit demselben Token neu, bis es ablief. Das Event
+// stoesst in LiveUpdateContext einen leichten API-Call an; der laeuft dort in
+// den 403-Rueckfall von api.ts (Token ohne Org-Claim, 'auth:org-fallback'),
+// und der AppContext baut den Socket mit dem neuen Token auf.
+describe('websocket — Org-Entzug beim Handshake', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createdSockets.length = 0;
+    vi.resetModules();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  const connectErrorHandler = (s: FakeSocket) =>
+    s.on.mock.calls.find((c: unknown[]) => c[0] === 'connect_error')?.[1] as ((e: Error) => void) | undefined;
+
+  it('"Kein Zugriff auf diese Organisation" feuert socket:auth-error', async () => {
+    const ws = await import('../../services/websocket');
+    ws.initializeWebSocket('token-mit-claim');
+    const dispatch = vi.spyOn(window, 'dispatchEvent');
+
+    const handler = connectErrorHandler(createdSockets[0]);
+    expect(handler).toBeDefined();
+    handler!(new Error('Kein Zugriff auf diese Organisation'));
+
+    expect(dispatch.mock.calls.map(c => (c[0] as Event).type)).toContain('socket:auth-error');
+  });
+
+  it('ein reiner Netzfehler beim Handshake feuert KEIN socket:auth-error', async () => {
+    const ws = await import('../../services/websocket');
+    ws.initializeWebSocket('token-alt');
+    const dispatch = vi.spyOn(window, 'dispatchEvent');
+
+    connectErrorHandler(createdSockets[0])!(new Error('xhr poll error'));
+
+    expect(dispatch.mock.calls.map(c => (c[0] as Event).type)).not.toContain('socket:auth-error');
+  });
+});

@@ -2049,7 +2049,7 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "users.organization_id !== id (Primaer-Org-Schutz)",
-          "hinweis": "BEKANNT: laufende Access-Tokens mit active_organization_id-Claim wirken bis Ablauf nach (max 15 Min + 30s Cache)"
+          "hinweis": "BEKANNT: laufende Access-Tokens mit active_organization_id-Claim wirken serverseitig bis Ablauf nach (max 15 Min + 30s Cache). BEHOBEN 26.09.2026 auf Client-Seite (Audit Grundgeruest BF-05): Die App holt beim ersten 403 \"Kein Zugriff auf diese Organisation\" per POST /auth/refresh OHNE X-Active-Organization ein Token ohne Claim, baut den Socket damit neu auf und faellt sauber auf die Stamm-Org zurueck; das alte Token wird nicht mehr weiterbenutzt. rbac.js faellt weiterhin bewusst NICHT still zurueck.\n"
         }
       }
     },

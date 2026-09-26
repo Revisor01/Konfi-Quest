@@ -222,6 +222,44 @@ export const ensureFreshToken = async (marginSeconds = 30): Promise<string | nul
   }
 };
 
+// Ein Token OHNE Org-Claim beschaffen (Audit 26.09.2026, Grundgeruest BF-05).
+//
+// Nach dem Rueckfall auf die Stamm-Gemeinde reicht es nicht, den Header
+// X-Active-Organization wegzulassen: Das Access-Token traegt weiter den
+// Claim active_organization_id der entzogenen Gemeinde, und rbac.js greift
+// OHNE Header genau auf diesen Claim zurueck -> wieder 403, bei jedem
+// Request, bis das Token ablaeuft (bis zu 15 Minuten). Der Weg zu einem
+// Token ohne Claim ist POST /auth/refresh ohne Org-Header (auth.js laesst den
+// Claim dann weg); switch-org auf die Stamm-Gemeinde ginge nicht, es verlangt
+// eine Zeile in user_organizations, die es fuer die Stamm-Gemeinde meist
+// nicht gibt.
+//
+// Muss NACH setActiveOrgId(null) laufen -- performRefresh liest die aktive
+// Org fuer den Header. Ein bereits laufender Refresh kann noch mit dem alten
+// Header unterwegs sein; auf ihn warten und dann selbst einmal refreshen.
+// Scheitert der Refresh (Funkloch), bleibt die Sitzung bestehen -- das
+// entscheidet allein der 401-Interceptor -- und der Zustand ist der von
+// vorher: das alte Token wirkt bis zu seinem Ablauf nach.
+const tokenOhneOrgClaimBeschaffen = async (): Promise<string | null> => {
+  if (isRefreshing) {
+    await new Promise<void>((resolve) => addRefreshSubscriber(() => resolve(), () => resolve()));
+  }
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+  isRefreshing = true;
+  try {
+    const neu = await performRefresh(refreshToken);
+    isRefreshing = false;
+    onTokenRefreshed(neu);
+    return neu;
+  } catch (err) {
+    isRefreshing = false;
+    onTokenRefreshFailed(err);
+    console.warn('Token ohne Gemeinde-Claim konnte nicht beschafft werden:', err);
+    return null;
+  }
+};
+
 // Handle auth errors and rate limiting
 api.interceptors.response.use(
   (response) => response,
@@ -237,9 +275,12 @@ api.interceptors.response.use(
       error.response?.data?.error === 'Kein Zugriff auf diese Organisation' &&
       getActiveOrgId()
     ) {
-      // Aktive Org zuruecksetzen und den AppContext per Event zum Remount bringen
-      // (KEIN window.location-Reload -> der zerschiesst den nativen WebView).
+      // Aktive Org zuruecksetzen, ein Token OHNE Org-Claim holen und erst
+      // dann den AppContext per Event zum Remount bringen -- der baut damit
+      // auch den Socket mit dem neuen Token auf (KEIN window.location-Reload
+      // -> der zerschiesst den nativen WebView).
       await setActiveOrgId(null);
+      await tokenOhneOrgClaimBeschaffen();
       window.dispatchEvent(new CustomEvent('auth:org-fallback'));
       return Promise.reject(error);
     }

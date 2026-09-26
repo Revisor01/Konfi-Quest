@@ -181,7 +181,10 @@ dir gesperrt, und auch ein neues Passwort setzt nur die Stamm-Gemeinde.
 Wischst du die Person in der Liste weg, endet nur ihre **Mitgliedschaft in
 deiner Gemeinde** — samt ihrer Jahrgänge und Plätze in Team- und
 Jahrgangs-Chats bei dir. Das Konto und die Stamm-Gemeinde bleiben, wie sie
-sind.
+sind. Arbeitet die Person in diesem Moment gerade in deiner Gemeinde,
+wechselt ihre App von selbst in ihre Stamm-Gemeinde; Chat und
+Live-Aktualisierungen laufen dort weiter, ohne dass sie sich neu anmelden
+muss.
 
 **Konfis lassen sich so nicht aufnehmen** — weder die eigenen noch die einer
 anderen Gemeinde. Sie gehören zu einem Jahrgang und kommen über einen
