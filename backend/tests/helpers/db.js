@@ -94,7 +94,7 @@ const TRUNCATE_SQL = `TRUNCATE
     push_tokens, event_reminders, password_resets,
     invite_codes, refresh_tokens, notifications,
     user_organizations, org_einladungen,
-    settings, daily_verses, apm_snapshots, socket_io_attachments,
+    settings, daily_verses, apm_snapshots, socket_io_attachments, rate_limit_zaehler,
     users, activities, custom_badges, events,
     jahrgaenge, categories, levels,
     role_permissions, permissions, roles,
