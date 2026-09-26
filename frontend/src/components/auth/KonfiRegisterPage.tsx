@@ -32,7 +32,7 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 import api from '../../services/api';
-import { setToken, setUser as setTokenStoreUser } from '../../services/tokenStore';
+import { sitzungUebernehmen } from '../../services/auth';
 import { hasValidUsernameChars } from '../../utils/usernameValidation';
 import { useApp } from '../../contexts/AppContext';
 
@@ -246,11 +246,14 @@ const KonfiRegisterPage: React.FC = () => {
 
       setSuccess(true);
 
-      // Auto-Login nach Registrierung
+      // Auto-Login nach Registrierung -- derselbe Weg wie beim Login, samt
+      // Refresh-Token. Bis zum 26.09.2026 wurden hier nur token und user
+      // gespeichert; nach 15 Minuten war die Sitzung ohne Refresh-Token zu
+      // Ende und jede neue Konfi flog mit "Deine Sitzung ist abgelaufen"
+      // hinaus (Audit, Grundgeruest BF-03).
       const { token, user } = response.data;
       if (token && user) {
-        await setToken(token);
-        await setTokenStoreUser(user);
+        await sitzungUebernehmen(response.data);
         setUser(user);
         setAppSuccess('Willkommen bei Konfi Quest!');
         // Kurz warten für visuelles Feedback, dann zum Dashboard

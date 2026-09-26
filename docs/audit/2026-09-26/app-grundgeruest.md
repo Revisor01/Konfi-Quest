@@ -186,6 +186,7 @@ so nicht haltbar.
 ### BF-03: Registrierung speichert den Refresh-Token nicht — Sitzung endet nach 15 Minuten
 
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — `sitzungUebernehmen` in `services/auth.ts` speichert Access-Token, Refresh-Token und Nutzer; Login und `KonfiRegisterPage` nutzen denselben Weg. Tests in `auth.test.ts` (Übernahme, Fehlerfall, Login, Quelltest der Seite).
 - **Fundstelle:** `frontend/src/components/auth/KonfiRegisterPage.tsx:248-254`
   (liest nur `{ token, user }`, importiert `setRefreshToken` nicht);
   `backend/routes/auth.js:1081-1083` (liefert `refresh_token` mit).

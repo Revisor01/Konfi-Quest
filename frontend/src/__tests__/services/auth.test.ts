@@ -149,3 +149,63 @@ describe('auth.logout — Queue gehoert zum Konto, nicht zum Geraet', () => {
     expect(mockQueueClear).toHaveBeenCalledTimes(1);
   });
 });
+
+// Audit 26.09.2026 (Grundgeruest BF-03, HOCH): Die Registrierung speicherte
+// nur { token, user }; das refresh_token blieb liegen. Nach 15 Minuten fand
+// ensureFreshToken keinen Refresh-Token, der 401-Interceptor rief clearAuth()
+// -- jede neue Konfi flog eine Viertelstunde nach ihrer Registrierung mit
+// "Deine Sitzung ist abgelaufen" hinaus. Login und Registrierung teilen sich
+// deshalb jetzt EINE Uebernahme.
+describe('sitzungUebernehmen — Login und Registrierung speichern dieselbe Sitzung', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  const nutzer = { id: 7, username: 'lena', display_name: 'Lena', type: 'konfi' } as unknown as import('../../types/user').BaseUser;
+
+  it('speichert Access-Token, Refresh-Token und Nutzer', async () => {
+    const { sitzungUebernehmen } = await import('../../services/auth');
+    const tokenStore = await import('../../services/tokenStore');
+
+    const ergebnis = await sitzungUebernehmen({ token: 'acc-1', refresh_token: 'ref-1', user: nutzer });
+
+    expect(ergebnis).toBe(nutzer);
+    expect(tokenStore.setToken).toHaveBeenCalledWith('acc-1');
+    expect(tokenStore.setRefreshToken).toHaveBeenCalledWith('ref-1');
+    expect(tokenStore.setUser).toHaveBeenCalledWith(nutzer);
+  });
+
+  it('ohne Token oder Nutzer wirft sie, statt eine halbe Sitzung zu speichern', async () => {
+    const { sitzungUebernehmen } = await import('../../services/auth');
+    const tokenStore = await import('../../services/tokenStore');
+
+    await expect(sitzungUebernehmen({ refresh_token: 'ref-1', user: nutzer })).rejects.toThrow('Fehlender Token oder Benutzer');
+    await expect(sitzungUebernehmen({ token: 'acc-1', refresh_token: 'ref-1' })).rejects.toThrow('Fehlender Token oder Benutzer');
+    expect(tokenStore.setToken).not.toHaveBeenCalled();
+    expect(tokenStore.setRefreshToken).not.toHaveBeenCalled();
+  });
+
+  it('der Login laeuft ueber dieselbe Uebernahme und speichert das refresh_token', async () => {
+    mockApiPost.mockResolvedValueOnce({ data: { token: 'acc-2', refresh_token: 'ref-2', user: nutzer } });
+    const { loginWithAutoDetection } = await import('../../services/auth');
+    const tokenStore = await import('../../services/tokenStore');
+
+    await loginWithAutoDetection('lena', 'geheim');
+
+    expect(tokenStore.setRefreshToken).toHaveBeenCalledWith('ref-2');
+  });
+
+  // Quelltest (Projektkonvention, vgl. rollenGleichbehandlung.test.ts): Der
+  // Fehlerfall ist "jemand schreibt die Uebernahme in der Seite wieder selbst
+  // und vergisst das refresh_token" -- genau das faengt ein Blick in die Quelle.
+  it('die Registrierungsseite nutzt die gemeinsame Uebernahme statt eigener Token-Aufrufe', async () => {
+    const { readFileSync } = await import('fs');
+    const { resolve } = await import('path');
+    const seite = readFileSync(resolve(process.cwd(), 'src/components/auth/KonfiRegisterPage.tsx'), 'utf8');
+
+    expect(seite).toContain('await sitzungUebernehmen(response.data)');
+    expect(seite).not.toMatch(/\bsetToken\(/);
+    expect(seite).not.toContain("from '../../services/tokenStore'");
+  });
+});

@@ -18,19 +18,36 @@ import { BaseUser } from '../types/user';
 // Race Condition User-Wechsel: Backend POST /device-token löscht alte Tokens
 // (anderer user_id mit gleichem device_token) automatisch VOR dem INSERT.
 // Frontend-seitig wird logout() mit await ausgeführt und blockiert bis DELETE durch ist.
+/**
+ * Uebernimmt eine frisch vom Server ausgestellte Sitzung in den tokenStore:
+ * Access-Token, Refresh-Token und Nutzer -- fuer Login UND Registrierung.
+ *
+ * Audit 26.09.2026 (Grundgeruest BF-03, HOCH): Die Registrierung speicherte
+ * nur { token, user } und liess das refresh_token liegen. Nach 15 Minuten
+ * fand ensureFreshToken keinen Refresh-Token, der 401-Interceptor rief
+ * clearAuth() -- jede neue Konfi flog eine Viertelstunde nach ihrer
+ * Registrierung mit "Deine Sitzung ist abgelaufen" hinaus. Der Fehler
+ * steckte von Anfang an in der Seite, weil Login und Registrierung die
+ * Uebernahme je fuer sich schrieben. Deshalb steht sie jetzt einmal hier.
+ */
+export const sitzungUebernehmen = async (
+  daten: { token?: string; refresh_token?: string; user?: BaseUser }
+): Promise<BaseUser> => {
+  const { token, refresh_token, user } = daten;
+  if (!token || !user) throw new Error('Fehlender Token oder Benutzer');
+
+  await setToken(token);
+  if (refresh_token) await setRefreshToken(refresh_token);
+  await setUser(user);
+
+  return user;
+};
+
 export const loginWithAutoDetection = async (username: string, password: string): Promise<BaseUser> => {
 
   try {
     const response = await api.post('/auth/login', { username, password });
-    const { token, refresh_token, user } = response.data;
-
-    if (!token || !user) throw new Error('Fehlender Token oder Benutzer');
-
-    await setToken(token);
-    if (refresh_token) await setRefreshToken(refresh_token);
-    await setUser(user);
-
-    return user;
+    return await sitzungUebernehmen(response.data);
   } catch (error: unknown) {
     const err = error as { response?: { status?: number; statusText?: string; data?: { error?: string } }; message?: string; code?: string };
  console.error('Login fehlgeschlagen:', {

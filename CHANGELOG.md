@@ -420,6 +420,10 @@ Versionsüberschrift.
   nicht einsehen konnte — obwohl Konfis einander nur in Räumen schreiben
   sollen, die die Leitung mitliest. Solche Räume werden beim Update zu Gruppen
   und damit für die Leitung sichtbar; echte Zweiergespräche bleiben privat.
+- Nach der Registrierung endete die Sitzung neuer Konfis nach einer
+  Viertelstunde mit „Deine Sitzung ist abgelaufen", und sie mussten sich mit
+  dem gerade gewählten Passwort neu anmelden. Die Registrierung meldet jetzt
+  dauerhaft an, genau wie der Login.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
