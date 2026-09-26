@@ -52,6 +52,13 @@ Mandantentrennung hält in 150 gezielten Fremdzugriffen. Die Testsuiten sind gr�
 in 11 von 15 Gegenproben echte Fehler. Das ist die gute Nachricht; sie ändert nichts an den
 vier Punkten oben.
 
+**Stand der Behebung (26.09., Abend):** Sechs der sieben Blocker sind im Branch
+`claude/fervent-edison-wp5yfj` behoben und mit Tests belegt; offen ist allein Blocker 3
+(Widerruf der Apple-Schlüssel, nur Simon im Developer-Portal). Von den Auflagen 8–24 sind alle
+umgesetzt bis auf die Zusammenführung der CHANGELOG-Doppelabschnitte (Punkt 19, zum Schluss)
+und die Screenshots nach dem Deploy (Punkt 22). Die vollen Suiten sind auf dem
+zusammengeführten Stand grün. Einzelheiten im Abschnitt „Behebungsstand".
+
 ## Rahmen und Methode
 
 - 15 Bereichsprüfungen parallel, jede mit eigenem Bericht in diesem Verzeichnis, jede nur
@@ -456,6 +463,70 @@ seinen Platz in den Top 10 und wird Produktentscheidung. E-03 (Gemeinden anlegen
 Installationen braucht ein Vorlagenkatalog ein Austauschformat zwischen Instanzen statt einer
 gemeinsamen Tabelle, und eine Verbandssicht über mehrere Instanzen ist ein anderes Produkt.
 Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit dieser Fußnote.
+
+## Behebungsstand (fortlaufend)
+
+Stand 26.09.2026, 16:15 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
+jeder Befund trägt im Bereichsbericht eine Status-Zeile mit Datum. Regeln für jeden Fix: Test
+für den verbotenen und den erlaubten Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG,
+Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
+
+**Volle Suiten auf dem zusammengeführten Stand (Commit `fac0b361`, 71 Commits):**
+
+| Suite | Ergebnis |
+|---|---|
+| Frontend (`vitest`, jsdom) | 271 Dateien, 3.864 Tests grün, 149 s |
+| Backend (`vitest`, echte DB, Migrationen 160–166) | 153 Dateien, 3.593 Tests grün, 1.336 s |
+| Typprüfung, ESLint (`--quiet`, jetzt CI-Gate) | grün |
+
+**Pakete:**
+
+| Paket | Inhalt | Befunde | Stand |
+|---|---|---|---|
+| Blocker (Koordination) | Super-Admin-Übernahme, Einladung fremder Konfis, Direktchat nur zu zweit, Eingeladene verwaltbar, Registrierung mit Refresh-Token | Sicherheit BF-01/BF-03, Chat BF-01, Leitung BF-01, Grundgerüst BF-03 | eingebaut (`0f2bd4db`, `1c953171`, `40f16971`, `260b82b7`, `853ab400`) |
+| A Dunkelmodus, fünf Auflagen | Anmeldeseite 1,4 → 8,4:1, Dashboards 1,3 → 9,1:1, Kartenregel (0,4,1) gegen ios27-Theme, Reaktionszähler, Befördern-Knopf; Messskript | darkmode BF-01/02/03/07/08 | eingebaut |
+| B CI und Release | Release-Tor (Store-Build nur von `main` nach grünem CI-Lauf desselben SHA), Deploy-Rewrite nur Live-Dienste (auch Notfall-Deploy), `concurrency`, `tsc`+`vite build`, kein `--passWithNoTests`, `npm audit` ab hoch, Lint bei Push, 19 ESLint-Fehler bereinigt; Store-Text-Prüfung gehärtet | CI BF-01/03/04/07/12, Tests BF-07/08, Toolchain BF-01/08, S-06, S-07 | eingebaut (Workflow-Dateien nach Rechtevergabe in `02bf4045`) |
+| C Skalierung A | Indizes `chat_messages` (Löschen 1.000 Nachrichten 32 s → 10 ms), Terminlisten je Termin statt View (77 ms → 2 ms), Datenbank-Abbruch beendet Replicas nicht mehr (mit zwei Instanzen nachgewiesen) | Datenbank BF-01/02, Betrieb BF-01/03, S-04 | eingebaut |
+| D Fachliche HOCH-Befunde | Vortags-Erinnerung 24 h vor Beginn ± 15 min mit Laufmerker, Wiederanmeldung nach Abmeldung, Wartelisten-Abmeldung, Stornoregeln auf beiden Wegen, Rückblicke überleben Jahrgangslöschung (Migration 162), kein Retry schreibender Anfragen ohne Idempotenzschlüssel | S-05, Screens BF-01/02, Punkte/Termine BF-01, Chat BF-02, Grundgerüst BF-02 | eingebaut |
+| E Sicherheit MITTEL | Reset-Limiter je Absender und je E-Mail, `password_plain` geleert (Migration 165), Soft-Delete an Login/Refresh/Middleware, Refresh-Gnadenfrist genau einmal (Migration 166), SMTP-Zertifikatsprüfung, RBAC-Cache bei Deaktivierung/Löschung, `X-Real-IP` nur vom Proxy, keine Adress-Fallbacks im Code | Sicherheit BF-05/06/07/08/09/10/12/13 (13 teilweise), S-01 | eingebaut |
+| F Barrierefreiheit Anmeldeseiten | Feldnamen, Links als Links, Enter sendet, Alarm-Regionen, Fokusring, `lang="de"`; Layout pixelgleich | UI BF-02/05/08, BF-01 teilweise, S-24/K-04 | eingebaut |
+| G Dokumentation | Store-Texte 2.3.0, Handbuch gegen Code, API-Rollen, Abrissliste gegen Tag 2.2.0, offene Befunde, README, Kommentare | Doku BF-01/02/03/04/05/06/07/09/11/12/14/15/17/19 (teils teilweise), S-12, S-14, S-22 | eingebaut |
+| H Tests | 40 Tests „fremde Gemeinde → 403/404" für 21 Routen (keine Route gab fremde Daten preis), zehn weiche Assertions geschärft | Tests BF-01/05/06 | eingebaut |
+| J Multi-Gemeinde-Restlücken | Eingeladene in Gruppenchats, Team-Rückblick je Gemeinde, eigener Rückblick der aktiven Gemeinde, 403-Rückfall mit Token ohne Org-Claim und Socket-Neuaufbau | Chat BF-04/06/08, Grundgerüst BF-05, S-02 | eingebaut |
+| L Punktwert am Zuordnungsdatensatz | `user_activities.points` (Migration 163, Backfill ≤ 13 s bei 1 Mio. Zeilen), Vergabe/Rücknahme/Reset/Historie/Listen lesen den vergebenen Wert | Punkte/Termine BF-02 | eingebaut |
+| Koordination, Hygiene | Betriebsadressen aus Compose, Abrissliste, Skript und Berichten; Gesamtabnahme-Nachträge | S-15, Sicherheit BF-12 | eingebaut |
+| I1 Skalierung B1 | Chat-Fan-out, doppelte `newMessage`, Sammelversand der Erinnerungen, App-Icon-Lauf, Registrierungs-Pushes | Betrieb BF-02/04/05/08/15 | **läuft** |
+| I2 Skalierung B2 | Limiter-Store, Cron-Leader, Graceful Shutdown, Wrapped-Parallelität, Deploy ohne Lücke, Postgres-Ressourcen, `statement_timeout` für Migrationen, Metrics-Grenze, Startseeding, Sicherungsdoku | Betrieb BF-06/07/09/10/11/12/13/14/16, Datenbank BF-03/04/05/07, S-10, S-11, S-18, S-19 | **läuft** |
+| K Dunkelmodus systematisch | Flächen-Stufenleiter, Text-Token je Bereichsfarbe (234 Stellen), Grautöne, Messung als Test | darkmode BF-04/05/06/09/11, UI BF-04, S-26 | **läuft** |
+
+**Noch nicht begonnen:** Barrierefreiheit über die Anmeldeseiten hinaus (Punkt 33: rund 150
+Felder, 147 klickbare `div`, Berührungsziele, Modalnamen — nach Paket K, weil beide dieselben
+Komponenten anfassen), Handbuch-Bilder aus dem Store-Bundle (S-17), Feature-Empfehlungen A
+(Punkt 32), Rechenschaft/Datenschutz (Punkt 28, Produkt- und Rechtsfragen), CHANGELOG-Doppelabschnitte
+(Punkt 19, zum Schluss durch die Koordination), NIEDRIG-Befunde (Punkt 36).
+
+**Bei Simon:**
+
+1. Apple-Schlüssel `7AQA623H3T` und `A29U7SN796` widerrufen oder Widerruf bestätigen (Blocker 3).
+2. Vor dem Deploy in Portainer: `SMTP_HOST`, `SMTP_USER`, `SMTP_HOST_IP` als Stack-Variablen;
+   SMTP-Zertifikat gegen den Hostnamen prüfen (`openssl s_client -connect <SMTP_HOST>:465
+   -servername <SMTP_HOST>`), sonst Notnagel `SMTP_TLS_REJECT_UNAUTHORIZED=false`.
+3. Vor dem Deploy in Produktion zählen: `SELECT count(*) FILTER (WHERE password_plain IS NOT NULL)
+   FROM konfi_profiles;` (Migration 165 leert danach), `SELECT count(*) FROM user_activities;`
+   (Backfill der Migration 163 muss unter 30 s bleiben; gemessen 13 s bei 1 Mio. Zeilen).
+4. Postgres-Ressourcen und `PG_POOL_MAX` im Portainer-Stack angleichen, sobald Paket I2 die
+   Referenz-Compose geändert hat.
+5. Autor-Identität der 71 älteren Branch-Commits (teils „Claude"): Force-Push zum Umschreiben
+   erlauben, per Squash-Merge auflösen oder selbst umschreiben. Neue Commits laufen als `Revisor01`.
+6. Nach dem Deploy: Screenshots neu ziehen (Punkt 22), Produktionsmessungen aus dem Abschnitt
+   „Auf Produktion nachzumessen".
+
+**Entscheidungen, die in der Umsetzung getroffen wurden und die Simon kippen kann:** Vortags-Erinnerung
+zur gleichen Uhrzeit am Vortag (24 h ± 15 min) statt zu einer festen Tageszeit; Konfis als
+Einladungsziel antworten wie unbekannte Kennungen (Team-Konten bleiben auffindbar); in einer weiteren
+Gemeinde lassen sich nur Rolle und Jahrgänge ändern, Kontofelder bleiben bei der Stamm-Gemeinde;
+Refresh-Gnadenfrist genau eine Wiederverwendung, die dritte widerruft alle Tokens des Kontos;
+SMTP-Zertifikatsprüfung standardmäßig streng.
 
 ## Dateien dieses Audits
 
