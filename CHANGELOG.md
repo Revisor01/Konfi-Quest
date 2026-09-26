@@ -250,6 +250,11 @@ Versionsüberschrift.
   statt Person für Person. Wer erinnert wird und wann, bleibt gleich; ein
   Erinnerungslauf mit vielen Terminen belastet die Datenbank nicht mehr
   minutenlang.
+- Die App folgt der Einstellung „Bewegung reduzieren" des Geräts: Dann
+  entfallen Seitenübergänge, das Schütteln bei falscher Anmeldung, pulsierende
+  Ladepunkte und Abzeichen, gleitende Karten und der Wisch durch die
+  Einführung — alles erscheint sofort an seinem Platz. Der Jahresrückblick
+  kennt diese Einstellung bereits und bleibt, wie er ist.
 
 ### Behoben
 - Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war

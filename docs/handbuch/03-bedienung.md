@@ -191,6 +191,15 @@ Das Auge am Passwortfeld, das X an Hinweisen und Fehlermeldungen sowie
 Anhängen und Senden im Chat reagieren auf eine Fläche von mindestens
 44 Punkten um das Symbol — ein Tipp knapp daneben trifft trotzdem.
 
+### Bewegung reduzieren
+
+Ist im System „Bewegung reduzieren" eingeschaltet (iOS: Bedienungshilfen ›
+Bewegung; Android: Bedienungshilfen › Animationen entfernen), verzichtet die
+App auf Seitenübergänge, das Schütteln bei falscher Anmeldung, pulsierende
+Ladepunkte und Abzeichen, gleitende Karten und den Wisch durch die
+Einführung — alles erscheint sofort. Der Jahresrückblick zeigt seine Bilder
+dann ruhig, ohne Drift.
+
 ## Nachlesen, was sich geändert hat
 
 Nach einem Update meldet sich beim ersten Öffnen **einmal** eine kurze

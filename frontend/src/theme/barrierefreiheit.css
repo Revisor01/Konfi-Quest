@@ -98,6 +98,35 @@ a.app-auth-link {
   transform: translate(-50%, -50%);
 }
 
+/* Bewegung reduzieren (UI BF-12): Wer es im System eingeschaltet hat, bekam
+   bisher nur Wrapped und das „Was ist neu"-Banner ruhig -- Login-Schuetteln,
+   pulsierende Ladepunkte, Kacheln, Karten und alle Uebergaenge liefen
+   weiter. Diese Regel stellt ALLES still, was zur App gehoert:
+   - jede Klasse mit unserem Praefix app- (samt ::before/::after),
+   - jedes Element mit Inline-animation/-transition (Ladepunkte, Abzeichen-
+     Puls, Karten-Uebergaenge stehen im style-Attribut).
+   Dauer 0,01 ms statt 0: animationend/transitionend feuern weiterhin, Code,
+   der darauf wartet, bleibt heil; Endzustand wie authored (fill-mode).
+   !important, weil die Stellen ihre Dauer per Klasse oder inline setzen.
+   Wrapped bleibt aussen vor: seine Klassen heissen wrapped-/teamer-/
+   konfetti-, kein Inline-Style -- es behaelt seine eigenen, bewusst
+   gestalteten Reduktionsregeln (WrappedModal.css, drei Bloecke).
+   Ionics Seitenuebergaenge laufen als Web Animations, nicht per CSS; die
+   schaltet App.tsx ueber utils/bewegung.ts ab, ebenso den Wisch der
+   Einfuehrung (OnboardingTour, Swiper speed). */
+@media (prefers-reduced-motion: reduce) {
+  [class*="app-"],
+  [class*="app-"]::before,
+  [class*="app-"]::after,
+  [style*="animation"],
+  [style*="transition"] {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 .app-auth-button.ion-focused::part(native),
 .app-auth-button:focus-visible::part(native) {
   outline: 3px solid var(--app-weiss);

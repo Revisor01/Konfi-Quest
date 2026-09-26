@@ -70,8 +70,13 @@ import './theme/variables.css';
 /* Fokusringe, nackte Knöpfe und Links der Anmeldeseiten -- muss NACH
    variables.css kommen, siehe Kopf der Datei. */
 import './theme/barrierefreiheit.css';
+import { bewegungReduziert } from './utils/bewegung';
 
 setupIonicReact({
+  // Seitenuebergaenge, Modale und Popover laufen als Web Animations, nicht
+  // per CSS -- wer im System „Bewegung reduzieren" eingeschaltet hat,
+  // bekommt sie hier abgeschaltet (Audit 26.09.2026, UI BF-12).
+  animated: !bewegungReduziert(),
   rippleEffect: true,
   inputBlurring: true,
   scrollPadding: true,
