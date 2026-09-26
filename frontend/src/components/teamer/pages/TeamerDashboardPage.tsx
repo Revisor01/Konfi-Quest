@@ -701,7 +701,7 @@ const TeamerDashboardPage: React.FC = () => {
                         className="app-cert-card"
                         onClick={(e) => {
                           certPopoverRef.current = cert;
-                          presentCertPopover({ event: e.nativeEvent });
+                          presentCertPopover({ event: e.nativeEvent, cssClass: 'badge-detail-popover' });
                         }}
                         style={{
                           borderRadius: 'var(--app-radius-karte)',
@@ -1156,7 +1156,7 @@ const TeamerDashboardPage: React.FC = () => {
                         key={badge.id}
                         onClick={(e) => {
                           badgePopoverRef.current = { badge, isEarned };
-                          presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center' });
+                          presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center', cssClass: 'badge-detail-popover' });
                         }}
                         style={{
                           width: '44px', height: '44px', borderRadius: 'var(--app-radius-kreis)',
@@ -1205,7 +1205,7 @@ const TeamerDashboardPage: React.FC = () => {
                           <div key={badge.id}
                             onClick={(e) => {
                               badgePopoverRef.current = { badge, isEarned: true };
-                              presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center' });
+                              presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center', cssClass: 'badge-detail-popover' });
                             }}
                             style={{
                               width: '44px', height: '44px', borderRadius: 'var(--app-radius-kreis)',

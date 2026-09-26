@@ -395,7 +395,11 @@ ion-list-header ion-label {
  */
 ion-card.app-card:not(.ios-theme-disabled) {
   --background: var(--app-surface-card);
-  box-shadow: none;
+  /* Hell `none`, dunkel der Kartenschatten -- der Unterschied steckt im Token
+     (Begruendung an seiner Definition in theme/abstaende.css). Hier stand bis
+     zum 26.09.2026 ein festes `none`; im Dunkeln nahm das der Karte die
+     letzte Kante, weil dort auch der Rand kaum traegt. */
+  box-shadow: var(--app-schatten-karte-flaeche);
   overflow: hidden;
   margin: 0;
 }
@@ -437,7 +441,8 @@ ion-card.app-card ion-item ion-label h2 {
   /* Rahmen ueber das Token (26.09.2026, Simons Befund "Rahmen nicht
      erkennbar"): rgba(0,0,0,0.06) ergibt auf Weiss etwa #f0f0f0 -- auf
      dunklem Grund aber Schwarz auf Schwarz, also nichts. --app-border-soft
-     traegt hell #eee (praktisch derselbe Eindruck) und dunkel #2c2c2e. */
+     traegt hell #eee (praktisch derselbe Eindruck) und dunkel #323234 --
+     eine Stufe ueber dem Kartengrund, sonst waere die Kante wieder weg. */
   border-top: 1px solid var(--app-border-soft);
   border-right: 1px solid var(--app-border-soft);
   border-bottom: 1px solid var(--app-border-soft);
@@ -2813,23 +2818,55 @@ ion-button.app-modal-submit-btn--bonus {
 .badge-detail-popover {
   --width: min(320px, 85vw);
   --max-width: min(320px, 85vw);
-  /* DECKEND, NICHT GLAS (Simon am Geraet, 26.09.2026: "auf dem Dashboard bei
-     Badges ist der Pfeil unten durchsichtig").
-     Gemessen im Theme-Stylesheet: ion-popover.ios bekommt
-     `--background: rgba(<glas>, 0.67)`, und ::part(arrow)::after erbt genau
-     diese Farbe -- das Theme gibt der Pfeilspitze selbst KEIN background,
-     nur clip-path und einen backdrop-filter. Die Blase kaschiert die
-     Transparenz ueber ihren eigenen Filter, die gestanzte Spitze nicht: Sie
-     zeigt, was darunter liegt (bei Simon der gruene Badge-Kreis).
-     Eine deckende Flaeche loest beides zugleich -- die Spitze erbt sie mit. */
   --background: var(--app-surface-card);
 }
 
-/* Der Pfeil ausdruecklich mit (siehe oben): Wer spaeter nur ::part(content)
-   faerbt, laesst die Spitze zurueck. Der Test dunkelmodus.test.ts haelt diesen
-   Zusammenhang fest. */
-.badge-popover-auto-width::part(arrow)::after,
-.badge-detail-popover::part(arrow)::after {
+/* === Abzeichen-Sprechblase: DECKEND, Blase wie Spitze ===
+   Simon am Geraet (26.09.2026): "Die haben in meiner App graue Hintergruende,
+   der Pfeil unten ist aber weiss. Die koennen einfach standard weisse Popover
+   sein." Auf Bildschirmfotos ist es nicht zu sehen, in der App eindeutig.
+
+   GEMESSEN im Browser mit echtem Theme und echter popoverEnterAnimation
+   (ios27 1.1.0, Ionic 9, iOS-Modus, 26.09.2026):
+
+     hell:    ::part(content) = rgba(0,0,0,0)   <- transparent
+              ::part(arrow)::after = display:none
+              ::part(callout-glass) = rgba(255,255,255,0.42) + brightness(1.35)
+     dunkel:  ::part(callout-glass) = rgba(62,62,62,0.08)    + brightness(0.9)
+
+   Die Animation setzt `ios-theme-callout` SELBST, sobald eine Sprechblase
+   moeglich ist (ios.enter.js: `baseEl.classList.add('ios-theme-callout')`).
+   In diesem Modus schaltet das Theme ::part(content) auf transparent und
+   ::part(arrow)::after auf display:none ab und zeichnet stattdessen DREI
+   gemaskte Schichten: callout-glass (Flaeche), callout-border (Kante),
+   callout-shadow. Blase und Spitze sind EIN SVG-Pfad -- deshalb gibt es hier
+   nichts mehr getrennt zu faerben, sondern genau eine Flaeche.
+
+   Warum der Versuch vom 26.09. nichts geaendert hat, zweifach:
+   1. Er faerbte `--background` und `::part(arrow)::after` -- beides im
+      Callout-Modus wirkungslos (transparent bzw. abgeschaltet).
+   2. `ion-popover.ios:not(.ios-theme-disabled,.ios26-disabled)` (Element plus
+      zwei Negationen) schlaegt eine einzelne Klasse. Der Dunkelblock des
+      Themes setzte `--background` also ohnehin zurueck auf 0.08 Deckkraft.
+
+   Deshalb hier: die Callout-Flaeche selbst, mit der Spezifitaet des Themes,
+   und OHNE brightness -- der Filter war es, der dieselbe Farbe auf Blase und
+   Spitze unterschiedlich aussehen liess. Vertrag im Test: dunkelmodus.test.ts. */
+ion-popover.badge-popover-auto-width:not(.ios-theme-disabled)::part(callout-glass),
+ion-popover.badge-detail-popover:not(.ios-theme-disabled)::part(callout-glass) {
+  background: var(--app-surface-card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Der Rueckfall, wenn KEIN Callout entsteht (Animation aus, `size: 'cover'`,
+   kein Anker -- dann bleibt die klassische Blase aus content plus Spitze).
+   Beide Wege muessen gleich aussehen, sonst haengt das Aussehen davon ab, wie
+   das Popover geoeffnet wurde. */
+ion-popover.badge-popover-auto-width:not(.ios-theme-callout)::part(content),
+ion-popover.badge-detail-popover:not(.ios-theme-callout)::part(content),
+ion-popover.badge-popover-auto-width::part(arrow)::after,
+ion-popover.badge-detail-popover::part(arrow)::after {
   background: var(--app-surface-card);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -3507,8 +3544,9 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
      etwas weniger gesaettigt, sonst leuchten sie auf Schwarz; die
      -dunkel-Partner ruecken auf den alten Grundton nach, damit Verlaeufe
      mit weissem Text lesbar bleiben.
-   - Text auf Kartengrund (#1c1c1e) mindestens 4,5:1 -- der Test
-     dunkelmodus.test.ts rechnet das nach.
+   - Text auf Kartengrund (#242426) mindestens 4,5:1 -- der Test
+     dunkelmodus.test.ts rechnet das nach. Das ist auch die Obergrenze des
+     Kartengrunds: bei #2c2c2e faellt --app-text-tertiary auf 4,27:1.
    - Jede -rgb-Form traegt exakt das Tripel ihres Hexwerts (Test).
    - Tokens OHNE dunkle Entsprechung stehen in der Ausnahmeliste des Tests,
      mit Begruendung: Metallfarben, Anmelde- und Wrapped-Akzente (schon fuer
@@ -3643,7 +3681,16 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-flaeche-hinweis: #0c2a3d;
     --app-rand-hinweis: #075985;
     --app-text-hinweis-dunkel: #7dd3fc;
-    --app-flaeche-gedaempft: #1c1c1e;
+    /* Gedaempfte Flaeche: die fixierte Kopfzeile der Anwesenheitsmatrix, und
+       die liegt AUF einer Karte, nicht auf dem Seitengrund. Hell setzt sie
+       sich mit #fafafa knapp nach unten von der weissen Karte ab (dL* -1,73);
+       im Dunkeln geht "knapp daneben" nur nach oben, sonst landet man beim
+       Seitengrund. #2c2c2e sind dL* +3,80 ueber der Karte, ihr Text bleibt
+       bei 6,45:1 (mittelgrau) und 11,10:1 (primary).
+       Vorher stand hier #1c1c1e -- derselbe Wert, den die Karte damals hatte,
+       also gar kein Absatz; seit die Karte auf #242426 steht, waere es sogar
+       ein Schritt nach unten gewesen. */
+    --app-flaeche-gedaempft: #2c2c2e;
 
     /* Text: iOS-Grautoene fuer dunklen Grund */
     --app-text-primary: #e5e5ea;
@@ -3658,27 +3705,62 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-text-dunkelgrau: #e5e7eb;
     --app-text-mittelgrau: #b0b0b5;
 
-    /* Flaechen und Linien: Kartengrund ueber Ionics Schwarz (iOS) bzw.
-       #121212 (Android), darueber zwei Stufen fuer Platzhalter und Raender */
-    --app-surface-card: #1c1c1e;
-    --app-surface-soft: #1c1c1e;
-    --app-surface-muted: #2c2c2e;
+    /* Flaechen und Linien: die Stufenleiter ueber dem Seitengrund.
+       Grund < Karte < gedaempfte Flaeche < Ladeflaeche.
+
+       GEMESSEN AM 26.09.2026, nachdem Simon am Geraet meldete: "Darkmode ist
+       nur halb gut. Koennte du die Listenelemente im Darkmode etwas absetzen.
+       Also grau statt black."
+
+       Der Seitengrund kommt aus Ionics dark.system.css und ist dort
+       plattformabhaengig: `:root.ios` setzt #000000, `:root.md` setzt #121212.
+       Das iOS-Theme (ionic-theme-ios27) ruehrt ihn nicht an -- nachgesehen,
+       es setzt --ion-background-color nur fuer Datumswaehler-Modale auf
+       transparent. Gegen diese beiden Gruende steht die Karte.
+
+       Gemessen wurde in dL* (CIE-Helligkeit), nicht im WCAG-Verhaeltnis: Das
+       Verhaeltnis staucht dicht ueber Schwarz und liest jeden Grauabstand als
+       "1,2:1", auch einen gut sichtbaren. Zum Vergleich der Hellmodus, wo
+       niemand etwas vermisst: Seitengrund #f4f5f8 -> Karte #ffffff sind
+       dL* 3,46.
+
+       Karte #1c1c1e ALT:  iOS dL* 10,34   Android dL* 4,88
+       Karte #242426 NEU:  iOS dL* 14,27   Android dL* 8,81
+
+       Auf Android war der Schritt also nicht einmal halb so gross wie auf
+       iOS -- dort war der Befund am schaerfsten, und er stand im Handoff
+       nicht. #242426 hebt beide Plattformen und bleibt unter der Grenze, die
+       der Text setzt: bei #2c2c2e faellt --app-text-tertiary (#8e8e93) auf
+       4,27:1 und reisst damit die 4,5:1 aus dunkelmodus.test.ts (21 Stellen
+       nutzen das Token). Auf #242426 sind es 4,75:1.
+
+       Farbe allein traegt den Unterschied aber nicht, und sie soll es auch
+       nicht: Im Hellmodus macht das der Schatten (dL* 3,46 waere sonst
+       nichts). Deshalb nimmt ion-card.app-card im Dunkeln wieder ihren
+       Schatten -- siehe dort. */
+    --app-surface-card: #242426;
+    --app-surface-soft: #242426;
+    --app-surface-muted: #323234;
     --app-surface-dim: #3a3a3c;
     --app-border: #3a3a3c;
-    --app-border-soft: #2c2c2e;
+    --app-border-soft: #323234;
     --app-border-strong: #48484a;
 
     /* Verlaeufe, die helle Flaechen sind */
     --app-gradient-seite-hell: linear-gradient(135deg, #121212 0%, #1f1f22 100%);
     --app-gradient-badge-gesperrt: linear-gradient(145deg, #48484a 0%, #3a3a3c 100%);
 
-    /* Ionic-Leisten: Glas-Grund auf Kartengrund-Ton, Titel hell. Die
-       Deckkraft steht in den Regeln der Leisten, hier nur der Ton. */
+    /* Ionic-Leisten: eigener Ton, dicht ueber dem Seitengrund -- die Leiste
+       liegt UEBER der Seite, nicht auf einer Karte, und soll sich nicht wie
+       eine Karte anfuehlen. Hell ist es #f7f7f7 (auch dort nicht das Weiss
+       der Karte), dunkel bleibt es #1c1c1e und damit eine Stufe unter dem
+       Kartengrund #242426. Die Deckkraft steht in den Regeln der Leisten,
+       hier nur der Ton. */
     --app-glasleiste-rgb: 28, 28, 30;
     --ion-toolbar-color: var(--app-weiss);
 
     /* Schatten: Ein schwarzer Schatten mit 10 % Deckkraft verschwindet auf
-       #1c1c1e -- Karten und Popover verloren im Dunkeln ihre Tiefe. Die
+       dunklem Grund -- Karten und Popover verloren im Dunkeln ihre Tiefe. Die
        Geometrie (Versatz, Weichzeichnung) bleibt exakt die der hellen Skala
        aus theme/abstaende.css, nur die Deckkraft steht auf dem Dreifachen,
        gedeckelt bei 0.6. Kein heller Schein: der wuerde auf Material und
@@ -3696,6 +3778,19 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-schatten-hoch: 0 8px 24px rgba(0, 0, 0, 0.36);
     --app-schatten-modal: 0 10px 28px rgba(0, 0, 0, 0.54);
   }
+
+    /* Tiefe der Karte. Im Hellen bewusst NICHTS: Dort traegt der Kartenrand
+       die Kante, und ein Schatten auf weissem Grund saehe nach Doppelrahmen
+       aus -- `ion-card.app-card` fuehrt darum `box-shadow: none`.
+       Im Dunkeln fehlt beides, und die Karte haette nur noch ihre Farbstufe.
+       Gemessen sind das dL* 14,27 (iOS, Grund #000000) und dL* 8,81
+       (Android, Grund #121212); im Hellmodus reichen dL* 3,46 vom
+       Seitengrund #f4f5f8 zur weissen Karte, weil dort der Schatten den Rest
+       macht. Also im Dunkeln dasselbe Mittel -- statt noch hellerer Flaechen,
+       die der Text nicht mitmacht (Begruendung am Flaechen-Block).
+       Der Wert kommt aus der Skala oben, nicht als Rohwert, und ist dort auf
+       der dreifachen Deckkraft -- ein 10-%-Schwarz verschwaende hier. */
+    --app-schatten-karte-flaeche: var(--app-schatten-karte);
 }
 
 /* ============================================

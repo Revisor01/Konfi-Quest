@@ -268,6 +268,110 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
     expect(relativeHelligkeit(tokens(dunkelBloecke[0] ?? '').get('--app-surface-card')!)).toBeLessThan(0.05);
   });
 
+  // SIMONS BEFUND AM GERAET (26.09.2026): "Darkmode ist nur halb gut. Koennte
+  // du die Listenelemente im Darkmode etwas absetzen. Also grau statt black.
+  // Oder andersrum die Hintergruende grau, der Rest black."
+  //
+  // GEMESSEN, nicht geschaetzt. Der Seitengrund kommt aus Ionics
+  // dark.system.css und ist plattformabhaengig: `:root.ios` #000000,
+  // `:root.md` #121212. Das iOS-Theme ruehrt ihn nicht an (nachgesehen: es
+  // setzt --ion-background-color nur fuer Datumswaehler-Modale).
+  //
+  // Gemessen wird in dL* (CIE-Helligkeit), NICHT im WCAG-Verhaeltnis: Das
+  // Verhaeltnis staucht dicht ueber Schwarz und liest jeden Grauabstand als
+  // "1,2:1", auch einen gut sichtbaren. Zum Vergleich der Hellmodus, wo
+  // niemand etwas vermisst: #f4f5f8 -> #ffffff sind dL* 3,46.
+  //
+  //   Karte #1c1c1e ALT:  iOS dL* 10,34   Android dL* 4,88
+  //   Karte #242426 NEU:  iOS dL* 14,27   Android dL*  8,81
+  //
+  // Auf Android war der Schritt nicht einmal halb so gross wie auf iOS --
+  // dort war der Befund am schaerfsten.
+  const GRUND_IOS = '#000000';      // Ionic dark.system.css, :root.ios
+  const GRUND_ANDROID = '#121212';  // Ionic dark.system.css, :root.md
+
+  it('der Seitengrund steht wirklich, wo wir ihn vermuten -- Ionic, nicht wir', () => {
+    // Die ganze Rechnung unten haengt daran. Aendert Ionic die Palette oder
+    // setzt das Theme doch einen eigenen Grund, muss sie neu gemacht werden.
+    const palette = lies('node_modules/@ionic/core/css/palettes/dark.system.css');
+    expect(palette).toMatch(/:root\.ios\{--ion-background-color:\s*#000000/);
+    expect(palette).toMatch(/:root\.md\{--ion-background-color:\s*#121212/);
+    // Und wir selbst ueberschreiben ihn nicht (nur als Rueckfall lesen ist ok).
+    const eigene = ohneKommentare(lies('src/theme/variables.css'))
+      .split('\n')
+      .filter((z) => /^\s*--ion-background-color\s*:/.test(z));
+    expect(eigene).toEqual([]);
+  });
+
+  it('die Karte setzt sich auf BEIDEN Plattformen ab: dL* mindestens 8', () => {
+    const karte = tokens(dunkelBloecke[0] ?? '').get('--app-surface-card')!;
+    const iosSchritt = dLStern(GRUND_IOS, karte);
+    const androidSchritt = dLStern(GRUND_ANDROID, karte);
+    // Der alte Wert #1c1c1e kam auf Android nur auf 4,88 -- genau Simons
+    // Befund. 8 ist die Untergrenze, die #242426 auf beiden Seiten haelt.
+    expect(iosSchritt).toBeGreaterThanOrEqual(8);
+    expect(androidSchritt).toBeGreaterThanOrEqual(8);
+    // Und der Schritt ist grosszuegiger als im Hellmodus, wo der Schatten
+    // mittraegt (dort dL* 3,46).
+    expect(androidSchritt).toBeGreaterThan(dLStern('#f4f5f8', '#ffffff'));
+  });
+
+  it('die Stufenleiter steigt: Grund < Karte < gedaempfte Flaeche < Ladeflaeche', () => {
+    const d = tokens(dunkelBloecke[0] ?? '');
+    const leiter = [
+      ['Grund (Android)', GRUND_ANDROID],
+      ['Karte', d.get('--app-surface-card')!],
+      ['gedaempft', d.get('--app-surface-muted')!],
+      ['Ladeflaeche', d.get('--app-surface-dim')!],
+    ] as const;
+    // Jede Stufe echt heller als die darunter -- keine Gleichstaende. Genau
+    // das waere passiert, haette man die Karte auf #2c2c2e gehoben: Sie waere
+    // mit --app-surface-muted zusammengefallen und der Platzhalter haette
+    // seine eigene Stufe verloren.
+    const flach: string[] = [];
+    for (let i = 0; i < leiter.length - 1; i++) {
+      const schritt = dLStern(leiter[i][1], leiter[i + 1][1]);
+      if (schritt < 3) flach.push(`${leiter[i][0]} -> ${leiter[i + 1][0]}: dL* ${schritt.toFixed(2)}`);
+    }
+    expect(flach).toEqual([]);
+    // Und der Rand hebt sich von der Karte ab, sonst ist die Kante weg.
+    expect(dLStern(d.get('--app-surface-card')!, d.get('--app-border-soft')!)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('die gedaempfte Flaeche setzt sich von der Karte ab, auf der sie liegt', () => {
+    // --app-flaeche-gedaempft ist die fixierte Kopfzeile der
+    // Anwesenheitsmatrix. Sie liegt AUF einer Karte, nicht auf dem
+    // Seitengrund. Hell setzt sie sich mit #fafafa knapp nach unten von Weiss
+    // ab; im Dunkeln geht "knapp daneben" nur nach oben, sonst landet man beim
+    // Seitengrund. Vorher trug sie denselben Wert wie die Karte (#1c1c1e),
+    // war also gar kein Absatz -- und nach dem Anheben der Karte sogar ein
+    // Schritt nach unten.
+    const d = tokens(dunkelBloecke[0] ?? '');
+    const schritt = dLStern(d.get('--app-surface-card')!, d.get('--app-flaeche-gedaempft')!);
+    expect(schritt).toBeGreaterThanOrEqual(3);
+    // Ihr Text bleibt lesbar (dieselbe 4,5:1-Schwelle wie auf der Karte).
+    for (const name of ['--app-text-primary', '--app-text-mittelgrau']) {
+      expect(kontrast(d.get(name)!, d.get('--app-flaeche-gedaempft')!)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('die Karte hat im Dunkeln Tiefe, im Hellen nicht -- ueber EIN Token, kein Rohwert', () => {
+    // Farbe allein traegt den Unterschied nicht; im Hellmodus macht es der
+    // Schatten (dL* 3,46 waere sonst nichts). Die Kartenregel darf deshalb
+    // kein festes `box-shadow: none` mehr fuehren.
+    const regel = css.match(/ion-card\.app-card:not\(\.ios-theme-disabled\) \{([\s\S]*?)\}/);
+    expect(regel, 'Kartenregel nicht gefunden').toBeTruthy();
+    expect(regel![1]).toMatch(/box-shadow:\s*var\(--app-schatten-karte-flaeche\)/);
+    expect(regel![1]).not.toMatch(/box-shadow:\s*none/);
+    // Hell ausdruecklich nichts, dunkel der Kartenschatten aus der Skala.
+    expect(helleTokens.get('--app-schatten-karte-flaeche')).toBe('none');
+    expect(tokens(dunkelBloecke[0] ?? '').get('--app-schatten-karte-flaeche'))
+      .toBe('var(--app-schatten-karte)');
+    // Kein Rohwert: die Tiefe kommt aus der konsolidierten Skala.
+    expect(tokens(dunkelBloecke[0] ?? '').get('--app-schatten-karte-flaeche'))
+      .not.toMatch(/rgba?\(/);
+  });
+
   // BEFUND AM GERAET (Simon, 26.09.2026): "Dark Mode Login Seite und
   // vermutlich auch User erstellen Passwort etc. sind noch hell!"
   //
@@ -329,18 +433,34 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
     const blase = [...css.matchAll(/([^\n{}]*::part\(content\)[^{]*)\{([^}]*)\}/g)]
       .filter(([, , regeln]) => /(?:^|[\s;])background\s*:/.test(regeln));
 
-    for (const [, selektor] of blase) {
-      const basis = selektor.trim().replace(/::part\(content\).*$/, '');
-      const faerbtPfeil = new RegExp(
-        `${basis.replace(/[.*+?^$()|[\]\\]/g, '\\$&')}[^\\n{}]*::part\\(arrow\\)`
-      ).test(css);
-      const setztBackground = new RegExp(
-        `${basis.replace(/[.*+?^$()|[\]\\]/g, '\\$&')}\\s*\\{[^}]*--background\\s*:`
-      ).test(css);
-      expect(
-        faerbtPfeil || setztBackground,
-        `"${selektor.trim()}" faerbt die Blase, aber weder den Pfeil noch --background`
-      ).toBe(true);
+    // Eine Regel darf mehrere Selektoren tragen ("a::part(content), b::part(
+    // arrow)::after"). Jeden EINZELN pruefen: sonst schneidet der Basis-Name
+    // aus der letzten Zeile den Rest der Liste ab, und eine Pfeil-Regel, die
+    // eine Zeile darueber steht, bliebe unsichtbar.
+    for (const [, selektorliste] of blase) {
+      for (const selektor of selektorliste.split(',')) {
+        if (!selektor.includes('::part(content)')) continue;
+        const basis = selektor.trim().replace(/::part\(content\).*$/, '');
+        const roh = (s: string) => s.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
+        // Der Traeger ist die Klasse (bzw. das Element), nicht der ganze
+        // Selektor: `:not(...)`-Zusaetze duerfen zwischen der Blasen- und der
+        // Pfeil-Regel abweichen -- im Callout-Modus ist die Blase gerade DURCH
+        // ein :not() ausgenommen, waehrend der Pfeil ohne Zusatz steht.
+        const traeger = basis.match(/(?:^|\s)((?:[a-zA-Z-]+)?\.[\w-]+|[a-zA-Z-]+)(?=[:.\s]|$)/);
+        const kern = traeger ? traeger[1] : basis;
+        // Der Pfeil kann ueber ::part(arrow) ODER ueber die Callout-Flaeche
+        // kommen -- im Callout-Modus ist er Teil desselben SVG-Pfades.
+        const faerbtPfeil = new RegExp(
+          `${roh(kern)}[^,{}]*::part\\((?:arrow|callout-glass)\\)`
+        ).test(css);
+        const setztBackground = new RegExp(
+          `${roh(kern)}[^,{}]*\\s*\\{[^}]*--background\\s*:`
+        ).test(css);
+        expect(
+          faerbtPfeil || setztBackground,
+          `"${selektor.trim()}" faerbt die Blase, aber weder den Pfeil noch --background`
+        ).toBe(true);
+      }
     }
   });
 
@@ -365,22 +485,63 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
     expect(abweichend).toEqual([]);
   });
 
-  // SIMONS BEFUND (26.09.2026): "auf dem Dashboard bei Badges ist der Pfeil
-  // unten durchsichtig. Bei Stempel (alle Rollen), bei Badges im Dashboard
-  // Konfi und Teamer und bei Badges auf der Seite bei Konfi und Teamer."
+  // SIMONS BEFUND AM GERAET (26.09.2026): "Die haben in meiner App graue
+  // Hintergruende, der Pfeil unten ist aber weiss. Die koennen einfach
+  // standard weisse Popover sein."
   //
-  // Gemessen im Theme-Stylesheet: ion-popover.ios setzt
-  // `--background: rgba(<glas>, 0.67)`, und ::part(arrow)::after bekommt dort
-  // NUR clip-path und backdrop-filter -- kein eigenes background. Die
-  // gestanzte Spitze erbt also das Glas und zeigt, was darunter liegt.
-  it('die Abzeichen-Sprechblase ist deckend, Blase wie Pfeilspitze', () => {
-    const regel = css.match(/\.badge-popover-auto-width,\s*\n\.badge-detail-popover \{([\s\S]*?)\}/);
-    expect(regel, '.badge-detail-popover nicht gefunden').toBeTruthy();
-    // Deckende Flaeche statt Theme-Glas -- die Spitze erbt sie mit.
-    expect(regel![1]).toMatch(/--background:\s*var\(--app-surface-card\)/);
-    // Und ausdruecklich noch einmal fuer die Spitze, falls jemand spaeter
-    // ::part(content) faerbt statt --background.
-    expect(css).toMatch(/\.badge-detail-popover::part\(arrow\)::after/);
+  // GEMESSEN im Browser mit echtem Theme und echter popoverEnterAnimation
+  // (ios27 1.1.0, Ionic 9, iOS-Modus):
+  //
+  //   vorher hell:   ::part(callout-glass) = rgba(255,255,255,0.42)
+  //                                          + brightness(1.35)
+  //   vorher dunkel: ::part(callout-glass) = rgba(62,62,62,0.08)
+  //                                          + brightness(0.9)
+  //   nachher:       rgb(255,255,255) bzw. rgb(28,28,30), backdrop-filter none
+  //
+  // Die Animation setzt `ios-theme-callout` selbst. In diesem Modus ist
+  // ::part(content) transparent und ::part(arrow)::after display:none -- die
+  // sichtbare Flaeche ist ::part(callout-glass), ein SVG-Pfad aus Blase UND
+  // Spitze. Wer nur --background oder ::part(arrow) faerbt, aendert nichts;
+  // genau das war der wirkungslose Versuch vom 26.09.
+  it('die Abzeichen-Sprechblase faerbt die Callout-Flaeche deckend', () => {
+    // Die Regel muss ::part(callout-glass) treffen -- sonst greift sie im
+    // Callout-Modus ueberhaupt nicht.
+    const glas = css.match(
+      /ion-popover\.badge-detail-popover[^{]*::part\(callout-glass\)[^{]*\{([\s\S]*?)\}/
+    );
+    expect(glas, '::part(callout-glass) wird nicht gefaerbt').toBeTruthy();
+    expect(glas![1]).toMatch(/background:\s*var\(--app-surface-card\)/);
+    // Ohne diesen Ausschalter bleibt brightness(1.35) bzw. 0.9 stehen -- der
+    // Filter war es, der Blase und Spitze verschieden aussehen liess.
+    expect(glas![1]).toMatch(/backdrop-filter:\s*none/);
+    expect(glas![1]).toMatch(/-webkit-backdrop-filter:\s*none/);
+  });
+
+  it('die Sprechblase traegt die Spezifitaet des Themes', () => {
+    // `ion-popover.ios:not(.ios-theme-disabled,.ios26-disabled)` ist Element
+    // plus zwei Negationen und schlaegt eine blosse Klasse. Eine Regel, die
+    // nur `.badge-detail-popover` heisst, verliert gegen den Dunkelblock des
+    // Themes -- gemessen am 26.09.: --background fiel dort auf 0.08 zurueck.
+    const zeilen = css
+      .split('\n')
+      .filter((z) => z.includes('badge-detail-popover') && z.includes('::part('));
+    expect(zeilen.length, 'keine ::part-Regel fuer die Sprechblase').toBeGreaterThan(0);
+    for (const zeile of zeilen) {
+      expect(
+        zeile.trimStart().startsWith('ion-popover.'),
+        `"${zeile.trim()}" beginnt nicht mit ion-popover und verliert gegen das Theme`
+      ).toBe(true);
+    }
+  });
+
+  it('der Rueckfall ohne Callout sieht genauso aus', () => {
+    // Ohne Anker oder mit abgeschalteter Animation entsteht kein Callout;
+    // dann traegt wieder ::part(content) plus Pfeilspitze die Farbe. Beide
+    // Wege muessen gleich aussehen.
+    expect(css).toMatch(
+      /ion-popover\.badge-detail-popover:not\(\.ios-theme-callout\)::part\(content\)/
+    );
+    expect(css).toMatch(/ion-popover\.badge-detail-popover::part\(arrow\)::after/);
   });
 
   it('die Anmelde-Karte folgt dem Dunkelmodus', () => {
@@ -415,4 +576,24 @@ function relativeHelligkeit(hex: string): number {
 function kontrast(a: string, b: string): number {
   const [l1, l2] = [relativeHelligkeit(a), relativeHelligkeit(b)].sort((x, y) => y - x);
   return (l1 + 0.05) / (l2 + 0.05);
+}
+
+/**
+ * L* (CIE-Helligkeit) eines Hexwerts, 0 = Schwarz, 100 = Weiss.
+ *
+ * Fuer FLAECHEN dicht ueber Schwarz ist das der richtige Massstab, nicht das
+ * WCAG-Verhaeltnis: Dessen +0,05 im Zaehler und Nenner staucht den Bereich so,
+ * dass #000 -> #1c1c1e und #000 -> #2c2c2e beide als "rund 1,2-1,5:1" lesen,
+ * obwohl der zweite Schritt fast doppelt so gross ist. L* ist perzeptuell
+ * gleichabstaendig -- ein dL* von 10 sieht unten wie oben gleich weit aus.
+ * (WCAG bleibt fuer TEXT auf Flaeche der Massstab, siehe kontrast().)
+ */
+function lStern(hex: string): number {
+  const y = relativeHelligkeit(hex);
+  return y <= 216 / 24389 ? y * (24389 / 27) : Math.cbrt(y) * 116 - 16;
+}
+
+/** Helligkeitsschritt von a nach b in L*. Positiv heisst: b ist heller. */
+function dLStern(a: string, b: string): number {
+  return lStern(b) - lStern(a);
 }

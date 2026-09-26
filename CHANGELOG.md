@@ -121,6 +121,10 @@ Versionsüberschrift.
   wann und wann zuletzt. Die Einzelfälle stehen weiterhin darunter.
 
 ### Geändert
+- Im Dunkelmodus setzen sich Karten und Listen deutlicher vom Hintergrund ab:
+  Sie sind jetzt erkennbar heller als der Grund statt fast schwarz auf schwarz
+  und werfen einen leichten Schatten. Auf Android war der Unterschied bisher
+  am kleinsten.
 - Die kleinen Marken in der Ecke von Karten zeigen jetzt durchgehend Symbole
   statt Wörter: die Rolle in der Benutzerliste (Gebäude für Org-Admin, Schild
   für Admin, Person für Teamer:in), „Voll"/„Frei" bei Serienterminen
@@ -226,8 +230,13 @@ Versionsüberschrift.
   Modus. Die Bereichsfarben sind jetzt in beiden Modi dieselben.
 - Im Dunkelmodus waren die Ränder von Karten und Listen nicht mehr zu erkennen,
   und im Chat blieben die Datumsmarken und die Eingabezeile hell.
-- Die Sprechblase an Abzeichen und Stempeln ist wieder durchgehend deckend —
-  ihre Spitze war durchsichtig und zeigte, was darunter lag.
+- Die Sprechblase an Abzeichen und Stempeln ist jetzt schlicht weiß, Fläche
+  und Spitze gleich. Bisher schimmerte durch, was darunter lag, und die Spitze
+  hatte einen anderen Ton als die Blase — am Bildschirm kaum zu sehen, auf dem
+  Telefon deutlich. Das galt auf allen Seiten, in allen Rollen.
+- Auf der Startseite fürs Team waren die Sprechblasen an Abzeichen und
+  Urkunden schmaler als anderswo, sodass Texte unnötig umbrachen. Sie sind
+  jetzt so breit wie überall sonst.
 - Die Zahl an der Glocke wird auf dem iPhone nicht mehr angeschnitten.
 - Unter „Benachrichtigungen" stand derselbe Hinweis zweimal; jetzt steht er
   einmal, in derselben Form wie die Hinweise überall sonst.

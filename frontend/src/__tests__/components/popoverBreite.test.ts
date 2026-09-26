@@ -77,3 +77,47 @@ describe('Level-Popover der Konfi-Startseite: dieselbe feste Breite', () => {
     expect(argumente).toMatch(/cssClass:\s*'badge-detail-popover'/);
   });
 });
+
+/**
+ * JEDE Sprechblase mit Spitze traegt die Klasse.
+ *
+ * Gefunden am 26.09.2026 beim Nachmessen von Simons Befund: Im
+ * Teamer-Dashboard riefen die beiden Abzeichen und die Zertifikate
+ * `presentBadgePopover`/`presentCertPopover` OHNE cssClass auf. Die Blase war
+ * dort 200px breit statt 320 und bekam weder die feste Breite noch die
+ * deckende Flaeche -- genau die Ansicht, in der Simon den grauen Hintergrund
+ * sah. Der Einzeltest oben deckte nur den Level-Popover ab.
+ *
+ * Ausgenommen sind Popover mit `arrow: false`: ohne Spitze zeichnet das Theme
+ * keine Sprechblase, die Klasse waere dort sinnlos.
+ */
+describe('Alle Abzeichen-Sprechblasen tragen die Klasse', () => {
+  const dateien = [
+    'src/components/konfi/views/BadgesView.tsx',
+    'src/components/konfi/views/DashboardView.tsx',
+    'src/components/teamer/pages/TeamerDashboardPage.tsx',
+    'src/components/teamer/pages/TeamerKonfiStatsPage.tsx',
+    'src/components/admin/views/KonfiBadgesSection.tsx',
+    'src/components/shared/ChallengeStempelSektion.tsx',
+  ];
+
+  it('kein present*Popover-Aufruf ohne cssClass', () => {
+    const ohneKlasse: string[] = [];
+    for (const datei of dateien) {
+      const quelle = lies(datei);
+      // Jeder Aufruf der Form present…Popover({ … })
+      for (const treffer of quelle.matchAll(/present\w*Popover\(\{([\s\S]*?)\}\)/g)) {
+        const argumente = treffer[1];
+        // Ohne Spitze keine Sprechblase -- dort ist die Klasse ohne Wirkung.
+        if (/arrow:\s*false/.test(argumente)) continue;
+        // Der Aufruf, der nur eine Variable weiterreicht, wird an der
+        // Definitionsstelle geprueft, nicht hier.
+        if (!/event:/.test(argumente)) continue;
+        if (!/cssClass:/.test(argumente)) {
+          ohneKlasse.push(`${datei}: ${argumente.replace(/\s+/g, ' ').trim().slice(0, 70)}`);
+        }
+      }
+    }
+    expect(ohneKlasse).toEqual([]);
+  });
+});

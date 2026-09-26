@@ -354,8 +354,9 @@ describe('PostfachModal', () => {
 
     it('die Karte der Mitteilungen traegt ausdruecklich den Kartengrund -- auf dem Geraet war sie es nicht', async () => {
       // Bis 25.09.2026 stand hier `white`; seit dem Dunkelmodus ist der
-      // Kartengrund ein Token (hell weiss, dunkel #1c1c1e), siehe
-      // dunkelmodus.test.ts.
+      // Kartengrund ein Token (hell weiss, dunkel grau). Welcher Grauwert es
+      // ist, legt dunkelmodus.test.ts fest -- hier zaehlt nur, dass die Karte
+      // das Token nimmt und nicht wieder eine feste Farbe.
       mockGet.mockResolvedValue(antwort([eintrag(1)]));
       render(<PostfachModal />);
       await oeffnen();

@@ -122,9 +122,11 @@ Level, Material, Jahresrückblick, Zertifikate).
 ## Im Dunkelmodus arbeiten
 
 Die App richtet sich nach dem Handy: Steht das Gerät auf Dunkel, werden
-Hintergründe, Karten, Listen und Texte dunkel. Die Farben der Bereiche —
-Rot für Termine, Violett für Konfis, Türkis für den Chat — bleiben
-erkennbar, nur etwas heller, damit sie auf dunklem Grund nicht leuchten.
+Hintergründe, Karten, Listen und Texte dunkel. Karten und Listen sind dabei
+etwas heller als der Hintergrund und werfen einen leichten Schatten, damit
+sie sich abheben. Die Farben der Bereiche — Rot für Termine, Violett für
+Konfis, Türkis für den Chat — sind dieselben wie im Hellen: So leuchten die
+farbigen Kopfbereiche auf dunklem Grund nicht heller als am Tag.
 
 Einen eigenen Schalter gibt es in der App nicht. Umgeschaltet wird in den
 Systemeinstellungen des Handys (iOS: *Anzeige & Helligkeit*, Android:
