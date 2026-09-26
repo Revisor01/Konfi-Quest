@@ -35,6 +35,7 @@ Dazu kommen Kontraste unter AA im Hellmodus (drei Text-Grautöne mit 2,85–3,54
 ### BF-01: 170 von 186 Formularfeldern haben keinen zugänglichen Namen (Ionic-9-Legacy-Label)
 
 - **Schwere:** HOCH
+- **Status:** teilweise behoben 26.09.2026 — die vier Anmeldeseiten (LoginView, ForgotPasswordPage, ResetPasswordPage, KonfiRegisterPage) tragen `aria-label` an jedem Feld, Pflichtfelder der Registrierung `aria-required`; die übrigen rund 150 Felder folgen im Barrierefreiheits-Paket vor der Ausrollung.
 - **Fundstelle:** durchgehend, z. B. `frontend/src/components/auth/LoginView.tsx:302-316`, `frontend/src/components/admin/modals/EventFormSections.tsx:89-95` und `:155-167`, `frontend/src/components/admin/modals/UserManagementModal.tsx:422-470`, `frontend/src/components/chat/modals/PollModal.tsx:243-307`; vollständige Liste über das Skript unten.
 - **Kennzeichnung:** reproduziert — statisch (Skript) und im Browser (Playwright, Chromium-Zugänglichkeitsbaum).
 - **Beschreibung:** Die App beschriftet Felder mit `<IonLabel position="stacked">Text</IonLabel>` als Geschwister eines `<IonInput>`/`<IonTextarea>`/`<IonSelect>`/`<IonToggle>`/`<IonRange>`/`<IonDatetime>` im `<IonItem>` (93 Vorkommen). Diese Legacy-Syntax hat Ionic 8 entfernt; in Ionic 9.0.3 (`node_modules/@ionic/core/components/ion-input.js`) setzt `getLabelledById()` den Namen ausschließlich aus dem `label`-Prop, einem `slot="label"` oder einem geerbten `aria-label`. Es gibt in der App **0** Felder mit `label=`; 170 von 186 Feldern haben weder `label`, `aria-label`, `aria-labelledby` noch `placeholder` im Tag. Die 16 übrigen haben nur einen Platzhalter, der verschwindet, sobald etwas eingetippt ist.
@@ -62,6 +63,7 @@ Dazu kommen Kontraste unter AA im Hellmodus (drei Text-Grautöne mit 2,85–3,54
 ### BF-02: Web-Variante — Anmeldeseite per Tastatur nur halb bedienbar
 
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — Augen-Umschalter als `<button aria-pressed>`, „Passwort vergessen?"/„Zurück"/„Registrieren"/„Anmelden" als `<a href>`, Enter im Feld sendet (`utils/tastatur.ts`, `beiEnter`); gemessen: Tab-Reihe 3 → 6 Haltepunkte, Enter 0 → 1 `POST /api/auth/login`; Layout pixelgleich (8 Screenshots, 0 abweichende Pixel).
 - **Fundstelle:** `frontend/src/components/auth/LoginView.tsx:333-338` (Augen-Umschalter als `IonIcon onClick`), `:380-386` (`<span onClick>` „Passwort vergessen?“), `:424-431` (`<div onClick>` Registrierung); kein `<form>`, kein `onKeyDown` (grep `'Enter'|<form|onSubmit` → 0 Treffer). Gleiches Muster `KonfiRegisterPage.tsx` („Zurück zur Anmeldung“), `ForgotPasswordPage.tsx`, `ResetPasswordPage.tsx`.
 - **Kennzeichnung:** reproduziert (Playwright gegen `http://127.0.0.1:5199/login`, Desktop 1 440 px).
 - **Beschreibung:** Die Tab-Reihenfolge der Login-Seite hat genau drei Haltepunkte: Nutzername → Passwort → „Anmelden“ → zurück zum `body`. Der Passwort-Augen-Umschalter, „Passwort vergessen?“ und „Noch keinen Account? Mit Einladungscode registrieren“ sind nicht fokussierbar und tragen keine Rolle (Zugänglichkeitsbaum: `img` ohne Namen bzw. `text`). Enter im Passwortfeld löst keinen Anmeldeversuch aus; erst der Klick auf „Anmelden“ sendet `POST https://konfi-quest.de/api/auth/login`. Auf `/register` ist ebenfalls nur das Code-Feld erreichbar („Zurück zur Anmeldung“ nicht).
@@ -94,6 +96,7 @@ Dazu kommen Kontraste unter AA im Hellmodus (drei Text-Grautöne mit 2,85–3,54
 ### BF-05: `lang="en"` auf einer deutschsprachigen App
 
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — `<html lang="de">` in `index.html`, Test `sprache.test.ts`.
 - **Fundstelle:** `frontend/index.html:2` (`<html lang="en">`); zur Laufzeit nirgends gesetzt (grep `documentElement.lang` → 0 Treffer); Kommentar in `__tests__/components/kachelrasterEinheitlich.test.tsx:147` kennt das Problem („Die Seite steht auf lang="en"“). Die statischen Seiten `public/*.html` haben korrekt `lang="de"`.
 - **Kennzeichnung:** reproduziert (Playwright: `document.documentElement.lang === "en"` auf allen vier Auth-Seiten).
 - **Beschreibung:** Die Sprachangabe steuert Vorlesestimme, Silbentrennung und Rechtschreibprüfung. WCAG 3.1.1 (Stufe A).
@@ -124,6 +127,7 @@ Dazu kommen Kontraste unter AA im Hellmodus (drei Text-Grautöne mit 2,85–3,54
 ### BF-08: Kein sichtbarer Fokus auf dem Anmelde-Knopf; Fehlermeldung ohne Live-Region
 
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Fehlerblöcke `role="alert"`, Bestätigungen `role="status"`; Fokusring in `theme/barrierefreiheit.css` (Hauptknopf zweifarbig Weiß/Lila über `.ion-focused` und `:focus-visible`, Links und nackte Knöpfe `currentColor`); gemessen: `outline none` → `solid 3px` Weiß + `solid 3px` Lila.
 - **Fundstelle:** `frontend/src/components/auth/LoginView.tsx:340-345` (`IonButton.app-auth-button`), `:390-411` (`<div className="app-auth-error">` ohne `role`/`aria-live`); vergleichbar `KonfiRegisterPage.tsx`, `ForgotPasswordPage.tsx`, `ResetPasswordPage.tsx`. Im Theme nur 6 `:focus-visible`-Regeln (`variables.css`), keine für Auth-Knöpfe.
 - **Kennzeichnung:** reproduziert (Playwright: Screenshot-Ausschnitte mit/ohne Fokus pixelgleich; computed style).
 - **Beschreibung:** Der Knopf erhält per Tab die Klasse `ion-focused`, aber `::after`-Overlay hat mit und ohne Fokus `opacity 0.08` bei `background rgba(0,0,0,0)` — kein sichtbarer Unterschied. Die Eingabefelder zeigen dagegen einen 3-px-Ring (in Ordnung). Nach fehlgeschlagener Anmeldung erscheint der Text „Anmeldung fehlgeschlagen — Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.“ (verständlich, gut) in einem `div` ohne `role="alert"`; im gesamten DOM war danach keine Live-Region vorhanden.
