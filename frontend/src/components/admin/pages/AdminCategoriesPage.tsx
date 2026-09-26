@@ -299,7 +299,7 @@ const AdminCategoriesPage: React.FC = () => {
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <AppKopfzeile titel="Kategorien" onZurueck={() => window.history.back()} />
+        <AppKopfzeile titel="Kategorien" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
         <IonContent>
           <LoadingSpinner fullScreen message="Kategorien werden geladen..." />
         </IonContent>
@@ -310,6 +310,7 @@ const AdminCategoriesPage: React.FC = () => {
   return (
     <IonPage ref={pageRef}>
       <AppKopfzeile
+        gemeindeUmschalter={false}
         titel="Kategorien"
         onZurueck={() => window.history.back()}
         rechts={canCreate ? (

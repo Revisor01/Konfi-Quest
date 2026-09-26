@@ -345,7 +345,7 @@ const AdminCertificatesPage: React.FC = () => {
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <AppKopfzeile titel="Zertifikate" onZurueck={() => window.history.back()} />
+        <AppKopfzeile titel="Zertifikate" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
         <IonContent>
           <LoadingSpinner fullScreen message="Zertifikate werden geladen..." />
         </IonContent>
@@ -356,6 +356,7 @@ const AdminCertificatesPage: React.FC = () => {
   return (
     <IonPage ref={pageRef}>
       <AppKopfzeile
+        gemeindeUmschalter={false}
         titel="Zertifikate"
         onZurueck={() => window.history.back()}
         rechts={isAdmin ? (

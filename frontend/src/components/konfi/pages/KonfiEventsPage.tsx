@@ -19,7 +19,7 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
-import { ICON_HINZUFUEGEN_GEFUELLT, ICON_QRCODE } from '../../shared/icons';
+import { ICON_HINZUFUEGEN_GEFUELLT, ICON_SCANNEN } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { zaehltAlsMeiner } from '../../shared';
 import { useApp } from '../../../contexts/AppContext';
@@ -324,7 +324,15 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
           </IonButton>
         ) : (
           <IonButton onClick={() => presentScannerModal()} aria-label="QR-Code scannen">
-            <IonIcon icon={ICON_QRCODE} />
+            {/* DASSELBE SYMBOL WIE BEIM TEAM (26.09.2026, Simons Befund:
+                "Symbol zum QR Code bei Teamer und Konfi unter Events oben ist
+                nicht gleich. Es geht um die Event Liste!").
+                Beide Knoepfe oeffnen den Scanner und tragen dieselbe
+                Beschriftung -- der Konfi zeigte dafuer ICON_QRCODE (das
+                Code-Bild), das Team ICON_SCANNEN (der Scan-Rahmen). Gemeint
+                ist das Scannen, also gilt ICON_SCANNEN. ICON_QRCODE bleibt,
+                wo ein Code ANGEZEIGT wird (Termin-Detailansicht des Teams). */}
+            <IonIcon icon={ICON_SCANNEN} />
           </IonButton>
         )}
       />

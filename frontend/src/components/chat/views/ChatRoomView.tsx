@@ -52,7 +52,7 @@ const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
       <IonPage ref={pageRef}>
         {/* Wie im Chatraum selbst opak (translucent={false}): der Inhalt
             darunter ist nicht fullscreen, siehe ChatHeader. */}
-        <AppKopfzeile titel="Fehler" onZurueck={onBack} translucent={false} />
+        <AppKopfzeile titel="Fehler" onZurueck={onBack} translucent={false} gemeindeUmschalter={false} />
         <IonContent className="ion-padding" style={{ textAlign: 'center' }}>
           <p>{isOffline
             ? 'Dieser Chat ist offline noch nicht verfügbar. Sobald du wieder online bist, wird er geladen.'

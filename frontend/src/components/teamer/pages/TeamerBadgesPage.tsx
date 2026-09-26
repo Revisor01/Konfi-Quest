@@ -143,7 +143,7 @@ const TeamerBadgesPage: React.FC = () => {
 
   return (
     <IonPage>
-      <AppKopfzeile titel="Teamer-Badges" onZurueck={() => window.history.back()} />
+      <AppKopfzeile titel="Teamer-Badges" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
 
       <IonContent className="app-gradient-background" fullscreen>
         <AppKopfzeileGross titel="Teamer-Badges" />

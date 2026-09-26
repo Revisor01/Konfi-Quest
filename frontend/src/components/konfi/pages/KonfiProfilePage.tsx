@@ -86,7 +86,7 @@ const KonfiProfilePage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <AppKopfzeile titel="Profil" onZurueck={() => window.history.back()} />
+      <AppKopfzeile titel="Profil" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
 
       <IonContent className="app-gradient-background" fullscreen>
         <AppKopfzeileGross titel="Profil" />

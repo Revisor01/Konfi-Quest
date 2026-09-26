@@ -575,7 +575,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       <>
         {/* Opak wie der ChatHeader danach, sonst springt die Kopfzeile beim
             Wechsel vom Laden zum Raum. */}
-        <AppKopfzeile titel="Chat wird geladen..." onZurueck={onBack} translucent={false} />
+        <AppKopfzeile titel="Chat wird geladen..." onZurueck={onBack} translucent={false} gemeindeUmschalter={false} />
         <IonContent className="app-gradient-background" fullscreen>
           <div style={{ textAlign: 'center', padding: 'var(--app-abstand-riesig)' }}>
             <p>Chat wird geladen...</p>

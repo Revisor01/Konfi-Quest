@@ -235,7 +235,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
   if (loading) {
     return (
       <IonPage>
-        <AppKopfzeile titel="Dashboard" onZurueck={() => window.history.back()} />
+        <AppKopfzeile titel="Dashboard" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
         <IonContent>
           <LoadingSpinner fullScreen message="Einstellungen werden geladen..." />
         </IonContent>
@@ -245,7 +245,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
 
   return (
     <IonPage>
-      <AppKopfzeile titel="Dashboard" onZurueck={() => window.history.back()} />
+      <AppKopfzeile titel="Dashboard" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
 
       <IonContent className="app-gradient-background" fullscreen>
         <AppKopfzeileGross titel="Dashboard" />

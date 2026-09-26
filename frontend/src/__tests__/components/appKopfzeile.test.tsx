@@ -283,6 +283,13 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
   // muss. Welche das sind, prueft umschalterInDetailansichten.test.ts.
   const detailansichten = new Set([
     'src/components/admin/views/EventDetailView.tsx',
+    // Verwaltungs-Unterseiten unter "Mehr" (Simon, 26.09.2026): Sie haengen
+    // an der Gemeinde, in der man sie geoeffnet hat -- ein Wechsel mitten
+    // darin fuehrt auf fremde Datensaetze. Je Zustand eine Kopfzeile, jede
+    // schaltet ab.
+    'src/components/admin/pages/AdminCategoriesPage.tsx',
+    'src/components/admin/pages/AdminCertificatesPage.tsx',
+    'src/components/admin/pages/AdminDashboardSettingsPage.tsx',
   ]);
 
   it('der Gemeinde-Umschalter kommt aus dem Geruest -- keine Seite baut ihn selbst, genau vier schalten ihn ab', () => {
@@ -424,9 +431,15 @@ describe('Chat und Challenges bauen keine eigene Kopfzeile mehr', () => {
       expect(quelle, datei).not.toContain('<IonTitle');
       expect(quelle, datei).not.toContain('collapse="condense"');
       expect(quelle, datei).not.toContain('ICON_ZURUECK');
-      // Seiten, keine Modale: niemand schaltet Glocke oder Umschalter ab.
+      // Seiten, keine Modale: niemand schaltet die Glocke ab.
       expect(quelle, datei).not.toContain('glocke={false}');
-      expect(quelle, datei).not.toContain('gemeindeUmschalter={false}');
+      // Der Umschalter dagegen schon -- seit 26.09.2026 traegt ihn der
+      // EINZELNE Chatraum nicht mehr (Simon: "Switcher raus"), weil ein Raum
+      // zu genau einer Gemeinde gehoert. Die Chat-UEBERSICHT behaelt ihn;
+      // das prueft der Test darunter.
+      if (!/ChatRoom(View)?\.tsx$/.test(datei)) {
+        expect(quelle, datei).not.toContain('gemeindeUmschalter={false}');
+      }
       expect(quelle, datei).not.toContain('OrgSwitcherButton');
     }
   });
@@ -475,8 +488,8 @@ describe('Chat und Challenges bauen keine eigene Kopfzeile mehr', () => {
 
     // Ladezustand und Fehlerseite: derselbe Zurueck-Weg, ebenfalls opak --
     // sonst springt die Kopfzeile beim Wechsel zum Raum.
-    expect(lies('src/components/chat/ChatRoom.tsx')).toContain('<AppKopfzeile titel="Chat wird geladen..." onZurueck={onBack} translucent={false} />');
-    expect(lies('src/components/chat/views/ChatRoomView.tsx')).toContain('<AppKopfzeile titel="Fehler" onZurueck={onBack} translucent={false} />');
+    expect(lies('src/components/chat/ChatRoom.tsx')).toContain('<AppKopfzeile titel="Chat wird geladen..." onZurueck={onBack} translucent={false} gemeindeUmschalter={false} />');
+    expect(lies('src/components/chat/views/ChatRoomView.tsx')).toContain('<AppKopfzeile titel="Fehler" onZurueck={onBack} translucent={false} gemeindeUmschalter={false} />');
     // Der Raum ist eine Seite mit Route (kein Modal), darum Glocke und Umschalter.
     expect(lies('src/navigation/rollenBaeume.ts')).toContain("page: ChatRoomView, param: 'roomId', propName: 'roomId'");
   });

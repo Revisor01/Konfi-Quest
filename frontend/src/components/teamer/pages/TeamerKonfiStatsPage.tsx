@@ -152,7 +152,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
   if (!konfiData) {
     return (
       <IonPage>
-        <AppKopfzeile titel="Konfi-Historie" onZurueck={() => window.history.back()} />
+        <AppKopfzeile titel="Konfi-Historie" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
         <IonContent className="ion-padding">
           <div style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-m)' }}>
             <p>Keine Konfi-Daten vorhanden</p>
@@ -166,7 +166,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <AppKopfzeile titel="Konfi-Historie" onZurueck={() => window.history.back()} />
+      <AppKopfzeile titel="Konfi-Historie" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
 
       <IonContent className="app-gradient-background" fullscreen>
         <AppKopfzeileGross titel="Konfi-Historie" />
