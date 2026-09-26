@@ -596,6 +596,11 @@ Versionsüberschrift.
   als nötig und wird nicht mehr als Absturz gezählt. Solange ein Server
   herunterfährt, nimmt er sich selbst aus der Verteilung, statt Anfragen ins
   Leere laufen zu lassen.
+- Jedes Eingabefeld der App nennt der Vorlesefunktion seinen Namen — „Name",
+  „Pflicht-Event", „Max. Teilnehmer:innen" statt nur „Textfeld" oder
+  „Schalter". Bisher galt das nur auf den Anmeldeseiten; jetzt lassen sich
+  auch Termin-, Konfi-, Benutzer- und Umfrage-Formulare mit VoiceOver und
+  TalkBack ausfüllen. Sichtbar ändert sich nichts.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

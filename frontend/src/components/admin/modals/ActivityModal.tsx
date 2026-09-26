@@ -199,7 +199,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
               <p className="app-text-sub" style={{ marginBottom: 'var(--app-abstand-mini)' }}>Datum *</p>
               <IonDatetimeButton datetime="activity-date" style={{ justifyContent: 'flex-start' }} />
               <IonModal keepContentsMounted={true}>
-                <IonDatetime
+                <IonDatetime aria-label="Datum" aria-required="true"
                   id="activity-date"
                   presentation="date"
                   firstDayOfWeek={1}
@@ -217,7 +217,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
               <p className="app-text-sub" style={{ marginTop: 'var(--app-abstand-basis)', marginBottom: 'var(--app-abstand-mini)' }}>Kommentar (optional)</p>
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonTextarea
+                  <IonTextarea aria-label="Zusätzliche Informationen"
                     value={comment}
                     onIonInput={(e) => setComment(e.detail.value!)}
                     placeholder="Zusätzliche Informationen..."

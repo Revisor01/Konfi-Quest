@@ -620,7 +620,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>Zeitraum (Wochen) <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{extraCriteria.weeks || 4}</span></IonLabel>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
               <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
-              <IonRange
+              <IonRange aria-label="Zeitraum (Wochen)"
                 min={1} max={26} step={1}
                 pin={true} pinFormatter={(value: number) => `${value}`}
                 value={extraCriteria.weeks || 4}
@@ -855,7 +855,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonList>
               <IonItem lines="inset">
                 <IonLabel position="stacked">Name *</IonLabel>
-                <IonInput
+                <IonInput aria-label="Name" aria-required="true"
                   value={formData.name}
                   onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
                   placeholder="Badge-Name eingeben"
@@ -867,7 +867,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
               <IonItem lines="inset">
                 <IonLabel position="stacked">Beschreibung</IonLabel>
-                <IonTextarea
+                <IonTextarea aria-label="Beschreibung"
                   value={formData.description}
                   onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
                   placeholder="Beschreibung des Badges..."
@@ -1104,7 +1104,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
                   <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
-                  <IonRange
+                  <IonRange aria-label={getValueLabel()}
                     min={1} max={reglerMax} step={1}
                     pin={true} pinFormatter={(value: number) => `${value}`}
                     value={formData.criteria_value}
@@ -1138,7 +1138,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   <h3 style={{ color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-mini) 0', fontWeight: 'var(--app-schrift-halbfett)' }}>Aktiv</h3>
                   <p style={{ color: 'var(--app-text-secondary)', margin: '0', fontSize: 'var(--app-text-sekundaer)' }}>Badge kann verliehen werden</p>
                 </IonLabel>
-                <IonToggle
+                <IonToggle aria-label="Aktiv"
                   slot="end"
                   className="app-toggle--badges"
                   checked={formData.is_active}
@@ -1151,7 +1151,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   <h3 style={{ color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-mini) 0', fontWeight: 'var(--app-schrift-halbfett)' }}>Geheim</h3>
                   <p style={{ color: 'var(--app-text-secondary)', margin: '0', fontSize: 'var(--app-text-sekundaer)' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
                 </IonLabel>
-                <IonToggle
+                <IonToggle aria-label="Geheim"
                   slot="end"
                   className="app-toggle--badges"
                   checked={formData.is_hidden}

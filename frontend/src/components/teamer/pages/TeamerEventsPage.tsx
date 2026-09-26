@@ -1758,7 +1758,7 @@ const TeamerEventsPage: React.FC = () => {
               <IonItemGroup>
                 <IonItem>
                   <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" className="app-icon-color--system" style={{ fontSize: 'var(--app-text-standard)' }} />
-                  <IonInput
+                  <IonInput aria-label="Events durchsuchen"
                     value={searchText}
                     onIonInput={(e) => setSearchText(e.detail.value || '')}
                     placeholder="Events durchsuchen..."

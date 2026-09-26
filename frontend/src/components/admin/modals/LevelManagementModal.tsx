@@ -196,7 +196,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
               <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Titel *</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Titel" aria-required="true"
                     value={formData.title}
                     onIonInput={(e) => setFormData({ ...formData, title: e.detail.value! })}
                     placeholder="z.B. Anfänger, Bronze, Meister"
@@ -209,7 +209,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                   <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>Benötigte Punkte * <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{formData.points_required}</span></IonLabel>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
                     <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
-                    <IonRange
+                    <IonRange aria-label="Benötigte Punkte" aria-required="true"
                       min={1} max={40} step={1}
                       pin={true} pinFormatter={(value: number) => `${value}`}
                       value={formData.points_required}
@@ -223,7 +223,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
 
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Beschreibung</IonLabel>
-                  <IonTextarea
+                  <IonTextarea aria-label="Beschreibung"
                     value={formData.description}
                     onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
                     placeholder="Optionale Beschreibung..."

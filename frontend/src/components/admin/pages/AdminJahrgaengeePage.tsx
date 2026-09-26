@@ -290,7 +290,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
               <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Name *</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Name" aria-required="true"
                     value={formData.name}
                     onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
                     placeholder="z.B. Jahrgang 2024/2025"
@@ -319,7 +319,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
               <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel>Gottesdienst-Punkte aktiviert</IonLabel>
-                  <IonToggle
+                  <IonToggle aria-label="Gottesdienst-Punkte aktiviert"
                     slot="end"
                     className="app-toggle--jahrgang"
                     checked={formData.gottesdienst_enabled}
@@ -337,7 +337,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                     <IonLabel position="stacked">Ziel Gottesdienst <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{formData.target_gottesdienst}</span></IonLabel>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
                       <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
-                      <IonRange
+                      <IonRange aria-label="Ziel Gottesdienst"
                         min={1} max={20} step={1}
                         pin={true} pinFormatter={(value: number) => `${value}`}
                         value={formData.target_gottesdienst}
@@ -351,7 +351,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 )}
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel>Gemeinde-Punkte aktiviert</IonLabel>
-                  <IonToggle
+                  <IonToggle aria-label="Gemeinde-Punkte aktiviert"
                     slot="end"
                     className="app-toggle--jahrgang"
                     checked={formData.gemeinde_enabled}
@@ -369,7 +369,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                     <IonLabel position="stacked">Ziel Gemeinde <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{formData.target_gemeinde}</span></IonLabel>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
                       <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
-                      <IonRange
+                      <IonRange aria-label="Ziel Gemeinde"
                         min={1} max={20} step={1}
                         pin={true} pinFormatter={(value: number) => `${value}`}
                         value={formData.target_gemeinde}
@@ -404,7 +404,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                       Konfis dieses Jahrgangs können ihren Konfispruch wählen.
                     </p>
                   </IonLabel>
-                  <IonToggle
+                  <IonToggle aria-label="Konfispruch-Auswahl"
                     slot="end"
                     className="app-toggle--jahrgang"
                     checked={formData.konfspruch_enabled}

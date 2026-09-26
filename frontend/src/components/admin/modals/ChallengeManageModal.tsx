@@ -365,7 +365,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                   <IonList>
                     <IonItem lines="inset">
                       <IonLabel position="stacked">Titel *</IonLabel>
-                      <IonInput
+                      <IonInput aria-label="Titel" aria-required="true"
                         value={formData.title}
                         onIonInput={(e) => setFormData({ ...formData, title: e.detail.value! })}
                         placeholder="Worum geht es?"
@@ -377,7 +377,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
 
                     <IonItem lines="inset">
                       <IonLabel position="stacked">Beschreibung *</IonLabel>
-                      <IonTextarea
+                      <IonTextarea aria-label="Beschreibung" aria-required="true"
                         value={formData.description}
                         onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
                         placeholder="Was sollen die Konfis tun?"
@@ -388,7 +388,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     </IonItem>
                     <IonItem lines="none">
                       <IonLabel position="stacked">Gestellt von (optional)</IonLabel>
-                      <IonInput
+                      <IonInput aria-label="Gestellt von (optional)"
                         value={formData.author_freetext}
                         onIonInput={(e) => setFormData({ ...formData, author_freetext: e.detail.value! })}
                         placeholder="z.B. Pastor Simon, Konfi-Team Hennstedt"
@@ -534,7 +534,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                         immer noch nachträglich.
                       </p>
                     </IonLabel>
-                    <IonToggle
+                    <IonToggle aria-label="Beiträge erst nach Freigabe zeigen"
                       slot="end"
                       className="app-toggle--challenges"
                       checked={formData.moderated}
@@ -552,7 +552,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                         Konfis können mehr als einen Beitrag zu dieser Challenge einreichen.
                       </p>
                     </IonLabel>
-                    <IonToggle
+                    <IonToggle aria-label="Mehrere Beiträge erlauben"
                       slot="end"
                       className="app-toggle--challenges"
                       checked={formData.allow_multiple}
@@ -577,7 +577,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                   <IonList>
                     <IonItem lines="inset">
                       <IonLabel position="stacked">Name des Stempels *</IonLabel>
-                      <IonInput
+                      <IonInput aria-label="Name des Stempels" aria-required="true"
                         value={formData.badge_name}
                         onIonInput={(e) => setFormData({ ...formData, badge_name: e.detail.value! })}
                         placeholder="z.B. Hingeschaut"
@@ -750,7 +750,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                           Entwürfe sehen nur du und dein Team.
                         </p>
                       </IonLabel>
-                      <IonToggle
+                      <IonToggle aria-label="Als Entwurf speichern"
                         slot="end"
                         className="app-toggle--challenges"
                         checked={formData.is_draft}
@@ -771,6 +771,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       {/* DateTime-Modals — wie im Event-Modal direkt unter IonPage, nicht im Content */}
       <IonModal keepContentsMounted={true}>
         <IonDatetime
+          aria-label="Start"
           id="challenge-start-picker"
           value={formData.starts_at}
           presentation="date-time"
@@ -782,6 +783,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       </IonModal>
       <IonModal keepContentsMounted={true}>
         <IonDatetime
+          aria-label="Ende"
           id="challenge-end-picker"
           value={formData.ends_at}
           presentation="date-time"

@@ -432,7 +432,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Anzeigename *</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Anzeigename" aria-required="true"
                     value={formData.display_name}
                     onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
                     placeholder="Max Mustermann"
@@ -446,7 +446,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 {!nameAutomatisch && (
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Benutzername *</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Benutzername" aria-required="true"
                     value={formData.username}
                     onIonInput={(e) => setFormData({ ...formData, username: e.detail.value! })}
                     placeholder="max.mustermann"
@@ -457,7 +457,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Funktionsbeschreibung (optional)</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Funktionsbeschreibung (optional)"
                     value={formData.role_title}
                     onIonInput={(e) => setFormData({ ...formData, role_title: e.detail.value! })}
                     placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
@@ -467,7 +467,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">E-Mail (optional)</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="E-Mail (optional)"
                     type="email"
                     value={formData.email}
                     onIonInput={(e) => setFormData({ ...formData, email: e.detail.value! })}
@@ -480,7 +480,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   <IonLabel position="stacked">
                     Passwort {!isEditMode && <span style={{ color: 'var(--app-color-danger)' }}>*</span>}
                   </IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Passwort"
                     type="password"
                     value={formData.password}
                     onIonInput={(e) => setFormData({ ...formData, password: e.detail.value! })}
@@ -580,7 +580,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     Benutzer kann sich anmelden
                   </p>
                 </div>
-                <IonToggle
+                <IonToggle aria-label="Konto aktiv"
                   className={`app-toggle--${farbe}`}
                   checked={formData.is_active}
                   onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}

@@ -190,7 +190,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
               <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Name *</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Name" aria-required="true"
                     value={formData.name}
                     onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
                     placeholder="z.B. Ausflug, Gottesdienst"
@@ -200,7 +200,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                 </IonItem>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Beschreibung</IonLabel>
-                  <IonTextarea
+                  <IonTextarea aria-label="Beschreibung"
                     value={formData.description}
                     onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
                     placeholder="Beschreibung der Kategorie..."

@@ -155,7 +155,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Bezeichnung *</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Bezeichnung" aria-required="true"
                     value={name}
                     onIonInput={(e) => setName(e.detail.value!)}
                     placeholder="z.B. Hilfe beim Aufräumen"
@@ -169,7 +169,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
               <p className="app-text-sub" style={{ marginTop: 'var(--app-abstand-basis)', marginBottom: 'var(--app-abstand-mini)' }}>Datum *</p>
               <IonDatetimeButton datetime="bonus-date" style={{ justifyContent: 'flex-start' }} />
               <IonModal keepContentsMounted={true}>
-                <IonDatetime
+                <IonDatetime aria-label="Datum" aria-required="true"
                   id="bonus-date"
                   presentation="date"
                   firstDayOfWeek={1}
@@ -189,7 +189,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', padding: '0 var(--app-abstand-eng)' }}>
                 <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
-                <IonRange
+                <IonRange aria-label="Punkte" aria-required="true"
                   min={1} max={10} step={1}
                   pin={true} pinFormatter={(value: number) => `${value}`}
                   value={points}
@@ -254,7 +254,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Begründung</IonLabel>
-                  <IonTextarea
+                  <IonTextarea aria-label="Begründung"
                     value={reason}
                     onIonInput={(e) => setReason(e.detail.value!)}
                     placeholder="Warum werden diese Bonuspunkte vergeben?"

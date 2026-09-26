@@ -611,7 +611,7 @@ const TeamerMaterialPage: React.FC = () => {
               <IonItemGroup>
                 <IonItem>
                   <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-                  <IonInput
+                  <IonInput aria-label="Material durchsuchen"
                     value={search}
                     onIonInput={(e) => setSearch(e.detail.value || '')}
                     placeholder="Material durchsuchen..."
@@ -621,7 +621,7 @@ const TeamerMaterialPage: React.FC = () => {
                 {jahrgaenge.length > 0 && (
                   <IonItem>
                     <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-                    <IonSelect
+                    <IonSelect aria-label="Jahrgang"
                       value={activeJahrgangId ?? 'alle'}
                       onIonChange={(e) => setActiveJahrgangId(e.detail.value === 'alle' ? undefined : e.detail.value)}
                       interface="popover"

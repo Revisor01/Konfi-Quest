@@ -407,7 +407,7 @@ const AdminMetricsPage: React.FC = () => {
                 <span>Ohne Neustart seit {fmtUptime(snap.uptimeSeconds)} · {snap.rps} Anfragen/Sek</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-kompakt)' }}>
                   alle 5 s
-                  <IonToggle checked={autoRefresh} onIonChange={(e) => setAutoRefresh(e.detail.checked)} />
+                  <IonToggle aria-label="Alle 5 Sekunden aktualisieren" checked={autoRefresh} onIonChange={(e) => setAutoRefresh(e.detail.checked)} />
                 </span>
               </div>
             </div>

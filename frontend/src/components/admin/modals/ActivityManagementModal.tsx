@@ -342,7 +342,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
               <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Name *</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Name" aria-required="true"
                     value={formData.name}
                     onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
                     placeholder="z.B. Sonntagsgottesdienst"
@@ -362,7 +362,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                   <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>Punkte * <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{formData.points}</span></IonLabel>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
                     <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
-                    <IonRange
+                    <IonRange aria-label="Punkte" aria-required="true"
                       min={1} max={5} step={1}
                   /* Rastermarken: Bei 1-5 Punkten sind die Stufen abzaehlbar,
                      das trifft man schneller als per Ziehen. `ticks` zeigt sie,

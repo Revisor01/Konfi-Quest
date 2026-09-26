@@ -1060,7 +1060,7 @@ export const TeamerSinceSection = React.memo<TeamerSinceSectionProps>(({
     </IonCard>
 
     <IonModal keepContentsMounted={true}>
-      <IonDatetime
+      <IonDatetime aria-label="Teamer:in seit"
         id="teamer-since-date"
         presentation="date"
         firstDayOfWeek={1}

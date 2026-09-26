@@ -141,25 +141,34 @@ Zwei Dinge bleiben absichtlich hell: der QR-Code, damit ihn jede Kamera
 liest, und die Bilder des Jahresrückblicks, die ihre eigenen Hintergründe
 mitbringen.
 
-## Mit Tastatur oder Vorlesefunktion anmelden
+## Mit Tastatur oder Vorlesefunktion bedienen
+
+Die App lässt sich ohne Maus und ohne Blick auf den Bildschirm bedienen, etwa
+am Rechner im Browser oder mit VoiceOver und TalkBack am Handy. Die App gibt
+Deutsch als Sprache an, VoiceOver und TalkBack lesen deshalb mit deutscher
+Stimme.
+
+### Anmelden
 
 Die Anmeldeseiten — Anmelden, [Passwort vergessen](35-passwoerter.md#weg-2-passwort-vergessen-per-e-mail),
-neues Passwort setzen und [Registrieren mit Einladungscode](35-passwoerter.md#sich-als-konfi-registrieren)
-— lassen sich ohne Maus und ohne Blick auf den Bildschirm bedienen, etwa am
-Rechner im Browser oder mit VoiceOver und TalkBack am Handy.
+neues Passwort setzen und [Registrieren mit Einladungscode](35-passwoerter.md#sich-als-konfi-registrieren):
 
 - **Tab** springt von Feld zu Feld und weiter zum Augen-Knopf am Passwortfeld,
   zum Anmelde-Knopf und zu den Links „Passwort vergessen?" und „Mit
   Einladungscode registrieren". Was gerade den Fokus hat, zeigt ein Ring.
 - **Enter** im Feld schickt das Formular ab — nach dem Passwort muss niemand
   mehr zum Knopf greifen.
-- Jedes Feld hat einen Namen, den die Vorlesefunktion nennt („Benutzername,
-  Textfeld"). Der Augen-Knopf heißt „Passwort anzeigen" und meldet, ob er
-  gedrückt ist.
+- Der Augen-Knopf heißt „Passwort anzeigen" und meldet, ob er gedrückt ist.
 - Fehlermeldungen wie „Falsches Passwort" werden sofort vorgelesen, ohne dass
   man sie suchen muss; Bestätigungen wie „E-Mail gesendet" ebenso.
-- Die App gibt Deutsch als Sprache an, VoiceOver und TalkBack lesen deshalb
-  mit deutscher Stimme.
+
+### Formulare ausfüllen
+
+Jedes Eingabefeld hat einen Namen, den die Vorlesefunktion nennt („Name,
+Textfeld", „Pflicht-Event, Schalter, aus", „Max. Teilnehmer:innen,
+Schieberegler") — in allen Formularen der App, vom Termin der Leitung bis zur
+Umfrage im Chat. Pflichtfelder, die mit einem Stern markiert sind, meldet sie
+als erforderlich.
 
 ## Nachlesen, was sich geändert hat
 

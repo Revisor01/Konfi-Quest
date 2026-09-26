@@ -251,7 +251,7 @@ const AdminMaterialPage: React.FC = () => {
               <IonItemGroup>
                 <IonItem>
                   <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-                  <IonInput
+                  <IonInput aria-label="Material durchsuchen"
                     value={search}
                     onIonInput={(e) => setSearch(e.detail.value || '')}
                     placeholder="Material durchsuchen..."
@@ -261,7 +261,7 @@ const AdminMaterialPage: React.FC = () => {
                 {(jahrgaenge || []).length > 0 && (
                   <IonItem>
                     <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-                    <IonSelect
+                    <IonSelect aria-label="Jahrgang"
                       value={nurGlobal ? 'global' : (activeJahrgangId ?? 'alle')}
                       onIonChange={(e) => {
                         const wert = e.detail.value;

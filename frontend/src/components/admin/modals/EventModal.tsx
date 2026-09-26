@@ -428,7 +428,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
                         Ansichten zeigen dafuer "Sofort möglich". */}
                     <IonItem lines="none">
                       <IonLabel>Anmeldung ab sofort</IonLabel>
-                      <IonToggle
+                      <IonToggle aria-label="Anmeldung ab sofort"
                         slot="end"
                         className="app-toggle--events"
                         checked={!formData.registration_opens_at}
@@ -484,7 +484,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
             <IonList>
               <IonItem lines="none">
                 <IonLabel>Zeitfenster aktivieren</IonLabel>
-                <IonToggle slot="end" className="app-toggle--events" checked={formData.has_timeslots}
+                <IonToggle aria-label="Zeitfenster aktivieren" slot="end" className="app-toggle--events" checked={formData.has_timeslots}
                   onIonChange={(e) => {
                     const hasTimeslots = e.detail.checked;
                     setFormData({ ...formData, has_timeslots: hasTimeslots });
@@ -532,18 +532,18 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
                     <IonDatetimeButton datetime={`timeslot-end-${index}`} />
                   </IonItem>
                   <IonModal keepContentsMounted={true}>
-                    <IonDatetime id={`timeslot-start-${index}`} presentation="time" value={timeslot.start_time}
+                    <IonDatetime aria-label="Startzeit" id={`timeslot-start-${index}`} presentation="time" value={timeslot.start_time}
                       onIonChange={(e) => { const v = e.detail.value as string; if (v) updateTimeslot(index, 'start_time', v); }}
                       minuteValues="0,15,30,45" disabled={loading} />
                   </IonModal>
                   <IonModal keepContentsMounted={true}>
-                    <IonDatetime id={`timeslot-end-${index}`} presentation="time" value={timeslot.end_time}
+                    <IonDatetime aria-label="Endzeit" id={`timeslot-end-${index}`} presentation="time" value={timeslot.end_time}
                       onIonChange={(e) => { const v = e.detail.value as string; if (v) updateTimeslot(index, 'end_time', v); }}
                       minuteValues="0,15,30,45" disabled={loading} />
                   </IonModal>
                   <IonItem lines="none">
                     <IonLabel>Unbegrenzte Teilnehmer:innen</IonLabel>
-                    <IonToggle slot="end" className="app-toggle--events" checked={timeslot.max_participants === 0}
+                    <IonToggle aria-label="Unbegrenzte Teilnehmer:innen" slot="end" className="app-toggle--events" checked={timeslot.max_participants === 0}
                       onIonChange={(e) => updateTimeslot(index, 'max_participants', e.detail.checked ? 0 : 5)}
                       disabled={loading} />
                   </IonItem>
@@ -552,7 +552,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
                       <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>Max. Teilnehmer:innen pro Slot</IonLabel>
                       <div className="app-range-row">
                         <span className="app-range-row__min">1</span>
-                        <IonRange
+                        <IonRange aria-label="Max. Teilnehmer:innen pro Slot"
                           className="app-range app-range--events"
                           /* 1-20 (24.09.2026, Simons Vorgabe). In Produktion
                              gemessen: 6 Zeitfenster, hoechster Wert 4 — keins
@@ -592,7 +592,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
 
       {/* DateTime Modals */}
       <IonModal keepContentsMounted={true}>
-        <IonDatetime id="event-date-picker" value={formData.event_date}
+        <IonDatetime aria-label="Event Datum & Uhrzeit" id="event-date-picker" value={formData.event_date}
           max={datePickerMax}
           onIonChange={(e) => {
             const selectedDate = e.detail.value as string;
@@ -618,21 +618,21 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
           style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': 'var(--app-schatten-schwebend-weich)' }} />
       </IonModal>
       <IonModal keepContentsMounted={true}>
-        <IonDatetime id="end-time-picker" value={formData.event_end_time || formData.event_date}
+        <IonDatetime aria-label="Endzeit (optional)" id="end-time-picker" value={formData.event_end_time || formData.event_date}
           max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, event_end_time: e.detail.value as string })}
           presentation="date-time" minuteValues="0,15,30,45" firstDayOfWeek={1}
           style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': 'var(--app-schatten-schwebend-weich)' }} />
       </IonModal>
       <IonModal keepContentsMounted={true}>
-        <IonDatetime id="registration-opens-picker" value={formData.registration_opens_at}
+        <IonDatetime aria-label="Anmeldung ab" id="registration-opens-picker" value={formData.registration_opens_at}
           max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, registration_opens_at: e.detail.value as string })}
           presentation="date-time" minuteValues="0,15,30,45" firstDayOfWeek={1}
           style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': 'var(--app-schatten-schwebend-weich)' }} />
       </IonModal>
       <IonModal keepContentsMounted={true}>
-        <IonDatetime id="registration-closes-picker" value={formData.registration_closes_at}
+        <IonDatetime aria-label="Anmeldeschluss" id="registration-closes-picker" value={formData.registration_closes_at}
           max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, registration_closes_at: e.detail.value as string })}
           presentation="date-time" minuteValues="0,15,30,45" firstDayOfWeek={1}

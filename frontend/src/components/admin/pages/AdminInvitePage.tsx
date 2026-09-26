@@ -301,7 +301,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <IonItem lines="none" className="app-item-transparent">
                       <IonLabel position="stacked">Jahrgang *</IonLabel>
-                      <IonSelect
+                      <IonSelect aria-label="Jahrgang" aria-required="true"
                         value={selectedJahrgang}
                         onIonChange={(e) => {
                           setSelectedJahrgang(e.detail.value);

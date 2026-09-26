@@ -498,6 +498,7 @@ const AdminWrappedPage: React.FC = () => {
                     <IonItem lines="none" style={{ '--background': 'transparent' }}>
                       <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
                       <IonSelect
+                        aria-label="Jahrgang"
                         placeholder="Jahrgang"
                         interface="popover"
                         interfaceOptions={{ arrow: false }}
@@ -542,6 +543,7 @@ const AdminWrappedPage: React.FC = () => {
                           offen, bis man abbricht oder ein waehlbares Jahr
                           antippt. */}
                       <IonSelect
+                        aria-label="Jahr"
                         placeholder="Jahr"
                         interface="action-sheet"
                         interfaceOptions={{ header: 'Welches Jahr?' }}

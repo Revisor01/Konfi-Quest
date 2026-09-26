@@ -266,7 +266,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
             {/* Suchfeld */}
             <IonItem>
               <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-              <IonInput
+              <IonInput aria-label="Konfi suchen"
                 value={searchTerm}
                 onIonInput={(e) => setSearchTerm(e.detail.value!)}
                 placeholder="Konfi suchen..."
@@ -275,7 +275,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
             {/* Jahrgang Filter */}
             <IonItem>
               <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-              <IonSelect
+              <IonSelect aria-label="Jahrgang"
                 value={jahrgangId}
                 onIonChange={(e) => setJahrgangId(e.detail.value)}
                 interface="popover"

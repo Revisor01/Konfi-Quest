@@ -130,7 +130,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
           {/* Suchfeld */}
           <IonItem>
             <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-            <IonInput
+            <IonInput aria-label="Organisation suchen"
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
               placeholder="Organisation suchen..."
@@ -139,7 +139,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
           {/* Status-Filter */}
           <IonItem>
             <IonIcon icon={ICON_FILTER} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-            <IonSelect
+            <IonSelect aria-label="Status"
               value={selectedFilter}
               onIonChange={(e) => setSelectedFilter(e.detail.value)}
               interface="popover"

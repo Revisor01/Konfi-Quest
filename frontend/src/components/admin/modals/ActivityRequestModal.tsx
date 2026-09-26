@@ -490,7 +490,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     <IonLabel style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-secondary)', marginBottom: 'var(--app-abstand-eng)', display: 'block' }}>
                       Grund für die Ablehnung *
                     </IonLabel>
-                    <IonTextarea
+                    <IonTextarea aria-label="Grund für die Ablehnung"
                       value={adminComment}
                       onIonInput={(e) => setAdminComment(e.detail.value!)}
                       placeholder="Bitte gib einen Grund für die Ablehnung an..."

@@ -484,7 +484,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                   fontSize: 'var(--app-text-standard)'
                 }}
               />
-              <IonInput
+              <IonInput aria-label="Chaträume durchsuchen"
                 value={searchText}
                 onIonInput={(e) => setSearchText(e.detail.value!)}
                 placeholder="Chaträume durchsuchen..."

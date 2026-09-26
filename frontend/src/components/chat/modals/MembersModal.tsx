@@ -443,7 +443,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                         fontSize: 'var(--app-text-standard)'
                       }}
                     />
-                    <IonInput
+                    <IonInput aria-label="Person suchen"
                       value={searchText}
                       onIonInput={(e) => setSearchText(e.detail.value!)}
                       placeholder="Person suchen..."

@@ -354,7 +354,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Spruchtext</IonLabel>
-                    <IonTextarea
+                    <IonTextarea aria-label="Spruchtext"
                       value={freitext}
                       onIonInput={(e) => setFreitext(e.detail.value || '')}
                       placeholder="Gib deinen Konfirmationsspruch ein"
@@ -365,7 +365,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Stelle (z.B. Joh 3,16)</IonLabel>
-                    <IonInput
+                    <IonInput aria-label="Bibelstelle"
                       value={freitextReferenz}
                       onIonInput={(e) => setFreitextReferenz(e.detail.value || '')}
                       placeholder="Stellenangabe (Pflicht)"

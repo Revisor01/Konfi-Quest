@@ -310,7 +310,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
                       >
                         <IonReorder slot="start" />
                         <IonLabel>{KONFI_LABELS[key]}</IonLabel>
-                        <IonToggle
+                        <IonToggle aria-label={KONFI_LABELS[key]}
                           slot="end"
                           className="app-toggle--users"
                           checked={dashboardConfig[`show_${key}` as keyof DashboardConfig]}
@@ -352,7 +352,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
                       >
                         <IonReorder slot="start" />
                         <IonLabel>{TEAMER_LABELS[key]}</IonLabel>
-                        <IonToggle
+                        <IonToggle aria-label={TEAMER_LABELS[key]}
                           slot="end"
                           className="app-toggle--users"
                           checked={teamerDashboardConfig[`show_${key}` as keyof TeamerDashboardConfig]}

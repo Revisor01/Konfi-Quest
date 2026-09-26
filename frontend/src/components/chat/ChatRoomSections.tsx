@@ -352,7 +352,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
           display: 'flex',
           alignItems: 'center'
         }}>
-          <IonTextarea
+          <IonTextarea aria-label="Nachricht schreiben"
             ref={textareaRef}
             value={messageText}
             onIonInput={(e) => { onTextChange(e.detail.value || ''); resizeTextarea(); }}

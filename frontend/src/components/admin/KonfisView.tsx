@@ -256,7 +256,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           {/* Suchfeld */}
           <IonItem>
             <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-            <IonInput
+            <IonInput aria-label={viewMode === 'teamer' ? 'Im Team suchen' : 'Konfi suchen'}
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
               placeholder={viewMode === 'teamer' ? 'Im Team suchen...' : 'Konfi suchen...'}
@@ -266,7 +266,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           {viewMode === 'konfis' && (
             <IonItem>
               <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-              <IonSelect
+              <IonSelect aria-label="Jahrgang"
                 value={selectedJahrgang}
                 onIonChange={(e) => setSelectedJahrgang(e.detail.value)}
                 interface="popover"
@@ -285,7 +285,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           {viewMode === 'konfis' && (
             <IonItem>
               <IonIcon icon={ICON_SORTIEREN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-              <IonSelect
+              <IonSelect aria-label="Sortierung"
                 value={sortBy}
                 onIonChange={(e) => setSortBy(e.detail.value)}
                 interface="popover"

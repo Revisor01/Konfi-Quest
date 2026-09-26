@@ -330,7 +330,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   {/* Suchfeld */}
                   <IonItem lines={eventJahrgaenge.length !== 1 || (eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0) ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Person suchen</IonLabel>
-                    <IonInput
+                    <IonInput aria-label="Person suchen"
                       value={searchTerm}
                       onIonInput={(e) => setSearchTerm(e.detail.value!)}
                       placeholder="Name eingeben..."
@@ -341,7 +341,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   {(eventJahrgaenge.length !== 1) && (
                     <IonItem lines={eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
                       <IonLabel position="stacked">Jahrgang</IonLabel>
-                      <IonSelect
+                      <IonSelect aria-label="Jahrgang"
                         value={selectedJahrgang}
                         onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
                         placeholder="Jahrgang wählen"
@@ -370,7 +370,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
                     <IonItem lines="none" style={{ '--background': 'transparent' }}>
                       <IonLabel position="stacked">Zeitslot</IonLabel>
-                      <IonSelect
+                      <IonSelect aria-label="Zeitslot"
                         value={selectedTimeslot}
                         onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
                         placeholder="Zeitslot wählen"

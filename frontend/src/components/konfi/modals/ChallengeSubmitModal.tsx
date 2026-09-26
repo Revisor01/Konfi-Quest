@@ -545,7 +545,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'text' && (
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonTextarea
+                  <IonTextarea aria-label="Schreib hier deinen Beitrag"
                     value={textContent}
                     onIonInput={(e) => setTextContent(e.detail.value || '')}
                     placeholder="Schreib hier deinen Beitrag..."
@@ -573,7 +573,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     </span>
                   </div>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonInput
+                    <IonInput aria-label="Link"
                       type="url"
                       inputmode="url"
                       value={linkUrl}
@@ -583,7 +583,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     />
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonTextarea
+                    <IonTextarea aria-label="Warum dieser Link? (optional)"
                       value={textContent}
                       onIonInput={(e) => setTextContent(e.detail.value || '')}
                       placeholder="Warum dieser Link? (optional)"
@@ -648,7 +648,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     )}
                   </div>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginTop: 'var(--app-abstand-eng)' }}>
-                    <IonTextarea
+                    <IonTextarea aria-label="Etwas dazu sagen? (optional)"
                       value={textContent}
                       onIonInput={(e) => setTextContent(e.detail.value || '')}
                       placeholder="Etwas dazu sagen? (optional)"
@@ -713,7 +713,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     )}
                   </div>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginTop: 'var(--app-abstand-eng)' }}>
-                    <IonTextarea
+                    <IonTextarea aria-label="Etwas dazu sagen? (optional)"
                       value={textContent}
                       onIonInput={(e) => setTextContent(e.detail.value || '')}
                       placeholder="Etwas dazu sagen? (optional)"
@@ -786,7 +786,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     )}
                   </div>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginTop: 'var(--app-abstand-eng)' }}>
-                    <IonTextarea
+                    <IonTextarea aria-label="Etwas dazu sagen? (optional)"
                       value={textContent}
                       onIonInput={(e) => setTextContent(e.detail.value || '')}
                       placeholder="Etwas dazu sagen? (optional)"

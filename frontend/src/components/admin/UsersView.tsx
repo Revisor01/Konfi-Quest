@@ -162,7 +162,7 @@ const UsersView: React.FC<UsersViewProps> = ({
         <IonItemGroup>
           <IonItem>
             <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" className="app-search-bar__icon" />
-            <IonInput
+            <IonInput aria-label="Benutzer:in suchen"
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
               placeholder="Benutzer:in suchen..."

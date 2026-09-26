@@ -162,7 +162,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
           <IonCardContent style={{ padding: 'var(--app-abstand-eng) var(--app-abstand-basis)' }}>
             <div className="app-search-bar" style={{ padding: 0 }}>
               <IonIcon icon={ICON_SUCHE_GEFUELLT} className="app-search-bar__icon" />
-              <IonInput
+              <IonInput aria-label="Aktivität suchen"
                 value={searchTerm}
                 onIonInput={(e) => setSearchTerm(e.detail.value!)}
                 placeholder="Aktivität suchen..."

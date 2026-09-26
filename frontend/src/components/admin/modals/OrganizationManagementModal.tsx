@@ -813,7 +813,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Name der Organisation *</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Name der Organisation" aria-required="true"
                     value={formData.display_name}
                     onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
                     placeholder="z.B. Kirchspiel West"
@@ -823,7 +823,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Beschreibung (optional)</IonLabel>
-                  <IonTextarea
+                  <IonTextarea aria-label="Beschreibung (optional)"
                     value={formData.description}
                     onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
                     placeholder="Kurze Beschreibung"
@@ -835,7 +835,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Kirchenkreis (optional)</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Kirchenkreis (optional)"
                     value={formData.kirchenkreis}
                     onIonInput={(e) => setFormData({ ...formData, kirchenkreis: e.detail.value! })}
                     placeholder="z.B. Kirchenkreis Dithmarschen"
@@ -862,19 +862,19 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Ansprechpartner:in</IonLabel>
-                  <IonInput value={formData.contact_name} onIonInput={(e) => setFormData({ ...formData, contact_name: e.detail.value! })} placeholder="z.B. Pastorin Müller" disabled={isSubmitting} />
+                  <IonInput aria-label="Ansprechpartner:in" value={formData.contact_name} onIonInput={(e) => setFormData({ ...formData, contact_name: e.detail.value! })} placeholder="z.B. Pastorin Müller" disabled={isSubmitting} />
                 </IonItem>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">E-Mail</IonLabel>
-                  <IonInput type="email" value={formData.contact_email} onIonInput={(e) => setFormData({ ...formData, contact_email: e.detail.value! })} placeholder="kontakt@beispiel.de" disabled={isSubmitting} />
+                  <IonInput aria-label="E-Mail" type="email" value={formData.contact_email} onIonInput={(e) => setFormData({ ...formData, contact_email: e.detail.value! })} placeholder="kontakt@beispiel.de" disabled={isSubmitting} />
                 </IonItem>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Telefon</IonLabel>
-                  <IonInput type="tel" value={formData.contact_phone} onIonInput={(e) => setFormData({ ...formData, contact_phone: e.detail.value! })} placeholder="04834 12345" disabled={isSubmitting} />
+                  <IonInput aria-label="Telefon" type="tel" value={formData.contact_phone} onIonInput={(e) => setFormData({ ...formData, contact_phone: e.detail.value! })} placeholder="04834 12345" disabled={isSubmitting} />
                 </IonItem>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Adresse</IonLabel>
-                  <IonTextarea
+                  <IonTextarea aria-label="Adresse"
                     value={formData.address}
                     onIonInput={(e) => setFormData({ ...formData, address: e.detail.value! })}
                     placeholder="Kirchstraße 1, 25764 Wesselburen"
@@ -885,7 +885,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 </IonItem>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Website</IonLabel>
-                  <IonInput type="url" value={formData.website_url} onIonInput={(e) => setFormData({ ...formData, website_url: e.detail.value! })} placeholder="https://www.beispiel.de" disabled={isSubmitting} />
+                  <IonInput aria-label="Website" type="url" value={formData.website_url} onIonInput={(e) => setFormData({ ...formData, website_url: e.detail.value! })} placeholder="https://www.beispiel.de" disabled={isSubmitting} />
                 </IonItem>
               </IonList>
             </IonCardContent>
@@ -910,7 +910,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <h3 style={{ fontWeight: 'var(--app-schrift-mittel)', margin: '0 0 var(--app-abstand-mini) 0' }}>Organisation aktiv</h3>
                     <p style={{ color: 'var(--app-text-secondary)', margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>Benutzer können sich anmelden</p>
                   </IonLabel>
-                  <IonToggle slot="end" className="app-toggle--users" checked={formData.is_active} onIonChange={(e) => {
+                  <IonToggle aria-label="Organisation aktiv" slot="end" className="app-toggle--users" checked={formData.is_active} onIonChange={(e) => {
                     const checked = e.detail.checked;
                     // Beim Deaktivieren einer bestehenden Org warnen: alle Nutzer werden ausgesperrt.
                     if (!checked && isEditMode) {
@@ -964,15 +964,15 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Name des Administrators *</IonLabel>
-                    <IonInput value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Müller" disabled={isSubmitting} />
+                    <IonInput aria-label="Name des Administrators" aria-required="true" value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Müller" disabled={isSubmitting} />
                   </IonItem>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Login-Benutzername *</IonLabel>
-                    <IonInput value={formData.admin_username} onIonInput={(e) => setFormData({ ...formData, admin_username: e.detail.value! })} placeholder="z.B. pmueller" disabled={isSubmitting} />
+                    <IonInput aria-label="Login-Benutzername" aria-required="true" value={formData.admin_username} onIonInput={(e) => setFormData({ ...formData, admin_username: e.detail.value! })} placeholder="z.B. pmueller" disabled={isSubmitting} />
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Passwort *</IonLabel>
-                    <IonInput type={showAdminPassword ? 'text' : 'password'} value={formData.admin_password} onIonInput={(e) => setFormData({ ...formData, admin_password: e.detail.value! })} placeholder="Mind. 8 Zeichen, Groß/Klein, Zahl, Sonderzeichen" disabled={isSubmitting} />
+                    <IonInput aria-label="Passwort" aria-required="true" type={showAdminPassword ? 'text' : 'password'} value={formData.admin_password} onIonInput={(e) => setFormData({ ...formData, admin_password: e.detail.value! })} placeholder="Mind. 8 Zeichen, Groß/Klein, Zahl, Sonderzeichen" disabled={isSubmitting} />
                     <IonButton aria-label="Passwort anzeigen oder verbergen" slot="end" fill="clear" onClick={() => setShowAdminPassword(v => !v)}>
                       <IonIcon icon={showAdminPassword ? ICON_VERBORGEN : ICON_SICHTBAR} />
                     </IonButton>
@@ -1077,7 +1077,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': 'var(--app-radius-knopf)', marginBottom: 'var(--app-abstand-eng)' }}>
                         <IonLabel position="stacked">Name *</IonLabel>
-                        <IonInput
+                        <IonInput aria-label="Name" aria-required="true"
                           value={newAdminData.display_name}
                           onIonInput={(e) => setNewAdminData({ ...newAdminData, display_name: e.detail.value! })}
                           placeholder="z.B. Pastor Müller"
@@ -1086,7 +1086,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       </IonItem>
                       <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': 'var(--app-radius-knopf)', marginBottom: 'var(--app-abstand-eng)' }}>
                         <IonLabel position="stacked">Login-Benutzername *</IonLabel>
-                        <IonInput
+                        <IonInput aria-label="Login-Benutzername" aria-required="true"
                           value={newAdminData.username}
                           onIonInput={(e) => setNewAdminData({ ...newAdminData, username: e.detail.value! })}
                           placeholder="z.B. pmueller"
@@ -1095,7 +1095,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       </IonItem>
                       <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': 'var(--app-radius-knopf)', marginBottom: 'var(--app-abstand-eng)' }}>
                         <IonLabel position="stacked">Passwort *</IonLabel>
-                        <IonInput
+                        <IonInput aria-label="Passwort" aria-required="true"
                           type="password"
                           value={newAdminData.password}
                           onIonInput={(e) => setNewAdminData({ ...newAdminData, password: e.detail.value! })}
@@ -1168,7 +1168,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonIcon icon={ICON_SUCHE} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-                    <IonInput
+                    <IonInput aria-label="Name oder Benutzername suchen"
                       value={memberSearch}
                       onIonInput={(e) => setMemberSearch(e.detail.value || '')}
                       placeholder="Name oder Benutzername suchen..."
@@ -1178,7 +1178,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonIcon icon={ICON_PERSON_HINZUFUEGEN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
                     <IonLabel>Rolle</IonLabel>
-                    <IonSelect
+                    <IonSelect aria-label="Rolle"
                       value={memberRole}
                       onIonChange={(e) => setMemberRole(e.detail.value)}
                       interface="popover"
@@ -1278,6 +1278,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Tarif</IonLabel>
                     <IonSelect
+                      aria-label="Tarif"
                       value={isCustomLimit ? '__custom__' : maxKonfis.trim()}
                       interface="popover"
                       interfaceOptions={{ cssClass: 'app-select-popover--wide', arrow: false }}
@@ -1306,7 +1307,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   {isCustomLimit && (
                     <IonItem lines="none" style={{ '--background': 'transparent' }}>
                       <IonLabel position="stacked">Eigenes Limit (leer = unbegrenzt)</IonLabel>
-                      <IonInput
+                      <IonInput aria-label="Eigenes Limit (leer = unbegrenzt)"
                         type="number"
                         inputmode="numeric"
                         min="0"
@@ -1363,6 +1364,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   <IonItem lines={isCustomTrialDate ? 'full' : 'full'} style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Zeitraum</IonLabel>
                     <IonSelect
+                      aria-label="Zeitraum"
                       value={isCustomTrialDate ? -1 : (trialEndsAt ? -2 : 0)}
                       interface="popover"
                       interfaceOptions={{ cssClass: 'app-select-popover--wide', arrow: false }}
@@ -1398,7 +1400,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       <IonLabel position="stacked">Enddatum</IonLabel>
                       <IonDatetimeButton datetime="trial-date-picker" />
                       <IonModal keepContentsMounted={true}>
-                        <IonDatetime
+                        <IonDatetime aria-label="Enddatum"
                           id="trial-date-picker"
                           presentation="date"
                           firstDayOfWeek={1}
@@ -1419,7 +1421,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         <h3 style={{ fontWeight: 'var(--app-schrift-mittel)', margin: '0 0 var(--app-abstand-mini) 0' }}>Als Testphase kennzeichnen</h3>
                         <p style={{ color: 'var(--app-text-secondary)', margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>Zeigt im Dashboard einen Hinweis mit Restlaufzeit</p>
                       </IonLabel>
-                      <IonToggle slot="end" className="app-toggle--users" checked={isTrial} onIonChange={(e) => handleIsTrialChange(e.detail.checked)} />
+                      <IonToggle aria-label="Als Testphase kennzeichnen" slot="end" className="app-toggle--users" checked={isTrial} onIonChange={(e) => handleIsTrialChange(e.detail.checked)} />
                     </IonItem>
                   )}
                 </IonList>

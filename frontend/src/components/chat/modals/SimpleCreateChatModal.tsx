@@ -406,7 +406,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               </IonListHeader>
               <IonItemGroup>
                 <IonItem>
-                  <IonInput
+                  <IonInput aria-label="Gruppenname eingeben"
                     value={groupName}
                     onIonInput={(e) => setGroupName(e.detail.value!)}
                     placeholder="Gruppenname eingeben"
@@ -437,7 +437,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     fontSize: 'var(--app-text-standard)'
                   }}
                 />
-                <IonInput
+                <IonInput aria-label="Person suchen"
                   value={searchText}
                   onIonInput={(e) => setSearchText(e.detail.value!)}
                   placeholder="Person suchen..."
@@ -451,7 +451,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     slot="start"
                     style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }}
                   />
-                  <IonSelect
+                  <IonSelect aria-label="Nach Rolle filtern"
                     value={selectedRole}
                     onIonChange={(e) => setSelectedRole(e.detail.value!)}
                     placeholder="Alle Rollen"
@@ -473,7 +473,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     slot="start"
                     style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }}
                   />
-                  <IonSelect
+                  <IonSelect aria-label="Nach Jahrgang filtern"
                     value={selectedJahrgang}
                     onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
                     placeholder="Alle Jahrgänge"
