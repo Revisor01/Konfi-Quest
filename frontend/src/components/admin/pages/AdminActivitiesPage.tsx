@@ -125,6 +125,7 @@ const AdminActivitiesPage: React.FC = () => {
       <AppKopfzeile
         titel="Aktivitäten"
         onZurueck={() => window.history.back()}
+        gemeindeUmschalter={false}
         rechts={canCreate ? (
           <IonButton aria-label="Neue Aktivität anlegen" onClick={presentActivityModal}>
             <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />

@@ -208,11 +208,13 @@ aus dieser Gemeinde im [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachl
 Bist du an Jahrgänge gebunden, zählt nur, was du dort auch sehen darfst. Eine
 Gemeinde ohne Zahl hat nichts Offenes.
 
-Weil der Umschalter auf jeder Seite steht, auf der ein Push oder eine
-Mitteilung landen kann, gibt es auch immer einen Rückweg: Ein angetippter Push
+Der Umschalter steht auf den Seiten, die du über die Leiste unten erreichst.
+Auf Unterseiten und in Detailansichten fehlt er mit Absicht: Was dort steht,
+gehört zu genau einer Gemeinde, und ein Wechsel mitten darin führte auf
+fremde Einträge. Einen Rückweg gibt es trotzdem immer — ein angetippter Push
 oder eine Mitteilung aus dem
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) wechselt in die
-Gemeinde, aus der sie stammt — von dort geht es an derselben Stelle zurück.
+Gemeinde, aus der sie stammt, und dort steht der Umschalter wieder.
 
 Im [Chat](90-chat.md#wer-wen-anschreiben-darf) steht die Person in der
 Team-Kontaktliste jeder ihrer Gemeinden — mit der Rolle, die sie dort hat.

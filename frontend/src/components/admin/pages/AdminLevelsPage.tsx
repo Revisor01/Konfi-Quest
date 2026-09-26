@@ -126,6 +126,7 @@ const AdminLevelsPage: React.FC = () => {
       <AppKopfzeile
         titel="Level"
         onZurueck={() => window.history.back()}
+        gemeindeUmschalter={false}
         rechts={(
           <IonButton aria-label="Neues Level anlegen" onClick={handleAdd}>
             <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />

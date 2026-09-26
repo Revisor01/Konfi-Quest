@@ -237,6 +237,10 @@ Versionsüberschrift.
 - Auf der Startseite fürs Team waren die Sprechblasen an Abzeichen und
   Urkunden schmaler als anderswo, sodass Texte unnötig umbrachen. Sie sind
   jetzt so breit wie überall sonst.
+- Auf den Unterseiten unter „Mehr" — Aktivitäten, Abzeichen, Jahrgänge,
+  Level, Material und Jahresrückblick — steht kein Gemeinde-Umschalter mehr.
+  Was dort zu sehen ist, gehört zu genau einer Gemeinde; ein Wechsel mitten
+  darin führte auf fremde Einträge.
 - Die Zahl an der Glocke wird auf dem iPhone nicht mehr angeschnitten.
 - Unter „Benachrichtigungen" stand derselbe Hinweis zweimal; jetzt steht er
   einmal, in derselben Form wie die Hinweise überall sonst.

@@ -597,6 +597,7 @@ const AdminJahrgaengeePage: React.FC = () => {
       <AppKopfzeile
         titel="Jahrgänge"
         onZurueck={() => window.history.back()}
+        gemeindeUmschalter={false}
         rechts={canCreate ? (
           <IonButton aria-label="Neuen Jahrgang anlegen" onClick={openCreateModal}>
             <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />

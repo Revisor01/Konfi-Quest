@@ -262,60 +262,57 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
     }
   });
 
-  // Simon am Geraet (25.09.2026): "Im Admin muss der Switcher weg auf den
-  // Unterseiten: Profil / Benutzerinnen / Organisationen / Betrieb." Das
-  // Profil gehoert zum Konto, nicht zur Gemeinde; Organisationen und Betrieb
-  // sind gemeindeuebergreifend. Push und Postfach zielen nur auf
-  // /admin/konfis und /admin/events (utils/pushNavigation.ts) -- der Rueckweg
-  // nach einem Gemeindewechsel braucht diese vier Seiten nicht.
-  const ohneUmschalter = new Set([
-    'src/components/admin/pages/AdminProfilePage.tsx',
-    'src/components/admin/pages/AdminUsersPage.tsx',
-    'src/components/admin/pages/AdminOrganizationsPage.tsx',
-    'src/components/admin/pages/AdminMetricsPage.tsx',
+  // DER UMSCHALTER GEHOERT AUF DIE REITER-SEITEN, SONST NIRGENDS.
+  //
+  // Simon am Geraet, dreimal in drei Tagen: "Im Admin muss der Switcher weg
+  // auf den Unterseiten: Profil / Benutzerinnen / Organisationen / Betrieb"
+  // (25.09.), "In Events Details kein org switcher zeigen", "Material sub
+  // Seiten auch weg damit", "Konfi Details im Admin hat auch nen switcher
+  // noch" (26.09.) -- und schliesslich: "auf den ganzen Subseiten fuer
+  // Aktivitaeten, Jahrgaenge, Badges und so unter Mehr ueberall nicht der
+  // Organisations-Switcher oben drin. Der ist aber ueberall oben drin."
+  //
+  // Dass er dreimal kam, lag an diesem Test: Er fuehrte ZWEI Ausnahmelisten
+  // und verlangte von allem, was nicht darin stand, `0` Abschaltungen --
+  // schrieb den Fehler also fest. Nachgezaehlt am 26.09.: sechs Unterseiten
+  // (Aktivitaeten, Badges, Jahrgaenge, Level, Material, Jahresrueckblick)
+  // trugen ihn weiterhin, weil sie in keiner Liste standen.
+  //
+  // Deshalb jetzt umgekehrt, als REGEL statt als Liste: Den Umschalter
+  // tragen nur die drei Seiten, die als Reiter unten in der Leiste stehen.
+  // Dort ist man in einer Gemeinde unterwegs und der Wechsel ist der Zweck.
+  // Jede Unterseite und jede Detailansicht zeigt dagegen Dinge EINER
+  // Gemeinde -- ein Wechsel mitten darin fuehrt auf fremde Datensaetze oder
+  // ins Leere. Eine neue Unterseite faellt damit von selbst unter die Regel;
+  // niemand muss an eine Liste denken.
+  const reiterSeiten = new Set([
+    'src/components/admin/pages/AdminKonfisPage.tsx',
+    'src/components/admin/pages/AdminEventsPage.tsx',
+    'src/components/admin/pages/AdminSettingsPage.tsx',  // "Mehr" selbst
   ]);
 
-  // DAZU die Detailansichten (26.09.2026, Simon am Geraet: "In Events Details
-  // kein org switcher zeigen", "Material sub Seiten auch weg damit"): Sie
-  // zeigen EINEN Gegenstand, der zu genau einer Gemeinde gehoert -- ein
-  // Wechsel fuehrte ins Leere. Sie stehen getrennt, weil sie MEHRERE
-  // Kopfzeilen haben (laedt / nicht gefunden / Inhalt) und jede abschalten
-  // muss. Welche das sind, prueft umschalterInDetailansichten.test.ts.
-  const detailansichten = new Set([
-    'src/components/admin/views/EventDetailView.tsx',
-    // Verwaltungs-Unterseiten unter "Mehr" (Simon, 26.09.2026): Sie haengen
-    // an der Gemeinde, in der man sie geoeffnet hat -- ein Wechsel mitten
-    // darin fuehrt auf fremde Datensaetze. Je Zustand eine Kopfzeile, jede
-    // schaltet ab.
-    'src/components/admin/pages/AdminCategoriesPage.tsx',
-    'src/components/admin/pages/AdminCertificatesPage.tsx',
-    'src/components/admin/pages/AdminDashboardSettingsPage.tsx',
-    // Detailansicht EINER Person (26.09.2026, Simon: "Konfi Details im Admin
-    // hat auch nen switcher noch").
-    'src/components/admin/views/KonfiDetailView.tsx',
-  ]);
-
-  it('der Gemeinde-Umschalter kommt aus dem Geruest -- keine Seite baut ihn selbst, genau vier schalten ihn ab', () => {
-    expect(ohneUmschalter.size).toBe(4);
-    let abgeschaltet = 0;
-    for (const [seite] of leitungsSeiten) {
+  it('den Umschalter tragen genau die drei Reiter-Seiten, jede Unterseite schaltet ihn ab', () => {
+    const tragen: string[] = [];
+    for (const [seite, zustaende] of leitungsSeiten) {
       const quelle = lies(seite);
-      // Vorher: import { OrgSwitcherButton } from '../../shared' NUR in AdminKonfisPage.
+      // Er kommt aus dem Geruest -- keine Seite baut ihn selbst.
       expect(quelle, seite).not.toContain('OrgSwitcherButton');
       expect(quelle, seite).not.toContain('glocke={false}');
-      const anzahl = zaehle(quelle, 'gemeindeUmschalter={false}');
-      if (ohneUmschalter.has(seite)) {
-        // Jede der vier hat genau EINE Kopfzeile -- und die schaltet ab.
-        expect(anzahl, seite).toBe(1);
-        abgeschaltet += 1;
-      } else if (detailansichten.has(seite)) {
-        // Mehrere Kopfzeilen je Zustand, jede schaltet ab.
-        expect(anzahl, seite).toBeGreaterThan(0);
+
+      const abgeschaltet = zaehle(quelle, 'gemeindeUmschalter={false}');
+      if (reiterSeiten.has(seite)) {
+        expect(abgeschaltet, `${seite} ist eine Reiter-Seite und behaelt ihn`).toBe(0);
+        tragen.push(seite);
       } else {
-        expect(anzahl, seite).toBe(0);
+        // JEDE Kopfzeile der Seite schaltet ab, nicht nur die erste: Sonst
+        // taucht er im Ladezustand oder auf der Fehlerseite wieder auf.
+        expect(
+          abgeschaltet,
+          `${seite} ist eine Unterseite -- alle ${zustaende} Kopfzeilen muessen abschalten`
+        ).toBe(zustaende);
       }
     }
-    expect(abgeschaltet).toBe(4);
+    expect(tragen.sort()).toEqual([...reiterSeiten].sort());
   });
 
   it('der Zurueck-Knopf kommt aus der Kopfzeile -- kein ICON_ZURUECK mehr in den Leitungs-Seiten', () => {

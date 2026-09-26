@@ -154,6 +154,7 @@ const AdminBadgesPage: React.FC = () => {
       <AppKopfzeile
         titel="Badges"
         onZurueck={() => window.history.back()}
+        gemeindeUmschalter={false}
         rechts={(
           <IonButton aria-label="Neues Badge anlegen" onClick={presentBadgeModal}>
             <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />

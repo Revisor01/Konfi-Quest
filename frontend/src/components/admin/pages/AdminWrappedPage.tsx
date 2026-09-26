@@ -250,6 +250,7 @@ const AdminWrappedPage: React.FC = () => {
       <AppKopfzeile
         titel="Jahresrückblick"
         onZurueck={() => window.history.back()}
+        gemeindeUmschalter={false}
         rechts={(
           <IonButton aria-label="Neuen Rückblick anlegen" onClick={() => setModalOffen(true)} disabled={!istLeitung && segment === 'teamer'}>
             <IonIcon icon={ICON_HINZUFUEGEN} slot="icon-only" />

@@ -199,6 +199,7 @@ const AdminMaterialPage: React.FC = () => {
       <AppKopfzeile
         titel="Material verwalten"
         onZurueck={() => window.history.back()}
+        gemeindeUmschalter={false}
         rechts={(
           <IonButton aria-label="Neues Material anlegen" onClick={openCreateModal}>
             <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
