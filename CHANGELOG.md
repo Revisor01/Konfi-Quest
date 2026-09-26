@@ -510,6 +510,9 @@ Versionsüberschrift.
   gespeicherten Nachrichten zügig löschen. Bisher konnte „Team-Chat leeren",
   das Löschen eines Termins mit Termin-Chat oder eines Kontos bei großen
   Nachrichtenmengen in einen Zeitüberschreitungsfehler laufen.
+- Die Tests prüfen jetzt für jede geschützte Route, dass eine fremde Gemeinde
+  nichts sieht und nichts ändert, und erwarten überall den genauen Wert statt
+  „irgendein Fehler".
 
 ## [2.2.0] - 2026-09-18
 
