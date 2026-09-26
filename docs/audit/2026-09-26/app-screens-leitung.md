@@ -245,6 +245,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-08: Handbuch nennt vier Seiten ohne Gemeinde-Umschalter — es sind alle Unterseiten
 
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — `30-leitung.md` und `05-rollen.md` beschreiben die Regel „nur auf den Seiten der Leiste unten; Unterseiten unter „Mehr", Detailansichten und Chaträume ohne" statt der vier Seiten; gegen alle `AppKopfzeile`-Aufrufe der drei Rollen geprüft.
 - **Fundstelle:** `docs/handbuch/30-leitung.md:17-19`, `docs/handbuch/05-rollen.md:180-186`;
   Code: alle `AppKopfzeile`-Aufrufe in `admin/pages/*` außer Konfis, Events,
   Mehr tragen `gemeindeUmschalter={false}` (Commit 878ca24)

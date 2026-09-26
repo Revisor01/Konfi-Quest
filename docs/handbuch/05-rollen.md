@@ -114,7 +114,8 @@ Im Einzelnen gilt für einen Admin:
 | Termine, Abzeichen, Kategorien, Level anlegen | — | — | ja | ja |
 | Termine ändern, absagen und löschen | — | — | ja | ja |
 | Personen an einem Termin ein- und austragen | — | — | ja | ja |
-| Challenges anlegen und begleiten | — | — | ja | ja |
+| Challenges anlegen und begleiten | — | nur eigene Jahrgänge | ja | ja |
+| Challenges und Beiträge löschen | — | — | ja | ja |
 | Konfis und Teamer:innen anlegen | — | — | ja | ja |
 | Material sehen | — | ja | ja | ja |
 | Material anlegen | — | — | ja | ja |
@@ -191,20 +192,23 @@ es nicht gibt. So lässt sich über die Einladung nicht herausfinden, ob ein Kin
 irgendwo ein Konto hat.
 
 Oben links in der Kopfzeile steht dann der Name der Gemeinde, in der man
-gerade arbeitet — in der Konfi-Liste ebenso wie in den Terminlisten, im Chat
-und in jedem Chatraum, bei den Challenges, unter „Mehr" oder in der
-Materialverwaltung.
+gerade arbeitet — auf jeder Seite, die du über die Leiste unten erreichst:
+bei der Leitung Konfis, Chat, Mitmachen, Challenges und „Mehr", im Team
+Start, Chat, Challenges, Mitmachen und Material, bei Konfis Start, Chat,
+Challenges, Mitmachen und Badges.
 
-Zwei Arten von Seiten tragen ihn nicht. **Detailansichten** zeigen einen
-einzelnen Gegenstand, der zu genau einer Gemeinde gehört — ein Termin, ein
-Material. Ein Wechsel würde dort ins Leere führen, weil es den Gegenstand in
-der anderen Gemeinde nicht gibt. Und **vier Seiten der Leitung**, bei denen
-ein Gemeindewechsel keinen Sinn ergibt: das **Profil** (es gehört zum Konto,
-nicht zur Gemeinde), **Benutzer:innen** sowie **Organisationen** und
-**Betrieb** (beide gemeindeübergreifend). Ein Tippen auf den Namen öffnet die
-Liste aller eigenen Gemeinden mit ihren vollen Namen; die aktive steht **fett**
-und leicht hinterlegt. Nach dem Wechsel laden alle Ansichten frisch in der
-gewählten Gemeinde. Wer nur einer Gemeinde angehört, sieht den Namen nicht.
+Alles, was von diesen Seiten aus geöffnet wird, trägt ihn nicht.
+**Detailansichten** — ein Termin, ein Material, eine Konfi, ein Chatraum —
+zeigen einen Gegenstand, der zu genau einer Gemeinde gehört; ein Wechsel
+führte ins Leere, weil es ihn in der anderen Gemeinde nicht gibt. Und die
+**Unterseiten** unter „Mehr" beziehungsweise im Profil — Profil,
+Benutzer:innen, Aktivitäten, Badges, Jahrgänge, Kategorien, Level, Material,
+Jahresrückblick, Zertifikate, Dashboard, Organisationen, Betrieb — gehören
+entweder zum Konto oder zu genau der Gemeinde, aus der man sie geöffnet hat.
+Ein Tippen auf den Namen öffnet die Liste aller eigenen Gemeinden mit ihren
+vollen Namen; die aktive steht **fett** und leicht hinterlegt. Nach dem
+Wechsel laden alle Ansichten frisch in der gewählten Gemeinde. Wer nur einer
+Gemeinde angehört, sieht den Namen nicht.
 
 Auch die **roten Zahlen an den Reitern** gehören zur Gemeinde, in der man
 gerade arbeitet: Beim Wechsel verschwinden sie und kommen mit den Zahlen der

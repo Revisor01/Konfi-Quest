@@ -376,6 +376,12 @@ bereits geöffneten Geräten.
 
 ## Die E-Mail-Adresse ändern
 
-Im Profil unter **„E-Mail-Adresse ändern"**. Zur Bestätigung geht eine Mail an
-die **neue** Adresse — erst nach dem Klick darin gilt sie. Solange das nicht
-bestätigt ist, funktioniert „Passwort vergessen" noch mit der alten.
+Im Profil unter **„E-Mail-Adresse ändern"**. Die neue Adresse gilt **sofort**
+— eine Bestätigungs-Mail gibt es nicht. „Passwort vergessen" geht ab diesem
+Moment nur noch über die neue Adresse; wer sich vertippt, sperrt sich damit
+von diesem Weg aus, bis die Adresse wieder stimmt. Deshalb vor dem Speichern
+nachsehen. Zur Not setzt die Leitung ein
+[neues Passwort](#weg-1-die-leitung-setzt-ein-neues-passwort).
+
+Eine Adresse, die schon ein anderes Konto nutzt, wird abgelehnt. Das Feld
+darf auch leer bleiben — dann ist „Passwort vergessen" nicht mehr möglich.

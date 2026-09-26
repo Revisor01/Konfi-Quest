@@ -88,7 +88,7 @@ an; sie gruppieren Termine und sind die Grundlage für Kategorie-Abzeichen.
 | Endzeit | zwei Stunden nach Beginn |
 | Anmeldung ab | sofort (kein Startzeitpunkt) |
 | Anmeldeschluss | 24 Stunden vor Beginn, bei kurzfristigen Terminen früher |
-| Max. Teilnehmer:innen | 5 (einstellbar 1 bis 50) |
+| Max. Teilnehmer:innen | 5 (einstellbar 1 bis 30; Termine mit mehr Plätzen behalten ihre Zahl) |
 | Punkte | 1, Typ Gemeinde |
 | Warteliste | an, 3 Plätze |
 | Check-in-Fenster | 30 Minuten |
@@ -871,8 +871,8 @@ gleichermaßen — und er steht in der Mitteilung, die auf den Handys ankommt:
 Gemeindehaus defekt."
 
 Unter dem Grund steht klein, wer abgesagt hat und wann („Abgesagt von Simon
-Luthe, 15.09."). Bei Terminen, die vor der Einführung des Grundes abgesagt
-wurden, fehlt diese Zeile — da ist schlicht nicht festgehalten, wer es war.
+Luthe, 15.09."). Bei älteren Absagen fehlt diese Zeile — da ist nicht
+festgehalten, wer es war.
 
 Hast du keinen Grund angegeben, steht in der Detailansicht „Kein Grund zur
 Absage angegeben." Der Satz steht für Leitung, Team und Konfis gleichermaßen

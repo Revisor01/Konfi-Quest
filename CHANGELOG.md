@@ -513,6 +513,9 @@ Versionsüberschrift.
 - Die Tests prüfen jetzt für jede geschützte Route, dass eine fremde Gemeinde
   nichts sieht und nichts ändert, und erwarten überall den genauen Wert statt
   „irgendein Fehler".
+- Das Handbuch beschreibt den Wechsel der E-Mail-Adresse, die Challenge-Rechte
+  des Teams, die Beförderung zur Teamer:in und den Gemeinde-Umschalter so, wie
+  die App sich verhält.
 
 ## [2.2.0] - 2026-09-18
 

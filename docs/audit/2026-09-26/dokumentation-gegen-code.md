@@ -115,6 +115,7 @@ abreißt.
 
 ### BF-02: Handbuch verspricht eine Bestätigungs-Mail beim Ändern der E-Mail-Adresse — der Code schreibt sofort
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — `35-passwoerter.md`: Die neue Adresse gilt sofort, eine Bestätigungs-Mail gibt es nicht; „Passwort vergessen" nur noch über die neue Adresse, doppelte Adressen werden abgelehnt, leer ist erlaubt (gegen `POST /auth/update-email` in `auth.js` und `ChangeEmailModal.tsx` geprüft). Die Bestätigung selbst wurde nicht gebaut — Produktentscheidung; N8 in der API-Doku bleibt wie dokumentiert.
 - **Fundstelle:** `docs/handbuch/35-passwoerter.md:373-378`; `backend/routes/auth.js:455-480`;
   `docs/api/verwaltung-auth.yaml:288-291` (N8)
 - **Kennzeichnung:** aus Code gelesen
@@ -136,6 +137,7 @@ abreißt.
 
 ### BF-03: Jahrgangs-Zuweisung nach Beförderung — Handbuch widerspricht sich selbst, Kapitel 45 widerspricht dem Code
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — `45-jahrgaenge.md` sagt „nicht automatisch" mit Link auf `05-rollen.md#eine-rolle-aendern`; `30-leitung.md` (Detailansicht einer Person) sagte es bereits richtig. Geprüft gegen `konfi-management.js` („6. KEINE automatische Jahrgangs-Zuweisung mehr").
 - **Fundstelle:** `docs/handbuch/45-jahrgaenge.md:221-222` („übernimmt das System
   seinen Jahrgang automatisch als Zuweisung, mit Lese- und Bearbeitungsrecht");
   `docs/handbuch/05-rollen.md:261-266` und `docs/handbuch/30-leitung.md:66-67`
@@ -155,6 +157,7 @@ abreißt.
 
 ### BF-04: Rechte-Tabelle und Teamer-Kapitel widersprechen sich und dem Code bei Challenges
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Tabelle in `05-rollen.md`: Teamer:in „nur eigene Jahrgänge" beim Anlegen und Begleiten, neue Zeile „Challenges und Beiträge löschen" nur Admin/Org-Admin; `20-teamer.md` nennt das Löschen als Leitungssache. Geprüft: `challenges.js` POST/PUT/moderate/export `requireTeamer`, beide DELETE `requireAdmin`; `ChallengesManageView.tsx` `darfLoeschen`.
 - **Fundstelle:** `docs/handbuch/05-rollen.md:117` („Challenges anlegen und begleiten
   | — | — | ja | ja" — Teamer:in: nein); `docs/handbuch/20-teamer.md:52-56`
   („anlegen und bearbeiten, löschen, Beiträge freigeben …");
@@ -366,6 +369,7 @@ abreißt.
 
 ### BF-11: Veraltete Verhaltensaussagen im Handbuch (vier Stellen)
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — „Mitteilungen prüfen" aus `03-bedienung.md` gestrichen; `70-termine.md` Regler 1 bis 30 (bestehende Termine behalten mehr); `45-jahrgaenge.md`: Luther 2017 und Gute Nachricht mit Wortlaut, Bibel in gerechter Sprache und Elberfelder ohne (Migration 134); `20-teamer.md` siehe BF-04.
 - **Fundstelle:**
   - `03-bedienung.md:271-274` („Im Profil steht unter „Mitteilungen prüfen" …") —
     `grep -rn "Mitteilungen prüfen" frontend/src --include='*.tsx' | grep -v __tests__`
@@ -487,6 +491,7 @@ abreißt.
 
 ### BF-17: Handbuch-Stil: 45 von 268 Überschriften sind Substantive, eine Stelle blickt zurück
 - **Schwere:** NIEDRIG
+- **Status:** teilweise behoben 26.09.2026 — `70-termine.md` blickt bei älteren Absagen nicht mehr zurück. Die Substantiv-Überschriften bleiben: „Events", „Konto", „Verwaltung (nur Org-Admin)" und „Inhalt" benennen Reiter und Abschnitte so, wie die App sie beschriftet, `#verwaltung-nur-org-admin` ist fünfmal verlinkt, und ob „Events" im Handbuch zu „Termine" wird, hängt an der offenen Begriffsentscheidung (UI BF-10).
 - **Fundstelle:** z. B. `05-rollen.md:18,28,35,46` („### Konfi", „### Teamer:in",
   „### Admin", „### Org-Admin"), `10-konfis.md:78`/`20-teamer.md:71`/`30-leitung.md:100`
   („### Events"), `30-leitung.md:173,180,188` („### Konto", „### Verwaltung (nur

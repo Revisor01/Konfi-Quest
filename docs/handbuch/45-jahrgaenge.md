@@ -157,11 +157,12 @@ sein, der Text höchstens 1000.
 Beides zugleich geht nicht: Wählt der Konfi aus der Liste, wird ein zuvor
 eingetippter Text gelöscht — und umgekehrt.
 
-> **Wichtig für die Praxis:** Mitgeliefert werden nur die **Vers-Stellen**,
-> nicht die Verstexte. Die Übersetzungstexte sind aus Lizenzgründen leer und
-> müssten von der Gemeinde selbst eingetragen werden. Solange das nicht
-> geschehen ist, zeigt die Liste Stellenangaben ohne Text — der Freitext-Weg
-> ist dann der einzige, der einen vollständigen Spruch liefert.
+> **Wichtig für die Praxis:** Den Wortlaut gibt es für **Luther 2017** und
+> **Gute Nachricht** — Einzelverse daraus dürfen Gemeinden frei verwenden,
+> der Quellenvermerk steht in der App bei der Auswahl. Für **Bibel in
+> gerechter Sprache** und **Elberfelder** fehlt der Text aus Lizenzgründen;
+> die Liste zeigt dort nur die Stellenangabe mit dem Hinweis, dass der Text
+> noch fehlt. Wer einen dieser beiden Wortlaute will, nimmt den Freitext-Weg.
 
 Die gesammelten Sprüche eines Jahrgangs kannst du dir als Übersicht anzeigen
 und dir per E-Mail zuschicken lassen — praktisch für Urkunden und den
@@ -218,8 +219,10 @@ nicht zugewiesen bist“**. Zwei Arten von Terminen bleiben immer sichtbar und
 buchbar: Termine [**nur für Teamer:innen**](70-termine.md#die-zielgruppe-waehlen)
 und Termine ohne jede Jahrgangsbindung.
 
-Wird ein Konfi **zur Teamer:in befördert**, übernimmt das System seinen
-Jahrgang automatisch als Zuweisung, mit Lese- und Bearbeitungsrecht.
+Wird ein Konfi **zur Teamer:in befördert**, bekommt er seinen alten Jahrgang
+**nicht** automatisch als Zuweisung. Die vergibt die Leitung, sobald die neue
+Teamer:in in einem Jahrgang aktiv sein soll — siehe
+[Eine Rolle ändern](05-rollen.md#eine-rolle-aendern).
 
 ## Kategorien anlegen und pflegen
 

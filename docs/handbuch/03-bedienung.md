@@ -268,11 +268,7 @@ direkt nach dem Flugmodus —, versucht die App es von selbst noch zweimal mit
 etwas Abstand. Wer gerade erst geöffnet hat, wartet deshalb am besten ein paar
 Sekunden, bevor er weitersucht.
 
-Im Profil steht unter **„Mitteilungen prüfen"**, ob die App überhaupt
-Mitteilungen senden darf und welche Fassung gerade läuft. Ein Tippen darauf
-zeigt beides im Klartext — das ist die schnellste Antwort auf „woran liegt es".
-
-Führt das nicht weiter, in dieser Reihenfolge weiterprobieren:
+Hilft das nicht, in dieser Reihenfolge weiterprobieren:
 
 1. In den Einstellungen des Geräts prüfen, ob Konfi Quest Benachrichtigungen
    senden darf — und ob der Energiesparmodus die App im Hintergrund bremst.

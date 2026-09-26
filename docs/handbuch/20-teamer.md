@@ -50,10 +50,11 @@ die du selbst angelegt hast. Alle Regeln stehen im Kapitel
 ![Der Challenges-Bereich in der Teamer-Ansicht.](/docs/bilder/iphone/teamer-challenges.png)
 
 Du arbeitest hier wie die Leitung, begrenzt auf deine zugewiesenen Jahrgänge:
-[anlegen und bearbeiten](80-challenges.md#eine-challenge-anlegen),
-[löschen](80-challenges.md#eine-challenge-loeschen), Beiträge
+[anlegen und bearbeiten](80-challenges.md#eine-challenge-anlegen), Beiträge
 [freigeben, anonymisieren oder ausblenden](80-challenges.md#beitraege-freigeben-ausblenden-loeschen)
-— und selbst mitmachen. Ein oranges Feld mit Zahl und Uhr an einer Challenge
+— und selbst mitmachen. Nur das **Löschen** — einer Challenge wie eines
+Beitrags — bleibt der [Leitung](80-challenges.md#eine-challenge-loeschen)
+vorbehalten. Ein oranges Feld mit Zahl und Uhr an einer Challenge
 sagt dir, wie viele Beiträge dort auf deine Freigabe warten — siehe
 [Offene Freigaben erkennen](80-challenges.md#offene-freigaben-erkennen).
 
