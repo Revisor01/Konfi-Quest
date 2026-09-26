@@ -10,6 +10,14 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
+- Die Gemeindeleitung kann jemanden, der schon ein Konto hat, in ihre Gemeinde
+  einladen — unter „Mehr › Benutzer:innen" über den Knopf oben rechts. Dazu
+  reicht der Benutzername oder die E-Mail-Adresse, und die Leitung gibt gleich
+  die Rolle mit. Die eingeladene Person bekommt eine Mitteilung und eine
+  E-Mail und entscheidet selbst; erst mit ihrer Zusage gehört sie zur Gemeinde.
+  Sie behält Benutzername und Passwort, ihre bisherige Gemeinde bleibt
+  unverändert. Die Einladung gilt 14 Tage und lässt sich zurückziehen. Konfis
+  werden weiterhin über einen Einladungscode aufgenommen.
 - In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde: Wer in der
   einen die Leitung stellt, kann in der anderen Teamer:in sein — die Rechte
   richten sich nach der Gemeinde, in der man gerade arbeitet. Der Umschalter

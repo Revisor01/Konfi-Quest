@@ -1510,6 +1510,36 @@ class PushService {
   /**
    * Von Warteliste aufgerückt - Push an Konfi
    */
+  /**
+   * Einladung in eine weitere Gemeinde (26.09.2026). Der Empfaenger
+   * entscheidet -- deshalb Gruppe "Anfragen und Freigaben".
+   *
+   * organization_id ist die EINLADENDE Gemeinde: Der Tap soll dorthin
+   * fuehren, wo die Einladung herkommt. Der Empfaenger ist dort allerdings
+   * noch NICHT Mitglied -- resolveOrgForPush kann also nicht wechseln. Das
+   * Ziel ist deshalb eine Seite seiner EIGENEN Rolle
+   * (utils/pushNavigation.ts, Fall 'gemeinde_einladung').
+   */
+  static async sendGemeindeEinladungToUser(db, userId, orgName, rolleName, einladungId, organizationId) {
+    try {
+      const notification = {
+        title: 'Einladung in eine Gemeinde',
+        body: `${orgName} lädt dich ein, dort als ${rolleName} mitzuarbeiten. Tippe, um zu antworten.`,
+        data: {
+          type: 'gemeinde_einladung',
+          einladung_id: einladungId?.toString() || '',
+          org_name: String(orgName || ''),
+          rolle: String(rolleName || ''),
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
+        }
+      };
+      return await this.sendToUser(db, userId, notification);
+    } catch (error) {
+      console.error('sendGemeindeEinladungToUser error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   static async sendWaitlistPromotionToKonfi(db, konfiId, eventName, eventDate = null, eventId = null, organizationId = null) {
     try {
 

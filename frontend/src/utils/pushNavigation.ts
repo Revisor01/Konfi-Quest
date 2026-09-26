@@ -420,6 +420,14 @@ export const buildPushTargetUrl = (
       // Zertifikat -> Profil, dort liegt der Download.
       return `${routePrefix}/profile`;
 
+    case 'gemeinde_einladung':
+      // Einladung in eine weitere Gemeinde (26.09.2026). Der Empfaenger ist
+      // dort NOCH NICHT Mitglied -- resolveOrgForPush kann also nicht in die
+      // einladende Gemeinde wechseln, und eine Seite von dort waere fuer ihn
+      // verschlossen. Ziel ist deshalb das Profil seiner EIGENEN Rolle, das
+      // die offenen Einladungen zeigt.
+      return `${routePrefix}/profile`;
+
     case 'jahrgang_deletion_warning':
       // Vorwarnung zur Jahrgangs-Archivierung. Betrifft die Leitung:
       // Einstellungen -> Jahrgaenge. Teamer:innen und Konfis haben diese

@@ -115,7 +115,10 @@ const GRUPPE_JE_ART = Object.freeze({
   event_opt_out: GRUPPE_VERWALTUNG,
   teamer_event_booking: GRUPPE_VERWALTUNG,
   teamer_event_cancellation: GRUPPE_VERWALTUNG,
-  jahrgang_deletion_warning: GRUPPE_VERWALTUNG
+  jahrgang_deletion_warning: GRUPPE_VERWALTUNG,
+  // Eine Einladung wartet auf die Entscheidung des Empfaengers -- genau das
+  // meint "Anfragen und Freigaben" (26.09.2026).
+  gemeinde_einladung: GRUPPE_VERWALTUNG
 });
 
 /** Gruppe zu einer Push-Art; unbekannte Arten fallen auf GRUPPE_STANDARD. */

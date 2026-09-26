@@ -1,4 +1,4 @@
-import { ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
+import { ICON_PERSON_HINZUFUEGEN_GEFUELLT, ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
@@ -21,6 +21,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import UsersView from '../UsersView';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import EinladungModal from '../modals/EinladungModal';
 import UserManagementModal from '../modals/UserManagementModal';
 import { AdminUser } from '../../../types/user';
 import { triggerPullHaptic } from '../../../utils/haptics';
@@ -43,6 +44,14 @@ const AdminUsersPage: React.FC = () => {
   const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook
+  // Einladung einer BESTEHENDEN Person in diese Gemeinde (26.09.2026) --
+  // getrennt vom Anlegen, weil es etwas anderes tut: Hier entsteht kein Konto,
+  // sondern eine Anfrage an jemanden, der schon eins hat.
+  const [presentEinladungHook, dismissEinladungHook] = useIonModal(EinladungModal, {
+    onClose: () => dismissEinladungHook(),
+    onSuccess: () => { dismissEinladungHook(); refreshUsers(); }
+  });
+
   const [presentUserModalHook, dismissUserModalHook] = useIonModal(UserManagementModal, {
     userId: modalUserId,
     onClose: () => {
@@ -104,9 +113,16 @@ const AdminUsersPage: React.FC = () => {
         onZurueck={() => window.history.back()}
         gemeindeUmschalter={false}
         rechts={user?.role_name === 'org_admin' ? (
+          <>
+            {/* Eine Person, die schon ein Konto hat, in diese Gemeinde
+                einladen (26.09.2026). Sie entscheidet selbst. */}
+            <IonButton aria-label="Person in diese Gemeinde einladen" onClick={() => presentEinladungHook({ presentingElement })}>
+              <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} slot="icon-only" />
+            </IonButton>
           <IonButton aria-label="Neue Benutzer:in anlegen" onClick={presentUserModal}>
             <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
           </IonButton>
+          </>
         ) : undefined}
       />
       <IonContent className="app-gradient-background" fullscreen>

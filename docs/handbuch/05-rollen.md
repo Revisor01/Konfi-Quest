@@ -153,9 +153,24 @@ Gemeinde**. Wer in der einen die Gemeindeleitung stellt, kann in der anderen
 Teamer:in sein; die Rechte richten sich immer nach der Gemeinde, in der man
 gerade arbeitet, nie nach der Gemeinde am Konto.
 
-Eine zweite Mitgliedschaft wird beim Betrieb von Konfi Quest beantragt: Die
-Gemeindeleitung meldet, wer aufgenommen werden soll und mit welcher Rolle.
-Die Person behält ihr bestehendes Konto samt Benutzername und Passwort.
+### Jemanden in die eigene Gemeinde einladen
+
+Die Gemeindeleitung lädt selbst ein: **Mehr › Benutzer:innen**, oben rechts der
+Knopf mit der Person. Dort trägt sie **Benutzername oder E-Mail-Adresse** der
+Person ein und wählt die **Rolle**, die diese in der eigenen Gemeinde bekommen
+soll.
+
+Die eingeladene Person braucht bereits ein Konto — angelegt wird hier keines.
+Sie bekommt eine Mitteilung in der App und eine E-Mail und findet die Einladung
+in ihrem Profil. **Erst wenn sie zusagt, gehört sie zur Gemeinde.** Bis dahin
+ändert sich nichts, und niemand wird über seinen Kopf hinweg aufgenommen.
+
+Sie behält Benutzername und Passwort; ihre bisherige Gemeinde bleibt
+unverändert. Die Einladung gilt **14 Tage** und lässt sich zurückziehen,
+solange sie offen ist.
+
+**Konfis lassen sich so nicht aufnehmen.** Sie gehören zu einem Jahrgang und
+kommen über einen [Einladungscode](35-passwoerter.md) hinein.
 
 Oben links in der Kopfzeile steht dann der Name der Gemeinde, in der man
 gerade arbeitet — in der Konfi-Liste ebenso wie in den Terminlisten, im Chat

@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n258 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n263 Operationen."
   },
   "servers": [
     {
@@ -386,6 +386,197 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Nur eigene Daten; role_name/role_display_name gelten fuer die AKTIVE Organisation"
+        }
+      }
+    },
+    "/api/einladungen": {
+      "post": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
+        "summary": "Eine bestehende Person in die eigene Gemeinde einladen",
+        "description": "NEU 26.09.2026 (Simon: \"ORG Admin kann bestehenden anderen User hinzufuegen, der bekommt Einladung und bestaetigt. Schon ist der switcher da.\"). Gesucht wird EXAKT nach Benutzername oder E-Mail -- keine Teilsuche, sonst liesse sich der Bestand fremder Gemeinden durchblaettern. Die Einladung gilt 14 Tage.\nDIE MITGLIEDSCHAFT ENTSTEHT NICHT HIER, sondern erst mit der Annahme: Eine Zugehoerigkeit aendert, was jemand sieht und darf, und wird deshalb nicht ueber den Kopf der Person hinweg angelegt.\nKONFI IST AUSGESCHLOSSEN -- und zwar zusaetzlich zur Rollenhierarchie: canCreateRole('org_admin', 'konfi') liefert TRUE, die Hierarchie allein wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen ueber invite_codes.\nMeldung an die eingeladene Person ueber Postfach, Push (Gruppe \"Anfragen und Freigaben\") und E-Mail, nach der Antwort (nachAntwort).\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kennung",
+                  "role_id"
+                ],
+                "properties": {
+                  "kennung": {
+                    "type": "string",
+                    "description": "Benutzername ODER E-Mail, exakt (Gross-/Kleinschreibung egal)"
+                  },
+                  "role_id": {
+                    "type": "integer",
+                    "description": "Rolle DIESER Gemeinde; niemals die konfi-Rolle"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "id, user_id, display_name, username, role_id, role_name, status, expires_at"
+          },
+          "400": {
+            "description": "Rolle gehoert nicht zu dieser Gemeinde; konfi-Rolle (error_code konfi_nicht_moeglich); Selbst-Einladung"
+          },
+          "403": {
+            "description": "Nicht org_admin, oder Rolle laut Hierarchie nicht vergebbar"
+          },
+          "404": {
+            "description": "Kein Konto mit dieser Kennung (error_code nicht_gefunden)"
+          },
+          "409": {
+            "description": "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Rolle gegen roles.organization_id der aktiven Org; Mitgliedschaft ueber BEIDE Quellen geprueft; Teilindex laesst nur eine offene Einladung je Person und Gemeinde"
+        }
+      },
+      "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
+        "summary": "Offene Einladungen der eigenen Gemeinde",
+        "responses": {
+          "200": {
+            "description": "Array offener, nicht abgelaufener Einladungen mit Namen und Rolle"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Nur die eigene Organisation, nur status='offen' und expires_at > NOW()"
+        }
+      }
+    },
+    "/api/einladungen/meine": {
+      "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
+        "summary": "Die eigenen offenen Einladungen",
+        "responses": {
+          "200": {
+            "description": "Array (Gemeinde, Rolle, wer eingeladen hat, expires_at)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "alle authentifizierten"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Nur eigene Einladungen (user_id = req.user.id). BEWUSST org-uebergreifend: Die Einladung kommt aus einer Gemeinde, in der man noch NICHT Mitglied ist."
+        }
+      }
+    },
+    "/api/einladungen/{id}/annehmen": {
+      "post": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
+        "summary": "Einladung annehmen -- legt die Mitgliedschaft an",
+        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "message, organization (id, name, slug, display_name)"
+          },
+          "404": {
+            "description": "Nicht vorhanden ODER nicht die eigene Einladung -- bewusst dieselbe Antwort, sonst liesse sich durch Durchprobieren erkennen, welche es gibt"
+          },
+          "409": {
+            "description": "Bereits beantwortet (error_code schon_beantwortet)"
+          },
+          "410": {
+            "description": "Abgelaufen (error_code expired)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "alle authentifizierten"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Nur die eingeladene Person selbst; Status offen; expires_at in der Zukunft"
+        }
+      }
+    },
+    "/api/einladungen/{id}/ablehnen": {
+      "post": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
+        "summary": "Einladung ablehnen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "message"
+          },
+          "404": {
+            "description": "wie bei annehmen"
+          },
+          "409": {
+            "description": "Bereits beantwortet"
+          },
+          "410": {
+            "description": "Abgelaufen"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "alle authentifizierten"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "wie bei annehmen"
         }
       }
     },

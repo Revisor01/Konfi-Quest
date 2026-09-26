@@ -50,7 +50,8 @@ const POSTFACH_ARTEN = new Set([
   'events_pending_approval',     // Termine warten auf Verbuchung
   'new_konfi_registration',      // neue Registrierung
   'challenge_submission',        // Beitrag wartet auf Freigabe
-  'jahrgang_deletion_warning',   // Warnung vor der Jahrgangs-Loeschung
+  'jahrgang_deletion_warning',
+  'gemeinde_einladung',   // in eine weitere Gemeinde eingeladen (26.09.2026)   // Warnung vor der Jahrgangs-Loeschung
   'event_opt_out',               // Konfi hat sich von einem Pflichttermin abgemeldet
   'event_opt_in',                // ... und wieder angemeldet
   // ---- Nachtraeglich entschieden (Simon, 25.09.2026: beide rein) ----

@@ -46,6 +46,7 @@ import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral über useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
 import SpiritFooter from '../../shared/SpiritFooter';
+import EinladungenKarte from '../../shared/EinladungenKarte';
 import PushAuswahlEintrag from '../../shared/PushAuswahl';
 import { useIonRouter } from '@ionic/react';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
@@ -254,6 +255,7 @@ const AdminSettingsPage: React.FC = () => {
               {/* Auswahl, welche Push-Gruppen aufs Handy kommen -- gemeinsame
                   Komponente aller drei Rollen; fordert die Berechtigung des
                   Geraets weiterhin an, solange sie fehlt. */}
+              <EinladungenKarte variante="users" />
               <PushAuswahlEintrag variante="users" presentingRef={pageRef} />
 
               {/* App-Tour und Neuerungen jederzeit erneut ansehen */}

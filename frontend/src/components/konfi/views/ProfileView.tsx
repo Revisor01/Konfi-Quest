@@ -25,6 +25,7 @@ import { SectionHeader } from '../../shared';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
+import EinladungenKarte from '../../shared/EinladungenKarte';
 import PushAuswahlEintrag from '../../shared/PushAuswahl';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
@@ -650,6 +651,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                   Blendet sich selbst aus, wenn das Geraet keine eingerichtete
                   Biometrie hat. */}
               <AppSperreSchalter variante="purple" />
+              <EinladungenKarte variante="purple" />
               <PushAuswahlEintrag variante="purple" presentingRef={pageRef} presentingElement={presentingElement} />
 
 

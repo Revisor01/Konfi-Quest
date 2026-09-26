@@ -260,6 +260,47 @@ Dein Konfi Quest Team
  * wird. Bewusst "gelöscht" (NICHT "archiviert") -- das interne Backup/Archiv
  * wird nach aussen nicht kommuniziert. Mit Hinweis aufs Befoerdern.
  */
+/**
+ * Einladung in eine weitere Gemeinde (26.09.2026). Nennt die Frist, weil sie
+ * nach 14 Tagen verfaellt -- wie die Loeschwarnung fuer Jahrgaenge.
+ */
+const sendGemeindeEinladungEmail = async (email, name, orgName, rolleName, expiresAt) => {
+  const frist = expiresAt
+    ? formatDatum(new Date(expiresAt), { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : null;
+  const subject = `Einladung von ${String(orgName).replace(/[\r\n]+/g, ' ').trim()} - Konfi Quest`;
+
+  const text = `
+Hallo ${name},
+
+${orgName} lädt dich ein, dort als ${rolleName} mitzuarbeiten.
+
+Du behältst dein Konto und dein Passwort. Nimmst du an, kannst du in der App
+oben links zwischen deinen Gemeinden wechseln. Deine bisherige Gemeinde bleibt
+unverändert.
+
+Öffne die App, um die Einladung anzunehmen oder abzulehnen.${frist ? `
+
+Die Einladung gilt bis zum ${frist}.` : ''}
+
+Viele Grüße,
+Dein Konfi Quest Team
+  `.trim();
+
+  const html = wrapHtml(`
+      <h2>Hallo ${escapeHtml(name)}!</h2>
+      <p><strong>${escapeHtml(orgName)}</strong> lädt dich ein, dort als
+         <strong>${escapeHtml(rolleName)}</strong> mitzuarbeiten.</p>
+      <p>Du behältst dein Konto und dein Passwort. Nimmst du an, kannst du in der
+         App oben links zwischen deinen Gemeinden wechseln — deine bisherige
+         Gemeinde bleibt unverändert.</p>
+      <p>Öffne die App, um die Einladung anzunehmen oder abzulehnen.</p>
+      ${frist ? `<div class="date">Gültig bis ${escapeHtml(frist)}</div>` : ''}
+  `, { headerGradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' });
+
+  return sendEmail({ to: email, subject, text, html });
+};
+
 const sendJahrgangDeletionWarningEmail = async (email, name, orgName, jahrgangName, daysLeft) => {
   const subject = `Jahrgang "${jahrgangName}" wird in ${daysLeft} Tagen gelöscht - Konfi Quest`;
 
@@ -420,5 +461,6 @@ module.exports = {
   sendPasswordChangedEmail,
   sendLicenseExpiryReminderEmail,
   sendJahrgangDeletionWarningEmail,
+  sendGemeindeEinladungEmail,
   sendKonfiMatrixEmail,
 };

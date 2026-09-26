@@ -578,6 +578,7 @@ function createApp(db, options = {}) {
   // Allgemeine Routes
   app.use('/api/users', require('./routes/users')(db, rbacVerifier, roleHelpers, ioOrDummy));
   app.use('/api/roles', require('./routes/roles')(db, rbacVerifier, roleHelpers));
+  app.use('/api/einladungen', require('./routes/einladungen')(db, rbacVerifier, roleHelpers));
 
   // Organizations (mit optionalem Rate-Limiter)
   if (rateLimiters.orgLimiter) {
