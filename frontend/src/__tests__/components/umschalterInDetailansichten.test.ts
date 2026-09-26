@@ -94,12 +94,21 @@ describe('Gemeinde-Umschalter: nicht in Detailansichten (26.09.2026)', () => {
     expect(liste[0]).not.toMatch(/gemeindeUmschalter=\{false\}/);
   });
 
+  // REITER-SEITEN behalten ihn, Unterseiten nicht -- was eine Reiter-Seite
+  // ist, steht in navigation/rollenBaeume.ts (tabs je Rolle).
+  //
+  // AdminMaterialPage stand hier bis zum 26.09.2026 als "Liste" und musste
+  // den Umschalter TRAGEN. Das war falsch: Bei der Leitung ist Material
+  // keine Reiter-Seite, sondern eine Unterseite unter "Mehr"
+  // (AdminSettingsPage -> /admin/material); die Reiter sind Konfis, Chat,
+  // Mitmachen, Challenges und Mehr. Beim Teamer ist Material dagegen sehr
+  // wohl ein Reiter ('teamer-material') -- deshalb steht TeamerMaterialPage
+  // weiter oben und behaelt ihn fuer die Liste.
   it('die Listen behalten ihn -- dort ist der Wechsel sinnvoll', () => {
     for (const datei of [
       'src/components/konfi/pages/KonfiEventsPage.tsx',
       'src/components/teamer/pages/TeamerEventsPage.tsx',
       'src/components/admin/pages/AdminEventsPage.tsx',
-      'src/components/admin/pages/AdminMaterialPage.tsx',
     ]) {
       for (const kopf of kopfzeilen(lies(datei))) {
         expect(kopf, `${datei}: eine Liste gibt den Umschalter ab`)

@@ -285,6 +285,11 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
   // Gemeinde -- ein Wechsel mitten darin fuehrt auf fremde Datensaetze oder
   // ins Leere. Eine neue Unterseite faellt damit von selbst unter die Regel;
   // niemand muss an eine Liste denken.
+  // Die Reiter der Leitung stehen in navigation/rollenBaeume.ts: Konfis,
+  // Chat, Mitmachen, Challenges, Mehr. Chat und Challenges liegen nicht in
+  // leitungsSeiten (sie sind rollenuebergreifende Dateien und werden weiter
+  // unten geprueft), deshalb nennt diese Menge nur die drei, die hier
+  // vorkommen.
   const reiterSeiten = new Set([
     'src/components/admin/pages/AdminKonfisPage.tsx',
     'src/components/admin/pages/AdminEventsPage.tsx',
