@@ -14436,7 +14436,7 @@
           "Jahrgänge"
         ],
         "summary": "Jahrgang löschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)",
-        "description": "Aktive Konfis (Rolle konfi) blockieren die Löschung immer. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true nötig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien entfernt.\n",
+        "description": "Aktive Konfis (Rolle konfi) blockieren die Löschung immer. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true nötig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien entfernt. RUECKBLICKE BLEIBEN (26.09.2026, Audit Chat BF-02, Migration 162): wrapped_ausgaben.jahrgang_id haengt mit ON DELETE SET NULL am Jahrgang; die Konfi-Ausgabe und die Snapshots befoerderter Ex-Konfis ueberleben das Loeschen und bleiben ueber GET /api/wrapped/history/{userId} abrufbar. Bis dahin nahm ein CASCADE Ausgabe und Snapshots mit. Konfi-Ausgaben dieses Jahrgangs ohne einen einzigen Snapshot werden mit entfernt.\n",
         "parameters": [
           {
             "name": "id",

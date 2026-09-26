@@ -720,6 +720,13 @@ paths:
         Nachrichten, ist force=true nötig; dann werden Chat-Raum,
         Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien
         entfernt.
+        RUECKBLICKE BLEIBEN (26.09.2026, Audit Chat BF-02, Migration 162):
+        wrapped_ausgaben.jahrgang_id haengt mit ON DELETE SET NULL am
+        Jahrgang; die Konfi-Ausgabe und die Snapshots befoerderter
+        Ex-Konfis ueberleben das Loeschen und bleiben ueber
+        GET /api/wrapped/history/{userId} abrufbar. Bis dahin nahm ein
+        CASCADE Ausgabe und Snapshots mit. Konfi-Ausgaben dieses Jahrgangs
+        ohne einen einzigen Snapshot werden mit entfernt.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
         - name: force

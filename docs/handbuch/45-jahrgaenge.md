@@ -279,9 +279,13 @@ unwiderruflich gelöscht** ([Chat](90-chat.md)).
 Ehemalige Konfis, die inzwischen Teamer:in sind, **blockieren das Löschen
 nicht**. Sie verlieren beim Löschen nur ihre Jahrgangs-Bindung.
 
-**Ihre Daten bleiben vollständig erhalten**: Punktestand, Level, Abzeichen
-und Konfispruch. Das ist bewusst so gebaut, damit sie ihre eigene Konfizeit
-später noch nachschauen können.
+**Ihre Daten bleiben vollständig erhalten**: Punktestand, Level, Abzeichen,
+Konfispruch und ihr [Konfi-Rückblick](95-wrapped.md). Das ist bewusst so
+gebaut, damit sie ihre eigene Konfizeit später noch nachschauen können — der
+Rückblick steht weiterhin in ihrem Profil, auch wenn der Jahrgang, für den er
+erstellt wurde, nicht mehr existiert. In deiner Liste der Ausgaben bleibt eine
+solche Ausgabe ohne Jahrgangsnamen stehen; eine Ausgabe, in der kein Rückblick
+mehr steckt, wird beim Löschen des Jahrgangs mit entfernt.
 
 ## Das Konfirmationsdatum finden
 

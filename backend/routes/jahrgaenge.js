@@ -441,6 +441,21 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
           AND kp.jahrgang_id = $1 AND r.name != 'konfi'
       `, [jahrgangId]);
 
+      // Rueckblick-Ausgaben des Jahrgangs (Audit 26.09.2026, Chat BF-02):
+      // Seit Migration 162 haengt wrapped_ausgaben.jahrgang_id mit
+      // ON DELETE SET NULL am Jahrgang -- die Ausgaben und damit die
+      // Snapshots befoerderter Ex-Konfis ueberleben das Loeschen, genau
+      // wie ihr konfi_profiles-Eintrag oben. Vorher nahm ein CASCADE
+      // Ausgabe und Snapshots mit; ohne Jahrgang ist der Rueckblick nicht
+      // neu erzeugbar. Was hier noch weg darf: Konfi-Ausgaben dieses
+      // Jahrgangs OHNE einen einzigen Snapshot -- die haetten sonst als
+      // leere, jahrgangslose Huelle in der Liste der Leitung gestanden.
+      await db.query(`
+        DELETE FROM wrapped_ausgaben a
+        WHERE a.jahrgang_id = $1 AND a.wrapped_type = 'konfi'
+          AND NOT EXISTS (SELECT 1 FROM wrapped_snapshots s WHERE s.ausgabe_id = a.id)
+      `, [jahrgangId]);
+
       const deleteJahrgangQuery = "DELETE FROM jahrgaenge WHERE id = $1 AND organization_id = $2";
       const { rowCount } = await db.query(deleteJahrgangQuery, [jahrgangId, req.user.organization_id]);
 

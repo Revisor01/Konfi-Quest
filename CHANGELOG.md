@@ -448,6 +448,10 @@ Versionsüberschrift.
   auf jedem Abmeldeweg. Über einen älteren Nebenweg konnte eine Konfi bislang
   ein von der Leitung eingetragenes „Gefehlt" selbst löschen oder sich am
   Vortag ohne Spur abmelden; die Anwesenheitsliste war so nicht verlässlich.
+- Löschte die Leitung einen alten Jahrgang, verschwand damit der
+  Konfi-Rückblick aller inzwischen beförderten Teamer:innen — obwohl ihre
+  Punkte, Level und Abzeichen bewusst erhalten bleiben. Der Rückblick bleibt
+  jetzt ebenfalls und steht weiter im Profil.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
