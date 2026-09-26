@@ -417,7 +417,9 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
       }
       expect(POSTFACH_ARTEN.has('wrapped')).toBe(true);
       expect(POSTFACH_ARTEN.has('certificate')).toBe(true);
-      expect(POSTFACH_ARTEN.size).toBe(23);
+      // 26.09.2026: 23 -> 24. 'gemeinde_einladung' kam dazu (Einladung in
+      // eine weitere Gemeinde).
+      expect(POSTFACH_ARTEN.size).toBe(24);
       expect(Object.keys(NICHT_IM_POSTFACH)).toHaveLength(9);
     });
   });

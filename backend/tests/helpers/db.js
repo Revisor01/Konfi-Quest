@@ -93,7 +93,7 @@ const TRUNCATE_SQL = `TRUNCATE
     challenge_submissions, challenge_jahrgang_assignments, challenges,
     push_tokens, event_reminders, password_resets,
     invite_codes, refresh_tokens, notifications,
-    user_organizations,
+    user_organizations, org_einladungen,
     settings, daily_verses, apm_snapshots, socket_io_attachments,
     users, activities, custom_badges, events,
     jahrgaenge, categories, levels,
