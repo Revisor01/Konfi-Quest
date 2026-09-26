@@ -447,6 +447,8 @@ Versionsüberschrift.
 - Typprüfung und Web-Build laufen bei jeder Änderung als Teil der Prüfungen mit:
   Ein Stand, der sich nicht bauen lässt, fällt vor der Auslieferung auf statt still
   danach.
+- Ein Prüflauf, der keine Tests findet, gilt nicht mehr als bestanden; bekannte
+  Sicherheitslücken in Abhängigkeiten stoppen ihn ab der Stufe „hoch".
 
 ## [2.2.0] - 2026-09-18
 

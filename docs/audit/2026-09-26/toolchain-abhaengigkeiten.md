@@ -249,6 +249,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-08: CI-Sicherheitsprüfung kann im Frontend nie rot werden, im Backend nur bei „critical"
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — Beide Audit-Schritte stehen auf `--audit-level=high` ohne `|| true`; die zwei react-router-Advisories sind `moderate` und liegen unter der Schwelle, eine gezielte Ausnahme ist deshalb nicht nötig (lokal geprüft: Frontend Exit 0 mit 3 moderate, Backend 0).
 - **Fundstelle:** `.github/workflows/ci.yml:226` (`npm audit --audit-level=critical || true`),
   `.github/workflows/ci.yml:107` (`npm audit --audit-level=critical`)
 - **Kennzeichnung:** reproduziert (`cd frontend && npm audit --json` → 3 moderate,

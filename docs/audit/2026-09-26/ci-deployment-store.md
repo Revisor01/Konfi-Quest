@@ -346,6 +346,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-12: `npm audit` im Frontend nicht blockierend, `--passWithNoTests` in beiden Test-Jobs
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — `|| true` gestrichen, beide Audit-Schritte auf `--audit-level=high` (lokal gemessen: Backend 0 Schwachstellen, Frontend 3 moderate → beide Exit 0); `--passWithNoTests` in beiden Test-Jobs entfernt (Vitest 4.1.11 endet ohne gefundene Tests mit Exit 1, für beide Konfigurationen geprüft; das Frontend findet 264, das Backend 139 Testdateien).
 - **Fundstelle:** `.github/workflows/ci.yml:226` (`npm audit --audit-level=critical || true`), `:116` und
   `:230` (`--passWithNoTests`).
 - **Kennzeichnung:** reproduziert (`npm audit` lokal)

@@ -161,6 +161,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-08: `--passWithNoTests` in beiden CI-Testjobs — ein kaputtes include-Muster ergäbe eine grüne CI mit null Tests
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Flag in beiden Jobs entfernt; Vitest 4.1.11 bricht ohne gefundene Tests selbst mit Exit 1 ab (für beide Konfigurationen gegen ein nicht existierendes Muster geprüft). Eine zusätzliche Mindestzahl-Prüfung ist nicht eingebaut.
 - **Fundstelle:** `.github/workflows/ci.yml:114` (backend), `:207` (frontend)
 - **Kennzeichnung:** reproduziert — Backend: `TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:1/postgres npx vitest run --config tests/vitest.config.ts --passWithNoTests 'tests/gibt-es-nicht-xyz'` → `No test files found, exiting with code 0`, Exit 0 (der globalSetup wird gar nicht erreicht — der tote Port 1 fiel nicht auf); ohne Flag Exit 1. Frontend: `npx vitest run --passWithNoTests 'src/__tests__/gibt-es-nicht-xyz'` → Exit 0; ohne Flag Exit 1.
 - **Beschreibung:** Vitest 4 bricht ohne gefundene Tests von selbst mit Exit 1 ab. Das Flag hebt genau diesen Schutz auf. Ein Tippfehler in `include: ['tests/**/*.test.{js,ts}']` oder ein Umzug des Testordners ließe `build-and-push` und `deploy` durchlaufen, ohne dass ein Test lief.
