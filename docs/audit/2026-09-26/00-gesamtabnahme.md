@@ -466,7 +466,7 @@ Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit d
 
 ## Behebungsstand (fortlaufend)
 
-Stand 26.09.2026, 16:15 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
+Stand 26.09.2026, 17:20 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
 jeder Befund trägt im Bereichsbericht eine Status-Zeile mit Datum. Regeln für jeden Fix: Test
 für den verbotenen und den erlaubten Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG,
 Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
@@ -495,8 +495,8 @@ Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
 | J Multi-Gemeinde-Restlücken | Eingeladene in Gruppenchats, Team-Rückblick je Gemeinde, eigener Rückblick der aktiven Gemeinde, 403-Rückfall mit Token ohne Org-Claim und Socket-Neuaufbau | Chat BF-04/06/08, Grundgerüst BF-05, S-02 | eingebaut |
 | L Punktwert am Zuordnungsdatensatz | `user_activities.points` (Migration 163, Backfill ≤ 13 s bei 1 Mio. Zeilen), Vergabe/Rücknahme/Reset/Historie/Listen lesen den vergebenen Wert | Punkte/Termine BF-02 | eingebaut |
 | Koordination, Hygiene | Betriebsadressen aus Compose, Abrissliste, Skript und Berichten; Gesamtabnahme-Nachträge | S-15, Sicherheit BF-12 | eingebaut |
-| I1 Skalierung B1 | Chat-Fan-out, doppelte `newMessage`, Sammelversand der Erinnerungen, App-Icon-Lauf, Registrierungs-Pushes | Betrieb BF-02/04/05/08/15 | **läuft** |
-| I2 Skalierung B2 | Limiter-Store, Cron-Leader, Graceful Shutdown, Wrapped-Parallelität, Deploy ohne Lücke, Postgres-Ressourcen, `statement_timeout` für Migrationen, Metrics-Grenze, Startseeding, Sicherungsdoku | Betrieb BF-06/07/09/10/11/12/13/14/16, Datenbank BF-03/04/05/07, S-10, S-11, S-18, S-19 | **läuft** |
+| I1 Skalierung B1 | Chat-Nachricht 2.002 → 22 Abfragen (150 Teilnehmende), `newMessage` je Client einmal, Erinnerungen je Termin vorgemerkt und gesammelt (200 Zusagen: 1.802 → 35 Abfragen), App-Icon-Lauf ohne Push-Sturm nach Neustart, Registrierungs-Pushes in Blöcken von 20 | Betrieb BF-02/04/05/08/15 | eingebaut |
+| I2 Skalierung B2 | Limiter-Zähler in der Datenbank (Migration 167, auch Passwort-Reset), Cron-Leader per Advisory-Lock mit Übernahme und Sichtbarkeit in `/api/status`, Graceful Shutdown Exit 1 nach 10 s → Exit 0 nach < 1 s, Wrapped-Parallelität 3 (Pool-Warteschlange 46 → 0), Deploy in zwei Stufen mit Gesundheitsprüfung (`deploy/rollend.sh`), Postgres 2 CPU / 3 GB und Pool-Vorgaben in der Compose-Referenz, Migrationslauf ohne 30-s-Grenze mit Stand in `/api/status`, `metrics/history` 33 MB → 116 kB, Startseeding idempotent, Sicherungsdoku `docs/betrieb/sicherung.md` | Betrieb BF-06/07/09/10/12/13/14/16, Datenbank BF-03/04/05/07, S-10, S-11, S-18, S-19 (BF-11 offen: Log-Sammelzeilen) | eingebaut; Deploy-Ablauf nur in GitHub prüfbar |
 | K Dunkelmodus systematisch | Flächen-Stufenleiter, Text-Token je Bereichsfarbe (234 Stellen), Grautöne, Messung als Test | darkmode BF-04/05/06/09/11, UI BF-04, S-26 | **läuft** |
 
 **Noch nicht begonnen:** Barrierefreiheit über die Anmeldeseiten hinaus (Punkt 33: rund 150
@@ -514,8 +514,12 @@ Komponenten anfassen), Handbuch-Bilder aus dem Store-Bundle (S-17), Feature-Empf
 3. Vor dem Deploy in Produktion zählen: `SELECT count(*) FILTER (WHERE password_plain IS NOT NULL)
    FROM konfi_profiles;` (Migration 165 leert danach), `SELECT count(*) FROM user_activities;`
    (Backfill der Migration 163 muss unter 30 s bleiben; gemessen 13 s bei 1 Mio. Zeilen).
-4. Postgres-Ressourcen und `PG_POOL_MAX` im Portainer-Stack angleichen, sobald Paket I2 die
-   Referenz-Compose geändert hat.
+4. Portainer-Stack an die Referenz-Compose angleichen: Postgres 2 CPU / 3 GB mit den
+   `shared_buffers`-/`work_mem`-Vorgaben, `PG_POOL_MAX=50` und die übrigen `PG_*`-Variablen,
+   `SHUTDOWN_DRAIN_MS`, `RUN_BACKGROUND_JOBS=false` bei `backend2` entfernen (Cron-Leader wird
+   gewählt); vorher prüfen, dass der Host 2 CPU / 3 GB zusätzlich frei hat; einmal
+   `CREATE EXTENSION IF NOT EXISTS pg_stat_statements` ausführen. Der zweistufige Deploy läuft
+   beim ersten Push auf `main` zum ersten Mal — den Lauf beobachten.
 5. Autor-Identität der 71 älteren Branch-Commits (teils „Claude"): Force-Push zum Umschreiben
    erlauben, per Squash-Merge auflösen oder selbst umschreiben. Neue Commits laufen als `Revisor01`.
 6. Nach dem Deploy: Screenshots neu ziehen (Punkt 22), Produktionsmessungen aus dem Abschnitt
