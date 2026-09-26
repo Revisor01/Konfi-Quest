@@ -97,6 +97,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-02: Dashboard-Karten „Ranking“ und „Events“ — weiße Schrift auf hellem Verlaufsende
 
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — Verlaufsenden auf Flächen-Tokens: `--app-color-events-tief` (`#991b1b`, als Bereichsfarbe in beiden Modi gleich) und `--app-color-success-klassisch-dunkel` (hell `#155724`, dunkel `#14532d`); die Text-Tokens `--app-text-fehler` und `--app-color-success-tief` stehen in keinem Verlauf mehr (Test über alle Verläufe im Stylesheet). Gemessen dunkel auf Konfi- und Teamer-Dashboard (iOS = Android): Weiß auf Ranking-Ende 1,28 → 9,11:1, auf Events-Ende 1,90 → 8,31:1; hell unverändert 8,68 / 8,31 (Verlaufsenden weiter `#155724` / `#991b1b`).
 - **Fundstelle:** `frontend/src/theme/variables.css:3115` (`.app-dashboard-section--events`: Verlauf
   `var(--app-color-events)` → `var(--app-text-fehler)`), `:3149` (`.app-dashboard-section--ranking`:
   `var(--app-color-success-klassisch)` → `var(--app-color-success-tief)`); Nutzer der Klassen:

@@ -602,6 +602,52 @@ describe('Dunkelmodus: Bereichsfarbe als Text (Anmeldeseiten)', () => {
   });
 });
 
+describe('Dunkelmodus: Dashboard-Verlaeufe enden auf Flaechen, nicht auf Text', () => {
+  // GEMESSEN am 26.09.2026 (Dunkelmodus-Audit BF-02, computed.cjs): Die
+  // Ranking-Karte lief von #34c759 nach #a7f3d0 (Mint), die Events-Karte von
+  // #dc2626 nach #fca5a5 (Rosa) -- weisse Schrift darauf 1,28:1 bzw. 1,90:1
+  // (hell 8,68 / 8,31). Ursache: Die Verlaeufe endeten auf TEXT-Tokens
+  // (--app-color-success-tief, --app-text-fehler), die der Dunkelblock fuer
+  // ihren Zweck -- Schrift auf dunkler Statusflaeche -- richtig aufhellt.
+  // Ein Verlaufsende ist eine Flaeche und braucht ein Flaechen-Token.
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const verlauf = (klasse: string) => {
+    const regel = css.match(new RegExp(`\\.${klasse} \\{([^}]*)\\}`));
+    expect(regel, `.${klasse} nicht gefunden`).toBeTruthy();
+    const bg = /background:\s*linear-gradient\(([^;]*)\);/.exec(regel![1]);
+    expect(bg, `.${klasse} hat keinen Verlauf`).toBeTruthy();
+    return bg![1];
+  };
+
+  it('kein Text-Token steht als Stufe in einem Verlauf -- nirgends im Stylesheet', () => {
+    const treffer = [...css.matchAll(/gradient\(([^;]*)\)/g)]
+      .map((m) => m[1])
+      .filter((stufen) => /var\(--app-text-|var\(--app-color-success-tief\)/.test(stufen));
+    expect(treffer).toEqual([]);
+  });
+
+  it('Events- und Ranking-Karte enden auf ihren Flaechen-Tokens', () => {
+    expect(verlauf('app-dashboard-section--events')).toMatch(/var\(--app-color-events-tief\) 100%/);
+    expect(verlauf('app-dashboard-section--ranking')).toMatch(/var\(--app-color-success-klassisch-dunkel\) 100%/);
+  });
+
+  it('weisse Schrift auf den Verlaufsenden: mindestens 4,5:1, hell wie dunkel', () => {
+    for (const name of ['--app-color-events-tief', '--app-color-success-klassisch-dunkel']) {
+      expect(kontrast('#ffffff', helleTokens.get(name)!), `${name} hell`).toBeGreaterThanOrEqual(4.5);
+      expect(kontrast('#ffffff', dunkel.get(name)!), `${name} dunkel`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('im Hellen aendert sich nichts: die Enden tragen die Toene von vorher', () => {
+    // Vorher endeten die Verlaeufe hell auf #991b1b (--app-text-fehler) und
+    // #155724 (--app-color-success-tief). Die Flaechen-Tokens tragen genau
+    // diese Werte -- wer sie aendert, aendert das helle Dashboard und muss
+    // hier bewusst nachziehen.
+    expect(helleTokens.get('--app-color-events-tief')).toBe('#991b1b');
+    expect(helleTokens.get('--app-color-success-klassisch-dunkel')).toBe('#155724');
+  });
+});
+
 /* --- WCAG-Rechnung --------------------------------------------------- */
 
 function hexZuRgb(hex: string): [number, number, number] {

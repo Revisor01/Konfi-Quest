@@ -170,6 +170,11 @@ ion-list-header ion-label {
   /* Dunkle Partnertoene der Domaenen-Farben (Verlaufs-/Hover-Stufen).
      Vorher als lose Hexwerte in SectionHeader & Co. verstreut (05.09.2026). */
   --app-color-events-dunkel: #b91c1c;
+  /* Tiefste Stufe der Termine-Farbe: das Ende des Events-Verlaufs auf dem
+     Dashboard. Bis 26.09.2026 endete der Verlauf auf --app-text-fehler, das
+     im Dunkeln zu Rosa aufhellt (weisse Schrift darauf 1,90:1, BF-02). Als
+     Flaeche bleibt der Ton in beiden Modi gleich, wie jede Bereichsfarbe. */
+  --app-color-events-tief: #991b1b;
   --app-color-activities-dunkel: #065f46;
   --app-color-konfis-dunkel: #4c1d95;
   --app-color-teamer-dunkel: #831843;
@@ -318,6 +323,11 @@ ion-list-header ion-label {
   --app-color-danger-hell: #ef4444;
   --app-color-danger-hell-rgb: 239, 68, 68;
   --app-color-success-klassisch: #28a745;
+  /* --app-color-success-tief ist TEXT auf --app-flaeche-erfolg und hellt im
+     Dunkeln auf (#a7f3d0). Der Ranking-Verlauf des Dashboards endete bis
+     26.09.2026 darauf: weisse Schrift auf Mint 1,28:1 (BF-02). Das Verlaufs-
+     ende ist eine Flaeche und bekommt ein eigenes Token, hell derselbe Ton. */
+  --app-color-success-klassisch-dunkel: #155724;
   --app-color-success-tief: #155724;
   /* Ampel der Admin-Metrikseite: feinere Abstufung als die Status-Tokens
      (gut == success-klassisch, kritisch == danger); Textfarben auf Karten. */
@@ -3124,7 +3134,9 @@ ion-popover.badge-detail-popover::part(arrow)::after {
 }
 
 .app-dashboard-section--events {
-  background: linear-gradient(135deg, var(--app-color-events) 0%, var(--app-text-fehler) 100%);
+  /* Verlaufsende ist eine FLAECHE mit weisser Schrift -- kein Text-Token
+     (BF-02, 26.09.2026: --app-text-fehler wurde im Dunkeln zu Rosa, 1,90:1). */
+  background: linear-gradient(135deg, var(--app-color-events) 0%, var(--app-color-events-tief) 100%);
   box-shadow: 0 8px 32px rgba(var(--app-color-events-rgb), 0.25);
   min-height: 180px;
 }
@@ -3158,7 +3170,9 @@ ion-popover.badge-detail-popover::part(arrow)::after {
 }
 
 .app-dashboard-section--ranking {
-  background: linear-gradient(135deg, var(--app-color-success-klassisch) 0%, var(--app-color-success-tief) 100%);
+  /* Verlaufsende ist eine FLAECHE mit weisser Schrift -- kein Text-Token
+     (BF-02, 26.09.2026: --app-color-success-tief wurde im Dunkeln zu Mint, 1,28:1). */
+  background: linear-gradient(135deg, var(--app-color-success-klassisch) 0%, var(--app-color-success-klassisch-dunkel) 100%);
   box-shadow: 0 8px 32px rgba(var(--app-color-success-klassisch-rgb), 0.25);
   min-height: 180px;
 }
@@ -3587,6 +3601,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-color-events: #dc2626;
     --app-color-events-rgb: 220, 38, 38;
     --app-color-events-dunkel: #b91c1c;
+    --app-color-events-tief: #991b1b;
     --app-color-activities: #047857;
     --app-color-activities-rgb: 4, 120, 87;
     --app-color-activities-dunkel: #065f46;
@@ -3664,6 +3679,10 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-color-success-frisch: #4ade80;
     --app-color-success-klassisch: #34c759;
     --app-color-success-klassisch-rgb: 52, 199, 89;
+    /* Verlaufsende der Ranking-Karte: eine Flaeche mit weisser Schrift, also
+       dunkel halten (Weiss darauf 9,11:1), nicht wie --app-color-success-tief
+       als Text aufhellen. */
+    --app-color-success-klassisch-dunkel: #14532d;
     --app-color-success-tief: #a7f3d0;
     --app-color-warning: #ff9f0a;
     --app-color-warning-rgb: 255, 159, 10;

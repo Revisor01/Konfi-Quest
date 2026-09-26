@@ -472,6 +472,10 @@ Versionsüberschrift.
   („Passwort vergessen?", „Noch keinen Account?", „Zurück zum Login") kaum zu
   erkennen — dunkles Lila auf dunkler Karte. Sie sind jetzt aufgehellt und
   lesbar; im Hellen bleibt alles wie zuvor.
+- Auf dem Dashboard von Konfis und Team liefen die Karten „Ranking" und
+  „Events" im Dunkelmodus unten in Mint beziehungsweise Rosa aus, und die
+  weiße Schrift darauf war kaum zu lesen. Die Verläufe enden jetzt auch im
+  Dunkeln auf einem dunklen Ton; im Hellen sehen sie aus wie bisher.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
