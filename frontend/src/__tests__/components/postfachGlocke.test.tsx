@@ -186,9 +186,13 @@ describe('PostfachGlocke', () => {
 describe('Zahl an der Glocke: auf der Ecke des Symbols, Pille und Knopf beschneiden nicht', () => {
   const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8');
   const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  // Findet den Block, in dessen Selektorliste der gesuchte Selektor steht.
+  // Seit 26.09.2026 traegt die Pillen-Freigabe zwei Selektoren (die scharfe
+  // gegen das Theme und die alte), deshalb kein Vergleich auf Gleichheit der
+  // ganzen Zeile mehr.
   const block = (selektor: string): string => {
     const treffer = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-      .filter((m) => m[1].trim().replace(/\s+/g, ' ') === selektor);
+      .filter((m) => m[1].split(',').some((s) => s.trim().replace(/\s+/g, ' ') === selektor));
     if (treffer.length !== 1) throw new Error(`${selektor}: ${treffer.length} Bloecke`);
     return treffer[0][2];
   };
@@ -246,7 +250,45 @@ describe('Zahl an der Glocke: auf der Ecke des Symbols, Pille und Knopf beschnei
     const pillen = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
       .filter((m) => /(^|[\s,])ion-buttons(\.|:|\s*\{|\s*$)/.test(m[1]) && /overflow:\s*visible/.test(m[2]))
       .map((m) => m[1].trim());
-    expect(pillen).toEqual(['ion-buttons:has(> .app-postfach-glocke)']);
+    // Jeder Selektor darin nennt die Glocke -- keine fremde Pille wird frei.
+    expect(pillen.length).toBeGreaterThan(0);
+    for (const gruppe of pillen) {
+      for (const einzeln of gruppe.split(',')) {
+        expect(einzeln, `gibt eine fremde Pille frei: ${einzeln.trim()}`)
+          .toMatch(/\.app-postfach-glocke/);
+      }
+    }
+  });
+
+  // SIMONS BEFUND (26.09.2026): "Das Postfach Kreis badge wird immer noch
+  // abgeschnitten." Die Geometrie oben stimmte, die Freigabe kam nur nie an:
+  // `ion-buttons:has(> .app-postfach-glocke)` hat die Spezifitaet (0,1,1) und
+  // verliert gegen die Theme-Pille
+  // `ion-buttons.ios:not(.ios-theme-disabled,.ios26-disabled):not(:has(...))`
+  // = (0,3,2). `overflow: hidden` blieb stehen.
+  //
+  // Dass die Theme-Regel ueberhaupt greift, liegt an Ionic: Ein IonButton in
+  // einer Toolbar bekommt `fill: 'clear'` automatisch, traegt also
+  // `.button-clear` und faellt nicht unter die `:not(:has(...))`-Ausnahme.
+  it('die Freigabe schlaegt die Theme-Pille nach Spezifitaet', () => {
+    // Grobe, aber ausreichende Zaehlung: Klassen/Pseudoklassen und Elemente.
+    const spezifitaet = (sel: string) => {
+      const klassen = (sel.match(/\.[a-zA-Z_-]|:[a-z-]+\(/g) || []).length;
+      const elemente = (sel.match(/(^|[\s>+~])[a-z][a-z0-9-]*/g) || []).length;
+      return klassen * 100 + elemente;
+    };
+    const THEME = 'ion-buttons.ios:not(.ios-theme-disabled,.ios26-disabled):not(:has(ion-button))';
+    const unsere = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter((m) => /overflow:\s*visible/.test(m[2]))
+      .flatMap((m) => m[1].split(','))
+      .map((sel) => sel.trim())
+      .filter((sel) => /^ion-buttons/.test(sel) && sel.includes('.app-postfach-glocke'));
+
+    expect(unsere.length, 'keine Freigabe-Regel fuer die Pille gefunden').toBeGreaterThan(0);
+    expect(
+      unsere.some((sel) => spezifitaet(sel) >= spezifitaet(THEME)),
+      `keine Freigabe erreicht die Schaerfe der Theme-Pille: ${unsere.join(' | ')}`
+    ).toBe(true);
   });
 
   // Android (MD3): Knopf 48x48 (Kreis Radius 24), .button-inner 24px hoch

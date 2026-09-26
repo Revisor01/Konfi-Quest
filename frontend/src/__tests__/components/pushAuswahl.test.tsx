@@ -98,6 +98,29 @@ describe('PushAuswahlModal', () => {
     expect(apiGet).toHaveBeenCalledWith('/notifications/preferences');
   });
 
+  // SIMONS BEFUND (26.09.2026): "Die Hinweistexte bei Benachrichtigungen sind
+  // voellig random doppelt, nicht so wie sonst die Hinweise."
+  // Vorher stand dieselbe Aussage zweimal -- im Untertitel des Hauptschalters
+  // ("Aus heisst: nichts aufs Handy, alles bleibt im Postfach") UND als
+  // Fliesstext darunter. Der Fliesstext war ausserdem ein <p> mit eigenem
+  // Rand AUSSERHALB der Karte, waehrend die App sonst IonNote INNERHALB nutzt.
+  it('sagt genau EINMAL, dass das Postfach bleibt', async () => {
+    render(<PushAuswahlModal onClose={() => {}} variante="purple" />);
+    await screen.findByText('Nachrichten');
+    const treffer = screen.queryAllByText(/im Postfach/i);
+    expect(treffer, `"im Postfach" steht ${treffer.length}x statt 1x`).toHaveLength(1);
+  });
+
+  it('stellt den Hinweis wie ueberall sonst dar: IonNote in der Karte', async () => {
+    const { container } = render(<PushAuswahlModal onClose={() => {}} variante="purple" />);
+    await screen.findByText('Nachrichten');
+    const hinweis = container.querySelector('.app-hinweis-text');
+    expect(hinweis, 'kein Hinweis mit der ueblichen Klasse').toBeTruthy();
+    expect(hinweis!.tagName.toLowerCase()).toBe('ion-note');
+    // Innerhalb der Karte, nicht als loser Absatz daneben.
+    expect(hinweis!.closest('ion-card'), 'Hinweis steht ausserhalb der Karte').toBeTruthy();
+  });
+
   it('zeigt eine vierte Gruppe, sobald der Server sie liefert (Team und Leitung)', async () => {
     apiGet.mockResolvedValue({ data: {
       ...KONFI_ANTWORT,

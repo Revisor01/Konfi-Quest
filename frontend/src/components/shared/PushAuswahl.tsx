@@ -11,6 +11,7 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
+  IonNote,
   IonPage,
   IonSpinner,
   IonTitle,
@@ -203,8 +204,8 @@ export const PushAuswahlModal: React.FC<ModalProps> = ({ onClose, variante, onGe
                 <IonList lines="none" style={{ background: 'transparent' }}>
                   <IonItem lines="full" className="app-dashboard-settings-item">
                     <IonLabel>
-                      <h2>Mitteilungen aufs Handy</h2>
-                      <p>Aus heißt: nichts aufs Handy, alles bleibt im Postfach</p>
+                      <h2>Alle Mitteilungen</h2>
+                      <p>Hauptschalter für die Gruppen darunter</p>
                     </IonLabel>
                     <IonToggle
                       slot="end"
@@ -237,11 +238,18 @@ export const PushAuswahlModal: React.FC<ModalProps> = ({ onClose, variante, onGe
                   ))}
                 </IonList>
               )}
+              {/* Ein Hinweis, nicht zwei (26.09.2026, Simons Befund: "Die
+                  Hinweistexte bei Benachrichtigungen sind voellig random
+                  doppelt, nicht so wie sonst die Hinweise"). Vorher stand
+                  dieselbe Aussage im Untertitel des Hauptschalters UND als
+                  Fliesstext unter der Karte -- und der als <p> mit eigenem
+                  Rand, waehrend die App sonst IonNote INNERHALB der Karte
+                  nutzt (siehe TerminAbsagenModal, AbmeldungNachtragenModal). */}
+              <IonNote className="app-hinweis-text">
+                Abgeschaltet wird nur der Weg aufs Handy – im Postfach unter der Glocke steht jede Mitteilung trotzdem.
+              </IonNote>
             </IonCardContent>
           </IonCard>
-          <p className="app-hinweis-text" style={{ margin: 'var(--app-abstand-eng) var(--app-abstand-basis)' }}>
-            Was du hier abschaltest, kommt nicht mehr aufs Handy – im Postfach unter der Glocke steht es trotzdem.
-          </p>
         </IonList>
       </IonContent>
     </IonPage>
