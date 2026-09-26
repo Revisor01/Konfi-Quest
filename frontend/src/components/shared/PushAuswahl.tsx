@@ -11,7 +11,6 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
-  IonNote,
   IonPage,
   IonSpinner,
   IonTitle,

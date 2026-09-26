@@ -103,8 +103,13 @@ import { AppProvider, useApp, FehlerDiagnose } from '../../contexts/AppContext';
 
 let letzterContext: ReturnType<typeof useApp>;
 const Consumer: React.FC = () => {
-  letzterContext = useApp();
-  return <span data-testid="error">{letzterContext.error || 'no-error'}</span>;
+  const ctx = useApp();
+  // Im Effect nach aussen reichen, nicht waehrend des Renderns
+  // (react-hooks/globals). Nach render() im act() steht der Wert.
+  React.useEffect(() => {
+    letzterContext = ctx;
+  });
+  return <span data-testid="error">{ctx.error || 'no-error'}</span>;
 };
 
 const melde = async (meldung: string, diagnose?: FehlerDiagnose) => {

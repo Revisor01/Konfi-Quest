@@ -5,7 +5,6 @@ import {
   ICON_KOPIEREN_GEFUELLT,
   ICON_CHAT,
   ICON_ENTFERNEN_GEFUELLT,
-  ICON_GESPERRT,
   ICON_GRUPPE_GEFUELLT,
   ICON_HAKEN_GEFUELLT,
   ICON_JAHRGANG,
@@ -297,7 +296,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       try {
         const res = await api.get(`/events/${eventData.id}/timeslots`);
         slots = res.data || [];
-      } catch (err) {
+      } catch {
         setError('Die Zeitfenster konnten nicht geladen werden — die Kopie hat keine.');
       }
     }
@@ -1506,7 +1505,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           <EventInfoCard
             eventData={eventData}
             participants={participants}
-            formatDate={formatDate}
             formatTime={formatTime}
             eventMaterials={eventMaterials}
             onMaterialHinweisClick={handleMaterialHinweisClick}

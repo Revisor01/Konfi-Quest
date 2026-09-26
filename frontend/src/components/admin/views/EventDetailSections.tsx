@@ -144,7 +144,6 @@ export type { Participant, Unregistration } from '../../../types/event';
 interface EventInfoCardProps {
   eventData: EventData;
   participants: Participant[];
-  formatDate: (dateString: string) => string;
   formatTime: (dateString: string) => string;
   // Material-Hinweis in den Eckdaten (Simons Wunsch 01.09.2026): Dass ein
   // Termin Material traegt, stand bisher NUR im Abschnitt ganz unten -- wer
@@ -158,7 +157,6 @@ interface EventInfoCardProps {
 export const EventInfoCard = React.memo<EventInfoCardProps>(({
   eventData,
   participants,
-  formatDate,
   formatTime,
   eventMaterials,
   onMaterialHinweisClick

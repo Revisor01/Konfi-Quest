@@ -160,7 +160,11 @@ const Verbraucher: React.FC = () => {
 let steuerung: { setUser: (u: BaseUser | null) => void; signOut: () => Promise<void> } | null = null;
 const SteuerbarerVerbraucher: React.FC = () => {
   const ctx = useApp();
-  steuerung = { setUser: ctx.setUser as (u: BaseUser | null) => void, signOut: ctx.signOut };
+  // Im Effect nach aussen reichen, nicht waehrend des Renderns
+  // (react-hooks/globals). Nach render() im act() steht der Wert.
+  React.useEffect(() => {
+    steuerung = { setUser: ctx.setUser as (u: BaseUser | null) => void, signOut: ctx.signOut };
+  });
   return <span data-testid="fertig">{ctx.user?.display_name || 'keiner'}</span>;
 };
 

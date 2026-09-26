@@ -17,6 +17,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
 const WURZEL = resolve(__dirname, '../../..');
@@ -295,7 +296,6 @@ describe('Nutzertexte bleiben Nutzertexte', () => {
  * Code.
  */
 function sucheInSrc(suche: string): string[] {
-  const { execFileSync } = require('node:child_process') as typeof import('node:child_process');
   try {
     const ausgabe = execFileSync(
       'grep',

@@ -53,7 +53,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
-import { SectionHeader, AbsageBlock, formatEventDateLong as formatDate, formatEventTime as formatTime, zeitraumText, istVergangen, istAbgesagt } from '../../shared';
+import { SectionHeader, AbsageBlock, formatEventTime as formatTime, zeitraumText, istVergangen, istAbgesagt } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
 import { Event } from '../../../types/event';

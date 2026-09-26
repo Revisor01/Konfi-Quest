@@ -153,29 +153,6 @@ const Verbraucher: React.FC = () => {
   return <span data-testid="fertig">{ctx.user?.display_name || 'keiner'}</span>;
 };
 
-/**
- * Wie oben, gibt aber setUser/signOut nach aussen, damit ein Test den
- * Ab- und Wiederanmelde-Weg nachstellen kann. Meldet NICHT von selbst an.
- */
-let steuerung: { setUser: (u: BaseUser | null) => void; signOut: () => Promise<void> } | null = null;
-const SteuerbarerVerbraucher: React.FC = () => {
-  const ctx = useApp();
-  steuerung = { setUser: ctx.setUser as (u: BaseUser | null) => void, signOut: ctx.signOut };
-  return <span data-testid="fertig">{ctx.user?.display_name || 'keiner'}</span>;
-};
-
-/** Den 'registration'-Listener herausfischen, den der Push-Effect gesetzt hat. */
-const registrierungsListener = (): ((t: { value: string }) => void) | null => {
-  const treffer = pushAddListener.mock.calls.find((c) => c[0] === 'registration');
-  return treffer ? (treffer[1] as (t: { value: string }) => void) : null;
-};
-
-/** Den Rueckruf fuer App-Aktivierung herausfischen. */
-const aktivierungsRueckruf = (): ((z: { isActive: boolean }) => void) | null => {
-  const treffer = appListener.mock.calls.find((c) => c[0] === 'appStateChange');
-  return treffer ? (treffer[1] as (z: { isActive: boolean }) => void) : null;
-};
-
 describe('Push-Token: aktiver Abruf, wenn Android nichts meldet', () => {
   beforeEach(() => {
     vi.clearAllMocks();

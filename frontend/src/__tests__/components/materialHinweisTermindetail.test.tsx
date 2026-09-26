@@ -50,7 +50,6 @@ const renderKarte = (materials: EventMaterial[], onClick = vi.fn()) => {
     <EventInfoCard
       eventData={eventFixture}
       participants={[]}
-      formatDate={(d) => d}
       formatTime={(d) => d}
       eventMaterials={materials}
       onMaterialHinweisClick={onClick}

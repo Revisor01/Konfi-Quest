@@ -10,15 +10,12 @@ import {
   IonTabBar,
   IonTabButton,
   IonTabs,
-  IonPage,
-  IonContent,
-  IonBadge,
-  IonSpinner
+  IonBadge
 } from '@ionic/react';
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../contexts/AppContext';
-import { BAEUME, ladeRolleVor } from '../../navigation/rollenBaeume';
+import { BAEUME } from '../../navigation/rollenBaeume';
 import { istTabLeisteVersteckt } from '../../navigation/routes';
 import type { Rolle, BadgeKey } from '../../navigation/routes';
 import { useAppLocation } from '../../navigation/useAppLocation';
@@ -126,21 +123,6 @@ const ParamSeite: React.FC<{
 
   return <Seite {...{ [prop]: parseInt(params[param] ?? '0', 10) }} onBack={zurueck} />;
 };
-
-// Ladezustand, waehrend ein Seiten-Chunk erstmals geladen wird. Bewusst eine
-// leere IonPage mit Spinner: Der IonRouterOutlet behaelt gemountete Seiten im
-// Speicher, und die lazy-Instanzen leben auf Modulebene — beim Tab-WECHSEL
-// zurueck oder nach dem Org-Wechsel-Remount (key=orgVersion) rendert eine
-// bereits geladene Seite synchron, dieser Fallback erscheint dann NICHT mehr.
-const SeiteLaedt: React.FC = () => (
-  <IonPage>
-    <IonContent>
-      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-        <IonSpinner name="crescent" />
-      </div>
-    </IonContent>
-  </IonPage>
-);
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();

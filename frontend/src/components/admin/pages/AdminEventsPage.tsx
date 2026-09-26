@@ -10,7 +10,7 @@ import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
-import { ICON_GESPERRT, ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
+import { ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -651,7 +651,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
       try {
         const res = await api.get(`/events/${event.id}/timeslots`);
         timeslots = res.data || [];
-      } catch (err) {
+      } catch {
         setError('Die Zeitfenster konnten nicht geladen werden — die Kopie hat keine.');
       }
     }
