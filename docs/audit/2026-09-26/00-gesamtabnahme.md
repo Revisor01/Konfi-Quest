@@ -55,8 +55,7 @@ vier Punkten oben.
 **Stand der Behebung (26.09., Abend):** Sechs der sieben Blocker sind im Branch
 `claude/fervent-edison-wp5yfj` behoben und mit Tests belegt; offen ist allein Blocker 3
 (Widerruf der Apple-Schlüssel, nur Simon im Developer-Portal). Von den Auflagen 8–24 sind alle
-umgesetzt bis auf die Zusammenführung der CHANGELOG-Doppelabschnitte (Punkt 19, zum Schluss)
-und die Screenshots nach dem Deploy (Punkt 22). Die vollen Suiten sind auf dem
+umgesetzt bis auf die Screenshots nach dem Deploy (Punkt 22). Die vollen Suiten sind auf dem
 zusammengeführten Stand grün. Einzelheiten im Abschnitt „Behebungsstand".
 
 ## Rahmen und Methode
@@ -412,6 +411,20 @@ Text-Tokens und die fünf Inline-Flicken am Code bestätigt und die Bilder der A
 Konfi-Verwaltung gesichtet. Was daraus folgt, steht in Punkt 18a (vor Release, wenige Stunden)
 und Punkt 34 (systematischer Weg, 9–10 Personentage).
 
+**Stand nach Umsetzung (26.09., Pakete A, K, K2):** Die Messung über dieselben 94 Zustände zeigt im
+Dunkeln **104 → 16 Textstellen** unter der Grenze, alle 16 sind die eigene Chat-Blase (weiße Schrift
+auf Chat-Türkis, 2,43:1 in *beiden* Modi — eine Produktentscheidung, kein Dunkelmodus-Thema); helle
+Flächen weiterhin 0. Die Flächen-Stufenleiter gilt jetzt auf iOS wie Android, Text steht in 20
+Bereichen und 17 Kriterienfarben auf Tokens mit eigener Dunkelstufe, die Eck-Marken liegen im Dunkeln
+eine Stufe tiefer (2,15–4,23 → 5,41–8,97:1). Der im Zwischenstand genannte Anmelde-Knopf „(0/50)" war
+ein Messfehler des Audit-Skripts (Knopffläche im Shadow-DOM nicht gesehen; real 10,78:1). Die
+korrigierte Messung liegt als wiederholbares Skript vor (`npm run dunkelmodus:messen`, 697 s, Exit 1
+bei jedem Verstoß außerhalb einer begründeten Restliste mit sechs Einträgen). Sie sieht jetzt auch,
+was das Audit-Skript übersprang: die farbigen Kopfbanner der Termindetails (weiße Schrift auf
+Statusgrün 2,02–2,22:1, in beiden Modi) und den roten „Event absagen"-Knopf auf dunkler Karte
+(4,39:1, die einzige dunkelspezifische Reststelle) — beides steht in der Restliste und gehört zu
+UI BF-04 (Statusflächen im Hellen), nicht mehr zum Dunkelmodus.
+
 ## Nachtrag 26.09. — Rahmen korrigiert: Einzelinstanzen und moderierte Chats
 
 Nach der ersten Fassung hat Simon zwei Prämissen korrigiert: Die EKD-Ausrollung geschieht in
@@ -466,7 +479,7 @@ Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit d
 
 ## Behebungsstand (fortlaufend)
 
-Stand 26.09.2026, 20:20 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
+Stand 26.09.2026, 21:00 UTC. Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
 jeder Befund trägt im Bereichsbericht eine Status-Zeile mit Datum. Regeln für jeden Fix: Test
 für den verbotenen und den erlaubten Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG,
 Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
@@ -478,6 +491,7 @@ Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
 | Frontend (`vitest`, jsdom) | `fac0b361` (71 Commits) | 271 Dateien, 3.864 Tests grün, 149 s |
 | Backend (`vitest`, echte DB, Migrationen 160–166) | `fac0b361` | 153 Dateien, 3.593 Tests grün, 1.336 s |
 | Backend (Migrationen 160–167, nach Paketen I1, I2, J, L) | `0cac428e` (95 Commits) | 169 Dateien, 3.698 Tests grün, 1.251 s |
+| Frontend, Endstand (nach M, K2, Gerätebefunden, CHANGELOG) | `e4c940df` (115 Commits) | 286 Dateien, 3.964 Tests grün, 162 s |
 | Typprüfung, ESLint (`--quiet`, jetzt CI-Gate) | laufend nach jedem Paket | grün |
 
 Zum Vergleich die Baseline vor dem Audit: Backend 139 Dateien / 3.399 Tests, Frontend 264 / 3.788.
@@ -500,20 +514,20 @@ Zum Vergleich die Baseline vor dem Audit: Backend 139 Dateien / 3.399 Tests, Fro
 | Koordination, Hygiene | Betriebsadressen aus Compose, Abrissliste, Skript und Berichten; Gesamtabnahme-Nachträge | S-15, Sicherheit BF-12 | eingebaut |
 | I1 Skalierung B1 | Chat-Nachricht 2.002 → 22 Abfragen (150 Teilnehmende), `newMessage` je Client einmal, Erinnerungen je Termin vorgemerkt und gesammelt (200 Zusagen: 1.802 → 35 Abfragen), App-Icon-Lauf ohne Push-Sturm nach Neustart, Registrierungs-Pushes in Blöcken von 20 | Betrieb BF-02/04/05/08/15 | eingebaut |
 | I2 Skalierung B2 | Limiter-Zähler in der Datenbank (Migration 167, auch Passwort-Reset), Cron-Leader per Advisory-Lock mit Übernahme und Sichtbarkeit in `/api/status`, Graceful Shutdown Exit 1 nach 10 s → Exit 0 nach < 1 s, Wrapped-Parallelität 3 (Pool-Warteschlange 46 → 0), Deploy in zwei Stufen mit Gesundheitsprüfung (`deploy/rollend.sh`), Postgres 2 CPU / 3 GB und Pool-Vorgaben in der Compose-Referenz, Migrationslauf ohne 30-s-Grenze mit Stand in `/api/status`, `metrics/history` 33 MB → 116 kB, Startseeding idempotent, Sicherungsdoku `docs/betrieb/sicherung.md` | Betrieb BF-06/07/09/10/12/13/14/16, Datenbank BF-03/04/05/07, S-10, S-11, S-18, S-19 (BF-11 offen: Log-Sammelzeilen) | eingebaut; Deploy-Ablauf nur in GitHub prüfbar |
-| K Dunkelmodus systematisch | Bausteine 1–3 eingebaut: Ionics Flächenvariablen je Plattform an die App-Tokens gebunden (iOS-Listen nicht mehr tiefschwarz), Text-Token-Familie `--app-text-<bereich>` für 20 Bereiche per Codemod, Grautöne hell und dunkel ≥ 4,5:1 (`colors.ts` nachgezogen). Nachgemessen mit dem Audit-Skript über dieselben 94 Zustände: **104 → 33 Verstöße**, 0 helle Flächen; 16 der 33 sind die eigene Chat-Blase (2,43:1 in beiden Modi, kein Dunkelmodus-Thema), der Rest sind vier Muster (Anmelde-Knopf im Termindetail 1,36:1, Punkte-Chips, Level-Punkte, Abzeichen-Prozent), alle mit dem Text-Token-Muster lösbar. Baustein 4 (gerenderte Messung als wiederholbarer Test) blieb unfertig im Arbeitsbaum des Agenten, der am Sitzungslimit abbrach | darkmode BF-04/05/06/11, UI BF-04 (teilweise), S-26; BF-09 offen | eingebaut, Messung offen |
+| K Dunkelmodus systematisch | Bausteine 1–3 eingebaut: Ionics Flächenvariablen je Plattform an die App-Tokens gebunden (iOS-Listen nicht mehr tiefschwarz), Text-Token-Familie `--app-text-<bereich>` für 20 Bereiche per Codemod, Grautöne hell und dunkel ≥ 4,5:1 (`colors.ts` nachgezogen). Nachgemessen mit dem Audit-Skript über dieselben 94 Zustände: **104 → 33 Verstöße**, 0 helle Flächen; 16 der 33 sind die eigene Chat-Blase (2,43:1 in beiden Modi, kein Dunkelmodus-Thema), der Rest sind vier Muster (Anmelde-Knopf im Termindetail 1,36:1, Punkte-Chips, Level-Punkte, Abzeichen-Prozent), alle mit dem Text-Token-Muster lösbar. Baustein 4 (gerenderte Messung als wiederholbarer Test) blieb unfertig im Arbeitsbaum des Agenten, der am Sitzungslimit abbrach | darkmode BF-04/05/06/11, UI BF-04 (teilweise), S-26 | eingebaut; Messung in K2 |
 | M Barrierefreiheit über die Anmeldeseiten hinaus | Alle Formularfelder nennen der Vorlesefunktion ihren Namen (Zählmethode des Berichts 186/170 → 186/0, 50 Dateien per Codemod aus dem sichtbaren Label, ~20 von Hand); 135 von 140 klickbaren Elementen ohne Tastaturbedienung → 0 (`role="button"`, `tabIndex`, Enter/Leertaste; 19 Stellen „Knopf im Knopf" als `presentation` mit innerem Knopf, im Test namentlich); 17 Modale mit Namen (17/17), die 92 per `useIonModal` geöffneten bleiben außerhalb der Zählmethode; Berührungsziele an 10 Stellen auf ≥ 44 px gemessen (Auge 20×20 → 44×45, Chat-Senden 39×48 → 44×48), Optik unverändert; „Bewegung reduzieren" wirkt app-weit (Seitenübergänge, Einführung, Ladepunkte, Puls). Gegenproben je Befund dokumentiert (Fix raus → 2–6 Tests rot). Nicht geprüft: echtes VoiceOver/TalkBack | UI BF-01 (Rest), BF-03, BF-12, BF-13, BF-16 | eingebaut (`53bf4658`–`6f60abb7`) |
 | Gerätebefunde 26.09. abends (Simon, Kollege) | Rückwechsel in die Stamm-Gemeinde scheiterte bei Konten, die nach Migration 101 angelegt wurden: `switch-org` prüfte nur `user_organizations`, die Liste zeigte die Stamm-Gemeinde aus `users.organization_id` — hing am Alter des Kontos, nicht an Android; Route löst beide Quellen auf, Antwortform gleich, Store-Apps profitieren mit. Einladungskarte der Leitung stand auf „Mehr", Push und Postfach führten ins Profil — jetzt bei allen drei Rollen im Profil, Test hält Ziel und Karte zusammen | neu, außerhalb der Berichte | eingebaut (`b9b58257`, `42943efe`) |
+| K2 Dunkelmodus-Rest und Messung als Test | Eck-Marken (Punkte, Level, Status) im Dunkeln eine Stufe tiefer, 13 Messstellen 2,15–4,23 → 5,41–8,97:1, hell byte-identisch; Prozentzahl im Abzeichen-Ring über 17 Kriterien-Text-Token (dunkel 4,06 → 4,84–5,87:1); der Anmelde-Knopf „(0/50)" war ein Messfehler (real 10,78:1, nicht angefasst — der vorgeschlagene Fix hätte auf 1,97:1 verschlechtert). Messung als `npm run dunkelmodus:messen` mit begründeter Restliste (6 Einträge), Shadow-DOM-Flächen und flache Verläufe jetzt erfasst; voller Lauf 697 s, dunkel 48 Messstellen in 12/94 Zuständen, 0 außerhalb der Restliste, Exit 0. Vergleichbar mit dem alten Skript: dunkel 33 → **16**, alle Chat-Blase. Nebenbefunde in der Restliste: Kopfbanner der Termindetails 2,02–2,22:1 in beiden Modi (UI BF-04), „Event absagen" auf dunkler Karte 4,39:1 (einzige dunkelspezifische Reststelle) | darkmode BF-09, BF-10 (teilweise), UI BF-04 (Nachtrag) | eingebaut (`67ac86e3`, `33a3f3f4`, `59f53de8`) |
+| CHANGELOG-Aufräumung (Punkt 19) | Neun Überschriften → fünf; Umschalter-Einträge gegen den Code auf einen Stand gebracht; „Mitteilungen prüfen" (hinzugefügt und wieder entfernt, im Code nicht vorhanden), viermal die Glockenzahl und die doppelte Symbolleiste entfernt; Framework-Name ersetzt. 168 → 164 Einträge bei elf Streichungen und sieben Zugängen aus M und K2 | Doku BF-10 (CHANGELOG-Teil) | eingebaut (`e4c940df`) |
 
 **Neu gestartet nach Abbruch (Sitzungslimit des Werkzeugs, 26.09. 17:10 UTC):** Paket M lief im
 zweiten Anlauf durch (Zeile oben). Aus Punkt 33 offen bleiben Datumsformate und Dynamic Type
 (UI BF-07, BF-14) — nicht Teil des Pakets.
 
-**Läuft:** Paket K2, Dunkelmodus-Rest (die vier Muster aus der Nachmessung, Messung als wiederholbarer
-Test) — zwei Commits im Arbeitsbaum, Messskript in Arbeit.
-
 **Noch nicht begonnen:** Handbuch-Bilder aus dem Store-Bundle (S-17), Feature-Empfehlungen A
-(Punkt 32), Rechenschaft/Datenschutz (Punkt 28, Produkt- und Rechtsfragen), CHANGELOG-Doppelabschnitte
-(Punkt 19, zum Schluss durch die Koordination), NIEDRIG-Befunde (Punkt 36).
+(Punkt 32), Rechenschaft/Datenschutz (Punkt 28, Produkt- und Rechtsfragen), NIEDRIG-Befunde
+(Punkt 36) außer den in M und K2 erledigten; aus Punkt 33 Datumsformate und Dynamic Type
+(UI BF-07, BF-14).
 
 **Bei Simon:**
 
