@@ -69,6 +69,13 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
       titel={roomName}
       onZurueck={onBack}
       translucent={false}
+      /* Kein Gemeinde-Umschalter (Simon am Geraet, 26.09.2026: "Im Chatraum
+         eines Admins sehe ich immer noch den Organisations-Switcher"). Ein
+         Chatraum gehoert zu genau einer Gemeinde -- ein Wechsel fuehrte ins
+         Leere. Die Chat-UEBERSICHT behaelt ihn.
+         Beim ersten Anlauf blieb diese Datei stehen: ChatRoom.tsx traegt nur
+         den Ladezustand, die eigentliche Kopfzeile des Raums steht hier. */
+      gemeindeUmschalter={false}
       rechts={(
         <>
           {/* Befund 12 aus dem Rollen-Bericht (26.08.2026): Mitgliederliste

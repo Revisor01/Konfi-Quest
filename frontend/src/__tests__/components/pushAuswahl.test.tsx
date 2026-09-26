@@ -111,14 +111,17 @@ describe('PushAuswahlModal', () => {
     expect(treffer, `"im Postfach" steht ${treffer.length}x statt 1x`).toHaveLength(1);
   });
 
-  it('stellt den Hinweis wie ueberall sonst dar: IonNote in der Karte', async () => {
+  it('stellt den Hinweis im farbigen Kasten dar, wie die anderen Hinweise', async () => {
+    // GEAENDERT 26.09.2026 (Simon: "Hinweise kriegen ja so einen Kasten, wie
+    // etwa wenn du in das Modal guckst fuer E-Mail"). Vorher eine IonNote,
+    // jetzt app-info-box in eigener Karte -- dasselbe Muster wie
+    // ChangeRoleTitleModal. Die Farbe folgt der Rolle.
     const { container } = render(<PushAuswahlModal onClose={() => {}} variante="purple" />);
     await screen.findByText('Nachrichten');
-    const hinweis = container.querySelector('.app-hinweis-text');
-    expect(hinweis, 'kein Hinweis mit der ueblichen Klasse').toBeTruthy();
-    expect(hinweis!.tagName.toLowerCase()).toBe('ion-note');
-    // Innerhalb der Karte, nicht als loser Absatz daneben.
-    expect(hinweis!.closest('ion-card'), 'Hinweis steht ausserhalb der Karte').toBeTruthy();
+    const kasten = container.querySelector('.app-info-box');
+    expect(kasten, 'kein Hinweis im farbigen Kasten').toBeTruthy();
+    expect(kasten!.className, 'Kasten traegt nicht die Rollenfarbe').toContain('app-info-box--purple');
+    expect(kasten!.closest('ion-card'), 'Kasten steht ausserhalb einer Karte').toBeTruthy();
   });
 
   it('zeigt eine vierte Gruppe, sobald der Server sie liefert (Team und Leitung)', async () => {

@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import {
   IonButton, IonButtons, IonCard, IonCardContent, IonContent, IonHeader, IonIcon,
   IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage,
-  IonSelect, IonSelectOption, IonTitle, IonToolbar
+  IonTitle, IonToolbar
 } from '@ionic/react';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import { fehlerText } from '../../../utils/fehler';
-import { ICON_SCHLIESSEN, ICON_GEMEINDE_GEFUELLT, ICON_PERSON } from '../../shared/icons';
+import { ICON_SCHLIESSEN, ICON_GEMEINDE_GEFUELLT, ICON_PERSON, ICON_SCHILD } from '../../shared/icons';
 
 /**
  * Eine bestehende Person in diese Gemeinde einladen (26.09.2026).
@@ -55,6 +55,26 @@ const EinladungModal: React.FC<Props> = ({ onClose, onSuccess }) => {
       .catch(() => { if (!abgemeldet) setRollen([]); });
     return () => { abgemeldet = true; };
   }, []);
+
+  // Wort fuer Wort dieselben Texte und Farben wie beim Anlegen einer
+  // Benutzer:in (Simon, 26.09.2026: "soll es genau so aussehen, wie es in
+  // 'Neue Benutzerin hinzufuegen' aussieht, damit die Leute wissen, was die
+  // Rolle ist"). Zwei Dialoge, die dieselbe Entscheidung verlangen, muessen
+  // sie gleich erklaeren -- sonst heisst dieselbe Rolle hier anders als dort.
+  const rolleToken = (name: string) =>
+    name === 'teamer' ? 'teamer' : (name === 'org_admin' || name === 'admin') ? 'users' : 'neutral';
+  const rolleFarbe = (name: string) => `var(--app-color-${rolleToken(name)})`;
+  const rolleTint = (name: string) => `rgba(var(--app-color-${rolleToken(name)}-rgb), 0.08)`;
+  const rolleName = (name: string) =>
+    name === 'org_admin' ? 'Org-Admin' : name === 'admin' ? 'Admin' : name === 'teamer' ? 'Teamer:in' : name;
+  const rolleBeschreibung = (name: string) => {
+    switch (name) {
+      case 'org_admin': return 'Voller Zugriff auf Konfis, Aktivitäten, Badges und Events – über alle Jahrgänge. Verwaltet zusätzlich die Benutzer:innen und deren Jahrgangs-Zuordnung.';
+      case 'admin': return 'Voller Zugriff auf Konfis, Aktivitäten, Badges und Events – nur für die zugewiesenen Jahrgänge.';
+      case 'teamer': return 'Eigenes Dashboard mit eigenen Badges, Team-Material und Team-Chat. Kann sich zu Events anmelden, bei denen das Team gebraucht wird. Vergibt keine Punkte und genehmigt keine Aktivitäten.';
+      default: return '';
+    }
+  };
 
   const istGueltig = kennung.trim().length > 0 && rolleId !== null;
 
@@ -129,21 +149,44 @@ const EinladungModal: React.FC<Props> = ({ onClose, onSuccess }) => {
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
-              <IonItem lines="none" className="app-dashboard-settings-item">
-                <IonSelect
-                  label="Rolle in dieser Gemeinde"
-                  labelPlacement="stacked"
-                  placeholder="Rolle wählen"
-                  value={rolleId}
-                  onIonChange={(e) => setRolleId(e.detail.value)}
-                >
-                  {rollen.map((r) => (
-                    <IonSelectOption key={r.id} value={r.id}>
-                      {r.display_name || r.name}
-                    </IonSelectOption>
-                  ))}
-                </IonSelect>
-              </IonItem>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
+                {rollen.map((r) => {
+                  const gewaehlt = rolleId === r.id;
+                  return (
+                    <div
+                      key={r.id}
+                      className="app-list-item"
+                      onClick={() => !isSubmitting && setRolleId(r.id)}
+                      style={{
+                        cursor: isSubmitting ? 'default' : 'pointer',
+                        opacity: isSubmitting ? 0.6 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '0',
+                        borderLeftColor: rolleFarbe(r.name),
+                        background: gewaehlt ? rolleTint(r.name) : undefined
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}>
+                        <div className="app-icon-circle" style={{ backgroundColor: rolleFarbe(r.name), width: '32px', height: '32px' }}>
+                          <IonIcon icon={ICON_SCHILD} style={{ fontSize: 'var(--app-text-basis)' }} />
+                        </div>
+                        <div>
+                          <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)', display: 'block' }}>
+                            {rolleName(r.name)}
+                          </span>
+                          {rolleBeschreibung(r.name) && (
+                            <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', display: 'block', marginTop: 'var(--app-abstand-winzig)', lineHeight: 1.35 }}>
+                              {rolleBeschreibung(r.name)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
               <IonNote className="app-hinweis-text">
                 Die Rolle gilt nur in dieser Gemeinde. In ihrer eigenen Gemeinde
                 bleibt alles, wie es ist. Konfis werden über einen

@@ -437,7 +437,7 @@ describe('Chat und Challenges bauen keine eigene Kopfzeile mehr', () => {
       // EINZELNE Chatraum nicht mehr (Simon: "Switcher raus"), weil ein Raum
       // zu genau einer Gemeinde gehoert. Die Chat-UEBERSICHT behaelt ihn;
       // das prueft der Test darunter.
-      if (!/ChatRoom(View)?\.tsx$/.test(datei)) {
+      if (!/ChatRoom(View|Sections)?\.tsx$/.test(datei)) {
         expect(quelle, datei).not.toContain('gemeindeUmschalter={false}');
       }
       expect(quelle, datei).not.toContain('OrgSwitcherButton');

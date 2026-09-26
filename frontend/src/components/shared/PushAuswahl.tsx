@@ -245,9 +245,16 @@ export const PushAuswahlModal: React.FC<ModalProps> = ({ onClose, variante, onGe
                   Fliesstext unter der Karte -- und der als <p> mit eigenem
                   Rand, waehrend die App sonst IonNote INNERHALB der Karte
                   nutzt (siehe TerminAbsagenModal, AbmeldungNachtragenModal). */}
-              <IonNote className="app-hinweis-text">
-                Abgeschaltet wird nur der Weg aufs Handy – im Postfach unter der Glocke steht jede Mitteilung trotzdem.
-              </IonNote>
+            </IonCardContent>
+          </IonCard>
+          {/* Der Hinweis im farbigen Kasten, wie ueberall sonst (Simon,
+              26.09.2026: "Hinweise kriegen ja so einen Kasten, wie etwa wenn
+              du in das Modal guckst fuer E-Mail"). Eigene Karte unter der
+              Liste -- app-info-box faerbt sie nach der Rolle. */}
+          <IonCard className="app-card">
+            <IonCardContent className={`app-info-box ${stil.infoBox}`}>
+              Abgeschaltet wird nur der Weg aufs Handy – im Postfach unter der
+              Glocke steht jede Mitteilung trotzdem.
             </IonCardContent>
           </IonCard>
         </IonList>
