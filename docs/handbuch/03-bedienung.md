@@ -185,6 +185,12 @@ Element gerade den Fokus hat.
 nennt die Vorlesefunktion seinen Namen („Postfach, Dialog"), sodass klar ist,
 wo man gelandet ist.
 
+### Kleine Knöpfe treffen
+
+Das Auge am Passwortfeld, das X an Hinweisen und Fehlermeldungen sowie
+Anhängen und Senden im Chat reagieren auf eine Fläche von mindestens
+44 Punkten um das Symbol — ein Tipp knapp daneben trifft trotzdem.
+
 ## Nachlesen, was sich geändert hat
 
 Nach einem Update meldet sich beim ersten Öffnen **einmal** eine kurze

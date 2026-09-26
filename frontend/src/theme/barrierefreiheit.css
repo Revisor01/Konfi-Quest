@@ -76,6 +76,28 @@ a.app-auth-link {
   outline-offset: 2px;
 }
 
+/* Beruehrungsziel mindestens 44 x 44 px (Apple HIG, WCAG 2.5.5), ohne die
+   Optik zu veraendern (UI BF-13): Ein unsichtbares Pseudo-Element nimmt die
+   Beruehrung an und reicht sie an den Knopf weiter -- der Browser meldet
+   fuer einen Treffer auf ::after das erzeugende Element. Der Knopf selbst
+   bleibt so gross wie gezeichnet (Auge am Passwortfeld 19 px, X der
+   Neuigkeiten-Karte 32 px, Chat-Knoepfe 38 px). max() waechst nur, wo der
+   Knopf kleiner als 44 px ist; position: absolute nimmt das Pseudo-Element
+   aus dem Flex-Fluss der nackten Knoepfe. Gemessen 26.09.2026 mit Playwright
+   (elementFromPoint, iPhone-Breite): Auge 20 x 20 -> 44 x 44. */
+.app-beruehrungsziel {
+  position: relative;
+}
+.app-beruehrungsziel::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
 .app-auth-button.ion-focused::part(native),
 .app-auth-button:focus-visible::part(native) {
   outline: 3px solid var(--app-weiss);

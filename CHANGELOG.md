@@ -611,6 +611,10 @@ Versionsüberschrift.
 - Das Postfach, der neue Rückblick und die Datumswähler in den Formularen
   melden sich der Vorlesefunktion mit Namen („Postfach", „Datum wählen")
   statt nur als „Dialog".
+- Kleine Knöpfe — das Auge am Passwortfeld, das X an Hinweisen und
+  Fehlermeldungen, Anhängen und Senden im Chat — lassen sich leichter
+  treffen: Die Fläche, die auf den Finger reagiert, ist jetzt mindestens
+  44 Punkte groß, die Knöpfe sehen aber aus wie zuvor.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

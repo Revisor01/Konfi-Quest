@@ -177,6 +177,7 @@ Dazu kommen Kontraste unter AA im Hellmodus (drei Text-Grautöne mit 2,85–3,54
 ### BF-13: Berührungsziele unter 44 px
 
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — Klasse `.app-beruehrungsziel` in `theme/barrierefreiheit.css`: ein unsichtbares `::after` von `max(100%, 44px)` mittig über dem Knopf nimmt die Berührung an, die Optik bleibt (Auge 19 px, X 32 px, Chat-Knöpfe 38 px). An zehn Stellen: Auge und Fehler-Kreuz auf den drei Anmeldeseiten mit Passwortfeld, X der Neuigkeiten-Karte, Anhängen und Senden im Chat. Gemessen mit Playwright/Chromium gegen Vite bei 393 px (`elementFromPoint`, 1-px-Schritte), Trefffläche vorher → nachher: Auge 20 × 20 → 44 × 45, X 32 × 32 → 44 × 44, Chat-Anhang 24 × 48 → 44 × 48, Chat-Senden 39 × 48 → 44 × 48, Fehler-X 12 × 21 → 44 × 44; Layout-Boxen unverändert (19,2 / 32,0 / 22,7 × 46,2 / 38,0 × 46,5 px). Tests `beruehrungsziele.test.ts` (Regel und alle zehn Stellen) und `beruehrungszieleGerendert.test.tsx` (Auge, X).
 - **Fundstelle:** `theme/variables.css:3980-3993` (`.app-whatsnew__close` 32 × 32 px), `:2685-2690` (`.app-auth-input__toggle`: nur `font-size: 1.2rem` ≈ 19 px, kein Innenabstand), `typografie.css:52-55` (38-px-Chat-Knöpfe).
 - **Kennzeichnung:** aus Code gelesen.
 - **Beschreibung:** Apple HIG und Material verlangen 44 bzw. 48 px; WCAG 2.5.5 (AAA) 44 px, WCAG 2.2 2.5.8 (AA) 24 px. Das Passwort-Auge liegt mit ~19 px unter allen dreien.

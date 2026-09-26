@@ -41,7 +41,7 @@ const UpdateHinweisKarte: React.FC<UpdateHinweisKarteProps> = ({ onOpen, onDismi
     {onDismiss ? (
       <button
         type="button"
-        className="app-whatsnew__close"
+        className="app-whatsnew__close app-beruehrungsziel"
         aria-label="Hinweis ausblenden"
         onClick={(e) => {
           e.stopPropagation();

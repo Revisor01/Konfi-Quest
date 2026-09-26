@@ -325,7 +325,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
         gap: 'var(--app-abstand-eng)',
         width: '100%'
       }}>
-        <IonButton aria-label="Datei anhängen"
+        <IonButton aria-label="Datei anhängen" className="app-beruehrungsziel"
           fill="clear"
           size="small"
           onClick={() => fileInputRef.current?.click()}
@@ -393,7 +393,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
           />
         </div>
 
-        <IonButton
+        <IonButton className="app-beruehrungsziel"
           fill="solid"
           shape="round"
           size="small"

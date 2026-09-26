@@ -344,7 +344,7 @@ const LoginView: React.FC = () => {
                   type="button"
                   slot="end"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="app-auth-input__toggle app-knopf-nackt"
+                  className="app-auth-input__toggle app-knopf-nackt app-beruehrungsziel"
                   aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
                   aria-pressed={showPassword}
                 >
@@ -418,7 +418,7 @@ const LoginView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => { setLoginError(null); setIsNetworkError(false); }}
-                    className="app-auth-error__close app-knopf-nackt"
+                    className="app-auth-error__close app-knopf-nackt app-beruehrungsziel"
                     style={{ opacity: 0.7 }}
                     aria-label="Meldung schließen"
                   >
