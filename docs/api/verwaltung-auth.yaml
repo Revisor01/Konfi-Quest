@@ -60,6 +60,11 @@
 #    # refresh haben keinen eigenen (strengeren) Rate-Limiter — Username-
 #    # Enumeration und Invite-Code-Bruteforce (nur 8 Hex-Zeichen = 4 Byte
 #    # Entropie) sind mit bis zu 2000 Requests/15min/IP möglich.
+#    "Pro Client-IP" heisst seit 26.09.2026 (Audit Sicherheit BF-13): der
+#    Header X-Real-IP zaehlt nur, wenn die Anfrage aus dem Docker-Netz kommt
+#    (utils/clientIp.js: Peer in Loopback/Link-Local/privatem Bereich), sonst
+#    req.ip. Vorher liess sich der Header von jedem Client setzen, der das
+#    Backend ohne den eigenen Proxy erreicht -- und damit jedes Limit umgehen.
 #
 # 3. SUPER_ADMIN — Sonderbehandlung:
 #    - requireSuperAdmin akzeptiert Rolle 'super_admin' ODER das DB-Flag

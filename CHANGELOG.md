@@ -531,6 +531,10 @@ Versionsüberschrift.
 - Die Referenz-Konfiguration des Servers, die Abrissliste und ein Wartungsskript
   im öffentlichen Repo nennen keine Betriebsadressen mehr; sie kommen aus den
   Stack-Variablen des Betriebs.
+- Die Anfragegrenzen des Servers übernehmen die Absenderadresse aus dem
+  Header des eigenen Proxys nur noch, wenn die Anfrage auch wirklich von dort
+  kommt. Vorher hätte ein Client, der den Proxy umgeht, jede Grenze mit einer
+  selbst gesetzten Adresse aushebeln können.
 
 ## [2.2.0] - 2026-09-18
 

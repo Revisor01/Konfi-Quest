@@ -182,6 +182,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-13: Rate-Limits gelten je Replica und vertrauen `X-Real-IP` ungeprüft
 - **Schwere:** MITTEL
+- **Status:** teilweise behoben 26.09.2026 — `X-Real-IP` gilt nur noch, wenn der direkte Gegenüber (`req.socket.remoteAddress`) im Docker-Netz liegt (Loopback, Link-Local, private Bereiche; `utils/clientIp.js`, genutzt von allen IP-Limitern in `server.js` und vom Reset-Limiter in `auth.js`); sonst zählt `req.ip`. Tests für vertrauten und fremden Peer in `tests/utils/clientIp.test.js`. **Offen:** der gemeinsame Limiter-Store je Replica (S-10, Betrieb BF-09) — anderes Paket; und die Produktionsmessung, ob Apache den Header überschreibt (unten Nr. 4).
 - **Fundstelle:** `backend/server.js:261-277` (`clientIp` nimmt `X-Real-IP` vor `req.ip`), alle `rateLimit({...})`-Blöcke ohne `store` (MemoryStore je Prozess), `deploy/compose.konfi_quest.yml` (backend, backend2, backend-test)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Jede Replica zählt für sich; Traefik verteilt ~50/50 (Kommentar in der Compose-Datei). Alle Limits sind damit faktisch mit der Replica-Zahl zu multiplizieren. `X-Real-IP` wird ohne Prüfung übernommen, dass er vom eigenen Apache stammt — erreicht eine Anfrage Traefik oder das Backend auf einem anderen Weg (oder reicht Apache einen vom Client gesetzten Header durch), setzt der Angreifer seine „IP" selbst und umgeht jedes Limit.

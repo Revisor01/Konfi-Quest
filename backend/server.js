@@ -271,11 +271,12 @@ const { ipKeyGenerator } = require('express-rate-limit');
 // trust-proxy-konformes X-Forwarded-For -> req.ip war für ALLE die Proxy-IP
 // (gleicher Key) -> der Limiter zählte GLOBAL über alle Nutzer -> eine Gruppe
 // flog gleichzeitig mit 429. Daher X-Real-IP bevorzugen, dann erst req.ip.
-const clientIp = (req) => {
-  const real = req.headers['x-real-ip'];
-  if (real && typeof real === 'string' && real.trim()) return real.trim();
-  return req.ip;
-};
+//
+// Seit dem 26.09.2026 (Audit Sicherheit BF-13) gilt der Header nur noch, wenn
+// die Anfrage aus dem Docker-Netz kommt -- sonst setzt ihn ein Client selbst
+// und umgeht jedes Limit. Dieselbe Funktion nutzt auch der Passwort-Reset-
+// Limiter in routes/auth.js; Begruendung und Regel stehen in utils/clientIp.js.
+const { clientIp } = require('./utils/clientIp');
 const userOrIpKey = (req) => {
   const auth = req.headers.authorization;
   if (auth && auth.startsWith('Bearer ')) {
