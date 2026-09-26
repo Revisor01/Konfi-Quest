@@ -2,7 +2,10 @@
 
 Koordination über 15 Bereichsprüfungen. Gegenstand: Repo `Revisor01/Konfi-Quest`, Stand
 `fce1ab01` (main, „chore(release): Android 124, iOS-Build 230"). Anlass: Verkauf an die EKD,
-Zielgröße 10.000–25.000 Nutzer:innen pro Jahr (nicht anwachsend), überwiegend Minderjährige.
+insgesamt 10.000–25.000 Nutzer:innen pro Jahr (nicht anwachsend), überwiegend Minderjährige —
+verteilt auf **Einzelinstanzen mit höchstens 150 Teilnehmenden**, keine gemeinsame Großinstanz.
+Alle Chats laufen moderiert, Konfi-zu-Konfi-Chat gibt es nicht. (Beide Angaben von Simon am
+26.09. nach der ersten Fassung; was sich dadurch ändert, steht im Abschnitt „Nachtrag".)
 
 ## Release-Entscheidung
 
@@ -11,7 +14,8 @@ Code, der mit 2.3.0 neu dazukommt oder von den 2.3.0-Funktionen abhängt:
 
 1. Ein Org-Admin kann das Passwort jedes Super-Admin-Kontos derselben Stamm-Gemeinde setzen
    und übernimmt damit die gesamte Instanz (Sicherheit BF-01, von der Koordination
-   reproduziert). Für eine Instanz mit Hunderten Gemeinden ist das die Übernahme aller.
+   reproduziert). Innerhalb einer Instanz ist das die Übernahme aller Gemeinden und aller
+   Daten darin — bei höchstens 150 Teilnehmenden begrenzt, aber vollständig.
 2. Die neue Gemeinde-Einladung lädt Konfis fremder Gemeinden als Teamer:in ein und
    beantwortet jede E-Mail-Adresse im System mit Klarname und Benutzername (Sicherheit
    BF-03, reproduziert).
@@ -27,12 +31,21 @@ mit großer Nutzerwirkung (Registrierung verliert die Sitzung nach 15 Minuten, P
 Mitternacht, Doppelbuchungen bei langsamer Leitung, Abgemeldete können sich nicht wieder
 anmelden, Anmeldeseite im Dunkelmodus mit Links bei 1,4:1 Kontrast).
 
-**EKD-Ausrollung (Skalierung auf 25.000): eigenes Gate, heute nicht erfüllt.** Der Betrieb
-trägt die heutigen rund 110 Konten; bei Zielgröße sättigt die Datenbank (0,3 CPU) bei etwa
-drei App-Starts oder 0,65 Chat-Nachrichten je Sekunde, und ein Verbindungsabbruch zur
-Datenbank beendet beide Backend-Replicas gleichzeitig (Betrieb BF-01, von der Koordination
-reproduziert). Dazu fehlen für Minderjährige an dieser Zahl Melden/Blockieren im Chat, die
-Einwilligungsdokumentation und die Rechenschaftsunterlagen (Abschnitt „Vor EKD-Ausrollung").
+**EKD-Ausrollung: kein Skalierungstor mehr, aber ein Betriebstor und eine offene
+Architekturfrage.** Die Ausrollung geschieht in Einzelinstanzen mit höchstens 150
+Teilnehmenden; die heutige Produktion trägt rund 110 Konten auf derselben Dimensionierung.
+Die Kapazitätsbefunde des Betriebsberichts (Datenbank sättigt bei etwa drei App-Starts je
+Sekunde, 1.086 Abfragen je Chat-Nachricht) verlieren damit ihre Dringlichkeit; die Messwerte
+bleiben richtig und wandern in die Hygiene-Liste. Von der Größe unabhängig und mit jeder
+Instanz einmal mehr zu tragen: Ein Verbindungsabbruch zur Datenbank beendet beide
+Backend-Replicas (Betrieb BF-01, von der Koordination reproduziert; Auflage 14), Sicherung
+und Wiederherstellung sind im Repo nicht beschrieben, der Deploy hat eine Lücke, die
+Rate-Limiter zählen je Replica. Neu und aus dem Repo nicht entscheidbar: Die Store-App kennt
+genau **eine** API-Adresse, zur Bauzeit gesetzt (`frontend/src/services/api.ts:8`). Wie eine
+App im Store mehrere Instanzen erreicht, steht nirgends (Punkt 25). Melden/Blockieren im Chat
+entfällt als Jugendschutz-Auflage: Konfis erreichen einander nur in Räumen, die die Leitung
+liest (`chat.js:456`, am Code geprüft); die einzige Stelle, an der diese Zusage im Code nicht
+hält, ist Chat BF-01 (Blocker 5).
 
 Kein Bereich hat einen Vertragsbruch gegenüber den Store-Apps 2.2.x gefunden. Die
 Mandantentrennung hält in 150 gezielten Fremdzugriffen. Die Testsuiten sind grün und fangen
@@ -92,7 +105,7 @@ zusammengeführten Sammelbefunde stehen im nächsten Abschnitt.
 | S-01 | Spalte `konfi_profiles.password_plain` existiert weiter, wird nur beim Passwort-Neusetzen geleert; Altbestand an Klartextpasswörtern möglich | Sicherheit BF-06, Datenbank BF-06, Koordination K-01 | HOCH, KRITISCH falls in Produktion befüllt |
 | S-02 | Multi-Gemeinde-Funktion (2.3.0) nur teilweise umgebaut: `GET /users` und `PUT /users/:id` nur Stamm-Gemeinde; Gruppenchat-Teilnehmer; Cron-Team-Rückblick; `/wrapped/me`; 403-Rückfall lässt Org-Claim im Token; Einladung fremder Konfis | Leitung BF-01, Chat BF-04/06/08, Grundgerüst BF-05, Sicherheit BF-03 | HOCH |
 | S-03 | Ranking liefert Klarnamen und exakte Punkte der drei Besten an jeden Konfi; Handbuch verspricht das Gegenteil | Screens Konfi/Teamer BF-03, Feature E-06, Koordination K-03 | MITTEL (Datenminimierung Minderjähriger) |
-| S-04 | Terminlisten materialisieren die View `event_booking_stats` über alle Buchungen aller Gemeinden (83–119 ms bei 150.000 Buchungen statt 1,2 ms) | Datenbank BF-02, Betrieb BF-03, Punkte/Termine „Unklar" | HOCH für die Ausrollung |
+| S-04 | Terminlisten materialisieren die View `event_booking_stats` über alle Buchungen aller Gemeinden (83–119 ms bei 150.000 Buchungen statt 1,2 ms) | Datenbank BF-02, Betrieb BF-03, Punkte/Termine „Unklar" | NIEDRIG — Nachtrag 26.09.: bei ≤ 150 Teilnehmenden je Instanz ohne Nutzerwirkung, Messwert bleibt |
 | S-05 | Vortags-Erinnerung geht im ersten 15-Minuten-Takt nach Mitternacht hinaus; Erinnerungslauf ohne Überlappungsschutz, Doppelversand möglich | Chat BF-03, Betrieb BF-05, Chat „Unklar" | HOCH |
 | S-06 | Lint- und Build-Gate der CI wirkungslos: Lint nur bei Pull Requests (seit 31.08. kein PR), kein `tsc`/`vite build` vor dem Merge, 19 ESLint-Fehler im Bestand | Tests BF-07, Toolchain BF-01, CI BF-07, Screens BF-11/BF-13, Grundgerüst BF-12 | MITTEL |
 | S-07 | `--passWithNoTests` in beiden Test-Jobs, `npm audit || true` im Frontend | Tests BF-08, CI BF-12, Toolchain BF-08 | MITTEL |
@@ -104,11 +117,11 @@ zusammengeführten Sammelbefunde stehen im nächsten Abschnitt.
 | S-13 | Versionsstände widersprechen sich (Root `package.json` 2.9.0, Backend 1.0.1 → `/api/status`, Frontend 0.0.1, Info.plist 220, pbxproj 218 gegen `version.json` 2.3.0/230) | CI BF-09, Doku BF-10, Toolchain BF-10, Koordination K-02 | NIEDRIG (Quelle `version.json` ist korrekt) |
 | S-14 | `docs/offene-befunde.md` führt #12 (init-scripts) und #13 (Teamer-Termine) als offen; beide sind seit 16.09. erledigt (Schema-Diff 0 Zeilen) | Doku BF-12, CI BF-15, Datenbank BF-13, Tests BF-11 | NIEDRIG |
 | S-15 | Serveradressen, IP, SMTP-Nutzer und Produktions-SSH-Ziel im öffentlichen Repo | Sicherheit BF-12, Datenbank BF-14 | MITTEL |
-| S-16 | Kein Melden/Blockieren im Chat für Minderjährige | Screens Konfi/Teamer BF-06, Feature E-15 | MITTEL (vor EKD-Ausrollung HOCH) |
+| S-16 | Kein Melden/Blockieren im Chat für Minderjährige | Screens Konfi/Teamer BF-06, Feature E-15 | NIEDRIG, Produktentscheidung — Nachtrag 26.09.: jeden gemeinsamen Raum liest die Leitung, kein Konfi-zu-Konfi-Chat |
 | S-17 | 42 Screenshots zeigen den Stand 2.2.x (10.09.), werden aber als Store-Bilder genutzt und mit 33 MB in jedes Store-Bundle kopiert; 27 davon referenziert kein Handbuchkapitel | UI BF-09, Toolchain BF-02, Doku BF-18 | MITTEL |
-| S-18 | Postgres mit 0,3 CPU / 1 GB, `PG_POOL_MAX` nicht im Compose, keine Sicherung/Wiederherstellung im Repo beschrieben | Datenbank BF-05/BF-07, Betrieb BF-13 | HOCH für die Ausrollung |
+| S-18 | Postgres mit 0,3 CPU / 1 GB, `PG_POOL_MAX` nicht im Compose, keine Sicherung/Wiederherstellung im Repo beschrieben | Datenbank BF-05/BF-07, Betrieb BF-13 | MITTEL — Nachtrag 26.09.: CPU-Grenze reicht für ≤ 150 Teilnehmende; Sicherung/Wiederherstellung bleibt und gilt je Instanz |
 | S-19 | `/api/metrics/history?days=730` liefert 31–35 MB | Datenbank BF-16, Betrieb BF-14 | NIEDRIG |
-| S-20 | Datenschutz-Dokumentation: Stand „Juni 2026", Multi-Gemeinde-Datenfluss fehlt, kein Verweis auf Verarbeitungsverzeichnis/TOM/AVV, Crashlytics ohne Abschaltmöglichkeit, Einwilligung außerhalb der App | Doku BF-08, Sicherheit BF-22, Grundgerüst BF-13, Feature E-01 | MITTEL (vor EKD-Ausrollung HOCH) |
+| S-20 | Datenschutz-Dokumentation: Stand „Juni 2026", Multi-Gemeinde-Datenfluss fehlt, kein Verweis auf Verarbeitungsverzeichnis/TOM/AVV, Crashlytics ohne Abschaltmöglichkeit, Einwilligung außerhalb der App | Doku BF-08, Sicherheit BF-22, Grundgerüst BF-13, Feature E-01 | MITTEL, je Instanz und Träger |
 | S-21 | Sitemap aus Datei-Änderungszeiten, nicht reproduzierbar, nicht im Frischecheck | CI BF-13, Doku BF-13 | NIEDRIG |
 | S-22 | README: Installationsweg funktioniert so nicht, Testzahlen 1625/2470 statt 3788/3399, „Handbuch in der App" ohne Link | Doku BF-01, Tests BF-11, Feature E-04, Koordination K-05 | MITTEL |
 | S-23 | Personenbezogene Daten in Logs: Benutzernamen bei jedem Login, Passwort im Konsolen-Log des Clients bei Fehlversuch, Roh-URLs mit Suchbegriffen im Betriebs-Dashboard | Sicherheit BF-14, Grundgerüst BF-08, Leitung BF-12 | MITTEL |
@@ -185,7 +198,10 @@ für den gesamten Projektcode leer.
    (`users.organization_id` und `user_organizations`) erweitern — oder den Einladungsknopf für
    2.3.0 zurückhalten.
 5. **Chat BF-01 (HOCH):** `POST /chat/rooms` weist den Typ `direct` ab (oder begrenzt ihn auf
-   genau eine weitere Person). Bestand in Produktion prüfen (SQL im Bericht).
+   genau eine weitere Person). Bestand in Produktion prüfen (SQL im Bericht). Das ist die
+   einzige Stelle, an der die Zusage „alle Chats moderiert, kein Konfi-zu-Konfi-Chat" im Code
+   nicht hält: Ein Teamer-Token genügt, um zwei Konfis in einen Raum zu setzen, den keine
+   Leitung lesen kann.
 6. **Grundgerüst BF-03 (HOCH):** Registrierung übernimmt `refresh_token` in den `tokenStore`
    (zwei Zeilen). Ohne das fliegt jede neue Konfi 15 Minuten nach der Registrierung heraus.
 7. **CI BF-01 (HOCH):** Für die Store-Einreichung 2.3.0 nachweisen, dass der CI-Lauf des exakt
@@ -243,25 +259,50 @@ für den gesamten Projektcode leer.
     Gruppenchat-Teilnehmer auf beide Quellen — oder die Funktion in den Release-Notes nicht als
     vollständig bewerben.
 
-### Vor EKD-Ausrollung — Skalierung, Jugendschutz, Rechenschaft
+### Vor EKD-Ausrollung — Betriebsmodell, Betrieb je Instanz, Rechenschaft
 
-25. **S-04 (HOCH):** Terminlisten ohne View-Materialisierung (Aggregat je Termin, Antwortform
-    unverändert). Gemessen 100 ms → 1,2 ms.
-26. **Betrieb BF-04 (HOCH):** Chat-Fan-out über `sendToMultipleUsers`, `total_unread`-Schleife
-    streichen; Ziel < 50 Abfragen je Nachricht.
-27. **Betrieb BF-02 (HOCH):** App-Icon-Lauf nach Neustart nur Merker füllen, Laufmerker gegen
-    Überlappung.
-28. **Datenbank BF-01 (HOCH):** Indizes auf `chat_messages(reply_to)` und `chat_messages(user_id)`
-    (Migration 160). Gemessen: 1.000 Nachrichten löschen 31,4 s → 12,6 ms.
-29. **S-18 (HOCH):** Postgres auf ≥ 2 CPU und 2–4 GB, `shared_buffers` anheben, `PG_POOL_MAX`
-    ins Compose; `statement_timeout` für Lock- und Migrationsverbindung auf 0; Sicherung und
-    Wiederherstellung im Repo beschreiben und einmal üben.
-30. **Betrieb BF-06/BF-09/BF-10/BF-11 (MITTEL):** Wrapped-Parallelität begrenzen; gemeinsamer
-    Limiter-Store; Cron-Leader per Advisory-Lock mit Sichtbarkeit; Sammel-Logzeilen.
-31. **Jugendschutz (S-16, S-20):** „Nachricht melden" und Stummschalten im Chat;
-    Datenschutzerklärung auf 2.3.0 (Multi-Gemeinde, Crashlytics, Umami); Verweis auf
-    Verarbeitungsverzeichnis, TOM, AVVs; Einwilligung dokumentieren (Feature E-01); Crashlytics
-    abschaltbar.
+*Nachtrag 26.09.: Die Skalierungspunkte der ersten Fassung (S-04, Betrieb BF-02/BF-03/BF-04/
+BF-06/BF-11 und der CPU-Anteil von S-18) stehen jetzt unter „Danach", Punkt 37 — bei
+höchstens 150 Teilnehmenden je Instanz haben sie keine Nutzerwirkung. Die Nummern 25–31 sind
+neu belegt, 32–36 unverändert.*
+
+25. **Betriebsmodell der Einzelinstanzen klären (Unklar, entscheidend):** Die Store-App spricht
+    genau eine API-Adresse: `VITE_API_URL` zur Bauzeit, sonst `https://konfi-quest.de/api`
+    (`frontend/src/services/api.ts:8`). Der iOS-Release-Workflow kennt den Parameter `api_url`
+    nur für die Test-API (`ios-release.yml:14-17`), der Android-Workflow gar nicht. Zwei
+    Lesarten, aus dem Repo nicht entscheidbar: (a) eine Instanz = eine Organisation im
+    gemeinsamen Backend — dann gelten die Skalierungsbefunde aus Punkt 37 wieder in voller
+    Schwere, weil alle 10.000–25.000 Konten in einer Datenbank landen; (b) eine Instanz = eigene
+    Installation mit eigener Datenbank — dann braucht die App eine Instanzwahl (Server-Adresse
+    beim ersten Start, QR-Code, Subdomain je Instanz) oder je Instanz einen eigenen Build samt
+    Store-Eintrag, und davon existiert heute nichts. Vor jedem weiteren Ausrollschritt
+    entscheiden und im Repo festhalten.
+26. **Betrieb je Instanz (S-18 Rest, Datenbank BF-05/BF-07, Betrieb BF-02/BF-10/BF-12):**
+    Sicherung und Wiederherstellung beschreiben und einmal üben; `PG_POOL_MAX` ins Compose;
+    Deploy-Lücke schließen; Cron-Leader mit Sichtbarkeit; App-Icon-Lauf nach Neustart mit
+    Laufmerker. Was bei einer Instanz Hygiene ist, wird bei N Instanzen zur Routine, die ohne
+    Beschreibung nicht delegierbar ist.
+27. **Datenbank BF-01 (HOCH → MITTEL):** Indizes auf `chat_messages(reply_to)` und
+    `chat_messages(user_id)` (Migration 160). Additive Migration von zwei Zeilen, unabhängig
+    von der Größe sinnvoll; gemessen an 490.400 Nachrichten 31,4 s → 12,6 ms. Bei 150
+    Teilnehmenden entsprechend kleiner, aber der Löschpfad (Konto löschen, Raum leeren, Jahrgang
+    löschen) wächst mit jedem Jahrgang, der im Chat bleibt.
+28. **Rechenschaft (S-20):** Datenschutzerklärung auf 2.3.0 (Multi-Gemeinde, Crashlytics,
+    Umami); Verweis auf Verarbeitungsverzeichnis, TOM, AVVs; Einwilligung dokumentieren
+    (Feature E-01); Crashlytics abschaltbar. Gilt je Instanz und je Träger — bei Lesart (b)
+    aus Punkt 25 also je Installation.
+29. **Betrieb BF-09 (MITTEL):** gemeinsamer Limiter-Store; heute gelten alle Limits doppelt,
+    weil jede Replica für sich zählt. Unabhängig von der Größe.
+30. **Betrieb BF-14 / S-19 (NIEDRIG):** `/api/metrics/history?days=730` liefert 31–35 MB —
+    Größe je Instanz begrenzen oder paginieren; wächst mit der Laufzeit, nicht mit der
+    Teilnehmerzahl.
+31. **Jugendschutz (S-16) — Produktentscheidung, keine Auflage mehr:** Konfis erreichen
+    einander nur in Räumen, die die Leitung liest; ein Konfi-zu-Konfi-Direktchat wird mit 403
+    abgewiesen (`backend/routes/chat.js:456-459`, am Code geprüft); Zweiergespräche
+    Konfi–Teamer:in sind laut Handbuch bewusst privat. „Nachricht melden" (Feature E-15) bleibt
+    eine Komfortfunktion, mit der ein Kind die Leitung auf eine Stelle im Chat zeigt, ohne sie
+    selbst anzuschreiben; Blockieren hat kein Ziel. Offen bleibt, ob die Store-Prüfung für
+    Apps mit nutzergenerierten Inhalten einen Meldeweg verlangt — bisher kam die App ohne durch.
 32. **Feature-Empfehlungen A (E-01 bis E-09):** insbesondere Wartungshinweis/Mindestversion über
     `/api/app-version` (muss in 2.3.0, damit der Rollout-Bestand es kennt), Gemeinden anlegen
     ohne Flaschenhals, Löschfrist ohne Konfirmationstermin, Hilfe in der App.
@@ -278,10 +319,16 @@ für den gesamten Projektcode leer.
 
 ### Danach — Hygiene und Prozess
 
-36. S-06 bis S-09, S-11 bis S-15, S-19, S-21 bis S-24 und die NIEDRIG-Befunde aller Berichte;
+36. S-06 bis S-09, S-11 bis S-15, S-21 bis S-24 und die NIEDRIG-Befunde aller Berichte;
     Backend-Lint einführen; Frontend-Tests von Quelltext- auf gerenderte Prüfungen umstellen;
     Vorlagenkatalog, Kalender-Export, CSV-Import und die übrigen Feature-Empfehlungen B/C nach
     Produktentscheidung.
+37. **Skalierungspunkte (Nachtrag 26.09.):** S-04 (Terminlisten ohne View-Materialisierung,
+    gemessen 100 ms → 1,2 ms), Betrieb BF-03/BF-04 (1.086 Abfragen und 66 Einzel-Pushes je
+    Chat-Nachricht), BF-06 (Wrapped-Parallelität), BF-11 (Log-Volumen), BF-13 CPU-Anteil
+    (Postgres ≥ 2 CPU, 2–4 GB, `shared_buffers`). Bei ≤ 150 Teilnehmenden je Instanz ohne
+    Nutzerwirkung; die Messwerte und Rezepte im Betriebs- und Datenbankbericht bleiben gültig
+    und rücken sofort nach „Vor EKD-Ausrollung", falls Punkt 25 auf Lesart (a) hinausläuft.
 
 ## Was nicht geprüft werden konnte
 
@@ -314,8 +361,8 @@ Die wichtigsten, in dieser Reihenfolge:
 6. `SELECT name FROM schema_migrations ORDER BY name DESC LIMIT 5;` (erwartet `159_…`, 89 Einträge) und `docker logs … | grep -c "Migration FAILED"`; Schema-Dump gegen `backend/tests/schema/prod-schema.sql` plus Migrationen diffen (Dump ist vom 22.08.).
 7. Portainer-Stack 249: steht `backend-test` auf `test-latest` oder auf dem Live-SHA?
 8. `req.ip` gegen `X-Real-IP`/`X-Forwarded-For` bei Anfragen verschiedener Clients loggen; überschreibt Apache `X-Real-IP`?
-9. `docker stats` und `cpu.stat throttled` der Postgres an einem Abend; `SHOW statement_timeout`; Cache-Trefferquote `pg_stat_database`; Tabellengrößen (`chat_messages`, `event_bookings`, `notifications`).
-10. `EXPLAIN (ANALYZE, BUFFERS)` der Terminliste mit echter Org-ID — läuft die View über alle Buchungen?
+9. `docker stats` und `cpu.stat throttled` der Postgres an einem Abend; `SHOW statement_timeout`; Cache-Trefferquote `pg_stat_database`; Tabellengrößen (`chat_messages`, `event_bookings`, `notifications`). Nachtrag 26.09.: bei ≤ 150 Teilnehmenden je Instanz zur Bestätigung der Dimensionierung, nicht mehr entscheidend.
+10. `EXPLAIN (ANALYZE, BUFFERS)` der Terminliste mit echter Org-ID — läuft die View über alle Buchungen? Nachtrag 26.09.: nur relevant, falls das Betriebsmodell eine gemeinsame Instanz bleibt (Punkt 25).
 11. Traefik-Access-Log: `grep -c 'chat/files/[a-f0-9]*?token='` (Token in URLs) und `DELETE /api/events/<id>/book` durch Konfi-Konten.
 12. `SELECT COUNT(*) FROM users WHERE deleted_at IS NOT NULL AND last_login_at > deleted_at;` — soft-gelöschte, weiter aktive Konten.
 13. `SELECT user_id, COUNT(*) FROM refresh_tokens WHERE revoked_at IS NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 20;` — Wiederverwendung der Gnadenfrist.
@@ -349,6 +396,58 @@ Die Koordination hat die Theme-Regel im Paket, die App-Regel, die beiden Verlauf
 Text-Tokens und die fünf Inline-Flicken am Code bestätigt und die Bilder der Anmeldeseite und der
 Konfi-Verwaltung gesichtet. Was daraus folgt, steht in Punkt 18a (vor Release, wenige Stunden)
 und Punkt 34 (systematischer Weg, 9–10 Personentage).
+
+## Nachtrag 26.09. — Rahmen korrigiert: Einzelinstanzen und moderierte Chats
+
+Nach der ersten Fassung hat Simon zwei Prämissen korrigiert: Die EKD-Ausrollung geschieht in
+**Einzelinstanzen mit höchstens 150 Teilnehmenden**, nicht als gemeinsame Instanz für 25.000;
+und **alle Chats sind moderiert, Konfi-zu-Konfi-Chat gibt es nicht.** Beides ist gegen den
+Code geprüft, die Bereichsberichte bleiben unverändert (ihre Messwerte stimmen weiter), die
+Bewertung in dieser Abnahme ändert sich wie folgt.
+
+**Am Code geprüft:**
+
+- `backend/routes/chat.js:456-459`: `POST /direct` weist einen Konfi, der einen Konfi
+  anschreibt, mit 403 ab („Konfis können keine anderen Konfis anschreiben"). Konfis erreichen
+  Team und Leitung nur über einen gemeinsamen Jahrgang (`teamAnschreibenVerboten`). Gruppen-,
+  Jahrgangs- und Termin-Räume darf die Leitung lesen, exportieren und darin löschen
+  (`darfRaumOeffnen`, laut Chat-Bericht und Handbuch `90-chat.md:147-161`); Zweiergespräche
+  sind privat, auch vor der Leitung — das ist Absicht.
+- Die Zusage hält an genau einer Stelle nicht: `POST /chat/rooms` nimmt den Typ `direct` mit
+  beliebig vielen Teilnehmenden an, sobald der Aufrufer kein Konfi ist (Chat BF-01, vom
+  Bereich reproduziert, von der Koordination mit eigenem Test bestätigt). Der Befund bleibt
+  Blocker 5 und wird durch die Prämisse wichtiger, nicht unwichtiger.
+- `frontend/src/services/api.ts:8`: `import.meta.env.VITE_API_URL || 'https://konfi-quest.de/api'`
+  — eine Adresse je Build. `ios-release.yml:14-17` nimmt `api_url` als Eingabe („LEER =
+  Produktion. Fuer Tests: …"), `android-release.yml` kennt keine solche Eingabe. Eine
+  Instanzwahl in der App existiert nicht (Suche nach `serverUrl`, `apiBaseUrl`, „Server
+  wählen" im Frontend: nur `api.ts`).
+
+**Was sich ändert:**
+
+| Befund | Erste Fassung | Jetzt | Grund |
+|---|---|---|---|
+| S-16 Melden/Blockieren | MITTEL, vor Ausrollung HOCH | NIEDRIG, Produktentscheidung (Punkt 31) | Konfis treffen einander nur in Räumen, die die Leitung liest; Blockieren hat kein Ziel |
+| S-04 Terminlisten-View | HOCH für die Ausrollung | NIEDRIG (Punkt 37) | 100 ms je Aufruf bei ≤ 150 Teilnehmenden ohne spürbare Wirkung |
+| S-18 Postgres-Dimensionierung | HOCH für die Ausrollung | MITTEL (Punkt 26) | CPU-Anteil entfällt; Sicherung/Wiederherstellung bleibt und gilt je Instanz |
+| Betrieb BF-03/BF-04/BF-06/BF-11 | vor Ausrollung | Danach (Punkt 37) | Kapazitätsbefunde ohne Nutzerwirkung bei dieser Größe |
+| Betrieb BF-01 Replica-Absturz | vor Ausrollung | **vor Release** (Punkt 14, unverändert) | von der Größe unabhängig; jeder Datenbank-Neustart trifft jede Instanz |
+| Datenbank BF-01 Indizes | HOCH | MITTEL (Punkt 27) | Löschpfad wächst mit der Laufzeit, nicht mit der Zielgröße; Fix bleibt zwei Zeilen |
+| Sicherheit BF-01 Super-Admin-Übernahme | KRITISCH, „Übernahme aller Gemeinden" | KRITISCH, Übernahme einer Instanz | Schwere als Rechteausweitung unverändert, Tragweite je Instanz begrenzt |
+| Chat BF-01 `direct`-Raum ohne Leitungszugriff | HOCH, Blocker 5 | HOCH, Blocker 5 — einzige Lücke in der Moderationszusage | siehe oben |
+| S-20 Datenschutz-Dokumentation | MITTEL, vor Ausrollung HOCH | MITTEL, je Instanz und Träger (Punkt 28) | von der Größe unabhängig |
+| Neu: Betriebsmodell der Instanzen | — | **Unklar, entscheidend** (Punkt 25) | eine API-Adresse je Build; Instanz = Organisation oder Instanz = Installation ist aus dem Repo nicht ablesbar |
+
+**Was gleich bleibt:** die vier Blocker, alle Auflagen 8–24, die Release-Entscheidung.
+Die Zählung „216 Befunde" bleibt, weil die Bereichsberichte nicht verändert wurden; die
+Verschiebungen betreffen nur die Bewertung in dieser Abnahme.
+
+**Feature-Empfehlungen unter den neuen Prämissen:** E-15 (Melden/Stummschalten) verliert
+seinen Platz in den Top 10 und wird Produktentscheidung. E-03 (Gemeinden anlegen), E-10/E-26
+(Verbandssicht) und E-11 (Vorlagenkatalog) hängen vollständig an Punkt 25: Bei getrennten
+Installationen braucht ein Vorlagenkatalog ein Austauschformat zwischen Instanzen statt einer
+gemeinsamen Tabelle, und eine Verbandssicht über mehrere Instanzen ist ein anderes Produkt.
+Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit dieser Fußnote.
 
 ## Dateien dieses Audits
 
