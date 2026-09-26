@@ -480,6 +480,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       res.json({ message: 'Account erfolgreich gelöscht' });
 
+      // Rechte-Cache leeren (Audit 26.09.2026, Sicherheit BF-10): Das eigene
+      // Token gaelte sonst noch bis zu 30 Sekunden weiter (TTL in rbac.js).
+      invalidateUserCache(userId);
+
       // Benachrichtigung NACH dem COMMIT und fehlertolerant — die Loeschung
       // ist festgeschrieben, ein Push-Fehler darf sie nicht mehr kippen.
       await meldeNachrueckern(db, user.organization_id, nachgerueckt);

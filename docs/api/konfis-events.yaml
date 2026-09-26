@@ -3340,7 +3340,7 @@ paths:
         objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und darf nicht bereits gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen)"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: Konfi geloescht }
+        "200": { description: "Konfi geloescht; Rechte-Cache der Person geleert (seit 26.09.2026, Audit Sicherheit BF-10 -- vorher galt die laufende Sitzung bis zu 30 s weiter)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }

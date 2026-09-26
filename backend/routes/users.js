@@ -425,10 +425,13 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // Live-Update NACH der Response: geaenderter Benutzer in der Benutzer-Liste.
       liveUpdate.sendToOrgAdmins(organizationId, 'users', 'update', { userId: parseInt(id) });
 
-      // Cache invalidieren damit neues Token sofort wirkt
-      if (role_id !== undefined) {
-        invalidateUserCache(parseInt(id));
-      }
+      // Rechte-Cache dieser Person leeren -- bei JEDER Aenderung, nicht nur beim
+      // Rollenwechsel (Audit 26.09.2026, Sicherheit BF-10): is_active=false
+      // wirkte sonst erst nach dem 30-Sekunden-TTL von rbac.js, die alte
+      // Sitzung arbeitete bis dahin weiter (reproduziert: PUT is_active=false,
+      // direkt danach GET mit der alten Sitzung -> 200). Auch Name und
+      // Rollentitel stehen im Cache; eine Aenderung soll sofort gelten.
+      invalidateUserCache(parseInt(id));
 
       // Rollen- oder Aktiv-Status-Wechsel ändert die Soll-Mitgliedschaft in
       // Team-/Jahrgangs-Chats -> INLINE syncen (TTL-Cache verlässt sich darauf)
@@ -753,6 +756,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     }
 
     try {
+      // Rechte-Cache leeren (Audit 26.09.2026, Sicherheit BF-10): rbac.js
+      // haelt das Benutzerobjekt 30 Sekunden -- ohne diese Zeile bediente die
+      // laufende Sitzung der geloeschten Person die API so lange weiter.
+      invalidateUserCache(parseInt(id));
+
       // Aktive Socket-Verbindungen des geloeschten Users sofort trennen — sonst
       // liest ein noch verbundener Client mit toter Session weiter Live-Updates
       // mit, bis er von selbst neu verbindet. Nach dem COMMIT (User ist weg).

@@ -288,7 +288,7 @@ paths:
               properties:
                 password: { type: string, description: "Bestaetigung mit aktuellem Passwort" }
       responses:
-        "200": { description: "Account geloescht (Hard-Delete in einer Transaktion, Sockets getrennt)" }
+        "200": { description: "Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt)" }
         "400": { description: "Passwort fehlt oder falsch" }
         "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
@@ -1271,7 +1271,7 @@ paths:
                 is_active: { type: boolean, description: "false trennt aktive Sockets" }
                 password: { type: string }
       responses:
-        "200": { description: "Aktualisiert; Chat-Sync bei Rollen-/Aktiv-Wechsel; User-Cache invalidiert" }
+        "200": { description: "Aktualisiert; Chat-Sync bei Rollen-/Aktiv-Wechsel; User-Cache bei JEDER Aenderung invalidiert (seit 26.09.2026 -- vorher nur bei role_id, is_active=false wirkte bis zu 30 s spaeter)" }
         "400": { description: "Rolle nicht in eigener Org / keine Felder" }
         "403": { description: "Hierarchie verletzt (Ziel-User oder neue Rolle)" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -1279,6 +1279,12 @@ paths:
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateUpdateUser]
+        # BEHOBEN 26.09.2026 (Audit Sicherheit BF-10): invalidateUserCache lief
+        # nur bei role_id. Nach is_active=false arbeitete die alte Sitzung bis
+        # zum 30-s-TTL von rbac.js weiter (reproduziert: PUT, direkt danach GET
+        # mit alter Sitzung -> 200). Jetzt bei jeder Aenderung; dasselbe nach
+        # DELETE /users/:id, DELETE /admin/konfis/:id und POST /auth/delete-account.
+        # Wirkt je Replica -- der gemeinsame Store bleibt offen (S-10).
         org-scope: true
         objekt-pruefung: "Ziel-User in der aktiven Org ueber BEIDE Quellen; canManageRole + canCreateRole für neue Rolle. Zusatzmitglied (user_organizations): NUR role_id, geschrieben nach user_organizations.role_id; geaenderte Kontofelder oder Passwort -> 400 nur_rolle_in_weiterer_gemeinde (seit 26.09.2026)"
         # BEHOBEN 22.08.2026 (war N7): das optionale password-Feld wird vor
@@ -1313,7 +1319,7 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
-        "200": { description: "Geloescht; Sockets getrennt; Nachweisfotos und Challenge-Dateien nach COMMIT entfernt" }
+        "200": { description: "Geloescht; Rechte-Cache geleert (seit 26.09.2026, BF-10); Sockets getrennt; Nachweisfotos und Challenge-Dateien nach COMMIT entfernt" }
         "400": { description: "Selbst-Loeschung verboten" }
         "403": { description: "Hierarchie verletzt" }
         "404": { $ref: "#/components/responses/NotFound" }

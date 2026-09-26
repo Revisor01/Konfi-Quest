@@ -6,6 +6,7 @@ const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
+const { invalidateUserCache } = require('../middleware/rbac');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
@@ -578,6 +579,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             await client.query('COMMIT');
             res.json({ message: 'Konfi erfolgreich gelöscht' });
+
+            // Rechte-Cache leeren (Audit 26.09.2026, Sicherheit BF-10): Sonst
+            // bediente die laufende Sitzung des geloeschten Kontos die API
+            // noch bis zu 30 Sekunden weiter (TTL in rbac.js).
+            invalidateUserCache(parseInt(userId));
 
             await meldeNachrueckern(db, req.user.organization_id, nachgerueckteLoeschung);
 

@@ -516,6 +516,9 @@ Versionsüberschrift.
   einmal (für den Fall, dass die App den neuen Schlüssel nicht mehr speichern
   konnte). Ein weiterer Versuch beendet alle Anmeldungen des Kontos, weil dann
   jemand anderes den Schlüssel haben könnte.
+- „Zugang deaktivieren" und das Löschen eines Kontos wirken jetzt sofort.
+  Bisher konnte die betroffene Person mit ihrer laufenden Sitzung noch bis zu
+  einer halben Minute weiterarbeiten.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
