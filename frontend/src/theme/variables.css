@@ -3777,7 +3777,6 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-schatten-schwebend-stark: 0 4px 16px rgba(0, 0, 0, 0.45);
     --app-schatten-hoch: 0 8px 24px rgba(0, 0, 0, 0.36);
     --app-schatten-modal: 0 10px 28px rgba(0, 0, 0, 0.54);
-  }
 
     /* Tiefe der Karte. Im Hellen bewusst NICHTS: Dort traegt der Kartenrand
        die Kante, und ein Schatten auf weissem Grund saehe nach Doppelrahmen
@@ -3791,6 +3790,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
        Der Wert kommt aus der Skala oben, nicht als Rohwert, und ist dort auf
        der dreifachen Deckkraft -- ein 10-%-Schwarz verschwaende hier. */
     --app-schatten-karte-flaeche: var(--app-schatten-karte);
+  }
 }
 
 /* ============================================
