@@ -5,7 +5,7 @@
 const express = require('express');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
-const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist } = require('../../utils/bookingUtils');
+const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, pruefeKonfiStorno } = require('../../utils/bookingUtils');
 const { removeFromEventChat, addToEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
 
@@ -147,7 +147,27 @@ module.exports = (db, rbacVerifier) => {
           return res.status(404).json({ error: 'Buchung nicht gefunden' });
         }
 
+        // KONFIS: DIESELBEN REGELN WIE AUF DER KONFI-ROUTE (Audit 26.09.2026,
+        // Punkte/Termine BF-01). Bis dahin loeschte dieser Weg jede Buchung
+        // -- am Pflichttermin, am Vortag, mit eingetragenem "gefehlt" -- und
+        // ohne Protokoll. Die Entscheidung steht in pruefeKonfiStorno, die
+        // Konfi-Route ruft dieselbe Funktion. Die Meldungen sind die der
+        // Konfi-Route; die Erfolgsform dieser Route bleibt unveraendert.
+        if (isKonfi) {
+          const { rows: [terminRegeln] } = await client.query(
+            'SELECT mandatory, event_date FROM events WHERE id = $1 AND organization_id = $2',
+            [eventId, req.user.organization_id]
+          );
+          const verboten = pruefeKonfiStorno({ event: terminRegeln, buchung: booking });
+          if (verboten) {
+            await client.query('ROLLBACK');
+            return res.status(verboten.status).json({ error: verboten.error });
+          }
+        }
+
         // War der Konfi als anwesend verbucht: Event-Punkte zuruecknehmen.
+        // (Fuer Konfis seit dem 26.09.2026 unerreichbar -- pruefeKonfiStorno
+        // weist verbuchte Zeilen ab; der Zweig bleibt fuer das Team.)
         if (booking.attendance_status === 'present') {
           const { rows: [pts] } = await client.query(
             "SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2",
@@ -168,6 +188,16 @@ module.exports = (db, rbacVerifier) => {
         // Wer sich vom Event abmeldet, fliegt auch aus dem zugehörigen Event-Chat.
         // Sonst bleibt man im Chat, obwohl man nicht mehr teilnimmt.
         await removeFromEventChat(client, eventId, userId, req.user.organization_id);
+
+        // Protokoll wie auf der Konfi-Route (26.09.2026): Die Leitung liest
+        // event_unregistrations; eine Abmeldung ueber diesen Weg blieb bisher
+        // ohne Spur. Nur fuer Konfis -- Team-Absagen haben ihren eigenen Push.
+        if (isKonfi) {
+          await client.query(
+            'INSERT INTO event_unregistrations (user_id, event_id, reason, unregistered_at, organization_id) VALUES ($1, $2, $3, NOW(), $4)',
+            [userId, eventId, (req.body && req.body.reason) || null, req.user.organization_id]
+          );
+        }
 
         // If a confirmed Konfi-spot was opened, auto-promote from waitlist (nur für Konfis relevant).
         // Kapazität wird SLOT-bezogen geprüft, wenn die Buchung an einem Timeslot hing —

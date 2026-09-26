@@ -662,7 +662,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/events/{id}/book</code></div>
         <p class="summary">Eigene Buchung stornieren</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur eigene Buchung (user_id + organization_id)</div><div class="hinweis">Punkte-Entzugs-Weg n) der Analyse. Keine 2-Tage-Frist wie bei /api/konfi/events/:id/register (nur Hinweis).</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur eigene Buchung (user_id + organization_id)</div><div class="hinweis">Punkte-Entzugs-Weg n) der Analyse. Befund 'Keine 2-Tage-Frist wie bei /api/konfi/events/:id/register' -- behoben 26.09.2026: Frist, Pflicht-Riegel und Anwesenheitsriegel gelten auf dem Konfi-Pfad.</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/events/{id}/book</code></div>
         <p class="summary">Event selbst buchen (Konfi- oder Teamer-Kontingent)</p>

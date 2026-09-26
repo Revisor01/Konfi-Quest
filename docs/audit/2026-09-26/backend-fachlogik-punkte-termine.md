@@ -86,6 +86,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-01: `DELETE /events/:id/book` umgeht für Konfis Pflichttermin-Riegel, Abmeldefrist und Anwesenheitsvermerk
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — die drei Regeln stehen in `utils/bookingUtils.pruefeKonfiStorno` (verbucht → 400, Pflicht → 400, Frist nur für bestätigte Plätze → 400) und werden von `DELETE /konfi/events/:id/register` und `DELETE /events/:id/book` gleichermaßen gerufen; `/book` protokolliert Konfi-Abmeldungen jetzt ebenfalls in `event_unregistrations`; Team unverändert. Tests `tests/routes/buchungStornoRegelnKonfi.test.js`.
 - **Fundstelle:** `backend/routes/events/buchung.js:101-166` (Rolle Konfi
   zugelassen in Zeile 105-108, keine Prüfung auf `mandatory`, `event_date`,
   `attendance_status`); Vergleich `backend/routes/konfi.js:1638-1645`

@@ -12,7 +12,7 @@ const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../ut
 const { deletePhotoFile, istSichererDateiname } = require('../utils/photoStorage');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
 const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
-const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach } = require('../utils/bookingUtils');
+const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach, pruefeKonfiStorno } = require('../utils/bookingUtils');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
@@ -1649,7 +1649,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const eventId = req.params.id;
       const { reason } = req.body;
 
-      // Guard: Pflicht-Events können nicht über DELETE abgemeldet werden
+      // Guard: Pflicht-Events können nicht über DELETE abgemeldet werden.
+      // Bewusst VOR der Buchungspruefung und ohne Org-Filter, damit die
+      // Antwort fuer einen Pflichttermin gleich bleibt, egal ob eine
+      // Buchung existiert (so war es, so lesen es die Apps).
       const { rows: [eventCheck] } = await db.query(
         'SELECT mandatory FROM events WHERE id = $1',
         [eventId]
@@ -1660,47 +1663,39 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Check if konfi is registered
       const { rows: [registration] } = await db.query(
-        'SELECT id, user_id, event_id, status, booking_date, timeslot_id, organization_id FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        'SELECT id, user_id, event_id, status, attendance_status, booking_date, timeslot_id, organization_id FROM event_bookings WHERE user_id = $1 AND event_id = $2',
         [konfiId, eventId]
       );
 
       if (!registration) {
         return res.status(400).json({ error: 'Du bist nicht für dieses Event angemeldet' });
       }
-      
+
       // Check if event exists and get event details.
       // max_participants/has_timeslots werden für den Kapazitaetscheck beim
       // Nachruecken gebraucht — fehlten sie hier, war max_participants
       // undefined und es wurde IMMER nachgerueckt (auch über die Kapazität
       // hinaus).
       const { rows: [event] } = await db.query(
-        'SELECT name, event_date, max_participants, has_timeslots FROM events WHERE id = $1 AND organization_id = $2',
+        'SELECT name, event_date, mandatory, max_participants, has_timeslots FROM events WHERE id = $1 AND organization_id = $2',
         [eventId, req.user.organization_id]
       );
-      
+
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
-      
-      // Check if unregistration is still allowed (2 days before event).
-      //
-      // Nur fuer BESTAETIGTE Plaetze (Audit 26.09.2026, Screens BF-02): Die
-      // Frist schuetzt die Planung der Leitung vor kurzfristig frei
-      // werdenden Plaetzen. Wer auf der Warteliste steht, belegt keinen --
-      // die Wartende konnte in den letzten 48 Stunden aber nicht mehr
-      // herunter, blieb auf der Liste und wurde beim Nachruecken als
-      // abwesend verbucht. Eine Wartende darf jederzeit gehen.
-      const eventDate = new Date(event.event_date);
-      const now = new Date();
-      const twoDaysBeforeEvent = new Date(eventDate.getTime() - (2 * 24 * 60 * 60 * 1000));
-      const belegtEinenPlatz = registration.status === 'confirmed';
-      
-      if (belegtEinenPlatz && now >= twoDaysBeforeEvent) {
-        return res.status(400).json({ 
-          error: 'Abmeldung ist nur bis 2 Tage vor dem Event möglich' 
-        });
+
+      // Die fachlichen Regeln (verbucht, Pflicht, Zwei-Tage-Frist nur fuer
+      // bestaetigte Plaetze -- Audit 26.09.2026, Screens BF-02) stehen seit
+      // dem 26.09.2026 in EINER Funktion, die auch DELETE /events/:id/book
+      // benutzt. Vorher war der Weg ueber die generische Route an allen
+      // Regeln vorbei (Audit Punkte/Termine BF-01). Begruendungen bei
+      // pruefeKonfiStorno in utils/bookingUtils.js.
+      const verboten = pruefeKonfiStorno({ event, buchung: registration });
+      if (verboten) {
+        return res.status(verboten.status).json({ error: verboten.error });
       }
-      
+
       // Ab hier transaktional (Befund 28.08.2026).
       //
       // Vorher liefen Loeschung, Chat-Austritt, Kapazitaets-Check, Nachruecken

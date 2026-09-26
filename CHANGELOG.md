@@ -444,6 +444,10 @@ Versionsüberschrift.
   Fehlermeldung. Jetzt zeigt der Termin den Wartelistenplatz und den Knopf
   „Von der Warteliste abmelden" — auch in den letzten zwei Tagen, denn wer
   wartet, belegt keinen Platz.
+- Pflichttermin-Regel, Abmeldefrist und eingetragene Anwesenheit gelten jetzt
+  auf jedem Abmeldeweg. Über einen älteren Nebenweg konnte eine Konfi bislang
+  ein von der Leitung eingetragenes „Gefehlt" selbst löschen oder sich am
+  Vortag ohne Spur abmelden; die Anwesenheitsliste war so nicht verlässlich.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

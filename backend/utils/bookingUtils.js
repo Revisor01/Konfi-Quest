@@ -1216,6 +1216,46 @@ async function setzeTeamerZusage(client, eingabe) {
   return { ok: true, status, vorherigerStatus, event, promotedUserId };
 }
 
+// ---------------------------------------------------------------------------
+// SELBSTABMELDUNG EINER KONFI: DIE REGELN AN EINER STELLE (26.09.2026)
+//
+// Audit Punkte/Termine BF-01: Die Konfi-App meldet ueber
+// DELETE /konfi/events/:id/register ab, und diese Route setzte drei Regeln
+// durch -- Pflichttermine nur per Opt-out, Abmelden nur bis zwei Tage vorher,
+// Protokoll in event_unregistrations. Die aeltere generische Route
+// DELETE /events/:id/book war mit einem Konfi-Token ebenso erreichbar und
+// prueften nur "gibt es eine Buchung": Ein Konfi mit API-Kenntnis konnte so
+// ein von der Leitung eingetragenes "unentschuldigt gefehlt" am Pflichttermin
+// selbst loeschen oder sich am Vortag ohne Spur abmelden.
+//
+// Deshalb steht die Entscheidung jetzt hier, und beide Routen rufen sie --
+// dasselbe Muster wie bucheTermin fuer das Anmelden. Reine Funktion ohne
+// Datenbank: Die Routen laden Termin und Buchung ohnehin.
+//
+// Reihenfolge der Pruefungen: Verbucht schlaegt alles (der Vermerk gehoert
+// der Leitung), dann Pflicht, dann Frist. Die Frist gilt nur fuer BESTAETIGTE
+// Plaetze -- eine Wartende belegt keinen und darf jederzeit herunter
+// (Audit Screens BF-02). 'excused'-Zeilen sind selbst Abmeldungen; sie zu
+// loeschen gibt nichts frei und bleibt erlaubt (Absage-Faelle, konfi.test).
+// ---------------------------------------------------------------------------
+const STORNO_FRIST_MS = 2 * 24 * 60 * 60 * 1000;
+
+function pruefeKonfiStorno({ event, buchung, now = new Date() }) {
+  if (buchung && (buchung.attendance_status === 'present' || buchung.attendance_status === 'absent')) {
+    return { status: 400, error: 'Die Anwesenheit ist bereits verbucht — Änderungen macht die Leitung' };
+  }
+  if (event && event.mandatory) {
+    return { status: 400, error: 'Pflicht-Events können nur über Opt-out abgemeldet werden' };
+  }
+  if (buchung && buchung.status === 'confirmed' && event && event.event_date) {
+    const fristEnde = new Date(new Date(event.event_date).getTime() - STORNO_FRIST_MS);
+    if (now >= fristEnde) {
+      return { status: 400, error: 'Abmeldung ist nur bis 2 Tage vor dem Event möglich' };
+    }
+  }
+  return null;
+}
+
 module.exports = {
   ABSAGE_OHNE_GRUND,
   meldeAlleAbBeiAbsage,
@@ -1231,5 +1271,6 @@ module.exports = {
   zaehleBuchungen,
   zaehleBestaetigte,
   bucheTermin,
-  setzeTeamerZusage
+  setzeTeamerZusage,
+  pruefeKonfiStorno
 };

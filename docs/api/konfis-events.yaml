@@ -1742,15 +1742,28 @@ paths:
         Die Teamer-Abmeldung laeuft ueber POST /api/teamer/events/{id}/zusage
         (dabei=false), die die Absage samt Grund stehen laesst statt zu
         loeschen. Die Route bleibt unveraendert fuer ausgelieferte Apps.
+        KONFI-PFAD SEIT 26.09.2026 MIT DENSELBEN REGELN WIE
+        DELETE /api/konfi/events/{id}/register (Audit Punkte/Termine BF-01,
+        utils/bookingUtils.pruefeKonfiStorno, eine Funktion fuer beide
+        Routen): verbuchte Anwesenheit (present/absent) -> 400 "Die
+        Anwesenheit ist bereits verbucht", Pflichttermin -> 400 "nur ueber
+        Opt-out", bestaetigter Platz in den letzten zwei Tagen -> 400
+        "nur bis 2 Tage vor dem Event". Wartende sind von der Frist
+        ausgenommen. Die Abmeldung wird wie auf der Konfi-Route in
+        event_unregistrations protokolliert. Bis dahin loeschte dieser Weg
+        jede Konfi-Buchung -- auch ein von der Leitung eingetragenes
+        "gefehlt" am Pflichttermin. Fuer Teamer:innen unveraendert (keine
+        Frist, kein Pflicht-Riegel, kein Konfi-Protokoll).
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "nur eigene Buchung (user_id + organization_id)"
-        hinweis: "Punkte-Entzugs-Weg n) der Analyse. Keine 2-Tage-Frist wie bei /api/konfi/events/:id/register (nur Hinweis)."
+        hinweis: "Punkte-Entzugs-Weg n) der Analyse. Befund 'Keine 2-Tage-Frist wie bei /api/konfi/events/:id/register' -- behoben 26.09.2026: Frist, Pflicht-Riegel und Anwesenheitsriegel gelten auf dem Konfi-Pfad."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Storniert; bereits_storniert=true wenn keine Buchung mehr vorhanden war" }
+        "400": { description: "Nur Konfis: Anwesenheit verbucht, Pflichttermin oder Frist (2 Tage) verstrichen" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { description: Termin existiert nicht in dieser Organisation }
