@@ -216,6 +216,24 @@ describe('useOfflineQuery', () => {
     await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
   });
 
+  it('auth:org-fallback-Event loest erneuten Fetch aus (Zugang zur Zweitgemeinde verloren)', async () => {
+    // Bekommt ein Request mit aktiver Gemeinde ein 403 "Kein Zugriff auf diese
+    // Organisation", setzt api.ts die aktive Gemeinde auf die Stamm-Gemeinde
+    // zurueck und feuert 'auth:org-fallback' -- OHNE 'org:switched'. Das ist
+    // derselbe Wechsel: AppContext leert dabei den Zwischenspeicher, und eine
+    // im IonRouterOutlet geparkte Seite bekommt keinen Remount. Ohne diesen
+    // Horcher zeigte sie weiter die Daten einer Gemeinde, die die Person nicht
+    // mehr sehen darf (26.09.2026, gefunden neben Simons Zaehler-Befund).
+    const fetcher = vi.fn().mockResolvedValue({ org: 1 });
+    renderHook(() => useOfflineQuery('org-fallback-key', fetcher));
+
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+
+    window.dispatchEvent(new CustomEvent('auth:org-fallback'));
+
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+  });
+
   it('sync:reconnect-Event loest erneuten Fetch aus (Socket-Reconnect)', async () => {
     const fetcher = vi.fn().mockResolvedValue({ v: 1 });
     renderHook(() => useOfflineQuery('reconnect-key', fetcher));

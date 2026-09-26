@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Badge } from '@capawesome/capacitor-badge';
 import { Capacitor } from '@capacitor/core';
 import api from '../services/api';
@@ -96,6 +96,36 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const [challengeUpdatesTotal, setChallengeUpdatesTotal] = useState(0);
   const [postfachUngelesen, setPostfachUngelesen] = useState(0);
 
+  /**
+   * Laufende Nummer der aktiven Gemeinde (26.09.2026, Simons Befund am Geraet:
+   * "Konfi-Ansicht Testgemeinde Challenge 9+, Wechsel auf Hennstedt -- bleibt
+   * dieser Badge, obwohl es nicht mal Challenges gibt.").
+   *
+   * Sie zaehlt bei jedem Gemeindewechsel hoch und entscheidet, WESSEN Antwort
+   * noch gelten darf: refreshAllCounts merkt sich beim Start den Stand und
+   * verwirft seine Antwort, wenn inzwischen gewechselt wurde. Ohne das
+   * ueberschreibt eine noch laufende Abfrage der ALTEN Gemeinde die Zahlen der
+   * neuen -- derselbe Wettlauf, der bei markRoomAsRead schon einmal zugeschlagen
+   * hat (Befund 03.09.2026, siehe dort).
+   *
+   * Als ref, nicht als State: Der Wert muss in der laufenden Abfrage sofort
+   * sichtbar sein, nicht erst im naechsten Rendern.
+   */
+  const gemeindeLauf = useRef(0);
+
+  /**
+   * Fuer welchen Lauf der Wechsel-Horcher schon geladen hat.
+   *
+   * Beim Gemeindewechsel setzt AppContext ein neues user-Objekt UND feuert
+   * 'org:switched'. Beides loest einen Refresh aus -- gemessen am 26.09.2026
+   * zwei GET /notifications/badge-counts je Wechsel. Der Horcher laedt zuerst
+   * (dispatchEvent laeuft sofort), der user-Effekt kommt hinterher und waere
+   * eine Wiederholung derselben Abfrage. Dieser Merker laesst ihn genau einmal
+   * aus -- fuer jeden weiteren Anlass (Push, Reconnect, Live-Ereignis) laedt er
+   * unveraendert.
+   */
+  const bereitsGeladenFuerLauf = useRef<number | null>(null);
+
   const isAdmin = user?.type === 'admin' && user?.role_name !== 'super_admin';
   // Challenge-Freigaben betreffen die ganze Leitung — Teamer moderieren ihre
   // zugewiesenen Jahrgänge selbst (das Backend zählt entsprechend gefiltert).
@@ -138,8 +168,17 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const refreshAllCounts = useCallback(async () => {
     if (!user) return;
 
+    // Zu welcher Gemeinde diese Abfrage gehoert. Wird beim Eintreffen der
+    // Antwort gegen den aktuellen Stand geprueft (siehe gemeindeLauf oben).
+    const lauf = gemeindeLauf.current;
+
     try {
       const { data } = await api.get('/notifications/badge-counts');
+
+      // Inzwischen die Gemeinde gewechselt? Dann gehoert diese Antwort der
+      // ALTEN Gemeinde und wird verworfen -- sonst schreibt sie deren Zahlen
+      // ueber die der neuen und Simons Befund waere nur verschoben.
+      if (lauf !== gemeindeLauf.current) return;
 
       // chatUnreadByRoom-Struktur (Record<number, number>) beibehalten —
       // ChatRoom (initialUnreadRef) und ChatOverview (Effect-Trigger) hängen dran.
@@ -232,6 +271,77 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       console.error('BadgeContext: refreshAllCounts fehlgeschlagen:', error);
     }
   }, [user, isAdmin, isLeadership]);
+
+  /**
+   * Setzt alle Zaehler zurueck, die zur AKTIVEN GEMEINDE gehoeren.
+   *
+   * Das Postfach bleibt bewusst stehen: Es zaehlt die Mitteilungen des KONTOS
+   * ueber alle Gemeinden (routes/notifications.js zaehlt sie ohne Org-Filter,
+   * die Begruendung steht dort). Wer wechselt, hat nicht weniger ungelesene
+   * Mitteilungen -- die Zahl an der Glocke darf nicht kurz auf 0 springen.
+   */
+  const setzeGemeindeZaehlerZurueck = useCallback(() => {
+    setChatUnreadByRoom({});
+    setChatUnreadTotal(0);
+    setPendingRequestsCount(0);
+    setPendingEventsCount(0);
+    setPendingChallengesCount(0);
+    setPendingChallengesByChallenge({});
+    setNewBadgesCount(0);
+    setChallengeUpdatesByChallenge({});
+    setChallengeUpdatesTotal(0);
+  }, []);
+
+  /*
+   * Gemeindewechsel (26.09.2026, Simons Befund am Geraet: "Wechsel ich die
+   * Ansicht, wird der Badge auf Challenges nicht ordentlich zurueckgesetzt.
+   * Der wird mitgenommen. Konfi-Ansicht Testgemeinde Challenge 9+, Wechsel auf
+   * Hennstedt -- bleibt dieser Badge, obwohl es nicht mal Challenges gibt.")
+   *
+   * WARUM DAS HIER STEHEN MUSS: Der BadgeProvider liegt in App.tsx AUSSERHALB
+   * des Routers -- und nur der Router haengt am orgVersion-Schluessel. Der
+   * Remount, der alle Ansichten frisch laedt, erreicht diesen Provider also
+   * nie; seine Zahlen ueberleben den Wechsel unberuehrt. Dass sie sich
+   * ueberhaupt irgendwann erneuerten, lag allein daran, dass AppContext beim
+   * Wechsel ein neues user-Objekt setzt und damit refreshAllCounts neu
+   * erzeugt. Darauf ist kein Verlass: Rolle und Gemeinde koennen gleich
+   * bleiben, und bis die Antwort da ist, steht die alte Zahl weiter am Reiter.
+   *
+   * DIE REIHENFOLGE IST DER FIX: erst zuruecksetzen, dann neu laden. Umgekehrt
+   * (oder nur neu laden) bleibt die Zahl der alten Gemeinde sichtbar, bis der
+   * Server antwortet -- und in einer Gemeinde ohne Challenges verschwindet sie
+   * nur, weil die Antwort sie auf 0 setzt. Sind Rollen verschieden (Teamer:in
+   * in A, Konfi in B), setzt refreshAllCounts die Zaehler der anderen Rolle
+   * gar nicht: pendingChallenges stuende in der Konfi-Gemeinde dauerhaft auf
+   * dem Wert aus A.
+   *
+   * gemeindeLauf hochzaehlen verwirft zugleich alle noch laufenden Abfragen
+   * der alten Gemeinde (siehe refreshAllCounts).
+   *
+   * Das Postfach bleibt stehen, siehe setzeGemeindeZaehlerZurueck.
+   *
+   * 'auth:org-fallback' gehoert dazu: Verliert jemand den Zugang zur
+   * Zweitgemeinde (403), setzt AppContext die App auf die Stamm-Gemeinde
+   * zurueck -- ohne 'org:switched' zu feuern. Das ist derselbe Wechsel und
+   * braucht dieselbe Behandlung, sonst zeigten die Reiter weiter die Zahlen
+   * einer Gemeinde, die die Person nicht mehr sehen darf.
+   */
+  useEffect(() => {
+    const beiWechsel = () => {
+      gemeindeLauf.current += 1;
+      setzeGemeindeZaehlerZurueck();
+      // Dieser Lauf ist damit bedient -- der user-Effekt unten, den AppContext
+      // im selben Wechsel ebenfalls anstoesst, laesst ihn aus.
+      bereitsGeladenFuerLauf.current = gemeindeLauf.current;
+      refreshAllCounts();
+    };
+    window.addEventListener('org:switched', beiWechsel);
+    window.addEventListener('auth:org-fallback', beiWechsel);
+    return () => {
+      window.removeEventListener('org:switched', beiWechsel);
+      window.removeEventListener('auth:org-fallback', beiWechsel);
+    };
+  }, [setzeGemeindeZaehlerZurueck, refreshAllCounts]);
 
   // markRoomAsRead: Optimistisch + API Call
   const markRoomAsRead = useCallback(async (roomId: number): Promise<void> => {
@@ -429,23 +539,25 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   // Großteil des /chat/rooms-Traffics (Admin-App offen = 120 Requests/h ohne Nutzen).
   useEffect(() => {
     if (!user) return;
+    // Hat der Wechsel-Horcher fuer diesen Lauf schon geladen, waere das hier
+    // dieselbe Abfrage ein zweites Mal (siehe bereitsGeladenFuerLauf oben).
+    // Den Merker danach loeschen: Jeder weitere Anlass soll wieder laden.
+    if (bereitsGeladenFuerLauf.current === gemeindeLauf.current) {
+      bereitsGeladenFuerLauf.current = null;
+      return;
+    }
     refreshAllCounts();
   }, [user, refreshAllCounts]);
 
-  // Reset bei Logout
+  // Reset bei Logout. Hier faellt AUCH das Postfach, anders als beim
+  // Gemeindewechsel: Ohne Konto gibt es keine Mitteilungen, die zaehlen
+  // koennten -- die Zahl an der Glocke waere die des abgemeldeten Kontos.
   useEffect(() => {
     if (!user) {
-      setChatUnreadByRoom({});
-      setChatUnreadTotal(0);
-      setPendingRequestsCount(0);
-      setPendingEventsCount(0);
-      setPendingChallengesCount(0);
-      setPendingChallengesByChallenge({});
-      setNewBadgesCount(0);
-      setChallengeUpdatesByChallenge({});
-      setChallengeUpdatesTotal(0);
+      setzeGemeindeZaehlerZurueck();
+      setPostfachUngelesen(0);
     }
-  }, [user]);
+  }, [user, setzeGemeindeZaehlerZurueck]);
 
   return (
     <BadgeContext.Provider value={{

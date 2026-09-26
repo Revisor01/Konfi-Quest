@@ -188,6 +188,13 @@ Liste aller eigenen Gemeinden mit ihren vollen Namen; die aktive steht **fett**
 und leicht hinterlegt. Nach dem Wechsel laden alle Ansichten frisch in der
 gewählten Gemeinde. Wer nur einer Gemeinde angehört, sieht den Namen nicht.
 
+Auch die **roten Zahlen an den Reitern** gehören zur Gemeinde, in der man
+gerade arbeitet: Beim Wechsel verschwinden sie und kommen mit den Zahlen der
+neuen Gemeinde zurück. Eine Gemeinde ohne Challenges trägt also keine Zahl an
+den Challenges. Nur die Zahl an der **Glocke** bleibt stehen — das
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) gehört zum
+Konto und umfasst alle Gemeinden.
+
 ### Sehen, wo etwas offen ist
 
 In dieser Liste trägt jede Gemeinde eine **rote Zahl**, wenn dort etwas auf

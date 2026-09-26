@@ -236,6 +236,14 @@ export function useOfflineQuery<T>(
   // die Page im IonRouterOutlet-Stack gecacht ist (nativer WebView) und daher
   // kein Remount/useEffect feuert. Das window-Event ist plattformunabhaengig und
   // greift unabhaengig vom Ionic-Page-Lifecycle. switchOrg (AppContext) feuert es.
+  //
+  // 'auth:org-fallback' gehoert dazu (26.09.2026): Verliert jemand den Zugang
+  // zur Zweitgemeinde, faellt die App per 403 auf die Stamm-Gemeinde zurueck --
+  // api.ts feuert dabei NUR dieses Event, nicht 'org:switched'. Das ist
+  // derselbe Wechsel, AppContext leert dafuer sogar den Zwischenspeicher. Ohne
+  // diesen Horcher zeigte eine geparkte Seite weiter die Daten einer Gemeinde,
+  // die die Person nicht mehr sehen darf. BadgeContext behandelt beide Events
+  // aus demselben Grund gemeinsam.
   useEffect(() => {
     const handler = () => {
       if (mountedRef.current && networkMonitor.isOnline) {
@@ -243,7 +251,11 @@ export function useOfflineQuery<T>(
       }
     };
     window.addEventListener('org:switched', handler);
-    return () => window.removeEventListener('org:switched', handler);
+    window.addEventListener('auth:org-fallback', handler);
+    return () => {
+      window.removeEventListener('org:switched', handler);
+      window.removeEventListener('auth:org-fallback', handler);
+    };
   }, [revalidate]);
 
   // Socket-Reconnect (sync:reconnect): Nach einem Verbindungsabriss (z.B. Deploy,

@@ -386,6 +386,18 @@ Versionsüberschrift.
   schwebten weit über ihren Symbolen.
 - iOS: Die Zähler an den Reitern sitzen wieder oben rechts am Symbol. Bisher
   hingen sie zu tief und lagen fast mittig auf dem Symbol.
+- Beim Wechsel in eine andere Gemeinde nahmen die Zähler an den Reitern die
+  Zahlen der vorigen Gemeinde mit — an Challenges stand eine Neun, obwohl es
+  in der neuen Gemeinde gar keine Challenges gibt. Das galt auch für Chat,
+  Anträge, Termine, Freigaben und Abzeichen. Die Zähler fallen jetzt beim
+  Wechsel sofort auf null und werden für die neue Gemeinde frisch geladen.
+  Die Zahl an der Glocke bleibt stehen: Das Postfach gehört zum Konto und
+  umfasst alle Gemeinden.
+- Beim Abmelden blieb die Zahl an der Glocke des vorigen Kontos stehen.
+- Verliert jemand den Zugang zu einer zweiten Gemeinde, fällt die App auf die
+  eigene Gemeinde zurück — dabei blieben bis zuletzt Zähler und bereits
+  geöffnete Listen der verlorenen Gemeinde stehen. Jetzt laden auch in diesem
+  Fall alle Ansichten frisch.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
