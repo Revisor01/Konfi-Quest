@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const { clientIp } = require('../utils/clientIp');
+const { PostgresRateLimitStore } = require('../utils/rateLimitStore');
 const { body, param } = require('express-validator');
 const validator = require('validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
@@ -17,6 +18,11 @@ const liveUpdate = require('../utils/liveUpdate');
 const { invalidateUserCache } = require('../middleware/rbac');
 const router = express.Router();
 
+// Die beiden Reset-Grenzen entstehen erst in der Fabrik unten, weil ihr
+// Zaehler seit dem 26.09.2026 in der Datenbank liegt (utils/rateLimitStore.js,
+// Betrieb BF-09): Zwei Backend-Replicas zaehlten sonst je fuer sich, jede
+// Grenze galt doppelt. Faellt die Datenbank aus, zaehlt der Store im Speicher weiter.
+const erzeugeResetLimiter = (db) => ({
 // Eigener Rate-Limiter für Passwort-Reset (getrennt vom Login-Limiter).
 //
 // SCHLUESSEL WIE ALLE ANDEREN IP-LIMITER (Audit 26.09.2026, Sicherheit
@@ -27,14 +33,15 @@ const router = express.Router();
 // Nutzer:innen ist die Funktion damit praktisch nicht verfügbar, und ein
 // Dritter sperrt sie mit fünf Anfragen für alle. Die uebrigen Limiter waren
 // laengst auf clientIp() umgestellt, nur dieser hier nicht.
-const passwordResetLimiter = rateLimit({
+  passwordResetLimiter: rateLimit({
   windowMs: 15 * 60 * 1000, // 15 Minuten
   max: 5, // Max 5 Reset-Anfragen pro 15 Minuten je Absender
   keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP vom Proxy)
   message: { error: 'Zu viele Passwort-Reset-Anfragen. Bitte warte 15 Minuten.' },
   standardHeaders: true,
-  legacyHeaders: false
-});
+  legacyHeaders: false,
+  store: new PostgresRateLimitStore(db, { prefix: 'reset-ip' })
+  }),
 
 // Zweite Grenze JE ZIEL-ADRESSE: Sobald der Limiter oben je Absender zaehlt,
 // laesst sich ein einzelnes Konto von vielen Adressen aus mit Reset-Mails
@@ -46,15 +53,18 @@ const passwordResetLimiter = rateLimit({
 // neutrale Antwort der Route waere umsonst. Gross-/Kleinschreibung und
 // Leerraum zaehlen nicht als andere Adresse. Ohne E-Mail im Body greift die
 // Validierung dahinter (400); der Limiter laesst solche Anfragen durch.
-const passwordResetEmailLimiter = rateLimit({
+  passwordResetEmailLimiter: rateLimit({
   windowMs: 60 * 60 * 1000, // 1 Stunde
   max: 3,
   keyGenerator: (req) => `email:${String(req.body.email).trim().toLowerCase()}`,
   skip: (req) => !req.body || typeof req.body.email !== 'string' || !req.body.email.trim(),
   message: { error: 'Zu viele Passwort-Reset-Anfragen für diese E-Mail-Adresse. Bitte warte eine Stunde.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  store: new PostgresRateLimitStore(db, { prefix: 'reset-email' })
+  })
 });
+
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -63,6 +73,7 @@ if (!JWT_SECRET) {
 
 // Unified auth routes - combines all login functionality
 module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, rbacVerifier) => {
+  const { passwordResetLimiter, passwordResetEmailLimiter } = erzeugeResetLimiter(db);
   const { authLimiter, registerLimiter } = rateLimiters;
   const emailService = require('../services/emailService');
 

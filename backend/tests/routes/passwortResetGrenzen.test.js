@@ -12,9 +12,9 @@
 // vertrauten Proxy) und zusaetzlich je E-Mail-Adresse: Eine einzelne
 // Adresse laesst sich nicht von vielen Absendern aus bombardieren.
 //
-// Die Limiter halten ihren Stand im Prozess. Jeder Test benutzt deshalb
-// eigene Adressen und eigene E-Mails, damit sich die Tests nicht gegenseitig
-// die Kontingente leeren. supertest verbindet ueber Loopback -- der Peer gilt
+// Die Zaehler liegen in der Datenbank (rate_limit_zaehler, Betrieb BF-09) und
+// werden mit truncateAll je Test geleert; zur Sicherheit benutzt jeder Test
+// trotzdem eigene Adressen und eigene E-Mails. supertest verbindet ueber Loopback -- der Peer gilt
 // als Proxy, X-Real-IP wird angenommen (utils/clientIp.js).
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
@@ -38,6 +38,10 @@ describe('POST /api/auth/request-password-reset: Grenzen je IP und je E-Mail', (
   afterAll(async () => {
     await closePool();
   });
+
+  // Zwei App-Instanzen gegen dieselbe Datenbank = zwei Replicas (Betrieb
+  // BF-09): Bis zum 26.09.2026 zaehlte jede fuer sich, die Grenze galt doppelt.
+  const zweiteInstanz = () => getTestApp(db);
 
   const anfrage = (ip, email) =>
     request(app)
@@ -113,5 +117,48 @@ describe('POST /api/auth/request-password-reset: Grenzen je IP und je E-Mail', (
     }
     expect(bekannt).toEqual([200, 200, 200, 429]);
     expect(unbekannt).toEqual([200, 200, 200, 429]);
+  });
+
+  describe('replica-uebergreifend: zwei Instanzen teilen sich die Grenze', () => {
+    it('die sechste Anfrage derselben Adresse ueber die ZWEITE Instanz -> 429', async () => {
+      const appB = zweiteInstanz();
+      for (let i = 0; i < 5; i++) {
+        const res = await anfrage('198.51.100.77', `replica-${i}@example.org`);
+        expect(res.status).toBe(200);
+      }
+      const res = await request(appB)
+        .post('/api/auth/request-password-reset')
+        .set('X-Real-IP', '198.51.100.77')
+        .send({ email: 'replica-6@example.org' });
+      expect(res.status).toBe(429);
+      expect(res.body.error).toBe('Zu viele Passwort-Reset-Anfragen. Bitte warte 15 Minuten.');
+
+      // Der Zaehler steht in der Datenbank -- nur so sehen ihn ZWEI PROZESSE.
+      // (Im Testprozess teilen sich zwei App-Instanzen sonst denselben
+      // Speicher-Zaehler; die Tabelle ist der Beweis, dass der Store greift.)
+      const { rows } = await db.query(
+        "SELECT schluessel, treffer FROM rate_limit_zaehler WHERE schluessel LIKE 'reset-ip:%' ORDER BY schluessel"
+      );
+      expect(rows.map((r) => [r.schluessel, r.treffer])).toEqual([['reset-ip:198.51.100.77', 6]]);
+    });
+
+    it('die vierte Anfrage fuer dieselbe E-Mail ueber die ZWEITE Instanz -> 429', async () => {
+      const appB = zweiteInstanz();
+      for (let i = 0; i < 3; i++) {
+        const res = await anfrage(`203.0.113.${10 + i}`, 'ziel-replica@example.org');
+        expect(res.status).toBe(200);
+      }
+      const res = await request(appB)
+        .post('/api/auth/request-password-reset')
+        .set('X-Real-IP', '203.0.113.99')
+        .send({ email: 'ziel-replica@example.org' });
+      expect(res.status).toBe(429);
+      expect(res.body.error).toBe('Zu viele Passwort-Reset-Anfragen für diese E-Mail-Adresse. Bitte warte eine Stunde.');
+
+      const { rows } = await db.query(
+        "SELECT schluessel, treffer FROM rate_limit_zaehler WHERE schluessel LIKE 'reset-email:%' ORDER BY schluessel"
+      );
+      expect(rows.map((r) => [r.schluessel, r.treffer])).toEqual([['reset-email:email:ziel-replica@example.org', 4]]);
+    });
   });
 });
