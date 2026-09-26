@@ -403,6 +403,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-08: `newMessage` erreicht jeden Client doppelt und löst zwei Zähler-Abrufe aus
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Nachricht und Umfrage gehen in EINEM Broadcast an `room_<id>` plus alle `user_<typ>_<id>` (`zielRaeumeFuerNachricht` in `routes/chat.js`); Socket.IO stellt je Socket einmal zu, der Postgres-Adapter trägt die Raumliste als Ganzes. Gemessen (Raum mit 150 Teilnehmenden, `kq_i1`): 151 Broadcasts je Nachricht → 1. Test `tests/routes/chatSocketZustellung.test.js` (echter Socket.IO-Server, Client im Raum und im eigenen Raum: genau ein `newMessage`, Payload unverändert, Zähler danach 1; Leitung ohne Teilnehmerschaft bekommt sie weiter).
 - **Fundstelle:** `backend/routes/chat.js:1215` (Emit an `room_<id>`) und `:1229` (Emit an
   jeden `user_<typ>_<id>` — auch an die, die im Raum sind),
   `frontend/src/contexts/BadgeContext.tsx:492–509` (`GET /notifications/badge-counts` je

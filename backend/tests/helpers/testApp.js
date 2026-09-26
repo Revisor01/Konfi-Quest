@@ -26,12 +26,19 @@ const path = require('path');
 // Ein Set, keine Liste: dieselbe App wird pro Datei einmal erzeugt.
 const erzeugteApps = new Set();
 
-function getTestApp(db) {
+/**
+ * @param {object} db
+ * @param {object} [extra]  Weitere createApp-Optionen, z. B. eine echte
+ *   Socket.IO-Instanz (`io`) fuer Tests, die die Zustellung von Ereignissen
+ *   pruefen. Ohne Angabe bleiben die Dummies.
+ */
+function getTestApp(db, extra = {}) {
   const uploadsDir = path.join(os.tmpdir(), 'konfi-test-uploads');
 
   const app = createApp(db, {
     uploadsDir,
     // transporter, io, rateLimiters: nicht uebergeben -> createApp nutzt Dummies
+    ...extra,
   });
 
   erzeugteApps.add(app);

@@ -41,10 +41,32 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   ];
   
   // === UTILITY FUNCTIONS ===
-  
-  
-  
+
+
+
   // === CHAT API ENDPOINTS ===
+
+  // Zielraeume fuer EINEN Broadcast einer neuen Nachricht: der Chat-Raum
+  // (fuer alle, die den Chat gerade offen haben -- auch die Leitung, die ohne
+  // Teilnehmerschaft mitliest) PLUS die persoenlichen Raeume aller
+  // Teilnehmenden (fuer Zaehler und Raumliste, wenn der Chat zu ist).
+  //
+  // Audit 26.09.2026, Betrieb BF-08: Vorher ging erst ein Emit an den Raum
+  // und dann in einer Schleife je Teilnehmer:in einer an den persoenlichen
+  // Raum. Wer den Chat offen hatte, sass in beiden Raeumen und bekam
+  // `newMessage` ZWEIMAL -- und der BadgeContext lud die Zaehler zweimal.
+  // Dazu kamen 151 einzelne Broadcasts je Nachricht in einem Raum mit 150
+  // Teilnehmenden, also 151 NOTIFY ueber den Postgres-Adapter.
+  //
+  // Socket.IO stellt einen Broadcast an mehrere Raeume je Socket genau EINMAL
+  // zu, auch wenn der Socket in mehreren der Raeume sitzt (socket.io-adapter,
+  // `apply` fuehrt eine Menge der schon bedienten Socket-IDs); der
+  // Postgres-Adapter traegt die Raumliste als Ganzes zu den anderen Replicas.
+  // Ereignisname und Payload bleiben, wie die Store-Apps sie lesen.
+  const zielRaeumeFuerNachricht = (roomId, teilnehmer) => [
+    `room_${roomId}`,
+    ...teilnehmer.map((p) => `user_${p.user_type}_${p.user_id}`),
+  ];
 
   // Hilfsfunktion: Nach einem Vote den aktuellen Poll-Stand einsammeln und per
   // 'pollUpdated' an den Raum senden, damit alle offenen Chats die neuen Votes
@@ -1243,27 +1265,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       
       res.json(message); // Respond immediately
 
-      // WebSocket: Broadcast new message to room (für User die den Chat offen haben)
+      // WebSocket: EIN Broadcast an den Raum (offene Chats) und die
+      // persoenlichen Raeume aller Teilnehmenden (Zaehler, Raumliste) --
+      // je Client genau einmal, siehe zielRaeumeFuerNachricht.
       if (io) {
-        io.to(`room_${roomId}`).emit('newMessage', {
-          roomId: parseInt(roomId),
-          message: message
-        });
-
-        // ZUSÄTZLICH: Benachrichtige alle Teilnehmer über ihren persönlichen Room
-        // (für Badge-Updates in ChatOverview und TabBar, auch wenn sie nicht im Chat sind)
         const participantsQuery = `
           SELECT user_id, user_type FROM chat_participants
           WHERE room_id = $1
         `;
         const { rows: allParticipants } = await db.query(participantsQuery, [roomId]);
-        for (const p of allParticipants) {
-          const userRoom = `user_${p.user_type}_${p.user_id}`;
-          io.to(userRoom).emit('newMessage', {
-            roomId: parseInt(roomId),
-            message: message
-          });
-        }
+        io.to(zielRaeumeFuerNachricht(roomId, allParticipants)).emit('newMessage', {
+          roomId: parseInt(roomId),
+          message: message
+        });
       }
 
       // Asynchronously send push notifications
@@ -2081,21 +2095,16 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           };
 
           // An den Raum (offene Chats) UND an alle Teilnehmer-User-Räume
-          // (Badge/Overview), exakt nach dem Muster des Nachrichten-Handlers.
-          io.to(`room_${roomId}`).emit('newMessage', {
-            roomId: parseInt(roomId),
-            message: pollMessage
-          });
+          // (Badge/Overview) in EINEM Broadcast, exakt nach dem Muster des
+          // Nachrichten-Handlers (zielRaeumeFuerNachricht).
           const { rows: allParticipants } = await db.query(
             'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
             [roomId]
           );
-          for (const p of allParticipants) {
-            io.to(`user_${p.user_type}_${p.user_id}`).emit('newMessage', {
-              roomId: parseInt(roomId),
-              message: pollMessage
-            });
-          }
+          io.to(zielRaeumeFuerNachricht(roomId, allParticipants)).emit('newMessage', {
+            roomId: parseInt(roomId),
+            message: pollMessage
+          });
         } catch (emitErr) {
           console.error('Failed to emit poll newMessage:', emitErr);
         }

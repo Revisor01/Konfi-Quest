@@ -544,6 +544,9 @@ Versionsüberschrift.
   lang in jeder Gemeinde nur leere Listen und Fehlermeldungen; erst Abmelden
   und Neuanmelden half. Jetzt wechselt sie sofort sauber in die
   Stamm-Gemeinde, und auch Chat und Live-Aktualisierungen laufen dort weiter.
+- Eine neue Chat-Nachricht kam bei allen, die den Chat gerade offen hatten,
+  doppelt an — unsichtbar, aber jedes Mal wurden die Zähler zweimal neu
+  geladen. Sie kommt jetzt genau einmal.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
