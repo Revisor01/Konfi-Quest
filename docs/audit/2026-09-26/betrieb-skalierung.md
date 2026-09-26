@@ -324,6 +324,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-05: Terminerinnerungen laufen sequentiell je Empfänger ohne Überlappungsschutz
 - **Schwere:** HOCH
+- **Status:** teilweise behoben 26.09.2026 — Laufmerker `eventReminderLaeuft` in `sendEventReminders`: ein Takt, der einen laufenden Vorgänger trifft, wird übersprungen (Test L1/L2); Mitternachts-Bündelung durch das 24-Stunden-Fenster aufgelöst (Chat BF-03). Offen: Sammelversand je Termin über `sendToMultipleUsers` und blockweises `INSERT … ON CONFLICT` (Umbau der Versandschleife, nicht Teil des Fachlogik-Pakets).
 - **Fundstelle:** `backend/services/backgroundService.js:467–474` (15-Minuten-`setInterval`
   ohne Laufmerker), `:692–715` und `:740–761` (Schleife: Push + Insert je Empfänger),
   `backend/services/pushService.js:1485` (`sendEventReminderToKonfi` → `sendToUser` je Kopf)

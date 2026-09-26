@@ -249,6 +249,21 @@ Schließt du die Anmeldung wieder (Fenster in die Zukunft verschoben, Termin
 abgesagt), wird die Merkung zurückgesetzt: Beim nächsten Öffnen kommt wieder
 ein Push. Pflicht-Events haben ihren eigenen Push beim Anlegen.
 
+### Terminerinnerungen einordnen
+
+Wer für einen Termin angemeldet ist, bekommt zwei Erinnerungen aufs Handy:
+**„Morgen: …" genau 24 Stunden vor Beginn** und **„Gleich: …" eine Stunde vor
+Beginn**. Ein Gottesdienst am Sonntag um 10:00 Uhr wird also am Samstag um
+10:00 Uhr angekündigt und am Sonntag um 9:00 Uhr noch einmal — nicht mitten
+in der Nacht. Beide kommen von einem Hintergrundlauf, der alle 15 Minuten
+prüft; die Erinnerung kann deshalb bis zu einer Viertelstunde vor oder nach
+der genauen Marke eintreffen, aber nie doppelt.
+
+Keine Erinnerung bekommt, wer auf der Warteliste steht, wer schon [verbucht
+oder abgemeldet ist](#eine-abmeldung-nachtragen) und niemand zu einem abgesagten
+Termin. Im Postfach stehen die Erinnerungen nicht — sie wären sofort veraltet
+(siehe [Mitteilungen im Postfach nachlesen](03-bedienung.md#mitteilungen-im-postfach-nachlesen)).
+
 ### Aus einer Mitteilung zum Termin springen
 
 Tippst du eine Mitteilung zu einem Termin an, öffnet die App den Termin selbst —
@@ -517,8 +532,8 @@ Punkte gibt es dabei keine; schon vergebene werden zurückgenommen, genau wie
 bei „Abwesend". Die Konfi bekommt eine Mitteilung, dass die Abmeldung
 eingetragen wurde — so sieht sie, dass der Anruf von zu Hause angekommen ist.
 
-Danach ist für sie Ruhe: Die Terminerinnerungen am Vortag und kurz vor Beginn
-bleiben aus. Das gilt für jede verbuchte Anwesenheit — wer als anwesend,
+Danach ist für sie Ruhe: Die [Terminerinnerungen](#terminerinnerungen-einordnen)
+24 Stunden und eine Stunde vor Beginn bleiben aus. Das gilt für jede verbuchte Anwesenheit — wer als anwesend,
 abwesend oder abgemeldet eingetragen ist, bekommt zu diesem Termin keine
 Erinnerung mehr.
 

@@ -430,6 +430,11 @@ Versionsüberschrift.
   Rolle und Jahrgänge, während Name, E-Mail, Passwort und Sperre bei der
   Stamm-Gemeinde bleiben. Wegwischen beendet nur die Mitgliedschaft in dieser
   Gemeinde, das Konto bleibt.
+- Die Erinnerung „Morgen: …" zu einem Termin kam kurz nach Mitternacht aufs
+  Handy — für einen Termin um 18:00 Uhr also 34 Stunden vorher. Sie kommt jetzt
+  genau 24 Stunden vor Beginn, so wie die Erinnerung „Gleich: …" eine Stunde
+  vorher. Außerdem kann ein langer Erinnerungslauf nicht mehr vom nächsten
+  überholt werden — dieselbe Erinnerung ging sonst zweimal hinaus.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

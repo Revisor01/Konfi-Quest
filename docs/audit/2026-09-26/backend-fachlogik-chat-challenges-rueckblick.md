@@ -41,6 +41,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 
 ### BF-03: „Morgen: Event!" wird zwischen 00:00 und 00:15 Uhr nachts verschickt
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — Vortags-Erinnerung an das Fenster „24 Stunden vor Beginn ±15 Minuten" gebunden (wie der Ein-Stunden-Zweig); Regel im Handbuch (70-termine.md „Terminerinnerungen einordnen"); Tests F1–F7 in `tests/services/eventReminders.test.js`.
 - **Fundstelle:** `backend/services/backgroundService.js:667-668` (Fenstervariablen berechnet, aber ungenutzt), `:670-682` (`e.event_date::date = $1::date` — reiner Datumsvergleich), `:467-473` (Takt 15 Minuten ab Prozessstart)
 - **Kennzeichnung:** reproduziert — Test F1/F2/F3 (temporär, gelöscht; `vi.setSystemTime`): Termin 29.09. 18:00 Berlin, Buchung `konfi1`. Systemzeit 28.09. **00:05** Berlin → `sendEventReminders` schreibt `event_reminders(1_day)` — **34 Stunden vorher**. 27.09. 23:50 → nichts (richtig). 28.09. 18:05 → Erinnerung (der Fall, den die Kommentare meinen).
 - **Beschreibung:** Die Vortags-Erinnerung wird für alle Termine ausgelöst, deren Kalendertag „morgen" ist. Weil der Dienst alle 15 Minuten läuft, ist der erste Treffer der erste Lauf nach Mitternacht. Der Ein-Stunden-Zweig arbeitet korrekt mit einem ±15-Minuten-Fenster (`:722-734`); für den Tageszweig sind dieselben Fenstervariablen angelegt, aber nie in die Abfrage gekommen. Das Handbuch sagt nur „am Vortag" (`70-termine.md:520`), die Push-Texte sagen „Morgen: … um 18:00 Uhr".

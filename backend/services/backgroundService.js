@@ -4,7 +4,7 @@ const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const emailService = require('./emailService');
 const apm = require('../utils/apm');
-const { formatUhrzeit, heuteBerlin } = require('../utils/zeitformat');
+const { formatUhrzeit } = require('../utils/zeitformat');
 const { appIconSummenFuerAlle } = require('../utils/appIconBadge');
 const { abzeichenFingerabdruecke } = require('../utils/abzeichenKandidaten');
 const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
@@ -15,6 +15,14 @@ const LICENSE_REMINDER_DAYS = 14;
 class BackgroundService {
   static badgeUpdateInterval = null;
   static eventReminderInterval = null;
+  // Laufmerker fuer sendEventReminders: Der 15-Minuten-Takt startet, ob der
+  // letzte Lauf fertig ist oder nicht. Dauert ein Lauf laenger als einen Takt
+  // (tausende Empfaenger, FCM-Latenz je Geraet), faende der naechste dieselben
+  // noch nicht eingetragenen Erinnerungen und schickte sie ein zweites Mal —
+  // der UNIQUE-Index auf event_reminders faengt nur die zweite Zeile, nicht
+  // den zweiten Push. Ein Prozess-Merker reicht, weil nur die
+  // Cron-Leader-Replica die Hintergrund-Jobs startet (server.js).
+  static eventReminderLaeuft = false;
   static pendingEventsCronTask = null;
   static tokenCleanupInterval = null;
   static wrappedCronTask = null;
@@ -657,12 +665,29 @@ class BackgroundService {
    * Entscheidung, nur doppelt getroffen. Eine Aufweichung zu
    * `status <> 'cancelled'` waere falsch: Warteliste und Absage duerfen keine
    * Erinnerung bekommen.
+   *
+   * Befund 26.09.2026 (Audit, Chat BF-03 / Betrieb BF-05): Die Vortags-
+   * Erinnerung verglich nur den Kalendertag (`event_date::date = morgen`) und
+   * ging deshalb im ersten Takt nach Mitternacht hinaus — fuer einen Termin um
+   * 18:00 Uhr also 34 Stunden vorher, um 00:05 Uhr aufs Handy. Die
+   * Fenstervariablen waren angelegt, aber nie in die Abfrage gekommen. Jetzt
+   * gilt fuer beide Zweige dieselbe Regel: Beginn minus 24 Stunden bzw. minus
+   * 1 Stunde, mit ±15 Minuten Toleranz. Das Fenster ist 30 Minuten breit bei
+   * 15 Minuten Takt: Faellt ein Takt aus, faengt der naechste den Termin noch;
+   * NOT EXISTS auf event_reminders verhindert den Doppelversand im zweiten.
+   * Dazu der Laufmerker eventReminderLaeuft (siehe Feld oben): Ein Takt, der
+   * einen noch laufenden Vorgaenger trifft, wird uebersprungen.
    */
   static async sendEventReminders(db) {
+    if (this.eventReminderLaeuft) {
+      console.warn('sendEventReminders: vorheriger Lauf noch aktiv — Takt uebersprungen');
+      return;
+    }
+    this.eventReminderLaeuft = true;
     try {
       const now = new Date();
 
-      // 1. Events die morgen stattfinden (1 Tag vorher Erinnerung)
+      // 1. Events, die in 24 Stunden (±15 Minuten) beginnen — Vortags-Erinnerung
       const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       const oneDayWindowStart = new Date(oneDayFromNow.getTime() - 15 * 60 * 1000);
       const oneDayWindowEnd = new Date(oneDayFromNow.getTime() + 15 * 60 * 1000);
@@ -674,7 +699,7 @@ class BackgroundService {
         WHERE eb.status = 'confirmed'
           AND eb.attendance_status IS NULL
           AND e.cancelled IS NOT TRUE
-          AND e.event_date::date = $1::date
+          AND e.event_date BETWEEN $1 AND $2
           AND NOT EXISTS (
             SELECT 1 FROM event_reminders er
             WHERE er.event_id = e.id
@@ -683,11 +708,7 @@ class BackgroundService {
           )
       `;
 
-      // heuteBerlin() statt toISOString(): Der Vergleich unten laeuft gegen
-      // e.event_date::date unter Berliner Sitzungszone. Mit dem UTC-Tag traf
-      // der nachts laufende Terminhinweis den falschen Kalendertag.
-      const tomorrowDate = heuteBerlin(oneDayFromNow);
-      const { rows: oneDayEvents } = await db.query(oneDayQuery, [tomorrowDate]);
+      const { rows: oneDayEvents } = await db.query(oneDayQuery, [oneDayWindowStart, oneDayWindowEnd]);
 
       for (const event of oneDayEvents) {
         try {
@@ -763,6 +784,8 @@ class BackgroundService {
     } catch (error) {
       console.error('Error in sendEventReminders:', error);
       throw error;
+    } finally {
+      this.eventReminderLaeuft = false;
     }
   }
 
