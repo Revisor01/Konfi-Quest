@@ -138,6 +138,7 @@ so nicht haltbar.
 ### BF-02: axios-retry wiederholt schreibende POSTs — Doppelbuchungen bei langsamer Leitung
 
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — `retryCondition` in `api.ts` wiederholt POST/PATCH nur noch mit gesetztem `Idempotency-Key`-Header (`IDEMPOTENCY_HEADER`, Client-Regel und Header-Hook; Server-Auswertung ist ein eigener Schritt); GET/PUT/DELETE und die 429-Sperre unverändert. Test `apiRetryNurIdempotent.test.ts` mit echtem axios-retry und zählendem Adapter (GET/503 → 4, POST/503 → 1, POST mit Schlüssel → 4).
 - **Fundstelle:** `frontend/src/services/api.ts:42-55` (retryCondition: `status >= 500`
   und `ECONNABORTED` ohne Methodenprüfung); Ziele ohne Idempotenzschlüssel:
   `components/admin/modals/BonusModal.tsx:95` (`POST /admin/konfis/:id/bonus-points`),

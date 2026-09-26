@@ -452,6 +452,12 @@ Versionsüberschrift.
   Konfi-Rückblick aller inzwischen beförderten Teamer:innen — obwohl ihre
   Punkte, Level und Abzeichen bewusst erhalten bleiben. Der Rückblick bleibt
   jetzt ebenfalls und steht weiter im Profil.
+- Bei schlechter Verbindung schickte die App eine hängende Anfrage bis zu
+  dreimal erneut — auch beim Speichern. So konnten Bonuspunkte mehrfach
+  vergeben, ein Termin mehrfach angelegt oder eine Anmeldung als „bereits
+  angemeldet" abgewiesen werden, obwohl sie längst stand. Wiederholt wird
+  jetzt nur noch, was folgenlos wiederholbar ist (Laden, Ändern, Löschen);
+  Speichern und Anlegen gehen genau einmal hinaus.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

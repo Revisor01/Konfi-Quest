@@ -34,11 +34,46 @@ const api = axios.create({
  */
 export const DATEI_TIMEOUT_MS = 180000;
 
+/**
+ * Header, mit dem ein Aufrufer einen schreibenden Request als wiederholbar
+ * kennzeichnet. Wer ihn setzt, verspricht: Der Server erkennt den zweiten
+ * Versuch am Schluessel und fuehrt ihn nicht doppelt aus. Die Server-Seite
+ * dafuer ist ein eigener Schritt (bisher kennt das Backend nur client_id
+ * fuer Antraege); bis dahin setzt ihn niemand, und POST/PATCH werden nie
+ * wiederholt.
+ */
+export const IDEMPOTENCY_HEADER = 'Idempotency-Key';
+
+// Methoden, die der Server nicht folgenlos zweimal ausfuehren kann.
+const NICHT_IDEMPOTENT = new Set(['post', 'patch']);
+
+const hatIdempotenzSchluessel = (config: { headers?: unknown } | undefined): boolean => {
+  const headers = config?.headers as
+    | { get?: (name: string) => unknown; [key: string]: unknown }
+    | undefined;
+  if (!headers) return false;
+  const wert = typeof headers.get === 'function'
+    ? headers.get(IDEMPOTENCY_HEADER)
+    : headers[IDEMPOTENCY_HEADER];
+  return typeof wert === 'string' && wert.length > 0;
+};
+
 // Automatischer Retry für transiente Fehler (5xx, 408) — NICHT für 429.
 // WICHTIG: 429 (Rate-Limit) darf NICHT retried werden. Ein Retry-auf-429 zählt
 // erneut gegen das Limit und macht die Ueberschreitung schlimmer (Retry-Lawine) —
 // genau das war die Ursache für das sporadische "Zu viele Anfragen". Bei 429
 // sagt der Server "warte", die richtige Antwort ist warten, nicht sofort 3x nachfeuern.
+//
+// NUR IDEMPOTENTE METHODEN (Audit 26.09.2026, Grundgeruest BF-02): axios-retry
+// schliesst POST in isNetworkOrIdempotentRequestError bewusst aus; die
+// Klauseln `status >= 500` und ECONNABORTED darunter hoben das fuer jede
+// Methode auf. Ein POST, dessen Antwort nach 20 s nicht da war, obwohl der
+// Server laengst geschrieben hatte, ging bis zu dreimal neu hinaus -- 3
+// Bonuspunkte wurden 6, 9 oder 12, ein Termin entstand mehrfach, eine
+// Anmeldung endete als Fehler "bereits angemeldet", obwohl sie stand. Ob der
+// Request angekommen ist, laesst sich beim Timeout nicht unterscheiden;
+// deshalb werden POST/PATCH nur wiederholt, wenn der Aufrufer einen
+// Idempotency-Key mitgibt (siehe IDEMPOTENCY_HEADER).
 axiosRetry(api, {
   retries: 3,
   retryDelay: (retryCount) => {
@@ -47,6 +82,8 @@ axiosRetry(api, {
   retryCondition: (error) => {
     const status = error.response?.status;
     if (status === 429) return false;
+    const methode = (error.config?.method || 'get').toLowerCase();
+    if (NICHT_IDEMPOTENT.has(methode) && !hatIdempotenzSchluessel(error.config)) return false;
     // Timeout (ECONNABORTED/ETIMEDOUT) durch Netzwerkwechsel ebenfalls wiederholen.
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') return true;
     return axiosRetry.isNetworkOrIdempotentRequestError(error) || (status !== undefined && status >= 500);
