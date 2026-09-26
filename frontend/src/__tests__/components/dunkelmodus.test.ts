@@ -250,6 +250,31 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
     expect(treffer).toEqual([]);
   });
 
+  // Schwarz mit Deckkraft ist auch Schwarz. `rgba(0,0,0,0.75)` als Textfarbe
+  // war der Reaktionszaehler an fremden Chat-Nachrichten -- gedacht fuer die
+  // weisse Blase; auf der dunklen (#242426) 1,25:1 (Dunkelmodus-Audit BF-07,
+  // 26.09.2026). Die Pruefung darueber sucht nur die Literale black/#000 und
+  // fand es nicht. Bestand, der noch umzustellen ist, steht hier mit Zahl und
+  // Grund; die Liste darf nur schrumpfen (Nebenbefund des Audits: Hinweistexte
+  // der Anmeldeseiten, im Dunkeln ebenso Schwarz auf der dunklen Karte).
+  const SCHWARZ_MIT_DECKKRAFT_BESTAND: Record<string, number> = {
+    'src/components/auth/ResetPasswordPage.tsx': 2, // "Passwort geaendert" / "Ungueltiger Link"
+    'src/components/auth/ForgotPasswordPage.tsx': 1, // "E-Mail gesendet"
+    'src/components/auth/KonfiRegisterPage.tsx': 1, // "Schon einen Account?" im zweiten Schritt
+  };
+
+  it('kein .tsx setzt inline Schwarz mit Deckkraft als Textfarbe -- ausser dem gezaehlten Bestand', () => {
+    // Auch hinter einem Bedingungsoperator: `color: eigene ? '…' : 'rgba(0,0,0,…)'`.
+    const TEXT_SCHWARZ_ALPHA = /(?:\bcolor|'--color')\s*:[^\n]*'rgba\(\s*0\s*,\s*0\s*,\s*0\s*,/g;
+    const gezaehlt: Record<string, number> = {};
+    for (const datei of dateienUnter('src', '.tsx')) {
+      const code = lies(datei).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      const n = (code.match(TEXT_SCHWARZ_ALPHA) ?? []).length;
+      if (n) gezaehlt[datei] = n;
+    }
+    expect(gezaehlt).toEqual(SCHWARZ_MIT_DECKKRAFT_BESTAND);
+  });
+
   it('keine Regel im Theme-Stylesheet setzt white/black als Hintergrund oder schwarzen Text', () => {
     const treffer: string[] = [];
     for (const datei of ['src/theme/variables.css', 'src/theme/typografie.css', 'src/theme/abstaende.css']) {

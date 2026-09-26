@@ -480,6 +480,9 @@ Versionsüberschrift.
   helleren Grauton, sondern blieben fast schwarz und hoben sich kaum vom
   Hintergrund ab — Android zeigte ihn längst. Jetzt sind Karten auf beiden
   Plattformen gleich abgesetzt, auch im Postfach.
+- Im Chat war im Dunkelmodus an fremden Nachrichten nicht zu erkennen, wie
+  viele reagiert haben: Die Zahl am Reaktions-Chip stand schwarz auf dunkel.
+  Sie folgt jetzt der Textfarbe der Nachricht.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

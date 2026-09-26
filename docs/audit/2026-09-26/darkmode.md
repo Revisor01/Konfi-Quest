@@ -247,6 +247,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-07: Chat — Reaktionszähler an fremden Nachrichten unsichtbar
 
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Zählertext an fremden Nachrichten auf `var(--app-text-emphasis)`, Chip-Grund auf `rgba(var(--app-text-system-rgb), 0.12)`; beides folgt dem Modus, die eigene (türkise) Blase behält Weiß. Mitgenommen, weil gleiches Muster in derselben Datei: der Platzhalter gelöschter Nachrichten (`MessageBubble.tsx:339`, `rgba(0,0,0,0.5)` auf der fremden Blase) schreibt ebenfalls mit `--app-text-emphasis`. Gemessen im Chatraum mit Reaktionen (iOS = Android): dunkel Zähler auf Chip 1,25 → 11,47:1 (Chip mit eigener Reaktion 1,53 → 11,39:1), hell 9,55 → 14,72:1. Test: `dunkelmodus.test.ts` zählt `rgba(0,0,0,…)` als Inline-Textfarbe je Datei (auch hinter `? :`) und erlaubt nur den benannten Bestand — vier Hinweistexte der Anmeldeseiten, siehe Nebenbefund; `MessageBubble.tsx` ist sauber.
 - **Fundstelle:** `frontend/src/components/chat/MessageBubble.tsx:769` (`color: isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.75)'`),
   `:748` (Chip-Grund `rgba(0,0,0,0.05)`), Blase `:214` (`var(--app-surface-soft)`, dunkel `#242426`)
 - **Kennzeichnung:** reproduziert — `computed.cjs`: `chat reaktions-chip … color rgba(0,0,0,0.75), chipBg rgba(0,0,0,0.05), blaseBg rgb(36,36,38)`;

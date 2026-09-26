@@ -336,7 +336,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             opacity: 0.6,
             fontSize: 'var(--app-text-basis)',
             whiteSpace: 'nowrap',
-            color: isOwnMessage ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)'
+            /* Gleiches Muster wie am Reaktionszaehler (BF-07): rohes Schwarz
+               auf der fremden Blase, im Dunkeln unsichtbar. Die Daempfung
+               traegt schon `opacity` darueber. */
+            color: isOwnMessage ? 'rgba(255,255,255,0.7)' : 'var(--app-text-emphasis)'
           }}>
             {message.content}
           </div>
@@ -744,9 +747,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     gap: 'var(--app-abstand-mini)',
                     padding: 'var(--app-abstand-mini) var(--app-abstand-eng)',
                     borderRadius: 'var(--app-radius-karte)',
+                    /* Fremde Blase: Chip-Grund und Zaehler aus Tokens, nicht aus
+                       rohem Schwarz -- die Blase ist im Dunkeln #242426, und
+                       rgba(0,0,0,…) blieb dort Schwarz auf Schwarz: Zaehler
+                       1,25:1 (Dunkelmodus-Audit BF-07, 26.09.2026). Auf der
+                       eigenen, tuerkisen Blase bleibt Weiss richtig. */
                     backgroundColor: userHasReacted
                       ? (isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(var(--app-color-chat-rgb), 0.12)')
-                      : (isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.05)'),
+                      : (isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(var(--app-text-system-rgb), 0.12)'),
                     border: userHasReacted
                       ? `1.5px solid ${emojiData?.color || 'var(--app-color-chat)'}`
                       : '1px solid transparent',
@@ -765,7 +773,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   />
                   <span style={{
                     fontWeight: userHasReacted ? 'var(--app-schrift-halbfett)' : 'var(--app-schrift-mittel)',
-                    color: isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.75)'
+                    color: isOwnMessage ? 'rgba(255,255,255,0.95)' : 'var(--app-text-emphasis)'
                   }}>
                     {reactions.length}
                   </span>
