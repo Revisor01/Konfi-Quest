@@ -35,7 +35,7 @@ Branch `claude/fervent-edison-wp5yfj`):
 
 **Bewusst nicht geprüft:** die Antwortformen aller 263 dokumentierten Operationen
 gegen `res.json(...)` — nur 28 Operationen tragen überhaupt ein JSON-Schema
-(gemessen), der Rest beschreibt die Antwort in Prosa; drei Stichproben stimmten (siehe
+(gemessen), der Rest beschreibt die Antwort in Prosa; zwei Stichproben stimmten (siehe
 „Nicht geprüft"). `scripts/verwaiste-dateien.mjs` braucht `DATABASE_URL`; diesem
 Bereich war kein Datenbank-Port zugewiesen. Screenshots gegen Produktion und die
 Store-Konsolen selbst lagen außerhalb der Umgebung.
@@ -73,9 +73,9 @@ abreißt.
 
 ### BF-01: README „Selbst betreiben" beschreibt einen Weg, der nicht funktioniert, und nennt falsche Zahlen
 - **Schwere:** MITTEL
-- **Fundstelle:** `README.md:96-108` (Installation), `README.md:129-138` (Aufbau),
+- **Fundstelle:** `README.md:101-118` (Installation), `README.md:122-140` (Aufbau), `README.md:61`,
   `backend/server.js:16-19`, `backend/database.js:108-140`, `backend/migrations/`
-  (erste Datei `064_…`), `init-scripts/README.md:60-71`
+  (erste Datei `064_…`), `init-scripts/README.md:53-71`
 - **Kennzeichnung:** aus Code gelesen; Zahlen gemessen
 - **Beschreibung:** Die README sagt: `cd backend && npm install && npm start` plus „eine
   `.env` mit `DATABASE_URL`, `JWT_SECRET`, `QR_SECRET` und
@@ -115,7 +115,7 @@ abreißt.
 
 ### BF-02: Handbuch verspricht eine Bestätigungs-Mail beim Ändern der E-Mail-Adresse — der Code schreibt sofort
 - **Schwere:** MITTEL
-- **Fundstelle:** `docs/handbuch/35-passwoerter.md:371-376`; `backend/routes/auth.js:455-480`;
+- **Fundstelle:** `docs/handbuch/35-passwoerter.md:373-378`; `backend/routes/auth.js:455-480`;
   `docs/api/verwaltung-auth.yaml:288-291` (N8)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Das Handbuch: „Zur Bestätigung geht eine Mail an die **neue**
@@ -136,9 +136,9 @@ abreißt.
 
 ### BF-03: Jahrgangs-Zuweisung nach Beförderung — Handbuch widerspricht sich selbst, Kapitel 45 widerspricht dem Code
 - **Schwere:** MITTEL
-- **Fundstelle:** `docs/handbuch/45-jahrgaenge.md:216-217` („übernimmt das System
+- **Fundstelle:** `docs/handbuch/45-jahrgaenge.md:221-222` („übernimmt das System
   seinen Jahrgang automatisch als Zuweisung, mit Lese- und Bearbeitungsrecht");
-  `docs/handbuch/05-rollen.md:262-266` und `docs/handbuch/30-leitung.md:64-66`
+  `docs/handbuch/05-rollen.md:261-266` und `docs/handbuch/30-leitung.md:66-67`
   („bewusst **nicht** automatisch"); `backend/routes/konfi-management.js:1603-1618`
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Der Code hat die automatische Zuweisung am 01.09.2026 entfernt
@@ -155,8 +155,8 @@ abreißt.
 
 ### BF-04: Rechte-Tabelle und Teamer-Kapitel widersprechen sich und dem Code bei Challenges
 - **Schwere:** MITTEL
-- **Fundstelle:** `docs/handbuch/05-rollen.md:119` („Challenges anlegen und begleiten
-  | — | — | ja | ja" — Teamer:in: nein); `docs/handbuch/20-teamer.md:56-59`
+- **Fundstelle:** `docs/handbuch/05-rollen.md:117` („Challenges anlegen und begleiten
+  | — | — | ja | ja" — Teamer:in: nein); `docs/handbuch/20-teamer.md:52-56`
   („anlegen und bearbeiten, löschen, Beiträge freigeben …");
   `backend/routes/challenges.js:1325,1439` (`requireTeamer`), `:1603-1613`
   (`DELETE /admin/:id` → `requireAdmin`), `:1931` (`DELETE /admin/submissions/:id` →
@@ -168,14 +168,14 @@ abreißt.
   (Nutzerentscheid 28.08.2026, durch Tests abgesichert:
   `backend/tests/routes/challenges.test.js:3000-3010`). Kapitel 05 verneint das Anlegen
   für Teamer:innen komplett; Kapitel 20 verspricht das Löschen. Beides ist falsch,
-  und zwar in entgegengesetzte Richtungen. Kapitel 80 (`80-challenges.md:222`) hat es
+  und zwar in entgegengesetzte Richtungen. Kapitel 80 (`80-challenges.md:225`) hat es
   richtig („Das dürfen nur Admins und Org-Admins, nicht Teamer:innen").
 - **Auswirkung aus Nutzersicht:** Eine Teamer:in liest in Kapitel 20, sie könne
   löschen, findet den Wisch nicht und hält die App für kaputt. Eine Leitung liest in
   Kapitel 05, Teamer:innen könnten keine Challenges anlegen, und plant die Arbeit
   falsch.
 - **Beleg:** `ChallengesManageView.tsx:212`: `const darfLoeschen = user?.type === 'admin';` — für `teamer` wird die Lösch-Option nicht gerendert; `challenges.js:1605`: `requireAdmin`.
-- **Empfehlung:** Zeile 119 in 05-rollen.md auf „ja (eigene Jahrgänge), ohne Löschen"
+- **Empfehlung:** Zeile 117 in 05-rollen.md auf „ja (eigene Jahrgänge), ohne Löschen"
   setzen; in 20-teamer.md „löschen" streichen. Der Satz aus 80-challenges.md ist die
   Vorlage.
 
@@ -204,7 +204,7 @@ abreißt.
 
 ### BF-06: `ABRISS.md` führt Routen als aufruferlos, die 2.3.0 ruft — und verweist auf verschobene Zeilen
 - **Schwere:** MITTEL
-- **Fundstelle:** `docs/api/ABRISS.md:165-166` (`GET`/`PUT /api/notifications/preferences`),
+- **Fundstelle:** `docs/api/ABRISS.md:161-162` (`GET`/`PUT /api/notifications/preferences`),
   `:191` (`createApp.js:480` und `:483`), `:157` („115 Zeilen"), `:184`
   (`services/api.ts:89`), `:186` (`backgroundService.js:761`, `wrapped.test.js:181-218`);
   `frontend/src/components/shared/PushAuswahl.tsx:77,136`
@@ -278,7 +278,7 @@ abreißt.
 - **Fundstelle:** `frontend/public/datenschutz.html:337` („Stand: Juni 2026"),
   Abschnitte 9a (Umami, ergänzt Commit `0ad9ded3` vom 10.08.2026) und 9b (Crashlytics,
   ergänzt `a67b6a01` vom 24.09.2026); `backend/routes/einladungen.js`,
-  `backend/middleware/rbac.js:146-176` (aktive Organisation); Repo-weite Suche nach
+  `backend/middleware/rbac.js:146-160` (aktive Organisation); Repo-weite Suche nach
   „Verarbeitungsverzeichnis", „Auftragsverarbeitung", „technische und organisatorische"
 - **Kennzeichnung:** reproduziert (`git log -S"Crashlytics" -- frontend/public/datenschutz.html` → `a67b6a01 2026-09-24`; `grep -c "mehrere Gemeinden\|zweite Gemeinde\|Mitgliedschaft" frontend/public/datenschutz.html` → 0)
 - **Beschreibung:** Drei Lücken:
@@ -366,7 +366,7 @@ abreißt.
 ### BF-11: Veraltete Verhaltensaussagen im Handbuch (vier Stellen)
 - **Schwere:** NIEDRIG
 - **Fundstelle:**
-  - `03-bedienung.md:279-282` („Im Profil steht unter „Mitteilungen prüfen" …") —
+  - `03-bedienung.md:271-274` („Im Profil steht unter „Mitteilungen prüfen" …") —
     `grep -rn "Mitteilungen prüfen" frontend/src --include='*.tsx' | grep -v __tests__`
     → 0 Treffer; CHANGELOG Zeile 325 dokumentiert die Entfernung (Commit `ef47d36b`).
   - `70-termine.md:91` („Max. Teilnehmer:innen 5 (einstellbar 1 bis 50)") —
@@ -377,7 +377,7 @@ abreißt.
     `134_konfspruch_texte.sql` (28.08.2026) füllt Luther 2017 und Gute Nachricht für
     alle 32 Sprüche; nur BigS und Elberfelder bleiben leer. Der Store-Text 2.1.0 sagt
     es richtig („Wortlaut in Luther 2017 und Gute Nachricht").
-  - `20-teamer.md:56-59` — siehe BF-04 (löschen).
+  - `20-teamer.md:52-56` — siehe BF-04 (löschen).
 - **Kennzeichnung:** aus Code gelesen; „Mitteilungen prüfen" reproduziert per grep
 - **Beschreibung:** Vier Aussagen beschreiben einen früheren Stand.
 - **Auswirkung aus Nutzersicht:** Wer nach „Mitteilungen prüfen" sucht, findet es
@@ -388,7 +388,7 @@ abreißt.
 
 ### BF-12: `docs/offene-befunde.md` führt #12 und #13 als offen, beide sind seit dem 16.09.2026 erledigt
 - **Schwere:** NIEDRIG
-- **Fundstelle:** `docs/offene-befunde.md:379-386` (#12 „IN ARBEIT"), `:388-399`
+- **Fundstelle:** `docs/offene-befunde.md:429-438` (#12 „IN ARBEIT"), `:440-449`
   (#13 „Der Umbau läuft"); `init-scripts/README.md`, Commit `a5230d86` (16.09.2026),
   `backend/tests/schema/neuinstallation.test.js`; `backend/routes/events/index.js:3-14`,
   `routes/events/verwaltung.js:72,339,784,1033,1101,1288,1484` (alle `requireAdmin`),
@@ -464,7 +464,7 @@ abreißt.
 ### BF-16: Handbuch dokumentiert die Super-Admin-Rolle und drei ihrer Funktionen nicht
 - **Schwere:** NIEDRIG
 - **Fundstelle:** `docs/handbuch/05-rollen.md:7-8` („Jede Person … hat genau eine
-  Rolle: Konfi, Teamer:in, Admin oder Org-Admin"), `00-start.md:14` („Es gibt vier
+  Rolle: Konfi, Teamer:in, Admin oder Org-Admin"), `00-start.md:15` („Es gibt vier
   Rollen"); `backend/middleware/rbac.js:55-60` (fünf Rollen);
   `frontend/src/navigation/rollenBaeume.ts:301` (`super_admin`-Baum),
   `AdminOrganizationsPage.tsx`, `AdminMetricsPage.tsx`, `organizations.js:310-320`
@@ -506,7 +506,7 @@ abreißt.
 
 ### BF-18: 27 unreferenzierte Bildschirmfotos werden mitgespiegelt und ausgeliefert
 - **Schwere:** NIEDRIG
-- **Fundstelle:** `scripts/build-handbuch.mjs:483-500` (kopiert alle PNGs aus
+- **Fundstelle:** `scripts/build-handbuch.mjs:531-548` (kopiert alle PNGs aus
   `docs/screenshots/*/`), `frontend/public/docs/bilder/` (30 MB, 42 Dateien)
 - **Kennzeichnung:** reproduziert (Verweise aus `docs/handbuch/*.md` gegen
   `docs/screenshots/` gestellt: 15 referenziert, 27 nicht; `du -sh` → 30M)
@@ -538,7 +538,7 @@ abreißt.
 
 ### BF-20: Handbuch nennt `moin@konfi-quest.de` als Absender, der Code-Standard ist `noreply@`
 - **Schwere:** NIEDRIG
-- **Fundstelle:** `docs/handbuch/35-passwoerter.md:99` („Die Mails kommen von
+- **Fundstelle:** `docs/handbuch/35-passwoerter.md:95` („Die Mails kommen von
   `moin@konfi-quest.de`"); `backend/services/emailService.js:58`
   (`SMTP_FROM || \`Konfi Quest <${SMTP_USER || 'noreply@konfi-quest.de'}>\``),
   `backend/server.js:230`
@@ -618,7 +618,7 @@ Termine, ≤ 12 Monate, monatlich ≤ 12 (`serien.js:80-81,132-134`); Punkteziel
 (`LevelManagementModal.tsx:213`); Zeitbasiert 1–26 Wochen
 (`BadgeManagementModal.tsx:624`); 16 Bedingungen (`badges.js:52`, gezählt); 95 Symbole
 (`badgeIcons.ts`, 95 `name:`-Einträge); 27 Konfi- + 9 Teamer-Standardabzeichen
-(`organizations.js:70,113`, gezählt); 6 Standard-Level (`a745a9cf`); Neu-prüfen-Sperre
+(`organizations.js:369,412`, gezählt); 6 Standard-Level (`a745a9cf`); Neu-prüfen-Sperre
 60 s (`badges.js:894`); Abzeichen-Hintergrundlauf stündlich (`backgroundService.js:109`);
 Mitteilungen > 365 Tage nachts gelöscht (`backgroundService.js:1064,1122`);
 Team-Rückblick-Cron 6. Januar 06:00 (`backgroundService.js:966`); Chat 4000 Zeichen
@@ -643,7 +643,7 @@ für Org-Admin sichtbar (`AdminSettingsPage.tsx:284`); Team-Rückblick je Gemein
 danach ohne Diff (0 Dateien); 176 interne Anker-Links in den erzeugten Seiten
 gegengeprüft, 0 tot; alle 15 referenzierten Bilder vorhanden; `build-handbuch.mjs`
 bricht bei totem Link, fehlendem Bild, fehlendem Frontmatter ab (gelesen
-`:512-535,651-665`); `build-openapi.mjs` bricht bei Operationen ohne Tag und bei
+`:265,654-686`); `build-openapi.mjs` bricht bei Operationen ohne Tag und bei
 Doppelungen ab; `build-api-docs.mjs` bricht bei unbekanntem Tag ab. Kaputtes
 Markdown (unbekannte Konstrukte) landet als Absatz — ohne Fehler, aber sichtbar.
 
@@ -666,9 +666,9 @@ Store-Texte auf Plattform-Wörter (`ios-release.yml:48-61`).
 ## Nicht geprüft
 
 - Antwortformen systematisch: Nur 28 von 263 Operationen tragen ein JSON-Schema (1
-  mit Beispiel). Drei Stichproben stimmten (`GET /api/app-version`,
-  `GET /api/teamer/badges` Array + zwei Header, `GET /api/notifications/badge-counts`
-  Feldnamen). Ein vollständiger Abgleich `res.json` ↔ Prosa wäre Handarbeit über
+  mit Beispiel). Zwei Stichproben stimmten (`GET /api/app-version`: `ios`/`android`
+  mit `version|null` und `url`; `GET /api/teamer/badges`: Array + Kopfzeilen
+  `X-Badges-Secret-Total`/`X-Badges-Visible-Total`). Ein vollständiger Abgleich `res.json` ↔ Prosa wäre Handarbeit über
   263 Handler.
 - `scripts/verwaiste-dateien.mjs`: braucht `DATABASE_URL`, kein Port zugewiesen.
 - `scripts/screenshots.mjs`, `drei-ansichten.mjs`: nur gelesen, nicht gegen
@@ -682,7 +682,7 @@ Store-Texte auf Plattform-Wörter (`ios-release.yml:48-61`).
 ## Auf Produktion nachzumessen
 
 - **Absenderadresse:** `docker exec konfi_quest-backend-1 sh -c 'echo "$SMTP_FROM / $SMTP_USER"'`
-  — steht dort `moin@`, stimmt 35-passwoerter.md:99; sonst korrigieren (BF-20).
+  — steht dort `moin@`, stimmt 35-passwoerter.md:95; sonst korrigieren (BF-20).
 - **`/api/status` Version:** `curl -s https://konfi-quest.de/api/status | jq .version` —
   erwartet nach BF-10 „1.0.1"; wenn ja, Quelle auf `frontend/version.json` umstellen.
 - **ABRISS-Zählung vor jedem Abriss** (Traefik-Log, `ABRISS.md:56-75`) — für
