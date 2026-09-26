@@ -4,6 +4,14 @@ Stand: 24.08.2026. Vollprüfung von Backend-Wertung, Anlege-Formular und allen
 drei Ansichten (Leitung, Teamer, Konfi). Jede Aussage ist mit Datei:Zeile
 belegt; Zeilennummern beziehen sich auf den Stand von Commit 197f5e66.
 
+> **Historische Notiz, nicht gepflegt.** Die Zeilennummern gelten für den
+> genannten Commit und wandern seitdem; `routes/events.js` ist seit dem
+> 28.08.2026 in `routes/events/*` aufgeteilt (Anwesenheit in
+> `anwesenheit.js`, QR-Check-in in `checkin.js`). Am 26.09.2026 korrigiert:
+> Takt und Kandidaten des Hintergrundjobs (unten) sowie der Stand von
+> Befund 1 und 9. Was heute gilt, steht im Handbuch (Kapitel Abzeichen) und
+> in `backend/services/backgroundService.js`.
+
 ## Überblick
 
 ### Tabellen (backend/tests/schema/prod-schema.sql)
@@ -50,12 +58,15 @@ Nach jedem punkterelevanten Ereignis, jeweils NACH Commit:
 - Aktivität zuweisen und löschen (konfi-management.js:926, 992)
 - Bonuspunkte anlegen und löschen (konfi-management.js:786, 852)
 - Antragsgenehmigung (activities.js:545) und Direktzuweisung (activities.js:710)
-- Event-Anwesenheit: einzeln (events.js:2915), innerhalb der Punkte-Transaktion
-  (events.js:2883), Bulk (events.js:2779), QR-Check-in (events.js:474 für
+- Event-Anwesenheit: einzeln, innerhalb der Punkte-Transaktion und Bulk
+  (heute `routes/events/anwesenheit.js`; damals events.js:2915, 2883, 2779),
+  QR-Check-in (heute `routes/events/checkin.js`; damals events.js:474 für
   Konfis, 490 für Teamer)
-- Hintergrundjob alle 5 Minuten für alle Nicht-Admins MIT Push-Token
-  (backgroundService.js:31-38, 56-63) — fängt zeitabhängige Typen
-  (`streak`, `time_based`, `teamer_year`) ab.
+- Hintergrundjob **stündlich** für **alle** aktiven Konfis und Teamer:innen —
+  nicht nur die mit Push-Token (`backgroundService.js`, `EINE_STUNDE`,
+  `updateAllUserBadges`; bis zum 24.08.2026 alle 5 Minuten und nur für Konten
+  mit Token, siehe Befund 9) — fängt zeitabhängige Typen (`streak`,
+  `time_based`, `teamer_year`) ab.
 
 Challenge-Beiträge lösen bewusst KEINEN Badge-Check aus: Challenges sind
 "OHNE Punkte, OHNE custom_badges-Eintrag" konzipiert; ihr Abzeichen wird aus
@@ -94,7 +105,11 @@ Wertung Teamer (badges.js:389-557).
 
 ## Befunde (nach Schwere)
 
-### 1. HOCH: `mandatory_event_count`-Badges sind in der Badge-Liste unsichtbar
+### 1. HOCH: `mandatory_event_count`-Badges sind in der Badge-Liste unsichtbar — BEHOBEN
+
+> Behoben: `konfi/views/BadgesView.tsx` kennt den Schlüssel
+> `mandatory_event_count` als eigene Kategorie („Immer dabei"); bestätigt im
+> Release-Audit 26.09.2026 (Punkte/Termine-Bericht).
 
 - **Was**: Die Kategorien-Liste der gemeinsamen Badge-Ansicht
   (konfi/views/BadgesView.tsx:265-282) kennt 16 Schlüssel — `mandatory_event_count`
@@ -216,9 +231,13 @@ Wertung Teamer (badges.js:389-557).
   (der umgekehrte Weg des 23.08.-Fixes), oder beim Umbenennen die
   `criteria_extra` aller betroffenen Badges mitziehen.
 
-### 9. NIEDRIG: Hintergrund-Check nur für User mit Push-Token
+### 9. NIEDRIG: Hintergrund-Check nur für User mit Push-Token — BEHOBEN
 
-- **Was**: `updateAllUserBadges` lädt die Kandidaten aus `push_tokens`
+> Behoben: `updateAllUserBadges` lädt alle aktiven Konfis und Teamer:innen
+> („NICHT nur die mit Push-Token", Kommentar in `backgroundService.js`), und
+> der Takt ist stündlich statt alle 5 Minuten. Stand 26.09.2026.
+
+- **Was**: `updateAllUserBadges` lud die Kandidaten aus `push_tokens`
   (backgroundService.js:56-63).
 - **Wie äußert es sich**: User ohne Push-Token (Push abgelehnt, nur Web) werden
   vom 5-Minuten-Check nie erfasst. Rein zeitgetriebene Vergaben — vor allem
@@ -275,7 +294,7 @@ Wertung Teamer (badges.js:389-557).
 - `computeCurrentStreak` (streakCalculation.js:48-79) endet bei der NEUESTEN
   aktiven Woche, nicht bei "heute": eine vor Monaten gerissene Serie wird im
   Fortschritt weiter als aktueller Streak angezeigt. Für die Vergabe egal
-  (der 5-Minuten-Check hätte damals vergeben), für die Anzeige leicht
+  (der stündliche Check hätte damals vergeben), für die Anzeige leicht
   irreführend.
 - Konfi-`specific_activity` zählt über den Aktivitätsnamen (badges.js:216-218)
   ohne `target_role`-Filter; teilen sich eine Konfi- und eine Teamer-Aktivität

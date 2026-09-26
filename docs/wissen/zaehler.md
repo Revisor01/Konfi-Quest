@@ -3,17 +3,25 @@
 Stand: 24.08.2026. Untersucht wegen der Beobachtung, dass der Zähler bei
 einigen Konfis auf Android nicht mehr wegging.
 
+> **Historische Notiz, nicht gepflegt.** Zeilennummern stammen vom
+> 24.08.2026 und sind hier durch Datei- und Funktionsnamen ersetzt; der
+> Routenname wurde am 26.09.2026 korrigiert (die Route heißt
+> `/badge-counts`, nicht `/counts`). Seit 2.3.0 zählt das App-Symbol
+> zusätzlich die ungelesenen Mitteilungen im Postfach mit — siehe Handbuch,
+> Kapitel „Die App bedienen".
+
 ## Drei Zähler, die leicht verwechselt werden
 
 | Nr. | Was | Wer setzt ihn |
 |---|---|---|
-| 1 | Zahl am App-Icon auf dem Homescreen | die laufende App über `Badge.set` / `Badge.clear` (`BadgeContext.tsx:144-147`), auf iOS zusätzlich der stille Push über `aps.badge` (`push/firebase.js`) |
-| 2 | Zahl am Reiter unten in der App | `BadgeContext`, gespeist aus `GET /api/notifications/counts` |
+| 1 | Zahl am App-Icon auf dem Homescreen | die laufende App über `Badge.set` / `Badge.clear` (`BadgeContext.tsx`), auf iOS zusätzlich der stille Push über `aps.badge` (`push/firebase.js`) |
+| 2 | Zahl am Reiter unten in der App | `BadgeContext`, gespeist aus `GET /api/notifications/badge-counts` |
 | 3 | Zahlen an einzelnen Chats in der Liste | dieselbe Abfrage, pro Raum |
 
 ## Wann der Zähler neu berechnet wird
 
-`BadgeContext.tsx:176-203` — kein Dauer-Abfragen, sondern Ereignisse:
+`BadgeContext.tsx` (der Effekt mit den Ereignis-Listenern) — kein
+Dauer-Abfragen, sondern Ereignisse:
 Anmeldung, `sync:reconnect` (feuert auch beim Zurückkehren aus dem Hintergrund,
 `AppContext.tsx:598-623`), `push:received` und neue Nachrichten über den
 Socket. Das ist vollständig und wurde geprüft; hier liegt der Fehler **nicht**.

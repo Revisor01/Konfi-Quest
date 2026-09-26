@@ -435,6 +435,7 @@ abreißt.
 
 ### BF-14: Wissensdateien beschreiben einen Stand vom 24.08.2026, der in drei Punkten nicht mehr gilt
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — beide Wissensdateien tragen einen Kopfvermerk „historische Notiz, nicht gepflegt"; in `abzeichen.md` Takt (stündlich) und Kandidaten (alle aktiven Konten, nicht nur mit Push-Token) des Hintergrundjobs korrigiert, `events.js`-Verweise auf `routes/events/anwesenheit.js`/`checkin.js` umgestellt, Befund 1 und 9 als behoben markiert (gegen `BadgesView.tsx` und `backgroundService.js` geprüft); in `zaehler.md` Route `/badge-counts` statt `/counts`, Zeilennummern durch Datei-/Funktionsnamen ersetzt.
 - **Fundstelle:** `docs/wissen/abzeichen.md:5,53-56`; `docs/wissen/zaehler.md:10-11,16,25`
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** `abzeichen.md` verweist auf `events.js:2915/2883/2779/474` — die
