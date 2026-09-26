@@ -800,7 +800,7 @@ paths:
           schema: { type: string, enum: ["true"] }
           description: Gesamte Historie statt 12-Monats-Fenster
       responses:
-        "200": { description: "Array von Events (e.*, registered_count, waitlist_count, teamer_count, abgemeldet_count, registration_status, is_registered, can_register, waitlist_position, categories[], chat_room_id)" }
+        "200": { description: "Array von Events (e.*, registered_count, waitlist_count, teamer_count, abgemeldet_count, registration_status, is_registered, can_register, waitlist_position, categories[], chat_room_id). can_register ist seit 26.09.2026 (Audit Screens BF-01) auch fuer eine abgemeldete Buchung wahr (status excused/opted_out), sofern Anmeldefenster offen und Termin nicht abgesagt -- die Abmeldung ist keine Anmeldung, bucheTermin reaktiviert die Zeile. Nur confirmed/waitlist/pending sperren." }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -821,7 +821,7 @@ paths:
         objekt-pruefung: "Event org-gescopt; Buchungsdaten nur eigene; kein Jahrgang-Check (nur Zähler)"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "is_registered, registration_status, can_register, event_status, confirmed_count, waitlist_count, waitlist_position, max_participants, waitlist_enabled" }
+        "200": { description: "is_registered, registration_status, can_register, event_status, confirmed_count, waitlist_count, waitlist_position, max_participants, waitlist_enabled. can_register folgt seit 26.09.2026 derselben Regel wie in GET /api/konfi/events: eine abgemeldete Zeile (excused/opted_out) sperrt nicht." }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -933,6 +933,13 @@ paths:
         (event_unregistrations, optionaler reason), laesst bei freiem
         bestaetigtem Platz von der Konfi-Warteliste nachruecken und
         benachrichtigt Admins.
+        FRIST NUR FUER BESTAETIGTE PLAETZE (26.09.2026, Audit Screens
+        BF-02): Die Zwei-Tage-Frist schuetzt die Planung der Leitung vor
+        kurzfristig frei werdenden Plaetzen. Wer auf der Warteliste steht
+        (status waitlist/pending), belegt keinen und darf jederzeit
+        herunter -- vorher endete das in den letzten 48 Stunden mit 400,
+        die Wartende blieb auf der Liste und wurde beim Nachruecken als
+        abwesend verbucht.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]

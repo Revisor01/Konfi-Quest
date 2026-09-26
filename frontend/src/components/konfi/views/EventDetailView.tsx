@@ -478,6 +478,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
     if (istAbgesagt(eventData)) return danger;
     if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return events;
+    // 'excused' = von der Leitung abgemeldet (Migration 153). Bis zum
+    // 26.09.2026 kannte die Kette den Wert nicht und fiel auf "Offen".
+    if (eventData.booking_status === 'excused' && !isPastEvent) return events;
     if (isKonfi && !isPastEvent) return info; // Konfirmation = blau (analog Admin)
     if (isPastEvent && eventData.attendance_status === 'present') return success;
     if (isPastEvent && eventData.attendance_status === 'absent') return danger;
@@ -502,6 +505,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
     if (istAbgesagt(eventData)) return 'Abgesagt';
     if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return 'Abgemeldet';
+    if (eventData.booking_status === 'excused' && !isPastEvent) return 'Abgemeldet';
     if (isKonfi && !isPastEvent) return eventData.is_registered ? 'Angemeldet' : 'Konfirmation';
     if (isPastEvent && eventData.attendance_status === 'present') return 'Verbucht';
     if (isPastEvent && eventData.attendance_status === 'absent') return 'Verpasst';
@@ -976,6 +980,33 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     );
                   }
 
+                  // VON DER LEITUNG ABGEMELDET am Pflichttermin (Audit
+                  // 26.09.2026, Screens BF-01): status 'excused' ist weder
+                  // opted_out noch is_registered und fiel deshalb auf den
+                  // stummen Hinweis "Pflicht-Event". Zurueck geht es ueber
+                  // die normale Anmeldung (POST /register), nicht ueber
+                  // Opt-in -- dessen UPDATE greift nur bei 'opted_out'.
+                  if (eventData.booking_status === 'excused') {
+                    return (
+                      <div style={{ textAlign: 'center' }}>
+                        <div className="app-status-box app-status-box--events" style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
+                          <IonIcon icon={ICON_ABSAGE} />
+                          Von der Leitung abgemeldet
+                        </div>
+                        <IonButton
+                          className="app-action-button"
+                          expand="block"
+                          color="success"
+                          disabled={!isOnline}
+                          onClick={handleRegister}
+                        >
+                          <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
+                          {!isOnline ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Du bist offline</> : 'Wieder anmelden'}
+                        </IonButton>
+                      </div>
+                    );
+                  }
+
                   if (eventData.is_registered) {
                     return (
                       <div style={{ textAlign: 'center' }}>
@@ -1058,6 +1089,81 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   <IonIcon icon={ICON_ABSAGE} style={{ verticalAlign: 'middle', marginRight: 'var(--app-abstand-kompakt)' }} />
                   Dieser Termin ist abgesagt
                 </IonNote>
+              ) : (eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending') ? (
+                // WARTELISTE (Audit 26.09.2026, Screens BF-02): is_registered
+                // ist nur bei 'confirmed' wahr. Ohne diesen Zweig fiel die
+                // Wartende unten in "Warteliste offen" -- einen Anmelde-Knopf,
+                // der mit 409 "bereits angemeldet" endete; herunter kam sie
+                // nicht. Die Zwei-Tage-Frist (canUnregister) gilt hier nicht:
+                // Ein Wartender belegt keinen Platz, das Backend nimmt ihn
+                // von der Frist aus. Gleicher Dialog wie beim Abmelden.
+                <div style={{ textAlign: 'center' }}>
+                  <div className="app-status-box app-status-box--events" style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
+                    <IonIcon icon={ICON_WARTEND_GEFUELLT} />
+                    Du stehst auf Platz {eventData.waitlist_position || '?'} der Warteliste
+                  </div>
+                  <IonButton
+                    className="app-action-button"
+                    expand="block"
+                    fill="outline"
+                    color="danger"
+                    onClick={() => presentUnregisterModal({
+                      presentingElement: pageRef.current || undefined
+                    })}
+                  >
+                    <IonIcon icon={ICON_ABSAGE} slot="start" />
+                    {!isOnline
+                      ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Von der Warteliste abmelden (wird gesendet)</>
+                      : 'Von der Warteliste abmelden'}
+                  </IonButton>
+                </div>
+              ) : eventData.booking_status === 'excused' ? (
+                // VON DER LEITUNG ABGEMELDET (Audit 26.09.2026, Screens BF-01):
+                // Der Termin steht fuer sie wieder da wie ein offener Termin
+                // (Handbuch 70-termine "Wieder anmelden kann sie sich aber
+                // selbst"). can_register kommt seit dem 26.09.2026 auch fuer
+                // 'excused'/'opted_out' als true; Anmeldeschluss und Plaetze
+                // gelten wie fuer alle -- ist der Termin voll, geht es auf die
+                // Warteliste, ist der Schluss vorbei, bleibt es beim Hinweis.
+                (() => {
+                  const voll = eventData.max_participants > 0 && (eventData.registered_count || 0) >= eventData.max_participants;
+                  const wartelisteOffen = voll && !!eventData.waitlist_enabled;
+                  const darfZurueck = !!eventData.can_register && eventData.registration_status === 'open' && (!voll || wartelisteOffen);
+                  return (
+                    <div style={{ textAlign: 'center' }}>
+                      <div className="app-status-box app-status-box--events" style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
+                        <IonIcon icon={ICON_ABSAGE} />
+                        Von der Leitung abgemeldet
+                      </div>
+                      {darfZurueck ? (
+                        <IonButton
+                          className="app-action-button"
+                          expand="block"
+                          color="success"
+                          disabled={!isOnline}
+                          onClick={handleRegister}
+                        >
+                          <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
+                          {!isOnline
+                            ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Du bist offline</>
+                            : wartelisteOffen ? 'Wieder anmelden (Warteliste)' : 'Wieder anmelden'}
+                        </IonButton>
+                      ) : (
+                        <IonButton
+                          className="app-action-button"
+                          expand="block"
+                          disabled
+                          color="medium"
+                        >
+                          <IonIcon icon={ICON_INFO_GEFUELLT} slot="start" />
+                          {eventData.registration_status === 'open'
+                            ? 'Ausgebucht'
+                            : eventData.registration_status === 'upcoming' ? 'Anmeldung noch nicht offen' : 'Anmeldung geschlossen'}
+                        </IonButton>
+                      )}
+                    </div>
+                  );
+                })()
               ) : (isKonfirmationEvent(eventData) && hasExistingKonfirmation) ? (
                 <IonButton
                   className="app-action-button"

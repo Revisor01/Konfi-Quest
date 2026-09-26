@@ -435,6 +435,15 @@ Versionsüberschrift.
   genau 24 Stunden vor Beginn, so wie die Erinnerung „Gleich: …" eine Stunde
   vorher. Außerdem kann ein langer Erinnerungslauf nicht mehr vom nächsten
   überholt werden — dieselbe Erinnerung ging sonst zweimal hinaus.
+- Hat die Leitung eine Konfi von einem Termin abgemeldet, sah die Konfi einen
+  offenen Termin mit grauem Knopf „Nicht verfügbar" — und kam nicht zurück.
+  Jetzt steht dort „Von der Leitung abgemeldet" und ein Knopf „Wieder
+  anmelden"; Anmeldeschluss und Plätze gelten dabei wie für alle.
+- Wer auf der Warteliste stand, konnte nicht herunter: Statt eines
+  Abmelden-Knopfs gab es „Warteliste offen", und der endete in einer
+  Fehlermeldung. Jetzt zeigt der Termin den Wartelistenplatz und den Knopf
+  „Von der Warteliste abmelden" — auch in den letzten zwei Tagen, denn wer
+  wartet, belegt keinen Platz.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

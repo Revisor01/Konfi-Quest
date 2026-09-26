@@ -89,6 +89,14 @@ mitbringen sollst und wie viele Plätze frei sind.
   [Warteliste](70-termine.md#plaetze-und-warteliste-einstellen) eingerichtet ist
 - **Abmelden** — bis zum
   [Abmeldeschluss](70-termine.md#wissen-bis-wann-konfis-sich-abmelden-koennen)
+- **Von der Warteliste abmelden** — jederzeit, auch kurz vor dem Termin. Der
+  Termin zeigt dir, auf welchem Platz du stehst; wer wartet, belegt keinen
+  Platz, darum gilt der Abmeldeschluss hier nicht.
+- **Wieder anmelden** — wenn die Leitung dich abgemeldet hat (etwa weil du
+  krank gemeldet warst). Der Termin steht dann mit „Abgemeldet" und „Von der
+  Leitung abgemeldet" da; mit **Wieder anmelden** bist du wieder dabei, solange
+  der Anmeldeschluss nicht vorbei ist. Ist der Termin inzwischen voll, landest
+  du auf der Warteliste.
 
 Bei [Pflicht-Events](70-termine.md#ein-pflicht-event-einrichten) bist du automatisch
 angemeldet; abmelden geht trotzdem, du wirst dabei nach einem Grund gefragt.

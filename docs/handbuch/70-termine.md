@@ -295,6 +295,12 @@ Gemeindeleitung sieht alles.
 gesperrt, und in der App steht „Abmelden geht nur bis 2 Tage vorher". Das ist
 fest eingestellt; der Anmeldezeitraum regelt nur das Anmelden.
 
+Die Frist gilt für bestätigte Plätze. **Wer auf der Warteliste steht, kann
+jederzeit herunter** — auch am Vortag —, denn ein Wartender belegt keinen
+Platz, den du verplant hättest. Der Termin zeigt der Konfi ihren
+Wartelistenplatz und den Knopf „Von der Warteliste abmelden"; du bekommst wie
+bei jeder Abmeldung eine Mitteilung.
+
 > **Du selbst bist davon nicht betroffen.** Die Leitung kann eine Anmeldung in
 > der Detailansicht jederzeit entfernen, auch am Tag des Termins.
 

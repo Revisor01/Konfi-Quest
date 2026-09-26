@@ -165,6 +165,9 @@ const EventsView: React.FC<EventsViewProps> = ({
     // Pflicht-Events: eigene Status-Logik
     const isMandatory = event.mandatory;
     const isOptedOut = event.is_opted_out || event.booking_status === 'opted_out';
+    // Von der Leitung abgemeldet (Migration 153). Bis zum 26.09.2026 kannte
+    // die Kette den Wert nicht: Die Karte sagte "Offen", nirgends "abgemeldet".
+    const isExcused = event.booking_status === 'excused' && !isPastEvent;
 
     // Bestimme Farbe - Konfirmation IMMER Lila (auch wenn angemeldet)
     // Alle Status-Farben aus globalen Tokens — Änderung im CSS wirkt hier automatisch
@@ -180,6 +183,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     let statusColor: string;
     if (isCancelled) statusColor = C.danger;
     else if (isMandatory && isOptedOut) statusColor = C.events;
+    else if (isExcused) statusColor = C.events;
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusColor = C.success;
     else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusColor = C.danger;
     else if (isMandatory && isPastEvent) statusColor = C.bonus;
@@ -207,6 +211,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     let statusText: string;
     if (isCancelled) statusText = 'Abgesagt';
     else if (isMandatory && isOptedOut) statusText = 'Abgemeldet';
+    else if (isExcused) statusText = 'Abgemeldet';
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusText = 'Anwesend';
     else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusText = 'Gefehlt';
     else if (isMandatory && isPastEvent) statusText = 'Ausstehend';

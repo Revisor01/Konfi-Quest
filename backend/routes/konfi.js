@@ -1194,9 +1194,19 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                et_booked.end_time as booked_timeslot_end,
                CASE WHEN eb_konfi.status = 'confirmed' THEN true ELSE false END as is_registered,
                CASE WHEN eb_konfi.status = 'opted_out' THEN true ELSE false END as is_opted_out,
+               -- can_register (Audit 26.09.2026, Screens BF-01): Eine
+               -- Abmeldung -- durch die Leitung ('excused') oder selbst
+               -- ('opted_out') -- ist KEINE Anmeldung. bucheTermin laesst
+               -- beide seit dem 16.09.2026 wieder hinein (bookingUtils.js,
+               -- "Reaktivierung"); die Liste sagte trotzdem false, sobald
+               -- irgendeine Buchungszeile existierte, und die App zeigte
+               -- der abgemeldeten Konfi "Nicht verfuegbar". Nur 'confirmed'
+               -- und 'waitlist'/'pending' sperren den Knopf; Anmeldefenster
+               -- und Absage gelten unveraendert. Gleiche Form (boolean).
                CASE
                  WHEN e.cancelled = true THEN false
-                 WHEN eb_konfi.id IS NOT NULL THEN false
+                 WHEN eb_konfi.id IS NOT NULL
+                      AND eb_konfi.status NOT IN ('excused', 'opted_out') THEN false
                  WHEN NOW() < e.registration_opens_at OR NOW() > e.registration_closes_at THEN false
                  ELSE true
                END as can_register,
@@ -1415,7 +1425,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       
       const confirmedCount = parseInt(event.registered_count) || 0;
       const waitlistCount = parseInt(event.waitlist_count) || 0;
-      const can_register = !registration && event.registration_status === 'open';
+      // Dieselbe Regel wie can_register in GET /konfi/events (26.09.2026):
+      // eine abgemeldete Zeile ('excused'/'opted_out') sperrt nicht.
+      const abgemeldet = !!registration
+        && (registration.status === 'excused' || registration.status === 'opted_out');
+      const can_register = (!registration || abgemeldet) && event.registration_status === 'open';
       
       // Get waitlist position if user is on waitlist
       let waitlist_position = null;
@@ -1668,12 +1682,20 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
       
-      // Check if unregistration is still allowed (2 days before event)
+      // Check if unregistration is still allowed (2 days before event).
+      //
+      // Nur fuer BESTAETIGTE Plaetze (Audit 26.09.2026, Screens BF-02): Die
+      // Frist schuetzt die Planung der Leitung vor kurzfristig frei
+      // werdenden Plaetzen. Wer auf der Warteliste steht, belegt keinen --
+      // die Wartende konnte in den letzten 48 Stunden aber nicht mehr
+      // herunter, blieb auf der Liste und wurde beim Nachruecken als
+      // abwesend verbucht. Eine Wartende darf jederzeit gehen.
       const eventDate = new Date(event.event_date);
       const now = new Date();
       const twoDaysBeforeEvent = new Date(eventDate.getTime() - (2 * 24 * 60 * 60 * 1000));
+      const belegtEinenPlatz = registration.status === 'confirmed';
       
-      if (now >= twoDaysBeforeEvent) {
+      if (belegtEinenPlatz && now >= twoDaysBeforeEvent) {
         return res.status(400).json({ 
           error: 'Abmeldung ist nur bis 2 Tage vor dem Event möglich' 
         });
