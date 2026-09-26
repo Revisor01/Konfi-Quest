@@ -574,6 +574,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-16: Startseeding der Zertifikatstypen läuft auf beiden Replicas ohne `ON CONFLICT`
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — Der Seed steht in `backend/utils/zertifikatstypenSeed.js`: **ein** `INSERT … VALUES (4 Zeilen) ON CONFLICT (organization_id, name) DO NOTHING` je Organisation statt vier Einzel-Inserts (bei 200 Gemeinden 200 statt 800 Statements), `routes/organizations.js` ruft ihn nur noch auf. Vitest `backend/tests/utils/zertifikatstypenSeed.test.js`: zweiter Lauf fügt 0 ein und wirft nicht, zwei gleichzeitige Läufe auf zwei Verbindungen ergeben je Organisation genau vier Typen, ein umbenannter Typ bleibt stehen; ohne `ON CONFLICT` fallen drei Tests mit `duplicate key value violates unique constraint certificate_types_organization_id_name_key`. Nicht verlegt: Der Seed läuft weiter beim Start (eine `SELECT`-Abfrage, wenn alle Gemeinden Typen haben) — das Anlegen einer Organisation bleibt unverändert.
 - **Fundstelle:** `backend/routes/organizations.js:1340–1370` (bei jedem Start: Insert je
   Organisation ohne Zertifikatstypen, ohne `ON CONFLICT`), Unique-Index
   `certificate_types_organization_id_name_key` fängt Doppelte ab

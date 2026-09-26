@@ -1326,7 +1326,10 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
   });
 
   // Standard-Zertifikatstypen für Organisationen nachziehen, die noch keine
-  // haben (einmalige Datenmigration für Bestandsorganisationen).
+  // haben (einmalige Datenmigration für Bestandsorganisationen). Der Insert
+  // steht in utils/zertifikatstypenSeed.js -- mit ON CONFLICT DO NOTHING,
+  // damit zwei gleichzeitig startende Replicas sich nicht mit duplicate-key
+  // in die Quere kommen (Audit 26.09.2026, Betrieb BF-16).
   //
   // Laeuft bewusst NICHT in Tests: Der Aufruf am Ende dieser Datei ist nicht
   // awaited und hängt am Router-Load. In der Testsuite wird createApp() pro
@@ -1337,36 +1340,17 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
   // POST /certificate-types im beforeEach von teamer.test.js, blieb certTypeId
   // undefined und die Folgetests fielen um — ein sporadisch roter Build, der
   // Deploys blockierte, ohne dass am Code etwas kaputt war.
-  const seedDefaultCertificates = async () => {
-    if (process.env.NODE_ENV === 'test') return;
-    try {
-      const { rows: orgs } = await db.query(
-        `SELECT o.id FROM organizations o
-         WHERE NOT EXISTS (
-           SELECT 1 FROM certificate_types ct WHERE ct.organization_id = o.id
-         )`
-      );
-      if (orgs.length === 0) return;
-      const defaultCerts = [
-        { name: 'Teamer-Card', icon: 'card' },
-        { name: 'JuLeiCa', icon: 'ribbon' },
-        { name: 'Rettungsschwimmer', icon: 'water' },
-        { name: 'Erste Hilfe', icon: 'medkit' }
-      ];
-      for (const org of orgs) {
-        for (const cert of defaultCerts) {
-          await db.query(
-            'INSERT INTO certificate_types (name, icon, organization_id) VALUES ($1, $2, $3)',
-            [cert.name, cert.icon, org.id]
-          );
+  // Die Funktion selbst ist in tests/utils/zertifikatstypenSeed.test.js geprueft.
+  if (process.env.NODE_ENV !== 'test') {
+    const { seedeStandardZertifikatstypen } = require('../utils/zertifikatstypenSeed');
+    seedeStandardZertifikatstypen(db)
+      .then(({ organisationen, eingefuegt }) => {
+        if (organisationen > 0) {
+          console.log(`Seeded default certificates for ${organisationen} organization(s) (${eingefuegt} rows)`);
         }
-      }
-      console.log(`Seeded default certificates for ${orgs.length} organization(s)`);
-    } catch (err) {
-      console.error('Error seeding default certificates:', err.message);
-    }
-  };
-  seedDefaultCertificates();
+      })
+      .catch((err) => console.error('Error seeding default certificates:', err.message));
+  }
 
   return router;
 };

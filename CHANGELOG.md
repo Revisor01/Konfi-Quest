@@ -622,6 +622,8 @@ Versionsüberschrift.
   Zeit ab, und ein zweiter Server, der auf sie wartet, beendet sich dabei
   nicht mehr mit der irreführenden Meldung „Datenbank nicht erreichbar". Ob
   beim Start eine Anpassung übersprungen wurde, steht in der Statusabfrage.
+- Zwei gleichzeitig startende Server legen die Standard-Zertifikatstypen
+  nicht mehr um die Wette an.
 
 ## [2.2.0] - 2026-09-18
 
