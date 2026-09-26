@@ -287,6 +287,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-09: Die Dunkelmodus-Tests sind grün, obwohl 104 Stellen unter der Grenze liegen
 
 - **Schwere:** MITTEL (Verstoß gegen CLAUDE.md: „Ein grüner Test beweist nichts, wenn er den Fehlerfall nicht erreicht“)
+- **Status:** teilweise behoben 26.09.2026 — die Bausteine 1–3 sind eingebaut und nachgemessen (104 → 33 Verstöße, Abschnitt „Nachmessung"); der gerenderte Messlauf als wiederholbarer Test (Baustein 4) fehlt noch.
 - **Fundstelle:** `frontend/src/__tests__/components/dunkelmodus.test.ts` (39 Tests in drei Dateien, alle
   grün: `npx vitest run src/__tests__/components/dunkelmodus.test.ts src/__tests__/components/dunkelmodusJsFarben.test.ts src/__tests__/config/systemBars.test.ts`),
   Kontrastprüfung `:222-236` (9 Tokens auf einem Grund), Ausnahmeliste `GLEICH_IN_BEIDEN_MODI` mit **36**
@@ -550,3 +551,33 @@ Einzelfix erreicht, weil sie an 2 bzw. 234 Stellen sitzen.
 - **Statusleiste iOS im Dunkeln:** helle Symbole über der Glasleiste?
 - Nach BF-03/04-Fix: `node scripts/screenshots.mjs --url https://konfi-quest.de` mit einer neuen
   Dunkel-Option gegen Produktion laufen lassen und die Handbuch-Bilder erneuern (erst deployen, dann ziehen).
+
+## Nachmessung nach den Bausteinen 1–3 (Koordination, 26.09.2026)
+
+Dasselbe Skript wie im Audit (`messen.cjs`, 47 Seitenzustände × iOS/Android = 94 Zustände, dunkel),
+gegen den Sammelbranch nach Einbau der drei Umbau-Commits (Flächen-Stufenleiter, Text-Token-Familie,
+Grautöne) und der fünf Einzelauflagen:
+
+| | Audit (Ausgang) | nach Umbau |
+|---|---|---|
+| helle Flächen im Dunkeln | 0 | 0 |
+| Textstellen unter 4,5:1 | **104** | **33** |
+| Zustände mit Verstoß | 30 von 94 | 15 von 94 |
+
+Die 33 verbleibenden Stellen, je Plattform gleich (iOS = Android):
+
+- **16 Stellen** eigene Chat-Blase: weiße Schrift und Uhrzeit auf `#06b6d4`, **2,43:1** — in beiden
+  Modi gleich, also kein Dunkelmodus-Befund (UI-Bericht, Bereichsfarbe Chat als Fläche mit weißem
+  Text); Entscheidung Simon: dunklere Chat-Fläche oder dunkle Schrift auf der eigenen Blase.
+- **2 Stellen** Termindetail Konfi: Knopf „Anmelden (0/50)" **1,36:1** — der schwerste Rest, ein
+  Knopf mit Bereichsfarbe ohne `--color` (gleiches Muster wie BF-08).
+- **8 Stellen** Level-Punkte (`/admin/settings/levels`, „0 P" bis „20 P", 2,15–4,23:1) und
+  Punkte-Chips („+ 1 P" bis „+ 3 P", 3,65–3,77:1, Aktivitäten und Konfi-Detail): Zahlen in
+  Bereichsfarbe auf getöntem Chip — braucht das Text-Token auf dem Chip-Grund statt auf der Karte.
+- **2 Stellen** Abzeichen-Fortschritt „0%" 4,06:1 — knapp unter der Grenze.
+
+Damit ist der Zielwert dieses Pakets (unter 15 Verstöße) **nicht** erreicht, der Dunkelmodus-Anteil
+(ohne die Chat-Blase) liegt bei 17 Stellen in vier Mustern; alle vier sind mit dem Text-Token-Muster
+lösbar. Baustein 4 (gerenderte Messung als wiederholbarer Test, `frontend/scripts/dunkelmodus-messen.mjs`)
+blieb im Arbeitsbaum des Pakets unfertig (Abbruch am Sitzungslimit) und ist nicht eingebaut; die
+Messung hier lief mit dem Audit-Skript aus dem Scratchpad.
