@@ -208,6 +208,7 @@ abreißt.
 
 ### BF-06: `ABRISS.md` führt Routen als aufruferlos, die 2.3.0 ruft — und verweist auf verschobene Zeilen
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — beide `preferences`-Routen aus Tabelle B nach Tabelle C („bleiben dauerhaft", Aufrufer `PushAuswahl.tsx`); Tabelle B gegen HEAD und Tag `2.2.0` nachgeprüft (keine Zeile wird von 2.2.0 gerufen), `POST /events/:id/book` als neue Zeile, falsche Anmerkung zum POST korrigiert; Zeilenverweise auf Datei- und Funktionsnamen umgestellt (`createApp.js`, `api.ts`, `checkWrappedTriggers`, `wrapped.test.js`), „115 Zeilen" → 95.
 - **Fundstelle:** `docs/api/ABRISS.md:161-162` (`GET`/`PUT /api/notifications/preferences`),
   `:191` (`createApp.js:480` und `:483`), `:157` („115 Zeilen"), `:184`
   (`services/api.ts:89`), `:186` (`backgroundService.js:761`, `wrapped.test.js:181-218`);
