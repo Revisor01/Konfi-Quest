@@ -644,6 +644,10 @@ Versionsüberschrift.
   gemeinsamen Datenbank (mehr Rechenleistung, Speicher und
   Verbindungen) und nennt die Verbindungs- und Zeitgrenzen der Server
   ausdrücklich.
+- Sicherung und Wiederherstellung sind beschrieben: was gesichert wird, wie
+  eine Sicherung geprüft wird, wie sie in eine leere Datenbank zurückgespielt
+  wird und wie die Rückspielprobe läuft — samt Prüfliste für den Betrieb und
+  einem Referenzskript.
 
 ## [2.2.0] - 2026-09-18
 
