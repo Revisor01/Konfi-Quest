@@ -438,6 +438,9 @@ Versionsüberschrift.
   Fotoauswahl lief ohnehin längst über die Dateiauswahl des Systems.
 - Innenabstände und Eckradien der Ionic-Bedienelemente hängen jetzt ebenfalls an
   der gemeinsamen Abstands-Skala; ein Test wacht darüber. Nichts sieht anders aus.
+- Die Store-Fassungen für iPhone und Android werden nur noch aus geprüften Ständen
+  gebaut: Der Bau wartet, bis die automatischen Prüfungen für genau diesen Stand
+  bestanden sind, und bricht bei einem roten Ergebnis ab.
 
 ## [2.2.0] - 2026-09-18
 

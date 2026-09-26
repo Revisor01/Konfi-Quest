@@ -75,6 +75,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-01: Store-Builds ohne Test-Gate, ohne Branch-Prüfung — nachweislich aus roten Commits hochgeladen
 - **Schwere:** HOCH
+- **Status:** behoben 26.09.2026 — Beide Release-Workflows haben einen vorgeschalteten Job `ci-gate` (`.github/scripts/release-gate.py`): Abbruch, wenn der Commit nicht auf `main` liegt (Eingabe `allow_non_main` übersteuert bewusst), und Warten auf einen erfolgreichen `ci.yml`-Lauf für genau diesen SHA (bis 45 Minuten; roter oder fehlender Lauf bricht mit Link bzw. Startanleitung ab). Lokal mit gefälschtem `gh` in zwölf Szenen durchgespielt; der erste echte Dispatch ist in GitHub zu prüfen. **Nachweis für den laufenden Release 2.3.0** (Build 230/124, Commit `fce1ab01`): `gh run list --repo Revisor01/Konfi-Quest --workflow ci.yml --commit fce1ab013e317ed21a582b7e4179fcf402a07e83 --json databaseId,status,conclusion,url` — der Eintrag muss `"conclusion": "success"` tragen (laut Beleg oben Lauf 948, grün seit 10:33:24 UTC).
 - **Fundstelle:** `.github/workflows/ios-release.yml:11-17` (nur `workflow_dispatch`, kein `needs`, keine
   Ref-Prüfung), `.github/workflows/android-release.yml:22-32` (dito), Job-Definitionen ohne Abhängigkeit
   `ios-release.yml:23-25`, `android-release.yml:38-40`.
