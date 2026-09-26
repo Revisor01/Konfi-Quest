@@ -282,6 +282,7 @@ abreißt.
 
 ### BF-08: Datenschutz-Dokumentation nicht auf dem Stand von 2.3.0; Rechenschaftsunterlagen fehlen
 - **Schwere:** MITTEL
+- **Status:** offen 26.09.2026 — nicht Teil des Doku-Pakets: Datenschutzerklärung, Verarbeitungsverzeichnis, TOM und AVV sind Rechtsfragen (Sammelbefund S-20). Die offene Frage zur Sichtbarkeit in einer zweiten Gemeinde ist in `docs/store-texte-2.3.0.md` (Konsolen-Angaben) benannt, nicht entschieden.
 - **Fundstelle:** `frontend/public/datenschutz.html:337` („Stand: Juni 2026"),
   Abschnitte 9a (Umami, ergänzt Commit `0ad9ded3` vom 10.08.2026) und 9b (Crashlytics,
   ergänzt `a67b6a01` vom 24.09.2026); `backend/routes/einladungen.js`,
@@ -337,6 +338,7 @@ abreißt.
 
 ### BF-10: CHANGELOG `[Unreleased]` verletzt das eigene Format an mehreren Stellen
 - **Schwere:** NIEDRIG
+- **Status:** teilweise behoben 26.09.2026 — der Teil Store-Texte/Versionsstände: `docs/store-texte-2.3.0.md` angelegt und `frontend/version.json` dort als die eine Quelle (2.3.0 / Android 124 / iOS 230) dokumentiert. Die CHANGELOG-Doppelabschnitte, die Netto-null-Paare, „Ionic" und die drei `package.json`-Versionen (Sammelbefund S-13) bleiben bei der Koordination bzw. beim CI-Paket, weil mehrere Pakete parallel in den Unreleased-Block schreiben.
 - **Fundstelle:** `CHANGELOG.md:12,123,181,187,206,215,221,410` (Abschnittsüberschriften),
   `:19-27` (Widerspruch), `:182` vs `:325`, `:207`, `:406`, `:3-8` (Kopf);
   `package.json:3` (`2.9.0`), `backend/package.json:3` (`1.0.1`),
@@ -417,6 +419,7 @@ abreißt.
 
 ### BF-13: Sitemap-Erzeugung nicht reproduzierbar, von der CI nicht geprüft
 - **Schwere:** NIEDRIG
+- **Status:** offen 26.09.2026 — Generator- und CI-Änderung, gehört zum CI-Paket (Sammelbefund S-21). Im Doku-Paket wurde `frontend/public/sitemap.xml` deshalb nach jedem Generatorlauf bewusst zurückgesetzt und nicht eingecheckt.
 - **Fundstelle:** `scripts/build-handbuch.mjs:699-707` (`statSync(...).mtime`),
   `:744` (`heute()` für `/docs/`), `.github/workflows/ci.yml:210-219`
 - **Kennzeichnung:** reproduziert (`node scripts/build-handbuch.mjs && git diff --stat frontend/public/sitemap.xml` → `1 file changed, 10 insertions(+), 10 deletions(-)`; danach `git restore frontend/public/sitemap.xml`)
@@ -475,6 +478,7 @@ abreißt.
 
 ### BF-16: Handbuch dokumentiert die Super-Admin-Rolle und drei ihrer Funktionen nicht
 - **Schwere:** NIEDRIG
+- **Status:** offen 26.09.2026 — kein reiner Textfehler: Ein Kapitel „Für den Betrieb" (Super-Admin, Gemeinde anlegen, Testphase, Betriebs-Überblick) braucht Produktentscheidungen (was davon Gemeinden lesen sollen); als Frage in der Abschlussmeldung des Doku-Pakets.
 - **Fundstelle:** `docs/handbuch/05-rollen.md:7-8` („Jede Person … hat genau eine
   Rolle: Konfi, Teamer:in, Admin oder Org-Admin"), `00-start.md:15` („Es gibt vier
   Rollen"); `backend/middleware/rbac.js:55-60` (fünf Rollen);
@@ -519,6 +523,7 @@ abreißt.
 
 ### BF-18: 27 unreferenzierte Bildschirmfotos werden mitgespiegelt und ausgeliefert
 - **Schwere:** NIEDRIG
+- **Status:** offen 26.09.2026 — Generator-Änderung, gehört mit den Screenshots zum UI-/Toolchain-Paket (Sammelbefund S-17). Die 42 neu zu ziehenden Bilder und die 15 vom Handbuch referenzierten sind in `docs/store-texte-2.3.0.md` aufgeführt.
 - **Fundstelle:** `scripts/build-handbuch.mjs:531-548` (kopiert alle PNGs aus
   `docs/screenshots/*/`), `frontend/public/docs/bilder/` (30 MB, 42 Dateien)
 - **Kennzeichnung:** reproduziert (Verweise aus `docs/handbuch/*.md` gegen
@@ -552,6 +557,7 @@ abreißt.
 
 ### BF-20: Handbuch nennt `moin@konfi-quest.de` als Absender, der Code-Standard ist `noreply@`
 - **Schwere:** NIEDRIG
+- **Status:** offen 26.09.2026 — nur auf Produktion prüfbar (`SMTP_FROM`/`SMTP_USER`); das Handbuch nennt weiter `moin@konfi-quest.de`, bis die Messung vorliegt (siehe „Auf Produktion nachzumessen").
 - **Fundstelle:** `docs/handbuch/35-passwoerter.md:95` („Die Mails kommen von
   `moin@konfi-quest.de`"); `backend/services/emailService.js:58`
   (`SMTP_FROM || \`Konfi Quest <${SMTP_USER || 'noreply@konfi-quest.de'}>\``),
