@@ -310,6 +310,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-10: Abzeichen-Kriterienfarben leben als 17 rohe Hexwerte außerhalb der Tokens
 
 - **Schwere:** NIEDRIG
+- **Status:** teilweise behoben 26.09.2026 — die Prozentzahl im Fortschrittsring schreibt mit einem Text-Token je Kriterium (`--app-text-kriterium-<typ>`, `getCriteriaTextColor()`): hell die Kriterienfarbe selbst, dunkel eine aufgehellte Stufe mit mindestens 4,5:1 auf Karte und beiden Seitengründen (streak `#eb445a` → `#ee6073`, auf der Karte 4,06 → 4,84:1; gerechnet außerdem teamer_year 1,72 → 4,54, mandatory_event_count 2,39 → 4,97, both_categories 2,74 → 4,51, event_count 3,72 → 4,76). Gemessen (`/konfi/badges`, iOS = Android): „0%“ 4,06 → 4,84:1, hell unverändert. **Offen:** die 17 Hexwerte selbst bleiben in `badgeCriteria.ts` (Flächen: Ring, Symbolkacheln — in beiden Modi gleich, nicht kontrastrelevant); Test `dunkelmodus.test.ts` hält hell = Hexwert und dunkel ≥ 4,5:1 fest.
 - **Fundstelle:** `frontend/src/utils/badgeCriteria.ts:66-81` (17 Hexwerte), `:104` (`CRITERIA_FALLBACK_COLOR`)
 - **Kennzeichnung:** reproduziert — `messung-all.json`: „0%“-Ring `#eb445a` auf `#1c1c1d` = 4,47:1 (iOS),
   auf `#242426` = 4,06:1 (Android); Bild `dark-ios-konfi-badges.png`

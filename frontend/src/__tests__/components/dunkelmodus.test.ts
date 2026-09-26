@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { resolve, join } from 'path';
+import { CRITERIA_COLORS, CRITERIA_FALLBACK_COLOR, getCriteriaTextColor } from '../../utils/badgeCriteria';
 
 /**
  * Dunkelmodus (25.09.2026): folgt der Systemeinstellung.
@@ -1173,6 +1174,70 @@ describe('Dunkelmodus: Eck-Marken -- weisse Schrift auf Datenfarbe (Paket K2)', 
       if (k < 4.5) schwach.push(`--${variante} (${token} ${farbe}): ${k.toFixed(2)}`);
     }
     expect(schwach).toEqual([]);
+  });
+});
+
+describe('Dunkelmodus: Kriterienfarbe als Text im Abzeichen-Ring (Paket K2, Audit BF-10)', () => {
+  // GEMESSEN am 26.09.2026 (Nachmessung, /konfi/badges, iOS = Android): Die
+  // Prozentzahl im Fortschrittsring der Abzeichen ("0%") schrieb mit der
+  // Kriterienfarbe aus utils/badgeCriteria.ts -- rohe Hexwerte, in beiden
+  // Modi gleich. Auf der dunklen Karte #242426: streak #eb445a 4,06:1
+  // (gemessen); gerechnet event_count #e63946 3,72, both_categories #5856d6
+  // 2,74, mandatory_event_count #b91c1c 2,39, teamer_year #5b21b6 1,72. Wie
+  // bei den Bereichsfarben gibt es je Kriterium ein Text-Token: hell die
+  // Kriterienfarbe selbst (im Hellen aendert sich nichts), dunkel eine
+  // aufgehellte Stufe mit mindestens 4,5:1 auf Karte und beiden
+  // Seitengruenden. Ring und Symbolkachel behalten die Kriterienfarbe als
+  // Flaeche.
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const TYPEN = Object.keys(CRITERIA_COLORS);
+  function tokenName(typ: string): string {
+    const m = /^var\((--app-text-kriterium-[a-z-]+)\)$/.exec(getCriteriaTextColor(typ));
+    expect(m, `${typ} -> ${getCriteriaTextColor(typ)}`).not.toBeNull();
+    return m![1];
+  }
+
+  it('jeder Kriterientyp hat ein Text-Token, hell identisch mit seinem Hexwert in badgeCriteria.ts', () => {
+    expect(TYPEN).toHaveLength(16);
+    const abweichend: string[] = [];
+    for (const typ of TYPEN) {
+      const t = tokenName(typ);
+      if (helleTokens.get(t) !== CRITERIA_COLORS[typ].toLowerCase()) abweichend.push(`${typ}: ${t} = ${helleTokens.get(t)} != ${CRITERIA_COLORS[typ]}`);
+    }
+    expect(abweichend).toEqual([]);
+  });
+
+  it('der Rueckfall fuer unbekannte Typen ist das Standard-Token mit der Rueckfallfarbe', () => {
+    expect(getCriteriaTextColor('gibt-es-nicht')).toBe('var(--app-text-kriterium-standard)');
+    expect(helleTokens.get('--app-text-kriterium-standard')).toBe(CRITERIA_FALLBACK_COLOR.toLowerCase());
+  });
+
+  it('dunkel liest sich jedes Token auf Karte und beiden Seitengruenden: mindestens 4,5:1, und heller als hell', () => {
+    const schwach: string[] = [];
+    for (const typ of [...TYPEN, 'gibt-es-nicht']) {
+      const t = tokenName(typ);
+      const d = dunkel.get(t);
+      if (!d) { schwach.push(`${t}: kein dunkler Wert`); continue; }
+      for (const [grundName, grund] of [['Karte', dunkel.get('--app-surface-card')!], ['iOS-Grund', '#000000'], ['Android-Grund', '#121212']]) {
+        const k = kontrast(d, grund);
+        if (k < 4.5) schwach.push(`${t} ${d} auf ${grundName} ${grund}: ${k.toFixed(2)}`);
+      }
+      if (relativeHelligkeit(d) <= relativeHelligkeit(helleTokens.get(t)!)) schwach.push(`${t}: dunkel ${d} nicht heller als hell ${helleTokens.get(t)}`);
+    }
+    expect(schwach).toEqual([]);
+  });
+
+  it('die Prozentzahl im Ring schreibt mit dem Text-Token; Ring und Kachel behalten die Kriterienfarbe als Flaeche', () => {
+    const code = lies('src/components/konfi/views/BadgesView.tsx');
+    expect(code).toMatch(/color:\s*getCriteriaTextColor\(category\.key\)/);
+    expect(code).not.toMatch(/\bcolor:\s*category\.color\b/);
+    expect(code).toMatch(/stroke=\{category\.color\}/);
+  });
+
+  it('ohne Token fiele die Rechnung durch: streak #eb445a auf der Karte unter 4,5:1 (Gegenprobe der Messung)', () => {
+    const k = kontrast(CRITERIA_COLORS.streak, dunkel.get('--app-surface-card')!);
+    expect(k).toBeLessThan(4.5);
+    expect(k).toBeGreaterThan(4.0); // 4,06 gemessen -- knapp, aber darunter
   });
 });
 

@@ -432,6 +432,37 @@ ion-list-header ion-label {
   --app-text-requests-rgb: 91, 33, 182;
   --app-text-purple: #5b21b6;
   --app-text-purple-rgb: 91, 33, 182;
+  /* Kriterienfarbe als TEXT (Paket K2, 26.09.2026, Dunkelmodus-Audit BF-10):
+     Die 16 Kriterienfarben der Abzeichen leben als Hexwerte in
+     utils/badgeCriteria.ts (Symbolkacheln, Fortschrittsring -- Flaechen, in
+     beiden Modi gleich). Die Prozentzahl im Ring schrieb mit derselben
+     Farbe: dunkel auf der Karte #242426 streak #eb445a 4,06:1 (gemessen,
+     /konfi/badges), gerechnet event_count #e63946 3,72, both_categories
+     #5856d6 2,74, mandatory_event_count #b91c1c 2,39, teamer_year #5b21b6
+     1,72. Wie bei den Bereichsfarben je Kriterium ein Text-Token: hell die
+     Kriterienfarbe selbst (im Hellen aendert sich nichts), dunkel eine
+     aufgehellte Stufe (Dunkelblock). getCriteriaTextColor() in
+     badgeCriteria.ts liefert das Token; dunkelmodus.test.ts haelt hell =
+     Hexwert in badgeCriteria.ts fest und dunkel mindestens 4,5:1 auf Karte
+     und beiden Seitengruenden. `standard` ist der Rueckfall fuer Typen ohne
+     eigene Farbe (CRITERIA_FALLBACK_COLOR). */
+  --app-text-kriterium-total-points: #ffd700;
+  --app-text-kriterium-gottesdienst-points: #ff9500;
+  --app-text-kriterium-gemeinde-points: #059669;
+  --app-text-kriterium-bonus-points: #ff6b9d;
+  --app-text-kriterium-both-categories: #5856d6;
+  --app-text-kriterium-activity-count: #3880ff;
+  --app-text-kriterium-unique-activities: #10dc60;
+  --app-text-kriterium-activity-combination: #7044ff;
+  --app-text-kriterium-category-activities: #0cd1e8;
+  --app-text-kriterium-category-combination: #0891b2;
+  --app-text-kriterium-specific-activity: #ffce00;
+  --app-text-kriterium-streak: #eb445a;
+  --app-text-kriterium-time-based: #8e8e93;
+  --app-text-kriterium-event-count: #e63946;
+  --app-text-kriterium-mandatory-event-count: #b91c1c;
+  --app-text-kriterium-teamer-year: #5b21b6;
+  --app-text-kriterium-standard: #667eea;
 
   /* Flaechen und Linien — vorher lose Hexwerte in den Komponenten */
   /* Kartengrund (25.09.2026): Bis hierher stand `white` 4x im Stylesheet und
@@ -3879,6 +3910,27 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-text-requests-rgb: 196, 181, 253;
     --app-text-purple: #c4b5fd;
     --app-text-purple-rgb: 196, 181, 253;
+    /* Kriterienfarben als Text (Paket K2): Weiss beigemischt, mindestens
+       15 %, sonst so viel, bis die Farbe auf der Karte #242426 4,5:1 haelt
+       (in Klammern der Kontrast auf der Karte; auf den Seitengruenden
+       #000000 / #121212 liegt er hoeher). */
+    --app-text-kriterium-total-points: #ffdd26;           /* 11,53 */
+    --app-text-kriterium-gottesdienst-points: #ffa526;    /* 7,87 */
+    --app-text-kriterium-gemeinde-points: #2ba680;        /* 5,07 */
+    --app-text-kriterium-bonus-points: #ff81ac;           /* 6,63 */
+    --app-text-kriterium-both-categories: #8280e0;        /* 4,51 */
+    --app-text-kriterium-activity-count: #5693ff;         /* 5,17 */
+    --app-text-kriterium-unique-activities: #34e178;      /* 8,99 */
+    --app-text-kriterium-activity-combination: #9473ff;   /* 4,54 */
+    --app-text-kriterium-category-activities: #30d8eb;    /* 8,96 */
+    --app-text-kriterium-category-combination: #2da2be;   /* 5,18 */
+    --app-text-kriterium-specific-activity: #ffd526;      /* 10,92 */
+    --app-text-kriterium-streak: #ee6073;                 /* 4,84 */
+    --app-text-kriterium-time-based: #9f9fa3;             /* 5,87 */
+    --app-text-kriterium-event-count: #eb616b;            /* 4,76 */
+    --app-text-kriterium-mandatory-event-count: #d57777;  /* 4,97 */
+    --app-text-kriterium-teamer-year: #9d7ad3;            /* 4,54 */
+    --app-text-kriterium-standard: #7d91ed;               /* 5,27 */
 
     /* Flaechen und Linien: die Stufenleiter ueber dem Seitengrund.
        Grund < Karte < gedaempfte Flaeche < Ladeflaeche.

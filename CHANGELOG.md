@@ -700,8 +700,9 @@ Versionsüberschrift.
   einem Referenzskript.
 - Im Dunkelmodus sind die kleinen farbigen Marken an Listeneinträgen —
   Punkte („+2P"), Level („20P"), Status — jetzt lesbar: Sie werden eine Stufe
-  tiefer, damit die weiße Schrift darauf genug Kontrast hat. Im Hellen
-  ändert sich nichts.
+  tiefer, damit die weiße Schrift darauf genug Kontrast hat. Auch die
+  Prozentzahl im Fortschrittsring der Abzeichen nimmt im Dunkeln eine hellere
+  Stufe ihrer Farbe. Im Hellen ändert sich nichts.
 
 ## [2.2.0] - 2026-09-18
 

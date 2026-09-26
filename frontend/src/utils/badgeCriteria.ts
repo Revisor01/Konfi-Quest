@@ -106,5 +106,16 @@ export const CRITERIA_FALLBACK_COLOR = '#667eea';
 export const getCriteriaColor = (criteriaType: string): string =>
   CRITERIA_COLORS[criteriaType] || CRITERIA_FALLBACK_COLOR;
 
+/**
+ * Kriterienfarbe als SCHRIFT auf einer Karte, als Token (`--app-text-kriterium-<typ>`
+ * in variables.css): hell die Kriterienfarbe selbst, dunkel eine aufgehellte
+ * Stufe mit mindestens 4,5:1 auf der Karte. Fuer die Prozentzahl im
+ * Fortschrittsring -- die Kriterienfarbe #eb445a stand dort im Dunkeln bei
+ * 4,06:1 (Dunkelmodus-Audit BF-10, 26.09.2026). Fuer Flaechen (Ring, Kachel)
+ * weiter getCriteriaColor().
+ */
+export const getCriteriaTextColor = (criteriaType: string): string =>
+  `var(--app-text-kriterium-${(criteriaType in CRITERIA_COLORS ? criteriaType : 'standard').replace(/_/g, '-')})`;
+
 export const getCriteriaIcon = (criteriaType: string): string =>
   CRITERIA_ICONS[criteriaType] || ICON_AKTION_GEFUELLT;
