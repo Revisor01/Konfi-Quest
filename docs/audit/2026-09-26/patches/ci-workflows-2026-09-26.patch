@@ -1,0 +1,390 @@
+diff --git a/.github/workflows/android-release.yml b/.github/workflows/android-release.yml
+index 7e37b508..6657c3ca 100644
+--- a/.github/workflows/android-release.yml
++++ b/.github/workflows/android-release.yml
+@@ -7,6 +7,11 @@ name: Android Release Build
+ # build.gradle liest sie direkt). Vor dem Dispatch: versionCode bumpen,
+ # frontend/release-notes-de.txt aktualisieren, committen.
+ #
++# RELEASE-TOR (26.09.2026): Der Job ci-gate laesst den Build erst zu, wenn der
++# Commit auf main liegt und der CI-Lauf (ci.yml) GENAU dieses Commits gruen
++# ist -- siehe .github/scripts/release-gate.py. Dispatch wie bisher, z. B.
++#   gh workflow run android-release.yml --ref main -f tracks=internal,alpha
++#
+ # WARUM DIE VORGABE NUR DIE TESTKANAELE NENNT (15.09.2026): Sie stand auf
+ # "internal,alpha,production". Ein Dispatch ohne gesetzte Eingabe — per CLI
+ # der Normalfall, dort ist die Vorgabe unsichtbar — reichte damit
+@@ -30,18 +35,65 @@ on:
+         description: "Dry-Run: kompletter Durchlauf, aber Play-Edit wird verworfen (kein Release)"
+         type: boolean
+         default: false
++      allow_non_main:
++        description: "Build von einem anderen Ref als main zulassen (Standard AUS). Nur fuer bewusste Testbuilds; die CI des Commits muss trotzdem gruen sein."
++        type: boolean
++        default: false
+ 
+ permissions:
+   contents: read
+ 
+ jobs:
++  ci-gate:
++    # RELEASE-TOR (26.09.2026, Release-Audit CI BF-01). Bis dahin baute dieser
++    # Workflow jeden Ref, den man ihm per Dispatch vorsetzte -- ohne Blick auf
++    # die CI. Nachgewiesen: Android-Lauf 53 (Commit b3b6ded1, versionCode 123)
++    # ging aus einem Commit mit ROTER CI in die Play-Tracks; der Release-Lauf
++    # startete 15 Sekunden nach dem Push, lange bevor die Tests durch waren.
++    # Ein Production-Release ist nicht umkehrbar (siehe oben, versionCode 102).
++    #
++    # Der Job prueft (a) der Commit liegt auf main -- oder die Eingabe
++    # allow_non_main wurde bewusst gesetzt -- und (b) ci.yml ist fuer GENAU
++    # diesen SHA gruen; laeuft die CI noch, wartet er bis 45 Minuten. Details
++    # und Fehlertexte: .github/scripts/release-gate.py. Rechte: actions:read
++    # fuer `gh run list` -- kein neues Secret, das GITHUB_TOKEN des Laufs reicht.
++    runs-on: ubuntu-latest
++    timeout-minutes: 50
++    permissions:
++      contents: read
++      actions: read
++    steps:
++      - name: Checkout (fuer das Skript)
++        uses: actions/checkout@v7
++
++      - name: Auf main? CI fuer diesen Commit gruen?
++        env:
++          GH_TOKEN: ${{ github.token }}
++          GH_REPO: ${{ github.repository }}
++          SHA: ${{ github.sha }}
++          REF: ${{ github.ref }}
++          ALLOW_NON_MAIN: ${{ inputs.allow_non_main }}
++        run: python3 .github/scripts/release-gate.py
++
+   build-upload:
++    needs: [ci-gate]
+     runs-on: ubuntu-latest
+     timeout-minutes: 45
+     steps:
+       - name: Checkout
+         uses: actions/checkout@v7
+ 
++      - name: Gebauter Commit ist der geprüfte Commit
++        # Das Tor hat github.sha geprueft; gebaut wird, was der Checkout
++        # ausgeliefert hat. Beides muss derselbe Commit sein.
++        run: |
++          IST=$(git rev-parse HEAD)
++          if [ "$IST" != "${{ github.sha }}" ]; then
++            echo "::error::Checkout steht auf $IST, geprueft wurde ${{ github.sha }}."
++            exit 1
++          fi
++          echo "Baue $IST (vom Release-Tor geprueft)."
++
+       - name: JDK 21 einrichten
+         uses: actions/setup-java@v5
+         with:
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 31c0fb4e..7419e90a 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -102,9 +102,11 @@ jobs:
+         working-directory: backend
+         run: npm ci
+ 
++      # Ab "high" rot (26.09.2026, Release-Audit Toolchain BF-08); vorher erst ab
++      # "critical". Gemessen am 26.09.2026: 0 Schwachstellen.
+       - name: Security audit
+         working-directory: backend
+-        run: npm audit --audit-level=critical
++        run: npm audit --audit-level=high
+ 
+       - name: Run tests
+         working-directory: backend
+@@ -113,7 +115,11 @@ jobs:
+           JWT_SECRET: test-secret-ci
+           ACTIVITY_PHOTO_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+           NODE_ENV: test
+-        run: npx vitest run --config tests/vitest.config.ts --passWithNoTests
++        # KEIN --passWithNoTests (26.09.2026, Release-Audit Tests BF-08 / CI BF-12):
++        # Vitest 4 bricht ohne gefundene Tests von selbst mit Exit 1 ab. Das Flag
++        # hob genau diesen Schutz auf -- ein Tippfehler im include-Muster oder ein
++        # Umzug des Testordners haette Build und Deploy mit NULL Tests durchgelassen.
++        run: npx vitest run --config tests/vitest.config.ts
+ 
+   frontend-test:
+     runs-on: ubuntu-latest
+@@ -139,43 +145,44 @@ jobs:
+         # Ionic nicht vertraegt.
+         run: npm ci
+ 
+-      # Lint NUR fuer die im PR geaenderten Frontend-Dateien: Der Altbestand
+-      # (273 Meldungen, Stand 31.08.2026 — von 1098 heruntergearbeitet) bleibt
+-      # unangetastet, aber wer eine Datei anfasst, hinterlaesst sie sauber.
+-      # Bewusst KEINE Baseline-Datei: die muesste bei jedem Fix neu erzeugt
+-      # werden und produziert Dauer-Merge-Konflikte. Auch kein --max-warnings
+-      # ueber alles: eine Gesamtzahl ortet den Verursacher nicht.
+-      # SCHARF seit 31.08.2026: Ein Verstoss in einer geaenderten Datei laesst
+-      # den Job fehlschlagen.
++      # Lint ueber den GANZEN Frontend-Baum, bei Push UND Pull Request.
+       #
+-      # Bewertet werden nur FEHLER, nicht Warnungen (kein --max-warnings 0).
+-      # Grund: Die rund 230 react-hooks-Meldungen wurden einzeln durchgesehen
+-      # und begruendet als harmlos eingestuft (siehe eslint.config.js); sie
+-      # liegen in 84 der 235 Quelldateien, darunter jede der acht am
+-      # haeufigsten angefassten. Mit --max-warnings 0 wuerde praktisch jeder
+-      # PR an geprueftem Altbestand scheitern — und der schnellste Ausweg
+-      # waere ein eslint-disable, also genau die falsche Gewohnheit.
++      # Bis zum 26.09.2026 lief der Schritt nur bei pull_request und nur ueber
++      # die im PR geaenderten Dateien. Seit dem 31.08.2026 ging aber kein PR
++      # mehr durch -- alle Commits gehen direkt auf main -- und der Schritt
++      # lief vier Wochen kein einziges Mal (Release-Audit: Tests BF-07,
++      # Toolchain BF-01). Der Bestand wuchs derweil auf 19 Fehler (15x
++      # no-unused-vars, 3x react-hooks/globals, 1x no-require-imports); die
++      # sind am 26.09.2026 behoben, der Baum steht auf 0 Fehlern.
+       #
+-      # Neue Verstoesse gegen no-explicit-any und no-unused-vars sind FEHLER
+-      # und blockieren weiterhin. Beide stehen aktuell auf null.
+-      - name: Lint (nur im PR geaenderte Dateien)
+-        if: github.event_name == 'pull_request'
++      # Bewertet werden nur FEHLER, nicht Warnungen (kein --max-warnings).
++      # Grund: Die rund 200 react-hooks-Meldungen der sechs herabgestuften
++      # Regeln wurden einzeln durchgesehen und begruendet als harmlos
++      # eingestuft (siehe eslint.config.js). Mit --max-warnings 0 wuerde
++      # praktisch jeder Push an geprueftem Altbestand scheitern -- und der
++      # schnellste Ausweg waere ein eslint-disable, also genau die falsche
++      # Gewohnheit. Warnungen bleiben im Log sichtbar.
++      #
++      # Ganzer Baum statt Diff: Bei 0 Fehlern im Bestand ortet ESLint jeden
++      # neuen Fehler selbst (Datei:Zeile); ein Diff gegen github.event.before
++      # braucht es dafuer nicht -- und der hat bei Force-Push und erstem Push
++      # eines Branches Sonderfaelle. Laufzeit rund eine Minute.
++      - name: Lint
++        working-directory: frontend
++        run: npx eslint .
++
++      # Typpruefung und Web-Build, BEVOR das Test-Gate gruen wird (26.09.2026,
++      # Release-Audit CI BF-07). Vitest prueft keine Typen und laesst kein CSS
++      # durch den Bundler. Am 26.09.2026 brach eine fehlende Klammer im
++      # Dunkelblock (36b8f7ce) erst in build-and-push auf main: Tests gruen,
++      # kein Image, kein Deploy -- und nichts hat es gemeldet. Bis dahin lief
++      # der Build ausschliesslich im Docker-Image, also NACH dem Gate.
++      # Gemessen am 26.09.2026 lokal: tsc 14 s, vite build 17 s.
++      - name: Typpruefung und Web-Build
++        working-directory: frontend
+         run: |
+-          git fetch --no-tags origin "${{ github.base_ref }}"
+-          # HEAD ist bei pull_request der Merge-Commit von Base+PR — der
+-          # Zwei-Punkt-Diff gegen die Base-Spitze ergibt genau die PR-Aenderungen.
+-          mapfile -t files < <(git diff --name-only --diff-filter=ACMR \
+-            "origin/${{ github.base_ref }}" HEAD -- \
+-            'frontend/src/**/*.ts' 'frontend/src/**/*.tsx' \
+-            | sed 's|^frontend/||')
+-          if [ "${#files[@]}" -eq 0 ]; then
+-            echo "Keine geaenderten Frontend-Quelldateien — Lint uebersprungen."
+-            exit 0
+-          fi
+-          echo "Gelintet werden ${#files[@]} Datei(en):"
+-          printf ' - %s\n' "${files[@]}"
+-          cd frontend
+-          npx eslint --no-error-on-unmatched-pattern "${files[@]}"
++          npx tsc --noEmit
++          npx vite build --logLevel warn
+ 
+       # Die API-Referenz unter frontend/public/docs/api/ wird eingecheckt, damit
+       # sie im Docker-Build landet (dessen Kontext ist ./frontend — docs/api/
+@@ -221,13 +228,20 @@ jobs:
+           fi
+           echo "Handbuch ist aktuell."
+ 
++      # Ab "high" rot, und zwar WIRKLICH (26.09.2026, Release-Audit CI BF-12 /
++      # Toolchain BF-08). Bis dahin stand hier `|| true`: Der Schritt konnte nie
++      # fehlschlagen, auch nicht bei einer kuenftigen kritischen Meldung. Die drei
++      # bekannten moderate-Meldungen zu react-router 6 (Ionic 9 verlangt genau
++      # diese Hauptversion, siehe CLAUDE.md) liegen unter der Schwelle und
++      # blockieren nicht. Gemessen am 26.09.2026: Frontend 3 moderate, Exit 0.
+       - name: Security audit
+         working-directory: frontend
+-        run: npm audit --audit-level=critical || true
++        run: npm audit --audit-level=high
+ 
++      # KEIN --passWithNoTests -- Begruendung beim Backend-Job.
+       - name: Run tests
+         working-directory: frontend
+-        run: npx vitest run --passWithNoTests
++        run: npx vitest run
+ 
+   e2e-test:
+     runs-on: ubuntu-latest
+@@ -372,6 +386,19 @@ jobs:
+     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+     runs-on: ubuntu-latest
+     timeout-minutes: 15
++    # Deploys laufen NACHEINANDER (26.09.2026, Release-Audit CI BF-04). Ohne
++    # diese Gruppe liefen zwei kurz aufeinander folgende Pushes parallel, und
++    # der aeltere konnte sein PUT /api/stacks NACH dem neueren absetzen --
++    # Produktion stand dann wieder auf dem aelteren SHA, und beide Verifies
++    # waren gruen. cancel-in-progress: false, weil ein laufender Deploy nie
++    # abgebrochen werden darf; ein WARTENDER wird durch den naechsten ersetzt
++    # (GitHub haelt je Gruppe genau einen Wartenden -- der ersetzte Lauf
++    # erscheint als "cancelled", das ist kein Fehler). Die Gruppe serialisiert,
++    # sie ordnet nicht: Braucht der aeltere Push laenger fuer seine Tests,
++    # kommt sein Deploy weiterhin NACH dem neueren an die Reihe.
++    concurrency:
++      group: deploy-production
++      cancel-in-progress: false
+     steps:
+       - name: Checkout (fuer Backend-Diff-Erkennung)
+         uses: actions/checkout@v7
+@@ -438,11 +465,36 @@ jobs:
+           # Owner-agnostisch matchen: github.repository_owner ist 'Revisor01' (mixed case),
+           # der ghcr-Image-Pfad aber lowercase 'revisor01' -> ein Pattern mit dem Owner
+           # wuerde NIE matchen. Stattdessen am eindeutigen 'konfi-quest-(backend|frontend)'
+-          # ankern. GIT_SHA via -s an perl uebergeben (keine Shell-Interpolation von $1).
+-          IMG_TAG="$IMG_TAG" perl -i -pe 's#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g' compose.yml
++          # ankern. IMG_TAG ueber die Umgebung an perl (keine Shell-Interpolation von $1).
++          #
++          # NUR die Dienste backend, backend2 und frontend (26.09.2026, Release-Audit
++          # CI BF-03). Bis dahin traf das Muster JEDE konfi-quest-backend-Zeile, also
++          # auch backend-test (Tag test-latest, gebaut von test-backend.yml). Nach
++          # jedem Push lief test-api damit auf demselben SHA wie Live, und ein danach
++          # gebautes test-latest wurde vom Stack nicht mehr referenziert. perl merkt
++          # sich den Dienstblock (Dienstnamen stehen mit zwei Leerzeichen Einzug
++          # unter services:) und schreibt nur in den drei Live-Diensten um.
++          bt_vorher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
++          IMG_TAG="$IMG_TAG" perl -i -pe '
++            BEGIN { $svc = "" }
++            $svc = ""  if /^\S/;
++            $svc = $1  if /^  ([A-Za-z0-9_.-]+):\s*(?:#.*)?$/;
++            s#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g
++              if $svc =~ /^(?:backend|backend2|frontend)$/;
++          ' compose.yml
+           echo "compose images nach Tag-Rewrite:"; grep -E "image:.*konfi-quest" compose.yml
+           grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
+           grep -q "konfi-quest-frontend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
++          # Gegenprobe: Die image-Zeile von backend-test muss unveraendert sein --
++          # sonst hat der Rewrite wieder zu weit gegriffen, und wir deployen NICHT.
++          bt_nachher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
++          if [ "$bt_vorher" != "$bt_nachher" ]; then
++            echo "::error::Tag-Rewrite hat backend-test angefasst ($bt_vorher -> $bt_nachher). Abbruch."; exit 1
++          fi
++          case "$bt_nachher" in
++            ""|*:test-*) ;;
++            *) echo "::warning::backend-test steht auf $bt_nachher statt auf test-latest -- Altlast des frueheren Rewrites. Im Portainer-Stack von Hand auf test-latest zurueckstellen." ;;
++          esac
+ 
+           redeploy() {
+             python3 <<'PY'
+diff --git a/.github/workflows/ios-release.yml b/.github/workflows/ios-release.yml
+index 53079a3c..b52c0043 100644
+--- a/.github/workflows/ios-release.yml
++++ b/.github/workflows/ios-release.yml
+@@ -7,6 +7,11 @@ name: iOS Release Build
+ #
+ # Version/Build-Nummer kommen aus frontend/version.json (Quelle der Wahrheit,
+ # via scripts/apply-version.sh). Vor dem Dispatch dort bumpen und committen.
++#
++# RELEASE-TOR (26.09.2026): Der Job ci-gate laesst den Build erst zu, wenn der
++# Commit auf main liegt und der CI-Lauf (ci.yml) GENAU dieses Commits gruen
++# ist -- siehe .github/scripts/release-gate.py. Dispatch wie bisher, z. B.
++#   gh workflow run ios-release.yml --ref main
+ 
+ on:
+   workflow_dispatch:
+@@ -15,18 +20,68 @@ on:
+         description: 'API-Basis (LEER = Produktion). Fuer Tests: https://test-api.konfi-quest.de/api'
+         required: false
+         default: ''
++      allow_non_main:
++        description: 'Build von einem anderen Ref als main zulassen (Standard AUS). Nur fuer bewusste Testbuilds; die CI des Commits muss trotzdem gruen sein.'
++        type: boolean
++        default: false
+ 
+ permissions:
+   contents: read
+ 
+ jobs:
++  ci-gate:
++    # RELEASE-TOR (26.09.2026, Release-Audit CI BF-01). Bis dahin baute dieser
++    # Workflow jeden Ref, den man ihm per Dispatch vorsetzte -- ohne Blick auf
++    # die CI. Nachgewiesen: Build 227 (b3b6ded1) und Build 222 (830257e9)
++    # gingen aus Commits mit ROTER CI zu App Store Connect; die Release-Laeufe
++    # starteten Sekunden nach dem Push, lange bevor die Tests durch waren. Der
++    # Web-Deploy in ci.yml war immer gegatet, der Store-Build nicht -- und ein
++    # Store-Build laesst sich nicht per Redeploy zurueckholen.
++    #
++    # Der Job prueft (a) der Commit liegt auf main -- oder die Eingabe
++    # allow_non_main wurde bewusst gesetzt -- und (b) ci.yml ist fuer GENAU
++    # diesen SHA gruen; laeuft die CI noch, wartet er bis 45 Minuten. Details
++    # und Fehlertexte: .github/scripts/release-gate.py. Eigener Ubuntu-Job,
++    # damit das Warten keine macOS-Minuten kostet und nicht am 60-Minuten-
++    # Rahmen des Builds knabbert. Rechte: actions:read fuer `gh run list` --
++    # kein neues Secret, das GITHUB_TOKEN des Laufs reicht.
++    runs-on: ubuntu-latest
++    timeout-minutes: 50
++    permissions:
++      contents: read
++      actions: read
++    steps:
++      - name: Checkout (fuer das Skript)
++        uses: actions/checkout@v7
++
++      - name: Auf main? CI fuer diesen Commit gruen?
++        env:
++          GH_TOKEN: ${{ github.token }}
++          GH_REPO: ${{ github.repository }}
++          SHA: ${{ github.sha }}
++          REF: ${{ github.ref }}
++          ALLOW_NON_MAIN: ${{ inputs.allow_non_main }}
++        run: python3 .github/scripts/release-gate.py
++
+   build-upload:
++    needs: [ci-gate]
+     runs-on: macos-26
+     timeout-minutes: 60
+     steps:
+       - name: Checkout
+         uses: actions/checkout@v7
+ 
++      - name: Gebauter Commit ist der geprüfte Commit
++        # Das Tor hat github.sha geprueft; gebaut wird, was der Checkout
++        # ausgeliefert hat. Beides muss derselbe Commit sein.
++        run: |
++          IST=$(git rev-parse HEAD)
++          if [ "$IST" != "${{ github.sha }}" ]; then
++            echo "::error::Checkout steht auf $IST, geprueft wurde ${{ github.sha }}."
++            exit 1
++          fi
++          echo "Baue $IST (vom Release-Tor geprueft)."
++
+       - name: Neuestes stabiles Xcode waehlen
+         run: |
+           # Beta-Installationen ausschliessen — genau deren Stempel verursachen ITMS-90111.
+diff --git a/.github/workflows/notfall-deploy.yml b/.github/workflows/notfall-deploy.yml
+index 9fb6a878..d529867d 100644
+--- a/.github/workflows/notfall-deploy.yml
++++ b/.github/workflows/notfall-deploy.yml
+@@ -93,9 +93,25 @@ jobs:
+             | python3 -c "import sys,json;open('compose.yml','w').write(json.load(sys.stdin)['StackFileContent'])"
+           test -s compose.yml || { echo "::error::compose leer"; exit 1; }
+ 
+-          IMG_TAG="$IMG_TAG" perl -i -pe 's#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g' compose.yml
++          # NUR die Dienste backend, backend2 und frontend (26.09.2026, Release-Audit
++          # CI BF-03, Nebenbefund): Derselbe Rewrite wie in ci.yml. Bis dahin traf das
++          # Muster auch backend-test (Tag test-latest) -- ein Notfall-Deploy haette die
++          # Test-Umgebung mit auf den Live-Stand gestellt.
++          bt_vorher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
++          IMG_TAG="$IMG_TAG" perl -i -pe '
++            BEGIN { $svc = "" }
++            $svc = ""  if /^\S/;
++            $svc = $1  if /^  ([A-Za-z0-9_.-]+):\s*(?:#.*)?$/;
++            s#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g
++              if $svc =~ /^(?:backend|backend2|frontend)$/;
++          ' compose.yml
+           echo "compose images nach Tag-Rewrite:"; grep -E "image:.*konfi-quest" compose.yml
+-          grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite fehlgeschlagen"; exit 1; }
++          grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
++          grep -q "konfi-quest-frontend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
++          bt_nachher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
++          if [ "$bt_vorher" != "$bt_nachher" ]; then
++            echo "::error::Tag-Rewrite hat backend-test angefasst ($bt_vorher -> $bt_nachher). Abbruch."; exit 1
++          fi
+ 
+           redeploy() {
+             python3 <<'PY'

@@ -592,3 +592,30 @@ richtig machen oder bis dahin entfernen.
   zeigt für versionCode 124 lesbare Stapel (Mapping-Upload wirksam)?
 - **Firebase/Google Cloud:** Anwendungsbeschränkungen der beiden Client-API-Schlüssel.
 - **ghcr:** Anzahl und Alter der Tags (Aufräumregel? jeder Push erzeugt zwei Images).
+
+## Auslieferung der Workflow-Änderungen (Nachtrag 26.09.2026)
+
+Die Behebungen aus Paket B, die Dateien unter `.github/workflows/` verändern (BF-01
+Release-Tor, BF-03 Deploy-Rewrite, BF-04 `concurrency`, BF-07 Typprüfung/Build im Test-Job,
+BF-12 `--passWithNoTests` und `npm audit`, Lint bei jedem Push; dazu der Nebenbefund im
+Notfall-Deploy), konnten von der Koordination **nicht gepusht** werden: Der Token der
+GitHub-App darf Workflow-Dateien weder anlegen noch ändern (`refusing to allow a GitHub App
+to create or update workflow … without 'workflows' permission`). Alles Übrige aus Paket B
+(Skript `.github/scripts/release-gate.py`, ESLint-Bereinigung, `eslint.config.js`, CHANGELOG,
+Status-Zeilen) liegt im Branch.
+
+Die Workflow-Änderungen liegen vollständig als Patch bei:
+`docs/audit/2026-09-26/patches/ci-workflows-2026-09-26.patch` (gegen den Stand `edb27d12`
+erzeugt, `git apply --check` gegen den Branch sauber). Anwenden auf einem Rechner mit
+eigenem GitHub-Zugang:
+
+```
+git checkout claude/fervent-edison-wp5yfj
+git apply docs/audit/2026-09-26/patches/ci-workflows-2026-09-26.patch
+git add .github/workflows && git commit -m "ci: Workflow-Änderungen aus dem Release-Audit 26.09.2026"
+git push
+```
+
+Alternativ der GitHub-App im Repo die Berechtigung „Workflows" geben; dann kann die
+Koordination die Commits selbst nachschieben. Die Status-Zeilen an BF-01/03/04/07/12 oben
+gelten erst, wenn der Patch auf `main` ist.
