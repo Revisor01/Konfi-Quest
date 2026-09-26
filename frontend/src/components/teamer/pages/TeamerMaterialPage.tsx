@@ -642,12 +642,24 @@ const TeamerMaterialPage: React.FC = () => {
             {/* Material-Liste: "Für alle" oben, danach alles Weitere
                 (Entscheidung Simon, 31.08.2026). */}
             {materials.length === 0 ? (
-              <EmptyState
-                icon={ICON_DATEI}
-                title="Keine Materialien"
-                message="Noch keine Materialien vorhanden."
-                iconColor="var(--app-color-material)"
-              />
+              /* In der Karte, wie ueberall sonst (Simon am Geraet,
+                 26.09.2026: "Material Seite im Teamer. Wenn nichts da ist
+                 fehlt der Hintergrund von ion Card"). Der leere Zustand stand
+                 hier nackt im Content -- als einzige Stelle: Die
+                 Dateien-Ansicht derselben Datei und AdminMaterialPage setzen
+                 ihn seit jeher in IonCard/IonCardContent. */
+              <IonList inset={true} className="app-segment-wrapper">
+                <IonCard className="app-card">
+                  <IonCardContent>
+                    <EmptyState
+                      icon={ICON_DATEI}
+                      title="Keine Materialien"
+                      message="Noch keine Materialien vorhanden."
+                      iconColor="var(--app-color-material)"
+                    />
+                  </IonCardContent>
+                </IonCard>
+              </IonList>
             ) : (
               <>
                 {globaleMaterials.length > 0 && (

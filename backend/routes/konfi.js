@@ -97,7 +97,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
             AND e.organization_id = $2
             AND (e.cancelled IS NULL OR e.cancelled = false)
         ) ce ON ce.user_id = u.id
-        WHERE u.id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
+        WHERE u.id = $1 AND u.deleted_at IS NULL
       `;
       const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);
 
@@ -425,7 +425,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         JOIN roles r ON u.role_id = r.id
-        WHERE u.id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
+        WHERE u.id = $1 AND u.deleted_at IS NULL
       `;
       const { rows: [konfi] } = await db.query(query, [konfiId]);
       
@@ -470,7 +470,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           FROM event_bookings 
           GROUP BY user_id
         ) event_stats ON u.id = event_stats.user_id
-        WHERE u.id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
+        WHERE u.id = $1 AND u.deleted_at IS NULL
         GROUP BY badge_stats.badge_count, activity_stats.activity_count, event_stats.event_count
       `;
       const { rows: [stats] } = await db.query(statsQuery, [konfiId, req.user.organization_id]);

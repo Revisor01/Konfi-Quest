@@ -246,6 +246,11 @@ Versionsüberschrift.
   die Anzeige nicht.
 - Im Profil steht jetzt der Name der Gemeinde, in der man gerade arbeitet.
   Bisher stand dort immer die Gemeinde des Kontos.
+- Wer in einer Gemeinde Konfi ist und in einer anderen zur Leitung oder zum
+  Team gehört, sieht dort jetzt Startseite, Profil und Abzeichen. Bisher blieb
+  die Startseite leer und es wurden keine Abzeichen angezeigt.
+- Auf der Materialseite des Teams steht der Hinweis „Keine Materialien" jetzt
+  auf einer Karte wie überall sonst; bisher stand er ohne Hintergrund da.
 - Die Leitung sieht die Jahresrückblicke auch von Personen, die über eine
   zweite Mitgliedschaft in ihrer Gemeinde arbeiten. Bisher blieb die Liste
   dort verschlossen.
