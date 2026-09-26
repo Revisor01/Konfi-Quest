@@ -88,11 +88,31 @@ const checkUserHierarchy = (operation = 'manage') => {
 
       // Bei Update/Delete/View-Operationen müssen wir erst den Ziel-User laden
       if (targetUserId) {
+        // BEIDE Quellen der Zugehoerigkeit (26.09.2026). Bis dahin stand hier
+        // allein `u.organization_id = $2`, also die Stamm-Gemeinde -- wer ueber
+        // user_organizations in der Gemeinde arbeitet, war dort nicht
+        // verwaltbar und bekam 404. Dasselbe Muster wie bei den
+        // Push-Empfaengern (25.09.2026, utils/orgMitglieder.js).
+        //
+        // DIE ROLLE GILT JE GEMEINDE: user_organizations traegt ein eigenes
+        // role_id. Geprueft wird die Rolle in DIESER Gemeinde, nicht die am
+        // Konto -- sonst liesse sich eine Person, die hier org_admin und in
+        // ihrer Stamm-Gemeinde Teamer:in ist, von einem Admin verwalten.
+        // Fuehren beide Quellen dieselbe Gemeinde, gewinnt die Rolle am
+        // Nutzerkonto (wie in GET /auth/my-organizations und orgMitglieder.js).
         const query = `
-          SELECT u.id, u.role_id, r.name as role_name
+          SELECT u.id, r.id AS role_id, r.name as role_name
           FROM users u
-          JOIN roles r ON u.role_id = r.id
+          JOIN roles r ON r.id = u.role_id
           WHERE u.id = $1 AND u.organization_id = $2
+          UNION ALL
+          SELECT u.id, r.id AS role_id, r.name as role_name
+          FROM user_organizations uo
+          JOIN users u ON u.id = uo.user_id
+          JOIN roles r ON r.id = uo.role_id
+          WHERE uo.user_id = $1 AND uo.organization_id = $2
+            AND u.organization_id <> $2
+          LIMIT 1
         `;
         const { rows: [targetUser] } = await req.db.query(query, [targetUserId, req.user.organization_id]);
 

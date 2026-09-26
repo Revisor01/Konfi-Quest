@@ -120,22 +120,36 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 
+    // Beide Quellen der Zugehoerigkeit (26.09.2026), wie in
+    // checkUserHierarchy: sonst waere eine Person aus user_organizations zwar
+    // verwaltbar, aber nicht anzeigbar -- die Oberflaeche laedt diese Route,
+    // bevor sie Jahrgaenge zuweisen laesst. Die Rolle wird dabei fuer DIESE
+    // Gemeinde aufgeloest (uo.role_id), damit die Anzeige nicht die Rolle der
+    // Stamm-Gemeinde behauptet.
     const userQuery = `
       SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
              u.last_login_at, u.created_at, u.updated_at,
-             r.id as role_id, r.name as role_name, r.display_name as role_display_name
+             COALESCE(uo.role_id, u.role_id) as role_id,
+             r.name as role_name, r.display_name as role_display_name
       FROM users u
-      LEFT JOIN roles r ON u.role_id = r.id
-      WHERE u.id = $1 AND u.organization_id = $2
+      LEFT JOIN user_organizations uo
+             ON uo.user_id = u.id AND uo.organization_id = $2
+                AND u.organization_id <> $2
+      LEFT JOIN roles r ON r.id = COALESCE(uo.role_id, u.role_id)
+      WHERE u.id = $1 AND (u.organization_id = $2 OR uo.organization_id = $2)
     `;
 
+    // Nur die Jahrgaenge DIESER Gemeinde (26.09.2026). Ohne den Filter zeigte
+    // die Detailansicht einer Person, die in mehreren Gemeinden arbeitet, auch
+    // deren Jahrgaenge aus den anderen -- die Schwester-Route
+    // GET /:id/jahrgaenge filtert seit jeher ueber j.organization_id.
     const jahrgaengeQuery = `
       SELECT j.id, j.name, uja.can_view, uja.can_edit, uja.assigned_at,
              assigner.display_name as assigned_by_name
       FROM user_jahrgang_assignments uja
       JOIN jahrgaenge j ON uja.jahrgang_id = j.id
       LEFT JOIN users assigner ON uja.assigned_by = assigner.id
-      WHERE uja.user_id = $1
+      WHERE uja.user_id = $1 AND j.organization_id = $2
       ORDER BY j.name
     `;
 
@@ -146,7 +160,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
 
-      const { rows: jahrgaenge } = await db.query(jahrgaengeQuery, [id]);
+      const { rows: jahrgaenge } = await db.query(jahrgaengeQuery, [id, organizationId]);
 
       res.json({
         ...user,
@@ -653,8 +667,22 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     }
 
     try {
-        // Check if user exists in organization
-        const { rows: [user] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [userId, organizationId]);
+        // Gehoert die Person zu dieser Gemeinde? BEIDE Quellen (26.09.2026):
+        // Stamm-Gemeinde am Konto ODER Zusatzzugehoerigkeit ueber
+        // user_organizations. Vorher stand hier allein organization_id, und wer
+        // ueber user_organizations in der Gemeinde arbeitet, bekam 404 --
+        // dasselbe Muster wie bei den Push-Empfaengern (utils/orgMitglieder.js).
+        // Die Rollen-Hierarchie prueft userHierarchyMiddleware, ebenfalls ueber
+        // beide Quellen und mit der Rolle DIESER Gemeinde.
+        const { rows: [user] } = await db.query(
+            `SELECT u.id
+               FROM users u
+              WHERE u.id = $1
+                AND (u.organization_id = $2
+                     OR EXISTS (SELECT 1 FROM user_organizations uo
+                                 WHERE uo.user_id = u.id AND uo.organization_id = $2))`,
+            [userId, organizationId]
+        );
         if (!user) {
             return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
         }
