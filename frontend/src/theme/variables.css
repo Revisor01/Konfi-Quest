@@ -3840,6 +3840,65 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
        der dreifachen Deckkraft -- ein 10-%-Schwarz verschwaende hier. */
     --app-schatten-karte-flaeche: var(--app-schatten-karte);
   }
+
+  /* FLAECHEN-STUFENLEITER (26.09.2026, Dunkelmodus-Audit BF-04/BF-11).
+     Ionic setzt seine Flaechenvariablen in dark.system.css JE PLATTFORM:
+       :root.ios { --ion-item-background: #000000; --ion-card-background: #1c1c1d }
+       :root.md  { --ion-item-background: #1e1e1e; --ion-card-background: #1e1e1e;
+                   --ion-toolbar-background: #1f1f1f }
+       :root.ios ion-modal { --ion-background-color: step-100 (#1a1a1a);
+                             --ion-toolbar-background: step-150 (#262626) }
+     Der Block darueber definiert nur --app-Tokens; Ionics Variablen blieben
+     unangetastet -- zwei Stufenleitern, je Plattform anders gemischt.
+     Gemessen (computed.cjs, iOS, Konfi-Verwaltung der Leitung): Seiten-
+     verlauf #121212-#1f1f22, Suchfeld-Item #000000, Karte #1c1c1d, Postfach-
+     Karte #242426, Glasleiste -- fuenf Toene auf einem Screen, die 222
+     Inset-Listen tiefschwarz im dunkelgrauen Grund. Auf Android derselbe
+     Screen stimmig, weil Ionics md-Werte zufaellig dicht an unseren liegen.
+
+     Deshalb hier Ionics Variablen an die App-Tokens binden, je Plattform.
+     `html:root.ios` hat Spezifitaet (0,2,1) und schlaegt Ionics `:root.ios`
+     (0,2,0) unabhaengig von der Ladereihenfolge; `html:root.ios ion-modal`
+     (0,2,2) schlaegt `:root.ios ion-modal` (0,2,1). dunkelmodus.test.ts
+     rechnet jede Bindung gegen die Palette nach.
+
+     Die Leiter, von unten: Seitengrund (Ionic je Plattform, iOS #000000,
+     md #121212; Seiten mit .app-gradient-background ihr Verlauf) < Leiste
+     (--app-glasleiste-rgb: auf iOS als Glas, auf md deckend) < Karte =
+     Listenfeld (--app-surface-card) < gedaempftes Feld (--app-surface-muted).
+
+     Nur --ion-background-color bleibt Ionics: Daraus leitet die Palette ihre
+     Helligkeitsstufen ab (step-50 ... step-950), an denen Eingabefelder,
+     Toasts und Datumswaehler haengen; und die Karten-Rechnung (dL*) im Test
+     ist gegen genau diese beiden Gruende gemacht. --ion-tab-bar-background
+     braucht keine Bindung: ion-tab-bar.ios setzt das Glas selbst, und
+     ion-tab-bar.md setzt --background direkt auf den Seitengrund. */
+  html:root.ios,
+  html:root.md {
+    --ion-item-background: var(--app-surface-card);
+    --ion-card-background: var(--app-surface-card);
+  }
+  html:root.md {
+    /* Die md-Palette setzt die Kopfleiste deckend auf #1f1f1f und schlaegt
+       damit die :root-Regel (Glas mit 72 % Deckkraft). Auf Android gibt es
+       keinen Blur, die Leiste MUSS deckend sein -- aber im Leisten-Ton der
+       App (#1c1c1e), nicht in Ionics. */
+    --ion-toolbar-background: rgb(var(--app-glasleiste-rgb));
+    /* Meldungen und Aktionsblaetter: Ionic nimmt auf md step-100 (#2a2a2a),
+       ein weiterer Ton. Sie sind Karten ueber einem abgedunkelten Grund und
+       tragen den Kartenton. (iOS: Glas aus dem Theme, bleibt.) */
+    --ion-overlay-background-color: var(--app-surface-card);
+  }
+  /* iOS-Modale: Ionic hebt sie an (Grund #1a1a1a, Leiste #262626) -- zwei
+     Toene, die es sonst nirgends gibt, und die Leiste laege HELLER als die
+     Karten darunter. Ein Modal ist eine Seite: derselbe Grund, dieselbe
+     Glasleiste. `inherit` nimmt den Wert der Wurzel, also Ionics Seitengrund
+     und die Leisten-Regel oben. */
+  html:root.ios ion-modal {
+    --ion-background-color: inherit;
+    --ion-toolbar-background: inherit;
+    --ion-toolbar-border-color: inherit;
+  }
 }
 
 /* ============================================

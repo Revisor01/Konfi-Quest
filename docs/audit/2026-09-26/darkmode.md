@@ -171,6 +171,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-04: iOS — fünf Flächentöne auf einem Screen, Inset-Listen tiefschwarz
 
 - **Schwere:** MITTEL
+- **Status:** behoben 26.09.2026 — Ionics Flächenvariablen hängen im Dunkelblock je Plattform an den App-Tokens (`html:root.ios` / `html:root.md`, Spezifität (0,2,1) gegen Ionics (0,2,0)): `--ion-item-background` und `--ion-card-background` = `--app-surface-card`, die md-Kopfleiste im Leisten-Ton (`--app-glasleiste-rgb`, deckend), md-Meldungen und Aktionsblätter im Kartenton (`--ion-overlay-background-color`), iOS-Modale per `inherit` auf Seitengrund und Glasleiste statt Ionics angehobener Stufen (`html:root.ios ion-modal`, (0,2,2) gegen (0,2,1)). `--ion-background-color` bleibt Ionics (Begründung im Dunkelblock). Gemessen (Playwright, 94 Zustände dunkel): Such-Item der Konfi-Verwaltung auf iOS `rgb(0,0,0)` → `rgb(36,36,38)` (= Kartenton), Android `#1e1e1e` → `#242426`; neutrale Flächentöne je Screen auf Android höchstens 5 → 4, Zustände mit mehr als drei Tönen 20 → 5 (die fünf: gedämpfte Stempel-Kacheln `#323234` als vierte Stufe neben Grund, Leiste, Karte — gewollt); Kontrastverstöße unverändert 84 (Flächen, nicht Schrift). Hell: 132 von 148 Screenshots pixelgleich, die 16 Abweichler sind Tageslosung und Kopfzeilen-Animation, keine Farbe — der Diff liegt vollständig im `@media (prefers-color-scheme: dark)`-Block. Test: Spezifitäts-Rechner gegen jede Regel aus `dark.system.css` für dieselbe Variable, Plattform und dasselbe Zielelement.
 - **Fundstelle:** `node_modules/@ionic/react/css/palettes/dark.system.css` (`:root.ios { --ion-background-color: #000000; --ion-item-background: #000000; --ion-card-background: #1c1c1d }`;
   `:root.md { --ion-background-color: #121212; --ion-item-background: #1e1e1e; --ion-card-background: #1e1e1e }`);
   `frontend/src/theme/variables.css:3572-3794` (Dunkelblock definiert **ausschließlich** `--app-*`-Tokens plus
@@ -317,6 +318,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-11: Doku widerspricht sich und dem Rendering
 
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — der Systemleisten-Eintrag im CHANGELOG sagt jetzt „folgen dem Telefon" statt „immer dunkel"; der Handbuch-Satz zu Karten und Listen ist seit BF-04 auf beiden Plattformen wahr und nennt sie ausdrücklich („auf iPhone und Android gleich, und ebenso bei Suchfeldern, Auswahllisten, Meldungen …"); `dunkelmodus.test.ts` prüft den Satz gegen die Datei.
 - **Fundstelle:** `CHANGELOG.md:42-47` („Die App folgt dem Dunkelmodus des Handys“) gegen `:254-257`
   („Sie sind jetzt immer dunkel und damit lesbar — die App hat keinen Dunkelmodus, also passt das
   überall“) — beide im selben Block `[Unreleased] - 2.3.0`; `docs/handbuch/03-bedienung.md:124-127`

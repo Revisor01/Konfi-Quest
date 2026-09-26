@@ -177,6 +177,12 @@ Versionsüberschrift.
   Videoclips gehen beim Hochladen und Abrufen nicht mehr durch den
   Arbeitsspeicher. Mehrere gleichzeitige Uploads bringen den Server damit nicht
   mehr an seine Grenze — auch nicht, wenn viele Gemeinden zusammenkommen.
+- Der Dunkelmodus ist flächig überarbeitet: Listen, Suchfelder, Auswahlfelder,
+  Meldungen und die Fenster, die sich über eine Seite legen, liegen jetzt auf
+  demselben dunklen Kartenton wie die Karten — auf iPhone und Android gleich.
+  Auf dem iPhone waren Listen und Suchfelder bisher tiefschwarz und die Karten
+  dunkler als vorgesehen, sodass bis zu fünf Grautöne auf einem Bildschirm
+  standen.
 
 ### Hinzugefügt
 - Im Profil steht unter „Mitteilungen prüfen", ob Mitteilungen für die App
@@ -268,8 +274,9 @@ Versionsüberschrift.
   kräftiger; im hellen Modus ändert sich nichts.
 - Auf Android waren die Knöpfe der Systemleiste unter der App (Zurück, Start,
   Übersicht) unsichtbar, sobald das Telefon im Dunkelmodus lief: Die Symbole
-  wurden weiß, die App darunter blieb hell. Sie sind jetzt immer dunkel und
-  damit lesbar — die App hat keinen Dunkelmodus, also passt das überall.
+  wurden weiß, die App darunter blieb hell. Die Symbole folgen jetzt dem
+  Telefon — dunkel auf der hellen App, hell auf der dunklen — und sind damit in
+  beiden Modi lesbar.
 - Auf Android war die blaue Zahl an der Glocke an der äußeren Spitze
   angeschnitten. Sie ist jetzt ganz zu sehen.
 - Hat eine Gemeinde noch keine Level, trägt das Symbol im leeren Zustand jetzt

@@ -349,11 +349,15 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
     const palette = lies('node_modules/@ionic/core/css/palettes/dark.system.css');
     expect(palette).toMatch(/:root\.ios\{--ion-background-color:\s*#000000/);
     expect(palette).toMatch(/:root\.md\{--ion-background-color:\s*#121212/);
-    // Und wir selbst ueberschreiben ihn nicht (nur als Rueckfall lesen ist ok).
+    // Und wir selbst setzen keinen EIGENEN Wert (nur als Rueckfall lesen ist
+    // ok). Die einzige Zeile, die die Variable anfasst, nimmt mit `inherit`
+    // Ionics angehobene Modal-Stufe (step-100) ZURUECK auf den Seitengrund --
+    // sie definiert keinen dritten Grund, siehe Stufenleiter-Test unten.
     const eigene = ohneKommentare(lies('src/theme/variables.css'))
       .split('\n')
-      .filter((z) => /^\s*--ion-background-color\s*:/.test(z));
-    expect(eigene).toEqual([]);
+      .filter((z) => /^\s*--ion-background-color\s*:/.test(z))
+      .map((z) => z.trim());
+    expect(eigene).toEqual(['--ion-background-color: inherit;']);
   });
 
   it('die Karte setzt sich auf BEIDEN Plattformen ab: dL* mindestens 8', () => {
@@ -782,6 +786,124 @@ describe('Dunkelmodus: die Kartenregel schlaegt das iOS-Theme an Spezifitaet', (
       }
     }
     expect(treffer).toEqual([]);
+  });
+});
+
+describe('Dunkelmodus: EINE Flaechen-Stufenleiter -- Ionics Flaechenvariablen haengen an den App-Tokens', () => {
+  // GEMESSEN am 26.09.2026 (Dunkelmodus-Audit BF-04, computed.cjs, iOS,
+  // Konfi-Verwaltung der Leitung): Seitenverlauf #121212-#1f1f22, Suchfeld-
+  // Item #000000, Karte #1c1c1d, Postfach-Karte #242426, Glasleiste -- fuenf
+  // Flaechentoene auf einem Screen, die 222 Inset-Listen tiefschwarz im
+  // dunkelgrauen Grund. Ursache: Ionics dark.system.css setzt
+  // --ion-item-background, --ion-card-background, --ion-toolbar-background
+  // JE PLATTFORM (`:root.ios`, `:root.md`, Spezifitaet (0,2,0)) und hebt
+  // iOS-Modale an (`:root.ios ion-modal`, (0,2,1)); der Dunkelblock der App
+  // definierte nur --app-Tokens. Zwei Stufenleitern, je Plattform anders
+  // gemischt -- eine Zeile im :root-Block (0,1,0) haette keine Chance.
+  //
+  // Der Text-Test kann das Rendering nicht sehen, aber rechnen, was der
+  // Browser rechnet: Jede App-Bindung muss Ionics Regel fuer dieselbe
+  // Variable, dieselbe Plattform und dasselbe Zielelement echt schlagen --
+  // dann ist die Ladereihenfolge egal.
+  const PALETTE = 'node_modules/@ionic/core/css/palettes/dark.system.css';
+  const paletteRegeln = regeln(ohneKommentare(lies(PALETTE)));
+  const dunkelRegeln = regeln(dunkelBloecke[0] ?? '');
+  const FLAECHEN = ['--ion-background-color', '--ion-item-background', '--ion-card-background', '--ion-toolbar-background', '--ion-tab-bar-background', '--ion-overlay-background-color'];
+  const gesetzt = (rumpf: string) => FLAECHEN.filter((v) => new RegExp(`(?:^|;)\\s*${v}\\s*:`).test(rumpf));
+  /** Woran die Regel haengt: die Wurzel oder ein Ionic-Element. */
+  const ziel = (selektor: string) => { const v = letzterVerbund(selektor.trim()); const m = /^ion-[\w-]+/.exec(v); return m ? m[0] : 'root'; };
+  const plattformVon = (selektor: string) => (/\.ios\b/.test(selektor) ? 'ios' : /\.md\b/.test(selektor) ? 'md' : null);
+
+  it('die Palette setzt die Flaechen je Plattform -- die Regeln, gegen die gerechnet wird, existieren', () => {
+    // Aendert Ionic die Palette, muss die Bindung neu gemacht werden -- nicht still gruen bleiben.
+    const ios = paletteRegeln.find((r) => r.selektor === ':root.ios');
+    const md = paletteRegeln.find((r) => r.selektor === ':root.md');
+    const modal = paletteRegeln.find((r) => r.selektor === ':root.ios ion-modal');
+    expect(ios?.rumpf).toMatch(/--ion-item-background:\s*#000000/);
+    expect(ios?.rumpf).toMatch(/--ion-card-background:\s*#1c1c1d/);
+    expect(md?.rumpf).toMatch(/--ion-item-background:\s*#1e1e1e/);
+    expect(md?.rumpf).toMatch(/--ion-card-background:\s*#1e1e1e/);
+    expect(md?.rumpf).toMatch(/--ion-toolbar-background:\s*#1f1f1f/);
+    expect(modal?.rumpf).toMatch(/--ion-background-color:/);
+    expect(modal?.rumpf).toMatch(/--ion-toolbar-background:/);
+  });
+
+  it('Karte und Listenfeld tragen auf BEIDEN Plattformen den Kartenton -- nicht Ionics Schwarz oder #1e1e1e', () => {
+    for (const plattform of ['ios', 'md']) {
+      const eigene = dunkelRegeln.filter((r) => teileObersteEbene(r.selektor).some((s) => s.trim() === `html:root.${plattform}`));
+      expect(eigene.some((r) => /--ion-item-background\s*:\s*var\(--app-surface-card\)/.test(r.rumpf)), `${plattform}: --ion-item-background an --app-surface-card`).toBe(true);
+      expect(eigene.some((r) => /--ion-card-background\s*:\s*var\(--app-surface-card\)/.test(r.rumpf)), `${plattform}: --ion-card-background an --app-surface-card`).toBe(true);
+    }
+  });
+
+  it('md: Kopfleiste im Leisten-Ton der App, Meldungen und Aktionsblaetter im Kartenton', () => {
+    // Ionics md-Palette setzt die Leiste deckend auf #1f1f1f und schlaegt
+    // damit die :root-Regel (Glas). Auf Android gibt es keinen Blur -- die
+    // Leiste bleibt deckend, aber im Ton der App (--app-glasleiste-rgb, eine
+    // Stufe unter der Karte), nicht in Ionics.
+    const md = dunkelRegeln.filter((r) => teileObersteEbene(r.selektor).some((s) => s.trim() === 'html:root.md'));
+    expect(md.some((r) => /--ion-toolbar-background\s*:\s*rgb\(var\(--app-glasleiste-rgb\)\)/.test(r.rumpf))).toBe(true);
+    expect(md.some((r) => /--ion-overlay-background-color\s*:\s*var\(--app-surface-card\)/.test(r.rumpf))).toBe(true);
+  });
+
+  it('iOS-Modale nehmen Grund und Leiste der Seite -- nicht Ionics angehobene Stufen', () => {
+    // dark.system.css: `:root.ios ion-modal { --ion-background-color: step-100
+    // (#1a1a1a); --ion-toolbar-background: step-150 (#262626) }` -- zwei Toene,
+    // die es sonst nirgends gibt, und die Leiste laege HELLER als die Karten
+    // darunter. `inherit` nimmt den Wert der Wurzel: Ionics Seitengrund und
+    // die Glasleiste. Kein eigener Wert -- sonst waere es ein dritter Grund.
+    const modal = dunkelRegeln.find((r) => r.selektor.trim() === 'html:root.ios ion-modal');
+    expect(modal, 'html:root.ios ion-modal fehlt').toBeTruthy();
+    expect(modal!.rumpf).toMatch(/--ion-background-color:\s*inherit/);
+    expect(modal!.rumpf).toMatch(/--ion-toolbar-background:\s*inherit/);
+    expect(modal!.rumpf).not.toMatch(/--ion-background-color:\s*(?:#|rgb|var)/);
+  });
+
+  it('jede Bindung ist spezifischer als Ionics Regel fuer dieselbe Variable, Plattform und Zielelement', () => {
+    const unterlegen: string[] = [];
+    let verglichen = 0;
+    for (const eigene of dunkelRegeln) {
+      const vars = gesetzt(eigene.rumpf);
+      if (!vars.length) continue;
+      for (const sel of teileObersteEbene(eigene.selektor).map((s) => s.trim())) {
+        const plattform = plattformVon(sel);
+        // Eine Bindung ohne Plattform-Klasse stuende bei (0,1,x) und verloere
+        // gegen `:root.ios` -- genau der Fehler, der behoben wurde.
+        expect(plattform, `"${sel}" nennt keine Plattform (.ios/.md)`).not.toBeNull();
+        for (const fremd of paletteRegeln) {
+          const gemeinsam = vars.filter((v) => gesetzt(fremd.rumpf).includes(v));
+          if (!gemeinsam.length) continue;
+          for (const fs of teileObersteEbene(fremd.selektor).map((s) => s.trim())) {
+            if (plattformVon(fs) !== plattform || ziel(fs) !== ziel(sel)) continue;
+            verglichen++;
+            if (vergleich(spezifitaet(sel), spezifitaet(fs)) <= 0) {
+              unterlegen.push(`${sel} (${spezifitaet(sel)}) schlaegt nicht ${fs} (${spezifitaet(fs)}) bei ${gemeinsam.join(', ')}`);
+            }
+          }
+        }
+      }
+    }
+    expect(unterlegen).toEqual([]);
+    // Und es wurde wirklich gerechnet: iOS-Wurzel, md-Wurzel, iOS-Modal.
+    expect(verglichen).toBeGreaterThanOrEqual(3);
+  });
+
+  it('die Rechnung stimmt an den Bindungs-Selektoren', () => {
+    expect(spezifitaet('html:root.ios')).toEqual([0, 2, 1]);
+    expect(spezifitaet(':root.ios')).toEqual([0, 2, 0]);
+    expect(spezifitaet('html:root.ios ion-modal')).toEqual([0, 2, 2]);
+    expect(spezifitaet(':root.ios ion-modal')).toEqual([0, 2, 1]);
+    // Der naive Weg -- eine Zeile im :root-Block -- verloere:
+    expect(vergleich(spezifitaet(':root'), spezifitaet(':root.ios'))).toBeLessThan(0);
+  });
+
+  it('das Handbuch sagt es so, wie es jetzt gerendert wird: Karten UND Listen heller als der Grund', () => {
+    // BF-11: Bis zur Bindung stand der Satz nur fuer Android; auf iOS waren
+    // die Inset-Listen dunkler als der Grund (Ionic #000000 im Verlauf
+    // #121212-#1f1f22). Wer den Satz aendert, aendert hier mit.
+    const handbuch = lies('../docs/handbuch/03-bedienung.md').replace(/\s+/g, ' ');
+    expect(handbuch).toMatch(/Karten und Listen sind dabei etwas heller als der Hintergrund/);
+    expect(handbuch).toMatch(/auf iPhone und Android gleich/);
   });
 });
 
