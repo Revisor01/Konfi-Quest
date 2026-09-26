@@ -275,6 +275,16 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
     'src/components/admin/pages/AdminMetricsPage.tsx',
   ]);
 
+  // DAZU die Detailansichten (26.09.2026, Simon am Geraet: "In Events Details
+  // kein org switcher zeigen", "Material sub Seiten auch weg damit"): Sie
+  // zeigen EINEN Gegenstand, der zu genau einer Gemeinde gehoert -- ein
+  // Wechsel fuehrte ins Leere. Sie stehen getrennt, weil sie MEHRERE
+  // Kopfzeilen haben (laedt / nicht gefunden / Inhalt) und jede abschalten
+  // muss. Welche das sind, prueft umschalterInDetailansichten.test.ts.
+  const detailansichten = new Set([
+    'src/components/admin/views/EventDetailView.tsx',
+  ]);
+
   it('der Gemeinde-Umschalter kommt aus dem Geruest -- keine Seite baut ihn selbst, genau vier schalten ihn ab', () => {
     expect(ohneUmschalter.size).toBe(4);
     let abgeschaltet = 0;
@@ -288,6 +298,9 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
         // Jede der vier hat genau EINE Kopfzeile -- und die schaltet ab.
         expect(anzahl, seite).toBe(1);
         abgeschaltet += 1;
+      } else if (detailansichten.has(seite)) {
+        // Mehrere Kopfzeilen je Zustand, jede schaltet ab.
+        expect(anzahl, seite).toBeGreaterThan(0);
       } else {
         expect(anzahl, seite).toBe(0);
       }

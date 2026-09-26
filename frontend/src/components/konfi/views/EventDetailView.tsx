@@ -521,7 +521,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <AppKopfzeile titel="Event Details" onZurueck={hideBackButton ? undefined : onBack} />
+        <AppKopfzeile titel="Event Details" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
         <IonContent fullscreen>
           <LoadingSpinner message="Event wird geladen..." />
         </IonContent>
@@ -532,7 +532,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (!eventData) {
     return (
       <IonPage ref={pageRef}>
-        <AppKopfzeile titel="Event nicht gefunden" onZurueck={hideBackButton ? undefined : onBack} />
+        <AppKopfzeile titel="Event nicht gefunden" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
         <IonContent fullscreen />
       </IonPage>
     );
@@ -581,6 +581,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       <AppKopfzeile
         titel={eventData.name}
         onZurueck={hideBackButton ? undefined : onBack}
+        gemeindeUmschalter={false}
         rechts={eventData.chat_room_id ? (
           <IonButton
             aria-label="Event-Chat öffnen"

@@ -1330,7 +1330,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <AppKopfzeile titel="Event Details" onZurueck={hideBackButton ? undefined : onBack} />
+        <AppKopfzeile titel="Event Details" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
         <IonContent fullscreen>
           <LoadingSpinner message="Event wird geladen..." />
         </IonContent>
@@ -1345,7 +1345,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (jahrgangFehlt) {
     return (
       <IonPage ref={pageRef}>
-        <AppKopfzeile titel="Termin" onZurueck={hideBackButton ? undefined : onBack} />
+        <AppKopfzeile titel="Termin" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
         <IonContent className="app-gradient-background" fullscreen>
           <EmptyState
             icon={ICON_JAHRGANG}
@@ -1363,6 +1363,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       <AppKopfzeile
         titel={eventData?.name || 'Event Details'}
         onZurueck={hideBackButton ? undefined : onBack}
+        gemeindeUmschalter={false}
         rechts={(
           <>
             {/* Einen BESTEHENDEN Chat oeffnen darf auch das Team — das ist

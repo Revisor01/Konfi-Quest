@@ -269,6 +269,7 @@ const TeamerMaterialPage: React.FC = () => {
         <AppKopfzeile
           titel={selectedMaterial.title}
           onZurueck={hideBackButton ? undefined : () => setSelectedMaterial(null)}
+          gemeindeUmschalter={false}
         />
 
         <IonContent className="app-gradient-background" fullscreen>
