@@ -147,7 +147,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
       nachAntwort(req, async () => {
         for (const userId of marked) {
           try {
-            await checkAndAwardBadges(db, userId);
+            await checkAndAwardBadges(db, userId, { organizationId: req.user.organization_id });
           } catch (badgeErr) {
             console.error('Error checking badges after bulk attendance:', badgeErr);
           }
@@ -510,7 +510,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
           await client.query(updateProfileQuery, [eventData.points, eventData.user_id]);
 
           try {
-            await checkAndAwardBadges(client, eventData.user_id);
+            await checkAndAwardBadges(client, eventData.user_id, { organizationId: req.user.organization_id });
           } catch (badgeErr) {
             console.error('Error checking badges after event attendance:', badgeErr);
           }
@@ -613,7 +613,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
       // Badge-Check NACH COMMIT für alle User (Teamer + Konfis)
       if (attendance_status === 'present') {
         try {
-          await checkAndAwardBadges(db, eventData.user_id);
+          await checkAndAwardBadges(db, eventData.user_id, { organizationId: req.user.organization_id });
         } catch (badgeErr) {
           console.error('Error checking badges after attendance update:', badgeErr);
         }

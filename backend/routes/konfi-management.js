@@ -1231,7 +1231,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
-                const newBadges = await checkAndAwardBadges(db, req.params.id);
+                const newBadges = await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
                 if (newBadges > 0) {
                 }
             } catch (badgeErr) {
@@ -1306,7 +1306,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
-                await checkAndAwardBadges(db, req.params.id);
+                await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
             } catch (badgeErr) {
  console.error('Error checking badges after bonus points removal:', badgeErr);
                 // Don't fail the request if badge checking fails
@@ -1395,7 +1395,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
-                const newBadges = await checkAndAwardBadges(db, req.params.id);
+                const newBadges = await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
                 if (newBadges > 0) {
                 }
             } catch (badgeErr) {
@@ -1488,7 +1488,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
-                await checkAndAwardBadges(db, req.params.id);
+                await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
             } catch (badgeErr) {
  console.error('Error checking badges after activity removal:', badgeErr);
                 // Don't fail the request if badge checking fails

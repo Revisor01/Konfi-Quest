@@ -377,6 +377,15 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Wer in einer Gemeinde zur Leitung gehört, bekommt dort keine Badges mehr.
+  Trug sich eine Leitung, die in einer anderen Gemeinde Konfi ist, bei einem
+  Event als anwesend ein, konnte sie Konfi-Badges der eigenen Gemeinde
+  erhalten. Badges gibt es nur für Konfis und Teamer:innen, und nur in der
+  Gemeinde, in der sie das sind.
+- Das Badge „Teamer-Jahr" zählt nur noch die Jahre in der eigenen Gemeinde,
+  so wie es die Fortschrittsanzeige schon tat. „Badge neu prüfen" erreicht
+  jetzt auch Konfis und Teamer:innen, die in der Gemeinde zusätzlich zu einer
+  anderen mitmachen.
 - Teilen sich mehrere ein Gerät, sieht nach einer abgelaufenen Sitzung die
   nächste Person nichts mehr vom gespeicherten Stand der vorigen, und deren
   wartende Nachrichten oder Abmeldungen gehen nicht mehr unter falschem Namen

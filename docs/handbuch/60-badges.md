@@ -9,6 +9,11 @@ Badges bekommen Konfis und Teamer:innen **automatisch**,
 sobald sie eine Bedingung erfüllen. Von Hand verleihen oder aberkennen lässt
 sich keines. Anlegen und Bearbeiten darf die Leitung, ansehen dürfen alle.
 
+Die Leitung selbst bekommt keine Badges. Wer in mehreren Gemeinden
+mitarbeitet, sammelt nur in der Gemeinde, in der die Person Konfi oder
+Teamer:in ist — und nur die Badges dieser Gemeinde. Als anwesend
+eingetragen zu werden, wo man zur Leitung gehört, bringt nichts ein.
+
 ## Die mitgelieferten Badges sichten
 
 Eine neue Gemeinde startet nicht bei null: **27 Badges für Konfis** und
@@ -301,7 +306,8 @@ Wochen **in Folge** mit mindestens einem Eintrag.
 
 #### Teamer-Jahr
 
-Kalenderjahre mit mindestens einer Aktivität oder einem Event.
+Kalenderjahre mit mindestens einer Aktivität oder einem Event in dieser
+Gemeinde. Was jemand in einer anderen Gemeinde im Team macht, zählt dort.
 
 *Beispiel:* Wert 3 → in drei Jahren aktiv gewesen.
 
@@ -382,7 +388,8 @@ ist für den Sonderfall gedacht, dass sich die **Datenlage** geändert hat, nich
 das Badge selbst — etwa nach einer nachträglich korrigierten Anwesenheit.
 Die Vergabe läuft dabei **ohne** Mitteilung und ohne Push. Danach steht dort,
 wie viele Personen geprüft wurden und wie viele das Badge neu bekommen
-haben.
+haben. Geprüft werden alle, die in deiner Gemeinde die Zielgruppe des Badges
+sind — auch wer dort nur zusätzlich zu einer anderen Gemeinde mitmacht.
 
 Zwei Dinge, die dabei auffallen können: Nach einem Lauf ist der Knopf für die
 ganze Gemeinde **eine Minute lang gesperrt** — drückst du früher erneut, kommt

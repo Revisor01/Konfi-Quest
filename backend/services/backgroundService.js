@@ -454,7 +454,7 @@ class BackgroundService {
           // Seit dem 14.09.2026 zusaetzlich: nur wer sich seit dem letzten
           // Lauf veraendert hat (siehe die Auswahl oben).
           if (!nurZaehler && zuPruefen.has(user.user_id)) {
-            await checkAndAwardBadges(db, user.user_id);
+            await checkAndAwardBadges(db, user.user_id, { organizationId: user.organization_id });
             geprueft++;
 
             // In Bloecken arbeiten statt am Stueck: Nach je

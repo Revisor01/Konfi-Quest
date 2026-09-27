@@ -331,6 +331,15 @@ paths:
         Abzeichen selbst): Seit derselben Aenderung laeuft dieselbe Pruefung
         bereits automatisch nach POST/PUT auf /api/admin/badges, abgekoppelt
         nach der Antwort.
+
+        Die Zielrolle gilt je Organisation: ausgewaehlt wird nach der Rolle
+        in DIESER Organisation (users.role_id fuer die Stamm-Organisation,
+        user_organizations.role_id fuer weitere). Leitungsrollen bekommen
+        nie ein Abzeichen.
+
+        BEHOBEN (27.09.2026): Bis dahin wurde nach der Rolle am Konto
+        ausgewaehlt; wer nur in einer Zweitgemeinde Konfi oder Teamer:in
+        war, wurde dort nie nachgeprueft.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Abzeichens" }
       responses:

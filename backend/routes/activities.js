@@ -666,7 +666,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Badge-Check NACH COMMIT (verwendet db Pool)
       if (status === 'approved') {
-        newBadges = await checkAndAwardBadges(db, request.user_id);
+        newBadges = await checkAndAwardBadges(db, request.user_id, { organizationId: req.user.organization_id });
 
         // Level-Check NACH Badge-Check
         try {
@@ -853,7 +853,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       // Badge-Check NACH COMMIT (verwendet db Pool) - für Konfis UND Teamer
-      const badgeResult = await checkAndAwardBadges(db, konfiId);
+      const badgeResult = await checkAndAwardBadges(db, konfiId, { organizationId: req.user.organization_id });
 
       // Level-Check NACH Badge-Check
       try {
