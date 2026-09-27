@@ -14,10 +14,12 @@
 
 :root {
   /* --- Textgroessen (Flusstext, Listen, Titel) --- */
-  --app-text-schmal: 0.55rem;           /* Tab-Beschriftungen im MD3-Look */
-  --app-text-winzig: 0.6rem;            /* kleinste Marker, Tabs im iOS-Look */
+  --app-text-winzig: 0.6rem;            /* kleinste Marker, Zaehler */
   --app-text-mini: 0.65rem;             /* Zaehler-Badges, Kleinstlabels */
   --app-text-meta: 0.7rem;              /* Zeitstempel, Metazeilen */
+  --app-text-reiter: 0.7rem;            /* Reiter-Beschriftungen, Android und iOS
+                                           (UI-Audit BF-07: vorher 8,8 / 9,4 px;
+                                           bei 360 px gemessen, variables.css) */
   --app-text-klein: 0.75rem;            /* Chips, Badges, Fussnoten */
   --app-text-hinweis: 0.8rem;           /* Hinweise, Zweitinfos */
   --app-text-sekundaer: 0.85rem;        /* Listen-Untertexte (haeufigster Wert) */

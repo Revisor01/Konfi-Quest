@@ -607,6 +607,12 @@ Versionsüberschrift.
   Aktivitäten", „Version … ist da" — sind Karte und Kreuz für Tastatur und
   Vorlesefunktion zwei getrennte Schaltflächen. Bisher steckte das Kreuz in
   der Karte, und wer es per Tastatur auslöste, öffnete die Karte gleich mit.
+- Die Beschriftungen der Reiter unten sind größer und besser lesbar, auf
+  Android wie auf dem iPhone. Auf schmalen Android-Handys stehen
+  „Challenges" und „Mitmachen" jetzt vollständig da, statt mit „…" gekürzt
+  zu werden.
+- Im Browser lässt sich Konfi Quest mit zwei Fingern vergrößern, auch auf
+  Android. Bisher war das gesperrt.
 - Kleine Knöpfe — das Auge am Passwortfeld, das X an Hinweisen und
   Fehlermeldungen, Anhängen und Senden im Chat — lassen sich leichter
   treffen: Die Fläche, die auf den Finger reagiert, ist jetzt mindestens

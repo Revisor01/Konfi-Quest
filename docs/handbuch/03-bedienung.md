@@ -198,6 +198,20 @@ Das Auge am Passwortfeld, das X an Hinweisen und Fehlermeldungen sowie
 Anhängen und Senden im Chat reagieren auf eine Fläche von mindestens
 44 Punkten um das Symbol — ein Tipp knapp daneben trifft trotzdem.
 
+### Schrift und Ansicht vergrößern
+
+Die App richtet ihre Schrift nach der Textgröße des Handys. Wer sie im System
+größer stellt (iPhone: *Einstellungen › Anzeige & Helligkeit › Textgröße*,
+noch größer unter *Bedienungshilfen › Anzeige & Textgröße › Größerer Text*;
+Android: *Einstellungen › Bedienungshilfen › Anzeigegröße und Text*), liest
+auch Konfi Quest größer. Die Beschriftungen der Reiter unten wachsen auf dem
+iPhone nur bis zu einer festen Größe mit, damit sie nicht ineinanderlaufen;
+auf Android kürzt die App eine zu lange Beschriftung mit „…".
+
+Im Browser lässt sich die Seite zusätzlich mit zwei Fingern vergrößern — auf
+dem iPhone wie auf Android. In der App selbst geht das nicht; dort ist die
+Textgröße des Handys der Weg.
+
 ### Bewegung reduzieren
 
 Ist im System „Bewegung reduzieren" eingeschaltet (iOS: Bedienungshilfen ›

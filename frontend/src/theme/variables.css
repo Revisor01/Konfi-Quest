@@ -1245,17 +1245,26 @@ ion-tab-bar.md ion-tab-button {
      iOS-Look ist nicht betroffen — er kennt diese Mindestbreite nicht. */
   min-width: 0 !important;
   flex: 1 1 0 !important;
+  /* Der Innenabstand eines Reiters steckt NICHT im padding des Hosts (das
+     oben auf 0 steht), sondern in Ionics Variablen --padding-start/-end:
+     12px je Seite (tab-button.md.css). Die Beschriftung hatte damit nur
+     48 von 72 px -- deshalb stand bei 0.6rem "Challen..." (gemessen
+     27.09.2026: 52 px noetig, 48 px Platz). Ohne diesen Abstand bekommt sie
+     die ganze Breite des Reiters; das Symbol mit seiner Pille (56 px) steht
+     weiter mittig. */
+  --padding-start: 0 !important;
+  --padding-end: 0 !important;
 }
 
 ion-tab-bar.md ion-tab-button ion-label,
 ion-tab-bar.md ion-tab-button .tab-button-text {
-  /* Etwas kleiner als --app-text-winzig (0.6rem): Nachdem die
-     MD3-Mindestbreite aufgehoben ist, teilen sich fuenf Reiter 360px, also
-     72px je Reiter. "Challenges" braucht bei 0.6rem 51px und passte damit
-     knapp NICHT -- es stand "Challen..." und "Mitmac..." da. Gemessen am
-     09.09.2026; bei 0.55rem bleiben alle fuenf Woerter vollstaendig.
-     Der iOS-Look ist nicht betroffen. */
-  font-size: var(--app-text-schmal) !important;
+  /* Reiter-Beschriftung 0.7rem = 11,2 px (UI-Audit BF-07; vorher 0.55rem =
+     8,8 px, unter Materials 12 px). Gemessen am 27.09.2026 mit Playwright
+     bei 360 px Breite, Android-Kennung, alle drei Rollen: fuenf Reiter zu
+     72 px, "Challenges" braucht 60 px, "Mitmachen" 58 px -- nichts wird
+     abgeschnitten. Groessere Systemschrift kuerzt mit Auslassungspunkten,
+     statt die Leiste zu sprengen. */
+  font-size: var(--app-text-reiter) !important;
   white-space: nowrap !important;
   /* Frueher overflow: visible — damit lief eine zu lange Beschriftung über
      den Reiter hinaus, statt sich zu kuerzen, und schob die Nachbarn optisch
@@ -1263,6 +1272,24 @@ ion-tab-bar.md ion-tab-button .tab-button-text {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   max-width: 100% !important;
+}
+
+/* Reiter-Beschriftung im iOS-Look (UI-Audit BF-07). Das iOS-Theme setzt
+   0.59rem am Reiter (ionic-theme-ios27.css), die Beschriftung erbt es:
+   9,4 px. Jetzt dieselbe Stufe wie auf Android. Gemessen am 27.09.2026 mit
+   iPhone-Kennung, alle drei Rollen: bei 360 px (Wurzel 16 px) 11,2 px,
+   kleinste Luecke zwischen zwei Beschriftungen ("Challenges" | "Mitmachen")
+   4,8 px; bei 375 px, dem schmalsten iPhone ab iOS 16, mit Wurzel 17 px
+   (Standard-Textgroesse, -apple-system-body) 11,9 px und 4,4 px Luecke.
+   Die Reiter im Glas-Look ueberlappen sich (80 px breit, 66 px Abstand),
+   eine zu lange Beschriftung wuerde deshalb nicht gekuerzt, sondern in die
+   Nachbarin laufen: ab 12,75 px beruehren sich die Woerter (0,1 px). Darum
+   die Obergrenze 12 px -- auch bei groesserer Systemschrift bleibt eine
+   Luecke, wie bei der Reiterleiste von iOS selbst, die ebenfalls nicht
+   mitwaechst. */
+ion-tab-bar.ios ion-tab-button ion-label {
+  font-size: min(var(--app-text-reiter), 12px) !important;
+  white-space: nowrap !important;
 }
 
 /* iOS26-Library Content-Gradient komplett neutralisieren */
