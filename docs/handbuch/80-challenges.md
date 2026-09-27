@@ -15,7 +15,7 @@ sehen, steht in [Für Konfis](10-konfis.md#bei-einer-challenge-mitmachen).
 Challenges zählen **nichts**: keine [Punkte](40-punkte.md), keine Rangliste,
 kein Beitrag zum [Punkteziel des Jahrgangs](45-jahrgaenge.md#punkteziele-festlegen). Wer
 Teilnahme belegen will, braucht dafür eine
-[Aktivität](40-punkte.md#ueber-eine-aktivitaet) oder einen [Termin](70-termine.md).
+[Aktivität](40-punkte.md#ueber-eine-aktivitaet) oder ein [Event](70-termine.md).
 Was es stattdessen gibt, ist ein Stempel für alle, die mitgemacht haben.
 
 ---
@@ -316,15 +316,15 @@ Entwurf machen.
 
 Jede Challenge trägt einen eigenen Stempel: ein Name (Pflicht, höchstens 100
 Zeichen) und ein Symbol aus einer Auswahl, voreingestellt die Flagge. Er ist
-etwas anderes als ein [Abzeichen](60-badges.md):
-Ein Abzeichen sammelt man, ein Stempel belegt, dass man dabei war.
+etwas anderes als ein [Badge](60-badges.md):
+Ein Badge sammelt man, ein Stempel belegt, dass man dabei war.
 
-| | Abzeichen | Stempel |
+| | Badge | Stempel |
 |---|---|---|
 | Wofür | eine Bedingung erfüllen | einen Beitrag einreichen |
 | Zählen | ja, Bedingungen mit Werten | nein, es gibt nichts zu zählen |
-| Abstufungen | ja, verschiedene Abzeichen | nein, für alle derselbe |
-| Wo er steht | in der Abzeichen-Liste | bei der Challenge, in der eigenen Sammlung und im Profil |
+| Abstufungen | ja, verschiedene Badges | nein, für alle derselbe |
+| Zu sehen | in der Badge-Liste | bei der Challenge, in der eigenen Sammlung und im Profil |
 
 Wann er kommt, hängt an der Freigabe-Pflicht:
 
@@ -339,7 +339,7 @@ Stempel. Mit dem Stempel kommt eine Mitteilung aufs Gerät.
 Gesammelte Stempel stehen im Challenges-Tab — bei Konfis, im Team und in der
 Leitung gleichermaßen, denn alle drei machen selbst mit. Die Leitung sieht die
 Stempel einer Person außerdem in deren Detailansicht, gleich hinter den
-Abzeichen.
+Badges.
 
 Neben den erhaltenen stehen dort auch die **noch nicht erhaltenen** — grau, mit
 Name und Symbol. Grau erscheint alles, was es je zu holen gab: laufende

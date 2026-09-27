@@ -55,15 +55,15 @@ lassen kannst.
   begründet
 - **Aktivitäten** [hinzufügen](40-punkte.md#eine-aktivitaet-direkt-zuschreiben)
   oder [entfernen](40-punkte.md#punkte-wieder-wegnehmen)
-- [**Abzeichen**](60-badges.md) ansehen
+- [**Badges**](60-badges.md) ansehen
 - [**Challenge-Stempel**](80-challenges.md) ansehen — direkt unter den
-  Abzeichen. Es erscheinen nur Stempel aus eigenen, freigegebenen Beiträgen;
+  Badges. Es erscheinen nur Stempel aus eigenen, freigegebenen Beiträgen;
   wer keinen hat, bei dem fehlt der Abschnitt ganz. Als **Admin** siehst du
   die Stempel der Konfis aus deinen Jahrgängen; bei Teamer:innen siehst du sie
   immer.
 - **Konfirmation** — Termin und Konfispruch
 - [**Passwort zurücksetzen**](35-passwoerter.md#weg-1-die-leitung-setzt-ein-neues-passwort)
-- **Zur Teamer:in befördern** — Punkte und Abzeichen bleiben als Konfi-Historie
+- **Zur Teamer:in befördern** — Punkte und Badges bleiben als Konfi-Historie
   erhalten. Eine Jahrgangs-Zuweisung bekommt die neue Teamer:in dabei nicht
   automatisch; die vergibst du unter **Mehr › Benutzer:innen**.
 
@@ -91,7 +91,7 @@ die Chats, in denen du bist. Zwei Grenzen bleiben: fremde Zweiergespräche und
 anonyme Umfragen. Beides steht unter
 [Was die Leitung darf](90-chat.md#nachvollziehen-was-die-leitung-sehen-kann).
 
-## Termine anlegen und verbuchen
+## Events anlegen und verbuchen
 
 ![Der Bereich Mitmachen in der Leitungsansicht.](/docs/bilder/iphone/leitung-mitmachen.png)
 
@@ -101,13 +101,13 @@ Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und
 ### Events
 
 Drei Reiter: **Aktuell**, **Verbuchen** und **Vergangen**. „Verbuchen" sammelt
-die Termine, bei denen noch
+die Events, bei denen noch
 [Anwesenheiten](70-termine.md#die-anwesenheit-verbuchen) einzutragen sind —
-sobald der Termin begonnen hat. Ein laufender Termin steht deshalb in beiden
-Reitern: unter „Aktuell", weil er noch läuft, und unter „Verbuchen", weil es
+sobald das Event begonnen hat. Ein laufendes Event steht deshalb in beiden
+Reitern: unter „Aktuell", weil es noch läuft, und unter „Verbuchen", weil es
 schon etwas einzutragen gibt.
 
-Beim Anlegen eines Termins legst du fest:
+Beim Anlegen eines Events legst du fest:
 
 - [**Für wen**](70-termine.md#die-zielgruppe-waehlen) — nur Konfis,
   Konfis mit gesuchten Teamer:innen, oder nur Team
@@ -117,7 +117,7 @@ Beim Anlegen eines Termins legst du fest:
   aufteilen soll
 - [**Plätze und Warteliste**](70-termine.md#plaetze-und-warteliste-einstellen), getrennt
   für Konfis und Team
-- [**Punkte**](70-termine.md#punkte-fuer-einen-termin-vergeben) und ob sie auf Gottesdienst oder Gemeinde
+- [**Punkte**](70-termine.md#punkte-fuer-ein-event-vergeben) und ob sie auf Gottesdienst oder Gemeinde
   zählen
 - [**Pflicht-Event**](70-termine.md#ein-pflicht-event-einrichten)
 - [**Serie**](70-termine.md#eine-serie-anlegen) — täglich, wöchentlich, zweiwöchentlich
@@ -128,13 +128,13 @@ In der Detailansicht trägst du Anwesenheit ein — anwesend, abwesend oder
 [Notiz](70-termine.md#eine-notiz-hinzufuegen) —, bestätigst die
 Warteliste,
 [fügst Teilnehmende von Hand hinzu](70-termine.md#teilnehmende-von-hand-hinzufuegen)
-und siehst die Abmeldungen samt Begründung. Bei Team-Terminen stehen dort auch
+und siehst die Abmeldungen samt Begründung. Bei Team-Events stehen dort auch
 die [Zu- und Absagen der Teamer:innen](70-termine.md#das-teamer-kontingent-verwalten).
 Über das QR-Symbol zeigst du den Code zum
 [Selbst-Einchecken](70-termine.md#den-qr-check-in-nutzen), auch zum Ausdrucken.
 
-Fällt ein Termin aus, hast du die Wahl zwischen
-[Absagen und Löschen](70-termine.md#einen-termin-absagen-oder-loeschen).
+Fällt ein Event aus, hast du die Wahl zwischen
+[Absagen und Löschen](70-termine.md#ein-event-absagen-oder-loeschen).
 
 ### Aktivitäten
 
@@ -191,11 +191,11 @@ und **App-Tour ansehen**.
 | Bereich | Wofür |
 |---|---|
 | **Aktivitäten** | Der Katalog dessen, was gemeldet werden kann, mit [Punkten](40-punkte.md#wissen-auf-welchen-drei-wegen-punkte-entstehen); ein [geänderter Punktwert](40-punkte.md#den-punktwert-einer-aktivitaet-aendern) gilt nur für künftige Vergaben |
-| **Badges** | [Abzeichen](60-badges.md#ein-abzeichen-anlegen) definieren, mit Bedingungen |
+| **Badges** | [Badges](60-badges.md#ein-badge-anlegen) definieren, mit Bedingungen |
 | **Jahrgänge** | [Punkteziele](45-jahrgaenge.md#punkteziele-festlegen) und die [Konfispruch-Freigabe](45-jahrgaenge.md#den-konfispruch-freigeben) |
 | **Kategorien** | [Für Aktivitäten und Events](45-jahrgaenge.md#kategorien-anlegen-und-pflegen) |
 | **Level** | [Punkteschwellen](40-punkte.md#level-anlegen-und-pflegen) und ihre Titel |
-| **Material** | Dateien und Links für Termine und Jahrgänge |
+| **Material** | Dateien und Links für Events und Jahrgänge |
 | **Jahresrückblick** | [Ausgaben anlegen, benennen und freigeben](95-wrapped.md#einen-rueckblick-anlegen) |
 | **Zertifikate** | Nachweise für Teamer:innen, mit Gültigkeit |
 
@@ -222,8 +222,8 @@ Material öffnet sich schreibgeschützt und nennt die anlegende Person. Der
 Org-Admin darf immer alles bearbeiten — so bleibt Material verwaltbar, wenn
 jemand die Gemeinde verlässt. Anlegen darf die ganze Leitung.
 
-Hängt Material an einem Termin, steht es in dessen Detailansicht bei den
-Eckdaten: [Material am Termin](70-termine.md#material-an-einem-termin-finden).
+Hängt Material an einem Event, steht es in dessen Detailansicht bei den
+Eckdaten: [Material am Event](70-termine.md#material-an-einem-event-finden).
 
 ## Einen Jahrgang einstellen
 

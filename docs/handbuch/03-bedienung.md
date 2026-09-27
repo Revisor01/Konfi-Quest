@@ -6,7 +6,7 @@ farbe: "#667eea"
 
 Ein paar Handgriffe wiederholen sich überall in Konfi Quest. Wer sie einmal
 kennt, findet sich in jeder Liste zurecht — im Chat genauso wie bei den
-Terminen oder den Abzeichen.
+Events oder den Badges.
 
 ## Sich in der App zurechtfinden
 
@@ -21,20 +21,30 @@ Unten stehen **fünf Reiter**. Welche das sind, hängt von der Rolle ab:
 | 5 | Badges | Material | **Mehr** |
 
 Konfis und Teamer:innen haben dieselbe Reihenfolge. Bei der Leitung sind
-**Mitmachen und Challenges vertauscht** — sie arbeitet häufiger mit Terminen.
+**Mitmachen und Challenges vertauscht** — sie arbeitet häufiger mit Events.
 
 Eine kleine Zahl am Reiter zeigt, dass dort etwas Neues wartet: im Chat
-ungelesene Nachrichten, bei den Abzeichen neu verliehene, bei den Challenges
+ungelesene Nachrichten, bei den Badges neu verliehene, bei den Challenges
 für Konfis Neuigkeiten in ihren laufenden Challenges (siehe
 [Neuigkeiten an Challenges erkennen](10-konfis.md#neuigkeiten-an-challenges-erkennen)),
 für Team und Leitung neue Beiträge und solche, die auf Freigabe warten (siehe
 [Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen)). Die
 Summe aller Reiter steht als Zahl am App-Symbol.
 
-Daten schreibt die App überall gleich: kurz als 14.09.2026 in Listen und auf
-Karten, ausgeschrieben als „Montag, 14. September 2026" in den Einzelansichten,
-Uhrzeiten als 18:00. Wo wenig Platz ist — im Chat, in der Anwesenheitsliste —,
-steht nur 14.09. Maßgeblich ist die Zeit, auf die das Handy eingestellt ist.
+### Die Begriffe der App kennen
+
+App und Handbuch nennen dieselben Dinge mit denselben Wörtern:
+
+| Wort | Was es meint | Mehr dazu |
+|---|---|---|
+| **das Event**, die Events | alles mit Datum, wozu man kommt: Gottesdienst, Konfi-Tag, Fahrt, Teamtreff | [Events](70-termine.md) |
+| **das Badge**, die Badges | eine Auszeichnung, die von selbst kommt, sobald eine Bedingung erfüllt ist | [Badges](60-badges.md) |
+| **die Challenge**, die Challenges | eine Aufgabe mit Zeitfenster, auf die Konfis mit einem Beitrag antworten | [Challenges](80-challenges.md) |
+| **der Stempel**, die Stempel | der Beleg fürs Mitmachen bei einer Challenge — ohne Punkte, ohne Rangliste | [Den Stempel vergeben](80-challenges.md#den-stempel-vergeben) |
+
+**Termin** heißt nur der Zeitpunkt, also Datum und Uhrzeit eines Events: „zwei
+Tage vor dem Termin", der Konfirmationstermin. Zusammengesetzte Wörter stehen
+mit Bindestrich — Pflicht-Event, Event-Chat, Badge-Bedingung.
 
 ### Mitteilungen im Postfach nachlesen
 
@@ -43,21 +53,19 @@ App dir mitteilen will, an einem Ort. Was als Push kam, steht hier auch; was
 du als Push verpasst hast, ebenfalls — und wer kein Push-Gerät hat oder
 Mitteilungen abgeschaltet hat, findet hier trotzdem alles.
 
-Als Konfi landen hier deine Punkte (aus einem Termin, als Bonus oder für eine
-zugewiesene Aktivität), Level-Aufstiege, Abzeichen und Stempel, dein
+Als Konfi landen hier deine Punkte (aus einem Event, als Bonus oder für eine
+zugewiesene Aktivität), Level-Aufstiege, Badges und Stempel, dein
 freigegebener Jahresrückblick, deine eingereichten Anträge samt Entscheidung,
 deine Anmeldungen und Abmeldungen, das Nachrücken von der Warteliste,
-abgesagte, geänderte und wieder stattfindende Termine und ausgeblendete
-Beiträge. Als Teamer:in oder Leitung zusätzlich: Abmeldungen
-von Konfis, Buchungen und Absagen des Teams, Termine, die auf Verbuchung
+abgesagte, geänderte und wieder stattfindende Events und ausgeblendete
+Beiträge. Als Teamer:in oder Leitung zusätzlich: neue Anträge, Abmeldungen
+von Konfis, Buchungen und Absagen des Teams, Events, die auf Verbuchung
 warten, neue Registrierungen, Beiträge zur Freigabe, Ab- und
-Wieder-Anmeldungen von Pflichtterminen, die Warnung vor dem Löschen eines
-Jahrgangs, der Team-Rückblick und ein neues Zertifikat. Neue Anträge landen
-bei der Leitung, die sie in ihrer Antragsliste sieht — siehe
-[Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt).
+Wieder-Anmeldungen von Pflicht-Events, die Warnung vor dem Löschen eines
+Jahrgangs, der Team-Rückblick und ein neues Zertifikat.
 
-**Nicht** im Postfach stehen die Erinnerung „morgen"/„gleich" vor einem Termin
-(sie wäre sofort veraltet), neue Termine (sie stehen in der Terminliste),
+**Nicht** im Postfach stehen die Erinnerung „morgen"/„gleich" vor einem Event
+(sie wäre sofort veraltet), neue Events (sie stehen in der Event-Liste),
 gestartete Challenges (die Challenge-Liste zählt selbst) und Chat-Nachrichten
 (der Chat zählt selbst).
 
@@ -72,16 +80,16 @@ Die ungelesenen Mitteilungen zählen auch in der **Zahl am App-Symbol** mit:
 Sie ist die Summe aller Zahlen, die die App zeigt — die Reiter und die Glocke.
 Ein offener Antrag, zu dem noch „Neuer Antrag eingegangen" ungelesen ist,
 steht deshalb zweimal darin — am Reiter und an der Glocke — und beides muss
-weg, bevor das Symbol auf null geht. „Termine warten auf Verbuchung" kommt
+weg, bevor das Symbol auf null geht. „Events warten auf Verbuchung" kommt
 täglich; die neue Mitteilung ersetzt die vom Vortag, solange die noch
 ungelesen ist.
 
 Im Postfach steht Ungelesenes fett und mit einem geschlossenen Umschlag in
 der Ecke. **Antippen**
 markiert die Mitteilung als gelesen und führt an die passende Stelle: zum
-Abzeichen, in die Antragsliste, an den Termin, bei einem Stempel zu den
+Badges, in die Antragsliste, an das Event, bei einem Stempel zu den
 Challenges, bei einem Level-Aufstieg auf die Startseite. Punkte — aus einem
-Termin, als Bonus oder für eine eingetragene Aktivität — öffnen die
+Event, als Bonus oder für eine eingetragene Aktivität — öffnen die
 Punkte-Übersicht im Profil; der Jahresrückblick öffnet genau die Ausgabe, um
 die es geht. **„Alle gelesen"** räumt auf einmal auf.
 **„Ältere Mitteilungen laden"** holt, was weiter zurückliegt; nach einem Jahr
@@ -89,9 +97,9 @@ werden Mitteilungen nachts entfernt. Das Kreuz oben links schließt das
 Postfach.
 
 Jede Mitteilung trägt die Farbe ihres Bereichs, wie überall in der App:
-Abzeichen in der Abzeichenfarbe, Anträge in der Aktivitätenfarbe, Termine in
-der Terminfarbe, Challenges in der Challenge-Farbe. Im Kreis davor steht bei
-einem Abzeichen dessen eigenes Symbol, bei einem Antrag der Stand (offen,
+Badges in der Badge-Farbe, Anträge in der Aktivitätenfarbe, Events in
+der Event-Farbe, Challenges in der Challenge-Farbe. Im Kreis davor steht bei
+einem Badge dessen eigenes Symbol, bei einem Antrag der Stand (offen,
 verbucht, abgelehnt). Darunter das Datum mit Kalendersymbol und
 — wer in mehreren Gemeinden mitarbeitet — die Gemeinde mit Gebäudesymbol. Die
 Vorgänge aus der Funklücke darüber stehen orange („Wird gesendet…") und rot
@@ -100,7 +108,7 @@ Vorgänge aus der Funklücke darüber stehen orange („Wird gesendet…") und r
 Verschwindet der Gegenstand einer Mitteilung, verschwindet die Mitteilung
 mit: Ziehst du einen Antrag zurück, ist „Antrag eingereicht" bei dir und
 „Neuer Antrag eingegangen" bei der Leitung weg; löscht die Leitung ein
-Abzeichen, geht „Neues Badge erhalten" dazu. Wird ein Termin gelöscht, gehen
+Badge, geht „Neues Badge erhalten" dazu. Wird ein Event gelöscht, gehen
 alle Mitteilungen zu ihm — Anmeldung, Absage, Teilnahme, Buchungen des Teams;
 mit einer gelöschten Challenge gehen Stempel, „Beitrag ausgeblendet" und
 „Neuer Beitrag", mit einem gelöschten Jahrgang die Warnung vor seiner
@@ -123,7 +131,7 @@ Teamer:innen — das Material.
 
 **Die Leitung** hat stattdessen den fünften Reiter **„Mehr"**. Er führt zu drei
 Bereichen: *Konto* (das eigene Profil), *Verwaltung* (Benutzer:innen,
-Einladungen) und *Inhalt* (Aktivitäten, Abzeichen, Jahrgänge, Kategorien,
+Einladungen) und *Inhalt* (Aktivitäten, Badges, Jahrgänge, Kategorien,
 Level, Material, Jahresrückblick, Zertifikate).
 
 ## Im Dunkelmodus arbeiten
@@ -133,7 +141,7 @@ Hintergründe, Karten, Listen und Texte dunkel. Karten und Listen sind dabei
 etwas heller als der Hintergrund und werfen einen leichten Schatten, damit
 sie sich abheben — auf iPhone und Android gleich, und ebenso bei Suchfeldern,
 Auswahllisten, Meldungen und den Fenstern, die sich über eine Seite legen.
-Die Farben der Bereiche — Rot für Termine, Violett für Konfis, Türkis für den
+Die Farben der Bereiche — Rot für Events, Violett für Konfis, Türkis für den
 Chat — sind auf den farbigen Flächen dieselben wie im Hellen: So leuchten die
 Kopfbereiche auf dunklem Grund nicht heller als am Tag. Steht eine
 Bereichsfarbe dagegen als Schrift oder Symbol auf einer Karte, nimmt sie im
@@ -175,8 +183,8 @@ neues Passwort setzen und [Registrieren mit Einladungscode](35-passwoerter.md#si
 
 Jedes Eingabefeld hat einen Namen, den die Vorlesefunktion nennt („Name,
 Textfeld", „Pflicht-Event, Schalter, aus", „Max. Teilnehmer:innen,
-Schieberegler") — in allen Formularen der App, vom Termin der Leitung bis zur
-Umfrage im Chat. Pflichtfelder, die mit einem Stern markiert sind, meldet sie
+Schieberegler") — in allen Formularen der App, vom Event-Formular der Leitung
+bis zur Umfrage im Chat. Pflichtfelder, die mit einem Stern markiert sind, meldet sie
 als erforderlich.
 
 ### Listen, Kacheln und Chat-Aktionen bedienen
@@ -184,20 +192,15 @@ als erforderlich.
 Was sich mit dem Finger antippen lässt, erreicht **Tab** und löst **Enter**
 oder die **Leertaste** aus: die Einträge unter „Mehr" und im Profil, die
 Auswahlzeilen in den Formularen der Leitung (Punkteart, Rolle, Jahrgang,
-Kategorien), Abzeichen- und Stempel-Kacheln, die Termin-Karten der Startseite
+Kategorien), Badge- und Stempel-Kacheln, die Event-Karten der Startseite
 sowie im Chat die Antwort-, Teilen- und Löschen-Knöpfe unter einer gewählten
 Nachricht und die Reaktionen. Die Vorlesefunktion nennt sie „Schaltfläche"
 und sagt bei Auswahlzeilen, ob sie gewählt sind; ein Ring zeigt, welches
 Element gerade den Fokus hat.
 
-Die Hinweiskarten auf der Startseite („Was ist neu", „Events und
-Aktivitäten", „Version … ist da") sind zwei Schaltflächen: die Karte, die
-öffnet, und daneben das Kreuz, das nur ausblendet.
-
-Öffnet sich ein Fenster — ein Formular, das Postfach, ein Datumswähler, die
-Punkte-Übersicht —, nennt die Vorlesefunktion seinen Titel („Passwort ändern,
-Dialog"), sodass klar ist, wo man gelandet ist. Die Ansicht einer Datei heißt
-wie die Datei, der Rückblick „Konfi-Rückblick" bzw. „Team-Rückblick".
+Öffnet sich ein Fenster — das Postfach, ein Datumswähler, ein Formular —,
+nennt die Vorlesefunktion seinen Namen („Postfach, Dialog"), sodass klar ist,
+wo man gelandet ist.
 
 ### Kleine Knöpfe treffen
 
@@ -205,26 +208,12 @@ Das Auge am Passwortfeld, das X an Hinweisen und Fehlermeldungen sowie
 Anhängen und Senden im Chat reagieren auf eine Fläche von mindestens
 44 Punkten um das Symbol — ein Tipp knapp daneben trifft trotzdem.
 
-### Schrift und Ansicht vergrößern
-
-Die App richtet ihre Schrift nach der Textgröße des Handys. Wer sie im System
-größer stellt (iPhone: *Einstellungen › Anzeige & Helligkeit › Textgröße*,
-noch größer unter *Bedienungshilfen › Anzeige & Textgröße › Größerer Text*;
-Android: *Einstellungen › Bedienungshilfen › Anzeigegröße und Text*), liest
-auch Konfi Quest größer. Die Beschriftungen der Reiter unten wachsen auf dem
-iPhone nur bis zu einer festen Größe mit, damit sie nicht ineinanderlaufen;
-auf Android kürzt die App eine zu lange Beschriftung mit „…".
-
-Im Browser lässt sich die Seite zusätzlich mit zwei Fingern vergrößern — auf
-dem iPhone wie auf Android. In der App selbst geht das nicht; dort ist die
-Textgröße des Handys der Weg.
-
 ### Bewegung reduzieren
 
 Ist im System „Bewegung reduzieren" eingeschaltet (iOS: Bedienungshilfen ›
 Bewegung; Android: Bedienungshilfen › Animationen entfernen), verzichtet die
 App auf Seitenübergänge, das Schütteln bei falscher Anmeldung, pulsierende
-Ladepunkte und Abzeichen, gleitende Karten und den Wisch durch die
+Ladepunkte und Badges, gleitende Karten und den Wisch durch die
 Einführung — alles erscheint sofort. Der Jahresrückblick zeigt seine Bilder
 dann ruhig, ohne Drift.
 
@@ -251,7 +240,7 @@ wurde.
 
 **Es gibt keine Löschknöpfe in Listen.** Wische den Eintrag stattdessen **nach
 links**, dann erscheint die Schaltfläche dahinter. Das gilt überall gleich — bei
-Terminen, Chats, Aktivitäten, Abzeichen, Konfis, Kategorien, Material und
+Events, Chats, Aktivitäten, Badges, Konfis, Kategorien, Material und
 allem anderen.
 
 > **Immer nach links, nie nach rechts.** Es gibt in der ganzen App keine
@@ -271,7 +260,7 @@ Rückfrage** sofort los:
 | Einladungscodes | **Verlängern** (läuft sofort) und Löschen |
 | Challenges | **Bearbeiten** (öffnet den Dialog) und Löschen |
 | Anträge auf Aktivitäten | nur **Zurücksetzen** — kein Löschen |
-| Termine | **Absagen** und Löschen |
+| Events | **Absagen** und Löschen |
 | Teilnehmerliste | **Auf die Warteliste setzen** und Entfernen |
 
 Faustregel: **Löschen fragt immer nach. Andere Aktionen nicht.**
@@ -282,7 +271,7 @@ Ziehe die Liste am oberen Rand nach unten, bis der Kreis erscheint, und lass
 los. Das funktioniert auf allen Seiten, die Daten vom Server zeigen.
 
 Meist ist das gar nicht nötig: Die App aktualisiert sich selbst, sobald sich
-etwas ändert — eine neue Chat-Nachricht, ein verliehenes Abzeichen, ein
+etwas ändert — eine neue Chat-Nachricht, ein verliehenes Badge, ein
 freigegebener Beitrag erscheinen von allein. Das Ziehen ist der sichere Weg,
 wenn du es genau wissen willst.
 
@@ -299,8 +288,8 @@ unter *Mehr → Konto* (Leitung). Er öffnet die Auswahl:
 | Gruppe | Was darüber kommt |
 |---|---|
 | Nachrichten | Neue Nachrichten in den Chats |
-| Termine | Anmeldungen, Änderungen, Absagen und Erinnerungen |
-| Punkte und Abzeichen | Punkte, Abzeichen, Level, Challenges und der Rückblick |
+| Events | Anmeldungen, Änderungen, Absagen und Erinnerungen |
+| Punkte und Badges | Punkte, Badges, Level, Challenges und der Rückblick |
 | Anfragen und Freigaben | Was auf deine Entscheidung wartet — nur für Leitung und Team |
 
 Konfis sehen nur die ersten drei: Bei ihnen kommt in „Anfragen und Freigaben"
@@ -314,7 +303,7 @@ Neue Konten haben alles an.
 > **Abgeschaltet wird nur der Weg aufs Handy.** Was du hier abwählst, steht
 > weiterhin im [Postfach](#mitteilungen-im-postfach-nachlesen) unter der Glocke — mit
 > Markierung für Ungelesenes und dem Sprung an die passende Stelle. Wer die
-> Terminmeldungen nicht aufs Handy will, verpasst sie deshalb nicht, sondern
+> Event-Mitteilungen nicht aufs Handy will, verpasst sie deshalb nicht, sondern
 > liest sie, wenn er die App öffnet. Die Zahl am App-Symbol zählt sie weiter.
 
 Solange das Gerät der App noch keine Mitteilungen erlaubt, steht in der
@@ -331,11 +320,11 @@ wie oben:
 | Gruppe | Was darüber kommt |
 |---|---|
 | Nachrichten | Neue Nachrichten in den Chats |
-| Termine | Anmeldungen, Änderungen, Absagen und Erinnerungen |
-| Punkte und Abzeichen | Punkte, Abzeichen, Level, Challenges und der Rückblick |
+| Events | Anmeldungen, Änderungen, Absagen und Erinnerungen |
+| Punkte und Badges | Punkte, Badges, Level, Challenges und der Rückblick |
 | Anfragen und Freigaben | Was auf deine Entscheidung wartet — nur für Leitung und Team |
 
-So bleibt der Chat hörbar, während die Terminerinnerungen still ankommen — oder
+So bleibt der Chat hörbar, während die Event-Erinnerungen still ankommen — oder
 umgekehrt. Wer alles stummschalten will, schaltet die Benachrichtigungen der App
 im Ganzen ab.
 
@@ -381,16 +370,16 @@ der Freizeit, im Bus.
 später los:
 
 - eine **Aktivität melden** (auch mit Foto)
-- sich von einem Termin **abmelden**
+- sich von einem Event **abmelden**
 - **Chat-Nachrichten** schreiben, an Umfragen teilnehmen, auf Nachrichten
   reagieren
-- als Leitung: Termine, Aktivitäten, Abzeichen, Level, Material und Kategorien
+- als Leitung: Events, Aktivitäten, Badges, Level, Material und Kategorien
   **anlegen oder bearbeiten**, Bonuspunkte vergeben
 
 Du siehst diese Vorgänge im [Postfach](#mitteilungen-im-postfach-nachlesen)
 hinter der Glocke unter **„Wird gesendet…"**, mit einem Uhr-Symbol; die Zahl
-an der Glocke färbt sich orange. Bei den Anträgen — Konfis unter „Mitmachen",
-das Team im Termine-Reiter — steht dieselbe Karte direkt in der Liste. Sobald
+an der Glocke färbt sich orange. Bei den Anträgen — Konfis und Team unter
+„Mitmachen" — steht dieselbe Karte direkt in der Liste. Sobald
 wieder Netz da ist, gehen die Vorgänge
 automatisch raus — auch wenn du die App zwischendurch geschlossen hast. Klappt
 etwas endgültig nicht, stehen sie unter **„Nicht gesendet"**, die Glocke wird
@@ -398,8 +387,8 @@ rot, und du kannst sie wegwischen.
 
 ### Was Netz braucht
 
-- sich zu einem Termin **anmelden**
-- **alles Löschen** — Konfis, Chats, Termine, Abzeichen und so weiter
+- sich zu einem Event **anmelden**
+- **alles Löschen** — Konfis, Chats, Events, Badges und so weiter
 - einen **Chat anlegen** oder Mitglieder ändern
 - **Einladungscodes** erzeugen, verlängern oder löschen
 - **Passwörter** zurücksetzen
@@ -417,8 +406,8 @@ Formularen steht statt des Hakens ein Wolken-Symbol mit **„Du bist offline"**.
 
 ### Was du ohne Netz noch siehst
 
-Alles, was du zuletzt geöffnet hattest — Termine, Chats, dein Profil, die
-Abzeichen. Die App merkt sich den Stand und zeigt ihn weiter. Er ist dann
+Alles, was du zuletzt geöffnet hattest — Events, Chats, dein Profil, die
+Badges. Die App merkt sich den Stand und zeigt ihn weiter. Er ist dann
 vielleicht ein paar Minuten alt, aber er ist da.
 
 Was sich wirklich nicht zeigen lässt, sagt die App als graue Zeile mit einem
@@ -426,5 +415,5 @@ Wolken-Symbol, etwa: „Die Teilnehmerliste ist offline nicht verfügbar."
 
 > **Eine App-weite Anzeige „Du bist offline" gibt es nicht.** Du merkst es an
 > den Knöpfen und an der Zahl an der Glocke. Kleinigkeiten im Hintergrund —
-> etwa dass du deine Abzeichen angesehen hast — wandern still mit und tauchen
+> etwa dass du deine Badges angesehen hast — wandern still mit und tauchen
 > dort nicht auf.

@@ -122,12 +122,14 @@ describe('Challenge-Stempel: das Handbuch zieht mit', () => {
     expect(kapitel).not.toContain('## Das Abzeichen');
   });
 
-  it('die Abgrenzung zum echten Abzeichen bleibt erhalten', () => {
-    // Das Wort "Abzeichen" MUSS hier vorkommen: Die Tabelle erklaert den
+  it('die Abgrenzung zum echten Badge bleibt erhalten', () => {
+    // Das Wort "Badge" MUSS hier vorkommen: Die Tabelle erklaert den
     // Unterschied. Faellt sie weg, versteht niemand mehr, warum es zwei
-    // verschiedene Dinge gibt.
-    expect(kapitel).toContain('| | Abzeichen | Stempel |');
-    expect(kapitel).toContain('Ein Abzeichen sammelt man, ein Stempel');
+    // verschiedene Dinge gibt. (Bis 27.09.2026 hiess es hier "Abzeichen";
+    // seitdem sprechen App und Handbuch von Badges -- Glossar in
+    // 03-bedienung.md, Test begriffeEinheitlich.)
+    expect(kapitel).toContain('| | Badge | Stempel |');
+    expect(kapitel).toContain('Ein Badge sammelt man, ein Stempel');
   });
 
   it('die anderen Kapitel nennen es auch so', () => {

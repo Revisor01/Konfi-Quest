@@ -24,7 +24,7 @@ dürfen dort nicht. Was die Rollen sonst unterscheidet, steht im Kapitel
 | **Gruppe** | frei zusammengestellt | Leitung, Admin oder Teamer:in legt sie an | ja |
 | **Jahrgangs-Chat** | alle Konfis des Jahrgangs plus zuständige Begleitung | **automatisch** mit dem Jahrgang | **nein** |
 | **Team-Chat** | alle mit Leitungs-, Admin- oder Teamer-Rolle | **automatisch**, einer pro Gemeinde | ja, außer für Leitung und Admins |
-| **Termin-Chat** | wer beim Freischalten bestätigt angemeldet ist | das Team schaltet ihn beim Termin frei | Konfis nur übers Abmelden |
+| **Event-Chat** | wer beim Freischalten bestätigt angemeldet ist | das Team schaltet ihn beim Event frei | Konfis nur übers Abmelden |
 
 ### Eine Direktnachricht beginnen
 
@@ -87,16 +87,16 @@ Leitung und Admins können den Team-Chat **leeren**: Der Knopf „Team-Chat leer
 oben im Chat entfernt alle Nachrichten samt Dateien, der Raum und seine
 Mitglieder bleiben. Das geht nur hier — *„Nur der Team-Chat lässt sich leeren."*
 
-### Den Termin-Chat nutzen
+### Den Event-Chat nutzen
 
-Er gehört zu einem [Termin](70-termine.md#einen-termin-chat-einrichten) und muss vom Team dort
+Er gehört zu einem [Event](70-termine.md#einen-event-chat-einrichten) und muss vom Team dort
 einmal freigeschaltet werden. Hinein kommen alle, die in diesem Moment bestätigt
 angemeldet sind — wer sich später anmeldet, kommt **nicht** automatisch nach.
 Wer sich abmeldet, fliegt heraus.
 
-> **Achtung:** Konfis können einen Termin-Chat nicht direkt verlassen. Die App
+> **Achtung:** Konfis können einen Event-Chat nicht direkt verlassen. Die App
 > sagt: *„Event-Chats werden über die Event-Abmeldung verlassen, nicht
-> direkt."* Sonst wäre jemand zum Termin angemeldet, bekäme aber die Absprachen
+> direkt."* Sonst wäre jemand zum Event angemeldet, bekäme aber die Absprachen
 > dazu nicht mit. Teamer:innen können ihn direkt verlassen.
 
 ---
@@ -154,7 +154,7 @@ Die Meldungen, wenn es doch jemand versucht:
 
 Leitung und Admins können jeden **gemeinschaftlichen** Raum ihrer Gemeinde
 öffnen, auch ohne selbst Mitglied zu sein: Gruppen, Jahrgangs-Chats, Team-Chats
-und Termin-Chats. Für diese Räume tragen sie die Verantwortung und müssen im
+und Event-Chats. Für diese Räume tragen sie die Verantwortung und müssen im
 Zweifel eingreifen können.
 
 **Fremde Zweiergespräche sind ausgenommen.** Wer nicht selbst in einem
@@ -306,7 +306,7 @@ geöffnet hat. Von Hand geht das über **Medien-Cache leeren** im eigenen Profil
 
 > **Achtung:** Weil Dateien verschlüsselt und zufällig benannt gespeichert
 > werden, lassen sie sich außerhalb der App weder durchsuchen noch
-> wiederherstellen. Was bleiben soll, gehört ins Material oder an einen Termin.
+> wiederherstellen. Was bleiben soll, gehört ins Material oder an ein Event.
 
 ---
 
@@ -400,7 +400,7 @@ im Chat — in Zweiergesprächen fehlt der Knopf, dort ist die Sache klar.
 
 **Ändern dürfen die Liste nur Leitung und Admins, und nur in Gruppen.** In allen
 anderen Chat-Arten ergibt sich aus der Sache selbst, wer drin ist: aus dem
-Jahrgang, aus der Rolle, aus der Terminanmeldung. Wer es anderswo versucht,
+Jahrgang, aus der Rolle, aus der Event-Anmeldung. Wer es anderswo versucht,
 bekommt: *„Teilnehmer können nur zu Gruppenchats hinzugefügt werden"*
 beziehungsweise *„… aus Gruppenchats entfernt werden"*.
 
@@ -425,7 +425,7 @@ Gemeinde** — niemand landet mit falschen Rechten in einer Gruppe.
 |---|---|
 | Gruppe | ja |
 | Team-Chat | ja |
-| Termin-Chat | Konfis nur übers Abmelden vom Termin; Teamer:innen direkt |
+| Event-Chat | Konfis nur übers Abmelden vom Event; Teamer:innen direkt |
 | Jahrgangs-Chat | **nein** |
 | Direktnachricht | **nein** |
 

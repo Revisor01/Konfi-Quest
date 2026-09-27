@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import {
   FRONTEND,
@@ -128,5 +128,61 @@ describe('Begriffe: die Mitteilungsgruppen heißen wie die Bereiche', () => {
     expect(quelle).toContain("name: 'Events',");
     expect(quelle).toContain("name: 'Punkte und Badges',");
     expect(quelle).toContain("description: 'Punkte, Badges, Level, Challenges und der Rückblick',");
+  });
+});
+
+describe('Begriffe: das Handbuch spricht wie die App', () => {
+  // Dieselbe Regel für docs/handbuch/. Gezählt am 27.09.2026 vorher:
+  // „Abzeichen" 150-mal, „Termine" 105-mal (dazu Termin, Terminen, Termins
+  // und 75 Zusammensetzungen), „Badges" 13-mal, „Events" 17-mal.
+  const HANDBUCH = join(FRONTEND, '../docs/handbuch');
+  const kapitel = readdirSync(HANDBUCH).filter((d) => d.endsWith('.md'));
+  /** Zeilen ohne Link-Ziele: "(70-termine.md#…)" ist ein Dateiname, kein Text. */
+  const zeilen = kapitel.flatMap((d) => readFileSync(join(HANDBUCH, d), 'utf8').split('\n')
+    .map((z, i) => ({ ort: `${d}:${i + 1}`, text: z.replace(/\]\([^()\s]+\)/g, ']') })));
+
+  /** „Termin" als Zeitpunkt — jede Form mit Grund. */
+  const ZEITPUNKT: Array<[RegExp, string]> = [
+    [/Konfirmationstermin/, 'Datum der Konfirmation, wie in der App'],
+    [/Terminbeginn/, 'Uhrzeit, ab der das Check-in-Fenster rechnet'],
+    [/vor dem Termin/, 'Frist, gerechnet vom Datum'],
+    [/^Termin näher/, 'der Beginn liegt näher (Anmeldeschluss-Vorschlag)'],
+    [/„Anderer Termin"/, 'Beschriftung in der App: ein anderes Konfirmationsdatum'],
+    [/Termin und Konfispruch/, 'Konfirmationsdatum in der Detailansicht'],
+    [/Terminabfrage/, 'Umfrage nach einem passenden Zeitpunkt'],
+    [/Fototermin/, 'Beispiel für ein Event mit Zeitfenstern — der Name, den die Gemeinde vergibt'],
+    [/\*\*Termin\*\* heißt nur der Zeitpunkt|„Termin" meint hier nur/, 'das Glossar selbst'],
+  ];
+
+  it('findet die Kapitel', () => {
+    expect(kapitel.length).toBe(14);
+  });
+
+  it('„Abzeichen" kommt nicht mehr vor', () => {
+    expect(zeilen.filter(({ text }) => /abzeichen/i.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
+  });
+
+  it('„Termin" steht nur für den Zeitpunkt', () => {
+    const offen = zeilen
+      .filter(({ text }) => /termin/i.test(text))
+      .filter(({ text }) => !ZEITPUNKT.some(([muster]) => muster.test(text)))
+      .map(({ ort, text }) => `${ort}: ${text}`);
+    expect(offen).toEqual([]);
+  });
+
+  it('jede Zeitpunkt-Ausnahme wird noch gebraucht', () => {
+    const texte = zeilen.map(({ text }) => text);
+    expect(ZEITPUNKT.filter(([muster]) => !texte.some((t) => muster.test(t))).map(([, grund]) => grund)).toEqual([]);
+  });
+
+  it('das Glossar steht in „Die App bedienen" und nennt alle vier Wörter', () => {
+    const bedienung = readFileSync(join(HANDBUCH, '03-bedienung.md'), 'utf8');
+    const abschnitt = bedienung.slice(bedienung.indexOf('### Die Begriffe der App kennen'));
+    expect(abschnitt.length).toBeLessThan(bedienung.length);
+    for (const wort of ['**das Event**', '**das Badge**', '**die Challenge**', '**der Stempel**']) {
+      expect(abschnitt).toContain(wort);
+    }
+    // Wo die Begriffe zuerst auftauchen, führt ein Verweis dorthin.
+    expect(readFileSync(join(HANDBUCH, '00-start.md'), 'utf8')).toContain('(03-bedienung.md#die-begriffe-der-app-kennen)');
   });
 });

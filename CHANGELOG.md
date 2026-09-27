@@ -260,6 +260,13 @@ Versionsüberschrift.
   („Events", „Punkte und Badges"). „Termin" steht nur noch für Datum und
   Uhrzeit, die Suche heißt in allen Rollen „Events durchsuchen" und „Badges
   durchsuchen".
+- App und Handbuch sprechen dieselbe Sprache: Was man besucht, sammelt und
+  mitmacht, heißt überall Event, Badge, Challenge und Stempel — auch in
+  Mitteilungen, Einführung, Rückblick, Fehlermeldungen und in den
+  Android-Einstellungen („Events", „Punkte und Badges"). „Termin" steht nur
+  noch für Datum und Uhrzeit, die Suche heißt in allen Rollen „Events
+  durchsuchen" und „Badges durchsuchen". Ein kurzes Glossar im Handbuch
+  erklärt die Wörter.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

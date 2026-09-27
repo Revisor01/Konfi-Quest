@@ -15,7 +15,7 @@ oben rechts.
 
 ## Auf der Startseite nachsehen, wo du stehst
 
-![Die Startseite eines Konfis: die drei Punkte-Ringe, darunter das nächste Level und die Abzeichen.](/docs/bilder/iphone/konfi-startseite.png)
+![Die Startseite eines Konfis: die drei Punkte-Ringe, darunter das nächste Level und die Badges.](/docs/bilder/iphone/konfi-startseite.png)
 
 Ganz oben stehen deine [Punkte](40-punkte.md) als drei Ringe: **Gesamt**,
 **Gottesdienst** und **Gemeinde**. Tippe sie an, dann siehst du, woher jeder
@@ -29,7 +29,7 @@ und in welcher Reihenfolge, stellt deine Gemeinde ein:
 - **Dein Konfispruch** — tippe die Karte an, um zu wählen; sie erscheint,
   sobald deine Gemeinde die
   [Auswahl freigegeben](45-jahrgaenge.md#den-konfispruch-freigeben) hat
-- **Deine Events** — die nächsten Termine
+- **Deine Events** — die nächsten Events
 - **Tageslosung** — der Bibelvers des Tages, in deiner Übersetzung
 - **Deine Badges** — was du schon gesammelt hast
 - **Dein Ranking** — dein Platz, ohne die Punkte der anderen zu zeigen
@@ -38,7 +38,7 @@ und in welcher Reihenfolge, stellt deine Gemeinde ein:
 
 ![Die Chat-Übersicht mit Gruppen und Einzelgesprächen.](/docs/bilder/iphone/konfi-chat.png)
 
-Im Reiter **Chat** liegen Gruppen für deinen Jahrgang und für Termine, dazu
+Im Reiter **Chat** liegen Gruppen für deinen Jahrgang und für Events, dazu
 Einzelgespräche. Du kannst antworten, reagieren, Bilder und Dateien schicken
 und an Umfragen teilnehmen.
 
@@ -52,7 +52,7 @@ Jahrgang. Alle Regeln stehen im Kapitel
 ![Der Challenges-Bereich mit den Reitern Aktuell und Archiv.](/docs/bilder/iphone/konfi-challenges.png)
 
 Zwei Reiter: **Aktuell** und **Archiv**, dazwischen deine gesammelten
-Abzeichen. Beim Einreichen wählst du, wie du antwortest — Text, Foto, Audio,
+[Stempel](80-challenges.md#den-stempel-vergeben). Beim Einreichen wählst du, wie du antwortest — Text, Foto, Audio,
 Video oder ein Link, je nachdem, was erlaubt ist.
 
 Bei manchen Challenges entscheidest du selbst, wer deinen Beitrag sieht, und
@@ -70,18 +70,18 @@ neue Challenge, neue Beiträge in der Galerie und die Entscheidung des Teams
 Zurückgesetzt wird beim Öffnen der Challenge. Beendete Challenges im Archiv
 zählen nicht mit; deine eigene Einreichung auch nicht.
 
-## Dich zu Terminen an- und abmelden
+## Dich zu Events an- und abmelden
 
 Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und
 **Aktivitäten**.
 
 ### Events
 
-Alle Termine deiner Gemeinde, gefiltert über **Meine**, **Alle** und
-**Konfirmation**. Unter **Meine** stehen alle Termine, zu denen du dich
+Alle Events deiner Gemeinde, gefiltert über **Meine**, **Alle** und
+**Konfirmation**. Unter **Meine** stehen alle Events, zu denen du dich
 gemeldet hast — angemeldet, auf der Warteliste, selbst abgemeldet oder von der
-Leitung abgemeldet. Auch abgesagte Termine bleiben dort stehen, solange du
-dafür angemeldet warst. Tippe einen an, dann siehst du Datum, Ort, was du
+Leitung abgemeldet. Auch abgesagte Events bleiben dort stehen, solange du
+dafür angemeldet warst. Tippe eines an, dann siehst du Datum, Ort, was du
 mitbringen sollst und wie viele Plätze frei sind.
 
 - **Anmelden** — solange Plätze frei sind
@@ -89,18 +89,18 @@ mitbringen sollst und wie viele Plätze frei sind.
   [Warteliste](70-termine.md#plaetze-und-warteliste-einstellen) eingerichtet ist
 - **Abmelden** — bis zum
   [Abmeldeschluss](70-termine.md#wissen-bis-wann-konfis-sich-abmelden-koennen)
-- **Von der Warteliste abmelden** — jederzeit, auch kurz vor dem Termin. Der
-  Termin zeigt dir, auf welchem Platz du stehst; wer wartet, belegt keinen
+- **Von der Warteliste abmelden** — jederzeit, auch kurz vor dem Event. Das
+  Event zeigt dir, auf welchem Platz du stehst; wer wartet, belegt keinen
   Platz, darum gilt der Abmeldeschluss hier nicht.
 - **Wieder anmelden** — wenn die Leitung dich abgemeldet hat (etwa weil du
-  krank gemeldet warst). Der Termin steht dann mit „Abgemeldet" und „Von der
+  krank gemeldet warst). Das Event steht dann mit „Abgemeldet" und „Von der
   Leitung abgemeldet" da; mit **Wieder anmelden** bist du wieder dabei, solange
-  der Anmeldeschluss nicht vorbei ist. Ist der Termin inzwischen voll, landest
+  der Anmeldeschluss nicht vorbei ist. Ist das Event inzwischen voll, landest
   du auf der Warteliste.
 
 Bei [Pflicht-Events](70-termine.md#ein-pflicht-event-einrichten) bist du automatisch
 angemeldet; abmelden geht trotzdem, du wirst dabei nach einem Grund gefragt.
-Hat ein Termin [Zeitfenster](70-termine.md#zeitfenster-einrichten), wählst du
+Hat ein Event [Zeitfenster](70-termine.md#zeitfenster-einrichten), wählst du
 beim Anmelden eines aus.
 
 Oben rechts findest du den **QR-Scanner**. Damit trägst du dich vor Ort selbst
@@ -117,13 +117,13 @@ die Meldung an dein Team, das sie
 Drei Reiter zeigen den Stand: **Offen**, **Angerechnet**, **Abgelehnt**. Wird
 etwas abgelehnt, steht der Grund dabei.
 
-## Deine Abzeichen ansehen
+## Deine Badges ansehen
 
 ![Die Badges-Seite: oben, wie viele erreicht sind, darunter die Gruppen; erreichte Badges tragen einen grünen Haken, offene bleiben blass.](/docs/bilder/iphone/konfi-abzeichen.png)
 
-Erreichte Abzeichen tragen einen grünen Haken, offene bleiben blass. Geheime
-Abzeichen siehst du erst, wenn du sie hast. Welche Bedingungen es gibt, steht
-im Kapitel [Abzeichen](60-badges.md#die-passende-bedingung-waehlen).
+Erreichte Badges tragen einen grünen Haken, offene bleiben blass. Geheime
+Badges siehst du erst, wenn du sie hast. Welche Bedingungen es gibt, steht
+im Kapitel [Badges](60-badges.md#die-passende-bedingung-waehlen).
 
 ## Dein Profil öffnen
 

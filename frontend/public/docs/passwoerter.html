@@ -94,7 +94,6 @@ table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
-hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 @media (max-width:860px) {
   /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
      zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
@@ -135,17 +134,6 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 .nav-nr { flex:none; width:20px; font-size:.74rem; font-variant-numeric:tabular-nums; color:var(--text-leise); text-align:right; }
 .seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
 .seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
-
-/* Abschnitte des aktuellen Kapitels (27.09.2026): eingerueckt an einer
-   feinen Linie. Der gerade gelesene (aria-current="location", gesetzt vom
-   Skript am Seitenende) bekommt ein Stueck Linie in der Akzentfarbe. Die
-   Nummernspalte ist so breit wie "11.17", damit die Titel buendig stehen. */
-.seitenleiste ul.nav-abschnitte { margin:3px 0 7px 13px; border-left:1px solid var(--rand); gap:1px; }
-.seitenleiste ul.nav-abschnitte a { align-items:baseline; gap:7px; margin-left:-1px; padding:5px 9px 5px 10px; border-left:2px solid transparent; border-radius:0 7px 7px 0; font-size:.8rem; line-height:1.4; color:var(--text-leise); overflow-wrap:anywhere; }
-.seitenleiste ul.nav-abschnitte a:hover { color:var(--text); }
-.seitenleiste ul.nav-abschnitte a[aria-current="location"] { color:var(--text); background:var(--flaeche-2); border-left-color:var(--akzent); font-weight:600; }
-.nav-abschnitt-nr { flex:none; min-width:4.4ch; font-size:.72rem; font-variant-numeric:tabular-nums; }
-.seitenleiste ul.nav-abschnitte a[aria-current="location"] .nav-abschnitt-nr { color:var(--akzent); }
 
 .kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
 .kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
@@ -194,7 +182,7 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
       <div class="nav-inhalt">
         <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
         <p class="nav-titel">Inhalt</p>
-        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html" aria-current="page" class="ist-hier"><span class="nav-nr">7</span>Passwörter und Zugänge</a><ul class="nav-abschnitte"><li><a href="#weg-1-die-leitung-setzt-ein-neues-passwort"><span class="nav-abschnitt-nr">7.1</span>Weg 1: Die Leitung setzt ein neues Passwort</a></li><li><a href="#weg-2-passwort-vergessen-per-e-mail"><span class="nav-abschnitt-nr">7.2</span>Weg 2: „Passwort vergessen&quot; per E-Mail</a></li><li><a href="#weg-3-selbst-aendern-wenn-man-angemeldet-ist"><span class="nav-abschnitt-nr">7.3</span>Weg 3: Selbst ändern, wenn man angemeldet ist</a></li><li><a href="#die-app-mit-face-id-sperren-lassen"><span class="nav-abschnitt-nr">7.4</span>Die App mit Face ID sperren lassen</a></li><li><a href="#ein-gueltiges-passwort-waehlen"><span class="nav-abschnitt-nr">7.5</span>Ein gültiges Passwort wählen</a></li><li><a href="#konfis-kommen-neu-dazu-der-einladungscode"><span class="nav-abschnitt-nr">7.6</span>Konfis kommen neu dazu: der Einladungscode</a></li><li><a href="#den-richtigen-benutzernamen-finden"><span class="nav-abschnitt-nr">7.7</span>Den richtigen Benutzernamen finden</a></li><li><a href="#wenn-gar-nichts-geht"><span class="nav-abschnitt-nr">7.8</span>Wenn gar nichts geht</a></li><li><a href="#die-e-mail-adresse-aendern"><span class="nav-abschnitt-nr">7.9</span>Die E-Mail-Adresse ändern</a></li></ul></li><li><a href="./punkte.html"><span class="nav-nr">8</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">10</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html" aria-current="page" class="ist-hier"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">8</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">10</span>Badges</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Events</a></li><li><a href="./challenges.html"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
         <div class="fuss">
           <p><a href="/docs/api/">API-Referenz</a></p>
           <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
@@ -213,13 +201,6 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
     var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
     setzen();
     if (schmal.addEventListener) schmal.addEventListener('change', setzen);
-    /* Ein Tipp auf einen Eintrag schliesst das Menue (27.09.2026). Bei
-       Kapiteln tat das bisher nur die neue Seite; ein Abschnitt liegt auf
-       derselben Seite, und das offene Menue verdeckte ihn. Der Klick kommt
-       vor dem Sprung an -- der Browser rechnet schon mit der schmalen Leiste. */
-    klapp.addEventListener('click', function (ev) {
-      if (schmal.matches && ev.target.closest('.nav-inhalt a')) klapp.removeAttribute('open');
-    });
   })();
   </script>
   <main class="inhalt">
@@ -282,7 +263,7 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
       <h3 id="was-die-uebersicht-der-offenen-apps-zeigt"><span class="abschnitt-nr">7.4.3</span>Was die Übersicht der offenen Apps zeigt</h3>
       <p><strong>Bei eingeschalteter Sperre gibt die App auch dort nichts preis.</strong> Wischst du die App weg oder wechselst zu einer anderen, steht in der Übersicht der offenen Apps nur noch das Logo — keine Namen, keine Punkte, keine Beiträge. Erst nach Face ID, Touch ID oder Fingerabdruck siehst du die Inhalte wieder.</p>
       <p>Das gilt auch, wenn du die App aus einem Foto- oder Teilen-Dialog heraus verlässt, und unabhängig von der gewählten Wartezeit: Verdeckt wird sofort, gesperrt erst nach der Zeit, die du eingestellt hast.</p>
-      <p><strong>Auf Android-Geräten sind dann auch Bildschirmfotos innerhalb der App gesperrt.</strong> Das System lässt sie nicht zu, solange die Sperre eingeschaltet ist — anders ließe sich das Vorschaubild dort nicht zuverlässig verdecken. Willst du etwas abfotografieren, etwa einen Termin oder einen QR-Code, stellst du die Sperre kurz auf „Aus&quot;.</p>
+      <p><strong>Auf Android-Geräten sind dann auch Bildschirmfotos innerhalb der App gesperrt.</strong> Das System lässt sie nicht zu, solange die Sperre eingeschaltet ist — anders ließe sich das Vorschaubild dort nicht zuverlässig verdecken. Willst du etwas abfotografieren, etwa ein Event oder einen QR-Code, stellst du die Sperre kurz auf „Aus&quot;.</p>
       <p><strong>Steht die Sperre auf „Aus&quot;, ändert sich nichts.</strong> Dann bleibt die Übersicht wie gewohnt, und Bildschirmfotos gehen auf allen Geräten.</p>
       <blockquote><strong>Was die Sperre leistet und was nicht:</strong> Sie ist ein Sichtschutz gegen neugierige Blicke, wenn das Handy herumliegt. Sie verschlüsselt nichts und hält niemanden auf, der das Gerät technisch auseinandernimmt. Für den Alltag reicht das — mehr verspricht sie nicht.</blockquote>
       <h3 id="die-einstellung-gilt-nur-auf-diesem-geraet"><span class="abschnitt-nr">7.4.4</span>Die Einstellung gilt nur auf diesem Gerät</h3>
@@ -301,7 +282,7 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
       <p>Die App zeigt beides zusammen: einen <strong>QR-Code</strong> und darunter den <strong>Einladungscode</strong> — acht Zeichen aus Ziffern und den Buchstaben A bis F, etwa <code>A3F09C21</code>. Beide sind dieselbe Einladung: Der QR-Code enthält nur den Link <code>konfi-quest.de/register</code> mit dem Code darin.</p>
       <p>Zum Weitergeben gibt es drei Wege:</p>
       <ul><li><strong>QR-Code zeigen</strong> — am Beamer oder auf dem eigenen Handy, etwa beim Elternabend oder in der ersten Konfi-Stunde</li><li><strong>Link kopieren</strong> und in eine E-Mail oder einen Elternbrief setzen</li><li><strong>Teilen</strong> über das Teilen-Menü des Geräts — weitergegeben wird der Link, nicht das Bild</li></ul>
-      <p>Einen Druckknopf gibt es hier <strong>nicht</strong> (anders als beim <a href="./termine.html#den-qr-check-in-nutzen">QR-Code fürs Einchecken</a> am Termin). Wer den Code auf Papier braucht, macht eine Bildschirmaufnahme oder verschickt den Link.</p>
+      <p>Einen Druckknopf gibt es hier <strong>nicht</strong> (anders als beim <a href="./termine.html#den-qr-check-in-nutzen">QR-Code fürs Einchecken</a> am Event). Wer den Code auf Papier braucht, macht eine Bildschirmaufnahme oder verschickt den Link.</p>
       <p><strong>Ein Code ist für die ganze Gruppe gedacht, nicht für eine Person.</strong> Er lässt sich beliebig oft verwenden — du erzeugst also eine Einladung pro Jahrgang.</p>
       <h3 id="eine-einladung-verlaengern-oder-loeschen"><span class="abschnitt-nr">7.6.2</span>Eine Einladung verlängern oder löschen</h3>
       <p>Ein Code gilt <strong>7 Tage</strong>. In der Übersicht der aktiven Einladungen verlängerst du ihn um <strong>jeweils 7 Tage</strong> — aber nur, solange er noch gültig ist. Ein abgelaufener Code verschwindet aus der Liste und lässt sich nicht wiederbeleben („Abgelaufene Codes können nicht verlängert werden&quot;); dann erzeugst du einen neuen.</p>
@@ -310,7 +291,7 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
       <h3 id="sich-als-konfi-registrieren"><span class="abschnitt-nr">7.6.3</span>Sich als Konfi registrieren</h3>
       <ol><li><strong>QR-Code scannen</strong> — die normale Kamera reicht, die Registrierungsseite öffnet sich im Browser. Ist auf einem Android-Gerät die App schon installiert, öffnet sich stattdessen direkt die App mit der Registrierung. Wer nur den Code als Text hat: auf der Anmeldeseite auf <strong>„Mit Einladungscode registrieren&quot;</strong> tippen und ihn dort eingeben.</li><li>Die Seite zeigt zur Kontrolle <strong>Jahrgang und Gemeinde</strong> an.</li><li><strong>Name, Benutzername und Passwort</strong> eingeben. Der Benutzername wird beim Eintippen geprüft (mindestens 3 Zeichen, nur Buchstaben, Zahlen, Punkt und Bindestrich), das Passwort muss die <a href="#ein-gueltiges-passwort-waehlen">Anforderungen</a> erfüllen.</li><li>Die <strong>E-Mail-Adresse ist freiwillig</strong> — aber zu empfehlen: Nur mit ihr funktioniert später „Passwort vergessen&quot;. Ohne sie bleibt bei vergessenem Passwort nur der Weg über die Leitung.</li><li>Absenden — fertig und <strong>sofort angemeldet</strong>. Es gibt keine Freischaltung und keine Wartezeit.</li></ol>
       <p>Dabei passiert automatisch:</p>
-      <ul><li>Die Konfi ist im <strong>Jahrgang</strong> der Einladung und damit auch in dessen <a href="./chat.html#den-jahrgangs-chat-nutzen">Jahrgangs-Chat</a>.</li><li>Sie wird zu allen zukünftigen <strong><a href="./termine.html#ein-pflicht-event-einrichten">Pflicht-Terminen</a></strong> ihres Jahrgangs angemeldet — als wäre sie von Anfang an dabei gewesen.</li><li>Die <strong>Leitung des Jahrgangs bekommt einen Push</strong>, und die Person erscheint sofort in der Konfi-Liste.</li></ul>
+      <ul><li>Die Konfi ist im <strong>Jahrgang</strong> der Einladung und damit auch in dessen <a href="./chat.html#den-jahrgangs-chat-nutzen">Jahrgangs-Chat</a>.</li><li>Sie wird zu allen zukünftigen <strong><a href="./termine.html#ein-pflicht-event-einrichten">Pflicht-Events</a></strong> ihres Jahrgangs angemeldet — als wäre sie von Anfang an dabei gewesen.</li><li>Die <strong>Leitung des Jahrgangs bekommt einen Push</strong>, und die Person erscheint sofort in der Konfi-Liste.</li></ul>
       <h3 id="wenn-die-registrierung-hakt"><span class="abschnitt-nr">7.6.4</span>Wenn die Registrierung hakt</h3>
       <div class="tabelle-huelle"><table><thead><tr><th>Meldung</th><th>Ursache und Ausweg</th></tr></thead><tbody><tr><td>„Dieser Einladungscode existiert nicht&quot;</td><td>Vertipper oder gelöschter Code — Groß- und Kleinschreibung ist egal, aber jede Stelle zählt. Zur Not neue Einladung erzeugen.</td></tr><tr><td>„Dieser Einladungscode ist abgelaufen&quot;</td><td>Die 7 Tage sind um. Die Leitung erzeugt einen neuen Code.</td></tr><tr><td>„Benutzername bereits vergeben&quot;</td><td>Einen anderen wählen — geprüft wird schon beim Eintippen, nicht erst beim Absenden.</td></tr><tr><td>„Die Anzahl der Konfis ist erreicht …&quot;</td><td>Das Konfi-Kontingent des Tarifs ist voll. Da hilft nur die Leitung — sie muss den Tarif anpassen.</td></tr></tbody></table></div>
       <h2 id="den-richtigen-benutzernamen-finden"><span class="abschnitt-nr">7.7</span>Den richtigen Benutzernamen finden</h2>
@@ -340,48 +321,5 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
     </nav>
   </main>
 </div>
-<script>
-(function () {
-  var leiste = document.querySelector('.seitenleiste');
-  var liste = leiste.querySelector('.nav-abschnitte');
-  if (leiste.scrollHeight > leiste.clientHeight) {
-    var k = leiste.getBoundingClientRect();
-    var fehlt = liste.getBoundingClientRect().bottom - k.bottom + 16;
-    var bisKapitel = leiste.querySelector('.ist-hier').getBoundingClientRect().top - k.top - 48;
-    if (fehlt > 0) leiste.scrollTop += Math.min(fehlt, bisKapitel);
-  }
-  if (!('IntersectionObserver' in window)) return;
-  var ende = document.querySelector('.blaettern');
-  var ziele = [];
-  liste.querySelectorAll('a').forEach(function (a) {
-    var h = document.getElementById(a.hash.slice(1));
-    if (h) ziele.push({ a: a, h: h });
-  });
-  var markieren = function () {
-    var hoehe = window.innerHeight;
-    var amEnde = !!ende && ende.getBoundingClientRect().bottom <= hoehe;
-    var linie = amEnde ? hoehe : hoehe * 0.35;
-    var aktiv = null, angesprungen = null;
-    ziele.forEach(function (z) {
-      var oben = z.h.getBoundingClientRect().top;
-      if (oben < linie) aktiv = z;
-      if (z.a.hash === location.hash && oben >= 0 && oben < hoehe) angesprungen = z;
-    });
-    if (amEnde && angesprungen) aktiv = angesprungen;
-    ziele.forEach(function (z) {
-      if (z === aktiv) z.a.setAttribute('aria-current', 'location');
-      else z.a.removeAttribute('aria-current');
-    });
-    if (aktiv && leiste.scrollHeight > leiste.clientHeight) {
-      var r = aktiv.a.getBoundingClientRect(), l = leiste.getBoundingClientRect();
-      if (r.top < l.top || r.bottom > l.bottom) leiste.scrollTop += r.top - l.top - l.height / 3;
-    }
-  };
-  var beobachter = new IntersectionObserver(markieren, { rootMargin: '0px 0px -65% 0px' });
-  ziele.forEach(function (z) { beobachter.observe(z.h); });
-  if (ende) new IntersectionObserver(markieren, { threshold: 1 }).observe(ende);
-  window.addEventListener('hashchange', markieren);
-})();
-</script>
 </body>
 </html>

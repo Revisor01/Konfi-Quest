@@ -17,8 +17,8 @@ Teamer:innen und bei Admins.
 
 ### Konfi
 
-Nimmt teil: meldet Aktivitäten, bucht Termine, macht bei Challenges mit,
-sammelt [Punkte](40-punkte.md) und [Abzeichen](60-badges.md) und sieht am Ende
+Nimmt teil: meldet Aktivitäten, bucht Events, macht bei Challenges mit,
+sammelt [Punkte](40-punkte.md) und [Badges](60-badges.md) und sieht am Ende
 den [Jahresrückblick](95-wrapped.md). Alles Weitere steht im Kapitel
 [Für Konfis](10-konfis.md).
 
@@ -27,14 +27,14 @@ dieses Kapitels hat er nicht.
 
 ### Teamer:in
 
-Begleitet die Jahrgänge, die ihr zugewiesen sind: zu Terminen anmelden, Punkte
+Begleitet die Jahrgänge, die ihr zugewiesen sind: zu Events anmelden, Punkte
 vergeben, Challenges begleiten, im Chat schreiben. Ohne Zuweisung erreicht eine
 Teamer:in keine Konfi und taucht umgekehrt bei keiner Konfi in der Kontaktliste
 auf. Mehr dazu im Kapitel [Für Teamer:innen](20-teamer.md).
 
 ### Admin
 
-Die operative Leitung. Verwaltet Konfis, Termine, Punkte, Abzeichen,
+Die operative Leitung. Verwaltet Konfis, Events, Punkte, Badges,
 Aktivitäten, Material und Challenges, bestätigt Aktivitäts-Meldungen, trägt
 Anwesenheiten ein und vergibt Bonuspunkte. Was davon wo liegt, steht im Kapitel
 [Für die Leitung](30-leitung.md).
@@ -64,7 +64,7 @@ davon, welche Zuweisungen bei ihm eingetragen sind.
 Für Teamer:innen und Admins begrenzt die Zuweisung nicht nur, was sie sehen,
 sondern auch, was sie ändern dürfen. Ein frisch angelegter Admin ohne Zuweisung
 sieht deshalb **keine einzige Konfi** — und auch keine jahrgangsgebundenen
-Challenges, Aktivitäts-Meldungen, Termine oder Material. Die Jahrgangs-Liste
+Challenges, Aktivitäts-Meldungen, Events oder Material. Die Jahrgangs-Liste
 zeigt ihm nur seine eigenen Jahrgänge, und die Meldungs-Zähler an den Reitern
 stehen bei ihm auf null, weil sie nur zählen, was er in seinen Listen auch
 sieht. Die App weist an den betroffenen Stellen darauf hin, dass die Zuweisung
@@ -105,15 +105,15 @@ Im Einzelnen gilt für einen Admin:
 
 | | Konfi | Teamer:in | Admin | Org-Admin |
 |---|---|---|---|---|
-| Eigene Punkte und Abzeichen sehen | ja | ja | ja | ja |
+| Eigene Punkte und Badges sehen | ja | ja | ja | ja |
 | Aktivitäten melden | ja | ja | ja | ja |
-| Zu Terminen anmelden | ja | ja | ja | ja |
+| Zu Events anmelden | ja | ja | ja | ja |
 | Punkte vergeben | — | ja | ja | ja |
 | Anwesenheit eintragen | — | — | ja | ja |
 | Aktivitäts-Meldungen bestätigen | — | — | ja | ja |
-| Termine, Abzeichen, Kategorien, Level anlegen | — | — | ja | ja |
-| Termine ändern, absagen und löschen | — | — | ja | ja |
-| Personen an einem Termin ein- und austragen | — | — | ja | ja |
+| Events, Badges, Kategorien, Level anlegen | — | — | ja | ja |
+| Events ändern, absagen und löschen | — | — | ja | ja |
+| Personen an einem Event ein- und austragen | — | — | ja | ja |
 | Challenges anlegen und begleiten | — | nur eigene Jahrgänge | ja | ja |
 | Challenges und Beiträge löschen | — | — | ja | ja |
 | Konfis und Teamer:innen anlegen | — | — | ja | ja |
@@ -201,7 +201,7 @@ Start, Chat, Challenges, Mitmachen und Material, bei Konfis Start, Chat,
 Challenges, Mitmachen und Badges.
 
 Alles, was von diesen Seiten aus geöffnet wird, trägt ihn nicht.
-**Detailansichten** — ein Termin, ein Material, eine Konfi, ein Chatraum —
+**Detailansichten** — ein Event, ein Material, eine Konfi, ein Chatraum —
 zeigen einen Gegenstand, der zu genau einer Gemeinde gehört; ein Wechsel
 führte ins Leere, weil es ihn in der anderen Gemeinde nicht gibt. Und die
 **Unterseiten** unter „Mehr" beziehungsweise im Profil — Profil,
@@ -226,9 +226,9 @@ In dieser Liste trägt jede Gemeinde eine **rote Zahl**, wenn dort etwas auf
 dich wartet — dieselbe Zahl, die die Reiter und das App-Symbol zusammen
 zeigen, nur je Gemeinde getrennt. So siehst du, wo Arbeit liegt, ohne erst
 hineinzuwechseln. Was mitzählt, hängt von deiner Rolle **in dieser Gemeinde**
-ab: als Leitung offene Anträge, unverbuchte Termine, wartende
+ab: als Leitung offene Anträge, unverbuchte Events, wartende
 Challenge-Beiträge und ungelesene Chats; als Teamer:in wartende Beiträge,
-Chats und neue Abzeichen. Dazu in jeder Rolle die ungelesenen Mitteilungen
+Chats und neue Badges. Dazu in jeder Rolle die ungelesenen Mitteilungen
 aus dieser Gemeinde im [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen).
 Bist du an Jahrgänge gebunden, zählt nur, was du dort auch sehen darfst. Eine
 Gemeinde ohne Zahl hat nichts Offenes.
@@ -296,7 +296,7 @@ Zweiergespräche — sind weg. **Ihr Konto bleibt**, mit Benutzername und
 Passwort. Zuhause ist sie ab jetzt in der anderen Gemeinde, mit der Rolle, die
 sie dort hat; arbeitet sie in mehreren mit, in der, der sie am längsten
 angehört. Eine gesperrte Gemeinde kommt dafür nur in Frage, wenn es keine
-andere gibt. Was sie bei dir angelegt oder geschrieben hat — Termine,
+andere gibt. Was sie bei dir angelegt oder geschrieben hat — Events,
 Material, Nachrichten, vergebene Punkte —, bleibt mit ihrem Namen stehen.
 
 Gehört die Person nur deiner Gemeinde an, fragt die App **„Benutzer löschen"**
@@ -319,7 +319,7 @@ Team-Rückblick. Wie er erstellt und freigegeben wird, steht im Kapitel
 
 ## Eine Rolle ändern
 
-Eine Konfi lässt sich **zur Teamer:in befördern**. Punkte und Abzeichen bleiben
+Eine Konfi lässt sich **zur Teamer:in befördern**. Punkte und Badges bleiben
 dabei als Konfi-Historie erhalten. Eine Jahrgangs-Zuweisung bekommt die frisch
 beförderte Person bewusst **nicht** automatisch: Teamer:innen dürfen auch ohne
 Jahrgang existieren. Die Zuweisung vergibt die Leitung, sobald sie in einem

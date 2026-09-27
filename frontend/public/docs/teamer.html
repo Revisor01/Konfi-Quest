@@ -94,7 +94,6 @@ table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
-hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 @media (max-width:860px) {
   /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
      zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
@@ -135,17 +134,6 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 .nav-nr { flex:none; width:20px; font-size:.74rem; font-variant-numeric:tabular-nums; color:var(--text-leise); text-align:right; }
 .seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
 .seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
-
-/* Abschnitte des aktuellen Kapitels (27.09.2026): eingerueckt an einer
-   feinen Linie. Der gerade gelesene (aria-current="location", gesetzt vom
-   Skript am Seitenende) bekommt ein Stueck Linie in der Akzentfarbe. Die
-   Nummernspalte ist so breit wie "11.17", damit die Titel buendig stehen. */
-.seitenleiste ul.nav-abschnitte { margin:3px 0 7px 13px; border-left:1px solid var(--rand); gap:1px; }
-.seitenleiste ul.nav-abschnitte a { align-items:baseline; gap:7px; margin-left:-1px; padding:5px 9px 5px 10px; border-left:2px solid transparent; border-radius:0 7px 7px 0; font-size:.8rem; line-height:1.4; color:var(--text-leise); overflow-wrap:anywhere; }
-.seitenleiste ul.nav-abschnitte a:hover { color:var(--text); }
-.seitenleiste ul.nav-abschnitte a[aria-current="location"] { color:var(--text); background:var(--flaeche-2); border-left-color:var(--akzent); font-weight:600; }
-.nav-abschnitt-nr { flex:none; min-width:4.4ch; font-size:.72rem; font-variant-numeric:tabular-nums; }
-.seitenleiste ul.nav-abschnitte a[aria-current="location"] .nav-abschnitt-nr { color:var(--akzent); }
 
 .kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
 .kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
@@ -194,7 +182,7 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
       <div class="nav-inhalt">
         <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
         <p class="nav-titel">Inhalt</p>
-        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html" aria-current="page" class="ist-hier"><span class="nav-nr">5</span>Für Teamer:innen</a><ul class="nav-abschnitte"><li><a href="#auf-der-startseite-nachsehen-was-ansteht"><span class="nav-abschnitt-nr">5.1</span>Auf der Startseite nachsehen, was ansteht</a></li><li><a href="#mit-team-und-konfis-schreiben"><span class="nav-abschnitt-nr">5.2</span>Mit Team und Konfis schreiben</a></li><li><a href="#challenges-stellen-und-begleiten"><span class="nav-abschnitt-nr">5.3</span>Challenges stellen und begleiten</a></li><li><a href="#zu-terminen-zusagen-und-absagen"><span class="nav-abschnitt-nr">5.4</span>Zu Terminen zusagen und absagen</a></li><li><a href="#material-oeffnen"><span class="nav-abschnitt-nr">5.5</span>Material öffnen</a></li><li><a href="#dein-profil-oeffnen"><span class="nav-abschnitt-nr">5.6</span>Dein Profil öffnen</a></li></ul></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">8</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">10</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html" aria-current="page" class="ist-hier"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">8</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">10</span>Badges</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Events</a></li><li><a href="./challenges.html"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
         <div class="fuss">
           <p><a href="/docs/api/">API-Referenz</a></p>
           <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
@@ -213,13 +201,6 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
     var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
     setzen();
     if (schmal.addEventListener) schmal.addEventListener('change', setzen);
-    /* Ein Tipp auf einen Eintrag schliesst das Menue (27.09.2026). Bei
-       Kapiteln tat das bisher nur die neue Seite; ein Abschnitt liegt auf
-       derselben Seite, und das offene Menue verdeckte ihn. Der Klick kommt
-       vor dem Sprung an -- der Browser rechnet schon mit der schmalen Leiste. */
-    klapp.addEventListener('click', function (ev) {
-      if (schmal.matches && ev.target.closest('.nav-inhalt a')) klapp.removeAttribute('open');
-    });
   })();
   </script>
   <main class="inhalt">
@@ -232,7 +213,7 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 
       <details class="kapitel-inhalt" open>
         <summary class="kapitel-inhalt-titel"><span>Inhalt</span><span class="ki-pfeil"></span></summary>
-        <ul><li class="stufe-2"><a href="#auf-der-startseite-nachsehen-was-ansteht"><span class="ki-nr">5.1</span>Auf der Startseite nachsehen, was ansteht</a></li><li class="stufe-2"><a href="#mit-team-und-konfis-schreiben"><span class="ki-nr">5.2</span>Mit Team und Konfis schreiben</a></li><li class="stufe-2"><a href="#challenges-stellen-und-begleiten"><span class="ki-nr">5.3</span>Challenges stellen und begleiten</a></li><li class="stufe-2"><a href="#zu-terminen-zusagen-und-absagen"><span class="ki-nr">5.4</span>Zu Terminen zusagen und absagen</a></li><li class="stufe-3"><a href="#events"><span class="ki-nr">5.4.1</span>Events</a></li><li class="stufe-3"><a href="#aktivitaeten"><span class="ki-nr">5.4.2</span>Aktivitäten</a></li><li class="stufe-2"><a href="#material-oeffnen"><span class="ki-nr">5.5</span>Material öffnen</a></li><li class="stufe-2"><a href="#dein-profil-oeffnen"><span class="ki-nr">5.6</span>Dein Profil öffnen</a></li></ul>
+        <ul><li class="stufe-2"><a href="#auf-der-startseite-nachsehen-was-ansteht"><span class="ki-nr">5.1</span>Auf der Startseite nachsehen, was ansteht</a></li><li class="stufe-2"><a href="#mit-team-und-konfis-schreiben"><span class="ki-nr">5.2</span>Mit Team und Konfis schreiben</a></li><li class="stufe-2"><a href="#challenges-stellen-und-begleiten"><span class="ki-nr">5.3</span>Challenges stellen und begleiten</a></li><li class="stufe-2"><a href="#zu-events-zusagen-und-absagen"><span class="ki-nr">5.4</span>Zu Events zusagen und absagen</a></li><li class="stufe-3"><a href="#events"><span class="ki-nr">5.4.1</span>Events</a></li><li class="stufe-3"><a href="#aktivitaeten"><span class="ki-nr">5.4.2</span>Aktivitäten</a></li><li class="stufe-2"><a href="#material-oeffnen"><span class="ki-nr">5.5</span>Material öffnen</a></li><li class="stufe-2"><a href="#dein-profil-oeffnen"><span class="ki-nr">5.6</span>Dein Profil öffnen</a></li></ul>
       </details>
       <script>document.querySelectorAll('.kapitel-inhalt.ist-lang').forEach(function(d){d.removeAttribute('open');});</script>
       <p>Ein Rundgang durch die App aus Teamer-Sicht. Unten stehen fünf Reiter — <strong>Start</strong>, <strong>Chat</strong>, <strong>Challenges</strong>, <strong>Mitmachen</strong> und <strong>Material</strong>. Dein Profil erreichst du über das Personen-Symbol oben rechts.</p>
@@ -240,7 +221,7 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
       <h2 id="auf-der-startseite-nachsehen-was-ansteht"><span class="abschnitt-nr">5.1</span>Auf der Startseite nachsehen, was ansteht</h2>
       <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-startseite.png" alt="Die Startseite einer Teamer:in: Begrüßung, die Karte für Challenges und die eigenen Zertifikate." loading="lazy"><figcaption>Die Startseite einer Teamer:in: Begrüßung, die Karte für Challenges und die eigenen Zertifikate.</figcaption></figure>
       <p>Die Bereiche, die deine Gemeinde freigeschaltet hat: deine <strong>Zertifikate</strong>, deine <strong>Events</strong>, die <strong>Tageslosung</strong> und deine <strong>Badges</strong>. Läuft gerade eine Challenge, steht sie oben. Ist dein <a href="./wrapped.html#den-team-rueckblick-anlegen-oder-ihn-laufen-lassen">Jahresrückblick</a> freigegeben, erscheint hier ein Banner dafür.</p>
-      <p>Unter <strong>Events</strong> stehen die nächsten Termine: die, zu denen du zugesagt hast, und die, für die noch Team gesucht wird. <strong>Fällt einer deiner Termine aus, steht er weiter da — als abgesagt, mit dem Grund</strong> und darunter, wer abgesagt hat. Genau dafür ist die Startseite da: Ein Termin, der einfach verschwindet, sagt „nichts los&quot; statt „fällt aus&quot;. Termine, für die Team gesucht wurde und die dann abgesagt wurden, verschwinden dagegen — dort hattest du nichts zugesagt.</p>
+      <p>Unter <strong>Events</strong> stehen die nächsten Events: die, zu denen du zugesagt hast, und die, für die noch Team gesucht wird. <strong>Fällt eines deiner Events aus, steht es weiter da — als abgesagt, mit dem Grund</strong> und darunter, wer abgesagt hat. Genau dafür ist die Startseite da: Ein Event, das einfach verschwindet, sagt „nichts los&quot; statt „fällt aus&quot;. Events, für die Team gesucht wurde und die dann abgesagt wurden, verschwinden dagegen — dort hattest du nichts zugesagt.</p>
       <h2 id="mit-team-und-konfis-schreiben"><span class="abschnitt-nr">5.2</span>Mit Team und Konfis schreiben</h2>
       <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-chat.png" alt="Die Chat-Übersicht der Teamer:innen." loading="lazy"><figcaption>Die Chat-Übersicht der Teamer:innen.</figcaption></figure>
       <p>Du erreichst das ganze Team deiner Gemeinde — alle Teamer:innen und die gesamte Leitung, unabhängig vom Jahrgang. Konfis erreichst du nur in deinen zugewiesenen Jahrgängen; ohne Zuweisung erreichst du keine und tauchst umgekehrt in deren Kontaktliste nicht auf.</p>
@@ -249,17 +230,17 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
       <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-challenges.png" alt="Der Challenges-Bereich in der Teamer-Ansicht." loading="lazy"><figcaption>Der Challenges-Bereich in der Teamer-Ansicht.</figcaption></figure>
       <p>Du arbeitest hier wie die Leitung, begrenzt auf deine zugewiesenen Jahrgänge: <a href="./challenges.html#eine-challenge-anlegen">anlegen und bearbeiten</a>, Beiträge <a href="./challenges.html#beitraege-freigeben-ausblenden-loeschen">freigeben, anonymisieren oder ausblenden</a> — und selbst mitmachen. Nur das <strong>Löschen</strong> — einer Challenge wie eines Beitrags — bleibt der <a href="./challenges.html#eine-challenge-loeschen">Leitung</a> vorbehalten. Eine rote Zahl am Symbol einer Challenge zeigt neue Beiträge seit deinem letzten Öffnen, ein oranges Feld mit Zahl und Uhr die Beiträge, die auf deine Freigabe warten — siehe <a href="./challenges.html#neue-beitraege-und-offene-freigaben-erkennen">Neue Beiträge und offene Freigaben erkennen</a>.</p>
       <p>Es gibt auch Challenges nur fürs Team; die sehen Konfis gar nicht. Was nach dem Start noch änderbar ist, steht unter <a href="./challenges.html#wissen-was-nach-dem-start-gesperrt-ist">Wissen, was nach dem Start gesperrt ist</a>.</p>
-      <h2 id="zu-terminen-zusagen-und-absagen"><span class="abschnitt-nr">5.4</span>Zu Terminen zusagen und absagen</h2>
-      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-mitmachen.png" alt="Der Bereich Mitmachen mit Terminen und Aktivitäten." loading="lazy"><figcaption>Der Bereich Mitmachen mit Terminen und Aktivitäten.</figcaption></figure>
+      <h2 id="zu-events-zusagen-und-absagen"><span class="abschnitt-nr">5.4</span>Zu Events zusagen und absagen</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-mitmachen.png" alt="Der Bereich Mitmachen mit Events und Aktivitäten." loading="lazy"><figcaption>Der Bereich Mitmachen mit Events und Aktivitäten.</figcaption></figure>
       <p>Der Reiter <strong>Mitmachen</strong> hat oben zwei Bereiche: <strong>Events</strong> und <strong>Aktivitäten</strong>.</p>
       <h3 id="events"><span class="abschnitt-nr">5.4.1</span>Events</h3>
-      <p>Alle Termine, gefiltert über <strong>Alle</strong>, <strong>Meine</strong> und <strong>Team</strong>. Unter <strong>Meine</strong> stehen alle Termine, zu denen du dich gemeldet hast — zugesagt, auf der Warteliste oder selbst abgesagt. Die Zahlen über der Liste zählen genauso. Zu jedem Termin siehst du die Details und das hinterlegte <a href="./termine.html#material-an-einem-termin-finden">Material</a>. Reine Konfi-Termine stehen nur zur Information da, ohne Anmeldung.</p>
-      <p><strong>Die Termine selbst verwaltet die Leitung:</strong> anlegen, ändern, absagen, löschen, Personen ein- und austragen und die Anwesenheit verbuchen. Du sagst für dich selbst zu oder ab, zeigst den QR-Code zum Einchecken und öffnest den Termin-Chat. Ist ein Termin abgesagt, siehst du das und den Grund dazu — ändern lässt sich daran nichts.</p>
+      <p>Alle Events, gefiltert über <strong>Alle</strong>, <strong>Meine</strong> und <strong>Team</strong>. Unter <strong>Meine</strong> stehen alle Events, zu denen du dich gemeldet hast — zugesagt, auf der Warteliste oder selbst abgesagt. Die Zahlen über der Liste zählen genauso. Zu jedem Event siehst du die Details und das hinterlegte <a href="./termine.html#material-an-einem-event-finden">Material</a>. Reine Konfi-Events stehen nur zur Information da, ohne Anmeldung.</p>
+      <p><strong>Die Events selbst verwaltet die Leitung:</strong> anlegen, ändern, absagen, löschen, Personen ein- und austragen und die Anwesenheit verbuchen. Du sagst für dich selbst zu oder ab, zeigst den QR-Code zum Einchecken und öffnest den Event-Chat. Ist ein Event abgesagt, siehst du das und den Grund dazu — ändern lässt sich daran nichts.</p>
       <p>Unter <strong>„Wer kommt&quot;</strong> steht die Teilnehmerliste: erst die Konfis, dann das Team, jeweils mit Jahrgang und dem Stand der Teilnahme (gebucht, Warteliste, anwesend, abgemeldet). So weißt du vor einer Freizeit, wen du erwartest. Die Liste ist zum Nachsehen da — verbucht und geändert wird sie von der Leitung.</p>
-      <p>Ist jemand abgemeldet, steht der <strong>Grund</strong> darunter. Ebenso <strong>Notizen</strong> wie „geht um 14 Uhr&quot; und, klein darunter, wer den Eintrag gemacht hat. Wer beim Termin vor Ort ist, soll das wissen, ohne nachfragen zu müssen.</p>
-      <p>Bei Terminen, für die Teamer:innen gesucht werden, antwortest du unter <strong>„Bist du dabei?&quot;</strong> mit <strong>„Dabei&quot;</strong> oder <strong>„Nicht dabei&quot;</strong>. Solange du nichts gewählt hast, stehen beide Knöpfe da; danach nur noch der Weg zurück — nach einer Zusage <strong>„Nicht mehr dabei&quot;</strong>, nach einer Absage <strong>„Doch dabei&quot;</strong>. Ändern lässt es sich jederzeit. Es gibt ein eigenes <a href="./termine.html#das-teamer-kontingent-verwalten">Kontingent für das Team</a>, getrennt von den Plätzen der Konfis.</p>
+      <p>Ist jemand abgemeldet, steht der <strong>Grund</strong> darunter. Ebenso <strong>Notizen</strong> wie „geht um 14 Uhr&quot; und, klein darunter, wer den Eintrag gemacht hat. Wer beim Event vor Ort ist, soll das wissen, ohne nachfragen zu müssen.</p>
+      <p>Bei Events, für die Teamer:innen gesucht werden, antwortest du unter <strong>„Bist du dabei?&quot;</strong> mit <strong>„Dabei&quot;</strong> oder <strong>„Nicht dabei&quot;</strong>. Solange du nichts gewählt hast, stehen beide Knöpfe da; danach nur noch der Weg zurück — nach einer Zusage <strong>„Nicht mehr dabei&quot;</strong>, nach einer Absage <strong>„Doch dabei&quot;</strong>. Ändern lässt es sich jederzeit. Es gibt ein eigenes <a href="./termine.html#das-teamer-kontingent-verwalten">Kontingent für das Team</a>, getrennt von den Plätzen der Konfis.</p>
       <p>Nach jeder Zu- oder Absage bestätigt die App, was gespeichert wurde, und die Liste <strong>„Wer kommt&quot;</strong> zeigt den neuen Stand. Ist das Team-Kontingent voll und eine Warteliste offen, sagt die Meldung, dass du auf der Warteliste stehst und automatisch nachrückst, sobald ein Platz frei wird.</p>
-      <p>Ist ein Termin <strong>abgesagt</strong>, steht statt der Knöpfe der Hinweis, dass er nicht stattfindet — zusagen kannst du dann nicht mehr. Bei einem vergangenen Termin, an dem du nicht teilgenommen hast, entfällt der Abschnitt ganz.</p>
+      <p>Ist ein Event <strong>abgesagt</strong>, steht statt der Knöpfe der Hinweis, dass es nicht stattfindet — zusagen kannst du dann nicht mehr. Bei einem vergangenen Event, an dem du nicht teilgenommen hast, entfällt der Abschnitt ganz.</p>
       <p>Beim Absagen fragt die App nach einem Grund — nach einer vorherigen Zusage ist er Pflicht, sonst freiwillig. Warum das so ist und was danach mit dem Platz passiert, steht unter <a href="./termine.html#das-teamer-kontingent-verwalten">Teamer:innen sagen zu oder ab</a>.</p>
       <h3 id="aktivitaeten"><span class="abschnitt-nr">5.4.2</span>Aktivitäten</h3>
       <p>Auch du meldest eigene Aktivitäten: Aktivität wählen, Datum, gern ein Foto als Nachweis. Der <a href="./punkte.html#eine-gemeldete-aktivitaet-entscheiden">Weg einer Meldung</a> ist derselbe wie bei den Konfis.</p>
@@ -268,7 +249,7 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
       <h2 id="dein-profil-oeffnen"><span class="abschnitt-nr">5.6</span>Dein Profil öffnen</h2>
       <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-profil.png" alt="Das Profil einer Teamer:in." loading="lazy"><figcaption>Das Profil einer Teamer:in.</figcaption></figure>
       <p>Über das Personen-Symbol oben rechts. Dort findest du:</p>
-      <ul><li><strong>Funktionsbeschreibung</strong> — wie du in der App genannt wirst, etwa „Teamerin&quot; oder „Jugendmitarbeiter&quot;. Sie steht neben deinem Namen im Chat.</li><li><strong>E-Mail-Adresse ändern</strong> und <strong>Passwort ändern</strong></li><li><strong>Bibelübersetzung</strong> für die Tageslosung</li><li><strong>Benachrichtigungen</strong> — welche Mitteilungen aufs Handy kommen; siehe <a href="./bedienung.html#auswaehlen-welche-mitteilungen-aufs-handy-kommen">Auswählen, welche Mitteilungen aufs Handy kommen</a></li><li><strong>App-Tour ansehen</strong> und <strong>Medien-Cache leeren</strong> — Letzteres wirft die Chat-Dateien weg, die zum schnelleren Öffnen auf dem Gerät liegen (siehe <a href="./chat.html#eine-datei-mitschicken">Chat</a>)</li><li><strong>Badges</strong> — deine Abzeichen; welche <a href="./badges.html#nur-fuer-teamer-innen">Bedingungen für Teamer:innen</a> gelten, steht im Abzeichen-Kapitel</li><li><strong>Deine Stempel</strong> — die <a href="./challenges.html#den-stempel-vergeben">Challenge-Stempel</a>, die du selbst gesammelt hast. Was es noch zu holen gibt, steht grau daneben. Ein Tipp auf einen Stempel zeigt, wofür er steht und wann du ihn bekommen hast. Gibt es weder erhaltene noch offene Stempel, steht der Abschnitt nicht da.</li><li><strong>Konfi-Historie</strong> — wenn du früher selbst Konfi warst: deine damaligen Punkte und Abzeichen. Hier steht nur deine Konfi-Zeit; deine Teamer-Abzeichen stehen unter <strong>Badges</strong>.</li><li><strong>Meine Rückblicke</strong> — deine <a href="./wrapped.html">Jahresrückblicke</a> als Teamer:in</li></ul>
+      <ul><li><strong>Funktionsbeschreibung</strong> — wie du in der App genannt wirst, etwa „Teamerin&quot; oder „Jugendmitarbeiter&quot;. Sie steht neben deinem Namen im Chat.</li><li><strong>E-Mail-Adresse ändern</strong> und <strong>Passwort ändern</strong></li><li><strong>Bibelübersetzung</strong> für die Tageslosung</li><li><strong>Benachrichtigungen</strong> — welche Mitteilungen aufs Handy kommen; siehe <a href="./bedienung.html#auswaehlen-welche-mitteilungen-aufs-handy-kommen">Auswählen, welche Mitteilungen aufs Handy kommen</a></li><li><strong>App-Tour ansehen</strong> und <strong>Medien-Cache leeren</strong> — Letzteres wirft die Chat-Dateien weg, die zum schnelleren Öffnen auf dem Gerät liegen (siehe <a href="./chat.html#eine-datei-mitschicken">Chat</a>)</li><li><strong>Badges</strong> — deine Badges; welche <a href="./badges.html#nur-fuer-teamer-innen">Bedingungen für Teamer:innen</a> gelten, steht im Badge-Kapitel</li><li><strong>Deine Stempel</strong> — die <a href="./challenges.html#den-stempel-vergeben">Challenge-Stempel</a>, die du selbst gesammelt hast. Was es noch zu holen gibt, steht grau daneben. Ein Tipp auf einen Stempel zeigt, wofür er steht und wann du ihn bekommen hast. Gibt es weder erhaltene noch offene Stempel, steht der Abschnitt nicht da.</li><li><strong>Konfi-Historie</strong> — wenn du früher selbst Konfi warst: deine damaligen Punkte und Badges. Hier steht nur deine Konfi-Zeit; deine Teamer-Badges stehen unter <strong>Badges</strong>.</li><li><strong>Meine Rückblicke</strong> — deine <a href="./wrapped.html">Jahresrückblicke</a> als Teamer:in</li></ul>
       <p>Wie du dich in der App bewegst, steht im Kapitel <a href="./bedienung.html">Die App bedienen</a>.</p>
     </article>
 
@@ -284,48 +265,5 @@ hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
     </nav>
   </main>
 </div>
-<script>
-(function () {
-  var leiste = document.querySelector('.seitenleiste');
-  var liste = leiste.querySelector('.nav-abschnitte');
-  if (leiste.scrollHeight > leiste.clientHeight) {
-    var k = leiste.getBoundingClientRect();
-    var fehlt = liste.getBoundingClientRect().bottom - k.bottom + 16;
-    var bisKapitel = leiste.querySelector('.ist-hier').getBoundingClientRect().top - k.top - 48;
-    if (fehlt > 0) leiste.scrollTop += Math.min(fehlt, bisKapitel);
-  }
-  if (!('IntersectionObserver' in window)) return;
-  var ende = document.querySelector('.blaettern');
-  var ziele = [];
-  liste.querySelectorAll('a').forEach(function (a) {
-    var h = document.getElementById(a.hash.slice(1));
-    if (h) ziele.push({ a: a, h: h });
-  });
-  var markieren = function () {
-    var hoehe = window.innerHeight;
-    var amEnde = !!ende && ende.getBoundingClientRect().bottom <= hoehe;
-    var linie = amEnde ? hoehe : hoehe * 0.35;
-    var aktiv = null, angesprungen = null;
-    ziele.forEach(function (z) {
-      var oben = z.h.getBoundingClientRect().top;
-      if (oben < linie) aktiv = z;
-      if (z.a.hash === location.hash && oben >= 0 && oben < hoehe) angesprungen = z;
-    });
-    if (amEnde && angesprungen) aktiv = angesprungen;
-    ziele.forEach(function (z) {
-      if (z === aktiv) z.a.setAttribute('aria-current', 'location');
-      else z.a.removeAttribute('aria-current');
-    });
-    if (aktiv && leiste.scrollHeight > leiste.clientHeight) {
-      var r = aktiv.a.getBoundingClientRect(), l = leiste.getBoundingClientRect();
-      if (r.top < l.top || r.bottom > l.bottom) leiste.scrollTop += r.top - l.top - l.height / 3;
-    }
-  };
-  var beobachter = new IntersectionObserver(markieren, { rootMargin: '0px 0px -65% 0px' });
-  ziele.forEach(function (z) { beobachter.observe(z.h); });
-  if (ende) new IntersectionObserver(markieren, { threshold: 1 }).observe(ende);
-  window.addEventListener('hashchange', markieren);
-})();
-</script>
 </body>
 </html>

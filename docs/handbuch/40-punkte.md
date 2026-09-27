@@ -7,7 +7,7 @@ gruppe: Nachschlagen
 
 Punkte sind das Herz von Konfi Quest. Sie ersetzen den Laufzettel: Statt einer
 Liste zum Abhaken sammeln Konfis Punkte, aus denen sich Fortschritt, Level und
-ein Teil der [Abzeichen](60-badges.md) ergeben. Dieses Kapitel richtet sich an
+ein Teil der [Badges](60-badges.md) ergeben. Dieses Kapitel richtet sich an
 die Leitung, die Punkte vergibt und korrigiert.
 
 ## Die zwei Punktarten auseinanderhalten
@@ -31,7 +31,7 @@ sondern es hängt an der Sache selbst:
 | Woher die Punkte kommen | Wer die Art festlegt |
 |---|---|
 | Aktivität | die Aktivität selbst (beim Anlegen eingestellt) |
-| Termin | der Termin (ohne Angabe: Gemeinde) |
+| Event | das Event selbst (ohne Angabe: Gemeinde) |
 | Bonuspunkte | du, direkt bei der Vergabe |
 
 ## Wissen, auf welchen drei Wegen Punkte entstehen
@@ -42,15 +42,15 @@ Aktivitäten sind das, was Konfis selbst melden — oder was ihr ihnen direkt
 zuschreibt. Jede Aktivität hat eine feste Punktzahl und eine feste Punktart.
 Den Ablauf beschreibt der nächste Abschnitt.
 
-### Über einen Termin
+### Über ein Event
 
-Wer bei einem Termin als anwesend eingetragen wird, bekommt die beim Termin
+Wer bei einem Event als anwesend eingetragen wird, bekommt die beim Event
 hinterlegten Punkte. Das passiert beim
 [Eintragen der Anwesenheit](70-termine.md#die-anwesenheit-verbuchen), nicht beim Buchen.
 Welche fünf Bedingungen dafür alle erfüllt sein müssen — unter anderem, dass
-[Pflichttermine](70-termine.md#ein-pflicht-event-einrichten) und Konfirmationen grundsätzlich
+[Pflicht-Events](70-termine.md#ein-pflicht-event-einrichten) und Konfirmationen grundsätzlich
 keine Punkte geben —, steht unter
-[Wann es Punkte gibt](70-termine.md#punkte-fuer-einen-termin-vergeben).
+[Wann es Punkte gibt](70-termine.md#punkte-fuer-ein-event-vergeben).
 
 ### Über Bonuspunkte
 
@@ -64,7 +64,7 @@ Punktzahl stellst du mit einem Schieberegler von **1 bis 10** ein. Die
 Bezeichnung gehängt und steht später in der Punktegeschichte.
 
 Der Konfi bekommt sofort einen Push: **„+3 Bonuspunkte!"** mit dem Text, wofür
-sie waren. Neue Abzeichen und ein neues Level werden gleich mitgeprüft.
+sie waren. Neue Badges und ein neues Level werden gleich mitgeprüft.
 
 ## Eine gemeldete Aktivität entscheiden
 
@@ -90,7 +90,7 @@ auch gemeldet — siehe
 
 - **Genehmigt:** Die Aktivität wird gutgeschrieben, die Punkte landen auf dem
   Zähler der Punktart, die an der Aktivität hängt. Es wird sofort geprüft, ob
-  damit neue Abzeichen oder ein neues Level erreicht sind. Der Konfi bekommt
+  damit neue Badges oder ein neues Level erreicht sind. Der Konfi bekommt
   „Antrag genehmigt!" mit der Punktzahl.
 - **Abgelehnt:** Es gibt keine Punkte. Der Konfi bekommt „Antrag abgelehnt"
   mit deiner Begründung als „Grund: …" daran.
@@ -168,7 +168,7 @@ Angeboten werden dabei nur Aktivitäten, deren Punktart im Jahrgang des Konfis
 eingeschaltet ist.
 
 > **Der Konfi merkt es nicht sofort.** Es kommt keine Push-Nachricht. Die
-> Punkte stehen zwar sofort da und Abzeichen werden gleich geprüft, ein
+> Punkte stehen zwar sofort da und Badges werden gleich geprüft, ein
 > dadurch erreichtes neues Level wird aber erst beim nächsten Öffnen seines
 > Dashboards sichtbar. Wenn jemand es mitbekommen soll, sag am besten kurz
 > Bescheid.
@@ -214,11 +214,11 @@ sie erzeugt hat. Das sind alle Wege:
 - Einen **genehmigten Antrag zurücksetzen**
 - Eine **direkt zugeschriebene Aktivität löschen**
 - **Bonuspunkte löschen**
-- Bei einem Termin die
+- Bei einem Event die
   [**Anwesenheit zurücknehmen**](70-termine.md#punkte-zuruecknehmen)
-- Eine Person **aus einem Termin entfernen**
+- Eine Person **aus einem Event entfernen**
 - Eine bestätigte Buchung **zurück auf die Warteliste** setzen
-- Einen **ganzen Termin löschen** — dabei werden alle dafür vergebenen Punkte
+- Ein **ganzes Event löschen** — dabei werden alle dafür vergebenen Punkte
   zurückgenommen
 
 Zurückgenommen wird immer der Wert, der bei der Vergabe gutgeschrieben wurde —
@@ -229,8 +229,8 @@ ist.
 > dass sie bei null aufhört. Nimmst du mehr zurück, als noch da ist — etwa weil
 > anderswo schon korrigiert wurde —, bleibt es bei 0 statt ins Minus zu gehen.
 
-Ein Abzeichen, das durch diese Punkte ausgelöst wurde, bleibt dagegen bestehen:
-[Abzeichen werden nie aberkannt](60-badges.md#wissen-was-vorher-zu-bedenken-ist).
+Ein Badge, das durch diese Punkte ausgelöst wurde, bleibt dagegen bestehen:
+[Badges werden nie aberkannt](60-badges.md#wissen-was-vorher-zu-bedenken-ist).
 
 Verschiebst du einen **Konfi in einen anderen Jahrgang**, wandern Punkte und
 Level unverändert mit.
@@ -291,16 +291,16 @@ steht — oder du benennst es einfach um.
 
 ## Nachvollziehen, wann nachgerechnet wird
 
-Abzeichen und Level werden beide sofort geprüft bei:
+Badges und Level werden beide sofort geprüft bei:
 
 - einem genehmigten Antrag
 - vergebenen Bonuspunkten
 - eingetragener Anwesenheit und beim Check-in per QR-Code
 
-Nur die Abzeichen — nicht das Level — werden geprüft, wenn du über die
+Nur die Badges — nicht das Level — werden geprüft, wenn du über die
 Konfi-Verwaltung eine Aktivität zuschreibst oder wieder löschst.
 
 Dazu kommen die
-[stündlichen Abzeichen-Prüfungen](60-badges.md#nachvollziehen-wann-geprueft-wird)
+[stündlichen Badge-Prüfungen](60-badges.md#nachvollziehen-wann-geprueft-wird)
 im Hintergrund. Das Level wird außerdem bei jedem Öffnen des Konfi-Dashboards
 überprüft und gegebenenfalls stillschweigend richtiggestellt.

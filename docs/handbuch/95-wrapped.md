@@ -6,7 +6,7 @@ gruppe: Nachschlagen
 ---
 
 Der Jahresrückblick — im System „Wrapped“ — ist eine Folge von Bildschirmseiten,
-durch die man wischt: Punkte, Termine, Abzeichen, der aktivste Monat, ein Blick
+durch die man wischt: Punkte, Events, Badges, der aktivste Monat, ein Blick
 auf die Konfirmation. Gedacht als Abschluss und als etwas, das man gern
 weiterschickt.
 
@@ -64,13 +64,13 @@ Team-Rückblicke tragen keinen eingetippten Namen; sie heißen nach ihrem Jahr.
 ### Beim Team das Jahr wählen
 
 Angeboten werden nur Jahre, in denen es für **Teamer:innen** tatsächlich etwas
-zu berichten gibt: ein Termin, bei dem eine Teamer:in anwesend war, eine
-Teamer-Aktivität, ein verliehenes Abzeichen, ein Zertifikat oder ein früherer
+zu berichten gibt: ein Event, bei dem eine Teamer:in anwesend war, eine
+Teamer-Aktivität, ein verliehenes Badge, ein Zertifikat oder ein früherer
 Team-Rückblick.
 
 Dass in einem Jahr überhaupt etwas los war, genügt nicht. Ein Jahr, in dem nur
 Konfis unterwegs waren, ergäbe einen leeren Team-Rückblick und steht deshalb
-nicht in der Liste — auch dann nicht, wenn es damals reichlich Termine gab.
+nicht in der Liste — auch dann nicht, wenn es damals reichlich Events gab.
 
 Anlegen lassen sich nur **abgeschlossene** Jahre. Das laufende steht sichtbar in
 der Liste, aber gesperrt, mit dem Hinweis „verfügbar ab 1.1." und der nächsten
@@ -236,7 +236,7 @@ Diese Seiten nehmen nicht am Wettbewerb teil:
 - **Der Blick nach vorn** — kurz vor Schluss. Während der Konfizeit ist das
   ein Zuspruch für die verbleibende Zeit, nach der Konfirmation die Einladung
   ins Team.
-- **Termine**, **Punkte** und **Abzeichen**. Der Grund ist die Abschluss-Seite:
+- **Events**, **Punkte** und **Badges**. Der Grund ist die Abschluss-Seite:
   Sie fasst genau diese drei Zahlen noch einmal zusammen. Ohne sie fasste sie
   etwas zusammen, das nie gezeigt wurde. (Auch sie nur, wenn wirklich etwas
   zusammengekommen ist.)
@@ -245,7 +245,7 @@ Diese Seiten nehmen nicht am Wettbewerb teil:
   ohne sie wäre der Rückblick eine Sammlung von Zahlen. Reserviert ist der
   seltenste Schwerpunkt; mehr als zwei davon gibt es nicht, sonst wiederholen
   sie sich.
-- **Das seltenste eigene Abzeichen**, wenn höchstens ein Fünftel der anderen es
+- **Das seltenste eigene Badge**, wenn höchstens ein Fünftel der anderen es
   auch hat.
 
 ### Die übrigen Plätze nach Seltenheit vergeben
@@ -253,17 +253,17 @@ Diese Seiten nehmen nicht am Wettbewerb teil:
 Für jede verbliebene Seite fragt die App: *Wie viele andere im Jahrgang bekommen
 diese Seite auch?* Je weniger, desto eher ist sie dabei.
 
-*Ein Beispiel:* Punkte und Abzeichen hat fast jeder — sie stehen ohnehin schon
+*Ein Beispiel:* Punkte und Badges hat fast jeder — sie stehen ohnehin schon
 fest. Bei der Sommerfreizeit nach Norwegen waren wenige; die Seite dazu kommt
 fast immer durch.
 
 Damit sieht nicht jede Konfi dasselbe, und wer etwas Ungewöhnliches erlebt hat,
 sieht genau das.
 
-**Das seltenste Abzeichen ab einem Fünftel.** Die Seite **„Das haben nur x %"**
-zeigt das seltenste Abzeichen, das jemand hat. Liegt dieser Wert bei **20 % oder
+**Das seltenste Badge ab einem Fünftel.** Die Seite **„Das haben nur x %"**
+zeigt das seltenste Badge, das jemand hat. Liegt dieser Wert bei **20 % oder
 darunter**, ist die Seite gesetzt und kann von nichts mehr verdrängt werden.
-Liegt er darüber, konkurriert sie wie jede andere — ein Abzeichen, das die
+Liegt er darüber, konkurriert sie wie jede andere — ein Badge, das die
 Hälfte des Jahrgangs hat, ist keine Besonderheit.
 
 ### Die Reihenfolge als Erzählung lesen
@@ -280,29 +280,29 @@ Prozent eines Jahrgangs diese Seite typischerweise bekommen. Kleiner heißt
 seltener heißt wertvoller.
 
 Bei Jahrgängen ab fünf Konfis misst die App vier dieser Werte an den echten
-Daten nach — Termine, Punkte, Abzeichen und Wochentag. Alle übrigen Seiten
+Daten nach — Events, Punkte, Badges und Wochentag. Alle übrigen Seiten
 behalten die Schätzwerte aus der Tabelle.
 
 | Seite | Was draufsteht | Wann man sie bekommt | Wie selten |
 |---|---|---|---|
 | **Begrüßung** | „Deine Konfi-Zeit" (mit „(bis jetzt)", wenn bis zur Konfirmation noch mehr als 30 Tage sind), der Name und der Name der Ausgabe | immer | immer |
-| **Deine Termine** | Zahl der besuchten Termine, mit einem Spruch dazu | mindestens ein besuchter Termin | 95 % |
+| **Deine Events** | Zahl der besuchten Events, mit einem Spruch dazu | mindestens ein besuchtes Event | 95 % |
 | **Warteliste-Held:in** | „Du hast gewartet — und es hat geklappt" | mindestens einmal von der Warteliste nachgerückt | 20 % |
 | **Dein Schwerpunkt** | Bereich oder besondere Zeit, mit eigenem Bild und Spruch | siehe die beiden Tabellen unten | verschieden |
-| **Stavanger 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Termin der Kategorie „Sommerfreizeit" zwischen 1.6. und 30.9.2026 | 5 % |
+| **Stavanger 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Event der Kategorie „Sommerfreizeit" zwischen 1.6. und 30.9.2026 | 5 % |
 | **Deine Challenges** | Zahl der Beiträge, Lieblings-Challenge | mindestens ein Challenge-Beitrag | 60 % |
 | **Deine Momente** | bis zu sechs Challenge-Beiträge, Fotos groß | mindestens ein Challenge-Beitrag | 55 % |
 | **Der Vielseitige** | auf wie vielen Wegen geantwortet wurde | Beiträge in mindestens zwei verschiedenen Medienarten (Text, Foto, Ton, Video, Link) | 40 % |
 | **Deine Punkte** | Gesamtpunkte, getrennt nach Gottesdienst und Gemeinde, Bonuspunkte | mindestens ein Punkt | 95 % |
-| **Dein aktivster Monat** | der Monat mit den meisten Einträgen | mindestens zwei Aktivitäten oder Termine in einem Monat | 85 % |
-| **Der lange Atem** | Spanne vom ersten bis zum letzten Termin | mindestens 5 Termine über mindestens 60 Tage | 45 % |
-| **Dein Wochentag** | der Tag, an dem die meisten Termine lagen | mindestens 4 Termine an einem Wochentag, und das ist mindestens die Hälfte aller | 25 % |
-| **Deine Abzeichen** | Zahl der Abzeichen, „von N", bis zu sechs Symbole | mindestens ein Abzeichen | 90 % |
-| **Das haben nur x %** | das seltenste eigene Abzeichen und wie viele es haben | ein Abzeichen im Zeitraum **und** mindestens 5 Konfis in der Gemeinde | so selten wie das Abzeichen — ab 20 % oder darunter ist die Seite gesetzt |
-| **Deine Konfirmation** | das Konfirmationsdatum; steht sie noch bevor, die Zahl der Tage | der Jahrgang hat einen als Konfirmation gekennzeichneten Termin | 35 % |
-| **Und weiter** | Zuspruch für die restliche Konfizeit; der Text richtet sich danach, wie viele Punkte zum Ziel noch fehlen | die Konfirmation steht noch bevor oder der Jahrgang hat keinen Termin | immer, als vorletzte Seite |
+| **Dein aktivster Monat** | der Monat mit den meisten Einträgen | mindestens zwei Aktivitäten oder Events in einem Monat | 85 % |
+| **Der lange Atem** | Spanne vom ersten bis zum letzten Event | mindestens 5 Events über mindestens 60 Tage | 45 % |
+| **Dein Wochentag** | der Tag, an dem die meisten Events lagen | mindestens 4 Events an einem Wochentag, und das ist mindestens die Hälfte aller | 25 % |
+| **Deine Badges** | Zahl der Badges, „von N", bis zu sechs Symbole | mindestens ein Badge | 90 % |
+| **Das haben nur x %** | das seltenste eigene Badge und wie viele es haben | ein Badge im Zeitraum **und** mindestens 5 Konfis in der Gemeinde | so selten wie das Badge — ab 20 % oder darunter ist die Seite gesetzt |
+| **Deine Konfirmation** | das Konfirmationsdatum; steht sie noch bevor, die Zahl der Tage | der Jahrgang hat ein als Konfirmation gekennzeichnetes Event | 35 % |
+| **Und weiter** | Zuspruch für die restliche Konfizeit; der Text richtet sich danach, wie viele Punkte zum Ziel noch fehlen | die Konfirmation steht noch bevor oder der Jahrgang hat kein Event | immer, als vorletzte Seite |
 | **Werde Teamer:in** | die Einladung, dabeizubleiben | die Konfirmation war schon | immer, als vorletzte Seite |
-| **Auf einen Blick** | Kirchengemeinde, Punkte, Termine, Abzeichen und der Konfirmationstermin unter „Dein Weg. Deine Zeit. Dein Glaube." | immer, als letzte Seite | immer |
+| **Auf einen Blick** | Kirchengemeinde, Punkte, Events, Badges und der Konfirmationstermin unter „Dein Weg. Deine Zeit. Dein Glaube." | immer, als letzte Seite | immer |
 
 Die Konfirmations-Seite nennt die Zahl der Tage nur einmal — als große Zahl oben.
 Der Satz darunter ordnet ein, ohne sie zu wiederholen: „Deine Konfirmation ist
@@ -313,7 +313,7 @@ weit." und danach „Du bist konfirmiert."
 
 Für jede der Standardkategorien gibt es eine eigene Seite mit eigenem Bild und
 eigenem Text. Man bekommt sie, wenn man in diesem Bereich etwas getan hat —
-gezählt werden **Termine und Aktivitäten zusammen**.
+gezählt werden **Events und Aktivitäten zusammen**.
 
 | Seite | Wann man sie bekommt | Wie selten |
 |---|---|---|
@@ -342,7 +342,7 @@ eine Seite.
 
 ### Seiten, die sich nach dem Datum richten
 
-Diese Seiten hängen **nicht** an der Kategorie, sondern am Datum des Termins.
+Diese Seiten hängen **nicht** an der Kategorie, sondern am Datum des Events.
 
 | Seite | Zeitraum | Wie selten |
 |---|---|---|
@@ -364,8 +364,8 @@ Heiligabend, ganz gleich ob eure Kategorie „Gottesdienst", „Advent" oder
 Ostern und der 1. Advent wandern jedes Jahr — die App rechnet sie aus, ihr
 müsst nichts pflegen.
 
-> **Jeder Termin zählt nur einmal.** Fällt ein Termin in eine dieser Zeiten,
-> gehört er dieser Seite — und **nicht zusätzlich** seiner Kategorie. Ein
+> **Jedes Event zählt nur einmal.** Fällt ein Event in eine dieser Zeiten,
+> gehört es dieser Seite — und **nicht zusätzlich** seiner Kategorie. Ein
 > Gottesdienst in der Passionszeit erscheint auf der Oster-Seite, nicht auch
 > noch auf der Gottesdienst-Seite. Niemand bekommt zwei Seiten über dieselbe
 > Stunde in derselben Kirche.
@@ -381,12 +381,12 @@ Drei Bedingungen müssen alle zutreffen:
 
 1. Die Person gehört zu einer der beiden Gemeinden, die mitgefahren sind:
    Kirchspiel West oder Kirchengemeinde Hennstedt.
-2. Sie hat eine Aktivität oder einen Termin der Kategorie **„Sommerfreizeit"**.
+2. Sie hat eine Aktivität oder ein Event der Kategorie **„Sommerfreizeit"**.
 3. Dieser liegt zwischen dem **1. Juni und dem 30. September 2026**.
 
 Überall sonst erscheint die Seite nicht, auch dann nicht, wenn dort eine
 gleichnamige Kategorie geführt wird. Das Datumsfenster ist bewusst weit um die
-Fahrt gelegt, damit ein früher Vorbereitungstermin oder ein Nachtreffen nicht
+Fahrt gelegt, damit ein frühes Vorbereitungstreffen oder ein Nachtreffen nicht
 herausfällt.
 
 Die **14 Tage** sind fester Text, keine gezählte Zahl: Die Fahrt dauerte 14
@@ -416,16 +416,16 @@ liegt.
 | Seite | Datenquelle |
 |---|---|
 | Punkte | der gespeicherte Punktestand des Konfis, plus Bonuspunkte-Summe |
-| Termine | die Buchungen der Person im Zeitraum |
-| Schwerpunkt | Aktivitäten und Termine, nach Kategorie gruppiert |
-| Aktivster Monat | Aktivitäten und besuchte Termine zusammen |
-| Abzeichen | die verliehenen [Abzeichen](60-badges.md) |
-| Das haben nur x % | wie viele Konfis der Gemeinde dasselbe Abzeichen haben |
-| Konfirmation | der [als Konfirmation gekennzeichnete Termin](70-termine.md#einen-termin-als-konfirmation-kennzeichnen) |
+| Events | die Buchungen der Person im Zeitraum |
+| Schwerpunkt | Aktivitäten und Events, nach Kategorie gruppiert |
+| Aktivster Monat | Aktivitäten und besuchte Events zusammen |
+| Badges | die verliehenen [Badges](60-badges.md) |
+| Das haben nur x % | wie viele Konfis der Gemeinde dasselbe Badge haben |
+| Konfirmation | das [als Konfirmation gekennzeichnete Event](70-termine.md#ein-event-als-konfirmation-kennzeichnen) |
 | Momente und Challenges | [Challenge-Beiträge](80-challenges.md) aus dem Zeitraum |
 | Warteliste | Buchungen, die von der Warteliste nachgerückt sind |
-| Der lange Atem | Spanne zwischen erstem und letztem Termin |
-| Dein Wochentag | häufigster Wochentag der Termine, in Berliner Zeit |
+| Der lange Atem | Spanne zwischen erstem und letztem Event |
+| Dein Wochentag | häufigster Wochentag der Events, in Berliner Zeit |
 | Der Vielseitige | verschiedene Medienarten der eigenen Challenge-Beiträge |
 
 Der **Zeitraum** reicht beim Konfi-Rückblick vom Beginn der Konfi-Zeit bis zu
@@ -445,19 +445,19 @@ Auch hier sind es **höchstens zehn Seiten**, und auch hier entscheidet die
 Seltenheit, welche. Wer neu im Team ist, bekommt keine Reihe von Seiten mit
 einer Null darauf, sondern einen kürzeren Rückblick.
 
-**Immer dabei:** Begrüßung und Abschluss, dazu Termine, Konfis und Abzeichen —
+**Immer dabei:** Begrüßung und Abschluss, dazu Events, Konfis und Badges —
 die drei Zahlen, die der Abschluss zusammenfasst. Auch sie nur, wenn wirklich
 etwas zusammengekommen ist.
 
 | Seite | Was draufsteht | Wann man sie bekommt | Wie selten |
 |---|---|---|---|
 | **Begrüßung** | „Dein Teamerjahr" mit der Jahreszahl, dazu der Name | immer | immer |
-| **So fing es an** | der erste Termin des Jahres mit Name und Datum | mindestens ein Termin im Zeitraum | 85 % |
-| **Deine Termine** | Zahl der begleiteten Termine, der größte mit Teilnehmerzahl | mindestens ein Termin im Zeitraum | 95 % |
-| **Stavanger 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Termin der Kategorie „Sommerfreizeit" zwischen 1.6. und 30.9.2026 | 5 % |
+| **So fing es an** | das erste Event des Jahres mit Name und Datum | mindestens ein Event im Zeitraum | 85 % |
+| **Deine Events** | Zahl der begleiteten Events, das größte mit Teilnehmerzahl | mindestens ein Event im Zeitraum | 95 % |
+| **Stavanger 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Event der Kategorie „Sommerfreizeit" zwischen 1.6. und 30.9.2026 | 5 % |
 | **Deine Konfis** | Zahl der betreuten Konfis, die Jahrgänge | mindestens ein Konfi über die Jahrgangs-Zuweisung | 90 % |
 | **Nicht allein** | mit wie vielen anderen zusammen die Jahrgänge betreut wurden | mindestens eine weitere Teamer:in auf denselben Jahrgängen | 75 % |
-| **Deine Abzeichen** | Zahl und bis zu sechs Abzeichen | mindestens ein Abzeichen im Zeitraum | 80 % |
+| **Deine Badges** | Zahl und bis zu sechs Badges | mindestens ein Badge im Zeitraum | 80 % |
 | **Deine Zertifikate** | Zahl und das zuletzt erhaltene Zertifikat; JuLeiCa und Teamer-Card werden eigens genannt | mindestens ein Zertifikat im Zeitraum | 40 % |
 | **Deine Kraftproben** | wie oft du selbst bei einer Challenge mitgemacht hast, und wobei am liebsten | mindestens ein eigener Beitrag | 60 % |
 | **Deine Challenges** | wie viele du selbst gestellt hast, mit den drei neuesten Titeln | mindestens drei gestellte Challenges (kein Entwurf) | 20 % |
@@ -465,12 +465,12 @@ etwas zusammengekommen ist.
 | **Dein Engagement** | Jahre im Team, „Dabei seit …" | Eintrittsdatum hinterlegt **und** nicht im ersten Jahr | 55 % |
 | **Dein erstes Jahr** | die Begrüßung für alle, die neu dazugekommen sind | im Rückblicksjahr ins Team gekommen, Eintrittsdatum bekannt | 25 % |
 | **Wie alles anfing** | „Du saßt mal auf der anderen Seite", mit eigenem Jahrgang | war selbst einmal Konfi in dieser Gemeinde | 20 % |
-| **Auf einen Blick** | Termine, Konfis, Abzeichen nebeneinander, „Danke, dass du dabei bist." | immer, als letzte Seite | immer |
+| **Auf einen Blick** | Events, Konfis, Badges nebeneinander, „Danke, dass du dabei bist." | immer, als letzte Seite | immer |
 
 ### Den Zuspruch statt eines Rückblicks bekommen
 
-Kam für eine Teamer:in im ganzen Jahr nichts zusammen — kein Termin, kein
-Konfi, kein Abzeichen, kein Zertifikat, keine Challenge, keine Freigabe —,
+Kam für eine Teamer:in im ganzen Jahr nichts zusammen — kein Event, kein
+Konfi, kein Badge, kein Zertifikat, keine Challenge, keine Freigabe —,
 bekommt sie **keinen Rückblick aus Nullen**, sondern drei Seiten mit einem
 Zuspruch: eine Begrüßung, ein Segenswort und ein Dank.
 
@@ -478,7 +478,7 @@ Der Spruch steht fest im System und bleibt für dieselbe Person im selben Jahr
 immer derselbe, auch wenn sie den Rückblick mehrfach öffnet. Er lässt sich
 teilen wie jede andere Seite.
 
-Ein einziger begleiteter Termin genügt, damit stattdessen der normale
+Ein einziges begleitetes Event genügt, damit stattdessen der normale
 Rückblick erscheint.
 
 Bei Konfis gibt es das nicht — wer noch keine Punkte hat, steht am Anfang
@@ -566,7 +566,7 @@ Am häufigsten weitergegeben wird die letzte Seite, **Auf einen Blick**. Auf dem
 geteilten Bild steht **weniger als auf der Seite selbst**: die Kirchengemeinde,
 der Satz „Dein Weg. Deine Zeit. Dein Glaube." und darunter groß unter der Zeile
 **„Meine Konfirmation"** der Konfirmationstag mit Monat und Jahr. Punkte,
-Termine und Abzeichen, die in der App daneben stehen, bleiben auf dem Bild weg.
+Events und Badges, die in der App daneben stehen, bleiben auf dem Bild weg.
 
 Ist kein Konfirmationstermin hinterlegt, fällt dieser Block weg: Dann trägt die
 Karte den Gemeindenamen, den Satz und das Logo — das genügt.

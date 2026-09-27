@@ -11,7 +11,7 @@ Punktarten gibt und ob der Konfispruch gewählt werden darf. Außerdem
 entscheidet der Jahrgang, wer im Team was sieht.
 
 Kategorien sind davon unabhängig — sie gelten für die ganze Gemeinde und
-sortieren Aktivitäten und Termine.
+sortieren Aktivitäten und Events.
 
 ## Einen Jahrgang anlegen
 
@@ -74,7 +74,7 @@ deaktiviert“** (entsprechend für Gemeinde). Das gilt für
 genehmigen, Aktivitäten direkt zuweisen, Bonuspunkte vergeben, Anwesenheit
 eintragen.
 
-Eine Ausnahme im Verhalten: Trägst du bei einem Termin über **„alle
+Eine Ausnahme im Verhalten: Trägst du bei einem Event über **„alle
 anwesend“** gesammelt Anwesenheit ein, werden betroffene Personen
 **stillschweigend übersprungen** statt mit einer Fehlermeldung. Du siehst
 also keinen Hinweis, dass jemand keine Punkte bekommen hat.
@@ -89,8 +89,8 @@ der Datenbank, werden aber überall herausgerechnet:
 | Gespeicherter Punktestand | bleibt unverändert erhalten |
 | Gesamtpunkte und Rangliste | die Art wird als 0 gewertet |
 | Level | zählt nur noch die aktive Art |
-| Abzeichen auf diese Punktart | werden nicht mehr erreicht |
-| Abzeichen auf Gesamtpunkte | rechnen nur mit der aktiven Art |
+| Badges auf diese Punktart | werden nicht mehr erreicht |
+| Badges auf Gesamtpunkte | rechnen nur mit der aktiven Art |
 | Jahresrückblick | nur das aktive Ziel fließt ein |
 
 ### Erkennen, was ausgeblendet und was ausgegraut ist
@@ -104,7 +104,7 @@ der Datenbank, werden aber überall herausgerechnet:
   etwas einreichen, das niemand genehmigen kann.
 
 **Ausgegraut** (sichtbar, aber blass) in der Konfi-Detailansicht der Leitung:
-Bonuspunkte, Terminpunkte und Aktivitäten der abgeschalteten Art. Ihr seht
+Bonuspunkte, Event-Punkte und Aktivitäten der abgeschalteten Art. Ihr seht
 also weiter, was einmal vergeben wurde — es ist nur erkennbar außer Kraft.
 
 ### Eine Punktart wieder einschalten
@@ -114,8 +114,8 @@ Fortschrittsanzeigen werden bei jedem Aufruf frisch berechnet. In dem Moment,
 in dem du die Art wieder einschaltest, sind sämtliche alten Punkte wieder da
 und zählen wieder — vollständig und sofort.
 
-Eine Einschränkung: **Abzeichen werden nicht rückwirkend vergeben.** Wer
-während der Abschaltung eine Abzeichen-Bedingung erfüllt hätte, bekommt es
+Eine Einschränkung: **Badges werden nicht rückwirkend vergeben.** Wer
+während der Abschaltung eine Badge-Bedingung erfüllt hätte, bekommt es
 nicht automatisch nachgereicht. Geprüft wird erst wieder bei der
 [nächsten Punktevergabe oder beim Hintergrundlauf](60-badges.md#nachvollziehen-wann-geprueft-wird).
 
@@ -194,8 +194,7 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Konfi löschen, befördern, Passwort zurücksetzen (Admin) | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
 | Punkte vergeben und zurücknehmen | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
 | Nachweisfotos zu Aktivitäten | nur für Verantwortliche der betreffenden Jahrgänge sichtbar |
-| Anträge auf Aktivitäten (Admin) | Anträge von Konfis dieser Jahrgänge stehen nicht in der Antragsliste, zählen nicht am Reiter und melden sich nicht als „Neuer Antrag eingegangen“; Anträge von Teamer:innen bleiben ([wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt)) |
-| Termine | jahrgangsgebundene Termine sind unsichtbar und nicht buchbar; führt eine Mitteilung oder ein Link auf einen solchen Termin, steht dort der Grund („Nicht deinem Jahrgang zugeordnet") |
+| Events | jahrgangsgebundene Events sind unsichtbar und nicht buchbar; führt eine Mitteilung oder ein Link auf ein solches Event, steht dort der Grund („Nicht deinem Jahrgang zugeordnet") |
 | Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
 | Anwesenheits- und Spruchlisten (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Jahresrückblick: Liste der Ausgaben | zeigt nur Ausgaben der eigenen Jahrgänge; ohne jede Zuweisung bleibt sie leer und nennt den Grund („Kein Jahrgang zugewiesen“) |
@@ -213,12 +212,12 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 > sich jemand meldet, er sehe „gar keine Konfis“ oder werde von niemandem
 > gefunden, ist fast immer die fehlende Jahrgangs-Zuweisung die Ursache.
 
-Bei [**Terminen**](70-termine.md) wirkt die Zuweisung auf beides: Sehen und
-Buchen. Eine Teamer:in kann sich nur zu Terminen ihrer eigenen Jahrgänge
-anmelden; sonst kommt **„Dieser Termin gehört zu einem Jahrgang, dem du
-nicht zugewiesen bist“**. Zwei Arten von Terminen bleiben immer sichtbar und
-buchbar: Termine [**nur für Teamer:innen**](70-termine.md#die-zielgruppe-waehlen)
-und Termine ohne jede Jahrgangsbindung.
+Bei [**Events**](70-termine.md) wirkt die Zuweisung auf beides: Sehen und
+Buchen. Eine Teamer:in kann sich nur zu Events ihrer eigenen Jahrgänge
+anmelden; sonst kommt **„Dieses Event gehört zu einem Jahrgang, dem du
+nicht zugewiesen bist“**. Zwei Arten von Events bleiben immer sichtbar und
+buchbar: Events [**nur für Teamer:innen**](70-termine.md#die-zielgruppe-waehlen)
+und Events ohne jede Jahrgangsbindung.
 
 Wird ein Konfi **zur Teamer:in befördert**, bekommt er seinen alten Jahrgang
 **nicht** automatisch als Zuweisung. Die vergibt die Leitung, sobald die neue
@@ -228,8 +227,8 @@ Teamer:in in einem Jahrgang aktiv sein soll — siehe
 ## Kategorien anlegen und pflegen
 
 Kategorien findest du unter **Mehr › Kategorien**. Sie sortieren Aktivitäten
-und Termine, und es gibt **eine einzige gemeinsame Liste** für beides — keine
-getrennten Kategorien für Aktivitäten und Termine.
+und Events, und es gibt **eine einzige gemeinsame Liste** für beides — keine
+getrennten Kategorien für Aktivitäten und Events.
 
 Eine Kategorie hat nur **Name** und **Beschreibung**. Beide gelten für die
 ganze Gemeinde, nicht pro Jahrgang. Zwei Kategorien dürfen nicht denselben
@@ -238,8 +237,8 @@ Namen haben („Kategoriename existiert bereits“).
 Verwendet werden sie an drei Stellen:
 
 - zum Sortieren und Filtern von **Aktivitäten**
-- zum Sortieren und Filtern von [**Terminen**](70-termine.md)
-- als Grundlage für [**Kategorie-Abzeichen**](60-badges.md#kategorie-aktivitaeten)
+- zum Sortieren und Filtern von [**Events**](70-termine.md)
+- als Grundlage für [**Kategorie-Badges**](60-badges.md#kategorie-aktivitaeten)
 
 ### Eine Kategorie löschen
 
@@ -253,14 +252,14 @@ bleibt vollständig.
 > **warnt nicht vorab**, dass die Kategorie noch benutzt wird. Das erfährst du
 > erst, nachdem du bestätigt hast — dann als Fehlermeldung.
 
-### Kategorie-Abzeichen nicht ins Leere laufen lassen
+### Kategorie-Badges nicht ins Leere laufen lassen
 
 > **Achtung, das ist die gefährlichste Stelle in diesem Kapitel:** Ein
-> Kategorie-Abzeichen merkt sich den **Namen** der Kategorie, nicht die
+> Kategorie-Badge merkt sich den **Namen** der Kategorie, nicht die
 > Kategorie selbst. Benennst du eine Kategorie um, findet das zugehörige
-> Abzeichen nichts mehr — **stillschweigend, ohne Fehlermeldung**. Niemand
+> Badge nichts mehr — **stillschweigend, ohne Fehlermeldung**. Niemand
 > bekommt es mehr, und niemand erfährt, warum. Bereits verliehene bleiben
-> erhalten. **Kategorien, auf die [Abzeichen](60-badges.md) zeigen, also
+> erhalten. **Kategorien, auf die [Badges](60-badges.md) zeigen, also
 > nicht umbenennen.**
 
 ## Einen Jahrgang löschen
@@ -283,7 +282,7 @@ unwiderruflich gelöscht** ([Chat](90-chat.md)).
 Ehemalige Konfis, die inzwischen Teamer:in sind, **blockieren das Löschen
 nicht**. Sie verlieren beim Löschen nur ihre Jahrgangs-Bindung.
 
-**Ihre Daten bleiben vollständig erhalten**: Punktestand, Level, Abzeichen,
+**Ihre Daten bleiben vollständig erhalten**: Punktestand, Level, Badges,
 Konfispruch und ihr [Konfi-Rückblick](95-wrapped.md). Das ist bewusst so
 gebaut, damit sie ihre eigene Konfizeit später noch nachschauen können — der
 Rückblick steht weiterhin in ihrem Profil, auch wenn der Jahrgang, für den er
@@ -294,7 +293,7 @@ mehr steckt, wird beim Löschen des Jahrgangs mit entfernt.
 ## Das Konfirmationsdatum finden
 
 Am Jahrgang selbst wird **kein** Konfirmationsdatum gepflegt. Der
-Konfirmationstermin ergibt sich **pro Konfi** aus dem Termin, der
-[als Konfirmation gekennzeichnet](70-termine.md#einen-termin-als-konfirmation-kennzeichnen) ist und den der
+Konfirmationstermin ergibt sich **pro Konfi** aus dem Event, das
+[als Konfirmation gekennzeichnet](70-termine.md#ein-event-als-konfirmation-kennzeichnen) ist und das der
 Konfi gebucht hat. Bei mehreren Konfirmationsterminen in einem Jahrgang hat
 also jeder sein eigenes, richtiges Datum.

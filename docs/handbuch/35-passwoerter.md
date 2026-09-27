@@ -212,7 +212,7 @@ gesperrt erst nach der Zeit, die du eingestellt hast.
 **Auf Android-Geräten sind dann auch Bildschirmfotos innerhalb der App
 gesperrt.** Das System lässt sie nicht zu, solange die Sperre eingeschaltet ist
 — anders ließe sich das Vorschaubild dort nicht zuverlässig verdecken. Willst
-du etwas abfotografieren, etwa einen Termin oder einen QR-Code, stellst du die
+du etwas abfotografieren, etwa ein Event oder einen QR-Code, stellst du die
 Sperre kurz auf „Aus".
 
 **Steht die Sperre auf „Aus", ändert sich nichts.** Dann bleibt die Übersicht
@@ -287,7 +287,7 @@ Zum Weitergeben gibt es drei Wege:
   nicht das Bild
 
 Einen Druckknopf gibt es hier **nicht** (anders als beim
-[QR-Code fürs Einchecken](70-termine.md#den-qr-check-in-nutzen) am Termin). Wer den Code
+[QR-Code fürs Einchecken](70-termine.md#den-qr-check-in-nutzen) am Event). Wer den Code
 auf Papier braucht, macht eine Bildschirmaufnahme oder verschickt den Link.
 
 **Ein Code ist für die ganze Gruppe gedacht, nicht für eine Person.** Er lässt
@@ -337,7 +337,7 @@ Dabei passiert automatisch:
 - Die Konfi ist im **Jahrgang** der Einladung und damit auch in dessen
   [Jahrgangs-Chat](90-chat.md#den-jahrgangs-chat-nutzen).
 - Sie wird zu allen zukünftigen
-  **[Pflicht-Terminen](70-termine.md#ein-pflicht-event-einrichten)** ihres Jahrgangs
+  **[Pflicht-Events](70-termine.md#ein-pflicht-event-einrichten)** ihres Jahrgangs
   angemeldet — als wäre sie von Anfang an dabei gewesen.
 - Die **Leitung des Jahrgangs bekommt einen Push**, und die Person erscheint
   sofort in der Konfi-Liste.

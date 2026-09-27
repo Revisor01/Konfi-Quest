@@ -1,17 +1,18 @@
 ---
-titel: Termine
+titel: Events
 untertitel: Anlegen, Anmeldung, Anwesenheit und Punkte
 farbe: "#dc2626"
 gruppe: Nachschlagen
 ---
 
-Termine (im System „Events") sind alles, wozu man kommen kann: Gottesdienste,
-Ausflüge, Konfi-Stunden, die Konfirmation. Ein Termin regelt, wer sich anmelden
+Events sind alles, wozu man kommen kann: Gottesdienste,
+Ausflüge, Konfi-Stunden, die Konfirmation. Ein Event regelt, wer sich anmelden
 darf, wie viele mitkommen, ob es Punkte gibt und wie du hinterher die
 Anwesenheit verbuchst. Dieses Kapitel richtet sich an Leitung und
-Teamer:innen; was Konfis sehen, steht jeweils dabei.
+Teamer:innen; was Konfis sehen, steht jeweils dabei. „Termin" meint hier nur
+den Zeitpunkt eines Events (siehe [Die Begriffe der App kennen](03-bedienung.md#die-begriffe-der-app-kennen)).
 
-## Einen Termin anlegen
+## Ein Event anlegen
 
 Name, Datum, Speichern — mehr braucht es nicht. Alles andere hat sinnvolle
 Voreinstellungen.
@@ -26,9 +27,9 @@ Drei Möglichkeiten stehen zur Auswahl:
 
 | | Nur Konfis | Konfis, Team gesucht | Nur Team |
 |---|---|---|---|
-| Konfis sehen den Termin | ja | ja | **nein** |
+| Konfis sehen das Event | ja | ja | **nein** |
 | Konfis können sich anmelden | ja | ja | nein |
-| Team sieht den Termin | nur bei passendem Jahrgang | nur bei passendem Jahrgang | **alle** |
+| Team sieht das Event | nur bei passendem Jahrgang | nur bei passendem Jahrgang | **alle** |
 | Team kann sich anmelden | **nein** | nur bei passendem Jahrgang | ja |
 | Abschnitt „Konfis" (Plätze, Punkte) | ja | ja | **weg** |
 | Abschnitt „Teamer:innen" (Kontingent) | **weg** | ja | ja |
@@ -46,28 +47,28 @@ Zeitfenster aus. Beim Speichern werden zusätzlich Punkte, Konfi-Plätze,
 Jahrgänge und der Anmeldezeitraum auf null gesetzt. „Konfis, Team gesucht"
 und „Nur Team" schließen sich gegenseitig aus.
 
-### Nachvollziehen, welche Termine das Team sieht
+### Nachvollziehen, welche Events das Team sieht
 
-**Teamer:innen sehen und buchen nur Termine der Jahrgänge, die sie betreuen.**
+**Teamer:innen sehen und buchen nur Events der Jahrgänge, die sie betreuen.**
 Dieselbe Regel wie im [Chat](90-chat.md#wer-wen-anschreiben-darf), wo man auch
 nur Konfis der eigenen Jahrgänge anschreiben kann. Wer den Jahrgang nicht
-betreut, findet den Termin gar nicht erst in seiner Liste; eine Buchung über
-einen Umweg lehnt der Server ab („Dieser Termin gehört zu einem Jahrgang, dem
+betreut, findet das Event gar nicht erst in seiner Liste; eine Buchung über
+einen Umweg lehnt der Server ab („Dieses Event gehört zu einem Jahrgang, dem
 du nicht zugewiesen bist").
 
-**Die Terminverwaltung liegt bei der Leitung.** Anlegen — einzeln wie als
+**Die Event-Verwaltung liegt bei der Leitung.** Anlegen — einzeln wie als
 Serie —, Ändern, Absagen, Löschen, Personen eintragen oder entfernen und die
 Anwesenheit verbuchen sind Sache der Admins und Org-Admins. Teamer:innen sagen
 für sich selbst zu oder ab, zeigen den QR-Code zum Einchecken und öffnen den
-Termin-Chat; was am Termin steht, lesen sie mit — einschließlich des Grundes,
-wenn er abgesagt wurde.
+Event-Chat; was am Event steht, lesen sie mit — einschließlich des Grundes,
+wenn es abgesagt wurde.
 
 Für die Leitung gilt dabei weiterhin die Jahrgangsgrenze: Anlegen, Ändern,
 Absagen, Löschen, Personen eintragen und Verbuchen gehen nur in den eigenen
-Jahrgängen, und ein Termin lässt sich auch nur Jahrgängen zuordnen, die man
+Jahrgängen, und ein Event lässt sich auch nur Jahrgängen zuordnen, die man
 selbst betreut.
 
-Zwei Ausnahmen: Termine mit der Zielgruppe **„Nur Team"** und Termine **ohne
+Zwei Ausnahmen: Events mit der Zielgruppe **„Nur Team"** und Events **ohne
 jeden Jahrgang** sind für alle Teamer:innen der Gemeinde offen — die einen
 betreffen keinen Jahrgang, die anderen gelten der ganzen Gemeinde.
 
@@ -79,7 +80,7 @@ die Jahrgangs-Zuweisung sonst noch steuert, steht unter
 
 Beides ordnest du im selben Abschnitt zu. Die Kategorien legst du vorher
 unter [Kategorien anlegen und pflegen](45-jahrgaenge.md#kategorien-anlegen-und-pflegen)
-an; sie gruppieren Termine und sind die Grundlage für Kategorie-Abzeichen.
+an; sie gruppieren Events und sind die Grundlage für Kategorie-Badges.
 
 ### Die Voreinstellungen kennen
 
@@ -87,43 +88,43 @@ an; sie gruppieren Termine und sind die Grundlage für Kategorie-Abzeichen.
 |---|---|
 | Endzeit | zwei Stunden nach Beginn |
 | Anmeldung ab | sofort (kein Startzeitpunkt) |
-| Anmeldeschluss | 24 Stunden vor Beginn, bei kurzfristigen Terminen früher |
-| Max. Teilnehmer:innen | 5 (einstellbar 1 bis 30; Termine mit mehr Plätzen behalten ihre Zahl) |
+| Anmeldeschluss | 24 Stunden vor Beginn, bei kurzfristigen Events früher |
+| Max. Teilnehmer:innen | 5 (einstellbar 1 bis 30; Events mit mehr Plätzen behalten ihre Zahl) |
 | Punkte | 1, Typ Gemeinde |
 | Warteliste | an, 3 Plätze |
 | Check-in-Fenster | 30 Minuten |
 
-## Einen Termin kopieren
+## Ein Event kopieren
 
-Wiederholt sich ein Termin, ohne eine Serie zu sein — die Freizeit im nächsten
-Jahr, der Jugendgottesdienst im neuen Halbjahr —, kopierst du ihn, statt alles
-neu einzutippen. In der Terminliste wischst du den Termin nach links und tippst
+Wiederholt sich ein Event, ohne eine Serie zu sein — die Freizeit im nächsten
+Jahr, der Jugendgottesdienst im neuen Halbjahr —, kopierst du es, statt alles
+neu einzutippen. In der Event-Liste wischst du das Event nach links und tippst
 auf das Kopieren-Symbol; in der Detailansicht steht es oben neben dem Stift.
 
 **Es wird dabei nichts angelegt.** Das Formular öffnet sich wie bei einem neuen
-Termin, nur mit allen Werten des Originals darin. Du änderst, was du ändern
+Event, nur mit allen Werten des Originals darin. Du änderst, was du ändern
 willst, und speicherst. Willst du doch nicht, schließt du das Fenster — dann ist
-nichts passiert. Nach dem Speichern landest du in der Terminliste, in der der
-neue Termin sofort steht.
+nichts passiert. Nach dem Speichern landest du in der Event-Liste, in der das
+neue Event sofort steht.
 
 Mit kommen Titel, Beschreibung, Ort, Mitbringsel, Punkte, Kategorien, Jahrgänge,
 Plätze und Wartelisten, das Teamer-Kontingent, Pflicht- und
 Konfirmations-Kennzeichen, das Check-in-Fenster und die Zeitfenster.
 
-Nicht mit kommen **Material und Chat** — die hängen am ursprünglichen Termin und
+Nicht mit kommen **Material und Chat** — die hängen am ursprünglichen Event und
 werden für den neuen frisch angelegt. Ebenso wenig die Anmeldungen, die
-Anwesenheit und die vergebenen Punkte: Die gehören zu dem Termin, der
-stattgefunden hat. Die Kopie eines abgesagten Termins ist nicht abgesagt — so
-holst du einen ausgefallenen Termin nach.
+Anwesenheit und die vergebenen Punkte: Die gehören zu dem Event, das
+stattgefunden hat. Die Kopie eines abgesagten Events ist nicht abgesagt — so
+holst du ein ausgefallenes Event nach.
 
-Das **Datum** steht auf heute, gerechnet wie bei einem neuen Termin; der
-Anmeldeschluss folgt daraus (siehe [Kurzfristige Termine](#kurzfristige-termine))
+Das **Datum** steht auf heute, gerechnet wie bei einem neuen Event; der
+Anmeldeschluss folgt daraus (siehe [Kurzfristige Events](#kurzfristige-events))
 und kann deshalb nicht in der Vergangenheit liegen. Die **Dauer** bleibt: Aus
 einem Wochenende wird wieder ein Wochenende, auch wenn du das Datum verschiebst.
 
 ## Ein Pflicht-Event einrichten
 
-Ein Pflicht-Event ist ein Termin, zu dem **der ganze Jahrgang automatisch
+Ein Pflicht-Event ist ein Event, zu dem **der ganze Jahrgang automatisch
 angemeldet ist**. Beim Speichern legt das System für jeden Konfi der
 ausgewählten Jahrgänge eine bestätigte Anmeldung an; alle bekommen einen Push
 „Neues Pflicht-Event".
@@ -132,7 +133,7 @@ Deshalb braucht ein Pflicht-Event **mindestens einen Jahrgang** — sonst
 verweigert das Formular das Speichern mit „Pflicht-Events brauchen mindestens
 einen Jahrgang".
 
-Machst du einen bestehenden Termin nachträglich zum Pflicht-Event, wird der
+Machst du ein bestehendes Event nachträglich zum Pflicht-Event, wird der
 Jahrgang jetzt angemeldet. Wer schon angemeldet war, bleibt es; Doppelanmeldungen
 entstehen nicht.
 
@@ -153,7 +154,7 @@ Wenn ohnehin der ganze Jahrgang angemeldet ist, gibt es nichts zu begrenzen und
 keinen Anmeldezeitraum zu öffnen.
 
 > **Keine Punkte für Pflicht.** Das lässt sich nicht umstellen. Die Anwesenheit
-> wird trotzdem erfasst — sie zählt für das Abzeichen
+> wird trotzdem erfasst — sie zählt für das Badge
 > [„Pflicht-Anwesenheit"](60-badges.md#die-passende-bedingung-waehlen).
 
 ### Eine Abmeldung vom Pflicht-Event entgegennehmen
@@ -163,13 +164,13 @@ Konfis können sich abmelden, aber nur **mit Begründung**, und die muss
 5 Zeichen haben".
 
 Danach steht die Anmeldung auf „abgemeldet", du bekommst einen Push mit Namen,
-Termin und Begründung, und beim Konfi steht „Du hast dich abgemeldet". Über
+Event und Begründung, und beim Konfi steht „Du hast dich abgemeldet". Über
 den Knopf **„Wieder anmelden"** geht es zurück; die ursprüngliche Begründung
-bleibt gespeichert. Beides geht nur, solange der Termin in der Zukunft liegt.
+bleibt gespeichert. Beides geht nur, solange das Event in der Zukunft liegt.
 
-> **Ist der Termin abgesagt, gibt es kein Zurück.** Dann steht statt des
-> Knopfes „Dieser Termin ist abgesagt" — er findet nicht statt, es gibt also
-> nichts, wozu man sich anmelden könnte. Soll er doch stattfinden,
+> **Ist das Event abgesagt, gibt es kein Zurück.** Dann steht statt des
+> Knopfes „Dieses Event ist abgesagt" — es findet nicht statt, es gibt also
+> nichts, wozu man sich anmelden könnte. Soll es doch stattfinden,
 > [nimm die Absage zurück](#eine-absage-zuruecknehmen); dabei kommen alle
 > wieder, die nur wegen der Absage abgemeldet waren.
 
@@ -178,7 +179,7 @@ bleibt gespeichert. Beides geht nur, solange der Termin in der Zukunft liegt.
 > meldet sich vorher wieder an oder wird von dir
 > [von Hand verbucht](#eine-selbstabmeldung-nachtraeglich-verbuchen).
 
-## Einen Termin als Konfirmation kennzeichnen
+## Ein Event als Konfirmation kennzeichnen
 
 Das Häkchen „Konfirmation" tut etwas anderes als „Pflicht-Event": Es meldet
 niemanden automatisch an, sondern sorgt dafür, dass **ein Konfi sich nur zu
@@ -186,7 +187,7 @@ genau einem Konfirmationstermin anmelden kann**. Der zweite Versuch wird
 abgelehnt:
 
 > „Du bist bereits zu einem Konfirmationstermin angemeldet (…). Melde dich
-> dort zuerst ab, um einen anderen Termin zu wählen."
+> dort zuerst ab, um ein anderes Event zu wählen."
 
 In der App sind die anderen Konfirmationstermine dann ausgegraut und tragen in
 der Ecke einen Doppelpfeil: „Anderer Termin" — die Konfi ist woanders angemeldet
@@ -220,12 +221,12 @@ Der Schalter **„Anmeldung ab sofort"** steht standardmäßig an: Es gibt keine
 Startzeitpunkt, nach dem Speichern kann man sich anmelden. Schaltest du ihn
 aus, erscheint ein Datumsfeld, vorbelegt mit „jetzt".
 
-Vor der Öffnung sehen die Konfis den Termin zwar, bekommen beim Versuch aber
+Vor der Öffnung sehen die Konfis das Event zwar, bekommen beim Versuch aber
 „Anmeldung noch nicht geöffnet"; in der Liste steht „Bald". Nach dem
 Anmeldeschluss kommt „Anmeldung bereits geschlossen", in der Liste steht
 „Geschlossen".
 
-### Kurzfristige Termine
+### Kurzfristige Events
 
 Der Anmeldeschluss wird mit 24 Stunden vor Beginn vorgeschlagen. Liegt der
 Termin näher — du trägst am Nachmittag etwas für den Abend ein —, rückt der
@@ -233,28 +234,28 @@ Vorschlag nach und landet zwischen jetzt und Beginn, statt in der
 Vergangenheit. So bleibt immer ein Fenster offen, in dem sich jemand anmelden
 kann. Du kannst ihn wie jeden anderen Wert danach frei setzen.
 
-Trägst du bei einem Termin, der noch bevorsteht, von Hand einen bereits
-abgelaufenen Anmeldeschluss ein, sagt das Speichern es und der Termin wird
-nicht angelegt — er wäre von Anfang an geschlossen. Bei Terminen, die du
+Trägst du bei einem Event, das noch bevorsteht, von Hand einen bereits
+abgelaufenen Anmeldeschluss ein, sagt das Speichern es und das Event wird
+nicht angelegt — es wäre von Anfang an geschlossen. Bei Events, die du
 nachträglich einträgst oder korrigierst, ist ein Anmeldeschluss in der
 Vergangenheit dagegen richtig und bleibt erlaubt.
 
 ### Den „Anmeldung möglich"-Push einordnen
 
-Sobald ein freiwilliger Termin anmeldbar wird, geht **genau ein** Push an die
+Sobald ein freiwilliges Event anmeldbar wird, geht **genau ein** Push an die
 Konfis. Er kommt nicht beim Speichern, sondern von einem Hintergrundlauf, der
 jede Minute prüft — so kann er nicht doppelt kommen. Werden auf einmal sehr
-viele Termine anmeldbar (etwa nach einem Import), arbeitet der Lauf sie nach
+viele Events anmeldbar (etwa nach einem Import), arbeitet der Lauf sie nach
 und nach ab, die am längsten offenen zuerst; ein einzelner Push kann dann
 einige Minuten später kommen.
 
-Schließt du die Anmeldung wieder (Fenster in die Zukunft verschoben, Termin
+Schließt du die Anmeldung wieder (Fenster in die Zukunft verschoben, Event
 abgesagt), wird die Merkung zurückgesetzt: Beim nächsten Öffnen kommt wieder
 ein Push. Pflicht-Events haben ihren eigenen Push beim Anlegen.
 
-### Terminerinnerungen einordnen
+### Event-Erinnerungen einordnen
 
-Wer für einen Termin angemeldet ist, bekommt zwei Erinnerungen aufs Handy:
+Wer für ein Event angemeldet ist, bekommt zwei Erinnerungen aufs Handy:
 **„Morgen: …" genau 24 Stunden vor Beginn** und **„Gleich: …" eine Stunde vor
 Beginn**. Ein Gottesdienst am Sonntag um 10:00 Uhr wird also am Samstag um
 10:00 Uhr angekündigt und am Sonntag um 9:00 Uhr noch einmal — nicht mitten
@@ -264,32 +265,32 @@ der genauen Marke eintreffen, aber nie doppelt.
 
 Keine Erinnerung bekommt, wer auf der Warteliste steht, wer schon [verbucht
 oder abgemeldet ist](#eine-abmeldung-nachtragen) und niemand zu einem abgesagten
-Termin. Im Postfach stehen die Erinnerungen nicht — sie wären sofort veraltet
+Event. Im Postfach stehen die Erinnerungen nicht — sie wären sofort veraltet
 (siehe [Mitteilungen im Postfach nachlesen](03-bedienung.md#mitteilungen-im-postfach-nachlesen)).
 
-### Aus einer Mitteilung zum Termin springen
+### Aus einer Mitteilung zum Event springen
 
-Tippst du eine Mitteilung zu einem Termin an, öffnet die App den Termin selbst —
-nicht die Terminliste. Das gilt für alle Termin-Mitteilungen: Anmeldung,
+Tippst du eine Mitteilung zu einem Event an, öffnet die App das Event selbst —
+nicht die Event-Liste. Das gilt für alle Event-Mitteilungen: Anmeldung,
 Abmeldung, Nachrücken von der Warteliste, bestätigte Teilnahme, Erinnerung,
 Änderung und Absage. Auch die Meldung an die Leitung, dass sich eine Teamerin
-oder ein Teamer an- oder abgemeldet hat, führt direkt zum Termin. Für Konfis,
-Teamer:innen und Leitung gleichermaßen; bei Teamer:innen öffnet sich der Termin
-in der Terminliste, der Zurück-Pfeil führt zur Liste.
+oder ein Teamer an- oder abgemeldet hat, führt direkt zum Event. Für Konfis,
+Teamer:innen und Leitung gleichermaßen; bei Teamer:innen öffnet sich das Event
+in der Event-Liste, der Zurück-Pfeil führt zur Liste.
 
-Eine Ausnahme: Ist der Termin **gelöscht**, bleibt es bei der Liste — die
+Eine Ausnahme: Ist das Event **gelöscht**, bleibt es bei der Liste — die
 Mitteilung trägt dann keine Kennung mit, damit niemand auf einer Seite landet,
 die es nicht mehr gibt.
 
-Ein Termin aus einem Jahrgang, dem du nicht zugewiesen bist, geht auch über
-eine Mitteilung oder einen Link nicht auf: Was in deiner Terminliste fehlt,
-bleibt auch auf diesem Weg verborgen. Statt des Termins steht dann „Nicht
+Ein Event aus einem Jahrgang, dem du nicht zugewiesen bist, geht auch über
+eine Mitteilung oder einen Link nicht auf: Was in deiner Event-Liste fehlt,
+bleibt auch auf diesem Weg verborgen. Statt des Events steht dann „Nicht
 deinem Jahrgang zugeordnet" mit dem Hinweis, dass die Leitung deiner Gemeinde
 die Zuweisung in den Einstellungen ändern kann — für Teamer:innen und Admins
-gleich. Das passiert etwa, wenn dich die Leitung an einen Jahrgangstermin
-setzt, dessen Jahrgang dir fehlt: Die Mitteilung kommt, der Termin selbst
+gleich. Das passiert etwa, wenn dich die Leitung in ein Event
+einträgt, dessen Jahrgang dir fehlt: Die Mitteilung kommt, das Event selbst
 bleibt zu, bis die [Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert) stimmt.
-Nur Termine „Nur Team" und Termine ohne Jahrgang sind für alle da; die
+Nur Events „Nur Team" und Events ohne Jahrgang sind für alle da; die
 Gemeindeleitung sieht alles.
 
 ### Wissen, bis wann Konfis sich abmelden können
@@ -300,12 +301,12 @@ fest eingestellt; der Anmeldezeitraum regelt nur das Anmelden.
 
 Die Frist gilt für bestätigte Plätze. **Wer auf der Warteliste steht, kann
 jederzeit herunter** — auch am Vortag —, denn ein Wartender belegt keinen
-Platz, den du verplant hättest. Der Termin zeigt der Konfi ihren
+Platz, den du verplant hättest. Das Event zeigt der Konfi ihren
 Wartelistenplatz und den Knopf „Von der Warteliste abmelden"; du bekommst wie
 bei jeder Abmeldung eine Mitteilung.
 
 > **Du selbst bist davon nicht betroffen.** Die Leitung kann eine Anmeldung in
-> der Detailansicht jederzeit entfernen, auch am Tag des Termins.
+> der Detailansicht jederzeit entfernen, auch am Tag des Events.
 
 ## Plätze und Warteliste einstellen
 
@@ -335,8 +336,8 @@ Konfi-Ansicht.
 Teamer:innen und zugeordnete Leitung zählen nie in die Konfi-Zahl. Sie haben
 ihr eigenes Kontingent und stehen getrennt daneben.
 
-Bei einem **abgesagten** Termin ist niemand mehr angemeldet — dort steht
-deshalb keine Platz-Zahl, sondern wie viele der Termin erreicht hat.
+Bei einem **abgesagten** Event ist niemand mehr angemeldet — dort steht
+deshalb keine Platz-Zahl, sondern wie viele das Event erreicht hat.
 
 ### Nachvollziehen, wann jemand nachrückt
 
@@ -346,25 +347,25 @@ ein Platz frei wird — nicht nur für die Abmeldung durch die Person selbst:
 | Auslöser | Was passiert |
 |---|---|
 | Jemand meldet sich selbst ab | die erste wartende Person rückt nach |
-| Eine Konfi meldet sich von einem Pflichttermin ab | dasselbe |
+| Eine Konfi meldet sich von einem Pflicht-Event ab | dasselbe |
 | Du meldest jemanden ab („Abgemeldet") | dasselbe |
 | Du trägst jemanden aus | dasselbe |
 | Du setzt jemanden auf die Warteliste zurück | dasselbe |
 | Du löschst eine Konfi | auf jeden ihrer Plätze rückt jemand nach |
 | Du beförderst eine Konfi zur Teamer:in | dasselbe — ihre Konfi-Plätze werden frei |
-| Du verschiebst eine Konfi in einen anderen Jahrgang | auf den Plätzen der Termine des alten Jahrgangs rückt nach |
+| Du verschiebst eine Konfi in einen anderen Jahrgang | auf den Plätzen der Events des alten Jahrgangs rückt nach |
 | Du erhöhst die Teilnehmerzahl | so viele rücken nach, wie neue Plätze da sind |
 | Du erhöhst die Plätze eines Zeitfensters | dasselbe, aber nur in diesem Zeitfenster |
 | Du erhöhst das Teamer-Kontingent | die wartenden Teamer:innen rücken nach |
 
 Nachgerückt wird in der Reihenfolge der Anmeldung; die nachgerückte Person
-bekommt einen Push und kommt in den Chat zum Termin, falls es einen gibt.
+bekommt einen Push und kommt in den Chat zum Event, falls es einen gibt.
 Gelöschte Nutzer:innen rücken nie nach.
 
 > **Ein frei gewordener Konfi-Platz geht niemals an eine wartende Teamer:in** —
 > und umgekehrt. Die beiden Wartelisten werden strikt getrennt geführt.
 
-> **An einem abgesagten Termin rückt niemand nach.** Der Termin findet nicht
+> **An einem abgesagten Event rückt niemand nach.** Das Event findet nicht
 > statt; eine Meldung „Ein Platz ist frei geworden, du bist jetzt angemeldet"
 > wäre dort schlicht falsch. Wer auf der Warteliste steht, bleibt stehen.
 
@@ -391,15 +392,15 @@ von „hat noch nicht reagiert" zu unterscheiden.
 
 ### Selbst zu- oder absagen
 
-Unter „Bist du dabei?" beantwortest du den Termin für dich selbst — in der
+Unter „Bist du dabei?" beantwortest du das Event für dich selbst — in der
 Leitungsansicht genauso wie im Team. Solange du noch nichts gesagt hast,
 stehen beide Knöpfe nebeneinander: **„Dabei"** und **„Nicht dabei"**. Hast du
 geantwortet, bleibt nur noch der Weg zurück stehen — nach einer Zusage
 **„Nicht mehr dabei"**, nach einer Absage **„Doch dabei"**. Wo du gerade
 stehst, zeigt das Zeichen an der Karte.
 
-Der Abschnitt erscheint nur bei Terminen, die Team-Anmeldungen annehmen, und
-nur solange der Termin weder vergangen noch abgesagt ist. Du zählst dabei in
+Der Abschnitt erscheint nur bei Events, die Team-Anmeldungen annehmen, und
+nur solange das Event weder vergangen noch abgesagt ist. Du zählst dabei in
 dasselbe Kontingent wie die Teamer:innen.
 
 Für den Grund gilt dieselbe Regel wie unten: Sagst du nach einer Zusage ab,
@@ -415,15 +416,15 @@ Für den Grund gilt:
 Sagt jemand von einem festen Platz ab, wird der Platz frei und die nächste
 Person rückt aus der Team-Warteliste nach.
 
-> **Zwei Arten von „weg vom Termin":** Eine **Absage** (Teamer:in, oder Konfi
+> **Zwei Arten von „weg vom Event":** Eine **Absage** (Teamer:in, oder Konfi
 > bei einem Pflicht-Event) bleibt als Eintrag mit Grund sichtbar stehen. Eine
-> **Abmeldung** von einem freiwilligen Termin entfernt die Anmeldung selbst;
+> **Abmeldung** von einem freiwilligen Event entfernt die Anmeldung selbst;
 > sie taucht in der Detailansicht unter „Abmeldungen" auf. Für die Plätze
 > zählt beides gleich: Wer absagt oder sich abmeldet, belegt keinen Platz mehr.
 
 ## Zeitfenster einrichten
 
-Zeitfenster sind für Termine, bei denen die Leute **nacheinander in kleinen
+Zeitfenster sind für Events, bei denen die Leute **nacheinander in kleinen
 Gruppen** kommen: Vorstellungsgespräche, Fototermine, Beichtgespräche. Du
 legst mehrere Fenster mit eigener Uhrzeit und eigener Platzzahl an:
 
@@ -453,11 +454,11 @@ auf die Warteliste **dieses einen Fensters**, und dort rückt auch genau von
 dieser Warteliste jemand nach. Ist die Warteliste aus, kommt „Dieser Zeitslot
 ist ausgebucht und hat keine Warteliste."
 
-Die in der Übersicht angezeigte Gesamtzahl ist bei Zeitfenster-Terminen die
+Die in der Übersicht angezeigte Gesamtzahl ist bei Zeitfenster-Events die
 Summe aller Fensterplätze.
 
 Unter jedem Fenster stehen die Angemeldeten, und zwar mit demselben Zustand wie
-in Terminen ohne Zeitfenster: anwesend, abwesend, abgemeldet oder gebucht, in
+in Events ohne Zeitfenster: anwesend, abwesend, abgemeldet oder gebucht, in
 denselben Farben und mit dem Abmeldegrund darunter. Wer sich abgemeldet hat,
 bleibt dort sichtbar — der Platz ist damit nicht frei, sondern belegt und
 abgemeldet.
@@ -475,25 +476,25 @@ Dasselbe gilt, wenn du Zeitfenster ganz ausschaltest.
 > Willst du es weg haben, melde erst die Leute ab oder verschiebe sie in ein
 > anderes Fenster.
 
-## Punkte für einen Termin vergeben
+## Punkte für ein Event vergeben
 
-Jeder Termin gibt entweder **Gottesdienst-** oder **Gemeindepunkte**;
+Jedes Event gibt entweder **Gottesdienst-** oder **Gemeindepunkte**;
 Voreinstellung ist Gemeinde. Der Unterschied der beiden Arten steht unter
 [Punkte](40-punkte.md#die-zwei-punktarten-auseinanderhalten).
 
 Punkte werden vergeben, wenn **alle fünf** Bedingungen erfüllt sind:
 
 1. Die Person ist als **anwesend** verbucht (per QR-Check-in oder von Hand)
-2. Der Termin hat eine **Punktzahl größer 0**
+2. Das Event hat eine **Punktzahl größer 0**
 3. Es ist **kein Pflicht-Event**
-4. Die Person ist ein **Konfi** — Teamer:innen bekommen für Termine keine Punkte
+4. Die Person ist ein **Konfi** — Teamer:innen bekommen für Events keine Punkte
 5. Der gewählte Punkt-Typ ist
    [im Jahrgang eingeschaltet](45-jahrgaenge.md#eine-punktart-abschalten)
 
 Fehlt eine davon, wird die Anwesenheit trotzdem gesetzt — nur ohne Punkte. Pro
-Person und Termin gibt es die Punkte genau einmal.
+Person und Event gibt es die Punkte genau einmal.
 
-Danach prüft das System automatisch, ob neue [Abzeichen](60-badges.md) fällig
+Danach prüft das System automatisch, ob neue [Badges](60-badges.md) fällig
 sind und ob jemand ein [Level](40-punkte.md#level-anlegen-und-pflegen)
 aufgestiegen ist.
 
@@ -511,12 +512,12 @@ trägst eine [Abmeldung nach](#eine-abmeldung-nachtragen), oder die Person
 **meldet sich ab**, obwohl sie schon als anwesend verbucht war. Der
 Punktestand fällt dabei nie unter null.
 
-Ein Abzeichen, das durch diese Punkte ausgelöst wurde, bleibt bestehen —
-[Abzeichen werden nie aberkannt](60-badges.md#ein-abzeichen-aus-dem-verkehr-ziehen).
+Ein Badge, das durch diese Punkte ausgelöst wurde, bleibt bestehen —
+[Badges werden nie aberkannt](60-badges.md#ein-badge-aus-dem-verkehr-ziehen).
 
 ## Die Anwesenheit verbuchen
 
-Nach dem Termin trägst du ein, wer da war. Es gibt drei Wege: einzeln, alle auf
+Nach dem Event trägst du ein, wer da war. Es gibt drei Wege: einzeln, alle auf
 einmal, oder die Leute checken sich selbst per QR-Code ein.
 
 **Einzeln** geht es in der Teilnehmerliste: Tipp auf den Eintrag, dann
@@ -541,31 +542,31 @@ Punkte gibt es dabei keine; schon vergebene werden zurückgenommen, genau wie
 bei „Abwesend". Die Konfi bekommt eine Mitteilung, dass die Abmeldung
 eingetragen wurde — so sieht sie, dass der Anruf von zu Hause angekommen ist.
 
-Danach ist für sie Ruhe: Die [Terminerinnerungen](#terminerinnerungen-einordnen)
+Danach ist für sie Ruhe: Die [Event-Erinnerungen](#event-erinnerungen-einordnen)
 24 Stunden und eine Stunde vor Beginn bleiben aus. Das gilt für jede verbuchte Anwesenheit — wer als anwesend,
-abwesend oder abgemeldet eingetragen ist, bekommt zu diesem Termin keine
+abwesend oder abgemeldet eingetragen ist, bekommt zu diesem Event keine
 Erinnerung mehr.
 
-**Der Platz wird frei.** Eine Abmeldung zählt nicht mehr als Anmeldung: Der
-Termin hat wieder einen Platz mehr, und wartet jemand, [rückt er
+**Der Platz wird frei.** Eine Abmeldung zählt nicht mehr als Anmeldung: Das
+Event hat wieder einen Platz mehr, und wartet jemand, [rückt er
 nach](#nachvollziehen-wann-jemand-nachrueckt). In der Teilnehmerliste rutscht
 die abgemeldete Person nach unten zu den anderen Abgemeldeten, statt zwischen
 den Anwesenden zu stehen.
 
 Einchecken kann sie sich danach nicht mehr selbst: Der QR-Scanner meldet „Du
-wurdest von diesem Termin abgemeldet". Steht sie doch vor dir, trägst du sie
+wurdest von diesem Event abgemeldet". Steht sie doch vor dir, trägst du sie
 über dasselbe Menü als **Anwesend** ein — damit zählt die Anmeldung wieder,
 und die Punkte gibt es auch.
 
 **Wieder anmelden kann sie sich aber selbst.** Wird das Kind rechtzeitig
-gesund, steht der Termin für sie wieder da wie jeder andere offene Termin, und
+gesund, steht das Event für sie wieder da wie jedes andere offene Event, und
 sie meldet sich neu an. Dabei gilt, was für alle gilt: Ist der Anmeldeschluss
-vorbei, kommt sie nicht mehr hinein; ist der Termin voll, landet sie auf der
+vorbei, kommt sie nicht mehr hinein; ist das Event voll, landet sie auf der
 Warteliste; bei Zeitfenstern wählt sie wieder eines aus. Der Abmeldegrund
 verschwindet in dem Moment aus der Teilnehmerliste — die neue Anmeldung ersetzt
 die Abmeldung.
 
-Am Termin selbst bleibt es beim Weg über dich: Der QR-Scanner ist gesperrt,
+Am Event selbst bleibt es beim Weg über dich: Der QR-Scanner ist gesperrt,
 damit niemand sich die Punkte zurückholt, die die Abmeldung genommen hat.
 
 ### Einen falschen Eintrag zurücknehmen
@@ -585,12 +586,12 @@ Der Eintrag steht nur im Menü, wenn überhaupt etwas verbucht ist. Bei einer
 Person, an der noch nichts eingetragen wurde, gibt es nichts zurückzunehmen.
 
 War die Person abgemeldet, zählt sie danach wieder als angemeldet — ihr Platz
-ist also wieder belegt. Ist der Termin inzwischen voll, weil jemand
-[nachgerückt](#nachvollziehen-wann-jemand-nachrueckt) ist, hat er nun eine
+ist also wieder belegt. Ist das Event inzwischen voll, weil jemand
+[nachgerückt](#nachvollziehen-wann-jemand-nachrueckt) ist, hat es nun eine
 Person mehr als vorgesehen; sieh in dem Fall auf die Teilnehmerzahl.
 
 In der [Anwesenheits-Matrix](30-leitung.md#konfis-und-teamer-innen-verwalten) steht dafür ein
-grauer Punkt, und der Termin zählt nicht in die Pflicht-Summe — so wie bei
+grauer Punkt, und das Event zählt nicht in die Pflicht-Summe — so wie bei
 einer Abmeldung, die der Konfi selbst in der App vorgenommen hat.
 
 > **Zwei Wege zur selben Aussage.** Meldet sich die Konfi
@@ -601,12 +602,12 @@ einer Abmeldung, die der Konfi selbst in der App vorgenommen hat.
 
 ### Eine Selbstabmeldung nachträglich verbuchen
 
-Hat sich jemand selbst von einem Pflichttermin abgemeldet und kommt dann doch,
+Hat sich jemand selbst von einem Pflicht-Event abgemeldet und kommt dann doch,
 tippst du den Eintrag genauso an wie jeden anderen. Du bekommst dasselbe Menü:
 **Anwesend**, **Abwesend**, **Abgemeldet** und die **Notiz**.
 
 Sobald du etwas einträgst, richtet sich die Anzeige danach: Der Eintrag wird
-grün, in der Anwesenheits-Matrix steht ein grüner Punkt, und der Termin zählt
+grün, in der Anwesenheits-Matrix steht ein grüner Punkt, und das Event zählt
 wieder in die Pflicht-Summe. Die ursprüngliche Abmeldung bleibt als
 Vorgeschichte darunter stehen — „Hatte sich abgemeldet: Familienfeier an dem
 Tag" —, damit im Team nachvollziehbar ist, warum hier von Hand nachgetragen
@@ -672,11 +673,11 @@ an den Punkten und am Abmeldegrund ändert das Löschen nichts.
 
 ### Alle auf einmal verbuchen
 
-Hat ein Termin begonnen und es gibt noch unverbuchte Anmeldungen, zeigt er
-oben den Status **„Verbuchen"** — schon während er läuft, damit du Anwesende
+Hat ein Event begonnen und es gibt noch unverbuchte Anmeldungen, zeigt es
+oben den Status **„Verbuchen"** — schon während es läuft, damit du Anwesende
 gleich eintragen kannst, statt bis zum Ende zu warten. Der Knopf „Alle bestätigen" setzt
 dann in einem Rutsch alle bestätigt angemeldeten Konfis ohne Anwesenheitsstatus
-auf „anwesend" — inklusive Punkten, Abzeichen- und Level-Prüfung und Push.
+auf „anwesend" — inklusive Punkten, Badge- und Level-Prüfung und Push.
 
 Nicht angefasst werden dabei:
 
@@ -699,13 +700,13 @@ Sind alle verbucht, wechselt der Status auf **„Verbucht"**.
 
 Du zeigst einen QR-Code (auf dem Handy, am Beamer, ausgedruckt), die Konfis
 scannen ihn in der App und sind eingecheckt — inklusive
-[Punkten](#punkte-fuer-einen-termin-vergeben).
+[Punkten](#punkte-fuer-ein-event-vergeben).
 
-Konfis finden den Scanner oben rechts in ihrer Terminliste oder im geöffneten
-Termin über den Knopf **„Einchecken"**; der erscheint nur, wenn die Anmeldung
+Konfis finden den Scanner oben rechts in ihrer Event-Liste oder im geöffneten
+Event über den Knopf **„Einchecken"**; der erscheint nur, wenn die Anmeldung
 bestätigt und noch keine Anwesenheit eingetragen ist, danach steht dort
 **„Anwesend"**. Teamer:innen scannen über den runden Knopf unten rechts in
-ihrer Terminliste.
+ihrer Event-Liste.
 
 Gescannt wird mit der Kamera in der App, nicht mit der Kamera-App des Geräts.
 Beim ersten Mal fragt das Gerät nach der Kamera-Erlaubnis. Ohne Netz geht es
@@ -717,7 +718,7 @@ kurz das Ergebnis und schaltet von selbst wieder scharf.
 Beim Anlegen stellst du es ein: 5 bis 60 Minuten, Voreinstellung 30. **Die Zahl
 gilt in beide Richtungen — vor und nach dem Terminbeginn.**
 
-*Beispiel:* Termin um 18:00 Uhr, Fenster 30 Minuten → Check-in von 17:30 bis
+*Beispiel:* Beginn um 18:00 Uhr, Fenster 30 Minuten → Check-in von 17:30 bis
 18:30. Das ist eine ganze Stunde, nicht eine halbe.
 
 Davor kommt „Check-in ist noch nicht möglich", danach „Der Check-in-Zeitraum
@@ -725,7 +726,7 @@ ist abgelaufen". Gerechnet wird immer ab dem Terminbeginn, nie ab der Endzeit.
 
 > **Für einen dreistündigen Konfi-Tag ist ein 30-Minuten-Fenster knapp** — wer
 > eine Stunde später dazustößt, kommt nicht mehr rein. Plane das Fenster nach
-> der erwarteten Ankunftszeit, nicht nach der Länge des Termins.
+> der erwarteten Ankunftszeit, nicht nach der Länge des Events.
 
 ### Den Zähler unter dem Code lesen
 
@@ -755,7 +756,7 @@ verbucht, bekommen aber keine Punkte.
 
 Ein erfolgreicher Scan wirkt **sofort**: Die Anwesenheit steht, die Punkte sind
 gutgeschrieben, die Person bekommt „Teilnahme bestätigt!" aufs Gerät, und
-Abzeichen wie Level werden geprüft. Nachtragen musst du nichts; der Termin
+Badges wie Level werden geprüft. Nachtragen musst du nichts; das Event
 taucht nur dann noch unter „Verbuchen" auf, wenn Personen offen sind, die nicht
 gescannt haben.
 
@@ -763,16 +764,16 @@ gescannt haben.
 
 Würde der Code in der Konfi-App auftauchen, könnte sich jeder von zu Hause aus
 als anwesend eintragen. Deshalb wird er ausschließlich an das Team
-ausgeliefert, und auch dort nur in der Detailansicht des einzelnen Termins —
-nie in der Terminliste.
+ausgeliefert, und auch dort nur in der Detailansicht des einzelnen Events —
+nie in der Event-Liste.
 
 Leitung und Teamer:innen kommen gleichermaßen an den Code: oben rechts im
-geöffneten Termin über das QR-Symbol. Sind vor Ort nur Teamer:innen, reicht
+geöffneten Event über das QR-Symbol. Sind vor Ort nur Teamer:innen, reicht
 das also. Der Code wird beim ersten Anzeigen erzeugt, bleibt danach gleich und
 läuft nicht ab; die zeitliche Begrenzung macht allein das Check-in-Fenster.
 
-Jeder Termin hat seinen eigenen Code, auch innerhalb einer Serie. Du holst ihn
-dir im jeweiligen Termin — die Liste „Weitere Termine dieser Serie" führt nur
+Jedes Event hat seinen eigenen Code, auch innerhalb einer Serie. Du holst ihn
+dir im jeweiligen Event — die Liste „Weitere Events dieser Serie" führt nur
 Namen, Datum und Plätze, keine Codes.
 
 ## Eine Serie anlegen
@@ -782,81 +783,81 @@ Abschnitt erscheint nur beim Anlegen, nicht beim Bearbeiten.
 
 | | |
 |---|---|
-| Anzahl Termine | **2 bis 26** (bei „Monatlich" höchstens 12) |
+| Anzahl Events | **2 bis 26** (bei „Monatlich" höchstens 12) |
 | Intervall | Täglich · Wöchentlich · Alle 2 Wochen · Monatlich |
-| Zeitspanne | **höchstens 12 Monate** vom ersten bis zum letzten Termin |
+| Zeitspanne | **höchstens 12 Monate** vom ersten bis zum letzten Event |
 
-Unter den Einstellungen steht immer das Datum des letzten Termins. Reißt du die
+Unter den Einstellungen steht immer das Datum des letzten Events. Reißt du die
 12-Monats-Grenze, verweigert das System das Speichern.
 
-Die Termine werden durchnummeriert: aus „Konfi-Stunde" wird „Konfi-Stunde #1",
+Die Events werden durchnummeriert: aus „Konfi-Stunde" wird „Konfi-Stunde #1",
 „Konfi-Stunde #2" und so weiter. Das lässt sich nicht abschalten.
 
 Alle Einstellungen — Punkte, Plätze, Warteliste, Kategorien, Jahrgänge,
-Pflicht-Häkchen, Check-in-Fenster, Teamer-Kontingent — werden auf jeden Termin
-der Serie übertragen, mit denselben Zwangsregeln wie beim Einzeltermin.
+Pflicht-Häkchen, Check-in-Fenster, Teamer-Kontingent — werden auf jedes Event
+der Serie übertragen, mit denselben Zwangsregeln wie beim einzelnen Event.
 
 ### Verstehen, wie das Anmeldefenster mitwandert
 
 Eine Einstellung wird nicht kopiert, sondern **mitverschoben**: der
-Anmeldezeitraum. Du stellst ihn einmal für den ersten Termin ein, und der
-**Abstand** gilt dann für jeden weiteren Termin.
+Anmeldezeitraum. Du stellst ihn einmal für das erste Event ein, und der
+**Abstand** gilt dann für jedes weitere Event.
 
-Erster Termin am 1. September, Anmeldung ab dem 25. August, also sieben Tage
+Erstes Event am 1. September, Anmeldung ab dem 25. August, also sieben Tage
 vorher:
 
-| Termin | Anmeldung öffnet |
+| Event am | Anmeldung öffnet |
 |---|---|
 | 1. September | 25. August |
 | 8. September | 1. September |
 | 15. September | 8. September |
 | 22. September | 15. September |
 
-Immer sieben Tage vor dem jeweiligen Termin, nicht immer am 25. Dasselbe gilt
+Immer sieben Tage vor dem jeweiligen Event, nicht immer am 25. Dasselbe gilt
 für den Anmeldeschluss. Der Abstand wird als echte Zeitspanne gerechnet, nicht
 als Tag im Kalender — eine Serie darf also über einen Monats- oder
 Jahreswechsel laufen.
 
-Der Anmeldeschluss des **ersten** Termins wird dabei so geprüft wie bei einem
-Einzeltermin: Steht er in der Vergangenheit, während der Termin noch bevorsteht,
-lässt sich die Serie nicht anlegen. Die Folgetermine erben den Abstand und
+Der Anmeldeschluss des **ersten** Events wird dabei so geprüft wie bei einem
+einzelnen Event: Steht er in der Vergangenheit, während das Event noch bevorsteht,
+lässt sich die Serie nicht anlegen. Die folgenden Events erben den Abstand und
 rücken damit ohnehin mit, deshalb genügt der Blick auf den ersten. Eine Reihe,
 die komplett in der Vergangenheit liegt, kannst du weiterhin nachtragen.
 
-> **Brauchst du es anders** — etwa eine Anmeldung, die für alle Termine
+> **Brauchst du es anders** — etwa eine Anmeldung, die für alle Events
 > gleichzeitig öffnet — geht das nicht über die Serie. Dann legst du die
-> Termine einzeln an oder passt die Anmeldezeiten hinterher an.
+> Events einzeln an oder passt die Anmeldezeiten hinterher an.
 
 ### Wissen, dass es keine Serien-Bearbeitung gibt
 
-Nach dem Anlegen sind es ganz normale Einzeltermine, die nur eine gemeinsame
-Kennung teilen. Einen Termin bearbeiten, löschen oder absagen betrifft immer
+Nach dem Anlegen sind es ganz normale einzelne Events, die nur eine gemeinsame
+Kennung teilen. Ein Event bearbeiten, löschen oder absagen betrifft immer
 nur **diesen einen**; die übrigen bleiben.
 
 > **Willst du an einer zwölfteiligen Serie den Ort ändern, sind das zwölf
 > Bearbeitungen.** Prüfe die Einstellungen also lieber einmal zu viel, bevor du
 > eine lange Serie speicherst.
 
-## Einen Termin absagen oder löschen
+## Ein Event absagen oder löschen
 
 Zwei verschiedene Dinge, die oft verwechselt werden.
 
 | | Absagen | Löschen |
 |---|---|---|
-| Termin bleibt sichtbar | **ja, durchgestrichen als „Abgesagt"** | nein, weg |
+| Event bleibt sichtbar | **ja, durchgestrichen als „Abgesagt"** | nein, weg |
 | Anmeldungen | bleiben erhalten, alle werden abgemeldet | **werden mitgelöscht** |
-| Termin-Chat und Nachrichten | bleiben | **werden mitgelöscht** |
+| Event-Chat und Nachrichten | bleiben | **werden mitgelöscht** |
 | Wer wird benachrichtigt | Angemeldete **und** Wartende | Angemeldete und Wartende |
-| Rückgängig | nein, aber der Termin ist noch da | **nein** |
+| Rückgängig | nein, aber das Event ist noch da | **nein** |
 | Neue Anmeldungen möglich | nein | — |
 
-**Absagen** ist der saubere Weg: Der Termin wird als abgesagt markiert, alle
-Angemeldeten und alle auf der Warteliste bekommen einen Push, der Termin bleibt
-durchgestrichen in der Liste stehen. Ein bereits abgesagter Termin lässt sich
+**Absagen** ist der saubere Weg: Das Event wird als abgesagt markiert, alle
+Angemeldeten und alle auf der Warteliste bekommen einen Push, das Event bleibt
+durchgestrichen in der Liste stehen. Ein bereits abgesagtes Event lässt sich
 nicht nochmal absagen.
 
-**Zu einem abgesagten Termin meldet sich niemand mehr an** — weder Konfis noch
-Team, und auch du trägst dort niemanden mehr ein. Der Termin findet nicht
+**Zu einem abgesagten Event meldet sich niemand mehr an** — weder Konfis noch
+Team, und auch du trägst dort niemanden mehr ein. Das Event findet nicht
 statt. Die Anmelde-Knöpfe und „Konfi hinzufügen" verschwinden deshalb, solange
 die Absage steht. Abmelden geht weiter: Wer raus will, kommt raus. Soll wieder
 jemand dazukommen, [nimm zuerst die Absage zurück](#eine-absage-zuruecknehmen).
@@ -864,11 +865,11 @@ jemand dazukommen, [nimm zuerst die Absage zurück](#eine-absage-zuruecknehmen).
 ### Einen Grund zur Absage angeben
 
 Beim Absagen öffnet sich ein Fenster mit einem Feld für den Grund. Das Feld ist
-freiwillig: Lässt du es leer, wird der Termin abgesagt und es wird nur die
+freiwillig: Lässt du es leer, wird das Event abgesagt und es wird nur die
 Absage gemeldet — wie bei jeder Absage zuvor.
 
 Schreibst du etwas hinein, geht der Grund an **alle Teilnehmenden**. Er steht
-am Termin — in der Liste und in der Detailansicht, für Leitung, Team und Konfis
+am Event — in der Liste und in der Detailansicht, für Leitung, Team und Konfis
 gleichermaßen — und er steht in der Mitteilung, die auf den Handys ankommt:
 „Leider abgesagt: ‚Konfifreizeit' am Sa., 20.09. um 10:00 Uhr. Heizung im
 Gemeindehaus defekt."
@@ -884,91 +885,91 @@ oder ob die Absage aus der Zeit vor diesem Feld stammt.
 
 > **Der Grund ist öffentlich.** Zwanzig Konfis lesen ihn auf dem
 > Sperrbildschirm. Was intern bleiben soll, gehört nicht in dieses Feld,
-> sondern in den Termin-Chat oder ins Gespräch.
+> sondern in den Event-Chat oder ins Gespräch.
 
 ### Angemeldete nach einer Absage verbuchen
 
 Mit der Absage sind alle Angemeldeten und alle auf der Warteliste **abgemeldet**.
 In der Teilnehmerliste stehen sie grau als „Abgemeldet", als Grund steht der
-Absagegrund — hast du keinen angegeben, steht dort „Termin abgesagt". Punkte
-gibt es dafür keine, und bereits vergebene sind zurückgenommen: Der Termin hat
+Absagegrund — hast du keinen angegeben, steht dort „Event abgesagt". Punkte
+gibt es dafür keine, und bereits vergebene sind zurückgenommen: Das Event hat
 nicht stattgefunden.
 
 Das gilt auch für alle, **die du schon verbucht hattest**: Wer auf anwesend
 oder abwesend stand, steht danach ebenfalls auf abgemeldet, und seine Punkte
-für diesen Termin sind weg. Ein abgesagter Termin hat keine Anwesenden — wer
+für dieses Event sind weg. Ein abgesagtes Event hat keine Anwesenden — wer
 dort als anwesend stünde, wäre bei etwas anwesend gewesen, das nicht
 stattgefunden hat. Auch der Vermerk, wer die Anwesenheit eingetragen hatte
 oder dass jemand sich per QR-Code eingecheckt hat, fällt damit weg.
 
-Das erspart dir das Nacharbeiten. Ein abgesagter Termin gilt damit als erledigt
+Das erspart dir das Nacharbeiten. Ein abgesagtes Event gilt damit als erledigt
 und taucht nicht mehr als „noch zu verbuchen" in der roten Zahl am Reiter auf.
 
 **Das ist die Voreinstellung, nicht das Ende.** Waren drei Konfis trotzdem da
 und haben beim Abbauen geholfen, tippst du sie in der Teilnehmerliste an und
 setzt sie auf **anwesend** — sie bekommen ihre Punkte wie an jedem anderen
-Termin. Die übrigen bleiben abgemeldet. Genauso lässt sich der Grund bei
+Event. Die übrigen bleiben abgemeldet. Genauso lässt sich der Grund bei
 einzelnen Personen durch einen eigenen ersetzen, etwa „krank, Mutter hat
 angerufen".
 
 Eine **Abmeldung mit eigenem Grund** bleibt dagegen stehen. Hast du jemanden
 vor der Absage abgemeldet, weil die Mutter angerufen hat, steht bei ihm
 weiterhin „krank, Mutter hat angerufen" und nicht der Absagegrund. Der Grund
-gehört der Person und nicht dem Termin. Dasselbe gilt für Konfis, die sich
-selbst von einem Pflichttermin abgemeldet haben, und für Teamer:innen, die
+gehört der Person und nicht dem Event. Dasselbe gilt für Konfis, die sich
+selbst von einem Pflicht-Event abgemeldet haben, und für Teamer:innen, die
 schon abgesagt hatten: Ihre Rückmeldung bleibt so stehen, wie sie ist.
 
 ### Den Grund nachtragen oder ändern
 
-Der Grund lässt sich an einem abgesagten Termin jederzeit nachtragen, ändern
+Der Grund lässt sich an einem abgesagten Event jederzeit nachtragen, ändern
 oder wieder entfernen. Eine Absage ist oft eilig — wer morgens um sieben in
 Eile nichts eingetragen hat oder sich vertippt, kommt so noch einmal heran.
 
-Der Weg dorthin führt über die **Terminliste**: Wisch den abgesagten Termin
+Der Weg dorthin führt über die **Event-Liste**: Wisch das abgesagte Event
 nach links — dort, wo bei den übrigen „Absagen" steht, liegt bei einem
-abgesagten Termin der Stift. Diesen Wisch hat die Leitung.
+abgesagten Event der Stift. Diesen Wisch hat die Leitung.
 
-Im Termin selbst steht der Grund nur zum Lesen. Der Abschnitt „Absage" nennt
+Im Event selbst steht der Grund nur zum Lesen. Der Abschnitt „Absage" nennt
 ihn und darunter, wer abgesagt hat; geändert wird er in der Liste.
 
 Es öffnet sich dasselbe Fenster wie beim Absagen, mit dem Text, der bisher
-dasteht. Leerst du das Feld und speicherst, fällt der Grund weg und der Termin
+dasteht. Leerst du das Feld und speicherst, fällt der Grund weg und das Event
 steht wieder nur als abgesagt da.
 
 **Eine neue Mitteilung geht dabei nicht raus.** Die Absage ist schon gemeldet;
 eine Korrektur am Begleittext ist keine zweite Absage. Wer möchte, dass alle
-von der Änderung erfahren, schreibt sie in den Termin-Chat.
+von der Änderung erfahren, schreibt sie in den Event-Chat.
 
 **Der neue Text kommt trotzdem überall an.** Er steht danach nicht nur am
-Termin, sondern auch in der Teilnehmerliste bei allen, die durch die Absage
+Event, sondern auch in der Teilnehmerliste bei allen, die durch die Absage
 abgemeldet wurden — als ihr Abmeldegrund. Löschst du den Grund ganz, steht bei
-ihnen wieder „Termin abgesagt".
+ihnen wieder „Event abgesagt".
 
 Wem du vorher einen **eigenen Grund** eingetragen hast, etwa „krank, Mutter hat
 angerufen", der behält ihn. Dieser Grund gehört der Person und nicht dem
-Termin; eine Korrektur am Absagegrund rührt ihn nicht an.
+Event; eine Korrektur am Absagegrund rührt ihn nicht an.
 
 Ändert jemand anderes den Grund als die Person, die abgesagt hat, steht das
 darunter („Grund geändert von Anna Meier, 16.09."). „Abgesagt von" nennt
-weiterhin, wer den Termin tatsächlich abgesagt hat — wer einen Tippfehler
-korrigiert, hat den Termin nicht abgesagt. Ändert die absagende Person ihren
+weiterhin, wer das Event tatsächlich abgesagt hat — wer einen Tippfehler
+korrigiert, hat das Event nicht abgesagt. Ändert die absagende Person ihren
 eigenen Grund, bleibt es bei der einen Zeile.
 
 Wer bearbeiten darf, richtet sich nach denselben Regeln wie das Absagen: Wer
-den Termin nicht hätte absagen dürfen, ändert auch den Grund nicht. Teamer:innen
+das Event nicht hätte absagen dürfen, ändert auch den Grund nicht. Teamer:innen
 und Konfis lesen den Grund nur; sie haben den Wisch nicht.
 
 ### Eine Absage zurücknehmen
 
 Die Heizung ist doch rechtzeitig repariert, der Sturm zieht vorbei: Ein
-abgesagter Termin lässt sich wieder aufleben lassen. Du musst ihn dafür nicht
+abgesagtes Event lässt sich wieder aufleben lassen. Du musst es dafür nicht
 neu anlegen — Anmeldungen, Warteliste und Chat bleiben, wo sie waren.
 
-Es gibt zwei Wege dorthin, genau wie beim Absagen. In der **Terminliste** den
-Termin nach links wischen: An einem abgesagten Termin liegen dort zwei
+Es gibt zwei Wege dorthin, genau wie beim Absagen. In der **Event-Liste** das
+Event nach links wischen: An einem abgesagten Event liegen dort zwei
 Aktionen nebeneinander — der grüne Pfeil nimmt die Absage zurück, der Stift
-daneben öffnet den Grund. Oder **im Termin selbst**, ganz unten: Dort, wo bei
-einem laufenden Termin „Event absagen" steht, steht bei einem abgesagten der
+daneben öffnet den Grund. Oder **im Event selbst**, ganz unten: Dort, wo bei
+einem laufenden Event „Event absagen" steht, steht bei einem abgesagten der
 grüne Knopf „Absage zurücknehmen". Beide Wege hat die Leitung, beide fragen
 dasselbe.
 
@@ -978,7 +979,7 @@ angemeldet werden** — denn genau die bekommen gleich eine Mitteilung.
 **Was zurückkommt:** Alle, die durch diese Absage abgemeldet wurden, sind
 wieder angemeldet — jede genau dort, wo sie vorher stand. Wer einen festen
 Platz hatte, hat ihn wieder; wer auf der Warteliste war, wartet weiter. Der
-Absagegrund verschwindet, und der Termin steht wieder ganz normal in den
+Absagegrund verschwindet, und das Event steht wieder ganz normal in den
 Listen: Man kann sich anmelden, und die Warteliste rückt wieder nach.
 
 **Was nicht zurückkommt:**
@@ -987,32 +988,32 @@ Listen: Man kann sich anmelden, und die Warteliste rückt wieder nach.
   sich selbst abgemeldet hat oder du ihn abgemeldet hast, weil die Mutter
   angerufen hatte: Diese Entscheidung galt unabhängig von der Absage und gilt
   weiter. Auch der eigene Grund („krank, Mutter hat angerufen") bleibt stehen.
-- **Punkte werden nicht wiederhergestellt.** Der Termin steht ja erst bevor.
+- **Punkte werden nicht wiederhergestellt.** Das Event steht ja erst bevor.
   Punkte gibt es, wenn du die Anwesenheit verbuchst — wie an jedem anderen
-  Termin.
+  Event.
 - **Eine Anwesenheit von vor der Absage kommt nicht zurück.** Wen du damals
   auf anwesend oder abwesend gesetzt hattest, steht nach dem Zurücknehmen
   wieder als noch nicht verbucht in der Liste — die Absage hatte ihn
-  abgemeldet. Das überrascht, ist aber richtig: Der Termin steht jetzt ja
-  wieder bevor. Verbucht wird, wenn er gelaufen ist.
+  abgemeldet. Das überrascht, ist aber richtig: Das Event steht jetzt ja
+  wieder bevor. Verbucht wird, wenn es gelaufen ist.
 
-**Alle Wiederangemeldeten bekommen eine Mitteilung:** „Termin findet doch
+**Alle Wiederangemeldeten bekommen eine Mitteilung:** „Event findet doch
 statt" — mit dem Hinweis, dass sie wieder angemeldet sind und bitte prüfen
-sollen, ob sie Zeit haben. Wer nicht kann, meldet sich über den Termin ab. Wer
+sollen, ob sie Zeit haben. Wer nicht kann, meldet sich über das Event ab. Wer
 abgemeldet bleibt, bekommt keine Nachricht: Sie ginge ihn nichts an.
 
 Wer zurücknehmen darf, richtet sich nach denselben Regeln wie das Absagen: die
-Leitung. Teamer:innen sehen, dass und warum ein Termin abgesagt ist, ändern
+Leitung. Teamer:innen sehen, dass und warum ein Event abgesagt ist, ändern
 daran aber nichts.
 
-### Wo ein abgesagter Termin steht
+### Wo ein abgesagtes Event steht
 
-Das richtet sich nach dem Datum: Solange der Termin noch bevorsteht oder
-läuft, findest du ihn unter **„Aktuell"**, danach unter **„Vergangen"** —
-durchgestrichen in beiden Fällen. Unter **„Verbuchen"** taucht er nicht auf:
-An einem abgesagten Termin gibt es nichts zu verbuchen.
+Das richtet sich nach dem Datum: Solange das Event noch bevorsteht oder
+läuft, findest du es unter **„Aktuell"**, danach unter **„Vergangen"** —
+durchgestrichen in beiden Fällen. Unter **„Verbuchen"** taucht es nicht auf:
+An einem abgesagten Event gibt es nichts zu verbuchen.
 
-In allen Listen und auf den Startseiten steht ein abgesagter Termin
+In allen Listen und auf den Startseiten steht ein abgesagtes Event
 durchgestrichen und grau, mit rotem Zeichen in der Ecke — für Leitung, Team und
 Konfis gleich. In der Detailansicht bleibt der Titel ungestrichen: Dort sagen
 die Überschrift „Abgesagt", die rote Farbe und der Abschnitt „Absage" mit dem
@@ -1020,63 +1021,63 @@ Grund ohnehin schon, woran man ist. Dieser Abschnitt steht in einer Karte wie
 die Details und die Beschreibung darunter — nur das Zeichen im Kopf und das
 Wort „Abgesagt:" sind rot.
 
-Konfis sehen einen abgesagten Termin nur, wenn sie dafür angemeldet waren — er
-geht sie ja an. Er steht in beiden Reitern an seinem Datum: unter **„Alle"**
-zwischen den Terminen, für die man sich noch anmelden kann, und unter
+Konfis sehen ein abgesagtes Event nur, wenn sie dafür angemeldet waren — es
+geht sie ja an. Es steht in beiden Reitern an seinem Datum: unter **„Alle"**
+zwischen den Events, für die man sich noch anmelden kann, und unter
 **„Meine"** bei den eigenen. Beide Male durchgestrichen und mit rotem Zeichen.
 Der Platz im Kalender ist der Punkt: An dem Tag war etwas geplant, und dass
 genau das ausfällt, ist die Nachricht. Am Listenende wäre an seiner Stelle nur
 eine Lücke.
 
-In der Leitungssicht ist es umgekehrt: Dort stehen abgesagte Termine im Reiter
-**„Alle"** am Ende der Liste. Wer plant, arbeitet die kommenden Termine der
+In der Leitungssicht ist es umgekehrt: Dort stehen abgesagte Events im Reiter
+**„Alle"** am Ende der Liste. Wer plant, arbeitet die kommenden Events der
 Reihe nach ab; ein abgesagter dazwischen unterbricht diese Reihe, ohne dass es
 an ihm etwas zu tun gäbe.
 
-### Einen Termin löschen
+### Ein Event löschen
 
-**Löschen** ist endgültig. Gelöscht werden der Termin selbst, alle Anmeldungen,
+**Löschen** ist endgültig. Gelöscht werden das Event selbst, alle Anmeldungen,
 alle Zeitfenster, die Zuordnung zu Kategorien und Jahrgängen sowie der komplette
-Termin-Chat mit allen Nachrichten, Umfragen und Dateien. Damit das nicht
+Event-Chat mit allen Nachrichten, Umfragen und Dateien. Damit das nicht
 versehentlich passiert, fragt das System zweimal nach. Die erste Frage ist die
-gewöhnliche Sicherheitsfrage. Hängt am Termin noch etwas dran, kommt danach eine
+gewöhnliche Sicherheitsfrage. Hängt am Event noch etwas dran, kommt danach eine
 zweite und nennt genau, was verloren geht: die Zahl der Anmeldungen, die Zahl
 der Chat-Nachrichten samt Dateien und die bereits vergebenen Punkte, die den
-Konfis wieder abgezogen werden. Erst nach **Endgültig löschen** ist der Termin
-weg. Ist der Termin leer, entfällt die zweite Frage.
+Konfis wieder abgezogen werden. Erst nach **Endgültig löschen** ist das Event
+weg. Ist das Event leer, entfällt die zweite Frage.
 
 Löschst du eine ganze Serie oder „diesen und alle folgenden", zählt die zweite
-Frage über alle betroffenen Termine zusammen.
+Frage über alle betroffenen Events zusammen.
 
-Benachrichtigt wird beim Löschen nur, wer es noch nicht weiß: Löschst du einen
-Termin, der **noch nicht abgesagt** war, bekommen alle Angemeldeten und alle
-auf der Warteliste die Meldung, dass er ausfällt. Räumst du dagegen einen
-**bereits abgesagten** Termin auf, bleibt es still — die Absage war schon
+Benachrichtigt wird beim Löschen nur, wer es noch nicht weiß: Löschst du ein
+Event, das **noch nicht abgesagt** war, bekommen alle Angemeldeten und alle
+auf der Warteliste die Meldung, dass es ausfällt. Räumst du dagegen ein
+**bereits abgesagtes** Event auf, bleibt es still — die Absage war schon
 gemeldet, ein zweites Mal sagt sie niemandem etwas Neues.
 
-> **Faustregel:** Ein Termin, der stattfinden sollte und ausfällt, wird
-> **abgesagt**. Ein Termin, den es nie hätte geben sollen (Tippfehler,
+> **Faustregel:** Ein Event, das stattfinden sollte und ausfällt, wird
+> **abgesagt**. Ein Event, das es nie hätte geben sollen (Tippfehler,
 > versehentlich angelegt), wird **gelöscht**.
 
 ## Nachvollziehen, wann automatisch benachrichtigt wird
 
-Änderst du an einem **zukünftigen, nicht abgesagten** Termin das Datum, die
+Änderst du an einem **zukünftigen, nicht abgesagten** Event das Datum, die
 Uhrzeit, die Endzeit oder den Ort, bekommen alle Angemeldeten und alle auf der
 Warteliste automatisch einen Push mit der Änderung. Das passiert beim
 Speichern, du musst es nicht auslösen.
 
 Änderst du nur den Namen, die Beschreibung, die Punkte oder die Platzzahl,
-kommt kein Push. Bei vergangenen Terminen ebenfalls nicht.
+kommt kein Push. Bei vergangenen Events ebenfalls nicht.
 
 Eine Mitteilung geht außerdem raus, wenn du jemanden
 [von Hand einträgst](#teilnehmende-von-hand-hinzufuegen) und wenn jemand
 [von der Warteliste nachrückt](#nachvollziehen-wann-jemand-nachrueckt).
 
-## Einen Termin-Chat einrichten
+## Einen Event-Chat einrichten
 
-Zu jedem Termin lässt sich ein Gruppenchat einrichten — **nicht automatisch**.
+Zu jedem Event lässt sich ein Gruppenchat einrichten — **nicht automatisch**.
 Jemand aus Leitung oder Team muss ihn in der Detailansicht über den Chat-Knopf
-anlegen und die Rückfrage bestätigen. Pro Termin gibt es genau einen; ein
+anlegen und die Rückfrage bestätigen. Pro Event gibt es genau einen; ein
 zweiter Versuch meldet „Chat existiert bereits für dieses Event".
 
 Beim Anlegen kommen hinein: die Person, die den Chat erstellt, und alle, die zu
@@ -1087,11 +1088,11 @@ Leitung gleichermaßen. Wer auf der Warteliste steht, ist nicht dabei.
 > wer von der Warteliste nachrückt. Lege den Chat also möglichst spät an, am
 > besten erst nach dem Anmeldeschluss. Sonst fehlt die Hälfte drin.
 
-Wer sich vom Termin abmeldet, wird gleichzeitig aus dem Chat entfernt. Wird der
-Termin gelöscht, verschwindet der Chat mitsamt allem; beim Absagen bleibt er
+Wer sich vom Event abmeldet, wird gleichzeitig aus dem Chat entfernt. Wird das
+Event gelöscht, verschwindet der Chat mitsamt allem; beim Absagen bleibt er
 bestehen.
 
-Was sonst im Termin-Chat gilt — schreiben, Umfragen, Dateien —, steht im
+Was sonst im Event-Chat gilt — schreiben, Umfragen, Dateien —, steht im
 Kapitel [Chat](90-chat.md#die-fuenf-chat-arten-unterscheiden).
 
 ## Teilnehmende von Hand hinzufügen
@@ -1104,14 +1105,14 @@ Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
 
 - Eine Teamer:in lässt sich nur bei „Konfis, Team gesucht" oder „Nur Team"
   eintragen
-- Ein Konfi lässt sich nicht in einen reinen Team-Termin eintragen
-- Bei Zeitfenster-Terminen musst du ein Fenster auswählen
+- Ein Konfi lässt sich nicht in ein reines Team-Event eintragen
+- Bei Zeitfenster-Events musst du ein Fenster auswählen
 - Doppelte Anmeldungen werden abgewiesen
-- Wer eingetragen wird, muss zu einem Jahrgang des Termins gehören — als
+- Wer eingetragen wird, muss zu einem Jahrgang des Events gehören — als
   Konfi, Teamer:in oder Leitung. Die Auswahl zeigt deshalb nur Personen aus
-  diesen Jahrgängen; ein Hinweis über der Liste nennt sie. Hat der Termin
-  mehrere Jahrgänge, genügt einer davon. Termine ohne Jahrgang und „Nur
-  Team"-Termine stehen allen offen, die Gemeindeleitung lässt sich immer
+  diesen Jahrgängen; ein Hinweis über der Liste nennt sie. Hat das Event
+  mehrere Jahrgänge, genügt einer davon. Events ohne Jahrgang und „Nur
+  Team"-Events stehen allen offen, die Gemeindeleitung lässt sich immer
   eintragen. Wer trotzdem über einen anderen Weg jemanden eintragen will,
   bekommt eine Meldung mit dem Namen der Person.
 
@@ -1121,9 +1122,9 @@ kein Platz mehr frei oder trägst du jemanden bewusst auf die Warteliste ein,
 steht das in der Meldung. Trägst du dich selbst ein, bekommst du nichts aufs
 eigene Handy.
 
-## Material an einem Termin finden
+## Material an einem Event finden
 
-Hängt [Material](30-leitung.md#die-gemeinde-unter-mehr-einstellen) an einem Termin, zeigen Terminliste und
+Hängt [Material](30-leitung.md#die-gemeinde-unter-mehr-einstellen) an einem Event, zeigen Event-Liste und
 Detailansicht das für Leitung und Teamer:innen an. In der Detailansicht steht
 der Hinweis direkt bei den Eckdaten und ist klickbar: Bei einem einzelnen
 Material öffnet sich sofort dessen Ansicht, bei mehreren springt die Seite zur
@@ -1136,21 +1137,21 @@ Materialliste weiter unten. Konfis sehen Material grundsätzlich nicht.
 > Konfirmation (dort sind Punkte immer 0), oder der Punkt-Typ ist im Jahrgang
 > abgeschaltet.
 
-> **„Die Teamer:innen sehen den Termin nicht."**
-> Teamer:innen sehen nur Termine ihrer eigenen Jahrgänge. Ausgenommen sind
-> „Nur Team"-Termine und Termine ohne jeden Jahrgang.
+> **„Die Teamer:innen sehen das Event nicht."**
+> Teamer:innen sehen nur Events ihrer eigenen Jahrgänge. Ausgenommen sind
+> „Nur Team"-Events und Events ohne jeden Jahrgang.
 
-> **„Der Termin ist ausgebucht, obwohl noch Plätze frei sind."**
-> Bei Zeitfenster-Terminen zählt das einzelne Fenster, nicht die Summe.
+> **„Das Event ist ausgebucht, obwohl noch Plätze frei sind."**
+> Bei Zeitfenster-Events zählt das einzelne Fenster, nicht die Summe.
 
 > **„Ich habe die Teilnehmerzahl reduziert, es sind aber immer noch zu viele
 > drin."**
 > So ist es gedacht: Bestätigte Anmeldungen werden nie zurückgestuft.
 
-> **„Die Hälfte fehlt im Termin-Chat."**
+> **„Die Hälfte fehlt im Event-Chat."**
 > Der Chat nimmt nur mit, wer beim Anlegen schon angemeldet war. Später
 > Angemeldete und Nachrücker kommen nicht dazu.
 
 > **„Der Konfi kann sich nicht abmelden."**
-> Bei freiwilligen Terminen geht Abmelden nur bis 2 Tage vor dem Termin. Du
+> Bei freiwilligen Events geht Abmelden nur bis 2 Tage vor dem Termin. Du
 > selbst kannst die Anmeldung in der Detailansicht trotzdem entfernen.

@@ -1,68 +1,68 @@
 ---
-titel: Abzeichen
+titel: Badges
 untertitel: Wie sie vergeben werden und welche Bedingungen es gibt
 farbe: "#b45309"
 gruppe: Nachschlagen
 ---
 
-Abzeichen (im System „Badges") bekommen Konfis und Teamer:innen **automatisch**,
+Badges bekommen Konfis und Teamer:innen **automatisch**,
 sobald sie eine Bedingung erfüllen. Von Hand verleihen oder aberkennen lässt
 sich keines. Anlegen und Bearbeiten darf die Leitung, ansehen dürfen alle.
 
-## Die mitgelieferten Abzeichen sichten
+## Die mitgelieferten Badges sichten
 
-Eine neue Gemeinde startet nicht bei null: **27 Abzeichen für Konfis** und
+Eine neue Gemeinde startet nicht bei null: **27 Badges für Konfis** und
 **neun für Teamer:innen** sind bereits angelegt und aktiv. Sie decken die
-gängigen Fälle ab — Punktestände, Anzahl von Aktivitäten und Terminen, Serien,
+gängigen Fälle ab — Punktestände, Anzahl von Aktivitäten und Events, Serien,
 bei Teamer:innen zusätzlich die Jahre im Team.
 
 Sie sind als Startpunkt gedacht, nicht als Vorgabe: Du kannst jedes umbenennen,
 seine Bedingung ändern oder es
-[aus dem Verkehr ziehen](#ein-abzeichen-aus-dem-verkehr-ziehen).
+[aus dem Verkehr ziehen](#ein-badge-aus-dem-verkehr-ziehen).
 
-## Ein Abzeichen anlegen
+## Ein Badge anlegen
 
 Du legst es einmal an und beschreibst dabei, wofür es vergeben wird. Ab dann
 prüft das System selbst.
 
-Ein Abzeichen besteht aus vier Dingen:
+Ein Badge besteht aus vier Dingen:
 
 - **Name und Beschreibung** — was drauf steht
 - **Symbol und Farbe** — wie es aussieht. Zur Auswahl stehen 95 Symbole,
   gruppiert nach Erfolg, Engagement, Gemeinschaft, Lernen, Natur, Zeit,
   Aktivitäten, Orte und Sonstiges. Die Farbe richtet sich zunächst nach
-  der Bedingung, damit verwandte Abzeichen zusammen wirken: Punkte-Abzeichen
-  sind golden, Gottesdienst-Abzeichen orange, Gemeinde-Abzeichen grün. Du
+  der Bedingung, damit verwandte Badges zusammen wirken: Punkte-Badges
+  sind golden, Gottesdienst-Badges orange, Gemeinde-Badges grün. Du
   kannst jede Farbe von Hand ändern.
 - **Bedingung** — wofür es vergeben wird (die sechzehn unten)
 - **Zielgruppe** — „Konfis" oder „Teamer:innen"
 
 Sobald du gespeichert hast, holt das System die Vergabe für alle Personen der
-Zielgruppe nach. Wer die Bedingung schon erfüllt, hat das Abzeichen also
+Zielgruppe nach. Wer die Bedingung schon erfüllt, hat das Badge also
 sofort — und zwar ohne Push und ohne Mitteilung, damit ein solcher Lauf
 niemanden mit Benachrichtigungen überschüttet.
 
 ### Wissen, was vorher zu bedenken ist
 
-**Vergangenes zählt immer mit.** Ein heute angelegtes Abzeichen „10
+**Vergangenes zählt immer mit.** Ein heute angelegtes Badge „10
 Aktivitäten" geht sofort an alle, die das längst erfüllen. Es lässt sich nicht
 nur ab heute gelten lassen. Wenn du mitten im Jahr etwas einführst, haben es
 einige auf einen Schlag.
 
 **Einmal verliehen, immer verliehen.** Verliert jemand später Punkte, bleibt
-das Abzeichen. Es gibt keinen Entzug.
+das Badge. Es gibt keinen Entzug.
 
 **Die Zielgruppe lässt sich nachträglich nicht ändern.** Beim Bearbeiten fehlt
-die Auswahl. Willst du wechseln, legst du ein neues Abzeichen an.
+die Auswahl. Willst du wechseln, legst du ein neues Badge an.
 
-### Ein Abzeichen geheim halten
+### Ein Badge geheim halten
 
-Ein Abzeichen mit dem Schalter „Geheim" sehen Konfis erst, **wenn sie es
+Ein Badge mit dem Schalter „Geheim" sehen Konfis erst, **wenn sie es
 haben**. Vorher taucht weder Name noch Beschreibung noch Fortschritt auf — die
 Angaben verlassen den Server gar nicht erst.
 
 Sichtbar ist nur, **dass** es etwas zu entdecken gibt: auf dem Dashboard als
-„2/5 geheim", auf der Abzeichen-Seite als Kennzahl **GEHEIM**. Verdient man
+„2/5 geheim", auf der Badge-Seite als Kennzahl **GEHEIM**. Verdient man
 eines, erscheint es ganz normal in der Liste, mit einem kleinen Eselsohr in
 der Ecke.
 
@@ -72,7 +72,7 @@ der Ecke.
 
 Die Bedingung wird ganz normal geprüft; „Geheim" betrifft nur die Anzeige.
 
-> Im Moment der Verleihung verrät sich das Abzeichen allerdings selbst: Push
+> Im Moment der Verleihung verrät sich das Badge allerdings selbst: Push
 > und Mitteilung nennen Name und Beschreibung wie bei jedem anderen. Zu dem
 > Zeitpunkt ist es ja verdient.
 
@@ -90,9 +90,9 @@ sondern die Frage, welche überhaupt gemeint ist. Deshalb zuerst der kurze Weg:
 | dass jemand in **beiden** Bereichen dabei war | **Beide Kategorien** |
 | dass du selbst etwas belohnt hast | **Bonuspunkte** |
 | schlichte Anwesenheit, egal woran | **Aktivitäten & Events** |
-| nur besuchte Termine | **Event-Teilnahmen** |
+| nur besuchte Events | **Event-Teilnahmen** |
 | Abwechslung statt immer dasselbe | **Verschiedene Aktivitäten** |
-| Verlässlichkeit bei Pflichtterminen | **Pflicht-Anwesenheit** |
+| Verlässlichkeit bei Pflicht-Events | **Pflicht-Anwesenheit** |
 | eine ganz bestimmte Sache, mehrfach | **Spezifische Aktivität** |
 | einige aus einer Liste, die du zusammenstellst | **Aktivitäts-Kombination** |
 | Ausdauer in **einem** Bereich | **Kategorie-Aktivitäten** |
@@ -104,14 +104,14 @@ sondern die Frage, welche überhaupt gemeint ist. Deshalb zuerst der kurze Weg:
 Drei Dinge vorweg, die für alle gelten:
 
 - **Der Zahlenwert** wird über einen Schieberegler eingestellt, bei einem neuen
-  Abzeichen von **1 bis 20**. Hat ein bestehendes Abzeichen einen höheren Wert,
+  Badge von **1 bis 20**. Hat ein bestehendes Badge einen höheren Wert,
   reicht sein Regler bis dorthin — sonst würde er den Wert beim ersten
-  Anfassen auf 20 herunterziehen und das Abzeichen schlagartig an alle mit 20
+  Anfassen auf 20 herunterziehen und das Badge schlagartig an alle mit 20
   Punkten vergeben. Zurückholen ließe sich das nicht.
 - **„Zeitbasiert" hat einen zweiten Regler** für den Zeitraum, 1 bis 26 Wochen.
 - **Was der Wert bedeutet, ist je Bedingung verschieden** — mal „so viele
   Punkte", mal „so oft", mal „aus so vielen Kategorien". Bei jeder Bedingung
-  unten steht es dabei. Wer das überliest, baut ein Abzeichen, das zu früh
+  unten steht es dabei. Wer das überliest, baut ein Badge, das zu früh
   oder gar nicht anspringt.
 
 ### Nach Punkten zählen
@@ -125,12 +125,12 @@ Gottesdienst- und Gemeindepunkte zusammen erreichen den Wert.
 Gezählt werden **nur die Punktarten, die
 [im Jahrgang eingeschaltet](45-jahrgaenge.md#eine-punktart-abschalten)
 sind**. Ist Gemeinde abgeschaltet, zählen nur Gottesdienstpunkte. Sind beide
-aus, ist das Abzeichen unerreichbar und wird Konfis gar nicht erst angezeigt.
+aus, ist das Badge unerreichbar und wird Konfis gar nicht erst angezeigt.
 
 #### Gottesdienst-Punkte · Gemeinde-Punkte
 
 Wie oben, aber nur die jeweilige [Punktart](40-punkte.md#die-zwei-punktarten-auseinanderhalten).
-Ist sie im Jahrgang abgeschaltet, wird das Abzeichen nicht vergeben.
+Ist sie im Jahrgang abgeschaltet, wird das Badge nicht vergeben.
 
 #### Beide Kategorien
 
@@ -142,7 +142,7 @@ Gemeindepunkte.
 
 > **Achtung, Wortfalle:** „Kategorien" meint hier **Gottesdienst und
 > Gemeinde**, nicht die [Kategorien](45-jahrgaenge.md#kategorien-anlegen-und-pflegen), die du
-> selbst anlegst. Wer Kategorie-Abzeichen will, nimmt „Kategorie-Aktivitäten".
+> selbst anlegst. Wer Kategorie-Badges will, nimmt „Kategorie-Aktivitäten".
 
 #### Bonuspunkte
 
@@ -157,33 +157,33 @@ auf einmal oder in fünf Schritten.
 #### Aktivitäten & Events
 
 Erledigte [Aktivitäten](40-punkte.md#ueber-eine-aktivitaet) **plus** besuchte
-[Termine](40-punkte.md#ueber-einen-termin) zusammen.
+[Events](40-punkte.md#ueber-ein-event) zusammen.
 
 *Beispiel:* Wert 10 → 10 Einträge insgesamt, egal in welcher Mischung.
 
 #### Event-Teilnahmen
 
-Nur besuchte Termine.
+Nur besuchte Events.
 
 #### Verschiedene Aktivitäten
 
 Wie viele **unterschiedliche** Aktivitäten jemand gemacht hat.
 
 *Beispiel:* Wert 3 → drei verschiedene Aktivitäten. Fünfmal dieselbe zählt als
-eine. Termine zählen hier **nicht** mit.
+eine. Events zählen hier **nicht** mit.
 
 #### Pflicht-Anwesenheit
 
-Besuchte [**Pflicht-Termine**](70-termine.md#ein-pflicht-event-einrichten) — also solche mit
+Besuchte [**Pflicht-Events**](70-termine.md#ein-pflicht-event-einrichten) — also solche mit
 Pflicht-Markierung und [eingetragener
 Anwesenheit](70-termine.md#die-anwesenheit-verbuchen).
 
-*Beispiel:* Wert 12 → 12 besuchte Pflichttermine.
+*Beispiel:* Wert 12 → 12 besuchte Pflicht-Events.
 
-> Das ist bei Konfis die einzige Bedingung, die Pflichttermine zählt. Bei
-> allen anderen bleiben Pflichttermine und
-> [Konfirmationen](70-termine.md#einen-termin-als-konfirmation-kennzeichnen) außen vor — sonst gäbe es
-> Abzeichen für etwas, wozu man ohnehin verpflichtet ist.
+> Das ist bei Konfis die einzige Bedingung, die Pflicht-Events zählt. Bei
+> allen anderen bleiben Pflicht-Events und
+> [Konfirmationen](70-termine.md#ein-event-als-konfirmation-kennzeichnen) außen vor — sonst gäbe es
+> Badges für etwas, wozu man ohnehin verpflichtet ist.
 
 ### Nach Inhalt zählen
 
@@ -194,7 +194,7 @@ Eine bestimmte Aktivität, so oft wie eingestellt.
 *Beispiel:* Wert 5 + „Sonntagsgottesdienst" → fünfmal daran teilgenommen.
 
 > **Dieselbe Falle wie bei den Kategorien:** Gemerkt wird der **Name** der
-> Aktivität. Wird sie später umbenannt, findet das Abzeichen nichts mehr —
+> Aktivität. Wird sie später umbenannt, findet das Badge nichts mehr —
 > stillschweigend. Verliehene bleiben.
 
 #### Aktivitäts-Kombination
@@ -204,7 +204,7 @@ Von mehreren ausgewählten Aktivitäten muss eine Mindestanzahl erledigt sein.
 *Beispiel:* Zehn Aktivitäten ausgewählt, Wert 3 → drei davon reichen.
 
 Auch hier zählt der **Name**: Wird eine der ausgewählten Aktivitäten
-umbenannt, fällt sie aus der Wertung. Termine zählen bei dieser Bedingung
+umbenannt, fällt sie aus der Wertung. Events zählen bei dieser Bedingung
 nicht mit — wer sie gewertet haben will, nimmt **Kategorie-Aktivitäten** oder
 **Kategorie-Kombination**.
 
@@ -213,10 +213,10 @@ nicht mit — wer sie gewertet haben will, nimmt **Kategorie-Aktivitäten** oder
 **Das ist die Bedingung, die deine selbst angelegten
 [Kategorien](45-jahrgaenge.md#kategorien-anlegen-und-pflegen) nutzt.**
 
-Gezählt wird alles aus einer Kategorie — **Aktivitäten und Termine zusammen**.
+Gezählt wird alles aus einer Kategorie — **Aktivitäten und Events zusammen**.
 
 *Beispiel:* Wert 3 + Kategorie „Kasualien" → drei Kasualien, egal ob als
-Aktivität gemeldet oder als Termin besucht.
+Aktivität gemeldet oder als Event besucht.
 
 So hängt es zusammen:
 
@@ -224,17 +224,17 @@ So hängt es zusammen:
 Kategorie "Kasualien" anlegen
    ├─ der Aktivität "Taufe begleiten" zuordnen
    ├─ der Aktivität "Beerdigung besuchen" zuordnen
-   └─ dem Termin "Trauung Familie Meier" zuordnen
+   └─ dem Event "Trauung Familie Meier" zuordnen
                     ↓
-Abzeichen "Kasualien-Kenner": 3 aus Kategorie "Kasualien"
+Badge "Kasualien-Kenner": 3 aus Kategorie "Kasualien"
 ```
 
-> **Wichtige Falle:** Das Abzeichen merkt sich den **Namen** der Kategorie,
+> **Wichtige Falle:** Das Badge merkt sich den **Namen** der Kategorie,
 > nicht die Kategorie selbst. Benennst du „Kasualien" später in „Kasualien &
 > Begleitung" um, findet es nichts mehr — stillschweigend, ohne Fehlermeldung.
-> Bereits verliehene bleiben. **Kategorien, auf die Abzeichen zeigen, also
+> Bereits verliehene bleiben. **Kategorien, auf die Badges zeigen, also
 > besser nicht umbenennen.** Mehr dazu unter
-> [Die Falle mit den Kategorie-Abzeichen](45-jahrgaenge.md#kategorie-abzeichen-nicht-ins-leere-laufen-lassen).
+> [Die Falle mit den Kategorie-Badges](45-jahrgaenge.md#kategorie-badges-nicht-ins-leere-laufen-lassen).
 
 #### Kategorie-Kombination
 
@@ -244,17 +244,17 @@ gewesen sein muss.
 
 *Beispiel:* Angekreuzt „Konfifahrt", „Übernachtung" und „Sommerfreizeit",
 Wert 3 → wer aus **allen dreien** mindestens einmal etwas hat, bekommt das
-Abzeichen.
+Badge.
 
 > **Der Wert ist die Anzahl der Kategorien — nicht, wie oft.** Das ist die
 > Stelle, an der es am ehesten schiefgeht. **Wert 1 heißt: eine der
 > angekreuzten Kategorien genügt.** Wer drei Freizeiten fordern will und den
-> Wert auf 1 stellt, verleiht das Abzeichen an alle, die bei *einer* davon
+> Wert auf 1 stellt, verleiht das Badge an alle, die bei *einer* davon
 > waren. Für „drei aus dreien" gehört dort die **3** hin.
 
 **Jede Kategorie zählt höchstens einmal.** Dreimal dieselbe Konfifahrt ergibt
 eine Kategorie, nicht drei — genau dafür gibt es diese Bedingung. Gezählt
-werden Termine und Aktivitäten gleichermaßen.
+werden Events und Aktivitäten gleichermaßen.
 
 Die App lässt zwei Fehler gar nicht erst zu: Weniger als **zwei** Kategorien
 werden abgelehnt („Bitte mindestens zwei Kategorien auswählen"), und ein Wert,
@@ -280,7 +280,7 @@ Als Faustregel: **Ausdauer in einer Sache** → Kategorie-Aktivitäten.
 
 #### Zeitbasiert
 
-So viele Aktivitäten oder Termine innerhalb der letzten X Wochen.
+So viele Aktivitäten oder Events innerhalb der letzten X Wochen.
 
 *Beispiel:* Wert 2 + 4 Wochen → zwei Einträge in den letzten vier Wochen.
 
@@ -295,13 +295,13 @@ Wochen **in Folge** mit mindestens einem Eintrag.
 
 > Gezählt wird ab der **letzten aktiven Woche** rückwärts, nicht ab heute. Wer
 > vor einem Jahr vier Wochen am Stück aktiv war und seitdem nichts, erfüllt
-> die Bedingung weiterhin und bekommt das Abzeichen beim Anlegen sofort.
+> die Bedingung weiterhin und bekommt das Badge beim Anlegen sofort.
 
 ### Nur für Teamer:innen
 
 #### Teamer-Jahr
 
-Kalenderjahre mit mindestens einer Aktivität oder einem Termin.
+Kalenderjahre mit mindestens einer Aktivität oder einem Event.
 
 *Beispiel:* Wert 3 → in drei Jahren aktiv gewesen.
 
@@ -329,21 +329,21 @@ zählt das Jahr der ältesten Teamer-Aktivität; fehlt auch das, zählt es null.
 | Teamer-Jahr | nein | ja |
 
 Teamer:innen sammeln keine Punkte — deshalb entfallen alle punktebasierten
-Bedingungen. Ein Punkte-Abzeichen mit Zielgruppe „Teamer:innen" wird nie
+Bedingungen. Ein Punkte-Badge mit Zielgruppe „Teamer:innen" wird nie
 vergeben, auch wenn es in der Datenbank steht.
 
 **„Nur im Bestand" heißt:** Diese vier lassen sich für „Teamer:innen" nicht
 **auswählen** — im Anlegeformular stehen sie dort nicht zur Wahl. Ein
-Abzeichen dieser Art, das es schon gibt, wird aber weiterhin ganz normal
+Badge dieser Art, das es schon gibt, wird aber weiterhin ganz normal
 **vergeben**. Wer eines vorfindet, muss es also nicht ersetzen.
 
-### Was bei Teamer-Abzeichen anders zählt
+### Was bei Teamer-Badges anders zählt
 
 - **Aktivitäten:** Nur solche mit der Zielgruppe „Teamer:innen" zählen mit.
   Eine Aktivität für Konfis bleibt außen vor, auch wenn sie in derselben
   Kategorie steckt.
-- **Termine:** Umgekehrt großzügiger — es zählt **jeder** Termin mit
-  eingetragener Anwesenheit, auch Pflichttermine und Konfirmationen.
+- **Events:** Umgekehrt großzügiger — es zählt **jedes** Event mit
+  eingetragener Anwesenheit, auch Pflicht-Events und Konfirmationen.
   Teamer:innen arbeiten dort ja mit.
 
 ## Nachvollziehen, wann geprüft wird
@@ -354,11 +354,11 @@ Sofort bei:
 - einer direkt zugewiesenen [Aktivität](40-punkte.md#eine-aktivitaet-direkt-zuschreiben)
   — und ebenso, wenn du eine wieder entfernst
 - vergebenen Bonuspunkten — und ebenso, wenn du welche zurücknimmst
-- [eingetragener Anwesenheit](70-termine.md#die-anwesenheit-verbuchen) bei einem Termin,
+- [eingetragener Anwesenheit](70-termine.md#die-anwesenheit-verbuchen) bei einem Event,
   einzeln wie für die ganze Liste
 - einem [Check-in per QR-Code](70-termine.md#den-qr-check-in-nutzen)
-- dem Anlegen oder Bearbeiten eines Abzeichens
-- dem Knopf „Abzeichen neu prüfen"
+- dem Anlegen oder Bearbeiten eines Badges
+- dem Knopf „Badge neu prüfen"
 
 > Dass auch das **Zurücknehmen** eine Prüfung auslöst, klingt widersinnig — es
 > kann ja nichts wegnehmen. Der Grund: Die Prüfung läuft immer über alle
@@ -372,36 +372,36 @@ einträgt.
 > **Mitteilungen sind dafür nicht nötig.** Der Hintergrundlauf geht alle
 > aktiven Konfis und Teamer:innen durch, ganz gleich ob jemand die App
 > installiert oder Mitteilungen erlaubt hat. Ohne Mitteilungen erfährt man von
-> dem Abzeichen nur später — beim nächsten Öffnen der App statt sofort per
+> dem Badge nur später — beim nächsten Öffnen der App statt sofort per
 > Push. Verliehen wird es genauso.
 
 ### Von Hand nachprüfen lassen
 
-Beim Bearbeiten eines Abzeichens gibt es den Knopf „Abzeichen neu prüfen". Er
+Beim Bearbeiten eines Badges gibt es den Knopf „Badge neu prüfen". Er
 ist für den Sonderfall gedacht, dass sich die **Datenlage** geändert hat, nicht
-das Abzeichen selbst — etwa nach einer nachträglich korrigierten Anwesenheit.
+das Badge selbst — etwa nach einer nachträglich korrigierten Anwesenheit.
 Die Vergabe läuft dabei **ohne** Mitteilung und ohne Push. Danach steht dort,
-wie viele Personen geprüft wurden und wie viele das Abzeichen neu bekommen
+wie viele Personen geprüft wurden und wie viele das Badge neu bekommen
 haben.
 
 Zwei Dinge, die dabei auffallen können: Nach einem Lauf ist der Knopf für die
 ganze Gemeinde **eine Minute lang gesperrt** — drückst du früher erneut, kommt
 „Die Prüfung lief gerade eben. Bitte … Sekunden warten." Und bei einem
-**deaktivierten** Abzeichen verweigert er den Dienst mit „Das Abzeichen ist
+**deaktivierten** Badge verweigert er den Dienst mit „Das Badge ist
 nicht aktiv"; dort gibt es nichts nachzuholen.
 
 ## Wissen, was beim Verleihen passiert
 
-1. Das Abzeichen wird eingetragen
+1. Das Badge wird eingetragen
 2. Mitteilung in der App: „Neues Badge erhalten!" mit dem Symbol des
-   Abzeichens dahinter, darunter „Herzlichen Glückwunsch! Du hast das Badge …
+   Badges dahinter, darunter „Herzlichen Glückwunsch! Du hast das Badge …
    erhalten" samt Beschreibung
 3. Push aufs Gerät, dort ohne das Symbol
 4. Der Zähler in der Tab-Leiste aktualisiert sich
 
-Ein Abzeichen kann nie doppelt vergeben werden.
+Ein Badge kann nie doppelt vergeben werden.
 
-## Ein Abzeichen aus dem Verkehr ziehen
+## Ein Badge aus dem Verkehr ziehen
 
 | | Deaktivieren | Löschen |
 |---|---|---|
@@ -411,7 +411,7 @@ Ein Abzeichen kann nie doppelt vergeben werden.
 | Zählt noch als offenes Ziel | nein | nein |
 | Rückgängig | ja | nein |
 
-> **Deaktivieren ist der Weg, ein Abzeichen aus dem Verkehr zu ziehen, ohne
+> **Deaktivieren ist der Weg, ein Badge aus dem Verkehr zu ziehen, ohne
 > jemandem etwas wegzunehmen.** Wer es schon hat, behält es und sieht es
 > weiterhin in seiner Liste. Für alle anderen ist es weg — es taucht nicht
 > mehr als erreichbares Ziel auf und wird nicht mehr vergeben. Löschen dagegen

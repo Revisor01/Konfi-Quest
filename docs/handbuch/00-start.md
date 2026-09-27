@@ -4,11 +4,12 @@ untertitel: Wie Konfi Quest funktioniert
 farbe: "#667eea"
 ---
 
-Konfi Quest begleitet die Konfizeit in einer App: [Termine](70-termine.md),
-[Punkte](40-punkte.md), [Abzeichen](60-badges.md),
+Konfi Quest begleitet die Konfizeit in einer App: [Events](70-termine.md),
+[Punkte](40-punkte.md), [Badges](60-badges.md),
 [Challenges](80-challenges.md), ein [Chat](90-chat.md) und am Ende ein
 [Jahresrückblick](95-wrapped.md). Dieses Kapitel gibt den Überblick — alles
-Weitere steht in den Kapiteln, auf die es verweist.
+Weitere steht in den Kapiteln, auf die es verweist. Welches Wort wofür steht,
+erklärt [Die Begriffe der App kennen](03-bedienung.md#die-begriffe-der-app-kennen).
 
 ## Die eigene Rolle finden
 
@@ -16,9 +17,9 @@ Es gibt vier Rollen, und jede bekommt beim Anmelden ihre eigene Ansicht:
 
 | Rolle | Worum es geht | Kapitel |
 |---|---|---|
-| **Konfi** | Aktivitäten melden, Termine buchen, bei Challenges mitmachen, Punkte und Abzeichen sammeln | [Für Konfis](10-konfis.md) |
-| **Teamer:in** | die zugewiesenen Jahrgänge begleiten, zu Terminen zusagen, Challenges begleiten, Material und Zertifikate ansehen | [Für Teamer:innen](20-teamer.md) |
-| **Admin** | der laufende Betrieb: Konfis, Termine, Punkte, Abzeichen, Aktivitäten, Challenges und Material | [Für die Leitung](30-leitung.md) |
+| **Konfi** | Aktivitäten melden, Events buchen, bei Challenges mitmachen, Punkte und Badges sammeln | [Für Konfis](10-konfis.md) |
+| **Teamer:in** | die zugewiesenen Jahrgänge begleiten, zu Events zusagen, Challenges begleiten, Material und Zertifikate ansehen | [Für Teamer:innen](20-teamer.md) |
+| **Admin** | der laufende Betrieb: Konfis, Events, Punkte, Badges, Aktivitäten, Challenges und Material | [Für die Leitung](30-leitung.md) |
 | **Org-Admin** | dazu Benutzer:innen, Jahrgänge, Jahrgangs-Zuweisungen und die Einstellungen der Gemeinde | [Für die Leitung](30-leitung.md) |
 
 Wer genau was darf und wie die Jahrgangs-Zuweisung das begrenzt, steht im
@@ -33,9 +34,9 @@ ein [Ziel](45-jahrgaenge.md#punkteziele-festlegen) fest oder schaltet eine Art
 
 Punkte entstehen [auf drei Wegen](40-punkte.md#wissen-auf-welchen-drei-wegen-punkte-entstehen):
 über eine gemeldete **Aktivität**, über die eingetragene **Anwesenheit** bei
-einem Termin und über **Bonuspunkte** von Hand. Aus dem Punktestand ergeben
+einem Event und über **Bonuspunkte** von Hand. Aus dem Punktestand ergeben
 sich [Level](40-punkte.md#level-anlegen-und-pflegen) und ein Teil der
-[Abzeichen](60-badges.md).
+[Badges](60-badges.md).
 
 ## Einordnen, dass Challenges nichts zählen
 
