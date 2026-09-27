@@ -48,6 +48,13 @@ export interface AdminUser {
    * nur Rolle und Jahrgaenge, nicht Name, E-Mail, Passwort oder Sperre.
    */
   mitgliedschaft?: 'stamm' | 'weitere';
+  /**
+   * In wie vielen ANDEREN Gemeinden die Person ausserdem Mitglied ist (nur die
+   * Zahl, keine Namen; GET /users). Bei 'stamm' und einem Wert ueber 0 loescht
+   * DELETE nicht das Konto, sondern entfernt die Person nur aus dieser
+   * Gemeinde -- ihr Konto zieht in eine der anderen um.
+   */
+  weitere_gemeinden?: number;
 }
 
 /**

@@ -280,6 +280,32 @@ Org-Admin — ein Admin kann ihn also nicht bearbeiten. Zugewiesen werden
 können nur Jahrgänge dieser Gemeinde; die Zuweisungen der anderen Gemeinden
 bleiben unberührt und werden hier auch nicht angezeigt.
 
+### Jemanden entfernen, der auch in anderen Gemeinden mitarbeitet
+
+Ist eine Person in deiner Gemeinde zuhause und arbeitet zugleich in einer
+anderen Gemeinde mit, entfernst du sie wie jede andere: unter **Mehr ›
+Benutzer:innen** in der Liste wegwischen. Die App fragt vorher nach —
+**„Aus der Gemeinde entfernen"** — und sagt dazu, dass die Person auch in einer
+anderen Gemeinde Mitglied ist. Welche Gemeinde das ist, zeigt sie nicht.
+
+Danach gehört die Person nicht mehr zu deiner Gemeinde: Ihre Jahrgänge bei dir
+und ihre Plätze in allen Chats deiner Gemeinde — Team, Jahrgänge, Gruppen und
+Zweiergespräche — sind weg. **Ihr Konto bleibt**, mit Benutzername und
+Passwort. Zuhause ist sie ab jetzt in der anderen Gemeinde, mit der Rolle, die
+sie dort hat; arbeitet sie in mehreren mit, in der, der sie am längsten
+angehört. Eine gesperrte Gemeinde kommt dafür nur in Frage, wenn es keine
+andere gibt. Was sie bei dir angelegt oder geschrieben hat — Termine,
+Material, Nachrichten, vergebene Punkte —, bleibt mit ihrem Namen stehen.
+
+Gehört die Person nur deiner Gemeinde an, fragt die App **„Benutzer löschen"**
+— dann wird ihr Konto gelöscht. Wer als Letzte:r in deiner Gemeinde Org-Admin
+ist, lässt sich auf keinem der beiden Wege entfernen.
+
+Dasselbe geschieht, wenn du eine Teamer:in in der
+[Konfi-Liste](30-leitung.md#konfis-und-teamer-innen-verwalten) unter **Team**
+löschst. Dort nennt die Abfrage beide Möglichkeiten; die Meldung danach sagt,
+ob das Konto gelöscht wurde oder in der anderen Gemeinde bleibt.
+
 ### Den Jahresrückblick fürs Team erstellen
 
 Der Team-Rückblick wird je Gemeinde erstellt und erfasst alle, die **in

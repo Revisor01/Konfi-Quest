@@ -1202,7 +1202,7 @@ paths:
       tags: ["Benutzer & Rollen"]
       summary: Alle Verwaltungs-User der eigenen Org (ohne Konfis/super_admin), mit can_edit-Flag aus der Hierarchie
       responses:
-        "200": { description: "User-Array (Rolle und Jahrgangs-Zaehler DIESER Gemeinde, can_edit, mitgliedschaft 'stamm'|'weitere' -- additiv seit 26.09.2026)" }
+        "200": { description: "User-Array (Rolle und Jahrgangs-Zaehler DIESER Gemeinde, can_edit, mitgliedschaft 'stamm'|'weitere' -- additiv seit 26.09.2026; weitere_gemeinden (integer): in wie vielen ANDEREN Gemeinden die Person ausserdem Mitglied ist, bei 'weitere' mindestens 1, nur die Zahl, keine Namen -- additiv seit 27.09.2026, der Loesch-Dialog erkennt daran, dass DELETE das Konto nicht loescht)" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
         rollen: [org_admin, admin]
@@ -1314,8 +1314,31 @@ paths:
           Jahrgangs-Routen."
     delete:
       tags: ["Benutzer & Rollen"]
-      summary: User löschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)
+      summary: User aus der Gemeinde entfernen -- Hard-Delete nur, wenn die Person keiner anderen Gemeinde angehört
       description: >
+        Drei Fälle (seit 27.09.2026), die Antwort trägt additiv
+        `konto_bleibt` (boolean):
+        (1) Die Person ist in einer anderen Gemeinde zuhause und arbeitet hier
+        über user_organizations mit: nur diese Mitgliedschaft endet,
+        `{ message: 'Mitgliedschaft in dieser Gemeinde beendet', konto_bleibt: true }`.
+        (2) Die Person ist hier zuhause UND hat eine Zeile in
+        user_organizations für eine andere Gemeinde: Das Konto zieht um,
+        `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`.
+        Neue Stamm-Gemeinde ist bevorzugt eine aktive, darunter die älteste
+        Mitgliedschaft (created_at, bei Gleichstand die Zeilen-ID);
+        users.organization_id und users.role_id übernehmen Gemeinde und Rolle
+        dieser Mitgliedschaft, ihre Zeile und eine etwaige Zeile für diese
+        Gemeinde verschwinden. Mit ihr gehen die Jahrgangs-Zuweisungen dieser
+        Gemeinde und die Plätze in ALLEN Chat-Räumen dieser Gemeinde (Team,
+        Jahrgänge, Gruppen, Zweiergespräche); was die Person hier angelegt
+        hat, bleibt unverändert und wird nicht anonymisiert. Rechte-Cache
+        geleert, Sockets getrennt; token_invalidated_at bleibt unberührt, weil
+        rbac.js und die Socket-Anmeldung Gemeinde und Rolle je Anfrage aus der
+        Datenbank lesen. Keine Namen fremder Gemeinden in der Antwort.
+        (3) Die Person gehört nur dieser Gemeinde an: Hard-Delete wie folgt,
+        `{ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false }`.
+
+        Hard-Delete (Fall 3):
         Anonymisiert die Urheberschaft (admin_id/created_by/approved_by ->
         NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by,
         levels.created_by und user_jahrgang_assignments.assigned_by — vorher
@@ -1329,16 +1352,20 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
-        "200": { description: "Geloescht; Rechte-Cache geleert (seit 26.09.2026, BF-10); Sockets getrennt; Nachweisfotos und Challenge-Dateien nach COMMIT entfernt" }
+        "200": { description: "{ message, konto_bleibt } -- Fall 1/2: Mitgliedschaft beendet bzw. Konto in eine andere Gemeinde umgezogen (konto_bleibt true, seit 27.09.2026); Fall 3: geloescht (konto_bleibt false). Rechte-Cache geleert (seit 26.09.2026, BF-10); Sockets getrennt; beim Loeschen Nachweisfotos und Challenge-Dateien nach COMMIT entfernt" }
         "400": { description: "Selbst-Loeschung verboten" }
         "403": { description: "Hierarchie verletzt" }
         "404": { $ref: "#/components/responses/NotFound" }
-        "409": { description: "Letzter org_admin der Org nicht loeschbar" }
+        "409": { description: "Letzter org_admin der Org nicht entfernbar (gilt fuer Loeschen und Umzug)" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('delete')", validateUserId]
         org-scope: true
-        objekt-pruefung: "Stamm-Mitglied: Konto loeschen (users.organization_id), Selbst-Loeschungs-Sperre, Letzter-org_admin-Schutz. Zusatzmitglied (user_organizations): NUR die Mitgliedschaft in dieser Gemeinde endet (user_organizations-Zeile, Jahrgaenge dieser Gemeinde, Team-/Jahrgangs-Chats), Antwort 200 'Mitgliedschaft in dieser Gemeinde beendet' -- seit 26.09.2026"
+        objekt-pruefung: "Stamm-Mitglied OHNE weitere Gemeinde: Konto loeschen (users.organization_id). Stamm-Mitglied MIT weiterer Gemeinde (user_organizations-Zeile einer anderen Org): Konto zieht dorthin um, hier endet die Zugehoerigkeit samt Jahrgaengen und allen Chat-Plaetzen -- seit 27.09.2026. Zusatzmitglied (user_organizations): NUR die Mitgliedschaft in dieser Gemeinde endet (user_organizations-Zeile, Jahrgaenge dieser Gemeinde, Team-/Jahrgangs-Chats), Antwort 200 'Mitgliedschaft in dieser Gemeinde beendet' -- seit 26.09.2026. In allen Faellen: Selbst-Loeschungs-Sperre, Hierarchie- und Super-Admin-Schutz (userHierarchyMiddleware); Letzter-org_admin-Schutz fuer Stamm-Mitglieder"
+        # BEHOBEN 27.09.2026 (Entscheidung Simon): Bis dahin loeschte DELETE
+        # eine hier beheimatete Person samt Konto, auch wenn sie in weiteren
+        # Gemeinden Mitglied war -- per CASCADE auf user_organizations verlor
+        # die andere Gemeinde sie ohne Warnung. Jetzt Fall 2 (Umzug).
         hinweis: >
           Geloescht wird die ganze Person nur durch die Gemeinde, an der das
           Konto haengt -- das darf keine andere. Fuer ein Zusatzmitglied
@@ -1346,6 +1373,11 @@ paths:
           das Ende der Mitgliedschaft, nicht des Kontos; vorher kam 404 und
           die Person liess sich aus der Gemeinde gar nicht entfernen. Der
           Letzter-org_admin-Schutz zaehlt weiterhin ueber users.organization_id.
+          Seit dem 27.09.2026 loescht auch die Gemeinde, an der das Konto
+          haengt, die ganze Person nur noch, wenn sie keiner anderen Gemeinde
+          angehoert -- sonst zieht das Konto dorthin um (Fall 2). Ob das so
+          kommt, sieht die Oberflaeche vorher an weitere_gemeinden in
+          GET /api/users.
 
   /api/users/{id}/jahrgaenge:
     get:

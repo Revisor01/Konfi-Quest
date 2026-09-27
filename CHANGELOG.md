@@ -607,6 +607,12 @@ Versionsüberschrift.
   Rolle hat. Ein neuer Challenge-Beitrag ergab dort 3 statt 2: die Freigabe und
   die Mitteilung dazu, die Mitteilung aber doppelt. Jetzt zählt jede Mitteilung
   einmal, bei der Gemeinde, aus der sie stammt.
+- Wer in der eigenen Gemeinde zuhause ist und zugleich in einer anderen
+  mitarbeitet, lässt sich aus der eigenen Gemeinde entfernen, ohne dass sein
+  Konto verschwindet: Es bleibt in der anderen Gemeinde bestehen, mit der Rolle
+  von dort. Bisher löschte das Wegwischen das ganze Konto, samt der
+  Mitgliedschaft in der anderen Gemeinde; die Sicherheitsabfrage sagt jetzt
+  vorher, was passiert.
 
 ### Sonstiges
 - Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.

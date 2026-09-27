@@ -82,10 +82,6 @@ describe('Bearbeiten-Dialog: in einer weiteren Gemeinde nur die Rolle', () => {
   });
 });
 
-describe('Loesch-Dialog: Mitgliedschaft beenden statt Konto loeschen', () => {
-  it('unterscheidet den Text nach dem Kennzeichen', () => {
-    const seite = lies('src/components/admin/pages/AdminUsersPage.tsx');
-    expect(seite).toContain("userToDelete.mitgliedschaft === 'weitere' ? 'Mitgliedschaft beenden' : 'Benutzer löschen'");
-    expect(seite).toContain('Das Konto und die Stamm-Gemeinde bleiben bestehen.');
-  });
-});
+// Der Loesch-Dialog ("Mitgliedschaft beenden" statt Kontoloeschung) wird seit
+// dem 27.09.2026 gerendert geprueft, mit allen drei Faellen:
+// benutzerEntfernenAbfrage.test.tsx.

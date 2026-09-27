@@ -27,7 +27,7 @@ import { AdminUser } from '../../../types/user';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 const AdminUsersPage: React.FC = () => {
-  const { setError, user, isOnline } = useApp();
+  const { setError, setSuccess, user, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-users');
   
   // Offline-Query: Users
@@ -70,25 +70,49 @@ const AdminUsersPage: React.FC = () => {
 
   const handleDeleteUser = async (userToDelete: AdminUser) => {
     if (offlineBlockiert(isOnline, setError)) return;
+    const person = `"${userToDelete.display_name}" (@${userToDelete.username})`;
+    // Die Sicherheitsabfrage sagt, was DELETE /users/:id wirklich tut -- drei
+    // Faelle wie im Backend:
+    //  - 'weitere': Die Person ist anderswo zuhause und arbeitet hier ueber eine
+    //    Gemeinde-Einladung mit. Es endet nur die Mitgliedschaft hier (Audit
+    //    26.09.2026, Leitung BF-01).
+    //  - 'stamm' mit weiteren Gemeinden: Sie ist hier zuhause, aber auch
+    //    anderswo Mitglied. Sie wird nur aus dieser Gemeinde entfernt, ihr
+    //    Konto bleibt in der anderen (Simon, 27.09.2026).
+    //  - sonst: Das Konto wird geloescht.
+    // In den ersten beiden Faellen bleibt das Konto -- der Knopf heisst dann
+    // "Entfernen", sonst klaenge es nach Kontoloeschung.
+    const weitere = userToDelete.mitgliedschaft === 'weitere';
+    const kontoBleibt = weitere || (userToDelete.weitere_gemeinden ?? 0) > 0;
+    const abfrage = weitere
+      ? {
+          header: 'Mitgliedschaft beenden',
+          message: `${person} aus dieser Gemeinde entfernen? Das Konto und die Stamm-Gemeinde bleiben bestehen.`
+        }
+      : kontoBleibt
+        ? {
+            header: 'Aus der Gemeinde entfernen',
+            message: `${person} ist auch in einer anderen Gemeinde Mitglied. Du entfernst die Person nur aus deiner Gemeinde; ihr Konto bleibt dort bestehen.`
+          }
+        : {
+            header: 'Benutzer löschen',
+            message: `Benutzer ${person} wirklich löschen?`
+          };
     presentAlert({
-      // Zusatzmitglied (Gemeinde-Einladung): Es endet nur die Mitgliedschaft
-      // in dieser Gemeinde, das Konto bleibt -- das muss der Dialog sagen,
-      // sonst klingt es nach Kontoloeschung (Audit 26.09.2026, Leitung BF-01).
-      header: userToDelete.mitgliedschaft === 'weitere' ? 'Mitgliedschaft beenden' : 'Benutzer löschen',
-      message: userToDelete.mitgliedschaft === 'weitere'
-        ? `"${userToDelete.display_name}" (@${userToDelete.username}) aus dieser Gemeinde entfernen? Das Konto und die Stamm-Gemeinde bleiben bestehen.`
-        : `Benutzer "${userToDelete.display_name}" (@${userToDelete.username}) wirklich löschen?`,
+      ...abfrage,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
-          text: 'Löschen',
+          text: kontoBleibt ? 'Entfernen' : 'Löschen',
           role: 'destructive',
           handler: async () => {
             try {
-              await api.delete(`/users/${userToDelete.id}`);
+              const res = await api.delete(`/users/${userToDelete.id}`);
+              // Die Meldung kommt vom Server -- er weiss, ob das Konto blieb.
+              if (res?.data?.message) setSuccess(res.data.message);
               await refreshUsers();
             } catch (err) {
-              setError(fehlerText(err, 'Fehler beim Löschen des Benutzers'));
+              setError(fehlerText(err, kontoBleibt ? 'Fehler beim Entfernen aus der Gemeinde' : 'Fehler beim Löschen des Benutzers'));
             }
           }
         }
