@@ -76,21 +76,13 @@ der bis zum Merge weiterläuft.
    Abschnitt 3 (`PG_POOL_MAX`, `PG_*`, `SHUTDOWN_DRAIN_MS`, `SMTP_*`,
    `extra_hosts`). Der alte Code liest `PG_POOL_MAX`, `PG_IDLE_TIMEOUT` und
    `PG_CONN_TIMEOUT` schon, die übrigen ignoriert er. Anwenden heißt beim alten
-   Workflow: Stack-Datei ändern — also mit Schritt 2 abstimmen. **`RUN_BACKGROUND_JOBS=false` bei `backend2` bleibt stehen** —
+   Workflow: Stack-Datei ändern — also mit Schritt 2 abstimmen.
+   **`TZ` nicht setzen** (siehe Kommentar in der Referenz): Produktion läuft
+   in UTC, das Umschalten verschöbe gelesene Zeitwerte; erst nach Klärung durch
+   die Entwicklung. **`RUN_BACKGROUND_JOBS=false` bei `backend2` bleibt stehen** —
    das kommt erst in Phase B weg.
 7. **Rückmeldung an Simon:** Sicherung (Größe, Zeit), Zählungen, Ergebnis des
    Abgleichs, offene Punkte. Danach entscheidet Simon über den Merge.
-
-**Stand 27.09.2026:** Die Schritte 1–4 sind erledigt, die Ergebnisse stehen in
-[01](01-vor-dem-deploy.md) und [02](02-portainer-stack.md) Abschnitt 1. Zu
-Schritt 2: Es gibt keine Stack-Variablen, alles steht direkt in der
-Stack-Datei. Deshalb auch nach dem Merge nichts auf Variablen umstellen, ohne
-vorher `ACTIVITY_PHOTO_ENCRYPTION_KEY` und `DOCS_PASSWORD` in die Referenz
-aufzunehmen. Die Schritte 5 und 6 warten auf ein Fenster von Simon. Beide
-ändern die Stack-Datei, und ein Stack-Update mit geänderter Backend-Umgebung
-erstellt `backend` und `backend2` gleichzeitig neu. Mit Schritt 6 kommt
-`SHUTDOWN_DRAIN_MS` hinzu, das der alte Code nicht kennt. `TZ` bleibt offen,
-bis geklärt ist, was die Zeile am Verhalten ändert.
 
 ## Phase B — Merge und Deploy (Simon gibt frei)
 
@@ -106,6 +98,9 @@ bis geklärt ist, was die Zeile am Verhalten ändert.
    messen).
 5. [03](03-nach-dem-deploy.md): Nachher-Messungen, eine echte Mail
    („Passwort vergessen" mit einem Testkonto), Absender.
+6. `backend-test` zieht beim Deploy nicht mit (der Deploy schreibt nur
+   `backend`, `backend2` und `frontend` um, CI BF-03). Damit die Test-API zum
+   neuen Stand passt: `test-backend.yml` einmal auf `main` laufen lassen.
 
 **Wenn der Deploy scheitert:** Der Workflow `notfall-deploy.yml` rollt einen
 früheren Image-Tag aus. Die Migrationen 160–168 sind additiv — der alte Code
