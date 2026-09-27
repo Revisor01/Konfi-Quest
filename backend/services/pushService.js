@@ -1307,7 +1307,7 @@ class PushService {
     try {
       if (!Array.isArray(empfaenger)) {
         console.error('sendNewActivityRequestToLeadership: Empfaengerliste fehlt, nichts gesendet');
-        return { success: false, message: 'Empfaengerliste fehlt' };
+        return { success: false, message: 'Empfängerliste fehlt' };
       }
       if (empfaenger.length === 0) {
         return { success: false, message: 'No admins found' };

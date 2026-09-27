@@ -94,6 +94,7 @@ table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
+hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 @media (max-width:860px) {
   /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
      zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
@@ -134,6 +135,17 @@ tbody tr:last-child td { border-bottom:none; }
 .nav-nr { flex:none; width:20px; font-size:.74rem; font-variant-numeric:tabular-nums; color:var(--text-leise); text-align:right; }
 .seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
 .seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
+
+/* Abschnitte des aktuellen Kapitels (27.09.2026): eingerueckt an einer
+   feinen Linie. Der gerade gelesene (aria-current="location", gesetzt vom
+   Skript am Seitenende) bekommt ein Stueck Linie in der Akzentfarbe. Die
+   Nummernspalte ist so breit wie "11.17", damit die Titel buendig stehen. */
+.seitenleiste ul.nav-abschnitte { margin:3px 0 7px 13px; border-left:1px solid var(--rand); gap:1px; }
+.seitenleiste ul.nav-abschnitte a { align-items:baseline; gap:7px; margin-left:-1px; padding:5px 9px 5px 10px; border-left:2px solid transparent; border-radius:0 7px 7px 0; font-size:.8rem; line-height:1.4; color:var(--text-leise); overflow-wrap:anywhere; }
+.seitenleiste ul.nav-abschnitte a:hover { color:var(--text); }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] { color:var(--text); background:var(--flaeche-2); border-left-color:var(--akzent); font-weight:600; }
+.nav-abschnitt-nr { flex:none; min-width:4.4ch; font-size:.72rem; font-variant-numeric:tabular-nums; }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] .nav-abschnitt-nr { color:var(--akzent); }
 
 .kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
 .kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
@@ -182,7 +194,7 @@ tbody tr:last-child td { border-bottom:none; }
       <div class="nav-inhalt">
         <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
         <p class="nav-titel">Inhalt</p>
-        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">8</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">10</span>Badges</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Events</a></li><li><a href="./challenges.html" aria-current="page" class="ist-hier"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">8</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">10</span>Badges</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Events</a></li><li><a href="./challenges.html" aria-current="page" class="ist-hier"><span class="nav-nr">12</span>Challenges</a><ul class="nav-abschnitte"><li><a href="#eine-challenge-anlegen"><span class="nav-abschnitt-nr">12.1</span>Eine Challenge anlegen</a></li><li><a href="#entscheiden-wer-welchen-beitrag-sieht"><span class="nav-abschnitt-nr">12.2</span>Entscheiden, wer welchen Beitrag sieht</a></li><li><a href="#beitraege-freigeben-ausblenden-loeschen"><span class="nav-abschnitt-nr">12.3</span>Beiträge freigeben, ausblenden, löschen</a></li><li><a href="#wissen-was-nach-dem-start-gesperrt-ist"><span class="nav-abschnitt-nr">12.4</span>Wissen, was nach dem Start gesperrt ist</a></li><li><a href="#den-stempel-vergeben"><span class="nav-abschnitt-nr">12.5</span>Den Stempel vergeben</a></li><li><a href="#die-beitraege-exportieren"><span class="nav-abschnitt-nr">12.6</span>Die Beiträge exportieren</a></li><li><a href="#nachvollziehen-wo-die-dateien-liegen"><span class="nav-abschnitt-nr">12.7</span>Nachvollziehen, wo die Dateien liegen</a></li><li><a href="#eine-challenge-loeschen"><span class="nav-abschnitt-nr">12.8</span>Eine Challenge löschen</a></li><li><a href="#wissen-was-konfis-koennen-und-was-nicht"><span class="nav-abschnitt-nr">12.9</span>Wissen, was Konfis können — und was nicht</a></li><li><a href="#neue-beitraege-und-offene-freigaben-erkennen"><span class="nav-abschnitt-nr">12.10</span>Neue Beiträge und offene Freigaben erkennen</a></li><li><a href="#nachsehen-wer-was-mitbekommt"><span class="nav-abschnitt-nr">12.11</span>Nachsehen, wer was mitbekommt</a></li></ul></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
         <div class="fuss">
           <p><a href="/docs/api/">API-Referenz</a></p>
           <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
@@ -201,6 +213,13 @@ tbody tr:last-child td { border-bottom:none; }
     var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
     setzen();
     if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+    /* Ein Tipp auf einen Eintrag schliesst das Menue (27.09.2026). Bei
+       Kapiteln tat das bisher nur die neue Seite; ein Abschnitt liegt auf
+       derselben Seite, und das offene Menue verdeckte ihn. Der Klick kommt
+       vor dem Sprung an -- der Browser rechnet schon mit der schmalen Leiste. */
+    klapp.addEventListener('click', function (ev) {
+      if (schmal.matches && ev.target.closest('.nav-inhalt a')) klapp.removeAttribute('open');
+    });
   })();
   </script>
   <main class="inhalt">
@@ -218,7 +237,7 @@ tbody tr:last-child td { border-bottom:none; }
       <script>document.querySelectorAll('.kapitel-inhalt.ist-lang').forEach(function(d){d.removeAttribute('open');});</script>
       <p>Eine Challenge ist eine Aufgabe mit einem Zeitfenster, auf die Konfis mit einem eigenen Beitrag antworten: ein Text, ein Foto, eine Sprachaufnahme, ein Video oder ein Musik-Link. Alles, was zurückkommt, sammelt sich an einer Stelle — und du entscheidest beim Anlegen, wer es zu sehen bekommt. Dieses Kapitel richtet sich an die Leitung und an <a href="./rollen.html#teamer-in">Teamer:innen</a>; was Konfis sehen, steht in <a href="./konfis.html#bei-einer-challenge-mitmachen">Für Konfis</a>.</p>
       <p>Challenges zählen <strong>nichts</strong>: keine <a href="./punkte.html">Punkte</a>, keine Rangliste, kein Beitrag zum <a href="./jahrgaenge.html#punkteziele-festlegen">Punkteziel des Jahrgangs</a>. Wer Teilnahme belegen will, braucht dafür eine <a href="./punkte.html#ueber-eine-aktivitaet">Aktivität</a> oder ein <a href="./termine.html">Event</a>. Was es stattdessen gibt, ist ein Stempel für alle, die mitgemacht haben.</p>
-      <p>---</p>
+      <hr>
       <h2 id="eine-challenge-anlegen"><span class="abschnitt-nr">12.1</span>Eine Challenge anlegen</h2>
       <p>Alles Nötige steht in einem Formular. Pflicht sind Titel (höchstens 200 Zeichen), Beschreibung, Stempel-Name (höchstens 100 Zeichen) und — sobald die Challenge kein Entwurf mehr ist — Start und Ende.</p>
       <p>In die <strong>Beschreibung</strong> gehört auch, was mit den Beiträgen passiert, besonders wenn du das Ergebnis weiterverwenden willst („Eure Sätze werden zu den Fürbitten im Gottesdienst am 12. Mai&quot;). Die App sagt nur, wer die Beiträge sehen kann, nicht, wozu sie gebraucht werden.</p>
@@ -248,7 +267,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Zu Foto, Audio und Video darf zusätzlich ein Text geschrieben werden — eine Bildunterschrift sozusagen.</p>
       <p><strong>Link nimmt keine beliebige Adresse.</strong> Erlaubt sind ausschließlich Links der vier genannten Musikdienste; alles andere wird mit „Hier gehen nur Musik-Links: Spotify, Apple Music, YouTube Music und Deezer. Bitte teile den Link direkt aus einer dieser Apps.&quot; abgewiesen. Der Server holt beim Einreichen einmalig Interpret, Titel und Album und speichert sie — beim Ansehen des Beitrags wird kein Musikdienst mehr kontaktiert.</p>
       <p>Beim Hochladen prüft das System nicht, wie eine Datei heißt oder was das Gerät behauptet, sondern liest die ersten Bytes. Ein umbenanntes PDF, das als <code>foto.jpg</code> hochgeladen wird, fliegt mit „Dateityp konnte nicht verifiziert werden&quot; raus. Ausnahme: Sprachaufnahmen liegen oft in Containern (m4a, mp4, mov), die technisch als Video gelten — solche Dateien werden bei „Audio&quot; akzeptiert.</p>
-      <p>---</p>
+      <hr>
       <h2 id="entscheiden-wer-welchen-beitrag-sieht"><span class="abschnitt-nr">12.2</span>Entscheiden, wer welchen Beitrag sieht</h2>
       <p>Das ist die wichtigste Entscheidung beim Anlegen, denn nach dem Start lässt sie sich nicht mehr ändern. Du wählst zwischen drei Sichtbarkeiten; bei „Selbst entscheiden&quot; wählt die einreichende Person danach noch einmal aus drei Stufen. Zusammen sind das fünf Fälle:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Sichtbarkeit der Challenge</th><th>Wahl beim Einreichen</th><th>Wer sieht den Beitrag</th></tr></thead><tbody><tr><td><strong>Öffentlich</strong></td><td>entfällt</td><td>nach Freigabe alle Konfis der Jahrgänge, mit Namen</td></tr><tr><td><strong>Selbst entscheiden</strong></td><td>„Öffentlich&quot; („mit deinem Namen&quot;)</td><td>nach Freigabe alle, mit Namen</td></tr><tr><td><strong>Selbst entscheiden</strong></td><td>„Anonym&quot; („ohne Namen&quot;)</td><td>nach Freigabe alle, ohne Namen</td></tr><tr><td><strong>Selbst entscheiden</strong></td><td>„Nur Leitung&quot; („nicht in der Galerie&quot;)</td><td>nur die Leitung und die Person selbst</td></tr><tr><td><strong>Nur Leitung</strong></td><td>entfällt</td><td>nur die Leitung und die Person selbst</td></tr></tbody></table></div>
@@ -259,7 +278,7 @@ tbody tr:last-child td { border-bottom:none; }
       <ul><li><strong>Ausgeblendet schlägt alles.</strong> Ein ausgeblendeter Beitrag erscheint nirgends, auch bei „Öffentlich&quot; nicht.</li><li><strong>In eurer Ansicht seht ihr immer alles</strong> — auch anonyme Beiträge mit Namen. Anonymität gilt gegenüber der Gruppe, nicht gegenüber euch. Nur so könnt ihr nachfragen, wenn ein Beitrag Sorgen macht.</li></ul>
       <p>„Anonym&quot; ist dabei ernst gemeint: Der Name verlässt den Server gar nicht erst. Die App blendet ihn nicht nur aus — die Anfrage der anderen Konfis bekommt an dieser Stelle schlicht nichts geliefert.</p>
       <blockquote><strong>Achtung:</strong> „Nur Leitung&quot; ist die stärkste Zusage, die jemand beim Einreichen geben kann. Solche Beiträge landen auch dann nicht im Export, wenn ihr sie freigebt. Wer sie im Gottesdienst verwenden will, muss die Person fragen.</blockquote>
-      <p>---</p>
+      <hr>
       <h2 id="beitraege-freigeben-ausblenden-loeschen"><span class="abschnitt-nr">12.3</span>Beiträge freigeben, ausblenden, löschen</h2>
       <p>Ist der Schalter „Beiträge erst nach Freigabe zeigen&quot; an (Voreinstellung), wartet jeder neue Beitrag auf euer Ja. Ist er aus, ist jeder Beitrag sofort freigegeben.</p>
       <p>Jeder Beitrag hat genau einen von drei Zuständen:</p>
@@ -275,7 +294,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Zwei Beiträge lassen sich nicht anonym stellen:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Fall</th><th>Meldung</th></tr></thead><tbody><tr><td>Die Person hat selbst „Nur Leitung&quot; gewählt</td><td>„Dieser Beitrag ist nur für die Leitung freigegeben. Diese Zusage lässt sich nicht ändern.&quot;</td></tr><tr><td>Der Beitrag ist schon anonym</td><td>„Dieser Beitrag ist bereits anonym. Anonymität lässt sich nicht zurücknehmen.&quot;</td></tr></tbody></table></div>
       <p>Der erste Fall ist wichtig: „Nur Leitung&quot; ist eine stärkere Zusage als „anonym&quot;. Sie zu „anonym&quot; zu machen, würde den Beitrag in die Galerie holen — das wäre eine Verschlechterung, keine Verbesserung.</p>
-      <p>---</p>
+      <hr>
       <h2 id="wissen-was-nach-dem-start-gesperrt-ist"><span class="abschnitt-nr">12.4</span>Wissen, was nach dem Start gesperrt ist</h2>
       <p>Sobald eine Challenge kein Entwurf mehr ist <strong>und</strong> der Startzeitpunkt erreicht wurde, sind die Bedingungen eingefroren, unter denen eingereicht wurde.</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Feld</th><th>Nach dem Start</th></tr></thead><tbody><tr><td>Wer mitmacht</td><td><strong>gesperrt</strong></td></tr><tr><td>Sichtbarkeit</td><td><strong>gesperrt</strong></td></tr><tr><td>Beiträge erst nach Freigabe zeigen</td><td><strong>gesperrt</strong></td></tr><tr><td>Erlaubte Medienarten</td><td><strong>gesperrt</strong></td></tr><tr><td>Startzeitpunkt</td><td><strong>gesperrt</strong></td></tr><tr><td>Mehrere Beiträge erlauben</td><td><strong>wirkungslos</strong></td></tr><tr><td>Jahrgänge</td><td><strong>wirkungslos</strong></td></tr><tr><td>Titel, Beschreibung, Ende, Gestellt von</td><td>änderbar</td></tr><tr><td>Name und Symbol des Stempels</td><td>änderbar</td></tr></tbody></table></div>
@@ -283,7 +302,7 @@ tbody tr:last-child td { border-bottom:none; }
       <blockquote><strong>Achtung, Stolperstein:</strong> Jahrgangs-Auswahl und der Schalter „Mehrere Beiträge erlauben&quot; bleiben im Formular anklickbar, haben nach dem Start aber keine Wirkung mehr. Du kannst Haken setzen und speichern, und danach steht wieder das Alte da — eine Fehlermeldung gibt es nicht.</blockquote>
       <p>Prüfe Sichtbarkeit und Teilnahme-Kreis deshalb, <strong>bevor</strong> du eine Challenge startest. Danach hilft nur noch, sie zu löschen und neu anzulegen — und dabei gehen alle Beiträge verloren.</p>
       <p>Speicherst du bei einer bereits gestarteten Challenge, wird der Entwurfs-Haken automatisch entfernt. Eine laufende Challenge lässt sich nicht nachträglich zum Entwurf machen.</p>
-      <p>---</p>
+      <hr>
       <h2 id="den-stempel-vergeben"><span class="abschnitt-nr">12.5</span>Den Stempel vergeben</h2>
       <p>Jede Challenge trägt einen eigenen Stempel: ein Name (Pflicht, höchstens 100 Zeichen) und ein Symbol aus einer Auswahl, voreingestellt die Flagge. Er ist etwas anderes als ein <a href="./badges.html">Badge</a>: Ein Badge sammelt man, ein Stempel belegt, dass man dabei war.</p>
       <div class="tabelle-huelle"><table><thead><tr><th></th><th>Badge</th><th>Stempel</th></tr></thead><tbody><tr><td>Wofür</td><td>eine Bedingung erfüllen</td><td>einen Beitrag einreichen</td></tr><tr><td>Zählen</td><td>ja, Bedingungen mit Werten</td><td>nein, es gibt nichts zu zählen</td></tr><tr><td>Abstufungen</td><td>ja, verschiedene Badges</td><td>nein, für alle derselbe</td></tr><tr><td>Zu sehen</td><td>in der Badge-Liste</td><td>bei der Challenge, in der eigenen Sammlung und im Profil</td></tr></tbody></table></div>
@@ -294,7 +313,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Neben den erhaltenen stehen dort auch die <strong>noch nicht erhaltenen</strong> — grau, mit Name und Symbol. Grau erscheint alles, was es je zu holen gab: laufende Challenges ebenso wie abgelaufene. So ist zu sehen, was noch möglich ist und was nicht mehr.</p>
       <p>Ein Tipp auf einen Stempel öffnet ein kleines Fenster mit Stempelname, zugehöriger Challenge und ihrer Beschreibung. Bei einem erhaltenen Stempel steht dort das Datum, an dem er verliehen wurde; bei einem grauen, ob die Challenge noch läuft oder vorbei ist.</p>
       <blockquote><strong>Achtung:</strong> Änderst du Name oder Symbol nachträglich, ändert sich das auch für alle, die den Stempel schon haben — er hängt an der Challenge, nicht an der Person. Entziehen lässt er sich nicht.</blockquote>
-      <p>---</p>
+      <hr>
       <h2 id="die-beitraege-exportieren"><span class="abschnitt-nr">12.6</span>Die Beiträge exportieren</h2>
       <p>In der Leitungs-Ansicht einer Challenge gibt es oben ein Export-Symbol. Es lädt eine einfache Textdatei herunter — daraus lässt sich eine Liturgie, ein Liedzettel, eine Playlist oder eine Wand bauen. Darin stehen Titel, Urheber-Zeile, Beschreibung, die Anzahl der Beiträge und dann Beitrag für Beitrag ein Kopf aus Name und Datum, gefolgt vom Text beziehungsweise bei Musik-Links von Interpret, Titel, Album und der Adresse.</p>
       <p>Was in den Export kommt:</p>
@@ -302,22 +321,22 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Fotos, Audio und Video sind <strong>nicht</strong> im Export — hat ein Beitrag weder Text noch Link, bleibt unter dem Kopf nur eine leere Zeile. Die Dateien holst du dir einzeln aus der App.</p>
       <p>Gibt es nichts zu exportieren, meldet die App „Es gibt noch keine Texte oder Links zum Exportieren.&quot;</p>
       <blockquote><strong>Achtung:</strong> Der Export ist mit Absicht strenger als eure eigene Ansicht. Was ihr exportiert, verlässt in aller Regel den Leitungskreis — ein Liturgieblatt liegt in der Kirchenbank. Die eine Ausnahme ist die Challenge „Nur Leitung&quot;: Dort ist der Export genau der Rückkanal, der in der Beschreibung angekündigt war. Sag das den Konfis dort auch.</blockquote>
-      <p>---</p>
+      <hr>
       <h2 id="nachvollziehen-wo-die-dateien-liegen"><span class="abschnitt-nr">12.7</span>Nachvollziehen, wo die Dateien liegen</h2>
       <p>Alle hochgeladenen Dateien liegen verschlüsselt auf dem Server und tragen zufällige Namen ohne Bezug zum Inhalt. Sie lassen sich nur über die App abrufen, nie über eine offene Adresse, und nur von Personen, die den Beitrag ohnehin sehen dürfen:</p>
       <ul><li>die Person, die ihn eingereicht hat — immer</li><li>der Org-Admin — für alles in seiner Organisation</li><li>Admins und Teamer:innen — für ihre zugewiesenen Jahrgänge, bei Challenges nur fürs Team für alles im Team</li><li>Konfis — nur für Beiträge, die in ihrer Galerie erscheinen dürfen</li></ul>
-      <p>---</p>
+      <hr>
       <h2 id="eine-challenge-loeschen"><span class="abschnitt-nr">12.8</span>Eine Challenge löschen</h2>
       <p>Entwürfe und noch nicht gestartete Challenges lassen sich direkt löschen. Bei laufenden und beendeten verlangt die App eine ausdrückliche Bestätigung und warnt vorher: „Diese Challenge läuft bereits oder ist beendet. Beim Löschen gehen alle Beiträge der Konfis verloren — bitte ausdrücklich bestätigen.&quot;</p>
       <p>Beim Löschen verschwindet alles: die Challenge, sämtliche Beiträge, sämtliche Dateien vom Server — und damit auch der Stempel bei allen, die ihn hatten. Das lässt sich nicht rückgängig machen, einen Papierkorb gibt es nicht.</p>
       <blockquote><strong>Achtung:</strong> Willst du eine Challenge nur aus dem Weg räumen, ohne jemandem etwas wegzunehmen, lass sie einfach auslaufen. Beendete Challenges wandern von selbst ins Archiv und stören dort niemanden.</blockquote>
-      <p>---</p>
+      <hr>
       <h2 id="wissen-was-konfis-koennen-und-was-nicht"><span class="abschnitt-nr">12.9</span>Wissen, was Konfis können — und was nicht</h2>
       <p>Konfis können laufende Challenges ihrer Jahrgänge sehen und einreichen, ihre eigenen Beiträge samt Zustand jederzeit ansehen, die Galerie ansehen, soweit die Sichtbarkeit es zulässt, beendete Challenges im Archiv nachlesen und ihre Stempel sammeln.</p>
       <p>Sie können einen eingereichten Beitrag <strong>nicht</strong> selbst zurückziehen, löschen, bearbeiten oder die Sichtbarkeits-Wahl nachträglich ändern. Entwürfe, geplante und Team-Challenges sehen sie nicht.</p>
       <p>Der Versuch, einen Beitrag zurückzuziehen, bringt: „Eingereichte Beiträge lassen sich nicht mehr zurückziehen. Wende dich an deine Leitung, falls ein Beitrag entfernt werden soll.&quot;</p>
       <blockquote><strong>Achtung:</strong> Damit landet diese Bitte bei euch. Rechnet damit, dass jemand nach einem Gruppenabend fragt, ob sein Beitrag wieder weg kann — „Ausblenden&quot; ist dann die richtige Antwort, nicht „geht nicht&quot;.</blockquote>
-      <p>---</p>
+      <hr>
       <h2 id="neue-beitraege-und-offene-freigaben-erkennen"><span class="abschnitt-nr">12.10</span>Neue Beiträge und offene Freigaben erkennen</h2>
       <p>An einer Challenge stehen zwei verschiedene Zahlen, wie im Chat:</p>
       <ul><li><strong>Die rote Zahl am Symbol</strong> zeigt, wie viele Beiträge seit deinem letzten Öffnen der Challenge dazugekommen sind — auch bei Challenges ohne Freigabe, bei denen ein Beitrag sofort in der Galerie steht. So siehst du, was passiert, und kannst einen Beitrag bei Bedarf ausblenden oder löschen. Öffnest du die Challenge, verschwindet die Zahl; was danach kommt, zählt neu. Eigene Beiträge zählen nicht mit.</li><li><strong>Das orange Feld mit Zahl und Uhr</strong> oben rechts zeigt, wie viele Beiträge auf eure Freigabe warten — orange, weil Freigaben warten können. Es bleibt stehen, bis ihr freigebt oder ausblendet; Öffnen allein ändert daran nichts.</li></ul>
@@ -340,5 +359,48 @@ tbody tr:last-child td { border-bottom:none; }
     </nav>
   </main>
 </div>
+<script>
+(function () {
+  var leiste = document.querySelector('.seitenleiste');
+  var liste = leiste.querySelector('.nav-abschnitte');
+  if (leiste.scrollHeight > leiste.clientHeight) {
+    var k = leiste.getBoundingClientRect();
+    var fehlt = liste.getBoundingClientRect().bottom - k.bottom + 16;
+    var bisKapitel = leiste.querySelector('.ist-hier').getBoundingClientRect().top - k.top - 48;
+    if (fehlt > 0) leiste.scrollTop += Math.min(fehlt, bisKapitel);
+  }
+  if (!('IntersectionObserver' in window)) return;
+  var ende = document.querySelector('.blaettern');
+  var ziele = [];
+  liste.querySelectorAll('a').forEach(function (a) {
+    var h = document.getElementById(a.hash.slice(1));
+    if (h) ziele.push({ a: a, h: h });
+  });
+  var markieren = function () {
+    var hoehe = window.innerHeight;
+    var amEnde = !!ende && ende.getBoundingClientRect().bottom <= hoehe;
+    var linie = amEnde ? hoehe : hoehe * 0.35;
+    var aktiv = null, angesprungen = null;
+    ziele.forEach(function (z) {
+      var oben = z.h.getBoundingClientRect().top;
+      if (oben < linie) aktiv = z;
+      if (z.a.hash === location.hash && oben >= 0 && oben < hoehe) angesprungen = z;
+    });
+    if (amEnde && angesprungen) aktiv = angesprungen;
+    ziele.forEach(function (z) {
+      if (z === aktiv) z.a.setAttribute('aria-current', 'location');
+      else z.a.removeAttribute('aria-current');
+    });
+    if (aktiv && leiste.scrollHeight > leiste.clientHeight) {
+      var r = aktiv.a.getBoundingClientRect(), l = leiste.getBoundingClientRect();
+      if (r.top < l.top || r.bottom > l.bottom) leiste.scrollTop += r.top - l.top - l.height / 3;
+    }
+  };
+  var beobachter = new IntersectionObserver(markieren, { rootMargin: '0px 0px -65% 0px' });
+  ziele.forEach(function (z) { beobachter.observe(z.h); });
+  if (ende) new IntersectionObserver(markieren, { threshold: 1 }).observe(ende);
+  window.addEventListener('hashchange', markieren);
+})();
+</script>
 </body>
 </html>
