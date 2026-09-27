@@ -87,14 +87,40 @@ describe('Standard-Zertifikatstypen beim Start', () => {
     // Zwei bereits offene Verbindungen, damit beide SELECTs wirklich vor dem
     // ersten INSERT laufen (ueber den Pool muesste die zweite Abfrage erst
     // eine Verbindung aufbauen und saehe die Zeilen der ersten schon).
+    //
+    // SCHRANKE (27.09.2026): Die offenen Verbindungen allein erzwangen die
+    // Reihenfolge nicht. Unter Last (voller Lauf, 1 von 3 Einzellaeufen) war
+    // A mit SELECT und INSERT fertig, bevor B las -- B sah dann 0 oder 1
+    // Organisationen ohne Typen, und die Erwartung "beide sahen 2" fiel,
+    // obwohl der Code richtig war. Jetzt wartet jede Seite nach ihrer ersten
+    // Abfrage (dem SELECT), bis auch die andere gelesen hat. Damit laeuft
+    // genau das Rennen, das dieser Test pruefen soll, in jedem Lauf.
     const clientA = await db.getClient();
     const clientB = await db.getClient();
+    let gelesen = 0;
+    let freigeben;
+    const beideHabenGelesen = new Promise((r) => { freigeben = r; });
+    const mitSchranke = (client) => {
+      let ersteAbfrage = true;
+      return {
+        query: async (t, p) => {
+          const ergebnis = await client.query(t, p);
+          if (ersteAbfrage) {
+            ersteAbfrage = false;
+            gelesen += 1;
+            if (gelesen === 2) freigeben();
+            await beideHabenGelesen;
+          }
+          return ergebnis;
+        },
+      };
+    };
     let a;
     let b;
     try {
       [a, b] = await Promise.all([
-        seedeStandardZertifikatstypen({ query: (t, p) => clientA.query(t, p) }),
-        seedeStandardZertifikatstypen({ query: (t, p) => clientB.query(t, p) }),
+        seedeStandardZertifikatstypen(mitSchranke(clientA)),
+        seedeStandardZertifikatstypen(mitSchranke(clientB)),
       ]);
     } finally {
       clientA.release();
