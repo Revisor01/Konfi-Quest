@@ -5,7 +5,7 @@ import { networkMonitor } from './networkMonitor';
 // Kein Zirkelbezug: biometrics.ts importiert nur tokenStore/Preferences, nie api.
 import { rotationUebernehmen } from './biometrics';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://konfi-quest.de/api';
+import { API_BASE_URL } from './apiBasis';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

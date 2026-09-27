@@ -448,6 +448,15 @@ Tippst du trotzdem, sagt es die App sinngemäß so: *„Das geht nur mit
 Internetverbindung. Bitte versuche es später noch einmal."* Bei Knöpfen in
 Formularen steht statt des Hakens ein Wolken-Symbol mit **„Du bist offline"**.
 
+### Verstehen, wann die App „ohne Netz" ist
+
+Meldet das Handy keine Verbindung — Flugmodus, kein Empfang, Funkloch —, fragt
+die App kurz beim Server nach. Antwortet er nicht, gilt sie als offline und
+sammelt, was sie später schicken kann. Sie fragt alle 15 Sekunden erneut und
+schickt los, sobald der Server wieder antwortet oder das Handy wieder eine
+Verbindung meldet. Antwortet der Server trotz der Meldung, bleibt die App
+online — manche Geräte melden „keine Verbindung", obwohl Netz da ist.
+
 ### Erkennen, was du ohne Netz noch siehst
 
 Alles, was du zuletzt geöffnet hattest — Events, Chats, Challenges, Material,

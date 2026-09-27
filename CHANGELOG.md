@@ -376,6 +376,10 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Im Funkloch oder ohne Empfang merkt die App jetzt, dass sie offline ist:
+  Nachrichten, Abmeldungen und gemeldete Aktivitäten warten und gehen raus,
+  sobald wieder Netz da ist. Bisher galt sie dort als online, schickte ins
+  Leere und gab nach drei Versuchen auf.
 - Eine gesperrte Gemeinde bekommt nichts mehr von allein — keine Erinnerungen
   vor Events, kein „Neues Event!" zum Anmeldestart, keinen Challenge-Start,
   kein „Events warten auf Verbuchung", keine Warnung vor dem Löschen eines
