@@ -451,7 +451,9 @@ Versionsüberschrift.
   dort mit dem Vermerk „zuhause in einer anderen Gemeinde"; die Leitung vergibt
   Rolle und Jahrgänge, während Name, E-Mail, Passwort und Sperre bei der
   Stamm-Gemeinde bleiben. Wegwischen beendet nur die Mitgliedschaft in dieser
-  Gemeinde, das Konto bleibt.
+  Gemeinde, das Konto bleibt. Aus allen Chats dieser Gemeinde ist die Person
+  danach heraus, auch aus Gruppen und Einzelchats, und bekommt von dort keine
+  Mitteilungen mehr.
 - Die Erinnerung „Morgen: …" zu einem Termin kam kurz nach Mitternacht aufs
   Handy — für einen Termin um 18:00 Uhr also 34 Stunden vorher. Sie kommt jetzt
   genau 24 Stunden vor Beginn, so wie die Erinnerung „Gleich: …" eine Stunde

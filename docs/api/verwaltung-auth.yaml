@@ -1321,6 +1321,11 @@ paths:
         (1) Die Person ist in einer anderen Gemeinde zuhause und arbeitet hier
         über user_organizations mit: nur diese Mitgliedschaft endet,
         `{ message: 'Mitgliedschaft in dieser Gemeinde beendet', konto_bleibt: true }`.
+        BEHOBEN 27.09.2026: Mit der Mitgliedschaft gehen die Plaetze in ALLEN
+        Chat-Raeumen dieser Gemeinde (vorher nur, was syncTeamChat und
+        syncJahrgangChat fuer zugewiesene Jahrgaenge erfassten -- Gruppen,
+        Zweierraeume und Jahrgangs-Chats ohne Zuweisung blieben, samt Push
+        zu jeder Nachricht). Antwortform unveraendert.
         (2) Die Person ist hier zuhause UND hat eine Zeile in
         user_organizations für eine andere Gemeinde: Das Konto zieht um,
         `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`.
@@ -1361,7 +1366,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('delete')", validateUserId]
         org-scope: true
-        objekt-pruefung: "Stamm-Mitglied OHNE weitere Gemeinde: Konto loeschen (users.organization_id). Stamm-Mitglied MIT weiterer Gemeinde (user_organizations-Zeile einer anderen Org): Konto zieht dorthin um, hier endet die Zugehoerigkeit samt Jahrgaengen und allen Chat-Plaetzen -- seit 27.09.2026. Zusatzmitglied (user_organizations): NUR die Mitgliedschaft in dieser Gemeinde endet (user_organizations-Zeile, Jahrgaenge dieser Gemeinde, Team-/Jahrgangs-Chats), Antwort 200 'Mitgliedschaft in dieser Gemeinde beendet' -- seit 26.09.2026. In allen Faellen: Selbst-Loeschungs-Sperre, Hierarchie- und Super-Admin-Schutz (userHierarchyMiddleware); Letzter-org_admin-Schutz fuer Stamm-Mitglieder"
+        objekt-pruefung: "Stamm-Mitglied OHNE weitere Gemeinde: Konto loeschen (users.organization_id). Stamm-Mitglied MIT weiterer Gemeinde (user_organizations-Zeile einer anderen Org): Konto zieht dorthin um, hier endet die Zugehoerigkeit samt Jahrgaengen und allen Chat-Plaetzen -- seit 27.09.2026. Zusatzmitglied (user_organizations): NUR die Mitgliedschaft in dieser Gemeinde endet (user_organizations-Zeile, Jahrgaenge dieser Gemeinde, alle Chat-Plaetze dieser Gemeinde), Antwort 200 'Mitgliedschaft in dieser Gemeinde beendet' -- seit 26.09.2026. In allen Faellen: Selbst-Loeschungs-Sperre, Hierarchie- und Super-Admin-Schutz (userHierarchyMiddleware); Letzter-org_admin-Schutz fuer Stamm-Mitglieder"
         # BEHOBEN 27.09.2026 (Entscheidung Simon): Bis dahin loeschte DELETE
         # eine hier beheimatete Person samt Konto, auch wenn sie in weiteren
         # Gemeinden Mitglied war -- per CASCADE auf user_organizations verlor

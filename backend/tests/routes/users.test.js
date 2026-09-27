@@ -1568,6 +1568,38 @@ describe('Users Routes', () => {
       const org2 = await liste(orgAdmin2Token);
       expect(org2.find(u => u.id === USERS.teamer2.id)).toBeDefined();
     });
+
+    it('DELETE nimmt sie aus ALLEN Chat-Raeumen dieser Gemeinde -- die der Stamm-Gemeinde bleiben', async () => {
+      // Befund 27.09.2026 (gemessen): Die Syncs erfassten nur Team-Chat und
+      // Jahrgaenge mit Zuweisung. Eine Gruppe (Raum 3), ein Jahrgangs-Chat,
+      // in dem sie als Org-Admin oder ohne Zuweisung sass (Raum 1), und
+      // Zweierraeume blieben -- und chat.js pusht an alle Teilnehmenden
+      // eines Raums, also weiter jede Nachricht aus einer Gemeinde, in der
+      // sie nicht mehr Mitglied ist.
+      for (const raum of [1, 2, 3, 4]) {
+        await db.query(
+          "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'teamer')",
+          [raum, USERS.teamer2.id]
+        );
+      }
+
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT room_id FROM chat_participants WHERE user_id = $1 ORDER BY room_id',
+        [USERS.teamer2.id]
+      );
+      // Raum 4 ist der Jahrgangs-Chat ihrer Stamm-Gemeinde (Org 2).
+      expect(rows.map(r => r.room_id)).toEqual([4]);
+      // Die anderen Teilnehmenden der Raeume von Org 1 bleiben unberuehrt.
+      const { rows: [{ anzahl }] } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM chat_participants WHERE room_id IN (1, 2, 3)'
+      );
+      expect(anzahl).toBe(8);
+    });
   });
 
   // ================================================================

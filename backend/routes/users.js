@@ -657,7 +657,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     // mitarbeitet, ist in einer anderen Gemeinde zuhause. Die Leitung dieser
     // Gemeinde darf ihn aus IHRER Gemeinde entfernen -- Konto, Stamm-Gemeinde
     // und alles dort bleiben. Mit der Mitgliedschaft gehen die Jahrgaenge
-    // dieser Gemeinde und die Plaetze in Team- und Jahrgangs-Chats.
+    // dieser Gemeinde und die Plaetze in allen Chat-Raeumen dieser Gemeinde.
     try {
       const { rows: [konto] } = await db.query('SELECT organization_id FROM users WHERE id = $1', [id]);
       if (konto && Number(konto.organization_id) !== Number(organizationId)) {
@@ -681,6 +681,17 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
           }
+          // Die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde gehen mit, wie
+          // beim Umzug (kontoZiehtUm). Die Syncs unten erfassen nur Team-Chat
+          // und Jahrgaenge mit Zuweisung; Gruppen, Zweierraeume und
+          // Jahrgangs-Chats, in denen sie ohne Zuweisung sass, blieben -- und
+          // chat.js pusht an alle Teilnehmenden (gemessen 27.09.2026).
+          await client.query(
+            `DELETE FROM chat_participants cp
+              USING chat_rooms r
+              WHERE cp.room_id = r.id AND cp.user_id = $1 AND r.organization_id = $2`,
+            [id, organizationId]
+          );
           await client.query('COMMIT');
         } catch (err) {
           await client.query('ROLLBACK').catch(() => {});
