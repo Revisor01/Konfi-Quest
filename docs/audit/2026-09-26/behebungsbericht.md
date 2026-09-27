@@ -242,6 +242,41 @@ Simon: „Das kann ja ein System sein. Und wir haben ja einen Medien-Cache!"
   angesehen und abgerufen, Konfispruch gespeichert (`8fbefc85`) — ohne Namen, Titel oder
   Kennungen.
 
+### Die letzten HOCH-Befunde und der Weg zum Deploy (27.09., abends)
+
+Drei HOCH-Befunde standen nie auf der Release-Liste der Gesamtabnahme; Simon hat sie am 27.09.
+vor den Merge gezogen, dazu die Mindestversion (Feature E-05).
+
+- **Funkloch** gilt als offline: Meldet das Handy keine Verbindung, fragt die App den Server
+  (Probe an `/api/health`, 4 s); antwortet er, bleibt sie online (die Play-Prüfumgebung meldet
+  „keine Verbindung" bei funktionierendem Netz), sonst sammelt die Warteschlange und prüft alle
+  15 s neu (`1a379aba`; Grundgerüst BF-01).
+- **Abgelaufene Sitzung, anderes Konto am Gerät:** Gespeicherter Stand und Warteschlange gehören
+  zum Konto — eine andere Person sieht nichts, wartende Nachrichten gehen nicht unter falschem
+  Namen raus, dieselbe Person findet alles wieder (`c526cdfa`; Grundgerüst BF-04).
+- **Anmeldesperre je Konto**, Bibelvers-Passwörter bleiben (Simon: „der Witz ist einfach zu
+  gut"): nach 10 falschen Passwörtern in einer Stunde 429, über alle Replicas, auch für
+  unbekannte Namen gleich. Durchprobieren eines Kontos vorher 25,6 h je IP, jetzt im Mittel
+  64 Tage (ganzer Raum 128 Tage). Dabei gefunden und behoben: Die Anmeldeseite zeigte bei
+  jeder Ablehnung — auch falschem Passwort — „Keine Verbindung zum Server" (auch in 2.2.x)
+  (`1a047f86`, `fc2b7add`; Sicherheit BF-04).
+- **Mindestversion und Wartungshinweis** über `/api/app-version` (nur neue Felder, 2.2.x liest
+  sie nicht): unter der Mindestversion ein Sperrbildschirm mit Store-Knopf, nie im Browser, nie
+  ohne Netz; der Wartungstext auf allen Startseiten (`d7802549`; E-05).
+- **Deploy-Falle:** Alle drei Deploy-Wege schickten Portainer eine leere Liste der
+  Stack-Variablen; Portainer ersetzt sie damit. In Produktion folgenlos, weil die Werte direkt in
+  der Stack-Datei stehen — jetzt gehen vorhandene Variablen unverändert zurück (`b168c55f`
+  vor dem Merge von `main`). Referenz-Compose: Fotoschlüssel und Doku-Passwort als Pflicht,
+  `TZ` bewusst nicht gesetzt (`b677bba5`).
+- **Zeitzone gemessen:** Produktion rechnet in UTC (Node-Prozess und Datenbanksitzung), die Tests
+  gingen von Berlin aus. Die volle Suite wie Produktion (beides UTC) lief bis auf die zwei Tests,
+  die genau die Berlin-Annahme prüfen, grün (3.968 von 3.970); der Code rechnet seine
+  Kalendertage selbst in Berliner Zeit. Kommentare korrigiert, Lauf per
+  `TEST_DB_SITZUNGSZONE=UTC` wiederholbar.
+- **Betrieb Phase A** (lokaler Agent, vor dem Merge): Sicherung, Postgres auf 2 CPU / 3 GB mit
+  `pg_stat_statements`, Pool 50 und Zeitgrenzen; ein Stack-Update mit 22 s bis gesund, 1 von
+  240 Statusabfragen gescheitert. Ergebnisse in `docs/auftraege/lokaler-agent/`.
+
 ### Handbuch, Sprache und Barrierefreiheit (27.09.)
 
 - **Handbuch-Navigation** mit den Abschnitten des Kapitels als Unterpunkten (`f0074acd`,
@@ -285,6 +320,17 @@ Gemeinden (umgesetzt).
   Gemeinde eine andere Rolle hat, verpasst sein eigenes Nachlade-Signal (kein Fremdempfang, BF-15).
 - Mehr als zehn Material-Dateien auf einmal prüft die App nicht vorab; der Server nimmt höchstens
   zehn an.
+- **Zeitzone:** Produktion läuft in UTC. 24 Spalten speichern eine Uhrzeit ohne Zone (in UTC
+  geschrieben); vier SQL-Stellen rechnen mit `CURRENT_DATE` und nehmen zwischen 0 und 2 Uhr
+  Berliner Zeit den Vortag (Zertifikatsablauf, Team-Eventliste, „Teamer:in seit",
+  Löschfristen) — wie in 2.2.x. Saubere Lösung nach dem Release: die Spalten auf
+  `timestamptz` umstellen (Muster Migration 138); `TZ` bis dahin nicht setzen.
+- **Refresh-Tokens:** 1.232 offene auf 129 Konten (größte 189); kein Lauf entfernt abgelaufene
+  oder widerrufene. Aufräumen und eine Obergrenze je Konto nach dem Release.
+- **Anmeldesperre:** Die Test-API arbeitet auf derselben Datenbank; bis sie den neuen Stand fährt
+  (`test-backend.yml` nach dem Merge), gilt dort keine Sperre. Ein gezieltes Aussperren eines
+  bekannten Kontos bleibt möglich (10 Versuche je Stunde), begrenzt durch das Fenster und
+  sofort aufhebbar mit neuem Passwort.
 
 **Barrierefreiheit:** Dynamic Type auf iOS am Gerät bestätigen (UI BF-07 b, nach dem Code kein
 Befund); echtes VoiceOver/TalkBack wurde nicht geprüft.
