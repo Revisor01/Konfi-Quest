@@ -153,6 +153,11 @@ describe('Socket.IO-Adapter: Abbruch der LISTEN-Verbindung', () => {
 
   it('server.js gibt den Adapter-Pool nur ueber die Huelle an den Adapter', () => {
     const quelle = fs.readFileSync(path.join(__dirname, '..', '..', 'server.js'), 'utf8');
-    expect(quelle).toMatch(/createPgAdapter\(mitVerbindungsschutz\(socketAdapterPool\)/);
+    // Die Huelle steht in einer Konstante, weil gracefulShutdown sie vor
+    // socketAdapterPool.end() schliesst (socketAdapterSchliessen.test.js).
+    expect(quelle).toMatch(/const adapterVerbindung = mitVerbindungsschutz\(socketAdapterPool\);/);
+    expect(quelle).toMatch(/createPgAdapter\(adapterVerbindung,/);
+    expect(quelle).not.toMatch(/createPgAdapter\(socketAdapterPool/);
+    expect(quelle).toMatch(/adapterVerbindung\.schliessen\(\);\s*await socketAdapterPool\.end\(\);/);
   });
 });

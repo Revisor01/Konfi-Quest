@@ -36,21 +36,48 @@
 //
 // Kein eigener LISTEN-Client, keine Kopie des Adapters: Die Reconnect-Logik
 // bleibt im Adapter, hier steht nur, was ihm fehlt.
+//
+// DRITTES PROBLEM (CI, 27.09.2026): initClient() merkt sich den Client erst
+// nach LISTEN in `this.client`, close() gibt nur diesen zurueck. Faellt der
+// Stopp in die Luecke (Replica wird direkt nach dem Start gestoppt), bleibt
+// der Client fuer immer ausgeliehen, und socketAdapterPool.end() wartete bis
+// zum Notausstieg -- Exit 1 nach 10 s. Deshalb merkt sich die Huelle jeden
+// ausgeliehenen Client; schliessen() gibt alle zurueck, und danach bleibt
+// jede neue Verbindungsanfrage offen, statt einen Client zu belegen oder den
+// naechsten Reconnect-Versuch auszuloesen.
 
 /**
  * @param {import('pg').Pool} pool - der Adapter-Pool aus server.js
  * @param {object} [optionen]
  * @param {(...args: any[]) => void} [optionen.log] - Logger (Standard console.error)
- * @returns {{ connect: () => Promise<import('pg').PoolClient>, query: Function }}
+ * @returns {{ connect: () => Promise<import('pg').PoolClient>, query: Function, schliessen: () => void }}
  */
 function mitVerbindungsschutz(pool, { log = console.error } = {}) {
   let verbindungenBisher = 0;
+  let geschlossen = false;
+  const ausgeliehen = new Set();
+  const nieFertig = () => new Promise(() => {});
 
   return {
     query: (...args) => pool.query(...args),
 
+    // Beim Herunterfahren zwischen io.close() und pool.end() aufrufen.
+    schliessen() {
+      geschlossen = true;
+      for (const client of ausgeliehen) {
+        client.release(new Error('Socket.IO-Adapter wird geschlossen'));
+      }
+    },
+
     async connect() {
+      if (geschlossen) return nieFertig();
       const client = await pool.connect();
+      if (geschlossen) {
+        // Die Anfrage lief schon, als geschlossen wurde.
+        client.release(new Error('Socket.IO-Adapter wird geschlossen'));
+        return nieFertig();
+      }
+      ausgeliehen.add(client);
       verbindungenBisher++;
       if (verbindungenBisher > 1) {
         log('Socket.IO-Adapter: Verbindung zur Datenbank wieder aufgebaut.');
@@ -63,13 +90,15 @@ function mitVerbindungsschutz(pool, { log = console.error } = {}) {
       client.release = (err) => {
         if (zurueckgegeben) return;
         zurueckgegeben = true;
+        ausgeliehen.delete(client);
         releaseOriginal.call(client, err);
       };
 
       let gemeldet = false;
       client.on('error', (err) => {
         // Zwei 'error'-Ereignisse je Abbruch (siehe oben) -- einmal melden reicht.
-        if (gemeldet) return;
+        // Nach schliessen() ist das Ende gewollt, kein Abbruch.
+        if (gemeldet || geschlossen) return;
         gemeldet = true;
         log('Socket.IO-Adapter: LISTEN-Verbindung zur Datenbank verloren, verbinde neu:', err.message);
       });

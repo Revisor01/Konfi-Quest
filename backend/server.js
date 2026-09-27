@@ -98,7 +98,8 @@ socketAdapterPool.on('error', (err) => {
 // beendete JEDE Replica im selben Moment -- Totalausfall bis Docker neu
 // startete. Die Huelle loggt den Abbruch, laesst den Adapter neu verbinden und
 // gibt den toten Client an den Pool zurueck (utils/socketAdapterVerbindung.js).
-io.adapter(createPgAdapter(mitVerbindungsschutz(socketAdapterPool), {
+const adapterVerbindung = mitVerbindungsschutz(socketAdapterPool);
+io.adapter(createPgAdapter(adapterVerbindung, {
   errorHandler: (err) => console.error('Socket.IO-Postgres-Adapter Fehler:', err.message),
 }));
 
@@ -629,6 +630,10 @@ const gracefulShutdown = async (signal, exitCode = 0) => {
     console.error('Fehler beim Schliessen der Datenbankverbindung:', err.message);
   }
   try {
+    // Faellt der Stopp in den Verbindungsaufbau des Adapters, gibt io.close()
+    // dessen LISTEN-Client nicht zurueck und end() wartete bis zum
+    // Notausstieg (utils/socketAdapterVerbindung.js, drittes Problem).
+    adapterVerbindung.schliessen();
     await socketAdapterPool.end();
     console.warn('Socket.IO-Adapter-Pool geschlossen.');
   } catch (err) {

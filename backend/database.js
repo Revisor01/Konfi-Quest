@@ -84,6 +84,14 @@ const { fuehreMigrationenAus, ergebnisLetzterLauf } = require('./utils/migration
 pool.query('SELECT NOW()')
   .then(() => fuehreMigrationenAus(pool))
   .catch(err => {
+    // Der Pool wurde geschlossen, waehrend der Start noch lief: gracefulShutdown
+    // (server.js) nach einem SIGTERM direkt nach dem Start. Das ist kein
+    // Startfehler -- ein exit(1) hier kaeme dem geordneten Exit 0 zuvor
+    // (tests/utils/startAbbruchBeimHerunterfahren.test.js).
+    if (pool.ending) {
+      console.warn('Start abgebrochen: Der Server wird heruntergefahren.');
+      return;
+    }
     const grund = /Migrations-Lock/.test(err && err.message)
       ? 'Migrations-Lock nicht bekommen'
       : 'DB nicht erreichbar';
