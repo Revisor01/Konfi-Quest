@@ -44,7 +44,7 @@ vi.mock('../../contexts/AppContext', () => ({
   useApp: () => ({ user: { id: 7, type: 'konfi', organization_id: 1 }, activeOrgId: null, organizations: [], switchOrg: vi.fn() }),
 }));
 vi.mock('../../contexts/BadgeContext', () => ({
-  useBadge: () => ({ postfachUngelesen: 0, refreshAllCounts: vi.fn() }),
+  useBadge: () => ({ postfachUngelesen: 0, refreshAllCounts: vi.fn(), postfachGelesen: vi.fn() }),
 }));
 vi.mock('../../hooks/useWartendeVorgaenge', () => ({
   useWartendeVorgaenge: () => ({ wartend: [], gescheitert: [], vergessen: vi.fn(), alleVergessen: vi.fn() }),

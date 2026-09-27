@@ -61,7 +61,7 @@ vi.mock('../../contexts/AppContext', () => ({
 }));
 
 vi.mock('../../contexts/BadgeContext', () => ({
-  useBadge: () => ({ postfachUngelesen: 0, refreshAllCounts: vi.fn().mockResolvedValue(undefined) }),
+  useBadge: () => ({ postfachUngelesen: 0, refreshAllCounts: vi.fn().mockResolvedValue(undefined), postfachGelesen: vi.fn() }),
 }));
 
 vi.mock('../../hooks/useWartendeVorgaenge', () => ({
