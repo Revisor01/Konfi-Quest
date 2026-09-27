@@ -24,7 +24,7 @@ dürfen dort nicht. Was die Rollen sonst unterscheidet, steht im Kapitel
 | **Gruppe** | frei zusammengestellt | Leitung, Admin oder Teamer:in legt sie an | ja |
 | **Jahrgangs-Chat** | alle Konfis des Jahrgangs plus zuständige Begleitung | **automatisch** mit dem Jahrgang | **nein** |
 | **Team-Chat** | alle mit Leitungs-, Admin- oder Teamer-Rolle | **automatisch**, einer pro Gemeinde | ja, außer für Leitung und Admins |
-| **Event-Chat** | wer beim Freischalten bestätigt angemeldet ist | das Team schaltet ihn beim Event frei | Konfis nur übers Abmelden |
+| **Event-Chat** | wer bestätigt angemeldet ist, auch später Angemeldete und Nachrückende | die Leitung legt ihn beim Event an | Konfis nur übers Abmelden |
 
 ### Eine Direktnachricht beginnen
 
@@ -89,10 +89,12 @@ Mitglieder bleiben. Das geht nur hier — *„Nur der Team-Chat lässt sich leer
 
 ### Den Event-Chat nutzen
 
-Er gehört zu einem [Event](70-termine.md#einen-event-chat-einrichten) und muss vom Team dort
-einmal freigeschaltet werden. Hinein kommen alle, die in diesem Moment bestätigt
-angemeldet sind — wer sich später anmeldet, kommt **nicht** automatisch nach.
-Wer sich abmeldet, fliegt heraus.
+Er gehört zu einem [Event](70-termine.md#einen-event-chat-einrichten) und wird dort von
+der Leitung einmal angelegt. Drin ist, wer **bestätigt angemeldet** ist — auch
+wer sich später anmeldet oder von der Warteliste nachrückt. Wer auf der
+Warteliste steht, kommt erst beim Nachrücken dazu; wer sich abmeldet,
+ausgetragen oder auf die Warteliste zurückgesetzt wird, fliegt heraus. Die
+Einzelheiten stehen beim [Event](70-termine.md#einen-event-chat-einrichten).
 
 > **Achtung:** Konfis können einen Event-Chat nicht direkt verlassen. Die App
 > sagt: *„Event-Chats werden über die Event-Abmeldung verlassen, nicht

@@ -653,10 +653,18 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           );
         }
 
-        // In den Chat zum Termin, falls es einen gibt. Auch bei der Rueckstufung
-        // auf die Warteliste: angemeldet ist angemeldet, entfernt wird erst beim
-        // Austragen (idempotent, meist schon drin).
-        await addToEventChat(client, eventId, booking.user_id, req.user.organization_id);
+        // Chat zum Termin, falls es einen gibt: Wer bestaetigt wird, kommt
+        // hinein; wer auf die Warteliste zurueckgesetzt wird, geht hinaus.
+        //
+        // Bis zum 27.09.2026 stand hier "angemeldet ist angemeldet" -- auch
+        // die Herabgestufte blieb im Chat. Simon (F-11, Bericht "Wer bekommt
+        // was", BF-17): "Wartende erst beim Nachrücken." Wer herabgestuft
+        // wird, ist eine Wartende wie jede andere (utils/eventChat.js).
+        if (status === 'waitlist') {
+          await removeFromEventChat(client, eventId, booking.user_id, req.user.organization_id);
+        } else {
+          await addToEventChat(client, eventId, booking.user_id, req.user.organization_id);
+        }
 
         await client.query('COMMIT');
       } catch (txErr) {

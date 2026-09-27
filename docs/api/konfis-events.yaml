@@ -918,7 +918,9 @@ paths:
         Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt
         die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen
         gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats
-        schon gebucht war.
+        schon gebucht war. Seit 27.09.2026 nur bei Ergebnis confirmed; wer auf
+        der Warteliste landet, kommt erst beim Nachruecken hinein (BF-17 /
+        F-11, siehe POST /api/events/{id}/chat).
 
 
         Seit 27.08.2026 zusaetzlich: reine Teamer-Termine (teamer_only)
@@ -1816,7 +1818,9 @@ paths:
         entscheidet rollenrichtig (Konfi- vs. Team-Kontingent, Timeslot-
         Kapazität, Warteliste); explizites status wird uebernommen.
         Wer hinzugefuegt wird, kommt zugleich in den Chat zum Termin, sofern
-        einer existiert — angelegt wird dabei keiner.
+        einer existiert — angelegt wird dabei keiner. Seit 27.09.2026 nur mit
+        finalem status 'confirmed'; auf die Warteliste Eingetragene kommen
+        erst beim Nachruecken hinein (BF-17 / F-11).
         GEAENDERT 31.08.2026: Die Rollenweiche trennt nach Konfi / Nicht-Konfi
         statt nach Teamer / Nicht-Teamer. Damit laesst sich auch die Leitung
         (admin, org_admin) einem Termin zuordnen — bewusst pro Termin, wie eine
@@ -2046,6 +2050,14 @@ paths:
         Antwort (data.type 'event_waitlisted', Titel "Auf die Warteliste
         gesetzt", mit event_id und organization_id), nicht an die
         ausloesende Person selbst. Die Antwortform ist unveraendert.
+
+
+        GEAENDERT 27.09.2026 (BF-17 / F-11, "Wartende erst beim
+        Nachrücken"): Die Degradierung nimmt die Person aus dem Chat zum
+        Termin, die Befoerderung auf 'confirmed' traegt sie ein. Bis dahin
+        blieb die Herabgestufte im Chat ("angemeldet ist angemeldet").
+
+
         BEHOBEN 15.09.2026: Die Degradierung gibt einen bestaetigten Platz
         frei — dort rueckt jetzt die naechste wartende Person derselben
         Kontingent-Seite nach (Push, war_auf_warteliste, Termin-Chat). Die
@@ -2370,6 +2382,24 @@ paths:
         Wartende — vorher nur bestaetigte, obwohl Wartende beim Anmelden
         hineinkommen. Pro Event nur ein Chat. Die Mitgliedschaft wird ab jetzt
         laufend gepflegt: Anmelden trägt ein, Abmelden trägt aus.
+
+
+        GEAENDERT 27.09.2026 (Bericht "Wer bekommt was", BF-17; Simons
+        Entscheidung F-11: "Bestätigte ja, Wartende erst beim Nachrücken;
+        Abgemeldete nicht"): "Gebucht" heisst hier wieder BESTAETIGT
+        (status 'confirmed'). Bis dahin kam beim Anlegen jede Buchung ausser
+        'cancelled' hinein, also auch Warteliste, 'opted_out' und 'excused'.
+        Dieselbe Regel gilt fuer jeden spaeteren Eintritt
+        (utils/eventChat.js, addToEventChat/syncEventChat): Anmelden,
+        Eintragen durch die Leitung, Teamer-Zusage, Pflicht-Automatik und
+        Wiederanmeldung tragen nur ein, wenn die Buchung bestaetigt ist;
+        Wartende kommen beim Nachruecken (automatisch oder von Hand) hinein;
+        wer auf die Warteliste zurueckgesetzt wird
+        (PUT /{id}/participants/{participantId}/status), geht hinaus.
+        Die Pflicht-Abmeldung (opt-out) und die Leitungs-Abmeldung bei der
+        Anwesenheit nehmen niemanden heraus (Entscheidung 24.08.2026).
+        participants_added zaehlt entsprechend nur Bestaetigte; die
+        Antwortform ist unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         x-geaendert: >

@@ -273,6 +273,11 @@ Versionsüberschrift.
   noch für Datum und Uhrzeit, die Suche heißt in allen Rollen „Events
   durchsuchen" und „Badges durchsuchen". Ein kurzes Glossar im Handbuch
   erklärt die Wörter.
+- Im Chat zu einem Event ist, wer bestätigt angemeldet ist — auch wer sich
+  erst nach dem Anlegen des Chats anmeldet oder von der Warteliste nachrückt.
+  Wer auf der Warteliste steht oder schon abgemeldet ist, kommt nicht mehr
+  hinein, und wer auf die Warteliste zurückgesetzt wird, verlässt den Chat.
+  Bisher saßen dort auch Wartende und beim Anlegen schon Abgemeldete.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

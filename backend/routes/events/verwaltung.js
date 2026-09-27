@@ -1073,6 +1073,9 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       // beides nicht auseinanderentwickelt. Vorher standen hier nur die
       // bestaetigten, und Wartende blieben aussen vor, obwohl sie beim Anmelden
       // hineinkommen (24.08.2026 vereinheitlicht).
+      // Seit 27.09.2026 heisst "gebucht" hier wieder "bestaetigt" -- fuer
+      // beide Wege zugleich (Simon, F-11: "Wartende erst beim Nachrücken;
+      // Abgemeldete nicht", siehe utils/eventChat.js).
       hinzugefuegt = await syncEventChat(client, eventId, req.user.organization_id);
 
       await client.query('COMMIT');

@@ -288,9 +288,9 @@ eine Mitteilung oder einen Link nicht auf: Was in deiner Event-Liste fehlt,
 bleibt auch auf diesem Weg verborgen. Statt des Events steht dann „Nicht
 deinem Jahrgang zugeordnet" mit dem Hinweis, dass die Leitung deiner Gemeinde
 die Zuweisung in den Einstellungen ändern kann — für Teamer:innen und Admins
-gleich. Das passiert etwa, wenn dich die Leitung in ein Event
-einträgt, dessen Jahrgang dir fehlt: Die Mitteilung kommt, das Event selbst
-bleibt zu, bis die [Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert) stimmt.
+gleich. Das kann etwa passieren, wenn eine ältere Mitteilung im Postfach zu
+einem Event führt, dessen Jahrgang dir inzwischen nicht mehr zugewiesen ist;
+das Event bleibt zu, bis die [Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert) wieder stimmt.
 Nur Events „Nur Team" und Events ohne Jahrgang sind für alle da; die
 Gemeindeleitung sieht alles.
 
@@ -1079,21 +1079,34 @@ und wenn jemand
 ## Einen Event-Chat einrichten
 
 Zu jedem Event lässt sich ein Gruppenchat einrichten — **nicht automatisch**.
-Jemand aus Leitung oder Team muss ihn in der Detailansicht über den Chat-Knopf
-anlegen und die Rückfrage bestätigen. Pro Event gibt es genau einen; ein
-zweiter Versuch meldet „Chat existiert bereits für dieses Event".
+Die Leitung legt ihn in der Detailansicht über den Chat-Knopf an und bestätigt
+die Rückfrage. Pro Event gibt es genau einen; ein zweiter Versuch meldet
+„Chat existiert bereits für dieses Event".
 
-Beim Anlegen kommen hinein: die Person, die den Chat erstellt, und alle, die zu
-diesem Zeitpunkt **bestätigt angemeldet** sind — Konfis, Teamer:innen und
-Leitung gleichermaßen. Wer auf der Warteliste steht, ist nicht dabei.
+**Im Event-Chat ist, wer bestätigt angemeldet ist** — Konfis, Teamer:innen
+und Leitung gleichermaßen —, dazu die Person, die ihn angelegt hat:
 
-> **Wer sich nach dem Anlegen anmeldet, wird nicht hinzugefügt** — auch nicht,
-> wer von der Warteliste nachrückt. Lege den Chat also möglichst spät an, am
-> besten erst nach dem Anmeldeschluss. Sonst fehlt die Hälfte drin.
+- Beim Anlegen kommen alle hinein, die in diesem Moment bestätigt angemeldet
+  sind.
+- Wer sich danach anmeldet oder eingetragen wird und einen festen Platz
+  bekommt, kommt von selbst dazu.
+- Wer auf der Warteliste steht, ist nicht dabei — auch nicht, wenn du ihn
+  direkt dort einträgst. Er kommt hinein, sobald er
+  [nachrückt](#nachvollziehen-wann-jemand-nachrueckt) oder du ihn bestätigst.
+- Wer sich abmeldet, ausgetragen oder auf die Warteliste zurückgesetzt wird,
+  ist draußen.
+- Wer beim Anlegen schon abgemeldet ist, kommt nicht hinein.
 
-Wer sich vom Event abmeldet, wird gleichzeitig aus dem Chat entfernt. Wird das
-Event gelöscht, verschwindet der Chat mitsamt allem; beim Absagen bleibt er
-bestehen.
+Du kannst den Chat also jederzeit anlegen, auch lange vor dem Anmeldeschluss:
+Wer später einen Platz bekommt, landet von selbst darin.
+
+> **Eine Ausnahme beim Verlassen:** Wer sich von einem **Pflicht-Event**
+> abmeldet oder den du bei der Anwesenheit als „Abgemeldet" verbuchst, bleibt
+> im Chat, wenn er schon drin war — das Event betrifft ihn weiter. Neu hinein
+> kommt er erst mit der Wiederanmeldung.
+
+Wird das Event gelöscht, verschwindet der Chat mitsamt allem; beim Absagen
+bleibt er mit allen Mitgliedern bestehen.
 
 Was sonst im Event-Chat gilt — schreiben, Umfragen, Dateien —, steht im
 Kapitel [Chat](90-chat.md#die-fuenf-chat-arten-unterscheiden).
@@ -1173,9 +1186,9 @@ Materialliste weiter unten. Konfis sehen Material grundsätzlich nicht.
 > drin."**
 > So ist es gedacht: Bestätigte Anmeldungen werden nie zurückgestuft.
 
-> **„Die Hälfte fehlt im Event-Chat."**
-> Der Chat nimmt nur mit, wer beim Anlegen schon angemeldet war. Später
-> Angemeldete und Nachrücker kommen nicht dazu.
+> **„Jemand fehlt im Event-Chat."**
+> Im Chat ist nur, wer bestätigt angemeldet ist. Wer auf der Warteliste steht,
+> kommt erst beim Nachrücken dazu — oder wenn du ihn bestätigst.
 
 > **„Der Konfi kann sich nicht abmelden."**
 > Bei freiwilligen Events geht Abmelden nur bis 2 Tage vor dem Termin. Du
