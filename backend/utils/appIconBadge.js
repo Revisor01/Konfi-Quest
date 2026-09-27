@@ -258,8 +258,20 @@ async function abzeichenZaehler(db, personen) {
 //
 // Der Index idx_notifications_unread (user_id, read_at) WHERE read_at IS
 // NULL traegt genau diese Abfrage.
+//
+// JEDE PERSON NUR EINMAL IN DIE ABFRAGE (27.09.2026, Befund am Geraet: "Postfach
+// 1 -- im Switcher zeigt er 3"). appIconSummenJeOrganisation bekommt die Person
+// einmal JE GEMEINDE. Weil hier nur ueber user_id/user_type verbunden wird,
+// traf jede Mitteilung jede dieser Zeilen und wurde so oft gezaehlt, wie die
+// Person Gemeinden mit derselben Rollenart hat -- als Leitung in drei
+// Gemeinden dreifach. Mit einer Gemeinde (und in appIconSummenFuerAlle, das je
+// Gemeinde einzeln aufgerufen wird) fiel es nie auf. Die Zuordnung zur
+// Gemeinde uebernimmt weiter n.organization_id; summenBerechnen bucht die
+// Zeile nur auf den Schluessel, den es fuer (Person, Rollenart, Gemeinde)
+// gibt.
 async function postfachZaehler(db, personen) {
   if (personen.length === 0) return [];
+  const eindeutig = [...new Map(personen.map((p) => [schluessel(p.id, p.type), p])).values()];
   return (await db.query(
     `SELECT n.user_id, z.user_type, n.organization_id, COUNT(*)::int AS c
        FROM notifications n
@@ -267,7 +279,7 @@ async function postfachZaehler(db, personen) {
               ON z.user_id = n.user_id
       WHERE n.read_at IS NULL
       GROUP BY n.user_id, z.user_type, n.organization_id`,
-    [personen.map((p) => p.id), personen.map((p) => p.type)]
+    [eindeutig.map((p) => p.id), eindeutig.map((p) => p.type)]
   )).rows;
 }
 

@@ -1909,6 +1909,12 @@ paths:
         ueber alle Gemeinden zusammen (`= ANY`/unnest), nicht eine je Gemeinde.
         Unabhaengig von X-Active-Organization: dieselbe Aufteilung, egal in
         welcher Gemeinde die Person gerade arbeitet.
+        BEHOBEN 27.09.2026 (Befund am Geraet, Antwortform unveraendert): Die
+        ungelesenen Postfach-Mitteilungen zaehlten je Gemeinde so oft, wie die
+        Person Gemeinden mit derselben Rollenart hat (Leitung in drei
+        Gemeinden: dreifach). Der Postfach-Zaehler nimmt jede Person jetzt
+        einmal in die Abfrage; jede Mitteilung zaehlt einmal, bei ihrer
+        organization_id.
       responses:
         '200':
           description: Je Gemeinde ein Eintrag, auch bei 0

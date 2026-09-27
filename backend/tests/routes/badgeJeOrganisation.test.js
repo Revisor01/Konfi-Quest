@@ -231,6 +231,64 @@ describe('GET /api/notifications/badge-counts/je-organisation', () => {
     });
   });
 
+  describe('Postfach je Gemeinde: jede Mitteilung genau einmal', () => {
+    // Befund am Geraet (Simon, 27.09.2026): "Postfach 1 -- im Switcher zeigt er
+    // 3." Ein Challenge-Beitrag in einer Gemeinde mit Freigabe ergab am
+    // Umschalter 3 statt 2 (1 Freigabe + 1 Mitteilung). Der Postfach-Zaehler
+    // nahm die Person einmal JE GEMEINDE in seine Abfrage (die Empfaengerliste
+    // der Route traegt sie je Mitgliedschaft) und zaehlte jede Mitteilung so
+    // oft mit, wie die Person Gemeinden hat. Bei einer Gemeinde fiel es nie auf.
+    const mitteilung = (userId, orgId, type = 'challenge_submission') => db.query(
+      `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+       VALUES ($1, 'Neuer Challenge-Beitrag', 'x', $2, '{}'::jsonb, $3)`,
+      [userId, type, orgId]
+    );
+
+    beforeEach(async () => {
+      // orgAdmin1: zuhause org_admin in Org 1, Teamer:in in Org 2, org_admin in Org 3.
+      await zusatz(db, USERS.orgAdmin1.id, ORGS.andereGemeinde.id, ROLES.teamer2.id);
+      await zusatz(db, USERS.orgAdmin1.id, ORG3.id, ROLLE_ORG_ADMIN_3);
+      invalidateUserCache(USERS.orgAdmin1.id);
+    });
+
+    it('je eine ungelesene Mitteilung aus Org 2 und Org 3: je 1, nicht je 3', async () => {
+      await mitteilung(USERS.orgAdmin1.id, ORGS.andereGemeinde.id);
+      await mitteilung(USERS.orgAdmin1.id, ORG3.id);
+      const res = await hole(app, generateToken('orgAdmin1'));
+      expect(res.status).toBe(200);
+      expect(res.body.jeOrganisation).toEqual({ 1: { offen: 0 }, 2: { offen: 1 }, 3: { offen: 1 } });
+    });
+
+    it('Summe ueber alle Gemeinden = Zahl an der Glocke', async () => {
+      await mitteilung(USERS.orgAdmin1.id, ORGS.andereGemeinde.id);
+      await mitteilung(USERS.orgAdmin1.id, ORG3.id);
+      const token = generateToken('orgAdmin1');
+      const umschalter = await hole(app, token);
+      const glocke = await request(app).get('/api/notifications/badge-counts').set('Authorization', `Bearer ${token}`);
+      const summe = Object.values(umschalter.body.jeOrganisation).reduce((n, o) => n + o.offen, 0);
+      expect(glocke.body.postfach.ungelesen).toBe(2);
+      expect(summe).toBe(2);
+    });
+
+    it('Simons Fall: ein Beitrag mit Freigabe in Org 3 und seine Mitteilung ergeben 2', async () => {
+      const jahrgang3 = (await db.query(
+        "INSERT INTO jahrgaenge (name, organization_id) VALUES ('J3', $1) RETURNING id", [ORG3.id]
+      )).rows[0].id;
+      await challengeMitOffenemBeitrag(db, ORG3.id, 'konfis', jahrgang3, USERS.konfi3.id);
+      await mitteilung(USERS.orgAdmin1.id, ORG3.id);
+      const res = await hole(app, generateToken('orgAdmin1'));
+      expect(res.status).toBe(200);
+      expect(res.body.jeOrganisation[3]).toEqual({ offen: 2 });
+    });
+
+    it('eine Person mit nur einer Gemeinde zaehlt ihre Mitteilung unveraendert einmal', async () => {
+      await mitteilung(USERS.admin2.id, ORGS.andereGemeinde.id, 'activity_request');
+      const res = await hole(app, generateToken('admin2'));
+      expect(res.status).toBe(200);
+      expect(res.body.jeOrganisation).toEqual({ 2: { offen: 1 } });
+    });
+  });
+
   describe('Paritaet mit dem App-Symbol', () => {
     it('Konfi mit einer Gemeinde: dieselbe Zahl wie am Symbol (2 ungelesene Nachrichten)', async () => {
       await db.query(

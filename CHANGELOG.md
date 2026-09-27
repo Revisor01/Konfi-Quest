@@ -584,6 +584,11 @@ Versionsüberschrift.
   Tab erreichbar ist; Escape schließt die Auswahl wieder. Bisher ging das nur
   mit langem Druck auf dem Handy oder einem Rechtsklick, den niemand kannte.
   Auf dem Handy bleibt alles wie gewohnt.
+- Wer in mehreren Gemeinden mitarbeitet, sah am Gemeinde-Umschalter jede
+  ungelesene Mitteilung mehrfach gezählt — so oft, wie er in Gemeinden dieselbe
+  Rolle hat. Ein neuer Challenge-Beitrag ergab dort 3 statt 2: die Freigabe und
+  die Mitteilung dazu, die Mitteilung aber doppelt. Jetzt zählt jede Mitteilung
+  einmal, bei der Gemeinde, aus der sie stammt.
 
 ### Sonstiges
 - Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.
