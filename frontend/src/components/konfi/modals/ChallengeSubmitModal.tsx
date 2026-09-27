@@ -17,7 +17,6 @@ import {
   IonItem,
   IonTextarea,
   IonInput,
-  IonProgressBar,
   IonSpinner
 } from '@ionic/react';
 import {
@@ -43,7 +42,9 @@ import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { track } from '../../../services/analytics';
-import { compressImage } from '../../../services/mediaCompression';
+import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE, zuGrossText } from '../../../services/mediaCompression';
+import FortschrittsBalken from '../../shared/FortschrittsBalken';
+import { sendeText } from '../../../utils/fortschritt';
 import { pruefeMusikLink, ERLAUBTE_DIENSTE_TEXT } from '../../../utils/musikLinks';
 import { getVisibilityInfo, getSuccessMessage } from '../../../utils/challengeTexte';
 import { AudioPlayer } from '../../shared';
@@ -76,8 +77,9 @@ const CONSENT_OPTIONS: { value: ChallengeConsent; label: string; hint: string; i
   { value: 'private', label: 'Nur Leitung', hint: 'nicht in der Galerie', icon: ICON_SPERRE }
 ];
 
-// Serverlimit laut Spec: 50 MB pro Datei.
-const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+// Serverlimit laut Spec: 50 MB pro Datei — steht als UPLOAD_GRENZE.challenges
+// neben der des Chats in services/mediaCompression (ein Weg für beide).
+const MAX_UPLOAD_BYTES = UPLOAD_GRENZE.challenges;
 
 // Bevorzugter MIME-Type für die Audioaufnahme: audio/mp4 läuft auf iOS-WebView
 // zuverlaessig (AVFoundation-Unterbau), audio/webm ist der Chromium/Android-Fallback.
@@ -262,17 +264,13 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       // Spaet eingetroffene Auswahl: Spinner wieder anzeigen (der Fokus-Fallback
       // hat ihn ggf. schon beendet), das finally setzt ihn zuverlaessig zurück.
       setPickingMedia(true);
-      const { file: compressed, previewUrl } = await compressImage(selected);
-      if (compressed.size > MAX_UPLOAD_BYTES) {
-        URL.revokeObjectURL(previewUrl);
-        setError('Datei ist zu groß (max. 50 MB).');
-        return;
-      }
+      // Derselbe Weg wie im Chat: verkleinern, dann gegen die Grenze prüfen.
+      const { file: verkleinert, bildVorschau } = await fuerUploadVorbereiten(selected, MAX_UPLOAD_BYTES);
       if (mediaPreview) URL.revokeObjectURL(mediaPreview);
-      setFile(compressed);
-      setMediaPreview(previewUrl);
-    } catch {
-      setError('Foto konnte nicht ausgewählt werden');
+      setFile(verkleinert);
+      setMediaPreview(bildVorschau || URL.createObjectURL(verkleinert));
+    } catch (err) {
+      setError(err instanceof DateiZuGrossFehler ? err.message : 'Foto konnte nicht ausgewählt werden');
     } finally {
       setPickingMedia(false);
     }
@@ -286,15 +284,14 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       const selected = await openFilePicker('video/*');
       if (!selected) return;
       setPickingMedia(true);
-      if (selected.size > MAX_UPLOAD_BYTES) {
-        setError('Datei ist zu groß (max. 50 MB).');
-        return;
-      }
+      // Videos werden nicht neu kodiert (Begründung in mediaCompression);
+      // es gilt dieselbe Grenze und derselbe Satz wie für Fotos und im Chat.
+      const { file: geprueft } = await fuerUploadVorbereiten(selected, MAX_UPLOAD_BYTES);
       if (mediaPreview) URL.revokeObjectURL(mediaPreview);
-      setFile(selected);
-      setMediaPreview(URL.createObjectURL(selected));
-    } catch {
-      setError('Video konnte nicht ausgewählt werden');
+      setFile(geprueft);
+      setMediaPreview(URL.createObjectURL(geprueft));
+    } catch (err) {
+      setError(err instanceof DateiZuGrossFehler ? err.message : 'Video konnte nicht ausgewählt werden');
     } finally {
       setPickingMedia(false);
     }
@@ -319,6 +316,12 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
         const extension = usedMime.includes('webm') ? 'webm' : 'm4a';
         const blob = new Blob(recordedChunksRef.current, { type: usedMime });
         const audioFile = new File([blob], `challenge-audio.${extension}`, { type: usedMime });
+        // Auch eine Aufnahme hat die Grenze des Servers; sonst scheiterte sie
+        // erst beim Einreichen.
+        if (audioFile.size > MAX_UPLOAD_BYTES) {
+          setError(zuGrossText(MAX_UPLOAD_BYTES));
+          return;
+        }
         if (mediaPreview) URL.revokeObjectURL(mediaPreview);
         setFile(audioFile);
         setMediaPreview(URL.createObjectURL(audioFile));
@@ -454,8 +457,26 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
             </IonButton>
           </IonButtons>
         </IonToolbar>
+        {/* Dieselbe Anzeige wie beim Senden im Chat (27.09.2026): Prozent und
+            Balken, bei 100 % "Wird verarbeitet…" — der Server verschlüsselt
+            dann noch, bei einem 50-MB-Video spürbar lange. */}
         {isSubmitting && uploadProgress > 0 && (
-          <IonProgressBar value={uploadProgress / 100} />
+          <div
+            aria-live="polite"
+            style={{
+              padding: '0 var(--app-abstand-basis) var(--app-abstand-eng)',
+              fontSize: 'var(--app-text-klein)',
+              color: 'var(--app-text-secondary)'
+            }}
+          >
+            {sendeText(uploadProgress)}
+            <div style={{ color: 'var(--app-text-challenges)' }}>
+              <FortschrittsBalken
+                prozent={uploadProgress}
+                beschriftung={`Beitrag wird gesendet: ${uploadProgress} Prozent`}
+              />
+            </div>
+          </div>
         )}
       </IonHeader>
 

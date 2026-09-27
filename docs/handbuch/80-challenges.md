@@ -137,6 +137,14 @@ Foto.
 Zu Foto, Audio und Video darf zusätzlich ein Text geschrieben werden — eine
 Bildunterschrift sozusagen.
 
+Fotos verkleinert die App vor dem Hochladen wie im [Chat](90-chat.md) — die
+lange Kante auf höchstens 1920 Pixel —, Videos und Aufnahmen gehen, wie sie
+sind. Ist eine Datei danach größer als 50 MB, sagt die App es gleich bei der
+Auswahl oder nach der Aufnahme: *„Datei ist zu groß (max. 50 MB)."* Beim
+Einreichen steht oben, wie weit das Hochladen ist (*„Wird gesendet… 40 %"*,
+dazu ein Balken); bei 100 % wechselt der Text auf *„Wird verarbeitet…"* — der
+Server verschlüsselt die Datei dann noch.
+
 **Link nimmt keine beliebige Adresse.** Erlaubt sind ausschließlich Links der
 vier genannten Musikdienste; alles andere wird mit „Hier gehen nur Musik-Links:
 Spotify, Apple Music, YouTube Music und Deezer. Bitte teile den Link direkt aus

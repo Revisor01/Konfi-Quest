@@ -7,6 +7,20 @@
 //
 // Videos lassen sich im WebView nicht sinnvoll transkodieren (kein Canvas-Weg,
 // ffmpeg.wasm wäre zu gross/langsam auf Mobilgeraeten) -> hier NICHT behandelt.
+//
+// Chat und Challenges gehen seit dem 27.09.2026 denselben Weg
+// (fuerUploadVorbereiten): erst verkleinern, dann gegen die Grenze prüfen,
+// mit demselben Satz bei zu großen Dateien. Simon: "Und wie im Chat auch schon
+// eine Verkleinerung der Grafik/Video, also Komprimierung. Das kann ja ein
+// System sein."
+//
+// Videos auch dort nicht: Im WebView gibt es keinen Weg, ein Video neu zu
+// kodieren, der ohne neue Abhängigkeit trägt. MediaRecorder über ein Canvas
+// nimmt in Echtzeit neu auf (ein 50-MB-Video dauert so lange, wie es läuft,
+// der Ton muss getrennt mit), WebCodecs kodiert nur und bräuchte für die
+// MP4-Datei einen eigenen Muxer, ffmpeg.wasm bringt rund 30 MB mit, ein
+// natives Plugin wäre eine neue Abhängigkeit. Es bleibt bei der Grenze:
+// Chat 5 MB, Challenges 50 MB — wie auf dem Server.
 
 const MAX_EDGE = 1920;
 const JPEG_QUALITY = 0.8;
@@ -15,6 +29,35 @@ const JPEG_QUALITY = 0.8;
 // Bilder (Screenshots, bereits komprimierte) bleiben unverändert -> kein
 // Qualitaetsverlust durch unnoetiges Re-Encoding.
 const SIZE_THRESHOLD = 500 * 1024; // 500 KB
+
+/**
+ * Größte Datei je Ziel, in Bytes — dieselben Werte wie auf dem Server
+ * (backend/createApp.js: chatUpload 5 MB, CHALLENGE_UPLOAD_LIMIT 50 MB).
+ *
+ * Der Chat prüfte bis zum 27.09.2026 auf 10 MB, der Server nimmt aber nur
+ * 5 MB an: Eine Datei dazwischen ging durch die Prüfung und scheiterte dann
+ * beim Senden ohne verständliche Meldung (so stand es als "bekannter
+ * Stolperstein" im Handbuch).
+ */
+export const UPLOAD_GRENZE = {
+  chat: 5 * 1024 * 1024,
+  challenges: 50 * 1024 * 1024,
+} as const;
+
+/**
+ * "Datei ist zu groß (max. 5 MB)." — für Chat und Challenges derselbe Satz,
+ * wörtlich wie in der Antwort des Servers (createApp.js, LIMIT_FILE_SIZE).
+ */
+export const zuGrossText = (maxBytes: number): string =>
+  `Datei ist zu groß (max. ${Math.round(maxBytes / 1024 / 1024)} MB).`;
+
+/** Die Datei ist auch nach dem Verkleinern größer als erlaubt. */
+export class DateiZuGrossFehler extends Error {
+  constructor(maxBytes: number) {
+    super(zuGrossText(maxBytes));
+    this.name = 'DateiZuGrossFehler';
+  }
+}
 
 interface CompressResult {
   file: File;
@@ -75,6 +118,40 @@ export const compressForUpload = async (file: File, maxBytes = 5 * 1024 * 1024):
     throw new Error(`Foto ist zu groß (max. ${Math.round(maxBytes / 1024 / 1024)} MB).`);
   }
   return compressed;
+};
+
+/**
+ * Eine ausgewählte Datei für den Upload vorbereiten — Chat und Challenges
+ * derselbe Weg: Fotos verkleinern (compressImage), DANN gegen die Grenze
+ * prüfen. Ein Handyfoto mit 8 MB passt nach dem Verkleinern locker; eine
+ * Prüfung davor ließe es scheitern.
+ *
+ * Liefert bei Fotos eine Vorschau-URL (der Aufrufer gibt sie frei), sonst
+ * null. Scheitert das Verkleinern, geht das Original weiter. Wirft
+ * DateiZuGrossFehler, wenn die Datei danach noch zu groß ist.
+ */
+export const fuerUploadVorbereiten = async (
+  file: File,
+  maxBytes: number
+): Promise<{ file: File; bildVorschau: string | null }> => {
+  let fertig = file;
+  let bildVorschau: string | null = null;
+  if (file.type.startsWith('image/')) {
+    try {
+      const ergebnis = await compressImage(file);
+      fertig = ergebnis.file;
+      bildVorschau = ergebnis.previewUrl;
+    } catch {
+      fertig = file;
+      bildVorschau = URL.createObjectURL(file);
+    }
+  }
+
+  if (fertig.size > maxBytes) {
+    if (bildVorschau) URL.revokeObjectURL(bildVorschau);
+    throw new DateiZuGrossFehler(maxBytes);
+  }
+  return { file: fertig, bildVorschau };
 };
 
 export const compressImage = async (file: File): Promise<CompressResult> => {

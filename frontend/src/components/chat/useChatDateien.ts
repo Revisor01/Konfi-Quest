@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { compressImage } from '../../services/mediaCompression';
+import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE } from '../../services/mediaCompression';
 import { useDateiOeffnen } from '../../hooks/useDateiOeffnen';
 import { Message } from '../../types/chat';
 
 /**
  * Datei-Handling des Chatraums (beim Aufteilen von ChatRoom.tsx hierher
- * gezogen, Verhalten unveraendert): Datei-/Foto-Auswahl samt Kompression und
- * 10MB-Grenze, Kamera und Galerie, sowie das Oeffnen empfangener Dateien
- * (nativ, mit FileViewerModal als Web-Fallback inklusive Swipe-Kontext).
+ * gezogen): Datei-/Foto-Auswahl samt Kompression und Groessengrenze, Kamera
+ * und Galerie, sowie das Oeffnen empfangener Dateien (nativ, mit
+ * FileViewerModal als Web-Fallback inklusive Swipe-Kontext).
  *
  * Das Oeffnen laeuft seit dem 27.09.2026 ueber useDateiOeffnen — denselben
  * Weg wie bei den Challenges (Ladeanzeige, Cache, Betrachter).
@@ -40,29 +40,20 @@ export function useChatDateien({ messages }: ChatDateienDeps) {
     event.target.value = '';
     if (!picked) return;
 
-    // Bilder vor Upload resizen + komprimieren (max 1920px lange Kante). Andere
-    // Dateien (Videos, PDFs) bleiben unverändert.
-    let file = picked;
-    let previewUrl: string | null = null;
-    if (picked.type.startsWith('image/')) {
-      try {
-        const result = await compressImage(picked);
-        file = result.file;
-        previewUrl = result.previewUrl;
-      } catch {
-        file = picked;
-        previewUrl = URL.createObjectURL(picked);
-      }
+    // Bilder vor Upload resizen + komprimieren (max 1920px lange Kante), dann
+    // gegen die Grenze pruefen — derselbe Weg wie bei den Challenges
+    // (27.09.2026). Andere Dateien (Videos, PDFs) bleiben unverändert.
+    //
+    // Die Grenze ist die des Servers: 5 MB. Bis zum 27.09.2026 stand hier
+    // 10 MB — eine Datei zwischen 5 und 10 MB ging durch und scheiterte dann
+    // beim Senden, ohne verstaendliche Meldung.
+    try {
+      const { file, bildVorschau } = await fuerUploadVorbereiten(picked, UPLOAD_GRENZE.chat);
+      setSelectedFile(file);
+      setSelectedFilePreview(bildVorschau);
+    } catch (err) {
+      setError(err instanceof DateiZuGrossFehler ? err.message : 'Datei konnte nicht ausgewählt werden');
     }
-
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit (nach Kompression)
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setError('Datei ist zu groß (max. 10MB)');
-      return;
-    }
-
-    setSelectedFile(file);
-    setSelectedFilePreview(previewUrl);
   };
 
   // Cleanup preview URL on unmount or file change

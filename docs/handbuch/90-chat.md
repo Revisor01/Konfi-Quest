@@ -291,7 +291,8 @@ An jede Nachricht lässt sich eine Datei hängen, ein Text darf dabeistehen.
 | **Dokumente** | PDF, Word, PowerPoint, TXT, CSV |
 
 Bilder und Videos erscheinen direkt im Chat, alles andere als Anhang mit
-Dateinamen zum Antippen. Bilder werden vor dem Senden automatisch verkleinert.
+Dateinamen zum Antippen. Bilder werden vor dem Senden automatisch verkleinert —
+auf demselben Weg wie bei den [Challenges](80-challenges.md).
 
 Während eine Datei gesendet wird, steht an der Nachricht, wie weit sie ist
 (*„Wird gesendet… 40 %"*), darunter ein Balken. Bei 100 % wechselt der Text auf
@@ -305,10 +306,10 @@ für alle Anhänge: Bilder, Videos, PDFs, Dokumente und Tondateien. Wie lange si
 dort bleiben und wann die App sie von selbst löscht, steht unter
 [Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
 
-> **Achtung, bekannter Stolperstein:** Die App warnt erst ab 10 MB (*„Datei ist
-> zu groß (max. 10MB)"*), der Server nimmt aber nur 5 MB an. Eine Datei
-> dazwischen scheitert deshalb ohne verständliche Meldung. Wenn eine Datei sich
-> partout nicht schicken lässt: auf die Größe schauen.
+Ist eine Datei größer, sagt die App es gleich bei der Auswahl: *„Datei ist zu
+groß (max. 5 MB)."* Fotos verkleinert sie vorher (die lange Kante auf höchstens
+1920 Pixel), ein Handyfoto passt danach fast immer. Videos und Tondateien gehen,
+wie sie sind — für ein längeres Video ist der Chat zu knapp.
 
 > **Achtung:** **Excel-Tabellen gehen nicht** — weder XLS noch XLSX, und auch
 > keine OpenDocument-Dateien. Wandle sie in ein PDF um oder leg sie im

@@ -162,6 +162,12 @@ Versionsüberschrift.
 - Eine neue Challenge, bei der das Team mitmacht, steht bei Teamer:innen und
   Leitung als rote Zahl an der Challenge und am Reiter, bis sie geöffnet
   wird — wie bei den Konfis. Bisher zählten fürs Team nur neue Beiträge.
+- Beim Einreichen eines Challenge-Beitrags mit Foto, Video oder Aufnahme steht
+  wie im Chat, wie weit das Hochladen ist — mit Prozentzahl und Balken, bei
+  100 % „Wird verarbeitet…". Fotos werden in Chat und Challenges auf demselben
+  Weg verkleinert, und eine zu große Datei meldet die App überall mit demselben
+  Satz. Eine zu große Tonaufnahme fällt gleich nach der Aufnahme auf statt erst
+  beim Einreichen.
 - Bilder und Videos im Chat zeigen beim Laden, wie weit sie sind — mit
   Prozentzahl und Balken wie beim Öffnen einer Datei. Klappt das Laden nicht,
   lässt es sich mit „Erneut versuchen" wiederholen. Ohne Netz steht statt einer
@@ -371,6 +377,9 @@ Versionsüberschrift.
   in ihrer Event-Liste finden — die Konfis der Jahrgänge, für die es gilt.
   Bisher ging sie an alle Konfis der Gemeinde, auch zu Events anderer
   Jahrgänge und zu Events ohne Jahrgang; wer darauf tippte, fand nichts.
+- Im Chat sagt die App bei einer Datei über 5 MB gleich bei der Auswahl, dass
+  sie zu groß ist. Bisher ließ sie Dateien bis 10 MB zu, die dann beim Senden
+  ohne verständliche Meldung scheiterten.
 - Geladene Bilder und Dateien werden beim Abmelden, beim Wechsel der Gemeinde
   und bei der Anmeldung eines anderen Kontos vom Gerät gelöscht. Bisher blieben
   sie liegen, bis jemand den Medien-Cache von Hand leerte — wer das Gerät danach
