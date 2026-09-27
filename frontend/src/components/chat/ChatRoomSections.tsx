@@ -445,29 +445,9 @@ export const MessageInput = React.memo<MessageInputProps>(({
   );
 });
 
-// Auto-capitalize für das Eingabefeld: schreibt den ersten Buchstaben sowie den
-// ersten Buchstaben nach einem Satzende (. ! ?) oder Zeilenumbruch gross. Greift nur
-// am Ende der Eingabe (= das gerade getippte Zeichen), damit der Cursor nicht springt
-// und bereits getippter Text nicht nachträglich umgeschrieben wird.
-export const autoCapitalize = (value: string): string => {
-  if (!value) return '';
-
-  const newChar = value.slice(-1);
-  // Nur Kleinbuchstaben (inkl. Umlaute) hochstellen, alles andere unverändert lassen.
-  if (newChar === newChar.toUpperCase() || !/[a-z\u00e4\u00f6\u00fc]/.test(newChar)) {
-    return value;
-  }
-
-  // Am Satzanfang? = erstes Zeichen überhaupt ODER vor dem letzten Zeichen steht
-  // (ggf. mit einem Space) ein Satzende-Zeichen bzw. ein Zeilenumbruch.
-  const before = value.slice(0, -1);
-  const atStart = before.length === 0;
-  const afterSentenceEnd = /([.!?]\s|\n)\s*$/.test(before);
-
-  if (atStart || afterSentenceEnd) {
-    return before + newChar.toUpperCase();
-  }
-
-  return value;
-};
+// Großschreibung im Eingabefeld: Regel und Begründung in
+// utils/chatGrossschreibung.ts (Variante A, Simon 27.09.2026). Greift nur am
+// Ende der Eingabe (das gerade getippte Zeichen), damit der Cursor nicht
+// springt und getippter Text nicht nachträglich umgeschrieben wird.
+export { autoCapitalize } from '../../utils/chatGrossschreibung';
 

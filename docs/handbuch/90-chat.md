@@ -202,6 +202,10 @@ Zeichen**. Alle im Raum sehen die Nachricht sofort und bekommen eine
 Benachrichtigung aufs Gerät — bei einem Zweiergespräch mit dem Namen des
 Absenders als Überschrift, sonst mit dem Namen des Chats.
 
+Den ersten Buchstaben einer Nachricht und den nach einem Punkt, Ausrufe- oder
+Fragezeichen schreibt die App groß. Ein Zeilenumbruch allein beendet keinen
+Satz: Danach bleibt der Buchstabe so, wie du ihn tippst.
+
 Ohne Netz bleibt die Nachricht in einer Warteschlange und geht los, sobald es
 wieder geht; mehr dazu unter
 [Ohne Internet weiterarbeiten](03-bedienung.md#ohne-internet-weiterarbeiten).
