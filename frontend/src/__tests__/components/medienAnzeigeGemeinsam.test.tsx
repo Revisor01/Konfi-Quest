@@ -173,6 +173,11 @@ describe('Bild: Chat und Challenges über denselben Weg', () => {
     online = false;
     const { container } = render(<LazyImage filePath="ff66" fileName="foto.jpg" quelle="challenges" />);
     await waitFor(() => expect(container.textContent).toContain('offline nicht verfügbar'));
+    // Erst melden, wenn die Anzeige zuhört: Sie meldet sich im Effekt nach
+    // dem Zeichnen an. Unter Last lag das Zeichnen schon vor, die Anmeldung
+    // noch nicht — die Meldung ging ins Leere, der Test fiel (zweimal im
+    // Gesamtlauf am 27.09.2026, einzeln nie).
+    await waitFor(() => expect(netzHoerer.size).toBe(1));
 
     online = true;
     await act(async () => { netzHoerer.forEach((fn) => fn(true)); });
