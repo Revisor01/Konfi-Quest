@@ -44,7 +44,12 @@
 #
 # 2. OFFENE ROUTEN (ohne Auth-Middleware) — alle unter /api/auth:
 #      POST /login                    authLimiter: 300/15min pro Client-IP,
-#                                     skipSuccessfulRequests
+#                                     skipSuccessfulRequests; dazu seit
+#                                     27.09.2026 die Kontosperre: 10 falsche
+#                                     Passwoerter je Stunde und Konto, danach
+#                                     429 auch mit richtigem Passwort
+#                                     (utils/kontoSperre.js, Audit Sicherheit
+#                                     BF-04 -- BEHOBEN 27.09.2026)
 #      POST /register-konfi           registerLimiter: 200/h pro IP; Schutz
 #                                     durch Invite-Code (8 Hex-Zeichen, 7 Tage
 #                                     gueltig, org-/jahrgangsgebunden) +
@@ -211,6 +216,29 @@ paths:
     post:
       tags: ["Anmeldung & Konto"]
       summary: Login für alle Rollen (case-insensitiver Username)
+      description: >
+        KONTOSPERRE seit 27.09.2026 (Audit Sicherheit BF-04, HOCH): Nach 10
+        falschen Passwoertern (401) innerhalb einer Stunde nimmt das Konto
+        keine Anmeldung mehr an -- auch nicht mit dem richtigen Passwort
+        (429, error_code account_locked). Gezaehlt wird je Konto, nicht je
+        IP: Schluessel ist SHA-256 ueber LOWER(username), gerechnet von
+        Postgres (dieselbe Funktion wie die Kontosuche); unbekannte
+        Benutzernamen werden genauso gezaehlt, die Sperre verraet also
+        nicht, ob es ein Konto gibt. Der Zaehler liegt in
+        rate_limit_zaehler (Migration 167) und gilt ueber alle Replicas.
+        Festes Fenster ab dem ersten Fehlversuch; weitere Versuche
+        verlaengern es nicht. Eine erfolgreiche Anmeldung setzt den Zaehler
+        auf 0; jedes neu gesetzte Passwort und jedes neu angelegte Konto
+        ebenso (POST /auth/change-password, /auth/reset-password,
+        /auth/register-konfi, POST und PUT /users, PUT
+        /users/{id}/reset-password, POST /admin/konfis und
+        /admin/konfis/{id}/regenerate-password, POST /organizations und
+        /organizations/{id}/admins). Leere Felder (400), deaktivierte oder
+        geloeschte Konten (403) und Serverfehler zaehlen nicht. Keine
+        RateLimit-Kopfzeilen fuer die Kontosperre (sie verrieten, wie oft
+        ein Konto durchprobiert wurde), nur Retry-After. Die IP-Grenze
+        (authLimiter) bleibt davor bestehen. Antwortform wie beim
+        authLimiter: { error } mit Status 429, zusaetzlich error_code.
       requestBody:
         required: true
         content:
@@ -226,13 +254,45 @@ paths:
           description: "JWT (15 Min) + Refresh-Token (90 Tage, SHA-256-gehasht gespeichert) + User-Objekt (bei Konfi inkl. jahrgang und Punkten; bei `admin` seit 27.08.2026 zusaetzlich assigned_jahrgaenge[] fuer die Warnung beim Jahrgangswechsel)"
         "401": { description: "Ungueltige Anmeldedaten (User unbekannt oder Passwort falsch — gleiche Meldung)" }
         "403": { description: "User deaktiviert ODER soft-geloescht (deleted_at; beides user_inactive, identische Antwort), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung" }
-        "429": { description: "authLimiter: 300 Fehlversuche/15min pro Client-IP (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09)" }
+        "429":
+          description: >
+            Zwei Quellen, gleiche Form { error } (Vertrag mit den Apps; die
+            Store-Apps 2.2.x zeigen wegen eines Fehlers der Anmeldeseite bei
+            jeder Ablehnung "Keine Verbindung zum Server", ab 2.3.0 steht
+            dort der Text aus error): authLimiter -- 300 Fehlversuche/15min pro
+            Client-IP (Zähler seit 26.09.2026 replica-übergreifend in der
+            Datenbank, Betrieb BF-09), Meldung "Zu viele Login-Versuche.
+            Bitte warte 15 Minuten." -- oder die Kontosperre (seit
+            27.09.2026): 10 falsche Passwörter je Stunde und Konto, Meldung
+            "Zu viele falsche Anmeldeversuche für dieses Konto. Versuche es
+            in einer Stunde wieder oder bitte die Leitung deiner Gemeinde um
+            ein neues Passwort." mit error_code account_locked und
+            Retry-After. Der Text ist fest und nennt keinen Namen.
+          headers:
+            Retry-After:
+              schema: { type: integer }
+              description: "Nur bei der Kontosperre: Sekunden bis zum Ende des Fensters (höchstens 3600)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+                  error_code: { type: string, enum: [account_locked], description: "Nur bei der Kontosperre" }
       x-berechtigung:
         rollen: [oeffentlich]
-        middleware: [authLimiter, validateLogin]
+        middleware: [authLimiter, validateLogin, kontoSperre]
         org-scope: false
         objekt-pruefung: "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide; deleted_at IS NOT NULL -> 403 user_inactive fuer jede Rolle"
-        hinweis: "Offene Route; setzt last_login_at"
+        hinweis: "Offene Route; setzt last_login_at; setzt nach Erfolg den Zaehler der Kontosperre zurueck"
+        # BEHOBEN 27.09.2026 (Audit Sicherheit BF-04, HOCH): Kontosperre je
+        # Konto. Vorher zaehlte nur der authLimiter je IP (1 200 Versuche je
+        # Stunde und Adresse); die Einmalpasswoerter (30 772 Bibelstellen,
+        # 14,9 Bit) waren damit in 25,6 h je IP, mit 10 IPs in 2,6 h
+        # durchprobiert. Jetzt hoechstens 240 Versuche am Tag je Konto, egal
+        # von wie vielen Adressen: 128,2 Tage fuer den ganzen Raum, 64,1 im
+        # Mittel. Das Passwortformat bleibt (Entscheidung Simon, 27.09.2026).
+        # Tests: backend/tests/routes/anmeldesperreJeKonto.test.js.
         # BEHOBEN 26.09.2026 (Audit Sicherheit BF-07): Login, Refresh und
         # verifyTokenRBAC pruefen deleted_at. Vorher konnte sich ein Konfi, den
         # der Auto-Loeschlauf 60 Tage nach der Konfirmation ausgeblendet hatte,
@@ -253,6 +313,11 @@ paths:
         nirgends gerufen. Ohne Adresse keine Mail; das Passwort steht nie
         darin; ein Versandfehler aendert nichts an Antwort und Passwort. Die
         Antwortform ist unveraendert.
+
+
+        SEIT 27.09.2026 (Audit Sicherheit BF-04): Das neue Passwort hebt
+        eine Kontosperre nach Fehlversuchen auf (siehe POST
+        /api/auth/login). Antwortform unveraendert.
       requestBody:
         required: true
         content:
@@ -753,6 +818,11 @@ paths:
         zugewiesenen Admin ging die Meldung als Rueckfall an ALLE Admins der
         Gemeinde. Den Rueckfall gibt es nicht mehr: Ohne zugewiesenen Admin
         bekommt sie die Gemeindeleitung. Antwortform unveraendert.
+
+
+        SEIT 27.09.2026 (Audit Sicherheit BF-04): Wurde der gewaehlte
+        Benutzername vorher durchprobiert, startet das neue Konto trotzdem
+        ohne Kontosperre (siehe POST /api/auth/login).
       requestBody:
         required: true
         content:
@@ -789,6 +859,11 @@ paths:
         an die hinterlegte Adresse des Kontos (utils/passwortGeaendertMail.js,
         emailService.sendPasswordChangedEmail). Ohne Adresse keine Mail; ein
         Versandfehler aendert nichts an Antwort und Passwort.
+
+
+        SEIT 27.09.2026 (Audit Sicherheit BF-04): Das neue Passwort hebt
+        eine Kontosperre nach Fehlversuchen auf (siehe POST
+        /api/auth/login). Antwortform unveraendert.
       requestBody:
         required: true
         content:
@@ -993,6 +1068,7 @@ paths:
         middleware: [verifyTokenRBAC, requireSuperAdmin, validateCreateOrg]
         org-scope: false
         objekt-pruefung: "keine"
+        hinweis: "Seit 27.09.2026 (Audit Sicherheit BF-04): Der erste org_admin startet ohne Kontosperre, auch wenn sein Benutzername vorher durchprobiert wurde"
 
   /api/organizations/search-users:
     get:
@@ -1172,6 +1248,7 @@ paths:
         middleware: [verifyTokenRBAC, validateCreateOrgAdmin]
         org-scope: true
         objekt-pruefung: "Inline: super_admin (jede Org) ODER org_admin der eigenen Org; org_admin-Rolle wird in der Ziel-Org aufgeloest"
+        hinweis: "Seit 27.09.2026 (Audit Sicherheit BF-04): Das neue Konto startet ohne Kontosperre, auch wenn sein Benutzername vorher durchprobiert wurde"
         # BEHOBEN 22.08.2026 (war N6): die zentrale validatePassword-Policy
         # gilt jetzt auch hier (8 Zeichen, Gross/Klein, Ziffer, Sonderzeichen).
 
@@ -1317,6 +1394,7 @@ paths:
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('create')", validateCreateUser]
         org-scope: true
         objekt-pruefung: "role_id muss zur eigenen Org gehören; Hierarchie prüft Ziel-Rolle"
+        hinweis: "Seit 27.09.2026 (Audit Sicherheit BF-04): Das neue Konto startet ohne Kontosperre, auch wenn sein Benutzername vorher durchprobiert wurde"
 
   /api/users/{id}:
     get:
@@ -1357,7 +1435,7 @@ paths:
                 role_title: { type: string }
                 role_id: { type: integer, description: "Rollenwechsel: Hierarchie prueft neue Rolle; Sockets werden getrennt" }
                 is_active: { type: boolean, description: "false trennt aktive Sockets" }
-                password: { type: string, description: "Seit 27.09.2026 (BF-20 / F-12): Wird ein Passwort gesetzt, geht nach der Antwort eine Bestaetigung an die hinterlegte Adresse des Kontos -- ohne das Passwort, mit dem Hinweis, dass die Leitung es gesetzt hat (ausser beim eigenen Konto)" }
+                password: { type: string, description: "Seit 27.09.2026 (BF-20 / F-12): Wird ein Passwort gesetzt, geht nach der Antwort eine Bestaetigung an die hinterlegte Adresse des Kontos -- ohne das Passwort, mit dem Hinweis, dass die Leitung es gesetzt hat (ausser beim eigenen Konto). Seit 27.09.2026 (Sicherheit BF-04) hebt es ausserdem eine Kontosperre nach Fehlversuchen auf" }
       responses:
         "200": { description: "Aktualisiert; Chat-Sync bei Rollen-/Aktiv-Wechsel; User-Cache bei JEDER Aenderung invalidiert (seit 26.09.2026 -- vorher nur bei role_id, is_active=false wirkte bis zu 30 s spaeter)" }
         "400": { description: "Rolle nicht in eigener Org / keine Felder" }
@@ -1596,6 +1674,12 @@ paths:
         persoenlich weiter). Ohne Adresse keine Mail; ein Versandfehler
         aendert nichts. Am Request und an der Antwortform aendert sich
         nichts.
+
+
+        SEIT 27.09.2026 (Audit Sicherheit BF-04): Das neue Passwort hebt
+        eine Kontosperre nach Fehlversuchen auf (siehe POST
+        /api/auth/login) -- der Weg der Leitung, wenn jemand ausgesperrt
+        ist.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       requestBody:

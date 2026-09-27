@@ -15,6 +15,7 @@ ist.
 | **Konfi mit E-Mail** | selbst über „Passwort vergessen" — oder Einmalpasswort |
 | **Teamer:in** | selbst über „Passwort vergessen" — oder Einmalpasswort |
 | **Admin / Org-Admin** | selbst über „Passwort vergessen"; sonst setzt ein Org-Admin in der Benutzerverwaltung ein Passwort |
+| **Zu viele falsche Passwörter** | eine Stunde warten oder ein neues Passwort — siehe [Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen) |
 | **Niemand kommt mehr rein** | siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht) |
 
 ## Weg 1: Die Leitung setzt ein neues Passwort
@@ -78,6 +79,9 @@ lateinischen Namen — `Genesis`, `Exodus`, `Levitikus`, `Numeri`,
 
 Das Passwort gilt unbegrenzt. Es heißt „Einmalpasswort", weil es zum ersten
 Anmelden gedacht ist — die Person sollte es danach im Profil ändern.
+Schnell durchprobieren lässt es sich trotzdem nicht: Nach zehn falschen
+Passwörtern nimmt das Konto bis zu eine Stunde lang keine Anmeldung an (siehe
+[Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen)).
 
 ## Weg 2: „Passwort vergessen" per E-Mail nutzen
 
@@ -398,6 +402,7 @@ und darunter, woran es liegt:
 | Meldung | Was dahintersteckt und was hilft |
 |---|---|
 | „Falsches Passwort. Bitte versuche es erneut." | Benutzername oder Passwort stimmt nicht — welches von beiden, sagt die App absichtlich nicht. Beim Passwort zählt Groß- und Kleinschreibung, beim [Benutzernamen](#den-richtigen-benutzernamen-finden) nicht. |
+| „Zu viele falsche Anmeldeversuche für dieses Konto. …" | Für dieses Konto kamen zehn falsche Passwörter innerhalb einer Stunde — siehe [Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen). |
 | „Zu viele Login-Versuche. Bitte warte 15 Minuten." | Aus demselben Netz kamen in einer Viertelstunde sehr viele falsche Passwörter, etwa im Gemeinde-WLAN. Warten hilft. |
 | „Dein Zugang wurde deaktiviert. …" | Das Konto ist deaktiviert oder die Konfi-Zeit ist vorbei — siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht). |
 | „Diese Organisation ist derzeit gesperrt. …" oder „Die Testphase dieser Organisation ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Gemeindeleitung mit dem Betrieb von Konfi Quest. |
@@ -408,6 +413,44 @@ die App auf dem Gerät nicht aktuell: Sie meldet jede Ablehnung als fehlende
 Verbindung, auch ein falsches Passwort. Ein Update aus dem App Store oder von
 Google Play bringt die richtigen Meldungen; im Browser gilt immer der aktuelle
 Stand.
+
+## Nach zu vielen falschen Passwörtern wieder hineinkommen
+
+Nach **zehn falschen Passwörtern innerhalb einer Stunde** nimmt ein Konto
+keine Anmeldung mehr an — auch nicht mit dem richtigen Passwort. Die App
+meldet dann: „Zu viele falsche Anmeldeversuche für dieses Konto. Versuche es in
+einer Stunde wieder oder bitte die Leitung deiner Gemeinde um ein neues
+Passwort."
+
+- **Gezählt wird je Konto**, nicht je Gerät: Es ist gleich, ob die Versuche
+  vom eigenen Handy, aus dem Gemeinde-WLAN oder von irgendwo sonst kommen.
+  Groß- und Kleinschreibung des Benutzernamens machen keinen Unterschied.
+- **Die Sperre endet von selbst**, spätestens eine Stunde nach dem ersten
+  falschen Passwort. Weitere Versuche in dieser Zeit verlängern sie nicht.
+- **Ein neues Passwort hebt sie sofort auf**, auf jedem der drei Wege: von der
+  [Leitung](#weg-1-die-leitung-setzt-ein-neues-passwort) gesetzt, über
+  [„Passwort vergessen"](#weg-2-passwort-vergessen-per-e-mail-nutzen) oder
+  [im Profil](#weg-3-selbst-aendern-wenn-man-angemeldet-ist) auf einem Gerät,
+  das noch angemeldet ist.
+- **Eine gelungene Anmeldung setzt die Zählung zurück.** Wer sich neunmal
+  vertippt und dann trifft, hat danach wieder zehn Versuche.
+- **Wer angemeldet ist, bleibt angemeldet.** Die Sperre gilt nur für die
+  Anmeldung mit Passwort. Die App auf dem Handy, die Anmeldung mit Face ID oder
+  Fingerabdruck und laufende Sitzungen im Browser merken nichts davon.
+
+**Wer ein fremdes Konto absichtlich sperrt,** indem er zehn falsche Passwörter
+eingibt, hält es damit nur bis zum Ende der Stunde zu und muss danach von
+vorn anfangen. Passiert das immer wieder, setzt die Leitung ein neues
+Passwort; das Kind meldet sich damit an und bleibt in der App angemeldet,
+dann trifft es die Sperre nicht mehr.
+
+> **Warum so streng?** Die Einmalpasswörter sind Bibelstellen — leicht
+> weiterzugeben, aber es gibt nur rund 31 000 davon. Wer einen Benutzernamen
+> kennt, könnte sie ohne Sperre in gut einem Tag alle ausprobieren. Mit der Sperre
+> bleiben ihm höchstens 240 Versuche am Tag; alle durchzuprobieren dauert über
+> vier Monate. Wer sein Einmalpasswort
+> [im Profil ändert](#weg-3-selbst-aendern-wenn-man-angemeldet-ist), macht es
+> Fremden noch schwerer.
 
 ## Weiterkommen, wenn gar nichts geht
 

@@ -115,7 +115,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/login</code></div>
         <p class="summary">Login für alle Rollen (case-insensitiver Username)</p>
-        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>authLimiter</code> · <code>validateLogin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide; deleted_at IS NOT NULL -&gt; 403 user_inactive fuer jede Rolle</div><div class="hinweis">Offene Route; setzt last_login_at</div>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>authLimiter</code> · <code>validateLogin</code> · <code>kontoSperre</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide; deleted_at IS NOT NULL -&gt; 403 user_inactive fuer jede Rolle</div><div class="hinweis">Offene Route; setzt last_login_at; setzt nach Erfolg den Zaehler der Kontosperre zurueck</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/logout</code></div>
         <p class="summary">Logout — Refresh-Token revozieren und Push-Token des Geraets entfernen (best effort, immer 200)</p>
@@ -193,7 +193,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/organizations</code></div>
         <p class="summary">Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitäten, 3 Beispiel-Challenges)</p>
-        <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireSuperAdmin</code> · <code>validateCreateOrg</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div>
+        <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireSuperAdmin</code> · <code>validateCreateOrg</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div><div class="hinweis">Seit 27.09.2026 (Audit Sicherheit BF-04): Der erste org_admin startet ohne Kontosperre, auch wenn sein Benutzername vorher durchprobiert wurde</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/organizations/{id}</code></div>
         <p class="summary">Organisation vollstaendig löschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)</p>
@@ -213,7 +213,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/organizations/{id}/admins</code></div>
         <p class="summary">Neuen org_admin in einer Organisation anlegen</p>
-        <div class="zugriff"><span class="chip r-super">Super-Admin</span><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>validateCreateOrgAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline: super_admin (jede Org) ODER org_admin der eigenen Org; org_admin-Rolle wird in der Ziel-Org aufgeloest</div>
+        <div class="zugriff"><span class="chip r-super">Super-Admin</span><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>validateCreateOrgAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline: super_admin (jede Org) ODER org_admin der eigenen Org; org_admin-Rolle wird in der Ziel-Org aufgeloest</div><div class="hinweis">Seit 27.09.2026 (Audit Sicherheit BF-04): Das neue Konto startet ohne Kontosperre, auch wenn sein Benutzername vorher durchprobiert wurde</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b45309">PATCH</span><code class="pfad">/api/organizations/{id}/limit</code></div>
         <p class="summary">Konfi-Limit (max_konfis) setzen — bewusst eigener Super-Admin-Endpunkt, damit org_admin den Tarif nicht aushebeln kann</p>
@@ -328,7 +328,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/users</code></div>
         <p class="summary">Verwaltungs-User anlegen (Rolle aus eigener Org, volle Passwort-Policy)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>userHierarchyMiddleware('create')</code> · <code>validateCreateUser</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>role_id muss zur eigenen Org gehören; Hierarchie prüft Ziel-Rolle</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>userHierarchyMiddleware('create')</code> · <code>validateCreateUser</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>role_id muss zur eigenen Org gehören; Hierarchie prüft Ziel-Rolle</div><div class="hinweis">Seit 27.09.2026 (Audit Sicherheit BF-04): Das neue Konto startet ohne Kontosperre, auch wenn sein Benutzername vorher durchprobiert wurde</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/users/{id}</code></div>
         <p class="summary">User aus der Gemeinde entfernen -- Hard-Delete nur, wenn die Person keiner anderen Gemeinde angehört</p>

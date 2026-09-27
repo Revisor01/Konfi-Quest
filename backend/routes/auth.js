@@ -21,6 +21,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
+const { erzeugeKontoSperre, kontoSperreAufheben } = require('../utils/kontoSperre');
 const router = express.Router();
 
 // Die beiden Reset-Grenzen entstehen erst in der Fabrik unten, weil ihr
@@ -146,6 +147,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
   // Rate Limiter Middleware für Login (falls vorhanden)
   const loginMiddleware = authLimiter ? [authLimiter] : [];
+  // Sperre JE KONTO nach 10 falschen Passwoertern in einer Stunde (Audit
+  // 26.09.2026, Sicherheit BF-04): Die IP-Grenze oben laesst 1 200 Versuche
+  // je Stunde und Adresse zu -- die Einmalpasswoerter (30 772 Bibelstellen)
+  // waren damit in einem Tag durchprobiert. Immer aktiv, auch ohne die
+  // Limiter aus server.js; Begruendung und Zahlen in utils/kontoSperre.js.
+  const kontoSperre = erzeugeKontoSperre(db);
   // Rate Limiter Middleware für Selbst-Registrierung (falls vorhanden)
   const registerMiddleware = registerLimiter ? [registerLimiter] : [];
 
@@ -192,7 +199,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   ];
 
   // Unified RBAC login - works for both admins and konfis
-  router.post('/login', ...loginMiddleware, validateLogin, async (req, res) => {
+  // Reihenfolge: IP-Grenze, Eingabepruefung (trimmt den Namen), Kontosperre.
+  router.post('/login', ...loginMiddleware, validateLogin, kontoSperre, async (req, res) => {
     // Usernames werden beim Anlegen klein gespeichert (name.toLowerCase()...).
     // Eingabe daher case-insensitiv machen: trim + lowercase, sonst scheitert
     // der Login wenn jemand z.B. "Anna.Schmidt" statt "anna.schmidt" tippt
@@ -266,6 +274,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
           });
         }
       }
+
+      // Erfolgreich angemeldet: Die Fehlversuche dieses Kontos verfallen --
+      // ein Kind, das sich neunmal vertippt und dann trifft, faengt wieder bei
+      // null an. (Ueber der Grenze kommt niemand bis hierher.)
+      if (req.kontoSperre) await kontoSperre.resetKey(req.kontoSperre.key);
 
       // last_login_at nur beim echten Login aktualisieren (nicht in Middleware)
       await db.query("UPDATE users SET last_login_at = NOW() WHERE id = $1", [user.id]);
@@ -385,6 +398,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         `UPDATE users SET password_hash = $1, token_invalidated_at = NOW() WHERE id = $2`,
         [hashedPassword, userId]
       );
+      // Neues Passwort: eine Sperre nach Fehlversuchen endet damit (BF-04).
+      await kontoSperreAufheben(db, userId);
       await db.query(
         'UPDATE refresh_tokens SET revoked_at = NOW(), expires_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',
         [userId]
@@ -1144,6 +1159,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
           VALUES ($1, $2, 0, 0, $3, $4)
         `, [newUser.id, invite.jahrgang_id, invite.id, invite.organization_id]);
 
+        // Ein vorher durchprobierter Name startet frei (utils/kontoSperre.js).
+        await kontoSperreAufheben(client, newUser.id);
+
         await client.query('COMMIT');
 
         // Push an die Leitung des Jahrgangs (27.09.2026, Regel in
@@ -1278,6 +1296,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         `UPDATE users SET password_hash = $1, token_invalidated_at = NOW() WHERE id = $2`,
         [hashedPassword, resetRecord.user_id]
       );
+      // Neues Passwort: eine Sperre nach Fehlversuchen endet damit (BF-04).
+      await kontoSperreAufheben(db, resetRecord.user_id);
       await db.query(
         'UPDATE refresh_tokens SET revoked_at = NOW(), expires_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',
         [resetRecord.user_id]

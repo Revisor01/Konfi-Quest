@@ -11,6 +11,7 @@ const { syncTeamChat } = require('../utils/teamChat');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
+const { kontoSperreAufheben } = require('../utils/kontoSperre');
 
 // Organizations routes
 // ============================================
@@ -365,6 +366,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const { rows: [newAdmin] } = await db.query(userQuery, [
         organizationId, orgAdminRoleId, admin_username, contact_email, hashedPassword, admin_display_name
       ]);
+      // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
+      await kontoSperreAufheben(db, newAdmin.id);
 
       // 4. Create default badges for the organization
       const defaultBadges = [
@@ -1081,6 +1084,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         VALUES ($1, $2, $3, $4, $5, $6, true)
         RETURNING id, username, display_name, email, is_active, created_at
       `, [id, role.id, username, email || null, hashedPassword, display_name]);
+      // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
+      await kontoSperreAufheben(db, newAdmin.id);
 
       res.status(201).json(newAdmin);
     } catch (err) {

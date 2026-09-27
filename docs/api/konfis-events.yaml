@@ -3341,7 +3341,9 @@ paths:
         Legt User + konfi_profiles an, erzeugt Username und Startpasswort,
         hängt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige
         Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation
-        wird geprüft.
+        wird geprüft. Seit 27.09.2026 (Audit Sicherheit BF-04) startet das
+        neue Konto ohne Kontosperre, auch wenn der erzeugte Benutzername
+        vorher durchprobiert wurde.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCreateKonfi]
@@ -3608,6 +3610,12 @@ paths:
         Antwort eine Bestaetigung dorthin, dass die Leitung ein neues
         Passwort gesetzt hat -- das Einmalpasswort steht NICHT darin. Ohne
         Adresse keine Mail; ein Versandfehler aendert nichts.
+
+
+        SEIT 27.09.2026 (Audit Sicherheit BF-04): Das neue Passwort hebt
+        eine Kontosperre nach Fehlversuchen auf (siehe POST /api/auth/login
+        in verwaltung-auth) -- der Weg der Leitung, wenn ein Kind nach zehn
+        falschen Passwoertern ausgesperrt ist. Antwortform unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]

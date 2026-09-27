@@ -25,6 +25,7 @@ const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
+const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const router = express.Router();
 
 // Konfis: Teamer darf ansehen, Admin darf bearbeiten
@@ -298,6 +299,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 INSERT INTO konfi_profiles (user_id, jahrgang_id, organization_id, gottesdienst_points, gemeinde_points)
                 VALUES ($1, $2, $3, 0, 0)`;
             await client.query(profileQuery, [userId, jahrgang_id, req.user.organization_id]);
+
+            // Ein vorher durchprobierter Benutzername startet frei (Sperre je
+            // Konto nach Fehlversuchen, utils/kontoSperre.js).
+            await kontoSperreAufheben(client, userId);
 
             // Jahrgangs-Chat synchronisieren: legt den Chat bei Bedarf an und
             // fuegt den neuen Konfi (sowie weiterhin alle Soll-Mitglieder) hinzu.
@@ -691,6 +696,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             const updateProfileQuery = "UPDATE konfi_profiles SET password_plain = NULL WHERE user_id = $1";
             await client.query(updateProfileQuery, [req.params.id]);
+
+            // Neues Passwort: Eine Sperre nach Fehlversuchen endet damit
+            // (Audit 26.09.2026, BF-04) -- der Weg, den die Leitung geht,
+            // wenn ein Kind ausgesperrt ist.
+            await kontoSperreAufheben(client, req.params.id);
 
             await client.query('COMMIT');
             res.json({ message: 'Passwort erfolgreich neu generiert', temporaryPassword: newPassword });

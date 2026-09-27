@@ -16,6 +16,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { loescheMitteilungenZuAntraegen, loescheMitteilungenUeberPerson } = require('../utils/postfachAufraeumen');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
+const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
 
 // User management routes
@@ -283,6 +284,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       `;
       const insertParams = [organizationId, username, email, display_name, role_title || null, passwordHash, role_id];
       const { rows: [newUser] } = await db.query(insertQuery, insertParams);
+      // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
+      await kontoSperreAufheben(db, newUser.id);
 
       res.status(201).json({
         id: newUser.id,
@@ -437,6 +440,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         // This case should theoretically not be hit due to the initial check, but is good for safety.
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
+
+      // Neues Passwort: Eine Sperre nach Fehlversuchen endet damit (BF-04).
+      // Nach dem UPDATE, damit ein im selben Zug geaenderter Benutzername zaehlt.
+      if (password) await kontoSperreAufheben(db, id);
 
       res.json({ message: 'Benutzer erfolgreich aktualisiert' });
 
@@ -1301,6 +1308,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         'UPDATE users SET password_hash = $1, updated_at = NOW(), token_invalidated_at = NOW() WHERE id = $2 AND organization_id = $3',
         [hashedPassword, id, targetUser.organization_id]
       );
+      // Neues Passwort: Eine Sperre nach Fehlversuchen endet damit (BF-04).
+      await kontoSperreAufheben(db, id);
 
       // Refresh-Tokens widerrufen. Ohne das ist die Invalidierung oben
       // wirkungslos: Der Refresh-Token laeuft 90 Tage und holt sich laufend

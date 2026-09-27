@@ -388,6 +388,10 @@ Versionsüberschrift.
   Nachrichten, Abmeldungen und gemeldete Aktivitäten warten und gehen raus,
   sobald wieder Netz da ist. Bisher galt sie dort als online, schickte ins
   Leere und gab nach drei Versuchen auf.
+- Einmalpasswörter lassen sich nicht mehr durchprobieren: Nach zehn falschen
+  Passwörtern innerhalb einer Stunde nimmt ein Konto keine Anmeldung mehr an,
+  auch nicht mit dem richtigen Passwort — bis die Stunde um ist oder das Konto
+  ein neues Passwort bekommt.
 - Scheitert die Anmeldung, nennt die App den Grund — falsches Passwort,
   deaktivierter Zugang, gesperrte Gemeinde oder zu viele Versuche. Bisher
   stand in jedem dieser Fälle „Keine Verbindung zum Server".
