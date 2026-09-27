@@ -104,10 +104,14 @@ describe('Klickbare Elemente sind Schaltflaechen oder ausdruecklich keine (UI BF
       'teamer/modals/TeamerActivityRequestModal.tsx',
       'konfi/pages/KonfiDashboardPage.tsx',       // Rueckblick-Hinweis mit Ausblenden-Knopf
       'teamer/pages/TeamerDashboardPage.tsx',
+      // Neuigkeiten-Karten mit X: Knopf ist der Text der Karte (27.09.2026)
+      'shared/UpdateHinweisKarte.tsx',
+      'shared/MitmachenHinweisKarte.tsx',
+      'shared/StoreUpdateBanner.tsx',
     ];
-    // 11 Zeilen unter „Mehr", 3 in der Chat-Blase, je 1 in den uebrigen fuenf Dateien.
+    // 11 Zeilen unter „Mehr", 3 in der Chat-Blase, je 1 in den uebrigen acht Dateien.
     const praesentation = alle.filter((k) => /(?:^|\s)role="presentation"/.test(k.tag));
-    expect(praesentation.length).toBe(19);
+    expect(praesentation.length).toBe(22);
     const fremd = praesentation.map((k) => k.ort).filter((ort) => !erlaubt.some((e) => ort.startsWith(e)));
     expect(fremd).toEqual([]);
   });
@@ -116,5 +120,46 @@ describe('Klickbare Elemente sind Schaltflaechen oder ausdruecklich keine (UI BF
     const quelle = readFileSync(join(wurzel, 'admin/pages/AdminSettingsPage.tsx'), 'utf8');
     const innen = quelle.match(/<div role="button" tabIndex=\{0\} onKeyDown=\{tastaturKlick\} className="app-list-item__main">/g) ?? [];
     expect(innen.length).toBe(11);
+  });
+
+  it('kein Knopf im Knopf: kein Element mit role="button" enthaelt einen weiteren Knopf', () => {
+    // Nachtrag 27.09.2026: Die drei Neuigkeiten-Karten (.app-whatsnew) waren
+    // role="button" und trugen ihr X in sich -- gemessen 6 Stellen, davon 3
+    // echt. Die 3 uebrigen im Challenge-Beitrag sind nur im Quelltext
+    // verschachtelt: role={mediaPreview ? undefined : 'button'} -- den
+    // Loeschen-Knopf gibt es nur MIT Vorschau, und dann ist die Flaeche kein
+    // Knopf mehr. Abschliessende Liste.
+    const bedingt = ['konfi/modals/ChallengeSubmitModal.tsx'];
+    const elementEnde = (quelle: string, start: number, name: string): number => {
+      const offen = tagEnde(quelle, start);
+      if (quelle[offen - 1] === '/') return offen + 1;
+      const muster = new RegExp(`<(/?)${name}\\b`, 'g');
+      muster.lastIndex = offen + 1;
+      let tiefe = 1;
+      for (let m = muster.exec(quelle); m; m = muster.exec(quelle)) {
+        if (m[1]) {
+          if (--tiefe === 0) return m.index;
+        } else {
+          const ende = tagEnde(quelle, m.index);
+          if (quelle[ende - 1] !== '/') tiefe++;
+          muster.lastIndex = ende + 1;
+        }
+      }
+      return quelle.length;
+    };
+    const funde: string[] = [];
+    for (const pfad of alleTsx(wurzel)) {
+      const quelle = readFileSync(pfad, 'utf8');
+      for (const m of quelle.matchAll(/<(div|span|li|IonCard|IonItem)\b/g)) {
+        const tag = quelle.slice(m.index!, tagEnde(quelle, m.index!) + 1);
+        if (!/(?:^|\s)role=(?:"button"|\{[^}]*'button'[^}]*\})/.test(tag)) continue;
+        const innen = quelle.slice(m.index! + tag.length, elementEnde(quelle, m.index!, m[1]));
+        if (/<button\b|<IonButton\b|role="button"|<a\b|<IonItem\b[^>]*\bbutton\b/.test(innen)) {
+          funde.push(`${relative(wurzel, pfad)}:${quelle.slice(0, m.index).split('\n').length}`);
+        }
+      }
+    }
+    expect(funde.filter((ort) => !bedingt.some((b) => ort.startsWith(b)))).toEqual([]);
+    expect(funde.filter((ort) => bedingt.some((b) => ort.startsWith(b))).length).toBe(3);
   });
 });

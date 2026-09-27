@@ -188,3 +188,14 @@ a.app-auth-link {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+
+/* Neuigkeiten-Karten (.app-whatsnew: „Was ist neu", „Events und
+   Aktivitäten", „Version x ist da"; Nachtrag 27.09.2026). Die Karte ist
+   role="presentation" und nimmt nur den Finger an; Knopf für Tastatur und
+   Vorlesehilfe ist ihr Text, das X steht daneben -- kein Knopf im Knopf.
+   Der Fokusring am Text in Weiß wie die Schrift der Karte; currentColor
+   wäre die Seitenschrift (dunkel auf dem Verlauf). */
+.app-whatsnew__text:focus-visible {
+  outline-color: var(--app-weiss);
+  border-radius: var(--app-radius-fein);
+}

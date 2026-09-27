@@ -603,6 +603,10 @@ Versionsüberschrift.
   die Datumswähler („Datum wählen"), die Ansicht einer Datei mit ihrem
   Dateinamen und der Rückblick. Ändert sich der Titel, während das Fenster
   offen ist, zieht der Name mit.
+- Auf den Hinweiskarten der Startseite — „Was ist neu", „Events und
+  Aktivitäten", „Version … ist da" — sind Karte und Kreuz für Tastatur und
+  Vorlesefunktion zwei getrennte Schaltflächen. Bisher steckte das Kreuz in
+  der Karte, und wer es per Tastatur auslöste, öffnete die Karte gleich mit.
 - Kleine Knöpfe — das Auge am Passwortfeld, das X an Hinweisen und
   Fehlermeldungen, Anhängen und Senden im Chat — lassen sich leichter
   treffen: Die Fläche, die auf den Finger reagiert, ist jetzt mindestens

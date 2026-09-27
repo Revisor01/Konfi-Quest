@@ -183,6 +183,10 @@ Nachricht und die Reaktionen. Die Vorlesefunktion nennt sie „Schaltfläche"
 und sagt bei Auswahlzeilen, ob sie gewählt sind; ein Ring zeigt, welches
 Element gerade den Fokus hat.
 
+Die Hinweiskarten auf der Startseite („Was ist neu", „Events und
+Aktivitäten", „Version … ist da") sind zwei Schaltflächen: die Karte, die
+öffnet, und daneben das Kreuz, das nur ausblendet.
+
 Öffnet sich ein Fenster — ein Formular, das Postfach, ein Datumswähler, die
 Punkte-Übersicht —, nennt die Vorlesefunktion seinen Titel („Passwort ändern,
 Dialog"), sodass klar ist, wo man gelandet ist. Die Ansicht einer Datei heißt
