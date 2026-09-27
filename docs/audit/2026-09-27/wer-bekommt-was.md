@@ -335,6 +335,11 @@ in CLAUDE.md („Wer sieht und bekommt was": Org-Admin alles; Admin und Teamer:i
 Team-Ausnahmen „Nur Team", Termine ohne Jahrgang, Chat im Team; Mitteilung = Sichtbarkeit) und
 werden wie empfohlen umgesetzt. Die Umsetzung steht je Befund in dessen Status-Zeile.
 
+**Nachfrage zu F-11, beantwortet 27.09.2026:** Pflicht-Abmeldung und die Abmeldung durch die Leitung
+bei der Anwesenheit nehmen niemanden aus dem Event-Chat — Simons Entscheidung vom 24.08.2026 („der
+Termin betrifft einen ja weiter") bleibt. Hinein kommen nur bestätigt Angemeldete, Wartende beim
+Nachrücken; wer auf die Warteliste zurückgesetzt wird, verlässt den Event-Chat.
+
 - **F-01 (BF-05):** Dürfen Admins (nicht Org-Admins) ohne eigene Teilnahme Jahrgangs-Chats, Termin-Chats und Gruppen mit Konfis fremder Jahrgänge öffnen? *Empfehlung: Nein — ohne Teilnahme nur Räume ihrer Jahrgänge, Termin-Chats von Terminen, die sie sehen, und reine Team-Räume; nur Org-Admins bleiben gemeindeweit.* **Status:** entschieden 27.09.2026 (Nein, wie empfohlen; Regel in CLAUDE.md) und mit BF-05 umgesetzt.
 - **F-02 (BF-03):** Sollen Teamer:innen des Jahrgangs „Neue Registrierung" auch bekommen? *Empfehlung: Nein, das ist Leitungssache (Konfis bearbeiten nur Admins); Empfänger Org-Admins und Admins des Jahrgangs.*
 - **F-03 (BF-02, BF-03):** Wenn niemand dem Jahrgang zugewiesen ist — genügt dann die Meldung an die Org-Admins? *Empfehlung: Ja, kein Rückfall an alle Admins.*
