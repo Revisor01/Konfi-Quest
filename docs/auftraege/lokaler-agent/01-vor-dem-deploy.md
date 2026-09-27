@@ -19,9 +19,12 @@ Stack-Variablen; ohne sie bricht `docker compose` mit „SMTP_HOST fehlt" ab
 (`${SMTP_HOST:?…}`). Das Backend prüft das Zertifikat des Mail-Servers
 standardmäßig streng.
 
-- [ ] In Portainer als Stack-Variablen setzen: `SMTP_HOST`, `SMTP_USER`,
-      `SMTP_HOST_IP` (für `extra_hosts`), `SMTP_PASS` prüfen. Werte nur in
-      Portainer, nirgends im Repo.
+- [ ] Mit dem Bestand in Portainer abgleichen: `SMTP_HOST`, `SMTP_USER`,
+      `SMTP_HOST_IP` (für `extra_hosts`), `SMTP_PASS`. Werte nur in
+      Portainer, nirgends im Repo. Wo sie stehen (Stack-Variablen oder direkt
+      in der Stack-Datei) und wann umgestellt wird, steht in
+      [00](00-ablauf-release-2.3.0.md), Phase A Schritt 2 — der alte Deploy
+      schickte die Stack-Variablen leer an Portainer.
 - [ ] Zertifikat gegen den Hostnamen prüfen:
       ```
       openssl s_client -connect "<SMTP_HOST>:465" -servername "<SMTP_HOST>" </dev/null 2>/dev/null \

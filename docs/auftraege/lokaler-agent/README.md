@@ -7,8 +7,13 @@ sagen, **was** zu tun ist und woran man merkt, dass es stimmt. **Wo** etwas
 liegt und **womit** man sich anmeldet, steht nicht hier — dieses Repo ist
 öffentlich.
 
+**Einstieg: [00-ablauf-release-2.3.0.md](00-ablauf-release-2.3.0.md)** —
+Reihenfolge von Sicherung bis Testbuild. Ein Merge nach `main` ist der
+Produktions-Deploy; den Merge gibt Simon frei.
+
 | Datei | Inhalt | Wann |
 |---|---|---|
+| [00-ablauf-release-2.3.0.md](00-ablauf-release-2.3.0.md) | Phasen A–D: vor dem Merge, Merge und Deploy, Testbuilds, danach | zuerst lesen |
 | [01-vor-dem-deploy.md](01-vor-dem-deploy.md) | Sicherung, Mail-Variablen und Zertifikat, Zählungen, Vorher-Messungen | vor dem ersten Deploy von 2.3.0 |
 | [02-portainer-stack.md](02-portainer-stack.md) | Stack an die Referenz angleichen, Postgres, zweistufiger Deploy, Hintergrundjobs | um den Deploy herum, Reihenfolge beachten |
 | [03-nach-dem-deploy.md](03-nach-dem-deploy.md) | Nachher-Messungen, Screenshots, Absender, Log-Volumen, Umami bereinigen | nach dem Deploy |
