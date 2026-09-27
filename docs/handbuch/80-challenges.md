@@ -91,7 +91,7 @@ Zwei Möglichkeiten unter „Wer macht mit?":
 | Team darf einreichen | ja | ja |
 | Jahrgänge auswählbar | ja, Pflicht | nein, entfällt |
 | Konfis sehen die Challenge | ja | **nein, gar nicht** |
-| Wer verwaltet sie | die Leitung und die Teamer:innen der Jahrgänge | jede:r im Team der Organisation |
+| Wer verwaltet sie | die Leitung — Org-Admins und alle Admins — und die Teamer:innen der Jahrgänge | jede:r im Team der Organisation |
 
 „Jahrgang und Team" ist die Voreinstellung: „Die Konfis der gewählten Jahrgänge
 und ihr im Team — alle reichen gleichberechtigt ein." Eine Einstellung „nur
@@ -101,6 +101,12 @@ beantworten.
 „Nur das Team" ist eine Runde unter euch. Solche Challenges laufen
 organisationsweit über die Rolle statt über Jahrgänge — deshalb entfällt die
 Jahrgangs-Auswahl, und jede:r im Team kann sie sehen und verwalten.
+
+Admins gehören zum Team und sind deshalb an jeder Challenge beteiligt, bei
+der das Team mitmacht — sie sehen und verwalten sie auch ohne zugewiesenen
+Jahrgang. Nur ältere Challenges, bei denen allein Konfis mitmachen, sehen
+Admins wie Teamer:innen nur für ihre
+[zugewiesenen Jahrgänge](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert).
 
 Konfis erfahren von einer Team-Challenge gar nichts: Sie steht nicht in ihrer
 Liste, und ruft jemand die Adresse direkt auf, antwortet das System „nicht
@@ -390,8 +396,10 @@ ohnehin sehen dürfen:
 
 - die Person, die ihn eingereicht hat — immer
 - der Org-Admin — für alles in seiner Organisation
-- Admins und Teamer:innen — nur für ihre zugewiesenen Jahrgänge, bei
-  Team-Challenges für alles im Team
+- Admins — für jede Challenge, bei der das Team mitmacht, sonst nur für ihre
+  zugewiesenen Jahrgänge
+- Teamer:innen — nur für ihre zugewiesenen Jahrgänge, bei Challenges nur fürs
+  Team für alles im Team
 - Konfis — nur für Beiträge, die in ihrer Galerie erscheinen dürfen
 
 ---
@@ -441,7 +449,8 @@ auf eure Freigabe warten. An der einzelnen Challenge steht dieselbe Zahl
 oben rechts als oranges Feld mit Uhr — orange, weil Freigaben warten können
 und kein Neues sind wie eine ungelesene Nachricht. Beide Zahlen zählen nur
 Challenges, die ihr selbst freigeben dürft: Teamer:innen ihre zugewiesenen
-Jahrgänge und die Challenges nur fürs Team, die Leitung alle der Gemeinde.
+Jahrgänge und die Challenges nur fürs Team, Admins zusätzlich alle, bei denen
+das Team mitmacht, die Gemeindeleitung alle der Gemeinde.
 Sobald ihr einen Beitrag freigebt oder ausblendet, geht die Zahl zurück; bei
 null verschwindet das Feld. Die Legende hinter dem Fragezeichen erklärt es
 zusammen mit den Status-Symbolen.
@@ -454,8 +463,12 @@ Zahlen werden nicht vermischt.
 
 - **Die Konfis der Jahrgänge** bekommen eine Mitteilung, sobald eine geplante
   Challenge tatsächlich startet — nicht schon beim Anlegen.
-- **Die Leitung** bekommt eine Mitteilung bei jedem neuen Beitrag, auch wenn er
-  ohne Moderation sofort in der Galerie steht.
+- **Wer die Challenge verwaltet**, bekommt eine Mitteilung bei jedem neuen
+  Beitrag, auch wenn er ohne Moderation sofort in der Galerie steht: die
+  Gemeindeleitung immer, Admins bei jeder Challenge mit dem Team und bei
+  reinen Konfi-Challenges ihrer Jahrgänge, Teamer:innen für ihre Jahrgänge
+  und die Challenges nur fürs Team. Wer selbst etwas einreicht, bekommt über
+  den eigenen Beitrag keine Mitteilung.
 - **Die einreichende Person** bekommt eine Mitteilung, sobald sie den Stempel
   erhält, und eine, wenn ihr Beitrag ausgeblendet wird — mit eurer Begründung,
   falls ihr eine eingetragen habt.

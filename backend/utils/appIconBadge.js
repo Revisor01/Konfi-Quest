@@ -19,6 +19,7 @@
 // Rolle, dieselben Bestandteile. Aendert sich eine Seite, gehoert die andere
 // nachgezogen; ein Test haelt die Zusammensetzung fest.
 const { challengeNeuigkeitenJeChallenge } = require('./challengeNeuigkeiten');
+const { leitungSiehtChallengeSql } = require('./challengeLeitungSicht');
 
 /**
  * Die Bausteine der Summe -- jeder als EINE Abfrage ueber viele
@@ -194,28 +195,25 @@ async function freigabeZaehlerProOrg(db, orgIds) {
 // 'nur_team' ist ausdruecklich eingeschlossen: Solche Runden haben per
 // Definition keine Jahrgangs-Zuordnung, sind aber fuer das ganze Team der
 // Organisation moderierbar (Migration 121, Befund H4).
+//
+// Seit 27.09.2026 ueber die gemeinsame Regel (utils/challengeLeitungSicht.js):
+// Admins zaehlen 'konfis_und_team' auch ohne Jahrgang -- deshalb geht die
+// Rolle je Person mit in die Abfrage.
 async function teamerFreigabeZaehler(db, teamer) {
   if (teamer.length === 0) return [];
   const jahrgangsListen = jahrgangsSpalte(teamer);
   return (await db.query(
     `SELECT z.user_id, z.user_type, z.organization_id, COUNT(cs.id)::int AS c
-       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[])
-              AS z(user_id, user_type, organization_id, jahrgaenge)
+       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[], $5::text[])
+              AS z(user_id, user_type, organization_id, jahrgaenge, rolle)
        LEFT JOIN challenges c
               ON c.organization_id = z.organization_id
        LEFT JOIN challenge_submissions cs
               ON cs.challenge_id = c.id
              AND cs.moderation_status = 'pending'
-             AND (
-               c.audience = 'nur_team'
-               OR EXISTS (
-                 SELECT 1 FROM challenge_jahrgang_assignments cja
-                  WHERE cja.challenge_id = c.id
-                    AND cja.jahrgang_id = ANY(z.jahrgaenge::int[])
-               )
-             )
+             AND ${leitungSiehtChallengeSql({ rolle: 'z.rolle', jahrgaenge: 'z.jahrgaenge::int[]' })}
       GROUP BY z.user_id, z.user_type, z.organization_id`,
-    [...spalten(teamer), jahrgangsListen]
+    [...spalten(teamer), jahrgangsListen, rollenSpalte(teamer)]
   )).rows;
 }
 
@@ -297,6 +295,11 @@ function jahrgangsSpalte(personen) {
   return personen.map((p) =>
     `{${(p.assigned_jahrgaenge || []).filter((j) => j.can_view).map((j) => j.id).join(',')}}`
   );
+}
+
+/** Die Rolle je Person; Teamer:innen ohne role_name gelten als 'teamer'. */
+function rollenSpalte(personen) {
+  return personen.map((p) => p.role_name || (p.type === 'teamer' ? 'teamer' : 'admin'));
 }
 
 /** Schluessel der Zuordnung: id allein reicht nicht, der Typ gehoert dazu. */

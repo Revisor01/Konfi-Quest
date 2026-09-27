@@ -302,13 +302,21 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
 
       await PushService.sendChallengeSubmissionToLeadership(db, ORG1, challengeId, 'Fotochallenge', 'Test Konfi 1', true);
 
-      const [admin] = await postfach(USERS.admin1.id);
-      expect(admin.type).toBe('challenge_submission');
-      expect(admin.data).toMatchObject({ challengeId: String(challengeId) });
-      expect(admin.message).toBe('Test Konfi 1 hat bei "Fotochallenge" etwas eingereicht. Wartet auf Freigabe.');
+      // Die Gemeindeleitung (org_admin) bekommt sie immer.
+      const [leitung] = await postfach(USERS.orgAdmin1.id);
+      expect(leitung.type).toBe('challenge_submission');
+      expect(leitung.data).toMatchObject({ challengeId: String(challengeId) });
+      expect(leitung.message).toBe('Test Konfi 1 hat bei "Fotochallenge" etwas eingereicht. Wartet auf Freigabe.');
 
       const [teamer] = await postfach(USERS.teamer1.id);
       expect(teamer.type).toBe('challenge_submission');
+
+      // Geaendert 27.09.2026 (Simon: "Wenn es nur Konfis sind, mit
+      // Jahrgangsbindung, und die sind da nicht drin, dann kriegen sie es auch
+      // nicht"): admin1 hat keinen Jahrgang, die Challenge ist eine reine
+      // Konfi-Challenge von Jahrgang 1 -- keine Mitteilung mehr. Vorher bekam
+      // jeder Admin jede Challenge-Mitteilung, sah die Challenge aber nicht.
+      expect(await postfach(USERS.admin1.id)).toEqual([]);
     });
 
     it('jahrgang_deletion_warning: mit jahrgang_id, damit sie mit dem Jahrgang gehen kann', async () => {

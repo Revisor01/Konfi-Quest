@@ -220,6 +220,14 @@ Versionsüberschrift.
   Ladepunkte und Abzeichen, gleitende Karten und der Wisch durch die
   Einführung — alles erscheint sofort an seinem Platz. Der Jahresrückblick
   kennt diese Einstellung bereits und bleibt, wie er ist.
+- Admins sehen und verwalten jede Challenge, bei der das Team mitmacht, auch
+  ohne zugewiesenen Jahrgang, und bekommen genau zu diesen Challenges die
+  Mitteilung über neue Beiträge. Bei älteren Challenges nur für Konfis gilt
+  weiter der Jahrgang. Bisher bekam jeder Admin zu jeder Challenge eine
+  Mitteilung, sah viele davon in Liste und Reiter aber gar nicht.
+- Teamer:innen bekommen die Mitteilung über neue Beiträge auch bei Challenges
+  nur fürs Team, die sie ja mitverwalten. Wer selbst etwas einreicht, bekommt
+  über den eigenen Beitrag keine Mitteilung mehr.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

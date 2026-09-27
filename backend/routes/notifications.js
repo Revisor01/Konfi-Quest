@@ -5,6 +5,7 @@ const { handleValidationErrors } = require('../middleware/validation');
 const { challengeNeuigkeitenJeChallenge } = require('../utils/challengeNeuigkeiten');
 const { appIconSummenJeOrganisation } = require('../utils/appIconBadge');
 const { ladeMitgliedschaftenDerPerson } = require('../utils/orgMitglieder');
+const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -128,21 +129,17 @@ module.exports = (db, verifyTokenRBAC) => {
         // teamerJahrgangIds.length > 0). Ergebnis: Ein Teamer konnte eine
         // Team-Runde moderieren, wurde aber nie per Reiter-Zaehler darauf
         // gestossen (Befund H4).
+        // Seit 27.09.2026 ueber die gemeinsame Regel (utils/challengeLeitungSicht.js):
+        // Admins zaehlen 'konfis_und_team' auch ohne Jahrgang.
         challengesPromise = db.query(
           `SELECT cs.challenge_id, COUNT(*)::int AS c
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
            WHERE c.organization_id = $1
              AND cs.moderation_status = 'pending'
-             AND (
-               c.audience = 'nur_team'
-               OR EXISTS (
-                 SELECT 1 FROM challenge_jahrgang_assignments cja
-                 WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($2::int[])
-               )
-             )
+             AND ${leitungSiehtChallengeSql({ rolle: '$3', jahrgaenge: '$2::int[]' })}
            GROUP BY cs.challenge_id`,
-          [organizationId, eigeneJahrgangIds]
+          [organizationId, eigeneJahrgangIds, req.user.role_name]
         );
       }
 

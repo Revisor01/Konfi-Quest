@@ -11,6 +11,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // 25.09.2026 fragte jede Leitungs-Meldung hier nur die Stamm-Organisation --
 // wer mehrere Gemeinden betreut, bekam aus den anderen nichts.
 const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
+const { ADMIN_ORGWEITE_AUDIENCES } = require('../utils/challengeLeitungSicht');
 // Postfach (25.09.2026): Welche Arten neben dem Push auch einen Eintrag in
 // der Tabelle notifications bekommen, steht in EINER Positivliste
 // (utils/postfachArten.js). Geschrieben wird zentral in sendToUser und
@@ -2212,8 +2213,8 @@ class PushService {
   }
 
   /**
-   * Neuer Challenge-Beitrag - Push an die Leitung (Org-Admins + die Teamer der
-   * zugewiesenen Jahrgänge). Wird bei JEDER Challenge gesendet (auch wenn der
+   * Neuer Challenge-Beitrag - Push an alle, die die Challenge verwalten
+   * (Regel in utils/challengeLeitungSicht.js, 27.09.2026). Wird bei JEDER Challenge gesendet (auch wenn der
    * Beitrag sofort oeffentlich ist) — bei moderierten Challenges mit Zusatz-
    * Hinweis, dass eine Freigabe noch aussteht.
    *
@@ -2224,8 +2225,10 @@ class PushService {
    * @param {string} konfiName - Anzeigename des einreichenden Konfis (die
    *   Leitung sieht IMMER den echten Namen — Anonymitaet gilt nur für die Galerie)
    * @param {boolean} moderated - Ob die Challenge moderiert ist (Freigabe nötig)
+   * @param {number|null} einreicherId - Wer eingereicht hat; bekommt keine
+   *   Mitteilung ueber den eigenen Beitrag (Team-Challenges)
    */
-  static async sendChallengeSubmissionToLeadership(db, organizationId, challengeId, challengeTitle, konfiName, moderated = false) {
+  static async sendChallengeSubmissionToLeadership(db, organizationId, challengeId, challengeTitle, konfiName, moderated = false, einreicherId = null) {
     try {
       const notification = {
         title: 'Neuer Challenge-Beitrag',
@@ -2239,22 +2242,52 @@ class PushService {
         }
       };
 
-      await this.sendToOrgAdmins(db, organizationId, notification);
-
-      // Teamer hängen über user_jahrgang_assignments an den Jahrgängen der
-      // Challenge und werden von sendToOrgAdmins nicht erfasst. Auch hier
-      // beide Quellen der Zugehoerigkeit: Wer in DIESER Organisation nur ueber
-      // user_organizations Teamer:in ist, hat die Zuweisung genauso.
+      // EMPFAENGER NACH DER GEMEINSAMEN REGEL (27.09.2026,
+      // utils/challengeLeitungSicht.js): Wer die Challenge in Liste und Reiter
+      // sieht, bekommt die Mitteilung -- und nur der. Vorher ging sie ueber
+      // sendToOrgAdmins an JEDEN Admin der Gemeinde (auch zu reinen
+      // Konfi-Challenges fremder Jahrgaenge, die er nicht sehen konnte), an
+      // Teamer:innen dagegen nie bei 'nur_team'-Runden, die sie moderieren.
+      //   org_admin  immer
+      //   admin      bei 'konfis_und_team' und 'nur_team' immer, sonst ueber
+      //              einen Jahrgang der Challenge
+      //   teamer     bei 'nur_team' immer, sonst ueber einen Jahrgang
+      // Beide Quellen der Zugehoerigkeit (ladeMitgliederDerOrganisation).
+      const { rows: [challengeZeile] } = await db.query(
+        'SELECT audience FROM challenges WHERE id = $1',
+        [challengeId]
+      );
+      const audience = challengeZeile?.audience || 'konfis';
       const { rows: jahrgaenge } = await db.query(
         'SELECT jahrgang_id FROM challenge_jahrgang_assignments WHERE challenge_id = $1',
         [challengeId]
       );
-      const teamers = await ladeMitgliederDerOrganisation(db, organizationId, ['teamer'], {
-        jahrgangIds: jahrgaenge.map(j => j.jahrgang_id)
-      });
+      const jahrgangIds = jahrgaenge.map(j => j.jahrgang_id);
 
-      if (teamers.length > 0) {
-        await this.sendToMultipleUsers(db, teamers, notification);
+      const [orgAdmins, admins, teamers] = await Promise.all([
+        ladeMitgliederDerOrganisation(db, organizationId, ['org_admin']),
+        ADMIN_ORGWEITE_AUDIENCES.includes(audience)
+          ? ladeMitgliederDerOrganisation(db, organizationId, ['admin'])
+          : ladeMitgliederDerOrganisation(db, organizationId, ['admin'], { jahrgangIds }),
+        audience === 'nur_team'
+          ? ladeMitgliederDerOrganisation(db, organizationId, ['teamer'])
+          : ladeMitgliederDerOrganisation(db, organizationId, ['teamer'], { jahrgangIds })
+      ]);
+
+      // Ohne Doppelte, und ohne die Person, die selbst eingereicht hat --
+      // wie im Chat die eigene Nachricht (bei Team-Challenges reicht die
+      // Leitung selbst ein).
+      const empfaenger = [];
+      const gesehen = new Set();
+      for (const id of [...orgAdmins, ...admins, ...teamers]) {
+        const k = String(id);
+        if (gesehen.has(k) || (einreicherId != null && k === String(einreicherId))) continue;
+        gesehen.add(k);
+        empfaenger.push(id);
+      }
+
+      if (empfaenger.length > 0) {
+        await this.sendToMultipleUsers(db, empfaenger, notification);
       }
 
       return { success: true };

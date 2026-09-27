@@ -1511,6 +1511,16 @@ paths:
         plus org-weite 'nur_team'-Challenges. org_admin sieht alle
         Challenges der Org.
         GEAENDERT 2026-08-31: admin war vorher org-weit.
+        GEAENDERT 2026-09-27 (Simon: Admins sind an jeder Team-Challenge
+        beteiligt): admin sieht zusaetzlich jede 'konfis_und_team'-Challenge
+        der Gemeinde, auch ohne Jahrgang; nur 'konfis' bleibt jahrgangs-
+        gebunden. Teamer unveraendert. Die Regel steht einmal in
+        utils/challengeLeitungSicht.js und gilt ebenso fuer die Sichtpruefung
+        (submissions, moderate, export, delete), die Datei-Auslieferung, die
+        Teilnehmerliste GET /challenges/konfi, badge-counts.pendingChallenges,
+        die App-Icon-Zahl und die Empfaenger der Mitteilung
+        'challenge_submission' (dort zusaetzlich: Teamer bei 'nur_team',
+        die einreichende Person nie). Antwortform unveraendert.
         GEAENDERT 2026-09-01: Ist die Liste ausgeduennt, weil admin/teamer
         keine Jahrgangs-Zuweisung hat, traegt die Antwort zusaetzlich den
         Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform
