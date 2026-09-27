@@ -562,6 +562,7 @@ SMTP-Zertifikatsprüfung standardmäßig streng.
 | Datei | Inhalt |
 |---|---|
 | `00-gesamtabnahme.md` | diese Abnahme |
+| `behebungsbericht.md` | was seit der Abnahme behoben wurde, was offen bleibt, was bei Simon liegt (Stand 27.09.) |
 | `backend-fachlogik-punkte-termine.md` | Punkte, Aktivitäten, Termine, Jahrgänge, Abzeichen, Level |
 | `backend-fachlogik-chat-challenges-rueckblick.md` | Chat, Challenges, Rückblick, Material, Postfach, Push, E-Mail, Hintergrundjobs |
 | `backend-sicherheit-datenschutz.md` | Mandantentrennung, Rechte, Authentifizierung, Uploads, Datenschutz, Geheimnisse |
