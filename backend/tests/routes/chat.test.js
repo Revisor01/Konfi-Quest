@@ -283,10 +283,27 @@ describe('Chat Routes', () => {
         .send({ type: 'group', name: 'Kleingruppe', participants: [USERS.konfi1.id, USERS.konfi2.id] });
 
       expect(res.status).toBe(200);
+
+      // Seit dem 27.09.2026 (Audit "Wer bekommt was", BF-05): Ohne Teilnahme
+      // liest eine Gruppe mit Konfis nur der Org-Admin. Bis dahin las hier
+      // admin1 mit -- ein Admin OHNE Jahrgang, nicht Teilnehmer, in einer
+      // Gruppe mit Konfis aus Jahrgang 1. Genau das verbietet die Regel.
+      // Der Kern des Tests bleibt: Anders als ein Direktchat ist die Gruppe
+      // fuer die Leitung ohne Teilnahme lesbar -- dafuer die eigene
+      // Teilnahme des Org-Admins entfernen und erneut lesen.
+      await db.query(
+        'DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [res.body.room_id, USERS.orgAdmin1.id]
+      );
       const lesen = await request(app)
         .get(`/api/chat/rooms/${res.body.room_id}/messages`)
-        .set('Authorization', `Bearer ${admin1Token}`);
+        .set('Authorization', `Bearer ${orgAdmin1Token}`);
       expect(lesen.status).toBe(200);
+
+      const adminOhneJahrgang = await request(app)
+        .get(`/api/chat/rooms/${res.body.room_id}/messages`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(adminOhneJahrgang.status).toBe(403);
     });
 
     // Der Bestand: Migration 164 macht aus 'direct'-Raeumen mit mehr als zwei

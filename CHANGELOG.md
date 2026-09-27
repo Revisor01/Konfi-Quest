@@ -286,6 +286,15 @@ Versionsüberschrift.
   Wer auf der Warteliste steht oder schon abgemeldet ist, kommt nicht mehr
   hinein, und wer auf die Warteliste zurückgesetzt wird, verlässt den Chat.
   Bisher saßen dort auch Wartende und beim Anlegen schon Abgemeldete.
+- Admins öffnen Chats, in denen sie nicht selbst Mitglied sind, nur noch für
+  ihre Jahrgänge: Jahrgangs-Chats ihrer Jahrgänge, Event-Chats von Events aus
+  ihrer Event-Liste und Räume nur fürs Team. Jahrgangs-Chats, Event-Chats und
+  Gruppen mit Konfis anderer Jahrgänge lassen sich nicht mehr lesen,
+  beschreiben, exportieren oder live mitverfolgen, und niemand trägt sich
+  dort selbst ein oder löscht sie. Der Org-Admin öffnet weiterhin jeden
+  gemeinschaftlichen Chat der Gemeinde; fremde Zweiergespräche bleiben für
+  alle zu und lassen sich auch nicht mehr löschen. In der Chatliste ändert
+  sich nichts.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
@@ -294,6 +303,9 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Wer einen Chat öffnen darf, ohne darin Mitglied zu sein — etwa der Org-Admin
+  in einer Gruppe —, sieht dort jetzt auch Bilder und Dateien. Bisher blieben
+  sie leer, obwohl die Nachrichten lesbar waren.
 - Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war
   das möglich — und dann wurde niemand automatisch angemeldet, obwohl der
   Termin für alle sichtbar war. In einer Gemeinde standen dadurch nur vier von

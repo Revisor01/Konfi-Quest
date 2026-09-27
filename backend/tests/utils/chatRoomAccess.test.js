@@ -7,17 +7,28 @@
 // fremde Direktchats live mitlesen.
 //
 // Geprueft werden der verbotene UND der erlaubte Fall.
+//
+// Seit dem 27.09.2026 (Audit "Wer bekommt was", BF-05) gilt ohne Teilnahme
+// nur noch der Org-Admin gemeindeweit; ein Admin nur in Raeumen seiner
+// Jahrgaenge, Terminen aus seiner Liste und reinen Team-Raeumen. Die
+// Regel-Tests dazu stehen in tests/routes/chatZugangNachJahrgang.test.js.
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, CHAT_ROOMS } = require('../helpers/seed');
+const { seed, USERS, ROLES, CHAT_ROOMS } = require('../helpers/seed');
 const { darfRaumBetreten } = require('../../utils/chatRoomAccess');
 
 const ORG_1 = 1;
 const ORG_2 = 2;
 
-// Nutzer so bauen, wie server.js sie aus dem Socket-Handshake ableitet.
+// Rolle aus der Seed-Rolle des Kontos (role_id -> name).
+const rolleVon = (u) => Object.values(ROLES).find(r => r.id === u.role_id).name;
+
+// Nutzer so bauen, wie server.js sie aus dem Socket-Handshake ableitet —
+// MIT role_name (server.js setzt ihn seit jeher; die Regel unterscheidet
+// seit dem 27.09.2026 Org-Admin und Admin).
 const alsNutzer = (u, orgId = ORG_1) => ({
   id: u.id,
   organization_id: orgId,
+  role_name: rolleVon(u),
   type: u.type,
 });
 
@@ -107,25 +118,37 @@ describe('darfRaumBetreten (Socket-Raum-Zugriff)', () => {
       expect(res.grund).toBe('kein Teilnehmer');
     });
 
-    it('Admin1 darf org-weit auch ohne Teilnehmerschaft (Admin-Bypass wie in den HTTP-Routen)', async () => {
-      // Admin1 ist NICHT Teilnehmer dieses Raums — nachweislich:
+    it('Org-Admin darf gemeindeweit auch ohne Teilnehmerschaft — nur in der eigenen Gemeinde', async () => {
+      // Bis 27.09.2026 hiess dieser Test "Admin1 darf org-weit auch ohne
+      // Teilnehmerschaft" und liess admin2 (Admin OHNE Jahrgang) in den
+      // Jahrgangs-Chat von Org 2. Das ist genau BF-05: Seit der Regel vom
+      // 27.09.2026 gilt der Zugang ohne Teilnahme gemeindeweit nur fuer den
+      // Org-Admin. Der Kern des Tests (Org-Grenze vor dem Bypass) bleibt.
       const { rows } = await db.query(
-        'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2',
-        [CHAT_ROOMS.jahrgang2.id, USERS.admin1.id]
+        'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id IN ($2, $3)',
+        [CHAT_ROOMS.jahrgang2.id, USERS.orgAdmin1.id, USERS.orgAdmin2.id]
       );
       expect(rows.length).toBe(0);
 
-      // ...aber der Raum liegt in Org 2, also greift die Org-Grenze zuerst.
-      const fremd = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang2.id, alsNutzer(USERS.admin1));
+      // Raum liegt in Org 2 — die Org-Grenze greift zuerst, auch fuer den Org-Admin.
+      const fremd = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang2.id, alsNutzer(USERS.orgAdmin1));
       expect(fremd.ok).toBe(false);
+      expect(fremd.grund).toBe(`Org-Isolation (Raum-Org ${ORG_2})`);
 
-      // In der eigenen Org greift der Bypass: Admin2 ist nicht Teilnehmer von
-      // Raum 4, gehört aber zu Org 2.
-      const eigen = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang2.id, alsNutzer(USERS.admin2, ORG_2));
+      // In der eigenen Gemeinde darf der Org-Admin ohne Teilnahme.
+      const eigen = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang2.id, alsNutzer(USERS.orgAdmin2, ORG_2));
       expect(eigen.ok).toBe(true);
     });
 
-    it('Org-Admin1 darf org-weit in Gruppen (type "admin" deckt org_admin mit ab)', async () => {
+    it('Admin ohne Zuweisung darf NICHT in den Jahrgangs-Chat seiner Gemeinde', async () => {
+      // Gegenstueck: admin2 (Rolle admin, keine Zuweisung auf Jahrgang 2,
+      // nicht Teilnehmer von Raum 4) — vor dem 27.09.2026 ok:true.
+      const res = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang2.id, alsNutzer(USERS.admin2, ORG_2));
+      expect(res.ok).toBe(false);
+      expect(res.grund).toBe('Jahrgang nicht zugewiesen');
+    });
+
+    it('Org-Admin1 darf org-weit in Gruppen (Rolle org_admin)', async () => {
       // Bewusst der Gruppenraum, nicht der Direktchat: Dort gilt seit dem
       // 24.08.2026 die Ausnahme, siehe Test oben.
       const res = await darfRaumBetreten(db, CHAT_ROOMS.group.id, alsNutzer(USERS.orgAdmin1));
@@ -147,20 +170,24 @@ describe('darfRaumBetreten (Socket-Raum-Zugriff)', () => {
     // einem Organisationswechsel dagegen als Zahl (parseInt). Ein strikter
     // Vergleich der beiden sperrte Mehr-Organisations-Leitungen aus JEDEM
     // Chat ihrer aktiven Zweitgemeinde aus — auch aus ihren eigenen.
+    // Seit dem 27.09.2026 mit orgAdmin2 statt admin2: admin2 hat keinen
+    // Jahrgang und kommt ohne Teilnahme nicht mehr in Raum 4 (BF-05). Die
+    // Tests pruefen den Typvergleich der Organisation, dafuer braucht es
+    // jemanden, der den Raum oeffnen darf.
     it('Eine Zahl als organization_id wird wie der String aus der Datenbank behandelt', async () => {
-      const alsZahl = { id: USERS.admin2.id, organization_id: Number(ORG_2), type: 'admin' };
+      const alsZahl = { id: USERS.orgAdmin2.id, organization_id: Number(ORG_2), role_name: 'org_admin', type: 'admin' };
       const res = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang2.id, alsZahl);
       expect(res.ok).toBe(true);
     });
 
     it('Ein String als organization_id wird ebenso behandelt', async () => {
-      const alsText = { id: USERS.admin2.id, organization_id: String(ORG_2), type: 'admin' };
+      const alsText = { id: USERS.orgAdmin2.id, organization_id: String(ORG_2), role_name: 'org_admin', type: 'admin' };
       const res = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang2.id, alsText);
       expect(res.ok).toBe(true);
     });
 
     it('Die Organisationsgrenze haelt auch bei gemischten Typen', async () => {
-      const alsText = { id: USERS.admin2.id, organization_id: String(ORG_2), type: 'admin' };
+      const alsText = { id: USERS.orgAdmin2.id, organization_id: String(ORG_2), role_name: 'org_admin', type: 'admin' };
       const res = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang.id, alsText);
       expect(res.ok).toBe(false);
       expect(res.grund).toBe(`Org-Isolation (Raum-Org ${ORG_1})`);

@@ -15,6 +15,7 @@ const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { nachAntwort } = require('../utils/nachAntwort');
+const { darfRaumBetreten } = require('../utils/chatRoomAccess');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -382,38 +383,23 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     return 'Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben';
   };
 
-  // Darf dieser Nutzer den Raum oeffnen (lesen, schreiben, Teilnehmer sehen)?
+  // Darf dieser Nutzer den Raum oeffnen (lesen, schreiben, Teilnehmer sehen,
+  // exportieren, Dateien laden, Umfragen, verwalten)?
   //
-  // Grundregel: Teilnehmerschaft. Leitung und Admins (type 'admin', also
-  // admin/org_admin/super_admin) duerfen zusaetzlich gemeindeweit — sie
-  // verantworten die Gemeinde und müssen im Zweifel eingreifen können.
+  // Die Regel steht an EINER Stelle (utils/chatRoomAccess.js), die auch der
+  // Socket (joinRoom, typing) nutzt: Teilnahme genuegt immer; ohne Teilnahme
+  // gemeindeweit nur der Org-Admin; ein Admin nur in Jahrgangs-Chats seiner
+  // Jahrgaenge, Event-Chats von Events aus seiner Liste und reinen
+  // Team-Raeumen; Einzelchats nie ohne Teilnahme (Simon 27.09.2026, Audit
+  // "Wer bekommt was" BF-05).
   //
-  // AUSNAHME Direktchats: Ein Zweiergespraech ist privat. Wer nicht selbst
-  // darin steht, kommt nicht hinein — auch die Leitung nicht (Entscheidung
-  // 23.08.2026). Vorher konnte jede Leitung jedes fremde Zweiergespraech ihrer
-  // Gemeinde lesen und exportieren; betroffen waren vor allem Gespraeche
-  // zwischen Teamer:innen und Konfis, also gerade die vertraulichen.
-  //
-  // Gruppen-, Jahrgangs-, Team- und Termin-Chats bleiben für die Leitung
-  // offen: Das sind gemeinschaftliche Räume, keine Zwiegespraeche.
+  // Bis zum 27.09.2026 stand hier eine eigene Kopie: `user.type === 'admin'`
+  // oeffnete jeden gemeinschaftlichen Raum der Gemeinde, auch Jahrgangs-,
+  // Event- und Gruppenchats mit Konfis fremder Jahrgaenge.
   //
   // Gibt true zurück, wenn der Zugriff erlaubt ist.
-  const darfRaumOeffnen = async (roomId, user) => {
-    const { rows: [raum] } = await db.query(
-      'SELECT type FROM chat_rooms WHERE id = $1 AND organization_id = $2',
-      [roomId, user.organization_id]
-    );
-    if (!raum) return false;
-
-    const { rows: [teilnehmer] } = await db.query(
-      'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3',
-      [roomId, user.id, user.type]
-    );
-    if (teilnehmer) return true;
-
-    // Kein Teilnehmer: nur Leitung/Admins, und nie bei Direktchats.
-    return user.type === 'admin' && raum.type !== 'direct';
-  };
+  const darfRaumOeffnen = async (roomId, user) =>
+    (await darfRaumBetreten(db, roomId, user)).ok;
 
   // Gegenrichtung: Darf dieser Konfi dieses Team-Mitglied anschreiben?
   //
@@ -1459,11 +1445,17 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(404).json({ error: 'Chat nicht gefunden' });
       }
 
-      // Ein Zweiergespraech laesst sich nur exportieren, wenn man selbst darin
-      // steht — sonst wäre der Schutz aus darfRaumOeffnen hier zu umgehen und
-      // der ganze Verlauf als Textdatei abrufbar (Entscheidung 23.08.2026).
+      // Exportieren darf nur, wer den Raum auch oeffnen darf — sonst wäre der
+      // Schutz aus darfRaumOeffnen hier zu umgehen und der ganze Verlauf als
+      // Textdatei abrufbar. Ein Zweiergespraech also nur mit eigener
+      // Teilnahme (Entscheidung 23.08.2026), einen Jahrgangs-, Event- oder
+      // Gruppenchat mit Konfis als Admin nur im eigenen Jahrgang (27.09.2026).
       if (!await darfRaumOeffnen(roomId, req.user)) {
-        return res.status(403).json({ error: 'Private Zweiergespräche lassen sich nicht exportieren' });
+        return res.status(403).json({
+          error: room.type === 'direct'
+            ? 'Private Zweiergespräche lassen sich nicht exportieren'
+            : 'Zugriff verweigert'
+        });
       }
 
       // Vollstaendiger Verlauf, aelteste zuerst. Geloeschte Nachrichten bleiben
@@ -1647,6 +1639,14 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(400).json({ error: 'Teilnehmer können nur zu Gruppenchats hinzugefügt werden' });
       }
 
+      // Verwalten nur, wer den Raum auch oeffnen darf (27.09.2026). Sonst
+      // traegt sich ein Admin in eine Gruppe mit Konfis fremder Jahrgaenge
+      // einfach selbst ein und liest danach als Teilnehmer mit — die Regel
+      // aus darfRaumOeffnen waere mit einem Aufruf umgangen.
+      if (!await darfRaumOeffnen(roomId, req.user)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
+
       // user_type IMMER serverseitig aus der echten Rolle ableiten — NIE vom
       // Client uebernehmen (siehe /direct: Teamer:innen kamen als 'admin' rein
       // und fanden den Raum nicht). Die Rolle ist die DIESER Gemeinde, die
@@ -1726,7 +1726,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (room.type !== 'group') {
         return res.status(400).json({ error: 'Teilnehmer können nur aus Gruppenchats entfernt werden' });
       }
-      
+
+      // Wie beim Hinzufuegen: verwalten nur, wer den Raum oeffnen darf.
+      if (!await darfRaumOeffnen(roomId, req.user)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
+
       const { rowCount } = await db.query("DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3", [roomId, userId, userType]);
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Teilnehmer nicht gefunden' });
@@ -1921,14 +1926,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(404).json({ error: 'Datei nicht gefunden' });
       }
 
-      // Check if user is member of the chat room
-      const { rows: [membership] } = await db.query(
-        `SELECT 1 FROM chat_participants cp
-         WHERE cp.room_id = $1 AND cp.user_id = $2`,
-        [fileMessage.room_id, req.user.id]
-      );
-
-      if (!membership) {
+      // Dieselbe Raum-Regel wie beim Lesen der Nachricht, die die Datei
+      // traegt (27.09.2026). Vorher stand hier eine eigene Kopie, die jede
+      // Teilnahme ohne Blick auf user_type genuegen liess und die Leitung
+      // ohne Teilnahme aussperrte: Sie las die Nachricht, das Bild darin
+      // blieb leer.
+      if (!await darfRaumOeffnen(fileMessage.room_id, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
 
@@ -2006,9 +2009,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     }
     
     try {
-      // Zugriff wie beim Lesen: Teilnehmerschaft, Leitung gemeindeweit — aber
-      // nicht in fremden Zweiergespraechen. Vorher genuegte die Organisation,
-      // damit liess sich eine Umfrage in ein fremdes Zweiergespraech stellen.
+      // Zugriff wie beim Lesen (darfRaumOeffnen, utils/chatRoomAccess.js).
+      // Vorher genuegte die Organisation, damit liess sich eine Umfrage in ein
+      // fremdes Zweiergespraech stellen.
       const { rows: [room] } = await db.query("SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, req.user.organization_id]);
 
       if (!room || !await darfRaumOeffnen(roomId, req.user)) {
@@ -2396,6 +2399,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (!room) {
         return res.status(404).json({ error: 'Chat-Raum nicht gefunden' });
       }
+
+      // Loeschen nur, wer den Raum auch oeffnen darf (27.09.2026) — und das
+      // VOR der Nachrichtenzahl, sonst verraet die 409-Antwort, wie viel in
+      // einem fremden Raum geschrieben wurde. Fremde Zweiergespraeche,
+      // Jahrgangs-Raeume anderer Jahrgaenge und Gruppen mit Konfis fremder
+      // Jahrgaenge loescht ein Admin damit nicht mehr per Raum-Kennung.
+      if (!await darfRaumOeffnen(roomId, req.user)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
       
       // Check if room has messages
       const { rows: [messageCount] } = await db.query("SELECT COUNT(*)::int as count FROM chat_messages WHERE room_id = $1 AND deleted_at IS NULL", [roomId]);
@@ -2415,7 +2427,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         });
       }
       
-      // Direct chats can be deleted by admins (no restrictions)
+      // Direktchats: loeschen nur Teilnehmende (s. darfRaumOeffnen oben).
 
       // Teilnehmer VOR dem Löschen einsammeln, damit wir sie danach über die
       // entfernte Raumliste informieren können (nach dem Delete sind die
@@ -2531,6 +2543,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
       if (!room.is_team_chat) {
         return res.status(409).json({ error: 'Nur der Team-Chat lässt sich leeren.' });
+      }
+      // Dieselbe Raum-Regel wie ueberall: Der Team-Chat ist ein reiner
+      // Team-Raum und damit fuer jede Leitung offen — die Pruefung steht
+      // trotzdem hier, damit kein Weg in einen Raum an ihr vorbeifuehrt.
+      if (!await darfRaumOeffnen(roomId, req.user)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
       }
 
       // Dateien VOR dem Löschen einsammeln (danach sind die Zeilen weg).
@@ -2700,8 +2718,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
 
-      // Dieselbe Regel wie beim Lesen der Nachrichten selbst: Teilnehmerschaft,
-      // Leitung zusaetzlich gemeindeweit — außer in fremden Zweiergespraechen.
+      // Dieselbe Regel wie beim Lesen der Nachrichten selbst (darfRaumOeffnen).
       if (!await darfRaumOeffnen(message.room_id, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }

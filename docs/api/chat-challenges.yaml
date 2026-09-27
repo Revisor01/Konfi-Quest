@@ -13,8 +13,9 @@
 #   req.user.type = 'konfi'  für Rolle konfi
 #                   'teamer' für Rolle teamer
 #                   'admin'  für Rollen admin, org_admin UND super_admin
-#   Alle "Admin-Bypass"-Prüfungen im Chat (userType === 'admin') gelten also
-#   für admin + org_admin (+ super_admin), NIE für teamer.
+#   Der Zugang OHNE Teilnahme ("Admin-Bypass") unterscheidet seit dem
+#   27.09.2026 nach Rolle: org_admin/super_admin (Rolle oder Flag)
+#   gemeindeweit, admin nur nach Jahrgang (s. Kernfrage 3). NIE für teamer.
 #   requireTeamer = requireRole('org_admin', 'admin', 'teamer').
 #
 # ============================================================================
@@ -76,8 +77,11 @@
 # 2. WER SIEHT WEN in Mitgliederlisten (GET /chat/rooms/:roomId/participants)?
 #    - Teilnehmer des Raums (konfi/teamer): sehen ALLE Teilnehmer mit Name,
 #      Rolle, role_title und (bei Konfis) Jahrgang.
-#    - admin/org_admin: sehen die Teilnehmerliste JEDES Raums ihrer Org,
-#      auch ohne selbst Teilnehmer zu sein (Admin-Bypass).
+#    - Ohne selbst Teilnehmer zu sein: wer den Raum nach Kernfrage 3
+#      oeffnen darf (org_admin jeden gemeinschaftlichen Raum der Org, admin
+#      nur nach Jahrgang). BEHOBEN 27.09.2026 (Audit "Wer bekommt was",
+#      BF-05): vorher sah jeder admin die Teilnehmerliste JEDES Raums seiner
+#      Org ausser fremden Direktchats.
 #    - Konfis sehen also in Jahrgangs-/Gruppen-/Event-Chats die anderen
 #      Konfis des Raums namentlich — das ist die einzige Stelle, an der
 #      Konfis andere Konfis "sehen" (anschreiben können sie sie nicht).
@@ -89,23 +93,45 @@
 #      Mitgliedschaft wird beim Aufruf per TTL-Sync (10 Min) nachgezogen:
 #      konfi -> eigener Jahrgangs-Chat; teamer/admin -> zugewiesene
 #      Jahrgänge + Team-Chat; org_admin -> ALLE Jahrgangs-Chats + Team-Chat.
-#    - Betreten/Lesen einzelner Räume (GET /rooms/:roomId, /messages,
-#      mark-read, POST /messages): Teilnehmer ODER Admin-Bypass —
-#      admin/org_admin können JEDEN Raum ihrer Org oeffnen, lesen und darin
-#      schreiben — AUSSER fremde Direktchats (GEAENDERT 2026-08-23: ein
-#      Zwiegespraech ist privat, dort greift der Admin-Bypass nicht mehr).
-#      Gruppen-, Jahrgangs-, Team- und Termin-Chats bleiben offen.
-#      teamer und konfi ausschliesslich als Teilnehmer.
-#      Zentral in darfRaumOeffnen() (chat.js), genutzt von /rooms/:id,
-#      /messages (GET+POST), mark-read, participants, reactions, polls,
-#      DELETE /messages/:id und dem Export.
+#    - Betreten/Lesen einzelner Räume — die EINE Regel
+#      (utils/chatRoomAccess.js darfRaumBetreten; Simon 27.09.2026):
+#        * Teilnehmer:in (user_id + user_type) darf immer.
+#        * Direktchat: nie ohne Teilnahme, fuer niemanden (seit 2026-08-23).
+#        * org_admin, Rolle super_admin, is_super_admin-Flag: jeder
+#          gemeinschaftliche Raum der aktiven Org ohne Teilnahme.
+#        * admin ohne Teilnahme NUR: Jahrgangs-Chat eines zugewiesenen
+#          Jahrgangs (can_view); Termin-Chat (event_id) eines Termins, den
+#          darfTermin erlaubt — dieselbe Regel wie GET /events ('Nur Team',
+#          ohne Jahrgang, oder gemeinsamer Jahrgang); Raum ohne Konfi unter
+#          den Teilnehmenden (Team-Chat, reine Team-Gruppe).
+#        * teamer und konfi ausschliesslich als Teilnehmer.
+#      BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-05, HOCH): vorher
+#      oeffnete JEDER admin (type 'admin') jeden gemeinschaftlichen Raum der
+#      Org ohne Teilnahme — auch Jahrgangs-, Termin- und Gruppenchats mit
+#      Konfis fremder Jahrgaenge — und konnte dort lesen, schreiben,
+#      exportieren und ueber den Socket mithoeren.
+#      Genutzt ueber darfRaumOeffnen() (chat.js) von GET /rooms/:id,
+#      /messages (GET+POST), mark-read, GET/POST/DELETE participants,
+#      GET /files/:filename, polls (anlegen, abstimmen), DELETE
+#      /messages/:id (fremde Nachricht), GET reactions, dem Export, DELETE
+#      /rooms/:id und DELETE /rooms/:id/messages. Seit 27.09.2026 auch von
+#      POST/DELETE participants (vorher konnte sich ein admin selbst in
+#      jede Gruppe eintragen und danach als Teilnehmer lesen), DELETE
+#      /rooms/:id (vorher jeder Raum der Org, auch fremde Direktchats) und
+#      GET /files (vorher eigene Kopie: jede Teilnahme ohne user_type,
+#      dafuer kein Zugang fuer den org_admin ohne Teilnahme).
+#      Reaktion SETZEN bleibt strenger: nur Teilnehmer:innen.
+#    - GET /chat/rooms (Liste) bleibt teilnahmebasiert; jeder gelistete Raum
+#      laesst sich damit oeffnen. Antwortform unveraendert.
 #    - Export (GET /rooms/:roomId/export): nur admin/org_admin (explizit
 #      NICHT teamer), kompletter Verlauf — aber nur für Räume, die man
-#      oeffnen darf (403 bei fremdem Direktchat).
+#      oeffnen darf (403 "Private Zweiergespräche lassen sich nicht
+#      exportieren" bei fremdem Direktchat, sonst 403 "Zugriff verweigert").
 #    - Org-Grenze: ueberall hart (jede Query prüft organization_id).
-#    - Socket-Raum `room_<id>` (joinRoom/typing/stopTyping, server.js):
-#      dieselbe Regel wie oben — Teilnehmer ODER Admin-Bypass, dazu die
-#      Org-Grenze. (BEHOBEN 2026-08-23; vorher wurde NUR die Organisation
+#    - Socket-Raum `room_<id>` (joinRoom/typing/stopTyping,
+#      utils/chatRoomAccess.js socketRaumEreignisse, eingehaengt in
+#      server.js): dieselbe Regel wie oben, dazu die Org-Grenze. Abgelehnt
+#      wird still (kein Beitritt, kein Ereignis). (BEHOBEN 2026-08-23; vorher wurde NUR die Organisation
 #      geprüft, jeder Angemeldete derselben Gemeinde konnte damit jedem Raum
 #      beitreten und über newMessage/pollUpdated/reactionAdded alle neuen
 #      Nachrichten fremder Chats mitlesen.)
@@ -113,10 +139,14 @@
 # 4. WER DARF NACHRICHTEN LOESCHEN (DELETE /chat/messages/:messageId)?
 #    - Eigene Nachrichten: jede Rolle (auch Konfi), Soft-Delete.
 #    - Fremde Nachrichten: nur admin/org_admin, und nur in Räumen, die sie
-#      oeffnen duerfen — in fremden Direktchats also nicht mehr
-#      (GEAENDERT 2026-08-23). teamer duerfen NUR eigene löschen.
-#    - Raum löschen (DELETE /rooms/:roomId): nur admin/org_admin; mit
+#      oeffnen duerfen (Kernfrage 3) — in fremden Direktchats also nicht
+#      (GEAENDERT 2026-08-23), als admin nur nach Jahrgang (27.09.2026).
+#      teamer duerfen NUR eigene löschen.
+#    - Raum löschen (DELETE /rooms/:roomId): nur admin/org_admin, nur Räume,
+#      die sie oeffnen duerfen (403 VOR der Nachrichtenzahl); mit
 #      Nachrichten nur per ?force=true; Jahrgangs-Chats nie direkt.
+#      BEHOBEN 27.09.2026 (BF-05): vorher jeder Raum der Org, auch fremde
+#      Direktchats und Gruppen mit Konfis fremder Jahrgaenge.
 #    - Team-Chat leeren (DELETE /rooms/:roomId/messages, NEU 2026-08-26):
 #      nur admin/org_admin, nur der automatische Team-Chat (is_team_chat) —
 #      alle Nachrichten samt Dateianhaengen hart weg, Raum und Mitglieder
@@ -185,10 +215,16 @@
 #   Ausserdem prüft die Mitgliedschaft hier nur user_id (ohne user_type) und
 #   es gibt KEINEN Admin-Bypass: ein Admin, der Nachrichten eines fremden
 #   Raums lesen darf, kann dessen Dateien nicht abrufen (Inkonsistenz, keine
-#   Rechteausweitung).
+#   Rechteausweitung). — Dieser Teil BEHOBEN 27.09.2026 (Audit Wer bekommt
+#   was, BF-05): Die Route nutzt darfRaumBetreten wie das Lesen der
+#   Nachrichten. Der Query-Parameter bleibt offen.
 # HINWEIS — ERLEDIGT 2026-08-23: admin/org_admin konnten JEDEN Raum der Org
 #   lesen, beschreiben und exportieren, auch private Direktchats zweier
-#   anderer Nutzer. Direktchats sind davon jetzt ausgenommen. Teamer können über POST /chat/rooms
+#   anderer Nutzer. Direktchats sind davon jetzt ausgenommen.
+#   BEHOBEN 27.09.2026 (Audit Wer bekommt was, BF-05): Ohne Teilnahme
+#   oeffnet nur noch der org_admin jeden gemeinschaftlichen Raum; ein admin
+#   nur Jahrgangs-Chats seiner Jahrgaenge, Termin-Chats seiner Termine und
+#   reine Team-Raeume (Kernfrage 3). Teamer können über POST /chat/rooms
 #   Gruppenraeume mit beliebigen Org-Nutzern (auch Konfis fremder Jahrgänge)
 #   anlegen und Jahrgangs-Chats für JEDEN Jahrgang der Org erstellen
 #   (keine Zuweisungspruefung beim Anlegen).
@@ -667,7 +703,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "Nur Räume mit eigenem chat_participants-Eintrag (KEIN Admin-Bypass in der Liste)"
-        hinweis: "Admins sehen fremde Räume zwar nicht in der Liste, können sie aber per ID oeffnen (siehe /rooms/{roomId})"
+        hinweis: "Jeder gelistete Raum laesst sich oeffnen (Teilnahme genuegt). Ohne Teilnahme oeffnet nur, wer nach darfRaumBetreten darf (siehe /rooms/{roomId}). BEHOBEN 27.09.2026 (BF-05): vorher oeffnete jeder admin per ID jeden gemeinschaftlichen Raum der Org, der hier nicht gelistet war. Antwortform unveraendert."
 
   /api/chat/rooms/{roomId}:
     get:
@@ -693,15 +729,15 @@ paths:
                             user_id: { type: integer }
                             display_name: { type: string }
                             user_type: { type: string }
-        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '404': { description: Raum nicht gefunden }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Teilnehmer des Raums ODER Admin-Bypass (type 'admin' = admin/org_admin: jeder Raum der eigenen Org)"
-        hinweis: "Admin-Bypass umfasst auch fremde Direktchats"
+        objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme"
+        hinweis: "BEHOBEN 27.09.2026 (Audit Wer bekommt was, BF-05): vorher Admin-Bypass fuer jeden admin in jedem gemeinschaftlichen Raum der Org. Fremde Direktchats sind seit 23.08.2026 zu."
     delete:
       tags: ["Chat"]
       summary: Chat-Raum löschen (nur Admins)
@@ -714,7 +750,7 @@ paths:
         - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] }, description: "true: Raum trotz vorhandener Nachrichten löschen" }
       responses:
         '200': { description: Geloescht }
-        '403': { description: Aufrufer ist kein Admin-Typ }
+        '403': { description: "Aufrufer ist kein Admin-Typ ODER darf den Raum nicht oeffnen ('Zugriff verweigert', vor der Nachrichtenzahl)" }
         '404': { description: Raum nicht in eigener Org }
         '409': { description: Nachrichten vorhanden (ohne force) ODER Jahrgangs-Chat }
         '500': { description: Datenbankfehler }
@@ -722,8 +758,8 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "req.user.type muss 'admin' sein; Raum muss zur eigenen Org gehören"
-        hinweis: "teamer und konfi nie; auch fremde Direktchats loeschbar"
+        objekt-pruefung: "req.user.type muss 'admin' sein UND darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme"
+        hinweis: "teamer und konfi nie. BEHOBEN 27.09.2026 (BF-05): vorher jeder Raum der Org, auch fremde Direktchats und Gruppen mit Konfis fremder Jahrgaenge."
 
   # ==========================================================================
   # CHAT — Nachrichten
@@ -751,13 +787,13 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/ChatMessage' }
-        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Teilnehmer ODER Admin-Bypass (admin/org_admin lesen jeden Raum der Org)"
+        objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher las jeder admin jeden gemeinschaftlichen Raum der Org"
         # LUECKE: Bei anonymen Umfragen (anonymous=true) fehlt in votes zwar
         # user_name, user_id/user_type jeder Stimme werden aber ausgeliefert —
         # über die Teilnehmerliste namentlich aufloesbar (LUECKE 2 im Kopf).
@@ -791,14 +827,14 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ChatMessage' }
         '400': { description: Weder Inhalt noch Datei / Datei unlesbar / Validierungsfehler }
-        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '415': { description: Dateityp per Magic Bytes nicht verifizierbar }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC, chatUpload.single, validateSendMessage, rateLimiters.chatMessageLimiter, rateLimiters.uploadLimiter]
         org-scope: true
-        objekt-pruefung: "Teilnehmer ODER Admin-Bypass — admin/org_admin können in JEDEN Raum der Org schreiben (auch fremde Direktchats)"
+        objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher schrieb jeder admin in jeden gemeinschaftlichen Raum der Org (Push an alle Konfis dort); fremde Direktchats seit 23.08.2026 zu"
     delete:
       tags: ["Chat"]
       summary: "Team-Chat leeren: ALLE Nachrichten löschen, Raum bleibt (NEU 2026-08-26)"
@@ -816,7 +852,7 @@ paths:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       responses:
         '200': { description: "{ message, deleted_count }" }
-        '403': { description: Rolle nicht org_admin/admin }
+        '403': { description: "Rolle nicht org_admin/admin (oder Raum nicht zu oeffnen — beim Team-Chat fuer die Leitung nie der Fall)" }
         '404': { description: Raum nicht in eigener Org }
         '409': { description: Kein Team-Chat (is_team_chat=false) }
         '500': { description: Datenbankfehler }
@@ -824,7 +860,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Raum org-gescopt geladen; nur is_team_chat=true wird geleert"
+        objekt-pruefung: "Raum org-gescopt geladen; nur is_team_chat=true wird geleert; zusaetzlich darfRaumBetreten (seit 27.09.2026, damit kein Weg an der Raum-Regel vorbeifuehrt — der Team-Chat ist ein reiner Team-Raum)"
 
   /api/chat/rooms/{roomId}/mark-read:
     post:
@@ -834,13 +870,13 @@ paths:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       responses:
         '200': { description: "Upsert von chat_read_status.last_read_at = NOW()" }
-        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Teilnehmer ODER Admin-Bypass"
+        objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme"
 
   /api/chat/rooms/{roomId}/export:
     get:
@@ -860,15 +896,15 @@ paths:
             text/plain: { schema: { type: string } }
             application/json: { schema: { type: object } }
         '400': { description: Ungueltige Raum-ID }
-        '403': { description: Aufrufer ist nicht Leitung (admin/org_admin/super_admin) }
+        '403': { description: "Aufrufer ist nicht Leitung (admin/org_admin/super_admin) ODER darf den Raum nicht oeffnen — 'Private Zweiergespräche lassen sich nicht exportieren' bei fremdem Direktchat, sonst 'Zugriff verweigert'" }
         '404': { description: Raum nicht in eigener Org (bewusst 404 statt 403) }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, super_admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "type='admin' UND role_name in (admin, org_admin, super_admin); Raum org-gescopt"
-        hinweis: "Keine Teilnahme nötig — jeder Raum der Org exportierbar, auch fremde Direktchats"
+        objekt-pruefung: "type='admin' UND role_name in (admin, org_admin, super_admin); Raum org-gescopt UND nach darfRaumBetreten zu oeffnen"
+        hinweis: "Ohne Teilnahme: org_admin jeder gemeinschaftliche Raum der Org, admin nur Raeume seiner Jahrgaenge, Termine und des Teams; fremde Direktchats nie (seit 23.08.2026). BEHOBEN 27.09.2026 (BF-05): vorher exportierte jeder admin jeden gemeinschaftlichen Raum der Org."
 
   /api/chat/messages/{messageId}:
     delete:
@@ -885,8 +921,8 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Eigene Nachricht (user_id+user_type) ODER type='admin' in derselben Org (fremde Nachrichten org-weit)"
-        hinweis: "teamer/konfi nur eigene; admin/org_admin jede Nachricht der Org"
+        objekt-pruefung: "Eigene Nachricht (user_id+user_type) ODER type='admin' UND Raum nach darfRaumBetreten zu oeffnen"
+        hinweis: "teamer/konfi nur eigene; admin/org_admin fremde Nachrichten nur in Raeumen, die sie oeffnen duerfen (fremde Direktchats nie, seit 23.08.2026; admin nur nach Jahrgang, seit 27.09.2026 — BF-05)"
         behoben: "26.08.2026 — Diese Regel stand hier korrekt, der Code hielt sie
           aber nicht ein: die Pruefung fiel auf darfRaumOeffnen zurueck, das fuer
           jede:n Teilnehmer:in true liefert. Damit konnte jede Konfi per API
@@ -923,13 +959,13 @@ paths:
                     role_display_name: { type: string }
                     jahrgang_id: { type: [integer, "null"] }
                     jahrgang_name: { type: [string, "null"] }
-        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Teilnehmer ODER Admin-Bypass (admin/org_admin: jeder Raum der Org)"
+        objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher sah jeder admin die Teilnehmerliste jedes gemeinschaftlichen Raums der Org"
     post:
       tags: ["Chat"]
       summary: Teilnehmer zu Gruppenchat hinzufuegen (nur Admins)
@@ -947,7 +983,7 @@ paths:
       responses:
         '201': { description: Hinzugefuegt (user_type serverseitig aus Rolle abgeleitet) }
         '400': { description: user_id fehlt ODER Raum ist kein Gruppenchat }
-        '403': { description: "Aufrufer ist kein Admin-Typ ODER admin traegt einen Konfi ausserhalb der zugewiesenen Jahrgaenge ein" }
+        '403': { description: "Aufrufer ist kein Admin-Typ ODER darf den Raum nicht oeffnen ('Zugriff verweigert') ODER admin traegt einen Konfi ausserhalb der zugewiesenen Jahrgaenge ein" }
         '404': { description: "Raum nicht in eigener Org, ODER Ziel-User weder Stamm-Mitglied noch ueber user_organizations in der aktiven Org" }
         '409': { description: Bereits Teilnehmer }
         '500': { description: Datenbankfehler }
@@ -956,7 +992,10 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: >
-          type='admin'; nur room.type='group'; Ziel-User org-gescopt ueber
+          type='admin'; nur room.type='group'; Raum nach darfRaumBetreten
+          zu oeffnen (seit 27.09.2026, BF-05 — vorher trug sich ein admin
+          ohne Jahrgang selbst in jede Gruppe ein und las danach als
+          Teilnehmer mit); Ziel-User org-gescopt ueber
           BEIDE Quellen (users.organization_id ODER user_organizations),
           user_type aus der Rolle DIESER Org (TEAM_MITGLIED_ROLLE).
           Konfi-Ziele zusaetzlich gegen die Jahrgangsbindung des Aufrufers
@@ -980,14 +1019,14 @@ paths:
       responses:
         '200': { description: Entfernt }
         '400': { description: Raum ist kein Gruppenchat }
-        '403': { description: Aufrufer ist kein Admin-Typ }
+        '403': { description: "Aufrufer ist kein Admin-Typ ODER darf den Raum nicht oeffnen ('Zugriff verweigert')" }
         '404': { description: Raum nicht in eigener Org ODER Teilnehmer nicht gefunden }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "type='admin'; nur room.type='group'"
+        objekt-pruefung: "type='admin'; nur room.type='group'; Raum nach darfRaumBetreten zu oeffnen (seit 27.09.2026, BF-05)"
 
   /api/chat/rooms/{roomId}/leave:
     delete:
@@ -1035,14 +1074,14 @@ paths:
         '200': { description: "Dateiinhalt (Content-Type aus Original-Dateiname)", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
         '400': { description: Ungueltiger Dateiname }
         '401': { description: Token fehlt oder ungueltig }
-        '403': { description: Kein Teilnehmer des Raums }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '404': { description: "Datei nicht gefunden (auch bei fremder Org oder wenn die Nachricht soft-gelöscht ist — seit 26.08.2026 werden Anhänge gelöschter Nachrichten nicht mehr ausgeliefert; die Datei bleibt für eine Wiederherstellung erhalten)" }
         '500': { description: Server-/Entschluesselungsfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: ["manuelle JWT-Pruefung mit DB-Abgleich (kein verifyTokenRBAC — Query-Parameter-Auth)"]
         org-scope: true
-        objekt-pruefung: "Nachricht mit file_path muss in der AKTIVEN Org liegen UND Aufrufer muss chat_participants-Eintrag im Raum haben (nur user_id, ohne user_type)"
+        objekt-pruefung: "Nachricht mit file_path muss in der AKTIVEN Org liegen UND der Raum nach darfRaumBetreten zu oeffnen sein (dieselbe Regel wie GET /rooms/{roomId}/messages)"
         # BEHOBEN 22.08.2026: Frueher `req.user = decoded` — Token-Angaben
         # galten ungeprueft für die volle Laufzeit (geloeschte/gesperrte
         # Konten kamen weiter an Dateien), und organization_id war immer die
@@ -1050,10 +1089,11 @@ paths:
         # bekamen. Jetzt DB-Abgleich inkl. Soft-Revoke und Aufloesung der
         # aktiven Org (403 bei fehlender Mitgliedschaft).
         # LUECKE (offen): Token auch als Query-Parameter akzeptiert
-        # (Access-Logs/Referrer); kein Admin-Bypass (Admins können
-        # Nachrichten fremder Räume lesen, deren Dateien aber nicht abrufen —
-        # Inkonsistenz); Mitgliedschafts-Check ohne user_type (unkritisch,
-        # user_id global eindeutig).
+        # (Access-Logs/Referrer).
+        # BEHOBEN 27.09.2026 (Audit Wer bekommt was, BF-05): kein
+        # Admin-Bypass (Admins konnten Nachrichten fremder Räume lesen, deren
+        # Dateien aber nicht abrufen — Inkonsistenz); Mitgliedschafts-Check
+        # ohne user_type. Jetzt darfRaumBetreten wie beim Lesen.
 
   /api/chat/rooms/{roomId}/polls:
     post:
@@ -1084,13 +1124,13 @@ paths:
           description: Erstellte Umfrage (id, message_id, options, votes=[])
         '400': { description: Frage/Optionen fehlen oder ungueltig }
         '403': { description: Aufrufer ist kein Admin-Typ }
-        '404': { description: Raum nicht in eigener Org }
+        '404': { description: "Raum nicht in eigener Org ODER darf nicht geoeffnet werden (darfRaumBetreten; 404 statt 403, damit fremde Raeume nicht bestaetigt werden)" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, validateCreatePoll]
         org-scope: true
-        objekt-pruefung: "type='admin'; Raum muss zur Org gehören (Teilnahme nicht nötig)"
+        objekt-pruefung: "type='admin'; Raum nach darfRaumBetreten zu oeffnen (Teilnahme; ohne Teilnahme org_admin gemeindeweit, admin nur nach Jahrgang — seit 27.09.2026, BF-05; vorher jeder gemeinschaftliche Raum der Org)"
         hinweis: "teamer können keine Umfragen erstellen"
 
   /api/chat/polls/{pollId}/vote:
@@ -1124,8 +1164,10 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: >
-          darfRaumOeffnen: Teilnehmer des Raums, oder Leitung in einem Raum
-          der eigenen Gemeinde — ausser in fremden Direktchats. BEHOBEN
+          darfRaumOeffnen: Teilnehmer des Raums, oder ohne Teilnahme der
+          org_admin in jedem gemeinschaftlichen Raum der Gemeinde und ein
+          admin nur nach Jahrgang (seit 27.09.2026, BF-05) — nie in fremden
+          Direktchats. BEHOBEN
           2026-08-28: Die Route hatte eine eigene Kopie der Pruefung, die
           strikt einen Teilnehmer-Eintrag verlangte. Dadurch durfte die
           Leitung in einem Gruppenchat eine Umfrage anlegen, aber nicht in
@@ -1163,7 +1205,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: >
-          Identisch zu /polls/{pollId}/vote — darfRaumOeffnen (Teilnehmer oder
+          Identisch zu /polls/{pollId}/vote — darfRaumOeffnen (seit 27.09.2026 nach Jahrgang, s. dort; Teilnehmer oder
           Leitung der eigenen Gemeinde, ausser in fremden Direktchats).
         hinweis: "Reicht an denselben Handler weiter wie /polls/{pollId}/vote"
 
@@ -1206,14 +1248,14 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Reaction' }
-        '403': { description: Fremde Org ODER kein Teilnehmer (Nicht-Admins) }
+        '403': { description: Fremde Org ODER Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '404': { description: Nachricht nicht gefunden }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Org-Check; Teilnehmer-Pflicht nur für Nicht-Admins (admin/org_admin lesen org-weit)"
+        objekt-pruefung: "Org-Check; darfRaumBetreten wie beim Lesen der Nachrichten (seit 27.09.2026 admin nur nach Jahrgang, BF-05; vorher lasen admin/org_admin org-weit)"
 
   # ==========================================================================
   # CHALLENGES — Teilnehmer-Endpunkte (Konfis UND Team je nach audience)

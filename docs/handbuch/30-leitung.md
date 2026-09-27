@@ -77,19 +77,22 @@ seit wann sie dabei sind. Wer wen anlegen darf, steht unter
 
 Als **Org-Admin** erreichst du jeden in deiner Gemeinde. Als **Admin** gilt
 auch im Chat deine Jahrgangs-Zuweisung: Du schreibst nur Konfis deiner eigenen
-Jahrgänge an oder nimmst sie in Gruppen auf. Umgekehrt dürfen dich alle Konfis
-anschreiben.
+Jahrgänge an oder nimmst sie in Gruppen auf, und umgekehrt erreichen dich nur
+die Konfis dieser Jahrgänge
+([Wer wen anschreiben darf](90-chat.md#nachschlagen-wer-wen-anschreiben-darf)).
 
 Nur die Leitung kann Mitglieder zu Gruppen hinzufügen und daraus entfernen,
 Chats und fremde Nachrichten löschen, den
 [Verlauf exportieren](90-chat.md#einen-chat-exportieren) und
 [Umfragen anlegen](90-chat.md#eine-umfrage-stellen).
 
-Du kannst jeden gemeinschaftlichen Raum deiner Gemeinde öffnen und lesen, auch
-ohne selbst Mitglied zu sein — in deiner eigenen Chatliste erscheinen aber nur
-die Chats, in denen du bist. Zwei Grenzen bleiben: fremde Zweiergespräche und
-anonyme Umfragen. Beides steht unter
-[Was die Leitung darf](90-chat.md#nachvollziehen-was-die-leitung-sehen-kann).
+In deiner Chatliste stehen die Chats, in denen du Mitglied bist. Ohne eigene
+Mitgliedschaft öffnest du als **Org-Admin** jeden gemeinschaftlichen Raum
+deiner Gemeinde, als **Admin** nur Jahrgangs-Chats deiner Jahrgänge,
+Event-Chats von Events aus deiner Event-Liste und Räume nur fürs Team.
+Fremde Zweiergespräche und die Stimmen anonymer Umfragen bleiben für alle zu.
+Die ganze Übersicht steht unter
+[Was die Leitung sehen kann](90-chat.md#nachvollziehen-was-die-leitung-sehen-kann).
 
 ## Events anlegen und verbuchen
 

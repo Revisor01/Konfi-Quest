@@ -203,7 +203,8 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Chat: Teamer:in oder Admin schreibt Konfi an | „Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“ |
 | Chat: Konfi schreibt Teamer:in oder Admin an | „Diese Teamer:in ist nicht für deinen Jahrgang zuständig“ bzw. „Dieser Admin ist nicht für deinen Jahrgang zuständig“ (die Org-Admins erreicht ein Konfi dagegen immer) |
 | Chat: Kontaktliste | die Teamer:in taucht bei den Konfis gar nicht erst auf |
-| Jahrgangs-Chatraum | keine Aufnahme in den Raum |
+| Jahrgangs-Chatraum | keine Aufnahme in den Raum; auch ein Admin öffnet ihn dann nicht („Zugriff verweigert“) |
+| Event-Chats und Gruppen mit Konfis | ohne eigene Mitgliedschaft zu; einen Event-Chat öffnet ein Admin nur, wenn das Event in seiner Event-Liste steht ([Chat](90-chat.md#nachvollziehen-was-die-leitung-sehen-kann)) |
 | Challenges | jahrgangsgebundene Challenges sind unsichtbar (Team-Runden bleiben) |
 | Meldungs-Zähler an den Reitern und am App-Symbol | zählen nur, was die eigenen Listen zeigen |
 | Mitteilungen und Push | nur für die eigenen Jahrgänge |

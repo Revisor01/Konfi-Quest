@@ -35,7 +35,8 @@ alten. Verlassen lässt es sich nicht.
 
 Ein Zweiergespräch hat immer genau zwei Personen — das ist der Grund, warum die
 Leitung es nicht mitliest. Sollen mehrere Personen miteinander schreiben,
-entsteht eine [Gruppe](#eine-gruppe-anlegen), und die kann die Leitung öffnen.
+entsteht eine [Gruppe](#eine-gruppe-anlegen), und die kann der Org-Admin
+öffnen.
 Einen „Direktchat" mit drei oder mehr Personen gibt es nicht; Konfis schreiben
 einander nur in Räumen, die die Leitung einsehen kann.
 
@@ -154,18 +155,41 @@ Die Meldungen, wenn es doch jemand versucht:
 
 ## Nachvollziehen, was die Leitung sehen kann
 
-Leitung und Admins können jeden **gemeinschaftlichen** Raum ihrer Gemeinde
-öffnen, auch ohne selbst Mitglied zu sein: Gruppen, Jahrgangs-Chats, Team-Chats
-und Event-Chats. Für diese Räume tragen sie die Verantwortung und müssen im
-Zweifel eingreifen können.
+Wer Mitglied eines Chats ist, kann ihn öffnen — in jeder Rolle. Ohne eigene
+Mitgliedschaft gilt dieselbe Regel wie überall in Konfi Quest: Der
+**Org-Admin** ist für die ganze Gemeinde zuständig, ein **Admin** für seine
+zugewiesenen Jahrgänge, und was nur das Team betrifft, ist fürs ganze Team
+offen.
 
-**Fremde Zweiergespräche sind ausgenommen.** Wer nicht selbst in einem
-Direktchat steht, kommt nicht hinein — auch die Leitung nicht. Sie kann ihn
-weder lesen noch exportieren, keine Nachricht darin löschen und keine Umfrage
-hineinstellen. Ein Zweiergespräch ist privat, auch in einer Gemeinde.
+| Raum, in dem du nicht Mitglied bist | Org-Admin | Admin | Teamer:in, Konfi |
+|---|---|---|---|
+| **Jahrgangs-Chat** | ja | nur bei zugewiesenem Jahrgang | nein |
+| **Event-Chat** | ja | wenn das Event in deiner Event-Liste steht | nein |
+| **Team-Chat**, **Gruppe ohne Konfis** | ja | ja | nein |
+| **Gruppe mit Konfis** | ja | nein | nein |
+| **Direktnachricht** | nein | nein | nein |
 
-Den ganzen Direktchat **löschen** können Leitung und Admins dagegen schon
-(siehe [Einen Chat löschen](#einen-chat-loeschen)) — lesen können sie ihn nicht.
+In der Event-Liste eines Admins stehen die Events seiner Jahrgänge, Events
+„Nur Team" und Events ohne Jahrgang — genau deren Chats kann er öffnen. Ein
+Jahrgangs-Chat gehört ihm, sobald ihm der Jahrgang zugewiesen ist; dann ist er
+ohnehin [Mitglied](#den-jahrgangs-chat-nutzen).
+
+Öffnen heißt alles, was deine Rolle im Raum darf: lesen, schreiben, Dateien
+laden, [exportieren](#einen-chat-exportieren), Umfragen stellen und abstimmen,
+[Mitglieder verwalten](#mitglieder-einer-gruppe-verwalten), Nachrichten und den
+[ganzen Chat löschen](#einen-chat-loeschen) — und neue Nachrichten live
+mitlesen. [Reagieren](#auf-eine-nachricht-reagieren) können nur die
+Mitglieder. Wo das Öffnen nicht erlaubt ist, antwortet die App mit *„Zugriff
+verweigert"*.
+
+In deiner Chatliste stehen nur die Chats, in denen du Mitglied bist, und jeder
+davon lässt sich öffnen. Einen Event-Chat, in dem du nicht Mitglied bist,
+erreichst du über das [Event](70-termine.md#einen-event-chat-einrichten).
+
+**Fremde Zweiergespräche sind für alle zu.** Wer nicht selbst in einem
+Direktchat steht, kommt nicht hinein — auch der Org-Admin nicht. Er kann ihn
+weder lesen noch exportieren, löschen, eine Nachricht darin löschen oder eine
+Umfrage hineinstellen. Ein Zweiergespräch ist privat, auch in einer Gemeinde.
 
 ---
 
@@ -214,7 +238,7 @@ wird — dann steht dort das Zitat ohne Inhalt.
 
 | Wer | Darf löschen |
 |---|---|
-| **Leitung und Admins** | eigene und **fremde** Nachrichten — aber nur in Räumen, die sie öffnen dürfen, also nicht in fremden Zweiergesprächen |
+| **Leitung und Admins** | eigene und **fremde** Nachrichten — aber nur in Räumen, die sie [öffnen dürfen](#nachvollziehen-was-die-leitung-sehen-kann), also nie in fremden Zweiergesprächen |
 | **Teamer:innen** | nur eigene |
 | **Konfis** | nur eigene — sie sehen den Papierkorb gar nicht erst |
 
@@ -400,7 +424,10 @@ beide den Zuschlag — die zweite bekommt „bereits vergeben".
 Wer in einem Chat ist, sehen **alle Mitglieder** über das Personen-Symbol oben
 im Chat — in Zweiergesprächen fehlt der Knopf, dort ist die Sache klar.
 
-**Ändern dürfen die Liste nur Leitung und Admins, und nur in Gruppen.** In allen
+**Ändern dürfen die Liste nur Leitung und Admins, nur in Gruppen, die sie
+[öffnen dürfen](#nachvollziehen-was-die-leitung-sehen-kann).** In eine Gruppe
+mit Konfis, in der er nicht Mitglied ist, trägt ein Admin deshalb niemanden
+ein — auch sich selbst nicht. In allen
 anderen Chat-Arten ergibt sich aus der Sache selbst, wer drin ist: aus dem
 Jahrgang, aus der Rolle, aus der Event-Anmeldung. Wer es anderswo versucht,
 bekommt: *„Teilnehmer können nur zu Gruppenchats hinzugefügt werden"*
@@ -441,7 +468,10 @@ nicht verlassen"*. Wer die Verantwortung trägt, bleibt in den Räumen.
 ## Einen Chat löschen
 
 Einen ganzen Chat löschen dürfen **Leitung und Admins**, in der Übersicht über
-die [Wischgeste nach links](03-bedienung.md#etwas-loeschen-nach-links-wischen).
+die [Wischgeste nach links](03-bedienung.md#etwas-loeschen-nach-links-wischen) —
+jeden Chat, den sie
+[öffnen dürfen](#nachvollziehen-was-die-leitung-sehen-kann). Ein fremdes
+Zweiergespräch löscht niemand.
 
 Enthält er noch Nachrichten, kommt zuerst eine Rückfrage: *„Chat-Raum kann nicht
 gelöscht werden: 47 Nachricht(en) vorhanden."* Erst mit ausdrücklicher
@@ -461,7 +491,11 @@ weiterzuarbeiten, etwa an einer Gottesdienst-Vorbereitung.
 **Nur Leitung und Admins dürfen das**, Teamer:innen und Konfis nicht (*„Nur die
 Leitung darf Chats exportieren"*). Ein Export nimmt den ganzen Verlauf aus dem
 Zusammenhang des Chats heraus; wer ihn zieht, soll dieselbe Verantwortung tragen
-wie beim Löschen. **Fremde Zweiergespräche lassen sich nicht exportieren.**
+wie beim Löschen. Exportieren lässt sich nur, was du
+[öffnen darfst](#nachvollziehen-was-die-leitung-sehen-kann) — als Admin also
+nur Räume deiner Jahrgänge, deiner Events und des Teams. **Fremde
+Zweiergespräche lassen sich nicht exportieren**
+(*„Private Zweiergespräche lassen sich nicht exportieren"*).
 
 Im Export steht der vollständige Verlauf, älteste Nachricht zuerst, nach Tagen
 gegliedert:

@@ -24,7 +24,7 @@ if (!JWT_SECRET) {
 // ====================================================================
 
 const db = require('./database');
-const { darfRaumBetreten } = require('./utils/chatRoomAccess');
+const { socketRaumEreignisse } = require('./utils/chatRoomAccess');
 
 // Gemeinsamer Zaehler-Speicher fuer die Rate-Limiter (Audit 26.09.2026,
 // Betrieb BF-09 / S-10): Ohne `store` zaehlte express-rate-limit je Prozess
@@ -191,51 +191,9 @@ io.on('connection', (socket) => {
   const userRoom = `user_${socket.user.type}_${socket.user.id}`;
   socket.join(userRoom);
 
-  socket.on('joinRoom', async (roomId) => {
-    try {
-      const erlaubt = await darfRaumBetreten(db, roomId, socket.user);
-      if (!erlaubt.ok) {
-        console.warn(`Socket joinRoom abgelehnt: User ${socket.user.id} -> Room ${roomId} (${erlaubt.grund})`);
-        return;
-      }
-      socket.join(`room_${roomId}`);
-    } catch (err) {
-      console.error('Socket joinRoom Fehler:', err.message);
-    }
-  });
-
-  socket.on('leaveRoom', (roomId) => {
-    socket.leave(`room_${roomId}`);
-  });
-
-  // Auch hier Teilnehmerschaft prüfen: Ohne sie liesse sich über die
-  // Tipp-Anzeige verraten, wer gerade in einem fremden Raum schreibt.
-  socket.on('typing', async (roomId) => {
-    try {
-      const erlaubt = await darfRaumBetreten(db, roomId, socket.user);
-      if (!erlaubt.ok) return;
-      socket.to(`room_${roomId}`).emit('userTyping', {
-        roomId,
-        userId: socket.user.id,
-        userName: socket.user.display_name
-      });
-    } catch (err) {
-      console.error('Socket typing Fehler:', err.message);
-    }
-  });
-
-  socket.on('stopTyping', async (roomId) => {
-    try {
-      const erlaubt = await darfRaumBetreten(db, roomId, socket.user);
-      if (!erlaubt.ok) return;
-      socket.to(`room_${roomId}`).emit('userStoppedTyping', {
-        roomId,
-        userId: socket.user.id
-      });
-    } catch (err) {
-      console.error('Socket stopTyping Fehler:', err.message);
-    }
-  });
+  // joinRoom, leaveRoom, typing, stopTyping: dieselbe Raum-Regel wie die
+  // REST-Routen (utils/chatRoomAccess.js).
+  socketRaumEreignisse(socket, db);
 
   socket.on('disconnect', (reason) => {
     if (reason === 'server namespace disconnect') {
