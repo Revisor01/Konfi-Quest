@@ -353,6 +353,22 @@ entschieden: die kleinen Punkte vor dem Merge beheben, dazu vier Entscheidungen.
   Tests und CHANGELOG; veraltete Zeilen sind ergänzt, nicht gelöscht (`6902994a`, `b6bda5fb`,
   `446e73ac`).
 
+Nach dem Öffnen des Pull Requests (Simon hat den Merge am 27.09. freigegeben) kamen aus dem CI
+und aus der Prüfung vor dem Merge noch diese Punkte:
+
+- **CHANGELOG ab 2.2.0 wiederhergestellt:** Der Versions-Commit `dd8cf2ad` hatte alle Abschnitte
+  von 2.2.0 bis 1.0 abgeschnitten (2.628 Zeilen); sie stehen wieder so drin wie auf `main`
+  (`24018560`). Überschrift `[2.3.0] - 2026-09-27` mit Build-Zeile (`3e8b0ef3`).
+- **Frontend-Tests unter Node 26** (wie im CI): `localStorage` war dort `undefined`, 26 Tests der
+  Medien-Pakete fielen; die Test-Einrichtung setzt den Speicher von jsdom ein (`1a0e6f23`).
+- **CodeQL:** Werte aus der Anfrage stehen in keinem Fehler-Log mehr im Formatstring, 17 Stellen
+  (`1a0e6f23`, `b88b0f26`). Die „DOM-Text als HTML"-Meldungen in Chat- und Challenge-Vorschau
+  sind Fehlalarme (Blob-Adressen im `src` von Bild, Video, Ton) und bestehen auf `main` genauso.
+- **Stopp direkt nach dem Start** endete nach 10 s mit Exit 1: Der Socket.IO-Adapter gab seinen
+  LISTEN-Client nicht zurück, wenn der Stopp in seinen Verbindungsaufbau fiel, und `database.js`
+  wertete den geschlossenen Pool als Startfehler. Jetzt Exit 0 (`bf92aa63`). Das war der
+  „wackelnde" Shutdown-Test.
+
 ## Was offen bleibt
 
 Stand 27.09.2026, vor dem Merge. Gezählt aus den Status-Zeilen der 15 Bereichsberichte und des
@@ -411,7 +427,7 @@ einchecken können.
 - **CI und Werkzeug:** Backend-Image (root, `npm install pg`, keine `.dockerignore`), eine
   Node-Version, Backend-Lint, `node-fetch` deklarieren, Handbuch-Bilder (33 MB) aus dem
   App-Bundle, CSP-Header, Play-Upload nicht sofort zu 100 %, Meldung bei rotem `main`, Tests für
-  `release-gate.py` und `rollend.sh`, Shutdown-Test gegen SIGTERM beim Start; Quelltext-Tests
+  `release-gate.py` und `rollend.sh`; Quelltext-Tests
   (44 %) und E2E über Smoke hinaus; Sitemap reproduzierbar.
 - **Betrieb:** Log-Volumen (Betrieb BF-11), letzte Laufzeit je Job (BF-10), Obergrenze der
   Refresh-Tokens je Konto (abgelaufene und widerrufene räumt `auth.js` schon weg; 1.232 offene
