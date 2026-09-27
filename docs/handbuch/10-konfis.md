@@ -11,7 +11,7 @@ oben rechts.
 
 > Noch keinen Zugang? Deine Gemeinde gibt dir einen Einladungscode — der Weg
 > steht im Kapitel
-> [Passwörter und Zugang](35-passwoerter.md#konfis-kommen-neu-dazu-der-einladungscode).
+> [Passwörter und Zugang](35-passwoerter.md#konfis-mit-einem-einladungscode-aufnehmen).
 
 ## Auf der Startseite nachsehen, wo du stehst
 
@@ -45,7 +45,7 @@ und an Umfragen teilnehmen.
 Anschreiben kannst du die Leitung deiner Gemeinde und die Teamer:innen, die für
 deinen Jahrgang zuständig sind — andere Konfis nicht, auch nicht aus deinem
 Jahrgang. Alle Regeln stehen im Kapitel
-[Chat](90-chat.md#wer-wen-anschreiben-darf).
+[Chat](90-chat.md#nachschlagen-wer-wen-anschreiben-darf).
 
 ## Bei einer Challenge mitmachen
 

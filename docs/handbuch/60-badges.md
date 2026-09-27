@@ -262,7 +262,7 @@ der größer ist als die Zahl der angekreuzten Kategorien, ebenfalls („Der Wer
 darf nicht größer sein als die Anzahl der gewählten Kategorien") — sonst
 entstünde ein „4 aus 3", das niemand erreichen kann.
 
-#### Kategorie-Aktivitäten oder Kategorie-Kombination?
+#### Zwischen Kategorie-Aktivitäten und Kategorie-Kombination wählen
 
 Die beiden sehen sich ähnlich und meinen Verschiedenes:
 
@@ -297,7 +297,7 @@ Wochen **in Folge** mit mindestens einem Eintrag.
 > vor einem Jahr vier Wochen am Stück aktiv war und seitdem nichts, erfüllt
 > die Bedingung weiterhin und bekommt das Badge beim Anlegen sofort.
 
-### Nur für Teamer:innen
+### Nur für Teamer:innen zählen
 
 #### Teamer-Jahr
 
@@ -337,7 +337,7 @@ vergeben, auch wenn es in der Datenbank steht.
 Badge dieser Art, das es schon gibt, wird aber weiterhin ganz normal
 **vergeben**. Wer eines vorfindet, muss es also nicht ersetzen.
 
-### Was bei Teamer-Badges anders zählt
+### Verstehen, was bei Teamer-Badges anders zählt
 
 - **Aktivitäten:** Nur solche mit der Zielgruppe „Teamer:innen" zählen mit.
   Eine Aktivität für Konfis bleibt außen vor, auch wenn sie in derselben

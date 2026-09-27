@@ -23,7 +23,7 @@ zum Anlegen.
 Die Leitung hat zwei Stufen: **Admins** kümmern sich um den laufenden Betrieb,
 **Org-Admins** zusätzlich um Benutzer:innen, Jahrgangs-Zuweisungen und die
 Einstellungen der Gemeinde. Der Unterschied steht im Kapitel
-[Rollen und Rechte](05-rollen.md#wer-darf-was).
+[Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
 
 Ein Punkt vorweg, weil er oft für Verwirrung sorgt: Auch als **Admin** brauchst
 du Jahrgangs-Zuweisungen. Konfi-Liste und Chat zeigen dir nur die Jahrgänge,
@@ -42,14 +42,14 @@ jeder Person siehst du die Punkte nach **Godi**, **Gemeinde** und **Gesamt**.
 Über das Plus legst du an, was gerade geöffnet ist. Dabei erzeugt die App ein
 [Einmalpasswort](35-passwoerter.md#wie-die-einmalpasswoerter-aussehen), das du
 direkt kopieren kannst. Ganze Gruppen lädst du besser
-[per QR-Code ein](35-passwoerter.md#konfis-kommen-neu-dazu-der-einladungscode),
+[per QR-Code ein](35-passwoerter.md#konfis-mit-einem-einladungscode-aufnehmen),
 statt jeden Konfi einzeln anzulegen.
 
 Oben findest du die **Anwesenheits-Matrix**: eine Tabelle über alle Konfis mit
 Pflicht-Anwesenheit und Konfisprüchen, die du dir auch per E-Mail schicken
 lassen kannst.
 
-### In der Detailansicht einer Person
+### Die Detailansicht einer Person nutzen
 
 - **Punkte vergeben** — als [Bonuspunkte](40-punkte.md#ueber-bonuspunkte), frei
   begründet
@@ -69,7 +69,7 @@ lassen kannst.
 
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
 seit wann sie dabei sind. Wer wen anlegen darf, steht unter
-[Wer wen anlegen darf](05-rollen.md#wer-wen-anlegen-darf).
+[Wer wen anlegen darf](05-rollen.md#nachschlagen-wer-wen-anlegen-darf).
 
 ## Chats moderieren
 

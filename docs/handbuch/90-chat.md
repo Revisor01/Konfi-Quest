@@ -12,7 +12,7 @@ dieses Kapitels.
 
 Wo unten „Leitung und Admins" steht, sind beide Rollen gemeint; Teamer:innen
 dürfen dort nicht. Was die Rollen sonst unterscheidet, steht im Kapitel
-[Rollen und Rechte](05-rollen.md#wer-darf-was).
+[Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
 
 ---
 
@@ -57,7 +57,7 @@ und pflegt seine Mitglieder selbst:
 
 - **Alle Konfis des Jahrgangs** sind drin. Neue Konfis kommen automatisch dazu
   — auch die, die sich
-  [per Einladungscode registriert](35-passwoerter.md#konfis-kommen-neu-dazu-der-einladungscode)
+  [per Einladungscode registriert](35-passwoerter.md#konfis-mit-einem-einladungscode-aufnehmen)
   haben.
 - **Die Leitung (Org-Admin)** ist immer in allen Jahrgangs-Chats der Gemeinde
   und bleibt es auch ohne Zuweisung.
@@ -101,7 +101,7 @@ Wer sich abmeldet, fliegt heraus.
 
 ---
 
-## Wer wen anschreiben darf
+## Nachschlagen, wer wen anschreiben darf
 
 | ↓ schreibt an → | Konfi | Teamer:in | Admin | Leitung (Org-Admin) |
 |---|---|---|---|---|
@@ -293,7 +293,7 @@ geöffnet hat. Von Hand geht das über **Medien-Cache leeren** im eigenen Profil
 > Anhang zum Herunterladen. (Aufnehmen geht nur bei
 > [Challenges](80-challenges.md).)
 
-### Was mit der Datei passiert
+### Verstehen, was mit der Datei passiert
 
 - Sie wird beim Hochladen **auf ihren echten Typ geprüft** — nicht am
   Dateinamen, sondern an den ersten Bytes. Ein umbenanntes Programm kommt nicht

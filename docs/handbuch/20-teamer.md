@@ -43,7 +43,7 @@ umgekehrt in deren Kontaktliste nicht auf.
 Gruppenchats kannst du anlegen. Mitglieder nachträglich hinzufügen oder
 entfernen und den Verlauf exportieren kann nur die Leitung — auch in Gruppen,
 die du selbst angelegt hast. Alle Regeln stehen im Kapitel
-[Chat](90-chat.md#wer-wen-anschreiben-darf).
+[Chat](90-chat.md#nachschlagen-wer-wen-anschreiben-darf).
 
 ## Challenges stellen und begleiten
 
@@ -148,7 +148,7 @@ Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
   Chat-Dateien weg, die zum schnelleren Öffnen auf dem Gerät liegen (siehe
   [Chat](90-chat.md#eine-datei-mitschicken))
 - **Badges** — deine Badges; welche
-  [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen) gelten,
+  [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen-zaehlen) gelten,
   steht im Badge-Kapitel
 - **Deine Stempel** — die [Challenge-Stempel](80-challenges.md#den-stempel-vergeben),
   die du selbst gesammelt hast. Was es noch zu holen gibt, steht grau daneben.

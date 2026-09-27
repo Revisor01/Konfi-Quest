@@ -182,7 +182,7 @@ deshalb keine Konfis. Er kann auch nur in seinen Jahrgängen Konfis anlegen
 und sie nur zwischen ihnen verschieben; ändert er die Jahrgänge einer
 Teamer:in, bleiben deren übrige Zuweisungen erhalten. Was das im Chat
 konkret bedeutet, steht im Kapitel
-[Chat](90-chat.md#wer-wen-anschreiben-darf); die Unterschiede zwischen den
+[Chat](90-chat.md#nachschlagen-wer-wen-anschreiben-darf); die Unterschiede zwischen den
 Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 
 | Bereich | Ohne passende Zuweisung |
@@ -277,7 +277,7 @@ bekommst du die Rückfrage „Chat-Nachrichten vorhanden“ mit dem Knopf
 **„Dennoch löschen“**. Dann werden **alle Nachrichten, Umfragen und Anhänge
 unwiderruflich gelöscht** ([Chat](90-chat.md)).
 
-### Beförderte Teamer:innen beim Löschen
+### Beförderte Teamer:innen beim Löschen behalten
 
 Ehemalige Konfis, die inzwischen Teamer:in sind, **blockieren das Löschen
 nicht**. Sie verlieren beim Löschen nur ihre Jahrgangs-Bindung.

@@ -78,7 +78,7 @@ Team sieht, dass du dabei warst. Trotzdem abschicken?" Danach meldet sie
 Punkte gibt es noch keine.
 
 **2. Die Leitung prüft.** Die Anträge stehen in der Antragsliste.
-[Teamer:innen sehen sie nicht](05-rollen.md#wer-darf-was) — in Beschreibung
+[Teamer:innen sehen sie nicht](05-rollen.md#nachschlagen-wer-was-darf) — in Beschreibung
 und Foto kann Privates stehen. Ein Admin sieht dort nur die Anträge aus
 [seinen Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert);
 Anträge von Teamer:innen sieht er immer. Wer den Antrag sieht, bekommt ihn
@@ -174,7 +174,7 @@ eingeschaltet ist.
 > Bescheid.
 
 Direkt zuschreiben, löschen und Bonuspunkte zurücknehmen können nur die
-[Leitungsrollen](05-rollen.md#wer-darf-was). Teamer:innen kommen an die
+[Leitungsrollen](05-rollen.md#nachschlagen-wer-was-darf). Teamer:innen kommen an die
 Konfi-Verwaltung nicht heran.
 
 ## Den Punktwert einer Aktivität ändern

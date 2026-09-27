@@ -50,7 +50,7 @@ und „Nur Team" schließen sich gegenseitig aus.
 ### Nachvollziehen, welche Events das Team sieht
 
 **Teamer:innen sehen und buchen nur Events der Jahrgänge, die sie betreuen.**
-Dieselbe Regel wie im [Chat](90-chat.md#wer-wen-anschreiben-darf), wo man auch
+Dieselbe Regel wie im [Chat](90-chat.md#nachschlagen-wer-wen-anschreiben-darf), wo man auch
 nur Konfis der eigenen Jahrgänge anschreiben kann. Wer den Jahrgang nicht
 betreut, findet das Event gar nicht erst in seiner Liste; eine Buchung über
 einen Umweg lehnt der Server ab („Dieses Event gehört zu einem Jahrgang, dem
@@ -118,7 +118,7 @@ stattgefunden hat. Die Kopie eines abgesagten Events ist nicht abgesagt — so
 holst du ein ausgefallenes Event nach.
 
 Das **Datum** steht auf heute, gerechnet wie bei einem neuen Event; der
-Anmeldeschluss folgt daraus (siehe [Kurzfristige Events](#kurzfristige-events))
+Anmeldeschluss folgt daraus (siehe [Kurzfristige Events](#kurzfristige-events-anlegen))
 und kann deshalb nicht in der Vergangenheit liegen. Die **Dauer** bleibt: Aus
 einem Wochenende wird wieder ein Wochenende, auch wenn du das Datum verschiebst.
 
@@ -226,7 +226,7 @@ Vor der Öffnung sehen die Konfis das Event zwar, bekommen beim Versuch aber
 Anmeldeschluss kommt „Anmeldung bereits geschlossen", in der Liste steht
 „Geschlossen".
 
-### Kurzfristige Events
+### Kurzfristige Events anlegen
 
 Der Anmeldeschluss wird mit 24 Stunden vor Beginn vorgeschlagen. Liegt der
 Termin näher — du trägst am Nachmittag etwas für den Abend ein —, rückt der
@@ -1006,7 +1006,7 @@ Wer zurücknehmen darf, richtet sich nach denselben Regeln wie das Absagen: die
 Leitung. Teamer:innen sehen, dass und warum ein Event abgesagt ist, ändern
 daran aber nichts.
 
-### Wo ein abgesagtes Event steht
+### Ein abgesagtes Event wiederfinden
 
 Das richtet sich nach dem Datum: Solange das Event noch bevorsteht oder
 läuft, findest du es unter **„Aktuell"**, danach unter **„Vergangen"** —

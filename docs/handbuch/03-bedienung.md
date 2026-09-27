@@ -123,7 +123,7 @@ auch tut. Was in den anderen Gemeinden noch offen ist, zeigt der
 Gemeinde-Umschalter oben links an jedem Eintrag (siehe [Sehen, wo etwas offen
 ist](05-rollen.md#sehen-wo-etwas-offen-ist)).
 
-### Das eigene Profil
+### Das eigene Profil finden
 
 **Konfis und Teamer:innen** tippen dafür oben rechts auf das Personen-Symbol.
 Dort stehen die eigenen Rückblicke, die Konto-Einstellungen und — bei
@@ -167,7 +167,7 @@ Stimme.
 
 ### Anmelden
 
-Die Anmeldeseiten — Anmelden, [Passwort vergessen](35-passwoerter.md#weg-2-passwort-vergessen-per-e-mail),
+Die Anmeldeseiten — Anmelden, [Passwort vergessen](35-passwoerter.md#weg-2-passwort-vergessen-per-e-mail-nutzen),
 neues Passwort setzen und [Registrieren mit Einladungscode](35-passwoerter.md#sich-als-konfi-registrieren):
 
 - **Tab** springt von Feld zu Feld und weiter zum Augen-Knopf am Passwortfeld,
@@ -250,7 +250,7 @@ allem anderen.
 Knopf daneben. Sie sagt auch, was genau verschwindet, etwa: „Der Jahrgang und
 sein Chatverlauf werden unwiderruflich entfernt."
 
-### Nicht jedes Wischen löscht
+### Andere Wisch-Aktionen erkennen
 
 Hinter der Wischgeste steckt manchmal etwas anderes — und dann läuft es **ohne
 Rückfrage** sofort los:
@@ -310,7 +310,7 @@ Solange das Gerät der App noch keine Mitteilungen erlaubt, steht in der
 Auswahl ein Hinweis mit einem Knopf, der die Erlaubnis anfordert. Die Auswahl
 selbst gilt dann, sobald sie erteilt ist.
 
-## Zusätzlich auf Android: Ton und Lautstärke je Gruppe
+## Auf Android Ton und Lautstärke je Gruppe einstellen
 
 Auf Android sind die vier Gruppen außerdem Kanäle des Systems. In den
 Android-Einstellungen unter *Apps → Konfi Quest → Benachrichtigungen* lässt
@@ -364,7 +364,7 @@ Hilft das nicht, in dieser Reihenfolge weiterprobieren:
 Die App ist dafür gebaut, dass unterwegs das Netz fehlt — im Gemeindehaus, auf
 der Freizeit, im Bus.
 
-### Was ohne Netz geht
+### Erkennen, was ohne Netz geht
 
 **Alles, was nur gemeldet werden muss**, nimmt die App entgegen und schickt es
 später los:
@@ -385,7 +385,7 @@ automatisch raus — auch wenn du die App zwischendurch geschlossen hast. Klappt
 etwas endgültig nicht, stehen sie unter **„Nicht gesendet"**, die Glocke wird
 rot, und du kannst sie wegwischen.
 
-### Was Netz braucht
+### Erkennen, was Netz braucht
 
 - sich zu einem Event **anmelden**
 - **alles Löschen** — Konfis, Chats, Events, Badges und so weiter
@@ -404,7 +404,7 @@ Tippst du trotzdem, sagt es die App sinngemäß so: *„Das geht nur mit
 Internetverbindung. Bitte versuche es später noch einmal."* Bei Knöpfen in
 Formularen steht statt des Hakens ein Wolken-Symbol mit **„Du bist offline"**.
 
-### Was du ohne Netz noch siehst
+### Erkennen, was du ohne Netz noch siehst
 
 Alles, was du zuletzt geöffnet hattest — Events, Chats, dein Profil, die
 Badges. Die App merkt sich den Stand und zeigt ihn weiter. Er ist dann

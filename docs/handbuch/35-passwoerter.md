@@ -15,7 +15,7 @@ ist.
 | **Konfi mit E-Mail** | selbst über „Passwort vergessen" — oder Einmalpasswort |
 | **Teamer:in** | selbst über „Passwort vergessen" — oder Einmalpasswort |
 | **Admin / Org-Admin** | selbst über „Passwort vergessen"; sonst setzt ein Org-Admin in der Benutzerverwaltung ein Passwort |
-| **Niemand kommt mehr rein** | siehe [Wenn gar nichts geht](#wenn-gar-nichts-geht) |
+| **Niemand kommt mehr rein** | siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht) |
 
 ## Weg 1: Die Leitung setzt ein neues Passwort
 
@@ -74,7 +74,7 @@ lateinischen Namen — `Genesis`, `Exodus`, `Levitikus`, `Numeri`,
 Das Passwort gilt unbegrenzt. Es heißt „Einmalpasswort", weil es zum ersten
 Anmelden gedacht ist — die Person sollte es danach im Profil ändern.
 
-## Weg 2: „Passwort vergessen" per E-Mail
+## Weg 2: „Passwort vergessen" per E-Mail nutzen
 
 Funktioniert für **alle Rollen**, aber nur, wenn eine E-Mail-Adresse hinterlegt
 ist.
@@ -198,7 +198,7 @@ Zähler, der irgendwann dichtmacht.
 Du kommst also immer wieder heraus, auch wenn die Biometrie am Gerät
 zwischendurch geändert oder entfernt wurde.
 
-### Was die Übersicht der offenen Apps zeigt
+### Verstehen, was die Übersicht der offenen Apps zeigt
 
 **Bei eingeschalteter Sperre gibt die App auch dort nichts preis.** Wischst du
 die App weg oder wechselst zu einer anderen, steht in der Übersicht der offenen
@@ -259,7 +259,7 @@ kein kleines l, keine Null und keine Eins. Das Passwort lässt sich also auch
 vorlesen. Gefällt dir der Vorschlag nicht, tippst du einfach noch einmal auf
 den Knopf.
 
-## Konfis kommen neu dazu: der Einladungscode
+## Konfis mit einem Einladungscode aufnehmen
 
 Neue Konfis muss niemand von Hand anlegen: Die Leitung erzeugt eine Einladung,
 die Konfis registrieren sich damit selbst und legen ihr Passwort dabei gleich
@@ -342,7 +342,7 @@ Dabei passiert automatisch:
 - Die **Leitung des Jahrgangs bekommt einen Push**, und die Person erscheint
   sofort in der Konfi-Liste.
 
-### Wenn die Registrierung hakt
+### Helfen, wenn die Registrierung hakt
 
 | Meldung | Ursache und Ausweg |
 |---|---|
@@ -362,7 +362,7 @@ Einladungscode wählen Konfis ihren Benutzernamen dagegen selbst.
 Beim Anmelden ist **Groß- und Kleinschreibung egal**: `Noemi.Burau`
 funktioniert genauso wie `noemi.burau`.
 
-## Wenn gar nichts geht
+## Weiterkommen, wenn gar nichts geht
 
 **Eine Konfi hat keine E-Mail und die Leitung ist nicht erreichbar.** Dann
 hilft nur warten. Es gibt keinen anderen Weg — sonst könnte sich jemand

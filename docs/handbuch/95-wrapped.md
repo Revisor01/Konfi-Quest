@@ -309,7 +309,7 @@ Der Satz darunter ordnet ein, ohne sie zu wiederholen: „Deine Konfirmation ist
 am …", ab 30 Tagen davor „Bald ist es so weit.", am Tag selbst „Heute ist es so
 weit." und danach „Du bist konfirmiert."
 
-### Die Seiten zu den Bereichen
+### Die Seiten zu den Bereichen lesen
 
 Für jede der Standardkategorien gibt es eine eigene Seite mit eigenem Bild und
 eigenem Text. Man bekommt sie, wenn man in diesem Bereich etwas getan hat —
@@ -340,7 +340,7 @@ eine Seite.
 > allgemeinen Schwerpunkt-Seite mit — niemand geht leer aus. Wollt ihr eine
 > eigene Seite dafür, benennt die Kategorie wie einen der Standardnamen.
 
-### Seiten, die sich nach dem Datum richten
+### Die Seiten zum Datum lesen
 
 Diese Seiten hängen **nicht** an der Kategorie, sondern am Datum des Events.
 
@@ -370,7 +370,7 @@ müsst nichts pflegen.
 > noch auf der Gottesdienst-Seite. Niemand bekommt zwei Seiten über dieselbe
 > Stunde in derselben Kirche.
 
-### Die Sonderseite zur Sommerfreizeit
+### Die Sonderseite zur Sommerfreizeit bekommen
 
 Die Seite zur Fahrt nach **Stavanger** trägt oben „Stavanger 2026" und darunter
 „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." Sie erscheint bei
@@ -398,7 +398,7 @@ mitgefahren sind.
 Mit 5 % ist es die seltenste Seite überhaupt — wer sie bekommen kann, bekommt
 sie auch.
 
-### Was bewusst nicht vorkommt
+### Wissen, was bewusst nicht vorkommt
 
 Ein Highlight „am öftesten abgesagt" gibt es nicht und wird es nicht geben.
 Absagen haben bei Konfis oft Gründe außerhalb ihrer Kontrolle — Familie,

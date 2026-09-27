@@ -23,7 +23,7 @@ Es gibt vier Rollen, und jede bekommt beim Anmelden ihre eigene Ansicht:
 | **Org-Admin** | dazu Benutzer:innen, Jahrgänge, Jahrgangs-Zuweisungen und die Einstellungen der Gemeinde | [Für die Leitung](30-leitung.md) |
 
 Wer genau was darf und wie die Jahrgangs-Zuweisung das begrenzt, steht im
-Kapitel [Rollen und Rechte](05-rollen.md#wer-darf-was).
+Kapitel [Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
 
 ## Verstehen, wie Punkte den Laufzettel ersetzen
 

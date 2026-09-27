@@ -101,7 +101,7 @@ Im Einzelnen gilt für einen Admin:
   Auch ein neues Passwort für eine Teamer:in kann er erzeugen, ohne mit ihr einen
   Jahrgang zu teilen.
 
-## Wer darf was
+## Nachschlagen, wer was darf
 
 | | Konfi | Teamer:in | Admin | Org-Admin |
 |---|---|---|---|---|
@@ -129,7 +129,7 @@ Im Einzelnen gilt für einen Admin:
 | Konfis direkt anschreiben | — | nur eigene Jahrgänge | nur eigene Jahrgänge | ja |
 | Ganze Gemeinde sehen, ohne Zuweisung | — | — | — | ja |
 
-## Wer wen anlegen darf
+## Nachschlagen, wer wen anlegen darf
 
 Angelegt und bearbeitet wird immer nur nach unten:
 
@@ -241,7 +241,7 @@ oder eine Mitteilung aus dem
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) wechselt in die
 Gemeinde, aus der sie stammt, und dort steht der Umschalter wieder.
 
-Im [Chat](90-chat.md#wer-wen-anschreiben-darf) steht die Person in der
+Im [Chat](90-chat.md#nachschlagen-wer-wen-anschreiben-darf) steht die Person in der
 Team-Kontaktliste jeder ihrer Gemeinden — mit der Rolle, die sie dort hat. In
 jeder dieser Gemeinden lässt sie sich auch in
 [Gruppenchats](90-chat.md#mitglieder-einer-gruppe-verwalten) aufnehmen, beim
@@ -325,7 +325,7 @@ beförderte Person bewusst **nicht** automatisch: Teamer:innen dürfen auch ohne
 Jahrgang existieren. Die Zuweisung vergibt die Leitung, sobald sie in einem
 Jahrgang aktiv sein soll — meist im neuen statt im alten eigenen. Der Weg dahin
 steht im Kapitel
-[Für die Leitung](30-leitung.md#in-der-detailansicht-einer-person).
+[Für die Leitung](30-leitung.md#die-detailansicht-einer-person-nutzen).
 
 Alle anderen Rollenwechsel macht ein Org-Admin unter
 **[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-admin)**.
