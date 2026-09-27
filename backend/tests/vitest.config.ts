@@ -16,8 +16,10 @@ export default defineConfig({
     setupFiles: ['./tests/setupTests.js'],
     include: ['tests/**/*.test.{js,ts}'],
     env: {
-      // Europe/Berlin wie in den Prod-Containern (portainer-stack.yml,
-      // deploy/compose.konfi_quest.yml). Bis zum 01.09.2026 stand hier 'UTC'
+      // Europe/Berlin -- gemessen am 27.09.2026 laeuft Produktion allerdings
+      // in UTC (Node-Prozess und Datenbanksitzung, siehe tests/helpers/db.js);
+      // die Referenz-Compose setzt TZ bewusst nicht. Ein Lauf wie Produktion:
+      // TZ und TEST_DB_SITZUNGSZONE auf 'UTC'. Bis zum 01.09.2026 stand hier 'UTC'
       // und traf damit die Produktion nur ZUFAELLIG: Die Container liefen
       // entgegen der Absicht ebenfalls in UTC, weil die Variable TZ im Stack
       // nur beim Datenbank-Dienst stand. Die Tests konnten die zwei Stunden

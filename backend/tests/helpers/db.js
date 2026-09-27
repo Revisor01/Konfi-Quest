@@ -24,9 +24,16 @@ let pool = null;
  */
 function getTestPool() {
   if (!pool) {
-    // Sitzungszone fest auf Europe/Berlin: In Produktion traegt der
-    // Datenbank-Dienst TZ und PGTZ auf Europe/Berlin (portainer-stack.yml,
-    // deploy/compose.konfi_quest.yml), der Node-Prozess ebenso. Die Test-DB
+    // Sitzungszone Europe/Berlin als Voreinstellung. ACHTUNG, gemessen am
+    // 27.09.2026: Produktion rechnet NICHT so. postgresql.conf gibt dort
+    // timezone = 'UTC' vor, die Sitzungen der App laufen in UTC, der
+    // Node-Prozess ebenso (TZ/PGTZ des Datenbank-Containers wirken nur auf
+    // psql; die Annahme unten, Produktion trage Europe/Berlin, war falsch).
+    // Die volle Suite mit TZ=UTC und TEST_DB_SITZUNGSZONE=UTC lief am
+    // 27.09.2026 bis auf zwei Tests in utils/zeitzone.test.js grün, die genau
+    // diese Annahme pruefen -- der Code rechnet seine Kalendertage selbst in
+    // Berliner Zeit (utils/zeitformat.js). Berlin bleibt hier Voreinstellung,
+    // weil die Fixtures ueber CURRENT_DATE anlegen (siehe unten). Die Test-DB
     // (docker-compose.test.yml) und die Postgres-Instanz der CI liefen dagegen
     // in UTC. Zwischen 00:00 und 02:00 Berliner Zeit lieferte CURRENT_DATE
     // deshalb noch den Vortag, waehrend heuteBerlin() im Code bereits den neuen
