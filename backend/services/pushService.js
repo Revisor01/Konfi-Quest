@@ -3,7 +3,7 @@
 // beim Require herausziehen wuerde, haette die echte Fassung in der Hand und
 // wuerde an FCM senden.
 const firebase = require('../push/firebase');
-const { appIconSummeOderNull, appIconSummenFuerAlle } = require('../utils/appIconBadge');
+const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
 const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // Empfaenger je Organisation ueber BEIDE Quellen der Zugehoerigkeit
@@ -465,132 +465,53 @@ class PushService {
   }
 
   /**
-   * Helper: Laedt alles, was die App-Icon-Summe braucht (Befund B2b).
-   *
-   * Der Push-Weg kennt nur die userId — fuer die Summe braucht es aber auch
-   * Rolle und (bei Teamer:innen) die zugewiesenen Jahrgaenge, weil sich die
-   * Zaehler je Rolle unterscheiden.
-   *
-   * Gibt null zurueck, wenn der User nicht auffindbar ist; der Aufrufer
-   * laesst den Badge dann weg.
-   */
-  static async ladeEmpfaengerFuerBadge(db, userId) {
-    try {
-      const { rows: [row] } = await db.query(
-        `SELECT u.id, u.organization_id, r.name AS role_name
-           FROM users u
-           JOIN roles r ON u.role_id = r.id
-          WHERE u.id = $1 AND u.deleted_at IS NULL`,
-        [userId]
-      );
-      if (!row) return null;
-
-      // user_type wie im Token: konfi bleibt konfi, teamer bleibt teamer,
-      // alle Leitungsrollen zaehlen als 'admin'.
-      const type = row.role_name === 'konfi'
-        ? 'konfi'
-        : (row.role_name === 'teamer' ? 'teamer' : 'admin');
-
-      let assigned_jahrgaenge = [];
-      // Jahrgaenge fuer Teamer:innen UND die Rolle 'admin' (01.09.2026):
-      // Beide sind gebunden, ihre App-Icon-Summe haengt an der Zuweisung.
-      // org_admin braucht keine (zaehlt org-weit).
-      if (type === 'teamer' || row.role_name === 'admin') {
-        const { rows } = await db.query(
-          'SELECT jahrgang_id AS id, can_view FROM user_jahrgang_assignments WHERE user_id = $1',
-          [userId]
-        );
-        assigned_jahrgaenge = rows;
-      }
-
-      return {
-        id: row.id,
-        type,
-        role_name: row.role_name,
-        organization_id: row.organization_id,
-        assigned_jahrgaenge
-      };
-    } catch (err) {
-      console.error('ladeEmpfaengerFuerBadge error:', err);
-      return null;
-    }
-  }
-
-  /**
-   * Helper: Die Zahl fuers App-Icon (Befund B2b).
+   * Helper: Die Zahl fuers App-Icon EINER Person (Befund B2b).
    *
    * Bis 27.08.2026 setzte der Chat-Push die CHAT-Zahl allein aufs Icon und
    * ueberschrieb damit Antraege, Termine und Abzeichen; alle anderen Pushes
-   * setzten hart 1. Jetzt rechnet der Server dieselbe Summe wie der Client.
+   * setzten hart 1. Seitdem rechnet der Server dieselbe Summe wie der Client.
    *
-   * Fehlertolerant: Bei einem Fehler kommt null zurueck und der Badge wird
-   * weggelassen — eine Nachricht darf nicht daran scheitern, dass eine Zahl
-   * fehlt.
+   * Seit 27.09.2026 (Audit "Wer bekommt was", Befund BF-12) derselbe Weg wie
+   * der Versand an viele: berechneBadgesFuerAlle mit einer Person. Vorher
+   * gab es hier eine eigene Schleife je Gemeinde -- mit der Rolle am
+   * Nutzerkonto in JEDER Gemeinde und dem ganzen Postfach in jeder Runde.
+   *
+   * Fehlertolerant: Bei einem Fehler oder einem unbekannten Konto kommt null
+   * zurueck und der Badge wird weggelassen — eine Nachricht darf nicht daran
+   * scheitern, dass eine Zahl fehlt.
    */
-  // Die Zahl am App-Icon ueber ALLE Organisationen einer Person.
-  //
-  // Befund 28.08.2026, in Produktion gemessen: Hier stand vorher nur
-  // `appIconSummeOderNull(db, empfaenger)` mit der PRIMAER-Organisation aus
-  // users.organization_id. Fuer Multi-Org-Leitungen war das Ergebnis falsch:
-  // gemessen an einem echten Konto (id 41) rechnete Org 1 = 0, Org 2 = 0,
-  // Org 4 = 29 -- gesendet wurde 0, weil Org 1 die Primaer-Org ist. iOS
-  // versteht badge: 0 als "Zaehler entfernen": Der Push kam an, aber ohne
-  // Zahl am Icon, waehrend die Reiter in der App die 29 korrekt zeigten.
-  //
-  // Die aktive Organisation steht nur im Token des Clients, nicht in der
-  // Datenbank -- der Push kann sie also nicht kennen. Deshalb die Summe ueber
-  // alle: Das Icon beantwortet die Frage "wie viel liegt fuer mich an?",
-  // nicht "wie viel liegt in der gerade geoeffneten Ansicht an?".
-  //
-  // Fuer Konfis aendert sich nichts, sie sind immer Single-Org.
   static async berechneBadge(db, userId) {
-    const empfaenger = await this.ladeEmpfaengerFuerBadge(db, userId);
-    if (!empfaenger) return null;
-
-    const orgIds = await this.ladeOrganisationenFuerBadge(db, userId, empfaenger.organization_id);
-    if (orgIds.length <= 1) {
-      return appIconSummeOderNull(db, empfaenger);
-    }
-
-    let summe = 0;
-    let hatWert = false;
-    for (const orgId of orgIds) {
-      const teil = await appIconSummeOderNull(db, { ...empfaenger, organization_id: orgId });
-      if (teil != null) { summe += teil; hatWert = true; }
-    }
-    return hatWert ? summe : null;
+    const { badges } = await this.berechneBadgesFuerAlle(db, [userId]);
+    const id = Number(userId);
+    return badges.has(id) ? badges.get(id) : null;
   }
 
   /**
    * Die Zahl fuers App-Icon fuer VIELE Empfaenger in wenigen Abfragen
    * (24.09.2026).
    *
-   * WARUM ES DIESE VARIANTE BRAUCHT: `berechneBadge` ruft je Kopf
-   * `appIconSummeOderNull`, und das ist ein Bulk-Aufruf mit einem Array aus
-   * EINEM Element. Der Docstring von `appIconSummenFuerAlle` sagt den Preis
-   * selbst: einzeln gerechnet waeren es "bei 1000 Konfis rund 7000 Abfragen je
-   * Takt. Hier sind es sechs." Der Versand an viele ging aber genau den
-   * einzelnen Weg -- gemessen am 24.09.2026 gegen die Test-Datenbank: 7
-   * Abfragen bei einem Empfaenger, 21 bei drei, 40 bei fuenf gemischten
-   * Rollen. Streng linear.
+   * WARUM ES DIESE VARIANTE BRAUCHT: Der Versand an viele rechnete die Summe
+   * bis 24.09.2026 je Kopf -- gemessen gegen die Test-Datenbank: 7 Abfragen
+   * bei einem Empfaenger, 21 bei drei, 40 bei fuenf gemischten Rollen. Streng
+   * linear.
    *
-   * Der Aufbau folgt bewusst backgroundService.updateAllUserBadges: dort wird
-   * dasselbe Problem seit dem 14.09.2026 richtig geloest -- Rollen und
-   * Jahrgaenge fuer alle auf einmal laden, je Organisation einmal rechnen, die
-   * Teilsummen addieren. Das ist also ein unvollstaendig ausgerolltes Muster,
-   * kein neues Verfahren.
+   * DIE ZAHL SELBST (27.09.2026, Befund BF-12, Entscheidung F-09): die Summe
+   * ueber ALLE Gemeinden der Person, je Gemeinde mit der Rolle und den
+   * Jahrgaengen, die sie DORT hat; jede ungelesene Postfach-Mitteilung genau
+   * einmal. Sie kommt aus utils/appIconBadge.js (appIconSummenAllerGemeinden),
+   * derselben Funktion wie im Hintergrund-Lauf und am Gemeinde-Umschalter.
+   * Die gerade geoeffnete Gemeinde steht nur im Token des Clients -- das Icon
+   * beantwortet "wie viel liegt fuer mich an?" (Befund 28.08.2026).
    *
-   * WARUM JE ORGANISATION EINMAL: `appIconSummenFuerAlle` schluesselt nach
-   * `id_type`. Bei einer Person in mehreren Organisationen kaeme sonst nur die
-   * letzte an. Die Summe ueber alle Organisationen ist Absicht (Befund
-   * 28.08.2026): Das Icon beantwortet "wie viel liegt fuer mich an?", und die
-   * gerade geoeffnete Organisation steht nur im Token des Clients.
+   * Vorher rechnete diese Funktion je Gemeinde eine eigene Runde und
+   * addierte. Gemessen im Audit (A11): Wer zuhause Org-Admin und in B
+   * Teamer:in ist, bekam Bs Antraege mitgezaehlt, die er dort nicht sieht,
+   * und das Postfach je Gemeinde ganz -- 5 statt 2.
    *
    * Die Primaer-Organisation kommt mit zurueck: Sie steht in derselben
    * Abfrage, und sendToUser braucht sie fuer den organization_id-Rueckfall im
    * Payload. Holte er sie weiter selbst (resolveRecipientOrgId), waere das die
-   * naechste Abfrage je Kopf -- gemessen am 24.09.2026 genau eine je
-   * Empfaenger, die hier schlicht entfaellt.
+   * naechste Abfrage je Kopf.
    *
    * @returns {Promise<{badges: Map<number, number|null>, orgs: Map<number, string>}>}
    *   badges: je userId die Zahl (fehlt der Eintrag, liess sie sich nicht
@@ -603,119 +524,20 @@ class PushService {
     if (eindeutige.length === 0) return { badges, orgs };
 
     try {
-      // Rolle und Primaer-Org fuer alle auf einmal (vorher: eine Abfrage je
-      // Kopf in ladeEmpfaengerFuerBadge).
-      const { rows: personen } = await db.query(
-        `SELECT u.id, u.organization_id, r.name AS role_name
-           FROM users u
-           JOIN roles r ON u.role_id = r.id
-          WHERE u.id = ANY($1::bigint[]) AND u.deleted_at IS NULL`,
-        [eindeutige]
-      );
-      if (personen.length === 0) return { badges, orgs };
-
-      // Primaer-Org gleich mitnehmen -- als String, weil FCM-data immer String
-      // ist (dieselbe Regel wie in resolveRecipientOrgId).
-      for (const p of personen) {
-        if (p.organization_id != null) orgs.set(p.id, String(p.organization_id));
-      }
-
-      // Weitere Organisationen fuer alle auf einmal (vorher: eine Abfrage je
-      // Kopf in ladeOrganisationenFuerBadge).
-      const { rows: mitgliedschaften } = await db.query(
-        'SELECT user_id, organization_id FROM user_organizations WHERE user_id = ANY($1::bigint[])',
-        [eindeutige]
-      );
-      const orgsJeUser = new Map();
-      for (const m of mitgliedschaften) {
-        if (!orgsJeUser.has(m.user_id)) orgsJeUser.set(m.user_id, new Set());
-        orgsJeUser.get(m.user_id).add(m.organization_id);
-      }
-
-      // Jahrgaenge fuer alle auf einmal -- gebraucht von Teamer:innen UND der
-      // Rolle 'admin' (beide sind gebunden, siehe ladeEmpfaengerFuerBadge).
-      const gebundene = personen
-        .filter((p) => p.role_name === 'teamer' || p.role_name === 'admin')
-        .map((p) => p.id);
-      const jahrgaengeJeUser = new Map();
-      if (gebundene.length > 0) {
-        const { rows } = await db.query(
-          `SELECT user_id, jahrgang_id AS id, can_view
-             FROM user_jahrgang_assignments WHERE user_id = ANY($1::bigint[])`,
-          [gebundene]
-        );
-        for (const r of rows) {
-          if (!jahrgaengeJeUser.has(r.user_id)) jahrgaengeJeUser.set(r.user_id, []);
-          jahrgaengeJeUser.get(r.user_id).push({ id: r.id, can_view: r.can_view });
-        }
-      }
-
-      // Je Person ein Eintrag pro Organisation -- wie in backgroundService.
-      const empfaenger = [];
-      for (const p of personen) {
-        const orgs = new Set(orgsJeUser.get(p.id) || []);
-        if (p.organization_id != null) orgs.add(p.organization_id);
-        if (orgs.size === 0) orgs.add(p.organization_id ?? null);
-        // user_type wie im Token: konfi bleibt konfi, teamer bleibt teamer,
-        // alle Leitungsrollen zaehlen als 'admin' (identisch zu
-        // ladeEmpfaengerFuerBadge -- die Zuordnung darf nicht auseinanderlaufen).
-        const type = p.role_name === 'konfi'
-          ? 'konfi'
-          : (p.role_name === 'teamer' ? 'teamer' : 'admin');
-        for (const orgId of orgs) {
-          empfaenger.push({
-            id: p.id,
-            type,
-            role_name: p.role_name,
-            organization_id: orgId,
-            assigned_jahrgaenge: jahrgaengeJeUser.get(p.id) || []
-          });
-        }
-      }
-
-      const nachOrg = new Map();
-      for (const e of empfaenger) {
-        if (!nachOrg.has(e.organization_id)) nachOrg.set(e.organization_id, []);
-        nachOrg.get(e.organization_id).push(e);
-      }
-
-      const summen = new Map();
-      for (const [, liste] of nachOrg) {
-        const teil = await appIconSummenFuerAlle(db, liste);
-        for (const [schluessel, wert] of teil) {
-          if (wert == null) continue;
-          summen.set(schluessel, (summen.get(schluessel) || 0) + wert);
-        }
-      }
-
-      for (const e of empfaenger) {
-        const wert = summen.get(`${e.id}_${e.type}`);
-        if (wert != null) badges.set(e.id, wert);
+      const jePerson = await appIconSummenAllerGemeinden(db, eindeutige);
+      for (const [userId, { summe, stamm_organization_id }] of jePerson) {
+        badges.set(userId, summe);
+        // Primaer-Org als String, weil FCM-data immer String ist (dieselbe
+        // Regel wie in resolveRecipientOrgId).
+        if (stamm_organization_id != null) orgs.set(userId, String(stamm_organization_id));
       }
       return { badges, orgs };
     } catch (err) {
-      // Fehlertolerant wie der Einzelweg: Ohne Zahl geht der Push trotzdem
-      // raus (der Aufrufer faellt dann auf 1 zurueck). Eine Nachricht darf
-      // nicht daran scheitern, dass eine Zahl fehlt.
+      // Fehlertolerant: Ohne Zahl geht der Push trotzdem raus (der Aufrufer
+      // faellt dann auf 1 zurueck). Eine Nachricht darf nicht daran
+      // scheitern, dass eine Zahl fehlt.
       console.error('berechneBadgesFuerAlle error:', err.message);
       return { badges, orgs };
-    }
-  }
-
-  // Alle Organisationen, in denen die Person Mitglied ist. Die Primaer-Org ist
-  // immer dabei, auch wenn user_organizations sie (noch) nicht fuehrt.
-  static async ladeOrganisationenFuerBadge(db, userId, primaerOrgId) {
-    try {
-      const { rows } = await db.query(
-        'SELECT organization_id FROM user_organizations WHERE user_id = $1',
-        [userId]
-      );
-      const ids = new Set(rows.map(r => r.organization_id));
-      if (primaerOrgId != null) ids.add(primaerOrgId);
-      return [...ids];
-    } catch (err) {
-      console.error('ladeOrganisationenFuerBadge error:', err.message);
-      return primaerOrgId != null ? [primaerOrgId] : [];
     }
   }
 
@@ -1086,7 +908,7 @@ class PushService {
    * 27.08.2026 abends). Der Hintergrunddienst uebergab bisher seinen eigenen
    * Wert, und der zaehlte NUR ungelesene Chat-Nachrichten
    * (`backgroundService.js:162`). Am App-Icon steht aber dieselbe Zahl, die
-   * jeder Push aus `appIconSummeOderNull` setzt — Chat PLUS Antraege, Termine
+   * jeder Push aus `berechneBadge` setzt — Chat PLUS Antraege, Termine
    * und Abzeichen. Ergebnis: Ein Push setzte korrekt "7", und bis zu fuenf
    * Minuten spaeter ueberschrieb der Hintergrund-Sync sie mit "2".
    *

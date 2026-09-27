@@ -8,6 +8,7 @@ import { initializeWebSocket } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 import { removeDeliveredForChatRoom } from '../services/notifications';
 import { offlineCache } from '../services/offlineCache';
+import { summeAllerGemeindenAusAntwort } from '../utils/offenJeGemeinde';
 import { useApp } from './AppContext';
 import { useLiveRefresh, useLiveUpdate, LiveUpdateType } from './LiveUpdateContext';
 
@@ -66,8 +67,16 @@ interface BadgeContextType {
    * Simon 27.09.2026). Der Aufrufer laedt nach dem PUT wie bisher neu.
    */
   postfachGelesen: (anzahl: number | 'alle') => void;
-  // Gesamt (Role-abhaengig)
+  // Gesamt (Role-abhaengig) -- Reiter und Glocke der AKTIVEN Gemeinde
   totalBadgeCount: number;
+  /**
+   * Die Zahl, die die App aufs App-Symbol setzt (27.09.2026, Befund BF-12).
+   * Bei einer Gemeinde ist das totalBadgeCount. Bei mehreren die Summe aller
+   * Gemeinden aus GET /notifications/badge-counts/je-organisation -- je
+   * Gemeinde mit der dortigen Rolle, dieselbe Zahl, die Push und
+   * Hintergrund-Lauf setzen.
+   */
+  appSymbolZahl: number;
   // Actions
   refreshAllCounts: () => Promise<void>;
   /**
@@ -86,7 +95,7 @@ const BadgeContext = createContext<BadgeContextType | undefined>(undefined);
 
 // Badge Provider Component
 export const BadgeProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useApp();
+  const { user, organizations } = useApp();
   // Erhoeht sich nach Socket-Reconnect-mit-neuem-Token (LiveUpdateContext). Als
   // Dependency des newMessage-Effekts unten nötig, damit der Listener nach
   // reconnectWithToken am NEUEN Socket-Objekt neu gebunden wird (der alte Socket
@@ -103,6 +112,31 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const [challengeUpdatesByChallenge, setChallengeUpdatesByChallenge] = useState<Record<number, number>>({});
   const [challengeUpdatesTotal, setChallengeUpdatesTotal] = useState(0);
   const [postfachUngelesen, setPostfachUngelesen] = useState(0);
+
+  /**
+   * Summe ueber ALLE Gemeinden der Person (27.09.2026, Audit "Wer bekommt
+   * was", Befund BF-12, Entscheidung F-09) -- nur bei mehreren Gemeinden
+   * geladen, sonst null.
+   *
+   * Der Server setzt mit jedem Push und alle fuenf Minuten im Hintergrund die
+   * Summe aller Gemeinden aufs Symbol, je Gemeinde mit der dortigen Rolle
+   * (backend/utils/appIconBadge.js, appIconSummenAllerGemeinden). Die offene
+   * App setzte bis dahin totalBadgeCount, also nur die AKTIVE Gemeinde --
+   * gemessen im Audit: Push 5, App auf 2. Die Zahl sprang bei jedem Oeffnen
+   * und Schliessen.
+   *
+   * Quelle ist die Aufteilung des Gemeinde-Umschalters: Deren Summe IST die
+   * Zahl des Servers. null heisst "nicht geladen" (eine Gemeinde, aelterer
+   * Server, Fehler) -- dann gilt totalBadgeCount wie bisher.
+   */
+  const [summeAllerGemeinden, setSummeAllerGemeinden] = useState<number | null>(null);
+
+  // Nur wer mehreren Gemeinden angehoert, braucht die zweite Abfrage. Die
+  // Liste kommt aus GET /auth/my-organizations (AppContext) und fuehrt
+  // dieselben Gemeinden wie je-organisation (beide Quellen, gesperrte nicht).
+  // Solange sie noch nicht geladen ist, gilt die Person als Single-Org --
+  // kommt sie an, entsteht refreshAllCounts neu und laedt nach.
+  const mehrereGemeinden = (organizations?.length ?? 0) > 1;
 
   /**
    * Laufende Nummer der aktiven Gemeinde (26.09.2026, Simons Befund am Geraet:
@@ -199,7 +233,20 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     const nummer = ++zaehlungGestartet.current;
 
     try {
-      const { data } = await api.get('/notifications/badge-counts');
+      // Bei mehreren Gemeinden zusaetzlich die Aufteilung je Gemeinde, fuer
+      // die Zahl am App-Symbol (Befund BF-12). Parallel, nicht nacheinander;
+      // ein Fehler dort laesst die Reiter unberuehrt (null -> totalBadgeCount).
+      // Personen mit EINER Gemeinde -- fast alle Konfis -- fragen sie nie ab:
+      // Ihre Summe ist totalBadgeCount, und badge-counts laeuft bei jeder
+      // Zaehler-Aktualisierung jedes Kontos.
+      const [{ data }, alleGemeinden] = await Promise.all([
+        api.get('/notifications/badge-counts'),
+        mehrereGemeinden
+          ? api.get('/notifications/badge-counts/je-organisation')
+            .then((res) => summeAllerGemeindenAusAntwort(res?.data))
+            .catch(() => null)
+          : Promise.resolve(null),
+      ]);
 
       // Inzwischen die Gemeinde gewechselt? Dann gehoert diese Antwort der
       // ALTEN Gemeinde und wird verworfen -- sonst schreibt sie deren Zahlen
@@ -209,6 +256,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       // Aenderung von Hand), ist diese Antwort veraltet (zaehlungGestartet).
       if (nummer <= zaehlungGilt.current) return;
       zaehlungGilt.current = nummer;
+
+      setSummeAllerGemeinden(alleGemeinden);
 
       // chatUnreadByRoom-Struktur (Record<number, number>) beibehalten —
       // ChatRoom (initialUnreadRef) und ChatOverview (Effect-Trigger) hängen dran.
@@ -298,7 +347,15 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('BadgeContext: refreshAllCounts fehlgeschlagen:', error);
     }
-  }, [user, isAdmin, isLeadership]);
+  }, [user, isAdmin, isLeadership, mehrereGemeinden]);
+
+  /**
+   * Die Zahl am App-Symbol: bei mehreren Gemeinden die Summe aller (sobald
+   * geladen), sonst Reiter plus Glocke der aktiven Gemeinde.
+   */
+  const appSymbolZahl = mehrereGemeinden && summeAllerGemeinden != null
+    ? summeAllerGemeinden
+    : totalBadgeCount;
 
   /**
    * Setzt alle Zaehler zurueck, die zur AKTIVEN GEMEINDE gehoeren.
@@ -307,6 +364,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
    * ueber alle Gemeinden (routes/notifications.js zaehlt sie ohne Org-Filter,
    * die Begruendung steht dort). Wer wechselt, hat nicht weniger ungelesene
    * Mitteilungen -- die Zahl an der Glocke darf nicht kurz auf 0 springen.
+   * Aus demselben Grund bleibt summeAllerGemeinden stehen: Sie haengt nicht
+   * an der aktiven Gemeinde, das Symbol soll beim Wechsel nicht springen.
    */
   const setzeGemeindeZaehlerZurueck = useCallback(() => {
     setChatUnreadByRoom({});
@@ -494,26 +553,27 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       });
   }, [user]);
 
-  // Sync Device Badge bei Änderung von totalBadgeCount.
+  // Sync Device Badge bei Änderung von appSymbolZahl (bis 27.09.2026
+  // totalBadgeCount -- bei mehreren Gemeinden nur die aktive, Befund BF-12).
   // Nur auf nativen Plattformen: im Desktop-Browser existiert navigator.setAppBadge/
   // clearAppBadge nicht (z.B. Firefox) -> der Web-Fallback des Plugins wirft eine
   // unhandled rejection. Promises zusaetzlich mit .catch absichern.
   const setzeGeraeteBadge = useCallback(() => {
     if (!Capacitor.isNativePlatform()) return;
-    const p = totalBadgeCount > 0
-      ? Badge.set({ count: totalBadgeCount })
+    const p = appSymbolZahl > 0
+      ? Badge.set({ count: appSymbolZahl })
       : Badge.clear();
     Promise.resolve(p).catch((error) => {
       console.warn('BadgeContext: Badge nicht verfügbar:', error);
     });
-  }, [totalBadgeCount]);
+  }, [appSymbolZahl]);
 
   useEffect(() => { setzeGeraeteBadge(); }, [setzeGeraeteBadge]);
 
   // Ausdrueckliches Neusetzen auf Zuruf (Befund 28.08.2026): Der Effekt oben
   // haengt am WERT und feuert nicht, wenn sich dieser nicht geaendert hat. Nach
   // removeAllDeliveredNotifications() ist das Icon aber leer, waehrend
-  // totalBadgeCount unveraendert im Speicher steht -- die Zahl kaeme erst
+  // appSymbolZahl unveraendert im Speicher steht -- die Zahl kaeme erst
   // zurueck, wenn zufaellig eine andere hereinkommt. AppContext schickt dieses
   // Signal deshalb direkt nach dem Aufraeumen.
   useEffect(() => {
@@ -590,6 +650,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     if (!user) {
       setzeGemeindeZaehlerZurueck();
       setPostfachUngelesen(0);
+      setSummeAllerGemeinden(null);
     }
   }, [user, setzeGemeindeZaehlerZurueck]);
 
@@ -606,6 +667,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       challengeUpdatesTotal,
       postfachUngelesen,
       totalBadgeCount,
+      appSymbolZahl,
       refreshAllCounts,
       markRoomAsRead,
       markChallengeAsRead,

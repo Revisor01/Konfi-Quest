@@ -72,8 +72,25 @@ describe('Der Push-Weg verwendet die berechnete Summe (B2b)', () => {
     expect(stelle).toContain('await this.berechneBadge(db, userId)');
   });
 
-  it('die Zaehlung ist fehlertolerant verdrahtet', () => {
+  it('die Zaehlung ist fehlertolerant verdrahtet', async () => {
     // Eine Push-Nachricht darf nicht daran scheitern, dass eine Zahl fehlt.
-    expect(quelle).toContain('appIconSummeOderNull');
+    //
+    // Bis 27.09.2026 stand hier nur ein Blick in die Quelle auf den Namen
+    // appIconSummeOderNull. Seit Push und Hintergrund-Lauf dieselbe Rechnung
+    // ueber alle Gemeinden nutzen (Befund BF-12), gibt es den Namen nicht
+    // mehr -- geprueft wird deshalb das Verhalten: Scheitert die Datenbank,
+    // kommt null (sendToUser setzt dann 1), kein Fehler.
+    const PushService = require('../../services/pushService');
+    const kaputt = { query: async () => { throw new Error('Datenbank weg'); } };
+    const echtesError = console.error;
+    console.error = () => {};
+    try {
+      await expect(PushService.berechneBadge(kaputt, 5)).resolves.toBeNull();
+      const { badges, orgs } = await PushService.berechneBadgesFuerAlle(kaputt, [5, 6]);
+      expect(badges.size).toBe(0);
+      expect(orgs.size).toBe(0);
+    } finally {
+      console.error = echtesError;
+    }
   });
 });

@@ -16,6 +16,7 @@ import { ICON_ORGANISATION, ICON_WECHSEL } from './icons';
 import { useApp } from '../../contexts/AppContext';
 import { UserOrganization } from '../../contexts/AppContext';
 import api from '../../services/api';
+import { offenJeOrgAusAntwort } from '../../utils/offenJeGemeinde';
 
 // Kurzname für die Header-Anzeige (Platz neben dem Seitentitel ist knapp).
 // Explizites Mapping für die bekannten Orgs; Fallback für kuenftige Orgs ist
@@ -40,24 +41,9 @@ const shortOrgName = (org?: UserOrganization): string => {
   return org.display_name || org.name || '';
 };
 
-/**
- * Was je Gemeinde offen ist, aus der Antwort von
- * GET /notifications/badge-counts/je-organisation. Nur Gemeinden mit einer
- * Zahl groesser 0 bleiben stehen -- "nichts offen" heisst: kein Eintrag,
- * keine Zahl. Aeltere Server ohne die Route oder ohne das Feld ergeben ein
- * leeres Objekt, kein Fehler.
- */
-export const offenJeOrgAusAntwort = (data: unknown): Record<number, number> => {
-  const ergebnis: Record<number, number> = {};
-  const roh = (data as { jeOrganisation?: unknown } | null | undefined)?.jeOrganisation;
-  if (!roh || typeof roh !== 'object') return ergebnis;
-  Object.entries(roh as Record<string, unknown>).forEach(([orgId, eintrag]) => {
-    const offen = Number((eintrag as { offen?: unknown } | null | undefined)?.offen) || 0;
-    const id = Number(orgId);
-    if (offen > 0 && Number.isFinite(id)) ergebnis[id] = offen;
-  });
-  return ergebnis;
-};
+// Die Regel, wie die Antwort gelesen wird, steht in utils/offenJeGemeinde.ts:
+// Das App-Symbol liest dieselbe Antwort (BadgeContext, Befund BF-12).
+export { offenJeOrgAusAntwort };
 
 /**
  * Org-Switcher oben links im Header. Erscheint NUR, wenn der eingeloggte User in
@@ -83,9 +69,10 @@ export const offenJeOrgAusAntwort = (data: unknown): Record<number, number> => {
  * wie am App-Symbol, nur je Gemeinde aufgeteilt; die Rolle und die
  * Jahrgangsbindung gelten dabei je Gemeinde (der Server rechnet das).
  *
- * Abgefragt wird erst beim Oeffnen, nicht mit jedem Zaehler-Refresh: Die Liste
- * ist selten offen, und die Zahl soll dann frisch sein. Schlaegt die Abfrage
- * fehl, bleibt die Liste ohne Zahlen benutzbar -- der Indikator ist Beiwerk.
+ * Abgefragt wird beim Oeffnen, damit die Zahl dann frisch ist. Schlaegt die
+ * Abfrage fehl, bleibt die Liste ohne Zahlen benutzbar -- der Indikator ist
+ * Beiwerk. Die Summe der Eintraege ist die Zahl am App-Symbol (Befund BF-12,
+ * 27.09.2026): Server und BadgeContext rechnen sie aus derselben Aufteilung.
  */
 const OrgSwitcherButton: React.FC = () => {
   const { organizations, activeOrgId, user, switchOrg } = useApp();

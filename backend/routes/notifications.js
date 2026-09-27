@@ -3,8 +3,7 @@ const { gruppenFuerRolle, bereinigeStumm } = require('../utils/pushGruppen');
 const { body } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge } = require('../utils/challengeNeuigkeiten');
-const { appIconSummenJeOrganisation } = require('../utils/appIconBadge');
-const { ladeMitgliedschaftenDerPerson } = require('../utils/orgMitglieder');
+const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
 const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
 
@@ -370,30 +369,34 @@ module.exports = (db, verifyTokenRBAC) => {
   // Zwei Abfragen fuer die Zugehoerigkeit plus EINE Zaehlrunde ueber alle
   // Gemeinden zusammen -- nicht eine Runde je Gemeinde.
   //
+  // EINE RECHNUNG MIT DEM APP-SYMBOL (27.09.2026, Befund BF-12): Push und
+  // Hintergrund-Lauf rechnen das Symbol seither aus derselben Funktion
+  // (appIconSummenAllerGemeinden); vorher nahmen sie fuer jede Gemeinde die
+  // Rolle am Nutzerkonto. Ungelesene Mitteilungen aus einer Gemeinde, der
+  // die Person nicht (mehr) angehoert, stehen bei der Stamm-Gemeinde -- die
+  // Glocke zeigt sie, also zaehlen sie am Symbol, genau einmal.
+  //
   // Sicherheitsgrenze: ausschliesslich req.user.id aus dem Token. Es gibt
   // keinen Parameter, mit dem sich eine fremde Gemeinde erfragen liesse; wer
   // einer Gemeinde nicht angehoert, bekommt fuer sie keinen Eintrag.
   router.get('/badge-counts/je-organisation', verifyTokenRBAC, async (req, res) => {
     try {
-      const mitgliedschaften = await ladeMitgliedschaftenDerPerson(db, req.user.id);
-      const empfaenger = mitgliedschaften.map((m) => ({
-        id: req.user.id,
-        type: m.type,
-        role_name: m.role_name,
-        organization_id: m.organization_id,
-        assigned_jahrgaenge: m.assigned_jahrgaenge
-      }));
-      const summen = await appIconSummenJeOrganisation(db, empfaenger);
+      // Seit 27.09.2026 (Befund BF-12) DIESELBE Funktion, aus der Push und
+      // Hintergrund-Lauf die Zahl am App-Symbol nehmen -- die Summe dieser
+      // Eintraege IST die Zahl am Symbol, und die App setzt sie bei mehreren
+      // Gemeinden genau so (BadgeContext).
+      const jePerson = await appIconSummenAllerGemeinden(db, [req.user.id]);
+      const person = jePerson.get(Number(req.user.id));
 
       // Ein Objekt je Gemeinde (nicht nur eine Zahl), damit spaeter eine
       // Aufschluesselung dazukommen kann, ohne die Form zu aendern. Auch
       // Gemeinden mit 0 stehen drin: So kann die App "nichts offen" von
       // "keine Angabe" unterscheiden.
       const jeOrganisation = {};
-      for (const e of empfaenger) {
-        jeOrganisation[e.organization_id] = {
-          offen: summen.get(`${e.id}_${e.type}_${e.organization_id}`) || 0
-        };
+      if (person) {
+        for (const [organizationId, offen] of person.jeOrganisation) {
+          jeOrganisation[organizationId] = { offen };
+        }
       }
       res.json({ jeOrganisation });
     } catch (err) {

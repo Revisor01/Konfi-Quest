@@ -657,6 +657,14 @@ Versionsüberschrift.
   Rolle hat. Ein neuer Challenge-Beitrag ergab dort 3 statt 2: die Freigabe und
   die Mitteilung dazu, die Mitteilung aber doppelt. Jetzt zählt jede Mitteilung
   einmal, bei der Gemeinde, aus der sie stammt.
+- Wer mehreren Gemeinden angehört, sieht am App-Symbol jetzt immer dieselbe
+  Zahl: die Summe aller Gemeinden, jede mit der Rolle, die man dort hat — also
+  die Zahlen im Gemeinde-Umschalter zusammen. Bisher setzte ein Push eine
+  andere Zahl als die geöffnete App, etwa 5 und 2: Der Push zählte in jeder
+  Gemeinde mit der Rolle der Stamm-Gemeinde, auch Anträge, die man dort gar
+  nicht sieht, und jede ungelesene Mitteilung je Gemeinde erneut; die geöffnete
+  App zählte nur die Gemeinde, in der man gerade arbeitet. Für alle, die einer
+  Gemeinde angehören, bleibt die Zahl, wie sie war.
 - Wer in der eigenen Gemeinde zuhause ist und zugleich in einer anderen
   mitarbeitet, lässt sich aus der eigenen Gemeinde entfernen, ohne dass sein
   Konto verschwindet: Es bleibt in der anderen Gemeinde bestehen, mit der Rolle

@@ -5,7 +5,7 @@ const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const emailService = require('./emailService');
 const apm = require('../utils/apm');
 const { formatUhrzeit } = require('../utils/zeitformat');
-const { appIconSummenFuerAlle } = require('../utils/appIconBadge');
+const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { abzeichenFingerabdruecke } = require('../utils/abzeichenKandidaten');
 const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
 const { invalidateUserCache } = require('../middleware/rbac');
@@ -219,7 +219,7 @@ class BackgroundService {
       // Hintergrund nie nachgefuehrt, waehrend org_admin bedient wurde.
       // Beide Leitungsrollen haben sehr wohl einen Zaehler
       // (`BadgeContext.tsx`: Chat + Antraege + Termine + Freigaben), und
-      // `appIconSummenFuerAlle` rechnet ihn fuer sie. Jetzt ausdruecklich
+      // `appIconSummenAllerGemeinden` rechnet ihn fuer sie. Jetzt ausdruecklich
       // aufgezaehlt statt negiert — eine neue Rolle faellt damit auf,
       // statt still mitzulaufen. `super_admin` bleibt aussen vor: die
       // Rolle ist org-fremd und hat weder Chat noch Antraege.
@@ -264,91 +264,33 @@ class BackgroundService {
       // — und damit die Gesamtzahl ueberschrieb, die jeder Push setzt. Der
       // naheliegende Fix (die Einzelrechnung pro Person aufrufen) kostete
       // sieben Abfragen je Person: bei 1000 Konfis 7000 je Fuenf-Minuten-Takt.
-      // `appIconSummenFuerAlle` liefert dieselbe Summe aus denselben
-      // SQL-Bausteinen wie der Einzelweg, aber in sechs Abfragen insgesamt.
       //
-      // Gerechnet wird fuer alle, gesendet nur an Geraete mit Token — die
-      // Abzeichen-Pruefung unten braucht ohnehin die volle Liste.
-      // Jahrgaenge fuer Teamer:innen UND die Rolle 'admin' (01.09.2026), in
-      // EINER Abfrage: Bei beiden haengen die Zaehler an der Zuweisung
-      // (Freigaben bei Teamer:innen; Antraege, Termine und Freigaben bei
-      // gebundenen Admins). org_admin zaehlt org-weit und braucht keine.
-      const teamerIds = users
-        .filter(u => u.user_type === 'teamer' || u.role_name === 'admin')
-        .map(u => u.user_id);
-      const jahrgaengeProTeamer = new Map();
-      if (teamerIds.length > 0) {
-        const { rows: zuweisungen } = await db.query(
-          'SELECT user_id, jahrgang_id AS id, can_view FROM user_jahrgang_assignments WHERE user_id = ANY($1::int[])',
-          [teamerIds]
-        );
-        for (const z of zuweisungen) {
-          if (!jahrgaengeProTeamer.has(z.user_id)) jahrgaengeProTeamer.set(z.user_id, []);
-          jahrgaengeProTeamer.get(z.user_id).push({ id: z.id, can_view: z.can_view });
-        }
-      }
-
-      // MULTI-ORG (Befund 28.08.2026, am Geraet nachgestellt): Hier stand nur
-      // `organization_id: u.organization_id` -- die PRIMAER-Organisation. Wer
-      // mehreren Gemeinden angehoert, bekam damit alle fuenf Minuten die Zahl
-      // EINER Organisation aufs Icon, egal was in den anderen offen war.
+      // Gerechnet wird fuer alle, gesendet nur an Geraete mit Token.
       //
-      // Gemessen an einem echten Konto: Org 1 = 6, Org 2 = 0, Org 4 = 29.
-      // Der Push (berechneBadge) sendete nach seinem Fix korrekt 35 -- der
-      // Hintergrund-Sync ueberschrieb sie kurz darauf wieder mit 6. Genau das
-      // war beobachtbar: Push zeigt 35, App oeffnen zeigt 6, wenig spaeter 0.
+      // MEHRERE GEMEINDEN (27.09.2026, Audit "Wer bekommt was", Befund BF-12):
+      // Die Zahl kommt aus derselben Funktion wie im Push und am
+      // Gemeinde-Umschalter (utils/appIconBadge.js, appIconSummenAllerGemeinden)
+      // -- Summe ueber alle Gemeinden der Person, je Gemeinde mit der Rolle und
+      // den Jahrgaengen, die sie DORT hat, jede Postfach-Mitteilung einmal.
       //
-      // Loesung wie in berechneBadge: je Organisation ein Eintrag, danach
-      // aufaddieren. Fuer Single-Org-Konten (alle Konfis, die meisten
-      // Teamer:innen) aendert sich nichts -- ein Eintrag wie bisher.
-      const orgsProUser = new Map();
-      const mehrfachIds = users.map(u => u.user_id);
-      if (mehrfachIds.length > 0) {
-        const { rows: zuordnungen } = await db.query(
-          'SELECT user_id, organization_id FROM user_organizations WHERE user_id = ANY($1::int[])',
-          [mehrfachIds]
-        );
-        for (const z of zuordnungen) {
-          if (!orgsProUser.has(z.user_id)) orgsProUser.set(z.user_id, new Set());
-          orgsProUser.get(z.user_id).add(z.organization_id);
-        }
-      }
-
-      const empfaenger = [];
-      for (const u of users) {
-        const orgs = orgsProUser.get(u.user_id) || new Set();
-        // Die Primaer-Org gehoert immer dazu, auch wenn user_organizations
-        // sie (noch) nicht fuehrt.
-        if (u.organization_id != null) orgs.add(u.organization_id);
-        // Ohne jede Organisation trotzdem EINEN Eintrag anlegen: Sonst faellt
-        // das Konto stillschweigend aus der Zaehlung, statt eine 0 zu bekommen.
-        if (orgs.size === 0) orgs.add(u.organization_id ?? null);
-        for (const orgId of orgs) {
-          empfaenger.push({
-            id: u.user_id,
-            type: u.user_type,
-            role_name: u.role_name,
-            organization_id: orgId,
-            assigned_jahrgaenge: jahrgaengeProTeamer.get(u.user_id) || []
-          });
-        }
-      }
-
-      // appIconSummenFuerAlle schluesselt nach `id_type` -- bei mehreren
-      // Organisationen desselben Kontos kaeme sonst nur die letzte an.
-      // Deshalb je Organisation einmal rechnen und hier addieren.
+      // Vorher stand hier eine eigene Fassung: je Gemeinde ein Eintrag mit der
+      // Rolle am Nutzerkonto (u.role_name) und eine Zaehlrunde je Gemeinde.
+      // Wer zuhause Org-Admin und in B Teamer:in ist, bekam so Bs offene
+      // Antraege mitgezaehlt, und das Postfach zaehlte in jeder Runde ganz.
+      // Gemessen im Audit (A11): Hintergrund 5, Gemeinde-Umschalter 2 + 0.
+      //
+      // Kosten: zwei Abfragen fuer die Zugehoerigkeit und EINE Zaehlrunde
+      // ueber alle Personen und Gemeinden -- vorher eine Runde je Gemeinde,
+      // die Zahl hing also an der Zahl der Gemeinden (nie an der Personenzahl).
+      //
+      // Fuer Personen mit einer Gemeinde ist das dieselbe Rechnung wie zuvor.
+      // Wer keiner aktiven Gemeinde mehr angehoert (gesperrt), bekommt 0 --
+      // wie am Umschalter; oeffnen liesse sich dort ohnehin nichts.
+      const jePerson = await appIconSummenAllerGemeinden(db, users.map(u => u.user_id));
       const summen = new Map();
-      const nachOrg = new Map();
-      for (const e of empfaenger) {
-        if (!nachOrg.has(e.organization_id)) nachOrg.set(e.organization_id, []);
-        nachOrg.get(e.organization_id).push(e);
-      }
-      for (const [, liste] of nachOrg) {
-        const teil = await appIconSummenFuerAlle(db, liste);
-        for (const [schluessel, wert] of teil) {
-          if (wert == null) continue;
-          summen.set(schluessel, (summen.get(schluessel) || 0) + wert);
-        }
+      for (const u of users) {
+        const person = jePerson.get(Number(u.user_id));
+        if (person) summen.set(`${u.user_id}_${u.user_type}`, person.summe);
       }
 
       // AUSWAHL FUER DIE ABZEICHEN-PRUEFUNG (14.09.2026).

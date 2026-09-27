@@ -29,7 +29,10 @@ für Konfis Neuigkeiten in ihren laufenden Challenges (siehe
 [Neuigkeiten an Challenges erkennen](10-konfis.md#neuigkeiten-an-challenges-erkennen)),
 für Team und Leitung neue Beiträge und solche, die auf Freigabe warten (siehe
 [Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen)). Die
-Summe aller Reiter steht als Zahl am App-Symbol.
+Summe aller Reiter steht als Zahl am App-Symbol. Wer mehreren Gemeinden
+angehört, sieht dort die Summe **aller** Gemeinden — die Reiter zeigen nur
+die, in der man gerade arbeitet (siehe
+[Sehen, wo etwas offen ist](05-rollen.md#sehen-wo-etwas-offen-ist)).
 
 Daten schreibt die App überall gleich: kurz als 14.09.2026 in Listen und auf
 Karten, ausgeschrieben als „Montag, 14. September 2026" in den Einzelansichten,
@@ -86,7 +89,9 @@ etwas gesendet wird, **rot**, wenn ein Vorgang endgültig nicht durchkam — das
 ist eine Aufgabe, kein Hinweis.
 
 Die ungelesenen Mitteilungen zählen auch in der **Zahl am App-Symbol** mit:
-Sie ist die Summe aller Zahlen, die die App zeigt — die Reiter und die Glocke.
+Sie ist die Summe aller Zahlen, die die App zeigt — die Reiter und die Glocke,
+bei mehreren Gemeinden die Reiter aller Gemeinden. Jede Mitteilung zählt
+dabei genau einmal.
 Ein offener Antrag, zu dem noch „Neuer Antrag eingegangen" ungelesen ist,
 steht deshalb zweimal darin — am Reiter und an der Glocke — und beides muss
 weg, bevor das Symbol auf null geht. „Events warten auf Verbuchung" kommt

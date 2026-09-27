@@ -102,10 +102,10 @@ describe('PushService unter Last', () => {
       // appIconSummenFuerAlle. Vorher lief die ganze Bulk-Funktion je Kopf
       // mit einem einelementigen Array -- also 4x bei 4 Empfaengern.
       //
-      // Hier bewusst nur Empfaenger EINER Organisation: appIconSummenFuerAlle
-      // schluesselt nach `id_type` und wird deshalb je Organisation einmal
-      // gerufen (Begruendung in berechneBadgesFuerAlle). Mit Empfaengern aus
-      // zwei Gemeinden waeren zwei Aufrufe richtig, nicht einer.
+      // Bis 27.09.2026 lief die Zaehlrunde je Organisation einmal; seit
+      // Befund BF-12 laeuft sie EINMAL fuer alle Gemeinden zusammen
+      // (appIconSummenAllerGemeinden) -- auch mit Empfaengern aus zwei
+      // Gemeinden bliebe es bei einer Chat-Abfrage.
       await PushService.sendToMultipleUsers(
         zaehlDb(),
         [USERS.konfi1.id, USERS.konfi2.id, USERS.teamer1.id, USERS.admin1.id],
@@ -142,6 +142,10 @@ describe('PushService unter Last', () => {
       // berechneBadgesFuerAlle), also zwei. new_event selbst schreibt keinen
       // Postfach-Eintrag (utils/postfachArten.js), sonst kaeme noch eine
       // konstante Abfrage je Block dazu.
+      // 27.09.2026 (Befund BF-12): Die Summe laeuft nur noch EINMAL fuer alle
+      // Gemeinden zusammen (appIconSummenAllerGemeinden) statt je Gemeinde;
+      // gemessen mit diesen sechs Empfaengern 20 -> 15 Abfragen. Die Grenze
+      // bleibt, wo sie war.
       expect(zaehler).toBeLessThanOrEqual(24);
     });
 

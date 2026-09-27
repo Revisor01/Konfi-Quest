@@ -1082,7 +1082,7 @@ useEffect(() => {
             // App weiter richtig zaehlten).
             //
             // Deshalb danach ausdruecklich neu setzen. Der Effekt in
-            // BadgeContext haengt an [totalBadgeCount] und feuert NICHT, wenn
+            // BadgeContext haengt an [appSymbolZahl] und feuert NICHT, wenn
             // sich der Wert nicht geaendert hat -- das Icon bliebe sonst leer,
             // bis zufaellig eine neue Zahl hereinkommt.
             removeAllDelivered().finally(() => {

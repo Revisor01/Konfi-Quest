@@ -218,20 +218,26 @@ gerade arbeitet: Beim Wechsel verschwinden sie und kommen mit den Zahlen der
 neuen Gemeinde zurück. Eine Gemeinde ohne Challenges trägt also keine Zahl an
 den Challenges. Nur die Zahl an der **Glocke** bleibt stehen — das
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) gehört zum
-Konto und umfasst alle Gemeinden.
+Konto und umfasst alle Gemeinden. Ebenso die **Zahl am App-Symbol**: Sie
+zählt alle Gemeinden zusammen und ändert sich durch den Wechsel nicht.
 
 ### Sehen, wo etwas offen ist
 
 In dieser Liste trägt jede Gemeinde eine **rote Zahl**, wenn dort etwas auf
-dich wartet — dieselbe Zahl, die die Reiter und das App-Symbol zusammen
-zeigen, nur je Gemeinde getrennt. So siehst du, wo Arbeit liegt, ohne erst
-hineinzuwechseln. Was mitzählt, hängt von deiner Rolle **in dieser Gemeinde**
-ab: als Leitung offene Anträge, unverbuchte Events, wartende
-Challenge-Beiträge und ungelesene Chats; als Teamer:in wartende Beiträge,
-Chats und neue Badges. Dazu in jeder Rolle die ungelesenen Mitteilungen
-aus dieser Gemeinde im [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen).
-Bist du an Jahrgänge gebunden, zählt nur, was du dort auch sehen darfst. Eine
-Gemeinde ohne Zahl hat nichts Offenes.
+dich wartet. So siehst du, wo Arbeit liegt, ohne erst hineinzuwechseln. Was
+mitzählt, hängt von deiner Rolle **in dieser Gemeinde** ab: als Leitung offene
+Anträge, unverbuchte Events, wartende Challenge-Beiträge und ungelesene
+Chats; als Teamer:in wartende Beiträge, Chats und neue Badges. Dazu in
+jeder Rolle die ungelesenen Mitteilungen aus dieser Gemeinde im
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) — Mitteilungen
+aus einer Gemeinde, der du nicht mehr angehörst, stehen bei deiner
+Stamm-Gemeinde. Bist du an Jahrgänge gebunden, zählt nur, was du dort auch
+sehen darfst. Eine Gemeinde ohne Zahl hat nichts Offenes.
+
+**Die Zahlen der Liste zusammengezählt ergeben die Zahl am App-Symbol.** Das
+Symbol zeigt immer die Summe aller deiner Gemeinden, jede mit der Rolle, die
+du dort hast — bei geschlossener wie bei geöffneter App. Die Reiter zeigen
+dagegen nur die Gemeinde, in der du gerade arbeitest.
 
 Der Umschalter steht auf den Seiten, die du über die Leiste unten erreichst.
 Auf Unterseiten und in Detailansichten fehlt er mit Absicht: Was dort steht,
@@ -267,7 +273,8 @@ Rolle hat — nicht nur aus der Stamm-Gemeinde:
 Die Rolle zählt je Gemeinde: Wer in der zweiten Gemeinde nur Teamer:in ist,
 bekommt dort keine Leitungs-Meldungen. Ein Tippen auf eine Mitteilung wechselt
 in die Gemeinde, aus der sie stammt, und öffnet dort das Ziel. Die Zahl am
-App-Symbol zählt über alle Gemeinden zusammen.
+App-Symbol zählt über alle Gemeinden zusammen, jede mit der Rolle, die die
+Person dort hat (siehe [Sehen, wo etwas offen ist](#sehen-wo-etwas-offen-ist)).
 
 ### Mitarbeitende der eigenen Gemeinde verwalten
 

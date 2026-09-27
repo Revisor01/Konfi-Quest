@@ -18,9 +18,16 @@
 // BadgeContext.totalBadgeCount uebereinstimmen -- dieselbe Aufteilung je
 // Rolle, dieselben Bestandteile. Aendert sich eine Seite, gehoert die andere
 // nachgezogen; ein Test haelt die Zusammensetzung fest.
+//
+// Bei mehreren Gemeinden (27.09.2026, Befund BF-12) ist die Zahl am Symbol
+// die Summe ueber alle Gemeinden, je Gemeinde mit der dortigen Rolle:
+// appIconSummenAllerGemeinden. Push, Hintergrund-Lauf und Gemeinde-Umschalter
+// lesen alle diese eine Funktion; tests/services/appIconMehrereGemeinden.test.js
+// haelt fest, dass sie dieselbe Zahl ergeben.
 const { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge } = require('./challengeNeuigkeiten');
 const { leitungSiehtChallengeSql } = require('./challengeLeitungSicht');
 const { gebundeneLeitungSiehtAntragSql } = require('./antragLeitungSicht');
+const { ladeMitgliedschaftenVieler } = require('./orgMitglieder');
 
 /**
  * Die Bausteine der Summe -- jeder als EINE Abfrage ueber viele
@@ -259,20 +266,24 @@ async function abzeichenZaehler(db, personen) {
 // Person Gemeinden mit derselben Rollenart hat -- als Leitung in drei
 // Gemeinden dreifach. Mit einer Gemeinde (und in appIconSummenFuerAlle, das je
 // Gemeinde einzeln aufgerufen wird) fiel es nie auf. Die Zuordnung zur
-// Gemeinde uebernimmt weiter n.organization_id; summenBerechnen bucht die
-// Zeile nur auf den Schluessel, den es fuer (Person, Rollenart, Gemeinde)
-// gibt.
+// Gemeinde uebernimmt weiter n.organization_id.
+//
+// SEIT 27.09.2026 (Befund BF-12) je PERSON einmal, nicht je Person und
+// Rollenart: Wer in A Leitung und in B Teamer:in ist, stand zweimal in der
+// Abfrage, jede Mitteilung kam zweimal zurueck. Welche Zeile zaehlt,
+// entschied bisher der Zufall, welcher Schluessel existierte; Mitteilungen
+// aus einer Gemeinde ausserhalb der Liste fielen ganz heraus. Die Zuordnung
+// macht jetzt summenBerechnen (postfachZiel) -- jede Mitteilung genau einmal.
 async function postfachZaehler(db, personen) {
   if (personen.length === 0) return [];
-  const eindeutig = [...new Map(personen.map((p) => [schluessel(p.id, p.type), p])).values()];
+  const ids = [...new Set(personen.map((p) => p.id))];
   return (await db.query(
-    `SELECT n.user_id, z.user_type, n.organization_id, COUNT(*)::int AS c
+    `SELECT n.user_id, n.organization_id, COUNT(*)::int AS c
        FROM notifications n
-       JOIN unnest($1::int[], $2::text[]) AS z(user_id, user_type)
-              ON z.user_id = n.user_id
-      WHERE n.read_at IS NULL
-      GROUP BY n.user_id, z.user_type, n.organization_id`,
-    [eindeutig.map((p) => p.id), eindeutig.map((p) => p.type)]
+      WHERE n.user_id = ANY($1::int[])
+        AND n.read_at IS NULL
+      GROUP BY n.user_id, n.organization_id`,
+    [ids]
   )).rows;
 }
 
@@ -320,6 +331,12 @@ function istLeitung(empfaenger) {
  * Teile werden nach Rolle gruppiert abgefragt, wer nicht dazugehoert, taucht
  * in der jeweiligen Abfrage gar nicht erst auf.
  *
+ * NUR FUER EINEN EINTRAG JE PERSON: Der Schluessel kennt die Gemeinde nicht.
+ * Push und Hintergrund-Lauf riefen diese Funktion bis 27.09.2026 je Gemeinde
+ * einmal und addierten -- mit der Rolle am Nutzerkonto fuer jede Gemeinde und
+ * dem Postfach in jeder Runde (Befund BF-12). Die Zahl am Symbol kommt seither
+ * aus appIconSummenAllerGemeinden.
+ *
  * @param {object} db          Pool oder Client
  * @param {Array<object>} empfaenger  je { id, type, organization_id, role_name?, assigned_jahrgaenge? }
  * @returns {Promise<Map<string, number>>}  Schluessel `${id}_${type}`, Wert nie negativ
@@ -349,6 +366,76 @@ async function appIconSummenFuerAlle(db, empfaenger) {
  */
 async function appIconSummenJeOrganisation(db, empfaenger) {
   return summenBerechnen(db, empfaenger, (id, type, orgId) => `${schluessel(id, type)}_${orgId}`);
+}
+
+/**
+ * DIE Zahl am App-Symbol -- fuer eine oder viele Personen, ueber ALLE ihre
+ * Gemeinden (27.09.2026, Audit "Wer bekommt was", Befund BF-12, Frage F-09).
+ *
+ * Summe ueber alle Gemeinden der Person, je Gemeinde mit der Rolle und den
+ * Jahrgaengen, die sie DORT hat. Jede ungelesene Postfach-Mitteilung zaehlt
+ * genau einmal, bei ihrer Gemeinde (sonst bei der Stamm-Gemeinde, siehe
+ * postfachZiel in summenBerechnen).
+ *
+ * VORHER gab es drei Rechnungen fuer diese Zahl, und sie liefen auseinander:
+ * Push und Hintergrund-Lauf rechneten jede Gemeinde mit der Rolle am
+ * Nutzerkonto (wer zuhause Org-Admin und in B Teamer:in ist, bekam Bs Antraege
+ * mitgezaehlt, die er dort gar nicht sieht) und zaehlten das ganze Postfach in
+ * jeder Gemeinde-Runde erneut; der Gemeinde-Umschalter rechnete richtig; die
+ * offene App setzte nur die aktive Gemeinde. Gemessen im Audit (A11): Push 5,
+ * Umschalter 2 + 0, App 2.
+ *
+ * JETZT lesen alle dieselbe Stelle: der Push an eine Person und an viele
+ * (pushService.berechneBadgesFuerAlle), der Hintergrund-Lauf
+ * (backgroundService.zaehlerUndAbzeichenLauf) und der Gemeinde-Umschalter
+ * (GET /notifications/badge-counts/je-organisation), dessen Summe die offene
+ * App bei mehreren Gemeinden aufs Symbol setzt (BadgeContext).
+ *
+ * Kosten: zwei Abfragen fuer die Zugehoerigkeit (ladeMitgliedschaftenVieler)
+ * und EINE Zaehlrunde ueber alle Personen und Gemeinden zusammen -- nicht eine
+ * je Gemeinde und nicht eine je Person.
+ *
+ * Fuer Personen mit einer Gemeinde ist das genau berechneAppIconSumme mit
+ * ihrem einen Eintrag.
+ *
+ * @param {object} db
+ * @param {Array<number>} userIds
+ * @returns {Promise<Map<number, {summe:number, jeOrganisation:Map<number, number>,
+ *   stamm_organization_id:number|null}>>}
+ *   Je Person (Schluessel: id als Zahl) die Summe, die Aufteilung je Gemeinde
+ *   (alle aktiven Gemeinden, auch mit 0) und die Stamm-Gemeinde. Geloeschte
+ *   oder unbekannte Konten fehlen; wer keiner aktiven Gemeinde angehoert, hat
+ *   die Summe 0.
+ */
+async function appIconSummenAllerGemeinden(db, userIds) {
+  const jePerson = await ladeMitgliedschaftenVieler(db, userIds);
+
+  const empfaenger = [];
+  for (const [userId, { mitgliedschaften }] of jePerson) {
+    for (const m of mitgliedschaften) {
+      empfaenger.push({
+        id: userId,
+        type: m.type,
+        role_name: m.role_name,
+        organization_id: m.organization_id,
+        assigned_jahrgaenge: m.assigned_jahrgaenge
+      });
+    }
+  }
+  const summen = await appIconSummenJeOrganisation(db, empfaenger);
+
+  const ergebnis = new Map();
+  for (const [userId, { mitgliedschaften, stamm_organization_id }] of jePerson) {
+    const jeOrganisation = new Map();
+    let summe = 0;
+    for (const m of mitgliedschaften) {
+      const wert = summen.get(`${schluessel(userId, m.type)}_${m.organization_id}`) || 0;
+      jeOrganisation.set(m.organization_id, wert);
+      summe += wert;
+    }
+    ergebnis.set(userId, { summe, jeOrganisation, stamm_organization_id });
+  }
+  return ergebnis;
 }
 
 // Der gemeinsame Rechenkern. `schluesselVon(id, type, organization_id)`
@@ -411,12 +498,33 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
     if (summen.has(k)) summen.set(k, summen.get(k) + (wert || 0));
   };
 
+  // Wohin eine Postfach-Zeile gehoert (27.09.2026, Befund BF-12): zum Eintrag
+  // der Person fuer die Gemeinde der Mitteilung. Gibt es den nicht -- die
+  // Person gehoert der Gemeinde nicht (mehr) an, oder sie ist gesperrt --,
+  // zum ERSTEN Eintrag der Person; bei appIconSummenAllerGemeinden ist das
+  // die Stamm-Gemeinde (ladeMitgliedschaftenVieler sortiert sie nach vorn).
+  // Das Postfach zeigt solche Mitteilungen an der Glocke; sie zaehlen am
+  // Symbol deshalb mit, genau einmal, und stehen im Gemeinde-Umschalter dort,
+  // wo die Person zuhause ist -- dessen Summe bleibt so die Zahl am Symbol.
+  const eintragJeGemeinde = new Map();
+  const ersterEintrag = new Map();
+  for (const p of empfaenger) {
+    const k = `${p.id}_${p.organization_id}`;
+    if (!eintragJeGemeinde.has(k)) eintragJeGemeinde.set(k, p);
+    if (!ersterEintrag.has(String(p.id))) ersterEintrag.set(String(p.id), p);
+  }
+  const postfachZiel = (userId, orgId) =>
+    eintragJeGemeinde.get(`${userId}_${orgId}`) || ersterEintrag.get(String(userId));
+
   for (const r of chat) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneFreigaben) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneAntraege) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneTermine) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of abzeichen) addiere(r.user_id, r.user_type, r.organization_id, r.c);
-  for (const r of postfach) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  for (const r of postfach) {
+    const ziel = postfachZiel(r.user_id, r.organization_id);
+    if (ziel) addiere(ziel.id, ziel.type, ziel.organization_id, r.c);
+  }
   for (const r of neuigkeiten) {
     addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c);
   }
@@ -471,18 +579,4 @@ async function berechneAppIconSumme(db, empfaenger) {
   return summen.get(schluessel(empfaenger.id, empfaenger.type)) || 0;
 }
 
-/**
- * Wie oben, aber fehlertolerant: Schlaegt die Zaehlung fehl, kommt null
- * zurueck statt eines Fehlers. Der Aufrufer laesst den Badge dann weg --
- * eine Push-Nachricht darf nicht daran scheitern, dass eine Zahl fehlt.
- */
-async function appIconSummeOderNull(db, empfaenger) {
-  try {
-    return await berechneAppIconSumme(db, empfaenger);
-  } catch (err) {
-    console.error('App-Icon-Summe konnte nicht berechnet werden:', err);
-    return null;
-  }
-}
-
-module.exports = { berechneAppIconSumme, appIconSummeOderNull, appIconSummenFuerAlle, appIconSummenJeOrganisation };
+module.exports = { berechneAppIconSumme, appIconSummenFuerAlle, appIconSummenJeOrganisation, appIconSummenAllerGemeinden };
