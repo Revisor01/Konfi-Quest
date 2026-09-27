@@ -58,6 +58,14 @@ interface BadgeContextType {
    * optimistisch sofort auf 0, dann POST. Fuer Team und Leitung ein No-op.
    */
   markChallengeAsRead: (challengeId: number) => Promise<void>;
+  /**
+   * Das Postfach meldet gelesene Mitteilungen: Die Glocke (und das
+   * App-Symbol) zaehlt SOFORT herunter, ohne auf den Server zu warten.
+   * 'alle' setzt auf 0. Zaehlungen, die vorher gestartet waren, werden
+   * danach verworfen -- sie trugen den Stand von vor dem Lesen (Befund
+   * Simon 27.09.2026). Der Aufrufer laedt nach dem PUT wie bisher neu.
+   */
+  postfachGelesen: (anzahl: number | 'alle') => void;
   // Gesamt (Role-abhaengig)
   totalBadgeCount: number;
   // Actions
@@ -112,6 +120,19 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
    * sichtbar sein, nicht erst im naechsten Rendern.
    */
   const gemeindeLauf = useRef(0);
+
+  /**
+   * Reihenfolge der Zaehlungen (Befund Simon 27.09.2026: „Der Zähler am
+   * Postfach ... nimmt nicht ab"). Laufen zwei Zaehlungen gleichzeitig,
+   * gewann bisher die ZULETZT EINTREFFENDE -- auch eine, die vor dem Lesen
+   * gestartet war und den alten Stand trug (z. B. die, die ein
+   * Gemeindewechsel beim Antippen einer Mitteilung anstoesst). Jetzt traegt
+   * jede Zaehlung eine laufende Nummer; eine Antwort gilt nur, wenn keine
+   * spaetere schon gegolten hat. Eine sofortige Aenderung von Hand
+   * (postfachGelesen) erklaert alle bis dahin gestarteten fuer ueberholt.
+   */
+  const zaehlungGestartet = useRef(0);
+  const zaehlungGilt = useRef(0);
 
   /**
    * Fuer welchen Lauf der Wechsel-Horcher schon geladen hat.
@@ -175,6 +196,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     // Zu welcher Gemeinde diese Abfrage gehoert. Wird beim Eintreffen der
     // Antwort gegen den aktuellen Stand geprueft (siehe gemeindeLauf oben).
     const lauf = gemeindeLauf.current;
+    const nummer = ++zaehlungGestartet.current;
 
     try {
       const { data } = await api.get('/notifications/badge-counts');
@@ -183,6 +205,10 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       // ALTEN Gemeinde und wird verworfen -- sonst schreibt sie deren Zahlen
       // ueber die der neuen und Simons Befund waere nur verschoben.
       if (lauf !== gemeindeLauf.current) return;
+      // Hat inzwischen eine SPAETER gestartete Zaehlung gegolten (oder eine
+      // Aenderung von Hand), ist diese Antwort veraltet (zaehlungGestartet).
+      if (nummer <= zaehlungGilt.current) return;
+      zaehlungGilt.current = nummer;
 
       // chatUnreadByRoom-Struktur (Record<number, number>) beibehalten —
       // ChatRoom (initialUnreadRef) und ChatOverview (Effect-Trigger) hängen dran.
@@ -344,6 +370,11 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       window.removeEventListener('auth:org-fallback', beiWechsel);
     };
   }, [setzeGemeindeZaehlerZurueck, refreshAllCounts]);
+
+  const postfachGelesen = useCallback((anzahl: number | 'alle') => {
+    zaehlungGilt.current = zaehlungGestartet.current;
+    setPostfachUngelesen(n => (anzahl === 'alle' ? 0 : Math.max(0, n - anzahl)));
+  }, []);
 
   // markRoomAsRead: Optimistisch + API Call
   const markRoomAsRead = useCallback(async (roomId: number): Promise<void> => {
@@ -578,6 +609,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       refreshAllCounts,
       markRoomAsRead,
       markChallengeAsRead,
+      postfachGelesen,
       // Legacy Alias
       badgeCount: chatUnreadTotal,
       refreshFromAPI: refreshAllCounts,

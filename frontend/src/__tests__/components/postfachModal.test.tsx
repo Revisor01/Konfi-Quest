@@ -58,8 +58,9 @@ vi.mock('../../contexts/AppContext', () => ({
 }));
 
 const mockRefresh = vi.fn();
+const mockPostfachGelesen = vi.fn();
 vi.mock('../../contexts/BadgeContext', () => ({
-  useBadge: () => ({ postfachUngelesen: 0, refreshAllCounts: mockRefresh }),
+  useBadge: () => ({ postfachUngelesen: 0, refreshAllCounts: mockRefresh, postfachGelesen: mockPostfachGelesen }),
 }));
 
 let mockWartend: QueueItem[] = [];
@@ -118,6 +119,7 @@ describe('PostfachModal', () => {
     mockPut.mockReset().mockResolvedValue({ data: { success: true } });
     mockSwitchOrg.mockReset().mockResolvedValue({ ok: true, type: 'konfi' });
     mockRefresh.mockReset().mockResolvedValue(undefined);
+    mockPostfachGelesen.mockReset();
     vi.mocked(pushZielMelden).mockReset();
     mockWartend = [];
     mockGescheitert = [];
@@ -178,6 +180,9 @@ describe('PostfachModal', () => {
     fireEvent.click(await screen.findByText('Mitteilung 12'));
 
     await waitFor(() => expect(mockPut).toHaveBeenCalledWith('/notifications/postfach/12/gelesen'));
+    // Die Glocke zaehlt sofort herunter (Befund Simon 27.09.2026).
+    expect(mockPostfachGelesen).toHaveBeenCalledTimes(1);
+    expect(mockPostfachGelesen).toHaveBeenCalledWith(1);
     await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/konfi/badges', 'inApp'));
     // Kein Gemeinde-Wechsel: Mitteilung und Konto gehoeren zu Gemeinde 1.
     expect(mockSwitchOrg).not.toHaveBeenCalled();
@@ -193,6 +198,7 @@ describe('PostfachModal', () => {
 
     await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/konfi/requests', 'inApp'));
     expect(mockPut).not.toHaveBeenCalled();
+    expect(mockPostfachGelesen).not.toHaveBeenCalled();
   });
 
   it('eine Mitteilung aus einer anderen Gemeinde wechselt erst dorthin -- wie ein Push', async () => {
@@ -230,6 +236,8 @@ describe('PostfachModal', () => {
 
     fireEvent.click(screen.getByText('Alle gelesen'));
     await waitFor(() => expect(mockPut).toHaveBeenCalledWith('/notifications/postfach/gelesen'));
+    // Die Glocke steht sofort auf 0 (Befund Simon 27.09.2026).
+    expect(mockPostfachGelesen).toHaveBeenCalledWith('alle');
     await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
     expect(container.querySelectorAll('.app-postfach-eintrag--ungelesen').length).toBe(0);
     // Ohne Ungelesene verschwindet der Knopf.

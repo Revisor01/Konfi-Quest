@@ -281,6 +281,9 @@ Versionsüberschrift.
   Termin für alle sichtbar war. In einer Gemeinde standen dadurch nur vier von
   zwölf Konfis an den Pflichtterminen. Termine ohne Pflicht dürfen weiterhin
   ohne Jahrgang für die ganze Gemeinde gelten.
+- Die Zahl an der Postfach-Glocke nimmt ab, sobald man eine Mitteilung
+  antippt oder alle als gelesen markiert. Bisher blieb sie oft stehen, weil
+  eine ältere Zählung die neue überschrieb.
 - Im Handbuch stehen zwischen den Abschnitten wieder Trennlinien statt drei
   Striche im Text (Abzeichen, Challenges, Chat).
 - Im Dunkelmodus blieben die Anmeldeseiten hell — Anmeldung, Passwort vergessen,

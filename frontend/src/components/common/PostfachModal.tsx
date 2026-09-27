@@ -152,7 +152,7 @@ const eintragSymbol = (eintrag: PostfachEintrag, bereich: PostfachBereich): Eint
  */
 const PostfachModal: React.FC = () => {
   const { user, activeOrgId, organizations, switchOrg } = useApp();
-  const { refreshAllCounts } = useBadge();
+  const { refreshAllCounts, postfachGelesen } = useBadge();
   const { wartend, gescheitert, vergessen, alleVergessen } = useWartendeVorgaenge();
 
   const [offen, setOffen] = useState(false);
@@ -215,6 +215,9 @@ const PostfachModal: React.FC = () => {
       // wieder als ungelesen da — das ist der richtige Stand.
       alsGelesenMerken(eintrag.id);
       setUngelesen(n => Math.max(0, n - 1));
+      // Die Glocke (und das App-Symbol) zaehlt sofort mit, nicht erst nach
+      // der naechsten Server-Zaehlung (Befund Simon 27.09.2026).
+      postfachGelesen(1);
       api.put(`/notifications/postfach/${eintrag.id}/gelesen`)
         .then(() => refreshAllCounts())
         .catch(() => { /* siehe oben */ });
@@ -243,6 +246,7 @@ const PostfachModal: React.FC = () => {
   const alleGelesen = async () => {
     setEintraege(prev => prev.map(e => (e.read_at ? e : { ...e, read_at: new Date().toISOString() })));
     setUngelesen(0);
+    postfachGelesen('alle');
     try {
       await api.put('/notifications/postfach/gelesen');
       await refreshAllCounts();
