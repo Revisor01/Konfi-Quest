@@ -105,6 +105,26 @@ describe('orgMitglieder: Zugehoerigkeit ueber beide Quellen', () => {
       .toEqual([USERS.orgAdmin1.id]);
   });
 
+  // BF-16 (Audit wer-bekommt-was, 27.09.2026): Listen, Zaehler und
+  // Jahrgangs-Chat verlangen Leserecht auf den Jahrgang -- der Filter hier
+  // pruefte nur, OB eine Zuweisung besteht. Eine Zuweisung mit can_view =
+  // false loeste Mitteilungen aus (Challenge-Beitraege), deren Vorgang die
+  // Person nirgends sieht.
+  it('verboten: jahrgangIds verlangt Leserecht -- eine Zuweisung mit can_view = false zaehlt nicht', async () => {
+    // teamer2 ist im Seed Jahrgang 2 zugewiesen (can_view Standard true).
+    await db.query(
+      'UPDATE user_jahrgang_assignments SET can_view = false WHERE user_id = $1 AND jahrgang_id = $2',
+      [USERS.teamer2.id, JAHRGAENGE.jahrgang2.id]
+    );
+    expect(await ladeMitgliederDerOrganisation(db, ORGS.andereGemeinde.id, ['teamer'], { jahrgangIds: [JAHRGAENGE.jahrgang2.id] }))
+      .toEqual([]);
+  });
+
+  it('erlaubt: dieselbe Zuweisung mit can_view = true zaehlt', async () => {
+    expect(ids(await ladeMitgliederDerOrganisation(db, ORGS.andereGemeinde.id, ['teamer'], { jahrgangIds: [JAHRGAENGE.jahrgang2.id] })))
+      .toEqual([USERS.teamer2.id]);
+  });
+
   it('leere Rollen- oder Jahrgangsliste: niemand, ohne Abfrage-Fehler', async () => {
     expect(await ladeMitgliederDerOrganisation(db, ORGS.testGemeinde.id, [])).toEqual([]);
     expect(await ladeLeitungDerOrganisation(db, ORGS.testGemeinde.id, { jahrgangIds: [] })).toEqual([]);

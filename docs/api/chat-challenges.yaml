@@ -1578,6 +1578,12 @@ paths:
         'konfis_und_team') ist nie ausgeliefert worden und zurueckgenommen:
         "Konfis und Team darf auch nur ein Admin sehen und ein Teamer, der in
         dem Jahrgang ist." Antwortform unveraendert.
+        BEHOBEN 2026-09-27 (Audit wer-bekommt-was BF-16): Die Empfaenger von
+        'challenge_submission' kamen ueber ladeMitgliederDerOrganisation mit
+        Jahrgangsfilter, der nur pruefte, OB eine Zuweisung besteht -- eine
+        Zuweisung mit can_view = false loeste die Mitteilung aus, die Liste
+        zeigte die Challenge nicht. Der Filter verlangt jetzt can_view, wie
+        diese Liste und die Zaehler.
         GEAENDERT 2026-09-01: Ist die Liste ausgeduennt, weil admin/teamer
         keine Jahrgangs-Zuweisung hat, traegt die Antwort zusaetzlich den
         Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform

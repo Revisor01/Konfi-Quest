@@ -112,6 +112,42 @@ describe('Challenges: Beteiligung von Admins und Team', () => {
     }
   });
 
+  // BF-16 (Audit wer-bekommt-was, 27.09.2026): Liste und Reiter verlangen
+  // Leserecht (can_view) auf den Jahrgang, die Empfaengerliste
+  // (ladeMitgliederDerOrganisation mit jahrgangIds) pruefte nur, OB eine
+  // Zuweisung besteht. Eine Zuweisung ohne Leserecht loeste eine Mitteilung
+  // zu einer Challenge aus, die die Person nirgends sieht.
+  describe('Zuweisung ohne Leserecht (can_view = false)', () => {
+    for (const [wer, userId] of [['admin1', USERS.admin1.id], ['teamer1', USERS.teamer1.id]]) {
+      it(`verboten: ${wer} mit can_view = false -- keine Sicht, keine Zahl, keine Mitteilung`, async () => {
+        if (wer === 'admin1') {
+          await db.query('INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view) VALUES ($1, $2, false)',
+            [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]);
+        } else {
+          await db.query('UPDATE user_jahrgang_assignments SET can_view = false WHERE user_id = $1 AND jahrgang_id = $2',
+            [USERS.teamer1.id, JAHRGAENGE.jahrgang1.id]);
+        }
+        invalidateUserCache(userId);
+        const c = await challenge('konfis_und_team');
+        expect((await einreichen('konfi1', c.id)).status).toBe(201);
+        expect(await liste(wer)).toEqual([]);
+        expect((await zaehler(wer)).pendingChallenges).toBe(0);
+        expect(await mitteilungen(userId)).toEqual([]);
+        // Die Gemeindeleitung bekommt sie weiter.
+        expect(await mitteilungen(USERS.orgAdmin1.id)).toEqual([c.id]);
+      });
+    }
+
+    it('erlaubt: dieselbe Zuweisung mit can_view = true -- Sicht, Zahl und Mitteilung', async () => {
+      // teamer1 ist im Seed Jahrgang 1 zugewiesen (can_view Standard true).
+      const c = await challenge('konfis_und_team');
+      expect((await einreichen('konfi1', c.id)).status).toBe(201);
+      expect(await liste('teamer1')).toEqual(['Runde konfis_und_team']);
+      expect((await zaehler('teamer1')).pendingChallenges).toBe(1);
+      expect(await mitteilungen(USERS.teamer1.id)).toEqual([c.id]);
+    });
+  });
+
   describe('Nur die Konfis', () => {
     it('das Team des Jahrgangs sieht und begleitet sie, reicht aber nichts ein', async () => {
       const c = await challenge('konfis');

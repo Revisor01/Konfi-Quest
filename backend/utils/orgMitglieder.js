@@ -34,7 +34,8 @@
  * @param {string[]} rollen        Rollennamen, z.B. ['admin', 'org_admin']
  * @param {object} [opt]
  * @param {number[]|null} [opt.jahrgangIds]  Nur Personen mit einer Zuweisung
- *   (user_jahrgang_assignments) auf mindestens einen dieser Jahrgaenge.
+ *   (user_jahrgang_assignments) MIT Leserecht (can_view) auf mindestens einen
+ *   dieser Jahrgaenge.
  * @returns {Promise<Array<number|string>>} Nutzer-IDs ohne Doppelte, so wie
  *   pg sie liefert (users.id ist bigint).
  */
@@ -46,10 +47,16 @@ async function ladeMitgliederDerOrganisation(db, organizationId, rollen, { jahrg
   let jahrgangFilter = '';
   if (Array.isArray(jahrgangIds)) {
     params.push(jahrgangIds);
+    // can_view gehoert dazu (27.09.2026, Audit wer-bekommt-was BF-16): Listen,
+    // Zaehler und Jahrgangs-Chat verlangen Leserecht auf den Jahrgang
+    // (notifications.js, jahrgangChat.js, darfJahrgang). Ohne diese Bedingung
+    // loeste eine Zuweisung mit can_view = false Mitteilungen aus, deren
+    // Vorgang die Person in keiner Liste sieht.
     jahrgangFilter = `
        AND EXISTS (
          SELECT 1 FROM user_jahrgang_assignments uja
           WHERE uja.user_id = u.id AND uja.jahrgang_id = ANY($3::int[])
+            AND uja.can_view = true
        )`;
   }
 

@@ -271,6 +271,8 @@ Versionsüberschrift.
   jeder Admin jeden Antrag gemeldet — samt Zahl an Glocke und App-Symbol —,
   auch wenn er ihn gar nicht öffnen konnte. Wer selbst eine Aktivität meldet,
   bekommt über den eigenen Antrag keine Mitteilung mehr.
+- Mitteilungen zu Challenge-Beiträgen bekommt nur noch, wer den Jahrgang auch
+  ansehen darf; eine Zuweisung ohne Leserecht reicht dafür nicht mehr.
 - Die App spricht überall dieselbe Sprache: Was man besucht, sammelt und
   mitmacht, heißt Event, Badge, Challenge und Stempel — auch in Mitteilungen,
   Einführung, Rückblick, Fehlermeldungen und in den Android-Einstellungen

@@ -279,6 +279,7 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 
 ### BF-16: Empfängerlisten mit Jahrgangsfilter prüfen `can_view` nicht
 - **Schwere:** NIEDRIG
+- **Status:** behoben 27.09.2026 — Der Jahrgangsfilter in `ladeMitgliederDerOrganisation` (`backend/utils/orgMitglieder.js`) verlangt `uja.can_view = true`; das betrifft die Challenge-Beitrags-Mitteilung (und bis zur Umstellung unter BF-03 die Registrierung). Tests `tests/utils/orgMitglieder.test.js`, `tests/routes/challengeAdminBeteiligung.test.js` (Liste, Reiter und Mitteilung bei `can_view = false`). In Produktion nicht gezählt (kein Zugriff); die App legt Zuweisungen immer mit Leserecht an.
 - **Fundstelle:** `backend/utils/orgMitglieder.js:45-54` (nur `uja.jahrgang_id = ANY(…)`), genutzt von `pushService.js:2271` (Challenge-Beitrag) und `:2410` (Registrierung); Listen, Zähler und Jahrgangs-Chat verlangen `can_view` (`notifications.js:100`, `jahrgangChat.js:85, 96`)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Eine Zuweisung mit `can_view = false` löst Mitteilungen aus, ohne dass die Person den Vorgang sieht. Ob es solche Zuweisungen in Produktion gibt, ist offen.
