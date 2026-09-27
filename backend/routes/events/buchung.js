@@ -83,7 +83,7 @@ module.exports = (db, rbacVerifier) => {
       nachAntwort(req, async () => {
         const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: userId });
         await PushService.sendTeamerEventBookingToLeadership(
-          db, req.user.organization_id, empfaenger, req.user.display_name, event.name, status, eventId
+          db, req.user.organization_id, empfaenger, req.user.display_name, event.name, status, eventId, userId
         );
       }, 'Push nach Teamer-Buchung');
 
@@ -297,7 +297,7 @@ module.exports = (db, rbacVerifier) => {
             const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: userId });
             await PushService.sendTeamerEventCancellationToLeadership(
               db, req.user.organization_id, empfaenger, req.user.display_name,
-              eventInfo ? eventInfo.name : 'Event', eventId
+              eventInfo ? eventInfo.name : 'Event', eventId, null, userId
             );
           } catch (pushErr) {
             console.error('Push notification failed for teamer cancellation:', pushErr);

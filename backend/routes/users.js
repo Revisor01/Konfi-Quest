@@ -13,7 +13,7 @@ const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { deletePhotoFile, deleteChallengeFile, deleteChatFile } = require('../utils/photoStorage');
 const liveUpdate = require('../utils/liveUpdate');
-const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
+const { loescheMitteilungenZuAntraegen, loescheMitteilungenUeberPerson } = require('../utils/postfachAufraeumen');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
@@ -546,8 +546,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   //  - Am Konto bleiben Name, Benutzername, E-Mail, Passwort, role_title (die
   //    Funktionsbezeichnung der Person; ab jetzt pflegt sie die neue
   //    Stamm-Gemeinde), teamer_since, push_enabled und push_gruppen_stumm
-  //    (Einstellungen der Person, nicht einer Gemeinde) und das Postfach (es
-  //    gehoert zum Konto, Handbuch 03-bedienung).
+  //    (Einstellungen der Person, nicht einer Gemeinde) und das Postfach mit
+  //    den Mitteilungen der uebrigen Gemeinden. Die Mitteilungen DIESER
+  //    Gemeinde gehen mit der Mitgliedschaft (Simon zu F-07, 27.09.2026;
+  //    utils/mitgliedschaftEnde.js).
   //  - token_invalidated_at bleibt unberuehrt. Keine Stelle im Backend
   //    entscheidet nach den Claims organization_id/role_name im Access-Token
   //    (gesucht am 27.09.2026: kein Lesen von decoded.organization_id,
@@ -661,7 +663,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     // mitarbeitet, ist in einer anderen Gemeinde zuhause. Die Leitung dieser
     // Gemeinde darf ihn aus IHRER Gemeinde entfernen -- Konto, Stamm-Gemeinde
     // und alles dort bleiben. Mit der Mitgliedschaft gehen die Jahrgaenge
-    // dieser Gemeinde und die Plaetze in allen Chat-Raeumen dieser Gemeinde.
+    // dieser Gemeinde, die Plaetze in allen Chat-Raeumen dieser Gemeinde und
+    // (seit 27.09.2026, F-07) ihre Postfach-Mitteilungen aus dieser Gemeinde.
     try {
       const { rows: [konto] } = await db.query('SELECT organization_id FROM users WHERE id = $1', [id]);
       if (konto && Number(konto.organization_id) !== Number(organizationId)) {
@@ -913,6 +916,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       }
       // Postfach (25.09.2026): siehe Einsammeln der Kennungen oben.
       await loescheMitteilungenZuAntraegen(client, antragIds);
+      // Und die Leitungs-Mitteilungen UEBER die Person -- Zu-/Absagen samt
+      // Grund, Beitraege, bei Konfis Registrierung und Abmeldungen (Audit
+      // "Wer bekommt was" BF-13 / F-07; derselbe Aufruf wie in
+      // utils/konfiDeletion.js).
+      await loescheMitteilungenUeberPerson(client, id);
 
       // Delete user
       const deleteUserResult = await client.query("DELETE FROM users WHERE id = $1 AND organization_id = $2", [id, organizationId]);

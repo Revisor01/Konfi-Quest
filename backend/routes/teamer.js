@@ -1235,12 +1235,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           if (dabei) {
             await PushService.sendTeamerEventBookingToLeadership(
               db, req.user.organization_id, empfaenger, req.user.display_name,
-              ergebnis.event.name, ergebnis.status, eventId
+              ergebnis.event.name, ergebnis.status, eventId, req.user.id
             );
           } else {
             await PushService.sendTeamerEventCancellationToLeadership(
               db, req.user.organization_id, empfaenger, req.user.display_name,
-              ergebnis.event.name, eventId, grund
+              ergebnis.event.name, eventId, grund, req.user.id
             );
           }
         }, 'Push nach Teamer-Zusage/-Absage');

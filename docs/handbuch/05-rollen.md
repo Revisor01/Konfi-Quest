@@ -186,11 +186,14 @@ Passwort und Sperre bleiben Sache ihrer Stamm-Gemeinde; diese Felder sind bei
 dir gesperrt, und auch ein neues Passwort setzt nur die Stamm-Gemeinde.
 
 Wischst du die Person in der Liste weg, endet nur ihre **Mitgliedschaft in
-deiner Gemeinde** — samt ihrer Jahrgänge und ihrer Plätze in allen Chats
-deiner Gemeinde, auch in Gruppen und Einzelchats. Das Konto und die
-Stamm-Gemeinde bleiben, wie sie sind. Genauso endet eine Mitgliedschaft, die
-der Betrieb von Konfi Quest aufhebt: Jahrgänge und Chat-Plätze in dieser
-Gemeinde gehen mit, Nachrichten aus ihren Chats kommen danach nicht mehr an.
+deiner Gemeinde** — samt ihrer Jahrgänge, ihrer Plätze in allen Chats
+deiner Gemeinde, auch in Gruppen und Einzelchats, und ihrer Mitteilungen aus
+deiner Gemeinde im
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen). Das Konto und
+die Stamm-Gemeinde bleiben, wie sie sind, mit den Mitteilungen aus dort.
+Genauso endet eine Mitgliedschaft, die der Betrieb von Konfi Quest aufhebt:
+Jahrgänge, Chat-Plätze und Mitteilungen dieser Gemeinde gehen mit, Nachrichten
+aus ihren Chats kommen danach nicht mehr an.
 Arbeitet die Person in diesem Moment gerade in deiner Gemeinde,
 wechselt ihre App von selbst in ihre Stamm-Gemeinde; Chat und
 Live-Aktualisierungen laufen dort weiter, ohne dass sie sich neu anmelden
@@ -240,9 +243,9 @@ Anträge, unverbuchte Events, wartende Challenge-Beiträge und ungelesene
 Chats; als Teamer:in wartende Beiträge, Chats und neue Badges. Dazu in
 jeder Rolle die ungelesenen Mitteilungen aus dieser Gemeinde im
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) — Mitteilungen
-aus einer Gemeinde, der du nicht mehr angehörst, stehen bei deiner
-Stamm-Gemeinde. Bist du an Jahrgänge gebunden, zählt nur, was du dort auch
-sehen darfst. Eine Gemeinde ohne Zahl hat nichts Offenes.
+aus einer gesperrten Gemeinde stehen bei deiner Stamm-Gemeinde; die einer
+Gemeinde, die du verlässt, gehen mit der Mitgliedschaft. Bist du an Jahrgänge
+gebunden, zählt nur, was du dort auch sehen darfst. Eine Gemeinde ohne Zahl hat nichts Offenes.
 
 **Die Zahlen der Liste zusammengezählt ergeben die Zahl am App-Symbol.** Das
 Symbol zeigt immer die Summe aller deiner Gemeinden, jede mit der Rolle, die
@@ -313,17 +316,19 @@ Benutzer:innen** in der Liste wegwischen. Die App fragt vorher nach —
 **„Aus der Gemeinde entfernen"** — und sagt dazu, dass die Person auch in einer
 anderen Gemeinde Mitglied ist. Welche Gemeinde das ist, zeigt sie nicht.
 
-Danach gehört die Person nicht mehr zu deiner Gemeinde: Ihre Jahrgänge bei dir
-und ihre Plätze in allen Chats deiner Gemeinde — Team, Jahrgänge, Gruppen und
-Zweiergespräche — sind weg. **Ihr Konto bleibt**, mit Benutzername und
-Passwort. Zuhause ist sie ab jetzt in der anderen Gemeinde, mit der Rolle, die
+Danach gehört die Person nicht mehr zu deiner Gemeinde: Ihre Jahrgänge bei dir,
+ihre Plätze in allen Chats deiner Gemeinde — Team, Jahrgänge, Gruppen und
+Zweiergespräche — und ihre Mitteilungen aus deiner Gemeinde sind weg. **Ihr
+Konto bleibt**, mit Benutzername und Passwort. Zuhause ist sie ab jetzt in der anderen Gemeinde, mit der Rolle, die
 sie dort hat; arbeitet sie in mehreren mit, in der, der sie am längsten
 angehört. Eine gesperrte Gemeinde kommt dafür nur in Frage, wenn es keine
 andere gibt. Was sie bei dir angelegt oder geschrieben hat — Events,
 Material, Nachrichten, vergebene Punkte —, bleibt mit ihrem Namen stehen.
 
 Gehört die Person nur deiner Gemeinde an, fragt die App **„Benutzer löschen"**
-— dann wird ihr Konto gelöscht. Wer als Letzte:r in deiner Gemeinde Org-Admin
+— dann wird ihr Konto gelöscht, und mit ihm verschwinden die Mitteilungen über
+sie aus den Postfächern der Leitung (siehe
+[Mitteilungen im Postfach nachlesen](03-bedienung.md#mitteilungen-im-postfach-nachlesen)). Wer als Letzte:r in deiner Gemeinde Org-Admin
 ist, lässt sich auf keinem der beiden Wege entfernen.
 
 Dasselbe geschieht, wenn du eine Teamer:in in der

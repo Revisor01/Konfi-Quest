@@ -1841,7 +1841,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         // Gemeinde -- samt Grund (Audit wer-bekommt-was, BF-01).
         // DELETE /events/:id/book meldet dasselbe (events/buchung.js).
         const empfaenger = await ladeLeitungZumTermin(db, eventId);
-        await PushService.sendEventUnregistrationToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, reason, eventId);
+        await PushService.sendEventUnregistrationToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, reason, eventId, konfiId);
       }, 'Abmelde-Mitteilungen');
 
       // Live-Update an Konfi und Admins senden
@@ -1973,7 +1973,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       nachAntwort(req, async () => {
         const konfiName = req.user.display_name || req.user.username;
         const empfaenger = await ladeLeitungZumTermin(db, eventId);
-        await PushService.sendEventOptOutToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, reason.trim(), eventId);
+        await PushService.sendEventOptOutToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, reason.trim(), eventId, konfiId);
       }, 'Opt-out-Mitteilung an die Leitung');
 
       // Live-Update
@@ -2055,7 +2055,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       nachAntwort(req, async () => {
         const konfiName = req.user.display_name || req.user.username;
         const empfaenger = await ladeLeitungZumTermin(db, eventId);
-        await PushService.sendEventOptInToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, eventId);
+        await PushService.sendEventOptInToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, eventId, konfiId);
       }, 'Opt-in-Mitteilung an die Leitung');
 
       // Live-Update

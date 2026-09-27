@@ -1481,7 +1481,10 @@ class PushService {
   // und stirbt mit dem Termin (utils/postfachAufraeumen.js). Dafuer braucht
   // sie seine Kennung. Ausserdem springt der Tap damit an den Termin statt
   // auf die Liste (frontend utils/pushNavigation.ts).
-  static async sendEventUnregistrationToLeadership(db, organizationId, empfaenger, konfiName, eventName, reason = null, eventId = null) {
+  // konfiId optional und am Ende (27.09.2026, BF-13 / F-07): Die Mitteilung
+  // geht mit dem Konto der Konfi (utils/postfachAufraeumen.js,
+  // loescheMitteilungenUeberPerson) -- dafuer traegt sie konfi_id.
+  static async sendEventUnregistrationToLeadership(db, organizationId, empfaenger, konfiName, eventName, reason = null, eventId = null, konfiId = null) {
     try {
       const notification = {
         title: 'Event-Abmeldung',
@@ -1493,6 +1496,7 @@ class PushService {
           event_name: eventName,
           konfi_name: konfiName,
           ...(eventId != null ? { event_id: String(eventId) } : {}),
+          ...(konfiId != null ? { konfi_id: String(konfiId) } : {}),
           organization_id: String(organizationId)
         }
       };
@@ -2264,6 +2268,9 @@ class PushService {
         data: {
           type: 'challenge_submission',
           challengeId: challengeId.toString(),
+          // Wer eingereicht hat (27.09.2026, BF-13 / F-07): Die Mitteilung
+          // geht mit dem Konto dieser Person (loescheMitteilungenUeberPerson).
+          ...(einreicherId != null ? { user_id: String(einreicherId) } : {}),
           organization_id: String(organizationId)
         }
       };
@@ -2436,7 +2443,9 @@ class PushService {
    * Rueckfall gibt es nicht mehr: Ist niemand zugewiesen, bleibt es bei der
    * Gemeindeleitung (F-03).
    */
-  static async sendNewKonfiRegistrationToLeadership(db, organizationId, empfaenger, jahrgangId, konfiName, jahrgangName) {
+  // konfiId optional und am Ende (27.09.2026, BF-13 / F-07): Die Mitteilung
+  // geht mit dem Konto der Konfi (loescheMitteilungenUeberPerson).
+  static async sendNewKonfiRegistrationToLeadership(db, organizationId, empfaenger, jahrgangId, konfiName, jahrgangName, konfiId = null) {
     try {
       const notification = {
         title: 'Neue Registrierung',
@@ -2444,7 +2453,8 @@ class PushService {
         data: {
           type: 'new_konfi_registration',
           organization_id: organizationId.toString(),
-          jahrgang_id: jahrgangId.toString()
+          jahrgang_id: jahrgangId.toString(),
+          ...(konfiId != null ? { konfi_id: String(konfiId) } : {})
         }
       };
 
@@ -2465,7 +2475,9 @@ class PushService {
    * (ladeLeitungZumTermin, utils/terminLeitungSicht.js, 27.09.2026); vorher
    * jeder Admin der Gemeinde, samt Grund (BF-01).
    */
-  static async sendEventOptOutToLeadership(db, organizationId, empfaenger, konfiName, eventName, reason, eventId = null) {
+  // konfiId optional und am Ende (27.09.2026, BF-13 / F-07), wie bei
+  // sendEventUnregistrationToLeadership.
+  static async sendEventOptOutToLeadership(db, organizationId, empfaenger, konfiName, eventName, reason, eventId = null, konfiId = null) {
     try {
       const notification = {
         title: `Abmeldung: ${eventName}`,
@@ -2474,6 +2486,7 @@ class PushService {
           type: 'event_opt_out',
           event_name: eventName,
           ...(eventId != null ? { event_id: String(eventId) } : {}),
+          ...(konfiId != null ? { konfi_id: String(konfiId) } : {}),
           konfi_name: konfiName,
           reason: reason,
           organization_id: String(organizationId)
@@ -2491,7 +2504,8 @@ class PushService {
    * Konfi hat Opt-out zurückgenommen (wieder angemeldet) - Push an die
    * Leitung, die den Termin sieht (Empfaenger wie beim Opt-out, 27.09.2026).
    */
-  static async sendEventOptInToLeadership(db, organizationId, empfaenger, konfiName, eventName, eventId = null) {
+  // konfiId optional und am Ende (27.09.2026, BF-13 / F-07).
+  static async sendEventOptInToLeadership(db, organizationId, empfaenger, konfiName, eventName, eventId = null, konfiId = null) {
     try {
       const notification = {
         title: `Wieder angemeldet: ${eventName}`,
@@ -2500,6 +2514,7 @@ class PushService {
           type: 'event_opt_in',
           event_name: eventName,
           ...(eventId != null ? { event_id: String(eventId) } : {}),
+          ...(konfiId != null ? { konfi_id: String(konfiId) } : {}),
           konfi_name: konfiName,
           organization_id: String(organizationId)
         }
@@ -2555,7 +2570,9 @@ class PushService {
    * Jahrgang erreichen weiterhin alle Admins -- die Team-Ausnahme.
    * @param {string} status 'confirmed' oder 'waitlist'
    */
-  static async sendTeamerEventBookingToLeadership(db, organizationId, empfaenger, teamerName, eventName, status, eventId) {
+  // teamerId optional und am Ende (27.09.2026, BF-13 / F-07): Die Mitteilung
+  // geht mit dem Konto der Teamer:in (loescheMitteilungenUeberPerson).
+  static async sendTeamerEventBookingToLeadership(db, organizationId, empfaenger, teamerName, eventName, status, eventId, teamerId = null) {
     try {
       return await this.sendToLeadership(db, organizationId, empfaenger, {
         title: 'Teamer:in angemeldet',
@@ -2565,6 +2582,7 @@ class PushService {
         data: {
           type: 'teamer_event_booking',
           eventId: String(eventId),
+          ...(teamerId != null ? { user_id: String(teamerId) } : {}),
           organization_id: String(organizationId)
         }
       }, 'sendTeamerEventBookingToLeadership');
@@ -2584,7 +2602,9 @@ class PushService {
   // in der Meldung lesen, ohne die App zu oeffnen. Der Storno-Weg
   // (DELETE /events/:id/book) ruft weiter ohne reason auf; Text und
   // data-Felder bleiben dann exakt wie bisher.
-  static async sendTeamerEventCancellationToLeadership(db, organizationId, empfaenger, teamerName, eventName, eventId, reason = null) {
+  // teamerId optional und am Ende (27.09.2026, BF-13 / F-07), wie bei der
+  // Zusage.
+  static async sendTeamerEventCancellationToLeadership(db, organizationId, empfaenger, teamerName, eventName, eventId, reason = null, teamerId = null) {
     try {
       const notification = {
         title: 'Teamer:in abgemeldet',
@@ -2594,6 +2614,7 @@ class PushService {
         data: {
           type: 'teamer_event_cancellation',
           eventId: String(eventId),
+          ...(teamerId != null ? { user_id: String(teamerId) } : {}),
           organization_id: String(organizationId)
         }
       };

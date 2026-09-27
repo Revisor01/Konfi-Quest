@@ -299,7 +299,7 @@ paths:
               properties:
                 password: { type: string, description: "Bestaetigung mit aktuellem Passwort" }
       responses:
-        "200": { description: "Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt)" }
+        "200": { description: "Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (utils/konfiDeletion.js, loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Antwortform unveraendert" }
         "400": { description: "Passwort fehlt oder falsch" }
         "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
@@ -1222,7 +1222,7 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
         - { name: userId, in: path, required: true, schema: { type: integer }, description: "User-ID des Mitglieds" }
       responses:
-        "200": { description: "{ message: 'Mitgliedschaft entfernt' } (unveraendert). In EINER Transaktion: user_organizations, die Jahrgangs-Zuweisungen dieser Org und die Plaetze in ALLEN Chat-Raeumen dieser Org (utils/mitgliedschaftEnde.js, dieselbe Funktion wie DELETE /users/{id}). Danach Team-Chat- und Jahrgangs-Sync, Sockets getrennt, Cache invalidiert, Soft-Revoke" }
+        "200": { description: "{ message: 'Mitgliedschaft entfernt' } (unveraendert). In EINER Transaktion: user_organizations, die Jahrgangs-Zuweisungen dieser Org, die Plaetze in ALLEN Chat-Raeumen dieser Org und (seit 27.09.2026) die eigenen Postfach-Mitteilungen aus dieser Org (utils/mitgliedschaftEnde.js, dieselbe Funktion wie DELETE /users/{id}). Danach Team-Chat- und Jahrgangs-Sync, Sockets getrennt, Cache invalidiert, Soft-Revoke" }
         "400": { description: "Primaer-Org kann hier nicht entfernt werden" }
         "404": { description: "User oder Mitgliedschaft nicht gefunden" }
       x-berechtigung:
@@ -1238,6 +1238,12 @@ paths:
         # Zuweisungen der Org blieben stehen und galten bei erneuter Aufnahme
         # sofort wieder. Der Weg ueber die Leitung (DELETE /users/{id})
         # raeumte das seit dem Morgen desselben Tages mit eigener Kopie.
+        # BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-13 / F-07,
+        # MITTEL): Die Person las das Postfach der alten Gemeinde weiter --
+        # Namen und Abmeldegruende von Konfis --, die Eintraege zaehlten an
+        # Glocke, App-Symbol und Umschalter (bei der Stamm-Gemeinde). Jetzt
+        # gehen sie mit: DELETE FROM notifications WHERE user_id = ... AND
+        # organization_id = <diese Org>, in derselben Transaktion.
         hinweis: >
           BEKANNT: laufende Access-Tokens mit active_organization_id-Claim
           wirken serverseitig bis Ablauf nach (max 15 Min + 30s Cache).
@@ -1402,6 +1408,11 @@ paths:
         ueber DIESELBE Funktion (utils/mitgliedschaftEnde.js: Zuweisungen und
         Chat-Plaetze der Gemeinde), damit die Wege nicht wieder
         auseinanderlaufen (Audit "Wer bekommt was", BF-08).
+        BEHOBEN 27.09.2026 (BF-13 / F-07): Dieselbe Funktion nimmt in Fall 1
+        und Fall 2 auch die eigenen Postfach-Mitteilungen der Person aus
+        DIESER Gemeinde mit (notifications.organization_id); die aus anderen
+        Gemeinden bleiben. Vorher las sie das Postfach der alten Gemeinde
+        weiter, und es zaehlte an Glocke und App-Symbol.
         (2) Die Person ist hier zuhause UND hat eine Zeile in
         user_organizations für eine andere Gemeinde: Das Konto zieht um,
         `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`.
@@ -1430,6 +1441,13 @@ paths:
         Platte entfernt. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen
         "Neuer Antrag eingegangen" bei der Leitung mit, die auf Anträge der
         geloeschten Person zeigten (utils/postfachAufraeumen.js).
+        BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-13 / F-07): Ebenso
+        alle Leitungs-Mitteilungen UEBER die Person
+        (loescheMitteilungenUeberPerson: Registrierung, Abmeldung,
+        Opt-out/-in, Challenge-Beitrag, Teamer-Zu-/Absage, neuer Antrag,
+        Einladung beantwortet -- Kennung konfi_id bzw. user_id im data-Teil).
+        Vorher standen sie mit Name und Grund bis zum 365-Tage-Aufraeumen bei
+        der Leitung.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:

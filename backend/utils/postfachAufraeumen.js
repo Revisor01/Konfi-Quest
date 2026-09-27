@@ -60,6 +60,27 @@
 //   keinen loeschbaren Gegenstand mit Kennung im Text; sie bleiben als
 //   Verlauf, wie die Antragsentscheidung.
 //
+// SEIT DEM 27.09.2026 AUCH DIE PERSON (Audit "Wer bekommt was", BF-13,
+// Simon zu F-07: "ja"): Leitungs-Mitteilungen UEBER eine Person -- Neue
+// Registrierung, Abmeldung samt Grund, Opt-out/-in, Challenge-Beitrag,
+// Teamer-Zu-/Absage, neuer Antrag, Antwort auf eine Einladung -- gehen mit
+// ihrem Konto. Vorher standen sie mit Name und Grund noch ein Jahr bei der
+// Leitung (Audit A13: 5 Reste nach einer Konfi-Loeschung). Die eigenen
+// Mitteilungen der Person gehen ohnehin mit dem Konto (user_id).
+//
+//   Die Kennung der Person liegt je Art unter `konfi_id` (Konfi-Vorgaenge;
+//   new_activity_request traegt sie seit jeher auch bei Teamer-Antraegen)
+//   oder `user_id` (Vorgaenge jeder Rolle: Challenge-Beitrag, Teamer-Zu-/
+//   Absage, Einladung beantwortet). Beide werden verglichen -- wie event_id
+//   und eventId beim Termin.
+//
+//   BESTANDSDATEN OHNE KENNUNG werden nicht geraten: Bis zum 27.09.2026
+//   trugen sieben dieser Arten nur den Namen im Text (event_unregistration,
+//   event_opt_out, event_opt_in, new_konfi_registration,
+//   challenge_submission, teamer_event_booking, teamer_event_cancellation).
+//   Ein Abgleich ueber den Namen traefe Namensgleiche. Diese Zeilen gehen
+//   mit ihrem Termin bzw. ihrer Challenge oder nach 365 Tagen.
+//
 // Alle Funktionen nehmen db ODER einen Transaktions-Client: Sie fuehren
 // kein BEGIN/COMMIT aus, der Aufrufer bestimmt die Transaktion.
 
@@ -176,14 +197,51 @@ async function loescheMitteilungenZuJahrgang(db, jahrgangId) {
   return rowCount;
 }
 
+/**
+ * Die Arten, die der Leitung UEBER eine Person berichten und mit ihrem Konto
+ * gehen (BF-13 / F-07, 27.09.2026). Kennung: konfi_id oder user_id (siehe Kopf).
+ */
+const ARTEN_UEBER_PERSON = [
+  'new_activity_request',           // konfi_id (auch bei Teamer-Antraegen)
+  'new_konfi_registration',         // konfi_id
+  'event_unregistration',           // konfi_id
+  'event_opt_out',                  // konfi_id
+  'event_opt_in',                   // konfi_id
+  'challenge_submission',           // user_id (Konfi oder Team)
+  'teamer_event_booking',           // user_id
+  'teamer_event_cancellation',      // user_id
+  'gemeinde_einladung_beantwortet'  // user_id (die eingeladene Person)
+];
+
+/**
+ * Entfernt die Leitungs-Mitteilungen ueber eine Person, deren Konto
+ * geloescht wird. In der Loesch-Transaktion des Aufrufers laufen lassen.
+ *
+ * @param {{query: Function}} db  Pool oder Client
+ * @param {number|string} userId  die Person, deren Konto geht
+ * @returns {Promise<number>} Anzahl entfernter Mitteilungen
+ */
+async function loescheMitteilungenUeberPerson(db, userId) {
+  if (userId === null || userId === undefined || String(userId) === '') return 0;
+  const { rowCount } = await db.query(
+    `DELETE FROM notifications
+      WHERE type = ANY($1::text[])
+        AND (data->>'konfi_id' = $2::text OR data->>'user_id' = $2::text)`,
+    [ARTEN_UEBER_PERSON, String(userId)]
+  );
+  return rowCount;
+}
+
 module.exports = {
   loescheMitteilungenZuAntraegen,
   loescheMitteilungenZuAbzeichen,
   loescheMitteilungenZuTermin,
   loescheMitteilungenZuChallenge,
   loescheMitteilungenZuJahrgang,
+  loescheMitteilungenUeberPerson,
   ZUSTANDS_ARTEN_ANTRAG,
   ARTEN_AM_TERMIN,
   ARTEN_AN_CHALLENGE,
-  ARTEN_AM_JAHRGANG
+  ARTEN_AM_JAHRGANG,
+  ARTEN_UEBER_PERSON
 };

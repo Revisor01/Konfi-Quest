@@ -2140,6 +2140,17 @@ paths:
         neuer Beitrag, mit dem Jahrgang die Loeschwarnung, mit dem Antrag
         die Zustandsmeldungen, mit dem Abzeichen "Neues Badge erhalten".
         Nach 365 Tagen werden Mitteilungen nachts entfernt.
+        BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-13 / F-07): Mit einem
+        geloeschten Konto gehen auch die Leitungs-Mitteilungen UEBER die
+        Person (data additiv mit konfi_id bzw. user_id: new_konfi_registration,
+        event_unregistration, event_opt_out, event_opt_in, challenge_submission,
+        teamer_event_booking, teamer_event_cancellation; new_activity_request
+        und gemeinde_einladung_beantwortet trugen die Kennung schon). Mit dem
+        Ende einer Mitgliedschaft gehen die eigenen Mitteilungen aus dieser
+        Gemeinde (utils/mitgliedschaftEnde.js); `ungelesen`, badge-counts.
+        postfach.ungelesen und je-organisation zaehlen sie danach nicht mehr.
+        Eine entzogene Jahrgangs-Zuweisung laesst das Postfach stehen
+        (Verlauf). Antwortform unveraendert.
         ENTSCHEIDUNG ORG-BEZUG: Das Postfach ist persoenlich wie das
         Mitteilungszentrum des Handys; Push-Nachrichten kommen ja auch
         unabhaengig von der aktiven Gemeinde an. Wer mehrere Gemeinden

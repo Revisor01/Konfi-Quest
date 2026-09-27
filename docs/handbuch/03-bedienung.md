@@ -136,6 +136,17 @@ Löschung. Entscheidungen und Punkte bleiben — „Antrag verbucht", „Antrag
 abgelehnt", Bonuspunkte und Level-Aufstiege sind Verlauf, auch wenn der
 abgelehnte Antrag später aufgeräumt wird.
 
+Dasselbe gilt für **Personen**: Wird ein Konto gelöscht — von der Leitung,
+von der Person selbst oder nach der Konfirmation von allein —, verschwinden
+bei der Leitung auch alle Mitteilungen über diese Person: Registrierung,
+Ab- und Wieder-Anmeldungen samt Grund, Beiträge, neue Anträge, Zu- und
+Absagen des Teams, die Antwort auf eine Einladung. Endet deine
+**Mitgliedschaft in einer Gemeinde**, gehen deine Mitteilungen aus dieser
+Gemeinde mit (siehe [Mitglieder aus anderen Gemeinden
+verwalten](05-rollen.md#mitglieder-aus-anderen-gemeinden-verwalten)). Wird dir
+dagegen nur ein Jahrgang entzogen, bleiben die Mitteilungen dazu als Verlauf
+stehen.
+
 Wer in **mehreren Gemeinden** mitarbeitet, sieht die Mitteilungen aller
 Gemeinden im selben Postfach, jede mit dem Namen ihrer Gemeinde. Antippen
 wechselt bei Bedarf zuerst in diese Gemeinde — so, wie es ein angetippter Push

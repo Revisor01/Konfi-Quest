@@ -1160,7 +1160,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
             empfaenger,
             invite.jahrgang_id,
             display_name,
-            invite.jahrgang_name
+            invite.jahrgang_name,
+            newUser.id
           );
         } catch (pushErr) {
           console.error('Push for new registration failed:', pushErr);

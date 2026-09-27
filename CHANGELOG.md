@@ -355,6 +355,13 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Wird ein Konto gelöscht, verschwinden bei der Leitung auch die Mitteilungen
+  über diese Person — Registrierung, Abmeldungen samt Grund, Ab- und
+  Wieder-Anmeldungen von Pflicht-Events, Beiträge, Zu- und Absagen des Teams.
+  Bisher standen sie mit Namen und Grund noch ein Jahr im Postfach. Endet
+  eine Mitgliedschaft in einer Gemeinde, gehen die Mitteilungen aus dieser
+  Gemeinde mit; Glocke, App-Symbol und Gemeinde-Auswahl zählen sie nicht
+  mehr. Ein entzogener Jahrgang lässt die Mitteilungen als Verlauf stehen.
 - Wer zur Teamer:in befördert wird, verlässt sofort die Event-Chats der
   bisherigen Anmeldungen und — solange ihr der alte Jahrgang nicht zugewiesen
   ist — dessen Chat; in den Team-Chat kommt sie sofort. Bisher bekam sie
