@@ -303,6 +303,11 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Hebt der Betrieb von Konfi Quest eine Mitgliedschaft in einer Gemeinde auf,
+  gehen auch die Jahrgänge und alle Chat-Plätze dieser Gemeinde mit — wie
+  wenn die Gemeindeleitung die Person entfernt. Bisher blieb sie in Gruppen
+  und Einzelchats und bekam deren Nachrichten weiter aufs Handy; bei einer
+  erneuten Aufnahme galten die alten Jahrgänge sofort wieder.
 - Wer einen Chat öffnen darf, ohne darin Mitglied zu sein — etwa der Org-Admin
   in einer Gruppe —, sieht dort jetzt auch Bilder und Dateien. Bisher blieben
   sie leer, obwohl die Nachrichten lesbar waren.

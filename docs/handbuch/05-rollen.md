@@ -188,7 +188,10 @@ dir gesperrt, und auch ein neues Passwort setzt nur die Stamm-Gemeinde.
 Wischst du die Person in der Liste weg, endet nur ihre **Mitgliedschaft in
 deiner Gemeinde** — samt ihrer Jahrgänge und ihrer Plätze in allen Chats
 deiner Gemeinde, auch in Gruppen und Einzelchats. Das Konto und die
-Stamm-Gemeinde bleiben, wie sie sind. Arbeitet die Person in diesem Moment gerade in deiner Gemeinde,
+Stamm-Gemeinde bleiben, wie sie sind. Genauso endet eine Mitgliedschaft, die
+der Betrieb von Konfi Quest aufhebt: Jahrgänge und Chat-Plätze in dieser
+Gemeinde gehen mit, Nachrichten aus ihren Chats kommen danach nicht mehr an.
+Arbeitet die Person in diesem Moment gerade in deiner Gemeinde,
 wechselt ihre App von selbst in ihre Stamm-Gemeinde; Chat und
 Live-Aktualisierungen laufen dort weiter, ohne dass sie sich neu anmelden
 muss.

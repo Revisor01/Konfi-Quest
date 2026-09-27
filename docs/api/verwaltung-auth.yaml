@@ -1208,7 +1208,7 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
         - { name: userId, in: path, required: true, schema: { type: integer }, description: "User-ID des Mitglieds" }
       responses:
-        "200": { description: "Mitgliedschaft entfernt; Chat-Sync raeumt Team-/Jahrgangs-Chats auf; Cache invalidiert" }
+        "200": { description: "{ message: 'Mitgliedschaft entfernt' } (unveraendert). In EINER Transaktion: user_organizations, die Jahrgangs-Zuweisungen dieser Org und die Plaetze in ALLEN Chat-Raeumen dieser Org (utils/mitgliedschaftEnde.js, dieselbe Funktion wie DELETE /users/{id}). Danach Team-Chat- und Jahrgangs-Sync, Sockets getrennt, Cache invalidiert, Soft-Revoke" }
         "400": { description: "Primaer-Org kann hier nicht entfernt werden" }
         "404": { description: "User oder Mitgliedschaft nicht gefunden" }
       x-berechtigung:
@@ -1216,6 +1216,14 @@ paths:
         middleware: [verifyTokenRBAC, requireSuperAdmin]
         org-scope: false
         objekt-pruefung: "users.organization_id !== id (Primaer-Org-Schutz)"
+        # BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-08, HOCH): Vorher
+        # entfernte dieser Weg nur user_organizations; die Syncs danach
+        # erfassen Team-Chat und Jahrgaenge mit Zuweisung. Gruppen,
+        # Zweierraeume, Termin-Chats und Jahrgangs-Chats ohne Zuweisung
+        # blieben -- die Person bekam weiter jede Nachricht als Push. Die
+        # Zuweisungen der Org blieben stehen und galten bei erneuter Aufnahme
+        # sofort wieder. Der Weg ueber die Leitung (DELETE /users/{id})
+        # raeumte das seit dem Morgen desselben Tages mit eigener Kopie.
         hinweis: >
           BEKANNT: laufende Access-Tokens mit active_organization_id-Claim
           wirken serverseitig bis Ablauf nach (max 15 Min + 30s Cache).
@@ -1375,7 +1383,11 @@ paths:
         Chat-Raeumen dieser Gemeinde (vorher nur, was syncTeamChat und
         syncJahrgangChat fuer zugewiesene Jahrgaenge erfassten -- Gruppen,
         Zweierraeume und Jahrgangs-Chats ohne Zuweisung blieben, samt Push
-        zu jeder Nachricht). Antwortform unveraendert.
+        zu jeder Nachricht). Antwortform unveraendert. Seit 27.09.2026
+        raeumen Fall 1, Fall 2 und DELETE /organizations/{id}/members/{userId}
+        ueber DIESELBE Funktion (utils/mitgliedschaftEnde.js: Zuweisungen und
+        Chat-Plaetze der Gemeinde), damit die Wege nicht wieder
+        auseinanderlaufen (Audit "Wer bekommt was", BF-08).
         (2) Die Person ist hier zuhause UND hat eine Zeile in
         user_organizations für eine andere Gemeinde: Das Konto zieht um,
         `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`.

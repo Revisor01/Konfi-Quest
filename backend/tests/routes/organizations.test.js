@@ -1276,6 +1276,112 @@ describe('Organizations Routes', () => {
         expect(rows[0].token_invalidated_at).not.toBeNull();
       });
 
+      // Audit "Wer bekommt was" 27.09.2026, BF-08 (HOCH): Der Super-Admin-Weg
+      // entfernte nur user_organizations; die Syncs danach erfassen Team-Chat
+      // und Jahrgaenge mit Zuweisung. Gruppen, Zweierraeume und
+      // Jahrgangs-Chats ohne Zuweisung blieben -- und chat.js pusht an alle
+      // Teilnehmenden eines Raums. Auch die Zuweisungen der Gemeinde blieben
+      // stehen und galten bei erneuter Aufnahme sofort wieder. Der Weg ueber
+      // die Leitung (users.js) raeumt beides seit dem 27.09.2026 (1eec4910).
+      describe('Ende der Mitgliedschaft raeumt Chat-Plaetze und Zuweisungen der Gemeinde (BF-08)', () => {
+        // admin1 (Stamm Org 1) arbeitet in Org 2 als Teamer:in mit.
+        const aufnehmenUndPlatzieren = async () => {
+          // Direkt statt ueber POST /members: dessen Team-Chat-Sync laeuft
+          // nach der Antwort weiter und legte sonst zeitgleich Raeume an.
+          // Rolle 7 = teamer in Org 2.
+          await db.query(
+            'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, 2, 7)',
+            [USERS.admin1.id]
+          );
+
+          // Org 2: Jahrgangs-Chat (Raum 4), eine Gruppe mit Konfi, ein
+          // Zweierraum mit orgAdmin2 -- und eine Zuweisung auf Jahrgang 2.
+          const { rows: [gruppe] } = await db.query(
+            "INSERT INTO chat_rooms (name, type, created_by, organization_id) VALUES ('Gruppe Org 2', 'group', $1, 2) RETURNING id",
+            [USERS.orgAdmin2.id]
+          );
+          const { rows: [zweier] } = await db.query(
+            "INSERT INTO chat_rooms (name, type, created_by, organization_id) VALUES ('Zweier Org 2', 'direct', $1, 2) RETURNING id",
+            [USERS.orgAdmin2.id]
+          );
+          await db.query(
+            `INSERT INTO chat_participants (room_id, user_id, user_type) VALUES
+               ($1, $4, 'admin'), ($1, $5, 'konfi'), ($2, $4, 'admin'),
+               ($3, $6, 'teamer'), ($1, $6, 'teamer'), ($2, $6, 'teamer')
+             ON CONFLICT DO NOTHING`,
+            [gruppe.id, zweier.id, 4, USERS.orgAdmin2.id, USERS.konfi3.id, USERS.admin1.id]
+          );
+          await db.query(
+            'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, 2), ($1, 1)',
+            [USERS.admin1.id]
+          );
+          return { gruppe: gruppe.id, zweier: zweier.id };
+        };
+
+        it('VERBOTEN: nach dem Entzug sitzt die Person in keinem Raum und hat keinen Jahrgang von Org 2 mehr', async () => {
+          const { gruppe, zweier } = await aufnehmenUndPlatzieren();
+          const { rows: vorher } = await db.query(
+            `SELECT cp.room_id FROM chat_participants cp JOIN chat_rooms r ON r.id = cp.room_id
+              WHERE cp.user_id = $1 AND r.organization_id = 2 ORDER BY cp.room_id`,
+            [USERS.admin1.id]
+          );
+          expect(vorher.map(r => r.room_id)).toEqual([4, gruppe, zweier]);
+
+          const res = await request(app)
+            .delete(`/api/organizations/2/members/${USERS.admin1.id}`)
+            .set('Authorization', `Bearer ${superAdminToken}`);
+          expect(res.status).toBe(200);
+          expect(res.body).toEqual({ message: 'Mitgliedschaft entfernt' });
+
+          const { rows: plaetze } = await db.query(
+            `SELECT cp.room_id FROM chat_participants cp JOIN chat_rooms r ON r.id = cp.room_id
+              WHERE cp.user_id = $1 AND r.organization_id = 2`,
+            [USERS.admin1.id]
+          );
+          expect(plaetze).toEqual([]);
+          const { rows: zuweisungen } = await db.query(
+            `SELECT uja.jahrgang_id FROM user_jahrgang_assignments uja
+               JOIN jahrgaenge j ON j.id = uja.jahrgang_id
+              WHERE uja.user_id = $1 AND j.organization_id = 2`,
+            [USERS.admin1.id]
+          );
+          expect(zuweisungen).toEqual([]);
+        });
+
+        it('ERLAUBT: Stamm-Gemeinde und die anderen Teilnehmenden bleiben unberuehrt', async () => {
+          const { gruppe, zweier } = await aufnehmenUndPlatzieren();
+
+          const res = await request(app)
+            .delete(`/api/organizations/2/members/${USERS.admin1.id}`)
+            .set('Authorization', `Bearer ${superAdminToken}`);
+          expect(res.status).toBe(200);
+
+          // Org 1: Raeume 1, 2, 3 aus dem Seed und die Zuweisung auf Jahrgang 1.
+          const { rows: stamm } = await db.query(
+            `SELECT cp.room_id FROM chat_participants cp JOIN chat_rooms r ON r.id = cp.room_id
+              WHERE cp.user_id = $1 AND r.organization_id = 1 ORDER BY cp.room_id`,
+            [USERS.admin1.id]
+          );
+          expect(stamm.map(r => r.room_id)).toEqual([1, 2, 3]);
+          const { rows: [{ jahrgaenge }] } = await db.query(
+            `SELECT array_agg(uja.jahrgang_id::int ORDER BY uja.jahrgang_id) AS jahrgaenge
+               FROM user_jahrgang_assignments uja JOIN jahrgaenge j ON j.id = uja.jahrgang_id
+              WHERE uja.user_id = $1 AND j.organization_id = 1`,
+            [USERS.admin1.id]
+          );
+          expect(jahrgaenge).toEqual([1]);
+
+          // Die uebrigen Teilnehmenden der Raeume von Org 2 bleiben.
+          const { rows: rest } = await db.query(
+            'SELECT room_id, user_id FROM chat_participants WHERE room_id IN ($1, $2) ORDER BY room_id, user_id',
+            [gruppe, zweier]
+          );
+          expect(rest.map(r => [r.room_id, r.user_id])).toEqual([
+            [gruppe, USERS.konfi3.id], [gruppe, USERS.orgAdmin2.id], [zweier, USERS.orgAdmin2.id],
+          ]);
+        });
+      });
+
       it('Primaer-Org kann NICHT entfernt werden -> 400', async () => {
         // admin1 Primaer-Org = 1, durch Migration in user_organizations vorhanden
         await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)

@@ -16,6 +16,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
+const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
 
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
@@ -597,18 +598,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id IN ($2, $3)',
         [userId, ziel.organization_id, organizationId]
       );
-      await client.query(
-        `DELETE FROM user_jahrgang_assignments uja
-          USING jahrgaenge j
-          WHERE uja.jahrgang_id = j.id AND uja.user_id = $1 AND j.organization_id = $2`,
-        [userId, organizationId]
-      );
-      await client.query(
-        `DELETE FROM chat_participants cp
-          USING chat_rooms r
-          WHERE cp.room_id = r.id AND cp.user_id = $1 AND r.organization_id = $2`,
-        [userId, organizationId]
-      );
+      // Zuweisungen und Chat-Plaetze DIESER Gemeinde -- dieselbe Funktion wie
+      // beim Ende einer Zusatz-Mitgliedschaft und beim Entzug durch den
+      // Super-Admin (utils/mitgliedschaftEnde.js).
+      await gemeindeZugehoerigkeitRaeumen(client, userId, organizationId);
       await client.query('COMMIT');
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
@@ -676,14 +669,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         let betroffeneJahrgaenge = [];
         try {
           await client.query('BEGIN');
-          const { rows: jg } = await client.query(
-            `DELETE FROM user_jahrgang_assignments uja
-              USING jahrgaenge j
-              WHERE uja.jahrgang_id = j.id AND uja.user_id = $1 AND j.organization_id = $2
-              RETURNING j.id`,
-            [id, organizationId]
-          );
-          betroffeneJahrgaenge = jg.map(r => r.id);
           const { rowCount } = await client.query(
             'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
             [id, organizationId]
@@ -692,17 +677,15 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
           }
-          // Die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde gehen mit, wie
-          // beim Umzug (kontoZiehtUm). Die Syncs unten erfassen nur Team-Chat
-          // und Jahrgaenge mit Zuweisung; Gruppen, Zweierraeume und
+          // Zuweisungen und die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde
+          // gehen mit, wie beim Umzug (kontoZiehtUm) und beim Entzug durch den
+          // Super-Admin -- eine Funktion fuer alle drei Wege
+          // (utils/mitgliedschaftEnde.js). Die Syncs unten erfassen nur
+          // Team-Chat und Jahrgaenge mit Zuweisung; Gruppen, Zweierraeume und
           // Jahrgangs-Chats, in denen sie ohne Zuweisung sass, blieben -- und
           // chat.js pusht an alle Teilnehmenden (gemessen 27.09.2026).
-          await client.query(
-            `DELETE FROM chat_participants cp
-              USING chat_rooms r
-              WHERE cp.room_id = r.id AND cp.user_id = $1 AND r.organization_id = $2`,
-            [id, organizationId]
-          );
+          ({ jahrgangIds: betroffeneJahrgaenge } =
+            await gemeindeZugehoerigkeitRaeumen(client, id, organizationId));
           await client.query('COMMIT');
         } catch (err) {
           await client.query('ROLLBACK').catch(() => {});

@@ -10,6 +10,7 @@ const { deletePhotoFile, deleteChallengeFile, deleteChatFile, deleteMaterialFile
 const { syncTeamChat } = require('../utils/teamChat');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const chatSyncCache = require('../utils/chatSyncCache');
+const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
 
 // Organizations routes
 // ============================================
@@ -1239,12 +1240,33 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       if (user.organization_id === orgId) {
         return res.status(400).json({ error: 'Die Primär-Organisation kann hier nicht entfernt werden' });
       }
-      const { rowCount } = await db.query(
-        'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
-        [userId, orgId]
-      );
-      if (rowCount === 0) {
-        return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+      // Mitgliedschaft, Zuweisungen und Chat-Plaetze DIESER Gemeinde in einer
+      // Transaktion -- dieselbe Funktion wie auf dem Weg ueber die Leitung
+      // (users.js). Bis zum 27.09.2026 entfernte dieser Weg nur
+      // user_organizations; Gruppen, Zweierraeume und Jahrgangs-Chats ohne
+      // Zuweisung blieben, und die Person bekam weiter jede Nachricht als
+      // Push (Audit "Wer bekommt was" BF-08). Auch die Zuweisungen blieben
+      // stehen und galten bei erneuter Aufnahme sofort wieder.
+      let betroffeneJahrgaenge = [];
+      const client = await db.getClient();
+      try {
+        await client.query('BEGIN');
+        const { rowCount } = await client.query(
+          'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+          [userId, orgId]
+        );
+        if (rowCount === 0) {
+          await client.query('ROLLBACK');
+          return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+        }
+        ({ jahrgangIds: betroffeneJahrgaenge } =
+          await gemeindeZugehoerigkeitRaeumen(client, userId, orgId));
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw txErr;
+      } finally {
+        client.release();
       }
 
       // Zusaetzlich zum Cache-Leeren die bestehenden Access-Tokens sperren.
@@ -1262,20 +1284,20 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       invalidateUserCache(userId);
       res.json({ message: 'Mitgliedschaft entfernt' });
 
-      // Chat-Mitgliedschaft der Org INLINE aufräumen: Ex-Mitglied fliegt aus
-      // Team-Chat und allen Jahrgangs-Chats der Org (Sync entfernt Nicht-Soll).
+      // Danach wie auf dem Weg ueber die Leitung (users.js): Sync-Merker,
+      // Team-Chat und die Jahrgaenge, deren Zuweisung ging, abgleichen, und
+      // offene Sockets trennen -- sie sitzen noch in den Raeumen dieser
+      // Gemeinde und bekaemen dort jede neue Nachricht live.
       try {
         chatSyncCache.invalidate(orgId, userId);
         await syncTeamChat(db, orgId, req.user.id);
-        const { rows: jgs } = await db.query(
-          'SELECT id FROM jahrgaenge WHERE organization_id = $1', [orgId]
-        );
-        for (const jg of jgs) {
-          await syncJahrgangChat(db, jg.id, orgId, req.user.id);
+        for (const jahrgangId of betroffeneJahrgaenge) {
+          await syncJahrgangChat(db, jahrgangId, orgId, req.user.id);
         }
       } catch (syncErr) {
         console.error('Chat-Sync nach Mitgliedschafts-Entzug fehlgeschlagen:', syncErr.message);
       }
+      liveUpdate.disconnectUserSockets(userId);
     } catch (err) {
       console.error('Database error in DELETE /organizations/:id/members/:userId:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
