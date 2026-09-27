@@ -293,7 +293,10 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
             <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-konfis-rgb), 0.08)', border: '1px solid rgba(var(--app-color-konfis-rgb), 0.2)' }}>
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <p style={{ margin: 0, fontSize: 'var(--app-text-basis)', lineHeight: '1.5', color: 'var(--app-text-konfis)' }}>
-                  Benutzername und Passwort werden automatisch generiert. Du kannst das Passwort später in der Detailansicht einsehen oder zurücksetzen.
+                  {/* Das Passwort wird gehasht gespeichert und nur im Dialog
+                      nach dem Anlegen gezeigt; die Detailansicht kann nur ein
+                      neues erzeugen (Audit Screens Leitung BF-05). */}
+                  Benutzername und Passwort werden automatisch generiert. Das Passwort wird dir nach dem Anlegen einmal angezeigt — kopiere es und gib es weiter. Einsehen lässt es sich danach nicht mehr; in der Detailansicht kannst du nur ein neues erzeugen.
                 </p>
               </IonCardContent>
             </IonCard>

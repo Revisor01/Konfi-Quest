@@ -388,6 +388,10 @@ Versionsüberschrift.
   und das Zitat einer beantworteten Nachricht. Jetzt liegen sie auf einer
   dunklen Fläche, vergebene Antworten und Rahmen heben sich ab; im Hellen
   bleibt alles wie zuvor.
+- Beim Anlegen eines Konfis versprach der Hinweis, das Passwort lasse sich
+  später einsehen. Es wird aber nur einmal angezeigt, danach lässt sich nur
+  ein neues erzeugen — das sagt der Hinweis jetzt, damit es vor dem Schließen
+  kopiert wird.
 - Wer in einer Gemeinde zur Leitung gehört, bekommt dort keine Badges mehr.
   Trug sich eine Leitung, die in einer anderen Gemeinde Konfi ist, bei einem
   Event als anwesend ein, konnte sie Konfi-Badges der eigenen Gemeinde

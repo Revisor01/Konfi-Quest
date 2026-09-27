@@ -228,6 +228,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 - **Beleg:** `KonfiModal.tsx:295` vs. `35-passwoerter.md:31-33`.
 - **Empfehlung:** Text ändern: „… Das Passwort wird dir einmal angezeigt —
   danach kannst du nur ein neues erzeugen."
+- **Status:** behoben 27.09.2026 — Am Code nachgesehen: `POST /admin/konfis` liefert `temporaryPassword` einmal, `AdminKonfisPage` zeigt es im Dialog „Einmalpasswort" mit „Kopieren"; gespeichert wird nur der bcrypt-Hash, die Detailansicht ruft allein `regenerate-password`. Der Hinweis lautet jetzt: „Benutzername und Passwort werden automatisch generiert. Das Passwort wird dir nach dem Anlegen einmal angezeigt — kopiere es und gib es weiter. Einsehen lässt es sich danach nicht mehr; in der Detailansicht kannst du nur ein neues erzeugen." Handbuch (`30-leitung.md`, `35-passwoerter.md`) sagte es schon richtig, unverändert. Test `components/konfiAnlegenPasswortHinweis.test.tsx` (4, gerendert: kein Versprechen, beschriebenes Verhalten, Verhalten im Code vorhanden, beim Bearbeiten kein Hinweis); vor dem Fix 2 rot.
 
 ### BF-06: Toter Aufruf `GET /admin/jahrgaenge/:id` vor jeder Passwortanzeige
 
