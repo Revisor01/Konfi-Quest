@@ -228,6 +228,18 @@
 #       requireAdmin und sind fuer sie ganz zu. Die darfTermin-Pruefung bleibt
 #       und wirkt jetzt fuer die Rolle "admin"; der Befund ist damit doppelt
 #       geschlossen, nicht wieder offen.
+#   L7  BEHOBEN 27.09.2026 (Audit Sicherheit BF-11). darfKonfi
+#       (utils/jahrgangsZugriff.js) las konfi_profiles ohne Gemeinde, und
+#       org_admin stieg vor jeder Pruefung mit "erlaubt" aus -- fuer jede
+#       Konfi-Kennung im System. POST /api/admin/konfis/:id/bonus-points und
+#       POST /api/admin/konfis/:id/activities liefen fuer eine Konfi einer
+#       anderen Gemeinde in ein UPDATE mit 0 Zeilen und endeten mit 500
+#       "Datenbankfehler" (es floss nichts, geschrieben wurde nichts);
+#       GET /api/admin/konfis/:id/event-points antwortete 200 [], Teamer:innen
+#       und Admins bekamen 403 statt 404. Jetzt gilt nur eine Konfi der
+#       aktiven Gemeinde (konfi_profiles.organization_id) als gefunden --
+#       sonst 404 "Konfi nicht gefunden", an allen Aufrufern von darfKonfi
+#       zugleich. Tests: tests/routes/fremdeGemeinde.test.js.
 #   P1  BEHOBEN 14.09.2026. GET /api/konfi/activity-requests/:id/photo war
 #       fuer Leitungsrollen nicht jahrgangs-gebunden - jede Leitung sah jedes
 #       offene Nachweisfoto der Organisation. Jetzt darfKonfi (view), wie an
@@ -3652,16 +3664,19 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Seit 01.09.2026: darfKonfi(view) — 404 wenn kein Konfi-Profil, 403 fuer admin/teamer ohne Zuweisung auf den Jahrgang (org_admin ausgenommen); dann WHERE ep.konfi_id = :id AND ep.organization_id = Token-Org"
+        objekt-pruefung: "Seit 01.09.2026: darfKonfi(view) — 404 wenn kein Konfi-Profil in der aktiven Gemeinde (seit 27.09.2026), 403 fuer admin/teamer ohne Zuweisung auf den Jahrgang (org_admin ausgenommen); dann WHERE ep.konfi_id = :id AND ep.organization_id = Token-Org"
         hinweis: >
           Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt:
           keiner) — gleiche Stufe wie GET /api/admin/konfis/{id}.
+          BEHOBEN 27.09.2026 (Audit Sicherheit BF-11): Eine Konfi einer
+          anderen Gemeinde ergab fuer org_admin 200 mit leerem Array, fuer
+          admin/teamer 403; jetzt 404 (siehe L7 im Kopf).
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Array von Event-Punkten (leeres Array, wenn keine)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "404": { description: "Konfi ohne Profil (seit 01.09.2026; vorher leeres Array)" }
+        "404": { description: "Konfi ohne Profil in der aktiven Gemeinde (seit 01.09.2026; vorher leeres Array. Konfi einer anderen Gemeinde seit 27.09.2026)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/admin/konfis/{id}/badges:
@@ -3738,6 +3753,11 @@ paths:
           GEAENDERT 2026-08-31: Dieselbe Grenze gilt jetzt auch fuer die Rolle
           admin (Simons Regel: ein Admin ist an seine Jahrgaenge gebunden).
           Nur org_admin/super_admin bleiben org-weit berechtigt.
+          BEHOBEN 27.09.2026 (Audit Sicherheit BF-11): Fuer eine Konfi einer
+          anderen Gemeinde endete die Route fuer org_admin mit 500
+          "Datenbankfehler" (die Grenze hielt nur das spaete UPDATE mit 0
+          Zeilen), fuer admin/teamer mit 403. Jetzt 404 "Konfi nicht
+          gefunden", bevor etwas geschrieben wird (siehe L7 im Kopf).
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -3755,7 +3775,7 @@ paths:
         "400": { description: Pflichtfelder fehlen oder Punkte-Typ fuer den Jahrgang deaktiviert }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Keine Teamer-Rolle, oder Teamer:in ohne Zugriff auf den Jahrgang der Ziel-Konfi" }
-        "404": { $ref: '#/components/responses/NotFound' }
+        "404": { description: "Konfi nicht gefunden — kein Konfi-Profil in der aktiven Gemeinde (Konfi einer anderen Gemeinde seit 27.09.2026 ebenfalls 404, vorher 500 bzw. 403)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/admin/konfis/{id}/bonus-points/{bonusId}:
@@ -3800,6 +3820,9 @@ paths:
         hinweis: >
           Anders als POST /api/admin/activities/assign-activity verlangt diese
           Route requireAdmin — Teamer:innen tragen über assign-activity nach.
+          BEHOBEN 27.09.2026 (Audit Sicherheit BF-11): Eine Konfi einer
+          anderen Gemeinde endete fuer org_admin mit 500; jetzt 404 "Konfi
+          nicht gefunden", bevor etwas geschrieben wird (siehe L7 im Kopf).
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true

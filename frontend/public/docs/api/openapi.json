@@ -6989,8 +6989,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Seit 01.09.2026: darfKonfi(view) — 404 wenn kein Konfi-Profil, 403 fuer admin/teamer ohne Zuweisung auf den Jahrgang (org_admin ausgenommen); dann WHERE ep.konfi_id = :id AND ep.organization_id = Token-Org",
-          "hinweis": "Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner) — gleiche Stufe wie GET /api/admin/konfis/{id}.\n"
+          "objekt-pruefung": "Seit 01.09.2026: darfKonfi(view) — 404 wenn kein Konfi-Profil in der aktiven Gemeinde (seit 27.09.2026), 403 fuer admin/teamer ohne Zuweisung auf den Jahrgang (org_admin ausgenommen); dann WHERE ep.konfi_id = :id AND ep.organization_id = Token-Org",
+          "hinweis": "Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner) — gleiche Stufe wie GET /api/admin/konfis/{id}. BEHOBEN 27.09.2026 (Audit Sicherheit BF-11): Eine Konfi einer anderen Gemeinde ergab fuer org_admin 200 mit leerem Array, fuer admin/teamer 403; jetzt 404 (siehe L7 im Kopf).\n"
         },
         "parameters": [
           {
@@ -7008,7 +7008,7 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "404": {
-            "description": "Konfi ohne Profil (seit 01.09.2026; vorher leeres Array)"
+            "description": "Konfi ohne Profil in der aktiven Gemeinde (seit 01.09.2026; vorher leeres Array. Konfi einer anderen Gemeinde seit 27.09.2026)"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -7125,7 +7125,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Gutschrift läuft über JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prüft den Punkte-Typ gegen den Jahrgang; zusaetzlich Jahrgangs-Zugriff auf die Ziel-Konfi fuer teamer UND admin (darfKonfi aus backend/utils/jahrgangsZugriff.js).\n",
-          "hinweis": "Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und admin (DELETE unten). Teamer:innen sind seit 27.08.2026 auf ihre zugewiesenen Jahrgaenge begrenzt (403 \"Kein Zugriff auf diesen Konfi\") — vorher fand kein Jahrgangs-Check auf die Ziel-ID statt, was zu assign-activity und zum Handbuch inkonsistent war. GEAENDERT 2026-08-31: Dieselbe Grenze gilt jetzt auch fuer die Rolle admin (Simons Regel: ein Admin ist an seine Jahrgaenge gebunden). Nur org_admin/super_admin bleiben org-weit berechtigt.\n"
+          "hinweis": "Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und admin (DELETE unten). Teamer:innen sind seit 27.08.2026 auf ihre zugewiesenen Jahrgaenge begrenzt (403 \"Kein Zugriff auf diesen Konfi\") — vorher fand kein Jahrgangs-Check auf die Ziel-ID statt, was zu assign-activity und zum Handbuch inkonsistent war. GEAENDERT 2026-08-31: Dieselbe Grenze gilt jetzt auch fuer die Rolle admin (Simons Regel: ein Admin ist an seine Jahrgaenge gebunden). Nur org_admin/super_admin bleiben org-weit berechtigt. BEHOBEN 27.09.2026 (Audit Sicherheit BF-11): Fuer eine Konfi einer anderen Gemeinde endete die Route fuer org_admin mit 500 \"Datenbankfehler\" (die Grenze hielt nur das spaete UPDATE mit 0 Zeilen), fuer admin/teamer mit 403. Jetzt 404 \"Konfi nicht gefunden\", bevor etwas geschrieben wird (siehe L7 im Kopf).\n"
         },
         "parameters": [
           {
@@ -7176,7 +7176,7 @@
             "description": "Keine Teamer-Rolle, oder Teamer:in ohne Zugriff auf den Jahrgang der Ziel-Konfi"
           },
           "404": {
-            "$ref": "#/components/responses/NotFound"
+            "description": "Konfi nicht gefunden — kein Konfi-Profil in der aktiven Gemeinde (Konfi einer anderen Gemeinde seit 27.09.2026 ebenfalls 404, vorher 500 bzw. 403)"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -7256,7 +7256,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Aktivität muss zur eigenen Organisation gehören; bei Konfi-Aktivitäten seit 01.09.2026 darfKonfi(view) — 404/403 wie assign-activity (Teamer-Aktivitaeten ausgenommen: Teamer:innen sieht ein Admin alle); checkPointTypeEnabled bei Konfi-Aktivitäten",
-          "hinweis": "Anders als POST /api/admin/activities/assign-activity verlangt diese Route requireAdmin — Teamer:innen tragen über assign-activity nach.\n"
+          "hinweis": "Anders als POST /api/admin/activities/assign-activity verlangt diese Route requireAdmin — Teamer:innen tragen über assign-activity nach. BEHOBEN 27.09.2026 (Audit Sicherheit BF-11): Eine Konfi einer anderen Gemeinde endete fuer org_admin mit 500; jetzt 404 \"Konfi nicht gefunden\", bevor etwas geschrieben wird (siehe L7 im Kopf).\n"
         },
         "parameters": [
           {

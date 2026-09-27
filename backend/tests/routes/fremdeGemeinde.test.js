@@ -686,4 +686,156 @@ describe('Fremde Gemeinde: Org-2-Token gegen Objekte aus Org 1', () => {
       expect(rows).toHaveLength(0);
     });
   });
+
+  // ==================================================================
+  // Sicherheit BF-11 (Audit 26.09.2026): darfKonfi kannte die Gemeinde nicht.
+  //
+  // Die Leitung (org_admin) stieg vor jeder Pruefung mit "erlaubt" aus -- fuer
+  // JEDE Konfi-Kennung im System. Die Grenze hielt dann nur noch ein spaetes
+  // UPDATE mit `u.organization_id = $3`: 0 Zeilen -> throw -> ROLLBACK -> 500
+  // "Datenbankfehler" und ein Stacktrace im Log. Reine Lese-Routen wie die
+  // Event-Punkte antworteten 200 mit leerer Liste, als gaebe es die Konfi.
+  //
+  // Hier von der anderen Seite: Token aus Org 1 gegen die Konfi aus Org 2
+  // (konfi3 = 6) -- die Richtung, in der der Bericht es nachgemessen hat.
+  // ==================================================================
+  describe('Konfi einer fremden Gemeinde an den Routen mit darfKonfi (Sicherheit BF-11)', () => {
+    const FREMDE_KONFI = USERS.konfi3.id; // Org 2
+
+    async function stand(konfiId) {
+      const { rows: [p] } = await db.query(
+        'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1',
+        [konfiId]
+      );
+      const { rows: [b] } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM bonus_points WHERE konfi_id = $1', [konfiId]
+      );
+      const { rows: [a] } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM user_activities WHERE user_id = $1', [konfiId]
+      );
+      return { punkte: [Number(p.gottesdienst_points), Number(p.gemeinde_points)], bonus: b.anzahl, aktivitaeten: a.anzahl };
+    }
+
+    it('Bonuspunkte: Org-Admin aus Org 1 -> 404 statt 500, nichts geschrieben', async () => {
+      const vorher = await stand(FREMDE_KONFI);
+
+      const res = await request(app)
+        .post(`/api/admin/konfis/${FREMDE_KONFI}/bonus-points`)
+        .set('Authorization', `Bearer ${t.orgAdmin1}`)
+        .send({ points: 5, type: 'gemeinde', description: 'Fremde Gemeinde' });
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Konfi nicht gefunden' });
+
+      expect(await stand(FREMDE_KONFI)).toEqual(vorher);
+      expect(vorher.bonus).toBe(0);
+    });
+
+    it('Bonuspunkte: Teamer:in aus Org 1 -> 404 (nicht 403: die Kennung verraet nicht, dass es die Konfi gibt)', async () => {
+      const res = await request(app)
+        .post(`/api/admin/konfis/${FREMDE_KONFI}/bonus-points`)
+        .set('Authorization', `Bearer ${t.teamer1}`)
+        .send({ points: 5, type: 'gemeinde', description: 'Fremde Gemeinde' });
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Konfi nicht gefunden' });
+      expect((await stand(FREMDE_KONFI)).bonus).toBe(0);
+    });
+
+    it('Aktivitaet nachtragen: Org-Admin aus Org 1 -> 404 statt 500, kein Eintrag', async () => {
+      const vorher = await stand(FREMDE_KONFI);
+
+      const res = await request(app)
+        .post(`/api/admin/konfis/${FREMDE_KONFI}/activities`)
+        .set('Authorization', `Bearer ${t.orgAdmin1}`)
+        .send({ activity_id: 1, completed_date: '2026-09-01' }); // Aktivitaet aus Org 1
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Konfi nicht gefunden' });
+
+      expect(await stand(FREMDE_KONFI)).toEqual(vorher);
+      expect(vorher.aktivitaeten).toBe(0);
+    });
+
+    it('Event-Punkte: Org-Admin aus Org 1 -> 404 statt 200 mit leerer Liste', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${FREMDE_KONFI}/event-points`)
+        .set('Authorization', `Bearer ${t.orgAdmin1}`);
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Konfi nicht gefunden' });
+    });
+
+    it('eigene Gemeinde: Org-Admin aus Org 1 vergibt Bonuspunkte an Konfi aus Org 1 -> 201, gutgeschrieben', async () => {
+      const vorher = await stand(USERS.konfi1.id);
+
+      const res = await request(app)
+        .post(`/api/admin/konfis/${USERS.konfi1.id}/bonus-points`)
+        .set('Authorization', `Bearer ${t.orgAdmin1}`)
+        .send({ points: 4, type: 'gemeinde', description: 'Eigene Gemeinde' });
+      expect(res.status).toBe(201);
+
+      const nachher = await stand(USERS.konfi1.id);
+      expect(nachher.punkte).toEqual([vorher.punkte[0], vorher.punkte[1] + 4]);
+      // seed.js legt fuer konfi1 schon einen Bonus an ("Sonderpunkte Weihnachten").
+      expect(nachher.bonus).toBe(vorher.bonus + 1);
+    });
+
+    it('eigene Gemeinde: Org-Admin aus Org 2 vergibt Bonuspunkte an Konfi aus Org 2 -> 201, gutgeschrieben', async () => {
+      const res = await request(app)
+        .post(`/api/admin/konfis/${FREMDE_KONFI}/bonus-points`)
+        .set('Authorization', `Bearer ${t.orgAdmin2}`)
+        .send({ points: 2, type: 'gottesdienst', description: 'Eigene Gemeinde' });
+      expect(res.status).toBe(201);
+
+      const nachher = await stand(FREMDE_KONFI);
+      expect(nachher.punkte).toEqual([2, 0]);
+      expect(nachher.bonus).toBe(1);
+    });
+
+    it('eigene Gemeinde: Org-Admin aus Org 1 liest die Event-Punkte von Konfi aus Org 1 -> 200', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.konfi1.id}/event-points`)
+        .set('Authorization', `Bearer ${t.orgAdmin1}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    // Welche Gemeinde zaehlt? Die des Konfi-Profils (konfi_profiles.
+    // organization_id), nicht users.organization_id: Wer am Konto in Org 1
+    // zuhause ist und ueber user_organizations in Org 2 Konfi ist, hat sein
+    // Profil in Org 2 (siehe konfiInZweitgemeinde.test.js).
+    describe('Konfi in der Zweitgemeinde', () => {
+      const DOPPEL = 271;
+
+      beforeEach(async () => {
+        await db.query(
+          `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active)
+           VALUES ($1, 'bf11-doppel', 'x', 'Doppel Konfi', $2, 1, true)`,
+          [DOPPEL, ROLES.orgAdmin.id]
+        );
+        await db.query(
+          'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, 2, $2)',
+          [DOPPEL, ROLES.konfi2.id]
+        );
+        await db.query(
+          `INSERT INTO konfi_profiles (user_id, organization_id, jahrgang_id, gottesdienst_points, gemeinde_points)
+           VALUES ($1, 2, $2, 0, 0)`,
+          [DOPPEL, JAHRGAENGE.jahrgang2.id]
+        );
+      });
+
+      it('Org-Admin aus Org 2 erreicht sie -> 200', async () => {
+        const res = await request(app)
+          .get(`/api/admin/konfis/${DOPPEL}/event-points`)
+          .set('Authorization', `Bearer ${t.orgAdmin2}`);
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual([]);
+      });
+
+      it('Org-Admin aus Org 1 (Stamm-Gemeinde des Kontos) erreicht sie nicht -> 404', async () => {
+        const res = await request(app)
+          .get(`/api/admin/konfis/${DOPPEL}/event-points`)
+          .set('Authorization', `Bearer ${t.orgAdmin1}`);
+        expect(res.status).toBe(404);
+        expect(res.body).toEqual({ error: 'Konfi nicht gefunden' });
+      });
+    });
+  });
 });

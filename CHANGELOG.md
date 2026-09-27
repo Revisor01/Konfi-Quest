@@ -971,6 +971,19 @@ Versionsüberschrift.
   Prüfungen, die auch eine falsche Antwort durchgehen ließen, erwarten jetzt
   den genauen Wert, etwa einen bestimmten Fehlerstatus statt „irgendein
   Fehler"; weitere weiche Prüfungen gibt es noch.
+- Die Code-Regeln werden bei jeder Änderung geprüft, nicht mehr nur bei
+  Pull Requests; der Altbestand an Regelverstößen ist abgebaut.
+- Chat-Nachrichten, Räume und Konten lassen sich auch bei sehr vielen
+  gespeicherten Nachrichten zügig löschen. Bisher konnte „Team-Chat leeren",
+  das Löschen eines Termins mit Termin-Chat oder eines Kontos bei großen
+  Nachrichtenmengen in einen Zeitüberschreitungsfehler laufen.
+- Die Tests prüfen jetzt für jede geschützte Route, dass eine fremde Gemeinde
+  nichts sieht und nichts ändert, und erwarten überall den genauen Wert statt
+  „irgendein Fehler".
+- Wer über die Schnittstelle Bonuspunkte, eine Aktivität oder Event-Punkte für
+  eine Konfi einer anderen Gemeinde anfragt, bekommt „Konfi nicht gefunden"
+  statt eines Serverfehlers. Die Prüfung steht jetzt vor jedem Konfi-Zugriff
+  der Leitung und des Teams, nicht erst beim Speichern.
 - Das Handbuch beschreibt den Wechsel der E-Mail-Adresse, die Challenge-Rechte
   des Teams, die Beförderung zur Teamer:in und den Gemeinde-Umschalter so, wie
   die App sich verhält.

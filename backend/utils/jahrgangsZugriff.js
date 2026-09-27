@@ -91,17 +91,33 @@ function darfJahrgang(req, jahrgangId, { edit = false } = {}) {
  * Unterscheidet bewusst zwischen "Konfi gibt es nicht" und "kein Zugriff",
  * damit die Aufrufer weiterhin 404 bzw. 403 senden koennen wie bisher.
  *
+ * NUR KONFIS DER AKTIVEN GEMEINDE (27.09.2026, Audit Sicherheit BF-11): Eine
+ * Konfi einer anderen Gemeinde gilt als nicht gefunden. Vorher las die
+ * Abfrage konfi_profiles ohne Gemeinde, und die Leitung (org_admin) stieg in
+ * darfJahrgang vor jeder Pruefung mit "erlaubt" aus -- fuer JEDE Konfi im
+ * System. Die Grenze hielt dann nur noch, wo die Route spaeter selbst nach
+ * der Gemeinde filterte: Bonuspunkte und nachgetragene Aktivitaeten liefen
+ * in ein UPDATE mit 0 Zeilen und endeten mit 500, die Event-Punkte
+ * antworteten 200 mit leerer Liste. Jetzt greift die Grenze an allen
+ * Aufrufern zugleich.
+ *
+ * Die Gemeinde der Konfi steht in konfi_profiles.organization_id -- nicht in
+ * users.organization_id: Wer am Konto in Gemeinde A zuhause ist und ueber
+ * user_organizations in Gemeinde B Konfi ist, hat sein Profil in B
+ * (konfi_profiles.user_id ist eindeutig, eine Person hat genau ein Profil).
+ *
  * @param {object} db             Pool oder Client (muss .query haben).
- * @param {object} req
+ * @param {object} req            req.user.organization_id = aktive Gemeinde.
  * @param {number|string} konfiId
  * @param {object} [optionen]
  * @param {boolean} [optionen.edit=false]
  * @returns {Promise<{gefunden: boolean, erlaubt: boolean, jahrgangId: number|null}>}
  */
 async function darfKonfi(db, req, konfiId, { edit = false } = {}) {
+  const organisation = req && req.user ? req.user.organization_id : null;
   const { rows: [profil] } = await db.query(
-    'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
-    [konfiId]
+    'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1 AND organization_id = $2',
+    [konfiId, organisation]
   );
 
   if (!profil) return { gefunden: false, erlaubt: false, jahrgangId: null };
