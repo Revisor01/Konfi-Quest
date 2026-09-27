@@ -1,6 +1,6 @@
 # Behebungsbericht zum Release-Audit 2.3.0
 
-Stand 27.09.2026, 08:30 UTC. Was seit der Gesamtabnahme vom 26.09. behoben wurde, was offen
+Stand 27.09.2026, 11:30 UTC. Was seit der Gesamtabnahme vom 26.09. behoben wurde, was offen
 bleibt und was bei Simon liegt. Jeder Punkt steht als Commit auf `claude/fervent-edison-wp5yfj`;
 die Berichte je Bereich tragen an jedem Befund eine Status-Zeile mit Datum. Die Regeln für jede
 Behebung standen im gemeinsamen Auftrag der Pakete: Test für den verbotenen und den erlaubten
@@ -90,6 +90,12 @@ den Dev-Server eines anderen beendet — folgenlos, der Lauf wurde wiederholt.
 - **Gerätebefund vom 27.09.:** Am Gemeinde-Umschalter zählte jede ungelesene Mitteilung so oft,
   wie die Person Gemeinden mit derselben Rolle hat. Ein Challenge-Beitrag mit Freigabe ergab dort
   3 statt 2. Jetzt zählt jede Mitteilung einmal, bei ihrer Gemeinde (`11354452`).
+- **Entscheidungen vom 27.09. zu Challenges:** Leitung und Team sehen neue Beiträge wie im Chat,
+  als rote Zahl am Reiter und an der Challenge bis zum Öffnen, auch ohne Freigabe; wartende
+  Freigaben bleiben das orange Feld, nichts zählt doppelt (`82220504`, Migration 168). Admins
+  sehen, zählen und bekommen Mitteilungen zu jeder Challenge, bei der das Team mitmacht, bei
+  reinen Konfi-Challenges nur mit Jahrgang; Teamer:innen bekommen die Mitteilung auch bei
+  Challenges nur fürs Team, niemand über den eigenen Beitrag (`62cb6b3c`).
 
 ### Chat, Push und Skalierung (eine Datenbank, Gemeinden bis 150 Teilnehmende)
 
@@ -178,12 +184,9 @@ Release 2.3.0; die Gesamtabnahme führt es unter „Vor EKD-Ausrollung" und „D
   Handbuch hängen daran (Doku BF-17).
 - Handbuch-Kapitel „Für den Betrieb" (Super-Admin, Gemeinde anlegen, Testphase) — was davon
   Gemeinden lesen sollen (Doku BF-16).
-- Challenges ohne Freigabe: Die Leitung bekommt zu jedem Beitrag eine Mitteilung, Reiter und
-  Challenge zeigen aber keine Zahl, weil dort nur wartende Freigaben zählen. Ob neue Beiträge
-  auch dort zählen sollen, ist offen.
-- Mitteilungen an die Leitung (neue Anträge, Challenge-Beiträge, Registrierungen und weitere)
-  gehen an alle Admins der Gemeinde, auch an solche, die an Jahrgänge gebunden sind und den
-  Vorgang in ihren Listen nicht sehen. Reiter und Listen beachten die Bindung schon.
+- Mitteilungen an die Leitung außerhalb der Challenges (neue Anträge, Registrierungen, Termine
+  und weitere) gehen weiter an alle Admins der Gemeinde, auch an jahrgangsgebundene, die den
+  Vorgang in ihren Listen nicht sehen. Für Challenges ist das am 27.09. entschieden und umgesetzt.
 - Wer eine Person löscht, die in der eigenen Gemeinde zuhause ist, löscht ihr Konto — und damit
   auch ihre Mitgliedschaften in anderen Gemeinden. Eine Warnung dazu gibt es nicht.
 
