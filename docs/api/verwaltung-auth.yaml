@@ -1742,6 +1742,11 @@ paths:
         externe Ueberwachung (Traefik verteilt den Aufruf zufaellig).
         `fehlt` heisst: niemand faehrt Erinnerungen, Auto-Loeschung,
         Token-Bereinigung, APM-Schnappschuesse. Der HTTP-Status bleibt 200.
+
+        VERSION (27.09.2026, Sammelbefund S-13, unveraendertes Feld): `version`
+        ist die App-Version aus backend/package.json, die `npm run
+        version:setzen` mit frontend/version.json (der einen Quelle)
+        gleichzieht -- vorher stand hier 1.0.1 auf einem 2.3.0-System.
       security: []
       responses:
         "200": { description: "status, version, commit, uptimeSeconds, cron_leader, checks.database, checks.migrations, checks.cron_leader, migrationen{gesamt, neu, fehlgeschlagen[]}, responseTimeMs" }

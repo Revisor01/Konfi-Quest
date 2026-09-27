@@ -33,8 +33,11 @@ Nicht nachträglich, nicht beim Release — im selben Commit wie die Änderung.
 **CHANGELOG.md**, wenn die Änderung Nutzer:innen betrifft. Format Keep a
 Changelog (Hinzugefügt / Geändert / Behoben / Sonstiges), ein knapper Satz pro
 Punkt aus Nutzersicht. Niemals Build-Nummern, Framework-Namen, Dateinamen oder
-Commit-Hashes — das gehört in die Commit-Message. Reine Interna (Refactoring,
-Tests, CI) höchstens unter „Sonstiges".
+Commit-Hashes in den Einträgen — das gehört in die Commit-Message. Die einzige
+Stelle für Build-Nummern ist die Zeile direkt unter der Versionsüberschrift
+(`iOS-Build 206 · Android versionCode 113`), die beim Release aus
+`frontend/version.json` geschrieben wird. Reine Interna (Refactoring, Tests, CI)
+höchstens unter „Sonstiges".
 
 **Das Handbuch** (`docs/handbuch/`), wenn sich das Verhalten ändert. Eine
 Verhaltensänderung ohne Handbuch-Eintrag ist unvollständig.
@@ -93,6 +96,32 @@ Compose-Projekt *und* Port — nicht die Worker-Zahl anheben.
   `psql`.
 
 Im Zweifel nachsehen, wie es im Repo bisher gemacht wurde, und das fortführen.
+
+## Versionsnummern
+
+**`frontend/version.json` ist die eine Quelle** — App-Version (Semantic
+Versioning), Android `versionCode`, iOS Build-Nummer. Alles andere folgt ihr:
+
+- Die drei `package.json` (Wurzel, `frontend/`, `backend/`) und ihre Lockfiles
+  tragen dieselbe App-Version; `GET /api/status` meldet sie deshalb als `version`.
+- Die erste Versionsüberschrift im CHANGELOG nennt dieselbe Version
+  (`## [Unreleased] - 2.3.0` vor dem Release, `## [2.3.0] - Datum` danach).
+- iOS (`MARKETING_VERSION`, Info.plist) und Android (`build.gradle`) lesen sie
+  beim Store-Build; `MARKETING_VERSION` steht zusätzlich im Repo auf dem Stand.
+
+**Anheben nur mit `npm run version:setzen -- 2.4.0 [--android 125 --ios 231]`**
+aus der Wurzel — nie von Hand in einer einzelnen Datei. `npm run version:pruefen`
+und der Test `versionsnummernEineQuelle` schlagen bei jeder Abweichung an.
+
+Welche Stelle steigt: **PATCH** für Fehlerbehebungen ohne neue Funktion,
+**MINOR** für neue Funktionen (auch mit additiven API-Feldern oder Migrationen),
+**MAJOR** nur, wenn eine ausgelieferte App brechen würde — was nach der Regel
+oben nicht vorkommt. Die Store-Build-Nummern steigen mit jedem Store-Upload um
+eins, unabhängig von der App-Version. Git-Tags tragen die App-Version ohne `v`.
+
+*Konkret passiert (bis 27.09.2026): Wurzel 2.9.0, `frontend/` 0.0.1, `backend/`
+1.0.1 und `version.json` 2.3.0 standen nebeneinander; `/api/status` meldete 1.0.1
+auf einem 2.3.0-System.*
 
 ## Handbuch-Stil
 

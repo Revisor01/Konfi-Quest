@@ -289,6 +289,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-09: Versionsstände widersprechen sich; ein Store-Build ist nicht sicher einem Commit zuzuordnen
 - **Schwere:** MITTEL
+- **Status:** teilweise behoben 27.09.2026 — Versionsstände: `scripts/version-setzen.mjs` (`npm run version:setzen`/`version:pruefen`) zieht die drei `package.json` samt Lockfiles und `MARKETING_VERSION` an `frontend/version.json` heran, gemessen 9 Abweichungen → 0; `/api/status` meldet 2.3.0 statt 1.0.1; Test `versionsnummernEineQuelle` (Frontend) und Assertion in `statusBetrieb.test.js`; Regel in CLAUDE.md „Versionsnummern". **Offen:** Git-Tag je Store-Upload im Release-Workflow und das Zurückcommitten von Info.plist (220) — Workflow-Änderung.
 - **Fundstelle:** `frontend/version.json` (2.3.0 / Android 124 / iOS 230 — Quelle der Wahrheit),
   `frontend/ios/App/App/Info.plist:19-22` (2.3.0 / **220**), `project.pbxproj:400,410,436,447`
   (**218** / 2.3.0), `package.json:3` (2.9.0), `backend/package.json:3` (1.0.1 → `/api/status` meldet

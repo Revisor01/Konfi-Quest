@@ -77,6 +77,11 @@ describe('GET /api/status als Betriebsanzeige', () => {
 
       expect(res.body.status).toBe('OK');
       expect(typeof res.body.version).toBe('string');
+      // Die App-Version, nicht eine interne Paketnummer: backend/package.json folgt
+      // frontend/version.json (CLAUDE.md, Abschnitt Versionsnummern; bis 27.09.2026
+      // stand hier 1.0.1 auf einem 2.3.0-System, Audit S-13).
+      const quelle = require('../../../frontend/version.json');
+      expect(res.body.version).toBe(quelle.version);
       expect(typeof res.body.commit).toBe('string');
       expect(typeof res.body.uptimeSeconds).toBe('number');
       expect(typeof res.body.responseTimeMs).toBe('number');

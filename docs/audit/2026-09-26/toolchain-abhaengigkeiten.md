@@ -283,6 +283,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-10: Abhängigkeits-Hygiene — undeklarierte Importe, tote Einträge, wirkungslose Overrides, bedeutungslose Versionsnummern
 - **Schwere:** NIEDRIG
+- **Status:** teilweise behoben 27.09.2026 — der Teil Versionsnummern: die drei `package.json` tragen die App-Version aus `frontend/version.json` (2.3.0), gesetzt und geprüft über `npm run version:setzen`/`version:pruefen`, Test `versionsnummernEineQuelle`. Undeklarierte Importe, tote Einträge und `overrides` bleiben offen (kein Paket).
 - **Fundstelle:** `backend/routes/auth.js:7`; `frontend/src/components/chat/useChatVerwaltung.ts`,
   `frontend/src/components/konfi/views/EventDetailView.tsx`, `frontend/src/contexts/ModalContext.tsx`
   (Import `@ionic/core`); `frontend/package.json:25,33,38` (`@types/qrcode` in `dependencies`,
