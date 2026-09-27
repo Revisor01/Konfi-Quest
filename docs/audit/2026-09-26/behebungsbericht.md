@@ -1,6 +1,6 @@
 # Behebungsbericht zum Release-Audit 2.3.0
 
-Stand 27.09.2026, 06:45 UTC. Was seit der Gesamtabnahme vom 26.09. behoben wurde, was offen
+Stand 27.09.2026, 08:30 UTC. Was seit der Gesamtabnahme vom 26.09. behoben wurde, was offen
 bleibt und was bei Simon liegt. Jeder Punkt steht als Commit auf `claude/fervent-edison-wp5yfj`;
 die Berichte je Bereich tragen an jedem Befund eine Status-Zeile mit Datum. Die Regeln für jede
 Behebung standen im gemeinsamen Auftrag der Pakete: Test für den verbotenen und den erlaubten
@@ -87,6 +87,9 @@ den Dev-Server eines anderen beendet — folgenlos, der Lauf wurde wiederholt.
   Zusatz-Gemeinden; jetzt beide Quellen, Store-Apps profitieren mit (`b9b58257`). Die
   Einladungskarte der Leitung stand auf „Mehr", Push und Postfach führten ins Profil; jetzt bei
   allen Rollen im Profil (`42943efe`).
+- **Gerätebefund vom 27.09.:** Am Gemeinde-Umschalter zählte jede ungelesene Mitteilung so oft,
+  wie die Person Gemeinden mit derselben Rolle hat. Ein Challenge-Beitrag mit Freigabe ergab dort
+  3 statt 2. Jetzt zählt jede Mitteilung einmal, bei ihrer Gemeinde (`11354452`).
 
 ### Chat, Push und Skalierung (eine Datenbank, Gemeinden bis 150 Teilnehmende)
 
@@ -175,6 +178,14 @@ Release 2.3.0; die Gesamtabnahme führt es unter „Vor EKD-Ausrollung" und „D
   Handbuch hängen daran (Doku BF-17).
 - Handbuch-Kapitel „Für den Betrieb" (Super-Admin, Gemeinde anlegen, Testphase) — was davon
   Gemeinden lesen sollen (Doku BF-16).
+- Challenges ohne Freigabe: Die Leitung bekommt zu jedem Beitrag eine Mitteilung, Reiter und
+  Challenge zeigen aber keine Zahl, weil dort nur wartende Freigaben zählen. Ob neue Beiträge
+  auch dort zählen sollen, ist offen.
+- Mitteilungen an die Leitung (neue Anträge, Challenge-Beiträge, Registrierungen und weitere)
+  gehen an alle Admins der Gemeinde, auch an solche, die an Jahrgänge gebunden sind und den
+  Vorgang in ihren Listen nicht sehen. Reiter und Listen beachten die Bindung schon.
+- Wer eine Person löscht, die in der eigenen Gemeinde zuhause ist, löscht ihr Konto — und damit
+  auch ihre Mitgliedschaften in anderen Gemeinden. Eine Warnung dazu gibt es nicht.
 
 **Barrierefreiheit, nicht Teil eines Pakets:** Datumsformate und Dynamic Type (UI BF-07, BF-14);
 die 92 per Hook geöffneten Modale ohne Namen (nur je Aufruf lösbar); `UpdateHinweisKarte` mit
