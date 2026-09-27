@@ -72,8 +72,11 @@ Zwei Ausnahmen: Events mit der Zielgruppe **„Nur Team"** und Events **ohne
 jeden Jahrgang** sind für alle Teamer:innen der Gemeinde offen — die einen
 betreffen keinen Jahrgang, die anderen gelten der ganzen Gemeinde.
 
-Für Admins gilt dieselbe Bindung, für org_admin und super_admin nicht. Was
-die Jahrgangs-Zuweisung sonst noch steuert, steht unter
+Für Admins gilt dieselbe Bindung, für org_admin und super_admin nicht — auch
+bei den Meldungen: Wer ein Event nicht sieht, erfährt nichts von Abmeldungen
+und Zusagen dazu und zählt es nicht unter „Verbuchen"
+([Nachsehen, wer von Abmeldungen und Zusagen erfährt](#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)).
+Was die Jahrgangs-Zuweisung sonst noch steuert, steht unter
 [Jahrgänge](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert).
 
 ### Kategorien und Jahrgänge zuordnen
@@ -168,8 +171,10 @@ Konfis können sich abmelden, aber nur **mit Begründung**, und die muss
 **mindestens 5 Zeichen** lang sein — sonst kommt „Begründung muss mindestens
 5 Zeichen haben".
 
-Danach steht die Anmeldung auf „abgemeldet", du bekommst einen Push mit Namen,
-Event und Begründung, und beim Konfi steht „Du hast dich abgemeldet". Über
+Danach steht die Anmeldung auf „abgemeldet", die Leitung des Events bekommt
+einen Push mit Namen, Event und Begründung (wer genau:
+[Nachsehen, wer von Abmeldungen und Zusagen erfährt](#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)),
+und beim Konfi steht „Du hast dich abgemeldet". Über
 den Knopf **„Wieder anmelden"** geht es zurück; die ursprüngliche Begründung
 bleibt gespeichert. Beides geht nur, solange das Event in der Zukunft liegt.
 
@@ -1094,6 +1099,35 @@ Eine Mitteilung geht außerdem raus, wenn du jemanden
 [austrägst oder auf die Warteliste setzt](#teilnehmende-austragen-oder-auf-die-warteliste-setzen)
 und wenn jemand
 [von der Warteliste nachrückt](#nachvollziehen-wann-jemand-nachrueckt).
+
+### Nachsehen, wer von Abmeldungen und Zusagen erfährt
+
+Meldet sich eine Konfi von einem Event ab — freiwillig oder mit Begründung
+[von einem Pflicht-Event](#eine-abmeldung-vom-pflicht-event-entgegennehmen) —,
+meldet sie sich wieder an, oder sagt jemand aus dem Team zu oder ab, kommt
+das als Push und im
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) an. Die
+Meldung trägt Namen und Grund, deshalb bekommen sie genau die, die das Event
+in ihrer Liste sehen:
+
+- **Die Gemeindeleitung** (Org-Admins) bekommt die Meldungen zu jedem Event
+  der Gemeinde.
+- **Admins** bekommen die Meldungen zu Events
+  [ihrer Jahrgänge](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert).
+  Gilt ein Event für mehrere Jahrgänge, genügt einer davon.
+- **Events „Nur Team" und Events ohne Jahrgang** gelten der ganzen Gemeinde:
+  Ihre Meldungen bekommen alle Admins, auch ohne Jahrgang.
+- **Teamer:innen** bekommen keine Meldungen über die Abmeldungen und Zusagen
+  anderer.
+- **Wer selbst zu- oder absagt**, bekommt darüber keine Meldung — auch nicht
+  als Leitung.
+
+**„Events warten auf Verbuchung"** kommt jeden Morgen um 9 Uhr, solange
+etwas offen ist. Die Zahl darin ist die Zahl an deinem Reiter „Verbuchen":
+Gezählt werden nur Events, die du siehst, und zwar ab ihrem Beginn. Steht bei
+dir nichts offen, kommt keine Erinnerung. Wer in mehreren Gemeinden
+mitarbeitet, bekommt je Gemeinde eine eigene Erinnerung mit der Zahl dieser
+Gemeinde — nach der Rolle und den Jahrgängen, die er dort hat.
 
 ## Einen Event-Chat einrichten
 

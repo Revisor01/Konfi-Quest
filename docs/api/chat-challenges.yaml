@@ -1862,6 +1862,17 @@ paths:
         sind unveraendert; neu ist, dass ein Admin fuer einen Antrag, den
         dieser Zaehler nicht zaehlt, auch keine Postfach-Mitteilung mehr
         bekommt (die sonst in postfach.ungelesen mitzaehlte).
+        BEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-11): pendingEvents
+        zaehlte fuer gebundene Admins "Team gesucht"-Events (teamer_needed)
+        fremder Jahrgaenge mit -- die Eventliste hatte diesen
+        Sichtbarkeitsgrund am 08.09.2026 gestrichen, die Zahl stand vor einem
+        Event, das sich weder finden noch oeffnen liess. Jetzt zaehlt
+        pendingEvents ueber die gemeinsame Regel in
+        backend/utils/terminLeitungSicht.js, dieselbe wie GET /api/events,
+        die Zahl am App-Symbol und die Erinnerung "Events warten auf
+        Verbuchung" (die seitdem jeder Person genau diese Zahl nennt,
+        BF-10). Buchungen geloeschter Konten zaehlen dabei wie in der Liste
+        nicht mehr mit. Antwortform unveraendert.
         Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen —
         vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter,
         bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie

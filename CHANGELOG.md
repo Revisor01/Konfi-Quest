@@ -271,6 +271,19 @@ Versionsüberschrift.
   jeder Admin jeden Antrag gemeldet — samt Zahl an Glocke und App-Symbol —,
   auch wenn er ihn gar nicht öffnen konnte. Wer selbst eine Aktivität meldet,
   bekommt über den eigenen Antrag keine Mitteilung mehr.
+- Abmeldungen von Konfis, Ab- und Wieder-Anmeldungen bei Pflicht-Events und
+  Zu- oder Absagen des Teams melden sich nur noch bei der Leitung, die das
+  Event in ihrer Liste sieht: bei der Gemeindeleitung immer, bei Admins nur
+  für Events ihrer Jahrgänge; Events „Nur Team" und Events ohne Jahrgang
+  weiterhin bei allen Admins. Bisher bekam jeder Admin jede dieser Meldungen
+  samt Namen und Grund, auch zu Events, die er nicht öffnen konnte. Wer selbst
+  zu- oder absagt, bekommt darüber keine Meldung mehr, und eine Abmeldung, die
+  nicht über die App kam, meldet sich wie jede andere.
+- „Events warten auf Verbuchung" nennt jeder Person die Zahl, die ihr Reiter
+  „Verbuchen" zeigt, statt der Zahl der ganzen Gemeinde; wer nichts zu
+  verbuchen hat, bekommt keine Erinnerung. Reiter und App-Symbol zählen
+  „Team gesucht"-Events fremder Jahrgänge nicht mehr mit — sie ließen sich
+  dort weder finden noch verbuchen.
 - Mitteilungen zu Challenge-Beiträgen bekommt nur noch, wer den Jahrgang auch
   ansehen darf; eine Zuweisung ohne Leserecht reicht dafür nicht mehr.
 - Die App spricht überall dieselbe Sprache: Was man besucht, sammelt und

@@ -17,6 +17,9 @@ const { heuteBerlin } = require('../utils/zeitformat');
 // Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
 // ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
 const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
+// Empfaenger der Zu- und Absage-Meldungen: die Leitung, die das Event sieht
+// (27.09.2026, Regel in utils/terminLeitungSicht.js).
+const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 
@@ -1218,22 +1221,29 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Konfi-Typen event_unregistration/event_opt_out: Deren Texte und
         // data-Felder (konfi_name) sind auf Konfis zugeschnitten, und die
         // Leitungs-App behandelt Teamer-Meldungen ueber die eigenen Typen.
-        try {
+        //
+        // EMPFAENGER (27.09.2026): die Leitung, die das Event sieht
+        // (utils/terminLeitungSicht.js) -- Org-Admins immer, Admins bei
+        // Jahrgangs-Events nur mit Zuweisung, bei "Nur Team" und Events ohne
+        // Jahrgang alle. Vorher jeder Admin der Gemeinde (BF-01). Die
+        // zusagende Person selbst nie: Die Route steht hinter requireTeamer,
+        // auch die Leitung sagt hier zu. Ueber nachAntwort, damit Tests darauf
+        // warten koennen.
+        const grund = typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null;
+        nachAntwort(req, async () => {
+          const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: req.user.id });
           if (dabei) {
-            await PushService.sendTeamerEventBookingToAdmins(
-              db, req.user.organization_id, req.user.display_name,
+            await PushService.sendTeamerEventBookingToLeadership(
+              db, req.user.organization_id, empfaenger, req.user.display_name,
               ergebnis.event.name, ergebnis.status, eventId
             );
           } else {
-            await PushService.sendTeamerEventCancellationToAdmins(
-              db, req.user.organization_id, req.user.display_name,
-              ergebnis.event.name, eventId,
-              typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null
+            await PushService.sendTeamerEventCancellationToLeadership(
+              db, req.user.organization_id, empfaenger, req.user.display_name,
+              ergebnis.event.name, eventId, grund
             );
           }
-        } catch (pushErr) {
-          console.error('Push nach Teamer-Zusage/-Absage:', pushErr);
-        }
+        }, 'Push nach Teamer-Zusage/-Absage');
 
         // Ist nach einer Absage jemand von der Team-Warteliste nachgerueckt,
         // erfaehrt er das per Push — wie beim Storno-Weg.

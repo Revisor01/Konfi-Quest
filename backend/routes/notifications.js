@@ -6,6 +6,7 @@ const { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge 
 const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
 const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
+const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('../utils/terminLeitungSicht');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -206,33 +207,30 @@ module.exports = (db, verifyTokenRBAC) => {
       // Jahrgangs-Bindung. `IS NOT TRUE` statt `= FALSE`, weil die Spalte
       // nullable ist: Termine aus dem Altbestand haben dort NULL und sind
       // damit nicht abgesagt.
+      //
+      // Seit 27.09.2026 ueber die gemeinsame Regel (utils/terminLeitungSicht.js):
+      // dieselbe Fassung filtert die Eventliste, zaehlt am App-Symbol und
+      // nennt jeder Person in der Verbuchen-Erinnerung um 09:00 genau diese
+      // Zahl. Dabei zwei Korrekturen an der Zahl selbst: "Team gesucht"
+      // (teamer_needed) zaehlt nicht mehr als Sichtbarkeitsgrund -- die Liste
+      // hat ihn am 08.09.2026 gestrichen, hier stand ein fremdes Event als
+      // rote Zahl, das sich nicht oeffnen liess (Audit wer-bekommt-was,
+      // BF-11). Und Buchungen geloeschter Konten zaehlen nicht mehr, wie in
+      // der Liste (utils/buchungszahlen.js).
       let eventsPromise = zero;
       if (isAdminType) {
-        const eventSichtFilter = istGebundenerAdmin
-          ? `AND (
-               e.teamer_only OR e.teamer_needed
-               OR NOT EXISTS (SELECT 1 FROM event_jahrgang_assignments eja
-                              WHERE eja.event_id = e.id)
-               OR EXISTS (SELECT 1 FROM event_jahrgang_assignments eja
-                          WHERE eja.event_id = e.id
-                            AND eja.jahrgang_id = ANY($2::int[]))
-             )`
+        const gebunden = !leitungSiehtAlleTermine(req.user);
+        const eventSichtFilter = gebunden
+          ? `AND ${gebundeneLeitungSiehtTerminSql({ jahrgaenge: '$2::int[]' })}`
           : '';
-        const eventParams = istGebundenerAdmin
+        const eventParams = gebunden
           ? [organizationId, eigeneJahrgangIds]
           : [organizationId];
         eventsPromise = db.query(
           `SELECT COUNT(*)::int AS c
            FROM events e
            WHERE e.organization_id = $1
-           AND e.event_date < NOW()
-           AND e.cancelled IS NOT TRUE
-           AND EXISTS (
-             SELECT 1 FROM event_bookings eb
-             WHERE eb.event_id = e.id
-             AND eb.status = 'confirmed'
-             AND eb.attendance_status IS NULL
-           )
+           AND ${terminWartetAufVerbuchungSql()}
            ${eventSichtFilter}`,
           eventParams
         );

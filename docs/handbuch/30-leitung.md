@@ -108,7 +108,11 @@ die Events, bei denen noch
 [Anwesenheiten](70-termine.md#die-anwesenheit-verbuchen) einzutragen sind —
 sobald das Event begonnen hat. Ein laufendes Event steht deshalb in beiden
 Reitern: unter „Aktuell", weil es noch läuft, und unter „Verbuchen", weil es
-schon etwas einzutragen gibt.
+schon etwas einzutragen gibt. Die Zahl am Reiter, die am App-Symbol und die
+Erinnerung „Events warten auf Verbuchung" jeden Morgen um 9 Uhr zählen genau
+die Events, die bei dir unter „Verbuchen" stehen — als Admin also nur die
+deiner Jahrgänge, dazu „Nur Team" und Events ohne Jahrgang
+([Nachsehen, wer von Abmeldungen und Zusagen erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)).
 
 Beim Anlegen eines Events legst du fest:
 

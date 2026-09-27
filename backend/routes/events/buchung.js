@@ -8,6 +8,9 @@ const liveUpdate = require('../../utils/liveUpdate');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, pruefeKonfiStorno } = require('../../utils/bookingUtils');
 const { removeFromEventChat, addToEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
+// Empfaenger der Buchungs- und Abmelde-Meldungen: die Leitung, die das Event
+// sieht (27.09.2026, Regel in utils/terminLeitungSicht.js).
+const { ladeLeitungZumTermin } = require('../../utils/terminLeitungSicht');
 
 module.exports = (db, rbacVerifier) => {
   const router = express.Router();
@@ -75,13 +78,14 @@ module.exports = (db, rbacVerifier) => {
       liveUpdate.sendToUser('teamer', userId, 'events', 'update', { eventId, status });
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'teamer_booking' });
 
-      try {
-        await PushService.sendTeamerEventBookingToAdmins(
-          db, req.user.organization_id, req.user.display_name, event.name, status, eventId
+      // An die Leitung, die das Event sieht (27.09.2026,
+      // utils/terminLeitungSicht.js; vorher jeder Admin der Gemeinde, BF-01).
+      nachAntwort(req, async () => {
+        const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: userId });
+        await PushService.sendTeamerEventBookingToLeadership(
+          db, req.user.organization_id, empfaenger, req.user.display_name, event.name, status, eventId
         );
-      } catch (pushErr) {
-        console.error('Push notification failed for teamer booking:', pushErr);
-      }
+      }, 'Push nach Teamer-Buchung');
 
       // Bestaetigung an die Teamer:in selbst (analog Konfi-Anmeldung)
       try {
@@ -284,17 +288,47 @@ module.exports = (db, rbacVerifier) => {
         liveUpdate.sendToUser(userType, userId, 'events', 'update', { eventId, action: 'canceled' });
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'cancellation' });
 
-        // Push an Admins bei Teamer-Storno
+        // Push an die Leitung, die das Event sieht (27.09.2026,
+        // utils/terminLeitungSicht.js; vorher jeder Admin der Gemeinde,
+        // BF-01).
         if (isTeamer) {
           try {
             const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [eventId]);
-            await PushService.sendTeamerEventCancellationToAdmins(
-              db, req.user.organization_id, req.user.display_name,
+            const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: userId });
+            await PushService.sendTeamerEventCancellationToLeadership(
+              db, req.user.organization_id, empfaenger, req.user.display_name,
               eventInfo ? eventInfo.name : 'Event', eventId
             );
           } catch (pushErr) {
             console.error('Push notification failed for teamer cancellation:', pushErr);
           }
+        }
+
+        // KONFI-STORNO MELDET SICH WIE DIE ABMELDUNG (27.09.2026, Audit
+        // wer-bekommt-was BF-18). Die App meldet Konfis ueber DELETE
+        // /konfi/events/:id/register ab (konfi.js); dieser Weg ist fuer
+        // Konfis nur ueber die Schnittstelle erreichbar -- keine App-Fassung
+        // ruft ihn (geprueft 1.5.3 bis 2.2.0 und HEAD). Gesperrt wird er
+        // nicht: Seit dem 26.09.2026 gelten hier dieselben Regeln
+        // (pruefeKonfiStorno) und dasselbe Protokoll (event_unregistrations)
+        // wie dort, und die Abmeldung steht damit in der Liste der Leitung.
+        // Es fehlte nur die Mitteilung -- jetzt dieselbe wie auf dem
+        // regulaeren Weg: Bestaetigung an die Konfi, "Event-Abmeldung" samt
+        // Grund an die Leitung, die das Event sieht.
+        if (isKonfi) {
+          const { rows: [eventInfo] } = await db.query('SELECT name FROM events WHERE id = $1', [eventId]);
+          const eventName = eventInfo ? eventInfo.name : 'Event';
+          try {
+            await PushService.sendEventUnregisteredToKonfi(db, userId, eventName, eventId);
+          } catch (pushErr) {
+            console.error('Push notification failed for konfi cancellation:', pushErr);
+          }
+          const empfaenger = await ladeLeitungZumTermin(db, eventId);
+          await PushService.sendEventUnregistrationToLeadership(
+            db, req.user.organization_id, empfaenger,
+            req.user.display_name || 'Ein Konfi', eventName,
+            (req.body && req.body.reason) || null, eventId
+          );
         }
       }, 'DELETE /events/:eventId/book');
 

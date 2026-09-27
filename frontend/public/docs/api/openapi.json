@@ -164,7 +164,6 @@
           "Anmeldung & Konto"
         ],
         "summary": "Eigenes Passwort ändern (mit aktuellem Passwort)",
-        "description": "NEU 27.09.2026 (Bericht \"Wer bekommt was\", BF-20; Simons Entscheidung F-12: \"Ja, fuer Konten mit E-Mail\"): Nach der Antwort geht eine Bestaetigung \"Passwort geändert\" an die hinterlegte Adresse (utils/passwortGeaendertMail.js). Die Vorlage emailService.sendPasswordChangedEmail gab es, sie wurde bis dahin nirgends gerufen. Ohne Adresse keine Mail; das Passwort steht nie darin; ein Versandfehler aendert nichts an Antwort und Passwort. Die Antwortform ist unveraendert.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -541,7 +540,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Einladung annehmen -- legt die Mitgliedschaft an",
-        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n\nBEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-21; Simons Entscheidung F-13: \"Ja, als Postfach-Eintrag\"): Die einladende Leitung erfuhr nichts. Jetzt nach der Antwort Push mit Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet', status 'angenommen', einladung_id, user_id, organization_id = die einladende Gemeinde) an die Person aus eingeladen_von, solange sie dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst an die Org-Admins der Gemeinde; nie an die eingeladene Person selbst. Dazu das Live-Signal 'users' an die Gemeinde (die Benutzerliste laedt nach). Die Antwortform ist unveraendert.\n",
+        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n",
         "parameters": [
           {
             "name": "id",
@@ -584,7 +583,6 @@
           "Benutzer & Rollen"
         ],
         "summary": "Einladung ablehnen",
-        "description": "BEHOBEN 27.09.2026 (BF-21 / F-13): Auch die Absage meldet sich bei der einladenden Leitung -- Push mit Postfach-Eintrag 'gemeinde_einladung_beantwortet' (status 'abgelehnt'), Empfaenger wie bei annehmen. Kein Live-Signal, die Benutzerliste aendert sich nicht. Die Antwortform ist unveraendert.\n",
         "parameters": [
           {
             "name": "id",
@@ -701,7 +699,6 @@
           "Passwörter & Einladungen"
         ],
         "summary": "Passwort-Reset-Mail anfordern (immer neutrale Antwort)",
-        "description": "BEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-20): Die Abfrage nahm den ERSTEN Treffer zu users.email -- ohne deleted_at und is_active. Die E-Mail ist nur je Gemeinde eindeutig (Index organization_id, email); trug dieselbe Adresse Konten in mehreren Gemeinden, bekam nur eines den Link, und geloeschte oder gesperrte Konten bekamen ihn auch. Jetzt: nur Konten mit deleted_at IS NULL und is_active nicht false (wie beim Login), und JEDES bekommt einen eigenen Token und eine eigene Mail. Bei mehreren Konten nennt die Mail Gemeinde (auch im Betreff) und Benutzername; bei einem Konto bleibt sie ohne diese Zeilen. Die Mail sagt seit demselben Tag \"24 Stunden gueltig\" (stand faelschlich \"1 Stunde\"; der Token galt immer 24 h). Der Versand laeuft seit 27.09.2026 NACH der Antwort (nachAntwort): Vorher wartete die Antwort auf den SMTP-Server, ihre Laufzeit verriet damit, ob -- und wie viele -- Konten es zur Adresse gibt. Die Antwort ist fuer null, ein und mehrere Konten dieselbe.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -723,13 +720,13 @@
         },
         "responses": {
           "200": {
-            "description": "Neutral: 'Falls ein Konto existiert, wurde eine E-Mail gesendet' -- unveraendert, auch bei mehreren Konten keine Aufzaehlung"
+            "description": "Neutral: 'Falls ein Konto existiert, wurde eine E-Mail gesendet'"
           },
           "429": {
             "description": "passwordResetLimiter: 5/15min je Client-IP (clientIp) ODER passwordResetEmailLimiter: 3/h je Ziel-E-Mail (normalisiert: trim + lowercase; zaehlt auch fuer unbekannte Adressen, damit der 429 kein Konto verraet); beide Zaehler seit 26.09.2026 replica-uebergreifend in der Datenbank, Betrieb BF-09)"
           },
           "500": {
-            "description": "Datenbankfehler. BEHOBEN: Ein fehlgeschlagener Mail-Versand liefert KEIN 500 mehr (seit 22.08.2026 abgefangen, seit 27.09.2026 nach der Antwort) -- vorher 'Mail-Versand fehlgeschlagen (nur wenn Konto existiert)', was die Neutralitaet schwaechte."
+            "description": "Mail-Versand fehlgeschlagen (nur wenn Konto existiert — schwaecht die Neutralitaet leicht ab)"
           }
         },
         "x-berechtigung": {
@@ -743,7 +740,7 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Token 32 Byte Hex, 24h gueltig",
-          "hinweis": "BEHOBEN 22.08.2026 (war: BEKANNT: Token wird unhashed in password_resets gespeichert) -- seitdem nur der SHA-256-Hash, eingeloest wird per Klartext-Token aus der Mail"
+          "hinweis": "BEKANNT: Token wird unhashed in password_resets gespeichert"
         }
       }
     },
@@ -1063,7 +1060,6 @@
           "Passwörter & Einladungen"
         ],
         "summary": "Passwort mit Reset-Token setzen (oeffentlich)",
-        "description": "NEU 27.09.2026 (BF-20; Simons Entscheidung F-12: \"Ja, fuer Konten mit E-Mail\"): Nach der Antwort geht eine Bestaetigung \"Passwort geändert\" an die hinterlegte Adresse des Kontos (utils/passwortGeaendertMail.js, emailService.sendPasswordChangedEmail). Ohne Adresse keine Mail; ein Versandfehler aendert nichts an Antwort und Passwort.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -2034,7 +2030,7 @@
         ],
         "responses": {
           "200": {
-            "description": "{ message: 'Mitgliedschaft entfernt' } (unveraendert). In EINER Transaktion: user_organizations, die Jahrgangs-Zuweisungen dieser Org und die Plaetze in ALLEN Chat-Raeumen dieser Org (utils/mitgliedschaftEnde.js, dieselbe Funktion wie DELETE /users/{id}). Danach Team-Chat- und Jahrgangs-Sync, Sockets getrennt, Cache invalidiert, Soft-Revoke"
+            "description": "Mitgliedschaft entfernt; Chat-Sync raeumt Team-/Jahrgangs-Chats auf; Cache invalidiert"
           },
           "400": {
             "description": "Primaer-Org kann hier nicht entfernt werden"
@@ -2289,8 +2285,7 @@
                     "description": "false trennt aktive Sockets"
                   },
                   "password": {
-                    "type": "string",
-                    "description": "Seit 27.09.2026 (BF-20 / F-12): Wird ein Passwort gesetzt, geht nach der Antwort eine Bestaetigung an die hinterlegte Adresse des Kontos -- ohne das Passwort, mit dem Hinweis, dass die Leitung es gesetzt hat (ausser beim eigenen Konto)"
+                    "type": "string"
                   }
                 }
               }
@@ -2335,7 +2330,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "User aus der Gemeinde entfernen -- Hard-Delete nur, wenn die Person keiner anderen Gemeinde angehört",
-        "description": "Drei Fälle (seit 27.09.2026), die Antwort trägt additiv `konto_bleibt` (boolean): (1) Die Person ist in einer anderen Gemeinde zuhause und arbeitet hier über user_organizations mit: nur diese Mitgliedschaft endet, `{ message: 'Mitgliedschaft in dieser Gemeinde beendet', konto_bleibt: true }`. BEHOBEN 27.09.2026: Mit der Mitgliedschaft gehen die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde (vorher nur, was syncTeamChat und syncJahrgangChat fuer zugewiesene Jahrgaenge erfassten -- Gruppen, Zweierraeume und Jahrgangs-Chats ohne Zuweisung blieben, samt Push zu jeder Nachricht). Antwortform unveraendert. Seit 27.09.2026 raeumen Fall 1, Fall 2 und DELETE /organizations/{id}/members/{userId} ueber DIESELBE Funktion (utils/mitgliedschaftEnde.js: Zuweisungen und Chat-Plaetze der Gemeinde), damit die Wege nicht wieder auseinanderlaufen (Audit \"Wer bekommt was\", BF-08). (2) Die Person ist hier zuhause UND hat eine Zeile in user_organizations für eine andere Gemeinde: Das Konto zieht um, `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`. Neue Stamm-Gemeinde ist bevorzugt eine aktive, darunter die älteste Mitgliedschaft (created_at, bei Gleichstand die Zeilen-ID); users.organization_id und users.role_id übernehmen Gemeinde und Rolle dieser Mitgliedschaft, ihre Zeile und eine etwaige Zeile für diese Gemeinde verschwinden. Mit ihr gehen die Jahrgangs-Zuweisungen dieser Gemeinde und die Plätze in ALLEN Chat-Räumen dieser Gemeinde (Team, Jahrgänge, Gruppen, Zweiergespräche); was die Person hier angelegt hat, bleibt unverändert und wird nicht anonymisiert. Rechte-Cache geleert, Sockets getrennt; token_invalidated_at bleibt unberührt, weil rbac.js und die Socket-Anmeldung Gemeinde und Rolle je Anfrage aus der Datenbank lesen. Keine Namen fremder Gemeinden in der Antwort. (3) Die Person gehört nur dieser Gemeinde an: Hard-Delete wie folgt, `{ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false }`.\nHard-Delete (Fall 3): Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unlöschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen \"Neuer Antrag eingegangen\" bei der Leitung mit, die auf Anträge der geloeschten Person zeigten (utils/postfachAufraeumen.js).\n",
+        "description": "Drei Fälle (seit 27.09.2026), die Antwort trägt additiv `konto_bleibt` (boolean): (1) Die Person ist in einer anderen Gemeinde zuhause und arbeitet hier über user_organizations mit: nur diese Mitgliedschaft endet, `{ message: 'Mitgliedschaft in dieser Gemeinde beendet', konto_bleibt: true }`. BEHOBEN 27.09.2026: Mit der Mitgliedschaft gehen die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde (vorher nur, was syncTeamChat und syncJahrgangChat fuer zugewiesene Jahrgaenge erfassten -- Gruppen, Zweierraeume und Jahrgangs-Chats ohne Zuweisung blieben, samt Push zu jeder Nachricht). Antwortform unveraendert. (2) Die Person ist hier zuhause UND hat eine Zeile in user_organizations für eine andere Gemeinde: Das Konto zieht um, `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`. Neue Stamm-Gemeinde ist bevorzugt eine aktive, darunter die älteste Mitgliedschaft (created_at, bei Gleichstand die Zeilen-ID); users.organization_id und users.role_id übernehmen Gemeinde und Rolle dieser Mitgliedschaft, ihre Zeile und eine etwaige Zeile für diese Gemeinde verschwinden. Mit ihr gehen die Jahrgangs-Zuweisungen dieser Gemeinde und die Plätze in ALLEN Chat-Räumen dieser Gemeinde (Team, Jahrgänge, Gruppen, Zweiergespräche); was die Person hier angelegt hat, bleibt unverändert und wird nicht anonymisiert. Rechte-Cache geleert, Sockets getrennt; token_invalidated_at bleibt unberührt, weil rbac.js und die Socket-Anmeldung Gemeinde und Rolle je Anfrage aus der Datenbank lesen. Keine Namen fremder Gemeinden in der Antwort. (3) Die Person gehört nur dieser Gemeinde an: Hard-Delete wie folgt, `{ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false }`.\nHard-Delete (Fall 3): Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unlöschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen \"Neuer Antrag eingegangen\" bei der Leitung mit, die auf Anträge der geloeschten Person zeigten (utils/postfachAufraeumen.js).\n",
         "parameters": [
           {
             "name": "id",
@@ -2540,7 +2535,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Passwort eines Users administrativ setzen",
-        "description": "GEAENDERT 14.09.2026: Der Reset beendet jetzt alle Sitzungen des Ziel-Users — token_invalidated_at wird gesetzt, alle Refresh-Tokens werden widerrufen und die Push-Tokens geloescht. Die Person muss sich auf jedem Geraet mit dem neuen Passwort neu anmelden. Am Request und an der Antwortform aendert sich nichts.\n\nNEU 27.09.2026 (Bericht \"Wer bekommt was\", BF-20; Simons Entscheidung F-12): Nach der Antwort geht eine Bestaetigung an die hinterlegte Adresse des Kontos -- \"die Leitung deiner Gemeinde hat ein neues Passwort gesetzt\", OHNE das Passwort (die Leitung gibt es persoenlich weiter). Ohne Adresse keine Mail; ein Versandfehler aendert nichts. Am Request und an der Antwortform aendert sich nichts.\n",
+        "description": "GEAENDERT 14.09.2026: Der Reset beendet jetzt alle Sitzungen des Ziel-Users — token_invalidated_at wird gesetzt, alle Refresh-Tokens werden widerrufen und die Push-Tokens geloescht. Die Person muss sich auf jedem Geraet mit dem neuen Passwort neu anmelden. Am Request und an der Antwortform aendert sich nichts.\n",
         "parameters": [
           {
             "name": "id",
@@ -3949,7 +3944,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Events des eigenen Jahrgangs (Konfi-Sicht)",
-        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine. ZUSAMMENGELEGT 01.09.2026: registration_status wird nicht mehr je Ansicht in SQL wiederholt, sondern in allen drei Listen (diese, GET /api/events, GET /api/konfi/events/{id}/status) aus utils/terminAnmeldeStatus.js gebildet. Werte und Reihenfolge unveraendert ('cancelled' vor 'mandatory' vor 'upcoming'/'closed' vor 'open'); die Abweichungen vom 25.08. und 27.08. koennen so nicht wieder entstehen. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn der Konfi selbst Teilnehmer des Raums ist (sonst null). Damit bildet der Chat-Einstieg im Termin-Detail genau die Berechtigung ab, die darfRaumOeffnen in chat.js durchsetzt. NEU 15.09.2026: cancelled_reason und cancelled_by_name kommen additiv mit (Migration 150). Der Absagegrund ist ausdruecklich fuer ALLE Teilnehmenden bestimmt — die Konfi-Liste ist der Ort, an dem er ankommen muss. Beide nullable. ADDITIV 16.09.2026: abgemeldet_count (integer) — abgemeldete Konfis, Selbstabmeldung und Abmeldung durch die Leitung zusammen, aus event_booking_stats. Die Konfi-Sicht trennt die beiden Abmelde-Arten bewusst NICHT: Aus ihrer Sicht ist beides dasselbe (\"diese Person ist nicht dabei\"), und wer wen abgemeldet hat, geht sie nichts an. Die Ansicht braucht die Zahl fuer abgesagte Termine: Dort stehen alle auf 'excused', registered_count ist 0 (richtig — niemand nimmt teil), und ohne diese Zahl liesse sich nicht erkennen, um wie viele es ging. Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. BEHOBEN 16.09.2026: registered_count, waitlist_count, teamer_count und abgemeldet_count kamen an einem Termin OHNE jede Buchung als null statt als 0. Die Zaehler stammen aus einer LATERAL-Unterabfrage auf event_booking_stats; diese View entsteht mit GROUP BY ueber event_bookings und hat fuer einen leeren Termin keine Zeile. Das COALESCE stand INNERHALB der Unterabfrage und wurde deshalb nie ausgewertet — es schuetzt vor einer NULL-Spalte, nicht vor einer fehlenden Zeile. Jetzt steht es aussen, wie bei GET /api/konfi/events/{id}/status. Alle vier Zaehler sind damit durchgaengig integer und nie null. BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-04 / F-05): Die Sichtbarkeits-Bedingung (Termin einem Jahrgang der Konfi zugeordnet, nie teamer_only) steht jetzt EINMAL in utils/konfiTerminSicht.js und bestimmt zugleich die Empfaenger der Mitteilung new_event (\"Neues Event!\", Hintergrundlauf zum Anmeldestart). Die ging vorher an jede Konfi der Gemeinde -- auch zu Terminen fremder Jahrgaenge und ohne Jahrgang, die diese Liste nicht zeigt. Termine ohne Jahrgang erscheinen hier weiterhin nicht (sie gelten dem Team) und loesen deshalb auch keine Konfi-Mitteilung aus. Antwortform und Inhalt der Liste unveraendert.\n",
+        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine. ZUSAMMENGELEGT 01.09.2026: registration_status wird nicht mehr je Ansicht in SQL wiederholt, sondern in allen drei Listen (diese, GET /api/events, GET /api/konfi/events/{id}/status) aus utils/terminAnmeldeStatus.js gebildet. Werte und Reihenfolge unveraendert ('cancelled' vor 'mandatory' vor 'upcoming'/'closed' vor 'open'); die Abweichungen vom 25.08. und 27.08. koennen so nicht wieder entstehen. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn der Konfi selbst Teilnehmer des Raums ist (sonst null). Damit bildet der Chat-Einstieg im Termin-Detail genau die Berechtigung ab, die darfRaumOeffnen in chat.js durchsetzt. NEU 15.09.2026: cancelled_reason und cancelled_by_name kommen additiv mit (Migration 150). Der Absagegrund ist ausdruecklich fuer ALLE Teilnehmenden bestimmt — die Konfi-Liste ist der Ort, an dem er ankommen muss. Beide nullable. ADDITIV 16.09.2026: abgemeldet_count (integer) — abgemeldete Konfis, Selbstabmeldung und Abmeldung durch die Leitung zusammen, aus event_booking_stats. Die Konfi-Sicht trennt die beiden Abmelde-Arten bewusst NICHT: Aus ihrer Sicht ist beides dasselbe (\"diese Person ist nicht dabei\"), und wer wen abgemeldet hat, geht sie nichts an. Die Ansicht braucht die Zahl fuer abgesagte Termine: Dort stehen alle auf 'excused', registered_count ist 0 (richtig — niemand nimmt teil), und ohne diese Zahl liesse sich nicht erkennen, um wie viele es ging. Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. BEHOBEN 16.09.2026: registered_count, waitlist_count, teamer_count und abgemeldet_count kamen an einem Termin OHNE jede Buchung als null statt als 0. Die Zaehler stammen aus einer LATERAL-Unterabfrage auf event_booking_stats; diese View entsteht mit GROUP BY ueber event_bookings und hat fuer einen leeren Termin keine Zeile. Das COALESCE stand INNERHALB der Unterabfrage und wurde deshalb nie ausgewertet — es schuetzt vor einer NULL-Spalte, nicht vor einer fehlenden Zeile. Jetzt steht es aussen, wie bei GET /api/konfi/events/{id}/status. Alle vier Zaehler sind damit durchgaengig integer und nie null.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3958,7 +3953,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "nur Events des eigenen Jahrgangs (utils/konfiTerminSicht.js, dieselbe Regel wie die Empfaenger von new_event); Konfi ohne Jahrgang -> leere Liste",
+          "objekt-pruefung": "nur Events des eigenen Jahrgangs; Konfi ohne Jahrgang -> leere Liste",
           "hinweis": "BEHOBEN 22.08.2026: qr_token wird aus der Response gefiltert (war dieselbe Klasse wie L1 in /api/events)."
         },
         "parameters": [
@@ -4118,7 +4113,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Für Event anmelden (primaere Konfi-Buchungsroute)",
-        "description": "Transaktional (FOR UPDATE). Prueft Doppelbuchung (409), Konfirmations-Sperre (nur EIN Konfirmationstermin, 409), Registrierungsfenster, Timeslot-Pflicht und Kapazität (Konfi- und Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats schon gebucht war. Seit 27.09.2026 nur bei Ergebnis confirmed; wer auf der Warteliste landet, kommt erst beim Nachruecken hinein (BF-17 / F-11, siehe POST /api/events/{id}/chat).\n\nSeit 27.08.2026 zusaetzlich: reine Teamer-Termine (teamer_only) werden mit 403 abgelehnt, abgesagte Termine (cancelled) mit 400. Beide Pruefungen fehlten hier, waehrend der regulaere Weg sie hatte (Befund N1, behoben). Das ABMELDEN von einem abgesagten Termin bleibt bewusst moeglich (DELETE, siehe unten) — sonst waeren bereits Angemeldete eingesperrt.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/events/{id}/book (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (200 mit message, registration_id, status, timeslot_id; kein error_code). Drei Fehler dieser Route sind dabei behoben: Zeitslot-Plaetze wurden ohne Rollen- und ohne deleted_at-Filter gezaehlt (geloeschte Konten belegten Plaetze), der Zeitslot wurde nicht gesperrt (zwei gleichzeitige Anmeldungen konnten denselben letzten Platz bekommen) und die Gemeinde des Zeitslots wurde nicht geprueft (jetzt 400 \"Ungueltiger Zeitslot\").\n",
+        "description": "Transaktional (FOR UPDATE). Prueft Doppelbuchung (409), Konfirmations-Sperre (nur EIN Konfirmationstermin, 409), Registrierungsfenster, Timeslot-Pflicht und Kapazität (Konfi- und Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats schon gebucht war.\n\nSeit 27.08.2026 zusaetzlich: reine Teamer-Termine (teamer_only) werden mit 403 abgelehnt, abgesagte Termine (cancelled) mit 400. Beide Pruefungen fehlten hier, waehrend der regulaere Weg sie hatte (Befund N1, behoben). Das ABMELDEN von einem abgesagten Termin bleibt bewusst moeglich (DELETE, siehe unten) — sonst waeren bereits Angemeldete eingesperrt.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/events/{id}/book (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (200 mit message, registration_id, status, timeslot_id; kein error_code). Drei Fehler dieser Route sind dabei behoben: Zeitslot-Plaetze wurden ohne Rollen- und ohne deleted_at-Filter gezaehlt (geloeschte Konten belegten Plaetze), der Zeitslot wurde nicht gesperrt (zwei gleichzeitige Anmeldungen konnten denselben letzten Platz bekommen) und die Gemeinde des Zeitslots wurde nicht geprueft (jetzt 400 \"Ungueltiger Zeitslot\").\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -4179,7 +4174,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Von Event abmelden (bis 2 Tage vorher)",
-        "description": "Loescht die eigene Buchung (Pflicht-Events nur per Opt-out, 400), entfernt die Person aus dem Event-Chat (seit 24.08.2026 — vorher blieb sie dort Teilnehmerin; wer nachrueckt, wird umgekehrt eingetragen), protokolliert die Abmeldung (event_unregistrations, optionaler reason), laesst bei freiem bestaetigtem Platz von der Konfi-Warteliste nachruecken und benachrichtigt Admins. FRIST NUR FUER BESTAETIGTE PLAETZE (26.09.2026, Audit Screens BF-02): Die Zwei-Tage-Frist schuetzt die Planung der Leitung vor kurzfristig frei werdenden Plaetzen. Wer auf der Warteliste steht (status waitlist/pending), belegt keinen und darf jederzeit herunter -- vorher endete das in den letzten 48 Stunden mit 400, die Wartende blieb auf der Liste und wurde beim Nachruecken als abwesend verbucht.\n",
+        "description": "Loescht die eigene Buchung (Pflicht-Events nur per Opt-out, 400), entfernt die Person aus dem Event-Chat (seit 24.08.2026 — vorher blieb sie dort Teilnehmerin; wer nachrueckt, wird umgekehrt eingetragen), protokolliert die Abmeldung (event_unregistrations, optionaler reason), laesst bei freiem bestaetigtem Platz von der Konfi-Warteliste nachruecken und benachrichtigt Admins. FRIST NUR FUER BESTAETIGTE PLAETZE (26.09.2026, Audit Screens BF-02): Die Zwei-Tage-Frist schuetzt die Planung der Leitung vor kurzfristig frei werdenden Plaetzen. Wer auf der Warteliste steht (status waitlist/pending), belegt keinen und darf jederzeit herunter -- vorher endete das in den letzten 48 Stunden mit 400, die Wartende blieb auf der Liste und wurde beim Nachruecken als abwesend verbucht.\n\nGEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01, F-10): Die Leitungs-Meldung \"Event-Abmeldung\" (Push und Postfach, Art event_unregistration, mit Name und Grund) geht nur noch an die Leitung, die das Event sieht: org_admin (und admin mit is_super_admin-Merkmal) immer, admin nur mit can_view-Zuweisung auf einen Jahrgang des Events, bei Events \"Nur Team\" (teamer_only) und Events ohne jeden Jahrgang an alle Admins; Teamer:innen nie. Beide Quellen der Zugehoerigkeit (users.organization_id und user_organizations, Rolle je Gemeinde), keine Person doppelt. Dieselbe Regel filtert GET /api/events und zaehlt pendingEvents (backend/utils/terminLeitungSicht.js). Vorher ging die Meldung an JEDEN Admin der Gemeinde, auch an Admins fremder Jahrgaenge, die das Event danach mit 403 nicht oeffnen konnten. Versand nach der Antwort; Antwortform unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -4239,7 +4234,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Von Pflicht-Event abmelden (Opt-out mit Begruendung)",
-        "description": "Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events. Wiederholbar: Wer bereits abgemeldet ist, bekommt 200 mit bereits_abgemeldet=true statt eines Fehlers — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Der Grund der ersten Abmeldung bleibt stehen. Der frei gewordene Platz wird nachbesetzt: Die erste wartende Konfi rueckt nach, bekommt einen Push und kommt in den Termin-Chat (behoben 15.09.2026 — bis dahin verfiel der Platz). An einem abgesagten Termin rueckt niemand nach. Die Route laeuft dafuer seit dem 15.09.2026 transaktional.\n",
+        "description": "Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events. Wiederholbar: Wer bereits abgemeldet ist, bekommt 200 mit bereits_abgemeldet=true statt eines Fehlers — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Der Grund der ersten Abmeldung bleibt stehen. Der frei gewordene Platz wird nachbesetzt: Die erste wartende Konfi rueckt nach, bekommt einen Push und kommt in den Termin-Chat (behoben 15.09.2026 — bis dahin verfiel der Platz). An einem abgesagten Termin rueckt niemand nach. Die Route laeuft dafuer seit dem 15.09.2026 transaktional.\n\nGEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01): Die Meldung an die Leitung (event_opt_out, mit Grund) geht nur an die Leitung, die das Event sieht -- dieselbe Regel wie bei DELETE /api/konfi/events/{id}/register (backend/utils/terminLeitungSicht.js). Vorher an jeden Admin der Gemeinde.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -4304,7 +4299,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Opt-out bei Pflicht-Event rueckgaengig machen",
-        "description": "Status opted_out -> confirmed (Begruendung bleibt gespeichert).\n\nABGESAGTE TERMINE seit 16.09.2026 mit 400 \"Dieser Termin ist abgesagt\" (Befund, live am Geraet reproduziert und behoben): Der cancelled-Guard fehlte hier als einzigem Anmelde-Weg. Wer sich von einem Pflichttermin abgemeldet hatte und danach die Absage erlebte, konnte sich ueber diese Route wieder anmelden und stand anschliessend als 'confirmed' an einem Termin, der nicht stattfindet. Simons Entscheidung: Zu einem abgesagten Termin meldet sich niemand an, weder Konfi noch Leitung.\n\nDas Zuruecknehmen der Absage (PUT /api/events/{id}/reaktivieren) ist davon NICHT betroffen: Es stellt die Buchungen mit einem eigenen UPDATE her (utils/bookingUtils.hebeAbsageAbmeldungenAuf) und laeuft nicht ueber diese Route.\n",
+        "description": "Status opted_out -> confirmed (Begruendung bleibt gespeichert).\n\nABGESAGTE TERMINE seit 16.09.2026 mit 400 \"Dieser Termin ist abgesagt\" (Befund, live am Geraet reproduziert und behoben): Der cancelled-Guard fehlte hier als einzigem Anmelde-Weg. Wer sich von einem Pflichttermin abgemeldet hatte und danach die Absage erlebte, konnte sich ueber diese Route wieder anmelden und stand anschliessend als 'confirmed' an einem Termin, der nicht stattfindet. Simons Entscheidung: Zu einem abgesagten Termin meldet sich niemand an, weder Konfi noch Leitung.\n\nDas Zuruecknehmen der Absage (PUT /api/events/{id}/reaktivieren) ist davon NICHT betroffen: Es stellt die Buchungen mit einem eigenen UPDATE her (utils/bookingUtils.hebeAbsageAbmeldungenAuf) und laeuft nicht ueber diese Route.\n\nGEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01): Die Meldung an die Leitung (event_opt_in) geht nur an die Leitung, die das Event sieht -- dieselbe Regel wie beim Opt-out. Vorher an jeden Admin der Gemeinde.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -4474,7 +4469,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Alle Events der Organisation (rollenabhaengig gefiltert)",
-        "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgängen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Nachgelagerte Filter: teamer UND admin (admin seit 01.09.2026, Simons Regel vom 31.08.) sehen jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine und teamer_only-Events immer); ohne jede Zuweisung kommt der Header X-Kein-Jahrgang-Zugewiesen mit. GEAENDERT 08.09.2026: teamer_needed zaehlt NICHT mehr als eigener Sichtbarkeitsgrund. Ein Termin mit \"Teamer:innen gesucht\" an einem fremden Jahrgang liesse sich seit derselben Aenderung ohnehin nicht mehr buchen (403 aus darfTeamerAnDiesenTermin) -- sichtbar bliebe ein Termin, der beim Antippen abgewiesen wird. org_admin sieht alles. Konfis sehen keine teamer_only-Events. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn die abrufende Person Teilnehmer des Raums ist (sonst null) — dieselbe Regel wie in der Konfi-Liste. NEU 15.09.2026: cancelled_reason (freiwilliger Absagegrund), cancelled_by und cancelled_by_name (wer abgesagt hat) kommen additiv mit — alle nullable. NULL beim Namen heisst \"unbekannt\": Termine, die vor Migration 150 abgesagt wurden, haben keinen Urheber. ADDITIV 16.09.2026: abgemeldet_count (integer) — abgemeldete KONFIS, Selbstabmeldung ('opted_out') und Abmeldung durch die Leitung ('excused') zusammen, aus event_booking_stats (konfi_opted_out + konfi_excused). Konfi-rein wie registered_count daneben; das Team-Kontingent zaehlt nicht mit. NICHT zu verwechseln mit total_participants, das ausdruecklich ALLE Buchungen beider Kontingente meint. Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert.\n",
+        "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgängen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Nachgelagerte Filter: teamer UND admin (admin seit 01.09.2026, Simons Regel vom 31.08.) sehen jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine und teamer_only-Events immer); ohne jede Zuweisung kommt der Header X-Kein-Jahrgang-Zugewiesen mit. GEAENDERT 08.09.2026: teamer_needed zaehlt NICHT mehr als eigener Sichtbarkeitsgrund. Ein Termin mit \"Teamer:innen gesucht\" an einem fremden Jahrgang liesse sich seit derselben Aenderung ohnehin nicht mehr buchen (403 aus darfTeamerAnDiesenTermin) -- sichtbar bliebe ein Termin, der beim Antippen abgewiesen wird. org_admin sieht alles. Konfis sehen keine teamer_only-Events. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn die abrufende Person Teilnehmer des Raums ist (sonst null) — dieselbe Regel wie in der Konfi-Liste. NEU 15.09.2026: cancelled_reason (freiwilliger Absagegrund), cancelled_by und cancelled_by_name (wer abgesagt hat) kommen additiv mit — alle nullable. NULL beim Namen heisst \"unbekannt\": Termine, die vor Migration 150 abgesagt wurden, haben keinen Urheber. ADDITIV 16.09.2026: abgemeldet_count (integer) — abgemeldete KONFIS, Selbstabmeldung ('opted_out') und Abmeldung durch die Leitung ('excused') zusammen, aus event_booking_stats (konfi_opted_out + konfi_excused). Konfi-rein wie registered_count daneben; das Team-Kontingent zaehlt nicht mit. NICHT zu verwechseln mit total_participants, das ausdruecklich ALLE Buchungen beider Kontingente meint. Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. GEAENDERT 27.09.2026: Die Sichtregel steht in backend/utils/terminLeitungSicht.js und bestimmt zugleich pendingEvents (GET /api/notifications/badge-counts), die Zahl am App-Symbol und die Empfaenger der Event-Meldungen an die Leitung (Abmeldungen, Opt-out/-in, Zu- und Absagen des Teams, \"Events warten auf Verbuchung\") -- wer ein Event hier nicht sieht, bekommt keine Meldung dazu. Antwortform und Filter unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5025,7 +5020,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event löschen (mit force-Bestaetigung)",
-        "description": "Loescht Event samt Buchungen, Timeslots, Kategorien, Jahrgangs- Zuweisungen und Event-Chat (inkl. Dateien). Bereits vergebene Event-Punkte werden dabei aus konfi_profiles zurueckgerechnet (GREATEST(0, ...), Befund H1, behoben 26.08.2026). Ohne ?force=true blockt die Route mit EINEM 409 (error_code event_delete_confirm), wenn Anmeldungen, Chat-Nachrichten oder vergebene Punkte existieren — mit booking_count, message_count, points_count und points_total fuer die Rueckfrage im Frontend (Befund M2/M3, behoben 26.08.2026; vorher zwei getrennte 409er event_has_bookings/event_has_chat, die das Frontend per pauschalem force=true umging).\n\nGEBUCHTE KONFIS WERDEN PER PUSH INFORMIERT — ABER NUR, WENN DER TERMIN NICHT SCHON ABGESAGT WAR (BEHOBEN 15.09.2026). Bis dahin ging bei JEDEM Loeschen ein event_cancelled-Push raus. Wer einen Termin erst absagt und ihn spaeter aufraeumt (der Weg, den das Handbuch empfiehlt), schickte denselben Konfis zweimal \"Leider abgesagt\" fuer denselben Termin — beim zweiten Mal stand er in der App laengst durchgestrichen. Kein Vertragsbruch gegenueber ausgelieferten Fassungen: Ein Push ist ein Ereignis, kein Antwortfeld; die Antwortform bleibt unveraendert.\n\nOHNE event_id IM PUSH: Der Termin ist in derselben Transaktion geloescht, ein Sprung dorthin fuehrte ins Leere. Die Meldung landet auf der Terminliste. Beim ABSAGEN (PUT /{id}/cancel) traegt der Push seit dem 15.09.2026 sehr wohl eine event_id.\n\nBEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-06): Empfaenger sind DIESELBEN wie beim Absagen (utils/bookingUtils.js, ladeBetroffeneEinesAusfalls): alle Gebuchten mit status confirmed, waitlist oder excused, ohne Rollenfilter -- Konfis, Teamer:innen und Leitungen, die sich eingetragen haben. Bis dahin nur Buchungen mit der Stamm-Rolle 'konfi': Gebuchte Teamer:innen erfuhren nie, dass ein Termin geloescht wurde, bei teamer_only-Terminen also niemand. Selbst Abgemeldete (opted_out) und geloeschte Konten bekommen nichts. Antwortform unveraendert.\n",
+        "description": "Loescht Event samt Buchungen, Timeslots, Kategorien, Jahrgangs- Zuweisungen und Event-Chat (inkl. Dateien). Bereits vergebene Event-Punkte werden dabei aus konfi_profiles zurueckgerechnet (GREATEST(0, ...), Befund H1, behoben 26.08.2026). Ohne ?force=true blockt die Route mit EINEM 409 (error_code event_delete_confirm), wenn Anmeldungen, Chat-Nachrichten oder vergebene Punkte existieren — mit booking_count, message_count, points_count und points_total fuer die Rueckfrage im Frontend (Befund M2/M3, behoben 26.08.2026; vorher zwei getrennte 409er event_has_bookings/event_has_chat, die das Frontend per pauschalem force=true umging).\n\nGEBUCHTE KONFIS WERDEN PER PUSH INFORMIERT — ABER NUR, WENN DER TERMIN NICHT SCHON ABGESAGT WAR (BEHOBEN 15.09.2026). Bis dahin ging bei JEDEM Loeschen ein event_cancelled-Push raus. Wer einen Termin erst absagt und ihn spaeter aufraeumt (der Weg, den das Handbuch empfiehlt), schickte denselben Konfis zweimal \"Leider abgesagt\" fuer denselben Termin — beim zweiten Mal stand er in der App laengst durchgestrichen. Kein Vertragsbruch gegenueber ausgelieferten Fassungen: Ein Push ist ein Ereignis, kein Antwortfeld; die Antwortform bleibt unveraendert.\n\nOHNE event_id IM PUSH: Der Termin ist in derselben Transaktion geloescht, ein Sprung dorthin fuehrte ins Leere. Die Meldung landet auf der Terminliste. Beim ABSAGEN (PUT /{id}/cancel) traegt der Push seit dem 15.09.2026 sehr wohl eine event_id.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5087,7 +5082,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event selbst buchen (Konfi- oder Teamer-Kontingent)",
-        "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/konfi/events/{id}/register (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (201 mit id, message, status; error_code konfirmation_already_booked weiterhin nur hier). Neu greift auf dem Konfi-Pfad der cancelled-Guard: Eine Anmeldung zu einem abgesagten Termin wird mit 400 abgelehnt — dieser Guard fehlte hier bisher, obwohl die Doku ihn beschrieb.\n\nSeit 16.09.2026 gilt der cancelled-Guard auch auf dem TEAMER-PFAD (400 \"Dieses Event ist abgesagt\"). Er stand bis dahin nur im Konfi-Zweig von bucheTermin und sitzt jetzt vor der Rollenweiche. Betroffen war vor allem die \"Meinungsaenderung\": Eine abgesagte Teamer-Buchung (opted_out) wird bei erneuter Zusage aktualisiert statt mit 409 abgewiesen — dieser Sonderweg lief am Riegel vorbei.\n\nDie Kapazitaet zaehlt ab jetzt einheitlich nach der Sicht event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung, geloeschte Konten nie.\n\nJAHRGANGSGRENZE seit 08.09.2026 (utils/bookingUtils.js, darfTeamerAnDiesenTermin): Der Teamer-Pfad lehnt einen Termin mit 403 ab, dessen Jahrgang der Aufrufer nicht betreut -- dieselbe Regel wie im Chat. Ausgenommen sind teamer_only (haengt an keinem Jahrgang), Termine ohne jede Jahrgangs-Zuordnung sowie org_admin/super_admin. Dieselbe Pruefung sitzt in POST /api/teamer/events/{id}/zusage, weil beide Wege zur selben Buchung fuehren. GET /api/events blendet solche Termine seit derselben Aenderung auch aus der Liste aus (routes/events/lesen.js).\n\nNEU 01.09.2026 (Teamer-Pfad): Eine ABGESAGTE eigene Buchung (status opted_out aus POST /api/teamer/events/{id}/zusage) wird reaktiviert statt mit 409 abgewiesen — \"Ich bin doch dabei\" nach einer Absage. Die Zeile wird aktualisiert (Grund, Absage-Datum und absage_nach_zusage geleert), alle Kapazitaetsregeln gelten unveraendert.\n\nERWEITERT 16.09.2026 — DIE REAKTIVIERUNG GILT JETZT FUER BEIDE ABMELDE-ARTEN UND BEIDE ROLLEN: Eine Buchung mit status opted_out ODER excused wird reaktiviert statt mit 409 abgewiesen, auf dem Konfi- wie auf dem Teamer-Pfad.\n\nDie frueher hier dokumentierte Einschraenkung (\"Fuer Konfis bleibt der 409, ein Pflicht-Opt-out wird ausschliesslich ueber POST /api/konfi/events/{id}/opt-in zurueckgenommen\") war nicht haltbar: Das UPDATE jener Route filtert fest auf status = 'opted_out' und antwortet bei excused mit 400 \"Keine Opt-out-Anmeldung gefunden\" — selbst an einem Pflichttermin. Wer von der Leitung abgemeldet worden war (status excused, Migration 153 vom 15.09.2026), hatte damit gar keinen Weg zurueck; der 409-Text \"Du bist bereits fuer dieses Event angemeldet\" war zudem sachlich falsch. Der Kommentar, der die Einschraenkung begruendete, stammte vom 01.09.2026 — zwei Wochen vor Einfuehrung des Status.\n\nKEINE SONDERREGEL: Nach der Reaktivierung laeuft die Buchung den normalen Weg (Anmeldefenster, Konfirmations-Sperre, Kapazitaet, Timeslot-Zwang, Warteliste). Eine abgemeldete Zeile belegt keinen Platz. Beim Reaktivieren werden attendance_status, excuse_reason und attendance_set_by/_at geleert — die neue Anmeldung ersetzt die Abmeldung. UNVERAENDERT bleibt die Check-in-Sperre in POST /api/events/qr-checkin (error_type excused): Der Weg zurueck fuehrt ueber die Anmeldung, nicht ueber den QR-Code.\n",
+        "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/konfi/events/{id}/register (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (201 mit id, message, status; error_code konfirmation_already_booked weiterhin nur hier). Neu greift auf dem Konfi-Pfad der cancelled-Guard: Eine Anmeldung zu einem abgesagten Termin wird mit 400 abgelehnt — dieser Guard fehlte hier bisher, obwohl die Doku ihn beschrieb.\n\nSeit 16.09.2026 gilt der cancelled-Guard auch auf dem TEAMER-PFAD (400 \"Dieses Event ist abgesagt\"). Er stand bis dahin nur im Konfi-Zweig von bucheTermin und sitzt jetzt vor der Rollenweiche. Betroffen war vor allem die \"Meinungsaenderung\": Eine abgesagte Teamer-Buchung (opted_out) wird bei erneuter Zusage aktualisiert statt mit 409 abgewiesen — dieser Sonderweg lief am Riegel vorbei.\n\nDie Kapazitaet zaehlt ab jetzt einheitlich nach der Sicht event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung, geloeschte Konten nie.\n\nJAHRGANGSGRENZE seit 08.09.2026 (utils/bookingUtils.js, darfTeamerAnDiesenTermin): Der Teamer-Pfad lehnt einen Termin mit 403 ab, dessen Jahrgang der Aufrufer nicht betreut -- dieselbe Regel wie im Chat. Ausgenommen sind teamer_only (haengt an keinem Jahrgang), Termine ohne jede Jahrgangs-Zuordnung sowie org_admin/super_admin. Dieselbe Pruefung sitzt in POST /api/teamer/events/{id}/zusage, weil beide Wege zur selben Buchung fuehren. GET /api/events blendet solche Termine seit derselben Aenderung auch aus der Liste aus (routes/events/lesen.js).\n\nNEU 01.09.2026 (Teamer-Pfad): Eine ABGESAGTE eigene Buchung (status opted_out aus POST /api/teamer/events/{id}/zusage) wird reaktiviert statt mit 409 abgewiesen — \"Ich bin doch dabei\" nach einer Absage. Die Zeile wird aktualisiert (Grund, Absage-Datum und absage_nach_zusage geleert), alle Kapazitaetsregeln gelten unveraendert.\n\nERWEITERT 16.09.2026 — DIE REAKTIVIERUNG GILT JETZT FUER BEIDE ABMELDE-ARTEN UND BEIDE ROLLEN: Eine Buchung mit status opted_out ODER excused wird reaktiviert statt mit 409 abgewiesen, auf dem Konfi- wie auf dem Teamer-Pfad.\n\nDie frueher hier dokumentierte Einschraenkung (\"Fuer Konfis bleibt der 409, ein Pflicht-Opt-out wird ausschliesslich ueber POST /api/konfi/events/{id}/opt-in zurueckgenommen\") war nicht haltbar: Das UPDATE jener Route filtert fest auf status = 'opted_out' und antwortet bei excused mit 400 \"Keine Opt-out-Anmeldung gefunden\" — selbst an einem Pflichttermin. Wer von der Leitung abgemeldet worden war (status excused, Migration 153 vom 15.09.2026), hatte damit gar keinen Weg zurueck; der 409-Text \"Du bist bereits fuer dieses Event angemeldet\" war zudem sachlich falsch. Der Kommentar, der die Einschraenkung begruendete, stammte vom 01.09.2026 — zwei Wochen vor Einfuehrung des Status.\n\nKEINE SONDERREGEL: Nach der Reaktivierung laeuft die Buchung den normalen Weg (Anmeldefenster, Konfirmations-Sperre, Kapazitaet, Timeslot-Zwang, Warteliste). Eine abgemeldete Zeile belegt keinen Platz. Beim Reaktivieren werden attendance_status, excuse_reason und attendance_set_by/_at geleert — die neue Anmeldung ersetzt die Abmeldung. UNVERAENDERT bleibt die Check-in-Sperre in POST /api/events/qr-checkin (error_type excused): Der Weg zurueck fuehrt ueber die Anmeldung, nicht ueber den QR-Code.\n\nGEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01, F-10): Die Meldung \"Teamer:in angemeldet\" (teamer_event_booking) geht nur an die Leitung, die das Event sieht -- org_admin immer, admin mit can_view-Zuweisung auf einen Jahrgang des Events, bei \"Nur Team\" und Events ohne Jahrgang alle Admins (backend/utils/terminLeitungSicht.js). Vorher ueber sendToOrgAdmins an jeden Admin der Gemeinde.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -5147,7 +5142,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Eigene Buchung stornieren",
-        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer). Wiederholbar: Ist die Buchung schon weg, der Termin aber vorhanden, kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404. SEIT 01.09.2026 ohne Aufrufer in der Oberflaeche (siehe ABRISS.md): Die Teamer-Abmeldung laeuft ueber POST /api/teamer/events/{id}/zusage (dabei=false), die die Absage samt Grund stehen laesst statt zu loeschen. Die Route bleibt unveraendert fuer ausgelieferte Apps. KONFI-PFAD SEIT 26.09.2026 MIT DENSELBEN REGELN WIE DELETE /api/konfi/events/{id}/register (Audit Punkte/Termine BF-01, utils/bookingUtils.pruefeKonfiStorno, eine Funktion fuer beide Routen): verbuchte Anwesenheit (present/absent) -> 400 \"Die Anwesenheit ist bereits verbucht\", Pflichttermin -> 400 \"nur ueber Opt-out\", bestaetigter Platz in den letzten zwei Tagen -> 400 \"nur bis 2 Tage vor dem Event\". Wartende sind von der Frist ausgenommen. Die Abmeldung wird wie auf der Konfi-Route in event_unregistrations protokolliert. Bis dahin loeschte dieser Weg jede Konfi-Buchung -- auch ein von der Leitung eingetragenes \"gefehlt\" am Pflichttermin. Fuer Teamer:innen unveraendert (keine Frist, kein Pflicht-Riegel, kein Konfi-Protokoll).\n",
+        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer). Wiederholbar: Ist die Buchung schon weg, der Termin aber vorhanden, kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404. SEIT 01.09.2026 ohne Aufrufer in der Oberflaeche (siehe ABRISS.md): Die Teamer-Abmeldung laeuft ueber POST /api/teamer/events/{id}/zusage (dabei=false), die die Absage samt Grund stehen laesst statt zu loeschen. Die Route bleibt unveraendert fuer ausgelieferte Apps. KONFI-PFAD SEIT 26.09.2026 MIT DENSELBEN REGELN WIE DELETE /api/konfi/events/{id}/register (Audit Punkte/Termine BF-01, utils/bookingUtils.pruefeKonfiStorno, eine Funktion fuer beide Routen): verbuchte Anwesenheit (present/absent) -> 400 \"Die Anwesenheit ist bereits verbucht\", Pflichttermin -> 400 \"nur ueber Opt-out\", bestaetigter Platz in den letzten zwei Tagen -> 400 \"nur bis 2 Tage vor dem Event\". Wartende sind von der Frist ausgenommen. Die Abmeldung wird wie auf der Konfi-Route in event_unregistrations protokolliert. Bis dahin loeschte dieser Weg jede Konfi-Buchung -- auch ein von der Leitung eingetragenes \"gefehlt\" am Pflichttermin. Fuer Teamer:innen unveraendert (keine Frist, kein Pflicht-Riegel, kein Konfi-Protokoll).\n\nBEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-18): Der Konfi-Pfad meldete sich bei niemandem -- die Abmeldung stand in der Liste der Leitung, ohne Mitteilung. Jetzt dieselben Mitteilungen wie auf DELETE /api/konfi/events/{id}/register: Bestaetigung an die Konfi (event_unregistered) und \"Event-Abmeldung\" samt optionalem reason an die Leitung, die das Event sieht (event_unregistration, backend/utils/terminLeitungSicht.js). Fuer Konfis bleibt die Route erreichbar (keine App-Fassung ruft sie fuer Konfis, geprueft 1.5.3 bis 2.2.0; Regeln und Protokoll gleichen seit 26.09.2026 der Konfi-Route). Die Teamer-Absage (\"Teamer:in abgemeldet\", teamer_event_cancellation) geht seit demselben Tag ebenfalls nur an die Leitung, die das Event sieht; vorher an jeden Admin. requestBody optional: reason (nur Konfi-Pfad, landet im Protokoll und in der Meldung). Antwortform unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -5165,6 +5160,21 @@
             "$ref": "#/components/parameters/pathId"
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "description": "Optionaler Abmeldegrund (nur Konfi-Pfad): Protokoll und Meldung an die Leitung"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Storniert; bereits_storniert=true wenn keine Buchung mehr vorhanden war"
@@ -5193,7 +5203,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Teilnehmer manuell hinzufuegen (Leitung)",
-        "description": "Fuegt einen User der eigenen Org zum Event hinzu. status='auto' entscheidet rollenrichtig (Konfi- vs. Team-Kontingent, Timeslot- Kapazität, Warteliste); explizites status wird uebernommen. Wer hinzugefuegt wird, kommt zugleich in den Chat zum Termin, sofern einer existiert — angelegt wird dabei keiner. Seit 27.09.2026 nur mit finalem status 'confirmed'; auf die Warteliste Eingetragene kommen erst beim Nachruecken hinein (BF-17 / F-11). GEAENDERT 31.08.2026: Die Rollenweiche trennt nach Konfi / Nicht-Konfi statt nach Teamer / Nicht-Teamer. Damit laesst sich auch die Leitung (admin, org_admin) einem Termin zuordnen — bewusst pro Termin, wie eine Teamer:in, um in den Chat zum Termin zu kommen. Sie zaehlt gegen das TEAM-Kontingent (teamer_max_participants) und belegt keinen Konfi-Platz. Vorher wurde eine so uebergebene Leitung als Konfi verbucht: Sie nahm einen Konfi-Platz und wurde an teamer_only-Terminen mit 400 abgewiesen. Die Antwortform ist unveraendert.\n\nBEHOBEN 16.09.2026: Die Route schickte KEINEN Push. Wer von der Leitung angemeldet wurde, erfuhr es nicht — es gab nur Live-Updates, die eine offene Sitzung erreichen, aber kein Handy. Jetzt geht nach der Antwort ein event_registered-Push an die eingetragene Person, rollenrichtig ueber sendEventRegisteredToTeamer (Nicht-Konfis) bzw. sendEventRegisteredToKonfi (Konfis) — derselbe Wortlaut wie bei der Selbstanmeldung. Auch finalStatus='waitlist' meldet sich (mit dem Wartelisten-Wortlaut). KEIN Push an die ausloesende Person, wenn die Leitung sich selbst zuordnet. Die Antwortform ist unveraendert.\n\nABGESAGTE TERMINE seit 16.09.2026 mit 400 \"Dieser Termin ist abgesagt\" (Simons Entscheidung: \"Nein, gar nicht\" — zu einem abgesagten Termin meldet sich niemand an, auch die Leitung traegt dort niemanden ein). Wer wieder Leute eintragen will, nimmt zuerst die Absage zurueck (PUT /api/events/{id}/reaktivieren); dabei kommen die durch die Absage Abgemeldeten ohnehin von selbst zurueck. Das ENTFERNEN einer Buchung (DELETE /{id}/bookings/{bookingId}) bleibt am abgesagten Termin moeglich.\n",
+        "description": "Fuegt einen User der eigenen Org zum Event hinzu. status='auto' entscheidet rollenrichtig (Konfi- vs. Team-Kontingent, Timeslot- Kapazität, Warteliste); explizites status wird uebernommen. Wer hinzugefuegt wird, kommt zugleich in den Chat zum Termin, sofern einer existiert — angelegt wird dabei keiner. GEAENDERT 31.08.2026: Die Rollenweiche trennt nach Konfi / Nicht-Konfi statt nach Teamer / Nicht-Teamer. Damit laesst sich auch die Leitung (admin, org_admin) einem Termin zuordnen — bewusst pro Termin, wie eine Teamer:in, um in den Chat zum Termin zu kommen. Sie zaehlt gegen das TEAM-Kontingent (teamer_max_participants) und belegt keinen Konfi-Platz. Vorher wurde eine so uebergebene Leitung als Konfi verbucht: Sie nahm einen Konfi-Platz und wurde an teamer_only-Terminen mit 400 abgewiesen. Die Antwortform ist unveraendert.\n\nBEHOBEN 16.09.2026: Die Route schickte KEINEN Push. Wer von der Leitung angemeldet wurde, erfuhr es nicht — es gab nur Live-Updates, die eine offene Sitzung erreichen, aber kein Handy. Jetzt geht nach der Antwort ein event_registered-Push an die eingetragene Person, rollenrichtig ueber sendEventRegisteredToTeamer (Nicht-Konfis) bzw. sendEventRegisteredToKonfi (Konfis) — derselbe Wortlaut wie bei der Selbstanmeldung. Auch finalStatus='waitlist' meldet sich (mit dem Wartelisten-Wortlaut). KEIN Push an die ausloesende Person, wenn die Leitung sich selbst zuordnet. Die Antwortform ist unveraendert.\n\nABGESAGTE TERMINE seit 16.09.2026 mit 400 \"Dieser Termin ist abgesagt\" (Simons Entscheidung: \"Nein, gar nicht\" — zu einem abgesagten Termin meldet sich niemand an, auch die Leitung traegt dort niemanden ein). Wer wieder Leute eintragen will, nimmt zuerst die Absage zurueck (PUT /api/events/{id}/reaktivieren); dabei kommen die durch die Absage Abgemeldeten ohnehin von selbst zurueck. Das ENTFERNEN einer Buchung (DELETE /{id}/bookings/{bookingId}) bleibt am abgesagten Termin moeglich.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5280,7 +5290,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Buchung eines Teilnehmers entfernen (Leitung)",
-        "description": "Loescht eine fremde Buchung; war der Konfi als anwesend verbucht, werden die Event-Punkte zurückgenommen. Die Person wird zudem aus dem Event-Chat entfernt (seit 24.08.2026). Danach rollenrichtiges Nachruecken aus der passenden Warteliste.\n\nBEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-14; Simons Entscheidung F-06: \"Ja, mit Postfach-Eintrag, wie beim Eintragen\"): Das Austragen blieb still, die Person erfuhr es nur ueber ein Live-Update in einer offenen Sitzung. Jetzt geht NACH der Antwort ein Push mit Postfach-Eintrag an die ausgetragene Person (data.type 'event_removed', Titel \"Vom Event ausgetragen\", mit event_id und organization_id) — fuer Konfis, Teamer:innen und zugeordnete Leitung. Nur wenn die Buchung 'confirmed' oder 'waitlist' war (eine schon abgemeldete Zeile verschwindet ohne neue Nachricht) und nie an die ausloesende Person selbst. Die Antwortform ist unveraendert. Apps, die die Art nicht kennen, zeigen den Push wie jeden anderen; das Antippen oeffnet dort nur die App.\n",
+        "description": "Loescht eine fremde Buchung; war der Konfi als anwesend verbucht, werden die Event-Punkte zurückgenommen. Die Person wird zudem aus dem Event-Chat entfernt (seit 24.08.2026). Danach rollenrichtiges Nachruecken aus der passenden Warteliste.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5440,7 +5450,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Teilnehmer zwischen bestaetigt und Warteliste verschieben",
-        "description": "status confirmed <-> waitlist. Degradierung auf waitlist löscht attendance_status und nimmt vergebene Event-Punkte zurück; Befoerderung von der Warteliste pusht an die betroffene Person.\n\nBEHOBEN 27.09.2026 (BF-14 / F-06): Auch die Degradierung meldet sich jetzt bei der betroffenen Person — Push mit Postfach-Eintrag nach der Antwort (data.type 'event_waitlisted', Titel \"Auf die Warteliste gesetzt\", mit event_id und organization_id), nicht an die ausloesende Person selbst. Die Antwortform ist unveraendert.\n\nGEAENDERT 27.09.2026 (BF-17 / F-11, \"Wartende erst beim Nachrücken\"): Die Degradierung nimmt die Person aus dem Chat zum Termin, die Befoerderung auf 'confirmed' traegt sie ein. Bis dahin blieb die Herabgestufte im Chat (\"angemeldet ist angemeldet\").\n\nBEHOBEN 15.09.2026: Die Degradierung gibt einen bestaetigten Platz frei — dort rueckt jetzt die naechste wartende Person derselben Kontingent-Seite nach (Push, war_auf_warteliste, Termin-Chat). Die gerade Herabgestufte kann sich dabei nicht selbst zurueckholen. Die Befoerderung VON HAND setzt jetzt ebenfalls war_auf_warteliste (Migration 145) — sie folgt bewusst nicht FIFO, die Leitung waehlt die Person aus. An einem abgesagten Termin rueckt niemand nach.\n\nABGESAGTE TERMINE seit 16.09.2026: Die Befoerderung auf 'confirmed' wird mit 400 \"Dieses Event ist abgesagt\" abgelehnt — sie ist eine Anmeldung wie jede andere. Der Weg auf die WARTELISTE bleibt offen: Das ist keine Anmeldung, sondern das Gegenteil, und der damit verbundene Punkteentzug muss auch an einem abgesagten Termin moeglich bleiben.\n\nBEHOBEN 16.09.2026 — KAPAZITAET: Die Befoerderung auf 'confirmed' hatte KEINE Kapazitaetspruefung. Solange nichts automatisch nachrueckte, fiel das nicht auf; seit dem Nachruecken vom 15.09. buchte der Weg \"herabstufen, dann wieder bestaetigen\" den Termin still ueber (beim Herabstufen rueckt Y nach, beim Bestaetigen kommt X ungeprueft dazu). Ist das Kontingent voll, antwortet die Route jetzt 400 \"Der Termin ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.\" Gezaehlt wird pro Kontingent-Seite (Konfi/Team) und ggf. pro Zeitfenster, ueber denselben Helfer wie das Nachruecken. Ohne Obergrenze (0/NULL) aendert sich nichts. Der Weg auf die Warteliste bleibt ungeprueft. Bewusstes Ueberbuchen laeuft ueber das Erhoehen der Teilnehmerzahl.\n\nGEPRUEFT 16.09.2026 — war_auf_warteliste: Die Spalte wird beim Bestaetigen nur gesetzt, wenn die Buchung wirklich auf 'waitlist' stand. Der Verdacht, sie werde auch bei einer Befoerderung aus 'excused' gesetzt, hat sich am Code NICHT bestaetigt; ein Test haelt das jetzt fest.\n\nGEPRUEFT 25.09.2026 — Jahrgang der betroffenen Person: BEWUSST NICHT geprueft. Der Riegel sitzt beim Eintragen (POST /api/events/{id}/participants); wer hier steht, ist bereits eingetragen. Der Weg auf die Warteliste ist das Gegenteil einer Anmeldung und muss offen bleiben (Punkteentzug). Die Befoerderung einer Altbuchung, die vor dem 25.09.2026 oder durch einen spaeteren Jahrgangswechsel nicht mehr passt, wuerde sonst dauerhaft haengen — weder bestaetigen noch anders aufloesen als durch Loeschen. Der Jahrgangswechsel eines Konfis raeumt kuenftige Buchungen fremder Jahrgangstermine ohnehin selbst ab (PUT /api/admin/konfis/{id}).\n",
+        "description": "status confirmed <-> waitlist. Degradierung auf waitlist löscht attendance_status und nimmt vergebene Event-Punkte zurück; Befoerderung von der Warteliste pusht an die betroffene Person. BEHOBEN 15.09.2026: Die Degradierung gibt einen bestaetigten Platz frei — dort rueckt jetzt die naechste wartende Person derselben Kontingent-Seite nach (Push, war_auf_warteliste, Termin-Chat). Die gerade Herabgestufte kann sich dabei nicht selbst zurueckholen. Die Befoerderung VON HAND setzt jetzt ebenfalls war_auf_warteliste (Migration 145) — sie folgt bewusst nicht FIFO, die Leitung waehlt die Person aus. An einem abgesagten Termin rueckt niemand nach.\n\nABGESAGTE TERMINE seit 16.09.2026: Die Befoerderung auf 'confirmed' wird mit 400 \"Dieses Event ist abgesagt\" abgelehnt — sie ist eine Anmeldung wie jede andere. Der Weg auf die WARTELISTE bleibt offen: Das ist keine Anmeldung, sondern das Gegenteil, und der damit verbundene Punkteentzug muss auch an einem abgesagten Termin moeglich bleiben.\n\nBEHOBEN 16.09.2026 — KAPAZITAET: Die Befoerderung auf 'confirmed' hatte KEINE Kapazitaetspruefung. Solange nichts automatisch nachrueckte, fiel das nicht auf; seit dem Nachruecken vom 15.09. buchte der Weg \"herabstufen, dann wieder bestaetigen\" den Termin still ueber (beim Herabstufen rueckt Y nach, beim Bestaetigen kommt X ungeprueft dazu). Ist das Kontingent voll, antwortet die Route jetzt 400 \"Der Termin ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.\" Gezaehlt wird pro Kontingent-Seite (Konfi/Team) und ggf. pro Zeitfenster, ueber denselben Helfer wie das Nachruecken. Ohne Obergrenze (0/NULL) aendert sich nichts. Der Weg auf die Warteliste bleibt ungeprueft. Bewusstes Ueberbuchen laeuft ueber das Erhoehen der Teilnehmerzahl.\n\nGEPRUEFT 16.09.2026 — war_auf_warteliste: Die Spalte wird beim Bestaetigen nur gesetzt, wenn die Buchung wirklich auf 'waitlist' stand. Der Verdacht, sie werde auch bei einer Befoerderung aus 'excused' gesetzt, hat sich am Code NICHT bestaetigt; ein Test haelt das jetzt fest.\n\nGEPRUEFT 25.09.2026 — Jahrgang der betroffenen Person: BEWUSST NICHT geprueft. Der Riegel sitzt beim Eintragen (POST /api/events/{id}/participants); wer hier steht, ist bereits eingetragen. Der Weg auf die Warteliste ist das Gegenteil einer Anmeldung und muss offen bleiben (Punkteentzug). Die Befoerderung einer Altbuchung, die vor dem 25.09.2026 oder durch einen spaeteren Jahrgangswechsel nicht mehr passt, wuerde sonst dauerhaft haengen — weder bestaetigen noch anders aufloesen als durch Loeschen. Der Jahrgangswechsel eines Konfis raeumt kuenftige Buchungen fremder Jahrgangstermine ohnehin selbst ab (PUT /api/admin/konfis/{id}).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5659,7 +5669,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Gruppenchat für Event erstellen",
-        "description": "Legt den Event-Chat an und fuegt Ersteller plus alle Gebuchten hinzu (rollenrichtiger user_type). Seit 24.08.2026 zählen dabei auch Wartende — vorher nur bestaetigte, obwohl Wartende beim Anmelden hineinkommen. Pro Event nur ein Chat. Die Mitgliedschaft wird ab jetzt laufend gepflegt: Anmelden trägt ein, Abmelden trägt aus.\n\nGEAENDERT 27.09.2026 (Bericht \"Wer bekommt was\", BF-17; Simons Entscheidung F-11: \"Bestätigte ja, Wartende erst beim Nachrücken; Abgemeldete nicht\"): \"Gebucht\" heisst hier wieder BESTAETIGT (status 'confirmed'). Bis dahin kam beim Anlegen jede Buchung ausser 'cancelled' hinein, also auch Warteliste, 'opted_out' und 'excused'. Dieselbe Regel gilt fuer jeden spaeteren Eintritt (utils/eventChat.js, addToEventChat/syncEventChat): Anmelden, Eintragen durch die Leitung, Teamer-Zusage, Pflicht-Automatik und Wiederanmeldung tragen nur ein, wenn die Buchung bestaetigt ist; Wartende kommen beim Nachruecken (automatisch oder von Hand) hinein; wer auf die Warteliste zurueckgesetzt wird (PUT /{id}/participants/{participantId}/status), geht hinaus. Die Pflicht-Abmeldung (opt-out) und die Leitungs-Abmeldung bei der Anwesenheit nehmen niemanden heraus (Entscheidung 24.08.2026). participants_added zaehlt entsprechend nur Bestaetigte; die Antwortform ist unveraendert.\n",
+        "description": "Legt den Event-Chat an und fuegt Ersteller plus alle Gebuchten hinzu (rollenrichtiger user_type). Seit 24.08.2026 zählen dabei auch Wartende — vorher nur bestaetigte, obwohl Wartende beim Anmelden hineinkommen. Pro Event nur ein Chat. Die Mitgliedschaft wird ab jetzt laufend gepflegt: Anmelden trägt ein, Abmelden trägt aus.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5708,7 +5718,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event absagen (mit Teilnehmer-Benachrichtigung)",
-        "description": "Setzt cancelled=true + cancelled_at und pusht an alle Gebuchten (confirmed + waitlist, seit Migration 153 auch einzeln abgemeldete mit excused; jede Rolle). Seit 27.09.2026 steht diese Auswahl an einer Stelle mit DELETE /{id} (utils/bookingUtils.js, ladeBetroffeneEinesAusfalls, Audit BF-06); participants_notified zaehlt unveraendert dieselben Personen.\nAUTOMATISCHES ABMELDEN (15.09.2026): In DERSELBEN Transaktion werden alle Buchungen mit status IN ('confirmed','waitlist') auf attendance_status='excused' gesetzt, excuse_reason = der Absagegrund (ohne Grund: der feste Text \"Event abgesagt\", bis 27.09.2026 \"Termin abgesagt\"). Bereits vergebene event_points werden geloescht und die Salden in konfi_profiles zurueckgerechnet. Schlaegt das Abmelden fehl, faellt auch die Absage zurueck (500).\nGEAENDERT 15.09.2026 (Migration 153) — DER BUCHUNGSSTATUS ZIEHT MIT: Dasselbe Mengen-UPDATE setzt jetzt auch status='excused' und abgemeldet_durch_absage=TRUE. Bis dahin blieb status auf 'confirmed'/'waitlist' stehen, begruendet mit dem Alt-App-Vertrag (ausgelieferte Fassungen filtern Teilnehmerlisten ueber status === 'confirmed'). Der Preis war zu hoch: Am Buchungsstatus haengen Erinnerungen, Kapazitaet, Nachruecken und Sortierung — dort blieb die Abmeldung unsichtbar, und zwar SERVERSEITIG, wo keine App-Fassung sie heilen kann. Nachgemessen stuerzt 2.1.1 an dem neuen Wert nicht ab; die Person erscheint dort als \"Gebucht\".\nabgemeldet_durch_absage=TRUE ist der Unterschied zur EINZELnen Abmeldung ueber PUT .../attendance (dort FALSE). Nur Abmeldungen mit TRUE werden aufgehoben, wenn die Absage zurueckgenommen wird; wer vorher von Hand oder selbst abgemeldet wurde, bleibt abgemeldet.\nANTWORTFORM UNVERAENDERT: kein Feld entfaellt, keines wird umbenannt, keines wechselt den Typ — status traegt einen WERT mehr.\nGEAENDERT 16.09.2026 — AUCH BEREITS VERBUCHTE WERDEN ABGEMELDET (Entscheidung Simon: \"Auch die auf abgemeldet setzen\"). Bis dahin stand in der Auswahl zusaetzlich attendance_status IS NULL; wer schon auf 'present' oder 'absent' stand, blieb unveraendert. Ein abgesagter Termin hat keine Anwesenden -- die Bedingung ist entfallen, present und absent fallen mit, und ihre event_points werden ebenfalls zurueckgenommen (die Punkte-Abfrage fasst dieselbe Menge, ein doppelter Abzug ist damit ausgeschlossen).\nNICHT angetastet wird, wer bereits ABGEMELDET war: status='opted_out' (Selbstabmeldung, Teamer-Absage) und status='excused' (Einzelabmeldung ueber PUT .../attendance, Migration 153) stehen nicht in der Auswahl. Ein eigener excuse_reason (\"krank, Mutter hat angerufen\") wird deshalb NICHT vom Absagegrund ueberschrieben, und abgemeldet_durch_absage bleibt dort FALSE.\nattendance_set_by, attendance_set_at, checkin_quelle und checked_in_at werden auf NULL gesetzt: Die Absage ist keine Anwesenheitsbeurteilung (Begruendung Migration 148/151) und traegt deshalb keine Urheberin ein -- sie raeumt die der aufgehobenen Verbuchung nur mit ab, damit an einer abgemeldeten Zeile nicht \"Selbst eingecheckt\" stehen bleibt. Wer abgesagt hat, steht in events.cancelled_by.\nKEIN BACKFILL: gilt nur fuer Absagen ab dem 15.09.2026, bereits abgesagte Termine bleiben unveraendert.\nDER TERMIN BLEIBT BEARBEITBAR: PUT /:id/participants/:pid/attendance und /:id/participants/attendance-all funktionieren an einem abgesagten Termin unveraendert weiter -- die Leitung kann einzelne Personen nachtraeglich auf 'present' setzen und ihnen Punkte vergeben.\nABSAGEGRUND (Migration 150, 15.09.2026): Optional laesst sich cancelled_reason mitschicken — Freitext, getrimmt, auf 500 Zeichen begrenzt, leer wird zu NULL. Der Grund wird gespeichert (events.cancelled_reason), an ALLE Teilnehmenden ausgeliefert und im Push-Text sowie unter data.cancelled_reason mitgeschickt. Ohne Grund bleibt der Push-Text unveraendert. cancelled_by haelt fest, wer abgesagt hat.\nTERMIN-KENNUNG IM PUSH (BEHOBEN 15.09.2026): data.event_id kommt additiv dazu. Der Absage-Push war der einzige Termin-Push ohne sie (sendEventChangedToKonfis, sendMandatoryEventCreated und sendEventRegisteredToKonfi tragen sie seit jeher) — ein Tipp auf die Meldung landete deshalb auf der Terminliste statt am Termin, wo der Grund ausfuehrlich steht. Alte App-Fassungen lesen den Schluessel nicht und verhalten sich unveraendert. Beim LOESCHEN eines Termins faellt er weg: Den Termin gibt es dann nicht mehr.\nnotification_message bleibt unveraendert bestehen: Das Feld wurde nie gespeichert oder verschickt, es kommt nur in der Antwort zurueck. Ausgelieferte App-Fassungen schicken es mit — es ist NICHT der Absagegrund.\n",
+        "description": "Setzt cancelled=true + cancelled_at und pusht an alle Gebuchten (confirmed + waitlist).\nAUTOMATISCHES ABMELDEN (15.09.2026): In DERSELBEN Transaktion werden alle Buchungen mit status IN ('confirmed','waitlist') auf attendance_status='excused' gesetzt, excuse_reason = der Absagegrund (ohne Grund: der feste Text \"Event abgesagt\", bis 27.09.2026 \"Termin abgesagt\"). Bereits vergebene event_points werden geloescht und die Salden in konfi_profiles zurueckgerechnet. Schlaegt das Abmelden fehl, faellt auch die Absage zurueck (500).\nGEAENDERT 15.09.2026 (Migration 153) — DER BUCHUNGSSTATUS ZIEHT MIT: Dasselbe Mengen-UPDATE setzt jetzt auch status='excused' und abgemeldet_durch_absage=TRUE. Bis dahin blieb status auf 'confirmed'/'waitlist' stehen, begruendet mit dem Alt-App-Vertrag (ausgelieferte Fassungen filtern Teilnehmerlisten ueber status === 'confirmed'). Der Preis war zu hoch: Am Buchungsstatus haengen Erinnerungen, Kapazitaet, Nachruecken und Sortierung — dort blieb die Abmeldung unsichtbar, und zwar SERVERSEITIG, wo keine App-Fassung sie heilen kann. Nachgemessen stuerzt 2.1.1 an dem neuen Wert nicht ab; die Person erscheint dort als \"Gebucht\".\nabgemeldet_durch_absage=TRUE ist der Unterschied zur EINZELnen Abmeldung ueber PUT .../attendance (dort FALSE). Nur Abmeldungen mit TRUE werden aufgehoben, wenn die Absage zurueckgenommen wird; wer vorher von Hand oder selbst abgemeldet wurde, bleibt abgemeldet.\nANTWORTFORM UNVERAENDERT: kein Feld entfaellt, keines wird umbenannt, keines wechselt den Typ — status traegt einen WERT mehr.\nGEAENDERT 16.09.2026 — AUCH BEREITS VERBUCHTE WERDEN ABGEMELDET (Entscheidung Simon: \"Auch die auf abgemeldet setzen\"). Bis dahin stand in der Auswahl zusaetzlich attendance_status IS NULL; wer schon auf 'present' oder 'absent' stand, blieb unveraendert. Ein abgesagter Termin hat keine Anwesenden -- die Bedingung ist entfallen, present und absent fallen mit, und ihre event_points werden ebenfalls zurueckgenommen (die Punkte-Abfrage fasst dieselbe Menge, ein doppelter Abzug ist damit ausgeschlossen).\nNICHT angetastet wird, wer bereits ABGEMELDET war: status='opted_out' (Selbstabmeldung, Teamer-Absage) und status='excused' (Einzelabmeldung ueber PUT .../attendance, Migration 153) stehen nicht in der Auswahl. Ein eigener excuse_reason (\"krank, Mutter hat angerufen\") wird deshalb NICHT vom Absagegrund ueberschrieben, und abgemeldet_durch_absage bleibt dort FALSE.\nattendance_set_by, attendance_set_at, checkin_quelle und checked_in_at werden auf NULL gesetzt: Die Absage ist keine Anwesenheitsbeurteilung (Begruendung Migration 148/151) und traegt deshalb keine Urheberin ein -- sie raeumt die der aufgehobenen Verbuchung nur mit ab, damit an einer abgemeldeten Zeile nicht \"Selbst eingecheckt\" stehen bleibt. Wer abgesagt hat, steht in events.cancelled_by.\nKEIN BACKFILL: gilt nur fuer Absagen ab dem 15.09.2026, bereits abgesagte Termine bleiben unveraendert.\nDER TERMIN BLEIBT BEARBEITBAR: PUT /:id/participants/:pid/attendance und /:id/participants/attendance-all funktionieren an einem abgesagten Termin unveraendert weiter -- die Leitung kann einzelne Personen nachtraeglich auf 'present' setzen und ihnen Punkte vergeben.\nABSAGEGRUND (Migration 150, 15.09.2026): Optional laesst sich cancelled_reason mitschicken — Freitext, getrimmt, auf 500 Zeichen begrenzt, leer wird zu NULL. Der Grund wird gespeichert (events.cancelled_reason), an ALLE Teilnehmenden ausgeliefert und im Push-Text sowie unter data.cancelled_reason mitgeschickt. Ohne Grund bleibt der Push-Text unveraendert. cancelled_by haelt fest, wer abgesagt hat.\nTERMIN-KENNUNG IM PUSH (BEHOBEN 15.09.2026): data.event_id kommt additiv dazu. Der Absage-Push war der einzige Termin-Push ohne sie (sendEventChangedToKonfis, sendMandatoryEventCreated und sendEventRegisteredToKonfi tragen sie seit jeher) — ein Tipp auf die Meldung landete deshalb auf der Terminliste statt am Termin, wo der Grund ausfuehrlich steht. Alte App-Fassungen lesen den Schluessel nicht und verhalten sich unveraendert. Beim LOESCHEN eines Termins faellt er weg: Den Termin gibt es dann nicht mehr.\nnotification_message bleibt unveraendert bestehen: Das Feld wurde nie gespeichert oder verschickt, es kommt nur in der Antwort zurueck. Ausgelieferte App-Fassungen schicken es mit — es ist NICHT der Absagegrund.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6881,7 +6891,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Neues Startpasswort für einen Konfi erzeugen",
-        "description": "Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurück. GEAENDERT 14.09.2026: Der Reset beendet jetzt alle Sitzungen der betroffenen Person — token_invalidated_at wird gesetzt, alle Refresh-Tokens werden widerrufen und die Push-Tokens geloescht. Die Person muss sich auf jedem Geraet mit dem neuen Passwort neu anmelden. Am Request und an der Antwortform aendert sich nichts.\n\nNEU 27.09.2026 (Bericht \"Wer bekommt was\", BF-20; Simons Entscheidung F-12): Hat das Konto eine E-Mail-Adresse, geht nach der Antwort eine Bestaetigung dorthin, dass die Leitung ein neues Passwort gesetzt hat -- das Einmalpasswort steht NICHT darin. Ohne Adresse keine Mail; ein Versandfehler aendert nichts.\n",
+        "description": "Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurück. GEAENDERT 14.09.2026: Der Reset beendet jetzt alle Sitzungen der betroffenen Person — token_invalidated_at wird gesetzt, alle Refresh-Tokens werden widerrufen und die Push-Tokens geloescht. Die Person muss sich auf jedem Geraet mit dem neuen Passwort neu anmelden. Am Request und an der Antwortform aendert sich nichts.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -7386,7 +7396,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Konfi zur Teamer:in befoerdern",
-        "description": "Setzt die Rolle auf teamer und teamer_since auf heute und löscht Event-Buchungen und offene Anträge. Seit 01.09.2026 wird der Konfi-Jahrgang NICHT mehr automatisch nach user_jahrgang_assignments uebertragen: Die frisch befoerderte Person bekam dadurch view+edit auf ihren alten Jahrgang (die eigene Peergroup) — Simons Regel sagt, Teamer:innen existieren auch ohne Jahrgang und die Zuweisung kommt bewusst spaeter ueber die Benutzerverwaltung. Die eigenen eingefrorenen Konfi-Daten bleiben davon unberuehrt (haengen an konfi_profiles, nicht an der Zuweisung). BEHOBEN 15.09.2026: Die geloeschten Buchungen geben Konfi-Plaetze frei — dort rueckt jetzt die naechste wartende KONFI nach (fest 'konfi', nicht aus der bereits gewechselten Rolle abgeleitet). An abgesagten Terminen rueckt niemand nach. Seit 25.09.2026 gehen mit den geloeschten offenen Anträgen auch deren Postfach-Mitteilungen (\"Neuer Antrag eingegangen\" bei der Leitung, \"Antrag eingereicht\" bei der befoerderten Person; utils/postfachAufraeumen.js). BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-19): In derselben Transaktion gleichen sich die Chat-Plaetze der neuen Rolle an — syncJahrgangChat fuer den alten Jahrgang (ohne can_view-Zuweisung faellt die Person heraus, mit bleibt sie als teamer), Austritt aus den Termin-Chats aller geloeschten Buchungen (removeFromEventChat) und sofort in den Team-Chat (syncTeamChat). Vorher blieb sie im Jahrgangs-Chat der ehemaligen Mitkonfis und in den Termin-Chats und bekam deren Nachrichten als Push, bis jemand anderes den Abgleich ausloeste; den Team-Chat bekam sie erst nach Ablauf des 10-Minuten-Merkers. Antwortform unveraendert.\n",
+        "description": "Setzt die Rolle auf teamer und teamer_since auf heute und löscht Event-Buchungen und offene Anträge. Seit 01.09.2026 wird der Konfi-Jahrgang NICHT mehr automatisch nach user_jahrgang_assignments uebertragen: Die frisch befoerderte Person bekam dadurch view+edit auf ihren alten Jahrgang (die eigene Peergroup) — Simons Regel sagt, Teamer:innen existieren auch ohne Jahrgang und die Zuweisung kommt bewusst spaeter ueber die Benutzerverwaltung. Die eigenen eingefrorenen Konfi-Daten bleiben davon unberuehrt (haengen an konfi_profiles, nicht an der Zuweisung). BEHOBEN 15.09.2026: Die geloeschten Buchungen geben Konfi-Plaetze frei — dort rueckt jetzt die naechste wartende KONFI nach (fest 'konfi', nicht aus der bereits gewechselten Rolle abgeleitet). An abgesagten Terminen rueckt niemand nach. Seit 25.09.2026 gehen mit den geloeschten offenen Anträgen auch deren Postfach-Mitteilungen (\"Neuer Antrag eingegangen\" bei der Leitung, \"Antrag eingereicht\" bei der befoerderten Person; utils/postfachAufraeumen.js).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -7399,7 +7409,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Ziel-User muss zur eigenen Organisation gehören und aktuell Rolle konfi haben (sonst 400); seit 01.09.2026 zusaetzlich darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen)",
-          "hinweis": "Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die globale Rolle (organization_id IS NULL). Ohne Zuweisung verlaesst die befoerderte Person den Jahrgangs-Chat ihres alten Jahrgangs sofort (seit 27.09.2026; vorher erst beim naechsten Chat-Sync, den jemand anderes ausloesen musste).\n"
+          "hinweis": "Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die globale Rolle (organization_id IS NULL). Ohne Zuweisung faellt die befoerderte Person beim naechsten Chat-Sync aus dem Jahrgangs-Chat ihres alten Jahrgangs — konsequent zur Regel.\n"
         },
         "parameters": [
           {
@@ -7801,7 +7811,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Nur Räume mit eigenem chat_participants-Eintrag (KEIN Admin-Bypass in der Liste)",
-          "hinweis": "Jeder gelistete Raum laesst sich oeffnen (Teilnahme genuegt). Ohne Teilnahme oeffnet nur, wer nach darfRaumBetreten darf (siehe /rooms/{roomId}). BEHOBEN 27.09.2026 (BF-05): vorher oeffnete jeder admin per ID jeden gemeinschaftlichen Raum der Org, der hier nicht gelistet war. Antwortform unveraendert."
+          "hinweis": "Admins sehen fremde Räume zwar nicht in der Liste, können sie aber per ID oeffnen (siehe /rooms/{roomId})"
         }
       }
     },
@@ -7860,7 +7870,7 @@
             }
           },
           "403": {
-            "description": "Raum darf nicht geoeffnet werden (darfRaumBetreten)"
+            "description": "Kein Teilnehmer und kein Admin der Org"
           },
           "404": {
             "description": "Raum nicht gefunden"
@@ -7880,8 +7890,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme",
-          "hinweis": "BEHOBEN 27.09.2026 (Audit Wer bekommt was, BF-05): vorher Admin-Bypass fuer jeden admin in jedem gemeinschaftlichen Raum der Org. Fremde Direktchats sind seit 23.08.2026 zu."
+          "objekt-pruefung": "Teilnehmer des Raums ODER Admin-Bypass (type 'admin' = admin/org_admin: jeder Raum der eigenen Org)",
+          "hinweis": "Admin-Bypass umfasst auch fremde Direktchats"
         }
       },
       "delete": {
@@ -7919,7 +7929,7 @@
             "description": "Geloescht"
           },
           "403": {
-            "description": "Aufrufer ist kein Admin-Typ ODER darf den Raum nicht oeffnen ('Zugriff verweigert', vor der Nachrichtenzahl)"
+            "description": "Aufrufer ist kein Admin-Typ"
           },
           "404": {
             "description": "Raum nicht in eigener Org"
@@ -7940,8 +7950,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "req.user.type muss 'admin' sein UND darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme",
-          "hinweis": "teamer und konfi nie. BEHOBEN 27.09.2026 (BF-05): vorher jeder Raum der Org, auch fremde Direktchats und Gruppen mit Konfis fremder Jahrgaenge."
+          "objekt-pruefung": "req.user.type muss 'admin' sein; Raum muss zur eigenen Org gehören",
+          "hinweis": "teamer und konfi nie; auch fremde Direktchats loeschbar"
         }
       }
     },
@@ -8010,7 +8020,7 @@
             }
           },
           "403": {
-            "description": "Raum darf nicht geoeffnet werden (darfRaumBetreten)"
+            "description": "Kein Teilnehmer und kein Admin der Org"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -8027,7 +8037,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher las jeder admin jeden gemeinschaftlichen Raum der Org",
+          "objekt-pruefung": "Teilnehmer ODER Admin-Bypass (admin/org_admin lesen jeden Raum der Org)",
           "hinweis": "Geloeschte Nachrichten kommen als Platzhalter (is_deleted=true) mit"
         }
       },
@@ -8094,7 +8104,7 @@
             "description": "Weder Inhalt noch Datei / Datei unlesbar / Validierungsfehler"
           },
           "403": {
-            "description": "Raum darf nicht geoeffnet werden (darfRaumBetreten)"
+            "description": "Kein Teilnehmer und kein Admin der Org"
           },
           "415": {
             "description": "Dateityp per Magic Bytes nicht verifizierbar"
@@ -8118,7 +8128,7 @@
             "rateLimiters.uploadLimiter"
           ],
           "org-scope": true,
-          "objekt-pruefung": "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher schrieb jeder admin in jeden gemeinschaftlichen Raum der Org (Push an alle Konfis dort); fremde Direktchats seit 23.08.2026 zu"
+          "objekt-pruefung": "Teilnehmer ODER Admin-Bypass — admin/org_admin können in JEDEN Raum der Org schreiben (auch fremde Direktchats)"
         }
       },
       "delete": {
@@ -8143,7 +8153,7 @@
             "description": "{ message, deleted_count }"
           },
           "403": {
-            "description": "Rolle nicht org_admin/admin (oder Raum nicht zu oeffnen — beim Team-Chat fuer die Leitung nie der Fall)"
+            "description": "Rolle nicht org_admin/admin"
           },
           "404": {
             "description": "Raum nicht in eigener Org"
@@ -8164,7 +8174,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Raum org-gescopt geladen; nur is_team_chat=true wird geleert; zusaetzlich darfRaumBetreten (seit 27.09.2026, damit kein Weg an der Raum-Regel vorbeifuehrt — der Team-Chat ist ein reiner Team-Raum)"
+          "objekt-pruefung": "Raum org-gescopt geladen; nur is_team_chat=true wird geleert"
         }
       }
     },
@@ -8190,7 +8200,7 @@
             "description": "Upsert von chat_read_status.last_read_at = NOW()"
           },
           "403": {
-            "description": "Raum darf nicht geoeffnet werden (darfRaumBetreten)"
+            "description": "Kein Teilnehmer und kein Admin der Org"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -8207,7 +8217,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme"
+          "objekt-pruefung": "Teilnehmer ODER Admin-Bypass"
         }
       }
     },
@@ -8263,7 +8273,7 @@
             "description": "Ungueltige Raum-ID"
           },
           "403": {
-            "description": "Aufrufer ist nicht Leitung (admin/org_admin/super_admin) ODER darf den Raum nicht oeffnen — 'Private Zweiergespräche lassen sich nicht exportieren' bei fremdem Direktchat, sonst 'Zugriff verweigert'"
+            "description": "Aufrufer ist nicht Leitung (admin/org_admin/super_admin)"
           },
           "404": {
             "description": "Raum nicht in eigener Org (bewusst 404 statt 403)"
@@ -8282,8 +8292,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "type='admin' UND role_name in (admin, org_admin, super_admin); Raum org-gescopt UND nach darfRaumBetreten zu oeffnen",
-          "hinweis": "Ohne Teilnahme: org_admin jeder gemeinschaftliche Raum der Org, admin nur Raeume seiner Jahrgaenge, Termine und des Teams; fremde Direktchats nie (seit 23.08.2026). BEHOBEN 27.09.2026 (BF-05): vorher exportierte jeder admin jeden gemeinschaftlichen Raum der Org."
+          "objekt-pruefung": "type='admin' UND role_name in (admin, org_admin, super_admin); Raum org-gescopt",
+          "hinweis": "Keine Teilnahme nötig — jeder Raum der Org exportierbar, auch fremde Direktchats"
         }
       }
     },
@@ -8329,8 +8339,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Eigene Nachricht (user_id+user_type) ODER type='admin' UND Raum nach darfRaumBetreten zu oeffnen",
-          "hinweis": "teamer/konfi nur eigene; admin/org_admin fremde Nachrichten nur in Raeumen, die sie oeffnen duerfen (fremde Direktchats nie, seit 23.08.2026; admin nur nach Jahrgang, seit 27.09.2026 — BF-05)",
+          "objekt-pruefung": "Eigene Nachricht (user_id+user_type) ODER type='admin' in derselben Org (fremde Nachrichten org-weit)",
+          "hinweis": "teamer/konfi nur eigene; admin/org_admin jede Nachricht der Org",
           "behoben": "26.08.2026 — Diese Regel stand hier korrekt, der Code hielt sie aber nicht ein: die Pruefung fiel auf darfRaumOeffnen zurueck, das fuer jede:n Teilnehmer:in true liefert. Damit konnte jede Konfi per API fremde Nachrichten im selben Raum loeschen (nicht ueber die App: die Oberflaeche bot die Schaltflaeche nie an). Rollen-Check ergaenzt, durch Tests abgesichert."
         }
       }
@@ -8406,7 +8416,7 @@
             }
           },
           "403": {
-            "description": "Raum darf nicht geoeffnet werden (darfRaumBetreten)"
+            "description": "Kein Teilnehmer und kein Admin der Org"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -8423,7 +8433,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher sah jeder admin die Teilnehmerliste jedes gemeinschaftlichen Raums der Org"
+          "objekt-pruefung": "Teilnehmer ODER Admin-Bypass (admin/org_admin: jeder Raum der Org)"
         }
       },
       "post": {
@@ -8468,7 +8478,7 @@
             "description": "user_id fehlt ODER Raum ist kein Gruppenchat"
           },
           "403": {
-            "description": "Aufrufer ist kein Admin-Typ ODER darf den Raum nicht oeffnen ('Zugriff verweigert') ODER admin traegt einen Konfi ausserhalb der zugewiesenen Jahrgaenge ein"
+            "description": "Aufrufer ist kein Admin-Typ ODER admin traegt einen Konfi ausserhalb der zugewiesenen Jahrgaenge ein"
           },
           "404": {
             "description": "Raum nicht in eigener Org, ODER Ziel-User weder Stamm-Mitglied noch ueber user_organizations in der aktiven Org"
@@ -8489,7 +8499,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "type='admin'; nur room.type='group'; Raum nach darfRaumBetreten zu oeffnen (seit 27.09.2026, BF-05 — vorher trug sich ein admin ohne Jahrgang selbst in jede Gruppe ein und las danach als Teilnehmer mit); Ziel-User org-gescopt ueber BEIDE Quellen (users.organization_id ODER user_organizations), user_type aus der Rolle DIESER Org (TEAM_MITGLIED_ROLLE). Konfi-Ziele zusaetzlich gegen die Jahrgangsbindung des Aufrufers (seit 2026-09-01): admin nur mit zugewiesenem Jahrgang (can_view), org_admin/super_admin ausgenommen — sonst waere die Grenze aus POST /rooms per nachtraeglichem Eintragen umgehbar.\n",
+          "objekt-pruefung": "type='admin'; nur room.type='group'; Ziel-User org-gescopt ueber BEIDE Quellen (users.organization_id ODER user_organizations), user_type aus der Rolle DIESER Org (TEAM_MITGLIED_ROLLE). Konfi-Ziele zusaetzlich gegen die Jahrgangsbindung des Aufrufers (seit 2026-09-01): admin nur mit zugewiesenem Jahrgang (can_view), org_admin/super_admin ausgenommen — sonst waere die Grenze aus POST /rooms per nachtraeglichem Eintragen umgehbar.\n",
           "hinweis": "teamer können keine Teilnehmer hinzufuegen (wohl aber Räume mit Teilnehmern ANLEGEN, siehe POST /rooms)"
         }
       }
@@ -8542,7 +8552,7 @@
             "description": "Raum ist kein Gruppenchat"
           },
           "403": {
-            "description": "Aufrufer ist kein Admin-Typ ODER darf den Raum nicht oeffnen ('Zugriff verweigert')"
+            "description": "Aufrufer ist kein Admin-Typ"
           },
           "404": {
             "description": "Raum nicht in eigener Org ODER Teilnehmer nicht gefunden"
@@ -8560,7 +8570,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "type='admin'; nur room.type='group'; Raum nach darfRaumBetreten zu oeffnen (seit 27.09.2026, BF-05)"
+          "objekt-pruefung": "type='admin'; nur room.type='group'"
         }
       }
     },
@@ -8660,7 +8670,7 @@
             "description": "Token fehlt oder ungueltig"
           },
           "403": {
-            "description": "Raum darf nicht geoeffnet werden (darfRaumBetreten)"
+            "description": "Kein Teilnehmer des Raums"
           },
           "404": {
             "description": "Datei nicht gefunden (auch bei fremder Org oder wenn die Nachricht soft-gelöscht ist — seit 26.08.2026 werden Anhänge gelöschter Nachrichten nicht mehr ausgeliefert; die Datei bleibt für eine Wiederherstellung erhalten)"
@@ -8680,7 +8690,7 @@
             "manuelle JWT-Pruefung mit DB-Abgleich (kein verifyTokenRBAC — Query-Parameter-Auth)"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Nachricht mit file_path muss in der AKTIVEN Org liegen UND der Raum nach darfRaumBetreten zu oeffnen sein (dieselbe Regel wie GET /rooms/{roomId}/messages)"
+          "objekt-pruefung": "Nachricht mit file_path muss in der AKTIVEN Org liegen UND Aufrufer muss chat_participants-Eintrag im Raum haben (nur user_id, ohne user_type)"
         }
       }
     },
@@ -8754,7 +8764,7 @@
             "description": "Aufrufer ist kein Admin-Typ"
           },
           "404": {
-            "description": "Raum nicht in eigener Org ODER darf nicht geoeffnet werden (darfRaumBetreten; 404 statt 403, damit fremde Raeume nicht bestaetigt werden)"
+            "description": "Raum nicht in eigener Org"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -8770,7 +8780,7 @@
             "validateCreatePoll"
           ],
           "org-scope": true,
-          "objekt-pruefung": "type='admin'; Raum nach darfRaumBetreten zu oeffnen (Teilnahme; ohne Teilnahme org_admin gemeindeweit, admin nur nach Jahrgang — seit 27.09.2026, BF-05; vorher jeder gemeinschaftliche Raum der Org)",
+          "objekt-pruefung": "type='admin'; Raum muss zur Org gehören (Teilnahme nicht nötig)",
           "hinweis": "teamer können keine Umfragen erstellen"
         }
       }
@@ -8842,7 +8852,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "darfRaumOeffnen: Teilnehmer des Raums, oder ohne Teilnahme der org_admin in jedem gemeinschaftlichen Raum der Gemeinde und ein admin nur nach Jahrgang (seit 27.09.2026, BF-05) — nie in fremden Direktchats. BEHOBEN 2026-08-28: Die Route hatte eine eigene Kopie der Pruefung, die strikt einen Teilnehmer-Eintrag verlangte. Dadurch durfte die Leitung in einem Gruppenchat eine Umfrage anlegen, aber nicht in ihr abstimmen. Ausserdem lief die Pruefung erst NACH Ablauf- und Options-Check und verriet so den Zustand fremder Umfragen.\n"
+          "objekt-pruefung": "darfRaumOeffnen: Teilnehmer des Raums, oder Leitung in einem Raum der eigenen Gemeinde — ausser in fremden Direktchats. BEHOBEN 2026-08-28: Die Route hatte eine eigene Kopie der Pruefung, die strikt einen Teilnehmer-Eintrag verlangte. Dadurch durfte die Leitung in einem Gruppenchat eine Umfrage anlegen, aber nicht in ihr abstimmen. Ausserdem lief die Pruefung erst NACH Ablauf- und Options-Check und verriet so den Zustand fremder Umfragen.\n"
         }
       }
     },
@@ -8913,7 +8923,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Identisch zu /polls/{pollId}/vote — darfRaumOeffnen (seit 27.09.2026 nach Jahrgang, s. dort; Teilnehmer oder Leitung der eigenen Gemeinde, ausser in fremden Direktchats).\n",
+          "objekt-pruefung": "Identisch zu /polls/{pollId}/vote — darfRaumOeffnen (Teilnehmer oder Leitung der eigenen Gemeinde, ausser in fremden Direktchats).\n",
           "hinweis": "Reicht an denselben Handler weiter wie /polls/{pollId}/vote"
         }
       }
@@ -9023,7 +9033,7 @@
             }
           },
           "403": {
-            "description": "Fremde Org ODER Raum darf nicht geoeffnet werden (darfRaumBetreten)"
+            "description": "Fremde Org ODER kein Teilnehmer (Nicht-Admins)"
           },
           "404": {
             "description": "Nachricht nicht gefunden"
@@ -9043,7 +9053,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Org-Check; darfRaumBetreten wie beim Lesen der Nachrichten (seit 27.09.2026 admin nur nach Jahrgang, BF-05; vorher lasen admin/org_admin org-weit)"
+          "objekt-pruefung": "Org-Check; Teilnehmer-Pflicht nur für Nicht-Admins (admin/org_admin lesen org-weit)"
         }
       }
     },
@@ -9053,7 +9063,7 @@
           "Challenges (Konfis)"
         ],
         "summary": "Aktive Challenges, Archiv und eigene Abzeichen",
-        "description": "Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines Jahrgangs (nie 'nur_team'); admin/teamer -> zugewiesene Jahrgänge ('konfis_und_team') + org-weite 'nur_team'; org_admin -> alle der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team'). GEAENDERT 2026-08-31: admin ist an seine Jahrgangs-Zuweisungen gebunden (vorher org-weit wie org_admin). GEAENDERT 2026-09-27 (Audit \"Wer bekommt was\", BF-07): Die Team-Bedingung steht einmal in utils/challengeLeitungSicht.js (teamMachtMitSql: Team macht mit UND sieht die Challenge) und bestimmt zugleich die Team-Empfaenger der Start-Mitteilung challenge_started und \"neue Challenge\" in badge-counts.challengeUpdates. Menge und Antwortform unveraendert.\n",
+        "description": "Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines Jahrgangs (nie 'nur_team'); admin/teamer -> zugewiesene Jahrgänge ('konfis_und_team') + org-weite 'nur_team'; org_admin -> alle der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team'). GEAENDERT 2026-08-31: admin ist an seine Jahrgangs-Zuweisungen gebunden (vorher org-weit wie org_admin).\n",
         "responses": {
           "200": {
             "description": "Gruppierte Challenge-Listen",
@@ -9248,7 +9258,7 @@
           "Challenges (Konfis)"
         ],
         "summary": "Challenge als geoeffnet markieren (Neuigkeiten-Zaehler zuruecksetzen)",
-        "description": "NEU 24.09.2026. Gegenstueck zu POST /api/chat/rooms/{roomId}/mark-read: Die Detailansicht ruft es beim Oeffnen. challenge_read_status merkt sich den Zeitpunkt je Challenge und Person; challengeUpdates in GET /api/notifications/badge-counts zaehlt ab dann neu (neue Galerie-Beitraege, Moderation eigener Beitraege). Zugriffsregeln wie GET /api/challenges/konfi/{id}: Wer die Challenge nicht oeffnen darf, kann sie auch nicht als gelesen markieren. Team-Rollen duerfen rufen (dieselbe Detailansicht). GEAENDERT 2026-09-27: auch fuer sie zaehlt challengeUpdates ab dann neu; die Leitungsansicht ruft es beim Oeffnen und Schliessen einer gestarteten Challenge. Migration 168 setzt fuer die bestehende Leitung einmalig den Stand auf den Update-Zeitpunkt. Seit demselben Tag (Audit BF-07) nimmt der erste Aufruf auch die \"neue Challenge\" (1) aus dem Team-Zaehler.\n",
+        "description": "NEU 24.09.2026. Gegenstueck zu POST /api/chat/rooms/{roomId}/mark-read: Die Detailansicht ruft es beim Oeffnen. challenge_read_status merkt sich den Zeitpunkt je Challenge und Person; challengeUpdates in GET /api/notifications/badge-counts zaehlt ab dann neu (neue Galerie-Beitraege, Moderation eigener Beitraege). Zugriffsregeln wie GET /api/challenges/konfi/{id}: Wer die Challenge nicht oeffnen darf, kann sie auch nicht als gelesen markieren. Team-Rollen duerfen rufen (dieselbe Detailansicht). GEAENDERT 2026-09-27: auch fuer sie zaehlt challengeUpdates ab dann neu; die Leitungsansicht ruft es beim Oeffnen und Schliessen einer gestarteten Challenge. Migration 168 setzt fuer die bestehende Leitung einmalig den Stand auf den Update-Zeitpunkt.\n",
         "parameters": [
           {
             "name": "id",
@@ -9611,7 +9621,7 @@
           "Challenges (Leitung)"
         ],
         "summary": "Challenge anlegen (Entwurf oder geplant)",
-        "description": "Defaults: audience 'konfis_und_team', visibility 'konfi_choice', moderated true, allow_multiple true, is_draft true, allowed_media [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht gespeichert. admin und teamer duerfen nur eigene (zugewiesene) Jahrgänge bespielen (admin seit 2026-08-31), org_admin alle; Jahrgänge und Urheber werden org-gescopt validiert. audience 'konfis' (\"Nur die Konfis\") ist ab 2.3.0 im Formular wieder waehlbar (Simon, 27.09.2026); die Route nahm den Wert durchgehend an. Einreichen duerfen dort nur Konfis (Team: 403 \"Bei dieser Challenge reichen nur die Konfis Beitraege ein.\"), sehen und moderieren wie bei 'konfis_und_team'. START-MITTEILUNG (challenge_started, \"Neue Challenge\"): nicht beim Anlegen, sondern beim tatsaechlichen Start (Hintergrundlauf ueber challenges.start_push_sent, einmal je Challenge). BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-07 / F-04): Empfaenger sind alle, die mitmachen -- Konfis der Jahrgaenge (nie bei 'nur_team'); dazu das Team nach utils/challengeLeitungSicht.js (ladeTeamDasMitmacht): bei 'nur_team' das ganze Team der Gemeinde (beide Quellen der Zugehoerigkeit), bei 'konfis_und_team' org_admin und admin/teamer mit can_view-Zuweisung auf einen Jahrgang der Challenge, bei 'konfis' niemand aus dem Team. Jede Person einmal, created_by nie. Vorher nur Konfis ueber die Jahrgaenge: bei 'nur_team' bekam niemand etwas.\n",
+        "description": "Defaults: audience 'konfis_und_team', visibility 'konfi_choice', moderated true, allow_multiple true, is_draft true, allowed_media [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht gespeichert. admin und teamer duerfen nur eigene (zugewiesene) Jahrgänge bespielen (admin seit 2026-08-31), org_admin alle; Jahrgänge und Urheber werden org-gescopt validiert. audience 'konfis' (\"Nur die Konfis\") ist ab 2.3.0 im Formular wieder waehlbar (Simon, 27.09.2026); die Route nahm den Wert durchgehend an. Einreichen duerfen dort nur Konfis (Team: 403 \"Bei dieser Challenge reichen nur die Konfis Beitraege ein.\"), sehen und moderieren wie bei 'konfis_und_team'.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -10121,7 +10131,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Leichtgewichtige Badge-Zähler für die Tab-Leiste",
-        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. GEAENDERT 27.09.2026: pendingRequests zaehlt ueber die gemeinsame Regel in backend/utils/antragLeitungSicht.js -- dieselbe, nach der die Antragsliste filtert und die Empfaenger von \"Neuer Antrag eingegangen\" bestimmt werden. Die Zahl selbst und die Antwortform sind unveraendert; neu ist, dass ein Admin fuer einen Antrag, den dieser Zaehler nicht zaehlt, auch keine Postfach-Mitteilung mehr bekommt (die sonst in postfach.ungelesen mitzaehlte). Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage. Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst \"nicht abgesagt\"). Der Verbuchen-Tab blendet sie aus, die Zahl stand also vor einer leeren Liste. Dieselbe Bedingung gilt in der App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich zaehlen. Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes Feld aendert Form oder Typ, aeltere Apps ignorieren es): die Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das Gegenstueck zu chat.byRoom/chat.total. GEAENDERT 2026-09-27 (Simon: \"Die Challenges sollen sich verhalten wie der Chat\"): auch fuer Team und Leitung gefuellt -- fremde, freigegebene Beitraege seit dem letzten Oeffnen in laufenden Challenges, die die Person sieht (utils/challengeNeuigkeiten.js, challengeNeuigkeitenLeitungJeChallenge). Wartende Beitraege zaehlen weiter nur in pendingChallenges, ein Beitrag nie in beiden. Store-Apps 2.2.x lesen das Feld fuer Team und Leitung nicht; ihr Reiter zeigt weiter nur pendingChallenges. BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-07): Fuer Team und Leitung zaehlt dazu die laufende Challenge selbst (1), solange sie nie geoeffnet wurde, das Team bei ihr mitmacht ('konfis_und_team', 'nur_team' -- utils/challengeLeitungSicht.js, teamMachtMitSql) und die Person sie nicht angelegt hat (challenges.created_by). Bei 'konfis' nicht. Nur Werte aendern sich, die Antwortform bleibt; dieselbe Rechnung speist die App-Icon-Summe und den Gemeinde-Umschalter. Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen), aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der Leitung. pendingChallenges bleibt unveraendert eine Zahl -- die Store-Apps 2.2.x lesen sie so. Fuer Konfis ist challengeApprovals 0/leer; Neuigkeiten (Konfis) und offene Freigaben (Leitung) werden nie in ein Feld gemischt. Seit 25.09.2026 kommt postfach additiv dazu: die Zahl ungelesener Postfach-Mitteilungen des KONTOS ueber alle Organisationen (dieselbe Zaehlung wie GET /api/notifications/postfach.ungelesen). Sie speist die Glocke -- und seit demselben Tag auch die Zahl am App-Symbol: Der Client addiert sie in allen drei Rollen zu den Reiter-Zahlen, der Server rechnet dieselbe Summe fuer den Push (utils/appIconBadge.js, postfachZaehler; Paritaetstest appIconBadgeParitaet.test.js). Gemessen vorher am Geraet: Glocke 23, Challenges 9, Chat 3, Symbol 12 -- jetzt 35. Ungelesene Mitteilungen zaehlen ALLE, auch die, deren Gegenstand ein Reiter schon zaehlt (offener Antrag + \"Neuer Antrag eingegangen\"); Begruendung in backend/utils/postfachArten.js. Kein bestehendes Feld aendert sich. Store-Apps 2.2.x addieren das Postfach nicht: Sie zeigen nach dem Oeffnen die kleinere Summe der Reiter, bis die naechste Fassung im Store ist.\n",
+        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. GEAENDERT 27.09.2026: pendingRequests zaehlt ueber die gemeinsame Regel in backend/utils/antragLeitungSicht.js -- dieselbe, nach der die Antragsliste filtert und die Empfaenger von \"Neuer Antrag eingegangen\" bestimmt werden. Die Zahl selbst und die Antwortform sind unveraendert; neu ist, dass ein Admin fuer einen Antrag, den dieser Zaehler nicht zaehlt, auch keine Postfach-Mitteilung mehr bekommt (die sonst in postfach.ungelesen mitzaehlte). BEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-11): pendingEvents zaehlte fuer gebundene Admins \"Team gesucht\"-Events (teamer_needed) fremder Jahrgaenge mit -- die Eventliste hatte diesen Sichtbarkeitsgrund am 08.09.2026 gestrichen, die Zahl stand vor einem Event, das sich weder finden noch oeffnen liess. Jetzt zaehlt pendingEvents ueber die gemeinsame Regel in backend/utils/terminLeitungSicht.js, dieselbe wie GET /api/events, die Zahl am App-Symbol und die Erinnerung \"Events warten auf Verbuchung\" (die seitdem jeder Person genau diese Zahl nennt, BF-10). Buchungen geloeschter Konten zaehlen dabei wie in der Liste nicht mehr mit. Antwortform unveraendert. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage. Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst \"nicht abgesagt\"). Der Verbuchen-Tab blendet sie aus, die Zahl stand also vor einer leeren Liste. Dieselbe Bedingung gilt in der App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich zaehlen. Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes Feld aendert Form oder Typ, aeltere Apps ignorieren es): die Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das Gegenstueck zu chat.byRoom/chat.total. GEAENDERT 2026-09-27 (Simon: \"Die Challenges sollen sich verhalten wie der Chat\"): auch fuer Team und Leitung gefuellt -- fremde, freigegebene Beitraege seit dem letzten Oeffnen in laufenden Challenges, die die Person sieht (utils/challengeNeuigkeiten.js, challengeNeuigkeitenLeitungJeChallenge). Wartende Beitraege zaehlen weiter nur in pendingChallenges, ein Beitrag nie in beiden. Store-Apps 2.2.x lesen das Feld fuer Team und Leitung nicht; ihr Reiter zeigt weiter nur pendingChallenges. Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen), aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der Leitung. pendingChallenges bleibt unveraendert eine Zahl -- die Store-Apps 2.2.x lesen sie so. Fuer Konfis ist challengeApprovals 0/leer; Neuigkeiten (Konfis) und offene Freigaben (Leitung) werden nie in ein Feld gemischt. Seit 25.09.2026 kommt postfach additiv dazu: die Zahl ungelesener Postfach-Mitteilungen des KONTOS ueber alle Organisationen (dieselbe Zaehlung wie GET /api/notifications/postfach.ungelesen). Sie speist die Glocke -- und seit demselben Tag auch die Zahl am App-Symbol: Der Client addiert sie in allen drei Rollen zu den Reiter-Zahlen, der Server rechnet dieselbe Summe fuer den Push (utils/appIconBadge.js, postfachZaehler; Paritaetstest appIconBadgeParitaet.test.js). Gemessen vorher am Geraet: Glocke 23, Challenges 9, Chat 3, Symbol 12 -- jetzt 35. Ungelesene Mitteilungen zaehlen ALLE, auch die, deren Gegenstand ein Reiter schon zaehlt (offener Antrag + \"Neuer Antrag eingegangen\"); Begruendung in backend/utils/postfachArten.js. Kein bestehendes Feld aendert sich. Store-Apps 2.2.x addieren das Postfach nicht: Sie zeigen nach dem Oeffnen die kleinere Summe der Reiter, bis die naechste Fassung im Store ist.\n",
         "responses": {
           "200": {
             "description": "Zähler",
@@ -10158,7 +10168,7 @@
                     },
                     "challengeUpdates": {
                       "type": "object",
-                      "description": "NEU 24.09.2026 fuer Konfis, seit 27.09.2026 auch fuer Team und Leitung (fremde freigegebene Beitraege seit dem letzten Oeffnen, wartende nicht; dazu 1 fuer eine nie geoeffnete Challenge, bei der das Team mitmacht und die die Person nicht angelegt hat). Fuer Konfis: je laufender Challenge des eigenen Jahrgangs, was seit dem letzten Oeffnen (POST /api/challenges/konfi/{id}/mark-read) dazukam: die Challenge selbst, wenn nie geoeffnet; fremde sichtbare Galerie-Beitraege; Freigabe oder Ausblenden eigener Beitraege durch andere. Dieselbe Rechnung (utils/challengeNeuigkeiten.js) speist die App-Icon-Summe in utils/appIconBadge.js.\n",
+                      "description": "NEU 24.09.2026 fuer Konfis, seit 27.09.2026 auch fuer Team und Leitung (fremde freigegebene Beitraege seit dem letzten Oeffnen, wartende nicht). Fuer Konfis: je laufender Challenge des eigenen Jahrgangs, was seit dem letzten Oeffnen (POST /api/challenges/konfi/{id}/mark-read) dazukam: die Challenge selbst, wenn nie geoeffnet; fremde sichtbare Galerie-Beitraege; Freigabe oder Ausblenden eigener Beitraege durch andere. Dieselbe Rechnung (utils/challengeNeuigkeiten.js) speist die App-Icon-Summe in utils/appIconBadge.js.\n",
                       "properties": {
                         "total": {
                           "type": "integer"
@@ -10296,7 +10306,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Postfach lesen (eigene Mitteilungen, alle Gemeinden)",
-        "description": "NEU 25.09.2026. Die Tabelle notifications wurde bis dahin an sechs Stellen geschrieben (Antragsentscheid, Abzeichen, Konfi- und Teamer-Meldungen), aber nirgends gelesen -- wer eine Push-Nachricht wegwischte, hatte sie verloren. Diese Route macht daraus ein Postfach. WAS DRINSTEHT (seit 25.09.2026, zweiter Schritt): Neben den vier alten Arten (badge_earned, new_activity_request, activity_request_submitted, activity_request_decision) schreibt der Push-Weg selbst (PushService.sendToUser/sendToMultipleUsers) 21 weitere Arten mit -- gesteuert ueber die Positivliste in backend/utils/postfachArten.js: event_attendance, bonus_points, activity_assigned, level_up, challenge_badge_earned, waitlist_promotion, event_cancelled, event_changed, event_reactivated, event_registered, event_unregistered, challenge_submission_hidden (Konfis/Teamer:innen); event_unregistration, teamer_event_booking, teamer_event_cancellation, events_pending_approval, new_konfi_registration, challenge_submission, jahrgang_deletion_warning, event_opt_out, event_opt_in (Leitung und Team). Der Eintrag entsteht VOR der Token-Pruefung -- auch wer keinen Push bekommt, hat ihn. Bewusst NICHT im Postfach: event_reminder, new_event, mandatory_event_created, challenge_started, chat (eigene Listen und Zaehler); wrapped und certificate sind nicht entschieden. NEU 27.09.2026 (additiv, BF-14 / F-06): event_removed (\"Vom Event ausgetragen\") und event_waitlisted (\"Auf die Warteliste gesetzt\") -- die Leitung hat die Person ausgetragen bzw. herabgestuft; beide mit event_id und organization_id, sie sterben mit dem Termin. Die Antwortform bleibt; `type` ist ein freier String, und eine App, die eine Art nicht kennt, zeigt Titel und Text wie jede Zeile, in der neutralen Farbe (bzw. der Terminfarbe beim Praefix event_) und ohne Sprungziel. Ebenso additiv (BF-21 / F-13): gemeinde_einladung_beantwortet (\"Einladung angenommen\" / \"Einladung abgelehnt\") an die einladende Leitung, mit einladung_id, user_id, status und organization_id der einladenden Gemeinde. events_pending_approval ersetzt die noch ungelesene Mitteilung derselben Person und Gemeinde vom Vortag, statt sich taeglich zu stapeln. `data` traegt die Kennungen des Pushes (event_id bzw. eventId, challengeId, jahrgang_id, request_id, badge_id); die App navigiert damit wie bei einem Push-Tap. Mitteilungen sterben mit ihrem Gegenstand (backend/utils/postfachAufraeumen.js): mit dem Termin alle Termin-Arten, mit der Challenge Stempel/ausgeblendet/ neuer Beitrag, mit dem Jahrgang die Loeschwarnung, mit dem Antrag die Zustandsmeldungen, mit dem Abzeichen \"Neues Badge erhalten\". Nach 365 Tagen werden Mitteilungen nachts entfernt. ENTSCHEIDUNG ORG-BEZUG: Das Postfach ist persoenlich wie das Mitteilungszentrum des Handys; Push-Nachrichten kommen ja auch unabhaengig von der aktiven Gemeinde an. Wer mehrere Gemeinden betreut (org_admin in Org 1, 2 und 4), muss einen \"Neuen Antrag\" aus Gemeinde 2 sehen, waehrend er in Gemeinde 1 arbeitet. Deshalb liest die Route ueber ALLE Organisationen des Kontos (nur notifications.user_id = eigene id, kein Filter auf die aktive Org). Jeder Eintrag traegt organization_id und organization_name (COALESCE(display_name, name), null wenn die Organisation fehlt); die App wechselt beim Antippen bei Bedarf die Gemeinde ueber den vorhandenen Push-Weg. Neueste zuerst (ORDER BY id DESC). Cursor ueber `vor` (nur id < vor): stabil auch, wenn waehrend des Blaetterns neue Eintraege dazukommen. `data` ist IMMER ein Objekt (jsonb; NULL wird zu {}). `ungelesen` ist die Gesamtzahl ungelesener Mitteilungen des Kontos, unabhaengig von der Seite -- dieselbe Zahl wie badge-counts.postfach.ungelesen. `weitere` sagt, ob es aeltere Eintraege gibt.\n",
+        "description": "NEU 25.09.2026. Die Tabelle notifications wurde bis dahin an sechs Stellen geschrieben (Antragsentscheid, Abzeichen, Konfi- und Teamer-Meldungen), aber nirgends gelesen -- wer eine Push-Nachricht wegwischte, hatte sie verloren. Diese Route macht daraus ein Postfach. WAS DRINSTEHT (seit 25.09.2026, zweiter Schritt): Neben den vier alten Arten (badge_earned, new_activity_request, activity_request_submitted, activity_request_decision) schreibt der Push-Weg selbst (PushService.sendToUser/sendToMultipleUsers) 21 weitere Arten mit -- gesteuert ueber die Positivliste in backend/utils/postfachArten.js: event_attendance, bonus_points, activity_assigned, level_up, challenge_badge_earned, waitlist_promotion, event_cancelled, event_changed, event_reactivated, event_registered, event_unregistered, challenge_submission_hidden (Konfis/Teamer:innen); event_unregistration, teamer_event_booking, teamer_event_cancellation, events_pending_approval, new_konfi_registration, challenge_submission, jahrgang_deletion_warning, event_opt_out, event_opt_in (Leitung und Team). Der Eintrag entsteht VOR der Token-Pruefung -- auch wer keinen Push bekommt, hat ihn. Bewusst NICHT im Postfach: event_reminder, new_event, mandatory_event_created, challenge_started, chat (eigene Listen und Zaehler); wrapped und certificate sind nicht entschieden. events_pending_approval ersetzt die noch ungelesene Mitteilung derselben Person und Gemeinde vom Vortag, statt sich taeglich zu stapeln. `data` traegt die Kennungen des Pushes (event_id bzw. eventId, challengeId, jahrgang_id, request_id, badge_id); die App navigiert damit wie bei einem Push-Tap. Mitteilungen sterben mit ihrem Gegenstand (backend/utils/postfachAufraeumen.js): mit dem Termin alle Termin-Arten, mit der Challenge Stempel/ausgeblendet/ neuer Beitrag, mit dem Jahrgang die Loeschwarnung, mit dem Antrag die Zustandsmeldungen, mit dem Abzeichen \"Neues Badge erhalten\". Nach 365 Tagen werden Mitteilungen nachts entfernt. ENTSCHEIDUNG ORG-BEZUG: Das Postfach ist persoenlich wie das Mitteilungszentrum des Handys; Push-Nachrichten kommen ja auch unabhaengig von der aktiven Gemeinde an. Wer mehrere Gemeinden betreut (org_admin in Org 1, 2 und 4), muss einen \"Neuen Antrag\" aus Gemeinde 2 sehen, waehrend er in Gemeinde 1 arbeitet. Deshalb liest die Route ueber ALLE Organisationen des Kontos (nur notifications.user_id = eigene id, kein Filter auf die aktive Org). Jeder Eintrag traegt organization_id und organization_name (COALESCE(display_name, name), null wenn die Organisation fehlt); die App wechselt beim Antippen bei Bedarf die Gemeinde ueber den vorhandenen Push-Weg. Neueste zuerst (ORDER BY id DESC). Cursor ueber `vor` (nur id < vor): stabil auch, wenn waehrend des Blaetterns neue Eintraege dazukommen. `data` ist IMMER ein Objekt (jsonb; NULL wird zu {}). `ungelesen` ist die Gesamtzahl ungelesener Mitteilungen des Kontos, unabhaengig von der Seite -- dieselbe Zahl wie badge-counts.postfach.ungelesen. `weitere` sagt, ob es aeltere Eintraege gibt.\n",
         "parameters": [
           {
             "name": "limit",
@@ -10919,7 +10929,7 @@
           "Teamer:innen"
         ],
         "summary": "Zusage/Absage zu einem Termin (\"Ich bin dabei\" / \"Ich bin nicht dabei\")",
-        "description": "Drei Zustaende in event_bookings.status: keine Zeile = offen, confirmed/waitlist = zugesagt, opted_out = abgesagt (Grund in opt_out_reason). Jeder Uebergang ist jederzeit erlaubt. Die Zusage prueft das Teamer-Kontingent wie der regulaere Buchungsweg (Team-Seite nach Migration 136); eine Absage aus confirmed gibt den Platz frei und laesst aus der TEAM-Warteliste nachruecken. GRUND (01.09.2026): freiwillig, max. 500 Zeichen — AUSSER die Absage nimmt eine Zusage zurueck (vorher confirmed ODER waitlist): dann ist er Pflicht, sonst 400 mit error_code 'grund_erforderlich'. Die Wiederholung einer Absage (Offline-Doppelversand) braucht keinen Grund und laesst den gespeicherten Grund samt Kennzeichen absage_nach_zusage stehen. JAHRGANGSGRENZE seit 08.09.2026: 403, wenn der Termin zu einem Jahrgang gehoert, den der Aufrufer nicht betreut -- dieselbe Regel wie im Chat und dieselbe Funktion wie im Buchungskern (darfTeamerAnDiesenTermin). Ausgenommen sind teamer_only, Termine ohne jede Jahrgangs-Zuordnung sowie org_admin/super_admin. Ohne diese Pruefung hier liesse sich die Sperre aus POST /api/events/{id}/book ueber diesen zweiten Weg umgehen. Fachlicher Kern in utils/bookingUtils.js (setzeTeamerZusage). Pushes an die Leitung ueber die Teamer-Typen teamer_event_booking bzw. teamer_event_cancellation (Absage seit 01.09.2026 mit Grund im Text); nachrueckende Teamer:innen bekommen waitlist_promotion.\n",
+        "description": "Drei Zustaende in event_bookings.status: keine Zeile = offen, confirmed/waitlist = zugesagt, opted_out = abgesagt (Grund in opt_out_reason). Jeder Uebergang ist jederzeit erlaubt. Die Zusage prueft das Teamer-Kontingent wie der regulaere Buchungsweg (Team-Seite nach Migration 136); eine Absage aus confirmed gibt den Platz frei und laesst aus der TEAM-Warteliste nachruecken. GRUND (01.09.2026): freiwillig, max. 500 Zeichen — AUSSER die Absage nimmt eine Zusage zurueck (vorher confirmed ODER waitlist): dann ist er Pflicht, sonst 400 mit error_code 'grund_erforderlich'. Die Wiederholung einer Absage (Offline-Doppelversand) braucht keinen Grund und laesst den gespeicherten Grund samt Kennzeichen absage_nach_zusage stehen. JAHRGANGSGRENZE seit 08.09.2026: 403, wenn der Termin zu einem Jahrgang gehoert, den der Aufrufer nicht betreut -- dieselbe Regel wie im Chat und dieselbe Funktion wie im Buchungskern (darfTeamerAnDiesenTermin). Ausgenommen sind teamer_only, Termine ohne jede Jahrgangs-Zuordnung sowie org_admin/super_admin. Ohne diese Pruefung hier liesse sich die Sperre aus POST /api/events/{id}/book ueber diesen zweiten Weg umgehen. Fachlicher Kern in utils/bookingUtils.js (setzeTeamerZusage). Pushes an die Leitung ueber die Teamer-Typen teamer_event_booking bzw. teamer_event_cancellation (Absage seit 01.09.2026 mit Grund im Text); nachrueckende Teamer:innen bekommen waitlist_promotion. GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01, F-10): Die beiden Leitungs-Meldungen gehen nur an die Leitung, die das Event sieht -- org_admin immer, admin mit can_view-Zuweisung auf einen Jahrgang des Events, bei \"Nur Team\" (teamer_only) und Events ohne Jahrgang alle Admins (backend/utils/terminLeitungSicht.js); vorher ueber sendToOrgAdmins an jeden Admin der Gemeinde. Die zusagende Person selbst bekommt keine Meldung ueber die eigene Zu- oder Absage -- die Route steht hinter requireTeamer, auch admin und org_admin sagen hier zu und bekamen bis dahin ihre eigene Meldung. Versand nach der Antwort; Antwortform unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",

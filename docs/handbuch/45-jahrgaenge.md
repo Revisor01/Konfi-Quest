@@ -196,6 +196,8 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Nachweisfotos zu Aktivitäten | nur für Verantwortliche der betreffenden Jahrgänge sichtbar |
 | Anträge auf Aktivitäten (Admin) | Anträge von Konfis dieser Jahrgänge stehen nicht in der Antragsliste, zählen nicht am Reiter und melden sich nicht als „Neuer Antrag eingegangen“; Anträge von Teamer:innen bleiben ([wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt)) |
 | Events | jahrgangsgebundene Events sind unsichtbar und nicht buchbar; führt eine Mitteilung oder ein Link auf ein solches Event, steht dort der Grund („Nicht deinem Jahrgang zugeordnet") |
+| Abmeldungen und Zusagen zu Events (Admin) | Abmeldungen von Konfis, Pflicht-Abmeldungen und Zu- oder Absagen des Teams melden sich nicht; Events „Nur Team“ und Events ohne Jahrgang melden sich bei allen Admins ([wer davon erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)) |
+| „Events warten auf Verbuchung“ (Admin) | zählt nur die Events, die der Reiter „Verbuchen“ zeigt; ist dort nichts offen, kommt keine Erinnerung |
 | Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
 | Anwesenheits- und Spruchlisten (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Jahresrückblick: Liste der Ausgaben | zeigt nur Ausgaben der eigenen Jahrgänge; ohne jede Zuweisung bleibt sie leer und nennt den Grund („Kein Jahrgang zugewiesen“) |

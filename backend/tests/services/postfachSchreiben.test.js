@@ -15,7 +15,7 @@
 // bewusst ausgenommenen Arten schreiben NICHTS.
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, EVENTS, JAHRGAENGE } = require('../helpers/seed');
-const { ladeLeitungDerOrganisation } = require('../../utils/orgMitglieder');
+const { ladeLeitungZumTermin } = require('../../utils/terminLeitungSicht');
 const { POSTFACH_ARTEN, NICHT_IM_POSTFACH } = require('../../utils/postfachArten');
 
 // Firebase abklemmen, BEVOR pushService geladen wird (Muster aus
@@ -229,13 +229,20 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
   // Leitungs- und Team-Arten
   // ================================================================
   describe('Leitungs-Arten', () => {
-    it('event_unregistration: Konfi-Abmeldung an die GESAMTE Leitung, mit event_id', async () => {
-      const leitung = await ladeLeitungDerOrganisation(db, ORG1);
-      expect(leitung.length).toBeGreaterThan(1);
+    // Seit 27.09.2026 nehmen die Event-Meldungen ihre Empfaenger von der
+    // Aufrufstelle (utils/terminLeitungSicht.js). Hier geht es um den
+    // Postfach-Eintrag je Empfaenger:in -- die Liste kommt aus der Regel bzw.
+    // ausdruecklich; wer sie bekommt, prueft
+    // tests/routes/terminLeitungEmpfaenger.test.js.
+    it('event_unregistration: Konfi-Abmeldung an die Leitung des Events, mit event_id', async () => {
+      // admin1 hat im Seed keinen Jahrgang und sieht das Event nicht: die
+      // Gemeindeleitung (orgAdmin1, orgAdminSuper).
+      const leitung = await ladeLeitungZumTermin(db, TERMIN);
+      expect(leitung).toEqual([USERS.orgAdmin1.id, USERS.orgAdminSuper.id]);
 
-      await PushService.sendEventUnregistrationToAdmins(db, ORG1, 'Test Konfi 1', 'Weihnachtsgottesdienst', 'Krank', TERMIN);
+      await PushService.sendEventUnregistrationToLeadership(db, ORG1, leitung, 'Test Konfi 1', 'Weihnachtsgottesdienst', 'Krank', TERMIN);
 
-      expect(await anzahl()).toBe(leitung.length);
+      expect(await anzahl()).toBe(2);
       for (const id of leitung) {
         const [m] = await postfach(id);
         expect(m.type).toBe('event_unregistration');
@@ -246,8 +253,8 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('teamer_event_booking und teamer_event_cancellation: mit eventId (camelCase, wie der Push)', async () => {
-      await PushService.sendTeamerEventBookingToAdmins(db, ORG1, 'Test Teamer 1', 'Weihnachtsgottesdienst', 'confirmed', TERMIN);
-      await PushService.sendTeamerEventCancellationToAdmins(db, ORG1, 'Test Teamer 1', 'Weihnachtsgottesdienst', TERMIN, 'Verhindert');
+      await PushService.sendTeamerEventBookingToLeadership(db, ORG1, [USERS.admin1.id], 'Test Teamer 1', 'Weihnachtsgottesdienst', 'confirmed', TERMIN);
+      await PushService.sendTeamerEventCancellationToLeadership(db, ORG1, [USERS.admin1.id], 'Test Teamer 1', 'Weihnachtsgottesdienst', TERMIN, 'Verhindert');
 
       const [buchung, absage] = await postfach(USERS.admin1.id);
       expect(buchung.type).toBe('teamer_event_booking');
@@ -258,7 +265,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('events_pending_approval: Erinnerung an unverbuchte Termine', async () => {
-      await PushService.sendEventsPendingApprovalToAdmins(db, ORG1, 3);
+      await PushService.sendEventsPendingApprovalToLeadership(db, ORG1, [USERS.admin1.id], 3);
 
       const [m] = await postfach(USERS.admin1.id);
       expect(m.type).toBe('events_pending_approval');
@@ -267,8 +274,8 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('events_pending_approval kommt taeglich: die neue ersetzt die noch UNGELESENE alte, Gelesenes bleibt', async () => {
-      await PushService.sendEventsPendingApprovalToAdmins(db, ORG1, 3);
-      await PushService.sendEventsPendingApprovalToAdmins(db, ORG1, 2);
+      await PushService.sendEventsPendingApprovalToLeadership(db, ORG1, [USERS.admin1.id], 3);
+      await PushService.sendEventsPendingApprovalToLeadership(db, ORG1, [USERS.admin1.id], 2);
 
       let liste = await postfach(USERS.admin1.id);
       expect(liste).toHaveLength(1);
@@ -276,7 +283,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
 
       // Gelesen -> Verlauf, bleibt stehen; die naechste kommt dazu.
       await db.query('UPDATE notifications SET read_at = NOW() WHERE id = $1', [liste[0].id]);
-      await PushService.sendEventsPendingApprovalToAdmins(db, ORG1, 1);
+      await PushService.sendEventsPendingApprovalToLeadership(db, ORG1, [USERS.admin1.id], 1);
 
       liste = await postfach(USERS.admin1.id);
       expect(liste).toHaveLength(2);
@@ -328,8 +335,8 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('event_opt_out und event_opt_in: mit event_id', async () => {
-      await PushService.sendEventOptOutToAdmins(db, ORG1, 'Test Konfi 1', 'Konfi-Unterricht', 'Zahnarzt', EVENTS.pflichtEvent.id);
-      await PushService.sendEventOptInToAdmins(db, ORG1, 'Test Konfi 1', 'Konfi-Unterricht', EVENTS.pflichtEvent.id);
+      await PushService.sendEventOptOutToLeadership(db, ORG1, [USERS.admin1.id], 'Test Konfi 1', 'Konfi-Unterricht', 'Zahnarzt', EVENTS.pflichtEvent.id);
+      await PushService.sendEventOptInToLeadership(db, ORG1, [USERS.admin1.id], 'Test Konfi 1', 'Konfi-Unterricht', EVENTS.pflichtEvent.id);
 
       const [aus, ein] = await postfach(USERS.admin1.id);
       expect(aus.type).toBe('event_opt_out');
@@ -478,7 +485,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
 
     it('ein ueberlanger Titel wird auf 255 Zeichen gekuerzt statt den Eintrag zu verlieren', async () => {
       const name = 'X'.repeat(300);
-      await PushService.sendEventOptOutToAdmins(db, ORG1, 'Konfi', name, 'Grund', EVENTS.pflichtEvent.id);
+      await PushService.sendEventOptOutToLeadership(db, ORG1, [USERS.admin1.id], 'Konfi', name, 'Grund', EVENTS.pflichtEvent.id);
 
       const [m] = await postfach(USERS.admin1.id);
       expect(m.title).toHaveLength(255);

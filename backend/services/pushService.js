@@ -53,7 +53,7 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
  * event_unregistered          | sendEventUnregisteredToKonfi         | Konfi           | ja
  * event_removed               | sendEventRemovedByLeitung            | Gebuchte Person | ja
  * event_waitlisted            | sendEventRemovedByLeitung            | Gebuchte Person | ja
- * event_unregistration        | sendEventUnregistrationToAdmins      | Org-Admins      | ja
+ * event_unregistration        | sendEventUnregistrationToLeadership  | Event-Leitung   | ja
  * level_up                    | sendLevelUpToKonfi                   | Konfi           | ja
  * event_reminder              | sendEventReminderToKonfi             | Konfi           | ja
  * waitlist_promotion          | sendWaitlistPromotionToKonfi         | Konfi           | ja
@@ -64,13 +64,13 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
  * event_changed               | sendEventChangedToKonfis             | Konfi (multi)   | ja
  * new_event                   | sendNewEventToOrgKonfis              | Jahrgangs-Konfis| ja
  * event_attendance            | sendEventAttendanceToKonfi           | Konfi           | ja
- * events_pending_approval     | sendEventsPendingApprovalToAdmins    | Org-Admins      | ja
+ * events_pending_approval     | sendEventsPendingApprovalToLeadership| Event-Leitung   | ja
  * new_konfi_registration      | sendNewKonfiRegistrationToAdmins     | Jahrgangs-Admins| ja
  * jahrgang_deletion_warning   | sendJahrgangDeletionWarningToAdmins  | Org-Admins      | ja
- * event_opt_out               | sendEventOptOutToAdmins              | Org-Admins      | ja
- * event_opt_in                | sendEventOptInToAdmins               | Org-Admins      | ja
- * teamer_event_booking        | sendTeamerEventBookingToAdmins       | Org-Admins      | ja
- * teamer_event_cancellation   | sendTeamerEventCancellationToAdmins  | Org-Admins      | ja
+ * event_opt_out               | sendEventOptOutToLeadership          | Event-Leitung   | ja
+ * event_opt_in                | sendEventOptInToLeadership           | Event-Leitung   | ja
+ * teamer_event_booking        | sendTeamerEventBookingToLeadership   | Event-Leitung   | ja
+ * teamer_event_cancellation   | sendTeamerEventCancellationToLeadership | Event-Leitung | ja
  * challenge_started           | sendChallengeStartedToJahrgaenge     | Teilnehmende    | ja
  * challenge_submission        | sendChallengeSubmissionToLeadership  | Leitung         | ja
  * challenge_started (Feed)    | sendChallengeFeedToJahrgaenge        | Jahrgangs-Konfis| ja
@@ -1080,6 +1080,13 @@ class PushService {
 
   /**
    * Generische Push-Notification an alle Admins einer Organisation
+   *
+   * NICHT fuer Vorgaenge mit Jahrgangsbezug (27.09.2026): Diese Methode
+   * kennt keine Jahrgangsbindung und erreicht jeden Admin der Gemeinde. Die
+   * Leitungs-Meldungen zu Terminen und Antraegen nehmen ihre Empfaenger aus
+   * der jeweiligen Regel-Stelle (utils/terminLeitungSicht.js,
+   * utils/antragLeitungSicht.js) und senden ueber sendToLeadership.
+   *
    * @param {object} db - DB-Pool
    * @param {number} organizationId - Organisation ID
    * @param {object} notification - { title, body, data? }
@@ -1105,6 +1112,40 @@ class PushService {
       console.error('sendToOrgAdmins error:', error);
       return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * Push an eine AUSDRUECKLICHE Empfaengerliste der Leitung (27.09.2026).
+   *
+   * Die Liste kommt von der Aufrufstelle, aus der Regel-Stelle des Vorgangs
+   * (ladeLeitungZumTermin, ladeLeitungZumAntrag) -- dieselbe Regel,
+   * nach der Liste und Zaehler filtern. Ohne Liste geht NICHTS raus: kein
+   * stiller Rueckfall auf die ganze Leitung (Audit wer-bekommt-was, BF-01,
+   * BF-03, F-03). Die Organisation des Inhalts kommt in den Payload, damit
+   * der Tap in DIESE Gemeinde wechselt.
+   *
+   * @param {object} db
+   * @param {number} organizationId  Organisation des Inhalts
+   * @param {Array<number>} empfaenger
+   * @param {object} notification  { title, body, data }
+   * @param {string} bezeichnung  fuer die Fehlermeldung
+   */
+  static async sendToLeadership(db, organizationId, empfaenger, notification, bezeichnung = 'sendToLeadership') {
+    if (!Array.isArray(empfaenger)) {
+      console.error(`${bezeichnung}: Empfaengerliste fehlt, nichts gesendet`);
+      return { success: false, message: 'Empfängerliste fehlt' };
+    }
+    if (empfaenger.length === 0) {
+      return { success: false, message: 'No admins found' };
+    }
+    const enriched = {
+      ...notification,
+      data: {
+        ...(notification.data || {}),
+        organization_id: String(notification.data?.organization_id ?? organizationId)
+      }
+    };
+    return this.sendToMultipleUsers(db, empfaenger, enriched);
   }
 
   /**
@@ -1425,25 +1466,22 @@ class PushService {
   }
 
   /**
-   * Konfi hat sich von Event abgemeldet - Push an alle Admins der Organisation
+   * Konfi hat sich von Event abgemeldet - Push an die Leitung, die den
+   * Termin sieht.
+   *
+   * EMPFAENGER KOMMEN VON DER AUFRUFSTELLE (27.09.2026): ladeLeitungZumTermin
+   * (utils/terminLeitungSicht.js) -- dieselbe Regel wie Terminliste und
+   * Verbuchen-Zaehler. Vorher holte die Methode selbst
+   * ladeLeitungDerOrganisation, also JEDEN Admin der Gemeinde; der Text
+   * traegt Name und Grund (Audit wer-bekommt-was, BF-01).
    */
   // eventId optional und am Ende (25.09.2026): Die Meldung geht seit dem
   // Postfach nicht nur als Push raus, sondern bleibt als Mitteilung stehen --
   // und stirbt mit dem Termin (utils/postfachAufraeumen.js). Dafuer braucht
   // sie seine Kennung. Ausserdem springt der Tap damit an den Termin statt
   // auf die Liste (frontend utils/pushNavigation.ts).
-  static async sendEventUnregistrationToAdmins(db, organizationId, konfiName, eventName, reason = null, eventId = null) {
+  static async sendEventUnregistrationToLeadership(db, organizationId, empfaenger, konfiName, eventName, reason = null, eventId = null) {
     try {
-
-      // Hole alle Admins der Organisation
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
- console.warn('Keine Admins für Organisation gefunden');
-        return { success: false, message: 'No admins found' };
-      }
-
-      const adminIds = admins;
       const notification = {
         title: 'Event-Abmeldung',
         body: reason
@@ -1458,9 +1496,9 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendEventUnregistrationToLeadership');
     } catch (error) {
- console.error('sendEventUnregistrationToAdmins error:', error);
+      console.error('sendEventUnregistrationToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
@@ -2321,18 +2359,17 @@ class PushService {
   }
 
   /**
-   * Events müssen verbucht werden - Push an Admins (für Cron-Job)
+   * Events müssen verbucht werden - Push an die Leitung (für Cron-Job)
+   *
+   * EMPFAENGER UND ZAHL KOMMEN VOM AUFRUFER (27.09.2026): Der Lauf um 09:00
+   * zaehlt je Person, was IHR Verbuchen-Reiter zeigt
+   * (zaehleWartendeTermineJeLeitung, utils/terminLeitungSicht.js), und ruft
+   * diese Methode je Gemeinde und Zahl einmal mit den Personen, die genau
+   * diese Zahl haben. Vorher bekam jeder Admin die Zahl der ganzen Gemeinde
+   * (Audit wer-bekommt-was, BF-10).
    */
-  static async sendEventsPendingApprovalToAdmins(db, organizationId, eventCount) {
+  static async sendEventsPendingApprovalToLeadership(db, organizationId, empfaenger, eventCount) {
     try {
-
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
-        return { success: false, message: 'No admins found' };
-      }
-
-      const adminIds = admins;
       const notification = {
         title: 'Events warten auf Verbuchung',
         body: `${eventCount} Event${eventCount > 1 ? 's' : ''} warten auf Anwesenheitsverbuchung`,
@@ -2343,9 +2380,9 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendEventsPendingApprovalToLeadership');
     } catch (error) {
- console.error('sendEventsPendingApprovalToAdmins error:', error);
+      console.error('sendEventsPendingApprovalToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
@@ -2425,18 +2462,13 @@ class PushService {
   // ====================================================================
 
   /**
-   * Konfi hat sich von Pflicht-Event abgemeldet (Opt-out) - Push an alle Admins der Organisation
+   * Konfi hat sich von Pflicht-Event abgemeldet (Opt-out) - Push an die
+   * Leitung, die den Termin sieht. Empfaenger von der Aufrufstelle
+   * (ladeLeitungZumTermin, utils/terminLeitungSicht.js, 27.09.2026); vorher
+   * jeder Admin der Gemeinde, samt Grund (BF-01).
    */
-  static async sendEventOptOutToAdmins(db, organizationId, konfiName, eventName, reason, eventId = null) {
+  static async sendEventOptOutToLeadership(db, organizationId, empfaenger, konfiName, eventName, reason, eventId = null) {
     try {
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
-        console.warn('Keine Admins für Organisation gefunden');
-        return { success: false, message: 'No admins found' };
-      }
-
-      const adminIds = admins;
       const notification = {
         title: `Abmeldung: ${eventName}`,
         body: `${konfiName} hat sich von '${eventName}' abgemeldet. Grund: ${reason}`,
@@ -2450,26 +2482,19 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendEventOptOutToLeadership');
     } catch (error) {
-      console.error('sendEventOptOutToAdmins error:', error);
+      console.error('sendEventOptOutToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
 
   /**
-   * Konfi hat Opt-out zurückgenommen (wieder angemeldet) - Push an alle Admins der Organisation
+   * Konfi hat Opt-out zurückgenommen (wieder angemeldet) - Push an die
+   * Leitung, die den Termin sieht (Empfaenger wie beim Opt-out, 27.09.2026).
    */
-  static async sendEventOptInToAdmins(db, organizationId, konfiName, eventName, eventId = null) {
+  static async sendEventOptInToLeadership(db, organizationId, empfaenger, konfiName, eventName, eventId = null) {
     try {
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
-        console.warn('Keine Admins für Organisation gefunden');
-        return { success: false, message: 'No admins found' };
-      }
-
-      const adminIds = admins;
       const notification = {
         title: `Wieder angemeldet: ${eventName}`,
         body: `${konfiName} hat sich wieder für '${eventName}' angemeldet`,
@@ -2482,9 +2507,9 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendEventOptInToLeadership');
     } catch (error) {
-      console.error('sendEventOptInToAdmins error:', error);
+      console.error('sendEventOptInToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
@@ -2525,12 +2550,16 @@ class PushService {
   }
 
   /**
-   * Teamer:in hat sich zu einem Event angemeldet - Push an die Leitung.
+   * Teamer:in hat sich zu einem Event angemeldet - Push an die Leitung, die
+   * den Termin sieht. Empfaenger von der Aufrufstelle (ladeLeitungZumTermin,
+   * utils/terminLeitungSicht.js, 27.09.2026); vorher ueber sendToOrgAdmins
+   * an jeden Admin der Gemeinde (BF-01). "Nur Team" und Termine ohne
+   * Jahrgang erreichen weiterhin alle Admins -- die Team-Ausnahme.
    * @param {string} status 'confirmed' oder 'waitlist'
    */
-  static async sendTeamerEventBookingToAdmins(db, organizationId, teamerName, eventName, status, eventId) {
+  static async sendTeamerEventBookingToLeadership(db, organizationId, empfaenger, teamerName, eventName, status, eventId) {
     try {
-      return await this.sendToOrgAdmins(db, organizationId, {
+      return await this.sendToLeadership(db, organizationId, empfaenger, {
         title: 'Teamer:in angemeldet',
         body: status === 'confirmed'
           ? `${teamerName} hat sich für '${eventName}' angemeldet`
@@ -2540,15 +2569,16 @@ class PushService {
           eventId: String(eventId),
           organization_id: String(organizationId)
         }
-      });
+      }, 'sendTeamerEventBookingToLeadership');
     } catch (error) {
-      console.error('sendTeamerEventBookingToAdmins error:', error);
+      console.error('sendTeamerEventBookingToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
 
   /**
-   * Teamer:in hat sich von einem Event abgemeldet - Push an die Leitung.
+   * Teamer:in hat sich von einem Event abgemeldet - Push an die Leitung, die
+   * den Termin sieht (Empfaenger wie bei der Anmeldung, 27.09.2026).
    */
   // reason ist seit 01.09.2026 dabei (ADDITIV, optional): Die Teamer-Absage
   // ueber POST /teamer/events/:id/zusage traegt einen Grund — bei einer
@@ -2556,7 +2586,7 @@ class PushService {
   // in der Meldung lesen, ohne die App zu oeffnen. Der Storno-Weg
   // (DELETE /events/:id/book) ruft weiter ohne reason auf; Text und
   // data-Felder bleiben dann exakt wie bisher.
-  static async sendTeamerEventCancellationToAdmins(db, organizationId, teamerName, eventName, eventId, reason = null) {
+  static async sendTeamerEventCancellationToLeadership(db, organizationId, empfaenger, teamerName, eventName, eventId, reason = null) {
     try {
       const notification = {
         title: 'Teamer:in abgemeldet',
@@ -2570,9 +2600,9 @@ class PushService {
         }
       };
       if (reason) notification.data.reason = reason;
-      return await this.sendToOrgAdmins(db, organizationId, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendTeamerEventCancellationToLeadership');
     } catch (error) {
-      console.error('sendTeamerEventCancellationToAdmins error:', error);
+      console.error('sendTeamerEventCancellationToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }

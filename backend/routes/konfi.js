@@ -14,6 +14,9 @@ const { darfKonfi } = require('../utils/jahrgangsZugriff');
 // Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
 // ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
 const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
+// Empfaenger der Abmelde-Meldungen: die Leitung, die das Event sieht
+// (27.09.2026, Regel in utils/terminLeitungSicht.js).
+const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach, pruefeKonfiStorno } = require('../utils/bookingUtils');
 const { buchungszahlenJeTerminSql } = require('../utils/buchungszahlen');
@@ -1822,19 +1825,24 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       res.json({ message: 'Abmeldung erfolgreich' });
 
-      // Push-Notification an Konfi senden
-      try {
-        await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name, eventId);
-      } catch (pushErr) {
- console.error('Error sending event unregistration push to konfi:', pushErr);
-      }
+      // Seit 27.09.2026 ueber nachAntwort statt frei laufend (gleiches
+      // Verhalten, Tests koennen darauf warten).
+      nachAntwort(req, async () => {
+        // Push-Notification an Konfi senden
+        try {
+          await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name, eventId);
+        } catch (pushErr) {
+          console.error('Error sending event unregistration push to konfi:', pushErr);
+        }
 
-      // Push-Notification an ALLE Admins senden
-      try {
-        await PushService.sendEventUnregistrationToAdmins(db, req.user.organization_id, konfiName, event.name, reason, eventId);
-      } catch (pushErr) {
- console.error('Error sending event unregistration push to admins:', pushErr);
-      }
+        // An die Leitung, die das Event sieht (27.09.2026, Regel in
+        // utils/terminLeitungSicht.js): Org-Admins immer, Admins nur mit
+        // Zuweisung auf einen Jahrgang des Events. Vorher an JEDEN Admin der
+        // Gemeinde -- samt Grund (Audit wer-bekommt-was, BF-01).
+        // DELETE /events/:id/book meldet dasselbe (events/buchung.js).
+        const empfaenger = await ladeLeitungZumTermin(db, eventId);
+        await PushService.sendEventUnregistrationToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, reason, eventId);
+      }, 'Abmelde-Mitteilungen');
 
       // Live-Update an Konfi und Admins senden
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');
@@ -1959,13 +1967,14 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         nachgerueckt.map((promotedUserId) => ({ eventId, userId: promotedUserId, seite: 'konfi' }))
       );
 
-      // Push an Admins (fire-and-forget)
-      try {
+      // Push an die Leitung, die das Event sieht (27.09.2026,
+      // utils/terminLeitungSicht.js; vorher jeder Admin der Gemeinde, BF-01).
+      // Ueber nachAntwort, damit Tests darauf warten koennen.
+      nachAntwort(req, async () => {
         const konfiName = req.user.display_name || req.user.username;
-        await PushService.sendEventOptOutToAdmins(db, req.user.organization_id, konfiName, event.name, reason.trim(), eventId);
-      } catch (pushErr) {
-        console.error('Opt-out push error:', pushErr);
-      }
+        const empfaenger = await ladeLeitungZumTermin(db, eventId);
+        await PushService.sendEventOptOutToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, reason.trim(), eventId);
+      }, 'Opt-out-Mitteilung an die Leitung');
 
       // Live-Update
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');
@@ -2041,13 +2050,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       res.json({ message: 'Wieder angemeldet' });
 
-      // Push an Admins (fire-and-forget)
-      try {
+      // Push an die Leitung, die das Event sieht (wie beim Opt-out,
+      // 27.09.2026).
+      nachAntwort(req, async () => {
         const konfiName = req.user.display_name || req.user.username;
-        await PushService.sendEventOptInToAdmins(db, req.user.organization_id, konfiName, event.name, eventId);
-      } catch (pushErr) {
-        console.error('Opt-in push error:', pushErr);
-      }
+        const empfaenger = await ladeLeitungZumTermin(db, eventId);
+        await PushService.sendEventOptInToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, eventId);
+      }, 'Opt-in-Mitteilung an die Leitung');
 
       // Live-Update
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');

@@ -8,6 +8,9 @@ const { formatUhrzeit } = require('../utils/zeitformat');
 const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { abzeichenFingerabdruecke } = require('../utils/abzeichenKandidaten');
 const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
+// Empfaenger der Verbuchen-Erinnerung (27.09.2026): die Regel-Stelle fuer
+// Events, nicht mehr die ganze Leitung.
+const { terminWartetAufVerbuchungSql, zaehleWartendeTermineJeLeitung } = require('../utils/terminLeitungSicht');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -938,26 +941,46 @@ class BackgroundService {
       // Befund H1, 27.08.2026: Abgesagte Termine ebenfalls nicht — bei einem
       // abgesagten Termin gibt es nichts zu verbuchen, die Erinnerung an die
       // Leitung waere reines Rauschen.
-      const query = `
-        SELECT e.organization_id, COUNT(DISTINCT e.id) as pending_count
-        FROM events e
-        JOIN event_bookings eb ON e.id = eb.event_id
-        JOIN users u ON eb.user_id = u.id AND u.deleted_at IS NULL
-        WHERE e.event_date < CURRENT_DATE
-          AND e.cancelled IS NOT TRUE
-          AND eb.status = 'confirmed'
-          AND eb.attendance_status IS NULL
-        GROUP BY e.organization_id
-        HAVING COUNT(DISTINCT e.id) > 0
-      `;
+      //
+      // JE PERSON DIE ZAHL IHRES REITERS (27.09.2026, Audit wer-bekommt-was
+      // BF-10). Vorher zaehlte der Lauf je Gemeinde und schickte dieselbe Zahl
+      // an jeden Admin -- auch an Admins, deren Verbuchen-Reiter keinen dieser
+      // Events zeigt. Jetzt zaehlt zaehleWartendeTermineJeLeitung
+      // (utils/terminLeitungSicht.js) mit derselben Regel wie
+      // badge-counts.pendingEvents: Org-Admins die ganze Gemeinde, Admins ihre
+      // Jahrgaenge plus "Nur Team" und Events ohne Jahrgang. Wer 0 hat, bekommt
+      // nichts. Die Bedingung "wartet auf Verbuchung" ist dieselbe wie am
+      // Reiter (terminWartetAufVerbuchungSql): ab Beginn des Events statt ab
+      // dem Vortag, weiterhin ohne abgesagte Events und ohne Buchungen
+      // geloeschter Konten.
+      //
+      // Kosten: eine Abfrage fuer die Gemeinden, zwei je Gemeinde fuer die
+      // Empfaenger, eine Zaehlung fuer alle Personen zusammen, dann ein
+      // Versand je Gemeinde und Zahl -- keine Abfrage je Person.
+      const { rows: pendingOrgs } = await db.query(
+        `SELECT DISTINCT e.organization_id
+           FROM events e
+          WHERE ${terminWartetAufVerbuchungSql()}
+          ORDER BY e.organization_id`
+      );
+      const zahlen = await zaehleWartendeTermineJeLeitung(db, pendingOrgs.map((o) => o.organization_id));
 
-      const { rows: pendingOrgs } = await db.query(query);
+      // Gruppen: Gemeinde -> Zahl -> Personen
+      const gruppen = new Map();
+      for (const z of zahlen) {
+        if (z.anzahl <= 0) continue;
+        const schluessel = `${z.organization_id}:${z.anzahl}`;
+        if (!gruppen.has(schluessel)) {
+          gruppen.set(schluessel, { organizationId: z.organization_id, anzahl: z.anzahl, empfaenger: [] });
+        }
+        gruppen.get(schluessel).empfaenger.push(z.user_id);
+      }
 
-      for (const org of pendingOrgs) {
+      for (const g of gruppen.values()) {
         try {
-          await PushService.sendEventsPendingApprovalToAdmins(db, org.organization_id, org.pending_count);
+          await PushService.sendEventsPendingApprovalToLeadership(db, g.organizationId, g.empfaenger, g.anzahl);
         } catch (err) {
-          console.error(`Pending events reminder failed for org ${org.organization_id}:`, err);
+          console.error(`Pending events reminder failed for org ${g.organizationId}:`, err);
         }
       }
 

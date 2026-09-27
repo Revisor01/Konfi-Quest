@@ -12,7 +12,8 @@
 // nicht auf "enthaelt" allein -- sonst faellt nicht auf, wenn jemand
 // dazukommt, der nichts bekommen soll (der Text nennt Namen von Konfis).
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, ORGS, ROLES, JAHRGAENGE } = require('../helpers/seed');
+const { seed, USERS, ORGS, ROLES, JAHRGAENGE, EVENTS } = require('../helpers/seed');
+const { ladeLeitungZumTermin } = require('../../utils/terminLeitungSicht');
 
 const firebase = require('../../push/firebase');
 const sendFirebasePushNotification = vi
@@ -93,36 +94,53 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
       expect(tokens()).toEqual(['token-orgadmin2', 'token-teamer2']);
     });
 
+    // Seit 27.09.2026 haengen die Event-Meldungen am Jahrgang
+    // (utils/terminLeitungSicht.js): Ein Admin bekommt sie nur mit Zuweisung
+    // auf den Jahrgang des Events 4 (Jahrgang 2). admin2 hat im Seed keinen
+    // Jahrgang -- die Tests, in denen er als Leitung mitlaufen soll, weisen
+    // ihn Jahrgang 2 zu. Ohne Zuweisung bekommt er nichts; das prueft
+    // tests/routes/terminLeitungEmpfaenger.test.js.
+    const admin2AufJahrgang2 = () => db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin2.id, JAHRGAENGE.jahrgang2.id]
+    );
+
     it('verboten: wer in Org 2 nur Teamer:in ist, bekommt den Leitungs-Push dort NICHT', async () => {
       // orgAdmin1 ist zuhause org_admin, in Org 2 aber nur Teamer:in (ohne
       // Jahrgangs-Zuweisung). Die Rolle gilt je Organisation.
       await zusatz(db, USERS.orgAdmin1.id, ORG2, ROLES.teamer2.id);
+      await admin2AufJahrgang2();
 
-      await PushService.sendEventOptOutToAdmins(db, ORG2, 'Emilia', 'Gemeindeabend', 'krank');
+      await PushService.sendEventOptOutToLeadership(db, ORG2, await ladeLeitungZumTermin(db, 4), 'Emilia', 'Gemeindeabend', 'krank', 4);
       expect(tokens()).toEqual(['token-admin2', 'token-orgadmin2']);
     });
 
-    it('sendToOrgAdmins (Teamer-Buchung, -Absage, Challenge): erreicht die Zusatz-Leitung', async () => {
+    it('Teamer-Buchung: erreicht die Zusatz-Leitung', async () => {
       await zusatz(db, USERS.orgAdmin1.id, ORG2, ROLES.orgAdmin2.id);
-      await PushService.sendTeamerEventBookingToAdmins(db, ORG2, 'Team-Person', 'Gemeindeabend', 'confirmed', 4);
+      await admin2AufJahrgang2();
+      await PushService.sendTeamerEventBookingToLeadership(db, ORG2, await ladeLeitungZumTermin(db, 4), 'Team-Person', 'Gemeindeabend', 'confirmed', 4);
       expect(tokens()).toEqual(['token-admin2', 'token-orgadmin1', 'token-orgadmin2']);
       expect(gesendete().find(p => p.token === 'token-orgadmin1').data.organization_id).toBe(String(ORG2));
     });
 
     it('alle uebrigen Leitungs-Meldungen erreichen die Zusatz-Leitung ebenfalls', async () => {
       await zusatz(db, USERS.orgAdmin1.id, ORG2, ROLES.orgAdmin2.id);
+      await admin2AufJahrgang2();
       const erwartet = ['token-admin2', 'token-orgadmin1', 'token-orgadmin2'];
 
       // "Neuer Antrag" steht hier nicht mehr (27.09.2026): Die Empfaenger
       // haengen am Jahrgang des Konfis und kommen aus ladeLeitungZumAntrag
       // (utils/antragLeitungSicht.js) -- die Zusatz-Leitung ueber
       // user_organizations prueft tests/routes/antragLeitungEmpfaenger.test.js.
+      // "Events warten auf Verbuchung" ebenso nicht: Die Zahl haengt an der
+      // Person (zaehleWartendeTermineJeLeitung), die Zusatz-Leitung prueft
+      // tests/services/verbuchenErinnerung.test.js.
+      const eventLeitung = () => ladeLeitungZumTermin(db, 4);
       const faelle = [
-        ['sendEventUnregistrationToAdmins', () => PushService.sendEventUnregistrationToAdmins(db, ORG2, 'Emilia', 'Gemeindeabend')],
-        ['sendEventsPendingApprovalToAdmins', () => PushService.sendEventsPendingApprovalToAdmins(db, ORG2, 2)],
+        ['sendEventUnregistrationToLeadership', async () => PushService.sendEventUnregistrationToLeadership(db, ORG2, await eventLeitung(), 'Emilia', 'Gemeindeabend', null, 4)],
         ['sendJahrgangDeletionWarningToAdmins', () => PushService.sendJahrgangDeletionWarningToAdmins(db, ORG2, '2025/2026', 3)],
-        ['sendEventOptInToAdmins', () => PushService.sendEventOptInToAdmins(db, ORG2, 'Emilia', 'Gemeindeabend')],
-        ['sendTeamerEventCancellationToAdmins', () => PushService.sendTeamerEventCancellationToAdmins(db, ORG2, 'Team-Person', 'Gemeindeabend', 4)],
+        ['sendEventOptInToLeadership', async () => PushService.sendEventOptInToLeadership(db, ORG2, await eventLeitung(), 'Emilia', 'Gemeindeabend', 4)],
+        ['sendTeamerEventCancellationToLeadership', async () => PushService.sendTeamerEventCancellationToLeadership(db, ORG2, await eventLeitung(), 'Team-Person', 'Gemeindeabend', 4)],
       ];
       for (const [name, senden] of faelle) {
         sendFirebasePushNotification.mockClear();
@@ -187,7 +205,16 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
       expect(tokens()).toEqual(['token-orgadmin1', 'token-orgadmin2', 'token-teamer2']);
 
       sendFirebasePushNotification.mockClear();
-      await PushService.sendEventOptOutToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Termin', 'krank');
+      // admin1 bekommt die Opt-out-Meldung seit 27.09.2026 nur mit Zuweisung
+      // auf den Jahrgang des Pflicht-Events (utils/terminLeitungSicht.js).
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      await PushService.sendEventOptOutToLeadership(
+        db, ORGS.testGemeinde.id, await ladeLeitungZumTermin(db, EVENTS.pflichtEvent.id),
+        'Konfi', 'Konfi-Unterricht', 'krank', EVENTS.pflichtEvent.id
+      );
       // Genau einmal, nicht doppelt (orgAdminSuper hat kein Geraet).
       expect(tokens()).toEqual(['token-admin1', 'token-orgadmin1']);
     });

@@ -42,8 +42,8 @@ describe('Termin-Pushes senden die Kennung mit', () => {
     for (const fn of [
       'sendEventUnregisteredToKonfi',
       'sendEventReminderToKonfi',
-      'sendEventOptOutToAdmins',
-      'sendEventOptInToAdmins',
+      'sendEventOptOutToLeadership',
+      'sendEventOptInToLeadership',
     ]) {
       const sig = quelle.match(new RegExp(`static async ${fn}\\(([^)]*)\\)`));
       expect(sig, `${fn}: Signatur nicht gefunden`).not.toBeNull();
@@ -70,8 +70,8 @@ describe('Termin-Pushes senden die Kennung mit', () => {
     const konfi = lies('routes/konfi.js');
     for (const fn of [
       'sendEventUnregisteredToKonfi',
-      'sendEventOptOutToAdmins',
-      'sendEventOptInToAdmins',
+      'sendEventOptOutToLeadership',
+      'sendEventOptInToLeadership',
     ]) {
       // Bis zum Semikolon statt bis zur ersten Klammer: `reason.trim()` haette
       // ein nicht-gieriges Muster sonst vorzeitig beendet.

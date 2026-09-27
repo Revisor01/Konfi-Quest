@@ -28,6 +28,7 @@ const { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge 
 const { leitungSiehtChallengeSql } = require('./challengeLeitungSicht');
 const { gebundeneLeitungSiehtAntragSql } = require('./antragLeitungSicht');
 const { ladeMitgliedschaftenVieler } = require('./orgMitglieder');
+const { gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('./terminLeitungSicht');
 
 /**
  * Die Bausteine der Summe -- jeder als EINE Abfrage ueber viele
@@ -103,20 +104,17 @@ async function antragZaehlerProOrg(db, orgIds) {
 // stuende sonst eine Zahl am Icon, hinter der eine leere Liste wartet.
 // `IS NOT TRUE` statt `= FALSE`, weil die Spalte nullable ist -- Termine aus
 // dem Altbestand tragen dort NULL und sind damit nicht abgesagt.
+// Seit 27.09.2026 ueber die gemeinsame Bedingung terminWartetAufVerbuchungSql
+// (utils/terminLeitungSicht.js) -- dieselbe wie badge-counts und die
+// Verbuchen-Erinnerung um 09:00; Buchungen geloeschter Konten zaehlen seitdem
+// wie in der Eventliste nicht mehr mit.
 async function terminZaehlerProOrg(db, orgIds) {
   if (orgIds.length === 0) return [];
   return (await db.query(
     `SELECT e.organization_id, COUNT(*)::int AS c
        FROM events e
       WHERE e.organization_id = ANY($1::int[])
-        AND e.event_date < NOW()
-        AND e.cancelled IS NOT TRUE
-        AND EXISTS (
-          SELECT 1 FROM event_bookings eb
-           WHERE eb.event_id = e.id
-             AND eb.status = 'confirmed'
-             AND eb.attendance_status IS NULL
-        )
+        AND ${terminWartetAufVerbuchungSql()}
       GROUP BY e.organization_id`,
     [orgIds]
   )).rows;
@@ -149,6 +147,10 @@ async function antragZaehlerGebunden(db, personen) {
 // Jahrgang und Teamer-Termine zaehlen immer, jahrgangsgebundene nur aus
 // zugewiesenen Jahrgaengen. Abgesagte Termine bleiben hier ebenso aussen vor
 // wie in terminZaehlerProOrg -- beide Wege muessen dieselbe Zahl liefern.
+// Seit 27.09.2026 ueber die gemeinsame Regel (utils/terminLeitungSicht.js):
+// "Team gesucht" (teamer_needed) zaehlt nicht mehr als Sichtbarkeitsgrund --
+// die Liste hatte ihn am 08.09.2026 gestrichen, dieser Zaehler nicht
+// (Audit wer-bekommt-was, BF-11).
 async function terminZaehlerGebunden(db, personen) {
   if (personen.length === 0) return [];
   return (await db.query(
@@ -157,22 +159,8 @@ async function terminZaehlerGebunden(db, personen) {
               AS z(user_id, user_type, organization_id, jahrgaenge)
        LEFT JOIN events e
               ON e.organization_id = z.organization_id
-             AND e.event_date < NOW()
-             AND e.cancelled IS NOT TRUE
-             AND EXISTS (
-               SELECT 1 FROM event_bookings eb
-                WHERE eb.event_id = e.id
-                  AND eb.status = 'confirmed'
-                  AND eb.attendance_status IS NULL
-             )
-             AND (
-               e.teamer_only OR e.teamer_needed
-               OR NOT EXISTS (SELECT 1 FROM event_jahrgang_assignments eja
-                               WHERE eja.event_id = e.id)
-               OR EXISTS (SELECT 1 FROM event_jahrgang_assignments eja
-                           WHERE eja.event_id = e.id
-                             AND eja.jahrgang_id = ANY(z.jahrgaenge::int[]))
-             )
+             AND ${terminWartetAufVerbuchungSql()}
+             AND ${gebundeneLeitungSiehtTerminSql({ jahrgaenge: 'z.jahrgaenge::int[]' })}
       GROUP BY z.user_id, z.user_type, z.organization_id`,
     [...spalten(personen), jahrgangsSpalte(personen)]
   )).rows;

@@ -139,6 +139,7 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 
 ### BF-01: Leitungs-Meldungen zu Jahrgangsvorgängen gehen an alle Admins der Gemeinde
 - **Schwere:** HOCH
+- **Status:** Event-Meldungen behoben 27.09.2026 — Konfi-Abmeldung, Opt-out/-in, Teamer-Zu-/Absage über Zusage-Route und `/events/:id/book` über `ladeLeitungZumTermin` (`backend/utils/terminLeitungSicht.js`): Org-Admins immer, Admins mit `can_view` auf einen Jahrgang des Events, bei „Nur Team" und ohne Jahrgang alle Admins, Teamer:innen nie, handelnde Person nie (F-10). Dieselbe Regel filtert `GET /events` (`routes/events/lesen.js`). Die Push-Methoden heißen `…ToLeadership` und nehmen die Empfänger von der Aufrufstelle; ohne Liste geht nichts raus. Test `tests/routes/terminLeitungEmpfaenger.test.js`. Die Löschwarnung folgt mit BF-03.
 - **Fundstelle:** `backend/services/pushService.js:1535` (Konfi-Abmeldung), `:2445` (Opt-out), `:2478` (Opt-in), `:1266` (`sendToOrgAdmins` für Teamer-Zu-/Absage, `:2546/2586`), `:2377` (Löschwarnung) — alle `ladeLeitungDerOrganisation(db, organizationId)` ohne `jahrgangIds`; Mail der Löschwarnung `backgroundService.js:1533-1541`
 - **Kennzeichnung:** reproduziert (A2, A5, A7)
 - **Beschreibung:** `ladeLeitungDerOrganisation` kann seit dem 25.09. nach Jahrgängen filtern (`orgMitglieder.js:45-54`), benutzt wird das nur bei der Registrierung und beim Challenge-Beitrag. Alle anderen Leitungs-Meldungen gehen an jede Person mit Rolle `admin` oder `org_admin` — auch an Admins fremder Jahrgänge und an Admins ohne Jahrgang, die den Termin bzw. Jahrgang weder in der Liste noch im Detail öffnen dürfen. Der Text trägt Namen und Grund. Das Handbuch beschreibt den Ist-Stand (`05-rollen.md:255-266`: „Meldungen an die Leitung … aus jeder Gemeinde, in der die Person Admin oder Org-Admin ist").
@@ -225,6 +226,7 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 
 ### BF-10: „Events warten auf Verbuchung" nennt gebundenen Admins die Zahl der ganzen Gemeinde
 - **Schwere:** MITTEL
+- **Status:** behoben 27.09.2026 — `checkPendingEvents` zählt je Person über `zaehleWartendeTermineJeLeitung` (`backend/utils/terminLeitungSicht.js`) mit derselben Regel wie `badge-counts.pendingEvents` und versendet je Gemeinde und Zahl einmal; wer 0 hat, bekommt nichts. Kosten: zwei Abfragen je Gemeinde für die Empfänger, eine Zählung für alle Personen (Test: 3 Abfragen für 3 wie für 13 Leitungspersonen). „Wartet auf Verbuchung" ist eine Bedingung (`terminWartetAufVerbuchungSql`) für Reiter, App-Symbol und Erinnerung: ab Beginn des Events (wie der Reiter der App), ohne abgesagte Events und ohne Buchungen gelöschter Konten (wie die Liste). Test `tests/services/verbuchenErinnerung.test.js`.
 - **Fundstelle:** `backend/services/backgroundService.js:999-1016` (Zählung je Gemeinde), `pushService.js:2342`
 - **Kennzeichnung:** reproduziert (A6)
 - **Beschreibung:** Der tägliche Lauf zählt je Gemeinde und schickt dieselbe Zahl an alle Admins; der Verbuchen-Reiter zählt für gebundene Admins nur sichtbare Termine. Der Postfach-Eintrag ersetzt sich täglich (`ERSETZENDE_ARTEN`) und zählt am App-Symbol mit.
@@ -234,6 +236,7 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 
 ### BF-11: Verbuchen-Zähler gebundener Admins zählt „Team gesucht"-Termine fremder Jahrgänge
 - **Schwere:** MITTEL
+- **Status:** behoben 27.09.2026 — `badge-counts.pendingEvents` (`routes/notifications.js`) und `terminZaehlerGebunden` (`utils/appIconBadge.js`) filtern über `gebundeneLeitungSiehtTerminSql` (`backend/utils/terminLeitungSicht.js`) ohne `teamer_needed`; dieselbe Regel wie die Eventliste. Test `tests/services/verbuchenErinnerung.test.js` (Liste, Reiter, App-Symbol, Detail 403, Erinnerung).
 - **Fundstelle:** `backend/routes/notifications.js:211`, `backend/utils/appIconBadge.js:166` (`e.teamer_only OR e.teamer_needed`) gegenüber `backend/routes/events/lesen.js:274-289` und `utils/jahrgangsZugriff.js:143-166` (`darfTermin`; `teamer_needed` zählt seit 08.09. nicht mehr)
 - **Kennzeichnung:** reproduziert (A6)
 - **Beschreibung:** Liste und `darfTermin` haben „Team gesucht" am 08.09. als Sichtbarkeitsgrund gestrichen, die beiden Zähler nicht. Der Termin zählt am Reiter und am App-Symbol, lässt sich aber weder finden noch öffnen.
@@ -295,6 +298,7 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 
 ### BF-18: Konfi-Storno über `DELETE /events/:id/book` meldet sich bei niemandem
 - **Schwere:** NIEDRIG
+- **Status:** behoben 27.09.2026 — Nicht gesperrt, sondern angeglichen: Der reguläre Weg der App ist `DELETE /konfi/events/:id/register`; `/events/:id/book` ruft für Konfis keine App-Fassung (geprüft 1.5.3, 2.0.0, 2.1.1, 2.2.0, HEAD), hat aber seit 26.09. dieselben Regeln (`pruefeKonfiStorno`) und dasselbe Protokoll. Jetzt auch dieselben Mitteilungen (`routes/events/buchung.js`): Bestätigung an die Konfi und „Event-Abmeldung" samt Grund an die Leitung, die das Event sieht. Test `tests/routes/terminLeitungEmpfaenger.test.js` (beide Wege: gleiche Empfänger, gleicher Text).
 - **Fundstelle:** `backend/routes/events/buchung.js:101-305` (Protokoll ja, Push an Leitung und Bestätigung an die Konfi nein) gegenüber `konfi.js:1826-1836`
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Die App nutzt für Konfis `DELETE /konfi/events/:id/register`; der generische Weg ist nur per Schnittstelle erreichbar (auch in Tag 2.2.0 nicht aus der App gerufen). Die Abmeldung steht dann in der Liste der Leitung, ohne Mitteilung.

@@ -80,6 +80,12 @@
 #      27.09.2026 — nur noch an die Leitung, die den Antrag in der Liste
 #      sieht (dieselbe Regel, backend/utils/antragLeitungSicht.js); vorher an
 #      jeden Admin der Gemeinde.
+#    - Event-Meldungen an die Leitung (Konfi-Abmeldung, Pflicht-Opt-out/-in,
+#      Zu- und Absagen des Teams) und "Events warten auf Verbuchung":
+#      GEAENDERT 27.09.2026 — nur noch an die Leitung, die das Event in der
+#      Liste sieht; die Erinnerung nennt jeder Person die Zahl ihres Reiters
+#      (backend/utils/terminLeitungSicht.js). Vorher an jeden Admin der
+#      Gemeinde, mit der Zahl der ganzen Gemeinde.
 #    - GET /api/events (Liste): Teamer sieht jahrgangs-gebundene Events nur
 #      für zugewiesene Jahrgänge (+ allgemeine + teamer_only/teamer_needed).
 #      # LÜCKE (klein): Der Filter greift nur bei assigned_jahrgaenge.length > 0.
@@ -990,6 +996,22 @@ paths:
         herunter -- vorher endete das in den letzten 48 Stunden mit 400,
         die Wartende blieb auf der Liste und wurde beim Nachruecken als
         abwesend verbucht.
+
+
+        GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01, F-10): Die
+        Leitungs-Meldung "Event-Abmeldung" (Push und Postfach, Art
+        event_unregistration, mit Name und Grund) geht nur noch an die
+        Leitung, die das Event sieht: org_admin (und admin mit
+        is_super_admin-Merkmal) immer, admin nur mit can_view-Zuweisung auf
+        einen Jahrgang des Events, bei Events "Nur Team" (teamer_only) und
+        Events ohne jeden Jahrgang an alle Admins; Teamer:innen nie. Beide
+        Quellen der Zugehoerigkeit (users.organization_id und
+        user_organizations, Rolle je Gemeinde), keine Person doppelt.
+        Dieselbe Regel filtert GET /api/events und zaehlt pendingEvents
+        (backend/utils/terminLeitungSicht.js). Vorher ging die Meldung an
+        JEDEN Admin der Gemeinde, auch an Admins fremder Jahrgaenge, die das
+        Event danach mit 403 nicht oeffnen konnten. Versand nach der Antwort;
+        Antwortform unveraendert.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -1026,6 +1048,13 @@ paths:
         (behoben 15.09.2026 — bis dahin verfiel der Platz). An einem
         abgesagten Termin rueckt niemand nach. Die Route laeuft dafuer seit
         dem 15.09.2026 transaktional.
+
+
+        GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01): Die Meldung an
+        die Leitung (event_opt_out, mit Grund) geht nur an die Leitung, die
+        das Event sieht -- dieselbe Regel wie bei DELETE
+        /api/konfi/events/{id}/register (backend/utils/terminLeitungSicht.js).
+        Vorher an jeden Admin der Gemeinde.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -1071,6 +1100,12 @@ paths:
         davon NICHT betroffen: Es stellt die Buchungen mit einem eigenen
         UPDATE her (utils/bookingUtils.hebeAbsageAbmeldungenAuf) und laeuft
         nicht ueber diese Route.
+
+
+        GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01): Die Meldung an
+        die Leitung (event_opt_in) geht nur an die Leitung, die das Event
+        sieht -- dieselbe Regel wie beim Opt-out. Vorher an jeden Admin der
+        Gemeinde.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -1186,6 +1221,13 @@ paths:
         mit total_participants, das ausdruecklich ALLE Buchungen beider
         Kontingente meint. Kein vorhandenes Feld wurde entfernt, umbenannt
         oder im Typ geaendert.
+        GEAENDERT 27.09.2026: Die Sichtregel steht in
+        backend/utils/terminLeitungSicht.js und bestimmt zugleich
+        pendingEvents (GET /api/notifications/badge-counts), die Zahl am
+        App-Symbol und die Empfaenger der Event-Meldungen an die Leitung
+        (Abmeldungen, Opt-out/-in, Zu- und Absagen des Teams, "Events warten
+        auf Verbuchung") -- wer ein Event hier nicht sieht, bekommt keine
+        Meldung dazu. Antwortform und Filter unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
@@ -1765,6 +1807,14 @@ paths:
         Abmeldung. UNVERAENDERT bleibt die Check-in-Sperre in
         POST /api/events/qr-checkin (error_type excused): Der Weg zurueck
         fuehrt ueber die Anmeldung, nicht ueber den QR-Code.
+
+
+        GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01, F-10): Die
+        Meldung "Teamer:in angemeldet" (teamer_event_booking) geht nur an die
+        Leitung, die das Event sieht -- org_admin immer, admin mit
+        can_view-Zuweisung auf einen Jahrgang des Events, bei "Nur Team" und
+        Events ohne Jahrgang alle Admins (backend/utils/terminLeitungSicht.js).
+        Vorher ueber sendToOrgAdmins an jeden Admin der Gemeinde.
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
@@ -1815,6 +1865,22 @@ paths:
         jede Konfi-Buchung -- auch ein von der Leitung eingetragenes
         "gefehlt" am Pflichttermin. Fuer Teamer:innen unveraendert (keine
         Frist, kein Pflicht-Riegel, kein Konfi-Protokoll).
+
+
+        BEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-18): Der Konfi-Pfad
+        meldete sich bei niemandem -- die Abmeldung stand in der Liste der
+        Leitung, ohne Mitteilung. Jetzt dieselben Mitteilungen wie auf
+        DELETE /api/konfi/events/{id}/register: Bestaetigung an die Konfi
+        (event_unregistered) und "Event-Abmeldung" samt optionalem reason an
+        die Leitung, die das Event sieht (event_unregistration,
+        backend/utils/terminLeitungSicht.js). Fuer Konfis bleibt die Route
+        erreichbar (keine App-Fassung ruft sie fuer Konfis, geprueft 1.5.3
+        bis 2.2.0; Regeln und Protokoll gleichen seit 26.09.2026 der
+        Konfi-Route). Die Teamer-Absage ("Teamer:in abgemeldet",
+        teamer_event_cancellation) geht seit demselben Tag ebenfalls nur an
+        die Leitung, die das Event sieht; vorher an jeden Admin.
+        requestBody optional: reason (nur Konfi-Pfad, landet im Protokoll und
+        in der Meldung). Antwortform unveraendert.
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
@@ -1822,6 +1888,13 @@ paths:
         objekt-pruefung: "nur eigene Buchung (user_id + organization_id)"
         hinweis: "Punkte-Entzugs-Weg n) der Analyse. Befund 'Keine 2-Tage-Frist wie bei /api/konfi/events/:id/register' -- behoben 26.09.2026: Frist, Pflicht-Riegel und Anwesenheitsriegel gelten auf dem Konfi-Pfad."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, description: "Optionaler Abmeldegrund (nur Konfi-Pfad): Protokoll und Meldung an die Leitung" }
       responses:
         "200": { description: "Storniert; bereits_storniert=true wenn keine Buchung mehr vorhanden war" }
         "400": { description: "Nur Konfis: Anwesenheit verbucht, Pflichttermin oder Frist (2 Tage) verstrichen" }

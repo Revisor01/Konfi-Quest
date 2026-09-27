@@ -8,6 +8,7 @@ const express = require('express');
 const { anmeldeStatusSql, kapazitaetSql, ZEITFENSTER_SQL } = require('../../utils/terminAnmeldeStatus');
 const { buchungszahlenJeTerminSql } = require('../../utils/buchungszahlen');
 const { darfTermin } = require('../../utils/jahrgangsZugriff');
+const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTermin } = require('../../utils/terminLeitungSicht');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
   const router = express.Router();
@@ -246,7 +247,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // ausgenommen). Vorher sah ein Admin ohne Jahrgang die komplette
       // Terminliste. Antwortform bleibt ein Array — nur die Auswahl schrumpft.
       let filteredRows = rows;
-      if (!req.user.is_super_admin
+      //
+      // Seit 27.09.2026 steht die Regel in utils/terminLeitungSicht.js --
+      // dieselbe Fassung zaehlt pendingEvents (badge-counts), die Zahl am
+      // App-Symbol und bestimmt die Empfaenger der Event-Meldungen an die
+      // Leitung (Abmeldungen, Opt-out/-in, Zu- und Absagen des Teams). Wer
+      // ein Event hier nicht sieht, bekommt auch keine Meldung dazu.
+      if (!leitungSiehtAlleTermine(req.user)
           && ['teamer', 'admin'].includes(req.user.role_name)) {
         // Ohne jede Zuweisung griff der Filter früher gar nicht (die Bedingung
         // verlangte length > 0) — eine Teamer:in ohne Jahrgang sah damit ALLE
@@ -266,10 +273,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         filteredRows = rows.filter(row => {
           // Reine Teamer-Events sind immer sichtbar: Sie haengen an keinem
           // Jahrgang, es gibt nichts zu schuetzen.
-          if (row.teamer_only) return true;
           // Allgemeine Events (keine Jahrgang-Zuweisung) sind für alle sichtbar
-          if (!row.jahrgang_ids) return true;
-          // Prüfen ob mindestens ein zugewiesener Jahrgang dabei ist
+          // Sonst muss mindestens ein zugewiesener Jahrgang dabei sein
           //
           // teamer_needed zaehlt seit dem 08.09.2026 NICHT mehr als eigener
           // Grund. Vorher war ein Termin mit "Teamer:innen gesucht" fuer ALLE
@@ -280,8 +285,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           // (08.09.2026) gilt fuer Sehen und Buchen gleichermassen: "teamer
           // sollen nur jahrgaenge und events buchen koennen wenn sie auch in
           // dem jahrgang sind. nur teamer ist davon ausgenommen."
-          const eventJahrgangIds = row.jahrgang_ids.split(',').map(id => parseInt(id, 10));
-          return eventJahrgangIds.some(id => viewableJahrgaenge.includes(id));
+          return gebundeneLeitungSiehtTermin({
+            teamerOnly: row.teamer_only,
+            jahrgangIds: row.jahrgang_ids ? row.jahrgang_ids.split(',').map(id => parseInt(id, 10)) : []
+          }, viewableJahrgaenge);
         });
       }
 

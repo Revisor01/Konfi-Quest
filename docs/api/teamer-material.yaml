@@ -306,6 +306,16 @@ paths:
         an die Leitung ueber die Teamer-Typen teamer_event_booking bzw.
         teamer_event_cancellation (Absage seit 01.09.2026 mit Grund im Text);
         nachrueckende Teamer:innen bekommen waitlist_promotion.
+        GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01, F-10): Die beiden
+        Leitungs-Meldungen gehen nur an die Leitung, die das Event sieht --
+        org_admin immer, admin mit can_view-Zuweisung auf einen Jahrgang des
+        Events, bei "Nur Team" (teamer_only) und Events ohne Jahrgang alle
+        Admins (backend/utils/terminLeitungSicht.js); vorher ueber
+        sendToOrgAdmins an jeden Admin der Gemeinde. Die zusagende Person
+        selbst bekommt keine Meldung ueber die eigene Zu- oder Absage -- die
+        Route steht hinter requireTeamer, auch admin und org_admin sagen hier
+        zu und bekamen bis dahin ihre eigene Meldung. Versand nach der
+        Antwort; Antwortform unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
