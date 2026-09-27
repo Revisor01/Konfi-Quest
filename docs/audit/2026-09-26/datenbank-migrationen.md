@@ -61,12 +61,14 @@ nirgends beschrieben und scheitert auf einer frisch aufgesetzten Instanz.
 
 ## Release-Empfehlung für den Bereich
 
-**Mit Auflage.** Vor dem EKD-Rollout (nicht zwingend vor 2.3.0, weil Produktion heute
+*Überholt — siehe „Stand 27.09.2026 (vor dem Merge von 2.3.0)" unten.* **Mit Auflage.** Vor dem EKD-Rollout (nicht zwingend vor 2.3.0, weil Produktion heute
 unter 11.000 Chat-Nachrichten hält): eine additive Migration mit
 `CREATE INDEX IF NOT EXISTS … ON chat_messages(reply_to) WHERE reply_to IS NOT NULL` und
 `… ON chat_messages(user_id)` (BF-01), und `statement_timeout` für die Migrations- und
 Lock-Verbindung auf 0 setzen (BF-03/BF-04). Alles Übrige sind Härtungen ohne
 Vertragsbruch.
+
+**Stand 27.09.2026 (vor dem Merge von 2.3.0):** Die Auflagen der Empfehlung sind erfüllt (Migration 160 mit beiden Indizes, Migrationsverbindung ohne `statement_timeout`). Von 17 Befunden sind 6 behoben (BF-01 bis BF-04, BF-14, BF-16), 3 teilweise behoben (BF-06, BF-07, BF-13), 6 offen (BF-08 bis BF-12, BF-15, alle NIEDRIG, später) und 2 liegen bei Simon/Betrieb (BF-05 Sicherung — Rhythmus, zweiter Ort, Überwachung und Rückspielprobe vor der EKD-Ausrollung; BF-17 Schema-Abgleich). Kein HOCH- oder KRITISCH-Befund ist offen.
 
 ## Befunde
 
@@ -191,6 +193,7 @@ Vertragsbruch.
 ### BF-05: Wiederherstellung aus der Sicherung ist nirgends beschrieben und scheitert auf einer frisch aufgesetzten Instanz
 - **Schwere:** MITTEL
 - **Status:** teilweise behoben 26.09.2026 — `docs/betrieb/sicherung.md` beschreibt, was gesichert wird (Datenbank, Uploads, Geheimnisse der Stack-Umgebung inkl. `ACTIVITY_PHOTO_ENCRYPTION_KEY`, Firebase-Datei), Rhythmus und Aufbewahrung (Soll), die Prüfung einer Sicherung (Alter, Größe, `pg_restore --list`, Kerntabellen) und die Wiederherstellung **in eine leere Datenbank** — mit der Regel gegen `init-scripts/` und `--clean`, für die drei Fälle „Datenbank kaputt", „neuer Server" (init-scripts-Mount vor dem ersten Start aus) und „einzelne Tabelle" — sowie eine Rückspielprobe mit Prüfkommandos. `deploy/sicherung.sh` liegt als Referenzskript im Repo (Vorabprüfung, `pg_dump -Fc`, Größen- und Lesbarkeitsprüfung, Upload-Archiv, Aufbewahrung; alles Instanzspezifische aus der Umgebung, keine Adressen). **Offen (Prüfliste am Ende der Seite, füllt Simon):** ob das produktive Skript dem Referenzskript entspricht, Ablageorte und zweiter Ort, Aufbewahrung, ob die Uploads gesichert werden, wer die Überwachung bekommt — und die erste Rückspielprobe gegen einen echten Dump.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** liegt bei Simon/Betrieb. Vor dem Deploy wurde einmal mit dem Referenzskript gesichert: 13 s, Dump 0,87 MB, `pg_restore --list` lesbar, 4/4 Kerntabellen, Uploads 233 MB, Stack-Datei exportiert (Auftrag `docs/auftraege/lokaler-agent/01-vor-dem-deploy.md`, Abschnitt 1). Offen: Rhythmus und Aufbewahrung am Host, zweiter Ort, Überwachung, Ablage der Geheimnisse und die erste Rückspielprobe gegen einen echten Dump (Auftrag `05-sicherung-und-notfall.md`) — vor EKD-Ausrollung.
 - **Fundstelle:** `deploy/compose.konfi_quest.yml:17-52` (kein Sicherungsdienst, kein Hinweis auf Wiederherstellung), `init-scripts/README.md` (beschreibt nur Neuinstallation), `docs/offene-befunde.md` #3 (Sicherungsskript liegt außerhalb des Repos)
 - **Kennzeichnung:** reproduziert (`pg_dump -Fc` von `kq_last`, 10,5 MB in 2 s; drei Wiederherstellungen)
 - **Beschreibung:** Das Repo enthält weder Sicherungsskript noch Wiederherstellungsanleitung
@@ -217,6 +220,7 @@ Vertragsbruch.
 
 ### BF-06: `konfi_profiles.password_plain` — eine Spalte für Klartext-Passwörter Minderjähriger existiert weiter und wird nur noch geleert, nie entfernt
 - **Schwere:** MITTEL (wird KRITISCH, falls die Spalte in Produktion Werte enthält — siehe „Auf Produktion nachzumessen")
+- **Status:** teilweise behoben 26.09.2026 — Migration 165 leert die Spalte (Sicherheit BF-06); in Produktion vor dem Deploy gezählt: 0 von 130 Zeilen mit Wert (Auftrag 01, Abschnitt 3), keine Sicherung enthält Klartext. Offen: `DROP COLUMN password_plain`; der Test `schemaDrift` verlangt die Spalte noch (`tests/schema/schemaDrift.test.js:76-80`). Später.
 - **Fundstelle:** `backend/tests/schema/prod-schema.sql` (Spalte `password_plain text` an `konfi_profiles`, einziges DDL im Repo), `backend/routes/konfi-management.js:681` (`UPDATE konfi_profiles SET password_plain = NULL …` — einzige Code-Stelle), `backend/tests/schema/schemaDrift.test.js` (Test verlangt die Existenz der Spalte)
 - **Kennzeichnung:** aus Code und Dump gelesen
 - **Beschreibung:** Die Spalte wurde in Produktion von Hand angelegt; kein Code schreibt sie
@@ -236,6 +240,7 @@ Vertragsbruch.
 ### BF-07: Postgres im Compose ist auf die heutige Gemeinde bemessen, nicht auf 10.000–25.000 Nutzer:innen
 - **Schwere:** MITTEL
 - **Status:** teilweise behoben 26.09.2026 — Referenzkopie `deploy/compose.konfi_quest.yml`: Postgres auf 2 CPU und 3 GB, `shared_buffers=768MB`, `effective_cache_size=2GB`, `work_mem=8MB`, `maintenance_work_mem=128MB`, `shared_preload_libraries=pg_stat_statements` (Extension einmal von Hand anlegen, Kommando im Compose), `max_connections=200` gegen 3 × (50 + 2) + 2 Leader-Verbindungen + 20 Reserve = 178 gerechnet; die Backends bekommen `PG_POOL_MAX=50`, `PG_IDLE_TIMEOUT`, `PG_CONN_TIMEOUT`, `PG_STATEMENT_TIMEOUT`, `PG_IDLE_TX_TIMEOUT` explizit ins Compose. Sicherung als Dienst im Stack: nicht umgesetzt (Referenzskript und Anleitung siehe BF-05). **Offen:** Die Referenzkopie ist nicht der Portainer-Stack — Simon muss den Stack von Hand angleichen und vorher prüfen, dass der Host 2 CPU und 3 GB zusätzlich frei hat (Kommentar im Compose vom 24.09.: 11,7 GB frei). Nachmessen des Sonntags-Lastfalls gegen den hinterlegten Datenbestand steht aus.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** im Produktions-Stack erledigt 27.09.2026 (Phase A, lokaler Agent, Auftrag `02-portainer-stack.md`): 2 CPU / 3 GB, `command` der Referenz, `pg_stat_statements` geladen und angelegt, Pool 50. Stand damit teilweise behoben: Die Sicherung läuft weiter als Skript am Host statt als Dienst im Stack (BF-05), eine Autovacuum-Anpassung für `chat_messages` gibt es nicht; die Abendzählung gegen `max_connections` und die Nachher-Messung liegen bei Simon/Betrieb.
 - **Fundstelle:** `deploy/compose.konfi_quest.yml:17` (`postgres:15-alpine`), `:25` (`max_connections=200`), `:45-46` (`memory: 1G`, `cpus: '0.3'`), Kommentar `:18-24` („rechnerisch reichen sie für ~90 gleichzeitige")
 - **Kennzeichnung:** aus Code gelesen; alle Messwerte dieses Berichts entstanden auf einer unbegrenzten CPU und sind für 0,3 CPU nach unten zu korrigieren
 - **Beschreibung:** Die Datenbank für drei Backend-Container und die gesamte EKD teilt sich
@@ -255,6 +260,7 @@ Vertragsbruch.
 
 ### BF-08: Fünf von 89 Migrationen sind nicht idempotent — entgegen ihren eigenen Kommentaren
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — der Kopfkommentar von `064_add_missing_fks.sql` (Z. 4) nennt die Datei weiter idempotent. Später.
 - **Fundstelle:** `backend/migrations/064_add_missing_fks.sql:16-26` (`DELETE … WHERE konfi_id …` auf Spalten, die 077 in `user_id` umbenennt; Kommentar Z. 4: „idempotent"), `064_add_missing_indexes.sql:122` (`idx_activity_requests_konfi_id ON activity_requests(konfi_id)`), `128_event_booking_stats_view.sql:30`, `136_event_booking_stats_leitung.sql:18` (`CREATE OR REPLACE VIEW` mit weniger Spalten als die spätere View → „cannot drop columns from view"), `132_bibeluebersetzung_eine_spalte.sql:29-38` (liest `kp.bible_translation` nach ihrem eigenen `DROP COLUMN`)
 - **Kennzeichnung:** reproduziert (`node migrieren.js …/kq_prod erneut`: 84 OK, 5 FEHL; Protokoll `scratchpad/…/idempotenz_kq_prod.log`)
 - **Beschreibung:** `database.js` führt vermerkte Migrationen nie erneut aus, deshalb keine
@@ -271,6 +277,7 @@ Vertragsbruch.
 
 ### BF-09: 42 redundante Indizes, davon 9 exakte Doppelgänger
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — keine Hygiene-Migration; zuerst `pg_stat_user_indexes.idx_scan` in Produktion nach dem Deploy messen, dann später.
 - **Fundstelle:** Katalog `kq_prod` (Abschnitt 10 in `scratchpad/…/katalog_kq_prod.txt`); Ursprung u. a. `064_add_missing_indexes.sql` neben den `sqlite_autoindex`-Altlasten, `097_…:25` + `064_consolidate_inline_schemas.sql:140` (zweimal UNIQUE auf `settings(organization_id, key)`), `124_…:24-28` (UNIQUE-Constraint **und** gleicher Index auf `daily_verses`), `116_drop_duplicate_indexes.sql` (entfernte nur 3)
 - **Kennzeichnung:** reproduziert (Katalogabfrage auf `kq_last`)
 - **Beschreibung:** Exakt gleiche Definition: `activity_categories` (2×UNIQUE),
@@ -289,6 +296,7 @@ Vertragsbruch.
 
 ### BF-10: `settings` hat keinen Primärschlüssel; mit `organization_id = NULL` sind Duplikate möglich
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `settings` weiter ohne Primärschlüssel; zuerst die NULL-Zeilen zählen (unten Nr. 10). Später.
 - **Fundstelle:** `backend/migrations/064_consolidate_inline_schemas.sql:138-140` (`DROP CONSTRAINT IF EXISTS settings_pkey`, danach nur UNIQUE `(organization_id, key)` mit nullbarer `organization_id`); Katalog Abschnitt 1 (auch `socket_io_attachments` ohne PK — Adapter-Tabelle, hinnehmbar)
 - **Kennzeichnung:** reproduziert: `INSERT INTO settings (key, value, organization_id) VALUES ('probe','a',NULL), ('probe','b',NULL)` → 2 Zeilen
 - **Beschreibung:** Ein UNIQUE-Index behandelt NULL-Werte als verschieden. Globale
@@ -301,6 +309,7 @@ Vertragsbruch.
 
 ### BF-11: 24 Zeitspalten ohne Zeitzone, neue Migrationen legen weiter `TIMESTAMP` an, zwei `created_at` sind TEXT
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — Spalten unverändert. Die Grundannahme der Beschreibung stimmt nicht: Produktion läuft in UTC, nicht in Europe/Berlin — der Node-Prozess ohne `TZ`, die Datenbanksitzungen der Backends in UTC (`postgresql.conf` `timezone = 'UTC'`; nur `psql` im Container zeigt Berlin, weil dort `PGTZ` gesetzt ist; Auftrag 01, Nr. 5). Zeitstempel ohne Zone stehen also in UTC; Stellen mit `CURRENT_DATE` nehmen zwischen 0 und 2 Uhr Berliner Zeit den Vortag (Behebungsbericht, „Zeitzone"). `TZ` bis zur Umstellung auf `timestamptz` nicht setzen (Referenz, `b677bba5`). Später, nach dem Muster von Migration 138.
 - **Fundstelle:** Katalog Abschnitt 6 (24 Spalten `timestamp without time zone`, u. a. `notifications.created_at`/`read_at` — angezeigt im Postfach —, `users.deleted_at`, `refresh_tokens.expires_at`); `backend/migrations/124_…:23` (`daily_verses.created_at TIMESTAMP`), `142_…:42` (`material_links.created_at TIMESTAMP`) — beide **nach** der Lehre aus `138_…`/`139_…`; `backend/tests/schema/prod-schema.sql` (`event_bookings.created_at text DEFAULT CURRENT_TIMESTAMP`, `event_timeslots.created_at text`), sortiert in `backend/utils/bookingUtils.js:495-499` (Warteliste rückt nach `ORDER BY eb.created_at` nach), `routes/events/anwesenheit.js:86`, `routes/events/lesen.js:742`
 - **Kennzeichnung:** aus Dump und Code gelesen
 - **Beschreibung:** Die Werte sind heute richtig, weil Datenbank **und** Node in
@@ -316,6 +325,7 @@ Vertragsbruch.
 
 ### BF-12: Typmischung integer/bigint an 55 Fremdschlüsseln, zwei Sequenzen tragen alte Tabellennamen
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — die Konvention „neue Fremdschlüssel als `BIGINT`" ist nirgends festgehalten. Später.
 - **Fundstelle:** Katalog Abschnitte 7/8/12: 55 FK-Spalten `integer` auf `bigint`-Ziele (alle Tabellen ab Migration 068), umgekehrt `konfi_profiles.invite_code_id bigint → invite_codes.id integer`; 30 Tabellen mit `bigint`-PK, 29 mit `integer`; `user_badges.id` läuft über `konfi_badges_id_seq`, `user_activities.id` über `konfi_activities_id_seq`; `backend/migrations/159_gemeinde_einladungen.sql:30-38` legt weiter `INTEGER REFERENCES users(id)` an; `backend/database.js:7` (`parseInt` auf bigint)
 - **Kennzeichnung:** aus Dump/Code gelesen
 - **Beschreibung:** Funktional unkritisch — Postgres vergleicht `integer = bigint`
@@ -326,6 +336,7 @@ Vertragsbruch.
 ### BF-13: Veraltete Doku und Kommentare zum Schema
 - **Schwere:** NIEDRIG
 - **Status:** teilweise behoben 26.09.2026 — `docs/offene-befunde.md` #12 als behoben markiert, mit dem Messwert 0 Diff-Zeilen (Doku-Paket); die drei Kommentare in `init-scripts/README.md`, `globalSetup.js`, `refresh-schema.sh` und `007_levels.sql` gehören zum Datenbank-Paket.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand teilweise behoben; offen sind die drei Kommentare (`init-scripts/README.md:48`, `backend/tests/globalSetup.js:36-37`, `backend/tests/schema/refresh-schema.sh:6-7`) und das tote `backend/init-scripts/007_levels.sql`. Später.
 - **Fundstelle:** `docs/offene-befunde.md:429` (#12 „IN ARBEIT" — behoben mit Commit `a5230d86`, 16.09.2026; heute 0 Diff-Zeilen), `init-scripts/README.md:48`, `backend/tests/globalSetup.js:37`, `backend/tests/schema/refresh-schema.sh:7` (dreimal „für daily_verses, activities.category … existiert nirgends ein DDL" — `124_daily_verses_und_activities_category.sql` liefert es seit 22.08.2026; nur `password_plain` hat weiter keins), `backend/init-scripts/007_levels.sql` (tot: nirgends eingebunden, `INTEGER`/`TIMESTAMP`-Typen, wird per `COPY . .` ins Image kopiert; Kommentar in `085_…:2` verweist noch darauf)
 - **Kennzeichnung:** reproduziert (Diff `kq_neu` vs. `kq_prod` = 0 Zeilen; Grep)
 - **Auswirkung aus Nutzersicht:** keine; die nächste Sitzung sucht an falscher Stelle.
@@ -334,6 +345,7 @@ Vertragsbruch.
 
 ### BF-14: Produktions-SSH-Ziel im öffentlichen Repo
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — `refresh-schema.sh` verlangt das Zugangsziel aus der Umgebung (`KQ_PROD_SSH`, ohne Vorgabe; `2086913e`, zusammen mit Sicherheit BF-12).
 - **Fundstelle:** `backend/tests/schema/refresh-schema.sh:23-24` (`SERVER="${KQ_PROD_SSH:-root@<host>}"`, `CONTAINER="${KQ_PROD_DB_CONTAINER:-kq-postgres}"`); `CLAUDE.md` „Betriebswissen (Serveradressen, Zugangsdaten, SSH) gehört nicht hierher"
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Hostname, Root-Login und Containername der Produktionsdatenbank stehen
@@ -344,6 +356,7 @@ Vertragsbruch.
 
 ### BF-15: Der Neuinstallations-Wächter vergleicht keine Indizes, Fremdschlüssel, UNIQUE, Defaults und NOT NULL
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `neuinstallation.test.js` vergleicht weiter nur Tabellen, Spalten, CHECKs und Views. Später.
 - **Fundstelle:** `backend/tests/schema/neuinstallation.test.js:126-146` (vier Abfragen: Tabellen, Spalten+Typ, CHECKs, Views)
 - **Kennzeichnung:** aus Code gelesen; per `pg_dump`-Diff heute keine Abweichung
 - **Beschreibung:** Der Test hat den Anlass (25 statt 57 Tabellen, falsche CHECKs) im Blick,
@@ -355,6 +368,7 @@ Vertragsbruch.
 
 ### BF-16: `/api/metrics/history?days=730` liefert 200.000 Zeilen (31 MB JSON)
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — mit Betrieb BF-14 (`edcb6bd6`): ab 31 Tagen verdichtet, `days=730` 33,5 MB → 116 kB.
 - **Fundstelle:** `backend/createApp.js:487-505` (`days` bis 730, keine Verdichtung, kein LIMIT); Schreiber `backend/services/backgroundService.js:1555` (alle 5 Minuten), Aufbewahrung 2 Jahre (`:1569`)
 - **Kennzeichnung:** reproduziert (`kq_last`, 200.000 Snapshots): 7 Tage 0,84 ms; 730 Tage **46,2 ms**, 200.000 Zeilen, **31 MB** JSON
 - **Auswirkung aus Nutzersicht:** nur `super_admin`; Browser und Backend-Heap (512 MB
@@ -363,6 +377,7 @@ Vertragsbruch.
 
 ### BF-17: Der Test-Dump ist fünf Wochen alt; ob Produktion heute dem Repo entspricht, ist aus dem Repo nicht belegbar
 - **Schwere:** NIEDRIG
+- **Status:** liegt bei Simon/Betrieb 27.09.2026 — `refresh-schema.sh` und der Schema-Diff liefen nicht, der Dump ist vom 22.08. In Produktion vor dem Deploy gemessen: 89 Einträge in `schema_migrations` bis `159_…`, `Migration FAILED` 0 auf allen drei Backends (Auftrag 01, Nr. 6). Den Schema-Diff nach dem Deploy messen.
 - **Fundstelle:** `backend/tests/schema/prod-schema.sql:6` („Dumped from database version 15.19", letzter Commit `4ddb1c74`/`6245925a` vom 22.08.2026), `prod-migrations.txt` (53 Einträge bis `123_…`), `backend/migrations/` (89 Dateien; 36 jünger als der Dump)
 - **Kennzeichnung:** aus Repo gelesen
 - **Beschreibung:** Test-DB und Neuinstallation sind Dump + 36 Migrationen. Das entspricht
@@ -378,26 +393,31 @@ Vertragsbruch.
 
 - **Produktionsschema heute:** Der Dump ist vom 22.08.2026. Ob Produktion heute exakt
   Dump + 36 Migrationen ist, lässt sich nur dort messen (SQL unten).
+  - **Status:** offen 27.09.2026 — Migrationsstand gemessen (89 bis 159), der Schema-Diff nicht (BF-17).
 - **Inhalt von `password_plain`:** Ob und wie viele Zeilen noch Klartext tragen, ist nur
   in Produktion zählbar; davon hängt ab, ob BF-06 KRITISCH ist.
+  - **Status:** geklärt 27.09.2026 — 0 von 130; BF-06 war nicht kritisch.
 - **Erst-Einrichtung einer neuen Instanz:** Das Schema entsteht korrekt, aber
   `permissions`, `roles`, `organizations` und der erste `super_admin` haben im Live-Pfad
   keinen Seed (Grep: `INSERT INTO permissions` nur im toten `007_levels.sql`). Wie eine
   Landeskirche den ersten Zugang bekommt, ist im Repo nicht beschrieben — nicht vertieft,
   gehört zur Betriebsdoku.
+  - **Status:** offen 27.09.2026 — weiter nicht beschrieben (erster `super_admin`, Rollen, Berechtigungen). Vor EKD-Ausrollung.
 - **Wirkung von 0,3 CPU:** Alle Zeiten hier stammen von einer unbegrenzten CPU; der Faktor
   in Produktion ist nur dort messbar.
+  - **Status:** überholt 27.09.2026 — Postgres hat seit Phase A 2 CPU; die Wirkung unter Last nach dem Deploy messen.
 - **Fremde Änderung im Arbeitsbaum:** `git status` zeigt `backend/routes/events/lesen.js`
   als geändert (`WHERE e.id = $1 AND e.organization_id = $2` → `AND ($2::int IS NOT
   NULL)`, also Wegfall der Mandantenprüfung im Termin-Detail). Diese Änderung stammt
   **nicht** aus diesem Audit (hier wurde nur gelesen); vermutlich ein Reproduktionsversuch
   eines anderen Prüfers. Die Koordination sollte sie zuordnen und verwerfen.
+  - **Status:** geklärt — `lesen.js:639` filtert `WHERE e.id = $1 AND e.organization_id = $2`, und `tests/routes/fremdeGemeinde.test.js` fängt den Wegfall (Tests BF-01).
 
 ## Alte Befunde nachgeprüft
 
 | Befund | Stand heute |
 |---|---|
-| `docs/offene-befunde.md` #12 „init-scripts weicht vom Produktionsschema ab — IN ARBEIT" | **behoben bestätigt** (Commit `a5230d86`, 16.09.2026): Neuinstallation und Deploy-Weg ergeben identische Schemata, `diff` = 0 Zeilen, 59 Tabellen, 1 View, 89 vermerkte Migrationen. Eintrag noch nicht aktualisiert (BF-13). |
+| `docs/offene-befunde.md` #12 „init-scripts weicht vom Produktionsschema ab — IN ARBEIT" | **behoben bestätigt** (Commit `a5230d86`, 16.09.2026): Neuinstallation und Deploy-Weg ergeben identische Schemata, `diff` = 0 Zeilen, 59 Tabellen, 1 View, 89 vermerkte Migrationen. Eintrag noch nicht aktualisiert (BF-13). *Stand 27.09.2026: in `docs/offene-befunde.md` als behoben markiert.* |
 | `docs/offene-befunde.md` #3 „Nächtlicher Dump war leer — BEHOBEN" | **nicht prüfbar**: Sicherungsskript und Überwachung liegen außerhalb des Repos. Wiederherstellung hier geübt (BF-05). |
 | `database.js` Kommentar „Advisory-Lock (Audit 03.07.2026): Replikas rasten sonst um Migrationen" | **umgesetzt**, aber mit Nebenwirkung unter `statement_timeout` (BF-03). |
 | `database.js`/`globalSetup.js` Kommentar „Incident 13.06.2026: 097/098/099 ausgeführt, aber nicht als applied vermerkt" | **behoben bestätigt**: `BEGIN` → SQL → `INSERT schema_migrations` → `COMMIT` auf einer dedizierten Verbindung (`database.js:136-139`); Fehler rollt alles zurück (reproduziert über die 5 nicht idempotenten Dateien: kein Halbzustand, kein Eintrag). |
@@ -464,3 +484,5 @@ Vertragsbruch.
 8. **CPU-Drosselung der Datenbank**: `docker stats --no-stream kq-postgres` und `cat /sys/fs/cgroup/…/cpu.stat | grep throttled` über einen Abend mit Push-Welle.
 9. **Wiederherstellungsübung** mit dem echten nächtlichen Dump in eine leere Datenbank auf dem Testsystem: Dauer, Zählungen (`users`, `chat_messages`, `event_bookings`), anschließender Backend-Start ohne „Migration applied"-Zeilen.
 10. **`settings` mit NULL-Organisation**: `SELECT key, count(*) FROM settings WHERE organization_id IS NULL GROUP BY key HAVING count(*) > 1;` (erwartet leer).
+
+**Stand 27.09.2026 (vor dem Deploy gemessen, Auftrag `docs/auftraege/lokaler-agent/01-vor-dem-deploy.md`):** Nr. 2 — 0 von 130. Nr. 4 — 89 Einträge, jüngster `159_gemeinde_einladungen.sql`, `Migration FAILED` 0 auf allen drei Backends. Nr. 5 — vor dem Anheben `shared_buffers` 128 MB, `work_mem` 4 MB, `max_connections` 200, Server-`statement_timeout` 0 (die Backends setzen 30 s je Verbindung), Zeitzone der Backend-Sitzungen UTC; nachher `shared_buffers` 768MB, `work_mem` 8MB. Nr. 8 — vor dem Anheben 14.489-mal gedrosselt in 27 h. Nach dem Deploy messen: Nr. 7 (Terminliste live) und Nr. 8 (Drosselung nachher). Nicht gelaufen: Nr. 1, 3, 6, 9 und 10 (liegen bei Simon/Betrieb).

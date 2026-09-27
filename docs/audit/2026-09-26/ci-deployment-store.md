@@ -63,13 +63,15 @@ Stufe NIEDRIG (Hygiene). Keine KRITISCH-Befunde.
 
 ## Release-Empfehlung für den Bereich
 
-**Mit Auflage.** Der Server-Deploy ist freigabefähig. Für die Store-Einreichung 2.3.0 gilt als Auflage:
+*Überholt — siehe „Stand 27.09.2026 (vor dem Merge von 2.3.0)" unten.* **Mit Auflage.** Der Server-Deploy ist freigabefähig. Für die Store-Einreichung 2.3.0 gilt als Auflage:
 (1) Vor der Freigabe in den Production-Track und der App-Store-Einreichung nachweisen, dass der CI-Lauf
 **des exakt gebauten Commits** (`fce1ab01`, CI-Lauf 948 — grün) grün ist; für die nächsten Builds den
 Release-Workflows ein Gate geben (Ref-Prüfung auf `main` + Warten auf grünen CI-Lauf desselben SHA).
 (2) `docs/store-texte-2.3.0.md` anlegen, damit der Plattform-Check des iOS-Workflows überhaupt etwas
 prüft. (3) `apple-app-site-association` entweder mit Team-ID `J459G9CJT5` und passendem Entitlement
 richtig machen oder bis dahin entfernen.
+
+**Stand 27.09.2026 (vor dem Merge von 2.3.0):** Von den drei Auflagen sind zwei erfüllt — Release-Tor (BF-01) und `docs/store-texte-2.3.0.md` (BF-08); die AASA-Datei (BF-02) trägt weiter den Platzhalter, Entscheidung Simon. Von 18 Befunden sind 4 behoben (BF-01, BF-03, BF-08, BF-12), 5 teilweise behoben (BF-04, BF-05, BF-07, BF-09, MITTEL, für 2.3.x vorgemerkt; BF-15) und 9 offen (BF-02 und BF-06, MITTEL; BF-10, BF-11, BF-13, BF-14, BF-16, BF-17, BF-18, NIEDRIG). Kein HOCH- oder KRITISCH-Befund ist offen. Neu aus der Prüfung vor dem Merge: `.github/scripts/release-gate.py` und `deploy/rollend.sh` haben keine Tests (beide nur lokal mit Nachbauten geprüft) — offen, für 2.3.x vorgemerkt. Die übrigen Reste stehen als Auftrag in `docs/auftraege/lokaler-agent/04-ci.md`.
 
 ## Befunde
 
@@ -120,6 +122,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-02: iOS-Deep-Links: `apple-app-site-association` ist ein Platzhalter und wird so ausgeliefert
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — die AASA-Datei trägt weiter `TEAMID` (2 Treffer), ein Associated-Domains-Entitlement fehlt. Simon entscheidet: Universal Links umsetzen oder die Datei entfernen (Auftrag `04-ci.md`, Abschnitt 10). Vor EKD-Ausrollung.
 - **Fundstelle:** `frontend/public/.well-known/apple-app-site-association:6,7,12`
   (`"appID": "TEAMID.de.godsapp.konfiquest"`, Pfade `/konfi/*`, `/admin/*`),
   `frontend/ios/App/App/App.entitlements:5-6` (nur `aps-environment`, kein
@@ -147,6 +150,7 @@ richtig machen oder bis dahin entfernen.
 ### BF-03: CI-Deploy schreibt auch `backend-test` auf das Live-Image um — Test-Backend läuft danach auf `main`
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — Der Tag-Rewrite in `ci.yml` folgt jetzt dem Dienstblock und schreibt nur in `backend`, `backend2` und `frontend` um; Gegenprobe im Workflow: die `image`-Zeile von `backend-test` muss vor und nach dem Rewrite identisch sein, sonst Abbruch ohne Deploy; steht sie nicht auf `test-…`, warnt der Lauf (Altlast des alten Rewrites — im Portainer-Stack von Hand auf `test-latest` zurückstellen, siehe „Auf Produktion nachzumessen"). Lokal gegen die Referenz-Compose in fünf Szenen geprüft (alter Rewrite reproduziert den Befund, Gegenprobe schlägt dabei an). `notfall-deploy.yml:96` trägt dasselbe alte Muster und ist nicht angefasst.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Der Ort in der Status-Zeile stimmt nicht mehr: Der Tag-Rewrite steht nicht in `ci.yml`, sondern in `deploy/rollend.sh` (`schreibe_tags`, aus dem Deploy-Job gerufen, `ee996132`) und in `notfall-deploy.yml` — dort ebenfalls auf die Live-Dienste begrenzt, samt Gegenprobe auf `backend-test` (`02bf4045`); „nicht angefasst" ist überholt. Beide Wege schicken die Stack-Variablen seit `6cd0d52d` unverändert zurück. Liegt bei Simon/Betrieb: `backend-test` steht im Live-Stack noch auf dem Live-SHA `fce1ab0` (vor dem Deploy gemessen, Auftrag `01-vor-dem-deploy.md`, Nr. 7) — in Portainer auf `test-latest` zurückstellen oder über `test-backend.yml` neu setzen.
 - **Fundstelle:** `.github/workflows/ci.yml:442` (Regex `(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+`),
   `deploy/compose.konfi_quest.yml:203-205,212` („Das Image trägt den Tag test-latest … der Live-Redeploy
   zieht davon nichts"), `.github/workflows/test-backend.yml:9-11`.
@@ -173,6 +177,7 @@ richtig machen oder bis dahin entfernen.
 ### BF-04: Kein `concurrency`-Schutz — parallele Deploys können sich überholen
 - **Schwere:** MITTEL
 - **Status:** teilweise behoben 26.09.2026 — `concurrency: deploy-production` (`cancel-in-progress: false`) auf dem `deploy`-Job: zwei Deploys laufen nie mehr gleichzeitig, ein wartender wird vom nächsten ersetzt. Offen bleibt die Reihenfolge: braucht der ältere Push länger für seine Tests, kommt sein Deploy weiterhin nach dem neueren an die Reihe und setzt den älteren SHA — eine Prüfung gegen den jüngsten erfolgreichen Lauf auf `main` fehlt. `cancel-in-progress` für Test-Jobs auf Nicht-`main`-Refs ist nicht umgesetzt.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt: serialisiert ja, Prüfung gegen den jüngsten erfolgreichen Lauf auf `main` nein; für 2.3.x vorgemerkt (Auftrag `04-ci.md`, Abschnitt 1).
 - **Fundstelle:** `.github/workflows/ci.yml` (kein `concurrency:`-Block auf Workflow- oder Job-Ebene;
   `grep -n concurrency .github/workflows/*.yml` → kein Treffer), Deploy-Schleife `ci.yml:465-485`.
 - **Kennzeichnung:** aus Code gelesen
@@ -190,6 +195,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-05: Jeder Push auf `main` erzeugt tagsüber eine Deploy-Lücke; „nachts unkritisch" stimmt nicht
 - **Schwere:** MITTEL
+- **Status:** teilweise behoben 27.09.2026 — der Deploy tauscht die Backends seit dem 26.09. nacheinander (`deploy/rollend.sh`, Betrieb BF-12, `ee996132`), der Compose-Kommentar „nachts unkritisch" ist ersetzt; die Lücke im ersten echten Lauf ist noch nicht gemessen (nach dem Deploy messen), `postgres:15-alpine` ist weiter nicht per Digest gepinnt. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `deploy/compose.konfi_quest.yml:11-13` („kurze Lücke; nachts unkritisch"),
   `deploy/rolling-deploy.sh:1-16` (WIP seit 21.06.2026, zwei offene Punkte), `ci.yml:342-372,447-460`
   (update_stack mit `pullImage: true` für den ganzen Stack), `compose.konfi_quest.yml:17` (`postgres:15-alpine`
@@ -214,6 +220,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-06: Backend-Image läuft als root, enthält Dev-Abhängigkeiten, Tests, Schema-Dump und Compiler
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — `backend/Dockerfile` unverändert (`node:26-bookworm`, root, `npm install --omit=dev && npm install pg`), `backend/.dockerignore` fehlt. Für 2.3.x vorgemerkt (Auftrag `04-ci.md`, Abschnitt 7).
 - **Fundstelle:** `backend/Dockerfile:1` (`node:26-bookworm`, Vollimage), `:6-11` (g++, make, python3 im
   Laufzeit-Image), `:17` (`npm install --omit=dev && npm install pg` statt `npm ci`), `:20` (`COPY . .`),
   kein `USER`, kein `backend/.dockerignore` (Datei fehlt; `frontend/.dockerignore` existiert).
@@ -246,6 +253,7 @@ richtig machen oder bis dahin entfernen.
 ### BF-07: Typprüfung und Web-Build laufen erst nach dem Merge — Build-Brüche erreichen `main` und stoppen still den Deploy
 - **Schwere:** MITTEL
 - **Status:** teilweise behoben 26.09.2026 — `frontend-test` führt jetzt `npx tsc --noEmit` und `npx vite build --logLevel warn` aus (lokal grün: 13,9 s bzw. 17,2 s); ein Typfehler oder eine kaputte CSS-Klammer macht den Test-Job rot, bevor `build-and-push` läuft. Nicht umgesetzt: eine zusätzliche aktive Benachrichtigung bei rotem `main` — es bleibt bei GitHubs Standard-Mail an den Committer.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt; die aktive Meldung bei rotem `main` fehlt, für 2.3.x vorgemerkt (Auftrag `04-ci.md`, Abschnitt 2).
 - **Fundstelle:** `.github/workflows/ci.yml:228-230` (frontend-test führt nur `vitest run` aus, kein
   `tsc --noEmit`, kein `vite build`), `:284-290` (der Build passiert erst in `build-and-push`, nur auf
   `main`/push), `frontend/package.json` (`"build": "tsc && vite build"`).
@@ -268,6 +276,7 @@ richtig machen oder bis dahin entfernen.
 ### BF-08: Store-Texte für 2.3.0 fehlen; Android-Notizen decken die größten Neuerungen nicht ab
 - **Schwere:** MITTEL
 - **Status:** teilweise behoben 26.09.2026 — `docs/store-texte-2.3.0.md` angelegt, `frontend/release-notes-de.txt` trägt jetzt Postfach/Glocke, Mitteilungs-Auswahl und die Push-Reparatur (437 Zeichen); die doppelten CHANGELOG-Abschnitte führt die Koordination zum Schluss zusammen, weil mehrere Pakete parallel in den Unreleased-Block schreiben.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** behoben — `docs/store-texte-2.3.0.md` liegt vor, der CHANGELOG-Block ist zusammengeführt (`e4c940df`). Rest: Die Datei nennt Android versionCode 124 und iOS-Build 230, `frontend/version.json` steht auf 125 und 231 — vor dem Store-Upload angleichen.
 - **Fundstelle:** `docs/` (vorhanden: `store-texte-2.0.0.md`, `2.1.0`, `2.1.1`, `2.2.0`; kein `2.3.0`),
   `frontend/release-notes-de.txt` (Play-Text, 489 Zeichen), `CHANGELOG.md:9-…` (Unreleased 2.3.0),
   `.github/workflows/ios-release.yml:41-71` (Plattform-Check liest nur vorhandene `store-texte-*.md`).
@@ -290,6 +299,7 @@ richtig machen oder bis dahin entfernen.
 ### BF-09: Versionsstände widersprechen sich; ein Store-Build ist nicht sicher einem Commit zuzuordnen
 - **Schwere:** MITTEL
 - **Status:** teilweise behoben 27.09.2026 — Versionsstände: `scripts/version-setzen.mjs` (`npm run version:setzen`/`version:pruefen`) zieht die drei `package.json` samt Lockfiles und `MARKETING_VERSION` an `frontend/version.json` heran, gemessen 9 Abweichungen → 0; `/api/status` meldet 2.3.0 statt 1.0.1; Test `versionsnummernEineQuelle` (Frontend) und Assertion in `statusBetrieb.test.js`; Regel in CLAUDE.md „Versionsnummern". **Offen:** Git-Tag je Store-Upload im Release-Workflow und das Zurückcommitten von Info.plist (220) — Workflow-Änderung.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt: `Info.plist` trägt weiter Build 220 (`CFBundleVersion`), `project.pbxproj` 218, `frontend/version.json` 231; der Git-Tag je Store-Upload fehlt. Für 2.3.x vorgemerkt (Auftrag `04-ci.md`, Abschnitt 3).
 - **Fundstelle:** `frontend/version.json` (2.3.0 / Android 124 / iOS 230 — Quelle der Wahrheit),
   `frontend/ios/App/App/Info.plist:19-22` (2.3.0 / **220**), `project.pbxproj:400,410,436,447`
   (**218** / 2.3.0), `package.json:3` (2.9.0), `backend/package.json:3` (1.0.1 → `/api/status` meldet
@@ -320,6 +330,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-10: Notfall-Deploy wurde nie ausgeführt — der Rückrollweg ist ungeprobt
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `notfall-deploy.yml` hat weiter nur `contents: read`, der Weg wurde nie geprobt; die Probe liegt bei Simon/Betrieb (Auftrag `05-sicherung-und-notfall.md`, Abschnitt 3), vor EKD-Ausrollung.
 - **Fundstelle:** `.github/workflows/notfall-deploy.yml` (gesamt), `:34-35` (`permissions: contents: read`,
   kein `packages: read`), `:65-68` (`docker login ghcr.io` + `docker manifest inspect`).
 - **Kennzeichnung:** reproduziert (Actions-API: `total_count: 0` für `notfall-deploy.yml`)
@@ -335,6 +346,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-11: E2E-Job auf Node 20 (EOL) und Actions v4; Produktions-Image auf Node 26 (kein LTS)
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — der E2E-Job läuft weiter auf Node 20 (`ci.yml:261`), Produktion auf 26 (Auftrag `04-ci.md`, Abschnitt 6). Später.
 - **Fundstelle:** `.github/workflows/ci.yml:243-247` (`actions/checkout@v4`, `setup-node@v4`,
   `node-version: '20'`) gegenüber `:92-97` (`@v7`, Node 26); `backend/Dockerfile:1` (`node:26-bookworm`);
   `backend/package.json` (`engines.node >=22`); Umgebung lokal Node 22.
@@ -363,6 +375,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-13: `sitemap.xml` wird aus Datei-Änderungszeiten erzeugt — nicht reproduzierbar und vom Frischecheck nicht erfasst
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `lastmod` kommt weiter aus der Änderungszeit (`scripts/build-handbuch.mjs:802`), der Frischecheck sieht `sitemap.xml` nicht (Auftrag `04-ci.md`, Abschnitt 4). Später.
 - **Fundstelle:** `scripts/build-handbuch.mjs:699-705` (`statSync(...).mtime`), `:714,741-743`;
   `.github/workflows/ci.yml:215-216` (Check nur `frontend/public/docs/`, nicht `frontend/public/sitemap.xml`).
 - **Kennzeichnung:** reproduziert (Generatorlauf + `git diff`)
@@ -378,6 +391,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-14: Web-Frontend ohne CSP/Referrer-Policy/Permissions-Policy; veralteter `X-XSS-Protection`
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `frontend/nginx.conf` setzt weiter `X-XSS-Protection` und keine CSP, `Referrer-Policy` oder `Permissions-Policy` (Auftrag `04-ci.md`, Abschnitt 8). Später.
 - **Fundstelle:** `frontend/nginx.conf:33-36,96-102,105-111,114-116`.
 - **Kennzeichnung:** reproduziert (`curl -I https://konfi-quest.de/login`)
 - **Beschreibung:** Die HTML-Antworten tragen `X-Frame-Options`, `nosniff`, `X-XSS-Protection: 1; mode=block`
@@ -394,6 +408,7 @@ richtig machen oder bis dahin entfernen.
 ### BF-15: Hygiene in Workflows und Deploy-Referenz (Sammelbefund)
 - **Schwere:** NIEDRIG
 - **Status:** teilweise behoben 26.09.2026 — `docs/offene-befunde.md` #12 als behoben markiert (Doku-Paket); die übrigen Punkte dieses Sammelbefunds (Action-Pinning, `test-backend.yml`, `frontend.yml`, Compose-`version`, Kommentar in `ci.yml`, `Info.plist`) gehören zum CI-Paket.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand: die Punkte des CI-Pakets sind weiter offen — Actions nicht per SHA gepinnt, `test-backend.yml` mit Vorgabe `feat/ionic-9` (`:22`), `frontend.yml` ohne Gate, `version: '3.8'` im Compose, die `ci.yml`-Kommentare „32/32" (`:249`) und „72 Migrationen" (`:379`), `armv7` in `Info.plist`. Später (Auftrag `04-ci.md`, Abschnitt 5).
 - **Fundstelle:** alle `uses:` in `.github/workflows/*.yml` (Tag-Pinning `@v7`/`@v4`, kein SHA);
   `test-backend.yml:22` (`default: 'feat/ionic-9'`, Branch längst gemergt — Lauf 7 vom 01.09.2026);
   `frontend.yml:4-5` (manueller Deploy ohne Tests, mit Portainer-Zugriff, aus jedem Branch; zuletzt
@@ -413,6 +428,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-16: Play-Upload veröffentlicht sofort zu 100 %; Track-Namen ungeprüft
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `upload-play.py` veröffentlicht weiter mit `status: completed` (`:108`) und prüft die Track-Namen nicht (`:112`). Vor EKD-Ausrollung (gestaffelte Freigabe bei vielen Installationen).
 - **Fundstelle:** `.github/scripts/upload-play.py:107-113` (`"status": "completed"`, `TRACKS.split(",")`
   ohne `strip()`/Prüfung).
 - **Kennzeichnung:** aus Code gelesen
@@ -427,6 +443,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-17: `paths:`-Filter der CI lässt Wurzel-`package.json`/`package-lock.json` (E2E-Abhängigkeiten) aus
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — der `paths`-Filter nennt Wurzel-`package.json` und `package-lock.json` weiter nicht. Später.
 - **Fundstelle:** `.github/workflows/ci.yml:7-25`.
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Der E2E-Job installiert aus der Wurzel (`npm ci`, `ci.yml:251`; `package.json` mit
@@ -441,6 +458,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-18: Kamera-Berechtigungstext auf iOS nennt den QR-Scanner nicht
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — der Kamera-Text nennt den QR-Scanner weiter nicht (`Info.plist:31-32`). Vor EKD-Ausrollung (Store).
 - **Fundstelle:** `frontend/ios/App/App/Info.plist:31-32` („… um Fotos für Chat-Nachrichten und
   Challenge-Beiträge aufzunehmen"), Nutzung durch `frontend/src/components/konfi/modals/QRScannerModal.tsx`
   (`qr-scanner`, Termin-Check-in); Android begründet die Kamera umgekehrt nur mit dem Scanner
@@ -459,23 +477,29 @@ richtig machen oder bis dahin entfernen.
   (PNG-Farbtyp 6). App Store Connect lehnt Marketing-Icons mit Transparenz ab (ITMS-90717). Die Uploads
   221–230 liefen durch — entweder ist der Kanal vollständig deckend und Xcode entfernt ihn, oder ASC hat
   gewarnt. Zu klären in App Store Connect (Build-Verarbeitung, Warnungen).
+  - **Status:** offen 27.09.2026 — in App Store Connect zu klären; liegt bei Simon.
 - **`aps-environment = development` in `App.entitlements`.** Xcode ersetzt den Wert beim Export mit
   App-Store-Profil nach gängiger Dokumentation durch `production`; Produktions-Push funktioniert laut
   Historie (Push-Ausfall betraf nur Android). Am IPA nicht geprüft (`codesign -d --entitlements`).
+  - **Status:** offen 27.09.2026 — am IPA prüfen; liegt bei Simon.
 - **`UIBackgroundModes: fetch`.** `AppContext.tsx` nutzt `@capawesome/capacitor-background-task`
   (Hintergrundzeit beim Wechsel), was den Modus `fetch` nicht braucht. Ob `fetch` irgendwo genutzt wird,
   war nicht feststellbar; Apple prüft ungenutzte Modi gelegentlich.
+  - **Status:** offen 27.09.2026 — klären, ob `fetch` gebraucht wird. Später.
 - **`UIFileSharingEnabled` + `LSSupportsOpeningDocumentsInPlace` = true.** Der Documents-Ordner der App
   ist in der Dateien-App sichtbar. `MaterialFormModal.tsx:218-228` und `chatTeilen.ts:41-47` schreiben
   temporär nach `Directory.Documents`. Ob dort Chat-Anhänge liegen bleiben (auch bei aktiver App-Sperre
   sichtbar), war ohne Gerät nicht prüfbar.
+  - **Status:** offen 27.09.2026 — am Gerät prüfen; liegt bei Simon.
 - **Test-Deadlocks in der CI.** Zwei rote `backend-test`-Läufe (931, 938) zeigen `deadlock detected`
   zwischen `truncateAll` und Zähler-Abfragen (`events`/`activity_requests`/`challenge_submissions`), die
   offenbar aus einem vorigen Test noch liefen. Sieht nach systematischem Flattern aus; gehört zum
   Test-Bereich, hier nur als Beobachtung.
+  - **Status:** offen 27.09.2026 — `truncateAll` hat seit Juni `lock_timeout` und Wiederholung (`backend/tests/helpers/db.js`), die Läufe 931 und 938 zeigen, dass es trotzdem vorkommt. Gehört zu den Tests; später.
 - **Sicherheit der Firebase-Client-Schlüssel.** `frontend/config/google-services.json` und
   `GoogleService-Info.plist` sind Client-Konfigurationen (öffentlich per Design). Ob die beiden
   API-Schlüssel in der Google-Cloud-Konsole auf Paket/Bundle beschränkt sind, ist nur dort prüfbar.
+  - **Status:** offen 27.09.2026 — in der Google-Cloud-Konsole prüfen; liegt bei Simon.
 
 ## Alte Befunde nachgeprüft
 
@@ -493,8 +517,8 @@ richtig machen oder bis dahin entfernen.
   wacht darüber. Der Eintrag in `docs/offene-befunde.md:429-437` sollte als behoben markiert werden.
 - **Datierter Kommentar `ci.yml:360-366` (02.09.2026)** „Datenbank trägt bereits ALLE 72 Migrationen … ein
   Live-Deploy führt keine Migration mehr aus": **veraltet.** 89 Migrationsdateien im Repo; Deploys führen
-  neue Migrationen automatisch aus (`database.js:76-104`, mit Advisory-Lock).
-- **`deploy/rolling-deploy.sh` (21.06.2026) „NOCH NICHT IM CI AKTIV":** **weiter offen** (BF-05).
+  neue Migrationen automatisch aus (`database.js:76-104`, mit Advisory-Lock). *Stand 27.09.2026: steht weiter im Code (`ci.yml:379`), BF-15.*
+- **`deploy/rolling-deploy.sh` (21.06.2026) „NOCH NICHT IM CI AKTIV":** **weiter offen** (BF-05). *Stand 27.09.2026: ersetzt durch `deploy/rollend.sh` (`ee996132`), erster Produktionslauf nach dem Merge.*
 - **`android-release.yml:10-20` (15.09.2026) versehentlicher Production-Release:** Vorgabe steht heute auf
   `internal,alpha` (`:27`) — **behoben bestätigt**.
 
@@ -595,6 +619,8 @@ richtig machen oder bis dahin entfernen.
   zeigt für versionCode 124 lesbare Stapel (Mapping-Upload wirksam)?
 - **Firebase/Google Cloud:** Anwendungsbeschränkungen der beiden Client-API-Schlüssel.
 - **ghcr:** Anzahl und Alter der Tags (Aufräumregel? jeder Push erzeugt zwei Images).
+
+**Stand 27.09.2026 (vor dem Deploy gemessen, Aufträge `01-vor-dem-deploy.md` und `02-portainer-stack.md`):** Portainer-Stack — `backend-test` steht auf dem Live-SHA `fce1ab0` (BF-03). Ressourcen — vor dem Anheben 0,3 CPU, 14.489-mal gedrosselt in 27 h, Cache-Trefferquote 99,96 %, 40 Verbindungen; seit dem 27.09. 2 CPU / 3 GB. Sicherung — einmal vor dem Deploy mit dem Referenzskript, Rückspielprobe offen. Migrationsstand — 89, jüngster `159_…`. Node live v26.10.0. Nach dem Deploy messen: Deploy-Lücke im zweistufigen Deploy, ob der Datenbank-Container neu erstellt wird. Liegt bei Simon: App Store Connect, Play Console, Firebase-Schlüssel, ghcr-Aufräumregel.
 
 ## Auslieferung der Workflow-Änderungen (Nachtrag 26.09.2026)
 

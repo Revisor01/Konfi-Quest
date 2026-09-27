@@ -16,7 +16,9 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 
 ## Release-Empfehlung für den Bereich
 
-**Mit Auflage.** Vor dem Release BF-01 schließen (`direct` in `POST /chat/rooms` ablehnen oder auf genau zwei Teilnehmende begrenzen — ein Einzeiler plus Bestandsabfrage) und BF-03 entscheiden (Uhrzeit der Vortags-Erinnerung); BF-02 mindestens im Löschdialog und Handbuch benennen, wenn die Kaskade nicht vor dem Release entschärft wird. Die MITTEL-Befunde zur Mehr-Gemeinden-Funktion (BF-04, BF-06, BF-08) betreffen ein 2.3.0-Hauptmerkmal und sollten in den Release-Notes nicht als vollständig beworben werden, solange sie offen sind.
+*Überholt — siehe „Stand 27.09.2026 (vor dem Merge von 2.3.0)" unten.* **Mit Auflage.** Vor dem Release BF-01 schließen (`direct` in `POST /chat/rooms` ablehnen oder auf genau zwei Teilnehmende begrenzen — ein Einzeiler plus Bestandsabfrage) und BF-03 entscheiden (Uhrzeit der Vortags-Erinnerung); BF-02 mindestens im Löschdialog und Handbuch benennen, wenn die Kaskade nicht vor dem Release entschärft wird. Die MITTEL-Befunde zur Mehr-Gemeinden-Funktion (BF-04, BF-06, BF-08) betreffen ein 2.3.0-Hauptmerkmal und sollten in den Release-Notes nicht als vollständig beworben werden, solange sie offen sind.
+
+**Stand 27.09.2026 (vor dem Merge von 2.3.0):** Jeder Befund trägt eine Status-Zeile, geprüft gegen Code, Tests und CHANGELOG. Von 14 Befunden sind 7 behoben (BF-01 bis BF-04, BF-06, BF-07, BF-14), 2 teilweise behoben (BF-08, BF-11) und 5 offen (BF-05 und BF-09, MITTEL, für 2.3.x vorgemerkt; BF-10, BF-12, BF-13, NIEDRIG, später). Offen ist kein HOCH- oder KRITISCH-Befund. Beide Auflagen der Empfehlung oben (BF-01 schließen, BF-03 entscheiden) sind erfüllt; von den Mehr-Gemeinden-Befunden sind BF-04 und BF-06 behoben, BF-08 bis auf die Challenge-Urheber:innen.
 
 ## Befunde
 
@@ -62,6 +64,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 
 ### BF-05: `DELETE /wrapped/teamer` lässt die Ausgabe stehen — der Team-Rückblick des Jahres ist danach nicht mehr erzeugbar
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — `DELETE /wrapped/teamer` löscht weiter nur die Snapshots (`routes/wrapped.js:3026-3046`) und lässt die leere Ausgabe stehen, die die Neuanlage sperrt; die Oberfläche nutzt `DELETE /ausgabe/:id`. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/routes/wrapped.js:2988-3010` (löscht nur `wrapped_snapshots`), `:2533-2551` (Idempotenz-Sperre prüft `wrapped_ausgaben`)
 - **Kennzeichnung:** reproduziert — Test D1 (temporär, gelöscht): `POST /generate-teamer {jahr:2025}` → `generated:1`; `DELETE /api/wrapped/teamer` → `deleted:1`; `POST /generate-teamer {jahr:2025}` → `generated:0`, „Der Team-Rückblick 2025 besteht bereits", `benachrichtigt:false`; `GET /ausgaben?typ=teamer` zeigt die Ausgabe mit `snapshots:0`; `GET /wrapped/meine` der Teamer:in → `[]`.
 - **Beschreibung:** Der Kommentar der Route („Erneutes Generieren überschreibt zwar") stammt aus der Zeit vor der Ausgaben-Sperre (08.09.2026). Seitdem gilt: Ausgabe da → nichts tun. Die Route hinterlässt eine leere Ausgabe, die genau diese Sperre auslöst. `docs/api/ABRISS.md` führt die Route als Betriebswerkzeug („Löschweg"), die Oberfläche nutzt seit 2.2.0 nur `DELETE /ausgabe/:id` (`AdminWrappedPage.tsx:229`; auch im Stand `2.2.0`).
@@ -81,6 +84,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 
 ### BF-07: Leitung darf einen Jahrgangs-Chat lesen, bekommt die Anhänge darin aber nicht
 - **Schwere:** MITTEL
+- **Status:** behoben 27.09.2026 — mit „Wer bekommt was" BF-05 (`677a8e91`): `GET /files/:filename` prüft über `darfRaumOeffnen` (`chat.js:1934`) dieselbe Regel wie die übrigen Leserouten (`utils/chatRoomAccess.js`, `darfRaumBetreten`). Die Leitung bekommt Anhänge in jedem Raum, den sie ohne Teilnahme öffnen darf; Test `tests/routes/chatZugangNachJahrgang.test.js` (Datei verboten und erlaubt).
 - **Fundstelle:** `backend/routes/chat.js:1852-1861` (Mitgliedschaft nur über `chat_participants`, ohne `user_type`, ohne Leitungsregel) gegenüber `chat.js:303-318` (`darfRaumOeffnen`) und Handbuch `90-chat.md:147-153`
 - **Kennzeichnung:** reproduziert — Test B1 (temporär, gelöscht): `konfi1` lädt PNG in Raum 1 (Jahrgangs-Chat); `org_admin1` (kein Teilnehmer) `GET /rooms/1/messages` → 200, `GET /chat/files/<file_path>` → **403** „Zugriff verweigert"; `admin1` (Teilnehmer) → 200.
 - **Beschreibung:** Alle anderen Leserouten (`/rooms/:id`, `/messages`, `/participants`, `/export`, Reaktionen lesen) folgen `darfRaumOeffnen`; die Datei-Route hat eine eigene, engere Mitgliedschaftsprüfung. Die Leitung sieht in der Nachrichtenliste ein Bild mit Dateinamen und bekommt beim Öffnen einen Fehler.
@@ -91,6 +95,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 ### BF-08: Zweitgemeinde-Mitglieder stehen in der Kontaktliste, lassen sich aber nicht in Gruppenchats eintragen
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — `POST /chat/rooms` (participants) und `POST /chat/rooms/:roomId/participants` lösen die Person über `TEAM_MITGLIED_ROLLE` auf (Stamm-Gemeinde ODER `user_organizations`, `user_type` aus der Rolle dieser Gemeinde); Tests L1 als Dauertests in `tests/routes/chatGruppenZweitgemeinde.test.js` (Zusatzmitglied, Rolle je Gemeinde, Stamm-Mitglied unverändert, fremde Gemeinde bleibt außen). Nicht auflösbare Teilnehmer:innen in `POST /rooms` werden weiterhin still weggelassen (kein 400 — Antwortverhalten der Store-Apps unverändert); die „gleiche Klasse" in `challenges.js` und der Lizenz-Erinnerung ist nicht Teil dieses Fixes.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** teilweise behoben — die Gruppenchats sind behoben (Status oben). Die Lizenz-Erinnerung aus der „gleichen Klasse" erreicht seit „Wer bekommt was" BF-09 alle Org-Admins beider Quellen (`23be613f`). Offen bleibt `challenges.js`: `GET /admin/authors` (`:1185-1196`) und die Urheber-Prüfung beim Anlegen und Ändern (`:1352`, `:1493`) kennen nur die Stamm-Gemeinde — eine Person aus einer weiteren Gemeinde lässt sich nicht als Urheber:in wählen. Für 2.3.x vorgemerkt (Liste „Rolle je Gemeinde" im Bericht `backend-fachlogik-punkte-termine.md`).
 - **Fundstelle:** `backend/routes/chat.js:1584-1592` (`POST /rooms/:roomId/participants`: `u.organization_id = $2`), `chat.js:606-611` (`POST /rooms`: Teilnehmerliste ebenso gefiltert — fremde werden **stillschweigend** weggelassen), gleiche Klasse: `backend/routes/challenges.js:1196` (`GET /admin/authors`), `:1365`/`:1506` (Urheber-Prüfung), `backend/services/backgroundService.js:1237` (Lizenz-Erinnerung)
 - **Kennzeichnung:** reproduziert — Test L1 (temporär, gelöscht): `teamer2` per `user_organizations` in Org 1; `GET /chat/team-contacts` (teamer1) enthält ihn; `POST /rooms/3/participants {user_id:7}` (org_admin1) → **404** „Benutzer nicht in deiner Organisation gefunden"; `POST /rooms {type:'group', participants:[7]}` → 200, Teilnehmer danach nur `[5]` (der Ersteller).
 - **Beschreibung:** Am 25./26.09. wurden Kontaktliste, Direktchat (`TEAM_MITGLIED_ROLLE`), Team-Chat-Sync und Push-Empfänger auf beide Zugehörigkeitsquellen umgestellt; die Gruppenchat-Teilnehmerverwaltung nicht. Die Rolle für den `user_type` käme zudem aus `u.role_id` (Stamm-Rolle) statt aus der Rolle in dieser Gemeinde.
@@ -100,6 +105,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 
 ### BF-09: Token im Query-String der Chat-Dateiroute landet im Zugriffslog
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — `GET /files/:filename` nimmt das Zugriffstoken weiter auch aus `?token=` (`chat.js:1820`); ob Tokens im Traefik-Log stehen, ist nicht gemessen. Für 2.3.x vorgemerkt, Log-Zählung nach dem Deploy messen.
 - **Fundstelle:** `backend/routes/chat.js:1743` (`|| req.query.token`), Gegenstück `backend/routes/challenges.js:995-1000` (lehnt genau dieses Muster als „reine Angriffsfläche" ab, weil Tokens in Access-Logs und Referrern landen)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Traefik protokolliert jede Anfrage mit `RequestPath` (`docs/api/ABRISS.md`, Abschnitt „Wie man das prüft"); der Pfad enthält den Query-String und damit das Zugriffstoken (15 Minuten gültig, aber mit `active_organization_id` und Nutzer-ID). Das Muster ist bewusst („Video-Elemente können keine Header senden"), die Challenge-Route zieht seit 04.08.2026 die gegenteilige Konsequenz — zwei Regeln für dieselbe Frage.
@@ -109,6 +115,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 
 ### BF-10: Zwei Ungelesen-Zähler mit verschiedener Semantik (`GET /chat/rooms` zählt eigene Nachrichten mit)
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `GET /chat/rooms` zählt eigene Nachrichten weiter mit (`chat.js:917`), `badge-counts` nicht; auch im Audit „Wer bekommt was" als bekannt offen geführt. Später.
 - **Fundstelle:** `backend/routes/chat.js:789-800` (kein Ausschluss eigener Nachrichten), `backend/routes/notifications.js:55-63` (schließt sie aus; der Kommentar dort behauptet Gleichheit)
 - **Kennzeichnung:** reproduziert — Test C1 (temporär, gelöscht): `konfi1` schreibt in Raum 1; `GET /chat/rooms` → `unread_count = 1`; `GET /notifications/badge-counts` → `chat.byRoom[1] = 0`.
 - **Beschreibung:** Die App nimmt `chatUnreadByRoom` aus `badge-counts` und fällt nur ohne Wert auf `room.unread_count` zurück (`ChatOverview.tsx:567`, `useChatSocket.ts:64`) — sichtbar wird der Unterschied also selten. Für jeden anderen Leser der Route (Store-Apps, Skripte) ist `unread_count` aber falsch, und offene Befunde #1 hat genau an solchen Doppelzählern gelitten.
@@ -118,6 +125,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 
 ### BF-11: E-Mail-Vorlagen setzen Namen unmaskiert ins HTML; ein Fehlerzweig ist unerreichbar
 - **Schwere:** NIEDRIG
+- **Status:** teilweise behoben 27.09.2026 — die Mails „Passwort vergessen" und „Passwort geändert" maskieren den Namen (`emailService.js:196`, `:249`); Lizenz- und Löschwarnung setzen `name`, `orgName` und `jahrgangName` weiter roh ins HTML (`:283-284`, `:357-358`), der 502-Zweig in `jahrgaenge.js:773-774` bleibt unerreichbar. Später.
 - **Fundstelle:** `backend/services/emailService.js:175`, `:247`, `:321` (`${name}`, `${orgName}`, `${jahrgangName}` roh im HTML; `escapeHtml` existiert (`:333`) und wird nur in `sendGemeindeEinladungEmail` und `sendKonfiMatrixEmail` benutzt); `backend/routes/jahrgaenge.js:758-760` (`mailResult.success === false` — `sendEmail` wirft bei Fehlern (`:55-79`), gibt nie `success:false` zurück, der 502-Zweig ist tot, es kommt 500)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Anzeigename (frei wählbar), Gemeindename und Jahrgangsname (Leitung) gelangen ohne Maskierung in den HTML-Teil von Passwort-Reset, Lizenz- und Löschwarnung. Mailclients führen kein Skript aus; Layoutbruch und Phishing-Optik über einen präparierten Anzeigenamen sind aber möglich. Zwei Vorlagen maskieren korrekt — die Regel ist da, nur nicht überall.
@@ -126,6 +134,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 
 ### BF-12: Tipp-Anzeige sendet `userName: undefined`
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `socket.user` trägt weiter kein `display_name` (`server.js:176-181`), das Tipp-Ereignis sendet `userName: undefined` (`utils/chatRoomAccess.js:183`). Später.
 - **Fundstelle:** `backend/server.js:190` liest `socket.user.display_name`; `server.js:146-151` setzt in `socket.user` nur `id`, `organization_id`, `role_name`, `type`
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Das Feld fehlt seit der Umstellung der Socket-Authentifizierung auf Datenbankprüfung (22.08.2026). Das Handbuch sagt, es gebe keine „schreibt gerade…"-Anzeige (`90-chat.md:181`) — der Server sendet trotzdem `userTyping`-Ereignisse, nur ohne Namen.
@@ -134,6 +143,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 
 ### BF-13: Ausgabe löschen verlangt weniger Rechte als Ausgabe anlegen
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `DELETE /ausgabe/:id` verlangt für Konfi-Ausgaben weiter nur irgendeine Zuweisung auf den Jahrgang, kein `can_edit` (`wrapped.js:2758` ff.). Später.
 - **Fundstelle:** `backend/routes/wrapped.js:2743-2750` (`DELETE /ausgabe/:id`: irgendeine Zuweisung auf den Jahrgang genügt, `can_edit` wird nicht geprüft) gegenüber `:2312` (`POST /generate/:jahrgangId`: `darfJahrgang(req, …, { edit: true })`)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Ein Admin mit reiner Lese-Zuweisung darf den Rückblick eines Jahrgangs samt aller Snapshots löschen, aber keinen anlegen.
@@ -142,6 +152,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 
 ### BF-14: Jahres-Cron läuft über gesperrte Organisationen; Lizenz-Mail nur an Stamm-Mitglieder
 - **Schwere:** NIEDRIG
+- **Status:** behoben 27.09.2026 — mit „Wer bekommt was" BF-22 und BF-09: Der Team-Rückblick am 6. Januar läuft nur noch für aktive Gemeinden (`backgroundService.js:1204`, `0a4da269`), die Lizenz-Erinnerung geht an alle Org-Admins beider Quellen (`ladeMitgliederDerOrganisation(db, org, ['org_admin'])`, `:1436`, `23be613f`). Tests `tests/services/gesperrteGemeindeHintergrund.test.js`, `tests/services/jahrgangLeitungEmpfaenger.test.js`.
 - **Fundstelle:** `backend/services/backgroundService.js:1011` (`SELECT id FROM organizations` ohne `is_active`), `:1234-1241` (`runLicenseReminders`: Leitung nur über `u.organization_id`)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Der Team-Rückblick wird am 6. Januar auch für inaktive (Testphase abgelaufen, gesperrte) Gemeinden erzeugt und der Push angestoßen (`getTokensForUser` filtert nur Konto-, nicht Gemeindestatus). Die Lizenz-Erinnerung erreicht eine Leitung, die die Gemeinde nur über `user_organizations` führt (realer Fall laut `orgMitglieder.js`), nicht.
@@ -151,15 +162,19 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 ## Unklar
 
 - **Mehrfach-Einreichung bei `allow_multiple = false` im Wettlauf.** Die Prüfung ist Lesen-dann-Schreiben ohne Unique-Constraint (`challenges.js:780-788`, Schema `challenge_submissions` ohne Eindeutigkeit auf `(challenge_id, user_id)`). Fünf gleichzeitige Text-Einreichungen im Test ergaben trotzdem genau einen Beitrag (Test I1) — das Zeitfenster ist klein, aber nicht null. Zu klären wäre mit einer gezielt verzögerten Transaktion; ein partieller Unique-Index (`WHERE` auf `allow_multiple` geht nicht über Tabellen hinweg) wäre nur über eine Prüfung mit `FOR UPDATE` auf der Challenge zu schließen.
+  - **Status:** offen 27.09.2026 — weiter Lesen-dann-Schreiben ohne Sperre (`challenges.js:775`); für 2.3.x vorgemerkt.
 - **Überlappende Erinnerungsläufe.** `sendEventReminders` läuft per `setInterval` ohne Wiedereintrittsschutz; die `event_reminders`-Zeile wird erst *nach* dem Push geschrieben. Dauert ein Lauf länger als 15 Minuten (viele Empfänger, langsames FCM), kann der nächste dieselben Erinnerungen ein zweites Mal senden. Ob das bei 10.000 Nutzer:innen eintritt, hängt an der Laufzeit je Push — nur in Produktion messbar (Dauer eines Laufs loggen).
+  - **Status:** behoben 26.09.2026 — Laufmerker gegen Überlappung und Vormerken vor dem Versand (Betrieb BF-05, `dc687ebe`; `253b739e`).
 - **Cron-Leader in Produktion.** Ob `backend2` tatsächlich `RUN_BACKGROUND_JOBS=false` trägt, steht nur im Stack; ohne diesen Schalter liefen Erinnerungen, Team-Rückblick und Zähler doppelt (die Challenge-Start- und Anmeldestart-Pushes sind über `UPDATE … RETURNING` dagegen geschützt, die Erinnerungen nicht).
+  - **Status:** im Code behoben 26.09.2026 — Leader per Advisory-Lock mit Übernahme, sichtbar in `/api/status` (Betrieb BF-10, `76b71dd9`). In Produktion trägt `backend2` `RUN_BACKGROUND_JOBS=false`, bis beide Backends 2.3.0 fahren; das Entfernen liegt bei Simon/Betrieb (Auftrag `docs/auftraege/lokaler-agent/02-portainer-stack.md`, Abschnitt 5).
 - **`POST /rooms/:roomId/messages` mit fremder `client_id`.** Die Idempotenz-Prüfung liefert eine vorhandene Nachricht derselben Organisation unabhängig vom Absender zurück (`chat.js:1099-1112`). Eine UUID zu raten ist praktisch aussichtslos; ein Test dafür wäre Theater — notiert, nicht bewertet.
+  - **Status:** bewusst so gelassen (Bewertung des Berichts: UUID praktisch nicht zu raten) — kein Handlungsbedarf.
 
 ## Alte Befunde nachgeprüft
 
 - **#1 Chat: Ungelesen-Markierung (02.09.)** — Backend-Seite bestätigt in Ordnung: `POST /rooms/:id/mark-read` ist ein UPSERT (`chat.js:1334-1338`), `badge-counts` respektiert den Lesestand (`notifications.test.js:782` grün). Neu dazu: die beiden Zähler haben verschiedene Semantik (BF-10).
 - **#6 Rückblick las die falsche Kategorie-Quelle** — behoben bestätigt: `wrapped.js:300/310/518` lesen `activity_categories`/`event_categories`, der frühere `COALESCE(a.category, a.type)` steht nur noch im Kommentar (`:448`).
-- **#7.2 Konfi-Historie hängt am Jahrgang (13.09.)** — im Frontend behoben, im Backend seit Migration 143 **neu gebrochen**: Die Konfi-Rückblicke verschwinden mit dem Jahrgang (BF-02). Punkte, Level, Abzeichen bleiben (`jahrgaenge.js:429-440`), der Rückblick nicht.
+- **#7.2 Konfi-Historie hängt am Jahrgang (13.09.)** — im Frontend behoben, im Backend seit Migration 143 **neu gebrochen**: Die Konfi-Rückblicke verschwinden mit dem Jahrgang (BF-02). Punkte, Level, Abzeichen bleiben (`jahrgaenge.js:429-440`), der Rückblick nicht. *Stand 27.09.2026: mit BF-02 behoben (Migration 162).*
 - **#8 Erinnerungen an Abgemeldete (15.09.)** — behoben bestätigt: `eb.attendance_status IS NULL` in beiden Erinnerungsabfragen (`backgroundService.js:675, 727`), `services/eventReminders.test.js` (grün, 26.09.) deckt Abmeldung und Absage ab.
 - **ABRISS.md / Vorfall 29.08. (`GET /teamer/badges`)** — die versprochene Lösung steht so im Code: alte Array-Route mit Kopfzeilen (`teamer.js:267-291`), neue `GET /badges/v2` (`:305-318`), `PUT` und `POST /badges/mark-seen` nebeneinander mit einer gemeinsamen Funktion (`:353-401`); Frontend `2.2.0` ruft `/badges/v2` und `POST mark-seen`. Tests in `badgesV2.test.js` („Alte Routen bleiben unveraendert").
 
@@ -206,3 +221,5 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 - **BF-09:** `docker logs --since 24h traefik 2>&1 | grep -c 'chat/files/[a-f0-9]*?token='` — kommt etwas, stehen JWTs im Log.
 - **Unklar/Erinnerungen:** Laufzeit eines `sendEventReminders`-Laufs loggen (Start/Ende) und gegen die 15 Minuten halten; prüfen, dass genau eine Replika `Hintergrund-Jobs gestartet (diese Replica ist der Cron-Leader)` loggt.
 - **Zweitgemeinden:** `SELECT COUNT(*) FROM user_organizations uo JOIN roles r ON r.id=uo.role_id WHERE r.name='teamer';` — so viele Personen trifft BF-04/06/08 heute.
+
+- **Stand 27.09.2026 (vor dem Deploy gemessen, Auftrag `docs/auftraege/lokaler-agent/01-vor-dem-deploy.md`, Nr. 4 und 5):** BF-01 — kein Direktchat mit mehr als zwei Personen, vier mit nur einer Person (Migration 164 lässt sie privat). BF-03 — bestätigt: 145 Vortags-Erinnerungen um 00:00 Berliner Zeit, 69 um 02:00, jede andere Stunde höchstens 13; `sent_at` steht in UTC, die Abfrage oben verschiebt deshalb um zwei Stunden. Die übrigen Messungen: nach dem Deploy messen.

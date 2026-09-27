@@ -61,17 +61,20 @@ im System Anzeigename und Benutzername — auch von Minderjährigen.
 
 ## Release-Empfehlung für den Bereich
 
-**nicht freigeben** — bis BF-01 (Passwort fremder Super-Admin-Konten) und BF-03
+*Überholt — siehe „Stand 27.09.2026 (vor dem Merge von 2.3.0)" unten.* **nicht freigeben** — bis BF-01 (Passwort fremder Super-Admin-Konten) und BF-03
 (Einladung fremder Konfis, Personenabfrage systemweit) behoben und mit Tests
 (verbotener und erlaubter Fall) belegt sind. BF-02 (Schlüssel in der Historie)
 ist keine Code-Änderung, sondern eine Betriebsfrage: Widerruf bei Apple
 bestätigen, sonst ebenfalls blockierend.
+
+**Stand 27.09.2026 (vor dem Merge von 2.3.0):** Von 22 Befunden sind 11 behoben (BF-01 bis BF-07, BF-09, BF-11, BF-12, BF-13; BF-11 vor dem Merge), 3 teilweise behoben (BF-08 und BF-10, MITTEL, für 2.3.x vorgemerkt; BF-16), 7 offen (BF-14, BF-15, BF-17 bis BF-20, NIEDRIG, später; BF-22, Datenschutz, vor EKD-Ausrollung) und 1 bewusst so gelassen (BF-21, Entscheidung Simon). Kein KRITISCH- oder HOCH-Befund ist offen. Die Bedingungen für „nicht freigeben" — BF-01 und BF-03 behoben und mit Tests belegt, die Schlüssel aus BF-02 widerrufen — sind erfüllt; die Empfehlung ist überholt. Offen bleiben die Produktionsmessungen Nr. 4, 6, 7, 8 und 10 (Stand am Ende) und die Unklar-Punkte zu Push-Inhalten und Datenexport (Datenschutz, vor EKD-Ausrollung).
 
 ## Befunde
 
 ### BF-01: Org-Admin übernimmt Super-Admin-Konten derselben Organisation
 - **Schwere:** KRITISCH
 - **Status:** behoben 26.09.2026 — `istSuperAdminKonto` (Rolle `super_admin` oder Flag `is_super_admin`) in `checkUserHierarchy` (PUT, DELETE, Jahrgänge) und inline in `reset-password`: nur ein Super-Admin darf ein solches Konto verwalten, sonst 403. Tests für alle vier Wege verboten und erlaubt in `users.test.js`.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** behoben, mit Testlücke — „Tests für alle vier Wege verboten und erlaubt" stimmt nur zur Hälfte: verboten sind alle vier Wege getestet (`users.test.js:1322-1365`), erlaubt nur `reset-password` und `PUT` (`:1376-1398`); der erlaubte Fall für `DELETE` und für die Jahrgangszuweisung (Super-Admin verwaltet ein Konto mit Merkmal) fehlt. Für 2.3.x vorgemerkt. Vor dem Deploy gezählt: zwei Konten mit Super-Admin-Merkmal, Rolle `org_admin` und gesetzter Gemeinde — genau die Konstellation des Befunds (Auftrag `docs/auftraege/lokaler-agent/01-vor-dem-deploy.md`, Nr. 3).
 - **Fundstelle:** `backend/routes/users.js:933-940` (`isOrgAdmin && isSameOrg`, kein Rollencheck des Ziels), `users.js:942-943` (Kommentar behauptet „Nur super_admin ist geschützt"), `backend/utils/roleHierarchy.js:31-34` (`org_admin` darf `org_admin` verwalten — das Flag `is_super_admin` kennt die Hierarchie nicht), `docs/api/verwaltung-auth.yaml:89-91` (als N1 offen geführt)
 - **Kennzeichnung:** reproduziert — temporärer Test: `PUT /api/admin/users/10/reset-password` (Ziel: Rolle `super_admin`, Org 1) durch `orgadmin1` → **200**; `PUT /api/admin/users/11/reset-password` (Ziel: `org_admin` mit `is_super_admin`-Flag, Simons Konstellation) → **200**; `PUT /api/admin/users/11 {password}` → **200**; `DELETE /api/admin/users/11` → **200**. Anschließend `POST /api/auth/login` als `orgadminsuper` mit dem gesetzten Passwort → 200, `is_super_admin: true`, `GET /api/organizations` → 200 mit allen Organisationen.
 - **Beschreibung:** Drei Wege setzen oder löschen ein Konto mit Super-Admin-Rechten, sobald es dieselbe `users.organization_id` trägt wie der aufrufende Org-Admin: `reset-password` prüft nur Rolle des Aufrufers und Org-Gleichheit; `PUT /:id` und `DELETE /:id` laufen durch `checkUserHierarchy`, das für ein `org_admin`-Ziel `true` liefert und `is_super_admin` nicht betrachtet. Sein sollte: Ziel mit Rolle `super_admin` oder Flag `is_super_admin` ist für jeden außer einem Super-Admin unantastbar.
@@ -102,6 +105,7 @@ bestätigen, sonst ebenfalls blockierend.
 ### BF-04: Generierte Passwörter haben 14,9 Bit; kein Wechselzwang, keine Kontosperre
 - **Schwere:** HOCH
 - **Status:** behoben 27.09.2026 — Kontosperre statt neuer Passwörter (Entscheidung Simon, 27.09.2026: „sie sollen das Passwort ja auch ändern […] und der Witz ist einfach zu gut" — Format und Raum der Bibelstellen-Passwörter bleiben unverändert). Nach **10 falschen Passwörtern innerhalb einer Stunde** nimmt `POST /api/auth/login` für dieses Konto keine Anmeldung mehr an, **auch nicht mit dem richtigen Passwort** — 429 `{ error, error_code: 'account_locked' }` in derselben Form wie der IP-Limiter, fester Text ohne Namen, `Retry-After`. Gezählt wird je Konto (SHA-256 über `LOWER(username)`, von Postgres gerechnet wie die Kontosuche; unbekannte Namen zählen genauso, kein Existenz-Leak), im gemeinsamen Store `rate_limit_zaehler` (Migration 167), also über beide Replicas; festes Fenster ab dem ersten Fehlversuch. Eine erfolgreiche Anmeldung sowie jedes neu gesetzte Passwort und jedes neu angelegte Konto setzen den Zähler auf 0 (zehn Stellen: Einmalpasswort und Konfi-Anlage der Leitung, `PUT /users/:id/reset-password`, `PUT`/`POST /users`, „Passwort vergessen", Profil, Registrierung, beide Org-Admin-Anlagen); die IP-Grenze (`authLimiter`, 300/15 min) bleibt davor. Keine Namen im Log: eine feste Zeile je Sperrfenster. `utils/kontoSperre.js`. **Gemessen:** Passwortraum nachgezählt 30 772 Stellen (14,91 Bit; gleichverteilt, 30 731 verschiedene in 200 000 Ziehungen). Vorher 1 200 Versuche/h je IP → ganzer Raum 25,6 h je IP (Mittel 12,8 h), mit 10 IPs 2,6 h (Mittel 1,3 h); nachher höchstens 240 Versuche/Tag je Konto, **unabhängig von der Zahl der IPs** → 128,2 Tage (Mittel 64,1 Tage), Trefferwahrscheinlichkeit 0,78 % je Tag, 5,5 % je Woche, 23,4 % in 30 Tagen (Faktor 120 gegenüber einer IP, 1 200 gegenüber zehn). Tests `tests/routes/anmeldesperreJeKonto.test.js`, 21 Fälle — verboten: richtiges Passwort nach 10 Fehlversuchen → 429, Fehlversuche von zehn IPs, fünf Schreibweisen des Namens, zweite App-Instanz auf derselben Datenbank (Zählerstand 11 in der Tabelle, nur der Hash), unbekannter Name antwortet Schritt für Schritt gleich, keine Namen im Log; erlaubt: anderes Konto frei, 9 Fehlversuche + richtiges Passwort → 200 und Zähler 0 (danach wieder volle 10), Fenster gealtert → 200, leere Eingaben zählen nicht, neues Passwort auf fünf Wegen, neue Konten auf fünf Wegen (das jeweils andere gesperrte Konto bleibt gesperrt). Ohne Sperre (Stand vor dem Fix) 20 von 21 rot, grün nur „leere Eingaben zählen nicht". Gegenproben: Zurücksetzen nach Erfolg entfernt → der 9+1-Fall rot (9 statt 0); Aufheben bei neuem Passwort/Konto wirkungslos → 10 rot; Schlüssel je IP und Rohname → 16 rot, darunter „zehn IPs" und „Schreibweisen". Nachgeprüft: Die Prämisse „`MemoryStore` je Prozess, bis 900 je IP und Viertelstunde bei drei Replikas" gilt seit Migration 167 (26.09.2026) nicht mehr — der `authLimiter` zählte bereits gemeinsam 300/15 min je IP; die Rechnung „25,6 h je IP" stimmt damit genau. Nebenbefund, mitbehoben: Die Anmeldeseite (auch in 2.2.0) zeigte bei **jeder** Ablehnung „Keine Verbindung zum Server", weil `loginWithAutoDetection` Status und Antwort verwarf; die Sperrmeldung erreicht deshalb erst Apps ab 2.3.0, 2.2.x zeigen weiter „Keine Verbindung" (Antwortform bleibt kompatibel). **Offen:** Pflicht-Passwortwechsel nach der Erstanmeldung (bewusst nicht, Entscheidung Simon); ein Sprühangriff mit je einer Stelle über viele Konten wird weiter nur von der IP-Grenze gebremst (im Mittel ein getroffenes Konto je 30 772 Versuche, also je 25,6 h und IP) und setzt eine Namensliste voraus (BF-18); `test-api.konfi-quest.de` (backend-test) arbeitet auf derselben Datenbank — solange dort ein Stand ohne Kontosperre läuft, lässt sie sich über diesen Weg umgehen.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Kern behoben; die Reste haben einen eigenen Stand: Pflicht-Passwortwechsel nach der Erstanmeldung bewusst so gelassen (Entscheidung Simon 27.09.2026); der Sprühangriff über viele Konten wird weiter nur von der IP-Grenze gebremst — offen, später; die Umgehung über `test-api` endet erst, wenn `backend-test` den neuen Stand fährt (`test-backend.yml` nach dem Merge) — liegt bei Simon/Betrieb. Die 23,4 % in 30 Tagen gelten für ein einzelnes Konto mit nie geändertem Einmalpasswort und einen Angreifer, der den Benutzernamen kennt.
 - **Fundstelle:** `backend/utils/passwordUtils.js:56-58` (`generateBiblicalPassword`), `backend/routes/konfi-management.js:215` (Konfi-Anlage) und `:600` (Neuvergabe), `backend/server.js:294-302` (`authLimiter`: 300 Fehlversuche/15 min **je IP**, `MemoryStore` je Prozess), kein Treffer für `failed_login|lockout|login_attempts` im Backend
 - **Kennzeichnung:** gemessen (`node -e` gegen `bibelVerszaehlung.js`): 31 168 Stellen, davon **30 772 ≥ 8 Zeichen = 14,9 Bit**; aus Code gelesen: kein Zwang zum Passwortwechsel (kein `must_change_password`-Feld im Schema, kein Frontend-Fluss), keine Sperre je Konto.
 - **Beschreibung:** Jeder von der Leitung angelegte Konfi erhält ein Passwort wie „Johannes7,47" aus 30 772 Möglichkeiten; die Policy erfüllt es formal (Groß-/Kleinbuchstabe, Ziffer, Komma). Wer es nie ändert — das Handbuch empfiehlt es nur („sollte es danach im Profil ändern", `35-passwoerter.md:71`) —, ist mit **25,6 Stunden je IP, 2,6 Stunden mit 10 IPs** vollständig durchprobierbar. Der Limiter zählt je Prozess: bei drei Backend-Replikas hinter Traefik (`deploy/compose.konfi_quest.yml`) sind es effektiv bis zu 900 Fehlversuche je IP und Viertelstunde. Eine Sperre nach n Fehlversuchen **je Konto** gibt es nicht.
@@ -122,6 +126,7 @@ bestätigen, sonst ebenfalls blockierend.
 ### BF-06: Spalte `konfi_profiles.password_plain` — möglicher Altbestand an Klartextpasswörtern
 - **Schwere:** HOCH (KRITISCH, falls in Produktion Werte stehen)
 - **Status:** behoben 26.09.2026 — Migration `165_password_plain_leeren.sql` setzt `password_plain = NULL` für alle Zeilen mit Wert (additiv, idempotent; die Spalte bleibt, `DROP COLUMN` folgt in einer späteren Migration). Nachgeprüft: keine Code-Stelle liest die Spalte (`grep -rn password_plain backend/ frontend/src init-scripts/` → Schema-Dump, init-script, Drift-Test, globalSetup-Kommentar und die NULL-Zuweisung in `konfi-management.js`). Tests in `tests/schema/migration165PasswordPlain.test.js` (Wert wird NULL, alle Zeilen, übrige Felder unverändert, idempotent, Spalte bleibt); Drift-Test unverändert grün. Die Zählung in Produktion (unten Nr. 1) läuft **trotzdem vor dem Deploy** — sie entscheidet über die Sicherungen.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** in Produktion vor dem Deploy gezählt: 0 von 130 Zeilen mit Wert (Auftrag 01, Abschnitt 3) — keine Sicherung enthält Klartext, der Befund war in Produktion nicht kritisch. `DROP COLUMN` steht aus (Datenbank BF-06), später.
 - **Fundstelle:** `backend/tests/schema/prod-schema.sql:1186` (`password_plain text`), `init-scripts/01-create-schema.sql:1202`, `backend/routes/konfi-management.js:681` (einzige Code-Stelle: `SET password_plain = NULL` bei Neuvergabe), keine Migration, die die Spalte leert oder entfernt; `tests/schema/schemaDrift.test.js:76-80` erwartet die Spalte
 - **Kennzeichnung:** aus Code gelesen. Ob Werte vorhanden sind, lässt sich nur in Produktion prüfen.
 - **Beschreibung:** Die Spalte stammt aus der SQLite-Zeit und wird heute weder geschrieben noch gelesen. Sie wird aber nur für Konfis geleert, deren Passwort seither neu generiert wurde. Alle anderen Zeilen behalten ihren Stand — und mit jedem Dump (`docs/offene-befunde.md` Nr. 3: nächtliche Dumps) wandert er in jede Sicherung.
@@ -132,6 +137,7 @@ bestätigen, sonst ebenfalls blockierend.
 ### BF-07: Soft-gelöschte Konfis bleiben angemeldet und nutzen die API weiter
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — Login (`auth.js`), Refresh (`issueRefreshedTokens`) und `rbac.js` laden `deleted_at` mit und antworten bei gesetztem Wert **exakt wie beim deaktivierten Konto** (Login 403 `user_inactive`, Refresh 403 `user_inactive`, Middleware 401 „User account is inactive") — kein Hinweis, dass es das Konto noch gibt; die Löschung gilt für jede Rolle. Der Auto-Löschlauf invalidiert dazu den Rechte-Cache und trennt die Sockets der soft-gelöschten Konten. Tests in `tests/routes/softGeloeschteKonten.test.js` (Login, falsches Passwort → 401 wie sonst, bestehende Sitzung, Auto-Löschlauf bei warmem Cache, Refresh, kein neues Token-Paar; erlaubter Fall für nicht gelöschte Konten).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** in Produktion vor dem Deploy gezählt: 0 soft-gelöschte Konten mit Anmeldung nach dem Löschen (Auftrag 01, Nr. 12).
 - **Fundstelle:** `backend/services/backgroundService.js:1506-1521` (setzt `deleted_at` 60 Tage nach Konfirmation), `backend/routes/auth.js:158-185` (Login ohne `deleted_at`-Filter), `backend/middleware/rbac.js:116-135` (kein `deleted_at`-Check); dagegen `server.js:104-109` (Socket-Auth) und `chat.js:1771-1775` (Datei-Auslieferung) filtern `deleted_at IS NULL`
 - **Kennzeichnung:** reproduziert — `UPDATE users SET deleted_at = NOW() WHERE id = 1`, dann `POST /api/auth/login` → **200**, `GET /api/chat/rooms` → **200**, `GET /api/konfi/profile` → 404.
 - **Beschreibung:** Der Soft-Delete blendet die Person für die Leitung aus (alle Listen filtern `deleted_at IS NULL`), lässt sie aber selbst weiterarbeiten: anmelden, Chats lesen und schreiben, Termine buchen. Zwischen Tag 60 und 120 nach der Konfirmation ist das ein Zwischenzustand, den niemand mehr sieht, aber der Betroffene noch bedient.
@@ -142,6 +148,7 @@ bestätigen, sonst ebenfalls blockierend.
 ### BF-08: Refresh-Token-Gnadenfrist ist unbegrenzt wiederverwendbar; keine Gerätebindung
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 (Gnadenfrist) — Migration 166 (`ersetzt_durch`, `gnade_genutzt_at`, additiv). Die Gnadenfrist gilt genau einmal; dabei wird der Nachfolger aus der ersten Rotation widerrufen und sofort ablaufen gelassen (je Gerät bleibt genau EIN Token offen). Eine dritte Verwendung im Fenster → 401 und Widerruf **aller** Refresh-Tokens des Kontos (Diebstahl-Signal); Wiederverwendung nach Ablauf des Fensters bleibt ein schlichtes 401 ohne Widerruf (ein lange offline gewesenes Gerät darf die übrigen nicht aussperren). Antwortform von `POST /auth/refresh` unverändert. Tests in `tests/routes/refreshGnadenfrist.test.js` (zweifach → 200/200 und 1 offenes Token; dritter → 401 und 0 offene, auch Zweitgerät; nur das betroffene Konto; nach Fenster 401 ohne Widerruf; Logout-Token ohne Gnade; Antwortform; `ersetzt_durch`; Rotationskette). **Offen:** die Gerätebindung (`device_id` an Refresh-Tokens) — Schema- und App-Änderung, nicht Teil dieses Pakets.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** teilweise behoben — die Gnadenfrist ist behoben, die Gerätebindung der Refresh-Tokens fehlt weiter; für 2.3.x vorgemerkt. In Produktion vor dem Deploy: 1.232 offene Refresh-Tokens auf 129 Konten, das größte mit 189 (Auftrag 01, Nr. 13). Eine Obergrenze je Konto gibt es nicht; der Aufräumlauf in `routes/auth.js` (alle 24 Stunden ab Prozessstart) entfernt nur abgelaufene und widerrufene Tokens.
 - **Fundstelle:** `backend/routes/auth.js:1194-1218` (Grace-Window 5 Minuten, Kommentar „einmalig+kurz nutzbar"), `:1296-1299` (neues Paar ohne Revoke im Grace-Pfad), Schema `refresh_tokens` (keine `device_id`, Migration 068)
 - **Kennzeichnung:** reproduziert — Login, dann dreimal `POST /api/auth/refresh` mit demselben (bereits rotierten) Token → `200, 200, 200`, drei neue Paare, danach **3 offene Refresh-Tokens** für ein Konto.
 - **Beschreibung:** Ein einmal rotierter Token bleibt fünf Minuten lang ein Generator für beliebig viele frische 90-Tage-Tokens. Damit fehlt, was Rotation eigentlich leisten soll: die Erkennung einer Wiederverwendung (Diebstahl) und der Widerruf der Token-Familie. Eine Bindung an das Gerät (`device_id` gibt es bei Push-Tokens, nicht bei Refresh-Tokens) fehlt ebenfalls.
@@ -151,7 +158,8 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-09: SMTP ohne Zertifikatsprüfung
 - **Schwere:** MITTEL
-- **Status:** behoben 26.09.2026 — beide Transporte (`server.js`, `services/emailService.js`) beziehen `tls` aus `utils/smtpTls.js`: Standard `rejectUnauthorized: true`; nur `SMTP_TLS_REJECT_UNAUTHORIZED=false` schaltet die Prüfung ab, mit Warnzeile im Log bei jedem Transport-Aufbau. Tests in `tests/utils/smtpTls.test.js` (ohne Variable streng, andere Werte streng, `false` → aus mit Warnung; `emailService` übergibt genau diese Optionen an nodemailer). **Vor dem Deploy** das Zertifikat des Anbieters gegen den Hostnamen prüfen (unten Nr. 11) — sonst geht nach dem Deploy keine Mail mehr raus.
+- **Status:** behoben 26.09.2026 — beide Transporte (`server.js`, `services/emailService.js`) beziehen `tls` aus `utils/smtpKonfiguration.js` (`smtpTlsOptionen`): Standard `rejectUnauthorized: true`; nur `SMTP_TLS_REJECT_UNAUTHORIZED=false` schaltet die Prüfung ab, mit Warnzeile im Log bei jedem Transport-Aufbau. Tests in `tests/utils/smtpKonfiguration.test.js` (ohne Variable streng, andere Werte streng, `false` → aus mit Warnung; `emailService` übergibt genau diese Optionen an nodemailer). **Vor dem Deploy** das Zertifikat des Anbieters gegen den Hostnamen prüfen (unten Nr. 11) — sonst geht nach dem Deploy keine Mail mehr raus.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Dateinamen in der Status-Zeile berichtigt — `utils/smtpTls.js` ging am 26.09. in `utils/smtpKonfiguration.js` auf (`9a7393ff`), der Test ebenso. Das Zertifikat wurde vor dem Deploy geprüft: Hostname im `subjectAltName`, gültig bis 20.12.2026, die strenge Prüfung gelingt auch aus dem Backend-Container; kein Notnagel nötig (Auftrag 01, Abschnitt 2).
 - **Fundstelle:** `backend/server.js:233-235` und `backend/services/emailService.js:39-41` (`tls: { rejectUnauthorized: false }`)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Der Mailversand akzeptiert jedes Zertifikat. Über diesen Kanal gehen Passwort-Reset-Links (`auth.js:705`), Gemeinde-Einladungen und die Anwesenheits-/Konfispruch-Listen ganzer Jahrgänge (`emailService.js:370-393`, Namen Minderjähriger).
@@ -162,6 +170,7 @@ bestätigen, sonst ebenfalls blockierend.
 ### BF-10: Deaktivierung und Löschung leeren den RBAC-Cache nicht
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — `invalidateUserCache` läuft jetzt bei **jeder** Änderung über `PUT /users/:id` (nicht nur bei `role_id`), nach dem COMMIT von `DELETE /users/:id` (Konto-Löschung), `DELETE /admin/konfis/:id` und `POST /auth/delete-account`; der Auto-Löschlauf leert den Cache seit BF-07 ebenfalls. Tests in `tests/routes/deaktivierungWirktSofort.test.js` (Sitzung aufgewärmt, dann `is_active=false` → sofort 401; drei Löschwege → sofort 401 „User not found"; erlaubt: Namensänderung und `is_active=true` lassen die Sitzung bestehen, fremde Sitzungen bleiben unberührt). **Offen** wie im Befund beschrieben: Der Cache ist je Replica; die anderen Instanzen laufen weiterhin bis zu 30 s in den TTL (gemeinsamer Store/`token_invalidated_at`, S-10 — anderes Paket).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** teilweise behoben — auf der bearbeitenden Replica wirkt die Sperre sofort, die andere läuft bis zu 30 s in ihren Rechte-Cache (Cache je Replica, `middleware/rbac.js`). Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/routes/users.js:354-356` (`invalidateUserCache` nur bei `role_id`), `users.js:414-648` (DELETE ohne Invalidierung), `backend/middleware/rbac.js:11-12` (30 s TTL)
 - **Kennzeichnung:** reproduziert — `PUT /api/admin/users/3 {is_active:false}`, unmittelbar danach `GET /api/teamer/profile` mit der alten Sitzung → **200** (erwartet 401).
 - **Beschreibung:** Nach Deaktivierung arbeitet die alte Sitzung bis zu 30 Sekunden weiter; Sockets werden getrennt, HTTP nicht. Bei drei Replikas gilt der Cache je Prozess, `invalidateUserCache` erreicht ohnehin nur die Replica, die den PUT bearbeitet hat (dasselbe gilt für alle anderen Aufrufer der Funktion).
@@ -171,6 +180,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-11: Bonuspunkte an fremden Konfi enden mit 500, Org-Grenze nur durch spätes UPDATE
 - **Schwere:** MITTEL
+- **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht) — `darfKonfi` prüft die Gemeinde mit; Bonuspunkte an eine fremde Konfi ergeben 404 statt 500.
 - **Fundstelle:** `backend/routes/konfi-management.js:1161-1168` (`darfKonfi` prüft Jahrgang, für `org_admin` ohne Org-Prüfung), `:1180-1191` (INSERT in `bonus_points` mit fremder `konfi_id`, danach UPDATE mit `u.organization_id = $3` → 0 Zeilen → `throw` → ROLLBACK → 500); gleiches Muster `:1351`
 - **Kennzeichnung:** reproduziert — `POST /api/admin/konfis/6/bonus-points` als `orgadmin1` → **500** `{"error":"Datenbankfehler"}`; DB danach unverändert (`bonus_points`-Zeilen: 0, Punkte 0/0).
 - **Beschreibung:** Es fließen keine Daten, aber die Isolation hängt an einem Nebeneffekt (Rowcount) statt an einer Prüfung vorab; die Route liefert 500 statt 404 und schreibt einen Stacktrace ins Log. `darfKonfi` (`utils/jahrgangsZugriff.js:101-116`) lädt `konfi_profiles` ohne `organization_id` — jede weitere Route, die es allein als Zugriffsprüfung nutzt, hat dieselbe Schwäche.
@@ -191,6 +201,7 @@ bestätigen, sonst ebenfalls blockierend.
 ### BF-13: Rate-Limits gelten je Replica und vertrauen `X-Real-IP` ungeprüft
 - **Schwere:** MITTEL
 - **Status:** teilweise behoben 26.09.2026 — `X-Real-IP` gilt nur noch, wenn der direkte Gegenüber (`req.socket.remoteAddress`) im Docker-Netz liegt (Loopback, Link-Local, private Bereiche; `utils/clientIp.js`, genutzt von allen IP-Limitern in `server.js` und vom Reset-Limiter in `auth.js`); sonst zählt `req.ip`. Tests für vertrauten und fremden Peer in `tests/utils/clientIp.test.js`. **Offen:** der gemeinsame Limiter-Store je Replica (S-10, Betrieb BF-09) — anderes Paket; und die Produktionsmessung, ob Apache den Header überschreibt (unten Nr. 4).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** behoben bis auf die Messung — der gemeinsame Limiter-Store steht seit dem 26.09. (Betrieb BF-09, `547e3930`, Migration 167), auch für beide Reset-Limiter; nur der allgemeine Flutschutz zählt bewusst je Replica. Offen ist allein, ob Apache `X-Real-IP` überschreibt (unten Nr. 4) — nach dem Deploy messen.
 - **Fundstelle:** `backend/server.js:261-277` (`clientIp` nimmt `X-Real-IP` vor `req.ip`), alle `rateLimit({...})`-Blöcke ohne `store` (MemoryStore je Prozess), `deploy/compose.konfi_quest.yml` (backend, backend2, backend-test)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Jede Replica zählt für sich; Traefik verteilt ~50/50 (Kommentar in der Compose-Datei). Alle Limits sind damit faktisch mit der Replica-Zahl zu multiplizieren. `X-Real-IP` wird ohne Prüfung übernommen, dass er vom eigenen Apache stammt — erreicht eine Anfrage Traefik oder das Backend auf einem anderen Weg (oder reicht Apache einen vom Client gesetzten Header durch), setzt der Angreifer seine „IP" selbst und umgeht jedes Limit.
@@ -200,6 +211,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-14: Benutzernamen Minderjähriger und Freitext in Server-Logs
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — jede Anmeldung loggt weiter den Benutzernamen (`routes/auth.js:211`, `:233`, `:239`), `push-diagnose` den Freitext (`routes/notifications.js:748`), die Matrix-Mail die Adresse der Leitung (`routes/jahrgaenge.js:763`). Später.
 - **Fundstelle:** `backend/routes/auth.js:155` (`Login-Versuch: <username>` bei jedem Login), `:177`, `:183`, `:192`, `:199`; `backend/routes/notifications.js:725-737` (`push-diagnose` loggt `user=<id>` und bis 200 Zeichen Freitext `hinweis`); `backend/routes/jahrgaenge.js:748` (Admin-E-Mail im Log)
 - **Kennzeichnung:** reproduziert — `console.warn`-Spy beim Login: `["Login-Versuch: konfi1","Login fehlgeschlagen: Falsches Passwort für 'konfi1'"]`
 - **Beschreibung:** Benutzername = `vorname.nachname` eines Kindes, jede Anmeldung eine Zeile. Docker-Logs rotieren (10 MB × 3), landen aber in jeder Log-Sammlung. Der Freitext aus `push-diagnose` kommt vom Client und kann alles enthalten.
@@ -207,6 +219,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-15: JWT trägt E-Mail und Anzeigename im Klartext
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — Access-Tokens tragen weiter `display_name` und `email` (`routes/auth.js:122-131` und die übrigen `jwt.sign`-Stellen); vor einer Änderung gegen die Store-Apps prüfen. Später.
 - **Fundstelle:** `backend/routes/auth.js:215-223`, `:654-663`, `:1282-1291`, `:1061-1069`
 - **Kennzeichnung:** reproduziert — Claims: `id, type, display_name, email, organization_id, role_name, is_super_admin, iat, exp`
 - **Beschreibung:** Access-Tokens sind nur base64-kodiert; sie liegen im Gerätespeicher, in Logs von Proxys und in Query-Parametern (`chat.js:1743` erlaubt `?token=` für Video-Elemente — URL-Logging). Für die Autorisierung braucht der Server nur `id`, `iat`, `active_organization_id`.
@@ -219,9 +232,11 @@ bestätigen, sonst ebenfalls blockierend.
 - **Beschreibung:** Kein Datenabfluss (alle Listen sind org-gefiltert), aber die 409er verraten Existenz und Nutzung fremder Objekt-IDs, und stilles Weglassen von Teilnehmern lässt die Leitung glauben, der Raum sei wie gewünscht angelegt.
 - **Empfehlung:** Org-Prüfung vor der Nutzungsprüfung; 404 für fremde IDs; `POST /rooms` mit 400 antworten, wenn Teilnehmer nicht zur Organisation gehören.
 - **Status:** teilweise behoben 27.09.2026 — `GET /api/konfi/events/:id/participants` (dazu `/status` und `/timeslots`) antwortet für Termine, die die Konfi nicht sieht, mit 404, auch für fremde Gemeinden (Konfi-Terminregel `utils/konfiTerminSicht.js`, Audit „Wer bekommt was" F-05). Die übrigen Routen dieses Befunds unverändert.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand teilweise behoben; offen bleiben u. a. die 409 vor der Gemeinde-Prüfung in `categories.js` und `teamer.js` (Zertifikatstypen) und das stille Weglassen fremder Teilnehmender in `POST /chat/rooms`; `attendance-count` antwortet für fremde Termine weiter 200 mit 0. Später.
 
 ### BF-17: Body-Parser-Fehler enden als 500 „Something went wrong!"
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — der Fehlerhandler kennt weiter nur `LIMIT_FILE_SIZE` (`createApp.js:691`); ungültiges JSON und zu große Körper enden als 500 mit Stack im Log. Später.
 - **Fundstelle:** `backend/createApp.js:602-620` (Fehlerhandler kennt nur `LIMIT_FILE_SIZE`), `:129` (`express.json()` mit Standard 100 kB)
 - **Kennzeichnung:** reproduziert — ungültiges JSON → 500; 200-kB-Body → 500 (statt 400/413); kein Stacktrace beim Client, aber `console.error(err.stack)` je Anfrage.
 - **Beschreibung:** Jeder Client-Fehler dieser Art wird als Serverfehler gezählt (APM, `/api/metrics`) und mit vollem Stack geloggt — mit 2000 Anfragen je Viertelstunde und Konto lässt sich das Log fluten.
@@ -229,6 +244,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-18: Öffentliche Endpunkte verraten Version/Commit und Kontonamen
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `check-username` hat weiter keinen eigenen Limiter (N3, `routes/auth.js:1002`), `/api/status` zeigt `commit` und `uptimeSeconds` öffentlich. Die `version` bleibt bewusst öffentlich: CLAUDE.md („Versionsnummern") legt fest, dass `/api/status` die App-Version meldet. Später.
 - **Fundstelle:** `backend/createApp.js:394-414` (`/api/status` ohne Auth: `version`, `commit`, `uptimeSeconds`), `backend/routes/auth.js:866-892` (`check-username` ohne Auth, nur Global-Limiter), `docs/api/verwaltung-auth.yaml:49-52` (als N3 offen)
 - **Kennzeichnung:** reproduziert — `/api/status` → `{"status":"OK","version":"1.0.1","commit":"unknown",…}`; `check-username/konfi1` → `{"available":false}`
 - **Beschreibung:** Mit `vorname.nachname` als Muster lässt sich prüfen, welche Kinder eines Ortes ein Konto haben — 2000 Namen je Viertelstunde und IP. N3 ist seit 22.08.2026 offen.
@@ -236,6 +252,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-19: Aufräum- und Verschlüsselungsskripte kennen `uploads/challenges/` nicht
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `cleanupOrphanPhotos.js` und `encryptExistingPhotos.js` kennen `uploads/challenges/` weiter nicht. Später.
 - **Fundstelle:** `backend/scripts/cleanupOrphanPhotos.js:18-31` (requests, chat, material), `backend/scripts/encryptExistingPhotos.js:22-24` (dieselben drei)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Challenge-Beiträge (Fotos, Sprachaufnahmen, Videos von Konfis, bis 50 MB) haben keinen Sicherheitsnetz-Lauf für Waisen; die Löschpfade räumen sie zwar mit, aber genau für deren Fehlerfälle existiert das Skript.
@@ -243,6 +260,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-20: Text-Uploads ohne Inhaltsprüfung
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — Text-Uploads in Chat und Material werden weiter nach dem angegebenen Typ angenommen. Später.
 - **Fundstelle:** `backend/routes/chat.js:1131-1133`, `backend/routes/material.js:848-851` (`text/plain`, `text/csv` „Header vertrauen")
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Wer `text/plain` deklariert, lädt beliebigen Inhalt hoch (z. B. HTML). Auslieferung ist entschärft: Chat setzt für `.txt` keinen Content-Type, Material erzwingt `attachment`; `nosniff` und CSP `script-src 'none'` sind gesetzt. Restrisiko: Download-Dateien mit fremdem Inhalt im Namen der Gemeinde.
@@ -250,6 +268,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-21: Teamer:innen erzeugen weiterhin QR-Check-in-Tokens (Rest von Befund #13)
 - **Schwere:** NIEDRIG
+- **Status:** bewusst so gelassen (Entscheidung Simon 27.09.2026) — Teamer:innen erzeugen QR-Codes, damit mehrere gleichzeitig einchecken können; Handbuch `70-termine.md` beschreibt es.
 - **Fundstelle:** `backend/routes/events/checkin.js:276` (`requireTeamer`), `:310` (`attendance-count`, `requireTeamer`)
 - **Kennzeichnung:** reproduziert — als `teamer1`: `POST /api/events/1/generate-qr` → **200**; dagegen `POST/PUT/DELETE /events`, `cancel`, `participants`, `attendance`, `series` → 403.
 - **Beschreibung:** Simons Entscheidung vom 16.09.2026 („Teamer:innen verwalten Termine nicht") ist für sieben Aktionen umgesetzt. Ob QR-Erzeugung und Live-Zähler gewollt bleiben (Teamer:in führt den Check-in vor Ort), ist nicht dokumentiert.
@@ -257,6 +276,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-22: Absturzdiagnose ohne Einwilligungs- oder Abschaltmöglichkeit
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `diagnoseSchalten` hat weiter keinen Aufrufer außerhalb der Datei, die App bietet keinen Schalter. Datenschutz, vor EKD-Ausrollung.
 - **Fundstelle:** `frontend/src/services/absturzdiagnose.ts:46-54` und `:246-252` (`diagnoseSchalten` existiert, „eine solche Oberfläche gibt es heute nicht"), kein Aufrufer außerhalb der Datei
 - **Kennzeichnung:** aus Code gelesen; Datenumfang geprüft: Rolle (normalisiert), Organisations-ID, Plattform, App-Fassung, gekürzte Fehlermeldungen (200 Zeichen) — keine Nutzer-ID, keine Namen. `datenschutz.html` nennt Crashlytics (4 Treffer).
 - **Beschreibung:** Daten gehen an Google (Crashlytics) ohne Opt-out in der App. Für Minderjährige ist das nach DSGVO-Maßstab mindestens erklärungsbedürftig; die Datensparsamkeit selbst ist vorbildlich umgesetzt.
@@ -265,19 +285,23 @@ bestätigen, sonst ebenfalls blockierend.
 ## Unklar
 
 - **Werden Chat-Nachrichtentexte im Push-Payload an FCM/APNs übertragen?** `pushService.js:763/961` senden `notification.body`; welche Stelle Chat-Nachrichten befüllt, wurde nicht bis zum Ende verfolgt (Push-Bereich). Falls ja, liegen Chat-Inhalte Minderjähriger auf Google-/Apple-Servern — die Datenschutzerklärung nennt Push (7 Treffer), aber nicht, was drinsteht.
+  - **Status:** offen 27.09.2026 — geklärt ist die Technik: Chat-Pushes tragen den Nachrichtentext als `body` (`utils/pushText.js`, `chatPushText`), er liegt also bei Google und Apple; die Datenschutzerklärung sagt das nicht. Datenschutz, vor EKD-Ausrollung.
 - **Zeigt `X-Real-IP` in Produktion wirklich die Client-IP?** Die Limiter hängen daran (BF-05, BF-13). Nur mit Zugriff auf Apache-Konfiguration/Logs klärbar.
+  - **Status:** offen 27.09.2026 — der Code vertraut dem Header nur noch aus dem Docker-Netz (BF-13); ob der Proxy ihn überschreibt, nach dem Deploy messen.
 - **Enthält `notifications.data` (JSONB) Namen anderer Personen**, die nach deren Löschung stehen bleiben? Struktur nicht analysiert.
+  - **Status:** teilweise geklärt 27.09.2026 — Mitteilungen über eine Person tragen seit „Wer bekommt was" BF-13 ihren Schlüssel und gehen mit dem Konto; Einträge aus der Zeit davor tragen keinen und bleiben bis zu 365 Tage (Menge nach dem Deploy messen).
 - **Existiert ein Datenexport (Art. 15 DSGVO)?** Keine Route gefunden (`grep export|Auskunft` in `konfi.js`/`auth.js` ohne Treffer); ob der Rückblick als Auskunft gilt, ist eine fachliche Frage.
+  - **Status:** offen 27.09.2026 — keine Auskunftsroute. Datenschutz, vor EKD-Ausrollung.
 
 ## Alte Befunde nachgeprüft
 
-- **N1 (API-Doku, 22.08.2026): `PUT /users/:id/reset-password` schützt `is_super_admin`-Ziele nicht** → **weiter offen**, sogar für Rolle `super_admin`; zusätzlich über `PUT /:id` und `DELETE /:id` (BF-01). `users.js:942-943` behauptet das Gegenteil.
+- **N1 (API-Doku, 22.08.2026): `PUT /users/:id/reset-password` schützt `is_super_admin`-Ziele nicht** → **weiter offen**, sogar für Rolle `super_admin`; zusätzlich über `PUT /:id` und `DELETE /:id` (BF-01). `users.js:942-943` behauptet das Gegenteil. *Stand 27.09.2026: behoben mit BF-01.*
 - **N2 (22.08.2026): Passwortwechsel beendet Sitzungen nicht** → **behoben bestätigt**: alte Sitzung vor Wechsel 200, danach 401 (Test); Refresh-Tokens werden widerrufen (`auth.js:323-330`, `users.js:954-965`, `konfi-management.js:660-675`).
-- **N3 (22.08.2026): keine eigenen Limiter auf `check-username`, `validate-invite`, `reset-password`, `refresh`** → **weiter offen** (`server.js`/`createApp.js` hängen dort keinen an; BF-18).
+- **N3 (22.08.2026): keine eigenen Limiter auf `check-username`, `validate-invite`, `reset-password`, `refresh`** → **weiter offen** (`server.js`/`createApp.js` hängen dort keinen an; BF-18). *Stand 27.09.2026: weiter offen (BF-18).*
 - **N5 (22.08.2026): Konfis sahen Org-Kontaktdaten** → **behoben bestätigt**: `GET /api/organizations/1` als Konfi → 403 (Test); `organizations.js:151,203,1288` mit `requireOrgVerwaltung`.
 - **N6 (22.08.2026): schwache Passwortpolicy an Org-Routen** → **behoben bestätigt** für `POST /organizations` und `POST /:id/admins` per `passwortPolicy` (`organizations.js:39-43,51,73`); der Inline-Check `password.length < 6` in `:1046` ist tot, aber harmlos.
 - **N7 (22.08.2026): Passwortpolicy beim Bearbeiten umgehbar** → **behoben bestätigt** (`users.js:318-329`).
-- **offene-befunde.md #13 (16.09.2026): Teamer-Rechte an Terminen** → **weitgehend umgesetzt**: sieben Verwaltungsaktionen liefern 403; `generate-qr` und `attendance-count` bleiben offen (BF-21).
+- **offene-befunde.md #13 (16.09.2026): Teamer-Rechte an Terminen** → **weitgehend umgesetzt**: sieben Verwaltungsaktionen liefern 403; `generate-qr` und `attendance-count` bleiben offen (BF-21). *Stand 27.09.2026: bewusst so gelassen (BF-21, Entscheidung Simon).*
 - **Kommentar `rbac.js:293-300` (10.09.2026): Org-Trennung läuft über die Abfragen** → **bestätigt** durch 150 Fremdzugriffe ohne Abfluss (siehe „Geprüft und in Ordnung").
 - **Kommentar `server.js:80-87` (22.08.2026): Socket-Auth prüft Konto in der DB** → bestätigt aus Code (`is_active`, `deleted_at`, Soft-Revoke, aktive Org mit Mitgliedschaftsprüfung).
 - **Kommentar `auth.js:698-703` (22.08.2026): Reset-Tokens gehasht** → bestätigt (`hashToken` beim Schreiben und Lesen, `auth.js:702,1131-1136`).
@@ -324,3 +348,5 @@ bestätigen, sonst ebenfalls blockierend.
 9. **Refresh-Token-Bestand (BF-08):** `SELECT user_id, COUNT(*) FROM refresh_tokens WHERE revoked_at IS NULL GROUP BY user_id ORDER BY 2 DESC LIMIT 20;`
 10. **JWT_SECRET-Länge:** im Portainer-Stack prüfen (`echo -n "$JWT_SECRET" | wc -c` ≥ 32 Byte); der Code erzwingt nur „nicht leer".
 11. **SMTP-Zertifikat (BF-09):** `openssl s_client -connect <SMTP_HOST>:465 -servername <SMTP_HOST> </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates` — ist es gültig, kann `rejectUnauthorized: false` einfach weg. *Nachtrag 26.09.2026:* Der Code prüft jetzt standardmäßig streng — die Messung muss deshalb **vor** dem Deploy laufen. Entscheidend ist die Zeile `Verify return code: 0 (ok)` in `openssl s_client -connect <SMTP_HOST>:465 -servername <SMTP_HOST> </dev/null` (bei STARTTLS auf 587: `openssl s_client -starttls smtp -connect <SMTP_HOST>:587 -servername <SMTP_HOST>`), und `subject`/`subjectAltName` müssen den in `SMTP_HOST` verwendeten Namen tragen. Passt etwas nicht: im Stack `SMTP_TLS_REJECT_UNAUTHORIZED=false` setzen (Warnzeile im Log) und beim Anbieter ein passendes Zertifikat einfordern.
+
+**Stand 27.09.2026 (vor dem Deploy gemessen, Auftrag `docs/auftraege/lokaler-agent/01-vor-dem-deploy.md`):** Nr. 1 — 0 von 130 Zeilen mit Klartext. Nr. 2 — beide Schlüssel widerrufen (BF-02). Nr. 3 — zwei Konten mit Super-Admin-Merkmal, Rolle `org_admin` und gesetzter Gemeinde; ob eines davon schon übernommen wurde, sagt die Zählung nicht. Nr. 5 — 0. Nr. 9 — 1.232 offene Refresh-Tokens auf 129 Konten (größtes 189). Nr. 11 — Zertifikat passt, die strenge Prüfung gelingt aus dem Container. Offen: Nr. 4 (nach dem Deploy messen), Nr. 6, 7, 8 und 10 (liegen bei Simon/Betrieb).

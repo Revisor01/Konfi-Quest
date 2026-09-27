@@ -73,7 +73,7 @@ diese Route nicht.
 
 ## Release-Empfehlung für den Bereich
 
-**Mit Auflage.** BF-01 vor dem Release schließen (kleiner Eingriff: in
+*Überholt — siehe „Stand 27.09.2026 (vor dem Merge von 2.3.0)" unten.* **Mit Auflage.** BF-01 vor dem Release schließen (kleiner Eingriff: in
 `routes/events/buchung.js` für `req.user.type === 'konfi'` dieselben drei
 Riegel wie in `konfi.js` — Pflichttermin, Frist, Protokoll — oder Konfis auf
 die Konfi-Route verweisen). BF-03 ist ein Zweizeiler (Vorab-Check in konfi.js
@@ -81,6 +81,8 @@ auf „bereits abgemeldet“ prüfen) und sollte mit. BF-02 braucht eine additiv
 Migration (Punktwert am Zuordnungsdatensatz speichern) und gehört in die
 nächste 2.3.x-Fassung; bis dahin sollte das Handbuch warnen, Punktwerte
 bestehender Aktivitäten nicht zu ändern.
+
+**Stand 27.09.2026 (vor dem Merge von 2.3.0):** Von 13 Befunden ist 1 behoben (BF-01), 1 teilweise behoben (BF-02: der Punktwert, nicht die Punktart), 10 sind offen (BF-03 bis BF-09, MITTEL, für 2.3.x vorgemerkt; BF-10, BF-11, BF-13, NIEDRIG, später) und 1 bewusst so gelassen (BF-12, die API-Doku vermerkt die Ausnahme). Kein HOCH- oder KRITISCH-Befund ist vollständig offen; von BF-02 fehlt nur die Punktart am Beleg. Die Auflage der Empfehlung (BF-01 vor dem Release) ist erfüllt, BF-03 ging nicht mit. Neu aus der Prüfung vor dem Merge: der Abschnitt „Nachtrag 27.09.2026: Rolle je Gemeinde" am Ende der Befunde — zwei Stellen behoben (Badge-Vergabe, `gehoertZumTermin`), die übrigen offen.
 
 ## Befunde
 
@@ -123,6 +125,7 @@ bestehender Aktivitäten nicht zu ändern.
 ### BF-02: Nachträglich geänderter Punktwert einer Aktivität verfälscht Rücknahme und Historie
 - **Schwere:** HOCH
 - **Status:** behoben 26.09.2026 — Migration 163 legt `user_activities.points` an (Backfill aus `activities.points`, gemessen 7–10 s je 500.000 und 12,7 s je 1.000.000 Zeilen); Genehmigung, Direktvergabe und Nachtragen speichern den Wert der Aktivität zum Zeitpunkt der Vergabe, Historie, Detailliste, Löschen der Zuordnung und Antrags-Reset lesen `COALESCE(ua.points, a.points)`. Tests `tests/routes/punktwertAmZuordnungsdatensatz.test.js` (7). Der empfohlene `type` am Beleg ist nicht umgesetzt (Nebenbefund an die Koordination).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** teilweise behoben — der Punktwert steht am Beleg, die Punktart (`type`) nicht: Rücknahme, Detailliste und Historie lesen `a.type` der Aktivität (`konfi-management.js:791`, `:1434`). Ändert die Leitung die Art einer Aktivität (Gottesdienst ↔ Gemeinde), landet jede spätere Rücknahme in der anderen Säule; die Summe stimmt, die Verteilung nicht. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/routes/konfi-management.js:1396-1403` (liest
   `a.points` der Aktivität, nicht den vergebenen Wert), `:1441-1447`
   (zieht diesen Wert ab); `backend/routes/activities.js:503-509`
@@ -157,6 +160,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-03: Offline-Wiederholung einer Abmeldung meldet Fehlschlag, obwohl sie gelungen ist
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — der Vorab-Check in `DELETE /konfi/events/:id/register` antwortet bei fehlender Buchung weiter 400 (`routes/konfi.js:1697`), bevor der Zweig `bereits_abgemeldet` (`:1759`) greift. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/routes/konfi.js:1647-1655` (Vorab-Check antwortet
   400 „Du bist nicht für dieses Event angemeldet“) vor dem dafür gebauten
   Zweig `:1708-1717` (`bereits_abgemeldet: true`); Frontend
@@ -189,6 +193,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-04: „Teilnehmende von Hand hinzufügen“ überbucht still; ungültiger `status` endet im 500
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — „Von Hand hinzufügen" mit `status: 'confirmed'` prüft weiter keine Kapazität, ein ungültiger `status` wird ungeprüft übernommen (`routes/events/teilnehmer.js:29`, `:124`) und endet im 500. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/routes/events/teilnehmer.js:29` (`status` aus dem
   Body), `:123-124` (`finalStatus = status`), `:139-219` (Kapazitäts- und
   Wartelistenprüfung nur im Zweig `status === 'auto'`), `:222` (INSERT ohne
@@ -223,6 +228,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-05: Wiederanmeldung nach Abmeldung behält den alten Wartelistenrang; Positionsanzeige widerspricht sich
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — die Reaktivierung setzt weiter nur `booking_date` (`utils/bookingUtils.js:971`, `:1079`), Nachrücken und Positionsanzeigen lesen verschiedene Spalten. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/utils/bookingUtils.js:1033-1047` (Reaktivierung
   setzt `booking_date = NOW()`, nicht `created_at`; Kommentar `:1028-1029`
   „Für Warteliste und Nachrücken zählt die NEUE Entscheidung“),
@@ -250,6 +256,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-06: Konfi-Kapazität auf „unbegrenzt“ setzen lässt die Warteliste stehen
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — `PUT /events/:id` rückt bei `max_participants = 0` weiter niemanden nach (`routes/events/verwaltung.js:620`), der Team-Zweig schon (`:635`). Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/routes/events/verwaltung.js:620-627`
   (`else if (max_participants > 0)` — 0 fällt durch); Gegenstück Team-Seite
   `:633-646` (`newTeamerMax === 0 || …` rückt alle Wartenden nach);
@@ -273,6 +280,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-07: Teamer-Aktivität lässt sich einer Person einer fremden Gemeinde zuordnen
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — der Teamer-Zweig von `POST /admin/konfis/:id/activities` prüft die Zielperson weiter nicht gegen die Gemeinde. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/routes/konfi-management.js:1306` (nur die
   Aktivität org-gescopt), `:1312-1331` (Teamer-Zweig überspringt `darfKonfi`
   und damit jede Prüfung der Zielperson), `:1337-1340` (INSERT ohne
@@ -299,6 +307,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-08: Jahrgang löschen hinterlässt Pflichttermine ohne Jahrgang und läuft ohne Transaktion
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — kein Riegel für Termine des Jahrgangs, keine Transaktion. Seit Simons Entscheidung vom 27.09. (Termine ohne Jahrgang gelten der ganzen Gemeinde, „Wer bekommt was" F-05) wiegt der Befund schwerer: verwaiste Pflichttermine sehen und buchen jetzt auch alle Konfis der Gemeinde. Für 2.3.x vorgemerkt; Bestand nach dem Deploy messen (SQL unten, BF-08).
 - **Fundstelle:** `backend/routes/jahrgaenge.js:329-463` (rund zwanzig
   `db.query`-Aufrufe auf dem Pool, kein `BEGIN`); Fremdschlüssel
   `event_jahrgang_assignments.jahrgang_id … ON DELETE CASCADE`
@@ -329,6 +338,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-09: Beförderung zur Teamer:in löscht vergangene Teilnahmen
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — die Beförderung löscht weiter alle Buchungen der Person (`konfi-management.js:1620`), auch vergangene mit verbuchter Anwesenheit; seit „Wer bekommt was" BF-19 verlässt sie dabei zusätzlich die Event-Chats. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/routes/konfi-management.js:1573-1577`
   (`DELETE FROM event_bookings WHERE user_id = $1` — alle Buchungen, auch
   vergangene mit `attendance_status = 'present'`); Handbuch
@@ -352,6 +362,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-10: Zielwert 0 wird als 10 ausgeliefert
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — weiter `target_gottesdienst || 10` (`routes/konfi.js:310-311`). Später.
 - **Fundstelle:** `backend/routes/konfi.js:299-304` (`target_gottesdienst
   || 10`); Validierung erlaubt 0 (`routes/jahrgaenge.js:23-24, 42-43`).
 - **Kennzeichnung:** reproduziert (curl gegen Server 6434).
@@ -366,6 +377,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-11: `event_bookings.created_at` ist TEXT und dient als Reihenfolge-Schlüssel der Warteliste
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — die Spalte ist weiter `text`, das Nachrücken sortiert danach. Später (zusammen mit den Zeitspalten, Datenbank BF-11).
 - **Fundstelle:** `prod-schema.sql:739` (`created_at text DEFAULT
   CURRENT_TIMESTAMP`, im Audit-Schema bestätigt); `utils/bookingUtils.js:495-499`
   (`ORDER BY eb.created_at ASC`); `routes/konfi.js:1281`, `routes/events/lesen.js:742`.
@@ -384,6 +396,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-12: `series_events` in `GET /events/:id` liefert seit 22.09.2026 weniger Felder
 - **Schwere:** NIEDRIG
+- **Status:** bewusst so gelassen (Sicherheitsfix 22.09.2026, `f586e6de`) — die empfohlene Ausnahme steht schon in `docs/api/konfis-events.yaml` bei `GET /events/:id` („FORMAENDERUNG, bewusst", mit den fünf verbliebenen Feldern und dem Grund); die Store-App 2.2.0 liest genau diese Felder.
 - **Fundstelle:** `backend/routes/events/lesen.js:778-785` (Commit
   `f586e6de`: `SELECT e.*` → fünf Felder); Store-App 2.2.0 liest
   `id, name, event_date, max_participants, registered_count`
@@ -400,6 +413,7 @@ bestehender Aktivitäten nicht zu ändern.
 
 ### BF-13: Automatische Einschreibung in Pflichttermine beim Anlegen einer Konfi läuft nach dem COMMIT ohne Transaktion
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — die Einschreibung in Pflichttermine beim Anlegen einer Konfi läuft weiter nach dem COMMIT. Später.
 - **Fundstelle:** `backend/routes/konfi-management.js:301-327` (Einschreibung
   und Chat-Eintritt nach `COMMIT` auf dem Pool, Fehler nur geloggt); zum
   Vergleich `:428-522` (der Jahrgangswechsel macht dasselbe innerhalb der
@@ -411,6 +425,71 @@ bestehender Aktivitäten nicht zu ändern.
   Hennstedt gesehen hat („nur 4 von 12“), dort mit anderer Ursache.
 - **Empfehlung:** Einschreibung in die Transaktion ziehen (wie beim PUT).
 
+## Nachtrag 27.09.2026: Rolle je Gemeinde
+
+Regel (CLAUDE.md, „Wer sieht und bekommt was"): Rolle und Jahrgänge gelten je Gemeinde, beide Quellen der
+Zugehörigkeit zählen — `users.organization_id`/`users.role_id` für die Stamm-Gemeinde, `user_organizations`
+für jede weitere (`utils/orgMitglieder.js`). Die Prüfung vor dem Merge hat die Stellen gesucht, die Rolle
+oder Gemeinde nur am Konto lesen. Betroffen ist nur, wer in verschiedenen Gemeinden verschiedene Rollen hat
+(etwa zuhause Org-Admin und woanders Teamer:in) oder wessen Stamm-Gemeinde in `user_organizations` mit einer
+anderen Rolle steht. Konfi-Mitgliedschaften in einer weiteren Gemeinde lässt die Einladung seit dem 26.09.
+nicht mehr zu (Sicherheit BF-03), der Super-Admin-Weg nie (`organizations.js:1164-1178`); die Zeilen, die
+Konfis einer weiteren Gemeinde betreffen, treffen also nur Altbestand. Zeilenangaben: Stand `b6a67ed1`.
+
+**Behoben:**
+
+- **Badge-Vergabe nach der Rolle am Konto** (Produktionsbefund 27.09.2026). `checkAndAwardBadges` las
+  `users.role_id` statt der Rolle in der Gemeinde des Vorgangs; eine Leitung mit Konfi-Profil in einer
+  anderen Gemeinde lief so in den Konfi-Zweig. Gemessen in Produktion: 12 Konfi-Badges aus Org 1 an ein
+  Org-Admin-Konto, ausgelöst durch eine Anwesenheit, die in Org 2 von Hand verbucht wurde — die einzige
+  Fehlvergabe in der Datenbank (gelöscht). Der Bericht hatte die Abzeichen unter „Geprüft und in Ordnung"
+  geführt.
+  - **Status:** behoben 27.09.2026 (`c26ad08a`, `b6a67ed1`) — in der Stamm-Gemeinde gilt die Rolle am
+    Konto, in jeder weiteren die aus `user_organizations`; geprüft werden nur `konfi` und `teamer`, das
+    Konfi-Profil muss zur Gemeinde gehören, alle Aufrufer geben die Gemeinde mit. Test
+    `tests/routes/abzeichenNurFuerKonfisUndTeamer.test.js`.
+- **`gehoertZumTermin`: Vollzugriff aus der Stamm-Rolle** (`utils/jahrgangsZugriff.js:207-230`).
+  `vollzugriff` kam aus `users.role_id` (`org_admin`/`super_admin`) oder dem Merkmal `is_super_admin`,
+  unabhängig von der Gemeinde des Termins. Wer zuhause Org-Admin ist, galt damit in jeder weiteren Gemeinde
+  als jahrgangsfrei: als Teamer:in dort an Termine fremder Jahrgänge buchen (`utils/bookingUtils.js:822`,
+  `darfTeamerAnDiesenTermin`) und von der Leitung in solche Termine eingetragen werden
+  (`routes/events/teilnehmer.js:89`).
+  - **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht).
+
+**Offen:**
+
+- **Status:** offen 27.09.2026 — für 2.3.x vorgemerkt, erst Umfang in Produktion messen (Konten mit
+  verschiedenen Rollen in verschiedenen Gemeinden; Abfrage unter der Tabelle).
+
+| Stelle (Datei:Zeile) | Liest | Auswirkung |
+|---|---|---|
+| `services/backgroundService.js:257-274`, `:457` | Rolle und Gemeinde am Konto | Der Abzeichen- und Zähler-Lauf prüft nur die Stamm-Gemeinde; Badges einer weiteren Gemeinde entstehen nur über die Routen. |
+| `services/backgroundService.js:1690-1700`, `:1731-1742` | Stamm-Rolle `konfi` | Die Auto-Löschung (Tag 60 soft, Tag 120 hart) nimmt das ganze Konto, auch wenn die Person in einer anderen Gemeinde im Team ist — die schwerste Folge der Liste (Datenverlust). |
+| `routes/events/anwesenheit.js:82-85`, `:298-303` | Stamm-Rolle | Die Sammelverbuchung trennt Konfi- und Team-Buchungen und vergibt Punkte nach der Rolle zuhause. |
+| `utils/bookingUtils.js:520-523`, `:728-731`; `utils/buchungszahlen.js:45-82`; `routes/events/teilnehmer.js:131-136`, `:171-200` | Stamm-Rolle | Konfi- und Team-Kontingent, Nachrücken und die Zahlen der Terminlisten zählen eine Person nach ihrer Rolle zuhause. |
+| `utils/eventChat.js:83-88`, `:122-128` | Stamm-Rolle | `user_type` im Event-Chat nach der Rolle zuhause. |
+| `utils/jahrgangChat.js:103-109` | Stamm-Rolle und -Gemeinde | Konfis einer weiteren Gemeinde kommen nicht in den Jahrgangs-Chat. |
+| `utils/konfiTerminSicht.js:101-112` (`ladeKonfisDieTerminSehen`) | Stamm-Rolle und -Gemeinde | „Neues Event!" erreicht Konfis einer weiteren Gemeinde nicht. |
+| `routes/events/verwaltung.js:274-284`, `:306`, `:527`; `routes/events/serien.js:310` | Stamm-Rolle und -Gemeinde | Die Einschreibung in Pflichttermine übergeht Konfis einer weiteren Gemeinde. |
+| `services/pushService.js:2109-2125`, `:2198-2212` | Stamm-Rolle | Challenge-Start und Galerie-Push erreichen Konfis einer weiteren Gemeinde nicht. |
+| `services/pushService.js:462-472` (`resolveRecipientOrgId`) | Stamm-Gemeinde | Ein Push ohne ausdrückliche Gemeinde im Payload wird der Stamm-Gemeinde zugeordnet (Sprungziel, Zähler). |
+| `routes/wrapped.js:716-717`, `:1100-1101`, `:2389-2390` | Stamm-Rolle | Der Konfi-Rückblick zählt nur Konten mit Rolle `konfi` zuhause. |
+| `utils/konfiLimit.js:60-66` | Stamm-Rolle und -Gemeinde | Die Konfi-Grenze der Lizenz zählt Konfis einer weiteren Gemeinde nicht. |
+| `routes/teamer.js:410-425`, `:600-615` | Stamm-Rolle und -Gemeinde | Badges und Zertifikate einer Teamer:in aus einer weiteren Gemeinde: 404. |
+| `routes/challenges.js:1185-1196`, `:1352`, `:1493` | Stamm-Gemeinde | Urheber:innen-Liste und -Prüfung kennen Personen einer weiteren Gemeinde nicht (Chat BF-08, Rest). |
+| `routes/konfi-management.js:108-113`, `:564`, `:1069` | Stamm-Rolle und -Gemeinde | Konfi-Liste und Konfi-Detail zeigen Konfis einer weiteren Gemeinde nicht. |
+| `utils/liveUpdate.js:291` (`sendToUserByRole`) | Stamm-Rolle | Das eigene Nachlade-Signal geht an den Raum der Rolle zuhause — bewusst so gelassen („Wer bekommt was" BF-15, kein Fremdempfang). |
+
+```sql
+-- Umfang: Konten, die in einer Gemeinde eine andere Rolle haben als am Konto
+SELECT u.id, rs.name AS rolle_am_konto, uo.organization_id, rw.name AS rolle_dort
+  FROM user_organizations uo
+  JOIN users u  ON u.id = uo.user_id
+  JOIN roles rs ON rs.id = u.role_id
+  JOIN roles rw ON rw.id = uo.role_id
+ WHERE rs.name <> rw.name;
+```
+
 ## Unklar
 
 - **Migrationsstand der Produktion.** `backend/tests/schema/prod-migrations.txt`
@@ -419,6 +498,7 @@ bestehender Aktivitäten nicht zu ändern.
   Leitung, Absage) auf den CHECK-Constraint und damit in einen 500er. Ob der
   Deploy alle 36 Migrationen anwendet, ist hier nicht prüfbar (siehe „Auf
   Produktion nachzumessen“).
+  - **Status:** geklärt 27.09.2026 — in Produktion gemessen: 89 Einträge in `schema_migrations` bis `159_gemeinde_einladungen.sql`, 153 ist dabei, `Migration FAILED` 0 (Auftrag `docs/auftraege/lokaler-agent/01-vor-dem-deploy.md`, Nr. 6). `/api/status` meldet den Stand seit Datenbank BF-04.
 - **Absage und Selbstabmeldung mit Verbuchung.** `meldeAlleAbBeiAbsage`
   fasst nur `confirmed`/`waitlist`. Wer sich von einem Pflichttermin
   abgemeldet hatte (`opted_out`), dann doch kam und `present` verbucht wurde,
@@ -427,26 +507,32 @@ bestehender Aktivitäten nicht zu ändern.
   zählt aber für `mandatory_event_count`. Nicht reproduziert, weil die
   Bewertung („gewollt: die Leitung darf nach der Absage einzelne auf present
   setzen“) offen ist.
+  - **Status:** offen 27.09.2026 — Bewertung weiter offen. Später.
 - **Check-in-Fenster endet nach dem Beginn.** `checkin.js:84-90` prüft
   `event_date ± checkin_window`; das Fenster schließt also 30 Minuten (Default)
   nach *Beginn*, nicht nach Ende. Wer zu einem zweistündigen Termin 40 Minuten
   zu spät kommt, kann nicht mehr einchecken. Ob das so gemeint ist, sagt das
   Handbuch nicht (`70-termine.md:94` nennt nur den Default).
+  - **Status:** offen 27.09.2026 — das Handbuch nennt weiter nur den Standardwert. Später.
 - **`POST /events/:id/generate-qr` ohne Jahrgangsbindung** (`checkin.js:276-307`,
   nur `requireTeamer`): Eine Teamer:in kann den Check-in-Token jedes Termins
   der Gemeinde holen. Wirkung gering (Einchecken setzt eine eigene Buchung
   voraus), aber die einzige Schreibroute an Terminen ohne `darfTermin`.
+  - **Status:** offen 27.09.2026 — dass Teamer:innen QR-Codes erzeugen, ist gewollt (Entscheidung Simon 27.09., Sicherheit BF-21); die fehlende Jahrgangsbindung (`darfTermin`) bleibt offen, für 2.3.x vorgemerkt.
 - **Serienfolge der Abzeichen** (`streakCalculation.js:616-646`): endet an der
   neuesten aktiven Woche, nicht an „heute“ — eine vor Monaten gerissene Serie
   wird weiter als aktuell angezeigt (Befund 13 in `docs/wissen/abzeichen.md`,
   unverändert). Nur Anzeige, nicht gemessen.
+  - **Status:** offen 27.09.2026 — unverändert (nur Anzeige). Später.
 - **Sammelverbuchung** (`anwesenheit.js:48-184`) prüft weder `cancelled` noch
   das Datum; faktisch harmlos, weil eine Absage alle auf `excused` setzt und
   die Oberfläche den Knopf erst ab Terminbeginn zeigt.
+  - **Status:** offen 27.09.2026 — unverändert, faktisch harmlos. Später.
 - **Sicht `event_booking_stats`** macht einen `Seq Scan` auf `users`
   (161 Zeilen, 3,5 ms je Termin). Wie sich das bei 25.000 Nutzern verhält,
   wenn die Terminliste die Sicht je Termin per LATERAL aufruft, ist hier nicht
   messbar; der Planer wird vermutlich auf den Primärschlüssel wechseln.
+  - **Status:** geklärt 26.09.2026 — die Listen zählen nicht mehr über die Sicht (Betrieb BF-03, Datenbank BF-02); Einzelabrufe mit fester Termin-ID brauchen 0,10–0,16 ms.
 
 ## Alte Befunde nachgeprüft
 
@@ -529,7 +615,7 @@ bestehender Aktivitäten nicht zu ändern.
   `streakCalculation`, `badgeProgress`); Rückwirkung bei Punktentzug: einmal
   verdiente Abzeichen bleiben — dokumentierte Entscheidung
   (`docs/wissen/abzeichen.md`), kein DELETE außer Badge-/Nutzerlöschung;
-  Teamer-Abzeichen zählen nur Teamer-Aktivitäten (`badges.js:456-461`).
+  Teamer-Abzeichen zählen nur Teamer-Aktivitäten (`badges.js:456-461`). *Nachtrag 27.09.2026: nicht in Ordnung — die Vergabe las die Rolle am Konto, siehe „Nachtrag 27.09.2026: Rolle je Gemeinde" (Produktionsbefund, behoben).*
 - **Level** — eine Rechnung (`levelFortschritt.js`) für Dashboard, Route und
   Push; Fortschritt auf 0–100 begrenzt.
 - **Beförderung Konfi → Teamer** — Rolle, `teamer_since`, Chat-Typen,
@@ -636,3 +722,5 @@ SELECT e.id, e.name, e.max_participants, s.konfi_confirmed FROM events e
 - **Unklar/Sicht**: `EXPLAIN (ANALYZE, BUFFERS)` der Terminliste
   (`GET /api/events`) gegen die echte Nutzerzahl, um den `Seq Scan` auf
   `users` in `event_booking_stats` zu bewerten.
+
+- **Stand 27.09.2026:** Migrationsstand in Produktion gemessen (89 Einträge bis `159_…`, darunter 153; `Migration FAILED` 0). Die übrigen Abfragen nach dem Deploy messen; für BF-02 seit Migration 163 `COALESCE(ua.points, a.points)` statt `a.points` summieren.

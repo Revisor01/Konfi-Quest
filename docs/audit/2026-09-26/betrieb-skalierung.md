@@ -124,7 +124,7 @@ Der Betrieb trägt die heutigen rund 110 Konten problemlos; für 25.000 Nutzer:i
 in dieser Form **nicht tragfähig**, und zwar nicht wegen der Anfragezahl, sondern wegen
 dreier Abfragemuster, die mit der Datenmenge oder der Empfängerzahl wachsen, und einer
 Datenbank mit 0,3 CPU, die dafür keinen Spielraum hat. **16 Befunde: 0 KRITISCH, 5 HOCH,
-7 MITTEL, 4 NIEDRIG.** Die drei wichtigsten Punkte:
+8 MITTEL, 3 NIEDRIG.** *(Berichtigt 27.09.2026: hier stand „7 MITTEL, 4 NIEDRIG"; MITTEL sind BF-06 bis BF-13, NIEDRIG BF-14 bis BF-16.)* Die drei wichtigsten Punkte:
 
 1. **Ein Verbindungsabbruch zur Datenbank beendet beide Replicas gleichzeitig** (BF-01,
    reproduziert): Der Postgres-Adapter von Socket.IO hält eine dauerhafte LISTEN-Verbindung
@@ -149,6 +149,8 @@ Upload-Volume, Socket-Adapter über Replicas — halten (siehe „Geprüft und i
 
 ### Kapazitätsaussage in Zahlen
 
+*Stand der Prüfung vor der Behebung (0,3 CPU, Aggregat über die ganze View, Fan-out je Kopf); siehe „Stand 27.09.2026 (vor dem Merge von 2.3.0)" am Ende der Release-Empfehlung.*
+
 Rechenbasis: 0,3 CPU = **300 ms Datenbank-Rechenzeit je Sekunde**; die gemessenen
 EXPLAIN-Zeiten sind bei vollständig gecachten Puffern im Wesentlichen CPU-Zeit.
 
@@ -170,7 +172,7 @@ EXPLAIN-Zeiten sind bei vollständig gecachten Puffern im Wesentlichen CPU-Zeit.
 
 ## Release-Empfehlung für den Bereich
 
-**Mit Auflage.** Für die heutige Nutzung (eine Handvoll Gemeinden) ist 2.3.0 betreibbar;
+*Überholt — siehe „Stand 27.09.2026 (vor dem Merge von 2.3.0)" unten.* **Mit Auflage.** Für die heutige Nutzung (eine Handvoll Gemeinden) ist 2.3.0 betreibbar;
 für die EKD-Ausrollung sind vor dem Anwachsen fünf Dinge zu erledigen, die sich alle
 lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
@@ -195,6 +197,8 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
    (Kommentar `database.js:13–18` verlangt es seit dem 24.09.2026, fehlt dort), CPU-Grenze
    der Postgres von 0,3 auf mindestens 2 anheben, `statement_timeout`-Kette gegen die
    Sonntagsspitze auf dem großen Datenbestand nachmessen.
+
+**Stand 27.09.2026 (vor dem Merge von 2.3.0):** Die fünf Maßnahmen sind umgesetzt: BF-01 bis BF-04 behoben; die Datenbank läuft in Produktion seit dem 27.09. mit 2 CPU / 3 GB, den Vorgaben der Referenz, `pg_stat_statements` und Pool 50 (Phase A, Auftrag `docs/auftraege/lokaler-agent/02-portainer-stack.md`). Das Nachmessen der Zeitgrenzen unter Sonntagslast steht aus (nach dem Deploy messen), ein Lasttest mit dem Zielbestand vor der EKD-Ausrollung. Von 16 Befunden sind 14 behoben (BF-12: erster Produktionslauf nach dem Merge; BF-13: Restschritte bei Simon/Betrieb) und 2 teilweise behoben (BF-10, BF-11, MITTEL, für 2.3.x vorgemerkt); offen ist keiner, auch kein HOCH- oder KRITISCH-Befund. Die Kapazitätsaussage oben beschreibt den Stand vor der Behebung.
 
 ## Befunde
 
@@ -408,6 +412,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 ### BF-08: `newMessage` erreicht jeden Client doppelt und löst zwei Zähler-Abrufe aus
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — Nachricht und Umfrage gehen in EINEM Broadcast an `room_<id>` plus alle `user_<typ>_<id>` (`zielRaeumeFuerNachricht` in `routes/chat.js`); Socket.IO stellt je Socket einmal zu, der Postgres-Adapter trägt die Raumliste als Ganzes. Gemessen (Raum mit 150 Teilnehmenden, `kq_i1`): 151 Broadcasts je Nachricht → 1. Test `tests/routes/chatSocketZustellung.test.js` (echter Socket.IO-Server, Client im Raum und im eigenen Raum: genau ein `newMessage`, Payload unverändert, Zähler danach 1; Leitung ohne Teilnehmerschaft bekommt sie weiter).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt; die empfohlene Entprellung des Zähler-Abrufs im Client (`BadgeContext`) fehlt — optional, später.
 - **Fundstelle:** `backend/routes/chat.js:1215` (Emit an `room_<id>`) und `:1229` (Emit an
   jeden `user_<typ>_<id>` — auch an die, die im Raum sind),
   `frontend/src/contexts/BadgeContext.tsx:492–509` (`GET /notifications/badge-counts` je
@@ -432,6 +437,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 ### BF-09: Rate-Limiter zählen je Replica — jedes Limit gilt doppelt
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — Eigener Store `backend/utils/rateLimitStore.js` (express-rate-limit-`Store`-Schnittstelle) auf der vorhandenen Postgres: ein `INSERT … ON CONFLICT DO UPDATE` je Treffer mit Fensterablauf in derselben Anweisung, Tabelle `rate_limit_zaehler` (UNLOGGED, Migration 167), Aufräumen abgelaufener Zeilen alle 10 Minuten; bei Datenbankfehler Rückfall auf den Speicher je Prozess (der alte Stand — fail-open wäre für den Doku-Limiter falsch, dessen Passwortprüfung keine Datenbank braucht). `rate-limit-postgresql` war über den Proxy nicht installierbar (404). In `server.js` bekommen Auth-, Registrierungs-, Doku-, Chat-, Chat-Leeren-, Buchungs-, Upload- und Organisations-Limiter je eine eigene Instanz (`store:`-Option, `clientIp`/`userOrIpKey` unverändert). **Bewusst je Replica geblieben:** der allgemeine Flutschutz (2000/15 min) — er liegt vor jeder Anfrage inklusive der Gesundheitsprüfungen, ein Datenbankschreiben je API-Aufruf wäre für eine Bremse, die kein Passwort schützt, der falsche Preis; effektiv also weiter 4000. Der Passwort-Reset-Limiter in `routes/auth.js` gehört zu Paket E und ist nicht angefasst. Vitest `backend/tests/utils/rateLimitStore.test.js`: zwei App-Instanzen auf derselben Datenbank, Limit 3 — die vierte Anfrage über die zweite Instanz → 429 (mit MemoryStore: 401), gemeinsame `RateLimit-*`-Header, Fensterablauf, `skipSuccessfulRequests`, Präfix-Trennung, Rückfall bei Datenbankfehler, Aufräumen. Zwei Prozesse (Ports 6439/6539): 20 falsche Doku-Passwörter an A → 401, das 21. an B → 429. Nachtrag (Koordination): auch der Passwort-Reset-Limiter (`routes/auth.js`, IP und E-Mail) hängt am Store.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Die Status-Zeile widerspricht sich nur scheinbar: „Der Passwort-Reset-Limiter … ist nicht angefasst" ist durch ihren eigenen Nachtrag überholt. Heute zählen alle IP- und Konto-Grenzen im gemeinsamen Store, auch beide Reset-Limiter (`routes/auth.js:42-70`) und die Anmeldesperre je Konto (Sicherheit BF-04); nur der allgemeine Flutschutz zählt bewusst je Replica.
 - **Fundstelle:** `backend/server.js:279–385` (alle `rateLimit(...)` ohne `store`,
   `express-rate-limit` 8.7.0 → `MemoryStore` je Prozess),
   `deploy/compose.konfi_quest.yml:57–182` (zwei Replicas hinter einem Traefik-Service)
@@ -453,6 +459,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 ### BF-10: Cron-Leader ohne Ersatz und ohne Sichtbarkeit
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — `backend/utils/cronLeader.js`: Jede Replica, die Jobs fahren darf (`RUN_BACKGROUND_JOBS` ≠ `false`), versucht im Takt (`CRON_LEADER_TAKT_MS`, Standard 10 s) `pg_try_advisory_lock(723002)` auf einer eigenen Verbindung; wer den Lock hält, startet die Hintergrund-Jobs, verliert sie die Verbindung, hält sie die Jobs an und bewirbt sich neu (kein zweiter Leader nach einem Datenbank-Neustart), beim geordneten Stopp wird der Lock sofort freigegeben. `server.js` wählt statt fest zu vergeben; `RUN_BACKGROUND_JOBS=false` heißt weiter „nie" (backend-test). Sichtbar in `GET /api/status`: `cron_leader` (diese Replica) und `checks.cron_leader` (`ok`/`fehlt`, aus `pg_locks` — von jeder Replica gleich beantwortet, damit Uptime Kuma es prüfen kann). Compose-Referenz: `RUN_BACKGROUND_JOBS=false` bei `backend2` entfernt — **muss im Portainer-Stack nachgezogen werden**, sonst bleibt `backend2` außen vor. Gemessen mit zwei Prozessen (Ports 6439/6539): genau eine Replica `cron_leader=true`, nach SIGTERM der Leader-Replica Übernahme durch die andere nach **8 370 ms** (ein Takt von 10 s). Vitest `backend/tests/utils/cronLeader.test.js` (genau eine von zwei wird Leader; geordnetes Ende → Übernahme in unter drei Takten à 150 ms; `pg_terminate_backend` auf den Leader → Übernahme; Verbindungsverlust → Rolle abgegeben und neu erworben; fremder Lock-Halter wird erkannt) und `backend/tests/routes/statusBetrieb.test.js` (Felder). Nicht umgesetzt: „letzte Laufzeit je Job" in `/api/metrics/local` — das berührt jede Job-Funktion in `backgroundService.js`, wo Paket I1 arbeitet.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** teilweise behoben — offen ist die „letzte Laufzeit je Job" in `/api/metrics/local`, für 2.3.x vorgemerkt. In Produktion greift die Übernahme erst, wenn `RUN_BACKGROUND_JOBS=false` bei `backend2` entfernt ist — nach dem Deploy, sobald beide Backends 2.3.0 fahren (Auftrag `02-portainer-stack.md`, Abschnitt 5); liegt bei Simon/Betrieb.
 - **Fundstelle:** `backend/server.js:469–475` (`RUN_BACKGROUND_JOBS`),
   `deploy/compose.konfi_quest.yml:135–141, 193–194, 213–215` (nur `backend` ist Leader),
   `backend/services/backgroundService.js` (keine Laufzeitstempel, kein Export des letzten
@@ -476,6 +483,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 
 ### BF-11: Log-Volumen bei Zielgröße überrollt die Aufbewahrung binnen Stunden
 - **Schwere:** MITTEL
+- **Status:** teilweise behoben 27.09.2026 — der Chat-Fan-out schreibt eine Sammelzeile statt einer Zeile je Person ohne Gerät (BF-04); offen sind die Warnung je Kopf in den übrigen Versandwegen (`services/pushService.js:641`), strukturierte Zeilen mit Anfrage-Kennung und die Rotation (weiter 10 MB × 3). Für 2.3.x vorgemerkt; das Log-Volumen nach dem Deploy messen (Auftrag `03-nach-dem-deploy.md`, Abschnitt 3).
 - **Fundstelle:** `deploy/compose.konfi_quest.yml:115–119` (json-file 10 m × 3 je
   Container), `backend/services/pushService.js:720, 938` (`console.warn('Keine Push-Tokens
   …')` je Empfänger), `backend/utils/apm.js:437` (`[APM] LANGSAM` je Anfrage > 1 s), 543
@@ -502,6 +510,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 ### BF-12: Deploy-Lücke: `update_stack` ersetzt beide Replicas gleichzeitig
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 (Produktionslauf steht aus) — Der Deploy-Job in `ci.yml` ruft `deploy/rollend.sh`: Tag-Rewrite und `update_stack` in **zwei Stufen** (erst `backend` + `frontend`, dann `backend2`); Docker Compose erstellt nur Dienste mit geänderter Konfiguration neu, die andere Replica trägt derweil den Traffic. Die zweite Stufe beginnt erst, wenn der **neue** Container der ersten (Image-Tag = neuer SHA, aus der Docker-API über Portainer) laut Healthcheck `healthy` ist; je Stufe bis zu drei Runden gegen das ghcr-Race. Zusammen mit dem Drain aus BF-07 (`/api/health` 503 vor dem Schließen) steht damit immer eine gesunde Replica im Traefik-Pool. Verify öffentlich mehrfach (Traefik verteilt): `database ok`, keine übersprungene Migration, Commit = SHA. `backend-test` bleibt unangetastet (Gegenprobe wie bisher). Der Entwurf `deploy/rolling-deploy.sh` ist ersetzt. **Annahme, nur in Produktion prüfbar:** Portainers `update_stack` läuft ohne `--force-recreate`; das Skript vergleicht die Container-ID von `backend2` vor und nach Stufe 1 und warnt, falls sie sich geändert hat (dann war der Tausch nicht lückenlos, aber nicht schlechter als vorher). Lokal geprüft: YAML-Parse von `ci.yml`, `bash -n`, Trockenlauf gegen einen Portainer-Nachbau (Stufe 1 erstellt nur `backend`+`frontend`, Stufe 2 nur `backend2`, Verify grün; mit simuliertem Force-Recreate erscheint die Warnung; Frontend-only-Fall ohne Commit-Verify).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** behoben im Code; der erste zweistufige Deploy in Produktion steht aus (Auftrag `02-portainer-stack.md`, Abschnitt 4) — nach dem Deploy messen. Dazu am 27.09. geschlossen: Alle drei Deploy-Wege schickten Portainer die Stack-Variablen als leere Liste und hätten vorhandene damit ersetzt; jetzt gehen sie unverändert zurück (`6cd0d52d`: `deploy/rollend.sh`, `notfall-deploy.yml`, `frontend.yml`).
 - **Fundstelle:** `.github/workflows/ci.yml:426–470` (PUT `/api/stacks/249` mit
   `pullImage:true` — recreate aller Dienste), `deploy/rolling-deploy.sh:1–16` („NOCH NICHT
   IM CI AKTIV", zwei offene Punkte), `deploy/compose.konfi_quest.yml:11–13`,
@@ -527,6 +536,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 ### BF-13: Datenbank-Dimensionierung und Pool-Vorgabe passen nicht zum Ziel
 - **Schwere:** MITTEL
 - **Status:** teilweise behoben 26.09.2026 — Referenzkopie `deploy/compose.konfi_quest.yml`: Postgres auf **2 CPU / 3 GB**, `shared_buffers=768MB`, `effective_cache_size=2GB`, `work_mem=8MB`, `maintenance_work_mem=128MB`, `shared_preload_libraries=pg_stat_statements` (Extension einmal von Hand, Kommando im Compose); `max_connections=200` gegen 3 × (50 + 2) + 2 Cron-Leader + 20 Reserve = 178 ≤ 197 gerechnet; die Backends bekommen `PG_POOL_MAX=50`, `PG_IDLE_TIMEOUT`, `PG_CONN_TIMEOUT`, `PG_STATEMENT_TIMEOUT`, `PG_IDLE_TX_TIMEOUT`, `PG_SOCKET_ADAPTER_POOL_MAX` explizit. **Offen, weil nur Simon es kann:** Die Referenzkopie ist nicht der Portainer-Stack — der Stack muss von Hand angeglichen werden, und vorher ist zu prüfen, dass der Host 2 CPU und 3 GB zusätzlich frei hat (Kommentar vom 24.09.: 11,7 GB frei). Das Nachmessen des Sonntags-Lastfalls gegen den hinterlegten Datenbestand steht danach aus. Kein Test: eine Referenzdatei ohne Laufzeit; YAML-Parse geprüft.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** im Produktions-Stack erledigt 27.09.2026 (Phase A, lokaler Agent, Auftrag `02-portainer-stack.md`, Abschnitte 2 und 3): Postgres mit 2 CPU / 3 GB und dem `command` der Referenz (`shared_buffers` 768MB, `work_mem` 8MB), `pg_stat_statements` geladen und angelegt, `PG_POOL_MAX` 50 samt `PG_*`-Zeitgrenzen und `SHUTDOWN_DRAIN_MS` an allen drei Backends; ein Stack-Update, nach 22 s alle Container gesund, im Sekundentakt eine gescheiterte Statusabfrage. Vorher in 27 h 14.489-mal gedrosselt (2.317 s). Fotoschlüssel und Doku-Passwort stehen seit `b677bba5` als Pflicht in der Referenz. Liegt bei Simon/Betrieb: die Abendzählung aus `pg_stat_activity` gegen `max_connections` 200, die Nachher-Messung unter Last und das Nachziehen der Referenz um die gewollten Abweichungen des Live-Stacks (`www.`-Router, Sticky-Cookie `konfi_lb`, Router `konfi-docs`, Middleware `retry-deploy`; Auftrag Abschnitt 6).
 - **Fundstelle:** `deploy/compose.konfi_quest.yml:42–46` (Postgres 1 GB, **0,3 CPU**),
   `:25` (`max_connections=200`), `backend/database.js:9–18` (Kommentar vom 24.09.2026:
   „PG_POOL_MAX gehört ins Compose", Rechenweg für 50), Compose ohne `PG_POOL_MAX`,
@@ -603,24 +613,30 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
   Fehlerpfad). Ob FCM bei 48.000 Einzelaufrufen in Folge `quota-exceeded` liefert
   (`pushService.js:165` behandelt es mit drei Versuchen), lässt sich nur in Produktion
   messen. Fehlt: Messwert ms je `send()` aus dem Produktions-Log.
+  - **Status:** offen 27.09.2026 — ms je `send()` nach dem Deploy messen.
 - **SMTP-Grenzen:** `emailService.js` sendet ohne Warteschlange, Rate oder Pooling
   (`nodemailer.createTransport` ohne `pool: true`); heute gehen nur Lizenz-, Lösch- und
   Passwort-Mails hinaus (Dutzende je Tag). Bei einem Massenversand wäre das Limit des
   Anbieters (`server.<anbieter>`) die Grenze — unbekannt.
+  - **Status:** offen 27.09.2026 — die Sendegrenze ist beim Anbieter nicht erfragt; liegt bei Simon/Betrieb, vor EKD-Ausrollung (vor einem Massenversand Pflicht). Geklärt ist der Absender: die `moin@`-Adresse über `SMTP_USER` (Auftrag `01-vor-dem-deploy.md`, Abschnitt 2).
 - **`X-Real-IP` wird ungeprüft übernommen** (`server.js:261–265`): Die IP-basierten
   Limiter (Login, Registrierung, Doku) lassen sich mit einem selbstgesetzten Header
   umgehen, falls Apache/Traefik den Header nicht überschreiben. Ob sie das tun, steht
   nicht im Repo. Fehlt: Traefik-/Apache-Konfiguration.
+  - **Status:** im Code behoben 26.09.2026 — nur noch aus dem Docker-Netz (Sicherheit BF-13, `utils/clientIp.js`); ob der Proxy den Header überschreibt, nach dem Deploy messen.
 - **1-Tag-Erinnerung um Mitternacht:** `sendEventReminders` (`backgroundService.js:665–690`)
   wählt Termine des Folgetags ohne Uhrzeitfenster — die Erinnerung „Morgen: …" geht im
   ersten Takt nach 00:00 hinaus. Fachlich anderer Bereich; für die Last bedeutet es einen
   Schwall statt Verteilung über den Tag.
+  - **Status:** behoben 26.09.2026 — 24 Stunden vor Beginn ± 15 Minuten (Chat BF-03, `253b739e`).
 - **Speicherbedarf des Node-Prozesses bei 1.000+ Sockets** (25 kB je Socket geschätzt →
   25–50 MB je Replica bei 512 MB Grenze): plausibel, nicht gemessen — kein Lastgenerator
   für Tausende Sockets aufgesetzt.
+  - **Status:** offen 27.09.2026 — kein Lasttest mit Tausenden Sockets; vor EKD-Ausrollung.
 - **Postgres-Speicher unter Last:** `max_connections=200` × `work_mem` 4 MB ist nur bei
   Sortierungen relevant; ob 1 GB bei 486 MB Daten plus 66 Verbindungen genügt, hängt vom
   Cache-Trefferanteil ab — nur in Produktion messbar (`pg_stat_database.blks_hit`).
+  - **Status:** teilweise geklärt 27.09.2026 — vor dem Anheben Cache-Trefferquote 99,96 % bei 23 MB Datenbank und 40 Verbindungen; seit dem 27.09. 3 GB mit `shared_buffers` 768MB. Unter Last nach dem Deploy messen.
 
 ## Alte Befunde nachgeprüft
 
@@ -631,9 +647,9 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
   vorhanden; Schema-Abgleich gehört in den Datenbank-Bereich → **nicht in diesem Bereich
   geprüft**.
 - Kommentar `database.js:9–18` (24.09.2026): „PG_POOL_MAX gehört ins Compose" →
-  **weiter offen**, Compose setzt keine PG_*-Variablen (BF-13).
+  **weiter offen**, Compose setzt keine PG_*-Variablen (BF-13). *Stand 27.09.2026: erledigt — Referenz (`8fc28171`) und Produktions-Stack (Phase A) setzen `PG_POOL_MAX=50`.*
 - Kommentar `compose.konfi_quest.yml:11–13` und `rolling-deploy.sh:1–16` (21.06.2026):
-  rollender Deploy nicht scharf → **weiter offen** (BF-12).
+  rollender Deploy nicht scharf → **weiter offen** (BF-12). *Stand 27.09.2026: behoben — `deploy/rollend.sh` (`ee996132`), erster Produktionslauf nach dem Merge.*
 - Kommentar `server.js:416–436` (27.08.2026): Doppel-Listener-Absturz bei fehlerhaftem
   Socket.IO-Handshake → **behoben bestätigt**: `server.on('request')` prüft
   `res.headersSent || res.writableEnded`; im Zwei-Instanzen-Test kein Absturz durch
@@ -712,6 +728,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 - Ein Lastgenerator mit hunderten gleichzeitigen Socket- und HTTP-Clients gegen die zwei
   Instanzen (die Maschine teilen sich 13 Agenten; die Kapazitätsaussage ist aus
   gemessenen Einzelkosten gerechnet, nicht unter Parallellast gemessen).
+  - **Status:** offen 27.09.2026 — Lasttest vor EKD-Ausrollung.
 - Traefik-Verhalten beim Ausfall einer Replica (kein Traefik lokal).
 - Tatsächliche Fotogrößen nach `mediaCompression.ts` (kein Browser-Canvas im Container):
   Der Code skaliert auf 1920 px lange Kante bei JPEG 0,8 und lässt Bilder ≤ 500 kB und
@@ -763,6 +780,8 @@ docker stats --no-stream konfi_quest-postgres-1
   `cleanupOrphanPhotos.js --dry-run` etwas findet.
 - Traefik/Apache: wird `X-Real-IP` vom Proxy überschrieben (Curl mit gesetztem Header
   gegen `/api/docs-auth/anmelden`, 21-mal: 429 muss unabhängig vom Header kommen).
+
+**Stand 27.09.2026 (vor dem Deploy gemessen, Aufträge `01-vor-dem-deploy.md` Abschnitt 5 und `02-portainer-stack.md`):** 40 Verbindungen am Sonntagnachmittag, 26 direkt nach dem Neustart; Cache-Trefferquote 99,96 %; Datenbank 23 MB, größte Tabelle `apm_snapshots` 2,2 MB; CPU-Drosselung vor dem Anheben 14.489-mal in 27 h (2.317 s). Die übrigen Messungen (FCM-Dauer, Log-Volumen, Zähler-Lauf, Deploy-Lücke, Plattenplatz, SMTP-Grenze, `X-Real-IP`): nach dem Deploy messen (Auftrag `03-nach-dem-deploy.md`).
 
 ---
 

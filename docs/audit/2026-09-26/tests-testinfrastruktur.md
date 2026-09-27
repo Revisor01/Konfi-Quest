@@ -36,7 +36,9 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ## Release-Empfehlung für den Bereich
 
-**mit Auflage** — Die Testinfrastruktur selbst blockiert das Release nicht; die Gegenproben zeigen, dass die vorhandenen Backend-Tests echte Fehler fangen. Auflage: Für `GET /api/events/:id` (BF-01) und die 23 geschützten Routen ohne Fremd-Gemeinde-Test (BF-05, insbesondere `POST /api/events/qr-checkin`, `POST /api/events/:id/generate-qr`, `GET /api/events/:id/attendance-count`, `POST /api/konfi/upload-photo`, `POST /api/konfi/events/:id/opt-in`) muss vor dem Release entweder ein Test „fremde Gemeinde → 403/404“ vorliegen oder der Sicherheitsbereich den Gemeinde-Filter am Code bestätigen. Alles andere kann nach dem Release folgen.
+*Überholt — siehe „Stand 27.09.2026 (vor dem Merge von 2.3.0)" unten.* **mit Auflage** — Die Testinfrastruktur selbst blockiert das Release nicht; die Gegenproben zeigen, dass die vorhandenen Backend-Tests echte Fehler fangen. Auflage: Für `GET /api/events/:id` (BF-01) und die 23 geschützten Routen ohne Fremd-Gemeinde-Test (BF-05, insbesondere `POST /api/events/qr-checkin`, `POST /api/events/:id/generate-qr`, `GET /api/events/:id/attendance-count`, `POST /api/konfi/upload-photo`, `POST /api/konfi/events/:id/opt-in`) muss vor dem Release entweder ein Test „fremde Gemeinde → 403/404“ vorliegen oder der Sicherheitsbereich den Gemeinde-Filter am Code bestätigen. Alles andere kann nach dem Release folgen.
+
+**Stand 27.09.2026 (vor dem Merge von 2.3.0):** Die Auflage ist erfüllt (BF-01, BF-05 behoben: 40 Fremd-Gemeinde-Tests in `tests/routes/fremdeGemeinde.test.js`). Von 16 Befunden sind 5 behoben (BF-01, BF-05 bis BF-08), 2 teilweise behoben (BF-04, MITTEL, für 2.3.x vorgemerkt; BF-11), 8 offen (BF-02, BF-03, BF-09, BF-10, MITTEL, für 2.3.x vorgemerkt; BF-12, BF-13, BF-15, BF-16, NIEDRIG, später) und 1 liegt bei Simon/Betrieb (BF-14). Befunde der Stufen HOCH oder KRITISCH hatte der Bereich nicht. Neu aus der Prüfung vor dem Merge: `tests/utils/gracefulShutdown.test.js` („endet nach SIGTERM mit Exit 0 in unter 3 s") fiel in drei Vollläufen der Koordination vom 27.09. mit Exit-Code 1 und lief in anderen grün — es wackelt unter Last; offen, später.
 
 ## Befunde
 
@@ -52,6 +54,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-02: 46 % der Frontend-Tests prüfen Quelltext statt Verhalten
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — nachgezählt wie im Befund (`readFileSync` ohne `render(`): 143 von 327 versionierten Frontend-Testdateien (26.09.: 123 von 263). Für 2.3.x vorgemerkt.
 - **Fundstelle:** `frontend/src/__tests__/**` — 123 von 263 Dateien lesen per `readFileSync` Komponenten-Quelltext und rendern nichts; z. B. `components/teamerTerminAbsagen.test.ts:116`, `components/adminZusageAusBookingStatus.test.ts:89`, `components/abgesagteTermineAnsichten.test.ts:233`, `components/terminRechteOberflaeche.test.ts:102`, `components/teamerZusageKarteAbgesagt.test.ts:99`
 - **Kennzeichnung:** reproduziert (gezählt): `xargs -a fe_tracked.txt grep -l readFileSync | xargs grep -L 'render('` → 123 Dateien / 1164 `it`-Blöcke; `render(`/`renderHook(` → 78 Dateien / 715 `it`-Blöcke; 1486 Erwartungen der Form `expect(quelle).toContain('…')`/`toMatch`.
 - **Beschreibung:** Fast die Hälfte der Frontend-Tests prüft, ob eine Zeichenkette im Quelltext steht (`expect(code).toContain('if (!zusageKarteInhalt) return null;')`, `expect(detail.match(/\|\| !darfVerwalten\) return null;/g).length).toBe(2)`). Solche Tests fallen bei jeder Umformulierung und bleiben grün, wenn die Zeile zwar steht, aber nicht das tut, was der Titel verspricht. Sie ersetzen keinen gerenderten Test: Ob „Absagen nur mit Recht“ gilt, prüft man, indem man die Komponente ohne Recht rendert und den Knopf nicht findet.
@@ -61,6 +64,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-03: E2E-Datenbank startet mit leerem Migrationsstand — 51 Migrationen laufen doppelt, 2 scheitern bei jedem Start
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — `docker-compose.e2e.yml` hängt `02-migrationsstand.sql` weiter nicht ein. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `docker-compose.e2e.yml:20-22` (nur `prod-schema.sql` eingehängt, `init-scripts/02-migrationsstand.sql` fehlt), `backend/database.js:142-151` (Fehler wird geloggt, Server startet)
 - **Kennzeichnung:** reproduziert — `NODE_PATH=backend/node_modules node scratchpad/tests-testinfrastruktur/schema_experiment.js` baut `audit_e2e` genau so auf: `schema_migrations nach Dump: 0 Zeilen`; `erneut angewandt (erfolgreich): 87, fehlgeschlagen (übersprungen): 2`; davon 51 mit Nummer < 124, also bereits im Dump enthalten. Fehlgeschlagen: `064_add_missing_fks.sql :: column "konfi_id" does not exist`, `064_add_missing_indexes.sql :: column "konfi_id" does not exist`.
 - **Beschreibung:** Der Dump ist schema-only, die Tabelle `schema_migrations` kommt leer. Beim Start läuft `runMigrations` über alle 89 Dateien; 87 gelingen (weil sie `IF NOT EXISTS`/idempotent sind), zwei scheitern und werden mit „Server laeuft weiter“ übersprungen. Das Endschema ist mit dem Test-Schema identisch (Tabellen 59/59, Spalten 539/539, Indizes 215/215, Views 1/1; eine CHECK-Constraint auf `challenges.audience` textlich anders, semantisch gleich) — aber nur, weil die Migrationen zufällig doppelt laufen dürfen. Für die Backend-Tests hat `globalSetup.js` genau dafür `prod-migrations.txt`; für Neuinstallationen gibt es `02-migrationsstand.sql`. Der E2E-Stack nutzt beides nicht.
@@ -70,6 +74,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-04: 15 Backend-Routen ohne einen einzigen Test
 - **Schwere:** MITTEL
+- **Status:** teilweise behoben 26.09.2026 — elf der 15 Routen haben seit BF-05 einen Test (`tests/routes/fremdeGemeinde.test.js`); ohne Test bleiben `POST /api/auth/update-email`, `POST /api/auth/update-role-title`, `GET /api/auth/check-username/:username` und `GET /api/auth/validate-invite/:code`. Für 2.3.x vorgemerkt.
 - **Fundstelle:** siehe Liste
 - **Kennzeichnung:** reproduziert (statisch): `node scratchpad/tests-testinfrastruktur/routen_abgleich.js` (nur versionierte Tests), Fehlalarme von Hand geprüft
 - **Beschreibung:** 251 eindeutige Routen (260 mit Doppel-Mount von `users.js`), 15 davon werden von keiner Testdatei mit passender Methode aufgerufen:
@@ -100,6 +105,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 ### BF-05: Mindestens 23 geschützte Routen ohne Test „fremde Gemeinde → 403/404“
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — `backend/tests/routes/fremdeGemeinde.test.js` (40 Tests in einer Datei, die bestehenden Testdateien bleiben unberührt): für alle neun Routen der Tabelle und elf geschützte Routen aus BF-04 (`DELETE chat/rooms/:roomId/leave`, `GET events/user/bookings`, `PUT admin/konfis/:id/teamer-since`, `GET konfi/events/:id/participants`, `GET teamer/:userId/badges`, `GET teamer/activities`, `GET teamer/requests`, `GET challenges/admin/authors`, `GET/POST extend/DELETE auth/invite-codes`) je ein Test mit Org-2-Token gegen ein Org-1-Objekt — erwartet wird der exakte heutige Status (404; beim QR-Check-in 403 `wrong_organization`; bei Listen ausschließlich Org-2-Zeilen, auch wenn eine Zeile mit Org-1-Bezug für diese Person in der Datenbank liegt) und dass kein Feld des fremden Objekts in der Antwort steht — dazu je Route der erlaubte Fall (200). Kein Test fand ein 200 mit Fremddaten, also kein neuer Sicherheitsbefund. `attendance-count` und `konfi/events/:id/participants` antworten für fremde Kennungen heute mit 200 und leerem Ergebnis; das ist so festgeschrieben, samt Beleg, dass der Filter wirkt (der Org-1-Termin hat eine bestätigte Buchung, die fremde Antwort zeigt 0 bzw. []) — ob 404 die bessere Antwort wäre, ist Sicherheit BF-16. Nicht abgedeckt: `POST auth/update-email` und `update-role-title` (ändern nur das eigene Konto, keine Objekt-Kennung; Rest von BF-04). Stichprobe der Gegenprobe: Org-Vergleich in `checkin.js` ausgebaut → der QR-Test fällt mit `expected 400 to be 403`.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Ein Satz ist überholt: `GET /api/konfi/events/:id/participants` antwortet für fremde Gemeinden und fremde Jahrgänge seit dem 27.09. mit 404 („Wer bekommt was" BF-04, Nachtrag; `ac86d860`), der Test erwartet das. `attendance-count` antwortet weiter 200 mit leerem Ergebnis.
 - **Fundstelle:** siehe Liste
 - **Kennzeichnung:** reproduziert (statisch): `node scratchpad/tests-testinfrastruktur/multiorg_routen.js` — je geschützter Route geprüft, ob eine aufrufende Testdatei ein Token aus `andereGemeinde` **und** ein 403/404 enthält. Das ist eine Untergrenze: BF-01 zeigt, dass Routen als „abgedeckt“ zählen, obwohl der konkrete Test fehlt.
 - **Beschreibung:** Von 217 geschützten Routen haben 191 eine solche Datei in Reichweite, 26 nicht — abzüglich der drei Werkzeug-Fehlalarme bleiben 23. Darunter neben den ungetesteten aus BF-04:
@@ -175,6 +181,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-09: E2E-Suite ist zu 85 % Smoke; der Punkte-Test prüft „irgendeine Ziffer“
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — der Punkte-Test prüft weiter „irgendeine Ziffer", `waitForTimeout` und `retries: 1` stehen. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `e2e/punkte-vergabe.spec.ts:58` (`toContainText(/[1-9]/)`), `:35` (`waitForTimeout(2_000)`), `e2e/aenderungsanzeige.spec.ts:105` (`waitForTimeout`), `playwright.config.ts:5` (`retries: 1`)
 - **Kennzeichnung:** aus Code gelesen (Stack nicht startbar, s. Umfang)
 - **Beschreibung:** Die acht Specs ergeben 34 Tests. 29 davon prüfen nur „URL passt und ein `ion-content` ist sichtbar“ (`login` 3, `tab-navigation` 7, `deep-link` 19). Fünf sind Abläufe: Buchung, Punktevergabe, Chat, zweimal Änderungsanzeige. Der Punkte-Test verspricht „Konfi sieht Punkte“ und prüft `expect(content).toContainText(/[1-9]/)` — jede Ziffer irgendwo auf dem Dashboard genügt, etwa im Jahrgangsnamen „2025/2026“. Er würde auch bei 0 vergebenen Punkten bestehen. Zwei feste Wartezeiten (`waitForTimeout(2000)`) und `retries: 1` verdecken Flattern, statt es zu zeigen. Der CI-Kommentar „Suite steht auf 32/32“ (31.08.) ist überholt (34).
@@ -184,6 +191,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-10: 49 Frontend-Komponenten ohne Bezug in irgendeinem Test — darunter Termin-Detail, Chat-Übersicht, Chat-Socket und die 2.3.0-Einladungs-Oberfläche
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — `EinladungModal`, `EinladungenKarte`, `KonfiEventDetailPage` und `UnregisterModal` haben weiter keinen gerenderten Test. Für 2.3.x vorgemerkt.
 - **Fundstelle:** siehe Liste
 - **Kennzeichnung:** reproduziert (statisch): `node scratchpad/tests-testinfrastruktur/fe_abgleich.js` — Dateiname (Import-Pfad oder Zeichenkette) kommt in keiner versionierten Testdatei vor.
 - **Beschreibung:** Von 226 Komponentendateien haben 49 keinen Bezug, dazu 2 von 17 Services (`migrateStorage.ts`, `systemDialoge.ts`), 6 von 38 Utils (`badgeCriteria.ts`, `dateUtils.ts`, `helpers.ts`, `sectionOrder.ts`, `segmentGlas.ts`, `slidingItems.ts`), 2 von 8 Hooks (`useChallengeDelete.ts`, `useMediaCacheControl.ts`). Nutzerrelevant unter den Komponenten: `konfi/pages/KonfiEventDetailPage.tsx`, `konfi/modals/UnregisterModal.tsx`, `chat/pages/ChatOverviewPage.tsx`, `chat/ChatMessagesList.tsx`, `chat/useChatSocket.ts`, `chat/useChatScroll.ts`, `chat/useUmfragenUndReaktionen.ts`, `chat/LazyImage.tsx`, `shared/AudioPlayer.tsx`, `admin/modals/{ActivityManagementModal,BadgeManagementModal,LevelManagementModal,ChangeRoleTitleModal}.tsx` — und die **2.3.0-Neuerung Gemeinde-Einladungen**: `admin/modals/EinladungModal.tsx` und `shared/EinladungenKarte.tsx` (die Testdatei `einladungVerlaengernRueckmeldung.test.ts` betrifft Einladungs*codes*, nicht Gemeinde-Einladungen). 27 der 49 sind Rückblick-Folien (`wrapped/slides/**`), die von Registry-Tests indirekt erfasst sein können.
@@ -194,6 +202,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 ### BF-11: Doku- und Kommentar-Drift in der Testinfrastruktur
 - **Schwere:** NIEDRIG
 - **Status:** teilweise behoben 26.09.2026 — README-Testzahlen auf 3.788 / 3.399 gesetzt und `docs/offene-befunde.md` #12 als behoben markiert (Doku-Paket); die Zahlen in `vitest.config.ts`, `testApp.js`, `db.js` und `ci.yml` gehören zum Test-Paket.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand: der Teil des Test-Pakets ist nicht nachgezogen — `vitest.config.ts:6` („alle 24 Suites"), `testApp.js:50` („65 Testdateien"), `db.js:71` und `ci.yml:75` („~45 Tabellen"), `ci.yml:76` („111 Mal"), `ci.yml:249` („32/32"). Später.
 - **Fundstelle:** `README.md:131` („1625 Tests“), `:138` („2470 Tests“), `backend/tests/vitest.config.ts:6` („alle 24 Suites“), `backend/tests/helpers/testApp.js:43` („65 Testdateien“), `backend/tests/helpers/db.js:60` und `.github/workflows/ci.yml:75` („~45 Tabellen“), `ci.yml:76` („truncateAll laeuft 111 Mal“), `ci.yml:124/137` („273 Meldungen“, „auf null“), `ci.yml:214` („32/32“), `docs/offene-befunde.md:429` (Nr. 12 „IN ARBEIT“)
 - **Kennzeichnung:** reproduziert (gezählt)
 - **Beschreibung:** Frontend heute 264 Dateien / 3788 Tests (Koordination), Backend 139 Dateien / 3296 statische `it` + 17 `it.each`; 58 Tabellen in der TRUNCATE-Liste; `truncateAll` steht 119-mal in 107 Dateien; Lint 336 Meldungen; E2E 34 Tests. Befund Nr. 12 (init-scripts) ist erledigt: `init-scripts/01-create-schema.sql` und `backend/tests/schema/prod-schema.sql` sind bis auf Kommentare identisch (`diff` leer), der Migrationsstand ebenso, der Wächter `neuinstallation.test.js` existiert — die Doku sagt noch „in Arbeit“. `init-scripts/README.md` stimmt dagegen mit dem heutigen Verhalten überein.
@@ -203,6 +212,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-12: Node-Versionen uneinheitlich — CI 26, Docker-Images 26, `engines` ≥ 22, lokal 22, E2E-Job 20
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — wie Toolchain BF-04 (Node 20 im E2E-Job, keine `.nvmrc`). Später.
 - **Fundstelle:** `.github/workflows/ci.yml:91,127` (26), `:225` (`'20'`), `:220` (`actions/checkout@v4` statt v7), `backend/Dockerfile:1` (`node:26-bookworm`), `frontend/Dockerfile:2` (`node:26-alpine`), `backend/package.json:44` (`>=22.0.0`), `README.md:135` („Node 22“)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Getestet wird unter 26 und (E2E-Seed via `seed.js`/bcrypt) unter 20, entwickelt unter 22, dokumentiert ist 22. Drei Laufzeiten für dieselbe Codebasis; der E2E-Job nutzt zudem ältere Action-Versionen als die übrigen Jobs.
@@ -212,6 +222,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-13: E2E-Compose weicht von Produktion und Backend-Tests ab — Postgres 16 statt 15, keine Zeitzone, fehlende Schlüssel
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — das E2E-Compose läuft weiter mit `postgres:16-alpine`, ohne `QR_SECRET` und `ACTIVITY_PHOTO_ENCRYPTION_KEY`. Die Annahme „Produktion: Europe/Berlin" stimmt nicht — Produktion läuft in UTC (Node-Prozess und Datenbanksitzungen der Backends, Auftrag `docs/auftraege/lokaler-agent/01-vor-dem-deploy.md`, Nr. 5); die Zeitzone erst nach der Umstellung der Zeitspalten angleichen (Datenbank BF-11). Später.
 - **Fundstelle:** `docker-compose.e2e.yml:3` (`postgres:16-alpine`; Produktion und `docker-compose.test.yml` 15), `:6-9` (kein `TZ`/`PGTZ`, Backend-Tests und Produktion: Europe/Berlin), `:35-40` (kein `QR_SECRET`, kein `ACTIVITY_PHOTO_ENCRYPTION_KEY`)
 - **Kennzeichnung:** aus Code gelesen; `QR_SECRET`-Verhalten in `routes/events/checkin.js:12-22` gelesen
 - **Beschreibung:** Ohne `QR_SECRET` startet das Backend nur, weil `NODE_ENV=test` den `process.exit(1)` unterdrückt — Check-in-Codes wären unsigniert. Ohne `ACTIVITY_PHOTO_ENCRYPTION_KEY` wirft `utils/photoCrypto.js:28` beim ersten Foto. Keine E2E-Spec berührt diese Pfade, deshalb fällt es nicht auf. Postgres-16-spezifische Syntax wurde in Migrationen/Code nicht gefunden (grep auf `any_value`, `pg_input_is_valid`, `random_normal`, `JSON_ARRAY`, `JSON_TABLE`, `MERGE` leer), der Versionsunterschied ist heute folgenlos.
@@ -221,6 +232,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-14: Schema-Dump ist fünf Wochen alt, 36 Migrationen laufen obendrauf — kein definierter Auffrisch-Rhythmus
 - **Schwere:** NIEDRIG
+- **Status:** liegt bei Simon/Betrieb 27.09.2026 — `refresh-schema.sh` braucht den Produktionszugang und lief nicht; der Migrationsstand in Produktion ist gemessen (89 bis 159, Datenbank BF-17). Den Schema-Diff nach dem Deploy messen.
 - **Fundstelle:** `backend/tests/schema/prod-schema.sql` (Dump vom 22.08.2026, PostgreSQL 15.19; `git log` zeigt letzte Änderung 22.08.), `prod-migrations.txt` (endet bei 123), `backend/migrations/` (bis 159)
 - **Kennzeichnung:** reproduziert — `globalSetup` meldet `36 neue Migrationen`; `audit_konfi`: alle 89 Migrationen in `schema_migrations`.
 - **Beschreibung:** Das Konzept „Dump + offene Migrationen = Deploy-Weg“ ist richtig und funktioniert. Es setzt aber voraus, dass Produktion seit dem 22.08. **nur** über Migrationen verändert wurde. Genau das war historisch nicht so (`daily_verses`, `activities.category`, `konfi_profiles.password_plain` von Hand angelegt — Kommentar in `globalSetup.js`). Ob es seit dem 22.08. wieder Handänderungen gab, kann das Repo nicht wissen; `refresh-schema.sh` wurde seit dem Umstieg nicht mehr ausgeführt.
@@ -230,6 +242,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-15: Frontend-Testlauf ohne feste Zeitzone, Tests mit echtem `new Date()`
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — der Frontend-Testlauf hat weiter kein festes `TZ` (lokal die Zeit des Rechners, in der CI UTC); die bedingte Erwartung in `tageUndKalendertag.test.ts` ist seit BF-06 behoben. Später.
 - **Fundstelle:** `frontend/vite.config.ts:63-84` (kein `TZ`, kein `testTimeout`), `.github/workflows/ci.yml` Job `frontend-test` (kein `TZ` → Runner-UTC), `frontend/src/__tests__/components/tageUndKalendertag.test.ts:83-112` (fünf Tests mit `new Date()` ohne `vi.useFakeTimers`), `chatOutbox.test.ts:182`
 - **Kennzeichnung:** aus Code gelesen (gezählt: 6 Dateien nutzen Fake-Timer, 3 nutzen `new Date()` ohne)
 - **Beschreibung:** Das Backend hat die Zeitzone nach dem Vorfall vom 02.09. dreifach festgezogen (Node-Prozess `TZ`, DB-Sitzung `-c timezone`, Compose/CI `TZ`/`PGTZ`); die Kommentare „zwischen 00:00 und 02:00“ in `db.js`, `docker-compose.test.yml`, `ci.yml`, `losungService.test.js` beschreiben behobene Fälle, und `zeitzone.test.js` wacht darüber. Das Frontend läuft lokal in der Zeitzone des Rechners, in der CI in UTC; `formatTimeUntil` wird mit echter Uhrzeit geprüft, einmal bedingt (BF-06 Nr. 7).
@@ -239,6 +252,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-16: Backend ohne Lint
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — wie Toolchain BF-06. Später.
 - **Fundstelle:** `backend/` — keine `eslint.config.*`, kein `eslint` in `backend/package.json`
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Das Frontend hat ein (nicht wirksames, BF-07) Lint-Gate, das Backend gar keines. Fehler wie `console.warn` mit einem Leerzeichen Einzug (`routes/auth.js:183`) oder ungenutzte Variablen fallen nicht auf.
@@ -249,6 +263,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 ## Unklar
 
 - **Läuft die E2E-Suite in der CI heute grün?** Nicht prüfbar (kein Image-Pull, kein Browser). Der letzte belegte Stand ist der CI-Kommentar „32/32“ vom 31.08.; seit dem 14.09. sind zwei Tests dazugekommen. Zu klären über den letzten Lauf von `e2e-test` in GitHub Actions — dort müsste auch das Log „ACHTUNG: 2 Migration(en) fehlgeschlagen“ (BF-03) bei jedem Start stehen.
+  - **Status:** geklärt 27.09.2026 — ja: `e2e-test` gehört zum Gate vor `build-and-push`, grüne `ci.yml`-Läufe auf `main` (etwa Lauf 948, CI BF-01) schließen ihn ein. Ob das Log die zwei fehlgeschlagenen Migrationen zeigt (BF-03), ist nicht nachgesehen.
 - **Trifft `/[1-9]/` im Punkte-Test tatsächlich den Jahrgangsnamen?** (BF-09) Braucht den laufenden Stack: Dashboard einer Konfi mit 0 Punkten öffnen und prüfen, ob eine Ziffer sichtbar ist.
 - **Laufzeiten der Frontend-Tests einzeln** wurden nicht gemessen; Vitest-Standard-Timeout 5 s, kein Hinweis auf Grenzfälle in der Baseline (132 s gesamt).
 - **Sequenz-IDs:** Der Seed setzt feste IDs und korrigiert 10 Sequenzen per `setval`; `RESTART IDENTITY` je Test macht die nächste ID deterministisch. Ob irgendwo eine feste „nächste ID“ erwartet wird, habe ich nicht systematisch gesucht — die 8 + 5 Einzelläufe (alle grün) sprechen dagegen.
@@ -258,11 +273,11 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 - **`docs/offene-befunde.md` Nr. 12 „init-scripts weicht vom Produktionsschema ab (16.09.) — IN ARBEIT“** → **behoben bestätigt**: `diff` von `init-scripts/01-create-schema.sql` und `backend/tests/schema/prod-schema.sql` ohne Kommentarzeilen leer; `02-migrationsstand.sql` gegen `prod-migrations.txt` identisch (53 Einträge); Wächter `backend/tests/schema/neuinstallation.test.js` vorhanden (baut zwei Wegwerf-DBs und vergleicht Tabellen, Views, Spalten, CHECKs). Doku ist nicht nachgezogen (BF-11).
 - **`globalSetup.js` / `schemaDrift.test.js`, „Audit 22.08.2026“ (Test-Schema als Patchwork, `daily_verses` fehlte, TRUNCATE-Liste unvollständig)** → **behoben bestätigt**: `audit_konfi` hat 58 Tabellen, TRUNCATE-Liste 58/58, `fehlen: []`, `überzählig: []`; `daily_verses` mit UNIQUE vorhanden; alle 89 Migrationen in `schema_migrations` (`schemaDrift.test.js` prüft beides bei jedem Lauf).
 - **`helpers/db.js` / `testApp.js`, „01.09.2026 sporadischer 404-Fehlschlag durch Nachläufer“ und `setupTests.js` „Parse Error 1 von 1200“** → **aus Code bestätigt**: `warteAufAlleNachwehen()` vor jedem TRUNCATE, `warteAufLiveUpdates()` (Befund 09.09.), `keepAlive: false`. 13 Dateien einzeln ohne einen Fehlschlag (1128 Tests) — kein Gegenbeweis, aber auch kein Beleg für Sporadik.
-- **`vitest.config.ts` / `db.js` / `docker-compose.test.yml` / `ci.yml`, „zwischen 00:00 und 02:00 Berliner Zeit“ (01./02.09.2026)** → **behoben bestätigt** (Backend): `TZ: 'Europe/Berlin'` im Node-Prozess, `-c timezone=Europe/Berlin` je DB-Verbindung, `TZ`/`PGTZ` in Compose und CI-Service; `zeitzone.test.js` wacht über `heuteBerlin()`. Frontend nicht nachgezogen (BF-15).
+- **`vitest.config.ts` / `db.js` / `docker-compose.test.yml` / `ci.yml`, „zwischen 00:00 und 02:00 Berliner Zeit“ (01./02.09.2026)** → **behoben bestätigt** (Backend): `TZ: 'Europe/Berlin'` im Node-Prozess, `-c timezone=Europe/Berlin` je DB-Verbindung, `TZ`/`PGTZ` in Compose und CI-Service; `zeitzone.test.js` wacht über `heuteBerlin()`. Frontend nicht nachgezogen (BF-15). *Stand 27.09.2026: gilt für die Testumgebung; Produktion läuft in UTC (unten, Nr. 3).*
 - **`e2e/global-setup.ts` / `docker-compose.e2e.yml`, „30.08.2026: E2E lief faktisch nie (leere DB, Timeout)“** → **teils**: Schema wird eingehängt, Timeout 900 s — aber ohne Migrationsstand (BF-03).
 - **`e2e/helpers/auth.ts`, „14.09.2026 Aenderungsanzeige legte die Suite lahm“** → **aus Code bestätigt**: `setzeAnzeigeMarker()` liest die Version aus `frontend/version.json` (2.3.0) statt fest zu verdrahten; `aenderungsanzeige.spec.ts` prüft den Overlay-Weg bewusst ohne Marker.
 - **`ci.yml`, „01.09.2026 bcrypt fehlte im E2E-Job“** → **aus Code bestätigt**: Schritt `npm ci --ignore-scripts` in `backend/`.
-- **`ci.yml`, „Lint SCHARF seit 31.08.2026“** → **weiter offen / unwirksam** (BF-07).
+- **`ci.yml`, „Lint SCHARF seit 31.08.2026“** → **weiter offen / unwirksam** (BF-07). *Stand 27.09.2026: behoben mit BF-07.*
 - **`tests/routes/eventBookingStats.test.js:126`, „28.08.2026 `.catch(() => {})` schluckte den Fehler“** → **behoben bestätigt** (Kommentar und Code; keine leeren `catch` um Erwartungen mehr in versionierten Tests).
 
 ## Geprüft und in Ordnung
@@ -309,3 +324,5 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 3. **Zeitzone in Produktion:** `SHOW timezone;` (erwartet `Europe/Berlin`) und `SELECT version();` (erwartet 15.x) — Grundlage für BF-13/BF-15.
 4. **E2E-Job-Log (GitHub Actions, `e2e-test`):** nach „ACHTUNG: 2 Migration(en) fehlgeschlagen“ suchen — bestätigt BF-03 im echten Lauf.
 5. **Lint-Schritt in Actions:** in den Läufen seit 31.08. zählen, wie oft der Schritt „Lint (nur im PR geaenderte Dateien)“ tatsächlich ausgeführt wurde (BF-07).
+
+**Stand 27.09.2026 (vor dem Deploy gemessen, Auftrag `docs/auftraege/lokaler-agent/01-vor-dem-deploy.md`):** Nr. 2 — 89 Einträge bis `159_gemeinde_einladungen.sql`, `Migration FAILED` 0. Nr. 3 — die Erwartung „Europe/Berlin" stimmt nicht: Die Datenbanksitzungen der Backends laufen in UTC (`postgresql.conf` `timezone = 'UTC'`), der Node-Prozess ohne `TZ` ebenfalls; nur `psql` im Container zeigt Berlin, weil dort `PGTZ` gesetzt ist. Die volle Backend-Suite lief unter UTC grün bis auf die zwei Tests, die genau die Berlin-Annahme prüfen (Behebungsbericht, `TEST_DB_SITZUNGSZONE=UTC`). Nr. 5 entfällt: Lint läuft seit dem 26.09. bei jedem Push (BF-07). Nr. 1: liegt bei Simon/Betrieb; Nr. 4: nach dem Deploy messen.

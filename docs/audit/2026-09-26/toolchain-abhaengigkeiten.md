@@ -61,6 +61,8 @@ Store-Apps 2.2.x; die MITTEL-Befunde sind Prozess- und Reproduzierbarkeitsthemen
 *nächsten* Release abzuarbeiten sind (Lint-Gate auch bei Push auf `main`, `dist/docs` aus dem
 App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
+**Stand 27.09.2026 (vor dem Merge von 2.3.0):** Die Empfehlung gilt weiter. Von 12 Befunden sind 2 behoben (BF-01, BF-08), 1 teilweise behoben (BF-10) und 9 offen (BF-02 bis BF-05, MITTEL, für 2.3.x vorgemerkt; BF-06, BF-07, BF-09, BF-11, BF-12, NIEDRIG, später). Befunde der Stufen HOCH oder KRITISCH hatte der Bereich nicht. Von den vier Punkten „vor dem nächsten Release" ist nur das Lint-Gate erledigt; `dist/docs` im App-Bundle, `npm ci` im Backend-Dockerfile und der E2E-Job auf Node 20 stehen aus.
+
 ## Befunde
 
 ### BF-01: Lint-Gate der CI ist seit dem 31.08.2026 nicht mehr aktiv; der Fehlerbestand wächst
@@ -100,6 +102,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-02: Native App-Bundles enthalten 33 MB Handbuch-Screenshots und Swagger-UI
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — beide Release-Workflows bauen weiter `dist/` samt `dist/docs` in die App, kein Entfernen vor `cap sync`. Für 2.3.x vorgemerkt (trifft schon den Store-Build 2.3.0).
 - **Fundstelle:** `frontend/capacitor.config.ts:8` (`webDir: 'dist'`), `frontend/public/docs/`
   (33 MB), `.github/workflows/android-release.yml:70-71` und
   `.github/workflows/ios-release.yml:106-107` (`npm run build` → `npx cap sync`),
@@ -126,6 +129,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-03: Backend-Image ist nicht aus dem Lockfile reproduzierbar
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — `backend/Dockerfile:17` unverändert (`npm install --omit=dev && npm install pg`), keine `backend/.dockerignore` (CI BF-06). Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/Dockerfile:17` (`RUN npm install --omit=dev && npm install pg`),
   `backend/Dockerfile:20` (`COPY . .`), fehlende `backend/.dockerignore`
 - **Kennzeichnung:** reproduziert (Scratchpad-Kopie von `backend/package.json` +
@@ -152,6 +156,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-04: Node-Versionen: E2E-Job auf Node 20 (End-of-Life seit 30.04.2026), Produktion auf Node 26 (noch kein LTS)
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — weiter Node 20 im E2E-Job, `>=22` in `engines`, 26 in CI und Produktion (live v26.10.0), keine `.nvmrc`. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `.github/workflows/ci.yml:245-247` (`actions/setup-node@v4`,
   `node-version: '20'`), `backend/Dockerfile:1` und `frontend/Dockerfile:2` (`node:26`),
   `.github/workflows/ci.yml:95-97,127-129` (Node 26, `setup-node@v7`),
@@ -177,6 +182,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-05: Tageslosung hängt an `node-fetch`, das nur über eine optionale, transitive Kette installiert ist
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — `losungService.js:90` importiert weiter `node-fetch`, `validator` ist weiter nicht deklariert. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `backend/services/losungService.js:90` (`const fetch = (await import('node-fetch')).default;`),
   `backend/package.json` (kein Eintrag `node-fetch`), aufgerufen aus `routes/konfi.js:10,1514`
   und `routes/teamer.js:5,1048`
@@ -202,6 +208,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-06: Backend ohne Lint-Konfiguration — 96 Fehler mit Standardregeln, aber keine undefinierten Bezeichner
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — das Backend hat weiter keine Lint-Konfiguration (Tests BF-16). Später.
 - **Fundstelle:** `backend/package.json` (kein `lint`-Skript, kein ESLint installiert), im Repo
   existiert nur `frontend/eslint.config.js`
 - **Kennzeichnung:** reproduziert (ESLint 10.10.0 aus `frontend/node_modules` mit
@@ -227,6 +234,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-07: 267 Testdateien, `vite.config.ts` und `capacitor.config.ts` werden von keiner Typprüfung erfasst — 64 Typfehler darin
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — die CI prüft seit dem 26.09. `tsc --noEmit` für `src/` (CI BF-07); Testdateien, `vite.config.ts` und `capacitor.config.ts` bleiben ohne Typprüfung. Später.
 - **Fundstelle:** `frontend/tsconfig.json:18-20` (`include: ["src"]`, `exclude` aller Tests,
   `references` ohne `tsc -b`), `frontend/tsconfig.node.json`, `frontend/package.json:15`
   (`"build": "tsc && vite build"`)
@@ -265,6 +273,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-09: Dependabot — 9 PRs offen seit dem 07.09., Ignore-Liste ohne TypeScript-Hauptversion
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `dependabot.yml` ignoriert weiter keine TypeScript-Hauptversion. Später.
 - **Fundstelle:** `.github/dependabot.yml:34-45` (Ignore nur react-router-Familie);
   GitHub-PRs #157, #158, #163, #164, #166, #167, #169, #170, #176
 - **Kennzeichnung:** reproduziert (GitHub-API `list_pull_requests state=open` →
@@ -284,6 +293,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 ### BF-10: Abhängigkeits-Hygiene — undeklarierte Importe, tote Einträge, wirkungslose Overrides, bedeutungslose Versionsnummern
 - **Schwere:** NIEDRIG
 - **Status:** teilweise behoben 27.09.2026 — der Teil Versionsnummern: die drei `package.json` tragen die App-Version aus `frontend/version.json` (2.3.0), gesetzt und geprüft über `npm run version:setzen`/`version:pruefen`, Test `versionsnummernEineQuelle`. Undeklarierte Importe, tote Einträge und `overrides` bleiben offen (kein Paket).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt; undeklarierte Importe, tote Einträge und `overrides` später.
 - **Fundstelle:** `backend/routes/auth.js:7`; `frontend/src/components/chat/useChatVerwaltung.ts`,
   `frontend/src/components/konfi/views/EventDetailView.tsx`, `frontend/src/contexts/ModalContext.tsx`
   (Import `@ionic/core`); `frontend/package.json:25,33,38` (`@types/qrcode` in `dependencies`,
@@ -315,6 +325,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-11: Startbündel lädt 1,39 MB Icon-Chunk (305 kB gzip) sofort; drei Build-Warnungen
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — der Icon-Chunk lädt weiter beim Start. Später.
 - **Fundstelle:** `frontend/src/components/shared/icons.ts`, `frontend/src/utils/badgeIcons.ts`;
   Build-Ausgabe (`vite build`) Zeilen 305–311
 - **Kennzeichnung:** reproduziert (`cd frontend && npm run build`, 61,6 s gesamt, davon Vite
@@ -336,6 +347,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-12: Zwei der als „harmlos" eingestuften Hook-Warnungen haben sichtbare Nebenwirkungen
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `Math.random()` im Render der Begrüßung und das memoisierte `Date.now()` stehen weiter. Später.
 - **Fundstelle:** `frontend/src/components/teamer/pages/TeamerDashboardPage.tsx:412`,
   `frontend/src/components/konfi/modals/ChallengeDetailModal.tsx:374`
 - **Kennzeichnung:** aus Code gelesen (10 Warnungen der sechs Regeln stichprobenartig geprüft)
@@ -489,3 +501,5 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
   `./gradlew :app:compileReleaseJavaWithJavac --info | grep -iE 'source|target'`.
 - Ob die Backend-Testsuite auf Node 22 und 26 dieselben Ergebnisse liefert (CI-Job einmal auf
   `node-version: 22` laufen lassen).
+
+**Stand 27.09.2026:** `node -v` im Backend-Container v26.10.0 (Auftrag `docs/auftraege/lokaler-agent/01-vor-dem-deploy.md`, Nr. 15). Die übrigen Messungen im Container und auf dem CI-Runner: später.
