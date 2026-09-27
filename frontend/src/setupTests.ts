@@ -4,6 +4,21 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// Node ab 25 bringt ein eigenes localStorage mit. Ohne --localstorage-file ist
+// es undefined und verdeckt das von jsdom: Preferences (Web) und der
+// offlineCache liefen ins Leere, und Tests, die unter Node 22 gruen waren,
+// fielen im CI (Node 26). Dann das von jsdom einsetzen.
+const jsdomFenster = (globalThis as { jsdom?: { window: Window } }).jsdom?.window;
+for (const name of ['localStorage', 'sessionStorage'] as const) {
+  if (jsdomFenster && typeof globalThis[name] === 'undefined') {
+    Object.defineProperty(globalThis, name, {
+      value: jsdomFenster[name],
+      configurable: true,
+      writable: true,
+    });
+  }
+}
+
 // Mock matchMedia
 window.matchMedia = window.matchMedia || function() {
   return {

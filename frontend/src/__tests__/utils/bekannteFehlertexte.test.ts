@@ -287,7 +287,7 @@ function fehlertexteImCode(): Map<string, string> {
         texte.forEach((t) => merke(t, wo));
         for (const name of namen) {
           // Lokale Konstante derselben Datei (alle gleichnamigen)
-          for (const decl of quelle.matchAll(new RegExp(`\\bconst\\s+${name.replace(/\$/g, '\\$')}\\s*(?::[^=]+)?=`, 'g'))) {
+          for (const decl of quelle.matchAll(new RegExp(`\\bconst\\s+${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(?::[^=]+)?=`, 'g'))) {
             const init = initialisierer(quelle, (decl.index ?? 0) + decl[0].length);
             const innen = ganzeWerte(init);
             innen.texte.forEach((t) => merke(t, `${wo} (${name})`));
@@ -363,7 +363,7 @@ describe('Zugelassene Server-Texte: wörtlich und ohne Platzhalter im Backend', 
 
   it.each([...ZUGELASSENE_SERVERTEXTE])('%s', (text) => {
     // Als EIGENES Literal, nicht nur als Teil eines laengeren Textes.
-    const alsLiteral = [`'${text.replace(/'/g, "\\'")}'`, `"${text}"`, `\`${text}\``];
+    const alsLiteral = [`'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`, `"${text}"`, `\`${text}\``];
     expect(alsLiteral.some((l) => buchung.includes(l))).toBe(true);
   });
 });

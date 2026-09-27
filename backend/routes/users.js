@@ -216,7 +216,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       });
 
     } catch (err) {
- console.error(`Database error in GET /users/${id}:`, err);
+ console.error('Database error in GET /users/%s:', id, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -522,7 +522,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Benutzername oder E-Mail existiert bereits' });
       }
- console.error(`Database error in PUT /users/${id}:`, err);
+ console.error('Database error in PUT /users/%s:', id, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -647,7 +647,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // In der neuen Stamm-Gemeinde wird aus "weitere" jetzt "stamm".
       liveUpdate.sendToOrgAdmins(ziel.organization_id, 'users', 'update', { userId });
     } catch (nachErr) {
-      console.error(`Nacharbeit nach Umzug von User ${userId} fehlgeschlagen:`, nachErr);
+      console.error('Nacharbeit nach Umzug von User %s fehlgeschlagen:', userId, nachErr);
     }
     return true;
   }
@@ -707,7 +707,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
           await client.query('COMMIT');
         } catch (err) {
           await client.query('ROLLBACK').catch(() => {});
-          console.error(`Database error in DELETE /users/${id} (Mitgliedschaft):`, err);
+          console.error('Database error in DELETE /users/%s (Mitgliedschaft):', id, err);
           return res.status(500).json({ error: 'Datenbankfehler' });
         } finally {
           client.release();
@@ -778,7 +778,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       const umgezogen = await kontoZiehtUm(req, res, parseInt(id), organizationId);
       if (umgezogen) return;
     } catch (err) {
-      console.error(`Database error in DELETE /users/${id} (Umzug):`, err);
+      console.error('Database error in DELETE /users/%s (Umzug):', id, err);
       if (!res.headersSent) return res.status(500).json({ error: 'Datenbankfehler' });
       return;
     }
@@ -948,7 +948,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       }
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
-      console.error(`Database error in DELETE /users/${id}:`, err);
+      console.error('Database error in DELETE /users/%s:', id, err);
       return res.status(500).json({ error: 'Datenbankfehler' });
     } finally {
       // KEIN client.release() im try — nur hier. Die Nacharbeit unten
@@ -987,7 +987,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     } catch (nachErr) {
       // Der Benutzer ist geloescht — das ist festgeschrieben. Ein Fehler beim
       // Aufraeumen darf die Antwort nicht mehr in einen 500 kippen.
-      console.error(`Aufraeumen nach DELETE /users/${id} fehlgeschlagen:`, nachErr);
+      console.error('Aufraeumen nach DELETE /users/%s fehlgeschlagen:', id, nachErr);
     }
 
     res.json({ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false });
@@ -996,7 +996,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     try {
       liveUpdate.sendToOrgAdmins(organizationId, 'users', 'delete', { userId: parseInt(id) });
     } catch (liveErr) {
-      console.error(`Live-Update nach DELETE /users/${id} fehlgeschlagen:`, liveErr);
+      console.error('Live-Update nach DELETE /users/%s fehlgeschlagen:', id, liveErr);
     }
   });
 
@@ -1194,7 +1194,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         liveUpdate.sendToOrgAdmins(organizationId, 'users', 'update', { userId: parseInt(userId) });
 
     } catch (err) {
-      console.error(`Database error in POST /users/${userId}/jahrgaenge:`, err);
+      console.error('Database error in POST /users/%s/jahrgaenge:', userId, err);
         if (!res.headersSent) res.status(500).json({ error: 'Datenbankfehler beim Zuweisen der Jahrgänge' });
     }
   });
@@ -1246,7 +1246,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       const { rows } = await db.query(query, [id, organizationId]);
       res.json(rows);
     } catch (err) {
- console.error(`Database error in GET /users/${id}/jahrgaenge:`, err);
+ console.error('Database error in GET /users/%s/jahrgaenge:', id, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1348,7 +1348,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       }), 'PUT /users/:id/reset-password (Mail)');
 
     } catch (err) {
- console.error(`Database error in PUT /users/${id}/reset-password:`, err);
+ console.error('Database error in PUT /users/%s/reset-password:', id, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
