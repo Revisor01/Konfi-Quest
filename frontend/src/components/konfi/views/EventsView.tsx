@@ -267,7 +267,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     <div>
       <SectionHeader
         title="Deine Events"
-        subtitle="Termine und Veranstaltungen"
+        subtitle="Gottesdienste, Konfi-Tage und Fahrten"
         icon={ICON_TERMIN_GEFUELLT}
         preset="events"
         stats={statsMitSprung}

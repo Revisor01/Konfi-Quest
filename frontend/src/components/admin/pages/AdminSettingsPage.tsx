@@ -158,7 +158,7 @@ const AdminSettingsPage: React.FC = () => {
       title: 'Material', icon: ICON_DATEI_GEFUELLT, color: 'var(--app-color-material)',
       paragraphs: [
         'Im Material-Bereich legst du Unterlagen und Dokumente fürs Team ab.',
-        'Material kann allgemein sein oder direkt einem Event zugeordnet werden — so finden alle die passenden Dokumente zum richtigen Termin.',
+        'Material kann allgemein sein oder direkt einem Event zugeordnet werden — so finden alle die passenden Dokumente zum richtigen Event.',
         'Unter Sichtbarkeit legst du fest, für wen es gedacht ist: nach Jahrgang — dann sieht es nur das Team dieses Jahrgangs — oder ausdrücklich für alle, dann sieht es das ganze Team der Gemeinde. Freigeben und zurückziehen kann nur der Org-Admin.',
         'Wichtig: Material ist nur für das Team sichtbar, nicht für die Konfis. Für alle heißt also immer: das ganze Team.',
       ],
@@ -166,7 +166,7 @@ const AdminSettingsPage: React.FC = () => {
     wrapped: {
       title: 'Jahresrückblick', icon: ICON_FUNKELN, color: 'var(--app-color-wrapped)',
       paragraphs: [
-        'Der Jahresrückblick zeigt jeder Konfi und jeder Teamer:in am Ende eines Abschnitts, was sie erlebt hat — Termine, Punkte, Abzeichen, ihre Schwerpunkte und die Momente aus den Challenges.',
+        'Der Jahresrückblick zeigt jeder Konfi und jeder Teamer:in am Ende eines Abschnitts, was sie erlebt hat — Events, Punkte, Badges, ihre Schwerpunkte und die Momente aus den Challenges.',
         'Ein Jahrgang läuft über mehrere Jahre. Deshalb kannst du mehrere Ausgaben anlegen und jeder einen eigenen Namen geben: „Dein erstes Jahr", „Zwischenstand", „Dein Abschluss". Frühere Ausgaben bleiben erhalten, wenn eine neue dazukommt.',
         'Jede Ausgabe wird beim Erstellen sofort freigegeben, und alle Betroffenen bekommen eine Mitteilung. Einzelne Ausgaben lassen sich gezielt löschen, ohne die anderen anzurühren.',
         'Als Admin verwaltest du die Rückblicke deiner eigenen Jahrgänge. Die Leitung sieht alle Jahrgänge und verwaltet zusätzlich die Rückblicke des Teams.',

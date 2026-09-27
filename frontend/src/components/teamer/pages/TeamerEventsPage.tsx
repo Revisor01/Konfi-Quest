@@ -1201,7 +1201,7 @@ const TeamerEventsPage: React.FC = () => {
                   <div className="app-info-row">
                     <IonIcon icon={ICON_KOPIEREN_GEFUELLT} className="app-info-row__icon app-icon-color--events" />
                     <div>
-                      <div className="app-info-row__label">Terminreihe</div>
+                      <div className="app-info-row__label">Event-Serie</div>
                       <div className="app-info-row__value">Teil einer Serie</div>
                     </div>
                   </div>
@@ -1334,7 +1334,7 @@ const TeamerEventsPage: React.FC = () => {
               // ein Hinweis an der Stelle, wo sonst ein Knopf waere.
               <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: 'var(--app-text-betont)' }}>
                 <IonIcon icon={ICON_ABSAGE} style={{ verticalAlign: 'middle', marginRight: 'var(--app-abstand-kompakt)' }} />
-                Dieser Termin ist abgesagt
+                Dieses Event ist abgesagt
               </IonNote>
             ) : isPast ? (
                   selectedEvent.is_registered ? (
@@ -1717,7 +1717,7 @@ const TeamerEventsPage: React.FC = () => {
             {/* Header mit Stats */}
             <SectionHeader
               title="Events"
-              subtitle="Termine und Veranstaltungen"
+              subtitle="Gottesdienste, Konfi-Tage und Fahrten"
               icon={ICON_TERMIN_GEFUELLT}
               preset="events"
               stats={statsData}
@@ -2017,12 +2017,12 @@ const TeamerEventsPage: React.FC = () => {
   // handledEventId verhindert, dass der Effekt oben sofort wieder nachfragt.
   const renderJahrgangHinweis = () => (
     <IonPage ref={pageRef}>
-      <AppKopfzeile titel="Termin" onZurueck={() => setJahrgangHinweis(false)} />
+      <AppKopfzeile titel="Event" onZurueck={() => setJahrgangHinweis(false)} />
       <IonContent className="app-gradient-background" fullscreen>
         <EmptyState
           icon={ICON_JAHRGANG}
           title="Nicht deinem Jahrgang zugeordnet"
-          message="Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
+          message="Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
           iconColor="var(--app-color-events)"
         />
       </IonContent>

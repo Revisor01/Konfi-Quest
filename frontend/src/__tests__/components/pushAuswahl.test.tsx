@@ -68,8 +68,8 @@ const KONFI_ANTWORT = {
   stumm: [],
   gruppen: [
     { id: 'konfi_chat', name: 'Nachrichten', beschreibung: 'Neue Nachrichten in deinen Chats', aktiv: true },
-    { id: 'konfi_termine', name: 'Termine', beschreibung: 'Anmeldungen, Änderungen, Absagen und Erinnerungen', aktiv: true },
-    { id: 'konfi_fortschritt', name: 'Punkte und Abzeichen', beschreibung: 'Punkte, Abzeichen, Level, Challenges und der Rückblick', aktiv: true }
+    { id: 'konfi_termine', name: 'Events', beschreibung: 'Anmeldungen, Änderungen, Absagen und Erinnerungen', aktiv: true },
+    { id: 'konfi_fortschritt', name: 'Punkte und Badges', beschreibung: 'Punkte, Badges, Level, Challenges und der Rückblick', aktiv: true }
   ]
 };
 
@@ -92,8 +92,8 @@ describe('PushAuswahlModal', () => {
   it('zeigt genau die Gruppen des Servers -- bei Konfis drei, ohne Verwaltung', async () => {
     render(<PushAuswahlModal onClose={() => {}} variante="purple" />);
     expect(await screen.findByText('Nachrichten')).toBeInTheDocument();
-    expect(screen.getByText('Termine')).toBeInTheDocument();
-    expect(screen.getByText('Punkte und Abzeichen')).toBeInTheDocument();
+    expect(screen.getByText('Events')).toBeInTheDocument();
+    expect(screen.getByText('Punkte und Badges')).toBeInTheDocument();
     expect(screen.queryByText('Anfragen und Freigaben')).toBeNull();
     expect(apiGet).toHaveBeenCalledWith('/notifications/preferences');
   });
@@ -135,26 +135,26 @@ describe('PushAuswahlModal', () => {
 
   it('Gruppe abwaehlen schickt PUT mit der vollstaendigen Abwahl-Liste; wieder anwaehlen leert sie', async () => {
     render(<PushAuswahlModal onClose={() => {}} variante="purple" />);
-    await screen.findByText('Termine');
+    await screen.findByText('Events');
 
-    await umschalten('Termine', false);
+    await umschalten('Events', false);
     await waitFor(() => expect(apiPut).toHaveBeenLastCalledWith('/notifications/preferences', { stumm: ['konfi_termine'] }));
 
     await umschalten('Nachrichten', false);
     await waitFor(() => expect(apiPut).toHaveBeenLastCalledWith('/notifications/preferences', { stumm: ['konfi_termine', 'konfi_chat'] }));
 
-    await umschalten('Termine', true);
+    await umschalten('Events', true);
     await waitFor(() => expect(apiPut).toHaveBeenLastCalledWith('/notifications/preferences', { stumm: ['konfi_chat'] }));
     expect(apiPut).toHaveBeenCalledTimes(3);
   });
 
   it('Hauptschalter aus schickt push_enabled=false und sperrt die Gruppen-Schalter', async () => {
     render(<PushAuswahlModal onClose={() => {}} variante="teamer" />);
-    await screen.findByText('Termine');
+    await screen.findByText('Events');
 
     await umschalten('Mitteilungen aufs Handy', false);
     expect(apiPut).toHaveBeenLastCalledWith('/notifications/preferences', { push_enabled: false });
-    await waitFor(() => expect(schalter('Termine').disabled).toBe(true));
+    await waitFor(() => expect(schalter('Events').disabled).toBe(true));
     expect(schalter('Mitteilungen aufs Handy').disabled).toBe(false);
   });
 
@@ -168,7 +168,7 @@ describe('PushAuswahlModal', () => {
 
   it('mit Berechtigung gibt es den Hinweis nicht', async () => {
     render(<PushAuswahlModal onClose={() => {}} variante="purple" />);
-    await screen.findByText('Termine');
+    await screen.findByText('Events');
     expect(screen.queryByText('Mitteilungen erlauben')).toBeNull();
   });
 });

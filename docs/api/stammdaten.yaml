@@ -345,7 +345,7 @@ paths:
                   badge_name: { type: string }
                   geprueft: { type: integer, description: "Anzahl geprüfter Personen der Zielrolle" }
                   neu_vergeben: { type: integer, description: "Anzahl dabei neu vergebener Exemplare" }
-        "400": { description: "Das Abzeichen ist nicht aktiv" }
+        "400": { description: "Das Badge ist nicht aktiv" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "Abzeichen nicht gefunden oder keine Berechtigung (fremde Org oder unbekannte id)" }

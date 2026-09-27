@@ -436,7 +436,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                     }}
                   >
                     Angeboten werden nur Personen aus {eventJahrgaenge.length === 1 ? 'dem Jahrgang' : 'den Jahrgängen'} dieses
-                    Termins ({eventJahrgaenge.join(', ')}). Die Gemeindeleitung ist davon ausgenommen.
+                    Events ({eventJahrgaenge.join(', ')}). Die Gemeindeleitung ist davon ausgenommen.
                   </p>
                 )}
                 {filteredKonfis.length === 0 ? (
@@ -448,7 +448,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                     <IonIcon icon={ICON_SUCHE_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-riesig)', opacity: 0.3, marginBottom: 'var(--app-abstand-basis)' }} />
                     <p style={{ margin: '0', fontSize: 'var(--app-text-standard)' }}>
                       {jahrgangsGrenzeAktiv
-                        ? 'Keine passenden Personen — nur wer zu einem Jahrgang dieses Termins gehört, lässt sich eintragen'
+                        ? 'Keine passenden Personen — nur wer zu einem Jahrgang dieses Events gehört, lässt sich eintragen'
                         : 'Keine Personen gefunden'}
                     </p>
                   </div>

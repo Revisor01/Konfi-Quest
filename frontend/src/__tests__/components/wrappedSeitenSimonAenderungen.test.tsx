@@ -57,6 +57,7 @@ describe('1. "Dein letzter Termin" ist von der Termin-Seite verschwunden', () =>
     const { container } = render(<EventsSlide isActive events={EVENTS} />);
     expect(text(container)).not.toContain('Konfi-Freizeit Ratzeburg');
     expect(text(container)).not.toContain('Dein letzter Termin');
+    expect(text(container)).not.toContain('Dein letztes Event');
   });
 
   it('der Merkzettel-Kasten ist ganz weg, nicht nur leer', () => {
@@ -76,7 +77,7 @@ describe('1. "Dein letzter Termin" ist von der Termin-Seite verschwunden', () =>
     const { container } = render(<EventsSlide isActive events={EVENTS} />);
     expect(container.querySelector('.kat-zahl')).not.toBeNull();
     const t = text(container);
-    expect(t).toContain('Deine Termine');
+    expect(t).toContain('Deine Events');
     expect(t).toContain('Du warstöfter daals mancheMöbel.');
     expect(t).toContain('Du hast kaum etwas ausgelassen.');
   });

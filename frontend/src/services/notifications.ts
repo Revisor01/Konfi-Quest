@@ -63,13 +63,13 @@ const KANAELE: Kanal[] = [
   },
   {
     id: 'konfi_termine',
-    name: 'Termine',
+    name: 'Events',
     description: 'Anmeldungen, Änderungen, Absagen und Erinnerungen',
   },
   {
     id: 'konfi_fortschritt',
-    name: 'Punkte und Abzeichen',
-    description: 'Punkte, Abzeichen, Level, Challenges und der Rückblick',
+    name: 'Punkte und Badges',
+    description: 'Punkte, Badges, Level, Challenges und der Rückblick',
   },
   {
     // Geht an Leitung und org_admin; bei der Challenge-Einreichung zusaetzlich

@@ -311,7 +311,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
         // Show action sheet for series deletion
         const buttons: ActionSheetButton[] = [
           {
-            text: 'Nur diesen Termin löschen',
+            text: 'Nur dieses Event löschen',
             icon: 'trash-outline',
             handler: () => deleteSingleEvent(event)
           }
@@ -320,15 +320,15 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
         // ohnehin die ganze Serie gemeint ist
         if (followingEvents.length > 1 && followingEvents.length < seriesEvents.length + 1) {
           buttons.push({
-            text: `Diesen + alle folgenden löschen (${followingEvents.length} Termine)`,
+            text: `Dieses + alle folgenden löschen (${followingEvents.length} Events)`,
             icon: 'trash-outline',
             role: 'destructive',
-            handler: () => deleteSeriesEvents(followingEvents, 'Diesen und alle folgenden Termine')
+            handler: () => deleteSeriesEvents(followingEvents, 'dieses und alle folgenden')
           });
         }
         buttons.push(
           {
-            text: `Ganze Serie löschen (${seriesEvents.length + 1} Termine)`,
+            text: `Ganze Serie löschen (${seriesEvents.length + 1} Events)`,
             icon: 'warning-outline',
             role: 'destructive',
             handler: () => deleteSeriesEvents([...seriesEvents, event], 'die ganze Serie')
@@ -339,8 +339,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           }
         );
         presentActionSheet({
-          header: `Serie-Event löschen`,
-          subHeader: `"${event.name}" ist Teil einer Serie mit ${seriesEvents.length + 1} Terminen.`,
+          header: 'Event einer Serie löschen',
+          subHeader: `"${event.name}" ist Teil einer Serie mit ${seriesEvents.length + 1} Events.`,
           buttons
         });
         return;
@@ -471,7 +471,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     let nachDemSchliessen: (() => void) | null = null;
     presentAlert({
       header: 'Serie löschen',
-      message: `Wirklich ${label} mit ${seriesEvents.length} Terminen löschen?`,
+      message: `Wirklich ${label} löschen (${seriesEvents.length} Events)?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -499,7 +499,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             if (fehler.length > 0) {
               const firstError = fehlerDaten(fehler[0].reason)?.error;
               setError(
-                `${fehler.length} von ${seriesEvents.length} Terminen konnten nicht gelöscht werden` +
+                `${fehler.length} von ${seriesEvents.length} Events konnten nicht gelöscht werden` +
                 (firstError ? `: ${firstError}` : '')
               );
             }
@@ -533,7 +533,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     });
     presentAlert({
       header: 'Wirklich löschen?',
-      message: `${konflikte.length} Termin${konflikte.length === 1 ? '' : 'e'} der Serie ${konflikte.length === 1 ? 'ist' : 'sind'} nicht leer. Beim Löschen geht verloren: ${verluste}. Das lässt sich nicht rückgängig machen.`,
+      message: `${konflikte.length} Event${konflikte.length === 1 ? '' : 's'} der Serie ${konflikte.length === 1 ? 'ist' : 'sind'} nicht leer. Beim Löschen geht verloren: ${verluste}. Das lässt sich nicht rückgängig machen.`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -549,7 +549,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             if (failed.length > 0) {
               const firstError = fehlerDaten((failed[0] as PromiseRejectedResult).reason)?.error;
               setError(
-                `${failed.length} von ${konflikte.length} Terminen konnten nicht gelöscht werden` +
+                `${failed.length} von ${konflikte.length} Events konnten nicht gelöscht werden` +
                 (firstError ? `: ${firstError}` : '')
               );
             }

@@ -96,7 +96,7 @@ describe('Bestaetigen von Hand: Kapazitaet und war_auf_warteliste', () => {
       const res = await setzeStatus(eventId, zwei.id, 'confirmed');
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Der Termin ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.');
+      expect(res.body.error).toBe('Das Event ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.');
       // Nichts geschrieben: die Wartende wartet weiter.
       expect((await lies(zwei.id)).status).toBe('waitlist');
       const { rows: [zahl] } = await db.query(

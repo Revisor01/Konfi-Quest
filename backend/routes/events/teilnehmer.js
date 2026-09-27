@@ -52,7 +52,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       if (event.cancelled) {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
+        return res.status(400).json({ error: 'Dieses Event ist abgesagt' });
       }
 
       // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
@@ -61,7 +61,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+        return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
       }
 
       // 2. Validate user
@@ -90,7 +90,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         await client.query('ROLLBACK');
         client.release();
         return res.status(403).json({
-          error: `${user.display_name} gehört zu keinem Jahrgang dieses Termins`,
+          error: `${user.display_name} gehört zu keinem Jahrgang dieses Events`,
           error_code: 'person_jahrgang_fremd'
         });
       }
@@ -363,7 +363,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         const zugriff = await darfTermin(client, req, eventId);
         if (!zugriff.erlaubt) {
           await client.query('ROLLBACK');
-          return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+          return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
         }
 
         // Falls der Konfi als ANWESEND verbucht war, beim Löschen die vergebenen
@@ -520,7 +520,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         const zugriff = await darfTermin(client, req, eventId);
         if (!zugriff.erlaubt) {
           await client.query('ROLLBACK');
-          return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+          return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
         }
 
         if (booking.status === status) {
@@ -534,7 +534,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         // bleibt offen: das ist keine Anmeldung, sondern das Gegenteil.
         if (booking.cancelled && status === 'confirmed') {
           await client.query('ROLLBACK');
-          return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
+          return res.status(400).json({ error: 'Dieses Event ist abgesagt' });
         }
 
         // Vorheriger Status: bei Wechsel von 'waitlist' -> 'confirmed' ist es eine
@@ -617,7 +617,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           if (frei !== null && frei <= 0) {
             await client.query('ROLLBACK');
             return res.status(400).json({
-              error: 'Der Termin ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.'
+              error: 'Das Event ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.'
             });
           }
 

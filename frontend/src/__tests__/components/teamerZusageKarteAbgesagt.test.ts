@@ -64,7 +64,7 @@ describe('Die Teamer-Seite kennt abgesagte Termine', () => {
     // Der Hinweis muss im ERSTEN Zweig stehen, also direkt hinter der
     // istAbgesagt-Bedingung -- nicht irgendwo weiter unten.
     const bedingung = code.search(/const\s+zusageKarteInhalt\s*=\s*istAbgesagt\(selectedEvent\)\s*\?/);
-    const hinweis = code.indexOf('Dieser Termin ist abgesagt');
+    const hinweis = code.indexOf('Dieses Event ist abgesagt');
     expect(bedingung).toBeGreaterThan(-1);
     expect(hinweis).toBeGreaterThan(bedingung);
     // Zwischen Bedingung und Hinweis darf KEIN WEITERER ZWEIG liegen -- der
@@ -87,7 +87,7 @@ describe('Die Teamer-Seite kennt abgesagte Termine', () => {
     // ZusageKnoepfen stehen, sonst laedt die Seite weiter zur Anmeldung an
     // einem Termin ein, den das Backend ablehnt.
     const code = quelle(TEAMER);
-    const abgesagtStelle = code.indexOf('Dieser Termin ist abgesagt');
+    const abgesagtStelle = code.indexOf('Dieses Event ist abgesagt');
     const ersteKnoepfe = code.indexOf('<ZusageKnoepfe');
     expect(abgesagtStelle).toBeGreaterThan(-1);
     expect(ersteKnoepfe).toBeGreaterThan(-1);
@@ -129,7 +129,7 @@ describe('Alle drei Rollen sagen dasselbe', () => {
   });
 
   it('Konfi und Teamer zeigen denselben Wortlaut', () => {
-    expect(quelle(KONFI)).toContain('Dieser Termin ist abgesagt');
-    expect(quelle(TEAMER)).toContain('Dieser Termin ist abgesagt');
+    expect(quelle(KONFI)).toContain('Dieses Event ist abgesagt');
+    expect(quelle(TEAMER)).toContain('Dieses Event ist abgesagt');
   });
 });

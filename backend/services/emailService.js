@@ -308,7 +308,7 @@ Hallo ${name},
 
 der Jahrgang "${jahrgangName}" in eurer Organisation "${orgName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} automatisch gelöscht.
 
-Das ist die letzte Gelegenheit, Konfis dieses Jahrgangs noch zu Teamer:innen zu befördern. Beförderte Teamer:innen behalten ihre Punkte und Abzeichen und bleiben euch erhalten - alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt.
+Das ist die letzte Gelegenheit, Konfis dieses Jahrgangs noch zu Teamer:innen zu befördern. Beförderte Teamer:innen behalten ihre Punkte und Badges und bleiben euch erhalten - alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt.
 
 Wenn ihr nichts unternehmt, geschieht die Löschung automatisch.
 
@@ -321,7 +321,7 @@ Dein Konfi Quest Team
       <p>der Jahrgang <strong>${jahrgangName}</strong> in eurer Organisation <strong>${orgName}</strong> wird bald gelöscht:</p>
       <div class="date">Löschung in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'}</div>
       <div class="warning">
-        <strong>Letzte Chance:</strong> Befördert jetzt noch Konfis dieses Jahrgangs zu Teamer:innen, wenn sie euch erhalten bleiben sollen. Beförderte Teamer:innen behalten ihre Punkte und Abzeichen. Alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt. Geschieht nichts, wird der Jahrgang automatisch gelöscht.
+        <strong>Letzte Chance:</strong> Befördert jetzt noch Konfis dieses Jahrgangs zu Teamer:innen, wenn sie euch erhalten bleiben sollen. Beförderte Teamer:innen behalten ihre Punkte und Badges. Alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt. Geschieht nichts, wird der Jahrgang automatisch gelöscht.
       </div>
   `);
 
@@ -408,7 +408,7 @@ const sendKonfiMatrixEmail = async (email, adminName, jahrgangName, type, rows =
       </table>`;
   } else {
     // Anwesenheit: Name + besuchte/gesamte Pflicht-Events
-    const textLines = rows.map(r => `${r.display_name} | Anwesenheit: ${r.present_count} von ${r.total_count} Pflicht-Terminen`);
+    const textLines = rows.map(r => `${r.display_name} | Anwesenheit: ${r.present_count} von ${r.total_count} Pflicht-Events`);
     textBody = textLines.length > 0 ? textLines.join('\n') : 'Keine Konfis in diesem Jahrgang.';
 
     const rowsHtml = rows.length > 0
@@ -424,7 +424,7 @@ const sendKonfiMatrixEmail = async (email, adminName, jahrgangName, type, rows =
         <thead>
           <tr>
             <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Konfi</th>
-            <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Anwesenheit (Pflicht-Termine)</th>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Anwesenheit (Pflicht-Events)</th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>

@@ -185,7 +185,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Konfi wirklich löschen?',
-      message: `"${konfi.name}" wird unwiderruflich gelöscht.\n\nDabei gehen alle Punkte, Abzeichen, Aktivitäten und Chat-Nachrichten dieses Konfis dauerhaft verloren. Das lässt sich nicht rückgängig machen.`,
+      message: `"${konfi.name}" wird unwiderruflich gelöscht.\n\nDabei gehen alle Punkte, Badges, Aktivitäten und Chat-Nachrichten dieses Konfis dauerhaft verloren. Das lässt sich nicht rückgängig machen.`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -218,7 +218,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         // (GET /admin/konfis/teamer, auch fuer Teamer:innen lesbar) sagt
         // nicht, wer das ist -- deshalb nennt die Abfrage beide Ausgaenge,
         // und die Erfolgsmeldung richtet sich nach der Antwort (konto_bleibt).
-        message: `Teamer:in "${name}" wirklich löschen?\n\nDas Konto wird mit allen zugehörigen Daten entfernt. Punkte und Abzeichen aus einer früheren Konfi-Zeit gehen dabei verloren.\n\nArbeitet die Person auch in einer anderen Gemeinde mit, wird sie nur aus deiner Gemeinde entfernt; ihr Konto bleibt dort bestehen.`,
+        message: `Teamer:in "${name}" wirklich löschen?\n\nDas Konto wird mit allen zugehörigen Daten entfernt. Punkte und Badges aus einer früheren Konfi-Zeit gehen dabei verloren.\n\nArbeitet die Person auch in einer anderen Gemeinde mit, wird sie nur aus deiner Gemeinde entfernt; ihr Konto bleibt dort bestehen.`,
         buttons: [
           { text: 'Abbrechen', role: 'cancel', handler: () => resolve() },
           {

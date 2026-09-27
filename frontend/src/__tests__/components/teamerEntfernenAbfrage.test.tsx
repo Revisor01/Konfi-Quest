@@ -137,7 +137,7 @@ describe('Teamer:in aus der Konfi-Liste entfernen', () => {
     expect(a.header).toBe('Teamer:in löschen');
     expect(a.message).toBe(
       'Teamer:in "Test Teamer 1" wirklich löschen?\n\n'
-      + 'Das Konto wird mit allen zugehörigen Daten entfernt. Punkte und Abzeichen aus einer früheren Konfi-Zeit gehen dabei verloren.\n\n'
+      + 'Das Konto wird mit allen zugehörigen Daten entfernt. Punkte und Badges aus einer früheren Konfi-Zeit gehen dabei verloren.\n\n'
       + 'Arbeitet die Person auch in einer anderen Gemeinde mit, wird sie nur aus deiner Gemeinde entfernt; ihr Konto bleibt dort bestehen.'
     );
   });

@@ -126,7 +126,7 @@ describe('Push-Gruppen: Abwahl in der App', () => {
       expect(await postfach(KONFI, 'bonus_points')).toBe(1);
     });
 
-    it('unbekannte Art faellt auf "Punkte und Abzeichen" und laesst sich darueber stummschalten', async () => {
+    it('unbekannte Art faellt auf "Punkte und Badges" und laesst sich darueber stummschalten', async () => {
       await stummSetzen(KONFI, [GRUPPE_FORTSCHRITT]);
       await PushService.sendToUser(db, KONFI, {
         title: 'x', body: 'y', data: { type: 'noch_nie_gesehen', organization_id: String(ORG1) }

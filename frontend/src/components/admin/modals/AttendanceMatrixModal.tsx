@@ -378,8 +378,8 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
         ) : data.events.length === 0 ? (
           <EmptyState
             icon={ICON_TERMIN}
-            title="Keine Pflichtevents"
-            message="Für diesen Jahrgang gibt es keine Pflichtevents."
+            title="Keine Pflicht-Events"
+            message="Für diesen Jahrgang gibt es keine Pflicht-Events."
           />
         ) : data.konfis.length === 0 ? (
           <EmptyState
@@ -394,7 +394,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                 <IonIcon icon={ICON_TERMIN} />
               </div>
               <IonLabel>
-                {data.events.length} Pflichtevent{data.events.length === 1 ? '' : 's'} · {filteredKonfis.length} Konfi{filteredKonfis.length === 1 ? '' : 's'}
+                {data.events.length} Pflicht-Event{data.events.length === 1 ? '' : 's'} · {filteredKonfis.length} Konfi{filteredKonfis.length === 1 ? '' : 's'}
               </IonLabel>
             </IonListHeader>
             <IonCard className="app-card">

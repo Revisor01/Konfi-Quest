@@ -117,7 +117,7 @@ async function takeBackEventPoints(client, userId, eventId) {
 }
 
 /** Fester Text, wenn eine Absage ohne Grund ausgesprochen wurde. */
-const ABSAGE_OHNE_GRUND = 'Termin abgesagt';
+const ABSAGE_OHNE_GRUND = 'Event abgesagt';
 
 /**
  * Meldet beim Absagen eines Termins alle Angemeldeten und Wartenden ab.
@@ -785,7 +785,7 @@ async function darfTeamerAnDiesenTermin(client, event, userId) {
   return gehoertZumTermin(client, userId, event.id);
 }
 
-const JAHRGANG_FREMD = 'Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist';
+const JAHRGANG_FREMD = 'Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist';
 
 /**
  * DER Buchungskern: eine Selbst-Anmeldung, komplett.
@@ -849,7 +849,7 @@ async function bucheTermin(client, eingabe) {
   //     Das Zuruecknehmen der Absage laeuft NICHT hier durch, sondern ueber
   //     hebeAbsageAbmeldungenAuf (eigenes UPDATE) — der Riegel behindert es
   //     nicht.
-  if (event.cancelled) return fehler(400, 'Dieser Termin ist abgesagt');
+  if (event.cancelled) return fehler(400, 'Dieses Event ist abgesagt');
 
   // 2. Doppelbuchung — vor allen fachlichen Pruefungen, damit ein zweiter
   //    Versuch immer 409 meldet und nicht je nach Termin etwas anderes.
@@ -1112,15 +1112,15 @@ async function setzeTeamerZusage(client, eingabe) {
        FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE`,
     [eventId, orgId]
   );
-  if (!event) return fehler(404, 'Termin nicht gefunden');
-  if (event.cancelled) return fehler(400, 'Dieser Termin ist abgesagt');
+  if (!event) return fehler(404, 'Event nicht gefunden');
+  if (event.cancelled) return fehler(400, 'Dieses Event ist abgesagt');
   // Nur dort, wo Teamer:innen ueberhaupt gebraucht werden. Bei reinen
   // Konfi-Terminen gibt es nichts zuzusagen.
   if (!event.teamer_needed && !event.teamer_only) {
-    return fehler(400, 'Für diesen Termin wird kein Team gesucht');
+    return fehler(400, 'Für dieses Event wird kein Team gesucht');
   }
   if (new Date(event.event_date) <= new Date()) {
-    return fehler(400, 'Der Termin liegt bereits in der Vergangenheit');
+    return fehler(400, 'Das Event liegt bereits in der Vergangenheit');
   }
   // Dieselbe Jahrgangsgrenze wie im Buchungskern -- sonst liesse sich die
   // Sperre ueber diesen zweiten Weg umgehen.

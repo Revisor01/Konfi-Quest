@@ -183,7 +183,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
       expect(m.data).toMatchObject({ event_id: String(TERMIN) });
     });
 
-    it('event_reactivated: Termin findet doch statt', async () => {
+    it('event_reactivated: Event findet doch statt', async () => {
       await PushService.sendEventReactivationToKonfis(db, [USERS.konfi1.id], 'Weihnachtsgottesdienst', DATUM, ORG1, TERMIN);
 
       const [m] = await postfach(USERS.konfi1.id);

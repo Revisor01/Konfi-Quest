@@ -385,7 +385,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
           <IonCardContent>
             <IonList>
               <IonItem lines="none" className="app-datumsfeld">
-                <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
+                <IonLabel position="stacked">Datum & Uhrzeit *</IonLabel>
                 <IonDatetimeButton datetime="event-date-picker" />
               </IonItem>
               <IonItem lines="none" className="app-datumsfeld">
@@ -592,7 +592,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
 
       {/* DateTime Modals */}
       <IonModal aria-label="Datum und Uhrzeit wählen" keepContentsMounted={true}>
-        <IonDatetime aria-label="Event Datum & Uhrzeit" id="event-date-picker" value={formData.event_date}
+        <IonDatetime aria-label="Datum & Uhrzeit" id="event-date-picker" value={formData.event_date}
           max={datePickerMax}
           onIonChange={(e) => {
             const selectedDate = e.detail.value as string;

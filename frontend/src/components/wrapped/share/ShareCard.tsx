@@ -241,7 +241,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             <>
               <div className="share-label">Dein Tag</div>
               <div style={{ fontSize: 96, fontWeight: 800, lineHeight: 1.1 }}>{wt.name}</div>
-              <div className="share-subtitle">{wt.anzahl} von {wt.gesamt} Terminen</div>
+              <div className="share-subtitle">{wt.anzahl} von {wt.gesamt} Events</div>
             </>
           );
         }
@@ -529,7 +529,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             <>
               <div className="share-label">So fing es an</div>
               <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.15 }}>{an.name}</div>
-              <div className="share-subtitle">Dein erster Termin</div>
+              <div className="share-subtitle">Dein erstes Event</div>
             </>
           );
         }

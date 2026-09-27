@@ -35,14 +35,14 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-users)',
     rgb: '--app-color-users-rgb',
     title: 'Dein Postfach',
-    text: 'Oben rechts steht jetzt eine Glocke. Dort sammelt sich alles, was die App dir sagen will: Punkte, Abzeichen, Anträge, Termine, Stempel. Auch was du als Mitteilung verpasst hast, steht dort. Antippen führt an die passende Stelle.',
+    text: 'Oben rechts steht jetzt eine Glocke. Dort sammelt sich alles, was die App dir sagen will: Punkte, Badges, Anträge, Events, Stempel. Auch was du als Mitteilung verpasst hast, steht dort. Antippen führt an die passende Stelle.',
   },
   {
     icon: ICON_BENACHRICHTIGUNG,
     color: 'var(--app-color-users)',
     rgb: '--app-color-users-rgb',
     title: 'Du wählst, was aufs Handy kommt',
-    text: 'Im Profil stellst du ein, welche Mitteilungen dein Handy erreichen: Nachrichten, Termine, Punkte und Abzeichen, einzeln ab- und anschaltbar. Abgeschaltet wird nur der Weg aufs Handy — im Postfach steht trotzdem alles.',
+    text: 'Im Profil stellst du ein, welche Mitteilungen dein Handy erreichen: Nachrichten, Events, Punkte und Badges, einzeln ab- und anschaltbar. Abgeschaltet wird nur der Weg aufs Handy — im Postfach steht trotzdem alles.',
   },
   {
     icon: ICON_MOND,
@@ -63,7 +63,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
     title: 'Mitteilungen führen zum Ziel',
-    text: 'Tippst du eine Mitteilung an, landest du dort, wo sie hingehört: Punkte in der Punkte-Übersicht, ein Stempel bei den Challenges, ein Termin beim Termin selbst. Mehrtägige Termine zeigen jetzt beide Tage.',
+    text: 'Tippst du eine Mitteilung an, landest du dort, wo sie hingehört: Punkte in der Punkte-Übersicht, ein Stempel bei den Challenges, ein Event beim Event selbst. Mehrtägige Events zeigen jetzt beide Tage.',
   },
 ];
 

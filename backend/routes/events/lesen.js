@@ -667,7 +667,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           // verwaltung.js (event_delete_confirm): Feld im Rumpf, `error`
           // bleibt unveraendert -- die Store-Apps lesen nur das.
           return res.status(403).json({
-            error: 'Kein Zugriff auf diesen Termin',
+            error: 'Kein Zugriff auf dieses Event',
             error_code: 'jahrgang_nicht_zugewiesen'
           });
         }

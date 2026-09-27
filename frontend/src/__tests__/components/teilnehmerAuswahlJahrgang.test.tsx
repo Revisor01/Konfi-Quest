@@ -134,7 +134,7 @@ describe('Teilnehmerauswahl bietet nur Personen aus den Jahrgaengen des Termins 
       serverMitTermin(termin);
       rendern('teamer');
       await waitFor(() => expect(screen.getByTestId('jahrgangs-hinweis')).toBeTruthy());
-      expect(screen.getByTestId('jahrgangs-hinweis').textContent).toContain('dem Jahrgang dieses Termins (JG A)');
+      expect(screen.getByTestId('jahrgangs-hinweis').textContent).toContain('dem Jahrgang dieses Events (JG A)');
     });
   });
 
@@ -160,7 +160,7 @@ describe('Teilnehmerauswahl bietet nur Personen aus den Jahrgaengen des Termins 
       serverMitTermin(termin);
       rendern('konfi');
       await waitFor(() => expect(screen.getByTestId('jahrgangs-hinweis')).toBeTruthy());
-      expect(screen.getByTestId('jahrgangs-hinweis').textContent).toContain('den Jahrgängen dieses Termins (JG A, JG B)');
+      expect(screen.getByTestId('jahrgangs-hinweis').textContent).toContain('den Jahrgängen dieses Events (JG A, JG B)');
     });
   });
 

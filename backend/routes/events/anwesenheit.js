@@ -63,7 +63,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
       // Jahrgaengen, die sie nicht einmal in der Liste sieht.
       const zugriff = await darfTermin(client, req, eventId);
       if (!zugriff.erlaubt) {
-        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+        return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
       }
 
       await client.query('BEGIN');
@@ -315,7 +315,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
       const zugriff = await darfTermin(client, req, eventId);
       if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else {
 
       // Punkte gibt es NUR für Konfis. Teamer:innen nehmen zwar teil (Anwesenheit

@@ -31,14 +31,14 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-users)',
     rgb: '--app-color-users-rgb',
     title: 'Das Postfach',
-    text: 'Oben rechts steht jetzt eine Glocke. Sie sammelt alles an einem Ort: neue Anträge und Registrierungen, Ab- und Anmeldungen, Beiträge zur Freigabe, Termine, die auf Verbuchung warten. Antippen führt an die passende Stelle.',
+    text: 'Oben rechts steht jetzt eine Glocke. Sie sammelt alles an einem Ort: neue Anträge und Registrierungen, Ab- und Anmeldungen, Beiträge zur Freigabe, Events, die auf Verbuchung warten. Antippen führt an die passende Stelle.',
   },
   {
     icon: ICON_BENACHRICHTIGUNG,
     color: 'var(--app-color-users)',
     rgb: '--app-color-users-rgb',
     title: 'Du wählst, was aufs Handy kommt',
-    text: 'Unter „Mehr" stellst du ein, welche Mitteilungen dein Handy erreichen: Nachrichten, Termine, Punkte und Abzeichen sowie Anfragen und Freigaben. Abgeschaltet wird nur der Weg aufs Handy — im Postfach steht trotzdem alles.',
+    text: 'Unter „Mehr" stellst du ein, welche Mitteilungen dein Handy erreichen: Nachrichten, Events, Punkte und Badges sowie Anfragen und Freigaben. Abgeschaltet wird nur der Weg aufs Handy — im Postfach steht trotzdem alles.',
   },
   {
     icon: ICON_MOND,
@@ -58,8 +58,8 @@ export const SLIDES: OnboardingSlide[] = [
     icon: ICON_TERMIN_GEFUELLT,
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
-    title: 'Klarheit bei Terminen',
-    text: 'Eine Termin-Mitteilung führt zum Termin selbst. Beim Eintragen von Hand stehen nur noch Personen zur Wahl, die zu einem Jahrgang des Termins gehören — ein Hinweis nennt die Jahrgänge. Mehrtägige Termine zeigen beide Tage.',
+    title: 'Klarheit bei Events',
+    text: 'Eine Event-Mitteilung führt zum Event selbst. Beim Eintragen von Hand stehen nur noch Personen zur Wahl, die zu einem Jahrgang des Events gehören — ein Hinweis nennt die Jahrgänge. Mehrtägige Events zeigen beide Tage.',
   },
   {
     icon: ICON_TACHO,

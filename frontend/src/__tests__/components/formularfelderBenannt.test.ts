@@ -103,6 +103,6 @@ describe('Formularfelder haben einen zugaenglichen Namen (UI BF-01)', () => {
   it('Pflichtfelder mit Stern im sichtbaren Label tragen aria-required', () => {
     // Stichprobe an den Stellen, die der Bericht nennt.
     const quelle = readFileSync(join(wurzel, 'admin/modals/EventFormSections.tsx'), 'utf8');
-    expect(quelle).toMatch(/<IonLabel position="stacked">Event Name \*<\/IonLabel>\s*<IonInput aria-label="Event Name" aria-required="true"/);
+    expect(quelle).toMatch(/<IonLabel position="stacked">Event-Name \*<\/IonLabel>\s*<IonInput aria-label="Event-Name" aria-required="true"/);
   });
 });

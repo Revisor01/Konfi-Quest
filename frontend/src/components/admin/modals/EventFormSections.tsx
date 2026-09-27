@@ -82,14 +82,14 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
       <div className="app-section-icon app-section-icon--events">
         <IonIcon icon={ICON_BEARBEITEN_GEFUELLT} />
       </div>
-      <IonLabel>Event Grunddaten</IonLabel>
+      <IonLabel>Event-Grunddaten</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
     <IonCardContent>
       <IonList>
         <IonItem lines="inset">
-          <IonLabel position="stacked">Event Name *</IonLabel>
-          <IonInput aria-label="Event Name" aria-required="true"
+          <IonLabel position="stacked">Event-Name *</IonLabel>
+          <IonInput aria-label="Event-Name" aria-required="true"
             value={formData.name}
             onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
             placeholder="z.B. Konfirmandenausflug"

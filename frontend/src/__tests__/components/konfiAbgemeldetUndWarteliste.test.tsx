@@ -250,7 +250,7 @@ describe('Gegenproben: die anderen Zustaende bleiben, wie sie waren', () => {
     };
     render(<EventDetailView eventId={5} onBack={() => undefined} />);
 
-    expect(screen.getByText('Dieser Termin ist abgesagt')).toBeTruthy();
+    expect(screen.getByText('Dieses Event ist abgesagt')).toBeTruthy();
     expect(screen.queryByText(/Warteliste abmelden/)).toBeNull();
   });
 });

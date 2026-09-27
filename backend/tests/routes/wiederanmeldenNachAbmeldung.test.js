@@ -280,7 +280,7 @@ describe('Wieder anmelden, nachdem die Leitung abgemeldet hat', () => {
       const wieder = await anmelden(eventId, konfiToken);
 
       expect(wieder.status).toBe(400);
-      expect(wieder.body.error).toBe('Dieser Termin ist abgesagt');
+      expect(wieder.body.error).toBe('Dieses Event ist abgesagt');
     });
 
     it('bei Zeitslot-Terminen braucht sie wieder einen Slot', async () => {

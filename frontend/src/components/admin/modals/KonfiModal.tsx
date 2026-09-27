@@ -251,14 +251,14 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
                   Es gelten die Regeln des neuen Jahrgangs:
                 </p>
                 <ul style={{ margin: 0, paddingLeft: 'var(--app-abstand-gross)', fontSize: 'var(--app-text-basis)', lineHeight: '1.6' }}>
-                  <li>Anmeldungen zu künftigen Terminen des alten Jahrgangs fallen weg.</li>
-                  <li>Pflichttermine des neuen Jahrgangs kommen dazu.</li>
+                  <li>Anmeldungen zu künftigen Events des alten Jahrgangs fallen weg.</li>
+                  <li>Pflicht-Events des neuen Jahrgangs kommen dazu.</li>
                   <li>Der Jahrgangs-Chat wechselt mit.</li>
                   <li>Der Jahresrückblick erscheint erst wieder, wenn der neue
                       Jahrgang freigegeben ist.</li>
                 </ul>
                 <p style={{ margin: 'var(--app-abstand-schmal) 0 0', fontSize: 'var(--app-text-sekundaer)', lineHeight: '1.5', opacity: 0.85 }}>
-                  Bereits erfasste Anwesenheiten und vergangene Termine bleiben
+                  Bereits erfasste Anwesenheiten und vergangene Events bleiben
                   unberührt.
                 </p>
 

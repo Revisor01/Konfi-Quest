@@ -48,7 +48,7 @@ describe('N6: Serien-Kennzeichnung auch fuer Konfis und Teamer:innen', () => {
     ['Konfi', konfiDetail],
     ['Teamer:in', teamerSeite]
   ])('%s sieht, dass der Termin Teil einer Reihe ist', (_rolle, quelle) => {
-    expect(quelle).toContain('Terminreihe');
+    expect(quelle).toContain('Event-Serie');
     expect(quelle).toContain('Teil einer Serie');
     expect(quelle).toMatch(/\{[a-zA-Z]+\.is_series && \(/);
   });

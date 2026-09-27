@@ -2008,7 +2008,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       //
       // ABMELDEN bleibt erlaubt — nur das Anmelden ist gesperrt.
       if (event.cancelled) {
-        return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
+        return res.status(400).json({ error: 'Dieses Event ist abgesagt' });
       }
 
       // Guard: Nur bei Pflicht-Events

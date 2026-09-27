@@ -54,14 +54,14 @@ const GRUPPEN = Object.freeze([
   }),
   Object.freeze({
     id: GRUPPE_TERMINE,
-    name: 'Termine',
+    name: 'Events',
     beschreibung: 'Anmeldungen, Änderungen, Absagen und Erinnerungen',
     rollen: Object.freeze(['konfi', 'teamer', 'admin'])
   }),
   Object.freeze({
     id: GRUPPE_FORTSCHRITT,
-    name: 'Punkte und Abzeichen',
-    beschreibung: 'Punkte, Abzeichen, Level, Challenges und der Rückblick',
+    name: 'Punkte und Badges',
+    beschreibung: 'Punkte, Badges, Level, Challenges und der Rückblick',
     rollen: Object.freeze(['konfi', 'teamer', 'admin'])
   }),
   Object.freeze({

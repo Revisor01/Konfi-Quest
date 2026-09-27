@@ -114,7 +114,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     <>
       <SectionHeader
         title="Events"
-        subtitle="Termine und Veranstaltungen"
+        subtitle="Gottesdienste, Konfi-Tage und Fahrten"
         icon={ICON_TERMIN_GEFUELLT}
         preset="events"
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
@@ -190,10 +190,10 @@ const EventsView: React.FC<EventsViewProps> = ({
           {onSearchChange && (
             <IonItem>
               <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" className="app-icon-color--system" style={{ fontSize: 'var(--app-text-standard)' }} />
-              <IonInput aria-label="Event suchen"
+              <IonInput aria-label="Events durchsuchen"
                 value={searchText}
                 onIonInput={(e) => onSearchChange(e.detail.value || '')}
-                placeholder="Event suchen..."
+                placeholder="Events durchsuchen..."
               />
             </IonItem>
           )}
@@ -505,7 +505,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {onKopieren && (
                       <IonItemOption
                         onClick={() => { closeOpenSlidingItems(); onKopieren(event); }}
-                        aria-label="Termin kopieren"
+                        aria-label="Event kopieren"
                         className="app-swipe-action"
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary">

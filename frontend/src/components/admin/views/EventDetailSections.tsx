@@ -531,7 +531,7 @@ export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
       <div className="app-section-icon app-section-icon--info">
         <IonIcon icon={ICON_TERMIN_GEFUELLT} />
       </div>
-      <IonLabel>Weitere Termine dieser Serie</IonLabel>
+      <IonLabel>Weitere Events dieser Serie</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
       <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>

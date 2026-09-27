@@ -97,7 +97,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // bestehen, das ist der gewollte Fall "ganze Gemeinde".
     if (mandatory && (!Array.isArray(jahrgang_ids) || jahrgang_ids.length === 0)) {
       return res.status(400).json({
-        error: 'Ein Pflichttermin braucht mindestens einen Jahrgang — sonst wird niemand automatisch angemeldet.',
+        error: 'Ein Pflicht-Event braucht mindestens einen Jahrgang — sonst wird niemand automatisch angemeldet.',
         error_code: 'pflicht_ohne_jahrgang'
       });
     }
@@ -365,7 +365,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // bestehen, das ist der gewollte Fall "ganze Gemeinde".
     if (mandatory && (!Array.isArray(jahrgang_ids) || jahrgang_ids.length === 0)) {
       return res.status(400).json({
-        error: 'Ein Pflichttermin braucht mindestens einen Jahrgang — sonst wird niemand automatisch angemeldet.',
+        error: 'Ein Pflicht-Event braucht mindestens einen Jahrgang — sonst wird niemand automatisch angemeldet.',
         error_code: 'pflicht_ohne_jahrgang'
       });
     }
@@ -448,7 +448,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
 
       if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else if (!zielJahrgangErlaubt) {
         await client.query('ROLLBACK');
         fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Jahrgang' } };
@@ -808,7 +808,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
       } else if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else {
 
       // Events MIT Anmeldungen duerfen gelöscht werden — aber nur ausdruecklich
@@ -1053,7 +1053,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
       } else if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else if (existingChat) {
         await client.query('ROLLBACK');
         fruehAntwort = { status: 409, body: { error: 'Chat existiert bereits für dieses Event' } };
@@ -1147,7 +1147,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         fruehAntwort = { status: 400, body: { error: 'Event ist bereits abgesagt' } };
       } else if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else {
 
       // Mark event as cancelled
@@ -1325,7 +1325,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         fruehAntwort = { status: 400, body: { error: 'Event ist nicht abgesagt' } };
       } else if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else {
         // cancelled, cancelled_at, cancelled_by BLEIBEN UNANGETASTET
         // (Migration 152): Wer den Termin abgesagt hat, hat ihn abgesagt --
@@ -1515,7 +1515,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         fruehAntwort = { status: 400, body: { error: 'Event ist nicht abgesagt' } };
       } else if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else {
         // Alle sechs Absage-Felder zurueck auf den Stand davor. Begruendung
         // ausfuehrlich im Kopf dieser Route.

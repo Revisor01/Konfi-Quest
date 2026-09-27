@@ -92,7 +92,7 @@ const absagenProps = { ...grundProps, modus: 'absagen' as const, grundVorgabe: '
 
 /** Der Speichern-Knopf heisst je nach Modus anders. */
 const speichernKnopf = (modus: 'grund' | 'absagen') =>
-  screen.getByLabelText(modus === 'grund' ? 'Absagegrund speichern' : 'Termin absagen');
+  screen.getByLabelText(modus === 'grund' ? 'Absagegrund speichern' : 'Event absagen');
 
 describe('TerminAbsagenModal: der Server lehnt ab', () => {
   beforeEach(() => {
@@ -138,7 +138,7 @@ describe('TerminAbsagenModal: der Server lehnt ab', () => {
     await act(async () => { fireEvent.click(speichernKnopf('absagen')); });
 
     await waitFor(() => expect(setError).toHaveBeenCalledTimes(1));
-    expect(setError).toHaveBeenCalledWith('Fehler beim Absagen des Termins');
+    expect(setError).toHaveBeenCalledWith('Fehler beim Absagen des Events');
     expect(dismiss).not.toHaveBeenCalled();
   });
 

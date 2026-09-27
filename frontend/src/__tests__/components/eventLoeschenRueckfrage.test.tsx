@@ -402,7 +402,7 @@ describe('Serien-Termine mit Anmeldungen loeschen', () => {
 
     await waitFor(() => expect(offeneAlerts).toHaveLength(2));
     expect(offeneAlerts[1].header).toBe('Wirklich löschen?');
-    expect(offeneAlerts[1].message).toContain('2 Termine der Serie');
+    expect(offeneAlerts[1].message).toContain('2 Events der Serie');
     expect(offeneAlerts[1].message).toContain('7 Anmeldungen');
     expect(offeneAlerts[1].message).toContain('3 Chat-Nachrichten');
     expect(offeneAlerts[1].message).toContain('12 bereits vergebene Punkte');

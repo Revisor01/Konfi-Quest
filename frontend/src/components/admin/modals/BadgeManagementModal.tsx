@@ -388,13 +388,13 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       const res = await api.post(`/admin/badges/${badgeId}/pruefen`);
       const neuVergeben = res.data?.neu_vergeben ?? 0;
       if (neuVergeben > 0) {
-        setSuccess(neuVergeben === 1 ? '1 Abzeichen neu vergeben' : `${neuVergeben} Abzeichen neu vergeben`);
+        setSuccess(neuVergeben === 1 ? '1 Badge neu vergeben' : `${neuVergeben} Badges neu vergeben`);
         onRefreshList?.();
       } else {
-        setSuccess('Alle Abzeichen sind aktuell');
+        setSuccess('Alle Badges sind aktuell');
       }
     } catch (err) {
-      setError(fehlerText(err, 'Fehler bei der Prüfung des Abzeichens'));
+      setError(fehlerText(err, 'Fehler bei der Prüfung des Badges'));
     } finally {
       setPruefLoading(false);
     }
@@ -1174,7 +1174,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 style={{ marginTop: 'var(--app-abstand-mittel)' }}
               >
                 {pruefLoading ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_AKTUALISIEREN} slot="start" />}
-                Abzeichen neu prüfen
+                Badge neu prüfen
               </IonButton>
             )}
           </IonCardContent>

@@ -331,7 +331,7 @@ const PostfachModal: React.FC = () => {
                   <EmptyState
                     icon={ICON_GLOCKE}
                     title="Nichts Neues"
-                    message="Hier landen Punkte, Abzeichen, Termine, Anträge und Entscheidungen — auch die, deren Push du verpasst hast."
+                    message="Hier landen Punkte, Badges, Events, Anträge und Entscheidungen — auch die, deren Push du verpasst hast."
                   />
                 )}
 

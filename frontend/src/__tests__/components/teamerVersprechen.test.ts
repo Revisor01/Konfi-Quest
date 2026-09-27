@@ -76,7 +76,7 @@ describe('Teamer-Texte versprechen nichts, was die App nicht kann', () => {
       // Dieser Test haelt den Stand fest, damit er nicht zurueckfaellt.
       const events = TEAMER_ONBOARDING_SLIDES.find((s) => s.title === 'Mitmachen: Events');
       expect(events).toBeTruthy();
-      expect(events!.text).toContain('Angelegt werden Termine von der Leitung');
+      expect(events!.text).toContain('Angelegt werden Events von der Leitung');
     });
   });
 });

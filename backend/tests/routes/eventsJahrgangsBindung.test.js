@@ -343,7 +343,7 @@ describe('Jahrgangs-Bindung der Termin-Schreibrouten', () => {
       // keine participants[]. `error` bleibt unveraendert, die Store-Apps
       // lesen nur dieses Feld.
       expect(res.body).toEqual({
-        error: 'Kein Zugriff auf diesen Termin',
+        error: 'Kein Zugriff auf dieses Event',
         error_code: 'jahrgang_nicht_zugewiesen'
       });
     });
@@ -357,7 +357,7 @@ describe('Jahrgangs-Bindung der Termin-Schreibrouten', () => {
 
       expect(res.status).toBe(403);
       expect(res.body).toEqual({
-        error: 'Kein Zugriff auf diesen Termin',
+        error: 'Kein Zugriff auf dieses Event',
         error_code: 'jahrgang_nicht_zugewiesen'
       });
     });
@@ -389,7 +389,7 @@ describe('Jahrgangs-Bindung der Termin-Schreibrouten', () => {
 
       expect(res.status).toBe(403);
       expect(res.body).toEqual({
-        error: 'Kein Zugriff auf diesen Termin',
+        error: 'Kein Zugriff auf dieses Event',
         error_code: 'jahrgang_nicht_zugewiesen'
       });
     });

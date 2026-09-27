@@ -277,10 +277,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         <IonItemGroup>
           <IonItem>
             <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-            <IonInput aria-label="Badge suchen"
+            <IonInput aria-label="Badges durchsuchen"
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder="Badge suchen..."
+              placeholder="Badges durchsuchen..."
             />
           </IonItem>
         </IonItemGroup>

@@ -598,10 +598,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           setEventData(ausListe);
           setError('');
         } else {
-          setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+          setError('Dieses Event wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
         }
       } catch {
-        if (gilt()) setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+        if (gilt()) setError('Dieses Event wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
       } finally {
         if (gilt()) setLoading(false);
       }
@@ -736,7 +736,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (isPastEvent && !hasUnprocessedBookings) return 'Verbucht';
 
     const regStatus = calculateRegistrationStatus(eventData);
-    if (regStatus === 'mandatory') return 'Pflichttermin';
+    if (regStatus === 'mandatory') return 'Pflicht-Event';
     const istVoll = eventData.max_participants > 0
       && eventData.registered_count >= eventData.max_participants;
     if (istVoll && eventData.waitlist_enabled) return 'Warteliste';
@@ -745,7 +745,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (regStatus === 'upcoming') return 'Bald';
     if (regStatus === 'closed') return 'Geschlossen';
     // Kein Status vom Backend: neutral bleiben statt "Geschlossen" behaupten.
-    return 'Termin';
+    return 'Event';
   };
 
   // Grund und Notiz gehen mit derselben Route mit. Der Grund gehoert zu
@@ -1328,7 +1328,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <AppKopfzeile titel="Event Details" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
+        <AppKopfzeile titel="Event-Details" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
         <IonContent fullscreen>
           <LoadingSpinner message="Event wird geladen..." />
         </IonContent>
@@ -1343,12 +1343,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (jahrgangFehlt) {
     return (
       <IonPage ref={pageRef}>
-        <AppKopfzeile titel="Termin" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
+        <AppKopfzeile titel="Event" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
         <IonContent className="app-gradient-background" fullscreen>
           <EmptyState
             icon={ICON_JAHRGANG}
             title="Nicht deinem Jahrgang zugeordnet"
-            message="Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
+            message="Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
             iconColor="var(--app-color-events)"
           />
         </IonContent>
@@ -1359,7 +1359,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   return (
     <IonPage ref={pageRef}>
       <AppKopfzeile
-        titel={eventData?.name || 'Event Details'}
+        titel={eventData?.name || 'Event-Details'}
         onZurueck={hideBackButton ? undefined : onBack}
         gemeindeUmschalter={false}
         rechts={(
@@ -1381,7 +1381,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 — der QR-Knopf daneben bleibt, der haengt am Backend an
                 requireTeamer. */}
             {darfVerwalten && (
-              <IonButton aria-label="Termin kopieren" onClick={handleKopieren}>
+              <IonButton aria-label="Event kopieren" onClick={handleKopieren}>
                 <IonIcon icon={ICON_KOPIEREN_GEFUELLT} />
               </IonButton>
             )}
@@ -1395,7 +1395,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <AppKopfzeileGross titel={eventData?.name || 'Event Details'} />
+        <AppKopfzeileGross titel={eventData?.name || 'Event-Details'} />
 
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent refreshingSpinner="crescent" />

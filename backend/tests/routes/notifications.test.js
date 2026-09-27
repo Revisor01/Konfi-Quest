@@ -426,7 +426,7 @@ describe('Notifications Routes', () => {
       expect(res.body.gruppen.every((g) => g.aktiv === true)).toBe(true);
       expect(res.body.gruppen[1]).toEqual({
         id: 'konfi_termine',
-        name: 'Termine',
+        name: 'Events',
         beschreibung: 'Anmeldungen, Änderungen, Absagen und Erinnerungen',
         aktiv: true
       });

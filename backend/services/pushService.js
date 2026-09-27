@@ -1906,7 +1906,7 @@ class PushService {
       }
 
       const notification = {
-        title: 'Termin findet doch statt',
+        title: 'Event findet doch statt',
         body: `"${eventName}" am ${dateInfo} findet doch statt.`
           + ' Du bist wieder angemeldet – prüf bitte, ob du Zeit hast, und melde dich sonst ab.',
         data: {

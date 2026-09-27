@@ -117,7 +117,7 @@ const CRITERIA_TYPES = {
     // hier zaehlt jede Kategorie hoechstens einmal. Genau das braucht es fuer
     // "drei verschiedene Freizeiten": dreimal dieselbe Konfifahrt soll das
     // Abzeichen NICHT ausloesen.
-    help: "Kreuze die Kategorien an, die in Frage kommen. Der Wert sagt, aus WIE VIELEN davon jemand dabei gewesen sein muss — nicht wie oft. Beispiel: drei Kategorien angekreuzt und Wert 3 heißt: aus allen dreien mindestens einmal. Wert 1 heißt: eine davon genügt. Zwei Termine aus derselben Kategorie zählen zusammen nur einmal. Es zählen Termine und Aktivitäten gleichermaßen."
+    help: "Kreuze die Kategorien an, die in Frage kommen. Der Wert sagt, aus WIE VIELEN davon jemand dabei gewesen sein muss — nicht wie oft. Beispiel: drei Kategorien angekreuzt und Wert 3 heißt: aus allen dreien mindestens einmal. Wert 1 heißt: eine davon genügt. Zwei Events aus derselben Kategorie zählen zusammen nur einmal. Es zählen Events und Aktivitäten gleichermaßen."
   },
   
   // === ZEIT-BASIERTE KRITERIEN (Komplex) ===
@@ -977,7 +977,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       if (!badge.is_active) {
         // Inaktive Abzeichen werden von checkAndAwardBadges ohnehin
         // uebersprungen — dann lieber gleich sagen, warum nichts passiert.
-        return res.status(400).json({ error: 'Das Abzeichen ist nicht aktiv' });
+        return res.status(400).json({ error: 'Das Badge ist nicht aktiv' });
       }
 
       const zuletzt = letztePruefungJeOrg.get(organizationId);

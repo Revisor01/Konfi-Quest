@@ -641,7 +641,7 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
           <EmptyState
             icon={ICON_TERMIN_GEFUELLT}
             title="Keine Events"
-            message="Noch bei keinem Termin dabei gewesen"
+            message="Noch bei keinem Event dabei gewesen"
             iconColor="var(--app-color-events)"
           />
         ) : (

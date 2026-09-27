@@ -142,7 +142,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // Fassungen zeigen den error-Text, den sie mitbekommen.
         await client.query('ROLLBACK');
         fruehAntwort = { status: 400, body: {
-          error: 'Du wurdest von diesem Termin abgemeldet. Melde dich bei der Leitung, wenn du doch da bist.',
+          error: 'Du wurdest von diesem Event abgemeldet. Melde dich bei der Leitung, wenn du doch da bist.',
           error_type: 'excused'
         } };
       } else if (booking.status !== 'confirmed') {

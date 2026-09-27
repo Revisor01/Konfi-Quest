@@ -59,10 +59,10 @@ describe('Gerenderte Formulare: jedes Feld hat einen Namen (UI BF-01)', () => {
     expect(felder.length).toBeGreaterThanOrEqual(7);
     expect(felder.filter((f) => !f.name)).toEqual([]);
     expect(felder.map((f) => f.name)).toEqual(expect.arrayContaining([
-      'Event Name', 'Beschreibung', 'Ort', 'Was mitbringen (optional)', 'Für wen ist das Event?', 'Pflicht-Event', 'Konfirmation',
+      'Event-Name', 'Beschreibung', 'Ort', 'Was mitbringen (optional)', 'Für wen ist das Event?', 'Pflicht-Event', 'Konfirmation',
     ]));
     // Das sichtbare Label bleibt -- Layout unveraendert.
-    expect(container.textContent).toContain('Event Name *');
+    expect(container.textContent).toContain('Event-Name *');
   });
 
   it('Termin-Formular, Karte „Konfis": Schalter und Schieberegler sind benannt', () => {

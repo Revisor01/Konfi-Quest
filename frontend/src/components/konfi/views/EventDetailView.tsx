@@ -527,7 +527,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <AppKopfzeile titel="Event Details" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
+        <AppKopfzeile titel="Event-Details" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
         <IonContent fullscreen>
           <LoadingSpinner message="Event wird geladen..." />
         </IonContent>
@@ -858,7 +858,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 <div className="app-info-row">
                   <IonIcon icon={ICON_KOPIEREN_GEFUELLT} className="app-info-row__icon app-icon-color--events" />
                   <div>
-                    <div className="app-info-row__label">Terminreihe</div>
+                    <div className="app-info-row__label">Event-Serie</div>
                     <div className="app-info-row__value">Teil einer Serie</div>
                   </div>
                 </div>
@@ -948,7 +948,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     return (
                       <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: 'var(--app-text-betont)' }}>
                         <IonIcon icon={ICON_ABSAGE} style={{ verticalAlign: 'middle', marginRight: 'var(--app-abstand-kompakt)' }} />
-                        Dieser Termin ist abgesagt
+                        Dieses Event ist abgesagt
                       </IonNote>
                     );
                   }
@@ -1089,7 +1089,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 // allen Anmelde-Zweigen; das Abmelden oben bleibt unberuehrt.
                 <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: 'var(--app-text-betont)' }}>
                   <IonIcon icon={ICON_ABSAGE} style={{ verticalAlign: 'middle', marginRight: 'var(--app-abstand-kompakt)' }} />
-                  Dieser Termin ist abgesagt
+                  Dieses Event ist abgesagt
                 </IonNote>
               ) : (eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending') ? (
                 // WARTELISTE (Audit 26.09.2026, Screens BF-02): is_registered

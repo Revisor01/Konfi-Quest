@@ -254,6 +254,12 @@ Versionsüberschrift.
   jeder Admin jeden Antrag gemeldet — samt Zahl an Glocke und App-Symbol —,
   auch wenn er ihn gar nicht öffnen konnte. Wer selbst eine Aktivität meldet,
   bekommt über den eigenen Antrag keine Mitteilung mehr.
+- Die App spricht überall dieselbe Sprache: Was man besucht, sammelt und
+  mitmacht, heißt Event, Badge, Challenge und Stempel — auch in Mitteilungen,
+  Einführung, Rückblick, Fehlermeldungen und in den Android-Einstellungen
+  („Events", „Punkte und Badges"). „Termin" steht nur noch für Datum und
+  Uhrzeit, die Suche heißt in allen Rollen „Events durchsuchen" und „Badges
+  durchsuchen".
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
