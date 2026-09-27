@@ -249,4 +249,45 @@ describe('Abzeichen nur fuer Konfis und Teamer:innen der jeweiligen Gemeinde', (
       expect(await abzeichenVon(db, DOPPEL)).toEqual([]);
     });
   });
+
+  // Fuehrt user_organizations die STAMM-Gemeinde noch einmal mit einer anderen
+  // Rolle (in Produktion vorgekommen, Kommentar in utils/orgMitglieder.js),
+  // gilt dort die Rolle am Konto -- so wie bei der Anmeldung, in rbac.js und
+  // in ladeMitgliedschaftenVieler. Die Badge-Pruefung darf keine eigene
+  // Fassung der Regel haben (CLAUDE.md, „Wer sieht und bekommt was").
+  describe('Stamm-Gemeinde doppelt in user_organizations: die Rolle am Konto gilt', () => {
+    const ZWEI_ROLLEN = 263;
+
+    const konto = async (rolleAmKonto, rolleZusatz) => {
+      await db.query(
+        `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active)
+         VALUES ($1, 'zwei-rollen', 'x', 'Zwei Rollen in Org 1', $2, 1, true)`,
+        [ZWEI_ROLLEN, rolleAmKonto]
+      );
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, 1, $2)',
+        [ZWEI_ROLLEN, rolleZusatz]
+      );
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, organization_id, jahrgang_id, gottesdienst_points, gemeinde_points)
+         VALUES ($1, 1, $2, 5, 15)`,
+        [ZWEI_ROLLEN, JAHRGAENGE.jahrgang1.id]
+      );
+    };
+
+    it('am Konto Leitung, in user_organizations Konfi: kein Badge (die App zeigt dort die Leitung)', async () => {
+      await konto(ROLES.orgAdmin.id, ROLES.konfi.id);
+      const ergebnis = await checkAndAwardBadges(db, ZWEI_ROLLEN, { organizationId: 1 });
+      expect(ergebnis.count).toBe(0);
+      expect(await abzeichenVon(db, ZWEI_ROLLEN)).toEqual([]);
+    });
+
+    it('am Konto Konfi, in user_organizations Leitung: das Konfi-Badge (die App zeigt dort die Konfi)', async () => {
+      await konto(ROLES.konfi.id, ROLES.orgAdmin.id);
+      await checkAndAwardBadges(db, ZWEI_ROLLEN, { organizationId: 1 });
+      expect(await abzeichenVon(db, ZWEI_ROLLEN)).toEqual([
+        { badge_id: ABZEICHEN_ORG1, organization_id: 1 }
+      ]);
+    });
+  });
 });

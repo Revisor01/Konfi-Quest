@@ -165,9 +165,10 @@ const STILL = { still: true };
 // gilt die Stamm-Gemeinde des Kontos.
 //
 // Abzeichen gibt es NUR fuer Konfis und Teamer:innen, und zwar in der
-// Gemeinde, in der die Person das ist. Die Rolle kommt deshalb aus
-// user_organizations fuer DIESE Gemeinde; users.role_id gilt nur fuer die
-// Stamm-Gemeinde. Befund 27.09.2026: Simon (Leitung in Kirchspiel West und
+// Gemeinde, in der die Person das ist. Die Rolle je Gemeinde nach derselben
+// Regel wie Anmeldung, rbac.js und utils/orgMitglieder.js: in der
+// Stamm-Gemeinde users.role_id -- auch wenn user_organizations sie noch
+// einmal mit anderer Rolle fuehrt --, in jeder weiteren user_organizations. Befund 27.09.2026: Simon (Leitung in Kirchspiel West und
 // Hennstedt, Konfi in einer Testgemeinde) trug sich in Hennstedt als anwesend
 // ein und bekam zwoelf Konfi-Abzeichen von Kirchspiel West -- die Rolle wurde
 // am Konto gelesen, das Konfi-Profil der Testgemeinde gegen die Abzeichen der
@@ -177,7 +178,7 @@ const checkAndAwardBadges = async (db, userId, optionen = {}) => {
   try {
     const { rows: [userInfo] } = await db.query(
       `SELECT g.organization_id,
-              COALESCE(ro.name, CASE WHEN u.organization_id = g.organization_id THEN rp.name END) AS role_name
+              CASE WHEN u.organization_id = g.organization_id THEN rp.name ELSE ro.name END AS role_name
          FROM users u
          CROSS JOIN LATERAL (SELECT COALESCE($2::bigint, u.organization_id) AS organization_id) g
          LEFT JOIN user_organizations uo ON uo.user_id = u.id AND uo.organization_id = g.organization_id
