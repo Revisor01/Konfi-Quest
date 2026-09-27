@@ -91,6 +91,7 @@ import { safeUUID } from '../../../utils/uuid';
 // der genauere — er kennt Teamer-Antraege ohne Punkte und ohne Typ.
 import type { ActivityRequest } from '../../konfi/modals/RequestDetailModal';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { trackMitmachenAnsicht } from '../../../services/analytics';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
@@ -106,6 +107,13 @@ const TeamerEventsPage: React.FC = () => {
 
   // Oberste Segment-Ebene: Events oder Aktivitäten.
   const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
+  // Umschalten an der Leiste „Events | Aktivitäten" zählt als eigener
+  // Bereich -- die Seite hat für beide Ansichten denselben Pfad
+  // (services/analytics.ts, trackMitmachenAnsicht).
+  const mitmachenAnsichtWechseln = (ansicht: 'events' | 'antraege') => {
+    if (ansicht !== mainSegment) trackMitmachenAnsicht(ansicht);
+    setMainSegment(ansicht);
+  };
 
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'team'>('meine');
   const [searchText, setSearchText] = useState('');
@@ -132,6 +140,9 @@ const TeamerEventsPage: React.FC = () => {
     const segment = new URLSearchParams(routerLocation.search).get('segment');
     if (segment === 'antraege') {
       setMainSegment('antraege');
+      // Einstieg per Link (Push, alte Route /konfi/requests) direkt in die
+      // Aktivitäten -- die Pfad-Messung zählt ihn sonst als „events".
+      trackMitmachenAnsicht('antraege');
     } else if (segment === 'events') {
       setMainSegment('events');
     }
@@ -1626,7 +1637,7 @@ const TeamerEventsPage: React.FC = () => {
       <div className="app-segment-wrapper">
         <IonSegment
           value={mainSegment}
-          onIonChange={(e) => setMainSegment(e.detail.value as 'events' | 'antraege')}
+          onIonChange={(e) => mitmachenAnsichtWechseln(e.detail.value as 'events' | 'antraege')}
         >
           <IonSegmentButton value="events">
             <IonLabel>Events</IonLabel>

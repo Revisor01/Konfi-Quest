@@ -121,6 +121,21 @@ export function trackBereich(bereich: string): void {
 }
 
 /**
+ * Ansicht unter „Mitmachen" (Konfi und Team): Events oder Aktivitäten.
+ *
+ * Die Bereichsmessung in MainTabs zählt am PFAD. Events und Aktivitäten
+ * liegen aber auf EINER Seite (/konfi/events, /teamer/events), umgeschaltet
+ * über die Leiste „Events | Aktivitäten" -- jeder Besuch zählte als
+ * „events" (Simon, 27.09.2026: „Activities hat heute nur 2, Events 235").
+ * Deshalb meldet die Seite das Umschalten selbst. „activities" ist derselbe
+ * Name wie die Aktivitäten-Seite der Leitung (/admin/activities), damit ein
+ * Ziel im Dashboard beides zählt.
+ */
+export function trackMitmachenAnsicht(ansicht: 'events' | 'antraege'): void {
+  trackBereich(ansicht === 'antraege' ? 'activities' : 'events');
+}
+
+/**
  * Fehler, den die nutzende Person zu sehen bekommt.
  *
  * `stelle` ist die gekuerzte, entschaerfte Meldung (das WAS), `art` die grobe

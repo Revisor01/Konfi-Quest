@@ -727,6 +727,8 @@ Versionsüberschrift.
 
 ### Sonstiges
 - Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.
+- Die anonyme Nutzungsmessung unterscheidet unter „Mitmachen“ zwischen Events
+  und Aktivitäten und zählt eingereichte Aktivitäten (mit oder ohne Foto).
 - Die iPhone-App ist auf das Startverfahren umgestellt, das neuere
   iOS-Fassungen verlangen. Für die Bedienung ändert sich nichts — ohne die
   Umstellung ließe sich die App künftig aber nicht mehr öffnen.

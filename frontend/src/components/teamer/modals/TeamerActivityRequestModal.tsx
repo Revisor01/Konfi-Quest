@@ -50,6 +50,7 @@ import { compressForUpload } from '../../../services/mediaCompression';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { track } from '../../../services/analytics';
 
 interface Activity {
   id: number;
@@ -203,6 +204,10 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
           };
 
           await api.post('/teamer/requests', requestData);
+          // Anonyme Messung (Simon, 27.09.2026): Wie oft werden Aktivitäten
+          // eingereicht, und mit Nachweisfoto? Erst nach der erfolgreichen
+          // Antwort; kein Name, keine Aktivität, keine Kennung.
+          track('aktivitaet-eingereicht', { mit_foto: !!photoFilename });
 
           setSuccess('Aktivität erfolgreich eingereicht!');
           onSuccess();
