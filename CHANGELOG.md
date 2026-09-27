@@ -597,9 +597,12 @@ Versionsüberschrift.
   Aktionen und Reaktionen im Chat. Tab erreicht sie, Enter oder Leertaste
   löst sie aus, ein Ring zeigt, wo man ist. Vorher waren sie am Rechner
   unerreichbar und wurden nur als Text vorgelesen.
-- Das Postfach, der neue Rückblick und die Datumswähler in den Formularen
-  melden sich der Vorlesefunktion mit Namen („Postfach", „Datum wählen")
-  statt nur als „Dialog".
+- Jedes Fenster, das sich über eine Seite legt, meldet sich der
+  Vorlesefunktion mit seinem Titel statt nur als „Dialog": die Formulare
+  (etwa „Passwort ändern"), die Punkte-Übersicht, das Postfach,
+  die Datumswähler („Datum wählen"), die Ansicht einer Datei mit ihrem
+  Dateinamen und der Rückblick. Ändert sich der Titel, während das Fenster
+  offen ist, zieht der Name mit.
 - Kleine Knöpfe — das Auge am Passwortfeld, das X an Hinweisen und
   Fehlermeldungen, Anhängen und Senden im Chat — lassen sich leichter
   treffen: Die Fläche, die auf den Finger reagiert, ist jetzt mindestens

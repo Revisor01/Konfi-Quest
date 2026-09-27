@@ -183,9 +183,10 @@ Nachricht und die Reaktionen. Die Vorlesefunktion nennt sie „Schaltfläche"
 und sagt bei Auswahlzeilen, ob sie gewählt sind; ein Ring zeigt, welches
 Element gerade den Fokus hat.
 
-Öffnet sich ein Fenster — das Postfach, ein Datumswähler, ein Formular —,
-nennt die Vorlesefunktion seinen Namen („Postfach, Dialog"), sodass klar ist,
-wo man gelandet ist.
+Öffnet sich ein Fenster — ein Formular, das Postfach, ein Datumswähler, die
+Punkte-Übersicht —, nennt die Vorlesefunktion seinen Titel („Passwort ändern,
+Dialog"), sodass klar ist, wo man gelandet ist. Die Ansicht einer Datei heißt
+wie die Datei, der Rückblick „Konfi-Rückblick" bzw. „Team-Rückblick".
 
 ### Kleine Knöpfe treffen
 

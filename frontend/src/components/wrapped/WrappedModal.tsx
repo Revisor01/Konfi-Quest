@@ -646,7 +646,12 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   };
 
   return (
-    <div className={`wrapped-overlay${wrappedType === 'teamer' ? ' wrapped-overlay--teamer' : ''}`}>
+    // Name des Dialogs fuer Vorlesehilfen -- die Folien haben keine
+    // Kopfzeile mit ion-title (siehe utils/modalNamen.ts).
+    <div
+      className={`wrapped-overlay${wrappedType === 'teamer' ? ' wrapped-overlay--teamer' : ''}`}
+      data-dialogname={wrappedType === 'teamer' ? 'Team-Rückblick' : 'Konfi-Rückblick'}
+    >
       <div className="wrapped-header">
         {/* Fortschrittsleiste aus Simons Entwurf: ein Segment je Seite.
             Ersetzt die runden Swiper-Punkte -- bei 13 Seiten sagen Punkte

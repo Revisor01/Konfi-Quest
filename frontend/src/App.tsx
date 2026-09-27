@@ -5,6 +5,7 @@ import { IonReactRouter } from '@ionic/react-router';
 // Animationen des iOS-Themes (ios27)
 import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios27';
 import { segmentGlasAnschalten } from './utils/segmentGlas';
+import { modalNamenAnschalten } from './utils/modalNamen';
 // Material Design 3 Animationen
 import { mdTransitionAnimation } from '@rdlabo/ionic-theme-md3';
 // Icons sind jetzt in MainTabs.tsx
@@ -97,6 +98,11 @@ const AppContent: React.FC = () => {
   // Einmal fuer die ganze App: Der Beobachter dort faengt auch Segmente, die
   // erst spaeter in einem Modal auftauchen.
   useEffect(() => segmentGlasAnschalten(), []);
+
+  // Jedes Modal traegt seinen Titel als Namen fuer Vorlesehilfen (Begruendung
+  // in modalNamen.ts). Ebenfalls einmal fuer die ganze App: Es gilt fuer die
+  // 92 per useIonModal geoeffneten Modale und jedes kuenftige.
+  useEffect(() => modalNamenAnschalten(), []);
 
   // App-Sperre: Face ID / Fingerabdruck vor der bereits angemeldeten App.
   // Der Hook laeuft immer mit (er muss den Hintergrundwechsel auch dann

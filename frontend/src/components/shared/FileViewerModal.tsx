@@ -570,7 +570,9 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   };
 
   return (
-    <div className="file-viewer-overlay">
+    // Name des Dialogs fuer Vorlesehilfen: der Dateiname, der auch oben in
+    // der Leiste steht (keine ion-title hier, siehe utils/modalNamen.ts).
+    <div className="file-viewer-overlay" data-dialogname={currentFile.fileName || 'Datei'}>
       {/* Toolbar */}
       <div className="file-viewer-toolbar">
         <div className="file-viewer-toolbar-left">
