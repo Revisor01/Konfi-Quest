@@ -32,6 +32,7 @@ import type { AlleAbzeichen, Badge, BadgeUebersicht, DashboardEvent, RankingEntr
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { TrialBanner, StoreUpdateBanner, istVergangen } from '../../shared';
+import WartungsHinweis from '../../shared/WartungsHinweis';
 import { track } from '../../../services/analytics';
 import { tastaturKlick } from '../../../utils/tastatur';
 
@@ -415,6 +416,10 @@ const KonfiDashboardPage: React.FC = () => {
         {/* Dezenter Hinweis, wenn im Store eine neuere Version liegt.
             Prueft selbst und rendert sonst nichts (StoreUpdateBanner). */}
         <StoreUpdateBanner style={{ margin: 'var(--app-abstand-eng) var(--app-abstand-basis) 0' }} />
+
+        {/* Wartungshinweis des Betriebs (E-05): steht, solange der Server ihn
+            meldet; liest nur den Stand und rendert sonst nichts. */}
+        <WartungsHinweis />
 
         {/* Die beiden Neuerungs-Banner. Auf der Startseite wegklickbar:
             jeder hat sein eigenes X und sein eigenes Flag. Dauerhaft

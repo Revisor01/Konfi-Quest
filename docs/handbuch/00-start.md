@@ -56,12 +56,7 @@ und woran du wartende Vorgänge erkennst, steht unter
 ## Ein Update aus dem Store laden
 
 Liegt im App Store oder bei Google Play eine neuere Version als die
-installierte, steht auf der Startseite eine blaue Karte: **„Version … ist da"**
-mit der neuen Versionsnummer und der Zeile „Hier tippen, um das Update im Store zu laden." Ein Tipp
-darauf öffnet die Store-Seite, ein Tipp auf das Kreuz blendet die Karte aus —
-dauerhaft für genau diese Version, auf diesem Gerät. Erst die nächste bringt
-sie wieder.
-
-Die App blockiert nie: Du kannst die alte Fassung so lange weiternutzen, wie du
-möchtest. Ohne Verbindung erscheint die Karte gar nicht, und im Browser nie —
-dort läuft immer der aktuelle Stand.
+installierte, steht auf der Startseite eine blaue Karte **„Version … ist da"**,
+die direkt zur Store-Seite führt. Wie sie funktioniert, was passiert, wenn
+eine Version nicht mehr unterstützt wird, und wo Wartungshinweise erscheinen,
+steht unter [Die App aktuell halten](03-bedienung.md#die-app-aktuell-halten).

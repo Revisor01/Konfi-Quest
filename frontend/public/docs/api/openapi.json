@@ -3015,11 +3015,11 @@
           "System & Monitoring"
         ],
         "summary": "Aktuell im Store veroeffentlichte App-Version (ohne Anmeldung)",
-        "description": "Meldet den Apps die aktuell veroeffentlichte Store-Version fuer den dezenten Update-Hinweis auf den Dashboards. Quelle ist der offene iTunes-Lookup (bundleId de.godsapp.konfiquest), serverseitig 6h gecacht; Android traegt dieselbe Version, weil beide Apps im Gleichschritt aus version.json released werden (Begruendung in backend/utils/storeVersion.js). version ist null, wenn der Lookup gerade nicht erreichbar ist — die App zeigt dann keinen Hinweis. Die Antwortform ist Vertrag fuer ausgelieferte Apps ab 2.1.1: Felder nur ergaenzen, nie entfernen oder umformen.\n",
+        "description": "Meldet den Apps die aktuell veroeffentlichte Store-Version fuer den dezenten Update-Hinweis auf den Dashboards. Quelle ist der offene iTunes-Lookup (bundleId de.godsapp.konfiquest), serverseitig 6h gecacht; Android traegt dieselbe Version, weil beide Apps im Gleichschritt aus version.json released werden (Begruendung in backend/utils/storeVersion.js). version ist null, wenn der Lookup gerade nicht erreichbar ist — die App zeigt dann keinen Hinweis. Die Antwortform ist Vertrag fuer ausgelieferte Apps ab 2.1.1: Felder nur ergaenzen, nie entfernen oder umformen.\nMINDESTVERSION UND WARTUNGSHINWEIS (27.09.2026, Feature-Empfehlung E-05, additiv): `ios.min_version` und `android.min_version` (String `x.y.z` oder null) sowie `wartung` (`{aktiv: boolean, text: string|null}`). Quelle sind die Umgebungsvariablen `APP_MIN_VERSION_IOS`, `APP_MIN_VERSION_ANDROID` und `WARTUNG_HINWEIS`, gelesen bei jeder Anfrage (backend/utils/betriebshinweise.js); leer oder nicht gesetzt ergibt null bzw. `aktiv: false, text: null`. Eine Mindestversion, die nicht die Form x.y.z hat, wird ignoriert (null) und einmal je Wert geloggt. Die App ab 2.3.0 sperrt sich nativ mit einem Bildschirm \"Bitte aktualisiere Konfi Quest\" und Knopf zur `url` der Plattform, wenn die installierte Version echt unter `min_version` liegt (nie im Browser, nie ohne Antwort des Servers), und zeigt `wartung.text` als Klartext auf den Startseiten und der Anmeldeseite. Die Store-Apps 2.1.1 und 2.2.0 lesen nur `version` und `url` und pruefen deren Typ (frontend/src/services/updateCheck.ts, an beiden Tags unveraendert) — die zusaetzlichen Felder sehen sie nicht.\nBeispiel: `{\"ios\": {\"version\": \"2.3.0\", \"url\": \"https://apps.apple.com/...\", \"min_version\": \"2.3.0\"}, \"android\": {\"version\": \"2.3.0\", \"url\": \"https://play.google.com/...\", \"min_version\": null}, \"wartung\": {\"aktiv\": true, \"text\": \"Heute ab 20 Uhr Wartung.\"}}`\n",
         "security": [],
         "responses": {
           "200": {
-            "description": "ios: {version|null, url}, android: {version|null, url}"
+            "description": "ios: {version|null, url, min_version|null}, android: {version|null, url, min_version|null}, wartung: {aktiv, text|null}"
           }
         },
         "x-berechtigung": {
@@ -3029,7 +3029,7 @@
           "middleware": [],
           "org-scope": false,
           "objekt-pruefung": "keine",
-          "hinweis": "Keine Authentifizierung — die veroeffentlichte Store-Version ist oeffentlich einsehbar. Der globale Rate-Limiter gilt.\n"
+          "hinweis": "Keine Authentifizierung — die veroeffentlichte Store-Version ist oeffentlich einsehbar. Der globale Rate-Limiter gilt. Mindestversion und Wartungstext sind ebenso oeffentlich (sie muessen auch vor der Anmeldung ankommen) — in WARTUNG_HINWEIS gehoert nichts, was nicht jede:r lesen darf.\n"
         }
       }
     },

@@ -49,6 +49,10 @@ Versionsüberschrift.
 - Eine Übersicht nach dem Update zeigt, was sich in dieser Fassung geändert
   hat — je Rolle das, was dort ankommt. Nachlesen geht jederzeit über „Was ist
   neu?" im Profil beziehungsweise unter „Mehr".
+- Kündigt der Betrieb eine Wartung an, steht der Hinweis auf der Startseite
+  jeder Rolle und auf der Anmeldeseite; wird eine App-Version nicht mehr
+  unterstützt, bittet ein eigener Bildschirm um das Update und führt direkt
+  in den Store — im Browser und ohne Netz nie.
 - Auswählen, welche Mitteilungen aufs Handy kommen — auf iPhone und Android
   gleich, in der App statt in den Systemeinstellungen: Unter
   „Benachrichtigungen" im Profil beziehungsweise unter „Mehr" lassen sich

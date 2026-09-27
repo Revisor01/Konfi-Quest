@@ -1191,7 +1191,7 @@ BEHOBEN 26.09.2026: Die Teamer-Auswahl filterte nicht auf deleted_at (anders als
       <div class="routen"><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/app-version</code></div>
         <p class="summary">Aktuell im Store veroeffentlichte App-Version (ohne Anmeldung)</p>
-        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div><div class="hinweis">Keine Authentifizierung — die veroeffentlichte Store-Version ist oeffentlich einsehbar. Der globale Rate-Limiter gilt.</div>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div><div class="hinweis">Keine Authentifizierung — die veroeffentlichte Store-Version ist oeffentlich einsehbar. Der globale Rate-Limiter gilt. Mindestversion und Wartungstext sind ebenso oeffentlich (sie muessen auch vor der Anmeldung ankommen) — in WARTUNG_HINWEIS gehoert nichts, was nicht jede:r lesen darf.</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/health</code></div>
         <p class="summary">Liveness-Check (ohne Anmeldung)</p>

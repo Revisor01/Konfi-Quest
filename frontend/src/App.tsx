@@ -22,6 +22,8 @@ import GlobalToasts from './components/common/GlobalToasts';
 import PostfachModal from './components/common/PostfachModal';
 import AppSperrbildschirm from './components/common/AppSperrbildschirm';
 import AppAbdeckung from './components/common/AppAbdeckung';
+import MindestversionSperre from './components/common/MindestversionSperre';
+import { beobachteBetriebsstatus } from './services/betriebsstatus';
 import { useAppSperre } from './hooks/useAppSperre';
 import { useSeitenBereit } from './navigation/useSeitenBereit';
 import PushZielNavigation from './navigation/PushZielNavigation';
@@ -103,6 +105,14 @@ const AppContent: React.FC = () => {
   // in modalNamen.ts). Ebenfalls einmal fuer die ganze App: Es gilt fuer die
   // 92 per useIonModal geoeffneten Modale und jedes kuenftige.
   useEffect(() => modalNamenAnschalten(), []);
+
+  // Mindestversion und Wartungshinweis (E-05, 27.09.2026): EINE Pruefung
+  // fuer die ganze App, beim Start und bei jeder Rueckkehr in die App.
+  // Sperre und Hinweise lesen nur den Stand (services/betriebsstatus.ts).
+  // Laeuft auch vor der Anmeldung -- der Endpunkt braucht keine, und ein zu
+  // altes Geraet soll schon an der Anmeldeseite erfahren, dass es ein Update
+  // braucht.
+  useEffect(() => beobachteBetriebsstatus(), []);
 
   // App-Sperre: Face ID / Fingerabdruck vor der bereits angemeldeten App.
   // Der Hook laeuft immer mit (er muss den Hintergrundwechsel auch dann
@@ -339,6 +349,15 @@ const AppContent: React.FC = () => {
           }}
         />
       )}
+      {/* "Bitte aktualisiere Konfi Quest" (E-05): steht NACH dem Schloss und
+          liegt bei gleichem z-index damit darueber -- wer aktualisieren muss,
+          dem hilft Entsperren nicht weiter. Unter der Abdeckung bleibt er:
+          Ins Vorschaubild gehoert die neutrale Flaeche.
+          Rendert nichts, solange die Mindestversion nicht greift; im
+          Browser, ohne Netz und bei Fehlern nie (services/betriebsstatus.ts).
+          Wie das Schloss genau EINMAL und ausserhalb der Zweigwahl, damit er
+          bei der Anmeldung und beim Laden nicht neu montiert wird. */}
+      <MindestversionSperre />
       {/* Die Abdeckung steht ZULETZT und damit ueber dem Sperrbildschirm.
           Beim Wegwechseln kann beides gleichzeitig anstehen — dann gehoert
           ins Vorschaubild die neutrale Flaeche, nicht der bedienbare

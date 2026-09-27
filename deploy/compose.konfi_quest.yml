@@ -168,6 +168,25 @@ services:
       # so aus dem Pool, BEVOR der Server schliesst. Danach Exit 0 in unter
       # einer Sekunde; alles innerhalb von stop_grace_period 30s.
       SHUTDOWN_DRAIN_MS: "6000"
+      # Mindestversion und Wartungshinweis (27.09.2026, Feature-Empfehlung
+      # E-05) -- GET /api/app-version meldet sie den Apps, gelesen bei jeder
+      # Anfrage (backend/utils/betriebshinweise.js). Hier OHNE Wert: gesetzt
+      # werden sie als Stack-Variablen in Portainer; leer heisst "aus".
+      # Wirksam mit dem naechsten Stack-Update (die Container starten neu).
+      #   APP_MIN_VERSION_IOS / APP_MIN_VERSION_ANDROID: Version x.y.z.
+      #     Liegt eine App ab 2.3.0 darunter, zeigt sie "Bitte aktualisiere
+      #     Konfi Quest" mit Knopf zum Store und ist bis zum Update nicht
+      #     nutzbar (nie im Browser, nie ohne Netz). NIE hoeher setzen als die
+      #     Version, die in dem Store der Plattform schon freigegeben ist --
+      #     sonst sperrt sie Geraete, die noch gar nicht aktualisieren
+      #     koennen. Ungueltige Werte ("2.3", "v2.3.0") gelten als nicht
+      #     gesetzt und stehen einmal im Log. Apps 2.2.x und aelter kennen
+      #     die Angabe nicht.
+      #   WARTUNG_HINWEIS: Klartext, erscheint auf den Startseiten aller
+      #     Rollen und auf der Anmeldeseite, bis die Variable wieder leer ist.
+      APP_MIN_VERSION_IOS: ${APP_MIN_VERSION_IOS:-}
+      APP_MIN_VERSION_ANDROID: ${APP_MIN_VERSION_ANDROID:-}
+      WARTUNG_HINWEIS: ${WARTUNG_HINWEIS:-}
     volumes:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro

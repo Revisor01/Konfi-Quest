@@ -25,6 +25,7 @@ import {
 } from '../shared/icons';
 import { biometrieIcon } from '../shared/biometrieSymbol';
 import { useApp } from '../../contexts/AppContext';
+import WartungsHinweis from '../shared/WartungsHinweis';
 import { loginWithAutoDetection, mitBiometrieAnmelden } from '../../services/auth';
 import { beiEnter } from '../../utils/tastatur';
 import { biometrieVerfuegbar, istBiometrieAktiv, BiometrieSinnbild } from '../../services/biometrics';
@@ -302,6 +303,11 @@ const LoginView: React.FC = () => {
                 <h2>Anmelden</h2>
                 <p>Melde dich an um deine Quest fortzusetzen</p>
               </div>
+
+              {/* Wartungshinweis des Betriebs (E-05): gerade vor der Anmeldung
+                  wichtig -- wer waehrend einer Wartung nicht hineinkommt, soll
+                  den Grund lesen. Rendert sonst nichts. */}
+              <WartungsHinweis style={{ margin: '0 0 var(--app-abstand-basis)' }} />
 
               {/* Feldnamen per aria-label: Ionic 9 bindet das Geschwister-IonLabel nicht mehr an das Feld;
                   das sichtbare Label bleibt fuer das Layout (Audit 26.09.2026, UI BF-01). */}

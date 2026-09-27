@@ -267,6 +267,66 @@ Konfis und Teamer:innen finden ihn im eigenen Profil, die Leitung unter
 „Mehr". Dort steht er dauerhaft, auch wenn die Übersicht längst weggetippt
 wurde.
 
+## Die App aktuell halten
+
+Beim Öffnen fragt die App beim Server nach, ob im Store eine neuere Version
+liegt. Ob die installierte Version noch unterstützt wird und ob eine Wartung
+angekündigt ist, fragt sie außerdem jedes Mal, wenn du in die App
+zurückkehrst.
+
+### Ein Update aus dem Store laden
+
+Liegt im App Store oder bei Google Play eine neuere Version als die
+installierte, steht auf der Startseite eine blaue Karte: **„Version … ist da"**
+mit der neuen Versionsnummer und der Zeile „Hier tippen, um das Update im
+Store zu laden." Ein Tipp darauf öffnet die Store-Seite, ein Tipp auf das
+Kreuz blendet die Karte aus — dauerhaft für genau diese Version, auf diesem
+Gerät. Erst die nächste bringt sie wieder.
+
+Die Karte ist ein Hinweis: Du kannst die bisherige Fassung weiternutzen,
+solange sie unterstützt wird. Ohne Verbindung erscheint die Karte gar nicht,
+und im Browser nie — dort läuft immer der aktuelle Stand.
+
+### Eine nicht mehr unterstützte Version aktualisieren
+
+Wird die installierte Version nicht mehr unterstützt, legt sich ein
+Bildschirm über die ganze App: **„Bitte aktualisiere Konfi Quest"** mit dem
+Satz „Diese Version wird nicht mehr unterstützt. Lade die aktuelle Version,
+um weiterzumachen." Der einzige Knopf führt zur Store-Seite — auf dem iPhone
+**„Im App Store aktualisieren"**, auf Android **„Bei Google Play
+aktualisieren"**. Wegtippen lässt sich der Bildschirm nicht; nach dem Update
+öffnet sich die App wie gewohnt.
+
+Der Bildschirm erscheint nur, wenn der Server die Version als zu alt meldet —
+ohne Verbindung bleibt die App nutzbar, im Browser erscheint er nie. Welche
+Version mindestens nötig ist, legt der Betrieb von Konfi Quest fest.
+
+### Einen Wartungshinweis lesen
+
+Kündigt der Betrieb eine Wartung oder Störung an, steht auf der Startseite —
+bei Konfis, Team und Leitung gleich — und auf der Anmeldeseite eine gelbe
+Karte **„Wartungshinweis"** mit dem angekündigten Text. Die App bleibt dabei
+voll nutzbar. Die Karte lässt sich nicht wegtippen; hat der Betrieb den
+Hinweis zurückgenommen, verschwindet sie beim nächsten Öffnen der App oder
+wenn du in sie zurückkehrst.
+
+### Mindestversion und Wartungshinweis setzen
+
+Für den Betrieb von Konfi Quest: Beides kommt aus Stack-Variablen des
+Servers und wird mit dem nächsten Stack-Update wirksam. Leer heißt aus.
+
+| Variable | Wirkung |
+|---|---|
+| `APP_MIN_VERSION_IOS` | Mindestversion auf dem iPhone, Form `x.y.z` (etwa `2.3.0`) |
+| `APP_MIN_VERSION_ANDROID` | Mindestversion auf Android, Form `x.y.z` |
+| `WARTUNG_HINWEIS` | Text des Wartungshinweises, als Klartext |
+
+Eine Mindestversion nie höher setzen als die Version, die im Store der
+Plattform schon freigegeben ist — sonst sperrt sie Geräte, die noch gar
+nicht aktualisieren können. Ein Wert, der keine Version der Form `x.y.z` ist,
+wird ignoriert und im Server-Log gemeldet. Beides wirkt erst ab App-Version
+2.3; ältere Installationen zeigen weder Sperre noch Hinweis.
+
 ## Etwas löschen: nach links wischen
 
 **Es gibt keine Löschknöpfe in Listen.** Wische den Eintrag stattdessen **nach

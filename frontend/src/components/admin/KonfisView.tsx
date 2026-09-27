@@ -16,6 +16,7 @@ import {
 } from '../shared/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection, TrialBanner, StoreUpdateBanner } from '../shared';
+import WartungsHinweis from '../shared/WartungsHinweis';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
@@ -205,6 +206,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       {/* Dezenter Hinweis, wenn im Store eine neuere Version liegt.
           Prueft selbst und rendert sonst nichts (StoreUpdateBanner). */}
       <StoreUpdateBanner />
+
+      {/* Wartungshinweis des Betriebs (E-05): steht, solange der Server ihn
+          meldet; liest nur den Stand und rendert sonst nichts. */}
+      <WartungsHinweis />
 
       <SectionHeader
         title={viewMode === 'teamer' ? 'Team' : 'Konfis'}

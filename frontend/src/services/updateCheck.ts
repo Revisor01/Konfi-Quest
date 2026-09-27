@@ -14,6 +14,9 @@
 //   Gemeinde-App ohnehin unangemessen. Der Link fuehrt lediglich zur
 //   Store-Seite der App — das ist auf beiden Plattformen der uebliche und
 //   zulaessige Weg.
+//   Die Sperre fuer zu alte Versionen ist davon getrennt und greift nur,
+//   wenn der Betrieb eine Mindestversion setzt (Entscheidung 27.09.2026,
+//   services/betriebsstatus.ts). Dieser Hinweis selbst blockiert weiterhin nie.
 // - Offline stoert nichts: ohne Verbindung wird gar nicht erst angefragt.
 // - Fehler sind still: Kein Hinweis ist immer ein gueltiges Ergebnis.
 

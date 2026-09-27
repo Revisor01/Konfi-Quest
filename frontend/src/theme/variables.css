@@ -4346,6 +4346,45 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
   .app-whatsnew:active { transform: none; }
 }
 
+/* Wartungshinweis des Betriebs (E-05, 27.09.2026; shared/WartungsHinweis).
+   BEWUSST NICHT die Form der Neuigkeiten-Karten darueber: Die sind zum
+   Antippen da und tragen ein X, dieser Hinweis ist eine reine Auskunft --
+   kein Zeiger, keine Druckbewegung. Deshalb die Statusflaeche "Warnung"
+   (Flaeche, Rand, Text als Dreiergruppe), die der Dunkelmodus mit eigenen
+   Werten fuehrt; dunkelmodus.test.ts prueft genau dieses Paar auf 4,5:1. */
+.app-wartungshinweis {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-schmal);
+  padding: var(--app-abstand-mittel) var(--app-abstand-mittelweit);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-flaeche-warnung);
+  border: 1px solid var(--app-rand-warnung);
+  color: var(--app-text-warnung);
+}
+.app-wartungshinweis__icon {
+  flex-shrink: 0;
+  font-size: var(--app-text-titel);
+  color: var(--app-text-warnung);
+}
+.app-wartungshinweis__inhalt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-winzig);
+  line-height: 1.35;
+}
+.app-wartungshinweis__titel {
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-fett);
+}
+.app-wartungshinweis__text {
+  font-size: var(--app-text-sekundaer);
+  /* Lange Woerter oder eingefuegte Adressen duerfen die Karte nicht sprengen. */
+  overflow-wrap: anywhere;
+}
+
 /* ====================================================================
    Glocke in der Kopfzeile und Postfach (25.09.2026)
 

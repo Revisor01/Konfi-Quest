@@ -241,6 +241,21 @@ Treffer für `/docs` in `frontend/src` außerhalb von Kommentaren).
 
 ### E-05: Wartungshinweis und Mindestversion über `/api/app-version`
 
+**Status:** umgesetzt 27.09.2026 — additive Felder `ios/android.min_version`
+und `wartung {aktiv, text}` aus den Stack-Variablen `APP_MIN_VERSION_IOS`,
+`APP_MIN_VERSION_ANDROID`, `WARTUNG_HINWEIS` (`backend/utils/betriebshinweise.js`);
+die App ab 2.3.0 zeigt unter der Mindestversion einen nicht wegklickbaren
+Bildschirm mit Knopf zum Store (nie im Browser, nie ohne Antwort des Servers,
+`frontend/src/services/betriebsstatus.ts`) und den Wartungstext auf den
+Startseiten aller Rollen und der Anmeldeseite. Abweichend vom Vorschlag: keine
+Tabelle und kein Formular auf der Betriebsseite, kein `bis` und keine `art`;
+und unter der Mindestversion sperrt die App (so beauftragt am 27.09.2026),
+statt nur dauerhaft hinzuweisen — das steht gegen die Begründung von E-29 und
+gegen den Kopf von `updateCheck.ts` (Apple-Ablehnungsgrund; dort nur um einen
+Verweis ergänzt); die Abwägung liegt bei Simon. Ohne gesetzte Variable
+sperrt nichts. Beschreibung für Nutzer:innen
+und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
+
 - **Für wen:** Betrieb / alle Rollen
 - **Warum jetzt:** Die App zeigt nur „eine neuere Version ist da"
   (`frontend/src/services/updateCheck.ts:11-18`, „Nur ein HINWEIS, nie eine
