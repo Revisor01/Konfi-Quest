@@ -56,8 +56,8 @@ Versionsüberschrift.
 - Auswählen, welche Mitteilungen aufs Handy kommen — auf iPhone und Android
   gleich, in der App statt in den Systemeinstellungen: Unter
   „Benachrichtigungen" im Profil beziehungsweise unter „Mehr" lassen sich
-  Nachrichten, Termine, Punkte und Abzeichen sowie (für Team und Leitung)
-  Anfragen und Freigaben einzeln ab- und anschalten, dazu ein Hauptschalter
+  „Nachrichten", „Events", „Punkte und Badges" sowie (für Team und Leitung)
+  „Anfragen und Freigaben" einzeln ab- und anschalten, dazu ein Hauptschalter
   für alles. Abgeschaltet wird nur der Weg aufs Handy — im Postfach unter der
   Glocke steht jede Mitteilung weiterhin.
 - Die App folgt dem Dunkelmodus des Handys: Steht das Gerät auf Dunkel,
@@ -67,25 +67,25 @@ Versionsüberschrift.
   Ampel der Kennzahlen und die farbigen Kopfbereiche folgen dem Wechsel —
   sie hielten zunächst an den hellen Farben fest.
 - Wer mehrere Gemeinden betreut, sieht in der Gemeinde-Auswahl oben links an
-  jeder Gemeinde eine rote Zahl, wenn dort etwas offen ist — Anträge, Termine,
+  jeder Gemeinde eine rote Zahl, wenn dort etwas offen ist — Anträge, Events,
   Beiträge, Chats, je nach eigener Rolle in dieser Gemeinde. So ist klar, wo
   Arbeit liegt, ohne erst hineinzuwechseln.
 - Ein Postfach: Oben rechts steht jetzt eine Glocke, die alles sammelt, was
-  die App dir mitteilen will — verliehene Abzeichen, eingereichte Anträge und
+  die App dir mitteilen will — verliehene Badges, eingereichte Anträge und
   die Entscheidungen dazu. Auch was du als Push verpasst hast, steht dort.
   Ungelesenes ist markiert, Antippen führt an die passende Stelle, „Alle
   gelesen" räumt auf. Wer in mehreren Gemeinden mitarbeitet, sieht die
   Mitteilungen aller Gemeinden an einem Ort, jede mit ihrem Gemeindenamen.
 - Das Postfach enthält jetzt alles, was bisher nur als Push kam: Punkte aus
-  einem Termin, Bonuspunkte, zugewiesene Aktivitäten, Level-Aufstiege,
+  einem Event, Bonuspunkte, zugewiesene Aktivitäten, Level-Aufstiege,
   Stempel, Anmeldungen, Abmeldungen, Nachrücken von der Warteliste, abgesagte,
-  geänderte und wieder stattfindende Termine, ausgeblendete Beiträge. Für
+  geänderte und wieder stattfindende Events, ausgeblendete Beiträge. Für
   Team und Leitung: Abmeldungen von Konfis, Buchungen und Absagen des Teams,
-  Termine, die auf Verbuchung warten, neue Registrierungen, Beiträge zur
+  Events, die auf Verbuchung warten, neue Registrierungen, Beiträge zur
   Freigabe, die Warnung vor dem Löschen eines Jahrgangs sowie Ab- und
-  Wieder-Anmeldungen von Pflichtterminen. Wer kein Push-Gerät hat oder
+  Wieder-Anmeldungen von Pflicht-Events. Wer kein Push-Gerät hat oder
   Mitteilungen abgeschaltet hat, findet all das trotzdem hier. Nicht im
-  Postfach: die Termin-Erinnerung „morgen"/„gleich", neue Termine, gestartete
+  Postfach: die Event-Erinnerung „morgen"/„gleich", neue Events, gestartete
   Challenges und Chat-Nachrichten — dafür gibt es eigene Listen und Zähler.
 - Auch der freigegebene Jahresrückblick und ein neues Zertifikat stehen im
   Postfach. Antippen des Rückblicks öffnet genau die Ausgabe, um die es geht.
@@ -93,28 +93,28 @@ Versionsüberschrift.
   Vorher fehlten sie dort: Wer 23 ungelesene Mitteilungen, 9 wartende
   Beiträge und 3 Chat-Nachrichten hatte, sah am Symbol eine 12. Jetzt steht
   dort 35 — die Summe aller Zahlen, die die App zeigt, Reiter und Glocke.
-  Eine Mitteilung „Termine warten auf Verbuchung" ersetzt die vom Vortag,
+  Eine Mitteilung „Events warten auf Verbuchung" ersetzt die vom Vortag,
   solange die noch ungelesen ist, statt sich täglich zu stapeln. Geräte, auf
   denen noch eine ältere App ohne Postfach läuft, bekommen die Zahl ohne
   Postfach und ohne Challenge-Neuigkeiten — dort ließen sie sich nicht
   abbauen, und die Zahl ginge nie auf null.
-- Mitteilungen zu einem Termin, einer Challenge oder einem Jahrgang
-  verschwinden mit, wenn der Termin, die Challenge oder der Jahrgang gelöscht
+- Mitteilungen zu einem Event, einer Challenge oder einem Jahrgang
+  verschwinden mit, wenn das Event, die Challenge oder der Jahrgang gelöscht
   wird — statt beim Antippen ins Leere zu führen. Die Meldung „Konfi hat sich
-  abgemeldet" führt die Leitung jetzt direkt an den Termin.
+  abgemeldet" führt die Leitung jetzt direkt zum Event.
 - Die Zahl an der Glocke zählt zusammen, was ungelesen ist und was noch aus
   einer Funklücke gesendet wird; ein endgültig gescheiterter Vorgang färbt sie
   rot.
-- Im Postfach zeigt jede Abzeichen-Mitteilung das Symbol des Abzeichens statt
-  eines allgemeinen Bands; Datum und Gemeinde tragen ein Symbol wie in den
-  Terminlisten. Auf dem iPhone geht das Postfach als Karte mit abgedunkeltem
+- Im Postfach zeigt jede Badge-Mitteilung das Symbol des Badges statt eines
+  allgemeinen Bands; Datum und Gemeinde tragen ein Symbol wie in den
+  Event-Listen. Auf dem iPhone geht das Postfach als Karte mit abgedunkeltem
   Hintergrund auf und schließt über das Kreuz, wie jedes andere Fenster der
   App.
-- Eine Abzeichen-Mitteilung heißt nur noch „Neues Badge erhalten!" — vorher
+- Eine Badge-Mitteilung heißt nur noch „Neues Badge erhalten!" — vorher
   hing der technische Symbolname am Titel („… sunny-outline"), auch bei
   älteren Mitteilungen wird er nicht mehr gezeigt.
 - Das Postfach räumt sich selbst auf: Ziehst du einen Antrag zurück oder
-  löscht die Leitung ein Abzeichen, verschwinden die Mitteilungen dazu — bei
+  löscht die Leitung ein Badge, verschwinden die Mitteilungen dazu — bei
   dir und bei der Leitung. Entscheidungen („verbucht", „abgelehnt") bleiben
   als Verlauf stehen.
 - Die Zahl mit Uhr an der einzelnen Challenge, die Leitung und Team offene
@@ -214,7 +214,7 @@ Versionsüberschrift.
   am kleinsten.
 - Die kleinen Marken in der Ecke von Karten zeigen jetzt durchgehend Symbole
   statt Wörter: die Rolle in der Benutzerliste (Gebäude für Org-Admin, Schild
-  für Admin, Person für Teamer:in), „Voll"/„Frei" bei Serienterminen
+  für Admin, Person für Teamer:in), „Voll"/„Frei" bei den Events einer Serie
   (Kreuz/Haken), „Aktiviert" bei den Benachrichtigungen (Haken), „Neu" im
   Postfach (geschlossener Umschlag) und die Restlaufzeit von Einladungscodes
   (Zahl der Tage plus Uhr; am letzten Tag ein oranges, abgelaufen ein rotes
@@ -226,10 +226,10 @@ Versionsüberschrift.
 - Alle Symbol-Marken in den Ecken der Karten sind jetzt für Vorlesehilfen
   beschriftet — der Satz, der beim Verweilen erscheint, wird auch vorgelesen.
   Bisher galt das nur für einen Teil von ihnen.
-- Mitteilungen über Punkte — aus einem Termin, als Bonus oder für eine
+- Mitteilungen über Punkte — aus einem Event, als Bonus oder für eine
   eingetragene Aktivität — führen beim Antippen in die Punkte-Übersicht statt
-  zum Termin oder auf die Startseite. Ein Stempel führt zu den Challenges,
-  wo die Stempel stehen, nicht mehr zu den Abzeichen. Der Jahresrückblick
+  zum Event oder auf die Startseite. Ein Stempel führt zu den Challenges,
+  wo die Stempel stehen, nicht mehr zu den Badges. Der Jahresrückblick
   öffnet den jeweiligen Rückblick im Profil statt der Startseite.
 - Eine neue Gemeinde startet mit denselben sechs Levels wie die bestehenden —
   mit geschlechtsneutralen Titeln (Noviz:in, Lehrling, Unterstützung,
@@ -240,23 +240,24 @@ Versionsüberschrift.
   oben rechts. Bei den Anträgen bleibt die Karte „Wird gesendet…" mit den
   einzelnen Vorgängen.
 - Der Gemeinde-Umschalter oben links steht auf allen Seiten, die über die
-  Leiste unten erreichbar sind — Konfis, Termine, Chat, Challenges und „Mehr"
-  für die Leitung, Startseite, Termine, Abzeichen, Challenges und Chat für
-  Konfis und Team —, nicht mehr nur in der Konfi-Liste. Wer über einen Push
-  oder das Postfach in eine andere Gemeinde gewechselt ist, sieht so, wo er
-  gerade arbeitet, und kommt von jeder dieser Seiten zurück. Nicht steht er in
-  Detailansichten (einzelner Termin, einzelne Konfi, einzelnes Material,
-  Chatraum), auf den Unterseiten unter „Mehr" (Aktivitäten, Abzeichen,
-  Jahrgänge, Level, Material, Jahresrückblick) sowie auf Profil,
-  Benutzer:innen, Organisationen und Betrieb: Was dort zu sehen ist, gehört zu
-  genau einer Gemeinde, ein Wechsel führte ins Leere. Die Glocke steht dagegen
-  auf jeder Seite, auch im Chatraum.
+  Leiste unten erreichbar sind — Konfis, Chat, Mitmachen, Challenges und
+  „Mehr" für die Leitung; Start, Chat, Challenges und Mitmachen für Konfis
+  und Team, dazu Badges bei den Konfis und Material beim Team —, nicht mehr
+  nur in der Konfi-Liste. Wer über einen Push oder das Postfach in eine
+  andere Gemeinde gewechselt ist, sieht so, wo er gerade arbeitet, und kommt
+  von jeder dieser Seiten zurück. Nicht steht er in Detailansichten
+  (einzelnes Event, einzelne Konfi, einzelnes Material, Chatraum), auf den
+  Unterseiten unter „Mehr" (Aktivitäten, Badges, Jahrgänge, Level, Material,
+  Jahresrückblick) sowie auf Profil, Benutzer:innen, Organisationen und
+  Betrieb: Was dort zu sehen ist, gehört zu genau einer Gemeinde, ein Wechsel
+  führte ins Leere. Die Glocke steht dagegen auf jeder Seite, auch im
+  Chatraum.
 - In der Gemeinde-Auswahl steht die aktive Gemeinde fett und leicht
   hinterlegt statt mit grünem Haken; der Gemeindename am Knopf ist kleiner und
   nimmt in der Kopfzeile weniger Platz ein.
 - Die Mitteilungen im Postfach sehen aus wie jede andere Liste der App: Karte
-  im Hintergrund, farbiger Rand und Symbol je Bereich — Abzeichen in der
-  Abzeichenfarbe, Anträge in der Aktivitätenfarbe. Ungelesenes trägt ein
+  im Hintergrund, farbiger Rand und Symbol je Bereich — Badges in der
+  Badge-Farbe, Anträge in der Aktivitätenfarbe. Ungelesenes trägt ein
   „Neu" in der Ecke.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
@@ -282,11 +283,11 @@ Versionsüberschrift.
   Die Abstufung untereinander bleibt erhalten.
 - Die Regler für Punkte, Plätze und Wiederholungen zeigen jetzt Rastermarken
   und rasten darauf ein. Die Höchstwerte für Teilnehmende und Zeitfenster sind
-  auf ein alltagstaugliches Maß gesetzt; bestehende Termine mit mehr Plätzen
+  auf ein alltagstaugliches Maß gesetzt; bestehende Events mit mehr Plätzen
   behalten ihre Zahl.
-- Die Terminlisten für Konfis, Team und Leitung laden spürbar schneller, wenn
-  viele Gemeinden dieselbe Datenbank teilen: Die Buchungszahlen je Termin
-  werden nur noch für die eigenen Termine gezählt statt für alle Buchungen
+- Die Event-Listen für Konfis, Team und Leitung laden spürbar schneller, wenn
+  viele Gemeinden dieselbe Datenbank teilen: Die Buchungszahlen je Event
+  werden nur noch für die eigenen Events gezählt statt für alle Buchungen
   aller Gemeinden. An den angezeigten Zahlen ändert sich nichts.
 - Die App gibt Deutsch als ihre Sprache an. Vorlesefunktionen wie VoiceOver
   und TalkBack lesen sie deshalb mit deutscher Stimme vor statt mit englischer.
@@ -295,13 +296,13 @@ Versionsüberschrift.
   Person einzeln. Wer die Nachricht bekommt, was darin steht und welche Zahl
   am App-Symbol erscheint, bleibt gleich — auch bei vielen Gemeinden in
   derselben Datenbank bleibt der Rest der App dabei flüssig.
-- Terminerinnerungen an viele Angemeldete gehen gesammelt je Termin hinaus
-  statt Person für Person. Wer erinnert wird und wann, bleibt gleich; ein
-  Erinnerungslauf mit vielen Terminen belastet die Datenbank nicht mehr
-  minutenlang.
+- Die Erinnerungen vor einem Event gehen bei vielen Angemeldeten gesammelt
+  hinaus, je Event auf einmal statt Person für Person. An der Auswahl, wer
+  erinnert wird, und am Text ändert das nichts; ein Erinnerungslauf mit
+  vielen Events belastet die Datenbank nicht mehr minutenlang.
 - Die App folgt der Einstellung „Bewegung reduzieren" des Geräts: Dann
   entfallen Seitenübergänge, das Schütteln bei falscher Anmeldung, pulsierende
-  Ladepunkte und Abzeichen, gleitende Karten und der Wisch durch die
+  Ladepunkte und Badges, gleitende Karten und der Wisch durch die
   Einführung — alles erscheint sofort an seinem Platz. Der Jahresrückblick
   kennt diese Einstellung bereits und bleibt, wie er ist.
 - Admins bekommen die Mitteilung über neue Beiträge nur noch zu Challenges,
@@ -391,9 +392,12 @@ Versionsüberschrift.
   wartende Nachrichten oder Abmeldungen gehen nicht mehr unter falschem Namen
   raus. Wer sich selbst wieder anmeldet, findet alles wie vorher.
 - Im Funkloch oder ohne Empfang merkt die App jetzt, dass sie offline ist:
-  Nachrichten, Abmeldungen und gemeldete Aktivitäten warten und gehen raus,
-  sobald wieder Netz da ist. Bisher galt sie dort als online, schickte ins
-  Leere und gab nach drei Versuchen auf.
+  Nachrichten, Abmeldungen und gemeldete Aktivitäten warten dann und gehen
+  raus, sobald wieder Netz da ist. Bisher galt sie dort als online, schickte
+  ins Leere und gab nach drei Versuchen auf. Hat die App das Funkloch noch
+  nicht bemerkt oder reißt die Verbindung mitten im Senden ab, wartet nur
+  eine Chat-Nachricht; eine Abmeldung, ein Antrag und die übrigen Formulare
+  melden dann einen Fehler und müssen später noch einmal abgeschickt werden.
 - Einmalpasswörter lassen sich nicht mehr durchprobieren: Nach zehn falschen
   Passwörtern innerhalb einer Stunde nimmt ein Konto keine Anmeldung mehr an,
   auch nicht mit dem richtigen Passwort — bis die Stunde um ist oder das Konto
@@ -428,7 +432,7 @@ Versionsüberschrift.
   von selbst großgeschrieben, sondern nur noch am Anfang und nach einem Punkt,
   Ausrufe- oder Fragezeichen.
 - Die anonyme Fehlermessung überträgt Meldungen des Servers nicht mehr im
-  Wortlaut, damit keine Namen, Dateinamen oder Namen von Terminen in die
+  Wortlaut, damit keine Namen, Dateinamen oder Namen von Events in die
   Statistik gelangen — bisher kam etwa „… gehört zu keinem Jahrgang dieses
   Events" samt Namen dort an. Im Wortlaut gezählt werden nur noch Meldungen,
   die fest in der App stehen, und einige feste Hinweise zur An- und Abmeldung
@@ -469,32 +473,32 @@ Versionsüberschrift.
   sie liegen, bis jemand den Medien-Cache von Hand leerte — wer das Gerät danach
   benutzte, fand die Dateien der vorigen Person vor. Nach dem Update lädt die
   App deshalb einmal alles neu, was schon gespeichert war.
-- Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war
-  das möglich — und dann wurde niemand automatisch angemeldet, obwohl der
-  Termin für alle sichtbar war. In einer Gemeinde standen dadurch nur vier von
-  zwölf Konfis an den Pflichtterminen. Termine ohne Pflicht dürfen weiterhin
+- Ein Pflicht-Event lässt sich nicht mehr ohne Jahrgang speichern. Bisher war
+  das möglich — und dann wurde niemand automatisch angemeldet, obwohl das
+  Event für alle sichtbar war. In einer Gemeinde standen dadurch nur vier von
+  zwölf Konfis an den Pflicht-Events. Events ohne Pflicht dürfen weiterhin
   ohne Jahrgang für die ganze Gemeinde gelten.
 - Die Zahl an der Postfach-Glocke nimmt ab, sobald man eine Mitteilung
   antippt oder alle als gelesen markiert — bei mehreren Gemeinden auch die
   Zahl am App-Symbol. Bisher blieb sie oft stehen, weil eine ältere Zählung
   die neue überschrieb.
 - Im Handbuch stehen zwischen den Abschnitten wieder Trennlinien statt drei
-  Striche im Text (Abzeichen, Challenges, Chat).
+  Striche im Text (Badges, Challenges, Chat).
 - Im Dunkelmodus blieben die Anmeldeseiten hell — Anmeldung, Passwort vergessen,
   neues Passwort und die Registrierung über einen Einladungslink.
 - Im Dunkelmodus leuchteten die farbigen Kopfbereiche greller als im hellen
   Modus. Die Bereichsfarben sind jetzt in beiden Modi dieselben.
 - Im Dunkelmodus waren die Ränder von Karten und Listen nicht mehr zu erkennen,
   und im Chat blieben die Datumsmarken und die Eingabezeile hell.
-- Die Sprechblase an Abzeichen und Stempeln ist jetzt schlicht weiß, Fläche
+- Die Sprechblase an Badges und Stempeln ist jetzt schlicht weiß, Fläche
   und Spitze gleich. Bisher schimmerte durch, was darunter lag, und die Spitze
   hatte einen anderen Ton als die Blase — am Bildschirm kaum zu sehen, auf dem
   Telefon deutlich. Das galt auf allen Seiten, in allen Rollen.
-- Auf der Startseite fürs Team waren die Sprechblasen an Abzeichen und
+- Auf der Startseite fürs Team waren die Sprechblasen an Badges und
   Urkunden schmaler als anderswo, sodass Texte unnötig umbrachen. Sie sind
   jetzt so breit wie überall sonst.
-- Ein laufender Termin steht jetzt schon unter „Verbuchen", nicht erst nach
-  seinem Ende. Bisher zeigte der Reiter „Mitmachen" während des Termins eine
+- Ein laufendes Event steht jetzt schon unter „Verbuchen", nicht erst nach
+  seinem Ende. Bisher zeigte der Reiter „Mitmachen" während des Events eine
   rote Zahl, hinter der eine leere Liste wartete — wer mitten im Konfisamstag
   jemanden verbuchen wollte, fand ihn dort nicht.
 - Unter „Benachrichtigungen" stand derselbe Hinweis zweimal; jetzt steht er
@@ -509,7 +513,7 @@ Versionsüberschrift.
   beiden Modi lesbar.
 - Hat eine Gemeinde noch keine Level, trägt das Symbol im leeren Zustand jetzt
   die Level-Farbe wie der Rest der Seite — nicht mehr das Violett der Konfis.
-- Die Sprechblase, die beim Antippen eines Abzeichens, Stempels oder Levels
+- Die Sprechblase, die beim Antippen eines Badges, Stempels oder Levels
   aufgeht, passt wieder zu ihrem Inhalt. Auf dem iPhone ragte der weiße
   Inhalt über die Glasblase hinaus, und der Pfeil zeigte neben die Kachel.
 - In der Level-Sprechblase bricht die Zeile mit den nötigen Punkten nicht mehr
@@ -525,8 +529,8 @@ Versionsüberschrift.
 - Im Profil steht jetzt der Name der Gemeinde, in der man gerade arbeitet.
   Bisher stand dort immer die Gemeinde des Kontos.
 - Wer in einer Gemeinde Konfi ist und in einer anderen zur Leitung oder zum
-  Team gehört, sieht dort jetzt Startseite, Profil und Abzeichen. Bisher blieb
-  die Startseite leer und es wurden keine Abzeichen angezeigt.
+  Team gehört, sieht dort jetzt Startseite, Profil und Badges. Bisher blieb
+  die Startseite leer und es wurden keine Badges angezeigt.
 - Auf der Materialseite des Teams steht der Hinweis „Keine Materialien" jetzt
   auf einer Karte wie überall sonst; bisher stand er ohne Hintergrund da.
 - Die Leitung sieht die Jahresrückblicke auch von Personen, die über eine
@@ -534,7 +538,7 @@ Versionsüberschrift.
   dort verschlossen.
 - Im Profil stehen nur noch die Jahresrückblicke der Gemeinde, in der man
   gerade ist. Wer in mehreren mitarbeitet, sah bisher alle untereinander.
-- Öffnet man einen Termin aus dem Postfach, führt der Zurück-Knopf wieder
+- Öffnet man ein Event aus dem Postfach, führt der Zurück-Knopf wieder
   dorthin zurück, wo man war. Bisher war er ohne Funktion.
 - Wer mehrere Gemeinden betreut, bekommt die Mitteilungen an die Leitung jetzt
   aus allen — neue Anträge, Ab- und Anmeldungen, Challenge-Beiträge, Buchungen
@@ -548,32 +552,32 @@ Versionsüberschrift.
   er dort, und umgekehrt zeigte ihm die Liste nach dem Wechsel das Team der
   Stamm-Gemeinde statt der gewählten.
 - Beim Eintragen von Hand bietet die Auswahl nur noch Personen an, die zu
-  einem Jahrgang des Termins gehören — bei Konfis wie beim Team und der
-  Leitung. Ein Hinweis nennt die Jahrgänge des Termins, damit klar ist, warum
+  einem Jahrgang des Events gehören — bei Konfis wie beim Team und der
+  Leitung. Ein Hinweis nennt die Jahrgänge des Events, damit klar ist, warum
   jemand fehlt. Der Server weist andere Einträge ab und sagt, um wen es geht.
   Bisher stand das Team ungefiltert in der Liste, und ein Konfi aus einem
-  fremden Jahrgang ließ sich über die Schnittstelle trotzdem eintragen. Termine
-  ohne Jahrgang und „Nur Team"-Termine bleiben für alle offen; die
+  fremden Jahrgang ließ sich über die Schnittstelle trotzdem eintragen. Events
+  ohne Jahrgang und „Nur Team"-Events bleiben für alle offen; die
   Gemeindeleitung ist ausgenommen.
-- Auch Teamer:innen kommen aus einer Termin-Mitteilung direkt zum Termin
-  statt nur zur Terminliste. Bisher landeten sie auf der Liste; ein Link auf
-  einen einzelnen Termin führte sogar zur Startseite.
-- Ein zweiter Link auf einen anderen Termin öffnet bei Teamer:innen jetzt
-  auch den zweiten Termin. Bisher wirkte nur der erste Link nach dem Start.
-- Ein Termin aus einem fremden Jahrgang lässt sich von Teamer:innen und
+- Auch Teamer:innen kommen aus einer Event-Mitteilung direkt zum Event
+  statt nur zur Event-Liste. Bisher landeten sie auf der Liste; ein Link auf
+  ein einzelnes Event führte sogar zur Startseite.
+- Ein zweiter Link auf ein anderes Event öffnet bei Teamer:innen jetzt
+  auch das zweite Event. Bisher wirkte nur der erste Link nach dem Start.
+- Ein Event aus einem fremden Jahrgang lässt sich von Teamer:innen und
   Leitung nicht mehr über seine Kennung abrufen — samt Teilnehmerliste und
-  Abmeldegründen. Sichtbar ist nur, was auch in der eigenen Terminliste steht.
-- Wer aus einer Termin-Mitteilung auf einen Termin kommt, dessen Jahrgang
+  Abmeldegründen. Sichtbar ist nur, was auch in der eigenen Event-Liste steht.
+- Wer aus einer Event-Mitteilung auf ein Event kommt, dessen Jahrgang
   ihm nicht zugewiesen ist, liest jetzt den Grund und den Weg hinaus („Nicht
   deinem Jahrgang zugeordnet") — statt einer allgemeinen Fehlermeldung über
-  einer leeren Seite oder einer stummen Terminliste.
+  einer leeren Seite oder einer stummen Event-Liste.
 - Auswahllisten öffnen sich ohne den kleinen Zipfel am Rand.
 - Die Hinweise im Profil („Was ist neu", „Events und Aktivitäten") zeigen
   rechts keinen Pfeil mehr.
 - Der Umschalter zwischen Konfis und Team hat auf iPhones die milchige
   Glasfläche, die auch die Navigationsleiste unten verwendet.
-- Eine Mitteilung zu einem Termin führt beim Antippen zum Termin selbst statt
-  nur zur Terminliste. Das gilt für Anmeldung, Abmeldung, Nachrücken von der
+- Eine Mitteilung zu einem Event führt beim Antippen zum Event selbst statt
+  nur zur Event-Liste. Das gilt für Anmeldung, Abmeldung, Nachrücken von der
   Warteliste, bestätigte Teilnahme und Erinnerungen — und für die Meldungen an
   die Leitung, wenn sich jemand an- oder abmeldet.
 - Steht die App-Sperre auf „Sofort", sperrt die App jetzt auch, wenn man sie
@@ -591,8 +595,8 @@ Versionsüberschrift.
 - Das Antippen einer Mitteilung stürzte die App auf Android ab: Sie öffnete
   sich kurz und war wieder weg, auch aus dem Hintergrund heraus — erst nach
   vollständigem Schließen ließ sie sich wieder starten. Zwei Ursachen steckten
-  dahinter, beide behoben. Der Tipp führt jetzt direkt zum gemeinten Termin,
-  Chat oder Abzeichen.
+  dahinter, beide behoben. Der Tipp führt jetzt direkt zum gemeinten Event,
+  Chat oder Badge.
 - Die App-Sperre fragte beim Öffnen zweimal gleichzeitig nach dem
   Fingerabdruck. Auf Android brach die erste Abfrage dadurch ab und meldete
   „Nicht erkannt", obwohl niemand abgebrochen hatte — erst der zweite Versuch
@@ -611,7 +615,7 @@ Versionsüberschrift.
   nächsten Anmeldung ohne Mitteilungen — etwa bei wackligem Netz oder direkt
   nach dem Flugmodus. Die App versucht es jetzt mehrmals mit wachsendem
   Abstand, im Hintergrund, ohne die Anmeldung aufzuhalten.
-- Mehrtägige Termine zeigen in den Details jetzt beide Tage. Eine Freizeit von
+- Mehrtägige Events zeigen in den Details jetzt beide Tage. Eine Freizeit von
   Freitagabend bis Sonntagmittag stand vorher als „Freitag · 16:30 – 12:30" da,
   als ob sie am selben Tag endete.
 - Die Auslastungsanzeige misst jetzt die Zeit, die der Server wirklich
@@ -629,7 +633,7 @@ Versionsüberschrift.
 - Beruht der langsame Rand einer Seite auf zu wenigen Aufrufen, steht das
   jetzt dabei. Bisher las sich ein einzelner Ausreißer wie eine dauerhafte
   Eigenschaft der Seite.
-- Der Check-in-Code weiterer Termine einer Reihe war in den Termindetails
+- Der Check-in-Code weiterer Events einer Reihe war in den Event-Details
   enthalten. Damit ließ sich die Anwesenheit für die ganze Reihe eintragen,
   ohne vor Ort zu sein.
 - Android: Die Reiterleiste unten ist wieder deckend und so hoch wie
@@ -641,7 +645,7 @@ Versionsüberschrift.
 - Beim Wechsel in eine andere Gemeinde nahmen die Zähler an den Reitern die
   Zahlen der vorigen Gemeinde mit — an Challenges stand eine Neun, obwohl es
   in der neuen Gemeinde gar keine Challenges gibt. Das galt auch für Chat,
-  Anträge, Termine, Freigaben und Abzeichen. Die Zähler fallen jetzt beim
+  Anträge, Events, Freigaben und Badges. Die Zähler fallen jetzt beim
   Wechsel sofort auf null und werden für die neue Gemeinde frisch geladen.
   Die Zahl an der Glocke bleibt stehen: Das Postfach gehört zum Konto und
   umfasst alle Gemeinden.
@@ -683,34 +687,37 @@ Versionsüberschrift.
   Gemeinde, das Konto bleibt. Aus allen Chats dieser Gemeinde ist die Person
   danach heraus, auch aus Gruppen und Einzelchats, und bekommt von dort keine
   Mitteilungen mehr.
-- Die Erinnerung „Morgen: …" zu einem Termin kam kurz nach Mitternacht aufs
-  Handy — für einen Termin um 18:00 Uhr also 34 Stunden vorher. Sie kommt jetzt
+- Die Erinnerung „Morgen: …" zu einem Event kam kurz nach Mitternacht aufs
+  Handy — für ein Event um 18:00 Uhr also 34 Stunden vorher. Sie kommt jetzt
   genau 24 Stunden vor Beginn, so wie die Erinnerung „Gleich: …" eine Stunde
   vorher. Außerdem kann ein langer Erinnerungslauf nicht mehr vom nächsten
   überholt werden — dieselbe Erinnerung ging sonst zweimal hinaus.
-- Hat die Leitung eine Konfi von einem Termin abgemeldet, sah die Konfi einen
-  offenen Termin mit grauem Knopf „Nicht verfügbar" — und kam nicht zurück.
+- Hat die Leitung eine Konfi von einem Event abgemeldet, sah die Konfi ein
+  offenes Event mit grauem Knopf „Nicht verfügbar" — und kam nicht zurück.
   Jetzt steht dort „Von der Leitung abgemeldet" und ein Knopf „Wieder
   anmelden"; Anmeldeschluss und Plätze gelten dabei wie für alle.
 - Wer auf der Warteliste stand, konnte nicht herunter: Statt eines
   Abmelden-Knopfs gab es „Warteliste offen", und der endete in einer
-  Fehlermeldung. Jetzt zeigt der Termin den Wartelistenplatz und den Knopf
+  Fehlermeldung. Jetzt zeigt das Event den Wartelistenplatz und den Knopf
   „Von der Warteliste abmelden" — auch in den letzten zwei Tagen, denn wer
   wartet, belegt keinen Platz.
-- Pflichttermin-Regel, Abmeldefrist und eingetragene Anwesenheit gelten jetzt
-  auf jedem Abmeldeweg. Über einen älteren Nebenweg konnte eine Konfi bislang
-  ein von der Leitung eingetragenes „Gefehlt" selbst löschen oder sich am
-  Vortag ohne Spur abmelden; die Anwesenheitsliste war so nicht verlässlich.
+- Die Regel für Pflicht-Events, die Abmeldefrist und die eingetragene
+  Anwesenheit gelten jetzt auf jedem Abmeldeweg. Über einen älteren Nebenweg
+  konnte eine Konfi bislang ein von der Leitung eingetragenes „Gefehlt" selbst
+  löschen oder sich am Vortag ohne Spur abmelden; die Anwesenheitsliste war so
+  nicht verlässlich.
 - Löschte die Leitung einen alten Jahrgang, verschwand damit der
   Konfi-Rückblick aller inzwischen beförderten Teamer:innen — obwohl ihre
-  Punkte, Level und Abzeichen bewusst erhalten bleiben. Der Rückblick bleibt
+  Punkte, Level und Badges bewusst erhalten bleiben. Der Rückblick bleibt
   jetzt ebenfalls und steht weiter im Profil.
 - Bei schlechter Verbindung schickte die App eine hängende Anfrage bis zu
   dreimal erneut — auch beim Speichern. So konnten Bonuspunkte mehrfach
-  vergeben, ein Termin mehrfach angelegt oder eine Anmeldung als „bereits
+  vergeben, ein Event mehrfach angelegt oder eine Anmeldung als „bereits
   angemeldet" abgewiesen werden, obwohl sie längst stand. Wiederholt wird
-  jetzt nur noch, was folgenlos wiederholbar ist (Laden, Ändern, Löschen);
-  Speichern und Anlegen gehen genau einmal hinaus.
+  jetzt nur noch, was folgenlos wiederholbar ist: Laden, Löschen und die
+  meisten Änderungen an bestehenden Einträgen. Anlegen, Anmelden, Einreichen
+  und Vergeben gehen genau einmal hinaus, ebenso einzelne Änderungen wie die
+  Wahl des Konfispruchs.
 - Ein kurzer Aussetzer der Datenbank (etwa ein Neustart) legte bisher den
   gesamten Dienst lahm: Alle Server beendeten sich im selben Moment, die App
   zeigte für einige Zeit Verbindungsfehler, offene Chats verloren die
@@ -734,6 +741,11 @@ Versionsüberschrift.
   Sie folgt jetzt der Textfarbe der Nachricht.
 - Der Knopf „Zur Teamer:in befördern" in der Konfi-Verwaltung zeigte im
   Dunkelmodus schwarze Schrift auf Lila; sie ist jetzt weiß wie im Hellen.
+- Im Dunkelmodus sind die kleinen farbigen Marken an Listeneinträgen —
+  Punkte („+2P"), Level („20P"), Status — jetzt lesbar: Sie werden eine Stufe
+  tiefer, damit die weiße Schrift darauf genug Kontrast hat. Auch die
+  Prozentzahl im Fortschrittsring der Badges nimmt im Dunkeln eine hellere
+  Stufe ihrer Farbe. Im Hellen ändert sich nichts.
 - Die Anmeldeseiten — Anmelden, Passwort vergessen, neues Passwort setzen,
   Registrieren mit Einladungscode — lassen sich mit Tastatur und
   Vorlesefunktion bedienen: Jedes Feld hat einen Namen, der Augen-Knopf am
@@ -754,7 +766,7 @@ Versionsüberschrift.
   mit jeder Sicherung mit.
 - Ehemalige Konfis, die 60 Tage nach der Konfirmation automatisch aus den
   Listen der Leitung genommen wurden, konnten sich bis zur endgültigen Löschung
-  weiter anmelden, im Jahrgangs-Chat schreiben und Termine buchen — für die
+  weiter anmelden, im Jahrgangs-Chat schreiben und Events buchen — für die
   Leitung unsichtbar. Jetzt ist die Anmeldung ab diesem Zeitpunkt gesperrt wie
   bei einem deaktivierten Konto, und laufende Sitzungen enden.
 - Der Schlüssel, mit dem ein Gerät seine Anmeldung im Hintergrund verlängert,
@@ -794,13 +806,17 @@ Versionsüberschrift.
 - Eine neue Chat-Nachricht kam bei allen, die den Chat gerade offen hatten,
   doppelt an — unsichtbar, aber jedes Mal wurden die Zähler zweimal neu
   geladen. Sie kommt jetzt genau einmal.
+- Chat-Nachrichten, Räume und Konten lassen sich auch bei sehr vielen
+  gespeicherten Nachrichten zügig löschen. Bisher konnte „Team-Chat leeren",
+  das Löschen eines Events mit Event-Chat oder eines Kontos bei großen
+  Nachrichtenmengen in einen Zeitüberschreitungsfehler laufen.
 - Nach jedem Neustart des Servers wurde die Zahl am App-Symbol auf allen
   Geräten auf einmal nachgeführt — bei vielen Gemeinden war die App danach
   bis zu einer Stunde träge, und mehrere solcher Läufe konnten sich
   überlappen. Der erste Lauf merkt sich jetzt nur die Stände; nachgeführt
   wird weiterhin alle fünf Minuten, sobald sich bei jemandem etwas ändert,
   und nie zwei Läufe gleichzeitig.
-- Werden nach einer Pause des Servers auf einmal sehr viele Termine
+- Werden nach einer Pause des Servers auf einmal sehr viele Events
   anmeldbar, kamen alle „Anmeldung möglich"-Mitteilungen in einem Schwall.
   Sie gehen jetzt nach und nach hinaus, die am längsten offenen zuerst; im
   Alltag ändert sich nichts.
@@ -808,15 +824,25 @@ Versionsüberschrift.
   als nötig und wird nicht mehr als Absturz gezählt. Solange ein Server
   herunterfährt, nimmt er sich selbst aus der Verteilung, statt Anfragen ins
   Leere laufen zu lassen.
+- Die Grenzen für Anmeldeversuche, Registrierungen, Chat-Nachrichten,
+  Buchungen und Uploads gelten jetzt für alle Server gemeinsam statt je
+  Server einzeln — sie waren dadurch doppelt so weit wie gedacht, und die
+  Meldung „Zu viele Anfragen" kam scheinbar zufällig.
+- Bei einer Auslieferung werden die beiden Server nacheinander getauscht,
+  der zweite erst, wenn der erste wieder antwortet — statt beide zugleich,
+  was die App für einige Sekunden „Verbindung fehlgeschlagen" melden ließ.
+- Das Erstellen des Jahresrückblicks für einen ganzen Jahrgang belegt nicht
+  mehr alle Datenbankverbindungen auf einmal; die App bleibt währenddessen
+  für alle anderen flüssig.
 - Jedes Eingabefeld der App nennt der Vorlesefunktion seinen Namen — „Name",
   „Pflicht-Event", „Max. Teilnehmer:innen" statt nur „Textfeld" oder
   „Schalter". Bisher galt das nur auf den Anmeldeseiten; jetzt lassen sich
-  auch Termin-, Konfi-, Benutzer- und Umfrage-Formulare mit VoiceOver und
+  auch Event-, Konfi-, Benutzer- und Umfrage-Formulare mit VoiceOver und
   TalkBack ausfüllen. Sichtbar ändert sich nichts.
 - Alles, was sich antippen lässt, lässt sich auch mit der Tastatur bedienen
   und heißt für die Vorlesefunktion „Schaltfläche": die Einträge unter
   „Mehr" und im Profil, die Auswahlzeilen in den Formularen der Leitung,
-  Abzeichen- und Stempel-Kacheln, Termin-Karten auf der Startseite, die
+  Badge- und Stempel-Kacheln, Event-Karten auf der Startseite, die
   Aktionen und Reaktionen im Chat. Tab erreicht sie, Enter oder Leertaste
   löst sie aus, ein Ring zeigt, wo man ist. Vorher waren sie am Rechner
   unerreichbar und wurden nur als Text vorgelesen.
@@ -899,7 +925,7 @@ Versionsüberschrift.
   gefunden werden kann. Übertragen werden nur technische Angaben und die Rolle
   in grober Einteilung — kein Name, keine Kennung. Was dabei an Google geht,
   steht in der Datenschutzerklärung.
-- Das Konfi-Profil lädt die Abzeichen nicht mehr ein zweites Mal, nur um die
+- Das Konfi-Profil lädt die Badges nicht mehr ein zweites Mal, nur um die
   Zahl in der Kachel anzuzeigen. Sie stand ohnehin schon in den Profildaten.
 - Die iPhone-App legt Apple gegenüber offen, was sie erhebt: anonyme
   Nutzungsstatistik ohne Personenbezug, die Geräte-Kennung für Mitteilungen
@@ -923,15 +949,14 @@ Versionsüberschrift.
   danach.
 - Ein Prüflauf, der keine Tests findet, gilt nicht mehr als bestanden; bekannte
   Sicherheitslücken in Abhängigkeiten stoppen ihn ab der Stufe „hoch".
-- Die Code-Regeln werden bei jeder Änderung geprüft, nicht mehr nur bei
-  Pull Requests; der Altbestand an Regelverstößen ist abgebaut.
-- Chat-Nachrichten, Räume und Konten lassen sich auch bei sehr vielen
-  gespeicherten Nachrichten zügig löschen. Bisher konnte „Team-Chat leeren",
-  das Löschen eines Termins mit Termin-Chat oder eines Kontos bei großen
-  Nachrichtenmengen in einen Zeitüberschreitungsfehler laufen.
-- Die Tests prüfen jetzt für jede geschützte Route, dass eine fremde Gemeinde
-  nichts sieht und nichts ändert, und erwarten überall den genauen Wert statt
-  „irgendein Fehler".
+- Die Code-Regeln der App werden bei jeder Änderung geprüft, nicht mehr nur
+  bei Pull Requests; der Altbestand an Regelverstößen in der App ist
+  abgebaut. Für den Server gibt es eine solche Prüfung noch nicht.
+- An 21 geschützten Routen, für die es das bisher nicht gab, prüfen die Tests
+  jetzt, dass eine fremde Gemeinde nichts sieht und nichts ändert. Zehn weiche
+  Prüfungen, die auch eine falsche Antwort durchgehen ließen, erwarten jetzt
+  den genauen Wert, etwa einen bestimmten Fehlerstatus statt „irgendein
+  Fehler"; weitere weiche Prüfungen gibt es noch.
 - Das Handbuch beschreibt den Wechsel der E-Mail-Adresse, die Challenge-Rechte
   des Teams, die Beförderung zur Teamer:in und den Gemeinde-Umschalter so, wie
   die App sich verhält.
@@ -958,22 +983,12 @@ Versionsüberschrift.
   beim Start eine Anpassung übersprungen wurde, steht in der Statusabfrage.
 - Zwei gleichzeitig startende Server legen die Standard-Zertifikatstypen
   nicht mehr um die Wette an.
-- Das Erstellen des Jahresrückblicks für einen ganzen Jahrgang belegt nicht
-  mehr alle Datenbankverbindungen auf einmal; die App bleibt währenddessen
-  für alle anderen flüssig.
-- Die Grenzen für Anmeldeversuche, Registrierungen, Chat-Nachrichten,
-  Buchungen und Uploads gelten jetzt für alle Server gemeinsam statt je
-  Server einzeln — sie waren dadurch doppelt so weit wie gedacht, und die
-  Meldung „Zu viele Anfragen" kam scheinbar zufällig.
 - Die zeitgesteuerten Aufgaben (Erinnerungen, Aufräumen, Löschfristen,
   Rückblick) übernimmt automatisch ein anderer Server, wenn der zuständige
   ausfällt. Ob gerade einer zuständig ist, steht in der Statusabfrage.
 - Der Kennzahlen-Verlauf über lange Zeiträume kommt verdichtet (je Stunde
   beziehungsweise je Tag) statt als Rohdaten, die die Auslastungsanzeige
   mit vielen Megabyte überluden. Die letzten Wochen bleiben unverändert fein.
-- Bei einer Auslieferung werden die beiden Server nacheinander getauscht,
-  der zweite erst, wenn der erste wieder antwortet — statt beide zugleich,
-  was die App für einige Sekunden „Verbindung fehlgeschlagen" melden ließ.
 - Die Betriebsvorlage bemisst die Datenbank für viele Gemeinden in einer
   gemeinsamen Datenbank (mehr Rechenleistung, Speicher und
   Verbindungen) und nennt die Verbindungs- und Zeitgrenzen der Server
@@ -982,11 +997,6 @@ Versionsüberschrift.
   eine Sicherung geprüft wird, wie sie in eine leere Datenbank zurückgespielt
   wird und wie die Rückspielprobe läuft — samt Prüfliste für den Betrieb und
   einem Referenzskript.
-- Im Dunkelmodus sind die kleinen farbigen Marken an Listeneinträgen —
-  Punkte („+2P"), Level („20P"), Status — jetzt lesbar: Sie werden eine Stufe
-  tiefer, damit die weiße Schrift darauf genug Kontrast hat. Auch die
-  Prozentzahl im Fortschrittsring der Abzeichen nimmt im Dunkeln eine hellere
-  Stufe ihrer Farbe. Im Hellen ändert sich nichts.
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.

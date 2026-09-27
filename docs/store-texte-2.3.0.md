@@ -4,8 +4,8 @@ Quelle: Abschnitt `## [Unreleased] - 2.3.0` in `CHANGELOG.md`.
 Beide Texte sind getrennt zu verwenden — niemals mischen.
 
 Versionsstände aus `frontend/version.json` (die eine Quelle, aus der beide
-Release-Workflows lesen): **2.3.0**, Android versionCode **124**, iOS-Build
-**230**. Auf beiden Plattformen ist 2.2.0 die Vorgängerin (iOS-Build 206,
+Release-Workflows lesen): **2.3.0**, Android versionCode **125**, iOS-Build
+**231**. Auf beiden Plattformen ist 2.2.0 die Vorgängerin (iOS-Build 206,
 Android versionCode 113) — anders als bei 2.2.0 laufen die Stände diesmal
 nicht auseinander, beide Texte beschreiben also dieselbe Spanne.
 
@@ -28,8 +28,8 @@ in der App.
 4. **Team-Rückblick je Gemeinde.**
 5. **Dunkelmodus** folgt dem Gerät.
 6. **Übersicht „Was ist neu?"** nach dem Update.
-7. **Behoben**, plattformübergreifend: laufender Termin unter „Verbuchen",
-   mehrtägige Termine mit beiden Tagen, Termin-Mitteilung führt zum Termin,
+7. **Behoben**, plattformübergreifend: laufendes Event unter „Verbuchen",
+   mehrtägige Events mit beiden Tagen, Event-Mitteilung führt zum Event,
    Zähler beim Gemeindewechsel, App-Sperre „Sofort" aus der App-Übersicht,
    Mitteilungen an große Gruppen.
 8. **Behoben, nur Android:** keine Mitteilungen mehr nach Update oder
@@ -55,14 +55,14 @@ in der App.
 > Mitteilungen durchgehend an. Sie zu erwähnen wäre ein Plattform-Verweis und
 > zugleich sachlich falsch.
 
-> **Höchstens 4.000 Zeichen.** Der Text unten hat 1.760.
+> **Höchstens 4.000 Zeichen.** Der Text unten hat 1.775.
 
 ```
-Ein Postfach für alles, was die App dir mitteilen will: Oben rechts steht jetzt eine Glocke. Dahinter sammeln sich verliehene Abzeichen, eingereichte Anträge und die Entscheidungen dazu, Punkte, Level-Aufstiege, Anmeldungen und Terminänderungen – auch das, was du als Push verpasst hast. Ungelesenes ist markiert, Antippen führt an die passende Stelle, „Alle gelesen“ räumt auf. Die Zahl am App-Symbol zählt die ungelesenen Mitteilungen mit.
+Ein Postfach für alles, was die App dir mitteilen will: Oben rechts steht jetzt eine Glocke. Dahinter sammeln sich verliehene Badges, eingereichte Anträge und die Entscheidungen dazu, Punkte, Level-Aufstiege, Anmeldungen und Änderungen an Events – auch das, was du als Push verpasst hast. Ungelesenes ist markiert, Antippen führt an die passende Stelle, „Alle gelesen“ räumt auf. Die Zahl am App-Symbol zählt die ungelesenen Mitteilungen mit.
 
-Du wählst selbst, welche Mitteilungen aufs Handy kommen: Unter „Benachrichtigungen“ im Profil beziehungsweise unter „Mehr“ lassen sich Nachrichten, Termine, Punkte und Abzeichen einzeln ab- und anschalten, dazu ein Hauptschalter für alles. Im Postfach steht jede Mitteilung weiterhin.
+Du wählst selbst, welche Mitteilungen aufs Handy kommen: Unter „Benachrichtigungen“ im Profil beziehungsweise unter „Mehr“ lassen sich „Nachrichten“, „Events“ und „Punkte und Badges“ einzeln ab- und anschalten, dazu ein Hauptschalter für alles. Im Postfach steht jede Mitteilung weiterhin.
 
-In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde: Wer in der einen die Leitung stellt, kann in der anderen Teamer:in sein. Der Umschalter oben links steht auf jeder Seite und zeigt je Gemeinde, wo etwas offen ist. Die Gemeindeleitung lädt Personen mit bestehendem Konto direkt ein – die eingeladene Person entscheidet selbst, ob sie zusagt.
+In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde: Wer in der einen die Leitung stellt, kann in der anderen Teamer:in sein. Der Umschalter oben links steht auf den Hauptseiten und zeigt je Gemeinde, wo etwas offen ist. Die Gemeindeleitung lädt Personen mit bestehendem Konto direkt ein – die eingeladene Person entscheidet selbst, ob sie zusagt.
 
 Der Jahresrückblick fürs Team wird je Gemeinde erstellt.
 
@@ -70,7 +70,7 @@ Die App folgt dem Dunkelmodus des Geräts.
 
 Nach dem Update zeigt eine Übersicht, was sich geändert hat – jederzeit nachlesbar unter „Was ist neu?“ im Profil beziehungsweise unter „Mehr“.
 
-Behoben: Ein laufender Termin steht schon während des Termins unter „Verbuchen“. Mehrtägige Termine zeigen beide Tage. Eine Mitteilung zu einem Termin führt direkt zum Termin. Beim Wechsel der Gemeinde fallen die Zähler an den Reitern sofort auf null und laden frisch. Die App-Sperre auf „Sofort“ greift auch, wenn die App aus der App-Übersicht zurückkommt. Mitteilungen an ganze Gemeinden oder Jahrgänge kommen zuverlässig an.
+Behoben: Ein laufendes Event steht schon unter „Verbuchen“, nicht erst nach seinem Ende. Mehrtägige Events zeigen beide Tage. Eine Mitteilung zu einem Event führt direkt zum Event. Beim Wechsel der Gemeinde fallen die Zähler an den Reitern sofort auf null und laden frisch. Die App-Sperre auf „Sofort“ greift auch, wenn die App aus der App-Übersicht zurückkommt. Mitteilungen an ganze Gemeinden oder Jahrgänge kommen zuverlässig an.
 ```
 
 ---
@@ -139,7 +139,7 @@ Was sich mit 2.3.0 ändert und beim Einreichen abgefragt wird. Hier steht nur,
 
 ### App Store Connect
 
-- **Version 2.3.0, Build 230** (aus `frontend/version.json`; der Workflow
+- **Version 2.3.0, Build 231** (aus `frontend/version.json`; der Workflow
   setzt beides).
 - **„Neues in dieser Version"**: der iOS-Text oben, ohne Plattform-Wörter.
 - **Screenshots**: die neu gezogenen iPhone-Bilder (siehe oben).
@@ -169,7 +169,7 @@ Was sich mit 2.3.0 ändert und beim Einreichen abgefragt wird. Hier steht nur,
 
 ### Play Console
 
-- **versionCode 124**, Version 2.3.0 (aus `frontend/version.json`;
+- **versionCode 125**, Version 2.3.0 (aus `frontend/version.json`;
   `build.gradle` liest die Datei direkt).
 - **„Was ist neu"**: kommt aus `frontend/release-notes-de.txt` — der Text oben.
 - **Track**: Der `android-release`-Workflow reicht ohne ausdrückliche Angabe
