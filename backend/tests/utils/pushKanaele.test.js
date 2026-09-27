@@ -213,4 +213,28 @@ describe('Push-Kanaele: Server und App meinen dieselben', () => {
   it('legt auch den Rueckfall-Kanal in der App an', () => {
     expect(kanaeleAusApp()).toContain(KANAL_STANDARD);
   });
+
+  it('nennt die Kanaele Wort fuer Wort wie die Auswahl in der App', () => {
+    // Audit 26.09.2026, UI BF-11: Die Android-Kanaele beschrieben sich als
+    // "Anmeldungen, Aenderungen, ..." und "... der Rueckblick", die
+    // Push-Auswahl in der App (utils/pushGruppen.js, geliefert ueber
+    // GET /notifications/preferences) als "Änderungen" und "Rückblick".
+    // pushGruppen.js verspricht "Wort fuer Wort dieselben" -- geprueft hat
+    // das bisher niemand. Die Namen stehen in den Android-Einstellungen,
+    // die Gruppen in der App; heissen sie verschieden, sucht man das eine
+    // unter dem Namen des anderen.
+    const quelle = fs.readFileSync(
+      path.join(__dirname, '../../../frontend/src/services/notifications.ts'),
+      'utf8'
+    );
+    const block = quelle.match(/const KANAELE: Kanal\[\] = \[([\s\S]*?)\n\];/)[1];
+    const inDerApp = [...block.matchAll(/id: '([a-z_]+)',\s*name: '([^']+)',\s*description: '([^']+)'/g)]
+      .map(([, id, name, beschreibung]) => ({ id, name, beschreibung }));
+    const { GRUPPEN } = require('../../utils/pushGruppen');
+    const vomServer = GRUPPEN.map(({ id, name, beschreibung }) => ({ id, name, beschreibung }));
+
+    // Gegenprobe: vier Kanaele, sonst hat das Muster nichts gefunden.
+    expect(inDerApp).toHaveLength(4);
+    expect(inDerApp).toEqual(vomServer);
+  });
 });

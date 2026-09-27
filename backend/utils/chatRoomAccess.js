@@ -28,7 +28,7 @@
  */
 async function darfRaumBetreten(db, roomId, user) {
   if (!user || !Number.isInteger(Number(roomId))) {
-    return { ok: false, grund: 'ungueltige Anfrage' };
+    return { ok: false, grund: 'ungültige Anfrage' };
   }
 
   const { rows: [raum] } = await db.query(

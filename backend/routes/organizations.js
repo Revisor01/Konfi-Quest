@@ -513,7 +513,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         { key: 'konzert', name: 'Konzert', description: 'Konzerte und Musik', type: 'both' },
         { key: 'kinder', name: 'Kinder', description: 'Kindergottesdienst, Kindergruppe', type: 'both' },
         { key: 'kreativ', name: 'Kreativ', description: 'Basteln, Gestalten, Werkstatt', type: 'both' },
-        { key: 'seelsorge', name: 'Seelsorge', description: 'Besuche, Gespraeche, Begleitung', type: 'both' },
+        { key: 'seelsorge', name: 'Seelsorge', description: 'Besuche, Gespräche, Begleitung', type: 'both' },
         // Kasualien bleibt: Die Standard-Aktivitaeten Taufe, Hochzeit und
         // Beerdigung haengen daran (defaultActivities unten). Ohne diese
         // Kategorie liefe das Anlegen einer Gemeinde auf einen leeren

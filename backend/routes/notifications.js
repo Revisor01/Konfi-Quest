@@ -619,7 +619,7 @@ module.exports = (db, verifyTokenRBAC) => {
     }
     const stumm = hatStumm ? bereinigeStumm(req.body.stumm) : null;
     if (hatStumm && stumm === null) {
-      return res.status(400).json({ error: 'stumm enthaelt eine unbekannte Gruppe' });
+      return res.status(400).json({ error: 'stumm enthält eine unbekannte Gruppe' });
     }
     try {
       const { rows: [row] } = await db.query(

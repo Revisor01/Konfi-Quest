@@ -1440,7 +1440,7 @@ describe('Material Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ title: 'Zu viele', link_urls: zuViele });
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Hoechstens 20 Links pro Material');
+      expect(res.body.error).toBe('Höchstens 20 Links pro Material');
     });
 
     it('Leere Eintraege im Array fallen still heraus', async () => {

@@ -141,7 +141,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // ohnehin unbenutzbar). Gleiche Groessenordnung wie die 10 Dateien pro
   // Upload-Anfrage.
   const MAX_LINKS = 20;
-  const LINK_ANZAHL_FEHLER = `Hoechstens ${MAX_LINKS} Links pro Material`;
+  const LINK_ANZAHL_FEHLER = `Höchstens ${MAX_LINKS} Links pro Material`;
 
   // Prueft ein link_urls-Array: jede Adresse einzeln ueber pruefeLink,
   // leere Eintraege fallen still heraus (das Formular schickt keine mit,

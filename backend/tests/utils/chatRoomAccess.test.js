@@ -71,7 +71,7 @@ describe('darfRaumBetreten (Socket-Raum-Zugriff)', () => {
     it('Ohne Nutzer wird abgelehnt', async () => {
       const res = await darfRaumBetreten(db, CHAT_ROOMS.direct.id, null);
       expect(res.ok).toBe(false);
-      expect(res.grund).toBe('ungueltige Anfrage');
+      expect(res.grund).toBe('ungültige Anfrage');
     });
   });
 

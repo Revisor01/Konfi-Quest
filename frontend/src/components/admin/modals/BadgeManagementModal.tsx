@@ -394,7 +394,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         setSuccess('Alle Abzeichen sind aktuell');
       }
     } catch (err) {
-      setError(fehlerText(err, 'Fehler bei der Pruefung des Abzeichens'));
+      setError(fehlerText(err, 'Fehler bei der Prüfung des Abzeichens'));
     } finally {
       setPruefLoading(false);
     }

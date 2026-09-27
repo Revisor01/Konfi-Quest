@@ -2777,7 +2777,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Dieselbe Rechte-Grenze wie beim Anlegen und Anzeigen:
         // Teamer-Ausgaben nur org_admin, Konfi-Ausgaben nur eigene Jahrgaenge.
         if (ausgabe.wrapped_type === 'teamer' && !istOrgAdmin) {
-          return res.status(403).json({ error: 'Nur die Leitung darf Teamer-Ausgaben loeschen' });
+          return res.status(403).json({ error: 'Nur die Leitung darf Teamer-Ausgaben löschen' });
         }
         if (ausgabe.wrapped_type === 'konfi' && !istOrgAdmin) {
           const { rows: [zugriff] } = await db.query(
@@ -2813,7 +2813,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         res.json({ message: `Ausgabe gelöscht (${anzahl} Rückblicke)`, deleted: anzahl });
       } catch (err) {
         console.error('Error deleting wrapped ausgabe:', err);
-        res.status(500).json({ error: 'Fehler beim Loeschen der Ausgabe' });
+        res.status(500).json({ error: 'Fehler beim Löschen der Ausgabe' });
       }
     }
   );

@@ -136,7 +136,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton aria-label={bearbeiten ? "Aenderungen speichern" : "Konfi speichern"} onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--konfi">
+            <IonButton aria-label={bearbeiten ? "Änderungen speichern" : "Konfi speichern"} onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--konfi">
               {!isOnline ? <><IonIcon icon={ICON_OFFLINE} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
             </IonButton>
           </IonButtons>

@@ -646,6 +646,11 @@ Versionsüberschrift.
   von dort. Bisher löschte das Wegwischen das ganze Konto, samt der
   Mitgliedschaft in der anderen Gemeinde; die Sicherheitsabfrage sagt jetzt
   vorher, was passiert.
+- Umlaute stehen jetzt überall richtig: in den Beschreibungen der
+  Mitteilungsgruppen in den Android-Einstellungen („Änderungen", „Rückblick"),
+  in den Namen der Symbole zur Auswahl („Glühbirne", „Kopfhörer"), bei der
+  Reaktion „Gefällt mir" und in einigen Fehlermeldungen. Vorlesehilfen sprechen
+  „Änderungen speichern" jetzt richtig aus.
 
 ### Sonstiges
 - Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.
