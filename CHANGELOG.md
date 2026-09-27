@@ -805,6 +805,13 @@ Versionsüberschrift.
 - Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.
 - Die anonyme Nutzungsmessung unterscheidet unter „Mitmachen“ zwischen Events
   und Aktivitäten und zählt eingereichte Aktivitäten (mit oder ohne Foto).
+- Die anonyme Nutzungsmessung zählt außerdem, wie oft die Leitung Anträge
+  annimmt oder ablehnt (getrennt nach Konfis und Team), ob Material angesehen
+  und Dateien oder Links daraus geöffnet werden und ob ein Konfispruch aus den
+  Vorschlägen oder ein eigener gespeichert wird, samt Bibelübersetzung. Nie
+  dabei: die Bibelstelle, Titel, Namen oder ein Ablehnungsgrund. Der
+  Material-Reiter des Teams zählt als Material statt als Profil. Die
+  Datenschutzerklärung nennt die neuen Arten.
 - Die iPhone-App ist auf das Startverfahren umgestellt, das neuere
   iOS-Fassungen verlangen. Für die Bedienung ändert sich nichts — ohne die
   Umstellung ließe sich die App künftig aber nicht mehr öffnen.

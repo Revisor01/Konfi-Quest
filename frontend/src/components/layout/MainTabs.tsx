@@ -20,7 +20,7 @@ import { istTabLeisteVersteckt } from '../../navigation/routes';
 import type { Rolle, BadgeKey } from '../../navigation/routes';
 import { useAppLocation } from '../../navigation/useAppLocation';
 import { useBadge } from '../../contexts/BadgeContext';
-import { trackBereich } from '../../services/analytics';
+import { bereichAusPfad, trackBereich } from '../../services/analytics';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 // AdminRolesPage entfernt - Rollen sind jetzt hardcoded
 
@@ -145,11 +145,11 @@ const MainTabs: React.FC = () => {
   // Routenwechsel statt an 15 einzelnen Tab-Buttons — so zählt auch
   // Navigation, die nicht über die Tab-Leiste läuft. Uebertragen wird nur
   // der Bereichsname (z.B. "challenges") plus die Rolle, NIE die volle Route:
-  // die kann IDs enthalten (/admin/konfis/42).
+  // die kann IDs enthalten (/admin/konfis/42). Wie der Name entsteht, steht
+  // in bereichAusPfad (services/analytics.ts).
   useEffect(() => {
     if (!user) return;
-    const teile = location.pathname.split('/').filter(Boolean);
-    const bereich = teile[1] || teile[0];
+    const bereich = bereichAusPfad(location.pathname);
     if (bereich) trackBereich(bereich);
   }, [location.pathname, user?.id]);
 

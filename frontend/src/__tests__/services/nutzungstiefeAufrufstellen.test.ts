@@ -56,6 +56,38 @@ const STELLEN: Array<{
     datei: 'src/components/admin/views/EventDetailView.tsx',
     handlung: 'anwesenheit-erfasst',
     vorher: '/attendance`'
+  },
+  // Simon, 27.09.2026: Anträge, Material, Konfispruch
+  // (docs/messung/umami.md, U1–U3).
+  {
+    datei: 'src/components/admin/modals/ActivityRequestModal.tsx',
+    handlung: 'antrag-entschieden',
+    vorher: 'api.put(`/admin/activities/requests/${request.id}`, body)'
+  },
+  {
+    datei: 'src/components/teamer/pages/TeamerMaterialPage.tsx',
+    handlung: 'material-angesehen',
+    vorher: 'api.get(`/material/${matId}`)'
+  },
+  {
+    datei: 'src/components/teamer/pages/TeamerMaterialPage.tsx',
+    handlung: 'material-abgerufen',
+    vorher: 'api.get(`/material/files/${file.stored_name}`'
+  },
+  {
+    datei: 'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
+    handlung: 'material-angesehen',
+    vorher: 'api.get(`/material/${materialId}`)'
+  },
+  {
+    datei: 'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
+    handlung: 'material-abgerufen',
+    vorher: 'api.get(`/material/files/${file.stored_name}`'
+  },
+  {
+    datei: 'src/components/konfi/modals/KonfispruchSelectModal.tsx',
+    handlung: 'konfispruch-gespeichert',
+    vorher: 'api.patch(`${apiBasePath}/profile`'
   }
 ];
 
@@ -82,24 +114,37 @@ describe('Gemessen wird erst nach der erfolgreichen Antwort', () => {
     // Eine fehlgeschlagene Handlung darf kein Erfolgs-Ereignis senden. Im
     // Quelltext heisst das: zwischen einem `catch` und der naechsten Messung
     // darf kein trackHandlung-Aufruf stehen, der zu dieser Handlung gehoert.
+    //
+    // Gezaehlt wird erst ab dem Wort `catch`: In `} catch (err) {` schliesst
+    // die erste Klammer den try-Block. Bis 27.09.2026 zaehlte sie mit, die
+    // Tiefe stand damit in derselben Zeile wieder auf 0 — und der Rumpf des
+    // catch wurde nie angesehen. Der Test war gruen, ohne etwas zu pruefen.
     const zeilen = quelle.split('\n');
     let imCatch = false;
     let tiefe = 0;
+    let catchZeilen = 0;
     for (const zeile of zeilen) {
+      let rest = zeile;
       if (!imCatch && /\bcatch\s*(\(|\{)/.test(zeile)) {
         imCatch = true;
         tiefe = 0;
+        rest = zeile.slice(zeile.search(/\bcatch\b/));
       }
       if (imCatch) {
+        catchZeilen++;
         expect(
           zeile.includes(`trackHandlung('${handlung}'`),
           `${datei}: Messung im catch-Zweig`
         ).toBe(false);
-        tiefe += (zeile.match(/\{/g) || []).length;
-        tiefe -= (zeile.match(/\}/g) || []).length;
-        if (tiefe <= 0 && /\}/.test(zeile)) imCatch = false;
+        tiefe += (rest.match(/\{/g) || []).length;
+        tiefe -= (rest.match(/\}/g) || []).length;
+        if (tiefe <= 0 && /\}/.test(rest)) imCatch = false;
       }
     }
+    // Gegenprobe gegen einen leeren Lauf: jede dieser Dateien hat catch-Zweige
+    // mit Rumpf, also muessen mehr Zeilen angesehen worden sein als catch-Koepfe.
+    const koepfe = zeilen.filter((z) => /\bcatch\s*(\(|\{)/.test(z)).length;
+    expect(catchZeilen).toBeGreaterThan(koepfe);
   });
 });
 
@@ -147,7 +192,11 @@ describe('Die Ereignisnamen und Merkmale stehen fest', () => {
     'anwesenheit-erfasst',
     'beitrag-moderiert',
     'termin-angelegt',
-    'material-bereitgestellt'
+    'material-bereitgestellt',
+    'antrag-entschieden',
+    'material-angesehen',
+    'material-abgerufen',
+    'konfispruch-gespeichert'
   ];
   const MERKMALE = [
     'aktivitaet',
@@ -167,7 +216,15 @@ describe('Die Ereignisnamen und Merkmale stehen fest', () => {
     'datei',
     'link',
     'beides',
-    'nur-text'
+    'nur-text',
+    'angenommen',
+    'abgelehnt',
+    'vorschlag',
+    'eigen',
+    'luther',
+    'gute-nachricht',
+    'bigs',
+    'elberfelder'
   ];
 
   it('alle Namen und Merkmale stehen so in analytics.ts', () => {

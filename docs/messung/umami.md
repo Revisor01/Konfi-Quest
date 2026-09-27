@@ -37,8 +37,11 @@ jeden neuen Messpunkt unverändert:
   nichts und liegt inhaltlich zu nah an den Beteiligten (begründet in
   `analytics.ts`, Typ `Handlung`).
 - **Ereignis- und Merkmalsnamen sind ASCII ohne Umlaut-Umschreibung**
-  (`nutzungstiefeAufrufstellen.test.ts`; `aktivitaet` ist die eine benannte
-  Ausnahme).
+  (für die Handlungen geprüft in `nutzungstiefeAufrufstellen.test.ts`;
+  `aktivitaet` ist dort die eine benannte Ausnahme). Ältere Ereignisse außerhalb
+  der Handlungen tragen noch Umschreibungen (`aktivitaet-eingereicht`,
+  `bestaetigt`); sie bleiben, damit die Zahlen im Dashboard vergleichbar
+  bleiben.
 
 ### Was Umami selbst dazulegt
 
@@ -64,7 +67,7 @@ Stand des Codes am 27.09.2026 (vollständig: alle Aufrufe von `track(`,
 | Ereignis | Merkmale (erlaubte Werte) | Rolle(n) | Aufrufstelle | Wann gemeldet |
 |---|---|---|---|---|
 | *(Seitenaufruf, ohne Namen)* | nur `rolle` | alle | `contexts/AppContext.tsx` (`trackSitzungsstart`) | sobald eine Rolle feststeht: nach der Anmeldung, beim Start mit gespeicherter Anmeldung, beim Gemeindewechsel mit anderer Rolle. Ohne ihn zählt Umami keine Besuche. |
-| `bereich-geoeffnet` | `bereich`: zweiter Pfadteil. Leitung: `konfis`, `chat`, `activities` (Aktivitäten-Verwaltung), `events`, `settings`, `badges`, `challenges`, `users`, `organizations`, `material`, `wrapped`, `profile`, `metrics`. Team: `dashboard`, `chat`, `events`, `challenges`, `material` (nur Altroute), `badges` (nur Altroute), `profile`. Konfi: `dashboard`, `events`, `challenges`, `badges`, `chat`, `profile` | alle | `components/layout/MainTabs.tsx` | bei jedem Pfadwechsel, auch ohne Tab-Leiste (Detailseiten zählen unter ihrem Bereich) |
+| `bereich-geoeffnet` | `bereich`: zweiter Pfadteil, Unterseiten des Profils unter ihrem eigenen Namen, nur Kleinbuchstaben und Bindestriche (`bereichAusPfad`). Leitung: `konfis`, `chat`, `activities` (Aktivitäten-Verwaltung), `events`, `settings`, `badges`, `challenges`, `users`, `organizations`, `material`, `wrapped`, `profile`, `metrics`. Team: `dashboard`, `chat`, `events`, `challenges`, `material`, `badges`, `konfi-stats`, `profile`. Konfi: `dashboard`, `events`, `challenges`, `badges`, `chat`, `profile` | alle | `components/layout/MainTabs.tsx` | bei jedem Pfadwechsel, auch ohne Tab-Leiste (Detailseiten zählen unter ihrem Bereich) |
 | `bereich-geoeffnet` (über `trackMitmachenAnsicht`) | `bereich`: `events` \| `activities` | konfi, teamer | `konfi/pages/KonfiEventsPage.tsx`, `teamer/pages/TeamerEventsPage.tsx` | beim Umschalten der Leiste „Events \| Aktivitäten" und beim Einstieg mit `?segment=antraege` |
 | `aktivitaet-eingereicht` | `mit_foto`: `true` \| `false` | konfi, teamer | `konfi/modals/ActivityRequestModal.tsx`, `teamer/modals/TeamerActivityRequestModal.tsx` | nach erfolgreichem `POST /konfi/requests` bzw. `/teamer/requests`; offline eingereiht zählt nicht |
 | `event-angemeldet` | `status`: `bestaetigt` \| `warteliste`; `mit_zeitfenster`: `true` \| `false` | konfi | `konfi/views/EventDetailView.tsx` | nach erfolgreichem `POST /konfi/events/:id/register` |
@@ -75,6 +78,10 @@ Stand des Codes am 27.09.2026 (vollständig: alle Aufrufe von `track(`,
 | `beitrag-moderiert` | `entscheidung`: `freigegeben` \| `ausgeblendet` \| `wieder-sichtbar` \| `anonymisiert` | teamer, admin | `admin/modals/ChallengeLeitungModal.tsx` | nach erfolgreichem `PUT /challenges/admin/submissions/:id/moderate` |
 | `termin-angelegt` | `form`: `einzeln` \| `serie`; `zielgruppe`: `konfi` \| `teamer` | admin | `admin/modals/EventModal.tsx` | nach erfolgreichem `POST /events` bzw. `/events/series`; Bearbeiten zählt nicht |
 | `material-bereitgestellt` | `inhalt`: `datei` \| `link` \| `beides` \| `nur-text` | admin | `admin/modals/MaterialFormModal.tsx` | nach Anlegen **und** Datei-Upload; nur neues Material, nicht das Bearbeiten |
+| `antrag-entschieden` | `entscheidung`: `angenommen` \| `abgelehnt`; `antrag_von`: `konfi` \| `teamer` | admin | `admin/modals/ActivityRequestModal.tsx` | nach erfolgreichem `PUT /admin/activities/requests/:id`; offline eingereiht zählt nicht |
+| `material-angesehen` | `inhalt`: `datei` \| `link` \| `beides` \| `nur-text` | teamer, admin | `teamer/pages/TeamerMaterialPage.tsx`, `teamer/pages/TeamerMaterialDetailPage.tsx` | nach der erfolgreichen Antwort auf `GET /material/:id`, einmal je Öffnen; ein Stand nur aus dem Zwischenspeicher zählt nicht |
+| `material-abgerufen` | `inhalt`: `datei` \| `link` | teamer, admin | dieselben beiden | Datei: nach erfolgreichem `GET /material/files/…`; Link: wenn er geöffnet wird |
+| `konfispruch-gespeichert` | `quelle`: `vorschlag` \| `eigen`; `bibel` (nur bei `vorschlag`): `luther` \| `gute-nachricht` \| `bigs` \| `elberfelder` | konfi, teamer | `konfi/modals/KonfispruchSelectModal.tsx` | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`; unverändert gespeichert zählt nicht |
 | `fehler` | `stelle`: angezeigte Meldung, Ziffern durch `#` ersetzt, höchstens 80 Zeichen; `art`: `http-<Status>` \| `netz` \| `timeout` \| `abbruch` \| `intern`; `ort`: festes Kürzel (`[a-z0-9-]`, höchstens 40 Zeichen) | alle | `contexts/AppContext.tsx` (`setError`) | wenn eine Fehlermeldung angezeigt wird |
 
 Hinweise zur Tabelle:
@@ -85,9 +92,10 @@ Hinweise zur Tabelle:
   durchsehen (`requireTeamer` an der Route).
 - Die Leitung hat unter „Mitmachen" ebenfalls die Leiste „Events |
   Aktivitäten" (`admin/pages/AdminEventsPage.tsx`), meldet das Umschalten
-  aber nicht. Der
-  Bereich `activities` der Leitung ist die Aktivitäten-**Verwaltung**
-  (`/admin/activities`), nicht die Anträge.
+  aber nicht. Der Bereich `activities` der Leitung ist die
+  Aktivitäten-**Verwaltung** (`/admin/activities`), nicht die Anträge.
+- Die Datenschutzerklärung (Abschnitt 9a) zählt die Arten von Handlungen
+  einzeln auf. Wer ein Ereignis ergänzt, zieht sie im selben Commit nach.
 - Die Startseite `konfi-quest.de` misst mit einer **eigenen** Kennung
   (Klicks, Scrolltiefe, Verweildauer; `public/landing.html`). Sie ist nicht
   Teil dieses Dokuments.
@@ -97,16 +105,16 @@ Hinweise zur Tabelle:
 | Frage | Heute | Womit |
 |---|---|---|
 | Wie viele Sitzungen gibt es, je Rolle? | ja | Seitenaufruf mit `rolle` (Sitzungen, nicht Personen) |
-| Welche Bereiche werden geöffnet, von wem? | ja, mit Lücken | `bereich-geoeffnet` — siehe B3 (Material-Reiter des Teams) und die Anträge der Leitung |
+| Welche Bereiche werden geöffnet, von wem? | ja; die Aktivitäten der Leitung unter „Mitmachen" nicht (S2) | `bereich-geoeffnet` |
 | Werden unter „Mitmachen" Events oder Aktivitäten angesehen? | ja, Konfi und Team | `trackMitmachenAnsicht` |
 | Wie viele Aktivitäten werden eingereicht — von Konfis, vom Team, mit Foto? | ja | `aktivitaet-eingereicht` mit `rolle` und `mit_foto` |
-| **Wie viele Anträge werden angenommen, wie viele abgelehnt — von Konfis, vom Team?** | **nein** | nichts; siehe U1 |
+| **Wie viele Anträge werden angenommen, wie viele abgelehnt — von Konfis, vom Team?** | **ja** (U1) | `antrag-entschieden` |
 | Kommen Anmeldungen der Konfis durch oder landen sie auf der Warteliste? | ja | `event-angemeldet` |
 | Meldet sich das Team zu Events an? | nein | siehe S3 |
 | Welche Medien werden bei Challenges eingereicht, wie wird die Sichtbarkeit gewählt? | ja | `challenge-beitrag` |
 | Arbeitet die Leitung mit der App (Punkte, Anwesenheit, Moderation, Events, Material)? | ja | `trackHandlung` |
-| **Wird hinterlegtes Material angesehen, werden Dateien und Links geöffnet?** | **nein** | nur `material-bereitgestellt`; siehe U2 |
-| **Welche Konfisprüche, welche Übersetzung, wie viele eigene?** | **nein** | nichts; siehe U3 und S1 |
+| **Wird hinterlegtes Material angesehen, werden Dateien und Links geöffnet?** | **ja** (U2) | `material-angesehen`, `material-abgerufen`, daneben `material-bereitgestellt` |
+| **Welche Konfisprüche, welche Übersetzung, wie viele eigene?** | **Übersetzung und eigene ja** (U3); welche Sprüche nicht (S1) | `konfispruch-gespeichert` |
 | Wird der Jahresrückblick angesehen? | nur als Bereich `wrapped` der Leitung | siehe S7 |
 | Wird das Postfach genutzt? | nein | siehe S8 |
 | Welche Mitteilungen schalten Leute ab? | nein | siehe S9 |
@@ -149,6 +157,10 @@ haben dort einen festen Namen; ein unbekannter Pfad aus einem alten Link
 greift — mit der Zahl als Bereich. **Vorschlag:** dieselbe Formregel wie bei
 `ort` (nur Kleinbuchstaben und Bindestriche). Aufwand klein.
 
+**Behoben am 27.09.2026** zusammen mit B3: `bereichAusPfad` in
+`analytics.ts` lässt nur Kleinbuchstaben und Bindestriche durch; alles andere
+wird nicht gemeldet.
+
 ### B3 — Der Material-Reiter des Teams zählt als `profile`
 
 Seit dem 04.09.2026 ist Material ein eigener Reiter des Teams mit der Adresse
@@ -157,6 +169,11 @@ Seit dem 04.09.2026 ist Material ein eigener Reiter des Teams mit der Adresse
 zu trennen; dasselbe gilt für `/teamer/profile/badges`. Unter `material`
 zählt nur noch die Altroute. **Vorschlag:** Unterseiten des Team-Profils unter
 ihrem eigenen Namen zählen. Aufwand klein. Gehört zu U2.
+
+**Behoben am 27.09.2026:** Unterseiten des Profils zählen unter ihrem eigenen
+Namen (`material`, `badges`, `konfi-stats`). Die Zahlen des Team-Bereichs
+`profile` sinken dadurch ab diesem Stand — das ist die Korrektur, kein
+Rückgang.
 
 ### B4 — Wie lange eine Umami-Sitzung lebt, ist ungeklärt
 
@@ -191,7 +208,10 @@ darf — je länger die Sitzung, desto mehr hängt an einem Wiedererkennen.
 - **Einreichen:** braucht nichts Neues. `aktivitaet-eingereicht` trägt über
   `track` die Rolle mit; Konfi und Team sind darüber schon getrennt.
 - **Aufwand:** klein.
-- **Status:** in Arbeit.
+- **Status:** umgesetzt am 27.09.2026. Tests:
+  `messungAntragEntschieden.test.tsx` (gerendert: erst nach der Antwort,
+  nichts bei Fehler, nichts offline), `messungAntragMaterialSpruch.test.ts`
+  (Nutzlast, Positivliste, Aufrufstelle).
 
 ### U2 — Material angesehen und abgerufen
 
@@ -209,14 +229,19 @@ darf — je länger die Sitzung, desto mehr hängt an einem Wiedererkennen.
   Material-Reiter) und `teamer/pages/TeamerMaterialDetailPage.tsx` (Material
   an einem Event, für Team und Leitung).
 - **Nicht dabei:** Titel, Kennung, Dateiname, Dateityp, Adresse des Links,
-  Anzahl der Dateien. Das Bearbeiten-Formular der Leitung zählt nicht: Dort
-  prüft die Leitung ihr eigenes Material.
+  Anzahl der Dateien. Die Material-Verwaltung der Leitung
+  (`admin/pages/AdminMaterialPage.tsx` mit `MaterialFormModal`) zählt nicht:
+  Dort legt die Leitung an und bearbeitet. Material, das an einem Event hängt,
+  zählt dagegen auch für die Leitung (`TeamerMaterialDetailPage`). Siehe S17.
 - **Dazu:** B3 beheben, sonst bleibt der Bereich `material` des Teams leer.
 - **Datenschutz:** feste Werte, Rolle Team oder Leitung. Ob jemand ein
   bestimmtes Material geöffnet hat, lässt sich ohne Titel und Kennung nicht
   sagen.
 - **Aufwand:** klein.
-- **Status:** in Arbeit.
+- **Status:** umgesetzt am 27.09.2026, B3 behoben. Tests:
+  `messungMaterialAbruf.test.tsx` (gerendert, beide Seiten: einmal je Öffnen,
+  nicht beim erneuten Laden, nicht nur aus dem Zwischenspeicher, nichts bei
+  Fehler), `messungAntragMaterialSpruch.test.ts`.
 
 ### U3 — Konfispruch gespeichert
 
@@ -235,7 +260,11 @@ darf — je länger die Sitzung, desto mehr hängt an einem Wiedererkennen.
 - **Datenschutz:** zwei plus vier Werte; Texte gibt es heute nur für Luther und
   Gute Nachricht. Daran erkennt man niemanden.
 - **Aufwand:** klein.
-- **Status:** in Arbeit.
+- **Status:** umgesetzt am 27.09.2026, ohne Bibelstelle. Tests:
+  `messungKonfispruch.test.tsx` (gerendert: erst nach der Antwort, nichts bei
+  Fehler, nichts bei unverändertem Speichern, Konfi und Team),
+  `messungAntragMaterialSpruch.test.ts`. Den geänderten eigenen Spruch prüft
+  nur der Quelltext-Test: Texteingaben erreichen React in jsdom nicht.
 
 ## Vorschläge — Simon entscheidet
 
@@ -395,6 +424,16 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
 - **Ereignis:** `neuigkeiten-angesehen` mit `bis_ende`: `true` \| `false`.
 - **Datenschutz:** unbedenklich. **Aufwand:** klein.
 
+### S17 — Lese-Ansicht der Material-Verwaltung
+
+- **Frage:** Sieht sich die Leitung Material von Kolleg:innen an?
+- **Ereignis:** `material-angesehen` (und `material-abgerufen` für Dateien)
+  auch aus der Material-Verwaltung — aber nur in der Lese-Ansicht
+  (`nurLesen`: Material, das die Person nicht bearbeiten darf). Das eigene
+  Material zu öffnen, um es zu bearbeiten, ist kein Abruf.
+- **Datenschutz:** wie U2. **Aufwand:** klein bis mittel (die Datei-Öffnung
+  im Formular hat zwei Wege, nativ und Rückfall).
+
 ### Bewusst nicht
 
 - **Chat** — keine Zahlen zu Nachrichten, Räumen, Umfragen oder Dateien
@@ -420,3 +459,11 @@ Für die beauftragten Messpunkte (U1–U3):
 | `material-angesehen` | `inhalt`, `rolle` |
 | `material-abgerufen` | `inhalt`, `rolle` |
 | `konfispruch-gespeichert` | `quelle`, `bibel`, `rolle` |
+
+Die neuen Ereignisse kommen erst mit der nächsten ausgelieferten Fassung an
+(Web nach dem Deploy, iOS und Android mit dem nächsten Store-Build). Ältere
+App-Fassungen melden sie nie; bis alle umgestiegen sind, sind die Zahlen
+Untergrenzen.
+
+Ein bestehendes Ziel auf `bereich-geoeffnet` mit `bereich: material` zählt ab
+dieser Fassung auch den Material-Reiter des Teams (B3).

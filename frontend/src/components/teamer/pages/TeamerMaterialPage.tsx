@@ -55,6 +55,7 @@ import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
 import { materialStats } from '../../../utils/materialStats';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
+import { materialInhalt, trackHandlung } from '../../../services/analytics';
 
 interface Material {
   id: number;
@@ -199,6 +200,13 @@ const TeamerMaterialPage: React.FC = () => {
       setDetailLoading(true);
       const res = await api.get(`/material/${matId}`);
       setSelectedMaterial(res.data);
+      // Anonyme Messung NACH der erfolgreichen Antwort: das Material ist
+      // angesehen (Simon, 27.09.2026). Einmal je Oeffnen — das Aktualisieren
+      // im Detail laedt ueber einen eigenen Aufruf und meldet nicht. Nur die
+      // Art des Inhalts, kein Titel, keine Kennung.
+      trackHandlung('material-angesehen', {
+        inhalt: materialInhalt((res.data?.files?.length ?? 0) > 0, materialLinks(res.data ?? {}).length > 0)
+      });
     } catch {
       setError('Fehler beim Laden des Materials');
     } finally {
@@ -229,6 +237,9 @@ const TeamerMaterialPage: React.FC = () => {
     try {
       await haptik(ImpactStyle.Medium);
       const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
+      // Anonyme Messung NACH dem erfolgreichen Laden: eine Datei ist
+      // abgerufen. Kein Dateiname, kein Dateityp.
+      trackHandlung('material-abgerufen', { inhalt: 'datei' });
       const blob = response.data;
       const contentType = response.headers?.['content-type'];
       const mime: string = typeof contentType === 'string' ? contentType : file.mime_type;
@@ -255,6 +266,8 @@ const TeamerMaterialPage: React.FC = () => {
     }
     await haptik(ImpactStyle.Medium);
     window.open(url, '_blank');
+    // Anonyme Messung: ein Link ist abgerufen — ohne seine Adresse.
+    trackHandlung('material-abgerufen', { inhalt: 'link' });
   };
 
   // === INLINE DETAIL VIEW ===

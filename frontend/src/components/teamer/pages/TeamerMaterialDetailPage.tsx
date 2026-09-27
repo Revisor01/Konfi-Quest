@@ -45,6 +45,7 @@ import { haptik, triggerPullHaptic, ImpactStyle } from '../../../utils/haptics';
 import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
+import { materialInhalt, trackHandlung } from '../../../services/analytics';
 
 interface MaterialFile {
   id: number;
@@ -83,11 +84,29 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   const { setError } = useApp();
   const pageRef = useRef<HTMLElement>(null);
 
+  // Anonyme Messung „Material angesehen" (Simon, 27.09.2026): EINMAL je
+  // Oeffnen. Die Seite wird als Modal jedes Mal neu montiert; Aktualisieren
+  // und Wiederverbinden laden erneut und duerfen nicht noch einmal zaehlen.
+  const angesehenGemeldet = useRef(false);
+
   // Offline-Query: Material-Detail (Metadaten, keine Dateien)
   const { data: material, loading, refresh } = useOfflineQuery<MaterialDetail>(
     'teamer:material-detail:' + materialId,
     async () => { const res = await api.get(`/material/${materialId}`); return res.data; },
-    { ttl: CACHE_TTL.PROFILE, enabled: !!materialId }
+    {
+      ttl: CACHE_TTL.PROFILE,
+      enabled: !!materialId,
+      // onSuccess ruft useOfflineQuery erst nach dem ERFOLGREICHEN Abruf —
+      // ein Stand nur aus dem Zwischenspeicher (offline) zaehlt nicht. Nur
+      // die Art des Inhalts, kein Titel, keine Kennung.
+      onSuccess: (geladen) => {
+        if (angesehenGemeldet.current) return;
+        angesehenGemeldet.current = true;
+        trackHandlung('material-angesehen', {
+          inhalt: materialInhalt((geladen?.files?.length ?? 0) > 0, materialLinks(geladen ?? {}).length > 0)
+        });
+      }
+    }
   );
 
   // FileViewer Modal (universeller Datei-Viewer mit Swipe)
@@ -125,6 +144,9 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
     try {
       await haptik(ImpactStyle.Medium);
       const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
+      // Anonyme Messung NACH dem erfolgreichen Laden: eine Datei ist
+      // abgerufen. Kein Dateiname, kein Dateityp.
+      trackHandlung('material-abgerufen', { inhalt: 'datei' });
       const blob = response.data;
       const contentType = response.headers?.['content-type'];
       const mime: string = typeof contentType === 'string' ? contentType : file.mime_type;
@@ -162,6 +184,8 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
     }
     await haptik(ImpactStyle.Medium);
     window.open(url, '_blank');
+    // Anonyme Messung: ein Link ist abgerufen — ohne seine Adresse.
+    trackHandlung('material-abgerufen', { inhalt: 'link' });
   };
 
   return (

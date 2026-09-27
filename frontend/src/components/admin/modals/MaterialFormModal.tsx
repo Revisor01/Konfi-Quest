@@ -53,7 +53,7 @@ import FileViewerModal from '../../shared/FileViewerModal';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istWebLink } from '../../../utils/linkDisplay';
-import { trackHandlung } from '../../../services/analytics';
+import { materialInhalt, trackHandlung } from '../../../services/analytics';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 
@@ -361,9 +361,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
             const hatDatei = newFiles.length > 0;
             const hatLink = bereinigt.length > 0;
             trackHandlung('material-bereitgestellt', {
-              inhalt: hatDatei && hatLink
-                ? 'beides'
-                : hatDatei ? 'datei' : hatLink ? 'link' : 'nur-text'
+              inhalt: materialInhalt(hatDatei, hatLink)
             });
           }
 

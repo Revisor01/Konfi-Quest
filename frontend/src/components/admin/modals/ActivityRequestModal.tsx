@@ -34,6 +34,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
+import { trackHandlung } from '../../../services/analytics';
 // triggerRefresh nicht direkt nutzen — Modal rendert via useIonModal außerhalb des Provider-Trees
 // Stattdessen onSuccess Callback nutzen, Parent-Page hat useLiveRefresh
 
@@ -170,6 +171,15 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       if (networkMonitor.isOnline) {
         try {
           await api.put(`/admin/activities/requests/${request.id}`, body);
+          // Anonyme Messung NACH der erfolgreichen Antwort: wie oft wird
+          // angenommen, wie oft abgelehnt, bei Konfis und beim Team (Simon,
+          // 27.09.2026). Kein Grund, keine Aktivitaet, keine Punkte, keine
+          // Person. Offline eingereiht zaehlt nicht — dort ist noch nichts
+          // entschieden.
+          trackHandlung('antrag-entschieden', {
+            entscheidung: selectedAction === 'approve' ? 'angenommen' : 'abgelehnt',
+            antrag_von: request.activity_target_role
+          });
           // Parent-Page refresht via onSuccess + useLiveRefresh
           onSuccess();
           onClose();

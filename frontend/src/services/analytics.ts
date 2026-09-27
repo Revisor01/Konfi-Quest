@@ -121,6 +121,36 @@ export function trackBereich(bereich: string): void {
 }
 
 /**
+ * Erlaubte Form eines Bereichsnamens: Kleinbuchstaben und Bindestriche,
+ * hoechstens 40 Zeichen. Alle Routen tragen an dieser Stelle einen festen
+ * Namen; eine Kennung (`/konfi/42` aus einem alten Link, bevor die Umleitung
+ * greift) faellt damit heraus, statt als Bereich im Dashboard zu stehen.
+ */
+const BEREICH_MUSTER = /^[a-z][a-z-]{0,39}$/;
+
+/**
+ * Bereichsname aus einem Pfad — nie die volle Route, die kann Kennungen
+ * enthalten (/admin/konfis/42).
+ *
+ * Grundregel: der zweite Pfadteil (`/admin/konfis/42` -> `konfis`), bei
+ * einteiligen Pfaden der erste (`/login`).
+ *
+ * Ausnahme Profil: Unterseiten des Profils zaehlen unter ihrem eigenen Namen.
+ * Der Reiter „Material" des Teams liegt seit dem 04.09.2026 unter
+ * `/teamer/profile/material` und zaehlte bis 27.09.2026 als `profile` —
+ * Material-Aufrufe des Teams waren von Profil-Aufrufen nicht zu trennen
+ * (docs/messung/umami.md, Befund B3). Dasselbe fuer `/teamer/profile/badges`.
+ *
+ * Liefert `null`, wenn der Name nicht die erlaubte Form hat — dann wird
+ * nichts gemeldet.
+ */
+export function bereichAusPfad(pfad: string): string | null {
+  const teile = pfad.split('/').filter(Boolean);
+  const bereich = teile[1] === 'profile' && teile[2] ? teile[2] : (teile[1] || teile[0]);
+  return bereich && BEREICH_MUSTER.test(bereich) ? bereich : null;
+}
+
+/**
  * Ansicht unter „Mitmachen" (Konfi und Team): Events oder Aktivitäten.
  *
  * Die Bereichsmessung in MainTabs zählt am PFAD. Events und Aktivitäten
@@ -188,6 +218,19 @@ export function istGueltigeArt(art: string): boolean {
  *  - `termin-angelegt`      Die Gemeinde plant ihre Arbeit in der App.
  *  - `material-bereitgestellt` Inhalte fuer das Team eingestellt.
  *
+ * Dazu, auf Simons Wunsch (27.09.2026; Bestand und Begruendung in
+ * docs/messung/umami.md, U1–U3) — Handlungen im weiteren Sinn, deren Werte
+ * ebenfalls aus Formularen oder Serverantworten stammen und deshalb dieselbe
+ * Positivliste brauchen:
+ *
+ *  - `antrag-entschieden`   Die Leitung nimmt einen Antrag an oder lehnt ihn ab.
+ *  - `material-angesehen`   Die Detailansicht eines Materials ist geoeffnet.
+ *  - `material-abgerufen`   Eine Datei oder ein Link daraus ist geoeffnet.
+ *  - `konfispruch-gespeichert` Ein Spruch aus den Vorschlaegen oder ein eigener.
+ *                           Bewusst OHNE Bibelstelle: ein Konfirmationsspruch
+ *                           ist oeffentlich und machte die Sitzung einer Konfi
+ *                           wiedererkennbar (docs/messung/umami.md, S1).
+ *
  * NICHT dabei und bewusst nicht: Chat-Nachrichten (Zahl sagt ueber die
  * paedagogische Nutzung nichts aus und liegt inhaltlich zu nah an den
  * Beteiligten), Jahresrueckblick-Aufrufe (wird an sechs Stellen geoeffnet,
@@ -200,7 +243,11 @@ export type Handlung =
   | 'anwesenheit-erfasst'
   | 'beitrag-moderiert'
   | 'termin-angelegt'
-  | 'material-bereitgestellt';
+  | 'material-bereitgestellt'
+  | 'antrag-entschieden'
+  | 'material-angesehen'
+  | 'material-abgerufen'
+  | 'konfispruch-gespeichert';
 
 /**
  * Erlaubte Auspraegungen je Handlung. Diese Liste ist die harte Grenze: was
@@ -236,8 +283,41 @@ const ERLAUBTE_MERKMALE: Record<Handlung, Record<string, readonly string[]>> = {
   },
   'material-bereitgestellt': {
     inhalt: ['datei', 'link', 'beides', 'nur-text']
+  },
+  'antrag-entschieden': {
+    entscheidung: ['angenommen', 'abgelehnt'],
+    // Wer den Antrag gestellt hat — aus der Zielgruppe der Aktivitaet, nie
+    // die Person. Kein Grund, keine Aktivitaet, keine Punktzahl.
+    antrag_von: ['konfi', 'teamer']
+  },
+  'material-angesehen': {
+    // Dieselben Werte wie beim Bereitstellen (materialInhalt), damit sich
+    // Eingestelltes und Angesehenes nebeneinanderlegen lassen.
+    inhalt: ['datei', 'link', 'beides', 'nur-text']
+  },
+  'material-abgerufen': {
+    // Was geoeffnet wurde — nie Dateiname, Dateityp oder Adresse.
+    inhalt: ['datei', 'link']
+  },
+  'konfispruch-gespeichert': {
+    quelle: ['vorschlag', 'eigen'],
+    bibel: ['luther', 'gute-nachricht', 'bigs', 'elberfelder']
   }
 };
+
+/**
+ * Art des Material-Inhalts, fuer `material-bereitgestellt` und
+ * `material-angesehen` aus derselben Hand.
+ */
+export function materialInhalt(
+  hatDatei: boolean,
+  hatLink: boolean
+): 'datei' | 'link' | 'beides' | 'nur-text' {
+  if (hatDatei && hatLink) return 'beides';
+  if (hatDatei) return 'datei';
+  if (hatLink) return 'link';
+  return 'nur-text';
+}
 
 /**
  * Eine Handlung melden, die auf dem Server GELUNGEN ist.
