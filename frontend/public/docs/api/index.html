@@ -670,7 +670,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/events/{id}/book</code></div>
         <p class="summary">Event selbst buchen (Konfi- oder Teamer-Kontingent)</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>bucht nur sich selbst; Event/Timeslot org-gescopt; Konfis nicht bei teamer_only (403)</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>bucht nur sich selbst; Event/Timeslot org-gescopt; Konfis nicht bei teamer_only (403) und seit 27.09.2026 nur bei Events, die sie sehen -- eigener Jahrgang oder ohne Jahrgang (utils/konfiTerminSicht.konfiSiehtTermin), sonst 403 'Dieses Event gehört zu einem anderen Jahrgang'</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/events/{id}/bookings/{bookingId}</code></div>
         <p class="summary">Buchung eines Teilnehmers entfernen (Leitung)</p>
@@ -733,7 +733,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       <div class="routen"><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/konfi/events</code></div>
         <p class="summary">Events des eigenen Jahrgangs (Konfi-Sicht)</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur Events des eigenen Jahrgangs (utils/konfiTerminSicht.js, dieselbe Regel wie die Empfaenger von new_event); Konfi ohne Jahrgang -&gt; leere Liste</div><div class="hinweis behoben">BEHOBEN 22.08.2026: qr_token wird aus der Response gefiltert (war dieselbe Klasse wie L1 in /api/events).</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Events des eigenen Jahrgangs und Events ohne jeden Jahrgang, nie teamer_only (utils/konfiTerminSicht.js, dieselbe Regel wie die Empfaenger von new_event, das Buchen und die Detailrouten); Konfi ohne Jahrgang -&gt; nur die Events ohne Jahrgang</div><div class="hinweis behoben">BEHOBEN 22.08.2026: qr_token wird aus der Response gefiltert (war dieselbe Klasse wie L1 in /api/events).</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/konfi/events/{id}/opt-in</code></div>
         <p class="summary">Opt-out bei Pflicht-Event rueckgaengig machen</p>
@@ -745,7 +745,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/konfi/events/{id}/participants</code></div>
         <p class="summary">Anonymisierte Teilnehmerliste eines Events (Konfi-Sicht)</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event muss zur eigenen Org gehören; Namen anonymisiert</div><div class="hinweis">Kein Jahrgang-Check - anonymisierte Listen beliebiger Org-Events abrufbar (nur Hinweis).</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event muss zur eigenen Org gehören; seit 27.09.2026 nur Events, die die Konfi sieht, oder mit eigener Buchung (utils/konfiTerminSicht.konfiSiehtTermin), sonst 404; Namen anonymisiert</div><div class="hinweis behoben">BEHOBEN 27.09.2026 (Audit 'Wer bekommt was', F-05): Bis dahin kein Jahrgang-Check -- die Teilnehmenden ('Vorname N.') von Events fremder Jahrgaenge und von 'Nur Team' waren mit der Kennung abrufbar. Fremde Gemeinde antwortet seither ebenfalls 404 statt 200 [] (Sicherheit BF-16).</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/konfi/events/{id}/register</code></div>
         <p class="summary">Von Event abmelden (bis 2 Tage vorher)</p>
@@ -753,15 +753,15 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/konfi/events/{id}/register</code></div>
         <p class="summary">Für Event anmelden (primaere Konfi-Buchungsroute)</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>bucht nur sich selbst; Event + Timeslot org-gescopt (Slot mit FOR UPDATE); nicht teamer_only, nicht cancelled</div><div class="hinweis">Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis).</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>bucht nur sich selbst; Event + Timeslot org-gescopt (Slot mit FOR UPDATE); nicht teamer_only, nicht cancelled; seit 27.09.2026 nur Events, die die Konfi sieht (eigener Jahrgang oder ohne Jahrgang, utils/konfiTerminSicht.konfiSiehtTermin), sonst 403 'Dieses Event gehört zu einem anderen Jahrgang'</div><div class="hinweis behoben">BEHOBEN 27.09.2026 (Audit 'Wer bekommt was', F-05): Bis dahin kein Jahrgang-Check -- eine Konfi konnte sich per API zu Events fremder Jahrgaenge der Gemeinde anmelden. Gilt ebenso fuer den Konfi-Pfad von POST /api/events/{id}/book (gemeinsamer Buchungskern).</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/konfi/events/{id}/status</code></div>
         <p class="summary">Eigener Anmeldestatus für ein Event</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event org-gescopt; Buchungsdaten nur eigene; kein Jahrgang-Check (nur Zähler)</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event org-gescopt; seit 27.09.2026 nur Events, die die Konfi sieht (eigener Jahrgang, ohne Jahrgang, nie teamer_only; utils/konfiTerminSicht.konfiSiehtTermin) oder mit eigener Buchung, sonst 404; Buchungsdaten nur eigene</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/konfi/events/{id}/timeslots</code></div>
         <p class="summary">Zeitslots eines Events (Konfi-Sicht)</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event org-gescopt; nur Slot-Daten + Zähler</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event org-gescopt; seit 27.09.2026 nur Events, die die Konfi sieht, oder mit eigener Buchung (utils/konfiTerminSicht.konfiSiehtTermin), sonst 404; nur Slot-Daten + Zähler</div>
       </article></div>
     </section><section id="challenges-leitung" class="service" style="--service:#ea580c">
       <header class="service-kopf"><h2>Challenges (Leitung)</h2><p class="service-meta">9 Operationen</p></header>

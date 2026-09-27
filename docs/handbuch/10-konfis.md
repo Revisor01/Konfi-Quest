@@ -77,8 +77,8 @@ Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und
 
 ### Events
 
-Alle Events deiner Gemeinde, gefiltert über **Meine**, **Alle** und
-**Konfirmation**. Unter **Meine** stehen alle Events, zu denen du dich
+Die Events deines Jahrgangs und die Events für die ganze Gemeinde, gefiltert
+über **Meine**, **Alle** und **Konfirmation**. Unter **Meine** stehen alle Events, zu denen du dich
 gemeldet hast — angemeldet, auf der Warteliste, selbst abgemeldet oder von der
 Leitung abgemeldet. Auch abgesagte Events bleiben dort stehen, solange du
 dafür angemeldet warst. Tippe eines an, dann siehst du Datum, Ort, was du

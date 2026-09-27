@@ -4,11 +4,12 @@
 // (Audit "Wer bekommt was" 27.09.2026, BF-04 / F-05).
 //
 // Die Regel (CLAUDE.md, "Wer sieht und bekommt was"): Mitteilung =
-// Sichtbarkeit. Die Konfi-Terminliste (GET /api/konfi/events) zeigt nur
-// Termine des eigenen Jahrgangs und nie "Nur Team"; Termine ohne Jahrgang
-// und fremder Jahrgaenge fehlen dort, eine Konfi ohne Jahrgang sieht gar
-// keine. Der Anmeldestart-Push fragte dagegen nur die Gemeinde -- jede Konfi
-// bekam jede Einladung, tippte darauf und fand nichts.
+// Sichtbarkeit. Die Konfi-Terminliste (GET /api/konfi/events) zeigt die
+// Termine des eigenen Jahrgangs und die Termine ohne jeden Jahrgang (sie
+// gelten der ganzen Gemeinde, Simon 27.09.2026), nie "Nur Team" und nie
+// fremde Jahrgaenge. Eine Konfi ohne Jahrgang sieht nur die Termine ohne
+// Jahrgang. Der Anmeldestart-Push fragte dagegen nur die Gemeinde -- jede
+// Konfi bekam jede Einladung, tippte darauf und fand nichts.
 //
 // Firebase ist gemockt wie in pushEmpfaengerMultiOrg.test.js. Die
 // Assertions pruefen die KONKRETE Empfaengerliste (sortierte Tokens) --
@@ -146,10 +147,11 @@ describe('"Neues Event!" nur an Konfis, die den Termin sehen (BF-04)', () => {
     expect(tokens()).toEqual(['token-konfi1', 'token-konfi2', 'token-konfiB']);
   });
 
-  it('Termin ohne Jahrgang: keine Konfi -- die Konfi-Liste zeigt ihn nicht', async () => {
+  it('Termin ohne Jahrgang: jede Konfi der Gemeinde -- auch die ohne Jahrgang', async () => {
     const id = await termin();
     await neuesEvent(id);
-    expect(tokens()).toEqual([]);
+    // Ganze Gemeinde (Simon 27.09.2026). konfi3 gehoert zu Gemeinde 2.
+    expect(tokens()).toEqual(['token-konfi1', 'token-konfi2', 'token-konfiB', 'token-konfiOhneJg']);
   });
 
   it('"Nur Team": nie an Konfis, auch wenn ein Jahrgang daranhaengt', async () => {
@@ -176,7 +178,10 @@ describe('"Neues Event!" nur an Konfis, die den Termin sehen (BF-04)', () => {
     await termin({ jahrgaenge: [JG_B], name: 'Nur B' });
     await termin({ name: 'Ohne Jahrgang' });
     await BackgroundService.sendRegistrationOpenPushes(db);
-    expect(tokens()).toEqual(['token-konfiB']);
+    // "Nur B" an Konfi B, "Ohne Jahrgang" an alle vier Konfis der Gemeinde.
+    expect(tokens()).toEqual([
+      'token-konfi1', 'token-konfi2', 'token-konfiB', 'token-konfiB', 'token-konfiOhneJg',
+    ]);
   });
 
   it('Paritaet: "Neues Event!" bekommt genau, wer den Termin in GET /api/konfi/events findet', async () => {
@@ -207,6 +212,7 @@ describe('"Neues Event!" nur an Konfis, die den Termin sehen (BF-04)', () => {
     // tatsaechlich, die Paritaet prueft also beide Richtungen.
     expect(liste[USERS.konfi1.id].has(termine.jahrgang1)).toBe(true);
     expect(liste[KONFI_B].has(termine.beide)).toBe(true);
-    expect(liste[KONFI_OHNE_JG].size).toBe(0);
+    expect(liste[KONFI_B].has(termine.ohneJahrgang)).toBe(true);
+    expect([...liste[KONFI_OHNE_JG]]).toEqual([termine.ohneJahrgang]);
   });
 });

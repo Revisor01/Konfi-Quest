@@ -18,12 +18,13 @@
 //     Org-2-Zeilen -- auch dann, wenn in der Datenbank eine Zeile mit
 //     Org-1-Bezug fuer diese Person liegt.
 //
-// Zwei Routen liefern fuer fremde Kennungen heute 200 mit LEEREM Ergebnis
-// (attendance-count: {0, 0}; konfi/events/:id/participants: []). Der Filter
-// steht im Code, es fliesst nichts ab; ob 404 die bessere Antwort waere, ist
-// Sicherheit BF-16 (NIEDRIG). Hier wird der heutige Stand festgeschrieben --
-// samt Beleg, dass der Filter wirkt: Das Org-1-Objekt HAT Buchungen, und die
-// fremde Antwort zeigt trotzdem keine.
+// attendance-count liefert fuer fremde Kennungen heute 200 mit LEEREM
+// Ergebnis ({0, 0}). Der Filter steht im Code, es fliesst nichts ab; ob 404
+// die bessere Antwort waere, ist Sicherheit BF-16 (NIEDRIG). Hier wird der
+// heutige Stand festgeschrieben -- samt Beleg, dass der Filter wirkt: Das
+// Org-1-Objekt HAT Buchungen, und die fremde Antwort zeigt trotzdem keine.
+// konfi/events/:id/participants antwortet seit 27.09.2026 mit 404: Die
+// Teilnehmenden liest nur, wer den Termin sieht (utils/konfiTerminSicht.js).
 const request = require('supertest');
 const fs = require('fs');
 const path = require('path');
@@ -285,18 +286,20 @@ describe('Fremde Gemeinde: Org-2-Token gegen Objekte aus Org 1', () => {
 
   // ==================================================================
   // BF-04/05: GET /api/konfi/events/:id/participants (anonymisiert)
-  // Heute 200 [] fuer fremde Kennungen (Sicherheit BF-16). Der Filter wirkt:
-  // Der Org-1-Termin hat eine bestaetigte Buchung.
+  // Bis 27.09.2026 200 [] fuer fremde Kennungen (Sicherheit BF-16), seither
+  // 404: Die Route prueft, ob die Konfi den Termin sieht. Der Org-1-Termin
+  // hat eine bestaetigte Buchung -- die Antwort nennt sie trotzdem nicht.
   // ==================================================================
   describe('GET /api/konfi/events/:id/participants', () => {
-    it('Konfi aus Org 2 -> 200 mit leerer Liste, obwohl der Termin Teilnehmende hat', async () => {
+    it('Konfi aus Org 2 -> 404, obwohl der Termin Teilnehmende hat', async () => {
       await buchung(EVENT_ORG1, USERS.konfi1.id);
 
       const res = await request(app)
         .get(`/api/konfi/events/${EVENT_ORG1}/participants`)
         .set('Authorization', `Bearer ${t.konfi3}`);
-      expect(res.status).toBe(200);
-      expect(res.body).toEqual([]);
+      expect(res.status).toBe(404);
+      nurFehler(res.body);
+      ohneFremddaten(res.body, USERS.konfi1.display_name);
     });
 
     it('eigene Gemeinde: Konfi aus Org 1 -> 200 mit anonymisiertem Namen', async () => {

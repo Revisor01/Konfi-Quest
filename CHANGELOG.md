@@ -159,6 +159,9 @@ Versionsüberschrift.
   Mitteilung an die Org-Admins der Gemeinde.
 
 ### Geändert
+- Ein Event ohne Jahrgang gilt der ganzen Gemeinde: Alle Konfis sehen es in
+  ihrer Event-Liste und können sich anmelden, auch Konfis ohne Jahrgang.
+  Bisher sahen Konfis solche Events gar nicht.
 - Eine neue Challenge, bei der das Team mitmacht, steht bei Teamer:innen und
   Leitung als rote Zahl an der Challenge und am Reiter, bis sie geöffnet
   wird — wie bei den Konfis. Bisher zählten fürs Team nur neue Beiträge.
@@ -396,9 +399,14 @@ Versionsüberschrift.
   Leitung, genau wie bei einer Absage. Bisher bekamen nur Konfis die Meldung;
   bei einem Event „Nur Team" erfuhr es niemand.
 - Die Mitteilung „Neues Event!" bekommen nur noch die Konfis, die das Event
-  in ihrer Event-Liste finden — die Konfis der Jahrgänge, für die es gilt.
-  Bisher ging sie an alle Konfis der Gemeinde, auch zu Events anderer
-  Jahrgänge und zu Events ohne Jahrgang; wer darauf tippte, fand nichts.
+  in ihrer Event-Liste finden — die Konfis der Jahrgänge, für die es gilt, bei
+  einem Event ohne Jahrgang alle Konfis der Gemeinde. Bisher ging sie an alle
+  Konfis der Gemeinde, auch zu Events anderer Jahrgänge; wer darauf tippte,
+  fand nichts.
+- Konfis können sich nur noch zu Events anmelden, die in ihrer Event-Liste
+  stehen, und nur bei diesen sehen, wer mitkommt. Bisher nahm der Server eine
+  Anmeldung auch für ein Event eines anderen Jahrgangs an und zeigte dessen
+  Teilnehmende, wenn die App danach fragte.
 - Im Chat sagt die App bei einer Datei über 5 MB gleich bei der Auswahl, dass
   sie zu groß ist. Bisher ließ sie Dateien bis 10 MB zu, die dann beim Senden
   ohne verständliche Meldung scheiterten.

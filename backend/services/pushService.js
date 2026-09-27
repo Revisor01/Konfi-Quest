@@ -1967,11 +1967,10 @@ class PushService {
    *
    * EMPFAENGER NACH DER REGEL DER KONFI-LISTE (27.09.2026, Audit "Wer bekommt
    * was", BF-04 / F-05; utils/konfiTerminSicht.js): Konfis der Jahrgaenge des
-   * Termins, nie bei "Nur Team". Termine ohne Jahrgang zeigt die Konfi-Liste
-   * nicht -- sie gelten dem Team --, also gibt es dafuer auch keinen Push;
-   * eine Konfi ohne Jahrgang sieht keinen Termin und bekommt keinen. Bis
-   * dahin ging der Push an jede Konfi der Gemeinde, auch zu Terminen fremder
-   * Jahrgaenge.
+   * Termins, nie bei "Nur Team". Ein Termin ohne Jahrgang gilt der ganzen
+   * Gemeinde (Simon, 27.09.2026) -- alle Konfis sehen ihn und bekommen den
+   * Push, auch eine Konfi ohne Jahrgang. Bis dahin ging der Push an jede
+   * Konfi der Gemeinde, auch zu Terminen fremder Jahrgaenge.
    *
    * Der Name bleibt (Aufrufer und Tests rufen ihn so); organizationId bleibt
    * die Gemeinde des Inhalts fuer den Org-Wechsel beim Antippen. Ohne

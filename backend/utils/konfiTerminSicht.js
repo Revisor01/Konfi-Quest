@@ -1,22 +1,25 @@
-// Welche Termine eine Konfi sieht -- EINE Regel fuer die Konfi-Terminliste
-// und die Mitteilung "Neues Event!" (27.09.2026, Audit "Wer bekommt was",
-// BF-04 / F-05).
+// Welche Termine eine Konfi sieht -- EINE Regel fuer die Konfi-Terminliste,
+// die Mitteilung "Neues Event!", das Buchen und die Detailansicht (Status,
+// Teilnehmende, Zeitfenster). Audit "Wer bekommt was", 27.09.2026, BF-04 /
+// F-05.
 //
 // Simon, 27.09.2026 (CLAUDE.md, "Wer sieht und bekommt was"): Konfis sehen
-// und bekommen nur den eigenen Jahrgang. Mitteilung = Sichtbarkeit: Eine
+// und bekommen den eigenen Jahrgang. Ein Termin ohne jeden Jahrgang gilt der
+// ganzen Gemeinde -- auch allen Konfis. Mitteilung = Sichtbarkeit: Eine
 // Mitteilung bekommt genau, wer den Vorgang in seiner Liste sieht.
 //
 //   Termin des eigenen Jahrgangs   sichtbar
 //   Termin fremder Jahrgaenge      nicht sichtbar
-//   Termin ohne jeden Jahrgang     nicht sichtbar (gilt dem Team, F-05)
+//   Termin ohne jeden Jahrgang     sichtbar (ganze Gemeinde)
 //   "Nur Team" (teamer_only)       nie
-//   Konfi ohne Jahrgang            sieht keinen Termin
+//   Konfi ohne Jahrgang            sieht nur die Termine ohne Jahrgang
 //
-// BIS HIERHER stand die Bedingung nur in GET /api/konfi/events (INNER JOIN
-// auf event_jahrgang_assignments, eigener Jahrgang, teamer_only IS NOT TRUE).
-// Der Anmeldestart-Push fragte dagegen jede Konfi der Gemeinde -- jede
-// Konfi bekam jede Woche Einladungen zu Terminen anderer Jahrgaenge und zu
-// Team-Terminen ohne Jahrgang, tippte darauf und fand nichts.
+// BIS 27.09.2026 stand die Bedingung nur in GET /api/konfi/events (INNER JOIN
+// auf event_jahrgang_assignments, eigener Jahrgang) -- ein Termin ohne
+// Jahrgang erschien bei keiner Konfi. Der Anmeldestart-Push fragte dagegen
+// jede Konfi der Gemeinde, das Buchen pruefte fuer Konfis keinen Jahrgang,
+// und Status und Teilnehmende nur die Gemeinde. Eine Konfi konnte sich mit
+// der Kennung eines fremden Termins anmelden und dessen Teilnehmende lesen.
 //
 // Was die Liste darueber hinaus filtert, gehoert nicht zur Sichtbarkeit des
 // Termins, sondern zur Darstellung: das Datumsfenster (letzte 12 Monate) und
@@ -26,7 +29,8 @@
 /**
  * SQL-Bedingung "eine Konfi des Jahrgangs <jahrgang> sieht Termin <e>".
  *
- * Ist <jahrgang> NULL (Konfi ohne Jahrgang), ist die Bedingung falsch.
+ * Ist <jahrgang> NULL (Konfi ohne Jahrgang), gilt sie nur fuer Termine ohne
+ * Jahrgang.
  *
  * @param {object} opt
  * @param {string} opt.jahrgang  SQL-Ausdruck fuer den Jahrgang der Konfi
@@ -37,12 +41,50 @@
 function konfiSiehtTerminSql({ jahrgang, e = 'e' }) {
   return `(
     ${e}.teamer_only IS NOT TRUE
-    AND EXISTS (
-      SELECT 1 FROM event_jahrgang_assignments eja_konfi_sicht
-       WHERE eja_konfi_sicht.event_id = ${e}.id
-         AND eja_konfi_sicht.jahrgang_id = ${jahrgang}
+    AND (
+      NOT EXISTS (
+        SELECT 1 FROM event_jahrgang_assignments eja_konfi_alle
+         WHERE eja_konfi_alle.event_id = ${e}.id
+      )
+      OR EXISTS (
+        SELECT 1 FROM event_jahrgang_assignments eja_konfi_sicht
+         WHERE eja_konfi_sicht.event_id = ${e}.id
+           AND eja_konfi_sicht.jahrgang_id = ${jahrgang}
+      )
     )
   )`;
+}
+
+/**
+ * Sieht Konfi <konfiId> Termin <eventId>? Dieselbe Bedingung wie die Liste,
+ * mit dem Jahrgang aus konfi_profiles.
+ *
+ * auchMitBuchung: Die EIGENE Buchung bleibt lesbar, auch wenn der Termin
+ * nicht (mehr) zum Jahrgang passt -- nach einem Jahrgangswechsel bleiben
+ * vergangene Buchungen mit Anwesenheit stehen, und die Konfi oeffnet sie aus
+ * ihrem Verlauf. Fuers Buchen gilt das nicht: Anmelden darf sich nur, wer
+ * den Termin sieht.
+ *
+ * Ein unbekannter Termin ergibt false. Die Gemeinde prueft der Aufrufer.
+ *
+ * @param {object} db              Pool oder Client
+ * @param {number|string} konfiId
+ * @param {number|string} eventId
+ * @param {object} [opt]
+ * @param {boolean} [opt.auchMitBuchung=false]
+ * @returns {Promise<boolean>}
+ */
+async function konfiSiehtTermin(db, konfiId, eventId, { auchMitBuchung = false } = {}) {
+  const jahrgang = '(SELECT kp.jahrgang_id FROM konfi_profiles kp WHERE kp.user_id = $2)';
+  const buchung = auchMitBuchung
+    ? 'OR EXISTS (SELECT 1 FROM event_bookings eb WHERE eb.event_id = e.id AND eb.user_id = $2)'
+    : '';
+  const { rows: [zeile] } = await db.query(
+    `SELECT (${konfiSiehtTerminSql({ jahrgang, e: 'e' })} ${buchung}) AS sieht
+       FROM events e WHERE e.id = $1`,
+    [eventId, konfiId]
+  );
+  return Boolean(zeile && zeile.sieht);
 }
 
 /**
@@ -73,4 +115,4 @@ async function ladeKonfisDieTerminSehen(db, eventId) {
   return rows.map((r) => r.id);
 }
 
-module.exports = { konfiSiehtTerminSql, ladeKonfisDieTerminSehen };
+module.exports = { konfiSiehtTerminSql, konfiSiehtTermin, ladeKonfisDieTerminSehen };

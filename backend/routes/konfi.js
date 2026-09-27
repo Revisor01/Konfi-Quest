@@ -20,7 +20,7 @@ const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach, pruefeKonfiStorno } = require('../utils/bookingUtils');
 const { buchungszahlenJeTerminSql } = require('../utils/buchungszahlen');
-const { konfiSiehtTerminSql } = require('../utils/konfiTerminSicht');
+const { konfiSiehtTerminSql, konfiSiehtTermin } = require('../utils/konfiTerminSicht');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
@@ -1133,17 +1133,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     try {
       const konfiId = req.user.id;
 
-      // Jahrgang des Konfis laden für Filterung
+      // Jahrgang des Konfis laden für Filterung. Eine Konfi ohne Jahrgang
+      // sieht die Termine ohne Jahrgang (sie gelten der ganzen Gemeinde,
+      // Simon 27.09.2026) -- bis dahin bekam sie hier eine leere Liste.
       const { rows: [konfiProfile] } = await db.query(
         'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
         [konfiId]
       );
 
-      if (!konfiProfile || !konfiProfile.jahrgang_id) {
-        return res.json([]); // Konfi ohne Jahrgang sieht keine Events
-      }
-
-      const jahrgangId = konfiProfile.jahrgang_id;
+      const jahrgangId = konfiProfile?.jahrgang_id ?? null;
 
       // Datumsfenster: standardmaessig nur Events des letzten Jahres (plus alle
       // zukuenftigen). Mit ?all=true wird die gesamte Historie geliefert.
@@ -1317,9 +1315,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           LIMIT 1
         ) event_chat ON true
         WHERE e.organization_id = $1
-          -- Eigener Jahrgang, nie "Nur Team": dieselbe Regel wie die
-          -- Empfaenger von "Neues Event!" (utils/konfiTerminSicht.js,
-          -- 27.09.2026). Vorher stand sie nur hier, als INNER JOIN auf
+          -- Eigener Jahrgang oder gar kein Jahrgang, nie "Nur Team":
+          -- dieselbe Regel wie die Empfaenger von "Neues Event!", das Buchen
+          -- und die Detailansicht (utils/konfiTerminSicht.js, 27.09.2026).
+          -- Vorher stand sie nur hier, als INNER JOIN auf
           -- event_jahrgang_assignments -- und der Push kannte sie nicht.
           AND ${konfiSiehtTerminSql({ jahrgang: '$3', e: 'e' })}
           AND (e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT NULL)
@@ -1381,6 +1380,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     try {
       const konfiId = req.user.id;
       const eventId = req.params.id;
+
+      // Nur Termine, die die Konfi sieht, oder die eigene Buchung -- sonst
+      // 404 wie ein unbekannter Termin (utils/konfiTerminSicht.js). Bis
+      // 27.09.2026 pruefte diese Route nur die Gemeinde.
+      if (!(await konfiSiehtTermin(db, konfiId, eventId, { auchMitBuchung: true }))) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
       
       // Check if konfi is registered
       const { rows: [registration] } = await db.query(
@@ -1482,6 +1488,14 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     try {
       const eventId = req.params.id;
 
+      // Die Teilnehmenden eines Termins liest nur, wer ihn sieht oder selbst
+      // gebucht ist. Bis 27.09.2026 pruefte diese Route nur die Gemeinde --
+      // eine Konfi las mit der Kennung eines Termins eines anderen
+      // Jahrgangs dessen Teilnehmende (Audit "Wer bekommt was", F-05).
+      if (!(await konfiSiehtTermin(db, req.user.id, eventId, { auchMitBuchung: true }))) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
       // Get confirmed participants with anonymized names — Teamer rausfiltern
       //
       // BEWUSST NUR 'confirmed' (nachgeprueft 15.09.2026, Migration 153): Das
@@ -1559,7 +1573,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // beide Routen rufen ladeZeitfenster, damit sie nicht auseinanderlaufen.
       const zeitfenster = await ladeZeitfenster(db, req.params.id, req.user.organization_id);
 
-      if (zeitfenster === null) {
+      if (zeitfenster === null
+          || !(await konfiSiehtTermin(db, req.user.id, req.params.id, { auchMitBuchung: true }))) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 

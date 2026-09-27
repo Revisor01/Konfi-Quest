@@ -40,7 +40,9 @@ erfunden:
   - Termine ohne jeden Jahrgang (sie gelten der ganzen Gemeinde);
   - Chat von Team zu Team (Team-Chat, Gruppen und Einzelchats unter
     Teamer:innen, Admins und Org-Admins).
-- **Konfi:** der eigene Jahrgang und die eigenen Vorgänge.
+- **Konfi:** der eigene Jahrgang und die eigenen Vorgänge, dazu die Termine
+  ohne jeden Jahrgang — sie sieht sie, bekommt sie gemeldet und kann sie buchen,
+  auch ohne eigenen Jahrgang (Simon, 27.09.2026).
 - **Mitteilung = Sichtbarkeit.** Push, Postfach-Eintrag und rote Zahl bekommt
   genau, wer den Vorgang in seiner Liste sieht und bearbeiten darf — nicht mehr
   und nicht weniger. Liste, Zähler und Empfänger lesen dieselbe Regel-Stelle

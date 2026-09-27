@@ -3950,7 +3950,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Events des eigenen Jahrgangs (Konfi-Sicht)",
-        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine. ZUSAMMENGELEGT 01.09.2026: registration_status wird nicht mehr je Ansicht in SQL wiederholt, sondern in allen drei Listen (diese, GET /api/events, GET /api/konfi/events/{id}/status) aus utils/terminAnmeldeStatus.js gebildet. Werte und Reihenfolge unveraendert ('cancelled' vor 'mandatory' vor 'upcoming'/'closed' vor 'open'); die Abweichungen vom 25.08. und 27.08. koennen so nicht wieder entstehen. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn der Konfi selbst Teilnehmer des Raums ist (sonst null). Damit bildet der Chat-Einstieg im Termin-Detail genau die Berechtigung ab, die darfRaumOeffnen in chat.js durchsetzt. NEU 15.09.2026: cancelled_reason und cancelled_by_name kommen additiv mit (Migration 150). Der Absagegrund ist ausdruecklich fuer ALLE Teilnehmenden bestimmt — die Konfi-Liste ist der Ort, an dem er ankommen muss. Beide nullable. ADDITIV 16.09.2026: abgemeldet_count (integer) — abgemeldete Konfis, Selbstabmeldung und Abmeldung durch die Leitung zusammen, aus event_booking_stats. Die Konfi-Sicht trennt die beiden Abmelde-Arten bewusst NICHT: Aus ihrer Sicht ist beides dasselbe (\"diese Person ist nicht dabei\"), und wer wen abgemeldet hat, geht sie nichts an. Die Ansicht braucht die Zahl fuer abgesagte Termine: Dort stehen alle auf 'excused', registered_count ist 0 (richtig — niemand nimmt teil), und ohne diese Zahl liesse sich nicht erkennen, um wie viele es ging. Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. BEHOBEN 16.09.2026: registered_count, waitlist_count, teamer_count und abgemeldet_count kamen an einem Termin OHNE jede Buchung als null statt als 0. Die Zaehler stammen aus einer LATERAL-Unterabfrage auf event_booking_stats; diese View entsteht mit GROUP BY ueber event_bookings und hat fuer einen leeren Termin keine Zeile. Das COALESCE stand INNERHALB der Unterabfrage und wurde deshalb nie ausgewertet — es schuetzt vor einer NULL-Spalte, nicht vor einer fehlenden Zeile. Jetzt steht es aussen, wie bei GET /api/konfi/events/{id}/status. Alle vier Zaehler sind damit durchgaengig integer und nie null. BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-04 / F-05): Die Sichtbarkeits-Bedingung (Termin einem Jahrgang der Konfi zugeordnet, nie teamer_only) steht jetzt EINMAL in utils/konfiTerminSicht.js und bestimmt zugleich die Empfaenger der Mitteilung new_event (\"Neues Event!\", Hintergrundlauf zum Anmeldestart). Die ging vorher an jede Konfi der Gemeinde -- auch zu Terminen fremder Jahrgaenge und ohne Jahrgang, die diese Liste nicht zeigt. Termine ohne Jahrgang erscheinen hier weiterhin nicht (sie gelten dem Team) und loesen deshalb auch keine Konfi-Mitteilung aus. Antwortform und Inhalt der Liste unveraendert.\n",
+        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine. ZUSAMMENGELEGT 01.09.2026: registration_status wird nicht mehr je Ansicht in SQL wiederholt, sondern in allen drei Listen (diese, GET /api/events, GET /api/konfi/events/{id}/status) aus utils/terminAnmeldeStatus.js gebildet. Werte und Reihenfolge unveraendert ('cancelled' vor 'mandatory' vor 'upcoming'/'closed' vor 'open'); die Abweichungen vom 25.08. und 27.08. koennen so nicht wieder entstehen. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn der Konfi selbst Teilnehmer des Raums ist (sonst null). Damit bildet der Chat-Einstieg im Termin-Detail genau die Berechtigung ab, die darfRaumOeffnen in chat.js durchsetzt. NEU 15.09.2026: cancelled_reason und cancelled_by_name kommen additiv mit (Migration 150). Der Absagegrund ist ausdruecklich fuer ALLE Teilnehmenden bestimmt — die Konfi-Liste ist der Ort, an dem er ankommen muss. Beide nullable. ADDITIV 16.09.2026: abgemeldet_count (integer) — abgemeldete Konfis, Selbstabmeldung und Abmeldung durch die Leitung zusammen, aus event_booking_stats. Die Konfi-Sicht trennt die beiden Abmelde-Arten bewusst NICHT: Aus ihrer Sicht ist beides dasselbe (\"diese Person ist nicht dabei\"), und wer wen abgemeldet hat, geht sie nichts an. Die Ansicht braucht die Zahl fuer abgesagte Termine: Dort stehen alle auf 'excused', registered_count ist 0 (richtig — niemand nimmt teil), und ohne diese Zahl liesse sich nicht erkennen, um wie viele es ging. Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. BEHOBEN 16.09.2026: registered_count, waitlist_count, teamer_count und abgemeldet_count kamen an einem Termin OHNE jede Buchung als null statt als 0. Die Zaehler stammen aus einer LATERAL-Unterabfrage auf event_booking_stats; diese View entsteht mit GROUP BY ueber event_bookings und hat fuer einen leeren Termin keine Zeile. Das COALESCE stand INNERHALB der Unterabfrage und wurde deshalb nie ausgewertet — es schuetzt vor einer NULL-Spalte, nicht vor einer fehlenden Zeile. Jetzt steht es aussen, wie bei GET /api/konfi/events/{id}/status. Alle vier Zaehler sind damit durchgaengig integer und nie null. BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-04 / F-05): Die Sichtbarkeits-Bedingung (Termin einem Jahrgang der Konfi zugeordnet, nie teamer_only) steht jetzt EINMAL in utils/konfiTerminSicht.js und bestimmt zugleich die Empfaenger der Mitteilung new_event (\"Neues Event!\", Hintergrundlauf zum Anmeldestart). Die ging vorher an jede Konfi der Gemeinde -- auch zu Terminen fremder Jahrgaenge und ohne Jahrgang, die diese Liste nicht zeigt. Antwortform und Inhalt der Liste unveraendert. GEAENDERT 27.09.2026 (Simon, F-05 \"ganze Gemeinde\"): Termine OHNE jeden Jahrgang gelten der ganzen Gemeinde und erscheinen jetzt bei allen Konfis -- auch bei einer Konfi ohne Jahrgang, die vorher pauschal [] bekam und jetzt genau diese Termine sieht. Sie loesen damit auch new_event an alle Konfis der Gemeinde aus. Antwortform unveraendert (Array), es kommen nur Eintraege hinzu.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3959,7 +3959,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "nur Events des eigenen Jahrgangs (utils/konfiTerminSicht.js, dieselbe Regel wie die Empfaenger von new_event); Konfi ohne Jahrgang -> leere Liste",
+          "objekt-pruefung": "Events des eigenen Jahrgangs und Events ohne jeden Jahrgang, nie teamer_only (utils/konfiTerminSicht.js, dieselbe Regel wie die Empfaenger von new_event, das Buchen und die Detailrouten); Konfi ohne Jahrgang -> nur die Events ohne Jahrgang",
           "hinweis": "BEHOBEN 22.08.2026: qr_token wird aus der Response gefiltert (war dieselbe Klasse wie L1 in /api/events)."
         },
         "parameters": [
@@ -4007,7 +4007,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event org-gescopt; Buchungsdaten nur eigene; kein Jahrgang-Check (nur Zähler)"
+          "objekt-pruefung": "Event org-gescopt; seit 27.09.2026 nur Events, die die Konfi sieht (eigener Jahrgang, ohne Jahrgang, nie teamer_only; utils/konfiTerminSicht.konfiSiehtTermin) oder mit eigener Buchung, sonst 404; Buchungsdaten nur eigene"
         },
         "parameters": [
           {
@@ -4048,8 +4048,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event muss zur eigenen Org gehören; Namen anonymisiert",
-          "hinweis": "Kein Jahrgang-Check - anonymisierte Listen beliebiger Org-Events abrufbar (nur Hinweis)."
+          "objekt-pruefung": "Event muss zur eigenen Org gehören; seit 27.09.2026 nur Events, die die Konfi sieht, oder mit eigener Buchung (utils/konfiTerminSicht.konfiSiehtTermin), sonst 404; Namen anonymisiert",
+          "hinweis": "BEHOBEN 27.09.2026 (Audit 'Wer bekommt was', F-05): Bis dahin kein Jahrgang-Check -- die Teilnehmenden ('Vorname N.') von Events fremder Jahrgaenge und von 'Nur Team' waren mit der Kennung abrufbar. Fremde Gemeinde antwortet seither ebenfalls 404 statt 200 [] (Sicherheit BF-16)."
         },
         "parameters": [
           {
@@ -4065,6 +4065,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Event unbekannt, aus fremder Gemeinde oder fuer die Konfi nicht sichtbar (seit 27.09.2026)"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -4087,7 +4090,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event org-gescopt; nur Slot-Daten + Zähler"
+          "objekt-pruefung": "Event org-gescopt; seit 27.09.2026 nur Events, die die Konfi sieht, oder mit eigener Buchung (utils/konfiTerminSicht.konfiSiehtTermin), sonst 404; nur Slot-Daten + Zähler"
         },
         "parameters": [
           {
@@ -4128,8 +4131,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "bucht nur sich selbst; Event + Timeslot org-gescopt (Slot mit FOR UPDATE); nicht teamer_only, nicht cancelled",
-          "hinweis": "Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis)."
+          "objekt-pruefung": "bucht nur sich selbst; Event + Timeslot org-gescopt (Slot mit FOR UPDATE); nicht teamer_only, nicht cancelled; seit 27.09.2026 nur Events, die die Konfi sieht (eigener Jahrgang oder ohne Jahrgang, utils/konfiTerminSicht.konfiSiehtTermin), sonst 403 'Dieses Event gehört zu einem anderen Jahrgang'",
+          "hinweis": "BEHOBEN 27.09.2026 (Audit 'Wer bekommt was', F-05): Bis dahin kein Jahrgang-Check -- eine Konfi konnte sich per API zu Events fremder Jahrgaenge der Gemeinde anmelden. Gilt ebenso fuer den Konfi-Pfad von POST /api/events/{id}/book (gemeinsamer Buchungskern)."
         },
         "parameters": [
           {
@@ -5098,7 +5101,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "bucht nur sich selbst; Event/Timeslot org-gescopt; Konfis nicht bei teamer_only (403)"
+          "objekt-pruefung": "bucht nur sich selbst; Event/Timeslot org-gescopt; Konfis nicht bei teamer_only (403) und seit 27.09.2026 nur bei Events, die sie sehen -- eigener Jahrgang oder ohne Jahrgang (utils/konfiTerminSicht.konfiSiehtTermin), sonst 403 'Dieses Event gehört zu einem anderen Jahrgang'"
         },
         "parameters": [
           {

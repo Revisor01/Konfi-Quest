@@ -842,15 +842,19 @@ paths:
         bestimmt zugleich die Empfaenger der Mitteilung new_event ("Neues
         Event!", Hintergrundlauf zum Anmeldestart). Die ging vorher an jede
         Konfi der Gemeinde -- auch zu Terminen fremder Jahrgaenge und ohne
-        Jahrgang, die diese Liste nicht zeigt. Termine ohne Jahrgang
-        erscheinen hier weiterhin nicht (sie gelten dem Team) und loesen
-        deshalb auch keine Konfi-Mitteilung aus. Antwortform und Inhalt der
+        Jahrgang, die diese Liste nicht zeigt. Antwortform und Inhalt der
         Liste unveraendert.
+        GEAENDERT 27.09.2026 (Simon, F-05 "ganze Gemeinde"): Termine OHNE
+        jeden Jahrgang gelten der ganzen Gemeinde und erscheinen jetzt bei
+        allen Konfis -- auch bei einer Konfi ohne Jahrgang, die vorher pauschal
+        [] bekam und jetzt genau diese Termine sieht. Sie loesen damit auch
+        new_event an alle Konfis der Gemeinde aus. Antwortform unveraendert
+        (Array), es kommen nur Eintraege hinzu.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "nur Events des eigenen Jahrgangs (utils/konfiTerminSicht.js, dieselbe Regel wie die Empfaenger von new_event); Konfi ohne Jahrgang -> leere Liste"
+        objekt-pruefung: "Events des eigenen Jahrgangs und Events ohne jeden Jahrgang, nie teamer_only (utils/konfiTerminSicht.js, dieselbe Regel wie die Empfaenger von new_event, das Buchen und die Detailrouten); Konfi ohne Jahrgang -> nur die Events ohne Jahrgang"
         hinweis: "BEHOBEN 22.08.2026: qr_token wird aus der Response gefiltert (war dieselbe Klasse wie L1 in /api/events)."
       parameters:
         - name: all
@@ -877,7 +881,7 @@ paths:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Event org-gescopt; Buchungsdaten nur eigene; kein Jahrgang-Check (nur Zähler)"
+        objekt-pruefung: "Event org-gescopt; seit 27.09.2026 nur Events, die die Konfi sieht (eigener Jahrgang, ohne Jahrgang, nie teamer_only; utils/konfiTerminSicht.konfiSiehtTermin) oder mit eigener Buchung, sonst 404; Buchungsdaten nur eigene"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "is_registered, registration_status, can_register, event_status, confirmed_count, waitlist_count, waitlist_position, max_participants, waitlist_enabled. can_register folgt seit 26.09.2026 derselben Regel wie in GET /api/konfi/events: eine abgemeldete Zeile (excused/opted_out) sperrt nicht." }
@@ -897,13 +901,14 @@ paths:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Event muss zur eigenen Org gehören; Namen anonymisiert"
-        hinweis: "Kein Jahrgang-Check - anonymisierte Listen beliebiger Org-Events abrufbar (nur Hinweis)."
+        objekt-pruefung: "Event muss zur eigenen Org gehören; seit 27.09.2026 nur Events, die die Konfi sieht, oder mit eigener Buchung (utils/konfiTerminSicht.konfiSiehtTermin), sonst 404; Namen anonymisiert"
+        hinweis: "BEHOBEN 27.09.2026 (Audit 'Wer bekommt was', F-05): Bis dahin kein Jahrgang-Check -- die Teilnehmenden ('Vorname N.') von Events fremder Jahrgaenge und von 'Nur Team' waren mit der Kennung abrufbar. Fremde Gemeinde antwortet seither ebenfalls 404 statt 200 [] (Sicherheit BF-16)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Array {id, display_name: 'Vorname N.'}" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: "Event unbekannt, aus fremder Gemeinde oder fuer die Konfi nicht sichtbar (seit 27.09.2026)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/konfi/events/{id}/timeslots:
@@ -919,7 +924,7 @@ paths:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Event org-gescopt; nur Slot-Daten + Zähler"
+        objekt-pruefung: "Event org-gescopt; seit 27.09.2026 nur Events, die die Konfi sieht, oder mit eigener Buchung (utils/konfiTerminSicht.konfiSiehtTermin), sonst 404; nur Slot-Daten + Zähler"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Array von Timeslots (et.*, registered_count, waitlist_count); leer wenn has_timeslots=false" }
@@ -965,8 +970,8 @@ paths:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "bucht nur sich selbst; Event + Timeslot org-gescopt (Slot mit FOR UPDATE); nicht teamer_only, nicht cancelled"
-        hinweis: "Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis)."
+        objekt-pruefung: "bucht nur sich selbst; Event + Timeslot org-gescopt (Slot mit FOR UPDATE); nicht teamer_only, nicht cancelled; seit 27.09.2026 nur Events, die die Konfi sieht (eigener Jahrgang oder ohne Jahrgang, utils/konfiTerminSicht.konfiSiehtTermin), sonst 403 'Dieses Event gehört zu einem anderen Jahrgang'"
+        hinweis: "BEHOBEN 27.09.2026 (Audit 'Wer bekommt was', F-05): Bis dahin kein Jahrgang-Check -- eine Konfi konnte sich per API zu Events fremder Jahrgaenge der Gemeinde anmelden. Gilt ebenso fuer den Konfi-Pfad von POST /api/events/{id}/book (gemeinsamer Buchungskern)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         content:
@@ -1824,7 +1829,7 @@ paths:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "bucht nur sich selbst; Event/Timeslot org-gescopt; Konfis nicht bei teamer_only (403)"
+        objekt-pruefung: "bucht nur sich selbst; Event/Timeslot org-gescopt; Konfis nicht bei teamer_only (403) und seit 27.09.2026 nur bei Events, die sie sehen -- eigener Jahrgang oder ohne Jahrgang (utils/konfiTerminSicht.konfiSiehtTermin), sonst 403 'Dieses Event gehört zu einem anderen Jahrgang'"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         content:

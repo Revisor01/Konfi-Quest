@@ -217,6 +217,7 @@ bestätigen, sonst ebenfalls blockierend.
 - **Kennzeichnung:** reproduziert — `DELETE /api/admin/categories/3` (Org 2) als `orgadmin1` → `409 "Kategorie kann nicht gelöscht werden: 1 Aktivität(en) zugeordnet."`; `DELETE /api/teamer/certificate-types/1` → `409 "… bereits im Team vergeben."`; sechs Routen → `200 []`/`200 {…:0}`; `POST /api/chat/rooms` mit Org-2-Personen → `200 {"room_id":5}`, Raum enthält nur den Ersteller.
 - **Beschreibung:** Kein Datenabfluss (alle Listen sind org-gefiltert), aber die 409er verraten Existenz und Nutzung fremder Objekt-IDs, und stilles Weglassen von Teilnehmern lässt die Leitung glauben, der Raum sei wie gewünscht angelegt.
 - **Empfehlung:** Org-Prüfung vor der Nutzungsprüfung; 404 für fremde IDs; `POST /rooms` mit 400 antworten, wenn Teilnehmer nicht zur Organisation gehören.
+- **Status:** teilweise behoben 27.09.2026 — `GET /api/konfi/events/:id/participants` (dazu `/status` und `/timeslots`) antwortet für Termine, die die Konfi nicht sieht, mit 404, auch für fremde Gemeinden (Konfi-Terminregel `utils/konfiTerminSicht.js`, Audit „Wer bekommt was" F-05). Die übrigen Routen dieses Befunds unverändert.
 
 ### BF-17: Body-Parser-Fehler enden als 500 „Something went wrong!"
 - **Schwere:** NIEDRIG

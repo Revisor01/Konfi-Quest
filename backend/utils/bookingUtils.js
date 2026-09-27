@@ -1,5 +1,6 @@
 const { addToEventChat } = require('./eventChat');
 const { gehoertZumTermin } = require('./jahrgangsZugriff');
+const { konfiSiehtTermin } = require('./konfiTerminSicht');
 
 // Shared Booking-Logik für Event-Buchungen
 // Wird von konfi.js und events.js genutzt
@@ -992,6 +993,13 @@ async function bucheTermin(client, eingabe) {
 
   // ---------- KONFI-SEITE ----------
   if (event.teamer_only) return fehler(403, 'Dieses Event ist nur für das Team');
+  // Jahrgangsgrenze (27.09.2026, Audit "Wer bekommt was", F-05): Buchen darf
+  // nur, wer den Termin in seiner Liste sieht -- eigener Jahrgang oder ein
+  // Termin ohne Jahrgang. Vorher pruefte die Konfi-Seite keinen Jahrgang; mit
+  // der Kennung eines fremden Termins meldete sich eine Konfi an.
+  if (!(await konfiSiehtTermin(client, userId, event.id))) {
+    return fehler(403, 'Dieses Event gehört zu einem anderen Jahrgang');
+  }
   // (Der cancelled-Riegel steht jetzt zentral oben, vor der Rollenweiche.)
 
   const fenster = validateRegistrationWindow(event);
