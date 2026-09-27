@@ -76,6 +76,9 @@ jobs:
           API="$PORTAINER_URL/api/stacks/$STACK_ID"
 
           curl --fail --silent --show-error -H "$AUTH" "$API/file" -o stack.json
+          # Die Stack-Variablen gehen unverändert zurück: Portainer ersetzt sie
+          # beim Update durch die mitgeschickte Liste ("env": [] löschte sie).
+          curl --fail --silent --show-error -H "$AUTH" "$API" -o stack-meta.json
 
           # Nur den Frontend-Tag ersetzen. Das Backend bleibt bewusst auf
           # seinem Stand — sonst wuerde ein Frontend-Deploy ungefragt auch
@@ -91,7 +94,8 @@ jobs:
           )
           if n != 1:
               sys.exit(f"Erwartete genau 1 Frontend-Image-Zeile, {n} gefunden — Abbruch.")
-          json.dump({"stackFileContent": new, "env": [], "prune": False, "pullImage": True},
+          env = json.load(open("stack-meta.json")).get("Env") or []
+          json.dump({"stackFileContent": new, "env": env, "prune": False, "pullImage": True},
                     open("payload.json", "w"))
           print(f"Frontend-Tag auf {tag} gesetzt.")
           PY

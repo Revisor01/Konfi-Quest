@@ -119,7 +119,11 @@ jobs:
           url,key=os.environ["P_URL"],os.environ["P_KEY"]
           sid,eid=os.environ["STACK_ID"],os.environ["ENDPOINT_ID"]
           compose=open("compose.yml").read()
-          body=json.dumps({"stackFileContent":compose,"env":[],"prune":False,"pullImage":True}).encode()
+          # Stack-Variablen unverändert zurückschicken (Portainer ersetzt sie
+          # beim Update; "env":[] löschte sie, 27.09.2026).
+          rq=urllib.request.Request(f"{url}/api/stacks/{sid}"); rq.add_header("X-API-Key",key)
+          env=json.load(urllib.request.urlopen(rq,timeout=30)).get("Env") or []
+          body=json.dumps({"stackFileContent":compose,"env":env,"prune":False,"pullImage":True}).encode()
           req=urllib.request.Request(f"{url}/api/stacks/{sid}?endpointId={eid}",data=body,method="PUT")
           req.add_header("X-API-Key",key); req.add_header("Content-Type","application/json")
           try:

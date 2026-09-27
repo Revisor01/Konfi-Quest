@@ -88,7 +88,17 @@ import json, os, urllib.request, urllib.error
 url, key = os.environ["P_URL"], os.environ["P_KEY"]
 sid, eid = os.environ["STACK_ID"], os.environ["ENDPOINT_ID"]
 compose = open("compose.yml").read()
-body = json.dumps({"stackFileContent": compose, "env": [], "prune": False, "pullImage": True}).encode()
+# Die Stack-Variablen (etwa SMTP_HOST) unverändert zurückschicken: Portainer
+# ERSETZT sie beim Update durch die mitgeschickte Liste -- "env": [] löschte
+# sie bei jedem Deploy (27.09.2026). Ohne Variablen bricht die Referenz-Compose
+# mit "SMTP_HOST fehlt" ab. Ohne gesetzte Variablen bleibt es eine leere Liste.
+req = urllib.request.Request(f"{url}/api/stacks/{sid}")
+req.add_header("X-API-Key", key)
+try:
+    env = json.load(urllib.request.urlopen(req, timeout=30)).get("Env") or []
+except Exception:
+    print("000"); raise SystemExit(0)
+body = json.dumps({"stackFileContent": compose, "env": env, "prune": False, "pullImage": True}).encode()
 req = urllib.request.Request(f"{url}/api/stacks/{sid}?endpointId={eid}", data=body, method="PUT")
 req.add_header("X-API-Key", key); req.add_header("Content-Type", "application/json")
 try:
