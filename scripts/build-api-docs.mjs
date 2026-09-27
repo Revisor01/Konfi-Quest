@@ -188,11 +188,11 @@ async function main() {
     .filter((b) => b.routen.length > 0);
 
   const gesamt = bereiche.reduce((n, b) => n + b.routen.length, 0);
-  // Datum NICHT aus der Uhr: Die CI erzeugt die Seite neu und vergleicht sie
-  // per git diff mit der eingecheckten. Ein Tageswechsel hätte den Vergleich
-  // rot gemacht, ohne dass sich etwas geändert hat. Quelle ist deshalb der
-  // Zeitpunkt der letzten Änderung an den Quellen (git), mit der Uhr als
-  // Rueckfall, falls git nicht verfuegbar ist.
+  // KEIN Datum auf der Seite: Die CI erzeugt sie neu und vergleicht sie per
+  // git diff mit der eingecheckten Fassung. Jedes Datum aus der Uhr hätte den
+  // Vergleich bei einem Tageswechsel rot gemacht, ohne dass sich etwas
+  // geändert hat. Deshalb steht nur die Zahl der Operationen im Kopf; der
+  // Stand ergibt sich aus dem Commit der yaml-Quellen.
 
   const nav = bereiche.map((b) =>
     `<li class="nav-gruppe"><a href="#${b.id}"><span class="nav-punkt" style="background:${b.farbe}"></span>${e(b.titel)}<span class="nav-zahl">${b.routen.length}</span></a></li>`

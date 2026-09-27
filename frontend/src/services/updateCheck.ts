@@ -14,6 +14,10 @@
 //   Gemeinde-App ohnehin unangemessen. Der Link fuehrt lediglich zur
 //   Store-Seite der App — das ist auf beiden Plattformen der uebliche und
 //   zulaessige Weg.
+//   Das gilt auch unter einer Mindestversion, die der Betrieb setzt
+//   (services/betriebsstatus.ts, Simon 27.09.2026: "Keine Zwangsupdates"):
+//   Dort erscheint ein deutlicherer Dialog, der sich ebenfalls schliessen
+//   laesst (components/common/MindestversionHinweis). Blockiert wird nie.
 // - Offline stoert nichts: ohne Verbindung wird gar nicht erst angefragt.
 // - Fehler sind still: Kein Hinweis ist immer ein gueltiges Ergebnis.
 

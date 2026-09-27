@@ -144,8 +144,8 @@ describe('Kachelraster: Namen brechen nicht mitten im Wort, Kacheln bleiben glei
   it('setzt keine Silbentrennung, die je nach Geraet anders bricht', () => {
     // Nachgemessen: hyphens:auto bricht "Gottesdienstb-esucher" -- derselbe
     // harte Schnitt wie overflow-wrap, nur unzuverlaessig obendrein. Die
-    // Seite steht auf lang="en", und auf Android-WebViews ist das deutsche
-    // Woerterbuch nicht garantiert.
+    // Seite steht zwar auf lang="de", aber auf Android-WebViews ist das
+    // deutsche Woerterbuch nicht garantiert.
     expect(nameBlock).not.toContain('hyphens:');
     expect(nameBlock).not.toContain('hyphens :');
   });

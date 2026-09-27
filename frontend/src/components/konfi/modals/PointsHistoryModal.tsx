@@ -29,6 +29,7 @@ import {
 import api from '../../../services/api';
 import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface PointsHistoryModalProps {
   onClose: () => void;
@@ -83,11 +84,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     if (!dateString) return 'Unbekannt';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Ungültig';
-    return date.toLocaleDateString('de-DE', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    return datumKurz(date);
   };
 
   // Gefilterte Historie: deaktivierte Typen ausblenden
@@ -259,7 +256,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                                   <div className={`app-list-item__title ${typeBadgeColor ? 'app-list-item__title--punkte-badge-doppelt' : 'app-list-item__title--punkte-badge'}`}>{entry.title}</div>
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-events)' }} />
+                                      <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-events)' }} />
                                       {formatDate(entry.date)}
                                     </span>
                                   </div>

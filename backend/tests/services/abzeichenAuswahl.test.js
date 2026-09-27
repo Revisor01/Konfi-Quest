@@ -219,7 +219,22 @@ describe('Abzeichen-Lauf: nur veraenderte Personen pruefen', () => {
     // 25.09.2026: 28 -> 30. Das Postfach kam als siebter Baustein in die
     // App-Icon-Summe (utils/appIconBadge.js, postfachZaehler) -- wieder eine
     // Abfrage je Organisation, also zwei. Konstant, nicht je Person.
-    expect(z.stand()).toBe(30);
+    // 27.09.2026: 30 -> 32. Neue Challenge-Beitraege fuer Leitung und Team
+    // (challengeNeuigkeitenLeitungJeChallenge) kamen als achter Baustein in
+    // die App-Icon-Summe -- eine Abfrage fuer alle Leitungs- und Team-Konten
+    // der Organisation, bei zwei Organisationen zwei. Konstant, nicht je
+    // Person.
+    // 27.09.2026: 32 -> 21 (Audit "Wer bekommt was", Befund BF-12). Die
+    // App-Icon-Summe lief je Organisation einmal (hier zwei Runden zu je elf
+    // Abfragen) und nahm in jeder Gemeinde die Rolle am Nutzerkonto. Jetzt
+    // kommt sie aus appIconSummenAllerGemeinden: zwei Abfragen fuer die
+    // Gemeinden je Person mit der dortigen Rolle (ladeMitgliedschaftenVieler,
+    // ersetzt die Abfragen fuer Jahrgangs-Zuweisungen und user_organizations)
+    // und EINE Zaehlrunde ueber alle Gemeinden: 1 + 2 + 11 + 7 = 21 statt
+    // 3 + 2 x 11 + 7 = 32. Die Zahl haengt damit auch nicht mehr an der Zahl
+    // der Gemeinden -- gemessen mit 40 weiteren Konfis und einer dritten
+    // Gemeinde: vorher 32 / 32 / 38, jetzt 21 / 21 / 21.
+    expect(z.stand()).toBe(21);
   });
 
   it('wer eine neue Aktivitaet bekommt, wird geprueft — und sonst niemand', async () => {

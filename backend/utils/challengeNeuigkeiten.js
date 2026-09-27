@@ -27,10 +27,19 @@
 // Verbuchen-Zaehler: keine Zahl vor einer Liste, in der man nicht handeln
 // kann.
 //
-// NUR KONFIS. Fuer Teamer:innen und die Leitung zaehlt der Challenge-Reiter
-// bereits die offenen Freigaben -- ihre Arbeitsliste. Beides in EINER Zahl
-// waere fuer sie unlesbar (7 = 3 Freigaben + 4 neue Galerie-Beitraege?).
-// Ein Reiter, eine Bedeutung je Rolle.
+// LEITUNG UND TEAM (seit 27.09.2026, Simon: "Die Challenges sollen sich
+// verhalten wie der Chat. Neue Nachricht: ein Abzeichen, ein Badge. Ich will
+// sehen, ob da etwas Neues passiert."). Bis dahin zaehlte fuer sie nur die
+// wartende Freigabe; bei einer Challenge ohne Freigabe erschien ein neuer
+// Beitrag nirgends ausser im Postfach. Ihre Regel steht unten in
+// challengeNeuigkeitenLeitungJeChallenge -- bewusst schlanker als die der
+// Konfis: Es zaehlen fremde, sichtbare Beitraege seit dem letzten Oeffnen
+// und -- wo das Team selbst mitmacht -- die noch nie geoeffnete Challenge
+// (seit demselben Tag, Audit "Wer bekommt was", BF-07). Ein wartender
+// Beitrag zaehlt dort NICHT, er steht schon als Freigabe am Reiter
+// (pendingChallenges) -- so zaehlt nichts doppelt, und an der Challenge
+// bleiben beide Arten unterscheidbar: orange mit Uhr fuer Freigaben, rote
+// Kugel fuer Neues.
 //
 // SICHTBARKEIT. Ein Konfi sieht Challenges seines Jahrgangs, nie 'nur_team',
 // nie Entwuerfe, nie ungestartete -- exakt der Scope von GET /challenges/konfi.
@@ -41,6 +50,7 @@
 // (Summe je Person fuers App-Icon im Push). Zwei getrennte Fassungen
 // derselben Regel waren der Fehler von Befund B2b -- sie laufen auseinander.
 const { PUBLIC_SUBMISSION_SQL } = require('./challengeSichtbarkeit');
+const { leitungSiehtChallengeSql, teamMachtMitSql } = require('./challengeLeitungSicht');
 
 /**
  * Neuigkeiten je Challenge fuer viele Konfis in EINER Abfrage.
@@ -119,4 +129,86 @@ async function challengeNeuigkeitenJeChallenge(db, konfis) {
   return rows.filter((r) => r.c > 0);
 }
 
-module.exports = { challengeNeuigkeitenJeChallenge };
+/**
+ * Neuigkeiten je Challenge fuer Leitung und Team (27.09.2026).
+ *
+ * Gezaehlt wird
+ *   1. die Challenge selbst, wenn die Person sie noch nie geoeffnet hat,
+ *      das Team bei ihr mitmacht ('konfis_und_team', 'nur_team' --
+ *      utils/challengeLeitungSicht.js, teamMachtMitSql) und die Person sie
+ *      nicht selbst angelegt hat (Pendant zur Start-Mitteilung
+ *      "Neue Challenge", die das Team seit dem Audit "Wer bekommt was",
+ *      BF-07, ebenfalls bekommt; bei 'konfis' liest das Team nur mit und
+ *      bekommt weder Mitteilung noch diese Zahl);
+ *   2. jeder Beitrag, der
+ *      - von jemand ANDEREM stammt (wie im Chat die eigene Nachricht),
+ *      - freigegeben ist ('approved': ohne Freigabe sofort, sonst nach der
+ *        Freigabe durch jemand anderen -- wer selbst freigibt, oeffnet dabei
+ *        die Challenge),
+ *      - nach dem letzten Oeffnen der Challenge eingereicht wurde,
+ * in einer laufenden Challenge, die die Person sieht
+ * (utils/challengeLeitungSicht.js: org_admin alle, admin Team-Challenges und
+ * eigene Jahrgaenge, teamer 'nur_team' und eigene Jahrgaenge).
+ *
+ * Wartende Beitraege zaehlen hier nicht -- sie stehen als Freigabe am
+ * Reiter (badge-counts.pendingChallenges). Ausgeblendete auch nicht: Die hat
+ * schon jemand gesehen und entschieden.
+ *
+ * "Nie geoeffnet" heisst: keine Zeile in challenge_read_status. Migration 168
+ * hat fuer die damalige Leitung jede bestehende Challenge als gesehen
+ * eingetragen; neu ist, was danach startet.
+ *
+ * @param {object} db
+ * @param {Array<{id:number,type:string,organization_id:number,role_name?:string,assigned_jahrgaenge?:Array}>} personen
+ *        Nur Typ 'admin' und 'teamer' (ohne super_admin) werden gezaehlt.
+ * @returns {Promise<Array<{user_id:number,user_type:string,organization_id:number,challenge_id:number,c:number}>>}
+ */
+async function challengeNeuigkeitenLeitungJeChallenge(db, personen) {
+  const leitung = (personen || []).filter((p) =>
+    (p.type === 'admin' || p.type === 'teamer') && p.role_name !== 'super_admin');
+  if (leitung.length === 0) return [];
+
+  const { rows } = await db.query(
+    `WITH z AS (
+       SELECT * FROM unnest($1::int[], $2::text[], $3::int[], $4::text[], $5::text[])
+         AS z(user_id, user_type, organization_id, rolle, jahrgaenge)
+     )
+     SELECT z.user_id, z.user_type, z.organization_id, c.id AS challenge_id,
+            (
+              -- 1. Die Challenge selbst: nie geoeffnet, das Team macht mit,
+              --    nicht selbst angelegt
+              CASE WHEN crs.challenge_id IS NULL
+                        AND c.created_by IS DISTINCT FROM z.user_id
+                        AND ${teamMachtMitSql({ rolle: 'z.rolle', jahrgaenge: 'z.jahrgaenge::int[]' })}
+                   THEN 1 ELSE 0 END
+              -- 2. Fremde, freigegebene Beitraege seit dem letzten Oeffnen
+              + (SELECT COUNT(*)
+                   FROM challenge_submissions cs
+                  WHERE cs.challenge_id = c.id
+                    AND cs.user_id <> z.user_id
+                    AND cs.moderation_status = 'approved'
+                    AND cs.created_at > COALESCE(crs.last_read_at, '1970-01-01'::timestamptz))
+            )::int AS c
+       FROM z
+       JOIN challenges c
+         ON c.organization_id = z.organization_id
+        AND c.is_draft = false
+        AND c.starts_at <= NOW()
+        AND c.ends_at >= NOW()
+        AND ${leitungSiehtChallengeSql({ rolle: 'z.rolle', jahrgaenge: 'z.jahrgaenge::int[]' })}
+       LEFT JOIN challenge_read_status crs
+         ON crs.challenge_id = c.id
+        AND crs.user_id = z.user_id
+        AND crs.user_type = z.user_type`,
+    [
+      leitung.map((p) => p.id),
+      leitung.map((p) => p.type),
+      leitung.map((p) => p.organization_id),
+      leitung.map((p) => p.role_name || (p.type === 'teamer' ? 'teamer' : 'admin')),
+      leitung.map((p) => `{${(p.assigned_jahrgaenge || []).filter((j) => j.can_view).map((j) => j.id).join(',')}}`)
+    ]
+  );
+  return rows.filter((r) => r.c > 0);
+}
+
+module.exports = { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge };

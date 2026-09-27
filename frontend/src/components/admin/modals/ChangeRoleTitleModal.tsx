@@ -113,7 +113,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Funktionsbeschreibung</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Funktionsbeschreibung"
                     value={roleTitle}
                     onIonInput={(e) => setRoleTitle(e.detail.value!)}
                     placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"

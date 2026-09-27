@@ -17,6 +17,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
 const WURZEL = resolve(__dirname, '../../..');
@@ -243,14 +244,16 @@ describe('Die vier Datei-Stellen geben je einen eigenen Ort mit', () => {
   ];
 
   it.each(stellen)('%s meldet den Ort %s', (datei, ort) => {
-    const quelle = lies(datei);
-    // Der Nutzertext ist unveraendert — echte Umlaute, kein technischer Zusatz.
-    expect(quelle).toContain('Fehler beim Öffnen der Datei');
-    expect(quelle).toContain(`ort: '${ort}'`);
-    // Und der gefangene Fehler wird mitgegeben, sonst bliebe `art` leer.
-    expect(quelle).toMatch(
-      new RegExp(`ort: '${ort}',\\s*fehler:`)
-    );
+    // Alle vier oeffnen seit dem 27.09.2026 ueber den gemeinsamen Hook
+    // useDateiOeffnen (Chat, Challenges, Material): Die Meldung steht dort —
+    // der Nutzertext unveraendert, der gefangene Fehler wird mitgegeben —,
+    // der Ort kommt als fehlerOrt aus dem Aufrufer. Beides wird geprueft.
+    // Bis dahin setzten die drei Material-Stellen die Meldung selbst; die
+    // Erwartung ist mit dem Aufruf in den Hook umgezogen.
+    const hook = lies('src/hooks/useDateiOeffnen.ts');
+    expect(hook).toContain('Fehler beim Öffnen der Datei');
+    expect(hook).toMatch(/ort: fehlerOrt,\s*fehler:/);
+    expect(lies(datei)).toContain(`fehlerOrt: '${ort}'`);
   });
 
   it('die vier Orte sind paarweise verschieden', () => {
@@ -259,7 +262,7 @@ describe('Die vier Datei-Stellen geben je einen eigenen Ort mit', () => {
   });
 
   it('keine der vier Stellen setzt die Meldung noch ohne Diagnose', () => {
-    for (const [datei] of stellen) {
+    for (const datei of [...stellen.map(([d]) => d), 'src/hooks/useDateiOeffnen.ts']) {
       const quelle = lies(datei);
       // Frueher: setError('Fehler beim Öffnen der Datei'); — also die Meldung
       // direkt gefolgt von der schliessenden Klammer.
@@ -271,7 +274,7 @@ describe('Die vier Datei-Stellen geben je einen eigenen Ort mit', () => {
 describe('Nutzertexte bleiben Nutzertexte', () => {
   it('kein technischer Zusatz in der Meldung', () => {
     for (const datei of [
-      'src/components/chat/useChatDateien.ts',
+      'src/hooks/useDateiOeffnen.ts',
       'src/components/teamer/pages/TeamerMaterialPage.tsx',
       'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
       'src/components/admin/modals/MaterialFormModal.tsx',
@@ -282,7 +285,7 @@ describe('Nutzertexte bleiben Nutzertexte', () => {
   });
 
   it('echte Umlaute, keine Umschreibung', () => {
-    const quelle = lies('src/components/chat/useChatDateien.ts');
+    const quelle = lies('src/hooks/useDateiOeffnen.ts');
     expect(quelle).toContain('Öffnen');
     expect(quelle).not.toContain('Oeffnen der Datei');
   });
@@ -295,7 +298,6 @@ describe('Nutzertexte bleiben Nutzertexte', () => {
  * Code.
  */
 function sucheInSrc(suche: string): string[] {
-  const { execFileSync } = require('node:child_process') as typeof import('node:child_process');
   try {
     const ausgabe = execFileSync(
       'grep',

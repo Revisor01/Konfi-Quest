@@ -26,7 +26,7 @@ const farbe = (token: string) => ({
 });
 
 export const REACTION_EMOJIS: Record<string, ReactionEmojiData> = {
-  like: { outline: ICON_DAUMEN_HOCH, filled: ICON_DAUMEN_HOCH_GEFUELLT, label: 'Gefaellt mir', ...farbe('gottesdienst') },
+  like: { outline: ICON_DAUMEN_HOCH, filled: ICON_DAUMEN_HOCH_GEFUELLT, label: 'Gefällt mir', ...farbe('gottesdienst') },
   heart: { outline: ICON_HERZ, filled: ICON_HERZ_GEFUELLT, label: 'Liebe', ...farbe('danger-hell') },
   laugh: { outline: ICON_FROEHLICH, filled: ICON_FROEHLICH_GEFUELLT, label: 'Lustig', ...farbe('badges') },
   wow: { outline: ICON_WARNHINWEIS, filled: ICON_WARNHINWEIS_GEFUELLT, label: 'Wow', ...farbe('konfis') },

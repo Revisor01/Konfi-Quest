@@ -1,33 +1,26 @@
 // Gemeinsame Datums-/Zeit-Formatierung für Events (zuvor in jeder Rolle
 // dupliziert: Konfi/Admin/Teamer Views + DetailViews). Deutsche Locale.
+//
+// Die Formate selbst stehen in utils/dateUtils.ts (UI-Audit BF-14): Die drei
+// Namen hier bleiben, weil 17 Stellen sie über shared/index.ts importieren,
+// und reichen nur weiter.
+import { datumKurz, datumLang, uhrzeit } from '../../utils/dateUtils';
 
 // 14.06.2026
 export const formatEventDate = (dateString: string): string =>
-  new Date(dateString).toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  datumKurz(dateString);
 
 // 18:30 (leere/ungueltige Eingaben -> '')
 export const formatEventTime = (dateString: string): string => {
   if (!dateString) return '';
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return '';
-  return date.toLocaleTimeString('de-DE', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return uhrzeit(date);
 };
 
-// Sonntag, 14. Juni 2026
+// Sonntag, 7. Juni 2026
 export const formatEventDateLong = (dateString: string): string =>
-  new Date(dateString).toLocaleDateString('de-DE', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
+  datumLang(dateString);
 
 // Befund N6 (27.08.2026): Ob ein Termin "vergangen" ist, wurde an ELF
 // Stellen einzeln gerechnet -- und nur an einer davon richtig. Zehn nutzten

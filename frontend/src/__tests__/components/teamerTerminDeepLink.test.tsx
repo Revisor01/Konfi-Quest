@@ -359,7 +359,7 @@ describe('Termin aus einem Jahrgang, dem die Person nicht zugewiesen ist', () =>
 
     await waitFor(() => expect(screen.getByText(HINWEIS_TITEL)).toBeTruthy());
     expect(screen.getByText(
-      'Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+      'Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
     )).toBeTruthy();
     // Genau eine Nachfrage, kein Termin offen, keine Liste dahinter.
     expect(abgerufeneDetails()).toEqual(['/events/99']);

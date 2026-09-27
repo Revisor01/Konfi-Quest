@@ -5,6 +5,8 @@ const { handleValidationErrors } = require('../middleware/validation');
 const { canCreateRole } = require('../utils/roleHierarchy');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { invalidateUserCache } = require('../middleware/rbac');
+const liveUpdate = require('../utils/liveUpdate');
+const { loescheMitteilungenZuEinladung } = require('../utils/postfachAufraeumen');
 
 // Einladung einer bestehenden Person in eine weitere Gemeinde (26.09.2026).
 //
@@ -89,14 +91,26 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Teilsuche: Sonst liesse sich der Bestand fremder Gemeinden
         // durchblaettern.
         const { rows: [ziel] } = await db.query(
-          `SELECT id, display_name, username, email
-             FROM users
-            WHERE deleted_at IS NULL
-              AND (LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1))
+          `SELECT u.id, u.display_name, u.username, u.email, r.name AS role_name
+             FROM users u
+             JOIN roles r ON r.id = u.role_id
+            WHERE u.deleted_at IS NULL
+              AND (LOWER(u.username) = LOWER($1) OR LOWER(u.email) = LOWER($1))
             LIMIT 1`,
           [kennung]
         );
-        if (!ziel) {
+        // KONFIS SIND KEIN ZIEL -- und sie sehen aus wie "nicht gefunden".
+        // Bis zum 26.09.2026 pruefte die Route nur die zu VERGEBENDE Rolle,
+        // nicht die Rolle der PERSON: Ein 13-jaehriger Konfi einer anderen
+        // Gemeinde liess sich als Teamer:in einladen und sah nach der Annahme
+        // deren Konfis, Antraege, Anwesenheit und Chats. Ausserdem beantwortete
+        // die Route jedem Org-Admin fuer jede E-Mail-Adresse im System, ob es
+        // ein Konto gibt -- samt Anzeigename, auch fuer Kinder fremder
+        // Gemeinden (Audit, Sicherheit BF-03). Deshalb dieselbe 404-Antwort
+        // wie bei einer unbekannten Kennung, ohne Name, ohne Einladung, ohne
+        // Push und Mail. Massgeblich ist die Stammrolle: Konfis koennen keine
+        // Zweitmitgliedschaft haben (organizations.js verbietet sie).
+        if (!ziel || ziel.role_name === 'konfi') {
           return res.status(404).json({
             error: 'Kein Konto mit diesem Benutzernamen oder dieser E-Mail-Adresse.',
             error_code: 'nicht_gefunden'
@@ -201,13 +215,34 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     param('id').isInt({ min: 1 }), handleValidationErrors,
     async (req, res) => {
       try {
-        const { rowCount } = await db.query(
-          `UPDATE org_einladungen
-              SET status = 'zurueckgezogen', beantwortet_at = NOW()
-            WHERE id = $1 AND organization_id = $2 AND status = 'offen'`,
-          [req.params.id, req.user.organization_id]
-        );
-        if (!rowCount) {
+        // Status und Postfach in EINER Transaktion: "Einladung in eine
+        // Gemeinde ... Tippe, um zu antworten" geht mit dem Zurueckziehen
+        // (27.09.2026). Vorher blieb der Eintrag bei der eingeladenen Person
+        // stehen, zaehlte als ungelesen und fuehrte ins leere Profil
+        // (utils/postfachAufraeumen.js). Scheitert das Aufraeumen, bleibt
+        // auch die Einladung offen -- kein halber Stand.
+        const client = await db.getClient();
+        let zurueckgezogen = false;
+        try {
+          await client.query('BEGIN');
+          const { rowCount } = await client.query(
+            `UPDATE org_einladungen
+                SET status = 'zurueckgezogen', beantwortet_at = NOW()
+              WHERE id = $1 AND organization_id = $2 AND status = 'offen'`,
+            [req.params.id, req.user.organization_id]
+          );
+          if (rowCount) {
+            await loescheMitteilungenZuEinladung(client, req.params.id);
+            zurueckgezogen = true;
+          }
+          await client.query('COMMIT');
+        } catch (txErr) {
+          await client.query('ROLLBACK').catch(() => {});
+          throw txErr;
+        } finally {
+          client.release();
+        }
+        if (!zurueckgezogen) {
           return res.status(404).json({ error: 'Einladung nicht gefunden' });
         }
         res.json({ message: 'Einladung zurückgezogen' });
@@ -239,8 +274,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
   /** Gemeinsame Vorpruefung von Annehmen und Ablehnen. */
   const holeEigeneEinladung = async (id, userId) => {
+    // eingeladen_von seit 27.09.2026: An diese Person geht die Meldung,
+    // dass die Einladung beantwortet wurde (meldeAntwort unten).
     const { rows: [e] } = await db.query(
-      `SELECT id, organization_id, user_id, role_id, status, expires_at
+      `SELECT id, organization_id, user_id, role_id, status, expires_at, eingeladen_von
          FROM org_einladungen WHERE id = $1`,
       [id]
     );
@@ -258,6 +295,33 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       return { fehler: { status: 410, body: { error: 'Diese Einladung ist abgelaufen.', error_code: 'expired' } } };
     }
     return { einladung: e };
+  };
+
+  /**
+   * Meldet der einladenden Leitung, dass die Einladung beantwortet wurde
+   * (Simon, 27.09.2026, F-13 / BF-21: "Ja, als Postfach-Eintrag").
+   * Empfaenger bestimmt PushService.sendEinladungBeantwortetToLeitung: die
+   * Person, die eingeladen hat, solange sie dort Org-Admin ist -- sonst die
+   * Org-Admins der Gemeinde. Laeuft nach der Antwort (nachAntwort).
+   */
+  const meldeAntwort = async (einladung, angenommen) => {
+    const { rows: [namen] } = await db.query(
+      `SELECT u.display_name AS person, r.display_name AS rolle_anzeige, r.name AS rolle,
+              COALESCE(o.display_name, o.name) AS gemeinde
+         FROM users u, roles r, organizations o
+        WHERE u.id = $1 AND r.id = $2 AND o.id = $3`,
+      [einladung.user_id, einladung.role_id, einladung.organization_id]
+    );
+    await PushService.sendEinladungBeantwortetToLeitung(db, {
+      einladungId: einladung.id,
+      organizationId: einladung.organization_id,
+      eingeladenVon: einladung.eingeladen_von,
+      eingeladenId: einladung.user_id,
+      personName: namen?.person,
+      rolleName: namen?.rolle_anzeige || namen?.rolle,
+      orgName: namen?.gemeinde,
+      angenommen
+    });
   };
 
   router.post('/:id/annehmen',
@@ -302,6 +366,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           [einladung.organization_id]
         );
         res.json({ message: 'Einladung angenommen', organization: org });
+
+        // Die einladende Leitung erfaehrt es (F-13), und die Benutzerliste
+        // der Gemeinde laedt nach -- dort steht die Person jetzt (Live-
+        // Signal 'users' wie in routes/users.js).
+        nachAntwort(req, async () => {
+          liveUpdate.sendToOrgAdmins(einladung.organization_id, 'users', 'update', { userId: Number(einladung.user_id) });
+          await meldeAntwort(einladung, true);
+        }, 'Einladung angenommen melden');
       } catch (err) {
         console.error('Database error in POST /einladungen/annehmen:', err);
         res.status(500).json({ error: 'Datenbankfehler' });
@@ -322,6 +394,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           [einladung.id]
         );
         res.json({ message: 'Einladung abgelehnt' });
+
+        // Auch die Absage erfaehrt die einladende Leitung (F-13).
+        nachAntwort(req, () => meldeAntwort(einladung, false), 'Einladung abgelehnt melden');
       } catch (err) {
         console.error('Database error in POST /einladungen/ablehnen:', err);
         res.status(500).json({ error: 'Datenbankfehler' });

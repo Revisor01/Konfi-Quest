@@ -155,7 +155,7 @@ describe('Anmelden an einem abgesagten Termin', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Dieser Termin ist abgesagt');
+      expect(res.body.error).toBe('Dieses Event ist abgesagt');
       // Und die Buchung steht danach NICHT auf 'confirmed' — genau der
       // Zustand, den Simon am Geraet vorfand.
       expect((await buchung(eventId, USERS.konfi1.id)).status).toBe('opted_out');
@@ -189,7 +189,7 @@ describe('Anmelden an einem abgesagten Termin', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Dieser Termin ist abgesagt');
+      expect(res.body.error).toBe('Dieses Event ist abgesagt');
       expect(await buchung(eventId, USERS.konfi1.id)).toBeUndefined();
     });
 
@@ -221,7 +221,7 @@ describe('Anmelden an einem abgesagten Termin', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Dieser Termin ist abgesagt');
+      expect(res.body.error).toBe('Dieses Event ist abgesagt');
       expect(await buchung(eventId, USERS.konfi1.id)).toBeUndefined();
     });
 
@@ -248,7 +248,7 @@ describe('Anmelden an einem abgesagten Termin', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Dieser Termin ist abgesagt');
+      expect(res.body.error).toBe('Dieses Event ist abgesagt');
       expect(await buchung(eventId, USERS.teamer1.id)).toBeUndefined();
     });
 
@@ -294,7 +294,7 @@ describe('Anmelden an einem abgesagten Termin', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Dieser Termin ist abgesagt');
+      expect(res.body.error).toBe('Dieses Event ist abgesagt');
       expect((await buchung(eventId, USERS.teamer1.id)).status).toBe('opted_out');
     });
   });
@@ -313,7 +313,7 @@ describe('Anmelden an einem abgesagten Termin', () => {
         .send({ dabei: true });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Dieser Termin ist abgesagt');
+      expect(res.body.error).toBe('Dieses Event ist abgesagt');
       expect(await buchung(eventId, USERS.teamer1.id)).toBeUndefined();
     });
 
@@ -344,7 +344,7 @@ describe('Anmelden an einem abgesagten Termin', () => {
         .send({ user_id: USERS.konfi1.id });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Dieser Termin ist abgesagt');
+      expect(res.body.error).toBe('Dieses Event ist abgesagt');
       expect(await buchung(eventId, USERS.konfi1.id)).toBeUndefined();
     });
 
@@ -408,7 +408,7 @@ describe('Anmelden an einem abgesagten Termin', () => {
         .send({ status: 'confirmed' });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Dieser Termin ist abgesagt');
+      expect(res.body.error).toBe('Dieses Event ist abgesagt');
     });
 
     it('ERLAUBT: am aktiven Termin wird von der Warteliste bestaetigt', async () => {

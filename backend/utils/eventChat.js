@@ -11,6 +11,27 @@
 // verlassen konnten sie ihn auch nicht: chat.js verweigert das mit dem Hinweis,
 // Event-Chats verlasse man über die Abmeldung. Genau die tat es nicht.
 //
+// NUR BESTAETIGTE KOMMEN HINEIN (Simon, 27.09.2026, F-11 im Bericht "Wer
+// bekommt was", BF-17): "Bestätigte ja, Wartende erst beim Nachrücken;
+// Abgemeldete nicht." Vom 24.08. bis hierher kam JEDE Buchung hinein -- beim
+// Anlegen alles ausser 'cancelled' (also auch Warteliste, 'opted_out' und
+// 'excused'), danach jede neue Buchung samt Warteliste. Das Handbuch sagte
+// seit jeher "Wer auf der Warteliste steht, ist nicht dabei".
+//
+// Die Regel steht deshalb an EINER Stelle, in den beiden Eintrittswegen
+// unten: addToEventChat und syncEventChat nehmen nur auf, wer eine
+// BESTAETIGTE Buchung hat. Die Aufrufer (Anmelden, Eintragen durch die
+// Leitung, Nachruecken, Zusage des Teams, Pflicht-Automatik, Wieder-
+// anmelden) muessen dafuer nichts wissen: Sie rufen wie bisher nach dem
+// Schreiben der Buchung, und wer auf der Warteliste landet, bleibt draussen,
+// bis promoteFromWaitlist ihn bestaetigt und hier erneut ruft.
+//
+// Wer auf die Warteliste ZURUECKGESETZT wird, geht wieder hinaus
+// (routes/events/teilnehmer.js) -- er ist dann ein Wartender wie jeder
+// andere. Die Pflicht-Abmeldung (opt-out) bleibt, wie am 24.08.2026
+// entschieden, im Chat, wenn sie schon drin war ("der Termin betrifft einen
+// ja weiter"); neu hinein kommt eine Abgemeldete nicht.
+//
 // user_type muss dem Wert entsprechen, mit dem später gelesen wird:
 // konfi -> 'konfi', teamer -> 'teamer', org_admin/admin -> 'admin'
 // (dieselbe Abbildung wie in jahrgangChat.js).
@@ -39,7 +60,10 @@ async function removeFromEventChat(db, eventId, userId, organizationId) {
 }
 
 /**
- * Traegt eine Person in alle Chat-Räume eines Termins ein.
+ * Traegt eine Person in alle Chat-Räume eines Termins ein — aber nur, wenn
+ * sie dort BESTAETIGT angemeldet ist (seit 27.09.2026, siehe Kopf). Wer auf
+ * der Warteliste steht oder abgemeldet ist, bleibt draussen; der Aufruf tut
+ * dann nichts.
  * Idempotent: Ist sie schon drin, passiert nichts. Existiert kein Chat, auch
  * nicht — der Chat wird bewusst nur auf Wunsch der Leitung angelegt.
  *
@@ -65,6 +89,12 @@ async function addToEventChat(db, eventId, userId, organizationId) {
      WHERE cr.event_id = $1
        AND cr.organization_id = $3
        AND u.deleted_at IS NULL
+       AND EXISTS (
+         SELECT 1 FROM event_bookings eb
+          WHERE eb.event_id = cr.event_id
+            AND eb.user_id = u.id
+            AND eb.status = 'confirmed'
+       )
      ON CONFLICT DO NOTHING`,
     [eventId, userId, organizationId]
   );
@@ -73,7 +103,8 @@ async function addToEventChat(db, eventId, userId, organizationId) {
 
 /**
  * Gleicht die Mitgliedschaft im Chat eines Termins an die Buchungen an:
- * Jede gebuchte Person (jeder Status außer 'cancelled') kommt hinein.
+ * Jede BESTAETIGT gebuchte Person kommt hinein (seit 27.09.2026; vorher
+ * jeder Status ausser 'cancelled', also auch Warteliste und Abgemeldete).
  * Entfernt niemanden — das macht removeFromEventChat beim Austragen.
  *
  * Für Mengen gedacht (Pflicht-Event-Automatik), wo einzelne Aufrufe je Person
@@ -97,7 +128,7 @@ async function syncEventChat(db, eventId, organizationId) {
      JOIN roles r ON r.id = u.role_id
      WHERE cr.event_id = $1
        AND cr.organization_id = $2
-       AND eb.status <> 'cancelled'
+       AND eb.status = 'confirmed'
        AND u.deleted_at IS NULL
      ON CONFLICT DO NOTHING`,
     [eventId, organizationId]

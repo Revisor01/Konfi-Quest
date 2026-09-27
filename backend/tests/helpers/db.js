@@ -24,9 +24,16 @@ let pool = null;
  */
 function getTestPool() {
   if (!pool) {
-    // Sitzungszone fest auf Europe/Berlin: In Produktion traegt der
-    // Datenbank-Dienst TZ und PGTZ auf Europe/Berlin (portainer-stack.yml,
-    // deploy/compose.konfi_quest.yml), der Node-Prozess ebenso. Die Test-DB
+    // Sitzungszone Europe/Berlin als Voreinstellung. ACHTUNG, gemessen am
+    // 27.09.2026: Produktion rechnet NICHT so. postgresql.conf gibt dort
+    // timezone = 'UTC' vor, die Sitzungen der App laufen in UTC, der
+    // Node-Prozess ebenso (TZ/PGTZ des Datenbank-Containers wirken nur auf
+    // psql; die Annahme unten, Produktion trage Europe/Berlin, war falsch).
+    // Die volle Suite mit TZ=UTC und TEST_DB_SITZUNGSZONE=UTC lief am
+    // 27.09.2026 bis auf zwei Tests in utils/zeitzone.test.js grün, die genau
+    // diese Annahme pruefen -- der Code rechnet seine Kalendertage selbst in
+    // Berliner Zeit (utils/zeitformat.js). Berlin bleibt hier Voreinstellung,
+    // weil die Fixtures ueber CURRENT_DATE anlegen (siehe unten). Die Test-DB
     // (docker-compose.test.yml) und die Postgres-Instanz der CI liefen dagegen
     // in UTC. Zwischen 00:00 und 02:00 Berliner Zeit lieferte CURRENT_DATE
     // deshalb noch den Vortag, waehrend heuteBerlin() im Code bereits den neuen
@@ -36,7 +43,11 @@ function getTestPool() {
     pool = new Pool({
       connectionString: TEST_DB_URL,
       max: 5,
-      options: '-c timezone=Europe/Berlin',
+      // TEST_DB_SITZUNGSZONE=UTC bildet die Produktion ab, wie sie am
+      // 27.09.2026 gemessen wurde: postgresql.conf gibt dort timezone = 'UTC'
+      // vor, die Sitzungen der App laufen in UTC (TZ/PGTZ des
+      // Datenbank-Containers wirken nur auf psql). Siehe Kommentar oben.
+      options: `-c timezone=${process.env.TEST_DB_SITZUNGSZONE || 'Europe/Berlin'}`,
     });
   }
   return {
@@ -94,7 +105,7 @@ const TRUNCATE_SQL = `TRUNCATE
     push_tokens, event_reminders, password_resets,
     invite_codes, refresh_tokens, notifications,
     user_organizations, org_einladungen,
-    settings, daily_verses, apm_snapshots, socket_io_attachments,
+    settings, daily_verses, apm_snapshots, socket_io_attachments, rate_limit_zaehler,
     users, activities, custom_badges, events,
     jahrgaenge, categories, levels,
     role_permissions, permissions, roles,

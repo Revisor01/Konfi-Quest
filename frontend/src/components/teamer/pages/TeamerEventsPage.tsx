@@ -43,6 +43,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { datumKurz } from '../../../utils/dateUtils';
 
 /** Ein Eintrag aus GET /material/by-event/:eventId (material.js). */
 interface EventMaterial {
@@ -63,7 +64,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, EmptyState, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, zeitraumText, istVergangen, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
+import { SectionHeader, ListSection, EmptyState, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, zeitraumText, istVergangen, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -89,6 +90,8 @@ import { safeUUID } from '../../../utils/uuid';
 // unterschiedlicher Nullbarkeit haben genau dort gebissen. Der Modal-Typ ist
 // der genauere — er kennt Teamer-Antraege ohne Punkte und ohne Typ.
 import type { ActivityRequest } from '../../konfi/modals/RequestDetailModal';
+import { tastaturKlick } from '../../../utils/tastatur';
+import { trackMitmachenAnsicht } from '../../../services/analytics';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
@@ -104,6 +107,13 @@ const TeamerEventsPage: React.FC = () => {
 
   // Oberste Segment-Ebene: Events oder Aktivitäten.
   const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
+  // Umschalten an der Leiste „Events | Aktivitäten" zählt als eigener
+  // Bereich -- die Seite hat für beide Ansichten denselben Pfad
+  // (services/analytics.ts, trackMitmachenAnsicht).
+  const mitmachenAnsichtWechseln = (ansicht: 'events' | 'antraege') => {
+    if (ansicht !== mainSegment) trackMitmachenAnsicht(ansicht);
+    setMainSegment(ansicht);
+  };
 
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'team'>('meine');
   const [searchText, setSearchText] = useState('');
@@ -130,6 +140,9 @@ const TeamerEventsPage: React.FC = () => {
     const segment = new URLSearchParams(routerLocation.search).get('segment');
     if (segment === 'antraege') {
       setMainSegment('antraege');
+      // Einstieg per Link (Push, alte Route /konfi/requests) direkt in die
+      // Aktivitäten -- die Pfad-Messung zählt ihn sonst als „events".
+      trackMitmachenAnsicht('antraege');
     } else if (segment === 'events') {
       setMainSegment('events');
     }
@@ -199,11 +212,7 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   const formatRequestDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
   const getFilteredRequests = () => {
@@ -1068,11 +1077,11 @@ const TeamerEventsPage: React.FC = () => {
                       {selectedEvent.registration_opens_at ? (
                         <>
                           <div className="app-info-row__value">
-                            von {new Date(selectedEvent.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(selectedEvent.registration_opens_at)}
+                            von {datumKurz(selectedEvent.registration_opens_at)} – {formatTime(selectedEvent.registration_opens_at)}
                           </div>
                           {selectedEvent.registration_closes_at && (
                             <div className="app-info-row__value">
-                              bis {new Date(selectedEvent.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(selectedEvent.registration_closes_at)}
+                              bis {datumKurz(selectedEvent.registration_closes_at)} – {formatTime(selectedEvent.registration_closes_at)}
                             </div>
                           )}
                         </>
@@ -1156,7 +1165,7 @@ const TeamerEventsPage: React.FC = () => {
                 {selectedEvent.location && (
                   <div className="app-info-row">
                     <IonIcon icon={ICON_ORT_GEFUELLT} className="app-info-row__icon app-icon-color--location" />
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       onClick={() => {
                         if (selectedEvent.location_maps_url) {
                           window.open(selectedEvent.location_maps_url, '_blank');
@@ -1203,7 +1212,7 @@ const TeamerEventsPage: React.FC = () => {
                   <div className="app-info-row">
                     <IonIcon icon={ICON_KOPIEREN_GEFUELLT} className="app-info-row__icon app-icon-color--events" />
                     <div>
-                      <div className="app-info-row__label">Terminreihe</div>
+                      <div className="app-info-row__label">Event-Serie</div>
                       <div className="app-info-row__value">Teil einer Serie</div>
                     </div>
                   </div>
@@ -1248,7 +1257,7 @@ const TeamerEventsPage: React.FC = () => {
                 {eventMaterials.length > 0 && (
                   <div className="app-info-row">
                     <IonIcon icon={ICON_DATEI_GEFUELLT} className="app-info-row__icon app-icon-color--material" />
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       onClick={() => {
                         if (eventMaterials.length === 1) {
                           materialIdRef.current = eventMaterials[0].id;
@@ -1336,7 +1345,7 @@ const TeamerEventsPage: React.FC = () => {
               // ein Hinweis an der Stelle, wo sonst ein Knopf waere.
               <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: 'var(--app-text-betont)' }}>
                 <IonIcon icon={ICON_ABSAGE} style={{ verticalAlign: 'middle', marginRight: 'var(--app-abstand-kompakt)' }} />
-                Dieser Termin ist abgesagt
+                Dieses Event ist abgesagt
               </IonNote>
             ) : isPast ? (
                   selectedEvent.is_registered ? (
@@ -1572,7 +1581,7 @@ const TeamerEventsPage: React.FC = () => {
               <IonCard className="app-card">
                 <IonCardContent className="app-card-content">
                   {eventMaterials.map((mat) => (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={mat.id}
                       className="app-list-item app-list-item--material"
                       style={{ cursor: 'pointer', marginBottom: 'var(--app-abstand-eng)' }}
@@ -1628,7 +1637,7 @@ const TeamerEventsPage: React.FC = () => {
       <div className="app-segment-wrapper">
         <IonSegment
           value={mainSegment}
-          onIonChange={(e) => setMainSegment(e.detail.value as 'events' | 'antraege')}
+          onIonChange={(e) => mitmachenAnsichtWechseln(e.detail.value as 'events' | 'antraege')}
         >
           <IonSegmentButton value="events">
             <IonLabel>Events</IonLabel>
@@ -1719,7 +1728,7 @@ const TeamerEventsPage: React.FC = () => {
             {/* Header mit Stats */}
             <SectionHeader
               title="Events"
-              subtitle="Termine und Veranstaltungen"
+              subtitle="Gottesdienste, Konfi-Tage und Fahrten"
               icon={ICON_TERMIN_GEFUELLT}
               preset="events"
               stats={statsData}
@@ -1758,7 +1767,7 @@ const TeamerEventsPage: React.FC = () => {
               <IonItemGroup>
                 <IonItem>
                   <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" className="app-icon-color--system" style={{ fontSize: 'var(--app-text-standard)' }} />
-                  <IonInput
+                  <IonInput aria-label="Events durchsuchen"
                     value={searchText}
                     onIonInput={(e) => setSearchText(e.detail.value || '')}
                     placeholder="Events durchsuchen..."
@@ -2019,12 +2028,12 @@ const TeamerEventsPage: React.FC = () => {
   // handledEventId verhindert, dass der Effekt oben sofort wieder nachfragt.
   const renderJahrgangHinweis = () => (
     <IonPage ref={pageRef}>
-      <AppKopfzeile titel="Termin" onZurueck={() => setJahrgangHinweis(false)} />
+      <AppKopfzeile titel="Event" onZurueck={() => setJahrgangHinweis(false)} />
       <IonContent className="app-gradient-background" fullscreen>
         <EmptyState
           icon={ICON_JAHRGANG}
           title="Nicht deinem Jahrgang zugeordnet"
-          message="Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
+          message="Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
           iconColor="var(--app-color-events)"
         />
       </IonContent>

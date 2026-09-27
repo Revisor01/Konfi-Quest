@@ -152,7 +152,7 @@ const eintragSymbol = (eintrag: PostfachEintrag, bereich: PostfachBereich): Eint
  */
 const PostfachModal: React.FC = () => {
   const { user, activeOrgId, organizations, switchOrg } = useApp();
-  const { refreshAllCounts } = useBadge();
+  const { refreshAllCounts, postfachGelesen } = useBadge();
   const { wartend, gescheitert, vergessen, alleVergessen } = useWartendeVorgaenge();
 
   const [offen, setOffen] = useState(false);
@@ -215,6 +215,9 @@ const PostfachModal: React.FC = () => {
       // wieder als ungelesen da — das ist der richtige Stand.
       alsGelesenMerken(eintrag.id);
       setUngelesen(n => Math.max(0, n - 1));
+      // Die Glocke (und das App-Symbol) zaehlt sofort mit, nicht erst nach
+      // der naechsten Server-Zaehlung (Befund Simon 27.09.2026).
+      postfachGelesen(1);
       api.put(`/notifications/postfach/${eintrag.id}/gelesen`)
         .then(() => refreshAllCounts())
         .catch(() => { /* siehe oben */ });
@@ -243,6 +246,7 @@ const PostfachModal: React.FC = () => {
   const alleGelesen = async () => {
     setEintraege(prev => prev.map(e => (e.read_at ? e : { ...e, read_at: new Date().toISOString() })));
     setUngelesen(0);
+    postfachGelesen('alle');
     try {
       await api.put('/notifications/postfach/gelesen');
       await refreshAllCounts();
@@ -259,7 +263,7 @@ const PostfachModal: React.FC = () => {
   return (
     // presentingElement: Auf iOS die Karte mit Abdunklung, wie jedes andere
     // Modal der App (Begruendung bei postfachPraesentationsElement).
-    <IonModal isOpen={offen} onDidDismiss={schliessen} presentingElement={praesentiertVon}>
+    <IonModal aria-labelledby="postfach-modal-titel" isOpen={offen} onDidDismiss={schliessen} presentingElement={praesentiertVon}>
       <IonHeader>
         <IonToolbar>
           {/* Schliessen-Symbol links wie in InfoModal, PointsHistoryModal und
@@ -270,7 +274,7 @@ const PostfachModal: React.FC = () => {
               <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
             </IonButton>
           </IonButtons>
-          <IonTitle>Postfach</IonTitle>
+          <IonTitle id="postfach-modal-titel">Postfach</IonTitle>
         </IonToolbar>
       </IonHeader>
       {/* Der Verlauf-Hintergrund aller Seiten und Modale; die Inhalte stehen
@@ -306,18 +310,16 @@ const PostfachModal: React.FC = () => {
                 </IonButton>
               )}
             </IonListHeader>
-            {/* --background ausdruecklich: Auf Simons iPhone (Build 225,
-                25.09.2026) war diese Karte da -- die Zeilen standen 28 pt vom
-                Rand, also Listenrand plus Kartenpolster -- aber nicht weiss:
-                Die Luecken zwischen den Zeilen trugen das Grau des
-                Hintergrunds. Das Theme (ionic-theme-ios27) loest die
-                Kartenfarbe ueber --ion-card-background -> --ion-item-background
-                -> --ion-background-color auf und schlaegt dabei die Regel
-                ion-card.app-card (theme/variables.css) an Spezifitaet; im
-                Modal ausserhalb des Routers ergab das kein Weiss, auf den
-                Seiten schon. Welche Variable im Modal abweicht, liess sich
-                im CSS nicht belegen -- deshalb hier fest, nicht geraten. */}
-            <IonCard className="app-card" data-testid="postfach-karte" style={{ '--background': 'var(--app-surface-card)' } as React.CSSProperties}>
+            {/* Kein eigener Kartengrund mehr (26.09.2026): Vom 25.09. bis hierher
+                stand `--background: var(--app-surface-card)` inline an dieser
+                Karte, weil sie auf Simons iPhone nicht die Tokenfarbe trug.
+                Die Ursache lag nicht im Modal, sondern in der Kartenregel
+                selbst: ion-card.app-card verlor auf iOS an Spezifitaet gegen
+                das ios27-Theme (Dunkelmodus-Audit BF-03) -- auf JEDER Seite,
+                nur im Hellen unsichtbar. Die Regel in theme/variables.css
+                schlaegt das Theme jetzt selbst; ein Flicken hier wuerde das
+                nur wieder verdecken. */}
+            <IonCard className="app-card" data-testid="postfach-karte">
               <IonCardContent style={{ padding: listeLeer ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
                 {laedt && listeLeer && (
                   <div className="app-postfach__laedt">
@@ -333,7 +335,7 @@ const PostfachModal: React.FC = () => {
                   <EmptyState
                     icon={ICON_GLOCKE}
                     title="Nichts Neues"
-                    message="Hier landen Punkte, Abzeichen, Termine, Anträge und Entscheidungen — auch die, deren Push du verpasst hast."
+                    message="Hier landen Punkte, Badges, Events, Anträge und Entscheidungen — auch die, deren Push du verpasst hast."
                   />
                 )}
 

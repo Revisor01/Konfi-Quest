@@ -185,7 +185,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Konfi wirklich löschen?',
-      message: `"${konfi.name}" wird unwiderruflich gelöscht.\n\nDabei gehen alle Punkte, Abzeichen, Aktivitäten und Chat-Nachrichten dieses Konfis dauerhaft verloren. Das lässt sich nicht rückgängig machen.`,
+      message: `"${konfi.name}" wird unwiderruflich gelöscht.\n\nDabei gehen alle Punkte, Badges, Aktivitäten und Chat-Nachrichten dieses Konfis dauerhaft verloren. Das lässt sich nicht rückgängig machen.`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -208,10 +208,17 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // resolved — so kann KonfisView danach die lokale Teamer-Liste neu laden.
   const handleDeleteTeamer = (teamer: TeamerListenEintrag): Promise<void> => {
     if (offlineBlockiert(isOnline, setError)) return Promise.resolve();
+    const name = teamer.display_name || teamer.name;
     return new Promise<void>((resolve) => {
       presentAlert({
         header: 'Teamer:in löschen',
-        message: `Teamer:in "${teamer.display_name || teamer.name}" wirklich löschen?\n\nDas Konto wird mit allen zugehörigen Daten entfernt. Punkte und Abzeichen aus einer früheren Konfi-Zeit gehen dabei verloren.`,
+        // Derselbe Weg wie unter "Benutzer:innen" (DELETE /users/:id): Wer
+        // auch in einer anderen Gemeinde Mitglied ist, wird nur aus dieser
+        // entfernt, das Konto bleibt dort (Simon, 27.09.2026). Diese Liste
+        // (GET /admin/konfis/teamer, auch fuer Teamer:innen lesbar) sagt
+        // nicht, wer das ist -- deshalb nennt die Abfrage beide Ausgaenge,
+        // und die Erfolgsmeldung richtet sich nach der Antwort (konto_bleibt).
+        message: `Teamer:in "${name}" wirklich löschen?\n\nDas Konto wird mit allen zugehörigen Daten entfernt. Punkte und Badges aus einer früheren Konfi-Zeit gehen dabei verloren.\n\nArbeitet die Person auch in einer anderen Gemeinde mit, wird sie nur aus deiner Gemeinde entfernt; ihr Konto bleibt dort bestehen.`,
         buttons: [
           { text: 'Abbrechen', role: 'cancel', handler: () => resolve() },
           {
@@ -219,9 +226,11 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             role: 'destructive',
             handler: async () => {
               try {
-                await api.delete(`/users/${teamer.id}`);
+                const res = await api.delete(`/users/${teamer.id}`);
                 await refreshKonfis();
-                setSuccess(`Teamer:in "${teamer.display_name || teamer.name}" gelöscht`);
+                setSuccess(res?.data?.konto_bleibt === true
+                  ? `Teamer:in "${name}" aus deiner Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen`
+                  : `Teamer:in "${name}" gelöscht`);
               } catch (err) {
                 setError(fehlerText(err, 'Fehler beim Löschen'));
               } finally {

@@ -14,6 +14,15 @@
 // zurueckgedreht wird.
 const BackgroundService = require('../../services/backgroundService');
 
+// Seit 27.09.2026 (Befund BF-12) holt der Lauf die Gemeinden JE PERSON mit
+// der dortigen Rolle ueber orgMitglieder.ladeMitgliedschaftenVieler --
+// dieselbe Stelle wie Push und Gemeinde-Umschalter. Die Abfrage ist an
+// is_primary zu erkennen; die Attrappen beantworten sie VOR der
+// Personen-Abfrage, weil sie ebenfalls FROM users u / JOIN roles r enthaelt.
+const istMitgliedschaftsAbfrage = (sql) => /is_primary/.test(sql);
+const mitgliedschaft = (userId, organizationId, roleName, isPrimary = true) =>
+  ({ user_id: userId, organization_id: organizationId, role_name: roleName, is_primary: isPrimary, org_aktiv: true });
+
 describe('Hintergrunddienst: Zaehler und Abzeichen-Pruefung sind getrennt', () => {
   afterEach(() => {
     BackgroundService.stopBadgeUpdateService();
@@ -51,8 +60,11 @@ describe('Hintergrunddienst: Zaehler und Abzeichen-Pruefung sind getrennt', () =
     const db = {
       query: async (sql) => {
         abfragen.push(String(sql));
+        if (istMitgliedschaftsAbfrage(sql)) {
+          return { rows: [mitgliedschaft(1, 1, 'konfi')] };
+        }
         if (/FROM users u/.test(sql)) {
-          return { rows: [{ user_id: 1, user_type: 'konfi', role_name: 'konfi', hat_push: false }] };
+          return { rows: [{ user_id: 1, organization_id: 1, user_type: 'konfi', role_name: 'konfi', hat_push: false }] };
         }
         return { rows: [] };
       }
@@ -94,6 +106,7 @@ describe('Hintergrunddienst: Zaehler und Abzeichen-Pruefung sind getrennt', () =
     let empfaengerAbfrage = null;
     const db = {
       query: async (sql) => {
+        if (istMitgliedschaftsAbfrage(sql)) return { rows: [] };
         if (/FROM users u/.test(sql) && /JOIN roles r/.test(sql)) {
           empfaengerAbfrage = String(sql);
           return { rows: [] };
@@ -122,6 +135,9 @@ describe('Hintergrunddienst: Zaehler und Abzeichen-Pruefung sind getrennt', () =
     const db = {
       query: async (sql) => {
         abfragen.push(String(sql));
+        if (istMitgliedschaftsAbfrage(sql)) {
+          return { rows: [mitgliedschaft(10, 1, 'org_admin'), mitgliedschaft(11, 1, 'admin')] };
+        }
         if (/FROM users u/.test(sql) && /JOIN roles r/.test(sql)) {
           return { rows: [
             { user_id: 10, user_type: 'admin', role_name: 'org_admin', organization_id: 1, hat_push: false },
@@ -152,11 +168,17 @@ describe('Hintergrunddienst: Zaehler und Abzeichen-Pruefung sind getrennt', () =
     const gefragteOrgs = [];
     const db = {
       query: async (sql, params) => {
+        // Stamm-Gemeinde 1 aus dem Nutzerkonto, 4 und 2 ueber
+        // user_organizations.
+        if (istMitgliedschaftsAbfrage(sql)) {
+          return { rows: [
+            mitgliedschaft(41, 1, 'org_admin'),
+            mitgliedschaft(41, 2, 'org_admin', false),
+            mitgliedschaft(41, 4, 'org_admin', false),
+          ] };
+        }
         if (/FROM users u/.test(sql) && /JOIN roles r/.test(sql)) {
           return { rows: [{ user_id: 41, user_type: 'admin', role_name: 'org_admin', organization_id: 1, hat_push: false }] };
-        }
-        if (/FROM user_organizations/.test(sql)) {
-          return { rows: [{ user_id: 41, organization_id: 4 }, { user_id: 41, organization_id: 2 }] };
         }
         if (Array.isArray(params)) {
           for (const p of params.flat()) {
@@ -179,10 +201,10 @@ describe('Hintergrunddienst: Zaehler und Abzeichen-Pruefung sind getrennt', () =
     const gefragteOrgs = [];
     const db = {
       query: async (sql, params) => {
+        if (istMitgliedschaftsAbfrage(sql)) return { rows: [mitgliedschaft(58, 1, 'konfi')] };
         if (/FROM users u/.test(sql) && /JOIN roles r/.test(sql)) {
           return { rows: [{ user_id: 58, user_type: 'konfi', role_name: 'konfi', organization_id: 1, hat_push: false }] };
         }
-        if (/FROM user_organizations/.test(sql)) return { rows: [] };
         if (Array.isArray(params)) {
           for (const p of params.flat()) {
             if ([1, 2, 4].includes(p) && !gefragteOrgs.includes(p)) gefragteOrgs.push(p);

@@ -8,6 +8,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
+const { cronLeaderVorhanden } = require('./utils/cronLeader');
 
 // Upload-Limit für Challenge-Beitraege (Audio/Video sind deutlich größer als
 // Chat-Anhänge). Als Konstante, weil der zentrale Multer-Error-Handler weiter
@@ -35,6 +36,10 @@ function createApp(db, options = {}) {
     uploadsDir = path.join(__dirname, 'uploads'),
     corsOrigins = null,
     holeStoreVersion = null,
+    // Betrieb BF-10 (26.09.2026): () => boolean, ob DIESE Replica den
+    // Cron-Leader-Lock haelt. server.js reicht es durch; ohne die Funktion
+    // fehlt das Feld `cron_leader` in /api/status.
+    istCronLeader = null,
   } = options;
 
   const app = express();
@@ -400,14 +405,50 @@ function createApp(db, options = {}) {
     } catch (e) {
       dbOk = false;
     }
+    // Migrationsstand (Audit 26.09.2026, Datenbank BF-04): Eine beim Start
+    // uebersprungene Migration stand bisher nur im Container-Log, waehrend
+    // hier "database: ok" stand -- und genau die Routen, die die neue Spalte
+    // brauchen, liefen auf 500. Jetzt additiv: checks.migrations ('ok' |
+    // 'fehler' | 'laeuft') und die Namen der fehlgeschlagenen Dateien. Der
+    // Status bleibt 200: Die Datenbank ist da, der Deploy-Verify prueft das
+    // Feld getrennt. Fehlt db.migrationsstand (Test-Pool, eigenes db-Objekt),
+    // fehlen die Felder.
+    const migrationen = typeof db.migrationsstand === 'function' ? db.migrationsstand() : undefined;
+    // Cron-Leader (Audit 26.09.2026, Betrieb BF-10), additiv: `cron_leader`
+    // sagt, ob DIESE Replica die Hintergrund-Jobs faehrt (nur, wenn server.js
+    // die Funktion durchreicht); `checks.cron_leader` sagt, ob IRGENDEINE
+    // sie faehrt -- aus pg_locks abgelesen, deshalb von jeder Replica aus
+    // gleich beantwortet und damit fuer eine externe Ueberwachung brauchbar
+    // (Traefik verteilt /api/status zufaellig). 'fehlt' heisst: niemand
+    // haelt den Lock -- Erinnerungen, Auto-Loeschung und Co. stehen.
+    let leaderVorhanden;
+    if (dbOk) {
+      try {
+        leaderVorhanden = (await cronLeaderVorhanden(db)) ? 'ok' : 'fehlt';
+      } catch (e) {
+        leaderVorhanden = 'unbekannt';
+      }
+    }
     const body = {
       status: dbOk ? 'OK' : 'DEGRADED',
       version: process.env.npm_package_version || require('./package.json').version,
       commit: process.env.GIT_SHA || 'unknown',
       uptimeSeconds: Math.round(process.uptime()),
+      ...(typeof istCronLeader === 'function' ? { cron_leader: istCronLeader() === true } : {}),
       checks: {
         database: dbOk ? 'ok' : 'error',
+        ...(migrationen !== undefined ? {
+          migrations: migrationen === null ? 'laeuft' : (migrationen.fehlgeschlagen.length === 0 ? 'ok' : 'fehler'),
+        } : {}),
+        ...(leaderVorhanden !== undefined ? { cron_leader: leaderVorhanden } : {}),
       },
+      ...(migrationen ? {
+        migrationen: {
+          gesamt: migrationen.gesamt,
+          neu: migrationen.neu,
+          fehlgeschlagen: migrationen.fehlgeschlagen.map(f => f.file),
+        },
+      } : {}),
       responseTimeMs: Date.now() - startedAt,
     };
     res.status(dbOk ? 200 : 503).json(body);
@@ -493,15 +534,56 @@ function createApp(db, options = {}) {
     // Wer nichts angibt, will den aktuellen Verlauf, nicht die Historie.
     // Der Index auf captured_at DESC trägt auch den grossen Bereich.
     const days = Math.min(730, Math.max(1, parseInt(req.query.days, 10) || 7));
+    // Verdichtung ab 31 Tagen (Audit 26.09.2026, Betrieb BF-14 / S-19):
+    // days=730 lieferte 210.000 Rohzeilen und 35 MB fuer ein Mobil-Dashboard.
+    // Bis 30 Tage bleibt es roh (alle fuenf Minuten, das Dashboard fragt 14),
+    // 31 bis 180 Tage ein Punkt je Stunde, darueber ein Punkt je Tag -- der
+    // Zwei-Jahres-Verlauf sind damit rund 730 Zeilen. Je Fenster gilt der
+    // LETZTE Schnappschuss fuer die kumulierten Zaehler (total_requests,
+    // total_errors: das Dashboard bildet Deltas aufeinanderfolgender Punkte,
+    // die bleiben so richtig) und das MAXIMUM fuer max_in_flight und
+    // worst_p95_ms samt der Route dieser Spitze. Antwortform additiv:
+    // snapshots bleibt ein Array mit denselben Feldern, neu ist aufloesung.
+    const aufloesung = days <= 30 ? '5min' : (days <= 180 ? 'stunde' : 'tag');
     try {
-      const { rows } = await db.query(
-        `SELECT captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route
-         FROM apm_snapshots
-         WHERE captured_at > NOW() - ($1 || ' days')::interval
-         ORDER BY captured_at ASC`,
-        [String(days)]
-      );
-      res.json({ days, snapshots: rows });
+      let rows;
+      if (aufloesung === '5min') {
+        ({ rows } = await db.query(
+          `SELECT captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route
+           FROM apm_snapshots
+           WHERE captured_at > NOW() - ($1 || ' days')::interval
+           ORDER BY captured_at ASC`,
+          [String(days)]
+        ));
+      } else {
+        ({ rows } = await db.query(
+          `WITH s AS (
+             SELECT date_trunc($2, captured_at) AS fenster, captured_at,
+                    total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route
+               FROM apm_snapshots
+              WHERE captured_at > NOW() - ($1 || ' days')::interval
+           ),
+           letzte AS (
+             SELECT DISTINCT ON (fenster) fenster, captured_at, total_requests, total_errors
+               FROM s ORDER BY fenster, captured_at DESC
+           ),
+           spitze AS (
+             SELECT DISTINCT ON (fenster) fenster, worst_p95_ms, worst_route
+               FROM s ORDER BY fenster, worst_p95_ms DESC NULLS LAST, captured_at DESC
+           ),
+           hoch AS (
+             SELECT fenster, MAX(max_in_flight) AS max_in_flight FROM s GROUP BY fenster
+           )
+           SELECT l.captured_at, l.total_requests, l.total_errors,
+                  h.max_in_flight, p.worst_p95_ms, p.worst_route
+             FROM letzte l
+             JOIN spitze p USING (fenster)
+             JOIN hoch h USING (fenster)
+            ORDER BY l.captured_at ASC`,
+          [String(days), aufloesung === 'stunde' ? 'hour' : 'day']
+        ));
+      }
+      res.json({ days, aufloesung, snapshots: rows });
     } catch (err) {
       console.error('Database error in GET /api/metrics/history:', err);
       res.status(500).json({ error: 'Datenbankfehler' });

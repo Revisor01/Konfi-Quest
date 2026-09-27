@@ -130,10 +130,10 @@ import EventDetailView from '../../components/admin/views/EventDetailView';
 // --- Testdaten ------------------------------------------------------------
 
 const HINWEIS_TITEL = 'Nicht deinem Jahrgang zugeordnet';
-const HINWEIS_TEXT = 'Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.';
+const HINWEIS_TEXT = 'Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.';
 
 const VERWEIGERT = {
-  response: { status: 403, data: { error: 'Kein Zugriff auf diesen Termin', error_code: 'jahrgang_nicht_zugewiesen' } },
+  response: { status: 403, data: { error: 'Kein Zugriff auf dieses Event', error_code: 'jahrgang_nicht_zugewiesen' } },
 };
 
 const terminAntwort = (id: number, name: string) => ({
@@ -193,7 +193,7 @@ describe('Termin aus einem Jahrgang, dem die Leitungsperson nicht zugewiesen ist
     expect(screen.getByText(HINWEIS_TEXT)).toBeTruthy();
     // Kein Ladezustand mehr, kein Platzhaltertitel der leeren Seite.
     expect(screen.queryByText('laedt')).toBeNull();
-    expect(screen.queryByText('Event Details')).toBeNull();
+    expect(screen.queryByText('Event-Details')).toBeNull();
     // Der bisherige Fehlerweg bleibt stumm: Das ist eine Antwort mit Grund,
     // kein Fehler der App.
     expect(gemeldeteFehler()).toEqual([]);

@@ -252,7 +252,11 @@ describe('runJahrgangDeletionReminders ("Letzte Chance"-Warnung)', () => {
   it('Tag 53 (7 Tage vor Loeschung): Reminder feuert + Marker wird gesetzt', async () => {
     await setKonfirmationDaysAgo(JAHRGAENGE.jahrgang1.id, 53, 1);
     const res = await BackgroundService.runJahrgangDeletionReminders(db);
-    expect(res.sent).toBeGreaterThanOrEqual(0); // Mailversand best-effort (SMTP im Test ggf. aus)
+    // Genau 0 Mails: Kein Leitungskonto im Seed hat eine E-Mail-Adresse, die
+    // Warnung geht ueber den Push-Weg; der Marker wird im Zweig
+    // "keine Adressaten" gesetzt. Frueher toBeGreaterThanOrEqual(0) -- fuer
+    // einen Zaehler immer wahr (Audit 26.09.2026, Tests BF-06).
+    expect(res.sent).toBe(0);
     const { rows } = await db.query('SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
     expect(rows[0].deletion_reminder_sent_at).not.toBeNull();
   });

@@ -32,7 +32,9 @@ import type { AlleAbzeichen, Badge, BadgeUebersicht, DashboardEvent, RankingEntr
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { TrialBanner, StoreUpdateBanner, istVergangen } from '../../shared';
+import WartungsHinweis from '../../shared/WartungsHinweis';
 import { track } from '../../../services/analytics';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface PointConfig {
   gottesdienst_enabled: boolean;
@@ -390,7 +392,7 @@ const KonfiDashboardPage: React.FC = () => {
         titel="Konfi Quest"
         rechts={(
           <IonButton onClick={() => router.push('/konfi/profile')} aria-label="Profil öffnen">
-            <IonIcon slot="icon-only" icon={ICON_PROFIL} style={{ color: 'var(--app-color-wrapped)', fontSize: 'var(--app-anzeige-basis)' }} />
+            <IonIcon slot="icon-only" icon={ICON_PROFIL} style={{ color: 'var(--app-text-wrapped)', fontSize: 'var(--app-anzeige-basis)' }} />
           </IonButton>
         )}
       />
@@ -415,6 +417,10 @@ const KonfiDashboardPage: React.FC = () => {
             Prueft selbst und rendert sonst nichts (StoreUpdateBanner). */}
         <StoreUpdateBanner style={{ margin: 'var(--app-abstand-eng) var(--app-abstand-basis) 0' }} />
 
+        {/* Wartungshinweis des Betriebs (E-05): steht, solange der Server ihn
+            meldet; liest nur den Stand und rendert sonst nichts. */}
+        <WartungsHinweis />
+
         {/* Die beiden Neuerungs-Banner. Auf der Startseite wegklickbar:
             jeder hat sein eigenes X und sein eigenes Flag. Dauerhaft
             erreichbar bleiben sie im Profil (Nutzerwunsch 25.08.2026). */}
@@ -438,7 +444,7 @@ const KonfiDashboardPage: React.FC = () => {
               sich wieder, ein weggeklickter bleibt weg. Erreichbar bleibt er
               im Profil unter "Meine Rueckblicke". */}
         {dashboardData.has_wrapped && !wrappedHinweisWeg && (
-          <div onClick={openWrapped} style={{
+          <div role="presentation" onClick={openWrapped} style={{
             margin: '0 var(--app-abstand-basis) var(--app-abstand-basis)',
             padding: 'var(--app-abstand-gross)',
             borderRadius: 'var(--app-radius-gross)',
@@ -450,7 +456,7 @@ const KonfiDashboardPage: React.FC = () => {
           }}>
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}>
               <IonIcon icon={ICON_FUNKELN_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-zahl)' }} />
-              <div style={{ minWidth: 0 }}>
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick} style={{ minWidth: 0 }}>
                 <h3 className="app-headline" style={{ margin: 0, fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-fett)' }}>
                   {dashboardData.wrapped_titel || 'Dein Jahresrückblick ist da!'}
                 </h3>

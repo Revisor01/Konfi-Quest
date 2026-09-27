@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<title>10. Abzeichen — Konfi Quest Handbuch</title>
+<title>10. Badges — Konfi Quest Handbuch</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Wie sie vergeben werden und welche Bedingungen es gibt">
 <link rel="icon" type="image/png" href="/favicon.png">
@@ -94,6 +94,7 @@ table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
+hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 @media (max-width:860px) {
   /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
      zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
@@ -134,6 +135,17 @@ tbody tr:last-child td { border-bottom:none; }
 .nav-nr { flex:none; width:20px; font-size:.74rem; font-variant-numeric:tabular-nums; color:var(--text-leise); text-align:right; }
 .seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
 .seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
+
+/* Abschnitte des aktuellen Kapitels (27.09.2026): eingerueckt an einer
+   feinen Linie. Der gerade gelesene (aria-current="location", gesetzt vom
+   Skript am Seitenende) bekommt ein Stueck Linie in der Akzentfarbe. Die
+   Nummernspalte ist so breit wie "11.17", damit die Titel buendig stehen. */
+.seitenleiste ul.nav-abschnitte { margin:3px 0 7px 13px; border-left:1px solid var(--rand); gap:1px; }
+.seitenleiste ul.nav-abschnitte a { align-items:baseline; gap:7px; margin-left:-1px; padding:5px 9px 5px 10px; border-left:2px solid transparent; border-radius:0 7px 7px 0; font-size:.8rem; line-height:1.4; color:var(--text-leise); overflow-wrap:anywhere; }
+.seitenleiste ul.nav-abschnitte a:hover { color:var(--text); }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] { color:var(--text); background:var(--flaeche-2); border-left-color:var(--akzent); font-weight:600; }
+.nav-abschnitt-nr { flex:none; min-width:4.4ch; font-size:.72rem; font-variant-numeric:tabular-nums; }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] .nav-abschnitt-nr { color:var(--akzent); }
 
 .kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
 .kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
@@ -176,13 +188,13 @@ tbody tr:last-child td { border-bottom:none; }
     </div>
     <details class="nav-klapp" open>
       <summary>
-        <span class="nav-hier"><span class="nav-hier-nr">10</span>Abzeichen</span>
+        <span class="nav-hier"><span class="nav-hier-nr">10</span>Badges</span>
         <span class="nav-schalter-wort">Inhalt<span class="nav-pfeil" aria-hidden="true"></span></span>
       </summary>
       <div class="nav-inhalt">
         <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
         <p class="nav-titel">Inhalt</p>
-        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">8</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html" aria-current="page" class="ist-hier"><span class="nav-nr">10</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">8</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html" aria-current="page" class="ist-hier"><span class="nav-nr">10</span>Badges</a><ul class="nav-abschnitte"><li><a href="#die-mitgelieferten-badges-sichten"><span class="nav-abschnitt-nr">10.1</span>Die mitgelieferten Badges sichten</a></li><li><a href="#ein-badge-anlegen"><span class="nav-abschnitt-nr">10.2</span>Ein Badge anlegen</a></li><li><a href="#die-passende-bedingung-waehlen"><span class="nav-abschnitt-nr">10.3</span>Die passende Bedingung wählen</a></li><li><a href="#pruefen-ob-die-bedingung-zur-zielgruppe-passt"><span class="nav-abschnitt-nr">10.4</span>Prüfen, ob die Bedingung zur Zielgruppe passt</a></li><li><a href="#nachvollziehen-wann-geprueft-wird"><span class="nav-abschnitt-nr">10.5</span>Nachvollziehen, wann geprüft wird</a></li><li><a href="#wissen-was-beim-verleihen-passiert"><span class="nav-abschnitt-nr">10.6</span>Wissen, was beim Verleihen passiert</a></li><li><a href="#ein-badge-aus-dem-verkehr-ziehen"><span class="nav-abschnitt-nr">10.7</span>Ein Badge aus dem Verkehr ziehen</a></li></ul></li><li><a href="./termine.html"><span class="nav-nr">11</span>Events</a></li><li><a href="./challenges.html"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
         <div class="fuss">
           <p><a href="/docs/api/">API-Referenz</a></p>
           <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
@@ -201,140 +213,148 @@ tbody tr:last-child td { border-bottom:none; }
     var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
     setzen();
     if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+    /* Ein Tipp auf einen Eintrag schliesst das Menue (27.09.2026). Bei
+       Kapiteln tat das bisher nur die neue Seite; ein Abschnitt liegt auf
+       derselben Seite, und das offene Menue verdeckte ihn. Der Klick kommt
+       vor dem Sprung an -- der Browser rechnet schon mit der schmalen Leiste. */
+    klapp.addEventListener('click', function (ev) {
+      if (schmal.matches && ev.target.closest('.nav-inhalt a')) klapp.removeAttribute('open');
+    });
   })();
   </script>
   <main class="inhalt">
     <article class="kapitel" style="--kapitel:#b45309">
       <header class="kapitel-kopf">
         <p class="kapitel-zaehler">Kapitel 10 von 14</p>
-        <h1><span class="kapitel-nr">10</span>Abzeichen</h1>
+        <h1><span class="kapitel-nr">10</span>Badges</h1>
         <p class="kapitel-meta">Wie sie vergeben werden und welche Bedingungen es gibt</p>
       </header>
 
       <details class="kapitel-inhalt ist-lang" open>
         <summary class="kapitel-inhalt-titel"><span>Inhalt</span><span class="ki-pfeil"></span></summary>
-        <ul><li class="stufe-2"><a href="#die-mitgelieferten-abzeichen-sichten"><span class="ki-nr">10.1</span>Die mitgelieferten Abzeichen sichten</a></li><li class="stufe-2"><a href="#ein-abzeichen-anlegen"><span class="ki-nr">10.2</span>Ein Abzeichen anlegen</a></li><li class="stufe-3"><a href="#wissen-was-vorher-zu-bedenken-ist"><span class="ki-nr">10.2.1</span>Wissen, was vorher zu bedenken ist</a></li><li class="stufe-3"><a href="#ein-abzeichen-geheim-halten"><span class="ki-nr">10.2.2</span>Ein Abzeichen geheim halten</a></li><li class="stufe-2"><a href="#die-passende-bedingung-waehlen"><span class="ki-nr">10.3</span>Die passende Bedingung wählen</a></li><li class="stufe-3"><a href="#nach-punkten-zaehlen"><span class="ki-nr">10.3.1</span>Nach Punkten zählen</a></li><li class="stufe-3"><a href="#nach-anzahl-zaehlen"><span class="ki-nr">10.3.2</span>Nach Anzahl zählen</a></li><li class="stufe-3"><a href="#nach-inhalt-zaehlen"><span class="ki-nr">10.3.3</span>Nach Inhalt zählen</a></li><li class="stufe-3"><a href="#nach-zeit-zaehlen"><span class="ki-nr">10.3.4</span>Nach Zeit zählen</a></li><li class="stufe-3"><a href="#nur-fuer-teamer-innen"><span class="ki-nr">10.3.5</span>Nur für Teamer:innen</a></li><li class="stufe-2"><a href="#pruefen-ob-die-bedingung-zur-zielgruppe-passt"><span class="ki-nr">10.4</span>Prüfen, ob die Bedingung zur Zielgruppe passt</a></li><li class="stufe-3"><a href="#was-bei-teamer-abzeichen-anders-zaehlt"><span class="ki-nr">10.4.1</span>Was bei Teamer-Abzeichen anders zählt</a></li><li class="stufe-2"><a href="#nachvollziehen-wann-geprueft-wird"><span class="ki-nr">10.5</span>Nachvollziehen, wann geprüft wird</a></li><li class="stufe-3"><a href="#von-hand-nachpruefen-lassen"><span class="ki-nr">10.5.1</span>Von Hand nachprüfen lassen</a></li><li class="stufe-2"><a href="#wissen-was-beim-verleihen-passiert"><span class="ki-nr">10.6</span>Wissen, was beim Verleihen passiert</a></li><li class="stufe-2"><a href="#ein-abzeichen-aus-dem-verkehr-ziehen"><span class="ki-nr">10.7</span>Ein Abzeichen aus dem Verkehr ziehen</a></li></ul>
+        <ul><li class="stufe-2"><a href="#die-mitgelieferten-badges-sichten"><span class="ki-nr">10.1</span>Die mitgelieferten Badges sichten</a></li><li class="stufe-2"><a href="#ein-badge-anlegen"><span class="ki-nr">10.2</span>Ein Badge anlegen</a></li><li class="stufe-3"><a href="#wissen-was-vorher-zu-bedenken-ist"><span class="ki-nr">10.2.1</span>Wissen, was vorher zu bedenken ist</a></li><li class="stufe-3"><a href="#ein-badge-geheim-halten"><span class="ki-nr">10.2.2</span>Ein Badge geheim halten</a></li><li class="stufe-2"><a href="#die-passende-bedingung-waehlen"><span class="ki-nr">10.3</span>Die passende Bedingung wählen</a></li><li class="stufe-3"><a href="#nach-punkten-zaehlen"><span class="ki-nr">10.3.1</span>Nach Punkten zählen</a></li><li class="stufe-3"><a href="#nach-anzahl-zaehlen"><span class="ki-nr">10.3.2</span>Nach Anzahl zählen</a></li><li class="stufe-3"><a href="#nach-inhalt-zaehlen"><span class="ki-nr">10.3.3</span>Nach Inhalt zählen</a></li><li class="stufe-3"><a href="#nach-zeit-zaehlen"><span class="ki-nr">10.3.4</span>Nach Zeit zählen</a></li><li class="stufe-3"><a href="#nur-fuer-teamer-innen-zaehlen"><span class="ki-nr">10.3.5</span>Nur für Teamer:innen zählen</a></li><li class="stufe-2"><a href="#pruefen-ob-die-bedingung-zur-zielgruppe-passt"><span class="ki-nr">10.4</span>Prüfen, ob die Bedingung zur Zielgruppe passt</a></li><li class="stufe-3"><a href="#verstehen-was-bei-teamer-badges-anders-zaehlt"><span class="ki-nr">10.4.1</span>Verstehen, was bei Teamer-Badges anders zählt</a></li><li class="stufe-2"><a href="#nachvollziehen-wann-geprueft-wird"><span class="ki-nr">10.5</span>Nachvollziehen, wann geprüft wird</a></li><li class="stufe-3"><a href="#von-hand-nachpruefen-lassen"><span class="ki-nr">10.5.1</span>Von Hand nachprüfen lassen</a></li><li class="stufe-2"><a href="#wissen-was-beim-verleihen-passiert"><span class="ki-nr">10.6</span>Wissen, was beim Verleihen passiert</a></li><li class="stufe-2"><a href="#ein-badge-aus-dem-verkehr-ziehen"><span class="ki-nr">10.7</span>Ein Badge aus dem Verkehr ziehen</a></li></ul>
       </details>
       <script>document.querySelectorAll('.kapitel-inhalt.ist-lang').forEach(function(d){d.removeAttribute('open');});</script>
-      <p>Abzeichen (im System „Badges&quot;) bekommen Konfis und Teamer:innen <strong>automatisch</strong>, sobald sie eine Bedingung erfüllen. Von Hand verleihen oder aberkennen lässt sich keines. Anlegen und Bearbeiten darf die Leitung, ansehen dürfen alle.</p>
-      <h2 id="die-mitgelieferten-abzeichen-sichten"><span class="abschnitt-nr">10.1</span>Die mitgelieferten Abzeichen sichten</h2>
-      <p>Eine neue Gemeinde startet nicht bei null: <strong>27 Abzeichen für Konfis</strong> und <strong>neun für Teamer:innen</strong> sind bereits angelegt und aktiv. Sie decken die gängigen Fälle ab — Punktestände, Anzahl von Aktivitäten und Terminen, Serien, bei Teamer:innen zusätzlich die Jahre im Team.</p>
-      <p>Sie sind als Startpunkt gedacht, nicht als Vorgabe: Du kannst jedes umbenennen, seine Bedingung ändern oder es <a href="#ein-abzeichen-aus-dem-verkehr-ziehen">aus dem Verkehr ziehen</a>.</p>
-      <h2 id="ein-abzeichen-anlegen"><span class="abschnitt-nr">10.2</span>Ein Abzeichen anlegen</h2>
+      <p>Badges bekommen Konfis und Teamer:innen <strong>automatisch</strong>, sobald sie eine Bedingung erfüllen. Von Hand verleihen oder aberkennen lässt sich keines. Anlegen und Bearbeiten darf die Leitung, ansehen dürfen alle.</p>
+      <p>Die Leitung selbst bekommt keine Badges. Wer in mehreren Gemeinden mitarbeitet, sammelt nur in der Gemeinde, in der die Person Konfi oder Teamer:in ist — und nur die Badges dieser Gemeinde. Als anwesend eingetragen zu werden, wo man zur Leitung gehört, bringt nichts ein.</p>
+      <h2 id="die-mitgelieferten-badges-sichten"><span class="abschnitt-nr">10.1</span>Die mitgelieferten Badges sichten</h2>
+      <p>Eine neue Gemeinde startet nicht bei null: <strong>27 Badges für Konfis</strong> und <strong>neun für Teamer:innen</strong> sind bereits angelegt und aktiv. Sie decken die gängigen Fälle ab — Punktestände, Anzahl von Aktivitäten und Events, Serien, bei Teamer:innen zusätzlich die Jahre im Team.</p>
+      <p>Sie sind als Startpunkt gedacht, nicht als Vorgabe: Du kannst jedes umbenennen, seine Bedingung ändern oder es <a href="#ein-badge-aus-dem-verkehr-ziehen">aus dem Verkehr ziehen</a>.</p>
+      <h2 id="ein-badge-anlegen"><span class="abschnitt-nr">10.2</span>Ein Badge anlegen</h2>
       <p>Du legst es einmal an und beschreibst dabei, wofür es vergeben wird. Ab dann prüft das System selbst.</p>
-      <p>Ein Abzeichen besteht aus vier Dingen:</p>
-      <ul><li><strong>Name und Beschreibung</strong> — was drauf steht</li><li><strong>Symbol und Farbe</strong> — wie es aussieht. Zur Auswahl stehen 95 Symbole, gruppiert nach Erfolg, Engagement, Gemeinschaft, Lernen, Natur, Zeit, Aktivitäten, Orte und Sonstiges. Die Farbe richtet sich zunächst nach der Bedingung, damit verwandte Abzeichen zusammen wirken: Punkte-Abzeichen sind golden, Gottesdienst-Abzeichen orange, Gemeinde-Abzeichen grün. Du kannst jede Farbe von Hand ändern.</li><li><strong>Bedingung</strong> — wofür es vergeben wird (die sechzehn unten)</li><li><strong>Zielgruppe</strong> — „Konfis&quot; oder „Teamer:innen&quot;</li></ul>
-      <p>Sobald du gespeichert hast, holt das System die Vergabe für alle Personen der Zielgruppe nach. Wer die Bedingung schon erfüllt, hat das Abzeichen also sofort — und zwar ohne Push und ohne Mitteilung, damit ein solcher Lauf niemanden mit Benachrichtigungen überschüttet.</p>
+      <p>Ein Badge besteht aus vier Dingen:</p>
+      <ul><li><strong>Name und Beschreibung</strong> — was drauf steht</li><li><strong>Symbol und Farbe</strong> — wie es aussieht. Zur Auswahl stehen 95 Symbole, gruppiert nach Erfolg, Engagement, Gemeinschaft, Lernen, Natur, Zeit, Aktivitäten, Orte und Sonstiges. Die Farbe richtet sich zunächst nach der Bedingung, damit verwandte Badges zusammen wirken: Punkte-Badges sind golden, Gottesdienst-Badges orange, Gemeinde-Badges grün. Du kannst jede Farbe von Hand ändern.</li><li><strong>Bedingung</strong> — wofür es vergeben wird (die sechzehn unten)</li><li><strong>Zielgruppe</strong> — „Konfis&quot; oder „Teamer:innen&quot;</li></ul>
+      <p>Sobald du gespeichert hast, holt das System die Vergabe für alle Personen der Zielgruppe nach. Wer die Bedingung schon erfüllt, hat das Badge also sofort — und zwar ohne Push und ohne Mitteilung, damit ein solcher Lauf niemanden mit Benachrichtigungen überschüttet.</p>
       <h3 id="wissen-was-vorher-zu-bedenken-ist"><span class="abschnitt-nr">10.2.1</span>Wissen, was vorher zu bedenken ist</h3>
-      <p><strong>Vergangenes zählt immer mit.</strong> Ein heute angelegtes Abzeichen „10 Aktivitäten&quot; geht sofort an alle, die das längst erfüllen. Es lässt sich nicht nur ab heute gelten lassen. Wenn du mitten im Jahr etwas einführst, haben es einige auf einen Schlag.</p>
-      <p><strong>Einmal verliehen, immer verliehen.</strong> Verliert jemand später Punkte, bleibt das Abzeichen. Es gibt keinen Entzug.</p>
-      <p><strong>Die Zielgruppe lässt sich nachträglich nicht ändern.</strong> Beim Bearbeiten fehlt die Auswahl. Willst du wechseln, legst du ein neues Abzeichen an.</p>
-      <h3 id="ein-abzeichen-geheim-halten"><span class="abschnitt-nr">10.2.2</span>Ein Abzeichen geheim halten</h3>
-      <p>Ein Abzeichen mit dem Schalter „Geheim&quot; sehen Konfis erst, <strong>wenn sie es haben</strong>. Vorher taucht weder Name noch Beschreibung noch Fortschritt auf — die Angaben verlassen den Server gar nicht erst.</p>
-      <p>Sichtbar ist nur, <strong>dass</strong> es etwas zu entdecken gibt: auf dem Dashboard als „2/5 geheim&quot;, auf der Abzeichen-Seite als Kennzahl <strong>GEHEIM</strong>. Verdient man eines, erscheint es ganz normal in der Liste, mit einem kleinen Eselsohr in der Ecke.</p>
+      <p><strong>Vergangenes zählt immer mit.</strong> Ein heute angelegtes Badge „10 Aktivitäten&quot; geht sofort an alle, die das längst erfüllen. Es lässt sich nicht nur ab heute gelten lassen. Wenn du mitten im Jahr etwas einführst, haben es einige auf einen Schlag.</p>
+      <p><strong>Einmal verliehen, immer verliehen.</strong> Verliert jemand später Punkte, bleibt das Badge. Es gibt keinen Entzug.</p>
+      <p><strong>Die Zielgruppe lässt sich nachträglich nicht ändern.</strong> Beim Bearbeiten fehlt die Auswahl. Willst du wechseln, legst du ein neues Badge an.</p>
+      <h3 id="ein-badge-geheim-halten"><span class="abschnitt-nr">10.2.2</span>Ein Badge geheim halten</h3>
+      <p>Ein Badge mit dem Schalter „Geheim&quot; sehen Konfis erst, <strong>wenn sie es haben</strong>. Vorher taucht weder Name noch Beschreibung noch Fortschritt auf — die Angaben verlassen den Server gar nicht erst.</p>
+      <p>Sichtbar ist nur, <strong>dass</strong> es etwas zu entdecken gibt: auf dem Dashboard als „2/5 geheim&quot;, auf der Badge-Seite als Kennzahl <strong>GEHEIM</strong>. Verdient man eines, erscheint es ganz normal in der Liste, mit einem kleinen Eselsohr in der Ecke.</p>
       <blockquote><strong>Deshalb kommt niemand auf 100 Prozent, solange ein Geheimnis offen ist.</strong> Die geheimen zählen in die Gesamtzahl mit hinein — die Anzeige springt erst auf 100 %, wenn auch sie alle gefunden sind. Bis dahin steht dort „100%?&quot;.</blockquote>
       <p>Die Bedingung wird ganz normal geprüft; „Geheim&quot; betrifft nur die Anzeige.</p>
-      <blockquote>Im Moment der Verleihung verrät sich das Abzeichen allerdings selbst: Push und Mitteilung nennen Name und Beschreibung wie bei jedem anderen. Zu dem Zeitpunkt ist es ja verdient.</blockquote>
-      <p>---</p>
+      <blockquote>Im Moment der Verleihung verrät sich das Badge allerdings selbst: Push und Mitteilung nennen Name und Beschreibung wie bei jedem anderen. Zu dem Zeitpunkt ist es ja verdient.</blockquote>
+      <hr>
       <h2 id="die-passende-bedingung-waehlen"><span class="abschnitt-nr">10.3</span>Die passende Bedingung wählen</h2>
       <p>Es gibt sechzehn Bedingungen. Die meiste Zeit braucht nicht das Einstellen, sondern die Frage, welche überhaupt gemeint ist. Deshalb zuerst der kurze Weg:</p>
-      <div class="tabelle-huelle"><table><thead><tr><th>Du willst auszeichnen …</th><th>Nimm</th></tr></thead><tbody><tr><td>dass jemand insgesamt viel gesammelt hat</td><td><strong>Gesamtpunkte</strong></td></tr><tr><td>Fleiß in einem der beiden Bereiche</td><td><strong>Gottesdienst-Punkte</strong> oder <strong>Gemeinde-Punkte</strong></td></tr><tr><td>dass jemand in <strong>beiden</strong> Bereichen dabei war</td><td><strong>Beide Kategorien</strong></td></tr><tr><td>dass du selbst etwas belohnt hast</td><td><strong>Bonuspunkte</strong></td></tr><tr><td>schlichte Anwesenheit, egal woran</td><td><strong>Aktivitäten &amp; Events</strong></td></tr><tr><td>nur besuchte Termine</td><td><strong>Event-Teilnahmen</strong></td></tr><tr><td>Abwechslung statt immer dasselbe</td><td><strong>Verschiedene Aktivitäten</strong></td></tr><tr><td>Verlässlichkeit bei Pflichtterminen</td><td><strong>Pflicht-Anwesenheit</strong></td></tr><tr><td>eine ganz bestimmte Sache, mehrfach</td><td><strong>Spezifische Aktivität</strong></td></tr><tr><td>einige aus einer Liste, die du zusammenstellst</td><td><strong>Aktivitäts-Kombination</strong></td></tr><tr><td>Ausdauer in <strong>einem</strong> Bereich</td><td><strong>Kategorie-Aktivitäten</strong></td></tr><tr><td>Vielfalt über <strong>mehrere</strong> Bereiche</td><td><strong>Kategorie-Kombination</strong></td></tr><tr><td>einen Schub in den letzten Wochen</td><td><strong>Zeitbasiert</strong></td></tr><tr><td>Dranbleiben Woche für Woche</td><td><strong>Serie</strong></td></tr><tr><td>lange Treue im Team</td><td><strong>Teamer-Jahr</strong></td></tr></tbody></table></div>
+      <div class="tabelle-huelle"><table><thead><tr><th>Du willst auszeichnen …</th><th>Nimm</th></tr></thead><tbody><tr><td>dass jemand insgesamt viel gesammelt hat</td><td><strong>Gesamtpunkte</strong></td></tr><tr><td>Fleiß in einem der beiden Bereiche</td><td><strong>Gottesdienst-Punkte</strong> oder <strong>Gemeinde-Punkte</strong></td></tr><tr><td>dass jemand in <strong>beiden</strong> Bereichen dabei war</td><td><strong>Beide Kategorien</strong></td></tr><tr><td>dass du selbst etwas belohnt hast</td><td><strong>Bonuspunkte</strong></td></tr><tr><td>schlichte Anwesenheit, egal woran</td><td><strong>Aktivitäten &amp; Events</strong></td></tr><tr><td>nur besuchte Events</td><td><strong>Event-Teilnahmen</strong></td></tr><tr><td>Abwechslung statt immer dasselbe</td><td><strong>Verschiedene Aktivitäten</strong></td></tr><tr><td>Verlässlichkeit bei Pflicht-Events</td><td><strong>Pflicht-Anwesenheit</strong></td></tr><tr><td>eine ganz bestimmte Sache, mehrfach</td><td><strong>Spezifische Aktivität</strong></td></tr><tr><td>einige aus einer Liste, die du zusammenstellst</td><td><strong>Aktivitäts-Kombination</strong></td></tr><tr><td>Ausdauer in <strong>einem</strong> Bereich</td><td><strong>Kategorie-Aktivitäten</strong></td></tr><tr><td>Vielfalt über <strong>mehrere</strong> Bereiche</td><td><strong>Kategorie-Kombination</strong></td></tr><tr><td>einen Schub in den letzten Wochen</td><td><strong>Zeitbasiert</strong></td></tr><tr><td>Dranbleiben Woche für Woche</td><td><strong>Serie</strong></td></tr><tr><td>lange Treue im Team</td><td><strong>Teamer-Jahr</strong></td></tr></tbody></table></div>
       <p>Drei Dinge vorweg, die für alle gelten:</p>
-      <ul><li><strong>Der Zahlenwert</strong> wird über einen Schieberegler eingestellt, bei einem neuen Abzeichen von <strong>1 bis 20</strong>. Hat ein bestehendes Abzeichen einen höheren Wert, reicht sein Regler bis dorthin — sonst würde er den Wert beim ersten Anfassen auf 20 herunterziehen und das Abzeichen schlagartig an alle mit 20 Punkten vergeben. Zurückholen ließe sich das nicht.</li><li><strong>„Zeitbasiert&quot; hat einen zweiten Regler</strong> für den Zeitraum, 1 bis 26 Wochen.</li><li><strong>Was der Wert bedeutet, ist je Bedingung verschieden</strong> — mal „so viele Punkte&quot;, mal „so oft&quot;, mal „aus so vielen Kategorien&quot;. Bei jeder Bedingung unten steht es dabei. Wer das überliest, baut ein Abzeichen, das zu früh oder gar nicht anspringt.</li></ul>
+      <ul><li><strong>Der Zahlenwert</strong> wird über einen Schieberegler eingestellt, bei einem neuen Badge von <strong>1 bis 20</strong>. Hat ein bestehendes Badge einen höheren Wert, reicht sein Regler bis dorthin — sonst würde er den Wert beim ersten Anfassen auf 20 herunterziehen und das Badge schlagartig an alle mit 20 Punkten vergeben. Zurückholen ließe sich das nicht.</li><li><strong>„Zeitbasiert&quot; hat einen zweiten Regler</strong> für den Zeitraum, 1 bis 26 Wochen.</li><li><strong>Was der Wert bedeutet, ist je Bedingung verschieden</strong> — mal „so viele Punkte&quot;, mal „so oft&quot;, mal „aus so vielen Kategorien&quot;. Bei jeder Bedingung unten steht es dabei. Wer das überliest, baut ein Badge, das zu früh oder gar nicht anspringt.</li></ul>
       <h3 id="nach-punkten-zaehlen"><span class="abschnitt-nr">10.3.1</span>Nach Punkten zählen</h3>
       <h4 id="gesamtpunkte">Gesamtpunkte</h4>
       <p>Gottesdienst- und Gemeindepunkte zusammen erreichen den Wert.</p>
       <p><em>Beispiel:</em> Wert 20 → sobald jemand insgesamt 20 Punkte hat.</p>
-      <p>Gezählt werden <strong>nur die Punktarten, die <a href="./jahrgaenge.html#eine-punktart-abschalten">im Jahrgang eingeschaltet</a> sind</strong>. Ist Gemeinde abgeschaltet, zählen nur Gottesdienstpunkte. Sind beide aus, ist das Abzeichen unerreichbar und wird Konfis gar nicht erst angezeigt.</p>
+      <p>Gezählt werden <strong>nur die Punktarten, die <a href="./jahrgaenge.html#eine-punktart-abschalten">im Jahrgang eingeschaltet</a> sind</strong>. Ist Gemeinde abgeschaltet, zählen nur Gottesdienstpunkte. Sind beide aus, ist das Badge unerreichbar und wird Konfis gar nicht erst angezeigt.</p>
       <h4 id="gottesdienst-punkte-gemeinde-punkte">Gottesdienst-Punkte · Gemeinde-Punkte</h4>
-      <p>Wie oben, aber nur die jeweilige <a href="./punkte.html#die-zwei-punktarten-auseinanderhalten">Punktart</a>. Ist sie im Jahrgang abgeschaltet, wird das Abzeichen nicht vergeben.</p>
+      <p>Wie oben, aber nur die jeweilige <a href="./punkte.html#die-zwei-punktarten-auseinanderhalten">Punktart</a>. Ist sie im Jahrgang abgeschaltet, wird das Badge nicht vergeben.</p>
       <h4 id="beide-kategorien">Beide Kategorien</h4>
       <p>Der Wert muss in <strong>beiden</strong> Bereichen einzeln erreicht sein; beide müssen im Jahrgang eingeschaltet sein.</p>
       <p><em>Beispiel:</em> Wert 5 → mindestens 5 Gottesdienstpunkte <strong>und</strong> mindestens 5 Gemeindepunkte.</p>
-      <blockquote><strong>Achtung, Wortfalle:</strong> „Kategorien&quot; meint hier <strong>Gottesdienst und Gemeinde</strong>, nicht die <a href="./jahrgaenge.html#kategorien-anlegen-und-pflegen">Kategorien</a>, die du selbst anlegst. Wer Kategorie-Abzeichen will, nimmt „Kategorie-Aktivitäten&quot;.</blockquote>
+      <blockquote><strong>Achtung, Wortfalle:</strong> „Kategorien&quot; meint hier <strong>Gottesdienst und Gemeinde</strong>, nicht die <a href="./jahrgaenge.html#kategorien-anlegen-und-pflegen">Kategorien</a>, die du selbst anlegst. Wer Kategorie-Badges will, nimmt „Kategorie-Aktivitäten&quot;.</blockquote>
       <h4 id="bonuspunkte">Bonuspunkte</h4>
       <p>Die <strong>Summe</strong> aller vergebenen <a href="./punkte.html#ueber-bonuspunkte">Bonuspunkte</a> erreicht den Wert.</p>
       <p><em>Beispiel:</em> Wert 5 → sobald du insgesamt 5 Bonuspunkte vergeben hast, egal ob auf einmal oder in fünf Schritten.</p>
       <h3 id="nach-anzahl-zaehlen"><span class="abschnitt-nr">10.3.2</span>Nach Anzahl zählen</h3>
       <h4 id="aktivitaeten-events">Aktivitäten &amp; Events</h4>
-      <p>Erledigte <a href="./punkte.html#ueber-eine-aktivitaet">Aktivitäten</a> <strong>plus</strong> besuchte <a href="./punkte.html#ueber-einen-termin">Termine</a> zusammen.</p>
+      <p>Erledigte <a href="./punkte.html#ueber-eine-aktivitaet">Aktivitäten</a> <strong>plus</strong> besuchte <a href="./punkte.html#ueber-ein-event">Events</a> zusammen.</p>
       <p><em>Beispiel:</em> Wert 10 → 10 Einträge insgesamt, egal in welcher Mischung.</p>
       <h4 id="event-teilnahmen">Event-Teilnahmen</h4>
-      <p>Nur besuchte Termine.</p>
+      <p>Nur besuchte Events.</p>
       <h4 id="verschiedene-aktivitaeten">Verschiedene Aktivitäten</h4>
       <p>Wie viele <strong>unterschiedliche</strong> Aktivitäten jemand gemacht hat.</p>
-      <p><em>Beispiel:</em> Wert 3 → drei verschiedene Aktivitäten. Fünfmal dieselbe zählt als eine. Termine zählen hier <strong>nicht</strong> mit.</p>
+      <p><em>Beispiel:</em> Wert 3 → drei verschiedene Aktivitäten. Fünfmal dieselbe zählt als eine. Events zählen hier <strong>nicht</strong> mit.</p>
       <h4 id="pflicht-anwesenheit">Pflicht-Anwesenheit</h4>
-      <p>Besuchte <a href="./termine.html#ein-pflicht-event-einrichten"><strong>Pflicht-Termine</strong></a> — also solche mit Pflicht-Markierung und <a href="./termine.html#die-anwesenheit-verbuchen">eingetragener Anwesenheit</a>.</p>
-      <p><em>Beispiel:</em> Wert 12 → 12 besuchte Pflichttermine.</p>
-      <blockquote>Das ist bei Konfis die einzige Bedingung, die Pflichttermine zählt. Bei allen anderen bleiben Pflichttermine und <a href="./termine.html#einen-termin-als-konfirmation-kennzeichnen">Konfirmationen</a> außen vor — sonst gäbe es Abzeichen für etwas, wozu man ohnehin verpflichtet ist.</blockquote>
+      <p>Besuchte <a href="./termine.html#ein-pflicht-event-einrichten"><strong>Pflicht-Events</strong></a> — also solche mit Pflicht-Markierung und <a href="./termine.html#die-anwesenheit-verbuchen">eingetragener Anwesenheit</a>.</p>
+      <p><em>Beispiel:</em> Wert 12 → 12 besuchte Pflicht-Events.</p>
+      <blockquote>Das ist bei Konfis die einzige Bedingung, die Pflicht-Events zählt. Bei allen anderen bleiben Pflicht-Events und <a href="./termine.html#ein-event-als-konfirmation-kennzeichnen">Konfirmationen</a> außen vor — sonst gäbe es Badges für etwas, wozu man ohnehin verpflichtet ist.</blockquote>
       <h3 id="nach-inhalt-zaehlen"><span class="abschnitt-nr">10.3.3</span>Nach Inhalt zählen</h3>
       <h4 id="spezifische-aktivitaet">Spezifische Aktivität</h4>
       <p>Eine bestimmte Aktivität, so oft wie eingestellt.</p>
       <p><em>Beispiel:</em> Wert 5 + „Sonntagsgottesdienst&quot; → fünfmal daran teilgenommen.</p>
-      <blockquote><strong>Dieselbe Falle wie bei den Kategorien:</strong> Gemerkt wird der <strong>Name</strong> der Aktivität. Wird sie später umbenannt, findet das Abzeichen nichts mehr — stillschweigend. Verliehene bleiben.</blockquote>
+      <blockquote><strong>Dieselbe Falle wie bei den Kategorien:</strong> Gemerkt wird der <strong>Name</strong> der Aktivität. Wird sie später umbenannt, findet das Badge nichts mehr — stillschweigend. Verliehene bleiben.</blockquote>
       <h4 id="aktivitaets-kombination">Aktivitäts-Kombination</h4>
       <p>Von mehreren ausgewählten Aktivitäten muss eine Mindestanzahl erledigt sein.</p>
       <p><em>Beispiel:</em> Zehn Aktivitäten ausgewählt, Wert 3 → drei davon reichen.</p>
-      <p>Auch hier zählt der <strong>Name</strong>: Wird eine der ausgewählten Aktivitäten umbenannt, fällt sie aus der Wertung. Termine zählen bei dieser Bedingung nicht mit — wer sie gewertet haben will, nimmt <strong>Kategorie-Aktivitäten</strong> oder <strong>Kategorie-Kombination</strong>.</p>
+      <p>Auch hier zählt der <strong>Name</strong>: Wird eine der ausgewählten Aktivitäten umbenannt, fällt sie aus der Wertung. Events zählen bei dieser Bedingung nicht mit — wer sie gewertet haben will, nimmt <strong>Kategorie-Aktivitäten</strong> oder <strong>Kategorie-Kombination</strong>.</p>
       <h4 id="kategorie-aktivitaeten">Kategorie-Aktivitäten</h4>
       <p><strong>Das ist die Bedingung, die deine selbst angelegten <a href="./jahrgaenge.html#kategorien-anlegen-und-pflegen">Kategorien</a> nutzt.</strong></p>
-      <p>Gezählt wird alles aus einer Kategorie — <strong>Aktivitäten und Termine zusammen</strong>.</p>
-      <p><em>Beispiel:</em> Wert 3 + Kategorie „Kasualien&quot; → drei Kasualien, egal ob als Aktivität gemeldet oder als Termin besucht.</p>
+      <p>Gezählt wird alles aus einer Kategorie — <strong>Aktivitäten und Events zusammen</strong>.</p>
+      <p><em>Beispiel:</em> Wert 3 + Kategorie „Kasualien&quot; → drei Kasualien, egal ob als Aktivität gemeldet oder als Event besucht.</p>
       <p>So hängt es zusammen:</p>
       <pre><code>Kategorie &quot;Kasualien&quot; anlegen
    ├─ der Aktivität &quot;Taufe begleiten&quot; zuordnen
    ├─ der Aktivität &quot;Beerdigung besuchen&quot; zuordnen
-   └─ dem Termin &quot;Trauung Familie Meier&quot; zuordnen
+   └─ dem Event &quot;Trauung Familie Meier&quot; zuordnen
                     ↓
-Abzeichen &quot;Kasualien-Kenner&quot;: 3 aus Kategorie &quot;Kasualien&quot;</code></pre>
-      <blockquote><strong>Wichtige Falle:</strong> Das Abzeichen merkt sich den <strong>Namen</strong> der Kategorie, nicht die Kategorie selbst. Benennst du „Kasualien&quot; später in „Kasualien &amp; Begleitung&quot; um, findet es nichts mehr — stillschweigend, ohne Fehlermeldung. Bereits verliehene bleiben. <strong>Kategorien, auf die Abzeichen zeigen, also besser nicht umbenennen.</strong> Mehr dazu unter <a href="./jahrgaenge.html#kategorie-abzeichen-nicht-ins-leere-laufen-lassen">Die Falle mit den Kategorie-Abzeichen</a>.</blockquote>
+Badge &quot;Kasualien-Kenner&quot;: 3 aus Kategorie &quot;Kasualien&quot;</code></pre>
+      <blockquote><strong>Wichtige Falle:</strong> Das Badge merkt sich den <strong>Namen</strong> der Kategorie, nicht die Kategorie selbst. Benennst du „Kasualien&quot; später in „Kasualien &amp; Begleitung&quot; um, findet es nichts mehr — stillschweigend, ohne Fehlermeldung. Bereits verliehene bleiben. <strong>Kategorien, auf die Badges zeigen, also besser nicht umbenennen.</strong> Mehr dazu unter <a href="./jahrgaenge.html#kategorie-badges-nicht-ins-leere-laufen-lassen">Die Falle mit den Kategorie-Badges</a>.</blockquote>
       <h4 id="kategorie-kombination">Kategorie-Kombination</h4>
       <p><strong>Die Bedingung für „aus verschiedenen Bereichen dabei gewesen&quot;.</strong> Du kreuzt mehrere Kategorien an; der Wert sagt, aus <strong>wie vielen davon</strong> jemand dabei gewesen sein muss.</p>
-      <p><em>Beispiel:</em> Angekreuzt „Konfifahrt&quot;, „Übernachtung&quot; und „Sommerfreizeit&quot;, Wert 3 → wer aus <strong>allen dreien</strong> mindestens einmal etwas hat, bekommt das Abzeichen.</p>
-      <blockquote><strong>Der Wert ist die Anzahl der Kategorien — nicht, wie oft.</strong> Das ist die Stelle, an der es am ehesten schiefgeht. <strong>Wert 1 heißt: eine der angekreuzten Kategorien genügt.</strong> Wer drei Freizeiten fordern will und den Wert auf 1 stellt, verleiht das Abzeichen an alle, die bei <em>einer</em> davon waren. Für „drei aus dreien&quot; gehört dort die <strong>3</strong> hin.</blockquote>
-      <p><strong>Jede Kategorie zählt höchstens einmal.</strong> Dreimal dieselbe Konfifahrt ergibt eine Kategorie, nicht drei — genau dafür gibt es diese Bedingung. Gezählt werden Termine und Aktivitäten gleichermaßen.</p>
+      <p><em>Beispiel:</em> Angekreuzt „Konfifahrt&quot;, „Übernachtung&quot; und „Sommerfreizeit&quot;, Wert 3 → wer aus <strong>allen dreien</strong> mindestens einmal etwas hat, bekommt das Badge.</p>
+      <blockquote><strong>Der Wert ist die Anzahl der Kategorien — nicht, wie oft.</strong> Das ist die Stelle, an der es am ehesten schiefgeht. <strong>Wert 1 heißt: eine der angekreuzten Kategorien genügt.</strong> Wer drei Freizeiten fordern will und den Wert auf 1 stellt, verleiht das Badge an alle, die bei <em>einer</em> davon waren. Für „drei aus dreien&quot; gehört dort die <strong>3</strong> hin.</blockquote>
+      <p><strong>Jede Kategorie zählt höchstens einmal.</strong> Dreimal dieselbe Konfifahrt ergibt eine Kategorie, nicht drei — genau dafür gibt es diese Bedingung. Gezählt werden Events und Aktivitäten gleichermaßen.</p>
       <p>Die App lässt zwei Fehler gar nicht erst zu: Weniger als <strong>zwei</strong> Kategorien werden abgelehnt („Bitte mindestens zwei Kategorien auswählen&quot;), und ein Wert, der größer ist als die Zahl der angekreuzten Kategorien, ebenfalls („Der Wert darf nicht größer sein als die Anzahl der gewählten Kategorien&quot;) — sonst entstünde ein „4 aus 3&quot;, das niemand erreichen kann.</p>
-      <h4 id="kategorie-aktivitaeten-oder-kategorie-kombination">Kategorie-Aktivitäten oder Kategorie-Kombination?</h4>
+      <h4 id="zwischen-kategorie-aktivitaeten-und-kategorie-kombination-waehlen">Zwischen Kategorie-Aktivitäten und Kategorie-Kombination wählen</h4>
       <p>Die beiden sehen sich ähnlich und meinen Verschiedenes:</p>
       <div class="tabelle-huelle"><table><thead><tr><th></th><th>Kategorie-Aktivitäten</th><th>Kategorie-Kombination</th></tr></thead><tbody><tr><td>Kategorien</td><td><strong>eine</strong></td><td><strong>mehrere</strong> (mindestens zwei)</td></tr><tr><td>Der Wert bedeutet</td><td><strong>wie oft</strong> aus dieser Kategorie</td><td>aus <strong>wie vielen</strong> Kategorien</td></tr><tr><td>Dreimal dieselbe Konfifahrt</td><td>zählt <strong>dreifach</strong></td><td>zählt <strong>einfach</strong></td></tr><tr><td>Passt für</td><td>„fünfmal im Gottesdienst&quot;</td><td>„bei Fahrt, Übernachtung und Freizeit dabei&quot;</td></tr></tbody></table></div>
       <p>Als Faustregel: <strong>Ausdauer in einer Sache</strong> → Kategorie-Aktivitäten. <strong>Vielfalt über mehrere Sachen</strong> → Kategorie-Kombination.</p>
       <h3 id="nach-zeit-zaehlen"><span class="abschnitt-nr">10.3.4</span>Nach Zeit zählen</h3>
       <h4 id="zeitbasiert">Zeitbasiert</h4>
-      <p>So viele Aktivitäten oder Termine innerhalb der letzten X Wochen.</p>
+      <p>So viele Aktivitäten oder Events innerhalb der letzten X Wochen.</p>
       <p><em>Beispiel:</em> Wert 2 + 4 Wochen → zwei Einträge in den letzten vier Wochen.</p>
       <p>Das Fenster wandert immer mit — es ist kein fester Zeitraum, sondern „ab jetzt rückwärts&quot;. Einstellbar sind 1 bis 26 Wochen.</p>
       <h4 id="serie">Serie</h4>
       <p>Wochen <strong>in Folge</strong> mit mindestens einem Eintrag.</p>
       <p><em>Beispiel:</em> Wert 4 → vier Wochen am Stück aktiv.</p>
-      <blockquote>Gezählt wird ab der <strong>letzten aktiven Woche</strong> rückwärts, nicht ab heute. Wer vor einem Jahr vier Wochen am Stück aktiv war und seitdem nichts, erfüllt die Bedingung weiterhin und bekommt das Abzeichen beim Anlegen sofort.</blockquote>
-      <h3 id="nur-fuer-teamer-innen"><span class="abschnitt-nr">10.3.5</span>Nur für Teamer:innen</h3>
+      <blockquote>Gezählt wird ab der <strong>letzten aktiven Woche</strong> rückwärts, nicht ab heute. Wer vor einem Jahr vier Wochen am Stück aktiv war und seitdem nichts, erfüllt die Bedingung weiterhin und bekommt das Badge beim Anlegen sofort.</blockquote>
+      <h3 id="nur-fuer-teamer-innen-zaehlen"><span class="abschnitt-nr">10.3.5</span>Nur für Teamer:innen zählen</h3>
       <h4 id="teamer-jahr">Teamer-Jahr</h4>
-      <p>Kalenderjahre mit mindestens einer Aktivität oder einem Termin.</p>
+      <p>Kalenderjahre mit mindestens einer Aktivität oder einem Event in dieser Gemeinde. Was jemand in einer anderen Gemeinde im Team macht, zählt dort.</p>
       <p><em>Beispiel:</em> Wert 3 → in drei Jahren aktiv gewesen.</p>
       <p><strong>Lücken sind erlaubt:</strong> Wer 2024 und 2026 aktiv war, aber 2025 nicht, hat zwei Jahre. Gezählt wird ab dem Eintrittsdatum („Teamer:in seit&quot;). Fehlt das, zählt das Jahr der ältesten Teamer-Aktivität; fehlt auch das, zählt es null.</p>
-      <p>---</p>
+      <hr>
       <h2 id="pruefen-ob-die-bedingung-zur-zielgruppe-passt"><span class="abschnitt-nr">10.4</span>Prüfen, ob die Bedingung zur Zielgruppe passt</h2>
       <div class="tabelle-huelle"><table><thead><tr><th>Bedingung</th><th>Konfis</th><th>Teamer:innen</th></tr></thead><tbody><tr><td>Gesamtpunkte, Gottesdienst, Gemeinde, Beide Kategorien</td><td>ja</td><td>nein</td></tr><tr><td>Bonuspunkte</td><td>ja</td><td>nein</td></tr><tr><td>Aktivitäten &amp; Events</td><td>ja</td><td>ja</td></tr><tr><td>Event-Teilnahmen</td><td>ja</td><td>nur im Bestand</td></tr><tr><td>Verschiedene Aktivitäten</td><td>ja</td><td>ja</td></tr><tr><td>Pflicht-Anwesenheit</td><td>ja</td><td>nur im Bestand</td></tr><tr><td>Spezifische Aktivität</td><td>ja</td><td>ja</td></tr><tr><td>Aktivitäts-Kombination</td><td>ja</td><td>ja</td></tr><tr><td>Kategorie-Aktivitäten</td><td>ja</td><td>ja</td></tr><tr><td>Kategorie-Kombination</td><td>ja</td><td>ja</td></tr><tr><td>Zeitbasiert, Serie</td><td>ja</td><td>nur im Bestand</td></tr><tr><td>Teamer-Jahr</td><td>nein</td><td>ja</td></tr></tbody></table></div>
-      <p>Teamer:innen sammeln keine Punkte — deshalb entfallen alle punktebasierten Bedingungen. Ein Punkte-Abzeichen mit Zielgruppe „Teamer:innen&quot; wird nie vergeben, auch wenn es in der Datenbank steht.</p>
-      <p><strong>„Nur im Bestand&quot; heißt:</strong> Diese vier lassen sich für „Teamer:innen&quot; nicht <strong>auswählen</strong> — im Anlegeformular stehen sie dort nicht zur Wahl. Ein Abzeichen dieser Art, das es schon gibt, wird aber weiterhin ganz normal <strong>vergeben</strong>. Wer eines vorfindet, muss es also nicht ersetzen.</p>
-      <h3 id="was-bei-teamer-abzeichen-anders-zaehlt"><span class="abschnitt-nr">10.4.1</span>Was bei Teamer-Abzeichen anders zählt</h3>
-      <ul><li><strong>Aktivitäten:</strong> Nur solche mit der Zielgruppe „Teamer:innen&quot; zählen mit. Eine Aktivität für Konfis bleibt außen vor, auch wenn sie in derselben Kategorie steckt.</li><li><strong>Termine:</strong> Umgekehrt großzügiger — es zählt <strong>jeder</strong> Termin mit eingetragener Anwesenheit, auch Pflichttermine und Konfirmationen. Teamer:innen arbeiten dort ja mit.</li></ul>
+      <p>Teamer:innen sammeln keine Punkte — deshalb entfallen alle punktebasierten Bedingungen. Ein Punkte-Badge mit Zielgruppe „Teamer:innen&quot; wird nie vergeben, auch wenn es in der Datenbank steht.</p>
+      <p><strong>„Nur im Bestand&quot; heißt:</strong> Diese vier lassen sich für „Teamer:innen&quot; nicht <strong>auswählen</strong> — im Anlegeformular stehen sie dort nicht zur Wahl. Ein Badge dieser Art, das es schon gibt, wird aber weiterhin ganz normal <strong>vergeben</strong>. Wer eines vorfindet, muss es also nicht ersetzen.</p>
+      <h3 id="verstehen-was-bei-teamer-badges-anders-zaehlt"><span class="abschnitt-nr">10.4.1</span>Verstehen, was bei Teamer-Badges anders zählt</h3>
+      <ul><li><strong>Aktivitäten:</strong> Nur solche mit der Zielgruppe „Teamer:innen&quot; zählen mit. Eine Aktivität für Konfis bleibt außen vor, auch wenn sie in derselben Kategorie steckt.</li><li><strong>Events:</strong> Umgekehrt großzügiger — es zählt <strong>jedes</strong> Event mit eingetragener Anwesenheit, auch Pflicht-Events und Konfirmationen. Teamer:innen arbeiten dort ja mit.</li></ul>
       <h2 id="nachvollziehen-wann-geprueft-wird"><span class="abschnitt-nr">10.5</span>Nachvollziehen, wann geprüft wird</h2>
       <p>Sofort bei:</p>
-      <ul><li>einer genehmigten Aktivitäts-Meldung</li><li>einer direkt zugewiesenen <a href="./punkte.html#eine-aktivitaet-direkt-zuschreiben">Aktivität</a> — und ebenso, wenn du eine wieder entfernst</li><li>vergebenen Bonuspunkten — und ebenso, wenn du welche zurücknimmst</li><li><a href="./termine.html#die-anwesenheit-verbuchen">eingetragener Anwesenheit</a> bei einem Termin, einzeln wie für die ganze Liste</li><li>einem <a href="./termine.html#den-qr-check-in-nutzen">Check-in per QR-Code</a></li><li>dem Anlegen oder Bearbeiten eines Abzeichens</li><li>dem Knopf „Abzeichen neu prüfen&quot;</li></ul>
+      <ul><li>einer genehmigten Aktivitäts-Meldung</li><li>einer direkt zugewiesenen <a href="./punkte.html#eine-aktivitaet-direkt-zuschreiben">Aktivität</a> — und ebenso, wenn du eine wieder entfernst</li><li>vergebenen Bonuspunkten — und ebenso, wenn du welche zurücknimmst</li><li><a href="./termine.html#die-anwesenheit-verbuchen">eingetragener Anwesenheit</a> bei einem Event, einzeln wie für die ganze Liste</li><li>einem <a href="./termine.html#den-qr-check-in-nutzen">Check-in per QR-Code</a></li><li>dem Anlegen oder Bearbeiten eines Badges</li><li>dem Knopf „Badge neu prüfen&quot;</li></ul>
       <blockquote>Dass auch das <strong>Zurücknehmen</strong> eine Prüfung auslöst, klingt widersinnig — es kann ja nichts wegnehmen. Der Grund: Die Prüfung läuft immer über alle Bedingungen, und eine davon könnte durch die Änderung erstmals erfüllt sein.</blockquote>
       <p>Zusätzlich <strong>stündlich</strong> im Hintergrund. Das betrifft in der Praxis nur die Bedingungen, die ohne Zutun fällig werden können — „Serie&quot;, „Zeitbasiert&quot; und „Teamer-Jahr&quot;. Alle anderen greifen ohnehin sofort, sobald jemand etwas einträgt.</p>
-      <blockquote><strong>Mitteilungen sind dafür nicht nötig.</strong> Der Hintergrundlauf geht alle aktiven Konfis und Teamer:innen durch, ganz gleich ob jemand die App installiert oder Mitteilungen erlaubt hat. Ohne Mitteilungen erfährt man von dem Abzeichen nur später — beim nächsten Öffnen der App statt sofort per Push. Verliehen wird es genauso.</blockquote>
+      <blockquote><strong>Mitteilungen sind dafür nicht nötig.</strong> Der Hintergrundlauf geht alle aktiven Konfis und Teamer:innen durch, ganz gleich ob jemand die App installiert oder Mitteilungen erlaubt hat. Ohne Mitteilungen erfährt man von dem Badge nur später — beim nächsten Öffnen der App statt sofort per Push. Verliehen wird es genauso.</blockquote>
       <h3 id="von-hand-nachpruefen-lassen"><span class="abschnitt-nr">10.5.1</span>Von Hand nachprüfen lassen</h3>
-      <p>Beim Bearbeiten eines Abzeichens gibt es den Knopf „Abzeichen neu prüfen&quot;. Er ist für den Sonderfall gedacht, dass sich die <strong>Datenlage</strong> geändert hat, nicht das Abzeichen selbst — etwa nach einer nachträglich korrigierten Anwesenheit. Die Vergabe läuft dabei <strong>ohne</strong> Mitteilung und ohne Push. Danach steht dort, wie viele Personen geprüft wurden und wie viele das Abzeichen neu bekommen haben.</p>
-      <p>Zwei Dinge, die dabei auffallen können: Nach einem Lauf ist der Knopf für die ganze Gemeinde <strong>eine Minute lang gesperrt</strong> — drückst du früher erneut, kommt „Die Prüfung lief gerade eben. Bitte … Sekunden warten.&quot; Und bei einem <strong>deaktivierten</strong> Abzeichen verweigert er den Dienst mit „Das Abzeichen ist nicht aktiv&quot;; dort gibt es nichts nachzuholen.</p>
+      <p>Beim Bearbeiten eines Badges gibt es den Knopf „Badge neu prüfen&quot;. Er ist für den Sonderfall gedacht, dass sich die <strong>Datenlage</strong> geändert hat, nicht das Badge selbst — etwa nach einer nachträglich korrigierten Anwesenheit. Die Vergabe läuft dabei <strong>ohne</strong> Mitteilung und ohne Push. Danach steht dort, wie viele Personen geprüft wurden und wie viele das Badge neu bekommen haben. Geprüft werden alle, die in deiner Gemeinde die Zielgruppe des Badges sind — auch wer dort nur zusätzlich zu einer anderen Gemeinde mitmacht.</p>
+      <p>Zwei Dinge, die dabei auffallen können: Nach einem Lauf ist der Knopf für die ganze Gemeinde <strong>eine Minute lang gesperrt</strong> — drückst du früher erneut, kommt „Die Prüfung lief gerade eben. Bitte … Sekunden warten.&quot; Und bei einem <strong>deaktivierten</strong> Badge verweigert er den Dienst mit „Das Badge ist nicht aktiv&quot;; dort gibt es nichts nachzuholen.</p>
       <h2 id="wissen-was-beim-verleihen-passiert"><span class="abschnitt-nr">10.6</span>Wissen, was beim Verleihen passiert</h2>
-      <ol><li>Das Abzeichen wird eingetragen</li><li>Mitteilung in der App: „Neues Badge erhalten!&quot; mit dem Symbol des Abzeichens dahinter, darunter „Herzlichen Glückwunsch! Du hast das Badge … erhalten&quot; samt Beschreibung</li><li>Push aufs Gerät, dort ohne das Symbol</li><li>Der Zähler in der Tab-Leiste aktualisiert sich</li></ol>
-      <p>Ein Abzeichen kann nie doppelt vergeben werden.</p>
-      <h2 id="ein-abzeichen-aus-dem-verkehr-ziehen"><span class="abschnitt-nr">10.7</span>Ein Abzeichen aus dem Verkehr ziehen</h2>
+      <ol><li>Das Badge wird eingetragen</li><li>Mitteilung in der App: „Neues Badge erhalten!&quot; mit dem Symbol des Badges dahinter, darunter „Herzlichen Glückwunsch! Du hast das Badge … erhalten&quot; samt Beschreibung</li><li>Push aufs Gerät, dort ohne das Symbol</li><li>Der Zähler in der Tab-Leiste aktualisiert sich</li></ol>
+      <p>Ein Badge kann nie doppelt vergeben werden.</p>
+      <h2 id="ein-badge-aus-dem-verkehr-ziehen"><span class="abschnitt-nr">10.7</span>Ein Badge aus dem Verkehr ziehen</h2>
       <div class="tabelle-huelle"><table><thead><tr><th></th><th>Deaktivieren</th><th>Löschen</th></tr></thead><tbody><tr><td>Neue Vergabe</td><td>stoppt</td><td>stoppt</td></tr><tr><td>Bereits Verliehene</td><td>bleiben</td><td><strong>werden mitgelöscht</strong></td></tr><tr><td>Wer es hatte, sieht es weiter</td><td>ja, bei Konfis wie Teamer:innen</td><td>nein</td></tr><tr><td>Zählt noch als offenes Ziel</td><td>nein</td><td>nein</td></tr><tr><td>Rückgängig</td><td>ja</td><td>nein</td></tr></tbody></table></div>
-      <blockquote><strong>Deaktivieren ist der Weg, ein Abzeichen aus dem Verkehr zu ziehen, ohne jemandem etwas wegzunehmen.</strong> Wer es schon hat, behält es und sieht es weiterhin in seiner Liste. Für alle anderen ist es weg — es taucht nicht mehr als erreichbares Ziel auf und wird nicht mehr vergeben. Löschen dagegen nimmt es auch denen weg, die es verdient hatten.</blockquote>
+      <blockquote><strong>Deaktivieren ist der Weg, ein Badge aus dem Verkehr zu ziehen, ohne jemandem etwas wegzunehmen.</strong> Wer es schon hat, behält es und sieht es weiterhin in seiner Liste. Für alle anderen ist es weg — es taucht nicht mehr als erreichbares Ziel auf und wird nicht mehr vergeben. Löschen dagegen nimmt es auch denen weg, die es verdient hatten.</blockquote>
       <p>Gelöscht wird über die <a href="./bedienung.html#etwas-loeschen-nach-links-wischen">Wischgeste nach links</a>.</p>
     </article>
 
@@ -345,10 +365,53 @@ Abzeichen &quot;Kasualien-Kenner&quot;: 3 aus Kategorie &quot;Kasualien&quot;</c
            </a>
       <a class="blatt blatt--weiter" href="./termine.html">
              <span class="blatt-hin">Nächstes Kapitel</span>
-             <span class="blatt-titel">11. Termine</span>
+             <span class="blatt-titel">11. Events</span>
            </a>
     </nav>
   </main>
 </div>
+<script>
+(function () {
+  var leiste = document.querySelector('.seitenleiste');
+  var liste = leiste.querySelector('.nav-abschnitte');
+  if (leiste.scrollHeight > leiste.clientHeight) {
+    var k = leiste.getBoundingClientRect();
+    var fehlt = liste.getBoundingClientRect().bottom - k.bottom + 16;
+    var bisKapitel = leiste.querySelector('.ist-hier').getBoundingClientRect().top - k.top - 48;
+    if (fehlt > 0) leiste.scrollTop += Math.min(fehlt, bisKapitel);
+  }
+  if (!('IntersectionObserver' in window)) return;
+  var ende = document.querySelector('.blaettern');
+  var ziele = [];
+  liste.querySelectorAll('a').forEach(function (a) {
+    var h = document.getElementById(a.hash.slice(1));
+    if (h) ziele.push({ a: a, h: h });
+  });
+  var markieren = function () {
+    var hoehe = window.innerHeight;
+    var amEnde = !!ende && ende.getBoundingClientRect().bottom <= hoehe;
+    var linie = amEnde ? hoehe : hoehe * 0.35;
+    var aktiv = null, angesprungen = null;
+    ziele.forEach(function (z) {
+      var oben = z.h.getBoundingClientRect().top;
+      if (oben < linie) aktiv = z;
+      if (z.a.hash === location.hash && oben >= 0 && oben < hoehe) angesprungen = z;
+    });
+    if (amEnde && angesprungen) aktiv = angesprungen;
+    ziele.forEach(function (z) {
+      if (z === aktiv) z.a.setAttribute('aria-current', 'location');
+      else z.a.removeAttribute('aria-current');
+    });
+    if (aktiv && leiste.scrollHeight > leiste.clientHeight) {
+      var r = aktiv.a.getBoundingClientRect(), l = leiste.getBoundingClientRect();
+      if (r.top < l.top || r.bottom > l.bottom) leiste.scrollTop += r.top - l.top - l.height / 3;
+    }
+  };
+  var beobachter = new IntersectionObserver(markieren, { rootMargin: '0px 0px -65% 0px' });
+  ziele.forEach(function (z) { beobachter.observe(z.h); });
+  if (ende) new IntersectionObserver(markieren, { threshold: 1 }).observe(ende);
+  window.addEventListener('hashchange', markieren);
+})();
+</script>
 </body>
 </html>

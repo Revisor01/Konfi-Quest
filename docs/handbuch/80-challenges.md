@@ -15,7 +15,7 @@ sehen, steht in [Für Konfis](10-konfis.md#bei-einer-challenge-mitmachen).
 Challenges zählen **nichts**: keine [Punkte](40-punkte.md), keine Rangliste,
 kein Beitrag zum [Punkteziel des Jahrgangs](45-jahrgaenge.md#punkteziele-festlegen). Wer
 Teilnahme belegen will, braucht dafür eine
-[Aktivität](40-punkte.md#ueber-eine-aktivitaet) oder einen [Termin](70-termine.md).
+[Aktivität](40-punkte.md#ueber-eine-aktivitaet) oder ein [Event](70-termine.md).
 Was es stattdessen gibt, ist ein Stempel für alle, die mitgemacht haben.
 
 ---
@@ -83,24 +83,34 @@ auswählen. Das gilt für Teamer:innen und Admins gleichermaßen.
 
 ### Festlegen, wer mitmachen darf
 
-Zwei Möglichkeiten unter „Wer macht mit?":
+Drei Möglichkeiten unter „Wer macht mit?":
 
-| | „Jahrgang und Team" | „Nur das Team" |
-|---|---|---|
-| Konfis dürfen einreichen | ja | nein |
-| Team darf einreichen | ja | ja |
-| Jahrgänge auswählbar | ja, Pflicht | nein, entfällt |
-| Konfis sehen die Challenge | ja | **nein, gar nicht** |
-| Wer verwaltet sie | die Leitung und die Teamer:innen der Jahrgänge | jede:r im Team der Organisation |
+| | „Jahrgang und Team" | „Nur die Konfis" | „Nur das Team" |
+|---|---|---|---|
+| Konfis dürfen einreichen | ja | ja | nein |
+| Team darf einreichen | ja | nein | ja |
+| Jahrgänge auswählbar | ja, Pflicht, mehrere möglich | ja, Pflicht, mehrere möglich | nein, entfällt |
+| Konfis sehen die Challenge | ja | ja | **nein, gar nicht** |
+| Wer sie sieht und verwaltet | Org-Admins und die Admins und Teamer:innen der gewählten Jahrgänge | Org-Admins und die Admins und Teamer:innen der gewählten Jahrgänge | jede:r im Team der Organisation |
 
 „Jahrgang und Team" ist die Voreinstellung: „Die Konfis der gewählten Jahrgänge
-und ihr im Team — alle reichen gleichberechtigt ein." Eine Einstellung „nur
-Konfis" gibt es bewusst nicht. Wer eine Aufgabe stellt, soll sie auch selbst
-beantworten.
+und ihr im Team — alle reichen gleichberechtigt ein."
+
+„Nur die Konfis" ist eine Aufgabe für die Konfis: „Die Konfis der gewählten
+Jahrgänge reichen ein. Ihr im Team seht die Beiträge und begleitet die
+Challenge, reicht aber selbst nichts ein." Wer mit dem Jahrgang arbeitet, sieht
+die Challenge trotzdem — auch als Teamer:in.
 
 „Nur das Team" ist eine Runde unter euch. Solche Challenges laufen
 organisationsweit über die Rolle statt über Jahrgänge — deshalb entfällt die
 Jahrgangs-Auswahl, und jede:r im Team kann sie sehen und verwalten.
+
+Bei „Jahrgang und Team" und „Nur die Konfis" entscheidet der Jahrgang, wer im
+Team die Challenge sieht: Org-Admins immer, Admins und Teamer:innen, wenn ihnen
+einer der gewählten Jahrgänge
+[zugewiesen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
+ist. Wer keinen davon hat, sieht die Challenge nicht, zählt sie nicht und
+bekommt keine Mitteilungen dazu.
 
 Konfis erfahren von einer Team-Challenge gar nichts: Sie steht nicht in ihrer
 Liste, und ruft jemand die Adresse direkt auf, antwortet das System „nicht
@@ -126,6 +136,14 @@ Foto.
 
 Zu Foto, Audio und Video darf zusätzlich ein Text geschrieben werden — eine
 Bildunterschrift sozusagen.
+
+Fotos verkleinert die App vor dem Hochladen wie im [Chat](90-chat.md) — die
+lange Kante auf höchstens 1920 Pixel —, Videos und Aufnahmen gehen, wie sie
+sind. Ist eine Datei danach größer als 50 MB, sagt die App es gleich bei der
+Auswahl oder nach der Aufnahme: *„Datei ist zu groß (max. 50 MB)."* Beim
+Einreichen steht oben, wie weit das Hochladen ist (*„Wird gesendet… 40 %"*,
+dazu ein Balken); bei 100 % wechselt der Text auf *„Wird verarbeitet…"* — der
+Server verschlüsselt die Datei dann noch.
 
 **Link nimmt keine beliebige Adresse.** Erlaubt sind ausschließlich Links der
 vier genannten Musikdienste; alles andere wird mit „Hier gehen nur Musik-Links:
@@ -306,15 +324,15 @@ Entwurf machen.
 
 Jede Challenge trägt einen eigenen Stempel: ein Name (Pflicht, höchstens 100
 Zeichen) und ein Symbol aus einer Auswahl, voreingestellt die Flagge. Er ist
-etwas anderes als ein [Abzeichen](60-badges.md):
-Ein Abzeichen sammelt man, ein Stempel belegt, dass man dabei war.
+etwas anderes als ein [Badge](60-badges.md):
+Ein Badge sammelt man, ein Stempel belegt, dass man dabei war.
 
-| | Abzeichen | Stempel |
+| | Badge | Stempel |
 |---|---|---|
 | Wofür | eine Bedingung erfüllen | einen Beitrag einreichen |
 | Zählen | ja, Bedingungen mit Werten | nein, es gibt nichts zu zählen |
-| Abstufungen | ja, verschiedene Abzeichen | nein, für alle derselbe |
-| Wo er steht | in der Abzeichen-Liste | bei der Challenge, in der eigenen Sammlung und im Profil |
+| Abstufungen | ja, verschiedene Badges | nein, für alle derselbe |
+| Zu sehen | in der Badge-Liste | bei der Challenge, in der eigenen Sammlung und im Profil |
 
 Wann er kommt, hängt an der Freigabe-Pflicht:
 
@@ -329,7 +347,7 @@ Stempel. Mit dem Stempel kommt eine Mitteilung aufs Gerät.
 Gesammelte Stempel stehen im Challenges-Tab — bei Konfis, im Team und in der
 Leitung gleichermaßen, denn alle drei machen selbst mit. Die Leitung sieht die
 Stempel einer Person außerdem in deren Detailansicht, gleich hinter den
-Abzeichen.
+Badges.
 
 Neben den erhaltenen stehen dort auch die **noch nicht erhaltenen** — grau, mit
 Name und Symbol. Grau erscheint alles, was es je zu holen gab: laufende
@@ -390,9 +408,22 @@ ohnehin sehen dürfen:
 
 - die Person, die ihn eingereicht hat — immer
 - der Org-Admin — für alles in seiner Organisation
-- Admins und Teamer:innen — nur für ihre zugewiesenen Jahrgänge, bei
-  Team-Challenges für alles im Team
+- Admins und Teamer:innen — für ihre zugewiesenen Jahrgänge, bei Challenges
+  nur fürs Team für alles im Team
 - Konfis — nur für Beiträge, die in ihrer Galerie erscheinen dürfen
+
+Auf dem Gerät bleiben Fotos, Videos und Aufnahmen nach dem ersten Laden
+liegen, wie die Dateien aus dem Chat: Beim nächsten Öffnen der Challenge sind
+sie sofort da, auch ohne Netz. Beim Abmelden, beim Wechsel der Gemeinde und
+wenn sich auf dem Gerät ein anderes Konto anmeldet, löscht die App sie; wie das
+im Einzelnen geht, steht unter
+[Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
+Ein Foto antippen öffnet es — mit Teilen und Sichern.
+
+Ohne Netz zeigt eine Challenge den zuletzt geladenen Stand, die Fotos kommen
+dann vom Gerät. War sie auf dem Gerät noch nie offen, steht dort *„Die Liste
+der Beiträge ist offline nicht verfügbar."* Mit Netz gilt immer, was der
+Server sagt.
 
 ---
 
@@ -434,28 +465,57 @@ entfernt werden soll."
 
 ---
 
-## Offene Freigaben erkennen
+## Neue Beiträge und offene Freigaben erkennen
 
-Eine rote Zahl am Reiter **Challenges** zeigt, wie viele Beiträge insgesamt
-auf eure Freigabe warten. An der einzelnen Challenge steht dieselbe Zahl
-oben rechts als oranges Feld mit Uhr — orange, weil Freigaben warten können
-und kein Neues sind wie eine ungelesene Nachricht. Beide Zahlen zählen nur
-Challenges, die ihr selbst freigeben dürft: Teamer:innen ihre zugewiesenen
-Jahrgänge und die Challenges nur fürs Team, die Leitung alle der Gemeinde.
-Sobald ihr einen Beitrag freigebt oder ausblendet, geht die Zahl zurück; bei
-null verschwindet das Feld. Die Legende hinter dem Fragezeichen erklärt es
-zusammen mit den Status-Symbolen.
+An einer Challenge stehen zwei verschiedene Zahlen, wie im Chat:
 
-Konfis sehen an der Challenge etwas anderes: eine rote Zahl am Symbol für ihre
-[Neuigkeiten](10-konfis.md#neuigkeiten-an-challenges-erkennen). Die beiden
-Zahlen werden nicht vermischt.
+- **Die rote Zahl am Symbol** zeigt, wie viele Beiträge seit deinem letzten
+  Öffnen der Challenge dazugekommen sind — auch bei Challenges ohne Freigabe,
+  bei denen ein Beitrag sofort in der Galerie steht. So siehst du, was
+  passiert, und kannst einen Beitrag bei Bedarf ausblenden oder löschen.
+  Öffnest du die Challenge, verschwindet die Zahl; was danach kommt, zählt
+  neu. Eigene Beiträge zählen nicht mit. Eine gestartete Challenge, bei der
+  du selbst mitmachst („Jahrgang und Team", „Nur das Team") und die du noch
+  nie geöffnet hast, zählt dazu als eins — außer du hast sie selbst angelegt.
+- **Das orange Feld mit Zahl und Uhr** oben rechts zeigt, wie viele Beiträge
+  auf eure Freigabe warten — orange, weil Freigaben warten können. Es bleibt
+  stehen, bis ihr freigebt oder ausblendet; Öffnen allein ändert daran
+  nichts.
+
+Ein Beitrag steht nie in beiden: Solange er auf Freigabe wartet, zählt er
+im orangen Feld. Gibt ihn jemand anderes frei, bevor du ihn gesehen hast,
+erscheint er bei dir als neu.
+
+Am Reiter **Challenges** stehen beide Zahlen zusammen, ebenso am
+[Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
+App-Symbol. Gezählt werden nur Challenges, die ihr seht: Admins und
+Teamer:innen die ihrer zugewiesenen Jahrgänge und die Challenges nur fürs
+Team, die Gemeindeleitung alle der Gemeinde.
+Neue Beiträge zählen nur in laufenden Challenges. Die Legende hinter dem
+Fragezeichen erklärt beide Zeichen zusammen mit den Status-Symbolen.
+
+Konfis sehen an der Challenge ebenfalls eine rote Zahl für ihre
+[Neuigkeiten](10-konfis.md#neuigkeiten-an-challenges-erkennen).
 
 ## Nachsehen, wer was mitbekommt
 
-- **Die Konfis der Jahrgänge** bekommen eine Mitteilung, sobald eine geplante
-  Challenge tatsächlich startet — nicht schon beim Anlegen.
-- **Die Leitung** bekommt eine Mitteilung bei jedem neuen Beitrag, auch wenn er
-  ohne Moderation sofort in der Galerie steht.
+Sobald eine geplante Challenge tatsächlich startet — nicht schon beim
+Anlegen —, bekommen **alle, die mitmachen**, die Mitteilung „Neue Challenge".
+Wer sie angelegt hat, bekommt keine, und niemand bekommt sie doppelt:
+
+| „Wer macht mit?" | Wer die Mitteilung zum Start bekommt |
+|---|---|
+| „Jahrgang und Team" | die Konfis der gewählten Jahrgänge, die Gemeindeleitung und die Admins und Teamer:innen dieser Jahrgänge |
+| „Nur die Konfis" | die Konfis der gewählten Jahrgänge — ihr im Team lest mit und seht neue Beiträge an der roten Zahl |
+| „Nur das Team" | das ganze Team der Gemeinde, mit und ohne Jahrgang; Konfis nie |
+
+Außerdem:
+
+- **Wer die Challenge verwaltet**, bekommt eine Mitteilung bei jedem neuen
+  Beitrag, auch wenn er ohne Moderation sofort in der Galerie steht: die
+  Gemeindeleitung immer, Admins und Teamer:innen für die Challenges ihrer
+  Jahrgänge und die Challenges nur fürs Team. Wer selbst etwas einreicht,
+  bekommt über den eigenen Beitrag keine Mitteilung.
 - **Die einreichende Person** bekommt eine Mitteilung, sobald sie den Stempel
   erhält, und eine, wenn ihr Beitrag ausgeblendet wird — mit eurer Begründung,
   falls ihr eine eingetragen habt.
@@ -464,8 +524,8 @@ Zahlen werden nicht vermischt.
   Challenge, neue Beiträge in der Galerie oder eure Entscheidung über ihren
   eigenen Beitrag; siehe
   [Neuigkeiten an Challenges erkennen](10-konfis.md#neuigkeiten-an-challenges-erkennen).
-  Bei euch zählen Reiter und das orange Feld mit Uhr stattdessen die
-  [offenen Freigaben](#offene-freigaben-erkennen).
+  Bei euch zählen Reiter und Challenge
+  [neue Beiträge, offene Freigaben und neue Challenges, bei denen ihr mitmacht](#neue-beitraege-und-offene-freigaben-erkennen).
 - **Alle Konfis der Jahrgänge** sehen ohne Neuladen, wenn eine Challenge startet,
   sich ändert oder ein Beitrag in der Galerie erscheint. Ohne Netz bleibt der
   zuletzt geladene Stand stehen, Einreichen geht dann nicht — siehe

@@ -23,6 +23,7 @@ describe('networkMonitor', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('isOnline ist initial true (optimistisch)', async () => {
@@ -58,6 +59,10 @@ describe('networkMonitor', () => {
   });
 
   it('init() wird nur einmal ausgefuehrt (idempotent)', async () => {
+    // Auf dem Gerät: Das Plugin wird seit 27.09.2026 nur noch nativ gefragt,
+    // im Browser entscheidet navigator.onLine (funklochErkennen.test.ts).
+    const { Capacitor } = await import('@capacitor/core');
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
     const { networkMonitor } = await import('../../services/networkMonitor');
 
     await networkMonitor.init();
@@ -65,11 +70,14 @@ describe('networkMonitor', () => {
 
     // getStatus sollte nur einmal aufgerufen worden sein
     expect(mockGetStatus).toHaveBeenCalledTimes(1);
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
   });
 
-  it('connectionType "unknown" wird als online gewertet (Emulator-Fall)', async () => {
+  it('connectionType "unknown" bleibt online, wenn der Server antwortet (Emulator-Fall)', async () => {
     // Nativer Pfad: Plugin meldet connected=false bei connectionType=unknown,
     // obwohl Netz da ist (typisch Android-Emulator) -> muss online bleiben.
+    // Seit 27.09.2026 entscheidet eine Probe an /health (funklochErkennen.test.ts).
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 200 })));
     const { Capacitor } = await import('@capacitor/core');
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
     mockGetStatus.mockResolvedValueOnce({ connected: false, connectionType: 'unknown' });
@@ -81,13 +89,15 @@ describe('networkMonitor', () => {
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
   });
 
-  it('connectionType "none" wird als online gewertet (optimistischer Login-Schutz)', async () => {
+  it('connectionType "none" bleibt online, wenn der Server antwortet (Login-Schutz für die Play-Prüfung)', async () => {
     // Bewusstes Verhalten (evaluateOnline): Bei connectionType 'none' ODER
     // 'unknown' optimistisch online bleiben. Manche Plattformen (Android-
     // Emulator, Google-Play-Review-Umgebung) melden connected=false, obwohl
     // Netz da ist — ein faelschliches Offline blockt sonst den Login vor dem
     // ersten Request und fuehrte zu Play-Rejections. Ein echter Fehler fällt
-    // ohnehin in den Request-Fehler-Handler.
+    // ohnehin in den Request-Fehler-Handler. Seit 27.09.2026 entscheidet eine
+    // Probe an /health; antwortet der Server, bleibt es online.
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 200 })));
     const { Capacitor } = await import('@capacitor/core');
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
     mockGetStatus.mockResolvedValueOnce({ connected: false, connectionType: 'none' });

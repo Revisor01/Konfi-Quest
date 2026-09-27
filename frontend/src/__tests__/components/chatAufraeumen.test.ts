@@ -60,23 +60,28 @@ describe('Toter Code aus der Aufteilung', () => {
   });
 });
 
-describe('Die 10-MB-Grenze bleibt im echten Weg bestehen', () => {
+describe('Die Groessengrenze bleibt im echten Weg bestehen', () => {
   // Beim Wegwerfen der toten Wrapper war die Frage, ob ihre Groessenpruefung
   // im echten Weg fehlt. Tut sie nicht -- und anders als die Wrapper sagt
   // handleFileSelect auch, warum nichts passiert.
+  //
+  // 27.09.2026: Die Grenze ist die des Servers (5 MB statt 10 MB) und steht
+  // mit dem Satz dazu im gemeinsamen Weg fuer Chat und Challenges
+  // (fuerUploadVorbereiten). Im Ablauf geprueft in
+  // uploadVerkleinerungGemeinsam.test.tsx (6-MB-PDF abgelehnt, 4 MB durch).
+  const kompression = lies('src/services/mediaCompression.ts');
+  const pruefung = dateien.slice(
+    dateien.indexOf('const handleFileSelect'),
+    dateien.indexOf('setSelectedFile(file)')
+  );
+
   it('handleFileSelect prueft die Groesse', () => {
-    const pruefung = dateien.slice(
-      dateien.indexOf('const handleFileSelect'),
-      dateien.indexOf('setSelectedFile(file)')
-    );
-    expect(pruefung).toContain('10 * 1024 * 1024');
+    expect(pruefung).toContain('fuerUploadVorbereiten(picked, UPLOAD_GRENZE.chat)');
+    expect(kompression).toContain('chat: 5 * 1024 * 1024,');
   });
 
   it('und meldet es der Nutzerin, statt still abzubrechen', () => {
-    const pruefung = dateien.slice(
-      dateien.indexOf('const handleFileSelect'),
-      dateien.indexOf('setSelectedFile(file)')
-    );
-    expect(pruefung).toContain('Datei ist zu groß (max. 10MB)');
+    expect(dateien).toContain('setError(err instanceof DateiZuGrossFehler ? err.message');
+    expect(kompression).toContain('`Datei ist zu groß (max. ${Math.round(maxBytes / 1024 / 1024)} MB).`');
   });
 });

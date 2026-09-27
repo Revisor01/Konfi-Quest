@@ -18,7 +18,17 @@
 // BadgeContext.totalBadgeCount uebereinstimmen -- dieselbe Aufteilung je
 // Rolle, dieselben Bestandteile. Aendert sich eine Seite, gehoert die andere
 // nachgezogen; ein Test haelt die Zusammensetzung fest.
-const { challengeNeuigkeitenJeChallenge } = require('./challengeNeuigkeiten');
+//
+// Bei mehreren Gemeinden (27.09.2026, Befund BF-12) ist die Zahl am Symbol
+// die Summe ueber alle Gemeinden, je Gemeinde mit der dortigen Rolle:
+// appIconSummenAllerGemeinden. Push, Hintergrund-Lauf und Gemeinde-Umschalter
+// lesen alle diese eine Funktion; tests/services/appIconMehrereGemeinden.test.js
+// haelt fest, dass sie dieselbe Zahl ergeben.
+const { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge } = require('./challengeNeuigkeiten');
+const { leitungSiehtChallengeSql } = require('./challengeLeitungSicht');
+const { gebundeneLeitungSiehtAntragSql } = require('./antragLeitungSicht');
+const { ladeMitgliedschaftenVieler } = require('./orgMitglieder');
+const { gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('./terminLeitungSicht');
 
 /**
  * Die Bausteine der Summe -- jeder als EINE Abfrage ueber viele
@@ -94,20 +104,17 @@ async function antragZaehlerProOrg(db, orgIds) {
 // stuende sonst eine Zahl am Icon, hinter der eine leere Liste wartet.
 // `IS NOT TRUE` statt `= FALSE`, weil die Spalte nullable ist -- Termine aus
 // dem Altbestand tragen dort NULL und sind damit nicht abgesagt.
+// Seit 27.09.2026 ueber die gemeinsame Bedingung terminWartetAufVerbuchungSql
+// (utils/terminLeitungSicht.js) -- dieselbe wie badge-counts und die
+// Verbuchen-Erinnerung um 09:00; Buchungen geloeschter Konten zaehlen seitdem
+// wie in der Eventliste nicht mehr mit.
 async function terminZaehlerProOrg(db, orgIds) {
   if (orgIds.length === 0) return [];
   return (await db.query(
     `SELECT e.organization_id, COUNT(*)::int AS c
        FROM events e
       WHERE e.organization_id = ANY($1::int[])
-        AND e.event_date < NOW()
-        AND e.cancelled IS NOT TRUE
-        AND EXISTS (
-          SELECT 1 FROM event_bookings eb
-           WHERE eb.event_id = e.id
-             AND eb.status = 'confirmed'
-             AND eb.attendance_status IS NULL
-        )
+        AND ${terminWartetAufVerbuchungSql()}
       GROUP BY e.organization_id`,
     [orgIds]
   )).rows;
@@ -117,6 +124,8 @@ async function terminZaehlerProOrg(db, orgIds) {
 // (Teamer-Ausnahme), Konfi-Antraege nur aus zugewiesenen Jahrgaengen --
 // exakt der Filter der Antragsliste und von badge-counts. ANY auf leerem
 // Array trifft nichts: ohne Zuweisung bleiben nur Teamer-Antraege.
+// Seit 27.09.2026 ueber die gemeinsame Regel (utils/antragLeitungSicht.js),
+// nach der auch die Empfaenger von "Neuer Antrag eingegangen" bestimmt werden.
 async function antragZaehlerGebunden(db, personen) {
   if (personen.length === 0) return [];
   return (await db.query(
@@ -127,14 +136,7 @@ async function antragZaehlerGebunden(db, personen) {
        LEFT JOIN activity_requests ar
               ON ar.activity_id = a.id
              AND ar.status = 'pending'
-             AND (
-               a.target_role = 'teamer'
-               OR EXISTS (
-                 SELECT 1 FROM konfi_profiles kp
-                  WHERE kp.user_id = ar.user_id
-                    AND kp.jahrgang_id = ANY(z.jahrgaenge::int[])
-               )
-             )
+             AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: 'z.jahrgaenge::int[]' })}
       GROUP BY z.user_id, z.user_type, z.organization_id`,
     [...spalten(personen), jahrgangsSpalte(personen)]
   )).rows;
@@ -145,6 +147,10 @@ async function antragZaehlerGebunden(db, personen) {
 // Jahrgang und Teamer-Termine zaehlen immer, jahrgangsgebundene nur aus
 // zugewiesenen Jahrgaengen. Abgesagte Termine bleiben hier ebenso aussen vor
 // wie in terminZaehlerProOrg -- beide Wege muessen dieselbe Zahl liefern.
+// Seit 27.09.2026 ueber die gemeinsame Regel (utils/terminLeitungSicht.js):
+// "Team gesucht" (teamer_needed) zaehlt nicht mehr als Sichtbarkeitsgrund --
+// die Liste hatte ihn am 08.09.2026 gestrichen, dieser Zaehler nicht
+// (Audit wer-bekommt-was, BF-11).
 async function terminZaehlerGebunden(db, personen) {
   if (personen.length === 0) return [];
   return (await db.query(
@@ -153,22 +159,8 @@ async function terminZaehlerGebunden(db, personen) {
               AS z(user_id, user_type, organization_id, jahrgaenge)
        LEFT JOIN events e
               ON e.organization_id = z.organization_id
-             AND e.event_date < NOW()
-             AND e.cancelled IS NOT TRUE
-             AND EXISTS (
-               SELECT 1 FROM event_bookings eb
-                WHERE eb.event_id = e.id
-                  AND eb.status = 'confirmed'
-                  AND eb.attendance_status IS NULL
-             )
-             AND (
-               e.teamer_only OR e.teamer_needed
-               OR NOT EXISTS (SELECT 1 FROM event_jahrgang_assignments eja
-                               WHERE eja.event_id = e.id)
-               OR EXISTS (SELECT 1 FROM event_jahrgang_assignments eja
-                           WHERE eja.event_id = e.id
-                             AND eja.jahrgang_id = ANY(z.jahrgaenge::int[]))
-             )
+             AND ${terminWartetAufVerbuchungSql()}
+             AND ${gebundeneLeitungSiehtTerminSql({ jahrgaenge: 'z.jahrgaenge::int[]' })}
       GROUP BY z.user_id, z.user_type, z.organization_id`,
     [...spalten(personen), jahrgangsSpalte(personen)]
   )).rows;
@@ -194,28 +186,24 @@ async function freigabeZaehlerProOrg(db, orgIds) {
 // 'nur_team' ist ausdruecklich eingeschlossen: Solche Runden haben per
 // Definition keine Jahrgangs-Zuordnung, sind aber fuer das ganze Team der
 // Organisation moderierbar (Migration 121, Befund H4).
+//
+// Seit 27.09.2026 ueber die gemeinsame Regel (utils/challengeLeitungSicht.js);
+// die Rolle geht je Person mit in die Abfrage (org_admin sieht alles).
 async function teamerFreigabeZaehler(db, teamer) {
   if (teamer.length === 0) return [];
   const jahrgangsListen = jahrgangsSpalte(teamer);
   return (await db.query(
     `SELECT z.user_id, z.user_type, z.organization_id, COUNT(cs.id)::int AS c
-       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[])
-              AS z(user_id, user_type, organization_id, jahrgaenge)
+       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[], $5::text[])
+              AS z(user_id, user_type, organization_id, jahrgaenge, rolle)
        LEFT JOIN challenges c
               ON c.organization_id = z.organization_id
        LEFT JOIN challenge_submissions cs
               ON cs.challenge_id = c.id
              AND cs.moderation_status = 'pending'
-             AND (
-               c.audience = 'nur_team'
-               OR EXISTS (
-                 SELECT 1 FROM challenge_jahrgang_assignments cja
-                  WHERE cja.challenge_id = c.id
-                    AND cja.jahrgang_id = ANY(z.jahrgaenge::int[])
-               )
-             )
+             AND ${leitungSiehtChallengeSql({ rolle: 'z.rolle', jahrgaenge: 'z.jahrgaenge::int[]' })}
       GROUP BY z.user_id, z.user_type, z.organization_id`,
-    [...spalten(teamer), jahrgangsListen]
+    [...spalten(teamer), jahrgangsListen, rollenSpalte(teamer)]
   )).rows;
 }
 
@@ -258,16 +246,32 @@ async function abzeichenZaehler(db, personen) {
 //
 // Der Index idx_notifications_unread (user_id, read_at) WHERE read_at IS
 // NULL traegt genau diese Abfrage.
+//
+// JEDE PERSON NUR EINMAL IN DIE ABFRAGE (27.09.2026, Befund am Geraet: "Postfach
+// 1 -- im Switcher zeigt er 3"). appIconSummenJeOrganisation bekommt die Person
+// einmal JE GEMEINDE. Weil hier nur ueber user_id/user_type verbunden wird,
+// traf jede Mitteilung jede dieser Zeilen und wurde so oft gezaehlt, wie die
+// Person Gemeinden mit derselben Rollenart hat -- als Leitung in drei
+// Gemeinden dreifach. Mit einer Gemeinde (und in appIconSummenFuerAlle, das je
+// Gemeinde einzeln aufgerufen wird) fiel es nie auf. Die Zuordnung zur
+// Gemeinde uebernimmt weiter n.organization_id.
+//
+// SEIT 27.09.2026 (Befund BF-12) je PERSON einmal, nicht je Person und
+// Rollenart: Wer in A Leitung und in B Teamer:in ist, stand zweimal in der
+// Abfrage, jede Mitteilung kam zweimal zurueck. Welche Zeile zaehlt,
+// entschied bisher der Zufall, welcher Schluessel existierte; Mitteilungen
+// aus einer Gemeinde ausserhalb der Liste fielen ganz heraus. Die Zuordnung
+// macht jetzt summenBerechnen (postfachZiel) -- jede Mitteilung genau einmal.
 async function postfachZaehler(db, personen) {
   if (personen.length === 0) return [];
+  const ids = [...new Set(personen.map((p) => p.id))];
   return (await db.query(
-    `SELECT n.user_id, z.user_type, n.organization_id, COUNT(*)::int AS c
+    `SELECT n.user_id, n.organization_id, COUNT(*)::int AS c
        FROM notifications n
-       JOIN unnest($1::int[], $2::text[]) AS z(user_id, user_type)
-              ON z.user_id = n.user_id
-      WHERE n.read_at IS NULL
-      GROUP BY n.user_id, z.user_type, n.organization_id`,
-    [personen.map((p) => p.id), personen.map((p) => p.type)]
+      WHERE n.user_id = ANY($1::int[])
+        AND n.read_at IS NULL
+      GROUP BY n.user_id, n.organization_id`,
+    [ids]
   )).rows;
 }
 
@@ -285,6 +289,11 @@ function jahrgangsSpalte(personen) {
   return personen.map((p) =>
     `{${(p.assigned_jahrgaenge || []).filter((j) => j.can_view).map((j) => j.id).join(',')}}`
   );
+}
+
+/** Die Rolle je Person; Teamer:innen ohne role_name gelten als 'teamer'. */
+function rollenSpalte(personen) {
+  return personen.map((p) => p.role_name || (p.type === 'teamer' ? 'teamer' : 'admin'));
 }
 
 /** Schluessel der Zuordnung: id allein reicht nicht, der Typ gehoert dazu. */
@@ -310,12 +319,18 @@ function istLeitung(empfaenger) {
  * Teile werden nach Rolle gruppiert abgefragt, wer nicht dazugehoert, taucht
  * in der jeweiligen Abfrage gar nicht erst auf.
  *
+ * NUR FUER EINEN EINTRAG JE PERSON: Der Schluessel kennt die Gemeinde nicht.
+ * Push und Hintergrund-Lauf riefen diese Funktion bis 27.09.2026 je Gemeinde
+ * einmal und addierten -- mit der Rolle am Nutzerkonto fuer jede Gemeinde und
+ * dem Postfach in jeder Runde (Befund BF-12). Die Zahl am Symbol kommt seither
+ * aus appIconSummenAllerGemeinden.
+ *
  * @param {object} db          Pool oder Client
  * @param {Array<object>} empfaenger  je { id, type, organization_id, role_name?, assigned_jahrgaenge? }
  * @returns {Promise<Map<string, number>>}  Schluessel `${id}_${type}`, Wert nie negativ
  */
 async function appIconSummenFuerAlle(db, empfaenger) {
-  return summenBerechnen(db, empfaenger, (id, type) => schluessel(id, type));
+  return (await summenBerechnen(db, empfaenger, (id, type) => schluessel(id, type))).summen;
 }
 
 /**
@@ -338,7 +353,84 @@ async function appIconSummenFuerAlle(db, empfaenger) {
  * @returns {Promise<Map<string, number>>}  Schluessel `${id}_${type}_${organization_id}`
  */
 async function appIconSummenJeOrganisation(db, empfaenger) {
-  return summenBerechnen(db, empfaenger, (id, type, orgId) => `${schluessel(id, type)}_${orgId}`);
+  return (await summenBerechnen(db, empfaenger, (id, type, orgId) => `${schluessel(id, type)}_${orgId}`)).summen;
+}
+
+/**
+ * DIE Zahl am App-Symbol -- fuer eine oder viele Personen, ueber ALLE ihre
+ * Gemeinden (27.09.2026, Audit "Wer bekommt was", Befund BF-12, Frage F-09).
+ *
+ * Summe ueber alle Gemeinden der Person, je Gemeinde mit der Rolle und den
+ * Jahrgaengen, die sie DORT hat. Jede ungelesene Postfach-Mitteilung zaehlt
+ * genau einmal, bei ihrer Gemeinde (sonst bei der Stamm-Gemeinde, siehe
+ * postfachZiel in summenBerechnen).
+ *
+ * VORHER gab es drei Rechnungen fuer diese Zahl, und sie liefen auseinander:
+ * Push und Hintergrund-Lauf rechneten jede Gemeinde mit der Rolle am
+ * Nutzerkonto (wer zuhause Org-Admin und in B Teamer:in ist, bekam Bs Antraege
+ * mitgezaehlt, die er dort gar nicht sieht) und zaehlten das ganze Postfach in
+ * jeder Gemeinde-Runde erneut; der Gemeinde-Umschalter rechnete richtig; die
+ * offene App setzte nur die aktive Gemeinde. Gemessen im Audit (A11): Push 5,
+ * Umschalter 2 + 0, App 2.
+ *
+ * JETZT lesen alle dieselbe Stelle: der Push an eine Person und an viele
+ * (pushService.berechneBadgesFuerAlle), der Hintergrund-Lauf
+ * (backgroundService.zaehlerUndAbzeichenLauf) und der Gemeinde-Umschalter
+ * (GET /notifications/badge-counts/je-organisation), dessen Summe die offene
+ * App bei mehreren Gemeinden aufs Symbol setzt (BadgeContext).
+ *
+ * Kosten: zwei Abfragen fuer die Zugehoerigkeit (ladeMitgliedschaftenVieler)
+ * und EINE Zaehlrunde ueber alle Personen und Gemeinden zusammen -- nicht eine
+ * je Gemeinde und nicht eine je Person.
+ *
+ * Fuer Personen mit einer Gemeinde ist das genau berechneAppIconSumme mit
+ * ihrem einen Eintrag.
+ *
+ * @param {object} db
+ * @param {Array<number>} userIds
+ * @returns {Promise<Map<number, {summe:number, jeOrganisation:Map<number, number>,
+ *   stamm_organization_id:number|null}>>}
+ *   Je Person (Schluessel: id als Zahl) die Summe, die Aufteilung je Gemeinde
+ *   (alle aktiven Gemeinden, auch mit 0) und die Stamm-Gemeinde. Geloeschte
+ *   oder unbekannte Konten fehlen; wer keiner aktiven Gemeinde angehoert, hat
+ *   die Summe 0.
+ */
+async function appIconSummenAllerGemeinden(db, userIds) {
+  const jePerson = await ladeMitgliedschaftenVieler(db, userIds);
+
+  const empfaenger = [];
+  for (const [userId, { mitgliedschaften }] of jePerson) {
+    for (const m of mitgliedschaften) {
+      empfaenger.push({
+        id: userId,
+        type: m.type,
+        role_name: m.role_name,
+        organization_id: m.organization_id,
+        assigned_jahrgaenge: m.assigned_jahrgaenge
+      });
+    }
+  }
+  const { summen, alteApps } = await summenBerechnen(
+    db, empfaenger, (id, type, orgId) => `${schluessel(id, type)}_${orgId}`
+  );
+
+  const ergebnis = new Map();
+  for (const [userId, { mitgliedschaften, stamm_organization_id }] of jePerson) {
+    const jeOrganisation = new Map();
+    let summe = 0;
+    let summeAlteApps = 0;
+    for (const m of mitgliedschaften) {
+      const k = `${schluessel(userId, m.type)}_${m.organization_id}`;
+      const wert = summen.get(k) || 0;
+      jeOrganisation.set(m.organization_id, wert);
+      summe += wert;
+      summeAlteApps += alteApps.get(k) || 0;
+    }
+    // summeAlteApps: die Zahl fuer Geraete der Store-Apps 2.2.x (ohne
+    // Postfach und Challenge-Neuigkeiten, siehe summenBerechnen).
+    ergebnis.set(userId, { summe, summeAlteApps, jeOrganisation, stamm_organization_id });
+  }
+  return ergebnis;
 }
 
 // Der gemeinsame Rechenkern. `schluesselVon(id, type, organization_id)`
@@ -347,7 +439,7 @@ async function appIconSummenJeOrganisation(db, empfaenger) {
 // Faellen dieselben; es gibt absichtlich keine zweite Fassung davon.
 async function summenBerechnen(db, empfaenger, schluesselVon) {
   const summen = new Map();
-  if (!empfaenger || empfaenger.length === 0) return summen;
+  if (!empfaenger || empfaenger.length === 0) return { summen, alteApps: new Map() };
 
   for (const p of empfaenger) summen.set(schluesselVon(p.id, p.type, p.organization_id), 0);
 
@@ -371,11 +463,11 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   const mitAbzeichen = empfaenger.filter((p) => p.type === 'konfi' || p.type === 'teamer');
   const leitungsOrgs = [...new Set(leitungOrgWeit.map((p) => p.organization_id))];
 
-  // Challenge-Neuigkeiten gibt es nur fuer Konfis (24.09.2026): Die Leitung
-  // hat am selben Reiter ihre Freigaben, beides in einer Zahl waere unlesbar.
+  // Challenge-Neuigkeiten: Konfis mit ihrer Regel (24.09.2026), Leitung und
+  // Team seit 27.09.2026 mit der schlankeren aus challengeNeuigkeiten.js.
   const konfis = empfaenger.filter((p) => p.type === 'konfi');
 
-  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, postfach] = await Promise.all([
+  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, postfach, leitungsNeuigkeiten] = await Promise.all([
     chatZaehler(db, empfaenger),
     antragZaehlerProOrg(db, leitungsOrgs),
     terminZaehlerProOrg(db, leitungsOrgs),
@@ -390,23 +482,58 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
     // kommen je Challenge, hier werden sie je Person aufsummiert.
     challengeNeuigkeitenJeChallenge(db, konfis),
     // Postfach fuer ALLE Rollen, alle ungelesenen.
-    postfachZaehler(db, empfaenger)
+    postfachZaehler(db, empfaenger),
+    // Challenge-Neuigkeiten fuer Leitung und Team (27.09.2026) -- dieselbe
+    // SQL-Fassung wie badge-counts.challengeUpdates fuer diese Rollen.
+    challengeNeuigkeitenLeitungJeChallenge(db, [...leitung, ...teamer])
   ]);
 
-  const addiere = (userId, userType, orgId, wert) => {
+  // Zwei Summen in einem Durchgang (27.09.2026, Kompatibilitaet mit den
+  // Store-Apps 2.2.x): `summen` ist die volle Zahl, `alteApps` die Rechnung
+  // von 2.2.0 -- OHNE Postfach und OHNE Challenge-Neuigkeiten. Beides kam
+  // nach 2.2.0 (18.09.2026) dazu, und die alte App kann es nicht abbauen:
+  // Sie hat kein Postfach und ruft nie mark-read fuer Challenges auf. Welche
+  // Summe ein Geraet bekommt, entscheidet der Versand je Push-Token
+  // (pushService.badgeFuerGeraet). Keine zusaetzliche Abfrage.
+  const alteApps = new Map([...summen.keys()].map((k) => [k, 0]));
+  const addiere = (userId, userType, orgId, wert, auchAlteApps = true) => {
     const k = schluesselVon(userId, userType, orgId);
     if (summen.has(k)) summen.set(k, summen.get(k) + (wert || 0));
+    if (auchAlteApps && alteApps.has(k)) alteApps.set(k, alteApps.get(k) + (wert || 0));
   };
+
+  // Wohin eine Postfach-Zeile gehoert (27.09.2026, Befund BF-12): zum Eintrag
+  // der Person fuer die Gemeinde der Mitteilung. Gibt es den nicht -- die
+  // Person gehoert der Gemeinde nicht (mehr) an, oder sie ist gesperrt --,
+  // zum ERSTEN Eintrag der Person; bei appIconSummenAllerGemeinden ist das
+  // die Stamm-Gemeinde (ladeMitgliedschaftenVieler sortiert sie nach vorn).
+  // Das Postfach zeigt solche Mitteilungen an der Glocke; sie zaehlen am
+  // Symbol deshalb mit, genau einmal, und stehen im Gemeinde-Umschalter dort,
+  // wo die Person zuhause ist -- dessen Summe bleibt so die Zahl am Symbol.
+  const eintragJeGemeinde = new Map();
+  const ersterEintrag = new Map();
+  for (const p of empfaenger) {
+    const k = `${p.id}_${p.organization_id}`;
+    if (!eintragJeGemeinde.has(k)) eintragJeGemeinde.set(k, p);
+    if (!ersterEintrag.has(String(p.id))) ersterEintrag.set(String(p.id), p);
+  }
+  const postfachZiel = (userId, orgId) =>
+    eintragJeGemeinde.get(`${userId}_${orgId}`) || ersterEintrag.get(String(userId));
 
   for (const r of chat) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneFreigaben) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneAntraege) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneTermine) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of abzeichen) addiere(r.user_id, r.user_type, r.organization_id, r.c);
-  for (const r of postfach) addiere(r.user_id, r.user_type, r.organization_id, r.c);
-  for (const r of neuigkeiten) {
-    addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c);
+  // Postfach und Challenge-Neuigkeiten nur in die volle Summe (siehe oben).
+  for (const r of postfach) {
+    const ziel = postfachZiel(r.user_id, r.organization_id);
+    if (ziel) addiere(ziel.id, ziel.type, ziel.organization_id, r.c, false);
   }
+  for (const r of neuigkeiten) {
+    addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c, false);
+  }
+  for (const r of leitungsNeuigkeiten) addiere(r.user_id, r.user_type, r.organization_id, r.c, false);
 
   // Die org-weiten Zahlen auf jede ORG-WEITE Leitung dieser Organisation
   // verteilen (gebundene Admins haben ihre Zahlen oben schon bekommen).
@@ -417,7 +544,8 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   for (const p of leitungOrgWeit) addiere(p.id, p.type, p.organization_id, proOrg.get(p.organization_id) || 0);
 
   for (const [k, wert] of summen) summen.set(k, Math.max(0, wert));
-  return summen;
+  for (const [k, wert] of alteApps) alteApps.set(k, Math.max(0, wert));
+  return { summen, alteApps };
 }
 
 /**
@@ -457,18 +585,4 @@ async function berechneAppIconSumme(db, empfaenger) {
   return summen.get(schluessel(empfaenger.id, empfaenger.type)) || 0;
 }
 
-/**
- * Wie oben, aber fehlertolerant: Schlaegt die Zaehlung fehl, kommt null
- * zurueck statt eines Fehlers. Der Aufrufer laesst den Badge dann weg --
- * eine Push-Nachricht darf nicht daran scheitern, dass eine Zahl fehlt.
- */
-async function appIconSummeOderNull(db, empfaenger) {
-  try {
-    return await berechneAppIconSumme(db, empfaenger);
-  } catch (err) {
-    console.error('App-Icon-Summe konnte nicht berechnet werden:', err);
-    return null;
-  }
-}
-
-module.exports = { berechneAppIconSumme, appIconSummeOderNull, appIconSummenFuerAlle, appIconSummenJeOrganisation };
+module.exports = { berechneAppIconSumme, appIconSummenFuerAlle, appIconSummenJeOrganisation, appIconSummenAllerGemeinden };

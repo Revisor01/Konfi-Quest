@@ -12,14 +12,15 @@ import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 import { removeDeliveredById, removeAllDelivered, benachrichtigungskanaeleAnlegen } from '../services/notifications';
 import { writeQueue } from '../services/writeQueue';
 import { offlineCache } from '../services/offlineCache';
+import { clearMediaCache, medienCacheKontoPruefen } from '../services/mediaCache';
 import { logout as performLogout } from '../services/auth';
 import { clearAuth } from '../services/tokenStore';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
 import { BaseUser } from '../types/user';
-import { setAnalyticsRole, trackFehler, trackSitzungsstart, istGueltigeArt, istGueltigerOrt } from '../services/analytics';
+import { setAnalyticsRole, trackFehler, trackSitzungsstart, istGueltigeArt, istGueltigerOrt, fehlerStelle } from '../services/analytics';
 import { diagnoseMerkmaleSetzen, wegmarke } from '../services/absturzdiagnose';
 import { ermittleAppVersion } from '../utils/appVersion';
-import { fehlerArt } from '../utils/fehler';
+import { fehlerArt, fehlerFuersProtokoll, herkunftDesFehlertexts } from '../utils/fehler';
 import { buildPushTargetUrl, resolveOrgForPush, pushZielMelden, PushUserType } from '../utils/pushNavigation';
 import { deepLinksAnschliessen } from '../utils/deepLinks';
 
@@ -291,7 +292,9 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
     fcmTokenLastSent = now; // Timestamp setzen
     await setPushTokenTimestamp(now); // Bug 3: Timestamp nach jedem Send persistieren
   } catch (err) {
-    console.error('Fehler beim Senden des FCM-Tokens:', err);
+    // Nur Status, Code und Servertext: der axios-Fehler traegt den Push-Token
+    // im Koerper und das Zugangs-Token im Header (Audit Grundgeruest BF-08).
+    console.error('Fehler beim Senden des FCM-Tokens:', fehlerFuersProtokoll(err));
     // Retry mit steigendem Abstand (5s, 15s, 30s), danach bei naechstem Online-Wechsel
     const retryDelays = [5000, 15000, 30000];
     if (retryCount < retryDelays.length) {
@@ -360,9 +363,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isOnline, setIsOnline] = useState<boolean>(true);
 
   // Jede Fehlermeldung, die tatsaechlich jemand zu sehen bekommt, fliesst in
-  // die anonyme Messung ein — DAS beantwortet "wo klemmt es". Uebertragen wird
-  // nur eine gekuerzte, entschaerfte Fassung des Textes: keine Namen, keine
-  // IDs, keine Freitexte aus Beitraegen (Zahlen werden ersetzt).
+  // die anonyme Messung ein — DAS beantwortet "wo klemmt es". Den Text selbst
+  // gibt es dort nur, wenn er ein Text der App ist (Positivliste in
+  // utils/bekannteFehlertexte.ts, Ziffern zu #). Ein Text vom Server kann
+  // Namen, Titel oder Dateinamen tragen und wird ersetzt: durch den
+  // Ersatztext, den die Aufrufstelle an `fehlerText` gegeben hat, sonst durch
+  // `andere-meldung` (Befund B1, docs/messung/umami.md, `fehlerStelle`).
   //
   // Der zweite Parameter ist rein diagnostisch und beruehrt die Anzeige NICHT:
   //   `ort`    — ein im Code fest vergebenes Kuerzel. Loest das Problem, dass
@@ -376,20 +382,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setError(meldung);
     if (!meldung) return;
 
-    const anonym = meldung
-      .replace(/\d+/g, '#')
-      .slice(0, 80);
+    // Kam der Text gerade aus `fehlerText(err, 'Ersatz')` statt des
+    // Ersatztextes? Dann steht der Ersatztext fuer die Stelle, und die Art
+    // kommt aus dem Fehlerobjekt — auch wenn die Aufrufstelle keine Diagnose
+    // mitgibt (das sind die meisten).
+    const herkunft = herkunftDesFehlertexts(meldung);
+    const stelle = fehlerStelle(meldung, herkunft?.ersatz);
 
     // Beide Zusatzangaben werden gegen ihr Muster geprueft, bevor sie das
     // Geraet verlassen. Was nicht passt, faellt weg — lieber ein Eintrag ohne
     // Ursache als einer mit einem durchgereichten Dateinamen.
-    const art = diagnose && 'fehler' in diagnose ? fehlerArt(diagnose.fehler) : undefined;
+    const art = diagnose && 'fehler' in diagnose ? fehlerArt(diagnose.fehler) : herkunft?.art;
     const ort = diagnose?.ort;
 
     const gepruefteArt = art && istGueltigeArt(art) ? art : undefined;
     const geprueftesOrt = ort && istGueltigerOrt(ort) ? ort : undefined;
 
-    trackFehler(anonym, gepruefteArt, geprueftesOrt);
+    trackFehler(stelle, gepruefteArt, geprueftesOrt);
 
     // Dieselbe entschaerfte Angabe zusaetzlich als WEGMARKE ins
     // Absturzprotokoll. Bewusst `wegmarke` und NICHT `fehlerMelden`:
@@ -403,8 +412,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // eine andere Geschichte als einer aus dem Stand.
     //
     // Es geht derselbe gepruefte Inhalt raus wie an die Nutzungsmessung —
-    // keine Zeichenkette mehr, kein Fehlerobjekt.
-    void wegmarke(`fehler ${geprueftesOrt ?? 'ohne-ort'} ${gepruefteArt ?? 'ohne-art'}: ${anonym}`);
+    // keine weitere Zeichenkette, kein Fehlerobjekt, kein Server-Text. Das
+    // Absturzprotokoll ist Firebase Crashlytics (Google): Die Wegmarken
+    // stehen im naechsten Absturz- oder Fehlerbericht des Geraets.
+    void wegmarke(`fehler ${geprueftesOrt ?? 'ohne-ort'} ${gepruefteArt ?? 'ohne-art'}: ${stelle}`);
   }, []);
 
   // Rolle für die anonyme Nutzungsmessung mitfuehren (konfi/teamer/admin) —
@@ -418,6 +429,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Rolle, sonst wuerde der Logout als weiterer Besuch gezählt.
     if (user?.role_name) trackSitzungsstart();
   }, [user?.role_name]);
+
+  // Medien-Cache ans angemeldete Konto binden (27.09.2026): Meldet sich ein
+  // anderes Konto an als das, dessen Chat- und Challenge-Medien auf dem Gerät
+  // liegen, wird der Cache geleert. Das Abmelden leert ihn ohnehin; hier geht
+  // es um die Wege daran vorbei (abgelaufene Sitzung, Face ID, Fehlerseite).
+  // Hier und nicht beim Login, weil JEDER Weg zu einem Konto über diesen
+  // Zustand läuft.
+  //
+  // Dasselbe für den gespeicherten Stand und die Warteschlange (Audit
+  // Grundgerüst BF-04): Beide gehören zum Konto (offlineCache.ts,
+  // writeQueue.ts, kontoPruefen). Lesen und Senden prüfen das selbst; hier
+  // verschwindet der Stand anderer Konten zusätzlich vom Gerät.
+  useEffect(() => {
+    if (!user?.id) return;
+    void medienCacheKontoPruefen(user.id).catch(() => { /* best-effort */ });
+    // Über Promise.resolve().then: auch ein synchroner Fehler bleibt hier
+    // best-effort und hält den übrigen Effekt nicht auf.
+    void Promise.resolve().then(() => offlineCache.fremdeKontenEntfernen()).catch(() => { /* best-effort */ });
+    void Promise.resolve().then(() => writeQueue.kontoPruefen()).catch(() => { /* best-effort */ });
+  }, [user?.id]);
 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
@@ -614,12 +645,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [loadOrganizations, user?.id]);
 
   // Sicherheitsnetz: Wenn ein Request mit aktiver Org ein 403 "Kein Zugriff"
-  // bekommt (api.ts setzt dann die aktive Org auf null), hier die App auf die
-  // Primaer-Org zuruecksetzen und alle Views remounten.
+  // bekommt (api.ts setzt dann die aktive Org auf null und holt ein Token
+  // OHNE Org-Claim), hier die App auf die Primaer-Org zuruecksetzen, den
+  // Socket mit dem neuen Token neu aufbauen und alle Views remounten.
   useEffect(() => {
     const handler = async () => {
       setActiveOrgIdState(null);
       try { await offlineCache.clearAll(); } catch { /* best-effort */ }
+      // Die Medien der entzogenen Gemeinde gehen mit (27.09.2026): Chat-
+      // Anhänge und Challenge-Dateien, die die Person dort sehen durfte.
+      try { await clearMediaCache(); } catch { /* best-effort */ }
+      // Wie beim bewussten Wechsel (switchOrg, Schritt 4b): Ohne Neuaufbau
+      // liefe der Socket mit dem Token der entzogenen Gemeinde weiter und
+      // der Server lehnte jeden Reconnect mit "Kein Zugriff auf diese
+      // Organisation" ab (Audit 26.09.2026, Grundgeruest BF-05).
+      try {
+        const frischesToken = getToken();
+        if (frischesToken) reconnectWithToken(frischesToken);
+      } catch (socketErr) {
+        console.error('Socket-Neuaufbau nach Gemeinde-Rueckfall fehlgeschlagen:', socketErr);
+      }
       setOrgVersion(v => v + 1);
     };
     window.addEventListener('auth:org-fallback', handler);
@@ -682,6 +727,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // 4. ALLE Offline-Caches + Schreib-Queue leeren (keine Daten der alten Org)
       await offlineCache.clearAll();
+      // Auch den Medien-Cache (27.09.2026) — die Chat- und Challenge-Dateien
+      // der alten Gemeinde. Best-effort: Ein Dateisystemfehler darf den
+      // bereits gelungenen Wechsel nicht als gescheitert melden.
+      try { await clearMediaCache(); } catch { /* best-effort */ }
       await writeQueue.clear();
 
       // Konnte der Flush oben nicht alles zustellen, ist das Verwerfen hier
@@ -771,6 +820,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Logout-Fehler (lokaler Logout wird erzwungen):', err);
       try { await clearAuth(); } catch { /* ignore */ }
       try { await offlineCache.clearAll(); } catch { /* ignore */ }
+      try { await clearMediaCache(); } catch { /* ignore */ }
     }
     /*
      * Push-Sperren raeumen (23.09.2026, Fall Malte, Android).
@@ -1071,7 +1121,7 @@ useEffect(() => {
             // App weiter richtig zaehlten).
             //
             // Deshalb danach ausdruecklich neu setzen. Der Effekt in
-            // BadgeContext haengt an [totalBadgeCount] und feuert NICHT, wenn
+            // BadgeContext haengt an [appSymbolZahl] und feuert NICHT, wenn
             // sich der Wert nicht geaendert hat -- das Icon bliebe sonst leer,
             // bis zufaellig eine neue Zahl hereinkommt.
             removeAllDelivered().finally(() => {

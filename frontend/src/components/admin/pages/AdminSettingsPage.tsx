@@ -46,11 +46,11 @@ import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral über useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
 import SpiritFooter from '../../shared/SpiritFooter';
-import EinladungenKarte from '../../shared/EinladungenKarte';
 import PushAuswahlEintrag from '../../shared/PushAuswahl';
 import { useIonRouter } from '@ionic/react';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
+import { tastaturKlick } from '../../../utils/tastatur';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 const AdminSettingsPage: React.FC = () => {
@@ -158,7 +158,7 @@ const AdminSettingsPage: React.FC = () => {
       title: 'Material', icon: ICON_DATEI_GEFUELLT, color: 'var(--app-color-material)',
       paragraphs: [
         'Im Material-Bereich legst du Unterlagen und Dokumente fürs Team ab.',
-        'Material kann allgemein sein oder direkt einem Event zugeordnet werden — so finden alle die passenden Dokumente zum richtigen Termin.',
+        'Material kann allgemein sein oder direkt einem Event zugeordnet werden — so finden alle die passenden Dokumente zum richtigen Event.',
         'Unter Sichtbarkeit legst du fest, für wen es gedacht ist: nach Jahrgang — dann sieht es nur das Team dieses Jahrgangs — oder ausdrücklich für alle, dann sieht es das ganze Team der Gemeinde. Freigeben und zurückziehen kann nur der Org-Admin.',
         'Wichtig: Material ist nur für das Team sichtbar, nicht für die Konfis. Für alle heißt also immer: das ganze Team.',
       ],
@@ -166,7 +166,7 @@ const AdminSettingsPage: React.FC = () => {
     wrapped: {
       title: 'Jahresrückblick', icon: ICON_FUNKELN, color: 'var(--app-color-wrapped)',
       paragraphs: [
-        'Der Jahresrückblick zeigt jeder Konfi und jeder Teamer:in am Ende eines Abschnitts, was sie erlebt hat — Termine, Punkte, Abzeichen, ihre Schwerpunkte und die Momente aus den Challenges.',
+        'Der Jahresrückblick zeigt jeder Konfi und jeder Teamer:in am Ende eines Abschnitts, was sie erlebt hat — Events, Punkte, Badges, ihre Schwerpunkte und die Momente aus den Challenges.',
         'Ein Jahrgang läuft über mehrere Jahre. Deshalb kannst du mehrere Ausgaben anlegen und jeder einen eigenen Namen geben: „Dein erstes Jahr", „Zwischenstand", „Dein Abschluss". Frühere Ausgaben bleiben erhalten, wenn eine neue dazukommt.',
         'Jede Ausgabe wird beim Erstellen sofort freigegeben, und alle Betroffenen bekommen eine Mitteilung. Einzelne Ausgaben lassen sich gezielt löschen, ohne die anderen anzurühren.',
         'Als Admin verwaltest du die Rückblicke deiner eigenen Jahrgänge. Die Leitung sieht alle Jahrgänge und verwaltet zusätzlich die Rückblicke des Teams.',
@@ -235,7 +235,7 @@ const AdminSettingsPage: React.FC = () => {
           <IonCard className="app-card">
             <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--users"
                 onClick={() => router.push('/admin/profile')}
               >
@@ -254,12 +254,15 @@ const AdminSettingsPage: React.FC = () => {
 
               {/* Auswahl, welche Push-Gruppen aufs Handy kommen -- gemeinsame
                   Komponente aller drei Rollen; fordert die Berechtigung des
-                  Geraets weiterhin an, solange sie fehlt. */}
-              <EinladungenKarte variante="users" />
+                  Geraets weiterhin an, solange sie fehlt.
+                  Die Karte mit offenen Gemeinde-Einladungen steht NICHT hier,
+                  sondern im Profil (AdminProfilePage) -- wie bei Konfis und
+                  Team, und dorthin fuehren Push und Postfach (Simon, 26.09.2026:
+                  "Er sollte wohl bei allen immer im Profil stehen"). */}
               <PushAuswahlEintrag variante="users" presentingRef={pageRef} />
 
               {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--users"
                 onClick={() => setShowOnboarding(true)}
               >
@@ -292,12 +295,12 @@ const AdminSettingsPage: React.FC = () => {
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--users"
                   onClick={() => router.push('/admin/users')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                     <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
                     </div>
@@ -306,19 +309,19 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Admins, Team und Rollen verwalten</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Benutzer:innen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.users); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Benutzer:innen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.users); }} style={{ '--color': 'var(--app-text-users)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
                 </div>
 
                 {user?.role_name === 'org_admin' && (
-                  <div
+                  <div role="presentation"
                     className="app-list-item app-list-item--users"
                     onClick={() => router.push('/admin/settings/dashboard')}
                   >
                     <div className="app-list-item__row">
-                      <div className="app-list-item__main">
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                       <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                       <IonIcon icon={ICON_APPS} />
                       </div>
@@ -327,19 +330,19 @@ const AdminSettingsPage: React.FC = () => {
                       <div className="app-list-item__meta"><span className="app-list-item__meta-item">Sichtbare Bereiche für Konfis und Team</span></div>
                       </div>
                       </div>
-                      <IonButton fill="clear" aria-label="Info zum Dashboard" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-color-organizations)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                      <IonButton fill="clear" aria-label="Info zum Dashboard" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-text-organizations)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                       <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                       </IonButton>
                     </div>
                   </div>
                 )}
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--users"
                   onClick={() => presentInviteModal({ presentingElement: presentingElement })}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                     <IonIcon icon={ICON_QRCODE_GEFUELLT} />
                     </div>
@@ -348,7 +351,7 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">QR-Code für Selbstregistrierung</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Konfis einladen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.invite); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Konfis einladen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.invite); }} style={{ '--color': 'var(--app-text-users)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
@@ -375,12 +378,12 @@ const AdminSettingsPage: React.FC = () => {
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--activities"
                   onClick={() => router.push('/admin/activities')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
                     <IonIcon icon={ICON_AKTION_GEFUELLT} />
                     </div>
@@ -389,18 +392,18 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Aktivitäten und Punkte verwalten</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Aktivitäten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.activities); }} style={{ '--color': 'var(--app-color-activities)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Aktivitäten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.activities); }} style={{ '--color': 'var(--app-text-activities)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--badges"
                   onClick={() => router.push('/admin/badges')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
                     <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
                     </div>
@@ -409,18 +412,18 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Auszeichnungen und Erfolge verwalten</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Badges" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.badges); }} style={{ '--color': 'var(--app-color-badges)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Badges" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.badges); }} style={{ '--color': 'var(--app-text-badges)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--jahrgang"
                   onClick={() => router.push('/admin/settings/jahrgaenge')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
                     <IonIcon icon={ICON_JAHRGANG_GEFUELLT} />
                     </div>
@@ -432,7 +435,7 @@ const AdminSettingsPage: React.FC = () => {
                   <IonButton
                     fill="clear"
                     onClick={(e) => { e.stopPropagation(); openInfo(INFOS.jahrgaenge); }}
-                    style={{ '--color': 'var(--app-color-jahrgang)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}
+                    style={{ '--color': 'var(--app-text-jahrgang)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}
                     aria-label="Info zu Jahrgängen"
                   >
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
@@ -440,12 +443,12 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--categories"
                   onClick={() => router.push('/admin/settings/categories')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--categories">
                     <IonIcon icon={ICON_KATEGORIE_GEFUELLT} />
                     </div>
@@ -454,18 +457,18 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Kategorien für Aktivitäten und Events</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Kategorien" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.categories); }} style={{ '--color': 'var(--app-color-categories)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Kategorien" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.categories); }} style={{ '--color': 'var(--app-text-categories)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--level"
                   onClick={() => router.push('/admin/settings/levels')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
                     <IonIcon icon={ICON_POKAL_GEFUELLT} />
                     </div>
@@ -474,18 +477,18 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Punkte-Level und Belohnungen</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Level" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.levels); }} style={{ '--color': 'var(--app-color-level)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Level" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.levels); }} style={{ '--color': 'var(--app-text-level)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--material"
                   onClick={() => router.push('/admin/material')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--material">
                     <IonIcon icon={ICON_DATEI_GEFUELLT} />
                     </div>
@@ -494,18 +497,18 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Materialien und Dokumente verwalten</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Material" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.material); }} style={{ '--color': 'var(--app-color-material)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Material" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.material); }} style={{ '--color': 'var(--app-text-material)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--wrapped"
                   onClick={() => router.push('/admin/wrapped')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                       <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'var(--app-color-wrapped)' }}>
                         <IonIcon icon={ICON_FUNKELN} style={{ color: 'white' }} />
                       </div>
@@ -514,18 +517,18 @@ const AdminSettingsPage: React.FC = () => {
                         <div className="app-list-item__meta"><span className="app-list-item__meta-item">Ausgaben anlegen, benennen und freigeben</span></div>
                       </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-color-wrapped)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-text-wrapped)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                       <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
                 </div>
 
-                <div
+                <div role="presentation"
                   className="app-list-item app-list-item--teamer"
                   onClick={() => router.push('/admin/settings/certificates')}
                 >
                   <div className="app-list-item__row">
-                    <div className="app-list-item__main">
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer">
                     <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
                     </div>
@@ -534,7 +537,7 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Zertifikate fürs Team verwalten</span></div>
                     </div>
                     </div>
-                    <IonButton fill="clear" aria-label="Info zu Zertifikaten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.certificates); }} style={{ '--color': 'var(--app-color-teamer)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                    <IonButton fill="clear" aria-label="Info zu Zertifikaten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.certificates); }} style={{ '--color': 'var(--app-text-teamer)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>

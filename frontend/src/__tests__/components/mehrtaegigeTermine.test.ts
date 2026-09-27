@@ -19,15 +19,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { zeitraumText } from '../../components/shared/eventFormatting';
+import { datumLang, uhrzeit } from '../../utils/dateUtils';
 
-// Wie die Anzeige selbst formatiert — so ist der Test unabhaengig davon,
-// in welcher Zeitzone er laeuft.
-const zeit = (iso: string) =>
-  new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-const tagLang = (iso: string) =>
-  new Date(iso).toLocaleDateString('de-DE', {
-    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
-  });
+// Mit den Formaten der Anzeige selbst (utils/dateUtils.ts, UI-Audit BF-14) —
+// so ist der Test unabhaengig davon, in welcher Zeitzone er laeuft.
+const zeit = (iso: string) => uhrzeit(iso);
+const tagLang = (iso: string) => datumLang(iso);
 
 describe('Zeitraum eines Termins', () => {
   it('nennt bei einem Tagestermin nur die Uhrzeiten', () => {

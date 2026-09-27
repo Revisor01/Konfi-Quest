@@ -26,7 +26,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../../middleware/validation');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
-const { isRegistrationOpenForKonfis, zaehleBuchungen, rueckeNach, freiePlaetze, meldeAlleAbBeiAbsage, hebeAbsageAbmeldungenAuf, ABSAGE_OHNE_GRUND } = require('../../utils/bookingUtils');
+const { isRegistrationOpenForKonfis, zaehleBuchungen, rueckeNach, freiePlaetze, meldeAlleAbBeiAbsage, hebeAbsageAbmeldungenAuf, ABSAGE_OHNE_GRUND, ladeBetroffeneEinesAusfalls } = require('../../utils/bookingUtils');
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { syncEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
@@ -48,7 +48,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     body('bring_items').optional({ nullable: true }).isString().withMessage('bring_items muss ein String sein'),
     // 0 = unbegrenzt, darum min: 0 und NICHT notEmpty (das wuerde die 0 verwerfen).
     body('max_participants').optional({ nullable: true }).isInt({ min: 0 })
-      .withMessage('Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder groesser sein'),
+      .withMessage('Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder größer sein'),
     handleValidationErrors
   ];
 
@@ -59,7 +59,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     body('is_konfirmation').optional().isBoolean().withMessage('is_konfirmation muss ein Boolean sein'),
     body('bring_items').optional({ nullable: true }).isString().withMessage('bring_items muss ein String sein'),
     body('max_participants').optional({ nullable: true }).isInt({ min: 0 })
-      .withMessage('Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder groesser sein'),
+      .withMessage('Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder größer sein'),
     handleValidationErrors
   ];
 
@@ -97,7 +97,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // bestehen, das ist der gewollte Fall "ganze Gemeinde".
     if (mandatory && (!Array.isArray(jahrgang_ids) || jahrgang_ids.length === 0)) {
       return res.status(400).json({
-        error: 'Ein Pflichttermin braucht mindestens einen Jahrgang — sonst wird niemand automatisch angemeldet.',
+        error: 'Ein Pflicht-Event braucht mindestens einen Jahrgang — sonst wird niemand automatisch angemeldet.',
         error_code: 'pflicht_ohne_jahrgang'
       });
     }
@@ -365,7 +365,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // bestehen, das ist der gewollte Fall "ganze Gemeinde".
     if (mandatory && (!Array.isArray(jahrgang_ids) || jahrgang_ids.length === 0)) {
       return res.status(400).json({
-        error: 'Ein Pflichttermin braucht mindestens einen Jahrgang — sonst wird niemand automatisch angemeldet.',
+        error: 'Ein Pflicht-Event braucht mindestens einen Jahrgang — sonst wird niemand automatisch angemeldet.',
         error_code: 'pflicht_ohne_jahrgang'
       });
     }
@@ -448,7 +448,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
 
       if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else if (!zielJahrgangErlaubt) {
         await client.query('ROLLBACK');
         fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Jahrgang' } };
@@ -788,7 +788,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // Vor dem try: die Nacharbeit hinter dem finally braucht diese Werte.
     let event = null;
     let fruehAntwort = null;
-    let bookedKonfiUserIds = [];
+    let betroffeneUserIds = [];
     let awardedPoints = [];
     try {
       await client.query('BEGIN');
@@ -808,7 +808,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
       } else if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else {
 
       // Events MIT Anmeldungen duerfen gelöscht werden — aber nur ausdruecklich
@@ -856,27 +856,17 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
 
       if (!fruehAntwort) {
 
-      // Push an angemeldete Konfis wenn abgesagtes Event gelöscht wird
-      // IMMER einsammeln (nicht nur bei abgesagten Events): wer angemeldet war,
-      // muss erfahren, dass der Termin weg ist — egal ob vorher abgesagt oder
-      // direkt gelöscht.
+      // Wer erfaehrt, dass der Termin weg ist: DIESELBEN wie bei einer
+      // Absage (utils/bookingUtils.js, ladeBetroffeneEinesAusfalls) --
+      // Konfis, Team und Leitung, bestaetigt, wartend oder einzeln
+      // abgemeldet ('excused', Migration 153). Vor dem Loeschen der
+      // Buchungen eingesammelt; gemeldet wird unten nur, wenn der Termin
+      // nicht schon abgesagt war.
       //
-      // 'excused' MUSS DABEI SEIN (Migration 153, 15.09.2026). Genau hier
-      // haette der neue Status sonst eine Luecke gerissen: Eine Absage meldet
-      // alle ab, ihre Buchungen stehen danach auf 'excused'. Wird der
-      // abgesagte Termin spaeter geloescht -- der haeufigste Fall, denn
-      // geloescht wird meist, was schon abgesagt ist --, waere die Liste der
-      // zu Benachrichtigenden LEER gewesen und niemand haette erfahren, dass
-      // der Termin weg ist. Der Satz oben ("wer angemeldet war") gilt
-      // weiterhin; er umfasst jetzt einen Status mehr.
-      const { rows: bookedKonfis } = await client.query(
-        `SELECT eb.user_id FROM event_bookings eb
-         JOIN users u ON eb.user_id = u.id
-         JOIN roles r ON u.role_id = r.id
-         WHERE eb.event_id = $1 AND r.name = 'konfi' AND eb.status IN ('confirmed', 'waitlist', 'excused') AND u.deleted_at IS NULL`,
-        [id]
-      );
-      bookedKonfiUserIds = bookedKonfis.map(b => b.user_id);
+      // BIS 27.09.2026 nur Buchungen mit der Stamm-Rolle 'konfi' (Audit
+      // "Wer bekommt was", BF-06): Gebuchte Teamer:innen erfuhren nie, dass
+      // ein Termin geloescht wurde -- bei "Nur Team"-Terminen also niemand.
+      betroffeneUserIds = await ladeBetroffeneEinesAusfalls(client, id);
 
       // Get event chat rooms and their files before deletion
       const { rows: eventChatRooms } = await client.query("SELECT id FROM chat_rooms WHERE event_id = $1", [id]);
@@ -1009,9 +999,9 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       // OHNE KENNUNG (letzter Parameter bleibt weg): Der Termin ist in
       // derselben Transaktion geloescht worden. Ein Sprung dorthin fuehrte
       // ins Leere — die Meldung bleibt auf der Terminliste.
-      if (bookedKonfiUserIds.length > 0 && !event.cancelled) {
+      if (betroffeneUserIds.length > 0 && !event.cancelled) {
         const eventDateFormatted = formatDatum(event.event_date);
-        try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+        try { await PushService.sendEventCancellationToKonfis(db, betroffeneUserIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
       }
 
       // Live Update: Notify all konfis and admins about the event deletion
@@ -1053,7 +1043,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
       } else if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else if (existingChat) {
         await client.query('ROLLBACK');
         fruehAntwort = { status: 409, body: { error: 'Chat existiert bereits für dieses Event' } };
@@ -1073,6 +1063,9 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       // beides nicht auseinanderentwickelt. Vorher standen hier nur die
       // bestaetigten, und Wartende blieben aussen vor, obwohl sie beim Anmelden
       // hineinkommen (24.08.2026 vereinheitlicht).
+      // Seit 27.09.2026 heisst "gebucht" hier wieder "bestaetigt" -- fuer
+      // beide Wege zugleich (Simon, F-11: "Wartende erst beim Nachrücken;
+      // Abgemeldete nicht", siehe utils/eventChat.js).
       hinzugefuegt = await syncEventChat(client, eventId, req.user.organization_id);
 
       await client.query('COMMIT');
@@ -1123,7 +1116,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // Vor dem try: Push, Antwort und Live-Update stehen hinter dem finally.
     let event = null;
     let fruehAntwort = null;
-    let participants = [];
+    let participantIds = [];
     try {
       await client.query('BEGIN');
 
@@ -1147,7 +1140,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         fruehAntwort = { status: 400, body: { error: 'Event ist bereits abgesagt' } };
       } else if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else {
 
       // Mark event as cancelled
@@ -1183,13 +1176,11 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       // Termin ausfaellt, statt bis zum Tag danach zu glauben, sie habe
       // lediglich gefehlt. Die Abfrage laeuft VOR meldeAlleAbBeiAbsage, die
       // uebrigen stehen hier also noch auf 'confirmed'/'waitlist'.
-      const { rows: teilnehmende } = await client.query(`
-        SELECT DISTINCT eb.user_id, u.display_name, u.username
-        FROM event_bookings eb
-        JOIN users u ON eb.user_id = u.id
-        WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist', 'excused') AND u.deleted_at IS NULL
-      `, [eventId]);
-      participants = teilnehmende;
+      //
+      // Seit 27.09.2026 an EINER Stelle mit der Loeschroute
+      // (ladeBetroffeneEinesAusfalls, Audit BF-06): Wer beim Absagen
+      // benachrichtigt wird, wird es auch beim Loeschen.
+      participantIds = await ladeBetroffeneEinesAusfalls(client, eventId);
 
       // ALLE ANGEMELDETEN ABMELDEN (Entscheidung Simon, 15.09.2026)
       //
@@ -1230,7 +1221,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     }
 
     // Push und LiveUpdate NACH COMMIT und client.release()
-    const userIds = participants.map(p => p.user_id);
+    const userIds = participantIds;
     const eventDateFormatted = formatDatum(event.event_date);
     if (userIds.length > 0) {
       // Der Grund geht in den Push mit (Entscheidung Simon, 15.09.2026): Er
@@ -1245,7 +1236,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
 
     res.json({
       message: `Event "${event.name}" wurde abgesagt`,
-      participants_notified: participants.length,
+      participants_notified: participantIds.length,
       notification_message,
       // Additiv: Alte Apps ignorieren das Feld, neue zeigen den Grund direkt
       // an, ohne den Termin nochmal zu laden.
@@ -1325,7 +1316,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         fruehAntwort = { status: 400, body: { error: 'Event ist nicht abgesagt' } };
       } else if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else {
         // cancelled, cancelled_at, cancelled_by BLEIBEN UNANGETASTET
         // (Migration 152): Wer den Termin abgesagt hat, hat ihn abgesagt --
@@ -1515,7 +1506,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         fruehAntwort = { status: 400, body: { error: 'Event ist nicht abgesagt' } };
       } else if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
       } else {
         // Alle sechs Absage-Felder zurueck auf den Stand davor. Begruendung
         // ausfuehrlich im Kopf dieser Route.

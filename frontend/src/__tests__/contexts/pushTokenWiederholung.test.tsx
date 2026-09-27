@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
+import { AxiosError, AxiosHeaders } from 'axios';
+import { konsoleMitschneiden } from '../protokollDurchsuchen';
 
 /**
  * Warum es diese Tests gibt (23.09.2026):
@@ -344,5 +346,68 @@ describe('Push-Token: Wiederholung mit wachsendem Abstand', () => {
     // Und die Wiederholung laeuft danach nebenher weiter.
     await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
     expect(getTokenMock).toHaveBeenCalledTimes(3);
+  });
+});
+
+/*
+ * Audit Grundgeruest BF-08: Scheitert das Senden des Tokens, schrieb die App
+ * den ganzen axios-Fehler ins Protokoll. Der traegt die gesendete Anfrage mit:
+ * den Push-Token im Koerper und das Zugangs-Token im Authorization-Header.
+ * Ins Protokoll gehoeren Status und Code, nicht die Anfrage.
+ */
+describe('Push-Token: ein gescheitertes Senden schreibt keine Token ins Protokoll', () => {
+  const PUSH_TOKEN = 'fcm-token-geheim-5b1e';
+  const ZUGANGS_TOKEN = 'zugang-geheim-77ad';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    plattform = 'android';
+    istNativ = true;
+    geraeteId = 'geraet-1';
+    pushZeitstempel = 0;
+    abrufe = [];
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    apiPost.mockReset();
+    apiPost.mockResolvedValue({ data: {} });
+  });
+
+  it('protokolliert Status und Code, aber weder Push- noch Zugangs-Token', async () => {
+    abrufe = [{ token: PUSH_TOKEN }];
+    const config = {
+      url: '/notifications/device-token',
+      method: 'post',
+      data: JSON.stringify({ token: PUSH_TOKEN, platform: 'android', device_id: 'geraet-1' }),
+      headers: new AxiosHeaders({ Authorization: `Bearer ${ZUGANGS_TOKEN}` }),
+    };
+    const fehler = new AxiosError(
+      'Request failed with status code 500', 'ERR_BAD_RESPONSE', config as never, {},
+      { status: 500, statusText: 'Error', data: { error: 'Interner Fehler' }, headers: {}, config } as never
+    );
+    apiPost.mockImplementation(async (url: unknown) => {
+      if (url === '/notifications/device-token') throw fehler;
+      return { data: {} };
+    });
+    const konsole = konsoleMitschneiden();
+
+    const { AppProvider, Verbraucher } = await frischLaden();
+    await act(async () => {
+      render(<AppProvider><Verbraucher /></AppProvider>);
+    });
+    await act(async () => { await vi.advanceTimersByTimeAsync(50); });
+
+    // Voraussetzung: der Sendeversuch lief und scheiterte.
+    expect(apiPost.mock.calls.filter((c) => c[0] === '/notifications/device-token')).toHaveLength(1);
+
+    expect(konsole.enthaelt(PUSH_TOKEN)).toBe(false);
+    expect(konsole.enthaelt(ZUGANGS_TOKEN)).toBe(false);
+    expect(konsole.aufrufe()).toContainEqual([
+      'Fehler beim Senden des FCM-Tokens:',
+      expect.objectContaining({ status: 500, code: 'ERR_BAD_RESPONSE', fehler: 'Interner Fehler' }),
+    ]);
+    konsole.beenden();
   });
 });

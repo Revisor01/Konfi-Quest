@@ -1,7 +1,7 @@
 import { ICON_PERSON_HINZUFUEGEN_GEFUELLT, ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   IonPage,
   IonContent,
@@ -20,6 +20,7 @@ import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import UsersView from '../UsersView';
+import OffeneEinladungen from '../OffeneEinladungen';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EinladungModal from '../modals/EinladungModal';
 import UserManagementModal from '../modals/UserManagementModal';
@@ -27,7 +28,7 @@ import { AdminUser } from '../../../types/user';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 const AdminUsersPage: React.FC = () => {
-  const { setError, user, isOnline } = useApp();
+  const { setError, setSuccess, user, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-users');
   
   // Offline-Query: Users
@@ -37,6 +38,17 @@ const AdminUsersPage: React.FC = () => {
     { ttl: CACHE_TTL.KONFIS }
   );
   
+  // Offene Einladungen (27.09.2026): Der Abschnitt laedt selbst; hochzaehlen
+  // heisst "neu laden" -- nach einer neuen Einladung, beim Live-Signal
+  // 'users' (eine Zusage verschiebt die Person in die Liste) und beim Ziehen
+  // zum Aktualisieren.
+  const [einladungenStand, setEinladungenStand] = useState(0);
+  const einladungenNeuLaden = useCallback(() => setEinladungenStand((n) => n + 1), []);
+  const allesNeuLaden = useCallback(() => {
+    refreshUsers();
+    einladungenNeuLaden();
+  }, [refreshUsers, einladungenNeuLaden]);
+
   // Modal state
   const [modalUserId, setModalUserId] = useState<number | null>(null);
 
@@ -49,7 +61,7 @@ const AdminUsersPage: React.FC = () => {
   // sondern eine Anfrage an jemanden, der schon eins hat.
   const [presentEinladungHook, dismissEinladungHook] = useIonModal(EinladungModal, {
     onClose: () => dismissEinladungHook(),
-    onSuccess: () => { dismissEinladungHook(); refreshUsers(); }
+    onSuccess: () => { dismissEinladungHook(); allesNeuLaden(); }
   });
 
   const [presentUserModalHook, dismissUserModalHook] = useIonModal(UserManagementModal, {
@@ -66,24 +78,56 @@ const AdminUsersPage: React.FC = () => {
   });
 
   // Subscribe to live updates for users
-  useLiveRefresh('users', refreshUsersLive);
+  useLiveRefresh('users', useCallback(() => {
+    refreshUsersLive();
+    einladungenNeuLaden();
+  }, [refreshUsersLive, einladungenNeuLaden]));
 
   const handleDeleteUser = async (userToDelete: AdminUser) => {
     if (offlineBlockiert(isOnline, setError)) return;
+    const person = `"${userToDelete.display_name}" (@${userToDelete.username})`;
+    // Die Sicherheitsabfrage sagt, was DELETE /users/:id wirklich tut -- drei
+    // Faelle wie im Backend:
+    //  - 'weitere': Die Person ist anderswo zuhause und arbeitet hier ueber eine
+    //    Gemeinde-Einladung mit. Es endet nur die Mitgliedschaft hier (Audit
+    //    26.09.2026, Leitung BF-01).
+    //  - 'stamm' mit weiteren Gemeinden: Sie ist hier zuhause, aber auch
+    //    anderswo Mitglied. Sie wird nur aus dieser Gemeinde entfernt, ihr
+    //    Konto bleibt in der anderen (Simon, 27.09.2026).
+    //  - sonst: Das Konto wird geloescht.
+    // In den ersten beiden Faellen bleibt das Konto -- der Knopf heisst dann
+    // "Entfernen", sonst klaenge es nach Kontoloeschung.
+    const weitere = userToDelete.mitgliedschaft === 'weitere';
+    const kontoBleibt = weitere || (userToDelete.weitere_gemeinden ?? 0) > 0;
+    const abfrage = weitere
+      ? {
+          header: 'Mitgliedschaft beenden',
+          message: `${person} aus dieser Gemeinde entfernen? Das Konto und die Stamm-Gemeinde bleiben bestehen.`
+        }
+      : kontoBleibt
+        ? {
+            header: 'Aus der Gemeinde entfernen',
+            message: `${person} ist auch in einer anderen Gemeinde Mitglied. Du entfernst die Person nur aus deiner Gemeinde; ihr Konto bleibt dort bestehen.`
+          }
+        : {
+            header: 'Benutzer löschen',
+            message: `Benutzer ${person} wirklich löschen?`
+          };
     presentAlert({
-      header: 'Benutzer löschen',
-      message: `Benutzer "${userToDelete.display_name}" (@${userToDelete.username}) wirklich löschen?`,
+      ...abfrage,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
-          text: 'Löschen',
+          text: kontoBleibt ? 'Entfernen' : 'Löschen',
           role: 'destructive',
           handler: async () => {
             try {
-              await api.delete(`/users/${userToDelete.id}`);
+              const res = await api.delete(`/users/${userToDelete.id}`);
+              // Die Meldung kommt vom Server -- er weiss, ob das Konto blieb.
+              if (res?.data?.message) setSuccess(res.data.message);
               await refreshUsers();
             } catch (err) {
-              setError(fehlerText(err, 'Fehler beim Löschen des Benutzers'));
+              setError(fehlerText(err, kontoBleibt ? 'Fehler beim Entfernen aus der Gemeinde' : 'Fehler beim Löschen des Benutzers'));
             }
           }
         }
@@ -129,7 +173,7 @@ const AdminUsersPage: React.FC = () => {
         <AppKopfzeileGross titel="Benutzer:innen" />
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          refreshUsers();
+          allesNeuLaden();
           e.detail.complete();
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
@@ -138,16 +182,23 @@ const AdminUsersPage: React.FC = () => {
         {loading ? (
           <LoadingSpinner message="Benutzer werden geladen..." />
         ) : (
-          <UsersView 
-            users={users || []}
-            onUpdate={refreshUsers}
-            onSelectUser={handleSelectUser}
-            onDeleteUser={handleDeleteUser}
-            // Befund 16: Die Route /admin/users ist ungegatet. Verwalten darf
-            // nur org_admin (users.js:385) — der Anlegen-Knopf oben prueft das
-            // seit jeher, die Loesch-Wische in der Liste nicht.
-            darfVerwalten={user?.role_name === 'org_admin'}
-          />
+          <>
+            <UsersView
+              users={users || []}
+              onUpdate={allesNeuLaden}
+              onSelectUser={handleSelectUser}
+              onDeleteUser={handleDeleteUser}
+              // Befund 16: Die Route /admin/users ist ungegatet. Verwalten darf
+              // nur org_admin (users.js:385) — der Anlegen-Knopf oben prueft das
+              // seit jeher, die Loesch-Wische in der Liste nicht.
+              darfVerwalten={user?.role_name === 'org_admin'}
+            />
+            {/* Offene Einladungen einsehen und zurueckziehen -- nur, wer auch
+                einladen darf: dieselbe Bedingung wie beim Einladen-Knopf oben
+                (requireOrgAdmin in routes/einladungen.js). Leer blendet sich
+                der Abschnitt aus. */}
+            {user?.role_name === 'org_admin' && <OffeneEinladungen aktualisierung={einladungenStand} />}
+          </>
         )}
       </IonContent>
     </IonPage>

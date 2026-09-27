@@ -20,6 +20,7 @@ import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import OrganizationView from '../OrganizationView';
+import WartungsHinweis from '../../shared/WartungsHinweis';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import OrganizationManagementModal from '../modals/OrganizationManagementModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
@@ -141,7 +142,11 @@ const AdminOrganizationsPage: React.FC = () => {
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
-        
+
+        {/* Wartungshinweis des Betriebs (E-05) -- auch hier, damit der
+            Super-Admin sieht, was gerade bei allen Rollen steht. */}
+        <WartungsHinweis />
+
         {loading ? (
           <LoadingSpinner message="Organisationen werden geladen..." />
         ) : (

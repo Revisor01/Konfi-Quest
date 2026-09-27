@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   IonPage,
   IonContent,
@@ -10,8 +10,7 @@ import {
   IonCard,
   IonCardContent,
   IonRefresher,
-  IonRefresherContent,
-  useIonModal
+  IonRefresherContent
 } from '@ionic/react';
 import {
   ICON_BEARBEITEN_GEFUELLT,
@@ -31,18 +30,18 @@ import {
   ICON_WELT,
 } from '../../shared/icons';
 import AppKopfzeile from '../../shared/AppKopfzeile';
-// Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
-import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
-import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
-import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
-import { CACHE_TTL } from '../../../services/offlineCache';
+import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
+import { materialDetailLaden } from '../../../services/materialDetail';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EmptyState from '../../shared/EmptyState';
+import LadeStandZeile from '../../shared/LadeStandZeile';
 import { SectionHeader } from '../../shared';
-import FileViewerModal, { FileItem } from '../../shared/FileViewerModal';
 import { haptik, triggerPullHaptic, ImpactStyle } from '../../../utils/haptics';
 import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
+import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
+import { materialInhalt, trackHandlung } from '../../../services/analytics';
 
 interface MaterialFile {
   id: number;
@@ -81,25 +80,60 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   const { setError } = useApp();
   const pageRef = useRef<HTMLElement>(null);
 
-  // Offline-Query: Material-Detail (Metadaten, keine Dateien)
-  const { data: material, loading, refresh } = useOfflineQuery<MaterialDetail>(
-    'teamer:material-detail:' + materialId,
-    async () => { const res = await api.get(`/material/${materialId}`); return res.data; },
-    { ttl: CACHE_TTL.PROFILE, enabled: !!materialId }
-  );
+  // Anonyme Messung „Material angesehen" (Simon, 27.09.2026): EINMAL je
+  // Oeffnen. Die Seite wird als Modal jedes Mal neu montiert; Aktualisieren
+  // und Wiederverbinden laden erneut und duerfen nicht noch einmal zaehlen.
+  const angesehenGemeldet = useRef(false);
 
-  // FileViewer Modal (universeller Datei-Viewer mit Swipe)
-  const viewerRef = useRef<{ files: FileItem[]; initialIndex: number }>({ files: [], initialIndex: 0 });
-  const [presentFileViewer, dismissFileViewer] = useIonModal(FileViewerModal, {
-    get files() { return viewerRef.current.files; },
-    get initialIndex() { return viewerRef.current.initialIndex; },
-    onClose: () => {
-      dismissFileViewer();
-      viewerRef.current.files.forEach(f => {
-        if (f.url.startsWith('blob:')) URL.revokeObjectURL(f.url);
-      });
-      viewerRef.current = { files: [], initialIndex: 0 };
+  // Material-Detail: erst der Server, den zuletzt geladenen Stand nur ohne
+  // Netz (27.09.2026; vorher useOfflineQuery, gemerkter Stand zuerst).
+  // Grund: Die Dateien liegen seitdem im Medien-Cache — eine inzwischen
+  // gelöschte Datei stünde sonst nach dem Öffnen kurz in der Liste und
+  // öffnete sich vom Gerät. materialDetailLaden nimmt dabei vom Gerät, was
+  // der Server nicht mehr führt.
+  const [material, setMaterial] = useState<MaterialDetail | null>(null);
+  const [loading, setLoading] = useState(!!materialId);
+  const laden = useCallback(async (): Promise<MaterialDetail | null> => {
+    try {
+      const { daten, ausSpeicher } = await materialDetailLaden<MaterialDetail>(materialId);
+      // Nur nach einer Antwort des Servers — ein Stand nur vom Gerät
+      // (offline) zaehlt nicht. Nur die Art des Inhalts, kein Titel, keine
+      // Kennung.
+      if (!ausSpeicher && !angesehenGemeldet.current) {
+        angesehenGemeldet.current = true;
+        trackHandlung('material-angesehen', {
+          inhalt: materialInhalt((daten?.files?.length ?? 0) > 0, materialLinks(daten ?? {}).length > 0)
+        });
+      }
+      return daten;
+    } catch {
+      return null;
     }
+  }, [materialId]);
+
+  useEffect(() => {
+    if (!materialId) return;
+    let aktiv = true;
+    void laden().then((daten) => {
+      if (!aktiv) return;
+      setMaterial(daten);
+      setLoading(false);
+    });
+    return () => { aktiv = false; };
+  }, [materialId, laden]);
+
+  const refresh = async () => {
+    setMaterial(await laden());
+  };
+
+  // Dateien über den gemeinsamen Weg von Chat und Challenges (27.09.2026,
+  // Simon: „Fotos Anträge und Material ja bitte."): Medien-Cache (zweites
+  // Öffnen ohne Download, auch ohne Netz), Fortschritt in der Zeile, nativ
+  // mit Teilen und Sichern, sonst der Betrachter mit den übrigen Dateien.
+  const { dateiOeffnen, ladendeDatei } = useDateiOeffnen({
+    quelle: 'material',
+    kontext: () => (material?.files || []).map((f) => ({ pfad: f.stored_name, name: f.original_name, typ: f.mime_type })),
+    fehlerOrt: 'material-teamer-detail',
   });
 
   const getFileIcon = (mimeType: string) => {
@@ -116,40 +150,16 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
+  // Der Typ kommt vom Server (mime_type): Beim Treffer im Cache gibt es keine
+  // Antwort, deren Kopf ihn nennen könnte.
   const openFile = async (file: MaterialFile) => {
-    try {
-      await haptik(ImpactStyle.Medium);
-      const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
-      const blob = response.data;
-      const contentType = response.headers?.['content-type'];
-      const mime: string = typeof contentType === 'string' ? contentType : file.mime_type;
-
-      // Nativ oeffnen versuchen (per D-13)
-      const openedNatively = await openFileNatively(blob, file.original_name, mime);
-      if (openedNatively) return;
-
-      // Web-Fallback: FileViewerModal mit Swipe-Kontext
-      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
-      const files: FileItem[] = (material?.files || []).map(f => ({
-        url: `/api/material/files/${f.stored_name}`,
-        fileName: f.original_name,
-        mimeType: f.mime_type
-      }));
-      const clickedIdx = (material?.files || []).findIndex(f => f.id === file.id);
-      if (clickedIdx >= 0) {
-        files[clickedIdx] = { url: blobUrl, fileName: file.original_name, mimeType: mime };
-      }
-      viewerRef.current = { files, initialIndex: Math.max(0, clickedIdx) };
-      presentFileViewer({ cssClass: 'file-viewer-modal' });
-    } catch (err) {
-      setError('Fehler beim Öffnen der Datei', { ort: 'material-teamer-detail', fehler: err });
+    // Anonyme Messung NACH dem erfolgreichen Laden (auch aus dem Cache): eine
+    // Datei ist abgerufen. Kein Dateiname, kein Dateityp.
+    if (await dateiOeffnen(file.stored_name, file.original_name, file.mime_type)) {
+      trackHandlung('material-abgerufen', { inhalt: 'datei' });
     }
   };
 
@@ -164,6 +174,8 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
     }
     await haptik(ImpactStyle.Medium);
     window.open(url, '_blank');
+    // Anonyme Messung: ein Link ist abgerufen — ohne seine Adresse.
+    trackHandlung('material-abgerufen', { inhalt: 'link' });
   };
 
   return (
@@ -243,7 +255,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                 <IonCardContent>
                   {material.ist_global && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_WELT} className="app-info-row__icon" style={{ color: 'var(--app-color-material)' }} />
+                      <IonIcon icon={ICON_WELT} className="app-info-row__icon" style={{ color: 'var(--app-text-material)' }} />
                       <div>
                         <div className="app-info-row__label">Sichtbar für</div>
                         <div className="app-info-row__value">Das ganze Team der Gemeinde</div>
@@ -252,7 +264,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   )}
                   {material.events && material.events.length > 0 && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-color-events)' }} />
+                      <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-text-events)' }} />
                       <div>
                         <div className="app-info-row__label">{material.events.length === 1 ? 'Event' : 'Events'}</div>
                         <div className="app-info-row__value">{material.events.map(e => e.name).join(', ')}</div>
@@ -261,7 +273,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   )}
                   {material.jahrgaenge && material.jahrgaenge.length > 0 && (
                     <div className="app-info-row">
-                      <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-color-konfis)' }} />
+                      <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-text-konfis)' }} />
                       <div>
                         <div className="app-info-row__label">{material.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}</div>
                         <div className="app-info-row__value">{material.jahrgaenge.map(j => j.name).join(', ')}</div>
@@ -304,7 +316,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   <IonCardContent>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                       {materialLinks(material).map((url) => (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={url}
                           className="app-list-item"
                           style={{ borderLeftColor: 'var(--app-color-material)', cursor: 'pointer' }}
@@ -319,7 +331,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                                 <div className="app-list-item__title">{hostAus(url)}</div>
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={ICON_EXTERN_OEFFNEN} style={{ color: 'var(--app-color-material)' }} />
+                                    <IonIcon icon={ICON_EXTERN_OEFFNEN} style={{ color: 'var(--app-text-material)' }} />
                                     Im Browser öffnen
                                   </span>
                                 </div>
@@ -354,7 +366,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {material.files.map((file) => (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={file.id}
                         className="app-list-item"
                         style={{
@@ -370,11 +382,12 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                             </div>
                             <div className="app-list-item__content">
                               <div className="app-list-item__title">{file.original_name}</div>
-                              <div className="app-list-item__meta">
-                                <span className="app-list-item__meta-item">
-                                  {formatFileSize(file.file_size)}
-                                </span>
-                              </div>
+                              <LadeStandZeile
+                                laedt={ladendeDatei?.pfad === file.stored_name}
+                                prozent={ladendeDatei?.prozent ?? null}
+                                sonst={formatFileSize(file.file_size)}
+                                farbe="var(--app-text-material)"
+                              />
                             </div>
                           </div>
                         </div>

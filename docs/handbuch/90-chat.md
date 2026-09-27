@@ -12,7 +12,7 @@ dieses Kapitels.
 
 Wo unten „Leitung und Admins" steht, sind beide Rollen gemeint; Teamer:innen
 dürfen dort nicht. Was die Rollen sonst unterscheidet, steht im Kapitel
-[Rollen und Rechte](05-rollen.md#wer-darf-was).
+[Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
 
 ---
 
@@ -24,7 +24,7 @@ dürfen dort nicht. Was die Rollen sonst unterscheidet, steht im Kapitel
 | **Gruppe** | frei zusammengestellt | Leitung, Admin oder Teamer:in legt sie an | ja |
 | **Jahrgangs-Chat** | alle Konfis des Jahrgangs plus zuständige Begleitung | **automatisch** mit dem Jahrgang | **nein** |
 | **Team-Chat** | alle mit Leitungs-, Admin- oder Teamer-Rolle | **automatisch**, einer pro Gemeinde | ja, außer für Leitung und Admins |
-| **Termin-Chat** | wer beim Freischalten bestätigt angemeldet ist | das Team schaltet ihn beim Termin frei | Konfis nur übers Abmelden |
+| **Event-Chat** | wer bestätigt angemeldet ist, auch später Angemeldete und Nachrückende | die Leitung legt ihn beim Event an | Konfis nur übers Abmelden |
 
 ### Eine Direktnachricht beginnen
 
@@ -32,6 +32,13 @@ Ein Zweiergespräch entsteht, sobald jemand jemanden zum ersten Mal anschreibt.
 Es gibt keinen Anlege-Schritt und keine zweite Direktnachricht zwischen
 denselben zwei Personen: Wer ein bestehendes Gespräch erneut öffnet, landet im
 alten. Verlassen lässt es sich nicht.
+
+Ein Zweiergespräch hat immer genau zwei Personen — das ist der Grund, warum die
+Leitung es nicht mitliest. Sollen mehrere Personen miteinander schreiben,
+entsteht eine [Gruppe](#eine-gruppe-anlegen), und die kann der Org-Admin
+öffnen.
+Einen „Direktchat" mit drei oder mehr Personen gibt es nicht; Konfis schreiben
+einander nur in Räumen, die die Leitung einsehen kann.
 
 ### Eine Gruppe anlegen
 
@@ -51,7 +58,7 @@ und pflegt seine Mitglieder selbst:
 
 - **Alle Konfis des Jahrgangs** sind drin. Neue Konfis kommen automatisch dazu
   — auch die, die sich
-  [per Einladungscode registriert](35-passwoerter.md#konfis-kommen-neu-dazu-der-einladungscode)
+  [per Einladungscode registriert](35-passwoerter.md#konfis-mit-einem-einladungscode-aufnehmen)
   haben.
 - **Die Leitung (Org-Admin)** ist immer in allen Jahrgangs-Chats der Gemeinde
   und bleibt es auch ohne Zuweisung.
@@ -81,21 +88,23 @@ Leitung und Admins können den Team-Chat **leeren**: Der Knopf „Team-Chat leer
 oben im Chat entfernt alle Nachrichten samt Dateien, der Raum und seine
 Mitglieder bleiben. Das geht nur hier — *„Nur der Team-Chat lässt sich leeren."*
 
-### Den Termin-Chat nutzen
+### Den Event-Chat nutzen
 
-Er gehört zu einem [Termin](70-termine.md#einen-termin-chat-einrichten) und muss vom Team dort
-einmal freigeschaltet werden. Hinein kommen alle, die in diesem Moment bestätigt
-angemeldet sind — wer sich später anmeldet, kommt **nicht** automatisch nach.
-Wer sich abmeldet, fliegt heraus.
+Er gehört zu einem [Event](70-termine.md#einen-event-chat-einrichten) und wird dort von
+der Leitung einmal angelegt. Drin ist, wer **bestätigt angemeldet** ist — auch
+wer sich später anmeldet oder von der Warteliste nachrückt. Wer auf der
+Warteliste steht, kommt erst beim Nachrücken dazu; wer sich abmeldet,
+ausgetragen oder auf die Warteliste zurückgesetzt wird, fliegt heraus. Die
+Einzelheiten stehen beim [Event](70-termine.md#einen-event-chat-einrichten).
 
-> **Achtung:** Konfis können einen Termin-Chat nicht direkt verlassen. Die App
+> **Achtung:** Konfis können einen Event-Chat nicht direkt verlassen. Die App
 > sagt: *„Event-Chats werden über die Event-Abmeldung verlassen, nicht
-> direkt."* Sonst wäre jemand zum Termin angemeldet, bekäme aber die Absprachen
+> direkt."* Sonst wäre jemand zum Event angemeldet, bekäme aber die Absprachen
 > dazu nicht mit. Teamer:innen können ihn direkt verlassen.
 
 ---
 
-## Wer wen anschreiben darf
+## Nachschlagen, wer wen anschreiben darf
 
 | ↓ schreibt an → | Konfi | Teamer:in | Admin | Leitung (Org-Admin) |
 |---|---|---|---|---|
@@ -146,18 +155,41 @@ Die Meldungen, wenn es doch jemand versucht:
 
 ## Nachvollziehen, was die Leitung sehen kann
 
-Leitung und Admins können jeden **gemeinschaftlichen** Raum ihrer Gemeinde
-öffnen, auch ohne selbst Mitglied zu sein: Gruppen, Jahrgangs-Chats, Team-Chats
-und Termin-Chats. Für diese Räume tragen sie die Verantwortung und müssen im
-Zweifel eingreifen können.
+Wer Mitglied eines Chats ist, kann ihn öffnen — in jeder Rolle. Ohne eigene
+Mitgliedschaft gilt dieselbe Regel wie überall in Konfi Quest: Der
+**Org-Admin** ist für die ganze Gemeinde zuständig, ein **Admin** für seine
+zugewiesenen Jahrgänge, und was nur das Team betrifft, ist fürs ganze Team
+offen.
 
-**Fremde Zweiergespräche sind ausgenommen.** Wer nicht selbst in einem
-Direktchat steht, kommt nicht hinein — auch die Leitung nicht. Sie kann ihn
-weder lesen noch exportieren, keine Nachricht darin löschen und keine Umfrage
-hineinstellen. Ein Zweiergespräch ist privat, auch in einer Gemeinde.
+| Raum, in dem du nicht Mitglied bist | Org-Admin | Admin | Teamer:in, Konfi |
+|---|---|---|---|
+| **Jahrgangs-Chat** | ja | nur bei zugewiesenem Jahrgang | nein |
+| **Event-Chat** | ja | wenn das Event in deiner Event-Liste steht | nein |
+| **Team-Chat**, **Gruppe ohne Konfis** | ja | ja | nein |
+| **Gruppe mit Konfis** | ja | nein | nein |
+| **Direktnachricht** | nein | nein | nein |
 
-Den ganzen Direktchat **löschen** können Leitung und Admins dagegen schon
-(siehe [Einen Chat löschen](#einen-chat-loeschen)) — lesen können sie ihn nicht.
+In der Event-Liste eines Admins stehen die Events seiner Jahrgänge, Events
+„Nur Team" und Events ohne Jahrgang — genau deren Chats kann er öffnen. Ein
+Jahrgangs-Chat gehört ihm, sobald ihm der Jahrgang zugewiesen ist; dann ist er
+ohnehin [Mitglied](#den-jahrgangs-chat-nutzen).
+
+Öffnen heißt alles, was deine Rolle im Raum darf: lesen, schreiben, Dateien
+laden, [exportieren](#einen-chat-exportieren), Umfragen stellen und abstimmen,
+[Mitglieder verwalten](#mitglieder-einer-gruppe-verwalten), Nachrichten und den
+[ganzen Chat löschen](#einen-chat-loeschen) — und neue Nachrichten live
+mitlesen. [Reagieren](#auf-eine-nachricht-reagieren) können nur die
+Mitglieder. Wo das Öffnen nicht erlaubt ist, antwortet die App mit *„Zugriff
+verweigert"*.
+
+In deiner Chatliste stehen nur die Chats, in denen du Mitglied bist, und jeder
+davon lässt sich öffnen. Einen Event-Chat, in dem du nicht Mitglied bist,
+erreichst du über das [Event](70-termine.md#einen-event-chat-einrichten).
+
+**Fremde Zweiergespräche sind für alle zu.** Wer nicht selbst in einem
+Direktchat steht, kommt nicht hinein — auch der Org-Admin nicht. Er kann ihn
+weder lesen noch exportieren, löschen, eine Nachricht darin löschen oder eine
+Umfrage hineinstellen. Ein Zweiergespräch ist privat, auch in einer Gemeinde.
 
 ---
 
@@ -170,6 +202,10 @@ Zeichen**. Alle im Raum sehen die Nachricht sofort und bekommen eine
 Benachrichtigung aufs Gerät — bei einem Zweiergespräch mit dem Namen des
 Absenders als Überschrift, sonst mit dem Namen des Chats.
 
+Den ersten Buchstaben einer Nachricht und den nach einem Punkt, Ausrufe- oder
+Fragezeichen schreibt die App groß. Ein Zeilenumbruch allein beendet keinen
+Satz: Danach bleibt der Buchstabe so, wie du ihn tippst.
+
 Ohne Netz bleibt die Nachricht in einer Warteschlange und geht los, sobald es
 wieder geht; mehr dazu unter
 [Ohne Internet weiterarbeiten](03-bedienung.md#ohne-internet-weiterarbeiten).
@@ -179,6 +215,19 @@ mit „Erneut senden" und „Nachricht löschen".
 
 > **Achtung:** Der Haken bedeutet **nicht** „gelesen". Lesebestätigungen gibt es
 > im Konfi-Quest-Chat nicht, und es gibt keine „schreibt gerade…"-Anzeige.
+
+### Die Aktionen einer Nachricht öffnen
+
+Reagieren, antworten, teilen und — wer darf — löschen: Das steht in einer
+kleinen Leiste unter der Nachricht.
+
+- **Auf dem Handy** die Nachricht lange gedrückt halten.
+- **Am Rechner** mit der Maus über die Nachricht fahren. Daneben erscheint ein
+  Knopf mit drei Punkten; ein Klick öffnet die Leiste, ein zweiter schließt sie.
+- **Mit der Tastatur** per Tab zum Knopf „Aktionen zu dieser Nachricht", Enter
+  öffnet die Leiste und springt auf die erste Aktion. Unter „Reaktion
+  hinzufügen" springt Enter auf die erste Reaktion. Escape schließt beides und
+  führt zurück zum Knopf.
 
 ### Auf eine Nachricht antworten
 
@@ -193,7 +242,7 @@ wird — dann steht dort das Zitat ohne Inhalt.
 
 | Wer | Darf löschen |
 |---|---|
-| **Leitung und Admins** | eigene und **fremde** Nachrichten — aber nur in Räumen, die sie öffnen dürfen, also nicht in fremden Zweiergesprächen |
+| **Leitung und Admins** | eigene und **fremde** Nachrichten — aber nur in Räumen, die sie [öffnen dürfen](#nachvollziehen-was-die-leitung-sehen-kann), also nie in fremden Zweiergesprächen |
 | **Teamer:innen** | nur eigene |
 | **Konfis** | nur eigene — sie sehen den Papierkorb gar nicht erst |
 
@@ -224,7 +273,9 @@ Es gibt genau sechs Reaktionen, keine freie Auswahl:
 Es gibt bewusst kein „Daumen runter" und kein „wütend": In einem Konfi-Chat soll
 niemand mit einem Tipp abgewatscht werden können.
 
-Ein Tipp setzt die Reaktion, ein zweiter auf dieselbe nimmt sie zurück. Mehrere
+Die Reaktionen stehen hinter „Reaktion hinzufügen" in der
+[Leiste der Nachricht](#die-aktionen-einer-nachricht-oeffnen). Ein Tipp setzt
+die Reaktion, ein zweiter auf dieselbe nimmt sie zurück. Mehrere
 verschiedene Reaktionen auf dieselbe Nachricht sind möglich. Unter der Nachricht
 steht, wie oft jede gewählt wurde; die eigenen sind hervorgehoben. Alle im Raum
 dürfen reagieren, auch Konfis — aber nur, wer wirklich Mitglied ist.
@@ -244,7 +295,8 @@ An jede Nachricht lässt sich eine Datei hängen, ein Text darf dabeistehen.
 | **Dokumente** | PDF, Word, PowerPoint, TXT, CSV |
 
 Bilder und Videos erscheinen direkt im Chat, alles andere als Anhang mit
-Dateinamen zum Antippen. Bilder werden vor dem Senden automatisch verkleinert.
+Dateinamen zum Antippen. Bilder werden vor dem Senden automatisch verkleinert —
+auf demselben Weg wie bei den [Challenges](80-challenges.md).
 
 Während eine Datei gesendet wird, steht an der Nachricht, wie weit sie ist
 (*„Wird gesendet… 40 %"*), darunter ein Balken. Bei 100 % wechselt der Text auf
@@ -254,14 +306,14 @@ sich öffnet. Ein zweites Antippen währenddessen bewirkt nichts; einmal reicht.
 
 Geladen wird jede Datei nur einmal. Danach liegt sie auf dem Gerät und öffnet
 sich beim nächsten Antippen sofort, ohne Ladeanzeige — auch ohne Netz. Das gilt
-für alle Anhänge: Bilder, Videos, PDFs, Dokumente und Tondateien. Wird der Platz
-knapp, räumt die App von allein auf und wirft weg, was am längsten niemand
-geöffnet hat. Von Hand geht das über **Medien-Cache leeren** im eigenen Profil.
+für alle Anhänge: Bilder, Videos, PDFs, Dokumente und Tondateien. Wie lange sie
+dort bleiben und wann die App sie von selbst löscht, steht unter
+[Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
 
-> **Achtung, bekannter Stolperstein:** Die App warnt erst ab 10 MB (*„Datei ist
-> zu groß (max. 10MB)"*), der Server nimmt aber nur 5 MB an. Eine Datei
-> dazwischen scheitert deshalb ohne verständliche Meldung. Wenn eine Datei sich
-> partout nicht schicken lässt: auf die Größe schauen.
+Ist eine Datei größer, sagt die App es gleich bei der Auswahl: *„Datei ist zu
+groß (max. 5 MB)."* Fotos verkleinert sie vorher (die lange Kante auf höchstens
+1920 Pixel), ein Handyfoto passt danach fast immer. Videos und Tondateien gehen,
+wie sie sind — für ein längeres Video ist der Chat zu knapp.
 
 > **Achtung:** **Excel-Tabellen gehen nicht** — weder XLS noch XLSX, und auch
 > keine OpenDocument-Dateien. Wandle sie in ein PDF um oder leg sie im
@@ -272,7 +324,7 @@ geöffnet hat. Von Hand geht das über **Medien-Cache leeren** im eigenen Profil
 > Anhang zum Herunterladen. (Aufnehmen geht nur bei
 > [Challenges](80-challenges.md).)
 
-### Was mit der Datei passiert
+### Verstehen, was mit der Datei passiert
 
 - Sie wird beim Hochladen **auf ihren echten Typ geprüft** — nicht am
   Dateinamen, sondern an den ersten Bytes. Ein umbenanntes Programm kommt nicht
@@ -285,7 +337,7 @@ geöffnet hat. Von Hand geht das über **Medien-Cache leeren** im eigenen Profil
 
 > **Achtung:** Weil Dateien verschlüsselt und zufällig benannt gespeichert
 > werden, lassen sie sich außerhalb der App weder durchsuchen noch
-> wiederherstellen. Was bleiben soll, gehört ins Material oder an einen Termin.
+> wiederherstellen. Was bleiben soll, gehört ins Material oder an ein Event.
 
 ---
 
@@ -377,15 +429,20 @@ beide den Zuschlag — die zweite bekommt „bereits vergeben".
 Wer in einem Chat ist, sehen **alle Mitglieder** über das Personen-Symbol oben
 im Chat — in Zweiergesprächen fehlt der Knopf, dort ist die Sache klar.
 
-**Ändern dürfen die Liste nur Leitung und Admins, und nur in Gruppen.** In allen
+**Ändern dürfen die Liste nur Leitung und Admins, nur in Gruppen, die sie
+[öffnen dürfen](#nachvollziehen-was-die-leitung-sehen-kann).** In eine Gruppe
+mit Konfis, in der er nicht Mitglied ist, trägt ein Admin deshalb niemanden
+ein — auch sich selbst nicht. In allen
 anderen Chat-Arten ergibt sich aus der Sache selbst, wer drin ist: aus dem
-Jahrgang, aus der Rolle, aus der Terminanmeldung. Wer es anderswo versucht,
+Jahrgang, aus der Rolle, aus der Event-Anmeldung. Wer es anderswo versucht,
 bekommt: *„Teilnehmer können nur zu Gruppenchats hinzugefügt werden"*
 beziehungsweise *„… aus Gruppenchats entfernt werden"*.
 
-Nur Personen aus der eigenen Organisation lassen sich hinzufügen, und ihre Rolle
-wird immer aus dem echten Konto ermittelt — niemand landet mit falschen Rechten
-in einer Gruppe.
+Nur Personen aus der eigenen Gemeinde lassen sich hinzufügen — dazu zählen
+auch Teamer:innen und Admins, die [über eine Einladung](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)
+hier mitarbeiten und in einer anderen Gemeinde zuhause sind. Ihre Rolle wird
+immer aus dem echten Konto ermittelt, und zwar die Rolle **in dieser
+Gemeinde** — niemand landet mit falschen Rechten in einer Gruppe.
 
 > **Achtung:** Beim nachträglichen Hinzufügen greift nur die Jahrgangsgrenze für
 > Konfis: Ein Admin kann nur Konfis seiner eigenen Jahrgänge eintragen. Alles
@@ -402,7 +459,7 @@ in einer Gruppe.
 |---|---|
 | Gruppe | ja |
 | Team-Chat | ja |
-| Termin-Chat | Konfis nur übers Abmelden vom Termin; Teamer:innen direkt |
+| Event-Chat | Konfis nur übers Abmelden vom Event; Teamer:innen direkt |
 | Jahrgangs-Chat | **nein** |
 | Direktnachricht | **nein** |
 
@@ -416,7 +473,10 @@ nicht verlassen"*. Wer die Verantwortung trägt, bleibt in den Räumen.
 ## Einen Chat löschen
 
 Einen ganzen Chat löschen dürfen **Leitung und Admins**, in der Übersicht über
-die [Wischgeste nach links](03-bedienung.md#etwas-loeschen-nach-links-wischen).
+die [Wischgeste nach links](03-bedienung.md#etwas-loeschen-nach-links-wischen) —
+jeden Chat, den sie
+[öffnen dürfen](#nachvollziehen-was-die-leitung-sehen-kann). Ein fremdes
+Zweiergespräch löscht niemand.
 
 Enthält er noch Nachrichten, kommt zuerst eine Rückfrage: *„Chat-Raum kann nicht
 gelöscht werden: 47 Nachricht(en) vorhanden."* Erst mit ausdrücklicher
@@ -436,7 +496,11 @@ weiterzuarbeiten, etwa an einer Gottesdienst-Vorbereitung.
 **Nur Leitung und Admins dürfen das**, Teamer:innen und Konfis nicht (*„Nur die
 Leitung darf Chats exportieren"*). Ein Export nimmt den ganzen Verlauf aus dem
 Zusammenhang des Chats heraus; wer ihn zieht, soll dieselbe Verantwortung tragen
-wie beim Löschen. **Fremde Zweiergespräche lassen sich nicht exportieren.**
+wie beim Löschen. Exportieren lässt sich nur, was du
+[öffnen darfst](#nachvollziehen-was-die-leitung-sehen-kann) — als Admin also
+nur Räume deiner Jahrgänge, deiner Events und des Teams. **Fremde
+Zweiergespräche lassen sich nicht exportieren**
+(*„Private Zweiergespräche lassen sich nicht exportieren"*).
 
 Im Export steht der vollständige Verlauf, älteste Nachricht zuerst, nach Tagen
 gegliedert:

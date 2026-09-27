@@ -19,6 +19,7 @@ import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { AdminUser } from '../../types/user';
 import { triggerPullHaptic } from '../../utils/haptics';
+import { datumKurz } from '../../utils/dateUtils';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -94,11 +95,7 @@ const UsersView: React.FC<UsersViewProps> = ({
 
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
 
@@ -162,7 +159,7 @@ const UsersView: React.FC<UsersViewProps> = ({
         <IonItemGroup>
           <IonItem>
             <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" className="app-search-bar__icon" />
-            <IonInput
+            <IonInput aria-label="Benutzer:in suchen"
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
               placeholder="Benutzer:in suchen..."
@@ -264,6 +261,14 @@ const UsersView: React.FC<UsersViewProps> = ({
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={ICON_AKTENTASCHE_GEFUELLT} className={user.is_active ? 'app-icon-color--badges' : ''} style={!user.is_active ? { color: 'var(--app-text-muted)' } : undefined} />
                                 {user.role_title}
+                              </span>
+                            )}
+                            {/* Ueber eine Gemeinde-Einladung dabei: Konto und
+                                Stamm-Gemeinde liegen woanders, hier gibt es
+                                nur Rolle und Jahrgaenge (Audit 26.09.2026). */}
+                            {user.mitgliedschaft === 'weitere' && (
+                              <span className="app-list-item__meta-item">
+                                zuhause in einer anderen Gemeinde
                               </span>
                             )}
                           </div>

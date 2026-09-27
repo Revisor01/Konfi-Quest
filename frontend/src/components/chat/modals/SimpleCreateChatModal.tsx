@@ -44,6 +44,7 @@ import api from '../../../services/api';
 import { ChatUser } from '../../../types/user';
 import { EigenerJahrgang, KonfiEintrag, TeamKontakt, VerfuegbarerPartner } from '../../../types/chat';
 import { istTeamTyp } from '../../../utils/chatRoles';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface SimpleCreateChatModalProps {
   onClose: () => void;
@@ -406,7 +407,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               </IonListHeader>
               <IonItemGroup>
                 <IonItem>
-                  <IonInput
+                  <IonInput aria-label="Gruppenname eingeben"
                     value={groupName}
                     onIonInput={(e) => setGroupName(e.detail.value!)}
                     placeholder="Gruppenname eingeben"
@@ -437,7 +438,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     fontSize: 'var(--app-text-standard)'
                   }}
                 />
-                <IonInput
+                <IonInput aria-label="Person suchen"
                   value={searchText}
                   onIonInput={(e) => setSearchText(e.detail.value!)}
                   placeholder="Person suchen..."
@@ -451,7 +452,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     slot="start"
                     style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }}
                   />
-                  <IonSelect
+                  <IonSelect aria-label="Nach Rolle filtern"
                     value={selectedRole}
                     onIonChange={(e) => setSelectedRole(e.detail.value!)}
                     placeholder="Alle Rollen"
@@ -473,7 +474,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     slot="start"
                     style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }}
                   />
-                  <IonSelect
+                  <IonSelect aria-label="Nach Jahrgang filtern"
                     value={selectedJahrgang}
                     onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
                     placeholder="Alle Jahrgänge"
@@ -524,7 +525,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                       const isAdmin = istTeamTyp(targetUser.type);
 
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={participantId}
                           className={`app-list-item ${isAdmin ? 'app-list-item--team' : 'app-list-item--konfi'}`}
                           onClick={() => {
@@ -569,7 +570,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 {isAdmin && targetUser.role_description && (
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-color-teamer)' }} />
+                                      <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-text-teamer)' }} />
                                       {targetUser.role_description}
                                     </span>
                                   </div>
@@ -577,7 +578,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 {!isAdmin && (targetUser.jahrgang_name || targetUser.jahrgang) && (
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-jahrgang)' }} />
+                                      <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-jahrgang)' }} />
                                       {targetUser.jahrgang_name || targetUser.jahrgang}
                                     </span>
                                   </div>

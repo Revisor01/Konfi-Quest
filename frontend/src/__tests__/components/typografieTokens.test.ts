@@ -38,13 +38,15 @@ const istAusnahme = (pfad: string) => AUSNAHMEN.some(a => pfad.endsWith(a));
 // den gemessenen Bestand vor der Konsolidierung ab — wer hier etwas aendert,
 // aendert die Schrift der ganzen App und sollte das absichtlich tun.
 const SKALA: Record<string, string> = {
-  // Kleinste Stufe, eigens fuer die Reiterleiste im MD3-Look (09.09.2026):
-  // Dort teilen sich fuenf Reiter 360px, und bei 0.6rem stand "Challen..."
-  // statt "Challenges". Im iOS-Look bleibt --app-text-winzig.
-  '--app-text-schmal': '0.55rem',
+  // --app-text-schmal (0.55rem, nur Reiter im MD3-Look) ist am 27.09.2026
+  // entfallen: Die Reiter tragen jetzt --app-text-reiter (siehe unten und
+  // zoomUndSchrift.test.ts).
   '--app-text-winzig': '0.6rem',
   '--app-text-mini': '0.65rem',
   '--app-text-meta': '0.7rem',
+  // Reiter-Beschriftungen auf beiden Plattformen (UI-Audit BF-07, 27.09.2026):
+  // bei 360 px gemessen, "Challenges" passt ohne Kuerzen.
+  '--app-text-reiter': '0.7rem',
   '--app-text-klein': '0.75rem',
   '--app-text-hinweis': '0.8rem',
   '--app-text-sekundaer': '0.85rem',
@@ -158,7 +160,10 @@ describe('Auch die Stylesheets haengen an der Skala', () => {
   it('variables.css setzt keine festen Schriftwerte mehr', () => {
     const css = lies('src/theme/variables.css');
     // clamp() bleibt erlaubt: responsive Groessen sind keine Skala-Stufen.
-    const groessen = fontDeklarationen(css, 'font-size').filter(w => !w.startsWith('var(') && !w.startsWith('clamp('));
+    // Ebenso min(var(...), px): eine Skala-Stufe mit Obergrenze (Reiter im
+    // iOS-Look, UI-Audit BF-07 -- dort laufen zu grosse Beschriftungen in die
+    // Nachbarin, statt gekuerzt zu werden).
+    const groessen = fontDeklarationen(css, 'font-size').filter(w => !w.startsWith('var(') && !w.startsWith('clamp(') && !w.startsWith('min(var('));
     expect(groessen).toEqual([]);
     const schnitte = fontDeklarationen(css, 'font-weight').filter(w => !w.startsWith('var('));
     expect(schnitte).toEqual([]);

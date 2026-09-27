@@ -41,6 +41,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import WrappedModal from '../../wrapped/WrappedModal';
 import { TrialBanner, StoreUpdateBanner, AbsageBlock, istAbgesagt, titelDekoration } from '../../shared';
+import WartungsHinweis from '../../shared/WartungsHinweis';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/sectionOrder';
@@ -53,6 +54,8 @@ import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import BadgePopoverContent, { BadgePopoverData, getBadgeColor } from '../../shared/BadgePopoverContent';
 import { formatTimeUntil, kalendertag } from '../../shared/eventFormatting';
+import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
 
 
 
@@ -194,12 +197,12 @@ const CertPopoverContent: React.FC<{
       </div>
       {cert.issued_date && (
         <div style={{ fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-secondary)', marginBottom: 'var(--app-abstand-mini)' }}>
-          Ausgestellt: {new Date(cert.issued_date).toLocaleDateString('de-DE')}
+          Ausgestellt: {datumKurz(cert.issued_date)}
         </div>
       )}
       {cert.expiry_date && (
         <div style={{ fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-secondary)' }}>
-          Ablauf: {new Date(cert.expiry_date).toLocaleDateString('de-DE')}
+          Ablauf: {datumKurz(cert.expiry_date)}
         </div>
       )}
     </div>
@@ -425,20 +428,13 @@ const TeamerDashboardPage: React.FC = () => {
   const formatEventTime = (dateString: string | undefined) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return uhrzeit(date);
   };
 
   const formatEventDate = (dateString: string | undefined) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short'
-    });
+    return datumKurz(date, { mitWochentag: true });
   };
 
   const config = dashboardData?.config;
@@ -542,6 +538,10 @@ const TeamerDashboardPage: React.FC = () => {
             Prueft selbst und rendert sonst nichts (StoreUpdateBanner). */}
         <StoreUpdateBanner style={{ margin: 'var(--app-abstand-eng) var(--app-abstand-basis) 0' }} />
 
+        {/* Wartungshinweis des Betriebs (E-05): steht, solange der Server ihn
+            meldet; liest nur den Stand und rendert sonst nichts. */}
+        <WartungsHinweis />
+
         {/* Die beiden Neuerungs-Banner. Auf der Startseite wegklickbar:
             jeder hat sein eigenes X und sein eigenes Flag. Dauerhaft
             erreichbar bleiben sie im Profil (Nutzerwunsch 25.08.2026). */}
@@ -590,7 +590,7 @@ const TeamerDashboardPage: React.FC = () => {
 
           {/* Wrapped Card */}
           {dashboardData?.has_wrapped && !wrappedHinweisWeg && (
-            <div onClick={openWrapped} style={{
+            <div role="presentation" onClick={openWrapped} style={{
               marginBottom: 'var(--app-abstand-basis)',
               padding: 'var(--app-abstand-gross)',
               borderRadius: 'var(--app-radius-gross)',
@@ -606,7 +606,7 @@ const TeamerDashboardPage: React.FC = () => {
             }}>
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}>
                 <IonIcon icon={ICON_FUNKELN_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-zahl)' }} />
-                <div>
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}>
                   <h3 style={{ margin: 0, fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-fett)' }}>Dein Team-Jahr Wrapped ist da!</h3>
                   <p style={{ margin: 'var(--app-abstand-mini) 0 0', fontSize: 'var(--app-text-sekundaer)', opacity: 0.9 }}>Schau dir deinen Jahresrückblick an</p>
                 </div>
@@ -696,7 +696,7 @@ const TeamerDashboardPage: React.FC = () => {
                     const isNotEarned = cert.status === 'not_earned';
 
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={cert.id}
                         className="app-cert-card"
                         onClick={(e) => {
@@ -758,7 +758,7 @@ const TeamerDashboardPage: React.FC = () => {
                         </span>
                         {isValid && cert.issued_date && (
                           <span style={{ fontSize: 'var(--app-text-mini)', color: 'rgba(255,255,255,0.7)' }}>
-                            Seit {new Date(cert.issued_date).toLocaleDateString('de-DE', { month: 'short', year: 'numeric' })}
+                            Seit {datumKurz(cert.issued_date)}
                           </span>
                         )}
                         {isExpired && (
@@ -802,7 +802,7 @@ const TeamerDashboardPage: React.FC = () => {
               <div className="app-dashboard-section__content app-dashboard-section__content--compact">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-mittel)' }}>
                   {visibleChallenges.map((challenge) => (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={challenge.id}
                       className="app-dashboard-glass-card"
                       onClick={() => router.push('/teamer/challenges')}
@@ -831,7 +831,7 @@ const TeamerDashboardPage: React.FC = () => {
                     </div>
                   ))}
                   {visibleChallenges.length === 0 && (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       className="app-dashboard-glass-card"
                       onClick={() => router.push('/teamer/challenges')}
                       style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}
@@ -857,7 +857,7 @@ const TeamerDashboardPage: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  <div
+                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     className="app-dashboard-glass-chip"
                     onClick={() => router.push('/teamer/challenges')}
                     style={{
@@ -884,7 +884,7 @@ const TeamerDashboardPage: React.FC = () => {
               const spruchText = spruch?.text?.trim();
               const spruchReference = spruch?.reference?.trim();
               return (
-            <div
+            <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
               key="konfispruch"
               className="app-dashboard-section app-dashboard-section--konfispruch"
               onClick={openKonfispruch}
@@ -942,7 +942,7 @@ const TeamerDashboardPage: React.FC = () => {
               <div className="app-dashboard-section__content app-dashboard-section__content--compact">
                 {dashboardData.events.length === 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-mittel)' }}>
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       className="app-dashboard-glass-card"
                       onClick={() => router.push('/teamer/events')}
                       style={{ cursor: 'pointer', textAlign: 'center', padding: 'var(--app-abstand-gross) var(--app-abstand-basis)' }}
@@ -954,7 +954,7 @@ const TeamerDashboardPage: React.FC = () => {
                         Tippe hier um verfügbare Events zu sehen
                       </div>
                     </div>
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       className="app-dashboard-glass-chip"
                       onClick={() => router.push('/teamer/events')}
                       style={{ alignSelf: 'center', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)' }}
@@ -967,7 +967,7 @@ const TeamerDashboardPage: React.FC = () => {
                     {dashboardData.events.map((event) => {
                       const isWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={event.id}
                           className="app-dashboard-glass-card"
                           onClick={() => router.push(`/teamer/events?eventId=${event.id}`)}
@@ -1057,7 +1057,7 @@ const TeamerDashboardPage: React.FC = () => {
                         </div>
                       );
                     })}
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       className="app-dashboard-glass-chip"
                       onClick={() => router.push('/teamer/events')}
                       style={{
@@ -1100,7 +1100,7 @@ const TeamerDashboardPage: React.FC = () => {
                   }
 
                   return (
-                    <div onClick={() => presentBibleModal()} style={{ cursor: 'pointer' }}>
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} onClick={() => presentBibleModal()} style={{ cursor: 'pointer' }}>
                       <blockquote className="app-dashboard-quote">
                         "{text}"
                       </blockquote>
@@ -1152,7 +1152,7 @@ const TeamerDashboardPage: React.FC = () => {
                     const recent = isRecent(badge) && isEarned;
                     const badgeClr = getBadgeColor(badge);
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={badge.id}
                         onClick={(e) => {
                           badgePopoverRef.current = { badge, isEarned };
@@ -1202,7 +1202,7 @@ const TeamerDashboardPage: React.FC = () => {
                         const recent = isRecent(badge);
                         const badgeClr = getBadgeColor(badge);
                         return (
-                          <div key={badge.id}
+                          <div role="button" tabIndex={0} onKeyDown={tastaturKlick} key={badge.id}
                             onClick={(e) => {
                               badgePopoverRef.current = { badge, isEarned: true };
                               presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center', cssClass: 'badge-detail-popover' });
@@ -1237,7 +1237,7 @@ const TeamerDashboardPage: React.FC = () => {
 
                 {/* Alle Badges Link */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--app-abstand-basis)' }}>
-                  <div
+                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     className="app-dashboard-glass-chip"
                     onClick={() => router.push('/teamer/profile/badges')}
                     style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)' }}

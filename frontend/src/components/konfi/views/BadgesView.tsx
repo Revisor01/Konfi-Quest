@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { CRITERIA_COLORS } from '../../../utils/badgeCriteria';
+import { CRITERIA_COLORS, getCriteriaTextColor } from '../../../utils/badgeCriteria';
 import {
   IonCard,
   IonCardContent,
@@ -175,7 +175,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         <IonItemGroup>
           <IonItem>
             <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-            <IonInput
+            <IonInput aria-label="Badges durchsuchen"
               value={searchText}
               onIonInput={(e) => setSearchText(e.detail.value || '')}
               placeholder="Badges durchsuchen..."
@@ -265,7 +265,9 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                       <span style={{
                         position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                         fontSize: progressPercent === 100 && categoryHasUndiscoveredSecrets ? 'var(--app-text-winzig)' : 'var(--app-text-meta)',
-                        fontWeight: 'var(--app-schrift-fett)', color: category.color
+                        fontWeight: 'var(--app-schrift-fett)',
+                        // Text-Token statt Kriterienfarbe: im Dunkeln eine hellere Stufe (Audit BF-10)
+                        color: getCriteriaTextColor(category.key)
                       }}>
                         {progressPercent === 100 && categoryHasUndiscoveredSecrets ? '100%?' : `${progressPercent}%`}
                       </span>

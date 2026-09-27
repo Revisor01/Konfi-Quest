@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 
 // Haptik darf keinen Ablauf abbrechen (15.09.2026, Simon in Firefox am Rechner).
 //

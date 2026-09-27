@@ -5,14 +5,19 @@
 
 const nodemailer = require('nodemailer');
 const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
+const { smtpKonfiguration } = require('../utils/smtpKonfiguration');
 
 // Gecachter Transporter (wird einmalig erstellt und wiederverwendet)
 let cachedTransporter = null;
 
-// SMTP-Credentials prüfen
+// SMTP-Konfiguration prüfen. Host und Nutzer kommen AUSSCHLIESSLICH aus der
+// Umgebung (Audit 26.09.2026, Sicherheit BF-12 / S-15): Hier stand ein
+// eingebauter Fallback-Host -- Betriebsdaten im oeffentlichen Repo, und ein
+// Versand, der bei fehlender Konfiguration still an eine eingebaute Adresse
+// ging. Fehlt etwas, scheitert der Versand mit dieser klaren Meldung.
 const validateSmtpConfig = () => {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.error('SMTP-Credentials nicht konfiguriert (SMTP_USER, SMTP_PASS)');
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.error('SMTP nicht konfiguriert (SMTP_HOST, SMTP_USER, SMTP_PASS)');
     return false;
   }
   return true;
@@ -25,21 +30,13 @@ const getTransporter = () => {
   }
 
   if (!validateSmtpConfig()) {
-    throw new Error('SMTP-Credentials nicht konfiguriert. SMTP_USER und SMTP_PASS müssen als Umgebungsvariablen gesetzt sein.');
+    throw new Error('SMTP nicht konfiguriert. SMTP_HOST, SMTP_USER und SMTP_PASS müssen als Umgebungsvariablen gesetzt sein.');
   }
 
-  cachedTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'server.godsapp.de',
-    port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: process.env.SMTP_SECURE !== 'false', // Default: true (Port 465 mit TLS)
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  });
+  // Dieselbe Konfiguration wie der Transport in server.js: Zertifikat wird
+  // geprueft (BF-09; hier stand `rejectUnauthorized: false`), kein
+  // eingebauter Host (BF-12). Begruendung: utils/smtpKonfiguration.js.
+  cachedTransporter = nodemailer.createTransport(smtpKonfiguration());
 
   return cachedTransporter;
 };
@@ -55,7 +52,9 @@ const getTransporter = () => {
 const sendEmail = async ({ to, subject, text, html }) => {
   const transporter = getTransporter();
 
-  const smtpFrom = process.env.SMTP_FROM || `Konfi Quest <${process.env.SMTP_USER || 'noreply@konfi-quest.de'}>`;
+  // Absender aus SMTP_FROM, sonst der SMTP-Nutzer -- kein eingebauter
+  // Fallback mehr (BF-12); getTransporter() hat SMTP_USER bereits verlangt.
+  const smtpFrom = process.env.SMTP_FROM || `Konfi Quest <${process.env.SMTP_USER}>`;
 
   const mailOptions = {
     from: smtpFrom,
@@ -69,7 +68,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
     const info = await transporter.sendMail(mailOptions);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`Fehler beim Senden der E-Mail an ${to}:`, error);
+    console.error('Fehler beim Senden der E-Mail an %s:', to, error);
     // Transporter-Cache invalidieren bei Verbindungsfehler
     if (error.code === 'ECONNECTION' || error.code === 'EAUTH' || error.code === 'ESOCKET') {
       cachedTransporter = null;
@@ -151,19 +150,41 @@ const wrapHtml = (contentHtml, { headerGradient } = {}) => `
  * @param {string} name - Name des Benutzers
  * @param {string} resetToken - Reset-Token
  * @param {string} resetUrl - Vollständige Reset-URL
+ * @param {{gemeinde?: string|null, benutzername?: string|null}} [konto]
+ *   Seit 27.09.2026 (BF-20): Eine Adresse kann an Konten in mehreren
+ *   Gemeinden haengen (E-Mail ist nur je Gemeinde eindeutig). Jedes Konto
+ *   bekommt seine EIGENE Mail mit eigenem Link; Gemeinde und Benutzername
+ *   sagen, zu welchem Konto dieser Link gehoert. Optional und am Ende --
+ *   ohne die Angaben bleibt die Mail, wie sie war.
  */
-const sendPasswordResetEmail = async (email, name, resetToken, resetUrl) => {
-  const subject = 'Passwort zurücksetzen - Konfi Quest';
+const sendPasswordResetEmail = async (email, name, resetToken, resetUrl, { gemeinde = null, benutzername = null } = {}) => {
+  // CR/LF raus: Der Gemeindename steht im Betreff (Header-Injection-Schutz
+  // wie bei sendGemeindeEinladungEmail).
+  const gemeindeZeile = gemeinde ? String(gemeinde).replace(/[\r\n]+/g, ' ').trim() : '';
+  const subject = gemeindeZeile
+    ? `Passwort zurücksetzen (${gemeindeZeile}) - Konfi Quest`
+    : 'Passwort zurücksetzen - Konfi Quest';
 
+  const kontoText = [
+    gemeindeZeile ? `Gemeinde: ${gemeindeZeile}` : null,
+    benutzername ? `Benutzername: ${benutzername}` : null
+  ].filter(Boolean).join('\n');
+  const kontoHtml = [
+    gemeindeZeile ? `Gemeinde: <strong>${escapeHtml(gemeindeZeile)}</strong>` : null,
+    benutzername ? `Benutzername: <strong>${escapeHtml(benutzername)}</strong>` : null
+  ].filter(Boolean).join('<br>');
+
+  // "24 Stunden": So lange gilt der Link (routes/auth.js, expiresAt), und so
+  // steht es im Handbuch. Hier stand bis zum 27.09.2026 "1 Stunde".
   const text = `
 Hallo ${name},
 
 du hast angefordert, dein Passwort für Konfi Quest zurückzusetzen.
-
+${kontoText ? `\nDieser Link gilt für dein Konto:\n${kontoText}\n` : ''}
 Klicke auf folgenden Link, um ein neues Passwort zu setzen:
 ${resetUrl}
 
-Dieser Link ist 1 Stunde gültig.
+Dieser Link ist 24 Stunden gültig.
 
 Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.
 
@@ -172,14 +193,15 @@ Dein Konfi Quest Team
   `.trim();
 
   const html = wrapHtml(`
-      <h2>Hallo ${name}!</h2>
+      <h2>Hallo ${escapeHtml(name)}!</h2>
       <p>Du hast angefordert, dein Passwort für Konfi Quest zurückzusetzen.</p>
+      ${kontoHtml ? `<p>Dieser Link gilt für dein Konto:<br>${kontoHtml}</p>` : ''}
       <p>Klicke auf den Button unten, um ein neues Passwort zu setzen:</p>
       <p style="text-align: center;">
         <a href="${resetUrl}" class="button">Neues Passwort setzen</a>
       </p>
       <div class="warning">
-        <strong>Hinweis:</strong> Dieser Link ist nur 1 Stunde gültig. Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.
+        <strong>Hinweis:</strong> Dieser Link ist 24 Stunden gültig. Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.
       </div>
   `);
 
@@ -187,19 +209,33 @@ Dein Konfi Quest Team
 };
 
 /**
- * Sendet eine Bestätigung nach erfolgreicher Passwortänderung
+ * Sendet eine Bestätigung nach erfolgreicher Passwortänderung.
+ *
+ * Gerufen seit dem 27.09.2026 aus utils/passwortGeaendertMail.js, fuer
+ * jeden Weg, der ein Passwort aendert (Simon, F-12). Das neue Passwort
+ * steht NIE in der Mail.
+ *
  * @param {string} email - E-Mail-Adresse des Empfängers
  * @param {string} name - Name des Benutzers
+ * @param {{durchLeitung?: boolean, gemeinde?: string|null}} [opt]
+ *   durchLeitung: Die Leitung hat das Passwort gesetzt, nicht die Person.
  */
-const sendPasswordChangedEmail = async (email, name) => {
+const sendPasswordChangedEmail = async (email, name, { durchLeitung = false, gemeinde = null } = {}) => {
   const subject = 'Passwort geändert - Konfi Quest';
+
+  const vonWem = durchLeitung
+    ? `die Leitung deiner Gemeinde${gemeinde ? ` (${gemeinde})` : ''} hat ein neues Passwort für dein Konto bei Konfi Quest gesetzt. Das Passwort selbst steht nicht in dieser Mail — du bekommst es von ihr.`
+    : 'dein Passwort für Konfi Quest wurde erfolgreich geändert.';
+  const vonWemHtml = durchLeitung
+    ? `die Leitung deiner Gemeinde${gemeinde ? ` (${escapeHtml(gemeinde)})` : ''} hat ein neues Passwort für dein Konto bei Konfi Quest gesetzt. Das Passwort selbst steht nicht in dieser Mail — du bekommst es von ihr.`
+    : 'dein Passwort für Konfi Quest wurde erfolgreich geändert.';
 
   const text = `
 Hallo ${name},
 
-dein Passwort für Konfi Quest wurde erfolgreich geändert.
+${vonWem}
 
-Falls du diese Änderung nicht vorgenommen hast, kontaktiere bitte sofort deinen Administrator.
+Falls du diese Änderung nicht vorgenommen oder erwartet hast, kontaktiere bitte sofort deinen Administrator.
 
 Viele Grüße,
 Dein Konfi Quest Team
@@ -210,9 +246,9 @@ Dein Konfi Quest Team
         <div class="success-icon">&#10003;</div>
         <h2>Passwort geändert!</h2>
       </div>
-      <p style="margin-top: 20px;">Hallo ${name},</p>
-      <p>dein Passwort für Konfi Quest wurde erfolgreich geändert.</p>
-      <p style="color: #666; font-size: 14px;">Falls du diese Änderung nicht vorgenommen hast, kontaktiere bitte sofort deinen Administrator.</p>
+      <p style="margin-top: 20px;">Hallo ${escapeHtml(name)},</p>
+      <p>${vonWemHtml}</p>
+      <p style="color: #666; font-size: 14px;">Falls du diese Änderung nicht vorgenommen oder erwartet hast, kontaktiere bitte sofort deinen Administrator.</p>
   `, { headerGradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' });
 
   return sendEmail({ to: email, subject, text, html });
@@ -309,7 +345,7 @@ Hallo ${name},
 
 der Jahrgang "${jahrgangName}" in eurer Organisation "${orgName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} automatisch gelöscht.
 
-Das ist die letzte Gelegenheit, Konfis dieses Jahrgangs noch zu Teamer:innen zu befördern. Beförderte Teamer:innen behalten ihre Punkte und Abzeichen und bleiben euch erhalten - alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt.
+Das ist die letzte Gelegenheit, Konfis dieses Jahrgangs noch zu Teamer:innen zu befördern. Beförderte Teamer:innen behalten ihre Punkte und Badges und bleiben euch erhalten - alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt.
 
 Wenn ihr nichts unternehmt, geschieht die Löschung automatisch.
 
@@ -322,7 +358,7 @@ Dein Konfi Quest Team
       <p>der Jahrgang <strong>${jahrgangName}</strong> in eurer Organisation <strong>${orgName}</strong> wird bald gelöscht:</p>
       <div class="date">Löschung in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'}</div>
       <div class="warning">
-        <strong>Letzte Chance:</strong> Befördert jetzt noch Konfis dieses Jahrgangs zu Teamer:innen, wenn sie euch erhalten bleiben sollen. Beförderte Teamer:innen behalten ihre Punkte und Abzeichen. Alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt. Geschieht nichts, wird der Jahrgang automatisch gelöscht.
+        <strong>Letzte Chance:</strong> Befördert jetzt noch Konfis dieses Jahrgangs zu Teamer:innen, wenn sie euch erhalten bleiben sollen. Beförderte Teamer:innen behalten ihre Punkte und Badges. Alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt. Geschieht nichts, wird der Jahrgang automatisch gelöscht.
       </div>
   `);
 
@@ -409,7 +445,7 @@ const sendKonfiMatrixEmail = async (email, adminName, jahrgangName, type, rows =
       </table>`;
   } else {
     // Anwesenheit: Name + besuchte/gesamte Pflicht-Events
-    const textLines = rows.map(r => `${r.display_name} | Anwesenheit: ${r.present_count} von ${r.total_count} Pflicht-Terminen`);
+    const textLines = rows.map(r => `${r.display_name} | Anwesenheit: ${r.present_count} von ${r.total_count} Pflicht-Events`);
     textBody = textLines.length > 0 ? textLines.join('\n') : 'Keine Konfis in diesem Jahrgang.';
 
     const rowsHtml = rows.length > 0
@@ -425,7 +461,7 @@ const sendKonfiMatrixEmail = async (email, adminName, jahrgangName, type, rows =
         <thead>
           <tr>
             <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Konfi</th>
-            <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Anwesenheit (Pflicht-Termine)</th>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Anwesenheit (Pflicht-Events)</th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>

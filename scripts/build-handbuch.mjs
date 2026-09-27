@@ -26,9 +26,9 @@ import { fileURLToPath } from 'node:url';
 const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const QUELLE = join(WURZEL, 'docs', 'handbuch');
 // Ein Verzeichnis, nicht eine Datei: Seit dem 24.08.2026 bekommt jedes Kapitel
-// eine eigene Seite. Zwoelf Kapitel in einem Dokument waren für Lesende zu
-// viel — man fand nicht wieder, wo man war, und konnte sich auf nichts
-// beziehen. Jetzt: nummerierte Kapitel, eine Seite pro Kapitel, unten
+// eine eigene Seite. Die damals zwoelf Kapitel (heute 14) in einem Dokument
+// waren für Lesende zu viel — man fand nicht wieder, wo man war, und konnte
+// sich auf nichts beziehen. Jetzt: nummerierte Kapitel, eine Seite pro Kapitel, unten
 // vor/zurück, davor eine Übersicht (index.html).
 const ZIEL_VERZ = process.argv[2]
   ? resolve(process.argv[2])
@@ -120,6 +120,12 @@ function markdown(quelle, anker = new Set(), kapitelNr = null, abschnitte = null
     const z = zeilen[i];
 
     if (!z.trim()) { i++; continue; }
+
+    // Trennlinie ("---" allein in einer Zeile). Ohne diesen Zweig landete sie
+    // als sichtbarer Absatz "---" im HTML (27.09.2026: 24 Stellen in
+    // Abzeichen, Challenges und Chat). Das Frontmatter hat lesen() vorher
+    // abgetrennt.
+    if (/^-{3,}$/.test(z.trim())) { teile.push('<hr>'); i++; continue; }
 
     // Ueberschriften — mit Anker, damit Querverweise auf Abschnitte zeigen
     // koennen. Bei doppeltem Text ("Events" als h2 und h3) wird gezaehlt,
@@ -247,7 +253,7 @@ function markdown(quelle, anker = new Set(), kapitelNr = null, abschnitte = null
     // Absatz
     const absatz = [];
     while (i < zeilen.length && zeilen[i].trim()
-      && !/^([-*]\s|\d+\.\s|>|#{2,4}\s|\||```)/.test(zeilen[i].trim())
+      && !/^([-*]\s|\d+\.\s|>|#{2,4}\s|\||```|-{3,}$)/.test(zeilen[i].trim())
       && !/^!\[[^\]]*\]\([^()\s]+\)$/.test(zeilen[i].trim())) {
       absatz.push(zeilen[i].trim());
       i++;
@@ -366,6 +372,7 @@ table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
+hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 @media (max-width:860px) {
   /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
      zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
@@ -407,6 +414,17 @@ tbody tr:last-child td { border-bottom:none; }
 .seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
 .seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
 
+/* Abschnitte des aktuellen Kapitels (27.09.2026): eingerueckt an einer
+   feinen Linie. Der gerade gelesene (aria-current="location", gesetzt vom
+   Skript am Seitenende) bekommt ein Stueck Linie in der Akzentfarbe. Die
+   Nummernspalte ist so breit wie "11.17", damit die Titel buendig stehen. */
+.seitenleiste ul.nav-abschnitte { margin:3px 0 7px 13px; border-left:1px solid var(--rand); gap:1px; }
+.seitenleiste ul.nav-abschnitte a { align-items:baseline; gap:7px; margin-left:-1px; padding:5px 9px 5px 10px; border-left:2px solid transparent; border-radius:0 7px 7px 0; font-size:.8rem; line-height:1.4; color:var(--text-leise); overflow-wrap:anywhere; }
+.seitenleiste ul.nav-abschnitte a:hover { color:var(--text); }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] { color:var(--text); background:var(--flaeche-2); border-left-color:var(--akzent); font-weight:600; }
+.nav-abschnitt-nr { flex:none; min-width:4.4ch; font-size:.72rem; font-variant-numeric:tabular-nums; }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] .nav-abschnitt-nr { color:var(--akzent); }
+
 .kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
 .kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
 
@@ -438,6 +456,66 @@ tbody tr:last-child td { border-bottom:none; }
   .kapitel-kopf h1 { font-size:1.9rem; }
 }`;
 
+/**
+ * Mitlaufende Markierung (27.09.2026): Der Abschnitt, in dem man gerade
+ * liest, traegt in der Seitenleiste aria-current="location". Steht am
+ * Seitenende, weil es die Ueberschriften im DOM braucht.
+ * Aktiv ist die letzte h2 oberhalb einer Linie bei 35 % der Fensterhoehe.
+ * Der Observer meldet sich nur, wenn eine Ueberschrift diese Linie kreuzt --
+ * kein Scroll-Handler, keine Bibliothek. Am Kapitelende laesst sich der
+ * letzte Abschnitt oft nicht mehr bis zur Linie schieben; ist das Blaettern
+ * ganz im Bild, gilt deshalb der angesprungene Abschnitt, sonst der letzte
+ * sichtbare. Die Seitenleiste scrollt auf dem Desktop in sich (Termine: 14
+ * Kapitel + 17 Abschnitte, 1766 px bei 800 px Fensterhoehe) und wird
+ * nachgefuehrt, damit die Markierung im Bild bleibt. Schon beim Laden holt
+ * sie das Kapitel samt Unterpunkten ins Bild -- ab Kapitel 7 ragten die
+ * Unterpunkte sonst unter den Rand (Challenges: 689 bis 1239 px bei 800 px).
+ */
+const MITLESEN = `
+<script>
+(function () {
+  var leiste = document.querySelector('.seitenleiste');
+  var liste = leiste.querySelector('.nav-abschnitte');
+  if (leiste.scrollHeight > leiste.clientHeight) {
+    var k = leiste.getBoundingClientRect();
+    var fehlt = liste.getBoundingClientRect().bottom - k.bottom + 16;
+    var bisKapitel = leiste.querySelector('.ist-hier').getBoundingClientRect().top - k.top - 48;
+    if (fehlt > 0) leiste.scrollTop += Math.min(fehlt, bisKapitel);
+  }
+  if (!('IntersectionObserver' in window)) return;
+  var ende = document.querySelector('.blaettern');
+  var ziele = [];
+  liste.querySelectorAll('a').forEach(function (a) {
+    var h = document.getElementById(a.hash.slice(1));
+    if (h) ziele.push({ a: a, h: h });
+  });
+  var markieren = function () {
+    var hoehe = window.innerHeight;
+    var amEnde = !!ende && ende.getBoundingClientRect().bottom <= hoehe;
+    var linie = amEnde ? hoehe : hoehe * 0.35;
+    var aktiv = null, angesprungen = null;
+    ziele.forEach(function (z) {
+      var oben = z.h.getBoundingClientRect().top;
+      if (oben < linie) aktiv = z;
+      if (z.a.hash === location.hash && oben >= 0 && oben < hoehe) angesprungen = z;
+    });
+    if (amEnde && angesprungen) aktiv = angesprungen;
+    ziele.forEach(function (z) {
+      if (z === aktiv) z.a.setAttribute('aria-current', 'location');
+      else z.a.removeAttribute('aria-current');
+    });
+    if (aktiv && leiste.scrollHeight > leiste.clientHeight) {
+      var r = aktiv.a.getBoundingClientRect(), l = leiste.getBoundingClientRect();
+      if (r.top < l.top || r.bottom > l.bottom) leiste.scrollTop += r.top - l.top - l.height / 3;
+    }
+  };
+  var beobachter = new IntersectionObserver(markieren, { rootMargin: '0px 0px -65% 0px' });
+  ziele.forEach(function (z) { beobachter.observe(z.h); });
+  if (ende) new IntersectionObserver(markieren, { threshold: 1 }).observe(ende);
+  window.addEventListener('hashchange', markieren);
+})();
+</script>`;
+
 function main() {
   const dateien = readdirSync(QUELLE).filter((f) => f.endsWith('.md')).sort();
   if (!dateien.length) throw new Error('Keine Markdown-Dateien in docs/handbuch/');
@@ -454,18 +532,31 @@ function main() {
     g.seiten.push(s);
   }
 
-  /** Navigation, in jeder Seite gleich; die aktuelle Seite ist markiert. */
-  const navFuer = (aktuell) => gruppen.map((g) =>
+  /**
+   * Navigation: alle Kapitel, die aktuelle Seite markiert. Unter dem
+   * aktuellen Kapitel stehen seine Abschnitte als eingerueckte Unterpunkte
+   * (Simon, 27.09.2026: "die subpunkte als Unterpunkte ausklappen wenn man
+   * ein Kapitel anklickt"). Nur h2: Mit h3 kaemen die Termine auf 54 Punkte
+   * (17 + 37, gezaehlt 27.09.2026), das liest niemand mehr als Leiste. Die
+   * anderen Kapitel bleiben zu -- ein Klick oeffnet deren Seite, und dort
+   * stehen deren Abschnitte offen. Ohne Skript, ohne Zustand.
+   */
+  const navFuer = (aktuell, abschnitte = []) => gruppen.map((g) =>
     (g.name ? `<p class="nav-gruppe">${e(g.name)}</p>` : '')
     + `<ul>${g.seiten.map((s) => {
         const hier = aktuell && s.id === aktuell.id;
+        const unter = hier ? abschnitte.filter((a) => a.stufe === 2) : [];
         return `<li><a href="./${e(s.datei)}"${hier ? ' aria-current="page" class="ist-hier"' : ''}>`
-          + `<span class="nav-nr">${s.nr}</span>${e(s.titel)}</a></li>`;
+          + `<span class="nav-nr">${s.nr}</span>${e(s.titel)}</a>`
+          + (unter.length ? `<ul class="nav-abschnitte">${unter.map((a) =>
+              `<li><a href="#${e(a.id)}"><span class="nav-abschnitt-nr">${e(a.nummer)}</span>${e(a.titel)}</a></li>`
+            ).join('')}</ul>` : '')
+          + '</li>';
       }).join('')}</ul>`
   ).join('');
 
   /** Gemeinsame Huelle. `stand` bleibt bewusst leer (siehe Commit vom 24.08.). */
-  const huelle = ({ titel, beschreibung, aktuell, inhalt }) => `<!doctype html>
+  const huelle = ({ titel, beschreibung, aktuell, inhalt, abschnitte = [] }) => `<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -497,7 +588,7 @@ ${STIL}
       <div class="nav-inhalt">
         <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
         <p class="nav-titel">Inhalt</p>
-        ${navFuer(aktuell)}
+        ${navFuer(aktuell, abschnitte)}
         <div class="fuss">
           <p><a href="/docs/api/">API-Referenz</a></p>
           <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
@@ -516,12 +607,19 @@ ${STIL}
     var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
     setzen();
     if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+    /* Ein Tipp auf einen Eintrag schliesst das Menue (27.09.2026). Bei
+       Kapiteln tat das bisher nur die neue Seite; ein Abschnitt liegt auf
+       derselben Seite, und das offene Menue verdeckte ihn. Der Klick kommt
+       vor dem Sprung an -- der Browser rechnet schon mit der schmalen Leiste. */
+    klapp.addEventListener('click', function (ev) {
+      if (schmal.matches && ev.target.closest('.nav-inhalt a')) klapp.removeAttribute('open');
+    });
   })();
   </script>
   <main class="inhalt">
 ${inhalt}
   </main>
-</div>
+</div>${abschnitte.some((a) => a.stufe === 2) ? MITLESEN : ''}
 </body>
 </html>
 `;
@@ -580,12 +678,13 @@ ${inhalt}
     const rumpfHtml = markdown(s.rumpf, anker, s.nr, abschnitte);
 
     // Inhaltsverzeichnis DES KAPITELS, direkt unter der Kapitelueberschrift
-    // (Simon, 08.09.2026). Zwei Ebenen, die zweite eingerueckt. Es steht im
-    // Fluss und nicht in der Seitenleiste: Die traegt schon die dreizehn
-    // Kapitel, und auf dem Handy klappt sie ohnehin zu.
-    // Lange Verzeichnisse starten zugeklappt -- das Wrapped-Kapitel hat 28
-    // Abschnitte und fuellte sonst den ganzen ersten Bildschirm (gemessen
-    // 1048 px). <details open> im HTML heisst: ohne JavaScript ist alles
+    // (Simon, 08.09.2026). Zwei Ebenen, die zweite eingerueckt. Die
+    // Seitenleiste zeigt seit dem 27.09.2026 nur die erste Ebene (siehe
+    // navFuer); dieses Verzeichnis bleibt, weil es die h3 mitfuehrt und auf
+    // dem Handy im Fluss steht, wo die Leiste zugeklappt ist.
+    // Lange Verzeichnisse starten zugeklappt -- das Wrapped-Kapitel hat 27
+    // Abschnitte (gezaehlt 26.09.2026) und fuellte sonst den ganzen ersten
+    // Bildschirm (gemessen 1048 px). <details open> im HTML heisst: ohne JavaScript ist alles
     // sichtbar; das Mini-Skript darunter nimmt das open bei langen Listen
     // weg. Kurze Kapitel bleiben offen.
     const langeListe = abschnitte.length > 8;
@@ -616,6 +715,7 @@ ${blaettern}`;
         beschreibung: s.untertitel,
         aktuell: s,
         inhalt,
+        abschnitte,
       }),
     });
   }

@@ -1953,6 +1953,16 @@ describe('Konfi Routes', () => {
   // Leitung gleich informieren.
   describe('POST /api/konfi/requests — Leitungs-Mitteilungen', () => {
     it('Antrag erzeugt In-App-Mitteilung fuer admin UND org_admin, sonst niemanden', async () => {
+      // Seit 27.09.2026 bekommt ein Admin die Mitteilung nur mit Zuweisung
+      // auf den Jahrgang des Konfis (Simon: "Antraege duerfen auch nur an
+      // Admins des Jahrgangs gehen"). admin1 hat im Seed keinen Jahrgang --
+      // die Zuweisung haelt den Sinn dieses Tests (M6: auch die Rolle admin
+      // bekommt die Mitteilung). Den Fall ohne Zuweisung prueft
+      // antragLeitungEmpfaenger.test.js.
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+      );
       const res = await request(app)
         .post('/api/konfi/requests')
         .set('Authorization', `Bearer ${konfiToken}`)

@@ -3,8 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, ORGS, ROLES, JAHRGAENGE } = require('../helpers/seed');
+const { seed, USERS, ORGS, ROLES, JAHRGAENGE, EVENTS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
+const { invalidateUserCache } = require('../../middleware/rbac');
 
 describe('Users Routes', () => {
   let app;
@@ -1296,6 +1297,671 @@ describe('Users Routes', () => {
         .send({ jahrgang_assignments: zuweisung });
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
+  // Super-Admin-Konten sind fuer Org-Admins unantastbar
+  //
+  // Audit 26.09.2026 (Sicherheit BF-01, KRITISCH): Ein Org-Admin konnte das
+  // Passwort jedes Super-Admin-Kontos setzen, das dieselbe Stamm-Gemeinde
+  // traegt -- ueber reset-password (prueft nur Rolle des Aufrufers und
+  // Org-Gleichheit) und ueber PUT/DELETE (checkUserHierarchy sah nur die
+  // Rolle org_admin, nicht das Flag is_super_admin). Danach Login als
+  // Super-Admin, alle Gemeinden sichtbar. Hier der verbotene UND der
+  // erlaubte Fall je Weg.
+  // ================================================================
+  describe('Super-Admin-Konten sind fuer Org-Admins unantastbar', () => {
+    const neuesPasswort = 'Sicheres-Passwort-2026!';
+
+    const passwortHash = async (id) => {
+      const { rows: [u] } = await db.query('SELECT password_hash FROM users WHERE id = $1', [id]);
+      return u.password_hash;
+    };
+
+    it('org_admin setzt KEIN Passwort fuer ein super_admin-Konto derselben Org -> 403', async () => {
+      const vorher = await passwortHash(USERS.superAdmin.id);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.superAdmin.id}/reset-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: neuesPasswort });
+
+      expect(res.status).toBe(403);
+      expect(await passwortHash(USERS.superAdmin.id)).toBe(vorher);
+    });
+
+    it('org_admin setzt KEIN Passwort fuer ein org_admin-Konto MIT is_super_admin-Flag -> 403', async () => {
+      const vorher = await passwortHash(USERS.orgAdminSuper.id);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.orgAdminSuper.id}/reset-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: neuesPasswort });
+
+      expect(res.status).toBe(403);
+      expect(await passwortHash(USERS.orgAdminSuper.id)).toBe(vorher);
+    });
+
+    it('org_admin bearbeitet KEIN Konto mit is_super_admin-Flag -> 403', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.orgAdminSuper.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ display_name: 'Uebernommen', password: neuesPasswort });
+
+      expect(res.status).toBe(403);
+      const { rows: [u] } = await db.query('SELECT display_name FROM users WHERE id = $1', [USERS.orgAdminSuper.id]);
+      expect(u.display_name).toBe(USERS.orgAdminSuper.display_name);
+    });
+
+    it('org_admin loescht KEIN Konto mit is_super_admin-Flag -> 403', async () => {
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.orgAdminSuper.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(403);
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1 AND deleted_at IS NULL', [USERS.orgAdminSuper.id]);
+      expect(rows).toHaveLength(1);
+    });
+
+    it('org_admin weist einem Konto mit is_super_admin-Flag KEINE Jahrgaenge zu -> 403', async () => {
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.orgAdminSuper.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahrgang_assignments: [{ jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: true }] });
+
+      expect(res.status).toBe(403);
+    });
+
+    // ---- der erlaubte Fall --------------------------------------------------
+
+    it('super_admin setzt das Passwort eines org_admin MIT Flag -> 200', async () => {
+      const vorher = await passwortHash(USERS.orgAdminSuper.id);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.orgAdminSuper.id}/reset-password`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({ password: neuesPasswort });
+
+      expect(res.status).toBe(200);
+      expect(await passwortHash(USERS.orgAdminSuper.id)).not.toBe(vorher);
+    });
+
+    it('org_admin setzt weiterhin das Passwort eines Admins derselben Org -> 200', async () => {
+      const vorher = await passwortHash(USERS.admin1.id);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.admin1.id}/reset-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: neuesPasswort });
+
+      expect(res.status).toBe(200);
+      expect(await passwortHash(USERS.admin1.id)).not.toBe(vorher);
+    });
+
+    it('org_admin bearbeitet weiterhin einen anderen org_admin OHNE Flag -> 200', async () => {
+      const { rows: [zweiter] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
+         VALUES ('orgadmin.zwei', 'Zweite Leitung', 'x', $1, $2) RETURNING id`,
+        [USERS.orgAdmin1.role_id, ORGS.testGemeinde.id]
+      );
+      const res = await request(app)
+        .put(`/api/admin/users/${zweiter.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ display_name: 'Zweite Leitung (neu)' });
+
+      expect(res.status).toBe(200);
+      const { rows: [u] } = await db.query('SELECT display_name FROM users WHERE id = $1', [zweiter.id]);
+      expect(u.display_name).toBe('Zweite Leitung (neu)');
+    });
+  });
+
+  // ================================================================
+  // Mitglieder aus weiteren Gemeinden (user_organizations)
+  //
+  // Audit 26.09.2026 (Leitung BF-01, HOCH): Wer ueber eine Gemeinde-Einladung
+  // mitarbeitet, fehlte in GET /users (nur Stamm-Gemeinde) und liess sich
+  // ueber PUT nicht bearbeiten -- eine eingeladene Admin bekam nie einen
+  // Jahrgang. Hier: teamer2 ist in Org 2 zuhause und arbeitet als Teamer:in
+  // in Org 1. Die Leitung von Org 1 sieht sie, aendert ihre Rolle und beendet
+  // die Mitgliedschaft -- aber nie Name, Passwort oder Konto.
+  // ================================================================
+  describe('Mitglieder aus weiteren Gemeinden (user_organizations)', () => {
+    beforeEach(async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.teamer2.id, ORGS.testGemeinde.id, ROLES.teamer.id]
+      );
+    });
+
+    const liste = async (token) => {
+      const res = await request(app).get('/api/admin/users').set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      return res.body;
+    };
+
+    it('GET /users zeigt die Person mit der Rolle DIESER Gemeinde und dem Kennzeichen "weitere"', async () => {
+      const users = await liste(orgAdminToken);
+      const teamer2 = users.find(u => u.id === USERS.teamer2.id);
+      const admin1 = users.find(u => u.id === USERS.admin1.id);
+
+      expect(teamer2).toBeDefined();
+      expect(teamer2.role_name).toBe('teamer');
+      expect(teamer2.mitgliedschaft).toBe('weitere');
+      expect(teamer2.can_edit).toBe(true);
+      // Ihr Jahrgang aus Org 2 zaehlt hier nicht mit.
+      expect(Number(teamer2.assigned_jahrgaenge_count)).toBe(0);
+      expect(admin1.mitgliedschaft).toBe('stamm');
+    });
+
+    it('in der Stamm-Gemeinde bleibt sie "stamm" und zaehlt ihre eigenen Jahrgaenge', async () => {
+      const users = await liste(orgAdmin2Token);
+      const teamer2 = users.find(u => u.id === USERS.teamer2.id);
+
+      expect(teamer2.mitgliedschaft).toBe('stamm');
+      expect(Number(teamer2.assigned_jahrgaenge_count)).toBe(1);
+      // Niemand aus Org 1 rutscht in die Liste von Org 2.
+      expect(users.find(u => u.id === USERS.admin1.id)).toBeUndefined();
+    });
+
+    it('GET /users/:id traegt das Kennzeichen', async () => {
+      const res = await request(app)
+        .get(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.mitgliedschaft).toBe('weitere');
+      expect(res.body.role_name).toBe('teamer');
+    });
+
+    it('PUT aendert die Rolle nur in DIESER Gemeinde', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ role_id: ROLES.admin.id });
+
+      expect(res.status).toBe(200);
+      const { rows: [uo] } = await db.query(
+        'SELECT role_id FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+        [USERS.teamer2.id, ORGS.testGemeinde.id]
+      );
+      expect(uo.role_id).toBe(ROLES.admin.id);
+      const { rows: [konto] } = await db.query('SELECT role_id FROM users WHERE id = $1', [USERS.teamer2.id]);
+      expect(konto.role_id).toBe(USERS.teamer2.role_id);
+    });
+
+    it('PUT mit UNVERAENDERTEN Kontofeldern (so schickt es die Oberflaeche) -> 200', async () => {
+      const { body: u } = await request(app)
+        .get(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          username: u.username, email: u.email, display_name: u.display_name,
+          role_title: u.role_title, is_active: u.is_active, role_id: ROLES.admin.id
+        });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('PUT wie die Store-App 2.2.x: leere Felder als null, Namen getrimmt -> 200', async () => {
+      // Kompatibilitaetspruefung 27.09.2026: In der Datenbank stehen leere
+      // Felder teils als '' (aeltere Oberflaechen schrieben sie so), Namen
+      // teils mit Leerzeichen am Rand. Das Formular der App 2.2.0 laedt die
+      // Werte und schickt `email.trim() || null`, `role_title.trim() || null`
+      // und den getrimmten Namen (UserManagementModal am Tag 2.2.0). Nichts
+      // davon ist eine Aenderung -- vorher kam 400 nur_rolle_in_weiterer_gemeinde.
+      await db.query(
+        `UPDATE users SET email = '', role_title = '', display_name = display_name || ' '
+          WHERE id = $1`,
+        [USERS.teamer2.id]
+      );
+      const { body: u } = await request(app)
+        .get(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          username: u.username.trim(),
+          email: (u.email || '').trim() || null,
+          display_name: u.display_name.trim(),
+          role_title: (u.role_title || '').trim() || null,
+          role_id: ROLES.admin.id,
+          is_active: u.is_active
+        });
+
+      expect(res.status).toBe(200);
+      const { rows: [uo] } = await db.query(
+        'SELECT role_id FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+        [USERS.teamer2.id, ORGS.testGemeinde.id]
+      );
+      expect(uo.role_id).toBe(ROLES.admin.id);
+      // Die Kontofelder bleiben, wie sie waren -- geschrieben wird nur die Rolle.
+      const { rows: [konto] } = await db.query(
+        'SELECT email, role_title, display_name FROM users WHERE id = $1', [USERS.teamer2.id]
+      );
+      expect(konto).toEqual({ email: '', role_title: '', display_name: `${USERS.teamer2.display_name} ` });
+    });
+
+    it('PUT mit geaendertem Namen -> 400, nichts geaendert', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ display_name: 'Umbenannt von Gemeinde 1', role_id: ROLES.admin.id });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error_code).toBe('nur_rolle_in_weiterer_gemeinde');
+      const { rows: [konto] } = await db.query('SELECT display_name FROM users WHERE id = $1', [USERS.teamer2.id]);
+      expect(konto.display_name).toBe(USERS.teamer2.display_name);
+      const { rows: [uo] } = await db.query(
+        'SELECT role_id FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+        [USERS.teamer2.id, ORGS.testGemeinde.id]
+      );
+      expect(uo.role_id).toBe(ROLES.teamer.id);
+    });
+
+    it('PUT mit Passwort -> 400', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: 'Sicheres-Passwort-2026!' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error_code).toBe('nur_rolle_in_weiterer_gemeinde');
+    });
+
+    it('reset-password setzt nur die Stamm-Gemeinde -> 403', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}/reset-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: 'Sicheres-Passwort-2026!' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('DELETE beendet die Mitgliedschaft samt Jahrgaengen dieser Gemeinde -- das Konto bleibt', async () => {
+      const zuweisung = await request(app)
+        .post(`/api/admin/users/${USERS.teamer2.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahrgang_assignments: [{ jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: true }] });
+      expect(zuweisung.status).toBe(200);
+
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Mitgliedschaft in dieser Gemeinde beendet');
+      expect(res.body.konto_bleibt).toBe(true);
+      const { rows: uo } = await db.query(
+        'SELECT 1 FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+        [USERS.teamer2.id, ORGS.testGemeinde.id]
+      );
+      expect(uo).toHaveLength(0);
+      const { rows: konto } = await db.query('SELECT id FROM users WHERE id = $1', [USERS.teamer2.id]);
+      expect(konto).toHaveLength(1);
+      const { rows: jahrgaenge } = await db.query(
+        'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1 ORDER BY jahrgang_id',
+        [USERS.teamer2.id]
+      );
+      // Der Jahrgang aus Org 1 ist weg, der aus der Stamm-Gemeinde (Seed) bleibt.
+      expect(jahrgaenge.map(j => j.jahrgang_id)).toEqual([JAHRGAENGE.jahrgang2.id]);
+      // Und in der Stamm-Gemeinde steht sie weiterhin in der Liste.
+      const org2 = await liste(orgAdmin2Token);
+      expect(org2.find(u => u.id === USERS.teamer2.id)).toBeDefined();
+    });
+
+    it('DELETE nimmt sie aus ALLEN Chat-Raeumen dieser Gemeinde -- die der Stamm-Gemeinde bleiben', async () => {
+      // Befund 27.09.2026 (gemessen): Die Syncs erfassten nur Team-Chat und
+      // Jahrgaenge mit Zuweisung. Eine Gruppe (Raum 3), ein Jahrgangs-Chat,
+      // in dem sie als Org-Admin oder ohne Zuweisung sass (Raum 1), und
+      // Zweierraeume blieben -- und chat.js pusht an alle Teilnehmenden
+      // eines Raums, also weiter jede Nachricht aus einer Gemeinde, in der
+      // sie nicht mehr Mitglied ist.
+      for (const raum of [1, 2, 3, 4]) {
+        await db.query(
+          "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'teamer')",
+          [raum, USERS.teamer2.id]
+        );
+      }
+
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT room_id FROM chat_participants WHERE user_id = $1 ORDER BY room_id',
+        [USERS.teamer2.id]
+      );
+      // Raum 4 ist der Jahrgangs-Chat ihrer Stamm-Gemeinde (Org 2).
+      expect(rows.map(r => r.room_id)).toEqual([4]);
+      // Die anderen Teilnehmenden der Raeume von Org 1 bleiben unberuehrt.
+      const { rows: [{ anzahl }] } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM chat_participants WHERE room_id IN (1, 2, 3)'
+      );
+      expect(anzahl).toBe(8);
+    });
+  });
+
+  // ================================================================
+  // Hier beheimatete Person mit weiteren Gemeinden entfernen
+  //
+  // Entscheidung Simon (27.09.2026): "Ich muss jemanden, der in mehreren
+  // Organisationen ist, in meiner loeschen koennen und dafuer sorgen, dass er
+  // dann nicht mehr in meiner ist. [...] Die andere Institution oder
+  // Organisation muss dann den Account behalten."
+  //
+  // Bis dahin loeschte DELETE /users/:id das GANZE Konto, sobald die Person
+  // in der aufrufenden Gemeinde zuhause war -- und mit ihm per CASCADE ihre
+  // Mitgliedschaften in allen anderen Gemeinden.
+  //
+  // Hier: teamer1 ist in Org 1 zuhause (Teamer:in, Jahrgang 1, Jahrgangs-Chat
+  // und Team-Gruppe von Org 1) und arbeitet in Org 2 als Admin mit
+  // (user_organizations, Jahrgang 2, Jahrgangs-Chat von Org 2).
+  // ================================================================
+  describe('Hier beheimatete Person mit weiteren Gemeinden entfernen', () => {
+    const ORG3 = { id: 3, name: 'Dritte Gemeinde' };
+    const ROLLE3 = { orgAdmin: 30, teamer: 31 };
+
+    beforeEach(async () => {
+      // Einige Tests verlegen Seed-Konten in eine andere Gemeinde. Der
+      // Rechte-Cache (30 s) haelt sonst den Stand aus dem vorigen Test.
+      invalidateUserCache();
+      await db.query(
+        `INSERT INTO user_organizations (user_id, organization_id, role_id, created_at)
+         VALUES ($1, $2, $3, NOW() - INTERVAL '1 day')`,
+        [USERS.teamer1.id, ORGS.andereGemeinde.id, ROLES.admin2.id]
+      );
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.teamer1.id, JAHRGAENGE.jahrgang2.id]
+      );
+      // Jahrgangs-Chat von Org 2 (Raum 4): dort sitzt sie ueber ihre Zuweisung.
+      await db.query(
+        "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (4, $1, 'admin')",
+        [USERS.teamer1.id]
+      );
+    });
+
+    const dritteGemeinde = async ({ aktiv = true } = {}) => {
+      await db.query(
+        'INSERT INTO organizations (id, name, slug, display_name, is_active) VALUES ($1, $2, $3, $2, $4)',
+        [ORG3.id, ORG3.name, 'dritte-gemeinde', aktiv]
+      );
+      await db.query(
+        `INSERT INTO roles (id, name, display_name, organization_id)
+         VALUES ($1, 'org_admin', 'Org-Admin', $3), ($2, 'teamer', 'Teamer:in', $3)`,
+        [ROLLE3.orgAdmin, ROLLE3.teamer, ORG3.id]
+      );
+    };
+
+    const entfernen = (token, userId, kopf = {}) => {
+      let r = request(app).delete(`/api/admin/users/${userId}`).set('Authorization', `Bearer ${token}`);
+      for (const [k, v] of Object.entries(kopf)) r = r.set(k, v);
+      return r;
+    };
+    const konto = async (userId) => {
+      const { rows: [k] } = await db.query('SELECT organization_id, role_id FROM users WHERE id = $1', [userId]);
+      return k ? { organization_id: Number(k.organization_id), role_id: Number(k.role_id) } : null;
+    };
+    const weitere = async (userId) => {
+      const { rows } = await db.query(
+        'SELECT organization_id, role_id FROM user_organizations WHERE user_id = $1 ORDER BY organization_id',
+        [userId]
+      );
+      return rows.map(r => ({ organization_id: Number(r.organization_id), role_id: Number(r.role_id) }));
+    };
+    const jahrgaenge = async (userId) => {
+      const { rows } = await db.query(
+        'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1 ORDER BY jahrgang_id',
+        [userId]
+      );
+      return rows.map(r => Number(r.jahrgang_id));
+    };
+    const raeume = async (userId) => {
+      const { rows } = await db.query(
+        'SELECT room_id FROM chat_participants WHERE user_id = $1 ORDER BY room_id',
+        [userId]
+      );
+      return rows.map(r => Number(r.room_id));
+    };
+    const liste = async (token) => {
+      const res = await request(app).get('/api/admin/users').set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      return res.body;
+    };
+
+    it('GET /users sagt vorher, dass sie auch anderswo Mitglied ist -- ohne den Namen der Gemeinde', async () => {
+      const org1 = await liste(orgAdminToken);
+      const teamer1 = org1.find(u => u.id === USERS.teamer1.id);
+      expect(teamer1.mitgliedschaft).toBe('stamm');
+      expect(teamer1.weitere_gemeinden).toBe(1);
+      expect(org1.find(u => u.id === USERS.admin1.id).weitere_gemeinden).toBe(0);
+      expect(JSON.stringify(org1)).not.toContain(ORGS.andereGemeinde.name);
+
+      // In Org 2 ist sie "weitere" -- ihre Stamm-Gemeinde zaehlt dort mit.
+      const org2 = await liste(orgAdmin2Token);
+      const dort = org2.find(u => u.id === USERS.teamer1.id);
+      expect(dort.mitgliedschaft).toBe('weitere');
+      expect(dort.weitere_gemeinden).toBe(1);
+      expect(JSON.stringify(org2)).not.toContain(ORGS.testGemeinde.name);
+    });
+
+    it('DELETE entfernt sie aus Org 1 -- das Konto bleibt und ist jetzt in Org 2 zuhause', async () => {
+      // Was sie in Org 1 geschaffen hat, bleibt stehen (das Konto gibt es ja weiter).
+      await db.query('UPDATE events SET created_by = $1 WHERE id = $2', [USERS.teamer1.id, EVENTS.gottesdienstEvent.id]);
+      const { rows: [nachricht] } = await db.query(
+        "INSERT INTO chat_messages (room_id, user_id, user_type, content) VALUES (3, $1, 'teamer', 'Hallo Team') RETURNING id",
+        [USERS.teamer1.id]
+      );
+
+      const res = await entfernen(orgAdminToken, USERS.teamer1.id);
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen');
+      expect(res.body.konto_bleibt).toBe(true);
+      expect(JSON.stringify(res.body)).not.toContain(ORGS.andereGemeinde.name);
+
+      // Stamm-Gemeinde ist jetzt Org 2, mit der Rolle von dort (Admin).
+      expect(await konto(USERS.teamer1.id)).toEqual({ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.admin2.id });
+      // Keine Mitgliedschaft mehr in Org 1; die Org-2-Zeile ist jetzt die Stamm-Gemeinde.
+      expect(await weitere(USERS.teamer1.id)).toEqual([]);
+      // Jahrgang 1 (Org 1) ist weg, Jahrgang 2 (Org 2) bleibt.
+      expect(await jahrgaenge(USERS.teamer1.id)).toEqual([JAHRGAENGE.jahrgang2.id]);
+      // Kein Platz mehr in einem Raum von Org 1 -- weder im Jahrgangs-Chat (1)
+      // noch in der Team-Gruppe (3), die kein Sync kennt. Raum 4 (Org 2) bleibt.
+      expect(await raeume(USERS.teamer1.id)).toEqual([4]);
+
+      const { rows: [termin] } = await db.query('SELECT created_by FROM events WHERE id = $1', [EVENTS.gottesdienstEvent.id]);
+      expect(Number(termin.created_by)).toBe(USERS.teamer1.id);
+      const { rows: bleibt } = await db.query('SELECT id FROM chat_messages WHERE id = $1', [nachricht.id]);
+      expect(bleibt).toHaveLength(1);
+    });
+
+    it('danach: Anmeldung klappt in Org 2, Org 1 kennt sie nicht mehr, die laufende Sitzung arbeitet in Org 2', async () => {
+      const teamer1Token = generateToken('teamer1');
+      // Laufende Sitzung vorher: Rolle aus Org 1 (und damit im Rechte-Cache).
+      const vorher = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${teamer1Token}`);
+      expect(vorher.status).toBe(200);
+      expect(vorher.body.role_name).toBe('teamer');
+
+      const res = await entfernen(orgAdminToken, USERS.teamer1.id);
+      expect(res.status).toBe(200);
+
+      // Dieselbe Sitzung arbeitet sofort in der neuen Stamm-Gemeinde.
+      const nachher = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${teamer1Token}`);
+      expect(nachher.status).toBe(200);
+      expect(nachher.body.role_name).toBe('admin');
+
+      const login = await request(app)
+        .post('/api/auth/login')
+        .send({ username: USERS.teamer1.username, password: 'testpasswort123' });
+      expect(login.status).toBe(200);
+      expect(login.body.user.role_name).toBe('admin');
+      expect(login.body.user.organization).toBe(ORGS.andereGemeinde.name);
+      expect(login.body.user.assigned_jahrgaenge.map(j => j.id)).toEqual([JAHRGAENGE.jahrgang2.id]);
+
+      const gemeinden = await request(app)
+        .get('/api/auth/my-organizations')
+        .set('Authorization', `Bearer ${login.body.token}`);
+      expect(gemeinden.status).toBe(200);
+      expect(gemeinden.body.map(o => Number(o.id))).toEqual([ORGS.andereGemeinde.id]);
+
+      // Zurueck nach Org 1 geht es nicht mehr.
+      const wechsel = await request(app)
+        .post('/api/auth/switch-org')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .send({ organization_id: ORGS.testGemeinde.id });
+      expect(wechsel.status).toBe(403);
+
+      expect((await liste(orgAdminToken)).find(u => u.id === USERS.teamer1.id)).toBeUndefined();
+      const inOrg2 = (await liste(orgAdmin2Token)).find(u => u.id === USERS.teamer1.id);
+      expect(inOrg2.mitgliedschaft).toBe('stamm');
+      expect(inOrg2.role_name).toBe('admin');
+      expect(inOrg2.weitere_gemeinden).toBe(0);
+    });
+
+    it('fuehrt user_organizations die eigene Gemeinde doppelt (Altbestand), verschwindet auch diese Zeile', async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.teamer1.id, ORGS.testGemeinde.id, ROLES.teamer.id]
+      );
+
+      const res = await entfernen(orgAdminToken, USERS.teamer1.id);
+
+      expect(res.status).toBe(200);
+      expect(await konto(USERS.teamer1.id)).toEqual({ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.admin2.id });
+      expect(await weitere(USERS.teamer1.id)).toEqual([]);
+    });
+
+    it('mehrere weitere Gemeinden: die aelteste Mitgliedschaft wird Stamm-Gemeinde, die andere bleibt', async () => {
+      await dritteGemeinde();
+      await db.query(
+        `INSERT INTO user_organizations (user_id, organization_id, role_id, created_at)
+         VALUES ($1, $2, $3, NOW() - INTERVAL '30 days')`,
+        [USERS.teamer1.id, ORG3.id, ROLLE3.teamer]
+      );
+
+      const res = await entfernen(orgAdminToken, USERS.teamer1.id);
+
+      expect(res.status).toBe(200);
+      expect(await konto(USERS.teamer1.id)).toEqual({ organization_id: ORG3.id, role_id: ROLLE3.teamer });
+      expect(await weitere(USERS.teamer1.id)).toEqual([{ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.admin2.id }]);
+    });
+
+    it('eine gesperrte Gemeinde wird nur Stamm-Gemeinde, wenn es keine andere gibt', async () => {
+      await dritteGemeinde({ aktiv: false });
+      await db.query(
+        `INSERT INTO user_organizations (user_id, organization_id, role_id, created_at)
+         VALUES ($1, $2, $3, NOW() - INTERVAL '30 days')`,
+        [USERS.teamer1.id, ORG3.id, ROLLE3.teamer]
+      );
+
+      const res = await entfernen(orgAdminToken, USERS.teamer1.id);
+
+      expect(res.status).toBe(200);
+      expect(await konto(USERS.teamer1.id)).toEqual({ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.admin2.id });
+      expect(await weitere(USERS.teamer1.id)).toEqual([{ organization_id: ORG3.id, role_id: ROLLE3.teamer }]);
+    });
+
+    it('ist die einzige andere Gemeinde gesperrt, bleibt das Konto trotzdem -- dort', async () => {
+      await db.query('UPDATE organizations SET is_active = false WHERE id = $1', [ORGS.andereGemeinde.id]);
+
+      const res = await entfernen(orgAdminToken, USERS.teamer1.id);
+
+      expect(res.status).toBe(200);
+      expect(res.body.konto_bleibt).toBe(true);
+      expect(await konto(USERS.teamer1.id)).toEqual({ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.admin2.id });
+    });
+
+    it('ohne weitere Gemeinde wird das Konto wie bisher geloescht', async () => {
+      await db.query('DELETE FROM user_organizations WHERE user_id = $1', [USERS.teamer1.id]);
+
+      const res = await entfernen(orgAdminToken, USERS.teamer1.id);
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Benutzer erfolgreich gelöscht');
+      expect(res.body.konto_bleibt).toBe(false);
+      expect(await konto(USERS.teamer1.id)).toBeNull();
+    });
+
+    it('steht nur die eigene Gemeinde in user_organizations (Altbestand), ist das keine weitere -- Konto geloescht', async () => {
+      await db.query('DELETE FROM user_organizations WHERE user_id = $1', [USERS.teamer1.id]);
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.teamer1.id, ORGS.testGemeinde.id, ROLES.teamer.id]
+      );
+
+      const res = await entfernen(orgAdminToken, USERS.teamer1.id);
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Benutzer erfolgreich gelöscht');
+      expect(await konto(USERS.teamer1.id)).toBeNull();
+    });
+
+    it('letzte:r Org-Admin der Gemeinde -> 409, nichts veraendert', async () => {
+      // orgAdmin1 ist in Org 1 zuhause und in Org 2 Org-Admin. Die einzige
+      // andere Org-Admin von Org 1 (orgAdminSuper) arbeitet dort nur ueber
+      // user_organizations mit -- sie zaehlt, wie bisher, nicht.
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.orgAdmin1.id, ORGS.andereGemeinde.id, ROLES.orgAdmin2.id]
+      );
+      await db.query('UPDATE users SET organization_id = $1, role_id = $2 WHERE id = $3',
+        [ORGS.andereGemeinde.id, ROLES.orgAdmin2.id, USERS.orgAdminSuper.id]);
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.orgAdminSuper.id, ORGS.testGemeinde.id, ROLES.orgAdmin.id]
+      );
+
+      const res = await entfernen(generateToken('orgAdminSuper'), USERS.orgAdmin1.id,
+        { 'X-Active-Organization': String(ORGS.testGemeinde.id) });
+
+      expect(res.status).toBe(409);
+      expect(await konto(USERS.orgAdmin1.id)).toEqual({ organization_id: ORGS.testGemeinde.id, role_id: ROLES.orgAdmin.id });
+      expect(await weitere(USERS.orgAdmin1.id)).toEqual([{ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.orgAdmin2.id }]);
+    });
+
+    it('Hierarchie: ein Admin entfernt keine andere Admin -> 403, nichts veraendert', async () => {
+      await db.query(
+        `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active)
+         VALUES (50, 'admin1b', 'x', 'Zweite Admin', $1, $2, true)`,
+        [ROLES.admin.id, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES (50, $1, $2)',
+        [ORGS.andereGemeinde.id, ROLES.teamer2.id]
+      );
+
+      const res = await entfernen(adminToken, 50);
+
+      expect(res.status).toBe(403);
+      expect(await konto(50)).toEqual({ organization_id: ORGS.testGemeinde.id, role_id: ROLES.admin.id });
+      expect(await weitere(50)).toEqual([{ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.teamer2.id }]);
+    });
+
+    it('Super-Admin-Konto mit weiterer Gemeinde -> 403, nichts veraendert', async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.orgAdminSuper.id, ORGS.andereGemeinde.id, ROLES.orgAdmin2.id]
+      );
+
+      const res = await entfernen(orgAdminToken, USERS.orgAdminSuper.id);
+
+      expect(res.status).toBe(403);
+      expect(await konto(USERS.orgAdminSuper.id)).toEqual({ organization_id: ORGS.testGemeinde.id, role_id: ROLES.orgAdmin.id });
+      expect(await weitere(USERS.orgAdminSuper.id)).toEqual([{ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.orgAdmin2.id }]);
+    });
+
+    it('aus einer Gemeinde, in der sie gar nicht ist -> 404, nichts veraendert', async () => {
+      await dritteGemeinde();
+      await db.query('UPDATE users SET organization_id = $1, role_id = $2 WHERE id = $3',
+        [ORG3.id, ROLLE3.orgAdmin, USERS.orgAdmin2.id]);
+
+      const res = await entfernen(orgAdmin2Token, USERS.teamer1.id);
+
+      expect(res.status).toBe(404);
+      expect(await konto(USERS.teamer1.id)).toEqual({ organization_id: ORGS.testGemeinde.id, role_id: ROLES.teamer.id });
+      expect(await weitere(USERS.teamer1.id)).toEqual([{ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.admin2.id }]);
     });
   });
 });

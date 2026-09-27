@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { resolve, join } from 'path';
+import { CRITERIA_COLORS, CRITERIA_FALLBACK_COLOR, getCriteriaTextColor } from '../../utils/badgeCriteria';
 
 /**
  * Dunkelmodus (25.09.2026): folgt der Systemeinstellung.
@@ -222,7 +223,9 @@ describe('Dunkelmodus: jedes Farbtoken hat eine dunkle Entsprechung', () => {
   it('Text auf Kartengrund ist lesbar: mindestens 4,5:1', () => {
     const grund = dunkleTokens.get('--app-surface-card')!;
     const schwach: string[] = [];
-    for (const name of ['--app-text-primary', '--app-text-secondary', '--app-text-tertiary', '--app-text-system', '--app-text-emphasis', '--app-text-body', '--app-text-ios', '--app-text-dunkelgrau', '--app-text-mittelgrau']) {
+    // --app-text-muted fehlte hier bis 26.09.2026 als einziges Grau-Token --
+    // und stand dunkel bei 3,74:1 auf der Karte (Audit BF-05).
+    for (const name of ['--app-text-primary', '--app-text-secondary', '--app-text-tertiary', '--app-text-muted', '--app-text-system', '--app-text-emphasis', '--app-text-body', '--app-text-ios', '--app-text-dunkelgrau', '--app-text-mittelgrau', '--app-text-konfis']) {
       const k = kontrast(dunkleTokens.get(name)!, grund);
       if (k < 4.5) schwach.push(`${name}: ${k.toFixed(2)}`);
     }
@@ -248,6 +251,92 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
       for (const m of code.match(TEXT_TSX) ?? []) treffer.push(`${datei}: ${m}`);
     }
     expect(treffer).toEqual([]);
+  });
+
+  // Hinter einem Bedingungsoperator fand die Regel darueber nichts: Sie
+  // verlangt das Literal direkt nach dem Doppelpunkt. So standen die Antworten
+  // einer Chat-Umfrage auf `… : takenByOther ? '…' : 'white'`, der Rahmen der
+  // eigenen Umfrage und das Zitat in der eigenen Blase auf `isOwnMessage ?
+  // 'white' : …` -- mit Schrift aus --app-text-emphasis, im Dunkeln fast
+  // Weiss auf Weiss (27.09.2026). Der Wert reicht bis zum naechsten Komma
+  // AUSSERHALB einer Zeichenkette; rgba(…) in Anfuehrungszeichen stoert nicht.
+  const FLAECHE_BEDINGT_TSX = new RegExp(
+    "(?:background|backgroundColor|'--background')\\s*:\\s*(?:[^'\\n,}]*'[^'\\n]*')*?[^'\\n,}]*'(?:white|black|#fff|#ffffff|#000|#000000)'",
+    'g'
+  );
+
+  it('auch hinter einem Bedingungsoperator setzt keine .tsx-Komponente einen weissen/schwarzen Hintergrund', () => {
+    const treffer: string[] = [];
+    for (const datei of dateienUnter('src', '.tsx')) {
+      const code = lies(datei).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      for (const m of code.match(FLAECHE_BEDINGT_TSX) ?? []) treffer.push(`${datei}: ${m}`);
+    }
+    expect(treffer).toEqual([]);
+  });
+
+  it('die Erkennung hinter dem Bedingungsoperator findet den Fehlerfall -- und nur ihn (Gegenprobe der Suchfunktion)', () => {
+    const findet = (zeile: string) => (zeile.match(FLAECHE_BEDINGT_TSX) ?? []).length > 0;
+    // Die Zeilen von vorher:
+    expect(findet("background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : takenByOther ? 'rgba(0,0,0,0.04)' : 'white',")).toBe(true);
+    expect(findet("backgroundColor: isOwnMessage ? 'white' : 'rgba(var(--app-color-chat-rgb), 0.08)',")).toBe(true);
+    expect(findet("background: aktiv ? '#fff' : 'var(--app-surface-soft)'")).toBe(true);
+    // Weisse SCHRIFT hinter einem Hintergrund in derselben Zeile ist erlaubt:
+    expect(findet("style={{ background: 'var(--app-color-chat)', color: 'white' }}")).toBe(false);
+    expect(findet("background: aktiv ? 'var(--app-color-chat)' : 'var(--app-surface-card)', color: 'white'")).toBe(false);
+    expect(findet("background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : takenByOther ? 'var(--app-surface-muted)' : 'var(--app-surface-card)',")).toBe(false);
+  });
+
+  // Schwarz mit Deckkraft ist auch Schwarz. `rgba(0,0,0,0.75)` als Textfarbe
+  // war der Reaktionszaehler an fremden Chat-Nachrichten -- gedacht fuer die
+  // weisse Blase; auf der dunklen (#242426) 1,25:1 (Dunkelmodus-Audit BF-07,
+  // 26.09.2026). Die Pruefung darueber sucht nur die Literale black/#000 und
+  // fand es nicht. Bestand, der noch umzustellen ist, steht hier mit Zahl und
+  // Grund; die Liste darf nur schrumpfen (Nebenbefund des Audits: Hinweistexte
+  // der Anmeldeseiten, im Dunkeln ebenso Schwarz auf der dunklen Karte).
+  const SCHWARZ_MIT_DECKKRAFT_BESTAND: Record<string, number> = {
+    'src/components/auth/ResetPasswordPage.tsx': 2, // "Passwort geaendert" / "Ungueltiger Link"
+    'src/components/auth/ForgotPasswordPage.tsx': 1, // "E-Mail gesendet"
+    'src/components/auth/KonfiRegisterPage.tsx': 1, // "Schon einen Account?" im zweiten Schritt
+  };
+
+  it('kein .tsx setzt inline Schwarz mit Deckkraft als Textfarbe -- ausser dem gezaehlten Bestand', () => {
+    // Auch hinter einem Bedingungsoperator: `color: eigene ? '…' : 'rgba(0,0,0,…)'`.
+    const TEXT_SCHWARZ_ALPHA = /(?:\bcolor|'--color')\s*:[^\n]*'rgba\(\s*0\s*,\s*0\s*,\s*0\s*,/g;
+    const gezaehlt: Record<string, number> = {};
+    for (const datei of dateienUnter('src', '.tsx')) {
+      const code = lies(datei).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      const n = (code.match(TEXT_SCHWARZ_ALPHA) ?? []).length;
+      if (n) gezaehlt[datei] = n;
+    }
+    expect(gezaehlt).toEqual(SCHWARZ_MIT_DECKKRAFT_BESTAND);
+  });
+
+  // Ein IonButton, der nur --background setzt, erbt Ionics Kontrastfarbe der
+  // Primaerfarbe -- hell Weiss, in der Dunkelpalette #000. "Zur Teamer:in
+  // befoerdern" tat das mit Konfi-Lila: schwarze Schrift auf #5b21b6, 2,34:1
+  // (Dunkelmodus-Audit BF-08, 26.09.2026); gleiches Muster am Knopf
+  // "Hinzufuegen" der Organisationsverwaltung. Erlaubt ist es nur, wo der
+  // Hintergrund Ionics Primaerfarbe SELBST ist -- dazu passt die geerbte
+  // Kontrastfarbe in beiden Paletten. Jede Ausnahme mit Grund; die Liste
+  // darf nur schrumpfen.
+  const HINTERGRUND_OHNE_COLOR_ERLAUBT: Record<string, number> = {
+    'src/components/admin/modals/MaterialFormModal.tsx': 1, // "Datei auswaehlen": --background ist var(--ion-color-primary), Ionics eigenes Paar
+  };
+
+  it('kein IonButton setzt inline --background ohne --color -- ausser auf Ionics eigener Primaerfarbe', () => {
+    const gezaehlt: Record<string, number> = {};
+    const fremd: string[] = [];
+    for (const datei of dateienUnter('src', '.tsx')) {
+      for (const tag of jsxOeffnendeTags(lies(datei), 'IonButton')) {
+        if (!/'--background'\s*:/.test(tag) || /'--color'\s*:/.test(tag)) continue;
+        gezaehlt[datei] = (gezaehlt[datei] ?? 0) + 1;
+        if (!/'--background'\s*:\s*'var\(--ion-color-primary\)'/.test(tag)) fremd.push(`${datei}: ${tag.replace(/\s+/g, ' ').slice(0, 100)}`);
+      }
+    }
+    // Kein Knopf mit eigener Flaechenfarbe ohne eigene Schriftfarbe ...
+    expect(fremd).toEqual([]);
+    // ... und der Bestand auf Ionics Primaerfarbe ist genau der bekannte.
+    expect(gezaehlt).toEqual(HINTERGRUND_OHNE_COLOR_ERLAUBT);
   });
 
   it('keine Regel im Theme-Stylesheet setzt white/black als Hintergrund oder schwarzen Text', () => {
@@ -296,11 +385,15 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
     const palette = lies('node_modules/@ionic/core/css/palettes/dark.system.css');
     expect(palette).toMatch(/:root\.ios\{--ion-background-color:\s*#000000/);
     expect(palette).toMatch(/:root\.md\{--ion-background-color:\s*#121212/);
-    // Und wir selbst ueberschreiben ihn nicht (nur als Rueckfall lesen ist ok).
+    // Und wir selbst setzen keinen EIGENEN Wert (nur als Rueckfall lesen ist
+    // ok). Die einzige Zeile, die die Variable anfasst, nimmt mit `inherit`
+    // Ionics angehobene Modal-Stufe (step-100) ZURUECK auf den Seitengrund --
+    // sie definiert keinen dritten Grund, siehe Stufenleiter-Test unten.
     const eigene = ohneKommentare(lies('src/theme/variables.css'))
       .split('\n')
-      .filter((z) => /^\s*--ion-background-color\s*:/.test(z));
-    expect(eigene).toEqual([]);
+      .filter((z) => /^\s*--ion-background-color\s*:/.test(z))
+      .map((z) => z.trim());
+    expect(eigene).toEqual(['--ion-background-color: inherit;']);
   });
 
   it('die Karte setzt sich auf BEIDEN Plattformen ab: dL* mindestens 8', () => {
@@ -359,10 +452,9 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
     // Farbe allein traegt den Unterschied nicht; im Hellmodus macht es der
     // Schatten (dL* 3,46 waere sonst nichts). Die Kartenregel darf deshalb
     // kein festes `box-shadow: none` mehr fuehren.
-    const regel = css.match(/ion-card\.app-card:not\(\.ios-theme-disabled\) \{([\s\S]*?)\}/);
-    expect(regel, 'Kartenregel nicht gefunden').toBeTruthy();
-    expect(regel![1]).toMatch(/box-shadow:\s*var\(--app-schatten-karte-flaeche\)/);
-    expect(regel![1]).not.toMatch(/box-shadow:\s*none/);
+    const { rumpf } = kartenRegel();
+    expect(rumpf).toMatch(/box-shadow:\s*var\(--app-schatten-karte-flaeche\)/);
+    expect(rumpf).not.toMatch(/box-shadow:\s*none/);
     // Hell ausdruecklich nichts, dunkel der Kartenschatten aus der Skala.
     expect(helleTokens.get('--app-schatten-karte-flaeche')).toBe('none');
     expect(tokens(dunkelBloecke[0] ?? '').get('--app-schatten-karte-flaeche'))
@@ -557,6 +649,704 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
   });
 });
 
+describe('Dunkelmodus: Bereichsfarbe als Text (Anmeldeseiten)', () => {
+  // GEMESSEN am 26.09.2026 (Dunkelmodus-Audit BF-01, messen.cjs, iOS und
+  // Android identisch): "Anmelden" in Konfi-Lila #5b21b6 auf der dunklen
+  // Karte #242426 = 1,72:1; "Passwort vergessen?" (0,7 Deckkraft) = 1,40:1;
+  // "Noch keinen Account?", "Zurueck zum Login" = 1,72:1. Hell 8,98:1.
+  //
+  // Die Bereichsfarben bleiben in beiden Modi gleich (Test oben) -- sie sind
+  // FLAECHEN. Als SCHRIFT auf einer Karte brauchen sie ein eigenes Text-Token,
+  // das im Dunkeln aufhellt; hell ist es die Bereichsfarbe selbst, damit sich
+  // dort nichts aendert. Erstes Token dieser Art: --app-text-konfis.
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const regel = (selektor: string) => {
+    const roh = selektor.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
+    const m = css.match(new RegExp(`(?:^|\\n)${roh} \\{([^}]*)\\}`));
+    expect(m, `${selektor} nicht gefunden`).toBeTruthy();
+    return m![1];
+  };
+
+  it('das Text-Token ist hell die Bereichsfarbe selbst -- im Hellen aendert sich nichts', () => {
+    expect(helleTokens.get('--app-text-konfis')).toBe(helleTokens.get('--app-color-konfis'));
+    expect(helleTokens.get('--app-text-konfis-rgb')).toBe(helleTokens.get('--app-color-konfis-rgb'));
+  });
+
+  it('dunkel liest es sich auf der Karte: mindestens 4,5:1, auch mit 0,7 Deckkraft', () => {
+    const karte = dunkel.get('--app-surface-card')!;
+    const text = dunkel.get('--app-text-konfis')!;
+    expect(kontrast(text, karte)).toBeGreaterThanOrEqual(4.5);
+    // .app-auth-link--muted legt das Token mit 0,7 Deckkraft auf die Karte.
+    expect(kontrast(mische(text, 0.7, karte), karte)).toBeGreaterThanOrEqual(4.5);
+    // Und es ist wirklich ein eigener, hellerer Ton -- kein Alias der Flaeche.
+    expect(text).not.toBe(dunkel.get('--app-color-konfis'));
+  });
+
+  it('Ueberschrift, Feldbeschriftung und Links der Anmeldeseiten schreiben mit dem Text-Token', () => {
+    for (const selektor of ['.app-auth-card__heading h2', '.app-auth-input__label', '.app-auth-link']) {
+      const r = regel(selektor);
+      expect(r, selektor).toMatch(/color:\s*var\(--app-text-konfis\)/);
+      expect(r, selektor).not.toMatch(/--app-color-(?:konfis|requests|purple)\b/);
+    }
+    const gedaempft = regel('.app-auth-link--muted');
+    expect(gedaempft).toMatch(/color:\s*rgba\(var\(--app-text-konfis-rgb\),\s*0\.7\)/);
+    expect(gedaempft).not.toMatch(/--app-color-(?:konfis|requests|purple)-rgb/);
+  });
+});
+
+describe('Dunkelmodus: Dashboard-Verlaeufe enden auf Flaechen, nicht auf Text', () => {
+  // GEMESSEN am 26.09.2026 (Dunkelmodus-Audit BF-02, computed.cjs): Die
+  // Ranking-Karte lief von #34c759 nach #a7f3d0 (Mint), die Events-Karte von
+  // #dc2626 nach #fca5a5 (Rosa) -- weisse Schrift darauf 1,28:1 bzw. 1,90:1
+  // (hell 8,68 / 8,31). Ursache: Die Verlaeufe endeten auf TEXT-Tokens
+  // (--app-color-success-tief, --app-text-fehler), die der Dunkelblock fuer
+  // ihren Zweck -- Schrift auf dunkler Statusflaeche -- richtig aufhellt.
+  // Ein Verlaufsende ist eine Flaeche und braucht ein Flaechen-Token.
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const verlauf = (klasse: string) => {
+    const regel = css.match(new RegExp(`\\.${klasse} \\{([^}]*)\\}`));
+    expect(regel, `.${klasse} nicht gefunden`).toBeTruthy();
+    const bg = /background:\s*linear-gradient\(([^;]*)\);/.exec(regel![1]);
+    expect(bg, `.${klasse} hat keinen Verlauf`).toBeTruthy();
+    return bg![1];
+  };
+
+  it('kein Text-Token steht als Stufe in einem Verlauf -- nirgends im Stylesheet', () => {
+    const treffer = [...css.matchAll(/gradient\(([^;]*)\)/g)]
+      .map((m) => m[1])
+      .filter((stufen) => /var\(--app-text-|var\(--app-color-success-tief\)/.test(stufen));
+    expect(treffer).toEqual([]);
+  });
+
+  it('Events- und Ranking-Karte enden auf ihren Flaechen-Tokens', () => {
+    expect(verlauf('app-dashboard-section--events')).toMatch(/var\(--app-color-events-tief\) 100%/);
+    expect(verlauf('app-dashboard-section--ranking')).toMatch(/var\(--app-color-success-klassisch-dunkel\) 100%/);
+  });
+
+  it('weisse Schrift auf den Verlaufsenden: mindestens 4,5:1, hell wie dunkel', () => {
+    for (const name of ['--app-color-events-tief', '--app-color-success-klassisch-dunkel']) {
+      expect(kontrast('#ffffff', helleTokens.get(name)!), `${name} hell`).toBeGreaterThanOrEqual(4.5);
+      expect(kontrast('#ffffff', dunkel.get(name)!), `${name} dunkel`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('im Hellen aendert sich nichts: die Enden tragen die Toene von vorher', () => {
+    // Vorher endeten die Verlaeufe hell auf #991b1b (--app-text-fehler) und
+    // #155724 (--app-color-success-tief). Die Flaechen-Tokens tragen genau
+    // diese Werte -- wer sie aendert, aendert das helle Dashboard und muss
+    // hier bewusst nachziehen.
+    expect(helleTokens.get('--app-color-events-tief')).toBe('#991b1b');
+    expect(helleTokens.get('--app-color-success-klassisch-dunkel')).toBe('#155724');
+  });
+});
+
+describe('Dunkelmodus: die Kartenregel schlaegt das iOS-Theme an Spezifitaet', () => {
+  // GEMESSEN am 26.09.2026 (Dunkelmodus-Audit BF-03, hell-karte.cjs): Auf iOS
+  // rendert ion-card.app-card im Dunkeln rgb(28,28,29) -- Ionics
+  // --ion-card-background --, nicht das Token #242426; auf Android #242426.
+  // Ursache: ionic-theme-ios27 setzt `ion-card.ios:not(.ios-theme-disabled,
+  // .ios26-disabled):not(.ion-color) { --background: var(--ion-card-background,
+  // …) }` mit Spezifitaet (0,3,1). Die App-Regel `ion-card.app-card:not(
+  // .ios-theme-disabled)` hatte (0,2,1) und verlor -- im Hellen unsichtbar,
+  // weil beide Wege bei #ffffff enden. Fuenf Karten wurden stattdessen per
+  // Inline-Style geflickt, 225 nicht.
+  //
+  // Der Text-Test kann das Rendering nicht sehen. Er kann aber rechnen, was
+  // der Browser rechnet: die Spezifitaet. Die Kartenregel muss JEDEN Karten-
+  // Selektor des Themes echt schlagen -- dann ist die Ladereihenfolge der
+  // Stylesheets egal, und der Fix haengt nicht an einem @import.
+  const THEME = 'node_modules/@rdlabo/ionic-theme-ios27/dist/css/ionic-theme-ios27.css';
+
+  /** Theme-Selektoren, die --background direkt an einer ion-card setzen. */
+  function themeKartenSelektoren(): string[] {
+    const raus: string[] = [];
+    for (const { selektor, rumpf } of regeln(ohneKommentare(lies(THEME)))) {
+      if (!/(?:^|;)\s*--background\s*:/.test(rumpf)) continue;
+      for (const einzeln of teileObersteEbene(selektor)) {
+        if (/^ion-card(?![\w-])/.test(letzterVerbund(einzeln.trim()))) raus.push(einzeln.trim());
+      }
+    }
+    return raus;
+  }
+
+  it('die Rechnung stimmt an bekannten Selektoren', () => {
+    expect(spezifitaet('ion-card.ios:not(.ios-theme-disabled,.ios26-disabled):not(.ion-color)')).toEqual([0, 3, 1]);
+    // Die alte Kartenregel: eine Klasse zu wenig -- genau der Befund.
+    expect(spezifitaet('ion-card.app-card:not(.ios-theme-disabled)')).toEqual([0, 2, 1]);
+    expect(spezifitaet(':root.ios ion-card.app-card:not(.ios-theme-disabled)')).toEqual([0, 4, 1]);
+    expect(spezifitaet('#a .b c::before:hover')).toEqual([1, 2, 2]);
+    expect(spezifitaet(':where(.a, #b) .c')).toEqual([0, 1, 0]);
+    expect(spezifitaet(':is(.a, #b) .c')).toEqual([1, 1, 0]);
+    expect(vergleich([0, 4, 1], [0, 3, 1])).toBeGreaterThan(0);
+    expect(vergleich([0, 3, 2], [0, 3, 1])).toBeGreaterThan(0);
+    expect(vergleich([0, 2, 9], [0, 3, 0])).toBeLessThan(0);
+  });
+
+  it('das Theme setzt --background an ion-card -- die Regel, gegen die gerechnet wird, existiert', () => {
+    // Faellt sie beim naechsten Theme-Update weg oder heisst anders, muss die
+    // Rechnung neu gemacht werden -- nicht still gruen bleiben.
+    const theme = themeKartenSelektoren();
+    expect(theme).toContain('ion-card.ios:not(.ios-theme-disabled,.ios26-disabled):not(.ion-color)');
+  });
+
+  it('jeder Selektor der Kartenregel ist spezifischer als jeder Karten-Selektor des Themes', () => {
+    const { selektoren, rumpf } = kartenRegel();
+    expect(rumpf).toMatch(/--background:\s*var\(--app-surface-card\)/);
+    // Beide Plattform-Wurzeln: Auf md gibt es heute keine Theme-Regel, aber
+    // eine Karte mit mode="ios" unter html.md traegt trotzdem .ios.
+    expect(selektoren.some((s) => s.startsWith(':root.ios '))).toBe(true);
+    expect(selektoren.some((s) => s.startsWith(':root.md '))).toBe(true);
+    const unterlegen: string[] = [];
+    for (const eigener of selektoren) {
+      for (const fremd of themeKartenSelektoren()) {
+        if (vergleich(spezifitaet(eigener), spezifitaet(fremd)) <= 0) {
+          unterlegen.push(`${eigener} (${spezifitaet(eigener)}) schlaegt nicht ${fremd} (${spezifitaet(fremd)})`);
+        }
+      }
+    }
+    expect(unterlegen).toEqual([]);
+  });
+
+  it('keine app-card traegt mehr einen Inline-Flicken fuer den Kartengrund', () => {
+    // PostfachModal.tsx hatte vom 25. bis 26.09.2026 `style={{ '--background':
+    // 'var(--app-surface-card)' }}` an der IonCard -- ein Symptom-Fix, der die
+    // Spezifitaetsfrage verdeckte. Seit die Kartenregel greift, ist er weg; ein
+    // neuer waere wieder einer.
+    const treffer: string[] = [];
+    for (const datei of dateienUnter('src', '.tsx')) {
+      const code = lies(datei).replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+      for (const m of code.matchAll(/<IonCard\b[^>]*>/g)) {
+        if (/className=["'{`][^"'}]*\bapp-card\b/.test(m[0]) && /'--background'\s*:/.test(m[0])) {
+          treffer.push(`${datei}: ${m[0].replace(/\s+/g, ' ').slice(0, 120)}`);
+        }
+      }
+    }
+    expect(treffer).toEqual([]);
+  });
+});
+
+describe('Dunkelmodus: EINE Flaechen-Stufenleiter -- Ionics Flaechenvariablen haengen an den App-Tokens', () => {
+  // GEMESSEN am 26.09.2026 (Dunkelmodus-Audit BF-04, computed.cjs, iOS,
+  // Konfi-Verwaltung der Leitung): Seitenverlauf #121212-#1f1f22, Suchfeld-
+  // Item #000000, Karte #1c1c1d, Postfach-Karte #242426, Glasleiste -- fuenf
+  // Flaechentoene auf einem Screen, die 222 Inset-Listen tiefschwarz im
+  // dunkelgrauen Grund. Ursache: Ionics dark.system.css setzt
+  // --ion-item-background, --ion-card-background, --ion-toolbar-background
+  // JE PLATTFORM (`:root.ios`, `:root.md`, Spezifitaet (0,2,0)) und hebt
+  // iOS-Modale an (`:root.ios ion-modal`, (0,2,1)); der Dunkelblock der App
+  // definierte nur --app-Tokens. Zwei Stufenleitern, je Plattform anders
+  // gemischt -- eine Zeile im :root-Block (0,1,0) haette keine Chance.
+  //
+  // Der Text-Test kann das Rendering nicht sehen, aber rechnen, was der
+  // Browser rechnet: Jede App-Bindung muss Ionics Regel fuer dieselbe
+  // Variable, dieselbe Plattform und dasselbe Zielelement echt schlagen --
+  // dann ist die Ladereihenfolge egal.
+  const PALETTE = 'node_modules/@ionic/core/css/palettes/dark.system.css';
+  const paletteRegeln = regeln(ohneKommentare(lies(PALETTE)));
+  const dunkelRegeln = regeln(dunkelBloecke[0] ?? '');
+  const FLAECHEN = ['--ion-background-color', '--ion-item-background', '--ion-card-background', '--ion-toolbar-background', '--ion-tab-bar-background', '--ion-overlay-background-color'];
+  const gesetzt = (rumpf: string) => FLAECHEN.filter((v) => new RegExp(`(?:^|;)\\s*${v}\\s*:`).test(rumpf));
+  /** Woran die Regel haengt: die Wurzel oder ein Ionic-Element. */
+  const ziel = (selektor: string) => { const v = letzterVerbund(selektor.trim()); const m = /^ion-[\w-]+/.exec(v); return m ? m[0] : 'root'; };
+  const plattformVon = (selektor: string) => (/\.ios\b/.test(selektor) ? 'ios' : /\.md\b/.test(selektor) ? 'md' : null);
+
+  it('die Palette setzt die Flaechen je Plattform -- die Regeln, gegen die gerechnet wird, existieren', () => {
+    // Aendert Ionic die Palette, muss die Bindung neu gemacht werden -- nicht still gruen bleiben.
+    const ios = paletteRegeln.find((r) => r.selektor === ':root.ios');
+    const md = paletteRegeln.find((r) => r.selektor === ':root.md');
+    const modal = paletteRegeln.find((r) => r.selektor === ':root.ios ion-modal');
+    expect(ios?.rumpf).toMatch(/--ion-item-background:\s*#000000/);
+    expect(ios?.rumpf).toMatch(/--ion-card-background:\s*#1c1c1d/);
+    expect(md?.rumpf).toMatch(/--ion-item-background:\s*#1e1e1e/);
+    expect(md?.rumpf).toMatch(/--ion-card-background:\s*#1e1e1e/);
+    expect(md?.rumpf).toMatch(/--ion-toolbar-background:\s*#1f1f1f/);
+    expect(modal?.rumpf).toMatch(/--ion-background-color:/);
+    expect(modal?.rumpf).toMatch(/--ion-toolbar-background:/);
+  });
+
+  it('Karte und Listenfeld tragen auf BEIDEN Plattformen den Kartenton -- nicht Ionics Schwarz oder #1e1e1e', () => {
+    for (const plattform of ['ios', 'md']) {
+      const eigene = dunkelRegeln.filter((r) => teileObersteEbene(r.selektor).some((s) => s.trim() === `html:root.${plattform}`));
+      expect(eigene.some((r) => /--ion-item-background\s*:\s*var\(--app-surface-card\)/.test(r.rumpf)), `${plattform}: --ion-item-background an --app-surface-card`).toBe(true);
+      expect(eigene.some((r) => /--ion-card-background\s*:\s*var\(--app-surface-card\)/.test(r.rumpf)), `${plattform}: --ion-card-background an --app-surface-card`).toBe(true);
+    }
+  });
+
+  it('md: Kopfleiste im Leisten-Ton der App, Meldungen und Aktionsblaetter im Kartenton', () => {
+    // Ionics md-Palette setzt die Leiste deckend auf #1f1f1f und schlaegt
+    // damit die :root-Regel (Glas). Auf Android gibt es keinen Blur -- die
+    // Leiste bleibt deckend, aber im Ton der App (--app-glasleiste-rgb, eine
+    // Stufe unter der Karte), nicht in Ionics.
+    const md = dunkelRegeln.filter((r) => teileObersteEbene(r.selektor).some((s) => s.trim() === 'html:root.md'));
+    expect(md.some((r) => /--ion-toolbar-background\s*:\s*rgb\(var\(--app-glasleiste-rgb\)\)/.test(r.rumpf))).toBe(true);
+    expect(md.some((r) => /--ion-overlay-background-color\s*:\s*var\(--app-surface-card\)/.test(r.rumpf))).toBe(true);
+  });
+
+  it('iOS-Modale nehmen Grund und Leiste der Seite -- nicht Ionics angehobene Stufen', () => {
+    // dark.system.css: `:root.ios ion-modal { --ion-background-color: step-100
+    // (#1a1a1a); --ion-toolbar-background: step-150 (#262626) }` -- zwei Toene,
+    // die es sonst nirgends gibt, und die Leiste laege HELLER als die Karten
+    // darunter. `inherit` nimmt den Wert der Wurzel: Ionics Seitengrund und
+    // die Glasleiste. Kein eigener Wert -- sonst waere es ein dritter Grund.
+    const modal = dunkelRegeln.find((r) => r.selektor.trim() === 'html:root.ios ion-modal');
+    expect(modal, 'html:root.ios ion-modal fehlt').toBeTruthy();
+    expect(modal!.rumpf).toMatch(/--ion-background-color:\s*inherit/);
+    expect(modal!.rumpf).toMatch(/--ion-toolbar-background:\s*inherit/);
+    expect(modal!.rumpf).not.toMatch(/--ion-background-color:\s*(?:#|rgb|var)/);
+  });
+
+  it('jede Bindung ist spezifischer als Ionics Regel fuer dieselbe Variable, Plattform und Zielelement', () => {
+    const unterlegen: string[] = [];
+    let verglichen = 0;
+    for (const eigene of dunkelRegeln) {
+      const vars = gesetzt(eigene.rumpf);
+      if (!vars.length) continue;
+      for (const sel of teileObersteEbene(eigene.selektor).map((s) => s.trim())) {
+        const plattform = plattformVon(sel);
+        // Eine Bindung ohne Plattform-Klasse stuende bei (0,1,x) und verloere
+        // gegen `:root.ios` -- genau der Fehler, der behoben wurde.
+        expect(plattform, `"${sel}" nennt keine Plattform (.ios/.md)`).not.toBeNull();
+        for (const fremd of paletteRegeln) {
+          const gemeinsam = vars.filter((v) => gesetzt(fremd.rumpf).includes(v));
+          if (!gemeinsam.length) continue;
+          for (const fs of teileObersteEbene(fremd.selektor).map((s) => s.trim())) {
+            if (plattformVon(fs) !== plattform || ziel(fs) !== ziel(sel)) continue;
+            verglichen++;
+            if (vergleich(spezifitaet(sel), spezifitaet(fs)) <= 0) {
+              unterlegen.push(`${sel} (${spezifitaet(sel)}) schlaegt nicht ${fs} (${spezifitaet(fs)}) bei ${gemeinsam.join(', ')}`);
+            }
+          }
+        }
+      }
+    }
+    expect(unterlegen).toEqual([]);
+    // Und es wurde wirklich gerechnet: iOS-Wurzel, md-Wurzel, iOS-Modal.
+    expect(verglichen).toBeGreaterThanOrEqual(3);
+  });
+
+  it('die Rechnung stimmt an den Bindungs-Selektoren', () => {
+    expect(spezifitaet('html:root.ios')).toEqual([0, 2, 1]);
+    expect(spezifitaet(':root.ios')).toEqual([0, 2, 0]);
+    expect(spezifitaet('html:root.ios ion-modal')).toEqual([0, 2, 2]);
+    expect(spezifitaet(':root.ios ion-modal')).toEqual([0, 2, 1]);
+    // Der naive Weg -- eine Zeile im :root-Block -- verloere:
+    expect(vergleich(spezifitaet(':root'), spezifitaet(':root.ios'))).toBeLessThan(0);
+  });
+
+  it('das Handbuch sagt es so, wie es jetzt gerendert wird: Karten UND Listen heller als der Grund', () => {
+    // BF-11: Bis zur Bindung stand der Satz nur fuer Android; auf iOS waren
+    // die Inset-Listen dunkler als der Grund (Ionic #000000 im Verlauf
+    // #121212-#1f1f22). Wer den Satz aendert, aendert hier mit.
+    const handbuch = lies('../docs/handbuch/03-bedienung.md').replace(/\s+/g, ' ');
+    expect(handbuch).toMatch(/Karten und Listen sind dabei etwas heller als der Hintergrund/);
+    expect(handbuch).toMatch(/auf iPhone und Android gleich/);
+  });
+});
+
+describe('Dunkelmodus: Text-Token-Familie je Bereichsfarbe (Baustein 2)', () => {
+  // GEMESSEN am 26.09.2026 (Dunkelmodus-Audit BF-06, messen.cjs, 94 Zustaende):
+  // Bereichsfarben standen an 234 Stellen als SCHRIFT auf Karten und
+  // Hinweiskaesten -- im Hellen lesbar (Konfi-Lila auf Weiss 8,98:1), im
+  // Dunkeln nicht (auf der Karte #242426: konfis 1,72, challenges 2,46,
+  // teamer 2,57, wrapped 2,72, activities 2,83, events 3,21, jahrgang 3,86,
+  // gemeinde 4,11, gottesdienst 4,21, users 4,23). Die Bereichsfarben selbst
+  // bleiben als FLAECHE in beiden Modi gleich (Test oben). Fuer Schrift gibt
+  // es je Bereich ein Text-Token: hell die Bereichsfarbe (im Hellen aendert
+  // sich nichts), dunkel ein aufgehellter Ton mit mindestens 4,5:1 auf der
+  // Karte UND auf beiden Seitengruenden. Die Textstellen wurden per Codemod
+  // umgestellt (nur `color`/`--color*` in style={{}} und im Stylesheet, keine
+  // Flaechen, keine Datenfelder).
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const FAMILIE = ['events', 'activities', 'konfis', 'teamer', 'challenges', 'users', 'badges', 'wrapped', 'bonus', 'group', 'jahrgang', 'categories', 'material', 'chat', 'level', 'gottesdienst', 'gemeinde', 'organizations', 'requests', 'purple'];
+  const GRUND_IOS = '#000000';
+  const GRUND_ANDROID = '#121212';
+
+  it('jede Bereichsfarbe, die als Text vorkommt, hat ein Text-Token -- hell UND dunkel, mit -rgb', () => {
+    const fehlend: string[] = [];
+    for (const b of FAMILIE) {
+      for (const name of [`--app-text-${b}`, `--app-text-${b}-rgb`]) {
+        if (!helleTokens.has(name)) fehlend.push(`${name} hell`);
+        if (!dunkel.has(name)) fehlend.push(`${name} dunkel`);
+      }
+    }
+    expect(fehlend).toEqual([]);
+  });
+
+  it('hell ist das Text-Token die Bereichsfarbe selbst -- im Hellen aendert sich nichts', () => {
+    const abweichend: string[] = [];
+    for (const b of FAMILIE) {
+      if (helleTokens.get(`--app-text-${b}`) !== helleTokens.get(`--app-color-${b}`)) abweichend.push(`${b}: ${helleTokens.get(`--app-text-${b}`)} != ${helleTokens.get(`--app-color-${b}`)}`);
+      if (helleTokens.get(`--app-text-${b}-rgb`) !== helleTokens.get(`--app-color-${b}-rgb`)) abweichend.push(`${b}-rgb`);
+    }
+    expect(abweichend).toEqual([]);
+  });
+
+  it('dunkel liest sich jedes Text-Token auf Karte und beiden Seitengruenden: mindestens 4,5:1', () => {
+    const schwach: string[] = [];
+    for (const b of FAMILIE) {
+      const t = dunkel.get(`--app-text-${b}`)!;
+      for (const [grundName, grund] of [['Karte', dunkel.get('--app-surface-card')!], ['iOS-Grund', GRUND_IOS], ['Android-Grund', GRUND_ANDROID], ['Verlaufsende', '#1f1f22']]) {
+        const k = kontrast(t, grund);
+        if (k < 4.5) schwach.push(`${b} ${t} auf ${grundName} ${grund}: ${k.toFixed(2)}`);
+      }
+      // Ein eigener, hellerer Ton -- kein Alias der Flaechenfarbe.
+      if (t === dunkel.get(`--app-color-${b}`)) schwach.push(`${b}: dunkel identisch mit der Flaechenfarbe`);
+    }
+    expect(schwach).toEqual([]);
+  });
+
+  it('die Aliasse tragen dieselben Toene wie ihr Original (requests/purple = konfis, organizations = users)', () => {
+    for (const [alias, original] of [['requests', 'konfis'], ['purple', 'konfis'], ['organizations', 'users']]) {
+      expect(dunkel.get(`--app-text-${alias}`), alias).toBe(dunkel.get(`--app-text-${original}`));
+    }
+  });
+
+  // Bestand, der bewusst bleibt -- jede Zeile mit Grund; die Liste darf nur schrumpfen.
+  const BEREICHSFARBE_ALS_TEXT_BESTAND: Record<string, number> = {
+    // ShareCard rendert ein Bild mit eigenem dunklen Grund in BEIDEN Modi;
+    // --app-color-wrapped-hell ist dort der helle Akzent und hat keine Text-Variante.
+    'src/components/wrapped/share/ShareCard.tsx': 3,
+    // Symbol auf dem dunklen Wrapped-Verlauf der Dashboard-Kachel, in beiden Modi gleich.
+    'src/components/teamer/pages/TeamerDashboardPage.tsx': 1,
+  };
+
+  /** Text-Eigenschaften in style={{ … }}-Bloecken, deren Wert eine Bereichsfarbe traegt. */
+  function bereichsfarbenAlsText(code: string): string[] {
+    const treffer: string[] = [];
+    for (const m of code.matchAll(/style=\{\{/g)) {
+      const start = m.index! + 'style={'.length;
+      let tiefe = 0; let anf: string | null = null; let ende = start;
+      for (let i = start; i < code.length; i++) {
+        const c = code[i];
+        if (anf) { if (c === anf && code[i - 1] !== '\\') anf = null; continue; }
+        if (c === "'" || c === '"' || c === '`') { anf = c; continue; }
+        if (c === '{' || c === '(' || c === '[') tiefe++;
+        else if (c === '}' || c === ')' || c === ']') { tiefe--; if (tiefe === 0) { ende = i; break; } }
+      }
+      const block = code.slice(start, ende + 1);
+      for (const p of block.matchAll(/(?:\bcolor|'--color(?:-checked|-hover|-focused|-activated)?')\s*:\s*([^,}]*(?:\([^)]*\)[^,}]*)*)/g)) {
+        for (const v of p[1].matchAll(/var\(--app-color-([a-z-]+?)(?:-rgb)?\)/g)) {
+          if (istBereichsfarbe(`--app-color-${v[1]}`)) treffer.push(`${p[0].trim().slice(0, 80)}`);
+        }
+      }
+    }
+    return treffer;
+  }
+
+  it('keine Bereichsfarbe steht mehr als Textfarbe in einem style-Block -- ausser dem gezaehlten Bestand', () => {
+    const gezaehlt: Record<string, number> = {};
+    for (const datei of dateienUnter('src', '.tsx')) {
+      const n = bereichsfarbenAlsText(lies(datei).replace(/\{\/\*[\s\S]*?\*\/\}/g, '')).length;
+      if (n) gezaehlt[datei] = n;
+    }
+    expect(gezaehlt).toEqual(BEREICHSFARBE_ALS_TEXT_BESTAND);
+  });
+
+  // Bereichsfarbe als Schrift auf einer Flaeche, die in BEIDEN Modi weiss ist:
+  // dort waere das aufgehellte Text-Token im Dunkeln unlesbar (#c4b5fd auf
+  // Weiss 1,6:1). Jede Zeile mit Grund; die Liste darf nur schrumpfen.
+  const BEREICHSFARBE_AUF_WEISS: Record<string, string> = {
+    '.app-sperrbildschirm__knopf': 'weisser Knopf (--app-weiss) auf dem Aurora-Verlauf, Konfi-Lila als Schrift in beiden Modi',
+  };
+
+  it('keine Bereichsfarbe steht mehr als Textfarbe im Stylesheet -- ausser auf Flaechen, die in beiden Modi weiss sind', () => {
+    // Zeilen `color:` / `--color*:` mit var(--app-color-<bereich>); Signalfarben
+    // (success/warning/danger/info/neutral/ampel) sind keine Bereichsfarben.
+    const treffer: string[] = [];
+    const ausnahmenGetroffen = new Set<string>();
+    let selektor = '';
+    css.split('\n').forEach((zeile, i) => {
+      const auf = zeile.trim().match(/^([.#a-zA-Z:[][^{]*)\{/);
+      if (auf) selektor = auf[1].trim();
+      const m = /^\s*(?:--color(?:-checked|-hover|-focused|-activated)?|color)\s*:\s*(.*)$/.exec(zeile);
+      if (!m) return;
+      for (const v of m[1].matchAll(/var\(--app-color-([a-z-]+?)(?:-rgb)?\)/g)) {
+        if (!istBereichsfarbe(`--app-color-${v[1]}`)) continue;
+        if (selektor in BEREICHSFARBE_AUF_WEISS) { ausnahmenGetroffen.add(selektor); continue; }
+        treffer.push(`variables.css:${i + 1} ${selektor} -> ${zeile.trim()}`);
+      }
+    });
+    expect(treffer).toEqual([]);
+    // Und jede Ausnahme trifft noch etwas -- sonst ist sie tot.
+    expect([...ausnahmenGetroffen].sort()).toEqual(Object.keys(BEREICHSFARBE_AUF_WEISS).sort());
+    // Die Ausnahme ist wirklich ein weisser Knopf, kein Freibrief.
+    for (const sel of Object.keys(BEREICHSFARBE_AUF_WEISS)) {
+      const rumpf = regeln(css).find((r) => r.selektor === sel)?.rumpf ?? '';
+      expect(rumpf, `${sel} traegt kein --background: var(--app-weiss)`).toMatch(/--background:\s*var\(--app-weiss\)/);
+    }
+  });
+
+  it('die Erkennung findet den Fehlerfall (Gegenprobe der Suchfunktion)', () => {
+    expect(bereichsfarbenAlsText(`<div style={{ color: 'var(--app-color-events)' }} />`)).toHaveLength(1);
+    expect(bereichsfarbenAlsText(`<div style={{ color: x ? 'var(--app-text-events)' : 'var(--app-color-chat)' }} />`)).toHaveLength(1);
+    expect(bereichsfarbenAlsText(`<IonButton style={{ '--color': 'var(--app-color-users)' }} />`)).toHaveLength(1);
+    // Flaechen und Signalfarben zaehlen nicht:
+    expect(bereichsfarbenAlsText(`<div style={{ background: 'var(--app-color-events)', color: 'var(--app-color-danger)' }} />`)).toHaveLength(0);
+    // Datenfelder ausserhalb von style={{}} zaehlen nicht (OnboardingTour legt sie auf einen weissen Knopf):
+    expect(bereichsfarbenAlsText(`const SLIDES = [{ color: 'var(--app-color-konfis)' }];`)).toHaveLength(0);
+  });
+});
+
+describe('Dunkelmodus: Grautoene lesbar -- hell wie dunkel (Baustein 3)', () => {
+  // GEMESSEN am 26.09.2026: Dunkelmodus-Audit BF-05 -- --app-text-muted war
+  // dunkel #7c7c82 (fuer den Dunkelblock ABGEDUNKELT statt aufgehellt): auf
+  // der gedaempften Flaeche #323234 3,08:1, auf der Karte #242426 3,74:1, 44
+  // Stellen in 94 Zustaenden. UI-Audit BF-04 -- hell lagen --app-text-muted
+  // #999 (2,85:1), --app-text-system #8e8e93 (3,26:1) und --app-text-tertiary
+  // #888 (3,54:1) auf Weiss unter 4,5:1, 119 Stellen. Beide Modi muessen auf
+  // Karte UND Seitengrund halten; dunkel zusaetzlich auf der gedaempften
+  // Flaeche (Stempel-Kacheln, Platzhalter), auf der 22 der 44 Stellen lagen.
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const GRAU = ['--app-text-secondary', '--app-text-tertiary', '--app-text-muted', '--app-text-system'];
+
+  it('hell: mindestens 4,5:1 auf Karte, weichem und gedaempftem Grund und dem Ionic-Seitengrund', () => {
+    const schwach: string[] = [];
+    for (const name of GRAU) {
+      const t = helleTokens.get(name)!;
+      for (const [grundName, grund] of [['Karte', helleTokens.get('--app-surface-card')!], ['soft', helleTokens.get('--app-surface-soft')!], ['muted', helleTokens.get('--app-surface-muted')!], ['Seitengrund', '#f4f5f8']]) {
+        const k = kontrast(t, grund);
+        if (k < 4.5) schwach.push(`${name} ${t} auf ${grundName} ${grund}: ${k.toFixed(2)}`);
+      }
+    }
+    expect(schwach).toEqual([]);
+  });
+
+  it('dunkel: mindestens 4,5:1 auf Karte, gedaempfter Flaeche, Kopfzeile der Matrix und beiden Seitengruenden', () => {
+    const schwach: string[] = [];
+    for (const name of GRAU) {
+      const t = dunkel.get(name)!;
+      for (const [grundName, grund] of [['Karte', dunkel.get('--app-surface-card')!], ['muted', dunkel.get('--app-surface-muted')!], ['gedaempft', dunkel.get('--app-flaeche-gedaempft')!], ['iOS-Grund', '#000000'], ['Android-Grund', '#121212']]) {
+        const k = kontrast(t, grund);
+        if (k < 4.5) schwach.push(`${name} ${t} auf ${grundName} ${grund}: ${k.toFixed(2)}`);
+      }
+    }
+    expect(schwach).toEqual([]);
+  });
+
+  it('die Rangfolge bleibt: secondary am kraeftigsten, muted am zartesten -- in beiden Modi', () => {
+    // Hell heisst zarter = heller, dunkel heisst zarter = dunkler. Fallen zwei
+    // Stufen zusammen, ist die Hierarchie weg, obwohl jeder Wert allein besteht.
+    const hell = GRAU.map((n) => relativeHelligkeit(helleTokens.get(n)!));
+    expect(hell[0]).toBeLessThan(hell[1]); // secondary dunkler als tertiary
+    expect(hell[1]).toBeLessThan(hell[2]); // tertiary dunkler als muted
+    const dunk = GRAU.map((n) => relativeHelligkeit(dunkel.get(n)!));
+    expect(dunk[0]).toBeGreaterThan(dunk[1]);
+    expect(dunk[1]).toBeGreaterThan(dunk[2]);
+  });
+
+  it('das -rgb-Tripel von --app-text-system passt hell wie dunkel zum Hexwert', () => {
+    expect(helleTokens.get('--app-text-system-rgb')).toBe(hexZuRgb(helleTokens.get('--app-text-system')!).join(', '));
+    expect(dunkel.get('--app-text-system-rgb')).toBe(hexZuRgb(dunkel.get('--app-text-system')!).join(', '));
+  });
+});
+
+describe('Dunkelmodus: Eck-Marken -- weisse Schrift auf Datenfarbe (Paket K2)', () => {
+  // GEMESSEN am 26.09.2026 (Nachmessung nach den Bausteinen 1-3, 94
+  // Zustaende dunkel, iOS = Android): Die kleinen Pillen (.app-corner-badge,
+  // `color: white`) tragen ihre Flaechenfarbe inline aus den Daten --
+  // Kategorie-, Level- oder Bereichsfarbe, in beiden Modi dieselbe. Weiss
+  // darauf: "20P" auf #f59e0b 2,15:1, "0P" auf #10b981 2,54, "+1P" auf
+  // #0a84ff 3,65, "5P"/"+3P" auf #3b82f6 3,68, "+2P" auf #059669 3,77, "10P"
+  // auf #8b5cf6 4,23 -- acht Stellen. Eine Regel kann eine Inline-Farbe nicht
+  // ersetzen, wohl aber ueberlagern: Im Dunkeln liegt eine flache schwarze
+  // Schicht als background-image auf jeder Marke. Hell bleibt die Marke, wie
+  // sie ist (UI-Audit BF-04, Eck-Marken, offen).
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const DATENFARBEN: Record<string, string> = {
+    '#10b981': 'Level "Novize" 0P',
+    '#3b82f6': 'Level "Lehrling" 5P, Bonus "+3P"',
+    '#8b5cf6': 'Level "Gehilfe" 10P',
+    '#f59e0b': 'Level "Experte" 20P',
+    '#059669': 'Aktivitaet "+2P"',
+    '#0a84ff': 'Aktivitaet "+1P"',
+  };
+  const markeHell = regeln(hell).filter((r) => r.selektor === '.app-corner-badge');
+  const markeDunkel = regeln(dunkelBloecke[0] ?? '').filter((r) => r.selektor === '.app-corner-badge');
+  /** Deckkraft der schwarzen Schicht im Dunkeln -- 0, wenn es keine gibt. */
+  function deckkraft(): number {
+    const m = /background-image:\s*linear-gradient\(\s*rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*([\d.]+)\s*\)\s*,\s*rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*([\d.]+)\s*\)\s*\)/.exec(markeDunkel.map((r) => r.rumpf).join('\n'));
+    return m && m[1] === m[2] ? +m[1] : 0;
+  }
+  const unterSchicht = (farbe: string) => mische('#000000', deckkraft(), farbe);
+
+  it('die Marke schreibt weiss -- das ist die Paarung, gegen die gerechnet wird', () => {
+    expect(markeHell).toHaveLength(1);
+    expect(markeHell[0].rumpf).toMatch(/color:\s*white/);
+  });
+
+  it('hell bleibt die Marke unveraendert: keine Schicht ausserhalb des Dunkelblocks', () => {
+    expect(markeHell[0].rumpf).not.toMatch(/background-image/);
+  });
+
+  it('dunkel liegt eine flache schwarze Schicht darauf: ein Verlauf mit zwei gleichen Stops', () => {
+    expect(deckkraft()).toBeGreaterThan(0);
+    expect(deckkraft()).toBeLessThan(0.6); // darueber ist von der Farbe nichts mehr zu erkennen
+  });
+
+  it('Weiss haelt unter der Schicht auf jeder Datenfarbe der Messung mindestens 4,5:1 -- ohne Schicht keine', () => {
+    const schwach: string[] = [];
+    const bestandOhne: string[] = [];
+    for (const [farbe, wo] of Object.entries(DATENFARBEN)) {
+      const k = kontrast('#ffffff', unterSchicht(farbe));
+      if (k < 4.5) schwach.push(`${wo}: Weiss auf ${farbe} unter der Schicht (${unterSchicht(farbe)}) ${k.toFixed(2)}`);
+      // Gegenprobe der Messung: jede dieser Farben fiel OHNE Schicht durch.
+      if (kontrast('#ffffff', farbe) >= 4.5) bestandOhne.push(`${wo}: ${farbe} bestand schon ohne Schicht`);
+    }
+    expect(schwach).toEqual([]);
+    expect(bestandOhne).toEqual([]);
+  });
+
+  it('... und auf jeder Klassenfarbe der Marken (.app-corner-badge--*), mit ihrem dunklen Wert', () => {
+    const varianten = [...hell.matchAll(/\.app-corner-badge--([a-z-]+)\s*\{\s*background-color:\s*var\((--app-color-[a-z-]+)\)/g)];
+    expect(varianten.length).toBeGreaterThanOrEqual(15);
+    const schwach: string[] = [];
+    for (const [, variante, token] of varianten) {
+      const farbe = dunkel.get(token) ?? helleTokens.get(token);
+      expect(farbe, `${token} ohne Wert`).toMatch(/^#[0-9a-f]{6}$/i);
+      const k = kontrast('#ffffff', unterSchicht(farbe!));
+      if (k < 4.5) schwach.push(`--${variante} (${token} ${farbe}): ${k.toFixed(2)}`);
+    }
+    expect(schwach).toEqual([]);
+  });
+});
+
+describe('Dunkelmodus: Kriterienfarbe als Text im Abzeichen-Ring (Paket K2, Audit BF-10)', () => {
+  // GEMESSEN am 26.09.2026 (Nachmessung, /konfi/badges, iOS = Android): Die
+  // Prozentzahl im Fortschrittsring der Abzeichen ("0%") schrieb mit der
+  // Kriterienfarbe aus utils/badgeCriteria.ts -- rohe Hexwerte, in beiden
+  // Modi gleich. Auf der dunklen Karte #242426: streak #eb445a 4,06:1
+  // (gemessen); gerechnet event_count #e63946 3,72, both_categories #5856d6
+  // 2,74, mandatory_event_count #b91c1c 2,39, teamer_year #5b21b6 1,72. Wie
+  // bei den Bereichsfarben gibt es je Kriterium ein Text-Token: hell die
+  // Kriterienfarbe selbst (im Hellen aendert sich nichts), dunkel eine
+  // aufgehellte Stufe mit mindestens 4,5:1 auf Karte und beiden
+  // Seitengruenden. Ring und Symbolkachel behalten die Kriterienfarbe als
+  // Flaeche.
+  const dunkel = tokens(dunkelBloecke[0] ?? '');
+  const TYPEN = Object.keys(CRITERIA_COLORS);
+  function tokenName(typ: string): string {
+    const m = /^var\((--app-text-kriterium-[a-z-]+)\)$/.exec(getCriteriaTextColor(typ));
+    expect(m, `${typ} -> ${getCriteriaTextColor(typ)}`).not.toBeNull();
+    return m![1];
+  }
+
+  it('jeder Kriterientyp hat ein Text-Token, hell identisch mit seinem Hexwert in badgeCriteria.ts', () => {
+    expect(TYPEN).toHaveLength(16);
+    const abweichend: string[] = [];
+    for (const typ of TYPEN) {
+      const t = tokenName(typ);
+      if (helleTokens.get(t) !== CRITERIA_COLORS[typ].toLowerCase()) abweichend.push(`${typ}: ${t} = ${helleTokens.get(t)} != ${CRITERIA_COLORS[typ]}`);
+    }
+    expect(abweichend).toEqual([]);
+  });
+
+  it('der Rueckfall fuer unbekannte Typen ist das Standard-Token mit der Rueckfallfarbe', () => {
+    expect(getCriteriaTextColor('gibt-es-nicht')).toBe('var(--app-text-kriterium-standard)');
+    expect(helleTokens.get('--app-text-kriterium-standard')).toBe(CRITERIA_FALLBACK_COLOR.toLowerCase());
+  });
+
+  it('dunkel liest sich jedes Token auf Karte und beiden Seitengruenden: mindestens 4,5:1, und heller als hell', () => {
+    const schwach: string[] = [];
+    for (const typ of [...TYPEN, 'gibt-es-nicht']) {
+      const t = tokenName(typ);
+      const d = dunkel.get(t);
+      if (!d) { schwach.push(`${t}: kein dunkler Wert`); continue; }
+      for (const [grundName, grund] of [['Karte', dunkel.get('--app-surface-card')!], ['iOS-Grund', '#000000'], ['Android-Grund', '#121212']]) {
+        const k = kontrast(d, grund);
+        if (k < 4.5) schwach.push(`${t} ${d} auf ${grundName} ${grund}: ${k.toFixed(2)}`);
+      }
+      if (relativeHelligkeit(d) <= relativeHelligkeit(helleTokens.get(t)!)) schwach.push(`${t}: dunkel ${d} nicht heller als hell ${helleTokens.get(t)}`);
+    }
+    expect(schwach).toEqual([]);
+  });
+
+  it('die Prozentzahl im Ring schreibt mit dem Text-Token; Ring und Kachel behalten die Kriterienfarbe als Flaeche', () => {
+    const code = lies('src/components/konfi/views/BadgesView.tsx');
+    expect(code).toMatch(/color:\s*getCriteriaTextColor\(category\.key\)/);
+    expect(code).not.toMatch(/\bcolor:\s*category\.color\b/);
+    expect(code).toMatch(/stroke=\{category\.color\}/);
+  });
+
+  it('ohne Token fiele die Rechnung durch: streak #eb445a auf der Karte unter 4,5:1 (Gegenprobe der Messung)', () => {
+    const k = kontrast(CRITERIA_COLORS.streak, dunkel.get('--app-surface-card')!);
+    expect(k).toBeLessThan(4.5);
+    expect(k).toBeGreaterThan(4.0); // 4,06 gemessen -- knapp, aber darunter
+  });
+});
+
+describe('Dunkelmodus: gerenderte Messung als wiederholbarer Test (Baustein 4, Audit BF-09)', () => {
+  // Die Tests in dieser Datei lesen das Stylesheet als Text. Was im Browser
+  // daraus wird -- Spezifitaet gegen das Theme, Flaechen im Shadow-DOM,
+  // gemischte Schichten -- misst scripts/dunkelmodus-messen.mjs in einem
+  // echten Chromium: 47 Seitenzustaende x hell/dunkel x iOS/Android, gegen
+  // die Restliste in scripts/dunkelmodus-restliste.json, Exit 1 bei einem
+  // Verstoss ausserhalb der Liste (Audit BF-09: 104 Verstoesse bei gruenen
+  // Tests). Es braucht einen laufenden Stack und laeuft deshalb nicht in der
+  // CI; hier steht, was ohne Stack pruefbar ist: Die Restliste ist
+  // wohlgeformt und begruendet, das Skript misst, was es verspricht.
+  const restliste = JSON.parse(lies('scripts/dunkelmodus-restliste.json')) as { eintraege: Record<string, string>[] };
+  const skript = lies('scripts/dunkelmodus-messen.mjs');
+  const MERKMALE = ['scheme', 'platform', 'seite', 'vorder', 'hinter', 'text', 'pfad'];
+
+  it('jeder Eintrag der Restliste nennt einen Grund und mindestens ein Merkmal, an dem er greift', () => {
+    expect(restliste.eintraege.length).toBeGreaterThan(0);
+    for (const e of restliste.eintraege) {
+      expect(typeof e.grund, JSON.stringify(e)).toBe('string');
+      expect(e.grund.length, e.grund).toBeGreaterThan(60);
+      expect(MERKMALE.filter((k) => k in e).length, `Eintrag ohne Merkmal: ${e.grund.slice(0, 60)}`).toBeGreaterThan(0);
+      expect(Object.keys(e).filter((k) => k !== 'grund' && !MERKMALE.includes(k)), e.grund.slice(0, 60)).toEqual([]);
+    }
+  });
+
+  it('jedes /RegExp/-Feld kompiliert, jeder feste Farbwert ist ein kleingeschriebener Hexwert', () => {
+    for (const e of restliste.eintraege) {
+      for (const k of ['vorder', 'hinter', 'text', 'pfad']) {
+        const w = e[k];
+        if (w === undefined) continue;
+        const m = /^\/(.*)\/([a-z]*)$/s.exec(w);
+        if (m) expect(() => new RegExp(m[1], m[2]), `${k}: ${w}`).not.toThrow();
+        else expect(w, `${k}: ${w}`).toMatch(k === 'vorder' || k === 'hinter' ? /^#[0-9a-f]{6}$/ : /^\/.*\/[a-z]*$/s);
+      }
+      if (e.scheme !== undefined) expect(['dark', 'light']).toContain(e.scheme);
+      if (e.platform !== undefined) expect(['ios', 'android']).toContain(e.platform);
+    }
+  });
+
+  it('die eigene Chat-Blase steht in der Restliste: Weiss auf Chat-Tuerkis, in beiden Modi, als Entscheidung', () => {
+    const chat = restliste.eintraege.find((e) => e.vorder === '#ffffff' && e.hinter === helleTokens.get('--app-color-chat'));
+    expect(chat).toBeDefined();
+    expect(chat!.scheme).toBeUndefined(); // gilt hell UND dunkel -- kein Dunkelmodus-Befund
+    expect(chat!.grund).toMatch(/Entscheidung/);
+  });
+
+  it('kein Eintrag deckt den Dunkelmodus pauschal ab -- ohne Farbe, Text oder Pfad', () => {
+    for (const e of restliste.eintraege) {
+      if (e.scheme === 'light') continue;
+      expect(['vorder', 'hinter', 'text', 'pfad'].some((k) => k in e), e.grund.slice(0, 60)).toBe(true);
+    }
+  });
+
+  it('das Skript misst die 47 Zustaende des Audits, beide Modi und Plattformen, liest genau diese Restliste und endet mit dem Exit-Code der Auswertung', () => {
+    const seiten = /const SEITEN = \{([\s\S]*?)\n\};/.exec(skript);
+    expect(seiten).not.toBeNull();
+    expect((seiten![1].match(/'\//g) ?? []).length).toBe(47);
+    expect(skript).toContain("'dunkelmodus-restliste.json'");
+    expect(skript).toMatch(/argWert\('schemes', 'dark,light'\)/);
+    expect(skript).toMatch(/argWert\('platforms', 'ios,android'\)/);
+    expect(skript).toMatch(/argWert\('out'/);
+    expect(skript).toMatch(/process\.exit\(ok \? 0 : 1\)/);
+    // Ionics Flaechen im Shadow-DOM und flache Schichten werden eingerechnet -- sonst
+    // misst es "Anmelden (0/50)" wieder gegen die Karte (1,36 statt 10,78:1).
+    expect(skript).toMatch(/\.button-native, \.item-native/);
+    expect(skript).toMatch(/flacheSchicht/);
+  });
+
+  it('npm run dunkelmodus:messen zeigt auf das Skript', () => {
+    const pkg = JSON.parse(lies('package.json')) as { scripts: Record<string, string> };
+    expect(pkg.scripts['dunkelmodus:messen']).toBe('node scripts/dunkelmodus-messen.mjs');
+  });
+});
+
 /* --- WCAG-Rechnung --------------------------------------------------- */
 
 function hexZuRgb(hex: string): [number, number, number] {
@@ -576,6 +1366,152 @@ function relativeHelligkeit(hex: string): number {
 function kontrast(a: string, b: string): number {
   const [l1, l2] = [relativeHelligkeit(a), relativeHelligkeit(b)].sort((x, y) => y - x);
   return (l1 + 0.05) / (l2 + 0.05);
+}
+
+/** Farbe `oben` mit Deckkraft `alpha` auf `unten` gelegt -- so rechnet der Browser rgba(). */
+function mische(oben: string, alpha: number, unten: string): string {
+  const o = hexZuRgb(oben);
+  const u = hexZuRgb(unten);
+  return '#' + o.map((c, i) => Math.round(c * alpha + u[i] * (1 - alpha)).toString(16).padStart(2, '0')).join('');
+}
+
+/* --- JSX lesen ------------------------------------------------------- */
+
+/**
+ * Alle oeffnenden JSX-Tags `<Name …>` einer Datei samt Attributen -- auch wenn
+ * in einem {…}-Ausdruck ein `>` steht (Pfeilfunktion, Vergleich) oder ein
+ * String eine Klammer enthaelt.
+ */
+function jsxOeffnendeTags(code: string, name: string): string[] {
+  const raus: string[] = [];
+  for (const m of code.matchAll(new RegExp(`<${name}(?=[\\s/>])`, 'g'))) {
+    let tiefe = 0;
+    let anfuehrung: string | null = null;
+    for (let i = m.index! + m[0].length; i < code.length; i++) {
+      const c = code[i];
+      if (anfuehrung) { if (c === anfuehrung && code[i - 1] !== '\\') anfuehrung = null; continue; }
+      if (tiefe > 0 && (c === '"' || c === "'" || c === '`')) { anfuehrung = c; continue; }
+      if (c === '{') tiefe++;
+      else if (c === '}') tiefe--;
+      else if (c === '>' && tiefe === 0) { raus.push(code.slice(m.index!, i + 1)); break; }
+    }
+  }
+  return raus;
+}
+
+/* --- CSS-Rechnung ---------------------------------------------------- */
+
+/**
+ * Alle Regeln eines Stylesheets als Selektor + Rumpf. At-Regeln (@media,
+ * @supports, @font-face) werden geoeffnet und ihr Inhalt normal gelesen;
+ * ihre eigene Kopfzeile ist keine Regel.
+ */
+function regeln(cssText: string): { selektor: string; rumpf: string }[] {
+  const raus: { selektor: string; rumpf: string }[] = [];
+  let kopf = '';
+  for (let i = 0; i < cssText.length; i++) {
+    const c = cssText[i];
+    if (c === '{') {
+      if (kopf.trim().startsWith('@')) { kopf = ''; continue; }
+      const ende = cssText.indexOf('}', i);
+      raus.push({ selektor: kopf.trim(), rumpf: cssText.slice(i + 1, ende) });
+      i = ende;
+      kopf = '';
+    } else if (c === '}') kopf = '';
+    else kopf += c;
+  }
+  return raus;
+}
+
+/** Die Kartenregel `ion-card.app-card` aus variables.css: ihre Selektoren einzeln und ihr Rumpf. */
+function kartenRegel(): { selektoren: string[]; rumpf: string } {
+  const treffer = regeln(css).filter((r) => r.selektor.includes('ion-card.app-card:not(.ios-theme-disabled)') && /--background\s*:/.test(r.rumpf));
+  expect(treffer, 'Kartenregel ion-card.app-card nicht gefunden').toHaveLength(1);
+  return { selektoren: teileObersteEbene(treffer[0].selektor).map((s) => s.trim()).filter(Boolean), rumpf: treffer[0].rumpf };
+}
+
+/** Eine Selektorliste an den Kommas der obersten Ebene trennen -- Kommas in :not(a, b) bleiben. */
+function teileObersteEbene(text: string): string[] {
+  const raus: string[] = [];
+  let tiefe = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '(' || c === '[') tiefe++;
+    else if (c === ')' || c === ']') tiefe--;
+    else if (c === ',' && tiefe === 0) { raus.push(text.slice(start, i)); start = i + 1; }
+  }
+  raus.push(text.slice(start));
+  return raus;
+}
+
+/** Der letzte Verbund-Selektor eines komplexen Selektors -- das Element, das die Regel trifft. */
+function letzterVerbund(selektor: string): string {
+  let tiefe = 0;
+  let start = 0;
+  for (let i = 0; i < selektor.length; i++) {
+    const c = selektor[i];
+    if (c === '(' || c === '[') tiefe++;
+    else if (c === ')' || c === ']') tiefe--;
+    else if (tiefe === 0 && /[\s>+~]/.test(c)) start = i + 1;
+  }
+  return selektor.slice(start);
+}
+
+/**
+ * Spezifitaet eines einzelnen komplexen Selektors als [IDs, Klassen, Elemente]
+ * nach Selectors Level 4: Klassen, Attribute und Pseudoklassen zaehlen gleich;
+ * :not()/:is()/:has() zaehlen wie ihr spezifischstes Argument, :where() nichts;
+ * Pseudoelemente zaehlen wie Elemente.
+ */
+function spezifitaet(selektor: string): [number, number, number] {
+  const s = selektor.trim();
+  let ids = 0;
+  let klassen = 0;
+  let elemente = 0;
+  let i = 0;
+  const name = () => {
+    const m = /^[\w-]+/.exec(s.slice(i));
+    if (!m) throw new Error(`Name erwartet in "${s}" an Stelle ${i}`);
+    i += m[0].length;
+    return m[0];
+  };
+  const klammer = () => {
+    let tiefe = 0;
+    const start = i + 1;
+    for (; i < s.length; i++) {
+      if (s[i] === '(') tiefe++;
+      else if (s[i] === ')' && --tiefe === 0) { const inhalt = s.slice(start, i); i++; return inhalt; }
+    }
+    throw new Error(`Klammer nicht geschlossen in "${s}"`);
+  };
+  while (i < s.length) {
+    const c = s[i];
+    if (c === '#') { i++; name(); ids++; }
+    else if (c === '.') { i++; name(); klassen++; }
+    else if (c === '[') { i = s.indexOf(']', i) + 1; klassen++; }
+    else if (c === ':' && s[i + 1] === ':') { i += 2; name(); if (s[i] === '(') klammer(); elemente++; }
+    else if (c === ':') {
+      i++;
+      const n = name();
+      if (s[i] !== '(') { klassen++; continue; }
+      const inhalt = klammer();
+      if (n === 'not' || n === 'is' || n === 'has') {
+        const max = teileObersteEbene(inhalt).map(spezifitaet).sort(vergleich).pop()!;
+        ids += max[0]; klassen += max[1]; elemente += max[2];
+      } else if (n !== 'where') klassen++;
+    }
+    else if (/[\s>+~*]/.test(c)) i++;
+    else if (/[a-zA-Z]/.test(c)) { name(); elemente++; }
+    else throw new Error(`Unerwartetes Zeichen "${c}" in "${s}"`);
+  }
+  return [ids, klassen, elemente];
+}
+
+/** Positiv, wenn a spezifischer ist als b; 0 bei Gleichstand (dann entscheidet die Reihenfolge). */
+function vergleich(a: [number, number, number], b: [number, number, number]): number {
+  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] - b[i];
+  return 0;
 }
 
 /**

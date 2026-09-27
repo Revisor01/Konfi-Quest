@@ -19,7 +19,7 @@
 set -euo pipefail
 
 ZIEL="$(dirname "$0")/prod-schema.sql"
-SERVER="${KQ_PROD_SSH:-root@kkd-fahrtenbuch.de}"
+SERVER="${KQ_PROD_SSH:?KQ_PROD_SSH (user@host) fehlt -- Betriebszugang, steht nicht im Repo}"
 CONTAINER="${KQ_PROD_DB_CONTAINER:-kq-postgres}"
 
 echo "Hole Schema von $SERVER ($CONTAINER) ..."

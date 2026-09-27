@@ -263,14 +263,25 @@ describe('Challenge-Neuigkeiten (Konfi-Zaehler wie beim Chat)', () => {
     expect((await zaehler(konfiToken)).total).toBe(0);
   });
 
-  it('Teamer:innen bekommen 0 -- ihr Reiter zaehlt die Freigaben, nicht die Neuigkeiten', async () => {
-    // teamer1 ist jahrgang1 zugewiesen und wuerde die Challenge SEHEN --
-    // der Neuigkeiten-Zaehler ist trotzdem allein Sache der Konfis.
+  it('Teamer:innen: ein wartender Beitrag zaehlt als Freigabe, nicht als Neuigkeit', async () => {
+    // teamer1 ist jahrgang1 zugewiesen und sieht die Challenge. Seit
+    // 27.09.2026 zaehlen auch fuer das Team Neuigkeiten -- freigegebene
+    // Beitraege und (Audit BF-07) die nie geoeffnete Challenge, bei der das
+    // Team mitmacht. Der WARTENDE Beitrag steht dort nicht, nur als Freigabe.
     const id = await challengeAnlegen({ audience: 'konfis_und_team' });
     await beitrag(id, USERS.konfi2.id, { status: 'pending' });
-    const res = await request(app)
+    const holen = () => request(app)
       .get('/api/notifications/badge-counts')
       .set('Authorization', `Bearer ${teamerToken}`);
+    // Vor dem Oeffnen: 1 fuer die neue Challenge, nicht 2.
+    const vorher = await holen();
+    expect(vorher.status).toBe(200);
+    expect(vorher.body.challengeUpdates).toEqual({ total: 1, byChallenge: { [id]: 1 } });
+    const gelesen = await request(app)
+      .post(`/api/challenges/konfi/${id}/mark-read`)
+      .set('Authorization', `Bearer ${teamerToken}`);
+    expect(gelesen.status).toBe(200);
+    const res = await holen();
     expect(res.status).toBe(200);
     expect(res.body.challengeUpdates).toEqual({ total: 0, byChallenge: {} });
     // Gegenprobe: die Freigabe steht bei ihr sehr wohl am Reiter -- und

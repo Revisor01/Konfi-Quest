@@ -373,7 +373,7 @@ describe('Absagegrund: PUT /api/events/:id/cancel', () => {
         .send({ cancelled_reason: 'Heizung defekt' });
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Kein Zugriff auf diesen Termin');
+      expect(res.body.error).toBe('Kein Zugriff auf dieses Event');
 
       const gespeichert = await termin(eventId);
       expect(gespeichert.cancelled === true).toBe(false);

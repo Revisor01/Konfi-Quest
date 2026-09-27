@@ -54,10 +54,13 @@ const TEAM_ROLES = ['org_admin', 'admin', 'teamer'];
 // Darf diese Rolle bei dieser Challenge einen eigenen Beitrag einreichen?
 // Konfis nur bei 'konfis'/'konfis_und_team', Team nur bei
 // 'konfis_und_team'/'nur_team'. super_admin nie (org-fremde Rolle).
+// Die Team-Kreise stehen seit 27.09.2026 in utils/challengeLeitungSicht.js
+// (TEAM_MACHT_MIT_AUDIENCES) -- dieselben bestimmen die Teilnahme-Liste,
+// die Start-Mitteilung ans Team und "neue Challenge" in dessen Zaehler.
 function maySubmit(roleName, audience) {
   const aud = audience || 'konfis_und_team';
   if (roleName === 'konfi') return aud === 'konfis' || aud === 'konfis_und_team';
-  if (TEAM_ROLES.includes(roleName)) return aud === 'konfis_und_team' || aud === 'nur_team';
+  if (TEAM_ROLES.includes(roleName)) return TEAM_MACHT_MIT_AUDIENCES.includes(aud);
   return false;
 }
 
@@ -102,6 +105,8 @@ const CONTENT_TYPES = {
 // braucht und der ueber pushService geladen wird, bevor diese Datei fertig
 // ist. Hier weiterhin re-exportiert (siehe module.exports unten).
 const { PUBLIC_SUBMISSION_SQL } = require('../utils/challengeSichtbarkeit');
+const { leitungSiehtChallengeSql, teamMachtMitSql, TEAM_MACHT_MIT_AUDIENCES } = require('../utils/challengeLeitungSicht');
+const { nachAntwort } = require('../utils/nachAntwort');
 
 // JS-Pendant für bereits geladene Zeilen (Datei-Auslieferung, Export).
 // Erwartet { moderation_status, konfi_consent } und { visibility }.
@@ -196,20 +201,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     const viewable = viewableJahrgangIds(req);
     if (viewable === null) return true;
 
-    // 'nur_team'-Challenges laufen org-weit über die Rolle (Migration 121) —
-    // jeder Teamer der Org darf sie sehen und verwalten, auch ohne
-    // Jahrgangs-Zuordnung (die es dort per Definition nicht gibt).
-    const { rows: [teamRow] } = await db.query(
-      `SELECT 1 FROM challenges WHERE id = $1 AND audience = 'nur_team' LIMIT 1`,
-      [challengeId]
-    );
-    if (teamRow) return true;
-
-    if (viewable.length === 0) return false;
+    // Die Regel steht in utils/challengeLeitungSicht.js (27.09.2026): 'nur_team'
+    // fuer das ganze Team, sonst nur ueber einen zugewiesenen Jahrgang.
     const { rows: [row] } = await db.query(
-      `SELECT 1 FROM challenge_jahrgang_assignments
-       WHERE challenge_id = $1 AND jahrgang_id = ANY($2::int[]) LIMIT 1`,
-      [challengeId, viewable]
+      `SELECT 1 FROM challenges c
+        WHERE c.id = $1
+          AND ${leitungSiehtChallengeSql({ rolle: '$2', jahrgaenge: '$3::int[]' })}
+        LIMIT 1`,
+      [challengeId, req.user.role_name, viewable]
     );
     return !!row;
   }
@@ -469,21 +468,16 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           SELECT 1 FROM challenge_jahrgang_assignments cja
           WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($3::int[])
         )`;
-      } else if (jahrgangIds === null) {
-        // org_admin/admin: alles der Org, aber nur wo das Team mitmachen darf
-        scopeCondition = `c.audience IN ('konfis_und_team', 'nur_team')`;
-      } else if (jahrgangIds.length === 0) {
-        // Teamer ohne Jahrgänge: nur die org-weiten Team-Challenges
-        scopeCondition = `c.audience = 'nur_team'`;
       } else {
-        params.push(jahrgangIds);
-        scopeCondition = `(
-          c.audience = 'nur_team'
-          OR (c.audience = 'konfis_und_team' AND EXISTS (
-            SELECT 1 FROM challenge_jahrgang_assignments cja
-            WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($3::int[])
-          ))
-        )`;
+        // Team: wo es mitmacht ('konfis_und_team', 'nur_team') und was es
+        // sieht -- org_admin alles der Org, Admins und Teamer:innen
+        // 'nur_team' immer, sonst ueber einen zugewiesenen Jahrgang (Simon,
+        // 27.09.2026). Seit 27.09.2026 EINE Bedingung mit der
+        // Start-Mitteilung ans Team und "neue Challenge" im Zaehler
+        // (utils/challengeLeitungSicht.js, teamMachtMitSql); vorher stand sie
+        // hier in drei Zweigen.
+        params.push(role, jahrgangIds || []);
+        scopeCondition = teamMachtMitSql({ rolle: '$3', jahrgaenge: '$4::int[]' });
       }
 
       const { rows } = await db.query(
@@ -686,9 +680,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // participantMayAccess (403). Wer eine Challenge nicht oeffnen darf, kann
   // sie auch nicht als gelesen markieren.
   //
-  // Team-Rollen duerfen den Aufruf ebenfalls machen (harmlos, gleiche
-  // Detailansicht), gezaehlt wird fuer sie aber nichts -- ihr Reiter zaehlt
-  // Freigaben.
+  // Team-Rollen rufen es ebenso (seit 27.09.2026 zaehlt auch fuer sie, was
+  // seit dem letzten Oeffnen neu ist -- challengeNeuigkeitenLeitungJeChallenge);
+  // die Leitungsansicht meldet das Oeffnen beim Aufgehen und Schliessen.
   router.post('/konfi/:id/mark-read',
     rbacVerifier,
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
@@ -892,7 +886,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // sofort approved, der Push feuert hier. Bei moderierten Challenges
         // gibt es das Abzeichen erst mit der Freigabe — der Push feuert dann
         // in PUT /admin/submissions/:id/moderate.
-        (async () => {
+        // Ueber nachAntwort statt frei laufend (27.09.2026): gleiches Verhalten,
+        // aber Tests koennen auf den Nachlauf warten (warteAufNachwehen).
+        nachAntwort(req, async () => {
           try {
             await PushService.sendChallengeSubmissionToLeadership(
               db,
@@ -900,7 +896,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
               challengeId,
               challenge.title,
               req.user.display_name,
-              challenge.moderated
+              challenge.moderated,
+              req.user.id
             );
           } catch (pushErr) {
             console.error('Push für Challenge-Beitrag fehlgeschlagen:', pushErr.message);
@@ -955,7 +952,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           } catch (badgeErr) {
             console.error('Abzeichen-Push für Challenge-Beitrag fehlgeschlagen:', badgeErr.message);
           }
-        })();
+        }, 'Pushes nach Challenge-Beitrag');
 
         // Live-Update nur, wenn der Beitrag sofort oeffentlich sichtbar ist.
         if (isSubmissionPublic(created, challenge)) {
@@ -1239,24 +1236,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           }
           res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
           // KEIN early-return mehr (Widerspruch behoben, 01.09.2026): Die
-          // org-weiten 'nur_team'-Challenges haengen an der Rolle, nicht am
-          // Jahrgang -- leadershipMayAccess und der Freigaben-Zaehler
-          // (notifications.js) gestehen sie auch ohne Zuweisung zu, nur diese
-          // Liste gab vorher grundlos [] zurueck. Ohne Zuweisung bleibt
-          // genau der 'nur_team'-Anteil uebrig.
-          jahrgangFilter = `AND c.audience = 'nur_team'`;
-        } else {
-          params.push(viewable);
-          // 'nur_team' ist org-weit ohne Jahrgangs-Zuordnung -> für jeden Teamer
-          // sichtbar, sonst könnte er seine eigene Team-Runde nicht verwalten.
-          jahrgangFilter = `AND (
-            c.audience = 'nur_team'
-            OR EXISTS (
-              SELECT 1 FROM challenge_jahrgang_assignments cja2
-              WHERE cja2.challenge_id = c.id AND cja2.jahrgang_id = ANY($3::int[])
-            )
-          )`;
+          // org-weiten Team-Challenges haengen an der Rolle, nicht am
+          // Jahrgang -- ohne Zuweisung bleibt genau dieser Anteil uebrig.
         }
+        // Eine Regel fuer Liste, Sichtpruefung, Zaehler und Mitteilungen
+        // (utils/challengeLeitungSicht.js, 27.09.2026): 'nur_team' fuer das
+        // ganze Team, sonst ueber einen zugewiesenen Jahrgang.
+        params.push(req.user.role_name, viewable);
+        jahrgangFilter = `AND ${leitungSiehtChallengeSql({ rolle: '$3', jahrgaenge: '$4::int[]' })}`;
       }
 
       const { rows } = await db.query(

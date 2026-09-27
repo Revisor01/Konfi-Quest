@@ -20,6 +20,13 @@ const sektionen = lies('src/components/chat/ChatRoomSections.tsx');
 const dateien = lies('src/components/chat/useChatDateien.ts');
 const blase = lies('src/components/chat/MessageBubble.tsx');
 const cache = lies('src/services/mediaCache.ts');
+// 27.09.2026: Die Anzeige (Texte und Balken) und das Oeffnen einer Datei
+// stehen einmal fuer Chat und Challenges in gemeinsamen Bausteinen. Die
+// Erwartungen ziehen dorthin um statt aufgeweicht zu werden; MessageBubble
+// und useChatDateien muessen die Bausteine nutzen. Gerendert geprueft in
+// medienAnzeigeGemeinsam.test.tsx.
+const fortschritt = lies('src/utils/fortschritt.ts') + lies('src/components/shared/FortschrittsBalken.tsx');
+const oeffnen = lies('src/hooks/useDateiOeffnen.ts');
 
 describe('Senden: der Fortschritt kommt von axios, nicht aus einer Schaetzung', () => {
   it('haengt den Fortschritt an onUploadProgress', () => {
@@ -77,7 +84,8 @@ describe('Senden: der Fortschritt kommt von axios, nicht aus einer Schaetzung', 
   it('sagt bei 100 Prozent, dass noch verarbeitet wird', () => {
     // Der Server rechnet danach noch (Bild umrechnen, verschluesseln). Ein
     // Balken, der bei 100 stehenbleibt, sieht sonst aus wie ein Haenger.
-    expect(blase).toContain('Wird verarbeitet…');
+    expect(fortschritt).toContain("prozent >= 100 ? 'Wird verarbeitet…'");
+    expect(blase).toContain('sendeText(uploadFortschritt!.prozent)');
   });
 });
 
@@ -101,30 +109,37 @@ describe('Laden: eine angetippte Datei zeigt, dass sie laedt', () => {
   it('reicht den Fortschritt aus dem Cache bis in die Anzeige durch', () => {
     // Die Bruecke zwischen beiden Dateien: ohne den Rueckruf gaebe es beim
     // Laden keine Rueckmeldung mehr.
-    expect(dateien).toContain('getMediaBlob(filePath, (prozent) => {');
-    expect(dateien).toContain('setLadendeDatei({ pfad: filePath, prozent });');
+    expect(oeffnen).toContain('getMediaBlob(filePath, {');
+    expect(oeffnen).toContain('onFortschritt: (prozent) => {');
+    expect(oeffnen).toContain('setLadendeDatei({ pfad: filePath, prozent });');
   });
 
   it('zeigt beim Cache-Treffer gar keine Ladeanzeige', () => {
     // Sie waere sofort wieder weg und wuerde nur aufblitzen.
-    expect(dateien).toContain('const schonDa = await istGecacht(filePath);');
-    expect(dateien).toContain('if (!schonDa) setLadendeDatei({ pfad: filePath, prozent: 0 });');
+    expect(oeffnen).toContain('const schonDa = await istGecacht(filePath, quelle);');
+    expect(oeffnen).toContain('if (!schonDa) setLadendeDatei({ pfad: filePath, prozent: 0 });');
   });
 
   it('ignoriert einen zweiten Tipp, solange geladen wird', () => {
     // Genau der gemeldete Fall: mehrfaches Tippen stiess mehrere Downloads an.
-    const klick = dateien.slice(
-      dateien.indexOf('const handleFileClick'),
-      dateien.indexOf('const handleFileClick') + 300
+    const klick = oeffnen.slice(
+      oeffnen.indexOf('const dateiOeffnen'),
+      oeffnen.indexOf('const dateiOeffnen') + 300
     );
-    expect(klick).toContain('if (ladendeDatei) return;');
+    // Seit 27.09.2026 mit Rückgabewert (false = nichts geladen, siehe Messung
+    // „Material abgerufen")
+    expect(klick).toContain('if (ladendeDatei) return false;');
   });
 
   it('raeumt die Anzeige im finally weg', () => {
     // Wichtig wegen des fruehen return, wenn die Datei nativ geoeffnet wurde:
     // ohne finally bliebe die Anzeige dort haengen.
-    const block = dateien.slice(dateien.indexOf('} finally {'), dateien.indexOf('} finally {') + 300);
+    const block = oeffnen.slice(oeffnen.indexOf('} finally {'), oeffnen.indexOf('} finally {') + 300);
     expect(block).toContain('setLadendeDatei(null)');
+  });
+
+  it('der Chat nutzt genau diesen Weg', () => {
+    expect(dateien).toContain('const { dateiOeffnen: handleFileClick, ladendeDatei } = useDateiOeffnen({');
   });
 
   it('gibt den Ladezustand nach aussen', () => {
@@ -146,7 +161,8 @@ describe('Laden: nur die angetippte Datei zeigt den Fortschritt', () => {
   });
 
   it('nennt beim Laden die Prozentzahl, sonst die Dateigroesse', () => {
-    expect(blase).toContain('`Wird geladen… ${ladendeDatei.prozent} %`');
+    expect(fortschritt).toContain('`Wird geladen… ${prozent} %`');
+    expect(blase).toContain('ladeText(ladendeDatei?.prozent)');
     expect(blase).toContain('formatFileSize(message.file_size)');
   });
 });
@@ -154,21 +170,20 @@ describe('Laden: nur die angetippte Datei zeigt den Fortschritt', () => {
 describe('Barrierefreiheit: beide Balken sind als Fortschritt ausgezeichnet', () => {
   it('setzt role und Werte beim Senden', () => {
     // Beide Balken liegen in MessageBubble: der Sende-Balken am Ende der
-    // Blase, der Lade-Balken beim Dateianhang.
-    expect(blase).toContain('aria-valuenow={uploadFortschritt!.prozent}');
-    const stellen = blase.split('role="progressbar"').length - 1;
+    // Blase, der Lade-Balken beim Dateianhang. Beide sind der gemeinsame
+    // FortschrittsBalken, der die Auszeichnung selbst traegt.
+    expect(blase).toContain('prozent={uploadFortschritt!.prozent}');
+    const stellen = blase.split('<FortschrittsBalken').length - 1;
     expect(stellen).toBe(2);
   });
 
   it('setzt role und Werte beim Laden', () => {
-    const balken = blase.slice(
-      blase.indexOf('role="progressbar"'),
-      blase.indexOf('role="progressbar"') + 400
-    );
-    expect(balken).toContain('aria-valuenow={ladendeDatei.prozent}');
-    expect(balken).toContain('aria-valuemin={0}');
-    expect(balken).toContain('aria-valuemax={100}');
-    expect(balken).toContain('aria-label=');
+    expect(blase).toContain('prozent={ladendeDatei.prozent}');
+    expect(fortschritt).toContain('role="progressbar"');
+    expect(fortschritt).toContain('aria-valuenow={prozent}');
+    expect(fortschritt).toContain('aria-valuemin={0}');
+    expect(fortschritt).toContain('aria-valuemax={100}');
+    expect(fortschritt).toContain('aria-label={beschriftung}');
   });
 });
 

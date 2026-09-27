@@ -321,7 +321,7 @@ describe('Badges Routes', () => {
       expect(res.status).toBe(403);
     });
 
-    it('Fehlende Pflichtfelder gibt 400/422', async () => {
+    it('Fehlende Pflichtfelder gibt 400', async () => {
       const token = generateToken('admin1');
       const res = await request(app)
         .post('/api/admin/badges')
@@ -330,7 +330,8 @@ describe('Badges Routes', () => {
           name: 'Nur-Name',
         });
 
-      expect([400, 422]).toContain(res.status);
+      // handleValidationErrors antwortet mit 400 (Audit 26.09.2026, Tests BF-06).
+      expect(res.status).toBe(400);
     });
 
     // Befund 24.08.2026: Wert 0 (oder fehlend) liesse jedes Zähl-Kriterium
@@ -608,10 +609,10 @@ describe('Badges Routes', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
-      // Level wird on-the-fly berechnet
-      if (res.body.level) {
-        expect(res.body.level.title || res.body.level.name).toBeDefined();
-      }
+      // Level wird on-the-fly berechnet und liegt unter level_info. Frueher
+      // stand hier `if (res.body.level) { ... }` -- das Feld gibt es nicht,
+      // der Test pruefte nichts (Audit 26.09.2026, Tests BF-06).
+      expect(res.body.level_info.current_level.title).toBe('Novize');
     });
 
     it('Konfi mit 10 Punkten bekommt Level Gehilfe', async () => {
@@ -627,11 +628,8 @@ describe('Badges Routes', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
-      // Level sollte mindestens Gehilfe sein (points_required: 10)
-      if (res.body.level) {
-        const levelName = (res.body.level.title || res.body.level.name || '').toLowerCase();
-        expect(['gehilfe', 'experte']).toContain(levelName);
-      }
+      // 10 Punkte: Gehilfe (points_required 10), Experte erst ab 20.
+      expect(res.body.level_info.current_level.title).toBe('Gehilfe');
     });
   });
 

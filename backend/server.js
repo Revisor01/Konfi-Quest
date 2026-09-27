@@ -24,7 +24,24 @@ if (!JWT_SECRET) {
 // ====================================================================
 
 const db = require('./database');
-const { darfRaumBetreten } = require('./utils/chatRoomAccess');
+const { socketRaumEreignisse } = require('./utils/chatRoomAccess');
+
+// Gemeinsamer Zaehler-Speicher fuer die Rate-Limiter (Audit 26.09.2026,
+// Betrieb BF-09 / S-10): Ohne `store` zaehlte express-rate-limit je Prozess
+// im Speicher, und hinter Traefik mit zwei Replicas galt jedes Limit doppelt
+// (40 statt 20 Doku-Passwort-Versuche, 600 statt 300 Login-Fehlversuche);
+// 429 kam scheinbar zufaellig. Der Store zaehlt in der vorhandenen Postgres
+// (Tabelle rate_limit_zaehler, Migration 167) und faellt bei einem
+// Datenbankausfall auf den Speicher je Prozess zurueck. Jeder Limiter
+// bekommt seine EIGENE Instanz mit eigenem Praefix.
+//
+// Bewusst NICHT geteilt: der allgemeine Flutschutz (generalLimiter, 2000 je
+// Viertelstunde). Er liegt vor JEDER Anfrage -- auch vor den
+// Gesundheitspruefungen von Traefik und Docker -- und ein Datenbankschreiben
+// je API-Aufruf waere fuer eine Bremse, die kein Passwort schuetzt, der
+// falsche Preis. Er zaehlt weiter je Replica; effektiv also das Doppelte.
+const { PostgresRateLimitStore } = require('./utils/rateLimitStore');
+const geteilterZaehler = (name) => new PostgresRateLimitStore(db, { prefix: name });
 
 // ====================================================================
 // HTTP SERVER (ohne App — App kommt nach Socket.IO Setup)
@@ -57,6 +74,7 @@ const io = new Server(server, {
 // über die Tabelle socket_io_attachments (Migration 109).
 const { createAdapter: createPgAdapter } = require('@socket.io/postgres-adapter');
 const { Pool: PgPool } = require('pg');
+const { mitVerbindungsschutz } = require('./utils/socketAdapterVerbindung');
 
 // Eigener kleiner Pool für den Adapter (dedizierte LISTEN-Connection + Queries),
 // getrennt vom App-Pool in database.js, damit die dauerhafte LISTEN-Verbindung
@@ -64,11 +82,24 @@ const { Pool: PgPool } = require('pg');
 const socketAdapterPool = new PgPool({
   connectionString: process.env.DATABASE_URL,
   max: parseInt(process.env.PG_SOCKET_ADAPTER_POOL_MAX || '2', 10),
+  // Wie der App-Pool (database.js): Nach einem Datenbank-Ausfall versucht der
+  // Adapter alle 1-3 s eine Neuverbindung; ohne Grenze hinge ein einzelner
+  // Versuch gegen einen nicht erreichbaren Host minutenlang im TCP-Timeout.
+  connectionTimeoutMillis: parseInt(process.env.PG_CONN_TIMEOUT || '5000', 10),
 });
+// Nur fuer LEERLAUFENDE Pool-Verbindungen. Die dauerhaft ausgecheckte
+// LISTEN-Verbindung des Adapters hoert hier NICHT mit -- dafuer die Huelle.
 socketAdapterPool.on('error', (err) => {
   console.error('Socket.IO-Adapter-Pool Fehler:', err.message);
 });
-io.adapter(createPgAdapter(socketAdapterPool, {
+// Huelle (Audit 26.09.2026, Betrieb BF-01): Der Adapter bindet an seinen
+// LISTEN-Client kein 'error'. Riss die Datenbankverbindung ab (Neustart,
+// OOM-Kill, Failover), warf Node uncaughtException, und gracefulShutdown unten
+// beendete JEDE Replica im selben Moment -- Totalausfall bis Docker neu
+// startete. Die Huelle loggt den Abbruch, laesst den Adapter neu verbinden und
+// gibt den toten Client an den Pool zurueck (utils/socketAdapterVerbindung.js).
+const adapterVerbindung = mitVerbindungsschutz(socketAdapterPool);
+io.adapter(createPgAdapter(adapterVerbindung, {
   errorHandler: (err) => console.error('Socket.IO-Postgres-Adapter Fehler:', err.message),
 }));
 
@@ -161,51 +192,9 @@ io.on('connection', (socket) => {
   const userRoom = `user_${socket.user.type}_${socket.user.id}`;
   socket.join(userRoom);
 
-  socket.on('joinRoom', async (roomId) => {
-    try {
-      const erlaubt = await darfRaumBetreten(db, roomId, socket.user);
-      if (!erlaubt.ok) {
-        console.warn(`Socket joinRoom abgelehnt: User ${socket.user.id} -> Room ${roomId} (${erlaubt.grund})`);
-        return;
-      }
-      socket.join(`room_${roomId}`);
-    } catch (err) {
-      console.error('Socket joinRoom Fehler:', err.message);
-    }
-  });
-
-  socket.on('leaveRoom', (roomId) => {
-    socket.leave(`room_${roomId}`);
-  });
-
-  // Auch hier Teilnehmerschaft prüfen: Ohne sie liesse sich über die
-  // Tipp-Anzeige verraten, wer gerade in einem fremden Raum schreibt.
-  socket.on('typing', async (roomId) => {
-    try {
-      const erlaubt = await darfRaumBetreten(db, roomId, socket.user);
-      if (!erlaubt.ok) return;
-      socket.to(`room_${roomId}`).emit('userTyping', {
-        roomId,
-        userId: socket.user.id,
-        userName: socket.user.display_name
-      });
-    } catch (err) {
-      console.error('Socket typing Fehler:', err.message);
-    }
-  });
-
-  socket.on('stopTyping', async (roomId) => {
-    try {
-      const erlaubt = await darfRaumBetreten(db, roomId, socket.user);
-      if (!erlaubt.ok) return;
-      socket.to(`room_${roomId}`).emit('userStoppedTyping', {
-        roomId,
-        userId: socket.user.id
-      });
-    } catch (err) {
-      console.error('Socket stopTyping Fehler:', err.message);
-    }
-  });
+  // joinRoom, leaveRoom, typing, stopTyping: dieselbe Raum-Regel wie die
+  // REST-Routen (utils/chatRoomAccess.js).
+  socketRaumEreignisse(socket, db);
 
   socket.on('disconnect', (reason) => {
     if (reason === 'server namespace disconnect') {
@@ -222,26 +211,29 @@ liveUpdate.init(io, db);
 // SMTP CONFIGURATION
 // ====================================================================
 
-const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || 'server.godsapp.de',
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: process.env.SMTP_SECURE !== 'false',
-  auth: {
-    user: process.env.SMTP_USER || 'noreply@konfi-quest.de',
-    pass: process.env.SMTP_PASS
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-};
+const { smtpKonfiguration } = require('./utils/smtpKonfiguration');
+
+// Host, Port, Nutzer, Passwort und TLS kommen aus der Umgebung -- ohne
+// eingebauten Fallback-Host oder -Nutzer (Audit 26.09.2026, Sicherheit
+// BF-12 / S-15; hier standen ein Hostname und eine Absenderadresse im Code)
+// und mit Zertifikatspruefung (BF-09; hier stand `rejectUnauthorized: false`).
+// Fehlen SMTP_HOST oder SMTP_USER, warnt smtpKonfiguration() beim Start;
+// Begruendung und Notnagel stehen in utils/smtpKonfiguration.js.
+const SMTP_CONFIG = smtpKonfiguration();
+const smtpKonfiguriert = Boolean(SMTP_CONFIG.host && SMTP_CONFIG.auth.user && SMTP_CONFIG.auth.pass);
 
 const transporter = nodemailer.createTransport(SMTP_CONFIG);
 
-transporter.verify(function(error, success) {
-  if (error) {
-    console.error('SMTP connection failed:', error);
-  }
-});
+// Nur pruefen, wenn es etwas zu pruefen gibt: Ohne Host liefe der Versuch
+// gegen localhost und meldete einen irrefuehrenden Verbindungsfehler statt
+// der Warnung von oben.
+if (smtpKonfiguriert) {
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.error('SMTP connection failed:', error);
+    }
+  });
+}
 
 // ====================================================================
 // RATE LIMITING
@@ -258,11 +250,12 @@ const { ipKeyGenerator } = require('express-rate-limit');
 // trust-proxy-konformes X-Forwarded-For -> req.ip war für ALLE die Proxy-IP
 // (gleicher Key) -> der Limiter zählte GLOBAL über alle Nutzer -> eine Gruppe
 // flog gleichzeitig mit 429. Daher X-Real-IP bevorzugen, dann erst req.ip.
-const clientIp = (req) => {
-  const real = req.headers['x-real-ip'];
-  if (real && typeof real === 'string' && real.trim()) return real.trim();
-  return req.ip;
-};
+//
+// Seit dem 26.09.2026 (Audit Sicherheit BF-13) gilt der Header nur noch, wenn
+// die Anfrage aus dem Docker-Netz kommt -- sonst setzt ihn ein Client selbst
+// und umgeht jedes Limit. Dieselbe Funktion nutzt auch der Passwort-Reset-
+// Limiter in routes/auth.js; Begruendung und Regel stehen in utils/clientIp.js.
+const { clientIp } = require('./utils/clientIp');
 const userOrIpKey = (req) => {
   const auth = req.headers.authorization;
   if (auth && auth.startsWith('Bearer ')) {
@@ -280,7 +273,7 @@ const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 2000,
   keyGenerator: userOrIpKey,
-  message: { error: 'Zu viele Anfragen. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Anfragen. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -292,6 +285,7 @@ const generalLimiter = rateLimit({
 // Hoch auf 300 Fehlversuche/15min (skipSuccessfulRequests: Erfolge zählen NICHT)
 // -> Gruppen-Onboarding läuft, echter Brute-Force wird weiter gebremst.
 const authLimiter = rateLimit({
+  store: geteilterZaehler('auth'),
   windowMs: 15 * 60 * 1000,
   max: 300,
   keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP), NICHT Proxy-IP
@@ -306,6 +300,7 @@ const authLimiter = rateLimit({
 // zu eng. Erfolgreiche Registrierungen zählen nicht mit, damit nur echte
 // Missbrauchs-Schleifen (Fehlversuche) gebremst werden.
 const registerLimiter = rateLimit({
+  store: geteilterZaehler('register'),
   windowMs: 60 * 60 * 1000,
   max: 200,
   keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP)
@@ -321,6 +316,7 @@ const registerLimiter = rateLimit({
 // (CodeQL-Befund 101, 24.08.2026). Erfolgreiche Anmeldungen zählen nicht,
 // 20 Fehlversuche pro Viertelstunde reichen für Vertipper locker.
 const docsLoginLimiter = rateLimit({
+  store: geteilterZaehler('docs'),
   windowMs: 15 * 60 * 1000,
   max: 20,
   keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP)
@@ -331,6 +327,7 @@ const docsLoginLimiter = rateLimit({
 });
 
 const chatMessageLimiter = rateLimit({
+  store: geteilterZaehler('chat'),
   windowMs: 60 * 1000,
   max: 60,
   keyGenerator: userOrIpKey,
@@ -340,19 +337,21 @@ const chatMessageLimiter = rateLimit({
 });
 
 const eventBookingLimiter = rateLimit({
+  store: geteilterZaehler('buchung'),
   windowMs: 15 * 60 * 1000,
   max: 60,
   keyGenerator: userOrIpKey,
-  message: { error: 'Zu viele Buchungsanfragen. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Buchungsanfragen. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
 const uploadLimiter = rateLimit({
+  store: geteilterZaehler('upload'),
   windowMs: 15 * 60 * 1000,
   max: 100,
   keyGenerator: userOrIpKey,
-  message: { error: 'Zu viele Uploads. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Uploads. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -363,15 +362,17 @@ const uploadLimiter = rateLimit({
 // "Missing rate limiting" gemeldet (26.08.2026). Zehn Leerungen pro Viertel-
 // stunde reichen fuer jeden echten Bedarf der Leitung.
 const chatClearLimiter = rateLimit({
+  store: geteilterZaehler('chat-leeren'),
   windowMs: 15 * 60 * 1000,
   max: 10,
   keyGenerator: userOrIpKey,
-  message: { error: 'Zu viele Leerungen des Team-Chats. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Leerungen des Team-Chats. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
 const orgLimiter = rateLimit({
+  store: geteilterZaehler('org'),
   // Deckt ALLE /api/organizations-Routen ab. GET (Lesen: Liste, Detail, Admins)
   // wird per skip ausgenommen und fällt auf den generalLimiter. Nur Schreib-Ops
   // (POST/PUT/PATCH/DELETE) zählen hier, pro User (nicht pro IP).
@@ -379,7 +380,7 @@ const orgLimiter = rateLimit({
   max: 500,
   keyGenerator: userOrIpKey,
   skip: (req) => req.method === 'GET',
-  message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -390,7 +391,12 @@ const orgLimiter = rateLimit({
 
 const { createApp } = require('./createApp');
 
+// Cron-Leader-Wahl (siehe unten); die Referenz steht vor createApp, damit
+// /api/status den Zustand DIESER Replica melden kann.
+let cronLeader = null;
+
 const app = createApp(db, {
+  istCronLeader: () => (cronLeader ? cronLeader.istLeader() : false),
   // Dieselbe Liste wie Socket.IO oben. Wirkt nur, wenn CORS_ORIGINS gesetzt
   // ist — in Produktion liegen Oberflaeche und API auf derselben Domain.
   corsOrigins: process.env.CORS_ORIGINS ? ALLOWED_ORIGINS : null,
@@ -429,9 +435,21 @@ const app = createApp(db, {
 //
 // Der Fix behaelt die Reihenfolge bei (Socket.IO zuerst, siehe oben) und
 // prueft nur, ob die Antwort schon steht.
+// Waehrend des Herunterfahrens (siehe gracefulShutdown) meldet der
+// Gesundheitspfad 503, damit Traefik diese Replica aus dem Pool nimmt,
+// BEVOR der Server keine Verbindungen mehr annimmt. Alle anderen Anfragen
+// werden in dieser Zeit noch normal beantwortet. Zwei Felder wie im
+// gesunden Fall (createApp.js), nur mit anderem Status.
+let wirdBeendet = false;
+
 server.on('request', (req, res) => {
   // Engine.IO hat bereits geantwortet (Handshake abgelehnt) -> nichts tun.
   if (res.headersSent || res.writableEnded) return;
+  if (wirdBeendet && req.url === '/api/health') {
+    res.writeHead(503, { 'Content-Type': 'application/json', Connection: 'close' });
+    res.end(JSON.stringify({ status: 'STOPPING', message: 'Konfi Points API wird beendet' }));
+    return;
+  }
   app(req, res);
 });
 
@@ -463,15 +481,37 @@ server.on('request', (req, res) => {
 
 // Hintergrund-Jobs (Cron: Auto-Deletion, Reminder, APM-Snapshots, Token-Cleanup,
 // Wrapped) duerfen bei MEHREREN Backend-Replicas (Zero-Downtime-Setup) nur EINMAL
-// laufen, sonst gibt es Doppel-Pushes/-Loeschungen/-Snapshots. Nur die Replica mit
-// RUN_BACKGROUND_JOBS!=='false' startet sie. Default = an (Single-Replica/lokal
-// unverändert); im 2-Replica-Stack setzt nur backend2 RUN_BACKGROUND_JOBS=false.
+// laufen, sonst gibt es Doppel-Pushes/-Loeschungen/-Snapshots.
+//
+// Bis zum 26.09.2026 legte RUN_BACKGROUND_JOBS den Leader FEST: nur `backend`
+// fuhr die Jobs, `backend2` stand mit 'false' daneben. War `backend` weg oder
+// in einer Neustartschleife, liefen weder Erinnerungen noch Token-Bereinigung,
+// Auto-Loeschung, Lizenz-Erinnerungen, APM-Schnappschuesse noch der
+// Team-Rueckblick -- und von aussen war nichts zu sehen (Audit 26.09.2026,
+// Betrieb BF-10).
+//
+// Jetzt WAEHLEN die Replicas den Leader per Advisory-Lock (utils/cronLeader.js):
+// Jede Replica, die Jobs fahren DARF, versucht den Lock im Takt; wer ihn
+// haelt, startet die Jobs; stirbt sie, uebernimmt die naechste beim
+// naechsten Takt. RUN_BACKGROUND_JOBS='false' heisst weiterhin: NIE
+// (backend-test teilt sich die Datenbank mit Live und darf keine Jobs fahren).
+// Alles andere heisst: an der Wahl teilnehmen. Sichtbar in /api/status als
+// `cron_leader` (diese Replica) und `checks.cron_leader` (irgendjemand).
 const BackgroundService = require('./services/backgroundService');
 if (process.env.RUN_BACKGROUND_JOBS !== 'false') {
-  BackgroundService.startAllServices(db, { wrappedRouter: app.wrappedRouter });
-  console.warn('Hintergrund-Jobs gestartet (diese Replica ist der Cron-Leader).');
+  const { starteCronLeaderWahl } = require('./utils/cronLeader');
+  cronLeader = starteCronLeaderWahl({
+    beiUebernahme: () => {
+      BackgroundService.startAllServices(db, { wrappedRouter: app.wrappedRouter });
+      console.warn('Hintergrund-Jobs gestartet (diese Replica ist der Cron-Leader).');
+    },
+    beiVerlust: () => {
+      BackgroundService.stopAllServices();
+    },
+  });
+  console.warn('Cron-Leader-Wahl gestartet -- diese Replica bewirbt sich um die Hintergrund-Jobs.');
 } else {
-  console.warn('Hintergrund-Jobs DEAKTIVIERT (RUN_BACKGROUND_JOBS=false) — andere Replica ist Cron-Leader.');
+  console.warn('Hintergrund-Jobs DEAKTIVIERT (RUN_BACKGROUND_JOBS=false) — diese Replica nimmt nicht an der Leader-Wahl teil.');
 }
 
 // ====================================================================
@@ -489,7 +529,7 @@ try {
 }
 
 const uploadsDir = require('path').join(__dirname, 'uploads');
-const smtpStatus = SMTP_CONFIG.auth.pass ? 'Konfiguriert' : 'Nicht konfiguriert';
+const smtpStatus = smtpKonfiguriert ? 'Konfiguriert' : 'Nicht konfiguriert';
 
 server.listen(PORT, () => {
   console.log('========================================');
@@ -515,29 +555,93 @@ server.listen(PORT, () => {
 // exitCode: 0 bei einem regulaeren Signal, 1 nach einem Absturz. Sonst meldet
 // der Container "sauber beendet", obwohl eine unbehandelte Exception ihn
 // heruntergefahren hat — in der Neustart-Statistik nicht mehr unterscheidbar.
-const gracefulShutdown = (signal, exitCode = 0) => {
-  console.warn(`${signal} empfangen - Graceful Shutdown...`);
-  server.close(async () => {
-    console.warn('HTTP-Server geschlossen.');
-    try {
-      await db.end();
-      console.warn('Datenbankverbindung geschlossen.');
-    } catch (err) {
-      console.error('Fehler beim Schliessen der Datenbankverbindung:', err.message);
-    }
-    try {
-      await socketAdapterPool.end();
-      console.warn('Socket.IO-Adapter-Pool geschlossen.');
-    } catch (err) {
-      console.error('Fehler beim Schliessen des Adapter-Pools:', err.message);
-    }
-    process.exit(exitCode);
-  });
+//
+// REIHENFOLGE (Audit 26.09.2026, Betrieb BF-07). Bis dahin stand hier
+// server.close() -> db.end() -> socketAdapterPool.end(), und JEDER Stopp
+// endete nach exakt 10 s mit Exit 1: Der Socket.IO-Postgres-Adapter haelt
+// fuer LISTEN dauerhaft einen Client aus socketAdapterPool ausgecheckt und
+// gibt ihn nur ueber io.close() zurueck. pool.end() wartet auf die Rueckgabe
+// aller Clients -- also ewig --, waehrend der 30-s-Aufraeumtimer des Adapters
+// weiter DELETE auf den geschlossenen Pool absetzte ("Cannot use a pool
+// after calling end on the pool"). Nach 10 s griff der Notausstieg mit
+// Exit 1. Gemessen: Exit 1 nach 10 014 ms, bei jedem Deploy, je Replica.
+//
+// Jetzt: (1) Gesundheitspfad auf 503 und optional SHUTDOWN_DRAIN_MS warten,
+// damit Traefik (Pruefintervall 5 s) die Replica aus dem Pool nimmt, solange
+// sie noch antwortet; (2) Hintergrund-Jobs anhalten; (3) io.close() -- trennt
+// die Sockets, schliesst den Adapter (LISTEN-Client zurueck, Timer aus) und
+// den HTTP-Server; leerlaufende Keep-Alive-Verbindungen werden sofort
+// geschlossen, laufende Anfragen bekommen SHUTDOWN_REQUEST_GRACE_MS;
+// (4) erst dann die Pools. Der Notausstieg bleibt als letztes Netz.
+const SHUTDOWN_DRAIN_MS = parseInt(process.env.SHUTDOWN_DRAIN_MS || '0', 10);
+const SHUTDOWN_REQUEST_GRACE_MS = parseInt(process.env.SHUTDOWN_REQUEST_GRACE_MS || '5000', 10);
+const SHUTDOWN_TIMEOUT_MS = 10000;
+const schlafen = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  setTimeout(() => {
+let shutdownLaeuft = false;
+const gracefulShutdown = async (signal, exitCode = 0) => {
+  if (shutdownLaeuft) return; // zweites Signal waehrend des Herunterfahrens
+  shutdownLaeuft = true;
+  const begonnen = Date.now();
+  console.warn(`${signal} empfangen - Graceful Shutdown...`);
+
+  const notausstieg = setTimeout(() => {
     console.error('Shutdown-Timeout erreicht - erzwinge Beendigung');
     process.exit(1);
-  }, 10000);
+  }, SHUTDOWN_TIMEOUT_MS);
+  notausstieg.unref();
+
+  // (1) Aus dem Traefik-Pool nehmen lassen, solange noch geantwortet wird.
+  wirdBeendet = true;
+  if (SHUTDOWN_DRAIN_MS > 0) {
+    await schlafen(SHUTDOWN_DRAIN_MS);
+  }
+
+  // (2) Keine neuen Job-Laeufe mehr anstossen; den Leader-Lock abgeben, damit
+  // die andere Replica beim naechsten Takt uebernimmt, statt erst nach dem
+  // Verbindungsende dieses Prozesses.
+  try {
+    if (cronLeader) await cronLeader.stopp();
+    BackgroundService.stopAllServices();
+  } catch (err) {
+    console.error('Fehler beim Anhalten der Hintergrund-Jobs:', err.message);
+  }
+
+  // (3) Sockets, Adapter, HTTP-Server.
+  try {
+    const ioZu = io.close();
+    if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
+    const abbruch = setTimeout(() => {
+      if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
+    }, SHUTDOWN_REQUEST_GRACE_MS);
+    abbruch.unref();
+    await ioZu;
+    clearTimeout(abbruch);
+    console.warn('HTTP-Server und Socket.IO geschlossen.');
+  } catch (err) {
+    console.error('Fehler beim Schliessen von HTTP-Server/Socket.IO:', err.message);
+  }
+
+  // (4) Pools -- jetzt haelt niemand mehr einen Client.
+  try {
+    await db.end();
+    console.warn('Datenbankverbindung geschlossen.');
+  } catch (err) {
+    console.error('Fehler beim Schliessen der Datenbankverbindung:', err.message);
+  }
+  try {
+    // Faellt der Stopp in den Verbindungsaufbau des Adapters, gibt io.close()
+    // dessen LISTEN-Client nicht zurueck und end() wartete bis zum
+    // Notausstieg (utils/socketAdapterVerbindung.js, drittes Problem).
+    adapterVerbindung.schliessen();
+    await socketAdapterPool.end();
+    console.warn('Socket.IO-Adapter-Pool geschlossen.');
+  } catch (err) {
+    console.error('Fehler beim Schliessen des Adapter-Pools:', err.message);
+  }
+
+  console.warn(`Shutdown abgeschlossen nach ${Date.now() - begonnen} ms (Exit ${exitCode}).`);
+  process.exit(exitCode);
 };
 
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));

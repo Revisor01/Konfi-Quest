@@ -16,6 +16,7 @@ import { ICON_DRUCKEN, ICON_OFFLINE, ICON_SCHLIESSEN } from './icons';
 import QRCode from 'qrcode';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
+import { datumLang, uhrzeit } from '../../utils/dateUtils';
 
 interface QRDisplayModalProps {
   eventId: number;
@@ -34,19 +35,11 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
+    return datumLang(dateString);
   };
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return uhrzeit(dateString);
   };
 
   // Abbruch-Merker (14.09.2026): Die Aufraeumfunktion lief bisher ins Leere,

@@ -7,6 +7,12 @@ const { waehleKacheln, waehleTeamerKacheln, teamerJahrIstLeer } = require('../ut
 const { waehleSegen } = require('../utils/wrappedSegen');
 const { seiteFuerKategorie, datumsFenster, orgHatSommerfreizeit, STAVANGER_VON, STAVANGER_BIS } = require('../utils/wrappedKategorien');
 const { ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
+const { begrenztParallel } = require('../utils/begrenztParallel');
+
+// Wie viele Konfi-Snapshots gleichzeitig entstehen (Betrieb BF-06, 26.09.2026).
+// Jeder belegt einen Pool-Client; drei plus der aeussere Client der Route
+// sind vier von 20 Plaetzen -- der Rest bleibt fuer die App frei.
+const WRAPPED_PARALLEL = Math.max(1, parseInt(process.env.WRAPPED_PARALLEL || '3', 10) || 3);
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireAdmin, requireOrgAdmin } = roleHelpers;
@@ -2179,16 +2185,23 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       //
       // Alt-Snapshots haben keine ausgabe_id -- fuer sie bleibt titel null
       // und die App zeigt wie bisher ihre eigene Ueberschrift.
+      //
+      // NUR DIE AKTIVE GEMEINDE (Audit 26.09.2026, Chat BF-06):
+      // req.user.organization_id ist die aktive Gemeinde (rbac.js). Ohne den
+      // Filter sah eine Teamer:in in Gemeinde B den Rueckblick aus Gemeinde
+      // A, sobald dessen Ausgabe juenger war -- die Zahlen der falschen
+      // Gemeinde unter der richtigen Ueberschrift.
       const { rows } = await db.query(
-        `SELECT s.data, s.computed_at, s.year,
+        `SELECT s.data, s.computed_at, s.year, s.organization_id,
                 a.id AS ausgabe_id, a.titel, a.freigegeben_at
            FROM wrapped_snapshots s
            LEFT JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
           WHERE s.user_id = $1 AND s.wrapped_type = $2
+            AND s.organization_id = $3
             AND (a.id IS NULL OR a.freigegeben_at IS NOT NULL)
           ORDER BY COALESCE(a.freigegeben_at, s.computed_at) DESC, s.year DESC
           LIMIT 1`,
-        [req.user.id, wrappedType]
+        [req.user.id, wrappedType, req.user.organization_id]
       );
 
       if (rows.length === 0) {
@@ -2225,7 +2238,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         wrapped_type: wrappedType,
         // Additiv -- alte Apps ignorieren die Felder und zeigen wie bisher.
         ausgabe_id: rows[0].ausgabe_id || null,
-        titel: rows[0].titel || null
+        titel: rows[0].titel || null,
+        // Additiv (26.09.2026): welcher Gemeinde der Rueckblick gehoert.
+        organization_id: rows[0].organization_id
       });
     } catch (err) {
       console.error('Error loading wrapped snapshot:', err);
@@ -2280,10 +2295,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       .isString().withMessage('Der Name muss Text sein')
       .bail()
       .trim()
-      .isLength({ max: 40 }).withMessage('Der Name darf hoechstens 40 Zeichen lang sein')
+      .isLength({ max: 40 }).withMessage('Der Name darf höchstens 40 Zeichen lang sein')
       // Steuerzeichen (auch Zeilenumbrueche) haben in einer Ueberschrift
       // nichts zu suchen. Emoji und Umlaute bleiben ausdruecklich erlaubt.
-      .matches(/^[^\p{Cc}\p{Cf}]*$/u).withMessage('Der Name enthaelt unerlaubte Zeichen'),
+      .matches(/^[^\p{Cc}\p{Cf}]*$/u).withMessage('Der Name enthält unerlaubte Zeichen'),
     handleValidationErrors,
     async (req, res) => {
       const client = await db.getClient();
@@ -2402,9 +2417,21 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           [jahrgangId]
         );
 
-        // Parallele Snapshot-Generierung (jeder Konfi holt eigenen DB-Client)
-        const results = await Promise.allSettled(
-          konfis.map(konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear, ausgabe.id, zeitraumVorgabe))
+        // Snapshot-Generierung mit BEGRENZTER Parallelitaet (jeder Konfi holt
+        // einen eigenen DB-Client, aber hoechstens WRAPPED_PARALLEL zugleich).
+        //
+        // Bis zum 26.09.2026 stand hier Promise.allSettled ueber ALLE Konfis:
+        // 58 Ketten holten gleichzeitig je einen Pool-Client (Pool 20). Der
+        // Pool war die ganze Zeit voll (gesamt 20, frei 0, wartend 20), ein
+        // gleichzeitiger Dashboard-Aufruf brauchte 754 ms statt 17 ms, und auf
+        // der Produktions-Datenbank liefen die wartenden Ketten UND alle
+        // API-Anfragen dieser Replica in den 5-s-Verbindungs-Timeout (Audit
+        // 26.09.2026, Betrieb BF-06). Drei Arbeiter plus der aeussere Client
+        // belegen vier Plaetze; der Rest des Pools bleibt der App.
+        const results = await begrenztParallel(
+          konfis,
+          WRAPPED_PARALLEL,
+          konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear, ausgabe.id, zeitraumVorgabe)
         );
         const generated = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
         const errors = results.length - generated;
@@ -2678,19 +2705,28 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   //
   // Zeigt ausschliesslich FREIGEGEBENE Ausgaben: Was die Leitung noch nicht
   // freigegeben hat, bleibt unsichtbar.
+  //
+  // NUR DIE AKTIVE GEMEINDE (Audit 26.09.2026, Chat BF-06), wie GET /me und
+  // GET /history/:userId: Eine Teamer:in in zwei Gemeinden sah hier die
+  // Rueckblicke beider Gemeinden ohne Unterschied. Additiv kommen
+  // organization_id und organization_name mit, damit die App sagen kann,
+  // woher ein Rueckblick stammt.
   router.get('/meine', rbacVerifier, async (req, res) => {
     try {
       const wrappedType = (req.user.role_name === 'teamer') ? 'teamer' : 'konfi';
       const { rows } = await db.query(
-        `SELECT s.id, s.year, s.computed_at,
+        `SELECT s.id, s.year, s.computed_at, s.organization_id,
+                o.name AS organization_name,
                 a.id AS ausgabe_id, a.titel, a.freigegeben_at,
                 a.zeitraum_start, a.zeitraum_ende
            FROM wrapped_snapshots s
            LEFT JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
+           LEFT JOIN organizations o ON o.id = s.organization_id
           WHERE s.user_id = $1 AND s.wrapped_type = $2
+            AND s.organization_id = $3
             AND (a.id IS NULL OR a.freigegeben_at IS NOT NULL)
           ORDER BY COALESCE(a.freigegeben_at, s.computed_at) DESC`,
-        [req.user.id, wrappedType]
+        [req.user.id, wrappedType, req.user.organization_id]
       );
       res.json(rows.map(r => ({
         snapshot_id: r.id,
@@ -2699,7 +2735,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         year: r.year,
         zeitraum_start: r.zeitraum_start,
         zeitraum_ende: r.zeitraum_ende,
-        computed_at: r.computed_at
+        computed_at: r.computed_at,
+        organization_id: r.organization_id,
+        organization_name: r.organization_name
       })));
     } catch (err) {
       console.error('Error loading own wrapped list:', err);
@@ -2739,7 +2777,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Dieselbe Rechte-Grenze wie beim Anlegen und Anzeigen:
         // Teamer-Ausgaben nur org_admin, Konfi-Ausgaben nur eigene Jahrgaenge.
         if (ausgabe.wrapped_type === 'teamer' && !istOrgAdmin) {
-          return res.status(403).json({ error: 'Nur die Leitung darf Teamer-Ausgaben loeschen' });
+          return res.status(403).json({ error: 'Nur die Leitung darf Teamer-Ausgaben löschen' });
         }
         if (ausgabe.wrapped_type === 'konfi' && !istOrgAdmin) {
           const { rows: [zugriff] } = await db.query(
@@ -2775,7 +2813,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         res.json({ message: `Ausgabe gelöscht (${anzahl} Rückblicke)`, deleted: anzahl });
       } catch (err) {
         console.error('Error deleting wrapped ausgabe:', err);
-        res.status(500).json({ error: 'Fehler beim Loeschen der Ausgabe' });
+        res.status(500).json({ error: 'Fehler beim Löschen der Ausgabe' });
       }
     }
   );
@@ -3232,12 +3270,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       await client.query('BEGIN');
 
-      const { rows: teamers } = await client.query(
-        `SELECT u.id as user_id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE r.name = 'teamer' AND u.organization_id = $1`,
-        [orgId]
-      );
+      // Alle Teamer:innen der Gemeinde ueber BEIDE Quellen der Zugehoerigkeit
+      // -- dieselbe Empfaengerliste wie im Hand-Weg (POST /generate-teamer).
+      // Bis zum 26.09.2026 (Audit Chat BF-04) stand hier
+      // `u.organization_id = $1`, ohne is_active/deleted_at: Wer ueber
+      // user_organizations in dieser Gemeinde im Team ist, bekam am 6. Januar
+      // nichts -- und weil die Ausgabe danach existierte, konnte die Leitung
+      // es nicht mehr von Hand nachholen. Gesperrte und geloeschte Konten
+      // bekamen dagegen Snapshot und Push. Die Rolle gilt je Gemeinde
+      // (uo.role_id): Wer hier org_admin ist, gehoert nicht in den
+      // TEAM-Rueckblick.
+      const teamerIds = await ladeMitgliederDerOrganisation(client, orgId, ['teamer']);
+      const teamers = teamerIds.map((user_id) => ({ user_id }));
 
       // Die Ausgabe zuerst -- ihre id gehoert seit Migration 144 zum
       // Schluessel der Snapshots.
@@ -3292,12 +3336,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       await client.query('COMMIT');
 
-      // Push (fire-and-forget)
-      try {
-        const teamerIds = teamers.map(t => t.user_id);
-        await PushService.sendWrappedReleased(dbRef, teamerIds, 'teamer', orgId, ausgabe.id);
-      } catch (pushErr) {
-        console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
+      // Push (fire-and-forget) -- nur, wenn es Empfaenger gibt.
+      if (teamerIds.length > 0) {
+        try {
+          await PushService.sendWrappedReleased(dbRef, teamerIds, 'teamer', orgId, ausgabe.id);
+        } catch (pushErr) {
+          console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
+        }
       }
 
       return { generated, errors };

@@ -245,8 +245,14 @@ export const buildPushTargetUrl = (
     // fiel in den Catch-all und landete auf dem Dashboard. Die Route gibt es
     // jetzt (rollenBaeume.ts, Umleitung auf ?eventId=), also dasselbe Ziel
     // wie bei Konfi und Leitung.
+    //
+    // event_removed / event_waitlisted (27.09.2026): Die Leitung hat einen
+    // ausgetragen oder auf die Warteliste zurueckgesetzt. Ziel wie bei der
+    // Anmeldung -- am Termin steht der neue Stand.
     case 'event_registered':
     case 'event_unregistered':
+    case 'event_removed':
+    case 'event_waitlisted':
     case 'waitlist_promotion':
     case 'event_reminder': {
       const evId = data?.event_id || data?.eventId;
@@ -334,9 +340,10 @@ export const buildPushTargetUrl = (
       return userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
 
     case 'challenge_started':
-      // Neue Challenge gestartet -> Challenge-Tab des Konfi (Leitung
-      // bekommt diesen Push nicht, fällt aber sauber auf ihre
-      // Challenge-Verwaltung zurück).
+      // Neue Challenge gestartet -> Challenge-Seite der eigenen Rolle. Seit
+      // 27.09.2026 bekommen den Push auch Team und Leitung, wo sie selbst
+      // mitmachen (Backend: utils/challengeLeitungSicht.js); dort liegt die
+      // neue Challenge in ihrer Challenge-Liste.
       return `${routePrefix}/challenges`;
 
     case 'challenge_submission':
@@ -427,6 +434,14 @@ export const buildPushTargetUrl = (
       // verschlossen. Ziel ist deshalb das Profil seiner EIGENEN Rolle, das
       // die offenen Einladungen zeigt.
       return `${routePrefix}/profile`;
+
+    case 'gemeinde_einladung_beantwortet':
+      // Die Antwort auf eine Einladung, an die einladende Leitung
+      // (27.09.2026). Die Meldung traegt die einladende Gemeinde;
+      // resolveOrgForPush wechselt dorthin, und die Benutzerliste zeigt,
+      // wer jetzt mitarbeitet. Nur Org-Admins bekommen sie -- faellt doch
+      // jemand anderes hinein, bleibt es bei seiner Startseite.
+      return userType === 'admin' ? '/admin/users' : `${routePrefix}/dashboard`;
 
     case 'jahrgang_deletion_warning':
       // Vorwarnung zur Jahrgangs-Archivierung. Betrifft die Leitung:

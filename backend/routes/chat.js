@@ -14,6 +14,8 @@ const { syncJahrgangChat, roleToParticipantType } = require('../utils/jahrgangCh
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
+const { nachAntwort } = require('../utils/nachAntwort');
+const { darfRaumBetreten } = require('../utils/chatRoomAccess');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -41,10 +43,107 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   ];
   
   // === UTILITY FUNCTIONS ===
-  
-  
-  
+
+
+
   // === CHAT API ENDPOINTS ===
+
+  // Zielraeume fuer EINEN Broadcast einer neuen Nachricht: der Chat-Raum
+  // (fuer alle, die den Chat gerade offen haben -- auch die Leitung, die ohne
+  // Teilnehmerschaft mitliest) PLUS die persoenlichen Raeume aller
+  // Teilnehmenden (fuer Zaehler und Raumliste, wenn der Chat zu ist).
+  //
+  // Audit 26.09.2026, Betrieb BF-08: Vorher ging erst ein Emit an den Raum
+  // und dann in einer Schleife je Teilnehmer:in einer an den persoenlichen
+  // Raum. Wer den Chat offen hatte, sass in beiden Raeumen und bekam
+  // `newMessage` ZWEIMAL -- und der BadgeContext lud die Zaehler zweimal.
+  // Dazu kamen 151 einzelne Broadcasts je Nachricht in einem Raum mit 150
+  // Teilnehmenden, also 151 NOTIFY ueber den Postgres-Adapter.
+  //
+  // Socket.IO stellt einen Broadcast an mehrere Raeume je Socket genau EINMAL
+  // zu, auch wenn der Socket in mehreren der Raeume sitzt (socket.io-adapter,
+  // `apply` fuehrt eine Menge der schon bedienten Socket-IDs); der
+  // Postgres-Adapter traegt die Raumliste als Ganzes zu den anderen Replicas.
+  // Ereignisname und Payload bleiben, wie die Store-Apps sie lesen.
+  const zielRaeumeFuerNachricht = (roomId, teilnehmer) => [
+    `room_${roomId}`,
+    ...teilnehmer.map((p) => `user_${p.user_type}_${p.user_id}`),
+  ];
+
+  // Nacharbeit zu einer neuen Nachricht (oder Umfrage), NACH der Antwort:
+  // Teilnehmende einmal laden, EIN Socket-Broadcast, EIN Sammel-Push.
+  //
+  // Audit 26.09.2026, Betrieb BF-04: Vorher lief hier je Teilnehmer:in eine
+  // Kette -- eine `total_unread`-Abfrage (26,5 ms, Join ueber alle Raeume der
+  // Person; ihr Ergebnis wurde im Push-Dienst ohnehin durch die Gesamtsumme
+  // ersetzt) und sendChatNotification mit Raum-Org, Sender-Tokens,
+  // Empfaenger-Tokens, berechneBadge (sieben Zaehler-Abfragen) und einem
+  // UPDATE je Geraet. Gemessen auf kq_i1 (Raum mit 150 Teilnehmenden, 278
+  // Geraete): 2.002 Abfragen und 2,7 s Datenbankzeit je Nachricht -- bei
+  // 0,3 CPU fuer die Datenbank saettigten 0,65 Nachrichten je Sekunde ueber
+  // alle Gemeinden alles andere. Jetzt rechnet sendChatNotificationToMany
+  // Badge und Tokens einmal fuer alle: 22 Abfragen und 170 ms, unabhaengig
+  // von der Teilnehmerzahl.
+  //
+  // Ueber nachAntwort statt einer nackten async-IIFE: Fehler werden gemeldet
+  // statt als unbehandelte Ablehnung zu enden, und Tests koennen den Nachlauf
+  // abwarten (utils/nachAntwort.js).
+  //
+  // @param {object} req
+  // @param {object} arg
+  // @param {number|string} arg.roomId
+  // @param {{id:number, type:string, name:string}} arg.sender
+  // @param {number} arg.messageId
+  // @param {(message:object) => object} arg.payload  Socket-Payload `message`
+  // @param {(raum:{roomName:string, isDirectChat:boolean}) => {title:string, body:string}} arg.textFuer
+  const nachNeuerNachricht = (req, { roomId, sender, messageId, payload, textFuer }) =>
+    nachAntwort(req, async () => {
+      const { rows: teilnehmer } = await db.query(
+        'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+        [roomId]
+      );
+
+      // WebSocket: EIN Broadcast an den Raum (offene Chats) und die
+      // persoenlichen Raeume aller Teilnehmenden (Zaehler, Raumliste) --
+      // je Client genau einmal, siehe zielRaeumeFuerNachricht.
+      if (io) {
+        io.to(zielRaeumeFuerNachricht(roomId, teilnehmer)).emit('newMessage', {
+          roomId: parseInt(roomId),
+          message: payload
+        });
+      }
+
+      // Push an alle anderen Teilnehmenden -- gesammelt, nicht je Kopf.
+      const empfaenger = teilnehmer
+        .filter((p) => !(Number(p.user_id) === Number(sender.id) && p.user_type === sender.type))
+        .map((p) => p.user_id);
+      if (empfaenger.length === 0) return;
+
+      const { rows: [room] } = await db.query(
+        'SELECT name, type, organization_id FROM chat_rooms WHERE id = $1',
+        [roomId]
+      );
+      const roomName = room?.name || 'Chat';
+      const isDirectChat = room?.type === 'direct';
+      const { title, body } = textFuer({ roomName, isDirectChat });
+
+      await PushService.sendChatNotificationToMany(db, empfaenger, {
+        title,
+        body,
+        roomId,
+        messageId,
+        data: {
+          sender_id: sender.id,
+          sender_name: sender.name,
+          room_name: roomName,
+          room_type: room?.type || 'unknown',
+          // Content-Org des Raums (Multi-Org: der Tap wechselt in die
+          // Organisation des Raums) -- mitgereicht, damit der Push-Dienst
+          // sie nicht erneut nachsehen muss.
+          organization_id: room?.organization_id
+        }
+      });
+    }, 'Chat-Push');
 
   // Hilfsfunktion: Nach einem Vote den aktuellen Poll-Stand einsammeln und per
   // 'pollUpdated' an den Raum senden, damit alle offenen Chats die neuen Votes
@@ -284,38 +383,23 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     return 'Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben';
   };
 
-  // Darf dieser Nutzer den Raum oeffnen (lesen, schreiben, Teilnehmer sehen)?
+  // Darf dieser Nutzer den Raum oeffnen (lesen, schreiben, Teilnehmer sehen,
+  // exportieren, Dateien laden, Umfragen, verwalten)?
   //
-  // Grundregel: Teilnehmerschaft. Leitung und Admins (type 'admin', also
-  // admin/org_admin/super_admin) duerfen zusaetzlich gemeindeweit — sie
-  // verantworten die Gemeinde und müssen im Zweifel eingreifen können.
+  // Die Regel steht an EINER Stelle (utils/chatRoomAccess.js), die auch der
+  // Socket (joinRoom, typing) nutzt: Teilnahme genuegt immer; ohne Teilnahme
+  // gemeindeweit nur der Org-Admin; ein Admin nur in Jahrgangs-Chats seiner
+  // Jahrgaenge, Event-Chats von Events aus seiner Liste und reinen
+  // Team-Raeumen; Einzelchats nie ohne Teilnahme (Simon 27.09.2026, Audit
+  // "Wer bekommt was" BF-05).
   //
-  // AUSNAHME Direktchats: Ein Zweiergespraech ist privat. Wer nicht selbst
-  // darin steht, kommt nicht hinein — auch die Leitung nicht (Entscheidung
-  // 23.08.2026). Vorher konnte jede Leitung jedes fremde Zweiergespraech ihrer
-  // Gemeinde lesen und exportieren; betroffen waren vor allem Gespraeche
-  // zwischen Teamer:innen und Konfis, also gerade die vertraulichen.
-  //
-  // Gruppen-, Jahrgangs-, Team- und Termin-Chats bleiben für die Leitung
-  // offen: Das sind gemeinschaftliche Räume, keine Zwiegespraeche.
+  // Bis zum 27.09.2026 stand hier eine eigene Kopie: `user.type === 'admin'`
+  // oeffnete jeden gemeinschaftlichen Raum der Gemeinde, auch Jahrgangs-,
+  // Event- und Gruppenchats mit Konfis fremder Jahrgaenge.
   //
   // Gibt true zurück, wenn der Zugriff erlaubt ist.
-  const darfRaumOeffnen = async (roomId, user) => {
-    const { rows: [raum] } = await db.query(
-      'SELECT type FROM chat_rooms WHERE id = $1 AND organization_id = $2',
-      [roomId, user.organization_id]
-    );
-    if (!raum) return false;
-
-    const { rows: [teilnehmer] } = await db.query(
-      'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3',
-      [roomId, user.id, user.type]
-    );
-    if (teilnehmer) return true;
-
-    // Kein Teilnehmer: nur Leitung/Admins, und nie bei Direktchats.
-    return user.type === 'admin' && raum.type !== 'direct';
-  };
+  const darfRaumOeffnen = async (roomId, user) =>
+    (await darfRaumBetreten(db, roomId, user)).ok;
 
   // Gegenrichtung: Darf dieser Konfi dieses Team-Mitglied anschreiben?
   //
@@ -533,7 +617,34 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (!['direct', 'group', 'jahrgang', 'admin_team'].includes(type)) {
         return res.status(400).json({ error: 'Ungültiger Chat-Typ' });
       }
-      
+
+      // ZWEIERGESPRAECH HEISST GENAU ZWEI PERSONEN (Audit 26.09.2026, Chat
+      // BF-01, HOCH). Der Typ 'direct' ist ueberall sonst das Signal "privat,
+      // auch vor der Leitung" (darfRaumOeffnen, Export, Loeschen, Umfragen).
+      // Bis hierher kam der Typ aber ungeprueft vom Client: Wer kein Konfi
+      // war, konnte zwei Konfis in einen 'direct'-Raum setzen -- ein
+      // Gruppenraum, den keine Leitung lesen kann und in dem Konfis einander
+      // schreiben. Genau das schliesst "alle Chats sind moderiert,
+      // Konfi-zu-Konfi-Chat gibt es nicht" aus. Der eigentliche Weg fuer
+      // Zweiergespraeche ist POST /direct; 'direct' bleibt hier nur fuer
+      // Clients erhalten, die diesen Weg nutzen (Antwortform ist Vertrag) --
+      // mit genau einer weiteren Person. Den Bestand richtet Migration 164
+      // (Raeume mit mehr als zwei Personen werden 'group' und damit fuer die
+      // Leitung lesbar).
+      if (type === 'direct') {
+        const weitere = new Set(
+          (Array.isArray(participants) ? participants : [])
+            .map(p => parseInt(typeof p === 'object' && p !== null ? p.user_id : p, 10))
+            .filter(uid => Number.isInteger(uid) && uid !== createdBy)
+        );
+        if (weitere.size !== 1) {
+          return res.status(400).json({
+            error: 'Ein Direktchat besteht aus genau zwei Personen. Für mehrere Personen lege eine Gruppe an.',
+            error_code: 'direct_nur_zu_zweit'
+          });
+        }
+      }
+
       // DATENSCHUTZ: Konfis dürfen NUR Direktnachrichten mit Admins erstellen (keine Gruppen, keine Konfi-zu-Konfi Chats)
       if (req.user.type === 'konfi') {
         if (type !== 'direct') {
@@ -603,10 +714,16 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           .map(p => parseInt(typeof p === 'object' ? p.user_id : p))
           .filter(uid => Number.isInteger(uid) && uid !== createdBy);
         if (participantIds.length > 0) {
+          // BEIDE Quellen der Zugehoerigkeit und die Rolle DIESER Gemeinde
+          // (Audit 26.09.2026, Chat BF-08). Bis dahin stand hier
+          // `u.organization_id = $2`: Wer ueber user_organizations hier
+          // mitarbeitet, stand in der Kontaktliste, fiel hier aber still
+          // heraus -- die Gruppe entstand ohne die Person.
           const { rows: partUsers } = await db.query(
             `SELECT u.id, r.name AS role_name
-               FROM users u JOIN roles r ON u.role_id = r.id
-              WHERE u.id = ANY($1::int[]) AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+               FROM users u
+               ${TEAM_MITGLIED_ROLLE}
+              WHERE u.id = ANY($1::int[]) AND u.deleted_at IS NULL`,
             [participantIds, organizationId]
           );
 
@@ -1210,88 +1327,26 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       
       res.json(message); // Respond immediately
 
-      // WebSocket: Broadcast new message to room (für User die den Chat offen haben)
-      if (io) {
-        io.to(`room_${roomId}`).emit('newMessage', {
-          roomId: parseInt(roomId),
-          message: message
-        });
-
-        // ZUSÄTZLICH: Benachrichtige alle Teilnehmer über ihren persönlichen Room
-        // (für Badge-Updates in ChatOverview und TabBar, auch wenn sie nicht im Chat sind)
-        const participantsQuery = `
-          SELECT user_id, user_type FROM chat_participants
-          WHERE room_id = $1
-        `;
-        const { rows: allParticipants } = await db.query(participantsQuery, [roomId]);
-        for (const p of allParticipants) {
-          const userRoom = `user_${p.user_type}_${p.user_id}`;
-          io.to(userRoom).emit('newMessage', {
-            roomId: parseInt(roomId),
-            message: message
-          });
-        }
-      }
-
-      // Asynchronously send push notifications
-      (async () => {
-        try {
-          const getParticipantsQuery = `
-          SELECT user_id, user_type FROM chat_participants
-          WHERE room_id = $1 AND NOT (user_id = $2 AND user_type = $3)
-        `;
-          const { rows: participants } = await db.query(getParticipantsQuery, [roomId, userId, userType]);
-          if (!participants) return;
-          
-          const { rows: [room] } = await db.query('SELECT name, type FROM chat_rooms WHERE id = $1', [roomId]);
-          const roomName = room?.name || 'Chat';
-          const isDirectChat = room?.type === 'direct';
-          const pushTitle = isDirectChat ? message.sender_name : roomName;
+      // Socket-Broadcast und Push nach der Antwort (siehe nachNeuerNachricht).
+      nachNeuerNachricht(req, {
+        roomId,
+        sender: { id: userId, type: userType, name: message.sender_name },
+        messageId: message.id,
+        payload: message,
+        textFuer: ({ roomName, isDirectChat }) => ({
+          title: isDirectChat ? message.sender_name : roomName,
           // Text der Mitteilung: siehe utils/pushText.js — dort steht auch,
           // warum es KEINE echte Bildvorschau gibt.
-          const pushBody = chatPushText({
+          body: chatPushText({
             content,
             messageType: message.message_type,
             fileName: message.file_name,
             senderName: message.sender_name,
             isDirectChat,
-          });
-          
-          for (const p of participants) {
-            const badgeQuery = `
-            SELECT COUNT(DISTINCT cm.id) as total_unread
-            FROM chat_messages cm
-            JOIN chat_participants cp ON cm.room_id = cp.room_id
-            LEFT JOIN chat_read_status crs ON cm.room_id = crs.room_id AND crs.user_id = $1 AND crs.user_type = $2
-            WHERE cp.user_id = $1
-            AND cp.user_type = $2
-            AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
-            AND cm.created_at <= NOW()
-            AND cm.deleted_at IS NULL
-            AND NOT (cm.user_id = $1 AND cm.user_type = $2)
-          `;
-            const { rows: [badgeResult] } = await db.query(badgeQuery, [p.user_id, p.user_type]);
-            const badgeCount = parseInt(badgeResult?.total_unread || '0', 10);
-            
-            await PushService.sendChatNotification(db, p.user_id, {
-              title: pushTitle,
-              body: pushBody,
-              badge: badgeCount,
-              roomId: roomId,
-              messageId: message.id,
-              data: {
-                sender_id: userId,
-                sender_name: message.sender_name,
-                room_name: roomName,
-                room_type: room?.type || 'unknown'
-              }
-            });
-          }
-        } catch (pushError) {
- console.error('Failed to send chat push notification:', pushError);
-        }
-      })();
-      
+          }),
+        }),
+      });
+
     } catch (err) {
       // Race Condition: Nachricht wurde zwischen Check und Insert eingefügt
       if (err.code === '23505' && err.detail?.includes('client_id')) {
@@ -1390,11 +1445,17 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(404).json({ error: 'Chat nicht gefunden' });
       }
 
-      // Ein Zweiergespraech laesst sich nur exportieren, wenn man selbst darin
-      // steht — sonst wäre der Schutz aus darfRaumOeffnen hier zu umgehen und
-      // der ganze Verlauf als Textdatei abrufbar (Entscheidung 23.08.2026).
+      // Exportieren darf nur, wer den Raum auch oeffnen darf — sonst wäre der
+      // Schutz aus darfRaumOeffnen hier zu umgehen und der ganze Verlauf als
+      // Textdatei abrufbar. Ein Zweiergespraech also nur mit eigener
+      // Teilnahme (Entscheidung 23.08.2026), einen Jahrgangs-, Event- oder
+      // Gruppenchat mit Konfis als Admin nur im eigenen Jahrgang (27.09.2026).
       if (!await darfRaumOeffnen(roomId, req.user)) {
-        return res.status(403).json({ error: 'Private Zweiergespräche lassen sich nicht exportieren' });
+        return res.status(403).json({
+          error: room.type === 'direct'
+            ? 'Private Zweiergespräche lassen sich nicht exportieren'
+            : 'Zugriff verweigert'
+        });
       }
 
       // Vollstaendiger Verlauf, aelteste zuerst. Geloeschte Nachrichten bleiben
@@ -1578,13 +1639,24 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(400).json({ error: 'Teilnehmer können nur zu Gruppenchats hinzugefügt werden' });
       }
 
+      // Verwalten nur, wer den Raum auch oeffnen darf (27.09.2026). Sonst
+      // traegt sich ein Admin in eine Gruppe mit Konfis fremder Jahrgaenge
+      // einfach selbst ein und liest danach als Teilnehmer mit — die Regel
+      // aus darfRaumOeffnen waere mit einem Aufruf umgangen.
+      if (!await darfRaumOeffnen(roomId, req.user)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
+
       // user_type IMMER serverseitig aus der echten Rolle ableiten — NIE vom
       // Client uebernehmen (siehe /direct: Teamer:innen kamen als 'admin' rein
-      // und fanden den Raum nicht).
+      // und fanden den Raum nicht). Die Rolle ist die DIESER Gemeinde, die
+      // Mitgliedschaft kommt aus BEIDEN Quellen (Audit 26.09.2026, Chat
+      // BF-08; vorher `u.organization_id = $2` -> 404 fuer Eingeladene).
       const { rows: [targetUser] } = await db.query(
         `SELECT u.id, r.name AS role_name
-           FROM users u JOIN roles r ON u.role_id = r.id
-          WHERE u.id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+           FROM users u
+           ${TEAM_MITGLIED_ROLLE}
+          WHERE u.id = $1 AND u.deleted_at IS NULL`,
         [user_id, organizationId]
       );
       if (!targetUser) {
@@ -1654,7 +1726,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (room.type !== 'group') {
         return res.status(400).json({ error: 'Teilnehmer können nur aus Gruppenchats entfernt werden' });
       }
-      
+
+      // Wie beim Hinzufuegen: verwalten nur, wer den Raum oeffnen darf.
+      if (!await darfRaumOeffnen(roomId, req.user)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
+
       const { rowCount } = await db.query("DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3", [roomId, userId, userType]);
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Teilnehmer nicht gefunden' });
@@ -1849,14 +1926,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(404).json({ error: 'Datei nicht gefunden' });
       }
 
-      // Check if user is member of the chat room
-      const { rows: [membership] } = await db.query(
-        `SELECT 1 FROM chat_participants cp
-         WHERE cp.room_id = $1 AND cp.user_id = $2`,
-        [fileMessage.room_id, req.user.id]
-      );
-
-      if (!membership) {
+      // Dieselbe Raum-Regel wie beim Lesen der Nachricht, die die Datei
+      // traegt (27.09.2026). Vorher stand hier eine eigene Kopie, die jede
+      // Teilnahme ohne Blick auf user_type genuegen liess und die Leitung
+      // ohne Teilnahme aussperrte: Sie las die Nachricht, das Bild darin
+      // blieb leer.
+      if (!await darfRaumOeffnen(fileMessage.room_id, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
 
@@ -1934,9 +2009,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     }
     
     try {
-      // Zugriff wie beim Lesen: Teilnehmerschaft, Leitung gemeindeweit — aber
-      // nicht in fremden Zweiergespraechen. Vorher genuegte die Organisation,
-      // damit liess sich eine Umfrage in ein fremdes Zweiergespraech stellen.
+      // Zugriff wie beim Lesen (darfRaumOeffnen, utils/chatRoomAccess.js).
+      // Vorher genuegte die Organisation, damit liess sich eine Umfrage in ein
+      // fremdes Zweiergespraech stellen.
       const { rows: [room] } = await db.query("SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, req.user.organization_id]);
 
       if (!room || !await darfRaumOeffnen(roomId, req.user)) {
@@ -2014,109 +2089,48 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // Struktur, die GET /messages für Poll-Nachrichten liefert (message_type
       // 'poll', options als Array, Poll-Metadaten, leere votes), damit der
       // ChatRoom-newMessage-Handler die Umfrage sofort rendern kann.
-      if (io) {
-        try {
-          const { rows: [sender] } = await db.query(
-            'SELECT display_name, username FROM users WHERE id = $1',
-            [userId]
-          );
-          const pollMessage = {
-            id: messageId,
-            room_id: parseInt(roomId),
-            user_id: userId,
-            user_type: userType,
-            sender_id: userId,
-            sender_type: userType,
-            sender_name: sender?.display_name || 'Unbekannt',
-            sender_username: sender?.username || null,
-            message_type: 'poll',
-            content: question,
-            created_at: new Date().toISOString(),
-            // Poll-Daten wie in GET /messages
-            poll_id: newPoll.id,
-            question: question,
-            options: validOptions,
-            multiple_choice: isMultipleChoice,
-            anonymous: Boolean(anonymous),
-            exclusive_options: Boolean(exclusive_options),
-            expires_at: expiresAt,
-            votes: [],
-            reactions: []
-          };
+      nachAntwort(req, async () => {
+        const { rows: [sender] } = await db.query(
+          'SELECT display_name, username FROM users WHERE id = $1',
+          [userId]
+        );
+        const senderName = sender?.display_name || 'Unbekannt';
+        const pollMessage = {
+          id: messageId,
+          room_id: parseInt(roomId),
+          user_id: userId,
+          user_type: userType,
+          sender_id: userId,
+          sender_type: userType,
+          sender_name: senderName,
+          sender_username: sender?.username || null,
+          message_type: 'poll',
+          content: question,
+          created_at: new Date().toISOString(),
+          // Poll-Daten wie in GET /messages
+          poll_id: newPoll.id,
+          question: question,
+          options: validOptions,
+          multiple_choice: isMultipleChoice,
+          anonymous: Boolean(anonymous),
+          exclusive_options: Boolean(exclusive_options),
+          expires_at: expiresAt,
+          votes: [],
+          reactions: []
+        };
 
-          // An den Raum (offene Chats) UND an alle Teilnehmer-User-Räume
-          // (Badge/Overview), exakt nach dem Muster des Nachrichten-Handlers.
-          io.to(`room_${roomId}`).emit('newMessage', {
-            roomId: parseInt(roomId),
-            message: pollMessage
-          });
-          const { rows: allParticipants } = await db.query(
-            'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
-            [roomId]
-          );
-          for (const p of allParticipants) {
-            io.to(`user_${p.user_type}_${p.user_id}`).emit('newMessage', {
-              roomId: parseInt(roomId),
-              message: pollMessage
-            });
-          }
-        } catch (emitErr) {
-          console.error('Failed to emit poll newMessage:', emitErr);
-        }
-      }
-
-      // Push-Benachrichtigung analog zum Nachrichten-Handler: Umfrage ist eine
-      // wichtige Nachricht. Asynchron, blockiert die Antwort nicht.
-      (async () => {
-        try {
-          const { rows: participants } = await db.query(
-            `SELECT user_id, user_type FROM chat_participants
-             WHERE room_id = $1 AND NOT (user_id = $2 AND user_type = $3)`,
-            [roomId, userId, userType]
-          );
-          if (!participants || participants.length === 0) return;
-
-          const { rows: [room2] } = await db.query('SELECT name, type FROM chat_rooms WHERE id = $1', [roomId]);
-          const roomName = room2?.name || 'Chat';
-          const { rows: [sender] } = await db.query('SELECT display_name FROM users WHERE id = $1', [userId]);
-          const senderName = sender?.display_name || 'Unbekannt';
-          const pushTitle = roomName;
-          const pushBody = `${senderName}: [Umfrage] ${question}`;
-
-          for (const p of participants) {
-            const badgeQuery = `
-              SELECT COUNT(DISTINCT cm.id) as total_unread
-              FROM chat_messages cm
-              JOIN chat_participants cp ON cm.room_id = cp.room_id
-              LEFT JOIN chat_read_status crs ON cm.room_id = crs.room_id AND crs.user_id = $1 AND crs.user_type = $2
-              WHERE cp.user_id = $1
-              AND cp.user_type = $2
-              AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
-            AND cm.created_at <= NOW()
-              AND cm.deleted_at IS NULL
-              AND NOT (cm.user_id = $1 AND cm.user_type = $2)
-            `;
-            const { rows: [badgeResult] } = await db.query(badgeQuery, [p.user_id, p.user_type]);
-            const badgeCount = parseInt(badgeResult?.total_unread || '0', 10);
-
-            await PushService.sendChatNotification(db, p.user_id, {
-              title: pushTitle,
-              body: pushBody,
-              badge: badgeCount,
-              roomId: roomId,
-              messageId: messageId,
-              data: {
-                sender_id: userId,
-                sender_name: senderName,
-                room_name: roomName,
-                room_type: room2?.type || 'unknown'
-              }
-            });
-          }
-        } catch (pushError) {
-          console.error('Failed to send poll push notification:', pushError);
-        }
-      })();
+        // Broadcast und Push exakt nach dem Muster des Nachrichten-Handlers.
+        await nachNeuerNachricht(req, {
+          roomId,
+          sender: { id: userId, type: userType, name: senderName },
+          messageId,
+          payload: pollMessage,
+          textFuer: ({ roomName }) => ({
+            title: roomName,
+            body: `${senderName}: [Umfrage] ${question}`,
+          }),
+        });
+      }, 'Umfrage-Nacharbeit');
 
     } catch (err) {
       console.error('Database error in POST /rooms/:roomId/polls:', err);
@@ -2385,6 +2399,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (!room) {
         return res.status(404).json({ error: 'Chat-Raum nicht gefunden' });
       }
+
+      // Loeschen nur, wer den Raum auch oeffnen darf (27.09.2026) — und das
+      // VOR der Nachrichtenzahl, sonst verraet die 409-Antwort, wie viel in
+      // einem fremden Raum geschrieben wurde. Fremde Zweiergespraeche,
+      // Jahrgangs-Raeume anderer Jahrgaenge und Gruppen mit Konfis fremder
+      // Jahrgaenge loescht ein Admin damit nicht mehr per Raum-Kennung.
+      if (!await darfRaumOeffnen(roomId, req.user)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
       
       // Check if room has messages
       const { rows: [messageCount] } = await db.query("SELECT COUNT(*)::int as count FROM chat_messages WHERE room_id = $1 AND deleted_at IS NULL", [roomId]);
@@ -2404,7 +2427,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         });
       }
       
-      // Direct chats can be deleted by admins (no restrictions)
+      // Direktchats: loeschen nur Teilnehmende (s. darfRaumOeffnen oben).
 
       // Teilnehmer VOR dem Löschen einsammeln, damit wir sie danach über die
       // entfernte Raumliste informieren können (nach dem Delete sind die
@@ -2520,6 +2543,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
       if (!room.is_team_chat) {
         return res.status(409).json({ error: 'Nur der Team-Chat lässt sich leeren.' });
+      }
+      // Dieselbe Raum-Regel wie ueberall: Der Team-Chat ist ein reiner
+      // Team-Raum und damit fuer jede Leitung offen — die Pruefung steht
+      // trotzdem hier, damit kein Weg in einen Raum an ihr vorbeifuehrt.
+      if (!await darfRaumOeffnen(roomId, req.user)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
       }
 
       // Dateien VOR dem Löschen einsammeln (danach sind die Zeilen weg).
@@ -2689,8 +2718,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
 
-      // Dieselbe Regel wie beim Lesen der Nachrichten selbst: Teilnehmerschaft,
-      // Leitung zusaetzlich gemeindeweit — außer in fremden Zweiergespraechen.
+      // Dieselbe Regel wie beim Lesen der Nachrichten selbst (darfRaumOeffnen).
       if (!await darfRaumOeffnen(message.room_id, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }

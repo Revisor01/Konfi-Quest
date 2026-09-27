@@ -6,6 +6,7 @@ import { teilen } from '../../services/systemDialoge';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileOpener } from '@capacitor-community/file-opener';
 import api, { DATEI_TIMEOUT_MS } from '../../services/api';
+import { getMediaBlob, medienAusApiPfad } from '../../services/mediaCache';
 import './FileViewerModal.css';
 
 // --- Hilfsfunktion: API-Pfade erkennen und per Auth-fetch in Blob-URL wandeln ---
@@ -13,10 +14,20 @@ const isApiPath = (url: string): boolean => {
   return url.startsWith('/api/') || url.startsWith('api/');
 };
 
-const resolveUrl = async (url: string): Promise<string> => {
+const resolveUrl = async (url: string, mimeType: string): Promise<string> => {
   if (!isApiPath(url)) return url;
   // Relativer API-Pfad → per axios (mit Auth-Header) laden
   const cleanPath = url.startsWith('/api/') ? url.substring(4) : url.startsWith('api/') ? '/' + url.substring(4) : url;
+  // Dateien aus Chat, Challenges und Material über den Medien-Cache
+  // (27.09.2026): Wer im Betrachter zu den übrigen Dateien wischt, lud jede
+  // davon bisher an
+  // ihm vorbei — bei jedem Wischen neu. Der Typ kommt aus dem Dateinamen;
+  // beim Treffer im Cache gibt es keinen Antwort-Header.
+  const medium = medienAusApiPfad(cleanPath);
+  if (medium) {
+    const blob = await getMediaBlob(medium.datei, { quelle: medium.quelle });
+    return URL.createObjectURL(new Blob([blob], { type: mimeType || blob.type }));
+  }
   const response = await api.get(cleanPath, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
   const contentType = response.headers?.['content-type'];
   const mime: string = typeof contentType === 'string' ? contentType : 'application/octet-stream';
@@ -159,7 +170,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
     // API-Pfad → async laden
     setUrlLoading(true);
     setResolvedUrl(null);
-    resolveUrl(url).then(resolved => {
+    resolveUrl(url, currentFile.mimeType).then(resolved => {
       resolvedUrlsRef.current[url] = resolved;
       setResolvedUrl(resolved);
       setUrlLoading(false);
@@ -570,7 +581,9 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   };
 
   return (
-    <div className="file-viewer-overlay">
+    // Name des Dialogs fuer Vorlesehilfen: der Dateiname, der auch oben in
+    // der Leiste steht (keine ion-title hier, siehe utils/modalNamen.ts).
+    <div className="file-viewer-overlay" data-dialogname={currentFile.fileName || 'Datei'}>
       {/* Toolbar */}
       <div className="file-viewer-toolbar">
         <div className="file-viewer-toolbar-left">

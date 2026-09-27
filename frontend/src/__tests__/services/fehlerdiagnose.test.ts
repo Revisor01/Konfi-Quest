@@ -219,10 +219,13 @@ describe('trackFehler traegt art und ort bis in die Nutzlast', () => {
 
   it('laesst art und ort weg, wenn nichts uebergeben wurde', async () => {
     const analytics = await ladeMitProd();
-    analytics.trackFehler('Irgendein Fehler');
+    // Ein bekannter Text der App: Seit dem 27.09.2026 laesst trackFehler
+    // einen unbekannten ("Irgendein Fehler") nur als `andere-meldung` durch
+    // (Befund B1, fehlerMessungOhneNamen.test.tsx).
+    analytics.trackFehler('Fehler beim Laden');
 
     const daten = nutzlast(fetchMock.mock.calls[0]).data as Record<string, unknown>;
-    expect(daten.stelle).toBe('Irgendein Fehler');
+    expect(daten.stelle).toBe('Fehler beim Laden');
     expect('art' in daten).toBe(false);
     expect('ort' in daten).toBe(false);
   });

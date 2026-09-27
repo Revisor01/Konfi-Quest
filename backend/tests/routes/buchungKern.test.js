@@ -209,8 +209,8 @@ describe('Buchungskern: beide Routen, eine Zaehlung', () => {
 
       expect(rBook.status).toBe(400);
       expect(rReg.status).toBe(400);
-      expect(rBook.body.error).toBe('Dieser Termin ist abgesagt');
-      expect(rReg.body.error).toBe('Dieser Termin ist abgesagt');
+      expect(rBook.body.error).toBe('Dieses Event ist abgesagt');
+      expect(rReg.body.error).toBe('Dieses Event ist abgesagt');
     });
 
     it('reiner Teamer-Termin: beide lehnen die Konfi mit 403 ab', async () => {

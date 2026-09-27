@@ -79,7 +79,7 @@ const WeiterSoSlide: React.FC<WeiterSoSlideProps> = ({ isActive, endspurt }) => 
         <span>
           {geschafft
             ? 'Schön, dass du dabei bist'
-            : 'Jeder Termin zählt, auch der kleine'}
+            : 'Jedes Event zählt, auch das kleine'}
         </span>
       </div>
     </SlideBase>

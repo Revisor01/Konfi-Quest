@@ -142,7 +142,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // Fassungen zeigen den error-Text, den sie mitbekommen.
         await client.query('ROLLBACK');
         fruehAntwort = { status: 400, body: {
-          error: 'Du wurdest von diesem Termin abgemeldet. Melde dich bei der Leitung, wenn du doch da bist.',
+          error: 'Du wurdest von diesem Event abgemeldet. Melde dich bei der Leitung, wenn du doch da bist.',
           error_type: 'excused'
         } };
       } else if (booking.status !== 'confirmed') {
@@ -202,7 +202,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             await client.query(updateProfileQuery, [event.points, userId]);
 
             try {
-              await checkAndAwardBadges(client, userId);
+              await checkAndAwardBadges(client, userId, { organizationId: req.user.organization_id });
             } catch (badgeErr) {
               console.error('Error checking badges after QR check-in:', badgeErr);
             }
@@ -233,7 +233,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Badge-Check für Teamer NACH COMMIT (Konfis bekommen Badge-Check schon oben)
       if (req.user.type === 'teamer') {
         try {
-          await checkAndAwardBadges(db, userId);
+          await checkAndAwardBadges(db, userId, { organizationId: req.user.organization_id });
         } catch (badgeErr) {
           console.error('Error checking teamer badges after QR check-in:', badgeErr);
         }

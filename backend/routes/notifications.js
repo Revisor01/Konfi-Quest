@@ -2,9 +2,11 @@ const express = require('express');
 const { gruppenFuerRolle, bereinigeStumm } = require('../utils/pushGruppen');
 const { body } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
-const { challengeNeuigkeitenJeChallenge } = require('../utils/challengeNeuigkeiten');
-const { appIconSummenJeOrganisation } = require('../utils/appIconBadge');
-const { ladeMitgliedschaftenDerPerson } = require('../utils/orgMitglieder');
+const { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge } = require('../utils/challengeNeuigkeiten');
+const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
+const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
+const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
+const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('../utils/terminLeitungSicht');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -128,21 +130,16 @@ module.exports = (db, verifyTokenRBAC) => {
         // teamerJahrgangIds.length > 0). Ergebnis: Ein Teamer konnte eine
         // Team-Runde moderieren, wurde aber nie per Reiter-Zaehler darauf
         // gestossen (Befund H4).
+        // Seit 27.09.2026 ueber die gemeinsame Regel (utils/challengeLeitungSicht.js).
         challengesPromise = db.query(
           `SELECT cs.challenge_id, COUNT(*)::int AS c
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
            WHERE c.organization_id = $1
              AND cs.moderation_status = 'pending'
-             AND (
-               c.audience = 'nur_team'
-               OR EXISTS (
-                 SELECT 1 FROM challenge_jahrgang_assignments cja
-                 WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($2::int[])
-               )
-             )
+             AND ${leitungSiehtChallengeSql({ rolle: '$3', jahrgaenge: '$2::int[]' })}
            GROUP BY cs.challenge_id`,
-          [organizationId, eigeneJahrgangIds]
+          [organizationId, eigeneJahrgangIds, req.user.role_name]
         );
       }
 
@@ -176,8 +173,11 @@ module.exports = (db, verifyTokenRBAC) => {
       // zaehlen immer (Teamer-Ausnahme), Konfi-Antraege nur aus zugewiesenen
       // Jahrgaengen. ANY auf leerem Array trifft nichts: Ein Admin ohne
       // Jahrgang zaehlt nur Teamer-Antraege, wie seine Liste.
+      // Seit 27.09.2026 ueber die gemeinsame Regel (utils/antragLeitungSicht.js),
+      // nach der auch die Empfaenger von "Neuer Antrag eingegangen" bestimmt
+      // werden.
       let requestsPromise = zero;
-      if (isAdminType && !istGebundenerAdmin) {
+      if (isAdminType && leitungSiehtAlleAntraege(req.user)) {
         requestsPromise = db.query(
           `SELECT COUNT(*)::int AS c
            FROM activity_requests ar
@@ -185,14 +185,13 @@ module.exports = (db, verifyTokenRBAC) => {
            WHERE a.organization_id = $1 AND ar.status = 'pending'`,
           [organizationId]
         );
-      } else if (istGebundenerAdmin) {
+      } else if (isAdminType) {
         requestsPromise = db.query(
           `SELECT COUNT(*)::int AS c
            FROM activity_requests ar
            JOIN activities a ON ar.activity_id = a.id
-           LEFT JOIN konfi_profiles kp ON kp.user_id = ar.user_id
            WHERE a.organization_id = $1 AND ar.status = 'pending'
-             AND (a.target_role = 'teamer' OR kp.jahrgang_id = ANY($2::int[]))`,
+             AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: '$2::int[]' })}`,
           [organizationId, eigeneJahrgangIds]
         );
       }
@@ -208,33 +207,30 @@ module.exports = (db, verifyTokenRBAC) => {
       // Jahrgangs-Bindung. `IS NOT TRUE` statt `= FALSE`, weil die Spalte
       // nullable ist: Termine aus dem Altbestand haben dort NULL und sind
       // damit nicht abgesagt.
+      //
+      // Seit 27.09.2026 ueber die gemeinsame Regel (utils/terminLeitungSicht.js):
+      // dieselbe Fassung filtert die Eventliste, zaehlt am App-Symbol und
+      // nennt jeder Person in der Verbuchen-Erinnerung um 09:00 genau diese
+      // Zahl. Dabei zwei Korrekturen an der Zahl selbst: "Team gesucht"
+      // (teamer_needed) zaehlt nicht mehr als Sichtbarkeitsgrund -- die Liste
+      // hat ihn am 08.09.2026 gestrichen, hier stand ein fremdes Event als
+      // rote Zahl, das sich nicht oeffnen liess (Audit wer-bekommt-was,
+      // BF-11). Und Buchungen geloeschter Konten zaehlen nicht mehr, wie in
+      // der Liste (utils/buchungszahlen.js).
       let eventsPromise = zero;
       if (isAdminType) {
-        const eventSichtFilter = istGebundenerAdmin
-          ? `AND (
-               e.teamer_only OR e.teamer_needed
-               OR NOT EXISTS (SELECT 1 FROM event_jahrgang_assignments eja
-                              WHERE eja.event_id = e.id)
-               OR EXISTS (SELECT 1 FROM event_jahrgang_assignments eja
-                          WHERE eja.event_id = e.id
-                            AND eja.jahrgang_id = ANY($2::int[]))
-             )`
+        const gebunden = !leitungSiehtAlleTermine(req.user);
+        const eventSichtFilter = gebunden
+          ? `AND ${gebundeneLeitungSiehtTerminSql({ jahrgaenge: '$2::int[]' })}`
           : '';
-        const eventParams = istGebundenerAdmin
+        const eventParams = gebunden
           ? [organizationId, eigeneJahrgangIds]
           : [organizationId];
         eventsPromise = db.query(
           `SELECT COUNT(*)::int AS c
            FROM events e
            WHERE e.organization_id = $1
-           AND e.event_date < NOW()
-           AND e.cancelled IS NOT TRUE
-           AND EXISTS (
-             SELECT 1 FROM event_bookings eb
-             WHERE eb.event_id = e.id
-             AND eb.status = 'confirmed'
-             AND eb.attendance_status IS NULL
-           )
+           AND ${terminWartetAufVerbuchungSql()}
            ${eventSichtFilter}`,
           eventParams
         );
@@ -246,9 +242,23 @@ module.exports = (db, verifyTokenRBAC) => {
       // Konfis; die Leitung hat am selben Reiter ihre Freigaben (oben).
       // Die Regel steht EINMAL in utils/challengeNeuigkeiten.js, dieselbe
       // Fassung speist die App-Icon-Summe fuer Pushes (Paritaet B2b).
+      //
+      // Seit 27.09.2026 auch fuer Leitung und Team (Simon: "Die Challenges
+      // sollen sich verhalten wie der Chat"): fremde, sichtbare Beitraege
+      // seit dem letzten Oeffnen -- wartende stehen weiter in
+      // pendingChallenges, ein Beitrag zaehlt nie doppelt. Alt-Apps
+      // (2.2.x) lesen challengeUpdates nur im Konfi-Zweig und ignorieren
+      // das Feld fuer Leitung und Team; die Antwortform bleibt.
+      // Admins mit Super-Admin-Merkmal zaehlen wie oben org-weit.
       const neuigkeitenPromise = (userType === 'konfi')
         ? challengeNeuigkeitenJeChallenge(db, [{ id: userId, type: userType, organization_id: organizationId }])
-        : Promise.resolve([]);
+        : challengeNeuigkeitenLeitungJeChallenge(db, [{
+            id: userId,
+            type: userType,
+            organization_id: organizationId,
+            role_name: (req.user.role_name === 'admin' && req.user.is_super_admin) ? 'org_admin' : req.user.role_name,
+            assigned_jahrgaenge: req.user.assigned_jahrgaenge || []
+          }]);
 
       // Postfach (25.09.2026): ungelesene Mitteilungen des KONTOS ueber alle
       // Organisationen -- dieselbe Zaehlung wie GET /postfach.ungelesen, damit
@@ -357,30 +367,34 @@ module.exports = (db, verifyTokenRBAC) => {
   // Zwei Abfragen fuer die Zugehoerigkeit plus EINE Zaehlrunde ueber alle
   // Gemeinden zusammen -- nicht eine Runde je Gemeinde.
   //
+  // EINE RECHNUNG MIT DEM APP-SYMBOL (27.09.2026, Befund BF-12): Push und
+  // Hintergrund-Lauf rechnen das Symbol seither aus derselben Funktion
+  // (appIconSummenAllerGemeinden); vorher nahmen sie fuer jede Gemeinde die
+  // Rolle am Nutzerkonto. Ungelesene Mitteilungen aus einer Gemeinde, der
+  // die Person nicht (mehr) angehoert, stehen bei der Stamm-Gemeinde -- die
+  // Glocke zeigt sie, also zaehlen sie am Symbol, genau einmal.
+  //
   // Sicherheitsgrenze: ausschliesslich req.user.id aus dem Token. Es gibt
   // keinen Parameter, mit dem sich eine fremde Gemeinde erfragen liesse; wer
   // einer Gemeinde nicht angehoert, bekommt fuer sie keinen Eintrag.
   router.get('/badge-counts/je-organisation', verifyTokenRBAC, async (req, res) => {
     try {
-      const mitgliedschaften = await ladeMitgliedschaftenDerPerson(db, req.user.id);
-      const empfaenger = mitgliedschaften.map((m) => ({
-        id: req.user.id,
-        type: m.type,
-        role_name: m.role_name,
-        organization_id: m.organization_id,
-        assigned_jahrgaenge: m.assigned_jahrgaenge
-      }));
-      const summen = await appIconSummenJeOrganisation(db, empfaenger);
+      // Seit 27.09.2026 (Befund BF-12) DIESELBE Funktion, aus der Push und
+      // Hintergrund-Lauf die Zahl am App-Symbol nehmen -- die Summe dieser
+      // Eintraege IST die Zahl am Symbol, und die App setzt sie bei mehreren
+      // Gemeinden genau so (BadgeContext).
+      const jePerson = await appIconSummenAllerGemeinden(db, [req.user.id]);
+      const person = jePerson.get(Number(req.user.id));
 
       // Ein Objekt je Gemeinde (nicht nur eine Zahl), damit spaeter eine
       // Aufschluesselung dazukommen kann, ohne die Form zu aendern. Auch
       // Gemeinden mit 0 stehen drin: So kann die App "nichts offen" von
       // "keine Angabe" unterscheiden.
       const jeOrganisation = {};
-      for (const e of empfaenger) {
-        jeOrganisation[e.organization_id] = {
-          offen: summen.get(`${e.id}_${e.type}_${e.organization_id}`) || 0
-        };
+      if (person) {
+        for (const [organizationId, offen] of person.jeOrganisation) {
+          jeOrganisation[organizationId] = { offen };
+        }
       }
       res.json({ jeOrganisation });
     } catch (err) {
@@ -606,7 +620,7 @@ module.exports = (db, verifyTokenRBAC) => {
     }
     const stumm = hatStumm ? bereinigeStumm(req.body.stumm) : null;
     if (hatStumm && stumm === null) {
-      return res.status(400).json({ error: 'stumm enthaelt eine unbekannte Gruppe' });
+      return res.status(400).json({ error: 'stumm enthält eine unbekannte Gruppe' });
     }
     try {
       const { rows: [row] } = await db.query(

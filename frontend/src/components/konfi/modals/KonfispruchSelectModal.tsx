@@ -34,6 +34,8 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
+import { tastaturKlick } from '../../../utils/tastatur';
+import { trackHandlung } from '../../../services/analytics';
 
 type Translation = 'luther2017' | 'bigs' | 'gute_nachricht' | 'elberfelder';
 
@@ -45,6 +47,17 @@ const TRANSLATION_LABELS: Record<Translation, string> = {
 };
 
 const TRANSLATION_KEYS: Translation[] = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];
+
+// Messwert je Uebersetzung fuer die anonyme Nutzungsmessung (Simon,
+// 27.09.2026: „welche Übersetzung"). Eigene, feste Werte statt der Schluessel:
+// Umami-Merkmale bleiben Kleinbuchstaben mit Bindestrich, und die
+// Positivliste in services/analytics.ts nennt genau diese vier.
+const BIBEL_MESSWERT: Record<Translation, string> = {
+  luther2017: 'luther',
+  bigs: 'bigs',
+  gute_nachricht: 'gute-nachricht',
+  elberfelder: 'elberfelder'
+};
 
 // Quellenangabe je Uebersetzung. Pflicht, kein Schmuck: Die Deutsche
 // Bibelgesellschaft erlaubt Einzelverse in kostenlosen Veroeffentlichungen
@@ -151,12 +164,23 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
         showError('Bitte wähle einen Spruch aus der Liste aus');
         return;
       }
+      // Unverändert erneut gespeichert ist keine Wahl — zählt nicht.
+      const unveraendert = current?.source === 'liste'
+        && current.id === selectedSpruchId
+        && current.translation === translation;
       await guard(async () => {
         try {
           await api.patch(`${apiBasePath}/profile`, {
             konfspruch_id: selectedSpruchId,
             translation
           });
+          // Anonyme Messung NACH der erfolgreichen Antwort: Vorschlag und
+          // Uebersetzung. Bewusst OHNE Bibelstelle und ohne Kennung — der
+          // Spruch ist oeffentlich und machte die Sitzung einer Konfi
+          // wiedererkennbar (docs/messung/umami.md, S1).
+          if (!unveraendert) {
+            trackHandlung('konfispruch-gespeichert', { quelle: 'vorschlag', bibel: BIBEL_MESSWERT[translation] });
+          }
           presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
           onSuccess();
         } catch (err) {
@@ -180,12 +204,20 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
         showError('Bitte gib die Stellenangabe an');
         return;
       }
+      const unveraendert = current?.source === 'freitext'
+        && (current.text || '').trim() === text
+        && (current.reference || '').trim() === referenz;
       await guard(async () => {
         try {
           await api.patch(`${apiBasePath}/profile`, {
             konfspruch_freitext: text,
             konfspruch_freitext_referenz: referenz
           });
+          // Eigener Spruch: nur DASS es ein eigener ist — weder Text noch
+          // Stellenangabe verlassen das Gerät.
+          if (!unveraendert) {
+            trackHandlung('konfispruch-gespeichert', { quelle: 'eigen' });
+          }
           presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
           onSuccess();
         } catch (err) {
@@ -285,7 +317,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                         const text = spruch.uebersetzungen?.[translation] || '';
                         const isSelected = selectedSpruchId === spruch.id;
                         return (
-                          <div
+                          <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                             key={spruch.id}
                             className={`app-list-item app-list-item--purple ${isSelected ? 'app-list-item--selected' : ''}`}
                             onClick={() => setSelectedSpruchId(spruch.id)}
@@ -354,7 +386,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Spruchtext</IonLabel>
-                    <IonTextarea
+                    <IonTextarea aria-label="Spruchtext"
                       value={freitext}
                       onIonInput={(e) => setFreitext(e.detail.value || '')}
                       placeholder="Gib deinen Konfirmationsspruch ein"
@@ -365,7 +397,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Stelle (z.B. Joh 3,16)</IonLabel>
-                    <IonInput
+                    <IonInput aria-label="Bibelstelle"
                       value={freitextReferenz}
                       onIonInput={(e) => setFreitextReferenz(e.detail.value || '')}
                       placeholder="Stellenangabe (Pflicht)"

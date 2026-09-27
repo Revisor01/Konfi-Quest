@@ -39,11 +39,17 @@ import {
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
+import { datumUhrzeit } from '../../../utils/dateUtils';
 
 /** Reiter im Challenge-Detail: Gruppen-Feed oder eigene Beitraege. */
 type KonfiReiter = 'feed' | 'meins';
-import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
-import { EmptyState, AudioPlayer } from '../../shared';
+import api from '../../../services/api';
+import { netzZuerstLaden } from '../../../services/netzZuerst';
+import { CACHE_TTL } from '../../../services/offlineCache';
+import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
+import { EmptyState } from '../../shared';
+import ChallengeMedium from '../../shared/ChallengeMedium';
+import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { istWebLink } from '../../../utils/linkDisplay';
 import MusikLink from '../../shared/MusikLink';
@@ -111,8 +117,7 @@ const formatDateTime = (value?: string): string => {
   if (!value) return '';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  return datumUhrzeit(d);
 };
 
 // Rollen-Kennzeichnung in der Galerie: Beitraege von Pastor:innen/Teamer:innen
@@ -134,96 +139,14 @@ const buildGalleryAuthorLabel = (submission: ChallengeSubmission): string => {
   return suffix ? `${name} · ${suffix}` : name;
 };
 
-// Medienvorschau für Challenge-Dateien. Eigene, schlanke Ladefunktion statt des
-// Chat-LazyImage: der mediaCache-Service ist fest auf /chat/files/ verdrahtet,
-// Challenges liegen unter /challenges/files/. Der Abruf läuft über axios (also
-// mit Auth-Header, kein ?token= nötig), die Object-URL wird beim Unmount wieder
-// freigegeben.
-const ChallengeMedia: React.FC<{
-  filePath: string;
-  fileName?: string | null;
-  mediaType: ChallengeMediaType;
-}> = ({ filePath, fileName, mediaType }) => {
-  const [src, setSrc] = useState('');
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    let objectUrl = '';
-    (async () => {
-      try {
-        const res = await api.get(`/challenges/files/${filePath}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
-        if (cancelled) return;
-        objectUrl = URL.createObjectURL(res.data as Blob);
-        setSrc(objectUrl);
-      } catch {
-        if (!cancelled) setFailed(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [filePath]);
-
-  if (failed) {
-    return (
-      <div style={{ marginTop: 'var(--app-abstand-eng)', color: 'var(--app-text-muted)', fontSize: 'var(--app-text-hinweis)' }}>
-        Datei konnte nicht geladen werden
-      </div>
-    );
-  }
-
-  if (!src) {
-    return (
-      <div
-        style={{
-          marginTop: 'var(--app-abstand-eng)', minHeight: '80px', borderRadius: 'var(--app-radius-knopf)', background: 'var(--app-surface-dim)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-sekundaer)', gap: 'var(--app-abstand-eng)'
-        }}
-      >
-        <IonSpinner name="dots" /> wird geladen...
-      </div>
-    );
-  }
-
-  if (mediaType === 'photo') {
-    return (
-      <div style={{ marginTop: 'var(--app-abstand-eng)', borderRadius: 'var(--app-radius-knopf)', overflow: 'hidden' }}>
-        <img
-          src={src}
-          alt={fileName || 'Beitrag'}
-          style={{ width: '100%', maxHeight: '320px', objectFit: 'cover', display: 'block' }}
-        />
-      </div>
-    );
-  }
-
-  if (mediaType === 'video') {
-    return (
-      <video
-        src={src}
-        controls
-        playsInline
-        style={{ width: '100%', maxHeight: '320px', marginTop: 'var(--app-abstand-eng)', borderRadius: 'var(--app-radius-knopf)', display: 'block' }}
-      />
-    );
-  }
-
-  if (mediaType === 'audio') {
-    return <AudioPlayer src={src} />;
-  }
-
-  return null;
-};
-
 /** Eine Beitragskarte — in der Galerie ohne, bei eigenen Beitraegen mit Status. */
 const SubmissionCard: React.FC<{
   submission: ChallengeSubmission;
   authorLabel: string;
   statusBadge?: { label: string; icon: string; color: string };
-}> = ({ submission, authorLabel, statusBadge }) => (
+  /** Foto antippen: öffnen wie eine Chat-Datei (nativ oder im Betrachter). */
+  onOeffnen?: (filePath: string, fileName: string) => void;
+}> = ({ submission, authorLabel, statusBadge, onOeffnen }) => (
   <div
     className="app-list-item app-list-item--challenges"
     style={{ position: 'relative', overflow: 'hidden', width: '100%' }}
@@ -287,11 +210,15 @@ const SubmissionCard: React.FC<{
             </div>
           )}
 
+          {/* Über den gemeinsamen Medien-Cache wie im Chat (27.09.2026):
+              einmal geladen, danach vom Gerät; Fortschritt, Erneut
+              versuchen, offline die graue Zeile. */}
           {submission.file_path && submission.media_type !== 'link' && submission.media_type !== 'text' && (
-            <ChallengeMedia
+            <ChallengeMedium
               filePath={submission.file_path}
               fileName={submission.file_name}
               mediaType={submission.media_type}
+              onOeffnen={onOeffnen}
             />
           )}
         </div>
@@ -320,10 +247,15 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   onClose,
   onSubmit
 }) => {
-  const { setError } = useApp();
+  const { user, setError } = useApp();
   const { markChallengeAsRead } = useBadge();
   const [detail, setDetail] = useState<KonfiChallengeDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  // Ohne Netz und ohne gespeicherten Stand: sagen, dass die Beiträge offline
+  // fehlen, statt eine leere Galerie zu zeigen ("Noch keine geteilten
+  // Beiträge" wäre dann schlicht falsch).
+  const [offlineOhneStand, setOfflineOhneStand] = useState(false);
+  const benutzerId = user?.id;
 
   // Beim Oeffnen als gelesen melden -- wie ChatRoom beim Betreten eines
   // Raums. Ab jetzt zaehlt der Neuigkeiten-Zaehler neu; ohne den Aufruf
@@ -336,11 +268,20 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
 
   const loadDetail = useCallback(async () => {
     try {
-      const res = await api.get(`/challenges/konfi/${challenge.id}`);
+      // Netz zuerst (27.09.2026): Bei Netz entscheidet immer der Server, was
+      // in der Galerie steht — ein ausgeblendeter oder gelöschter Beitrag
+      // erscheint nicht, auch nicht kurz aus dem Speicher. Ohne Netz zeigt
+      // die Ansicht den zuletzt geladenen Stand, die Fotos kommen dann aus
+      // dem Medien-Cache.
+      const { daten: data } = await netzZuerstLaden(
+        `konfi:challenge:${benutzerId}:${challenge.id}`,
+        () => api.get(`/challenges/konfi/${challenge.id}`).then((res) => res.data),
+        CACHE_TTL.REQUESTS
+      );
+      setOfflineOhneStand(false);
       // Backend liefert { challenge, gallery, own_submissions } — Challenge-Felder
       // müssen auf die oberste Ebene, sonst ist starts_at/ends_at undefined und
       // die Challenge erscheint faelschlich als beendet.
-      const data = res.data;
       // Die Galerie-Query liefert den Namen als display_name (bei anonymen
       // Beitraegen NULL), das UI liest konfi_name -> hier normalisieren, sonst
       // erscheint JEDER Galerie-Beitrag als "Anonym".
@@ -354,11 +295,15 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
           : null
       );
     } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Laden der Challenge'));
+      if ((err as { response?: unknown })?.response === undefined) {
+        setOfflineOhneStand(true);
+      } else {
+        setError(fehlerText(err, 'Fehler beim Laden der Challenge'));
+      }
     } finally {
       setLoading(false);
     }
-  }, [challenge.id, setError]);
+  }, [challenge.id, benutzerId, setError]);
 
   useEffect(() => {
     setLoading(true);
@@ -385,6 +330,18 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   // eigene Reiter, unabhaengig davon, was zuletzt gewaehlt war.
   const effektiverReiter: KonfiReiter = current.visibility === 'private' ? 'meins' : reiter;
   const sichtbareBeitraege = effektiverReiter === 'meins' ? ownSubmissions : gallery;
+
+  // Ein Foto öffnen wie eine Chat-Datei: nativ mit Teilen und Sichern, sonst
+  // im Betrachter, in dem sich durch die Fotos dieses Reiters wischen lässt.
+  // Nur was die Liste gerade führt — ein ausgeblendeter oder gelöschter
+  // Beitrag steht nicht darin und ist so auch nicht zu erreichen.
+  const { dateiOeffnen } = useDateiOeffnen({
+    quelle: 'challenges',
+    fehlerOrt: 'challenge-datei',
+    kontext: () => sichtbareBeitraege
+      .filter((b) => b.media_type === 'photo' && b.file_path)
+      .map((b) => ({ pfad: b.file_path!, name: b.file_name })),
+  });
 
   // Kurzform der Sichtbarkeit für den Kopf: EIN knapper Halbsatz neben der
   // Laufzeit, damit beim Mitmachen sofort klar ist, wer den Beitrag zu sehen
@@ -517,6 +474,8 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
           <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-extraweit)' }}>
             <IonSpinner name="crescent" />
           </div>
+        ) : offlineOhneStand ? (
+          <OfflinePlatzhalter was="Die Liste der Beiträge" />
         ) : (
           <>
             {/* Reiter statt zweier gestapelter Bloecke: Der eigene Beitrag
@@ -585,6 +544,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                           statusBadge={effektiverReiter === 'meins'
                             ? getOwnStatus(submission, current)
                             : undefined}
+                          onOeffnen={(pfad, name) => { void dateiOeffnen(pfad, name); }}
                         />
                       ))}
                     </div>

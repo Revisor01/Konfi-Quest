@@ -32,6 +32,7 @@ import { DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { istVergangen } from '../../shared';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface DashboardData {
   konfi: {
@@ -397,7 +398,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             {dashboardData.konfi.jahrgang_name}
           </p>
 
-          <div
+          <div role={onOpenPointsHistory ? 'button' : undefined} tabIndex={onOpenPointsHistory ? 0 : undefined} onKeyDown={tastaturKlick}
             onClick={onOpenPointsHistory}
             style={{ cursor: onOpenPointsHistory ? 'pointer' : 'default', display: 'flex', justifyContent: 'center' }}
           >
@@ -526,7 +527,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="app-dashboard-section__content app-dashboard-section__content--compact">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-mittel)' }}>
                     {visibleChallenges.map((challenge) => (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={challenge.id}
                         className="app-dashboard-glass-card"
                         onClick={() => router.push('/konfi/challenges')}
@@ -554,7 +555,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         </div>
                       </div>
                     ))}
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       className="app-dashboard-glass-chip"
                       onClick={() => router.push('/konfi/challenges')}
                       style={{
@@ -582,7 +583,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             const spruchText = spruch?.text?.trim();
             const spruchReference = spruch?.reference?.trim();
             return (
-              <div
+              <div role={onOpenKonfispruch ? 'button' : undefined} tabIndex={onOpenKonfispruch ? 0 : undefined} onKeyDown={tastaturKlick}
                 className="app-dashboard-section app-dashboard-section--konfispruch"
                 key="konfispruch"
                 onClick={onOpenKonfispruch}
@@ -633,7 +634,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           onClick={() => router.push(`/konfi/events/${event.id}`)}
                         />
                       ))}
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         className="app-dashboard-glass-chip"
                         onClick={() => router.push('/konfi/events')}
                         style={{
@@ -649,7 +650,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-mittel)' }}>
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         className="app-dashboard-glass-card"
                         onClick={() => router.push('/konfi/events')}
                         style={{ cursor: 'pointer', textAlign: 'center', padding: 'var(--app-abstand-gross) var(--app-abstand-basis)' }}
@@ -661,7 +662,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           Tippe hier um verfügbare Events zu sehen
                         </div>
                       </div>
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         className="app-dashboard-glass-chip"
                         onClick={() => router.push('/konfi/events')}
                         style={{
@@ -700,7 +701,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       reference = hasLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers || actualDailyVerse.reference;
                     }
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         onClick={() => presentBibleModal()}
                         style={{ cursor: 'pointer' }}
                       >
@@ -744,7 +745,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         const isRecent = recentBadgeIds.has(badge.id);
                         const badgeClr = getBadgeColor(badge);
                         return (
-                          <div
+                          <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                             key={badge.id}
                             onClick={(e) => {
                               badgePopoverRef.current = { badge, isEarned };
@@ -790,7 +791,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             const isRecent = recentBadgeIds.has(badge.id);
                             const badgeClr = getBadgeColor(badge);
                             return (
-                              <div key={badge.id}
+                              <div role="button" tabIndex={0} onKeyDown={tastaturKlick} key={badge.id}
                                 onClick={(e) => {
                                   badgePopoverRef.current = { badge, isEarned: true };
                                   presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center', cssClass: 'badge-detail-popover' });
@@ -825,7 +826,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   </>
 
                   <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--app-abstand-basis)' }}>
-                    <div className="app-dashboard-glass-chip" onClick={() => router.push('/konfi/badges')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-kompakt)' }}>
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-dashboard-glass-chip" onClick={() => router.push('/konfi/badges')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-kompakt)' }}>
                       <span>Alle Badges anzeigen</span>
                       <IonIcon icon={ICON_WEITER_GEFUELLT} style={{ fontSize: 'var(--app-text-basis)' }} />
                     </div>

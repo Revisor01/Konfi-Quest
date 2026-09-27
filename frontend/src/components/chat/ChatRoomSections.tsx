@@ -133,9 +133,9 @@ export const ReplyPreview = React.memo<ReplyPreviewProps>(({ replyToMessage, onC
     borderLeft: '3px solid var(--app-color-chat)',
     gap: 'var(--app-abstand-eng)'
   }}>
-    <IonIcon icon={ICON_ANTWORTEN} style={{ fontSize: 'var(--app-text-untertitel)', color: 'var(--app-color-chat)' }} />
+    <IonIcon icon={ICON_ANTWORTEN} style={{ fontSize: 'var(--app-text-untertitel)', color: 'var(--app-text-chat)' }} />
     <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontWeight: 'var(--app-schrift-halbfett)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-color-chat)' }}>
+      <div style={{ fontWeight: 'var(--app-schrift-halbfett)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-chat)' }}>
         {replyToMessage.sender_name}
       </div>
       <div style={{
@@ -213,7 +213,7 @@ export const FilePreviewBar = React.memo<FilePreviewBarProps>(({ selectedFile, s
         justifyContent: 'center',
         flexShrink: 0
       }}>
-        <IonIcon icon={ICON_ANHANG_GEFUELLT} style={{ fontSize: 'var(--app-text-titel-gross)', color: 'var(--app-color-chat)' }} />
+        <IonIcon icon={ICON_ANHANG_GEFUELLT} style={{ fontSize: 'var(--app-text-titel-gross)', color: 'var(--app-text-chat)' }} />
       </div>
     )}
     <div style={{ flex: 1, minWidth: 0 }}>
@@ -227,7 +227,7 @@ export const FilePreviewBar = React.memo<FilePreviewBarProps>(({ selectedFile, s
       }}>
         {selectedFile.name}
       </div>
-      <div style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-color-chat)', fontWeight: 'var(--app-schrift-mittel)' }}>
+      <div style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-chat)', fontWeight: 'var(--app-schrift-mittel)' }}>
         {formatFileSize(selectedFile.size)}
       </div>
     </div>
@@ -325,14 +325,14 @@ export const MessageInput = React.memo<MessageInputProps>(({
         gap: 'var(--app-abstand-eng)',
         width: '100%'
       }}>
-        <IonButton aria-label="Datei anhängen"
+        <IonButton aria-label="Datei anhängen" className="app-beruehrungsziel"
           fill="clear"
           size="small"
           onClick={() => fileInputRef.current?.click()}
           style={{
             '--padding-start': 'var(--app-abstand-mini)',
             '--padding-end': 'var(--app-abstand-mini)',
-            '--color': 'var(--app-color-chat)',
+            '--color': 'var(--app-text-chat)',
             '--height': '38px',
             '--min-height': '38px',
             fontSize: 'var(--app-icon-chat-anhang)'
@@ -352,7 +352,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
           display: 'flex',
           alignItems: 'center'
         }}>
-          <IonTextarea
+          <IonTextarea aria-label="Nachricht schreiben"
             ref={textareaRef}
             value={messageText}
             onIonInput={(e) => { onTextChange(e.detail.value || ''); resizeTextarea(); }}
@@ -393,7 +393,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
           />
         </div>
 
-        <IonButton
+        <IonButton className="app-beruehrungsziel"
           fill="solid"
           shape="round"
           size="small"
@@ -445,29 +445,9 @@ export const MessageInput = React.memo<MessageInputProps>(({
   );
 });
 
-// Auto-capitalize für das Eingabefeld: schreibt den ersten Buchstaben sowie den
-// ersten Buchstaben nach einem Satzende (. ! ?) oder Zeilenumbruch gross. Greift nur
-// am Ende der Eingabe (= das gerade getippte Zeichen), damit der Cursor nicht springt
-// und bereits getippter Text nicht nachträglich umgeschrieben wird.
-export const autoCapitalize = (value: string): string => {
-  if (!value) return '';
-
-  const newChar = value.slice(-1);
-  // Nur Kleinbuchstaben (inkl. Umlaute) hochstellen, alles andere unverändert lassen.
-  if (newChar === newChar.toUpperCase() || !/[a-z\u00e4\u00f6\u00fc]/.test(newChar)) {
-    return value;
-  }
-
-  // Am Satzanfang? = erstes Zeichen überhaupt ODER vor dem letzten Zeichen steht
-  // (ggf. mit einem Space) ein Satzende-Zeichen bzw. ein Zeilenumbruch.
-  const before = value.slice(0, -1);
-  const atStart = before.length === 0;
-  const afterSentenceEnd = /([.!?]\s|\n)\s*$/.test(before);
-
-  if (atStart || afterSentenceEnd) {
-    return before + newChar.toUpperCase();
-  }
-
-  return value;
-};
+// Großschreibung im Eingabefeld: Regel und Begründung in
+// utils/chatGrossschreibung.ts (Variante A, Simon 27.09.2026). Greift nur am
+// Ende der Eingabe (das gerade getippte Zeichen), damit der Cursor nicht
+// springt und getippter Text nicht nachträglich umgeschrieben wird.
+export { autoCapitalize } from '../../utils/chatGrossschreibung';
 

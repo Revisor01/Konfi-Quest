@@ -52,7 +52,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       if (event.cancelled) {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
+        return res.status(400).json({ error: 'Dieses Event ist abgesagt' });
       }
 
       // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
@@ -61,7 +61,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+        return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
       }
 
       // 2. Validate user
@@ -90,7 +90,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         await client.query('ROLLBACK');
         client.release();
         return res.status(403).json({
-          error: `${user.display_name} gehört zu keinem Jahrgang dieses Termins`,
+          error: `${user.display_name} gehört zu keinem Jahrgang dieses Events`,
           error_code: 'person_jahrgang_fremd'
         });
       }
@@ -338,6 +338,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         // Warteliste nachgerueckt wird (Konfi- und Teamer-Kontingent sind getrennt).
         const { rows: [gefunden] } = await client.query(`
           SELECT eb.*, u.organization_id, e.organization_id as event_org_id,
+                 e.name AS event_name, e.event_date AS event_date,
                  (r.name <> 'konfi') as is_teamer_booking
           FROM event_bookings eb
           JOIN users u ON eb.user_id = u.id
@@ -363,7 +364,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         const zugriff = await darfTermin(client, req, eventId);
         if (!zugriff.erlaubt) {
           await client.query('ROLLBACK');
-          return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+          return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
         }
 
         // Falls der Konfi als ANWESEND verbucht war, beim Löschen die vergebenen
@@ -420,6 +421,22 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       }
 
       res.json({ message: 'Teilnehmer erfolgreich entfernt' });
+
+      // WER AUSGETRAGEN WIRD, ERFAEHRT ES (Simon, 27.09.2026, F-06 / BF-14):
+      // "Ja, mit Postfach-Eintrag, wie beim Eintragen." Derselbe Rahmen wie
+      // beim Eintragen oben: nach der Antwort, nicht an die ausloesende
+      // Person selbst (wer sich selbst austraegt, weiss es), Fehler kippen
+      // nichts. Nur wer angemeldet war oder wartete -- eine Zeile, die schon
+      // "abgemeldet" hiess, verschwindet ohne neue Nachricht: Die Person hat
+      // sich ja bereits abgemeldet oder wurde abgemeldet.
+      if (['confirmed', 'waitlist'].includes(booking.status)
+          && Number(booking.user_id) !== Number(req.user.id)) {
+        nachAntwort(req, async () => {
+          await PushService.sendEventRemovedByLeitung(
+            db, booking.user_id, booking.event_name, booking.event_date, 'removed', eventId, req.user.organization_id
+          );
+        }, 'DELETE /events/:id/bookings/:bookingId (Mitteilung)');
+      }
 
       // Ab hier ist alles festgeschrieben — Benachrichtigungen erst jetzt.
       if (punkteZurueck) {
@@ -520,7 +537,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         const zugriff = await darfTermin(client, req, eventId);
         if (!zugriff.erlaubt) {
           await client.query('ROLLBACK');
-          return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+          return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
         }
 
         if (booking.status === status) {
@@ -534,7 +551,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         // bleibt offen: das ist keine Anmeldung, sondern das Gegenteil.
         if (booking.cancelled && status === 'confirmed') {
           await client.query('ROLLBACK');
-          return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
+          return res.status(400).json({ error: 'Dieses Event ist abgesagt' });
         }
 
         // Vorheriger Status: bei Wechsel von 'waitlist' -> 'confirmed' ist es eine
@@ -617,7 +634,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           if (frei !== null && frei <= 0) {
             await client.query('ROLLBACK');
             return res.status(400).json({
-              error: 'Der Termin ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.'
+              error: 'Das Event ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.'
             });
           }
 
@@ -636,10 +653,18 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           );
         }
 
-        // In den Chat zum Termin, falls es einen gibt. Auch bei der Rueckstufung
-        // auf die Warteliste: angemeldet ist angemeldet, entfernt wird erst beim
-        // Austragen (idempotent, meist schon drin).
-        await addToEventChat(client, eventId, booking.user_id, req.user.organization_id);
+        // Chat zum Termin, falls es einen gibt: Wer bestaetigt wird, kommt
+        // hinein; wer auf die Warteliste zurueckgesetzt wird, geht hinaus.
+        //
+        // Bis zum 27.09.2026 stand hier "angemeldet ist angemeldet" -- auch
+        // die Herabgestufte blieb im Chat. Simon (F-11, Bericht "Wer bekommt
+        // was", BF-17): "Wartende erst beim Nachrücken." Wer herabgestuft
+        // wird, ist eine Wartende wie jede andere (utils/eventChat.js).
+        if (status === 'waitlist') {
+          await removeFromEventChat(client, eventId, booking.user_id, req.user.organization_id);
+        } else {
+          await addToEventChat(client, eventId, booking.user_id, req.user.organization_id);
+        }
 
         await client.query('COMMIT');
       } catch (txErr) {
@@ -661,6 +686,16 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           } catch (pushErr) {
             console.error('Error sending waitlist promotion push:', pushErr);
           }
+        }
+
+        // Wer auf die Warteliste zurueckgesetzt wird, erfaehrt es (Simon,
+        // 27.09.2026, F-06 / BF-14) -- wie beim Austragen nicht, wer sich
+        // selbst herabstuft. wasWaitlist ist hier false: 'waitlist' ->
+        // 'waitlist' lehnt die Route oben mit 400 ab.
+        if (status === 'waitlist' && !wasWaitlist && Number(betroffenerUser) !== Number(req.user.id)) {
+          await PushService.sendEventRemovedByLeitung(
+            db, betroffenerUser, eventName, eventDatum, 'waitlist', eventId, req.user.organization_id
+          );
         }
 
         // Wer durch die Herabstufung nachgerueckt ist, erfaehrt es — ueber

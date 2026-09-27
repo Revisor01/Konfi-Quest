@@ -132,7 +132,7 @@ describe('Der Hinweis in der Karte "Bist du dabei?" ist grau -- in beiden Rollen
 
   it('und NICHT mehr die rote Statusbox fuer diesen Hinweis', () => {
     const quelle = lies(TEAM);
-    const hinweis = quelle.indexOf('Dieser Termin ist abgesagt');
+    const hinweis = quelle.indexOf('Dieses Event ist abgesagt');
     expect(hinweis).toBeGreaterThan(-1);
     // Die 300 Zeichen vor dem Hinweistext duerfen kein --danger tragen.
     const davor = quelle.slice(Math.max(0, hinweis - 300), hinweis);

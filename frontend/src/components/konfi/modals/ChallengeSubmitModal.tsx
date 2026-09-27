@@ -17,7 +17,6 @@ import {
   IonItem,
   IonTextarea,
   IonInput,
-  IonProgressBar,
   IonSpinner
 } from '@ionic/react';
 import {
@@ -43,7 +42,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { track } from '../../../services/analytics';
-import { compressImage } from '../../../services/mediaCompression';
+import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE, zuGrossText } from '../../../services/mediaCompression';
+import SendeAnzeige from '../../shared/SendeAnzeige';
 import { pruefeMusikLink, ERLAUBTE_DIENSTE_TEXT } from '../../../utils/musikLinks';
 import { getVisibilityInfo, getSuccessMessage } from '../../../utils/challengeTexte';
 import { AudioPlayer } from '../../shared';
@@ -53,6 +53,7 @@ import type {
   ChallengeMediaType,
   ChallengeConsent
 } from '../../../types/challenges';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 // Einreich-Modal für eine Challenge. Zeigt nur die von der Challenge erlaubten
 // Medienarten (allowed_media). Bei visibility='konfi_choice' entscheidet der
@@ -75,8 +76,9 @@ const CONSENT_OPTIONS: { value: ChallengeConsent; label: string; hint: string; i
   { value: 'private', label: 'Nur Leitung', hint: 'nicht in der Galerie', icon: ICON_SPERRE }
 ];
 
-// Serverlimit laut Spec: 50 MB pro Datei.
-const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+// Serverlimit laut Spec: 50 MB pro Datei — steht als UPLOAD_GRENZE.challenges
+// neben der des Chats in services/mediaCompression (ein Weg für beide).
+const MAX_UPLOAD_BYTES = UPLOAD_GRENZE.challenges;
 
 // Bevorzugter MIME-Type für die Audioaufnahme: audio/mp4 läuft auf iOS-WebView
 // zuverlaessig (AVFoundation-Unterbau), audio/webm ist der Chromium/Android-Fallback.
@@ -261,17 +263,13 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       // Spaet eingetroffene Auswahl: Spinner wieder anzeigen (der Fokus-Fallback
       // hat ihn ggf. schon beendet), das finally setzt ihn zuverlaessig zurück.
       setPickingMedia(true);
-      const { file: compressed, previewUrl } = await compressImage(selected);
-      if (compressed.size > MAX_UPLOAD_BYTES) {
-        URL.revokeObjectURL(previewUrl);
-        setError('Datei ist zu groß (max. 50 MB).');
-        return;
-      }
+      // Derselbe Weg wie im Chat: verkleinern, dann gegen die Grenze prüfen.
+      const { file: verkleinert, bildVorschau } = await fuerUploadVorbereiten(selected, MAX_UPLOAD_BYTES);
       if (mediaPreview) URL.revokeObjectURL(mediaPreview);
-      setFile(compressed);
-      setMediaPreview(previewUrl);
-    } catch {
-      setError('Foto konnte nicht ausgewählt werden');
+      setFile(verkleinert);
+      setMediaPreview(bildVorschau || URL.createObjectURL(verkleinert));
+    } catch (err) {
+      setError(err instanceof DateiZuGrossFehler ? err.message : 'Foto konnte nicht ausgewählt werden');
     } finally {
       setPickingMedia(false);
     }
@@ -285,15 +283,14 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       const selected = await openFilePicker('video/*');
       if (!selected) return;
       setPickingMedia(true);
-      if (selected.size > MAX_UPLOAD_BYTES) {
-        setError('Datei ist zu groß (max. 50 MB).');
-        return;
-      }
+      // Videos werden nicht neu kodiert (Begründung in mediaCompression);
+      // es gilt dieselbe Grenze und derselbe Satz wie für Fotos und im Chat.
+      const { file: geprueft } = await fuerUploadVorbereiten(selected, MAX_UPLOAD_BYTES);
       if (mediaPreview) URL.revokeObjectURL(mediaPreview);
-      setFile(selected);
-      setMediaPreview(URL.createObjectURL(selected));
-    } catch {
-      setError('Video konnte nicht ausgewählt werden');
+      setFile(geprueft);
+      setMediaPreview(URL.createObjectURL(geprueft));
+    } catch (err) {
+      setError(err instanceof DateiZuGrossFehler ? err.message : 'Video konnte nicht ausgewählt werden');
     } finally {
       setPickingMedia(false);
     }
@@ -318,6 +315,12 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
         const extension = usedMime.includes('webm') ? 'webm' : 'm4a';
         const blob = new Blob(recordedChunksRef.current, { type: usedMime });
         const audioFile = new File([blob], `challenge-audio.${extension}`, { type: usedMime });
+        // Auch eine Aufnahme hat die Grenze des Servers; sonst scheiterte sie
+        // erst beim Einreichen.
+        if (audioFile.size > MAX_UPLOAD_BYTES) {
+          setError(zuGrossText(MAX_UPLOAD_BYTES));
+          return;
+        }
         if (mediaPreview) URL.revokeObjectURL(mediaPreview);
         setFile(audioFile);
         setMediaPreview(URL.createObjectURL(audioFile));
@@ -453,8 +456,11 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
             </IonButton>
           </IonButtons>
         </IonToolbar>
-        {isSubmitting && uploadProgress > 0 && (
-          <IonProgressBar value={uploadProgress / 100} />
+        {/* Dieselbe Anzeige wie beim Senden im Chat (27.09.2026): Prozent und
+            Balken, bei 100 % "Wird verarbeitet…" — der Server verschlüsselt
+            dann noch, bei einem 50-MB-Video spürbar lange. */}
+        {isSubmitting && (
+          <SendeAnzeige prozent={uploadProgress} was="Beitrag" farbe="var(--app-text-challenges)" />
         )}
       </IonHeader>
 
@@ -493,7 +499,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                   {availableOptions.map((option) => {
                     const isSelected = option.value === mediaType;
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                         key={option.value}
                         className={`app-list-item app-list-item--challenges${isSelected ? ' app-list-item--selected' : ''}`}
                         onClick={() => handleMediaTypeChange(option.value)}
@@ -545,7 +551,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'text' && (
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonTextarea
+                  <IonTextarea aria-label="Schreib hier deinen Beitrag"
                     value={textContent}
                     onIonInput={(e) => setTextContent(e.detail.value || '')}
                     placeholder="Schreib hier deinen Beitrag..."
@@ -573,7 +579,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     </span>
                   </div>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonInput
+                    <IonInput aria-label="Link"
                       type="url"
                       inputmode="url"
                       value={linkUrl}
@@ -583,7 +589,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     />
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonTextarea
+                    <IonTextarea aria-label="Warum dieser Link? (optional)"
                       value={textContent}
                       onIonInput={(e) => setTextContent(e.detail.value || '')}
                       placeholder="Warum dieser Link? (optional)"
@@ -596,7 +602,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'photo' && (
                 <>
-                  <div
+                  <div role={mediaPreview ? undefined : 'button'} tabIndex={mediaPreview ? undefined : 0} onKeyDown={tastaturKlick}
                     onClick={() => !pickingMedia && !mediaPreview && pickPhoto()}
                     style={{
                       padding: mediaPreview ? '0' : 'var(--app-abstand-basis)',
@@ -648,7 +654,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     )}
                   </div>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginTop: 'var(--app-abstand-eng)' }}>
-                    <IonTextarea
+                    <IonTextarea aria-label="Etwas dazu sagen? (optional)"
                       value={textContent}
                       onIonInput={(e) => setTextContent(e.detail.value || '')}
                       placeholder="Etwas dazu sagen? (optional)"
@@ -661,7 +667,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'video' && (
                 <>
-                  <div
+                  <div role={mediaPreview ? undefined : 'button'} tabIndex={mediaPreview ? undefined : 0} onKeyDown={tastaturKlick}
                     onClick={() => !pickingMedia && !mediaPreview && pickVideo()}
                     style={{
                       padding: mediaPreview ? '0' : 'var(--app-abstand-basis)',
@@ -713,7 +719,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     )}
                   </div>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginTop: 'var(--app-abstand-eng)' }}>
-                    <IonTextarea
+                    <IonTextarea aria-label="Etwas dazu sagen? (optional)"
                       value={textContent}
                       onIonInput={(e) => setTextContent(e.detail.value || '')}
                       placeholder="Etwas dazu sagen? (optional)"
@@ -726,7 +732,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'audio' && (
                 <>
-                  <div
+                  <div role={mediaPreview ? undefined : 'button'} tabIndex={mediaPreview ? undefined : 0} onKeyDown={tastaturKlick}
                     onClick={() => {
                       if (mediaPreview) return;
                       if (isRecording) stopRecording();
@@ -786,7 +792,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     )}
                   </div>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginTop: 'var(--app-abstand-eng)' }}>
-                    <IonTextarea
+                    <IonTextarea aria-label="Etwas dazu sagen? (optional)"
                       value={textContent}
                       onIonInput={(e) => setTextContent(e.detail.value || '')}
                       placeholder="Etwas dazu sagen? (optional)"
@@ -816,7 +822,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                   {CONSENT_OPTIONS.map((option) => {
                     const isSelected = option.value === consent;
                     return (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                         key={option.value}
                         className={`app-list-item app-list-item--challenges${isSelected ? ' app-list-item--selected' : ''}`}
                         onClick={() => setConsent(option.value)}

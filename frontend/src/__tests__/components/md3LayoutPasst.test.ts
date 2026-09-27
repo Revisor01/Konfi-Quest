@@ -34,16 +34,24 @@ describe('MD3-Layout: die deutschen Beschriftungen passen', () => {
       expect(block![0]).toMatch(/flex:\s*1 1 0/);
     });
 
-    it('die Beschriftung nutzt die schmalste Stufe der Skala', () => {
-      // Bei --app-text-winzig (0.6rem) fehlten "Challenges" und "Mitmachen"
-      // je fuenf Pixel.
+    it('die Beschriftung nutzt die Reiter-Stufe der Skala', () => {
+      // Bis 27.09.2026 stand hier die schmalste Stufe (0.55rem = 8,8 px),
+      // weil "Challenges" bei 0.6rem abgeschnitten wurde. Der Grund war
+      // Ionics Innenabstand (12 px je Seite, siehe unten), nicht die Breite
+      // des Reiters (UI-Audit BF-07).
       const block = css.match(/ion-tab-bar\.md ion-tab-button ion-label,[^{]*\{[^}]*\}/);
       expect(block).not.toBeNull();
-      expect(block![0]).toContain('var(--app-text-schmal)');
+      expect(block![0]).toContain('var(--app-text-reiter)');
+    });
+
+    it('die Beschriftung bekommt die ganze Breite des Reiters (kein Innenabstand)', () => {
+      const block = css.match(/ion-tab-bar\.md ion-tab-button \{[^}]*\}/);
+      expect(block![0]).toMatch(/--padding-start:\s*0 !important/);
+      expect(block![0]).toMatch(/--padding-end:\s*0 !important/);
     });
 
     it('die Stufe steht in der Typografie-Skala', () => {
-      expect(lies('src/theme/typografie.css')).toContain('--app-text-schmal');
+      expect(lies('src/theme/typografie.css')).toContain('--app-text-reiter');
     });
 
     it('der Kuerzungs-Schutz bleibt', () => {

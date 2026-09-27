@@ -482,7 +482,7 @@ describe('Absagegrund aendern: PUT /api/events/:id/absagegrund', () => {
       expect(res.status).toBe(200);
       expect((await termin(eventId)).cancelled_reason).toBeNull();
 
-      expect((await buchung(eventId, USERS.konfi1.id)).excuse_reason).toBe('Termin abgesagt');
+      expect((await buchung(eventId, USERS.konfi1.id)).excuse_reason).toBe('Event abgesagt');
     });
 
     it('bei 403 bleibt auch der Grund an den Buchungen stehen', async () => {
@@ -605,7 +605,7 @@ describe('Absagegrund aendern: PUT /api/events/:id/absagegrund', () => {
         .send({ cancelled_reason: 'Reingepfuscht' });
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Kein Zugriff auf diesen Termin');
+      expect(res.body.error).toBe('Kein Zugriff auf dieses Event');
 
       const gespeichert = await termin(eventId);
       expect(gespeichert.cancelled_reason).toBe('Alter Grund');

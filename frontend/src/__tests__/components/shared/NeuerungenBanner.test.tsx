@@ -14,8 +14,10 @@ describe('NeuerungenBanner', () => {
     render(
       <NeuerungenBanner onUpdateOeffnen={vi.fn()} onMitmachenOeffnen={vi.fn()} />
     );
-    expect(screen.getByRole('button', { name: UPDATE })).toHaveClass('app-whatsnew');
-    const gruen = screen.getByRole('button', { name: MITMACHEN });
+    // Knopf ist der Text der Karte, die Karte selbst ihr Rahmen (kein Knopf
+    // im Knopf, siehe hinweisKartenKeinKnopfImKnopf.test.tsx).
+    expect(screen.getByRole('button', { name: UPDATE }).closest('.app-whatsnew')).not.toBeNull();
+    const gruen = screen.getByRole('button', { name: MITMACHEN }).closest('.app-whatsnew');
     expect(gruen).toHaveClass('app-whatsnew');
     expect(gruen).toHaveClass('app-whatsnew--mitmachen');
   });

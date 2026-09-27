@@ -6,6 +6,12 @@
 // Absage lässt die Buchungen auf 'confirmed' stehen, also feuerte nach der
 // Nachricht "Leider abgesagt" am Vortag trotzdem "Morgen: Event!".
 //
+// Befund 26.09.2026 (Chat BF-03 / Betrieb BF-05): Die Vortags-Erinnerung
+// verglich nur den Kalendertag (`event_date::date = morgen`) und ging deshalb
+// im ersten 15-Minuten-Takt nach Mitternacht hinaus; der Lauf hatte keinen
+// Schutz gegen den naechsten Takt. Die Termine der Grundtests liegen deshalb
+// bei NOW() + 24 Stunden — genau im Fenster, nicht bloss am richtigen Tag.
+//
 // Messpunkt ist die Tabelle event_reminders: Der Service schreibt dort pro
 // tatsächlich verschickter Erinnerung genau eine Zeile. Ob der Push selbst beim
 // Gerät ankommt, hängt an Device-Tokens, die es im Test nicht gibt — die Zeile
@@ -13,6 +19,7 @@
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS } = require('../helpers/seed');
 const BackgroundService = require('../../services/backgroundService');
+const PushService = require('../../services/pushService');
 
 const ORG_ID = 1;
 
@@ -79,7 +86,7 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
 
   it('Test 1: Abgesagter Termin morgen loest KEINE 1-Tages-Erinnerung aus', async () => {
     const eventId = await createEventWithBooking({
-      eventDateSql: "CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours'",
+      eventDateSql: "NOW() + INTERVAL '24 hours'",
       cancelled: true
     });
 
@@ -90,7 +97,7 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
 
   it('Test 2: Gegenprobe — nicht abgesagter Termin morgen loest die 1-Tages-Erinnerung aus', async () => {
     const eventId = await createEventWithBooking({
-      eventDateSql: "CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours'",
+      eventDateSql: "NOW() + INTERVAL '24 hours'",
       cancelled: false
     });
 
@@ -128,7 +135,7 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
     const eventId = nextEventId++;
     await db.query(
       `INSERT INTO events (id, name, event_date, organization_id, cancelled, mandatory, has_timeslots)
-       VALUES ($1, 'Altbestand-Termin', CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours', $2, NULL, false, false)`,
+       VALUES ($1, 'Altbestand-Termin', NOW() + INTERVAL '24 hours', $2, NULL, false, false)`,
       [eventId, ORG_ID]
     );
     await db.query(
@@ -153,7 +160,7 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
 
   it('Test 8: Abgemeldete Person (excused) bekommt KEINE 1-Tages-Erinnerung', async () => {
     const eventId = await createEventWithBooking({
-      eventDateSql: "CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours'",
+      eventDateSql: "NOW() + INTERVAL '24 hours'",
       cancelled: false,
       attendanceStatus: 'excused'
     });
@@ -181,7 +188,7 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
     // Beweist, dass der Filter nicht zu viel wegnimmt: derselbe Aufbau wie
     // Test 8/9, nur ohne Verbuchung.
     const morgen = await createEventWithBooking({
-      eventDateSql: "CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours'",
+      eventDateSql: "NOW() + INTERVAL '24 hours'",
       cancelled: false,
       attendanceStatus: null
     });
@@ -201,7 +208,7 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
 
   it('Test 11: Verbuchte Teilnahme (present/absent) bekommt keine Erinnerung mehr', async () => {
     const present = await createEventWithBooking({
-      eventDateSql: "CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours'",
+      eventDateSql: "NOW() + INTERVAL '24 hours'",
       cancelled: false,
       attendanceStatus: 'present'
     });
@@ -223,7 +230,7 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
     const eventId = nextEventId++;
     await db.query(
       `INSERT INTO events (id, name, event_date, organization_id, cancelled, mandatory, has_timeslots)
-       VALUES ($1, 'Gemischter Termin', CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours', $2, false, false, false)`,
+       VALUES ($1, 'Gemischter Termin', NOW() + INTERVAL '24 hours', $2, false, false, false)`,
       [eventId, ORG_ID]
     );
     await db.query(
@@ -246,7 +253,7 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
     const eventId = nextEventId++;
     await db.query(
       `INSERT INTO events (id, name, event_date, organization_id, cancelled, mandatory, has_timeslots)
-       VALUES ($1, 'Abgemeldet-Termin', CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours', $2, false, false, false)`,
+       VALUES ($1, 'Abgemeldet-Termin', NOW() + INTERVAL '24 hours', $2, false, false, false)`,
       [eventId, ORG_ID]
     );
     await db.query(
@@ -259,6 +266,161 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
 
     expect(await countReminders(eventId, '1_day')).toBe(0);
     expect(await reminderEmpfaenger(eventId, '1_day')).toEqual([]);
+  });
+
+  // ------------------------------------------------------------------
+  // Vortags-Erinnerung an die Uhrzeit gebunden (Befund 26.09.2026, Chat BF-03)
+  //
+  // Regel: 24 Stunden vor Beginn, mit ±15 Minuten Toleranz — dasselbe Fenster
+  // wie beim Ein-Stunden-Zweig. Ein Termin um 18:00 Uhr wird also am Vortag
+  // um 18:00 Uhr angekuendigt, nicht um 00:05 Uhr nachts.
+  // vi.setSystemTime mockt nur Date; die Datenbank laeuft mit echter Uhr, die
+  // Abfrage bekommt ihre Fenstergrenzen aber aus der JS-Zeit.
+  // ------------------------------------------------------------------
+  describe('Zeitfenster der Vortags-Erinnerung (24 Stunden, ±15 Minuten)', () => {
+    // Mittwoch, 12.05.2027, 18:00 Uhr Berlin (Sommerzeit, UTC+2)
+    const TERMIN_SQL = "'2027-05-12 18:00:00+02'::timestamptz";
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    async function terminMitBuchung() {
+      return createEventWithBooking({ eventDateSql: TERMIN_SQL, cancelled: false });
+    }
+
+    async function laufUm(isoBerlin) {
+      vi.setSystemTime(new Date(isoBerlin));
+      await BackgroundService.sendEventReminders(db);
+    }
+
+    it('F1: Um 00:05 Uhr am Vortag geht KEINE Vortags-Erinnerung hinaus', async () => {
+      const eventId = await terminMitBuchung();
+
+      await laufUm('2027-05-11T00:05:00+02:00');
+
+      expect(await countReminders(eventId, '1_day')).toBe(0);
+    });
+
+    it('F2: 24 Stunden vorher (18:05 Uhr am Vortag) geht die Vortags-Erinnerung hinaus', async () => {
+      const eventId = await terminMitBuchung();
+
+      await laufUm('2027-05-11T18:05:00+02:00');
+
+      expect(await countReminders(eventId, '1_day')).toBe(1);
+      expect(await reminderEmpfaenger(eventId, '1_day')).toEqual([USERS.konfi1.id]);
+    });
+
+    it('F3: Zwei Tage vorher um 23:50 Uhr geht nichts hinaus', async () => {
+      const eventId = await terminMitBuchung();
+
+      await laufUm('2027-05-10T23:50:00+02:00');
+
+      expect(await countReminders(eventId, '1_day')).toBe(0);
+    });
+
+    it('F4: Knapp vor dem Fenster (17:40 Uhr) und knapp danach (18:20 Uhr) passiert nichts', async () => {
+      const eventId = await terminMitBuchung();
+
+      await laufUm('2027-05-11T17:40:00+02:00');
+      expect(await countReminders(eventId, '1_day')).toBe(0);
+
+      await laufUm('2027-05-11T18:20:00+02:00');
+      expect(await countReminders(eventId, '1_day')).toBe(0);
+    });
+
+    it('F5: Fensterrand — 17:45 Uhr und 18:15 Uhr treffen noch (zwei Takte je Termin)', async () => {
+      // Das Fenster ist 30 Minuten breit bei 15 Minuten Takt: Faellt ein Takt
+      // aus (Neustart, langer Vorlauf), faengt der naechste den Termin noch.
+      const frueh = await terminMitBuchung();
+      await laufUm('2027-05-11T17:45:00+02:00');
+      expect(await countReminders(frueh, '1_day')).toBe(1);
+
+      const spaet = await createEventWithBooking({
+        eventDateSql: TERMIN_SQL, cancelled: false, userId: USERS.konfi2.id
+      });
+      await laufUm('2027-05-11T18:15:00+02:00');
+      expect(await countReminders(spaet, '1_day')).toBe(1);
+    });
+
+    it('F6: Zweiter Lauf im selben Fenster schickt nicht noch einmal', async () => {
+      const eventId = await terminMitBuchung();
+
+      await laufUm('2027-05-11T17:50:00+02:00');
+      await laufUm('2027-05-11T18:05:00+02:00');
+
+      expect(await countReminders(eventId, '1_day')).toBe(1);
+    });
+
+    it('F7: Die Ein-Stunden-Erinnerung folgt derselben Regel (17:00 Uhr am Tag selbst)', async () => {
+      const eventId = await terminMitBuchung();
+
+      await laufUm('2027-05-12T17:02:00+02:00');
+
+      expect(await countReminders(eventId, '1_hour')).toBe(1);
+      expect(await countReminders(eventId, '1_day')).toBe(0);
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // Laufmerker gegen ueberlappende Laeufe (Befund 26.09.2026, Betrieb BF-05)
+  //
+  // Der 15-Minuten-Takt startet unabhaengig davon, ob der letzte Lauf fertig
+  // ist. Dauert ein Lauf laenger (tausende Empfaenger, FCM-Latenz), findet der
+  // naechste Takt dieselben noch nicht eingetragenen Erinnerungen und schickt
+  // sie ein zweites Mal — der UNIQUE-Index auf event_reminders faengt nur die
+  // zweite ZEILE, nicht den zweiten PUSH. Messpunkt ist deshalb der Aufruf
+  // von PushService.sendEventReminderToKonfi, nicht die Tabelle.
+  // ------------------------------------------------------------------
+  describe('Laufmerker gegen ueberlappende Laeufe', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('L1: Ein zweiter Lauf, waehrend der erste noch sendet, kehrt sofort zurueck und schickt nichts doppelt', async () => {
+      const eventId = await createEventWithBooking({
+        eventDateSql: "NOW() + INTERVAL '60 minutes'",
+        cancelled: false
+      });
+
+      // Der Push haengt, bis der Test ihn freigibt — simuliert den langen Lauf.
+      let freigeben;
+      const schranke = new Promise(resolve => { freigeben = resolve; });
+      const push = vi.spyOn(PushService, 'sendEventReminderToKonfi')
+        .mockImplementation(async () => { await schranke; return { success: true }; });
+
+      const ersterLauf = BackgroundService.sendEventReminders(db);
+      await vi.waitFor(() => expect(push).toHaveBeenCalledTimes(1));
+
+      // Der zweite Lauf muss fertig sein, BEVOR der erste freigegeben wird —
+      // sonst hat er nicht uebersprungen, sondern haengt selbst im Push.
+      const zweiterLauf = BackgroundService.sendEventReminders(db);
+      const ausgang = await Promise.race([
+        zweiterLauf.then(() => 'uebersprungen'),
+        new Promise(resolve => setTimeout(() => resolve('haengt'), 500))
+      ]);
+      expect(ausgang).toBe('uebersprungen');
+
+      freigeben();
+      await ersterLauf;
+      await zweiterLauf;
+
+      expect(push).toHaveBeenCalledTimes(1);
+      expect(await countReminders(eventId, '1_hour')).toBe(1);
+    });
+
+    it('L2: Nach einem abgebrochenen Lauf ist der Merker wieder frei', async () => {
+      const kaputt = { query: async () => { throw new Error('DB weg (simuliert)'); } };
+      await expect(BackgroundService.sendEventReminders(kaputt)).rejects.toThrow('DB weg (simuliert)');
+
+      const eventId = await createEventWithBooking({
+        eventDateSql: "NOW() + INTERVAL '60 minutes'",
+        cancelled: false
+      });
+      await BackgroundService.sendEventReminders(db);
+
+      expect(await countReminders(eventId, '1_hour')).toBe(1);
+    });
   });
 
   describe('sendRegistrationOpenPushes ("Anmeldung moeglich")', () => {

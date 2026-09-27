@@ -1,6 +1,6 @@
 {
   "name": "konfi-points-backend",
-  "version": "1.0.1",
+  "version": "2.3.0",
   "description": "Backend API für das Konfi-Punkte-System",
   "main": "server.js",
   "scripts": {

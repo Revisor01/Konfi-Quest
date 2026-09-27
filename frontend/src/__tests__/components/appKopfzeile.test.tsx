@@ -376,7 +376,7 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
     expect(lies('src/components/admin/pages/AdminUsersPage.tsx')).toContain("rechts={user?.role_name === 'org_admin' ? (");
 
     const terminDetail = lies('src/components/admin/views/EventDetailView.tsx');
-    for (const knopf of ['Event-Chat öffnen', 'QR-Code anzeigen', 'Termin kopieren', 'Event bearbeiten']) {
+    for (const knopf of ['Event-Chat öffnen', 'QR-Code anzeigen', 'Event kopieren', 'Event bearbeiten']) {
       expect(zaehle(terminDetail, `aria-label="${knopf}"`), knopf).toBe(1);
     }
     expect(terminDetail).toContain('{(eventData?.chat_room_id || darfVerwalten) && (');

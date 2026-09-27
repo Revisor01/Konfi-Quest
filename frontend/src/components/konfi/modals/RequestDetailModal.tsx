@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -25,7 +25,8 @@ import {
   ICON_WARTEND_GEFUELLT,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
-import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
+import NachweisFoto from '../../shared/NachweisFoto';
+import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
 
 export interface ActivityRequest {
   id: number;
@@ -57,73 +58,24 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   onClose,
   onDelete
 }) => {
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [loadingPhoto, setLoadingPhoto] = useState(false);
-  const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
-
   // Dieses Modal wird auch von der Teamer-Seite genutzt (TeamerEventsPage).
   // Teamer-Anträge haben weder Punkte noch Gottesdienst/Gemeinde — die Rolle
   // kommt aus den Daten, damit die Aufrufer nichts setzen müssen.
   const isTeamerRequest = request?.activity_target_role === 'teamer';
 
-  const loadPhoto = async (id: number) => {
-    setLoadingPhoto(true);
-    setPhotoLoadFailed(false);
-    try {
-      const response = await api.get(`/konfi/activity-requests/${id}/photo`, {
-        responseType: 'blob',
-        timeout: DATEI_TIMEOUT_MS
-      });
-      const url = URL.createObjectURL(response.data);
-      setPhotoUrl(url);
-    } catch (err) {
-      // Ladefehler MERKEN: sonst fällt die Anzeige unten in den Leerzustand
-      // und behauptet "Kein Foto hochgeladen", obwohl eines existiert
-      // (Audit 10.08.).
-      console.error('Error loading photo:', err);
-      setPhotoLoadFailed(true);
-    } finally {
-      setLoadingPhoto(false);
-    }
-  };
-
-  // Beim Antragswechsel den Foto-Zustand zuruecksetzen — sonst bleibt das
-  // Bild des VORHERIGEN Antrags stehen, wenn der neue keins hat.
-  useEffect(() => {
-    setPhotoUrl(null);
-    setPhotoLoadFailed(false);
-    if (request?.photo_filename && request.status === 'pending') {
-      loadPhoto(request.id);
-    }
-  }, [request]);
-
-  // Freigabe an photoUrl koppeln, NICHT an request: Das fruehere Cleanup im
-  // [request]-Effekt las photoUrl aus der Closure des Effekt-Laufs — dort war
-  // es noch null, die Blob-URL wurde nie freigegeben (Leck pro Foto-Ansicht).
-  useEffect(() => {
-    if (!photoUrl) return;
-    return () => {
-      URL.revokeObjectURL(photoUrl);
-    };
-  }, [photoUrl]);
-
+  // Das Foto lädt und zeigt NachweisFoto (27.09.2026, gemeinsam mit der
+  // Leitung): Fortschritt, "Erneut versuchen", ohne Netz die graue Zeile, und
+  // die Object-URL geht beim Schließen oder Antragswechsel mit. Die früheren
+  // Befunde dieser Stelle — ein Ladefehler behauptete "Kein Foto hochgeladen"
+  // (Audit 10.08.), die URL wurde nie freigegeben, beim Wechsel blieb das Foto
+  // des vorigen Antrags stehen (30.08.2026) — prüft requestDetailModalFoto.
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return datumUhrzeit(dateString);
   };
 
   if (!request) {
@@ -236,29 +188,8 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
-                {loadingPhoto ? (
-                  <div style={{
-                    background: 'var(--app-surface-muted)',
-                    borderRadius: 'var(--app-radius-karte)',
-                    padding: 'var(--app-abstand-weit) var(--app-abstand-basis)',
-                    textAlign: 'center'
-                  }}>
-                    <IonSpinner name="crescent" />
-                    <p style={{ margin: 'var(--app-abstand-mittel) 0 0 0', fontSize: 'var(--app-text-basis)', color: 'var(--app-text-secondary)' }}>
-                      Lade Foto...
-                    </p>
-                  </div>
-                ) : photoUrl ? (
-                  <img
-                    src={photoUrl}
-                    alt="Foto zur Aktivität"
-                    style={{
-                      maxWidth: '100%',
-                      borderRadius: 'var(--app-radius-klein)',
-                      boxShadow: 'var(--app-schatten-karte)',
-                      display: 'block'
-                    }}
-                  />
+                {request.photo_filename ? (
+                  <NachweisFoto key={request.id} antragId={request.id} />
                 ) : (
                   <div style={{
                     background: 'var(--app-surface-muted)',
@@ -271,9 +202,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                       style={{ fontSize: 'var(--app-anzeige-gross)', color: 'var(--app-text-muted)', marginBottom: 'var(--app-abstand-mittel)', display: 'block' }}
                     />
                     <p style={{ margin: '0', fontSize: 'var(--app-text-basis)', color: 'var(--app-text-secondary)' }}>
-                      {photoLoadFailed
-                        ? 'Dein Foto konnte nicht geladen werden. Zieh die Seite nach unten, um es erneut zu versuchen.'
-                        : 'Kein Foto hochgeladen'}
+                      Kein Foto hochgeladen
                     </p>
                   </div>
                 )}

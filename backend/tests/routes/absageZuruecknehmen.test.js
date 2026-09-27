@@ -628,7 +628,7 @@ describe('Absage zuruecknehmen: PUT /api/events/:id/reaktivieren', () => {
       const push = pushSpion();
       expect((await reaktivieren(eventId)).status).toBe(200);
 
-      expect(push.meldung.title).toBe('Termin findet doch statt');
+      expect(push.meldung.title).toBe('Event findet doch statt');
       expect(push.meldung.body.startsWith('"Konfifreizeit" am ')).toBe(true);
       expect(push.meldung.body.endsWith(
         'findet doch statt. Du bist wieder angemeldet – prüf bitte, ob du Zeit hast, und melde dich sonst ab.'
@@ -729,7 +729,7 @@ describe('Absage zuruecknehmen: PUT /api/events/:id/reaktivieren', () => {
       const res = await reaktivieren(eventId, adminMitJgToken);
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Kein Zugriff auf diesen Termin');
+      expect(res.body.error).toBe('Kein Zugriff auf dieses Event');
       expect((await eventZeile(eventId)).cancelled).toBe(true);
     });
 

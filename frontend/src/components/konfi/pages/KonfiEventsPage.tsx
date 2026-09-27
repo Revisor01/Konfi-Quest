@@ -44,6 +44,8 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 // unterschiedlicher Nullbarkeit haben genau dort gebissen. Der Modal-Typ ist
 // der genauere — er kennt Teamer-Antraege ohne Punkte und ohne Typ.
 import type { ActivityRequest } from '../modals/RequestDetailModal';
+import { datumKurz } from '../../../utils/dateUtils';
+import { trackMitmachenAnsicht } from '../../../services/analytics';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten sind aus ihrem eigenen
 // Tab in dieses Segment gewandert.
@@ -66,6 +68,13 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
 
   // Oberste Segment-Ebene: Events oder Aktivitäten.
   const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
+  // Umschalten an der Leiste „Events | Aktivitäten" zählt als eigener
+  // Bereich -- die Seite hat für beide Ansichten denselben Pfad
+  // (services/analytics.ts, trackMitmachenAnsicht).
+  const mitmachenAnsichtWechseln = (ansicht: 'events' | 'antraege') => {
+    if (ansicht !== mainSegment) trackMitmachenAnsicht(ansicht);
+    setMainSegment(ansicht);
+  };
 
   // --- useOfflineQuery: Events ---
   const { data: events, loading, refresh, refreshLive } = useOfflineQuery<Event[]>(
@@ -87,6 +96,9 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
     const segment = new URLSearchParams(routerLocation.search).get('segment');
     if (segment === 'antraege') {
       setMainSegment('antraege');
+      // Einstieg per Link (Push, alte Route /konfi/requests) direkt in die
+      // Aktivitäten -- die Pfad-Messung zählt ihn sonst als „events".
+      trackMitmachenAnsicht('antraege');
     } else if (segment === 'events') {
       setMainSegment('events');
     }
@@ -163,11 +175,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
   const getFilteredRequests = () => {
@@ -300,7 +308,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
       <div className="app-segment-wrapper">
         <IonSegment
           value={mainSegment}
-          onIonChange={(e) => setMainSegment(e.detail.value as 'events' | 'antraege')}
+          onIonChange={(e) => mitmachenAnsichtWechseln(e.detail.value as 'events' | 'antraege')}
         >
           <IonSegmentButton value="events">
             <IonLabel>Events</IonLabel>

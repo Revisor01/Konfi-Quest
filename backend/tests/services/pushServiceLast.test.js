@@ -102,10 +102,10 @@ describe('PushService unter Last', () => {
       // appIconSummenFuerAlle. Vorher lief die ganze Bulk-Funktion je Kopf
       // mit einem einelementigen Array -- also 4x bei 4 Empfaengern.
       //
-      // Hier bewusst nur Empfaenger EINER Organisation: appIconSummenFuerAlle
-      // schluesselt nach `id_type` und wird deshalb je Organisation einmal
-      // gerufen (Begruendung in berechneBadgesFuerAlle). Mit Empfaengern aus
-      // zwei Gemeinden waeren zwei Aufrufe richtig, nicht einer.
+      // Bis 27.09.2026 lief die Zaehlrunde je Organisation einmal; seit
+      // Befund BF-12 laeuft sie EINMAL fuer alle Gemeinden zusammen
+      // (appIconSummenAllerGemeinden) -- auch mit Empfaengern aus zwei
+      // Gemeinden bliebe es bei einer Chat-Abfrage.
       await PushService.sendToMultipleUsers(
         zaehlDb(),
         [USERS.konfi1.id, USERS.konfi2.id, USERS.teamer1.id, USERS.admin1.id],
@@ -142,6 +142,10 @@ describe('PushService unter Last', () => {
       // berechneBadgesFuerAlle), also zwei. new_event selbst schreibt keinen
       // Postfach-Eintrag (utils/postfachArten.js), sonst kaeme noch eine
       // konstante Abfrage je Block dazu.
+      // 27.09.2026 (Befund BF-12): Die Summe laeuft nur noch EINMAL fuer alle
+      // Gemeinden zusammen (appIconSummenAllerGemeinden) statt je Gemeinde;
+      // gemessen mit diesen sechs Empfaengern 20 -> 15 Abfragen. Die Grenze
+      // bleibt, wo sie war.
       expect(zaehler).toBeLessThanOrEqual(24);
     });
 
@@ -158,14 +162,17 @@ describe('PushService unter Last', () => {
       expect(anzahlMit('FROM push_tokens pt')).toBe(1);
     });
 
-    it('je zusaetzlichem Empfaenger kommt genau 1 Abfrage dazu, nicht 8', async () => {
-      // Die eigentliche Aussage in Zahlen, ohne absolute Grenze: Was je Kopf
-      // bleibt, ist genau EINE Abfrage -- den Token als erreichbar vermerken.
-      // Die ist unvermeidlich, sie schreibt je Geraet eine eigene Zeile.
-      // Alles andere laeuft einmal fuer alle.
+    it('je zusaetzlichem Empfaenger kommt KEINE Abfrage dazu (vorher 1, davor 8)', async () => {
+      // Die eigentliche Aussage in Zahlen, ohne absolute Grenze: Nichts
+      // waechst mehr mit der Zahl der Koepfe. Alles laeuft einmal fuer alle
+      // -- seit dem 26.09.2026 (Audit Betrieb BF-04) auch die Buchfuehrung
+      // "Token erreichbar", die bis dahin je Geraet eine eigene UPDATE-Zeile
+      // schrieb und deshalb als EINE Abfrage je Kopf uebrig blieb. Sie laeuft
+      // jetzt gesammelt je Block (schreibeErgebnisSammler): drei Abfragen
+      // hoechstens, egal ob 2 oder 50 Geraete im Block.
       //
       // Vorher waren es 7 bis 8 je Kopf (gemessen 24.09.2026: 7 bei einem
-      // Empfaenger, 21 bei drei, 40 bei fuenf).
+      // Empfaenger, 21 bei drei, 40 bei fuenf), danach genau 1.
       //
       // Bewusst Konfis EINER Organisation mit je EINEM Geraet: Dann ist der
       // Unterschied zwischen zwei und vier Empfaengern genau der Aufwand je
@@ -203,8 +210,8 @@ describe('PushService unter Last', () => {
       );
       const beiVier = zaehler;
 
-      // Zwei Empfaenger mehr -> zwei Abfragen mehr (eine je Kopf).
-      expect(beiVier - beiZwei).toBe(2);
+      // Zwei Empfaenger mehr -> keine Abfrage mehr.
+      expect(beiVier - beiZwei).toBe(0);
     });
 
     it('die Zahl am App-Icon bleibt dieselbe wie beim Einzelversand', async () => {

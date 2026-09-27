@@ -34,7 +34,8 @@
  * @param {string[]} rollen        Rollennamen, z.B. ['admin', 'org_admin']
  * @param {object} [opt]
  * @param {number[]|null} [opt.jahrgangIds]  Nur Personen mit einer Zuweisung
- *   (user_jahrgang_assignments) auf mindestens einen dieser Jahrgaenge.
+ *   (user_jahrgang_assignments) MIT Leserecht (can_view) auf mindestens einen
+ *   dieser Jahrgaenge.
  * @returns {Promise<Array<number|string>>} Nutzer-IDs ohne Doppelte, so wie
  *   pg sie liefert (users.id ist bigint).
  */
@@ -46,10 +47,16 @@ async function ladeMitgliederDerOrganisation(db, organizationId, rollen, { jahrg
   let jahrgangFilter = '';
   if (Array.isArray(jahrgangIds)) {
     params.push(jahrgangIds);
+    // can_view gehoert dazu (27.09.2026, Audit wer-bekommt-was BF-16): Listen,
+    // Zaehler und Jahrgangs-Chat verlangen Leserecht auf den Jahrgang
+    // (notifications.js, jahrgangChat.js, darfJahrgang). Ohne diese Bedingung
+    // loeste eine Zuweisung mit can_view = false Mitteilungen aus, deren
+    // Vorgang die Person in keiner Liste sieht.
     jahrgangFilter = `
        AND EXISTS (
          SELECT 1 FROM user_jahrgang_assignments uja
           WHERE uja.user_id = u.id AND uja.jahrgang_id = ANY($3::int[])
+            AND uja.can_view = true
        )`;
   }
 
@@ -106,6 +113,10 @@ function ladeLeitungDerOrganisation(db, organizationId, opt) {
  *
  * Zwei Abfragen, unabhaengig von der Anzahl der Gemeinden.
  *
+ * Die Stamm-Gemeinde steht vorn, die weiteren folgen nach ihrer id (seit
+ * 27.09.2026, Befund BF-12): Die Zahl am App-Symbol bucht dort, was keiner
+ * Gemeinde der Liste gehoert (siehe utils/appIconBadge.js).
+ *
  * @param {object} db
  * @param {number} userId
  * @returns {Promise<Array<{organization_id:number, role_name:string, type:string,
@@ -113,55 +124,106 @@ function ladeLeitungDerOrganisation(db, organizationId, opt) {
  *   type wie im Token: konfi, teamer oder admin (alle Leitungsrollen).
  */
 async function ladeMitgliedschaftenDerPerson(db, userId) {
+  const jePerson = await ladeMitgliedschaftenVieler(db, [userId]);
+  const eintrag = jePerson.get(Number(userId));
+  return eintrag ? eintrag.mitgliedschaften : [];
+}
+
+/**
+ * Dasselbe fuer viele Personen auf einmal (27.09.2026, Befund BF-12).
+ *
+ * Die Zahl am App-Symbol setzen der Push (eine Person oder ein Block) und
+ * der Hintergrund-Lauf (alle Konten, alle fuenf Minuten). Beide brauchen die
+ * Rolle JE GEMEINDE -- vorher nahmen sie die Rolle am Nutzerkonto fuer jede
+ * Gemeinde. Hier steht die Regel EINMAL, ladeMitgliedschaftenDerPerson ist
+ * derselbe Weg mit einer Person. Zwei Abfragen, unabhaengig von der Zahl der
+ * Personen und Gemeinden.
+ *
+ * Geloeschte Konten tauchen nicht auf (wie im Push-Weg vorher).
+ *
+ * @param {object} db
+ * @param {Array<number>} userIds
+ * @returns {Promise<Map<number, {stamm_organization_id:number|null,
+ *   mitgliedschaften:Array<{organization_id:number, role_name:string, type:string,
+ *   assigned_jahrgaenge:Array<{id:number, can_view:boolean, can_edit:boolean}>}>}>>}
+ *   Je Person die Stamm-Gemeinde aus users.organization_id -- auch wenn sie
+ *   gesperrt ist; der Push setzt sie als Rueckfall in den Payload -- und die
+ *   Mitgliedschaften in AKTIVEN Gemeinden, die Stamm-Gemeinde zuerst.
+ */
+async function ladeMitgliedschaftenVieler(db, userIds) {
+  const ids = [...new Set((userIds || []).map(Number).filter(Number.isFinite))];
+  const jePerson = new Map();
+  if (ids.length === 0) return jePerson;
+
   const [{ rows: zeilen }, { rows: jahrgaenge }] = await Promise.all([
     db.query(
       `
-      SELECT m.organization_id, m.role_name
+      SELECT m.user_id, m.organization_id, m.role_name, m.is_primary, m.org_aktiv
         FROM (
-          SELECT u.organization_id, r.name AS role_name, true AS is_primary
+          SELECT u.id AS user_id, u.organization_id, r.name AS role_name, true AS is_primary,
+                 COALESCE(o.is_active, true) AS org_aktiv
             FROM users u
             JOIN roles r ON r.id = u.role_id
             JOIN organizations o ON o.id = u.organization_id
-           WHERE u.id = $1 AND COALESCE(o.is_active, true) = true
+           WHERE u.id = ANY($1::bigint[]) AND u.deleted_at IS NULL
           UNION ALL
-          SELECT uo.organization_id, r.name AS role_name, false AS is_primary
+          SELECT uo.user_id, uo.organization_id, r.name AS role_name, false AS is_primary,
+                 COALESCE(o.is_active, true) AS org_aktiv
             FROM user_organizations uo
+            JOIN users u ON u.id = uo.user_id AND u.deleted_at IS NULL
             JOIN roles r ON r.id = uo.role_id
             JOIN organizations o ON o.id = uo.organization_id
-           WHERE uo.user_id = $1 AND COALESCE(o.is_active, true) = true
+           WHERE uo.user_id = ANY($1::bigint[])
         ) m
-       ORDER BY m.organization_id, m.is_primary DESC
+       ORDER BY m.user_id, m.is_primary DESC, m.organization_id
       `,
-      [userId]
+      [ids]
     ),
     db.query(
-      `SELECT uja.jahrgang_id AS id, uja.can_view, uja.can_edit, j.organization_id
+      `SELECT uja.user_id, uja.jahrgang_id AS id, uja.can_view, uja.can_edit, j.organization_id
          FROM user_jahrgang_assignments uja
          JOIN jahrgaenge j ON j.id = uja.jahrgang_id
-        WHERE uja.user_id = $1`,
-      [userId]
+        WHERE uja.user_id = ANY($1::bigint[])`,
+      [ids]
     )
   ]);
 
-  const jahrgaengeJeOrg = new Map();
+  // Jahrgaenge je (Person, Gemeinde): Ein Jahrgang gehoert genau einer
+  // Organisation, eine Zuweisung aus A zaehlt so nie in B.
+  const jahrgaengeJe = new Map();
   for (const j of jahrgaenge) {
-    if (!jahrgaengeJeOrg.has(j.organization_id)) jahrgaengeJeOrg.set(j.organization_id, []);
-    jahrgaengeJeOrg.get(j.organization_id).push({ id: j.id, can_view: j.can_view, can_edit: j.can_edit });
+    const k = `${Number(j.user_id)}_${j.organization_id}`;
+    if (!jahrgaengeJe.has(k)) jahrgaengeJe.set(k, []);
+    jahrgaengeJe.get(k).push({ id: j.id, can_view: j.can_view, can_edit: j.can_edit });
   }
 
-  const mitgliedschaften = [];
-  const gesehen = new Set();
   for (const z of zeilen) {
-    if (gesehen.has(z.organization_id)) continue;
-    gesehen.add(z.organization_id);
-    mitgliedschaften.push({
+    const userId = Number(z.user_id);
+    if (!jePerson.has(userId)) {
+      jePerson.set(userId, { stamm_organization_id: null, mitgliedschaften: [], gesehen: new Set() });
+    }
+    const eintrag = jePerson.get(userId);
+    if (z.is_primary) eintrag.stamm_organization_id = z.organization_id;
+    // Gesperrte Gemeinden fallen heraus (wie GET /auth/my-organizations).
+    // Fuehrt user_organizations die Stamm-Gemeinde doppelt, gewinnt die Rolle
+    // am Nutzerkonto: Die Stamm-Zeile kommt durch die Sortierung zuerst.
+    if (!z.org_aktiv || eintrag.gesehen.has(z.organization_id)) continue;
+    eintrag.gesehen.add(z.organization_id);
+    eintrag.mitgliedschaften.push({
       organization_id: z.organization_id,
       role_name: z.role_name,
       type: z.role_name === 'konfi' ? 'konfi' : (z.role_name === 'teamer' ? 'teamer' : 'admin'),
-      assigned_jahrgaenge: jahrgaengeJeOrg.get(z.organization_id) || []
+      assigned_jahrgaenge: jahrgaengeJe.get(`${userId}_${z.organization_id}`) || []
     });
   }
-  return mitgliedschaften;
+  for (const eintrag of jePerson.values()) delete eintrag.gesehen;
+  return jePerson;
 }
 
-module.exports = { ladeMitgliederDerOrganisation, ladeLeitungDerOrganisation, ladeMitgliedschaftenDerPerson, LEITUNGSROLLEN };
+module.exports = {
+  ladeMitgliederDerOrganisation,
+  ladeLeitungDerOrganisation,
+  ladeMitgliedschaftenDerPerson,
+  ladeMitgliedschaftenVieler,
+  LEITUNGSROLLEN
+};

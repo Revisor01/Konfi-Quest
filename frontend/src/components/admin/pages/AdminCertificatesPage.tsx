@@ -52,6 +52,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { ICON_CHOICES, getIconFromString, type IconChoice } from '../../../utils/badgeIcons';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -229,7 +230,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
                               </IonText>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 'var(--app-abstand-eng)' }}>
                                 {group.icons.map(({ key, data }) => (
-                                  <div
+                                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label={data.name} aria-pressed={icon === key}
                                     key={key}
                                     onClick={() => setIcon(key)}
                                     style={{

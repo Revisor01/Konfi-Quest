@@ -7,6 +7,11 @@ name: Android Release Build
 # build.gradle liest sie direkt). Vor dem Dispatch: versionCode bumpen,
 # frontend/release-notes-de.txt aktualisieren, committen.
 #
+# RELEASE-TOR (26.09.2026): Der Job ci-gate laesst den Build erst zu, wenn der
+# Commit auf main liegt und der CI-Lauf (ci.yml) GENAU dieses Commits gruen
+# ist -- siehe .github/scripts/release-gate.py. Dispatch wie bisher, z. B.
+#   gh workflow run android-release.yml --ref main -f tracks=internal,alpha
+#
 # WARUM DIE VORGABE NUR DIE TESTKANAELE NENNT (15.09.2026): Sie stand auf
 # "internal,alpha,production". Ein Dispatch ohne gesetzte Eingabe — per CLI
 # der Normalfall, dort ist die Vorgabe unsichtbar — reichte damit
@@ -30,17 +35,64 @@ on:
         description: "Dry-Run: kompletter Durchlauf, aber Play-Edit wird verworfen (kein Release)"
         type: boolean
         default: false
+      allow_non_main:
+        description: "Build von einem anderen Ref als main zulassen (Standard AUS). Nur fuer bewusste Testbuilds; die CI des Commits muss trotzdem gruen sein."
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
+  ci-gate:
+    # RELEASE-TOR (26.09.2026, Release-Audit CI BF-01). Bis dahin baute dieser
+    # Workflow jeden Ref, den man ihm per Dispatch vorsetzte -- ohne Blick auf
+    # die CI. Nachgewiesen: Android-Lauf 53 (Commit b3b6ded1, versionCode 123)
+    # ging aus einem Commit mit ROTER CI in die Play-Tracks; der Release-Lauf
+    # startete 15 Sekunden nach dem Push, lange bevor die Tests durch waren.
+    # Ein Production-Release ist nicht umkehrbar (siehe oben, versionCode 102).
+    #
+    # Der Job prueft (a) der Commit liegt auf main -- oder die Eingabe
+    # allow_non_main wurde bewusst gesetzt -- und (b) ci.yml ist fuer GENAU
+    # diesen SHA gruen; laeuft die CI noch, wartet er bis 45 Minuten. Details
+    # und Fehlertexte: .github/scripts/release-gate.py. Rechte: actions:read
+    # fuer `gh run list` -- kein neues Secret, das GITHUB_TOKEN des Laufs reicht.
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout (fuer das Skript)
+        uses: actions/checkout@v7
+
+      - name: Auf main? CI fuer diesen Commit gruen?
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
+          ALLOW_NON_MAIN: ${{ inputs.allow_non_main }}
+        run: python3 .github/scripts/release-gate.py
+
   build-upload:
+    needs: [ci-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Gebauter Commit ist der geprüfte Commit
+        # Das Tor hat github.sha geprueft; gebaut wird, was der Checkout
+        # ausgeliefert hat. Beides muss derselbe Commit sein.
+        run: |
+          IST=$(git rev-parse HEAD)
+          if [ "$IST" != "${{ github.sha }}" ]; then
+            echo "::error::Checkout steht auf $IST, geprueft wurde ${{ github.sha }}."
+            exit 1
+          fi
+          echo "Baue $IST (vom Release-Tor geprueft)."
 
       - name: JDK 21 einrichten
         uses: actions/setup-java@v5

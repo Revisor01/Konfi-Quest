@@ -9,6 +9,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import { fehlerText } from '../../../utils/fehler';
 import { ICON_SCHLIESSEN, ICON_GEMEINDE_GEFUELLT, ICON_PERSON, ICON_SCHILD } from '../../shared/icons';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 /**
  * Eine bestehende Person in diese Gemeinde einladen (26.09.2026).
@@ -153,7 +154,7 @@ const EinladungModal: React.FC<Props> = ({ onClose, onSuccess }) => {
                 {rollen.map((r) => {
                   const gewaehlt = rolleId === r.id;
                   return (
-                    <div
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={r.id}
                       className="app-list-item"
                       onClick={() => !isSubmitting && setRolleId(r.id)}

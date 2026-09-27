@@ -10,6 +10,8 @@ const { deletePhotoFile, deleteChallengeFile, deleteChatFile, deleteMaterialFile
 const { syncTeamChat } = require('../utils/teamChat');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const chatSyncCache = require('../utils/chatSyncCache');
+const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
+const { kontoSperreAufheben } = require('../utils/kontoSperre');
 
 // Organizations routes
 // ============================================
@@ -364,6 +366,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const { rows: [newAdmin] } = await db.query(userQuery, [
         organizationId, orgAdminRoleId, admin_username, contact_email, hashedPassword, admin_display_name
       ]);
+      // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
+      await kontoSperreAufheben(db, newAdmin.id);
 
       // 4. Create default badges for the organization
       const defaultBadges = [
@@ -389,7 +393,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         { name: "Bonuspunkte-Gewinner", icon: "gift-outline", description: "Du hast Bonuspunkte erhalten - weiter so!", criteria_type: "bonus_points", criteria_value: 1 },
         { name: "Event-Entdecker", icon: "calendar-outline", description: "Du warst bei 3 Events dabei!", criteria_type: "event_count", criteria_value: 3 },
         { name: "Event-Stammgast", icon: "calendar-number-outline", description: "7 Events besucht - du bist richtig dabei!", criteria_type: "event_count", criteria_value: 7 },
-        { name: "Zuverlässig", icon: "checkmark-done-outline", description: "Bei 5 Pflichtterminen anwesend - darauf ist Verlass!", criteria_type: "mandatory_event_count", criteria_value: 5 },
+        { name: "Zuverlässig", icon: "checkmark-done-outline", description: "Bei 5 Pflicht-Events anwesend - darauf ist Verlass!", criteria_type: "mandatory_event_count", criteria_value: 5 },
         { name: "Neugierig", icon: "compass-outline", description: "3 verschiedene Aktivitäten ausprobiert!", criteria_type: "unique_activities", criteria_value: 3 },
         { name: "Vielseitig", icon: "telescope-outline", description: "6 verschiedene Aktivitäten ausprobiert - stark!", criteria_type: "unique_activities", criteria_value: 6 },
         { name: "Dranbleiber", icon: "flame-outline", description: "3 Wochen in Folge aktiv gewesen!", criteria_type: "streak", criteria_value: 3 },
@@ -413,8 +417,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         { name: "Willkommen im Team", icon: "hand-right-outline", description: "Dein erster Einsatz als Teamer:in ist eingetragen.", criteria_type: "activity_count", criteria_value: 1 },
         { name: "Mit dabei", icon: "people-circle-outline", description: "5 Einsätze als Teamer:in.", criteria_type: "activity_count", criteria_value: 5 },
         { name: "Feste Größe", icon: "shield-checkmark-outline", description: "15 Einsätze als Teamer:in.", criteria_type: "activity_count", criteria_value: 15 },
-        { name: "Erste Begleitung", icon: "calendar-outline", description: "Du warst bei deinem ersten Termin dabei.", criteria_type: "event_count", criteria_value: 1 },
-        { name: "Verlässlich dabei", icon: "calendar-number-outline", description: "Bei 10 Terminen dabei gewesen.", criteria_type: "event_count", criteria_value: 10 },
+        { name: "Erste Begleitung", icon: "calendar-outline", description: "Du warst bei deinem ersten Event dabei.", criteria_type: "event_count", criteria_value: 1 },
+        { name: "Verlässlich dabei", icon: "calendar-number-outline", description: "Bei 10 Events dabei gewesen.", criteria_type: "event_count", criteria_value: 10 },
         { name: "Vielseitig im Einsatz", icon: "color-palette-outline", description: "5 verschiedene Aktivitäten begleitet.", criteria_type: "unique_activities", criteria_value: 5 },
         { name: "Ein Jahr im Team", icon: "ribbon-outline", description: "Ein Jahr als Teamer:in aktiv gewesen.", criteria_type: "teamer_year", criteria_value: 1 },
         { name: "Drei Jahre im Team", icon: "trophy-outline", description: "Drei Jahre als Teamer:in aktiv gewesen.", criteria_type: "teamer_year", criteria_value: 3 },
@@ -513,7 +517,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         { key: 'konzert', name: 'Konzert', description: 'Konzerte und Musik', type: 'both' },
         { key: 'kinder', name: 'Kinder', description: 'Kindergottesdienst, Kindergruppe', type: 'both' },
         { key: 'kreativ', name: 'Kreativ', description: 'Basteln, Gestalten, Werkstatt', type: 'both' },
-        { key: 'seelsorge', name: 'Seelsorge', description: 'Besuche, Gespraeche, Begleitung', type: 'both' },
+        { key: 'seelsorge', name: 'Seelsorge', description: 'Besuche, Gespräche, Begleitung', type: 'both' },
         // Kasualien bleibt: Die Standard-Aktivitaeten Taufe, Hochzeit und
         // Beerdigung haengen daran (defaultActivities unten). Ohne diese
         // Kategorie liefe das Anlegen einer Gemeinde auf einen leeren
@@ -1080,6 +1084,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         VALUES ($1, $2, $3, $4, $5, $6, true)
         RETURNING id, username, display_name, email, is_active, created_at
       `, [id, role.id, username, email || null, hashedPassword, display_name]);
+      // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
+      await kontoSperreAufheben(db, newAdmin.id);
 
       res.status(201).json(newAdmin);
     } catch (err) {
@@ -1239,12 +1245,33 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       if (user.organization_id === orgId) {
         return res.status(400).json({ error: 'Die Primär-Organisation kann hier nicht entfernt werden' });
       }
-      const { rowCount } = await db.query(
-        'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
-        [userId, orgId]
-      );
-      if (rowCount === 0) {
-        return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+      // Mitgliedschaft, Zuweisungen und Chat-Plaetze DIESER Gemeinde in einer
+      // Transaktion -- dieselbe Funktion wie auf dem Weg ueber die Leitung
+      // (users.js). Bis zum 27.09.2026 entfernte dieser Weg nur
+      // user_organizations; Gruppen, Zweierraeume und Jahrgangs-Chats ohne
+      // Zuweisung blieben, und die Person bekam weiter jede Nachricht als
+      // Push (Audit "Wer bekommt was" BF-08). Auch die Zuweisungen blieben
+      // stehen und galten bei erneuter Aufnahme sofort wieder.
+      let betroffeneJahrgaenge = [];
+      const client = await db.getClient();
+      try {
+        await client.query('BEGIN');
+        const { rowCount } = await client.query(
+          'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+          [userId, orgId]
+        );
+        if (rowCount === 0) {
+          await client.query('ROLLBACK');
+          return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+        }
+        ({ jahrgangIds: betroffeneJahrgaenge } =
+          await gemeindeZugehoerigkeitRaeumen(client, userId, orgId));
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw txErr;
+      } finally {
+        client.release();
       }
 
       // Zusaetzlich zum Cache-Leeren die bestehenden Access-Tokens sperren.
@@ -1262,20 +1289,20 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       invalidateUserCache(userId);
       res.json({ message: 'Mitgliedschaft entfernt' });
 
-      // Chat-Mitgliedschaft der Org INLINE aufräumen: Ex-Mitglied fliegt aus
-      // Team-Chat und allen Jahrgangs-Chats der Org (Sync entfernt Nicht-Soll).
+      // Danach wie auf dem Weg ueber die Leitung (users.js): Sync-Merker,
+      // Team-Chat und die Jahrgaenge, deren Zuweisung ging, abgleichen, und
+      // offene Sockets trennen -- sie sitzen noch in den Raeumen dieser
+      // Gemeinde und bekaemen dort jede neue Nachricht live.
       try {
         chatSyncCache.invalidate(orgId, userId);
         await syncTeamChat(db, orgId, req.user.id);
-        const { rows: jgs } = await db.query(
-          'SELECT id FROM jahrgaenge WHERE organization_id = $1', [orgId]
-        );
-        for (const jg of jgs) {
-          await syncJahrgangChat(db, jg.id, orgId, req.user.id);
+        for (const jahrgangId of betroffeneJahrgaenge) {
+          await syncJahrgangChat(db, jahrgangId, orgId, req.user.id);
         }
       } catch (syncErr) {
         console.error('Chat-Sync nach Mitgliedschafts-Entzug fehlgeschlagen:', syncErr.message);
       }
+      liveUpdate.disconnectUserSockets(userId);
     } catch (err) {
       console.error('Database error in DELETE /organizations/:id/members/:userId:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -1326,7 +1353,10 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
   });
 
   // Standard-Zertifikatstypen für Organisationen nachziehen, die noch keine
-  // haben (einmalige Datenmigration für Bestandsorganisationen).
+  // haben (einmalige Datenmigration für Bestandsorganisationen). Der Insert
+  // steht in utils/zertifikatstypenSeed.js -- mit ON CONFLICT DO NOTHING,
+  // damit zwei gleichzeitig startende Replicas sich nicht mit duplicate-key
+  // in die Quere kommen (Audit 26.09.2026, Betrieb BF-16).
   //
   // Laeuft bewusst NICHT in Tests: Der Aufruf am Ende dieser Datei ist nicht
   // awaited und hängt am Router-Load. In der Testsuite wird createApp() pro
@@ -1337,36 +1367,17 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
   // POST /certificate-types im beforeEach von teamer.test.js, blieb certTypeId
   // undefined und die Folgetests fielen um — ein sporadisch roter Build, der
   // Deploys blockierte, ohne dass am Code etwas kaputt war.
-  const seedDefaultCertificates = async () => {
-    if (process.env.NODE_ENV === 'test') return;
-    try {
-      const { rows: orgs } = await db.query(
-        `SELECT o.id FROM organizations o
-         WHERE NOT EXISTS (
-           SELECT 1 FROM certificate_types ct WHERE ct.organization_id = o.id
-         )`
-      );
-      if (orgs.length === 0) return;
-      const defaultCerts = [
-        { name: 'Teamer-Card', icon: 'card' },
-        { name: 'JuLeiCa', icon: 'ribbon' },
-        { name: 'Rettungsschwimmer', icon: 'water' },
-        { name: 'Erste Hilfe', icon: 'medkit' }
-      ];
-      for (const org of orgs) {
-        for (const cert of defaultCerts) {
-          await db.query(
-            'INSERT INTO certificate_types (name, icon, organization_id) VALUES ($1, $2, $3)',
-            [cert.name, cert.icon, org.id]
-          );
+  // Die Funktion selbst ist in tests/utils/zertifikatstypenSeed.test.js geprueft.
+  if (process.env.NODE_ENV !== 'test') {
+    const { seedeStandardZertifikatstypen } = require('../utils/zertifikatstypenSeed');
+    seedeStandardZertifikatstypen(db)
+      .then(({ organisationen, eingefuegt }) => {
+        if (organisationen > 0) {
+          console.log(`Seeded default certificates for ${organisationen} organization(s) (${eingefuegt} rows)`);
         }
-      }
-      console.log(`Seeded default certificates for ${orgs.length} organization(s)`);
-    } catch (err) {
-      console.error('Error seeding default certificates:', err.message);
-    }
-  };
-  seedDefaultCertificates();
+      })
+      .catch((err) => console.error('Error seeding default certificates:', err.message));
+  }
 
   return router;
 };

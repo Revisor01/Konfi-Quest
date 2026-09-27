@@ -23,6 +23,7 @@ import { safeUUID } from '../../../utils/uuid';
 import { ICON_CHOICES as BADGE_ICONS } from '../../../utils/badgeIcons';
 import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBACK_COLOR } from '../../../utils/badgeCriteria';
 import type { BadgeKriteriumExtra } from '../../../utils/badgeCriteria';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 
 
@@ -387,13 +388,13 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       const res = await api.post(`/admin/badges/${badgeId}/pruefen`);
       const neuVergeben = res.data?.neu_vergeben ?? 0;
       if (neuVergeben > 0) {
-        setSuccess(neuVergeben === 1 ? '1 Abzeichen neu vergeben' : `${neuVergeben} Abzeichen neu vergeben`);
+        setSuccess(neuVergeben === 1 ? '1 Badge neu vergeben' : `${neuVergeben} Badges neu vergeben`);
         onRefreshList?.();
       } else {
-        setSuccess('Alle Abzeichen sind aktuell');
+        setSuccess('Alle Badges sind aktuell');
       }
     } catch (err) {
-      setError(fehlerText(err, 'Fehler bei der Pruefung des Abzeichens'));
+      setError(fehlerText(err, 'Fehler bei der Prüfung des Badges'));
     } finally {
       setPruefLoading(false);
     }
@@ -454,7 +455,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     {activities.map(activity => {
                       const isSelected = extraCriteria.activity_id === activity.id;
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={activity.id}
                           className={activityItemClass(activity, isSelected)}
                           onClick={() => !loading && setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
@@ -513,7 +514,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     {categories.map(category => {
                       const isSelected = extraCriteria.required_category === category.name;
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                           key={category.id}
                           className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => !loading && setExtraCriteria({ ...extraCriteria, required_category: category.name })}
@@ -571,7 +572,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     {categories.map(category => {
                       const isSelected = gewaehlteKategorien.includes(category.name);
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                           key={category.id}
                           className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => {
@@ -620,7 +621,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>Zeitraum (Wochen) <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{extraCriteria.weeks || 4}</span></IonLabel>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
               <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
-              <IonRange
+              <IonRange aria-label="Zeitraum (Wochen)"
                 min={1} max={26} step={1}
                 pin={true} pinFormatter={(value: number) => `${value}`}
                 value={extraCriteria.weeks || 4}
@@ -658,7 +659,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       const isSelected = activityIds.includes(activity.id);
 
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={activity.id}
                           className={activityItemClass(activity, isSelected)}
                           onClick={() => {
@@ -798,7 +799,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                 {/* Jede Zielgruppe in IHRER Farbe (Konfi-Lila, Teamer-Pink)
                     statt beide in Orange — wie ueberall sonst in der App. */}
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className={`app-list-item app-list-item--purple${formData.target_role === 'konfi' ? ' app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, target_role: 'konfi', criteria_type: 'total_points', criteria_value: 10, color: getCategoryColor('total_points') })}
                   style={{
@@ -817,7 +818,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     </div>
                   </div>
                 </div>
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className={`app-list-item app-list-item--teamer${formData.target_role === 'teamer' ? ' app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, target_role: 'teamer', criteria_type: 'activity_count', criteria_value: 5, color: getCategoryColor('activity_count') })}
                   style={{
@@ -855,7 +856,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonList>
               <IonItem lines="inset">
                 <IonLabel position="stacked">Name *</IonLabel>
-                <IonInput
+                <IonInput aria-label="Name" aria-required="true"
                   value={formData.name}
                   onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
                   placeholder="Badge-Name eingeben"
@@ -867,7 +868,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
               <IonItem lines="inset">
                 <IonLabel position="stacked">Beschreibung</IonLabel>
-                <IonTextarea
+                <IonTextarea aria-label="Beschreibung"
                   value={formData.description}
                   onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
                   placeholder="Beschreibung des Badges..."
@@ -907,7 +908,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                           </IonText>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 'var(--app-abstand-eng)' }}>
                             {group.icons.map(({ key, data }) => (
-                              <div
+                              <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label={data.name} aria-pressed={formData.icon === key}
                                 key={key}
                                 onClick={() => setFormData({ ...formData, icon: key })}
                                 style={{
@@ -1042,7 +1043,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       const labelWithoutEmoji = type.label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
 
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={value}
                           className="app-list-item"
                           onClick={() => {
@@ -1104,7 +1105,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
                   <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
-                  <IonRange
+                  <IonRange aria-label={getValueLabel()}
                     min={1} max={reglerMax} step={1}
                     pin={true} pinFormatter={(value: number) => `${value}`}
                     value={formData.criteria_value}
@@ -1138,7 +1139,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   <h3 style={{ color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-mini) 0', fontWeight: 'var(--app-schrift-halbfett)' }}>Aktiv</h3>
                   <p style={{ color: 'var(--app-text-secondary)', margin: '0', fontSize: 'var(--app-text-sekundaer)' }}>Badge kann verliehen werden</p>
                 </IonLabel>
-                <IonToggle
+                <IonToggle aria-label="Aktiv"
                   slot="end"
                   className="app-toggle--badges"
                   checked={formData.is_active}
@@ -1151,7 +1152,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   <h3 style={{ color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-mini) 0', fontWeight: 'var(--app-schrift-halbfett)' }}>Geheim</h3>
                   <p style={{ color: 'var(--app-text-secondary)', margin: '0', fontSize: 'var(--app-text-sekundaer)' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
                 </IonLabel>
-                <IonToggle
+                <IonToggle aria-label="Geheim"
                   slot="end"
                   className="app-toggle--badges"
                   checked={formData.is_hidden}
@@ -1173,7 +1174,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 style={{ marginTop: 'var(--app-abstand-mittel)' }}
               >
                 {pruefLoading ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_AKTUALISIEREN} slot="start" />}
-                Abzeichen neu prüfen
+                Badge neu prüfen
               </IonButton>
             )}
           </IonCardContent>

@@ -17,7 +17,6 @@ import {
   IonDatetime,
   IonDatetimeButton,
   IonModal,
-  IonProgressBar,
   IonList,
   IonListHeader,
   IonAccordion,
@@ -47,9 +46,12 @@ import { writeQueue, QueueBody } from '../../../services/writeQueue';
 import { AktivitaetMelden } from '../../../types/request';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
-import { compressForUpload } from '../../../services/mediaCompression';
+import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE } from '../../../services/mediaCompression';
+import SendeAnzeige from '../../shared/SendeAnzeige';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { tastaturKlick } from '../../../utils/tastatur';
+import { track } from '../../../services/analytics';
 
 interface Activity {
   id: number;
@@ -110,10 +112,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     const file = target.files?.[0];
     if (!file) return;
     try {
-      // Erst komprimieren (1920px/JPEG wie im Chat), DANN Groessen-Check:
-      // Live-Kamerafotos sind oft 8-16 MB und wuerden einen vorgezogenen
-      // 5MB-Check immer reissen; nach Kompression passen sie locker.
-      const prepared = await compressForUpload(file);
+      // Derselbe Weg wie in Chat und Challenges (27.09.2026): erst
+      // verkleinern (1920 px, JPEG), DANN gegen die Grenze des Servers prüfen
+      // — Live-Kamerafotos haben 8-16 MB und passen erst danach. Zu groß
+      // meldet derselbe Satz wie überall: "Datei ist zu groß (max. 5 MB)."
+      const { file: prepared, bildVorschau } = await fuerUploadVorbereiten(file, UPLOAD_GRENZE.nachweisfoto);
+      // Das Formular zeigt keine Bildvorschau, nur "Foto ausgewählt".
+      if (bildVorschau) URL.revokeObjectURL(bildVorschau);
       setFormData(prev => ({ ...prev, photo_file: prepared }));
 
       // Create preview
@@ -123,7 +128,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       };
       reader.readAsDataURL(prepared);
     } catch (err) {
-      setError(err instanceof Error && err.message ? err.message : 'Foto konnte nicht verarbeitet werden');
+      setError(err instanceof DateiZuGrossFehler ? err.message : 'Foto konnte nicht verarbeitet werden');
     }
   };
 
@@ -199,6 +204,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           };
 
           await api.post('/konfi/requests', requestData);
+          // Anonyme Messung (Simon, 27.09.2026): Wie oft werden Aktivitäten
+          // eingereicht, und mit Nachweisfoto? Erst nach der erfolgreichen
+          // Antwort; kein Name, keine Aktivität, keine Kennung.
+          track('aktivitaet-eingereicht', { mit_foto: !!photoFilename });
 
           setSuccess('Aktivität erfolgreich eingereicht!');
           onSuccess();
@@ -285,8 +294,12 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             </IonButton>
           </IonButtons>
         </IonToolbar>
-        {isSubmitting && uploadProgress > 0 && (
-          <IonProgressBar value={uploadProgress / 100} />
+        {/* Dieselbe Anzeige wie beim Einreichen eines Challenge-Beitrags
+            (27.09.2026): Prozent und Balken, bei 100 % "Wird verarbeitet…" —
+            der Server verschlüsselt das Foto dann noch. Vorher ein Balken
+            ohne Zahl. */}
+        {isSubmitting && (
+          <SendeAnzeige prozent={uploadProgress} was="Foto" farbe="var(--app-text-requests)" />
         )}
       </IonHeader>
 
@@ -360,7 +373,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                           const variant = activity.type === 'gottesdienst' ? 'gottesdienst' : 'gemeinde';
 
                           return (
-                            <div
+                            <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                               key={activity.id}
                               className={`app-list-item app-list-item--${variant}${isSelected ? ' app-list-item--selected' : ''}`}
                               onClick={() => {
@@ -425,8 +438,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonDatetimeButton datetime="date-picker" />
-                <IonModal keepContentsMounted={true}>
-                  <IonDatetime
+                <IonModal aria-label="Datum wählen" keepContentsMounted={true}>
+                  <IonDatetime aria-label="Datum wählen"
                     id="date-picker"
                     value={formData.requested_date}
                     onIonChange={(e) => setFormData(prev => ({ ...prev, requested_date: e.detail.value as string }))}
@@ -451,7 +464,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <IonCard className="app-card">
             <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonTextarea
+                <IonTextarea aria-label="Anmerkungen (optional)"
                   value={formData.description}
                   onIonInput={(e) => setFormData(prev => ({ ...prev, description: e.detail.value! }))}
                   placeholder="Anmerkungen... (optional)"
@@ -473,7 +486,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
-              <div
+              <div role="presentation"
                 onClick={handlePhotoSelect}
                 style={{
                   padding: 'var(--app-abstand-basis)',
@@ -486,13 +499,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               >
                 {photoPreview ? (
                   <div className="app-settings-item" style={{ justifyContent: 'space-between' }}>
-                    <div className="app-settings-item" style={{ gap: 'var(--app-abstand-eng)' }}>
+                    <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label="Anderes Foto wählen" className="app-settings-item" style={{ gap: 'var(--app-abstand-eng)' }}>
                       <IonIcon
                         icon={ICON_ZUSAGE_GEFUELLT}
                         className="app-icon-color--gemeinde"
                         style={{ fontSize: 'var(--app-text-untertitel)' }}
                       />
-                      <span style={{ fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-color-gemeinde)' }}>
+                      <span style={{ fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-gemeinde)' }}>
                         Foto ausgewählt
                       </span>
                     </div>
@@ -509,7 +522,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     </IonButton>
                   </div>
                 ) : (
-                  <div className="app-settings-item" style={{ justifyContent: 'center' }}>
+                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick} className="app-settings-item" style={{ justifyContent: 'center' }}>
                     <IonIcon
                       icon={ICON_KAMERA_GEFUELLT}
                       className="app-icon-color--gemeinde"

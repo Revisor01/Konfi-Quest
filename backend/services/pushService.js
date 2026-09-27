@@ -3,7 +3,7 @@
 // beim Require herausziehen wuerde, haette die echte Fassung in der Hand und
 // wuerde an FCM senden.
 const firebase = require('../push/firebase');
-const { appIconSummeOderNull, appIconSummenFuerAlle } = require('../utils/appIconBadge');
+const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
 const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // Empfaenger je Organisation ueber BEIDE Quellen der Zugehoerigkeit
@@ -11,6 +11,8 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // 25.09.2026 fragte jede Leitungs-Meldung hier nur die Stamm-Organisation --
 // wer mehrere Gemeinden betreut, bekam aus den anderen nichts.
 const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
+const { TEAM_ORGWEITE_AUDIENCES, ladeTeamDasMitmacht } = require('../utils/challengeLeitungSicht');
+const { ladeKonfisDieTerminSehen } = require('../utils/konfiTerminSicht');
 // Postfach (25.09.2026): Welche Arten neben dem Push auch einen Eintrag in
 // der Tabelle notifications bekommen, steht in EINER Positivliste
 // (utils/postfachArten.js). Geschrieben wird zentral in sendToUser und
@@ -42,14 +44,16 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
  * ----------------------------|--------------------------------------|-----------------|--------
  * chat                        | sendChatNotification                 | User            | ja
  * badge_update                | sendBadgeUpdate                      | User            | ja
- * new_activity_request        | sendNewActivityRequestToAdmins       | Org-Admins      | ja
+ * new_activity_request        | sendNewActivityRequestToLeadership   | Antrags-Leitung | ja
  * activity_request_status     | sendActivityRequestStatusToKonfi     | Konfi           | ja
  * badge_earned                | sendBadgeEarnedToKonfi               | Konfi           | ja
  * activity_assigned           | sendActivityAssignedToKonfi          | Konfi           | ja
  * bonus_points                | sendBonusPointsToKonfi               | Konfi           | ja
  * event_registered            | sendEventRegisteredToKonfi           | Konfi           | ja
  * event_unregistered          | sendEventUnregisteredToKonfi         | Konfi           | ja
- * event_unregistration        | sendEventUnregistrationToAdmins      | Org-Admins      | ja
+ * event_removed               | sendEventRemovedByLeitung            | Gebuchte Person | ja
+ * event_waitlisted            | sendEventRemovedByLeitung            | Gebuchte Person | ja
+ * event_unregistration        | sendEventUnregistrationToLeadership  | Event-Leitung   | ja
  * level_up                    | sendLevelUpToKonfi                   | Konfi           | ja
  * event_reminder              | sendEventReminderToKonfi             | Konfi           | ja
  * waitlist_promotion          | sendWaitlistPromotionToKonfi         | Konfi           | ja
@@ -58,20 +62,21 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
  * event_cancelled             | sendEventCancellationToKonfis        | Konfi (multi)   | ja
  * event_reactivated           | sendEventReactivationToKonfis        | Konfi (multi)   | ja
  * event_changed               | sendEventChangedToKonfis             | Konfi (multi)   | ja
- * new_event                   | sendNewEventToOrgKonfis              | Org-Konfis      | ja
+ * new_event                   | sendNewEventToOrgKonfis              | Jahrgangs-Konfis| ja
  * event_attendance            | sendEventAttendanceToKonfi           | Konfi           | ja
- * events_pending_approval     | sendEventsPendingApprovalToAdmins    | Org-Admins      | ja
- * new_konfi_registration      | sendNewKonfiRegistrationToAdmins     | Jahrgangs-Admins| ja
- * jahrgang_deletion_warning   | sendJahrgangDeletionWarningToAdmins  | Org-Admins      | ja
- * event_opt_out               | sendEventOptOutToAdmins              | Org-Admins      | ja
- * event_opt_in                | sendEventOptInToAdmins               | Org-Admins      | ja
- * teamer_event_booking        | sendTeamerEventBookingToAdmins       | Org-Admins      | ja
- * teamer_event_cancellation   | sendTeamerEventCancellationToAdmins  | Org-Admins      | ja
- * challenge_started           | sendChallengeStartedToJahrgaenge     | Jahrgangs-Konfis| ja
+ * events_pending_approval     | sendEventsPendingApprovalToLeadership| Event-Leitung   | ja
+ * new_konfi_registration      | sendNewKonfiRegistrationToLeadership | Jahrgangs-Leitung| ja
+ * jahrgang_deletion_warning   | sendJahrgangDeletionWarningToLeadership | Jahrgangs-Leitung| ja
+ * event_opt_out               | sendEventOptOutToLeadership          | Event-Leitung   | ja
+ * event_opt_in                | sendEventOptInToLeadership           | Event-Leitung   | ja
+ * teamer_event_booking        | sendTeamerEventBookingToLeadership   | Event-Leitung   | ja
+ * teamer_event_cancellation   | sendTeamerEventCancellationToLeadership | Event-Leitung | ja
+ * challenge_started           | sendChallengeStartedToJahrgaenge     | Teilnehmende    | ja
  * challenge_submission        | sendChallengeSubmissionToLeadership  | Leitung         | ja
  * challenge_started (Feed)    | sendChallengeFeedToJahrgaenge        | Jahrgangs-Konfis| ja
  * challenge_badge_earned      | sendChallengeBadgeEarnedToKonfi      | Konfi           | ja
  * challenge_submission_hidden | sendChallengeSubmissionHiddenToUser  | Einreichende:r  | ja
+ * gemeinde_einladung_beantwortet | sendEinladungBeantwortetToLeitung | Einladende:r / Org-Admins | ja
  *
  * Helper-Methoden (nicht direkt als Push-Type):
  * - getTokensForUser(db, userId)
@@ -220,9 +225,13 @@ class PushService {
    * sendChatNotification) genau dieselbe Behandlung brauchen und sie vorher
    * zweimal Zeile fuer Zeile im Code stand.
    *
+   * @param {object} [sammler]  Nur beim Versand an viele: statt je Geraet
+   *   sofort zu schreiben, wird die Token-ID hier eingesammelt und der
+   *   Aufrufer schreibt am Ende des Blocks in DREI Abfragen fuer alle
+   *   (schreibeErgebnisSammler). Ohne den Parameter wie bisher sofort.
    * @returns {Promise<boolean>} true, wenn der Push ankam
    */
-  static async verarbeiteErgebnis(db, token, result) {
+  static async verarbeiteErgebnis(db, token, result, sammler = null) {
     if (result.success) {
       // Erfolgreiche Zustellung frischt `updated_at` auf (Befund 28.08.2026).
       // Die Bereinigung wirft Tokens weg, die 30 Tage nicht aktualisiert
@@ -231,23 +240,72 @@ class PushService {
       // die Zustellung und merkte es nicht, obwohl sein Geraet die ganze Zeit
       // erreichbar war. Ein angekommener Push ist der bessere Beleg dafuer
       // als ein App-Start.
-      await this.markiereTokenErreichbar(db, token);
+      if (sammler) sammler.erreichbar.push(token.id);
+      else await this.markiereTokenErreichbar(db, token);
       return true;
     }
 
     if (this.istFatal(result.errorCode)) {
       // Fatale Errors: Token sofort löschen
-      await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+      if (sammler) sammler.ungueltig.push(token.id);
+      else await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
       console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
     } else {
       // Sonstige Errors: Counter erhöhen
-      await db.query(
-        'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
-        [token.id]
-      );
+      if (sammler) sammler.fehlgeschlagen.push(token.id);
+      else {
+        await db.query(
+          'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
+          [token.id]
+        );
+      }
       console.error('Push failed for token:', result.error);
     }
     return false;
+  }
+
+  /**
+   * Buchfuehrung ueber die Geraete eines ganzen Blocks (Audit 26.09.2026,
+   * Betrieb BF-04).
+   *
+   * Nach dem Umbau der Badge-Rechnung und der Token-Abfrage auf "einmal fuer
+   * alle" war das UPDATE je Geraet die letzte Abfrage, die mit der Zahl der
+   * Empfaenger wuchs: 278 Geraete in einem Raum mit 150 Teilnehmenden, 278
+   * UPDATEs je Nachricht. Gesammelt sind es hoechstens drei Abfragen je Block
+   * -- eine fuer die erreichten Geraete, eine fuer die ungueltigen, eine fuer
+   * die zeitweilig gescheiterten -- und die Wirkung in der Datenbank ist
+   * dieselbe (updated_at und Fehlerzaehler zurueck bzw. hoch, Token weg).
+   *
+   * Der Einzelweg (sendToUser ohne vorberechnet) schreibt weiter sofort:
+   * dort gibt es nichts zu sammeln.
+   */
+  static neuerErgebnisSammler() {
+    return { erreichbar: [], ungueltig: [], fehlgeschlagen: [] };
+  }
+
+  static async schreibeErgebnisSammler(db, sammler) {
+    if (!sammler) return;
+    try {
+      if (sammler.erreichbar.length > 0) {
+        await db.query(
+          'UPDATE push_tokens SET updated_at = NOW(), error_count = 0, last_error_at = NULL WHERE id = ANY($1::bigint[])',
+          [sammler.erreichbar]
+        );
+      }
+      if (sammler.ungueltig.length > 0) {
+        await db.query('DELETE FROM push_tokens WHERE id = ANY($1::bigint[])', [sammler.ungueltig]);
+      }
+      if (sammler.fehlgeschlagen.length > 0) {
+        await db.query(
+          'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = ANY($1::bigint[])',
+          [sammler.fehlgeschlagen]
+        );
+      }
+    } catch (err) {
+      // Wie markiereTokenErreichbar: Die Buchfuehrung darf den Versand nicht
+      // kippen -- die Nachrichten sind zu diesem Zeitpunkt laengst zugestellt.
+      console.error('Token-Buchfuehrung fehlgeschlagen:', err.message);
+    }
   }
 
   /**
@@ -260,14 +318,18 @@ class PushService {
    * Die Zahl, die aus dem Ruder laufen kann, ist die der EMPFAENGER -- die
    * drosselt sendToMultipleUsers.
    *
+   * @param {number|null} [badgeAlteApps] Zahl fuer Geraete der Store-Apps
+   *   2.2.x (siehe badgeFuerGeraet); null = alle Geraete bekommen payload.badge.
    * @returns {Promise<{erfolge: number, fehler: number}>}
    */
-  static async sendeAnGeraete(db, tokens, payload) {
+  static async sendeAnGeraete(db, tokens, payload, sammler = null, badgeAlteApps = null) {
     const ergebnisse = await Promise.all(tokens.map(async (token) => {
+      const badge = this.badgeFuerGeraet(token, payload.badge, badgeAlteApps);
+      const nutzlast = badge === payload.badge ? payload : { ...payload, badge };
       const result = await this.sendeMitWiederholung(
-        () => firebase.sendFirebasePushNotification(token.token, payload)
+        () => firebase.sendFirebasePushNotification(token.token, nutzlast)
       );
-      return this.verarbeiteErgebnis(db, token, result);
+      return this.verarbeiteErgebnis(db, token, result, sammler);
     }));
 
     const erfolge = ergebnisse.filter(Boolean).length;
@@ -411,257 +473,116 @@ class PushService {
   }
 
   /**
-   * Helper: Laedt alles, was die App-Icon-Summe braucht (Befund B2b).
-   *
-   * Der Push-Weg kennt nur die userId — fuer die Summe braucht es aber auch
-   * Rolle und (bei Teamer:innen) die zugewiesenen Jahrgaenge, weil sich die
-   * Zaehler je Rolle unterscheiden.
-   *
-   * Gibt null zurueck, wenn der User nicht auffindbar ist; der Aufrufer
-   * laesst den Badge dann weg.
-   */
-  static async ladeEmpfaengerFuerBadge(db, userId) {
-    try {
-      const { rows: [row] } = await db.query(
-        `SELECT u.id, u.organization_id, r.name AS role_name
-           FROM users u
-           JOIN roles r ON u.role_id = r.id
-          WHERE u.id = $1 AND u.deleted_at IS NULL`,
-        [userId]
-      );
-      if (!row) return null;
-
-      // user_type wie im Token: konfi bleibt konfi, teamer bleibt teamer,
-      // alle Leitungsrollen zaehlen als 'admin'.
-      const type = row.role_name === 'konfi'
-        ? 'konfi'
-        : (row.role_name === 'teamer' ? 'teamer' : 'admin');
-
-      let assigned_jahrgaenge = [];
-      // Jahrgaenge fuer Teamer:innen UND die Rolle 'admin' (01.09.2026):
-      // Beide sind gebunden, ihre App-Icon-Summe haengt an der Zuweisung.
-      // org_admin braucht keine (zaehlt org-weit).
-      if (type === 'teamer' || row.role_name === 'admin') {
-        const { rows } = await db.query(
-          'SELECT jahrgang_id AS id, can_view FROM user_jahrgang_assignments WHERE user_id = $1',
-          [userId]
-        );
-        assigned_jahrgaenge = rows;
-      }
-
-      return {
-        id: row.id,
-        type,
-        role_name: row.role_name,
-        organization_id: row.organization_id,
-        assigned_jahrgaenge
-      };
-    } catch (err) {
-      console.error('ladeEmpfaengerFuerBadge error:', err);
-      return null;
-    }
-  }
-
-  /**
-   * Helper: Die Zahl fuers App-Icon (Befund B2b).
+   * Helper: Die Zahl fuers App-Icon EINER Person (Befund B2b).
    *
    * Bis 27.08.2026 setzte der Chat-Push die CHAT-Zahl allein aufs Icon und
    * ueberschrieb damit Antraege, Termine und Abzeichen; alle anderen Pushes
-   * setzten hart 1. Jetzt rechnet der Server dieselbe Summe wie der Client.
+   * setzten hart 1. Seitdem rechnet der Server dieselbe Summe wie der Client.
    *
-   * Fehlertolerant: Bei einem Fehler kommt null zurueck und der Badge wird
-   * weggelassen — eine Nachricht darf nicht daran scheitern, dass eine Zahl
-   * fehlt.
+   * Seit 27.09.2026 (Audit "Wer bekommt was", Befund BF-12) derselbe Weg wie
+   * der Versand an viele: berechneBadgesFuerAlle mit einer Person. Vorher
+   * gab es hier eine eigene Schleife je Gemeinde -- mit der Rolle am
+   * Nutzerkonto in JEDER Gemeinde und dem ganzen Postfach in jeder Runde.
+   *
+   * Fehlertolerant: Bei einem Fehler oder einem unbekannten Konto kommt null
+   * zurueck und der Badge wird weggelassen — eine Nachricht darf nicht daran
+   * scheitern, dass eine Zahl fehlt.
    */
-  // Die Zahl am App-Icon ueber ALLE Organisationen einer Person.
-  //
-  // Befund 28.08.2026, in Produktion gemessen: Hier stand vorher nur
-  // `appIconSummeOderNull(db, empfaenger)` mit der PRIMAER-Organisation aus
-  // users.organization_id. Fuer Multi-Org-Leitungen war das Ergebnis falsch:
-  // gemessen an einem echten Konto (id 41) rechnete Org 1 = 0, Org 2 = 0,
-  // Org 4 = 29 -- gesendet wurde 0, weil Org 1 die Primaer-Org ist. iOS
-  // versteht badge: 0 als "Zaehler entfernen": Der Push kam an, aber ohne
-  // Zahl am Icon, waehrend die Reiter in der App die 29 korrekt zeigten.
-  //
-  // Die aktive Organisation steht nur im Token des Clients, nicht in der
-  // Datenbank -- der Push kann sie also nicht kennen. Deshalb die Summe ueber
-  // alle: Das Icon beantwortet die Frage "wie viel liegt fuer mich an?",
-  // nicht "wie viel liegt in der gerade geoeffneten Ansicht an?".
-  //
-  // Fuer Konfis aendert sich nichts, sie sind immer Single-Org.
   static async berechneBadge(db, userId) {
-    const empfaenger = await this.ladeEmpfaengerFuerBadge(db, userId);
-    if (!empfaenger) return null;
+    const { badges } = await this.berechneBadgesFuerAlle(db, [userId]);
+    const id = Number(userId);
+    return badges.has(id) ? badges.get(id) : null;
+  }
 
-    const orgIds = await this.ladeOrganisationenFuerBadge(db, userId, empfaenger.organization_id);
-    if (orgIds.length <= 1) {
-      return appIconSummeOderNull(db, empfaenger);
-    }
+  /**
+   * Wie berechneBadge, aber mit der Zahl fuer die Store-Apps 2.2.x daneben
+   * (siehe badgeFuerGeraet). null, wenn die Zahl nicht ermittelbar ist.
+   *
+   * @returns {Promise<{badge: number, badgeAlteApps: number}|null>}
+   */
+  static async berechneBadgePaar(db, userId) {
+    const { badges, badgesAlteApps } = await this.berechneBadgesFuerAlle(db, [userId]);
+    const id = Number(userId);
+    if (!badges.has(id)) return null;
+    return { badge: badges.get(id), badgeAlteApps: badgesAlteApps.get(id) };
+  }
 
-    let summe = 0;
-    let hatWert = false;
-    for (const orgId of orgIds) {
-      const teil = await appIconSummeOderNull(db, { ...empfaenger, organization_id: orgId });
-      if (teil != null) { summe += teil; hatWert = true; }
-    }
-    return hatWert ? summe : null;
+  /**
+   * Welche Zahl ans App-Symbol DIESES Geraets geht (27.09.2026,
+   * Kompatibilitaetspruefung vor dem Deploy von 2.3.0).
+   *
+   * Die volle Zahl zaehlt seit 24./25.09.2026 auch ungelesene
+   * Postfach-Mitteilungen und Challenge-Neuigkeiten. Die Store-Apps 2.2.x
+   * kennen beides nicht -- kein Postfach, kein mark-read fuer Challenges --
+   * und koennten diese Anteile nie abbauen: Die Zahl am Symbol bliebe
+   * dauerhaft zu hoch, auf iOS sichtbar, weil dort aps.badge sie direkt
+   * setzt. Diese Geraete melden ihren Token ohne app_version (erst 2.3.0
+   * schickt sie mit, Migration 156); sie bekommen die Rechnung von 2.2.0.
+   *
+   * Ist badgeAlteApps null (ausdruecklich uebergebene Zahl, oder die Summe
+   * liess sich nicht ermitteln), bekommen alle Geraete dieselbe Zahl.
+   */
+  static badgeFuerGeraet(token, badge, badgeAlteApps) {
+    if (badgeAlteApps == null || (token && token.app_version)) return badge;
+    return badgeAlteApps;
   }
 
   /**
    * Die Zahl fuers App-Icon fuer VIELE Empfaenger in wenigen Abfragen
    * (24.09.2026).
    *
-   * WARUM ES DIESE VARIANTE BRAUCHT: `berechneBadge` ruft je Kopf
-   * `appIconSummeOderNull`, und das ist ein Bulk-Aufruf mit einem Array aus
-   * EINEM Element. Der Docstring von `appIconSummenFuerAlle` sagt den Preis
-   * selbst: einzeln gerechnet waeren es "bei 1000 Konfis rund 7000 Abfragen je
-   * Takt. Hier sind es sechs." Der Versand an viele ging aber genau den
-   * einzelnen Weg -- gemessen am 24.09.2026 gegen die Test-Datenbank: 7
-   * Abfragen bei einem Empfaenger, 21 bei drei, 40 bei fuenf gemischten
-   * Rollen. Streng linear.
+   * WARUM ES DIESE VARIANTE BRAUCHT: Der Versand an viele rechnete die Summe
+   * bis 24.09.2026 je Kopf -- gemessen gegen die Test-Datenbank: 7 Abfragen
+   * bei einem Empfaenger, 21 bei drei, 40 bei fuenf gemischten Rollen. Streng
+   * linear.
    *
-   * Der Aufbau folgt bewusst backgroundService.updateAllUserBadges: dort wird
-   * dasselbe Problem seit dem 14.09.2026 richtig geloest -- Rollen und
-   * Jahrgaenge fuer alle auf einmal laden, je Organisation einmal rechnen, die
-   * Teilsummen addieren. Das ist also ein unvollstaendig ausgerolltes Muster,
-   * kein neues Verfahren.
+   * DIE ZAHL SELBST (27.09.2026, Befund BF-12, Entscheidung F-09): die Summe
+   * ueber ALLE Gemeinden der Person, je Gemeinde mit der Rolle und den
+   * Jahrgaengen, die sie DORT hat; jede ungelesene Postfach-Mitteilung genau
+   * einmal. Sie kommt aus utils/appIconBadge.js (appIconSummenAllerGemeinden),
+   * derselben Funktion wie im Hintergrund-Lauf und am Gemeinde-Umschalter.
+   * Die gerade geoeffnete Gemeinde steht nur im Token des Clients -- das Icon
+   * beantwortet "wie viel liegt fuer mich an?" (Befund 28.08.2026).
    *
-   * WARUM JE ORGANISATION EINMAL: `appIconSummenFuerAlle` schluesselt nach
-   * `id_type`. Bei einer Person in mehreren Organisationen kaeme sonst nur die
-   * letzte an. Die Summe ueber alle Organisationen ist Absicht (Befund
-   * 28.08.2026): Das Icon beantwortet "wie viel liegt fuer mich an?", und die
-   * gerade geoeffnete Organisation steht nur im Token des Clients.
+   * Vorher rechnete diese Funktion je Gemeinde eine eigene Runde und
+   * addierte. Gemessen im Audit (A11): Wer zuhause Org-Admin und in B
+   * Teamer:in ist, bekam Bs Antraege mitgezaehlt, die er dort nicht sieht,
+   * und das Postfach je Gemeinde ganz -- 5 statt 2.
    *
    * Die Primaer-Organisation kommt mit zurueck: Sie steht in derselben
    * Abfrage, und sendToUser braucht sie fuer den organization_id-Rueckfall im
    * Payload. Holte er sie weiter selbst (resolveRecipientOrgId), waere das die
-   * naechste Abfrage je Kopf -- gemessen am 24.09.2026 genau eine je
-   * Empfaenger, die hier schlicht entfaellt.
+   * naechste Abfrage je Kopf.
    *
-   * @returns {Promise<{badges: Map<number, number|null>, orgs: Map<number, string>}>}
+   * @returns {Promise<{badges: Map<number, number|null>, badgesAlteApps: Map<number, number>, orgs: Map<number, string>}>}
    *   badges: je userId die Zahl (fehlt der Eintrag, liess sie sich nicht
-   *   ermitteln). orgs: je userId die Primaer-Org als String.
+   *   ermitteln). badgesAlteApps: dieselbe Zahl fuer Geraete der Store-Apps
+   *   2.2.x (siehe badgeFuerGeraet). orgs: je userId die Primaer-Org als
+   *   String.
    */
   static async berechneBadgesFuerAlle(db, userIds) {
     const badges = new Map();
+    const badgesAlteApps = new Map();
     const orgs = new Map();
     const eindeutige = [...new Set(userIds)];
-    if (eindeutige.length === 0) return { badges, orgs };
+    if (eindeutige.length === 0) return { badges, badgesAlteApps, orgs };
 
     try {
-      // Rolle und Primaer-Org fuer alle auf einmal (vorher: eine Abfrage je
-      // Kopf in ladeEmpfaengerFuerBadge).
-      const { rows: personen } = await db.query(
-        `SELECT u.id, u.organization_id, r.name AS role_name
-           FROM users u
-           JOIN roles r ON u.role_id = r.id
-          WHERE u.id = ANY($1::bigint[]) AND u.deleted_at IS NULL`,
-        [eindeutige]
-      );
-      if (personen.length === 0) return { badges, orgs };
-
-      // Primaer-Org gleich mitnehmen -- als String, weil FCM-data immer String
-      // ist (dieselbe Regel wie in resolveRecipientOrgId).
-      for (const p of personen) {
-        if (p.organization_id != null) orgs.set(p.id, String(p.organization_id));
+      const jePerson = await appIconSummenAllerGemeinden(db, eindeutige);
+      for (const [userId, { summe, summeAlteApps, stamm_organization_id }] of jePerson) {
+        badges.set(userId, summe);
+        badgesAlteApps.set(userId, summeAlteApps);
+        // Primaer-Org als String, weil FCM-data immer String ist (dieselbe
+        // Regel wie in resolveRecipientOrgId).
+        if (stamm_organization_id != null) orgs.set(userId, String(stamm_organization_id));
       }
-
-      // Weitere Organisationen fuer alle auf einmal (vorher: eine Abfrage je
-      // Kopf in ladeOrganisationenFuerBadge).
-      const { rows: mitgliedschaften } = await db.query(
-        'SELECT user_id, organization_id FROM user_organizations WHERE user_id = ANY($1::bigint[])',
-        [eindeutige]
-      );
-      const orgsJeUser = new Map();
-      for (const m of mitgliedschaften) {
-        if (!orgsJeUser.has(m.user_id)) orgsJeUser.set(m.user_id, new Set());
-        orgsJeUser.get(m.user_id).add(m.organization_id);
-      }
-
-      // Jahrgaenge fuer alle auf einmal -- gebraucht von Teamer:innen UND der
-      // Rolle 'admin' (beide sind gebunden, siehe ladeEmpfaengerFuerBadge).
-      const gebundene = personen
-        .filter((p) => p.role_name === 'teamer' || p.role_name === 'admin')
-        .map((p) => p.id);
-      const jahrgaengeJeUser = new Map();
-      if (gebundene.length > 0) {
-        const { rows } = await db.query(
-          `SELECT user_id, jahrgang_id AS id, can_view
-             FROM user_jahrgang_assignments WHERE user_id = ANY($1::bigint[])`,
-          [gebundene]
-        );
-        for (const r of rows) {
-          if (!jahrgaengeJeUser.has(r.user_id)) jahrgaengeJeUser.set(r.user_id, []);
-          jahrgaengeJeUser.get(r.user_id).push({ id: r.id, can_view: r.can_view });
-        }
-      }
-
-      // Je Person ein Eintrag pro Organisation -- wie in backgroundService.
-      const empfaenger = [];
-      for (const p of personen) {
-        const orgs = new Set(orgsJeUser.get(p.id) || []);
-        if (p.organization_id != null) orgs.add(p.organization_id);
-        if (orgs.size === 0) orgs.add(p.organization_id ?? null);
-        // user_type wie im Token: konfi bleibt konfi, teamer bleibt teamer,
-        // alle Leitungsrollen zaehlen als 'admin' (identisch zu
-        // ladeEmpfaengerFuerBadge -- die Zuordnung darf nicht auseinanderlaufen).
-        const type = p.role_name === 'konfi'
-          ? 'konfi'
-          : (p.role_name === 'teamer' ? 'teamer' : 'admin');
-        for (const orgId of orgs) {
-          empfaenger.push({
-            id: p.id,
-            type,
-            role_name: p.role_name,
-            organization_id: orgId,
-            assigned_jahrgaenge: jahrgaengeJeUser.get(p.id) || []
-          });
-        }
-      }
-
-      const nachOrg = new Map();
-      for (const e of empfaenger) {
-        if (!nachOrg.has(e.organization_id)) nachOrg.set(e.organization_id, []);
-        nachOrg.get(e.organization_id).push(e);
-      }
-
-      const summen = new Map();
-      for (const [, liste] of nachOrg) {
-        const teil = await appIconSummenFuerAlle(db, liste);
-        for (const [schluessel, wert] of teil) {
-          if (wert == null) continue;
-          summen.set(schluessel, (summen.get(schluessel) || 0) + wert);
-        }
-      }
-
-      for (const e of empfaenger) {
-        const wert = summen.get(`${e.id}_${e.type}`);
-        if (wert != null) badges.set(e.id, wert);
-      }
-      return { badges, orgs };
+      return { badges, badgesAlteApps, orgs };
     } catch (err) {
-      // Fehlertolerant wie der Einzelweg: Ohne Zahl geht der Push trotzdem
-      // raus (der Aufrufer faellt dann auf 1 zurueck). Eine Nachricht darf
-      // nicht daran scheitern, dass eine Zahl fehlt.
+      // Fehlertolerant: Ohne Zahl geht der Push trotzdem raus (der Aufrufer
+      // faellt dann auf 1 zurueck). Eine Nachricht darf nicht daran
+      // scheitern, dass eine Zahl fehlt.
       console.error('berechneBadgesFuerAlle error:', err.message);
-      return { badges, orgs };
-    }
-  }
-
-  // Alle Organisationen, in denen die Person Mitglied ist. Die Primaer-Org ist
-  // immer dabei, auch wenn user_organizations sie (noch) nicht fuehrt.
-  static async ladeOrganisationenFuerBadge(db, userId, primaerOrgId) {
-    try {
-      const { rows } = await db.query(
-        'SELECT organization_id FROM user_organizations WHERE user_id = $1',
-        [userId]
-      );
-      const ids = new Set(rows.map(r => r.organization_id));
-      if (primaerOrgId != null) ids.add(primaerOrgId);
-      return [...ids];
-    } catch (err) {
-      console.error('ladeOrganisationenFuerBadge error:', err.message);
-      return primaerOrgId != null ? [primaerOrgId] : [];
+      return { badges, badgesAlteApps, orgs };
     }
   }
 
@@ -682,7 +603,7 @@ class PushService {
    * Helper: Sendet Push an einen User
    *
    * @param {object} [vorberechnet] Optional, nur vom Versand an viele belegt:
-   *   { badge, orgId, tokens } -- die schon fuer ALLE Empfaenger gemeinsam
+   *   { badge, badgeAlteApps?, orgId, tokens } -- die schon fuer ALLE Empfaenger gemeinsam
    *   ermittelten Werte. Ohne den Parameter holt die Methode sie wie bisher
    *   selbst; alle bestehenden Aufrufstellen bleiben unveraendert gueltig.
    */
@@ -748,23 +669,35 @@ class PushService {
       // Beim Versand an viele ist die Zahl schon fuer ALLE zusammen gerechnet
       // (berechneBadgesFuerAlle). Dann NICHT erneut rechnen -- genau das war
       // der Befund: eine Bulk-Abfrage je Kopf statt einer fuer alle.
-      const berechneterBadge = notification.badge != null
-        ? notification.badge
-        : (vorberechnet && 'badge' in vorberechnet
-          ? vorberechnet.badge
-          : await this.berechneBadge(db, userId));
+      // Daneben die Zahl fuer Geraete der Store-Apps 2.2.x (badgeFuerGeraet);
+      // eine ausdruecklich uebergebene Zahl gilt fuer alle Geraete.
+      let berechneterBadge;
+      let badgeAlteApps = null;
+      if (notification.badge != null) {
+        berechneterBadge = notification.badge;
+      } else if (vorberechnet && 'badge' in vorberechnet) {
+        berechneterBadge = vorberechnet.badge;
+        badgeAlteApps = vorberechnet.badgeAlteApps != null ? vorberechnet.badgeAlteApps : null;
+      } else {
+        const paar = await this.berechneBadgePaar(db, userId);
+        berechneterBadge = paar ? paar.badge : null;
+        badgeAlteApps = paar ? paar.badgeAlteApps : null;
+      }
 
       // Alle Geraete dieser Person in EINEM FCM-Aufruf (sendEach) statt je
       // Geraet einzeln, mit Wiederholung bei zeitweiligen Fehlern. Die
       // Fehlerbehandlung PRO TOKEN bleibt erhalten -- daran haengt das
       // Aufraeumen ungueltiger Tokens.
+      // Beim Versand an viele sammelt der Aufrufer die Buchfuehrung je Block
+      // (vorberechnet.sammler) statt je Geraet zu schreiben.
       const { erfolge, fehler } = await this.sendeAnGeraete(db, tokens, {
         title: notification.title,
         body: notification.body,
         badge: berechneterBadge != null ? berechneterBadge : 1,
         sound: 'default',
         data: data
-      });
+      }, (vorberechnet && vorberechnet.sammler) || null,
+      berechneterBadge != null ? badgeAlteApps : null);
 
       // `success` sagt jetzt die Wahrheit (24.09.2026). Vorher stand hier hart
       // `success: true`, auch wenn KEIN einziger Push zugestellt wurde -- ein
@@ -836,11 +769,14 @@ class PushService {
       // Zeilen im Speicher, bevor der erste Push raus ist; genau die Spitze,
       // die die Drosselung vermeiden soll. So kostet ein Block eine feste,
       // kleine Zahl von Abfragen, unabhaengig davon, wie viele Bloecke folgen.
-      const { badges, orgs } = braucheVorarbeit
+      const { badges, badgesAlteApps, orgs } = braucheVorarbeit
         ? await this.berechneBadgesFuerAlle(db, block)
-        : { badges: new Map(), orgs: new Map() };
+        : { badges: new Map(), badgesAlteApps: new Map(), orgs: new Map() };
       const tokensJeUser = await this.getTokensForUsers(db, block, notification.data && notification.data.type);
 
+      // Token-Buchfuehrung fuer den ganzen Block gesammelt (drei Abfragen
+      // statt einer je Geraet, siehe schreibeErgebnisSammler).
+      const sammler = this.neuerErgebnisSammler();
       const teil = await Promise.all(
         block.map(async (userId) => {
           // `badge: null` heisst hier "fuer diese Person nicht ermittelbar" --
@@ -849,13 +785,16 @@ class PushService {
           // wir haetten die Abfrage je Kopf wieder. Dasselbe gilt fuer orgId.
           const vorberechnet = {
             badge: badges.has(userId) ? badges.get(userId) : null,
+            badgeAlteApps: badgesAlteApps.has(userId) ? badgesAlteApps.get(userId) : null,
             orgId: orgs.has(userId) ? orgs.get(userId) : null,
             tokens: tokensJeUser.get(userId) || [],
+            sammler,
           };
           const result = await this.sendToUser(db, userId, notification, vorberechnet);
           return { userId, ...result };
         })
       );
+      await this.schreibeErgebnisSammler(db, sammler);
       ergebnisse.push(...teil);
 
       // Nach jedem Block kurz pausieren -- aber nicht nach dem letzten, sonst
@@ -871,13 +810,58 @@ class PushService {
   }
 
   /**
-   * Sendet Chat-Benachrichtigung an alle User-Devices
+   * Chat-Push an VIELE Empfaenger:innen -- der Fan-out einer Nachricht
+   * (Audit 26.09.2026, Betrieb BF-04).
+   *
+   * Vorher rief routes/chat.js je Teilnehmer:in sendChatNotification, und
+   * jede dieser Ketten holte fuer sich Raum-Organisation, Sender-Tokens,
+   * Empfaenger-Tokens und die Zahl fuers App-Icon (berechneBadge: Rolle,
+   * Organisationen, sieben Zaehler-Abfragen) und schrieb je Geraet ein
+   * UPDATE. Gemessen auf kq_i1 (Raum mit 150 Teilnehmenden, 278 Geraete):
+   * 2.002 Abfragen und 2,7 s Datenbankzeit je Nachricht. Dazu kam in
+   * chat.js noch eine `total_unread`-Abfrage je Kopf, deren Ergebnis hier
+   * ohnehin ersetzt wurde.
+   *
+   * Jetzt laeuft dieselbe Arbeit EINMAL fuer alle: Badge-Zahl und Primaer-Org
+   * (berechneBadgesFuerAlle), Tokens (getTokensForUsers), und die
+   * Buchfuehrung ueber die Geraete gesammelt je Block
+   * (schreibeErgebnisSammler). Gesendet wird in Bloecken von EMPFAENGER_BLOCK
+   * wie in sendToMultipleUsers -- die Vorarbeit aber fuer alle zusammen, nicht
+   * je Block: Ein Chat-Raum hat hoechstens so viele Teilnehmende wie eine
+   * Gemeinde Konten (rund 150), da lohnt die Zerlegung nicht, sie kostete nur
+   * je Block die Zaehler-Abfragen erneut. Gemessen danach: 22 Abfragen und
+   * 170 ms Datenbankzeit.
+   *
+   * WAS GLEICH BLEIBT (Vertrag mit den Apps): Titel, Text, `badge` als
+   * Gesamtsumme fuers App-Icon (der von chat.js gereichte Wert ist nur
+   * Rueckfall, wenn die Summe nicht ermittelbar ist) und der data-Block
+   * type/roomId/messageId/sender_id/sender_name/room_name/organization_id.
+   * Die Gruppe "Nachrichten" (GRUPPE_CHAT) bleibt stummschaltbar, gesperrte
+   * und geloeschte Konten bleiben aussen vor -- beides steckt in
+   * getTokensForUsers.
+   *
+   * WAS WEGFAELLT: Die eigene Abfrage der Sender-Tokens ("gleicher Token bei
+   * verschiedenen Accounts"). Seit Migration 095 ist push_tokens.token
+   * eindeutig (idx_push_tokens_token_unique); ein Token gehoert genau einer
+   * Person, und der Sender steht nicht in der Empfaengerliste.
+   *
+   * Personen ohne Geraet ergeben EINE Sammelzeile im Log statt einer je Kopf
+   * -- bei 150 Teilnehmenden waren das vorher bis zu 150 Zeilen je Nachricht.
+   *
+   * @param {object} db
+   * @param {number[]} userIds  Empfaenger:innen OHNE den Sender
+   * @param {object} notificationData  { title, body, badge?, roomId, messageId,
+   *   data: { sender_id, sender_name, room_name, organization_id? } }
+   * @returns {Promise<Array<{userId:number, success:boolean, ...}>>} ein
+   *   Eintrag je Empfaenger:in, in der Reihenfolge der userIds
    */
-  static async sendChatNotification(db, userId, notificationData) {
+  static async sendChatNotificationToMany(db, userIds, notificationData) {
+    const empfaenger = [...new Set(userIds || [])];
+    if (empfaenger.length === 0) return [];
     try {
-
       // Content-Org des Chat-Raums (Multi-Org: der Tap wechselt in die
       // Organisation des Raums, NICHT in die Primär-Org des Empfängers).
+      // chat.js reicht sie mit; sonst EINE Abfrage fuer alle.
       let chatOrgId = notificationData.data?.organization_id != null
         ? String(notificationData.data.organization_id)
         : '';
@@ -895,72 +879,9 @@ class PushService {
         }
       }
 
-      // Hole zuerst die Tokens des Senders um sie auszuschließen
-      const senderTokensQuery = `SELECT token FROM push_tokens WHERE user_id = $1`;
-      const { rows: senderTokens } = await db.query(senderTokensQuery, [notificationData.data?.sender_id]);
-      const senderTokenList = senderTokens.map(t => t.token);
-
-      // Neuestes Token pro Device verwenden
-      // UND Sender-Tokens ausschließen (für den Fall dass gleicher Token bei verschiedenen Accounts)
-      // UND Master-Schalter prüfen (u.push_enabled): bei false keine Tokens.
-      // UND die Gruppe "Nachrichten" darf nicht stummgeschaltet sein ($3).
-      // UND gesperrte/geloeschte Konten ausschliessen — gleiche Bedingung wie
-      // in getTokensForUser, das diese Abfrage bewusst nicht nutzt (Sender-
-      // Ausschluss). Beide muessen zusammen gepflegt werden.
-      // DISTINCT ON (token): nie denselben FCM-Token doppelt beliefern (Alt-Daten
-      // mit gleichem Token unter mehreren device_ids).
-      let query = `
-        SELECT DISTINCT ON (pt.token) pt.* FROM push_tokens pt
-        JOIN users u ON pt.user_id = u.id
-        WHERE pt.user_id = $1
-          AND u.push_enabled = true
-          AND NOT ($3::text = ANY(u.push_gruppen_stumm))
-          AND u.is_active = true
-          AND u.deleted_at IS NULL
-          AND pt.id IN (
-            SELECT MAX(id)
-            FROM push_tokens
-            WHERE user_id = $2
-            GROUP BY device_id, platform
-          )
-      `;
-
-      // Sender-Tokens ausschliessen wenn vorhanden
-      if (senderTokenList.length > 0) {
-        query += ` AND pt.token NOT IN (${senderTokenList.map((_, i) => `$${i + 4}`).join(', ')})`;
-      }
-      query += ` ORDER BY pt.token, pt.id DESC`;
-
-      const queryParams = [userId, userId, GRUPPE_CHAT, ...senderTokenList];
-      const { rows: tokens } = await db.query(query, queryParams);
-
-      if (!tokens || tokens.length === 0) {
- console.warn('Keine Push-Tokens für User gefunden:', userId);
-        return { success: false, message: 'No tokens found' };
-      }
-
-      // App-Icon-Zahl (Befund B2b): Hier stand bisher die CHAT-Unread-Zahl
-      // allein (der Aufrufer in chat.js reicht sie als notificationData.badge
-      // herein). Sie ueberschrieb damit Antraege, Termine, Freigaben und
-      // Abzeichen -- das Icon zeigte nach einer Chat-Nachricht nur noch die
-      // Chat-Zahl.
-      //
-      // Anders als in sendToUser wird der uebergebene Wert deshalb bewusst
-      // ERSETZT, nicht bevorzugt: Er ist per Definition zu niedrig. Nur wenn
-      // die Zaehlung fehlschlaegt, gilt er als Rueckfall.
-      const gesamtBadge = await this.berechneBadge(db, userId);
-      const badgeWert = gesamtBadge != null
-        ? gesamtBadge
-        : (notificationData.badge || 1);
-
-      // An alle Geraete in EINEM FCM-Aufruf, mit Wiederholung bei
-      // zeitweiligen Fehlern -- dieselbe Behandlung wie in sendToUser. Vorher
-      // lief hier ein Roundtrip je Geraet nacheinander, ohne Wiederholung.
-      const { erfolge, fehler } = await this.sendeAnGeraete(db, tokens, {
+      const notification = {
         title: notificationData.title || 'Neue Nachricht',
         body: notificationData.body,
-        badge: badgeWert,
-        sound: 'default',
         data: {
           type: 'chat',
           roomId: notificationData.roomId?.toString() || '',
@@ -970,21 +891,71 @@ class PushService {
           room_name: notificationData.data?.room_name || '',
           organization_id: chatOrgId
         }
-      });
-
-      // `success` nach dem tatsaechlichen Versand (24.09.2026), wie in
-      // sendToUser: Kam nichts durch, ist es kein Erfolg.
-      return {
-        success: erfolge > 0,
-        sent: erfolge,
-        errors: fehler,
-        total: tokens.length
       };
 
+      // Vorarbeit EINMAL fuer alle: App-Icon-Zahl und Tokens.
+      const { badges, badgesAlteApps } = await this.berechneBadgesFuerAlle(db, empfaenger);
+      const tokensJeUser = await this.getTokensForUsers(db, empfaenger, 'chat');
+
+      const ergebnisse = [];
+      let ohneGeraet = 0;
+      for (let i = 0; i < empfaenger.length; i += this.EMPFAENGER_BLOCK) {
+        const block = empfaenger.slice(i, i + this.EMPFAENGER_BLOCK);
+        const sammler = this.neuerErgebnisSammler();
+        const teil = await Promise.all(block.map(async (userId) => {
+          const tokens = tokensJeUser.get(userId) || [];
+          if (tokens.length === 0) {
+            ohneGeraet++;
+            return { userId, success: false, message: 'No tokens found' };
+          }
+          // App-Icon-Zahl (Befund B2b): die Gesamtsumme, nicht die Chat-Zahl
+          // allein. Der von chat.js gereichte Wert gilt nur als Rueckfall,
+          // wenn die Summe fuer diese Person nicht ermittelbar war -- und
+          // fehlt auch er, setzt sendToUser 1. `notification.badge` bleibt
+          // dabei bewusst leer: Er haette in sendToUser Vorrang und wuerde die
+          // berechnete Summe ueberschreiben.
+          const vorberechnet = {
+            badge: badges.has(userId)
+              ? badges.get(userId)
+              : (notificationData.badge != null ? notificationData.badge : null),
+            badgeAlteApps: badgesAlteApps.has(userId) ? badgesAlteApps.get(userId) : null,
+            orgId: chatOrgId || null,
+            tokens,
+            sammler,
+          };
+          const result = await this.sendToUser(db, userId, notification, vorberechnet);
+          return { userId, ...result };
+        }));
+        await this.schreibeErgebnisSammler(db, sammler);
+        ergebnisse.push(...teil);
+
+        if (i + this.EMPFAENGER_BLOCK < empfaenger.length) {
+          await this.schlafen(this.EMPFAENGER_PAUSE_MS);
+        }
+      }
+
+      if (ohneGeraet > 0) {
+        console.warn(
+          `Chat-Push Raum ${notification.data.roomId}: ${ohneGeraet} von ${empfaenger.length} Empfänger:innen ohne Push-Token`
+        );
+      }
+      return ergebnisse;
     } catch (error) {
- console.error('PushService.sendChatNotification error:', error);
+      console.error('PushService.sendChatNotificationToMany error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Chat-Push an EINE Person -- derselbe Weg wie sendChatNotificationToMany
+   * mit einer Empfaengerin. Bleibt fuer Aufrufer und Tests, die eine Person
+   * meinen; der Nachrichten-Fan-out in routes/chat.js nutzt den Sammelweg.
+   */
+  static async sendChatNotification(db, userId, notificationData) {
+    const [ergebnis] = await this.sendChatNotificationToMany(db, [userId], notificationData);
+    if (!ergebnis) return { success: false, message: 'No tokens found' };
+    const { userId: _weg, ...rest } = ergebnis;
+    return rest;
   }
 
   /**
@@ -994,7 +965,7 @@ class PushService {
    * 27.08.2026 abends). Der Hintergrunddienst uebergab bisher seinen eigenen
    * Wert, und der zaehlte NUR ungelesene Chat-Nachrichten
    * (`backgroundService.js:162`). Am App-Icon steht aber dieselbe Zahl, die
-   * jeder Push aus `appIconSummeOderNull` setzt — Chat PLUS Antraege, Termine
+   * jeder Push aus `berechneBadge` setzt — Chat PLUS Antraege, Termine
    * und Abzeichen. Ergebnis: Ein Push setzte korrekt "7", und bis zu fuenf
    * Minuten spaeter ueberschrieb der Hintergrund-Sync sie mit "2".
    *
@@ -1018,10 +989,11 @@ class PushService {
         return { success: false, message: 'No tokens found' };
       }
 
-      const badgeCount = await this.berechneBadge(db, userId);
-      if (badgeCount == null) {
+      const paar = await this.berechneBadgePaar(db, userId);
+      if (paar == null || paar.badge == null) {
         return { success: false, message: 'Badge nicht ermittelbar' };
       }
+      const badgeCount = paar.badge;
 
       let successCount = 0;
       let errorCount = 0;
@@ -1032,8 +1004,10 @@ class PushService {
         // faellt er wegen quota-exceeded aus, steht dort bis zum naechsten
         // Ereignis eine veraltete Zahl.
         //
+        // Je Geraet die passende Zahl (Store-Apps 2.2.x, badgeFuerGeraet).
+        const zahl = this.badgeFuerGeraet(token, badgeCount, paar.badgeAlteApps);
         const result = await this.sendeMitWiederholung(
-          () => firebase.sendFirebaseSilentPush(token.token, badgeCount)
+          () => firebase.sendFirebaseSilentPush(token.token, zahl)
         );
 
         if (result.success) {
@@ -1065,7 +1039,10 @@ class PushService {
       // gar nicht mehr.
       // `success` nach dem tatsaechlichen Versand (24.09.2026), wie in
       // sendToUser und sendChatNotification.
-      return { success: successCount > 0, sent: successCount, errors: errorCount, total: tokens.length, badge: badgeCount };
+      return {
+        success: successCount > 0, sent: successCount, errors: errorCount, total: tokens.length,
+        badge: badgeCount, badgeAlteApps: paar.badgeAlteApps
+      };
 
     } catch (error) {
  console.error('PushService.sendBadgeUpdate error:', error);
@@ -1073,15 +1050,106 @@ class PushService {
     }
   }
 
+  /**
+   * Stiller App-Icon-Push an VIELE Personen mit schon gerechneter Zahl
+   * (Audit 26.09.2026, Betrieb BF-02).
+   *
+   * Der Hintergrunddienst (updateAllUserBadges) rechnet die Summe fuer alle
+   * Konten in wenigen Bulk-Abfragen -- und rief dann fuer jede Person, deren
+   * Stand sich geaendert hat, sendBadgeUpdate, das die Summe ERNEUT je Kopf
+   * rechnete (Rolle, Organisationen, Zaehler-Abfragen) und die Tokens je Kopf
+   * holte: rund 7 Abfragen je Person. Eine neue Chat-Nachricht in einem Raum
+   * mit 60 Teilnehmenden kostete im naechsten Takt 439 Abfragen
+   * (tests/services/appIconLaufNeustart.test.js, N3).
+   *
+   * Hier stattdessen: Tokens EINMAL fuer alle (getTokensForUsers, ohne Art --
+   * der stille Push traegt nur die Zahl und ist nicht stummschaltbar, wie in
+   * sendBadgeUpdate), je Geraet der stille Push mit der mitgegebenen Zahl,
+   * Buchfuehrung gesammelt je Block. Die Regeln je Geraet sind dieselben wie
+   * in sendBadgeUpdate: Erfolg setzt einen Fehlerzaehler zurueck (aber ruehrt
+   * updated_at NICHT an -- ein stiller Push ist kein Beleg, dass jemand die
+   * App noch nutzt), fatale Fehler loeschen den Token, sonstige zaehlen hoch.
+   *
+   * @param {object} db
+   * @param {Array<{userId:number, badge:number, badgeAlteApps?:number}>} eintraege
+   *   badgeAlteApps: Zahl fuer Geraete der Store-Apps 2.2.x (badgeFuerGeraet);
+   *   fehlt sie, bekommen alle Geraete `badge`.
+   * @returns {Promise<{sent:number, errors:number, total:number}>}
+   */
+  static async sendBadgeUpdates(db, eintraege) {
+    let sent = 0;
+    let errors = 0;
+    let total = 0;
+    if (!eintraege || eintraege.length === 0) return { sent, errors, total };
+
+    for (let i = 0; i < eintraege.length; i += this.EMPFAENGER_BLOCK) {
+      const block = eintraege.slice(i, i + this.EMPFAENGER_BLOCK);
+      const tokensJeUser = await this.getTokensForUsers(db, block.map((e) => e.userId));
+      const sammler = { zurueckgesetzt: [], ungueltig: [], fehlgeschlagen: [] };
+
+      await Promise.all(block.map(async ({ userId, badge, badgeAlteApps }) => {
+        const tokens = tokensJeUser.get(userId) || [];
+        for (const token of tokens) {
+          total++;
+          const zahl = this.badgeFuerGeraet(token, badge, badgeAlteApps);
+          const result = await this.sendeMitWiederholung(
+            () => firebase.sendFirebaseSilentPush(token.token, zahl)
+          );
+          if (result.success) {
+            sent++;
+            if (token.error_count > 0) sammler.zurueckgesetzt.push(token.id);
+          } else if (this.istFatal(result.errorCode)) {
+            sammler.ungueltig.push(token.id);
+            errors++;
+          } else {
+            sammler.fehlgeschlagen.push(token.id);
+            errors++;
+          }
+        }
+      }));
+
+      try {
+        if (sammler.zurueckgesetzt.length > 0) {
+          await db.query(
+            'UPDATE push_tokens SET error_count = 0, last_error_at = NULL WHERE id = ANY($1::bigint[])',
+            [sammler.zurueckgesetzt]
+          );
+        }
+        if (sammler.ungueltig.length > 0) {
+          await db.query('DELETE FROM push_tokens WHERE id = ANY($1::bigint[])', [sammler.ungueltig]);
+          console.warn(`${sammler.ungueltig.length} Token(s) gelöscht (von FCM abgelehnt, stiller Push)`);
+        }
+        if (sammler.fehlgeschlagen.length > 0) {
+          await db.query(
+            'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = ANY($1::bigint[])',
+            [sammler.fehlgeschlagen]
+          );
+        }
+      } catch (err) {
+        console.error('Token-Buchfuehrung (stiller Push) fehlgeschlagen:', err.message);
+      }
+
+      if (i + this.EMPFAENGER_BLOCK < eintraege.length) {
+        await this.schlafen(this.EMPFAENGER_PAUSE_MS);
+      }
+    }
+    return { sent, errors, total };
+  }
+
   // ====================================================================
   // ACTIVITY REQUEST NOTIFICATIONS
   // ====================================================================
 
   /**
-   * Neuer Antrag eingereicht - Push an alle Admins der Organisation
-   */
-  /**
    * Generische Push-Notification an alle Admins einer Organisation
+   *
+   * NICHT fuer Vorgaenge mit Jahrgangsbezug (27.09.2026): Diese Methode
+   * kennt keine Jahrgangsbindung und erreicht jeden Admin der Gemeinde. Die
+   * Leitungs-Meldungen zu Terminen, Jahrgaengen und Antraegen nehmen ihre
+   * Empfaenger aus der jeweiligen Regel-Stelle (utils/terminLeitungSicht.js,
+   * utils/jahrgangLeitungSicht.js, utils/antragLeitungSicht.js) und senden
+   * ueber sendToLeadership.
+   *
    * @param {object} db - DB-Pool
    * @param {number} organizationId - Organisation ID
    * @param {object} notification - { title, body, data? }
@@ -1109,18 +1177,72 @@ class PushService {
     }
   }
 
-  static async sendNewActivityRequestToAdmins(db, organizationId, konfiName, activityName, points) {
+  /**
+   * Push an eine AUSDRUECKLICHE Empfaengerliste der Leitung (27.09.2026).
+   *
+   * Die Liste kommt von der Aufrufstelle, aus der Regel-Stelle des Vorgangs
+   * (ladeLeitungZumTermin, ladeLeitungZumJahrgang, ...) -- dieselbe Regel,
+   * nach der Liste und Zaehler filtern. Ohne Liste geht NICHTS raus: kein
+   * stiller Rueckfall auf die ganze Leitung (Audit wer-bekommt-was, BF-01,
+   * BF-03, F-03). Die Organisation des Inhalts kommt in den Payload, damit
+   * der Tap in DIESE Gemeinde wechselt.
+   *
+   * @param {object} db
+   * @param {number} organizationId  Organisation des Inhalts
+   * @param {Array<number>} empfaenger
+   * @param {object} notification  { title, body, data }
+   * @param {string} bezeichnung  fuer die Fehlermeldung
+   */
+  static async sendToLeadership(db, organizationId, empfaenger, notification, bezeichnung = 'sendToLeadership') {
+    if (!Array.isArray(empfaenger)) {
+      console.error(`${bezeichnung}: Empfaengerliste fehlt, nichts gesendet`);
+      return { success: false, message: 'Empfängerliste fehlt' };
+    }
+    if (empfaenger.length === 0) {
+      return { success: false, message: 'No admins found' };
+    }
+    const enriched = {
+      ...notification,
+      data: {
+        ...(notification.data || {}),
+        organization_id: String(notification.data?.organization_id ?? organizationId)
+      }
+    };
+    return this.sendToMultipleUsers(db, empfaenger, enriched);
+  }
+
+  /**
+   * Neuer Antrag eingereicht - Push an die Leitung, die den Antrag sieht.
+   *
+   * EMPFAENGER KOMMEN VON DER AUFRUFSTELLE (27.09.2026): Die Regel steht in
+   * utils/antragLeitungSicht.js (ladeLeitungZumAntrag) -- dieselbe, nach der
+   * Antragsliste, pendingRequests und App-Symbol filtern. konfi.js und
+   * teamer.js ermitteln die Empfaenger EINMAL und schreiben damit Postfach
+   * und Push; zwei getrennte Abfragen koennten auseinanderlaufen. Vorher
+   * holte diese Methode selbst ladeLeitungDerOrganisation, also JEDEN Admin
+   * der Gemeinde -- auch jahrgangsgebundene, die den Antrag nicht sehen.
+   * Simon: "Antraege duerfen auch nur an Admins des Jahrgangs gehen."
+   *
+   * Ohne Empfaengerliste wird NICHTS gesendet -- kein stiller Rueckfall auf
+   * die ganze Leitung.
+   *
+   * @param {object} db
+   * @param {number} organizationId  Organisation des Antrags (Content-Org)
+   * @param {Array<number>} empfaenger  aus ladeLeitungZumAntrag
+   * @param {string} konfiName
+   * @param {string} activityName
+   * @param {number} points
+   */
+  static async sendNewActivityRequestToLeadership(db, organizationId, empfaenger, konfiName, activityName, points) {
     try {
-
-      // Hole alle Admins der Organisation
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
- console.warn('Keine Admins für Organisation gefunden');
+      if (!Array.isArray(empfaenger)) {
+        console.error('sendNewActivityRequestToLeadership: Empfaengerliste fehlt, nichts gesendet');
+        return { success: false, message: 'Empfängerliste fehlt' };
+      }
+      if (empfaenger.length === 0) {
         return { success: false, message: 'No admins found' };
       }
 
-      const adminIds = admins;
       const notification = {
         title: 'Neuer Antrag',
         body: `${konfiName} hat einen Antrag für "${activityName}" (${points}P) eingereicht`,
@@ -1130,9 +1252,9 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToMultipleUsers(db, empfaenger, notification);
     } catch (error) {
- console.error('sendNewActivityRequestToAdmins error:', error);
+      console.error('sendNewActivityRequestToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
@@ -1346,25 +1468,86 @@ class PushService {
   }
 
   /**
-   * Konfi hat sich von Event abgemeldet - Push an alle Admins der Organisation
+   * Die Leitung hat jemanden aus einem Termin ausgetragen oder auf die
+   * Warteliste zurueckgesetzt -- Push und Postfach an die Person.
+   *
+   * SIMONS ENTSCHEIDUNG (27.09.2026, F-06 im Bericht "Wer bekommt was",
+   * BF-14): "Ja, mit Postfach-Eintrag, wie beim Eintragen." Bis hierher
+   * meldete sich nur das Eintragen (sendEventRegisteredToKonfi aus
+   * routes/events/teilnehmer.js); Austragen und Herabstufen liefen still --
+   * die Konfi hielt sich den Termin frei, obwohl sie nicht mehr darauf stand.
+   *
+   * ZWEI EIGENE ARTEN statt event_unregistered: Die sagt "Du hast dich
+   * abgemeldet" und ist die Bestaetigung der EIGENEN Handlung. Hier handelt
+   * jemand anderes. Rollenagnostisch wie sendEventRegisteredToKonfi --
+   * Konfis, Teamer:innen und zugeordnete Leitung gehen denselben Weg.
+   *
+   * ALTE APPS: Store-Fassungen 2.2.x kennen beide Arten nicht. Der Push
+   * erscheint dort mit Titel und Text wie jeder andere (das zeigt das
+   * Betriebssystem); das Antippen oeffnet die App, ohne zu springen
+   * (buildPushTargetUrl liefert fuer unbekannte Arten ''). Ein Postfach haben
+   * sie nicht. Fassungen mit Postfach, die die Arten noch nicht kennen,
+   * zeigen den Eintrag in der Terminfarbe (Praefix event_) ohne Sprungziel.
+   *
+   * @param {'removed'|'waitlist'} vorgang  ausgetragen oder auf die Warteliste
+   */
+  static async sendEventRemovedByLeitung(db, userId, eventName, eventDate, vorgang, eventId = null, organizationId = null) {
+    try {
+      const datum = eventDate
+        ? ` am ${formatDatum(eventDate, { weekday: 'long', day: 'numeric', month: 'long' })}`
+        : '';
+      const gemeinsam = {
+        event_name: eventName,
+        event_id: eventId?.toString() || '',
+        // Event-Org explizit: Teamer:innen koennen Multi-Org sein.
+        ...(organizationId != null ? { organization_id: String(organizationId) } : {})
+      };
+
+      const notification = vorgang === 'waitlist'
+        ? {
+          title: 'Auf die Warteliste gesetzt',
+          body: `Die Leitung hat dich für "${eventName}"${datum} auf die Warteliste gesetzt. Rückst du nach, bekommst du Bescheid.`,
+          data: {
+            type: 'event_waitlisted',
+            ...gemeinsam
+          }
+        }
+        : {
+          title: 'Vom Event ausgetragen',
+          body: `Die Leitung hat dich aus "${eventName}"${datum} ausgetragen.`,
+          data: {
+            type: 'event_removed',
+            ...gemeinsam
+          }
+        };
+
+      return await this.sendToUser(db, userId, notification);
+    } catch (error) {
+      console.error('sendEventRemovedByLeitung error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Konfi hat sich von Event abgemeldet - Push an die Leitung, die den
+   * Termin sieht.
+   *
+   * EMPFAENGER KOMMEN VON DER AUFRUFSTELLE (27.09.2026): ladeLeitungZumTermin
+   * (utils/terminLeitungSicht.js) -- dieselbe Regel wie Terminliste und
+   * Verbuchen-Zaehler. Vorher holte die Methode selbst
+   * ladeLeitungDerOrganisation, also JEDEN Admin der Gemeinde; der Text
+   * traegt Name und Grund (Audit wer-bekommt-was, BF-01).
    */
   // eventId optional und am Ende (25.09.2026): Die Meldung geht seit dem
   // Postfach nicht nur als Push raus, sondern bleibt als Mitteilung stehen --
   // und stirbt mit dem Termin (utils/postfachAufraeumen.js). Dafuer braucht
   // sie seine Kennung. Ausserdem springt der Tap damit an den Termin statt
   // auf die Liste (frontend utils/pushNavigation.ts).
-  static async sendEventUnregistrationToAdmins(db, organizationId, konfiName, eventName, reason = null, eventId = null) {
+  // konfiId optional und am Ende (27.09.2026, BF-13 / F-07): Die Mitteilung
+  // geht mit dem Konto der Konfi (utils/postfachAufraeumen.js,
+  // loescheMitteilungenUeberPerson) -- dafuer traegt sie konfi_id.
+  static async sendEventUnregistrationToLeadership(db, organizationId, empfaenger, konfiName, eventName, reason = null, eventId = null, konfiId = null) {
     try {
-
-      // Hole alle Admins der Organisation
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
- console.warn('Keine Admins für Organisation gefunden');
-        return { success: false, message: 'No admins found' };
-      }
-
-      const adminIds = admins;
       const notification = {
         title: 'Event-Abmeldung',
         body: reason
@@ -1375,13 +1558,14 @@ class PushService {
           event_name: eventName,
           konfi_name: konfiName,
           ...(eventId != null ? { event_id: String(eventId) } : {}),
+          ...(konfiId != null ? { konfi_id: String(konfiId) } : {}),
           organization_id: String(organizationId)
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendEventUnregistrationToLeadership');
     } catch (error) {
- console.error('sendEventUnregistrationToAdmins error:', error);
+      console.error('sendEventUnregistrationToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
@@ -1481,6 +1665,15 @@ class PushService {
 
   /**
    * Event-Erinnerung - Push an Konfi (1 Tag oder 1 Stunde vorher)
+   *
+   * @param {number|number[]} konfiId  EINE Person oder die Liste aller
+   *   Empfaenger:innen eines Termins. Der Erinnerungslauf
+   *   (backgroundService.sendEventReminders) ruft seit dem 26.09.2026 je
+   *   Termin einmal mit der Liste (Audit Betrieb BF-05): Der Text ist je
+   *   Termin gleich, und sendToMultipleUsers rechnet Tokens und Badge einmal
+   *   fuer alle statt je Kopf. Mit einer einzelnen ID bleibt es der bisherige
+   *   Einzelweg -- Rueckgabe dann wie sendToUser, mit der Liste wie
+   *   sendToMultipleUsers (ein Array).
    */
   static async sendEventReminderToKonfi(db, konfiId, eventName, eventDate, eventTime, reminderType, organizationId = null, eventId = null) {
     try {
@@ -1500,6 +1693,9 @@ class PushService {
         }
       };
 
+      if (Array.isArray(konfiId)) {
+        return await this.sendToMultipleUsers(db, konfiId, notification);
+      }
       return await this.sendToUser(db, konfiId, notification);
     } catch (error) {
  console.error('sendEventReminderToKonfi error:', error);
@@ -1519,6 +1715,10 @@ class PushService {
    * noch NICHT Mitglied -- resolveOrgForPush kann also nicht wechseln. Das
    * Ziel ist deshalb eine Seite seiner EIGENEN Rolle
    * (utils/pushNavigation.ts, Fall 'gemeinde_einladung').
+   *
+   * einladung_id ist mehr als Beiwerk: Zieht die Leitung die Einladung
+   * zurueck, findet utils/postfachAufraeumen.js den Postfach-Eintrag darueber
+   * und nimmt ihn mit (27.09.2026).
    */
   static async sendGemeindeEinladungToUser(db, userId, orgName, rolleName, einladungId, organizationId) {
     try {
@@ -1537,6 +1737,64 @@ class PushService {
     } catch (error) {
       console.error('sendGemeindeEinladungToUser error:', error);
       return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Eine Einladung in eine weitere Gemeinde wurde angenommen oder abgelehnt
+   * -- Postfach und Push an die Person, die eingeladen hat (27.09.2026).
+   *
+   * Befund BF-21 (Bericht "Wer bekommt was"): Die einladende Leitung erfuhr
+   * nichts; die offene Einladung verschwand nur aus GET /einladungen, und
+   * die App zeigt diese Liste nicht einmal an. Simons Entscheidung zu F-13:
+   * "Ja, als Postfach-Eintrag." Push dazu wie bei allen uebrigen Meldungen
+   * an die Leitung (Teamer-Buchung, Abmeldung, Registrierung): Sie laufen
+   * durch sendToMultipleUsers, das Postfach und Push zusammen schreibt.
+   *
+   * EMPFAENGER nach "Mitteilung = Sichtbarkeit" (CLAUDE.md): Einladen und
+   * die Einladungen sehen darf nur der Org-Admin (requireOrgAdmin in
+   * routes/einladungen.js). Deshalb geht die Meldung an die Person, die
+   * eingeladen hat (org_einladungen.eingeladen_von) -- solange sie in DIESER
+   * Gemeinde noch Org-Admin ist (beide Quellen der Zugehoerigkeit, aktiv,
+   * nicht geloescht; utils/orgMitglieder.js). Ist sie es nicht mehr, gehen
+   * die Org-Admins der Gemeinde an ihre Stelle. Die eingeladene Person ist
+   * nie Empfaengerin, auch wenn sie mit der Annahme selbst Org-Admin wird.
+   *
+   * @param {object} p
+   * @param {number} p.organizationId  die EINLADENDE Gemeinde (Org des Inhalts)
+   * @param {number|null} p.eingeladenVon
+   * @param {number} p.eingeladenId    die eingeladene Person
+   * @param {boolean} p.angenommen
+   * @returns {Promise<Array>} Ergebnis je Empfaenger (sendToMultipleUsers)
+   */
+  static async sendEinladungBeantwortetToLeitung(db, { einladungId, organizationId, eingeladenVon, eingeladenId, personName, rolleName, orgName, angenommen }) {
+    try {
+      const orgAdmins = (await ladeMitgliederDerOrganisation(db, organizationId, ['org_admin']))
+        .filter((id) => Number(id) !== Number(eingeladenId));
+      const einladende = orgAdmins.filter((id) => eingeladenVon != null && Number(id) === Number(eingeladenVon));
+      const empfaenger = einladende.length > 0 ? einladende : orgAdmins;
+      if (empfaenger.length === 0) return [];
+
+      const person = personName || 'Die eingeladene Person';
+      const rolle = rolleName || 'Mitglied';
+      const gemeinde = orgName || 'eurer Gemeinde';
+      const notification = {
+        title: angenommen ? 'Einladung angenommen' : 'Einladung abgelehnt',
+        body: angenommen
+          ? `${person} hat die Einladung angenommen und arbeitet jetzt als ${rolle} in ${gemeinde} mit.`
+          : `${person} hat die Einladung als ${rolle} in ${gemeinde} abgelehnt.`,
+        data: {
+          type: 'gemeinde_einladung_beantwortet',
+          einladung_id: einladungId?.toString() || '',
+          user_id: eingeladenId?.toString() || '',
+          status: angenommen ? 'angenommen' : 'abgelehnt',
+          organization_id: String(organizationId)
+        }
+      };
+      return await this.sendToMultipleUsers(db, empfaenger, notification);
+    } catch (error) {
+      console.error('sendEinladungBeantwortetToLeitung error:', error);
+      return [];
     }
   }
 
@@ -1702,7 +1960,7 @@ class PushService {
       }
 
       const notification = {
-        title: 'Termin findet doch statt',
+        title: 'Event findet doch statt',
         body: `"${eventName}" am ${dateInfo} findet doch statt.`
           + ' Du bist wieder angemeldet – prüf bitte, ob du Zeit hast, und melde dich sonst ab.',
         data: {
@@ -1770,37 +2028,33 @@ class PushService {
   }
 
   /**
-   * Neues Event erstellt - Push an alle Konfis der Organisation
+   * Anmeldung geoeffnet ("Neues Event!") - Push an die Konfis, die den Termin
+   * in ihrer Terminliste sehen.
+   *
+   * EMPFAENGER NACH DER REGEL DER KONFI-LISTE (27.09.2026, Audit "Wer bekommt
+   * was", BF-04 / F-05; utils/konfiTerminSicht.js): Konfis der Jahrgaenge des
+   * Termins, nie bei "Nur Team". Ein Termin ohne Jahrgang gilt der ganzen
+   * Gemeinde (Simon, 27.09.2026) -- alle Konfis sehen ihn und bekommen den
+   * Push, auch eine Konfi ohne Jahrgang. Bis dahin ging der Push an jede
+   * Konfi der Gemeinde, auch zu Terminen fremder Jahrgaenge.
+   *
+   * Der Name bleibt (Aufrufer und Tests rufen ihn so); organizationId bleibt
+   * die Gemeinde des Inhalts fuer den Org-Wechsel beim Antippen. Ohne
+   * eventId sind die Jahrgaenge unbekannt -- dann geht nichts raus, statt
+   * im Zweifel an alle.
+   *
+   * deleted_at/is_active (Befund M5 aus dem Push-Bericht, 27.08.2026): Die
+   * Jahrgangs-Archivierung setzt bei Konfis 60-120 Tage nach der
+   * Konfirmation nur `deleted_at` und loescht keine Push-Tokens. Die
+   * Empfaengerabfrage filtert beides weiterhin selbst, obwohl
+   * getTokensForUser es seit 28.08.2026 zentral tut -- so wird die Liste
+   * schon vor dem Token-Lookup klein.
    */
   static async sendNewEventToOrgKonfis(db, organizationId, eventName, eventDate, eventId = null) {
     try {
-
-      // Hole alle Konfi-IDs der Organisation
-      // deleted_at/is_active pruefen (Befund M5 aus dem Push-Bericht,
-      // 27.08.2026): Die Jahrgangs-Archivierung setzt bei Konfis 60-120 Tage
-      // nach der Konfirmation nur `deleted_at`, loescht aber keine
-      // Push-Tokens. Ohne diesen Filter bekamen ausgeschiedene Konten bis zur
-      // 30-Tage-Token-Bereinigung weiter "Neues Event!" einer Gemeinde, aus
-      // der sie laengst raus sind. Die Nachbarmethode
-      // `sendChallengeStartedToJahrgaenge` filtert seit jeher `deleted_at`.
-      // `is_active` kommt hier dazu — deaktivierte Konten sollen ebenso
-      // wenig angeschrieben werden. (Der Satz stand hier frueher anders:
-      // `sendToOrgAdmins` pruefe das bereits so — das stimmte nie. Seit
-      // 28.08.2026 filtert stattdessen `getTokensForUser` zentral, sodass es
-      // fuer alle Empfaenger-Abfragen gilt; der Filter hier bleibt trotzdem,
-      // weil er die Empfaengerliste schon vor dem Token-Lookup verkleinert.)
-      const konfisQuery = `
-        SELECT u.id FROM users u
-        JOIN roles r ON u.role_id = r.id
-        WHERE u.organization_id = $1 AND r.name = 'konfi'
-          AND u.deleted_at IS NULL
-          AND u.is_active = true
-      `;
-      const { rows: konfis } = await db.query(konfisQuery, [organizationId]);
-      const konfiIds = konfis.map(k => k.id);
+      const konfiIds = await ladeKonfisDieTerminSehen(db, eventId);
 
       if (konfiIds.length === 0) {
- console.warn('Keine Konfis für Organisation gefunden:', organizationId);
         return { success: true, sent: 0 };
       }
 
@@ -1833,10 +2087,24 @@ class PushService {
   // ====================================================================
 
   /**
-   * Challenge gestartet - Push an alle Konfis der zugewiesenen Jahrgänge.
-   * Empfaenger kommen über challenge_jahrgang_assignments, NICHT über die
-   * ganze Organisation: eine Challenge läuft immer nur für bestimmte
-   * Jahrgänge.
+   * Challenge gestartet - Push an alle, die mitmachen duerfen.
+   *
+   * EMPFAENGER (27.09.2026, Audit "Wer bekommt was", BF-07 / F-04):
+   *   - Konfis der zugewiesenen Jahrgaenge, ausser bei 'nur_team' (dort
+   *     sehen sie die Challenge gar nicht) -- derselbe Kreis wie
+   *     GET /api/challenges/konfi fuer Konfis;
+   *   - das Team, das mitmacht: bei 'nur_team' das ganze Team der Gemeinde,
+   *     bei 'konfis_und_team' Org-Admins und die Admins und Teamer:innen der
+   *     Jahrgaenge; bei 'konfis' niemand aus dem Team (es liest nur mit und
+   *     sieht neue Beitraege ueber den Neuigkeiten-Zaehler). Regel-Stelle
+   *     utils/challengeLeitungSicht.js (ladeTeamDasMitmacht, teamMachtMitSql)
+   *     -- dieselbe wie die Teilnahme-Liste des Teams und "neue Challenge"
+   *     in dessen Zaehler.
+   * Bis dahin gingen die Empfaenger nur ueber die Jahrgaenge an Konfis: bei
+   * 'nur_team' bekam niemand etwas, bei 'konfis_und_team' nur die Konfis.
+   *
+   * Jede Person einmal; wer die Challenge angelegt hat (created_by), nie --
+   * sie startet sie ja.
    *
    * @param {object} db - DB-Pool
    * @param {number} challengeId - Challenge ID
@@ -1844,29 +2112,43 @@ class PushService {
    */
   static async sendChallengeStartedToJahrgaenge(db, challengeId, challengeTitle) {
     try {
-      const { rows: konfis } = await db.query(
-        `SELECT DISTINCT kp.user_id
-         FROM konfi_profiles kp
-         JOIN users u ON kp.user_id = u.id
-         JOIN roles r ON u.role_id = r.id
-         JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = kp.jahrgang_id
-         WHERE cja.challenge_id = $1
-           AND r.name = 'konfi'
-           AND u.deleted_at IS NULL`,
-        [challengeId]
-      );
+      const [{ rows: konfis }, team, { rows: [challengeRow] }] = await Promise.all([
+        db.query(
+          `SELECT DISTINCT kp.user_id
+           FROM konfi_profiles kp
+           JOIN users u ON kp.user_id = u.id
+           JOIN roles r ON u.role_id = r.id
+           JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = kp.jahrgang_id
+           JOIN challenges c ON c.id = cja.challenge_id
+           WHERE cja.challenge_id = $1
+             AND c.audience <> 'nur_team'
+             AND r.name = 'konfi'
+             AND u.deleted_at IS NULL`,
+          [challengeId]
+        ),
+        ladeTeamDasMitmacht(db, challengeId),
+        // Content-Org der Challenge (nicht der Empfaenger) fuer den
+        // Org-Wechsel beim Antippen, dazu wer sie angelegt hat.
+        db.query(
+          'SELECT organization_id, created_by FROM challenges WHERE id = $1',
+          [challengeId]
+        )
+      ]);
 
-      const konfiIds = konfis.map(k => k.user_id);
-      if (konfiIds.length === 0) {
+      const startendePerson = challengeRow && challengeRow.created_by != null
+        ? String(challengeRow.created_by)
+        : null;
+      const empfaenger = [];
+      const gesehen = new Set();
+      for (const id of [...konfis.map(k => k.user_id), ...team]) {
+        const k = String(id);
+        if (gesehen.has(k) || k === startendePerson) continue;
+        gesehen.add(k);
+        empfaenger.push(id);
+      }
+      if (empfaenger.length === 0) {
         return { success: true, sent: 0 };
       }
-
-      // Content-Org der Challenge (nicht der Empfänger) für den Org-Wechsel
-      // beim Antippen.
-      const { rows: [challengeRow] } = await db.query(
-        'SELECT organization_id FROM challenges WHERE id = $1',
-        [challengeId]
-      );
 
       const notification = {
         title: 'Neue Challenge',
@@ -1880,7 +2162,7 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, konfiIds, notification);
+      return await this.sendToMultipleUsers(db, empfaenger, notification);
     } catch (error) {
       console.error('sendChallengeStartedToJahrgaenge error:', error);
       return { success: false, error: error.message };
@@ -2026,8 +2308,8 @@ class PushService {
   }
 
   /**
-   * Neuer Challenge-Beitrag - Push an die Leitung (Org-Admins + die Teamer der
-   * zugewiesenen Jahrgänge). Wird bei JEDER Challenge gesendet (auch wenn der
+   * Neuer Challenge-Beitrag - Push an alle, die die Challenge verwalten
+   * (Regel in utils/challengeLeitungSicht.js, 27.09.2026). Wird bei JEDER Challenge gesendet (auch wenn der
    * Beitrag sofort oeffentlich ist) — bei moderierten Challenges mit Zusatz-
    * Hinweis, dass eine Freigabe noch aussteht.
    *
@@ -2038,8 +2320,10 @@ class PushService {
    * @param {string} konfiName - Anzeigename des einreichenden Konfis (die
    *   Leitung sieht IMMER den echten Namen — Anonymitaet gilt nur für die Galerie)
    * @param {boolean} moderated - Ob die Challenge moderiert ist (Freigabe nötig)
+   * @param {number|null} einreicherId - Wer eingereicht hat; bekommt keine
+   *   Mitteilung ueber den eigenen Beitrag (Team-Challenges)
    */
-  static async sendChallengeSubmissionToLeadership(db, organizationId, challengeId, challengeTitle, konfiName, moderated = false) {
+  static async sendChallengeSubmissionToLeadership(db, organizationId, challengeId, challengeTitle, konfiName, moderated = false, einreicherId = null) {
     try {
       const notification = {
         title: 'Neuer Challenge-Beitrag',
@@ -2049,26 +2333,56 @@ class PushService {
         data: {
           type: 'challenge_submission',
           challengeId: challengeId.toString(),
+          // Wer eingereicht hat (27.09.2026, BF-13 / F-07): Die Mitteilung
+          // geht mit dem Konto dieser Person (loescheMitteilungenUeberPerson).
+          ...(einreicherId != null ? { user_id: String(einreicherId) } : {}),
           organization_id: String(organizationId)
         }
       };
 
-      await this.sendToOrgAdmins(db, organizationId, notification);
-
-      // Teamer hängen über user_jahrgang_assignments an den Jahrgängen der
-      // Challenge und werden von sendToOrgAdmins nicht erfasst. Auch hier
-      // beide Quellen der Zugehoerigkeit: Wer in DIESER Organisation nur ueber
-      // user_organizations Teamer:in ist, hat die Zuweisung genauso.
+      // EMPFAENGER NACH DER GEMEINSAMEN REGEL (27.09.2026,
+      // utils/challengeLeitungSicht.js): Wer die Challenge in Liste und Reiter
+      // sieht, bekommt die Mitteilung -- und nur der. Vorher ging sie ueber
+      // sendToOrgAdmins an JEDEN Admin der Gemeinde (auch zu reinen
+      // Konfi-Challenges fremder Jahrgaenge, die er nicht sehen konnte), an
+      // Teamer:innen dagegen nie bei 'nur_team'-Runden, die sie moderieren.
+      //   org_admin       immer
+      //   admin, teamer   bei 'nur_team' immer, sonst ueber einen Jahrgang
+      //                   der Challenge
+      // Beide Quellen der Zugehoerigkeit (ladeMitgliederDerOrganisation).
+      const { rows: [challengeZeile] } = await db.query(
+        'SELECT audience FROM challenges WHERE id = $1',
+        [challengeId]
+      );
+      const audience = challengeZeile?.audience || 'konfis';
       const { rows: jahrgaenge } = await db.query(
         'SELECT jahrgang_id FROM challenge_jahrgang_assignments WHERE challenge_id = $1',
         [challengeId]
       );
-      const teamers = await ladeMitgliederDerOrganisation(db, organizationId, ['teamer'], {
-        jahrgangIds: jahrgaenge.map(j => j.jahrgang_id)
-      });
+      const jahrgangIds = jahrgaenge.map(j => j.jahrgang_id);
 
-      if (teamers.length > 0) {
-        await this.sendToMultipleUsers(db, teamers, notification);
+      const orgWeit = TEAM_ORGWEITE_AUDIENCES.includes(audience);
+      const [orgAdmins, team] = await Promise.all([
+        ladeMitgliederDerOrganisation(db, organizationId, ['org_admin']),
+        orgWeit
+          ? ladeMitgliederDerOrganisation(db, organizationId, ['admin', 'teamer'])
+          : ladeMitgliederDerOrganisation(db, organizationId, ['admin', 'teamer'], { jahrgangIds })
+      ]);
+
+      // Ohne Doppelte, und ohne die Person, die selbst eingereicht hat --
+      // wie im Chat die eigene Nachricht (bei Team-Challenges reicht die
+      // Leitung selbst ein).
+      const empfaenger = [];
+      const gesehen = new Set();
+      for (const id of [...orgAdmins, ...team]) {
+        const k = String(id);
+        if (gesehen.has(k) || (einreicherId != null && k === String(einreicherId))) continue;
+        gesehen.add(k);
+        empfaenger.push(id);
+      }
+
+      if (empfaenger.length > 0) {
+        await this.sendToMultipleUsers(db, empfaenger, notification);
       }
 
       return { success: true };
@@ -2118,18 +2432,17 @@ class PushService {
   }
 
   /**
-   * Events müssen verbucht werden - Push an Admins (für Cron-Job)
+   * Events müssen verbucht werden - Push an die Leitung (für Cron-Job)
+   *
+   * EMPFAENGER UND ZAHL KOMMEN VOM AUFRUFER (27.09.2026): Der Lauf um 09:00
+   * zaehlt je Person, was IHR Verbuchen-Reiter zeigt
+   * (zaehleWartendeTermineJeLeitung, utils/terminLeitungSicht.js), und ruft
+   * diese Methode je Gemeinde und Zahl einmal mit den Personen, die genau
+   * diese Zahl haben. Vorher bekam jeder Admin die Zahl der ganzen Gemeinde
+   * (Audit wer-bekommt-was, BF-10).
    */
-  static async sendEventsPendingApprovalToAdmins(db, organizationId, eventCount) {
+  static async sendEventsPendingApprovalToLeadership(db, organizationId, empfaenger, eventCount) {
     try {
-
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
-        return { success: false, message: 'No admins found' };
-      }
-
-      const adminIds = admins;
       const notification = {
         title: 'Events warten auf Verbuchung',
         body: `${eventCount} Event${eventCount > 1 ? 's' : ''} warten auf Anwesenheitsverbuchung`,
@@ -2140,31 +2453,30 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendEventsPendingApprovalToLeadership');
     } catch (error) {
- console.error('sendEventsPendingApprovalToAdmins error:', error);
+      console.error('sendEventsPendingApprovalToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
 
   /**
-   * "Letzte Chance"-Warnung an Org-Admins: ein Jahrgang wird in wenigen Tagen
-   * automatisch gelöscht. Wir nennen es bewusst "gelöscht" (das interne Archiv
-   * bleibt unerwaehnt). Hinweis aufs Befoerdern der Konfis zu Teamer:innen.
+   * "Letzte Chance"-Warnung an die Leitung des Jahrgangs: ein Jahrgang wird
+   * in wenigen Tagen automatisch gelöscht. Wir nennen es bewusst "gelöscht"
+   * (das interne Archiv bleibt unerwaehnt). Hinweis aufs Befoerdern der
+   * Konfis zu Teamer:innen.
+   *
+   * EMPFAENGER KOMMEN VON DER AUFRUFSTELLE (27.09.2026): Org-Admins und Admins
+   * mit Schreibrecht auf den Jahrgang (ladeLeitungZumJahrgang mit
+   * schreibrecht, utils/jahrgangLeitungSicht.js) -- Befoerdern verlangt
+   * Schreibrecht (F-14). Vorher jeder Admin der Gemeinde (BF-01).
    */
   // jahrgangId optional und am Ende (25.09.2026): Die Warnung steht seit dem
   // Postfach als Mitteilung und geht mit dem Jahrgang, sobald er geloescht
   // ist (utils/postfachAufraeumen.js) -- eine Warnung vor etwas, das schon
   // passiert ist, waere Rauschen.
-  static async sendJahrgangDeletionWarningToAdmins(db, organizationId, jahrgangName, daysLeft, jahrgangId = null) {
+  static async sendJahrgangDeletionWarningToLeadership(db, organizationId, empfaenger, jahrgangName, daysLeft, jahrgangId = null) {
     try {
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
-        return { success: false, message: 'No admins found' };
-      }
-
-      const adminIds = admins;
       const notification = {
         title: 'Jahrgang wird bald gelöscht',
         body: `Der Jahrgang "${jahrgangName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} gelöscht. Letzte Chance, Konfis zu Teamer:innen zu befördern.`,
@@ -2177,42 +2489,43 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendJahrgangDeletionWarningToLeadership');
     } catch (error) {
-      console.error('sendJahrgangDeletionWarningToAdmins error:', error);
+      console.error('sendJahrgangDeletionWarningToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
 
   /**
-   * Neue Konfi-Registrierung - Push an Jahrgangs-Admins (Fallback: alle Org-Admins)
+   * Neue Konfi-Registrierung - Push an die Leitung des Jahrgangs.
+   *
+   * EMPFAENGER KOMMEN VON DER AUFRUFSTELLE (27.09.2026):
+   * ladeLeitungZumJahrgang (utils/jahrgangLeitungSicht.js) -- Org-Admins
+   * immer, Admins mit Leserecht auf den Jahrgang, Teamer:innen nie (F-02).
+   * Vorher verlangte die Abfrage auch von Org-Admins eine Zuweisung (sie
+   * fielen heraus, sobald ein Admin zugewiesen war), und ohne zugewiesenen
+   * Admin ging die Meldung als Rueckfall an ALLE Admins (BF-03). Einen
+   * Rueckfall gibt es nicht mehr: Ist niemand zugewiesen, bleibt es bei der
+   * Gemeindeleitung (F-03).
    */
-  static async sendNewKonfiRegistrationToAdmins(db, organizationId, jahrgangId, konfiName, jahrgangName) {
+  // konfiId optional und am Ende (27.09.2026, BF-13 / F-07): Die Mitteilung
+  // geht mit dem Konto der Konfi (loescheMitteilungenUeberPerson).
+  static async sendNewKonfiRegistrationToLeadership(db, organizationId, empfaenger, jahrgangId, konfiName, jahrgangName, konfiId = null) {
     try {
-      // Admins des Jahrgangs finden -- ueber beide Quellen der Zugehoerigkeit,
-      // die Rolle gilt je Organisation (utils/orgMitglieder.js).
-      const admins = await ladeLeitungDerOrganisation(db, organizationId, { jahrgangIds: [jahrgangId] });
-
-      // Fallback: Alle Org-Admins wenn kein Jahrgangs-Admin
-      const adminIds = admins.length === 0
-        ? await ladeLeitungDerOrganisation(db, organizationId)
-        : admins;
-
-      if (adminIds.length === 0) return { success: false, message: 'No admins found' };
-
       const notification = {
         title: 'Neue Registrierung',
         body: `${konfiName} hat sich registriert (${jahrgangName})`,
         data: {
           type: 'new_konfi_registration',
           organization_id: organizationId.toString(),
-          jahrgang_id: jahrgangId.toString()
+          jahrgang_id: jahrgangId.toString(),
+          ...(konfiId != null ? { konfi_id: String(konfiId) } : {})
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendNewKonfiRegistrationToLeadership');
     } catch (error) {
-      console.error('sendNewKonfiRegistrationToAdmins error:', error);
+      console.error('sendNewKonfiRegistrationToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
@@ -2222,18 +2535,15 @@ class PushService {
   // ====================================================================
 
   /**
-   * Konfi hat sich von Pflicht-Event abgemeldet (Opt-out) - Push an alle Admins der Organisation
+   * Konfi hat sich von Pflicht-Event abgemeldet (Opt-out) - Push an die
+   * Leitung, die den Termin sieht. Empfaenger von der Aufrufstelle
+   * (ladeLeitungZumTermin, utils/terminLeitungSicht.js, 27.09.2026); vorher
+   * jeder Admin der Gemeinde, samt Grund (BF-01).
    */
-  static async sendEventOptOutToAdmins(db, organizationId, konfiName, eventName, reason, eventId = null) {
+  // konfiId optional und am Ende (27.09.2026, BF-13 / F-07), wie bei
+  // sendEventUnregistrationToLeadership.
+  static async sendEventOptOutToLeadership(db, organizationId, empfaenger, konfiName, eventName, reason, eventId = null, konfiId = null) {
     try {
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
-        console.warn('Keine Admins für Organisation gefunden');
-        return { success: false, message: 'No admins found' };
-      }
-
-      const adminIds = admins;
       const notification = {
         title: `Abmeldung: ${eventName}`,
         body: `${konfiName} hat sich von '${eventName}' abgemeldet. Grund: ${reason}`,
@@ -2241,32 +2551,27 @@ class PushService {
           type: 'event_opt_out',
           event_name: eventName,
           ...(eventId != null ? { event_id: String(eventId) } : {}),
+          ...(konfiId != null ? { konfi_id: String(konfiId) } : {}),
           konfi_name: konfiName,
           reason: reason,
           organization_id: String(organizationId)
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendEventOptOutToLeadership');
     } catch (error) {
-      console.error('sendEventOptOutToAdmins error:', error);
+      console.error('sendEventOptOutToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
 
   /**
-   * Konfi hat Opt-out zurückgenommen (wieder angemeldet) - Push an alle Admins der Organisation
+   * Konfi hat Opt-out zurückgenommen (wieder angemeldet) - Push an die
+   * Leitung, die den Termin sieht (Empfaenger wie beim Opt-out, 27.09.2026).
    */
-  static async sendEventOptInToAdmins(db, organizationId, konfiName, eventName, eventId = null) {
+  // konfiId optional und am Ende (27.09.2026, BF-13 / F-07).
+  static async sendEventOptInToLeadership(db, organizationId, empfaenger, konfiName, eventName, eventId = null, konfiId = null) {
     try {
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
-        console.warn('Keine Admins für Organisation gefunden');
-        return { success: false, message: 'No admins found' };
-      }
-
-      const adminIds = admins;
       const notification = {
         title: `Wieder angemeldet: ${eventName}`,
         body: `${konfiName} hat sich wieder für '${eventName}' angemeldet`,
@@ -2274,14 +2579,15 @@ class PushService {
           type: 'event_opt_in',
           event_name: eventName,
           ...(eventId != null ? { event_id: String(eventId) } : {}),
+          ...(konfiId != null ? { konfi_id: String(konfiId) } : {}),
           konfi_name: konfiName,
           organization_id: String(organizationId)
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendEventOptInToLeadership');
     } catch (error) {
-      console.error('sendEventOptInToAdmins error:', error);
+      console.error('sendEventOptInToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
@@ -2322,12 +2628,18 @@ class PushService {
   }
 
   /**
-   * Teamer:in hat sich zu einem Event angemeldet - Push an die Leitung.
+   * Teamer:in hat sich zu einem Event angemeldet - Push an die Leitung, die
+   * den Termin sieht. Empfaenger von der Aufrufstelle (ladeLeitungZumTermin,
+   * utils/terminLeitungSicht.js, 27.09.2026); vorher ueber sendToOrgAdmins
+   * an jeden Admin der Gemeinde (BF-01). "Nur Team" und Termine ohne
+   * Jahrgang erreichen weiterhin alle Admins -- die Team-Ausnahme.
    * @param {string} status 'confirmed' oder 'waitlist'
    */
-  static async sendTeamerEventBookingToAdmins(db, organizationId, teamerName, eventName, status, eventId) {
+  // teamerId optional und am Ende (27.09.2026, BF-13 / F-07): Die Mitteilung
+  // geht mit dem Konto der Teamer:in (loescheMitteilungenUeberPerson).
+  static async sendTeamerEventBookingToLeadership(db, organizationId, empfaenger, teamerName, eventName, status, eventId, teamerId = null) {
     try {
-      return await this.sendToOrgAdmins(db, organizationId, {
+      return await this.sendToLeadership(db, organizationId, empfaenger, {
         title: 'Teamer:in angemeldet',
         body: status === 'confirmed'
           ? `${teamerName} hat sich für '${eventName}' angemeldet`
@@ -2335,17 +2647,19 @@ class PushService {
         data: {
           type: 'teamer_event_booking',
           eventId: String(eventId),
+          ...(teamerId != null ? { user_id: String(teamerId) } : {}),
           organization_id: String(organizationId)
         }
-      });
+      }, 'sendTeamerEventBookingToLeadership');
     } catch (error) {
-      console.error('sendTeamerEventBookingToAdmins error:', error);
+      console.error('sendTeamerEventBookingToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
 
   /**
-   * Teamer:in hat sich von einem Event abgemeldet - Push an die Leitung.
+   * Teamer:in hat sich von einem Event abgemeldet - Push an die Leitung, die
+   * den Termin sieht (Empfaenger wie bei der Anmeldung, 27.09.2026).
    */
   // reason ist seit 01.09.2026 dabei (ADDITIV, optional): Die Teamer-Absage
   // ueber POST /teamer/events/:id/zusage traegt einen Grund — bei einer
@@ -2353,7 +2667,9 @@ class PushService {
   // in der Meldung lesen, ohne die App zu oeffnen. Der Storno-Weg
   // (DELETE /events/:id/book) ruft weiter ohne reason auf; Text und
   // data-Felder bleiben dann exakt wie bisher.
-  static async sendTeamerEventCancellationToAdmins(db, organizationId, teamerName, eventName, eventId, reason = null) {
+  // teamerId optional und am Ende (27.09.2026, BF-13 / F-07), wie bei der
+  // Zusage.
+  static async sendTeamerEventCancellationToLeadership(db, organizationId, empfaenger, teamerName, eventName, eventId, reason = null, teamerId = null) {
     try {
       const notification = {
         title: 'Teamer:in abgemeldet',
@@ -2363,13 +2679,14 @@ class PushService {
         data: {
           type: 'teamer_event_cancellation',
           eventId: String(eventId),
+          ...(teamerId != null ? { user_id: String(teamerId) } : {}),
           organization_id: String(organizationId)
         }
       };
       if (reason) notification.data.reason = reason;
-      return await this.sendToOrgAdmins(db, organizationId, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendTeamerEventCancellationToLeadership');
     } catch (error) {
-      console.error('sendTeamerEventCancellationToAdmins error:', error);
+      console.error('sendTeamerEventCancellationToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }

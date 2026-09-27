@@ -26,6 +26,32 @@ auf — TypeError, das Teamer-Dashboard stürzte sofort nach dem Login ab, auf i
 und Android. Im Browser fiel es nicht auf, dort lief die neue Oberfläche. Die
 Backend-Tests waren grün.*
 
+## Wer sieht und bekommt was
+
+Die Regel steht fest (Simon, 27.09.2026) und wird nicht je Funktion neu
+erfunden:
+
+- **Org-Admin** sieht, darf und bekommt alles seiner Gemeinde — er ist die
+  Instanz vor Ort, die alles administrieren können muss.
+- **Admin und Teamer:in** immer nur für ihre zugewiesenen Jahrgänge.
+  Ausnahmen, die fürs ganze Team gelten, ohne Jahrgang:
+  - was ausdrücklich nur fürs Team ist — Termine „Nur Team", Challenges
+    „Nur das Team";
+  - Termine ohne jeden Jahrgang (sie gelten der ganzen Gemeinde);
+  - Chat von Team zu Team (Team-Chat, Gruppen und Einzelchats unter
+    Teamer:innen, Admins und Org-Admins).
+- **Konfi:** der eigene Jahrgang und die eigenen Vorgänge, dazu die Termine
+  ohne jeden Jahrgang — sie sieht sie, bekommt sie gemeldet und kann sie buchen,
+  auch ohne eigenen Jahrgang (Simon, 27.09.2026).
+- **Mitteilung = Sichtbarkeit.** Push, Postfach-Eintrag und rote Zahl bekommt
+  genau, wer den Vorgang in seiner Liste sieht und bearbeiten darf — nicht mehr
+  und nicht weniger. Liste, Zähler und Empfänger lesen dieselbe Regel-Stelle
+  (Vorbild `backend/utils/challengeLeitungSicht.js`), sonst laufen sie
+  auseinander.
+- Rolle und Jahrgänge gelten **je Gemeinde**; beide Quellen der
+  Zugehörigkeit beachten (`users.organization_id` und `user_organizations`,
+  `backend/utils/orgMitglieder.js`).
+
 ## Drei Dinge im selben Commit mitschreiben
 
 Nicht nachträglich, nicht beim Release — im selben Commit wie die Änderung.
@@ -33,8 +59,11 @@ Nicht nachträglich, nicht beim Release — im selben Commit wie die Änderung.
 **CHANGELOG.md**, wenn die Änderung Nutzer:innen betrifft. Format Keep a
 Changelog (Hinzugefügt / Geändert / Behoben / Sonstiges), ein knapper Satz pro
 Punkt aus Nutzersicht. Niemals Build-Nummern, Framework-Namen, Dateinamen oder
-Commit-Hashes — das gehört in die Commit-Message. Reine Interna (Refactoring,
-Tests, CI) höchstens unter „Sonstiges".
+Commit-Hashes in den Einträgen — das gehört in die Commit-Message. Die einzige
+Stelle für Build-Nummern ist die Zeile direkt unter der Versionsüberschrift
+(`iOS-Build 206 · Android versionCode 113`), die beim Release aus
+`frontend/version.json` geschrieben wird. Reine Interna (Refactoring, Tests, CI)
+höchstens unter „Sonstiges".
 
 **Das Handbuch** (`docs/handbuch/`), wenn sich das Verhalten ändert. Eine
 Verhaltensänderung ohne Handbuch-Eintrag ist unvollständig.
@@ -93,6 +122,32 @@ Compose-Projekt *und* Port — nicht die Worker-Zahl anheben.
   `psql`.
 
 Im Zweifel nachsehen, wie es im Repo bisher gemacht wurde, und das fortführen.
+
+## Versionsnummern
+
+**`frontend/version.json` ist die eine Quelle** — App-Version (Semantic
+Versioning), Android `versionCode`, iOS Build-Nummer. Alles andere folgt ihr:
+
+- Die drei `package.json` (Wurzel, `frontend/`, `backend/`) und ihre Lockfiles
+  tragen dieselbe App-Version; `GET /api/status` meldet sie deshalb als `version`.
+- Die erste Versionsüberschrift im CHANGELOG nennt dieselbe Version
+  (`## [Unreleased] - 2.3.0` vor dem Release, `## [2.3.0] - Datum` danach).
+- iOS (`MARKETING_VERSION`, Info.plist) und Android (`build.gradle`) lesen sie
+  beim Store-Build; `MARKETING_VERSION` steht zusätzlich im Repo auf dem Stand.
+
+**Anheben nur mit `npm run version:setzen -- 2.4.0 [--android 125 --ios 231]`**
+aus der Wurzel — nie von Hand in einer einzelnen Datei. `npm run version:pruefen`
+und der Test `versionsnummernEineQuelle` schlagen bei jeder Abweichung an.
+
+Welche Stelle steigt: **PATCH** für Fehlerbehebungen ohne neue Funktion,
+**MINOR** für neue Funktionen (auch mit additiven API-Feldern oder Migrationen),
+**MAJOR** nur, wenn eine ausgelieferte App brechen würde — was nach der Regel
+oben nicht vorkommt. Die Store-Build-Nummern steigen mit jedem Store-Upload um
+eins, unabhängig von der App-Version. Git-Tags tragen die App-Version ohne `v`.
+
+*Konkret passiert (bis 27.09.2026): Wurzel 2.9.0, `frontend/` 0.0.1, `backend/`
+1.0.1 und `version.json` 2.3.0 standen nebeneinander; `/api/status` meldete 1.0.1
+auf einem 2.3.0-System.*
 
 ## Handbuch-Stil
 

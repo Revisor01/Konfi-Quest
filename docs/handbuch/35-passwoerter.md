@@ -15,7 +15,8 @@ ist.
 | **Konfi mit E-Mail** | selbst über „Passwort vergessen" — oder Einmalpasswort |
 | **Teamer:in** | selbst über „Passwort vergessen" — oder Einmalpasswort |
 | **Admin / Org-Admin** | selbst über „Passwort vergessen"; sonst setzt ein Org-Admin in der Benutzerverwaltung ein Passwort |
-| **Niemand kommt mehr rein** | siehe [Wenn gar nichts geht](#wenn-gar-nichts-geht) |
+| **Zu viele falsche Passwörter** | eine Stunde warten oder ein neues Passwort — siehe [Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen) |
+| **Niemand kommt mehr rein** | siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht) |
 
 ## Weg 1: Die Leitung setzt ein neues Passwort
 
@@ -41,6 +42,15 @@ gerade auf einem anderen Gerät angemeldet ist, fliegt heraus und muss sich neu
 anmelden — auch wenn dieses Gerät jemand anderem gehört. Genau darum geht es,
 wenn ein Passwort zurückgesetzt wird, weil ein Konto in falsche Hände geraten
 ist. Dasselbe gilt, wenn ein Org-Admin ein Leitungspasswort setzt.
+
+Hat die Person eine E-Mail-Adresse hinterlegt, bekommt sie eine
+[Bestätigung](#die-bestaetigung-nach-einer-passwortaenderung-einordnen), dass
+die Leitung ihr Passwort neu gesetzt hat. Das Passwort selbst steht nicht
+darin — das gibst du weiter.
+
+Konten mit Super-Admin-Rechten kann nur ein Super-Admin bearbeiten — auch
+dann, wenn ein solches Konto in deiner Gemeinde zuhause ist. Passwort, Name,
+Sperre und Löschung sind für die Gemeindeleitung dort gesperrt.
 
 **Leitungskonten laufen anders:** Für Admins und Org-Admins gibt es kein
 Einmalpasswort. Ein Org-Admin öffnet
@@ -69,8 +79,11 @@ lateinischen Namen — `Genesis`, `Exodus`, `Levitikus`, `Numeri`,
 
 Das Passwort gilt unbegrenzt. Es heißt „Einmalpasswort", weil es zum ersten
 Anmelden gedacht ist — die Person sollte es danach im Profil ändern.
+Schnell durchprobieren lässt es sich trotzdem nicht: Nach zehn falschen
+Passwörtern nimmt das Konto bis zu eine Stunde lang keine Anmeldung an (siehe
+[Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen)).
 
-## Weg 2: „Passwort vergessen" per E-Mail
+## Weg 2: „Passwort vergessen" per E-Mail nutzen
 
 Funktioniert für **alle Rollen**, aber nur, wenn eine E-Mail-Adresse hinterlegt
 ist.
@@ -86,11 +99,22 @@ App sagt dasselbe. Sonst könnte man ausprobieren, welche Adressen ein Konto
 haben. Kommt keine Mail an, kann es also auch heißen, dass die Adresse gar
 nicht hinterlegt ist.
 
-**Der Link gilt 24 Stunden** und lässt sich nur einmal verwenden. Wer zu spät
-kommt, fordert einen neuen an.
+**Mehrere Konten mit derselben Adresse** — etwa eines in jeder von zwei
+Gemeinden — bekommen jedes eine **eigene Mail mit eigenem Link**. Darin stehen
+Gemeinde und Benutzername, damit klar ist, welches Konto der Link öffnet; die
+Gemeinde steht auch im Betreff. Gelöschte und gesperrte Konten bekommen keinen
+Link — mit ihnen ginge die Anmeldung ohnehin nicht.
 
-**Höchstens fünf Anfragen in 15 Minuten.** Danach meldet die App „Zu viele
-Passwort-Reset-Anfragen. Bitte warte 15 Minuten." Das ist kein Fehler.
+**Der Link gilt 24 Stunden** und lässt sich nur einmal verwenden. Wer zu spät
+kommt, fordert einen neuen an. Ist das neue Passwort gesetzt, kommt eine
+[Bestätigung](#die-bestaetigung-nach-einer-passwortaenderung-einordnen) an
+dieselbe Adresse.
+
+**Höchstens fünf Anfragen in 15 Minuten** von demselben Gerät oder Netz. Danach
+meldet die App „Zu viele Passwort-Reset-Anfragen. Bitte warte 15 Minuten." Das
+ist kein Fehler. Für dieselbe E-Mail-Adresse sind es außerdem höchstens drei
+Anfragen in einer Stunde — egal, von wo sie kommen. So kann niemand ein
+fremdes Postfach mit Reset-Mails fluten.
 
 **Prüfe den Spam-Ordner.** Die Mails kommen von `moin@konfi-quest.de`.
 
@@ -104,6 +128,27 @@ hat.
 angemeldet war, muss sich überall neu anmelden, und die ausgesperrten Geräte
 bekommen auch keine Push-Nachrichten mehr. Das ist Absicht: Hatte jemand
 Fremdes Zugriff, ist er damit sofort draußen.
+
+**Plötzlich überall abgemeldet?** Jedes Gerät hält im Hintergrund einen
+Schlüssel, mit dem es die Anmeldung stillschweigend verlängert; bei jeder
+Verlängerung wird er gegen einen neuen getauscht. Taucht ein bereits
+getauschter Schlüssel kurz darauf ein zweites Mal auf, hat ihn außer dem
+eigenen Gerät noch jemand — dann beendet die App zur Sicherheit alle
+Anmeldungen des Kontos, auf jedem Gerät. Neu anmelden genügt; wer sich das
+nicht erklären kann, ändert danach das Passwort.
+
+## Die Bestätigung nach einer Passwortänderung einordnen
+
+Wird das Passwort eines Kontos geändert, geht eine Mail „Passwort geändert" an
+die hinterlegte Adresse — auf allen drei Wegen: selbst im Profil geändert, über
+den Link aus „Passwort vergessen" neu gesetzt oder von der Leitung neu gesetzt
+(Einmalpasswort oder Benutzerverwaltung). Setzt die Leitung das Passwort, sagt
+die Mail das; **das Passwort selbst steht nie darin**.
+
+Ohne hinterlegte Adresse gibt es keine Mail. Kommt sie, ohne dass du oder die
+Leitung etwas geändert habt, melde dich sofort bei der Leitung deiner
+Gemeinde — dann hatte jemand Fremdes Zugriff. Klappt der Versand einmal nicht,
+gilt das neue Passwort trotzdem.
 
 ## Die App mit Face ID sperren lassen
 
@@ -183,7 +228,7 @@ Zähler, der irgendwann dichtmacht.
 Du kommst also immer wieder heraus, auch wenn die Biometrie am Gerät
 zwischendurch geändert oder entfernt wurde.
 
-### Was die Übersicht der offenen Apps zeigt
+### Verstehen, was die Übersicht der offenen Apps zeigt
 
 **Bei eingeschalteter Sperre gibt die App auch dort nichts preis.** Wischst du
 die App weg oder wechselst zu einer anderen, steht in der Übersicht der offenen
@@ -197,7 +242,7 @@ gesperrt erst nach der Zeit, die du eingestellt hast.
 **Auf Android-Geräten sind dann auch Bildschirmfotos innerhalb der App
 gesperrt.** Das System lässt sie nicht zu, solange die Sperre eingeschaltet ist
 — anders ließe sich das Vorschaubild dort nicht zuverlässig verdecken. Willst
-du etwas abfotografieren, etwa einen Termin oder einen QR-Code, stellst du die
+du etwas abfotografieren, etwa ein Event oder einen QR-Code, stellst du die
 Sperre kurz auf „Aus".
 
 **Steht die Sperre auf „Aus", ändert sich nichts.** Dann bleibt die Übersicht
@@ -244,7 +289,7 @@ kein kleines l, keine Null und keine Eins. Das Passwort lässt sich also auch
 vorlesen. Gefällt dir der Vorschlag nicht, tippst du einfach noch einmal auf
 den Knopf.
 
-## Konfis kommen neu dazu: der Einladungscode
+## Konfis mit einem Einladungscode aufnehmen
 
 Neue Konfis muss niemand von Hand anlegen: Die Leitung erzeugt eine Einladung,
 die Konfis registrieren sich damit selbst und legen ihr Passwort dabei gleich
@@ -272,7 +317,7 @@ Zum Weitergeben gibt es drei Wege:
   nicht das Bild
 
 Einen Druckknopf gibt es hier **nicht** (anders als beim
-[QR-Code fürs Einchecken](70-termine.md#den-qr-check-in-nutzen) am Termin). Wer den Code
+[QR-Code fürs Einchecken](70-termine.md#den-qr-check-in-nutzen) am Event). Wer den Code
 auf Papier braucht, macht eine Bildschirmaufnahme oder verschickt den Link.
 
 **Ein Code ist für die ganze Gruppe gedacht, nicht für eine Person.** Er lässt
@@ -322,12 +367,14 @@ Dabei passiert automatisch:
 - Die Konfi ist im **Jahrgang** der Einladung und damit auch in dessen
   [Jahrgangs-Chat](90-chat.md#den-jahrgangs-chat-nutzen).
 - Sie wird zu allen zukünftigen
-  **[Pflicht-Terminen](70-termine.md#ein-pflicht-event-einrichten)** ihres Jahrgangs
+  **[Pflicht-Events](70-termine.md#ein-pflicht-event-einrichten)** ihres Jahrgangs
   angemeldet — als wäre sie von Anfang an dabei gewesen.
-- Die **Leitung des Jahrgangs bekommt einen Push**, und die Person erscheint
-  sofort in der Konfi-Liste.
+- Die **Gemeindeleitung und die Admins des Jahrgangs bekommen einen Push**,
+  und die Person erscheint bei ihnen sofort in der Konfi-Liste — wer genau,
+  steht unter
+  [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt).
 
-### Wenn die Registrierung hakt
+### Helfen, wenn die Registrierung hakt
 
 | Meldung | Ursache und Ausweg |
 |---|---|
@@ -347,7 +394,65 @@ Einladungscode wählen Konfis ihren Benutzernamen dagegen selbst.
 Beim Anmelden ist **Groß- und Kleinschreibung egal**: `Noemi.Burau`
 funktioniert genauso wie `noemi.burau`.
 
-## Wenn gar nichts geht
+## Die Meldung beim Anmelden einordnen
+
+Klappt die Anmeldung nicht, steht unter dem Knopf „Anmeldung fehlgeschlagen"
+und darunter, woran es liegt:
+
+| Meldung | Was dahintersteckt und was hilft |
+|---|---|
+| „Falsches Passwort. Bitte versuche es erneut." | Benutzername oder Passwort stimmt nicht — welches von beiden, sagt die App absichtlich nicht. Beim Passwort zählt Groß- und Kleinschreibung, beim [Benutzernamen](#den-richtigen-benutzernamen-finden) nicht. |
+| „Zu viele falsche Anmeldeversuche für dieses Konto. …" | Für dieses Konto kamen zehn falsche Passwörter innerhalb einer Stunde — siehe [Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen). |
+| „Zu viele Login-Versuche. Bitte warte 15 Minuten." | Aus demselben Netz kamen in einer Viertelstunde sehr viele falsche Passwörter, etwa im Gemeinde-WLAN. Warten hilft. |
+| „Dein Zugang wurde deaktiviert. …" | Das Konto ist deaktiviert oder die Konfi-Zeit ist vorbei — siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht). |
+| „Diese Organisation ist derzeit gesperrt. …" oder „Die Testphase dieser Organisation ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Gemeindeleitung mit dem Betrieb von Konfi Quest. |
+| „Keine Verbindung zum Server. …" | Das Gerät erreicht Konfi Quest nicht. WLAN oder mobile Daten prüfen und noch einmal versuchen. |
+
+**„Keine Verbindung" bei jedem Versuch, obwohl das Internet geht?** Dann ist
+die App auf dem Gerät nicht aktuell: Sie meldet jede Ablehnung als fehlende
+Verbindung, auch ein falsches Passwort. Ein Update aus dem App Store oder von
+Google Play bringt die richtigen Meldungen; im Browser gilt immer der aktuelle
+Stand.
+
+## Nach zu vielen falschen Passwörtern wieder hineinkommen
+
+Nach **zehn falschen Passwörtern innerhalb einer Stunde** nimmt ein Konto
+keine Anmeldung mehr an — auch nicht mit dem richtigen Passwort. Die App
+meldet dann: „Zu viele falsche Anmeldeversuche für dieses Konto. Versuche es in
+einer Stunde wieder oder bitte die Leitung deiner Gemeinde um ein neues
+Passwort."
+
+- **Gezählt wird je Konto**, nicht je Gerät: Es ist gleich, ob die Versuche
+  vom eigenen Handy, aus dem Gemeinde-WLAN oder von irgendwo sonst kommen.
+  Groß- und Kleinschreibung des Benutzernamens machen keinen Unterschied.
+- **Die Sperre endet von selbst**, spätestens eine Stunde nach dem ersten
+  falschen Passwort. Weitere Versuche in dieser Zeit verlängern sie nicht.
+- **Ein neues Passwort hebt sie sofort auf**, auf jedem der drei Wege: von der
+  [Leitung](#weg-1-die-leitung-setzt-ein-neues-passwort) gesetzt, über
+  [„Passwort vergessen"](#weg-2-passwort-vergessen-per-e-mail-nutzen) oder
+  [im Profil](#weg-3-selbst-aendern-wenn-man-angemeldet-ist) auf einem Gerät,
+  das noch angemeldet ist.
+- **Eine gelungene Anmeldung setzt die Zählung zurück.** Wer sich neunmal
+  vertippt und dann trifft, hat danach wieder zehn Versuche.
+- **Wer angemeldet ist, bleibt angemeldet.** Die Sperre gilt nur für die
+  Anmeldung mit Passwort. Die App auf dem Handy, die Anmeldung mit Face ID oder
+  Fingerabdruck und laufende Sitzungen im Browser merken nichts davon.
+
+**Wer ein fremdes Konto absichtlich sperrt,** indem er zehn falsche Passwörter
+eingibt, hält es damit nur bis zum Ende der Stunde zu und muss danach von
+vorn anfangen. Passiert das immer wieder, setzt die Leitung ein neues
+Passwort; das Kind meldet sich damit an und bleibt in der App angemeldet,
+dann trifft es die Sperre nicht mehr.
+
+> **Warum so streng?** Die Einmalpasswörter sind Bibelstellen — leicht
+> weiterzugeben, aber es gibt nur rund 31 000 davon. Wer einen Benutzernamen
+> kennt, könnte sie ohne Sperre in gut einem Tag alle ausprobieren. Mit der Sperre
+> bleiben ihm höchstens 240 Versuche am Tag; alle durchzuprobieren dauert über
+> vier Monate. Wer sein Einmalpasswort
+> [im Profil ändert](#weg-3-selbst-aendern-wenn-man-angemeldet-ist), macht es
+> Fremden noch schwerer.
+
+## Weiterkommen, wenn gar nichts geht
 
 **Eine Konfi hat keine E-Mail und die Leitung ist nicht erreichbar.** Dann
 hilft nur warten. Es gibt keinen anderen Weg — sonst könnte sich jemand
@@ -367,11 +472,26 @@ Passwort. Ein Org-Admin aktiviert es unter
 **[Mehr → Benutzer:innen](30-leitung.md#verwaltung-nur-org-admin)** wieder.
 Sich selbst kann niemand deaktivieren.
 
+**Die Konfi-Zeit ist vorbei.** 60 Tage nach der Konfirmation nimmt die App
+ehemalige Konfis automatisch aus den Listen der Leitung, nach 120 Tagen werden
+ihre Konten endgültig gelöscht. Dazwischen ist die Anmeldung ebenso gesperrt
+wie bei einem deaktivierten Konto — die App meldet „Dein Zugang wurde
+deaktiviert", und wer noch angemeldet war, wird abgemeldet. Wer nach der
+Konfirmation weiter dabei sein soll, wird vorher
+[zur Teamer:in befördert](05-rollen.md#eine-rolle-aendern); Teamer:innen sind
+von der Löschung ausgenommen.
+
 **Jemand wurde aus der Gemeinde entfernt.** Der Zugang endet sofort, auch auf
 bereits geöffneten Geräten.
 
 ## Die E-Mail-Adresse ändern
 
-Im Profil unter **„E-Mail-Adresse ändern"**. Zur Bestätigung geht eine Mail an
-die **neue** Adresse — erst nach dem Klick darin gilt sie. Solange das nicht
-bestätigt ist, funktioniert „Passwort vergessen" noch mit der alten.
+Im Profil unter **„E-Mail-Adresse ändern"**. Die neue Adresse gilt **sofort**
+— eine Bestätigungs-Mail gibt es nicht. „Passwort vergessen" geht ab diesem
+Moment nur noch über die neue Adresse; wer sich vertippt, sperrt sich damit
+von diesem Weg aus, bis die Adresse wieder stimmt. Deshalb vor dem Speichern
+nachsehen. Zur Not setzt die Leitung ein
+[neues Passwort](#weg-1-die-leitung-setzt-ein-neues-passwort).
+
+Eine Adresse, die schon ein anderes Konto nutzt, wird abgelehnt. Das Feld
+darf auch leer bleiben — dann ist „Passwort vergessen" nicht mehr möglich.

@@ -16,6 +16,7 @@ import {
 } from '../shared/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection, TrialBanner, StoreUpdateBanner } from '../shared';
+import WartungsHinweis from '../shared/WartungsHinweis';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
@@ -206,6 +207,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           Prueft selbst und rendert sonst nichts (StoreUpdateBanner). */}
       <StoreUpdateBanner />
 
+      {/* Wartungshinweis des Betriebs (E-05): steht, solange der Server ihn
+          meldet; liest nur den Stand und rendert sonst nichts. */}
+      <WartungsHinweis />
+
       <SectionHeader
         title={viewMode === 'teamer' ? 'Team' : 'Konfis'}
         subtitle={viewMode === 'teamer' ? 'Team verwalten' : 'Konfis verwalten'}
@@ -256,7 +261,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           {/* Suchfeld */}
           <IonItem>
             <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-            <IonInput
+            <IonInput aria-label={viewMode === 'teamer' ? 'Im Team suchen' : 'Konfi suchen'}
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
               placeholder={viewMode === 'teamer' ? 'Im Team suchen...' : 'Konfi suchen...'}
@@ -266,7 +271,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           {viewMode === 'konfis' && (
             <IonItem>
               <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-              <IonSelect
+              <IonSelect aria-label="Jahrgang"
                 value={selectedJahrgang}
                 onIonChange={(e) => setSelectedJahrgang(e.detail.value)}
                 interface="popover"
@@ -285,7 +290,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           {viewMode === 'konfis' && (
             <IonItem>
               <IonIcon icon={ICON_SORTIEREN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-              <IonSelect
+              <IonSelect aria-label="Sortierung"
                 value={sortBy}
                 onIonChange={(e) => setSortBy(e.detail.value)}
                 interface="popover"
@@ -365,7 +370,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                         </div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={ICON_ABZEICHEN} style={{ color: 'var(--app-color-teamer)' }} />
+                            <IonIcon icon={ICON_ABZEICHEN} style={{ color: 'var(--app-text-teamer)' }} />
                             {teamer.badge_count || 0} Badges
                           </span>
                           <span className="app-list-item__meta-item">
@@ -483,7 +488,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                 {/* Zeile 2: Jahrgang + Badges */}
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-jahrgang)' }} />
+                                    <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-jahrgang)' }} />
                                     {konfi.jahrgang_name || konfi.jahrgang || 'Kein Jahrgang'}
                                   </span>
                                   <span className="app-list-item__meta-item">
@@ -513,7 +518,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                 <div style={{ display: 'flex', gap: 'var(--app-abstand-eng)' }}>
                                   <div style={{ flex: 1 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--app-abstand-winzig)' }}>
-                                      <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-color-gottesdienst)', fontWeight: 'var(--app-schrift-halbfett)' }}>Godi</span>
+                                      <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-text-gottesdienst)', fontWeight: 'var(--app-schrift-halbfett)' }}>Godi</span>
                                       <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-text-muted)' }}>{godiPoints}/{targetGodi}</span>
                                     </div>
                                     <div className="app-progress-bar">
@@ -524,7 +529,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                   </div>
                                   <div style={{ flex: 1 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--app-abstand-winzig)' }}>
-                                      <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-color-gemeinde)', fontWeight: 'var(--app-schrift-halbfett)' }}>Gemeinde</span>
+                                      <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-text-gemeinde)', fontWeight: 'var(--app-schrift-halbfett)' }}>Gemeinde</span>
                                       <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-text-muted)' }}>{gemPoints}/{targetGem}</span>
                                     </div>
                                     <div className="app-progress-bar">
@@ -537,7 +542,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                 {/* Gesamt */}
                                 <div>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--app-abstand-winzig)' }}>
-                                    <span style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-color-konfis)', fontWeight: 'var(--app-schrift-fett)' }}>Gesamt</span>
+                                    <span style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-konfis)', fontWeight: 'var(--app-schrift-fett)' }}>Gesamt</span>
                                     <span style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-secondary)', fontWeight: 'var(--app-schrift-halbfett)' }}>
                                       {totalPoints}/{targetTotal}
                                       {percentTotal > 100 && <span style={{ color: 'var(--app-color-success-strong)', marginLeft: 'var(--app-abstand-mini)' }}>({percentTotal}%)</span>}
@@ -554,7 +559,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                               /* Ein breiter Balken für den aktiven Typ */
                               <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--app-abstand-winzig)' }}>
-                                  <span style={{ fontSize: 'var(--app-text-meta)', color: godiEnabled ? 'var(--app-color-gottesdienst)' : 'var(--app-color-gemeinde)', fontWeight: 'var(--app-schrift-fett)' }}>
+                                  <span style={{ fontSize: 'var(--app-text-meta)', color: godiEnabled ? 'var(--app-text-gottesdienst)' : 'var(--app-text-gemeinde)', fontWeight: 'var(--app-schrift-fett)' }}>
                                     {godiEnabled ? 'Gottesdienst' : 'Gemeinde'}
                                   </span>
                                   <span style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-secondary)', fontWeight: 'var(--app-schrift-halbfett)' }}>

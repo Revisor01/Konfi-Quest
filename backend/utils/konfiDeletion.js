@@ -6,7 +6,7 @@
 
 const { deletePhotoFile, deleteChallengeFile, deleteChatFile } = require('./photoStorage');
 const { rueckeNach } = require('./bookingUtils');
-const { loescheMitteilungenZuAntraegen } = require('./postfachAufraeumen');
+const { loescheMitteilungenZuAntraegen, loescheMitteilungenUeberPerson } = require('./postfachAufraeumen');
 
 /**
  * Loescht einen Konfi und alle 16 abhaengigen Tabellen in der korrekten
@@ -111,6 +111,10 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   );
   await client.query("DELETE FROM chat_messages WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
+  // Und die Mitteilungen UEBER die Person bei der Leitung -- Registrierung,
+  // Abmeldung samt Grund, Opt-out/-in, Beitrag, Zu-/Absage (Audit "Wer
+  // bekommt was" BF-13, Simon zu F-07: "ja"; utils/postfachAufraeumen.js).
+  await loescheMitteilungenUeberPerson(client, userId);
   await client.query("DELETE FROM password_resets WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM chat_poll_votes WHERE user_id = $1", [userId]);

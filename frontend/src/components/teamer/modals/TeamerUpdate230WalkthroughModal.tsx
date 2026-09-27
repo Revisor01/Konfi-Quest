@@ -32,14 +32,14 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-users)',
     rgb: '--app-color-users-rgb',
     title: 'Das Postfach',
-    text: 'Oben rechts steht jetzt eine Glocke. Sie sammelt alles an einem Ort: Anträge und Entscheidungen, Ab- und Anmeldungen, Termine, Challenge-Beiträge, Abzeichen. Auch verpasste Mitteilungen stehen dort. Antippen führt an die passende Stelle.',
+    text: 'Oben rechts steht jetzt eine Glocke. Sie sammelt alles an einem Ort: Anträge und Entscheidungen, Ab- und Anmeldungen, Events, Challenge-Beiträge, Badges. Auch verpasste Mitteilungen stehen dort. Antippen führt an die passende Stelle.',
   },
   {
     icon: ICON_BENACHRICHTIGUNG,
     color: 'var(--app-color-users)',
     rgb: '--app-color-users-rgb',
     title: 'Du wählst, was aufs Handy kommt',
-    text: 'Unter „Mehr" stellst du ein, welche Mitteilungen dein Handy erreichen: Nachrichten, Termine, Punkte und Abzeichen sowie Anfragen und Freigaben. Abgeschaltet wird nur der Weg aufs Handy — im Postfach steht trotzdem alles.',
+    text: 'Unter „Mehr" stellst du ein, welche Mitteilungen dein Handy erreichen: Nachrichten, Events, Punkte und Badges sowie Anfragen und Freigaben. Abgeschaltet wird nur der Weg aufs Handy — im Postfach steht trotzdem alles.',
   },
   {
     icon: ICON_MOND,
@@ -52,8 +52,8 @@ export const SLIDES: OnboardingSlide[] = [
     icon: ICON_TERMIN_GEFUELLT,
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
-    title: 'Direkt zum Termin',
-    text: 'Eine Termin-Mitteilung führt dich jetzt zum Termin selbst statt nur zur Liste. Auch ein zweiter Link auf einen anderen Termin öffnet den zweiten. Mehrtägige Termine zeigen in den Details beide Tage.',
+    title: 'Direkt zum Event',
+    text: 'Eine Event-Mitteilung führt dich jetzt zum Event selbst statt nur zur Liste. Auch ein zweiter Link auf ein anderes Event öffnet das zweite. Mehrtägige Events zeigen in den Details beide Tage.',
   },
   {
     icon: ICON_GEMEINDE_GEFUELLT,

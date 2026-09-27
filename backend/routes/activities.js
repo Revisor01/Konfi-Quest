@@ -11,6 +11,9 @@ const { deletePhotoFile } = require('../utils/photoStorage');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
+// Wer welchen Antrag sieht: EINE Regel fuer Liste, Zaehler und die Empfaenger
+// von "Neuer Antrag eingegangen" (27.09.2026).
+const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
@@ -213,7 +216,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'update');
 
     } catch (err) {
- console.error(`Database error in PUT /api/activities/${activityId}:`, err);
+ console.error('Database error in PUT /api/activities/%s:', activityId, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -316,7 +319,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'delete');
 
     } catch (err) {
- console.error(`Database error in DELETE /api/activities/${activityId}:`, err);
+ console.error('Database error in DELETE /api/activities/%s:', activityId, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -360,10 +363,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       // Teamer-Anträge (a.target_role = 'teamer') bleiben immer sichtbar:
       // Teamer:innen sieht ein Admin laut Regel alle, und sie haben keinen
       // Jahrgang, über den gefiltert werden könnte.
+      //
+      // Die Regel steht seit 27.09.2026 in utils/antragLeitungSicht.js --
+      // dieselbe Fassung filtert pendingRequests (badge-counts), die Zahl am
+      // App-Symbol und die Empfaenger von "Neuer Antrag eingegangen". Wer den
+      // Antrag hier nicht sieht, bekommt auch keine Mitteilung dazu.
       let jahrgangFilter = '';
-      const vollzugriff = req.user.is_super_admin
-        || ['super_admin', 'org_admin'].includes(req.user.role_name);
-      if (!vollzugriff) {
+      if (!leitungSiehtAlleAntraege(req.user)) {
         const sichtbare = (req.user.assigned_jahrgaenge || [])
           .filter(j => j.can_view)
           .map(j => j.id);
@@ -376,11 +382,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           // Array bleibt -- dasselbe Muster wie GET /admin/konfis
           // (konfi-management.js).
           res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
-          jahrgangFilter = ` AND a.target_role = 'teamer'`;
-        } else {
-          params.push(sichtbare);
-          jahrgangFilter = ` AND (a.target_role = 'teamer' OR kp.jahrgang_id = ANY($${params.length}::int[]))`;
         }
+        // Leeres Array trifft keinen Konfi-Jahrgang: ohne Zuweisung bleiben
+        // nur die Teamer-Antraege.
+        params.push(sichtbare);
+        jahrgangFilter = ` AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: `$${params.length}::int[]` })}`;
       }
 
       const query = `
@@ -390,7 +396,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         FROM activity_requests ar
         JOIN users u_konfi ON ar.user_id = u_konfi.id
         JOIN activities a ON ar.activity_id = a.id
-        LEFT JOIN konfi_profiles kp ON kp.user_id = ar.user_id
         LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
         WHERE a.organization_id = $1${statusFilter}${jahrgangFilter}
         ORDER BY ar.created_at DESC
@@ -502,25 +507,36 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
         // SCHRITT 1: Alte Entscheidung rückgängig machen
         if (oldStatus === 'approved') {
-
-          // Punkte abziehen nur für Konfi-Activities (Teamer haben keine bekommen)
-          if (!isTeamerActivity) {
-            const pointField = getPointField(request.type);
-            await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [request.points, request.user_id]);
-          }
-
-          // konfi_activity Eintrag löschen
-          await client.query(
-            `DELETE FROM user_activities
-             WHERE id = (
-               SELECT id FROM user_activities
-               WHERE user_id = $1 AND activity_id = $2
-               ORDER BY completed_date DESC, id DESC
-               LIMIT 1
-             )`,
+          // Die Zuordnung, die die Genehmigung angelegt hat: die jüngste zu
+          // user/activity (eine eigene Verknüpfung Antrag -> Zuordnung gibt
+          // es nicht). Abgezogen wird der Wert, der an DIESER Zeile steht
+          // (user_activities.points, Migration 163) — nicht der aktuelle Wert
+          // der Aktivität. Bis 26.09.2026 zog das Zurücksetzen a.points ab:
+          // Hatte die Leitung den Punktwert nach der Genehmigung geändert,
+          // stimmte der Abzug nicht zur Gutschrift (Audit BF-02). Bestand
+          // ohne Wert fällt auf a.points zurück und verhält sich wie vorher.
+          // Gibt es keine Zuordnung mehr (schon über die Konfi-Verwaltung
+          // gelöscht — dort wurden die Punkte bereits abgezogen), wird auch
+          // nichts mehr abgezogen.
+          const { rows: [zuordnung] } = await client.query(
+            `SELECT ua.id, COALESCE(ua.points, a.points) AS points
+               FROM user_activities ua
+               JOIN activities a ON a.id = ua.activity_id
+              WHERE ua.user_id = $1 AND ua.activity_id = $2
+              ORDER BY ua.completed_date DESC, ua.id DESC
+              LIMIT 1`,
             [request.user_id, request.activity_id]
           );
 
+          if (zuordnung) {
+            // Punkte abziehen nur für Konfi-Activities (Teamer haben keine bekommen)
+            if (!isTeamerActivity && zuordnung.points) {
+              const pointField = getPointField(request.type);
+              await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [zuordnung.points, request.user_id]);
+            }
+
+            await client.query('DELETE FROM user_activities WHERE id = $1', [zuordnung.id]);
+          }
         }
 
         // SCHRITT 2: Status auf pending setzen, Kommentar löschen
@@ -551,7 +567,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
     } catch (err) {
- console.error(`Database error in PUT /api/activities/requests/${requestId}/reset:`, err);
+ console.error('Database error in PUT /api/activities/requests/%s/reset:', requestId, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -610,7 +626,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         await client.query(updateRequestQuery, [status, admin_comment, req.user.id, requestId]);
 
         if (status === 'approved') {
-          await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
+          // points: der Wert der Aktivität JETZT, am Beleg festgehalten
+          // (Migration 163). Ändert die Leitung die Aktivität später, bleibt
+          // dieser Wert — Historie und Rücknahme lesen ihn (Audit 26.09.2026,
+          // BF-02).
+          await client.query(
+            "INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id, points) VALUES ($1, $2, $3, $4, $5, $6)",
+            [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id, request.points]
+          );
 
           // Punkte nur für Konfi-Activities (Teamer-Activities sind nur Nachweis)
           if (!isTeamerActivity) {
@@ -643,7 +666,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Badge-Check NACH COMMIT (verwendet db Pool)
       if (status === 'approved') {
-        newBadges = await checkAndAwardBadges(db, request.user_id);
+        newBadges = await checkAndAwardBadges(db, request.user_id, { organizationId: req.user.organization_id });
 
         // Level-Check NACH Badge-Check
         try {
@@ -735,7 +758,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToUserByRole(request.user_id, 'points', 'update');
       liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update');
     } catch (err) {
- console.error(`Database error in PUT /api/activities/requests/${requestId}:`, err);
+ console.error('Database error in PUT /api/activities/requests/%s:', requestId, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -809,7 +832,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       try {
         await client.query('BEGIN');
 
-        await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [konfiId, activityId, req.user.id, date, req.user.organization_id]);
+        // points: Wert der Aktivität zum Zeitpunkt der Vergabe, am Beleg
+        // festgehalten (Migration 163, Audit 26.09.2026 BF-02).
+        await client.query(
+          "INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id, points) VALUES ($1, $2, $3, $4, $5, $6)",
+          [konfiId, activityId, req.user.id, date, req.user.organization_id, activity.points]
+        );
 
         if (!isTeamerActivity && activity.points && activity.type) {
           const pointField = getPointField(activity.type);
@@ -825,7 +853,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       // Badge-Check NACH COMMIT (verwendet db Pool) - für Konfis UND Teamer
-      const badgeResult = await checkAndAwardBadges(db, konfiId);
+      const badgeResult = await checkAndAwardBadges(db, konfiId, { organizationId: req.user.organization_id });
 
       // Level-Check NACH Badge-Check
       try {

@@ -10,20 +10,17 @@ import {
   IonTabBar,
   IonTabButton,
   IonTabs,
-  IonPage,
-  IonContent,
-  IonBadge,
-  IonSpinner
+  IonBadge
 } from '@ionic/react';
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../contexts/AppContext';
-import { BAEUME, ladeRolleVor } from '../../navigation/rollenBaeume';
+import { BAEUME } from '../../navigation/rollenBaeume';
 import { istTabLeisteVersteckt } from '../../navigation/routes';
 import type { Rolle, BadgeKey } from '../../navigation/routes';
 import { useAppLocation } from '../../navigation/useAppLocation';
 import { useBadge } from '../../contexts/BadgeContext';
-import { trackBereich } from '../../services/analytics';
+import { bereichAusPfad, trackBereich } from '../../services/analytics';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 // AdminRolesPage entfernt - Rollen sind jetzt hardcoded
 
@@ -127,21 +124,6 @@ const ParamSeite: React.FC<{
   return <Seite {...{ [prop]: parseInt(params[param] ?? '0', 10) }} onBack={zurueck} />;
 };
 
-// Ladezustand, waehrend ein Seiten-Chunk erstmals geladen wird. Bewusst eine
-// leere IonPage mit Spinner: Der IonRouterOutlet behaelt gemountete Seiten im
-// Speicher, und die lazy-Instanzen leben auf Modulebene — beim Tab-WECHSEL
-// zurueck oder nach dem Org-Wechsel-Remount (key=orgVersion) rendert eine
-// bereits geladene Seite synchron, dieser Fallback erscheint dann NICHT mehr.
-const SeiteLaedt: React.FC = () => (
-  <IonPage>
-    <IonContent>
-      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-        <IonSpinner name="crescent" />
-      </div>
-    </IonContent>
-  </IonPage>
-);
-
 const MainTabs: React.FC = () => {
   const { user } = useApp();
   // Alle fuenf Zahlen an den Reitern kommen aus EINER Quelle: dem BadgeContext,
@@ -163,11 +145,11 @@ const MainTabs: React.FC = () => {
   // Routenwechsel statt an 15 einzelnen Tab-Buttons — so zählt auch
   // Navigation, die nicht über die Tab-Leiste läuft. Uebertragen wird nur
   // der Bereichsname (z.B. "challenges") plus die Rolle, NIE die volle Route:
-  // die kann IDs enthalten (/admin/konfis/42).
+  // die kann IDs enthalten (/admin/konfis/42). Wie der Name entsteht, steht
+  // in bereichAusPfad (services/analytics.ts).
   useEffect(() => {
     if (!user) return;
-    const teile = location.pathname.split('/').filter(Boolean);
-    const bereich = teile[1] || teile[0];
+    const bereich = bereichAusPfad(location.pathname);
     if (bereich) trackBereich(bereich);
   }, [location.pathname, user?.id]);
 

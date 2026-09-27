@@ -11,8 +11,16 @@ const { beantworteTageslosung } = require('../services/losungService');
 const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
 const { deletePhotoFile, istSichererDateiname } = require('../utils/photoStorage');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
-const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
-const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach } = require('../utils/bookingUtils');
+// Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
+// ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
+const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
+// Empfaenger der Abmelde-Meldungen: die Leitung, die das Event sieht
+// (27.09.2026, Regel in utils/terminLeitungSicht.js).
+const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
+const { nachAntwort } = require('../utils/nachAntwort');
+const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach, pruefeKonfiStorno } = require('../utils/bookingUtils');
+const { buchungszahlenJeTerminSql } = require('../utils/buchungszahlen');
+const { konfiSiehtTerminSql, konfiSiehtTermin } = require('../utils/konfiTerminSicht');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
@@ -709,34 +717,34 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         message: 'Antrag erfolgreich eingereicht'
       });
 
-      // Admin-Benachrichtigungen NACH der Antwort (Performance-Audit 10.08.):
-      // Der Push-Versand läuft seriell über alle Admins und deren Geraete —
-      // je Token ein FCM-Roundtrip. Lief das vor res.json(), wartete der Konfi
-      // darauf (gemessen ~1,5 s p95 auf dem haeufigsten Antrags-Endpunkt).
-      // Muster wie in routes/chat.js: Block in eine selbst aufgerufene
-      // async-Funktion, Fehler nur loggen — die Antwort ist bereits raus.
-      (async () => {
-      try {
-        // In-App-Mitteilung an die GESAMTE Leitung (admin UND org_admin) —
-        // identisch zum Push-Versand in PushService.sendNewActivityRequestToAdmins.
-        // Vorher stand hier nur r.name='admin', org_admin ging leer aus (M6).
-        // Seit 25.09.2026 ueber beide Quellen der Zugehoerigkeit (Stamm-Org
-        // UND user_organizations, Rolle je Organisation) -- sonst fehlt die
-        // Mitteilung bei allen, die diese Gemeinde als Zweit-Organisation
-        // betreuen (utils/orgMitglieder.js).
-        const adminIds = await ladeLeitungDerOrganisation(db, req.user.organization_id);
+      // Leitungs-Benachrichtigungen NACH der Antwort (Performance-Audit
+      // 10.08.): Der Push-Versand laeuft ueber alle Empfaenger und deren
+      // Geraete -- je Token ein FCM-Roundtrip. Lief das vor res.json(),
+      // wartete der Konfi darauf (gemessen ~1,5 s p95 auf dem haeufigsten
+      // Antrags-Endpunkt). Seit 27.09.2026 ueber nachAntwort statt frei
+      // laufend: gleiches Verhalten, Tests koennen darauf warten.
+      nachAntwort(req, async () => {
+        // EMPFAENGER (27.09.2026, Simon: "Antraege duerfen auch nur an Admins
+        // des Jahrgangs gehen"): wer den Antrag in seiner Liste sieht --
+        // org_admin immer, admin nur mit can_view-Zuweisung auf den Jahrgang
+        // des Konfis, Teamer:innen nie (utils/antragLeitungSicht.js). Vorher
+        // ging die Mitteilung an JEDEN Admin der Gemeinde (seit M6 admin UND
+        // org_admin, seit 25.09.2026 ueber beide Quellen der Zugehoerigkeit
+        // -- beides bleibt, ladeLeitungZumAntrag baut darauf auf).
+        // Postfach und Push bekommen DIESELBE Liste.
+        const empfaenger = await ladeLeitungZumAntrag(db, newRequest.id);
 
         const { rows: [konfiData] } = await db.query(
           "SELECT display_name FROM users WHERE id = $1",
           [konfiId]
         );
 
-        if (adminIds.length > 0) {
+        if (empfaenger.length > 0) {
           await db.query(
             `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
              SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
             [
-              adminIds,
+              empfaenger,
               'Neuer Antrag eingegangen',
               `${konfiData.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
               'new_activity_request',
@@ -752,20 +760,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           );
         }
 
-
-        // Send push notifications to admins
-        await PushService.sendNewActivityRequestToAdmins(
+        await PushService.sendNewActivityRequestToLeadership(
           db,
           req.user.organization_id,
+          empfaenger,
           konfiData.display_name,
           activity.name,
           activity.points
         );
-      } catch (notifErr) {
-        console.error('Error sending admin notifications:', notifErr);
-        // Don't fail the request if notification fails
-      }
-      })();
+      }, 'Leitungs-Mitteilung zum neuen Antrag');
 
       // Live-Update an alle Admins über neuen Antrag senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');
@@ -1130,17 +1133,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     try {
       const konfiId = req.user.id;
 
-      // Jahrgang des Konfis laden für Filterung
+      // Jahrgang des Konfis laden für Filterung. Eine Konfi ohne Jahrgang
+      // sieht die Termine ohne Jahrgang (sie gelten der ganzen Gemeinde,
+      // Simon 27.09.2026) -- bis dahin bekam sie hier eine leere Liste.
       const { rows: [konfiProfile] } = await db.query(
         'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
         [konfiId]
       );
 
-      if (!konfiProfile || !konfiProfile.jahrgang_id) {
-        return res.json([]); // Konfi ohne Jahrgang sieht keine Events
-      }
-
-      const jahrgangId = konfiProfile.jahrgang_id;
+      const jahrgangId = konfiProfile?.jahrgang_id ?? null;
 
       // Datumsfenster: standardmaessig nur Events des letzten Jahres (plus alle
       // zukuenftigen). Mit ?all=true wird die gesamte Historie geliefert.
@@ -1194,9 +1195,19 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                et_booked.end_time as booked_timeslot_end,
                CASE WHEN eb_konfi.status = 'confirmed' THEN true ELSE false END as is_registered,
                CASE WHEN eb_konfi.status = 'opted_out' THEN true ELSE false END as is_opted_out,
+               -- can_register (Audit 26.09.2026, Screens BF-01): Eine
+               -- Abmeldung -- durch die Leitung ('excused') oder selbst
+               -- ('opted_out') -- ist KEINE Anmeldung. bucheTermin laesst
+               -- beide seit dem 16.09.2026 wieder hinein (bookingUtils.js,
+               -- "Reaktivierung"); die Liste sagte trotzdem false, sobald
+               -- irgendeine Buchungszeile existierte, und die App zeigte
+               -- der abgemeldeten Konfi "Nicht verfuegbar". Nur 'confirmed'
+               -- und 'waitlist'/'pending' sperren den Knopf; Anmeldefenster
+               -- und Absage gelten unveraendert. Gleiche Form (boolean).
                CASE
                  WHEN e.cancelled = true THEN false
-                 WHEN eb_konfi.id IS NOT NULL THEN false
+                 WHEN eb_konfi.id IS NOT NULL
+                      AND eb_konfi.status NOT IN ('excused', 'opted_out') THEN false
                  WHEN NOW() < e.registration_opens_at OR NOW() > e.registration_closes_at THEN false
                  ELSE true
                END as can_register,
@@ -1221,7 +1232,6 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         FROM events e
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
         LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
-        INNER JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
         -- Zahlen aus event_booking_stats statt aus einer eigenen Kopie
         -- (28.08.2026). Konfi-Sicht: registered_count UND waitlist_count
         -- zaehlen NUR Konfis. Teamer haben ein eigenes Kontingent mit eigener
@@ -1255,8 +1265,14 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
             -- kennen es nicht und zeigen weiter, was sie bisher zeigten.
             COALESCE(ebs.konfi_opted_out, 0)
               + COALESCE(ebs.konfi_excused, 0) as abgemeldet_count
-          FROM event_booking_stats ebs
-          WHERE ebs.event_id = e.id
+          -- JE TERMIN statt aus der View (Audit 26.09.2026, S-04): Im
+          -- LATERAL gegen die Liste berechnete der Planer die GANZE View --
+          -- alle Buchungen aller Gemeinden, Seq Scan auf event_bookings und
+          -- users. 77 ms je Aufruf bei 100.000 Buchungen, 2 ms so. Spalte fuer
+          -- Spalte dieselbe Zaehlung wie die View (utils/buchungszahlen.js);
+          -- ein Termin ohne Buchung liefert Nullen statt keiner Zeile, das
+          -- aeussere COALESCE bleibt, die Antwort ist dieselbe.
+          FROM ${buchungszahlenJeTerminSql('e.id')} ebs
         ) bstats ON true
         LEFT JOIN LATERAL (
           SELECT STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
@@ -1299,8 +1315,12 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           LIMIT 1
         ) event_chat ON true
         WHERE e.organization_id = $1
-          AND eja.jahrgang_id = $3
-          AND e.teamer_only IS NOT TRUE
+          -- Eigener Jahrgang oder gar kein Jahrgang, nie "Nur Team":
+          -- dieselbe Regel wie die Empfaenger von "Neues Event!", das Buchen
+          -- und die Detailansicht (utils/konfiTerminSicht.js, 27.09.2026).
+          -- Vorher stand sie nur hier, als INNER JOIN auf
+          -- event_jahrgang_assignments -- und der Push kannte sie nicht.
+          AND ${konfiSiehtTerminSql({ jahrgang: '$3', e: 'e' })}
           AND (e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT NULL)
           ${dateWindowClause}
         ORDER BY e.event_date ASC
@@ -1360,6 +1380,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     try {
       const konfiId = req.user.id;
       const eventId = req.params.id;
+
+      // Nur Termine, die die Konfi sieht, oder die eigene Buchung -- sonst
+      // 404 wie ein unbekannter Termin (utils/konfiTerminSicht.js). Bis
+      // 27.09.2026 pruefte diese Route nur die Gemeinde.
+      if (!(await konfiSiehtTermin(db, konfiId, eventId, { auchMitBuchung: true }))) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
       
       // Check if konfi is registered
       const { rows: [registration] } = await db.query(
@@ -1415,7 +1442,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       
       const confirmedCount = parseInt(event.registered_count) || 0;
       const waitlistCount = parseInt(event.waitlist_count) || 0;
-      const can_register = !registration && event.registration_status === 'open';
+      // Dieselbe Regel wie can_register in GET /konfi/events (26.09.2026):
+      // eine abgemeldete Zeile ('excused'/'opted_out') sperrt nicht.
+      const abgemeldet = !!registration
+        && (registration.status === 'excused' || registration.status === 'opted_out');
+      const can_register = (!registration || abgemeldet) && event.registration_status === 'open';
       
       // Get waitlist position if user is on waitlist
       let waitlist_position = null;
@@ -1456,6 +1487,14 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
     try {
       const eventId = req.params.id;
+
+      // Die Teilnehmenden eines Termins liest nur, wer ihn sieht oder selbst
+      // gebucht ist. Bis 27.09.2026 pruefte diese Route nur die Gemeinde --
+      // eine Konfi las mit der Kennung eines Termins eines anderen
+      // Jahrgangs dessen Teilnehmende (Audit "Wer bekommt was", F-05).
+      if (!(await konfiSiehtTermin(db, req.user.id, eventId, { auchMitBuchung: true }))) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
 
       // Get confirmed participants with anonymized names — Teamer rausfiltern
       //
@@ -1534,7 +1573,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // beide Routen rufen ladeZeitfenster, damit sie nicht auseinanderlaufen.
       const zeitfenster = await ladeZeitfenster(db, req.params.id, req.user.organization_id);
 
-      if (zeitfenster === null) {
+      if (zeitfenster === null
+          || !(await konfiSiehtTermin(db, req.user.id, req.params.id, { auchMitBuchung: true }))) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
@@ -1635,7 +1675,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const eventId = req.params.id;
       const { reason } = req.body;
 
-      // Guard: Pflicht-Events können nicht über DELETE abgemeldet werden
+      // Guard: Pflicht-Events können nicht über DELETE abgemeldet werden.
+      // Bewusst VOR der Buchungspruefung und ohne Org-Filter, damit die
+      // Antwort fuer einen Pflichttermin gleich bleibt, egal ob eine
+      // Buchung existiert (so war es, so lesen es die Apps).
       const { rows: [eventCheck] } = await db.query(
         'SELECT mandatory FROM events WHERE id = $1',
         [eventId]
@@ -1646,39 +1689,39 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Check if konfi is registered
       const { rows: [registration] } = await db.query(
-        'SELECT id, user_id, event_id, status, booking_date, timeslot_id, organization_id FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        'SELECT id, user_id, event_id, status, attendance_status, booking_date, timeslot_id, organization_id FROM event_bookings WHERE user_id = $1 AND event_id = $2',
         [konfiId, eventId]
       );
 
       if (!registration) {
         return res.status(400).json({ error: 'Du bist nicht für dieses Event angemeldet' });
       }
-      
+
       // Check if event exists and get event details.
       // max_participants/has_timeslots werden für den Kapazitaetscheck beim
       // Nachruecken gebraucht — fehlten sie hier, war max_participants
       // undefined und es wurde IMMER nachgerueckt (auch über die Kapazität
       // hinaus).
       const { rows: [event] } = await db.query(
-        'SELECT name, event_date, max_participants, has_timeslots FROM events WHERE id = $1 AND organization_id = $2',
+        'SELECT name, event_date, mandatory, max_participants, has_timeslots FROM events WHERE id = $1 AND organization_id = $2',
         [eventId, req.user.organization_id]
       );
-      
+
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
-      
-      // Check if unregistration is still allowed (2 days before event)
-      const eventDate = new Date(event.event_date);
-      const now = new Date();
-      const twoDaysBeforeEvent = new Date(eventDate.getTime() - (2 * 24 * 60 * 60 * 1000));
-      
-      if (now >= twoDaysBeforeEvent) {
-        return res.status(400).json({ 
-          error: 'Abmeldung ist nur bis 2 Tage vor dem Event möglich' 
-        });
+
+      // Die fachlichen Regeln (verbucht, Pflicht, Zwei-Tage-Frist nur fuer
+      // bestaetigte Plaetze -- Audit 26.09.2026, Screens BF-02) stehen seit
+      // dem 26.09.2026 in EINER Funktion, die auch DELETE /events/:id/book
+      // benutzt. Vorher war der Weg ueber die generische Route an allen
+      // Regeln vorbei (Audit Punkte/Termine BF-01). Begruendungen bei
+      // pruefeKonfiStorno in utils/bookingUtils.js.
+      const verboten = pruefeKonfiStorno({ event, buchung: registration });
+      if (verboten) {
+        return res.status(verboten.status).json({ error: verboten.error });
       }
-      
+
       // Ab hier transaktional (Befund 28.08.2026).
       //
       // Vorher liefen Loeschung, Chat-Austritt, Kapazitaets-Check, Nachruecken
@@ -1797,19 +1840,24 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       res.json({ message: 'Abmeldung erfolgreich' });
 
-      // Push-Notification an Konfi senden
-      try {
-        await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name, eventId);
-      } catch (pushErr) {
- console.error('Error sending event unregistration push to konfi:', pushErr);
-      }
+      // Seit 27.09.2026 ueber nachAntwort statt frei laufend (gleiches
+      // Verhalten, Tests koennen darauf warten).
+      nachAntwort(req, async () => {
+        // Push-Notification an Konfi senden
+        try {
+          await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name, eventId);
+        } catch (pushErr) {
+          console.error('Error sending event unregistration push to konfi:', pushErr);
+        }
 
-      // Push-Notification an ALLE Admins senden
-      try {
-        await PushService.sendEventUnregistrationToAdmins(db, req.user.organization_id, konfiName, event.name, reason, eventId);
-      } catch (pushErr) {
- console.error('Error sending event unregistration push to admins:', pushErr);
-      }
+        // An die Leitung, die das Event sieht (27.09.2026, Regel in
+        // utils/terminLeitungSicht.js): Org-Admins immer, Admins nur mit
+        // Zuweisung auf einen Jahrgang des Events. Vorher an JEDEN Admin der
+        // Gemeinde -- samt Grund (Audit wer-bekommt-was, BF-01).
+        // DELETE /events/:id/book meldet dasselbe (events/buchung.js).
+        const empfaenger = await ladeLeitungZumTermin(db, eventId);
+        await PushService.sendEventUnregistrationToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, reason, eventId, konfiId);
+      }, 'Abmelde-Mitteilungen');
 
       // Live-Update an Konfi und Admins senden
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');
@@ -1934,13 +1982,14 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         nachgerueckt.map((promotedUserId) => ({ eventId, userId: promotedUserId, seite: 'konfi' }))
       );
 
-      // Push an Admins (fire-and-forget)
-      try {
+      // Push an die Leitung, die das Event sieht (27.09.2026,
+      // utils/terminLeitungSicht.js; vorher jeder Admin der Gemeinde, BF-01).
+      // Ueber nachAntwort, damit Tests darauf warten koennen.
+      nachAntwort(req, async () => {
         const konfiName = req.user.display_name || req.user.username;
-        await PushService.sendEventOptOutToAdmins(db, req.user.organization_id, konfiName, event.name, reason.trim(), eventId);
-      } catch (pushErr) {
-        console.error('Opt-out push error:', pushErr);
-      }
+        const empfaenger = await ladeLeitungZumTermin(db, eventId);
+        await PushService.sendEventOptOutToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, reason.trim(), eventId, konfiId);
+      }, 'Opt-out-Mitteilung an die Leitung');
 
       // Live-Update
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');
@@ -1986,7 +2035,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       //
       // ABMELDEN bleibt erlaubt — nur das Anmelden ist gesperrt.
       if (event.cancelled) {
-        return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
+        return res.status(400).json({ error: 'Dieses Event ist abgesagt' });
       }
 
       // Guard: Nur bei Pflicht-Events
@@ -2016,13 +2065,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       res.json({ message: 'Wieder angemeldet' });
 
-      // Push an Admins (fire-and-forget)
-      try {
+      // Push an die Leitung, die das Event sieht (wie beim Opt-out,
+      // 27.09.2026).
+      nachAntwort(req, async () => {
         const konfiName = req.user.display_name || req.user.username;
-        await PushService.sendEventOptInToAdmins(db, req.user.organization_id, konfiName, event.name, eventId);
-      } catch (pushErr) {
-        console.error('Opt-in push error:', pushErr);
-      }
+        const empfaenger = await ladeLeitungZumTermin(db, eventId);
+        await PushService.sendEventOptInToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, eventId, konfiId);
+      }, 'Opt-in-Mitteilung an die Leitung');
 
       // Live-Update
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');

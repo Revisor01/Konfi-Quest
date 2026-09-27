@@ -82,7 +82,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     const SERIES_INTERVALS = ['day', 'week', '2weeks', 'month'];
 
     if (!Number.isInteger(series_count) || series_count > SERIES_MAX_COUNT) {
-      return res.status(400).json({ error: `Eine Serie darf höchstens ${SERIES_MAX_COUNT} Termine haben` });
+      return res.status(400).json({ error: `Eine Serie darf höchstens ${SERIES_MAX_COUNT} Events haben` });
     }
     if (series_interval !== undefined && !SERIES_INTERVALS.includes(series_interval)) {
       return res.status(400).json({ error: 'Ungültiges Serien-Intervall. Erlaubt: day, week, 2weeks, month' });

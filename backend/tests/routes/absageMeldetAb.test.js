@@ -468,7 +468,7 @@ describe('Absage meldet alle Angemeldeten ab', () => {
 
       const b = await buchung(eventId, USERS.konfi1.id);
       expect(b.attendance_status).toBe('excused');
-      expect(b.excuse_reason).toBe('Termin abgesagt');
+      expect(b.excuse_reason).toBe('Event abgesagt');
     });
 
     // Ein Grund aus lauter Leerzeichen ist kein Grund -- die Route
@@ -478,7 +478,7 @@ describe('Absage meldet alle Angemeldeten ab', () => {
       await bucht(eventId, USERS.konfi1.id);
 
       expect((await absagen(eventId, { cancelled_reason: '   ' })).status).toBe(200);
-      expect((await buchung(eventId, USERS.konfi1.id)).excuse_reason).toBe('Termin abgesagt');
+      expect((await buchung(eventId, USERS.konfi1.id)).excuse_reason).toBe('Event abgesagt');
     });
   });
 

@@ -484,7 +484,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                   fontSize: 'var(--app-text-standard)'
                 }}
               />
-              <IonInput
+              <IonInput aria-label="Chaträume durchsuchen"
                 value={searchText}
                 onIonInput={(e) => setSearchText(e.detail.value!)}
                 placeholder="Chaträume durchsuchen..."
@@ -585,7 +585,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                   <div className="app-list-item__meta">
                                     {room.last_message?.created_at && (
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={ICON_UHRZEIT_GEFUELLT} style={{ color: 'var(--app-color-events)' }} />
+                                        <IonIcon icon={ICON_UHRZEIT_GEFUELLT} style={{ color: 'var(--app-text-events)' }} />
                                         {formatLastMessageTime(room.last_message.created_at)}
                                       </span>
                                     )}

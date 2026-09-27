@@ -6,10 +6,13 @@ const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
+const { invalidateUserCache } = require('../middleware/rbac');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
+const { syncTeamChat } = require('../utils/teamChat');
+const chatSyncCache = require('../utils/chatSyncCache');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 // Ein Ort fuer "darf dieser Aufrufer in diesem Jahrgang?" — org_admin und
 // super_admin sind ausgenommen, admin und teamer brauchen die Zuweisung.
@@ -20,6 +23,9 @@ const liveUpdate = require('../utils/liveUpdate');
 const { rueckeNach } = require('../utils/bookingUtils');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
+const { nachAntwort } = require('../utils/nachAntwort');
+const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
+const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const router = express.Router();
 
 // Konfis: Teamer darf ansehen, Admin darf bearbeiten
@@ -294,6 +300,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 VALUES ($1, $2, $3, 0, 0)`;
             await client.query(profileQuery, [userId, jahrgang_id, req.user.organization_id]);
 
+            // Ein vorher durchprobierter Benutzername startet frei (Sperre je
+            // Konto nach Fehlversuchen, utils/kontoSperre.js).
+            await kontoSperreAufheben(client, userId);
+
             // Jahrgangs-Chat synchronisieren: legt den Chat bei Bedarf an und
             // fuegt den neuen Konfi (sowie weiterhin alle Soll-Mitglieder) hinzu.
             await syncJahrgangChat(client, jahrgang_id, req.user.organization_id, req.user.id);
@@ -514,7 +524,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 const { rows: gebucht } = await client.query(enrollFutureEventsQuery, [req.params.id, req.user.organization_id, jahrgang_id]);
                 // In die Chats der neu gebuchten Pflichttermine eintreten —
                 // dieselbe Regel wie beim Nachbuchen eines Jahrgangs am Event
-                // (events.js: syncEventChat). Existiert kein Chat, passiert
+                // (utils/eventChat.js: syncEventChat, gerufen aus
+                // routes/events/verwaltung.js). Existiert kein Chat, passiert
                 // nichts (Anlage bleibt Sache der Leitung).
                 for (const row of gebucht) {
                   await addToEventChat(client, row.event_id, parseInt(req.params.id, 10), req.user.organization_id);
@@ -577,6 +588,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             await client.query('COMMIT');
             res.json({ message: 'Konfi erfolgreich gelöscht' });
+
+            // Rechte-Cache leeren (Audit 26.09.2026, Sicherheit BF-10): Sonst
+            // bediente die laufende Sitzung des geloeschten Kontos die API
+            // noch bis zu 30 Sekunden weiter (TTL in rbac.js).
+            invalidateUserCache(parseInt(userId));
 
             await meldeNachrueckern(db, req.user.organization_id, nachgerueckteLoeschung);
 
@@ -681,8 +697,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             const updateProfileQuery = "UPDATE konfi_profiles SET password_plain = NULL WHERE user_id = $1";
             await client.query(updateProfileQuery, [req.params.id]);
 
+            // Neues Passwort: Eine Sperre nach Fehlversuchen endet damit
+            // (Audit 26.09.2026, BF-04) -- der Weg, den die Leitung geht,
+            // wenn ein Kind ausgesperrt ist.
+            await kontoSperreAufheben(client, req.params.id);
+
             await client.query('COMMIT');
             res.json({ message: 'Passwort erfolgreich neu generiert', temporaryPassword: newPassword });
+
+            // Bestaetigung an die hinterlegte Adresse, falls es eine gibt
+            // (Simon, 27.09.2026, F-12 / BF-20). Das Einmalpasswort steht
+            // NICHT darin -- die Leitung gibt es persoenlich weiter.
+            nachAntwort(req, () => meldePasswortGeaendert(db, parseInt(req.params.id, 10), { durchLeitung: true }),
+                'POST /admin/konfis/:id/regenerate-password (Mail)');
 
         } catch (err) {
             await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
@@ -756,8 +783,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 }
             }
 
+            // points = der bei der Vergabe gutgeschriebene Wert (Migration 163),
+            // Bestand ohne Wert fällt auf den Wert der Aktivität zurück. Steht
+            // BEWUSST hinter ka.* — pg nimmt bei gleichem Feldnamen die letzte
+            // Spalte. Feldname und Typ bleiben, die Store-Apps lesen `points`.
             const activitiesQuery = `
-                SELECT ka.*, a.name, a.points, a.type, a.target_role, u.display_name as admin_name
+                SELECT ka.*, a.name, COALESCE(ka.points, a.points) AS points, a.type, a.target_role, u.display_name as admin_name
                 FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 LEFT JOIN users u ON ka.admin_id = u.id
@@ -892,7 +923,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             if (konfi.role_name === 'teamer' && konfi.gottesdienst_points !== null) {
                 // Activities aus der Konfi-Zeit
                 const histActivities = `
-                    SELECT ka.id, a.name as title, a.points, a.type as category,
+                    SELECT ka.id, a.name as title, COALESCE(ka.points, a.points) AS points, a.type as category,
                            ka.completed_date as date, 'activity' as source_type
                     FROM user_activities ka
                     JOIN activities a ON ka.activity_id = a.id
@@ -1200,7 +1231,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
-                const newBadges = await checkAndAwardBadges(db, req.params.id);
+                const newBadges = await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
                 if (newBadges > 0) {
                 }
             } catch (badgeErr) {
@@ -1275,7 +1306,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
-                await checkAndAwardBadges(db, req.params.id);
+                await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
             } catch (badgeErr) {
  console.error('Error checking badges after bonus points removal:', badgeErr);
                 // Don't fail the request if badge checking fails
@@ -1334,10 +1365,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             try {
                 await client.query('BEGIN');
 
+                // points: Wert der Aktivität zum Zeitpunkt der Vergabe, am Beleg
+                // festgehalten (Migration 163, Audit 26.09.2026 BF-02).
                 const query = `
-                    INSERT INTO user_activities (user_id, activity_id, completed_date, comment, admin_id, organization_id, created_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
-                await client.query(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id]);
+                    INSERT INTO user_activities (user_id, activity_id, completed_date, comment, admin_id, organization_id, created_at, points)
+                    VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)`;
+                await client.query(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id, activity.points]);
 
                 if (!isTeamerActivity && activity.points && activity.type) {
                     const updateField = getPointField(activity.type);
@@ -1362,7 +1395,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
-                const newBadges = await checkAndAwardBadges(db, req.params.id);
+                const newBadges = await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
                 if (newBadges > 0) {
                 }
             } catch (badgeErr) {
@@ -1393,8 +1426,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // org-gescopt und traf dann 0 Zeilen — das UPDATE auf konfi_profiles
             // lief aber trotzdem und zog dem fremden Konfi Punkte ab
             // (Audit 22.08.2026, gleiche Fehlerklasse wie assign-activity).
+            // points = was bei der Vergabe gutgeschrieben wurde (Migration 163),
+            // nicht der aktuelle Wert der Aktivität — sonst zieht das Löschen
+            // nach einer Änderung des Punktwerts zu viel oder zu wenig ab
+            // (Audit 26.09.2026, BF-02). Bestand ohne Wert: a.points wie vorher.
             const getActivityQuery = `
-                SELECT ka.*, a.points, a.type, a.target_role
+                SELECT ka.*, COALESCE(ka.points, a.points) AS points, a.type, a.target_role
                 FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 JOIN users u ON ka.user_id = u.id
@@ -1451,7 +1488,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
-                await checkAndAwardBadges(db, req.params.id);
+                await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
             } catch (badgeErr) {
  console.error('Error checking badges after activity removal:', badgeErr);
                 // Don't fail the request if badge checking fails
@@ -1574,6 +1611,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 "SELECT event_id, timeslot_id FROM event_bookings WHERE user_id = $1 AND status = 'confirmed'",
                 [konfiId]
             );
+            // Alle Termine mit einer Buchung, gleich welcher Status -- ihre
+            // Termin-Chats verlaesst die Person in Schritt 9b (BF-19).
+            const { rows: gebuchteTermine } = await client.query(
+                'SELECT DISTINCT event_id FROM event_bookings WHERE user_id = $1',
+                [konfiId]
+            );
             await client.query('DELETE FROM event_bookings WHERE user_id = $1', [konfiId]);
             for (const platz of freiwerdend) {
                 const [promoted] = await rueckeNach(client, {
@@ -1617,10 +1660,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // jeder anderen Teamer:in (Benutzerverwaltung).
             //
             // Folgen, bewusst in Kauf genommen:
-            //  - Ohne Zuweisung faellt die Person beim naechsten
-            //    syncJahrgangChat aus dem Chat ihres alten Jahrgangs (Schritt 9
-            //    haelt sie nur bis dahin drin). Konsistent: Wer die Jahrgangs-
-            //    Daten nicht sieht, sitzt auch nicht im Jahrgangs-Chat.
+            //  - Ohne Zuweisung verlaesst die Person den Chat ihres alten
+            //    Jahrgangs sofort (Schritt 9b, seit 27.09.2026). Konsistent: Wer
+            //    die Jahrgangs-Daten nicht sieht, sitzt auch nicht im
+            //    Jahrgangs-Chat.
             //  - Die EIGENEN eingefrorenen Konfi-Daten (Punkte, Abzeichen,
             //    Historie, Wrapped) haengen an konfi_profiles/user_id, nicht
             //    an der Zuweisung — /teamer/profile und /teamer/konfi-history
@@ -1631,6 +1674,34 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // 9. Chat-Teilnahmen: user_type aktualisieren damit Räume sichtbar bleiben
             await client.query("UPDATE chat_participants SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
             await client.query("UPDATE chat_read_status SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
+
+            // 9b. Chat-Plaetze nach der Regel, in derselben Transaktion (Audit
+            // "Wer bekommt was" 27.09.2026, BF-19). Bis hierher blieb die
+            // Person ohne Zuweisung im Jahrgangs-Chat der ehemaligen
+            // Mitkonfis und in den Termin-Chats, deren Buchungen Schritt 4
+            // gerade geloescht hat -- und bekam jede Nachricht als Push, bis
+            // zufaellig jemand anderes den Abgleich ausloeste (ihr eigenes
+            // Oeffnen gleicht den alten Jahrgang nicht ab, sie hat keine
+            // Zuweisung). Regel (CLAUDE.md "Wer sieht und bekommt was"):
+            // Teamer:innen nur in Chats ihrer zugewiesenen Jahrgaenge, der
+            // Team-Chat gilt fuers ganze Team.
+            //  - Jahrgangs-Chat: syncJahrgangChat mit der NEUEN Rolle. Ohne
+            //    Zuweisung (Normalfall, Schritt 6) faellt sie heraus; mit
+            //    can_view-Zuweisung auf den alten Jahrgang bleibt sie drin.
+            //  - Termin-Chats: wie jede Abmeldung (utils/eventChat.js).
+            //  - Team-Chat: sofort statt erst beim naechsten Abgleich nach
+            //    Ablauf des 10-Minuten-Merkers.
+            const { rows: [altesProfil] } = await client.query(
+                'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
+                [konfiId]
+            );
+            if (altesProfil?.jahrgang_id) {
+                await syncJahrgangChat(client, altesProfil.jahrgang_id, req.user.organization_id, req.user.id);
+            }
+            for (const { event_id: eventId } of gebuchteTermine) {
+                await removeFromEventChat(client, eventId, konfiId, req.user.organization_id);
+            }
+            await syncTeamChat(client, req.user.organization_id, req.user.id);
 
             // 10. Bibeluebersetzung: hier ist NICHTS mehr zu tun (Befund N8).
             // Bis Migration 132 lag dieselbe Praeferenz je Rolle in einer
@@ -1643,6 +1714,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // selbst: an der Zeile aendert die Befoerderung nichts.
 
             await client.query('COMMIT');
+            // Der naechste GET /chat/rooms gleicht mit der neuen Rolle ab.
+            chatSyncCache.invalidate(req.user.organization_id, konfiId);
 
             // Nachweisfotos der geloeschten Anträge vom Dateisystem entfernen
             // (nach dem COMMIT, fehlertolerant — eine fehlende Datei darf die

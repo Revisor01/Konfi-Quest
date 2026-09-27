@@ -142,7 +142,7 @@ const MARKERS: LegendEntry[] = [
     color: 'var(--app-color-konfis)',
     icon: ICON_FLAMME_GEFUELLT,
     label: 'Konfirmation',
-    description: 'Ein Konfirmations-Termin.',
+    description: 'Ein Event zur Konfirmation.',
     variants: ['konfi', 'teamer', 'admin'],
   },
   {

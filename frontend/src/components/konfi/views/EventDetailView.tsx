@@ -53,13 +53,15 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
-import { SectionHeader, AbsageBlock, formatEventDateLong as formatDate, formatEventTime as formatTime, zeitraumText, istVergangen, istAbgesagt } from '../../shared';
+import { SectionHeader, AbsageBlock, formatEventTime as formatTime, zeitraumText, istVergangen, istAbgesagt } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
 import { Event } from '../../../types/event';
 import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -478,6 +480,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
     if (istAbgesagt(eventData)) return danger;
     if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return events;
+    // 'excused' = von der Leitung abgemeldet (Migration 153). Bis zum
+    // 26.09.2026 kannte die Kette den Wert nicht und fiel auf "Offen".
+    if (eventData.booking_status === 'excused' && !isPastEvent) return events;
     if (isKonfi && !isPastEvent) return info; // Konfirmation = blau (analog Admin)
     if (isPastEvent && eventData.attendance_status === 'present') return success;
     if (isPastEvent && eventData.attendance_status === 'absent') return danger;
@@ -502,6 +507,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
     if (istAbgesagt(eventData)) return 'Abgesagt';
     if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return 'Abgemeldet';
+    if (eventData.booking_status === 'excused' && !isPastEvent) return 'Abgemeldet';
     if (isKonfi && !isPastEvent) return eventData.is_registered ? 'Angemeldet' : 'Konfirmation';
     if (isPastEvent && eventData.attendance_status === 'present') return 'Verbucht';
     if (isPastEvent && eventData.attendance_status === 'absent') return 'Verpasst';
@@ -521,7 +527,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <AppKopfzeile titel="Event Details" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
+        <AppKopfzeile titel="Event-Details" onZurueck={hideBackButton ? undefined : onBack} gemeindeUmschalter={false} />
         <IonContent fullscreen>
           <LoadingSpinner message="Event wird geladen..." />
         </IonContent>
@@ -726,11 +732,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     {eventData.registration_opens_at ? (
                       <>
                         <div className="app-info-row__value">
-                          von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(eventData.registration_opens_at)}
+                          von {datumKurz(eventData.registration_opens_at)} – {formatTime(eventData.registration_opens_at)}
                         </div>
                         {eventData.registration_closes_at && (
                           <div className="app-info-row__value">
-                            bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(eventData.registration_closes_at)}
+                            bis {datumKurz(eventData.registration_closes_at)} – {formatTime(eventData.registration_closes_at)}
                           </div>
                         )}
                       </>
@@ -815,7 +821,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               {eventData.location && (
                 <div className="app-info-row">
                   <IonIcon icon={ICON_ORT_GEFUELLT} className="app-info-row__icon app-icon-color--location" />
-                  <div
+                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     onClick={() => {
                       if (eventData.location_maps_url) {
                         window.open(eventData.location_maps_url, '_blank');
@@ -852,7 +858,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 <div className="app-info-row">
                   <IonIcon icon={ICON_KOPIEREN_GEFUELLT} className="app-info-row__icon app-icon-color--events" />
                   <div>
-                    <div className="app-info-row__label">Terminreihe</div>
+                    <div className="app-info-row__label">Event-Serie</div>
                     <div className="app-info-row__value">Teil einer Serie</div>
                   </div>
                 </div>
@@ -942,7 +948,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     return (
                       <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: 'var(--app-text-betont)' }}>
                         <IonIcon icon={ICON_ABSAGE} style={{ verticalAlign: 'middle', marginRight: 'var(--app-abstand-kompakt)' }} />
-                        Dieser Termin ist abgesagt
+                        Dieses Event ist abgesagt
                       </IonNote>
                     );
                   }
@@ -971,6 +977,33 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                         >
                           <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
                           Wieder anmelden
+                        </IonButton>
+                      </div>
+                    );
+                  }
+
+                  // VON DER LEITUNG ABGEMELDET am Pflichttermin (Audit
+                  // 26.09.2026, Screens BF-01): status 'excused' ist weder
+                  // opted_out noch is_registered und fiel deshalb auf den
+                  // stummen Hinweis "Pflicht-Event". Zurueck geht es ueber
+                  // die normale Anmeldung (POST /register), nicht ueber
+                  // Opt-in -- dessen UPDATE greift nur bei 'opted_out'.
+                  if (eventData.booking_status === 'excused') {
+                    return (
+                      <div style={{ textAlign: 'center' }}>
+                        <div className="app-status-box app-status-box--events" style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
+                          <IonIcon icon={ICON_ABSAGE} />
+                          Von der Leitung abgemeldet
+                        </div>
+                        <IonButton
+                          className="app-action-button"
+                          expand="block"
+                          color="success"
+                          disabled={!isOnline}
+                          onClick={handleRegister}
+                        >
+                          <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
+                          {!isOnline ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Du bist offline</> : 'Wieder anmelden'}
                         </IonButton>
                       </div>
                     );
@@ -1056,8 +1089,83 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 // allen Anmelde-Zweigen; das Abmelden oben bleibt unberuehrt.
                 <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: 'var(--app-text-betont)' }}>
                   <IonIcon icon={ICON_ABSAGE} style={{ verticalAlign: 'middle', marginRight: 'var(--app-abstand-kompakt)' }} />
-                  Dieser Termin ist abgesagt
+                  Dieses Event ist abgesagt
                 </IonNote>
+              ) : (eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending') ? (
+                // WARTELISTE (Audit 26.09.2026, Screens BF-02): is_registered
+                // ist nur bei 'confirmed' wahr. Ohne diesen Zweig fiel die
+                // Wartende unten in "Warteliste offen" -- einen Anmelde-Knopf,
+                // der mit 409 "bereits angemeldet" endete; herunter kam sie
+                // nicht. Die Zwei-Tage-Frist (canUnregister) gilt hier nicht:
+                // Ein Wartender belegt keinen Platz, das Backend nimmt ihn
+                // von der Frist aus. Gleicher Dialog wie beim Abmelden.
+                <div style={{ textAlign: 'center' }}>
+                  <div className="app-status-box app-status-box--events" style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
+                    <IonIcon icon={ICON_WARTEND_GEFUELLT} />
+                    Du stehst auf Platz {eventData.waitlist_position || '?'} der Warteliste
+                  </div>
+                  <IonButton
+                    className="app-action-button"
+                    expand="block"
+                    fill="outline"
+                    color="danger"
+                    onClick={() => presentUnregisterModal({
+                      presentingElement: pageRef.current || undefined
+                    })}
+                  >
+                    <IonIcon icon={ICON_ABSAGE} slot="start" />
+                    {!isOnline
+                      ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Von der Warteliste abmelden (wird gesendet)</>
+                      : 'Von der Warteliste abmelden'}
+                  </IonButton>
+                </div>
+              ) : eventData.booking_status === 'excused' ? (
+                // VON DER LEITUNG ABGEMELDET (Audit 26.09.2026, Screens BF-01):
+                // Der Termin steht fuer sie wieder da wie ein offener Termin
+                // (Handbuch 70-termine "Wieder anmelden kann sie sich aber
+                // selbst"). can_register kommt seit dem 26.09.2026 auch fuer
+                // 'excused'/'opted_out' als true; Anmeldeschluss und Plaetze
+                // gelten wie fuer alle -- ist der Termin voll, geht es auf die
+                // Warteliste, ist der Schluss vorbei, bleibt es beim Hinweis.
+                (() => {
+                  const voll = eventData.max_participants > 0 && (eventData.registered_count || 0) >= eventData.max_participants;
+                  const wartelisteOffen = voll && !!eventData.waitlist_enabled;
+                  const darfZurueck = !!eventData.can_register && eventData.registration_status === 'open' && (!voll || wartelisteOffen);
+                  return (
+                    <div style={{ textAlign: 'center' }}>
+                      <div className="app-status-box app-status-box--events" style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
+                        <IonIcon icon={ICON_ABSAGE} />
+                        Von der Leitung abgemeldet
+                      </div>
+                      {darfZurueck ? (
+                        <IonButton
+                          className="app-action-button"
+                          expand="block"
+                          color="success"
+                          disabled={!isOnline}
+                          onClick={handleRegister}
+                        >
+                          <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
+                          {!isOnline
+                            ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Du bist offline</>
+                            : wartelisteOffen ? 'Wieder anmelden (Warteliste)' : 'Wieder anmelden'}
+                        </IonButton>
+                      ) : (
+                        <IonButton
+                          className="app-action-button"
+                          expand="block"
+                          disabled
+                          color="medium"
+                        >
+                          <IonIcon icon={ICON_INFO_GEFUELLT} slot="start" />
+                          {eventData.registration_status === 'open'
+                            ? 'Ausgebucht'
+                            : eventData.registration_status === 'upcoming' ? 'Anmeldung noch nicht offen' : 'Anmeldung geschlossen'}
+                        </IonButton>
+                      )}
+                    </div>
+                  );
+                })()
               ) : (isKonfirmationEvent(eventData) && hasExistingKonfirmation) ? (
                 <IonButton
                   className="app-action-button"

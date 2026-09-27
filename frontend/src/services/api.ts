@@ -5,7 +5,8 @@ import { networkMonitor } from './networkMonitor';
 // Kein Zirkelbezug: biometrics.ts importiert nur tokenStore/Preferences, nie api.
 import { rotationUebernehmen } from './biometrics';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://konfi-quest.de/api';
+import { API_BASE_URL } from './apiBasis';
+import { fehlerFuersProtokoll } from '../utils/fehler';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -34,11 +35,46 @@ const api = axios.create({
  */
 export const DATEI_TIMEOUT_MS = 180000;
 
+/**
+ * Header, mit dem ein Aufrufer einen schreibenden Request als wiederholbar
+ * kennzeichnet. Wer ihn setzt, verspricht: Der Server erkennt den zweiten
+ * Versuch am Schluessel und fuehrt ihn nicht doppelt aus. Die Server-Seite
+ * dafuer ist ein eigener Schritt (bisher kennt das Backend nur client_id
+ * fuer Antraege); bis dahin setzt ihn niemand, und POST/PATCH werden nie
+ * wiederholt.
+ */
+export const IDEMPOTENCY_HEADER = 'Idempotency-Key';
+
+// Methoden, die der Server nicht folgenlos zweimal ausfuehren kann.
+const NICHT_IDEMPOTENT = new Set(['post', 'patch']);
+
+const hatIdempotenzSchluessel = (config: { headers?: unknown } | undefined): boolean => {
+  const headers = config?.headers as
+    | { get?: (name: string) => unknown; [key: string]: unknown }
+    | undefined;
+  if (!headers) return false;
+  const wert = typeof headers.get === 'function'
+    ? headers.get(IDEMPOTENCY_HEADER)
+    : headers[IDEMPOTENCY_HEADER];
+  return typeof wert === 'string' && wert.length > 0;
+};
+
 // Automatischer Retry für transiente Fehler (5xx, 408) — NICHT für 429.
 // WICHTIG: 429 (Rate-Limit) darf NICHT retried werden. Ein Retry-auf-429 zählt
 // erneut gegen das Limit und macht die Ueberschreitung schlimmer (Retry-Lawine) —
 // genau das war die Ursache für das sporadische "Zu viele Anfragen". Bei 429
 // sagt der Server "warte", die richtige Antwort ist warten, nicht sofort 3x nachfeuern.
+//
+// NUR IDEMPOTENTE METHODEN (Audit 26.09.2026, Grundgeruest BF-02): axios-retry
+// schliesst POST in isNetworkOrIdempotentRequestError bewusst aus; die
+// Klauseln `status >= 500` und ECONNABORTED darunter hoben das fuer jede
+// Methode auf. Ein POST, dessen Antwort nach 20 s nicht da war, obwohl der
+// Server laengst geschrieben hatte, ging bis zu dreimal neu hinaus -- 3
+// Bonuspunkte wurden 6, 9 oder 12, ein Termin entstand mehrfach, eine
+// Anmeldung endete als Fehler "bereits angemeldet", obwohl sie stand. Ob der
+// Request angekommen ist, laesst sich beim Timeout nicht unterscheiden;
+// deshalb werden POST/PATCH nur wiederholt, wenn der Aufrufer einen
+// Idempotency-Key mitgibt (siehe IDEMPOTENCY_HEADER).
 axiosRetry(api, {
   retries: 3,
   retryDelay: (retryCount) => {
@@ -47,6 +83,8 @@ axiosRetry(api, {
   retryCondition: (error) => {
     const status = error.response?.status;
     if (status === 429) return false;
+    const methode = (error.config?.method || 'get').toLowerCase();
+    if (NICHT_IDEMPOTENT.has(methode) && !hatIdempotenzSchluessel(error.config)) return false;
     // Timeout (ECONNABORTED/ETIMEDOUT) durch Netzwerkwechsel ebenfalls wiederholen.
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') return true;
     return axiosRetry.isNetworkOrIdempotentRequestError(error) || (status !== undefined && status >= 500);
@@ -185,6 +223,46 @@ export const ensureFreshToken = async (marginSeconds = 30): Promise<string | nul
   }
 };
 
+// Ein Token OHNE Org-Claim beschaffen (Audit 26.09.2026, Grundgeruest BF-05).
+//
+// Nach dem Rueckfall auf die Stamm-Gemeinde reicht es nicht, den Header
+// X-Active-Organization wegzulassen: Das Access-Token traegt weiter den
+// Claim active_organization_id der entzogenen Gemeinde, und rbac.js greift
+// OHNE Header genau auf diesen Claim zurueck -> wieder 403, bei jedem
+// Request, bis das Token ablaeuft (bis zu 15 Minuten). Der Weg zu einem
+// Token ohne Claim ist POST /auth/refresh ohne Org-Header (auth.js laesst den
+// Claim dann weg); switch-org auf die Stamm-Gemeinde ginge nicht, es verlangt
+// eine Zeile in user_organizations, die es fuer die Stamm-Gemeinde meist
+// nicht gibt.
+//
+// Muss NACH setActiveOrgId(null) laufen -- performRefresh liest die aktive
+// Org fuer den Header. Ein bereits laufender Refresh kann noch mit dem alten
+// Header unterwegs sein; auf ihn warten und dann selbst einmal refreshen.
+// Scheitert der Refresh (Funkloch), bleibt die Sitzung bestehen -- das
+// entscheidet allein der 401-Interceptor -- und der Zustand ist der von
+// vorher: das alte Token wirkt bis zu seinem Ablauf nach.
+const tokenOhneOrgClaimBeschaffen = async (): Promise<string | null> => {
+  if (isRefreshing) {
+    await new Promise<void>((resolve) => addRefreshSubscriber(() => resolve(), () => resolve()));
+  }
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+  isRefreshing = true;
+  try {
+    const neu = await performRefresh(refreshToken);
+    isRefreshing = false;
+    onTokenRefreshed(neu);
+    return neu;
+  } catch (err) {
+    isRefreshing = false;
+    onTokenRefreshFailed(err);
+    // Nur Status und Code: `config.data` des Refresh-Fehlers traegt den
+    // Refresh-Token im Klartext (Audit Grundgeruest BF-08).
+    console.warn('Token ohne Gemeinde-Claim konnte nicht beschafft werden:', fehlerFuersProtokoll(err));
+    return null;
+  }
+};
+
 // Handle auth errors and rate limiting
 api.interceptors.response.use(
   (response) => response,
@@ -200,9 +278,12 @@ api.interceptors.response.use(
       error.response?.data?.error === 'Kein Zugriff auf diese Organisation' &&
       getActiveOrgId()
     ) {
-      // Aktive Org zuruecksetzen und den AppContext per Event zum Remount bringen
-      // (KEIN window.location-Reload -> der zerschiesst den nativen WebView).
+      // Aktive Org zuruecksetzen, ein Token OHNE Org-Claim holen und erst
+      // dann den AppContext per Event zum Remount bringen -- der baut damit
+      // auch den Socket mit dem neuen Token auf (KEIN window.location-Reload
+      // -> der zerschiesst den nativen WebView).
       await setActiveOrgId(null);
+      await tokenOhneOrgClaimBeschaffen();
       window.dispatchEvent(new CustomEvent('auth:org-fallback'));
       return Promise.reject(error);
     }

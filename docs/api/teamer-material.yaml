@@ -1,12 +1,14 @@
 # =====================================================================
 # Konfi Quest API - OpenAPI 3.1 - BLOCK 3 von 3
-# Dokumentierte Dateien (Stand main, 23.08.2026, am Code verifiziert):
-#   backend/routes/teamer.js   -> Prefix /api/teamer   (22 Routen; Nr. 22 ist
+# Dokumentierte Dateien (Stand main, 23.08.2026, am Code verifiziert;
+# Zaehlung nachgezogen am 26.09.2026 — die Generatoren zaehlen bei jedem
+# Lauf nach):
+#   backend/routes/teamer.js   -> Prefix /api/teamer   (26 Operationen; darunter
 #   POST /events/{id}/zusage, nachdokumentiert und erweitert am 01.09.2026)
-#   backend/routes/material.js -> Prefix /api/material (13 Routen)
-#   backend/routes/wrapped.js  -> Prefix /api/wrapped  (6 Routen)
+#   backend/routes/material.js -> Prefix /api/material ( 9 Operationen)
+#   backend/routes/wrapped.js  -> Prefix /api/wrapped  (10 Operationen)
 #
-# Mount-Prefixe geprüft in backend/createApp.js (Zeilen 442-446):
+# Mount-Prefixe geprüft in backend/createApp.js (app.use-Bloecke):
 #   app.use('/api/teamer',   require('./routes/teamer')(...))
 #   app.use('/api/wrapped',  wrappedRouter)          // aus routes/wrapped.js
 #   app.use('/api/material', require('./routes/material')(...))
@@ -300,10 +302,26 @@ paths:
         jede Jahrgangs-Zuordnung sowie org_admin/super_admin. Ohne diese
         Pruefung hier liesse sich die Sperre aus POST /api/events/{id}/book
         ueber diesen zweiten Weg umgehen.
+        BEHOBEN 27.09.2026: Die Ausnahme fuer org_admin/super_admin las die
+        Rolle am KONTO. Wer zuhause org_admin und in der aktiven Gemeinde nur
+        Teamer:in ist, sagte dort fuer jeden Termin fremder Jahrgaenge zu
+        (200 statt 403). Jetzt zaehlt die Rolle in der Gemeinde des Termins
+        (Stamm-Gemeinde: users.role_id, weitere: user_organizations); das Flag
+        is_super_admin bleibt gemeindeuebergreifend.
         Fachlicher Kern in utils/bookingUtils.js (setzeTeamerZusage). Pushes
         an die Leitung ueber die Teamer-Typen teamer_event_booking bzw.
         teamer_event_cancellation (Absage seit 01.09.2026 mit Grund im Text);
         nachrueckende Teamer:innen bekommen waitlist_promotion.
+        GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-01, F-10): Die beiden
+        Leitungs-Meldungen gehen nur an die Leitung, die das Event sieht --
+        org_admin immer, admin mit can_view-Zuweisung auf einen Jahrgang des
+        Events, bei "Nur Team" (teamer_only) und Events ohne Jahrgang alle
+        Admins (backend/utils/terminLeitungSicht.js); vorher ueber
+        sendToOrgAdmins an jeden Admin der Gemeinde. Die zusagende Person
+        selbst bekommt keine Meldung ueber die eigene Zu- oder Absage -- die
+        Route steht hinter requireTeamer, auch admin und org_admin sagen hier
+        zu und bekamen bis dahin ihre eigene Meldung. Versand nach der
+        Antwort; Antwortform unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -485,6 +503,10 @@ paths:
         beide Routen dasselbe Frontend-Modal speisen. Berechnung seitdem in
         backend/utils/punkteHistorie.js, von beiden Routen genutzt.
         Antwortform unveraendert.
+        `points` eines activity-Eintrags ist seit 26.09.2026 der bei der
+        Vergabe gutgeschriebene Wert (user_activities.points, Migration 163),
+        nicht mehr der aktuelle Wert der Aktivität (Punkte/Termine BF-02,
+        behoben).
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
@@ -875,7 +897,10 @@ paths:
         Konfispruch aus konfi_profiles (aufgeloeste Listen-Wahl oder
         Freitext, null ohne Eintrag oder bei abgeschaltetem Schalter — dann
         wird die Tabelle gar nicht erst abgefragt). Zuletzt wird geprüft,
-        ob ein Teamer-Wrapped-Snapshot vorliegt. Die Challenges-Teaser
+        ob ein Teamer-Wrapped-Snapshot in der AKTIVEN Organisation vorliegt
+        (has_wrapped; BEHOBEN 26.09.2026, Audit Chat BF-06: vorher ohne
+        Org-Filter, die Flagge stand in Gemeinde B auf true, obwohl nur
+        Gemeinde A einen Rueckblick hatte). Die Challenges-Teaser
         selbst laedt das Frontend separat über GET /api/challenges/admin.
         GEAENDERT 15.09.2026 — ABGESAGTE TERMINE: Bis dahin filterte die
         Abfrage sie hart weg (AND e.cancelled IS NOT TRUE), und die
@@ -1026,6 +1051,15 @@ paths:
         Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht. Bis
         26.08.2026 gab es hier nur Push — Teamer-Antraege fehlten damit im
         Mitteilungscenter der Leitung (Befund M6, behoben).
+        GEAENDERT 27.09.2026: Empfaenger von Mitteilung und Push bestimmt
+        dieselbe Regel wie GET /api/admin/activities/requests
+        (backend/utils/antragLeitungSicht.js). Antraege auf
+        Teamer-Aktivitaeten sieht jeder admin und org_admin der Gemeinde, es
+        bleibt also bei der gesamten Leitung -- neu ist nur, dass die
+        antragstellende Person selbst keine Mitteilung mehr bekommt: Die Route
+        steht hinter requireTeamer, auch admin und org_admin koennen hier
+        melden und bekamen bis dahin "Neuer Antrag eingegangen" ueber den
+        eigenen Antrag. Antwortform unveraendert.
         Seit 01.09.2026 faengt die Route auch die Race zwischen Vorab-Check
         und Insert ab (Unique-Verletzung 23505 auf client_id) und liefert
         dann 200 mit dem vorhandenen Antrag statt eines 500ers (Befund M3,
@@ -1579,7 +1613,17 @@ paths:
   # backend/routes/wrapped.js  (Prefix /api/wrapped)
   # Der Router exportiert zusaetzlich generateAllTeamerWrapped als Funktion
   # fuer den Cron am 6. Januar (backgroundService) - das ist KEINE HTTP-Route
-  # und daher hier nicht dokumentiert. Ein Gegenstueck fuer Konfis gibt es
+  # und daher hier nicht dokumentiert. BEHOBEN 26.09.2026 (Audit Chat BF-04):
+  # Der Cron-Weg las die Teamer:innen allein ueber users.organization_id
+  # (Stamm-Org, ohne is_active/deleted_at), waehrend POST /generate-teamer
+  # laengst beide Quellen nahm; jetzt dieselbe Empfaengerliste
+  # (utils/orgMitglieder.js), ohne Empfaenger kein Push.
+  # BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-22): Der Cron lief ueber
+  # ALLE Organisationen, auch gesperrte (organizations.is_active = false),
+  # in denen sich niemand anmelden kann; jetzt nur ueber aktive. Dieselbe
+  # Grenze in allen Mitteilungs-Laeufen von backgroundService.js
+  # (NUR_AKTIVE_GEMEINDE); POST /generate-teamer von Hand ist unveraendert.
+  # Ein Gegenstueck fuer Konfis gibt es
   # bewusst nicht mehr (entfallen 08.09.2026): Es war toter Code ohne jeden
   # Aufrufer, und der Konfi-Rueckblick laeuft nie automatisch - wann der
   # richtige Tag ist, weiss nur die Gemeinde.
@@ -1600,17 +1644,19 @@ paths:
       x-berechtigung:
         rollen: ["alle authentifizierten"]
         middleware: [verifyTokenRBAC]
-        org-scope: false
-        objekt-pruefung: "nur eigene Daten (WHERE user_id = req.user.id)"
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten in der AKTIVEN Org (WHERE user_id = req.user.id AND organization_id = req.user.organization_id)"
         hinweis: >
-          # BEFUND W1: Die Abfrage filtert NICHT auf organization_id. Bei
-          Multi-Org-Nutzung kommt der neueste Snapshot unabhaengig von der
-          aktiven Organisation zurück. Es sind immer eigene Daten, aber der
-          Org-Kontext wird ignoriert. Ausserdem gibt es keinen Rollen-Guard:
+          # BEFUND W1 -- BEHOBEN 26.09.2026 (Audit Chat BF-06): Die Abfrage
+          filterte NICHT auf organization_id. Bei Multi-Org-Nutzung kam der
+          neueste Snapshot unabhaengig von der aktiven Organisation zurueck --
+          das Teamer-Dashboard zeigte in Gemeinde B die Zahlen aus Gemeinde A.
+          Jetzt zaehlt die aktive Org (req.user.organization_id); additiv
+          traegt die Antwort organization_id. Weiterhin kein Rollen-Guard:
           jede authentifizierte Rolle darf die Route aufrufen (für
           org_admin/admin/super_admin ist das Ergebnis in aller Regel 404).
       responses:
-        "200": { description: "data (Snapshot-JSON), computed_at, year, wrapped_type" }
+        "200": { description: "data (Snapshot-JSON), computed_at, year, wrapped_type, ausgabe_id, titel; additiv seit 26.09.2026 organization_id" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Konfi-Wrapped noch nicht freigegeben (Freigabe-Gate seit 26.08.2026)" }
         "404": { description: Kein Wrapped-Snapshot vorhanden }
@@ -1785,15 +1831,17 @@ paths:
           required: false
           schema: { type: string, enum: [konfi, teamer] }
       x-berechtigung:
-        rollen: [admin, org_admin, super_admin]
+        rollen: [admin, org_admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: >
           Admin sieht nur Ausgaben von Jahrgaengen mit eigener Zuweisung
-          (user_jahrgang_assignments). org_admin und super_admin sehen alle
-          Jahrgaenge. Teamer-Ausgaben sind organisationsweit und deshalb NUR
-          fuer org_admin/super_admin sichtbar - dieselbe Grenze wie beim
-          Erzeugen.
+          (user_jahrgang_assignments). org_admin sieht alle Jahrgaenge.
+          Teamer-Ausgaben sind organisationsweit und deshalb NUR fuer
+          org_admin sichtbar - dieselbe Grenze wie beim Erzeugen. Ein Konto
+          mit Rolle super_admin faellt an requireAdmin durch (403), wie im
+          Dateikopf beschrieben — die rollen-Zeile nannte es bis zum
+          26.09.2026 trotzdem (Audit Dokumentation BF-07).
       responses:
         "200":
           description: >
@@ -1837,18 +1885,58 @@ paths:
           required: true
           schema: { type: integer, minimum: 1 }
       x-berechtigung:
-        rollen: [admin, org_admin, super_admin]
+        rollen: [admin, org_admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: >
           Ausgabe muss zur aktiven Org gehoeren (sonst 404). Teamer-Ausgaben
-          nur org_admin/super_admin (sonst 403). Konfi-Ausgaben: Admin
-          braucht eine Zuweisung auf den Jahrgang (sonst 403).
+          nur org_admin (sonst 403). Konfi-Ausgaben: Admin braucht eine
+          Zuweisung auf den Jahrgang (sonst 403). Rolle super_admin faellt
+          an requireAdmin durch (403); rollen-Zeile nachgezogen am 26.09.2026.
       responses:
         "200": { description: "message, deleted (Anzahl geloeschter Rueckblicke)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { description: "Ausgabe nicht gefunden oder fremde Organisation" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/wrapped/team-jahre:
+    get:
+      tags: ["Wrapped"]
+      summary: Jahre, fuer die ein Team-Rueckblick erzeugt werden kann
+      description: >
+        Seit 08.09.2026. Liefert die Jahre, in denen es fuer Teamer:innen der
+        aktiven Organisation etwas zu erzaehlen gibt — dieselbe Grenze wie der
+        Rueckblick selbst (Simon, 09.09.2026: "Wenn es fuer Teamer nichts zu
+        verarbeiten gibt aus einem Jahr, dann darf das auch nicht angezeigt
+        werden"). Quellen: anwesende Teamer:innen an Terminen,
+        Teamer-Aktivitaeten (target_role teamer), Teamer-Abzeichen,
+        Zertifikate und bereits vorhandene Teamer-Ausgaben. Ein reiner
+        Konfi-Termin macht ein Jahr NICHT lieferbar.
+
+        Das laufende Jahr steht immer in der Liste, aber gesperrt — sonst
+        hielte man sein Fehlen fuer einen Fehler.
+
+        Nachdokumentiert am 26.09.2026 (Audit Dokumentation BF-09).
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "Alle Abfragen auf req.user.organization_id; Admins erreichen die Route nicht (der Team-Rueckblick ist Sache der Leitung, die Oberflaeche fragt sie nur als Leitung ab)"
+      responses:
+        "200":
+          description: "Array, absteigend nach Jahr: { jahr, gesperrt } — gesperrt = true fuer das laufende Jahr"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    jahr: { type: integer }
+                    gesperrt: { type: boolean }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/wrapped/meine:
@@ -1868,9 +1956,13 @@ paths:
         rollen: [konfi, teamer, admin, org_admin, super_admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "nur eigene Snapshots (user_id = req.user.id)"
+        objekt-pruefung: "nur eigene Snapshots der AKTIVEN Org (user_id = req.user.id AND organization_id = req.user.organization_id)"
+        # BEHOBEN 26.09.2026 (Audit Chat BF-06): Bis dahin ohne Org-Filter --
+        # eine Teamer:in in zwei Gemeinden sah hier beide Listen vermischt,
+        # ohne Gemeindeangabe. Jetzt nur die aktive Org; additiv
+        # organization_id und organization_name je Eintrag.
       responses:
-        "200": { description: "Array: snapshot_id, ausgabe_id, titel, year, zeitraum_start, zeitraum_ende, computed_at" }
+        "200": { description: "Array: snapshot_id, ausgabe_id, titel, year, zeitraum_start, zeitraum_ende, computed_at; additiv seit 26.09.2026 organization_id, organization_name" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "500": { $ref: '#/components/responses/ServerError' }
 

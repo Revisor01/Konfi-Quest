@@ -40,20 +40,23 @@ import {
   ICON_SCHLIESSEN,
   ICON_VIDEO,
 } from '../../shared/icons';
-import { haptik, ImpactStyle } from '../../../utils/haptics';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { FileViewer } from '@capacitor/file-viewer';
-import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
+import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
 import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { medienVergessen } from '../../../services/mediaCache';
+import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE } from '../../../services/mediaCompression';
 import FileViewerModal from '../../shared/FileViewerModal';
+import LadeStandZeile from '../../shared/LadeStandZeile';
+import SendeAnzeige from '../../shared/SendeAnzeige';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istWebLink } from '../../../utils/linkDisplay';
-import { trackHandlung } from '../../../services/analytics';
+import { materialInhalt, trackHandlung } from '../../../services/analytics';
+import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface MaterialFile {
   id: number;
@@ -139,6 +142,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
     ?? (material?.link_url ? [material.link_url] : [])
   );
   const { isSubmitting, guard } = useActionGuard();
+  const [sendeProzent, setSendeProzent] = useState(0);
 
   const [events, setEvents] = useState<EventOption[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<JahrgangOption[]>([]);
@@ -194,53 +198,39 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const openFile = async (file: MaterialFile) => {
-    try {
-      await haptik(ImpactStyle.Medium);
-      const response = await api.get(`/material/files/${file.stored_name}`, {
-        responseType: 'blob',
-        timeout: DATEI_TIMEOUT_MS
-      });
-      const blob = response.data;
-      const base64Data = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.readAsDataURL(blob);
-      });
+  // Vorhandene Dateien über den gemeinsamen Weg von Chat, Challenges und dem
+  // Material-Reiter (27.09.2026, Simon: „Fotos Anträge und Material ja
+  // bitte."): Medien-Cache, Fortschritt in der Zeile, nativ mit Teilen und
+  // Sichern, sonst der Betrachter. Vorher lud diese Stelle jede Datei bei
+  // jedem Öffnen neu, mit eigenem Weg in die native Vorschau, und beim
+  // Rückfall auf den Betrachter ein zweites Mal.
+  const { dateiOeffnen, ladendeDatei } = useDateiOeffnen({
+    quelle: 'material',
+    kontext: () => existingFiles.map((f) => ({ pfad: f.stored_name, name: f.original_name, typ: f.mime_type })),
+    fehlerOrt: 'material-admin-formular',
+  });
 
-      const ext = file.original_name.split('.').pop() || '';
-      const tempPath = `temp/material_${file.id}.${ext}`;
+  const openFile = (file: MaterialFile) => dateiOeffnen(file.stored_name, file.original_name, file.mime_type);
 
+  // Eine gewählte Datei vorbereiten wie in Chat und Challenges: Fotos
+  // verkleinern, dann gegen die Grenze des Servers prüfen (20 MB je Datei).
+  // Was zu groß bleibt, kommt nicht in die Liste — mit demselben Satz wie
+  // überall. Vorher ging jede Datei ungeprüft in die Liste und scheiterte
+  // erst beim Speichern.
+  const dateienVorbereiten = async (gewaehlt: File[]) => {
+    const fertig: File[] = [];
+    let zuGross: string | null = null;
+    for (const datei of gewaehlt) {
       try {
-        await Filesystem.mkdir({ path: 'temp', directory: Directory.Documents, recursive: true });
-      } catch { /* existiert bereits */ }
-
-      await Filesystem.writeFile({
-        path: tempPath,
-        data: base64Data,
-        directory: Directory.Documents,
-        recursive: true
-      });
-
-      const fileUri = await Filesystem.getUri({ directory: Directory.Documents, path: tempPath });
-
-      if (file.mime_type.startsWith('image/')) {
-        await FileOpener.open({ filePath: fileUri.uri, contentType: file.mime_type });
-      } else {
-        await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
-      }
-    } catch (err) {
-      console.warn('Native file viewer failed, using in-app fallback:', err);
-      try {
-        const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
-        openInAppViewer(response.data, file.original_name, file.mime_type);
-      } catch (fallbackErr) {
-        setError('Fehler beim Öffnen der Datei', { ort: 'material-admin-formular', fehler: fallbackErr });
+        const { file, bildVorschau } = await fuerUploadVorbereiten(datei, UPLOAD_GRENZE.material);
+        if (bildVorschau) URL.revokeObjectURL(bildVorschau);
+        fertig.push(file);
+      } catch (err) {
+        if (err instanceof DateiZuGrossFehler) zuGross = err.message;
       }
     }
+    if (zuGross) setError(zuGross);
+    if (fertig.length > 0) setNewFiles(prev => [...prev, ...fertig]);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -255,10 +245,12 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
     // 1 -> 1 -> 0 ueber das change-Event hinweg.
     //
     // Das Leeren selbst bleibt noetig, damit dieselbe Datei ein zweites Mal
-    // gewaehlt werden kann (ohne Wertwechsel feuert change nicht).
+    // gewaehlt werden kann (ohne Wertwechsel feuert change nicht). Das
+    // Vorbereiten (verkleinern, Grenze) arbeitet mit der schon ausgelesenen
+    // Liste weiter.
     const gewaehlt = e.target.files ? Array.from(e.target.files) : [];
     if (gewaehlt.length > 0) {
-      setNewFiles(prev => [...prev, ...gewaehlt]);
+      void dateienVorbereiten(gewaehlt);
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -282,6 +274,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
             try {
               await api.delete(`/material/files/${file.id}`);
               setExistingFiles(prev => prev.filter(f => f.id !== file.id));
+              // Auch vom eigenen Gerät (27.09.2026): Sonst läge die Datei
+              // weiter im Medien-Cache, obwohl es sie nicht mehr gibt.
+              await medienVergessen(file.stored_name, 'material');
             } catch {
               setError('Fehler beim Löschen der Datei');
             }
@@ -343,8 +338,15 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
             newFiles.forEach(file => {
               formData.append('files', file);
             });
+            // Mit Sende-Anzeige wie beim Challenge-Einreichen und dem
+            // Zeitlimit für Dateien: Zehn Dateien zu 20 MB brauchen länger
+            // als die 20 s, die sonst gelten.
             await api.post(`/material/${materialId}/files`, formData, {
-              headers: { 'Content-Type': 'multipart/form-data' }
+              headers: { 'Content-Type': 'multipart/form-data' },
+              timeout: DATEI_TIMEOUT_MS,
+              onUploadProgress: (event) => {
+                if (event.total) setSendeProzent(Math.round((event.loaded * 100) / event.total));
+              }
             });
           }
 
@@ -359,9 +361,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
             const hatDatei = newFiles.length > 0;
             const hatLink = bereinigt.length > 0;
             trackHandlung('material-bereitgestellt', {
-              inhalt: hatDatei && hatLink
-                ? 'beides'
-                : hatDatei ? 'datei' : hatLink ? 'link' : 'nur-text'
+              inhalt: materialInhalt(hatDatei, hatLink)
             });
           }
 
@@ -386,6 +386,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
         onSuccess();
       } catch (err) {
         setError(fehlerText(err, 'Fehler beim Speichern'));
+      } finally {
+        setSendeProzent(0);
       }
     });
   };
@@ -410,6 +412,12 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
             </IonButtons>
           )}
         </IonToolbar>
+        {/* Dieselbe Anzeige wie beim Einreichen eines Challenge-Beitrags
+            (27.09.2026). Vorher lief das Hochladen ohne jede Rückmeldung
+            außer dem drehenden Knopf. */}
+        {isSubmitting && (
+          <SendeAnzeige prozent={sendeProzent} was={newFiles.length === 1 ? 'Datei' : 'Dateien'} farbe="var(--app-text-material)" />
+        )}
       </IonHeader>
 
       <IonContent className="app-gradient-background">
@@ -504,7 +512,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                         .map(ev => {
                           const isSelected = eventIds.includes(ev.id);
                           return (
-                            <div
+                            <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                               key={ev.id}
                               className="app-list-item"
                               onClick={() => {
@@ -528,7 +536,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                                     <div className="app-list-item__title">{ev.name}</div>
                                     {ev.event_date && (
                                       <div className="app-list-item__subtitle">
-                                        {new Date(ev.event_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                        {datumKurz(ev.event_date)}
                                       </div>
                                     )}
                                   </div>
@@ -559,7 +567,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                       {jahrgaenge.map(jg => {
                         const isSelected = jahrgangIds.includes(jg.id);
                         return (
-                          <div
+                          <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                             key={jg.id}
                             className="app-list-item"
                             onClick={() => {
@@ -706,11 +714,12 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                               </div>
                               <div className="app-list-item__content">
                                 <div className="app-list-item__title">{file.original_name}</div>
-                                <div className="app-list-item__meta">
-                                  <span className="app-list-item__meta-item">
-                                    {formatFileSize(file.file_size)}
-                                  </span>
-                                </div>
+                                <LadeStandZeile
+                                  laedt={ladendeDatei?.pfad === file.stored_name}
+                                  prozent={ladendeDatei?.prozent ?? null}
+                                  sonst={formatFileSize(file.file_size)}
+                                  farbe="var(--app-text-material)"
+                                />
                               </div>
                             </div>
                           </div>

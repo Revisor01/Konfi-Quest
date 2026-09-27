@@ -1,5 +1,6 @@
 const { addToEventChat } = require('./eventChat');
 const { gehoertZumTermin } = require('./jahrgangsZugriff');
+const { konfiSiehtTermin } = require('./konfiTerminSicht');
 
 // Shared Booking-Logik für Event-Buchungen
 // Wird von konfi.js und events.js genutzt
@@ -117,7 +118,43 @@ async function takeBackEventPoints(client, userId, eventId) {
 }
 
 /** Fester Text, wenn eine Absage ohne Grund ausgesprochen wurde. */
-const ABSAGE_OHNE_GRUND = 'Termin abgesagt';
+const ABSAGE_OHNE_GRUND = 'Event abgesagt';
+
+/**
+ * Wer erfaehrt, dass ein Termin ausfaellt -- beim ABSAGEN und beim LOESCHEN
+ * eines noch nicht abgesagten Termins dieselben Personen (27.09.2026, Audit
+ * "Wer bekommt was", BF-06).
+ *
+ * Alle Gebuchten ohne Rollenfilter: Konfis, Teamer:innen und Leitungen, die
+ * sich selbst eingetragen haben; bestaetigt ('confirmed'), auf der Warteliste
+ * ('waitlist') und einzeln abgemeldet ('excused' -- sie waren angemeldet und
+ * sollen erfahren, dass der Termin ausfaellt, statt zu glauben, sie haetten
+ * nur gefehlt). Nicht: wer sich selbst abgemeldet hat ('opted_out') und
+ * geloeschte Konten.
+ *
+ * Bis dahin stand die Abfrage zweimal da, und die Loeschroute nahm nur
+ * Buchungen mit der Stamm-Rolle 'konfi': Gebuchte Teamer:innen erfuhren nie,
+ * dass ein Termin geloescht wurde -- bei "Nur Team"-Terminen also niemand.
+ *
+ * Laeuft VOR meldeAlleAbBeiAbsage bzw. vor dem Loeschen der Buchungen.
+ *
+ * @param {object} db - Pool oder Client
+ * @param {number|string} eventId
+ * @returns {Promise<Array<number>>} Nutzer-IDs ohne Doppelte
+ */
+async function ladeBetroffeneEinesAusfalls(db, eventId) {
+  const { rows } = await db.query(
+    `SELECT DISTINCT eb.user_id
+       FROM event_bookings eb
+       JOIN users u ON eb.user_id = u.id
+      WHERE eb.event_id = $1
+        AND eb.status IN ('confirmed', 'waitlist', 'excused')
+        AND u.deleted_at IS NULL
+      ORDER BY eb.user_id`,
+    [eventId]
+  );
+  return rows.map((r) => r.user_id);
+}
 
 /**
  * Meldet beim Absagen eines Termins alle Angemeldeten und Wartenden ab.
@@ -785,7 +822,7 @@ async function darfTeamerAnDiesenTermin(client, event, userId) {
   return gehoertZumTermin(client, userId, event.id);
 }
 
-const JAHRGANG_FREMD = 'Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist';
+const JAHRGANG_FREMD = 'Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist';
 
 /**
  * DER Buchungskern: eine Selbst-Anmeldung, komplett.
@@ -849,7 +886,7 @@ async function bucheTermin(client, eingabe) {
   //     Das Zuruecknehmen der Absage laeuft NICHT hier durch, sondern ueber
   //     hebeAbsageAbmeldungenAuf (eigenes UPDATE) — der Riegel behindert es
   //     nicht.
-  if (event.cancelled) return fehler(400, 'Dieser Termin ist abgesagt');
+  if (event.cancelled) return fehler(400, 'Dieses Event ist abgesagt');
 
   // 2. Doppelbuchung — vor allen fachlichen Pruefungen, damit ein zweiter
   //    Versuch immer 409 meldet und nicht je nach Termin etwas anderes.
@@ -956,6 +993,13 @@ async function bucheTermin(client, eingabe) {
 
   // ---------- KONFI-SEITE ----------
   if (event.teamer_only) return fehler(403, 'Dieses Event ist nur für das Team');
+  // Jahrgangsgrenze (27.09.2026, Audit "Wer bekommt was", F-05): Buchen darf
+  // nur, wer den Termin in seiner Liste sieht -- eigener Jahrgang oder ein
+  // Termin ohne Jahrgang. Vorher pruefte die Konfi-Seite keinen Jahrgang; mit
+  // der Kennung eines fremden Termins meldete sich eine Konfi an.
+  if (!(await konfiSiehtTermin(client, userId, event.id))) {
+    return fehler(403, 'Dieses Event gehört zu einem anderen Jahrgang');
+  }
   // (Der cancelled-Riegel steht jetzt zentral oben, vor der Rollenweiche.)
 
   const fenster = validateRegistrationWindow(event);
@@ -1112,15 +1156,15 @@ async function setzeTeamerZusage(client, eingabe) {
        FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE`,
     [eventId, orgId]
   );
-  if (!event) return fehler(404, 'Termin nicht gefunden');
-  if (event.cancelled) return fehler(400, 'Dieser Termin ist abgesagt');
+  if (!event) return fehler(404, 'Event nicht gefunden');
+  if (event.cancelled) return fehler(400, 'Dieses Event ist abgesagt');
   // Nur dort, wo Teamer:innen ueberhaupt gebraucht werden. Bei reinen
   // Konfi-Terminen gibt es nichts zuzusagen.
   if (!event.teamer_needed && !event.teamer_only) {
-    return fehler(400, 'Für diesen Termin wird kein Team gesucht');
+    return fehler(400, 'Für dieses Event wird kein Team gesucht');
   }
   if (new Date(event.event_date) <= new Date()) {
-    return fehler(400, 'Der Termin liegt bereits in der Vergangenheit');
+    return fehler(400, 'Das Event liegt bereits in der Vergangenheit');
   }
   // Dieselbe Jahrgangsgrenze wie im Buchungskern -- sonst liesse sich die
   // Sperre ueber diesen zweiten Weg umgehen.
@@ -1216,8 +1260,49 @@ async function setzeTeamerZusage(client, eingabe) {
   return { ok: true, status, vorherigerStatus, event, promotedUserId };
 }
 
+// ---------------------------------------------------------------------------
+// SELBSTABMELDUNG EINER KONFI: DIE REGELN AN EINER STELLE (26.09.2026)
+//
+// Audit Punkte/Termine BF-01: Die Konfi-App meldet ueber
+// DELETE /konfi/events/:id/register ab, und diese Route setzte drei Regeln
+// durch -- Pflichttermine nur per Opt-out, Abmelden nur bis zwei Tage vorher,
+// Protokoll in event_unregistrations. Die aeltere generische Route
+// DELETE /events/:id/book war mit einem Konfi-Token ebenso erreichbar und
+// prueften nur "gibt es eine Buchung": Ein Konfi mit API-Kenntnis konnte so
+// ein von der Leitung eingetragenes "unentschuldigt gefehlt" am Pflichttermin
+// selbst loeschen oder sich am Vortag ohne Spur abmelden.
+//
+// Deshalb steht die Entscheidung jetzt hier, und beide Routen rufen sie --
+// dasselbe Muster wie bucheTermin fuer das Anmelden. Reine Funktion ohne
+// Datenbank: Die Routen laden Termin und Buchung ohnehin.
+//
+// Reihenfolge der Pruefungen: Verbucht schlaegt alles (der Vermerk gehoert
+// der Leitung), dann Pflicht, dann Frist. Die Frist gilt nur fuer BESTAETIGTE
+// Plaetze -- eine Wartende belegt keinen und darf jederzeit herunter
+// (Audit Screens BF-02). 'excused'-Zeilen sind selbst Abmeldungen; sie zu
+// loeschen gibt nichts frei und bleibt erlaubt (Absage-Faelle, konfi.test).
+// ---------------------------------------------------------------------------
+const STORNO_FRIST_MS = 2 * 24 * 60 * 60 * 1000;
+
+function pruefeKonfiStorno({ event, buchung, now = new Date() }) {
+  if (buchung && (buchung.attendance_status === 'present' || buchung.attendance_status === 'absent')) {
+    return { status: 400, error: 'Die Anwesenheit ist bereits verbucht — Änderungen macht die Leitung' };
+  }
+  if (event && event.mandatory) {
+    return { status: 400, error: 'Pflicht-Events können nur über Opt-out abgemeldet werden' };
+  }
+  if (buchung && buchung.status === 'confirmed' && event && event.event_date) {
+    const fristEnde = new Date(new Date(event.event_date).getTime() - STORNO_FRIST_MS);
+    if (now >= fristEnde) {
+      return { status: 400, error: 'Abmeldung ist nur bis 2 Tage vor dem Event möglich' };
+    }
+  }
+  return null;
+}
+
 module.exports = {
   ABSAGE_OHNE_GRUND,
+  ladeBetroffeneEinesAusfalls,
   meldeAlleAbBeiAbsage,
   hebeAbsageAbmeldungenAuf,
   takeBackEventPoints,
@@ -1231,5 +1316,6 @@ module.exports = {
   zaehleBuchungen,
   zaehleBestaetigte,
   bucheTermin,
-  setzeTeamerZusage
+  setzeTeamerZusage,
+  pruefeKonfiStorno
 };

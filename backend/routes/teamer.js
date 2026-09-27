@@ -14,7 +14,13 @@ const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
 const { heuteBerlin } = require('../utils/zeitformat');
-const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
+// Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
+// ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
+const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
+// Empfaenger der Zu- und Absage-Meldungen: die Leitung, die das Event sieht
+// (27.09.2026, Regel in utils/terminLeitungSicht.js).
+const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
+const { nachAntwort } = require('../utils/nachAntwort');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
@@ -835,12 +841,15 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       }
 
       // Wrapped-Verfuegbarkeit prüfen (Teamer: direkt auf wrapped_snapshots)
+      // -- in der AKTIVEN Gemeinde (Audit 26.09.2026, Chat BF-06): Sonst
+      // hiess es in Gemeinde B "Dein Team-Jahr ist da", und GET /wrapped/me
+      // zeigte dort die Zahlen aus Gemeinde A.
       const { rows: [wrappedResult] } = await db.query(
         `SELECT EXISTS(
           SELECT 1 FROM wrapped_snapshots
-          WHERE user_id = $1 AND wrapped_type = 'teamer'
+          WHERE user_id = $1 AND wrapped_type = 'teamer' AND organization_id = $2
         ) as has_wrapped`,
-        [userId]
+        [userId, orgId]
       );
       const has_wrapped = wrappedResult?.has_wrapped || false;
 
@@ -1212,22 +1221,29 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Konfi-Typen event_unregistration/event_opt_out: Deren Texte und
         // data-Felder (konfi_name) sind auf Konfis zugeschnitten, und die
         // Leitungs-App behandelt Teamer-Meldungen ueber die eigenen Typen.
-        try {
+        //
+        // EMPFAENGER (27.09.2026): die Leitung, die das Event sieht
+        // (utils/terminLeitungSicht.js) -- Org-Admins immer, Admins bei
+        // Jahrgangs-Events nur mit Zuweisung, bei "Nur Team" und Events ohne
+        // Jahrgang alle. Vorher jeder Admin der Gemeinde (BF-01). Die
+        // zusagende Person selbst nie: Die Route steht hinter requireTeamer,
+        // auch die Leitung sagt hier zu. Ueber nachAntwort, damit Tests darauf
+        // warten koennen.
+        const grund = typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null;
+        nachAntwort(req, async () => {
+          const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: req.user.id });
           if (dabei) {
-            await PushService.sendTeamerEventBookingToAdmins(
-              db, req.user.organization_id, req.user.display_name,
-              ergebnis.event.name, ergebnis.status, eventId
+            await PushService.sendTeamerEventBookingToLeadership(
+              db, req.user.organization_id, empfaenger, req.user.display_name,
+              ergebnis.event.name, ergebnis.status, eventId, req.user.id
             );
           } else {
-            await PushService.sendTeamerEventCancellationToAdmins(
-              db, req.user.organization_id, req.user.display_name,
-              ergebnis.event.name, eventId,
-              typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null
+            await PushService.sendTeamerEventCancellationToLeadership(
+              db, req.user.organization_id, empfaenger, req.user.display_name,
+              ergebnis.event.name, eventId, grund, req.user.id
             );
           }
-        } catch (pushErr) {
-          console.error('Push nach Teamer-Zusage/-Absage:', pushErr);
-        }
+        }, 'Push nach Teamer-Zusage/-Absage');
 
         // Ist nach einer Absage jemand von der Team-Warteliste nachgerueckt,
         // erfaehrt er das per Push — wie beim Storno-Weg.
@@ -1299,49 +1315,49 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       res.status(201).json({ id: newRequest.id, message: 'Antrag eingereicht' });
 
       // Leitungs-Benachrichtigung NACH der Antwort (Muster wie in konfi.js):
-      // In-App-Mitteilung UND Push an admin/org_admin. Vorher gab es hier nur
+      // In-App-Mitteilung UND Push an die Leitung. Vorher gab es hier nur
       // Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung,
       // waehrend Konfi-Antraege dort auftauchten (Drei-Ansichten-Befund M6).
-      // Fehler werden nur geloggt — die Antwort ist bereits raus.
-      (async () => {
-        try {
-          // Leitung ueber beide Quellen der Zugehoerigkeit (Stamm-Org UND
-          // user_organizations, Rolle je Organisation) -- wie beim Push
-          // (utils/orgMitglieder.js, 25.09.2026).
-          const adminIds = await ladeLeitungDerOrganisation(db, req.user.organization_id);
+      // Seit 27.09.2026 ueber nachAntwort statt frei laufend.
+      nachAntwort(req, async () => {
+        // EMPFAENGER nach derselben Regel wie die Antragsliste
+        // (utils/antragLeitungSicht.js, 27.09.2026). Antraege von
+        // Teamer:innen sieht jeder Admin der Gemeinde (Teamer-Ausnahme vom
+        // 31.08.2026) -- hier kommen also weiterhin admin und org_admin an,
+        // ueber beide Quellen der Zugehoerigkeit. Postfach und Push bekommen
+        // DIESELBE Liste.
+        const empfaenger = await ladeLeitungZumAntrag(db, newRequest.id);
 
-          if (adminIds.length > 0) {
-            await db.query(
-              `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
-               SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
-              [
-                adminIds,
-                'Neuer Antrag eingegangen',
-                `${req.user.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
-                'new_activity_request',
-                JSON.stringify({
-                  request_id: newRequest.id,
-                  konfi_id: userId,
-                  konfi_name: req.user.display_name,
-                  activity_name: activity.name,
-                  points: activity.points
-                }),
-                req.user.organization_id
-              ]
-            );
-          }
-
-          await PushService.sendNewActivityRequestToAdmins(
-            db,
-            req.user.organization_id,
-            req.user.display_name,
-            activity.name,
-            activity.points
+        if (empfaenger.length > 0) {
+          await db.query(
+            `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+             SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
+            [
+              empfaenger,
+              'Neuer Antrag eingegangen',
+              `${req.user.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
+              'new_activity_request',
+              JSON.stringify({
+                request_id: newRequest.id,
+                konfi_id: userId,
+                konfi_name: req.user.display_name,
+                activity_name: activity.name,
+                points: activity.points
+              }),
+              req.user.organization_id
+            ]
           );
-        } catch (notifErr) {
-          console.error('Error sending admin notifications (teamer request):', notifErr);
         }
-      })();
+
+        await PushService.sendNewActivityRequestToLeadership(
+          db,
+          req.user.organization_id,
+          empfaenger,
+          req.user.display_name,
+          activity.name,
+          activity.points
+        );
+      }, 'Leitungs-Mitteilung zum neuen Teamer-Antrag');
 
       // Live-Update an alle Admins/Org-Admins/Teamer:innen der Org (neuer Antrag)
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');

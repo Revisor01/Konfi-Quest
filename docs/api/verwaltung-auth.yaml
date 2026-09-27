@@ -1,8 +1,12 @@
 # ============================================================================
 # Konfi Quest API — Block 3: Verwaltung & Auth
-# Dokumentiert: auth, docs-auth, teamer, organizations, material, users,
-# jahrgaenge, badges, wrapped, levels, categories, roles, settings (112 Routen)
-# Stand: 2026-08-22, verifiziert am Code (Branch main-Stand des Repos)
+# Dokumentiert: auth, docs-auth, health/status/app-version, metrics,
+# organizations, users (beide Mounts), einladungen — 67 Operationen,
+# gezaehlt am 26.09.2026 (die Generatoren zaehlen bei jedem Lauf nach).
+# teamer, material und wrapped stehen in teamer-material.yaml; jahrgaenge,
+# badges, levels, categories, roles und settings in stammdaten.yaml.
+# Stand: 2026-08-22, verifiziert am Code (Branch main-Stand des Repos);
+# Kopfzeilen und Rollenangaben nachgezogen am 26.09.2026.
 # ============================================================================
 #
 # SCHWERPUNKT-ANALYSE
@@ -10,13 +14,17 @@
 # 1. RECHTEVERGABE (Wer darf wen anlegen/aendern/loeschen?)
 #    Rollenhierarchie (utils/roleHierarchy.js, Level 5..1):
 #      super_admin(5) > org_admin(4) > admin(3) > teamer(2) > konfi(1)
-#    - User-Verwaltung (/api/users bzw. /api/admin/users) ist komplett
-#      requireOrgAdmin; zusaetzlich checkUserHierarchy pro Operation:
-#        * super_admin darf alle Rollen außer super_admin verwalten
+#    - User-Verwaltung (/api/users bzw. /api/admin/users) ist requireAdmin
+#      (org_admin UND admin; Entscheidung 26.08.2026, bis dahin
+#      requireOrgAdmin — Kopfzeile nachgezogen am 26.09.2026); die
+#      Reichweite regelt checkUserHierarchy pro Operation:
+#        * super_admin darf alle Rollen außer super_admin anlegen; ein
+#          super_admin-Konto (Rolle ODER Flag is_super_admin) bearbeitet,
+#          loescht oder setzt nur ein Super-Admin zurueck (seit 26.09.2026)
 #        * org_admin darf ALLE Rollen der eigenen Org verwalten,
 #          AUCH andere org_admins (explizite Regel im Code)
-#        * admin duerfte teamer/konfi verwalten, teamer nur konfi —
-#          praktisch irrelevant, da die Routen requireOrgAdmin verlangen
+#        * admin verwaltet teamer und konfi (seine eigenen Jahrgaenge),
+#          teamer und konfi niemanden
 #    - Rollen-Zuweisung: role_id wird gegen roles der eigenen Org geprüft;
 #      bei Update mit Rollenwechsel prüft canCreateRole die Ziel-Rolle.
 #      GET /roles/list/assignable liefert nur zuweisbare Rollen
@@ -28,28 +36,47 @@
 #    - Letzter org_admin einer Org ist gegen Löschen geschuetzt (409).
 #    - Selbst-Löschung: über POST /auth/delete-account (jede Rolle, mit
 #      Passwort-Bestaetigung); DELETE /users/:id blockt Selbst-Löschung.
-#    - Multi-Org-Mitgliedschaften (user_organizations) vergibt NUR der
-#      super_admin (POST/DELETE /organizations/:id/members); konfi und
-#      super_admin sind als Mitglieds-Rolle explizit verboten.
+#    - Multi-Org-Mitgliedschaften (user_organizations) vergibt der
+#      super_admin direkt (POST/DELETE /organizations/:id/members) — und seit
+#      dem 26.09.2026 der org_admin per Einladung (POST /api/einladungen; die
+#      Mitgliedschaft entsteht erst mit der Annahme durch die Person). konfi
+#      und super_admin sind als Mitglieds-Rolle auf beiden Wegen verboten.
 #
 # 2. OFFENE ROUTEN (ohne Auth-Middleware) — alle unter /api/auth:
 #      POST /login                    authLimiter: 300/15min pro Client-IP,
-#                                     skipSuccessfulRequests
+#                                     skipSuccessfulRequests; dazu seit
+#                                     27.09.2026 die Kontosperre: 10 falsche
+#                                     Passwoerter je Stunde und Konto, danach
+#                                     429 auch mit richtigem Passwort
+#                                     (utils/kontoSperre.js, Audit Sicherheit
+#                                     BF-04 -- BEHOBEN 27.09.2026)
 #      POST /register-konfi           registerLimiter: 200/h pro IP; Schutz
 #                                     durch Invite-Code (8 Hex-Zeichen, 7 Tage
 #                                     gueltig, org-/jahrgangsgebunden) +
 #                                     Passwort-Policy + Konfi-Limit-Check
-#      POST /request-password-reset   eigener Limiter: 5/15min; neutrale
-#                                     Antwort (kein E-Mail-Enumeration-Leak)
+#      POST /request-password-reset   zwei eigene Limiter: 5/15min je Client-IP
+#                                     (clientIp, seit 26.09.2026 -- vorher
+#                                     req.ip, hinter dem Proxy fuer ALLE
+#                                     gleich; Audit Sicherheit BF-05) UND
+#                                     3/h je Ziel-E-Mail; neutrale Antwort
+#                                     (kein E-Mail-Enumeration-Leak)
 #      POST /reset-password           NUR globaler General-Limiter (2000/15min)
 #      POST /refresh                  NUR General-Limiter; Refresh-Token-
 #                                     Rotation mit 5-Minuten-Grace-Window
+#                                     (seit 26.09.2026 genau einmal nutzbar;
+#                                     dritte Verwendung widerruft alle
+#                                     Refresh-Tokens des Kontos, BF-08)
 #      GET  /check-username/:username NUR General-Limiter
 #      GET  /validate-invite/:code    NUR General-Limiter
 #    # LÜCKE (NEU): check-username, validate-invite, reset-password und
 #    # refresh haben keinen eigenen (strengeren) Rate-Limiter — Username-
 #    # Enumeration und Invite-Code-Bruteforce (nur 8 Hex-Zeichen = 4 Byte
 #    # Entropie) sind mit bis zu 2000 Requests/15min/IP möglich.
+#    "Pro Client-IP" heisst seit 26.09.2026 (Audit Sicherheit BF-13): der
+#    Header X-Real-IP zaehlt nur, wenn die Anfrage aus dem Docker-Netz kommt
+#    (utils/clientIp.js: Peer in Loopback/Link-Local/privatem Bereich), sonst
+#    req.ip. Vorher liess sich der Header von jedem Client setzen, der das
+#    Backend ohne den eigenen Proxy erreicht -- und damit jedes Limit umgehen.
 #
 # 3. SUPER_ADMIN — Sonderbehandlung:
 #    - requireSuperAdmin akzeptiert Rolle 'super_admin' ODER das DB-Flag
@@ -86,9 +113,14 @@
 #      Teamer sehen die eigenen Zertifikate über ihr Dashboard.
 #
 # NEUE LUECKEN (zusaetzlich zu den bekannten, Details an den Routen):
-#  N1  PUT /users/:id/reset-password schuetzt Ziel-User mit is_super_admin-
-#      Flag NICHT: org_admin derselben Org kann dessen Passwort setzen und
-#      so Super-Admin-Rechte uebernehmen (Privilege Escalation).
+#  N1  BEHOBEN 26.09.2026. PUT /users/:id/reset-password, PUT /users/:id,
+#      DELETE /users/:id und POST /users/:id/jahrgaenge weisen ein Ziel mit
+#      Rolle super_admin ODER Flag is_super_admin mit 403 ab, sofern der
+#      Aufrufer nicht selbst Super-Admin ist (istSuperAdminKonto in
+#      utils/roleHierarchy.js, in checkUserHierarchy und inline im Reset).
+#      Vorher konnte ein org_admin derselben Org dessen Passwort setzen und
+#      so Super-Admin-Rechte uebernehmen (Privilege Escalation; Audit
+#      26.09.2026, Sicherheit BF-01, reproduziert).
 #  N2  BEHOBEN. Passwort-Änderung/-Reset revoziert bestehende Refresh-Tokens
 #      (90 Tage) und setzt token_invalidated_at: change-password und
 #      auth/reset-password am 22.08.2026, die Push-Tokens am 01.09.2026,
@@ -113,7 +145,9 @@
 #      Unique-Kollision erlaubt E-Mail-Enumeration durch eingeloggte User.
 #
 # BEKANNT (dokumentiert, nicht neu): Multi-Org-Claim-Nachwirkung nach
-# Mitgliedschafts-Entzug (Access-Token bis 15 Min + 30s-User-Cache);
+# Mitgliedschafts-Entzug (Access-Token bis 15 Min + 30s-User-Cache) --
+# clientseitig BEHOBEN 26.09.2026 (Audit Grundgeruest BF-05): die App holt
+# beim ersten 403 ein Token ohne Claim, siehe DELETE /organizations/{id}/members/{userId};
 # Passwort-Reset-Token unhashed in password_resets; org_admin darf is_active
 # der eigenen Org setzen (PUT /organizations/:id); Org-Anlage erlaubt
 # 6-Zeichen-Admin-Passwoerter.
@@ -182,6 +216,29 @@ paths:
     post:
       tags: ["Anmeldung & Konto"]
       summary: Login für alle Rollen (case-insensitiver Username)
+      description: >
+        KONTOSPERRE seit 27.09.2026 (Audit Sicherheit BF-04, HOCH): Nach 10
+        falschen Passwoertern (401) innerhalb einer Stunde nimmt das Konto
+        keine Anmeldung mehr an -- auch nicht mit dem richtigen Passwort
+        (429, error_code account_locked). Gezaehlt wird je Konto, nicht je
+        IP: Schluessel ist SHA-256 ueber LOWER(username), gerechnet von
+        Postgres (dieselbe Funktion wie die Kontosuche); unbekannte
+        Benutzernamen werden genauso gezaehlt, die Sperre verraet also
+        nicht, ob es ein Konto gibt. Der Zaehler liegt in
+        rate_limit_zaehler (Migration 167) und gilt ueber alle Replicas.
+        Festes Fenster ab dem ersten Fehlversuch; weitere Versuche
+        verlaengern es nicht. Eine erfolgreiche Anmeldung setzt den Zaehler
+        auf 0; jedes neu gesetzte Passwort und jedes neu angelegte Konto
+        ebenso (POST /auth/change-password, /auth/reset-password,
+        /auth/register-konfi, POST und PUT /users, PUT
+        /users/{id}/reset-password, POST /admin/konfis und
+        /admin/konfis/{id}/regenerate-password, POST /organizations und
+        /organizations/{id}/admins). Leere Felder (400), deaktivierte oder
+        geloeschte Konten (403) und Serverfehler zaehlen nicht. Keine
+        RateLimit-Kopfzeilen fuer die Kontosperre (sie verrieten, wie oft
+        ein Konto durchprobiert wurde), nur Retry-After. Die IP-Grenze
+        (authLimiter) bleibt davor bestehen. Antwortform wie beim
+        authLimiter: { error } mit Status 429, zusaetzlich error_code.
       requestBody:
         required: true
         content:
@@ -196,19 +253,71 @@ paths:
         "200":
           description: "JWT (15 Min) + Refresh-Token (90 Tage, SHA-256-gehasht gespeichert) + User-Objekt (bei Konfi inkl. jahrgang und Punkten; bei `admin` seit 27.08.2026 zusaetzlich assigned_jahrgaenge[] fuer die Warnung beim Jahrgangswechsel)"
         "401": { description: "Ungueltige Anmeldedaten (User unbekannt oder Passwort falsch — gleiche Meldung)" }
-        "403": { description: "User deaktiviert (user_inactive), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin ausgenommen" }
-        "429": { description: "authLimiter: 300 Fehlversuche/15min pro Client-IP" }
+        "403": { description: "User deaktiviert ODER soft-geloescht (deleted_at; beides user_inactive, identische Antwort), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung" }
+        "429":
+          description: >
+            Zwei Quellen, gleiche Form { error } (Vertrag mit den Apps; die
+            Store-Apps 2.2.x zeigen wegen eines Fehlers der Anmeldeseite bei
+            jeder Ablehnung "Keine Verbindung zum Server", ab 2.3.0 steht
+            dort der Text aus error): authLimiter -- 300 Fehlversuche/15min pro
+            Client-IP (Zähler seit 26.09.2026 replica-übergreifend in der
+            Datenbank, Betrieb BF-09), Meldung "Zu viele Login-Versuche.
+            Bitte warte 15 Minuten." -- oder die Kontosperre (seit
+            27.09.2026): 10 falsche Passwörter je Stunde und Konto, Meldung
+            "Zu viele falsche Anmeldeversuche für dieses Konto. Versuche es
+            in einer Stunde wieder oder bitte die Leitung deiner Gemeinde um
+            ein neues Passwort." mit error_code account_locked und
+            Retry-After. Der Text ist fest und nennt keinen Namen.
+          headers:
+            Retry-After:
+              schema: { type: integer }
+              description: "Nur bei der Kontosperre: Sekunden bis zum Ende des Fensters (höchstens 3600)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+                  error_code: { type: string, enum: [account_locked], description: "Nur bei der Kontosperre" }
       x-berechtigung:
         rollen: [oeffentlich]
-        middleware: [authLimiter, validateLogin]
+        middleware: [authLimiter, validateLogin, kontoSperre]
         org-scope: false
-        objekt-pruefung: "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide"
-        hinweis: "Offene Route; setzt last_login_at"
+        objekt-pruefung: "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide; deleted_at IS NOT NULL -> 403 user_inactive fuer jede Rolle"
+        hinweis: "Offene Route; setzt last_login_at; setzt nach Erfolg den Zaehler der Kontosperre zurueck"
+        # BEHOBEN 27.09.2026 (Audit Sicherheit BF-04, HOCH): Kontosperre je
+        # Konto. Vorher zaehlte nur der authLimiter je IP (1 200 Versuche je
+        # Stunde und Adresse); die Einmalpasswoerter (30 772 Bibelstellen,
+        # 14,9 Bit) waren damit in 25,6 h je IP, mit 10 IPs in 2,6 h
+        # durchprobiert. Jetzt hoechstens 240 Versuche am Tag je Konto, egal
+        # von wie vielen Adressen: 128,2 Tage fuer den ganzen Raum, 64,1 im
+        # Mittel. Das Passwortformat bleibt (Entscheidung Simon, 27.09.2026).
+        # Tests: backend/tests/routes/anmeldesperreJeKonto.test.js.
+        # BEHOBEN 26.09.2026 (Audit Sicherheit BF-07): Login, Refresh und
+        # verifyTokenRBAC pruefen deleted_at. Vorher konnte sich ein Konfi, den
+        # der Auto-Loeschlauf 60 Tage nach der Konfirmation ausgeblendet hatte,
+        # bis zur harten Loeschung (Tag 120) weiter anmelden, chatten und
+        # buchen -- unsichtbar fuer die Leitung (reproduziert: Login 200,
+        # GET /chat/rooms 200). Antwort bewusst identisch mit "deaktiviert".
 
   /api/auth/change-password:
     post:
       tags: ["Anmeldung & Konto"]
       summary: Eigenes Passwort ändern (mit aktuellem Passwort)
+      description: >
+        NEU 27.09.2026 (Bericht "Wer bekommt was", BF-20; Simons
+        Entscheidung F-12: "Ja, fuer Konten mit E-Mail"): Nach der Antwort
+        geht eine Bestaetigung "Passwort geändert" an die hinterlegte Adresse
+        (utils/passwortGeaendertMail.js). Die Vorlage
+        emailService.sendPasswordChangedEmail gab es, sie wurde bis dahin
+        nirgends gerufen. Ohne Adresse keine Mail; das Passwort steht nie
+        darin; ein Versandfehler aendert nichts an Antwort und Passwort. Die
+        Antwortform ist unveraendert.
+
+
+        SEIT 27.09.2026 (Audit Sicherheit BF-04): Das neue Passwort hebt
+        eine Kontosperre nach Fehlversuchen auf (siehe POST
+        /api/auth/login). Antwortform unveraendert.
       requestBody:
         required: true
         content:
@@ -255,7 +364,7 @@ paths:
               properties:
                 password: { type: string, description: "Bestaetigung mit aktuellem Passwort" }
       responses:
-        "200": { description: "Account geloescht (Hard-Delete in einer Transaktion, Sockets getrennt)" }
+        "200": { description: "Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (utils/konfiDeletion.js, loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Antwortform unveraendert" }
         "400": { description: "Passwort fehlt oder falsch" }
         "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
@@ -364,6 +473,15 @@ paths:
         wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen
         ueber invite_codes.
 
+        AUCH ALS ZIEL (BEHOBEN 26.09.2026, Audit Sicherheit BF-03): Ist die
+        gefundene Person ein Konfi (Stammrolle), antwortet die Route mit
+        demselben 404 wie bei einer unbekannten Kennung -- ohne Name, ohne
+        Einladung, ohne Push und Mail. Vorher liess sich ein Konfi einer
+        fremden Gemeinde als Teamer:in einladen, und die Route bestaetigte zu
+        jeder E-Mail-Adresse im System, ob ein Konto existiert (Enumeration,
+        auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre
+        Einladung erscheint ohnehin in der Liste.
+
         Meldung an die eingeladene Person ueber Postfach, Push (Gruppe
         "Anfragen und Freigaben") und E-Mail, nach der Antwort (nachAntwort).
       requestBody:
@@ -380,7 +498,7 @@ paths:
         "201": { description: "id, user_id, display_name, username, role_id, role_name, status, expires_at" }
         "400": { description: "Rolle gehoert nicht zu dieser Gemeinde; konfi-Rolle (error_code konfi_nicht_moeglich); Selbst-Einladung" }
         "403": { description: "Nicht org_admin, oder Rolle laut Hierarchie nicht vergebbar" }
-        "404": { description: "Kein Konto mit dieser Kennung (error_code nicht_gefunden)" }
+        "404": { description: "Kein Konto mit dieser Kennung ODER die Person ist ein Konfi -- beides identisch (error_code nicht_gefunden)" }
         "409": { description: "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen)" }
       x-berechtigung:
         rollen: [org_admin]
@@ -391,8 +509,16 @@ paths:
     get:
       tags: ["Benutzer & Rollen"]
       summary: Offene Einladungen der eigenen Gemeinde
+      description: >
+        Seit dem 27.09.2026 liest die App diese Liste: "Mehr > Benutzer:innen",
+        Abschnitt "Offene Einladungen" mit dem Knopf "Zurueckziehen" (DELETE
+        /api/einladungen/{id}). Die Seite ruft die Route nur als org_admin --
+        dieselbe Bedingung wie beim Einladen; alle anderen bekaemen 403.
+        Die App liest id, display_name, username, role_name,
+        role_display_name, created_at und expires_at -- diese Felder sind
+        damit Vertrag.
       responses:
-        "200": { description: "Array offener, nicht abgelaufener Einladungen mit Namen und Rolle" }
+        "200": { description: "Array offener, nicht abgelaufener Einladungen, neueste zuerst; je Zeile id, organization_id, user_id, role_id, status, expires_at, created_at, organization_display_name, organization_name, role_name, role_display_name, eingeladen_von_name sowie display_name und username der eingeladenen Person" }
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]
@@ -411,6 +537,43 @@ paths:
         org-scope: false
         objekt-pruefung: "Nur eigene Einladungen (user_id = req.user.id). BEWUSST org-uebergreifend: Die Einladung kommt aus einer Gemeinde, in der man noch NICHT Mitglied ist."
 
+  /api/einladungen/{id}:
+    delete:
+      tags: ["Benutzer & Rollen"]
+      summary: Offene Einladung zurueckziehen
+      description: >
+        Setzt status = 'zurueckgezogen' und beantwortet_at = NOW(). Kein
+        echtes Loeschen: Die Zeile bleibt als Verlauf stehen, und der
+        Teilindex (eine offene Einladung je Person und Gemeinde) gibt den
+        Platz fuer eine neue Einladung frei. Nur Einladungen der eigenen
+        Gemeinde im Status 'offen' — alles andere ergibt dieselbe 404, ohne
+        zu verraten, ob es die Einladung gibt.
+
+        Nachdokumentiert am 26.09.2026 (Audit Dokumentation BF-09): Die Route
+        kam mit dem Einladungs-Commit, blieb in der yaml aber aus.
+
+
+        BEHOBEN 27.09.2026: Bei der eingeladenen Person blieb nach dem
+        Zurueckziehen der Postfach-Eintrag "Einladung in eine Gemeinde ...
+        Tippe, um zu antworten" (type 'gemeinde_einladung') stehen, zaehlte
+        als ungelesen und fuehrte beim Antippen ins Profil, dessen Karte
+        (GET /einladungen/meine, Filter status = 'offen') schon leer war.
+        Jetzt geht der Eintrag in DERSELBEN Transaktion wie der Statuswechsel
+        (utils/postfachAufraeumen.js, loescheMitteilungenZuEinladung ueber
+        data.einladung_id); scheitert das, bleibt auch die Einladung offen.
+        Nur bei Erfolg -- eine 404 (fremde Gemeinde, schon beantwortet)
+        raeumt nichts auf. Die Antwortform ist unveraendert.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: "message ('Einladung zurückgezogen')" }
+        "404": { description: "Nicht vorhanden, fremde Gemeinde oder nicht mehr offen — bewusst dieselbe Antwort" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "organization_id = aktive Org UND status = 'offen' im UPDATE selbst; 0 Zeilen -> 404"
+
   /api/einladungen/{id}/annehmen:
     post:
       tags: ["Benutzer & Rollen"]
@@ -420,6 +583,18 @@ paths:
         user_organizations. Danach invalidateUserCache, sonst haelt der
         RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der
         Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.
+
+
+        BEHOBEN 27.09.2026 (Bericht "Wer bekommt was", BF-21; Simons
+        Entscheidung F-13: "Ja, als Postfach-Eintrag"): Die einladende
+        Leitung erfuhr nichts. Jetzt nach der Antwort Push mit
+        Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet',
+        status 'angenommen', einladung_id, user_id, organization_id = die
+        einladende Gemeinde) an die Person aus eingeladen_von, solange sie
+        dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst
+        an die Org-Admins der Gemeinde; nie an die eingeladene Person
+        selbst. Dazu das Live-Signal 'users' an die Gemeinde (die
+        Benutzerliste laedt nach). Die Antwortform ist unveraendert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -437,6 +612,12 @@ paths:
     post:
       tags: ["Benutzer & Rollen"]
       summary: Einladung ablehnen
+      description: >
+        BEHOBEN 27.09.2026 (BF-21 / F-13): Auch die Absage meldet sich bei
+        der einladenden Leitung -- Push mit Postfach-Eintrag
+        'gemeinde_einladung_beantwortet' (status 'abgelehnt'), Empfaenger
+        wie bei annehmen. Kein Live-Signal, die Benutzerliste aendert sich
+        nicht. Die Antwortform ist unveraendert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -484,13 +665,30 @@ paths:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
         org-scope: false
-        objekt-pruefung: "Mitgliedschaft in user_organizations + is_active der Ziel-Org"
+        objekt-pruefung: "Mitgliedschaft über beide Quellen (Stamm-Gemeinde aus users.organization_id, weitere aus user_organizations; bis 26.09.2026 nur Letztere — der Rückwechsel in die Stamm-Gemeinde scheiterte bei Konten ohne Zeile) + is_active der Ziel-Org"
         hinweis: "Trial-Ablauf der Ziel-Org wird hier NICHT geprüft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf"
 
   /api/auth/request-password-reset:
     post:
       tags: ["Passwörter & Einladungen"]
       summary: Passwort-Reset-Mail anfordern (immer neutrale Antwort)
+      description: >
+        BEHOBEN 27.09.2026 (Bericht "Wer bekommt was", BF-20): Die Abfrage
+        nahm den ERSTEN Treffer zu users.email -- ohne deleted_at und
+        is_active. Die E-Mail ist nur je Gemeinde eindeutig (Index
+        organization_id, email); trug dieselbe Adresse Konten in mehreren
+        Gemeinden, bekam nur eines den Link, und geloeschte oder gesperrte
+        Konten bekamen ihn auch. Jetzt: nur Konten mit deleted_at IS NULL
+        und is_active nicht false (wie beim Login), und JEDES bekommt einen
+        eigenen Token und eine eigene Mail. Bei mehreren Konten nennt die
+        Mail Gemeinde (auch im Betreff) und Benutzername; bei einem Konto
+        bleibt sie ohne diese Zeilen. Die Mail sagt seit demselben Tag
+        "24 Stunden gueltig" (stand faelschlich "1 Stunde"; der Token galt
+        immer 24 h).
+        Der Versand laeuft seit 27.09.2026 NACH der Antwort (nachAntwort):
+        Vorher wartete die Antwort auf den SMTP-Server, ihre Laufzeit
+        verriet damit, ob -- und wie viele -- Konten es zur Adresse gibt.
+        Die Antwort ist fuer null, ein und mehrere Konten dieselbe.
       requestBody:
         required: true
         content:
@@ -501,15 +699,21 @@ paths:
               properties:
                 email: { type: string, format: email }
       responses:
-        "200": { description: "Neutral: 'Falls ein Konto existiert, wurde eine E-Mail gesendet'" }
-        "429": { description: "passwordResetLimiter: 5/15min" }
-        "500": { description: "Mail-Versand fehlgeschlagen (nur wenn Konto existiert — schwaecht die Neutralitaet leicht ab)" }
+        "200": { description: "Neutral: 'Falls ein Konto existiert, wurde eine E-Mail gesendet' -- unveraendert, auch bei mehreren Konten keine Aufzaehlung" }
+        "429": { description: "passwordResetLimiter: 5/15min je Client-IP (clientIp) ODER passwordResetEmailLimiter: 3/h je Ziel-E-Mail (normalisiert: trim + lowercase; zaehlt auch fuer unbekannte Adressen, damit der 429 kein Konto verraet); beide Zaehler seit 26.09.2026 replica-uebergreifend in der Datenbank, Betrieb BF-09)" }
+        "500": { description: "Datenbankfehler. BEHOBEN: Ein fehlgeschlagener Mail-Versand liefert KEIN 500 mehr (seit 22.08.2026 abgefangen, seit 27.09.2026 nach der Antwort) -- vorher 'Mail-Versand fehlgeschlagen (nur wenn Konto existiert)', was die Neutralitaet schwaechte." }
       x-berechtigung:
         rollen: [oeffentlich]
-        middleware: [passwordResetLimiter, validateRequestPasswordReset]
+        middleware: [passwordResetLimiter, passwordResetEmailLimiter, validateRequestPasswordReset]
         org-scope: false
         objekt-pruefung: "Token 32 Byte Hex, 24h gueltig"
-        hinweis: "BEKANNT: Token wird unhashed in password_resets gespeichert"
+        # BEHOBEN 26.09.2026 (Audit Sicherheit BF-05, HOCH): passwordResetLimiter
+        # zaehlte auf req.ip -- hinter dem Proxy fuer ALLE dieselbe Adresse,
+        # also fuenf Reset-Anfragen je Viertelstunde fuer die ganze Plattform
+        # (reproduziert: 6x mit verschiedenen X-Real-IP -> 200,200,200,200,200,429).
+        # Jetzt ipKeyGenerator(clientIp(req)) wie alle uebrigen IP-Limiter,
+        # dazu passwordResetEmailLimiter je Ziel-Adresse.
+        hinweis: "BEHOBEN 22.08.2026 (war: BEKANNT: Token wird unhashed in password_resets gespeichert) -- seitdem nur der SHA-256-Hash, eingeloest wird per Klartext-Token aus der Mail"
 
   /api/auth/invite-code:
     post:
@@ -620,6 +824,25 @@ paths:
     post:
       tags: ["Passwörter & Einladungen"]
       summary: Selbst-Registrierung als Konfi mit Einladungscode (inkl. Auto-Login)
+      description: >
+        GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-03, F-02, F-03): Die
+        Meldung "Neue Registrierung" (Push und Postfach,
+        new_konfi_registration) geht an die Leitung des Jahrgangs:
+        org_admin (und admin mit is_super_admin-Merkmal) immer, admin mit
+        can_view-Zuweisung auf den Jahrgang der Einladung, Teamer:innen nie
+        (backend/utils/jahrgangLeitungSicht.js) -- genau wer die neue Konfi
+        in GET /api/admin/konfis sieht. Beide Quellen der Zugehoerigkeit,
+        Rolle je Gemeinde. Vorher verlangte die Empfaengerliste auch von
+        org_admin eine Zuweisung (die Gemeindeleitung fiel heraus, sobald ein
+        Admin zugewiesen war), die can_view-Pruefung fehlte, und ohne
+        zugewiesenen Admin ging die Meldung als Rueckfall an ALLE Admins der
+        Gemeinde. Den Rueckfall gibt es nicht mehr: Ohne zugewiesenen Admin
+        bekommt sie die Gemeindeleitung. Antwortform unveraendert.
+
+
+        SEIT 27.09.2026 (Audit Sicherheit BF-04): Wurde der gewaehlte
+        Benutzername vorher durchprobiert, startet das neue Konto trotzdem
+        ohne Kontosperre (siehe POST /api/auth/login).
       requestBody:
         required: true
         content:
@@ -634,12 +857,12 @@ paths:
                 password: { type: string, description: "volle Passwort-Policy" }
                 email: { type: string, format: email, description: "optional" }
       responses:
-        "200": { description: "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an Jahrgangs-Admins" }
+        "200": { description: "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an die Leitung des Jahrgangs (Org-Admins immer, Admins mit can_view auf den Jahrgang)" }
         "403": { description: "Konfi-Limit der Org erreicht (limit_exceeded)" }
         "404": { description: "Code existiert nicht" }
         "409": { description: "Username vergeben" }
         "410": { description: "Code abgelaufen" }
-        "429": { description: "registerLimiter: 200/h pro IP" }
+        "429": { description: "registerLimiter: 200/h pro IP (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09)" }
       x-berechtigung:
         rollen: [oeffentlich]
         middleware: [registerLimiter, validateRegisterKonfi]
@@ -650,6 +873,17 @@ paths:
     post:
       tags: ["Passwörter & Einladungen"]
       summary: Passwort mit Reset-Token setzen (oeffentlich)
+      description: >
+        NEU 27.09.2026 (BF-20; Simons Entscheidung F-12: "Ja, fuer Konten mit
+        E-Mail"): Nach der Antwort geht eine Bestaetigung "Passwort geändert"
+        an die hinterlegte Adresse des Kontos (utils/passwortGeaendertMail.js,
+        emailService.sendPasswordChangedEmail). Ohne Adresse keine Mail; ein
+        Versandfehler aendert nichts an Antwort und Passwort.
+
+
+        SEIT 27.09.2026 (Audit Sicherheit BF-04): Das neue Passwort hebt
+        eine Kontosperre nach Fehlversuchen auf (siehe POST
+        /api/auth/login). Antwortform unveraendert.
       requestBody:
         required: true
         content:
@@ -680,7 +914,7 @@ paths:
   /api/auth/refresh:
     post:
       tags: ["Anmeldung & Konto"]
-      summary: Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window)
+      summary: Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window genau einmal)
       parameters:
         - { name: X-Active-Organization, in: header, required: false, schema: { type: integer }, description: "Aktive Multi-Org — wird nach Mitgliedschafts-Pruefung als Claim uebernommen" }
       requestBody:
@@ -693,15 +927,22 @@ paths:
               properties:
                 refresh_token: { type: string }
       responses:
-        "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert (bleibt 5 Min im Grace-Window nutzbar)" }
-        "401": { description: "Refresh-Token ungueltig/abgelaufen/zu lange revoziert" }
-        "403": { description: "User deaktiviert / Org gesperrt / Trial abgelaufen (super_admin ausgenommen)" }
+        "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt" }
+        "401": { description: "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung" }
+        "403": { description: "User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt / Trial abgelaufen (super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung). Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt" }
       x-berechtigung:
         rollen: [oeffentlich]
         middleware: []
         org-scope: false
         objekt-pruefung: "SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login"
         hinweis: "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
+        # BEHOBEN 26.09.2026 (Audit Sicherheit BF-08): Das Grace-Window war
+        # unbegrenzt oft nutzbar -- dreimal derselbe rotierte Token: 200, 200,
+        # 200 und drei offene 90-Tage-Tokens; ein abgegriffenes Refresh-Token
+        # gab 90 Tage Zugriff, ohne aufzufallen. Jetzt genau eine Wieder-
+        # verwendung (Migration 166: ersetzt_durch, gnade_genutzt_at), danach
+        # Widerruf aller Refresh-Tokens des Kontos. Antwortform unveraendert.
+        # OFFEN bleibt die Geraetebindung (device_id) aus derselben Empfehlung.
 
   /api/auth/logout:
     post:
@@ -775,7 +1016,7 @@ paths:
       responses:
         "200": { description: "Cookie kq_docs gesetzt (JWT 30 Tage, HttpOnly, Secure, SameSite=Lax)" }
         "401": { description: "Passwort falsch (zeitkonstanter Vergleich)" }
-        "429": { description: "docsLoginLimiter: 20 Fehlversuche/15min pro Client-IP; Erfolge zaehlen nicht" }
+        "429": { description: "docsLoginLimiter: 20 Fehlversuche/15min pro Client-IP; Erfolge zaehlen nicht (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09 — vorher galt das Limit je Replica, also doppelt)" }
         "503": { description: "DOCS_PASSWORD nicht gesetzt — Doku bleibt gesperrt statt offen" }
       x-berechtigung:
         rollen: [oeffentlich]
@@ -847,6 +1088,7 @@ paths:
         middleware: [verifyTokenRBAC, requireSuperAdmin, validateCreateOrg]
         org-scope: false
         objekt-pruefung: "keine"
+        hinweis: "Seit 27.09.2026 (Audit Sicherheit BF-04): Der erste org_admin startet ohne Kontosperre, auch wenn sein Benutzername vorher durchprobiert wurde"
 
   /api/organizations/search-users:
     get:
@@ -871,11 +1113,11 @@ paths:
         "200": { description: "SELECT * der Org + user/konfi/jahrgang/activity/event/badge_count" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
-        rollen: [alle authentifizierten]
-        middleware: [verifyTokenRBAC]
+        rollen: [super_admin, org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireOrgVerwaltung]
         org-scope: true
         objekt-pruefung: "Immer req.user.organization_id"
-        hinweis: "Auch Konfis/Teamer sehen den vollen Org-Datensatz (Kontakt-/Trial-/Limit-Felder) — siehe N5"
+        hinweis: "BEHOBEN 22.08.2026 (war N5): requireOrgVerwaltung (= requireTeamer oder Super-Admin) — Konfis erhalten 403 statt Kontakt-, Trial- und Limit-Feldern. Der Hinweis hier las sich bis zum 26.09.2026 noch wie ein offener Befund."
 
   /api/organizations/{id}:
     get:
@@ -888,13 +1130,14 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
-        rollen: [super_admin, "jede Rolle der eigenen Org"]
-        middleware: [verifyTokenRBAC]
+        rollen: [super_admin, org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireOrgVerwaltung]
         org-scope: true
         objekt-pruefung: "Inline: is_super_admin ODER organization_id === id"
         # BEHOBEN 22.08.2026 (war N5): Rollen-Check ergaenzt (super_admin ODER
         # Verwaltungsrolle). Konfis erhalten 403 statt Kontakt-, Trial- und
-        # Lizenzdaten der Gemeinde.
+        # Lizenzdaten der Gemeinde. Die rollen-Zeile oben sagte bis zum
+        # 26.09.2026 noch "jede Rolle der eigenen Org" — nachgezogen.
     put:
       tags: ["Organisationen"]
       summary: Organisation bearbeiten (Stammdaten; trial_ends_at/is_trial nur Super-Admin)
@@ -919,7 +1162,7 @@ paths:
                 website_url: { type: string }
                 kirchenkreis: { type: string }
                 is_active: { type: boolean, description: "BEKANNT: auch org_admin darf die eigene Org (de)aktivieren" }
-                trial_ends_at: { type: [string, "null"], format: date-time, description: "nur super_admin; setzt license_reminder_sent_at zurueck" }
+                trial_ends_at: { type: [string, "null"], format: date-time, description: "nur super_admin; setzt license_reminder_sent_at zurueck. Bei bezahlter Lizenz (is_trial=false) geht 14 Tage vor Ablauf einmal eine Erinnerungs-Mail an alle org_admin der Gemeinde, ueber beide Quellen der Zugehoerigkeit (users.organization_id und user_organizations) -- GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-09, F-15): vorher nur an die Stamm-Leitung, dafuer auch an Admins" }
                 is_trial: { type: boolean, description: "nur super_admin" }
       responses:
         "200": { description: "Aktualisiert" }
@@ -1025,6 +1268,7 @@ paths:
         middleware: [verifyTokenRBAC, validateCreateOrgAdmin]
         org-scope: true
         objekt-pruefung: "Inline: super_admin (jede Org) ODER org_admin der eigenen Org; org_admin-Rolle wird in der Ziel-Org aufgeloest"
+        hinweis: "Seit 27.09.2026 (Audit Sicherheit BF-04): Das neue Konto startet ohne Kontosperre, auch wenn sein Benutzername vorher durchprobiert wurde"
         # BEHOBEN 22.08.2026 (war N6): die zentrale validatePassword-Policy
         # gilt jetzt auch hier (8 Zeichen, Gross/Klein, Ziffer, Sonderzeichen).
 
@@ -1075,7 +1319,7 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
         - { name: userId, in: path, required: true, schema: { type: integer }, description: "User-ID des Mitglieds" }
       responses:
-        "200": { description: "Mitgliedschaft entfernt; Chat-Sync raeumt Team-/Jahrgangs-Chats auf; Cache invalidiert" }
+        "200": { description: "{ message: 'Mitgliedschaft entfernt' } (unveraendert). In EINER Transaktion: user_organizations, die Jahrgangs-Zuweisungen dieser Org, die Plaetze in ALLEN Chat-Raeumen dieser Org und (seit 27.09.2026) die eigenen Postfach-Mitteilungen aus dieser Org (utils/mitgliedschaftEnde.js, dieselbe Funktion wie DELETE /users/{id}). Danach Team-Chat- und Jahrgangs-Sync, Sockets getrennt, Cache invalidiert, Soft-Revoke" }
         "400": { description: "Primaer-Org kann hier nicht entfernt werden" }
         "404": { description: "User oder Mitgliedschaft nicht gefunden" }
       x-berechtigung:
@@ -1083,7 +1327,29 @@ paths:
         middleware: [verifyTokenRBAC, requireSuperAdmin]
         org-scope: false
         objekt-pruefung: "users.organization_id !== id (Primaer-Org-Schutz)"
-        hinweis: "BEKANNT: laufende Access-Tokens mit active_organization_id-Claim wirken bis Ablauf nach (max 15 Min + 30s Cache)"
+        # BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-08, HOCH): Vorher
+        # entfernte dieser Weg nur user_organizations; die Syncs danach
+        # erfassen Team-Chat und Jahrgaenge mit Zuweisung. Gruppen,
+        # Zweierraeume, Termin-Chats und Jahrgangs-Chats ohne Zuweisung
+        # blieben -- die Person bekam weiter jede Nachricht als Push. Die
+        # Zuweisungen der Org blieben stehen und galten bei erneuter Aufnahme
+        # sofort wieder. Der Weg ueber die Leitung (DELETE /users/{id})
+        # raeumte das seit dem Morgen desselben Tages mit eigener Kopie.
+        # BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-13 / F-07,
+        # MITTEL): Die Person las das Postfach der alten Gemeinde weiter --
+        # Namen und Abmeldegruende von Konfis --, die Eintraege zaehlten an
+        # Glocke, App-Symbol und Umschalter (bei der Stamm-Gemeinde). Jetzt
+        # gehen sie mit: DELETE FROM notifications WHERE user_id = ... AND
+        # organization_id = <diese Org>, in derselben Transaktion.
+        hinweis: >
+          BEKANNT: laufende Access-Tokens mit active_organization_id-Claim
+          wirken serverseitig bis Ablauf nach (max 15 Min + 30s Cache).
+          BEHOBEN 26.09.2026 auf Client-Seite (Audit Grundgeruest BF-05): Die
+          App holt beim ersten 403 "Kein Zugriff auf diese Organisation" per
+          POST /auth/refresh OHNE X-Active-Organization ein Token ohne Claim,
+          baut den Socket damit neu auf und faellt sauber auf die Stamm-Org
+          zurueck; das alte Token wird nicht mehr weiterbenutzt. rbac.js
+          faellt weiterhin bewusst NICHT still zurueck.
 
   /api/organizations/{id}/stats:
     get:
@@ -1095,29 +1361,32 @@ paths:
         "200": { description: "Zaehler-Objekt" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
-        rollen: [super_admin, "jede Rolle der eigenen Org"]
-        middleware: [verifyTokenRBAC]
+        rollen: [super_admin, org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireOrgVerwaltung]
         org-scope: true
         objekt-pruefung: "Inline: is_super_admin ODER eigene Org"
         # BEHOBEN 22.08.2026 (war N5): Rollen-Check ergaenzt; Konfis
-        # erhalten 403.
+        # erhalten 403. rollen-Zeile nachgezogen am 26.09.2026.
 
   # ==========================================================================
   # USERS (backend/routes/users.js — 9 Routen, Mount /api/users UND
-  # /api/admin/users; komplette Verwaltung nur org_admin + Rollenhierarchie)
+  # /api/admin/users; requireAdmin + Rollenhierarchie, siehe Dateikopf)
   # ==========================================================================
   /api/users:
     get:
       tags: ["Benutzer & Rollen"]
       summary: Alle Verwaltungs-User der eigenen Org (ohne Konfis/super_admin), mit can_edit-Flag aus der Hierarchie
       responses:
-        "200": { description: "User-Array (Rolle, Jahrgangs-Zaehler, can_edit)" }
+        "200": { description: "User-Array (Rolle und Jahrgangs-Zaehler DIESER Gemeinde, can_edit, mitgliedschaft 'stamm'|'weitere' -- additiv seit 26.09.2026; weitere_gemeinden (integer): in wie vielen ANDEREN Gemeinden die Person ausserdem Mitglied ist, bei 'weitere' mindestens 1, nur die Zahl, keine Namen -- additiv seit 27.09.2026, der Loesch-Dialog erkennt daran, dass DELETE das Konto nicht loescht)" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "keine weitere"
+        objekt-pruefung: "BEIDE Quellen der Zugehoerigkeit (users.organization_id ODER user_organizations, Rolle je Gemeinde)"
+        # BEHOBEN 26.09.2026 (Audit Leitung BF-01): Bis dahin nur die
+        # Stamm-Gemeinde -- wer ueber eine Gemeinde-Einladung mitarbeitete,
+        # fehlte in der Liste und bekam nie Rolle oder Jahrgaenge.
     post:
       tags: ["Benutzer & Rollen"]
       summary: Verwaltungs-User anlegen (Rolle aus eigener Org, volle Passwort-Policy)
@@ -1145,6 +1414,7 @@ paths:
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('create')", validateCreateUser]
         org-scope: true
         objekt-pruefung: "role_id muss zur eigenen Org gehören; Hierarchie prüft Ziel-Rolle"
+        hinweis: "Seit 27.09.2026 (Audit Sicherheit BF-04): Das neue Konto startet ohne Kontosperre, auch wenn sein Benutzername vorher durchprobiert wurde"
 
   /api/users/{id}:
     get:
@@ -1185,9 +1455,9 @@ paths:
                 role_title: { type: string }
                 role_id: { type: integer, description: "Rollenwechsel: Hierarchie prueft neue Rolle; Sockets werden getrennt" }
                 is_active: { type: boolean, description: "false trennt aktive Sockets" }
-                password: { type: string }
+                password: { type: string, description: "Seit 27.09.2026 (BF-20 / F-12): Wird ein Passwort gesetzt, geht nach der Antwort eine Bestaetigung an die hinterlegte Adresse des Kontos -- ohne das Passwort, mit dem Hinweis, dass die Leitung es gesetzt hat (ausser beim eigenen Konto). Seit 27.09.2026 (Sicherheit BF-04) hebt es ausserdem eine Kontosperre nach Fehlversuchen auf" }
       responses:
-        "200": { description: "Aktualisiert; Chat-Sync bei Rollen-/Aktiv-Wechsel; User-Cache invalidiert" }
+        "200": { description: "Aktualisiert; Chat-Sync bei Rollen-/Aktiv-Wechsel; User-Cache bei JEDER Aenderung invalidiert (seit 26.09.2026 -- vorher nur bei role_id, is_active=false wirkte bis zu 30 s spaeter)" }
         "400": { description: "Rolle nicht in eigener Org / keine Felder" }
         "403": { description: "Hierarchie verletzt (Ziel-User oder neue Rolle)" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -1195,10 +1465,20 @@ paths:
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateUpdateUser]
+        # BEHOBEN 26.09.2026 (Audit Sicherheit BF-10): invalidateUserCache lief
+        # nur bei role_id. Nach is_active=false arbeitete die alte Sitzung bis
+        # zum 30-s-TTL von rbac.js weiter (reproduziert: PUT, direkt danach GET
+        # mit alter Sitzung -> 200). Jetzt bei jeder Aenderung; dasselbe nach
+        # DELETE /users/:id, DELETE /admin/konfis/:id und POST /auth/delete-account.
+        # Wirkt je Replica -- der gemeinsame Store bleibt offen (S-10).
         org-scope: true
-        objekt-pruefung: "Ziel-User in der STAMM-Org (users.organization_id); canManageRole + canCreateRole für neue Rolle"
+        objekt-pruefung: "Ziel-User in der aktiven Org ueber BEIDE Quellen; canManageRole + canCreateRole für neue Rolle. Zusatzmitglied (user_organizations): NUR role_id, geschrieben nach user_organizations.role_id; geaenderte Kontofelder oder Passwort -> 400 nur_rolle_in_weiterer_gemeinde (seit 26.09.2026). \"Geaendert\" wie die Oberflaeche liest (27.09.2026): leerer Text = NULL, Leerzeichen am Rand zaehlen nicht -- die Store-App 2.2.x schickt leere Felder als null und Namen getrimmt, in der Datenbank stehen sie teils als ''."
         # BEHOBEN 22.08.2026 (war N7): das optionale password-Feld wird vor
         # dem Hashen gegen validatePassword geprüft.
+        # BEHOBEN 26.09.2026 (Audit Leitung BF-01): vorher nur STAMM-Org,
+        # Zusatzmitglieder bekamen 404. Kontofelder bleiben bewusst bei der
+        # Stamm-Gemeinde -- sonst kaeme die Leitung von Gemeinde B ueber das
+        # Passwort einer eingeladenen Teamer:in in deren Gemeinde A hinein.
         hinweis: >
           BEWUSST enger als GET und die Jahrgangs-Routen (26.09.2026): Die
           Middleware laesst seither auch Personen durch, die ueber
@@ -1210,8 +1490,45 @@ paths:
           Jahrgangs-Routen."
     delete:
       tags: ["Benutzer & Rollen"]
-      summary: User löschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)
+      summary: User aus der Gemeinde entfernen -- Hard-Delete nur, wenn die Person keiner anderen Gemeinde angehört
       description: >
+        Drei Fälle (seit 27.09.2026), die Antwort trägt additiv
+        `konto_bleibt` (boolean):
+        (1) Die Person ist in einer anderen Gemeinde zuhause und arbeitet hier
+        über user_organizations mit: nur diese Mitgliedschaft endet,
+        `{ message: 'Mitgliedschaft in dieser Gemeinde beendet', konto_bleibt: true }`.
+        BEHOBEN 27.09.2026: Mit der Mitgliedschaft gehen die Plaetze in ALLEN
+        Chat-Raeumen dieser Gemeinde (vorher nur, was syncTeamChat und
+        syncJahrgangChat fuer zugewiesene Jahrgaenge erfassten -- Gruppen,
+        Zweierraeume und Jahrgangs-Chats ohne Zuweisung blieben, samt Push
+        zu jeder Nachricht). Antwortform unveraendert. Seit 27.09.2026
+        raeumen Fall 1, Fall 2 und DELETE /organizations/{id}/members/{userId}
+        ueber DIESELBE Funktion (utils/mitgliedschaftEnde.js: Zuweisungen und
+        Chat-Plaetze der Gemeinde), damit die Wege nicht wieder
+        auseinanderlaufen (Audit "Wer bekommt was", BF-08).
+        BEHOBEN 27.09.2026 (BF-13 / F-07): Dieselbe Funktion nimmt in Fall 1
+        und Fall 2 auch die eigenen Postfach-Mitteilungen der Person aus
+        DIESER Gemeinde mit (notifications.organization_id); die aus anderen
+        Gemeinden bleiben. Vorher las sie das Postfach der alten Gemeinde
+        weiter, und es zaehlte an Glocke und App-Symbol.
+        (2) Die Person ist hier zuhause UND hat eine Zeile in
+        user_organizations für eine andere Gemeinde: Das Konto zieht um,
+        `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`.
+        Neue Stamm-Gemeinde ist bevorzugt eine aktive, darunter die älteste
+        Mitgliedschaft (created_at, bei Gleichstand die Zeilen-ID);
+        users.organization_id und users.role_id übernehmen Gemeinde und Rolle
+        dieser Mitgliedschaft, ihre Zeile und eine etwaige Zeile für diese
+        Gemeinde verschwinden. Mit ihr gehen die Jahrgangs-Zuweisungen dieser
+        Gemeinde und die Plätze in ALLEN Chat-Räumen dieser Gemeinde (Team,
+        Jahrgänge, Gruppen, Zweiergespräche); was die Person hier angelegt
+        hat, bleibt unverändert und wird nicht anonymisiert. Rechte-Cache
+        geleert, Sockets getrennt; token_invalidated_at bleibt unberührt, weil
+        rbac.js und die Socket-Anmeldung Gemeinde und Rolle je Anfrage aus der
+        Datenbank lesen. Keine Namen fremder Gemeinden in der Antwort.
+        (3) Die Person gehört nur dieser Gemeinde an: Hard-Delete wie folgt,
+        `{ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false }`.
+
+        Hard-Delete (Fall 3):
         Anonymisiert die Urheberschaft (admin_id/created_by/approved_by ->
         NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by,
         levels.created_by und user_jahrgang_assignments.assigned_by — vorher
@@ -1222,24 +1539,42 @@ paths:
         Platte entfernt. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen
         "Neuer Antrag eingegangen" bei der Leitung mit, die auf Anträge der
         geloeschten Person zeigten (utils/postfachAufraeumen.js).
+        BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-13 / F-07): Ebenso
+        alle Leitungs-Mitteilungen UEBER die Person
+        (loescheMitteilungenUeberPerson: Registrierung, Abmeldung,
+        Opt-out/-in, Challenge-Beitrag, Teamer-Zu-/Absage, neuer Antrag,
+        Einladung beantwortet -- Kennung konfi_id bzw. user_id im data-Teil).
+        Vorher standen sie mit Name und Grund bis zum 365-Tage-Aufraeumen bei
+        der Leitung.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
-        "200": { description: "Geloescht; Sockets getrennt; Nachweisfotos und Challenge-Dateien nach COMMIT entfernt" }
+        "200": { description: "{ message, konto_bleibt } -- Fall 1/2: Mitgliedschaft beendet bzw. Konto in eine andere Gemeinde umgezogen (konto_bleibt true, seit 27.09.2026); Fall 3: geloescht (konto_bleibt false). Rechte-Cache geleert (seit 26.09.2026, BF-10); Sockets getrennt; beim Loeschen Nachweisfotos und Challenge-Dateien nach COMMIT entfernt" }
         "400": { description: "Selbst-Loeschung verboten" }
         "403": { description: "Hierarchie verletzt" }
         "404": { $ref: "#/components/responses/NotFound" }
-        "409": { description: "Letzter org_admin der Org nicht loeschbar" }
+        "409": { description: "Letzter org_admin der Org nicht entfernbar (gilt fuer Loeschen und Umzug)" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('delete')", validateUserId]
         org-scope: true
-        objekt-pruefung: "STAMM-Org (users.organization_id); Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz"
+        objekt-pruefung: "Stamm-Mitglied OHNE weitere Gemeinde: Konto loeschen (users.organization_id). Stamm-Mitglied MIT weiterer Gemeinde (user_organizations-Zeile einer anderen Org): Konto zieht dorthin um, hier endet die Zugehoerigkeit samt Jahrgaengen und allen Chat-Plaetzen -- seit 27.09.2026. Zusatzmitglied (user_organizations): NUR die Mitgliedschaft in dieser Gemeinde endet (user_organizations-Zeile, Jahrgaenge dieser Gemeinde, alle Chat-Plaetze dieser Gemeinde), Antwort 200 'Mitgliedschaft in dieser Gemeinde beendet' -- seit 26.09.2026. In allen Faellen: Selbst-Loeschungs-Sperre, Hierarchie- und Super-Admin-Schutz (userHierarchyMiddleware); Letzter-org_admin-Schutz fuer Stamm-Mitglieder"
+        # BEHOBEN 27.09.2026 (Entscheidung Simon): Bis dahin loeschte DELETE
+        # eine hier beheimatete Person samt Konto, auch wenn sie in weiteren
+        # Gemeinden Mitglied war -- per CASCADE auf user_organizations verlor
+        # die andere Gemeinde sie ohne Warnung. Jetzt Fall 2 (Umzug).
         hinweis: >
-          BEWUSST enger als GET und die Jahrgangs-Routen (26.09.2026), wie
-          bei PUT: Geloescht wird die ganze Person samt aller Gemeinden. Das
-          darf nur die Gemeinde, an der das Konto haengt. Der Letzter-
-          org_admin-Schutz zaehlt ebenfalls ueber users.organization_id."
+          Geloescht wird die ganze Person nur durch die Gemeinde, an der das
+          Konto haengt -- das darf keine andere. Fuer ein Zusatzmitglied
+          bedeutet DELETE deshalb seit dem 26.09.2026 (Audit Leitung BF-01)
+          das Ende der Mitgliedschaft, nicht des Kontos; vorher kam 404 und
+          die Person liess sich aus der Gemeinde gar nicht entfernen. Der
+          Letzter-org_admin-Schutz zaehlt weiterhin ueber users.organization_id.
+          Seit dem 27.09.2026 loescht auch die Gemeinde, an der das Konto
+          haengt, die ganze Person nur noch, wenn sie keiner anderen Gemeinde
+          angehoert -- sonst zieht das Konto dorthin um (Fall 2). Ob das so
+          kommt, sieht die Oberflaeche vorher an weitere_gemeinden in
+          GET /api/users.
 
   /api/users/{id}/jahrgaenge:
     get:
@@ -1350,6 +1685,21 @@ paths:
         werden widerrufen und die Push-Tokens geloescht. Die Person muss sich
         auf jedem Geraet mit dem neuen Passwort neu anmelden. Am Request und
         an der Antwortform aendert sich nichts.
+
+
+        NEU 27.09.2026 (Bericht "Wer bekommt was", BF-20; Simons
+        Entscheidung F-12): Nach der Antwort geht eine Bestaetigung an die
+        hinterlegte Adresse des Kontos -- "die Leitung deiner Gemeinde hat
+        ein neues Passwort gesetzt", OHNE das Passwort (die Leitung gibt es
+        persoenlich weiter). Ohne Adresse keine Mail; ein Versandfehler
+        aendert nichts. Am Request und an der Antwortform aendert sich
+        nichts.
+
+
+        SEIT 27.09.2026 (Audit Sicherheit BF-04): Das neue Passwort hebt
+        eine Kontosperre nach Fehlversuchen auf (siehe POST
+        /api/auth/login) -- der Weg der Leitung, wenn jemand ausgesperrt
+        ist.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       requestBody:
@@ -1370,13 +1720,14 @@ paths:
         rollen: [super_admin, org_admin]
         middleware: [verifyTokenRBAC, validateResetPassword]
         org-scope: true
-        objekt-pruefung: "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten"
-        # LÜCKE (N1): der Ziel-User wird NICHT auf is_super_admin/super_admin
-        # geprüft. Ein org_admin kann so das Passwort eines org_admins MIT
-        # is_super_admin-Flag in seiner Org setzen und dessen Super-Admin-
-        # Rechte uebernehmen (Privilege Escalation). Der Kommentar "nur
-        # super_admin ist geschuetzt" stimmt nur für die Rolle (org=NULL),
-        # nicht für das Flag.
+        objekt-pruefung: "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten -- aber kein Konto mit Rolle super_admin oder Flag is_super_admin (403, seit 26.09.2026)"
+        # BEHOBEN 26.09.2026 (war N1): der Ziel-User wird jetzt auf
+        # super_admin-Rolle ODER is_super_admin-Flag geprueft; nur ein
+        # Super-Admin darf ein solches Konto zuruecksetzen. Vorher konnte ein
+        # org_admin das Passwort eines org_admins MIT is_super_admin-Flag in
+        # seiner Org setzen und dessen Super-Admin-Rechte uebernehmen
+        # (Privilege Escalation). Der Kommentar "nur super_admin ist
+        # geschuetzt" stimmte nur für die Rolle (org=NULL), nicht für das Flag.
         # BEHOBEN 14.09.2026 (war N2): der Reset setzt jetzt
         # token_invalidated_at, widerruft alle Refresh-Tokens des Ziel-Users
         # und loescht dessen Push-Tokens. Vorher lief die alte Sitzung weiter
@@ -1594,9 +1945,37 @@ paths:
         gerade nicht erreichbar ist — die App zeigt dann keinen Hinweis.
         Die Antwortform ist Vertrag fuer ausgelieferte Apps ab 2.1.1:
         Felder nur ergaenzen, nie entfernen oder umformen.
+
+        MINDESTVERSION UND WARTUNGSHINWEIS (27.09.2026, Feature-Empfehlung
+        E-05, additiv): `ios.min_version` und `android.min_version` (String
+        `x.y.z` oder null) sowie `wartung` (`{aktiv: boolean, text: string|null}`).
+        Quelle sind die Umgebungsvariablen `APP_MIN_VERSION_IOS`,
+        `APP_MIN_VERSION_ANDROID` und `WARTUNG_HINWEIS`, gelesen bei jeder
+        Anfrage (backend/utils/betriebshinweise.js); leer oder nicht gesetzt
+        ergibt null bzw. `aktiv: false, text: null`. Eine Mindestversion, die
+        nicht die Form x.y.z hat, wird ignoriert (null) und einmal je Wert
+        geloggt. Die App ab 2.3.0 zeigt nativ einen Hinweis "Bitte
+        aktualisiere Konfi Quest" mit "Später" und "Aktualisieren" (Knopf zur
+        `url` der Plattform), wenn die installierte Version echt unter
+        `min_version` liegt (nie im Browser, nie ohne Antwort des Servers).
+        Sie sperrt nicht: Der Hinweis laesst sich schliessen, die App bleibt
+        bedienbar, und er kommt erst beim naechsten Start wieder (Entscheidung
+        27.09.2026 "Keine Zwangsupdates"; vorher war ein nicht wegklickbarer
+        Sperrbildschirm vorgesehen — er steckt nur in den Testbuilds iOS 231
+        und Android 125 von 2.3.0, in keiner Store-Version). `wartung.text`
+        erscheint als Klartext auf den Startseiten und der Anmeldeseite. Die
+        Store-Apps 2.1.1 und 2.2.0 lesen nur `version` und `url` und pruefen deren Typ
+        (frontend/src/services/updateCheck.ts, an beiden Tags unveraendert) —
+        die zusaetzlichen Felder sehen sie nicht.
+
+        Beispiel:
+        `{"ios": {"version": "2.3.0", "url": "https://apps.apple.com/...",
+        "min_version": "2.3.0"}, "android": {"version": "2.3.0", "url":
+        "https://play.google.com/...", "min_version": null}, "wartung":
+        {"aktiv": true, "text": "Heute ab 20 Uhr Wartung."}}`
       security: []
       responses:
-        "200": { description: "ios: {version|null, url}, android: {version|null, url}" }
+        "200": { description: "ios: {version|null, url, min_version|null}, android: {version|null, url, min_version|null}, wartung: {aktiv, text|null}" }
       x-berechtigung:
         rollen: [oeffentlich]
         middleware: []
@@ -1604,7 +1983,10 @@ paths:
         objekt-pruefung: "keine"
         hinweis: >
           Keine Authentifizierung — die veroeffentlichte Store-Version ist
-          oeffentlich einsehbar. Der globale Rate-Limiter gilt.
+          oeffentlich einsehbar. Der globale Rate-Limiter gilt. Mindestversion
+          und Wartungstext sind ebenso oeffentlich (sie muessen auch vor der
+          Anmeldung ankommen) — in WARTUNG_HINWEIS gehoert nichts, was nicht
+          jede:r lesen darf.
 
   /api/status:
     get:
@@ -1613,9 +1995,36 @@ paths:
       description: >
         Prueft die Datenbank mit SELECT 1 und liefert 200 bei gesunder DB,
         sonst 503. Getrennt von /health, weil er echte Abhaengigkeiten prüft.
+
+        MIGRATIONSSTAND (26.09.2026, Audit Datenbank BF-04, additiv): Eine beim
+        Start uebersprungene Migration stand vorher nur im Container-Log,
+        waehrend hier `database: ok` stand. Jetzt zusaetzlich
+        `checks.migrations` (`ok` | `fehler` | `laeuft`) und `migrationen`
+        `{gesamt, neu, fehlgeschlagen[]}` mit den Dateinamen der
+        uebersprungenen Migrationen (die Fehlermeldung selbst bleibt im Log,
+        der Pfad ist oeffentlich). Der HTTP-Status bleibt bei `fehler` 200 --
+        die Datenbank ist da; der Deploy-Verify in ci.yml prueft das Feld
+        getrennt und bricht ab. Beide Felder fehlen, wenn der Prozess keinen
+        Migrationslauf kennt (Testaufbau).
+
+        CRON-LEADER (26.09.2026, Audit Betrieb BF-10, additiv): Die Replicas
+        waehlen die Replica, die die Hintergrund-Jobs faehrt, per
+        Postgres-Advisory-Lock (vorher fest per Umgebungsvariable, ohne
+        Ersatz bei Ausfall). `cron_leader` (boolean) sagt, ob DIESE Replica
+        den Lock haelt; `checks.cron_leader` (`ok` | `fehlt` | `unbekannt`)
+        sagt, ob IRGENDEINE ihn haelt -- aus pg_locks gelesen, deshalb von
+        jeder Replica aus gleich beantwortet und damit der Wert fuer eine
+        externe Ueberwachung (Traefik verteilt den Aufruf zufaellig).
+        `fehlt` heisst: niemand faehrt Erinnerungen, Auto-Loeschung,
+        Token-Bereinigung, APM-Schnappschuesse. Der HTTP-Status bleibt 200.
+
+        VERSION (27.09.2026, Sammelbefund S-13, unveraendertes Feld): `version`
+        ist die App-Version aus backend/package.json, die `npm run
+        version:setzen` mit frontend/version.json (der einen Quelle)
+        gleichzieht -- vorher stand hier 1.0.1 auf einem 2.3.0-System.
       security: []
       responses:
-        "200": { description: "status, version, commit, uptimeSeconds, checks.database, responseTimeMs" }
+        "200": { description: "status, version, commit, uptimeSeconds, cron_leader, checks.database, checks.migrations, checks.cron_leader, migrationen{gesamt, neu, fehlgeschlagen[]}, responseTimeMs" }
         "503": { description: "DEGRADED — Datenbank nicht erreichbar" }
       x-berechtigung:
         rollen: [oeffentlich]
@@ -1742,6 +2151,17 @@ paths:
         gemessen 276 Zeilen und 1,8 MB je 30 Tage, also rund 44 MB für zwei
         Jahre. Die Snapshots entstehen zeitgesteuert alle fünf Minuten, NICHT
         je Nutzer:in; die Zeilenzahl wächst also nicht mit der Gemeindegrösse.
+
+        VERDICHTUNG AB 31 TAGEN (26.09.2026, Audit Betrieb BF-14 / S-19,
+        additiv): `days=730` lieferte 210.000 Rohzeilen und 35 MB fuer ein
+        Mobil-Dashboard. Jetzt: bis 30 Tage roh (alle fuenf Minuten), 31 bis
+        180 Tage ein Punkt je Stunde, darueber ein Punkt je Tag -- der
+        Zwei-Jahres-Verlauf sind damit rund 730 Zeilen. Je Zeitfenster gilt
+        der LETZTE Schnappschuss fuer die kumulierten Zaehler (total_requests,
+        total_errors -- die Deltas des Dashboards bleiben damit richtig) und
+        das MAXIMUM fuer max_in_flight und worst_p95_ms (samt der Route dieser
+        Spitze). `snapshots` bleibt ein Array mit denselben Feldern; neu ist
+        `aufloesung` (`5min` | `stunde` | `tag`).
       parameters:
         - name: days
           in: query
@@ -1750,8 +2170,9 @@ paths:
           description: >
             Auf 1..730 begrenzt (zwei Jahre, so weit die Aufbewahrung reicht);
             ungueltige Werte und 0 fallen auf 7 zurück, negative auf 1.
+            Bis 30 roh, 31..180 stuendlich verdichtet, darueber taeglich.
       responses:
-        "200": { description: "days und snapshots[] (captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)" }
+        "200": { description: "days, aufloesung (5min|stunde|tag) und snapshots[] (captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "500": { $ref: "#/components/responses/ServerError" }

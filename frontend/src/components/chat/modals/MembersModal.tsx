@@ -46,6 +46,7 @@ import { EigenerJahrgang, KonfiEintrag } from '../../../types/chat';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istTeamTyp } from '../../../utils/chatRoles';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 interface Participant {
   user_id: number;
@@ -326,7 +327,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
     const badgeColor = isTeam ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)';
 
     return (
-      <div
+      <div role={isSelectable ? 'button' : undefined} tabIndex={isSelectable ? 0 : undefined} onKeyDown={isSelectable ? tastaturKlick : undefined} aria-pressed={isSelectable ? isSelected : undefined}
         key={participantId}
         className={`app-list-item ${isTeam ? 'app-list-item--team' : 'app-list-item--konfi'} ${isSelected ? 'app-list-item--selected' : ''}`}
         onClick={isSelectable ? onToggle : undefined}
@@ -356,7 +357,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {isTeam && roleText && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-color-teamer)' }} />
+                    <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-text-teamer)' }} />
                     {roleText}
                   </span>
                 </div>
@@ -364,7 +365,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {!isTeam && jahrgang && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-jahrgang)' }} />
+                    <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-jahrgang)' }} />
                     {jahrgang}
                   </span>
                 </div>
@@ -443,7 +444,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                         fontSize: 'var(--app-text-standard)'
                       }}
                     />
-                    <IonInput
+                    <IonInput aria-label="Person suchen"
                       value={searchText}
                       onIonInput={(e) => setSearchText(e.detail.value!)}
                       placeholder="Person suchen..."

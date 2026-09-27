@@ -97,7 +97,7 @@ const TeamerBadgesPage: React.FC = () => {
         url: '/teamer/badges/mark-seen',
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Abzeichen gesehen' },
+        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Badges gesehen' },
       });
       return;
     }

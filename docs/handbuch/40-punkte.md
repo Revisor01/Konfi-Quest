@@ -7,7 +7,7 @@ gruppe: Nachschlagen
 
 Punkte sind das Herz von Konfi Quest. Sie ersetzen den Laufzettel: Statt einer
 Liste zum Abhaken sammeln Konfis Punkte, aus denen sich Fortschritt, Level und
-ein Teil der [Abzeichen](60-badges.md) ergeben. Dieses Kapitel richtet sich an
+ein Teil der [Badges](60-badges.md) ergeben. Dieses Kapitel richtet sich an
 die Leitung, die Punkte vergibt und korrigiert.
 
 ## Die zwei Punktarten auseinanderhalten
@@ -31,7 +31,7 @@ sondern es hängt an der Sache selbst:
 | Woher die Punkte kommen | Wer die Art festlegt |
 |---|---|
 | Aktivität | die Aktivität selbst (beim Anlegen eingestellt) |
-| Termin | der Termin (ohne Angabe: Gemeinde) |
+| Event | das Event selbst (ohne Angabe: Gemeinde) |
 | Bonuspunkte | du, direkt bei der Vergabe |
 
 ## Wissen, auf welchen drei Wegen Punkte entstehen
@@ -42,15 +42,15 @@ Aktivitäten sind das, was Konfis selbst melden — oder was ihr ihnen direkt
 zuschreibt. Jede Aktivität hat eine feste Punktzahl und eine feste Punktart.
 Den Ablauf beschreibt der nächste Abschnitt.
 
-### Über einen Termin
+### Über ein Event
 
-Wer bei einem Termin als anwesend eingetragen wird, bekommt die beim Termin
+Wer bei einem Event als anwesend eingetragen wird, bekommt die beim Event
 hinterlegten Punkte. Das passiert beim
 [Eintragen der Anwesenheit](70-termine.md#die-anwesenheit-verbuchen), nicht beim Buchen.
 Welche fünf Bedingungen dafür alle erfüllt sein müssen — unter anderem, dass
-[Pflichttermine](70-termine.md#ein-pflicht-event-einrichten) und Konfirmationen grundsätzlich
+[Pflicht-Events](70-termine.md#ein-pflicht-event-einrichten) und Konfirmationen grundsätzlich
 keine Punkte geben —, steht unter
-[Wann es Punkte gibt](70-termine.md#punkte-fuer-einen-termin-vergeben).
+[Wann es Punkte gibt](70-termine.md#punkte-fuer-ein-event-vergeben).
 
 ### Über Bonuspunkte
 
@@ -64,7 +64,7 @@ Punktzahl stellst du mit einem Schieberegler von **1 bis 10** ein. Die
 Bezeichnung gehängt und steht später in der Punktegeschichte.
 
 Der Konfi bekommt sofort einen Push: **„+3 Bonuspunkte!"** mit dem Text, wofür
-sie waren. Neue Abzeichen und ein neues Level werden gleich mitgeprüft.
+sie waren. Neue Badges und ein neues Level werden gleich mitgeprüft.
 
 ## Eine gemeldete Aktivität entscheiden
 
@@ -77,18 +77,33 @@ Team sieht, dass du dabei warst. Trotzdem abschicken?" Danach meldet sie
 „Aktivität erfolgreich eingereicht!". Der Antrag ist ab jetzt ausstehend,
 Punkte gibt es noch keine.
 
+Das Foto verkleinert die App vor dem Senden wie im Chat und in Challenges;
+ein Handyfoto mit 8 MB passt danach locker. Bleibt es größer als 5 MB, sagt
+sie es gleich bei der Auswahl: „Datei ist zu groß (max. 5 MB)." Beim Absenden
+steht unter der Kopfzeile, wie weit das Hochladen ist — „Wird gesendet…
+40 %", zuletzt „Wird verarbeitet…". Sein Foto sieht der Konfi in der Meldung,
+solange sie offen ist; nach der Entscheidung nur noch die Leitung.
+
 **2. Die Leitung prüft.** Die Anträge stehen in der Antragsliste.
-[Teamer:innen sehen sie nicht](05-rollen.md#wer-darf-was) — in Beschreibung
+[Teamer:innen sehen sie nicht](05-rollen.md#nachschlagen-wer-was-darf) — in Beschreibung
 und Foto kann Privates stehen. Ein Admin sieht dort nur die Anträge aus
 [seinen Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert);
-Anträge von Teamer:innen sieht er immer.
+Anträge von Teamer:innen sieht er immer. Wer den Antrag sieht, bekommt ihn
+auch gemeldet — siehe
+[Nachsehen, wer von einem neuen Antrag erfährt](#nachsehen-wer-von-einem-neuen-antrag-erfaehrt).
+
+Das Nachweisfoto lädt beim Öffnen des Antrags, mit Prozentzahl und Balken;
+klappt es nicht, holt „Erneut versuchen" es noch einmal. Im Konfi-Profil
+öffnet ein Tipp auf einen offenen Antrag mit Bild-Symbol das Foto groß. Auf
+dem Gerät bleibt es dabei nicht — ohne Netz ist es nicht zu sehen (siehe
+[Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten)).
 
 **3. Die Entscheidung.** Es gibt genau zwei Möglichkeiten: „Genehmigen" oder
 „Ablehnen".
 
 - **Genehmigt:** Die Aktivität wird gutgeschrieben, die Punkte landen auf dem
   Zähler der Punktart, die an der Aktivität hängt. Es wird sofort geprüft, ob
-  damit neue Abzeichen oder ein neues Level erreicht sind. Der Konfi bekommt
+  damit neue Badges oder ein neues Level erreicht sind. Der Konfi bekommt
   „Antrag genehmigt!" mit der Punktzahl.
 - **Abgelehnt:** Es gibt keine Punkte. Der Konfi bekommt „Antrag abgelehnt"
   mit deiner Begründung als „Grund: …" daran.
@@ -131,6 +146,31 @@ Löschen lassen sich nur abgelehnte Anträge. Die anderen sind geschützt:
 
 Mit dem Antrag verschwindet auch sein Nachweisfoto.
 
+### Nachsehen, wer von einem neuen Antrag erfährt
+
+Ein neuer Antrag kommt als Push und im
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) als „Neuer
+Antrag eingegangen" an — bei genau denen, die ihn in ihrer Antragsliste sehen
+und entscheiden dürfen:
+
+- **Die Gemeindeleitung** (Org-Admins) bekommt jeden Antrag der Gemeinde.
+- **Admins** bekommen die Anträge der Konfis aus
+  [ihren Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
+  und alle Anträge von Teamer:innen. Ein Admin ohne Jahrgang bekommt also nur
+  die Anträge des Teams.
+- **Ein Konfi ohne Jahrgang** meldet sich nur bei der Gemeindeleitung — nur
+  sie sieht seinen Antrag.
+- **Teamer:innen** bekommen keine Meldung über neue Anträge; die Antragsliste
+  ist ihnen verschlossen.
+- **Wer selbst eine Aktivität meldet**, bekommt dazu „Antrag eingereicht",
+  aber nie „Neuer Antrag eingegangen" über den eigenen Antrag.
+
+Die Zahl am Reiter, am
+[Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
+App-Symbol zählt nach derselben Regel. Wer in mehreren Gemeinden mitarbeitet,
+bekommt die Anträge jeder Gemeinde nach der Rolle und den Jahrgängen, die er
+dort hat.
+
 ## Eine Aktivität direkt zuschreiben
 
 Nicht alles muss den Antragsweg gehen. Warst du ohnehin dabei, schreibst du die
@@ -141,14 +181,39 @@ Angeboten werden dabei nur Aktivitäten, deren Punktart im Jahrgang des Konfis
 eingeschaltet ist.
 
 > **Der Konfi merkt es nicht sofort.** Es kommt keine Push-Nachricht. Die
-> Punkte stehen zwar sofort da und Abzeichen werden gleich geprüft, ein
+> Punkte stehen zwar sofort da und Badges werden gleich geprüft, ein
 > dadurch erreichtes neues Level wird aber erst beim nächsten Öffnen seines
 > Dashboards sichtbar. Wenn jemand es mitbekommen soll, sag am besten kurz
 > Bescheid.
 
 Direkt zuschreiben, löschen und Bonuspunkte zurücknehmen können nur die
-[Leitungsrollen](05-rollen.md#wer-darf-was). Teamer:innen kommen an die
+[Leitungsrollen](05-rollen.md#nachschlagen-wer-was-darf). Teamer:innen kommen an die
 Konfi-Verwaltung nicht heran.
+
+## Den Punktwert einer Aktivität ändern
+
+Den Punktwert einer Aktivität stellst du unter **Mehr › Aktivitäten** um. Die
+Regel dabei: **Der neue Wert gilt für alles, was ab jetzt vergeben wird. Was
+schon gutgeschrieben ist, bleibt, wie es war.**
+
+Jede Vergabe merkt sich den Wert, den die Aktivität in diesem Moment hatte —
+egal, ob sie über einen genehmigten Antrag oder eine direkte Zuschreibung
+entstanden ist. Daran hängt alles Weitere:
+
+- Der **Punktestand** ändert sich durch die Umstellung nicht.
+- Die **Punktegeschichte** und die Aktivitätenliste in der Konfi-Verwaltung
+  zeigen bei jedem Eintrag den Wert, der damals gutgeschrieben wurde.
+- Wird eine Vergabe später zurückgenommen — durch Zurücksetzen des Antrags
+  oder Löschen der Zuordnung —, verschwinden genau diese Punkte wieder, nicht
+  der neue Wert.
+
+*Beispiel:* Der „Sonntagsgottesdienst" bringt 1 Punkt; du hebst ihn auf 2 an.
+Wer ihn vorher fünfmal gemeldet hat, steht weiter bei 5 Punkten. Die sechste
+Meldung bringt 2. Löschst du eine der ersten fünf Zuordnungen, geht 1 Punkt
+weg.
+
+Soll jemand rückwirkend den höheren Wert bekommen, gibst du die Differenz als
+[Bonuspunkte](#ueber-bonuspunkte).
 
 ## Punkte wieder wegnehmen
 
@@ -162,19 +227,23 @@ sie erzeugt hat. Das sind alle Wege:
 - Einen **genehmigten Antrag zurücksetzen**
 - Eine **direkt zugeschriebene Aktivität löschen**
 - **Bonuspunkte löschen**
-- Bei einem Termin die
+- Bei einem Event die
   [**Anwesenheit zurücknehmen**](70-termine.md#punkte-zuruecknehmen)
-- Eine Person **aus einem Termin entfernen**
+- Eine Person **aus einem Event entfernen**
 - Eine bestätigte Buchung **zurück auf die Warteliste** setzen
-- Einen **ganzen Termin löschen** — dabei werden alle dafür vergebenen Punkte
+- Ein **ganzes Event löschen** — dabei werden alle dafür vergebenen Punkte
   zurückgenommen
+
+Zurückgenommen wird immer der Wert, der bei der Vergabe gutgeschrieben wurde —
+auch wenn eine Aktivität [inzwischen anders bewertet](#den-punktwert-einer-aktivitaet-aendern)
+ist.
 
 > **Der Punktestand fällt nie unter 0.** Jede dieser Rücknahmen ist so gebaut,
 > dass sie bei null aufhört. Nimmst du mehr zurück, als noch da ist — etwa weil
 > anderswo schon korrigiert wurde —, bleibt es bei 0 statt ins Minus zu gehen.
 
-Ein Abzeichen, das durch diese Punkte ausgelöst wurde, bleibt dagegen bestehen:
-[Abzeichen werden nie aberkannt](60-badges.md#wissen-was-vorher-zu-bedenken-ist).
+Ein Badge, das durch diese Punkte ausgelöst wurde, bleibt dagegen bestehen:
+[Badges werden nie aberkannt](60-badges.md#wissen-was-vorher-zu-bedenken-ist).
 
 Verschiebst du einen **Konfi in einen anderen Jahrgang**, wandern Punkte und
 Level unverändert mit.
@@ -235,16 +304,16 @@ steht — oder du benennst es einfach um.
 
 ## Nachvollziehen, wann nachgerechnet wird
 
-Abzeichen und Level werden beide sofort geprüft bei:
+Badges und Level werden beide sofort geprüft bei:
 
 - einem genehmigten Antrag
 - vergebenen Bonuspunkten
 - eingetragener Anwesenheit und beim Check-in per QR-Code
 
-Nur die Abzeichen — nicht das Level — werden geprüft, wenn du über die
+Nur die Badges — nicht das Level — werden geprüft, wenn du über die
 Konfi-Verwaltung eine Aktivität zuschreibst oder wieder löschst.
 
 Dazu kommen die
-[stündlichen Abzeichen-Prüfungen](60-badges.md#nachvollziehen-wann-geprueft-wird)
+[stündlichen Badge-Prüfungen](60-badges.md#nachvollziehen-wann-geprueft-wird)
 im Hintergrund. Das Level wird außerdem bei jedem Öffnen des Konfi-Dashboards
 überprüft und gegebenenfalls stillschweigend richtiggestellt.

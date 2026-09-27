@@ -52,24 +52,34 @@ import { ICON_CHOICES, getIconFromString } from '../../../utils/badgeIcons';
 import {
   baueChallengePayload,
   istChallengeFormularGueltig,
+  audienceFuerFormular,
   istNurTeam,
   zeitraumFehler
 } from '../../../utils/challengeForm';
+import { tastaturKlick } from '../../../utils/tastatur';
 
 // Icon-Auswahl: gemeinsamer Vorrat aus utils/badgeIcons, damit
 // Challenge-Stempel, Abzeichen und Zertifikate dieselbe Bildsprache haben.
 // Rueckfall bleibt die Flagge (frueher lokal in CHALLENGE_ICONS).
 export const getChallengeIcon = (iconName?: string): string => getIconFromString(iconName, ICON_CHALLENGE_GEFUELLT);
 
-// Teilnahme-Kreis (Migration 121): "Mitmachen ist besser als aussen stehen" —
-// das Team darf IMMER mitschreiben, deshalb gibt es bewusst KEINE Option
-// "nur Konfis" mehr (User-Entscheid 09.08.2026). Bleibt nach dem Start
+// Teilnahme-Kreis (Migration 121). Drei Zielgruppen (Simon, 27.09.2026 --
+// ersetzt den Entscheid vom 09.08.2026, der "nur Konfis" abgeschafft hatte):
+// "Konfis, weil wir damit arbeiten und die Teamer das auch sehen muessen."
+// Wer eine Challenge sieht, regelt die Zielgruppe mit dem Jahrgang:
+// 'nur_team' das ganze Team, sonst Team und Leitung der gewaehlten
+// Jahrgaenge (backend/utils/challengeLeitungSicht.js). Bleibt nach dem Start
 // eingefroren (wie Sichtbarkeit/Freigabe).
 const AUDIENCE_OPTIONS: { value: ChallengeAudience; label: string; hint: string }[] = [
   {
     value: 'konfis_und_team',
     label: 'Jahrgang und Team',
     hint: 'Die Konfis der gewählten Jahrgänge und ihr im Team — alle reichen gleichberechtigt ein.'
+  },
+  {
+    value: 'konfis',
+    label: 'Nur die Konfis',
+    hint: 'Die Konfis der gewählten Jahrgänge reichen ein. Ihr im Team seht die Beiträge und begleitet die Challenge, reicht aber selbst nichts ein.'
   },
   {
     value: 'nur_team',
@@ -188,10 +198,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
         setFormData({
           title: challenge.title || '',
           description: challenge.description || '',
-          // Alt-Challenges ohne Team-Teilnahme ('konfis') gibt es noch in der DB;
-          // im Formular werden sie als "Jahrgang und Team" angezeigt und beim
-          // nächsten Speichern (vor Start) auch so uebernommen.
-          audience: challenge.audience === 'nur_team' ? 'nur_team' : 'konfis_und_team',
+          audience: audienceFuerFormular(challenge.audience),
           visibility: (challenge.visibility as ChallengeVisibility) || 'konfi_choice',
           moderated: challenge.moderated !== false,
           allowed_media: (challenge.allowed_media as ChallengeMediaType[]) || ['text', 'photo'],
@@ -365,7 +372,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                   <IonList>
                     <IonItem lines="inset">
                       <IonLabel position="stacked">Titel *</IonLabel>
-                      <IonInput
+                      <IonInput aria-label="Titel" aria-required="true"
                         value={formData.title}
                         onIonInput={(e) => setFormData({ ...formData, title: e.detail.value! })}
                         placeholder="Worum geht es?"
@@ -377,7 +384,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
 
                     <IonItem lines="inset">
                       <IonLabel position="stacked">Beschreibung *</IonLabel>
-                      <IonTextarea
+                      <IonTextarea aria-label="Beschreibung" aria-required="true"
                         value={formData.description}
                         onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
                         placeholder="Was sollen die Konfis tun?"
@@ -388,7 +395,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     </IonItem>
                     <IonItem lines="none">
                       <IonLabel position="stacked">Gestellt von (optional)</IonLabel>
-                      <IonInput
+                      <IonInput aria-label="Gestellt von (optional)"
                         value={formData.author_freetext}
                         onIonInput={(e) => setFormData({ ...formData, author_freetext: e.detail.value! })}
                         placeholder="z.B. Pastor Simon, Konfi-Team Hennstedt"
@@ -417,7 +424,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                 <IonCardContent>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {AUDIENCE_OPTIONS.map((option) => (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={formData.audience === option.value}
                         key={option.value}
                         className={`app-list-item app-list-item--challenges${formData.audience === option.value ? ' app-list-item--selected' : ''}`}
                         onClick={() => !loading && !isStarted && setFormData({ ...formData, audience: option.value })}
@@ -454,7 +461,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     <IonLabel style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: formData.allowed_media.length === 0 ? 'var(--app-color-danger)' : 'var(--app-text-secondary)' }}>
                       Mehrere möglich *
                       {formData.allowed_media.length > 0 && (
-                        <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-color-challenges)', fontWeight: 'var(--app-schrift-normal)' }}>
+                        <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-challenges)', fontWeight: 'var(--app-schrift-normal)' }}>
                           ({formData.allowed_media.length} ausgewählt)
                         </span>
                       )}
@@ -464,7 +471,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     {MEDIA_OPTIONS.map((option) => {
                       const isSelected = formData.allowed_media.includes(option.value);
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                           key={option.value}
                           className={`app-list-item app-list-item--challenges${isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => toggleMedia(option.value)}
@@ -504,7 +511,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                       (Nutzerentscheid 24.08.2026). */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {VISIBILITY_OPTIONS.map((option) => (
-                      <div
+                      <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={formData.visibility === option.value}
                         key={option.value}
                         className={`app-list-item app-list-item--challenges${formData.visibility === option.value ? ' app-list-item--selected' : ''}`}
                         onClick={() => !loading && !isStarted && setFormData({ ...formData, visibility: option.value })}
@@ -534,7 +541,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                         immer noch nachträglich.
                       </p>
                     </IonLabel>
-                    <IonToggle
+                    <IonToggle aria-label="Beiträge erst nach Freigabe zeigen"
                       slot="end"
                       className="app-toggle--challenges"
                       checked={formData.moderated}
@@ -552,7 +559,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                         Konfis können mehr als einen Beitrag zu dieser Challenge einreichen.
                       </p>
                     </IonLabel>
-                    <IonToggle
+                    <IonToggle aria-label="Mehrere Beiträge erlauben"
                       slot="end"
                       className="app-toggle--challenges"
                       checked={formData.allow_multiple}
@@ -577,7 +584,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                   <IonList>
                     <IonItem lines="inset">
                       <IonLabel position="stacked">Name des Stempels *</IonLabel>
-                      <IonInput
+                      <IonInput aria-label="Name des Stempels" aria-required="true"
                         value={formData.badge_name}
                         onIonInput={(e) => setFormData({ ...formData, badge_name: e.detail.value! })}
                         placeholder="z.B. Hingeschaut"
@@ -611,7 +618,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                               </IonText>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 'var(--app-abstand-eng)' }}>
                                 {group.icons.map(({ key, data }) => (
-                                  <div
+                                  <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label={data.name} aria-pressed={formData.badge_icon === key}
                                     key={key}
                                     onClick={() => !loading && setFormData({ ...formData, badge_icon: key })}
                                     style={{
@@ -666,7 +673,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     <IonLabel style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: formData.jahrgang_ids.length === 0 ? 'var(--app-color-danger)' : 'var(--app-text-secondary)' }}>
                       Jahrgänge (mehrere möglich) *
                       {formData.jahrgang_ids.length > 0 && (
-                        <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-color-jahrgang)', fontWeight: 'var(--app-schrift-normal)' }}>
+                        <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-jahrgang)', fontWeight: 'var(--app-schrift-normal)' }}>
                           ({formData.jahrgang_ids.length} ausgewählt)
                         </span>
                       )}
@@ -676,7 +683,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     {jahrgaenge.map((jahrgang) => {
                       const isSelected = formData.jahrgang_ids.includes(jahrgang.id);
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                           key={jahrgang.id}
                           className={`app-list-item app-list-item--jahrgang${isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => toggleJahrgang(jahrgang.id)}
@@ -750,7 +757,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                           Entwürfe sehen nur du und dein Team.
                         </p>
                       </IonLabel>
-                      <IonToggle
+                      <IonToggle aria-label="Als Entwurf speichern"
                         slot="end"
                         className="app-toggle--challenges"
                         checked={formData.is_draft}
@@ -769,8 +776,9 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       </IonContent>
 
       {/* DateTime-Modals — wie im Event-Modal direkt unter IonPage, nicht im Content */}
-      <IonModal keepContentsMounted={true}>
+      <IonModal aria-label="Start wählen" keepContentsMounted={true}>
         <IonDatetime
+          aria-label="Start"
           id="challenge-start-picker"
           value={formData.starts_at}
           presentation="date-time"
@@ -780,8 +788,9 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           style={{ '--background': 'var(--app-surface-soft)', '--border-radius': 'var(--app-radius-karte)', '--box-shadow': 'var(--app-schatten-schwebend-weich)' }}
         />
       </IonModal>
-      <IonModal keepContentsMounted={true}>
+      <IonModal aria-label="Ende wählen" keepContentsMounted={true}>
         <IonDatetime
+          aria-label="Ende"
           id="challenge-end-picker"
           value={formData.ends_at}
           presentation="date-time"

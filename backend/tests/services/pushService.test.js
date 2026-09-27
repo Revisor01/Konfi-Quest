@@ -9,7 +9,7 @@
 // Getestet wird gegen die echte Test-DB (Seed: Org 1 und Org 2), Firebase
 // ist gemockt — die Assertions prüfen den konkreten data-Payload je Typ.
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, ORGS, CHAT_ROOMS, JAHRGAENGE } = require('../helpers/seed');
+const { seed, USERS, ORGS, CHAT_ROOMS, JAHRGAENGE, EVENTS } = require('../helpers/seed');
 
 // vi.mock greift bei diesem CJS-Setup nicht zuverlaessig (siehe
 // jahrgaenge.test.js) — deshalb vi.spyOn auf dem Modul-Objekt, BEVOR
@@ -21,6 +21,8 @@ const sendFirebasePushNotification = vi
 vi.spyOn(firebase, 'sendFirebaseSilentPush').mockResolvedValue({ success: true });
 
 const PushService = require('../../services/pushService');
+const { ladeLeitungZumAntrag } = require('../../utils/antragLeitungSicht');
+const { ladeLeitungZumTermin } = require('../../utils/terminLeitungSicht');
 
 // Alle gesendeten Payloads einsammeln: [{ token, data }]
 const gesendete = () => sendFirebasePushNotification.mock.calls.map(
@@ -141,49 +143,85 @@ describe('PushService: organization_id in jedem Payload', () => {
       }
     });
 
-    it('sendNewActivityRequestToAdmins: organization_id = Content-Org', async () => {
-      await PushService.sendNewActivityRequestToAdmins(db, 2, 'Konfi', 'Aktivität', 3);
-      const [push] = gesendete();
-      expect(push.data.type).toBe('new_activity_request');
-      expect(push.data.organization_id).toBe('2');
-    });
-
-    it('sendEventUnregistrationToAdmins', async () => {
-      await PushService.sendEventUnregistrationToAdmins(db, 1, 'Konfi', 'Event');
-      const [push] = gesendete();
-      expect(push.data.type).toBe('event_unregistration');
-      expect(push.data.organization_id).toBe('1');
-    });
-
-    it('sendEventsPendingApprovalToAdmins', async () => {
-      await PushService.sendEventsPendingApprovalToAdmins(db, 1, 3);
-      const [push] = gesendete();
-      expect(push.data.type).toBe('events_pending_approval');
-      expect(push.data.organization_id).toBe('1');
-    });
-
-    it('sendJahrgangDeletionWarningToAdmins', async () => {
-      await PushService.sendJahrgangDeletionWarningToAdmins(db, 1, 'Jahrgang 2025', 3);
-      const [push] = gesendete();
-      expect(push.data.type).toBe('jahrgang_deletion_warning');
-      expect(push.data.organization_id).toBe('1');
-    });
-
-    it('sendEventOptOutToAdmins und sendEventOptInToAdmins', async () => {
-      await PushService.sendEventOptOutToAdmins(db, 1, 'Konfi', 'Event', 'krank');
-      await PushService.sendEventOptInToAdmins(db, 1, 'Konfi', 'Event');
+    // Seit 27.09.2026 kommen die Empfaenger von der Aufrufstelle
+    // (utils/antragLeitungSicht.js, ladeLeitungZumAntrag) -- hier geht es nur
+    // um den Payload.
+    it('sendNewActivityRequestToLeadership: organization_id = Content-Org', async () => {
+      await PushService.sendNewActivityRequestToLeadership(db, 2, [USERS.admin2.id], 'Konfi', 'Aktivität', 3);
       const pushes = gesendete();
+      expect(pushes.map(p => p.token)).toEqual(['token-admin2']);
+      expect(pushes[0].data.type).toBe('new_activity_request');
+      expect(pushes[0].data.organization_id).toBe('2');
+    });
+
+    it('sendNewActivityRequestToLeadership: ohne Empfaengerliste geht nichts raus -- kein Rueckfall auf die ganze Leitung', async () => {
+      const ergebnis = await PushService.sendNewActivityRequestToLeadership(db, 2, undefined, 'Konfi', 'Aktivität', 3);
+      expect(ergebnis.success).toBe(false);
+      expect(gesendete()).toEqual([]);
+    });
+
+    // Seit 27.09.2026 kommen auch bei den Event- und Jahrgangs-Meldungen die
+    // Empfaenger von der Aufrufstelle (utils/terminLeitungSicht.js,
+    // utils/jahrgangLeitungSicht.js) -- hier geht es nur um den Payload, mit
+    // ausdruecklicher Liste und auf genau diese Liste geprueft.
+    it('sendEventUnregistrationToLeadership', async () => {
+      await PushService.sendEventUnregistrationToLeadership(db, 1, [USERS.admin1.id], 'Konfi', 'Event');
+      const pushes = gesendete();
+      expect(pushes.map(p => p.token)).toEqual(['token-admin1']);
+      expect(pushes[0].data.type).toBe('event_unregistration');
+      expect(pushes[0].data.organization_id).toBe('1');
+    });
+
+    it('sendEventsPendingApprovalToLeadership', async () => {
+      await PushService.sendEventsPendingApprovalToLeadership(db, 1, [USERS.admin1.id], 3);
+      const pushes = gesendete();
+      expect(pushes.map(p => p.token)).toEqual(['token-admin1']);
+      expect(pushes[0].data.type).toBe('events_pending_approval');
+      expect(pushes[0].data.organization_id).toBe('1');
+    });
+
+    it('sendJahrgangDeletionWarningToLeadership', async () => {
+      await PushService.sendJahrgangDeletionWarningToLeadership(db, 1, [USERS.admin1.id], 'Jahrgang 2025', 3);
+      const pushes = gesendete();
+      expect(pushes.map(p => p.token)).toEqual(['token-admin1']);
+      expect(pushes[0].data.type).toBe('jahrgang_deletion_warning');
+      expect(pushes[0].data.organization_id).toBe('1');
+    });
+
+    it('sendEventOptOutToLeadership und sendEventOptInToLeadership', async () => {
+      await PushService.sendEventOptOutToLeadership(db, 1, [USERS.admin1.id], 'Konfi', 'Event', 'krank');
+      await PushService.sendEventOptInToLeadership(db, 1, [USERS.admin1.id], 'Konfi', 'Event');
+      const pushes = gesendete();
+      expect(pushes.map(p => p.token)).toEqual(['token-admin1', 'token-admin1']);
       const optOut = pushes.find(p => p.data.type === 'event_opt_out');
       const optIn = pushes.find(p => p.data.type === 'event_opt_in');
       expect(optOut.data.organization_id).toBe('1');
       expect(optIn.data.organization_id).toBe('1');
     });
 
-    it('sendNewKonfiRegistrationToAdmins', async () => {
-      await PushService.sendNewKonfiRegistrationToAdmins(db, 1, JAHRGAENGE.jahrgang1.id, 'Neuer Konfi', 'Jahrgang 2025');
-      const [push] = gesendete();
-      expect(push.data.type).toBe('new_konfi_registration');
-      expect(push.data.organization_id).toBe('1');
+    it('sendNewKonfiRegistrationToLeadership', async () => {
+      await PushService.sendNewKonfiRegistrationToLeadership(db, 1, [USERS.admin1.id], JAHRGAENGE.jahrgang1.id, 'Neuer Konfi', 'Jahrgang 2025');
+      const pushes = gesendete();
+      expect(pushes.map(p => p.token)).toEqual(['token-admin1']);
+      expect(pushes[0].data.type).toBe('new_konfi_registration');
+      expect(pushes[0].data.organization_id).toBe('1');
+    });
+
+    it('Event- und Jahrgangs-Meldungen: ohne Empfaengerliste geht nichts raus -- kein Rueckfall auf die ganze Leitung', async () => {
+      const ergebnisse = await Promise.all([
+        PushService.sendEventUnregistrationToLeadership(db, 1, undefined, 'Konfi', 'Event', 'krank', 1),
+        PushService.sendEventOptOutToLeadership(db, 1, undefined, 'Konfi', 'Event', 'krank', 2),
+        PushService.sendEventOptInToLeadership(db, 1, undefined, 'Konfi', 'Event', 2),
+        PushService.sendTeamerEventBookingToLeadership(db, 1, undefined, 'Team', 'Event', 'confirmed', 1),
+        PushService.sendTeamerEventCancellationToLeadership(db, 1, undefined, 'Team', 'Event', 1),
+        PushService.sendEventsPendingApprovalToLeadership(db, 1, undefined, 3),
+        PushService.sendJahrgangDeletionWarningToLeadership(db, 1, undefined, 'Jahrgang 2025', 3, 1),
+        PushService.sendNewKonfiRegistrationToLeadership(db, 1, undefined, 1, 'Neue Konfi', 'Jahrgang 2025'),
+      ]);
+      expect(ergebnisse.map(e => e.success)).toEqual([false, false, false, false, false, false, false, false]);
+      expect(gesendete()).toEqual([]);
+      const { rows: [{ c }] } = await db.query('SELECT COUNT(*)::int AS c FROM notifications');
+      expect(c).toBe(0);
     });
   });
 
@@ -242,10 +280,13 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(push.data.organization_id).toBe('1');
     });
 
+    // Seit 27.09.2026 (BF-04) gehen die Empfaenger vom TERMIN aus -- die
+    // Konfis seiner Jahrgaenge. Der Test rief mit der Kennung 5, die es im
+    // Seed nicht gibt; jetzt der Seed-Termin 1 (Jahrgang 1: konfi1, konfi2).
     it('sendNewEventToOrgKonfis: Org aus dem Parameter', async () => {
-      await PushService.sendNewEventToOrgKonfis(db, 1, 'Neues Event', new Date().toISOString(), 5);
+      await PushService.sendNewEventToOrgKonfis(db, 1, 'Neues Event', new Date().toISOString(), EVENTS.gottesdienstEvent.id);
       const pushes = gesendete();
-      expect(pushes.length).toBeGreaterThan(0);
+      expect(pushes.length).toBe(2);
       for (const push of pushes) {
         expect(push.data.type).toBe('new_event');
         expect(push.data.organization_id).toBe('1');
@@ -259,27 +300,30 @@ describe('PushService: organization_id in jedem Payload', () => {
     // bekamen bis zur 30-Tage-Token-Bereinigung weiter "Neues Event!" einer
     // Gemeinde, aus der sie laengst raus sind.
     it('M5: archivierte Konfis bekommen keinen new_event-Push mehr', async () => {
+      // Termin 1 statt der Kennungen 5-7, die es im Seed nicht gibt: Seit
+      // 27.09.2026 (BF-04) kommen die Empfaenger aus den Jahrgaengen des
+      // Termins.
       const vorher = await (async () => {
-        await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin A', new Date().toISOString(), 5);
+        await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin A', new Date().toISOString(), EVENTS.gottesdienstEvent.id);
         const n = gesendete().length;
         sendFirebasePushNotification.mockClear();
         return n;
       })();
-      // Erlaubter Fall: beide aktiven Konfis der Org 1 bekommen den Push
-      // (konfi1 und konfi2; konfi3 gehoert zu Org 2, siehe seed.js).
+      // Erlaubter Fall: beide aktiven Konfis des Jahrgangs 1 bekommen den
+      // Push (konfi1 und konfi2; konfi3 gehoert zu Org 2, siehe seed.js).
       expect(vorher).toBe(2);
 
       // Verbotener Fall: ein archivierter Konfi faellt raus, obwohl sein
       // Token noch existiert.
       await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
-      await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin B', new Date().toISOString(), 6);
+      await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin B', new Date().toISOString(), EVENTS.gottesdienstEvent.id);
       expect(gesendete().length).toBe(1);
       expect(gesendete().map(p => p.token)).not.toContain('token-konfi1');
       sendFirebasePushNotification.mockClear();
 
       // Dasselbe fuer ein deaktiviertes Konto.
       await db.query('UPDATE users SET deleted_at = NULL, is_active = false WHERE id = $1', [USERS.konfi1.id]);
-      await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin C', new Date().toISOString(), 7);
+      await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin C', new Date().toISOString(), EVENTS.gottesdienstEvent.id);
       expect(gesendete().length).toBe(1);
       expect(gesendete().map(p => p.token)).not.toContain('token-konfi1');
     });
@@ -483,24 +527,48 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(gesendete().map(p => p.token)).not.toContain('token-admin1');
     });
 
-    it('sendNewActivityRequestToAdmins: deaktivierte Leitung faellt raus', async () => {
-      await PushService.sendNewActivityRequestToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Aktivitaet', 3);
-      expect(gesendete().map(p => p.token)).toContain('token-admin1');
+    it('Neuer Antrag: deaktivierte Leitung faellt raus (Empfaenger aus ladeLeitungZumAntrag)', async () => {
+      // admin1 bekommt den Antrag nur mit Zuweisung auf den Jahrgang des
+      // Konfis (Regel vom 27.09.2026) -- sonst prueft der Test nichts.
+      await db.query('INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]);
+      const { rows: [antrag] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id)
+         VALUES ($1, 1, '2026-06-01', 'pending', $2) RETURNING id`,
+        [USERS.konfi1.id, ORGS.testGemeinde.id]
+      );
+      const senden = async () => PushService.sendNewActivityRequestToLeadership(
+        db, ORGS.testGemeinde.id, await ladeLeitungZumAntrag(db, antrag.id), 'Konfi', 'Aktivitaet', 3
+      );
+
+      // In dieser Datei hat aus der Leitung von Org 1 nur admin1 ein Geraet.
+      await senden();
+      expect(gesendete().map(p => p.token)).toEqual(['token-admin1']);
       sendFirebasePushNotification.mockClear();
 
       await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.admin1.id]);
-      await PushService.sendNewActivityRequestToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Aktivitaet', 3);
-      expect(gesendete().map(p => p.token)).not.toContain('token-admin1');
+      await senden();
+      expect(gesendete().map(p => p.token)).toEqual([]);
     });
 
-    it('sendEventOptOutToAdmins: deaktivierte Leitung faellt raus', async () => {
-      await PushService.sendEventOptOutToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Termin', 'krank');
-      expect(gesendete().map(p => p.token)).toContain('token-admin1');
+    it('Opt-out: deaktivierte Leitung faellt raus (Empfaenger aus ladeLeitungZumTermin)', async () => {
+      // admin1 bekommt die Meldung nur mit Zuweisung auf den Jahrgang des
+      // Events (Regel vom 27.09.2026) -- sonst prueft der Test nichts.
+      await db.query('INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]);
+      const senden = async () => PushService.sendEventOptOutToLeadership(
+        db, ORGS.testGemeinde.id, await ladeLeitungZumTermin(db, EVENTS.pflichtEvent.id),
+        'Konfi', 'Konfi-Unterricht', 'krank', EVENTS.pflichtEvent.id
+      );
+
+      // In dieser Datei hat aus der Leitung von Org 1 nur admin1 ein Geraet.
+      await senden();
+      expect(gesendete().map(p => p.token)).toEqual(['token-admin1']);
       sendFirebasePushNotification.mockClear();
 
       await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.admin1.id]);
-      await PushService.sendEventOptOutToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Termin', 'krank');
-      expect(gesendete().map(p => p.token)).not.toContain('token-admin1');
+      await senden();
+      expect(gesendete().map(p => p.token)).toEqual([]);
     });
 
     it('Geloeschtes Konto bekommt ebenfalls nichts', async () => {
@@ -674,9 +742,9 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(gesendete()).toHaveLength(0);
     });
 
-    it('sendTeamerEventBookingToAdmins: angemeldet', async () => {
-      await PushService.sendTeamerEventBookingToAdmins(
-        db, ORGS.testGemeinde.id, 'Lasse Brandt', 'Konfi-Freizeit', 'confirmed', 42
+    it('sendTeamerEventBookingToLeadership: angemeldet', async () => {
+      await PushService.sendTeamerEventBookingToLeadership(
+        db, ORGS.testGemeinde.id, [USERS.admin1.id], 'Lasse Brandt', 'Konfi-Freizeit', 'confirmed', 42
       );
 
       const [push] = gesendete();
@@ -686,9 +754,9 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(push.data.organization_id).toBe('1');
     });
 
-    it('sendTeamerEventBookingToAdmins: Warteliste hat einen eigenen Text', async () => {
-      await PushService.sendTeamerEventBookingToAdmins(
-        db, ORGS.testGemeinde.id, 'Lasse Brandt', 'Konfi-Freizeit', 'waitlist', 42
+    it('sendTeamerEventBookingToLeadership: Warteliste hat einen eigenen Text', async () => {
+      await PushService.sendTeamerEventBookingToLeadership(
+        db, ORGS.testGemeinde.id, [USERS.admin1.id], 'Lasse Brandt', 'Konfi-Freizeit', 'waitlist', 42
       );
 
       const [push] = gesendete();
@@ -696,11 +764,11 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(push.data.organization_id).toBe('1');
     });
 
-    it('sendTeamerEventCancellationToAdmins: Abmeldung ohne Grund — Text wie bisher', async () => {
+    it('sendTeamerEventCancellationToLeadership: Abmeldung ohne Grund — Text wie bisher', async () => {
       // Der Storno-Weg (DELETE /events/:id/book) ruft ohne reason auf: Der
       // Text darf sich fuer ihn nicht aendern.
-      await PushService.sendTeamerEventCancellationToAdmins(
-        db, ORGS.testGemeinde.id, 'Lasse Brandt', 'Konfi-Freizeit', 42
+      await PushService.sendTeamerEventCancellationToLeadership(
+        db, ORGS.testGemeinde.id, [USERS.admin1.id], 'Lasse Brandt', 'Konfi-Freizeit', 42
       );
 
       const [push] = gesendete();
@@ -712,9 +780,9 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(push.data.reason).toBeUndefined();
     });
 
-    it('sendTeamerEventCancellationToAdmins: Absage MIT Grund nennt ihn (01.09.2026)', async () => {
-      await PushService.sendTeamerEventCancellationToAdmins(
-        db, ORGS.testGemeinde.id, 'Lasse Brandt', 'Konfi-Freizeit', 42, 'Familienfeier'
+    it('sendTeamerEventCancellationToLeadership: Absage MIT Grund nennt ihn (01.09.2026)', async () => {
+      await PushService.sendTeamerEventCancellationToLeadership(
+        db, ORGS.testGemeinde.id, [USERS.admin1.id], 'Lasse Brandt', 'Konfi-Freizeit', 42, 'Familienfeier'
       );
 
       const [push] = gesendete();

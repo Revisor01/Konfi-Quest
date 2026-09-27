@@ -23,11 +23,11 @@ Challenge, steht sie oben. Ist dein
 [Jahresrückblick](95-wrapped.md#den-team-rueckblick-anlegen-oder-ihn-laufen-lassen)
 freigegeben, erscheint hier ein Banner dafür.
 
-Unter **Events** stehen die nächsten Termine: die, zu denen du zugesagt hast,
-und die, für die noch Team gesucht wird. **Fällt einer deiner Termine aus,
-steht er weiter da — als abgesagt, mit dem Grund** und darunter, wer abgesagt
-hat. Genau dafür ist die Startseite da: Ein Termin, der einfach verschwindet,
-sagt „nichts los" statt „fällt aus". Termine, für die Team gesucht wurde und
+Unter **Events** stehen die nächsten Events: die, zu denen du zugesagt hast,
+und die, für die noch Team gesucht wird. **Fällt eines deiner Events aus,
+steht es weiter da — als abgesagt, mit dem Grund** und darunter, wer abgesagt
+hat. Genau dafür ist die Startseite da: Ein Event, das einfach verschwindet,
+sagt „nichts los" statt „fällt aus". Events, für die Team gesucht wurde und
 die dann abgesagt wurden, verschwinden dagegen — dort hattest du nichts
 zugesagt.
 
@@ -43,44 +43,47 @@ umgekehrt in deren Kontaktliste nicht auf.
 Gruppenchats kannst du anlegen. Mitglieder nachträglich hinzufügen oder
 entfernen und den Verlauf exportieren kann nur die Leitung — auch in Gruppen,
 die du selbst angelegt hast. Alle Regeln stehen im Kapitel
-[Chat](90-chat.md#wer-wen-anschreiben-darf).
+[Chat](90-chat.md#nachschlagen-wer-wen-anschreiben-darf).
 
 ## Challenges stellen und begleiten
 
 ![Der Challenges-Bereich in der Teamer-Ansicht.](/docs/bilder/iphone/teamer-challenges.png)
 
 Du arbeitest hier wie die Leitung, begrenzt auf deine zugewiesenen Jahrgänge:
-[anlegen und bearbeiten](80-challenges.md#eine-challenge-anlegen),
-[löschen](80-challenges.md#eine-challenge-loeschen), Beiträge
+[anlegen und bearbeiten](80-challenges.md#eine-challenge-anlegen), Beiträge
 [freigeben, anonymisieren oder ausblenden](80-challenges.md#beitraege-freigeben-ausblenden-loeschen)
-— und selbst mitmachen. Ein oranges Feld mit Zahl und Uhr an einer Challenge
-sagt dir, wie viele Beiträge dort auf deine Freigabe warten — siehe
-[Offene Freigaben erkennen](80-challenges.md#offene-freigaben-erkennen).
+— und selbst mitmachen. Nur das **Löschen** — einer Challenge wie eines
+Beitrags — bleibt der [Leitung](80-challenges.md#eine-challenge-loeschen)
+vorbehalten. Eine rote Zahl am Symbol einer Challenge zeigt, was seit deinem
+letzten Öffnen neu ist — neue Beiträge und, wo du mitmachst, die gestartete
+Challenge selbst —, ein oranges Feld mit Zahl und Uhr die Beiträge, die auf
+deine Freigabe warten — siehe
+[Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen).
 
 Es gibt auch Challenges nur fürs Team; die sehen Konfis gar nicht. Was nach dem
 Start noch änderbar ist, steht unter
 [Wissen, was nach dem Start gesperrt ist](80-challenges.md#wissen-was-nach-dem-start-gesperrt-ist).
 
-## Zu Terminen zusagen und absagen
+## Zu Events zusagen und absagen
 
-![Der Bereich Mitmachen mit Terminen und Aktivitäten.](/docs/bilder/iphone/teamer-mitmachen.png)
+![Der Bereich Mitmachen mit Events und Aktivitäten.](/docs/bilder/iphone/teamer-mitmachen.png)
 
 Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und
 **Aktivitäten**.
 
 ### Events
 
-Alle Termine, gefiltert über **Alle**, **Meine** und **Team**. Unter **Meine**
-stehen alle Termine, zu denen du dich gemeldet hast — zugesagt, auf der
+Alle Events, gefiltert über **Alle**, **Meine** und **Team**. Unter **Meine**
+stehen alle Events, zu denen du dich gemeldet hast — zugesagt, auf der
 Warteliste oder selbst abgesagt. Die Zahlen über der Liste zählen genauso. Zu
-jedem Termin siehst du die Details und das hinterlegte
-[Material](70-termine.md#material-an-einem-termin-finden). Reine Konfi-Termine stehen nur
+jedem Event siehst du die Details und das hinterlegte
+[Material](70-termine.md#material-an-einem-event-finden). Reine Konfi-Events stehen nur
 zur Information da, ohne Anmeldung.
 
-**Die Termine selbst verwaltet die Leitung:** anlegen, ändern, absagen,
+**Die Events selbst verwaltet die Leitung:** anlegen, ändern, absagen,
 löschen, Personen ein- und austragen und die Anwesenheit verbuchen. Du sagst
 für dich selbst zu oder ab, zeigst den QR-Code zum Einchecken und öffnest den
-Termin-Chat. Ist ein Termin abgesagt, siehst du das und den Grund dazu — ändern
+Event-Chat. Ist ein Event abgesagt, siehst du das und den Grund dazu — ändern
 lässt sich daran nichts.
 
 Unter **„Wer kommt"** steht die Teilnehmerliste: erst die Konfis, dann das
@@ -90,9 +93,9 @@ Liste ist zum Nachsehen da — verbucht und geändert wird sie von der Leitung.
 
 Ist jemand abgemeldet, steht der **Grund** darunter. Ebenso **Notizen** wie
 „geht um 14 Uhr" und, klein darunter, wer den Eintrag gemacht hat. Wer beim
-Termin vor Ort ist, soll das wissen, ohne nachfragen zu müssen.
+Event vor Ort ist, soll das wissen, ohne nachfragen zu müssen.
 
-Bei Terminen, für die Teamer:innen gesucht werden, antwortest du unter **„Bist
+Bei Events, für die Teamer:innen gesucht werden, antwortest du unter **„Bist
 du dabei?"** mit **„Dabei"** oder **„Nicht dabei"**. Solange du nichts gewählt
 hast, stehen beide Knöpfe da; danach nur noch der Weg zurück — nach einer
 Zusage **„Nicht mehr dabei"**, nach einer Absage **„Doch dabei"**. Ändern
@@ -105,8 +108,8 @@ Liste **„Wer kommt"** zeigt den neuen Stand. Ist das Team-Kontingent voll und
 eine Warteliste offen, sagt die Meldung, dass du auf der Warteliste stehst und
 automatisch nachrückst, sobald ein Platz frei wird.
 
-Ist ein Termin **abgesagt**, steht statt der Knöpfe der Hinweis, dass er nicht
-stattfindet — zusagen kannst du dann nicht mehr. Bei einem vergangenen Termin,
+Ist ein Event **abgesagt**, steht statt der Knöpfe der Hinweis, dass es nicht
+stattfindet — zusagen kannst du dann nicht mehr. Bei einem vergangenen Event,
 an dem du nicht teilgenommen hast, entfällt der Abschnitt ganz.
 
 Beim Absagen fragt die App nach einem Grund — nach einer vorherigen Zusage ist
@@ -130,6 +133,14 @@ eigenen Abschnitt ganz oben, am Globus zu erkennen. Links öffnen sich im
 Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
 [Für die Leitung](30-leitung.md#material-anlegen-und-sichtbar-machen).
 
+Eine Datei antippen öffnet sie; solange sie lädt, steht in ihrer Zeile
+*„Wird geladen…"* mit Prozentzahl. Danach liegt sie auf dem Gerät und öffnet
+sich beim nächsten Mal sofort, auch ohne Netz — ein Material, das du schon
+einmal offen hattest, zeigt sich dann mit dem zuletzt geladenen Stand. Was die
+Leitung inzwischen gelöscht hat, verschwindet beim nächsten Öffnen mit Netz
+auch vom Gerät. Mehr dazu unter
+[Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
+
 ## Dein Profil öffnen
 
 ![Das Profil einer Teamer:in.](/docs/bilder/iphone/teamer-profil.png)
@@ -143,18 +154,19 @@ Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
 - **Benachrichtigungen** — welche Mitteilungen aufs Handy kommen; siehe
   [Auswählen, welche Mitteilungen aufs Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen)
 - **App-Tour ansehen** und **Medien-Cache leeren** — Letzteres wirft die
-  Chat-Dateien weg, die zum schnelleren Öffnen auf dem Gerät liegen (siehe
-  [Chat](90-chat.md#eine-datei-mitschicken))
-- **Badges** — deine Abzeichen; welche
-  [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen) gelten,
-  steht im Abzeichen-Kapitel
+  Dateien aus Chat, Challenges und Material weg, die zum schnelleren Öffnen
+  auf dem Gerät liegen (siehe
+  [Den Medien-Cache leeren](03-bedienung.md#den-medien-cache-leeren))
+- **Badges** — deine Badges; welche
+  [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen-zaehlen) gelten,
+  steht im Badge-Kapitel
 - **Deine Stempel** — die [Challenge-Stempel](80-challenges.md#den-stempel-vergeben),
   die du selbst gesammelt hast. Was es noch zu holen gibt, steht grau daneben.
   Ein Tipp auf einen Stempel zeigt, wofür er steht und wann du ihn bekommen
   hast. Gibt es weder erhaltene noch offene Stempel, steht der Abschnitt nicht
   da.
 - **Konfi-Historie** — wenn du früher selbst Konfi warst: deine damaligen
-  Punkte und Abzeichen. Hier steht nur deine Konfi-Zeit; deine Teamer-Abzeichen
+  Punkte und Badges. Hier steht nur deine Konfi-Zeit; deine Teamer-Badges
   stehen unter **Badges**.
 - **Meine Rückblicke** — deine [Jahresrückblicke](95-wrapped.md) als Teamer:in
 

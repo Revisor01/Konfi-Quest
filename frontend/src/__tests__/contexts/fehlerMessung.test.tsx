@@ -103,8 +103,13 @@ import { AppProvider, useApp, FehlerDiagnose } from '../../contexts/AppContext';
 
 let letzterContext: ReturnType<typeof useApp>;
 const Consumer: React.FC = () => {
-  letzterContext = useApp();
-  return <span data-testid="error">{letzterContext.error || 'no-error'}</span>;
+  const ctx = useApp();
+  // Im Effect nach aussen reichen, nicht waehrend des Renderns
+  // (react-hooks/globals). Nach render() im act() steht der Wert.
+  React.useEffect(() => {
+    letzterContext = ctx;
+  });
+  return <span data-testid="error">{ctx.error || 'no-error'}</span>;
 };
 
 const melde = async (meldung: string, diagnose?: FehlerDiagnose) => {
@@ -187,25 +192,33 @@ describe('trackFehler bekommt die Ursache mitgeliefert', () => {
 
   it('laesst Aufrufe ohne Diagnose weiterhin zu (258 alte Aufrufstellen)', async () => {
     await aufbauen();
+    // Bis 27.09.2026 stand hier ein beliebiger Text, und er kam im Wortlaut
+    // an — genau das war Befund B1. Heute gilt das nur fuer bekannte Texte;
+    // ein unbekannter wird `andere-meldung` (fehlerMessungOhneNamen.test.tsx).
+    await melde('Fehler beim Speichern');
     await melde('Irgendein alter Fehler');
 
-    expect(mockTrackFehler).toHaveBeenCalledWith('Irgendein alter Fehler', undefined, undefined);
+    expect(mockTrackFehler).toHaveBeenNthCalledWith(1, 'Fehler beim Speichern', undefined, undefined);
+    expect(mockTrackFehler).toHaveBeenNthCalledWith(2, 'andere-meldung', undefined, undefined);
   });
 
   it('ersetzt Zahlen im Meldungstext weiterhin, auch mit Diagnose', async () => {
     await aufbauen();
-    await melde('Konfi 4711 wurde nicht gefunden', {
-      ort: 'event-detail-laden',
-      fehler: { response: { status: 404 } },
+    // Bis 27.09.2026 mit „Konfi 4711 wurde nicht gefunden" — kein Text der
+    // App, heute also `andere-meldung`. Dieselbe Pruefung an einem bekannten
+    // Text, mit einer anderen Zahl als im Code (dort: 8).
+    await melde('Das Passwort muss mindestens 4711 Zeichen lang sein', {
+      ort: 'organisation-anlegen',
+      fehler: { response: { status: 400 } },
     });
 
     // Eine ganze Ziffernfolge wird zu EINEM #, nicht zu einem # je Ziffer —
     // sonst verriete schon die Laenge des Platzhalters die Groessenordnung
     // einer Kennung.
     expect(mockTrackFehler).toHaveBeenCalledWith(
-      'Konfi # wurde nicht gefunden',
-      'http-404',
-      'event-detail-laden'
+      'Das Passwort muss mindestens # Zeichen lang sein',
+      'http-400',
+      'organisation-anlegen'
     );
   });
 

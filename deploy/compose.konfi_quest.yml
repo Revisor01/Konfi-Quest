@@ -2,15 +2,23 @@ version: '3.8'
 # Konfi-Quest Stack (Portainer Stack 249) — Referenzkopie im Repo.
 # QUELLE DER WAHRHEIT bleibt der Portainer-Stack; diese Datei dokumentiert die Struktur.
 #
+# KEINE BETRIEBSADRESSEN IM REPO (CLAUDE.md; Release-Audit 26.09.2026, Sicherheit BF-12):
+# Mail-Host, Mail-Login und die Host-IP fuer extra_hosts kommen als Stack-Variablen aus
+# Portainer (SMTP_HOST, SMTP_USER, SMTP_HOST_IP, SMTP_PASS) -- hier stehen nur die
+# Platzhalter. Wer diese Datei in den Stack kopiert, setzt die Variablen dort.
+#
 # STAND 21.06.2026: Das Backend laeuft als ZWEI Replicas (backend + backend2) hinter
 # Traefik (gemeinsamer Service konfi-api + loadbalancer.healthcheck -> nur gesunde
-# Replicas bekommen Traffic). Cron-Leader: nur backend (backend2 RUN_BACKGROUND_JOBS=false).
+# Replicas bekommen Traffic). Cron-Leader: per Advisory-Lock gewaehlt (26.09.2026),
+# backend und backend2 bewerben sich, backend-test nie (RUN_BACKGROUND_JOBS=false).
 # Lastverteilung verifiziert ~50/50. Der Stack laeuft auf FESTEM Commit-SHA-Tag
 # (das CI schreibt den Tag beim Deploy um); :latest ist auf ghcr unzuverlaessig.
 #
-# Der LUECKENLOSE (rollende) Deploy ist NOCH NICHT scharf — siehe deploy/rolling-deploy.sh
-# (2 offene Punkte: Traefik-Drain-Timing + fester-SHA-statt-latest). Bis dahin deployt
-# das CI weiter per update_stack (kurze Luecke; nachts unkritisch).
+# Rollender Deploy seit dem 26.09.2026 (deploy/rollend.sh, aus ci.yml aufgerufen):
+# update_stack in ZWEI Stufen -- erst backend (+ frontend) auf den neuen Tag, warten
+# bis der neue Container gesund ist, dann backend2. Dazu der Drain in server.js
+# (SHUTDOWN_DRAIN_MS unten). Der fruehere Entwurf deploy/rolling-deploy.sh ist damit
+# ersetzt.
 # <TAG> wird beim Deploy durch den aktuellen Commit-SHA ersetzt.
 services:
   postgres:
@@ -22,7 +30,46 @@ services:
     # obendrauf -- ohne mehr Speicher waere max_connections eine Attrappe.
     # Die 200 sind dadurch nicht voll durch Speicher gedeckt (rechnerisch
     # reichen sie fuer ~90 gleichzeitige); die Pools schoepfen das nie aus.
-    command: ["postgres", "-c", "max_connections=200"]
+    #
+    # DIMENSIONIERUNG FUER EINE GEMEINSAME DATENBANK (26.09.2026, Release-
+    # Audit Betrieb BF-13 / Datenbank BF-07 / Sammelbefund S-18): Alle
+    # Gemeinden laufen in EINER Datenbank (10.000-25.000 Nutzer:innen). Der
+    # Engpass war die CPU-Grenze 0,3 -- 300 ms Rechenzeit je Sekunde fuer
+    # drei Backends zusammen, also rund 3 App-Starts je Sekunde. Jetzt:
+    #   - 2 CPU, 3 GB. Rechnung fuer den Speicher: shared_buffers 768 MB
+    #     (ein Viertel des RAM) + 178 Verbindungen x bis zu 10 MB = 2,5 GB
+    #     im Extremfall; realistisch liegen Pool-Verbindungen leer und
+    #     brauchen 2-5 MB.
+    #   - max_connections=200 gegen 3 Backends x (PG_POOL_MAX 50 + Adapter-
+    #     Pool 2) + 2 Cron-Leader-Verbindungen + 20 Reserve fuer psql,
+    #     Migrationen und Sicherung = 178 <= 197 nutzbare (3 sind fuer den
+    #     Superuser reserviert). Rechenweg in backend/database.js.
+    #   - effective_cache_size 2 GB (RAM abzueglich Prozesse) hilft dem
+    #     Planer, Indizes zu bevorzugen; work_mem 8 MB je Sortierung
+    #     (Standard 4) fuer die Terminlisten und Chat-Abfragen;
+    #     maintenance_work_mem 128 MB fuer CREATE INDEX in Migrationen und
+    #     Autovacuum auf chat_messages.
+    #   - pg_stat_statements vorgeladen, damit sich langsame Abfragen in
+    #     Produktion messen lassen. Die Extension einmal von Hand anlegen:
+    #       docker exec <postgres> psql -U konfi_user -d konfi_db \
+    #         -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+    # QUELLE DER WAHRHEIT IST DER PORTAINER-STACK: Diese Werte muessen dort
+    # von Hand nachgezogen werden -- und vorher ist zu pruefen, dass der Host
+    # 2 CPU und 3 GB zusaetzlich frei hat (24.09.2026: 11,7 GB frei).
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=768MB"
+      - "-c"
+      - "effective_cache_size=2GB"
+      - "-c"
+      - "work_mem=8MB"
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
     environment:
       POSTGRES_DB: konfi_db
       POSTGRES_USER: konfi_user
@@ -42,8 +89,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
-          cpus: '0.3'
+          # 26.09.2026 (Betrieb BF-13): vorher 1G / 0.3 -- Rechnung im
+          # Kommentar am command oben.
+          memory: 3G
+          cpus: '2'
     security_opt:
       - no-new-privileges:true
     logging:
@@ -59,10 +108,26 @@ services:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
     environment: &backend_env
       NODE_ENV: production
-      # Ohne TZ laeuft der Node-Prozess in UTC. Der Anker gilt fuer
-      # backend, backend2 und backend-test gleichermassen.
-      TZ: Europe/Berlin
+      # TZ NICHT uebernehmen, solange nicht geklaert (27.09.2026). Seit dem
+      # 01.09.2026 sollte hier TZ: Europe/Berlin stehen; Produktion lief nie so
+      # (Abgleich des Live-Stacks vor 2.3.0: Backends in UTC). Der Code rechnet
+      # Uhrzeiten und Datumsgrenzen seit f74ec501 selbst in Berliner Zeit
+      # (utils/zeitformat.js), UTC ist fuer die Anzeige also unschaedlich.
+      # Riskant ist das Umschalten: node-postgres liest Spalten `timestamp`
+      # OHNE Zeitzone (24 Stueck, Audit Datenbank BF-11) in der Zeitzone des
+      # Prozesses -- mit TZ verschoebe sich jeder solche Wert beim Lesen um
+      # bis zu zwei Stunden, auch fuer den alten Code. Erst diese Spalten
+      # pruefen, dann entscheiden.
+      # TZ: Europe/Berlin
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET fehlt}
+      # Schluessel der verschluesselten Nachweisfotos (utils/photoCrypto.js,
+      # 64 Hex-Zeichen). Fehlt er oder ist er ein anderer, sind alle
+      # gespeicherten Fotos unlesbar -- den Wert aus dem Live-Stack
+      # uebernehmen, NIE neu erzeugen.
+      ACTIVITY_PHOTO_ENCRYPTION_KEY: ${ACTIVITY_PHOTO_ENCRYPTION_KEY:?ACTIVITY_PHOTO_ENCRYPTION_KEY fehlt}
+      # Passwort der API-Doku unter /docs/api (routes/docsAuth.js); ohne
+      # bleibt die Doku gesperrt.
+      DOCS_PASSWORD: ${DOCS_PASSWORD:?DOCS_PASSWORD fehlt}
       QR_SECRET: ${QR_SECRET:?QR_SECRET fehlt}
       LOSUNG_API_KEY: ${LOSUNG_API_KEY:?LOSUNG_API_KEY fehlt}
       DATABASE_URL: postgresql://konfi_user:${POSTGRES_PASSWORD}@postgres:5432/konfi_db
@@ -71,18 +136,63 @@ services:
       PGDATABASE: konfi_db
       PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}
       PGPORT: 5432
-      SMTP_HOST: server.godsapp.de
+      # Verbindungspool und Zeitgrenzen EXPLIZIT (26.09.2026, Betrieb BF-13).
+      # Bis dahin stand nur PG_IDLE_TIMEOUT im Stack, der Pool lief auf dem
+      # Code-Standard 20. Rechenweg in backend/database.js: drei Backends x
+      # (50 + 2 Adapter) + 2 Cron-Leader + 20 Reserve = 178 <= 197 nutzbare
+      # Verbindungen bei max_connections=200 (oben). Die Zeitgrenzen sind die
+      # Code-Standards -- hier stehen sie, damit der Stack sie zeigt und
+      # eine Aenderung kein Deploy braucht.
+      PG_POOL_MAX: "50"
+      PG_IDLE_TIMEOUT: "600000"
+      PG_CONN_TIMEOUT: "5000"
+      PG_STATEMENT_TIMEOUT: "30000"
+      PG_IDLE_TX_TIMEOUT: "60000"
+      PG_SOCKET_ADAPTER_POOL_MAX: "2"
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST fehlt}
       SMTP_PORT: 465
-      SMTP_USER: moin@konfi-quest.de
+      SMTP_USER: ${SMTP_USER:?SMTP_USER fehlt}
       SMTP_PASS: ${SMTP_PASS:?SMTP_PASS fehlt}
+      # Der Mailversand prueft seit dem 26.09.2026 das Zertifikat des
+      # Mailservers (Audit Sicherheit BF-09). Passt es nicht zum SMTP_HOST,
+      # geht keine Mail mehr raus -- vor dem Deploy pruefen:
+      #   openssl s_client -connect <SMTP_HOST>:465 -servername <SMTP_HOST> </dev/null
+      # Nur als Notnagel, bis das Zertifikat stimmt (Warnzeile im Log):
+      # SMTP_TLS_REJECT_UNAUTHORIZED: "false"
       # Metrics-Aggregation: /api/metrics fragt BEIDE Replicas (interne Compose-
       # Servicenamen im internal-Netz) ab und mergt sie zu einem Gesamtbild.
       METRICS_PEERS: "http://backend:5000,http://backend2:5000"
+      # Drain vor dem Stopp (26.09.2026, Betrieb BF-07/BF-12): Nach SIGTERM
+      # meldet /api/health 6 s lang 503, waehrend die Replica alle anderen
+      # Anfragen weiter beantwortet -- Traefik (Pruefintervall 5 s) nimmt sie
+      # so aus dem Pool, BEVOR der Server schliesst. Danach Exit 0 in unter
+      # einer Sekunde; alles innerhalb von stop_grace_period 30s.
+      SHUTDOWN_DRAIN_MS: "6000"
+      # Mindestversion und Wartungshinweis (27.09.2026, Feature-Empfehlung
+      # E-05) -- GET /api/app-version meldet sie den Apps, gelesen bei jeder
+      # Anfrage (backend/utils/betriebshinweise.js). Hier OHNE Wert: gesetzt
+      # werden sie als Stack-Variablen in Portainer; leer heisst "aus".
+      # Wirksam mit dem naechsten Stack-Update (die Container starten neu).
+      #   APP_MIN_VERSION_IOS / APP_MIN_VERSION_ANDROID: Version x.y.z.
+      #     Liegt eine App ab 2.3.0 darunter, zeigt sie "Bitte aktualisiere
+      #     Konfi Quest" mit "Später" und Knopf zum Store -- ein Hinweis, keine
+      #     Sperre: Er laesst sich schliessen und kommt beim naechsten Start
+      #     wieder (nie im Browser, nie ohne Netz). NIE hoeher setzen als die
+      #     Version, die in dem Store der Plattform schon freigegeben ist --
+      #     sonst bittet die App um ein Update, das es fuer das Geraet noch
+      #     gar nicht gibt. Ungueltige Werte ("2.3", "v2.3.0") gelten als
+      #     nicht gesetzt und stehen einmal im Log. Apps 2.2.x und aelter
+      #     kennen die Angabe nicht.
+      #   WARTUNG_HINWEIS: Klartext, erscheint auf den Startseiten aller
+      #     Rollen und auf der Anmeldeseite, bis die Variable wieder leer ist.
+      APP_MIN_VERSION_IOS: ${APP_MIN_VERSION_IOS:-}
+      APP_MIN_VERSION_ANDROID: ${APP_MIN_VERSION_ANDROID:-}
+      WARTUNG_HINWEIS: ${WARTUNG_HINWEIS:-}
     volumes:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
     extra_hosts:
-      - "server.godsapp.de:213.109.162.132"
+      - "${SMTP_HOST:?SMTP_HOST fehlt}:${SMTP_HOST_IP:?SMTP_HOST_IP fehlt}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -132,18 +242,21 @@ services:
       - internal
 
   # --- Backend-Replica 2 (identisch, anderer Service/Containername) ---
-  # WICHTIG: RUN_BACKGROUND_JOBS=false -> nur Replica 1 (backend) ist Cron-Leader,
-  # sonst liefen Auto-Deletion/Reminder/APM-Snapshots doppelt.
+  # Cron-Leader per Wahl (26.09.2026, Betrieb BF-10): backend und backend2
+  # bewerben sich beide um den Advisory-Lock (utils/cronLeader.js); genau eine
+  # faehrt die Hintergrund-Jobs, faellt sie aus, uebernimmt die andere beim
+  # naechsten Takt. Bis dahin stand hier RUN_BACKGROUND_JOBS=false und der
+  # Leader war fest -- fiel backend aus, standen Erinnerungen, Auto-Loeschung
+  # und Co. unbemerkt. Die Variable bleibt NUR bei backend-test (nie Jobs).
   backend2:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
     environment:
       <<: *backend_env
-      RUN_BACKGROUND_JOBS: "false"
     volumes:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
     extra_hosts:
-      - "server.godsapp.de:213.109.162.132"
+      - "${SMTP_HOST:?SMTP_HOST fehlt}:${SMTP_HOST_IP:?SMTP_HOST_IP fehlt}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -190,8 +303,9 @@ services:
   # Vier Punkte, die hier anders sind als bei backend/backend2:
   #  1. EIGENER Router-Name (konfi-api-test). Mit dem Live-Namen wuerde
   #     Traefik diesen Container in den Live-Pool aufnehmen.
-  #  2. RUN_BACKGROUND_JOBS=false — sonst laufen Auto-Loeschung, Erinnerungen
-  #     und APM-Snapshots DOPPELT gegen die echten Daten.
+  #  2. RUN_BACKGROUND_JOBS=false — dieser Container nimmt NICHT an der
+  #     Cron-Leader-Wahl teil; sonst koennte Testcode Auto-Loeschung,
+  #     Erinnerungen und APM-Snapshots gegen die echten Daten fahren.
   #  3. METRICS_PEERS leer — die Testmessung gehoert nicht in die Live-Zahlen.
   #  4. CORS macht ALLEIN der vHost (Apache). NICHT zusaetzlich im Backend
   #     ueber CORS_ORIGINS setzen: Dann schreiben BEIDE den Header, er steht
@@ -218,7 +332,7 @@ services:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
     extra_hosts:
-      - "server.godsapp.de:213.109.162.132"
+      - "${SMTP_HOST:?SMTP_HOST fehlt}:${SMTP_HOST_IP:?SMTP_HOST_IP fehlt}"
     depends_on:
       postgres:
         condition: service_healthy

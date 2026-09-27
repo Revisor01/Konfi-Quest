@@ -43,6 +43,7 @@ import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { materialVergessen, type MaterialDateiVerweis } from '../../../services/materialDetail';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
@@ -149,7 +150,14 @@ const AdminMaterialPage: React.FC = () => {
           role: 'destructive',
           handler: async () => {
             try {
+              // Welche Dateien daran hängen, führt nur das Detail — die Liste
+              // kennt bloß die Anzahl. Gebraucht, um sie nach dem Löschen
+              // auch vom eigenen Gerät zu nehmen (Medien-Cache, 27.09.2026).
+              const dateien: MaterialDateiVerweis[] = material.file_count !== 0
+                ? await api.get(`/material/${material.id}`).then(r => r.data?.files || []).catch(() => [])
+                : [];
               await api.delete(`/material/${material.id}`);
+              await materialVergessen(material.id, dateien);
               refreshMaterial();
             } catch (err) {
               setError(fehlerText(err, 'Fehler beim Löschen'));
@@ -251,7 +259,7 @@ const AdminMaterialPage: React.FC = () => {
               <IonItemGroup>
                 <IonItem>
                   <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-                  <IonInput
+                  <IonInput aria-label="Material durchsuchen"
                     value={search}
                     onIonInput={(e) => setSearch(e.detail.value || '')}
                     placeholder="Material durchsuchen..."
@@ -261,7 +269,7 @@ const AdminMaterialPage: React.FC = () => {
                 {(jahrgaenge || []).length > 0 && (
                   <IonItem>
                     <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-                    <IonSelect
+                    <IonSelect aria-label="Jahrgang"
                       value={nurGlobal ? 'global' : (activeJahrgangId ?? 'alle')}
                       onIonChange={(e) => {
                         const wert = e.detail.value;
@@ -349,25 +357,25 @@ const AdminMaterialPage: React.FC = () => {
                                     <div className="app-list-item__meta">
                                       {mat.ist_global && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={ICON_WELT} style={{ color: 'var(--app-color-material)' }} />
+                                          <IonIcon icon={ICON_WELT} style={{ color: 'var(--app-text-material)' }} />
                                           Für alle
                                         </span>
                                       )}
                                       {((mat.link_count ?? (mat.link_url ? 1 : 0)) > 0) && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={ICON_LINK} style={{ color: 'var(--app-color-material)' }} />
+                                          <IonIcon icon={ICON_LINK} style={{ color: 'var(--app-text-material)' }} />
                                           {(mat.link_count ?? 1) === 1 ? 'Link' : `${mat.link_count} Links`}
                                         </span>
                                       )}
                                       {mat.file_count !== undefined && mat.file_count > 0 && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={ICON_ANHANG} style={{ color: 'var(--app-color-material)' }} />
+                                          <IonIcon icon={ICON_ANHANG} style={{ color: 'var(--app-text-material)' }} />
                                           {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
                                         </span>
                                       )}
                                       {(mat.event_count || 0) > 0 && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-events)' }} />
+                                          <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-events)' }} />
                                           {mat.event_count} {mat.event_count === 1 ? 'Event' : 'Events'}
                                         </span>
                                       )}

@@ -4,16 +4,18 @@
 # notifications.js), Stand Branch main, 2026-08-22.
 #
 # Mount-Punkte (backend/createApp.js):
-#   /api/chat           -> routes/chat.js           (24 Routen)
-#   /api/challenges     -> routes/challenges.js     (13 Routen)
-#   /api/notifications  -> routes/notifications.js  ( 9 Routen)
+#   /api/chat           -> routes/chat.js           (24 Operationen)
+#   /api/challenges     -> routes/challenges.js     (15 Operationen)
+#   /api/notifications  -> routes/notifications.js  (10 Operationen)
+#   (gezaehlt am 26.09.2026; die Generatoren zaehlen bei jedem Lauf nach)
 #
 # ROLLEN-MODELL (middleware/rbac.js):
 #   req.user.type = 'konfi'  für Rolle konfi
 #                   'teamer' für Rolle teamer
 #                   'admin'  für Rollen admin, org_admin UND super_admin
-#   Alle "Admin-Bypass"-Prüfungen im Chat (userType === 'admin') gelten also
-#   für admin + org_admin (+ super_admin), NIE für teamer.
+#   Der Zugang OHNE Teilnahme ("Admin-Bypass") unterscheidet seit dem
+#   27.09.2026 nach Rolle: org_admin/super_admin (Rolle oder Flag)
+#   gemeindeweit, admin nur nach Jahrgang (s. Kernfrage 3). NIE für teamer.
 #   requireTeamer = requireRole('org_admin', 'admin', 'teamer').
 #
 # ============================================================================
@@ -75,8 +77,11 @@
 # 2. WER SIEHT WEN in Mitgliederlisten (GET /chat/rooms/:roomId/participants)?
 #    - Teilnehmer des Raums (konfi/teamer): sehen ALLE Teilnehmer mit Name,
 #      Rolle, role_title und (bei Konfis) Jahrgang.
-#    - admin/org_admin: sehen die Teilnehmerliste JEDES Raums ihrer Org,
-#      auch ohne selbst Teilnehmer zu sein (Admin-Bypass).
+#    - Ohne selbst Teilnehmer zu sein: wer den Raum nach Kernfrage 3
+#      oeffnen darf (org_admin jeden gemeinschaftlichen Raum der Org, admin
+#      nur nach Jahrgang). BEHOBEN 27.09.2026 (Audit "Wer bekommt was",
+#      BF-05): vorher sah jeder admin die Teilnehmerliste JEDES Raums seiner
+#      Org ausser fremden Direktchats.
 #    - Konfis sehen also in Jahrgangs-/Gruppen-/Event-Chats die anderen
 #      Konfis des Raums namentlich — das ist die einzige Stelle, an der
 #      Konfis andere Konfis "sehen" (anschreiben können sie sie nicht).
@@ -88,23 +93,45 @@
 #      Mitgliedschaft wird beim Aufruf per TTL-Sync (10 Min) nachgezogen:
 #      konfi -> eigener Jahrgangs-Chat; teamer/admin -> zugewiesene
 #      Jahrgänge + Team-Chat; org_admin -> ALLE Jahrgangs-Chats + Team-Chat.
-#    - Betreten/Lesen einzelner Räume (GET /rooms/:roomId, /messages,
-#      mark-read, POST /messages): Teilnehmer ODER Admin-Bypass —
-#      admin/org_admin können JEDEN Raum ihrer Org oeffnen, lesen und darin
-#      schreiben — AUSSER fremde Direktchats (GEAENDERT 2026-08-23: ein
-#      Zwiegespraech ist privat, dort greift der Admin-Bypass nicht mehr).
-#      Gruppen-, Jahrgangs-, Team- und Termin-Chats bleiben offen.
-#      teamer und konfi ausschliesslich als Teilnehmer.
-#      Zentral in darfRaumOeffnen() (chat.js), genutzt von /rooms/:id,
-#      /messages (GET+POST), mark-read, participants, reactions, polls,
-#      DELETE /messages/:id und dem Export.
+#    - Betreten/Lesen einzelner Räume — die EINE Regel
+#      (utils/chatRoomAccess.js darfRaumBetreten; Simon 27.09.2026):
+#        * Teilnehmer:in (user_id + user_type) darf immer.
+#        * Direktchat: nie ohne Teilnahme, fuer niemanden (seit 2026-08-23).
+#        * org_admin, Rolle super_admin, is_super_admin-Flag: jeder
+#          gemeinschaftliche Raum der aktiven Org ohne Teilnahme.
+#        * admin ohne Teilnahme NUR: Jahrgangs-Chat eines zugewiesenen
+#          Jahrgangs (can_view); Termin-Chat (event_id) eines Termins, den
+#          darfTermin erlaubt — dieselbe Regel wie GET /events ('Nur Team',
+#          ohne Jahrgang, oder gemeinsamer Jahrgang); Raum ohne Konfi unter
+#          den Teilnehmenden (Team-Chat, reine Team-Gruppe).
+#        * teamer und konfi ausschliesslich als Teilnehmer.
+#      BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-05, HOCH): vorher
+#      oeffnete JEDER admin (type 'admin') jeden gemeinschaftlichen Raum der
+#      Org ohne Teilnahme — auch Jahrgangs-, Termin- und Gruppenchats mit
+#      Konfis fremder Jahrgaenge — und konnte dort lesen, schreiben,
+#      exportieren und ueber den Socket mithoeren.
+#      Genutzt ueber darfRaumOeffnen() (chat.js) von GET /rooms/:id,
+#      /messages (GET+POST), mark-read, GET/POST/DELETE participants,
+#      GET /files/:filename, polls (anlegen, abstimmen), DELETE
+#      /messages/:id (fremde Nachricht), GET reactions, dem Export, DELETE
+#      /rooms/:id und DELETE /rooms/:id/messages. Seit 27.09.2026 auch von
+#      POST/DELETE participants (vorher konnte sich ein admin selbst in
+#      jede Gruppe eintragen und danach als Teilnehmer lesen), DELETE
+#      /rooms/:id (vorher jeder Raum der Org, auch fremde Direktchats) und
+#      GET /files (vorher eigene Kopie: jede Teilnahme ohne user_type,
+#      dafuer kein Zugang fuer den org_admin ohne Teilnahme).
+#      Reaktion SETZEN bleibt strenger: nur Teilnehmer:innen.
+#    - GET /chat/rooms (Liste) bleibt teilnahmebasiert; jeder gelistete Raum
+#      laesst sich damit oeffnen. Antwortform unveraendert.
 #    - Export (GET /rooms/:roomId/export): nur admin/org_admin (explizit
 #      NICHT teamer), kompletter Verlauf — aber nur für Räume, die man
-#      oeffnen darf (403 bei fremdem Direktchat).
+#      oeffnen darf (403 "Private Zweiergespräche lassen sich nicht
+#      exportieren" bei fremdem Direktchat, sonst 403 "Zugriff verweigert").
 #    - Org-Grenze: ueberall hart (jede Query prüft organization_id).
-#    - Socket-Raum `room_<id>` (joinRoom/typing/stopTyping, server.js):
-#      dieselbe Regel wie oben — Teilnehmer ODER Admin-Bypass, dazu die
-#      Org-Grenze. (BEHOBEN 2026-08-23; vorher wurde NUR die Organisation
+#    - Socket-Raum `room_<id>` (joinRoom/typing/stopTyping,
+#      utils/chatRoomAccess.js socketRaumEreignisse, eingehaengt in
+#      server.js): dieselbe Regel wie oben, dazu die Org-Grenze. Abgelehnt
+#      wird still (kein Beitritt, kein Ereignis). (BEHOBEN 2026-08-23; vorher wurde NUR die Organisation
 #      geprüft, jeder Angemeldete derselben Gemeinde konnte damit jedem Raum
 #      beitreten und über newMessage/pollUpdated/reactionAdded alle neuen
 #      Nachrichten fremder Chats mitlesen.)
@@ -112,10 +139,14 @@
 # 4. WER DARF NACHRICHTEN LOESCHEN (DELETE /chat/messages/:messageId)?
 #    - Eigene Nachrichten: jede Rolle (auch Konfi), Soft-Delete.
 #    - Fremde Nachrichten: nur admin/org_admin, und nur in Räumen, die sie
-#      oeffnen duerfen — in fremden Direktchats also nicht mehr
-#      (GEAENDERT 2026-08-23). teamer duerfen NUR eigene löschen.
-#    - Raum löschen (DELETE /rooms/:roomId): nur admin/org_admin; mit
+#      oeffnen duerfen (Kernfrage 3) — in fremden Direktchats also nicht
+#      (GEAENDERT 2026-08-23), als admin nur nach Jahrgang (27.09.2026).
+#      teamer duerfen NUR eigene löschen.
+#    - Raum löschen (DELETE /rooms/:roomId): nur admin/org_admin, nur Räume,
+#      die sie oeffnen duerfen (403 VOR der Nachrichtenzahl); mit
 #      Nachrichten nur per ?force=true; Jahrgangs-Chats nie direkt.
+#      BEHOBEN 27.09.2026 (BF-05): vorher jeder Raum der Org, auch fremde
+#      Direktchats und Gruppen mit Konfis fremder Jahrgaenge.
 #    - Team-Chat leeren (DELETE /rooms/:roomId/messages, NEU 2026-08-26):
 #      nur admin/org_admin, nur der automatische Team-Chat (is_team_chat) —
 #      alle Nachrichten samt Dateianhaengen hart weg, Raum und Mitglieder
@@ -184,10 +215,16 @@
 #   Ausserdem prüft die Mitgliedschaft hier nur user_id (ohne user_type) und
 #   es gibt KEINEN Admin-Bypass: ein Admin, der Nachrichten eines fremden
 #   Raums lesen darf, kann dessen Dateien nicht abrufen (Inkonsistenz, keine
-#   Rechteausweitung).
+#   Rechteausweitung). — Dieser Teil BEHOBEN 27.09.2026 (Audit Wer bekommt
+#   was, BF-05): Die Route nutzt darfRaumBetreten wie das Lesen der
+#   Nachrichten. Der Query-Parameter bleibt offen.
 # HINWEIS — ERLEDIGT 2026-08-23: admin/org_admin konnten JEDEN Raum der Org
 #   lesen, beschreiben und exportieren, auch private Direktchats zweier
-#   anderer Nutzer. Direktchats sind davon jetzt ausgenommen. Teamer können über POST /chat/rooms
+#   anderer Nutzer. Direktchats sind davon jetzt ausgenommen.
+#   BEHOBEN 27.09.2026 (Audit Wer bekommt was, BF-05): Ohne Teilnahme
+#   oeffnet nur noch der org_admin jeden gemeinschaftlichen Raum; ein admin
+#   nur Jahrgangs-Chats seiner Jahrgaenge, Termin-Chats seiner Termine und
+#   reine Team-Raeume (Kernfrage 3). Teamer können über POST /chat/rooms
 #   Gruppenraeume mit beliebigen Org-Nutzern (auch Konfis fremder Jahrgänge)
 #   anlegen und Jahrgangs-Chats für JEDEN Jahrgang der Org erstellen
 #   (keine Zuweisungspruefung beim Anlegen).
@@ -566,6 +603,17 @@ paths:
         wodurch spaeter angelegte Konfis nie in den Jahrgangschat kamen).
         participants werden org-gescopt validiert, user_type serverseitig
         aus der Rolle abgeleitet.
+
+        type='direct' NUR ZU ZWEIT (BEHOBEN 26.09.2026, Audit Chat BF-01):
+        participants muss genau EINE weitere Person enthalten, sonst 400
+        (error_code direct_nur_zu_zweit). Vorher kam der Typ ungeprueft vom
+        Client; wer kein Konfi war, konnte zwei Konfis in einen
+        'direct'-Raum setzen -- ein Gruppenraum, den die Leitung wegen
+        darfRaumOeffnen ('direct' = privat) weder lesen noch exportieren
+        konnte und in dem Konfis einander schrieben. Der eigentliche Weg fuer
+        Zweiergespraeche ist POST /chat/direct; 'direct' bleibt hier nur aus
+        Vertragsgruenden erhalten. Bestand: Migration 164 stellt
+        'direct'-Raeume mit mehr als zwei Personen auf 'group'.
       requestBody:
         required: true
         content:
@@ -578,7 +626,12 @@ paths:
                 name: { type: string }
                 participants:
                   type: array
-                  description: User-IDs (oder Objekte mit user_id); nur Org-Mitglieder werden uebernommen
+                  description: >
+                    User-IDs (oder Objekte mit user_id); nur Mitglieder der
+                    aktiven Org werden uebernommen -- ueber BEIDE Quellen
+                    (users.organization_id ODER user_organizations), user_type
+                    aus der Rolle DIESER Org. BEHOBEN 26.09.2026 (Audit Chat
+                    BF-08): vorher nur Stamm-Org, Eingeladene fielen still weg.
                   items: { type: [integer, object] }
                 jahrgang_id: { type: integer, description: Pflicht bei type=jahrgang }
       responses:
@@ -591,7 +644,7 @@ paths:
                 properties:
                   room_id: { type: integer }
                   created: { type: boolean }
-        '400': { description: Typ/Name fehlt, ungueltiger Typ oder jahrgang_id fehlt }
+        '400': { description: "Typ/Name fehlt, ungueltiger Typ, jahrgang_id fehlt, ODER type='direct' ohne genau eine weitere Person (error_code direct_nur_zu_zweit, seit 26.09.2026)" }
         '403': { description: "Konfi mit type != direct, Jahrgang nicht in eigener Org, ODER Konfi-Teilnehmer ausserhalb der zugewiesenen Jahrgaenge (admin/teamer)" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
@@ -613,6 +666,16 @@ paths:
         # und Jahrgangspruefung der participants-Liste, Raum wird bei
         # Verstoss wieder geloescht); seit 2026-09-01 gilt die
         # Jahrgangsgrenze auch fuer admin.
+        # BEHOBEN 26.09.2026 (Audit Chat BF-01, HOCH): type='direct' war fuer
+        # Nicht-Konfis mit beliebig vielen participants moeglich -- ein
+        # Gruppenraum, der ueberall als privates Zweiergespraech galt und den
+        # die Leitung nicht lesen konnte. Jetzt genau eine weitere Person
+        # (400 direct_nur_zu_zweit); Bestand ueber Migration 164 auf 'group'.
+        # BEHOBEN 26.09.2026 (Audit Chat BF-08): participants wurden allein
+        # ueber u.organization_id (Stamm-Org) aufgeloest -- wer ueber
+        # user_organizations in der aktiven Org mitarbeitet, stand in
+        # /team-contacts, fiel hier aber still heraus. Jetzt beide Quellen
+        # (TEAM_MITGLIED_ROLLE), user_type aus der Rolle DIESER Org.
         # WEITERHIN OFFEN: Jahrgangs-Chats lassen sich für JEDEN Jahrgang
         # der Org anlegen (keine Zuweisungspruefung bei type='jahrgang').
         hinweis: "Siehe LUECKE-Kommentar; emitRoomsChanged an alle finalen Teilnehmer"
@@ -640,7 +703,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "Nur Räume mit eigenem chat_participants-Eintrag (KEIN Admin-Bypass in der Liste)"
-        hinweis: "Admins sehen fremde Räume zwar nicht in der Liste, können sie aber per ID oeffnen (siehe /rooms/{roomId})"
+        hinweis: "Jeder gelistete Raum laesst sich oeffnen (Teilnahme genuegt). Ohne Teilnahme oeffnet nur, wer nach darfRaumBetreten darf (siehe /rooms/{roomId}). BEHOBEN 27.09.2026 (BF-05): vorher oeffnete jeder admin per ID jeden gemeinschaftlichen Raum der Org, der hier nicht gelistet war. Antwortform unveraendert."
 
   /api/chat/rooms/{roomId}:
     get:
@@ -666,15 +729,15 @@ paths:
                             user_id: { type: integer }
                             display_name: { type: string }
                             user_type: { type: string }
-        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '404': { description: Raum nicht gefunden }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Teilnehmer des Raums ODER Admin-Bypass (type 'admin' = admin/org_admin: jeder Raum der eigenen Org)"
-        hinweis: "Admin-Bypass umfasst auch fremde Direktchats"
+        objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme"
+        hinweis: "BEHOBEN 27.09.2026 (Audit Wer bekommt was, BF-05): vorher Admin-Bypass fuer jeden admin in jedem gemeinschaftlichen Raum der Org. Fremde Direktchats sind seit 23.08.2026 zu."
     delete:
       tags: ["Chat"]
       summary: Chat-Raum löschen (nur Admins)
@@ -687,7 +750,7 @@ paths:
         - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] }, description: "true: Raum trotz vorhandener Nachrichten löschen" }
       responses:
         '200': { description: Geloescht }
-        '403': { description: Aufrufer ist kein Admin-Typ }
+        '403': { description: "Aufrufer ist kein Admin-Typ ODER darf den Raum nicht oeffnen ('Zugriff verweigert', vor der Nachrichtenzahl)" }
         '404': { description: Raum nicht in eigener Org }
         '409': { description: Nachrichten vorhanden (ohne force) ODER Jahrgangs-Chat }
         '500': { description: Datenbankfehler }
@@ -695,8 +758,8 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "req.user.type muss 'admin' sein; Raum muss zur eigenen Org gehören"
-        hinweis: "teamer und konfi nie; auch fremde Direktchats loeschbar"
+        objekt-pruefung: "req.user.type muss 'admin' sein UND darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme"
+        hinweis: "teamer und konfi nie. BEHOBEN 27.09.2026 (BF-05): vorher jeder Raum der Org, auch fremde Direktchats und Gruppen mit Konfis fremder Jahrgaenge."
 
   # ==========================================================================
   # CHAT — Nachrichten
@@ -724,13 +787,13 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/ChatMessage' }
-        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Teilnehmer ODER Admin-Bypass (admin/org_admin lesen jeden Raum der Org)"
+        objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher las jeder admin jeden gemeinschaftlichen Raum der Org"
         # LUECKE: Bei anonymen Umfragen (anonymous=true) fehlt in votes zwar
         # user_name, user_id/user_type jeder Stimme werden aber ausgeliefert —
         # über die Teilnehmerliste namentlich aufloesbar (LUECKE 2 im Kopf).
@@ -764,14 +827,14 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ChatMessage' }
         '400': { description: Weder Inhalt noch Datei / Datei unlesbar / Validierungsfehler }
-        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '415': { description: Dateityp per Magic Bytes nicht verifizierbar }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC, chatUpload.single, validateSendMessage, rateLimiters.chatMessageLimiter, rateLimiters.uploadLimiter]
         org-scope: true
-        objekt-pruefung: "Teilnehmer ODER Admin-Bypass — admin/org_admin können in JEDEN Raum der Org schreiben (auch fremde Direktchats)"
+        objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher schrieb jeder admin in jeden gemeinschaftlichen Raum der Org (Push an alle Konfis dort); fremde Direktchats seit 23.08.2026 zu"
     delete:
       tags: ["Chat"]
       summary: "Team-Chat leeren: ALLE Nachrichten löschen, Raum bleibt (NEU 2026-08-26)"
@@ -789,7 +852,7 @@ paths:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       responses:
         '200': { description: "{ message, deleted_count }" }
-        '403': { description: Rolle nicht org_admin/admin }
+        '403': { description: "Rolle nicht org_admin/admin (oder Raum nicht zu oeffnen — beim Team-Chat fuer die Leitung nie der Fall)" }
         '404': { description: Raum nicht in eigener Org }
         '409': { description: Kein Team-Chat (is_team_chat=false) }
         '500': { description: Datenbankfehler }
@@ -797,7 +860,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Raum org-gescopt geladen; nur is_team_chat=true wird geleert"
+        objekt-pruefung: "Raum org-gescopt geladen; nur is_team_chat=true wird geleert; zusaetzlich darfRaumBetreten (seit 27.09.2026, damit kein Weg an der Raum-Regel vorbeifuehrt — der Team-Chat ist ein reiner Team-Raum)"
 
   /api/chat/rooms/{roomId}/mark-read:
     post:
@@ -807,13 +870,13 @@ paths:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       responses:
         '200': { description: "Upsert von chat_read_status.last_read_at = NOW()" }
-        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Teilnehmer ODER Admin-Bypass"
+        objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme"
 
   /api/chat/rooms/{roomId}/export:
     get:
@@ -833,15 +896,15 @@ paths:
             text/plain: { schema: { type: string } }
             application/json: { schema: { type: object } }
         '400': { description: Ungueltige Raum-ID }
-        '403': { description: Aufrufer ist nicht Leitung (admin/org_admin/super_admin) }
+        '403': { description: "Aufrufer ist nicht Leitung (admin/org_admin/super_admin) ODER darf den Raum nicht oeffnen — 'Private Zweiergespräche lassen sich nicht exportieren' bei fremdem Direktchat, sonst 'Zugriff verweigert'" }
         '404': { description: Raum nicht in eigener Org (bewusst 404 statt 403) }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, super_admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "type='admin' UND role_name in (admin, org_admin, super_admin); Raum org-gescopt"
-        hinweis: "Keine Teilnahme nötig — jeder Raum der Org exportierbar, auch fremde Direktchats"
+        objekt-pruefung: "type='admin' UND role_name in (admin, org_admin, super_admin); Raum org-gescopt UND nach darfRaumBetreten zu oeffnen"
+        hinweis: "Ohne Teilnahme: org_admin jeder gemeinschaftliche Raum der Org, admin nur Raeume seiner Jahrgaenge, Termine und des Teams; fremde Direktchats nie (seit 23.08.2026). BEHOBEN 27.09.2026 (BF-05): vorher exportierte jeder admin jeden gemeinschaftlichen Raum der Org."
 
   /api/chat/messages/{messageId}:
     delete:
@@ -858,8 +921,8 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Eigene Nachricht (user_id+user_type) ODER type='admin' in derselben Org (fremde Nachrichten org-weit)"
-        hinweis: "teamer/konfi nur eigene; admin/org_admin jede Nachricht der Org"
+        objekt-pruefung: "Eigene Nachricht (user_id+user_type) ODER type='admin' UND Raum nach darfRaumBetreten zu oeffnen"
+        hinweis: "teamer/konfi nur eigene; admin/org_admin fremde Nachrichten nur in Raeumen, die sie oeffnen duerfen (fremde Direktchats nie, seit 23.08.2026; admin nur nach Jahrgang, seit 27.09.2026 — BF-05)"
         behoben: "26.08.2026 — Diese Regel stand hier korrekt, der Code hielt sie
           aber nicht ein: die Pruefung fiel auf darfRaumOeffnen zurueck, das fuer
           jede:n Teilnehmer:in true liefert. Damit konnte jede Konfi per API
@@ -896,13 +959,13 @@ paths:
                     role_display_name: { type: string }
                     jahrgang_id: { type: [integer, "null"] }
                     jahrgang_name: { type: [string, "null"] }
-        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Teilnehmer ODER Admin-Bypass (admin/org_admin: jeder Raum der Org)"
+        objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher sah jeder admin die Teilnehmerliste jedes gemeinschaftlichen Raums der Org"
     post:
       tags: ["Chat"]
       summary: Teilnehmer zu Gruppenchat hinzufuegen (nur Admins)
@@ -920,8 +983,8 @@ paths:
       responses:
         '201': { description: Hinzugefuegt (user_type serverseitig aus Rolle abgeleitet) }
         '400': { description: user_id fehlt ODER Raum ist kein Gruppenchat }
-        '403': { description: "Aufrufer ist kein Admin-Typ ODER admin traegt einen Konfi ausserhalb der zugewiesenen Jahrgaenge ein" }
-        '404': { description: Raum oder Ziel-User nicht in eigener Org }
+        '403': { description: "Aufrufer ist kein Admin-Typ ODER darf den Raum nicht oeffnen ('Zugriff verweigert') ODER admin traegt einen Konfi ausserhalb der zugewiesenen Jahrgaenge ein" }
+        '404': { description: "Raum nicht in eigener Org, ODER Ziel-User weder Stamm-Mitglied noch ueber user_organizations in der aktiven Org" }
         '409': { description: Bereits Teilnehmer }
         '500': { description: Datenbankfehler }
       x-berechtigung:
@@ -929,11 +992,20 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: >
-          type='admin'; nur room.type='group'; Ziel-User org-gescopt.
+          type='admin'; nur room.type='group'; Raum nach darfRaumBetreten
+          zu oeffnen (seit 27.09.2026, BF-05 — vorher trug sich ein admin
+          ohne Jahrgang selbst in jede Gruppe ein und las danach als
+          Teilnehmer mit); Ziel-User org-gescopt ueber
+          BEIDE Quellen (users.organization_id ODER user_organizations),
+          user_type aus der Rolle DIESER Org (TEAM_MITGLIED_ROLLE).
           Konfi-Ziele zusaetzlich gegen die Jahrgangsbindung des Aufrufers
           (seit 2026-09-01): admin nur mit zugewiesenem Jahrgang (can_view),
           org_admin/super_admin ausgenommen — sonst waere die Grenze aus
           POST /rooms per nachtraeglichem Eintragen umgehbar.
+        # BEHOBEN 26.09.2026 (Audit Chat BF-08): Der Ziel-User wurde allein
+        # ueber u.organization_id gesucht -- Eingeladene (user_organizations)
+        # bekamen 404 "nicht in deiner Organisation", obwohl sie in
+        # /team-contacts standen und Push aus dieser Org erhielten.
         hinweis: "teamer können keine Teilnehmer hinzufuegen (wohl aber Räume mit Teilnehmern ANLEGEN, siehe POST /rooms)"
 
   /api/chat/rooms/{roomId}/participants/{userId}/{userType}:
@@ -947,14 +1019,14 @@ paths:
       responses:
         '200': { description: Entfernt }
         '400': { description: Raum ist kein Gruppenchat }
-        '403': { description: Aufrufer ist kein Admin-Typ }
+        '403': { description: "Aufrufer ist kein Admin-Typ ODER darf den Raum nicht oeffnen ('Zugriff verweigert')" }
         '404': { description: Raum nicht in eigener Org ODER Teilnehmer nicht gefunden }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "type='admin'; nur room.type='group'"
+        objekt-pruefung: "type='admin'; nur room.type='group'; Raum nach darfRaumBetreten zu oeffnen (seit 27.09.2026, BF-05)"
 
   /api/chat/rooms/{roomId}/leave:
     delete:
@@ -1002,14 +1074,14 @@ paths:
         '200': { description: "Dateiinhalt (Content-Type aus Original-Dateiname)", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
         '400': { description: Ungueltiger Dateiname }
         '401': { description: Token fehlt oder ungueltig }
-        '403': { description: Kein Teilnehmer des Raums }
+        '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '404': { description: "Datei nicht gefunden (auch bei fremder Org oder wenn die Nachricht soft-gelöscht ist — seit 26.08.2026 werden Anhänge gelöschter Nachrichten nicht mehr ausgeliefert; die Datei bleibt für eine Wiederherstellung erhalten)" }
         '500': { description: Server-/Entschluesselungsfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: ["manuelle JWT-Pruefung mit DB-Abgleich (kein verifyTokenRBAC — Query-Parameter-Auth)"]
         org-scope: true
-        objekt-pruefung: "Nachricht mit file_path muss in der AKTIVEN Org liegen UND Aufrufer muss chat_participants-Eintrag im Raum haben (nur user_id, ohne user_type)"
+        objekt-pruefung: "Nachricht mit file_path muss in der AKTIVEN Org liegen UND der Raum nach darfRaumBetreten zu oeffnen sein (dieselbe Regel wie GET /rooms/{roomId}/messages)"
         # BEHOBEN 22.08.2026: Frueher `req.user = decoded` — Token-Angaben
         # galten ungeprueft für die volle Laufzeit (geloeschte/gesperrte
         # Konten kamen weiter an Dateien), und organization_id war immer die
@@ -1017,10 +1089,11 @@ paths:
         # bekamen. Jetzt DB-Abgleich inkl. Soft-Revoke und Aufloesung der
         # aktiven Org (403 bei fehlender Mitgliedschaft).
         # LUECKE (offen): Token auch als Query-Parameter akzeptiert
-        # (Access-Logs/Referrer); kein Admin-Bypass (Admins können
-        # Nachrichten fremder Räume lesen, deren Dateien aber nicht abrufen —
-        # Inkonsistenz); Mitgliedschafts-Check ohne user_type (unkritisch,
-        # user_id global eindeutig).
+        # (Access-Logs/Referrer).
+        # BEHOBEN 27.09.2026 (Audit Wer bekommt was, BF-05): kein
+        # Admin-Bypass (Admins konnten Nachrichten fremder Räume lesen, deren
+        # Dateien aber nicht abrufen — Inkonsistenz); Mitgliedschafts-Check
+        # ohne user_type. Jetzt darfRaumBetreten wie beim Lesen.
 
   /api/chat/rooms/{roomId}/polls:
     post:
@@ -1051,13 +1124,13 @@ paths:
           description: Erstellte Umfrage (id, message_id, options, votes=[])
         '400': { description: Frage/Optionen fehlen oder ungueltig }
         '403': { description: Aufrufer ist kein Admin-Typ }
-        '404': { description: Raum nicht in eigener Org }
+        '404': { description: "Raum nicht in eigener Org ODER darf nicht geoeffnet werden (darfRaumBetreten; 404 statt 403, damit fremde Raeume nicht bestaetigt werden)" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, validateCreatePoll]
         org-scope: true
-        objekt-pruefung: "type='admin'; Raum muss zur Org gehören (Teilnahme nicht nötig)"
+        objekt-pruefung: "type='admin'; Raum nach darfRaumBetreten zu oeffnen (Teilnahme; ohne Teilnahme org_admin gemeindeweit, admin nur nach Jahrgang — seit 27.09.2026, BF-05; vorher jeder gemeinschaftliche Raum der Org)"
         hinweis: "teamer können keine Umfragen erstellen"
 
   /api/chat/polls/{pollId}/vote:
@@ -1091,8 +1164,10 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: >
-          darfRaumOeffnen: Teilnehmer des Raums, oder Leitung in einem Raum
-          der eigenen Gemeinde — ausser in fremden Direktchats. BEHOBEN
+          darfRaumOeffnen: Teilnehmer des Raums, oder ohne Teilnahme der
+          org_admin in jedem gemeinschaftlichen Raum der Gemeinde und ein
+          admin nur nach Jahrgang (seit 27.09.2026, BF-05) — nie in fremden
+          Direktchats. BEHOBEN
           2026-08-28: Die Route hatte eine eigene Kopie der Pruefung, die
           strikt einen Teilnehmer-Eintrag verlangte. Dadurch durfte die
           Leitung in einem Gruppenchat eine Umfrage anlegen, aber nicht in
@@ -1130,7 +1205,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: >
-          Identisch zu /polls/{pollId}/vote — darfRaumOeffnen (Teilnehmer oder
+          Identisch zu /polls/{pollId}/vote — darfRaumOeffnen (seit 27.09.2026 nach Jahrgang, s. dort; Teilnehmer oder
           Leitung der eigenen Gemeinde, ausser in fremden Direktchats).
         hinweis: "Reicht an denselben Handler weiter wie /polls/{pollId}/vote"
 
@@ -1173,14 +1248,14 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Reaction' }
-        '403': { description: Fremde Org ODER kein Teilnehmer (Nicht-Admins) }
+        '403': { description: Fremde Org ODER Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '404': { description: Nachricht nicht gefunden }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Org-Check; Teilnehmer-Pflicht nur für Nicht-Admins (admin/org_admin lesen org-weit)"
+        objekt-pruefung: "Org-Check; darfRaumBetreten wie beim Lesen der Nachrichten (seit 27.09.2026 admin nur nach Jahrgang, BF-05; vorher lasen admin/org_admin org-weit)"
 
   # ==========================================================================
   # CHALLENGES — Teilnehmer-Endpunkte (Konfis UND Team je nach audience)
@@ -1198,6 +1273,12 @@ paths:
         mit Team-Beteiligung ('konfis_und_team', 'nur_team').
         GEAENDERT 2026-08-31: admin ist an seine Jahrgangs-Zuweisungen
         gebunden (vorher org-weit wie org_admin).
+        GEAENDERT 2026-09-27 (Audit "Wer bekommt was", BF-07): Die
+        Team-Bedingung steht einmal in utils/challengeLeitungSicht.js
+        (teamMachtMitSql: Team macht mit UND sieht die Challenge) und
+        bestimmt zugleich die Team-Empfaenger der Start-Mitteilung
+        challenge_started und "neue Challenge" in
+        badge-counts.challengeUpdates. Menge und Antwortform unveraendert.
       responses:
         '200':
           description: Gruppierte Challenge-Listen
@@ -1324,7 +1405,12 @@ paths:
         Galerie-Beitraege, Moderation eigener Beitraege). Zugriffsregeln wie
         GET /api/challenges/konfi/{id}: Wer die Challenge nicht oeffnen darf,
         kann sie auch nicht als gelesen markieren. Team-Rollen duerfen rufen
-        (dieselbe Detailansicht), fuer sie wird aber nichts gezaehlt.
+        (dieselbe Detailansicht). GEAENDERT 2026-09-27: auch fuer sie zaehlt
+        challengeUpdates ab dann neu; die Leitungsansicht ruft es beim Oeffnen
+        und Schliessen einer gestarteten Challenge. Migration 168 setzt fuer
+        die bestehende Leitung einmalig den Stand auf den Update-Zeitpunkt.
+        Seit demselben Tag (Audit BF-07) nimmt der erste Aufruf auch die
+        "neue Challenge" (1) aus dem Team-Zaehler.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Challenge" }
       responses:
@@ -1478,6 +1564,26 @@ paths:
         plus org-weite 'nur_team'-Challenges. org_admin sieht alle
         Challenges der Org.
         GEAENDERT 2026-08-31: admin war vorher org-weit.
+        GEAENDERT 2026-09-27 (Simon): Die Regel steht einmal in
+        utils/challengeLeitungSicht.js -- org_admin alles; admin und teamer
+        'nur_team' org-weit, 'konfis_und_team' und 'konfis' nur ueber einen
+        zugewiesenen Jahrgang der Challenge. Sie gilt ebenso fuer die
+        Sichtpruefung (submissions, moderate, export, delete), die
+        Datei-Auslieferung, badge-counts.pendingChallenges und
+        challengeUpdates, die App-Icon-Zahl und die Empfaenger der Mitteilung
+        'challenge_submission'. Dort vorher: jeder admin der Gemeinde (auch
+        zu Challenges fremder Jahrgaenge, die er nicht sah), teamer nie bei
+        'nur_team'; jetzt dieselbe Regel wie die Liste, die einreichende
+        Person nie. Eine Zwischenfassung desselben Tages (admin org-weit bei
+        'konfis_und_team') ist nie ausgeliefert worden und zurueckgenommen:
+        "Konfis und Team darf auch nur ein Admin sehen und ein Teamer, der in
+        dem Jahrgang ist." Antwortform unveraendert.
+        BEHOBEN 2026-09-27 (Audit wer-bekommt-was BF-16): Die Empfaenger von
+        'challenge_submission' kamen ueber ladeMitgliederDerOrganisation mit
+        Jahrgangsfilter, der nur pruefte, OB eine Zuweisung besteht -- eine
+        Zuweisung mit can_view = false loeste die Mitteilung aus, die Liste
+        zeigte die Challenge nicht. Der Filter verlangt jetzt can_view, wie
+        diese Liste und die Zaehler.
         GEAENDERT 2026-09-01: Ist die Liste ausgeduennt, weil admin/teamer
         keine Jahrgangs-Zuweisung hat, traegt die Antwort zusaetzlich den
         Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform
@@ -1513,6 +1619,22 @@ paths:
         gespeichert. admin und teamer duerfen nur eigene (zugewiesene)
         Jahrgänge bespielen (admin seit 2026-08-31), org_admin alle;
         Jahrgänge und Urheber werden org-gescopt validiert.
+        audience 'konfis' ("Nur die Konfis") ist ab 2.3.0 im Formular wieder
+        waehlbar (Simon, 27.09.2026); die Route nahm den Wert durchgehend an.
+        Einreichen duerfen dort nur Konfis (Team: 403 "Bei dieser Challenge
+        reichen nur die Konfis Beitraege ein."), sehen und moderieren wie bei
+        'konfis_und_team'.
+        START-MITTEILUNG (challenge_started, "Neue Challenge"): nicht beim
+        Anlegen, sondern beim tatsaechlichen Start (Hintergrundlauf ueber
+        challenges.start_push_sent, einmal je Challenge). BEHOBEN 27.09.2026
+        (Audit "Wer bekommt was", BF-07 / F-04): Empfaenger sind alle, die
+        mitmachen -- Konfis der Jahrgaenge (nie bei 'nur_team'); dazu das
+        Team nach utils/challengeLeitungSicht.js (ladeTeamDasMitmacht): bei
+        'nur_team' das ganze Team der Gemeinde (beide Quellen der
+        Zugehoerigkeit), bei 'konfis_und_team' org_admin und admin/teamer mit
+        can_view-Zuweisung auf einen Jahrgang der Challenge, bei 'konfis'
+        niemand aus dem Team. Jede Person einmal, created_by nie. Vorher nur
+        Konfis ueber die Jahrgaenge: bei 'nur_team' bekam niemand etwas.
       requestBody:
         required: true
         content:
@@ -1586,15 +1708,16 @@ paths:
         - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] }, description: "true: auch eine bereits gestartete Challenge löschen — samt Beiträgen und Dateien" }
       responses:
         '200': { description: Geloescht inkl. aller Beitraege und Dateien }
-        '403': { description: requireTeamer / leadershipMayAccess }
+        '403': { description: requireAdmin / leadershipMayAccess }
         '404': { description: Challenge nicht in eigener Org }
         '409': { description: Bereits gestartet/beendet und force fehlt }
         '500': { description: Datenbankfehler }
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [rbacVerifier, requireTeamer]
+        rollen: [org_admin, admin]
+        middleware: [rbacVerifier, requireAdmin]
         org-scope: true
         objekt-pruefung: "leadershipMayAccess (wie PUT)"
+        hinweis: "Seit 28.08.2026 requireAdmin (Nutzerentscheid: Teamer:innen loeschen keine Challenges, Test in challenges.test.js). Anlegen, Bearbeiten und Moderieren bleiben requireTeamer. Die rollen-Zeile hier sagte bis zum 26.09.2026 noch teamer — nachgezogen (Audit Dokumentation BF-07)."
 
   /api/challenges/admin/{id}/submissions:
     get:
@@ -1681,14 +1804,15 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Beitrags" }
       responses:
         '200': { description: "{ message: 'Beitrag gelöscht' }" }
-        '403': { description: requireTeamer / leadershipMayAccess }
+        '403': { description: requireAdmin / leadershipMayAccess }
         '404': { description: Beitrag nicht in eigener Org }
         '500': { description: Datenbankfehler }
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [rbacVerifier, requireTeamer]
+        rollen: [org_admin, admin]
+        middleware: [rbacVerifier, requireAdmin]
         org-scope: true
         objekt-pruefung: "Submission org-gescopt + leadershipMayAccess auf die zugehoerige Challenge (wie moderate)"
+        hinweis: "Seit 28.08.2026 requireAdmin — Teamer:innen blenden Beitraege aus (moderate), loeschen sie aber nicht. rollen-Zeile nachgezogen am 26.09.2026 (Audit Dokumentation BF-07)."
 
   /api/challenges/admin/{id}/export:
     get:
@@ -1731,6 +1855,24 @@ paths:
         die Rolle admin nur noch, was seine Listen zeigen: Antraege aus
         zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem
         Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit.
+        GEAENDERT 27.09.2026: pendingRequests zaehlt ueber die gemeinsame
+        Regel in backend/utils/antragLeitungSicht.js -- dieselbe, nach der
+        die Antragsliste filtert und die Empfaenger von "Neuer Antrag
+        eingegangen" bestimmt werden. Die Zahl selbst und die Antwortform
+        sind unveraendert; neu ist, dass ein Admin fuer einen Antrag, den
+        dieser Zaehler nicht zaehlt, auch keine Postfach-Mitteilung mehr
+        bekommt (die sonst in postfach.ungelesen mitzaehlte).
+        BEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-11): pendingEvents
+        zaehlte fuer gebundene Admins "Team gesucht"-Events (teamer_needed)
+        fremder Jahrgaenge mit -- die Eventliste hatte diesen
+        Sichtbarkeitsgrund am 08.09.2026 gestrichen, die Zahl stand vor einem
+        Event, das sich weder finden noch oeffnen liess. Jetzt zaehlt
+        pendingEvents ueber die gemeinsame Regel in
+        backend/utils/terminLeitungSicht.js, dieselbe wie GET /api/events,
+        die Zahl am App-Symbol und die Erinnerung "Events warten auf
+        Verbuchung" (die seitdem jeder Person genau diese Zahl nennt,
+        BF-10). Buchungen geloeschter Konten zaehlen dabei wie in der Liste
+        nicht mehr mit. Antwortform unveraendert.
         Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen —
         vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter,
         bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie
@@ -1749,8 +1891,21 @@ paths:
         Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes
         Feld aendert Form oder Typ, aeltere Apps ignorieren es): die
         Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das
-        Gegenstueck zu chat.byRoom/chat.total. Fuer Team und Leitung ist es
-        0/leer; ihr Challenge-Reiter zaehlt pendingChallenges.
+        Gegenstueck zu chat.byRoom/chat.total. GEAENDERT 2026-09-27 (Simon:
+        "Die Challenges sollen sich verhalten wie der Chat"): auch fuer Team
+        und Leitung gefuellt -- fremde, freigegebene Beitraege seit dem
+        letzten Oeffnen in laufenden Challenges, die die Person sieht
+        (utils/challengeNeuigkeiten.js, challengeNeuigkeitenLeitungJeChallenge).
+        Wartende Beitraege zaehlen weiter nur in pendingChallenges, ein Beitrag
+        nie in beiden. Store-Apps 2.2.x lesen das Feld fuer Team und Leitung
+        nicht; ihr Reiter zeigt weiter nur pendingChallenges.
+        BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-07): Fuer Team und
+        Leitung zaehlt dazu die laufende Challenge selbst (1), solange sie nie
+        geoeffnet wurde, das Team bei ihr mitmacht ('konfis_und_team',
+        'nur_team' -- utils/challengeLeitungSicht.js, teamMachtMitSql) und die
+        Person sie nicht angelegt hat (challenges.created_by). Bei 'konfis'
+        nicht. Nur Werte aendern sich, die Antwortform bleibt; dieselbe
+        Rechnung speist die App-Icon-Summe und den Gemeinde-Umschalter.
         Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe
         Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen),
         aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der
@@ -1794,7 +1949,11 @@ paths:
                   challengeUpdates:
                     type: object
                     description: >
-                      NEU 24.09.2026, nur fuer Konfis gefuellt. Je laufender
+                      NEU 24.09.2026 fuer Konfis, seit 27.09.2026 auch fuer
+                      Team und Leitung (fremde freigegebene Beitraege seit dem
+                      letzten Oeffnen, wartende nicht; dazu 1 fuer eine nie
+                      geoeffnete Challenge, bei der das Team mitmacht und die
+                      die Person nicht angelegt hat). Fuer Konfis: je laufender
                       Challenge des eigenen Jahrgangs, was seit dem letzten
                       Oeffnen (POST /api/challenges/konfi/{id}/mark-read)
                       dazukam: die Challenge selbst, wenn nie geoeffnet;
@@ -1867,13 +2026,36 @@ paths:
         was die Person dort auch sehen darf.
         EIGENE ROUTE statt eines weiteren Felds in badge-counts: badge-counts
         fragt jedes Konto bei jeder Zaehler-Aktualisierung ab, auch die vielen
-        Single-Org-Konfis, die den Umschalter nie sehen. Diese Route ruft die
-        App nur beim Oeffnen der Auswahlliste. badge-counts bleibt unveraendert
-        (Alt-App-Vertrag, Store-Apps 2.2.x).
+        Single-Org-Konfis, die den Umschalter nie sehen. badge-counts bleibt
+        unveraendert (Alt-App-Vertrag, Store-Apps 2.2.x).
+        WER DIE ROUTE RUFT (geaendert 2026-09-27, Audit "Wer bekommt was",
+        Befund BF-12): die Auswahlliste beim Oeffnen und -- NUR bei Personen
+        mit mehreren Gemeinden -- der Zaehler-Abgleich der App zusammen mit
+        badge-counts, denn die Summe der Eintraege ist die Zahl, die die App
+        dann aufs App-Symbol setzt. Personen mit einer Gemeinde rufen sie
+        dafuer nie. Store-Apps 2.2.x rufen sie gar nicht.
         Kosten: zwei Abfragen fuer die Zugehoerigkeit plus eine Zaehlrunde
         ueber alle Gemeinden zusammen (`= ANY`/unnest), nicht eine je Gemeinde.
         Unabhaengig von X-Active-Organization: dieselbe Aufteilung, egal in
         welcher Gemeinde die Person gerade arbeitet.
+        BEHOBEN 27.09.2026 (Befund am Geraet, Antwortform unveraendert): Die
+        ungelesenen Postfach-Mitteilungen zaehlten je Gemeinde so oft, wie die
+        Person Gemeinden mit derselben Rollenart hat (Leitung in drei
+        Gemeinden: dreifach). Der Postfach-Zaehler nimmt jede Person jetzt
+        einmal in die Abfrage; jede Mitteilung zaehlt einmal, bei ihrer
+        organization_id.
+        BEHOBEN 2026-09-27 (Audit "Wer bekommt was", Befund BF-12, Antwortform
+        unveraendert): Die Summe der Eintraege ist jetzt genau die Zahl am
+        App-Symbol. Push und Hintergrund-Lauf rechneten das Symbol bis dahin
+        mit der Rolle am Nutzerkonto fuer jede Gemeinde und dem Postfach in
+        jeder Gemeinde erneut (gemessen: Symbol 5, Umschalter 2 + 0); sie lesen
+        seither dieselbe Funktion wie diese Route
+        (utils/appIconBadge.js, appIconSummenAllerGemeinden). Dabei geaendert:
+        Eine ungelesene Mitteilung aus einer Gemeinde, der die Person nicht
+        (mehr) angehoert oder die gesperrt ist, zaehlt beim Eintrag der
+        Stamm-Gemeinde (ist diese gesperrt, beim ersten Eintrag der Liste;
+        vorher fiel sie hier heraus, am Symbol zaehlte sie) --
+        so bleibt die Summe gleich der Glocke plus den Reitern aller Gemeinden.
       responses:
         '200':
           description: Je Gemeinde ein Eintrag, auch bei 0
@@ -1937,6 +2119,17 @@ paths:
         Push bekommt, hat ihn. Bewusst NICHT im Postfach: event_reminder,
         new_event, mandatory_event_created, challenge_started, chat (eigene
         Listen und Zaehler); wrapped und certificate sind nicht entschieden.
+        NEU 27.09.2026 (additiv, BF-14 / F-06): event_removed ("Vom Event
+        ausgetragen") und event_waitlisted ("Auf die Warteliste gesetzt") --
+        die Leitung hat die Person ausgetragen bzw. herabgestuft; beide mit
+        event_id und organization_id, sie sterben mit dem Termin. Die
+        Antwortform bleibt; `type` ist ein freier String, und eine App, die
+        eine Art nicht kennt, zeigt Titel und Text wie jede Zeile, in der
+        neutralen Farbe (bzw. der Terminfarbe beim Praefix event_) und ohne
+        Sprungziel. Ebenso additiv (BF-21 / F-13):
+        gemeinde_einladung_beantwortet ("Einladung angenommen" /
+        "Einladung abgelehnt") an die einladende Leitung, mit einladung_id,
+        user_id, status und organization_id der einladenden Gemeinde.
         events_pending_approval ersetzt die noch ungelesene Mitteilung
         derselben Person und Gemeinde vom Vortag, statt sich taeglich zu
         stapeln. `data` traegt die Kennungen des Pushes (event_id bzw.
@@ -1947,6 +2140,17 @@ paths:
         neuer Beitrag, mit dem Jahrgang die Loeschwarnung, mit dem Antrag
         die Zustandsmeldungen, mit dem Abzeichen "Neues Badge erhalten".
         Nach 365 Tagen werden Mitteilungen nachts entfernt.
+        BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-13 / F-07): Mit einem
+        geloeschten Konto gehen auch die Leitungs-Mitteilungen UEBER die
+        Person (data additiv mit konfi_id bzw. user_id: new_konfi_registration,
+        event_unregistration, event_opt_out, event_opt_in, challenge_submission,
+        teamer_event_booking, teamer_event_cancellation; new_activity_request
+        und gemeinde_einladung_beantwortet trugen die Kennung schon). Mit dem
+        Ende einer Mitgliedschaft gehen die eigenen Mitteilungen aus dieser
+        Gemeinde (utils/mitgliedschaftEnde.js); `ungelesen`, badge-counts.
+        postfach.ungelesen und je-organisation zaehlen sie danach nicht mehr.
+        Eine entzogene Jahrgangs-Zuweisung laesst das Postfach stehen
+        (Verlauf). Antwortform unveraendert.
         ENTSCHEIDUNG ORG-BEZUG: Das Postfach ist persoenlich wie das
         Mitteilungszentrum des Handys; Push-Nachrichten kommen ja auch
         unabhaengig von der aktiven Gemeinde an. Wer mehrere Gemeinden
@@ -2236,7 +2440,7 @@ paths:
                 token: { type: string }
                 platform: { type: string, enum: [ios, android, web] }
                 device_id: { type: string, description: Optional, wird sonst generiert }
-                app_version: { type: string, maxLength: 32, nullable: true, description: "ADDITIV 23.09.2026 (Migration 156) - Marketing-Version der App, z.B. 2.3.0. Optional; ausgelieferte Fassungen schicken es nicht, dann bleibt die Spalte NULL (= unbekannt). Eine Registrierung OHNE die Angabe ueberschreibt eine bereits bekannte Fassung nicht (COALESCE im Upsert)." }
+                app_version: { type: string, maxLength: 32, nullable: true, description: "ADDITIV 23.09.2026 (Migration 156) - Marketing-Version der App, z.B. 2.3.0. Optional; ausgelieferte Fassungen schicken es nicht, dann bleibt die Spalte NULL (= unbekannt). Eine Registrierung OHNE die Angabe ueberschreibt eine bereits bekannte Fassung nicht (COALESCE im Upsert). SEIT 27.09.2026 bestimmt die Angabe auch die Zahl am App-Symbol (aps.badge, stiller Push): Geraete OHNE Fassung (Store-Apps 2.2.x) bekommen sie ohne ungelesene Postfach-Mitteilungen und ohne Challenge-Neuigkeiten, weil die alte App beides nicht abbauen kann; Geraete MIT Fassung die volle Summe." }
                 app_build: { type: string, maxLength: 32, nullable: true, description: "ADDITIV 23.09.2026 (Migration 156) - Build-Nummer als Text, z.B. 117 (Android versionCode) oder 211 (iOS). Text, weil beide Plattformen unterschiedlich zaehlen." }
       responses:
         '200': { description: Gespeichert }

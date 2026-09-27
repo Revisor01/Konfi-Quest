@@ -15,7 +15,8 @@
 // bewusst ausgenommenen Arten schreiben NICHTS.
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, EVENTS, JAHRGAENGE } = require('../helpers/seed');
-const { ladeLeitungDerOrganisation } = require('../../utils/orgMitglieder');
+const { ladeLeitungZumTermin } = require('../../utils/terminLeitungSicht');
+const { ladeLeitungZumJahrgang } = require('../../utils/jahrgangLeitungSicht');
 const { POSTFACH_ARTEN, NICHT_IM_POSTFACH } = require('../../utils/postfachArten');
 
 // Firebase abklemmen, BEVOR pushService geladen wird (Muster aus
@@ -45,10 +46,13 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     await seed(db);
     // Nur konfi1 und admin1 haben ein Push-Geraet. Alle anderen Empfaenger
     // sind ohne Token -- und muessen die Mitteilung trotzdem bekommen.
+    // Geraete mit einer App, die das Postfach kennt (app_version gesetzt);
+    // ohne Version rechnet der Server die Zahl wie fuer die Store-Apps 2.2.x
+    // (tests/services/appSymbolAlteApps.test.js).
     await db.query(
-      `INSERT INTO push_tokens (user_id, token, platform, device_id) VALUES
-       ($1, 'token-konfi1', 'ios', 'dev-konfi1'),
-       ($2, 'token-admin1', 'ios', 'dev-admin1')`,
+      `INSERT INTO push_tokens (user_id, token, platform, device_id, app_version) VALUES
+       ($1, 'token-konfi1', 'ios', 'dev-konfi1', '2.3.0'),
+       ($2, 'token-admin1', 'ios', 'dev-admin1', '2.3.0')`,
       [USERS.konfi1.id, USERS.admin1.id]
     );
     sendFirebasePushNotification.mockClear();
@@ -183,7 +187,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
       expect(m.data).toMatchObject({ event_id: String(TERMIN) });
     });
 
-    it('event_reactivated: Termin findet doch statt', async () => {
+    it('event_reactivated: Event findet doch statt', async () => {
       await PushService.sendEventReactivationToKonfis(db, [USERS.konfi1.id], 'Weihnachtsgottesdienst', DATUM, ORG1, TERMIN);
 
       const [m] = await postfach(USERS.konfi1.id);
@@ -229,13 +233,21 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
   // Leitungs- und Team-Arten
   // ================================================================
   describe('Leitungs-Arten', () => {
-    it('event_unregistration: Konfi-Abmeldung an die GESAMTE Leitung, mit event_id', async () => {
-      const leitung = await ladeLeitungDerOrganisation(db, ORG1);
-      expect(leitung.length).toBeGreaterThan(1);
+    // Seit 27.09.2026 nehmen die Leitungs-Meldungen ihre Empfaenger von der
+    // Aufrufstelle (utils/terminLeitungSicht.js, utils/jahrgangLeitungSicht.js).
+    // Hier geht es um den Postfach-Eintrag je Empfaenger:in -- die Liste
+    // kommt aus der Regel bzw. ausdruecklich; wer sie bekommt, pruefen
+    // tests/routes/terminLeitungEmpfaenger.test.js und
+    // tests/services/jahrgangLeitungEmpfaenger.test.js.
+    it('event_unregistration: Konfi-Abmeldung an die Leitung des Events, mit event_id', async () => {
+      // admin1 hat im Seed keinen Jahrgang und sieht das Event nicht: die
+      // Gemeindeleitung (orgAdmin1, orgAdminSuper).
+      const leitung = await ladeLeitungZumTermin(db, TERMIN);
+      expect(leitung).toEqual([USERS.orgAdmin1.id, USERS.orgAdminSuper.id]);
 
-      await PushService.sendEventUnregistrationToAdmins(db, ORG1, 'Test Konfi 1', 'Weihnachtsgottesdienst', 'Krank', TERMIN);
+      await PushService.sendEventUnregistrationToLeadership(db, ORG1, leitung, 'Test Konfi 1', 'Weihnachtsgottesdienst', 'Krank', TERMIN);
 
-      expect(await anzahl()).toBe(leitung.length);
+      expect(await anzahl()).toBe(2);
       for (const id of leitung) {
         const [m] = await postfach(id);
         expect(m.type).toBe('event_unregistration');
@@ -246,8 +258,8 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('teamer_event_booking und teamer_event_cancellation: mit eventId (camelCase, wie der Push)', async () => {
-      await PushService.sendTeamerEventBookingToAdmins(db, ORG1, 'Test Teamer 1', 'Weihnachtsgottesdienst', 'confirmed', TERMIN);
-      await PushService.sendTeamerEventCancellationToAdmins(db, ORG1, 'Test Teamer 1', 'Weihnachtsgottesdienst', TERMIN, 'Verhindert');
+      await PushService.sendTeamerEventBookingToLeadership(db, ORG1, [USERS.admin1.id], 'Test Teamer 1', 'Weihnachtsgottesdienst', 'confirmed', TERMIN);
+      await PushService.sendTeamerEventCancellationToLeadership(db, ORG1, [USERS.admin1.id], 'Test Teamer 1', 'Weihnachtsgottesdienst', TERMIN, 'Verhindert');
 
       const [buchung, absage] = await postfach(USERS.admin1.id);
       expect(buchung.type).toBe('teamer_event_booking');
@@ -258,7 +270,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('events_pending_approval: Erinnerung an unverbuchte Termine', async () => {
-      await PushService.sendEventsPendingApprovalToAdmins(db, ORG1, 3);
+      await PushService.sendEventsPendingApprovalToLeadership(db, ORG1, [USERS.admin1.id], 3);
 
       const [m] = await postfach(USERS.admin1.id);
       expect(m.type).toBe('events_pending_approval');
@@ -267,8 +279,8 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('events_pending_approval kommt taeglich: die neue ersetzt die noch UNGELESENE alte, Gelesenes bleibt', async () => {
-      await PushService.sendEventsPendingApprovalToAdmins(db, ORG1, 3);
-      await PushService.sendEventsPendingApprovalToAdmins(db, ORG1, 2);
+      await PushService.sendEventsPendingApprovalToLeadership(db, ORG1, [USERS.admin1.id], 3);
+      await PushService.sendEventsPendingApprovalToLeadership(db, ORG1, [USERS.admin1.id], 2);
 
       let liste = await postfach(USERS.admin1.id);
       expect(liste).toHaveLength(1);
@@ -276,7 +288,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
 
       // Gelesen -> Verlauf, bleibt stehen; die naechste kommt dazu.
       await db.query('UPDATE notifications SET read_at = NOW() WHERE id = $1', [liste[0].id]);
-      await PushService.sendEventsPendingApprovalToAdmins(db, ORG1, 1);
+      await PushService.sendEventsPendingApprovalToLeadership(db, ORG1, [USERS.admin1.id], 1);
 
       liste = await postfach(USERS.admin1.id);
       expect(liste).toHaveLength(2);
@@ -287,10 +299,12 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('new_konfi_registration: mit jahrgang_id', async () => {
-      await PushService.sendNewKonfiRegistrationToAdmins(db, ORG1, JAHRGAENGE.jahrgang1.id, 'Neue Konfi', '2025/2026');
+      const leitung = await ladeLeitungZumJahrgang(db, ORG1, JAHRGAENGE.jahrgang1.id);
+      await PushService.sendNewKonfiRegistrationToLeadership(db, ORG1, leitung, JAHRGAENGE.jahrgang1.id, 'Neue Konfi', '2025/2026');
 
-      const { rows } = await db.query("SELECT user_id, data FROM notifications WHERE type = 'new_konfi_registration'");
-      expect(rows.length).toBeGreaterThan(0);
+      const { rows } = await db.query("SELECT user_id, data FROM notifications WHERE type = 'new_konfi_registration' ORDER BY user_id");
+      // Die Gemeindeleitung; admin1 hat im Seed keinen Jahrgang.
+      expect(rows.map((r) => Number(r.user_id))).toEqual([USERS.orgAdmin1.id, USERS.orgAdminSuper.id]);
       for (const r of rows) {
         expect(r.data).toMatchObject({ jahrgang_id: String(JAHRGAENGE.jahrgang1.id) });
       }
@@ -302,17 +316,26 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
 
       await PushService.sendChallengeSubmissionToLeadership(db, ORG1, challengeId, 'Fotochallenge', 'Test Konfi 1', true);
 
-      const [admin] = await postfach(USERS.admin1.id);
-      expect(admin.type).toBe('challenge_submission');
-      expect(admin.data).toMatchObject({ challengeId: String(challengeId) });
-      expect(admin.message).toBe('Test Konfi 1 hat bei "Fotochallenge" etwas eingereicht. Wartet auf Freigabe.');
+      // Die Gemeindeleitung (org_admin) bekommt sie immer.
+      const [leitung] = await postfach(USERS.orgAdmin1.id);
+      expect(leitung.type).toBe('challenge_submission');
+      expect(leitung.data).toMatchObject({ challengeId: String(challengeId) });
+      expect(leitung.message).toBe('Test Konfi 1 hat bei "Fotochallenge" etwas eingereicht. Wartet auf Freigabe.');
 
       const [teamer] = await postfach(USERS.teamer1.id);
       expect(teamer.type).toBe('challenge_submission');
+
+      // Geaendert 27.09.2026 (Simon: "Wenn es nur Konfis sind, mit
+      // Jahrgangsbindung, und die sind da nicht drin, dann kriegen sie es auch
+      // nicht"): admin1 hat keinen Jahrgang, die Challenge ist eine reine
+      // Konfi-Challenge von Jahrgang 1 -- keine Mitteilung mehr. Vorher bekam
+      // jeder Admin jede Challenge-Mitteilung, sah die Challenge aber nicht.
+      expect(await postfach(USERS.admin1.id)).toEqual([]);
     });
 
     it('jahrgang_deletion_warning: mit jahrgang_id, damit sie mit dem Jahrgang gehen kann', async () => {
-      await PushService.sendJahrgangDeletionWarningToAdmins(db, ORG1, '2025/2026', 3, JAHRGAENGE.jahrgang1.id);
+      const leitung = await ladeLeitungZumJahrgang(db, ORG1, JAHRGAENGE.jahrgang1.id, { schreibrecht: true });
+      await PushService.sendJahrgangDeletionWarningToLeadership(db, ORG1, leitung, '2025/2026', 3, JAHRGAENGE.jahrgang1.id);
 
       const [m] = await postfach(USERS.orgAdmin1.id);
       expect(m.type).toBe('jahrgang_deletion_warning');
@@ -320,8 +343,8 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('event_opt_out und event_opt_in: mit event_id', async () => {
-      await PushService.sendEventOptOutToAdmins(db, ORG1, 'Test Konfi 1', 'Konfi-Unterricht', 'Zahnarzt', EVENTS.pflichtEvent.id);
-      await PushService.sendEventOptInToAdmins(db, ORG1, 'Test Konfi 1', 'Konfi-Unterricht', EVENTS.pflichtEvent.id);
+      await PushService.sendEventOptOutToLeadership(db, ORG1, [USERS.admin1.id], 'Test Konfi 1', 'Konfi-Unterricht', 'Zahnarzt', EVENTS.pflichtEvent.id);
+      await PushService.sendEventOptInToLeadership(db, ORG1, [USERS.admin1.id], 'Test Konfi 1', 'Konfi-Unterricht', EVENTS.pflichtEvent.id);
 
       const [aus, ein] = await postfach(USERS.admin1.id);
       expect(aus.type).toBe('event_opt_out');
@@ -364,7 +387,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
 
     it('die Push-Gegenstuecke der alten Schreibstellen schreiben hier NICHT (sonst laege alles doppelt)', async () => {
       await PushService.sendBadgeEarnedToKonfi(db, USERS.konfi1.id, 'Fleissig', 'flame', 'B', 1, ORG1);
-      await PushService.sendNewActivityRequestToAdmins(db, ORG1, 'Test Konfi 1', 'Kirchenchor', 1);
+      await PushService.sendNewActivityRequestToLeadership(db, ORG1, [USERS.orgAdmin1.id], 'Test Konfi 1', 'Kirchenchor', 1);
       await PushService.sendActivityRequestStatusToKonfi(db, USERS.konfi1.id, 'Kirchenchor', 1, 'approved', null, 7, ORG1);
       expect(await anzahl()).toBe(0);
     });
@@ -419,7 +442,11 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
       expect(POSTFACH_ARTEN.has('certificate')).toBe(true);
       // 26.09.2026: 23 -> 24. 'gemeinde_einladung' kam dazu (Einladung in
       // eine weitere Gemeinde).
-      expect(POSTFACH_ARTEN.size).toBe(24);
+      // 27.09.2026: 24 -> 26. 'event_removed' und 'event_waitlisted' (die
+      // Leitung traegt aus bzw. setzt auf die Warteliste, F-06/BF-14).
+      // 27.09.2026: 26 -> 27. 'gemeinde_einladung_beantwortet' (Antwort auf
+      // eine Einladung an die einladende Leitung, F-13/BF-21).
+      expect(POSTFACH_ARTEN.size).toBe(27);
       expect(Object.keys(NICHT_IM_POSTFACH)).toHaveLength(9);
     });
   });
@@ -466,7 +493,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
 
     it('ein ueberlanger Titel wird auf 255 Zeichen gekuerzt statt den Eintrag zu verlieren', async () => {
       const name = 'X'.repeat(300);
-      await PushService.sendEventOptOutToAdmins(db, ORG1, 'Konfi', name, 'Grund', EVENTS.pflichtEvent.id);
+      await PushService.sendEventOptOutToLeadership(db, ORG1, [USERS.admin1.id], 'Konfi', name, 'Grund', EVENTS.pflichtEvent.id);
 
       const [m] = await postfach(USERS.admin1.id);
       expect(m.title).toHaveLength(255);

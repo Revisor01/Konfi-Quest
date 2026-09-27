@@ -5,6 +5,7 @@ import { IonReactRouter } from '@ionic/react-router';
 // Animationen des iOS-Themes (ios27)
 import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios27';
 import { segmentGlasAnschalten } from './utils/segmentGlas';
+import { modalNamenAnschalten } from './utils/modalNamen';
 // Material Design 3 Animationen
 import { mdTransitionAnimation } from '@rdlabo/ionic-theme-md3';
 // Icons sind jetzt in MainTabs.tsx
@@ -21,6 +22,8 @@ import GlobalToasts from './components/common/GlobalToasts';
 import PostfachModal from './components/common/PostfachModal';
 import AppSperrbildschirm from './components/common/AppSperrbildschirm';
 import AppAbdeckung from './components/common/AppAbdeckung';
+import MindestversionHinweis from './components/common/MindestversionHinweis';
+import { beobachteBetriebsstatus } from './services/betriebsstatus';
 import { useAppSperre } from './hooks/useAppSperre';
 import { useSeitenBereit } from './navigation/useSeitenBereit';
 import PushZielNavigation from './navigation/PushZielNavigation';
@@ -67,8 +70,16 @@ import '@ionic/react/css/palettes/dark.system.css';
 
 /* Theme variables */
 import './theme/variables.css';
+/* Fokusringe, nackte Knöpfe und Links der Anmeldeseiten -- muss NACH
+   variables.css kommen, siehe Kopf der Datei. */
+import './theme/barrierefreiheit.css';
+import { bewegungReduziert } from './utils/bewegung';
 
 setupIonicReact({
+  // Seitenuebergaenge, Modale und Popover laufen als Web Animations, nicht
+  // per CSS -- wer im System „Bewegung reduzieren" eingeschaltet hat,
+  // bekommt sie hier abgeschaltet (Audit 26.09.2026, UI BF-12).
+  animated: !bewegungReduziert(),
   rippleEffect: true,
   inputBlurring: true,
   scrollPadding: true,
@@ -89,6 +100,19 @@ const AppContent: React.FC = () => {
   // Einmal fuer die ganze App: Der Beobachter dort faengt auch Segmente, die
   // erst spaeter in einem Modal auftauchen.
   useEffect(() => segmentGlasAnschalten(), []);
+
+  // Jedes Modal traegt seinen Titel als Namen fuer Vorlesehilfen (Begruendung
+  // in modalNamen.ts). Ebenfalls einmal fuer die ganze App: Es gilt fuer die
+  // 92 per useIonModal geoeffneten Modale und jedes kuenftige.
+  useEffect(() => modalNamenAnschalten(), []);
+
+  // Mindestversion und Wartungshinweis (E-05, 27.09.2026): EINE Pruefung
+  // fuer die ganze App, beim Start und bei jeder Rueckkehr in die App.
+  // Die Hinweise lesen nur den Stand (services/betriebsstatus.ts).
+  // Laeuft auch vor der Anmeldung -- der Endpunkt braucht keine, und ein zu
+  // altes Geraet soll schon an der Anmeldeseite erfahren, dass es ein Update
+  // braucht.
+  useEffect(() => beobachteBetriebsstatus(), []);
 
   // App-Sperre: Face ID / Fingerabdruck vor der bereits angemeldeten App.
   // Der Hook laeuft immer mit (er muss den Hintergrundwechsel auch dann
@@ -325,6 +349,17 @@ const AppContent: React.FC = () => {
           }}
         />
       )}
+      {/* "Bitte aktualisiere Konfi Quest" (E-05): ein Hinweis, keine Sperre
+          (Simon, 27.09.2026: "Keine Zwangsupdates") -- ein Dialog mit
+          "Später" und "Aktualisieren", einmal je App-Start. Rendert selbst
+          nichts in den Baum; der Dialog ist ein Ionic-Overlay und liegt damit
+          UNTER Schloss und Abdeckung. Solange das Schloss steht oder beim
+          Start noch nicht klar ist, ob es kommt, wartet er -- sonst laege er
+          unsichtbar darunter und zoege den Fokus dorthin.
+          Im Browser, ohne Netz und bei Fehlern nie (services/betriebsstatus.ts).
+          Wie das Schloss genau EINMAL und ausserhalb der Zweigwahl: Er gilt
+          auch auf der Anmeldeseite. */}
+      <MindestversionHinweis zurueckhalten={gesperrt || !startGeklaert} />
       {/* Die Abdeckung steht ZULETZT und damit ueber dem Sperrbildschirm.
           Beim Wegwechseln kann beides gleichzeitig anstehen — dann gehoert
           ins Vorschaubild die neutrale Flaeche, nicht der bedienbare

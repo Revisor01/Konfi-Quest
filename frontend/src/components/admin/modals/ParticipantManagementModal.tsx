@@ -34,6 +34,9 @@ import type { Participant } from '../../../types/event';
 // Die Jahrgangsregel liegt in utils/jahrgangsPassung.ts (25.09.2026) — sie
 // spiegelt gehoertZumTermin im Backend und hat dort ihre Erklaerung.
 import { passtZumTermin } from '../../../utils/jahrgangsPassung';
+import { tastaturKlick } from '../../../utils/tastatur';
+import { uhrzeit } from '../../../utils/dateUtils';
+import { fehlerText } from '../../../utils/fehler';
 
 interface Konfi {
   id: number;
@@ -222,10 +225,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     if (!dateString) return '';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return uhrzeit(date);
   };
 
   const handleKonfiSelection = (konfiId: number) => {
@@ -278,8 +278,9 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       } catch (err) {
         // Die Meldung des Servers zeigen, wenn er eine hat — etwa "… gehört
         // zu keinem Jahrgang dieses Termins" (403). Sonst der Sammelbegriff.
-        const meldung = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-        setError(meldung || 'Fehler beim Hinzufügen der Teilnehmer:innen');
+        // Ueber fehlerText, damit die Fehlermessung statt des Server-Textes
+        // (er traegt den Namen der Person) den Sammelbegriff meldet.
+        setError(fehlerText(err, 'Fehler beim Hinzufügen der Teilnehmer:innen'));
       } finally {
         setLoading(false);
       }
@@ -330,7 +331,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   {/* Suchfeld */}
                   <IonItem lines={eventJahrgaenge.length !== 1 || (eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0) ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Person suchen</IonLabel>
-                    <IonInput
+                    <IonInput aria-label="Person suchen"
                       value={searchTerm}
                       onIonInput={(e) => setSearchTerm(e.detail.value!)}
                       placeholder="Name eingeben..."
@@ -341,7 +342,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   {(eventJahrgaenge.length !== 1) && (
                     <IonItem lines={eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
                       <IonLabel position="stacked">Jahrgang</IonLabel>
-                      <IonSelect
+                      <IonSelect aria-label="Jahrgang"
                         value={selectedJahrgang}
                         onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
                         placeholder="Jahrgang wählen"
@@ -370,7 +371,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
                     <IonItem lines="none" style={{ '--background': 'transparent' }}>
                       <IonLabel position="stacked">Zeitslot</IonLabel>
-                      <IonSelect
+                      <IonSelect aria-label="Zeitslot"
                         value={selectedTimeslot}
                         onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
                         placeholder="Zeitslot wählen"
@@ -437,7 +438,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                     }}
                   >
                     Angeboten werden nur Personen aus {eventJahrgaenge.length === 1 ? 'dem Jahrgang' : 'den Jahrgängen'} dieses
-                    Termins ({eventJahrgaenge.join(', ')}). Die Gemeindeleitung ist davon ausgenommen.
+                    Events ({eventJahrgaenge.join(', ')}). Die Gemeindeleitung ist davon ausgenommen.
                   </p>
                 )}
                 {filteredKonfis.length === 0 ? (
@@ -449,7 +450,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                     <IonIcon icon={ICON_SUCHE_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-riesig)', opacity: 0.3, marginBottom: 'var(--app-abstand-basis)' }} />
                     <p style={{ margin: '0', fontSize: 'var(--app-text-standard)' }}>
                       {jahrgangsGrenzeAktiv
-                        ? 'Keine passenden Personen — nur wer zu einem Jahrgang dieses Termins gehört, lässt sich eintragen'
+                        ? 'Keine passenden Personen — nur wer zu einem Jahrgang dieses Events gehört, lässt sich eintragen'
                         : 'Keine Personen gefunden'}
                     </p>
                   </div>
@@ -459,7 +460,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                       const isSelected = selectedKonfis.includes(konfi.id);
 
                       return (
-                        <div
+                        <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={konfi.id}
                           className="app-list-item app-list-item--events"
                           onClick={() => handleKonfiSelection(konfi.id)}

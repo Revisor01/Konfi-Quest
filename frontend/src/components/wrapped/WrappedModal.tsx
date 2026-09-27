@@ -234,7 +234,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'teamer-jahre': return { ...base, slideValue: `${t.slides.engagement.jahre_aktiv} Jahre als Teamer:in` };
         case 'teamer-team': return { ...base, slideValue: `Mit ${t.slides.team?.mitstreitende || 0} anderen im Team` };
         case 'teamer-neu-dabei': return { ...base, slideValue: 'Mein erstes Jahr im Team' };
-        case 'teamer-anfang': return { ...base, slideValue: `Erster Termin: ${t.slides.anfang?.name || ''}` };
+        case 'teamer-anfang': return { ...base, slideValue: `Erstes Event: ${t.slides.anfang?.name || ''}` };
         case 'teamer-antworten': return { ...base, slideValue: `${t.slides.chat?.antworten || 0} Mal geantwortet` };
         case 'teamer-konfi-zeit': return { ...base, slideValue: 'Selbst mal Konfi gewesen — heute im Team' };
         case 'stavanger-2026': return { ...base, slideValue: '14 unvergessliche Tage in Himmel og Hav' };
@@ -646,7 +646,12 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   };
 
   return (
-    <div className={`wrapped-overlay${wrappedType === 'teamer' ? ' wrapped-overlay--teamer' : ''}`}>
+    // Name des Dialogs fuer Vorlesehilfen -- die Folien haben keine
+    // Kopfzeile mit ion-title (siehe utils/modalNamen.ts).
+    <div
+      className={`wrapped-overlay${wrappedType === 'teamer' ? ' wrapped-overlay--teamer' : ''}`}
+      data-dialogname={wrappedType === 'teamer' ? 'Team-Rückblick' : 'Konfi-Rückblick'}
+    >
       <div className="wrapped-header">
         {/* Fortschrittsleiste aus Simons Entwurf: ein Segment je Seite.
             Ersetzt die runden Swiper-Punkte -- bei 13 Seiten sagen Punkte

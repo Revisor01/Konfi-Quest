@@ -34,9 +34,11 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
+import EinladungenKarte from '../../shared/EinladungenKarte';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
+import { datumKurz } from '../../../utils/dateUtils';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
@@ -172,7 +174,7 @@ const AdminProfilePage: React.FC = () => {
               {profileData?.created_at && (
                 <div className="app-detail-header__info-chip">
                   <IonIcon icon={ICON_TERMIN} style={{ fontSize: 'var(--app-text-sekundaer)' }} />
-                  Seit {new Date(profileData?.created_at || '').toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  Seit {datumKurz(profileData?.created_at)}
                 </div>
               )}
             </div>
@@ -311,6 +313,13 @@ const AdminProfilePage: React.FC = () => {
 
                 {/* App-Sperre: Face ID / Fingerabdruck vor der laufenden App */}
                 <AppSperreSchalter variante="users" />
+                {/* Offene Einladungen in eine weitere Gemeinde -- im Profil
+                    wie bei Konfis und Team; Push und Postfach fuehren hierher
+                    (pushNavigation: gemeinde_einladung -> /admin/profile).
+                    Bis zum 26.09.2026 stand die Karte auf dem Reiter "Mehr",
+                    der Tipp auf die Mitteilung landete aber hier -- und fand
+                    nichts. */}
+                <EinladungenKarte variante="users" />
               </div>
             </IonCardContent>
           </IonCard>

@@ -114,7 +114,7 @@ const verifyTokenRBAC = (db) => {
 
       // User-Query mit LEFT JOIN für super_admin (organization_id kann NULL sein)
       const userQuery = `
-        SELECT u.id, u.organization_id, u.username, u.display_name, u.is_active,
+        SELECT u.id, u.organization_id, u.username, u.display_name, u.is_active, u.deleted_at,
                u.role_title, u.is_super_admin, u.token_invalidated_at,
                r.name as role_name, r.display_name as role_display_name,
                o.name as organization_name, o.slug as organization_slug,
@@ -130,7 +130,13 @@ const verifyTokenRBAC = (db) => {
         return res.status(401).json({ error: 'User not found' });
       }
 
-      if (!user.is_active) {
+      // Soft-geloescht (deleted_at, Auto-Loeschlauf 60 Tage nach der
+      // Konfirmation) zaehlt wie deaktiviert -- gleiche Antwort, kein Hinweis,
+      // dass es das Konto noch gibt. Socket-Auth (server.js) und die Datei-
+      // Auslieferung (chat.js) filterten deleted_at laengst, diese Middleware
+      // nicht: Ein ausgeblendetes Konto bediente die API bis zur harten
+      // Loeschung weiter (Audit 26.09.2026, Sicherheit BF-07).
+      if (!user.is_active || user.deleted_at) {
         return res.status(401).json({ error: 'User account is inactive' });
       }
 
@@ -294,7 +300,8 @@ const requireTeamer = requireRole('org_admin', 'admin', 'teamer'); // Events, Pu
 // ============================================
 // Hier stand bis zum 10.09.2026 eine Middleware requireSameOrganization. Sie
 // war an keiner Route verdrahtet und deshalb wirkungslos. Die Trennung laeuft
-// tatsaechlich ueber die Abfragen: 345-mal wird die Organisation aus dem Token
+// tatsaechlich ueber die Abfragen: 474-mal (gezaehlt am 26.09.2026 in routes,
+// utils, services und createApp.js) wird die Organisation aus dem Token
 // genommen (req.user.organization_id), nur einmal aus der Anfrage -- in
 // POST /auth/switch-org, und dort prueft die Route die Mitgliedschaft selbst
 // gegen user_organizations und lehnt sonst mit 403 ab.

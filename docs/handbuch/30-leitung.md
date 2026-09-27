@@ -14,15 +14,16 @@ arbeitest (siehe [In mehreren Gemeinden
 mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)). Ein Tippen auf
 den Namen zeigt alle deine Gemeinden, die aktive fett, jede mit einer roten
 Zahl, wenn dort etwas offen ist (siehe [Sehen, wo etwas offen
-ist](05-rollen.md#sehen-wo-etwas-offen-ist)). Auf **Profil**,
-**Benutzer:innen**, **Organisationen** und **Betrieb** fehlt der Name — dort
-gibt es nichts, was an der Gemeinde hinge. Dazwischen der Titel, daneben die
-Knöpfe der jeweiligen Seite, etwa das Plus zum Anlegen.
+ist](05-rollen.md#sehen-wo-etwas-offen-ist)). Der Name steht nur auf den
+fünf Reitern selbst; auf den Unterseiten unter „Mehr" und in Detailansichten
+fehlt er — was dort steht, gehört zum Konto oder zu genau einer Gemeinde.
+Dazwischen der Titel, daneben die Knöpfe der jeweiligen Seite, etwa das Plus
+zum Anlegen.
 
 Die Leitung hat zwei Stufen: **Admins** kümmern sich um den laufenden Betrieb,
 **Org-Admins** zusätzlich um Benutzer:innen, Jahrgangs-Zuweisungen und die
 Einstellungen der Gemeinde. Der Unterschied steht im Kapitel
-[Rollen und Rechte](05-rollen.md#wer-darf-was).
+[Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
 
 Ein Punkt vorweg, weil er oft für Verwirrung sorgt: Auch als **Admin** brauchst
 du Jahrgangs-Zuweisungen. Konfi-Liste und Chat zeigen dir nur die Jahrgänge,
@@ -41,34 +42,34 @@ jeder Person siehst du die Punkte nach **Godi**, **Gemeinde** und **Gesamt**.
 Über das Plus legst du an, was gerade geöffnet ist. Dabei erzeugt die App ein
 [Einmalpasswort](35-passwoerter.md#wie-die-einmalpasswoerter-aussehen), das du
 direkt kopieren kannst. Ganze Gruppen lädst du besser
-[per QR-Code ein](35-passwoerter.md#konfis-kommen-neu-dazu-der-einladungscode),
+[per QR-Code ein](35-passwoerter.md#konfis-mit-einem-einladungscode-aufnehmen),
 statt jeden Konfi einzeln anzulegen.
 
 Oben findest du die **Anwesenheits-Matrix**: eine Tabelle über alle Konfis mit
 Pflicht-Anwesenheit und Konfisprüchen, die du dir auch per E-Mail schicken
 lassen kannst.
 
-### In der Detailansicht einer Person
+### Die Detailansicht einer Person nutzen
 
 - **Punkte vergeben** — als [Bonuspunkte](40-punkte.md#ueber-bonuspunkte), frei
   begründet
 - **Aktivitäten** [hinzufügen](40-punkte.md#eine-aktivitaet-direkt-zuschreiben)
   oder [entfernen](40-punkte.md#punkte-wieder-wegnehmen)
-- [**Abzeichen**](60-badges.md) ansehen
+- [**Badges**](60-badges.md) ansehen
 - [**Challenge-Stempel**](80-challenges.md) ansehen — direkt unter den
-  Abzeichen. Es erscheinen nur Stempel aus eigenen, freigegebenen Beiträgen;
+  Badges. Es erscheinen nur Stempel aus eigenen, freigegebenen Beiträgen;
   wer keinen hat, bei dem fehlt der Abschnitt ganz. Als **Admin** siehst du
   die Stempel der Konfis aus deinen Jahrgängen; bei Teamer:innen siehst du sie
   immer.
 - **Konfirmation** — Termin und Konfispruch
 - [**Passwort zurücksetzen**](35-passwoerter.md#weg-1-die-leitung-setzt-ein-neues-passwort)
-- **Zur Teamer:in befördern** — Punkte und Abzeichen bleiben als Konfi-Historie
+- **Zur Teamer:in befördern** — Punkte und Badges bleiben als Konfi-Historie
   erhalten. Eine Jahrgangs-Zuweisung bekommt die neue Teamer:in dabei nicht
   automatisch; die vergibst du unter **Mehr › Benutzer:innen**.
 
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
 seit wann sie dabei sind. Wer wen anlegen darf, steht unter
-[Wer wen anlegen darf](05-rollen.md#wer-wen-anlegen-darf).
+[Wer wen anlegen darf](05-rollen.md#nachschlagen-wer-wen-anlegen-darf).
 
 ## Chats moderieren
 
@@ -76,21 +77,24 @@ seit wann sie dabei sind. Wer wen anlegen darf, steht unter
 
 Als **Org-Admin** erreichst du jeden in deiner Gemeinde. Als **Admin** gilt
 auch im Chat deine Jahrgangs-Zuweisung: Du schreibst nur Konfis deiner eigenen
-Jahrgänge an oder nimmst sie in Gruppen auf. Umgekehrt dürfen dich alle Konfis
-anschreiben.
+Jahrgänge an oder nimmst sie in Gruppen auf, und umgekehrt erreichen dich nur
+die Konfis dieser Jahrgänge
+([Wer wen anschreiben darf](90-chat.md#nachschlagen-wer-wen-anschreiben-darf)).
 
 Nur die Leitung kann Mitglieder zu Gruppen hinzufügen und daraus entfernen,
 Chats und fremde Nachrichten löschen, den
 [Verlauf exportieren](90-chat.md#einen-chat-exportieren) und
 [Umfragen anlegen](90-chat.md#eine-umfrage-stellen).
 
-Du kannst jeden gemeinschaftlichen Raum deiner Gemeinde öffnen und lesen, auch
-ohne selbst Mitglied zu sein — in deiner eigenen Chatliste erscheinen aber nur
-die Chats, in denen du bist. Zwei Grenzen bleiben: fremde Zweiergespräche und
-anonyme Umfragen. Beides steht unter
-[Was die Leitung darf](90-chat.md#nachvollziehen-was-die-leitung-sehen-kann).
+In deiner Chatliste stehen die Chats, in denen du Mitglied bist. Ohne eigene
+Mitgliedschaft öffnest du als **Org-Admin** jeden gemeinschaftlichen Raum
+deiner Gemeinde, als **Admin** nur Jahrgangs-Chats deiner Jahrgänge,
+Event-Chats von Events aus deiner Event-Liste und Räume nur fürs Team.
+Fremde Zweiergespräche und die Stimmen anonymer Umfragen bleiben für alle zu.
+Die ganze Übersicht steht unter
+[Was die Leitung sehen kann](90-chat.md#nachvollziehen-was-die-leitung-sehen-kann).
 
-## Termine anlegen und verbuchen
+## Events anlegen und verbuchen
 
 ![Der Bereich Mitmachen in der Leitungsansicht.](/docs/bilder/iphone/leitung-mitmachen.png)
 
@@ -100,13 +104,17 @@ Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und
 ### Events
 
 Drei Reiter: **Aktuell**, **Verbuchen** und **Vergangen**. „Verbuchen" sammelt
-die Termine, bei denen noch
+die Events, bei denen noch
 [Anwesenheiten](70-termine.md#die-anwesenheit-verbuchen) einzutragen sind —
-sobald der Termin begonnen hat. Ein laufender Termin steht deshalb in beiden
-Reitern: unter „Aktuell", weil er noch läuft, und unter „Verbuchen", weil es
-schon etwas einzutragen gibt.
+sobald das Event begonnen hat. Ein laufendes Event steht deshalb in beiden
+Reitern: unter „Aktuell", weil es noch läuft, und unter „Verbuchen", weil es
+schon etwas einzutragen gibt. Die Zahl am Reiter, die am App-Symbol und die
+Erinnerung „Events warten auf Verbuchung" jeden Morgen um 9 Uhr zählen genau
+die Events, die bei dir unter „Verbuchen" stehen — als Admin also nur die
+deiner Jahrgänge, dazu „Nur Team" und Events ohne Jahrgang
+([Nachsehen, wer von Abmeldungen und Zusagen erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)).
 
-Beim Anlegen eines Termins legst du fest:
+Beim Anlegen eines Events legst du fest:
 
 - [**Für wen**](70-termine.md#die-zielgruppe-waehlen) — nur Konfis,
   Konfis mit gesuchten Teamer:innen, oder nur Team
@@ -116,7 +124,7 @@ Beim Anlegen eines Termins legst du fest:
   aufteilen soll
 - [**Plätze und Warteliste**](70-termine.md#plaetze-und-warteliste-einstellen), getrennt
   für Konfis und Team
-- [**Punkte**](70-termine.md#punkte-fuer-einen-termin-vergeben) und ob sie auf Gottesdienst oder Gemeinde
+- [**Punkte**](70-termine.md#punkte-fuer-ein-event-vergeben) und ob sie auf Gottesdienst oder Gemeinde
   zählen
 - [**Pflicht-Event**](70-termine.md#ein-pflicht-event-einrichten)
 - [**Serie**](70-termine.md#eine-serie-anlegen) — täglich, wöchentlich, zweiwöchentlich
@@ -127,13 +135,13 @@ In der Detailansicht trägst du Anwesenheit ein — anwesend, abwesend oder
 [Notiz](70-termine.md#eine-notiz-hinzufuegen) —, bestätigst die
 Warteliste,
 [fügst Teilnehmende von Hand hinzu](70-termine.md#teilnehmende-von-hand-hinzufuegen)
-und siehst die Abmeldungen samt Begründung. Bei Team-Terminen stehen dort auch
+und siehst die Abmeldungen samt Begründung. Bei Team-Events stehen dort auch
 die [Zu- und Absagen der Teamer:innen](70-termine.md#das-teamer-kontingent-verwalten).
 Über das QR-Symbol zeigst du den Code zum
 [Selbst-Einchecken](70-termine.md#den-qr-check-in-nutzen), auch zum Ausdrucken.
 
-Fällt ein Termin aus, hast du die Wahl zwischen
-[Absagen und Löschen](70-termine.md#einen-termin-absagen-oder-loeschen).
+Fällt ein Event aus, hast du die Wahl zwischen
+[Absagen und Löschen](70-termine.md#ein-event-absagen-oder-loeschen).
 
 ### Aktivitäten
 
@@ -147,10 +155,10 @@ im Punkte-Kapitel.
 
 ![Die Challenges-Verwaltung der Leitung.](/docs/bilder/iphone/leitung-challenges.png)
 
-Drei Reiter: **Aktuell**, **Geplant**, **Archiv**. Ein oranges Feld mit Zahl
-und Uhr an einer Challenge sagt dir, wie viele Beiträge dort auf Freigabe
-warten — siehe
-[Offene Freigaben erkennen](80-challenges.md#offene-freigaben-erkennen).
+Drei Reiter: **Aktuell**, **Geplant**, **Archiv**. Eine rote Zahl am Symbol
+einer Challenge zeigt neue Beiträge seit deinem letzten Öffnen, ein oranges
+Feld mit Zahl und Uhr die Beiträge, die auf Freigabe warten — siehe
+[Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen).
 
 Beim [Anlegen](80-challenges.md#eine-challenge-anlegen) legst du fest, wer
 mitmacht, [welche Medienarten](80-challenges.md#festlegen-womit-geantwortet-werden-darf)
@@ -185,16 +193,20 @@ und **App-Tour ansehen**.
 | **Dashboard** | Welche Bereiche Konfis und Team auf ihrer Startseite sehen, und in welcher Reihenfolge |
 | **Konfis einladen** | [QR-Code für die Selbstregistrierung](35-passwoerter.md#die-einladung-erzeugen) |
 
+Läuft die Lizenz der Gemeinde ab, bekommen **alle Org-Admins** 14 Tage vorher
+eine E-Mail — auch wer die Gemeinde über eine Einladung mitleitet. Admins
+bekommen sie nicht. Hinterlege deshalb bei allen Org-Admins eine E-Mail-Adresse.
+
 ### Inhalt
 
 | Bereich | Wofür |
 |---|---|
-| **Aktivitäten** | Der Katalog dessen, was gemeldet werden kann, mit [Punkten](40-punkte.md#wissen-auf-welchen-drei-wegen-punkte-entstehen) |
-| **Badges** | [Abzeichen](60-badges.md#ein-abzeichen-anlegen) definieren, mit Bedingungen |
+| **Aktivitäten** | Der Katalog dessen, was gemeldet werden kann, mit [Punkten](40-punkte.md#wissen-auf-welchen-drei-wegen-punkte-entstehen); ein [geänderter Punktwert](40-punkte.md#den-punktwert-einer-aktivitaet-aendern) gilt nur für künftige Vergaben |
+| **Badges** | [Badges](60-badges.md#ein-badge-anlegen) definieren, mit Bedingungen |
 | **Jahrgänge** | [Punkteziele](45-jahrgaenge.md#punkteziele-festlegen) und die [Konfispruch-Freigabe](45-jahrgaenge.md#den-konfispruch-freigeben) |
 | **Kategorien** | [Für Aktivitäten und Events](45-jahrgaenge.md#kategorien-anlegen-und-pflegen) |
 | **Level** | [Punkteschwellen](40-punkte.md#level-anlegen-und-pflegen) und ihre Titel |
-| **Material** | Dateien und Links für Termine und Jahrgänge |
+| **Material** | Dateien und Links für Events und Jahrgänge |
 | **Jahresrückblick** | [Ausgaben anlegen, benennen und freigeben](95-wrapped.md#einen-rueckblick-anlegen) |
 | **Zertifikate** | Nachweise für Teamer:innen, mit Gültigkeit |
 
@@ -203,6 +215,16 @@ und **App-Tour ansehen**.
 Ein Material trägt **Dateien und Links zugleich** — etwa ein PDF und dazu
 mehrere Videos. Beide Bereiche stehen im Formular offen, beide sind freiwillig.
 Dateien werden verschlüsselt abgelegt, Links öffnen sich im Browser.
+
+Fotos verkleinert die App beim Auswählen wie im Chat (lange Kante 1920
+Pixel). Wer ein Bild in voller Auflösung braucht, etwa zum Drucken, legt es
+als PDF ab. Eine Datei darf danach höchstens 20 MB groß sein; was darüber
+liegt, meldet die App gleich bei der Auswahl mit „Datei ist zu groß (max.
+20 MB)." und nimmt es nicht auf. Beim Speichern steht unter der Kopfzeile,
+wie weit das Hochladen ist — „Wird gesendet… 40 %", zuletzt „Wird
+verarbeitet…". Wie die Dateien danach auf den Geräten liegen und wieder
+verschwinden, steht unter
+[Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
 
 Wer es sieht, hängt allein an der Jahrgangs-Zuordnung:
 
@@ -221,8 +243,8 @@ Material öffnet sich schreibgeschützt und nennt die anlegende Person. Der
 Org-Admin darf immer alles bearbeiten — so bleibt Material verwaltbar, wenn
 jemand die Gemeinde verlässt. Anlegen darf die ganze Leitung.
 
-Hängt Material an einem Termin, steht es in dessen Detailansicht bei den
-Eckdaten: [Material am Termin](70-termine.md#material-an-einem-termin-finden).
+Hängt Material an einem Event, steht es in dessen Detailansicht bei den
+Eckdaten: [Material am Event](70-termine.md#material-an-einem-event-finden).
 
 ## Einen Jahrgang einstellen
 

@@ -39,6 +39,7 @@ import {
   type RoutenSortierung,
   type RoutenZeile,
 } from '../../../utils/betriebsKennzahlen';
+import { datumUhrzeit, uhrzeit } from '../../../utils/dateUtils';
 
 interface RouteRow {
   route: string;
@@ -107,8 +108,8 @@ const fmtUptime = (s: number) => {
   if (h > 0) return `${h} Std ${m} Min`;
   return `${m} Min`;
 };
-const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-const fmtDateTime = (iso: string) => new Date(iso).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const fmtTime = (iso: string) => uhrzeit(iso);
+const fmtDateTime = (iso: string) => datumUhrzeit(iso, { ohneJahr: true });
 const fmtZahl = (n: number) => n.toLocaleString('de-DE');
 
 // Millisekunden lesbar: unter einer Sekunde in ms, darueber in s/min.
@@ -148,7 +149,7 @@ const Kpi: React.FC<{ icon: string; label: string; value: string; color: string;
 const Karte: React.FC<{ icon: string; titel: string; farbe?: string; hinweis?: string; children: React.ReactNode }> = ({ icon, titel, farbe, hinweis, children }) => (
   <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-mittel)', marginBottom: 'var(--app-abstand-basis)', boxShadow: 'var(--app-schatten-fein)' }}>
     <div style={{ fontSize: 'var(--app-text-hinweis)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-secondary)', marginBottom: 'var(--app-abstand-kompakt)', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-kompakt)' }}>
-      <IonIcon icon={icon} style={{ color: farbe || 'var(--app-color-chat)' }} /> {titel}
+      <IonIcon icon={icon} style={{ color: farbe || 'var(--app-text-chat)' }} /> {titel}
     </div>
     {children}
     {hinweis && <div style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)', marginTop: 'var(--app-abstand-eng)', lineHeight: 1.4 }}>{hinweis}</div>}
@@ -214,7 +215,7 @@ const RoutenListe: React.FC<{ zeilen: RoutenZeile[] }> = ({ zeilen }) => (
             <span style={{ display: 'block', fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-gross)', color: msColor(r.mitteMs), lineHeight: 1.1 }} title="Median: die Hälfte aller Anfragen war schneller">
               {r.mitteMs} ms
             </span>
-            <span style={{ display: 'block', fontSize: 'var(--app-text-meta)', color: 'var(--app-color-chat)', fontWeight: 'var(--app-schrift-halbfett)' }}>
+            <span style={{ display: 'block', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-chat)', fontWeight: 'var(--app-schrift-halbfett)' }}>
               {fmtZahl(r.count)}× aufgerufen
             </span>
           </span>
@@ -407,7 +408,7 @@ const AdminMetricsPage: React.FC = () => {
                 <span>Ohne Neustart seit {fmtUptime(snap.uptimeSeconds)} · {snap.rps} Anfragen/Sek</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-kompakt)' }}>
                   alle 5 s
-                  <IonToggle checked={autoRefresh} onIonChange={(e) => setAutoRefresh(e.detail.checked)} />
+                  <IonToggle aria-label="Alle 5 Sekunden aktualisieren" checked={autoRefresh} onIonChange={(e) => setAutoRefresh(e.detail.checked)} />
                 </span>
               </div>
             </div>
@@ -689,7 +690,7 @@ const VerlaufListe: React.FC<{
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 'var(--app-abstand-eng)' }}>
             <span style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-body)', fontWeight: 'var(--app-schrift-halbfett)' }}>{t.tag}</span>
             <span style={{ display: 'flex', gap: 'var(--app-abstand-mittel)', fontSize: 'var(--app-text-klein)' }}>
-              <span style={{ color: 'var(--app-color-chat)' }}>{fmtZahl(t.anfragen)} Anfragen</span>
+              <span style={{ color: 'var(--app-text-chat)' }}>{fmtZahl(t.anfragen)} Anfragen</span>
               <span style={{ color: t.fehler > 0 ? 'var(--app-color-danger)' : METRIK_AMPEL.gut, fontWeight: t.fehler > 0 ? 'var(--app-schrift-halbfett)' : 'normal' }}>{t.fehler} Fehler</span>
               <span style={{ color: msColor(t.schlimmsteMs) }}>{fmtDauer(t.schlimmsteMs)}</span>
             </span>
@@ -713,7 +714,7 @@ const VerlaufListe: React.FC<{
         <div key={i} style={{ padding: 'var(--app-abstand-eng) var(--app-abstand-mittel)', borderTop: i ? '1px solid var(--app-surface-dim)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
           <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-secondary)', flexShrink: 0 }}>{fmtDateTime(d.at)}</span>
           <span style={{ display: 'flex', gap: 'var(--app-abstand-schmal)', fontSize: 'var(--app-text-klein)' }}>
-            <span style={{ color: 'var(--app-color-chat)' }}>{fmtZahl(d.requests)} Anfragen</span>
+            <span style={{ color: 'var(--app-text-chat)' }}>{fmtZahl(d.requests)} Anfragen</span>
             {d.errors > 0 && <span style={{ color: 'var(--app-color-danger)', fontWeight: 'var(--app-schrift-halbfett)' }}>{d.errors} Fehler</span>}
             <span style={{ color: msColor(d.worstP95) }}>{fmtDauer(d.worstP95)}</span>
           </span>

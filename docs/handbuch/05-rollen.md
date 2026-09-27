@@ -17,8 +17,8 @@ Teamer:innen und bei Admins.
 
 ### Konfi
 
-Nimmt teil: meldet Aktivitäten, bucht Termine, macht bei Challenges mit,
-sammelt [Punkte](40-punkte.md) und [Abzeichen](60-badges.md) und sieht am Ende
+Nimmt teil: meldet Aktivitäten, bucht Events, macht bei Challenges mit,
+sammelt [Punkte](40-punkte.md) und [Badges](60-badges.md) und sieht am Ende
 den [Jahresrückblick](95-wrapped.md). Alles Weitere steht im Kapitel
 [Für Konfis](10-konfis.md).
 
@@ -27,14 +27,14 @@ dieses Kapitels hat er nicht.
 
 ### Teamer:in
 
-Begleitet die Jahrgänge, die ihr zugewiesen sind: zu Terminen anmelden, Punkte
+Begleitet die Jahrgänge, die ihr zugewiesen sind: zu Events anmelden, Punkte
 vergeben, Challenges begleiten, im Chat schreiben. Ohne Zuweisung erreicht eine
 Teamer:in keine Konfi und taucht umgekehrt bei keiner Konfi in der Kontaktliste
 auf. Mehr dazu im Kapitel [Für Teamer:innen](20-teamer.md).
 
 ### Admin
 
-Die operative Leitung. Verwaltet Konfis, Termine, Punkte, Abzeichen,
+Die operative Leitung. Verwaltet Konfis, Events, Punkte, Badges,
 Aktivitäten, Material und Challenges, bestätigt Aktivitäts-Meldungen, trägt
 Anwesenheiten ein und vergibt Bonuspunkte. Was davon wo liegt, steht im Kapitel
 [Für die Leitung](30-leitung.md).
@@ -64,7 +64,7 @@ davon, welche Zuweisungen bei ihm eingetragen sind.
 Für Teamer:innen und Admins begrenzt die Zuweisung nicht nur, was sie sehen,
 sondern auch, was sie ändern dürfen. Ein frisch angelegter Admin ohne Zuweisung
 sieht deshalb **keine einzige Konfi** — und auch keine jahrgangsgebundenen
-Challenges, Aktivitäts-Meldungen, Termine oder Material. Die Jahrgangs-Liste
+Challenges, Aktivitäts-Meldungen, Events oder Material. Die Jahrgangs-Liste
 zeigt ihm nur seine eigenen Jahrgänge, und die Meldungs-Zähler an den Reitern
 stehen bei ihm auf null, weil sie nur zählen, was er in seinen Listen auch
 sieht. Die App weist an den betroffenen Stellen darauf hin, dass die Zuweisung
@@ -101,20 +101,21 @@ Im Einzelnen gilt für einen Admin:
   Auch ein neues Passwort für eine Teamer:in kann er erzeugen, ohne mit ihr einen
   Jahrgang zu teilen.
 
-## Wer darf was
+## Nachschlagen, wer was darf
 
 | | Konfi | Teamer:in | Admin | Org-Admin |
 |---|---|---|---|---|
-| Eigene Punkte und Abzeichen sehen | ja | ja | ja | ja |
+| Eigene Punkte und Badges sehen | ja | ja | ja | ja |
 | Aktivitäten melden | ja | ja | ja | ja |
-| Zu Terminen anmelden | ja | ja | ja | ja |
+| Zu Events anmelden | ja | ja | ja | ja |
 | Punkte vergeben | — | ja | ja | ja |
 | Anwesenheit eintragen | — | — | ja | ja |
 | Aktivitäts-Meldungen bestätigen | — | — | ja | ja |
-| Termine, Abzeichen, Kategorien, Level anlegen | — | — | ja | ja |
-| Termine ändern, absagen und löschen | — | — | ja | ja |
-| Personen an einem Termin ein- und austragen | — | — | ja | ja |
-| Challenges anlegen und begleiten | — | — | ja | ja |
+| Events, Badges, Kategorien, Level anlegen | — | — | ja | ja |
+| Events ändern, absagen und löschen | — | — | ja | ja |
+| Personen an einem Event ein- und austragen | — | — | ja | ja |
+| Challenges anlegen und begleiten | — | eigene Jahrgänge und „Nur das Team" | eigene Jahrgänge und „Nur das Team" | ja |
+| Challenges und Beiträge löschen | — | — | eigene Jahrgänge und „Nur das Team" | ja |
 | Konfis und Teamer:innen anlegen | — | — | ja | ja |
 | Material sehen | — | ja | ja | ja |
 | Material anlegen | — | — | ja | ja |
@@ -128,7 +129,11 @@ Im Einzelnen gilt für einen Admin:
 | Konfis direkt anschreiben | — | nur eigene Jahrgänge | nur eigene Jahrgänge | ja |
 | Ganze Gemeinde sehen, ohne Zuweisung | — | — | — | ja |
 
-## Wer wen anlegen darf
+Challenges für „Nur das Team" hängen an keinem Jahrgang: Sie gelten der ganzen
+Gemeinde, und jede:r im Team kann sie anlegen und begleiten. Mehr dazu unter
+[Festlegen, wer mitmachen darf](80-challenges.md#festlegen-wer-mitmachen-darf).
+
+## Nachschlagen, wer wen anlegen darf
 
 Angelegt und bearbeitet wird immer nur nach unten:
 
@@ -166,47 +171,111 @@ in ihrem Profil. **Erst wenn sie zusagt, gehört sie zur Gemeinde.** Bis dahin
 ändert sich nichts, und niemand wird über seinen Kopf hinweg aufgenommen.
 
 Sie behält Benutzername und Passwort; ihre bisherige Gemeinde bleibt
-unverändert. Die Einladung gilt **14 Tage** und lässt sich zurückziehen,
-solange sie offen ist.
+unverändert. Die Einladung gilt **14 Tage** und lässt sich
+[zurückziehen](#eine-einladung-zurueckziehen), solange sie offen ist.
 
-**Konfis lassen sich so nicht aufnehmen.** Sie gehören zu einem Jahrgang und
-kommen über einen [Einladungscode](35-passwoerter.md) hinein.
+**Sagt sie zu oder ab, erfährst du es** — als Mitteilung aufs Handy und im
+Postfach: „Einladung angenommen" oder „Einladung abgelehnt", mit Name, Rolle
+und Gemeinde. Antippen führt zu **Mehr › Benutzer:innen**, wo die Person nach
+einer Zusage steht. Die Mitteilung geht an dich, wenn du eingeladen hast;
+bist du in der Gemeinde inzwischen nicht mehr Org-Admin, geht sie an die
+Org-Admins der Gemeinde.
+
+### Eine Einladung zurückziehen
+
+Offene Einladungen stehen unter **Mehr › Benutzer:innen** am Ende der Seite,
+im Abschnitt **Offene Einladungen** — je Person mit Name, Benutzername, Rolle,
+dem Tag der Einladung und dem Tag, bis zu dem sie gilt. Den Abschnitt sehen
+nur Org-Admins, denn nur sie dürfen einladen. Ist nichts offen, fehlt er.
+
+1. Bei der Person auf **Zurückziehen** tippen.
+2. Die Rückfrage „Einladung zurückziehen" mit **Zurückziehen** bestätigen.
+
+Der Eintrag verschwindet aus dem Abschnitt, und die Person kann die
+Einladung nicht mehr annehmen. Bei ihr verschwindet die Einladung aus dem
+Profil und die Mitteilung dazu aus dem
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen); eine eigene
+Mitteilung über das Zurückziehen bekommt sie nicht. Einladen lässt sie sich
+danach jederzeit neu.
+
+Hat die Person inzwischen zu- oder abgesagt, gibt es nichts mehr
+zurückzuziehen: Die App sagt das, und der Eintrag verschwindet. Nach einer
+Zusage steht die Person in der Liste darüber.
+
+### Mitglieder aus anderen Gemeinden verwalten
+
+Nach der Zusage steht die Person unter **Mehr › Benutzer:innen** — mit dem
+Vermerk „zuhause in einer anderen Gemeinde". Dort vergibst du ihre **Rolle**
+in deiner Gemeinde und ihre **Jahrgänge**. Name, Benutzername, E-Mail,
+Passwort und Sperre bleiben Sache ihrer Stamm-Gemeinde; diese Felder sind bei
+dir gesperrt, und auch ein neues Passwort setzt nur die Stamm-Gemeinde.
+
+Wischst du die Person in der Liste weg, endet nur ihre **Mitgliedschaft in
+deiner Gemeinde** — samt ihrer Jahrgänge, ihrer Plätze in allen Chats
+deiner Gemeinde, auch in Gruppen und Einzelchats, und ihrer Mitteilungen aus
+deiner Gemeinde im
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen). Das Konto und
+die Stamm-Gemeinde bleiben, wie sie sind, mit den Mitteilungen aus dort.
+Genauso endet eine Mitgliedschaft, die der Betrieb von Konfi Quest aufhebt:
+Jahrgänge, Chat-Plätze und Mitteilungen dieser Gemeinde gehen mit, Nachrichten
+aus ihren Chats kommen danach nicht mehr an.
+Arbeitet die Person in diesem Moment gerade in deiner Gemeinde,
+wechselt ihre App von selbst in ihre Stamm-Gemeinde; Chat und
+Live-Aktualisierungen laufen dort weiter, ohne dass sie sich neu anmelden
+muss.
+
+**Konfis lassen sich so nicht aufnehmen** — weder die eigenen noch die einer
+anderen Gemeinde. Sie gehören zu einem Jahrgang und kommen über einen
+[Einladungscode](35-passwoerter.md) hinein. Trägst du den Benutzernamen oder
+die E-Mail-Adresse eines Konfis ein, meldet die App „Kein Konto mit diesem
+Benutzernamen oder dieser E-Mail-Adresse" — genau wie bei einer Kennung, die
+es nicht gibt. So lässt sich über die Einladung nicht herausfinden, ob ein Kind
+irgendwo ein Konto hat.
 
 Oben links in der Kopfzeile steht dann der Name der Gemeinde, in der man
-gerade arbeitet — in der Konfi-Liste ebenso wie in den Terminlisten, im Chat
-und in jedem Chatraum, bei den Challenges, unter „Mehr" oder in der
-Materialverwaltung.
+gerade arbeitet — auf jeder Seite, die du über die Leiste unten erreichst:
+bei der Leitung Konfis, Chat, Mitmachen, Challenges und „Mehr", im Team
+Start, Chat, Challenges, Mitmachen und Material, bei Konfis Start, Chat,
+Challenges, Mitmachen und Badges.
 
-Zwei Arten von Seiten tragen ihn nicht. **Detailansichten** zeigen einen
-einzelnen Gegenstand, der zu genau einer Gemeinde gehört — ein Termin, ein
-Material. Ein Wechsel würde dort ins Leere führen, weil es den Gegenstand in
-der anderen Gemeinde nicht gibt. Und **vier Seiten der Leitung**, bei denen
-ein Gemeindewechsel keinen Sinn ergibt: das **Profil** (es gehört zum Konto,
-nicht zur Gemeinde), **Benutzer:innen** sowie **Organisationen** und
-**Betrieb** (beide gemeindeübergreifend). Ein Tippen auf den Namen öffnet die
-Liste aller eigenen Gemeinden mit ihren vollen Namen; die aktive steht **fett**
-und leicht hinterlegt. Nach dem Wechsel laden alle Ansichten frisch in der
-gewählten Gemeinde. Wer nur einer Gemeinde angehört, sieht den Namen nicht.
+Alles, was von diesen Seiten aus geöffnet wird, trägt ihn nicht.
+**Detailansichten** — ein Event, ein Material, eine Konfi, ein Chatraum —
+zeigen einen Gegenstand, der zu genau einer Gemeinde gehört; ein Wechsel
+führte ins Leere, weil es ihn in der anderen Gemeinde nicht gibt. Und die
+**Unterseiten** unter „Mehr" beziehungsweise im Profil — Profil,
+Benutzer:innen, Aktivitäten, Badges, Jahrgänge, Kategorien, Level, Material,
+Jahresrückblick, Zertifikate, Dashboard, Organisationen, Betrieb — gehören
+entweder zum Konto oder zu genau der Gemeinde, aus der man sie geöffnet hat.
+Ein Tippen auf den Namen öffnet die Liste aller eigenen Gemeinden mit ihren
+vollen Namen; die aktive steht **fett** und leicht hinterlegt. Nach dem
+Wechsel laden alle Ansichten frisch in der gewählten Gemeinde. Wer nur einer
+Gemeinde angehört, sieht den Namen nicht.
 
 Auch die **roten Zahlen an den Reitern** gehören zur Gemeinde, in der man
 gerade arbeitet: Beim Wechsel verschwinden sie und kommen mit den Zahlen der
 neuen Gemeinde zurück. Eine Gemeinde ohne Challenges trägt also keine Zahl an
 den Challenges. Nur die Zahl an der **Glocke** bleibt stehen — das
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) gehört zum
-Konto und umfasst alle Gemeinden.
+Konto und umfasst alle Gemeinden. Ebenso die **Zahl am App-Symbol**: Sie
+zählt alle Gemeinden zusammen und ändert sich durch den Wechsel nicht.
 
 ### Sehen, wo etwas offen ist
 
 In dieser Liste trägt jede Gemeinde eine **rote Zahl**, wenn dort etwas auf
-dich wartet — dieselbe Zahl, die die Reiter und das App-Symbol zusammen
-zeigen, nur je Gemeinde getrennt. So siehst du, wo Arbeit liegt, ohne erst
-hineinzuwechseln. Was mitzählt, hängt von deiner Rolle **in dieser Gemeinde**
-ab: als Leitung offene Anträge, unverbuchte Termine, wartende
-Challenge-Beiträge und ungelesene Chats; als Teamer:in wartende Beiträge,
-Chats und neue Abzeichen. Dazu in jeder Rolle die ungelesenen Mitteilungen
-aus dieser Gemeinde im [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen).
-Bist du an Jahrgänge gebunden, zählt nur, was du dort auch sehen darfst. Eine
-Gemeinde ohne Zahl hat nichts Offenes.
+dich wartet. So siehst du, wo Arbeit liegt, ohne erst hineinzuwechseln. Was
+mitzählt, hängt von deiner Rolle **in dieser Gemeinde** ab: als Leitung offene
+Anträge, unverbuchte Events, wartende Challenge-Beiträge und ungelesene
+Chats; als Teamer:in wartende Beiträge, Chats und neue Badges. Dazu in
+jeder Rolle die ungelesenen Mitteilungen aus dieser Gemeinde im
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) — Mitteilungen
+aus einer gesperrten Gemeinde stehen bei deiner Stamm-Gemeinde; die einer
+Gemeinde, die du verlässt, gehen mit der Mitgliedschaft. Bist du an Jahrgänge
+gebunden, zählt nur, was du dort auch sehen darfst. Eine Gemeinde ohne Zahl hat nichts Offenes.
+
+**Die Zahlen der Liste zusammengezählt ergeben die Zahl am App-Symbol.** Das
+Symbol zeigt immer die Summe aller deiner Gemeinden, jede mit der Rolle, die
+du dort hast — bei geschlossener wie bei geöffneter App. Die Reiter zeigen
+dagegen nur die Gemeinde, in der du gerade arbeitest.
 
 Der Umschalter steht auf den Seiten, die du über die Leiste unten erreichst.
 Auf Unterseiten und in Detailansichten fehlt er mit Absicht: Was dort steht,
@@ -216,23 +285,40 @@ oder eine Mitteilung aus dem
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) wechselt in die
 Gemeinde, aus der sie stammt, und dort steht der Umschalter wieder.
 
-Im [Chat](90-chat.md#wer-wen-anschreiben-darf) steht die Person in der
-Team-Kontaktliste jeder ihrer Gemeinden — mit der Rolle, die sie dort hat.
+Im [Chat](90-chat.md#nachschlagen-wer-wen-anschreiben-darf) steht die Person in der
+Team-Kontaktliste jeder ihrer Gemeinden — mit der Rolle, die sie dort hat. In
+jeder dieser Gemeinden lässt sie sich auch in
+[Gruppenchats](90-chat.md#mitglieder-einer-gruppe-verwalten) aufnehmen, beim
+Anlegen wie nachträglich.
+
+Den [Team-Rückblick](95-wrapped.md#am-6-januar-geht-es-von-allein) bekommt
+eine Teamer:in in jeder Gemeinde, in der sie im Team ist — je einen eigenen,
+mit den Zahlen genau dieser Gemeinde, ob die Leitung ihn von Hand anlegt oder
+er am 6. Januar von allein entsteht.
 
 **Mitteilungen kommen aus allen Gemeinden**, in denen jemand die passende
 Rolle hat — nicht nur aus der Stamm-Gemeinde:
 
 - Meldungen an die Leitung (neue Anträge, Ab- und Anmeldungen von Konfis,
   Challenge-Beiträge, Buchungen des Teams, Registrierungen, die Warnung vor
-  dem Löschen eines Jahrgangs) aus jeder Gemeinde, in der die Person Admin
-  oder Org-Admin ist.
+  dem Löschen eines Jahrgangs, „Events warten auf Verbuchung") aus jeder
+  Gemeinde, in der die Person Admin oder Org-Admin ist. Die Gemeindeleitung
+  bekommt sie alle; ein Admin nur, was die Jahrgänge betrifft, die ihm in
+  dieser Gemeinde zugewiesen sind, dazu Anträge von Teamer:innen und alles
+  zu Events „Nur Team" und Events ohne Jahrgang — siehe
+  [Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt),
+  [Nachsehen, wer von Abmeldungen und Zusagen erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)
+  und [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt).
+- Die Erinnerung an eine ablaufende Lizenz per E-Mail an alle Org-Admins der
+  Gemeinde, auch an die, die sie über eine Einladung leiten — nicht an Admins.
 - Beitrags-Meldungen als Teamer:in aus jeder Gemeinde, in der sie Teamer:in
   mit Zuweisung auf den betreffenden Jahrgang ist.
 
 Die Rolle zählt je Gemeinde: Wer in der zweiten Gemeinde nur Teamer:in ist,
 bekommt dort keine Leitungs-Meldungen. Ein Tippen auf eine Mitteilung wechselt
 in die Gemeinde, aus der sie stammt, und öffnet dort das Ziel. Die Zahl am
-App-Symbol zählt über alle Gemeinden zusammen.
+App-Symbol zählt über alle Gemeinden zusammen, jede mit der Rolle, die die
+Person dort hat (siehe [Sehen, wo etwas offen ist](#sehen-wo-etwas-offen-ist)).
 
 ### Mitarbeitende der eigenen Gemeinde verwalten
 
@@ -247,6 +333,34 @@ Org-Admin — ein Admin kann ihn also nicht bearbeiten. Zugewiesen werden
 können nur Jahrgänge dieser Gemeinde; die Zuweisungen der anderen Gemeinden
 bleiben unberührt und werden hier auch nicht angezeigt.
 
+### Jemanden entfernen, der auch in anderen Gemeinden mitarbeitet
+
+Ist eine Person in deiner Gemeinde zuhause und arbeitet zugleich in einer
+anderen Gemeinde mit, entfernst du sie wie jede andere: unter **Mehr ›
+Benutzer:innen** in der Liste wegwischen. Die App fragt vorher nach —
+**„Aus der Gemeinde entfernen"** — und sagt dazu, dass die Person auch in einer
+anderen Gemeinde Mitglied ist. Welche Gemeinde das ist, zeigt sie nicht.
+
+Danach gehört die Person nicht mehr zu deiner Gemeinde: Ihre Jahrgänge bei dir,
+ihre Plätze in allen Chats deiner Gemeinde — Team, Jahrgänge, Gruppen und
+Zweiergespräche — und ihre Mitteilungen aus deiner Gemeinde sind weg. **Ihr
+Konto bleibt**, mit Benutzername und Passwort. Zuhause ist sie ab jetzt in der anderen Gemeinde, mit der Rolle, die
+sie dort hat; arbeitet sie in mehreren mit, in der, der sie am längsten
+angehört. Eine gesperrte Gemeinde kommt dafür nur in Frage, wenn es keine
+andere gibt. Was sie bei dir angelegt oder geschrieben hat — Events,
+Material, Nachrichten, vergebene Punkte —, bleibt mit ihrem Namen stehen.
+
+Gehört die Person nur deiner Gemeinde an, fragt die App **„Benutzer löschen"**
+— dann wird ihr Konto gelöscht, und mit ihm verschwinden die Mitteilungen über
+sie aus den Postfächern der Leitung (siehe
+[Mitteilungen im Postfach nachlesen](03-bedienung.md#mitteilungen-im-postfach-nachlesen)). Wer als Letzte:r in deiner Gemeinde Org-Admin
+ist, lässt sich auf keinem der beiden Wege entfernen.
+
+Dasselbe geschieht, wenn du eine Teamer:in in der
+[Konfi-Liste](30-leitung.md#konfis-und-teamer-innen-verwalten) unter **Team**
+löschst. Dort nennt die Abfrage beide Möglichkeiten; die Meldung danach sagt,
+ob das Konto gelöscht wurde oder in der anderen Gemeinde bleibt.
+
 ### Den Jahresrückblick fürs Team erstellen
 
 Der Team-Rückblick wird je Gemeinde erstellt und erfasst alle, die **in
@@ -258,13 +372,20 @@ Team-Rückblick. Wie er erstellt und freigegeben wird, steht im Kapitel
 
 ## Eine Rolle ändern
 
-Eine Konfi lässt sich **zur Teamer:in befördern**. Punkte und Abzeichen bleiben
+Eine Konfi lässt sich **zur Teamer:in befördern**. Punkte und Badges bleiben
 dabei als Konfi-Historie erhalten. Eine Jahrgangs-Zuweisung bekommt die frisch
 beförderte Person bewusst **nicht** automatisch: Teamer:innen dürfen auch ohne
 Jahrgang existieren. Die Zuweisung vergibt die Leitung, sobald sie in einem
 Jahrgang aktiv sein soll — meist im neuen statt im alten eigenen. Der Weg dahin
 steht im Kapitel
-[Für die Leitung](30-leitung.md#in-der-detailansicht-einer-person).
+[Für die Leitung](30-leitung.md#die-detailansicht-einer-person-nutzen).
+
+Im Chat gilt ab der Beförderung die Teamer-Rolle: Die Person ist sofort im
+[Team-Chat](90-chat.md#den-team-chat-nutzen) und verlässt den Chat ihres alten
+Jahrgangs sowie die Event-Chats ihrer Konfi-Anmeldungen (die Anmeldungen
+selbst entfallen mit der Beförderung). Ist ihr der alte Jahrgang schon
+zugewiesen, bleibt sie in dessen Chat — jetzt als Teamer:in. Zweiergespräche
+und Gruppen, in denen sie ist, bleiben bestehen.
 
 Alle anderen Rollenwechsel macht ein Org-Admin unter
 **[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-admin)**.

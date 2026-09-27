@@ -26,6 +26,15 @@ const handler = quelle.slice(
   quelle.indexOf('const removeNewFile')
 );
 
+// Seit dem 27.09.2026 bereitet dateienVorbereiten die gewaehlten Dateien vor
+// (verkleinern, Grenze des Servers) und haengt sie danach an — mit der Liste,
+// die handleFileSelect vor dem Leeren ausgelesen hat. Der State-Updater steht
+// deshalb dort; geprueft wird er dort.
+const vorbereiten = quelle.slice(
+  quelle.indexOf('const dateienVorbereiten'),
+  quelle.indexOf('const handleFileSelect')
+);
+
 describe('Datei-Auswahl im Material-Modal', () => {
   it('liest die Dateiliste aus, bevor der Input geleert wird', () => {
     const auslesen = handler.indexOf('Array.from(e.target.files)');
@@ -38,13 +47,17 @@ describe('Datei-Auswahl im Material-Modal', () => {
   it('liest NICHT innerhalb des State-Updaters aus', () => {
     // Genau das war der Fehler: der Updater laeuft verzoegert. Geprueft
     // wird die Updater-ZEILE selbst -- sie darf nur die vorher ausgelesene
-    // Variable verwenden, nie erneut e.target.files.
-    const zeile = handler.split('\n')
+    // Liste verwenden (vorbereitet als `fertig`), nie erneut e.target.files.
+    const zeile = vorbereiten.split('\n')
       .filter(z => !z.trim().startsWith('//'))
       .find(z => z.includes('setNewFiles(prev'));
     expect(zeile, 'setNewFiles-Zeile nicht gefunden').toBeTruthy();
     expect(zeile!).not.toContain('target.files');
-    expect(zeile!).toContain('gewaehlt');
+    expect(zeile!).toContain('fertig');
+    expect(vorbereiten).not.toContain('target.files');
+    // `fertig` entsteht aus genau der Liste, die vor dem Leeren gelesen wurde.
+    expect(vorbereiten).toMatch(/for \(const datei of gewaehlt\)/);
+    expect(handler).toContain('dateienVorbereiten(gewaehlt)');
   });
 
   it('leert den Input weiterhin — dieselbe Datei muss erneut waehlbar sein', () => {

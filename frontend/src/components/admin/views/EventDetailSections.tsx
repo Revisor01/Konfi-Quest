@@ -45,6 +45,8 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
 import { teilnahmeDarstellung, listItemKlasse, iconKreisKlasse, eckBadgeKlasse } from '../../../utils/teilnahmeStatus';
 import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
+import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
 
@@ -144,7 +146,6 @@ export type { Participant, Unregistration } from '../../../types/event';
 interface EventInfoCardProps {
   eventData: EventData;
   participants: Participant[];
-  formatDate: (dateString: string) => string;
   formatTime: (dateString: string) => string;
   // Material-Hinweis in den Eckdaten (Simons Wunsch 01.09.2026): Dass ein
   // Termin Material traegt, stand bisher NUR im Abschnitt ganz unten -- wer
@@ -158,7 +159,6 @@ interface EventInfoCardProps {
 export const EventInfoCard = React.memo<EventInfoCardProps>(({
   eventData,
   participants,
-  formatDate,
   formatTime,
   eventMaterials,
   onMaterialHinweisClick
@@ -207,11 +207,11 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
               {eventData.registration_opens_at ? (
                 <>
                   <div className="app-info-row__value">
-                    von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(eventData.registration_opens_at)}
+                    von {datumKurz(eventData.registration_opens_at)} – {formatTime(eventData.registration_opens_at)}
                   </div>
                   {eventData.registration_closes_at && (
                     <div className="app-info-row__value">
-                      bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(eventData.registration_closes_at)}
+                      bis {datumKurz(eventData.registration_closes_at)} – {formatTime(eventData.registration_closes_at)}
                     </div>
                   )}
                 </>
@@ -383,7 +383,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {eventData.location && (
           <div className="app-info-row">
             <IonIcon icon={ICON_ORT_GEFUELLT} className="app-info-row__icon app-icon-color--location" />
-            <div
+            <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
               onClick={() => {
                 if (eventData.location_maps_url) {
                   window.open(eventData.location_maps_url, '_blank');
@@ -460,7 +460,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {eventMaterials && eventMaterials.length > 0 && onMaterialHinweisClick && (
           <div className="app-info-row">
             <IonIcon icon={ICON_DATEI_GEFUELLT} className="app-info-row__icon app-icon-color--material" />
-            <div onClick={onMaterialHinweisClick}>
+            <div role="button" tabIndex={0} onKeyDown={tastaturKlick} onClick={onMaterialHinweisClick}>
               <div className="app-info-row__label">Material</div>
               <div className="app-info-row__value app-event-detail__material-link">
                 {eventMaterials.length === 1
@@ -531,7 +531,7 @@ export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
       <div className="app-section-icon app-section-icon--info">
         <IonIcon icon={ICON_TERMIN_GEFUELLT} />
       </div>
-      <IonLabel>Weitere Termine dieser Serie</IonLabel>
+      <IonLabel>Weitere Events dieser Serie</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
       <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
@@ -541,7 +541,7 @@ export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
           const seriesUnlimited = (seriesEvent.max_participants || 0) === 0;
           const isFull = !seriesUnlimited && (seriesEvent.registered_count || 0) >= seriesEvent.max_participants;
           return (
-            <div
+            <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
               key={seriesEvent.id}
               className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'} app-event-detail__series-link`}
               onClick={() => onNavigate(seriesEvent.id)}
@@ -610,13 +610,7 @@ export const UnregistrationsSection = React.memo<UnregistrationsSectionProps>(({
                     {unreg.konfi_name}
                   </div>
                   <div className="app-list-item__subtitle">
-                    Abgemeldet am {new Date(unreg.unregistered_at).toLocaleString('de-DE', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    Abgemeldet am {datumUhrzeit(unreg.unregistered_at)}
                   </div>
                 </div>
               </div>
@@ -659,7 +653,7 @@ export const EventMaterialSection = React.memo<EventMaterialSectionProps>(({
       <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
         {eventMaterials.map((mat) => (
-          <div
+          <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
             key={mat.id}
             className="app-list-item app-list-item--material"
             style={{ cursor: 'pointer' }}

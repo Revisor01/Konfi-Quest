@@ -18,6 +18,7 @@ import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { tageBis } from '../shared/eventFormatting';
+import { datumKurz } from '../../utils/dateUtils';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -130,7 +131,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
           {/* Suchfeld */}
           <IonItem>
             <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-            <IonInput
+            <IonInput aria-label="Organisation suchen"
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
               placeholder="Organisation suchen..."
@@ -139,7 +140,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
           {/* Status-Filter */}
           <IonItem>
             <IonIcon icon={ICON_FILTER} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-            <IonSelect
+            <IonSelect aria-label="Status"
               value={selectedFilter}
               onIonChange={(e) => setSelectedFilter(e.detail.value)}
               interface="popover"
@@ -241,26 +242,26 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                           </div>
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: 'var(--app-color-konfis)' }} />
+                              <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: 'var(--app-text-konfis)' }} />
                               {organization.max_konfis != null
                                 ? `${organization.konfi_count} / ${organization.max_konfis} Konfis`
                                 : `${organization.konfi_count} Konfis`}
                             </span>
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={ICON_PERSON} style={{ color: 'var(--app-color-teamer)' }} />
+                              <IonIcon icon={ICON_PERSON} style={{ color: 'var(--app-text-teamer)' }} />
                               {organization.user_count} Team
                             </span>
                             <span className="app-list-item__meta-item">
                               {(() => {
                                 if (!organization.trial_ends_at) {
-                                  return <><IonIcon icon={ICON_UHRZEIT} style={{ color: 'var(--app-color-users)' }} />unbegrenzt</>;
+                                  return <><IonIcon icon={ICON_UHRZEIT} style={{ color: 'var(--app-text-users)' }} />unbegrenzt</>;
                                 }
                                 const end = new Date(organization.trial_ends_at);
                                 const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                                 return (
                                   <>
-                                    <IonIcon icon={ICON_UHRZEIT} style={{ color: days < 0 ? 'var(--app-color-events)' : 'var(--app-color-users)' }} />
-                                    {end.toLocaleDateString('de-DE')} {days >= 0 ? `(${days} Tag${days === 1 ? '' : 'e'})` : '(abgelaufen)'}
+                                    <IonIcon icon={ICON_UHRZEIT} style={{ color: days < 0 ? 'var(--app-text-events)' : 'var(--app-text-users)' }} />
+                                    {datumKurz(end)} {days >= 0 ? `(${days} Tag${days === 1 ? '' : 'e'})` : '(abgelaufen)'}
                                   </>
                                 );
                               })()}

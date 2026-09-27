@@ -25,29 +25,41 @@ import { resolve, join } from 'path';
 const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
 
 const video = lies('src/components/chat/VideoPreview.tsx');
+const medium = lies('src/hooks/useMedienDatei.ts');
 const qr = lies('src/components/shared/QRDisplayModal.tsx');
 const api = lies('src/services/api.ts');
 const cache = lies('src/services/mediaCache.ts');
 
 describe('VideoPreview raeumt auch bei Abbruch waehrend des Ladens auf', () => {
+  // 27.09.2026: Das Laden steckt nicht mehr in VideoPreview, sondern im
+  // gemeinsamen Hook useMedienDatei (Chat und Challenges). Die Erwartungen
+  // ziehen mit um statt aufgeweicht zu werden; der ABLAUF (abhaengen, dann
+  // fertig bzw. gescheitert) ist zusaetzlich gerendert geprueft in
+  // medienAnzeigeGemeinsam.test.tsx.
   it('fuehrt einen Abbruch-Merker', () => {
-    expect(video).toContain('let cancelled = false;');
-    expect(video).toContain('cancelled = true;');
+    expect(medium).toContain('let cancelled = false;');
+    expect(medium).toContain('cancelled = true;');
   });
 
   it('gibt eine URL frei, die erst nach dem Abhaengen entstanden ist', () => {
     // Der Kern des Lecks: ohne diesen Zweig bleibt genau diese URL liegen.
-    expect(video).toContain('if (cancelled) {');
-    expect(video).toContain('URL.revokeObjectURL(blobUrl);');
+    expect(medium).toContain('if (cancelled) {');
+    expect(medium).toContain('URL.revokeObjectURL(eigeneUrl);');
   });
 
   it('meldet keinen Fehler mehr fuer eine weggescrollte Nachricht', () => {
-    // Am Meldungstext verankert, nicht an der Reihenfolge: Die Datei hat
-    // mehrere catch-Bloecke, gemeint ist der des Blob-Ladens.
-    const ende = video.indexOf("onErrorRef.current('Fehler beim Laden des Videos')");
+    // Am Fehler-Rueckruf verankert: gemeint ist der catch des Ladens.
+    const ende = medium.indexOf('onFehlerRef.current?.();');
     expect(ende).toBeGreaterThan(-1);
-    const zweig = video.slice(video.lastIndexOf('} catch (error) {', ende), ende);
+    const zweig = medium.slice(medium.lastIndexOf('} catch (error) {', ende), ende);
     expect(zweig).toContain('if (cancelled) return;');
+  });
+
+  it('VideoPreview laedt ueber den gemeinsamen Hook, mit eigenem typisierten Blob', () => {
+    // Eigener Blob (typ gesetzt): nur dann gehoert die URL der Vorschau und
+    // wird beim Abhaengen freigegeben.
+    expect(video).toContain('useMedienDatei(filePath, {');
+    expect(video).toContain('typ: videoTyp(fileName),');
   });
 });
 

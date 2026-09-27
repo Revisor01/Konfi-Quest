@@ -5,6 +5,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import { ICON_PFEIL_WEITER_GEFUELLT, ICON_ZUSAGE_GEFUELLT } from './icons';
+import { bewegungReduziert } from '../../utils/bewegung';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
@@ -134,6 +135,9 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ slides, onClose, displa
         <Swiper
           modules={[Pagination]}
           pagination={{ clickable: true }}
+          // Der Wisch von Folie zu Folie: 300 ms (Swiper-Vorgabe), bei
+          // „Bewegung reduzieren" springt er (UI BF-12).
+          speed={bewegungReduziert() ? 0 : 300}
           autoHeight={false}
           onSwiper={(s) => { swiperRef.current = s; }}
           onSlideChange={(s) => setIndex(s.activeIndex)}

@@ -1,7 +1,8 @@
 # ============================================================================
 # Konfi Quest API — Block 4: Stammdaten
 # Dokumentiert: badges, levels, categories, jahrgaenge, settings, roles
-# (27 Routen). organizations.js ist vollstaendig in verwaltung-auth.yaml
+# (28 Operationen, gezaehlt am 26.09.2026; die Generatoren zaehlen bei jedem
+# Lauf nach). organizations.js ist vollstaendig in verwaltung-auth.yaml
 # dokumentiert und wird hier bewusst NICHT wiederholt (Liste am Dateiende).
 # Stand: 2026-08-23, verifiziert am Code (Branch main-Stand des Repos)
 # ============================================================================
@@ -330,6 +331,15 @@ paths:
         Abzeichen selbst): Seit derselben Aenderung laeuft dieselbe Pruefung
         bereits automatisch nach POST/PUT auf /api/admin/badges, abgekoppelt
         nach der Antwort.
+
+        Die Zielrolle gilt je Organisation: ausgewaehlt wird nach der Rolle
+        in DIESER Organisation (users.role_id fuer die Stamm-Organisation,
+        user_organizations.role_id fuer weitere). Leitungsrollen bekommen
+        nie ein Abzeichen.
+
+        BEHOBEN (27.09.2026): Bis dahin wurde nach der Rolle am Konto
+        ausgewaehlt; wer nur in einer Zweitgemeinde Konfi oder Teamer:in
+        war, wurde dort nie nachgeprueft.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Abzeichens" }
       responses:
@@ -344,7 +354,7 @@ paths:
                   badge_name: { type: string }
                   geprueft: { type: integer, description: "Anzahl geprüfter Personen der Zielrolle" }
                   neu_vergeben: { type: integer, description: "Anzahl dabei neu vergebener Exemplare" }
-        "400": { description: "Das Abzeichen ist nicht aktiv" }
+        "400": { description: "Das Badge ist nicht aktiv" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "Abzeichen nicht gefunden oder keine Berechtigung (fremde Org oder unbekannte id)" }
@@ -720,6 +730,13 @@ paths:
         Nachrichten, ist force=true nötig; dann werden Chat-Raum,
         Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien
         entfernt.
+        RUECKBLICKE BLEIBEN (26.09.2026, Audit Chat BF-02, Migration 162):
+        wrapped_ausgaben.jahrgang_id haengt mit ON DELETE SET NULL am
+        Jahrgang; die Konfi-Ausgabe und die Snapshots befoerderter
+        Ex-Konfis ueberleben das Loeschen und bleiben ueber
+        GET /api/wrapped/history/{userId} abrufbar. Bis dahin nahm ein
+        CASCADE Ausgabe und Snapshots mit. Konfi-Ausgaben dieses Jahrgangs
+        ohne einen einzigen Snapshot werden mit entfernt.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
         - name: force

@@ -158,7 +158,7 @@ describe('Hinzugefuegte Person muss zum Jahrgang des Termins passen', () => {
       const res = await eintragen(id, KONFI_B);
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Konfi Bela gehört zu keinem Jahrgang dieses Termins');
+      expect(res.body.error).toBe('Konfi Bela gehört zu keinem Jahrgang dieses Events');
       expect(res.body.error_code).toBe('person_jahrgang_fremd');
       expect(await buchungen(id, KONFI_B)).toBe(0);
     });
@@ -212,7 +212,7 @@ describe('Hinzugefuegte Person muss zum Jahrgang des Termins passen', () => {
       const res = await eintragen(id, TEAMER_B);
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Teamer Ben gehört zu keinem Jahrgang dieses Termins');
+      expect(res.body.error).toBe('Teamer Ben gehört zu keinem Jahrgang dieses Events');
       expect(res.body.error_code).toBe('person_jahrgang_fremd');
       expect(await buchungen(id, TEAMER_B)).toBe(0);
     });
@@ -232,7 +232,7 @@ describe('Hinzugefuegte Person muss zum Jahrgang des Termins passen', () => {
       const res = await eintragen(id, ADMIN_B);
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Leitung B gehört zu keinem Jahrgang dieses Termins');
+      expect(res.body.error).toBe('Leitung B gehört zu keinem Jahrgang dieses Events');
       expect(await buchungen(id, ADMIN_B)).toBe(0);
     });
 

@@ -41,6 +41,8 @@ import { useAppLocation } from '../../../navigation/useAppLocation';
 import { PUNKTE_PARAMETER, RUECKBLICK_PARAMETER, waehleRueckblick } from '../../../utils/pushNavigation';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
+import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
 
 interface KonfiProfile {
   id: number;
@@ -322,11 +324,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     if (!dateString) return 'Unbekannt';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Ungültiges Datum';
-    return date.toLocaleDateString('de-DE', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    return datumKurz(date);
   };
 
   return (
@@ -426,10 +424,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                     color: 'rgba(255, 255, 255, 0.8)', 
                     fontSize: 'var(--app-text-basis)' 
                   }}>
-                    {new Date(profile.confirmation_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                    {uhrzeit(profile.confirmation_date)} Uhr
                   </p>
                   {profile.confirmation_location && (
-                    <p 
+                    <button type="button" className="app-knopf-nackt" aria-label={`${profile.confirmation_location} auf der Karte öffnen`} 
                       style={{ 
                         margin: '0', 
                         color: 'rgba(255, 255, 255, 0.9)', 
@@ -448,7 +446,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                     >
                       <IonIcon icon={ICON_ORT} style={{ fontSize: 'var(--app-text-standard)' }} />
                       {profile.confirmation_location}
-                    </p>
+                    </button>
                   )}
                 </div>
               ) : (
@@ -483,7 +481,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           <IonCard className="app-card">
             <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               {wrappedHistory.map((entry) => (
-                <div
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   key={entry.id}
                   className="app-list-item app-list-item--purple"
                   style={{ width: '100%', cursor: 'pointer' }}
@@ -500,7 +498,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                         </div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">
-                            {new Date(entry.computed_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {datumKurz(entry.computed_at)}
                           </span>
                         </div>
                       </div>
@@ -525,7 +523,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {/* Punkte-Übersicht */}
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--purple"
                 style={{ width: '100%', cursor: 'pointer' }}
                 onClick={() => {
@@ -550,7 +548,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
               </div>
 
               {/* App-Tour erneut ansehen */}
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--purple"
                 style={{ width: '100%', cursor: 'pointer' }}
                 onClick={() => setShowOnboarding(true)}
@@ -571,7 +569,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
               </div>
 
               {/* E-Mail ändern */}
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--purple"
                 style={{ width: '100%', cursor: 'pointer' }}
                 onClick={() => {
@@ -598,7 +596,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
               </div>
 
               {/* Passwort ändern */}
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--purple"
                 style={{ width: '100%', cursor: 'pointer' }}
                 onClick={() => {
@@ -623,7 +621,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
               </div>
 
               {/* Bibelübersetzung */}
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--purple"
                 style={{ width: '100%', cursor: 'pointer' }}
                 onClick={() => {
@@ -656,7 +654,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
 
               {/* Medien-Cache leeren */}
-              <div
+              <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--purple"
                 style={{ width: '100%', cursor: 'pointer' }}
                 onClick={handleClearMediaCache}

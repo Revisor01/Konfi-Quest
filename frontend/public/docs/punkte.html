@@ -94,6 +94,7 @@ table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
+hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 @media (max-width:860px) {
   /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
      zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
@@ -134,6 +135,17 @@ tbody tr:last-child td { border-bottom:none; }
 .nav-nr { flex:none; width:20px; font-size:.74rem; font-variant-numeric:tabular-nums; color:var(--text-leise); text-align:right; }
 .seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
 .seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
+
+/* Abschnitte des aktuellen Kapitels (27.09.2026): eingerueckt an einer
+   feinen Linie. Der gerade gelesene (aria-current="location", gesetzt vom
+   Skript am Seitenende) bekommt ein Stueck Linie in der Akzentfarbe. Die
+   Nummernspalte ist so breit wie "11.17", damit die Titel buendig stehen. */
+.seitenleiste ul.nav-abschnitte { margin:3px 0 7px 13px; border-left:1px solid var(--rand); gap:1px; }
+.seitenleiste ul.nav-abschnitte a { align-items:baseline; gap:7px; margin-left:-1px; padding:5px 9px 5px 10px; border-left:2px solid transparent; border-radius:0 7px 7px 0; font-size:.8rem; line-height:1.4; color:var(--text-leise); overflow-wrap:anywhere; }
+.seitenleiste ul.nav-abschnitte a:hover { color:var(--text); }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] { color:var(--text); background:var(--flaeche-2); border-left-color:var(--akzent); font-weight:600; }
+.nav-abschnitt-nr { flex:none; min-width:4.4ch; font-size:.72rem; font-variant-numeric:tabular-nums; }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] .nav-abschnitt-nr { color:var(--akzent); }
 
 .kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
 .kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
@@ -182,7 +194,7 @@ tbody tr:last-child td { border-bottom:none; }
       <div class="nav-inhalt">
         <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
         <p class="nav-titel">Inhalt</p>
-        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html" aria-current="page" class="ist-hier"><span class="nav-nr">8</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">10</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html" aria-current="page" class="ist-hier"><span class="nav-nr">8</span>Punkte, Level und Ziele</a><ul class="nav-abschnitte"><li><a href="#die-zwei-punktarten-auseinanderhalten"><span class="nav-abschnitt-nr">8.1</span>Die zwei Punktarten auseinanderhalten</a></li><li><a href="#wissen-auf-welchen-drei-wegen-punkte-entstehen"><span class="nav-abschnitt-nr">8.2</span>Wissen, auf welchen drei Wegen Punkte entstehen</a></li><li><a href="#eine-gemeldete-aktivitaet-entscheiden"><span class="nav-abschnitt-nr">8.3</span>Eine gemeldete Aktivität entscheiden</a></li><li><a href="#eine-aktivitaet-direkt-zuschreiben"><span class="nav-abschnitt-nr">8.4</span>Eine Aktivität direkt zuschreiben</a></li><li><a href="#den-punktwert-einer-aktivitaet-aendern"><span class="nav-abschnitt-nr">8.5</span>Den Punktwert einer Aktivität ändern</a></li><li><a href="#punkte-wieder-wegnehmen"><span class="nav-abschnitt-nr">8.6</span>Punkte wieder wegnehmen</a></li><li><a href="#level-anlegen-und-pflegen"><span class="nav-abschnitt-nr">8.7</span>Level anlegen und pflegen</a></li><li><a href="#nachvollziehen-wann-nachgerechnet-wird"><span class="nav-abschnitt-nr">8.8</span>Nachvollziehen, wann nachgerechnet wird</a></li></ul></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">10</span>Badges</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Events</a></li><li><a href="./challenges.html"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
         <div class="fuss">
           <p><a href="/docs/api/">API-Referenz</a></p>
           <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
@@ -201,6 +213,13 @@ tbody tr:last-child td { border-bottom:none; }
     var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
     setzen();
     if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+    /* Ein Tipp auf einen Eintrag schliesst das Menue (27.09.2026). Bei
+       Kapiteln tat das bisher nur die neue Seite; ein Abschnitt liegt auf
+       derselben Seite, und das offene Menue verdeckte ihn. Der Klick kommt
+       vor dem Sprung an -- der Browser rechnet schon mit der schmalen Leiste. */
+    klapp.addEventListener('click', function (ev) {
+      if (schmal.matches && ev.target.closest('.nav-inhalt a')) klapp.removeAttribute('open');
+    });
   })();
   </script>
   <main class="inhalt">
@@ -213,32 +232,34 @@ tbody tr:last-child td { border-bottom:none; }
 
       <details class="kapitel-inhalt ist-lang" open>
         <summary class="kapitel-inhalt-titel"><span>Inhalt</span><span class="ki-pfeil"></span></summary>
-        <ul><li class="stufe-2"><a href="#die-zwei-punktarten-auseinanderhalten"><span class="ki-nr">8.1</span>Die zwei Punktarten auseinanderhalten</a></li><li class="stufe-2"><a href="#wissen-auf-welchen-drei-wegen-punkte-entstehen"><span class="ki-nr">8.2</span>Wissen, auf welchen drei Wegen Punkte entstehen</a></li><li class="stufe-3"><a href="#ueber-eine-aktivitaet"><span class="ki-nr">8.2.1</span>Über eine Aktivität</a></li><li class="stufe-3"><a href="#ueber-einen-termin"><span class="ki-nr">8.2.2</span>Über einen Termin</a></li><li class="stufe-3"><a href="#ueber-bonuspunkte"><span class="ki-nr">8.2.3</span>Über Bonuspunkte</a></li><li class="stufe-2"><a href="#eine-gemeldete-aktivitaet-entscheiden"><span class="ki-nr">8.3</span>Eine gemeldete Aktivität entscheiden</a></li><li class="stufe-3"><a href="#eine-entscheidung-zuruecknehmen"><span class="ki-nr">8.3.1</span>Eine Entscheidung zurücknehmen</a></li><li class="stufe-3"><a href="#einen-antrag-loeschen"><span class="ki-nr">8.3.2</span>Einen Antrag löschen</a></li><li class="stufe-2"><a href="#eine-aktivitaet-direkt-zuschreiben"><span class="ki-nr">8.4</span>Eine Aktivität direkt zuschreiben</a></li><li class="stufe-2"><a href="#punkte-wieder-wegnehmen"><span class="ki-nr">8.5</span>Punkte wieder wegnehmen</a></li><li class="stufe-2"><a href="#level-anlegen-und-pflegen"><span class="ki-nr">8.6</span>Level anlegen und pflegen</a></li><li class="stufe-3"><a href="#verstehen-welche-punkte-fuers-level-zaehlen"><span class="ki-nr">8.6.1</span>Verstehen, welche Punkte fürs Level zählen</a></li><li class="stufe-3"><a href="#aufsteigen-und-absteigen"><span class="ki-nr">8.6.2</span>Aufsteigen und absteigen</a></li><li class="stufe-3"><a href="#ein-belegtes-level-loswerden"><span class="ki-nr">8.6.3</span>Ein belegtes Level loswerden</a></li><li class="stufe-2"><a href="#nachvollziehen-wann-nachgerechnet-wird"><span class="ki-nr">8.7</span>Nachvollziehen, wann nachgerechnet wird</a></li></ul>
+        <ul><li class="stufe-2"><a href="#die-zwei-punktarten-auseinanderhalten"><span class="ki-nr">8.1</span>Die zwei Punktarten auseinanderhalten</a></li><li class="stufe-2"><a href="#wissen-auf-welchen-drei-wegen-punkte-entstehen"><span class="ki-nr">8.2</span>Wissen, auf welchen drei Wegen Punkte entstehen</a></li><li class="stufe-3"><a href="#ueber-eine-aktivitaet"><span class="ki-nr">8.2.1</span>Über eine Aktivität</a></li><li class="stufe-3"><a href="#ueber-ein-event"><span class="ki-nr">8.2.2</span>Über ein Event</a></li><li class="stufe-3"><a href="#ueber-bonuspunkte"><span class="ki-nr">8.2.3</span>Über Bonuspunkte</a></li><li class="stufe-2"><a href="#eine-gemeldete-aktivitaet-entscheiden"><span class="ki-nr">8.3</span>Eine gemeldete Aktivität entscheiden</a></li><li class="stufe-3"><a href="#eine-entscheidung-zuruecknehmen"><span class="ki-nr">8.3.1</span>Eine Entscheidung zurücknehmen</a></li><li class="stufe-3"><a href="#einen-antrag-loeschen"><span class="ki-nr">8.3.2</span>Einen Antrag löschen</a></li><li class="stufe-3"><a href="#nachsehen-wer-von-einem-neuen-antrag-erfaehrt"><span class="ki-nr">8.3.3</span>Nachsehen, wer von einem neuen Antrag erfährt</a></li><li class="stufe-2"><a href="#eine-aktivitaet-direkt-zuschreiben"><span class="ki-nr">8.4</span>Eine Aktivität direkt zuschreiben</a></li><li class="stufe-2"><a href="#den-punktwert-einer-aktivitaet-aendern"><span class="ki-nr">8.5</span>Den Punktwert einer Aktivität ändern</a></li><li class="stufe-2"><a href="#punkte-wieder-wegnehmen"><span class="ki-nr">8.6</span>Punkte wieder wegnehmen</a></li><li class="stufe-2"><a href="#level-anlegen-und-pflegen"><span class="ki-nr">8.7</span>Level anlegen und pflegen</a></li><li class="stufe-3"><a href="#verstehen-welche-punkte-fuers-level-zaehlen"><span class="ki-nr">8.7.1</span>Verstehen, welche Punkte fürs Level zählen</a></li><li class="stufe-3"><a href="#aufsteigen-und-absteigen"><span class="ki-nr">8.7.2</span>Aufsteigen und absteigen</a></li><li class="stufe-3"><a href="#ein-belegtes-level-loswerden"><span class="ki-nr">8.7.3</span>Ein belegtes Level loswerden</a></li><li class="stufe-2"><a href="#nachvollziehen-wann-nachgerechnet-wird"><span class="ki-nr">8.8</span>Nachvollziehen, wann nachgerechnet wird</a></li></ul>
       </details>
       <script>document.querySelectorAll('.kapitel-inhalt.ist-lang').forEach(function(d){d.removeAttribute('open');});</script>
-      <p>Punkte sind das Herz von Konfi Quest. Sie ersetzen den Laufzettel: Statt einer Liste zum Abhaken sammeln Konfis Punkte, aus denen sich Fortschritt, Level und ein Teil der <a href="./badges.html">Abzeichen</a> ergeben. Dieses Kapitel richtet sich an die Leitung, die Punkte vergibt und korrigiert.</p>
+      <p>Punkte sind das Herz von Konfi Quest. Sie ersetzen den Laufzettel: Statt einer Liste zum Abhaken sammeln Konfis Punkte, aus denen sich Fortschritt, Level und ein Teil der <a href="./badges.html">Badges</a> ergeben. Dieses Kapitel richtet sich an die Leitung, die Punkte vergibt und korrigiert.</p>
       <h2 id="die-zwei-punktarten-auseinanderhalten"><span class="abschnitt-nr">8.1</span>Die zwei Punktarten auseinanderhalten</h2>
       <p>Es gibt genau zwei Arten, mehr lassen sich nicht anlegen:</p>
       <ul><li><strong>Gottesdienst-Punkte</strong> — für alles rund um Gottesdienste</li><li><strong>Gemeinde-Punkte</strong> — für alles andere in der Gemeinde</li></ul>
       <p>Jeder Konfi hat für beide Arten einen eigenen Zähler. Diese beiden Zähler sind der einzige Ort, an dem der Punktestand steht — alles andere in der App ist eine Ansicht darauf.</p>
       <p>Jeder Jahrgang legt für beide Arten getrennt fest, wie viele Punkte <a href="./jahrgaenge.html#punkteziele-festlegen">das Ziel sind</a> und ob die Art <a href="./jahrgaenge.html#eine-punktart-abschalten">überhaupt genutzt wird</a>.</p>
       <p>Welche Art eine Vergabe füllt, entscheidest du nicht im Moment der Vergabe, sondern es hängt an der Sache selbst:</p>
-      <div class="tabelle-huelle"><table><thead><tr><th>Woher die Punkte kommen</th><th>Wer die Art festlegt</th></tr></thead><tbody><tr><td>Aktivität</td><td>die Aktivität selbst (beim Anlegen eingestellt)</td></tr><tr><td>Termin</td><td>der Termin (ohne Angabe: Gemeinde)</td></tr><tr><td>Bonuspunkte</td><td>du, direkt bei der Vergabe</td></tr></tbody></table></div>
+      <div class="tabelle-huelle"><table><thead><tr><th>Woher die Punkte kommen</th><th>Wer die Art festlegt</th></tr></thead><tbody><tr><td>Aktivität</td><td>die Aktivität selbst (beim Anlegen eingestellt)</td></tr><tr><td>Event</td><td>das Event selbst (ohne Angabe: Gemeinde)</td></tr><tr><td>Bonuspunkte</td><td>du, direkt bei der Vergabe</td></tr></tbody></table></div>
       <h2 id="wissen-auf-welchen-drei-wegen-punkte-entstehen"><span class="abschnitt-nr">8.2</span>Wissen, auf welchen drei Wegen Punkte entstehen</h2>
       <h3 id="ueber-eine-aktivitaet"><span class="abschnitt-nr">8.2.1</span>Über eine Aktivität</h3>
       <p>Aktivitäten sind das, was Konfis selbst melden — oder was ihr ihnen direkt zuschreibt. Jede Aktivität hat eine feste Punktzahl und eine feste Punktart. Den Ablauf beschreibt der nächste Abschnitt.</p>
-      <h3 id="ueber-einen-termin"><span class="abschnitt-nr">8.2.2</span>Über einen Termin</h3>
-      <p>Wer bei einem Termin als anwesend eingetragen wird, bekommt die beim Termin hinterlegten Punkte. Das passiert beim <a href="./termine.html#die-anwesenheit-verbuchen">Eintragen der Anwesenheit</a>, nicht beim Buchen. Welche fünf Bedingungen dafür alle erfüllt sein müssen — unter anderem, dass <a href="./termine.html#ein-pflicht-event-einrichten">Pflichttermine</a> und Konfirmationen grundsätzlich keine Punkte geben —, steht unter <a href="./termine.html#punkte-fuer-einen-termin-vergeben">Wann es Punkte gibt</a>.</p>
+      <h3 id="ueber-ein-event"><span class="abschnitt-nr">8.2.2</span>Über ein Event</h3>
+      <p>Wer bei einem Event als anwesend eingetragen wird, bekommt die beim Event hinterlegten Punkte. Das passiert beim <a href="./termine.html#die-anwesenheit-verbuchen">Eintragen der Anwesenheit</a>, nicht beim Buchen. Welche fünf Bedingungen dafür alle erfüllt sein müssen — unter anderem, dass <a href="./termine.html#ein-pflicht-event-einrichten">Pflicht-Events</a> und Konfirmationen grundsätzlich keine Punkte geben —, steht unter <a href="./termine.html#punkte-fuer-ein-event-vergeben">Wann es Punkte gibt</a>.</p>
       <h3 id="ueber-bonuspunkte"><span class="abschnitt-nr">8.2.3</span>Über Bonuspunkte</h3>
       <p>Bonuspunkte vergibst du frei von Hand — für alles, was in kein Raster passt. Du öffnest den Konfi in der Konfi-Verwaltung und tippst auf „Bonuspunkte hinzufügen&quot;.</p>
       <p>Pflicht sind eine <strong>„Bezeichnung&quot;</strong>, ein <strong>„Datum&quot;</strong> und ein <strong>„Typ&quot;</strong>; die Punktzahl stellst du mit einem Schieberegler von <strong>1 bis 10</strong> ein. Die <strong>„Begründung&quot;</strong> ist optional — sie wird, wenn du sie ausfüllst, hinter die Bezeichnung gehängt und steht später in der Punktegeschichte.</p>
-      <p>Der Konfi bekommt sofort einen Push: <strong>„+3 Bonuspunkte!&quot;</strong> mit dem Text, wofür sie waren. Neue Abzeichen und ein neues Level werden gleich mitgeprüft.</p>
+      <p>Der Konfi bekommt sofort einen Push: <strong>„+3 Bonuspunkte!&quot;</strong> mit dem Text, wofür sie waren. Neue Badges und ein neues Level werden gleich mitgeprüft.</p>
       <h2 id="eine-gemeldete-aktivitaet-entscheiden"><span class="abschnitt-nr">8.3</span>Eine gemeldete Aktivität entscheiden</h2>
       <p>Das ist der häufigste Ablauf im Alltag, deshalb hier Schritt für Schritt.</p>
       <p><strong>1. Der Konfi meldet.</strong> Er wählt eine Aktivität und ein Datum; „Anmerkungen&quot; und ein „Foto als Nachweis&quot; sind beide freiwillig. Lässt er das Foto weg, fragt die App noch einmal nach: „Normalerweise gehört ein Foto dazu, damit dein Team sieht, dass du dabei warst. Trotzdem abschicken?&quot; Danach meldet sie „Aktivität erfolgreich eingereicht!&quot;. Der Antrag ist ab jetzt ausstehend, Punkte gibt es noch keine.</p>
-      <p><strong>2. Die Leitung prüft.</strong> Die Anträge stehen in der Antragsliste. <a href="./rollen.html#wer-darf-was">Teamer:innen sehen sie nicht</a> — in Beschreibung und Foto kann Privates stehen. Ein Admin sieht dort nur die Anträge aus <a href="./jahrgaenge.html#nachvollziehen-was-die-jahrgangs-zuweisung-steuert">seinen Jahrgängen</a>; Anträge von Teamer:innen sieht er immer.</p>
+      <p>Das Foto verkleinert die App vor dem Senden wie im Chat und in Challenges; ein Handyfoto mit 8 MB passt danach locker. Bleibt es größer als 5 MB, sagt sie es gleich bei der Auswahl: „Datei ist zu groß (max. 5 MB).&quot; Beim Absenden steht unter der Kopfzeile, wie weit das Hochladen ist — „Wird gesendet… 40 %&quot;, zuletzt „Wird verarbeitet…&quot;. Sein Foto sieht der Konfi in der Meldung, solange sie offen ist; nach der Entscheidung nur noch die Leitung.</p>
+      <p><strong>2. Die Leitung prüft.</strong> Die Anträge stehen in der Antragsliste. <a href="./rollen.html#nachschlagen-wer-was-darf">Teamer:innen sehen sie nicht</a> — in Beschreibung und Foto kann Privates stehen. Ein Admin sieht dort nur die Anträge aus <a href="./jahrgaenge.html#nachvollziehen-was-die-jahrgangs-zuweisung-steuert">seinen Jahrgängen</a>; Anträge von Teamer:innen sieht er immer. Wer den Antrag sieht, bekommt ihn auch gemeldet — siehe <a href="#nachsehen-wer-von-einem-neuen-antrag-erfaehrt">Nachsehen, wer von einem neuen Antrag erfährt</a>.</p>
+      <p>Das Nachweisfoto lädt beim Öffnen des Antrags, mit Prozentzahl und Balken; klappt es nicht, holt „Erneut versuchen&quot; es noch einmal. Im Konfi-Profil öffnet ein Tipp auf einen offenen Antrag mit Bild-Symbol das Foto groß. Auf dem Gerät bleibt es dabei nicht — ohne Netz ist es nicht zu sehen (siehe <a href="./bedienung.html#geladene-bilder-und-dateien-auf-dem-geraet-behalten">Geladene Bilder und Dateien auf dem Gerät behalten</a>).</p>
       <p><strong>3. Die Entscheidung.</strong> Es gibt genau zwei Möglichkeiten: „Genehmigen&quot; oder „Ablehnen&quot;.</p>
-      <ul><li><strong>Genehmigt:</strong> Die Aktivität wird gutgeschrieben, die Punkte landen auf dem Zähler der Punktart, die an der Aktivität hängt. Es wird sofort geprüft, ob damit neue Abzeichen oder ein neues Level erreicht sind. Der Konfi bekommt „Antrag genehmigt!&quot; mit der Punktzahl.</li><li><strong>Abgelehnt:</strong> Es gibt keine Punkte. Der Konfi bekommt „Antrag abgelehnt&quot; mit deiner Begründung als „Grund: …&quot; daran.</li></ul>
+      <ul><li><strong>Genehmigt:</strong> Die Aktivität wird gutgeschrieben, die Punkte landen auf dem Zähler der Punktart, die an der Aktivität hängt. Es wird sofort geprüft, ob damit neue Badges oder ein neues Level erreicht sind. Der Konfi bekommt „Antrag genehmigt!&quot; mit der Punktzahl.</li><li><strong>Abgelehnt:</strong> Es gibt keine Punkte. Der Konfi bekommt „Antrag abgelehnt&quot; mit deiner Begründung als „Grund: …&quot; daran.</li></ul>
       <blockquote><strong>Die Begründung ist beim Ablehnen Pflicht.</strong> Die App verlangt sie („Grund für die Ablehnung *&quot;), und auch das System dahinter weist ein Ablehnen ohne Begründung zurück („Beim Ablehnen ist eine Begründung erforderlich&quot;). Der Konfi soll erfahren, warum etwas nicht zählt.</blockquote>
       <p>Ein bereits entschiedener Antrag lässt sich nicht noch einmal entscheiden. Der Versuch endet mit „Nur ausstehende Anträge können genehmigt oder abgelehnt werden&quot;.</p>
       <h3 id="eine-entscheidung-zuruecknehmen"><span class="abschnitt-nr">8.3.1</span>Eine Entscheidung zurücknehmen</h3>
@@ -250,39 +271,50 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Löschen lassen sich nur abgelehnte Anträge. Die anderen sind geschützt:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Zustand</th><th>Löschen möglich?</th><th>Meldung</th></tr></thead><tbody><tr><td>Ausstehend</td><td>nein</td><td>„Offene Anträge werden genehmigt oder abgelehnt, nicht gelöscht.&quot;</td></tr><tr><td>Genehmigt</td><td>nein</td><td>„Genehmigte Anträge gehören zur Punktegeschichte. Setze den Antrag zuerst zurück.&quot;</td></tr><tr><td>Abgelehnt</td><td>ja</td><td>—</td></tr></tbody></table></div>
       <p>Mit dem Antrag verschwindet auch sein Nachweisfoto.</p>
+      <h3 id="nachsehen-wer-von-einem-neuen-antrag-erfaehrt"><span class="abschnitt-nr">8.3.3</span>Nachsehen, wer von einem neuen Antrag erfährt</h3>
+      <p>Ein neuer Antrag kommt als Push und im <a href="./bedienung.html#mitteilungen-im-postfach-nachlesen">Postfach</a> als „Neuer Antrag eingegangen&quot; an — bei genau denen, die ihn in ihrer Antragsliste sehen und entscheiden dürfen:</p>
+      <ul><li><strong>Die Gemeindeleitung</strong> (Org-Admins) bekommt jeden Antrag der Gemeinde.</li><li><strong>Admins</strong> bekommen die Anträge der Konfis aus <a href="./jahrgaenge.html#nachvollziehen-was-die-jahrgangs-zuweisung-steuert">ihren Jahrgängen</a> und alle Anträge von Teamer:innen. Ein Admin ohne Jahrgang bekommt also nur die Anträge des Teams.</li><li><strong>Ein Konfi ohne Jahrgang</strong> meldet sich nur bei der Gemeindeleitung — nur sie sieht seinen Antrag.</li><li><strong>Teamer:innen</strong> bekommen keine Meldung über neue Anträge; die Antragsliste ist ihnen verschlossen.</li><li><strong>Wer selbst eine Aktivität meldet</strong>, bekommt dazu „Antrag eingereicht&quot;, aber nie „Neuer Antrag eingegangen&quot; über den eigenen Antrag.</li></ul>
+      <p>Die Zahl am Reiter, am <a href="./rollen.html#sehen-wo-etwas-offen-ist">Gemeinde-Umschalter</a> und am App-Symbol zählt nach derselben Regel. Wer in mehreren Gemeinden mitarbeitet, bekommt die Anträge jeder Gemeinde nach der Rolle und den Jahrgängen, die er dort hat.</p>
       <h2 id="eine-aktivitaet-direkt-zuschreiben"><span class="abschnitt-nr">8.4</span>Eine Aktivität direkt zuschreiben</h2>
       <p>Nicht alles muss den Antragsweg gehen. Warst du ohnehin dabei, schreibst du die Aktivität direkt zu: Konfi in der Konfi-Verwaltung öffnen, „Aktivität hinzufügen&quot;. Ein Kommentar ist möglich, aber freiwillig.</p>
       <p>Angeboten werden dabei nur Aktivitäten, deren Punktart im Jahrgang des Konfis eingeschaltet ist.</p>
-      <blockquote><strong>Der Konfi merkt es nicht sofort.</strong> Es kommt keine Push-Nachricht. Die Punkte stehen zwar sofort da und Abzeichen werden gleich geprüft, ein dadurch erreichtes neues Level wird aber erst beim nächsten Öffnen seines Dashboards sichtbar. Wenn jemand es mitbekommen soll, sag am besten kurz Bescheid.</blockquote>
-      <p>Direkt zuschreiben, löschen und Bonuspunkte zurücknehmen können nur die <a href="./rollen.html#wer-darf-was">Leitungsrollen</a>. Teamer:innen kommen an die Konfi-Verwaltung nicht heran.</p>
-      <h2 id="punkte-wieder-wegnehmen"><span class="abschnitt-nr">8.5</span>Punkte wieder wegnehmen</h2>
+      <blockquote><strong>Der Konfi merkt es nicht sofort.</strong> Es kommt keine Push-Nachricht. Die Punkte stehen zwar sofort da und Badges werden gleich geprüft, ein dadurch erreichtes neues Level wird aber erst beim nächsten Öffnen seines Dashboards sichtbar. Wenn jemand es mitbekommen soll, sag am besten kurz Bescheid.</blockquote>
+      <p>Direkt zuschreiben, löschen und Bonuspunkte zurücknehmen können nur die <a href="./rollen.html#nachschlagen-wer-was-darf">Leitungsrollen</a>. Teamer:innen kommen an die Konfi-Verwaltung nicht heran.</p>
+      <h2 id="den-punktwert-einer-aktivitaet-aendern"><span class="abschnitt-nr">8.5</span>Den Punktwert einer Aktivität ändern</h2>
+      <p>Den Punktwert einer Aktivität stellst du unter <strong>Mehr › Aktivitäten</strong> um. Die Regel dabei: <strong>Der neue Wert gilt für alles, was ab jetzt vergeben wird. Was schon gutgeschrieben ist, bleibt, wie es war.</strong></p>
+      <p>Jede Vergabe merkt sich den Wert, den die Aktivität in diesem Moment hatte — egal, ob sie über einen genehmigten Antrag oder eine direkte Zuschreibung entstanden ist. Daran hängt alles Weitere:</p>
+      <ul><li>Der <strong>Punktestand</strong> ändert sich durch die Umstellung nicht.</li><li>Die <strong>Punktegeschichte</strong> und die Aktivitätenliste in der Konfi-Verwaltung zeigen bei jedem Eintrag den Wert, der damals gutgeschrieben wurde.</li><li>Wird eine Vergabe später zurückgenommen — durch Zurücksetzen des Antrags oder Löschen der Zuordnung —, verschwinden genau diese Punkte wieder, nicht der neue Wert.</li></ul>
+      <p><em>Beispiel:</em> Der „Sonntagsgottesdienst&quot; bringt 1 Punkt; du hebst ihn auf 2 an. Wer ihn vorher fünfmal gemeldet hat, steht weiter bei 5 Punkten. Die sechste Meldung bringt 2. Löschst du eine der ersten fünf Zuordnungen, geht 1 Punkt weg.</p>
+      <p>Soll jemand rückwirkend den höheren Wert bekommen, gibst du die Differenz als <a href="#ueber-bonuspunkte">Bonuspunkte</a>.</p>
+      <h2 id="punkte-wieder-wegnehmen"><span class="abschnitt-nr">8.6</span>Punkte wieder wegnehmen</h2>
       <p><strong>Es gibt keinen „Punkte abziehen&quot;-Knopf.</strong> Du kannst niemandem einfach so drei Punkte wegnehmen, und du kannst auch keine negative Punktzahl eintragen — das System lässt es nicht zu.</p>
       <p>Punkte verschwinden ausschließlich, indem die Buchung zurückgenommen wird, die sie erzeugt hat. Das sind alle Wege:</p>
-      <ul><li>Einen <strong>genehmigten Antrag zurücksetzen</strong></li><li>Eine <strong>direkt zugeschriebene Aktivität löschen</strong></li><li><strong>Bonuspunkte löschen</strong></li><li>Bei einem Termin die <a href="./termine.html#punkte-zuruecknehmen"><strong>Anwesenheit zurücknehmen</strong></a></li><li>Eine Person <strong>aus einem Termin entfernen</strong></li><li>Eine bestätigte Buchung <strong>zurück auf die Warteliste</strong> setzen</li><li>Einen <strong>ganzen Termin löschen</strong> — dabei werden alle dafür vergebenen Punkte zurückgenommen</li></ul>
+      <ul><li>Einen <strong>genehmigten Antrag zurücksetzen</strong></li><li>Eine <strong>direkt zugeschriebene Aktivität löschen</strong></li><li><strong>Bonuspunkte löschen</strong></li><li>Bei einem Event die <a href="./termine.html#punkte-zuruecknehmen"><strong>Anwesenheit zurücknehmen</strong></a></li><li>Eine Person <strong>aus einem Event entfernen</strong></li><li>Eine bestätigte Buchung <strong>zurück auf die Warteliste</strong> setzen</li><li>Ein <strong>ganzes Event löschen</strong> — dabei werden alle dafür vergebenen Punkte zurückgenommen</li></ul>
+      <p>Zurückgenommen wird immer der Wert, der bei der Vergabe gutgeschrieben wurde — auch wenn eine Aktivität <a href="#den-punktwert-einer-aktivitaet-aendern">inzwischen anders bewertet</a> ist.</p>
       <blockquote><strong>Der Punktestand fällt nie unter 0.</strong> Jede dieser Rücknahmen ist so gebaut, dass sie bei null aufhört. Nimmst du mehr zurück, als noch da ist — etwa weil anderswo schon korrigiert wurde —, bleibt es bei 0 statt ins Minus zu gehen.</blockquote>
-      <p>Ein Abzeichen, das durch diese Punkte ausgelöst wurde, bleibt dagegen bestehen: <a href="./badges.html#wissen-was-vorher-zu-bedenken-ist">Abzeichen werden nie aberkannt</a>.</p>
+      <p>Ein Badge, das durch diese Punkte ausgelöst wurde, bleibt dagegen bestehen: <a href="./badges.html#wissen-was-vorher-zu-bedenken-ist">Badges werden nie aberkannt</a>.</p>
       <p>Verschiebst du einen <strong>Konfi in einen anderen Jahrgang</strong>, wandern Punkte und Level unverändert mit.</p>
-      <h2 id="level-anlegen-und-pflegen"><span class="abschnitt-nr">8.6</span>Level anlegen und pflegen</h2>
+      <h2 id="level-anlegen-und-pflegen"><span class="abschnitt-nr">8.7</span>Level anlegen und pflegen</h2>
       <p>Level sind die Stufen, die sich aus dem Punktestand ergeben. Du legst sie einmal für die ganze Gemeinde an — nicht pro Jahrgang. Der Weg führt über <strong>Mehr › Level</strong>.</p>
       <p>Ein Level besteht aus:</p>
       <ul><li><strong>„Titel&quot;</strong> — was angezeigt wird, etwa „Bronze&quot; oder „Meister&quot;</li><li><strong>„Benötigte Punkte&quot;</strong> — ab wann es gilt, per Schieberegler von <strong>1 bis 40</strong></li><li><strong>„Beschreibung&quot;</strong>, <strong>„Icon&quot;</strong> und <strong>„Level-Farbe&quot;</strong> — wie es aussieht</li></ul>
       <p>Zwei Level dürfen nicht dieselbe Punktzahl haben; der Versuch endet mit „Ein Level mit dieser Punktzahl existiert bereits&quot;.</p>
-      <h3 id="verstehen-welche-punkte-fuers-level-zaehlen"><span class="abschnitt-nr">8.6.1</span>Verstehen, welche Punkte fürs Level zählen</h3>
+      <h3 id="verstehen-welche-punkte-fuers-level-zaehlen"><span class="abschnitt-nr">8.7.1</span>Verstehen, welche Punkte fürs Level zählen</h3>
       <p>Für das Level werden Gottesdienst- und Gemeindepunkte zusammengezählt.</p>
       <p>Entscheidend und leicht zu übersehen: Gezählt werden nur die Punktarten, die <a href="./jahrgaenge.html#eine-punktart-abschalten">im Jahrgang eingeschaltet</a> sind. Ist im Jahrgang „Gemeinde&quot; abgeschaltet, zählen für das Level ausschließlich die Gottesdienstpunkte — auch wenn auf dem Gemeinde-Zähler noch alte Punkte stehen.</p>
       <p><em>Beispiel:</em> Ein Konfi hat 8 Gottesdienst- und 5 Gemeindepunkte. Sind beide Arten aktiv, zählt er mit 13 Punkten. Wird „Gemeinde&quot; im Jahrgang abgeschaltet, zählt er ab sofort mit 8 — und rutscht damit unter Umständen ein Level zurück.</p>
-      <h3 id="aufsteigen-und-absteigen"><span class="abschnitt-nr">8.6.2</span>Aufsteigen und absteigen</h3>
+      <h3 id="aufsteigen-und-absteigen"><span class="abschnitt-nr">8.7.2</span>Aufsteigen und absteigen</h3>
       <p><strong>Beim Aufstieg</strong> bekommt der Konfi eine Mitteilung und einen Push: „Level Up! Herzlichen Glückwunsch! Du hast Level ‚…' erreicht!&quot;</p>
       <p><strong>Beim Abstieg passiert nichts hörbar.</strong> Sinken die Punkte unter die Schwelle, wird das Level still nach unten korrigiert — keine Mitteilung, kein Push, kein Hinweis. Niemand soll eine Nachricht darüber bekommen, dass er etwas verloren hat.</p>
       <blockquote><strong>Nebeneffekt, den du kennen solltest:</strong> Nach dem Löschen einer Aktivität oder von Bonuspunkten wird das Level nicht sofort nachgerechnet. Es bleibt kurzzeitig zu hoch stehen und wird erst korrigiert, wenn der Konfi das nächste Mal sein Dashboard öffnet. Dort passiert es dann ebenfalls still.</blockquote>
-      <h3 id="ein-belegtes-level-loswerden"><span class="abschnitt-nr">8.6.3</span>Ein belegtes Level loswerden</h3>
+      <h3 id="ein-belegtes-level-loswerden"><span class="abschnitt-nr">8.7.3</span>Ein belegtes Level loswerden</h3>
       <p>Steht auch nur ein Konfi aktuell auf einem Level, wird das Löschen abgelehnt: <strong>„Dieses Level ist noch vergeben — benenne es um oder ordne die betroffenen Konfis um.&quot;</strong></p>
       <p>Die App nennt dir dabei nicht, welche Konfis das sind. Willst du das Level trotzdem loswerden, änderst du seine Punktzahl so, dass niemand mehr darauf steht — oder du benennst es einfach um.</p>
-      <h2 id="nachvollziehen-wann-nachgerechnet-wird"><span class="abschnitt-nr">8.7</span>Nachvollziehen, wann nachgerechnet wird</h2>
-      <p>Abzeichen und Level werden beide sofort geprüft bei:</p>
+      <h2 id="nachvollziehen-wann-nachgerechnet-wird"><span class="abschnitt-nr">8.8</span>Nachvollziehen, wann nachgerechnet wird</h2>
+      <p>Badges und Level werden beide sofort geprüft bei:</p>
       <ul><li>einem genehmigten Antrag</li><li>vergebenen Bonuspunkten</li><li>eingetragener Anwesenheit und beim Check-in per QR-Code</li></ul>
-      <p>Nur die Abzeichen — nicht das Level — werden geprüft, wenn du über die Konfi-Verwaltung eine Aktivität zuschreibst oder wieder löschst.</p>
-      <p>Dazu kommen die <a href="./badges.html#nachvollziehen-wann-geprueft-wird">stündlichen Abzeichen-Prüfungen</a> im Hintergrund. Das Level wird außerdem bei jedem Öffnen des Konfi-Dashboards überprüft und gegebenenfalls stillschweigend richtiggestellt.</p>
+      <p>Nur die Badges — nicht das Level — werden geprüft, wenn du über die Konfi-Verwaltung eine Aktivität zuschreibst oder wieder löschst.</p>
+      <p>Dazu kommen die <a href="./badges.html#nachvollziehen-wann-geprueft-wird">stündlichen Badge-Prüfungen</a> im Hintergrund. Das Level wird außerdem bei jedem Öffnen des Konfi-Dashboards überprüft und gegebenenfalls stillschweigend richtiggestellt.</p>
     </article>
 
     <nav class="blaettern" aria-label="Weitere Kapitel">
@@ -297,5 +329,48 @@ tbody tr:last-child td { border-bottom:none; }
     </nav>
   </main>
 </div>
+<script>
+(function () {
+  var leiste = document.querySelector('.seitenleiste');
+  var liste = leiste.querySelector('.nav-abschnitte');
+  if (leiste.scrollHeight > leiste.clientHeight) {
+    var k = leiste.getBoundingClientRect();
+    var fehlt = liste.getBoundingClientRect().bottom - k.bottom + 16;
+    var bisKapitel = leiste.querySelector('.ist-hier').getBoundingClientRect().top - k.top - 48;
+    if (fehlt > 0) leiste.scrollTop += Math.min(fehlt, bisKapitel);
+  }
+  if (!('IntersectionObserver' in window)) return;
+  var ende = document.querySelector('.blaettern');
+  var ziele = [];
+  liste.querySelectorAll('a').forEach(function (a) {
+    var h = document.getElementById(a.hash.slice(1));
+    if (h) ziele.push({ a: a, h: h });
+  });
+  var markieren = function () {
+    var hoehe = window.innerHeight;
+    var amEnde = !!ende && ende.getBoundingClientRect().bottom <= hoehe;
+    var linie = amEnde ? hoehe : hoehe * 0.35;
+    var aktiv = null, angesprungen = null;
+    ziele.forEach(function (z) {
+      var oben = z.h.getBoundingClientRect().top;
+      if (oben < linie) aktiv = z;
+      if (z.a.hash === location.hash && oben >= 0 && oben < hoehe) angesprungen = z;
+    });
+    if (amEnde && angesprungen) aktiv = angesprungen;
+    ziele.forEach(function (z) {
+      if (z === aktiv) z.a.setAttribute('aria-current', 'location');
+      else z.a.removeAttribute('aria-current');
+    });
+    if (aktiv && leiste.scrollHeight > leiste.clientHeight) {
+      var r = aktiv.a.getBoundingClientRect(), l = leiste.getBoundingClientRect();
+      if (r.top < l.top || r.bottom > l.bottom) leiste.scrollTop += r.top - l.top - l.height / 3;
+    }
+  };
+  var beobachter = new IntersectionObserver(markieren, { rootMargin: '0px 0px -65% 0px' });
+  ziele.forEach(function (z) { beobachter.observe(z.h); });
+  if (ende) new IntersectionObserver(markieren, { threshold: 1 }).observe(ende);
+  window.addEventListener('hashchange', markieren);
+})();
+</script>
 </body>
 </html>

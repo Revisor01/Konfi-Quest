@@ -119,7 +119,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
               <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Dein Passwort *</IonLabel>
-                  <IonInput
+                  <IonInput aria-label="Dein Passwort" aria-required="true"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onIonInput={(e) => {

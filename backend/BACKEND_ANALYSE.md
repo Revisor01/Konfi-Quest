@@ -1,7 +1,6 @@
 # Backend-Analyse Konfipoints
 
 **Datum:** 30. Dezember 2025
-**Analysiert von:** Claude Code
 
 ---
 

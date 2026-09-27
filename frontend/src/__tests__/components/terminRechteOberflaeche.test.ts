@@ -109,7 +109,7 @@ describe('Detailansicht: Verwaltungsaktionen haengen am Leitungsrecht', () => {
     // Von jedem der beiden Knoepfe aus rueckwaerts: Direkt davor muss die
     // Rechte-Bedingung stehen. (Nicht ueber <IonButtons slot="end"> suchen --
     // das kommt in der Datei mehrfach vor und trifft den falschen Block.)
-    for (const knopf of ['aria-label="Termin kopieren"', 'aria-label="Event bearbeiten"']) {
+    for (const knopf of ['aria-label="Event kopieren"', 'aria-label="Event bearbeiten"']) {
       const stelle = detail.indexOf(knopf);
       expect(stelle).toBeGreaterThan(-1);
       expect(detail.slice(stelle - 120, stelle)).toContain('darfVerwalten && (');
@@ -146,7 +146,7 @@ describe('Kopieren ist in Liste und Detailansicht erreichbar', () => {
     const seite = lies('src/components/admin/pages/AdminEventsPage.tsx');
     const liste = lies('src/components/admin/EventsView.tsx');
     expect(seite).toContain('onKopieren={canCreate ? handleKopiereEvent : undefined}');
-    expect(liste).toContain('aria-label="Termin kopieren"');
+    expect(liste).toContain('aria-label="Event kopieren"');
   });
 
   it('die Kopie laeuft ueber kopiereTermin, nicht ueber eine zweite Handabschrift', () => {

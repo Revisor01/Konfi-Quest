@@ -10,7 +10,9 @@ import { resolve } from 'path';
 // Name UND Jahrgang.
 //
 // Der Jahrgangswechsel ist die heikle Haelfte. Was er ausloest, wurde vorher
-// gemessen; die Entscheidungen dazu stehen in BAUSTELLEN.md. Simons Leitsatz:
+// gemessen; die Entscheidungen dazu standen in der inzwischen entfallenen
+// BAUSTELLEN.md, die Regeln dazu heute im Handbuch (Kapitel Jahrgaenge).
+// Simons Leitsatz:
 // "Neuer Jahrgang, die Regeln des Jahrgangs gelten."
 //
 // Dieser Test haelt die Warnungen fest. Als Dateitest, weil der Fehler waere,
@@ -74,15 +76,15 @@ describe('Stammdaten bearbeiten: die Warnungen beim Jahrgangswechsel', () => {
   it('sie benennen, was der Wechsel bewirkt', () => {
     // Simons Leitsatz, in vier Punkten aufgeschluesselt.
     expect(modal).toContain('Es gelten die Regeln des neuen Jahrgangs');
-    expect(modal).toContain('Anmeldungen zu künftigen Terminen des alten Jahrgangs fallen weg');
-    expect(modal).toContain('Pflichttermine des neuen Jahrgangs kommen dazu');
+    expect(modal).toContain('Anmeldungen zu künftigen Events des alten Jahrgangs fallen weg');
+    expect(modal).toContain('Pflicht-Events des neuen Jahrgangs kommen dazu');
     expect(modal).toContain('Der Jahrgangs-Chat wechselt mit');
     expect(modal).toContain('Der Jahresrückblick erscheint erst wieder');
   });
 
   it('sie sagen auch, was NICHT passiert', () => {
     // Sonst klingt der Wechsel gefaehrlicher, als er ist.
-    expect(modal).toContain('Bereits erfasste Anwesenheiten und vergangene Termine bleiben');
+    expect(modal).toContain('Bereits erfasste Anwesenheiten und vergangene Events bleiben');
   });
 
   it('bei abgeschalteter Punkteart warnen sie konkret', () => {

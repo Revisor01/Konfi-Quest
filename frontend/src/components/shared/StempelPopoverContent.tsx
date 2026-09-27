@@ -3,6 +3,7 @@ import { IonIcon } from '@ionic/react';
 import { ICON_CHALLENGE_GEFUELLT, ICON_SPERRE_GEFUELLT, ICON_ZUSAGE_GEFUELLT } from './icons';
 import { getIconFromString } from '../../utils/badgeIcons';
 import type { ChallengeMark, OffenerStempel } from '../../types/challenges';
+import { datumKurz } from '../../utils/dateUtils';
 
 /**
  * Der Popover eines Challenge-Stempels (Simon, 14.09.2026: "wenn man auf einen
@@ -147,9 +148,7 @@ const StempelPopoverContent: React.FC<{
             </div>
             {datum && (
               <span style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-tertiary)' }}>
-                {new Date(datum).toLocaleDateString('de-DE', {
-                  day: 'numeric', month: 'short', year: 'numeric',
-                })}
+                {datumKurz(datum)}
               </span>
             )}
           </>

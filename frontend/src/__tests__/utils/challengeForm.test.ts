@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  audienceFuerFormular,
   baueChallengePayload,
   istChallengeFormularGueltig,
   zeitraumFehler,
@@ -87,5 +88,33 @@ describe('baueChallengePayload', () => {
   it('nur_team: Jahrgangs-Zuordnung wird geleert', () => {
     const payload = baueChallengePayload(basis({ audience: 'nur_team', jahrgang_ids: [3, 4] }), false);
     expect(payload.jahrgang_ids).toEqual([]);
+  });
+});
+
+describe('audienceFuerFormular (drei Zielgruppen, Simon 27.09.2026)', () => {
+  it('„Nur die Konfis" bleibt beim Bearbeiten erhalten', () => {
+    // Vorher wurde 'konfis' im Formular zu 'konfis_und_team' und beim
+    // nächsten Speichern vor dem Start so übernommen.
+    expect(audienceFuerFormular('konfis')).toBe('konfis');
+  });
+
+  it('die beiden anderen Zielgruppen bleiben ebenso', () => {
+    expect(audienceFuerFormular('konfis_und_team')).toBe('konfis_und_team');
+    expect(audienceFuerFormular('nur_team')).toBe('nur_team');
+  });
+
+  it('fehlend oder unbekannt: Normalfall „Jahrgang und Team"', () => {
+    expect(audienceFuerFormular(undefined)).toBe('konfis_und_team');
+    expect(audienceFuerFormular(null)).toBe('konfis_und_team');
+    expect(audienceFuerFormular('alle')).toBe('konfis_und_team');
+  });
+
+  it('„Nur die Konfis" verlangt Jahrgänge wie „Jahrgang und Team"', () => {
+    expect(istChallengeFormularGueltig(basis({ audience: 'konfis', jahrgang_ids: [] }))).toBe(false);
+    expect(istChallengeFormularGueltig(basis({ audience: 'konfis', jahrgang_ids: [3] }))).toBe(true);
+  });
+
+  it('der Payload trägt „konfis" unverändert ans Backend', () => {
+    expect(baueChallengePayload(basis({ audience: 'konfis' }), false).audience).toBe('konfis');
   });
 });
