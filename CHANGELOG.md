@@ -32,8 +32,11 @@ Versionsüberschrift.
   Stelle, dorthin führen auch Mitteilung und Postfach — und entscheidet
   selbst; erst mit ihrer Zusage gehört sie zur Gemeinde.
   Sie behält Benutzername und Passwort, ihre bisherige Gemeinde bleibt
-  unverändert. Die Einladung gilt 14 Tage und lässt sich zurückziehen. Konfis
-  werden weiterhin über einen Einladungscode aufgenommen.
+  unverändert. Die Einladung gilt 14 Tage. Solange sie offen ist, steht sie
+  in „Mehr › Benutzer:innen" unter „Offene Einladungen" und lässt sich dort
+  zurückziehen; bei der eingeladenen Person verschwindet sie dann aus Profil
+  und Postfach. Konfis werden weiterhin über einen Einladungscode
+  aufgenommen.
 - In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde: Wer in der
   einen die Leitung stellt, kann in der anderen Teamer:in sein — die Rechte
   richten sich nach der Gemeinde, in der man gerade arbeitet. Der Umschalter

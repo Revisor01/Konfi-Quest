@@ -6,6 +6,7 @@ const { canCreateRole } = require('../utils/roleHierarchy');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
+const { loescheMitteilungenZuEinladung } = require('../utils/postfachAufraeumen');
 
 // Einladung einer bestehenden Person in eine weitere Gemeinde (26.09.2026).
 //
@@ -214,13 +215,34 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     param('id').isInt({ min: 1 }), handleValidationErrors,
     async (req, res) => {
       try {
-        const { rowCount } = await db.query(
-          `UPDATE org_einladungen
-              SET status = 'zurueckgezogen', beantwortet_at = NOW()
-            WHERE id = $1 AND organization_id = $2 AND status = 'offen'`,
-          [req.params.id, req.user.organization_id]
-        );
-        if (!rowCount) {
+        // Status und Postfach in EINER Transaktion: "Einladung in eine
+        // Gemeinde ... Tippe, um zu antworten" geht mit dem Zurueckziehen
+        // (27.09.2026). Vorher blieb der Eintrag bei der eingeladenen Person
+        // stehen, zaehlte als ungelesen und fuehrte ins leere Profil
+        // (utils/postfachAufraeumen.js). Scheitert das Aufraeumen, bleibt
+        // auch die Einladung offen -- kein halber Stand.
+        const client = await db.getClient();
+        let zurueckgezogen = false;
+        try {
+          await client.query('BEGIN');
+          const { rowCount } = await client.query(
+            `UPDATE org_einladungen
+                SET status = 'zurueckgezogen', beantwortet_at = NOW()
+              WHERE id = $1 AND organization_id = $2 AND status = 'offen'`,
+            [req.params.id, req.user.organization_id]
+          );
+          if (rowCount) {
+            await loescheMitteilungenZuEinladung(client, req.params.id);
+            zurueckgezogen = true;
+          }
+          await client.query('COMMIT');
+        } catch (txErr) {
+          await client.query('ROLLBACK').catch(() => {});
+          throw txErr;
+        } finally {
+          client.release();
+        }
+        if (!zurueckgezogen) {
           return res.status(404).json({ error: 'Einladung nicht gefunden' });
         }
         res.json({ message: 'Einladung zurückgezogen' });

@@ -135,9 +135,12 @@ Badge, geht „Neues Badge erhalten" dazu. Wird ein Event gelöscht, gehen
 alle Mitteilungen zu ihm — Anmeldung, Absage, Teilnahme, Buchungen des Teams;
 mit einer gelöschten Challenge gehen Stempel, „Beitrag ausgeblendet" und
 „Neuer Beitrag", mit einem gelöschten Jahrgang die Warnung vor seiner
-Löschung. Entscheidungen und Punkte bleiben — „Antrag verbucht", „Antrag
-abgelehnt", Bonuspunkte und Level-Aufstiege sind Verlauf, auch wenn der
-abgelehnte Antrag später aufgeräumt wird.
+Löschung. Zieht die Gemeindeleitung eine
+[Einladung zurück](05-rollen.md#eine-einladung-zurueckziehen), geht
+„Einladung in eine Gemeinde" bei der eingeladenen Person. Entscheidungen und
+Punkte bleiben — „Antrag verbucht", „Antrag abgelehnt", Bonuspunkte und
+Level-Aufstiege sind Verlauf, auch wenn der abgelehnte Antrag später
+aufgeräumt wird.
 
 Dasselbe gilt für **Personen**: Wird ein Konto gelöscht — von der Leitung,
 von der Person selbst oder nach der Konfirmation von allein —, verschwinden

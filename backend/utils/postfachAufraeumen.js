@@ -81,6 +81,17 @@
 //   Ein Abgleich ueber den Namen traefe Namensgleiche. Diese Zeilen gehen
 //   mit ihrem Termin bzw. ihrer Challenge oder nach 365 Tagen.
 //
+// SEIT DEM 27.09.2026 AUCH DIE ZURUECKGEZOGENE EINLADUNG (Simon: die Leitung
+// zieht eine Gemeinde-Einladung in "Benutzer:innen" zurueck). "Einladung in
+// eine Gemeinde ... Tippe, um zu antworten" meldet einen ZUSTAND -- die
+// Einladung wartet auf eine Antwort. Nach dem Zurueckziehen gibt es nichts
+// mehr zu beantworten: GET /einladungen/meine ist leer, das Antippen fuehrt
+// ins Profil ohne Karte. Vorher blieb der Eintrag stehen und zaehlte in der
+// roten Zahl mit. Er geht deshalb mit dem Zurueckziehen (routes/
+// einladungen.js). Die Antwort an die Leitung ("Einladung angenommen/
+// abgelehnt") haelt eine Entscheidung fest und bleibt -- sie kann bei einer
+// zurueckgezogenen Einladung ohnehin nicht entstehen.
+//
 // Alle Funktionen nehmen db ODER einen Transaktions-Client: Sie fuehren
 // kein BEGIN/COMMIT aus, der Aufrufer bestimmt die Transaktion.
 
@@ -232,6 +243,31 @@ async function loescheMitteilungenUeberPerson(db, userId) {
   return rowCount;
 }
 
+/**
+ * Die Arten, die eine offene Einladung melden und mit ihrem Zurueckziehen
+ * gehen (Kennung: einladung_id, als Text -- pushService schreibt sie mit
+ * toString()).
+ */
+const ARTEN_AN_EINLADUNG = ['gemeinde_einladung'];
+
+/**
+ * Entfernt "Einladung in eine Gemeinde" zu einer zurueckgezogenen Einladung.
+ *
+ * @param {{query: Function}} db  Pool oder Client
+ * @param {number|string} einladungId
+ * @returns {Promise<number>} Anzahl entfernter Mitteilungen
+ */
+async function loescheMitteilungenZuEinladung(db, einladungId) {
+  if (einladungId === null || einladungId === undefined || String(einladungId) === '') return 0;
+  const { rowCount } = await db.query(
+    `DELETE FROM notifications
+      WHERE type = ANY($1::text[])
+        AND data->>'einladung_id' = $2::text`,
+    [ARTEN_AN_EINLADUNG, String(einladungId)]
+  );
+  return rowCount;
+}
+
 module.exports = {
   loescheMitteilungenZuAntraegen,
   loescheMitteilungenZuAbzeichen,
@@ -239,9 +275,11 @@ module.exports = {
   loescheMitteilungenZuChallenge,
   loescheMitteilungenZuJahrgang,
   loescheMitteilungenUeberPerson,
+  loescheMitteilungenZuEinladung,
   ZUSTANDS_ARTEN_ANTRAG,
   ARTEN_AM_TERMIN,
   ARTEN_AN_CHALLENGE,
   ARTEN_AM_JAHRGANG,
-  ARTEN_UEBER_PERSON
+  ARTEN_UEBER_PERSON,
+  ARTEN_AN_EINLADUNG
 };

@@ -1715,6 +1715,10 @@ class PushService {
    * noch NICHT Mitglied -- resolveOrgForPush kann also nicht wechseln. Das
    * Ziel ist deshalb eine Seite seiner EIGENEN Rolle
    * (utils/pushNavigation.ts, Fall 'gemeinde_einladung').
+   *
+   * einladung_id ist mehr als Beiwerk: Zieht die Leitung die Einladung
+   * zurueck, findet utils/postfachAufraeumen.js den Postfach-Eintrag darueber
+   * und nimmt ihn mit (27.09.2026).
    */
   static async sendGemeindeEinladungToUser(db, userId, orgName, rolleName, einladungId, organizationId) {
     try {

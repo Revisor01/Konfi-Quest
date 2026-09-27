@@ -1,7 +1,7 @@
 import { ICON_PERSON_HINZUFUEGEN_GEFUELLT, ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   IonPage,
   IonContent,
@@ -20,6 +20,7 @@ import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import UsersView from '../UsersView';
+import OffeneEinladungen from '../OffeneEinladungen';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EinladungModal from '../modals/EinladungModal';
 import UserManagementModal from '../modals/UserManagementModal';
@@ -37,6 +38,17 @@ const AdminUsersPage: React.FC = () => {
     { ttl: CACHE_TTL.KONFIS }
   );
   
+  // Offene Einladungen (27.09.2026): Der Abschnitt laedt selbst; hochzaehlen
+  // heisst "neu laden" -- nach einer neuen Einladung, beim Live-Signal
+  // 'users' (eine Zusage verschiebt die Person in die Liste) und beim Ziehen
+  // zum Aktualisieren.
+  const [einladungenStand, setEinladungenStand] = useState(0);
+  const einladungenNeuLaden = useCallback(() => setEinladungenStand((n) => n + 1), []);
+  const allesNeuLaden = useCallback(() => {
+    refreshUsers();
+    einladungenNeuLaden();
+  }, [refreshUsers, einladungenNeuLaden]);
+
   // Modal state
   const [modalUserId, setModalUserId] = useState<number | null>(null);
 
@@ -49,7 +61,7 @@ const AdminUsersPage: React.FC = () => {
   // sondern eine Anfrage an jemanden, der schon eins hat.
   const [presentEinladungHook, dismissEinladungHook] = useIonModal(EinladungModal, {
     onClose: () => dismissEinladungHook(),
-    onSuccess: () => { dismissEinladungHook(); refreshUsers(); }
+    onSuccess: () => { dismissEinladungHook(); allesNeuLaden(); }
   });
 
   const [presentUserModalHook, dismissUserModalHook] = useIonModal(UserManagementModal, {
@@ -66,7 +78,10 @@ const AdminUsersPage: React.FC = () => {
   });
 
   // Subscribe to live updates for users
-  useLiveRefresh('users', refreshUsersLive);
+  useLiveRefresh('users', useCallback(() => {
+    refreshUsersLive();
+    einladungenNeuLaden();
+  }, [refreshUsersLive, einladungenNeuLaden]));
 
   const handleDeleteUser = async (userToDelete: AdminUser) => {
     if (offlineBlockiert(isOnline, setError)) return;
@@ -158,7 +173,7 @@ const AdminUsersPage: React.FC = () => {
         <AppKopfzeileGross titel="Benutzer:innen" />
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          refreshUsers();
+          allesNeuLaden();
           e.detail.complete();
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
@@ -167,16 +182,23 @@ const AdminUsersPage: React.FC = () => {
         {loading ? (
           <LoadingSpinner message="Benutzer werden geladen..." />
         ) : (
-          <UsersView 
-            users={users || []}
-            onUpdate={refreshUsers}
-            onSelectUser={handleSelectUser}
-            onDeleteUser={handleDeleteUser}
-            // Befund 16: Die Route /admin/users ist ungegatet. Verwalten darf
-            // nur org_admin (users.js:385) — der Anlegen-Knopf oben prueft das
-            // seit jeher, die Loesch-Wische in der Liste nicht.
-            darfVerwalten={user?.role_name === 'org_admin'}
-          />
+          <>
+            <UsersView
+              users={users || []}
+              onUpdate={allesNeuLaden}
+              onSelectUser={handleSelectUser}
+              onDeleteUser={handleDeleteUser}
+              // Befund 16: Die Route /admin/users ist ungegatet. Verwalten darf
+              // nur org_admin (users.js:385) — der Anlegen-Knopf oben prueft das
+              // seit jeher, die Loesch-Wische in der Liste nicht.
+              darfVerwalten={user?.role_name === 'org_admin'}
+            />
+            {/* Offene Einladungen einsehen und zurueckziehen -- nur, wer auch
+                einladen darf: dieselbe Bedingung wie beim Einladen-Knopf oben
+                (requireOrgAdmin in routes/einladungen.js). Leer blendet sich
+                der Abschnitt aus. */}
+            {user?.role_name === 'org_admin' && <OffeneEinladungen aktualisierung={einladungenStand} />}
+          </>
         )}
       </IonContent>
     </IonPage>

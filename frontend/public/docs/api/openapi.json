@@ -484,9 +484,10 @@
           "Benutzer & Rollen"
         ],
         "summary": "Offene Einladungen der eigenen Gemeinde",
+        "description": "Seit dem 27.09.2026 liest die App diese Liste: \"Mehr > Benutzer:innen\", Abschnitt \"Offene Einladungen\" mit dem Knopf \"Zurueckziehen\" (DELETE /api/einladungen/{id}). Die Seite ruft die Route nur als org_admin -- dieselbe Bedingung wie beim Einladen; alle anderen bekaemen 403. Die App liest id, display_name, username, role_name, role_display_name, created_at und expires_at -- diese Felder sind damit Vertrag.\n",
         "responses": {
           "200": {
-            "description": "Array offener, nicht abgelaufener Einladungen mit Namen und Rolle"
+            "description": "Array offener, nicht abgelaufener Einladungen, neueste zuerst; je Zeile id, organization_id, user_id, role_id, status, expires_at, created_at, organization_display_name, organization_name, role_name, role_display_name, eingeladen_von_name sowie display_name und username der eingeladenen Person"
           }
         },
         "x-berechtigung": {
@@ -531,7 +532,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Offene Einladung zurueckziehen",
-        "description": "Setzt status = 'zurueckgezogen' und beantwortet_at = NOW(). Kein echtes Loeschen: Die Zeile bleibt als Verlauf stehen, und der Teilindex (eine offene Einladung je Person und Gemeinde) gibt den Platz fuer eine neue Einladung frei. Nur Einladungen der eigenen Gemeinde im Status 'offen' — alles andere ergibt dieselbe 404, ohne zu verraten, ob es die Einladung gibt.\nNachdokumentiert am 26.09.2026 (Audit Dokumentation BF-09): Die Route kam mit dem Einladungs-Commit, blieb in der yaml aber aus.\n",
+        "description": "Setzt status = 'zurueckgezogen' und beantwortet_at = NOW(). Kein echtes Loeschen: Die Zeile bleibt als Verlauf stehen, und der Teilindex (eine offene Einladung je Person und Gemeinde) gibt den Platz fuer eine neue Einladung frei. Nur Einladungen der eigenen Gemeinde im Status 'offen' — alles andere ergibt dieselbe 404, ohne zu verraten, ob es die Einladung gibt.\nNachdokumentiert am 26.09.2026 (Audit Dokumentation BF-09): Die Route kam mit dem Einladungs-Commit, blieb in der yaml aber aus.\n\nBEHOBEN 27.09.2026: Bei der eingeladenen Person blieb nach dem Zurueckziehen der Postfach-Eintrag \"Einladung in eine Gemeinde ... Tippe, um zu antworten\" (type 'gemeinde_einladung') stehen, zaehlte als ungelesen und fuehrte beim Antippen ins Profil, dessen Karte (GET /einladungen/meine, Filter status = 'offen') schon leer war. Jetzt geht der Eintrag in DERSELBEN Transaktion wie der Statuswechsel (utils/postfachAufraeumen.js, loescheMitteilungenZuEinladung ueber data.einladung_id); scheitert das, bleibt auch die Einladung offen. Nur bei Erfolg -- eine 404 (fremde Gemeinde, schon beantwortet) raeumt nichts auf. Die Antwortform ist unveraendert.\n",
         "parameters": [
           {
             "name": "id",
@@ -545,7 +546,7 @@
         ],
         "responses": {
           "200": {
-            "description": "message"
+            "description": "message ('Einladung zurückgezogen')"
           },
           "404": {
             "description": "Nicht vorhanden, fremde Gemeinde oder nicht mehr offen — bewusst dieselbe Antwort"

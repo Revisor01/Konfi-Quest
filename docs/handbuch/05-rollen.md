@@ -171,8 +171,8 @@ in ihrem Profil. **Erst wenn sie zusagt, gehört sie zur Gemeinde.** Bis dahin
 ändert sich nichts, und niemand wird über seinen Kopf hinweg aufgenommen.
 
 Sie behält Benutzername und Passwort; ihre bisherige Gemeinde bleibt
-unverändert. Die Einladung gilt **14 Tage** und lässt sich zurückziehen,
-solange sie offen ist.
+unverändert. Die Einladung gilt **14 Tage** und lässt sich
+[zurückziehen](#eine-einladung-zurueckziehen), solange sie offen ist.
 
 **Sagt sie zu oder ab, erfährst du es** — als Mitteilung aufs Handy und im
 Postfach: „Einladung angenommen" oder „Einladung abgelehnt", mit Name, Rolle
@@ -180,6 +180,27 @@ und Gemeinde. Antippen führt zu **Mehr › Benutzer:innen**, wo die Person nach
 einer Zusage steht. Die Mitteilung geht an dich, wenn du eingeladen hast;
 bist du in der Gemeinde inzwischen nicht mehr Org-Admin, geht sie an die
 Org-Admins der Gemeinde.
+
+### Eine Einladung zurückziehen
+
+Offene Einladungen stehen unter **Mehr › Benutzer:innen** am Ende der Seite,
+im Abschnitt **Offene Einladungen** — je Person mit Name, Benutzername, Rolle,
+dem Tag der Einladung und dem Tag, bis zu dem sie gilt. Den Abschnitt sehen
+nur Org-Admins, denn nur sie dürfen einladen. Ist nichts offen, fehlt er.
+
+1. Bei der Person auf **Zurückziehen** tippen.
+2. Die Rückfrage „Einladung zurückziehen" mit **Zurückziehen** bestätigen.
+
+Der Eintrag verschwindet aus dem Abschnitt, und die Person kann die
+Einladung nicht mehr annehmen. Bei ihr verschwindet die Einladung aus dem
+Profil und die Mitteilung dazu aus dem
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen); eine eigene
+Mitteilung über das Zurückziehen bekommt sie nicht. Einladen lässt sie sich
+danach jederzeit neu.
+
+Hat die Person inzwischen zu- oder abgesagt, gibt es nichts mehr
+zurückzuziehen: Die App sagt das, und der Eintrag verschwindet. Nach einer
+Zusage steht die Person in der Liste darüber.
 
 ### Mitglieder aus anderen Gemeinden verwalten
 
