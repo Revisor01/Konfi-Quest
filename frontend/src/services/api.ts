@@ -6,6 +6,7 @@ import { networkMonitor } from './networkMonitor';
 import { rotationUebernehmen } from './biometrics';
 
 import { API_BASE_URL } from './apiBasis';
+import { fehlerFuersProtokoll } from '../utils/fehler';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -255,7 +256,9 @@ const tokenOhneOrgClaimBeschaffen = async (): Promise<string | null> => {
   } catch (err) {
     isRefreshing = false;
     onTokenRefreshFailed(err);
-    console.warn('Token ohne Gemeinde-Claim konnte nicht beschafft werden:', err);
+    // Nur Status und Code: `config.data` des Refresh-Fehlers traegt den
+    // Refresh-Token im Klartext (Audit Grundgeruest BF-08).
+    console.warn('Token ohne Gemeinde-Claim konnte nicht beschafft werden:', fehlerFuersProtokoll(err));
     return null;
   }
 };

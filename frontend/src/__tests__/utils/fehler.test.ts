@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { alsApiFehler, fehlerDaten, fehlerStatus, fehlerText, fehlerTextOderMessage, herkunftDesFehlertexts, istNetzwerkfehler } from '../../utils/fehler';
+import { AxiosError, AxiosHeaders } from 'axios';
+import { alsApiFehler, fehlerDaten, fehlerFuersProtokoll, fehlerStatus, fehlerText, fehlerTextOderMessage, herkunftDesFehlertexts, istNetzwerkfehler } from '../../utils/fehler';
+import { enthaeltText } from '../protokollDurchsuchen';
 
 /** Nachbau eines axios-Fehlers, wie ihn die Catch-Blöcke bisher gesehen haben. */
 const axiosFehler = (data: unknown, status = 400) => ({
@@ -180,5 +182,65 @@ describe('herkunftDesFehlertexts', () => {
     expect(herkunftDesFehlertexts('Text 0')).toBeUndefined();
     expect(herkunftDesFehlertexts('Text 1')).toEqual({ ersatz: 'Ersatz 1', art: 'http-400' });
     expect(herkunftDesFehlertexts('Text 10')).toEqual({ ersatz: 'Ersatz 10', art: 'http-400' });
+  });
+});
+
+// Audit Grundgeruest BF-08: Ein axios-Fehler traegt die gesendete Anfrage mit
+// (config.data, config.headers, request, response.config). Ins Protokoll darf
+// davon nichts.
+describe('fehlerFuersProtokoll', () => {
+  const PASSWORT = 'Passwort-geheim-31';
+  const TOKEN = 'token-geheim-9c';
+
+  const echterAxiosFehler = (status?: number, data: unknown = {}) => {
+    const config = {
+      url: '/auth/login',
+      method: 'post',
+      data: JSON.stringify({ username: 'konfi1', password: PASSWORT }),
+      headers: new AxiosHeaders({ Authorization: `Bearer ${TOKEN}` }),
+    };
+    const response = status ? { status, statusText: 'x', data, headers: {}, config, request: {} } : undefined;
+    return new AxiosError(
+      status ? `Request failed with status code ${status}` : 'Network Error',
+      status ? 'ERR_BAD_REQUEST' : 'ERR_NETWORK',
+      config as never, { gesendet: config.data }, response as never
+    );
+  };
+
+  it('behält Status, Code, Server-Fehlertext und Meldung', () => {
+    expect(fehlerFuersProtokoll(echterAxiosFehler(401, { error: 'Ungültige Anmeldedaten' }))).toEqual({
+      status: 401,
+      code: 'ERR_BAD_REQUEST',
+      fehler: 'Ungültige Anmeldedaten',
+      meldung: 'Request failed with status code 401',
+    });
+  });
+
+  it('lässt Passwort und Token aus der gesendeten Anfrage weg', () => {
+    const fehler = echterAxiosFehler(401, { error: 'Ungültige Anmeldedaten' });
+    // Voraussetzung: das Fehlerobjekt selbst traegt beides.
+    expect(enthaeltText(fehler, PASSWORT)).toBe(true);
+    expect(enthaeltText(fehler, TOKEN)).toBe(true);
+
+    const protokoll = fehlerFuersProtokoll(fehler);
+    expect(enthaeltText(protokoll, PASSWORT)).toBe(false);
+    expect(enthaeltText(protokoll, TOKEN)).toBe(false);
+  });
+
+  it('ohne Antwort: nur Code und Meldung', () => {
+    expect(fehlerFuersProtokoll(echterAxiosFehler())).toEqual({ code: 'ERR_NETWORK', meldung: 'Network Error' });
+  });
+
+  it('nimmt aus der Antwort nur den Fehlertext, keine weiteren Felder', () => {
+    const protokoll = fehlerFuersProtokoll(echterAxiosFehler(400, { error: 'Kaputt', username: 'konfi1', details: { a: 1 } }));
+    expect(protokoll).toEqual({ status: 400, code: 'ERR_BAD_REQUEST', fehler: 'Kaputt', meldung: 'Request failed with status code 400' });
+  });
+
+  it('übersteht Fehler ohne axios-Form und fremde Werte', () => {
+    expect(fehlerFuersProtokoll(new Error('Preferences kaputt'))).toEqual({ meldung: 'Preferences kaputt' });
+    expect(fehlerFuersProtokoll({ code: 'UNAVAILABLE', message: 'Plugin fehlt' })).toEqual({ code: 'UNAVAILABLE', meldung: 'Plugin fehlt' });
+    expect(fehlerFuersProtokoll(null)).toEqual({});
+    expect(fehlerFuersProtokoll(undefined)).toEqual({});
+    expect(fehlerFuersProtokoll('kaputt')).toEqual({});
   });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { AxiosInstance, AxiosInterceptorManager, AxiosResponse } from 'axios';
+import { konsoleMitschneiden } from '../protokollDurchsuchen';
 
 // 403-Rueckfall auf die Stamm-Gemeinde (Audit 26.09.2026, Grundgeruest BF-05, HOCH)
 //
@@ -123,6 +124,31 @@ describe('api — 403-Rueckfall auf die Stamm-Gemeinde', () => {
     expect(ereignisse).toContain('auth:org-fallback');
     expect(ereignisse).not.toContain('auth:relogin-required');
     expect(tokenStore.clearAuth).not.toHaveBeenCalled();
+  });
+
+  // Audit Grundgeruest BF-08: Der Fehler des Refresh traegt die gesendete
+  // Anfrage mit -- `config.data` ist '{"refresh_token":"…"}'. Ins Protokoll
+  // gehoeren Status und Code, nicht der Token.
+  it('scheitert der Refresh, steht der Refresh-Token nicht im Protokoll', async () => {
+    const axiosModul = await import('axios');
+    const config = { url: '/auth/refresh', method: 'post', data: JSON.stringify({ refresh_token: 'refresh-1' }), headers: {} };
+    const fehler = new axiosModul.AxiosError(
+      'Request failed with status code 500', 'ERR_BAD_RESPONSE', config as never, {},
+      { status: 500, statusText: 'Error', data: {}, headers: {}, config } as never
+    );
+    vi.spyOn(axiosModul.default, 'post').mockRejectedValue(fehler);
+    const konsole = konsoleMitschneiden();
+
+    const { default: api } = await import('../../services/api');
+    const rejected = responseHandler(api)!.rejected!;
+    await expect(rejected(ORG_403)).rejects.toBe(ORG_403);
+
+    expect(konsole.enthaelt('refresh-1')).toBe(false);
+    expect(konsole.aufrufe()).toContainEqual([
+      'Token ohne Gemeinde-Claim konnte nicht beschafft werden:',
+      expect.objectContaining({ status: 500, code: 'ERR_BAD_RESPONSE' }),
+    ]);
+    konsole.beenden();
   });
 
   it('ein anderes 403 loest keinen Rueckfall und keinen Refresh aus', async () => {

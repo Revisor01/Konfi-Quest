@@ -379,6 +379,10 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Bei einer fehlgeschlagenen Anmeldung landet das eingegebene Passwort nicht
+  mehr im Protokoll des Geräts. Ebenso bleiben die Schlüssel der Sitzung
+  draußen, wenn das Abmelden, die Anmeldung per Face ID oder Fingerabdruck
+  oder das Einrichten der Mitteilungen scheitert.
 - Wer in einer Gemeinde zur Leitung gehört, bekommt dort keine Badges mehr.
   Trug sich eine Leitung, die in einer anderen Gemeinde Konfi ist, bei einem
   Event als anwesend ein, konnte sie Konfi-Badges der eigenen Gemeinde

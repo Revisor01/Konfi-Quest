@@ -140,6 +140,45 @@ export function alsApiFehler(err: unknown): { response?: { status?: number; data
   return alsObjekt(err) !== null ? (err as { response?: { status?: number; data?: ApiFehlerAntwort }; message?: string; code?: string }) : {};
 }
 
+/** Was `fehlerFuersProtokoll` von einem Fehler uebrig laesst. */
+export interface ProtokollFehler {
+  /** HTTP-Status der Antwort, falls es eine gab. */
+  status?: number;
+  /** Fehlercode von axios (`ERR_NETWORK`, `ECONNABORTED` …) oder eines Plugins. */
+  code?: string;
+  /** Fehlertext des Servers aus `response.data.error`. */
+  fehler?: string;
+  /** `err.message` — bei axios allgemein ("Request failed with status code 401"). */
+  meldung?: string;
+}
+
+/**
+ * Die unkritischen Felder eines gefangenen Fehlers, fuer `console.*`.
+ *
+ * WARUM (Audit Grundgeruest BF-08, Sammelbefund S-23): Ein axios-Fehler traegt
+ * die gesendete Anfrage mit. `config.data` ist der Koerper im Klartext — bei
+ * der Anmeldung Benutzername UND Passwort, beim Refresh und Abmelden der
+ * Refresh-Token —, `config.headers.Authorization` das Zugangs-Token, dazu
+ * `request` und `response.config` mit denselben Daten. Wer den ganzen Fehler
+ * an die Konsole gibt, schreibt das alles ins Protokoll des Geraets.
+ *
+ * Deshalb nur, was zum Eingrenzen reicht: Status, Code, Server-Fehlertext und
+ * die Meldung. Niemals `config`, `request` oder das Fehlerobjekt selbst.
+ */
+export function fehlerFuersProtokoll(err: unknown): ProtokollFehler {
+  const obj = alsObjekt(err) as (MitResponse & { message?: unknown }) | null;
+  const ergebnis: ProtokollFehler = {};
+
+  const status = fehlerStatus(err);
+  if (status !== undefined) ergebnis.status = status;
+  if (typeof obj?.code === 'string' && obj.code) ergebnis.code = obj.code;
+  const serverfehler = obj?.response?.data?.error;
+  if (typeof serverfehler === 'string' && serverfehler) ergebnis.fehler = serverfehler;
+  if (typeof obj?.message === 'string' && obj.message) ergebnis.meldung = obj.message;
+
+  return ergebnis;
+}
+
 /**
  * Grobe Ursache eines gefangenen Fehlers, fuer die anonyme Messung.
  *

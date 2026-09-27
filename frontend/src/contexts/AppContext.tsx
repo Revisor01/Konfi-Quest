@@ -20,7 +20,7 @@ import { BaseUser } from '../types/user';
 import { setAnalyticsRole, trackFehler, trackSitzungsstart, istGueltigeArt, istGueltigerOrt, fehlerStelle } from '../services/analytics';
 import { diagnoseMerkmaleSetzen, wegmarke } from '../services/absturzdiagnose';
 import { ermittleAppVersion } from '../utils/appVersion';
-import { fehlerArt, herkunftDesFehlertexts } from '../utils/fehler';
+import { fehlerArt, fehlerFuersProtokoll, herkunftDesFehlertexts } from '../utils/fehler';
 import { buildPushTargetUrl, resolveOrgForPush, pushZielMelden, PushUserType } from '../utils/pushNavigation';
 import { deepLinksAnschliessen } from '../utils/deepLinks';
 
@@ -292,7 +292,9 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
     fcmTokenLastSent = now; // Timestamp setzen
     await setPushTokenTimestamp(now); // Bug 3: Timestamp nach jedem Send persistieren
   } catch (err) {
-    console.error('Fehler beim Senden des FCM-Tokens:', err);
+    // Nur Status, Code und Servertext: der axios-Fehler traegt den Push-Token
+    // im Koerper und das Zugangs-Token im Header (Audit Grundgeruest BF-08).
+    console.error('Fehler beim Senden des FCM-Tokens:', fehlerFuersProtokoll(err));
     // Retry mit steigendem Abstand (5s, 15s, 30s), danach bei naechstem Online-Wechsel
     const retryDelays = [5000, 15000, 30000];
     if (retryCount < retryDelays.length) {
