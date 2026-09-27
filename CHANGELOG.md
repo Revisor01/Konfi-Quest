@@ -133,6 +133,10 @@ Versionsüberschrift.
   Jahrgänge sieht die Beiträge und begleitet die Challenge. Bestehende
   Challenges nur für Konfis behalten ihre Zielgruppe beim Bearbeiten, statt
   still auf „Jahrgang und Team" zu wechseln.
+- Im Handbuch stehen unter dem geöffneten Kapitel dessen Abschnitte (13.1,
+  13.2 …) als Unterpunkte in der Navigation, auch im Menü auf dem Handy. Der
+  Abschnitt, in dem man gerade liest, ist dort markiert; ein Tipp auf einen
+  Unterpunkt springt hin und schließt auf dem Handy das Menü.
 
 ### Geändert
 - Im Dunkelmodus setzen sich Karten und Listen deutlicher vom Hintergrund ab:

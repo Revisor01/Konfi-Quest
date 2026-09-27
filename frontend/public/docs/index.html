@@ -135,6 +135,17 @@ tbody tr:last-child td { border-bottom:none; }
 .seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
 .seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
 
+/* Abschnitte des aktuellen Kapitels (27.09.2026): eingerueckt an einer
+   feinen Linie. Der gerade gelesene (aria-current="location", gesetzt vom
+   Skript am Seitenende) bekommt ein Stueck Linie in der Akzentfarbe. Die
+   Nummernspalte ist so breit wie "11.17", damit die Titel buendig stehen. */
+.seitenleiste ul.nav-abschnitte { margin:3px 0 7px 13px; border-left:1px solid var(--rand); gap:1px; }
+.seitenleiste ul.nav-abschnitte a { align-items:baseline; gap:7px; margin-left:-1px; padding:5px 9px 5px 10px; border-left:2px solid transparent; border-radius:0 7px 7px 0; font-size:.8rem; line-height:1.4; color:var(--text-leise); overflow-wrap:anywhere; }
+.seitenleiste ul.nav-abschnitte a:hover { color:var(--text); }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] { color:var(--text); background:var(--flaeche-2); border-left-color:var(--akzent); font-weight:600; }
+.nav-abschnitt-nr { flex:none; min-width:4.4ch; font-size:.72rem; font-variant-numeric:tabular-nums; }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] .nav-abschnitt-nr { color:var(--akzent); }
+
 .kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
 .kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
 
@@ -201,6 +212,13 @@ tbody tr:last-child td { border-bottom:none; }
     var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
     setzen();
     if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+    /* Ein Tipp auf einen Eintrag schliesst das Menue (27.09.2026). Bei
+       Kapiteln tat das bisher nur die neue Seite; ein Abschnitt liegt auf
+       derselben Seite, und das offene Menue verdeckte ihn. Der Klick kommt
+       vor dem Sprung an -- der Browser rechnet schon mit der schmalen Leiste. */
+    klapp.addEventListener('click', function (ev) {
+      if (schmal.matches && ev.target.closest('.nav-inhalt a')) klapp.removeAttribute('open');
+    });
   })();
   </script>
   <main class="inhalt">

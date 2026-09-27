@@ -135,6 +135,17 @@ tbody tr:last-child td { border-bottom:none; }
 .seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
 .seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
 
+/* Abschnitte des aktuellen Kapitels (27.09.2026): eingerueckt an einer
+   feinen Linie. Der gerade gelesene (aria-current="location", gesetzt vom
+   Skript am Seitenende) bekommt ein Stueck Linie in der Akzentfarbe. Die
+   Nummernspalte ist so breit wie "11.17", damit die Titel buendig stehen. */
+.seitenleiste ul.nav-abschnitte { margin:3px 0 7px 13px; border-left:1px solid var(--rand); gap:1px; }
+.seitenleiste ul.nav-abschnitte a { align-items:baseline; gap:7px; margin-left:-1px; padding:5px 9px 5px 10px; border-left:2px solid transparent; border-radius:0 7px 7px 0; font-size:.8rem; line-height:1.4; color:var(--text-leise); overflow-wrap:anywhere; }
+.seitenleiste ul.nav-abschnitte a:hover { color:var(--text); }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] { color:var(--text); background:var(--flaeche-2); border-left-color:var(--akzent); font-weight:600; }
+.nav-abschnitt-nr { flex:none; min-width:4.4ch; font-size:.72rem; font-variant-numeric:tabular-nums; }
+.seitenleiste ul.nav-abschnitte a[aria-current="location"] .nav-abschnitt-nr { color:var(--akzent); }
+
 .kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
 .kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
 
@@ -182,7 +193,7 @@ tbody tr:last-child td { border-bottom:none; }
       <div class="nav-inhalt">
         <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
         <p class="nav-titel">Inhalt</p>
-        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html" aria-current="page" class="ist-hier"><span class="nav-nr">8</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">10</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./bedienung.html"><span class="nav-nr">2</span>Die App bedienen</a></li><li><a href="./rollen.html"><span class="nav-nr">3</span>Rollen und Rechte</a></li><li><a href="./konfis.html"><span class="nav-nr">4</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">5</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">6</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">7</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html" aria-current="page" class="ist-hier"><span class="nav-nr">8</span>Punkte, Level und Ziele</a><ul class="nav-abschnitte"><li><a href="#die-zwei-punktarten-auseinanderhalten"><span class="nav-abschnitt-nr">8.1</span>Die zwei Punktarten auseinanderhalten</a></li><li><a href="#wissen-auf-welchen-drei-wegen-punkte-entstehen"><span class="nav-abschnitt-nr">8.2</span>Wissen, auf welchen drei Wegen Punkte entstehen</a></li><li><a href="#eine-gemeldete-aktivitaet-entscheiden"><span class="nav-abschnitt-nr">8.3</span>Eine gemeldete Aktivität entscheiden</a></li><li><a href="#eine-aktivitaet-direkt-zuschreiben"><span class="nav-abschnitt-nr">8.4</span>Eine Aktivität direkt zuschreiben</a></li><li><a href="#den-punktwert-einer-aktivitaet-aendern"><span class="nav-abschnitt-nr">8.5</span>Den Punktwert einer Aktivität ändern</a></li><li><a href="#punkte-wieder-wegnehmen"><span class="nav-abschnitt-nr">8.6</span>Punkte wieder wegnehmen</a></li><li><a href="#level-anlegen-und-pflegen"><span class="nav-abschnitt-nr">8.7</span>Level anlegen und pflegen</a></li><li><a href="#nachvollziehen-wann-nachgerechnet-wird"><span class="nav-abschnitt-nr">8.8</span>Nachvollziehen, wann nachgerechnet wird</a></li></ul></li><li><a href="./jahrgaenge.html"><span class="nav-nr">9</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">10</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">11</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">12</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">13</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">14</span>Jahresrückblick (Wrapped)</a></li></ul>
         <div class="fuss">
           <p><a href="/docs/api/">API-Referenz</a></p>
           <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
@@ -201,6 +212,13 @@ tbody tr:last-child td { border-bottom:none; }
     var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
     setzen();
     if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+    /* Ein Tipp auf einen Eintrag schliesst das Menue (27.09.2026). Bei
+       Kapiteln tat das bisher nur die neue Seite; ein Abschnitt liegt auf
+       derselben Seite, und das offene Menue verdeckte ihn. Der Klick kommt
+       vor dem Sprung an -- der Browser rechnet schon mit der schmalen Leiste. */
+    klapp.addEventListener('click', function (ev) {
+      if (schmal.matches && ev.target.closest('.nav-inhalt a')) klapp.removeAttribute('open');
+    });
   })();
   </script>
   <main class="inhalt">
@@ -304,5 +322,48 @@ tbody tr:last-child td { border-bottom:none; }
     </nav>
   </main>
 </div>
+<script>
+(function () {
+  var leiste = document.querySelector('.seitenleiste');
+  var liste = leiste.querySelector('.nav-abschnitte');
+  if (leiste.scrollHeight > leiste.clientHeight) {
+    var k = leiste.getBoundingClientRect();
+    var fehlt = liste.getBoundingClientRect().bottom - k.bottom + 16;
+    var bisKapitel = leiste.querySelector('.ist-hier').getBoundingClientRect().top - k.top - 48;
+    if (fehlt > 0) leiste.scrollTop += Math.min(fehlt, bisKapitel);
+  }
+  if (!('IntersectionObserver' in window)) return;
+  var ende = document.querySelector('.blaettern');
+  var ziele = [];
+  liste.querySelectorAll('a').forEach(function (a) {
+    var h = document.getElementById(a.hash.slice(1));
+    if (h) ziele.push({ a: a, h: h });
+  });
+  var markieren = function () {
+    var hoehe = window.innerHeight;
+    var amEnde = !!ende && ende.getBoundingClientRect().bottom <= hoehe;
+    var linie = amEnde ? hoehe : hoehe * 0.35;
+    var aktiv = null, angesprungen = null;
+    ziele.forEach(function (z) {
+      var oben = z.h.getBoundingClientRect().top;
+      if (oben < linie) aktiv = z;
+      if (z.a.hash === location.hash && oben >= 0 && oben < hoehe) angesprungen = z;
+    });
+    if (amEnde && angesprungen) aktiv = angesprungen;
+    ziele.forEach(function (z) {
+      if (z === aktiv) z.a.setAttribute('aria-current', 'location');
+      else z.a.removeAttribute('aria-current');
+    });
+    if (aktiv && leiste.scrollHeight > leiste.clientHeight) {
+      var r = aktiv.a.getBoundingClientRect(), l = leiste.getBoundingClientRect();
+      if (r.top < l.top || r.bottom > l.bottom) leiste.scrollTop += r.top - l.top - l.height / 3;
+    }
+  };
+  var beobachter = new IntersectionObserver(markieren, { rootMargin: '0px 0px -65% 0px' });
+  ziele.forEach(function (z) { beobachter.observe(z.h); });
+  if (ende) new IntersectionObserver(markieren, { threshold: 1 }).observe(ende);
+  window.addEventListener('hashchange', markieren);
+})();
+</script>
 </body>
 </html>
