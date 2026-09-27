@@ -282,6 +282,7 @@ export const ZUGELASSENE_SERVERTEXTE: readonly string[] = [
   'Du bist bereits für dieses Event angemeldet',
   'Dieses Event ist nicht für das Team buchbar',
   'Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist',
+  'Dieses Event gehört zu einem anderen Jahrgang',
   'Dieses Event ist nur für das Team',
   'Anmeldung noch nicht geöffnet',
   'Anmeldung bereits geschlossen',

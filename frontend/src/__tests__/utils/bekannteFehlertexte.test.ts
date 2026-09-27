@@ -358,7 +358,7 @@ describe('Zugelassene Server-Texte: wörtlich und ohne Platzhalter im Backend', 
   const buchung = readFileSync(resolve(BACKEND, 'utils/bookingUtils.js'), 'utf8');
 
   it('es sind wenige, und alle stammen aus der Event-Anmeldung und -Abmeldung', () => {
-    expect(ZUGELASSENE_SERVERTEXTE).toHaveLength(18);
+    expect(ZUGELASSENE_SERVERTEXTE).toHaveLength(19);
   });
 
   it.each([...ZUGELASSENE_SERVERTEXTE])('%s', (text) => {
