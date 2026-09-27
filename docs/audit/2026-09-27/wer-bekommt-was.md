@@ -321,6 +321,12 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 
 ## Offene Fragen an Simon
 
+**Beantwortet 27.09.2026.** Simon hat F-06, F-07, F-08, F-11, F-12 und F-13 jeweils mit „ja"
+beantwortet, also wie empfohlen. F-01 bis F-05, F-09, F-10, F-14 und F-15 folgen direkt aus der Regel
+in CLAUDE.md („Wer sieht und bekommt was": Org-Admin alles; Admin und Teamer:in nur ihre Jahrgänge,
+Team-Ausnahmen „Nur Team", Termine ohne Jahrgang, Chat im Team; Mitteilung = Sichtbarkeit) und
+werden wie empfohlen umgesetzt. Die Umsetzung steht je Befund in dessen Status-Zeile.
+
 - **F-01 (BF-05):** Dürfen Admins (nicht Org-Admins) ohne eigene Teilnahme Jahrgangs-Chats, Termin-Chats und Gruppen mit Konfis fremder Jahrgänge öffnen? *Empfehlung: Nein — ohne Teilnahme nur Räume ihrer Jahrgänge, Termin-Chats von Terminen, die sie sehen, und reine Team-Räume; nur Org-Admins bleiben gemeindeweit.*
 - **F-02 (BF-03):** Sollen Teamer:innen des Jahrgangs „Neue Registrierung" auch bekommen? *Empfehlung: Nein, das ist Leitungssache (Konfis bearbeiten nur Admins); Empfänger Org-Admins und Admins des Jahrgangs.*
 - **F-03 (BF-02, BF-03):** Wenn niemand dem Jahrgang zugewiesen ist — genügt dann die Meldung an die Org-Admins? *Empfehlung: Ja, kein Rückfall an alle Admins.*
