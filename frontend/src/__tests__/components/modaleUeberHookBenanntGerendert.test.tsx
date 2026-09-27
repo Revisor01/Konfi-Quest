@@ -35,6 +35,12 @@ import { modalNamenAnschalten, dialogHuelle } from '../../utils/modalNamen';
 
 setupIonicReact({ animated: false });
 
+// Wartezeit fuer das Oeffnen: Ionic laedt beim ersten Modal der Datei seine
+// Bausteine, und unter der vollen Suite (parallele Worker) dauerte das
+// gemessen laenger als die 1 s, die waitFor voreinstellt -- das Modal stand
+// noch auf overlay-hidden, ionModalWillPresent war noch nicht gefallen.
+const OEFFNEN = { timeout: 8000 };
+
 let abschalten: () => void = () => {};
 beforeAll(() => { abschalten = modalNamenAnschalten(); });
 afterAll(() => abschalten());
@@ -66,16 +72,16 @@ const huelle = async (): Promise<HTMLElement> => {
     const modal = document.querySelector('ion-modal');
     h = modal ? dialogHuelle(modal) : null;
     expect(h).not.toBeNull();
-  });
+  }, OEFFNEN);
   return h!;
 };
 
-describe('Per useIonModal geoeffnete Modale tragen ihren Titel als Namen (UI BF-16, Nebenbefund)', () => {
+describe('Per useIonModal geoeffnete Modale tragen ihren Titel als Namen (UI BF-16, Nebenbefund)', { timeout: 20000 }, () => {
   it('„Passwort ändern" (Profil aller drei Rollen): die Dialog-Huelle heisst wie der Titel', async () => {
     oeffne(ChangePasswordModal, { onClose: () => {}, onSuccess: () => {}, variante: 'purple' as const });
     const h = await huelle();
     expect(h.getAttribute('role')).toBe('dialog');
-    await waitFor(() => expect(h.getAttribute('aria-label')).toBe('Passwort ändern'));
+    await waitFor(() => expect(h.getAttribute('aria-label')).toBe('Passwort ändern'), OEFFNEN);
   });
 
   it('Datei-Ansicht (Material, Chat-Anhang) ohne Kopfzeile: der Dateiname ist der Name', async () => {
@@ -84,7 +90,7 @@ describe('Per useIonModal geoeffnete Modale tragen ihren Titel als Namen (UI BF-
       onClose: () => {},
     });
     const h = await huelle();
-    await waitFor(() => expect(h.getAttribute('aria-label')).toBe('Gemeindebrief-Oktober.pdf'));
+    await waitFor(() => expect(h.getAttribute('aria-label')).toBe('Gemeindebrief-Oktober.pdf'), OEFFNEN);
   });
 
   it('der Name folgt dem Titel, wenn er wechselt („Aktivität laden..." -> „Aktivität prüfen")', async () => {
@@ -101,9 +107,9 @@ describe('Per useIonModal geoeffnete Modale tragen ihren Titel als Namen (UI BF-
     };
     oeffne(Wechselnd, {});
     const h = await huelle();
-    await waitFor(() => expect(h.getAttribute('aria-label')).toBe('Aktivität laden...'));
+    await waitFor(() => expect(h.getAttribute('aria-label')).toBe('Aktivität laden...'), OEFFNEN);
     act(() => laden(true));
-    await waitFor(() => expect(h.getAttribute('aria-label')).toBe('Aktivität prüfen'));
+    await waitFor(() => expect(h.getAttribute('aria-label')).toBe('Aktivität prüfen'), OEFFNEN);
   });
 
   it('ein ausdruecklicher Name (aria-label ueber htmlAttributes) hat Vorrang vor dem Titel', async () => {
@@ -114,7 +120,7 @@ describe('Per useIonModal geoeffnete Modale tragen ihren Titel als Namen (UI BF-
     const h = await huelle();
     // Warten, bis der Inhalt samt Titel steht -- erst dann koennte der
     // Beobachter ueberschreiben.
-    await waitFor(() => expect(document.querySelector('ion-modal ion-title')?.textContent).toBe('Titel'));
+    await waitFor(() => expect(document.querySelector('ion-modal ion-title')?.textContent).toBe('Titel'), OEFFNEN);
     await new Promise((r) => setTimeout(r, 50));
     expect(h.getAttribute('aria-label')).toBe('Ausdrücklich');
   });
@@ -132,6 +138,6 @@ describe('Per useIonModal geoeffnete Modale tragen ihren Titel als Namen (UI BF-
     // Ionic reicht nur aria-label und role an die Huelle weiter; aria-labelledby
     // bleibt am Host (ion-modal.js, inheritAttributes).
     expect(h.getAttribute('aria-labelledby')).toBeNull();
-    await waitFor(() => expect(h.getAttribute('aria-label')).toBe('Postfach'));
+    await waitFor(() => expect(h.getAttribute('aria-label')).toBe('Postfach'), OEFFNEN);
   });
 });
