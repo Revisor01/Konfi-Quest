@@ -381,6 +381,14 @@ Versionsüberschrift.
 - Im Chat wird nach einem Zeilenumbruch der nächste Buchstabe nicht mehr
   von selbst großgeschrieben, sondern nur noch am Anfang und nach einem Punkt,
   Ausrufe- oder Fragezeichen.
+- Die anonyme Fehlermessung überträgt Meldungen des Servers nicht mehr im
+  Wortlaut, damit keine Namen, Dateinamen oder Namen von Terminen in die
+  Statistik gelangen — bisher kam etwa „… gehört zu keinem Jahrgang dieses
+  Events" samt Namen dort an. Im Wortlaut gezählt werden nur noch Meldungen,
+  die fest in der App stehen, und einige feste Hinweise zur An- und Abmeldung
+  bei Events; sonst steht dort nur, an welcher Stelle und aus welchem Grund
+  es klemmte. Dasselbe gilt für die Absturzberichte. Die Datenschutzerklärung
+  beschreibt es genauer.
 - Hebt der Betrieb von Konfi Quest eine Mitgliedschaft in einer Gemeinde auf,
   gehen auch die Jahrgänge und alle Chat-Plätze dieser Gemeinde mit — wie
   wenn die Gemeindeleitung die Person entfernt. Bisher blieb sie in Gruppen

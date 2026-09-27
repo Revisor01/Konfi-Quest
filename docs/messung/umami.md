@@ -25,7 +25,9 @@ jeden neuen Messpunkt unverändert:
   sie an jedes Ereignis.
 - **Werte aus Formularen nur über eine Positivliste** (`ERLAUBTE_MERKMALE` für
   `trackHandlung`). Was nicht in der Liste steht, fällt heraus; das Ereignis
-  selbst geht trotzdem, damit die Zählung stimmt.
+  selbst geht trotzdem, damit die Zählung stimmt. Dasselbe gilt für Texte, die
+  nicht aus dem Code stammen: Fehlermeldungen gehen nur im Wortlaut raus, wenn
+  sie in `utils/bekannteFehlertexte.ts` stehen (B1).
 - **Erst nach der erfolgreichen Server-Antwort melden, nie beim Klick.** Ein
   Klick, der in einem Fehler endet, ist keine Nutzung. Offline eingereihte
   Schreibvorgänge zählen deshalb heute nicht.
@@ -82,7 +84,7 @@ Stand des Codes am 27.09.2026 (vollständig: alle Aufrufe von `track(`,
 | `material-angesehen` | `inhalt`: `datei` \| `link` \| `beides` \| `nur-text` | teamer, admin | `teamer/pages/TeamerMaterialPage.tsx`, `teamer/pages/TeamerMaterialDetailPage.tsx` | nach der erfolgreichen Antwort auf `GET /material/:id`, einmal je Öffnen; ein Stand nur aus dem Zwischenspeicher zählt nicht |
 | `material-abgerufen` | `inhalt`: `datei` \| `link` | teamer, admin | dieselben beiden | Datei: nach erfolgreichem `GET /material/files/…`; Link: wenn er geöffnet wird |
 | `konfispruch-gespeichert` | `quelle`: `vorschlag` \| `eigen`; `bibel` (nur bei `vorschlag`): `luther` \| `gute-nachricht` \| `bigs` \| `elberfelder` | konfi, teamer | `konfi/modals/KonfispruchSelectModal.tsx` | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`; unverändert gespeichert zählt nicht |
-| `fehler` | `stelle`: angezeigte Meldung, Ziffern durch `#` ersetzt, höchstens 80 Zeichen; `art`: `http-<Status>` \| `netz` \| `timeout` \| `abbruch` \| `intern`; `ort`: festes Kürzel (`[a-z0-9-]`, höchstens 40 Zeichen) | alle | `contexts/AppContext.tsx` (`setError`) | wenn eine Fehlermeldung angezeigt wird |
+| `fehler` | `stelle`: die angezeigte Meldung nur, wenn sie auf der Positivliste steht (`utils/bekannteFehlertexte.ts`: 204 Texte der App, 18 Server-Texte der Event-An- und -Abmeldung), Ziffern durch `#` ersetzt, höchstens 80 Zeichen; ein anderer Text vom Server wird durch den Ersatztext der Aufrufstelle aus `fehlerText(err, 'Ersatz')` ersetzt, alles Übrige durch `andere-meldung` (`fehlerStelle`); `art`: `http-<Status>` \| `netz` \| `timeout` \| `abbruch` \| `intern` — aus dem Fehlerobjekt der Diagnose oder, bei einem ersetzten Server-Text, aus der Antwort; `ort`: festes Kürzel (`[a-z0-9-]`, höchstens 40 Zeichen) | alle | `contexts/AppContext.tsx` (`setError`) | wenn eine Fehlermeldung angezeigt wird; derselbe Wert geht als Wegmarke ins Absturzprotokoll (Crashlytics, nur iOS und Android) |
 
 Hinweise zur Tabelle:
 
@@ -119,7 +121,7 @@ Hinweise zur Tabelle:
 | Wird das Postfach genutzt? | nein | siehe S8 |
 | Welche Mitteilungen schalten Leute ab? | nein | siehe S9 |
 | Wie viele nutzen den Dunkelmodus? | nein | siehe S11 |
-| Wo und warum treten Fehler auf? | ja | `fehler` — aber siehe B1 |
+| Wo und warum treten Fehler auf? | ja; Server-Texte nur bei der Event-An- und -Abmeldung im Wortlaut (B1) | `fehler` |
 | Wie viele Punkte, Badges, Level haben Konfis? | nein, und bleibt so | Punktzahlen und Stände wären Fingerabdrücke |
 
 ## Befunde aus der Bestandsaufnahme
@@ -148,6 +150,60 @@ kann der mit — über eine Positivliste. **Aufwand:** mittel (eine Stelle in
 `AppContext.tsx` und `fehlerText`, dazu Tests). **Und:** in Umami unter
 `fehler` → `stelle` nach diesen Satzanfängen suchen und Treffer löschen.
 Eigener Auftrag, nicht Teil dieses Pakets.
+
+**Behoben am 27.09.2026.** Am Code bestätigt: `setErrorTracked`
+(`AppContext.tsx`) gab den angezeigten Text nach `\d+ → #` und 80 Zeichen an
+`trackFehler` und an die Wegmarke; die Server-Texte stehen in
+`events/teilnehmer.js` (Z. 93), `einladungen.js` (Z. 135, 156),
+`material.js` (Z. 863) und `bookingUtils.js` (Z. 1014).
+`ParticipantManagementModal` las `response.data.error` sogar direkt. Ein Test
+mit dem echten `AppContext` zeigte den Namen in der Nutzlast an Umami (vor
+dem Fix 14 von 18 Tests rot).
+
+Wie:
+
+- **Positivliste.** `stelle` ist nur noch der angezeigte Text, wenn er in
+  `utils/bekannteFehlertexte.ts` steht — 204 feste Texte der App und 18
+  Server-Texte (siehe unten). Verglichen wird exakt, nach der Entschärfung;
+  gesendet wird immer ein Element von `ERLAUBTE_STELLEN` (`analytics.ts`),
+  also ein Literal aus dem Quelltext. `trackFehler` prüft noch einmal (zweite
+  Sperre).
+- **Das WO bleibt.** Von 80 Aufrufen `setError(fehlerText(err, 'Ersatz'))`
+  geben 78 weder `ort` noch Fehlerobjekt mit (gezählt am 27.09.2026) — mit
+  einem bloßen Platzhalter wäre dort nicht mehr zu sehen, wo es klemmt.
+  Deshalb merkt sich `fehlerText` für zehn Sekunden, welcher Ersatztext zu einem gelieferten
+  Server-Text gehörte (`herkunftDesFehlertexts`, nur im Speicher, höchstens
+  zehn Einträge, einmal abrufbar). Die Messung meldet dann den Ersatztext der
+  Aufrufstelle und die Art aus der Antwort (`http-409` …). Nur wo es keinen
+  gibt, steht `andere-meldung`. Die drei Stellen, die `response.data.error`
+  direkt lasen (`ParticipantManagementModal`, `AdminWrappedPage`,
+  `EventModal`), gehen jetzt über `fehlerText`; angezeigt wird dasselbe.
+- **Server-Texte im Wortlaut** nur für die An- und Abmeldung bei Events: 18
+  Texte, die in `backend/utils/bookingUtils.js` wörtlich als Literal stehen
+  („Anmeldung bereits geschlossen", „Das Event ist leider bereits
+  ausgebucht", „Abmeldung ist nur bis 2 Tage vor dem Event möglich" …).
+  Dort stehen hinter `http-400` ein Dutzend Gründe, und genau die beantworten,
+  warum Konfis sich nicht anmelden können. Der Text mit dem Namen des
+  Konfirmationstermins ist nicht dabei. Weitere Server-Texte nicht: Die
+  meisten sagen nicht mehr als der Status, und jeder Eintrag müsste dem
+  Backend folgen.
+- **Nicht veraltet.** `bekannteFehlertexte.test.ts` liest den Quelltext
+  (`setError`, `fehlerText`, `fehlerTextOderMessage`, `onError`) und schlägt
+  an, wenn ein fester Text fehlt oder ein Eintrag nicht mehr vorkommt; die
+  Server-Texte prüft er gegen `bookingUtils.js`.
+- **Absturzprotokoll.** Die Wegmarke (`wegmarke`, Firebase Crashlytics, nur
+  iOS und Android, steht im nächsten Absturz- oder Fehlerbericht) trägt
+  denselben Wert.
+- **Altbestand.** Bereinigung der Umami-Datenbank:
+  [docs/auftraege/lokaler-agent/03-nach-dem-deploy.md](../auftraege/lokaler-agent/03-nach-dem-deploy.md),
+  Abschnitt 6. Store-Fassungen ohne diese Korrektur schicken bis zu ihrem
+  Update weiter den vollen Text — die Bereinigung ist deshalb zu wiederholen.
+
+Tests: `fehlerMessungOhneNamen.test.tsx` (echte Nutzlast an Umami und
+Wegmarke: verboten — die fünf Texte der vier Fundstellen, direkt und über
+`fehlerText`, Name an bekanntem Text, zweite Sperre; erlaubt — Text der App
+mit Ziffer, Offline-Meldung, mit Ort und Art, Ersatztext, zugelassener
+Server-Text), `bekannteFehlertexte.test.ts`, `fehler.test.ts`.
 
 ### B2 — `bereich` hat keine Formprüfung
 

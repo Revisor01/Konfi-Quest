@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { alsApiFehler, fehlerDaten, fehlerStatus, fehlerText, fehlerTextOderMessage, istNetzwerkfehler } from '../../utils/fehler';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { alsApiFehler, fehlerDaten, fehlerStatus, fehlerText, fehlerTextOderMessage, herkunftDesFehlertexts, istNetzwerkfehler } from '../../utils/fehler';
 
 /** Nachbau eines axios-Fehlers, wie ihn die Catch-Blöcke bisher gesehen haben. */
 const axiosFehler = (data: unknown, status = 400) => ({
@@ -126,5 +126,59 @@ describe('fehlerStatus und fehlerDaten', () => {
   it('macht aus einem Nicht-Objekt ein leeres Fehlerobjekt', () => {
     expect(alsApiFehler('kaputt')).toEqual({});
     expect(alsApiFehler(null)).toEqual({});
+  });
+});
+
+/**
+ * Herkunft eines Server-Textes fuer die Fehlermessung (Befund B1,
+ * docs/messung/umami.md): Die Messung ersetzt einen Server-Text durch den
+ * Ersatztext der Aufrufstelle. Dafuer merkt sich fehlerText kurz, welcher
+ * Ersatztext zu welchem gelieferten Text gehoerte.
+ */
+describe('herkunftDesFehlertexts', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('liefert Ersatztext und Art, wenn fehlerText den Server-Text geliefert hat', () => {
+    const text = fehlerText(axiosFehler({ error: 'Anna Beispiel gehört zu keinem Jahrgang' }, 403), 'Fehler beim Hinzufügen');
+    expect(herkunftDesFehlertexts(text)).toEqual({ ersatz: 'Fehler beim Hinzufügen', art: 'http-403' });
+  });
+
+  it('wird beim Abruf verbraucht', () => {
+    const text = fehlerText(axiosFehler({ error: 'Einmal-Text' }, 409), 'Ersatz A');
+    expect(herkunftDesFehlertexts(text)).toEqual({ ersatz: 'Ersatz A', art: 'http-409' });
+    expect(herkunftDesFehlertexts(text)).toBeUndefined();
+  });
+
+  it('merkt sich nichts, wenn der Ersatztext selbst geliefert wurde', () => {
+    const text = fehlerText(new Error('Netzwerk kaputt'), 'Fehler beim Laden X');
+    expect(text).toBe('Fehler beim Laden X');
+    expect(herkunftDesFehlertexts(text)).toBeUndefined();
+  });
+
+  it('fehlerTextOderMessage merkt sich Server-Text und err.message', () => {
+    const server = fehlerTextOderMessage(axiosFehler({ error: 'Server sagt nein' }, 400), 'Ersatz B');
+    expect(herkunftDesFehlertexts(server)).toEqual({ ersatz: 'Ersatz B', art: 'http-400' });
+
+    const message = fehlerTextOderMessage({ message: 'Datei Taufurkunde.pdf zu groß' }, 'Ersatz C');
+    expect(message).toBe('Datei Taufurkunde.pdf zu groß');
+    expect(herkunftDesFehlertexts(message)?.ersatz).toBe('Ersatz C');
+  });
+
+  it('verfällt nach zehn Sekunden', () => {
+    vi.useFakeTimers();
+    const text = fehlerText(axiosFehler({ error: 'Später abgerufen' }, 400), 'Ersatz D');
+    vi.advanceTimersByTime(10_001);
+    expect(herkunftDesFehlertexts(text)).toBeUndefined();
+  });
+
+  it('hält höchstens zehn Einträge, der älteste fällt zuerst', () => {
+    for (let i = 0; i < 11; i++) {
+      fehlerText(axiosFehler({ error: `Text ${i}` }, 400), `Ersatz ${i}`);
+    }
+    expect(herkunftDesFehlertexts('Text 0')).toBeUndefined();
+    expect(herkunftDesFehlertexts('Text 1')).toEqual({ ersatz: 'Ersatz 1', art: 'http-400' });
+    expect(herkunftDesFehlertexts('Text 10')).toEqual({ ersatz: 'Ersatz 10', art: 'http-400' });
   });
 });

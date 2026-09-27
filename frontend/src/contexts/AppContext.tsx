@@ -17,10 +17,10 @@ import { logout as performLogout } from '../services/auth';
 import { clearAuth } from '../services/tokenStore';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
 import { BaseUser } from '../types/user';
-import { setAnalyticsRole, trackFehler, trackSitzungsstart, istGueltigeArt, istGueltigerOrt } from '../services/analytics';
+import { setAnalyticsRole, trackFehler, trackSitzungsstart, istGueltigeArt, istGueltigerOrt, fehlerStelle } from '../services/analytics';
 import { diagnoseMerkmaleSetzen, wegmarke } from '../services/absturzdiagnose';
 import { ermittleAppVersion } from '../utils/appVersion';
-import { fehlerArt } from '../utils/fehler';
+import { fehlerArt, herkunftDesFehlertexts } from '../utils/fehler';
 import { buildPushTargetUrl, resolveOrgForPush, pushZielMelden, PushUserType } from '../utils/pushNavigation';
 import { deepLinksAnschliessen } from '../utils/deepLinks';
 
@@ -361,9 +361,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isOnline, setIsOnline] = useState<boolean>(true);
 
   // Jede Fehlermeldung, die tatsaechlich jemand zu sehen bekommt, fliesst in
-  // die anonyme Messung ein — DAS beantwortet "wo klemmt es". Uebertragen wird
-  // nur eine gekuerzte, entschaerfte Fassung des Textes: keine Namen, keine
-  // IDs, keine Freitexte aus Beitraegen (Zahlen werden ersetzt).
+  // die anonyme Messung ein — DAS beantwortet "wo klemmt es". Den Text selbst
+  // gibt es dort nur, wenn er ein Text der App ist (Positivliste in
+  // utils/bekannteFehlertexte.ts, Ziffern zu #). Ein Text vom Server kann
+  // Namen, Titel oder Dateinamen tragen und wird ersetzt: durch den
+  // Ersatztext, den die Aufrufstelle an `fehlerText` gegeben hat, sonst durch
+  // `andere-meldung` (Befund B1, docs/messung/umami.md, `fehlerStelle`).
   //
   // Der zweite Parameter ist rein diagnostisch und beruehrt die Anzeige NICHT:
   //   `ort`    — ein im Code fest vergebenes Kuerzel. Loest das Problem, dass
@@ -377,20 +380,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setError(meldung);
     if (!meldung) return;
 
-    const anonym = meldung
-      .replace(/\d+/g, '#')
-      .slice(0, 80);
+    // Kam der Text gerade aus `fehlerText(err, 'Ersatz')` statt des
+    // Ersatztextes? Dann steht der Ersatztext fuer die Stelle, und die Art
+    // kommt aus dem Fehlerobjekt — auch wenn die Aufrufstelle keine Diagnose
+    // mitgibt (das sind die meisten).
+    const herkunft = herkunftDesFehlertexts(meldung);
+    const stelle = fehlerStelle(meldung, herkunft?.ersatz);
 
     // Beide Zusatzangaben werden gegen ihr Muster geprueft, bevor sie das
     // Geraet verlassen. Was nicht passt, faellt weg — lieber ein Eintrag ohne
     // Ursache als einer mit einem durchgereichten Dateinamen.
-    const art = diagnose && 'fehler' in diagnose ? fehlerArt(diagnose.fehler) : undefined;
+    const art = diagnose && 'fehler' in diagnose ? fehlerArt(diagnose.fehler) : herkunft?.art;
     const ort = diagnose?.ort;
 
     const gepruefteArt = art && istGueltigeArt(art) ? art : undefined;
     const geprueftesOrt = ort && istGueltigerOrt(ort) ? ort : undefined;
 
-    trackFehler(anonym, gepruefteArt, geprueftesOrt);
+    trackFehler(stelle, gepruefteArt, geprueftesOrt);
 
     // Dieselbe entschaerfte Angabe zusaetzlich als WEGMARKE ins
     // Absturzprotokoll. Bewusst `wegmarke` und NICHT `fehlerMelden`:
@@ -404,8 +410,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // eine andere Geschichte als einer aus dem Stand.
     //
     // Es geht derselbe gepruefte Inhalt raus wie an die Nutzungsmessung —
-    // keine Zeichenkette mehr, kein Fehlerobjekt.
-    void wegmarke(`fehler ${geprueftesOrt ?? 'ohne-ort'} ${gepruefteArt ?? 'ohne-art'}: ${anonym}`);
+    // keine weitere Zeichenkette, kein Fehlerobjekt, kein Server-Text. Das
+    // Absturzprotokoll ist Firebase Crashlytics (Google): Die Wegmarken
+    // stehen im naechsten Absturz- oder Fehlerbericht des Geraets.
+    void wegmarke(`fehler ${geprueftesOrt ?? 'ohne-ort'} ${gepruefteArt ?? 'ohne-art'}: ${stelle}`);
   }, []);
 
   // Rolle für die anonyme Nutzungsmessung mitfuehren (konfi/teamer/admin) —

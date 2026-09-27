@@ -26,6 +26,8 @@
  * User-Agent, dort greift der Filter nicht (geprüft 10.08.2026).
  */
 
+import { BEKANNTE_FEHLERTEXTE, ZUGELASSENE_SERVERTEXTE } from '../utils/bekannteFehlertexte';
+
 const UMAMI_URL = 'https://t.godsapp.de/api/send';
 const WEBSITE_ID = '72da966c-4b34-41f8-9dbe-e7fb7397f6d6';
 
@@ -166,16 +168,68 @@ export function trackMitmachenAnsicht(ansicht: 'events' | 'antraege'): void {
 }
 
 /**
+ * Platzhalter fuer `stelle`, wenn der Meldungstext nicht zu den bekannten
+ * Texten gehoert — in der Regel ein Text vom Server, der Namen, Titel oder
+ * Dateinamen enthalten kann (Befund B1, docs/messung/umami.md).
+ */
+export const STELLE_ANDERE_MELDUNG = 'andere-meldung';
+
+/** Ziffernfolgen zu einem `#`, hoechstens 80 Zeichen. */
+function entschaerft(text: string): string {
+  return text.replace(/\d+/g, '#').slice(0, 80);
+}
+
+/**
+ * Die einzigen Werte, die `stelle` je annehmen kann: die bekannten Texte in
+ * entschaerfter Form und der Platzhalter. Eine feste, endliche Menge aus
+ * Literalen des Quelltextes — was nicht darin steht, geht nicht raus.
+ */
+export const ERLAUBTE_STELLEN: ReadonlySet<string> = new Set([
+  ...[...BEKANNTE_FEHLERTEXTE, ...ZUGELASSENE_SERVERTEXTE].map(entschaerft),
+  STELLE_ANDERE_MELDUNG
+]);
+
+/**
+ * `stelle` fuer die Messung: der Meldungstext, wenn er ein bekannter Text ist
+ * (Ziffern zu `#`, gekuerzt), sonst der `ersatz` der Aufrufstelle, wenn DER
+ * bekannt ist, sonst `andere-meldung`.
+ *
+ * WARUM eine Positivliste und keine Entschaerfung: Ein Name laesst sich nicht
+ * herausrechnen — „Emilia Mustermann gehoert zu keinem Jahrgang dieses
+ * Events" kam bis 27.09.2026 vollstaendig an. Deshalb gilt hier derselbe
+ * Grundsatz wie bei den Merkmalen der Handlungen: Werte, die nicht aus dem
+ * Code selbst stammen, nur ueber eine Positivliste.
+ *
+ * Verglichen wird die entschaerfte Form. Das aendert nichts an der Sperre:
+ * Gesendet wird immer ein Element von ERLAUBTE_STELLEN, und jedes davon ist
+ * ein Text aus dem Quelltext.
+ */
+export function fehlerStelle(meldung: string, ersatz?: string): string {
+  const stelle = entschaerft(meldung);
+  if (ERLAUBTE_STELLEN.has(stelle) && stelle !== STELLE_ANDERE_MELDUNG) return stelle;
+  if (ersatz) {
+    const ersatzStelle = entschaerft(ersatz);
+    if (ERLAUBTE_STELLEN.has(ersatzStelle)) return ersatzStelle;
+  }
+  return STELLE_ANDERE_MELDUNG;
+}
+
+/**
  * Fehler, den die nutzende Person zu sehen bekommt.
  *
- * `stelle` ist die gekuerzte, entschaerfte Meldung (das WAS), `art` die grobe
- * Ursache (das WARUM: `http-404`, `netz`, `timeout` …) und `ort` ein im Code
- * fest vergebenes Kuerzel (das WO). Alle drei sind bewusst grob und niemals
+ * `stelle` ist die Meldung (das WAS) — aber nur, wenn sie zu den bekannten
+ * Texten gehoert, siehe `fehlerStelle`. `art` ist die grobe Ursache (das
+ * WARUM: `http-404`, `netz`, `timeout` …) und `ort` ein im Code fest
+ * vergebenes Kuerzel (das WO). Alle drei sind bewusst grob und niemals
  * rueckfuehrbar — siehe `fehlerArt`/`ORT_MUSTER` unten.
+ *
+ * `stelle` wird HIER noch einmal gegen die Liste geprueft — die zweite
+ * Sperre, falls jemand kuenftig an AppContext vorbei meldet. Ein Wert, den
+ * `fehlerStelle` schon geliefert hat, kommt dabei unveraendert durch.
  */
 export function trackFehler(stelle: string, art?: string, ort?: string): void {
   track('fehler', {
-    stelle,
+    stelle: fehlerStelle(stelle),
     ...(art ? { art } : {}),
     ...(ort ? { ort } : {})
   });

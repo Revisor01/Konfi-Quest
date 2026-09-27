@@ -21,7 +21,7 @@ import {
 } from './EventFormSections';
 import type { EventFormData } from './EventFormSections';
 import { safeUUID } from '../../../utils/uuid';
-import { fehlerDaten } from '../../../utils/fehler';
+import { fehlerDaten, fehlerText } from '../../../utils/fehler';
 import { trackHandlung } from '../../../services/analytics';
 
 interface EventModalProps {
@@ -325,8 +325,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
         .filter((m): m is string => typeof m === 'string' && m !== '')
         .join(', ');
       if (details) setError(details);
-      else if (typeof data?.error === 'string' && data.error) setError(data.error);
-      else setError('Fehler beim Speichern des Events');
+      else setError(fehlerText(error, 'Fehler beim Speichern des Events'));
     } finally { setLoading(false); }
       });
     } catch {

@@ -29,6 +29,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { SectionHeader, EmptyState } from '../../shared';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { datumKurz } from '../../../utils/dateUtils';
+import { fehlerText } from '../../../utils/fehler';
 
 /**
  * Die Rueckblick-Ausgaben verwalten.
@@ -207,8 +208,7 @@ const AdminWrappedPage: React.FC = () => {
       setNeuerName('');
       await laden();
     } catch (e) {
-      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg || 'Rückblick konnte nicht erstellt werden');
+      setError(fehlerText(e, 'Rückblick konnte nicht erstellt werden'));
     } finally {
       setErzeugt(false);
     }
@@ -231,8 +231,7 @@ const AdminWrappedPage: React.FC = () => {
               setSuccess('Ausgabe gelöscht');
               await laden();
             } catch (e) {
-              const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
-              setError(msg || 'Löschen fehlgeschlagen');
+              setError(fehlerText(e, 'Löschen fehlgeschlagen'));
             }
           },
         },

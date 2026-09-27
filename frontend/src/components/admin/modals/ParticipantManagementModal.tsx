@@ -36,6 +36,7 @@ import type { Participant } from '../../../types/event';
 import { passtZumTermin } from '../../../utils/jahrgangsPassung';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { uhrzeit } from '../../../utils/dateUtils';
+import { fehlerText } from '../../../utils/fehler';
 
 interface Konfi {
   id: number;
@@ -277,8 +278,9 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       } catch (err) {
         // Die Meldung des Servers zeigen, wenn er eine hat — etwa "… gehört
         // zu keinem Jahrgang dieses Termins" (403). Sonst der Sammelbegriff.
-        const meldung = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-        setError(meldung || 'Fehler beim Hinzufügen der Teilnehmer:innen');
+        // Ueber fehlerText, damit die Fehlermessung statt des Server-Textes
+        // (er traegt den Namen der Person) den Sammelbegriff meldet.
+        setError(fehlerText(err, 'Fehler beim Hinzufügen der Teilnehmer:innen'));
       } finally {
         setLoading(false);
       }
