@@ -77,8 +77,11 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
 
       await PushService.sendChallengeSubmissionToLeadership(db, ORG2, CHALLENGE_ORG2, 'Challenge Org 2', 'Emilia', true);
 
-      // Leitung Org 2 + orgAdmin1 (Zusatz) + teamer2 (Seed-Zuweisung auf Jahrgang 2).
-      expect(tokens()).toEqual(['token-admin2', 'token-orgadmin1', 'token-orgadmin2', 'token-teamer2']);
+      // org_admins Org 2 + orgAdmin1 (Zusatz) + teamer2 (Seed-Zuweisung auf
+      // Jahrgang 2). admin2 hat keinen Jahrgang und bekommt zu einer
+      // Challenge 'konfis_und_team' nichts (Entscheidung 27.09.2026: dort nur
+      // Admins und Teamer:innen des Jahrgangs).
+      expect(tokens()).toEqual(['token-orgadmin1', 'token-orgadmin2', 'token-teamer2']);
       // Der Tap muss in Org 2 wechseln, nicht in die Stamm-Org 1 des Empfaengers.
       const anOrgAdmin1 = gesendete().find(p => p.token === 'token-orgadmin1');
       expect(anOrgAdmin1.data.organization_id).toBe(String(ORG2));
@@ -87,7 +90,7 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
 
     it('verboten: ohne Zugehoerigkeit zu Org 2 bekommt admin1 nichts', async () => {
       await PushService.sendChallengeSubmissionToLeadership(db, ORG2, CHALLENGE_ORG2, 'Challenge Org 2', 'Emilia', true);
-      expect(tokens()).toEqual(['token-admin2', 'token-orgadmin2', 'token-teamer2']);
+      expect(tokens()).toEqual(['token-orgadmin2', 'token-teamer2']);
     });
 
     it('verboten: wer in Org 2 nur Teamer:in ist, bekommt den Leitungs-Push dort NICHT', async () => {
@@ -156,8 +159,8 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
         [USERS.teamer1.id, JAHRGAENGE.jahrgang2.id]
       );
       await PushService.sendChallengeSubmissionToLeadership(db, ORG2, CHALLENGE_ORG2, 'Challenge Org 2', 'Emilia', false);
-      // Leitung Org 2 + teamer2 (Seed-Zuweisung auf Jahrgang 2) + teamer1.
-      expect(tokens()).toEqual(['token-admin2', 'token-orgadmin2', 'token-teamer1', 'token-teamer2']);
+      // org_admin Org 2 + teamer2 (Seed-Zuweisung auf Jahrgang 2) + teamer1.
+      expect(tokens()).toEqual(['token-orgadmin2', 'token-teamer1', 'token-teamer2']);
     });
 
     it('verboten: Zuweisung auf den Jahrgang OHNE Zugehoerigkeit zu Org 2 reicht nicht', async () => {
@@ -166,7 +169,7 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
         [USERS.teamer1.id, JAHRGAENGE.jahrgang2.id]
       );
       await PushService.sendChallengeSubmissionToLeadership(db, ORG2, CHALLENGE_ORG2, 'Challenge Org 2', 'Emilia', false);
-      expect(tokens()).toEqual(['token-admin2', 'token-orgadmin2', 'token-teamer2']);
+      expect(tokens()).toEqual(['token-orgadmin2', 'token-teamer2']);
     });
   });
 
@@ -178,7 +181,7 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
       await zusatz(db, USERS.orgAdmin1.id, ORG2, ROLES.orgAdmin2.id);
 
       await PushService.sendChallengeSubmissionToLeadership(db, ORG2, CHALLENGE_ORG2, 'Challenge Org 2', 'Emilia', true);
-      expect(tokens()).toEqual(['token-admin2', 'token-orgadmin1', 'token-orgadmin2', 'token-teamer2']);
+      expect(tokens()).toEqual(['token-orgadmin1', 'token-orgadmin2', 'token-teamer2']);
 
       sendFirebasePushNotification.mockClear();
       await PushService.sendEventOptOutToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Termin', 'krank');

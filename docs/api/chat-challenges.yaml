@@ -1514,16 +1514,20 @@ paths:
         plus org-weite 'nur_team'-Challenges. org_admin sieht alle
         Challenges der Org.
         GEAENDERT 2026-08-31: admin war vorher org-weit.
-        GEAENDERT 2026-09-27 (Simon: Admins sind an jeder Team-Challenge
-        beteiligt): admin sieht zusaetzlich jede 'konfis_und_team'-Challenge
-        der Gemeinde, auch ohne Jahrgang; nur 'konfis' bleibt jahrgangs-
-        gebunden. Teamer unveraendert. Die Regel steht einmal in
-        utils/challengeLeitungSicht.js und gilt ebenso fuer die Sichtpruefung
-        (submissions, moderate, export, delete), die Datei-Auslieferung, die
-        Teilnehmerliste GET /challenges/konfi, badge-counts.pendingChallenges,
-        die App-Icon-Zahl und die Empfaenger der Mitteilung
-        'challenge_submission' (dort zusaetzlich: Teamer bei 'nur_team',
-        die einreichende Person nie). Antwortform unveraendert.
+        GEAENDERT 2026-09-27 (Simon): Die Regel steht einmal in
+        utils/challengeLeitungSicht.js -- org_admin alles; admin und teamer
+        'nur_team' org-weit, 'konfis_und_team' und 'konfis' nur ueber einen
+        zugewiesenen Jahrgang der Challenge. Sie gilt ebenso fuer die
+        Sichtpruefung (submissions, moderate, export, delete), die
+        Datei-Auslieferung, badge-counts.pendingChallenges und
+        challengeUpdates, die App-Icon-Zahl und die Empfaenger der Mitteilung
+        'challenge_submission'. Dort vorher: jeder admin der Gemeinde (auch
+        zu Challenges fremder Jahrgaenge, die er nicht sah), teamer nie bei
+        'nur_team'; jetzt dieselbe Regel wie die Liste, die einreichende
+        Person nie. Eine Zwischenfassung desselben Tages (admin org-weit bei
+        'konfis_und_team') ist nie ausgeliefert worden und zurueckgenommen:
+        "Konfis und Team darf auch nur ein Admin sehen und ein Teamer, der in
+        dem Jahrgang ist." Antwortform unveraendert.
         GEAENDERT 2026-09-01: Ist die Liste ausgeduennt, weil admin/teamer
         keine Jahrgangs-Zuweisung hat, traegt die Antwort zusaetzlich den
         Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform
@@ -1559,6 +1563,11 @@ paths:
         gespeichert. admin und teamer duerfen nur eigene (zugewiesene)
         Jahrgänge bespielen (admin seit 2026-08-31), org_admin alle;
         Jahrgänge und Urheber werden org-gescopt validiert.
+        audience 'konfis' ("Nur die Konfis") ist ab 2.3.0 im Formular wieder
+        waehlbar (Simon, 27.09.2026); die Route nahm den Wert durchgehend an.
+        Einreichen duerfen dort nur Konfis (Team: 403 "Bei dieser Challenge
+        reichen nur die Konfis Beitraege ein."), sehen und moderieren wie bei
+        'konfis_und_team'.
       requestBody:
         required: true
         content:

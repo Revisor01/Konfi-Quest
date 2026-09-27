@@ -199,8 +199,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     if (viewable === null) return true;
 
     // Die Regel steht in utils/challengeLeitungSicht.js (27.09.2026): 'nur_team'
-    // fuer das ganze Team, 'konfis_und_team' zusaetzlich fuer jeden Admin,
-    // sonst nur ueber einen zugewiesenen Jahrgang.
+    // fuer das ganze Team, sonst nur ueber einen zugewiesenen Jahrgang.
     const { rows: [row] } = await db.query(
       `SELECT 1 FROM challenges c
         WHERE c.id = $1
@@ -466,10 +465,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           SELECT 1 FROM challenge_jahrgang_assignments cja
           WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($3::int[])
         )`;
-      } else if (jahrgangIds === null || role === 'admin') {
-        // org_admin und admin: alles der Org, wo das Team mitmachen darf --
-        // Admins sind an jeder Team-Challenge beteiligt, auch ohne Jahrgang
-        // (Simon, 27.09.2026; utils/challengeLeitungSicht.js).
+      } else if (jahrgangIds === null) {
+        // org_admin: alles der Org, wo das Team mitmachen darf. Admins und
+        // Teamer:innen nur ueber ihre Jahrgaenge (Simon, 27.09.2026;
+        // utils/challengeLeitungSicht.js).
         scopeCondition = `c.audience IN ('konfis_und_team', 'nur_team')`;
       } else if (jahrgangIds.length === 0) {
         // Teamer ohne Jahrgänge: nur die org-weiten Team-Challenges
@@ -1102,9 +1101,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // 'nur_team'-Challenges sind org-weit (keine Jahrgangs-Zuordnung) —
         // dort darf jede:r aus dem Team der Org die Dateien sehen, sonst könnte
         // sie/er die eigene Team-Runde nicht anschauen (Migration 121).
-        // Admins zusaetzlich bei 'konfis_und_team' (utils/challengeLeitungSicht.js).
-        if (row.audience === 'nur_team'
-            || (requester.role_name === 'admin' && row.audience === 'konfis_und_team')) {
+        if (row.audience === 'nur_team') {
           mayAccess = true;
         } else {
           // Sonst nur für Submissions aus einem der zugewiesenen Jahrgänge —
@@ -1248,8 +1245,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         }
         // Eine Regel fuer Liste, Sichtpruefung, Zaehler und Mitteilungen
         // (utils/challengeLeitungSicht.js, 27.09.2026): 'nur_team' fuer das
-        // ganze Team, 'konfis_und_team' zusaetzlich fuer jeden Admin, sonst
-        // ueber einen zugewiesenen Jahrgang.
+        // ganze Team, sonst ueber einen zugewiesenen Jahrgang.
         params.push(req.user.role_name, viewable);
         jahrgangFilter = `AND ${leitungSiehtChallengeSql({ rolle: '$3', jahrgaenge: '$4::int[]' })}`;
       }

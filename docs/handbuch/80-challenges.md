@@ -83,30 +83,34 @@ auswählen. Das gilt für Teamer:innen und Admins gleichermaßen.
 
 ### Festlegen, wer mitmachen darf
 
-Zwei Möglichkeiten unter „Wer macht mit?":
+Drei Möglichkeiten unter „Wer macht mit?":
 
-| | „Jahrgang und Team" | „Nur das Team" |
-|---|---|---|
-| Konfis dürfen einreichen | ja | nein |
-| Team darf einreichen | ja | ja |
-| Jahrgänge auswählbar | ja, Pflicht | nein, entfällt |
-| Konfis sehen die Challenge | ja | **nein, gar nicht** |
-| Wer verwaltet sie | die Leitung — Org-Admins und alle Admins — und die Teamer:innen der Jahrgänge | jede:r im Team der Organisation |
+| | „Jahrgang und Team" | „Nur die Konfis" | „Nur das Team" |
+|---|---|---|---|
+| Konfis dürfen einreichen | ja | ja | nein |
+| Team darf einreichen | ja | nein | ja |
+| Jahrgänge auswählbar | ja, Pflicht, mehrere möglich | ja, Pflicht, mehrere möglich | nein, entfällt |
+| Konfis sehen die Challenge | ja | ja | **nein, gar nicht** |
+| Wer sie sieht und verwaltet | Org-Admins und die Admins und Teamer:innen der gewählten Jahrgänge | Org-Admins und die Admins und Teamer:innen der gewählten Jahrgänge | jede:r im Team der Organisation |
 
 „Jahrgang und Team" ist die Voreinstellung: „Die Konfis der gewählten Jahrgänge
-und ihr im Team — alle reichen gleichberechtigt ein." Eine Einstellung „nur
-Konfis" gibt es bewusst nicht. Wer eine Aufgabe stellt, soll sie auch selbst
-beantworten.
+und ihr im Team — alle reichen gleichberechtigt ein."
+
+„Nur die Konfis" ist eine Aufgabe für die Konfis: „Die Konfis der gewählten
+Jahrgänge reichen ein. Ihr im Team seht die Beiträge und begleitet die
+Challenge, reicht aber selbst nichts ein." Wer mit dem Jahrgang arbeitet, sieht
+die Challenge trotzdem — auch als Teamer:in.
 
 „Nur das Team" ist eine Runde unter euch. Solche Challenges laufen
 organisationsweit über die Rolle statt über Jahrgänge — deshalb entfällt die
 Jahrgangs-Auswahl, und jede:r im Team kann sie sehen und verwalten.
 
-Admins gehören zum Team und sind deshalb an jeder Challenge beteiligt, bei
-der das Team mitmacht — sie sehen und verwalten sie auch ohne zugewiesenen
-Jahrgang. Nur ältere Challenges, bei denen allein Konfis mitmachen, sehen
-Admins wie Teamer:innen nur für ihre
-[zugewiesenen Jahrgänge](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert).
+Bei „Jahrgang und Team" und „Nur die Konfis" entscheidet der Jahrgang, wer im
+Team die Challenge sieht: Org-Admins immer, Admins und Teamer:innen, wenn ihnen
+einer der gewählten Jahrgänge
+[zugewiesen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
+ist. Wer keinen davon hat, sieht die Challenge nicht, zählt sie nicht und
+bekommt keine Mitteilungen dazu.
 
 Konfis erfahren von einer Team-Challenge gar nichts: Sie steht nicht in ihrer
 Liste, und ruft jemand die Adresse direkt auf, antwortet das System „nicht
@@ -396,10 +400,8 @@ ohnehin sehen dürfen:
 
 - die Person, die ihn eingereicht hat — immer
 - der Org-Admin — für alles in seiner Organisation
-- Admins — für jede Challenge, bei der das Team mitmacht, sonst nur für ihre
-  zugewiesenen Jahrgänge
-- Teamer:innen — nur für ihre zugewiesenen Jahrgänge, bei Challenges nur fürs
-  Team für alles im Team
+- Admins und Teamer:innen — für ihre zugewiesenen Jahrgänge, bei Challenges
+  nur fürs Team für alles im Team
 - Konfis — nur für Beiträge, die in ihrer Galerie erscheinen dürfen
 
 ---
@@ -463,9 +465,9 @@ erscheint er bei dir als neu.
 
 Am Reiter **Challenges** stehen beide Zahlen zusammen, ebenso am
 [Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
-App-Symbol. Gezählt werden nur Challenges, die ihr seht: Teamer:innen ihre
-zugewiesenen Jahrgänge und die Challenges nur fürs Team, Admins zusätzlich
-alle, bei denen das Team mitmacht, die Gemeindeleitung alle der Gemeinde.
+App-Symbol. Gezählt werden nur Challenges, die ihr seht: Admins und
+Teamer:innen die ihrer zugewiesenen Jahrgänge und die Challenges nur fürs
+Team, die Gemeindeleitung alle der Gemeinde.
 Neue Beiträge zählen nur in laufenden Challenges. Die Legende hinter dem
 Fragezeichen erklärt beide Zeichen zusammen mit den Status-Symbolen.
 
@@ -478,10 +480,9 @@ Konfis sehen an der Challenge ebenfalls eine rote Zahl für ihre
   Challenge tatsächlich startet — nicht schon beim Anlegen.
 - **Wer die Challenge verwaltet**, bekommt eine Mitteilung bei jedem neuen
   Beitrag, auch wenn er ohne Moderation sofort in der Galerie steht: die
-  Gemeindeleitung immer, Admins bei jeder Challenge mit dem Team und bei
-  reinen Konfi-Challenges ihrer Jahrgänge, Teamer:innen für ihre Jahrgänge
-  und die Challenges nur fürs Team. Wer selbst etwas einreicht, bekommt über
-  den eigenen Beitrag keine Mitteilung.
+  Gemeindeleitung immer, Admins und Teamer:innen für die Challenges ihrer
+  Jahrgänge und die Challenges nur fürs Team. Wer selbst etwas einreicht,
+  bekommt über den eigenen Beitrag keine Mitteilung.
 - **Die einreichende Person** bekommt eine Mitteilung, sobald sie den Stempel
   erhält, und eine, wenn ihr Beitrag ausgeblendet wird — mit eurer Begründung,
   falls ihr eine eingetragen habt.

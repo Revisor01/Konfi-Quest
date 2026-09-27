@@ -178,9 +178,11 @@ const VISIBILITY_LABEL: Record<string, string> = {
   private: 'Nur Leitung'
 };
 
-// Teilnahme-Kreis (Migration 121). 'konfis' ist der Normalfall und wird in der
-// Meta-Zeile NICHT angezeigt — nur die Abweichungen sind erwaehnenswert.
+// Teilnahme-Kreis (Migration 121) -- drei Zielgruppen, alle in der
+// Meta-Zeile benannt (Simon, 27.09.2026; vorher galt 'konfis' als Normalfall
+// ohne Anzeige, bis es die Option im Formular gar nicht mehr gab).
 const AUDIENCE_LABEL: Record<string, string> = {
+  konfis: 'Nur Konfis',
   konfis_und_team: 'Konfis und Team',
   nur_team: 'Nur Team'
 };

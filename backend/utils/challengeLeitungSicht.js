@@ -1,18 +1,21 @@
 // Wer aus der Leitung eine Challenge sieht, sie zaehlt und Mitteilungen zu
 // ihr bekommt -- EINE Regel fuer alle Stellen (27.09.2026).
 //
-// Simon: "Admins sehen nur und kriegen auch nur Infos zu Challenges, an denen
-// sie beteiligt sind, aber Admins sind ja theoretisch an jeder Team-Challenge
-// beteiligt. Also immer wenn Konfi und Team oder nur Team ausgewaehlt ist,
-// dann kriegen die Admins das. Wenn es nur Konfis sind, mit Jahrgangsbindung,
-// und die sind da nicht drin, dann kriegen sie es auch nicht."
+// Simon, 27.09.2026 -- drei Zielgruppen:
+//   "nur Team (ohne Jahrgang alle im Team, Teamer, Admins, org Admins)
+//    Team und Konfi (jahrgangsgebunden, mehrere moeglich: alle Konfis,
+//      Teamer, Admins, org Admins)
+//    Konfis (jahrgangsgebunden, mehrere moeglich: alle Konfis, Teamer,
+//      Admins, org Admins) -- Konfis, weil wir damit arbeiten und die
+//      Teamer das auch sehen muessen."
 //
-//   org_admin  jede Challenge der Gemeinde
-//   admin      'konfis_und_team' und 'nur_team' immer (das Team ist
-//              beteiligt, und Admins gehoeren zum Team); 'konfis' nur mit
-//              einem zugewiesenen Jahrgang der Challenge
-//   teamer     'nur_team' immer (Migration 121, Befund H4); sonst nur mit
-//              einem zugewiesenen Jahrgang der Challenge
+//   org_admin        jede Challenge der Gemeinde
+//   admin, teamer    'nur_team' immer; 'konfis_und_team' und 'konfis' nur
+//                    mit einem zugewiesenen Jahrgang der Challenge
+//
+// Eine erste Fassung am selben Tag liess Admins 'konfis_und_team' auch ohne
+// Jahrgang sehen; Simon hat das korrigiert ("Konfis und Team darf auch nur
+// ein Admin sehen und ein Teamer, der in dem Jahrgang ist").
 //
 // Bis dahin stand die Regel an sieben Stellen einzeln (Sichtpruefung,
 // Leitungsliste, Teilnehmerliste, Dateiauslieferung, Reiter-Zaehler,
@@ -20,8 +23,8 @@
 // gar keine Bindung: Jeder Admin bekam zu jeder Challenge eine Nachricht,
 // sah sie aber in Liste und Reiter nicht.
 
-/** Teilnahmekreise, an denen ein Admin ohne Jahrgang beteiligt ist. */
-const ADMIN_ORGWEITE_AUDIENCES = ['konfis_und_team', 'nur_team'];
+/** Teilnahmekreis, den das ganze Team ohne Jahrgang sieht. */
+const TEAM_ORGWEITE_AUDIENCES = ['nur_team'];
 
 /**
  * SQL-Bedingung "diese Leitungsrolle sieht Challenge <c>".
@@ -36,7 +39,6 @@ function leitungSiehtChallengeSql({ rolle, jahrgaenge, c = 'c' }) {
   return `(
     ${rolle} = 'org_admin'
     OR ${c}.audience = 'nur_team'
-    OR (${rolle} = 'admin' AND ${c}.audience = 'konfis_und_team')
     OR EXISTS (
       SELECT 1 FROM challenge_jahrgang_assignments cja_sicht
        WHERE cja_sicht.challenge_id = ${c}.id
@@ -56,9 +58,8 @@ function leitungSiehtChallengeSql({ rolle, jahrgaenge, c = 'c' }) {
 function leitungSiehtChallenge(rolle, audience, challengeJahrgaenge, eigeneJahrgaenge) {
   if (rolle === 'org_admin') return true;
   if (audience === 'nur_team') return true;
-  if (rolle === 'admin' && audience === 'konfis_und_team') return true;
   const eigene = new Set((eigeneJahrgaenge || []).map(Number));
   return (challengeJahrgaenge || []).some((id) => eigene.has(Number(id)));
 }
 
-module.exports = { leitungSiehtChallengeSql, leitungSiehtChallenge, ADMIN_ORGWEITE_AUDIENCES };
+module.exports = { leitungSiehtChallengeSql, leitungSiehtChallenge, TEAM_ORGWEITE_AUDIENCES };

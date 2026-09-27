@@ -68,3 +68,25 @@ describe('Leitungsliste: neue Beitraege als rote Kugel', () => {
     expect(container.querySelectorAll('.app-zaehler-kugel').length).toBe(0);
   });
 });
+
+describe('Leitungsliste: jede der drei Zielgruppen steht in der Meta-Zeile', () => {
+  it('„Nur Konfis", „Konfis und Team" und „Nur Team" werden benannt', () => {
+    const mit = (id: number, title: string, audience: string) =>
+      ({ ...laufend(id, title), audience } as unknown as AdminChallenge);
+    const { container } = render(
+      <ChallengesManageView
+        challenges={[mit(5, 'Konfi-Runde', 'konfis'), mit(6, 'Gemischt', 'konfis_und_team'), mit(7, 'Teamrunde', 'nur_team')]}
+        neuigkeiten={{}}
+        offeneFreigaben={{}}
+        onSelectChallenge={() => {}}
+        onEditChallenge={() => {}}
+        onDeleteChallenge={() => {}}
+      />
+    );
+    const eintrag = (titel: string) =>
+      [...container.querySelectorAll('.app-list-item')].find((e) => e.textContent?.includes(titel))?.textContent;
+    expect(eintrag('Konfi-Runde')).toContain('Nur Konfis');
+    expect(eintrag('Gemischt')).toContain('Konfis und Team');
+    expect(eintrag('Teamrunde')).toContain('Nur Team');
+  });
+});

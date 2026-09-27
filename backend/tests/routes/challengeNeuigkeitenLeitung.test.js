@@ -96,8 +96,11 @@ describe('Challenge-Neuigkeiten fuer Leitung und Team', () => {
     expect(vorher.pendingChallenges).toBe(1);
     expect(vorher.challengeUpdates.total).toBe(0);
 
-    // Gibt die Gemeindeleitung frei, hat admin1 den Beitrag noch nicht
-    // gesehen: fuer ihn ist er jetzt neu -- bis er die Challenge oeffnet.
+    // Gibt die Gemeindeleitung frei, hat admin1 (Jahrgang 1) den Beitrag noch
+    // nicht gesehen: fuer ihn ist er jetzt neu -- bis er die Challenge oeffnet.
+    await db.query('INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]);
+    invalidateUserCache(USERS.admin1.id);
     const frei = await request(app).put(`/api/challenges/admin/submissions/${b.id}/moderate`)
       .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`).send({ action: 'approve' });
     expect(frei.status).toBe(200);
@@ -110,13 +113,17 @@ describe('Challenge-Neuigkeiten fuer Leitung und Team', () => {
 
   it('der eigene Beitrag zaehlt nicht', async () => {
     const c = await challenge();
-    await beitrag('admin1', c.id);
-    expect((await zaehler('admin1')).challengeUpdates.total).toBe(0);
+    await beitrag('teamer1', c.id);
+    expect((await zaehler('teamer1')).challengeUpdates.total).toBe(0);
     expect((await zaehler('orgAdmin1')).challengeUpdates.total).toBe(1);
   });
 
-  it('Jahrgangsbindung: reine Konfi-Challenge eines fremden Jahrgangs zaehlt fuer den Admin nicht', async () => {
+  it('Jahrgangsbindung: ohne Jahrgang zaehlt fuer den Admin weder "Konfis und Team" noch "Nur Konfis"', async () => {
     const c = await challenge({ audience: 'konfis' });
+    const c2 = await challenge();
+    await beitrag('konfi2', c2.id);
+    expect((await zaehler('admin1')).challengeUpdates.total).toBe(0);
+    await db.query('DELETE FROM challenge_submissions WHERE challenge_id = $1', [c2.id]);
     await beitrag('konfi1', c.id);
     expect((await zaehler('admin1')).challengeUpdates.total).toBe(0);
     // Teamer:in des Jahrgangs und Gemeindeleitung zaehlen ihn.

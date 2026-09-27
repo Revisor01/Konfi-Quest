@@ -3,18 +3,16 @@
 // Wer aus der Leitung eine Challenge sieht, sie zaehlt und eine Mitteilung
 // zu neuen Beitraegen bekommt (Simon, 27.09.2026):
 //
-//   "Admins sehen nur und kriegen auch nur Infos zu Challenges, an denen sie
-//    beteiligt sind, aber Admins sind ja theoretisch an jeder Team-Challenge
-//    beteiligt. Also immer wenn Konfi und Team oder nur Team ausgewaehlt ist,
-//    dann kriegen die Admins das. Wenn es nur Konfis sind, mit
-//    Jahrgangsbindung, und die sind da nicht drin, dann kriegen sie es auch
-//    nicht."
+//   Drei Zielgruppen: "nur Team (ohne Jahrgang alle im Team, Teamer, Admins,
+//   org Admins), Team und Konfi (jahrgangsgebunden: alle Konfis, Teamer,
+//   Admins, org Admins), Konfis (jahrgangsgebunden: alle Konfis, Teamer,
+//   Admins, org Admins)." -- "Konfis und Team darf auch nur ein Admin sehen
+//   und ein Teamer, der in dem Jahrgang ist."
 //
-// Vorher: Ein Admin ohne passenden Jahrgang sah 'konfis_und_team'-Challenges
-// nicht und zaehlte sie nicht -- bekam aber zu JEDER Challenge der Gemeinde
-// eine Mitteilung, auch zu reinen Konfi-Challenges fremder Jahrgaenge.
-// Teamer:innen bekamen zu 'nur_team'-Runden gar keine Mitteilung, obwohl
-// sie sie moderieren und ihr Reiter sie zaehlt.
+// Vorher: Die Mitteilung zu einem neuen Beitrag ging an JEDEN Admin der
+// Gemeinde, auch zu Challenges fremder Jahrgaenge, die er weder in der Liste
+// noch am Reiter sah. Teamer:innen bekamen zu 'nur_team'-Runden gar keine
+// Mitteilung, obwohl sie sie moderieren und ihr Reiter sie zaehlt.
 //
 // admin1 (Rolle admin, Org 1) hat im Seed KEINEN Jahrgang; teamer1 hat
 // Jahrgang 1. Assertions auf konkrete Werte.
@@ -71,48 +69,55 @@ describe('Challenges: Beteiligung von Admins und Team', () => {
   )).rows.map((r) => Number(r.challenge_id));
 
   describe('Admin ohne passenden Jahrgang', () => {
-    it('erlaubt: "Konfis und Team" sieht, zaehlt und meldet er', async () => {
-      const c = await challenge('konfis_und_team');
-      expect((await einreichen('konfi1', c.id)).status).toBe(201);
-      expect(await liste('admin1')).toEqual(['Runde konfis_und_team']);
-      const z = await zaehler('admin1');
-      expect(z.pendingChallenges).toBe(1);
-      expect(z.challengeApprovals.byChallenge).toEqual({ [c.id]: 1 });
-      expect(await mitteilungen(USERS.admin1.id)).toEqual([c.id]);
-      const detail = await request(app).get(`/api/challenges/admin/${c.id}/submissions`)
-        .set('Authorization', `Bearer ${generateToken('admin1')}`);
-      expect(detail.status).toBe(200);
-    });
-
-    it('erlaubt: "nur Team" sieht, zaehlt und meldet er', async () => {
+    it('erlaubt: "nur Team" sieht, zaehlt und meldet er -- ohne Jahrgang', async () => {
       const c = await challenge('nur_team');
       expect((await einreichen('teamer1', c.id)).status).toBe(201);
       expect(await liste('admin1')).toEqual(['Runde nur_team']);
       expect((await zaehler('admin1')).pendingChallenges).toBe(1);
       expect(await mitteilungen(USERS.admin1.id)).toEqual([c.id]);
+      const beitraege = await request(app).get(`/api/challenges/admin/${c.id}/submissions`)
+        .set('Authorization', `Bearer ${generateToken('admin1')}`);
+      expect(beitraege.status).toBe(200);
     });
 
-    it('verboten: "nur Konfis" eines fremden Jahrgangs -- keine Sicht, keine Zahl, keine Mitteilung', async () => {
-      const c = await challenge('konfis');
-      expect((await einreichen('konfi1', c.id)).status).toBe(201);
-      expect(await liste('admin1')).toEqual([]);
-      expect((await zaehler('admin1')).pendingChallenges).toBe(0);
-      expect(await mitteilungen(USERS.admin1.id)).toEqual([]);
-      // Die Gemeindeleitung bekommt sie weiterhin.
-      expect(await mitteilungen(USERS.orgAdmin1.id)).toEqual([c.id]);
-    });
+    for (const audience of ['konfis_und_team', 'konfis']) {
+      it(`verboten: "${audience}" eines fremden Jahrgangs -- keine Sicht, keine Zahl, keine Mitteilung`, async () => {
+        const c = await challenge(audience);
+        expect((await einreichen('konfi1', c.id)).status).toBe(201);
+        expect(await liste('admin1')).toEqual([]);
+        expect((await zaehler('admin1')).pendingChallenges).toBe(0);
+        expect(await mitteilungen(USERS.admin1.id)).toEqual([]);
+        const beitraege = await request(app).get(`/api/challenges/admin/${c.id}/submissions`)
+          .set('Authorization', `Bearer ${generateToken('admin1')}`);
+        expect(beitraege.status).toBe(403);
+        // Gemeindeleitung und Teamer:in des Jahrgangs bekommen sie.
+        expect(await mitteilungen(USERS.orgAdmin1.id)).toEqual([c.id]);
+        expect(await mitteilungen(USERS.teamer1.id)).toEqual([c.id]);
+      });
+    }
   });
 
   describe('Admin mit passendem Jahrgang', () => {
-    it('erlaubt: "nur Konfis" seines Jahrgangs sieht, zaehlt und meldet er', async () => {
-      await db.query('INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
-        [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]);
-      invalidateUserCache(USERS.admin1.id);
+    for (const audience of ['konfis_und_team', 'konfis']) {
+      it(`erlaubt: "${audience}" seines Jahrgangs sieht, zaehlt und meldet er`, async () => {
+        await db.query('INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+          [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]);
+        invalidateUserCache(USERS.admin1.id);
+        const c = await challenge(audience);
+        expect((await einreichen('konfi1', c.id)).status).toBe(201);
+        expect(await liste('admin1')).toEqual([`Runde ${audience}`]);
+        expect((await zaehler('admin1')).pendingChallenges).toBe(1);
+        expect(await mitteilungen(USERS.admin1.id)).toEqual([c.id]);
+      });
+    }
+  });
+
+  describe('Nur die Konfis', () => {
+    it('das Team des Jahrgangs sieht und begleitet sie, reicht aber nichts ein', async () => {
       const c = await challenge('konfis');
-      expect((await einreichen('konfi1', c.id)).status).toBe(201);
-      expect(await liste('admin1')).toEqual(['Runde konfis']);
-      expect((await zaehler('admin1')).pendingChallenges).toBe(1);
-      expect(await mitteilungen(USERS.admin1.id)).toEqual([c.id]);
+      const res = await einreichen('teamer1', c.id);
+      expect(res.status).toBe(403);
+      expect(await liste('teamer1')).toEqual(['Runde konfis']);
     });
   });
 

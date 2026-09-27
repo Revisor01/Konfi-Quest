@@ -196,9 +196,8 @@ async function freigabeZaehlerProOrg(db, orgIds) {
 // Definition keine Jahrgangs-Zuordnung, sind aber fuer das ganze Team der
 // Organisation moderierbar (Migration 121, Befund H4).
 //
-// Seit 27.09.2026 ueber die gemeinsame Regel (utils/challengeLeitungSicht.js):
-// Admins zaehlen 'konfis_und_team' auch ohne Jahrgang -- deshalb geht die
-// Rolle je Person mit in die Abfrage.
+// Seit 27.09.2026 ueber die gemeinsame Regel (utils/challengeLeitungSicht.js);
+// die Rolle geht je Person mit in die Abfrage (org_admin sieht alles).
 async function teamerFreigabeZaehler(db, teamer) {
   if (teamer.length === 0) return [];
   const jahrgangsListen = jahrgangsSpalte(teamer);

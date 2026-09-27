@@ -52,6 +52,7 @@ import { ICON_CHOICES, getIconFromString } from '../../../utils/badgeIcons';
 import {
   baueChallengePayload,
   istChallengeFormularGueltig,
+  audienceFuerFormular,
   istNurTeam,
   zeitraumFehler
 } from '../../../utils/challengeForm';
@@ -62,15 +63,23 @@ import { tastaturKlick } from '../../../utils/tastatur';
 // Rueckfall bleibt die Flagge (frueher lokal in CHALLENGE_ICONS).
 export const getChallengeIcon = (iconName?: string): string => getIconFromString(iconName, ICON_CHALLENGE_GEFUELLT);
 
-// Teilnahme-Kreis (Migration 121): "Mitmachen ist besser als aussen stehen" —
-// das Team darf IMMER mitschreiben, deshalb gibt es bewusst KEINE Option
-// "nur Konfis" mehr (User-Entscheid 09.08.2026). Bleibt nach dem Start
+// Teilnahme-Kreis (Migration 121). Drei Zielgruppen (Simon, 27.09.2026 --
+// ersetzt den Entscheid vom 09.08.2026, der "nur Konfis" abgeschafft hatte):
+// "Konfis, weil wir damit arbeiten und die Teamer das auch sehen muessen."
+// Wer eine Challenge sieht, regelt die Zielgruppe mit dem Jahrgang:
+// 'nur_team' das ganze Team, sonst Team und Leitung der gewaehlten
+// Jahrgaenge (backend/utils/challengeLeitungSicht.js). Bleibt nach dem Start
 // eingefroren (wie Sichtbarkeit/Freigabe).
 const AUDIENCE_OPTIONS: { value: ChallengeAudience; label: string; hint: string }[] = [
   {
     value: 'konfis_und_team',
     label: 'Jahrgang und Team',
     hint: 'Die Konfis der gewählten Jahrgänge und ihr im Team — alle reichen gleichberechtigt ein.'
+  },
+  {
+    value: 'konfis',
+    label: 'Nur die Konfis',
+    hint: 'Die Konfis der gewählten Jahrgänge reichen ein. Ihr im Team seht die Beiträge und begleitet die Challenge, reicht aber selbst nichts ein.'
   },
   {
     value: 'nur_team',
@@ -189,10 +198,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
         setFormData({
           title: challenge.title || '',
           description: challenge.description || '',
-          // Alt-Challenges ohne Team-Teilnahme ('konfis') gibt es noch in der DB;
-          // im Formular werden sie als "Jahrgang und Team" angezeigt und beim
-          // nächsten Speichern (vor Start) auch so uebernommen.
-          audience: challenge.audience === 'nur_team' ? 'nur_team' : 'konfis_und_team',
+          audience: audienceFuerFormular(challenge.audience),
           visibility: (challenge.visibility as ChallengeVisibility) || 'konfi_choice',
           moderated: challenge.moderated !== false,
           allowed_media: (challenge.allowed_media as ChallengeMediaType[]) || ['text', 'photo'],

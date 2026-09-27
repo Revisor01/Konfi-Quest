@@ -11,7 +11,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // 25.09.2026 fragte jede Leitungs-Meldung hier nur die Stamm-Organisation --
 // wer mehrere Gemeinden betreut, bekam aus den anderen nichts.
 const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
-const { ADMIN_ORGWEITE_AUDIENCES } = require('../utils/challengeLeitungSicht');
+const { TEAM_ORGWEITE_AUDIENCES } = require('../utils/challengeLeitungSicht');
 // Postfach (25.09.2026): Welche Arten neben dem Push auch einen Eintrag in
 // der Tabelle notifications bekommen, steht in EINER Positivliste
 // (utils/postfachArten.js). Geschrieben wird zentral in sendToUser und
@@ -2248,10 +2248,9 @@ class PushService {
       // sendToOrgAdmins an JEDEN Admin der Gemeinde (auch zu reinen
       // Konfi-Challenges fremder Jahrgaenge, die er nicht sehen konnte), an
       // Teamer:innen dagegen nie bei 'nur_team'-Runden, die sie moderieren.
-      //   org_admin  immer
-      //   admin      bei 'konfis_und_team' und 'nur_team' immer, sonst ueber
-      //              einen Jahrgang der Challenge
-      //   teamer     bei 'nur_team' immer, sonst ueber einen Jahrgang
+      //   org_admin       immer
+      //   admin, teamer   bei 'nur_team' immer, sonst ueber einen Jahrgang
+      //                   der Challenge
       // Beide Quellen der Zugehoerigkeit (ladeMitgliederDerOrganisation).
       const { rows: [challengeZeile] } = await db.query(
         'SELECT audience FROM challenges WHERE id = $1',
@@ -2264,14 +2263,12 @@ class PushService {
       );
       const jahrgangIds = jahrgaenge.map(j => j.jahrgang_id);
 
-      const [orgAdmins, admins, teamers] = await Promise.all([
+      const orgWeit = TEAM_ORGWEITE_AUDIENCES.includes(audience);
+      const [orgAdmins, team] = await Promise.all([
         ladeMitgliederDerOrganisation(db, organizationId, ['org_admin']),
-        ADMIN_ORGWEITE_AUDIENCES.includes(audience)
-          ? ladeMitgliederDerOrganisation(db, organizationId, ['admin'])
-          : ladeMitgliederDerOrganisation(db, organizationId, ['admin'], { jahrgangIds }),
-        audience === 'nur_team'
-          ? ladeMitgliederDerOrganisation(db, organizationId, ['teamer'])
-          : ladeMitgliederDerOrganisation(db, organizationId, ['teamer'], { jahrgangIds })
+        orgWeit
+          ? ladeMitgliederDerOrganisation(db, organizationId, ['admin', 'teamer'])
+          : ladeMitgliederDerOrganisation(db, organizationId, ['admin', 'teamer'], { jahrgangIds })
       ]);
 
       // Ohne Doppelte, und ohne die Person, die selbst eingereicht hat --
@@ -2279,7 +2276,7 @@ class PushService {
       // Leitung selbst ein).
       const empfaenger = [];
       const gesehen = new Set();
-      for (const id of [...orgAdmins, ...admins, ...teamers]) {
+      for (const id of [...orgAdmins, ...team]) {
         const k = String(id);
         if (gesehen.has(k) || (einreicherId != null && k === String(einreicherId))) continue;
         gesehen.add(k);

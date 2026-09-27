@@ -314,11 +314,11 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
        VALUES ($1, $2, $3, 'text', 'Hallo', 'approved')`,
       [c.id, USERS.konfi1.id, ORGS.testGemeinde.id]
     );
-    await mitteilung(USERS.orgAdmin1.id, 'challenge_submission', { challengeId: String(c.id) });
+    await mitteilung(USERS.admin1.id, 'challenge_submission', { challengeId: String(c.id) });
     await mitteilung(USERS.teamer1.id, 'challenge_submission', { challengeId: String(c.id) });
 
     // 1 neuer Beitrag an der Challenge + 1 Mitteilung im Postfach.
-    const leitung = await vergleiche(USERS.orgAdmin1, 'admin', 'orgAdmin1');
+    const leitung = await vergleiche(USERS.admin1, 'admin', 'admin1');
     expect(leitung.body.challengeUpdates.total).toBe(1);
     expect(leitung.server).toBe(2);
     expect(leitung.client).toBe(2);

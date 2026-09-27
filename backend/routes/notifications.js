@@ -129,8 +129,7 @@ module.exports = (db, verifyTokenRBAC) => {
         // teamerJahrgangIds.length > 0). Ergebnis: Ein Teamer konnte eine
         // Team-Runde moderieren, wurde aber nie per Reiter-Zaehler darauf
         // gestossen (Befund H4).
-        // Seit 27.09.2026 ueber die gemeinsame Regel (utils/challengeLeitungSicht.js):
-        // Admins zaehlen 'konfis_und_team' auch ohne Jahrgang.
+        // Seit 27.09.2026 ueber die gemeinsame Regel (utils/challengeLeitungSicht.js).
         challengesPromise = db.query(
           `SELECT cs.challenge_id, COUNT(*)::int AS c
            FROM challenge_submissions cs

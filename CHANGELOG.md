@@ -128,6 +128,11 @@ Versionsüberschrift.
   sofort in der Galerie steht. Wartende Freigaben stehen weiter im orangen
   Feld mit Uhr; ein Beitrag zählt nie doppelt. Gemeinde-Umschalter und
   App-Symbol zählen die neuen Beiträge mit.
+- Beim Anlegen einer Challenge gibt es wieder die Zielgruppe „Nur die
+  Konfis": Die Konfis der gewählten Jahrgänge reichen ein, das Team dieser
+  Jahrgänge sieht die Beiträge und begleitet die Challenge. Bestehende
+  Challenges nur für Konfis behalten ihre Zielgruppe beim Bearbeiten, statt
+  still auf „Jahrgang und Team" zu wechseln.
 
 ### Geändert
 - Im Dunkelmodus setzen sich Karten und Listen deutlicher vom Hintergrund ab:
@@ -226,11 +231,10 @@ Versionsüberschrift.
   Ladepunkte und Abzeichen, gleitende Karten und der Wisch durch die
   Einführung — alles erscheint sofort an seinem Platz. Der Jahresrückblick
   kennt diese Einstellung bereits und bleibt, wie er ist.
-- Admins sehen und verwalten jede Challenge, bei der das Team mitmacht, auch
-  ohne zugewiesenen Jahrgang, und bekommen genau zu diesen Challenges die
-  Mitteilung über neue Beiträge. Bei älteren Challenges nur für Konfis gilt
-  weiter der Jahrgang. Bisher bekam jeder Admin zu jeder Challenge eine
-  Mitteilung, sah viele davon in Liste und Reiter aber gar nicht.
+- Admins bekommen die Mitteilung über neue Beiträge nur noch zu Challenges,
+  die sie auch sehen: denen ihrer Jahrgänge und denen nur fürs Team. Bisher
+  bekam jeder Admin zu jeder Challenge eine Mitteilung, sah viele davon in
+  Liste und Reiter aber gar nicht.
 - Teamer:innen bekommen die Mitteilung über neue Beiträge auch bei Challenges
   nur fürs Team, die sie ja mitverwalten. Wer selbst etwas einreicht, bekommt
   über den eigenen Beitrag keine Mitteilung mehr.
