@@ -317,6 +317,10 @@ Versionsüberschrift.
 - Wer einen Chat öffnen darf, ohne darin Mitglied zu sein — etwa der Org-Admin
   in einer Gruppe —, sieht dort jetzt auch Bilder und Dateien. Bisher blieben
   sie leer, obwohl die Nachrichten lesbar waren.
+- Wird ein Event gelöscht statt abgesagt, erfahren es jetzt alle, die dafür
+  angemeldet waren oder auf der Warteliste standen — auch Teamer:innen und
+  Leitung, genau wie bei einer Absage. Bisher bekamen nur Konfis die Meldung;
+  bei einem Event „Nur Team" erfuhr es niemand.
 - Die Mitteilung „Neues Event!" bekommen nur noch die Konfis, die das Event
   in ihrer Event-Liste finden — die Konfis der Jahrgänge, für die es gilt.
   Bisher ging sie an alle Konfis der Gemeinde, auch zu Events anderer

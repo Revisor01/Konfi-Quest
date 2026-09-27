@@ -192,6 +192,7 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 - **Auswirkung aus Nutzersicht:** Eine Teamer:in hat für das Teamtreffen zugesagt, der Termin wird gelöscht, sie erfährt nichts und steht am Tag vor verschlossener Tür.
 - **Beleg:** `A8 DELETE /events/90 -> 200 | Pushes danach: [] | Postfach teamer1: 0 | PUT /events/91/cancel -> 200 | Pushes: ["teamer1"]`.
 - **Empfehlung:** Empfänger wie bei der Absage (alle Gebuchten `confirmed`/`waitlist`/`excused`, ohne Rollenfilter). Test: „Nur Team"-Termin mit Teamer-Buchung löschen → Push an die Teamer:in.
+- **Status:** behoben 27.09.2026 — Absage und Löschen lesen dieselbe Auswahl `ladeBetroffeneEinesAusfalls` (`backend/utils/bookingUtils.js`): alle Gebuchten `confirmed`/`waitlist`/`excused` jeder Rolle, ohne gelöschte Konten; Push und Postfach „Event abgesagt" wie bisher ohne Termin-Kennung. Ein bereits abgesagter Termin meldet sich beim Löschen weiterhin nicht ein zweites Mal. Tests `tests/routes/terminLoeschenMitteilung.test.js` (5, inkl. Parität Absage ↔ Löschen).
 
 ### BF-07: Challenge-Start — das Team bekommt nichts
 - **Schwere:** HOCH

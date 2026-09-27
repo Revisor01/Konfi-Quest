@@ -120,6 +120,42 @@ async function takeBackEventPoints(client, userId, eventId) {
 const ABSAGE_OHNE_GRUND = 'Event abgesagt';
 
 /**
+ * Wer erfaehrt, dass ein Termin ausfaellt -- beim ABSAGEN und beim LOESCHEN
+ * eines noch nicht abgesagten Termins dieselben Personen (27.09.2026, Audit
+ * "Wer bekommt was", BF-06).
+ *
+ * Alle Gebuchten ohne Rollenfilter: Konfis, Teamer:innen und Leitungen, die
+ * sich selbst eingetragen haben; bestaetigt ('confirmed'), auf der Warteliste
+ * ('waitlist') und einzeln abgemeldet ('excused' -- sie waren angemeldet und
+ * sollen erfahren, dass der Termin ausfaellt, statt zu glauben, sie haetten
+ * nur gefehlt). Nicht: wer sich selbst abgemeldet hat ('opted_out') und
+ * geloeschte Konten.
+ *
+ * Bis dahin stand die Abfrage zweimal da, und die Loeschroute nahm nur
+ * Buchungen mit der Stamm-Rolle 'konfi': Gebuchte Teamer:innen erfuhren nie,
+ * dass ein Termin geloescht wurde -- bei "Nur Team"-Terminen also niemand.
+ *
+ * Laeuft VOR meldeAlleAbBeiAbsage bzw. vor dem Loeschen der Buchungen.
+ *
+ * @param {object} db - Pool oder Client
+ * @param {number|string} eventId
+ * @returns {Promise<Array<number>>} Nutzer-IDs ohne Doppelte
+ */
+async function ladeBetroffeneEinesAusfalls(db, eventId) {
+  const { rows } = await db.query(
+    `SELECT DISTINCT eb.user_id
+       FROM event_bookings eb
+       JOIN users u ON eb.user_id = u.id
+      WHERE eb.event_id = $1
+        AND eb.status IN ('confirmed', 'waitlist', 'excused')
+        AND u.deleted_at IS NULL
+      ORDER BY eb.user_id`,
+    [eventId]
+  );
+  return rows.map((r) => r.user_id);
+}
+
+/**
  * Meldet beim Absagen eines Termins alle Angemeldeten und Wartenden ab.
  *
  * WARUM UEBERHAUPT: Eine Absage setzte bis zum 15.09.2026 nur events.cancelled
@@ -1258,6 +1294,7 @@ function pruefeKonfiStorno({ event, buchung, now = new Date() }) {
 
 module.exports = {
   ABSAGE_OHNE_GRUND,
+  ladeBetroffeneEinesAusfalls,
   meldeAlleAbBeiAbsage,
   hebeAbsageAbmeldungenAuf,
   takeBackEventPoints,

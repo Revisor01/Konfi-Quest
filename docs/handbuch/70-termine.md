@@ -865,7 +865,7 @@ Zwei verschiedene Dinge, die oft verwechselt werden.
 | Event bleibt sichtbar | **ja, durchgestrichen als „Abgesagt"** | nein, weg |
 | Anmeldungen | bleiben erhalten, alle werden abgemeldet | **werden mitgelöscht** |
 | Event-Chat und Nachrichten | bleiben | **werden mitgelöscht** |
-| Wer wird benachrichtigt | Angemeldete **und** Wartende | Angemeldete und Wartende |
+| Wer wird benachrichtigt | Angemeldete **und** Wartende, Konfis wie Team | dieselben wie beim Absagen |
 | Rückgängig | nein, aber das Event ist noch da | **nein** |
 | Neue Anmeldungen möglich | nein | — |
 
@@ -1068,10 +1068,12 @@ Löschst du eine ganze Serie oder „diesen und alle folgenden", zählt die zwei
 Frage über alle betroffenen Events zusammen.
 
 Benachrichtigt wird beim Löschen nur, wer es noch nicht weiß: Löschst du ein
-Event, das **noch nicht abgesagt** war, bekommen alle Angemeldeten und alle
-auf der Warteliste die Meldung, dass es ausfällt. Räumst du dagegen ein
-**bereits abgesagtes** Event auf, bleibt es still — die Absage war schon
-gemeldet, ein zweites Mal sagt sie niemandem etwas Neues.
+Event, das **noch nicht abgesagt** war, bekommen alle, die eine Absage
+erreicht hätte, dieselbe Meldung, dass es ausfällt — die Angemeldeten und alle
+auf der Warteliste, Konfis wie Teamer:innen und Leitung, auch bei Events
+„Nur Team". Wer sich selbst abgemeldet hatte, bekommt nichts. Räumst du
+dagegen ein **bereits abgesagtes** Event auf, bleibt es still — die Absage
+war schon gemeldet, ein zweites Mal sagt sie niemandem etwas Neues.
 
 > **Faustregel:** Ein Event, das stattfinden sollte und ausfällt, wird
 > **abgesagt**. Ein Event, das es nie hätte geben sollen (Tippfehler,

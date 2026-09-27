@@ -1636,6 +1636,17 @@ paths:
         geloescht, ein Sprung dorthin fuehrte ins Leere. Die Meldung landet
         auf der Terminliste. Beim ABSAGEN (PUT /{id}/cancel) traegt der Push
         seit dem 15.09.2026 sehr wohl eine event_id.
+
+
+        BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-06): Empfaenger sind
+        DIESELBEN wie beim Absagen (utils/bookingUtils.js,
+        ladeBetroffeneEinesAusfalls): alle Gebuchten mit status confirmed,
+        waitlist oder excused, ohne Rollenfilter -- Konfis, Teamer:innen und
+        Leitungen, die sich eingetragen haben. Bis dahin nur Buchungen mit der
+        Stamm-Rolle 'konfi': Gebuchte Teamer:innen erfuhren nie, dass ein
+        Termin geloescht wurde, bei teamer_only-Terminen also niemand.
+        Selbst Abgemeldete (opted_out) und geloeschte Konten bekommen nichts.
+        Antwortform unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         x-geaendert: >
@@ -2446,7 +2457,11 @@ paths:
       summary: Event absagen (mit Teilnehmer-Benachrichtigung)
       description: >
         Setzt cancelled=true + cancelled_at und pusht an alle Gebuchten
-        (confirmed + waitlist).
+        (confirmed + waitlist, seit Migration 153 auch einzeln abgemeldete
+        mit excused; jede Rolle). Seit 27.09.2026 steht diese Auswahl an
+        einer Stelle mit DELETE /{id} (utils/bookingUtils.js,
+        ladeBetroffeneEinesAusfalls, Audit BF-06); participants_notified
+        zaehlt unveraendert dieselben Personen.
 
         AUTOMATISCHES ABMELDEN (15.09.2026): In DERSELBEN Transaktion werden
         alle Buchungen mit status IN ('confirmed','waitlist') auf
