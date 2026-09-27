@@ -84,6 +84,13 @@ der bis zum Merge weiterläuft.
 7. **Rückmeldung an Simon:** Sicherung (Größe, Zeit), Zählungen, Ergebnis des
    Abgleichs, offene Punkte. Danach entscheidet Simon über den Merge.
 
+**Stand 27.09.2026, 16:30:** Phase A ist durch. Schritte 1–4 siehe
+[01](01-vor-dem-deploy.md) und [02](02-portainer-stack.md) Abschnitt 1.
+Die Schritte 5 und 6 hat Simon sofort freigegeben; sie liefen in **einem**
+Stack-Update um 16:25:58 (Ergebnis in [02](02-portainer-stack.md) Abschnitte
+2 und 3). `TZ` ist nicht gesetzt, `RUN_BACKGROUND_JOBS=false` bei `backend2`
+steht noch. Offen ist nur der Merge.
+
 ## Phase B — Merge und Deploy (Simon gibt frei)
 
 1. Simon merged den Pull Request des Release-Branches nach `main`.
