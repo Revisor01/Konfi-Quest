@@ -34,6 +34,8 @@ describe('Die drei Datumsformate (UI BF-14)', () => {
     const iso = '2026-09-14T16:00:00.000Z';
     expect(datumKurz(iso)).toBe('14.09.2026');
     expect(datumKurz(iso, { ohneJahr: true })).toBe('14.09.');
+    // Event-Karten der Startseite mit Wochentag (Simon, 27.09.2026).
+    expect(datumKurz(iso, { mitWochentag: true })).toBe('Mo., 14.09.2026');
     expect(datumLang(iso)).toBe('Montag, 14. September 2026');
     expect(uhrzeit(iso)).toBe('18:00');
     expect(datumUhrzeit(iso)).toBe('14.09.2026, 18:00');
@@ -176,6 +178,7 @@ describe('Keine Sonderformate neben utils/dateUtils.ts (UI BF-14)', () => {
     expect(optionen).toEqual([
       "KURZ { day: '2-digit', month: '2-digit', year: 'numeric' }",
       "KURZ_OHNE_JAHR { day: '2-digit', month: '2-digit' }",
+      "KURZ_MIT_WOCHENTAG { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }",
       "LANG { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }",
       "UHRZEIT { hour: '2-digit', minute: '2-digit' }",
     ]);

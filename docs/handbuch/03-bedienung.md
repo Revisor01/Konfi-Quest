@@ -31,6 +31,13 @@ für Team und Leitung neue Beiträge und solche, die auf Freigabe warten (siehe
 [Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen)). Die
 Summe aller Reiter steht als Zahl am App-Symbol.
 
+Daten schreibt die App überall gleich: kurz als 14.09.2026 in Listen und auf
+Karten, ausgeschrieben als „Montag, 14. September 2026" in den Einzelansichten,
+Uhrzeiten als 18:00. Die Event-Karten auf der Startseite nennen dazu den
+Wochentag: Mo., 14.09.2026. Wo wenig Platz ist — im Chat, in der
+Anwesenheitsliste —, steht nur 14.09. Maßgeblich ist die Zeit, auf die das
+Handy eingestellt ist.
+
 ### Die Begriffe der App kennen
 
 App und Handbuch nennen dieselben Dinge mit denselben Wörtern:
@@ -58,11 +65,13 @@ zugewiesene Aktivität), Level-Aufstiege, Badges und Stempel, dein
 freigegebener Jahresrückblick, deine eingereichten Anträge samt Entscheidung,
 deine Anmeldungen und Abmeldungen, das Nachrücken von der Warteliste,
 abgesagte, geänderte und wieder stattfindende Events und ausgeblendete
-Beiträge. Als Teamer:in oder Leitung zusätzlich: neue Anträge, Abmeldungen
+Beiträge. Als Teamer:in oder Leitung zusätzlich: Abmeldungen
 von Konfis, Buchungen und Absagen des Teams, Events, die auf Verbuchung
 warten, neue Registrierungen, Beiträge zur Freigabe, Ab- und
 Wieder-Anmeldungen von Pflicht-Events, die Warnung vor dem Löschen eines
-Jahrgangs, der Team-Rückblick und ein neues Zertifikat.
+Jahrgangs, der Team-Rückblick und ein neues Zertifikat. Neue Anträge landen
+bei der Leitung, die sie in ihrer Antragsliste sieht — siehe
+[Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt).
 
 **Nicht** im Postfach stehen die Erinnerung „morgen"/„gleich" vor einem Event
 (sie wäre sofort veraltet), neue Events (sie stehen in der Event-Liste),

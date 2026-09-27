@@ -190,3 +190,27 @@ describe('Startseite beim ERSTEN Aufbau (Teamer)', () => {
     expect(container.querySelectorAll('[data-testid="ionpage"]').length).toBe(1);
   });
 });
+
+describe('Startseite: Event-Karten mit Wochentag (Simon, 27.09.2026)', () => {
+  // Die Vereinheitlichung der Datumsformate (UI BF-14) hatte „Mo., 14. Sept."
+  // auf der Startseite zu „14.09.2026" gemacht. Simon: „Wochentag finde ich
+  // eine gute Idee" -- die Karte zeigt „Mo., 14.09.2026".
+  it('Teamer:in: die Event-Karte nennt den Wochentag', async () => {
+    const vorher = process.env.TZ;
+    process.env.TZ = 'Europe/Berlin';
+    teamerDashboard.events = [{
+      id: 91, title: 'Konfi-Tag', event_date: '2026-09-14T16:00:00.000Z',
+      booking_status: 'confirmed', location: 'Gemeindehaus',
+    }] as unknown as typeof teamerDashboard.events;
+    try {
+      const { container } = render(<TeamerDashboardPage />);
+      await waitFor(() => {
+        expect(container.textContent).toContain('Konfi-Tag');
+      }, { timeout: 3000 });
+      expect(container.textContent).toContain('Mo., 14.09.2026');
+    } finally {
+      teamerDashboard.events = [];
+      if (vorher === undefined) delete process.env.TZ; else process.env.TZ = vorher;
+    }
+  });
+});

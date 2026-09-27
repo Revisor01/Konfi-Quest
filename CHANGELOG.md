@@ -243,9 +243,10 @@ Versionsüberschrift.
   nur fürs Team, die sie ja mitverwalten. Wer selbst etwas einreicht, bekommt
   über den eigenen Beitrag keine Mitteilung mehr.
 - Daten stehen überall in derselben Form: kurz als 14.09.2026 in Listen,
-  Karten und Übersichten — auch dort, wo bisher „8. Sept. 2026", „8.9.2026"
-  oder „Mo., 14. Sept." stand —, ausgeschrieben als „Montag, 14. September
-  2026" in Einzelansichten und Rückfragen, Uhrzeiten als 18:00. Wo der Platz
+  Karten und Übersichten — auch dort, wo bisher „8. Sept. 2026" oder
+  „8.9.2026" stand —, auf den Event-Karten der Startseite mit Wochentag
+  (Mo., 14.09.2026), ausgeschrieben als „Montag, 14. September 2026" in
+  Einzelansichten und Rückfragen, Uhrzeiten als 18:00. Wo der Platz
   knapp ist (Chat, Anwesenheitsliste), fällt das Jahr weg: 14.09.
 - Neue Anträge melden sich nur noch bei der Leitung, die sie auch in ihrer
   Antragsliste sieht: bei der Gemeindeleitung immer, bei Admins nur für Konfis

@@ -161,7 +161,7 @@ export const formatEventTime = (dateString: string | undefined) => {
 export const formatEventDate = (dateString: string | undefined) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return datumKurz(date);
+  return datumKurz(date, { mitWochentag: true });
 };
 
 /**

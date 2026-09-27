@@ -19,6 +19,9 @@ export const getYearWeek = (date: Date): string => {
  *   datumKurz   14.09.2026                   Listen, Karten, Metazeilen
  *               14.09.  (ohneJahr)           wo der Platz knapp und das Jahr
  *                                            klar ist: Spaltenköpfe, Chat
+ *               Mo., 14.09.2026              Event-Karten der Startseite
+ *                       (mitWochentag)       (Simon, 27.09.2026: „Wochentag
+ *                                            finde ich eine gute Idee")
  *   datumLang   Montag, 14. September 2026   Überschriften, Detail, Rückfragen
  *   uhrzeit     18:00                        „Uhr" steht, wo es der Satz will
  * und eine Verbindung daraus: datumUhrzeit = „14.09.2026, 18:00".
@@ -38,6 +41,7 @@ type Zeitpunkt = Date | string | number | null | undefined;
 
 const KURZ: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
 const KURZ_OHNE_JAHR: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit' };
+const KURZ_MIT_WOCHENTAG: Intl.DateTimeFormatOptions = { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' };
 const LANG: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
 const UHRZEIT: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
 
@@ -47,10 +51,14 @@ const alsDatum = (wert: Zeitpunkt): Date | null => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
-/** 14.09.2026 -- oder 14.09. mit { ohneJahr: true }. */
-export const datumKurz = (wert: Zeitpunkt, { ohneJahr = false }: { ohneJahr?: boolean } = {}): string => {
+/** 14.09.2026 -- oder 14.09. mit { ohneJahr: true }, Mo., 14.09.2026 mit { mitWochentag: true }. */
+export const datumKurz = (
+  wert: Zeitpunkt,
+  { ohneJahr = false, mitWochentag = false }: { ohneJahr?: boolean; mitWochentag?: boolean } = {}
+): string => {
   const d = alsDatum(wert);
-  return d ? d.toLocaleDateString('de-DE', ohneJahr ? KURZ_OHNE_JAHR : KURZ) : '';
+  if (!d) return '';
+  return d.toLocaleDateString('de-DE', mitWochentag ? KURZ_MIT_WOCHENTAG : ohneJahr ? KURZ_OHNE_JAHR : KURZ);
 };
 
 /** Montag, 14. September 2026 */
