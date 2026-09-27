@@ -152,6 +152,9 @@ Versionsüberschrift.
   Mitteilung an die Org-Admins der Gemeinde.
 
 ### Geändert
+- Eine neue Challenge, bei der das Team mitmacht, steht bei Teamer:innen und
+  Leitung als rote Zahl an der Challenge und am Reiter, bis sie geöffnet
+  wird — wie bei den Konfis. Bisher zählten fürs Team nur neue Beiträge.
 - Im Dunkelmodus setzen sich Karten und Listen deutlicher vom Hintergrund ab:
   Sie sind jetzt erkennbar heller als der Grund statt fast schwarz auf schwarz
   und werfen einen leichten Schatten. Auf Android war der Unterschied bisher
@@ -317,6 +320,11 @@ Versionsüberschrift.
 - Wer einen Chat öffnen darf, ohne darin Mitglied zu sein — etwa der Org-Admin
   in einer Gruppe —, sieht dort jetzt auch Bilder und Dateien. Bisher blieben
   sie leer, obwohl die Nachrichten lesbar waren.
+- Startet eine Challenge, bekommen jetzt alle die Mitteilung „Neue Challenge",
+  die mitmachen: bei „Nur das Team" das ganze Team, bei „Jahrgang und Team"
+  auch Teamer:innen und Leitung der Jahrgänge. Bisher kam sie nur bei den
+  Konfis an — eine Challenge nur fürs Team startete ganz ohne Mitteilung.
+  Wer die Challenge angelegt hat, bekommt keine.
 - Wird ein Event gelöscht statt abgesagt, erfahren es jetzt alle, die dafür
   angemeldet waren oder auf der Warteliste standen — auch Teamer:innen und
   Leitung, genau wie bei einer Absage. Bisher bekamen nur Konfis die Meldung;

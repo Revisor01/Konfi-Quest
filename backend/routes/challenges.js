@@ -54,10 +54,13 @@ const TEAM_ROLES = ['org_admin', 'admin', 'teamer'];
 // Darf diese Rolle bei dieser Challenge einen eigenen Beitrag einreichen?
 // Konfis nur bei 'konfis'/'konfis_und_team', Team nur bei
 // 'konfis_und_team'/'nur_team'. super_admin nie (org-fremde Rolle).
+// Die Team-Kreise stehen seit 27.09.2026 in utils/challengeLeitungSicht.js
+// (TEAM_MACHT_MIT_AUDIENCES) -- dieselben bestimmen die Teilnahme-Liste,
+// die Start-Mitteilung ans Team und "neue Challenge" in dessen Zaehler.
 function maySubmit(roleName, audience) {
   const aud = audience || 'konfis_und_team';
   if (roleName === 'konfi') return aud === 'konfis' || aud === 'konfis_und_team';
-  if (TEAM_ROLES.includes(roleName)) return aud === 'konfis_und_team' || aud === 'nur_team';
+  if (TEAM_ROLES.includes(roleName)) return TEAM_MACHT_MIT_AUDIENCES.includes(aud);
   return false;
 }
 
@@ -102,7 +105,7 @@ const CONTENT_TYPES = {
 // braucht und der ueber pushService geladen wird, bevor diese Datei fertig
 // ist. Hier weiterhin re-exportiert (siehe module.exports unten).
 const { PUBLIC_SUBMISSION_SQL } = require('../utils/challengeSichtbarkeit');
-const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
+const { leitungSiehtChallengeSql, teamMachtMitSql, TEAM_MACHT_MIT_AUDIENCES } = require('../utils/challengeLeitungSicht');
 const { nachAntwort } = require('../utils/nachAntwort');
 
 // JS-Pendant für bereits geladene Zeilen (Datei-Auslieferung, Export).
@@ -465,23 +468,16 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           SELECT 1 FROM challenge_jahrgang_assignments cja
           WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($3::int[])
         )`;
-      } else if (jahrgangIds === null) {
-        // org_admin: alles der Org, wo das Team mitmachen darf. Admins und
-        // Teamer:innen nur ueber ihre Jahrgaenge (Simon, 27.09.2026;
-        // utils/challengeLeitungSicht.js).
-        scopeCondition = `c.audience IN ('konfis_und_team', 'nur_team')`;
-      } else if (jahrgangIds.length === 0) {
-        // Teamer ohne Jahrgänge: nur die org-weiten Team-Challenges
-        scopeCondition = `c.audience = 'nur_team'`;
       } else {
-        params.push(jahrgangIds);
-        scopeCondition = `(
-          c.audience = 'nur_team'
-          OR (c.audience = 'konfis_und_team' AND EXISTS (
-            SELECT 1 FROM challenge_jahrgang_assignments cja
-            WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($3::int[])
-          ))
-        )`;
+        // Team: wo es mitmacht ('konfis_und_team', 'nur_team') und was es
+        // sieht -- org_admin alles der Org, Admins und Teamer:innen
+        // 'nur_team' immer, sonst ueber einen zugewiesenen Jahrgang (Simon,
+        // 27.09.2026). Seit 27.09.2026 EINE Bedingung mit der
+        // Start-Mitteilung ans Team und "neue Challenge" im Zaehler
+        // (utils/challengeLeitungSicht.js, teamMachtMitSql); vorher stand sie
+        // hier in drei Zweigen.
+        params.push(role, jahrgangIds || []);
+        scopeCondition = teamMachtMitSql({ rolle: '$3', jahrgaenge: '$4::int[]' });
       }
 
       const { rows } = await db.query(

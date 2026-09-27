@@ -11,7 +11,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // 25.09.2026 fragte jede Leitungs-Meldung hier nur die Stamm-Organisation --
 // wer mehrere Gemeinden betreut, bekam aus den anderen nichts.
 const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
-const { TEAM_ORGWEITE_AUDIENCES } = require('../utils/challengeLeitungSicht');
+const { TEAM_ORGWEITE_AUDIENCES, ladeTeamDasMitmacht } = require('../utils/challengeLeitungSicht');
 const { ladeKonfisDieTerminSehen } = require('../utils/konfiTerminSicht');
 // Postfach (25.09.2026): Welche Arten neben dem Push auch einen Eintrag in
 // der Tabelle notifications bekommen, steht in EINER Positivliste
@@ -71,7 +71,7 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
  * event_opt_in                | sendEventOptInToAdmins               | Org-Admins      | ja
  * teamer_event_booking        | sendTeamerEventBookingToAdmins       | Org-Admins      | ja
  * teamer_event_cancellation   | sendTeamerEventCancellationToAdmins  | Org-Admins      | ja
- * challenge_started           | sendChallengeStartedToJahrgaenge     | Jahrgangs-Konfis| ja
+ * challenge_started           | sendChallengeStartedToJahrgaenge     | Teilnehmende    | ja
  * challenge_submission        | sendChallengeSubmissionToLeadership  | Leitung         | ja
  * challenge_started (Feed)    | sendChallengeFeedToJahrgaenge        | Jahrgangs-Konfis| ja
  * challenge_badge_earned      | sendChallengeBadgeEarnedToKonfi      | Konfi           | ja
@@ -1979,10 +1979,24 @@ class PushService {
   // ====================================================================
 
   /**
-   * Challenge gestartet - Push an alle Konfis der zugewiesenen Jahrgänge.
-   * Empfaenger kommen über challenge_jahrgang_assignments, NICHT über die
-   * ganze Organisation: eine Challenge läuft immer nur für bestimmte
-   * Jahrgänge.
+   * Challenge gestartet - Push an alle, die mitmachen duerfen.
+   *
+   * EMPFAENGER (27.09.2026, Audit "Wer bekommt was", BF-07 / F-04):
+   *   - Konfis der zugewiesenen Jahrgaenge, ausser bei 'nur_team' (dort
+   *     sehen sie die Challenge gar nicht) -- derselbe Kreis wie
+   *     GET /api/challenges/konfi fuer Konfis;
+   *   - das Team, das mitmacht: bei 'nur_team' das ganze Team der Gemeinde,
+   *     bei 'konfis_und_team' Org-Admins und die Admins und Teamer:innen der
+   *     Jahrgaenge; bei 'konfis' niemand aus dem Team (es liest nur mit und
+   *     sieht neue Beitraege ueber den Neuigkeiten-Zaehler). Regel-Stelle
+   *     utils/challengeLeitungSicht.js (ladeTeamDasMitmacht, teamMachtMitSql)
+   *     -- dieselbe wie die Teilnahme-Liste des Teams und "neue Challenge"
+   *     in dessen Zaehler.
+   * Bis dahin gingen die Empfaenger nur ueber die Jahrgaenge an Konfis: bei
+   * 'nur_team' bekam niemand etwas, bei 'konfis_und_team' nur die Konfis.
+   *
+   * Jede Person einmal; wer die Challenge angelegt hat (created_by), nie --
+   * sie startet sie ja.
    *
    * @param {object} db - DB-Pool
    * @param {number} challengeId - Challenge ID
@@ -1990,29 +2004,43 @@ class PushService {
    */
   static async sendChallengeStartedToJahrgaenge(db, challengeId, challengeTitle) {
     try {
-      const { rows: konfis } = await db.query(
-        `SELECT DISTINCT kp.user_id
-         FROM konfi_profiles kp
-         JOIN users u ON kp.user_id = u.id
-         JOIN roles r ON u.role_id = r.id
-         JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = kp.jahrgang_id
-         WHERE cja.challenge_id = $1
-           AND r.name = 'konfi'
-           AND u.deleted_at IS NULL`,
-        [challengeId]
-      );
+      const [{ rows: konfis }, team, { rows: [challengeRow] }] = await Promise.all([
+        db.query(
+          `SELECT DISTINCT kp.user_id
+           FROM konfi_profiles kp
+           JOIN users u ON kp.user_id = u.id
+           JOIN roles r ON u.role_id = r.id
+           JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = kp.jahrgang_id
+           JOIN challenges c ON c.id = cja.challenge_id
+           WHERE cja.challenge_id = $1
+             AND c.audience <> 'nur_team'
+             AND r.name = 'konfi'
+             AND u.deleted_at IS NULL`,
+          [challengeId]
+        ),
+        ladeTeamDasMitmacht(db, challengeId),
+        // Content-Org der Challenge (nicht der Empfaenger) fuer den
+        // Org-Wechsel beim Antippen, dazu wer sie angelegt hat.
+        db.query(
+          'SELECT organization_id, created_by FROM challenges WHERE id = $1',
+          [challengeId]
+        )
+      ]);
 
-      const konfiIds = konfis.map(k => k.user_id);
-      if (konfiIds.length === 0) {
+      const startendePerson = challengeRow && challengeRow.created_by != null
+        ? String(challengeRow.created_by)
+        : null;
+      const empfaenger = [];
+      const gesehen = new Set();
+      for (const id of [...konfis.map(k => k.user_id), ...team]) {
+        const k = String(id);
+        if (gesehen.has(k) || k === startendePerson) continue;
+        gesehen.add(k);
+        empfaenger.push(id);
+      }
+      if (empfaenger.length === 0) {
         return { success: true, sent: 0 };
       }
-
-      // Content-Org der Challenge (nicht der Empfänger) für den Org-Wechsel
-      // beim Antippen.
-      const { rows: [challengeRow] } = await db.query(
-        'SELECT organization_id FROM challenges WHERE id = $1',
-        [challengeId]
-      );
 
       const notification = {
         title: 'Neue Challenge',
@@ -2026,7 +2054,7 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, konfiIds, notification);
+      return await this.sendToMultipleUsers(db, empfaenger, notification);
     } catch (error) {
       console.error('sendChallengeStartedToJahrgaenge error:', error);
       return { success: false, error: error.message };

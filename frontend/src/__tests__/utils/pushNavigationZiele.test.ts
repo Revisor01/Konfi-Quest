@@ -74,6 +74,15 @@ describe('M2: Die Ziele passen zur Rolle', () => {
     expect(buildPushTargetUrl('event_changed', {}, 'teamer')).toBe('/teamer/events');
   });
 
+  it('"Neue Challenge" fuehrt jede Rolle auf ihre Challenge-Seite', () => {
+    // Seit 27.09.2026 (Audit "Wer bekommt was", BF-07) bekommen den Start
+    // auch Team und Leitung, wo sie mitmachen -- ihr Ziel ist die eigene
+    // Challenge-Seite, nicht die der Konfis.
+    expect(buildPushTargetUrl('challenge_started', { challengeId: '5' }, 'konfi')).toBe('/konfi/challenges');
+    expect(buildPushTargetUrl('challenge_started', { challengeId: '5' }, 'teamer')).toBe('/teamer/challenges');
+    expect(buildPushTargetUrl('challenge_started', { challengeId: '5' }, 'admin')).toBe('/admin/challenges');
+  });
+
   it('Absage fuehrt zum Termin, wenn die Kennung mitkommt', () => {
     // Bis zum 15.09.2026 landete die Absage immer auf der Terminliste --
     // der Push trug als einziger Termin-Push keine Kennung. Am Termin steht

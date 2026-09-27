@@ -1273,6 +1273,12 @@ paths:
         mit Team-Beteiligung ('konfis_und_team', 'nur_team').
         GEAENDERT 2026-08-31: admin ist an seine Jahrgangs-Zuweisungen
         gebunden (vorher org-weit wie org_admin).
+        GEAENDERT 2026-09-27 (Audit "Wer bekommt was", BF-07): Die
+        Team-Bedingung steht einmal in utils/challengeLeitungSicht.js
+        (teamMachtMitSql: Team macht mit UND sieht die Challenge) und
+        bestimmt zugleich die Team-Empfaenger der Start-Mitteilung
+        challenge_started und "neue Challenge" in
+        badge-counts.challengeUpdates. Menge und Antwortform unveraendert.
       responses:
         '200':
           description: Gruppierte Challenge-Listen
@@ -1403,6 +1409,8 @@ paths:
         challengeUpdates ab dann neu; die Leitungsansicht ruft es beim Oeffnen
         und Schliessen einer gestarteten Challenge. Migration 168 setzt fuer
         die bestehende Leitung einmalig den Stand auf den Update-Zeitpunkt.
+        Seit demselben Tag (Audit BF-07) nimmt der erste Aufruf auch die
+        "neue Challenge" (1) aus dem Team-Zaehler.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Challenge" }
       responses:
@@ -1610,6 +1618,17 @@ paths:
         Einreichen duerfen dort nur Konfis (Team: 403 "Bei dieser Challenge
         reichen nur die Konfis Beitraege ein."), sehen und moderieren wie bei
         'konfis_und_team'.
+        START-MITTEILUNG (challenge_started, "Neue Challenge"): nicht beim
+        Anlegen, sondern beim tatsaechlichen Start (Hintergrundlauf ueber
+        challenges.start_push_sent, einmal je Challenge). BEHOBEN 27.09.2026
+        (Audit "Wer bekommt was", BF-07 / F-04): Empfaenger sind alle, die
+        mitmachen -- Konfis der Jahrgaenge (nie bei 'nur_team'); dazu das
+        Team nach utils/challengeLeitungSicht.js (ladeTeamDasMitmacht): bei
+        'nur_team' das ganze Team der Gemeinde (beide Quellen der
+        Zugehoerigkeit), bei 'konfis_und_team' org_admin und admin/teamer mit
+        can_view-Zuweisung auf einen Jahrgang der Challenge, bei 'konfis'
+        niemand aus dem Team. Jede Person einmal, created_by nie. Vorher nur
+        Konfis ueber die Jahrgaenge: bei 'nur_team' bekam niemand etwas.
       requestBody:
         required: true
         content:
@@ -1863,6 +1882,13 @@ paths:
         Wartende Beitraege zaehlen weiter nur in pendingChallenges, ein Beitrag
         nie in beiden. Store-Apps 2.2.x lesen das Feld fuer Team und Leitung
         nicht; ihr Reiter zeigt weiter nur pendingChallenges.
+        BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-07): Fuer Team und
+        Leitung zaehlt dazu die laufende Challenge selbst (1), solange sie nie
+        geoeffnet wurde, das Team bei ihr mitmacht ('konfis_und_team',
+        'nur_team' -- utils/challengeLeitungSicht.js, teamMachtMitSql) und die
+        Person sie nicht angelegt hat (challenges.created_by). Bei 'konfis'
+        nicht. Nur Werte aendern sich, die Antwortform bleibt; dieselbe
+        Rechnung speist die App-Icon-Summe und den Gemeinde-Umschalter.
         Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe
         Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen),
         aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der
@@ -1908,7 +1934,9 @@ paths:
                     description: >
                       NEU 24.09.2026 fuer Konfis, seit 27.09.2026 auch fuer
                       Team und Leitung (fremde freigegebene Beitraege seit dem
-                      letzten Oeffnen, wartende nicht). Fuer Konfis: je laufender
+                      letzten Oeffnen, wartende nicht; dazu 1 fuer eine nie
+                      geoeffnete Challenge, bei der das Team mitmacht und die
+                      die Person nicht angelegt hat). Fuer Konfis: je laufender
                       Challenge des eigenen Jahrgangs, was seit dem letzten
                       Oeffnen (POST /api/challenges/konfi/{id}/mark-read)
                       dazukam: die Challenge selbst, wenn nie geoeffnet;

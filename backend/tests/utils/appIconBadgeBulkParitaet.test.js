@@ -132,8 +132,9 @@ describe('Einzel- und Bulk-Weg liefern dieselbe App-Icon-Summe', () => {
       empfaengerFuer(USERS.teamer1, 'teamer', [{ id: 1, can_view: true }])
     ]);
     expect(teamer.bulk).toBe(teamer.einzeln);
-    // 1 Chat-Nachricht + 1 offene Freigabe (nur_team gilt org-weit).
-    expect(teamer.einzeln).toBe(2);
+    // 1 Chat-Nachricht + 1 offene Freigabe (nur_team gilt org-weit) + die
+    // nie geoeffnete Team-Challenge selbst (seit 27.09.2026, Audit BF-07).
+    expect(teamer.einzeln).toBe(3);
   });
 
   it('mehrere Personen gemischt: jede bekommt ihre eigene Zahl', async () => {

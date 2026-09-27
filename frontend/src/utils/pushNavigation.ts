@@ -340,9 +340,10 @@ export const buildPushTargetUrl = (
       return userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
 
     case 'challenge_started':
-      // Neue Challenge gestartet -> Challenge-Tab des Konfi (Leitung
-      // bekommt diesen Push nicht, fällt aber sauber auf ihre
-      // Challenge-Verwaltung zurück).
+      // Neue Challenge gestartet -> Challenge-Seite der eigenen Rolle. Seit
+      // 27.09.2026 bekommen den Push auch Team und Leitung, wo sie selbst
+      // mitmachen (Backend: utils/challengeLeitungSicht.js); dort liegt die
+      // neue Challenge in ihrer Challenge-Liste.
       return `${routePrefix}/challenges`;
 
     case 'challenge_submission':

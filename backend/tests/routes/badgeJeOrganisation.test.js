@@ -127,8 +127,10 @@ describe('GET /api/notifications/badge-counts/je-organisation', () => {
       expect(res.status).toBe(200);
       expect(Object.keys(res.body.jeOrganisation).map(Number).sort()).toEqual([1, 2, 3]);
       expect(res.body.jeOrganisation[1]).toEqual({ offen: 2 });
-      // Als Teamer:in in Org 2: der Team-Beitrag (1), NICHT der Antrag.
-      expect(res.body.jeOrganisation[2]).toEqual({ offen: 1 });
+      // Als Teamer:in in Org 2: der Team-Beitrag (1) und die nie geoeffnete
+      // Team-Challenge selbst (1, "neue Challenge" auch fuers Team seit
+      // 27.09.2026, Audit BF-07), NICHT der Antrag.
+      expect(res.body.jeOrganisation[2]).toEqual({ offen: 2 });
       // Gemeinde ohne Offenes steht drin, mit 0 -- die App zeigt dann nichts.
       expect(res.body.jeOrganisation[3]).toEqual({ offen: 0 });
     });
@@ -141,8 +143,9 @@ describe('GET /api/notifications/badge-counts/je-organisation', () => {
       );
       const res = await hole(app, generateToken('orgAdmin1'));
       expect(res.status).toBe(200);
-      // Antrag (1) + Freigabe (1) -- org_admin sieht beides org-weit.
-      expect(res.body.jeOrganisation[2]).toEqual({ offen: 2 });
+      // Antrag (1) + Freigabe (1) -- org_admin sieht beides org-weit --
+      // + die nie geoeffnete Team-Challenge (1, seit 27.09.2026, BF-07).
+      expect(res.body.jeOrganisation[2]).toEqual({ offen: 3 });
       // Die anderen beiden Gemeinden bleiben, wie sie waren.
       expect(res.body.jeOrganisation[1]).toEqual({ offen: 2 });
       expect(res.body.jeOrganisation[3]).toEqual({ offen: 0 });
@@ -156,9 +159,11 @@ describe('GET /api/notifications/badge-counts/je-organisation', () => {
         .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`)
         .set('X-Active-Organization', String(ORGS.andereGemeinde.id));
       expect(res.status).toBe(200);
+      // Org 2 wie im ersten Fall: Team-Beitrag + nie geoeffnete
+      // Team-Challenge (seit 27.09.2026, BF-07).
       expect(res.body.jeOrganisation).toEqual({
         1: { offen: 2 },
-        2: { offen: 1 },
+        2: { offen: 2 },
         3: { offen: 0 }
       });
     });

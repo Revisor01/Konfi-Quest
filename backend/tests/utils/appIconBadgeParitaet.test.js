@@ -317,15 +317,17 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
     await mitteilung(USERS.admin1.id, 'challenge_submission', { challengeId: String(c.id) });
     await mitteilung(USERS.teamer1.id, 'challenge_submission', { challengeId: String(c.id) });
 
-    // 1 neuer Beitrag an der Challenge + 1 Mitteilung im Postfach.
+    // 1 neuer Beitrag an der Challenge + die Challenge selbst, nie geoeffnet
+    // und das Team macht mit (seit 27.09.2026, Audit BF-07) + 1 Mitteilung
+    // im Postfach -- auf beiden Seiten gleich.
     const leitung = await vergleiche(USERS.admin1, 'admin', 'admin1');
-    expect(leitung.body.challengeUpdates.total).toBe(1);
-    expect(leitung.server).toBe(2);
-    expect(leitung.client).toBe(2);
+    expect(leitung.body.challengeUpdates.total).toBe(2);
+    expect(leitung.server).toBe(3);
+    expect(leitung.client).toBe(3);
     const team = await vergleiche(USERS.teamer1, 'teamer', 'teamer1');
-    expect(team.body.challengeUpdates.total).toBe(1);
-    expect(team.server).toBe(2);
-    expect(team.client).toBe(2);
+    expect(team.body.challengeUpdates.total).toBe(2);
+    expect(team.server).toBe(3);
+    expect(team.client).toBe(3);
   });
 
   it('Teamer: mit Chat', async () => {

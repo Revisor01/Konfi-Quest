@@ -453,7 +453,9 @@ An einer Challenge stehen zwei verschiedene Zahlen, wie im Chat:
   bei denen ein Beitrag sofort in der Galerie steht. So siehst du, was
   passiert, und kannst einen Beitrag bei Bedarf ausblenden oder löschen.
   Öffnest du die Challenge, verschwindet die Zahl; was danach kommt, zählt
-  neu. Eigene Beiträge zählen nicht mit.
+  neu. Eigene Beiträge zählen nicht mit. Eine gestartete Challenge, bei der
+  du selbst mitmachst („Jahrgang und Team", „Nur das Team") und die du noch
+  nie geöffnet hast, zählt dazu als eins — außer du hast sie selbst angelegt.
 - **Das orange Feld mit Zahl und Uhr** oben rechts zeigt, wie viele Beiträge
   auf eure Freigabe warten — orange, weil Freigaben warten können. Es bleibt
   stehen, bis ihr freigebt oder ausblendet; Öffnen allein ändert daran
@@ -476,8 +478,18 @@ Konfis sehen an der Challenge ebenfalls eine rote Zahl für ihre
 
 ## Nachsehen, wer was mitbekommt
 
-- **Die Konfis der Jahrgänge** bekommen eine Mitteilung, sobald eine geplante
-  Challenge tatsächlich startet — nicht schon beim Anlegen.
+Sobald eine geplante Challenge tatsächlich startet — nicht schon beim
+Anlegen —, bekommen **alle, die mitmachen**, die Mitteilung „Neue Challenge".
+Wer sie angelegt hat, bekommt keine, und niemand bekommt sie doppelt:
+
+| „Wer macht mit?" | Wer die Mitteilung zum Start bekommt |
+|---|---|
+| „Jahrgang und Team" | die Konfis der gewählten Jahrgänge, die Gemeindeleitung und die Admins und Teamer:innen dieser Jahrgänge |
+| „Nur die Konfis" | die Konfis der gewählten Jahrgänge — ihr im Team lest mit und seht neue Beiträge an der roten Zahl |
+| „Nur das Team" | das ganze Team der Gemeinde, mit und ohne Jahrgang; Konfis nie |
+
+Außerdem:
+
 - **Wer die Challenge verwaltet**, bekommt eine Mitteilung bei jedem neuen
   Beitrag, auch wenn er ohne Moderation sofort in der Galerie steht: die
   Gemeindeleitung immer, Admins und Teamer:innen für die Challenges ihrer
@@ -492,7 +504,7 @@ Konfis sehen an der Challenge ebenfalls eine rote Zahl für ihre
   eigenen Beitrag; siehe
   [Neuigkeiten an Challenges erkennen](10-konfis.md#neuigkeiten-an-challenges-erkennen).
   Bei euch zählen Reiter und Challenge
-  [neue Beiträge und offene Freigaben](#neue-beitraege-und-offene-freigaben-erkennen).
+  [neue Beiträge, offene Freigaben und neue Challenges, bei denen ihr mitmacht](#neue-beitraege-und-offene-freigaben-erkennen).
 - **Alle Konfis der Jahrgänge** sehen ohne Neuladen, wenn eine Challenge startet,
   sich ändert oder ein Beitrag in der Galerie erscheint. Ohne Netz bleibt der
   zuletzt geladene Stand stehen, Einreichen geht dann nicht — siehe

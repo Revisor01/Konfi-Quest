@@ -106,13 +106,21 @@ describe('Challenge-Neuigkeiten fuer Leitung und Team', () => {
     expect(frei.status).toBe(200);
     const admin = await zaehler('admin1');
     expect(admin.pendingChallenges).toBe(0);
-    expect(admin.challengeUpdates.total).toBe(1);
+    // 2 an der Challenge: der freigegebene Beitrag und -- seit 27.09.2026
+    // (Audit BF-07) -- die Challenge selbst, die admin1 nie geoeffnet hat und
+    // bei der das Team mitmacht. Wartend zaehlte der Beitrag nicht (oben).
+    expect(admin.challengeUpdates).toEqual({ total: 2, byChallenge: { [c.id]: 2 } });
     await geoeffnet('admin1', c.id);
     expect((await zaehler('admin1')).challengeUpdates.total).toBe(0);
   });
 
   it('der eigene Beitrag zaehlt nicht', async () => {
     const c = await challenge();
+    // Eingereicht wird aus der geoeffneten Challenge heraus. Ohne das Oeffnen
+    // stuende bei teamer1 seit 27.09.2026 (Audit BF-07) die nie geoeffnete
+    // Challenge als 1 -- und der Test koennte den eigenen Beitrag nicht mehr
+    // von ihr unterscheiden.
+    await geoeffnet('teamer1', c.id);
     await beitrag('teamer1', c.id);
     expect((await zaehler('teamer1')).challengeUpdates.total).toBe(0);
     expect((await zaehler('orgAdmin1')).challengeUpdates.total).toBe(1);
@@ -126,8 +134,11 @@ describe('Challenge-Neuigkeiten fuer Leitung und Team', () => {
     await db.query('DELETE FROM challenge_submissions WHERE challenge_id = $1', [c2.id]);
     await beitrag('konfi1', c.id);
     expect((await zaehler('admin1')).challengeUpdates.total).toBe(0);
-    // Teamer:in des Jahrgangs und Gemeindeleitung zaehlen ihn.
-    expect((await zaehler('teamer1')).challengeUpdates.total).toBe(1);
+    // Teamer:in des Jahrgangs und Gemeindeleitung zaehlen ihn. Bei teamer1
+    // steht dazu c2 ("Jahrgang und Team", nie geoeffnet) als neue Challenge
+    // (seit 27.09.2026, Audit BF-07); c ("Nur die Konfis") ist nur der
+    // Beitrag -- dort macht das Team nicht mit.
+    expect((await zaehler('teamer1')).challengeUpdates).toEqual({ total: 2, byChallenge: { [c.id]: 1, [c2.id]: 1 } });
     expect((await zaehler('orgAdmin1')).challengeUpdates.total).toBe(1);
   });
 
