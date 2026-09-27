@@ -32,7 +32,12 @@ und in welcher Reihenfolge, stellt deine Gemeinde ein:
 - **Deine Events** — die nächsten Events
 - **Tageslosung** — der Bibelvers des Tages, in deiner Übersetzung
 - **Deine Badges** — was du schon gesammelt hast
-- **Dein Ranking** — dein Platz, ohne die Punkte der anderen zu zeigen
+- **Dein Ranking** — dein Platz in deinem Jahrgang. Platz 1 steht dort immer
+  mit Namen und Punkten; bist du selbst unter den ersten drei, siehst du alle
+  drei mit Namen und Punkten. Stehst du weiter hinten, zeigt die Karte neben
+  dir nur die Plätze direkt vor und hinter dir, ohne Namen und Punkte. Die
+  Gemeindeleitung kann das Ranking unter
+  [Mehr › Dashboard](30-leitung.md#verwaltung-nur-org-admin) ausschalten.
 
 ## Mit deinem Team schreiben
 

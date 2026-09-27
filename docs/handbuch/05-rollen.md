@@ -114,8 +114,8 @@ Im Einzelnen gilt für einen Admin:
 | Events, Badges, Kategorien, Level anlegen | — | — | ja | ja |
 | Events ändern, absagen und löschen | — | — | ja | ja |
 | Personen an einem Event ein- und austragen | — | — | ja | ja |
-| Challenges anlegen und begleiten | — | nur eigene Jahrgänge | ja | ja |
-| Challenges und Beiträge löschen | — | — | ja | ja |
+| Challenges anlegen und begleiten | — | eigene Jahrgänge und „Nur das Team" | eigene Jahrgänge und „Nur das Team" | ja |
+| Challenges und Beiträge löschen | — | — | eigene Jahrgänge und „Nur das Team" | ja |
 | Konfis und Teamer:innen anlegen | — | — | ja | ja |
 | Material sehen | — | ja | ja | ja |
 | Material anlegen | — | — | ja | ja |
@@ -128,6 +128,10 @@ Im Einzelnen gilt für einen Admin:
 | Jahresrückblick freigeben | — | — | nur eigene Jahrgänge | ja |
 | Konfis direkt anschreiben | — | nur eigene Jahrgänge | nur eigene Jahrgänge | ja |
 | Ganze Gemeinde sehen, ohne Zuweisung | — | — | — | ja |
+
+Challenges für „Nur das Team" hängen an keinem Jahrgang: Sie gelten der ganzen
+Gemeinde, und jede:r im Team kann sie anlegen und begleiten. Mehr dazu unter
+[Festlegen, wer mitmachen darf](80-challenges.md#festlegen-wer-mitmachen-darf).
 
 ## Nachschlagen, wer wen anlegen darf
 

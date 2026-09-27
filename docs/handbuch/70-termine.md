@@ -793,8 +793,10 @@ nie in der Event-Liste.
 
 Leitung und Teamer:innen kommen gleichermaßen an den Code: oben rechts im
 geöffneten Event über das QR-Symbol. Sind vor Ort nur Teamer:innen, reicht
-das also. Der Code wird beim ersten Anzeigen erzeugt, bleibt danach gleich und
-läuft nicht ab; die zeitliche Begrenzung macht allein das Check-in-Fenster.
+das also. Das ist gewollt: So können mehrere aus dem Team gleichzeitig den Code
+zeigen und die Konfis einchecken lassen. Der Code wird beim ersten Anzeigen
+erzeugt, bleibt danach gleich und läuft nicht ab; die zeitliche Begrenzung
+macht allein das Check-in-Fenster.
 
 Jedes Event hat seinen eigenen Code, auch innerhalb einer Serie. Du holst ihn
 dir im jeweiligen Event — die Liste „Weitere Events dieser Serie" führt nur
