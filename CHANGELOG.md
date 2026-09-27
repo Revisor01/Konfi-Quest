@@ -383,6 +383,11 @@ Versionsüberschrift.
   mehr im Protokoll des Geräts. Ebenso bleiben die Schlüssel der Sitzung
   draußen, wenn das Abmelden, die Anmeldung per Face ID oder Fingerabdruck
   oder das Einrichten der Mitteilungen scheitert.
+- Im Dunkelmodus sind die Antworten einer Umfrage im Chat lesbar. Sie standen
+  in heller Schrift auf weißer Fläche, in der eigenen Nachricht auch die Frage
+  und das Zitat einer beantworteten Nachricht. Jetzt liegen sie auf einer
+  dunklen Fläche, vergebene Antworten und Rahmen heben sich ab; im Hellen
+  bleibt alles wie zuvor.
 - Wer in einer Gemeinde zur Leitung gehört, bekommt dort keine Badges mehr.
   Trug sich eine Leitung, die in einer anderen Gemeinde Konfi ist, bei einem
   Event als anwesend ein, konnte sie Konfi-Badges der eigenen Gemeinde

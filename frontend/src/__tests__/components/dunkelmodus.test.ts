@@ -253,6 +253,39 @@ describe('Dunkelmodus: kein festes Weiss oder Schwarz mehr als Flaeche', () => {
     expect(treffer).toEqual([]);
   });
 
+  // Hinter einem Bedingungsoperator fand die Regel darueber nichts: Sie
+  // verlangt das Literal direkt nach dem Doppelpunkt. So standen die Antworten
+  // einer Chat-Umfrage auf `… : takenByOther ? '…' : 'white'`, der Rahmen der
+  // eigenen Umfrage und das Zitat in der eigenen Blase auf `isOwnMessage ?
+  // 'white' : …` -- mit Schrift aus --app-text-emphasis, im Dunkeln fast
+  // Weiss auf Weiss (27.09.2026). Der Wert reicht bis zum naechsten Komma
+  // AUSSERHALB einer Zeichenkette; rgba(…) in Anfuehrungszeichen stoert nicht.
+  const FLAECHE_BEDINGT_TSX = new RegExp(
+    "(?:background|backgroundColor|'--background')\\s*:\\s*(?:[^'\\n,}]*'[^'\\n]*')*?[^'\\n,}]*'(?:white|black|#fff|#ffffff|#000|#000000)'",
+    'g'
+  );
+
+  it('auch hinter einem Bedingungsoperator setzt keine .tsx-Komponente einen weissen/schwarzen Hintergrund', () => {
+    const treffer: string[] = [];
+    for (const datei of dateienUnter('src', '.tsx')) {
+      const code = lies(datei).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      for (const m of code.match(FLAECHE_BEDINGT_TSX) ?? []) treffer.push(`${datei}: ${m}`);
+    }
+    expect(treffer).toEqual([]);
+  });
+
+  it('die Erkennung hinter dem Bedingungsoperator findet den Fehlerfall -- und nur ihn (Gegenprobe der Suchfunktion)', () => {
+    const findet = (zeile: string) => (zeile.match(FLAECHE_BEDINGT_TSX) ?? []).length > 0;
+    // Die Zeilen von vorher:
+    expect(findet("background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : takenByOther ? 'rgba(0,0,0,0.04)' : 'white',")).toBe(true);
+    expect(findet("backgroundColor: isOwnMessage ? 'white' : 'rgba(var(--app-color-chat-rgb), 0.08)',")).toBe(true);
+    expect(findet("background: aktiv ? '#fff' : 'var(--app-surface-soft)'")).toBe(true);
+    // Weisse SCHRIFT hinter einem Hintergrund in derselben Zeile ist erlaubt:
+    expect(findet("style={{ background: 'var(--app-color-chat)', color: 'white' }}")).toBe(false);
+    expect(findet("background: aktiv ? 'var(--app-color-chat)' : 'var(--app-surface-card)', color: 'white'")).toBe(false);
+    expect(findet("background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : takenByOther ? 'var(--app-surface-muted)' : 'var(--app-surface-card)',")).toBe(false);
+  });
+
   // Schwarz mit Deckkraft ist auch Schwarz. `rgba(0,0,0,0.75)` als Textfarbe
   // war der Reaktionszaehler an fremden Chat-Nachrichten -- gedacht fuer die
   // weisse Blase; auf der dunklen (#242426) 1,25:1 (Dunkelmodus-Audit BF-07,

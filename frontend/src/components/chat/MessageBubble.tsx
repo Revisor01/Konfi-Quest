@@ -348,7 +348,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             style={{
               padding: 'var(--app-abstand-kompakt) var(--app-abstand-schmal)',
               marginBottom: 'var(--app-abstand-kompakt)',
-              backgroundColor: isOwnMessage ? 'white' : 'rgba(var(--app-color-chat-rgb), 0.08)',
+              // Kartengrund statt 'white': hell derselbe Ton, dunkel eine
+              // dunkle Flaeche -- die Schrift (Text-Tokens) wechselt mit.
+              backgroundColor: isOwnMessage ? 'var(--app-surface-card)' : 'rgba(var(--app-color-chat-rgb), 0.08)',
               borderRadius: 'var(--app-radius-klein)',
               borderLeft: '3px solid var(--app-color-chat)',
               cursor: 'pointer'
@@ -395,7 +397,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         ) : message.message_type === 'poll' && message.question && message.options ? (
           <div style={{
-            background: isOwnMessage ? 'white' : 'rgba(var(--app-color-chat-rgb), 0.06)',
+            // Kartengrund statt 'white' (27.09.2026): Frage und Antworten
+            // schreiben mit --app-text-emphasis, im Dunkeln fast Weiss.
+            background: isOwnMessage ? 'var(--app-surface-card)' : 'rgba(var(--app-color-chat-rgb), 0.06)',
             borderRadius: 'var(--app-radius-weich)',
             padding: 'var(--app-abstand-basis)',
             marginTop: 'var(--app-abstand-mini)',
@@ -481,8 +485,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   key={index}
                   onClick={() => { if (!takenByOther) onVoteInPoll(message.id, index); }}
                   style={{
-                    background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : takenByOther ? 'rgba(0,0,0,0.04)' : 'white',
-                    border: userVoted ? '2px solid var(--app-color-chat)' : '1px solid rgba(0,0,0,0.08)',
+                    // Flaechen und Rahmen aus Tokens (27.09.2026): 'white' mit
+                    // Schrift aus --app-text-emphasis war im Dunkeln Weiss auf
+                    // Weiss; Schwarz mit Deckkraft (vergeben, Rahmen)
+                    // verschwindet auf dunklem Grund. Hell tragen die Tokens
+                    // dieselben Toene wie vorher (#fff, #f5f5f5, #eee).
+                    background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : takenByOther ? 'var(--app-surface-muted)' : 'var(--app-surface-card)',
+                    border: userVoted ? '2px solid var(--app-color-chat)' : '1px solid var(--app-border-soft)',
                     borderRadius: 'var(--app-radius-knopf)',
                     padding: 'var(--app-abstand-mittel)',
                     marginBottom: 'var(--app-abstand-eng)',
