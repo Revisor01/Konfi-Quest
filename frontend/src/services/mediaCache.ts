@@ -1,4 +1,5 @@
-// Lokaler Cache für Chat-Medien (Bilder + Videos).
+// Lokaler Cache für geschützte Medien der App: Chat-Anhänge und die Dateien
+// der Challenge-Beiträge.
 //
 // Problem davor: LazyImage/VideoPreview luden jedes Medium bei jedem
 // Sichtbarwerden NEU vom Server (GET /chat/files/:path) und erzeugten dabei
@@ -6,39 +7,89 @@
 // + Scrollen = wiederholte grosse Downloads.
 //
 // Lösung: geladene Medien werden binaer im Filesystem (Directory.Cache)
-// abgelegt (key = Hash des filePath). Beim erneuten Anzeigen kommt das Medium
-// aus dem Cache statt vom Server. Es gibt eine "Cache leeren"-Funktion samt
-// Groessenanzeige.
+// abgelegt. Beim erneuten Anzeigen kommt das Medium aus dem Cache statt vom
+// Server. Es gibt eine "Cache leeren"-Funktion samt Groessenanzeige.
 //
-// Hinweis Object-URLs: getMediaObjectUrl() erzeugt eine blob:-URL, die der
-// AUFRUFER beim Unmount per URL.revokeObjectURL() freigeben muss.
+// EIN Cache für alle geschützten Datei-Routen (27.09.2026, Simon: "Wir
+// brauchen bei den Bildern und Files in Challenges auch einen Geräte-Cache,
+// sonst wird das alles immer wieder gelesen. [...] Das kann ja ein System
+// sein."). Bis dahin war der Cache fest auf /chat/files/ verdrahtet, und die
+// Challenge-Ansichten luden jedes Bild bei jedem Öffnen neu. Jetzt nennt
+// jeder Aufruf seine QUELLE; Route und Cache-Schlüssel folgen daraus. Grenze,
+// Größenanzeige und "Cache leeren" gelten für alle Quellen gemeinsam.
+//
+// Hinweis Object-URLs: getMediaObjectUrl() liefert eine GETEILTE blob:-URL, die
+// der Aufrufer NICHT freigeben darf (siehe dort).
 
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import api, { DATEI_TIMEOUT_MS } from './api';
 
 const CACHE_DIR = 'media-cache';
 
-// In-Memory-Promise-Cache: verhindert parallele Doppel-Downloads desselben
-// filePath (z.B. wenn dasselbe Bild mehrfach im Viewport erscheint).
+/**
+ * Die geschützten Medien-Routen der App. Eine neue Route kommt hier dazu —
+ * sonst nirgends.
+ */
+export type MedienQuelle = 'chat' | 'challenges';
+
+const ROUTEN: Record<MedienQuelle, string> = {
+  chat: '/chat/files/',
+  challenges: '/challenges/files/',
+};
+
+/** Pfad der Datei-Route relativ zur API, etwa `/challenges/files/ab12…`. */
+export const medienApiPfad = (datei: string, quelle: MedienQuelle = 'chat'): string =>
+  `${ROUTEN[quelle]}${datei}`;
+
+/**
+ * Umkehrung von medienApiPfad: erkennt eine geschützte Medien-Route in einem
+ * API-Pfad (mit oder ohne führendes /api). Damit laufen auch Dateien, die als
+ * Adresse weitergereicht werden (Wisch-Kontext im Datei-Betrachter), über
+ * diesen Cache statt am ihm vorbei.
+ */
+export const medienAusApiPfad = (pfad: string): { quelle: MedienQuelle; datei: string } | null => {
+  const ohneApi = pfad.replace(/^\/?api(?=\/)/, '');
+  for (const quelle of Object.keys(ROUTEN) as MedienQuelle[]) {
+    const route = ROUTEN[quelle];
+    if (ohneApi.startsWith(route)) {
+      const datei = ohneApi.slice(route.length);
+      if (datei && !datei.includes('/')) return { quelle, datei };
+    }
+  }
+  return null;
+};
+
+// In-Memory-Promise-Cache: verhindert parallele Doppel-Downloads derselben
+// Datei (z.B. wenn dasselbe Bild mehrfach im Viewport erscheint).
 const inflight = new Map<string, Promise<Blob>>();
 
 // Persistenter In-Memory-Object-URL-Cache: haelt fertige blob:-URLs über
-// Mount/Unmount der Chat-Komponenten hinweg. So ist ein Bild beim erneuten
-// Oeffnen des Chats SOFORT da (kein Re-Download aus dem Filesystem, kein
-// Spinner, kein Layout-Sprung). Die URLs werden NICHT pro-Komponente revoked
-// (das wuerde den geteilten Cache zerstoeren) — nur clearMediaCache() räumt auf.
+// Mount/Unmount der Anzeige-Komponenten hinweg. So ist ein Bild beim erneuten
+// Oeffnen des Chats oder einer Challenge SOFORT da (kein Re-Download aus dem
+// Filesystem, kein Spinner, kein Layout-Sprung). Die URLs werden NICHT
+// pro-Komponente revoked (das wuerde den geteilten Cache zerstoeren) — nur
+// clearMediaCache(), die Grenze und medienVergessen() räumen auf.
 const objectUrlCache = new Map<string, string>();
 
-// Stabiler, dateisystemsicherer Schlüssel aus dem filePath (djb2-Hash).
-const cacheKey = (filePath: string): string => {
-  let hash = 5381;
-  for (let i = 0; i < filePath.length; i++) {
-    hash = ((hash << 5) + hash + filePath.charCodeAt(i)) | 0;
+// djb2-Hash — nur noch für Dateinamen, die nicht dateisystemsicher sind. Die
+// Server vergeben 64 Hexzeichen, die kommen unverändert in den Schlüssel.
+const hash = (text: string): string => {
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) {
+    h = ((h << 5) + h + text.charCodeAt(i)) | 0;
   }
-  // Endung mitnehmen, damit der korrekte MIME-Typ rekonstruierbar bleibt.
-  const extMatch = filePath.match(/\.([a-zA-Z0-9]{1,5})$/);
-  const ext = extMatch ? '.' + extMatch[1].toLowerCase() : '';
-  return `${(hash >>> 0).toString(36)}${ext}`;
+  return (h >>> 0).toString(36);
+};
+
+// Schlüssel = Quelle + Dateiname, etwa "challenges-3a96…". Die Quelle steht
+// vorn, damit eine Chat- und eine Challenge-Datei gleichen Namens nie
+// denselben Eintrag treffen.
+//
+// Vor dem 27.09.2026 war der Schlüssel ein 32-Bit-Hash des Dateinamens ohne
+// Quelle — ein Hash kann kollidieren, der Name nicht.
+const cacheKey = (datei: string, quelle: MedienQuelle): string => {
+  const sicher = /^[A-Za-z0-9_]+(\.[A-Za-z0-9]{1,5})?$/.test(datei) ? datei : `h${hash(datei)}`;
+  return `${quelle}-${sicher}`;
 };
 
 const blobToBase64 = (blob: Blob): Promise<string> =>
@@ -71,7 +122,7 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
 // ja immer laden. Die moeglichst alle Dateien."). Vorher standen hier nur Bild-
 // und Video-Typen, weil nur die ueberhaupt in den Cache kamen.
 const mimeFromKey = (key: string): string => {
-  const ext = key.split('.').pop()?.toLowerCase() || '';
+  const ext = key.includes('.') ? key.split('.').pop()?.toLowerCase() || '' : '';
   const map: Record<string, string> = {
     jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
     heic: 'image/heic', heif: 'image/heif', bmp: 'image/bmp', svg: 'image/svg+xml',
@@ -89,6 +140,14 @@ const mimeFromKey = (key: string): string => {
   };
   return map[ext] || 'application/octet-stream';
 };
+
+/**
+ * MIME-Typ aus einem Dateinamen wie "foto.png". Die Server vergeben
+ * Dateinamen ohne Endung; der Typ steht deshalb nur im Originalnamen des
+ * Beitrags oder der Nachricht — und genau daraus leiten ihn die Anzeigen ab.
+ */
+export const mimeAusDateiname = (name: string | null | undefined): string =>
+  name ? mimeFromKey(name) : 'application/octet-stream';
 
 async function ensureDir(): Promise<void> {
   try {
@@ -149,8 +208,8 @@ async function writeToCache(key: string, blob: Blob): Promise<void> {
  *  geratenen Zahl). */
 export type FortschrittHandler = (prozent: number | null) => void;
 
-async function downloadBlob(filePath: string, onFortschritt?: FortschrittHandler): Promise<Blob> {
-  const response = await api.get(`/chat/files/${filePath}`, {
+async function downloadBlob(route: string, onFortschritt?: FortschrittHandler): Promise<Blob> {
+  const response = await api.get(route, {
     responseType: 'blob',
     // Eigenes, hoeheres Zeitlimit fuer Dateien (siehe api.ts): Das globale
     // von 20 s liess grosse Anhaenge auf langsamer Leitung scheitern.
@@ -166,13 +225,45 @@ async function downloadBlob(filePath: string, onFortschritt?: FortschrittHandler
 }
 
 /**
+ * Wie ein Medium geholt wird. `quelle` fehlt nur bei den Chat-Aufrufen aus der
+ * Zeit vor der Verallgemeinerung — sie bleiben so unverändert gültig.
+ */
+export interface MedienAbruf {
+  quelle?: MedienQuelle;
+  /** Wird nur beim echten Download gerufen, nicht beim Cache-Treffer. */
+  onFortschritt?: FortschrittHandler;
+  /**
+   * Erst den Server fragen, den Cache nur ohne Netz nehmen. Für Ansichten,
+   * deren Liste ein eingefrorener Stand ist (Jahresrückblick): Dort entscheidet
+   * so weiter der Server, ob eine Datei noch gezeigt werden darf — ein
+   * inzwischen gelöschter Beitrag kommt nicht mehr aus dem Cache.
+   */
+  netzZuerst?: boolean;
+}
+
+const abrufLesen = (abruf?: FortschrittHandler | MedienAbruf): Required<Pick<MedienAbruf, 'quelle' | 'netzZuerst'>> & Pick<MedienAbruf, 'onFortschritt'> => {
+  const a: MedienAbruf = typeof abruf === 'function' ? { onFortschritt: abruf } : (abruf || {});
+  return { quelle: a.quelle || 'chat', netzZuerst: a.netzZuerst === true, onFortschritt: a.onFortschritt };
+};
+
+/**
+ * Hat der Server gesagt, dass es die Datei für diese Person nicht (mehr) gibt?
+ * 403: kein Zugriff (mehr), 404/410: gelöscht. Netzfehler und 5xx zählen
+ * nicht — dann darf der Cache weiter aushelfen.
+ */
+const endgueltigWeg = (err: unknown): boolean => {
+  const status = (err as { response?: { status?: number } })?.response?.status;
+  return status === 403 || status === 404 || status === 410;
+};
+
+/**
  * Liegt die Datei schon im Cache? Erlaubt es dem Aufrufer, bei einem Treffer
  * gar keine Ladeanzeige zu zeigen — ein Spinner, der sofort wieder verschwindet,
  * blitzt nur unangenehm auf.
  */
-export async function istGecacht(filePath: string): Promise<boolean> {
+export async function istGecacht(filePath: string, quelle: MedienQuelle = 'chat'): Promise<boolean> {
   try {
-    await Filesystem.stat({ path: `${CACHE_DIR}/${cacheKey(filePath)}`, directory: Directory.Cache });
+    await Filesystem.stat({ path: `${CACHE_DIR}/${cacheKey(filePath, quelle)}`, directory: Directory.Cache });
     return true;
   } catch {
     return false;
@@ -183,29 +274,46 @@ export async function istGecacht(filePath: string): Promise<boolean> {
  * Liefert das Medium als Blob — aus dem lokalen Cache, sonst per Download
  * (und legt es danach in den Cache).
  *
- * `onFortschritt` wird nur beim echten Download gerufen, nicht beim
- * Cache-Treffer.
+ * Zweites Argument: der Fortschritts-Rückruf (so rufen es die Chat-Stellen
+ * seit jeher) oder ein MedienAbruf mit Quelle.
  */
-export async function getMediaBlob(filePath: string, onFortschritt?: FortschrittHandler): Promise<Blob> {
-  const key = cacheKey(filePath);
+export async function getMediaBlob(filePath: string, abruf?: FortschrittHandler | MedienAbruf): Promise<Blob> {
+  const { quelle, onFortschritt, netzZuerst } = abrufLesen(abruf);
+  const key = cacheKey(filePath, quelle);
+
+  if (netzZuerst) {
+    try {
+      const blob = await downloadBlob(medienApiPfad(filePath, quelle), onFortschritt);
+      await writeToCache(key, blob);
+      return blob;
+    } catch (err) {
+      if (endgueltigWeg(err)) {
+        await eintragEntfernen(key);
+        throw err;
+      }
+      const cached = await readFromCache(key);
+      if (cached) return cached;
+      throw err;
+    }
+  }
 
   const cached = await readFromCache(key);
   if (cached) return cached;
 
   // Laufenden Download wiederverwenden statt parallel doppelt zu laden.
-  let promise = inflight.get(filePath);
+  let promise = inflight.get(key);
   if (!promise) {
     promise = (async () => {
-      const blob = await downloadBlob(filePath, onFortschritt);
+      const blob = await downloadBlob(medienApiPfad(filePath, quelle), onFortschritt);
       await writeToCache(key, blob);
       return blob;
     })();
-    inflight.set(filePath, promise);
+    inflight.set(key, promise);
   }
   try {
     return await promise;
   } finally {
-    inflight.delete(filePath);
+    inflight.delete(key);
   }
 }
 
@@ -215,8 +323,8 @@ export async function getMediaBlob(filePath: string, onFortschritt?: Fortschritt
  * SOFORT beim Render anzuzeigen (ohne Lazy-Load/Ruckeln), und nur ungecachte
  * Bilder lazy nachzuladen.
  */
-export function getCachedObjectUrl(filePath: string): string | null {
-  return objectUrlCache.get(filePath) ?? null;
+export function getCachedObjectUrl(filePath: string, quelle: MedienQuelle = 'chat'): string | null {
+  return objectUrlCache.get(cacheKey(filePath, quelle)) ?? null;
 }
 
 /**
@@ -224,17 +332,43 @@ export function getCachedObjectUrl(filePath: string): string | null {
  * In-Memory-Cache gehalten und über Mount/Unmount hinweg wiederverwendet — der
  * AUFRUFER darf sie NICHT selbst revoken (nur clearMediaCache() räumt auf).
  */
-export async function getMediaObjectUrl(filePath: string): Promise<string> {
-  const cached = objectUrlCache.get(filePath);
+export async function getMediaObjectUrl(filePath: string, abruf?: MedienAbruf): Promise<string> {
+  const { quelle } = abrufLesen(abruf);
+  const key = cacheKey(filePath, quelle);
+  const cached = objectUrlCache.get(key);
   if (cached) return cached;
-  const blob = await getMediaBlob(filePath);
+  const blob = await getMediaBlob(filePath, abruf);
   // Doppelpruefung: ein paralleler Aufruf könnte die URL inzwischen gesetzt
   // haben -> dann die eigene verwerfen und die geteilte nehmen.
-  const existing = objectUrlCache.get(filePath);
+  const existing = objectUrlCache.get(key);
   if (existing) return existing;
   const url = URL.createObjectURL(blob);
-  objectUrlCache.set(filePath, url);
+  objectUrlCache.set(key, url);
   return url;
+}
+
+// Eine Datei samt Object-URL aus dem Cache nehmen.
+async function eintragEntfernen(key: string): Promise<void> {
+  const url = objectUrlCache.get(key);
+  if (url) {
+    URL.revokeObjectURL(url);
+    objectUrlCache.delete(key);
+  }
+  letzterZugriff.delete(key);
+  try {
+    await Filesystem.deleteFile({ path: `${CACHE_DIR}/${key}`, directory: Directory.Cache });
+  } catch {
+    // Lag gar nicht im Cache -> nichts zu tun.
+  }
+}
+
+/**
+ * Wirft EINE Datei aus dem Cache — etwa nachdem die Leitung einen Beitrag
+ * gelöscht hat. Sonst läge die Datei weiter auf diesem Gerät, obwohl es sie
+ * auf dem Server nicht mehr gibt.
+ */
+export async function medienVergessen(filePath: string, quelle: MedienQuelle = 'chat'): Promise<void> {
+  await eintragEntfernen(cacheKey(filePath, quelle));
 }
 
 // Obergrenze des Caches. Darueber fliegt raus, was am laengsten nicht benutzt
@@ -245,9 +379,9 @@ export async function getMediaObjectUrl(filePath: string): Promise<string> {
 // Solange nur Bilder und Videos aus dem Chat hineinliefen, fiel das kaum auf.
 // Seit auch Dokumente und Audio gecacht werden, waechst er deutlich schneller.
 //
-// 500 MB, weil eine einzelne Chat-Datei hoechstens 10 MB gross sein darf
-// (useChatDateien.ts) — es passen also immer mindestens 50 Dateien hinein, und
-// der uebliche Bestand aus Bildern liegt um Groessenordnungen darunter.
+// 500 MB, weil die groesste Einzeldatei ein Challenge-Beitrag mit 50 MB ist
+// (Chat: 5 MB) — es passen also immer mindestens zehn davon hinein, und der
+// uebliche Bestand aus Bildern liegt um Groessenordnungen darunter.
 const MAX_CACHE_BYTES = 500 * 1024 * 1024;
 
 type CacheEintrag = { name: string; size: number; mtime: number };
@@ -315,12 +449,12 @@ export async function grenzeDurchsetzen(): Promise<void> {
           gesamt -= e.size;
           letzterZugriff.delete(e.name);
           // Die Object-URL derselben Datei muss mitgehen, sonst zeigt die App
-          // weiter auf einen Blob, den der Cache nicht mehr kennt.
-          for (const [pfad, url] of objectUrlCache.entries()) {
-            if (cacheKey(pfad) === e.name) {
-              URL.revokeObjectURL(url);
-              objectUrlCache.delete(pfad);
-            }
+          // weiter auf einen Blob, den der Cache nicht mehr kennt. Der
+          // Dateiname IST der Schlüssel der Object-URL.
+          const url = objectUrlCache.get(e.name);
+          if (url) {
+            URL.revokeObjectURL(url);
+            objectUrlCache.delete(e.name);
           }
         } catch {
           // Loeschen fehlgeschlagen -> naechste Datei versuchen.
@@ -336,7 +470,7 @@ export async function grenzeDurchsetzen(): Promise<void> {
   return laufendesAufraeumen;
 }
 
-/** Gesamtgroesse des Medien-Caches in Bytes. */
+/** Gesamtgroesse des Medien-Caches in Bytes — alle Quellen zusammen. */
 export async function getMediaCacheSize(): Promise<number> {
   try {
     const eintraege = await eintraegeLesen();
@@ -346,7 +480,11 @@ export async function getMediaCacheSize(): Promise<number> {
   }
 }
 
-/** Loescht den kompletten Medien-Cache (Filesystem + In-Memory-Object-URLs). */
+/**
+ * Loescht den kompletten Medien-Cache aller Quellen (Filesystem +
+ * In-Memory-Object-URLs). Läuft von Hand ("Medien-Cache leeren") und beim
+ * Abmelden sowie beim Wechsel der Gemeinde.
+ */
 export async function clearMediaCache(): Promise<void> {
   inflight.clear();
   letzterZugriff.clear();

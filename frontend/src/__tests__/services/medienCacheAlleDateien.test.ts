@@ -103,9 +103,13 @@ describe('Der Cache waechst nicht unbegrenzt', () => {
 
   it('gibt die Object-URL einer weggeworfenen Datei frei', () => {
     // Sonst zeigte die App weiter auf einen Blob, den der Cache nicht mehr hat.
+    // Seit dem 27.09.2026 ist der Dateiname selbst der Schlüssel der
+    // Object-URL (Quelle + Name statt Hash), die Suche über alle Einträge
+    // entfällt. Im Ablauf geprüft in medienCacheQuellen.test.ts ("die Grenze
+    // gibt die Object-URL einer verdrängten Datei frei").
     const aufraeumen = cache.slice(cache.indexOf('export async function grenzeDurchsetzen'));
     expect(aufraeumen).toContain('URL.revokeObjectURL(url);');
-    expect(aufraeumen).toContain('objectUrlCache.delete(pfad);');
+    expect(aufraeumen).toContain('objectUrlCache.delete(e.name);');
   });
 });
 
