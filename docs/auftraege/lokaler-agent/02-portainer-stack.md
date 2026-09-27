@@ -11,10 +11,50 @@ Schritt 5 erst, wenn der neue Code auf **beiden** Backends läuft.
 
 ## 1. Abgleich
 
-- [ ] Live-Stack exportieren und gegen die Referenz diffen (Dienste, Images,
+- [x] Live-Stack exportieren und gegen die Referenz diffen (Dienste, Images,
       Umgebung ohne Werte der Geheimnisse, Ressourcen, `command` von Postgres,
       Healthchecks, Labels). Jede Abweichung einordnen: gewollt (dann in die
       Referenz, mit Begründung im Kommentar) oder angleichen.
+      **Ergebnis 27.09.2026** (Live-Stand der Stack-Datei vom 26.09., Tag
+      `fce1ab0`). Alle Werte stehen direkt in der Datei, Stack-Variablen gibt
+      es keine. Abweichungen:
+
+      *Fehlt in der Referenz — vor jedem Kopieren der Referenz nachtragen:*
+      - `ACTIVITY_PHOTO_ENCRYPTION_KEY` und `DOCS_PASSWORD` in der Umgebung
+        aller drei Backends. Die Referenz kennt beide nicht. Wer sie in den
+        Stack kopiert, macht die verschlüsselten Aktivitätsfotos unlesbar.
+        `docs/betrieb/sicherung.md` nennt beide richtig.
+
+      *Gewollt, gehört in die Referenz (Abschnitt 6):*
+      - Router `konfi-api` und `konfi-frontend` auch für den `www.`-Host.
+      - Middlewares `compress-default@file` und `retry-deploy@file` (API),
+        `retry-deploy@file` (Frontend).
+      - Sticky-Cookie `konfi_lb` am Service `konfi-api` (httpOnly, secure,
+        sameSite lax).
+      - Router `konfi-docs` (Priorität 20, `konfi-docs-auth@file`) für
+        `/docs/api` ohne die Anmeldeseite.
+      - Healthcheck des Frontends prüft eine IP statt `127.0.0.1`
+        (gleichwertig).
+
+      *Anzugleichen (Phase A 5 und 6, braucht Simons Fenster):*
+      - Postgres: `command` nur `max_connections=200`, Grenzen 1 GB / 0,3 CPU.
+      - Backends: `PG_POOL_MAX`, `PG_CONN_TIMEOUT`, `PG_STATEMENT_TIMEOUT`,
+        `PG_IDLE_TX_TIMEOUT`, `PG_SOCKET_ADAPTER_POOL_MAX` und
+        `SHUTDOWN_DRAIN_MS` fehlen. Vorhanden ist nur `PG_IDLE_TIMEOUT`.
+
+      *Zur Entscheidung, nicht blind übernehmen:*
+      - `TZ: Europe/Berlin` fehlt bei allen drei Backends. Sie laufen in UTC
+        (`date` im Container: UTC) und schreiben Zeitstempel ohne Zeitzone in
+        UTC (siehe 01, Nr. 5). Die Zeile der Referenz ändert also Verhalten,
+        auch am alten Code. Erst mit der Entwicklung klären, gegen welche
+        Zeitzone der Code von 2.3.0 getestet ist.
+      - `backend-test` steht auf dem Live-SHA statt auf `test-latest` (01,
+        Nr. 7).
+
+      Der neue Deploy (`deploy/rollend.sh`) liest die Live-Datei, ändert nur
+      die Image-Tags von `backend`/`frontend` bzw. `backend2` und schickt die
+      vorhandenen Variablen zurück (hier eine leere Liste). Die direkt
+      eingetragenen Geheimnisse übersteht er also.
 
 ## 2. Postgres
 
