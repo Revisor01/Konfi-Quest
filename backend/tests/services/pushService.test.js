@@ -9,7 +9,7 @@
 // Getestet wird gegen die echte Test-DB (Seed: Org 1 und Org 2), Firebase
 // ist gemockt — die Assertions prüfen den konkreten data-Payload je Typ.
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, ORGS, CHAT_ROOMS, JAHRGAENGE } = require('../helpers/seed');
+const { seed, USERS, ORGS, CHAT_ROOMS, JAHRGAENGE, EVENTS } = require('../helpers/seed');
 
 // vi.mock greift bei diesem CJS-Setup nicht zuverlaessig (siehe
 // jahrgaenge.test.js) — deshalb vi.spyOn auf dem Modul-Objekt, BEVOR
@@ -253,10 +253,13 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(push.data.organization_id).toBe('1');
     });
 
+    // Seit 27.09.2026 (BF-04) gehen die Empfaenger vom TERMIN aus -- die
+    // Konfis seiner Jahrgaenge. Der Test rief mit der Kennung 5, die es im
+    // Seed nicht gibt; jetzt der Seed-Termin 1 (Jahrgang 1: konfi1, konfi2).
     it('sendNewEventToOrgKonfis: Org aus dem Parameter', async () => {
-      await PushService.sendNewEventToOrgKonfis(db, 1, 'Neues Event', new Date().toISOString(), 5);
+      await PushService.sendNewEventToOrgKonfis(db, 1, 'Neues Event', new Date().toISOString(), EVENTS.gottesdienstEvent.id);
       const pushes = gesendete();
-      expect(pushes.length).toBeGreaterThan(0);
+      expect(pushes.length).toBe(2);
       for (const push of pushes) {
         expect(push.data.type).toBe('new_event');
         expect(push.data.organization_id).toBe('1');
@@ -270,27 +273,30 @@ describe('PushService: organization_id in jedem Payload', () => {
     // bekamen bis zur 30-Tage-Token-Bereinigung weiter "Neues Event!" einer
     // Gemeinde, aus der sie laengst raus sind.
     it('M5: archivierte Konfis bekommen keinen new_event-Push mehr', async () => {
+      // Termin 1 statt der Kennungen 5-7, die es im Seed nicht gibt: Seit
+      // 27.09.2026 (BF-04) kommen die Empfaenger aus den Jahrgaengen des
+      // Termins.
       const vorher = await (async () => {
-        await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin A', new Date().toISOString(), 5);
+        await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin A', new Date().toISOString(), EVENTS.gottesdienstEvent.id);
         const n = gesendete().length;
         sendFirebasePushNotification.mockClear();
         return n;
       })();
-      // Erlaubter Fall: beide aktiven Konfis der Org 1 bekommen den Push
-      // (konfi1 und konfi2; konfi3 gehoert zu Org 2, siehe seed.js).
+      // Erlaubter Fall: beide aktiven Konfis des Jahrgangs 1 bekommen den
+      // Push (konfi1 und konfi2; konfi3 gehoert zu Org 2, siehe seed.js).
       expect(vorher).toBe(2);
 
       // Verbotener Fall: ein archivierter Konfi faellt raus, obwohl sein
       // Token noch existiert.
       await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
-      await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin B', new Date().toISOString(), 6);
+      await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin B', new Date().toISOString(), EVENTS.gottesdienstEvent.id);
       expect(gesendete().length).toBe(1);
       expect(gesendete().map(p => p.token)).not.toContain('token-konfi1');
       sendFirebasePushNotification.mockClear();
 
       // Dasselbe fuer ein deaktiviertes Konto.
       await db.query('UPDATE users SET deleted_at = NULL, is_active = false WHERE id = $1', [USERS.konfi1.id]);
-      await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin C', new Date().toISOString(), 7);
+      await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin C', new Date().toISOString(), EVENTS.gottesdienstEvent.id);
       expect(gesendete().length).toBe(1);
       expect(gesendete().map(p => p.token)).not.toContain('token-konfi1');
     });

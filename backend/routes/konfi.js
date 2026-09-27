@@ -17,6 +17,7 @@ const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach, pruefeKonfiStorno } = require('../utils/bookingUtils');
 const { buchungszahlenJeTerminSql } = require('../utils/buchungszahlen');
+const { konfiSiehtTerminSql } = require('../utils/konfiTerminSicht');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
@@ -1230,7 +1231,6 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         FROM events e
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
         LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
-        INNER JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
         -- Zahlen aus event_booking_stats statt aus einer eigenen Kopie
         -- (28.08.2026). Konfi-Sicht: registered_count UND waitlist_count
         -- zaehlen NUR Konfis. Teamer haben ein eigenes Kontingent mit eigener
@@ -1314,8 +1314,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           LIMIT 1
         ) event_chat ON true
         WHERE e.organization_id = $1
-          AND eja.jahrgang_id = $3
-          AND e.teamer_only IS NOT TRUE
+          -- Eigener Jahrgang, nie "Nur Team": dieselbe Regel wie die
+          -- Empfaenger von "Neues Event!" (utils/konfiTerminSicht.js,
+          -- 27.09.2026). Vorher stand sie nur hier, als INNER JOIN auf
+          -- event_jahrgang_assignments -- und der Push kannte sie nicht.
+          AND ${konfiSiehtTerminSql({ jahrgang: '$3', e: 'e' })}
           AND (e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT NULL)
           ${dateWindowClause}
         ORDER BY e.event_date ASC

@@ -172,6 +172,7 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 - **Auswirkung aus Nutzersicht:** Jede Konfi bekommt jede Woche Einladungen zu Terminen anderer Jahrgänge und zu Team-internen Terminen ohne Jahrgang, tippt darauf und findet nichts. Bei mehreren Jahrgängen je Gemeinde ist das der häufigste Push überhaupt.
 - **Beleg:** `A4 Termin 80 (nur J3) -> Push an ["konfi1","konfi2","konfiOhneJg"] | Termin 81 (ohne Jahrgang) -> Push an ["konfi1","konfi2","konfiOhneJg"] | konfi1 Liste enthaelt 80/81: false false | konfiOhneJg Liste: 0`.
 - **Empfehlung:** Empfänger über `event_jahrgang_assignments` wie `sendMandatoryEventCreated` (`verwaltung.js:298-313`); Termine ohne Jahrgang ohne Konfi-Push (F-05). Test mit zwei Jahrgängen und einer Konfi ohne Jahrgang; `pushService.test.js:245-283` anpassen.
+- **Status:** behoben 27.09.2026 — Regel-Stelle `backend/utils/konfiTerminSicht.js` (`konfiSiehtTerminSql`, `ladeKonfisDieTerminSehen`); Konfi-Terminliste (`konfi.js`) und „Neues Event!" (`pushService.sendNewEventToOrgKonfis`) lesen sie beide. Empfänger: Konfis der Jahrgänge des Termins, nie „Nur Team"; Termine ohne Jahrgang und Konfis ohne Jahrgang: niemand (die Liste zeigt sie nicht, F-05 wie empfohlen). Erinnerungen 24 h/1 h gehen weiter nur an eigene Buchungen — nicht derselbe Fehler. Tests `tests/services/neuesEventEmpfaenger.test.js` (9, inkl. Parität mit `GET /api/konfi/events`).
 
 ### BF-05: Admins öffnen jeden gemeinschaftlichen Chat-Raum der Gemeinde
 - **Schwere:** HOCH

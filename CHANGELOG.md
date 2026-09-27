@@ -317,6 +317,10 @@ Versionsüberschrift.
 - Wer einen Chat öffnen darf, ohne darin Mitglied zu sein — etwa der Org-Admin
   in einer Gruppe —, sieht dort jetzt auch Bilder und Dateien. Bisher blieben
   sie leer, obwohl die Nachrichten lesbar waren.
+- Die Mitteilung „Neues Event!" bekommen nur noch die Konfis, die das Event
+  in ihrer Event-Liste finden — die Konfis der Jahrgänge, für die es gilt.
+  Bisher ging sie an alle Konfis der Gemeinde, auch zu Events anderer
+  Jahrgänge und zu Events ohne Jahrgang; wer darauf tippte, fand nichts.
 - Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war
   das möglich — und dann wurde niemand automatisch angemeldet, obwohl der
   Termin für alle sichtbar war. In einer Gemeinde standen dadurch nur vier von

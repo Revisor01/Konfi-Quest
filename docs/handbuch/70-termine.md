@@ -82,6 +82,11 @@ Beides ordnest du im selben Abschnitt zu. Die Kategorien legst du vorher
 unter [Kategorien anlegen und pflegen](45-jahrgaenge.md#kategorien-anlegen-und-pflegen)
 an; sie gruppieren Events und sind die Grundlage für Kategorie-Badges.
 
+Die Jahrgänge entscheiden, welche Konfis das Event sehen: nur die der
+zugeordneten Jahrgänge. Ein Event ohne Jahrgang steht beim Team, nicht bei
+den Konfis — und nur wer es sieht, bekommt die
+[Mitteilung zum Anmeldestart](#den-anmeldung-moeglich-push-einordnen).
+
 ### Die Voreinstellungen kennen
 
 | Feld | Voreinstellung |
@@ -242,8 +247,20 @@ Vergangenheit dagegen richtig und bleibt erlaubt.
 
 ### Den „Anmeldung möglich"-Push einordnen
 
-Sobald ein freiwilliges Event anmeldbar wird, geht **genau ein** Push an die
-Konfis. Er kommt nicht beim Speichern, sondern von einem Hintergrundlauf, der
+Sobald ein freiwilliges Event anmeldbar wird, geht **genau ein** Push
+„Neues Event!" an die Konfis, die das Event in ihrer Event-Liste sehen — das
+sind die Konfis der Jahrgänge, die du dem Event zugeordnet hast:
+
+| Event | Wer bekommt „Neues Event!" |
+|---|---|
+| für einen oder mehrere Jahrgänge | die Konfis dieser Jahrgänge, jede einmal |
+| ohne Jahrgang | niemand — Konfis sehen es nicht, es gilt dem Team |
+| „Nur Team" | niemand |
+
+Eine Konfi ohne Jahrgang sieht kein Event und bekommt deshalb auch keinen
+Push. Team und Leitung bekommen ihn nie.
+
+Der Push kommt nicht beim Speichern, sondern von einem Hintergrundlauf, der
 jede Minute prüft — so kann er nicht doppelt kommen. Werden auf einmal sehr
 viele Events anmeldbar (etwa nach einem Import), arbeitet der Lauf sie nach
 und nach ab, die am längsten offenen zuerst; ein einzelner Push kann dann

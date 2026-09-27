@@ -12,6 +12,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // wer mehrere Gemeinden betreut, bekam aus den anderen nichts.
 const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
 const { TEAM_ORGWEITE_AUDIENCES } = require('../utils/challengeLeitungSicht');
+const { ladeKonfisDieTerminSehen } = require('../utils/konfiTerminSicht');
 // Postfach (25.09.2026): Welche Arten neben dem Push auch einen Eintrag in
 // der Tabelle notifications bekommen, steht in EINER Positivliste
 // (utils/postfachArten.js). Geschrieben wird zentral in sendToUser und
@@ -61,7 +62,7 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
  * event_cancelled             | sendEventCancellationToKonfis        | Konfi (multi)   | ja
  * event_reactivated           | sendEventReactivationToKonfis        | Konfi (multi)   | ja
  * event_changed               | sendEventChangedToKonfis             | Konfi (multi)   | ja
- * new_event                   | sendNewEventToOrgKonfis              | Org-Konfis      | ja
+ * new_event                   | sendNewEventToOrgKonfis              | Jahrgangs-Konfis| ja
  * event_attendance            | sendEventAttendanceToKonfi           | Konfi           | ja
  * events_pending_approval     | sendEventsPendingApprovalToAdmins    | Org-Admins      | ja
  * new_konfi_registration      | sendNewKonfiRegistrationToAdmins     | Jahrgangs-Admins| ja
@@ -1918,37 +1919,34 @@ class PushService {
   }
 
   /**
-   * Neues Event erstellt - Push an alle Konfis der Organisation
+   * Anmeldung geoeffnet ("Neues Event!") - Push an die Konfis, die den Termin
+   * in ihrer Terminliste sehen.
+   *
+   * EMPFAENGER NACH DER REGEL DER KONFI-LISTE (27.09.2026, Audit "Wer bekommt
+   * was", BF-04 / F-05; utils/konfiTerminSicht.js): Konfis der Jahrgaenge des
+   * Termins, nie bei "Nur Team". Termine ohne Jahrgang zeigt die Konfi-Liste
+   * nicht -- sie gelten dem Team --, also gibt es dafuer auch keinen Push;
+   * eine Konfi ohne Jahrgang sieht keinen Termin und bekommt keinen. Bis
+   * dahin ging der Push an jede Konfi der Gemeinde, auch zu Terminen fremder
+   * Jahrgaenge.
+   *
+   * Der Name bleibt (Aufrufer und Tests rufen ihn so); organizationId bleibt
+   * die Gemeinde des Inhalts fuer den Org-Wechsel beim Antippen. Ohne
+   * eventId sind die Jahrgaenge unbekannt -- dann geht nichts raus, statt
+   * im Zweifel an alle.
+   *
+   * deleted_at/is_active (Befund M5 aus dem Push-Bericht, 27.08.2026): Die
+   * Jahrgangs-Archivierung setzt bei Konfis 60-120 Tage nach der
+   * Konfirmation nur `deleted_at` und loescht keine Push-Tokens. Die
+   * Empfaengerabfrage filtert beides weiterhin selbst, obwohl
+   * getTokensForUser es seit 28.08.2026 zentral tut -- so wird die Liste
+   * schon vor dem Token-Lookup klein.
    */
   static async sendNewEventToOrgKonfis(db, organizationId, eventName, eventDate, eventId = null) {
     try {
-
-      // Hole alle Konfi-IDs der Organisation
-      // deleted_at/is_active pruefen (Befund M5 aus dem Push-Bericht,
-      // 27.08.2026): Die Jahrgangs-Archivierung setzt bei Konfis 60-120 Tage
-      // nach der Konfirmation nur `deleted_at`, loescht aber keine
-      // Push-Tokens. Ohne diesen Filter bekamen ausgeschiedene Konten bis zur
-      // 30-Tage-Token-Bereinigung weiter "Neues Event!" einer Gemeinde, aus
-      // der sie laengst raus sind. Die Nachbarmethode
-      // `sendChallengeStartedToJahrgaenge` filtert seit jeher `deleted_at`.
-      // `is_active` kommt hier dazu — deaktivierte Konten sollen ebenso
-      // wenig angeschrieben werden. (Der Satz stand hier frueher anders:
-      // `sendToOrgAdmins` pruefe das bereits so — das stimmte nie. Seit
-      // 28.08.2026 filtert stattdessen `getTokensForUser` zentral, sodass es
-      // fuer alle Empfaenger-Abfragen gilt; der Filter hier bleibt trotzdem,
-      // weil er die Empfaengerliste schon vor dem Token-Lookup verkleinert.)
-      const konfisQuery = `
-        SELECT u.id FROM users u
-        JOIN roles r ON u.role_id = r.id
-        WHERE u.organization_id = $1 AND r.name = 'konfi'
-          AND u.deleted_at IS NULL
-          AND u.is_active = true
-      `;
-      const { rows: konfis } = await db.query(konfisQuery, [organizationId]);
-      const konfiIds = konfis.map(k => k.id);
+      const konfiIds = await ladeKonfisDieTerminSehen(db, eventId);
 
       if (konfiIds.length === 0) {
- console.warn('Keine Konfis für Organisation gefunden:', organizationId);
         return { success: true, sent: 0 };
       }
 

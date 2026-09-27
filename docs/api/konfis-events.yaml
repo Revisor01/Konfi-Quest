@@ -825,11 +825,21 @@ paths:
         fehlenden Zeile. Jetzt steht es aussen, wie bei
         GET /api/konfi/events/{id}/status. Alle vier Zaehler sind damit
         durchgaengig integer und nie null.
+        BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-04 / F-05): Die
+        Sichtbarkeits-Bedingung (Termin einem Jahrgang der Konfi zugeordnet,
+        nie teamer_only) steht jetzt EINMAL in utils/konfiTerminSicht.js und
+        bestimmt zugleich die Empfaenger der Mitteilung new_event ("Neues
+        Event!", Hintergrundlauf zum Anmeldestart). Die ging vorher an jede
+        Konfi der Gemeinde -- auch zu Terminen fremder Jahrgaenge und ohne
+        Jahrgang, die diese Liste nicht zeigt. Termine ohne Jahrgang
+        erscheinen hier weiterhin nicht (sie gelten dem Team) und loesen
+        deshalb auch keine Konfi-Mitteilung aus. Antwortform und Inhalt der
+        Liste unveraendert.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "nur Events des eigenen Jahrgangs; Konfi ohne Jahrgang -> leere Liste"
+        objekt-pruefung: "nur Events des eigenen Jahrgangs (utils/konfiTerminSicht.js, dieselbe Regel wie die Empfaenger von new_event); Konfi ohne Jahrgang -> leere Liste"
         hinweis: "BEHOBEN 22.08.2026: qr_token wird aus der Response gefiltert (war dieselbe Klasse wie L1 in /api/events)."
       parameters:
         - name: all
