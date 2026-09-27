@@ -340,7 +340,7 @@ entschieden: die kleinen Punkte vor dem Merge beheben, dazu vier Entscheidungen.
 - **Hinweistext im Konfi-Formular** versprach ein später einsehbares Passwort (`7cb275f0`;
   Leitung BF-05). **Umlaute** in 9 weiteren Server-Meldungen, der Test liest jetzt auch
   Prüfregeln und Anfragegrenzen (`07db97ef`; UI BF-11).
-- **Einladungen einsehen und zurückziehen** in der Benutzerliste (`(Einladungen: Commit folgt)`; Leitung BF-02) —
+- **Einladungen einsehen und zurückziehen** in der Benutzerliste (`88519074`; Leitung BF-02) —
   CHANGELOG und Handbuch versprachen es, die App hatte keine Oberfläche dafür.
 - **Mindestversion** zeigt einen wegklickbaren Hinweis statt einer Sperre (`3df23705`; Simon:
   „Keine Zwangsupdates").
@@ -427,7 +427,8 @@ Ungelesen-Zähler, E-Mail-HTML roh, Doppeltipp auf „Anmelden", QR-Scanner-Clos
 Body-Parser-Fehler → 500, JWT mit E-Mail, `check-username` ohne Limiter, Aufräumskripte ohne
 `uploads/challenges`, Text-Uploads ohne Inhaltsprüfung, redundante Indizes, `settings` ohne PK,
 Kommentar- und Zahlen-Drift, Dependabot-Regeln, 1,39-MB-Icon-Chunk, 17 Flächen-Hexwerte der
-Kriterien, dunkle Screenshots.
+Kriterien, dunkle Screenshots; die Einladungs-Mitteilung im Postfach der eingeladenen Person
+bleibt nach Annehmen, Ablehnen oder Ablauf stehen (nach dem Zurückziehen verschwindet sie).
 
 ### Vor der EKD-Ausrollung
 

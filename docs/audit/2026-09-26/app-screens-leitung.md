@@ -131,7 +131,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-02: Einladungen lassen sich in der App weder einsehen noch zurückziehen
 
 - **Schwere:** MITTEL
-- **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht) — offene Einladungen stehen jetzt in der Benutzerliste und lassen sich dort zurückziehen (`GET /einladungen`, `DELETE /einladungen/:id`). Am Stand `b6a67ed1` rief noch keine Oberfläche die beiden Routen, obwohl CHANGELOG und Handbuch (`05-rollen.md:170`) das Zurückziehen schon versprachen.
+- **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit `88519074`) — offene Einladungen stehen jetzt in der Benutzerliste und lassen sich dort zurückziehen (`GET /einladungen`, `DELETE /einladungen/:id`). Am Stand `b6a67ed1` rief noch keine Oberfläche die beiden Routen, obwohl CHANGELOG und Handbuch (`05-rollen.md:170`) das Zurückziehen schon versprachen.
 - **Fundstelle:** `backend/routes/einladungen.js:182` (GET /), `:199` (DELETE /:id)
   ohne Aufrufer; `docs/handbuch/05-rollen.md:169-170`
 - **Kennzeichnung:** reproduziert —
