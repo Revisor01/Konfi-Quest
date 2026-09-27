@@ -57,7 +57,11 @@ behoben und mit Tests belegt; offen ist allein Blocker 3
 (Widerruf der Apple-Schlüssel, nur Simon im Developer-Portal). **Nachtrag 27.09.:** Simon hat
 beide Schlüssel widerrufen — alle sieben Blocker sind erledigt. Von den Auflagen 8–24 sind alle
 umgesetzt bis auf die Screenshots nach dem Deploy (Punkt 22). Die vollen Suiten sind auf dem
-zusammengeführten Stand grün. Einzelheiten im Abschnitt „Behebungsstand".
+zusammengeführten Stand grün. **Nachtrag 27.09. abends:** Simon hat die Regel „Wer sieht und
+bekommt was" festgelegt; ein eigenes Audit dazu fand 22 Befunde (9 HOCH), alle sind bearbeitet
+(21 behoben, 1 geprüft und regelkonform). Dazu ein gemeinsames Medien-System, ein Datenschutzbefund
+in der Nutzungsmessung (Namen in Fehlermeldungen) und Begriffe, Handbuch und Barrierefreiheit.
+Einzelheiten im Abschnitt „Behebungsstand" und im Behebungsbericht.
 
 ## Rahmen und Methode
 
@@ -481,7 +485,7 @@ Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit d
 
 ## Behebungsstand (fortlaufend)
 
-Stand 27.09.2026, 06:45 UTC (122 Commits über `main`). Jeder Eintrag steht als Commit auf dem Release-Branch,
+Stand 27.09.2026, abends (196 Commits über `main`, Code-Stand `9e7fa4c8`). Jeder Eintrag steht als Commit auf dem Release-Branch,
 jeder Befund trägt im Bereichsbericht eine Status-Zeile mit Datum. Regeln für jeden Fix: Test
 für den verbotenen und den erlaubten Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG,
 Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
@@ -496,6 +500,8 @@ Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
 | Frontend, Endstand (nach M, K2, Gerätebefunden, CHANGELOG) | `e4c940df` (115 Commits) | 286 Dateien, 3.964 Tests grün, 162 s |
 | Backend, Endstand (Migrationen 160–167, echte DB, nach M, K2, Gerätebefunden) | `59f53de8` (letzter Code-Commit; danach nur Doku) | 169 Dateien, 3.700 Tests grün, 1.370 s |
 | Frontend, nach den Nachträgen 27.09. (Versionsnummern, Chat-Aktionen) | `83f5038b` | 288 Dateien, 3.980 Tests grün, 141 s |
+| Backend, Endstand 27.09. (Migrationen 160–168, nach „Wer bekommt was", Z, Event ohne Jahrgang) | `ac86d860` (letzter Backend-Commit; danach nur App und Doku) | 188 Dateien, 3.970 Tests grün, 2.144 s |
+| Frontend, Endstand 27.09. (nach M2, M3, N, N2, P, Q, R, Y) | `9e7fa4c8` | 322 Dateien, 4.474 Tests grün |
 | Typprüfung, ESLint (`--quiet`, jetzt CI-Gate) | laufend nach jedem Paket | grün |
 
 Zum Vergleich die Baseline vor dem Audit: Backend 139 Dateien / 3.399 Tests, Frontend 264 / 3.788.
@@ -523,20 +529,33 @@ Zum Vergleich die Baseline vor dem Audit: Backend 139 Dateien / 3.399 Tests, Fro
 | Gerätebefunde 26.09. abends (Simon, Kollege) | Rückwechsel in die Stamm-Gemeinde scheiterte bei Konten, die nach Migration 101 angelegt wurden: `switch-org` prüfte nur `user_organizations`, die Liste zeigte die Stamm-Gemeinde aus `users.organization_id` — hing am Alter des Kontos, nicht an Android; Route löst beide Quellen auf, Antwortform gleich, Store-Apps profitieren mit. Einladungskarte der Leitung stand auf „Mehr", Push und Postfach führten ins Profil — jetzt bei allen drei Rollen im Profil, Test hält Ziel und Karte zusammen | neu, außerhalb der Berichte | eingebaut (`b9b58257`, `42943efe`) |
 | K2 Dunkelmodus-Rest und Messung als Test | Eck-Marken (Punkte, Level, Status) im Dunkeln eine Stufe tiefer, 13 Messstellen 2,15–4,23 → 5,41–8,97:1, hell byte-identisch; Prozentzahl im Abzeichen-Ring über 17 Kriterien-Text-Token (dunkel 4,06 → 4,84–5,87:1); der Anmelde-Knopf „(0/50)" war ein Messfehler (real 10,78:1, nicht angefasst — der vorgeschlagene Fix hätte auf 1,97:1 verschlechtert). Messung als `npm run dunkelmodus:messen` mit begründeter Restliste (6 Einträge), Shadow-DOM-Flächen und flache Verläufe jetzt erfasst; voller Lauf 697 s, dunkel 48 Messstellen in 12/94 Zuständen, 0 außerhalb der Restliste, Exit 0. Vergleichbar mit dem alten Skript: dunkel 33 → **16**, alle Chat-Blase. Nebenbefunde in der Restliste: Kopfbanner der Termindetails 2,02–2,22:1 in beiden Modi (UI BF-04), „Event absagen" auf dunkler Karte 4,39:1 (einzige dunkelspezifische Reststelle) | darkmode BF-09, BF-10 (teilweise), UI BF-04 (Nachtrag) | eingebaut (`67ac86e3`, `33a3f3f4`, `59f53de8`) |
 | CHANGELOG-Aufräumung (Punkt 19) | Neun Überschriften → fünf; Umschalter-Einträge gegen den Code auf einen Stand gebracht; „Mitteilungen prüfen" (hinzugefügt und wieder entfernt, im Code nicht vorhanden), viermal die Glockenzahl und die doppelte Symbolleiste entfernt; Framework-Name ersetzt. 168 → 164 Einträge bei elf Streichungen und sieben Zugängen aus M und K2 | Doku BF-10 (CHANGELOG-Teil) | eingebaut (`e4c940df`) |
-| Nachträge 27.09. | Versionsnummern aus einer Quelle: drei `package.json` samt Lockfiles und iOS-Projekt folgen `frontend/version.json`, 9 Abweichungen → 0, `/api/status` meldet 2.3.0 statt 1.0.1, Skript `npm run version:setzen`/`version:pruefen`, Test, Regel in CLAUDE.md samt Ausnahme für die Build-Zeile. Chat-Aktionen ohne langen Druck: Knopf neben jeder Nachricht, Hover/Tab/Escape, Touch unverändert. Behebungsbericht als eigenes Dokument | S-13, CI BF-09 (teilweise), Toolchain BF-10 (teilweise), Doku BF-10, UI BF-03 (Nachtrag) | eingebaut (`dd8cf2ad`, `83f5038b`, `d044dda6`) |
+| Nachträge 27.09. vormittags | Versionsnummern aus einer Quelle: drei `package.json` samt Lockfiles und iOS-Projekt folgen `frontend/version.json`, 9 Abweichungen → 0, `/api/status` meldet 2.3.0 statt 1.0.1, Skript `npm run version:setzen`/`version:pruefen`, Test, Regel in CLAUDE.md samt Ausnahme für die Build-Zeile. Chat-Aktionen ohne langen Druck: Knopf neben jeder Nachricht, Hover/Tab/Escape, Touch unverändert. Behebungsbericht als eigenes Dokument | S-13, CI BF-09 (teilweise), Toolchain BF-10 (teilweise), Doku BF-10, UI BF-03 (Nachtrag) | eingebaut (`dd8cf2ad`, `83f5038b`, `d044dda6`) |
+| Challenges und Mitgliedschaften 27.09. | Leitung und Team sehen neue Beiträge wie im Chat (Migration 168); Admins an jeder Team-Challenge beteiligt; drei Zielgruppen („Nur die Konfis" zurück, Konfis und Team nur mit Jahrgang, „Nur das Team" ohne Jahrgang); Postfach am Umschalter je Mitteilung einmal; Entfernen statt Konto löschen, wenn die Person weitere Gemeinden hat, samt Chat-Plätzen | Gerätebefunde und Entscheidungen Simon | eingebaut (`11354452`, `82220504`, `62cb6b3c`, `da9bc4bc`, `6c4fe468`, `1eec4910`) |
+| Regel „Wer sieht und bekommt was" und Audit dazu | Regel in CLAUDE.md; eigener Bericht `docs/audit/2026-09-27/wer-bekommt-was.md` mit Matrix je Rolle, 22 Befunden (9 HOCH), 15 Fragen — beantwortet | neu | eingebaut (`60a8d8d7`, `4ab12e4b`, `427cd7ad`, `9401f64d`, `f36402e5`) |
+| T Anträge | Push und Postfach nur an die Leitung, die den Antrag sieht; eine Regel-Stelle für Liste, Zähler, App-Symbol und Empfänger | Wer bekommt was BF-02 | eingebaut (`c7496853`) |
+| U Leitungs-Meldungen nach Jahrgang | Event-Meldungen, Verbuchen, Registrierung, Löschwarnung, Lizenz-Erinnerung; Empfängerfilter mit Leserecht | BF-01, 03, 09, 10, 11, 16, 18 | eingebaut (`9e098492`, `e46932d2`, `23be613f`, `56dfd53c`) |
+| V Chat | Admins ohne Teilnahme nur in Räumen ihrer Jahrgänge; Mitgliedschaftsende über den Super-Admin räumt Chat-Plätze; Beförderung gleicht Chats ab | BF-05, 08, 19 | eingebaut (`677a8e91`, `aa005d31`, `6b452727`) |
+| W Konfis und Team | „Neues Event!" nur an Konfis, die das Event sehen; gelöschtes Event meldet sich bei allen Gebuchten; Challenge-Start fürs Team | BF-04, 06, 07 | eingebaut (`49e95d5b`, `fa754707`, `d570ee4e`) |
+| X Die betroffene Person erfährt es | Austragen und Warteliste melden sich; Event-Chat nur bestätigt Angemeldete; Mail nach Passwortänderung, „Passwort vergessen" eindeutig; einladende Leitung erfährt Zu- und Absage | BF-14, 17, 20, 21 | eingebaut (`9399a6a0`, `00da0b25`, `a20e830e`, `c959e6df`) |
+| Y Zähler | App-Symbol je Gemeinde mit der dortigen Rolle, Postfach nicht mehrfach; Glocke zählt beim Lesen sofort herunter | BF-12, Gerätebefund | eingebaut (`5c14bf61`, `6a317c31`, `faa54547`) |
+| Z Postfach und Hintergrund | Mitteilungen gehen mit Konto und Mitgliedschaft (Personenschlüssel an sieben Arten); gesperrte Gemeinde ohne Hintergrund-Mitteilungen; Live-Signale ohne Inhalt nachgewiesen | BF-13, 22, 15 | eingebaut (`c913b455`, `0a4da269`, `40bb8397`) |
+| Event ohne Jahrgang (Koordination) | Simons Entscheidung zu F-05: Events ohne Jahrgang gelten der ganzen Gemeinde, auch den Konfis; dabei geschlossen: Konfi-Buchung ohne Jahrgangsprüfung (200 → 403), Teilnehmende fremder Jahrgänge lesbar (200 → 404) | F-05, Sicherheit BF-16 (teilweise) | eingebaut (`ac86d860`) |
+| M2, M3 Medien | Ein Medien-Cache für Chat, Challenges, Material; geleert beim Abmelden und Konto-/Gemeindewechsel; Verkleinerung und Größengrenzen auf einem Weg; Challenges und Material ohne Netz; Nachweisfotos nur anzeigen, nie ablegen | Aufträge Simon | eingebaut (`17266eae`–`4407180c`, `2a17f82d`–`71c5e0fc`) |
+| N, N2 Nutzungsmessung | Messkonzept; Mitmachen getrennt, Aktivität eingereicht, Anträge entschieden, Material angesehen/abgerufen, Konfispruch; Fehlermessung nur über eine Positivliste (vorher Namen aus Server-Meldungen an Umami und Crashlytics), Bereinigung als Auftrag | Aufträge Simon, Messung B1 | eingebaut (`e7a6dc92`, `0f4212d0`, `8fbefc85`, `7428d316`, `4fca331a`, `5f916540`, `9e7fa4c8`) |
+| P, Q, R Handbuch, Barrierefreiheit, Begriffe | Unterpunkte in der Handbuch-Navigation; jeder Dialog mit Namen (92 → 0), kein Knopf im Knopf, Zoom frei, Reiter 8,8 → 11,2 px, drei Datumsformate; Events, Badges, Challenges, Stempel; echte Umlaute 19 → 0; Überschriften als Tätigkeiten | UI BF-07, 10, 11, 14, 16; Doku BF-17 | eingebaut (`f0074acd`–`6473c310`) |
+| Kleinere Nachträge 27.09. | Wochentag auf den Event-Karten; Chat-Großschreibung nur am Anfang und nach . ! ?; Wettlauf-Test der Zertifikatstypen mit fester Schranke statt Zeitglück | Gerätebefunde | eingebaut (`6ddd003d`, `0e114bdf`, `6bcaf158`) |
 
 **Neu gestartet nach Abbruch (Sitzungslimit des Werkzeugs, 26.09. 17:10 UTC):** Paket M lief im
-zweiten Anlauf durch (Zeile oben). Aus Punkt 33 offen bleiben Datumsformate und Dynamic Type
-(UI BF-07, BF-14) — nicht Teil des Pakets.
+zweiten Anlauf durch (Zeile oben). Datumsformate und Zoom (UI BF-14, BF-07) kamen am 27.09. mit
+Paket Q; Dynamic Type auf iOS ist nach dem Code kein Befund und am Gerät zu bestätigen.
 
 **Noch nicht begonnen:** Handbuch-Bilder aus dem Store-Bundle (S-17), Feature-Empfehlungen A
 (Punkt 32), Rechenschaft/Datenschutz (Punkt 28, Produkt- und Rechtsfragen), NIEDRIG-Befunde
-(Punkt 36) außer den in M und K2 erledigten; aus Punkt 33 Datumsformate und Dynamic Type
-(UI BF-07, BF-14).
+(Punkt 36) außer den in M, K2, Q und R erledigten.
 
 **Bei Simon:**
 
-1. Apple-Schlüssel `7AQA623H3T` und `A29U7SN796` widerrufen oder Widerruf bestätigen (Blocker 3).
+1. Apple-Schlüssel `7AQA623H3T` und `A29U7SN796` — am 27.09. widerrufen, erledigt (Blocker 3).
 2. Vor dem Deploy in Portainer: `SMTP_HOST`, `SMTP_USER`, `SMTP_HOST_IP` als Stack-Variablen;
    SMTP-Zertifikat gegen den Hostnamen prüfen (`openssl s_client -connect <SMTP_HOST>:465
    -servername <SMTP_HOST>`), sonst Notnagel `SMTP_TLS_REJECT_UNAUTHORIZED=false`.
@@ -549,10 +568,15 @@ zweiten Anlauf durch (Zeile oben). Aus Punkt 33 offen bleiben Datumsformate und 
    gewählt); vorher prüfen, dass der Host 2 CPU / 3 GB zusätzlich frei hat; einmal
    `CREATE EXTENSION IF NOT EXISTS pg_stat_statements` ausführen. Der zweistufige Deploy läuft
    beim ersten Push auf `main` zum ersten Mal — den Lauf beobachten.
-5. Autor-Identität der 71 älteren Branch-Commits (teils „Claude"): Force-Push zum Umschreiben
-   erlauben, per Squash-Merge auflösen oder selbst umschreiben. Neue Commits laufen als `Revisor01`.
+5. Autor-Identität der älteren Branch-Commits (50 mit „Claude" als Autor, 56 als Committer):
+   Force-Push zum Umschreiben erlauben, per Squash-Merge auflösen oder selbst umschreiben. Neue
+   Commits laufen als `Revisor01`; `main` bleibt, wie es ist (Simon, 27.09.).
 6. Nach dem Deploy: Screenshots neu ziehen (Punkt 22), Produktionsmessungen aus dem Abschnitt
-   „Auf Produktion nachzumessen".
+   „Auf Produktion nachzumessen", die in Umami gesammelten Fehlermeldungen bereinigen und
+   Sitzungssalz sowie Ortsangaben der Umami-Instanz prüfen (Auftrag
+   `docs/auftraege/lokaler-agent/03-nach-dem-deploy.md`, Abschnitt 6).
+7. Offene Entscheidungen: Messvorschläge S1–S17 (`docs/messung/umami.md`), Verkleinerung der
+   Material-Bilder (lange Kante 1920 px), Videos weiter unverkleinert.
 
 **Entscheidungen, die in der Umsetzung getroffen wurden und die Simon kippen kann:** Vortags-Erinnerung
 zur gleichen Uhrzeit am Vortag (24 h ± 15 min) statt zu einer festen Tageszeit; Konfis als
@@ -566,7 +590,8 @@ SMTP-Zertifikatsprüfung standardmäßig streng.
 | Datei | Inhalt |
 |---|---|
 | `00-gesamtabnahme.md` | diese Abnahme |
-| `behebungsbericht.md` | was seit der Abnahme behoben wurde, was offen bleibt, was bei Simon liegt (Stand 27.09.) |
+| `behebungsbericht.md` | was seit der Abnahme behoben wurde, was offen bleibt, was bei Simon liegt (Stand 27.09. abends) |
+| `../2026-09-27/wer-bekommt-was.md` | Audit „Wer bekommt was": Mitteilungen, Zähler und Listen je Rolle gegen die Regel, 22 Befunde mit Status |
 | `backend-fachlogik-punkte-termine.md` | Punkte, Aktivitäten, Termine, Jahrgänge, Abzeichen, Level |
 | `backend-fachlogik-chat-challenges-rueckblick.md` | Chat, Challenges, Rückblick, Material, Postfach, Push, E-Mail, Hintergrundjobs |
 | `backend-sicherheit-datenschutz.md` | Mandantentrennung, Rechte, Authentifizierung, Uploads, Datenschutz, Geheimnisse |

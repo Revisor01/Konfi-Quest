@@ -1,7 +1,8 @@
 # Behebungsbericht zum Release-Audit 2.3.0
 
-Stand 27.09.2026, 11:30 UTC. Was seit der Gesamtabnahme vom 26.09. behoben wurde, was offen
-bleibt und was bei Simon liegt. Jeder Punkt steht als Commit auf dem Release-Branch;
+Stand 27.09.2026, abends (Code-Stand `9e7fa4c8`). Was seit der Gesamtabnahme vom 26.09. behoben
+wurde, was offen bleibt und was bei Simon liegt. Dazu gehört das Audit „Wer bekommt was" vom 27.09.
+(`docs/audit/2026-09-27/wer-bekommt-was.md`) samt seinen Behebungspaketen. Jeder Punkt steht als Commit auf dem Release-Branch;
 die Berichte je Bereich tragen an jedem Befund eine Status-Zeile mit Datum. Die Regeln für jede
 Behebung standen im gemeinsamen Auftrag der Pakete: Test für den verbotenen und den erlaubten
 Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG, Handbuch und API-Doku im selben Commit,
@@ -11,18 +12,21 @@ Antwortformen unverändert (Store-Apps 2.2.x lesen weiter), Migrationen additiv.
 
 | | Vor dem Audit | Jetzt |
 |---|---|---|
-| Blocker der Gesamtabnahme | 7 | 1 offen (Apple-Schlüssel widerrufen — nur Simon) |
+| Blocker der Gesamtabnahme | 7 | 0 offen (Apple-Schlüssel am 27.09. widerrufen) |
 | Auflagen vor Release (Punkte 8–24) | 17 | 1 offen (Screenshots nach dem Deploy) |
-| Backend-Tests | 139 Dateien / 3.399 | 169 Dateien / 3.700, grün |
-| Frontend-Tests | 264 Dateien / 3.788 | 288 Dateien / 3.980, grün |
+| Audit „Wer bekommt was" (27.09.) | 22 Befunde, davon 9 HOCH | 21 behoben, 1 geprüft und regelkonform |
+| Backend-Tests | 139 Dateien / 3.399 | 188 Dateien / 3.970, grün |
+| Frontend-Tests | 264 Dateien / 3.788 | 322 Dateien / 4.474, grün |
 | Dunkelmodus, Textstellen unter 4,5:1 (94 Zustände) | 104 | 16 (alle: eigene Chat-Blase, in beiden Modi) |
 | Formularfelder ohne Namen für die Vorlesefunktion | 170 von 186 | 0 |
 | Klickbare Elemente ohne Tastaturbedienung | 147 | 0 |
-| Commits auf dem Branch | — | 122 (17 Berichte, 105 Behebung und Nachweis) |
-| Neue Migrationen | — | 160, 162–167 (alle additiv) |
+| Per Hook geöffnete Dialoge ohne Namen für die Vorlesefunktion | 92 | 0 |
+| Datumsformate in der App | 17 Optionssätze in 88 Aufrufen | 3 Formate an einer Stelle |
+| Commits auf dem Branch über `main` | — | 196 (Berichte, Behebung, Nachweis) |
+| Neue Migrationen | — | 160, 162–168 (alle additiv) |
 
-Arbeitsweise: Die Koordination hat die fünf Blocker selbst behoben und danach 14 Pakete an
-parallel arbeitende Agenten vergeben, jedes in einem eigenen Arbeitsbaum mit demselben Auftrag.
+Arbeitsweise: Die Koordination hat die fünf Blocker selbst behoben und danach Pakete an
+parallel arbeitende Agenten vergeben (14 am 26.09., 16 weitere am 27.09.), jedes in einem eigenen Arbeitsbaum mit demselben Auftrag.
 Jede Rückmeldung wurde gegen den Code geprüft, die Commits einzeln übernommen, nach jedem Paket
 Typprüfung, Lint und die betroffenen Tests gefahren, zum Schluss beide Vollsuiten. Zwei Pakete
 brachen am Sitzungslimit des Werkzeugs ab und wurden neu gestartet; ein Agent hat versehentlich
@@ -166,33 +170,124 @@ den Dev-Server eines anderen beendet — folgenlos, der Lauf wurde wiederholt.
   Lockfiles und das iOS-Projekt folgen ihr über `npm run version:setzen`, `/api/status` meldet
   2.3.0 statt 1.0.1, Test und Regel in CLAUDE.md samt Ausnahme für die Build-Zeile (`dd8cf2ad`).
 
+### Eine Regel: wer sieht und bekommt was (27.09.)
+
+Simon hat die Regel am 27.09. festgelegt, sie steht in CLAUDE.md („Wer sieht und bekommt was",
+`60a8d8d7`, `4ab12e4b`): Org-Admin alles seiner Gemeinde; Admin und Teamer:in nur ihre
+Jahrgänge, mit den Team-Ausnahmen „Nur Team", Events ohne Jahrgang und Chat im Team; Konfis den
+eigenen Jahrgang und die Events ohne Jahrgang; Mitteilung = Sichtbarkeit. Das Audit „Wer bekommt
+was" (`427cd7ad`) hat Mitteilungen, Zähler und Listen je Rolle dagegen geprüft: 22 Befunde, 9 davon
+HOCH, 15 Fragen an Simon — alle beantwortet (`9401f64d`, `f36402e5`, F-05 nachträglich).
+
+- **Anträge** melden sich nur bei der Leitung, die sie sieht: Org-Admins, Admins mit Leserecht
+  auf den Jahrgang der Konfi; Anträge von Teamer:innen an alle Admins (`c7496853`; BF-02).
+- **Event-Meldungen** (Abmeldung mit Grund, Opt-out/-in, Zu- und Absagen des Teams, Verbuchen),
+  **Registrierung**, **Jahrgangs-Löschwarnung** und **Lizenz-Erinnerung** nur an die Leitung des
+  Jahrgangs bzw. an alle Org-Admins; Empfängerfilter verlangt Leserecht (`9e098492`, `e46932d2`,
+  `23be613f`, `56dfd53c`; BF-01, 03, 09, 10, 11, 16, 18).
+- **Chat:** Admins öffnen ohne Teilnahme nur Räume ihrer Jahrgänge (`677a8e91`; BF-05); das Ende
+  einer Mitgliedschaft räumt alle Chat-Plätze der Gemeinde (`aa005d31`, `1eec4910`; BF-08); eine
+  Beförderung zur Teamer:in gleicht Jahrgangs-, Event- und Team-Chat sofort ab (`6b452727`;
+  BF-19); der Event-Chat nimmt nur bestätigt Angemeldete auf (`00da0b25`; BF-17).
+- **Konfis:** „Neues Event!" nur an Konfis, die das Event in ihrer Liste sehen (`49e95d5b`;
+  BF-04). Events ohne Jahrgang gelten der ganzen Gemeinde — alle Konfis sehen, bekommen und
+  buchen sie. Dabei geschlossen: Konfis konnten sich per Kennung zu Events fremder Jahrgänge
+  anmelden und deren Teilnehmende lesen (`ac86d860`; F-05).
+- **Team:** Ein gelöschtes Event meldet sich bei allen Gebuchten wie eine Absage (`fa754707`;
+  BF-06); Start-Mitteilung und „neue Challenge" für alle, die mitmachen (`d570ee4e`; BF-07).
+- **Die betroffene Person erfährt es:** Austragen und Zurücksetzen auf die Warteliste
+  (`9399a6a0`; BF-14), Bestätigungsmail nach einer Passwortänderung und „Passwort vergessen" für
+  genau das richtige Konto (`a20e830e`; BF-20), Zusage und Absage einer Einladung an die
+  einladende Leitung (`c959e6df`; BF-21).
+- **Zähler:** Das App-Symbol zählt bei mehreren Gemeinden je Gemeinde mit der dortigen Rolle
+  (`5c14bf61`, `6a317c31`; BF-12); die Postfach-Glocke zählt beim Lesen sofort herunter, eine
+  ältere Zählung überschreibt keine neuere mehr (`faa54547`; Gerätebefund).
+- **Postfach und Hintergrund:** Mitteilungen über eine Person gehen mit ihrem Konto und mit dem
+  Ende der Mitgliedschaft (`c913b455`; BF-13); eine gesperrte Gemeinde bekommt nichts mehr von
+  allein (`0a4da269`; BF-22); gemeindeweite Live-Signale tragen nachweislich keinen Inhalt
+  (`40bb8397`; BF-15, geprüft).
+- **Challenges:** drei Zielgruppen — „Nur die Konfis" wieder da, Konfis und Team nur mit Jahrgang,
+  „Nur das Team" für das ganze Team (`da9bc4bc`).
+- **Mitgliedschaften:** Wer in der eigenen Gemeinde zuhause ist und weitere Gemeinden hat, wird
+  nur aus der eigenen entfernt, das Konto bleibt (`6c4fe468`).
+
+### Medien: ein System für Chat, Challenges, Anträge und Material (27.09.)
+
+Simon: „Das kann ja ein System sein. Und wir haben ja einen Medien-Cache!"
+
+- **Ein Medien-Cache** für alle geschützten Datei-Routen, je Quelle getrennt; Bilder und Dateien
+  der Challenges und des Materials laden beim zweiten Öffnen ohne Download, auch ohne Netz, mit
+  Fortschritt, „Erneut versuchen" und Öffnen samt Teilen (`17266eae`, `98421a9e`, `b3fdae34`,
+  `7b436360`).
+- **Datenschutz:** Der Cache gehört zum Konto und wird beim Abmelden, beim Wechsel von Konto oder
+  Gemeinde geleert — vorher fand die nächste Person am Gerät die Dateien der vorigen
+  (`4c2c5f66`). Nachweisfotos der Anträge laufen durch dieselben Bausteine, landen aber nie auf dem
+  Gerät (`2a17f82d`, `e36275ff`).
+- **Verkleinerung und Grenzen** beim Hochladen auf einem Weg: Fotos lange Kante 1920 px, Grenze je
+  Quelle wie beim Server (Chat 5 MB, Challenges 50 MB, Nachweisfoto 5 MB, Material 20 MB), ein
+  Satz für „zu groß" (`c67ac3c8`). Videos werden nicht verkleinert.
+- **Ohne Netz:** Challenges und Material zeigen den zuletzt geladenen Stand, bei Netz entscheidet
+  zuerst der Server — Gelöschtes verschwindet auch vom Gerät (`4407180c`, `7b436360`).
+
+### Nutzungsmessung (27.09.)
+
+- **Datenschutzbefund behoben:** Die Fehlermessung übertrug angezeigte Server-Meldungen — darin
+  Namen von Konfis — an Umami und in die Absturzprotokolle. Jetzt nur noch Texte einer
+  Positivliste (203 der App, 19 feste Anmeldetexte des Servers), sonst der Ersatztext der Stelle
+  mit dem Status (`7428d316`, `5f916540`, `9e7fa4c8`); die Bereinigung der schon gesammelten Daten
+  liegt als Auftrag vor (`4fca331a`).
+- **Messkonzept** mit Bestandsaufnahme, Grundsätzen und 17 Vorschlägen (`0f4212d0`).
+- **Neu gemessen:** Events und Aktivitäten unter „Mitmachen" getrennt, „Aktivität eingereicht"
+  (`e7a6dc92`); Anträge entschieden (angenommen/abgelehnt, von Konfi oder Team), Material
+  angesehen und abgerufen, Konfispruch gespeichert (`8fbefc85`) — ohne Namen, Titel oder
+  Kennungen.
+
+### Handbuch, Sprache und Barrierefreiheit (27.09.)
+
+- **Handbuch-Navigation** mit den Abschnitten des Kapitels als Unterpunkten (`f0074acd`,
+  `1923e9b1`); Überschriften nennen Tätigkeiten (`08b5730b`; Doku BF-17).
+- **Begriffe** nach Simons Entscheidung: Events, Badges, Challenges, Stempel in App, Backend und
+  Handbuch, Glossar im Handbuch (`cd56127b`, `ebbaceae`; UI BF-10); echte Umlaute in allen
+  Nutzertexten, 19 → 0 Stellen mit Prüfung über App und Backend (`8874afd1`; UI BF-11).
+- **Barrierefreiheit:** Jeder Dialog nennt der Vorlesehilfe seinen Titel, 92 → 0 ohne Namen
+  (`bfd599c6`); Hinweiskarten ohne Knopf im Knopf (`5aa13b4c`); Zoom im Browser frei,
+  Reiter-Beschriftungen 8,8 → 11,2 px (`c0ee345f`; UI BF-07); drei Datumsformate statt 17
+  (`9412b496`; UI BF-14).
+- **Kleinere Gerätebefunde:** Event-Karten auf der Startseite nennen den Wochentag (`6ddd003d`);
+  im Chat beendet ein Zeilenumbruch allein keinen Satz mehr, großgeschrieben wird nur am Anfang und
+  nach . ! ? (`0e114bdf`).
+
 ## Was offen bleibt
 
-Aus den Status-Zeilen aller Berichte (Stand 27.09., 06:00 UTC). Nichts davon blockiert das
+Aus den Status-Zeilen aller Berichte (Stand 27.09., abends). Nichts davon blockiert das
 Release 2.3.0; die Gesamtabnahme führt es unter „Vor EKD-Ausrollung" und „Danach".
 
-**Produkt- und Farbentscheidungen (Simon sieht sie sich an):**
-- Eigene Chat-Blase: weiße Schrift auf Chat-Türkis, 2,43:1 in beiden Modi (16 Stellen).
-- Kopfbanner der Termindetails: weiße Überschrift auf Statusgrün 2,02–2,22:1, Untertitel 1,74,
-  in beiden Modi (UI BF-04, Nebenbefund K2).
-- „Event absagen" auf dunkler Karte 4,39:1 — die einzige dunkelspezifische Reststelle.
-- Hellmodus: Bereichs-, Signal- und Kriterienfarben als Schrift (Abzeichen 2,15, Chat 2,43,
-  Benutzer 3,66:1) und die Eck-Marken im Hellen (2,15–4,23:1); der Text-Token je Bereich ist hell
-  absichtlich die Bereichsfarbe — ein hellerer Wert lässt sich je Bereich an einer Stelle setzen.
-- Gedämpfter Link „Passwort vergessen?" im Hellen 4,37:1.
-- Begriffe „Events/Badges" gegen „Termine/Abzeichen" (UI BF-10), 45 Substantiv-Überschriften im
-  Handbuch hängen daran (Doku BF-17).
-- Handbuch-Kapitel „Für den Betrieb" (Super-Admin, Gemeinde anlegen, Testphase) — was davon
-  Gemeinden lesen sollen (Doku BF-16).
-- Mitteilungen an die Leitung außerhalb der Challenges (neue Anträge, Registrierungen, Termine
-  und weitere) gehen weiter an alle Admins der Gemeinde, auch an jahrgangsgebundene, die den
-  Vorgang in ihren Listen nicht sehen. Für Challenges ist das am 27.09. entschieden und umgesetzt.
-- Wer eine Person löscht, die in der eigenen Gemeinde zuhause ist, löscht ihr Konto — und damit
-  auch ihre Mitgliedschaften in anderen Gemeinden. Eine Warnung dazu gibt es nicht.
+**Entschieden am 27.09. und damit erledigt:** Farben (Simon nimmt die verbleibenden Stellen an:
+eigene Chat-Blase, Kopfbanner der Event-Details, „Event absagen" auf dunkler Karte, Bereichsfarben
+als Schrift im Hellmodus, „Passwort vergessen?"), Begriffe (Events, Badges, Challenges, Stempel —
+umgesetzt), kein Betriebs-Kapitel im Handbuch („Ich bin der Betreiber!"), Mitteilungen an die
+Leitung nur nach Jahrgang (umgesetzt, Abschnitt oben), Entfernen statt Löschen bei weiteren
+Gemeinden (umgesetzt).
 
-**Barrierefreiheit, nicht Teil eines Pakets:** Datumsformate und Dynamic Type (UI BF-07, BF-14);
-die 92 per Hook geöffneten Modale ohne Namen (nur je Aufruf lösbar); `UpdateHinweisKarte` mit
-Knopf im Knopf.
+**Offen zur Entscheidung (Simon):**
+- Nutzungsmessung: die Vorschläge S1–S17 in `docs/messung/umami.md` (etwa Bibelstelle des
+  Konfispruchs, Anträge-Ansicht, Postfach, Push-Auswahl, Dunkelmodus).
+- Material-Bilder werden beim Hochladen wie im Chat verkleinert (lange Kante 1920 px). Wer Bilder
+  zum Drucken ablegen will, bekommt sie kleiner; eine Zeile schaltet das für Material ab.
+- Videos werden nicht verkleinert, nur gegen die Größengrenze geprüft. Empfehlung: so lassen,
+  keine neue Bibliothek.
+
+**Bekannte Reste ohne Regelverstoß:**
+- Mitteilungen, die vor 2.3.0 über eine Person geschrieben wurden, tragen keinen Personenschlüssel
+  und verschwinden nicht mit deren Konto, sondern wie bisher mit Event, Challenge oder nach
+  365 Tagen („Wer bekommt was" BF-13). Wie viele es in Produktion sind, ist nicht gemessen.
+- `sendToUserByRole` wählt den Live-Raum nach der Rolle in der Stamm-Gemeinde: Wer in der aktiven
+  Gemeinde eine andere Rolle hat, verpasst sein eigenes Nachlade-Signal (kein Fremdempfang, BF-15).
+- Mehr als zehn Material-Dateien auf einmal prüft die App nicht vorab; der Server nimmt höchstens
+  zehn an.
+
+**Barrierefreiheit:** Dynamic Type auf iOS am Gerät bestätigen (UI BF-07 b, nach dem Code kein
+Befund); echtes VoiceOver/TalkBack wurde nicht geprüft.
 
 **CI und Release:** Reihenfolge zweier Deploys bei ungleicher Testdauer (CI BF-04, Rest); aktive
 Benachrichtigung bei rotem `main` (BF-07, Rest); Git-Tag je Store-Upload und Zurückcommitten der
@@ -203,7 +298,10 @@ Compose-`version`, Kommentar in `ci.yml` (BF-15); Sitemap-Erzeugung reproduzierb
 **Betrieb (nur mit Zugang zur Produktion):** Portainer-Stack an die Compose-Referenz angleichen
 (Betrieb BF-13, Datenbank BF-07 — Referenz steht, Anwendung fehlt); Sicherungs-Rhythmus,
 Aufbewahrung und Rückspielprobe im Betrieb einrichten (Datenbank BF-05); Log-Sammelzeilen
-(Betrieb BF-11); Absender-Adresse `moin@` gegen `SMTP_FROM` messen (Doku BF-20).
+(Betrieb BF-11); Absender-Adresse `moin@` gegen `SMTP_FROM` messen (Doku BF-20). Die Schritte
+stehen als Aufträge für einen Agenten mit Zugang in `docs/auftraege/lokaler-agent/`, dazu neu:
+die in Umami gesammelten Fehlermeldungen bereinigen und Sitzungssalz sowie Ortsangaben der
+Umami-Instanz prüfen (`03-nach-dem-deploy.md`, Abschnitt 6).
 
 **Recht und Rechenschaft:** Datenschutzerklärung auf 2.3.0, Verarbeitungsverzeichnis, TOM, AVV
 (Doku BF-08, Sammelbefund S-20); Sichtbarkeit von Daten in einer zweiten Gemeinde als
@@ -217,8 +315,7 @@ Feature-Empfehlungen (Punkt 32) und NIEDRIG-Befunde ohne Paket (Punkt 36).
 
 ## Was bei Simon liegt
 
-1. **Apple-Schlüssel** `7AQA623H3T` und `A29U7SN796` im Developer-Portal widerrufen oder den
-   Widerruf bestätigen — der letzte offene Blocker.
+1. **Apple-Schlüssel** `7AQA623H3T` und `A29U7SN796` — am 27.09. widerrufen, erledigt.
 2. **Vor dem Deploy** in Portainer: `SMTP_HOST`, `SMTP_USER`, `SMTP_HOST_IP` als Stack-Variablen;
    SMTP-Zertifikat gegen den Hostnamen prüfen, sonst Notnagel `SMTP_TLS_REJECT_UNAUTHORIZED=false`.
 3. **Vor dem Deploy zählen:** `SELECT count(*) FILTER (WHERE password_plain IS NOT NULL) FROM
@@ -229,11 +326,18 @@ Feature-Empfehlungen (Punkt 32) und NIEDRIG-Befunde ohne Paket (Punkt 36).
    beobachten.
 5. **Nach dem Deploy:** Screenshots neu ziehen (Punkt 22), Produktionsmessungen aus dem Abschnitt
    „Auf Produktion nachzumessen" der Gesamtabnahme.
-6. **Farb- und Produktentscheidungen** aus dem Abschnitt oben.
-7. **Autorenschaft der älteren Commits:** 50 Commits tragen noch „Claude" als Autor, 56 als
+6. **Nach dem Deploy, Umami:** die gesammelten Fehlermeldungen bereinigen (Auftrag
+   `03-nach-dem-deploy.md`, Abschnitt 6: sichern, zählen, ersetzen, erneut zählen), solange
+   Store-Fassungen ohne die Korrektur im Umlauf sind monatlich wiederholen; Sitzungssalz
+   (`SALT_ROTATION`) und die Speicherung von Region und Stadt mit der Datenschutzerklärung
+   abgleichen (B4).
+7. **Offene Entscheidungen** aus dem Abschnitt oben (Messvorschläge S1–S17, Material-Bilder,
+   Videos).
+8. **Autorenschaft der älteren Commits:** 50 Commits tragen noch „Claude" als Autor, 56 als
    Committer. Das Umschreiben ändert alle Commit-Kennungen des Branches und braucht einen
    Force-Push; die Rechteprüfung dieser Sitzung hat es abgelehnt. Nach dem Umschreiben müssen
    die Commit-Verweise in Gesamtabnahme, Behebungsbericht und Doku-Bericht nachgezogen werden.
+   `main` bleibt, wie es ist (Simon, 27.09.).
 
 ## Entscheidungen der Umsetzung, die Simon kippen kann
 
@@ -243,3 +347,11 @@ einer weiteren Gemeinde lassen sich nur Rolle und Jahrgänge ändern, Kontofelde
 Stamm-Gemeinde; Refresh-Gnadenfrist genau eine Wiederverwendung, die dritte widerruft alle Tokens
 des Kontos; SMTP-Zertifikatsprüfung standardmäßig streng; Eck-Marken nur im Dunkeln abgesenkt, im
 Hellen unverändert; Versionsnummern nur noch über `npm run version:setzen`.
+
+Dazu vom 27.09.: Nachweisfotos der Anträge laufen durch dieselben Bausteine wie die übrigen Medien,
+bleiben aber nie auf dem Gerät (sie liegen auf dem Server verschlüsselt und gehören meist
+Minderjährigen; ein Leitungsgerät würde sie sonst sammeln); der Medien-Cache wird beim Abmelden
+und beim Wechsel von Konto oder Gemeinde geleert; eine Konfi darf ihre eigene Buchung eines Events
+weiter öffnen, auch wenn es inzwischen zu einem anderen Jahrgang gehört; die Fehlermessung
+überträgt Server-Texte nur über eine Positivliste von 19 festen Anmeldetexten, alles andere als
+Ersatztext der Stelle mit dem Status.

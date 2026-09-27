@@ -25,7 +25,7 @@ Die Empfänger sind gründlich auf beide Zugehörigkeitsquellen umgestellt (Roll
 Die HOCH-Befunde:
 
 1. **BF-01** Konfi-Abmeldungen samt Grund, Pflicht-Opt-out/-in, Teamer-Zu-/Absagen zu Jahrgangsterminen und die Jahrgangs-Löschwarnung (Push, Postfach, Mail) gehen an alle Admins der Gemeinde.
-2. **BF-02** Konfi-Anträge (Push und Postfach) gehen an alle Admins — *in Arbeit (eigenes Paket)*.
+2. **BF-02** Konfi-Anträge (Push und Postfach) gehen an alle Admins.
 3. **BF-03** Neue Registrierung: Org-Admins ohne Zuweisung bekommen nichts, sobald ein Admin dem Jahrgang zugewiesen ist; ohne Zuweisung geht sie an alle Admins.
 4. **BF-04** „Neues Event!" geht an alle Konfis der Gemeinde — auch für Termine anderer Jahrgänge und ohne Jahrgang, die sie gar nicht sehen.
 5. **BF-05** Jeder Admin kann jeden gemeinschaftlichen Chat-Raum der Gemeinde lesen, beschreiben und live mithören — fremde Jahrgangs-Chats, Termin-Chats, Gruppen mit fremden Konfis.
@@ -33,6 +33,8 @@ Die HOCH-Befunde:
 7. **BF-07** Beim Start einer Challenge „Nur das Team" bekommt niemand eine Mitteilung, bei „Jahrgang und Team" nur die Konfis; einen Zähler für die neue Challenge hat das Team auch nicht.
 8. **BF-08** Beendet der Super-Admin eine Mitgliedschaft, bleibt die Person in Gruppen- und Einzelchats der Gemeinde und bekommt deren Nachrichten weiter.
 9. **BF-09** Die Lizenz-Erinnerung erreicht nur die Stamm-Leitung (Zusatz-Org-Admins nie) — dafür auch jahrgangsgebundene Admins.
+
+**Stand der Behebung (27.09.2026, abends):** Alle 22 Befunde sind bearbeitet — 21 behoben, BF-15 geprüft und ohne Umbau regelkonform (Signale ohne Inhalt). Die 15 Fragen an Simon sind beantwortet (Abschnitt „Offene Fragen an Simon"); F-05 hat er gegen die Empfehlung entschieden: Termine ohne Jahrgang gelten der ganzen Gemeinde, auch den Konfis. Einzelheiten in der Status-Zeile jedes Befunds.
 
 ## Release-Empfehlung für den Bereich
 
@@ -147,14 +149,15 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 - **Beleg:** `A2 Opt-out 200 -> Push an ["admin1","adminB(J3)","adminOhneJg","orgAdmin1","orgAdminSuper"] | Text bei adminB: "Test Konfi 1 hat sich von 'Konfi-Unterricht' abgemeldet. Grund: krank, Fieber seit gestern"`, `A2 Opt-in … adminB GET /events/2 -> 403`, `A2 Abmeldung 200 -> Push an [dieselben fünf]`; `A5 Zusage 200 -> Push an [dieselben fünf] | Absage 200 -> [dieselben fünf] | adminB GET /events/70 -> 403`; `A7 Push jahrgang_deletion_warning -> [dieselben fünf] | Mails an [admin1, admin_b, admin_ohne, orgadmin1, orgadminsuper] | adminB sieht Jahrgaenge [303]`.
 - **Empfehlung:** Eine Empfängerregel „Leitung des Vorgangs" neben `challengeLeitungSicht.js`: Org-Admins immer, Admins nur mit `can_view`-Zuweisung auf einen Jahrgang des Termins; bei „Nur Team" und Terminen ohne Jahrgang alle Admins. Die Methoden bekommen die Termin- bzw. Jahrgangs-Kennung (liegt an jeder Aufrufstelle vor). Löschwarnung: Org-Admins + Admins des Jahrgangs (F-14). Tests: verbotener Fall (Admin fremder Jahrgang, Admin ohne Jahrgang) und erlaubter (Admin des Jahrgangs, Org-Admin, „Nur Team"-Termin → alle Admins); `pushEmpfaengerMultiOrg.test.js:102/114/150` anpassen. Handbuch `05-rollen.md:255-266` nachziehen.
 
-### BF-02: Konfi-Anträge gehen per Push und Postfach an alle Admins — in Arbeit
-- **Schwere:** HOCH · **Status:** in Arbeit (eigenes Paket, 27.09.2026)
+### BF-02: Konfi-Anträge gehen per Push und Postfach an alle Admins
+- **Schwere:** HOCH
 - **Fundstelle:** `backend/routes/konfi.js:728-754` (Postfach-INSERT an `ladeLeitungDerOrganisation`), `:758` → `pushService.js:1287-1313`
 - **Kennzeichnung:** reproduziert (A1)
 - **Beschreibung:** Liste und Zähler sind seit 31.08. gebunden (`activities.js:352-381`, `notifications.js:184-194`), Push und Postfach nicht. Der Postfach-Eintrag trägt `konfi_name`, Aktivität und Punkte. Die Zahl am Postfach und am App-Symbol steigt, die Antragsliste bleibt leer.
 - **Auswirkung aus Nutzersicht:** Admin B sieht „Neuer Antrag eingegangen — Test Konfi 1 …" in Glocke und Push, tippt darauf und findet eine leere Antragsliste.
 - **Beleg:** `A1 POST -> 201 | Push new_activity_request an ["admin1","adminB(J3)","adminOhneJg","orgAdmin1","orgAdminSuper"] | Postfach an [dieselben] | adminB Liste: 0 Antraege | adminB badge-counts pendingRequests 0 postfach.ungelesen 1`.
 - **Empfehlung:** wie BF-01 mit dem Jahrgang der Konfi; Konfi ohne Jahrgang → nur Org-Admins. Teamer-Anträge bleiben org-weit (F-08).
+- **Status:** behoben 27.09.2026 (`c7496853`, Simon: „Anträge dürfen auch nur an Admins des Jahrgangs gehen.") — eine Regel-Stelle `backend/utils/antragLeitungSicht.js`: Org-Admin (auch das Merkmal `is_super_admin`) jeder Antrag der Gemeinde; Admin Anträge von Teamer:innen immer (F-08), Konfi-Anträge nur mit `can_view`-Zuweisung auf den Jahrgang der Konfi; Konfi ohne Jahrgang nur an die org-weite Leitung; die antragstellende Person nie. Antragsliste, `badge-counts.pendingRequests`, App-Symbol, Gemeinde-Umschalter, Push und Postfach lesen sie; ohne Empfängerliste geht nichts raus (kein Rückfall auf die ganze Leitung). Teamer:innen sehen und entscheiden Anträge nicht und bekommen deshalb keine Mitteilung. Test `tests/routes/antragLeitungEmpfaenger.test.js` (20, verboten und erlaubt je Rolle, `can_view = false`, fremder Jahrgang, Konfi ohne Jahrgang).
 
 ### BF-03: Neue Registrierung erreicht Org-Admins nicht — und ohne Jahrgangs-Admin alle Admins
 - **Schwere:** HOCH
