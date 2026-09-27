@@ -6,6 +6,18 @@ Wo unklar ist, ob die EKD etwas will, steht es unten als offene Frage und nicht
 als Vorschlag. Grundlage: Stand des Repos am 26.09.2026 (CHANGELOG „Unreleased
 2.3.0", Store-Apps 2.2.x in Betrieb).
 
+**Stand 27.09.2026 (vor dem Merge):** Jede Empfehlung ist am Stand `b6a67ed1` gegen den Code
+geprüft und trägt eine Status-Zeile. Von 33 Empfehlungen ist **1 umgesetzt** (E-05; die
+Sperre unter der Mindestversion wird vor dem Merge nach Simons Entscheidung „Keine
+Zwangsupdates" zu einem wegklickbaren Hinweis), **1 teilweise umgesetzt** (E-09), **24 offen**
+(A ohne E-05 und E-09: E-01 bis E-04, E-06 bis E-08, vor EKD-Ausrollung; B: E-10 bis E-21,
+davon E-15 und E-21 vor EKD-Ausrollung, die übrigen später; C: E-22 bis E-26, später) und
+**7 bewusst nicht umgesetzt** (D: E-27 bis E-33, wie empfohlen; E-29, E-31 und E-32 durch
+Entscheidungen Simons gedeckt). Die zehn Produktfragen am Ende sind bis auf Teile von Frage 10
+(Ranking, siehe E-06) unbeantwortet. Für E-03, E-10, E-11 und E-26 gilt seit dem 26.09.
+Punkt 25 der Gesamtabnahme: alle Gemeinden in einer Datenbank, jede eine Organisation mit
+höchstens 150 Teilnehmenden.
+
 ## Ausgangslage
 
 Konfi Quest ist eine Ionic-9/React-19-App für iOS, Android und Browser mit
@@ -100,6 +112,7 @@ Treffer für `/docs` in `frontend/src` außerhalb von Kommentaren).
 
 ### E-01: Rechtstexte, Einwilligung und Datenschutzhinweis in der App
 
+- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): keine Links auf Datenschutz oder Impressum in der App, kein Zustimmungsfeld bei der Registrierung. Datenschutz und Rechtstexte liegen bei Simon (Produktfrage 1); vor EKD-Ausrollung.
 - **Für wen:** Konfi / Leitung / Betrieb
 - **Warum jetzt:** Die Registrierung per Einladungscode nimmt `invite_code,
   display_name, username, password, email` entgegen — kein Häkchen, keine
@@ -138,6 +151,7 @@ Treffer für `/docs` in `frontend/src` außerhalb von Kommentaren).
 
 ### E-02: Löschfrist auch ohne Konfirmationstermin greifen lassen
 
+- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): `jahrgaenge.confirmation_date` liest und schreibt weiter keine Route; ohne Konfirmations-Event wird nicht gelöscht. Datenschutz (Produktfrage 2); vor EKD-Ausrollung.
 - **Für wen:** Leitung / Betrieb (Datenschutz)
 - **Warum jetzt:** Die Auto-Löschung leitet den Stichtag aus dem
   `is_konfirmation`-Event ab; fehlt er, passiert nichts — bewusst „sicherer
@@ -171,6 +185,7 @@ Treffer für `/docs` in `frontend/src` außerhalb von Kommentaren).
 
 ### E-03: Gemeinden anlegen ohne Flaschenhals — Antragsweg, EKD-Vorgaben, zweiter Org-Admin
 
+- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): `POST /organizations` nur für Super-Admins, 30-Tage-Testphase als Vorgabe. Mit Punkt 25 der Gesamtabnahme (Simon, 26.09.: alle Gemeinden in einer Datenbank, jede eine Organisation) passt der Vorschlag; wer Gemeinden beantragt, ist Produktfrage 3. Vor EKD-Ausrollung.
 - **Für wen:** Landeskirche / Betrieb / Leitung
 - **Warum jetzt:** `POST /organizations` ist `requireSuperAdmin`
   (`organizations.js:284`); jede Anlage schreibt Name, Slug, Kontakt,
@@ -206,6 +221,7 @@ Treffer für `/docs` in `frontend/src` außerhalb von Kommentaren).
 
 ### E-04: Hilfe und Support in der App
 
+- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): kein Link aufs Handbuch in der App, keine Hilfe-Seite. Vor EKD-Ausrollung (Produktfrage 9).
 - **Für wen:** Konfi / Teamer:in / Leitung / Betrieb
 - **Warum jetzt:** README verspricht „Handbuch in der App" (`README.md:61`);
   tatsächlich verlinkt die App das Handbuch nirgends (grep `/docs` in
@@ -256,6 +272,15 @@ Verweis ergänzt); die Abwägung liegt bei Simon. Ohne gesetzte Variable
 sperrt nichts. Beschreibung für Nutzer:innen
 und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Commit `d7802549` bestätigt. Der
+  Widerspruch oben ist entschieden — Simon, 27.09.2026: „Keine Zwangsupdates". Unter der
+  Mindestversion zeigt die App einen Hinweis mit Knopf zum Store statt einer Sperre — keine
+  Blockade, wie hier vorgeschlagen, und über den Vorschlag („dauerhafter, nicht wegklickbarer
+  Hinweis") hinaus wegklickbar. Damit gelten wieder der Kopf von `updateCheck.ts` („nie eine
+  Blockade") und die Begründung von E-29. Behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit
+  im Behebungsbericht). Die Felder in `/api/app-version` und der Wartungstext bleiben, wie
+  oben beschrieben.
+
 - **Für wen:** Betrieb / alle Rollen
 - **Warum jetzt:** Die App zeigt nur „eine neuere Version ist da"
   (`frontend/src/services/updateCheck.ts:11-18`, „Nur ein HINWEIS, nie eine
@@ -284,6 +309,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-06: Ranking als Opt-in und ohne Klarnamen in der Antwort
 
+- **Status:** offen 27.09.2026 — Simon hat am 27.09. zum Ranking entschieden, das Handbuch anzupassen statt die App (Screens Konfi/Teamer BF-03): Das Ranking bleibt eingeschaltet, und die Antwort trägt weiter Namen und Punkte der drei Besten. Voreinstellung für neue Gemeinden und Klarnamen in der Antwort sind damit nicht entschieden (Produktfrage 10); vor EKD-Ausrollung.
 - **Für wen:** Konfi / Leitung
 - **Warum jetzt:** Das Konfi-Dashboard zeigt „Dein Ranking" standardmäßig
   (`backend/routes/konfi.js:335`: `show_ranking` Default `true`); die Antwort
@@ -310,6 +336,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-07: Rollenbezeichnungen für Ehrenamtliche
 
+- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): neue Gemeinden bekommen die Rolle `admin` weiter als „Hauptamt" (`organizations.js:342`). Vor EKD-Ausrollung.
 - **Für wen:** Leitung / Landeskirche
 - **Warum jetzt:** Jede neu angelegte Gemeinde bekommt die Rolle `admin` mit
   `display_name: 'Hauptamt'` (`organizations.js:340`); Handbuch und Oberfläche
@@ -333,6 +360,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-08: Einladungscode länger und wählbar gültig
 
+- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): Einladungscodes gelten weiter 7 Tage (`auth.js:894`). Vor EKD-Ausrollung.
 - **Für wen:** Leitung / Konfi
 - **Warum jetzt:** Ein Einladungscode gilt 7 Tage, verlängerbar um jeweils 7
   Tage, ein abgelaufener lässt sich nicht wiederbeleben
@@ -357,6 +385,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-09: Sprache und Barrierefreiheit der Web-Variante
 
+- **Status:** teilweise umgesetzt 26./27.09.2026 — `lang="de"` (UI BF-05) und ein Durchgang über Tastatur und Namen für die Vorlesehilfe (UI BF-01, BF-02, BF-03, BF-08, BF-16; Chat-Aktionen per Knopf statt nur per langem Druck) sind eingebaut. Offen: ein Durchgang mit echtem Bildschirmleser je Rolle (nach dem Deploy messen, liegt bei Simon); die Wischgesten zum Löschen sind nicht erneut geprüft.
 - **Für wen:** Konfi / Leitung (wer kein Smartphone hat oder mit Hilfsmitteln
   arbeitet)
 - **Warum jetzt:** Die Browser-Variante ist der einzige Weg ohne Smartphone
@@ -383,6 +412,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-10: Landeskirche und Kirchenkreis als Ebene über der Gemeinde, mit anonymen Kennzahlen
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Mit Punkt 25 der Gesamtabnahme (Simon, 26.09.: alle Gemeinden in einer Datenbank) bleibt der Vorschlag innerhalb einer Datenbank umsetzbar; wer lesen darf, ist Produktfrage 4. Später.
 - **Für wen:** Landeskirche / Betrieb
 - **Warum jetzt:** Es gibt genau zwei Ebenen: Nutzer:in und Organisation.
   `kirchenkreis` ist Freitext (`prod-schema.sql:1521`,
@@ -416,6 +446,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-11: Vorlagenkatalog zwischen Gemeinden (Aktivitäten, Kategorien, Abzeichen, Challenges, Termine)
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Mit Punkt 25 der Gesamtabnahme (alle Gemeinden in einer Datenbank) genügt eine gemeinsame Tabelle, kein Austauschformat zwischen Installationen. Später.
 - **Für wen:** Leitung / Landeskirche
 - **Warum jetzt:** Jede neue Gemeinde bekommt denselben hart kodierten
   Startsatz: 27 Konfi- und 9 Teamer-Abzeichen, 4 Zertifikatstypen, 6 Level, 14
@@ -448,6 +479,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-12: CSV-Import von Konfis mit Passwortliste
 
+- **Status:** offen 27.09.2026 — nicht begonnen (Produktfrage 7). Später.
 - **Für wen:** Leitung
 - **Warum jetzt:** Konfis entstehen einzeln (`konfi-management.js:208-216`:
   `name, jahrgang_id`, generiertes Bibel-Passwort) oder per Einladungscode
@@ -471,6 +503,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-13: Kalender-Export (ICS) und Termin-Abo — auch als Elterninformation
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Später.
 - **Für wen:** Konfi / Teamer:in / Eltern (indirekt)
 - **Warum jetzt:** Termine leben nur in der App; es gibt kein ICS, keinen
   Kalender-Abo-Link (grep `ics|ical|text/calendar` ohne Treffer). Erinnerungen
@@ -496,6 +529,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-14: Jahrgangsabschluss — Export für Urkunden und Archivierung
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Später; vor der ersten Konfirmation in einer neuen Gemeinde sinnvoll.
 - **Für wen:** Leitung
 - **Warum jetzt:** Vor der Konfirmation braucht die Leitung Sprüche,
   Konfirmationsdatum, Anwesenheit und Punkte je Konfi; danach löscht die App
@@ -526,6 +560,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-15: Nachricht melden und Konfi im Raum stummschalten
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Seit der Gesamtabnahme (Punkt 31, Simons Rahmen vom 26.09.: alle Chats moderiert, kein Konfi-zu-Konfi-Chat) eine Produktentscheidung, keine Auflage. Offen bleibt, ob die Store-Prüfung einen Meldeweg verlangt; vor EKD-Ausrollung klären (Screens Konfi/Teamer BF-06).
 - **Für wen:** Konfi / Teamer:in / Leitung
 - **Warum jetzt:** Der Chat ist bewusst eng geführt: Konfis erreichen einander
   nie direkt, sechs positive Reaktionen (`chat.js:2579`), die Leitung kann jeden
@@ -552,6 +587,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-16: Nachtruhe für Push je Gemeinde
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Die Vortags-Erinnerung kommt seit dem 26.09. 24 h ± 15 min vor Beginn (Behebungsbericht), also weiter zur Uhrzeit des Events. Später.
 - **Für wen:** Konfi / Leitung
 - **Warum jetzt:** Push geht sofort raus, unabhängig von der Uhrzeit — Chat,
   Freigaben, Punkte (`pushService.js`, kein Zeitfenster; grep
@@ -578,6 +614,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-17: Feature-Schalter je Gemeinde
 
+- **Status:** offen 27.09.2026 — nicht begonnen (Produktfrage 8). Später.
 - **Für wen:** Leitung / Landeskirche / Betrieb
 - **Warum jetzt:** `settings` kennt 15 Schlüssel, alle Dashboard-Kacheln und
   deren Reihenfolge (`settings.js:11-26`); es gibt keinen Schalter, der einen
@@ -604,6 +641,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-18: Fehler melden aus der App
 
+- **Status:** offen 27.09.2026 — nicht begonnen (Produktfrage 9). Später.
 - **Für wen:** alle Rollen / Betrieb
 - **Warum jetzt:** Abstürze werden automatisch und ohne Personenbezug gemeldet
   (`absturzdiagnose.ts`, CHANGELOG Unreleased „Sonstiges"); Fehler mit Art und
@@ -626,6 +664,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-19: Öffentliche Statusseite und Störungshinweis
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Der Wartungshinweis aus E-05 steht in der App; eine Statusseite außerhalb des Stacks gibt es nicht. Später.
 - **Für wen:** Leitung / Betrieb
 - **Warum jetzt:** `/api/status` liefert Version, Commit, Datenbank-Zustand
   als JSON (`createApp.js:394-413`); der Rolling-Deploy liest es
@@ -645,6 +684,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-20: Speicher- und Mengen-Kennzahlen je Gemeinde (Grundlage für das Kostenmodell)
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Später.
 - **Für wen:** Betrieb / Landeskirche
 - **Warum jetzt:** Push ist über Firebase kostenfrei (`backend/push/firebase.js`,
   `sendEach`), Mail läuft über den eigenen SMTP-Server mit sieben
@@ -673,6 +713,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-21: Selbstauskunft — Datenexport für das eigene Konto
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Auskunftsrecht (DSG-EKD); vor EKD-Ausrollung.
 - **Für wen:** Konfi / Teamer:in / Leitung
 - **Warum jetzt:** Das Löschrecht ist Selbstbedienung (`auth.js:374`,
   `DeleteAccountModal.tsx`); das Auskunftsrecht (§ 19 DSG-EKD) läuft über
@@ -697,6 +738,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-22: Material und Aufgaben für Konfis
 
+- **Status:** offen 27.09.2026 — nicht begonnen (Produktfrage 6). Später.
 - **Für wen:** Konfi / Leitung
 - **Warum:** Material ist ausschließlich Teamsache (`material.js:260`
   `requireTeamer`; `30-leitung.md`: „Konfis sehen Material nicht"). Konfis
@@ -716,6 +758,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-23: Ehrenamtsnachweis für Teamer:innen als Dokument
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Später.
 - **Für wen:** Teamer:in / Leitung
 - **Warum:** Zertifikate mit Gültigkeit existieren (JuLeiCa, Teamer-Card,
   Erste Hilfe, Rettungsschwimmer; `teamer.js:447-651`, `organizations.js:444-451`),
@@ -732,6 +775,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-24: Mehrjahresvergleich für die Leitung
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Später.
 - **Für wen:** Leitung / Landeskirche
 - **Warum:** Wrapped-Ausgaben und Team-Rückblicke liegen je Jahrgang bzw.
   Jahr (`wrapped.js:2894, 2824`), die Anwesenheits-Matrix je Jahrgang
@@ -746,6 +790,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-25: Objektspeicher und Mandanten-Quoten
 
+- **Status:** offen 27.09.2026 — nicht begonnen. Später, erst nach gemessenen Zahlen (E-20).
 - **Für wen:** Betrieb
 - **Warum:** Uploads liegen auf einer Host-Platte im Container-Pfad
   (`photoStorage.js:10-13`, `compose.konfi_quest.yml:82`), drei Container
@@ -761,6 +806,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-26: Delegierte Gemeindeverwaltung durch Kirchenkreise
 
+- **Status:** offen 27.09.2026 — nicht begonnen; hängt an E-10. Später.
 - **Für wen:** Landeskirche / Betrieb
 - **Warum:** Folgt aus E-03 und E-10: Wenn Kirchenkreise Gemeinden selbst
   anlegen, Org-Admins zurücksetzen und Lizenzen zuordnen dürfen, entfällt der
@@ -778,6 +824,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-27: Eltern-Konten oder Elternrolle
 
+- **Status:** bewusst so gelassen 27.09.2026 (Empfehlung dieses Berichts; Produktfrage 5 liegt bei Simon) — keine Elternrolle eingebaut.
 - **Begründung:** Eine sechste Rolle, die Chats, Beiträge oder Punkte eines
   Kindes einsieht, widerspricht der Datenminimierung, die die App an vielen
   Stellen bewusst verfolgt (anonyme Beiträge, deren Name „den Server gar nicht
@@ -789,6 +836,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-28: Wortfilter im Chat
 
+- **Status:** bewusst so gelassen 27.09.2026 (Empfehlung dieses Berichts) — kein Wortfilter eingebaut.
 - **Begründung:** Der Chat ist strukturell entschärft: keine
   Konfi-zu-Konfi-Direktnachrichten, nur positive Reaktionen (`chat.js:2579`),
   Leitung liest jeden Gruppenraum mit und löscht (`90-chat.md`). Ein Wortfilter
@@ -797,6 +845,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-29: Zwangsupdate oder harte Sperre alter App-Versionen
 
+- **Status:** bewusst so gelassen (Entscheidung Simon 27.09.2026: „Keine Zwangsupdates") — die Sperre unter der Mindestversion aus E-05 wird vor dem Merge zu einem wegklickbaren Hinweis; siehe den Nachtrag an E-05.
 - **Begründung:** `updateCheck.ts:13-16` hält fest, dass eine gesperrte App
   bei Apple ein Ablehnungsgrund wäre; die Abrissliste setzt auf Zählung im
   Zugriffslog statt auf Zwang (`docs/api/ABRISS.md`). Der Mindestversions-
@@ -805,6 +854,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-30: Mehrsprachigkeit
 
+- **Status:** bewusst so gelassen 27.09.2026 (Empfehlung dieses Berichts) — kein Übersetzungssystem eingebaut.
 - **Begründung:** Es gibt kein Übersetzungssystem; alle Texte stehen als
   deutsche Zeichenketten in Komponenten und Routen (grep `i18n|useTranslation`
   ohne Treffer). Zielgruppe der EKD-Ausrollung sind deutschsprachige Gemeinden;
@@ -814,6 +864,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-31: Terminverwaltung für Teamer:innen wieder öffnen
 
+- **Status:** bewusst so gelassen (Entscheidung Simon 16.09.2026) — Events verwalten weiter nur Admins und Org-Admins.
 - **Begründung:** Simons Entscheidung vom 16.09.2026: Teamer:innen verwalten
   Termine nicht (`offene-befunde.md`, Nr. 13; CHANGELOG 2.2.0 „Geändert").
   Für Ehrenamts-Leitungen mag der Wunsch nach Delegation kommen — dann als
@@ -822,6 +873,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-32: Direktnachrichten zwischen Konfis
 
+- **Status:** bewusst so gelassen (Entscheidung Simon 26.09.2026: kein Konfi-zu-Konfi-Chat) — `POST /chat/direct` weist Konfi an Konfi mit 403 ab (`chat.js:541-542`).
 - **Begründung:** Bewusst ausgeschlossen („Konfis erreichen einander nie",
   `90-chat.md`); der Jahrgangs-Chat ist der moderierte Raum. Bei 13-Jährigen
   ist das die richtige Grenze; jede Öffnung erzeugt Moderationslast ohne
@@ -829,6 +881,7 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 
 ### E-33: Direkte Schnittstellen zu Kirchenbuch- oder Meldewesen-Systemen
 
+- **Status:** bewusst so gelassen 27.09.2026 (Empfehlung dieses Berichts; Produktfrage 7 liegt bei Simon) — keine Direktanbindung.
 - **Begründung:** Welche Systeme die Gemeinden der EKD-Landeskirchen nutzen
   und ob deren Anbieter Schnittstellen freigeben, ist aus dem Repo nicht
   ersichtlich und mir nicht bekannt. Ein CSV-Import (E-12) deckt den Bedarf
@@ -864,7 +917,19 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
 E-12 (CSV-Import), E-13 (ICS) und E-16 (Nachtruhe) folgen direkt danach; sie
 sind klein, aber weniger dringend als die Punkte oben.
 
+**Stand 27.09.2026 (vor dem Merge):** Die Reihenfolge vom 26.09. bleibt als damaliger Stand
+stehen. Überholt sind zwei Plätze: E-05 (Platz 2) ist umgesetzt, und E-15 (Platz 7) ist seit
+der Gesamtabnahme (Punkt 31) eine Produktentscheidung statt einer Auflage. Die übrigen acht
+sind offen.
+
 ## Offene Produktfragen an Simon
+
+**Stand 27.09.2026 (vor dem Merge):** Frage 10 ist zum Teil beantwortet — das Ranking bleibt
+und das Handbuch beschreibt es, wie es ist (Entscheidung Simon 27.09.2026, Screens
+Konfi/Teamer BF-03); ob neue Gemeinden es ausgeschaltet bekommen und ob die Antwort Klarnamen
+trägt, ist offen. Frage 3 berührt die Entscheidung vom 26.09. (alle Gemeinden in einer
+Datenbank, Gesamtabnahme Punkt 25), beantwortet aber nicht, wer Gemeinden anlegt. Die übrigen
+Fragen sind unbeantwortet.
 
 1. **Einwilligung der Eltern:** Bleibt es beim schriftlichen Verfahren der
    Gemeinde außerhalb der App (`datenschutz.html:290-291`), oder soll die App

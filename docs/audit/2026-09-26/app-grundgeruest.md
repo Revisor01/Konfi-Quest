@@ -68,9 +68,24 @@ Gemeinde-Umschalter ein Rückfall-Pfad, der die App bis zu 15 Minuten in
 403-Fehler laufen lässt, und ein Sitzungsablauf, der Cache und Warteschlange der
 vorigen Person stehen lässt.
 
+**Stand 27.09.2026 (vor dem Merge):** Jeder Befund ist gegen Code, Tests und CHANGELOG am
+Stand `b6a67ed1` geprüft und trägt eine Status-Zeile. Von 13 Befunden sind **7 behoben**
+(alle fünf HOCH, BF-01 bis BF-05, dazu BF-08 und BF-12) und **6 offen** (BF-06, BF-07,
+BF-09 MITTEL, für 2.3.x vorgemerkt; BF-10, BF-11 NIEDRIG, später; BF-13 NIEDRIG,
+Datenschutztext, vor EKD-Ausrollung). **Kein HOCH- oder KRITISCH-Befund ist mehr offen.**
+Reste an behobenen Befunden stehen in deren Status-Zeile: BF-01 (Teil 2 der Empfehlung),
+BF-02 (kein Idempotenzschlüssel im Einsatz), BF-05 (Nebenbefund Rolle und Gemeindename im
+Zustand). Aus „Unklar" weiter offen: `switchOrg` während eines laufenden Flush (nicht
+reproduziert, später). Die Gerätemessungen unter „Auf Produktion nachzumessen" liegen bei
+Simon und dem Betrieb (nach dem Deploy messen).
+
 ## Release-Empfehlung für den Bereich
 
-**Mit Auflage.** Vor dem Store-Build sind drei kleine, risikoarme Korrekturen zu
+**Stand 27.09.2026 (vor dem Merge):** Die Auflage ist erfüllt. BF-02, BF-03 und BF-05 sind
+am 26.09. behoben, BF-01 und BF-04 — anders als unten empfohlen — noch vor dem Merge am
+27.09. Die Empfehlung vom 26.09. bleibt als damaliger Stand stehen und ist überholt.
+
+*Stand 26.09.2026, überholt:* **Mit Auflage.** Vor dem Store-Build sind drei kleine, risikoarme Korrekturen zu
 machen: BF-03 (Refresh-Token bei Registrierung übernehmen, zwei Zeilen), BF-02
 (POST aus der Wiederholung herausnehmen bzw. nur mit Idempotenzschlüssel
 wiederholen) und BF-05 (im 403-Rückfall ein Token ohne Org-Claim beschaffen).
@@ -135,11 +150,13 @@ so nicht haltbar.
   Warteschlange fallen (wie `chatOutbox`), damit eine falsche Netz-Einschätzung
   nicht sofort in einen Fehler führt. Am Gerät nachmessen (siehe unten).
 - **Status:** behoben 27.09.2026 — Die Begründung für „`none` = online" ist echt (Commit `8827370e`, 30.06.2026: Android-Emulatoren und die Google-Play-Prüfumgebung melden `none`/`unknown` samt `connected: false` bei funktionierendem Netz; ein vorab geblockter Login führte zu Play-Ablehnungen). Deshalb nicht einfach umgedreht: In diesem unsicheren Fall entscheidet eine Probe an `/api/health` (`mode: 'no-cors'`, Zeitlimit 4 s; jede Antwort, auch 503, zählt als Netz). Antwortet der Server, bleibt die App online (Play-Fall); sonst offline, Wiederholung alle 15 s, bis der Server antwortet oder das Plugin eine Verbindung meldet; eine ältere Probe überschreibt keine neuere Statusmeldung. Nur auf dem Gerät; im Browser weiter `navigator.onLine`, das Plugin wird dort nicht mehr gefragt. Die Warteschlange hält Einträge offline zurück (`writeQueue.ts:490`, `writeQueue.test.ts` „flush() versucht offline keine Requests"). Test `src/__tests__/services/funklochErkennen.test.ts` (8: Funkloch offline, Play-Fall online, `unknown` geprüft, Wiederholung meldet Rückkehr, Plugin-Verbindung beendet die Probe, Verlust der Verbindung, hängende Probe, Web ohne Probe); vor dem Fix 6 rot. Gegenprobe: alte Regel → 6 rot, ohne Wiederholung → 1 rot. `networkMonitor.test.ts` stellte `none`/`unknown` → online fest und prüft jetzt denselben Fall mit antwortendem Server. Von der Empfehlung abgewichen: `none` nicht pauschal offline, weil der Commit ausdrücklich auch `none` in der Play-Prüfung nennt; nicht umgesetzt ist Teil 2 (Rückfall in die Warteschlange bei `ERR_NETWORK` im Online-Zweig der Formulare) — am Gerät nachmessen (Nr. 17 unten).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt, Commit `1a379aba`. Verweis korrigiert: „Nr. 17 unten" meint die Liste „Auf Produktion nachzumessen" der Gesamtabnahme (`00-gesamtabnahme.md`, Nr. 17); in diesem Bericht ist es der Punkt „BF-01 am Gerät". Teil 2 der Empfehlung bleibt **offen**: Hält die App sich für online, obwohl das Netz nicht trägt (schwacher Empfang, den das Gerät noch als verbunden meldet), fallen Abmeldung und Antrag bei `ERR_NETWORK` nicht in die Warteschlange, sondern zeigen einen Fehler. Der CHANGELOG-Eintrag („warten und gehen raus, sobald wieder Netz da ist") stimmt für den erkannten Funkloch, nicht für diesen Fall. Für 2.3.x vorgemerkt; das Verhalten am Gerät nach dem Deploy messen.
 
 ### BF-02: axios-retry wiederholt schreibende POSTs — Doppelbuchungen bei langsamer Leitung
 
 - **Schwere:** HOCH
 - **Status:** behoben 26.09.2026 — `retryCondition` in `api.ts` wiederholt POST/PATCH nur noch mit gesetztem `Idempotency-Key`-Header (`IDEMPOTENCY_HEADER`, Client-Regel und Header-Hook; Server-Auswertung ist ein eigener Schritt); GET/PUT/DELETE und die 429-Sperre unverändert. Test `apiRetryNurIdempotent.test.ts` mit echtem axios-retry und zählendem Adapter (GET/503 → 4, POST/503 → 1, POST mit Schlüssel → 4).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt, Commit `4ce13ead`. Rest **offen**: Kein Aufrufer setzt den `Idempotency-Key`, und das Backend wertet ihn nicht aus — POST und PATCH werden deshalb nie wiederholt (das behebt den Befund, Doppelbuchungen entstehen nicht mehr). Die mittelfristige Empfehlung (`client_id` für Bonuspunkte, Event- und Konfi-Anlage nach dem Muster `antragIdempotenz.js`) steht aus; später. Der CHANGELOG-Eintrag nennt als wiederholbar „Laden, Ändern, Löschen" — gemeint ist PUT; PATCH wird ohne Schlüssel ebenfalls nicht wiederholt.
 - **Fundstelle:** `frontend/src/services/api.ts:42-55` (retryCondition: `status >= 500`
   und `ECONNABORTED` ohne Methodenprüfung); Ziele ohne Idempotenzschlüssel:
   `components/admin/modals/BonusModal.tsx:95` (`POST /admin/konfis/:id/bonus-points`),
@@ -189,6 +206,7 @@ so nicht haltbar.
 
 - **Schwere:** HOCH
 - **Status:** behoben 26.09.2026 — `sitzungUebernehmen` in `services/auth.ts` speichert Access-Token, Refresh-Token und Nutzer; Login und `KonfiRegisterPage` nutzen denselben Weg. Tests in `auth.test.ts` (Übernahme, Fehlerfall, Login, Quelltest der Seite).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt, Commit `853ab400`.
 - **Fundstelle:** `frontend/src/components/auth/KonfiRegisterPage.tsx:248-254`
   (liest nur `{ token, user }`, importiert `setRefreshToken` nicht);
   `backend/routes/auth.js:1081-1083` (liefert `refresh_token` mit).
@@ -266,10 +284,13 @@ so nicht haltbar.
   `user.id` präfixen und beim Login eines *anderen* Kontos (`prevUserId !==
   user.id`) den Cache leeren.
 - **Status:** behoben 27.09.2026 — Nicht pauschal geleert (wie empfohlen im 401-Pfad), weil der Relogin auch dieselbe Person trifft (Passwortwechsel auf einem anderen Gerät) und deren wartende Aktionen sonst verloren gingen; stattdessen an das Konto gebunden, wie die Empfehlung im zweiten Teil vorschlägt. `offlineCache`: jeder Schlüssel trägt die Kennung des angemeldeten Kontos (`cache:<id>:<key>`, aus `tokenStore.getUser()`), ein anderes Konto findet nichts, dieselbe Person ihren Stand; `fremdeKontenEntfernen()` nimmt nach der Anmeldung den Stand anderer Konten und Altbestand ohne Kennung vom Gerät. `writeQueue`: merkt sich ihr Konto (`queue:konto`) und leert Warteschlange, „Nicht gesendet" (Chat samt lokaler Dateien) und fehlgeschlagene Aktionen, sobald ein ANDERES Konto angemeldet ist — geprüft vor jedem Senden (`flush`, `flushTextOnly`), Einreihen und Lesen (`getAll`, `getByMetadata`, `getFailedChat`, `getFailedActions`), damit weder ein Flush beim Verbindungsaufbau noch die Glocke vor dem Abgleich etwas Fremdes erreicht; ohne Markierung (Stand vor dem Update) übernimmt die erste angemeldete Person. `AppContext` gleicht nach jeder Anmeldung ab (neben dem Medien-Cache, best-effort auch gegen synchrone Fehler). Nicht geändert: `biometrieVergessen` im Ablaufpfad — die Biometrie hängt am widerrufenen Refresh-Token und scheitert von selbst. Test `src/__tests__/services/offlineDatenGehoerenZumKonto.test.ts` (7: Cache verboten/erlaubt/Entfernen, Warteschlange verboten Senden und Lesen, erlaubt dieselbe Person und Altbestand); vor dem Fix 4 rot. Gegenprobe: Cache ohne Kontokennung → 2 rot, Warteschlange ohne Kontoprüfung → 2 rot. 99 Testdateien mit Cache-, Warteschlangen-, Kontext- und Token-Bezug grün (947).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt, Commit `c526cdfa`.
+
 ### BF-05: 403-Rückfall auf die Stamm-Gemeinde lässt den Org-Claim im Token — bis 15 Minuten nur Fehler
 
 - **Schwere:** HOCH
 - **Status:** behoben 26.09.2026 — `api.ts` holt im Rückfall nach `setActiveOrgId(null)` per `POST /auth/refresh` ohne `X-Active-Organization` ein Token ohne Org-Claim (wartet einen laufenden Refresh ab) und feuert `auth:org-fallback` erst danach; `AppContext` baut im Handler den Socket mit dem neuen Token neu auf (`reconnectWithToken`, wie beim bewussten Wechsel); `websocket.ts` wertet „Zugriff"/„Organisation" im Handshake-Fehler als Auth-Fehler (`socket:auth-error`). Tests: `services/apiOrgRueckfall.test.ts` (Refresh ohne Header, Reihenfolge Token vor Event, Refresh-Fehler ohne Relogin, anderes 403 unberührt, ohne aktive Org kein Rückfall), `contexts/appContextOrgRueckfall.test.tsx` (gerenderter Kontext, Socket-Neuaufbau), `services/websocket.test.ts` (Handshake-Meldung). Serverseitig unverändert — kein stiller Rückfall in `rbac.js`. Der Nutzer-State (Rolle, Gemeindename aus dem letzten `switchOrg`) wird im Rückfall weiterhin nicht auf die Stamm-Gemeinde zurückgeschrieben (Nebenbefund).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt, Commit `0ffa88ff`. Der Nebenbefund ist **offen**: Der Rückfall-Handler in `AppContext.tsx` (heute ab Zeile 649) setzt aktive Gemeinde, Cache, Medien-Cache und Socket zurück, aber nicht Rolle und Gemeindename im Nutzer-Zustand. Hat die Person in der entzogenen Gemeinde eine andere Rolle als in der Stamm-Gemeinde, zeigt die App die Oberfläche der entzogenen Rolle weiter, bis `refreshUser` den Zustand neu von `/auth/me` holt (beim nächsten App-Start). Der CHANGELOG-Eintrag („wechselt sie sofort sauber in die Stamm-Gemeinde") verspricht damit etwas mehr, als der Code tut. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `frontend/src/services/api.ts:198-208` (entfernt nur den Header),
   `contexts/AppContext.tsx:619-627` (Handler: State, Cache, Remount — kein Token),
   `backend/routes/auth.js:659-664` (switch-org setzt `active_organization_id` ins
@@ -316,6 +337,7 @@ so nicht haltbar.
 ### BF-06: Biometrische Anmeldung — die Klartext-Kopie des Refresh-Tokens kehrt nach der ersten Rotation zurück
 
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — am Code bestätigt (Prüfung vor dem Merge): `performRefresh` schreibt den neuen Refresh-Token weiter ohne Rücksicht auf den Schalter mit `setRefreshToken` in die Preferences (heute `api.ts:159`), `rotationUebernehmen` (heute `biometrics.ts:475`) legt ihn zusätzlich in den sicheren Speicher. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `frontend/src/services/api.ts:122` (`setRefreshToken` schreibt
   immer in Preferences), `services/tokenStore.ts:58-61`,
   `services/biometrics.ts:27-32` (Zusicherung a: „NUR biometrie-geschuetzt …
@@ -349,6 +371,7 @@ so nicht haltbar.
 ### BF-07: Der Refresh-Request hat kein Zeitlimit — hängt er, warten alle Requests
 
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — am Code bestätigt (Prüfung vor dem Merge): beide direkten Refresh-Aufrufe ohne `timeout`, heute `api.ts:144` (`performRefresh`) und `auth.ts:286` (`mitBiometrieAnmelden`). Für 2.3.x vorgemerkt.
 - **Fundstelle:** `frontend/src/services/api.ts:107-109` (`axios.post` ohne
   `timeout`; die API-Instanz hat 20 s, `api.ts:16`), `:169-173` und `:237-249`
   (Wartende hängen am `isRefreshing`-Merker), `services/auth.ts:244-246`
@@ -373,6 +396,7 @@ so nicht haltbar.
 ### BF-08: Fehlgeschlagener Login schreibt das Passwort ins Konsolen-Log
 
 - **Schwere:** MITTEL
+- **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht) — `fullError` im Login-Log (am Stand `b6a67ed1` noch `auth.ts:59-66`) und das Fehlerobjekt beim Senden des FCM-Tokens (`AppContext.tsx:295`) gehen nicht mehr ins Konsolen-Log.
 - **Fundstelle:** `frontend/src/services/auth.ts:36-43` (`fullError: error`).
 - **Kennzeichnung:** reproduziert — `audit-passwort-im-log.test.ts`: das
   geloggte Objekt enthält `config.data = '{"username":"anna","password":"Geheim!2026"}'`.
@@ -396,6 +420,7 @@ so nicht haltbar.
 ### BF-09: Keine Sperre gegen die Schleife „401 → Refresh gelingt → 401 → …"
 
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — am Code bestätigt (Prüfung vor dem Merge): kein `_retry`-Merker, der Originalrequest geht nach dem Refresh erneut hinaus (heute `api.ts:322` für Wartende, `:339` nach eigenem Refresh). Ein auslösender Fall im Backend ist weiter nicht bekannt. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `frontend/src/services/api.ts:253-261` (`api(originalRequest)`
   ohne `_retry`-Merker).
 - **Kennzeichnung:** reproduziert (Mechanismus) — `audit-401-schleife.test.ts`:
@@ -420,6 +445,7 @@ so nicht haltbar.
 ### BF-10: Migrationsreste im localStorage überleben das Abmelden
 
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert: `migrateStorage.ts` löscht die alten Schlüssel nicht, `clearAuth` räumt nur die Preferences. Später.
 - **Fundstelle:** `frontend/src/services/migrateStorage.ts:5-6,15-23` („Keys
   werden NICHT gelöscht"), `services/tokenStore.ts:76-91` (`clearAuth` räumt
   nur Preferences).
@@ -439,6 +465,7 @@ so nicht haltbar.
 ### BF-11: Gesperrte Gemeinde / abgelaufene Testphase erscheint als „Sitzung abgelaufen"
 
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert: Jeder Fehler des Refresh führt zu `clearAuth` und „Deine Sitzung ist abgelaufen"; der `error_code` einer 403-Antwort wird nicht durchgereicht. Später.
 - **Fundstelle:** `backend/routes/auth.js:1255-1268` (403 mit `error_code`),
   `frontend/src/services/api.ts:262-275` (jeder Refresh-Fehler → `clearAuth` +
   `auth:relogin-required`), `App.tsx:138`, `LoginView.tsx:61-63`.
@@ -456,6 +483,7 @@ so nicht haltbar.
 ### BF-12: Lint-Fehler im Bereich (toter Code in MainTabs)
 
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — `ladeRolleVor`-Import und die ungenutzte Komponente `SeiteLaedt` sind aus `MainTabs.tsx` entfernt (Commit `4c8fb30d`, 19 ESLint-Fehler im Frontend-Bestand, danach `npx eslint .` ohne Fehler); die CI lintet seitdem bei jedem Push.
 - **Fundstelle:** `frontend/src/components/layout/MainTabs.tsx:21` (`ladeRolleVor`
   importiert, ungenutzt), `:135-143` (`SeiteLaedt` definiert, ungenutzt).
 - **Kennzeichnung:** reproduziert — `npx eslint --quiet …`: 2 Fehler
@@ -467,6 +495,7 @@ so nicht haltbar.
 ### BF-13: Datenschutzerklärung beschreibt die Absturzdiagnose enger als der Code
 
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — `datenschutz.html` sagt weiter „ausschließlich dann …, wenn die App abstürzt oder einen Fehler abfängt, der die Bedienung unterbricht" (heute Zeile 266), der Code meldet auch Fehler im Hintergrund. Rechtstext: liegt bei Simon, vor EKD-Ausrollung (zusammen mit Doku BF-08).
 - **Fundstelle:** `frontend/public/datenschutz.html:265 ff.` („Ein Bericht wird
   ausschließlich dann erzeugt, wenn die App abstürzt oder einen Fehler abfängt,
   der die Bedienung unterbricht — nicht im laufenden Betrieb") gegen

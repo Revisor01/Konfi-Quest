@@ -58,9 +58,22 @@ eingesehen noch zurückgezogen werden, obwohl das Handbuch beides verspricht.
 Drittens fehlt an Terminen eine Prüfung „Ende vor Anfang" auf beiden Seiten;
 so ein Termin landet sofort unter „Vergangen".
 
+**Stand 27.09.2026 (vor dem Merge):** Jeder Befund ist gegen Code, Tests und CHANGELOG am
+Stand `b6a67ed1` geprüft und trägt eine Status-Zeile. Von 15 Befunden sind **5 behoben**
+(der HOCH-Befund BF-01, dazu BF-02, BF-05, BF-08 und BF-13), **9 offen** (BF-03, BF-04
+MITTEL, für 2.3.x vorgemerkt; BF-06, BF-07, BF-09, BF-10, BF-11, BF-15 NIEDRIG, später;
+BF-12 NIEDRIG, Datenminimierung, vor EKD-Ausrollung) und **1 liegt beim Betrieb** (BF-14,
+Renderzeit am Gerät nach dem Deploy messen). **Kein HOCH- oder KRITISCH-Befund ist mehr
+offen.** Aus „Unklar" liegt bei Simon: die fest auf `https://konfi-quest.de` verdrahtete
+Registrierungs-URL (nur relevant, falls eine Instanz unter eigener Domain läuft).
+
 ## Release-Empfehlung für den Bereich
 
-**mit Auflage.** Der Bereich ist funktional und vertragskonform gegenüber den
+**Stand 27.09.2026 (vor dem Merge):** Die Auflage ist erfüllt — BF-01 ist am 26.09. behoben
+(`260b82b7`), BF-02 und BF-05 vor dem Merge am 27.09.; BF-03 und BF-04 sind für 2.3.x
+vorgemerkt. Die Empfehlung vom 26.09. bleibt als damaliger Stand stehen und ist überholt.
+
+*Stand 26.09.2026, überholt:* **mit Auflage.** Der Bereich ist funktional und vertragskonform gegenüber den
 Store-Apps; die Auflage betrifft den mit 2.3.0 neuen Einladungsfluss:
 **BF-01 vor dem Release schließen** (`GET /users` und `PUT /users/:id` auf
 beide Zugehörigkeitsquellen erweitern, wie `GET /users/:id` und
@@ -73,6 +86,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 
 - **Schwere:** HOCH
 - **Status:** behoben 26.09.2026 — `GET /users` liest beide Quellen (Rolle und Jahrgangszähler je Gemeinde, additives Feld `mitgliedschaft` = `stamm`/`weitere`); `PUT /users/:id` ändert für Zusatzmitglieder nur die Rolle in `user_organizations` (Kontofelder → 400 `nur_rolle_in_weiterer_gemeinde`); `DELETE /users/:id` beendet für sie die Mitgliedschaft samt Jahrgängen dieser Gemeinde statt das Konto zu löschen. Oberfläche: Vermerk in der Liste, gesperrte Kontofelder mit Hinweis im Dialog, angepasster Lösch-Dialog. Tests in `users.test.js` (9) und `benutzerlisteWeitereGemeinde.test.tsx`.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt, Commit `260b82b7`.
 - **Fundstelle:** `backend/routes/users.js:97` (GET /), `backend/routes/users.js:288`
   (PUT /:id); Aufrufer `frontend/src/components/admin/pages/AdminUsersPage.tsx:34-38`,
   `frontend/src/components/admin/pages/AdminJahrgaengeePage.tsx:167-172`,
@@ -117,6 +131,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-02: Einladungen lassen sich in der App weder einsehen noch zurückziehen
 
 - **Schwere:** MITTEL
+- **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht) — offene Einladungen stehen jetzt in der Benutzerliste und lassen sich dort zurückziehen (`GET /einladungen`, `DELETE /einladungen/:id`). Am Stand `b6a67ed1` rief noch keine Oberfläche die beiden Routen, obwohl CHANGELOG und Handbuch (`05-rollen.md:170`) das Zurückziehen schon versprachen.
 - **Fundstelle:** `backend/routes/einladungen.js:182` (GET /), `:199` (DELETE /:id)
   ohne Aufrufer; `docs/handbuch/05-rollen.md:169-170`
 - **Kennzeichnung:** reproduziert —
@@ -140,6 +155,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-03: Termin mit Ende vor Anfang wird nirgends abgewiesen
 
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — unverändert: weder Formular noch Backend vergleichen Ende und Beginn (die Suche unter „Kennzeichnung" trifft heute nur zwei `<IonDatetime …>`-Zeilen in `EventModal.tsx`, keine Vergleichsstelle). Für 2.3.x vorgemerkt.
 - **Fundstelle:** `frontend/src/components/admin/modals/EventModal.tsx:203-208`
   (Prüfungen), `:621-624` (Ende-Picker ohne `min`);
   `backend/routes/events/verwaltung.js:42-53` (validateCreateEvent),
@@ -167,6 +183,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-04: Einzelner Antrag lädt die gesamte Antragshistorie der Gemeinde
 
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — unverändert: `GET /admin/activities/requests` (heute `activities.js:338`) hat weiter kein LIMIT und keinen Filter je Person. Für 2.3.x vorgemerkt; die Größe je Gemeinde nach dem Deploy messen (Punkt 2 unten).
 - **Fundstelle:** `frontend/src/components/admin/modals/ActivityRequestModal.tsx:85-87`,
   `frontend/src/components/admin/views/KonfiDetailView.tsx:430`,
   `frontend/src/components/admin/pages/AdminEventsPage.tsx:129`;
@@ -194,6 +211,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-05: Hinweis beim Konfi-Anlegen verspricht, das Passwort sei später einsehbar
 
 - **Schwere:** MITTEL
+- **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht) — der Hinweis im Konfi-Formular (`KonfiModal.tsx`) sagt nicht mehr, das Passwort sei später in der Detailansicht einsehbar, und deckt sich mit `35-passwoerter.md`.
 - **Fundstelle:** `frontend/src/components/admin/modals/KonfiModal.tsx:295`;
   Gegenstücke `backend/routes/konfi-management.js:215-216` (bcrypt),
   `:599-697` (nur Neu-Generieren), `frontend/src/components/admin/views/KonfiDetailView.tsx:607-637`;
@@ -214,6 +232,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-06: Toter Aufruf `GET /admin/jahrgaenge/:id` vor jeder Passwortanzeige
 
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert: `createOrJoinJahrgangChat` ruft weiter `GET /admin/jahrgaenge/:id` vor dem Passwort-Dialog (heute `AdminKonfisPage.tsx:266`, `:355-358`). Später.
 - **Fundstelle:** `frontend/src/components/admin/pages/AdminKonfisPage.tsx:257,346-361`;
   `backend/routes/jahrgaenge.js` (keine GET-/:id-Route)
 - **Kennzeichnung:** reproduziert — Routentabelle ohne DB:
@@ -233,6 +252,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-07: Toter Aufruf `GET /organizations/:id` bei jedem Öffnen der Konfi-Liste
 
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert: `KonfisView.tsx:94-108` lädt die Organisation, der Wert wird nie gelesen. Später.
 - **Fundstelle:** `frontend/src/components/admin/KonfisView.tsx:93-112`
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** `const [, setKonfiLimit] = useState(...)` — der Wert wird
@@ -263,6 +283,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-09: Handbuch: Teamer-Abzeichen „Pflicht-Anwesenheit" würde weiter vergeben — das Backend kennt den Fall nicht
 
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert: `mandatory_event_count` wertet nur der Konfi-Zweig von `badges.js` aus; das Handbuch (`60-badges.md`) sagt für Teamer:innen weiter „wird ganz normal vergeben". Später; ob es ein solches Teamer-Badge gibt, nach dem Deploy messen (Punkt 3 unten).
 - **Fundstelle:** `docs/handbuch/60-badges.md:323,333-336`;
   `backend/routes/badges.js:486-660` (Teamer-Zweig)
 - **Kennzeichnung:** reproduziert —
@@ -287,6 +308,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-10: Löschwarnung für Konfis nennt nicht alles, was verschwindet; Handbuch ohne Abschnitt
 
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert bis auf den Begriff: Die Warnung (heute `AdminKonfisPage.tsx:188`) nennt „Punkte, Badges, Aktivitäten und Chat-Nachrichten", nicht Event-Anmeldungen, Challenge-Beiträge und Fotos; kein Handbuch-Abschnitt zum Löschen einer Konfi. Später.
 - **Fundstelle:** `frontend/src/components/admin/pages/AdminKonfisPage.tsx:188`;
   `backend/utils/konfiDeletion.js:33-160`; `docs/handbuch/30-leitung.md`
 - **Kennzeichnung:** aus Code gelesen
@@ -306,6 +328,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-11: `useOfflineQuery` zeigt beim Schlüsselwechsel alte Daten bis zur neuen Antwort
 
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert: `useOfflineQuery.ts` setzt beim Wechsel des Schlüssels weder `data` zurück noch `loading` (0 Treffer für `setData(null)`). Später.
 - **Fundstelle:** `frontend/src/hooks/useOfflineQuery.ts:160-215` (kein
   `setData(null)`/`setLoading(true)` beim Wechsel von `cacheKey`);
   betroffen `AdminBadgesPage.tsx:51` (`…:${selectedRole}`),
@@ -328,6 +351,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-12: Betriebs-Dashboard speichert und zeigt Roh-URLs samt Query-String
 
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert: `apm.js` reicht `req.originalUrl` samt Query als Beispiel-URL an `record` weiter (heute Zeile 432-435) und schreibt sie ins Langsam-Log. Datenminimierung; vor EKD-Ausrollung.
 - **Fundstelle:** `backend/utils/apm.js:333,344`;
   `frontend/src/components/admin/pages/AdminMetricsPage.tsx:649,663`
 - **Kennzeichnung:** aus Code gelesen
@@ -346,6 +370,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-13: ESLint-Fehler in Admin-Dateien
 
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — die sechs Fehler in `AdminEventsPage.tsx`, `EventDetailSections.tsx`, `EventDetailView.tsx` (Leitung) und `PushAuswahl.tsx` sind entfernt (Commit `4c8fb30d`, 19 ESLint-Fehler im Frontend-Bestand, danach `npx eslint .` ohne Fehler); die CI lintet seitdem bei jedem Push. Die Warnungen sind nicht Teil des Befunds.
 - **Fundstelle:** `frontend/src/components/admin/pages/AdminEventsPage.tsx:13:10,654:16`;
   `admin/views/EventDetailSections.tsx:161:3`; `admin/views/EventDetailView.tsx:8:3,300:16`;
   `shared/PushAuswahl.tsx:14:3`
@@ -362,6 +387,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-14: Listen ohne Virtualisierung — Renderzeit wächst linear
 
 - **Schwere:** NIEDRIG
+- **Status:** liegt beim Betrieb 27.09.2026 — wie empfohlen erst messen: Renderzeit der Konfi-Liste der größten Gemeinde auf einem Mittelklasse-Android nach dem Deploy (Punkt 4 unten). Mit dem Rahmen vom 26.09. (jede Gemeinde höchstens 150 Teilnehmende, Gesamtabnahme Punkt 25) liegt die Liste unter den gemessenen 300 Konfis.
 - **Fundstelle:** `frontend/src/components/admin/KonfisView.tsx:154-170`,
   `EventsView.tsx:92-100`
 - **Kennzeichnung:** reproduziert — temporärer Vitest-Test (jsdom, 3 Läufe,
@@ -386,6 +412,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-15: Weg zum Anlegen einer neuen Gemeinde ist nirgends dokumentiert
 
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — kein Abschnitt in `docs/wissen/`. Ins Handbuch gehört er nach Simons Entscheidung zu Doku BF-16 nicht („Ein Betriebs-Kapitel wird es nicht geben. Ich bin der Betreiber!"); eine Notiz in `docs/wissen/` wird nötig, sobald jemand außer Simon Gemeinden anlegt. Später.
 - **Fundstelle:** `frontend/src/components/admin/modals/OrganizationManagementModal.tsx:380-490`;
   `backend/routes/organizations.js:284-632`; `docs/handbuch/*`, `docs/wissen/*`
 - **Kennzeichnung:** reproduziert —

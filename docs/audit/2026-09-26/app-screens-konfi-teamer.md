@@ -51,9 +51,28 @@ anderen" zusagt. Der Chat lädt genau 100 Nachrichten und bietet kein Blättern;
 sind in der App unerreichbar. Die früheren Befunde #1, #5, #7.1, #7.2 und #10 sind am heutigen
 Code als behoben bestätigt.
 
+**Stand 27.09.2026 (vor dem Merge):** Jeder Befund ist gegen Code, Tests und CHANGELOG am Stand
+`b6a67ed1` geprüft und trägt eine Status-Zeile. Von 12 Befunden sind **4 behoben** (beide HOCH,
+BF-01 und BF-02, dazu BF-08 und BF-11), **2 bewusst so gelassen** (BF-03 Ranking: Entscheidung
+Simon 27.09., das Handbuch beschreibt jetzt, was die App zeigt; BF-06 Melden/Blockieren:
+Produktentscheidung, alle Chats moderiert) und **6 offen** (BF-04, BF-05, BF-07 MITTEL, für
+2.3.x vorgemerkt; BF-09, BF-10, BF-12 NIEDRIG, später). **Kein HOCH- oder KRITISCH-Befund ist
+mehr offen.** Aus „Unklar" weiter offen: „Konfi ohne Jahrgang" — `GET /konfi/dashboard` und
+`/konfi/profile` machen weiter einen inneren `JOIN jahrgaenge` (heute `konfi.js:92` und `:434`)
+und antworten ohne Jahrgang mit 404. Das passt nicht zur Regel vom 27.09. (Konfis sehen
+Events ohne Jahrgang „auch ohne eigenen Jahrgang"), ist über die Oberfläche aber weiter nicht
+erreichbar (Konfi-Anlage verlangt `jahrgang_id ≥ 1`, Jahrgang mit Konfis lässt sich nicht
+löschen); für 2.3.x vorgemerkt. Ebenfalls offen: Zeitzone der Anzeige (Gerätezone, nicht
+entschieden; später). Die Messungen unter „Auf Produktion nachzumessen" liegen beim Betrieb
+(nach dem Deploy messen).
+
 ## Release-Empfehlung für den Bereich
 
-**Mit Auflage.** Auflage: BF-01 und BF-02 vor dem Release beheben (beides Frontend-Änderungen in
+**Stand 27.09.2026 (vor dem Merge):** Die Auflage ist erfüllt — BF-01 und BF-02 sind am
+26.09. behoben (`febfeb33`, `8150b86c`). BF-03 ist entschieden (Handbuch angeglichen). Die
+Empfehlung vom 26.09. bleibt als damaliger Stand stehen und ist überholt.
+
+*Stand 26.09.2026, überholt:* **Mit Auflage.** Auflage: BF-01 und BF-02 vor dem Release beheben (beides Frontend-Änderungen in
 `konfi/views/EventDetailView.tsx` plus eine Zeile in `routes/konfi.js`, additiv), weil sie eine
 im Handbuch zugesagte Funktion für Konfis unbenutzbar machen. BF-03 (Ranking) sollte vor der
 EKD-Ausrollung entschieden werden: entweder Handbuch angleichen oder Punkte anderer ausblenden —
@@ -64,6 +83,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 ### BF-01: Von der Leitung abgemeldete Konfi kann sich nicht wieder anmelden und sieht „Offen"/„Nicht verfügbar"
 - **Schwere:** HOCH
 - **Status:** behoben 26.09.2026 — `can_register` in `GET /konfi/events` und `/konfi/events/:id/status` ist für `excused`/`opted_out` wahr (gleiche Form); Detailansicht und Liste zeigen „Abgemeldet" / „Von der Leitung abgemeldet" mit Knopf „Wieder anmelden" (auch am Pflichttermin); Tests `wiederanmeldenSichtbarUndWarteliste.test.js`, `konfiAbgemeldetUndWarteliste.test.tsx`.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt, Commit `febfeb33`.
 - **Fundstelle:** `backend/routes/konfi.js:1197-1202` (`can_register`), `frontend/src/components/konfi/views/EventDetailView.tsx:1071` (Anmelde-Knopf), `frontend/src/components/konfi/views/EventDetailView.tsx:1100-1109` („Nicht verfügbar"), `frontend/src/components/konfi/views/EventsView.tsx` (Statustext-Kette, kein Zweig für `excused`)
 - **Kennzeichnung:** reproduziert (Vitest `auditTmpEventDetailWarteliste.test.tsx`, Fall „excused"; Quelle im Scratchpad)
 - **Beschreibung:** Seit Migration 153 setzt eine Abmeldung durch die Leitung `event_bookings.status = 'excused'`. `GET /konfi/events` berechnet `can_register` als `false`, sobald **irgendeine** Buchungszeile existiert (`WHEN eb_konfi.id IS NOT NULL THEN false`). Die Detailansicht zeigt den Anmelde-Knopf nur bei `can_register`; für `excused` bleibt der deaktivierte Knopf „Nicht verfügbar". Der Statuskopf sagt „Offen" (die Kette kennt `excused` nicht), nirgends steht „abgemeldet". Das Backend erlaubt die Wiederanmeldung ausdrücklich (`utils/bookingUtils.js:891-895`, Simons Entscheidung 16.09.2026, Test `wiederanmeldenNachAbmeldung.test.js`), das Handbuch verspricht sie (`70-termine.md:536-542`: „Wieder anmelden kann sie sich aber selbst … steht der Termin für sie wieder da wie jeder andere offene Termin").
@@ -81,6 +101,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 ### BF-02: Konfi auf der Warteliste hat keinen Abmeldeweg; der angebotene Knopf läuft in einen Fehler
 - **Schwere:** HOCH
 - **Status:** behoben 26.09.2026 — Detailansicht hat für `waitlist`/`pending` einen eigenen Zweig („Du stehst auf Platz N der Warteliste", Knopf „Von der Warteliste abmelden" → bestehender Abmelde-Dialog/DELETE); das Backend nimmt Wartende von der Zwei-Tage-Frist aus (`konfi.js`, DELETE /events/:id/register); Tests wie bei BF-01.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt, Commits `febfeb33` und `8150b86c`. Fundstelle korrigiert: Die Abmelderegeln samt Ausnahme für Wartende stehen seit `8150b86c` nicht mehr in der Route, sondern in `pruefeKonfiStorno` (`backend/utils/bookingUtils.js`); `DELETE /konfi/events/:id/register` (`konfi.js`, heute ab Zeile 1668) und `DELETE /events/:id/book` (`routes/events/buchung.js`) rufen sie beide. Die im Befund genannten Zeilen `konfi.js:1628-1660` und `:1671-1680` beschreiben den Stand vom 26.09.
 - **Fundstelle:** `frontend/src/components/konfi/views/EventDetailView.tsx:328-333` (`canUnregister` verlangt `is_registered`), `:1022-1049` (Abmelden nur bei `is_registered`), `:1089-1099` (Knopf „Warteliste offen" für Wartende); Backend `backend/routes/konfi.js:1628-1660` (DELETE akzeptiert jede Buchung), `backend/utils/bookingUtils.js:894-895` (409 bei vorhandener Buchung)
 - **Kennzeichnung:** reproduziert (Vitest `auditTmpEventDetailWarteliste.test.tsx`, Fall „Warteliste")
 - **Beschreibung:** `is_registered` ist nur bei `status = 'confirmed'` wahr. Wer auf der Warteliste steht (`booking_status = 'waitlist'`), bekommt deshalb keinen Abmelden-Knopf. Weil zugleich `can_register = false` ist und der Termin voll, fällt die Ansicht in den Zweig „Warteliste offen (2/5)" — einen aktiven Knopf, der `POST /konfi/events/:id/register` ruft. Der Server antwortet 409 „Du bist bereits für dieses Event angemeldet". Der Server-Weg zum Verlassen der Warteliste existiert (`DELETE /konfi/events/:id/register` löscht jede eigene Buchung), die App bietet ihn nicht an.
@@ -97,6 +118,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 
 ### BF-03: Ranking der Startseite zeigt Namen und Punkte anderer Konfis — Handbuch verspricht das Gegenteil
 - **Schwere:** MITTEL
+- **Status:** bewusst so gelassen, Handbuch angepasst 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht) — Entscheidung Simon 27.09.2026: „Handbuch anpassen". Das Ranking bleibt, wie es ist (Namen und Punkte der Bestplatzierten, siehe Beschreibung); `docs/handbuch/10-konfis.md` beschreibt jetzt, was die App zeigt. Voreinstellung für neue Gemeinden und Klarnamen in der Antwort bleiben Feature E-06 (vor EKD-Ausrollung).
 - **Fundstelle:** `frontend/src/components/konfi/views/DashboardSections.tsx:325-360` (Podest aus `ranking[0..2]` inkl. `points`), `:506-509` (`${entry.points} Punkte`), `backend/routes/konfi.js:136-146` (`rankingSql` liefert `display_name` und `points` der Top 3), `docs/handbuch/10-konfis.md:35`
 - **Kennzeichnung:** reproduziert (Vitest `auditTmpRanking.test.tsx`, 2 Tests grün)
 - **Beschreibung:** Das Handbuch sagt: „**Dein Ranking** — dein Platz, ohne die Punkte der anderen zu zeigen". Tatsächlich liefert das Backend für die drei Bestplatzierten `display_name` und `points`, und die Ansicht rendert beides — bei eigenem Platz ≤ 3 alle drei, sonst Platz 1 mit Punktzahl. Nur die eingeschobenen Nachbarplätze sind anonym („Konfi vor dir"). `show_ranking` steht standardmäßig auf `true` (`konfi.js:335`).
@@ -112,6 +134,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 
 ### BF-04: Chat-Verlauf endet nach 100 Nachrichten — kein Blättern, ältere Nachrichten in der App unerreichbar
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — unverändert: `ChatRoom.tsx:59` und `:280` laden `?limit=100`, kein Nachladen älterer Nachrichten, kein Hinweis am Listenanfang. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `frontend/src/components/chat/ChatRoom.tsx:59`, `:280` (`?limit=100`), `:295` (nur `?after=`); Backend `backend/routes/chat.js:941-947` (Deckel 200), `:1004` (`LIMIT $2 OFFSET $3` vorhanden)
 - **Kennzeichnung:** aus Code gelesen (`grep -rn "offset" frontend/src/components/chat` → kein Treffer)
 - **Beschreibung:** Der Raum lädt einmal die letzten 100 Nachrichten und danach nur noch Neues (`after`). Es gibt kein „ältere laden", keinen Scroll-Trigger nach oben, keine Nutzung von `offset`. Das Handbuch (90-chat.md) beschreibt den Chat ohne diese Grenze; der Export („ganzer Verlauf") steht nur der Leitung offen.
@@ -121,6 +144,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 
 ### BF-05: Teamer-Termin-Detailansicht trägt den Gemeinde-Umschalter — entgegen der Regel, und der Wächter erzwingt es
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — unverändert: Keine Kopfzeile in `TeamerEventsPage.tsx` schaltet den Umschalter ab (0 Treffer für `gemeindeUmschalter`), und der Wächter `umschalterInDetailansichten.test.ts` verlangt das weiter. Für 2.3.x vorgemerkt.
 - **Fundstelle:** `frontend/src/components/teamer/pages/TeamerEventsPage.tsx:904-907` (Kopfzeile der Detailansicht ohne `gemeindeUmschalter={false}`), `:2022` (Jahrgang-Hinweis, ebenfalls ohne), `frontend/src/__tests__/components/umschalterInDetailansichten.test.ts:112-124` („die Listen behalten ihn": verlangt für **jede** Kopfzeile in `TeamerEventsPage.tsx`, dass sie **nicht** abschaltet)
 - **Kennzeichnung:** aus Code gelesen; Wächter `umschalterInDetailansichten.test.ts` ausgeführt (grün — und genau das ist der Befund)
 - **Beschreibung:** Commit 54b0d88 legt fest: „Eine Detailansicht zeigt EINEN Gegenstand, und der gehört zu genau einer Gemeinde. Ein Wechsel führt dort ins Leere." Die Konfi- und Leitungs-Detailansicht schalten ab; die Teamer-Detailansicht lebt inline in `TeamerEventsPage` (`renderDetail`) und trägt ihn weiter. Der Wächter behandelt die ganze Datei als „Liste" und würde die Korrektur rot machen — dieselbe Wächter-Falle, die 878ca24 für die Leitung beschreibt.
@@ -136,7 +160,8 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 - **Empfehlung:** In `renderDetail` und `renderJahrgangHinweis` `gemeindeUmschalter={false}` setzen; den Wächter für `TeamerEventsPage.tsx` wie für `TeamerMaterialPage.tsx` (Test `:96-108`) auf „Liste behält, Detail schaltet ab" umstellen.
 
 ### BF-06: Keine Möglichkeit, Nachrichten oder Personen im Chat zu melden oder zu blockieren
-- **Schwere:** MITTEL
+- **Schwere:** MITTEL (die Gesamtabnahme führt ihn seit dem 26.09. als NIEDRIG, S-16)
+- **Status:** bewusst so gelassen (Entscheidung Simon 26.09.2026: alle Chats sind moderiert, Konfi-zu-Konfi-Chat gibt es nicht; Gesamtabnahme Punkt 31) — am Code geprüft: `POST /chat/direct` weist Konfi an Konfi mit 403 ab (heute `chat.js:541-542`), Gruppen mit Konfis untereinander ebenso (`:735-738`); Konfis treffen einander nur in Räumen, die die Leitung liest. „Nachricht melden" bleibt Feature E-15. Offen ist nur, ob die Store-Prüfung für Apps mit nutzergenerierten Inhalten einen Meldeweg verlangt — vor EKD-Ausrollung klären.
 - **Fundstelle:** `frontend/src/components/chat/MessageBubble.tsx` (Aktionsleiste: Antworten, Teilen, Reagieren, Löschen nur eigene), `frontend/src/components/chat/useChatVerwaltung.ts` (Optionen: Verlassen, Exportieren, Leeren), `backend/routes/chat.js` (keine Route für Meldung/Block)
 - **Kennzeichnung:** aus Code gelesen (`grep -rni "melden|blockier|report|missbrauch" frontend/src/components/chat backend/routes/chat.js` → keine fachlichen Treffer)
 - **Beschreibung:** Konfis (13–14 Jahre) chatten in Jahrgangs-, Gruppen- und Termin-Chats miteinander und mit dem Team. Es gibt keinen Weg, eine Nachricht zu melden oder eine Person zu blockieren; Konfis dürfen fremde Nachrichten nicht löschen (richtig). Die einzige Eskalation ist, die Leitung selbst anzuschreiben. Das Handbuch (90-chat.md) beschreibt keine Meldefunktion; App-Store-Richtlinien für Apps mit nutzergenerierten Inhalten verlangen üblicherweise einen Melde- und Blockierweg.
@@ -146,6 +171,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 
 ### BF-07: Teamer:innen können den Rückblick-Hinweis nur einmal für immer wegklicken — Backend liefert keine Ausgabe-Id
 - **Schwere:** MITTEL
+- **Status:** offen 27.09.2026 — unverändert: `GET /teamer/dashboard` liefert kein `wrapped_ausgabe_id` (0 Treffer in `teamer.js`), der Schlüssel in `TeamerDashboardPage.tsx` (heute Zeile 375) endet weiter auf `_alt`. Für 2.3.x vorgemerkt (vor dem Team-Rückblick am 6. Januar).
 - **Fundstelle:** `frontend/src/components/teamer/pages/TeamerDashboardPage.tsx:372` (`wrapped_hinweis_t_${user.id}_${dashboardData?.wrapped_ausgabe_id ?? 'alt'}`), `backend/routes/teamer.js:847` (Antwort `{ greeting, certificates, events, badges, config, has_wrapped, konfspruch }` — kein `wrapped_ausgabe_id`), `docs/handbuch/95-wrapped.md:511-514`
 - **Kennzeichnung:** aus Code gelesen (`grep -n wrapped_ausgabe_id backend/routes/teamer.js` → kein Treffer)
 - **Beschreibung:** Der Konfi-Weg merkt sich das Wegklicken pro Ausgabe (`konfi.js` liefert `wrapped_ausgabe_id`). Der Teamer-Weg baut denselben Schlüssel, bekommt aber nie eine Id → Schlüssel endet immer auf `_alt`. Das Handbuch verspricht für beide Karten: „die nächste Ausgabe meldet sich wieder".
@@ -155,6 +181,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 
 ### BF-08: Chat-Dateigrenze: App prüft 10 MB, Server nimmt 5 MB — Datei dazwischen scheitert nach dem Upload
 - **Schwere:** MITTEL
+- **Status:** behoben 27.09.2026 — Die App prüft im Chat die Grenze des Servers, 5 MB, auf demselben Weg wie bei Challenges und Material (Fotos werden vorher verkleinert, ein Satz für „zu groß"); der „bekannte Stolperstein" ist aus `90-chat.md` gestrichen. Commit `c67ac3c8` (Medien: Verkleinerung und Größengrenze beim Hochladen).
 - **Fundstelle:** `frontend/src/components/chat/useChatDateien.ts:82-86` (`10 * 1024 * 1024`), `backend/createApp.js:196` (`fileSize: 5 * 1024 * 1024`), `:616` (413 „Datei ist zu groß (max. 5 MB).")`, `docs/handbuch/90-chat.md` („Achtung, bekannter Stolperstein")
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Das Handbuch dokumentiert den Widerspruch bereits als „bekannten Stolperstein"; er besteht unverändert. Eine Datei zwischen 5 und 10 MB (etwa ein 40-Sekunden-Video) passiert die App-Prüfung, wird hochgeladen, der Server antwortet 413. `ChatRoom.sendMessage` fängt den Fehler, reiht die Nachricht in die Warteschlange und flusht; `writeQueue.ts:552-560` behandelt 4xx als endgültig → die Blase wechselt auf „fehlgeschlagen" mit „Erneut senden", was wieder scheitert.
@@ -164,6 +191,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 
 ### BF-09: Doppeltipp auf „Anmelden" schickt zwei Anmeldungen — der zweite Versuch zeigt einen Fehler trotz Erfolg
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert: `doRegister` (heute `EventDetailView.tsx:354`) läuft ohne `useActionGuard`. Später.
 - **Fundstelle:** `frontend/src/components/konfi/views/EventDetailView.tsx:352-378` (`doRegister` ohne `useActionGuard`), `:1071-1088` (Knopf ohne `disabled` während des Sendens)
 - **Kennzeichnung:** reproduziert (Vitest `auditTmpEventDetailWarteliste.test.tsx`, Fall „Doppeltipp": 2 POSTs, `setError('Du bist bereits für dieses Event angemeldet')`)
 - **Beschreibung:** Die Modals des Bereichs nutzen `useActionGuard` (ActivityRequestModal, ChallengeSubmitModal, UnregisterModal); die Anmeldung im Termin-Detail nicht. Der Server ist idempotent (409 beim zweiten), der Nutzer sieht aber die Fehlermeldung des zweiten Aufrufs, obwohl die Anmeldung geklappt hat.
@@ -173,6 +201,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 
 ### BF-10: QR-Scanner liest `isOnline` und `scanning` aus einer veralteten Closure
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert: Der Scan-Callback entsteht im Mount-Effekt und liest `isOnline` aus dem ersten Rendern. Später.
 - **Fundstelle:** `frontend/src/components/konfi/modals/QRScannerModal.tsx:34-65` (`useEffect(..., [])` legt den Scan-Callback einmal an), `:67-70` (`if (scanning) return; if (!isOnline) ...`)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Der QrScanner-Callback wird im Mount-Effekt erzeugt und sieht `isOnline`/`scanning` vom ersten Rendern. Geht das Gerät nach dem Öffnen offline, greift die Prüfung nicht; statt „Du bist offline" kommt der Fallback „QR-Code konnte nicht verarbeitet werden" (Netzfehler ohne Servertext). Den Doppel-Scan verhindert praktisch `scanner.stop()`, nicht der `scanning`-Merker.
@@ -182,6 +211,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 
 ### BF-11: `npm run lint` schlägt im Bereich mit 3 Fehlern fehl; die CI prüft nur geänderte Dateien
 - **Schwere:** NIEDRIG
+- **Status:** behoben 26.09.2026 — die drei ungenutzten Importe (`formatDate`, `formatDateLong`, `IonNote`) sind entfernt (Commit `4c8fb30d`, 19 ESLint-Fehler im Frontend-Bestand, danach `npx eslint .` ohne Fehler); die CI lintet seitdem den ganzen Frontend-Baum bei jedem Push (`ci.yml`, Schritt „Lint", `npx eslint .`), nicht mehr nur geänderte Dateien.
 - **Fundstelle:** `frontend/src/components/konfi/views/EventDetailView.tsx:56` (`formatDate` ungenutzt), `frontend/src/components/teamer/pages/TeamerEventsPage.tsx:66` (`formatDateLong` ungenutzt), `frontend/src/components/shared/PushAuswahl.tsx:14` (`IonNote` ungenutzt); `.github/workflows/ci.yml:160-178`
 - **Kennzeichnung:** reproduziert (`npx eslint src/components/{konfi,teamer,chat,wrapped,shared}` → „3 errors, 197 warnings", Exit 1; Protokoll `scratchpad/app-screens-konfi-teamer/eslint.log`)
 - **Beschreibung:** Die CI-Kommentare behaupten „no-unused-vars … stehen aktuell auf null". Drei `@typescript-eslint/no-unused-vars`-Fehler liegen im Bereich; da die CI nur im PR geänderte Dateien lintet, blockieren sie erst, wenn jemand diese Dateien anfasst — dann aber mit fremden Altfehlern.
@@ -191,6 +221,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 
 ### BF-12: Kleinere Hygiene: Chat-Raum-Typ kennt keine Teamer:innen, Badges-Seite leer ohne Profilantwort
 - **Schwere:** NIEDRIG
+- **Status:** offen 27.09.2026 — unverändert: `ChatRoomView.tsx:22` kennt `user_type` nur als `'admin' | 'konfi'`, `KonfiBadgesPage.tsx:112` verwirft die Liste ohne Profilantwort. Später.
 - **Fundstelle:** `frontend/src/components/chat/views/ChatRoomView.tsx:22` (`user_type: 'admin' | 'konfi'`), `frontend/src/components/konfi/pages/KonfiBadgesPage.tsx:112` (`if (!badgeData || !konfiData) return [];`)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** (a) `ChatRoomData.participants[].user_type` fehlt `'teamer'`, obwohl `chat_participants.user_type` ihn seit langem führt (`types/chat.ts` kennt `ChatUserType`); `ChatRoom` liest daraus `partnerType`. (b) Die Badges-Seite verwirft die komplette Abzeichenliste, wenn `GET /konfi/profile` (nur als Rückfall für den Punkte-Fortschritt gebraucht) noch nicht oder nicht mehr geladen ist — die Kopfzahlen aus `stats` stehen dann neben „Keine Badges gefunden".

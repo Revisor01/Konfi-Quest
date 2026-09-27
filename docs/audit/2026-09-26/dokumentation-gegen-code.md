@@ -59,9 +59,27 @@ während `release-notes-de.txt` sie schon trägt.
 
 Befunde: **0 KRITISCH, 0 HOCH, 8 MITTEL, 12 NIEDRIG.**
 
+**Stand 27.09.2026 (vor dem Merge):** Jeder Befund ist gegen Code, Doku und CHANGELOG am
+Stand `b6a67ed1` geprüft und trägt genau eine Status-Zeile (BF-17 trug zwei). Von 20
+Befunden sind **15 behoben** (BF-01 bis BF-07, BF-09 bis BF-12, BF-14, BF-17, BF-19, BF-20;
+bei BF-04 und BF-05 kamen Reste hinzu, die vor dem Merge behoben werden: die Rechte-Tabelle
+für Challenges nach der Regel vom 27.09. und Build-Nummern und Begriffe der Store-Texte),
+**2 teilweise behoben** (BF-08: Stand der Datenschutzerklärung aktualisiert, der Rest liegt
+bei Simon, vor EKD-Ausrollung; BF-15: Rest später), **2 offen** (BF-13 Sitemap, BF-18
+unreferenzierte Bilder; beide NIEDRIG, später) und **1 entfällt** nach Entscheidung Simon
+(BF-16, kein Betriebs-Kapitel). Einen HOCH- oder KRITISCH-Befund gab es in diesem Bereich
+nicht. Aus „Unklar" weiter offen: das Auslösen der Konfi-Kontingent-Meldung ist nicht getestet
+(später); `/api/status` meldet seit BF-10 die App-Version, nach dem Deploy messen.
+
 ## Release-Empfehlung für den Bereich
 
-**mit Auflage.** Die Doku blockiert das Release nicht, aber drei Dinge müssen vor dem
+**Stand 27.09.2026 (vor dem Merge):** Die Auflage ist erfüllt — `docs/store-texte-2.3.0.md`
+liegt vor (BF-05, mit den Korrekturen vor dem Merge), die Handbuch-Aussagen zu Rechten und
+Sicherheit sind korrigiert (BF-02, BF-03, BF-04), die `preferences`-Routen stehen in
+Tabelle C (BF-06). Die Empfehlung vom 26.09. bleibt als damaliger Stand stehen und ist
+überholt.
+
+*Stand 26.09.2026, überholt:* **mit Auflage.** Die Doku blockiert das Release nicht, aber drei Dinge müssen vor dem
 Einreichen erledigt sein: (1) `docs/store-texte-2.3.0.md` anlegen und gegen
 CHANGELOG und `release-notes-de.txt` lesen (BF-05); (2) die vier falschen
 Handbuch-Aussagen zu Rechten und Sicherheit korrigieren (BF-02, BF-03, BF-04) und die
@@ -159,6 +177,7 @@ abreißt.
 ### BF-04: Rechte-Tabelle und Teamer-Kapitel widersprechen sich und dem Code bei Challenges
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — Tabelle in `05-rollen.md`: Teamer:in „nur eigene Jahrgänge" beim Anlegen und Begleiten, neue Zeile „Challenges und Beiträge löschen" nur Admin/Org-Admin; `20-teamer.md` nennt das Löschen als Leitungssache. Geprüft: `challenges.js` POST/PUT/moderate/export `requireTeamer`, beide DELETE `requireAdmin`; `ChallengesManageView.tsx` `darfLoeschen`.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Die Tabelle „Nachschlagen, wer was darf" in `05-rollen.md` (Zeile „Challenges anlegen und begleiten", heute Zeile 117) stimmt nach der Regel vom 27.09. (CLAUDE.md, „Wer sieht und bekommt was"; Challenges mit drei Zielgruppen, `da9bc4bc`) nicht mehr: Admins stehen dort mit „ja" statt „nur eigene Jahrgänge", und Teamer:innen haben bei Challenges „Nur das Team" Zugriff ohne Jahrgang. Behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht).
 - **Fundstelle:** `docs/handbuch/05-rollen.md:117` („Challenges anlegen und begleiten
   | — | — | ja | ja" — Teamer:in: nein); `docs/handbuch/20-teamer.md:52-56`
   („anlegen und bearbeiten, löschen, Beiträge freigeben …");
@@ -186,6 +205,7 @@ abreißt.
 ### BF-05: Store-Texte für 2.3.0 fehlen, `release-notes-de.txt` ist schon umgestellt
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — `docs/store-texte-2.3.0.md` angelegt (iOS-Text 1.8 k Zeichen ohne Plattform-Wörter, Play-Text unter 500 Zeichen mit Postfach und Push-Reparatur, Screenshot-Liste, Konsolen-Angaben mit offener Datenschutz-Frage zur Multi-Gemeinde); `frontend/release-notes-de.txt` auf den Play-Text gesetzt.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Zwei Stellen stimmten nicht mehr: `docs/store-texte-2.3.0.md` nannte Android versionCode 124 und iOS-Build 230, `frontend/version.json` steht inzwischen auf **125 / 231**; und der iOS-Text sagte noch „Termine"/„Abzeichen", während App und Handbuch seit der Begriffsentscheidung vom 27.09. „Events"/„Badges" sagen (UI BF-10). Behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht).
 - **Fundstelle:** `docs/store-texte-2.2.0.md` (letzte Fassung), `frontend/release-notes-de.txt`
   (489 Zeichen, Inhalt 2.3.0), `.github/workflows/android-release.yml:120`,
   `.github/workflows/ios-release.yml:48-61`
@@ -283,6 +303,7 @@ abreißt.
 ### BF-08: Datenschutz-Dokumentation nicht auf dem Stand von 2.3.0; Rechenschaftsunterlagen fehlen
 - **Schwere:** MITTEL
 - **Status:** offen 26.09.2026 — nicht Teil des Doku-Pakets: Datenschutzerklärung, Verarbeitungsverzeichnis, TOM und AVV sind Rechtsfragen (Sammelbefund S-20). Die offene Frage zur Sichtbarkeit in einer zweiten Gemeinde ist in `docs/store-texte-2.3.0.md` (Konsolen-Angaben) benannt, nicht entschieden.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** **teilweise behoben.** Lücke 1 ist zu: Die Erklärung trägt „Stand: September 2026", der Abschnitt zur Nutzungsmessung ist am 27.09. nachgezogen (`7428d316`, `8fbefc85`). Lücke 2 (Mitarbeit in mehreren Gemeinden: was wer sieht, wer zustimmt) steht weiter nicht darin (0 Treffer für „mehrere Gemeinden", „weitere Gemeinde", „Mitgliedschaft"), Lücke 3 (Verzeichnis der Verarbeitungstätigkeiten, TOM, AVV oder ein Verweis, wo sie liegen) ebenso. Liegt bei Simon, vor EKD-Ausrollung. Dazu gehört auch die engere Beschreibung der Absturzdiagnose (Grundgerüst BF-13).
 - **Fundstelle:** `frontend/public/datenschutz.html:337` („Stand: Juni 2026"),
   Abschnitte 9a (Umami, ergänzt Commit `0ad9ded3` vom 10.08.2026) und 9b (Crashlytics,
   ergänzt `a67b6a01` vom 24.09.2026); `backend/routes/einladungen.js`,
@@ -338,7 +359,7 @@ abreißt.
 
 ### BF-10: CHANGELOG `[Unreleased]` verletzt das eigene Format an mehreren Stellen
 - **Schwere:** NIEDRIG
-- **Status:** behoben 26./27.09.2026 — der Teil Store-Texte/Versionsstände: `docs/store-texte-2.3.0.md` angelegt und `frontend/version.json` dort als die eine Quelle (2.3.0 / Android 124 / iOS 230) dokumentiert. **Punkte 1–4 behoben 26.09.2026** (Koordination, nach dem letzten Paket, `e4c940df` und Folge-Commit): neun Überschriften → fünf in Keep-a-Changelog-Reihenfolge; Satz zur zweiten Mitgliedschaft nennt beide Wege; „Mitteilungen prüfen" (beide Einträge) und „Absturzmeldung prüfen" gestrichen, dazu vier Einträge zur Glockenzahl und ein doppelter zur Symbolleiste (alles Unreleased-intern) sowie drei sich widersprechende Einträge zum Gemeinde-Umschalter durch einen ersetzt, der dem Code entspricht; „Ionic-Bedienelemente" → „eingebaute Bedienelemente". 168 → 164 Einträge. **Punkte 5 und 6 behoben 27.09.2026:** CLAUDE.md benennt die Build-Zeile unter der Versionsüberschrift als einzige erlaubte Stelle für Build-Nummern und hat einen Abschnitt „Versionsnummern" (eine Quelle, `npm run version:setzen`, wann PATCH/MINOR/MAJOR); die drei `package.json` samt Lockfiles stehen auf 2.3.0, `/api/status` meldet 2.3.0, Test `versionsnummernEineQuelle` wacht. Damit ist BF-10 vollständig behoben.
+- **Status:** behoben 26./27.09.2026 — der Teil Store-Texte/Versionsstände: `docs/store-texte-2.3.0.md` angelegt und `frontend/version.json` dort als die eine Quelle (2.3.0 / Android 124 / iOS 230 — Nachtrag 27.09.: inzwischen 125 / 231, siehe BF-05) dokumentiert. **Punkte 1–4 behoben 26.09.2026** (Koordination, nach dem letzten Paket, `e4c940df` und Folge-Commit): neun Überschriften → fünf in Keep-a-Changelog-Reihenfolge; Satz zur zweiten Mitgliedschaft nennt beide Wege; „Mitteilungen prüfen" (beide Einträge) und „Absturzmeldung prüfen" gestrichen, dazu vier Einträge zur Glockenzahl und ein doppelter zur Symbolleiste (alles Unreleased-intern) sowie drei sich widersprechende Einträge zum Gemeinde-Umschalter durch einen ersetzt, der dem Code entspricht; „Ionic-Bedienelemente" → „eingebaute Bedienelemente". 168 → 164 Einträge. **Punkte 5 und 6 behoben 27.09.2026:** CLAUDE.md benennt die Build-Zeile unter der Versionsüberschrift als einzige erlaubte Stelle für Build-Nummern und hat einen Abschnitt „Versionsnummern" (eine Quelle, `npm run version:setzen`, wann PATCH/MINOR/MAJOR); die drei `package.json` samt Lockfiles stehen auf 2.3.0, `/api/status` meldet 2.3.0, Test `versionsnummernEineQuelle` wacht. Damit ist BF-10 vollständig behoben.
 - **Fundstelle:** `CHANGELOG.md:12,123,181,187,206,215,221,410` (Abschnittsüberschriften),
   `:19-27` (Widerspruch), `:182` vs `:325`, `:207`, `:406`, `:3-8` (Kopf);
   `package.json:3` (`2.9.0`), `backend/package.json:3` (`1.0.1`),
@@ -420,6 +441,7 @@ abreißt.
 ### BF-13: Sitemap-Erzeugung nicht reproduzierbar, von der CI nicht geprüft
 - **Schwere:** NIEDRIG
 - **Status:** offen 26.09.2026 — Generator- und CI-Änderung, gehört zum CI-Paket (Sammelbefund S-21). Im Doku-Paket wurde `frontend/public/sitemap.xml` deshalb nach jedem Generatorlauf bewusst zurückgesetzt und nicht eingecheckt.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** weiter offen — die CI-Pakete haben die Sitemap nicht aufgenommen (Behebungsbericht, „Was offen bleibt"). Später.
 - **Fundstelle:** `scripts/build-handbuch.mjs:699-707` (`statSync(...).mtime`),
   `:744` (`heute()` für `/docs/`), `.github/workflows/ci.yml:210-219`
 - **Kennzeichnung:** reproduziert (`node scripts/build-handbuch.mjs && git diff --stat frontend/public/sitemap.xml` → `1 file changed, 10 insertions(+), 10 deletions(-)`; danach `git restore frontend/public/sitemap.xml`)
@@ -458,6 +480,7 @@ abreißt.
 ### BF-15: Code-Kommentare mit veralteten Zahlen und toten Dateiverweisen
 - **Schwere:** NIEDRIG
 - **Status:** teilweise behoben 26.09.2026 — `rbac.js`: 345 → 474 Stellen mit Zähldatum; `build-api-docs.mjs`: Kommentar sagt jetzt, dass bewusst kein Datum geschrieben wird; `build-handbuch.mjs`: „dreizehn Kapitel" → 14, „28 Abschnitte" → 27 (beide mit Zähldatum), „Zwölf Kapitel" als damaliger Stand gekennzeichnet; tote Verweise in `konfi-management.js` (`events.js: syncEventChat` → `utils/eventChat.js`) und `konfiStammdatenBearbeiten.test.ts` (`BAUSTELLEN.md`) ersetzt. Nicht angefasst: der CSS-Kommentar „zwoelf Punkte" im Handbuch-Stylesheet (er landet in allen 15 erzeugten Seiten — eine Textkorrektur, die 15 Erzeugnisse umschreibt, lohnt nicht) und die historischen `events.js:NNN`-Verweise in Tests und `EventDetailView.tsx` (Dateien anderer Pakete, Verweise als Historie lesbar); `openapi.js` war nicht mehr auffindbar.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt; der Rest (CSS-Kommentar im Handbuch-Stylesheet, historische `events.js:NNN`-Verweise) bleibt offen, später.
 - **Fundstelle:** `backend/middleware/rbac.js:297` („345-mal … nur einmal aus der
   Anfrage"); `scripts/build-api-docs.mjs:191-195`; `scripts/build-handbuch.mjs:29,373,584-586`;
   Dateiverweise auf `routes/events.js`, `events.js`, `BAUSTELLEN.md`, `openapi.js`
@@ -502,8 +525,9 @@ abreißt.
 
 ### BF-17: Handbuch-Stil: 45 von 268 Überschriften sind Substantive, eine Stelle blickt zurück
 - **Schwere:** NIEDRIG
-- **Status:** teilweise behoben 26.09.2026 — `70-termine.md` blickt bei älteren Absagen nicht mehr zurück. Die Substantiv-Überschriften bleiben: „Events", „Konto", „Verwaltung (nur Org-Admin)" und „Inhalt" benennen Reiter und Abschnitte so, wie die App sie beschriftet, `#verwaltung-nur-org-admin` ist fünfmal verlinkt, und ob „Events" im Handbuch zu „Termine" wird, hängt an der offenen Begriffsentscheidung (UI BF-10).
 - **Status:** behoben 27.09.2026 — Begriffsentscheidung gefallen (Events, Badges, Challenges, Stempel; UI BF-10), „Events" bleibt also. 26 Überschriften zu Tätigkeiten umgeschrieben (z. B. „Wer darf was" → „Nachschlagen, wer was darf", „Was ohne Netz geht" → „Erkennen, was ohne Netz geht", „Konfis kommen neu dazu: der Einladungscode" → „Konfis mit einem Einladungscode aufnehmen", „Wo ein abgesagtes Event steht" → „Ein abgesagtes Event wiederfinden"), 26 Anker geändert und 19 Verweise nachgezogen (App, Website, Backend und API-Doku verlinken keinen davon; geprüft von `handbuchVerweise.test.ts`). Gezählt mit der Heuristik dieses Befunds (letztes Wort kein Infinitiv, kein „Wissen,/Verstehen,…"-Anfang; Stand 1eec4910 mit 279 Überschriften): 64 → 38 von 280. Die 38 bleiben bewusst: 28 zitieren wörtlich eine Beschriftung der App — die Rollen „Konfi", „Teamer:in", „Admin", „Org-Admin" (05), die Bereiche „Events" und „Aktivitäten" unter „Mitmachen" (10, 20, 30), die Abschnitte „Konto", „Verwaltung (nur Org-Admin)", „Inhalt" unter „Mehr" (30) und die 15 Bedingungsnamen (60, h4); 3 zählen die drei Wege zu Punkten auf („Über eine Aktivität/ein Event/Bonuspunkte", 40); 7 sind ganze Sätze, keine Substantive (35: „Weg 1: Die Leitung setzt ein neues Passwort", „Kurze Abstecher sperren nicht", „Die Einstellung gilt nur auf diesem Gerät"; 45: „Neue Punkte werden blockiert", „Bestehende Punkte bleiben — zählen aber nicht mehr"; 95: „Die Überschrift entsteht von selbst", „Am 6. Januar geht es von allein").
+- **Früherer Stand (überholt):** teilweise behoben 26.09.2026 — `70-termine.md` blickt bei älteren Absagen nicht mehr zurück. Die Substantiv-Überschriften bleiben: „Events", „Konto", „Verwaltung (nur Org-Admin)" und „Inhalt" benennen Reiter und Abschnitte so, wie die App sie beschriftet, `#verwaltung-nur-org-admin` ist fünfmal verlinkt, und ob „Events" im Handbuch zu „Termine" wird, hängt an der offenen Begriffsentscheidung (UI BF-10).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Der Befund trug zwei Status-Zeilen; die ältere ist als früherer Stand gekennzeichnet, gültig ist „behoben 27.09.2026".
 - **Fundstelle:** z. B. `05-rollen.md:18,28,35,46` („### Konfi", „### Teamer:in",
   „### Admin", „### Org-Admin"), `10-konfis.md:78`/`20-teamer.md:71`/`30-leitung.md:100`
   („### Events"), `30-leitung.md:173,180,188` („### Konto", „### Verwaltung (nur
@@ -525,6 +549,7 @@ abreißt.
 ### BF-18: 27 unreferenzierte Bildschirmfotos werden mitgespiegelt und ausgeliefert
 - **Schwere:** NIEDRIG
 - **Status:** offen 26.09.2026 — Generator-Änderung, gehört mit den Screenshots zum UI-/Toolchain-Paket (Sammelbefund S-17). Die 42 neu zu ziehenden Bilder und die 15 vom Handbuch referenzierten sind in `docs/store-texte-2.3.0.md` aufgeführt.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** weiter offen — `build-handbuch.mjs` spiegelt weiter alle Bilder aus `docs/screenshots/`. Später; sinnvoll zusammen mit dem Neuziehen der Bilder nach dem Deploy (UI BF-09).
 - **Fundstelle:** `scripts/build-handbuch.mjs:531-548` (kopiert alle PNGs aus
   `docs/screenshots/*/`), `frontend/public/docs/bilder/` (30 MB, 42 Dateien)
 - **Kennzeichnung:** reproduziert (Verweise aus `docs/handbuch/*.md` gegen
@@ -559,6 +584,7 @@ abreißt.
 ### BF-20: Handbuch nennt `moin@konfi-quest.de` als Absender, der Code-Standard ist `noreply@`
 - **Schwere:** NIEDRIG
 - **Status:** offen 26.09.2026 — nur auf Produktion prüfbar (`SMTP_FROM`/`SMTP_USER`); das Handbuch nennt weiter `moin@konfi-quest.de`, bis die Messung vorliegt (siehe „Auf Produktion nachzumessen").
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** **behoben** (gemessen, kein Fehler) — Der lokale Agent hat in Produktion nachgesehen: `SMTP_FROM` ist nicht gesetzt, `SMTP_USER` ist die `moin@`-Adresse; der Absender lautet damit `Konfi Quest <moin@…>`, wie das Handbuch sagt (`docs/auftraege/lokaler-agent/01-vor-dem-deploy.md`, Commit `7881ecfc`). Nichts zu ändern, solange Simon keinen anderen Absender will. Die Probe-Mail nach dem Deploy steht als Auftrag aus (`03-nach-dem-deploy.md`).
 - **Fundstelle:** `docs/handbuch/35-passwoerter.md:95` („Die Mails kommen von
   `moin@konfi-quest.de`"); `backend/services/emailService.js:58`
   (`SMTP_FROM || \`Konfi Quest <${SMTP_USER || 'noreply@konfi-quest.de'}>\``),

@@ -56,9 +56,30 @@ das Stylesheet als Text prüfen, nicht das Ergebnis.
 **Befunde: 0 KRITISCH, 2 HOCH, 7 MITTEL, 3 NIEDRIG.** Die drei wichtigsten: Anmeldeseite
 unlesbar (BF-01), Dashboard-Verläufe (BF-02), iOS-Karten ohne Token (BF-03).
 
+**Stand 27.09.2026 (vor dem Merge):** Jeder Befund ist gegen Code, Tests und CHANGELOG am
+Stand `b6a67ed1` geprüft und trägt eine Status-Zeile. Von 12 Befunden sind **9 behoben**
+(beide HOCH, BF-01 und BF-02, dazu BF-03 bis BF-08 und BF-11) und **3 teilweise behoben**
+(BF-09: die gerenderte Messung läuft von Hand, nicht in der CI, für 2.3.x vorgemerkt; BF-10:
+die 17 Flächen-Hexwerte der Kriterien, später; BF-12: keine dunklen Bilder, kein visueller
+Regressionstest, später). **Kein HOCH- oder KRITISCH-Befund ist mehr offen.** Neu bei der
+Prüfung vor dem Merge (nur am Code abgeleitet, nicht gerendert): Umfrage-Optionen im Chat
+hatten im Dunkeln einen weißen Grund unter heller Schrift — behoben vor dem Merge, Nachtrag
+an BF-09. Bewusst so gelassen (Entscheidung Simon 27.09.2026, pauschal zu den Farben): die
+eigene Chat-Blase, die Kopfbanner der Event-Details und „Event absagen" auf dunkler Karte.
+Offen, später: Teilen-Bild des Rückblicks im Dunkeln nicht ausgelöst (Unklar). Am Gerät
+nach dem Deploy (Simon): weißer Blitz beim Kaltstart, Statusleiste iOS, Sichtung auf iPhone
+und Android (Auflage 18a der Gesamtabnahme). Nebenbei: Der CHANGELOG führt die Korrektur der
+Eck-Marken und des Badge-Rings im Dunkeln (Paket K2) unter „Sonstiges" statt „Behoben".
+
 ## Release-Empfehlung für den Bereich
 
-**Mit Auflage.** Der Dunkelmodus bricht nichts und ist kein Absturz- oder Datenrisiko, aber die
+**Stand 27.09.2026 (vor dem Merge):** Die Auflage ist erfüllt — BF-01, BF-02, BF-03 und
+BF-07 sind seit dem 26.09. behoben, dazu der größte Teil der 2.3.x-Liste (Bausteine 1–3 und
+ein Teil von 4 des empfohlenen Wegs). Offen aus der Auflage ist nur die Sichtung der vier
+Screens dunkel auf einem iPhone (liegt bei Simon, nach dem Deploy). Die Empfehlung vom 26.09.
+bleibt als damaliger Stand stehen und ist überholt.
+
+*Stand 26.09.2026, überholt:* **Mit Auflage.** Der Dunkelmodus bricht nichts und ist kein Absturz- oder Datenrisiko, aber die
 Anmeldeseite — der erste Screen jedes Konfis — hat im Dunkeln Links mit 1,4:1, und die Dashboards
 zeigen weiße Schrift auf Pastell. Auflage vor dem Store-Release: BF-01, BF-02, BF-03 und BF-07
 beheben (zusammen wenige Stunden, alle mit Fundstelle und Zielwert unten), danach die vier
@@ -288,6 +309,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 
 - **Schwere:** MITTEL (Verstoß gegen CLAUDE.md: „Ein grüner Test beweist nichts, wenn er den Fehlerfall nicht erreicht“)
 - **Status:** behoben 26.09.2026 — Bausteine 1–3 eingebaut (104 → 33 Verstöße), Paket K2 hat die vier Restmuster geprüft, zwei behoben und eines als Messfehler entlarvt (Abschnitt „Nachmessung“, Unterabschnitt Paket K2). Baustein 4 steht als wiederholbarer Test: `npm --prefix frontend run dunkelmodus:messen -- --url <Vite>` (`frontend/scripts/dunkelmodus-messen.mjs`) misst gerendert 47 Seitenzustände × hell/dunkel × iOS/Android (188 Zustände) plus die Auflagen BF-01/02/03/04/07/08 in einem echten Chromium — Kontraste gegen den nächsten deckenden Grund inklusive Ionics Shadow-DOM-Flächen und flacher Überlagerungen, helle Flächen im Dunkeln —, schreibt eine Ergebnisdatei (`--out`), vergleicht gegen die begründete Restliste `frontend/scripts/dunkelmodus-restliste.json` und endet mit Exit 1 bei jedem Verstoß außerhalb der Liste. Kein CI-Anschluss (kein laufender Stack in der Pipeline); die Restliste selbst sichert `dunkelmodus.test.ts` (Grund je Eintrag, kein pauschaler Dunkel-Eintrag, Chat-Blase enthalten). Letzter voller Lauf 26.09.2026: dunkel 48 Messstellen in 12 von 94 Zuständen (16 eigene Chat-Blase, 30 Kopfbanner der Termindetails — beide in beiden Modi —, 2 Danger-Knopf „Event absagen“ 4,39:1 als einzige dunkelspezifische Stelle; alle drei Nebenbefunde mit Grund in der Restliste), 0 helle Flächen; hell 93 Messstellen in 23 Zuständen, alle in der Restliste (UI-Audit BF-04); Auflagen 0 offen; **Exit 0**, Laufzeit 697 s.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand genauer: **teilweise behoben.** Die Messung gibt es als wiederholbaren Lauf, aber nur von Hand gegen einen laufenden Stack — kein CI-Schritt ruft `dunkelmodus:messen`, die CI prüft weiter nur das Stylesheet als Text. Damit kann eine Farbänderung den Dunkelmodus wieder zurückwerfen, ohne dass die CI rot wird — genau der Befund. CI-Anschluss für 2.3.x vorgemerkt. Die Messung deckt außerdem nicht jeden Zustand ab („Nicht geprüft": Umfrage, Datei-Viewer, Aktionsblatt im Chat u. a.). Ein Beispiel dafür, am Code gefunden: **Umfrage-Optionen im Chat** — `MessageBubble.tsx:484` setzt den Grund einer nicht gewählten Option als Literal `'white'`, die Schrift folgt dem Modus; im Dunkeln helle Schrift auf weißem Grund (nur am Code abgeleitet, nicht gerendert gemessen). Behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht).
 - **Fundstelle:** `frontend/src/__tests__/components/dunkelmodus.test.ts` (39 Tests in drei Dateien, alle
   grün: `npx vitest run src/__tests__/components/dunkelmodus.test.ts src/__tests__/components/dunkelmodusJsFarben.test.ts src/__tests__/config/systemBars.test.ts`),
   Kontrastprüfung `:222-236` (9 Tokens auf einem Grund), Ausnahmeliste `GLEICH_IN_BEIDEN_MODI` mit **36**
@@ -311,6 +333,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 
 - **Schwere:** NIEDRIG
 - **Status:** teilweise behoben 26.09.2026 — die Prozentzahl im Fortschrittsring schreibt mit einem Text-Token je Kriterium (`--app-text-kriterium-<typ>`, `getCriteriaTextColor()`): hell die Kriterienfarbe selbst, dunkel eine aufgehellte Stufe mit mindestens 4,5:1 auf Karte und beiden Seitengründen (streak `#eb445a` → `#ee6073`, auf der Karte 4,06 → 4,84:1; gerechnet außerdem teamer_year 1,72 → 4,54, mandatory_event_count 2,39 → 4,97, both_categories 2,74 → 4,51, event_count 3,72 → 4,76). Gemessen (`/konfi/badges`, iOS = Android): „0%“ 4,06 → 4,84:1, hell unverändert. **Offen:** die 17 Hexwerte selbst bleiben in `badgeCriteria.ts` (Flächen: Ring, Symbolkacheln — in beiden Modi gleich, nicht kontrastrelevant); Test `dunkelmodus.test.ts` hält hell = Hexwert und dunkel ≥ 4,5:1 fest.
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt — die 17 Flächenfarben stehen weiter als Hexwerte in `badgeCriteria.ts` (heute Zeilen 66-81). Die Überführung in Tokens ist später vorgesehen; die Farben der Flächen fallen unter Simons Entscheidung vom 27.09. zu den Farben.
 - **Fundstelle:** `frontend/src/utils/badgeCriteria.ts:66-81` (17 Hexwerte), `:104` (`CRITERIA_FALLBACK_COLOR`)
 - **Kennzeichnung:** reproduziert — `messung-all.json`: „0%“-Ring `#eb445a` auf `#1c1c1d` = 4,47:1 (iOS),
   auf `#242426` = 4,06:1 (Android); Bild `dark-ios-konfi-badges.png`
@@ -337,6 +360,7 @@ betroffenen Screens dunkel auf einem iPhone ansehen. Alles andere kann in die 2.
 ### BF-12: Kein dunkler Bild- und Regressionspfad
 
 - **Schwere:** NIEDRIG
+- **Status:** teilweise behoben 26.09.2026 — Es gibt jetzt einen automatisierten Weg, den Dunkelmodus zu **messen**: `npm --prefix frontend run dunkelmodus:messen` rechnet Kontraste und helle Flächen gerendert über 188 Zustände (BF-09, nur von Hand). Es gibt weiter keinen, ihn zu **sehen**: `scripts/screenshots.mjs` hat keine Dunkel-Option, die Handbuch-Bilder sind nur hell, und kein Test vergleicht Bilder (`toHaveScreenshot`). Geprüft am Stand `b6a67ed1`. Später (Baustein 5 des empfohlenen Wegs; Bilder erst nach dem Deploy ziehen).
 - **Fundstelle:** `scripts/screenshots.mjs` (kein `colorScheme`, 0 Treffer für „dark“), `docs/screenshots/`
   (nur helle Bilder), `e2e/` und `frontend/src` (0 Treffer `toHaveScreenshot`/`toMatchSnapshot`)
 - **Kennzeichnung:** aus Code gelesen
