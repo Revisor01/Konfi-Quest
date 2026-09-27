@@ -76,7 +76,10 @@ der bis zum Merge weiterläuft.
    Abschnitt 3 (`PG_POOL_MAX`, `PG_*`, `SHUTDOWN_DRAIN_MS`, `SMTP_*`,
    `extra_hosts`). Der alte Code liest `PG_POOL_MAX`, `PG_IDLE_TIMEOUT` und
    `PG_CONN_TIMEOUT` schon, die übrigen ignoriert er. Anwenden heißt beim alten
-   Workflow: Stack-Datei ändern — also mit Schritt 2 abstimmen. **`RUN_BACKGROUND_JOBS=false` bei `backend2` bleibt stehen** —
+   Workflow: Stack-Datei ändern — also mit Schritt 2 abstimmen.
+   **`TZ` nicht setzen** (siehe Kommentar in der Referenz): Produktion läuft
+   in UTC, das Umschalten verschöbe gelesene Zeitwerte; erst nach Klärung durch
+   die Entwicklung. **`RUN_BACKGROUND_JOBS=false` bei `backend2` bleibt stehen** —
    das kommt erst in Phase B weg.
 7. **Rückmeldung an Simon:** Sicherung (Größe, Zeit), Zählungen, Ergebnis des
    Abgleichs, offene Punkte. Danach entscheidet Simon über den Merge.
@@ -95,6 +98,9 @@ der bis zum Merge weiterläuft.
    messen).
 5. [03](03-nach-dem-deploy.md): Nachher-Messungen, eine echte Mail
    („Passwort vergessen" mit einem Testkonto), Absender.
+6. `backend-test` zieht beim Deploy nicht mit (der Deploy schreibt nur
+   `backend`, `backend2` und `frontend` um, CI BF-03). Damit die Test-API zum
+   neuen Stand passt: `test-backend.yml` einmal auf `main` laufen lassen.
 
 **Wenn der Deploy scheitert:** Der Workflow `notfall-deploy.yml` rollt einen
 früheren Image-Tag aus. Die Migrationen 160–168 sind additiv — der alte Code
