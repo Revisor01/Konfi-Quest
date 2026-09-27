@@ -357,6 +357,11 @@ Versionsüberschrift.
   in ihrer Event-Liste finden — die Konfis der Jahrgänge, für die es gilt.
   Bisher ging sie an alle Konfis der Gemeinde, auch zu Events anderer
   Jahrgänge und zu Events ohne Jahrgang; wer darauf tippte, fand nichts.
+- Geladene Bilder und Dateien werden beim Abmelden, beim Wechsel der Gemeinde
+  und bei der Anmeldung eines anderen Kontos vom Gerät gelöscht. Bisher blieben
+  sie liegen, bis jemand den Medien-Cache von Hand leerte — wer das Gerät danach
+  benutzte, fand die Dateien der vorigen Person vor. Nach dem Update lädt die
+  App deshalb einmal alles neu, was schon gespeichert war.
 - Ein Pflichttermin lässt sich nicht mehr ohne Jahrgang speichern. Bisher war
   das möglich — und dann wurde niemand automatisch angemeldet, obwohl der
   Termin für alle sichtbar war. In einer Gemeinde standen dadurch nur vier von

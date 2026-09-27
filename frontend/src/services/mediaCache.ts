@@ -22,6 +22,7 @@
 // der Aufrufer NICHT freigeben darf (siehe dort).
 
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Preferences } from '@capacitor/preferences';
 import api, { DATEI_TIMEOUT_MS } from './api';
 
 const CACHE_DIR = 'media-cache';
@@ -86,7 +87,8 @@ const hash = (text: string): string => {
 // denselben Eintrag treffen.
 //
 // Vor dem 27.09.2026 war der Schlüssel ein 32-Bit-Hash des Dateinamens ohne
-// Quelle — ein Hash kann kollidieren, der Name nicht.
+// Quelle. Solche Einträge verwirft medienCacheKontoPruefen() beim ersten Start
+// nach dem Update (siehe dort) — ein Hash kann kollidieren, der Name nicht.
 const cacheKey = (datei: string, quelle: MedienQuelle): string => {
   const sicher = /^[A-Za-z0-9_]+(\.[A-Za-z0-9]{1,5})?$/.test(datei) ? datei : `h${hash(datei)}`;
   return `${quelle}-${sicher}`;
@@ -497,5 +499,40 @@ export async function clearMediaCache(): Promise<void> {
     await Filesystem.rmdir({ path: CACHE_DIR, directory: Directory.Cache, recursive: true });
   } catch {
     // Verzeichnis existierte nicht -> nichts zu tun.
+  }
+}
+
+// Für welches Konto der Cache gerade gefüllt wird.
+const KONTO_SCHLUESSEL = 'medien_cache_konto';
+
+/**
+ * Bindet den Cache an das angemeldete Konto: Meldet sich ein ANDERES Konto an
+ * als das, für das der Cache gefüllt wurde, wird er vorher geleert.
+ *
+ * Das Abmelden leert den Cache ohnehin (auth.ts). Dieser Weg fängt ab, was am
+ * Abmelden vorbeigeht: eine abgelaufene Sitzung, nach der sich jemand anderes
+ * anmeldet, die Anmeldung per Face ID in ein anderes Konto, ein Neustart über
+ * die Fehlerseite. Ohne ihn lägen die Medien der vorigen Person weiter auf dem
+ * Gerät.
+ *
+ * Fehlt die Markierung (erster Start nach dem Update am 27.09.2026), wird
+ * ebenfalls geleert: Bis dahin blieb der Cache beim Abmelden liegen und kann
+ * Medien anderer Konten enthalten, die dieses Gerät benutzt haben; die alten
+ * Schlüssel trugen zudem keine Quelle.
+ */
+export async function medienCacheKontoPruefen(kontoId: number | string): Promise<void> {
+  const konto = String(kontoId);
+  let bisher: string | null;
+  try {
+    bisher = (await Preferences.get({ key: KONTO_SCHLUESSEL })).value;
+  } catch {
+    bisher = null;
+  }
+  if (bisher === konto) return;
+  await clearMediaCache();
+  try {
+    await Preferences.set({ key: KONTO_SCHLUESSEL, value: konto });
+  } catch {
+    // Ohne Markierung wird beim nächsten Start noch einmal geleert — sicher.
   }
 }

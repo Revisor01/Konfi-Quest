@@ -301,9 +301,9 @@ sich öffnet. Ein zweites Antippen währenddessen bewirkt nichts; einmal reicht.
 
 Geladen wird jede Datei nur einmal. Danach liegt sie auf dem Gerät und öffnet
 sich beim nächsten Antippen sofort, ohne Ladeanzeige — auch ohne Netz. Das gilt
-für alle Anhänge: Bilder, Videos, PDFs, Dokumente und Tondateien. Wird der Platz
-knapp, räumt die App von allein auf und wirft weg, was am längsten niemand
-geöffnet hat. Von Hand geht das über **Medien-Cache leeren** im eigenen Profil.
+für alle Anhänge: Bilder, Videos, PDFs, Dokumente und Tondateien. Wie lange sie
+dort bleiben und wann die App sie von selbst löscht, steht unter
+[Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
 
 > **Achtung, bekannter Stolperstein:** Die App warnt erst ab 10 MB (*„Datei ist
 > zu groß (max. 10MB)"*), der Server nimmt aber nur 5 MB an. Eine Datei

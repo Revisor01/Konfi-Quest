@@ -10,6 +10,7 @@ import {
   istBiometrieAktiv
 } from './biometrics';
 import { offlineCache } from './offlineCache';
+import { clearMediaCache } from './mediaCache';
 import { writeQueue } from './writeQueue';
 import { disconnectWebSocket } from './websocket';
 import { networkMonitor } from './networkMonitor';
@@ -202,6 +203,16 @@ export const logout = async (): Promise<void> => {
       await offlineCache.clearAll();
     } catch (error) {
       console.warn('Cache-Clear beim Logout fehlgeschlagen:', error);
+    }
+
+    // Medien-Cache leeren (27.09.2026): Chat-Anhänge und Challenge-Dateien
+    // des abgemeldeten Kontos dürfen nicht auf dem Gerät liegen bleiben. Bis
+    // dahin wurde er nur von Hand geleert — wer sich danach anmeldete, fand
+    // die Medien der vorigen Person vor.
+    try {
+      await clearMediaCache();
+    } catch (error) {
+      console.warn('Medien-Cache beim Logout nicht geleert:', error);
     }
 
     // Device ID NICHT löschen - bleibt für das Geraet persistent

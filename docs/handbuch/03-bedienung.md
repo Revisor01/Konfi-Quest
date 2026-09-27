@@ -437,3 +437,28 @@ Wolken-Symbol, etwa: „Die Teilnehmerliste ist offline nicht verfügbar."
 > den Knöpfen und an der Zahl an der Glocke. Kleinigkeiten im Hintergrund —
 > etwa dass du deine Badges angesehen hast — wandern still mit und tauchen
 > dort nicht auf.
+
+## Geladene Bilder und Dateien auf dem Gerät behalten
+
+Bilder, Videos und Dateien aus dem Chat lädt die App nur einmal. Danach liegen
+sie auf dem Gerät und öffnen sich beim nächsten Mal sofort — auch ohne Netz.
+Dieser Speicher heißt in der App **Medien-Cache**. Wird er zu groß (mehr als
+500 MB), wirft die App von selbst weg, was am längsten niemand geöffnet hat.
+
+### Den Medien-Cache leeren
+
+Im eigenen [Profil](#das-eigene-profil-finden) steht **„Medien-Cache leeren"**
+mit der belegten Größe darunter. Nach der Rückfrage ist der Speicher leer; die
+Dateien laden beim nächsten Öffnen neu.
+
+Von selbst leert die App ihn,
+
+- wenn du dich **abmeldest**,
+- wenn du in eine **andere Gemeinde wechselst** — auch dann, wenn die App
+  dich zurück in deine Stamm-Gemeinde setzt, weil dir die andere entzogen
+  wurde,
+- wenn sich auf dem Gerät ein **anderes Konto anmeldet** als das, dessen
+  Dateien dort liegen — etwa nach einer abgelaufenen Anmeldung.
+
+So findet niemand, der das Gerät nach dir benutzt, deine Bilder und Dateien
+vor.

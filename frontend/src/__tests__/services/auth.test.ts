@@ -53,6 +53,13 @@ vi.mock('../../services/websocket', () => ({
   disconnectWebSocket: vi.fn(),
 }));
 
+// Der Medien-Cache (Chat- und Challenge-Dateien) gehoert zum Konto wie die
+// Queue: Beim Abmelden muss er leer werden (27.09.2026).
+const mockClearMediaCache = vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined);
+vi.mock('../../services/mediaCache', () => ({
+  clearMediaCache: (...a: unknown[]) => mockClearMediaCache(...a),
+}));
+
 let mockOnline = true;
 vi.mock('../../services/networkMonitor', () => ({
   networkMonitor: { get isOnline() { return mockOnline; } },
@@ -147,6 +154,31 @@ describe('auth.logout — Queue gehoert zum Konto, nicht zum Geraet', () => {
     // Cache des alten Kontos blieben liegen und wurden nach dem naechsten
     // Login unter fremder Identitaet gesendet.
     expect(mockQueueClear).toHaveBeenCalledTimes(1);
+  });
+
+  // Befund 27.09.2026: Der Medien-Cache ueberlebte das Abmelden. Die Chat-
+  // Medien -- und kuenftig die Challenge-Fotos -- des abgemeldeten Kontos
+  // lagen weiter auf dem Geraet, auch wenn sich danach jemand anderes
+  // anmeldete.
+  it('leert den Medien-Cache, NACHDEM die Sitzung weg ist', async () => {
+    const { logout } = await import('../../services/auth');
+
+    await logout();
+
+    expect(mockClearMediaCache).toHaveBeenCalledTimes(1);
+    expect(mockClearAuth.mock.invocationCallOrder[0])
+      .toBeLessThan(mockClearMediaCache.mock.invocationCallOrder[0]);
+  });
+
+  it('ein Fehler beim Leeren des Medien-Caches haelt das Abmelden nicht auf', async () => {
+    mockClearMediaCache.mockRejectedValueOnce(new Error('Dateisystem voll'));
+    const { logout, isLoggingOut } = await import('../../services/auth');
+
+    await logout();
+
+    expect(mockClearAuth).toHaveBeenCalledTimes(1);
+    expect(mockQueueClear).toHaveBeenCalledTimes(1);
+    expect(isLoggingOut()).toBe(false);
   });
 });
 

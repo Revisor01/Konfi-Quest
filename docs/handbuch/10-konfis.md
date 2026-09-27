@@ -143,7 +143,7 @@ im Kapitel [Badges](60-badges.md#die-passende-bedingung-waehlen).
   auf dem Gerät, damit sie beim nächsten Mal sofort da sind. Hier lässt sich
   dieser Speicher leeren; die Dateien laden dann beim nächsten Antippen neu.
   Nötig ist das selten, die App räumt selbst auf (siehe
-  [Chat](90-chat.md#eine-datei-mitschicken))
+  [Den Medien-Cache leeren](03-bedienung.md#den-medien-cache-leeren))
 
 Ganz unten kannst du dich abmelden oder dein Konto löschen. Wie du dich in der
 App bewegst, steht im Kapitel [Die App bedienen](03-bedienung.md).

@@ -12,6 +12,7 @@ import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 import { removeDeliveredById, removeAllDelivered, benachrichtigungskanaeleAnlegen } from '../services/notifications';
 import { writeQueue } from '../services/writeQueue';
 import { offlineCache } from '../services/offlineCache';
+import { clearMediaCache, medienCacheKontoPruefen } from '../services/mediaCache';
 import { logout as performLogout } from '../services/auth';
 import { clearAuth } from '../services/tokenStore';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
@@ -419,6 +420,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (user?.role_name) trackSitzungsstart();
   }, [user?.role_name]);
 
+  // Medien-Cache ans angemeldete Konto binden (27.09.2026): Meldet sich ein
+  // anderes Konto an als das, dessen Chat- und Challenge-Medien auf dem Gerät
+  // liegen, wird der Cache geleert. Das Abmelden leert ihn ohnehin; hier geht
+  // es um die Wege daran vorbei (abgelaufene Sitzung, Face ID, Fehlerseite).
+  // Hier und nicht beim Login, weil JEDER Weg zu einem Konto über diesen
+  // Zustand läuft.
+  useEffect(() => {
+    if (!user?.id) return;
+    void medienCacheKontoPruefen(user.id).catch(() => { /* best-effort */ });
+  }, [user?.id]);
+
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
 
@@ -621,6 +633,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const handler = async () => {
       setActiveOrgIdState(null);
       try { await offlineCache.clearAll(); } catch { /* best-effort */ }
+      // Die Medien der entzogenen Gemeinde gehen mit (27.09.2026): Chat-
+      // Anhänge und Challenge-Dateien, die die Person dort sehen durfte.
+      try { await clearMediaCache(); } catch { /* best-effort */ }
       // Wie beim bewussten Wechsel (switchOrg, Schritt 4b): Ohne Neuaufbau
       // liefe der Socket mit dem Token der entzogenen Gemeinde weiter und
       // der Server lehnte jeden Reconnect mit "Kein Zugriff auf diese
@@ -693,6 +708,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // 4. ALLE Offline-Caches + Schreib-Queue leeren (keine Daten der alten Org)
       await offlineCache.clearAll();
+      // Auch den Medien-Cache (27.09.2026) — die Chat- und Challenge-Dateien
+      // der alten Gemeinde. Best-effort: Ein Dateisystemfehler darf den
+      // bereits gelungenen Wechsel nicht als gescheitert melden.
+      try { await clearMediaCache(); } catch { /* best-effort */ }
       await writeQueue.clear();
 
       // Konnte der Flush oben nicht alles zustellen, ist das Verwerfen hier
@@ -782,6 +801,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Logout-Fehler (lokaler Logout wird erzwungen):', err);
       try { await clearAuth(); } catch { /* ignore */ }
       try { await offlineCache.clearAll(); } catch { /* ignore */ }
+      try { await clearMediaCache(); } catch { /* ignore */ }
     }
     /*
      * Push-Sperren raeumen (23.09.2026, Fall Malte, Android).
