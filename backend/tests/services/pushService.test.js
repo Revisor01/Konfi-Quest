@@ -160,10 +160,10 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(gesendete()).toEqual([]);
     });
 
-    // Seit 27.09.2026 kommen auch bei den Event-Meldungen die Empfaenger von
-    // der Aufrufstelle (utils/terminLeitungSicht.js) -- hier geht es nur um
-    // den Payload, mit ausdruecklicher Liste und auf genau diese Liste
-    // geprueft.
+    // Seit 27.09.2026 kommen auch bei den Event- und Jahrgangs-Meldungen die
+    // Empfaenger von der Aufrufstelle (utils/terminLeitungSicht.js,
+    // utils/jahrgangLeitungSicht.js) -- hier geht es nur um den Payload, mit
+    // ausdruecklicher Liste und auf genau diese Liste geprueft.
     it('sendEventUnregistrationToLeadership', async () => {
       await PushService.sendEventUnregistrationToLeadership(db, 1, [USERS.admin1.id], 'Konfi', 'Event');
       const pushes = gesendete();
@@ -180,11 +180,12 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(pushes[0].data.organization_id).toBe('1');
     });
 
-    it('sendJahrgangDeletionWarningToAdmins', async () => {
-      await PushService.sendJahrgangDeletionWarningToAdmins(db, 1, 'Jahrgang 2025', 3);
-      const [push] = gesendete();
-      expect(push.data.type).toBe('jahrgang_deletion_warning');
-      expect(push.data.organization_id).toBe('1');
+    it('sendJahrgangDeletionWarningToLeadership', async () => {
+      await PushService.sendJahrgangDeletionWarningToLeadership(db, 1, [USERS.admin1.id], 'Jahrgang 2025', 3);
+      const pushes = gesendete();
+      expect(pushes.map(p => p.token)).toEqual(['token-admin1']);
+      expect(pushes[0].data.type).toBe('jahrgang_deletion_warning');
+      expect(pushes[0].data.organization_id).toBe('1');
     });
 
     it('sendEventOptOutToLeadership und sendEventOptInToLeadership', async () => {
@@ -198,14 +199,15 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(optIn.data.organization_id).toBe('1');
     });
 
-    it('sendNewKonfiRegistrationToAdmins', async () => {
-      await PushService.sendNewKonfiRegistrationToAdmins(db, 1, JAHRGAENGE.jahrgang1.id, 'Neuer Konfi', 'Jahrgang 2025');
-      const [push] = gesendete();
-      expect(push.data.type).toBe('new_konfi_registration');
-      expect(push.data.organization_id).toBe('1');
+    it('sendNewKonfiRegistrationToLeadership', async () => {
+      await PushService.sendNewKonfiRegistrationToLeadership(db, 1, [USERS.admin1.id], JAHRGAENGE.jahrgang1.id, 'Neuer Konfi', 'Jahrgang 2025');
+      const pushes = gesendete();
+      expect(pushes.map(p => p.token)).toEqual(['token-admin1']);
+      expect(pushes[0].data.type).toBe('new_konfi_registration');
+      expect(pushes[0].data.organization_id).toBe('1');
     });
 
-    it('Event-Meldungen: ohne Empfaengerliste geht nichts raus -- kein Rueckfall auf die ganze Leitung', async () => {
+    it('Event- und Jahrgangs-Meldungen: ohne Empfaengerliste geht nichts raus -- kein Rueckfall auf die ganze Leitung', async () => {
       const ergebnisse = await Promise.all([
         PushService.sendEventUnregistrationToLeadership(db, 1, undefined, 'Konfi', 'Event', 'krank', 1),
         PushService.sendEventOptOutToLeadership(db, 1, undefined, 'Konfi', 'Event', 'krank', 2),
@@ -213,8 +215,10 @@ describe('PushService: organization_id in jedem Payload', () => {
         PushService.sendTeamerEventBookingToLeadership(db, 1, undefined, 'Team', 'Event', 'confirmed', 1),
         PushService.sendTeamerEventCancellationToLeadership(db, 1, undefined, 'Team', 'Event', 1),
         PushService.sendEventsPendingApprovalToLeadership(db, 1, undefined, 3),
+        PushService.sendJahrgangDeletionWarningToLeadership(db, 1, undefined, 'Jahrgang 2025', 3, 1),
+        PushService.sendNewKonfiRegistrationToLeadership(db, 1, undefined, 1, 'Neue Konfi', 'Jahrgang 2025'),
       ]);
-      expect(ergebnisse.map(e => e.success)).toEqual([false, false, false, false, false, false]);
+      expect(ergebnisse.map(e => e.success)).toEqual([false, false, false, false, false, false, false, false]);
       expect(gesendete()).toEqual([]);
       const { rows: [{ c }] } = await db.query('SELECT COUNT(*)::int AS c FROM notifications');
       expect(c).toBe(0);

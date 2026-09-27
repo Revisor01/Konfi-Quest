@@ -16,6 +16,7 @@
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, EVENTS, JAHRGAENGE } = require('../helpers/seed');
 const { ladeLeitungZumTermin } = require('../../utils/terminLeitungSicht');
+const { ladeLeitungZumJahrgang } = require('../../utils/jahrgangLeitungSicht');
 const { POSTFACH_ARTEN, NICHT_IM_POSTFACH } = require('../../utils/postfachArten');
 
 // Firebase abklemmen, BEVOR pushService geladen wird (Muster aus
@@ -229,11 +230,12 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
   // Leitungs- und Team-Arten
   // ================================================================
   describe('Leitungs-Arten', () => {
-    // Seit 27.09.2026 nehmen die Event-Meldungen ihre Empfaenger von der
-    // Aufrufstelle (utils/terminLeitungSicht.js). Hier geht es um den
-    // Postfach-Eintrag je Empfaenger:in -- die Liste kommt aus der Regel bzw.
-    // ausdruecklich; wer sie bekommt, prueft
-    // tests/routes/terminLeitungEmpfaenger.test.js.
+    // Seit 27.09.2026 nehmen die Leitungs-Meldungen ihre Empfaenger von der
+    // Aufrufstelle (utils/terminLeitungSicht.js, utils/jahrgangLeitungSicht.js).
+    // Hier geht es um den Postfach-Eintrag je Empfaenger:in -- die Liste
+    // kommt aus der Regel bzw. ausdruecklich; wer sie bekommt, pruefen
+    // tests/routes/terminLeitungEmpfaenger.test.js und
+    // tests/services/jahrgangLeitungEmpfaenger.test.js.
     it('event_unregistration: Konfi-Abmeldung an die Leitung des Events, mit event_id', async () => {
       // admin1 hat im Seed keinen Jahrgang und sieht das Event nicht: die
       // Gemeindeleitung (orgAdmin1, orgAdminSuper).
@@ -294,10 +296,12 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('new_konfi_registration: mit jahrgang_id', async () => {
-      await PushService.sendNewKonfiRegistrationToAdmins(db, ORG1, JAHRGAENGE.jahrgang1.id, 'Neue Konfi', '2025/2026');
+      const leitung = await ladeLeitungZumJahrgang(db, ORG1, JAHRGAENGE.jahrgang1.id);
+      await PushService.sendNewKonfiRegistrationToLeadership(db, ORG1, leitung, JAHRGAENGE.jahrgang1.id, 'Neue Konfi', '2025/2026');
 
-      const { rows } = await db.query("SELECT user_id, data FROM notifications WHERE type = 'new_konfi_registration'");
-      expect(rows.length).toBeGreaterThan(0);
+      const { rows } = await db.query("SELECT user_id, data FROM notifications WHERE type = 'new_konfi_registration' ORDER BY user_id");
+      // Die Gemeindeleitung; admin1 hat im Seed keinen Jahrgang.
+      expect(rows.map((r) => Number(r.user_id))).toEqual([USERS.orgAdmin1.id, USERS.orgAdminSuper.id]);
       for (const r of rows) {
         expect(r.data).toMatchObject({ jahrgang_id: String(JAHRGAENGE.jahrgang1.id) });
       }
@@ -327,7 +331,8 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     });
 
     it('jahrgang_deletion_warning: mit jahrgang_id, damit sie mit dem Jahrgang gehen kann', async () => {
-      await PushService.sendJahrgangDeletionWarningToAdmins(db, ORG1, '2025/2026', 3, JAHRGAENGE.jahrgang1.id);
+      const leitung = await ladeLeitungZumJahrgang(db, ORG1, JAHRGAENGE.jahrgang1.id, { schreibrecht: true });
+      await PushService.sendJahrgangDeletionWarningToLeadership(db, ORG1, leitung, '2025/2026', 3, JAHRGAENGE.jahrgang1.id);
 
       const [m] = await postfach(USERS.orgAdmin1.id);
       expect(m.type).toBe('jahrgang_deletion_warning');

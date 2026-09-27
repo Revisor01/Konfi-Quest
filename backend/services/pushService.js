@@ -65,8 +65,8 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
  * new_event                   | sendNewEventToOrgKonfis              | Jahrgangs-Konfis| ja
  * event_attendance            | sendEventAttendanceToKonfi           | Konfi           | ja
  * events_pending_approval     | sendEventsPendingApprovalToLeadership| Event-Leitung   | ja
- * new_konfi_registration      | sendNewKonfiRegistrationToAdmins     | Jahrgangs-Admins| ja
- * jahrgang_deletion_warning   | sendJahrgangDeletionWarningToAdmins  | Org-Admins      | ja
+ * new_konfi_registration      | sendNewKonfiRegistrationToLeadership | Jahrgangs-Leitung| ja
+ * jahrgang_deletion_warning   | sendJahrgangDeletionWarningToLeadership | Jahrgangs-Leitung| ja
  * event_opt_out               | sendEventOptOutToLeadership          | Event-Leitung   | ja
  * event_opt_in                | sendEventOptInToLeadership           | Event-Leitung   | ja
  * teamer_event_booking        | sendTeamerEventBookingToLeadership   | Event-Leitung   | ja
@@ -1083,9 +1083,10 @@ class PushService {
    *
    * NICHT fuer Vorgaenge mit Jahrgangsbezug (27.09.2026): Diese Methode
    * kennt keine Jahrgangsbindung und erreicht jeden Admin der Gemeinde. Die
-   * Leitungs-Meldungen zu Terminen und Antraegen nehmen ihre Empfaenger aus
-   * der jeweiligen Regel-Stelle (utils/terminLeitungSicht.js,
-   * utils/antragLeitungSicht.js) und senden ueber sendToLeadership.
+   * Leitungs-Meldungen zu Terminen, Jahrgaengen und Antraegen nehmen ihre
+   * Empfaenger aus der jeweiligen Regel-Stelle (utils/terminLeitungSicht.js,
+   * utils/jahrgangLeitungSicht.js, utils/antragLeitungSicht.js) und senden
+   * ueber sendToLeadership.
    *
    * @param {object} db - DB-Pool
    * @param {number} organizationId - Organisation ID
@@ -1118,7 +1119,7 @@ class PushService {
    * Push an eine AUSDRUECKLICHE Empfaengerliste der Leitung (27.09.2026).
    *
    * Die Liste kommt von der Aufrufstelle, aus der Regel-Stelle des Vorgangs
-   * (ladeLeitungZumTermin, ladeLeitungZumAntrag) -- dieselbe Regel,
+   * (ladeLeitungZumTermin, ladeLeitungZumJahrgang, ...) -- dieselbe Regel,
    * nach der Liste und Zaehler filtern. Ohne Liste geht NICHTS raus: kein
    * stiller Rueckfall auf die ganze Leitung (Audit wer-bekommt-was, BF-01,
    * BF-03, F-03). Die Organisation des Inhalts kommt in den Payload, damit
@@ -2388,23 +2389,22 @@ class PushService {
   }
 
   /**
-   * "Letzte Chance"-Warnung an Org-Admins: ein Jahrgang wird in wenigen Tagen
-   * automatisch gelöscht. Wir nennen es bewusst "gelöscht" (das interne Archiv
-   * bleibt unerwaehnt). Hinweis aufs Befoerdern der Konfis zu Teamer:innen.
+   * "Letzte Chance"-Warnung an die Leitung des Jahrgangs: ein Jahrgang wird
+   * in wenigen Tagen automatisch gelöscht. Wir nennen es bewusst "gelöscht"
+   * (das interne Archiv bleibt unerwaehnt). Hinweis aufs Befoerdern der
+   * Konfis zu Teamer:innen.
+   *
+   * EMPFAENGER KOMMEN VON DER AUFRUFSTELLE (27.09.2026): Org-Admins und Admins
+   * mit Schreibrecht auf den Jahrgang (ladeLeitungZumJahrgang mit
+   * schreibrecht, utils/jahrgangLeitungSicht.js) -- Befoerdern verlangt
+   * Schreibrecht (F-14). Vorher jeder Admin der Gemeinde (BF-01).
    */
   // jahrgangId optional und am Ende (25.09.2026): Die Warnung steht seit dem
   // Postfach als Mitteilung und geht mit dem Jahrgang, sobald er geloescht
   // ist (utils/postfachAufraeumen.js) -- eine Warnung vor etwas, das schon
   // passiert ist, waere Rauschen.
-  static async sendJahrgangDeletionWarningToAdmins(db, organizationId, jahrgangName, daysLeft, jahrgangId = null) {
+  static async sendJahrgangDeletionWarningToLeadership(db, organizationId, empfaenger, jahrgangName, daysLeft, jahrgangId = null) {
     try {
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
-        return { success: false, message: 'No admins found' };
-      }
-
-      const adminIds = admins;
       const notification = {
         title: 'Jahrgang wird bald gelöscht',
         body: `Der Jahrgang "${jahrgangName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} gelöscht. Letzte Chance, Konfis zu Teamer:innen zu befördern.`,
@@ -2417,29 +2417,27 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendJahrgangDeletionWarningToLeadership');
     } catch (error) {
-      console.error('sendJahrgangDeletionWarningToAdmins error:', error);
+      console.error('sendJahrgangDeletionWarningToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }
 
   /**
-   * Neue Konfi-Registrierung - Push an Jahrgangs-Admins (Fallback: alle Org-Admins)
+   * Neue Konfi-Registrierung - Push an die Leitung des Jahrgangs.
+   *
+   * EMPFAENGER KOMMEN VON DER AUFRUFSTELLE (27.09.2026):
+   * ladeLeitungZumJahrgang (utils/jahrgangLeitungSicht.js) -- Org-Admins
+   * immer, Admins mit Leserecht auf den Jahrgang, Teamer:innen nie (F-02).
+   * Vorher verlangte die Abfrage auch von Org-Admins eine Zuweisung (sie
+   * fielen heraus, sobald ein Admin zugewiesen war), und ohne zugewiesenen
+   * Admin ging die Meldung als Rueckfall an ALLE Admins (BF-03). Einen
+   * Rueckfall gibt es nicht mehr: Ist niemand zugewiesen, bleibt es bei der
+   * Gemeindeleitung (F-03).
    */
-  static async sendNewKonfiRegistrationToAdmins(db, organizationId, jahrgangId, konfiName, jahrgangName) {
+  static async sendNewKonfiRegistrationToLeadership(db, organizationId, empfaenger, jahrgangId, konfiName, jahrgangName) {
     try {
-      // Admins des Jahrgangs finden -- ueber beide Quellen der Zugehoerigkeit,
-      // die Rolle gilt je Organisation (utils/orgMitglieder.js).
-      const admins = await ladeLeitungDerOrganisation(db, organizationId, { jahrgangIds: [jahrgangId] });
-
-      // Fallback: Alle Org-Admins wenn kein Jahrgangs-Admin
-      const adminIds = admins.length === 0
-        ? await ladeLeitungDerOrganisation(db, organizationId)
-        : admins;
-
-      if (adminIds.length === 0) return { success: false, message: 'No admins found' };
-
       const notification = {
         title: 'Neue Registrierung',
         body: `${konfiName} hat sich registriert (${jahrgangName})`,
@@ -2450,9 +2448,9 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToLeadership(db, organizationId, empfaenger, notification, 'sendNewKonfiRegistrationToLeadership');
     } catch (error) {
-      console.error('sendNewKonfiRegistrationToAdmins error:', error);
+      console.error('sendNewKonfiRegistrationToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }

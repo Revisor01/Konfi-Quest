@@ -284,6 +284,12 @@ Versionsüberschrift.
   verbuchen hat, bekommt keine Erinnerung. Reiter und App-Symbol zählen
   „Team gesucht"-Events fremder Jahrgänge nicht mehr mit — sie ließen sich
   dort weder finden noch verbuchen.
+- „Neue Registrierung" geht immer an die Gemeindeleitung und an die Admins
+  des Jahrgangs. Bisher fiel die Gemeindeleitung heraus, sobald ein Admin dem
+  Jahrgang zugewiesen war, und war niemand zugewiesen, bekam jeder Admin der
+  Gemeinde die Meldung. Die Warnung vor dem Löschen eines Jahrgangs geht an
+  die Gemeindeleitung und die Admins, die in diesem Jahrgang befördern dürfen,
+  statt an jeden Admin.
 - Mitteilungen zu Challenge-Beiträgen bekommt nur noch, wer den Jahrgang auch
   ansehen darf; eine Zuweisung ohne Leserecht reicht dafür nicht mehr.
 - Die App spricht überall dieselbe Sprache: Was man besucht, sammelt und

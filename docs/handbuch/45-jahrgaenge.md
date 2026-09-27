@@ -198,6 +198,8 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Events | jahrgangsgebundene Events sind unsichtbar und nicht buchbar; führt eine Mitteilung oder ein Link auf ein solches Event, steht dort der Grund („Nicht deinem Jahrgang zugeordnet") |
 | Abmeldungen und Zusagen zu Events (Admin) | Abmeldungen von Konfis, Pflicht-Abmeldungen und Zu- oder Absagen des Teams melden sich nicht; Events „Nur Team“ und Events ohne Jahrgang melden sich bei allen Admins ([wer davon erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)) |
 | „Events warten auf Verbuchung“ (Admin) | zählt nur die Events, die der Reiter „Verbuchen“ zeigt; ist dort nichts offen, kommt keine Erinnerung |
+| Neue Registrierung (Admin) | keine Meldung; sie geht an die Gemeindeleitung und die Admins des Jahrgangs ([wer davon erfährt](#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt)) |
+| „Jahrgang wird bald gelöscht“ (Admin) | keine Warnung; sie bekommt nur, wer im Jahrgang bearbeiten und damit befördern darf |
 | Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
 | Anwesenheits- und Spruchlisten (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Jahresrückblick: Liste der Ausgaben | zeigt nur Ausgaben der eigenen Jahrgänge; ohne jede Zuweisung bleibt sie leer und nennt den Grund („Kein Jahrgang zugewiesen“) |
@@ -227,6 +229,29 @@ Wird ein Konfi **zur Teamer:in befördert**, bekommt er seinen alten Jahrgang
 **nicht** automatisch als Zuweisung. Die vergibt die Leitung, sobald die neue
 Teamer:in in einem Jahrgang aktiv sein soll — siehe
 [Eine Rolle ändern](05-rollen.md#eine-rolle-aendern).
+
+## Nachsehen, wer Meldungen zu einem Jahrgang bekommt
+
+Zwei Meldungen hängen an einem Jahrgang selbst. Beide kommen als Push und im
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) an:
+
+- **„Neue Registrierung“** — eine Konfi hat sich mit einem
+  [Einladungscode](35-passwoerter.md#sich-als-konfi-registrieren) angemeldet.
+  Sie geht an die Gemeindeleitung (Org-Admins) und an die Admins, denen der
+  Jahrgang zugewiesen ist — genau an die, bei denen die neue Konfi sofort in
+  der Konfi-Liste steht. Ist dem Jahrgang kein Admin zugewiesen, bekommt sie
+  nur die Gemeindeleitung.
+- **„Jahrgang wird bald gelöscht“** — sieben Tage bevor die Konfis eines
+  Jahrgangs nach der Konfirmation
+  [aus den Listen genommen werden](35-passwoerter.md#weiterkommen-wenn-gar-nichts-geht),
+  mit dem Hinweis, wer bleiben soll, jetzt noch zur Teamer:in zu befördern.
+  Sie kommt zusätzlich per E-Mail, und zwar an die Gemeindeleitung und an die
+  Admins, die im Jahrgang bearbeiten dürfen — denn nur sie können befördern.
+  Eine Zuweisung, die nur zum Ansehen berechtigt, reicht dafür nicht.
+
+Teamer:innen bekommen keine der beiden. Wer in mehreren Gemeinden
+mitarbeitet, bekommt sie nach der Rolle und den Jahrgängen, die er in der
+jeweiligen Gemeinde hat.
 
 ## Kategorien anlegen und pflegen
 

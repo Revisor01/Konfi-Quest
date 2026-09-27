@@ -983,6 +983,7 @@
           "Passwörter & Einladungen"
         ],
         "summary": "Selbst-Registrierung als Konfi mit Einladungscode (inkl. Auto-Login)",
+        "description": "GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-03, F-02, F-03): Die Meldung \"Neue Registrierung\" (Push und Postfach, new_konfi_registration) geht an die Leitung des Jahrgangs: org_admin (und admin mit is_super_admin-Merkmal) immer, admin mit can_view-Zuweisung auf den Jahrgang der Einladung, Teamer:innen nie (backend/utils/jahrgangLeitungSicht.js) -- genau wer die neue Konfi in GET /api/admin/konfis sieht. Beide Quellen der Zugehoerigkeit, Rolle je Gemeinde. Vorher verlangte die Empfaengerliste auch von org_admin eine Zuweisung (die Gemeindeleitung fiel heraus, sobald ein Admin zugewiesen war), die can_view-Pruefung fehlte, und ohne zugewiesenen Admin ging die Meldung als Rueckfall an ALLE Admins der Gemeinde. Den Rueckfall gibt es nicht mehr: Ohne zugewiesenen Admin bekommt sie die Gemeindeleitung. Antwortform unveraendert.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -1023,7 +1024,7 @@
         },
         "responses": {
           "200": {
-            "description": "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an Jahrgangs-Admins"
+            "description": "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an die Leitung des Jahrgangs (Org-Admins immer, Admins mit can_view auf den Jahrgang)"
           },
           "403": {
             "description": "Konfi-Limit der Org erreicht (limit_exceeded)"

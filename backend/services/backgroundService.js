@@ -7,10 +7,10 @@ const apm = require('../utils/apm');
 const { formatUhrzeit } = require('../utils/zeitformat');
 const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { abzeichenFingerabdruecke } = require('../utils/abzeichenKandidaten');
-const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
-// Empfaenger der Verbuchen-Erinnerung (27.09.2026): die Regel-Stelle fuer
-// Events, nicht mehr die ganze Leitung.
+// Empfaenger der Leitungs-Meldungen aus dem Hintergrund (27.09.2026): die
+// Regel-Stellen fuer Events und Jahrgaenge, nicht mehr die ganze Leitung.
 const { terminWartetAufVerbuchungSql, zaehleWartendeTermineJeLeitung } = require('../utils/terminLeitungSicht');
+const { ladeLeitungZumJahrgang } = require('../utils/jahrgangLeitungSicht');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -1439,7 +1439,8 @@ class BackgroundService {
    */
   /**
    * "Letzte Chance"-Reminder: 7 Tage VOR der automatischen Löschung (Tag 60
-   * nach Konfirmation = Soft-Delete) bekommen die Org-Admins eine Mail + Push,
+   * nach Konfirmation = Soft-Delete) bekommen die Org-Admins und die Admins
+   * mit Schreibrecht auf den Jahrgang (seit 27.09.2026) eine Mail + Push,
    * dass der Jahrgang gelöscht wird und sie jetzt noch Konfis befoerdern
    * können. Idempotent pro Jahrgang via deletion_reminder_sent_at.
    *
@@ -1497,10 +1498,17 @@ class BackgroundService {
 
           const daysLeft = SOFT_DELETE_DAY - age; // Tage bis zur Loeschung
 
-          // Org-Admins mit E-Mail laden -- ueber beide Quellen der
+          // Empfaenger mit E-Mail laden -- ueber beide Quellen der
           // Zugehoerigkeit (Stamm-Org UND user_organizations, Rolle je
-          // Organisation), wie der Push darunter (utils/orgMitglieder.js).
-          const leitungIds = await ladeLeitungDerOrganisation(db, jg.organization_id);
+          // Organisation), dieselbe Liste wie der Push darunter.
+          //
+          // Seit 27.09.2026 die Leitung DIESES Jahrgangs
+          // (utils/jahrgangLeitungSicht.js): Org-Admins und Admins mit
+          // Schreibrecht auf den Jahrgang -- die Warnung ruft zum Befoerdern
+          // auf, und Befoerdern verlangt Schreibrecht (F-14). Vorher ging sie
+          // an jeden Admin der Gemeinde, auch an Admins, die den Jahrgang gar
+          // nicht sehen (Audit wer-bekommt-was, BF-01).
+          const leitungIds = await ladeLeitungZumJahrgang(db, jg.organization_id, jg.id, { schreibrecht: true });
           const { rows: admins } = leitungIds.length === 0 ? { rows: [] } : await db.query(
             `SELECT u.display_name, u.email
                FROM users u
@@ -1525,10 +1533,10 @@ class BackgroundService {
             }
           }
 
-          // Push an alle Org-Admins (zuverlaessiger Kanal, kein externer SMTP).
+          // Push an dieselbe Leitung (zuverlaessiger Kanal, kein externer SMTP).
           let pushSent = false;
           try {
-            const pushRes = await PushService.sendJahrgangDeletionWarningToAdmins(db, jg.organization_id, jg.name, daysLeft, jg.id);
+            const pushRes = await PushService.sendJahrgangDeletionWarningToLeadership(db, jg.organization_id, leitungIds, jg.name, daysLeft, jg.id);
             // sendToMultipleUsers liefert kein einheitliches Erfolgsflag; wir
             // werten "kein Fehler geworfen" als zugestellt-versucht. Ein echtes
             // false (z.B. keine Admins) liefert {success:false}.

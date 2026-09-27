@@ -76,10 +76,11 @@ Verbuchung warten, neue Registrierungen, Ab- und Wieder-Anmeldungen von
 Pflicht-Events und die Warnung vor dem Löschen eines Jahrgangs, als
 Gemeindeleitung die Antwort auf eine
 [Einladung in deine Gemeinde](05-rollen.md#jemanden-in-die-eigene-gemeinde-einladen).
-Anträge und Meldungen zu Events bekommst du nur, wenn du sie in deinen Listen
-siehst: siehe
-[Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt)
-und [Nachsehen, wer von Abmeldungen und Zusagen erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt).
+Anträge und Meldungen zu Events und Jahrgängen bekommst du nur, wenn du sie in
+deinen Listen siehst: siehe
+[Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt),
+[Nachsehen, wer von Abmeldungen und Zusagen erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)
+und [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt).
 
 **Nicht** im Postfach stehen die Erinnerung „morgen"/„gleich" vor einem Event
 (sie wäre sofort veraltet), neue Events (sie stehen in der Event-Liste),

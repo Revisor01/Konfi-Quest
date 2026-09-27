@@ -365,8 +365,10 @@ Dabei passiert automatisch:
 - Sie wird zu allen zukünftigen
   **[Pflicht-Events](70-termine.md#ein-pflicht-event-einrichten)** ihres Jahrgangs
   angemeldet — als wäre sie von Anfang an dabei gewesen.
-- Die **Leitung des Jahrgangs bekommt einen Push**, und die Person erscheint
-  sofort in der Konfi-Liste.
+- Die **Gemeindeleitung und die Admins des Jahrgangs bekommen einen Push**,
+  und die Person erscheint bei ihnen sofort in der Konfi-Liste — wer genau,
+  steht unter
+  [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt).
 
 ### Helfen, wenn die Registrierung hakt
 

@@ -86,6 +86,11 @@
 #      Liste sieht; die Erinnerung nennt jeder Person die Zahl ihres Reiters
 #      (backend/utils/terminLeitungSicht.js). Vorher an jeden Admin der
 #      Gemeinde, mit der Zahl der ganzen Gemeinde.
+#    - "Neue Registrierung" (POST /api/auth/register-konfi) und die Warnung
+#      vor dem Loeschen eines Jahrgangs: GEAENDERT 27.09.2026 — Org-Admins
+#      immer, Admins mit can_view (Registrierung) bzw. can_edit
+#      (Loeschwarnung) auf den Jahrgang, kein Rueckfall an alle Admins
+#      (backend/utils/jahrgangLeitungSicht.js).
 #    - GET /api/events (Liste): Teamer sieht jahrgangs-gebundene Events nur
 #      für zugewiesene Jahrgänge (+ allgemeine + teamer_only/teamer_needed).
 #      # LÜCKE (klein): Der Filter greift nur bei assigned_jahrgaenge.length > 0.

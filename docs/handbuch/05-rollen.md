@@ -274,12 +274,13 @@ Rolle hat — nicht nur aus der Stamm-Gemeinde:
 - Meldungen an die Leitung (neue Anträge, Ab- und Anmeldungen von Konfis,
   Challenge-Beiträge, Buchungen des Teams, Registrierungen, die Warnung vor
   dem Löschen eines Jahrgangs, „Events warten auf Verbuchung") aus jeder
-  Gemeinde, in der die Person Admin oder Org-Admin ist. Neue Anträge und
-  Meldungen zu Events bekommt ein Admin dabei nur für die Jahrgänge, die ihm
-  in dieser Gemeinde zugewiesen sind, dazu Anträge von Teamer:innen und alles
+  Gemeinde, in der die Person Admin oder Org-Admin ist. Die Gemeindeleitung
+  bekommt sie alle; ein Admin nur, was die Jahrgänge betrifft, die ihm in
+  dieser Gemeinde zugewiesen sind, dazu Anträge von Teamer:innen und alles
   zu Events „Nur Team" und Events ohne Jahrgang — siehe
-  [Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt)
-  und [Nachsehen, wer von Abmeldungen und Zusagen erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt).
+  [Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt),
+  [Nachsehen, wer von Abmeldungen und Zusagen erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)
+  und [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt).
 - Beitrags-Meldungen als Teamer:in aus jeder Gemeinde, in der sie Teamer:in
   mit Zuweisung auf den betreffenden Jahrgang ist.
 

@@ -14,6 +14,7 @@
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, ROLES, JAHRGAENGE, EVENTS } = require('../helpers/seed');
 const { ladeLeitungZumTermin } = require('../../utils/terminLeitungSicht');
+const { ladeLeitungZumJahrgang } = require('../../utils/jahrgangLeitungSicht');
 
 const firebase = require('../../push/firebase');
 const sendFirebasePushNotification = vi
@@ -94,12 +95,13 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
       expect(tokens()).toEqual(['token-orgadmin2', 'token-teamer2']);
     });
 
-    // Seit 27.09.2026 haengen die Event-Meldungen am Jahrgang
-    // (utils/terminLeitungSicht.js): Ein Admin bekommt sie nur mit Zuweisung
-    // auf den Jahrgang des Events 4 (Jahrgang 2). admin2 hat im Seed keinen
-    // Jahrgang -- die Tests, in denen er als Leitung mitlaufen soll, weisen
-    // ihn Jahrgang 2 zu. Ohne Zuweisung bekommt er nichts; das prueft
-    // tests/routes/terminLeitungEmpfaenger.test.js.
+    // Seit 27.09.2026 haengen die Event- und Jahrgangs-Meldungen am Jahrgang
+    // (utils/terminLeitungSicht.js, utils/jahrgangLeitungSicht.js): Ein Admin
+    // bekommt sie nur mit Zuweisung auf den Jahrgang des Events 4 bzw. auf
+    // Jahrgang 2. admin2 hat im Seed keinen Jahrgang -- die Tests, in denen er
+    // als Leitung mitlaufen soll, weisen ihn Jahrgang 2 zu. Ohne Zuweisung
+    // bekommt er nichts; das pruefen tests/routes/terminLeitungEmpfaenger.test.js
+    // und tests/services/jahrgangLeitungEmpfaenger.test.js.
     const admin2AufJahrgang2 = () => db.query(
       'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
       [USERS.admin2.id, JAHRGAENGE.jahrgang2.id]
@@ -136,9 +138,10 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
       // Person (zaehleWartendeTermineJeLeitung), die Zusatz-Leitung prueft
       // tests/services/verbuchenErinnerung.test.js.
       const eventLeitung = () => ladeLeitungZumTermin(db, 4);
+      const jahrgangLeitung = () => ladeLeitungZumJahrgang(db, ORG2, JAHRGAENGE.jahrgang2.id, { schreibrecht: true });
       const faelle = [
         ['sendEventUnregistrationToLeadership', async () => PushService.sendEventUnregistrationToLeadership(db, ORG2, await eventLeitung(), 'Emilia', 'Gemeindeabend', null, 4)],
-        ['sendJahrgangDeletionWarningToAdmins', () => PushService.sendJahrgangDeletionWarningToAdmins(db, ORG2, '2025/2026', 3)],
+        ['sendJahrgangDeletionWarningToLeadership', async () => PushService.sendJahrgangDeletionWarningToLeadership(db, ORG2, await jahrgangLeitung(), '2025/2026', 3, JAHRGAENGE.jahrgang2.id)],
         ['sendEventOptInToLeadership', async () => PushService.sendEventOptInToLeadership(db, ORG2, await eventLeitung(), 'Emilia', 'Gemeindeabend', 4)],
         ['sendTeamerEventCancellationToLeadership', async () => PushService.sendTeamerEventCancellationToLeadership(db, ORG2, await eventLeitung(), 'Team-Person', 'Gemeindeabend', 4)],
       ];
@@ -153,22 +156,33 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
     });
   });
 
-  describe('Jahrgangs-Admins bei neuer Registrierung', () => {
-    it('erlaubt: Zusatz-org_admin mit Zuweisung auf den Jahrgang ist der einzige Jahrgangs-Admin', async () => {
+  // Geaendert 27.09.2026 (Audit wer-bekommt-was BF-03, F-03): Org-Admins
+  // bekommen die Registrierung immer, auch ohne Zuweisung; einen Rueckfall
+  // an alle Admins gibt es nicht mehr (utils/jahrgangLeitungSicht.js).
+  // Vorher stand hier, dass ein zugewiesener Zusatz-org_admin der EINZIGE
+  // Empfaenger ist (orgAdmin2 fiel heraus) und dass ohne Zuweisung die ganze
+  // Leitung samt admin2 die Meldung bekommt -- beides genau der Befund.
+  describe('Leitung des Jahrgangs bei neuer Registrierung', () => {
+    const registrierung = async () => PushService.sendNewKonfiRegistrationToLeadership(
+      db, ORG2, await ladeLeitungZumJahrgang(db, ORG2, JAHRGAENGE.jahrgang2.id),
+      JAHRGAENGE.jahrgang2.id, 'Emilia', '2025/2026'
+    );
+
+    it('erlaubt: Zusatz-org_admin bekommt sie -- und die Stamm-Org-Admins auch ohne Zuweisung', async () => {
       await zusatz(db, USERS.orgAdmin1.id, ORG2, ROLES.orgAdmin2.id);
       await db.query(
         'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
         [USERS.orgAdmin1.id, JAHRGAENGE.jahrgang2.id]
       );
-      await PushService.sendNewKonfiRegistrationToAdmins(db, ORG2, JAHRGAENGE.jahrgang2.id, 'Emilia', '2025/2026');
-      expect(tokens()).toEqual(['token-orgadmin1']);
-      expect(gesendete()[0].data.organization_id).toBe(String(ORG2));
+      await registrierung();
+      expect(tokens()).toEqual(['token-orgadmin1', 'token-orgadmin2']);
+      expect(gesendete().find(p => p.token === 'token-orgadmin1').data.organization_id).toBe(String(ORG2));
     });
 
-    it('ohne Jahrgangs-Admin greift der Rueckfall auf die ganze Leitung -- samt Zusatz-Leitung', async () => {
+    it('ohne Jahrgangs-Admin kein Rueckfall: nur die Gemeindeleitung -- samt Zusatz-Org-Admin', async () => {
       await zusatz(db, USERS.orgAdmin1.id, ORG2, ROLES.orgAdmin2.id);
-      await PushService.sendNewKonfiRegistrationToAdmins(db, ORG2, JAHRGAENGE.jahrgang2.id, 'Emilia', '2025/2026');
-      expect(tokens()).toEqual(['token-admin2', 'token-orgadmin1', 'token-orgadmin2']);
+      await registrierung();
+      expect(tokens()).toEqual(['token-orgadmin1', 'token-orgadmin2']);
     });
   });
 

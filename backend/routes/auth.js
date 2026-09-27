@@ -14,6 +14,9 @@ const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { checkKonfiLimit } = require('../utils/konfiLimit');
 const PushService = require('../services/pushService');
+// Empfaenger von "Neue Registrierung": die Leitung des Jahrgangs
+// (27.09.2026, Regel in utils/jahrgangLeitungSicht.js).
+const { ladeLeitungZumJahrgang } = require('../utils/jahrgangLeitungSicht');
 const liveUpdate = require('../utils/liveUpdate');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { nachAntwort } = require('../utils/nachAntwort');
@@ -1143,11 +1146,18 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
         await client.query('COMMIT');
 
-        // Push-Notification an Jahrgangs-Admins
+        // Push an die Leitung des Jahrgangs (27.09.2026, Regel in
+        // utils/jahrgangLeitungSicht.js): Org-Admins immer, Admins mit
+        // Leserecht auf den Jahrgang -- genau wer die neue Konfi in der
+        // Konfi-Liste sieht. Vorher fielen die Org-Admins heraus, sobald ein
+        // Admin zugewiesen war, und ohne zugewiesenen Admin ging die Meldung
+        // an ALLE Admins (Audit wer-bekommt-was, BF-03, F-02, F-03).
         try {
-          await PushService.sendNewKonfiRegistrationToAdmins(
+          const empfaenger = await ladeLeitungZumJahrgang(db, invite.organization_id, invite.jahrgang_id);
+          await PushService.sendNewKonfiRegistrationToLeadership(
             db,
             invite.organization_id,
+            empfaenger,
             invite.jahrgang_id,
             display_name,
             invite.jahrgang_name
