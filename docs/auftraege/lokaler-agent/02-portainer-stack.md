@@ -58,8 +58,8 @@ Schritt 5 erst, wenn der neue Code auf **beiden** Backends läuft.
 
 ## 2. Postgres
 
-- [ ] Ressourcen `cpus: '2'`, `memory: 3G`.
-- [ ] `command` mit den Vorgaben der Referenz (`shared_buffers=768MB`,
+- [x] Ressourcen `cpus: '2'`, `memory: 3G`.
+- [x] `command` mit den Vorgaben der Referenz (`shared_buffers=768MB`,
       `effective_cache_size=2GB`, `work_mem=8MB`, `maintenance_work_mem=128MB`,
       `shared_preload_libraries=pg_stat_statements` und die übrigen Zeilen dort).
       `shared_preload_libraries` braucht einen Neustart von Postgres —
@@ -67,26 +67,54 @@ Schritt 5 erst, wenn der neue Code auf **beiden** Backends läuft.
       für diese Zeit die Datenbank). Beobachten und ins Ergebnis schreiben: Wie
       lange antwortet `/api/status` mit Datenbankfehler, fangen sich die
       Backends ohne Neustart wieder?
-- [ ] Nach dem Neustart einmal:
+      **Ergebnis 27.09.2026:** Das lief zusammen mit Abschnitt 3 in einem
+      Stack-Update um 16:25:58, Sonntagnachmittag, auf Simons Zuruf. Vorher
+      lief keine Abfrage, und keine Sperre wartete. Portainer hat Postgres und
+      alle drei Backends neu erstellt; die Backends warten per `depends_on`,
+      bis Postgres gesund ist. Um 16:26:20 waren alle fünf Container
+      gesund. Die Messung im Sekundentakt auf `/api/status` zählte **einen**
+      Fehlschlag (16:25:59, Zeitüberschreitung nach 2 s), ab 16:26:02 wieder
+      200. Gemessen wurde nur der HTTP-Code. Ob `/api/status` in diesen
+      Sekunden einen Datenbankfehler meldete, ist nicht belegt. Danach
+      `Migration FAILED` 0 und keine Fehlerzeile in den Logs der Backends.
+      Postgres läuft mit 2 CPU / 3 GB und dem `command` der Referenz.
+- [x] Nach dem Neustart einmal:
       `CREATE EXTENSION IF NOT EXISTS pg_stat_statements;`
       Prüfen: `SELECT count(*) FROM pg_stat_statements;` > 0 nach einigen
       Minuten Betrieb. Die App liest die Erweiterung nicht; sie ist für die
       Messungen in [03](03-nach-dem-deploy.md) da (langsamste Abfragen unter
       echter Last).
-- [ ] `SHOW shared_buffers; SHOW work_mem; SHOW statement_timeout;` — Werte ins Ergebnis.
+      **Ergebnis 27.09.2026:** Erweiterung angelegt, schon kurz danach 22
+      Einträge.
+- [x] `SHOW shared_buffers; SHOW work_mem; SHOW statement_timeout;` — Werte ins Ergebnis.
+      **Ergebnis 27.09.2026:** `shared_buffers` 768MB, `work_mem` 8MB,
+      `statement_timeout` 0 (Server; die Backends setzen je Verbindung 30 s),
+      `shared_preload_libraries` pg_stat_statements.
 
 ## 3. Backends
 
-- [ ] Umgebung von `backend` und `backend2` wie in der Referenz:
+- [x] Umgebung von `backend` und `backend2` wie in der Referenz:
       `PG_POOL_MAX=50`, `PG_IDLE_TIMEOUT`, `PG_CONN_TIMEOUT`,
       `PG_STATEMENT_TIMEOUT`, `PG_IDLE_TX_TIMEOUT`,
       `PG_SOCKET_ADAPTER_POOL_MAX`, `SHUTDOWN_DRAIN_MS=6000`, die
       `SMTP_*`-Variablen aus [01](01-vor-dem-deploy.md), `extra_hosts`.
+      **Ergebnis 27.09.2026:** `PG_POOL_MAX` 50, `PG_CONN_TIMEOUT`,
+      `PG_STATEMENT_TIMEOUT`, `PG_IDLE_TX_TIMEOUT`,
+      `PG_SOCKET_ADAPTER_POOL_MAX` und `SHUTDOWN_DRAIN_MS` ergänzt. Über den
+      YAML-Anker gelten sie auch für `backend-test`, wie in der Referenz.
+      `SMTP_*` und `extra_hosts` standen schon. Die Geheimnisse sind in
+      allen drei Backends unverändert vorhanden (6/6 geprüft). Der laufende
+      Code liest `PG_STATEMENT_TIMEOUT` und `PG_CONN_TIMEOUT` ohnehin mit
+      denselben Vorgaben; wirksam geändert hat sich nur der Pool (20 → 50).
+      `TZ` bewusst nicht gesetzt.
 - [ ] Rechnung prüfen: Die Referenz setzt `max_connections=200` gegen drei
       Backends × (`PG_POOL_MAX` 50 + Adapter) plus Reserve (Kommentar am
       `command` in der Referenz). `SHOW max_connections;` und in einem
       Abendbetrieb `SELECT count(*) FROM pg_stat_activity;` — Zahlen ins
       Ergebnis.
+      **Zwischenstand 27.09.2026:** `max_connections` 200; 26 Verbindungen
+      direkt nach dem Neustart (Sonntagnachmittag). Die Messung am Abend
+      steht noch aus.
 
 ## 4. Den ersten zweistufigen Deploy beobachten
 
