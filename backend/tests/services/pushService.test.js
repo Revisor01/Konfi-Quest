@@ -21,6 +21,7 @@ const sendFirebasePushNotification = vi
 vi.spyOn(firebase, 'sendFirebaseSilentPush').mockResolvedValue({ success: true });
 
 const PushService = require('../../services/pushService');
+const { ladeLeitungZumAntrag } = require('../../utils/antragLeitungSicht');
 
 // Alle gesendeten Payloads einsammeln: [{ token, data }]
 const gesendete = () => sendFirebasePushNotification.mock.calls.map(
@@ -141,11 +142,21 @@ describe('PushService: organization_id in jedem Payload', () => {
       }
     });
 
-    it('sendNewActivityRequestToAdmins: organization_id = Content-Org', async () => {
-      await PushService.sendNewActivityRequestToAdmins(db, 2, 'Konfi', 'Aktivität', 3);
-      const [push] = gesendete();
-      expect(push.data.type).toBe('new_activity_request');
-      expect(push.data.organization_id).toBe('2');
+    // Seit 27.09.2026 kommen die Empfaenger von der Aufrufstelle
+    // (utils/antragLeitungSicht.js, ladeLeitungZumAntrag) -- hier geht es nur
+    // um den Payload.
+    it('sendNewActivityRequestToLeadership: organization_id = Content-Org', async () => {
+      await PushService.sendNewActivityRequestToLeadership(db, 2, [USERS.admin2.id], 'Konfi', 'Aktivität', 3);
+      const pushes = gesendete();
+      expect(pushes.map(p => p.token)).toEqual(['token-admin2']);
+      expect(pushes[0].data.type).toBe('new_activity_request');
+      expect(pushes[0].data.organization_id).toBe('2');
+    });
+
+    it('sendNewActivityRequestToLeadership: ohne Empfaengerliste geht nichts raus -- kein Rueckfall auf die ganze Leitung', async () => {
+      const ergebnis = await PushService.sendNewActivityRequestToLeadership(db, 2, undefined, 'Konfi', 'Aktivität', 3);
+      expect(ergebnis.success).toBe(false);
+      expect(gesendete()).toEqual([]);
     });
 
     it('sendEventUnregistrationToAdmins', async () => {
@@ -483,14 +494,28 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(gesendete().map(p => p.token)).not.toContain('token-admin1');
     });
 
-    it('sendNewActivityRequestToAdmins: deaktivierte Leitung faellt raus', async () => {
-      await PushService.sendNewActivityRequestToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Aktivitaet', 3);
-      expect(gesendete().map(p => p.token)).toContain('token-admin1');
+    it('Neuer Antrag: deaktivierte Leitung faellt raus (Empfaenger aus ladeLeitungZumAntrag)', async () => {
+      // admin1 bekommt den Antrag nur mit Zuweisung auf den Jahrgang des
+      // Konfis (Regel vom 27.09.2026) -- sonst prueft der Test nichts.
+      await db.query('INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]);
+      const { rows: [antrag] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id)
+         VALUES ($1, 1, '2026-06-01', 'pending', $2) RETURNING id`,
+        [USERS.konfi1.id, ORGS.testGemeinde.id]
+      );
+      const senden = async () => PushService.sendNewActivityRequestToLeadership(
+        db, ORGS.testGemeinde.id, await ladeLeitungZumAntrag(db, antrag.id), 'Konfi', 'Aktivitaet', 3
+      );
+
+      // In dieser Datei hat aus der Leitung von Org 1 nur admin1 ein Geraet.
+      await senden();
+      expect(gesendete().map(p => p.token)).toEqual(['token-admin1']);
       sendFirebasePushNotification.mockClear();
 
       await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.admin1.id]);
-      await PushService.sendNewActivityRequestToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Aktivitaet', 3);
-      expect(gesendete().map(p => p.token)).not.toContain('token-admin1');
+      await senden();
+      expect(gesendete().map(p => p.token)).toEqual([]);
     });
 
     it('sendEventOptOutToAdmins: deaktivierte Leitung faellt raus', async () => {

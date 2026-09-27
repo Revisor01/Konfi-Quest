@@ -258,7 +258,9 @@ Rolle hat — nicht nur aus der Stamm-Gemeinde:
 - Meldungen an die Leitung (neue Anträge, Ab- und Anmeldungen von Konfis,
   Challenge-Beiträge, Buchungen des Teams, Registrierungen, die Warnung vor
   dem Löschen eines Jahrgangs) aus jeder Gemeinde, in der die Person Admin
-  oder Org-Admin ist.
+  oder Org-Admin ist. Neue Anträge von Konfis bekommt ein Admin dabei nur aus
+  den Jahrgängen, die ihm in dieser Gemeinde zugewiesen sind — siehe
+  [Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt).
 - Beitrags-Meldungen als Teamer:in aus jeder Gemeinde, in der sie Teamer:in
   mit Zuweisung auf den betreffenden Jahrgang ist.
 

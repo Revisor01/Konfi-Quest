@@ -1035,6 +1035,15 @@ paths:
         Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht. Bis
         26.08.2026 gab es hier nur Push — Teamer-Antraege fehlten damit im
         Mitteilungscenter der Leitung (Befund M6, behoben).
+        GEAENDERT 27.09.2026: Empfaenger von Mitteilung und Push bestimmt
+        dieselbe Regel wie GET /api/admin/activities/requests
+        (backend/utils/antragLeitungSicht.js). Antraege auf
+        Teamer-Aktivitaeten sieht jeder admin und org_admin der Gemeinde, es
+        bleibt also bei der gesamten Leitung -- neu ist nur, dass die
+        antragstellende Person selbst keine Mitteilung mehr bekommt: Die Route
+        steht hinter requireTeamer, auch admin und org_admin koennen hier
+        melden und bekamen bis dahin "Neuer Antrag eingegangen" ueber den
+        eigenen Antrag. Antwortform unveraendert.
         Seit 01.09.2026 faengt die Route auch die Race zwischen Vorab-Check
         und Insert ab (Unique-Verletzung 23505 auf client_id) und liefert
         dann 200 mit dem vorhandenen Antrag statt eines 500ers (Befund M3,

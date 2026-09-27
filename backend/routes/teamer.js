@@ -14,7 +14,10 @@ const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
 const { heuteBerlin } = require('../utils/zeitformat');
-const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
+// Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
+// ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
+const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
+const { nachAntwort } = require('../utils/nachAntwort');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
@@ -1302,49 +1305,49 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       res.status(201).json({ id: newRequest.id, message: 'Antrag eingereicht' });
 
       // Leitungs-Benachrichtigung NACH der Antwort (Muster wie in konfi.js):
-      // In-App-Mitteilung UND Push an admin/org_admin. Vorher gab es hier nur
+      // In-App-Mitteilung UND Push an die Leitung. Vorher gab es hier nur
       // Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung,
       // waehrend Konfi-Antraege dort auftauchten (Drei-Ansichten-Befund M6).
-      // Fehler werden nur geloggt — die Antwort ist bereits raus.
-      (async () => {
-        try {
-          // Leitung ueber beide Quellen der Zugehoerigkeit (Stamm-Org UND
-          // user_organizations, Rolle je Organisation) -- wie beim Push
-          // (utils/orgMitglieder.js, 25.09.2026).
-          const adminIds = await ladeLeitungDerOrganisation(db, req.user.organization_id);
+      // Seit 27.09.2026 ueber nachAntwort statt frei laufend.
+      nachAntwort(req, async () => {
+        // EMPFAENGER nach derselben Regel wie die Antragsliste
+        // (utils/antragLeitungSicht.js, 27.09.2026). Antraege von
+        // Teamer:innen sieht jeder Admin der Gemeinde (Teamer-Ausnahme vom
+        // 31.08.2026) -- hier kommen also weiterhin admin und org_admin an,
+        // ueber beide Quellen der Zugehoerigkeit. Postfach und Push bekommen
+        // DIESELBE Liste.
+        const empfaenger = await ladeLeitungZumAntrag(db, newRequest.id);
 
-          if (adminIds.length > 0) {
-            await db.query(
-              `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
-               SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
-              [
-                adminIds,
-                'Neuer Antrag eingegangen',
-                `${req.user.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
-                'new_activity_request',
-                JSON.stringify({
-                  request_id: newRequest.id,
-                  konfi_id: userId,
-                  konfi_name: req.user.display_name,
-                  activity_name: activity.name,
-                  points: activity.points
-                }),
-                req.user.organization_id
-              ]
-            );
-          }
-
-          await PushService.sendNewActivityRequestToAdmins(
-            db,
-            req.user.organization_id,
-            req.user.display_name,
-            activity.name,
-            activity.points
+        if (empfaenger.length > 0) {
+          await db.query(
+            `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+             SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
+            [
+              empfaenger,
+              'Neuer Antrag eingegangen',
+              `${req.user.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
+              'new_activity_request',
+              JSON.stringify({
+                request_id: newRequest.id,
+                konfi_id: userId,
+                konfi_name: req.user.display_name,
+                activity_name: activity.name,
+                points: activity.points
+              }),
+              req.user.organization_id
+            ]
           );
-        } catch (notifErr) {
-          console.error('Error sending admin notifications (teamer request):', notifErr);
         }
-      })();
+
+        await PushService.sendNewActivityRequestToLeadership(
+          db,
+          req.user.organization_id,
+          empfaenger,
+          req.user.display_name,
+          activity.name,
+          activity.points
+        );
+      }, 'Leitungs-Mitteilung zum neuen Teamer-Antrag');
 
       // Live-Update an alle Admins/Org-Admins/Teamer:innen der Org (neuer Antrag)
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');

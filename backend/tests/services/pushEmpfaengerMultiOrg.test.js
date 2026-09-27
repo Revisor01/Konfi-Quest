@@ -113,8 +113,11 @@ describe('Push-Empfaenger bei mehreren Organisationen', () => {
       await zusatz(db, USERS.orgAdmin1.id, ORG2, ROLES.orgAdmin2.id);
       const erwartet = ['token-admin2', 'token-orgadmin1', 'token-orgadmin2'];
 
+      // "Neuer Antrag" steht hier nicht mehr (27.09.2026): Die Empfaenger
+      // haengen am Jahrgang des Konfis und kommen aus ladeLeitungZumAntrag
+      // (utils/antragLeitungSicht.js) -- die Zusatz-Leitung ueber
+      // user_organizations prueft tests/routes/antragLeitungEmpfaenger.test.js.
       const faelle = [
-        ['sendNewActivityRequestToAdmins', () => PushService.sendNewActivityRequestToAdmins(db, ORG2, 'Emilia', 'Gottesdienst', 2)],
         ['sendEventUnregistrationToAdmins', () => PushService.sendEventUnregistrationToAdmins(db, ORG2, 'Emilia', 'Gemeindeabend')],
         ['sendEventsPendingApprovalToAdmins', () => PushService.sendEventsPendingApprovalToAdmins(db, ORG2, 2)],
         ['sendJahrgangDeletionWarningToAdmins', () => PushService.sendJahrgangDeletionWarningToAdmins(db, ORG2, '2025/2026', 3)],

@@ -247,6 +247,13 @@ Versionsüberschrift.
   oder „Mo., 14. Sept." stand —, ausgeschrieben als „Montag, 14. September
   2026" in Einzelansichten und Rückfragen, Uhrzeiten als 18:00. Wo der Platz
   knapp ist (Chat, Anwesenheitsliste), fällt das Jahr weg: 14.09.
+- Neue Anträge melden sich nur noch bei der Leitung, die sie auch in ihrer
+  Antragsliste sieht: bei der Gemeindeleitung immer, bei Admins nur für Konfis
+  aus ihren Jahrgängen. Anträge von Teamer:innen hängen an keinem Jahrgang
+  und gehen weiterhin an alle Admins und die Gemeindeleitung. Bisher bekam
+  jeder Admin jeden Antrag gemeldet — samt Zahl an Glocke und App-Symbol —,
+  auch wenn er ihn gar nicht öffnen konnte. Wer selbst eine Aktivität meldet,
+  bekommt über den eigenen Antrag keine Mitteilung mehr.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

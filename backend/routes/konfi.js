@@ -11,7 +11,10 @@ const { beantworteTageslosung } = require('../services/losungService');
 const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
 const { deletePhotoFile, istSichererDateiname } = require('../utils/photoStorage');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
-const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
+// Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
+// ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
+const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
+const { nachAntwort } = require('../utils/nachAntwort');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach, pruefeKonfiStorno } = require('../utils/bookingUtils');
 const { buchungszahlenJeTerminSql } = require('../utils/buchungszahlen');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
@@ -710,34 +713,34 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         message: 'Antrag erfolgreich eingereicht'
       });
 
-      // Admin-Benachrichtigungen NACH der Antwort (Performance-Audit 10.08.):
-      // Der Push-Versand läuft seriell über alle Admins und deren Geraete —
-      // je Token ein FCM-Roundtrip. Lief das vor res.json(), wartete der Konfi
-      // darauf (gemessen ~1,5 s p95 auf dem haeufigsten Antrags-Endpunkt).
-      // Muster wie in routes/chat.js: Block in eine selbst aufgerufene
-      // async-Funktion, Fehler nur loggen — die Antwort ist bereits raus.
-      (async () => {
-      try {
-        // In-App-Mitteilung an die GESAMTE Leitung (admin UND org_admin) —
-        // identisch zum Push-Versand in PushService.sendNewActivityRequestToAdmins.
-        // Vorher stand hier nur r.name='admin', org_admin ging leer aus (M6).
-        // Seit 25.09.2026 ueber beide Quellen der Zugehoerigkeit (Stamm-Org
-        // UND user_organizations, Rolle je Organisation) -- sonst fehlt die
-        // Mitteilung bei allen, die diese Gemeinde als Zweit-Organisation
-        // betreuen (utils/orgMitglieder.js).
-        const adminIds = await ladeLeitungDerOrganisation(db, req.user.organization_id);
+      // Leitungs-Benachrichtigungen NACH der Antwort (Performance-Audit
+      // 10.08.): Der Push-Versand laeuft ueber alle Empfaenger und deren
+      // Geraete -- je Token ein FCM-Roundtrip. Lief das vor res.json(),
+      // wartete der Konfi darauf (gemessen ~1,5 s p95 auf dem haeufigsten
+      // Antrags-Endpunkt). Seit 27.09.2026 ueber nachAntwort statt frei
+      // laufend: gleiches Verhalten, Tests koennen darauf warten.
+      nachAntwort(req, async () => {
+        // EMPFAENGER (27.09.2026, Simon: "Antraege duerfen auch nur an Admins
+        // des Jahrgangs gehen"): wer den Antrag in seiner Liste sieht --
+        // org_admin immer, admin nur mit can_view-Zuweisung auf den Jahrgang
+        // des Konfis, Teamer:innen nie (utils/antragLeitungSicht.js). Vorher
+        // ging die Mitteilung an JEDEN Admin der Gemeinde (seit M6 admin UND
+        // org_admin, seit 25.09.2026 ueber beide Quellen der Zugehoerigkeit
+        // -- beides bleibt, ladeLeitungZumAntrag baut darauf auf).
+        // Postfach und Push bekommen DIESELBE Liste.
+        const empfaenger = await ladeLeitungZumAntrag(db, newRequest.id);
 
         const { rows: [konfiData] } = await db.query(
           "SELECT display_name FROM users WHERE id = $1",
           [konfiId]
         );
 
-        if (adminIds.length > 0) {
+        if (empfaenger.length > 0) {
           await db.query(
             `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
              SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
             [
-              adminIds,
+              empfaenger,
               'Neuer Antrag eingegangen',
               `${konfiData.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
               'new_activity_request',
@@ -753,20 +756,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           );
         }
 
-
-        // Send push notifications to admins
-        await PushService.sendNewActivityRequestToAdmins(
+        await PushService.sendNewActivityRequestToLeadership(
           db,
           req.user.organization_id,
+          empfaenger,
           konfiData.display_name,
           activity.name,
           activity.points
         );
-      } catch (notifErr) {
-        console.error('Error sending admin notifications:', notifErr);
-        // Don't fail the request if notification fails
-      }
-      })();
+      }, 'Leitungs-Mitteilung zum neuen Antrag');
 
       // Live-Update an alle Admins über neuen Antrag senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');

@@ -81,7 +81,9 @@ Punkte gibt es noch keine.
 [Teamer:innen sehen sie nicht](05-rollen.md#wer-darf-was) — in Beschreibung
 und Foto kann Privates stehen. Ein Admin sieht dort nur die Anträge aus
 [seinen Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert);
-Anträge von Teamer:innen sieht er immer.
+Anträge von Teamer:innen sieht er immer. Wer den Antrag sieht, bekommt ihn
+auch gemeldet — siehe
+[Nachsehen, wer von einem neuen Antrag erfährt](#nachsehen-wer-von-einem-neuen-antrag-erfaehrt).
 
 **3. Die Entscheidung.** Es gibt genau zwei Möglichkeiten: „Genehmigen" oder
 „Ablehnen".
@@ -130,6 +132,31 @@ Löschen lassen sich nur abgelehnte Anträge. Die anderen sind geschützt:
 | Abgelehnt | ja | — |
 
 Mit dem Antrag verschwindet auch sein Nachweisfoto.
+
+### Nachsehen, wer von einem neuen Antrag erfährt
+
+Ein neuer Antrag kommt als Push und im
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) als „Neuer
+Antrag eingegangen" an — bei genau denen, die ihn in ihrer Antragsliste sehen
+und entscheiden dürfen:
+
+- **Die Gemeindeleitung** (Org-Admins) bekommt jeden Antrag der Gemeinde.
+- **Admins** bekommen die Anträge der Konfis aus
+  [ihren Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
+  und alle Anträge von Teamer:innen. Ein Admin ohne Jahrgang bekommt also nur
+  die Anträge des Teams.
+- **Ein Konfi ohne Jahrgang** meldet sich nur bei der Gemeindeleitung — nur
+  sie sieht seinen Antrag.
+- **Teamer:innen** bekommen keine Meldung über neue Anträge; die Antragsliste
+  ist ihnen verschlossen.
+- **Wer selbst eine Aktivität meldet**, bekommt dazu „Antrag eingereicht",
+  aber nie „Neuer Antrag eingegangen" über den eigenen Antrag.
+
+Die Zahl am Reiter, am
+[Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
+App-Symbol zählt nach derselben Regel. Wer in mehreren Gemeinden mitarbeitet,
+bekommt die Anträge jeder Gemeinde nach der Rolle und den Jahrgängen, die er
+dort hat.
 
 ## Eine Aktivität direkt zuschreiben
 

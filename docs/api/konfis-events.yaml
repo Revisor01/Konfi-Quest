@@ -68,6 +68,11 @@
 #      403 — ein Admin sieht die Anträge seiner Jahrgänge, ein Admin ohne
 #      Zuweisung ein leeres Array. Antwortform bleibt ein Array.
 #      Teamer-Anträge (target_role='teamer') bleiben immer sichtbar.
+#    - "Neuer Antrag eingegangen" (Postfach + Push nach POST
+#      /api/konfi/requests und POST /api/teamer/requests): GEAENDERT
+#      27.09.2026 — nur noch an die Leitung, die den Antrag in der Liste
+#      sieht (dieselbe Regel, backend/utils/antragLeitungSicht.js); vorher an
+#      jeden Admin der Gemeinde.
 #    - GET /api/events (Liste): Teamer sieht jahrgangs-gebundene Events nur
 #      für zugewiesene Jahrgänge (+ allgemeine + teamer_only/teamer_needed).
 #      # LÜCKE (klein): Der Filter greift nur bei assigned_jahrgaenge.length > 0.
@@ -466,9 +471,26 @@ paths:
       description: >
         Legt einen Antrag (status pending) an. Idempotent über optionale
         client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem
-        bestehenden Datensatz. Benachrichtigt die gesamte Leitung (Rollen
-        admin UND org_admin) per In-App-Mitteilung und Push — bis 26.08.2026
-        ging die In-App-Mitteilung nur an admin (Befund M6, behoben).
+        bestehenden Datensatz. Benachrichtigt die Leitung, die den Antrag in
+        ihrer Liste sieht, per In-App-Mitteilung (Postfach,
+        new_activity_request) und Push — bis 26.08.2026 ging die
+        In-App-Mitteilung nur an admin (Befund M6, behoben).
+
+
+        GEAENDERT 27.09.2026 (Simon: "Antraege duerfen auch nur an Admins des
+        Jahrgangs gehen"): Empfaenger sind org_admin (und admin mit
+        is_super_admin-Merkmal) immer, admin nur mit can_view-Zuweisung auf
+        den Jahrgang des Konfis (konfi_profiles.jahrgang_id), Teamer:innen
+        nie; ein Konfi ohne Jahrgang meldet sich nur bei der org-weiten
+        Leitung. Beide Quellen der Zugehoerigkeit (users.organization_id und
+        user_organizations, Rolle je Gemeinde), keine Person doppelt, die
+        antragstellende Person nie. Dieselbe Regel filtert GET
+        /api/admin/activities/requests, pendingRequests in GET
+        /api/notifications/badge-counts und die Zahl am App-Symbol
+        (backend/utils/antragLeitungSicht.js). Vorher ging beides an JEDEN
+        Admin der Gemeinde, auch an jahrgangsgebundene, die den Antrag nicht
+        sehen. Postfach und Push laufen nach der Antwort; die Antwortform
+        (201 mit id + message) ist unveraendert.
 
 
         Die Aktivität muss target_role='konfi' haben; sonst 404. Bis
@@ -2887,6 +2909,11 @@ paths:
           X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform bleibt
           ein Array, Teamer-Antraege sind weiterhin enthalten). Die
           Oberflaeche erklaert damit, warum keine Konfi-Antraege kommen.
+          GEAENDERT 27.09.2026: Die Sichtregel steht in
+          backend/utils/antragLeitungSicht.js und bestimmt zugleich, wer
+          "Neuer Antrag eingegangen" bekommt (POST /api/konfi/requests, POST
+          /api/teamer/requests) -- wer einen Antrag hier nicht sieht, bekommt
+          keine Mitteilung dazu. Antwortform und Filter unveraendert.
       responses:
         "200":
           description: "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)"

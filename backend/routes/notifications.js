@@ -6,6 +6,7 @@ const { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge 
 const { appIconSummenJeOrganisation } = require('../utils/appIconBadge');
 const { ladeMitgliedschaftenDerPerson } = require('../utils/orgMitglieder');
 const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
+const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -172,8 +173,11 @@ module.exports = (db, verifyTokenRBAC) => {
       // zaehlen immer (Teamer-Ausnahme), Konfi-Antraege nur aus zugewiesenen
       // Jahrgaengen. ANY auf leerem Array trifft nichts: Ein Admin ohne
       // Jahrgang zaehlt nur Teamer-Antraege, wie seine Liste.
+      // Seit 27.09.2026 ueber die gemeinsame Regel (utils/antragLeitungSicht.js),
+      // nach der auch die Empfaenger von "Neuer Antrag eingegangen" bestimmt
+      // werden.
       let requestsPromise = zero;
-      if (isAdminType && !istGebundenerAdmin) {
+      if (isAdminType && leitungSiehtAlleAntraege(req.user)) {
         requestsPromise = db.query(
           `SELECT COUNT(*)::int AS c
            FROM activity_requests ar
@@ -181,14 +185,13 @@ module.exports = (db, verifyTokenRBAC) => {
            WHERE a.organization_id = $1 AND ar.status = 'pending'`,
           [organizationId]
         );
-      } else if (istGebundenerAdmin) {
+      } else if (isAdminType) {
         requestsPromise = db.query(
           `SELECT COUNT(*)::int AS c
            FROM activity_requests ar
            JOIN activities a ON ar.activity_id = a.id
-           LEFT JOIN konfi_profiles kp ON kp.user_id = ar.user_id
            WHERE a.organization_id = $1 AND ar.status = 'pending'
-             AND (a.target_role = 'teamer' OR kp.jahrgang_id = ANY($2::int[]))`,
+             AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: '$2::int[]' })}`,
           [organizationId, eigeneJahrgangIds]
         );
       }

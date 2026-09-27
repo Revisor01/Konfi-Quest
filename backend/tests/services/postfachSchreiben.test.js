@@ -372,7 +372,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
 
     it('die Push-Gegenstuecke der alten Schreibstellen schreiben hier NICHT (sonst laege alles doppelt)', async () => {
       await PushService.sendBadgeEarnedToKonfi(db, USERS.konfi1.id, 'Fleissig', 'flame', 'B', 1, ORG1);
-      await PushService.sendNewActivityRequestToAdmins(db, ORG1, 'Test Konfi 1', 'Kirchenchor', 1);
+      await PushService.sendNewActivityRequestToLeadership(db, ORG1, [USERS.orgAdmin1.id], 'Test Konfi 1', 'Kirchenchor', 1);
       await PushService.sendActivityRequestStatusToKonfi(db, USERS.konfi1.id, 'Kirchenchor', 1, 'approved', null, 7, ORG1);
       expect(await anzahl()).toBe(0);
     });

@@ -48,11 +48,13 @@ zugewiesene Aktivität), Level-Aufstiege, Abzeichen und Stempel, dein
 freigegebener Jahresrückblick, deine eingereichten Anträge samt Entscheidung,
 deine Anmeldungen und Abmeldungen, das Nachrücken von der Warteliste,
 abgesagte, geänderte und wieder stattfindende Termine und ausgeblendete
-Beiträge. Als Teamer:in oder Leitung zusätzlich: neue Anträge, Abmeldungen
+Beiträge. Als Teamer:in oder Leitung zusätzlich: Abmeldungen
 von Konfis, Buchungen und Absagen des Teams, Termine, die auf Verbuchung
 warten, neue Registrierungen, Beiträge zur Freigabe, Ab- und
 Wieder-Anmeldungen von Pflichtterminen, die Warnung vor dem Löschen eines
-Jahrgangs, der Team-Rückblick und ein neues Zertifikat.
+Jahrgangs, der Team-Rückblick und ein neues Zertifikat. Neue Anträge landen
+bei der Leitung, die sie in ihrer Antragsliste sieht — siehe
+[Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt).
 
 **Nicht** im Postfach stehen die Erinnerung „morgen"/„gleich" vor einem Termin
 (sie wäre sofort veraltet), neue Termine (sie stehen in der Terminliste),

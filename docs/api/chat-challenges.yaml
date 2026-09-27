@@ -1788,6 +1788,13 @@ paths:
         die Rolle admin nur noch, was seine Listen zeigen: Antraege aus
         zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem
         Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit.
+        GEAENDERT 27.09.2026: pendingRequests zaehlt ueber die gemeinsame
+        Regel in backend/utils/antragLeitungSicht.js -- dieselbe, nach der
+        die Antragsliste filtert und die Empfaenger von "Neuer Antrag
+        eingegangen" bestimmt werden. Die Zahl selbst und die Antwortform
+        sind unveraendert; neu ist, dass ein Admin fuer einen Antrag, den
+        dieser Zaehler nicht zaehlt, auch keine Postfach-Mitteilung mehr
+        bekommt (die sonst in postfach.ungelesen mitzaehlte).
         Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen —
         vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter,
         bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie

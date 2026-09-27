@@ -11,6 +11,9 @@ const { deletePhotoFile } = require('../utils/photoStorage');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
+// Wer welchen Antrag sieht: EINE Regel fuer Liste, Zaehler und die Empfaenger
+// von "Neuer Antrag eingegangen" (27.09.2026).
+const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
@@ -360,10 +363,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       // Teamer-Anträge (a.target_role = 'teamer') bleiben immer sichtbar:
       // Teamer:innen sieht ein Admin laut Regel alle, und sie haben keinen
       // Jahrgang, über den gefiltert werden könnte.
+      //
+      // Die Regel steht seit 27.09.2026 in utils/antragLeitungSicht.js --
+      // dieselbe Fassung filtert pendingRequests (badge-counts), die Zahl am
+      // App-Symbol und die Empfaenger von "Neuer Antrag eingegangen". Wer den
+      // Antrag hier nicht sieht, bekommt auch keine Mitteilung dazu.
       let jahrgangFilter = '';
-      const vollzugriff = req.user.is_super_admin
-        || ['super_admin', 'org_admin'].includes(req.user.role_name);
-      if (!vollzugriff) {
+      if (!leitungSiehtAlleAntraege(req.user)) {
         const sichtbare = (req.user.assigned_jahrgaenge || [])
           .filter(j => j.can_view)
           .map(j => j.id);
@@ -376,11 +382,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           // Array bleibt -- dasselbe Muster wie GET /admin/konfis
           // (konfi-management.js).
           res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
-          jahrgangFilter = ` AND a.target_role = 'teamer'`;
-        } else {
-          params.push(sichtbare);
-          jahrgangFilter = ` AND (a.target_role = 'teamer' OR kp.jahrgang_id = ANY($${params.length}::int[]))`;
         }
+        // Leeres Array trifft keinen Konfi-Jahrgang: ohne Zuweisung bleiben
+        // nur die Teamer-Antraege.
+        params.push(sichtbare);
+        jahrgangFilter = ` AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: `$${params.length}::int[]` })}`;
       }
 
       const query = `
@@ -390,7 +396,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         FROM activity_requests ar
         JOIN users u_konfi ON ar.user_id = u_konfi.id
         JOIN activities a ON ar.activity_id = a.id
-        LEFT JOIN konfi_profiles kp ON kp.user_id = ar.user_id
         LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
         WHERE a.organization_id = $1${statusFilter}${jahrgangFilter}
         ORDER BY ar.created_at DESC

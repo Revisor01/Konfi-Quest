@@ -523,7 +523,10 @@ describe('Postfach Routes', () => {
         ));
         if (leitung.length === 0) await new Promise(r => setTimeout(r, 50));
       }
-      expect(leitung.length).toBe(3); // admin1, orgAdmin1, orgAdminSuper
+      // orgAdmin1 und orgAdminSuper. admin1 hat im Seed keinen Jahrgang und
+      // sieht den Antrag deshalb nicht -- seit 27.09.2026 bekommt er dann
+      // auch keine Mitteilung (utils/antragLeitungSicht.js).
+      expect(leitung.length).toBe(2);
       const { rows: eigene } = await db.query(
         "SELECT id FROM notifications WHERE type = 'activity_request_submitted' AND user_id = $1", [USERS.konfi1.id]
       );

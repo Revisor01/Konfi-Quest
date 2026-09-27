@@ -43,7 +43,7 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
  * ----------------------------|--------------------------------------|-----------------|--------
  * chat                        | sendChatNotification                 | User            | ja
  * badge_update                | sendBadgeUpdate                      | User            | ja
- * new_activity_request        | sendNewActivityRequestToAdmins       | Org-Admins      | ja
+ * new_activity_request        | sendNewActivityRequestToLeadership   | Antrags-Leitung | ja
  * activity_request_status     | sendActivityRequestStatusToKonfi     | Konfi           | ja
  * badge_earned                | sendBadgeEarnedToKonfi               | Konfi           | ja
  * activity_assigned           | sendActivityAssignedToKonfi          | Konfi           | ja
@@ -1253,9 +1253,6 @@ class PushService {
   // ====================================================================
 
   /**
-   * Neuer Antrag eingereicht - Push an alle Admins der Organisation
-   */
-  /**
    * Generische Push-Notification an alle Admins einer Organisation
    * @param {object} db - DB-Pool
    * @param {number} organizationId - Organisation ID
@@ -1284,18 +1281,38 @@ class PushService {
     }
   }
 
-  static async sendNewActivityRequestToAdmins(db, organizationId, konfiName, activityName, points) {
+  /**
+   * Neuer Antrag eingereicht - Push an die Leitung, die den Antrag sieht.
+   *
+   * EMPFAENGER KOMMEN VON DER AUFRUFSTELLE (27.09.2026): Die Regel steht in
+   * utils/antragLeitungSicht.js (ladeLeitungZumAntrag) -- dieselbe, nach der
+   * Antragsliste, pendingRequests und App-Symbol filtern. konfi.js und
+   * teamer.js ermitteln die Empfaenger EINMAL und schreiben damit Postfach
+   * und Push; zwei getrennte Abfragen koennten auseinanderlaufen. Vorher
+   * holte diese Methode selbst ladeLeitungDerOrganisation, also JEDEN Admin
+   * der Gemeinde -- auch jahrgangsgebundene, die den Antrag nicht sehen.
+   * Simon: "Antraege duerfen auch nur an Admins des Jahrgangs gehen."
+   *
+   * Ohne Empfaengerliste wird NICHTS gesendet -- kein stiller Rueckfall auf
+   * die ganze Leitung.
+   *
+   * @param {object} db
+   * @param {number} organizationId  Organisation des Antrags (Content-Org)
+   * @param {Array<number>} empfaenger  aus ladeLeitungZumAntrag
+   * @param {string} konfiName
+   * @param {string} activityName
+   * @param {number} points
+   */
+  static async sendNewActivityRequestToLeadership(db, organizationId, empfaenger, konfiName, activityName, points) {
     try {
-
-      // Hole alle Admins der Organisation
-      const admins = await ladeLeitungDerOrganisation(db, organizationId);
-
-      if (admins.length === 0) {
- console.warn('Keine Admins für Organisation gefunden');
+      if (!Array.isArray(empfaenger)) {
+        console.error('sendNewActivityRequestToLeadership: Empfaengerliste fehlt, nichts gesendet');
+        return { success: false, message: 'Empfaengerliste fehlt' };
+      }
+      if (empfaenger.length === 0) {
         return { success: false, message: 'No admins found' };
       }
 
-      const adminIds = admins;
       const notification = {
         title: 'Neuer Antrag',
         body: `${konfiName} hat einen Antrag für "${activityName}" (${points}P) eingereicht`,
@@ -1305,9 +1322,9 @@ class PushService {
         }
       };
 
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      return await this.sendToMultipleUsers(db, empfaenger, notification);
     } catch (error) {
- console.error('sendNewActivityRequestToAdmins error:', error);
+      console.error('sendNewActivityRequestToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }

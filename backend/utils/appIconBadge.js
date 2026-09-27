@@ -20,6 +20,7 @@
 // nachgezogen; ein Test haelt die Zusammensetzung fest.
 const { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge } = require('./challengeNeuigkeiten');
 const { leitungSiehtChallengeSql } = require('./challengeLeitungSicht');
+const { gebundeneLeitungSiehtAntragSql } = require('./antragLeitungSicht');
 
 /**
  * Die Bausteine der Summe -- jeder als EINE Abfrage ueber viele
@@ -118,6 +119,8 @@ async function terminZaehlerProOrg(db, orgIds) {
 // (Teamer-Ausnahme), Konfi-Antraege nur aus zugewiesenen Jahrgaengen --
 // exakt der Filter der Antragsliste und von badge-counts. ANY auf leerem
 // Array trifft nichts: ohne Zuweisung bleiben nur Teamer-Antraege.
+// Seit 27.09.2026 ueber die gemeinsame Regel (utils/antragLeitungSicht.js),
+// nach der auch die Empfaenger von "Neuer Antrag eingegangen" bestimmt werden.
 async function antragZaehlerGebunden(db, personen) {
   if (personen.length === 0) return [];
   return (await db.query(
@@ -128,14 +131,7 @@ async function antragZaehlerGebunden(db, personen) {
        LEFT JOIN activity_requests ar
               ON ar.activity_id = a.id
              AND ar.status = 'pending'
-             AND (
-               a.target_role = 'teamer'
-               OR EXISTS (
-                 SELECT 1 FROM konfi_profiles kp
-                  WHERE kp.user_id = ar.user_id
-                    AND kp.jahrgang_id = ANY(z.jahrgaenge::int[])
-               )
-             )
+             AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: 'z.jahrgaenge::int[]' })}
       GROUP BY z.user_id, z.user_type, z.organization_id`,
     [...spalten(personen), jahrgangsSpalte(personen)]
   )).rows;
