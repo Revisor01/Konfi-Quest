@@ -290,6 +290,9 @@ Versionsüberschrift.
   Gemeinde die Meldung. Die Warnung vor dem Löschen eines Jahrgangs geht an
   die Gemeindeleitung und die Admins, die in diesem Jahrgang befördern dürfen,
   statt an jeden Admin.
+- Die Erinnerung an eine ablaufende Lizenz geht an alle Org-Admins der
+  Gemeinde, auch an die, die sie über eine Einladung mitleiten — und nicht
+  mehr an Admins.
 - Mitteilungen zu Challenge-Beiträgen bekommt nur noch, wer den Jahrgang auch
   ansehen darf; eine Zuweisung ohne Leserecht reicht dafür nicht mehr.
 - Die App spricht überall dieselbe Sprache: Was man besucht, sammelt und

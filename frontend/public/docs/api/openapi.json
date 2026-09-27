@@ -1609,7 +1609,7 @@
                       "null"
                     ],
                     "format": "date-time",
-                    "description": "nur super_admin; setzt license_reminder_sent_at zurueck"
+                    "description": "nur super_admin; setzt license_reminder_sent_at zurueck. Bei bezahlter Lizenz (is_trial=false) geht 14 Tage vor Ablauf einmal eine Erinnerungs-Mail an alle org_admin der Gemeinde, ueber beide Quellen der Zugehoerigkeit (users.organization_id und user_organizations) -- GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-09, F-15): vorher nur an die Stamm-Leitung, dafuer auch an Admins"
                   },
                   "is_trial": {
                     "type": "boolean",

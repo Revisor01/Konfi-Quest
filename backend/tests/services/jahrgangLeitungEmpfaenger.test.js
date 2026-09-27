@@ -1,8 +1,8 @@
 // backend/tests/services/jahrgangLeitungEmpfaenger.test.js
 //
-// Wer von einer neuen Registrierung und der Warnung vor dem Loeschen eines
-// Jahrgangs erfaehrt (27.09.2026, Audit wer-bekommt-was BF-01, BF-03,
-// F-02, F-03, F-14).
+// Wer von einer neuen Registrierung, der Warnung vor dem Loeschen eines
+// Jahrgangs und der Lizenz-Erinnerung erfaehrt (27.09.2026, Audit
+// wer-bekommt-was BF-01, BF-03, BF-09, F-02, F-03, F-14, F-15).
 //
 // Regel (CLAUDE.md "Wer sieht und bekommt was"): Org-Admins bekommen alles
 // ihrer Gemeinde; Admins nur, was ihre zugewiesenen Jahrgaenge betrifft;
@@ -14,11 +14,14 @@
 //                        alle Admins, wenn niemand zugewiesen ist (F-03).
 //   Loeschwarnung        Org-Admins + Admins mit SCHREIBrecht auf den
 //                        Jahrgang -- Befoerdern verlangt Schreibrecht (F-14).
+//   Lizenz-Erinnerung    alle Org-Admins der Gemeinde ueber beide Quellen,
+//                        keine Admins (F-15).
 //
 // Vorher: Die Registrierung verlangte auch von Org-Admins eine Zuweisung
 // (sie fielen heraus, sobald ein Admin zugewiesen war) und ging ohne
 // zugewiesenen Admin an ALLE Admins; die Loeschwarnung ging an jeden Admin
-// der Gemeinde.
+// der Gemeinde; die Lizenz-Mail nur an die Stamm-Leitung, dafuer auch an
+// jahrgangsgebundene Admins.
 //
 // Seed: admin1 (Rolle admin, Org 1) ohne Jahrgang; teamer1 Jahrgang 1;
 // orgAdmin1 und orgAdminSuper org_admin in Org 1; admin2 (ohne Jahrgang) und
@@ -47,10 +50,11 @@ const FREMDER_JAHRGANG = 90;
 
 const MIT_GERAET = ['teamer1', 'admin1', 'orgAdmin1', 'orgAdminSuper', 'teamer2', 'admin2', 'orgAdmin2'];
 
-describe('Jahrgangs-Meldungen gehen an die zustaendige Leitung', () => {
+describe('Jahrgangs- und Gemeinde-Meldungen gehen an die zustaendige Leitung', () => {
   let app;
   let db;
   let mailLoeschwarnung;
+  let mailLizenz;
 
   beforeAll(() => { db = getTestPool(); app = getTestApp(db); });
 
@@ -72,6 +76,7 @@ describe('Jahrgangs-Meldungen gehen an die zustaendige Leitung', () => {
     );
     sendFirebasePushNotification.mockClear();
     mailLoeschwarnung = vi.spyOn(emailService, 'sendJahrgangDeletionWarningEmail').mockReset().mockResolvedValue({ success: true });
+    mailLizenz = vi.spyOn(emailService, 'sendLicenseExpiryReminderEmail').mockReset().mockResolvedValue({ success: true });
   });
 
   afterAll(async () => { await closePool(); });
@@ -302,6 +307,48 @@ describe('Jahrgangs-Meldungen gehen an die zustaendige Leitung', () => {
       expect(tokens('jahrgang_deletion_warning')).toEqual(['token-orgAdmin1', 'token-orgAdmin2']);
       for (const p of pushes('jahrgang_deletion_warning')) expect(p.data.organization_id).toBe(String(ORG2));
       expect(mails()).toEqual(['orgadmin1@beispiel.invalid', 'orgadmin2@beispiel.invalid']);
+    });
+  });
+
+  // ==================================================================
+  // Lizenz-Erinnerung (BF-09, F-15)
+  // ==================================================================
+  describe('Lizenz-Erinnerung', () => {
+    const lizenzLaeuftAb = (orgId) => db.query(
+      `UPDATE organizations SET is_trial = false, trial_ends_at = NOW() + interval '3 days',
+              license_reminder_sent_at = NULL WHERE id = $1`,
+      [orgId]
+    );
+    const mails = () => mailLizenz.mock.calls.map(([adresse]) => adresse).sort();
+
+    it('erlaubt: alle Org-Admins der Gemeinde -- verboten: Admins, auch mit Jahrgang', async () => {
+      await zuweisen('admin1', J1, { canView: true, canEdit: true });
+      await lizenzLaeuftAb(ORG1);
+      const ergebnis = await BackgroundService.runLicenseReminders(db);
+      expect(mails()).toEqual(['orgadmin1@beispiel.invalid', 'orgadminsuper@beispiel.invalid']);
+      expect(ergebnis.sent).toBe(2);
+    });
+
+    it('erlaubt: Org-Admin nur ueber user_organizations bekommt sie -- vorher nie', async () => {
+      await zusatz('orgAdmin1', ORG2, ROLES.orgAdmin2.id);
+      await lizenzLaeuftAb(ORG2);
+      await BackgroundService.runLicenseReminders(db);
+      // admin2 (Rolle admin) nicht.
+      expect(mails()).toEqual(['orgadmin1@beispiel.invalid', 'orgadmin2@beispiel.invalid']);
+    });
+
+    it('verboten: wer in der Gemeinde nur Admin ist (Zusatz-Rolle admin), bekommt sie nicht', async () => {
+      await zusatz('orgAdmin1', ORG2, ROLES.admin2.id);
+      await lizenzLaeuftAb(ORG2);
+      await BackgroundService.runLicenseReminders(db);
+      expect(mails()).toEqual(['orgadmin2@beispiel.invalid']);
+    });
+
+    it('verboten: gesperrtes Org-Admin-Konto bekommt keine Mail', async () => {
+      await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.orgAdminSuper.id]);
+      await lizenzLaeuftAb(ORG1);
+      await BackgroundService.runLicenseReminders(db);
+      expect(mails()).toEqual(['orgadmin1@beispiel.invalid']);
     });
   });
 });

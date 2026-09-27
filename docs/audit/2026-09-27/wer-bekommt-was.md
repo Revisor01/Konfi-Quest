@@ -218,6 +218,7 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 
 ### BF-09: Lizenz-Erinnerung nur an die Stamm-Leitung, dafür auch an gebundene Admins
 - **Schwere:** HOCH
+- **Status:** behoben 27.09.2026 — `runLicenseReminders` (`backend/services/backgroundService.js`) nimmt `ladeMitgliederDerOrganisation(db, org, ['org_admin'])`: alle Org-Admins über beide Quellen, keine Admins, gesperrte Konten nicht (F-15). Test `tests/services/jahrgangLeitungEmpfaenger.test.js` („Lizenz-Erinnerung").
 - **Fundstelle:** `backend/services/backgroundService.js:1405-1414` (`u.organization_id = $1 AND r.name IN ('admin','org_admin')`)
 - **Kennzeichnung:** reproduziert (A15)
 - **Beschreibung:** Einziger Leitungs-Versand, der `user_organizations` noch nicht kennt (im Bericht vom 26.09. als BF-14 NIEDRIG notiert, nicht behoben). Laut `chat.js:265-270` hat Organisation 2 in Produktion ihre gesamte Leitung nur über `user_organizations` — dort erreicht die Erinnerung niemanden. Nach Ablauf sperrt `runTrialExpiry` (`backgroundService.js:1360-1378`) jede Gemeinde mit abgelaufenem `trial_ends_at`, auch bezahlte. Umgekehrt geht die Mail an Admins, die mit der Lizenz nichts zu tun haben.

@@ -7,6 +7,7 @@ const apm = require('../utils/apm');
 const { formatUhrzeit } = require('../utils/zeitformat');
 const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { abzeichenFingerabdruecke } = require('../utils/abzeichenKandidaten');
+const { ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
 // Empfaenger der Leitungs-Meldungen aus dem Hintergrund (27.09.2026): die
 // Regel-Stellen fuer Events und Jahrgaenge, nicht mehr die ganze Leitung.
 const { terminWartetAufVerbuchungSql, zaehleWartendeTermineJeLeitung } = require('../utils/terminLeitungSicht');
@@ -1367,16 +1368,24 @@ class BackgroundService {
 
       for (const org of orgs) {
         try {
-          // Org-Admins mit E-Mail laden (admin + org_admin, aktiv)
-          const { rows: admins } = await db.query(
+          // Org-Admins mit E-Mail laden -- NUR die Rolle org_admin, ueber
+          // BEIDE Quellen der Zugehoerigkeit (27.09.2026, Audit
+          // wer-bekommt-was BF-09, F-15). Vorher fragte die Abfrage nur
+          // users.organization_id und die Rollen admin UND org_admin: Wer die
+          // Gemeinde ueber user_organizations leitet, bekam die Erinnerung nie
+          // -- eine Gemeinde, deren ganze Leitung per Einladung mitarbeitet,
+          // wurde ohne Vorwarnung gesperrt --, dafuer jeder Admin, auch
+          // jahrgangsgebundene, die mit der Lizenz nichts zu tun haben.
+          // Gesperrte und geloeschte Konten fallen in
+          // ladeMitgliederDerOrganisation heraus.
+          const orgAdminIds = await ladeMitgliederDerOrganisation(db, org.id, ['org_admin']);
+          const { rows: admins } = orgAdminIds.length === 0 ? { rows: [] } : await db.query(
             `SELECT u.display_name, u.email
-             FROM users u
-             JOIN roles r ON u.role_id = r.id
-             WHERE u.organization_id = $1
-               AND u.is_active = true
-               AND r.name IN ('admin', 'org_admin')
-               AND u.email IS NOT NULL AND u.email <> ''`,
-            [org.id]
+               FROM users u
+              WHERE u.id = ANY($1::bigint[])
+                AND u.email IS NOT NULL AND u.email <> ''
+              ORDER BY u.id`,
+            [orgAdminIds]
           );
 
           const end = new Date(org.trial_ends_at);

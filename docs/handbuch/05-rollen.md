@@ -281,6 +281,8 @@ Rolle hat — nicht nur aus der Stamm-Gemeinde:
   [Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt),
   [Nachsehen, wer von Abmeldungen und Zusagen erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)
   und [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt).
+- Die Erinnerung an eine ablaufende Lizenz per E-Mail an alle Org-Admins der
+  Gemeinde, auch an die, die sie über eine Einladung leiten — nicht an Admins.
 - Beitrags-Meldungen als Teamer:in aus jeder Gemeinde, in der sie Teamer:in
   mit Zuweisung auf den betreffenden Jahrgang ist.
 

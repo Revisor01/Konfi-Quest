@@ -193,6 +193,10 @@ und **App-Tour ansehen**.
 | **Dashboard** | Welche Bereiche Konfis und Team auf ihrer Startseite sehen, und in welcher Reihenfolge |
 | **Konfis einladen** | [QR-Code für die Selbstregistrierung](35-passwoerter.md#die-einladung-erzeugen) |
 
+Läuft die Lizenz der Gemeinde ab, bekommen **alle Org-Admins** 14 Tage vorher
+eine E-Mail — auch wer die Gemeinde über eine Einladung mitleitet. Admins
+bekommen sie nicht. Hinterlege deshalb bei allen Org-Admins eine E-Mail-Adresse.
+
 ### Inhalt
 
 | Bereich | Wofür |
