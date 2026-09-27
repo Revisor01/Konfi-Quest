@@ -36,7 +36,11 @@ function getTestPool() {
     pool = new Pool({
       connectionString: TEST_DB_URL,
       max: 5,
-      options: '-c timezone=Europe/Berlin',
+      // TEST_DB_SITZUNGSZONE=UTC bildet die Produktion ab, wie sie am
+      // 27.09.2026 gemessen wurde: postgresql.conf gibt dort timezone = 'UTC'
+      // vor, die Sitzungen der App laufen in UTC (TZ/PGTZ des
+      // Datenbank-Containers wirken nur auf psql). Siehe Kommentar oben.
+      options: `-c timezone=${process.env.TEST_DB_SITZUNGSZONE || 'Europe/Berlin'}`,
     });
   }
   return {
