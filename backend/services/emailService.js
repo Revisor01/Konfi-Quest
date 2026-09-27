@@ -68,7 +68,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
     const info = await transporter.sendMail(mailOptions);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`Fehler beim Senden der E-Mail an ${to}:`, error);
+    console.error('Fehler beim Senden der E-Mail an %s:', to, error);
     // Transporter-Cache invalidieren bei Verbindungsfehler
     if (error.code === 'ECONNECTION' || error.code === 'EAUTH' || error.code === 'ESOCKET') {
       cachedTransporter = null;

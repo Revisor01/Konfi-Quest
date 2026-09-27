@@ -216,7 +216,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'update');
 
     } catch (err) {
- console.error(`Database error in PUT /api/activities/${activityId}:`, err);
+ console.error('Database error in PUT /api/activities/%s:', activityId, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -319,7 +319,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'delete');
 
     } catch (err) {
- console.error(`Database error in DELETE /api/activities/${activityId}:`, err);
+ console.error('Database error in DELETE /api/activities/%s:', activityId, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -567,7 +567,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
     } catch (err) {
- console.error(`Database error in PUT /api/activities/requests/${requestId}/reset:`, err);
+ console.error('Database error in PUT /api/activities/requests/%s/reset:', requestId, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -758,7 +758,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToUserByRole(request.user_id, 'points', 'update');
       liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update');
     } catch (err) {
- console.error(`Database error in PUT /api/activities/requests/${requestId}:`, err);
+ console.error('Database error in PUT /api/activities/requests/%s:', requestId, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
