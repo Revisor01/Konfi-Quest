@@ -367,8 +367,16 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // (dieselbe Klasse wie Sicherheit BF-01). Unveraenderte Kontofelder
       // duerfen mitkommen, weil die Oberflaeche das ganze Formular schickt;
       // ein geaenderter Wert ist ein 400, kein stilles Weglassen.
+      //
+      // Verglichen wird wie die Oberflaeche liest (Kompatibilitaetspruefung
+      // 27.09.2026): Leerer Text und NULL sind dasselbe, Leerzeichen am Rand
+      // zaehlen nicht. In der Datenbank stehen leere Felder teils als '', und
+      // die Store-App 2.2.x schickt `email.trim() || null` und getrimmte
+      // Namen -- das ist keine Aenderung. Geschrieben wird hier ohnehin nur
+      // die Rolle, die Kontofelder bleiben unangetastet.
       if (!user.stamm) {
-        const gleich = (neu, alt) => neu === undefined || (neu ?? null) === (alt ?? null);
+        const lesart = (v) => (typeof v === 'string' ? (v.trim() || null) : (v ?? null));
+        const gleich = (neu, alt) => neu === undefined || lesart(neu) === lesart(alt);
         const kontoUnveraendert =
           gleich(username, user.username) && gleich(email, user.email) &&
           gleich(display_name, user.display_name) && gleich(role_title, user.role_title) &&

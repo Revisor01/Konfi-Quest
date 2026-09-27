@@ -1452,7 +1452,7 @@ paths:
         # DELETE /users/:id, DELETE /admin/konfis/:id und POST /auth/delete-account.
         # Wirkt je Replica -- der gemeinsame Store bleibt offen (S-10).
         org-scope: true
-        objekt-pruefung: "Ziel-User in der aktiven Org ueber BEIDE Quellen; canManageRole + canCreateRole für neue Rolle. Zusatzmitglied (user_organizations): NUR role_id, geschrieben nach user_organizations.role_id; geaenderte Kontofelder oder Passwort -> 400 nur_rolle_in_weiterer_gemeinde (seit 26.09.2026)"
+        objekt-pruefung: "Ziel-User in der aktiven Org ueber BEIDE Quellen; canManageRole + canCreateRole für neue Rolle. Zusatzmitglied (user_organizations): NUR role_id, geschrieben nach user_organizations.role_id; geaenderte Kontofelder oder Passwort -> 400 nur_rolle_in_weiterer_gemeinde (seit 26.09.2026). \"Geaendert\" wie die Oberflaeche liest (27.09.2026): leerer Text = NULL, Leerzeichen am Rand zaehlen nicht -- die Store-App 2.2.x schickt leere Felder als null und Namen getrimmt, in der Datenbank stehen sie teils als ''."
         # BEHOBEN 22.08.2026 (war N7): das optionale password-Feld wird vor
         # dem Hashen gegen validatePassword geprüft.
         # BEHOBEN 26.09.2026 (Audit Leitung BF-01): vorher nur STAMM-Org,

@@ -1501,6 +1501,46 @@ describe('Users Routes', () => {
       expect(res.status).toBe(200);
     });
 
+    it('PUT wie die Store-App 2.2.x: leere Felder als null, Namen getrimmt -> 200', async () => {
+      // Kompatibilitaetspruefung 27.09.2026: In der Datenbank stehen leere
+      // Felder teils als '' (aeltere Oberflaechen schrieben sie so), Namen
+      // teils mit Leerzeichen am Rand. Das Formular der App 2.2.0 laedt die
+      // Werte und schickt `email.trim() || null`, `role_title.trim() || null`
+      // und den getrimmten Namen (UserManagementModal am Tag 2.2.0). Nichts
+      // davon ist eine Aenderung -- vorher kam 400 nur_rolle_in_weiterer_gemeinde.
+      await db.query(
+        `UPDATE users SET email = '', role_title = '', display_name = display_name || ' '
+          WHERE id = $1`,
+        [USERS.teamer2.id]
+      );
+      const { body: u } = await request(app)
+        .get(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          username: u.username.trim(),
+          email: (u.email || '').trim() || null,
+          display_name: u.display_name.trim(),
+          role_title: (u.role_title || '').trim() || null,
+          role_id: ROLES.admin.id,
+          is_active: u.is_active
+        });
+
+      expect(res.status).toBe(200);
+      const { rows: [uo] } = await db.query(
+        'SELECT role_id FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+        [USERS.teamer2.id, ORGS.testGemeinde.id]
+      );
+      expect(uo.role_id).toBe(ROLES.admin.id);
+      // Die Kontofelder bleiben, wie sie waren -- geschrieben wird nur die Rolle.
+      const { rows: [konto] } = await db.query(
+        'SELECT email, role_title, display_name FROM users WHERE id = $1', [USERS.teamer2.id]
+      );
+      expect(konto).toEqual({ email: '', role_title: '', display_name: `${USERS.teamer2.display_name} ` });
+    });
+
     it('PUT mit geaendertem Namen -> 400, nichts geaendert', async () => {
       const res = await request(app)
         .put(`/api/admin/users/${USERS.teamer2.id}`)
