@@ -50,7 +50,12 @@ export const loginWithAutoDetection = async (username: string, password: string)
     const response = await api.post('/auth/login', { username, password });
     return await sitzungUebernehmen(response.data);
   } catch (error: unknown) {
-    const err = error as { response?: { status?: number; statusText?: string; data?: { error?: string } }; message?: string; code?: string };
+    const err = error as {
+      response?: { status?: number; statusText?: string; data?: { error?: string } };
+      message?: string;
+      code?: string;
+      rateLimitMessage?: string;
+    };
  console.error('Login fehlgeschlagen:', {
       status: err?.response?.status,
       statusText: err?.response?.statusText,
@@ -59,7 +64,16 @@ export const loginWithAutoDetection = async (username: string, password: string)
       code: err.code,
       fullError: error
     });
-    throw new Error('Login fehlgeschlagen: ' + (err?.response?.data?.error || err.message), { cause: error });
+    // Antwort, Fehlercode und Rate-Limit-Meldung MITGEBEN. Die Anmeldeseite
+    // entscheidet daran, was sie zeigt (LoginView: 429 -> Meldung des
+    // Servers, keine Antwort -> "Keine Verbindung", 401 -> "Falsches
+    // Passwort"). Ohne die Felder landete jede Ablehnung durch den Server im
+    // Zweig "Keine Verbindung zum Server" -- auch "zu viele Versuche", deren
+    // Meldung sagt, was zu tun ist. Test: anmeldefehlerSichtbar.test.tsx.
+    throw Object.assign(
+      new Error('Login fehlgeschlagen: ' + (err?.response?.data?.error || err.message), { cause: error }),
+      { response: err?.response, code: err?.code, rateLimitMessage: err?.rateLimitMessage }
+    );
   }
 };
 

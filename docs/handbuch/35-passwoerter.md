@@ -390,6 +390,25 @@ Einladungscode wählen Konfis ihren Benutzernamen dagegen selbst.
 Beim Anmelden ist **Groß- und Kleinschreibung egal**: `Noemi.Burau`
 funktioniert genauso wie `noemi.burau`.
 
+## Die Meldung beim Anmelden einordnen
+
+Klappt die Anmeldung nicht, steht unter dem Knopf „Anmeldung fehlgeschlagen"
+und darunter, woran es liegt:
+
+| Meldung | Was dahintersteckt und was hilft |
+|---|---|
+| „Falsches Passwort. Bitte versuche es erneut." | Benutzername oder Passwort stimmt nicht — welches von beiden, sagt die App absichtlich nicht. Beim Passwort zählt Groß- und Kleinschreibung, beim [Benutzernamen](#den-richtigen-benutzernamen-finden) nicht. |
+| „Zu viele Login-Versuche. Bitte warte 15 Minuten." | Aus demselben Netz kamen in einer Viertelstunde sehr viele falsche Passwörter, etwa im Gemeinde-WLAN. Warten hilft. |
+| „Dein Zugang wurde deaktiviert. …" | Das Konto ist deaktiviert oder die Konfi-Zeit ist vorbei — siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht). |
+| „Diese Organisation ist derzeit gesperrt. …" oder „Die Testphase dieser Organisation ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Gemeindeleitung mit dem Betrieb von Konfi Quest. |
+| „Keine Verbindung zum Server. …" | Das Gerät erreicht Konfi Quest nicht. WLAN oder mobile Daten prüfen und noch einmal versuchen. |
+
+**„Keine Verbindung" bei jedem Versuch, obwohl das Internet geht?** Dann ist
+die App auf dem Gerät nicht aktuell: Sie meldet jede Ablehnung als fehlende
+Verbindung, auch ein falsches Passwort. Ein Update aus dem App Store oder von
+Google Play bringt die richtigen Meldungen; im Browser gilt immer der aktuelle
+Stand.
+
 ## Weiterkommen, wenn gar nichts geht
 
 **Eine Konfi hat keine E-Mail und die Leitung ist nicht erreichbar.** Dann

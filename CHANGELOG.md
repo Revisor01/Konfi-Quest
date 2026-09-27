@@ -388,6 +388,9 @@ Versionsüberschrift.
   Nachrichten, Abmeldungen und gemeldete Aktivitäten warten und gehen raus,
   sobald wieder Netz da ist. Bisher galt sie dort als online, schickte ins
   Leere und gab nach drei Versuchen auf.
+- Scheitert die Anmeldung, nennt die App den Grund — falsches Passwort,
+  deaktivierter Zugang, gesperrte Gemeinde oder zu viele Versuche. Bisher
+  stand in jedem dieser Fälle „Keine Verbindung zum Server".
 - Eine gesperrte Gemeinde bekommt nichts mehr von allein — keine Erinnerungen
   vor Events, kein „Neues Event!" zum Anmeldestart, keinen Challenge-Start,
   kein „Events warten auf Verbuchung", keine Warnung vor dem Löschen eines
