@@ -390,6 +390,19 @@ Hilft das nicht, in dieser Reihenfolge weiterprobieren:
 > ist, kommt nach, sobald das Gerät wieder online ist — steht in der Liste aber
 > ohnehin.
 
+**Aus einer gesperrten Gemeinde kommt nichts von allein.** Ist eine Gemeinde
+gesperrt — die Testphase oder Lizenz ist abgelaufen, oder der Betrieb von
+Konfi Quest hat sie gesperrt —, kann sich dort niemand anmelden. Dann schickt
+die App aus dieser Gemeinde auch nichts mehr von selbst: keine Erinnerungen
+vor Events, kein „Neues Event!" zum Anmeldestart, keinen Challenge-Start,
+kein „Events warten auf Verbuchung", keine Warnung vor dem Löschen eines
+Jahrgangs und keinen Team-Rückblick am 6. Januar; die Zahl am App-Symbol wird
+für ihre Konten nicht mehr nachgeführt. Die Löschung der Konfi-Konten nach
+der Konfirmation läuft trotzdem weiter — die Fristen hängen nicht an der
+Sperre. Wird die Gemeinde wieder freigegeben, kommen Anmeldestart und
+Challenge-Start nach, solange die Anmeldung noch offen ist und die Challenge
+noch läuft; Erinnerungen, deren Zeitpunkt vorbei ist, kommen nicht nach.
+
 ## Ohne Internet weiterarbeiten
 
 Die App ist dafür gebaut, dass unterwegs das Netz fehlt — im Gemeindehaus, auf

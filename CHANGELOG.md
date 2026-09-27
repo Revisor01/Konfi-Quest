@@ -355,6 +355,13 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Eine gesperrte Gemeinde bekommt nichts mehr von allein — keine Erinnerungen
+  vor Events, kein „Neues Event!" zum Anmeldestart, keinen Challenge-Start,
+  kein „Events warten auf Verbuchung", keine Warnung vor dem Löschen eines
+  Jahrgangs, keinen Team-Rückblick am 6. Januar und keine Zahl ans
+  App-Symbol. Bisher kamen diese Mitteilungen weiter, obwohl sich dort
+  niemand anmelden kann. Wird die Gemeinde wieder freigegeben, kommen
+  Anmeldestart und Challenge-Start nach, solange sie noch anstehen.
 - Wird ein Konto gelöscht, verschwinden bei der Leitung auch die Mitteilungen
   über diese Person — Registrierung, Abmeldungen samt Grund, Ab- und
   Wieder-Anmeldungen von Pflicht-Events, Beiträge, Zu- und Absagen des Teams.

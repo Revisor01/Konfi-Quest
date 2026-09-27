@@ -18,6 +18,28 @@ const liveUpdate = require('../utils/liveUpdate');
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
 
+// GESPERRTE GEMEINDEN BEKOMMEN NICHTS VON ALLEIN (27.09.2026, Audit "Wer
+// bekommt was", BF-22). Ist organizations.is_active = false -- Testphase
+// oder Lizenz abgelaufen (runTrialExpiry) oder vom Betrieb gesperrt --, kann
+// sich dort niemand anmelden (auth.js Login 403) und keine Anfrage
+// durchkommen (rbac.js: "Organization is inactive"). Die Laeufe hier
+// schickten trotzdem weiter Erinnerungen, "Neues Event!", Challenge-Start,
+// "Events warten auf Verbuchung", stille Zaehler-Pushes, den Team-Rueckblick
+// und die Loeschwarnung -- jede fuehrte ins Leere.
+//
+// Deshalb filtert jede Sammelabfrage eines Laufs, der Mitteilungen
+// ausloest, auf aktive Gemeinden, mit derselben Bedingung wie rbac.js und
+// ladeMitgliedschaftenVieler (COALESCE(is_active, true): NULL gilt als
+// aktiv). Gefiltert wird in der Abfrage, nicht je Person -- kein Lauf kostet
+// dadurch eine Abfrage mehr. Wo ein Merker den Versand festhaelt
+// (registration_open_notified, start_push_sent, event_reminders,
+// deletion_reminder_sent_at), bleibt er fuer die gesperrte Gemeinde offen:
+// Wird sie wieder freigegeben, kommt nach, was dann noch ansteht.
+// Unveraendert laufen die Loeschfristen (runAutoDeletion) -- nur deren
+// Nachrueck-Meldung bleibt in einer gesperrten Gemeinde aus -- und die
+// Lizenz-Erinnerung, die ohnehin nur aktive Gemeinden fragt.
+const NUR_AKTIVE_GEMEINDE = (alias) => `COALESCE(${alias}.is_active, true) = true`;
+
 class BackgroundService {
   static badgeUpdateInterval = null;
   static eventReminderInterval = null;
@@ -240,6 +262,9 @@ class BackgroundService {
                ) AS hat_push
         FROM users u
         JOIN roles r ON u.role_id = r.id
+        -- Gesperrte Stamm-Gemeinde: keine Anmeldung, also auch kein stiller
+        -- Push und keine Abzeichen-Pruefung (BF-22, siehe Dateikopf).
+        JOIN organizations o ON o.id = u.organization_id AND ${NUR_AKTIVE_GEMEINDE('o')}
         WHERE r.name IN ('konfi', 'teamer', 'admin', 'org_admin')
           AND u.deleted_at IS NULL
           AND u.is_active = true
@@ -587,6 +612,8 @@ class BackgroundService {
             AND (mandatory IS NULL OR mandatory = false)
             AND (registration_opens_at IS NULL OR registration_opens_at <= NOW())
             AND (registration_closes_at IS NULL OR registration_closes_at >= NOW())
+            AND EXISTS (SELECT 1 FROM organizations o
+                         WHERE o.id = events.organization_id AND ${NUR_AKTIVE_GEMEINDE('o')})
           ORDER BY registration_opens_at NULLS FIRST, id
           LIMIT $1
           FOR UPDATE SKIP LOCKED
@@ -664,6 +691,8 @@ class BackgroundService {
           AND is_draft = false
           AND starts_at <= NOW()
           AND ends_at > NOW()
+          AND EXISTS (SELECT 1 FROM organizations o
+                       WHERE o.id = challenges.organization_id AND ${NUR_AKTIVE_GEMEINDE('o')})
         RETURNING id, title
       `);
 
@@ -799,6 +828,7 @@ class BackgroundService {
       const oneDayQuery = `
         SELECT DISTINCT e.id, e.name, e.event_date, e.organization_id, eb.user_id
         FROM events e
+        JOIN organizations o ON o.id = e.organization_id AND ${NUR_AKTIVE_GEMEINDE('o')}
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.status = 'confirmed'
           AND eb.attendance_status IS NULL
@@ -844,6 +874,7 @@ class BackgroundService {
       const oneHourQuery = `
         SELECT DISTINCT e.id, e.name, e.event_date, e.organization_id, eb.user_id
         FROM events e
+        JOIN organizations o ON o.id = e.organization_id AND ${NUR_AKTIVE_GEMEINDE('o')}
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.status = 'confirmed'
           AND eb.attendance_status IS NULL
@@ -961,6 +992,8 @@ class BackgroundService {
       const { rows: pendingOrgs } = await db.query(
         `SELECT DISTINCT e.organization_id
            FROM events e
+           -- Gesperrte Gemeinden nicht (BF-22, siehe Dateikopf).
+           JOIN organizations o ON o.id = e.organization_id AND ${NUR_AKTIVE_GEMEINDE('o')}
           WHERE ${terminWartetAufVerbuchungSql()}
           ORDER BY e.organization_id`
       );
@@ -1147,7 +1180,11 @@ class BackgroundService {
 
       let teamerOrgsGenerated = 0;
 
-      const { rows: orgs } = await db.query('SELECT id FROM organizations');
+      // Gesperrte Gemeinden nicht (BF-22, siehe Dateikopf): Niemand kann den
+      // Rueckblick dort oeffnen; nach der Freigabe geht es von Hand.
+      const { rows: orgs } = await db.query(
+        `SELECT id FROM organizations o WHERE ${NUR_AKTIVE_GEMEINDE('o')}`
+      );
 
       for (const org of orgs) {
         try {
@@ -1463,7 +1500,14 @@ class BackgroundService {
     const WARN_LEAD_DAYS = 7;     // so viele Tage vorher warnen
     let sent = 0;
     try {
-      const { rows: jahrgaenge } = await db.query('SELECT id, name, organization_id FROM jahrgaenge');
+      // Nur Jahrgaenge aktiver Gemeinden (BF-22, siehe Dateikopf): Eine
+      // gesperrte Leitung kann niemanden mehr befoerdern; der Merker bleibt
+      // offen, nach einer Freigabe im Warnfenster kommt die Warnung noch.
+      const { rows: jahrgaenge } = await db.query(
+        `SELECT j.id, j.name, j.organization_id
+           FROM jahrgaenge j
+           JOIN organizations o ON o.id = j.organization_id AND ${NUR_AKTIVE_GEMEINDE('o')}`
+      );
 
       for (const jg of jahrgaenge) {
         try {
@@ -1581,8 +1625,13 @@ class BackgroundService {
 
     let jahrgaenge;
     try {
+      // org_aktiv: Geloescht wird auch in einer gesperrten Gemeinde (die
+      // Fristen haengen nicht an der Sperre), gemeldet wird dort nichts
+      // (BF-22, siehe Dateikopf).
       const res = await db.query(
-        'SELECT id, organization_id FROM jahrgaenge'
+        `SELECT j.id, j.organization_id, ${NUR_AKTIVE_GEMEINDE('o')} AS org_aktiv
+           FROM jahrgaenge j
+           LEFT JOIN organizations o ON o.id = j.organization_id`
       );
       jahrgaenge = res.rows;
     } catch (error) {
@@ -1648,8 +1697,9 @@ class BackgroundService {
             await client.query('COMMIT');
             totalHard++;
             // Benachrichtigung nach dem COMMIT; Fehler werden dort je Person
-            // geschluckt und duerfen den Lauf nicht abbrechen.
-            await meldeNachrueckern(db, jg.organization_id, nachgerueckt);
+            // geschluckt und duerfen den Lauf nicht abbrechen. In einer
+            // gesperrten Gemeinde nicht (BF-22) -- nachgerueckt ist trotzdem.
+            if (jg.org_aktiv) await meldeNachrueckern(db, jg.organization_id, nachgerueckt);
           } catch (delErr) {
             try { await client.query('ROLLBACK'); } catch (_) { /* ignore */ }
             console.error(`Auto-Deletion: Hard-Delete fuer Konfi ${konfi.id} (Jahrgang ${jg.id}) fehlgeschlagen:`, delErr.message);

@@ -286,8 +286,9 @@ prüft; die Erinnerung kann deshalb bis zu einer Viertelstunde vor oder nach
 der genauen Marke eintreffen, aber nie doppelt.
 
 Keine Erinnerung bekommt, wer auf der Warteliste steht, wer schon [verbucht
-oder abgemeldet ist](#eine-abmeldung-nachtragen) und niemand zu einem abgesagten
-Event. Im Postfach stehen die Erinnerungen nicht — sie wären sofort veraltet
+oder abgemeldet ist](#eine-abmeldung-nachtragen), niemand zu einem abgesagten
+Event und niemand in einer [gesperrten
+Gemeinde](03-bedienung.md#benachrichtigungen-wieder-zum-laufen-bringen). Im Postfach stehen die Erinnerungen nicht — sie wären sofort veraltet
 (siehe [Mitteilungen im Postfach nachlesen](03-bedienung.md#mitteilungen-im-postfach-nachlesen)).
 
 ### Aus einer Mitteilung zum Event springen

@@ -1612,6 +1612,11 @@ paths:
   # (Stamm-Org, ohne is_active/deleted_at), waehrend POST /generate-teamer
   # laengst beide Quellen nahm; jetzt dieselbe Empfaengerliste
   # (utils/orgMitglieder.js), ohne Empfaenger kein Push.
+  # BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-22): Der Cron lief ueber
+  # ALLE Organisationen, auch gesperrte (organizations.is_active = false),
+  # in denen sich niemand anmelden kann; jetzt nur ueber aktive. Dieselbe
+  # Grenze in allen Mitteilungs-Laeufen von backgroundService.js
+  # (NUR_AKTIVE_GEMEINDE); POST /generate-teamer von Hand ist unveraendert.
   # Ein Gegenstueck fuer Konfis gibt es
   # bewusst nicht mehr (entfallen 08.09.2026): Es war toter Code ohne jeden
   # Aufrufer, und der Konfi-Rueckblick laeuft nie automatisch - wann der
