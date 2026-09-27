@@ -255,6 +255,8 @@ Versionsüberschrift.
   Termin für alle sichtbar war. In einer Gemeinde standen dadurch nur vier von
   zwölf Konfis an den Pflichtterminen. Termine ohne Pflicht dürfen weiterhin
   ohne Jahrgang für die ganze Gemeinde gelten.
+- Im Handbuch stehen zwischen den Abschnitten wieder Trennlinien statt drei
+  Striche im Text (Abzeichen, Challenges, Chat).
 - Im Dunkelmodus blieben die Anmeldeseiten hell — Anmeldung, Passwort vergessen,
   neues Passwort und die Registrierung über einen Einladungslink.
 - Im Dunkelmodus leuchteten die farbigen Kopfbereiche greller als im hellen

@@ -94,6 +94,7 @@ table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
+hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 @media (max-width:860px) {
   /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
      zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
@@ -236,7 +237,7 @@ tbody tr:last-child td { border-bottom:none; }
       <script>document.querySelectorAll('.kapitel-inhalt.ist-lang').forEach(function(d){d.removeAttribute('open');});</script>
       <p>Der Chat ist der geschützte Nachrichtenraum der Gemeinde. Wer nicht in eurer Organisation ist, kommt nicht hinein — und wer drin ist, erreicht nicht automatisch jede andere Person. Diese Grenzen sind der eigentliche Inhalt dieses Kapitels.</p>
       <p>Wo unten „Leitung und Admins&quot; steht, sind beide Rollen gemeint; Teamer:innen dürfen dort nicht. Was die Rollen sonst unterscheidet, steht im Kapitel <a href="./rollen.html#wer-darf-was">Rollen und Rechte</a>.</p>
-      <p>---</p>
+      <hr>
       <h2 id="die-fuenf-chat-arten-unterscheiden"><span class="abschnitt-nr">13.1</span>Die fünf Chat-Arten unterscheiden</h2>
       <div class="tabelle-huelle"><table><thead><tr><th>Art</th><th>Wer ist drin</th><th>Wie er entsteht</th><th>Verlassbar</th></tr></thead><tbody><tr><td><strong>Direktnachricht</strong></td><td>genau zwei Personen</td><td>jemand schreibt jemanden an</td><td><strong>nein</strong></td></tr><tr><td><strong>Gruppe</strong></td><td>frei zusammengestellt</td><td>Leitung, Admin oder Teamer:in legt sie an</td><td>ja</td></tr><tr><td><strong>Jahrgangs-Chat</strong></td><td>alle Konfis des Jahrgangs plus zuständige Begleitung</td><td><strong>automatisch</strong> mit dem Jahrgang</td><td><strong>nein</strong></td></tr><tr><td><strong>Team-Chat</strong></td><td>alle mit Leitungs-, Admin- oder Teamer-Rolle</td><td><strong>automatisch</strong>, einer pro Gemeinde</td><td>ja, außer für Leitung und Admins</td></tr><tr><td><strong>Termin-Chat</strong></td><td>wer beim Freischalten bestätigt angemeldet ist</td><td>das Team schaltet ihn beim Termin frei</td><td>Konfis nur übers Abmelden</td></tr></tbody></table></div>
       <h3 id="eine-direktnachricht-beginnen"><span class="abschnitt-nr">13.1.1</span>Eine Direktnachricht beginnen</h3>
@@ -257,7 +258,7 @@ tbody tr:last-child td { border-bottom:none; }
       <h3 id="den-termin-chat-nutzen"><span class="abschnitt-nr">13.1.5</span>Den Termin-Chat nutzen</h3>
       <p>Er gehört zu einem <a href="./termine.html#einen-termin-chat-einrichten">Termin</a> und muss vom Team dort einmal freigeschaltet werden. Hinein kommen alle, die in diesem Moment bestätigt angemeldet sind — wer sich später anmeldet, kommt <strong>nicht</strong> automatisch nach. Wer sich abmeldet, fliegt heraus.</p>
       <blockquote><strong>Achtung:</strong> Konfis können einen Termin-Chat nicht direkt verlassen. Die App sagt: <em>„Event-Chats werden über die Event-Abmeldung verlassen, nicht direkt.&quot;</em> Sonst wäre jemand zum Termin angemeldet, bekäme aber die Absprachen dazu nicht mit. Teamer:innen können ihn direkt verlassen.</blockquote>
-      <p>---</p>
+      <hr>
       <h2 id="wer-wen-anschreiben-darf"><span class="abschnitt-nr">13.2</span>Wer wen anschreiben darf</h2>
       <div class="tabelle-huelle"><table><thead><tr><th>↓ schreibt an →</th><th>Konfi</th><th>Teamer:in</th><th>Admin</th><th>Leitung (Org-Admin)</th></tr></thead><tbody><tr><td><strong>Konfi</strong></td><td><strong>nie</strong></td><td>nur bei <strong>gemeinsamem Jahrgang</strong></td><td>nur bei <strong>gemeinsamem Jahrgang</strong></td><td>immer</td></tr><tr><td><strong>Teamer:in</strong></td><td>nur bei <strong>zugewiesenem Jahrgang</strong></td><td>ja</td><td>ja</td><td>ja</td></tr><tr><td><strong>Admin</strong></td><td>nur bei <strong>zugewiesenem Jahrgang</strong></td><td>ja</td><td>ja</td><td>ja</td></tr><tr><td><strong>Leitung (Org-Admin)</strong></td><td>immer</td><td>ja</td><td>ja</td><td>ja</td></tr></tbody></table></div>
       <p>Vier Regeln stecken darin:</p>
@@ -269,12 +270,12 @@ tbody tr:last-child td { border-bottom:none; }
       <ul><li><em>„Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben&quot;</em></li><li><em>„Diese Konfirmand:in ist keinem deiner Jahrgänge zugeordnet&quot;</em></li><li><em>„Diese Teamer:in ist nicht für deinen Jahrgang zuständig&quot;</em></li><li><em>„Dieser Admin ist nicht für deinen Jahrgang zuständig&quot;</em></li></ul>
       <blockquote><strong>Achtung, häufiger Anruf:</strong> Eine Teamer:in oder ein Admin <strong>ohne zugewiesenen Jahrgang</strong> erreicht keinen einzigen Konfi — und taucht umgekehrt in keiner Konfi-Kontaktliste auf. Wenn jemand meldet „ich sehe meine Konfis nicht im Chat&quot;, ist fast immer die <a href="./jahrgaenge.html#nachvollziehen-was-die-jahrgangs-zuweisung-steuert">Jahrgangs-Zuweisung</a> die Ursache. Prüf sie in der Nutzerverwaltung.</blockquote>
       <blockquote><strong>Achtung:</strong> Ein Konfi <strong>ohne Jahrgang</strong> ist nur für die Leitung erreichbar. Bis der Jahrgang gesetzt ist, kommt weder eine Teamer:in noch ein Admin an ihn heran.</blockquote>
-      <p>---</p>
+      <hr>
       <h2 id="nachvollziehen-was-die-leitung-sehen-kann"><span class="abschnitt-nr">13.3</span>Nachvollziehen, was die Leitung sehen kann</h2>
       <p>Leitung und Admins können jeden <strong>gemeinschaftlichen</strong> Raum ihrer Gemeinde öffnen, auch ohne selbst Mitglied zu sein: Gruppen, Jahrgangs-Chats, Team-Chats und Termin-Chats. Für diese Räume tragen sie die Verantwortung und müssen im Zweifel eingreifen können.</p>
       <p><strong>Fremde Zweiergespräche sind ausgenommen.</strong> Wer nicht selbst in einem Direktchat steht, kommt nicht hinein — auch die Leitung nicht. Sie kann ihn weder lesen noch exportieren, keine Nachricht darin löschen und keine Umfrage hineinstellen. Ein Zweiergespräch ist privat, auch in einer Gemeinde.</p>
       <p>Den ganzen Direktchat <strong>löschen</strong> können Leitung und Admins dagegen schon (siehe <a href="#einen-chat-loeschen">Einen Chat löschen</a>) — lesen können sie ihn nicht.</p>
-      <p>---</p>
+      <hr>
       <h2 id="nachrichten-schreiben-zitieren-und-loeschen"><span class="abschnitt-nr">13.4</span>Nachrichten schreiben, zitieren und löschen</h2>
       <h3 id="eine-nachricht-schreiben"><span class="abschnitt-nr">13.4.1</span>Eine Nachricht schreiben</h3>
       <p>Text ins Feld „Nachricht schreiben…&quot; eintippen und senden, höchstens <strong>4000 Zeichen</strong>. Alle im Raum sehen die Nachricht sofort und bekommen eine Benachrichtigung aufs Gerät — bei einem Zweiergespräch mit dem Namen des Absenders als Überschrift, sonst mit dem Namen des Chats.</p>
@@ -292,13 +293,13 @@ tbody tr:last-child td { border-bottom:none; }
       <p><strong>Gelöscht heißt nicht weg.</strong> An der Stelle bleibt ein Platzhalter stehen:</p>
       <blockquote>Diese Nachricht wurde gelöscht</blockquote>
       <p>Der Inhalt wird nicht mehr ausgeliefert, die Lücke im Gespräch bleibt sichtbar — und im Export steht an der Stelle <code>[gelöscht]</code>.</p>
-      <p>---</p>
+      <hr>
       <h2 id="auf-eine-nachricht-reagieren"><span class="abschnitt-nr">13.5</span>Auf eine Nachricht reagieren</h2>
       <p>Es gibt genau sechs Reaktionen, keine freie Auswahl:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Reaktion</th><th>Gemeint als</th></tr></thead><tbody><tr><td><strong>Gefällt mir</strong></td><td>Zustimmung, gelesen und einverstanden</td></tr><tr><td><strong>Liebe</strong></td><td>Zuneigung, „schön&quot;</td></tr><tr><td><strong>Lustig</strong></td><td>Humor</td></tr><tr><td><strong>Wow</strong></td><td>Überraschung</td></tr><tr><td><strong>Traurig</strong></td><td>Anteilnahme</td></tr><tr><td><strong>Beten</strong></td><td>„ich denke an dich&quot;, „ich bete dafür&quot;</td></tr></tbody></table></div>
       <p>Es gibt bewusst kein „Daumen runter&quot; und kein „wütend&quot;: In einem Konfi-Chat soll niemand mit einem Tipp abgewatscht werden können.</p>
       <p>Die Reaktionen stehen hinter „Reaktion hinzufügen&quot; in der <a href="#die-aktionen-einer-nachricht-oeffnen">Leiste der Nachricht</a>. Ein Tipp setzt die Reaktion, ein zweiter auf dieselbe nimmt sie zurück. Mehrere verschiedene Reaktionen auf dieselbe Nachricht sind möglich. Unter der Nachricht steht, wie oft jede gewählt wurde; die eigenen sind hervorgehoben. Alle im Raum dürfen reagieren, auch Konfis — aber nur, wer wirklich Mitglied ist.</p>
-      <p>---</p>
+      <hr>
       <h2 id="eine-datei-mitschicken"><span class="abschnitt-nr">13.6</span>Eine Datei mitschicken</h2>
       <p>An jede Nachricht lässt sich eine Datei hängen, ein Text darf dabeistehen. <strong>Höchstens 5 MB pro Datei</strong> — der Chat ist kein Ablageort.</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Was</th><th>Formate</th></tr></thead><tbody><tr><td><strong>Bilder</strong></td><td>JPG, PNG, GIF, WebP, HEIC/HEIF</td></tr><tr><td><strong>Videos</strong></td><td>MP4, MOV, WebM</td></tr><tr><td><strong>Audio</strong></td><td>MP3, M4A, OGG, WAV</td></tr><tr><td><strong>Dokumente</strong></td><td>PDF, Word, PowerPoint, TXT, CSV</td></tr></tbody></table></div>
@@ -311,7 +312,7 @@ tbody tr:last-child td { border-bottom:none; }
       <h3 id="was-mit-der-datei-passiert"><span class="abschnitt-nr">13.6.1</span>Was mit der Datei passiert</h3>
       <ul><li>Sie wird beim Hochladen <strong>auf ihren echten Typ geprüft</strong> — nicht am Dateinamen, sondern an den ersten Bytes. Ein umbenanntes Programm kommt nicht durch (<em>„Dateityp konnte nicht verifiziert werden&quot;</em>). Nur bei reinen Textdateien (TXT, CSV) geht das nicht, weil sie keine solche Kennung haben.</li><li>Sie liegt danach <strong>verschlüsselt</strong> auf dem Server, unter einem zufälligen Namen ohne Bezug zu Inhalt oder Absender.</li><li>Abrufen kann sie nur, wer angemeldet ist und den Chat öffnen darf. Es gibt keine offene Adresse zum Weiterschicken.</li></ul>
       <blockquote><strong>Achtung:</strong> Weil Dateien verschlüsselt und zufällig benannt gespeichert werden, lassen sie sich außerhalb der App weder durchsuchen noch wiederherstellen. Was bleiben soll, gehört ins Material oder an einen Termin.</blockquote>
-      <p>---</p>
+      <hr>
       <h2 id="eine-umfrage-stellen"><span class="abschnitt-nr">13.7</span>Eine Umfrage stellen</h2>
       <p>In jedem Chat lässt sich eine Umfrage stellen — praktisch für „Wer kann am Samstag?&quot; oder „Welches Lied nehmen wir?&quot;.</p>
       <p><strong>Anlegen dürfen sie nur Leitung und Admins.</strong> Teamer:innen und Konfis stimmen ab, sehen den Umfrage-Knopf aber nicht (<em>„Nur Admins können Umfragen erstellen&quot;</em>).</p>
@@ -333,23 +334,23 @@ tbody tr:last-child td { border-bottom:none; }
       <ul><li>Wer eine schon vergebene Option antippt, bekommt: <em>„Diese Option ist bereits vergeben&quot;</em>. Es entsteht keine zweite Stimme darauf.</li><li><strong>Die Wahl wechseln</strong> geht jederzeit: Tippst du eine andere freie Option an, wird deine alte wieder freigegeben.</li><li><strong>Die Wahl zurückgeben</strong> geht, indem du deine eigene Option noch einmal antippst.</li><li><strong>Mehrfachauswahl ist ausgeschlossen.</strong> Der Schalter wird grau und meldet <em>„Bei exklusiven Optionen nicht möglich&quot;</em>.</li></ul>
       <p>Zwei Personen, die im selben Moment auf dieselbe Option tippen, bekommen nicht beide den Zuschlag — die zweite bekommt „bereits vergeben&quot;.</p>
       <blockquote><strong>Achtung:</strong> Es gibt keine Warteliste. Ist alles vergeben, muss die Absprache im Chat geklärt werden.</blockquote>
-      <p>---</p>
+      <hr>
       <h2 id="mitglieder-einer-gruppe-verwalten"><span class="abschnitt-nr">13.8</span>Mitglieder einer Gruppe verwalten</h2>
       <p>Wer in einem Chat ist, sehen <strong>alle Mitglieder</strong> über das Personen-Symbol oben im Chat — in Zweiergesprächen fehlt der Knopf, dort ist die Sache klar.</p>
       <p><strong>Ändern dürfen die Liste nur Leitung und Admins, und nur in Gruppen.</strong> In allen anderen Chat-Arten ergibt sich aus der Sache selbst, wer drin ist: aus dem Jahrgang, aus der Rolle, aus der Terminanmeldung. Wer es anderswo versucht, bekommt: <em>„Teilnehmer können nur zu Gruppenchats hinzugefügt werden&quot;</em> beziehungsweise <em>„… aus Gruppenchats entfernt werden&quot;</em>.</p>
       <p>Nur Personen aus der eigenen Gemeinde lassen sich hinzufügen — dazu zählen auch Teamer:innen und Admins, die <a href="./rollen.html#in-mehreren-gemeinden-mitarbeiten">über eine Einladung</a> hier mitarbeiten und in einer anderen Gemeinde zuhause sind. Ihre Rolle wird immer aus dem echten Konto ermittelt, und zwar die Rolle <strong>in dieser Gemeinde</strong> — niemand landet mit falschen Rechten in einer Gruppe.</p>
       <blockquote><strong>Achtung:</strong> Beim nachträglichen Hinzufügen greift nur die Jahrgangsgrenze für Konfis: Ein Admin kann nur Konfis seiner eigenen Jahrgänge eintragen. Alles andere bleibt ungeprüft — die Leitung kann einen Konfi und eine fachfremde Teamer:in in dieselbe Gruppe setzen, obwohl die beiden einander nicht direkt anschreiben könnten. Wer eine Gruppe zusammenstellt, sollte selbst hinschauen, wer dort zusammentrifft.</blockquote>
-      <p>---</p>
+      <hr>
       <h2 id="einen-chat-verlassen"><span class="abschnitt-nr">13.9</span>Einen Chat verlassen</h2>
       <div class="tabelle-huelle"><table><thead><tr><th>Art</th><th>Verlassbar</th></tr></thead><tbody><tr><td>Gruppe</td><td>ja</td></tr><tr><td>Team-Chat</td><td>ja</td></tr><tr><td>Termin-Chat</td><td>Konfis nur übers Abmelden vom Termin; Teamer:innen direkt</td></tr><tr><td>Jahrgangs-Chat</td><td><strong>nein</strong></td></tr><tr><td>Direktnachricht</td><td><strong>nein</strong></td></tr></tbody></table></div>
       <p>Der Knopf steckt im Drei-Punkte-Menü oben im Chat, als „Chat verlassen&quot;.</p>
       <p><strong>Leitung und Admins können gar keinen Chat verlassen</strong> — <em>„Admins können Chats nicht verlassen&quot;</em>. Wer die Verantwortung trägt, bleibt in den Räumen.</p>
-      <p>---</p>
+      <hr>
       <h2 id="einen-chat-loeschen"><span class="abschnitt-nr">13.10</span>Einen Chat löschen</h2>
       <p>Einen ganzen Chat löschen dürfen <strong>Leitung und Admins</strong>, in der Übersicht über die <a href="./bedienung.html#etwas-loeschen-nach-links-wischen">Wischgeste nach links</a>.</p>
       <p>Enthält er noch Nachrichten, kommt zuerst eine Rückfrage: <em>„Chat-Raum kann nicht gelöscht werden: 47 Nachricht(en) vorhanden.&quot;</em> Erst mit ausdrücklicher Bestätigung wird gelöscht — dann sind der Raum, alle Nachrichten, alle Umfragen und alle Dateien weg. Es gibt keinen Papierkorb.</p>
       <p>Jahrgangs-Chats sind ausgenommen: Sie verschwinden nur mit ihrem Jahrgang.</p>
-      <p>---</p>
+      <hr>
       <h2 id="einen-chat-exportieren"><span class="abschnitt-nr">13.11</span>Einen Chat exportieren</h2>
       <p>Ein ganzer Chatverlauf lässt sich über das Drei-Punkte-Menü als Textdatei sichern („Chat-Verlauf exportieren&quot;) — gedacht dafür, aus einem Gespräch weiterzuarbeiten, etwa an einer Gottesdienst-Vorbereitung.</p>
       <p><strong>Nur Leitung und Admins dürfen das</strong>, Teamer:innen und Konfis nicht (<em>„Nur die Leitung darf Chats exportieren&quot;</em>). Ein Export nimmt den ganzen Verlauf aus dem Zusammenhang des Chats heraus; wer ihn zieht, soll dieselbe Verantwortung tragen wie beim Löschen. <strong>Fremde Zweiergespräche lassen sich nicht exportieren.</strong></p>
@@ -370,7 +371,7 @@ Exportiert am 23.08.2026 14:12 — 138 Nachrichten
       <p>Mit dabei: Datum und Uhrzeit, Absender mit Rolle, der Text, bei Anhängen der Dateiname, bei Umfragen Frage und Antwortmöglichkeiten und bei Antworten der Bezug auf die zitierte Nachricht.</p>
       <p>Nicht im Export stehen: die <strong>Dateien selbst</strong> (nur ihre Namen), die <strong>Reaktionen</strong> und die <strong>abgegebenen Stimmen</strong> einer Umfrage — bei keiner Umfrage, auch nicht bei einer mit Namen.</p>
       <p>Auf einem Handy landet der Export im Teilen-Menü, am Rechner im Download-Ordner.</p>
-      <p>---</p>
+      <hr>
       <h2 id="sich-in-der-chat-uebersicht-zurechtfinden"><span class="abschnitt-nr">13.12</span>Sich in der Chat-Übersicht zurechtfinden</h2>
       <p>Über der Liste stehen drei Zahlen: <strong>CHATS</strong> (wie viele du hast), <strong>UNGELESEN</strong> (die Summe aller Zähler) und <strong>AKTIV</strong> (Chats mit einer Nachricht in den letzten sieben Tagen). Die ersten beiden sind anklickbar und schalten auf den passenden Reiter; AKTIV ist nur eine Anzeige.</p>
       <p>Darunter die Reiter, dann das Suchfeld — erst filtern, dann suchen. Gesucht wird über die Chat-Namen, nicht über die Nachrichten darin.</p>

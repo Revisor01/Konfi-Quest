@@ -121,6 +121,12 @@ function markdown(quelle, anker = new Set(), kapitelNr = null, abschnitte = null
 
     if (!z.trim()) { i++; continue; }
 
+    // Trennlinie ("---" allein in einer Zeile). Ohne diesen Zweig landete sie
+    // als sichtbarer Absatz "---" im HTML (27.09.2026: 24 Stellen in
+    // Abzeichen, Challenges und Chat). Das Frontmatter hat lesen() vorher
+    // abgetrennt.
+    if (/^-{3,}$/.test(z.trim())) { teile.push('<hr>'); i++; continue; }
+
     // Ueberschriften — mit Anker, damit Querverweise auf Abschnitte zeigen
     // koennen. Bei doppeltem Text ("Events" als h2 und h3) wird gezaehlt,
     // sonst gaebe es zweimal dieselbe id.
@@ -247,7 +253,7 @@ function markdown(quelle, anker = new Set(), kapitelNr = null, abschnitte = null
     // Absatz
     const absatz = [];
     while (i < zeilen.length && zeilen[i].trim()
-      && !/^([-*]\s|\d+\.\s|>|#{2,4}\s|\||```)/.test(zeilen[i].trim())
+      && !/^([-*]\s|\d+\.\s|>|#{2,4}\s|\||```|-{3,}$)/.test(zeilen[i].trim())
       && !/^!\[[^\]]*\]\([^()\s]+\)$/.test(zeilen[i].trim())) {
       absatz.push(zeilen[i].trim());
       i++;
@@ -366,6 +372,7 @@ table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
+hr { border:none; border-top:1px solid var(--rand); margin:36px 0; }
 @media (max-width:860px) {
   /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
      zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
