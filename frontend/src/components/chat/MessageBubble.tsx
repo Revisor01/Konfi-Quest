@@ -22,6 +22,8 @@ import { REACTION_EMOJIS } from './constants';
 import { formatFileSize } from '../../utils/helpers';
 import VideoPreview from './VideoPreview';
 import LazyImage from './LazyImage';
+import FortschrittsBalken from '../shared/FortschrittsBalken';
+import { ladeText, sendeText } from '../../utils/fortschritt';
 import { tastaturKlick } from '../../utils/tastatur';
 import { datumUhrzeit, uhrzeit } from '../../utils/dateUtils';
 
@@ -621,7 +623,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               </div>
             ) : message.file_name?.match(/\.(mp4|mov|avi|webm|m4v)$/i) ? (
               <VideoPreview
-                message={message}
+                filePath={message.file_path}
+                fileName={message.file_name}
+                fileSize={message.file_size}
                 onError={(error) => onError('Fehler beim Laden des Videos: ' + error)}
               />
             ) : (
@@ -652,9 +656,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   </div>
                   {laedtGerade ? (
                     <div style={{ fontSize: 'var(--app-text-klein)', opacity: 0.9 }}>
-                      {ladendeDatei?.prozent != null
-                        ? `Wird geladen… ${ladendeDatei.prozent} %`
-                        : 'Wird geladen…'}
+                      {ladeText(ladendeDatei?.prozent)}
                     </div>
                   ) : message.file_size ? (
                     <div style={{ fontSize: 'var(--app-text-klein)', opacity: 0.8 }}>
@@ -662,29 +664,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     </div>
                   ) : null}
                   {laedtGerade && ladendeDatei?.prozent != null && (
-                    <div
-                      role="progressbar"
-                      aria-valuenow={ladendeDatei.prozent}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label={`Datei wird geladen: ${ladendeDatei.prozent} Prozent`}
-                      style={{
-                        height: '3px',
-                        marginTop: 'var(--app-abstand-mini)',
-                        borderRadius: 'var(--app-abstand-winzig)',
-                        backgroundColor: 'currentColor',
-                        opacity: 0.25,
-                        overflow: 'hidden'
-                      }}
-                    >
-                      <div style={{
-                        width: `${ladendeDatei.prozent}%`,
-                        height: '100%',
-                        backgroundColor: 'currentColor',
-                        borderRadius: 'var(--app-abstand-winzig)',
-                        transition: 'width 0.2s ease-out'
-                      }} />
-                    </div>
+                    <FortschrittsBalken
+                      prozent={ladendeDatei.prozent}
+                      beschriftung={`Datei wird geladen: ${ladendeDatei.prozent} Prozent`}
+                    />
                   )}
                 </div>
                 {laedtGerade ? (
@@ -717,9 +700,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           )}
           {sendetGerade && (
             <span style={{ marginLeft: 'var(--app-abstand-mini)' }}>
-              {uploadFortschritt!.prozent >= 100
-                ? 'Wird verarbeitet…'
-                : `Wird gesendet… ${uploadFortschritt!.prozent} %`}
+              {sendeText(uploadFortschritt!.prozent)}
             </span>
           )}
           {isOwnMessage && !message.queueStatus && (
@@ -746,29 +727,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         </div>
 
         {sendetGerade && (
-          <div
-            role="progressbar"
-            aria-valuenow={uploadFortschritt!.prozent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Datei wird gesendet: ${uploadFortschritt!.prozent} Prozent`}
-            style={{
-              height: '3px',
-              marginTop: 'var(--app-abstand-mini)',
-              borderRadius: 'var(--app-abstand-winzig)',
-              backgroundColor: 'currentColor',
-              opacity: 0.25,
-              overflow: 'hidden'
-            }}
-          >
-            <div style={{
-              width: `${uploadFortschritt!.prozent}%`,
-              height: '100%',
-              backgroundColor: 'currentColor',
-              borderRadius: 'var(--app-abstand-winzig)',
-              transition: 'width 0.2s ease-out'
-            }} />
-          </div>
+          <FortschrittsBalken
+            prozent={uploadFortschritt!.prozent}
+            beschriftung={`Datei wird gesendet: ${uploadFortschritt!.prozent} Prozent`}
+          />
         )}
 
         {/* Reaktionen Anzeige */}

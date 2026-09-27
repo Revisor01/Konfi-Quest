@@ -155,6 +155,13 @@ Versionsüberschrift.
 - Eine neue Challenge, bei der das Team mitmacht, steht bei Teamer:innen und
   Leitung als rote Zahl an der Challenge und am Reiter, bis sie geöffnet
   wird — wie bei den Konfis. Bisher zählten fürs Team nur neue Beiträge.
+- Bilder und Videos im Chat zeigen beim Laden, wie weit sie sind — mit
+  Prozentzahl und Balken wie beim Öffnen einer Datei. Klappt das Laden nicht,
+  lässt es sich mit „Erneut versuchen" wiederholen. Ohne Netz steht statt einer
+  Ladeanzeige, dass das Bild offline nicht verfügbar ist; es lädt von selbst,
+  sobald wieder Netz da ist.
+- Wer im Chat durch die Dateien wischt oder eine Datei teilt, lädt sie nicht
+  mehr erneut herunter, wenn sie schon auf dem Gerät liegt.
 - Im Dunkelmodus setzen sich Karten und Listen deutlicher vom Hintergrund ab:
   Sie sind jetzt erkennbar heller als der Grund statt fast schwarz auf schwarz
   und werfen einen leichten Schatten. Auf Android war der Unterschied bisher

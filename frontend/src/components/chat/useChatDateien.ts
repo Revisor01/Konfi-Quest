@@ -1,12 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { useIonModal } from '@ionic/react';
-import { haptik, ImpactStyle } from '../../utils/haptics';
+import { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { compressImage } from '../../services/mediaCompression';
-import { getMediaBlob, istGecacht } from '../../services/mediaCache';
-// Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
-import { openFileNatively } from '../../utils/nativeFileViewer';
-import FileViewerModal, { FileItem } from '../shared/FileViewerModal';
+import { useDateiOeffnen } from '../../hooks/useDateiOeffnen';
 import { Message } from '../../types/chat';
 
 /**
@@ -14,20 +9,10 @@ import { Message } from '../../types/chat';
  * gezogen, Verhalten unveraendert): Datei-/Foto-Auswahl samt Kompression und
  * 10MB-Grenze, Kamera und Galerie, sowie das Oeffnen empfangener Dateien
  * (nativ, mit FileViewerModal als Web-Fallback inklusive Swipe-Kontext).
+ *
+ * Das Oeffnen laeuft seit dem 27.09.2026 ueber useDateiOeffnen — denselben
+ * Weg wie bei den Challenges (Ladeanzeige, Cache, Betrachter).
  */
-
-// MIME-Type aus Dateiname ableiten
-const getMimeFromFileName = (name: string): string => {
-  const ext = (name.split('.').pop() || '').toLowerCase();
-  const map: Record<string, string> = {
-    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
-    mp4: 'video/mp4', mov: 'video/quicktime', avi: 'video/x-msvideo', webm: 'video/webm', m4v: 'video/mp4',
-    pdf: 'application/pdf',
-    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  };
-  return map[ext] || 'application/octet-stream';
-};
 
 interface ChatDateienDeps {
   // Fuer den Swipe-Kontext im Viewer: alle Datei-Nachrichten des Raums.
@@ -38,24 +23,15 @@ export function useChatDateien({ messages }: ChatDateienDeps) {
   const { setError } = useApp();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
-  // Welche Datei gerade geladen wird und wie weit. Ohne Rueckmeldung sieht man
-  // beim Antippen einer PDF gar nichts passieren und tippt weiter (Simon,
-  // 11.09.2026). `prozent` ist null, solange der Server keine Groesse meldet —
-  // dann laeuft die Anzeige unbestimmt statt auf einer geratenen Zahl.
-  const [ladendeDatei, setLadendeDatei] = useState<{ pfad: string; prozent: number | null } | null>(null);
-  const viewerRef = useRef<{ files: FileItem[]; initialIndex: number }>({ files: [], initialIndex: 0 });
 
-  // FileViewer Modal mit useIonModal Hook (universeller Datei-Viewer)
-  const [presentFileViewer, dismissFileViewer] = useIonModal(FileViewerModal, {
-    get files() { return viewerRef.current.files; },
-    get initialIndex() { return viewerRef.current.initialIndex; },
-    onClose: () => {
-      dismissFileViewer();
-      viewerRef.current.files.forEach(f => {
-        if (f.url.startsWith('blob:')) URL.revokeObjectURL(f.url);
-      });
-      viewerRef.current = { files: [], initialIndex: 0 };
-    }
+  // Empfangene Dateien oeffnen: Ladeanzeige mit Prozent, Medien-Cache, nativ
+  // oder im Betrachter mit allen Dateien des Raums zum Wischen.
+  const { dateiOeffnen: handleFileClick, ladendeDatei } = useDateiOeffnen({
+    quelle: 'chat',
+    fehlerOrt: 'chat-datei',
+    kontext: () => messages
+      .filter(m => m.file_path)
+      .map(m => ({ pfad: m.file_path!, name: m.file_name })),
   });
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,61 +80,6 @@ export function useChatDateien({ messages }: ChatDateienDeps) {
     }
     setSelectedFile(null);
     setSelectedFilePreview(null);
-  };
-
-  const handleFileClick = async (filePath: string, fileName: string, mimeType: string) => {
-    // Zweiter Tipp auf dieselbe Datei, waehrend sie laedt: ignorieren statt
-    // einen zweiten Download zu starten.
-    if (ladendeDatei) return;
-    try {
-      await haptik(ImpactStyle.Light);
-
-      // Ueber den Medien-Cache statt direkt per api.get (13.09.2026, Simon:
-      // "Sonst muss man ja immer laden. Die moeglichst alle Dateien.").
-      // Vorher lief GENAU dieser Zweig — PDFs, Office-Dokumente, Audio, alles
-      // ausser Bild und Video — an mediaCache vorbei: jedes Antippen war ein
-      // voller Download. Die Ladeanzeige hier stammt aus derselben Not.
-      //
-      // Beim Cache-Treffer gar keine Anzeige zeigen: Sie waere sofort wieder
-      // weg und wuerde nur aufblitzen.
-      const schonDa = await istGecacht(filePath);
-      if (!schonDa) setLadendeDatei({ pfad: filePath, prozent: 0 });
-
-      const blob = await getMediaBlob(filePath, (prozent) => {
-        setLadendeDatei({ pfad: filePath, prozent });
-      });
-      // Der MIME-Typ kommt jetzt aus dem Dateinamen statt aus dem
-      // Antwort-Header — beim Cache-Treffer gibt es keine Antwort mehr.
-      // mimeType ist der vom Aufrufer gemeldete Typ der Nachricht.
-      const mime: string = mimeType || getMimeFromFileName(fileName);
-
-      // Nativ oeffnen versuchen (per D-12)
-      const openedNatively = await openFileNatively(blob, fileName, mime);
-      if (openedNatively) return;
-
-      // Web-Fallback: FileViewerModal mit Swipe-Kontext
-      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
-      const allFileMessages = messages.filter(m => m.file_path);
-      const files: FileItem[] = allFileMessages.map(m => {
-        if (m.file_path === filePath) {
-          return { url: blobUrl, fileName: m.file_name || fileName, mimeType: mime };
-        }
-        return {
-          url: `/api/chat/files/${m.file_path}`,
-          fileName: m.file_name || 'Datei',
-          mimeType: m.file_name ? getMimeFromFileName(m.file_name) : 'application/octet-stream'
-        };
-      });
-      const clickedIndex = allFileMessages.findIndex(m => m.file_path === filePath);
-      viewerRef.current = { files, initialIndex: Math.max(0, clickedIndex) };
-      presentFileViewer({ cssClass: 'file-viewer-modal' });
-    } catch (err) {
-      setError('Fehler beim Öffnen der Datei', { ort: 'chat-datei', fehler: err });
-    } finally {
-      // finally statt einzelner Aufrufe: Der Zweig "nativ geoeffnet" steigt
-      // per return aus, und ohne finally bliebe die Anzeige dort haengen.
-      setLadendeDatei(null);
-    }
   };
 
   return {

@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { teilen } from '../../services/systemDialoge';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import api, { DATEI_TIMEOUT_MS } from '../../services/api';
+import { getMediaBlob } from '../../services/mediaCache';
 import { Message } from '../../types/chat';
 
 /**
@@ -19,9 +20,10 @@ export async function nachrichtTeilen(
 ): Promise<void> {
   try {
     if (message.file_path) {
-      // For files, share the actual file natively (with auth token)
-      const response = await api.get(`/chat/files/${message.file_path}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
-      const blob = response.data;
+      // Die Datei über den Medien-Cache holen (27.09.2026): Was schon im
+      // Chat angezeigt wurde, liegt auf dem Gerät — Teilen lud es bisher
+      // trotzdem noch einmal vom Server.
+      const blob = await getMediaBlob(message.file_path);
       const fileName = message.file_name || 'file';
 
       // Write to Documents directory for sharing

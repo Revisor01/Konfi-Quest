@@ -20,6 +20,7 @@ const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8'
 
 const cache = lies('src/services/mediaCache.ts');
 const dateien = lies('src/components/chat/useChatDateien.ts');
+const oeffnen = lies('src/hooks/useDateiOeffnen.ts');
 const viewer = lies('src/utils/nativeFileViewer.ts');
 const main = lies('src/main.tsx');
 
@@ -50,18 +51,27 @@ describe('Der Cache kennt auch Dokumente, Audio und Archive', () => {
 });
 
 describe('Das Oeffnen einer Datei laeuft ueber den Cache', () => {
+  // 27.09.2026: Das Oeffnen steckt nicht mehr in useChatDateien, sondern im
+  // gemeinsamen Hook useDateiOeffnen (Chat und Challenges). Die Erwartungen
+  // ziehen mit um; useChatDateien muss den Hook nutzen.
   it('ruft getMediaBlob statt direkt api.get', () => {
-    expect(dateien).toContain('getMediaBlob(filePath,');
+    expect(oeffnen).toContain('getMediaBlob(filePath, {');
   });
 
   it('laedt Dateien nicht mehr direkt vom Server', () => {
     // Die Gegenprobe zum vorigen Test: Bliebe der alte Aufruf stehen, liefe
     // weiterhin jeder Tipp am Cache vorbei.
     expect(dateien).not.toContain("api.get(`/chat/files/");
+    expect(oeffnen).not.toContain('api.get(');
   });
 
   it('importiert den Cache', () => {
-    expect(dateien).toContain("from '../../services/mediaCache'");
+    expect(oeffnen).toContain("from '../services/mediaCache'");
+  });
+
+  it('der Chat oeffnet ueber den gemeinsamen Weg', () => {
+    expect(dateien).toContain("from '../../hooks/useDateiOeffnen'");
+    expect(dateien).toContain("quelle: 'chat',");
   });
 });
 

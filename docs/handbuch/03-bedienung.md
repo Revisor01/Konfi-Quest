@@ -445,6 +445,17 @@ sie auf dem Gerät und öffnen sich beim nächsten Mal sofort — auch ohne Netz
 Dieser Speicher heißt in der App **Medien-Cache**. Wird er zu groß (mehr als
 500 MB), wirft die App von selbst weg, was am längsten niemand geöffnet hat.
 
+Solange ein Bild oder Video lädt, steht an seiner Stelle *„Wird geladen…"* mit
+Prozentzahl und einem Balken — dieselbe Anzeige wie beim Antippen einer Datei.
+Klappt das Laden nicht, sagt die App es (*„Das Bild konnte nicht geladen
+werden."*) und bietet **„Erneut versuchen"** an. Fehlt das Netz und liegt das
+Bild noch nicht auf dem Gerät, steht dort die graue Zeile mit der Wolke
+(*„Das Bild ist offline nicht verfügbar."*); sobald wieder Netz da ist, lädt es
+von selbst.
+
+Auch der Betrachter, in dem du durch die Dateien wischst, und das Teilen einer
+Datei nehmen sie vom Gerät, wenn sie dort schon liegt.
+
 ### Den Medien-Cache leeren
 
 Im eigenen [Profil](#das-eigene-profil-finden) steht **„Medien-Cache leeren"**

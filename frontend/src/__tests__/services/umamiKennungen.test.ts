@@ -244,6 +244,16 @@ describe('Die vier Datei-Stellen geben je einen eigenen Ort mit', () => {
   ];
 
   it.each(stellen)('%s meldet den Ort %s', (datei, ort) => {
+    // Der Chat oeffnet seit dem 27.09.2026 ueber den gemeinsamen Hook
+    // useDateiOeffnen (Chat und Challenges): Die Meldung steht dort, der Ort
+    // kommt als fehlerOrt aus dem Aufrufer. Beides wird geprueft.
+    if (datei.endsWith('useChatDateien.ts')) {
+      const hook = lies('src/hooks/useDateiOeffnen.ts');
+      expect(hook).toContain('Fehler beim Öffnen der Datei');
+      expect(hook).toMatch(/ort: fehlerOrt,\s*fehler:/);
+      expect(lies(datei)).toContain(`fehlerOrt: '${ort}'`);
+      return;
+    }
     const quelle = lies(datei);
     // Der Nutzertext ist unveraendert — echte Umlaute, kein technischer Zusatz.
     expect(quelle).toContain('Fehler beim Öffnen der Datei');
@@ -260,7 +270,7 @@ describe('Die vier Datei-Stellen geben je einen eigenen Ort mit', () => {
   });
 
   it('keine der vier Stellen setzt die Meldung noch ohne Diagnose', () => {
-    for (const [datei] of stellen) {
+    for (const datei of [...stellen.map(([d]) => d), 'src/hooks/useDateiOeffnen.ts']) {
       const quelle = lies(datei);
       // Frueher: setError('Fehler beim Öffnen der Datei'); — also die Meldung
       // direkt gefolgt von der schliessenden Klammer.
@@ -272,7 +282,7 @@ describe('Die vier Datei-Stellen geben je einen eigenen Ort mit', () => {
 describe('Nutzertexte bleiben Nutzertexte', () => {
   it('kein technischer Zusatz in der Meldung', () => {
     for (const datei of [
-      'src/components/chat/useChatDateien.ts',
+      'src/hooks/useDateiOeffnen.ts',
       'src/components/teamer/pages/TeamerMaterialPage.tsx',
       'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
       'src/components/admin/modals/MaterialFormModal.tsx',
@@ -283,7 +293,7 @@ describe('Nutzertexte bleiben Nutzertexte', () => {
   });
 
   it('echte Umlaute, keine Umschreibung', () => {
-    const quelle = lies('src/components/chat/useChatDateien.ts');
+    const quelle = lies('src/hooks/useDateiOeffnen.ts');
     expect(quelle).toContain('Öffnen');
     expect(quelle).not.toContain('Oeffnen der Datei');
   });
