@@ -33,9 +33,13 @@ erfunden:
 
 - **Org-Admin** sieht, darf und bekommt alles seiner Gemeinde — er ist die
   Instanz vor Ort, die alles administrieren können muss.
-- **Admin und Teamer:in** immer nur für ihre zugewiesenen Jahrgänge. Einzige
-  Ausnahme: was ausdrücklich nur fürs Team ist (Challenge „Nur das Team")
-  gilt fürs ganze Team ohne Jahrgang.
+- **Admin und Teamer:in** immer nur für ihre zugewiesenen Jahrgänge.
+  Ausnahmen, die fürs ganze Team gelten, ohne Jahrgang:
+  - was ausdrücklich nur fürs Team ist — Termine „Nur Team", Challenges
+    „Nur das Team";
+  - Termine ohne jeden Jahrgang (sie gelten der ganzen Gemeinde);
+  - Chat von Team zu Team (Team-Chat, Gruppen und Einzelchats unter
+    Teamer:innen, Admins und Org-Admins).
 - **Konfi:** der eigene Jahrgang und die eigenen Vorgänge.
 - **Mitteilung = Sichtbarkeit.** Push, Postfach-Eintrag und rote Zahl bekommt
   genau, wer den Vorgang in seiner Liste sieht und bearbeiten darf — nicht mehr
