@@ -273,6 +273,28 @@ vor den Merge gezogen, dazu die Mindestversion (Feature E-05).
   die genau die Berlin-Annahme prüfen, grün (3.968 von 3.970); der Code rechnet seine
   Kalendertage selbst in Berliner Zeit. Kommentare korrigiert, Lauf per
   `TEST_DB_SITZUNGSZONE=UTC` wiederholbar.
+- **Kompatibilität mit der Store-App 2.2.0** (Tag `2.2.0`, iOS-Build 206, Android versionCode
+  113) gegen das Backend 2.3.0: 303 Aufrufstellen, 196 Routen, 25 Warteschlangen-Einträge,
+  9 Socket-Ereignisse der alten App. Jede Route gibt es noch, Antwortformen gleich, nur neue
+  Felder; kein Absturz, kein Hängenbleiben. Zwei Befunde behoben:
+  - Die **Zahl am App-Symbol** (iOS) zählte seit 24./25.09. das Postfach und die
+    Challenge-Neuigkeiten mit; die alte App kann beides nicht abbauen, die Zahl wäre nie auf
+    null gegangen. Geräte ohne `app_version` am Push-Token (2.3.0 meldet sie mit, 2.2.x nicht)
+    bekommen jetzt die Rechnung von 2.2.0 — in jedem Versandweg und im Hintergrundlauf, ohne
+    zusätzliche Abfrage (`48c998cc`).
+  - **Rolle eines Zusatzmitglieds ändern** scheiterte mit 400, wenn E-Mail oder Funktion in
+    der Datenbank als `''` stehen: Die alte App schickt `null`. Leerer Text und NULL gelten
+    jetzt als gleich, Rand-Leerzeichen zählen nicht; geschrieben wird weiter nur die Rolle
+    (`504acb29`).
+
+  Bewusst so gelassen (am Gerät sichtbar, kein Bruch): Chat-Medien laden in 2.2.x ohne
+  Prozentanzeige (gestreamt, ohne `Content-Length`); gehen zwei Refresh-Antworten hintereinander
+  verloren, ist die dritte Nutzung eine Wiederverwendung und meldet alle Geräte des Kontos ab
+  (vorher innerhalb von 5 Minuten erlaubt); wählt die Leitung in 2.2.x eine Person ohne Jahrgang
+  des Events als Teilnehmende, kommt „Fehler beim Hinzufügen" ohne Grund (403
+  `person_jahrgang_fremd`); neue Push-Arten (Einladung, Warteliste, ausgetragen) öffnen die alte
+  App ohne Sprung; Konfis ohne Jahrgang sehen die Termine ohne Jahrgang — auch Pflichttermine
+  ohne Jahrgang aus dem Bestand.
 - **Betrieb Phase A** (lokaler Agent, vor dem Merge): Sicherung, Postgres auf 2 CPU / 3 GB mit
   `pg_stat_statements`, Pool 50 und Zeitgrenzen; ein Stack-Update mit 22 s bis gesund, 1 von
   240 Statusabfragen gescheitert. Ergebnisse in `docs/auftraege/lokaler-agent/`.
@@ -327,6 +349,11 @@ Gemeinden (umgesetzt).
   `timestamptz` umstellen (Muster Migration 138); `TZ` bis dahin nicht setzen.
 - **Refresh-Tokens:** 1.232 offene auf 129 Konten (größte 189); kein Lauf entfernt abgelaufene
   oder widerrufene. Aufräumen und eine Obergrenze je Konto nach dem Release.
+- **Nach dem Deploy zu messen (Kompatibilität):** wie viele Push-Tokens ohne `app_version`
+  (= Geräte mit 2.2.x) und wie viele ungelesene Mitteilungen es je Person gibt; ob die
+  IP-Grenzen je Adresse zählen (in `rate_limit_zaehler` viele Schlüssel je Limiter, nicht einer
+  für alle — die Adresse kommt aus `X-Real-IP`, wenn der Proxy aus dem Docker-Netz kommt);
+  wie viele Pflichttermine ohne Jahrgang aktiv sind.
 - **Anmeldesperre:** Die Test-API arbeitet auf derselben Datenbank; bis sie den neuen Stand fährt
   (`test-backend.yml` nach dem Merge), gilt dort keine Sperre. Ein gezieltes Aussperren eines
   bekannten Kontos bleibt möglich (10 Versuche je Stunde), begrenzt durch das Fenster und

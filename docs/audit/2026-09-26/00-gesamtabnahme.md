@@ -47,7 +47,10 @@ entfällt als Jugendschutz-Auflage: Konfis erreichen einander nur in Räumen, di
 liest (`chat.js:456`, am Code geprüft); die einzige Stelle, an der diese Zusage im Code nicht
 hält, ist Chat BF-01 (Blocker 5).
 
-Kein Bereich hat einen Vertragsbruch gegenüber den Store-Apps 2.2.x gefunden. Die
+Kein Bereich hat einen Vertragsbruch gegenüber den Store-Apps 2.2.x gefunden. (Die eigene
+Prüfung gegen den Tag `2.2.0` am 27.09. fand keinen Bruch der Antwortformen, aber zwei
+Verhaltensfolgen — Zahl am App-Symbol, Rolle eines Zusatzmitglieds —, beide vor dem Merge
+behoben; Einzelheiten im Behebungsbericht.) Die
 Mandantentrennung hält in 150 gezielten Fremdzugriffen. Die Testsuiten sind grün und fangen
 in 11 von 15 Gegenproben echte Fehler. Das ist die gute Nachricht; sie ändert nichts an den
 vier Punkten oben.
