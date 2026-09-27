@@ -348,12 +348,6 @@ Versionsüberschrift.
   mehr an Admins.
 - Mitteilungen zu Challenge-Beiträgen bekommt nur noch, wer den Jahrgang auch
   ansehen darf; eine Zuweisung ohne Leserecht reicht dafür nicht mehr.
-- Die App spricht überall dieselbe Sprache: Was man besucht, sammelt und
-  mitmacht, heißt Event, Badge, Challenge und Stempel — auch in Mitteilungen,
-  Einführung, Rückblick, Fehlermeldungen und in den Android-Einstellungen
-  („Events", „Punkte und Badges"). „Termin" steht nur noch für Datum und
-  Uhrzeit, die Suche heißt in allen Rollen „Events durchsuchen" und „Badges
-  durchsuchen".
 - App und Handbuch sprechen dieselbe Sprache: Was man besucht, sammelt und
   mitmacht, heißt überall Event, Badge, Challenge und Stempel — auch in
   Mitteilungen, Einführung, Rückblick, Fehlermeldungen und in den
@@ -472,8 +466,9 @@ Versionsüberschrift.
   zwölf Konfis an den Pflichtterminen. Termine ohne Pflicht dürfen weiterhin
   ohne Jahrgang für die ganze Gemeinde gelten.
 - Die Zahl an der Postfach-Glocke nimmt ab, sobald man eine Mitteilung
-  antippt oder alle als gelesen markiert. Bisher blieb sie oft stehen, weil
-  eine ältere Zählung die neue überschrieb.
+  antippt oder alle als gelesen markiert — bei mehreren Gemeinden auch die
+  Zahl am App-Symbol. Bisher blieb sie oft stehen, weil eine ältere Zählung
+  die neue überschrieb.
 - Im Handbuch stehen zwischen den Abschnitten wieder Trennlinien statt drei
   Striche im Text (Abzeichen, Challenges, Chat).
 - Im Dunkelmodus blieben die Anmeldeseiten hell — Anmeldung, Passwort vergessen,
