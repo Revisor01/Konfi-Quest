@@ -272,8 +272,9 @@ Event. Im Postfach stehen die Erinnerungen nicht — sie wären sofort veraltet
 
 Tippst du eine Mitteilung zu einem Event an, öffnet die App das Event selbst —
 nicht die Event-Liste. Das gilt für alle Event-Mitteilungen: Anmeldung,
-Abmeldung, Nachrücken von der Warteliste, bestätigte Teilnahme, Erinnerung,
-Änderung und Absage. Auch die Meldung an die Leitung, dass sich eine Teamerin
+Abmeldung, Austragen oder Zurücksetzen auf die Warteliste durch die Leitung,
+Nachrücken von der Warteliste, bestätigte Teilnahme, Erinnerung, Änderung und
+Absage. Auch die Meldung an die Leitung, dass sich eine Teamerin
 oder ein Teamer an- oder abgemeldet hat, führt direkt zum Event. Für Konfis,
 Teamer:innen und Leitung gleichermaßen; bei Teamer:innen öffnet sich das Event
 in der Event-Liste, der Zurück-Pfeil führt zur Liste.
@@ -1070,7 +1071,9 @@ Speichern, du musst es nicht auslösen.
 kommt kein Push. Bei vergangenen Events ebenfalls nicht.
 
 Eine Mitteilung geht außerdem raus, wenn du jemanden
-[von Hand einträgst](#teilnehmende-von-hand-hinzufuegen) und wenn jemand
+[von Hand einträgst](#teilnehmende-von-hand-hinzufuegen),
+[austrägst oder auf die Warteliste setzt](#teilnehmende-austragen-oder-auf-die-warteliste-setzen)
+und wenn jemand
 [von der Warteliste nachrückt](#nachvollziehen-wann-jemand-nachrueckt).
 
 ## Einen Event-Chat einrichten
@@ -1121,6 +1124,28 @@ Leitung gleichermaßen, mit derselben Meldung wie bei der Selbstanmeldung. Ist
 kein Platz mehr frei oder trägst du jemanden bewusst auf die Warteliste ein,
 steht das in der Meldung. Trägst du dich selbst ein, bekommst du nichts aufs
 eigene Handy.
+
+## Teilnehmende austragen oder auf die Warteliste setzen
+
+In der Teilnehmerliste der Detailansicht wischst du eine Person nach links:
+
+- **Entfernen** trägt sie nach der Rückfrage „Anmeldung entfernen?" aus dem
+  Event aus.
+- **Auf die Warteliste setzen** (bei bestätigten Konfis) nimmt ihr den festen
+  Platz, nach der Rückfrage „Auf die Warteliste setzen?".
+
+Ein Platz, der dabei frei wird, geht an die nächste wartende Person — siehe
+[Nachvollziehen, wann jemand nachrückt](#nachvollziehen-wann-jemand-nachrueckt).
+
+**Wer ausgetragen oder auf die Warteliste gesetzt wird, bekommt eine
+Mitteilung** — als Push und im Postfach, Konfis, Teamer:innen und Leitung
+gleichermaßen: „Vom Event ausgetragen" beziehungsweise „Auf die Warteliste
+gesetzt", mit Name und Datum des Events. Antippen öffnet das Event. So hält
+sich niemand den Tag für ein Event frei, auf dem er nicht mehr steht.
+
+Still bleibt es in zwei Fällen: wenn du dich selbst austrägst oder
+herabstufst, und wenn die Person schon als abgemeldet in der Liste stand —
+sie weiß es dann bereits.
 
 ## Material an einem Event finden
 

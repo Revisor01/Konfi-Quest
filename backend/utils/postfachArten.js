@@ -42,6 +42,10 @@ const POSTFACH_ARTEN = new Set([
   'event_reactivated',           // Termin findet doch statt
   'event_registered',            // Anmeldung bestaetigt / auf Warteliste
   'event_unregistered',          // Abmeldung bestaetigt
+  // Die Leitung hat einen ausgetragen bzw. auf die Warteliste zurueckgesetzt
+  // (Simon, 27.09.2026, F-06: "mit Postfach-Eintrag, wie beim Eintragen")
+  'event_removed',
+  'event_waitlisted',
   'challenge_submission_hidden', // eigener Beitrag ausgeblendet
   // ---- Leitung und Team ----
   'event_unregistration',        // Konfi hat sich abgemeldet

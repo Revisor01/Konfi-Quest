@@ -245,8 +245,14 @@ export const buildPushTargetUrl = (
     // fiel in den Catch-all und landete auf dem Dashboard. Die Route gibt es
     // jetzt (rollenBaeume.ts, Umleitung auf ?eventId=), also dasselbe Ziel
     // wie bei Konfi und Leitung.
+    //
+    // event_removed / event_waitlisted (27.09.2026): Die Leitung hat einen
+    // ausgetragen oder auf die Warteliste zurueckgesetzt. Ziel wie bei der
+    // Anmeldung -- am Termin steht der neue Stand.
     case 'event_registered':
     case 'event_unregistered':
+    case 'event_removed':
+    case 'event_waitlisted':
     case 'waitlist_promotion':
     case 'event_reminder': {
       const evId = data?.event_id || data?.eventId;

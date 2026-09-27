@@ -101,7 +101,9 @@ describe('Push-Kanaele: jeder Typ hat einen', () => {
     // in der Zeile darunter -- KEIN Typ ohne Kanal. Wer hier hochzaehlt,
     // ohne den neuen Typ in KANAL_JE_TYP einzutragen, faellt weiterhin auf.
     // 26.09.2026: 31 -> 32. 'gemeinde_einladung' kam dazu.
-    expect(typen.length).toBe(32);
+    // 27.09.2026: 32 -> 34. 'event_removed' und 'event_waitlisted' (die
+    // Leitung traegt aus bzw. setzt auf die Warteliste, F-06/BF-14).
+    expect(typen.length).toBe(34);
     expect(typen).toContain('chat');
     expect(typen).toContain('event_reminder');
 

@@ -338,6 +338,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         // Warteliste nachgerueckt wird (Konfi- und Teamer-Kontingent sind getrennt).
         const { rows: [gefunden] } = await client.query(`
           SELECT eb.*, u.organization_id, e.organization_id as event_org_id,
+                 e.name AS event_name, e.event_date AS event_date,
                  (r.name <> 'konfi') as is_teamer_booking
           FROM event_bookings eb
           JOIN users u ON eb.user_id = u.id
@@ -420,6 +421,22 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       }
 
       res.json({ message: 'Teilnehmer erfolgreich entfernt' });
+
+      // WER AUSGETRAGEN WIRD, ERFAEHRT ES (Simon, 27.09.2026, F-06 / BF-14):
+      // "Ja, mit Postfach-Eintrag, wie beim Eintragen." Derselbe Rahmen wie
+      // beim Eintragen oben: nach der Antwort, nicht an die ausloesende
+      // Person selbst (wer sich selbst austraegt, weiss es), Fehler kippen
+      // nichts. Nur wer angemeldet war oder wartete -- eine Zeile, die schon
+      // "abgemeldet" hiess, verschwindet ohne neue Nachricht: Die Person hat
+      // sich ja bereits abgemeldet oder wurde abgemeldet.
+      if (['confirmed', 'waitlist'].includes(booking.status)
+          && Number(booking.user_id) !== Number(req.user.id)) {
+        nachAntwort(req, async () => {
+          await PushService.sendEventRemovedByLeitung(
+            db, booking.user_id, booking.event_name, booking.event_date, 'removed', eventId, req.user.organization_id
+          );
+        }, 'DELETE /events/:id/bookings/:bookingId (Mitteilung)');
+      }
 
       // Ab hier ist alles festgeschrieben — Benachrichtigungen erst jetzt.
       if (punkteZurueck) {
@@ -661,6 +678,16 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           } catch (pushErr) {
             console.error('Error sending waitlist promotion push:', pushErr);
           }
+        }
+
+        // Wer auf die Warteliste zurueckgesetzt wird, erfaehrt es (Simon,
+        // 27.09.2026, F-06 / BF-14) -- wie beim Austragen nicht, wer sich
+        // selbst herabstuft. wasWaitlist ist hier false: 'waitlist' ->
+        // 'waitlist' lehnt die Route oben mit 400 ab.
+        if (status === 'waitlist' && !wasWaitlist && Number(betroffenerUser) !== Number(req.user.id)) {
+          await PushService.sendEventRemovedByLeitung(
+            db, betroffenerUser, eventName, eventDatum, 'waitlist', eventId, req.user.organization_id
+          );
         }
 
         // Wer durch die Herabstufung nachgerueckt ist, erfaehrt es — ueber

@@ -84,6 +84,9 @@ const GRUPPE_JE_ART = Object.freeze({
   // Termine: Anmeldung, Absage, Aenderung, Erinnerung, Warteliste, Teilnahme
   event_registered: GRUPPE_TERMINE,
   event_unregistered: GRUPPE_TERMINE,
+  // Von der Leitung ausgetragen / auf die Warteliste gesetzt (27.09.2026)
+  event_removed: GRUPPE_TERMINE,
+  event_waitlisted: GRUPPE_TERMINE,
   event_cancelled: GRUPPE_TERMINE,
   event_reactivated: GRUPPE_TERMINE,
   event_changed: GRUPPE_TERMINE,

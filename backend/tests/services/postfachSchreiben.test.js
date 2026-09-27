@@ -427,7 +427,9 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
       expect(POSTFACH_ARTEN.has('certificate')).toBe(true);
       // 26.09.2026: 23 -> 24. 'gemeinde_einladung' kam dazu (Einladung in
       // eine weitere Gemeinde).
-      expect(POSTFACH_ARTEN.size).toBe(24);
+      // 27.09.2026: 24 -> 26. 'event_removed' und 'event_waitlisted' (die
+      // Leitung traegt aus bzw. setzt auf die Warteliste, F-06/BF-14).
+      expect(POSTFACH_ARTEN.size).toBe(26);
       expect(Object.keys(NICHT_IM_POSTFACH)).toHaveLength(9);
     });
   });

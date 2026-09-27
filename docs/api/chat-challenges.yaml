@@ -2032,6 +2032,14 @@ paths:
         Push bekommt, hat ihn. Bewusst NICHT im Postfach: event_reminder,
         new_event, mandatory_event_created, challenge_started, chat (eigene
         Listen und Zaehler); wrapped und certificate sind nicht entschieden.
+        NEU 27.09.2026 (additiv, BF-14 / F-06): event_removed ("Vom Event
+        ausgetragen") und event_waitlisted ("Auf die Warteliste gesetzt") --
+        die Leitung hat die Person ausgetragen bzw. herabgestuft; beide mit
+        event_id und organization_id, sie sterben mit dem Termin. Die
+        Antwortform bleibt; `type` ist ein freier String, und eine App, die
+        eine Art nicht kennt, zeigt Titel und Text wie jede Zeile, in der
+        neutralen Farbe (bzw. der Terminfarbe beim Praefix event_) und ohne
+        Sprungziel.
         events_pending_approval ersetzt die noch ungelesene Mitteilung
         derselben Person und Gemeinde vom Vortag, statt sich taeglich zu
         stapeln. `data` traegt die Kennungen des Pushes (event_id bzw.

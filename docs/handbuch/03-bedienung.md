@@ -66,7 +66,8 @@ Mitteilungen abgeschaltet hat, findet hier trotzdem alles.
 Als Konfi landen hier deine Punkte (aus einem Event, als Bonus oder für eine
 zugewiesene Aktivität), Level-Aufstiege, Badges und Stempel, dein
 freigegebener Jahresrückblick, deine eingereichten Anträge samt Entscheidung,
-deine Anmeldungen und Abmeldungen, das Nachrücken von der Warteliste,
+deine Anmeldungen und Abmeldungen, das Nachrücken von der Warteliste, wenn
+die Leitung dich aus einem Event austrägt oder auf die Warteliste setzt,
 abgesagte, geänderte und wieder stattfindende Events und ausgeblendete
 Beiträge. Als Teamer:in oder Leitung zusätzlich: Abmeldungen
 von Konfis, Buchungen und Absagen des Teams, Events, die auf Verbuchung

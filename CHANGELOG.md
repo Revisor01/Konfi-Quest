@@ -137,6 +137,11 @@ Versionsüberschrift.
   13.2 …) als Unterpunkte in der Navigation, auch im Menü auf dem Handy. Der
   Abschnitt, in dem man gerade liest, ist dort markiert; ein Tipp auf einen
   Unterpunkt springt hin und schließt auf dem Handy das Menü.
+- Wer von der Leitung aus einem Event ausgetragen oder auf die Warteliste
+  zurückgesetzt wird, bekommt eine Mitteilung — als Push und im Postfach, für
+  Konfis, Teamer:innen und Leitung. Antippen öffnet das Event. Bisher
+  meldete sich nur das Eintragen, und wer ausgetragen war, hielt sich den
+  Tag womöglich weiter frei.
 
 ### Geändert
 - Im Dunkelmodus setzen sich Karten und Listen deutlicher vom Hintergrund ab:

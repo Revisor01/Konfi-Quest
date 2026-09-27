@@ -219,6 +219,8 @@ const EVENT_NOTIFICATION_TYPES = new Set([
   'new_event',
   'event_registered',
   'event_unregistered',
+  'event_removed',
+  'event_waitlisted',
   'waitlist_promotion',
   'event_attendance',
   'event_reminder',

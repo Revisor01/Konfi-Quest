@@ -257,6 +257,7 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 
 ### BF-14: Aus dem Termin ausgetragen oder auf die Warteliste gesetzt — keine Mitteilung
 - **Schwere:** MITTEL
+- **Status:** behoben 27.09.2026 — nach F-06 zwei neue Arten mit Push und Postfach-Eintrag: `event_removed` („Vom Event ausgetragen", `DELETE /events/:id/bookings/:bookingId`) und `event_waitlisted` („Auf die Warteliste gesetzt", `PUT …/status` auf `waitlist`), beide über `PushService.sendEventRemovedByLeitung`, nach der Antwort, nicht an die auslösende Person, beim Austragen nur für Buchungen `confirmed`/`waitlist`. Antippen führt an das Event; Apps ohne die Arten zeigen den Push und öffnen nur die App (`tests/routes/mitteilungBeimAustragen.test.js`, `frontend/src/__tests__/components/postfachUnbekannteArt.test.tsx`).
 - **Fundstelle:** `backend/routes/events/teilnehmer.js:307-450` (nur Live-Signal `:446`), `:456-690` (Push nur bei Warteliste → bestätigt, `:658`)
 - **Kennzeichnung:** reproduziert (A14, Austragen); Herabstufung aus Code gelesen
 - **Beschreibung:** Eintragen durch die Leitung meldet sich (`:274/278`, Handbuch `70-termine.md:1118`), Austragen und Herabstufen nicht — weder Push noch Postfach. Die Terminliste der Person zeigt danach „nicht angemeldet".

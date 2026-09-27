@@ -50,6 +50,8 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
  * bonus_points                | sendBonusPointsToKonfi               | Konfi           | ja
  * event_registered            | sendEventRegisteredToKonfi           | Konfi           | ja
  * event_unregistered          | sendEventUnregisteredToKonfi         | Konfi           | ja
+ * event_removed               | sendEventRemovedByLeitung            | Gebuchte Person | ja
+ * event_waitlisted            | sendEventRemovedByLeitung            | Gebuchte Person | ja
  * event_unregistration        | sendEventUnregistrationToAdmins      | Org-Admins      | ja
  * level_up                    | sendLevelUpToKonfi                   | Konfi           | ja
  * event_reminder              | sendEventReminderToKonfi             | Konfi           | ja
@@ -1355,6 +1357,67 @@ class PushService {
       return await this.sendToUser(db, konfiId, notification);
     } catch (error) {
  console.error('sendEventUnregisteredToKonfi error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Die Leitung hat jemanden aus einem Termin ausgetragen oder auf die
+   * Warteliste zurueckgesetzt -- Push und Postfach an die Person.
+   *
+   * SIMONS ENTSCHEIDUNG (27.09.2026, F-06 im Bericht "Wer bekommt was",
+   * BF-14): "Ja, mit Postfach-Eintrag, wie beim Eintragen." Bis hierher
+   * meldete sich nur das Eintragen (sendEventRegisteredToKonfi aus
+   * routes/events/teilnehmer.js); Austragen und Herabstufen liefen still --
+   * die Konfi hielt sich den Termin frei, obwohl sie nicht mehr darauf stand.
+   *
+   * ZWEI EIGENE ARTEN statt event_unregistered: Die sagt "Du hast dich
+   * abgemeldet" und ist die Bestaetigung der EIGENEN Handlung. Hier handelt
+   * jemand anderes. Rollenagnostisch wie sendEventRegisteredToKonfi --
+   * Konfis, Teamer:innen und zugeordnete Leitung gehen denselben Weg.
+   *
+   * ALTE APPS: Store-Fassungen 2.2.x kennen beide Arten nicht. Der Push
+   * erscheint dort mit Titel und Text wie jeder andere (das zeigt das
+   * Betriebssystem); das Antippen oeffnet die App, ohne zu springen
+   * (buildPushTargetUrl liefert fuer unbekannte Arten ''). Ein Postfach haben
+   * sie nicht. Fassungen mit Postfach, die die Arten noch nicht kennen,
+   * zeigen den Eintrag in der Terminfarbe (Praefix event_) ohne Sprungziel.
+   *
+   * @param {'removed'|'waitlist'} vorgang  ausgetragen oder auf die Warteliste
+   */
+  static async sendEventRemovedByLeitung(db, userId, eventName, eventDate, vorgang, eventId = null, organizationId = null) {
+    try {
+      const datum = eventDate
+        ? ` am ${formatDatum(eventDate, { weekday: 'long', day: 'numeric', month: 'long' })}`
+        : '';
+      const gemeinsam = {
+        event_name: eventName,
+        event_id: eventId?.toString() || '',
+        // Event-Org explizit: Teamer:innen koennen Multi-Org sein.
+        ...(organizationId != null ? { organization_id: String(organizationId) } : {})
+      };
+
+      const notification = vorgang === 'waitlist'
+        ? {
+          title: 'Auf die Warteliste gesetzt',
+          body: `Die Leitung hat dich für "${eventName}"${datum} auf die Warteliste gesetzt. Rückst du nach, bekommst du Bescheid.`,
+          data: {
+            type: 'event_waitlisted',
+            ...gemeinsam
+          }
+        }
+        : {
+          title: 'Vom Event ausgetragen',
+          body: `Die Leitung hat dich aus "${eventName}"${datum} ausgetragen.`,
+          data: {
+            type: 'event_removed',
+            ...gemeinsam
+          }
+        };
+
+      return await this.sendToUser(db, userId, notification);
+    } catch (error) {
+      console.error('sendEventRemovedByLeitung error:', error);
       return { success: false, error: error.message };
     }
   }

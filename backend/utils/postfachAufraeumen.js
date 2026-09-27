@@ -110,6 +110,7 @@ async function loescheMitteilungenZuAbzeichen(db, badgeId) {
  */
 const ARTEN_AM_TERMIN = [
   'event_registered', 'event_unregistered', 'waitlist_promotion', 'event_attendance',
+  'event_removed', 'event_waitlisted',
   'event_cancelled', 'event_changed', 'event_reactivated', 'event_reminder',
   'event_unregistration', 'teamer_event_booking', 'teamer_event_cancellation',
   'event_opt_out', 'event_opt_in', 'new_event', 'mandatory_event_created'
