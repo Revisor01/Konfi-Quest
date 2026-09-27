@@ -404,6 +404,14 @@ ohnehin sehen dürfen:
   nur fürs Team für alles im Team
 - Konfis — nur für Beiträge, die in ihrer Galerie erscheinen dürfen
 
+Auf dem Gerät bleiben Fotos, Videos und Aufnahmen nach dem ersten Laden
+liegen, wie die Dateien aus dem Chat: Beim nächsten Öffnen der Challenge sind
+sie sofort da, auch ohne Netz. Beim Abmelden, beim Wechsel der Gemeinde und
+wenn sich auf dem Gerät ein anderes Konto anmeldet, löscht die App sie; wie das
+im Einzelnen geht, steht unter
+[Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
+Ein Foto antippen öffnet es — mit Teilen und Sichern.
+
 ---
 
 ## Eine Challenge löschen

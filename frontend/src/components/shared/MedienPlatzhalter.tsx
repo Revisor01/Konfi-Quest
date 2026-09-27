@@ -13,6 +13,8 @@ import type { MedienZustand } from '../../hooks/useMedienDatei';
 //    ein zweiter Versuch ging erst nach dem Verlassen der Ansicht)
 //  - ohne Netz die graue Zeile mit Wolke, wie überall in der App, statt einer
 //    Ladeanzeige, die bis zum Zeitlimit steht
+//  - gelöscht oder kein Zugriff mehr: "… ist nicht mehr verfügbar." ohne
+//    zweiten Versuch
 
 interface MedienPlatzhalterProps {
   zustand: MedienZustand;
@@ -27,6 +29,15 @@ interface MedienPlatzhalterProps {
 const MedienPlatzhalter: React.FC<MedienPlatzhalterProps> = ({ zustand, prozent, was, onErneut, dunkel }) => {
   if (zustand === 'offline') {
     return <OfflinePlatzhalter was={was} />;
+  }
+
+  if (zustand === 'weg') {
+    // Gelöscht oder kein Zugriff mehr: Ein zweiter Versuch hülfe nicht.
+    return (
+      <div style={{ textAlign: 'center', fontSize: 'var(--app-text-sekundaer)', padding: '0 var(--app-abstand-basis)' }}>
+        {was} ist nicht mehr verfügbar.
+      </div>
+    );
   }
 
   if (zustand === 'fehler') {

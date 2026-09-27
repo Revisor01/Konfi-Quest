@@ -10,6 +10,13 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
+- Bilder und Dateien in Challenges bleiben auf dem Gerät gespeichert und laden
+  beim zweiten Öffnen sofort — in der Galerie, bei den eigenen Beiträgen, in
+  der Ansicht der Leitung und im Jahresrückblick, auch ohne Netz. Beim Laden
+  steht wie im Chat, wie weit es ist; klappt es nicht, geht es mit „Erneut
+  versuchen" noch einmal. Ein Foto lässt sich antippen und öffnen, mit Teilen
+  und Sichern. Chat und Challenges teilen sich dabei einen Speicher, den
+  „Medien-Cache leeren" im Profil zusammen leert.
 - Die Gemeindeleitung kann jemanden, der schon ein Konto hat, in ihre Gemeinde
   einladen — unter „Mehr › Benutzer:innen" über den Knopf oben rechts. Dazu
   reicht der Benutzername oder die E-Mail-Adresse, und die Leitung gibt gleich

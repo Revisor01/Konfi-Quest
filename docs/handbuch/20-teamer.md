@@ -146,7 +146,8 @@ Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
 - **Benachrichtigungen** — welche Mitteilungen aufs Handy kommen; siehe
   [Auswählen, welche Mitteilungen aufs Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen)
 - **App-Tour ansehen** und **Medien-Cache leeren** — Letzteres wirft die
-  Chat-Dateien weg, die zum schnelleren Öffnen auf dem Gerät liegen (siehe
+  Dateien aus Chat und Challenges weg, die zum schnelleren Öffnen auf dem
+  Gerät liegen (siehe
   [Den Medien-Cache leeren](03-bedienung.md#den-medien-cache-leeren))
 - **Badges** — deine Badges; welche
   [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen-zaehlen) gelten,

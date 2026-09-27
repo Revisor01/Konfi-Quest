@@ -23,8 +23,10 @@ import { networkMonitor } from '../services/networkMonitor';
  * - `fehler`: der Server hat es nicht geliefert — erneut versuchen möglich
  * - `offline`: kein Netz und nicht auf dem Gerät; lädt von selbst, sobald
  *   wieder Netz da ist
+ * - `weg`: der Server liefert die Datei für diese Person nicht mehr
+ *   (gelöscht oder kein Zugriff mehr) — ein zweiter Versuch hilft nicht
  */
-export type MedienZustand = 'wartet' | 'laedt' | 'bereit' | 'fehler' | 'offline';
+export type MedienZustand = 'wartet' | 'laedt' | 'bereit' | 'fehler' | 'offline' | 'weg';
 
 export interface MedienDateiOptionen {
   quelle: MedienQuelle;
@@ -136,7 +138,12 @@ export function useMedienDatei(
       } catch (error) {
         if (cancelled) return;
         console.warn('Medium konnte nicht geladen werden:', quelle, error);
-        setZustand(networkMonitor.isOnline ? 'fehler' : 'offline');
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        if (status === 403 || status === 404 || status === 410) {
+          setZustand('weg');
+        } else {
+          setZustand(networkMonitor.isOnline ? 'fehler' : 'offline');
+        }
         onFehlerRef.current?.();
       }
     };

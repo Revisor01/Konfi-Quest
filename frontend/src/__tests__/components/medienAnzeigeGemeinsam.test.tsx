@@ -150,6 +150,15 @@ describe('Bild: Chat und Challenges über denselben Weg', () => {
     expect(apiGet).toHaveBeenCalledTimes(2);
   });
 
+  it('gelöscht oder kein Zugriff mehr (404/403): "nicht mehr verfügbar", kein zweiter Versuch', async () => {
+    apiGet.mockRejectedValueOnce(Object.assign(new Error('404'), { response: { status: 404 } }));
+
+    const { container } = render(<LazyImage filePath="dd55" fileName="foto.jpg" />);
+
+    await waitFor(() => expect(container.textContent).toContain('Das Bild ist nicht mehr verfügbar.'));
+    expect(screen.queryByText('Erneut versuchen')).toBeNull();
+  });
+
   it('ohne Netz und nicht auf dem Gerät: graue Zeile statt Ladeanzeige, kein Aufruf', async () => {
     online = false;
 

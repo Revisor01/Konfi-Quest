@@ -440,10 +440,12 @@ Wolken-Symbol, etwa: „Die Teilnehmerliste ist offline nicht verfügbar."
 
 ## Geladene Bilder und Dateien auf dem Gerät behalten
 
-Bilder, Videos und Dateien aus dem Chat lädt die App nur einmal. Danach liegen
-sie auf dem Gerät und öffnen sich beim nächsten Mal sofort — auch ohne Netz.
-Dieser Speicher heißt in der App **Medien-Cache**. Wird er zu groß (mehr als
-500 MB), wirft die App von selbst weg, was am längsten niemand geöffnet hat.
+Bilder, Videos, Tonaufnahmen und Dateien aus dem [Chat](90-chat.md) und aus
+[Challenges](80-challenges.md) lädt die App nur einmal. Danach liegen sie auf
+dem Gerät und öffnen sich beim nächsten Mal sofort — auch ohne Netz. Beides
+liegt in einem gemeinsamen Speicher, in der App **Medien-Cache** genannt. Wird
+er zu groß (mehr als 500 MB), wirft die App von selbst weg, was am längsten
+niemand geöffnet hat.
 
 Solange ein Bild oder Video lädt, steht an seiner Stelle *„Wird geladen…"* mit
 Prozentzahl und einem Balken — dieselbe Anzeige wie beim Antippen einer Datei.
@@ -453,8 +455,20 @@ Bild noch nicht auf dem Gerät, steht dort die graue Zeile mit der Wolke
 (*„Das Bild ist offline nicht verfügbar."*); sobald wieder Netz da ist, lädt es
 von selbst.
 
-Auch der Betrachter, in dem du durch die Dateien wischst, und das Teilen einer
-Datei nehmen sie vom Gerät, wenn sie dort schon liegt.
+Ein Foto antippen öffnet es — im Chat wie in einer Challenge. Auf dem Handy
+erscheint die Vorschau des Systems mit Teilen und Sichern, im Browser der
+Betrachter der App mit Herunterladen; dort lässt sich durch die übrigen Fotos
+der Ansicht wischen. Auch der Betrachter und das Teilen nehmen die Datei vom
+Gerät, wenn sie dort schon liegt.
+
+Angezeigt wird nur, was die Liste gerade führt, und die kommt vom Server.
+Ein ausgeblendeter oder gelöschter Challenge-Beitrag steht nicht mehr darin —
+er erscheint deshalb auch nicht aus dem Speicher. Der
+[Jahresrückblick](95-wrapped.md) ist ein fester Stand; seine Fotos fragt die
+App deshalb bei Netz immer erst beim Server nach. Ist ein Beitrag inzwischen
+gelöscht, steht dort *„Das Foto ist nicht mehr verfügbar."*, und die Datei
+verschwindet vom Gerät. Wer einen Beitrag löscht, räumt ihn auch aus dem
+eigenen Speicher.
 
 ### Den Medien-Cache leeren
 
@@ -472,4 +486,4 @@ Von selbst leert die App ihn,
   Dateien dort liegen — etwa nach einer abgelaufenen Anmeldung.
 
 So findet niemand, der das Gerät nach dir benutzt, deine Bilder und Dateien
-vor.
+vor — weder aus dem Chat noch aus Challenges.

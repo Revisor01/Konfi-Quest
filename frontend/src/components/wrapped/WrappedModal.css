@@ -922,9 +922,12 @@ ion-modal.wrapped-modal-fullscreen {
   animation: challenge-foto-puls 1.4s ease-in-out infinite;
 }
 
-.challenge-moment-foto--leer {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: var(--app-text-ueberschrift-gross);
+/* Lade-, Fehler- und Offline-Hinweis an Stelle des Fotos: der gemeinsame
+   MedienPlatzhalter wie in Chat und Challenges (27.09.2026). */
+.challenge-moment-foto--hinweis {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: var(--app-text-klein);
+  text-align: center;
 }
 
 @keyframes challenge-foto-puls {
@@ -1854,13 +1857,14 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 .moment-polaroid__bild .challenge-moment-foto--laedt,
-.moment-polaroid__bild .challenge-moment-foto--leer {
+.moment-polaroid__bild .challenge-moment-foto--hinweis {
   display: flex;
   align-items: center;
   justify-content: center;
   background: #e8e4dc;
-  color: rgba(0, 0, 0, 0.3);
-  font-size: 24px;
+  /* Der Hinweis liegt hier auf hellem Polaroid-Papier. */
+  color: rgba(0, 0, 0, 0.6);
+  font-size: var(--app-text-klein);
 }
 
 /* Beiträge ohne Foto (Text, Audio, Link) bekommen dieselbe Fläche --
