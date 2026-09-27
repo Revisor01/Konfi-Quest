@@ -302,6 +302,12 @@ paths:
         jede Jahrgangs-Zuordnung sowie org_admin/super_admin. Ohne diese
         Pruefung hier liesse sich die Sperre aus POST /api/events/{id}/book
         ueber diesen zweiten Weg umgehen.
+        BEHOBEN 27.09.2026: Die Ausnahme fuer org_admin/super_admin las die
+        Rolle am KONTO. Wer zuhause org_admin und in der aktiven Gemeinde nur
+        Teamer:in ist, sagte dort fuer jeden Termin fremder Jahrgaenge zu
+        (200 statt 403). Jetzt zaehlt die Rolle in der Gemeinde des Termins
+        (Stamm-Gemeinde: users.role_id, weitere: user_organizations); das Flag
+        is_super_admin bleibt gemeindeuebergreifend.
         Fachlicher Kern in utils/bookingUtils.js (setzeTeamerZusage). Pushes
         an die Leitung ueber die Teamer-Typen teamer_event_booking bzw.
         teamer_event_cancellation (Absage seit 01.09.2026 mit Grund im Text);

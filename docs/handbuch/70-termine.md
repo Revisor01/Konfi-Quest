@@ -54,7 +54,10 @@ Dieselbe Regel wie im [Chat](90-chat.md#nachschlagen-wer-wen-anschreiben-darf), 
 nur Konfis der eigenen Jahrgänge anschreiben kann. Wer den Jahrgang nicht
 betreut, findet das Event gar nicht erst in seiner Liste; eine Buchung über
 einen Umweg lehnt der Server ab („Dieses Event gehört zu einem Jahrgang, dem
-du nicht zugewiesen bist").
+du nicht zugewiesen bist"). Es zählt die Rolle in der Gemeinde des Events: Wer
+in einer anderen Gemeinde die Leitung stellt, ist hier Teamer:in wie alle
+anderen (siehe [In mehreren Gemeinden
+mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)).
 
 **Die Event-Verwaltung liegt bei der Leitung.** Anlegen — einzeln wie als
 Serie —, Ändern, Absagen, Löschen, Personen eintragen oder entfernen und die

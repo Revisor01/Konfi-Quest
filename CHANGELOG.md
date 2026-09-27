@@ -401,6 +401,11 @@ Versionsüberschrift.
   so wie es die Fortschrittsanzeige schon tat. „Badge neu prüfen" erreicht
   jetzt auch Konfis und Teamer:innen, die in der Gemeinde zusätzlich zu einer
   anderen mitmachen.
+- Wer in einer Gemeinde die Leitung stellt und in einer anderen im Team ist,
+  sagt dort nur noch für Events der eigenen Jahrgänge zu — wie alle
+  Teamer:innen. Bisher galt die Leitungsrolle der Stamm-Gemeinde auch dort,
+  und jedes Event ließ sich buchen. Umgekehrt sagt, wer in einer weiteren
+  Gemeinde die Leitung stellt, dort für jedes Event zu.
 - Teilen sich mehrere ein Gerät, sieht nach einer abgelaufenen Sitzung die
   nächste Person nichts mehr vom gespeicherten Stand der vorigen, und deren
   wartende Nachrichten oder Abmeldungen gehen nicht mehr unter falschem Namen

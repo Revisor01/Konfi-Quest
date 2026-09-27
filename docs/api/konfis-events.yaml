@@ -1792,6 +1792,13 @@ paths:
         Pruefung sitzt in POST /api/teamer/events/{id}/zusage, weil beide Wege
         zur selben Buchung fuehren. GET /api/events blendet solche Termine seit
         derselben Aenderung auch aus der Liste aus (routes/events/lesen.js).
+        BEHOBEN 27.09.2026: Die Ausnahme fuer org_admin/super_admin las die
+        Rolle am KONTO (users.role_id). Wer zuhause org_admin und in der
+        aktiven Gemeinde nur Teamer:in ist, buchte dort jeden Termin fremder
+        Jahrgaenge (201 statt 403). Jetzt zaehlt die Rolle in der Gemeinde des
+        Termins (Stamm-Gemeinde: users.role_id, weitere: user_organizations);
+        das Flag is_super_admin bleibt gemeindeuebergreifend. Tests:
+        tests/routes/terminRolleJeGemeinde.test.js.
 
 
         NEU 01.09.2026 (Teamer-Pfad): Eine ABGESAGTE eigene Buchung
@@ -2007,6 +2014,11 @@ paths:
           Ausgelieferte Apps (2.2.x) filterten die Konfi-Auswahl schon ueber
           den Jahrgangsnamen; nur die Team-Auswahl konnte in die neue 403
           laufen — sie faengt jeden Fehler mit einer Sammelmeldung ab.
+          GEAENDERT 27.09.2026: Die Ausnahme org_admin/super_admin gilt mit
+          der Rolle, die die Person in der Gemeinde des Termins hat
+          (Stamm-Gemeinde: users.role_id, weitere: user_organizations.role_id),
+          nicht mehr mit der Rolle am Konto; das Flag is_super_admin bleibt
+          gemeindeuebergreifend.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
