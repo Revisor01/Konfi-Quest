@@ -106,7 +106,7 @@ von einer App-Fassung ohne die Korrektur (Store-Apps bis zu ihrem Update).
       Das legt eine temporäre Tabelle `erlaubte_stelle(wert)` an. Alles
       Folgende in **derselben** psql-Sitzung, die Datei dort mit
       `\i erlaubte_stelle.sql` einlesen. Die letzte Zeile nennt die Zahl der
-      Werte (Stand 27.09.2026: 224 — 204 Texte der App, 19 Server-Texte der
+      Werte (Stand 27.09.2026: 223 — 203 Texte der App, 19 Server-Texte der
       Event-An- und -Abmeldung, `andere-meldung`).
 - [ ] Spalten prüfen: `\d event_data` und `\d website_event`. Erwartet
       (Umami 2.x und 3.x): `event_data.website_event_id`, `data_key`,

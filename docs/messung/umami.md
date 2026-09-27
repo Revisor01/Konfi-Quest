@@ -84,7 +84,7 @@ Stand des Codes am 27.09.2026 (vollständig: alle Aufrufe von `track(`,
 | `material-angesehen` | `inhalt`: `datei` \| `link` \| `beides` \| `nur-text` | teamer, admin | `teamer/pages/TeamerMaterialPage.tsx`, `teamer/pages/TeamerMaterialDetailPage.tsx` | nach der erfolgreichen Antwort auf `GET /material/:id`, einmal je Öffnen; ein Stand nur aus dem Zwischenspeicher zählt nicht |
 | `material-abgerufen` | `inhalt`: `datei` \| `link` | teamer, admin | dieselben beiden | Datei: nach erfolgreichem `GET /material/files/…`; Link: wenn er geöffnet wird |
 | `konfispruch-gespeichert` | `quelle`: `vorschlag` \| `eigen`; `bibel` (nur bei `vorschlag`): `luther` \| `gute-nachricht` \| `bigs` \| `elberfelder` | konfi, teamer | `konfi/modals/KonfispruchSelectModal.tsx` | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`; unverändert gespeichert zählt nicht |
-| `fehler` | `stelle`: die angezeigte Meldung nur, wenn sie auf der Positivliste steht (`utils/bekannteFehlertexte.ts`: 204 Texte der App, 19 Server-Texte der Event-An- und -Abmeldung), Ziffern durch `#` ersetzt, höchstens 80 Zeichen; ein anderer Text vom Server wird durch den Ersatztext der Aufrufstelle aus `fehlerText(err, 'Ersatz')` ersetzt, alles Übrige durch `andere-meldung` (`fehlerStelle`); `art`: `http-<Status>` \| `netz` \| `timeout` \| `abbruch` \| `intern` — aus dem Fehlerobjekt der Diagnose oder, bei einem ersetzten Server-Text, aus der Antwort; `ort`: festes Kürzel (`[a-z0-9-]`, höchstens 40 Zeichen) | alle | `contexts/AppContext.tsx` (`setError`) | wenn eine Fehlermeldung angezeigt wird; derselbe Wert geht als Wegmarke ins Absturzprotokoll (Crashlytics, nur iOS und Android) |
+| `fehler` | `stelle`: die angezeigte Meldung nur, wenn sie auf der Positivliste steht (`utils/bekannteFehlertexte.ts`: 203 Texte der App, 19 Server-Texte der Event-An- und -Abmeldung), Ziffern durch `#` ersetzt, höchstens 80 Zeichen; ein anderer Text vom Server wird durch den Ersatztext der Aufrufstelle aus `fehlerText(err, 'Ersatz')` ersetzt, alles Übrige durch `andere-meldung` (`fehlerStelle`); `art`: `http-<Status>` \| `netz` \| `timeout` \| `abbruch` \| `intern` — aus dem Fehlerobjekt der Diagnose oder, bei einem ersetzten Server-Text, aus der Antwort; `ort`: festes Kürzel (`[a-z0-9-]`, höchstens 40 Zeichen) | alle | `contexts/AppContext.tsx` (`setError`) | wenn eine Fehlermeldung angezeigt wird; derselbe Wert geht als Wegmarke ins Absturzprotokoll (Crashlytics, nur iOS und Android) |
 
 Hinweise zur Tabelle:
 
@@ -163,7 +163,7 @@ dem Fix 14 von 18 Tests rot).
 Wie:
 
 - **Positivliste.** `stelle` ist nur noch der angezeigte Text, wenn er in
-  `utils/bekannteFehlertexte.ts` steht — 204 feste Texte der App und 19
+  `utils/bekannteFehlertexte.ts` steht — 203 feste Texte der App und 19
   Server-Texte (siehe unten). Verglichen wird exakt, nach der Entschärfung;
   gesendet wird immer ein Element von `ERLAUBTE_STELLEN` (`analytics.ts`),
   also ein Literal aus dem Quelltext. `trackFehler` prüft noch einmal (zweite

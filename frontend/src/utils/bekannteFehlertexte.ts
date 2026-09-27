@@ -210,7 +210,6 @@ export const BEKANNTE_FEHLERTEXTE: readonly string[] = [
   'Fehler beim Zurücksetzen des Passworts',
   'Fehler beim Zuweisen',
   'Foto konnte nicht ausgewählt werden',
-  'Foto konnte nicht geladen werden',
   'Foto konnte nicht lokal gespeichert werden',
   'Foto konnte nicht verarbeitet werden',
   'Für diesen Jahrgang ist keine Punkteart aktiv.',
