@@ -81,6 +81,17 @@ der bis zum Merge weiterläuft.
 7. **Rückmeldung an Simon:** Sicherung (Größe, Zeit), Zählungen, Ergebnis des
    Abgleichs, offene Punkte. Danach entscheidet Simon über den Merge.
 
+**Stand 27.09.2026:** Die Schritte 1–4 sind erledigt, die Ergebnisse stehen in
+[01](01-vor-dem-deploy.md) und [02](02-portainer-stack.md) Abschnitt 1. Zu
+Schritt 2: Es gibt keine Stack-Variablen, alles steht direkt in der
+Stack-Datei. Deshalb auch nach dem Merge nichts auf Variablen umstellen, ohne
+vorher `ACTIVITY_PHOTO_ENCRYPTION_KEY` und `DOCS_PASSWORD` in die Referenz
+aufzunehmen. Die Schritte 5 und 6 warten auf ein Fenster von Simon. Beide
+ändern die Stack-Datei, und ein Stack-Update mit geänderter Backend-Umgebung
+erstellt `backend` und `backend2` gleichzeitig neu. Mit Schritt 6 kommt
+`SHUTDOWN_DRAIN_MS` hinzu, das der alte Code nicht kennt. `TZ` bleibt offen,
+bis geklärt ist, was die Zeile am Verhalten ändert.
+
 ## Phase B — Merge und Deploy (Simon gibt frei)
 
 1. Simon merged den Pull Request des Release-Branches nach `main`.
