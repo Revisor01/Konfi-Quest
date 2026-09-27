@@ -280,6 +280,14 @@ und Betrieb: `docs/handbuch/03-bedienung.md`, „Die App aktuell halten".
   Blockade") und die Begründung von E-29. Behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit
   im Behebungsbericht). Die Felder in `/api/app-version` und der Wartungstext bleiben, wie
   oben beschrieben.
+**Geändert 27.09.2026 (Simon: „Keine Zwangsupdates"):** Die Sperre ist
+zurückgenommen, bevor sie eine Store-Version erreicht hat (nur die Testbuilds
+iOS 231 / Android 125 tragen sie). Unter der Mindestversion zeigt die App
+jetzt einen deutlichen, wegklickbaren Hinweis „Bitte aktualisiere Konfi
+Quest" mit „Später" und „Aktualisieren", einmal je App-Start
+(`frontend/src/components/common/MindestversionHinweis.tsx`); damit gilt
+wieder die Linie von E-29 und `updateCheck.ts`. Backend und Antwortform
+unverändert.
 
 - **Für wen:** Betrieb / alle Rollen
 - **Warum jetzt:** Die App zeigt nur „eine neuere Version ist da"

@@ -51,8 +51,9 @@ Versionsüberschrift.
   neu?" im Profil beziehungsweise unter „Mehr".
 - Kündigt der Betrieb eine Wartung an, steht der Hinweis auf der Startseite
   jeder Rolle und auf der Anmeldeseite; wird eine App-Version nicht mehr
-  unterstützt, bittet ein eigener Bildschirm um das Update und führt direkt
-  in den Store — im Browser und ohne Netz nie.
+  unterstützt, bittet ein deutlicher Hinweis um das Update und führt direkt
+  in den Store. Er lässt sich mit „Später" schließen, die App bleibt nutzbar,
+  und erst beim nächsten Start fragt sie wieder — im Browser und ohne Netz nie.
 - Auswählen, welche Mitteilungen aufs Handy kommen — auf iPhone und Android
   gleich, in der App statt in den Systemeinstellungen: Unter
   „Benachrichtigungen" im Profil beziehungsweise unter „Mehr" lassen sich

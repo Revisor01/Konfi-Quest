@@ -12,18 +12,24 @@
 // WAS DARAUS WIRD:
 //   - Liegt die INSTALLIERTE Version (App.getInfo, wie beim Store-Hinweis)
 //     echt unter der Mindestversion der eigenen Plattform, steht
-//     `aktualisierenUrl` auf der Store-Seite — und MindestversionSperre
-//     (components/common) legt sich ueber die ganze App.
+//     `aktualisierenUrl` auf der Store-Seite — und MindestversionHinweis
+//     (components/common) bittet in einem Dialog um das Update.
 //   - Ist wartung.aktiv, steht der Text in `wartungstext` — WartungsHinweis
 //     (components/shared) zeigt ihn auf den Startseiten und der Anmeldung.
 //
-// WANN NIE GESPERRT WIRD ("lieber einmal zu wenig"):
+// KEIN ZWANG (Simon, 27.09.2026: "Keine Zwangsupdates"): Auch unter der
+// Mindestversion bleibt die App bedienbar. Der Hinweis laesst sich mit
+// "Später" schliessen und kommt erst beim naechsten Start wieder
+// (merkeMindestversionHinweisGezeigt unten). Wie der Store-Hinweis in
+// updateCheck.ts: ein Hinweis, nie eine Blockade.
+//
+// WANN NIE GEFRAGT WIRD ("lieber einmal zu wenig"):
 //   - im Browser: dort laeuft immer der zuletzt deployte Web-Build;
 //   - ohne Netz: es wird gar nicht erst gefragt;
 //   - wenn die Anfrage scheitert oder die Antwort nicht passt (kein
 //     Versionsstring, keine https-Store-Seite): der Stand bleibt, wie er
-//     war — beim Start also frei.
-// Eine gescheiterte Pruefung nimmt eine bestehende Sperre allerdings auch
+//     war — beim Start also ohne Hinweis.
+// Eine gescheiterte Pruefung nimmt einen bestehenden Befund allerdings auch
 // nicht zurueck: Die installierte Version aendert sich waehrend einer Sitzung
 // nicht (ein Update startet die App neu), und der Server hatte sie bereits
 // als zu alt gemeldet.
@@ -35,11 +41,11 @@
 // jemand die App erst beenden muss. Beim Wegwechseln wird nicht gefragt.
 //
 // NUR AUF ENTSCHEIDUNG DES BETRIEBS: Ohne gesetzte Mindestversion bleibt es
-// beim reinen Store-Hinweis, der nie blockiert (updateCheck.ts). Die Sperre
-// fuehrt ausschliesslich zur Store-Seite der App. Wer eine Mindestversion
-// setzt, setzt sie nie hoeher als die Version, die in BEIDEN Stores
-// freigegeben ist — sonst sperrt sie Geraete, die noch gar nicht
-// aktualisieren koennen (Hinweis auch in deploy/compose.konfi_quest.yml).
+// beim reinen Store-Hinweis (updateCheck.ts). Der Hinweis fuehrt
+// ausschliesslich zur Store-Seite der App. Wer eine Mindestversion setzt,
+// setzt sie nie hoeher als die Version, die in BEIDEN Stores freigegeben
+// ist — sonst bittet die App um ein Update, das es fuer das Geraet noch gar
+// nicht gibt (Hinweis auch in deploy/compose.konfi_quest.yml).
 
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
@@ -57,10 +63,13 @@ export interface Betriebsstatus {
 const LEER: Betriebsstatus = { aktualisierenUrl: null, wartungstext: null };
 
 // Modul-Level-Stand wie networkMonitor: Die App haengt EINE Pruefung an
-// (App.tsx), Sperre und Hinweise lesen denselben Stand.
+// (App.tsx), der Mindestversions-Hinweis und die Wartungshinweise lesen
+// denselben Stand.
 let stand: Betriebsstatus = LEER;
 const zuhoerer = new Set<() => void>();
 let laufendePruefung: Promise<void> | null = null;
+// Siehe merkeMindestversionHinweisGezeigt.
+let mindestversionHinweisGezeigt = false;
 
 function istObjekt(wert: unknown): wert is Record<string, unknown> {
   return typeof wert === 'object' && wert !== null && !Array.isArray(wert);
@@ -85,7 +94,7 @@ async function aktualisierenUrlAus(daten: Record<string, unknown>): Promise<stri
   if (!url.startsWith('https://')) return null;
   const { version: installiert } = await App.getInfo();
   // istNeuereVersion prueft beide Werte auf die Versionsform und vergleicht
-  // segmentweise (2.10.0 > 2.9.0). Gleichstand sperrt nicht.
+  // segmentweise (2.10.0 > 2.9.0). Gleichstand ist kein Grund fuer den Hinweis.
   return istNeuereVersion(mindestversion, installiert) ? url : null;
 }
 
@@ -129,6 +138,37 @@ export function holeBetriebsstatus(): Betriebsstatus {
   return stand;
 }
 
+/**
+ * Merkt fuer diesen App-Start, dass der Hinweis "Bitte aktualisiere Konfi
+ * Quest" gezeigt wurde; bis zum naechsten Start erscheint er nicht wieder.
+ *
+ * WARUM BIS ZUM NAECHSTEN START — nur im Speicher, nicht in Preferences:
+ *   - Nicht bei jeder Rueckkehr in die App: Geprueft wird zwar dann (siehe
+ *     oben), aber ein Dialog nach jedem Wechsel zu einer anderen App waere
+ *     Zwang durch Zermuerbung — genau das, was "Keine Zwangsupdates"
+ *     ausschliesst.
+ *   - Nicht dauerhaft: Dann hiesse "Später" in Wahrheit "nie". Der Betrieb
+ *     setzt eine Mindestversion, weil die alte Fassung wirklich gehen soll;
+ *     beim naechsten Start darf die App deshalb wieder fragen. iOS und
+ *     Android beenden eine App im Hintergrund frueher oder spaeter ohnehin —
+ *     "Später" heisst damit tatsaechlich spaeter.
+ *   - Nicht je Anmeldung: Ab- und Anmelden aendert die installierte Version
+ *     nicht, und der Hinweis erscheint schon auf der Anmeldeseite. Wer ihn
+ *     dort weggetippt hat, bekommt ihn nach der Anmeldung nicht noch einmal.
+ * Eine Mindestversion, die der Betrieb waehrend der Sitzung anhebt, fragt
+ * ebenfalls erst beim naechsten Start — die Bitte ist dieselbe.
+ * Dazwischen erinnert die blaue Store-Karte auf der Startseite
+ * (StoreUpdateBanner), solange sie fuer diese Version nicht weggetippt ist.
+ */
+export function merkeMindestversionHinweisGezeigt(): void {
+  mindestversionHinweisGezeigt = true;
+}
+
+/** true, wenn der Hinweis in diesem App-Start schon gezeigt wurde. */
+export function mindestversionHinweisSchonGezeigt(): boolean {
+  return mindestversionHinweisGezeigt;
+}
+
 /** Meldet Aenderungen des Stands; gibt die Abmeldung zurueck. */
 export function abonniereBetriebsstatus(fn: () => void): () => void {
   zuhoerer.add(fn);
@@ -162,4 +202,5 @@ export function _nurFuerTests_reset(): void {
   stand = LEER;
   zuhoerer.clear();
   laufendePruefung = null;
+  mindestversionHinweisGezeigt = false;
 }

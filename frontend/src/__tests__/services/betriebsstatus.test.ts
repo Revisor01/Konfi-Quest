@@ -6,12 +6,14 @@
 // geladen, weil der Stand auf Modulebene liegt.
 //
 // Geprueft werden die Zusagen aus dem Modulkopf:
-//   - gesperrt wird nur nativ, nur mit Antwort des Servers und nur, wenn die
-//     installierte Version ECHT unter der Mindestversion der Plattform liegt
-//     (semantisch verglichen: 2.10.0 > 2.9.0);
+//   - um das Update gebeten wird nur nativ, nur mit Antwort des Servers und
+//     nur, wenn die installierte Version ECHT unter der Mindestversion der
+//     Plattform liegt (semantisch verglichen: 2.10.0 > 2.9.0);
 //   - der Wartungshinweis gilt ueberall, auch im Browser;
 //   - geprueft wird beim Start und bei der Rueckkehr in die App, nicht oefter;
-//   - eine gescheiterte Pruefung aendert nichts am Stand.
+//   - eine gescheiterte Pruefung aendert nichts am Stand;
+//   - "schon gezeigt" gilt bis zum naechsten Start, nicht nur bis zur
+//     naechsten Rueckkehr in die App und nicht fuer immer.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const halter = {
@@ -100,7 +102,7 @@ beforeEach(() => {
 });
 
 describe('Mindestversion', () => {
-  it('unter der Mindestversion: Sperre mit der Store-Seite der Plattform', async () => {
+  it('unter der Mindestversion: Hinweis mit der Store-Seite der Plattform', async () => {
     halter.installierteVersion = '2.2.0';
     halter.apiAntwort = antwort({ ios: '2.3.0' });
     const m = await ladeModul();
@@ -112,13 +114,13 @@ describe('Mindestversion', () => {
   it('auf Android zaehlen Mindestversion und Store-Seite von android', async () => {
     halter.plattform = 'android';
     halter.installierteVersion = '2.2.0';
-    // iOS gesperrt, Android nicht -> Android-Geraet bleibt frei ...
+    // Mindestversion nur fuer iOS -> das Android-Geraet bekommt keinen Hinweis ...
     halter.apiAntwort = antwort({ ios: '2.3.0', android: null });
     let m = await ladeModul();
     await m.pruefeBetriebsstatus();
     expect(m.holeBetriebsstatus().aktualisierenUrl).toBeNull();
 
-    // ... und umgekehrt: Android gesperrt -> Play-Store-Seite.
+    // ... und umgekehrt: Mindestversion fuer Android -> Play-Store-Seite.
     vi.resetModules();
     halter.apiAntwort = antwort({ ios: null, android: '2.2.1' });
     m = await ladeModul();
@@ -126,7 +128,7 @@ describe('Mindestversion', () => {
     expect(m.holeBetriebsstatus().aktualisierenUrl).toBe(PLAY_URL);
   });
 
-  it('genau auf der Mindestversion: keine Sperre (2.3.0 gegen 2.3.0)', async () => {
+  it('genau auf der Mindestversion: kein Hinweis (2.3.0 gegen 2.3.0)', async () => {
     halter.installierteVersion = '2.3.0';
     halter.apiAntwort = antwort({ ios: '2.3.0' });
     const m = await ladeModul();
@@ -134,7 +136,7 @@ describe('Mindestversion', () => {
     expect(m.holeBetriebsstatus().aktualisierenUrl).toBeNull();
   });
 
-  it('ueber der Mindestversion: keine Sperre', async () => {
+  it('ueber der Mindestversion: kein Hinweis', async () => {
     halter.installierteVersion = '2.4.1';
     halter.apiAntwort = antwort({ ios: '2.3.0' });
     const m = await ladeModul();
@@ -171,7 +173,7 @@ describe('Mindestversion', () => {
 
   it('die Browser-Ausnahme haengt an isNativePlatform, nicht an der Plattform-Kennung', async () => {
     // Zweite Sicherung: Selbst wenn eine Web-Umgebung sich als "ios" meldete,
-    // sperrt nur die native App.
+    // bittet nur die native App um das Update.
     halter.nativ = false;
     halter.plattform = 'ios';
     halter.installierteVersion = '2.2.0';
@@ -182,7 +184,7 @@ describe('Mindestversion', () => {
     expect(halter.getInfoAufrufe).toBe(0);
   });
 
-  it('offline: keine Sperre, keine Anfrage', async () => {
+  it('offline: kein Hinweis, keine Anfrage', async () => {
     halter.online = false;
     halter.installierteVersion = '2.2.0';
     halter.apiAntwort = antwort({ ios: '2.3.0' });
@@ -192,7 +194,7 @@ describe('Mindestversion', () => {
     expect(mockApiGet).not.toHaveBeenCalled();
   });
 
-  it('Anfrage scheitert: keine Sperre, kein Fehler nach aussen', async () => {
+  it('Anfrage scheitert: kein Hinweis, kein Fehler nach aussen', async () => {
     halter.installierteVersion = '2.2.0';
     halter.apiFehler = new Error('Network Error');
     const m = await ladeModul();
@@ -200,7 +202,7 @@ describe('Mindestversion', () => {
     expect(m.holeBetriebsstatus()).toEqual({ aktualisierenUrl: null, wartungstext: null });
   });
 
-  it('Server vor dem Update (Antwort ohne min_version und wartung): keine Sperre, kein Hinweis', async () => {
+  it('Server vor dem Update (Antwort ohne min_version und wartung): weder Update- noch Wartungshinweis', async () => {
     halter.installierteVersion = '2.2.0';
     halter.apiAntwort = {
       ios: { version: '2.3.0', url: IOS_URL },
@@ -211,7 +213,7 @@ describe('Mindestversion', () => {
     expect(m.holeBetriebsstatus()).toEqual({ aktualisierenUrl: null, wartungstext: null });
   });
 
-  it('unplausible Werte sperren nie (Mindestversion kein Versionsstring, Store-Seite fehlt)', async () => {
+  it('unplausible Werte loesen nie einen Hinweis aus (Mindestversion kein Versionsstring, Store-Seite fehlt)', async () => {
     halter.installierteVersion = '2.2.0';
     for (const kaputt of [
       { ios: { version: '2.3.0', url: IOS_URL, min_version: 'bald' } },
@@ -227,6 +229,41 @@ describe('Mindestversion', () => {
       await m.pruefeBetriebsstatus();
       expect(m.holeBetriebsstatus().aktualisierenUrl, JSON.stringify(kaputt)).toBeNull();
     }
+  });
+});
+
+describe('Mindestversions-Hinweis: einmal je App-Start', () => {
+  it('"schon gezeigt" haelt ueber jede Rueckkehr in die App, ein neuer Start faengt frisch an', async () => {
+    halter.installierteVersion = '2.2.0';
+    halter.apiAntwort = antwort({ ios: '2.3.0' });
+    let m = await ladeModul();
+    m.beobachteBetriebsstatus();
+    await durchlaufen();
+    expect(m.holeBetriebsstatus().aktualisierenUrl).toBe(IOS_URL);
+    expect(m.mindestversionHinweisSchonGezeigt()).toBe(false);
+
+    m.merkeMindestversionHinweisGezeigt();
+    expect(m.mindestversionHinweisSchonGezeigt()).toBe(true);
+
+    // Rueckkehr in die App, auch mit angehobener Mindestversion: bleibt gemerkt.
+    halter.apiAntwort = antwort({ ios: '2.4.0' });
+    appStateZuhoerer!({ isActive: true });
+    await durchlaufen();
+    expect(mockApiGet).toHaveBeenCalledTimes(2);
+    expect(m.mindestversionHinweisSchonGezeigt()).toBe(true);
+
+    // Naechster Start (frisches Modul): nichts gemerkt -- auch nichts auf
+    // Dauer gespeichert, der Merker lebt nur im Speicher.
+    vi.resetModules();
+    m = await ladeModul();
+    expect(m.mindestversionHinweisSchonGezeigt()).toBe(false);
+  });
+
+  it('_nurFuerTests_reset gilt als neuer Start und vergisst den Merker', async () => {
+    const m = await ladeModul();
+    m.merkeMindestversionHinweisGezeigt();
+    m._nurFuerTests_reset();
+    expect(m.mindestversionHinweisSchonGezeigt()).toBe(false);
   });
 });
 

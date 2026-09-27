@@ -41,10 +41,12 @@ Das ist erfüllt, wenn beides zutrifft:
    neuere ersetzt — **und** die Übergangszeit ist vorbei. Nutzer:innen
    aktualisieren nicht sofort; erfahrungsgemäß braucht es einige Wochen, bis
    die alten Installationen praktisch verschwunden sind. Eine Mindestversion
-   verkürzt das: Sie lässt sich je Plattform über `APP_MIN_VERSION_IOS` und
-   `APP_MIN_VERSION_ANDROID` setzen (GET `/api/app-version`, siehe
-   `verwaltung-auth.yaml`), wirkt aber nur auf Apps ab 2.3.0 — Installationen
-   mit 2.2.x und älter kennen sie nicht und müssen weiter ausgezählt werden.
+   kann das verkürzen: Sie lässt sich je Plattform über `APP_MIN_VERSION_IOS`
+   und `APP_MIN_VERSION_ANDROID` setzen (GET `/api/app-version`, siehe
+   `verwaltung-auth.yaml`) und bittet darunter bei jedem Start deutlich um das
+   Update — sie sperrt aber nicht, wer „Später" wählt, nutzt die alte Fassung
+   weiter. Sie wirkt außerdem nur auf Apps ab 2.3.0; Installationen mit 2.2.x
+   und älter kennen sie nicht. Ausgezählt wird deshalb in jedem Fall.
 2. Die Zugriffszählung unten zeigt über einen vollen Beobachtungszeitraum
    (mindestens zwei Wochen, damit auch seltene Nutzer:innen erfasst sind)
    **null** Zugriffe.

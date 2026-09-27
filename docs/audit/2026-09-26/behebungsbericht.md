@@ -262,7 +262,8 @@ vor den Merge gezogen, dazu die Mindestversion (Feature E-05).
   (`1a047f86`, `fc2b7add`; Sicherheit BF-04).
 - **Mindestversion und Wartungshinweis** über `/api/app-version` (nur neue Felder, 2.2.x liest
   sie nicht): unter der Mindestversion ein Sperrbildschirm mit Store-Knopf, nie im Browser, nie
-  ohne Netz; der Wartungstext auf allen Startseiten (`d7802549`; E-05).
+  ohne Netz; der Wartungstext auf allen Startseiten (`d7802549`; E-05). Am selben Tag auf einen
+  wegklickbaren Hinweis mit „Später" umgestellt (Simon: „Keine Zwangsupdates"; Stand bei E-05).
 - **Deploy-Falle:** Alle drei Deploy-Wege schickten Portainer eine leere Liste der
   Stack-Variablen; Portainer ersetzt sie damit. In Produktion folgenlos, weil die Werte direkt in
   der Stack-Datei stehen — jetzt gehen vorhandene Variablen unverändert zurück (`b168c55f`

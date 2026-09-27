@@ -22,7 +22,7 @@ import GlobalToasts from './components/common/GlobalToasts';
 import PostfachModal from './components/common/PostfachModal';
 import AppSperrbildschirm from './components/common/AppSperrbildschirm';
 import AppAbdeckung from './components/common/AppAbdeckung';
-import MindestversionSperre from './components/common/MindestversionSperre';
+import MindestversionHinweis from './components/common/MindestversionHinweis';
 import { beobachteBetriebsstatus } from './services/betriebsstatus';
 import { useAppSperre } from './hooks/useAppSperre';
 import { useSeitenBereit } from './navigation/useSeitenBereit';
@@ -108,7 +108,7 @@ const AppContent: React.FC = () => {
 
   // Mindestversion und Wartungshinweis (E-05, 27.09.2026): EINE Pruefung
   // fuer die ganze App, beim Start und bei jeder Rueckkehr in die App.
-  // Sperre und Hinweise lesen nur den Stand (services/betriebsstatus.ts).
+  // Die Hinweise lesen nur den Stand (services/betriebsstatus.ts).
   // Laeuft auch vor der Anmeldung -- der Endpunkt braucht keine, und ein zu
   // altes Geraet soll schon an der Anmeldeseite erfahren, dass es ein Update
   // braucht.
@@ -349,15 +349,17 @@ const AppContent: React.FC = () => {
           }}
         />
       )}
-      {/* "Bitte aktualisiere Konfi Quest" (E-05): steht NACH dem Schloss und
-          liegt bei gleichem z-index damit darueber -- wer aktualisieren muss,
-          dem hilft Entsperren nicht weiter. Unter der Abdeckung bleibt er:
-          Ins Vorschaubild gehoert die neutrale Flaeche.
-          Rendert nichts, solange die Mindestversion nicht greift; im
-          Browser, ohne Netz und bei Fehlern nie (services/betriebsstatus.ts).
-          Wie das Schloss genau EINMAL und ausserhalb der Zweigwahl, damit er
-          bei der Anmeldung und beim Laden nicht neu montiert wird. */}
-      <MindestversionSperre />
+      {/* "Bitte aktualisiere Konfi Quest" (E-05): ein Hinweis, keine Sperre
+          (Simon, 27.09.2026: "Keine Zwangsupdates") -- ein Dialog mit
+          "Später" und "Aktualisieren", einmal je App-Start. Rendert selbst
+          nichts in den Baum; der Dialog ist ein Ionic-Overlay und liegt damit
+          UNTER Schloss und Abdeckung. Solange das Schloss steht oder beim
+          Start noch nicht klar ist, ob es kommt, wartet er -- sonst laege er
+          unsichtbar darunter und zoege den Fokus dorthin.
+          Im Browser, ohne Netz und bei Fehlern nie (services/betriebsstatus.ts).
+          Wie das Schloss genau EINMAL und ausserhalb der Zweigwahl: Er gilt
+          auch auf der Anmeldeseite. */}
+      <MindestversionHinweis zurueckhalten={gesperrt || !startGeklaert} />
       {/* Die Abdeckung steht ZULETZT und damit ueber dem Sperrbildschirm.
           Beim Wegwechseln kann beides gleichzeitig anstehen — dann gehoert
           ins Vorschaubild die neutrale Flaeche, nicht der bedienbare

@@ -1934,12 +1934,17 @@ paths:
         Anfrage (backend/utils/betriebshinweise.js); leer oder nicht gesetzt
         ergibt null bzw. `aktiv: false, text: null`. Eine Mindestversion, die
         nicht die Form x.y.z hat, wird ignoriert (null) und einmal je Wert
-        geloggt. Die App ab 2.3.0 sperrt sich nativ mit einem Bildschirm
-        "Bitte aktualisiere Konfi Quest" und Knopf zur `url` der Plattform,
-        wenn die installierte Version echt unter `min_version` liegt (nie im
-        Browser, nie ohne Antwort des Servers), und zeigt `wartung.text` als
-        Klartext auf den Startseiten und der Anmeldeseite. Die Store-Apps
-        2.1.1 und 2.2.0 lesen nur `version` und `url` und pruefen deren Typ
+        geloggt. Die App ab 2.3.0 zeigt nativ einen Hinweis "Bitte
+        aktualisiere Konfi Quest" mit "Später" und "Aktualisieren" (Knopf zur
+        `url` der Plattform), wenn die installierte Version echt unter
+        `min_version` liegt (nie im Browser, nie ohne Antwort des Servers).
+        Sie sperrt nicht: Der Hinweis laesst sich schliessen, die App bleibt
+        bedienbar, und er kommt erst beim naechsten Start wieder (Entscheidung
+        27.09.2026 "Keine Zwangsupdates"; vorher war ein nicht wegklickbarer
+        Sperrbildschirm vorgesehen — er steckt nur in den Testbuilds iOS 231
+        und Android 125 von 2.3.0, in keiner Store-Version). `wartung.text`
+        erscheint als Klartext auf den Startseiten und der Anmeldeseite. Die
+        Store-Apps 2.1.1 und 2.2.0 lesen nur `version` und `url` und pruefen deren Typ
         (frontend/src/services/updateCheck.ts, an beiden Tags unveraendert) —
         die zusaetzlichen Felder sehen sie nicht.
 

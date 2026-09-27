@@ -292,17 +292,24 @@ und im Browser nie — dort läuft immer der aktuelle Stand.
 
 ### Eine nicht mehr unterstützte Version aktualisieren
 
-Wird die installierte Version nicht mehr unterstützt, legt sich ein
-Bildschirm über die ganze App: **„Bitte aktualisiere Konfi Quest"** mit dem
-Satz „Diese Version wird nicht mehr unterstützt. Lade die aktuelle Version,
-um weiterzumachen." Der einzige Knopf führt zur Store-Seite — auf dem iPhone
-**„Im App Store aktualisieren"**, auf Android **„Bei Google Play
-aktualisieren"**. Wegtippen lässt sich der Bildschirm nicht; nach dem Update
-öffnet sich die App wie gewohnt.
+Wird die installierte Version nicht mehr unterstützt, erscheint über der App
+ein Hinweis: **„Bitte aktualisiere Konfi Quest"** mit dem Satz „Diese Version
+wird nicht mehr unterstützt. Die aktuelle Version liegt im App Store bereit."
+— auf Android „bei Google Play". **„Aktualisieren"** öffnet die Store-Seite
+der App; nach dem Update öffnet sich die App wie gewohnt.
 
-Der Bildschirm erscheint nur, wenn der Server die Version als zu alt meldet —
-ohne Verbindung bleibt die App nutzbar, im Browser erscheint er nie. Welche
-Version mindestens nötig ist, legt der Betrieb von Konfi Quest fest.
+**„Später"** schließt den Hinweis, ebenso ein Tipp daneben oder die
+Zurück-Taste auf Android. Die App lässt sich danach ganz normal weiter
+nutzen. Bis zum nächsten Start der App kommt der Hinweis nicht wieder, auch
+nicht beim Wechsel zu einer anderen App und zurück; auf der Startseite
+erinnert solange die blaue Karte (siehe
+[Ein Update aus dem Store laden](#ein-update-aus-dem-store-laden)). Ist die
+App-Sperre mit Face ID oder Fingerabdruck eingeschaltet, erscheint der
+Hinweis erst nach dem Entsperren.
+
+Der Hinweis erscheint nur, wenn der Server die Version als zu alt meldet —
+ohne Verbindung und im Browser nie. Welche Version mindestens nötig ist, legt
+der Betrieb von Konfi Quest fest; eine Pflicht zum Update gibt es nicht.
 
 ### Einen Wartungshinweis lesen
 
@@ -324,11 +331,15 @@ Servers und wird mit dem nächsten Stack-Update wirksam. Leer heißt aus.
 | `APP_MIN_VERSION_ANDROID` | Mindestversion auf Android, Form `x.y.z` |
 | `WARTUNG_HINWEIS` | Text des Wartungshinweises, als Klartext |
 
+Unter der Mindestversion bittet die App um das Update, sperrt aber nicht:
+Der Hinweis lässt sich schließen und kommt beim nächsten Start wieder (siehe
+[Eine nicht mehr unterstützte Version aktualisieren](#eine-nicht-mehr-unterstuetzte-version-aktualisieren)).
 Eine Mindestversion nie höher setzen als die Version, die im Store der
-Plattform schon freigegeben ist — sonst sperrt sie Geräte, die noch gar
-nicht aktualisieren können. Ein Wert, der keine Version der Form `x.y.z` ist,
-wird ignoriert und im Server-Log gemeldet. Beides wirkt erst ab App-Version
-2.3; ältere Installationen zeigen weder Sperre noch Hinweis.
+Plattform schon freigegeben ist — sonst bittet die App um ein Update, das es
+für das Gerät noch gar nicht gibt. Ein Wert, der keine Version der Form
+`x.y.z` ist, wird ignoriert und im Server-Log gemeldet. Beides wirkt erst ab
+App-Version 2.3; ältere Installationen kennen weder die Mindestversion noch
+den Wartungshinweis.
 
 ## Etwas löschen: nach links wischen
 
