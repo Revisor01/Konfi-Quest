@@ -1,6 +1,6 @@
 # Behebungsbericht zum Release-Audit 2.3.0
 
-Stand 27.09.2026, 06:00 UTC. Was seit der Gesamtabnahme vom 26.09. behoben wurde, was offen
+Stand 27.09.2026, 06:45 UTC. Was seit der Gesamtabnahme vom 26.09. behoben wurde, was offen
 bleibt und was bei Simon liegt. Jeder Punkt steht als Commit auf `claude/fervent-edison-wp5yfj`;
 die Berichte je Bereich tragen an jedem Befund eine Status-Zeile mit Datum. Die Regeln für jede
 Behebung standen im gemeinsamen Auftrag der Pakete: Test für den verbotenen und den erlaubten
@@ -14,11 +14,11 @@ Antwortformen unverändert (Store-Apps 2.2.x lesen weiter), Migrationen additiv.
 | Blocker der Gesamtabnahme | 7 | 1 offen (Apple-Schlüssel widerrufen — nur Simon) |
 | Auflagen vor Release (Punkte 8–24) | 17 | 1 offen (Screenshots nach dem Deploy) |
 | Backend-Tests | 139 Dateien / 3.399 | 169 Dateien / 3.700, grün |
-| Frontend-Tests | 264 Dateien / 3.788 | 287 Dateien / 3.968, grün |
+| Frontend-Tests | 264 Dateien / 3.788 | 288 Dateien / 3.980, grün |
 | Dunkelmodus, Textstellen unter 4,5:1 (94 Zustände) | 104 | 16 (alle: eigene Chat-Blase, in beiden Modi) |
 | Formularfelder ohne Namen für die Vorlesefunktion | 170 von 186 | 0 |
 | Klickbare Elemente ohne Tastaturbedienung | 147 | 0 |
-| Commits auf dem Branch | — | 118 (17 Berichte, 101 Behebung und Nachweis) |
+| Commits auf dem Branch | — | 122 (17 Berichte, 105 Behebung und Nachweis) |
 | Neue Migrationen | — | 160, 162–167 (alle additiv) |
 
 Arbeitsweise: Die Koordination hat die fünf Blocker selbst behoben und danach 14 Pakete an
@@ -131,6 +131,10 @@ den Dev-Server eines anderen beendet — folgenlos, der Lauf wurde wiederholt.
 - **Ganze App** (Paket M): 186 Formularfelder mit Namen (170 → 0 ohne), 135 klickbare Elemente
   per Tastatur bedienbar, 17 Modale mit Namen, zehn kleine Knöpfe mit 44-px-Trefffläche bei
   gleicher Optik, „Bewegung reduzieren" app-weit (`53bf4658`–`632302d4`).
+- **Chat-Aktionen ohne langen Druck**: Reagieren, Antworten, Teilen und Löschen gingen nur per
+  langem Druck oder unsichtbarem Rechtsklick, per Tastatur gar nicht. Jetzt ein Knopf neben jeder
+  Nachricht, am Rechner beim Überfahren sichtbar, per Tab erreichbar, Escape schließt; auf dem
+  Handy bleibt der lange Druck (`83f5038b`).
 
 ### CI, Release und Tests
 
@@ -172,10 +176,6 @@ Release 2.3.0; die Gesamtabnahme führt es unter „Vor EKD-Ausrollung" und „D
 - Handbuch-Kapitel „Für den Betrieb" (Super-Admin, Gemeinde anlegen, Testphase) — was davon
   Gemeinden lesen sollen (Doku BF-16).
 
-**Chat, in Arbeit (Paket N, läuft):** Aktionen zu einer Nachricht sind nur per langem Druck
-erreichbar — im Browser mit der Maus nur über den unsichtbaren Rechtsklick, per Tastatur gar
-nicht.
-
 **Barrierefreiheit, nicht Teil eines Pakets:** Datumsformate und Dynamic Type (UI BF-07, BF-14);
 die 92 per Hook geöffneten Modale ohne Namen (nur je Aufruf lösbar); `UpdateHinweisKarte` mit
 Knopf im Knopf.
@@ -216,6 +216,10 @@ Feature-Empfehlungen (Punkt 32) und NIEDRIG-Befunde ohne Paket (Punkt 36).
 5. **Nach dem Deploy:** Screenshots neu ziehen (Punkt 22), Produktionsmessungen aus dem Abschnitt
    „Auf Produktion nachzumessen" der Gesamtabnahme.
 6. **Farb- und Produktentscheidungen** aus dem Abschnitt oben.
+7. **Autorenschaft der älteren Commits:** 50 Commits tragen noch „Claude" als Autor, 56 als
+   Committer. Das Umschreiben ändert alle Commit-Kennungen des Branches und braucht einen
+   Force-Push; die Rechteprüfung dieser Sitzung hat es abgelehnt. Nach dem Umschreiben müssen
+   die Commit-Verweise in Gesamtabnahme, Behebungsbericht und Doku-Bericht nachgezogen werden.
 
 ## Entscheidungen der Umsetzung, die Simon kippen kann
 

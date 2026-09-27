@@ -479,7 +479,7 @@ Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit d
 
 ## Behebungsstand (fortlaufend)
 
-Stand 26.09.2026, 21:15 UTC (117 Commits über `main`). Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
+Stand 27.09.2026, 06:45 UTC (122 Commits über `main`). Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
 jeder Befund trägt im Bereichsbericht eine Status-Zeile mit Datum. Regeln für jeden Fix: Test
 für den verbotenen und den erlaubten Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG,
 Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
@@ -493,6 +493,7 @@ Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.
 | Backend (Migrationen 160–167, nach Paketen I1, I2, J, L) | `0cac428e` (95 Commits) | 169 Dateien, 3.698 Tests grün, 1.251 s |
 | Frontend, Endstand (nach M, K2, Gerätebefunden, CHANGELOG) | `e4c940df` (115 Commits) | 286 Dateien, 3.964 Tests grün, 162 s |
 | Backend, Endstand (Migrationen 160–167, echte DB, nach M, K2, Gerätebefunden) | `59f53de8` (letzter Code-Commit; danach nur Doku) | 169 Dateien, 3.700 Tests grün, 1.370 s |
+| Frontend, nach den Nachträgen 27.09. (Versionsnummern, Chat-Aktionen) | `83f5038b` | 288 Dateien, 3.980 Tests grün, 141 s |
 | Typprüfung, ESLint (`--quiet`, jetzt CI-Gate) | laufend nach jedem Paket | grün |
 
 Zum Vergleich die Baseline vor dem Audit: Backend 139 Dateien / 3.399 Tests, Frontend 264 / 3.788.
@@ -520,6 +521,7 @@ Zum Vergleich die Baseline vor dem Audit: Backend 139 Dateien / 3.399 Tests, Fro
 | Gerätebefunde 26.09. abends (Simon, Kollege) | Rückwechsel in die Stamm-Gemeinde scheiterte bei Konten, die nach Migration 101 angelegt wurden: `switch-org` prüfte nur `user_organizations`, die Liste zeigte die Stamm-Gemeinde aus `users.organization_id` — hing am Alter des Kontos, nicht an Android; Route löst beide Quellen auf, Antwortform gleich, Store-Apps profitieren mit. Einladungskarte der Leitung stand auf „Mehr", Push und Postfach führten ins Profil — jetzt bei allen drei Rollen im Profil, Test hält Ziel und Karte zusammen | neu, außerhalb der Berichte | eingebaut (`b9b58257`, `42943efe`) |
 | K2 Dunkelmodus-Rest und Messung als Test | Eck-Marken (Punkte, Level, Status) im Dunkeln eine Stufe tiefer, 13 Messstellen 2,15–4,23 → 5,41–8,97:1, hell byte-identisch; Prozentzahl im Abzeichen-Ring über 17 Kriterien-Text-Token (dunkel 4,06 → 4,84–5,87:1); der Anmelde-Knopf „(0/50)" war ein Messfehler (real 10,78:1, nicht angefasst — der vorgeschlagene Fix hätte auf 1,97:1 verschlechtert). Messung als `npm run dunkelmodus:messen` mit begründeter Restliste (6 Einträge), Shadow-DOM-Flächen und flache Verläufe jetzt erfasst; voller Lauf 697 s, dunkel 48 Messstellen in 12/94 Zuständen, 0 außerhalb der Restliste, Exit 0. Vergleichbar mit dem alten Skript: dunkel 33 → **16**, alle Chat-Blase. Nebenbefunde in der Restliste: Kopfbanner der Termindetails 2,02–2,22:1 in beiden Modi (UI BF-04), „Event absagen" auf dunkler Karte 4,39:1 (einzige dunkelspezifische Reststelle) | darkmode BF-09, BF-10 (teilweise), UI BF-04 (Nachtrag) | eingebaut (`67ac86e3`, `33a3f3f4`, `59f53de8`) |
 | CHANGELOG-Aufräumung (Punkt 19) | Neun Überschriften → fünf; Umschalter-Einträge gegen den Code auf einen Stand gebracht; „Mitteilungen prüfen" (hinzugefügt und wieder entfernt, im Code nicht vorhanden), viermal die Glockenzahl und die doppelte Symbolleiste entfernt; Framework-Name ersetzt. 168 → 164 Einträge bei elf Streichungen und sieben Zugängen aus M und K2 | Doku BF-10 (CHANGELOG-Teil) | eingebaut (`e4c940df`) |
+| Nachträge 27.09. | Versionsnummern aus einer Quelle: drei `package.json` samt Lockfiles und iOS-Projekt folgen `frontend/version.json`, 9 Abweichungen → 0, `/api/status` meldet 2.3.0 statt 1.0.1, Skript `npm run version:setzen`/`version:pruefen`, Test, Regel in CLAUDE.md samt Ausnahme für die Build-Zeile. Chat-Aktionen ohne langen Druck: Knopf neben jeder Nachricht, Hover/Tab/Escape, Touch unverändert. Behebungsbericht als eigenes Dokument | S-13, CI BF-09 (teilweise), Toolchain BF-10 (teilweise), Doku BF-10, UI BF-03 (Nachtrag) | eingebaut (`dd8cf2ad`, `83f5038b`, `d044dda6`) |
 
 **Neu gestartet nach Abbruch (Sitzungslimit des Werkzeugs, 26.09. 17:10 UTC):** Paket M lief im
 zweiten Anlauf durch (Zeile oben). Aus Punkt 33 offen bleiben Datumsformate und Dynamic Type
