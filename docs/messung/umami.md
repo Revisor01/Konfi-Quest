@@ -245,6 +245,15 @@ setzen (falls die Fassung es kennt) oder Kommentar und Datenschutzerklärung
 richtigstellen. Das entscheidet mit, wie viel ein einzelnes Merkmal verraten
 darf — je länger die Sitzung, desto mehr hängt an einem Wiedererkennen.
 
+Am Umami-Quelltext nachgesehen am 27.09.2026 (Hauptzweig, Fassung 3.4.0):
+`SALT_ROTATION` mit Vorgabe `month` in `src/app/api/send/route.ts`,
+`getSalt` in `src/lib/crypto.ts` kennt `day`, `week` und sonst Monat; die
+Tabelle `session` hat die Spalten `country`, `region` und `city`. Welche
+Fassung auf dem Server läuft, ist damit nicht geklärt. Der Auftrag dafür
+steht in
+[docs/auftraege/lokaler-agent/03-nach-dem-deploy.md](../auftraege/lokaler-agent/03-nach-dem-deploy.md),
+Abschnitt 6.
+
 ## Von Simon beauftragt (27.09.2026)
 
 ### U1 — Anträge entschieden
