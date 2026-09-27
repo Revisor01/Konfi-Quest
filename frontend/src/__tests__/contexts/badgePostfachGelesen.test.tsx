@@ -56,8 +56,6 @@ vi.mock('@capacitor/core', () => ({
   Capacitor: { isNativePlatform: () => false },
 }));
 
-const KONFI = { id: 1, type: 'konfi', role_name: 'konfi' };
-const TEAMER = { id: 3, type: 'teamer', role_name: 'teamer' };
 const LEITUNG = { id: 41, type: 'admin', role_name: 'org_admin' };
 let mockUser: { id: number; type: string; role_name: string } = LEITUNG;
 vi.mock('../../contexts/AppContext', () => ({
