@@ -434,9 +434,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // es um die Wege daran vorbei (abgelaufene Sitzung, Face ID, Fehlerseite).
   // Hier und nicht beim Login, weil JEDER Weg zu einem Konto über diesen
   // Zustand läuft.
+  //
+  // Dasselbe für den gespeicherten Stand und die Warteschlange (Audit
+  // Grundgerüst BF-04): Beide gehören zum Konto (offlineCache.ts,
+  // writeQueue.ts, kontoPruefen). Lesen und Senden prüfen das selbst; hier
+  // verschwindet der Stand anderer Konten zusätzlich vom Gerät.
   useEffect(() => {
     if (!user?.id) return;
     void medienCacheKontoPruefen(user.id).catch(() => { /* best-effort */ });
+    // Über Promise.resolve().then: auch ein synchroner Fehler bleibt hier
+    // best-effort und hält den übrigen Effekt nicht auf.
+    void Promise.resolve().then(() => offlineCache.fremdeKontenEntfernen()).catch(() => { /* best-effort */ });
+    void Promise.resolve().then(() => writeQueue.kontoPruefen()).catch(() => { /* best-effort */ });
   }, [user?.id]);
 
   // Push notifications state

@@ -376,6 +376,10 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Teilen sich mehrere ein Gerät, sieht nach einer abgelaufenen Sitzung die
+  nächste Person nichts mehr vom gespeicherten Stand der vorigen, und deren
+  wartende Nachrichten oder Abmeldungen gehen nicht mehr unter falschem Namen
+  raus. Wer sich selbst wieder anmeldet, findet alles wie vorher.
 - Im Funkloch oder ohne Empfang merkt die App jetzt, dass sie offline ist:
   Nachrichten, Abmeldungen und gemeldete Aktivitäten warten und gehen raus,
   sobald wieder Netz da ist. Bisher galt sie dort als online, schickte ins

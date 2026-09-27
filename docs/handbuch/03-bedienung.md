@@ -478,6 +478,15 @@ Wolken-Symbol, etwa: „Die Teilnehmerliste ist offline nicht verfügbar."
 > etwa dass du deine Badges angesehen hast — wandern still mit und tauchen
 > dort nicht auf.
 
+### Ein Gerät mit anderen teilen
+
+Der gespeicherte Stand und alles, was noch auf das Senden wartet, gehören zu
+deinem Konto. Meldet sich auf demselben Gerät jemand anderes an — auch nachdem
+deine Sitzung abgelaufen ist, ohne dass du dich abgemeldet hast —, sieht die
+Person nichts davon, und was von dir noch wartete, wird verworfen statt unter
+ihrem Namen gesendet. Meldest du dich selbst wieder an, ist alles noch da und
+geht raus. Beim Abmelden leert die App ohnehin alles.
+
 ## Geladene Bilder und Dateien auf dem Gerät behalten
 
 Bilder, Videos, Tonaufnahmen und Dateien aus dem [Chat](90-chat.md), aus
