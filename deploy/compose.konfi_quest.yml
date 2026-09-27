@@ -108,10 +108,26 @@ services:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
     environment: &backend_env
       NODE_ENV: production
-      # Ohne TZ laeuft der Node-Prozess in UTC. Der Anker gilt fuer
-      # backend, backend2 und backend-test gleichermassen.
-      TZ: Europe/Berlin
+      # TZ NICHT uebernehmen, solange nicht geklaert (27.09.2026). Seit dem
+      # 01.09.2026 sollte hier TZ: Europe/Berlin stehen; Produktion lief nie so
+      # (Abgleich des Live-Stacks vor 2.3.0: Backends in UTC). Der Code rechnet
+      # Uhrzeiten und Datumsgrenzen seit f74ec501 selbst in Berliner Zeit
+      # (utils/zeitformat.js), UTC ist fuer die Anzeige also unschaedlich.
+      # Riskant ist das Umschalten: node-postgres liest Spalten `timestamp`
+      # OHNE Zeitzone (24 Stueck, Audit Datenbank BF-11) in der Zeitzone des
+      # Prozesses -- mit TZ verschoebe sich jeder solche Wert beim Lesen um
+      # bis zu zwei Stunden, auch fuer den alten Code. Erst diese Spalten
+      # pruefen, dann entscheiden.
+      # TZ: Europe/Berlin
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET fehlt}
+      # Schluessel der verschluesselten Nachweisfotos (utils/photoCrypto.js,
+      # 64 Hex-Zeichen). Fehlt er oder ist er ein anderer, sind alle
+      # gespeicherten Fotos unlesbar -- den Wert aus dem Live-Stack
+      # uebernehmen, NIE neu erzeugen.
+      ACTIVITY_PHOTO_ENCRYPTION_KEY: ${ACTIVITY_PHOTO_ENCRYPTION_KEY:?ACTIVITY_PHOTO_ENCRYPTION_KEY fehlt}
+      # Passwort der API-Doku unter /docs/api (routes/docsAuth.js); ohne
+      # bleibt die Doku gesperrt.
+      DOCS_PASSWORD: ${DOCS_PASSWORD:?DOCS_PASSWORD fehlt}
       QR_SECRET: ${QR_SECRET:?QR_SECRET fehlt}
       LOSUNG_API_KEY: ${LOSUNG_API_KEY:?LOSUNG_API_KEY fehlt}
       DATABASE_URL: postgresql://konfi_user:${POSTGRES_PASSWORD}@postgres:5432/konfi_db
