@@ -26,6 +26,26 @@ auf — TypeError, das Teamer-Dashboard stürzte sofort nach dem Login ab, auf i
 und Android. Im Browser fiel es nicht auf, dort lief die neue Oberfläche. Die
 Backend-Tests waren grün.*
 
+## Wer sieht und bekommt was
+
+Die Regel steht fest (Simon, 27.09.2026) und wird nicht je Funktion neu
+erfunden:
+
+- **Org-Admin** sieht, darf und bekommt alles seiner Gemeinde — er ist die
+  Instanz vor Ort, die alles administrieren können muss.
+- **Admin und Teamer:in** immer nur für ihre zugewiesenen Jahrgänge. Einzige
+  Ausnahme: was ausdrücklich nur fürs Team ist (Challenge „Nur das Team")
+  gilt fürs ganze Team ohne Jahrgang.
+- **Konfi:** der eigene Jahrgang und die eigenen Vorgänge.
+- **Mitteilung = Sichtbarkeit.** Push, Postfach-Eintrag und rote Zahl bekommt
+  genau, wer den Vorgang in seiner Liste sieht und bearbeiten darf — nicht mehr
+  und nicht weniger. Liste, Zähler und Empfänger lesen dieselbe Regel-Stelle
+  (Vorbild `backend/utils/challengeLeitungSicht.js`), sonst laufen sie
+  auseinander.
+- Rolle und Jahrgänge gelten **je Gemeinde**; beide Quellen der
+  Zugehörigkeit beachten (`users.organization_id` und `user_organizations`,
+  `backend/utils/orgMitglieder.js`).
+
 ## Drei Dinge im selben Commit mitschreiben
 
 Nicht nachträglich, nicht beim Release — im selben Commit wie die Änderung.
