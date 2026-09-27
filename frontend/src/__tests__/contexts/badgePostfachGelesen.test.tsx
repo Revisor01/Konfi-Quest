@@ -58,8 +58,9 @@ vi.mock('@capacitor/core', () => ({
 
 const LEITUNG = { id: 41, type: 'admin', role_name: 'org_admin' };
 let mockUser: { id: number; type: string; role_name: string } = LEITUNG;
+let mockOrganizations: Array<{ id: number; name: string; role_name: string }> = [];
 vi.mock('../../contexts/AppContext', () => ({
-  useApp: () => ({ user: mockUser }),
+  useApp: () => ({ user: mockUser, organizations: mockOrganizations }),
 }));
 
 vi.mock('../../contexts/LiveUpdateContext', () => ({
@@ -105,6 +106,7 @@ describe('BadgeContext: Postfach-Glocke nimmt beim Lesen ab', () => {
     vi.clearAllMocks();
     captured.current = null;
     mockUser = LEITUNG;
+    mockOrganizations = [];
   });
 
   it('eine aeltere Zaehlung, die NACH einer neueren eintrifft, ueberschreibt sie nicht', async () => {
@@ -167,5 +169,27 @@ describe('BadgeContext: Postfach-Glocke nimmt beim Lesen ab', () => {
     expect(captured.current!.postfachUngelesen).toBe(0);
     act(() => { captured.current!.postfachGelesen(1); });
     expect(captured.current!.postfachUngelesen).toBe(0);
+  });
+
+  it('mehrere Gemeinden: auch die Zahl am App-Symbol (Summe aller Gemeinden) zaehlt sofort herunter', async () => {
+    mockOrganizations = [
+      { id: 1, name: 'A', role_name: 'org_admin' },
+      { id: 2, name: 'B', role_name: 'teamer' },
+    ];
+    mockApiGet.mockImplementation(async (url: string) => (
+      url === '/notifications/badge-counts/je-organisation'
+        ? { data: { jeOrganisation: { 1: { offen: 4 }, 2: { offen: 3 } } } }
+        : zaehlung(3)
+    ));
+    renderProvider();
+    await waitFor(() => expect(captured.current?.appSymbolZahl).toBe(7));
+
+    act(() => { captured.current!.postfachGelesen(1); });
+    expect(captured.current!.postfachUngelesen).toBe(2);
+    expect(captured.current!.appSymbolZahl).toBe(6);
+
+    act(() => { captured.current!.postfachGelesen('alle'); });
+    expect(captured.current!.postfachUngelesen).toBe(0);
+    expect(captured.current!.appSymbolZahl).toBe(4);
   });
 });

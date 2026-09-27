@@ -430,9 +430,21 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [setzeGemeindeZaehlerZurueck, refreshAllCounts]);
 
+  // Aktueller Postfach-Stand fuer postfachGelesen: Wie viele tatsaechlich
+  // wegfallen, muss VOR den beiden set-Aufrufen feststehen -- die Summe
+  // aller Gemeinden (App-Symbol bei mehreren Gemeinden) sinkt um genau so
+  // viele, nie unter 0.
+  const postfachStand = useRef(0);
+  useEffect(() => { postfachStand.current = postfachUngelesen; }, [postfachUngelesen]);
+
   const postfachGelesen = useCallback((anzahl: number | 'alle') => {
     zaehlungGilt.current = zaehlungGestartet.current;
-    setPostfachUngelesen(n => (anzahl === 'alle' ? 0 : Math.max(0, n - anzahl)));
+    const weg = anzahl === 'alle'
+      ? postfachStand.current
+      : Math.min(postfachStand.current, Math.max(0, anzahl));
+    postfachStand.current -= weg;
+    setPostfachUngelesen(n => Math.max(0, n - weg));
+    setSummeAllerGemeinden(summe => (summe == null ? summe : Math.max(0, summe - weg)));
   }, []);
 
   // markRoomAsRead: Optimistisch + API Call
