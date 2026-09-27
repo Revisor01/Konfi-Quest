@@ -303,6 +303,12 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Wer zur Teamer:in befördert wird, verlässt sofort die Event-Chats der
+  bisherigen Anmeldungen und — solange ihr der alte Jahrgang nicht zugewiesen
+  ist — dessen Chat; in den Team-Chat kommt sie sofort. Bisher bekam sie
+  die Nachrichten der ehemaligen Mitkonfis weiter aufs Handy, bis der Chat
+  des Jahrgangs zufällig neu abgeglichen wurde, und kam erst nach einigen
+  Minuten in den Team-Chat.
 - Hebt der Betrieb von Konfi Quest eine Mitgliedschaft in einer Gemeinde auf,
   gehen auch die Jahrgänge und alle Chat-Plätze dieser Gemeinde mit — wie
   wenn die Gemeindeleitung die Person entfernt. Bisher blieb sie in Gruppen

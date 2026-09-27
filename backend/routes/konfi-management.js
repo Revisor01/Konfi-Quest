@@ -11,6 +11,8 @@ const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
+const { syncTeamChat } = require('../utils/teamChat');
+const chatSyncCache = require('../utils/chatSyncCache');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 // Ein Ort fuer "darf dieser Aufrufer in diesem Jahrgang?" — org_admin und
 // super_admin sind ausgenommen, admin und teamer brauchen die Zuweisung.
@@ -1599,6 +1601,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 "SELECT event_id, timeslot_id FROM event_bookings WHERE user_id = $1 AND status = 'confirmed'",
                 [konfiId]
             );
+            // Alle Termine mit einer Buchung, gleich welcher Status -- ihre
+            // Termin-Chats verlaesst die Person in Schritt 9b (BF-19).
+            const { rows: gebuchteTermine } = await client.query(
+                'SELECT DISTINCT event_id FROM event_bookings WHERE user_id = $1',
+                [konfiId]
+            );
             await client.query('DELETE FROM event_bookings WHERE user_id = $1', [konfiId]);
             for (const platz of freiwerdend) {
                 const [promoted] = await rueckeNach(client, {
@@ -1642,10 +1650,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // jeder anderen Teamer:in (Benutzerverwaltung).
             //
             // Folgen, bewusst in Kauf genommen:
-            //  - Ohne Zuweisung faellt die Person beim naechsten
-            //    syncJahrgangChat aus dem Chat ihres alten Jahrgangs (Schritt 9
-            //    haelt sie nur bis dahin drin). Konsistent: Wer die Jahrgangs-
-            //    Daten nicht sieht, sitzt auch nicht im Jahrgangs-Chat.
+            //  - Ohne Zuweisung verlaesst die Person den Chat ihres alten
+            //    Jahrgangs sofort (Schritt 9b, seit 27.09.2026). Konsistent: Wer
+            //    die Jahrgangs-Daten nicht sieht, sitzt auch nicht im
+            //    Jahrgangs-Chat.
             //  - Die EIGENEN eingefrorenen Konfi-Daten (Punkte, Abzeichen,
             //    Historie, Wrapped) haengen an konfi_profiles/user_id, nicht
             //    an der Zuweisung — /teamer/profile und /teamer/konfi-history
@@ -1656,6 +1664,34 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // 9. Chat-Teilnahmen: user_type aktualisieren damit Räume sichtbar bleiben
             await client.query("UPDATE chat_participants SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
             await client.query("UPDATE chat_read_status SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
+
+            // 9b. Chat-Plaetze nach der Regel, in derselben Transaktion (Audit
+            // "Wer bekommt was" 27.09.2026, BF-19). Bis hierher blieb die
+            // Person ohne Zuweisung im Jahrgangs-Chat der ehemaligen
+            // Mitkonfis und in den Termin-Chats, deren Buchungen Schritt 4
+            // gerade geloescht hat -- und bekam jede Nachricht als Push, bis
+            // zufaellig jemand anderes den Abgleich ausloeste (ihr eigenes
+            // Oeffnen gleicht den alten Jahrgang nicht ab, sie hat keine
+            // Zuweisung). Regel (CLAUDE.md "Wer sieht und bekommt was"):
+            // Teamer:innen nur in Chats ihrer zugewiesenen Jahrgaenge, der
+            // Team-Chat gilt fuers ganze Team.
+            //  - Jahrgangs-Chat: syncJahrgangChat mit der NEUEN Rolle. Ohne
+            //    Zuweisung (Normalfall, Schritt 6) faellt sie heraus; mit
+            //    can_view-Zuweisung auf den alten Jahrgang bleibt sie drin.
+            //  - Termin-Chats: wie jede Abmeldung (utils/eventChat.js).
+            //  - Team-Chat: sofort statt erst beim naechsten Abgleich nach
+            //    Ablauf des 10-Minuten-Merkers.
+            const { rows: [altesProfil] } = await client.query(
+                'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
+                [konfiId]
+            );
+            if (altesProfil?.jahrgang_id) {
+                await syncJahrgangChat(client, altesProfil.jahrgang_id, req.user.organization_id, req.user.id);
+            }
+            for (const { event_id: eventId } of gebuchteTermine) {
+                await removeFromEventChat(client, eventId, konfiId, req.user.organization_id);
+            }
+            await syncTeamChat(client, req.user.organization_id, req.user.id);
 
             // 10. Bibeluebersetzung: hier ist NICHTS mehr zu tun (Befund N8).
             // Bis Migration 132 lag dieselbe Praeferenz je Rolle in einer
@@ -1668,6 +1704,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // selbst: an der Zeile aendert die Befoerderung nichts.
 
             await client.query('COMMIT');
+            // Der naechste GET /chat/rooms gleicht mit der neuen Rolle ab.
+            chatSyncCache.invalidate(req.user.organization_id, konfiId);
 
             // Nachweisfotos der geloeschten Anträge vom Dateisystem entfernen
             // (nach dem COMMIT, fehlertolerant — eine fehlende Datei darf die

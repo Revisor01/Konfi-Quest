@@ -3778,6 +3778,16 @@ paths:
         Postfach-Mitteilungen ("Neuer Antrag eingegangen" bei der Leitung,
         "Antrag eingereicht" bei der befoerderten Person;
         utils/postfachAufraeumen.js).
+        BEHOBEN 27.09.2026 (Audit "Wer bekommt was", BF-19): In derselben
+        Transaktion gleichen sich die Chat-Plaetze der neuen Rolle an —
+        syncJahrgangChat fuer den alten Jahrgang (ohne can_view-Zuweisung
+        faellt die Person heraus, mit bleibt sie als teamer), Austritt aus
+        den Termin-Chats aller geloeschten Buchungen (removeFromEventChat)
+        und sofort in den Team-Chat (syncTeamChat). Vorher blieb sie im
+        Jahrgangs-Chat der ehemaligen Mitkonfis und in den Termin-Chats und
+        bekam deren Nachrichten als Push, bis jemand anderes den Abgleich
+        ausloeste; den Team-Chat bekam sie erst nach Ablauf des
+        10-Minuten-Merkers. Antwortform unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
@@ -3785,9 +3795,10 @@ paths:
         objekt-pruefung: "Ziel-User muss zur eigenen Organisation gehören und aktuell Rolle konfi haben (sonst 400); seit 01.09.2026 zusaetzlich darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen)"
         hinweis: >
           Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die
-          globale Rolle (organization_id IS NULL). Ohne Zuweisung faellt die
-          befoerderte Person beim naechsten Chat-Sync aus dem Jahrgangs-Chat
-          ihres alten Jahrgangs — konsequent zur Regel.
+          globale Rolle (organization_id IS NULL). Ohne Zuweisung verlaesst
+          die befoerderte Person den Jahrgangs-Chat ihres alten Jahrgangs
+          sofort (seit 27.09.2026; vorher erst beim naechsten Chat-Sync, den
+          jemand anderes ausloesen musste).
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Konfi befoerdert }

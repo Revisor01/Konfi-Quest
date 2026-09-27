@@ -1374,6 +1374,99 @@ describe('Konfi-Management Routes', () => {
       expect(rows.map(r => r.table_name)).toEqual(['users']);
     });
 
+    // Audit "Wer bekommt was" 27.09.2026, BF-19: Die Befoerderung schrieb die
+    // Chat-Plaetze nur auf user_type 'teamer' um. Eine Zuweisung auf den
+    // alten Jahrgang gibt es bewusst nicht (seit 01.09.2026, Schritt 6 der
+    // Route) -- die Person blieb trotzdem im Jahrgangs-Chat der ehemaligen
+    // Mitkonfis und bekam jede Nachricht als Push, bis zufaellig jemand
+    // anderes den Abgleich ausloeste. Ebenso in den Termin-Chats, deren
+    // Buchungen die Befoerderung loescht. Regel (CLAUDE.md "Wer sieht und
+    // bekommt was"): Teamer:innen nur in Chats ihrer zugewiesenen Jahrgaenge,
+    // dazu der Team-Chat fuers ganze Team.
+    describe('BF-19: Chat-Plaetze nach der Befoerderung folgen der Regel', () => {
+      const neueKonfi = async (name) => {
+        const res = await request(app)
+          .post('/api/admin/konfis')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ name, jahrgang_id: JAHRGAENGE.jahrgang1.id });
+        expect(res.status).toBe(201);
+        return res.body.id;
+      };
+
+      // Termin 1 (Jahrgang 1) mit bestaetigter Buchung und Termin-Chat.
+      const terminChatMitBuchung = async (konfiId) => {
+        await db.query(
+          "INSERT INTO event_bookings (event_id, user_id, status, organization_id) VALUES (1, $1, 'confirmed', 1)",
+          [konfiId]
+        );
+        const { rows: [raum] } = await db.query(
+          "INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id) VALUES ('Termin-Chat', 'group', 1, $1, 1) RETURNING id",
+          [USERS.orgAdmin1.id]
+        );
+        await db.query(
+          "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'konfi')",
+          [raum.id, konfiId]
+        );
+        return raum.id;
+      };
+
+      const plaetze = async (userId) => {
+        const { rows } = await db.query(
+          `SELECT cp.room_id, cp.user_type, r.type, r.is_team_chat, r.event_id
+             FROM chat_participants cp JOIN chat_rooms r ON r.id = cp.room_id
+            WHERE cp.user_id = $1 ORDER BY cp.room_id`,
+          [userId]
+        );
+        return rows;
+      };
+
+      it('VERBOTEN: ohne Zuweisung ist sie sofort aus dem alten Jahrgangs-Chat und dem Termin-Chat heraus', async () => {
+        const konfiId = await neueKonfi('Befoerdert Ohne Zuweisung');
+        const terminRaum = await terminChatMitBuchung(konfiId);
+        expect((await plaetze(konfiId)).map(p => p.room_id)).toEqual([1, terminRaum]);
+
+        const res = await request(app)
+          .post(`/api/admin/konfis/${konfiId}/promote-teamer`)
+          .set('Authorization', `Bearer ${adminToken}`);
+        expect(res.status).toBe(200);
+
+        const { rows: zuweisungen } = await db.query(
+          'SELECT 1 FROM user_jahrgang_assignments WHERE user_id = $1', [konfiId]
+        );
+        expect(zuweisungen).toHaveLength(0);
+
+        // Genau ein Platz: der Team-Chat der Gemeinde, als Teamer:in.
+        const danach = await plaetze(konfiId);
+        expect(danach.map(p => ({ typ: p.user_type, team: p.is_team_chat }))).toEqual([
+          { typ: 'teamer', team: true },
+        ]);
+      });
+
+      it('ERLAUBT: mit Zuweisung auf den alten Jahrgang bleibt sie im Jahrgangs-Chat -- als Teamer:in', async () => {
+        const konfiId = await neueKonfi('Befoerdert Mit Zuweisung');
+        await db.query(
+          'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, false)',
+          [konfiId, JAHRGAENGE.jahrgang1.id]
+        );
+
+        const res = await request(app)
+          .post(`/api/admin/konfis/${konfiId}/promote-teamer`)
+          .set('Authorization', `Bearer ${adminToken}`);
+        expect(res.status).toBe(200);
+
+        const danach = await plaetze(konfiId);
+        expect(danach.map(p => ({ raum: p.room_id, typ: p.user_type, team: p.is_team_chat }))).toEqual([
+          { raum: 1, typ: 'teamer', team: false },
+          { raum: danach[1].room_id, typ: 'teamer', team: true },
+        ]);
+        // Die anderen Konfis des Jahrgangs bleiben, wo sie sind.
+        const { rows: mitkonfis } = await db.query(
+          "SELECT user_id FROM chat_participants WHERE room_id = 1 AND user_type = 'konfi' ORDER BY user_id"
+        );
+        expect(mitkonfis.map(r => r.user_id)).toEqual([USERS.konfi1.id, USERS.konfi2.id]);
+      });
+    });
+
     it('Bereits Teamer gibt 400', async () => {
       // Teamer1 ist schon ein Teamer - Promote-Versuch sollte 400 geben
       const res = await request(app)

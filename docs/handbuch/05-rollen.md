@@ -344,5 +344,12 @@ Jahrgang aktiv sein soll — meist im neuen statt im alten eigenen. Der Weg dahi
 steht im Kapitel
 [Für die Leitung](30-leitung.md#die-detailansicht-einer-person-nutzen).
 
+Im Chat gilt ab der Beförderung die Teamer-Rolle: Die Person ist sofort im
+[Team-Chat](90-chat.md#den-team-chat-nutzen) und verlässt den Chat ihres alten
+Jahrgangs sowie die Event-Chats ihrer Konfi-Anmeldungen (die Anmeldungen
+selbst entfallen mit der Beförderung). Ist ihr der alte Jahrgang schon
+zugewiesen, bleibt sie in dessen Chat — jetzt als Teamer:in. Zweiergespräche
+und Gruppen, in denen sie ist, bleiben bestehen.
+
 Alle anderen Rollenwechsel macht ein Org-Admin unter
 **[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-admin)**.
