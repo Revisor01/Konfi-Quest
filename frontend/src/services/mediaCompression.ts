@@ -12,7 +12,8 @@
 // (fuerUploadVorbereiten): erst verkleinern, dann gegen die Grenze prüfen,
 // mit demselben Satz bei zu großen Dateien. Simon: "Und wie im Chat auch schon
 // eine Verkleinerung der Grafik/Video, also Komprimierung. Das kann ja ein
-// System sein."
+// System sein." Seit demselben Tag auch das Nachweisfoto eines Antrags
+// (Simon: „Fotos Anträge und Material ja bitte.").
 //
 // Videos auch dort nicht: Im WebView gibt es keinen Weg, ein Video neu zu
 // kodieren, der ohne neue Abhängigkeit trägt. MediaRecorder über ein Canvas
@@ -32,7 +33,8 @@ const SIZE_THRESHOLD = 500 * 1024; // 500 KB
 
 /**
  * Größte Datei je Ziel, in Bytes — dieselben Werte wie auf dem Server
- * (backend/createApp.js: chatUpload 5 MB, CHALLENGE_UPLOAD_LIMIT 50 MB).
+ * (backend/createApp.js: chatUpload 5 MB, CHALLENGE_UPLOAD_LIMIT 50 MB,
+ * requestUpload 5 MB für das Nachweisfoto eines Antrags).
  *
  * Der Chat prüfte bis zum 27.09.2026 auf 10 MB, der Server nimmt aber nur
  * 5 MB an: Eine Datei dazwischen ging durch die Prüfung und scheiterte dann
@@ -42,6 +44,7 @@ const SIZE_THRESHOLD = 500 * 1024; // 500 KB
 export const UPLOAD_GRENZE = {
   chat: 5 * 1024 * 1024,
   challenges: 50 * 1024 * 1024,
+  nachweisfoto: 5 * 1024 * 1024,
 } as const;
 
 /**
@@ -99,32 +102,13 @@ const changeExtension = (name: string, ext: string): string => {
 };
 
 /**
- * Komprimiert/skaliert ein Bild-File für den Upload. Gibt das (ggf.
- * unveraenderte) File samt frischer Preview-URL zurück. Nicht-Bilder werden
- * unverändert durchgereicht.
- */
-/**
- * Kompression + Groessen-Gate für Foto-Uploads (Aktivitaetsantraege etc.):
- * erst verkleinern, DANN gegen maxBytes prüfen — Live-Kamerafotos (8-16 MB)
- * wuerden einen vorgezogenen Check sonst immer reissen, obwohl sie nach der
- * Kompression locker passen. Die Preview-URL aus compressImage wird hier
- * sofort freigegeben (die Aufrufer bauen ihre eigene Vorschau).
- * Wirft bei Ueberschreitung einen Error mit deutscher Meldung.
- */
-export const compressForUpload = async (file: File, maxBytes = 5 * 1024 * 1024): Promise<File> => {
-  const { file: compressed, previewUrl } = await compressImage(file);
-  URL.revokeObjectURL(previewUrl);
-  if (compressed.size > maxBytes) {
-    throw new Error(`Foto ist zu groß (max. ${Math.round(maxBytes / 1024 / 1024)} MB).`);
-  }
-  return compressed;
-};
-
-/**
- * Eine ausgewählte Datei für den Upload vorbereiten — Chat und Challenges
- * derselbe Weg: Fotos verkleinern (compressImage), DANN gegen die Grenze
- * prüfen. Ein Handyfoto mit 8 MB passt nach dem Verkleinern locker; eine
- * Prüfung davor ließe es scheitern.
+ * Eine ausgewählte Datei für den Upload vorbereiten — Chat, Challenges und
+ * das Nachweisfoto eines Antrags derselbe Weg: Fotos verkleinern
+ * (compressImage), DANN gegen die Grenze prüfen. Ein Handyfoto mit 8 MB passt
+ * nach dem Verkleinern locker; eine Prüfung davor ließe es scheitern.
+ *
+ * Die Anträge hatten bis zum 27.09.2026 einen eigenen Weg (compressForUpload)
+ * mit eigenem Satz ("Foto ist zu groß (max. 5 MB).") — jetzt dieser.
  *
  * Liefert bei Fotos eine Vorschau-URL (der Aufrufer gibt sie frei), sonst
  * null. Scheitert das Verkleinern, geht das Original weiter. Wirft

@@ -26,8 +26,12 @@ vi.mock('../../services/networkMonitor', () => ({
   networkMonitor: { isOnline: false, subscribe: vi.fn(() => () => {}) },
 }));
 
+// Seit dem 27.09.2026 geht das Foto über denselben Weg wie in Chat und
+// Challenges (fuerUploadVorbereiten); geprüft in nachweisfotoGemeinsam.
 vi.mock('../../services/mediaCompression', () => ({
-  compressForUpload: vi.fn(),
+  fuerUploadVorbereiten: vi.fn(),
+  DateiZuGrossFehler: class extends Error {},
+  UPLOAD_GRENZE: { nachweisfoto: 5 * 1024 * 1024 },
 }));
 
 vi.mock('@capacitor/filesystem', () => ({

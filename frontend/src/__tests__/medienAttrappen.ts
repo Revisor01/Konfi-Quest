@@ -101,3 +101,19 @@ export const objectUrlAttrappe = () => {
   });
   return { erzeugt, freigegeben };
 };
+
+/**
+ * Ein Ionic-Knopf nach seiner Beschriftung für Vorlesehilfen. Ionic reicht
+ * aria-label beim Einhängen an den Knopf in seinem Schatten-DOM weiter und
+ * nimmt es vom äußeren Element — je nach Zeitpunkt (und Last der Maschine)
+ * steht es hier oder dort. Ein querySelector allein fand den Knopf deshalb
+ * mal, mal nicht.
+ */
+export const knopf = (container: HTMLElement, beschriftung: string): Element => {
+  const aussen = container.querySelector(`[aria-label="${beschriftung}"]`);
+  if (aussen) return aussen;
+  const innen = [...container.querySelectorAll('ion-button')]
+    .find((b) => b.shadowRoot?.querySelector(`[aria-label="${beschriftung}"]`));
+  if (!innen) throw new Error(`Knopf "${beschriftung}" nicht gefunden`);
+  return innen;
+};

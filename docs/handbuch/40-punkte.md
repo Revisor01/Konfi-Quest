@@ -77,6 +77,13 @@ Team sieht, dass du dabei warst. Trotzdem abschicken?" Danach meldet sie
 „Aktivität erfolgreich eingereicht!". Der Antrag ist ab jetzt ausstehend,
 Punkte gibt es noch keine.
 
+Das Foto verkleinert die App vor dem Senden wie im Chat und in Challenges;
+ein Handyfoto mit 8 MB passt danach locker. Bleibt es größer als 5 MB, sagt
+sie es gleich bei der Auswahl: „Datei ist zu groß (max. 5 MB)." Beim Absenden
+steht unter der Kopfzeile, wie weit das Hochladen ist — „Wird gesendet…
+40 %", zuletzt „Wird verarbeitet…". Sein Foto sieht der Konfi in der Meldung,
+solange sie offen ist; nach der Entscheidung nur noch die Leitung.
+
 **2. Die Leitung prüft.** Die Anträge stehen in der Antragsliste.
 [Teamer:innen sehen sie nicht](05-rollen.md#nachschlagen-wer-was-darf) — in Beschreibung
 und Foto kann Privates stehen. Ein Admin sieht dort nur die Anträge aus
@@ -84,6 +91,12 @@ und Foto kann Privates stehen. Ein Admin sieht dort nur die Anträge aus
 Anträge von Teamer:innen sieht er immer. Wer den Antrag sieht, bekommt ihn
 auch gemeldet — siehe
 [Nachsehen, wer von einem neuen Antrag erfährt](#nachsehen-wer-von-einem-neuen-antrag-erfaehrt).
+
+Das Nachweisfoto lädt beim Öffnen des Antrags, mit Prozentzahl und Balken;
+klappt es nicht, holt „Erneut versuchen" es noch einmal. Im Konfi-Profil
+öffnet ein Tipp auf einen offenen Antrag mit Bild-Symbol das Foto groß. Auf
+dem Gerät bleibt es dabei nicht — ohne Netz ist es nicht zu sehen (siehe
+[Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten)).
 
 **3. Die Entscheidung.** Es gibt genau zwei Möglichkeiten: „Genehmigen" oder
 „Ablehnen".

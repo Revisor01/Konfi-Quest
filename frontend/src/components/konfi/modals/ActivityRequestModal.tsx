@@ -17,7 +17,6 @@ import {
   IonDatetime,
   IonDatetimeButton,
   IonModal,
-  IonProgressBar,
   IonList,
   IonListHeader,
   IonAccordion,
@@ -47,7 +46,8 @@ import { writeQueue, QueueBody } from '../../../services/writeQueue';
 import { AktivitaetMelden } from '../../../types/request';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
-import { compressForUpload } from '../../../services/mediaCompression';
+import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE } from '../../../services/mediaCompression';
+import SendeAnzeige from '../../shared/SendeAnzeige';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { tastaturKlick } from '../../../utils/tastatur';
@@ -112,10 +112,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     const file = target.files?.[0];
     if (!file) return;
     try {
-      // Erst komprimieren (1920px/JPEG wie im Chat), DANN Groessen-Check:
-      // Live-Kamerafotos sind oft 8-16 MB und wuerden einen vorgezogenen
-      // 5MB-Check immer reissen; nach Kompression passen sie locker.
-      const prepared = await compressForUpload(file);
+      // Derselbe Weg wie in Chat und Challenges (27.09.2026): erst
+      // verkleinern (1920 px, JPEG), DANN gegen die Grenze des Servers prüfen
+      // — Live-Kamerafotos haben 8-16 MB und passen erst danach. Zu groß
+      // meldet derselbe Satz wie überall: "Datei ist zu groß (max. 5 MB)."
+      const { file: prepared, bildVorschau } = await fuerUploadVorbereiten(file, UPLOAD_GRENZE.nachweisfoto);
+      // Das Formular zeigt keine Bildvorschau, nur "Foto ausgewählt".
+      if (bildVorschau) URL.revokeObjectURL(bildVorschau);
       setFormData(prev => ({ ...prev, photo_file: prepared }));
 
       // Create preview
@@ -125,7 +128,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       };
       reader.readAsDataURL(prepared);
     } catch (err) {
-      setError(err instanceof Error && err.message ? err.message : 'Foto konnte nicht verarbeitet werden');
+      setError(err instanceof DateiZuGrossFehler ? err.message : 'Foto konnte nicht verarbeitet werden');
     }
   };
 
@@ -291,8 +294,12 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             </IonButton>
           </IonButtons>
         </IonToolbar>
-        {isSubmitting && uploadProgress > 0 && (
-          <IonProgressBar value={uploadProgress / 100} />
+        {/* Dieselbe Anzeige wie beim Einreichen eines Challenge-Beitrags
+            (27.09.2026): Prozent und Balken, bei 100 % "Wird verarbeitet…" —
+            der Server verschlüsselt das Foto dann noch. Vorher ein Balken
+            ohne Zahl. */}
+        {isSubmitting && (
+          <SendeAnzeige prozent={uploadProgress} was="Foto" farbe="var(--app-text-requests)" />
         )}
       </IonHeader>
 

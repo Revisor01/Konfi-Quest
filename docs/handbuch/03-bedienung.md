@@ -500,6 +500,23 @@ gelöscht, steht dort *„Das Foto ist nicht mehr verfügbar."*, und die Datei
 verschwindet vom Gerät. Wer einen Beitrag löscht, räumt ihn auch aus dem
 eigenen Speicher.
 
+### Verstehen, warum Nachweisfotos nicht auf dem Gerät bleiben
+
+Das Foto zu einer [gemeldeten Aktivität](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden)
+lädt mit derselben Anzeige — Prozentzahl und Balken, *„Erneut versuchen"*,
+ohne Netz die graue Zeile *„Das Foto ist offline nicht verfügbar."* Es kommt
+aber bei jedem Öffnen vom Server und ist beim Schließen wieder weg; in den
+Medien-Cache wandert es nie.
+
+Nachweisfotos zeigen meist Minderjährige. Der Server legt sie verschlüsselt ab
+und gibt sie nur an die Leitung ihres Jahrgangs heraus — und an den Konfi
+selbst, solange der Antrag offen ist. Ein Gerät der Leitung soll nicht nach
+und nach die Fotos vieler Konfis sammeln, und wer einen Jahrgang abgibt, soll
+die Fotos auch ohne Netz nicht mehr sehen. Nach der Entscheidung zeigt die App
+dem Konfi sein Foto nicht mehr, auch nicht aus einem Speicher; wurde der
+Antrag gerade erst entschieden, steht dort *„Das Foto ist nicht mehr
+verfügbar."*
+
 ### Den Medien-Cache leeren
 
 Im eigenen [Profil](#das-eigene-profil-finden) steht **„Medien-Cache leeren"**

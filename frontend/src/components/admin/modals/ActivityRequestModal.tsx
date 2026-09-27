@@ -29,7 +29,8 @@ import {
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
-import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
+import api from '../../../services/api';
+import NachweisFoto from '../../shared/NachweisFoto';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
@@ -75,7 +76,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [request, setRequest] = useState<ActivityRequest | null>(null);
   const [adminComment, setAdminComment] = useState('');
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<'approve' | 'reject' | null>(null);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
 
@@ -91,11 +91,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       if (foundRequest) {
         setRequest(foundRequest);
         setAdminComment(foundRequest.admin_comment || '');
-
-        // Admins sehen das Nachweisfoto in jedem Status (auch verbucht/abgelehnt)
-        if (foundRequest.photo_filename) {
-          loadPhoto(foundRequest.id);
-        }
+        // Das Nachweisfoto lädt NachweisFoto selbst, sobald es gezeigt wird —
+        // für die Leitung in jedem Status (auch verbucht/abgelehnt).
       } else {
         setError('Aktivität nicht gefunden');
       }
@@ -107,43 +104,20 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     }
   };
 
-  const loadPhoto = async (id: number) => {
-    try {
-      const response = await api.get(`/admin/activities/requests/${id}/photo`, {
-        responseType: 'blob',
-        timeout: DATEI_TIMEOUT_MS
-      });
-      const url = URL.createObjectURL(response.data);
-      setPhotoUrl(url);
-    } catch (err) {
- console.error('Error loading photo:', err);
-    }
-  };
-
   useEffect(() => {
     if (requestId) {
       loadRequest();
     }
   }, [requestId]);
 
-  // Blob-URL des Nachweisfotos beim Wechsel/Unmount freigeben — an photoUrl
-  // gekoppelt, damit das Cleanup die AKTUELLE URL sieht (Lint-Durchsicht
-  // 30.08.2026, gleiches Muster wie RequestDetailModal).
-  useEffect(() => {
-    if (!photoUrl) return;
-    return () => {
-      URL.revokeObjectURL(photoUrl);
-    };
-  }, [photoUrl]);
-
-
   const handleDeletePhoto = async () => {
     if (!request) return;
     setDeletingPhoto(true);
     try {
       await api.delete(`/admin/activities/requests/${request.id}/photo`);
-      // Freigabe der Blob-URL uebernimmt der photoUrl-Effekt beim Wechsel auf null.
-      setPhotoUrl(null);
+      // Ohne photo_filename haengt NachweisFoto ab und gibt dabei seine
+      // Blob-URL frei (Befund 30.08.2026, geprueft in
+      // adminActivityRequestFoto).
       setRequest({ ...request, photo_filename: undefined });
       setSuccess('Foto erfolgreich gelöscht');
     } catch (err) {
@@ -348,30 +322,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
-                {photoUrl ? (
-                  <img
-                    src={photoUrl}
-                    alt="Foto zur Aktivität"
-                    style={{
-                      maxWidth: '100%',
-                      borderRadius: 'var(--app-radius-klein)',
-                      boxShadow: 'var(--app-schatten-karte)',
-                      display: 'block'
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    background: 'var(--app-surface-muted)',
-                    borderRadius: 'var(--app-radius-karte)',
-                    padding: 'var(--app-abstand-weit) var(--app-abstand-basis)',
-                    textAlign: 'center'
-                  }}>
-                    <IonSpinner name="crescent" />
-                    <p style={{ margin: 'var(--app-abstand-mittel) 0 0 0', fontSize: 'var(--app-text-basis)', color: 'var(--app-text-secondary)' }}>
-                      Lade Foto...
-                    </p>
-                  </div>
-                )}
+                {/* Vorher: bei einem Ladefehler stand "Lade Foto..." für
+                    immer da. Jetzt Fortschritt, Fehler mit "Erneut
+                    versuchen", ohne Netz die graue Zeile. */}
+                <NachweisFoto key={request.id} antragId={request.id} leitung />
 
                 <IonButton
                   expand="block"

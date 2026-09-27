@@ -162,6 +162,14 @@ Versionsüberschrift.
 - Ein Event ohne Jahrgang gilt der ganzen Gemeinde: Alle Konfis sehen es in
   ihrer Event-Liste und können sich anmelden, auch Konfis ohne Jahrgang.
   Bisher sahen Konfis solche Events gar nicht.
+- Das Foto zu einer gemeldeten Aktivität zeigt beim Laden, wie weit es ist,
+  und lässt sich mit „Erneut versuchen" neu laden — beim Konfi, beim Team und
+  bei der Leitung, auch groß im Konfi-Profil, das sich dafür sofort öffnet.
+  Ohne Netz steht statt einer Ladeanzeige, dass das Foto offline nicht
+  verfügbar ist. Nachweisfotos bleiben dabei bewusst nicht auf dem Gerät.
+- Beim Melden einer Aktivität wird das Foto wie in Chat und Challenges
+  verkleinert; ist es danach noch zu groß, sagt die App es mit demselben Satz
+  wie dort. Beim Absenden steht, wie weit das Hochladen ist.
 - Eine neue Challenge, bei der das Team mitmacht, steht bei Teamer:innen und
   Leitung als rote Zahl an der Challenge und am Reiter, bis sie geöffnet
   wird — wie bei den Konfis. Bisher zählten fürs Team nur neue Beiträge.
@@ -372,6 +380,9 @@ Versionsüberschrift.
   eine Mitgliedschaft in einer Gemeinde, gehen die Mitteilungen aus dieser
   Gemeinde mit; Glocke, App-Symbol und Gemeinde-Auswahl zählen sie nicht
   mehr. Ein entzogener Jahrgang lässt die Mitteilungen als Verlauf stehen.
+- Ließ sich das Nachweisfoto beim Prüfen eines Antrags nicht laden, stand dort
+  für immer „Lade Foto...". Jetzt sagt die App, dass es nicht geladen werden
+  konnte, und bietet „Erneut versuchen" an.
 - Wer zur Teamer:in befördert wird, verlässt sofort die Event-Chats der
   bisherigen Anmeldungen und — solange ihr der alte Jahrgang nicht zugewiesen
   ist — dessen Chat; in den Team-Chat kommt sie sofort. Bisher bekam sie

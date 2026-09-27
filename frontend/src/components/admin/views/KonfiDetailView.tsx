@@ -25,7 +25,8 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
+import api from '../../../services/api';
+import NachweisFoto from '../../shared/NachweisFoto';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { offlineCache } from '../../../services/offlineCache';
@@ -67,6 +68,32 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { tastaturKlick } from '../../../utils/tastatur';
 
+/**
+ * Das Nachweisfoto eines Antrags auf ganzer Fläche. Steht außerhalb von
+ * KonfiDetailView: Innen definiert, war es bei jedem Zeichnen der Ansicht ein
+ * neuer Komponententyp — das Modal hängte seinen Inhalt jedes Mal neu ein, und
+ * das Foto hätte jedes Mal neu geladen.
+ */
+const NachweisFotoAnsicht: React.FC<{ onClose: () => void; antragId: number | null }> = ({ onClose, antragId }) => (
+  <IonPage>
+    <IonHeader>
+      <IonToolbar>
+        <IonTitle>Foto</IonTitle>
+        <IonButtons slot="start">
+          <IonButton aria-label="Schließen" onClick={onClose}>
+            <IonIcon icon={ICON_SCHLIESSEN_GEFUELLT} />
+          </IonButton>
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+    <IonContent>
+      <div style={{ padding: 'var(--app-abstand-basis)', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        {antragId !== null && <NachweisFoto key={antragId} antragId={antragId} leitung vollflaeche />}
+      </div>
+    </IonContent>
+  </IonPage>
+);
+
 interface KonfiDetailViewProps {
   konfiId: number;
   onBack: () => void;
@@ -94,7 +121,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     id: number; name: string; gottesdienst_enabled?: boolean; gemeinde_enabled?: boolean;
   }>>([]);
   const isTeamer = targetRole === 'teamer';
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const fotoAntragRef = React.useRef<number | null>(null);
   const [teamerEvents, setTeamerEvents] = useState<Array<{
     id: number;
     name: string;
@@ -177,46 +204,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     }
   });
 
-  // Photo Modal Component
-  const PhotoModal: React.FC<{ onClose: () => void; photoUrl: string }> = ({ onClose, photoUrl }) => (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Foto</IonTitle>
-          <IonButtons slot="start">
-            <IonButton aria-label="Schließen" onClick={onClose}>
-              <IonIcon icon={ICON_SCHLIESSEN_GEFUELLT} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent>
-        <div style={{ padding: 'var(--app-abstand-basis)', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-          <img
-            src={photoUrl}
-            alt="Aktivitätsfoto"
-            style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              objectFit: 'contain',
-              borderRadius: 'var(--app-radius-klein)'
-            }}
-          />
-        </div>
-      </IonContent>
-    </IonPage>
-  );
-
-  // Photo Modal mit useIonModal Hook
-  const [presentPhotoModalHook, dismissPhotoModalHook] = useIonModal(PhotoModal, {
+  // Foto-Ansicht mit useIonModal. Welcher Antrag gemeint ist, steht im Ref
+  // (Getter wie beim Material-Modal in EventDetailView): Er ist gesetzt, BEVOR
+  // das Modal aufgeht, so zeigt schon das erste Zeichnen den richtigen Antrag.
+  const [presentPhotoModalHook, dismissPhotoModalHook] = useIonModal(NachweisFotoAnsicht, {
     onClose: () => {
-      if (selectedPhoto && selectedPhoto.startsWith('blob:')) {
-        URL.revokeObjectURL(selectedPhoto);
-      }
-      setSelectedPhoto(null);
+      fotoAntragRef.current = null;
       dismissPhotoModalHook();
     },
-    photoUrl: selectedPhoto || ''
+    get antragId() { return fotoAntragRef.current; }
   });
 
   // Certificate Assign Modal mit useIonModal Hook
@@ -634,27 +630,17 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     }
   };
 
-  const handlePhotoClick = async (activity: Activity) => {
+  // Die Ansicht geht SOFORT auf und lädt darin — mit Fortschritt, "Erneut
+  // versuchen" und der Zeile ohne Netz (NachweisFoto). Vorher lud diese Stelle
+  // erst still im Hintergrund und öffnete danach; bis dahin passierte beim
+  // Antippen sichtbar nichts, bei einem Fehler kam nur "Foto konnte nicht
+  // geladen werden".
+  const handlePhotoClick = (activity: Activity) => {
     if (activity.hasPhoto && activity.requestId) {
-      try {
-        const response = await api.get(`/admin/activities/requests/${activity.requestId}/photo`, {
-          responseType: 'blob',
-          timeout: DATEI_TIMEOUT_MS
-        });
-        const photoUrl = URL.createObjectURL(response.data);
-        // Vorherige Blob-URL freigeben, falls direkt ein weiteres Foto geoeffnet wird
-        setSelectedPhoto((prev) => {
-          if (prev && prev.startsWith('blob:')) {
-            try { URL.revokeObjectURL(prev); } catch { /* Freigeben darf scheitern: die URL war schon ungueltig. Das neue Foto trotzdem zeigen. */ }
-          }
-          return photoUrl;
-        });
-        presentPhotoModalHook({
-          presentingElement: presentingElement || undefined
-        });
-      } catch {
-        setError('Foto konnte nicht geladen werden');
-      }
+      fotoAntragRef.current = activity.requestId;
+      presentPhotoModalHook({
+        presentingElement: presentingElement || undefined
+      });
     }
   };
 
