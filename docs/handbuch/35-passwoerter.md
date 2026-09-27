@@ -42,6 +42,11 @@ anmelden — auch wenn dieses Gerät jemand anderem gehört. Genau darum geht es
 wenn ein Passwort zurückgesetzt wird, weil ein Konto in falsche Hände geraten
 ist. Dasselbe gilt, wenn ein Org-Admin ein Leitungspasswort setzt.
 
+Hat die Person eine E-Mail-Adresse hinterlegt, bekommt sie eine
+[Bestätigung](#die-bestaetigung-nach-einer-passwortaenderung-einordnen), dass
+die Leitung ihr Passwort neu gesetzt hat. Das Passwort selbst steht nicht
+darin — das gibst du weiter.
+
 Konten mit Super-Admin-Rechten kann nur ein Super-Admin bearbeiten — auch
 dann, wenn ein solches Konto in deiner Gemeinde zuhause ist. Passwort, Name,
 Sperre und Löschung sind für die Gemeindeleitung dort gesperrt.
@@ -90,8 +95,16 @@ App sagt dasselbe. Sonst könnte man ausprobieren, welche Adressen ein Konto
 haben. Kommt keine Mail an, kann es also auch heißen, dass die Adresse gar
 nicht hinterlegt ist.
 
+**Mehrere Konten mit derselben Adresse** — etwa eines in jeder von zwei
+Gemeinden — bekommen jedes eine **eigene Mail mit eigenem Link**. Darin stehen
+Gemeinde und Benutzername, damit klar ist, welches Konto der Link öffnet; die
+Gemeinde steht auch im Betreff. Gelöschte und gesperrte Konten bekommen keinen
+Link — mit ihnen ginge die Anmeldung ohnehin nicht.
+
 **Der Link gilt 24 Stunden** und lässt sich nur einmal verwenden. Wer zu spät
-kommt, fordert einen neuen an.
+kommt, fordert einen neuen an. Ist das neue Passwort gesetzt, kommt eine
+[Bestätigung](#die-bestaetigung-nach-einer-passwortaenderung-einordnen) an
+dieselbe Adresse.
 
 **Höchstens fünf Anfragen in 15 Minuten** von demselben Gerät oder Netz. Danach
 meldet die App „Zu viele Passwort-Reset-Anfragen. Bitte warte 15 Minuten." Das
@@ -119,6 +132,19 @@ getauschter Schlüssel kurz darauf ein zweites Mal auf, hat ihn außer dem
 eigenen Gerät noch jemand — dann beendet die App zur Sicherheit alle
 Anmeldungen des Kontos, auf jedem Gerät. Neu anmelden genügt; wer sich das
 nicht erklären kann, ändert danach das Passwort.
+
+## Die Bestätigung nach einer Passwortänderung einordnen
+
+Wird das Passwort eines Kontos geändert, geht eine Mail „Passwort geändert" an
+die hinterlegte Adresse — auf allen drei Wegen: selbst im Profil geändert, über
+den Link aus „Passwort vergessen" neu gesetzt oder von der Leitung neu gesetzt
+(Einmalpasswort oder Benutzerverwaltung). Setzt die Leitung das Passwort, sagt
+die Mail das; **das Passwort selbst steht nie darin**.
+
+Ohne hinterlegte Adresse gibt es keine Mail. Kommt sie, ohne dass du oder die
+Leitung etwas geändert habt, melde dich sofort bei der Leitung deiner
+Gemeinde — dann hatte jemand Fremdes Zugriff. Klappt der Versand einmal nicht,
+gilt das neue Passwort trotzdem.
 
 ## Die App mit Face ID sperren lassen
 

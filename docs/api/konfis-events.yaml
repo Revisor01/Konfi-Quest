@@ -3478,6 +3478,13 @@ paths:
         Refresh-Tokens werden widerrufen und die Push-Tokens geloescht.
         Die Person muss sich auf jedem Geraet mit dem neuen Passwort neu
         anmelden. Am Request und an der Antwortform aendert sich nichts.
+
+
+        NEU 27.09.2026 (Bericht "Wer bekommt was", BF-20; Simons
+        Entscheidung F-12): Hat das Konto eine E-Mail-Adresse, geht nach der
+        Antwort eine Bestaetigung dorthin, dass die Leitung ein neues
+        Passwort gesetzt hat -- das Einmalpasswort steht NICHT darin. Ohne
+        Adresse keine Mail; ein Versandfehler aendert nichts.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]

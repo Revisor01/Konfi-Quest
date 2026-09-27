@@ -21,6 +21,8 @@ const liveUpdate = require('../utils/liveUpdate');
 const { rueckeNach } = require('../utils/bookingUtils');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
+const { nachAntwort } = require('../utils/nachAntwort');
+const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const router = express.Router();
 
 // Konfis: Teamer darf ansehen, Admin darf bearbeiten
@@ -690,6 +692,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             await client.query('COMMIT');
             res.json({ message: 'Passwort erfolgreich neu generiert', temporaryPassword: newPassword });
+
+            // Bestaetigung an die hinterlegte Adresse, falls es eine gibt
+            // (Simon, 27.09.2026, F-12 / BF-20). Das Einmalpasswort steht
+            // NICHT darin -- die Leitung gibt es persoenlich weiter.
+            nachAntwort(req, () => meldePasswortGeaendert(db, parseInt(req.params.id, 10), { durchLeitung: true }),
+                'POST /admin/konfis/:id/regenerate-password (Mail)');
 
         } catch (err) {
             await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));

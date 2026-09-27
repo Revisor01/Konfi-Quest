@@ -16,6 +16,8 @@ const { checkKonfiLimit } = require('../utils/konfiLimit');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { invalidateUserCache } = require('../middleware/rbac');
+const { nachAntwort } = require('../utils/nachAntwort');
+const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const router = express.Router();
 
 // Die beiden Reset-Grenzen entstehen erst in der Fabrik unten, weil ihr
@@ -418,6 +420,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         ...(neuesPaar || {})
       });
 
+      // Bestaetigung an die hinterlegte Adresse (Simon, 27.09.2026, F-12 /
+      // BF-20) -- nach der Antwort, ein Versandfehler kippt nichts.
+      nachAntwort(req, () => meldePasswortGeaendert(db, userId), 'POST /auth/change-password (Mail)');
+
     } catch (err) {
  console.error('Database error in POST /api/auth/change-password:', err);
       res.status(500).json({ error: 'Fehler beim Ändern des Passworts' });
@@ -753,15 +759,40 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     if (!email) return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
     
     try {
+      // WELCHE KONTEN (27.09.2026, Bericht "Wer bekommt was", BF-20): Bis
+      // hierher nahm die Abfrage den ERSTEN Treffer zu `u.email = $1` -- ohne
+      // deleted_at und is_active. Die E-Mail ist aber nur je Gemeinde
+      // eindeutig (Index auf organization_id, email): Trug dieselbe Adresse
+      // Konten in zwei Gemeinden, bekam nur eines den Link, und welches, hing
+      // an der Reihenfolge der Tabelle. Geloeschte und gesperrte Konten
+      // bekamen ihn ebenfalls, obwohl sie sich damit nicht anmelden koennen.
+      //
+      // Jetzt: nur Konten, mit denen man sich anmelden kann (nicht geloescht,
+      // nicht gesperrt -- is_active NULL gilt wie beim Login als aktiv), und
+      // JEDES davon bekommt seinen eigenen Link.
+      //
+      // EINE MAIL JE KONTO, nicht eine Mail mit mehreren Links: Die Vorlage
+      // (emailService.sendPasswordResetEmail) traegt genau einen Knopf und
+      // spricht die Person mit dem Namen DIESES Kontos an. Je Konto eine Mail
+      // laesst Knopf und Anrede, wie sie sind, und kann nicht verwechselt
+      // werden -- dazu stehen Gemeinde und Benutzername im Text, die Gemeinde
+      // auch im Betreff. Eine Sammelmail braeuchte eine Liste in Text und
+      // HTML und liesse offen, welcher Knopf zu welchem Konto gehoert.
       const query = `
-        SELECT u.id, u.email, u.display_name as name, r.name as role_name
+        SELECT u.id, u.email, u.username, u.display_name as name, r.name as role_name,
+               COALESCE(o.display_name, o.name) AS gemeinde
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN organizations o ON o.id = u.organization_id
         WHERE u.email = $1
+          AND u.deleted_at IS NULL
+          AND COALESCE(u.is_active, true) = true
+        ORDER BY u.id
       `;
-      const { rows: [user] } = await db.query(query, [email]);
-      
-      if (user) {
+      const { rows: konten } = await db.query(query, [email]);
+
+      const mails = [];
+      for (const user of konten) {
         const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
         const token = generateResetToken();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
@@ -773,22 +804,38 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         await db.query('INSERT INTO password_resets (user_id, user_type, token, expires_at) VALUES ($1, $2, $3, $4)',
           [user.id, userType, hashToken(token), expiresAt]);
 
-        const resetUrl = `https://konfi-quest.de/reset-password?token=${token}`;
-
-        try {
-          await emailService.sendPasswordResetEmail(email, user.name, token, resetUrl);
-        } catch (emailError) {
-          // BEWUSST kein 500 nach aussen (Audit 22.08.2026): Die Antwort unten
-          // ist absichtlich neutral formuliert, damit sie nicht verraet, ob es
-          // ein Konto gibt. Ein Fehlerstatus genau dann, wenn ein Konto
-          // existiert, hätte dieselbe Auskunft über die Hintertuer gegeben —
-          // 200 = unbekannte Adresse, 500 = Adresse vorhanden.
-          console.error('E-Mail-Versand fehlgeschlagen:', emailError);
-        }
+        mails.push({
+          name: user.name,
+          token,
+          resetUrl: `https://konfi-quest.de/reset-password?token=${token}`,
+          // Gemeinde und Benutzername nur, wenn es etwas zu unterscheiden
+          // gibt: Bei einem einzigen Konto bleibt die Mail, wie sie war.
+          konto: konten.length > 1 ? { gemeinde: user.gemeinde, benutzername: user.username } : {}
+        });
       }
 
       // Always return a success message to not reveal if an email exists or not
+      // -- und nicht, WIE VIELE Konten es gibt: Die Antwort ist fuer null,
+      // eins und mehrere Konten Zeichen fuer Zeichen dieselbe.
       res.json({ message: 'Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine Reset-E-Mail gesendet' });
+
+      // Versand NACH der Antwort (27.09.2026, utils/nachAntwort.js): Vorher
+      // wartete die Antwort auf den SMTP-Server -- die Laufzeit verriet damit,
+      // ob (und bei mehreren Mails: wie viele) Konten es zur Adresse gibt.
+      // Fehler bleiben BEWUSST ohne Wirkung nach aussen (Audit 22.08.2026):
+      // Ein Fehlerstatus genau dann, wenn ein Konto existiert, haette dieselbe
+      // Auskunft ueber die Hintertuer gegeben.
+      if (mails.length > 0) {
+        nachAntwort(req, async () => {
+          for (const m of mails) {
+            try {
+              await emailService.sendPasswordResetEmail(email, m.name, m.token, m.resetUrl, m.konto);
+            } catch (emailError) {
+              console.error('E-Mail-Versand fehlgeschlagen:', emailError);
+            }
+          }
+        }, 'POST /auth/request-password-reset (Mail)');
+      }
 
     } catch (err) {
  console.error('Database error in POST /api/auth/request-password-reset:', err);
@@ -1233,6 +1280,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       invalidateUserCache(resetRecord.user_id);
 
       res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
+
+      // Bestaetigung an die hinterlegte Adresse (F-12 / BF-20), wie beim
+      // Selbst-Aendern.
+      nachAntwort(req, () => meldePasswortGeaendert(db, resetRecord.user_id), 'POST /auth/reset-password (Mail)');
 
     } catch (err) {
  console.error('Database error in POST /api/auth/reset-password:', err);

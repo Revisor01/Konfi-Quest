@@ -150,19 +150,41 @@ const wrapHtml = (contentHtml, { headerGradient } = {}) => `
  * @param {string} name - Name des Benutzers
  * @param {string} resetToken - Reset-Token
  * @param {string} resetUrl - Vollständige Reset-URL
+ * @param {{gemeinde?: string|null, benutzername?: string|null}} [konto]
+ *   Seit 27.09.2026 (BF-20): Eine Adresse kann an Konten in mehreren
+ *   Gemeinden haengen (E-Mail ist nur je Gemeinde eindeutig). Jedes Konto
+ *   bekommt seine EIGENE Mail mit eigenem Link; Gemeinde und Benutzername
+ *   sagen, zu welchem Konto dieser Link gehoert. Optional und am Ende --
+ *   ohne die Angaben bleibt die Mail, wie sie war.
  */
-const sendPasswordResetEmail = async (email, name, resetToken, resetUrl) => {
-  const subject = 'Passwort zurücksetzen - Konfi Quest';
+const sendPasswordResetEmail = async (email, name, resetToken, resetUrl, { gemeinde = null, benutzername = null } = {}) => {
+  // CR/LF raus: Der Gemeindename steht im Betreff (Header-Injection-Schutz
+  // wie bei sendGemeindeEinladungEmail).
+  const gemeindeZeile = gemeinde ? String(gemeinde).replace(/[\r\n]+/g, ' ').trim() : '';
+  const subject = gemeindeZeile
+    ? `Passwort zurücksetzen (${gemeindeZeile}) - Konfi Quest`
+    : 'Passwort zurücksetzen - Konfi Quest';
 
+  const kontoText = [
+    gemeindeZeile ? `Gemeinde: ${gemeindeZeile}` : null,
+    benutzername ? `Benutzername: ${benutzername}` : null
+  ].filter(Boolean).join('\n');
+  const kontoHtml = [
+    gemeindeZeile ? `Gemeinde: <strong>${escapeHtml(gemeindeZeile)}</strong>` : null,
+    benutzername ? `Benutzername: <strong>${escapeHtml(benutzername)}</strong>` : null
+  ].filter(Boolean).join('<br>');
+
+  // "24 Stunden": So lange gilt der Link (routes/auth.js, expiresAt), und so
+  // steht es im Handbuch. Hier stand bis zum 27.09.2026 "1 Stunde".
   const text = `
 Hallo ${name},
 
 du hast angefordert, dein Passwort für Konfi Quest zurückzusetzen.
-
+${kontoText ? `\nDieser Link gilt für dein Konto:\n${kontoText}\n` : ''}
 Klicke auf folgenden Link, um ein neues Passwort zu setzen:
 ${resetUrl}
 
-Dieser Link ist 1 Stunde gültig.
+Dieser Link ist 24 Stunden gültig.
 
 Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.
 
@@ -171,14 +193,15 @@ Dein Konfi Quest Team
   `.trim();
 
   const html = wrapHtml(`
-      <h2>Hallo ${name}!</h2>
+      <h2>Hallo ${escapeHtml(name)}!</h2>
       <p>Du hast angefordert, dein Passwort für Konfi Quest zurückzusetzen.</p>
+      ${kontoHtml ? `<p>Dieser Link gilt für dein Konto:<br>${kontoHtml}</p>` : ''}
       <p>Klicke auf den Button unten, um ein neues Passwort zu setzen:</p>
       <p style="text-align: center;">
         <a href="${resetUrl}" class="button">Neues Passwort setzen</a>
       </p>
       <div class="warning">
-        <strong>Hinweis:</strong> Dieser Link ist nur 1 Stunde gültig. Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.
+        <strong>Hinweis:</strong> Dieser Link ist 24 Stunden gültig. Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.
       </div>
   `);
 
@@ -186,19 +209,33 @@ Dein Konfi Quest Team
 };
 
 /**
- * Sendet eine Bestätigung nach erfolgreicher Passwortänderung
+ * Sendet eine Bestätigung nach erfolgreicher Passwortänderung.
+ *
+ * Gerufen seit dem 27.09.2026 aus utils/passwortGeaendertMail.js, fuer
+ * jeden Weg, der ein Passwort aendert (Simon, F-12). Das neue Passwort
+ * steht NIE in der Mail.
+ *
  * @param {string} email - E-Mail-Adresse des Empfängers
  * @param {string} name - Name des Benutzers
+ * @param {{durchLeitung?: boolean, gemeinde?: string|null}} [opt]
+ *   durchLeitung: Die Leitung hat das Passwort gesetzt, nicht die Person.
  */
-const sendPasswordChangedEmail = async (email, name) => {
+const sendPasswordChangedEmail = async (email, name, { durchLeitung = false, gemeinde = null } = {}) => {
   const subject = 'Passwort geändert - Konfi Quest';
+
+  const vonWem = durchLeitung
+    ? `die Leitung deiner Gemeinde${gemeinde ? ` (${gemeinde})` : ''} hat ein neues Passwort für dein Konto bei Konfi Quest gesetzt. Das Passwort selbst steht nicht in dieser Mail — du bekommst es von ihr.`
+    : 'dein Passwort für Konfi Quest wurde erfolgreich geändert.';
+  const vonWemHtml = durchLeitung
+    ? `die Leitung deiner Gemeinde${gemeinde ? ` (${escapeHtml(gemeinde)})` : ''} hat ein neues Passwort für dein Konto bei Konfi Quest gesetzt. Das Passwort selbst steht nicht in dieser Mail — du bekommst es von ihr.`
+    : 'dein Passwort für Konfi Quest wurde erfolgreich geändert.';
 
   const text = `
 Hallo ${name},
 
-dein Passwort für Konfi Quest wurde erfolgreich geändert.
+${vonWem}
 
-Falls du diese Änderung nicht vorgenommen hast, kontaktiere bitte sofort deinen Administrator.
+Falls du diese Änderung nicht vorgenommen oder erwartet hast, kontaktiere bitte sofort deinen Administrator.
 
 Viele Grüße,
 Dein Konfi Quest Team
@@ -209,9 +246,9 @@ Dein Konfi Quest Team
         <div class="success-icon">&#10003;</div>
         <h2>Passwort geändert!</h2>
       </div>
-      <p style="margin-top: 20px;">Hallo ${name},</p>
-      <p>dein Passwort für Konfi Quest wurde erfolgreich geändert.</p>
-      <p style="color: #666; font-size: 14px;">Falls du diese Änderung nicht vorgenommen hast, kontaktiere bitte sofort deinen Administrator.</p>
+      <p style="margin-top: 20px;">Hallo ${escapeHtml(name)},</p>
+      <p>${vonWemHtml}</p>
+      <p style="color: #666; font-size: 14px;">Falls du diese Änderung nicht vorgenommen oder erwartet hast, kontaktiere bitte sofort deinen Administrator.</p>
   `, { headerGradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' });
 
   return sendEmail({ to: email, subject, text, html });

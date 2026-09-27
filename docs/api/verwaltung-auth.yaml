@@ -244,6 +244,15 @@ paths:
     post:
       tags: ["Anmeldung & Konto"]
       summary: Eigenes Passwort ändern (mit aktuellem Passwort)
+      description: >
+        NEU 27.09.2026 (Bericht "Wer bekommt was", BF-20; Simons
+        Entscheidung F-12: "Ja, fuer Konten mit E-Mail"): Nach der Antwort
+        geht eine Bestaetigung "Passwort geändert" an die hinterlegte Adresse
+        (utils/passwortGeaendertMail.js). Die Vorlage
+        emailService.sendPasswordChangedEmail gab es, sie wurde bis dahin
+        nirgends gerufen. Ohne Adresse keine Mail; das Passwort steht nie
+        darin; ein Versandfehler aendert nichts an Antwort und Passwort. Die
+        Antwortform ist unveraendert.
       requestBody:
         required: true
         content:
@@ -560,6 +569,23 @@ paths:
     post:
       tags: ["Passwörter & Einladungen"]
       summary: Passwort-Reset-Mail anfordern (immer neutrale Antwort)
+      description: >
+        BEHOBEN 27.09.2026 (Bericht "Wer bekommt was", BF-20): Die Abfrage
+        nahm den ERSTEN Treffer zu users.email -- ohne deleted_at und
+        is_active. Die E-Mail ist nur je Gemeinde eindeutig (Index
+        organization_id, email); trug dieselbe Adresse Konten in mehreren
+        Gemeinden, bekam nur eines den Link, und geloeschte oder gesperrte
+        Konten bekamen ihn auch. Jetzt: nur Konten mit deleted_at IS NULL
+        und is_active nicht false (wie beim Login), und JEDES bekommt einen
+        eigenen Token und eine eigene Mail. Bei mehreren Konten nennt die
+        Mail Gemeinde (auch im Betreff) und Benutzername; bei einem Konto
+        bleibt sie ohne diese Zeilen. Die Mail sagt seit demselben Tag
+        "24 Stunden gueltig" (stand faelschlich "1 Stunde"; der Token galt
+        immer 24 h).
+        Der Versand laeuft seit 27.09.2026 NACH der Antwort (nachAntwort):
+        Vorher wartete die Antwort auf den SMTP-Server, ihre Laufzeit
+        verriet damit, ob -- und wie viele -- Konten es zur Adresse gibt.
+        Die Antwort ist fuer null, ein und mehrere Konten dieselbe.
       requestBody:
         required: true
         content:
@@ -570,9 +596,9 @@ paths:
               properties:
                 email: { type: string, format: email }
       responses:
-        "200": { description: "Neutral: 'Falls ein Konto existiert, wurde eine E-Mail gesendet'" }
+        "200": { description: "Neutral: 'Falls ein Konto existiert, wurde eine E-Mail gesendet' -- unveraendert, auch bei mehreren Konten keine Aufzaehlung" }
         "429": { description: "passwordResetLimiter: 5/15min je Client-IP (clientIp) ODER passwordResetEmailLimiter: 3/h je Ziel-E-Mail (normalisiert: trim + lowercase; zaehlt auch fuer unbekannte Adressen, damit der 429 kein Konto verraet); beide Zaehler seit 26.09.2026 replica-uebergreifend in der Datenbank, Betrieb BF-09)" }
-        "500": { description: "Mail-Versand fehlgeschlagen (nur wenn Konto existiert — schwaecht die Neutralitaet leicht ab)" }
+        "500": { description: "Datenbankfehler. BEHOBEN: Ein fehlgeschlagener Mail-Versand liefert KEIN 500 mehr (seit 22.08.2026 abgefangen, seit 27.09.2026 nach der Antwort) -- vorher 'Mail-Versand fehlgeschlagen (nur wenn Konto existiert)', was die Neutralitaet schwaechte." }
       x-berechtigung:
         rollen: [oeffentlich]
         middleware: [passwordResetLimiter, passwordResetEmailLimiter, validateRequestPasswordReset]
@@ -584,7 +610,7 @@ paths:
         # (reproduziert: 6x mit verschiedenen X-Real-IP -> 200,200,200,200,200,429).
         # Jetzt ipKeyGenerator(clientIp(req)) wie alle uebrigen IP-Limiter,
         # dazu passwordResetEmailLimiter je Ziel-Adresse.
-        hinweis: "BEKANNT: Token wird unhashed in password_resets gespeichert"
+        hinweis: "BEHOBEN 22.08.2026 (war: BEKANNT: Token wird unhashed in password_resets gespeichert) -- seitdem nur der SHA-256-Hash, eingeloest wird per Klartext-Token aus der Mail"
 
   /api/auth/invite-code:
     post:
@@ -725,6 +751,12 @@ paths:
     post:
       tags: ["Passwörter & Einladungen"]
       summary: Passwort mit Reset-Token setzen (oeffentlich)
+      description: >
+        NEU 27.09.2026 (BF-20; Simons Entscheidung F-12: "Ja, fuer Konten mit
+        E-Mail"): Nach der Antwort geht eine Bestaetigung "Passwort geändert"
+        an die hinterlegte Adresse des Kontos (utils/passwortGeaendertMail.js,
+        emailService.sendPasswordChangedEmail). Ohne Adresse keine Mail; ein
+        Versandfehler aendert nichts an Antwort und Passwort.
       requestBody:
         required: true
         content:
@@ -1279,7 +1311,7 @@ paths:
                 role_title: { type: string }
                 role_id: { type: integer, description: "Rollenwechsel: Hierarchie prueft neue Rolle; Sockets werden getrennt" }
                 is_active: { type: boolean, description: "false trennt aktive Sockets" }
-                password: { type: string }
+                password: { type: string, description: "Seit 27.09.2026 (BF-20 / F-12): Wird ein Passwort gesetzt, geht nach der Antwort eine Bestaetigung an die hinterlegte Adresse des Kontos -- ohne das Passwort, mit dem Hinweis, dass die Leitung es gesetzt hat (ausser beim eigenen Konto)" }
       responses:
         "200": { description: "Aktualisiert; Chat-Sync bei Rollen-/Aktiv-Wechsel; User-Cache bei JEDER Aenderung invalidiert (seit 26.09.2026 -- vorher nur bei role_id, is_active=false wirkte bis zu 30 s spaeter)" }
         "400": { description: "Rolle nicht in eigener Org / keine Felder" }
@@ -1493,6 +1525,15 @@ paths:
         werden widerrufen und die Push-Tokens geloescht. Die Person muss sich
         auf jedem Geraet mit dem neuen Passwort neu anmelden. Am Request und
         an der Antwortform aendert sich nichts.
+
+
+        NEU 27.09.2026 (Bericht "Wer bekommt was", BF-20; Simons
+        Entscheidung F-12): Nach der Antwort geht eine Bestaetigung an die
+        hinterlegte Adresse des Kontos -- "die Leitung deiner Gemeinde hat
+        ein neues Passwort gesetzt", OHNE das Passwort (die Leitung gibt es
+        persoenlich weiter). Ohne Adresse keine Mail; ein Versandfehler
+        aendert nichts. Am Request und an der Antwortform aendert sich
+        nichts.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       requestBody:

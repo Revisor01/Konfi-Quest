@@ -14,6 +14,8 @@ const chatSyncCache = require('../utils/chatSyncCache');
 const { deletePhotoFile, deleteChallengeFile, deleteChatFile } = require('../utils/photoStorage');
 const liveUpdate = require('../utils/liveUpdate');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
+const { nachAntwort } = require('../utils/nachAntwort');
+const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
@@ -436,6 +438,15 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       }
 
       res.json({ message: 'Benutzer erfolgreich aktualisiert' });
+
+      // Neues Passwort gesetzt: Bestaetigung an die hinterlegte Adresse
+      // (Simon, 27.09.2026, F-12 / BF-20), ohne das Passwort. Nach der
+      // Antwort; "durch die Leitung" nur, wenn es nicht das eigene Konto ist.
+      if (password) {
+        nachAntwort(req, () => meldePasswortGeaendert(db, parseInt(id, 10), {
+          durchLeitung: Number(id) !== Number(req.user.id)
+        }), 'PUT /users/:id (Passwort-Mail)');
+      }
 
       // Live-Update NACH der Response: geaenderter Benutzer in der Benutzer-Liste.
       liveUpdate.sendToOrgAdmins(organizationId, 'users', 'update', { userId: parseInt(id) });
@@ -1321,6 +1332,12 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       liveUpdate.disconnectUserSockets(parseInt(id));
 
       res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
+
+      // Bestaetigung an die hinterlegte Adresse (F-12 / BF-20), ohne das
+      // Passwort -- die Leitung gibt es persoenlich weiter.
+      nachAntwort(req, () => meldePasswortGeaendert(db, parseInt(id, 10), {
+        durchLeitung: Number(id) !== Number(req.user.id)
+      }), 'PUT /users/:id/reset-password (Mail)');
 
     } catch (err) {
  console.error(`Database error in PUT /users/${id}/reset-password:`, err);

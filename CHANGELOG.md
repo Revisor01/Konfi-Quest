@@ -142,6 +142,10 @@ Versionsüberschrift.
   Konfis, Teamer:innen und Leitung. Antippen öffnet das Event. Bisher
   meldete sich nur das Eintragen, und wer ausgetragen war, hielt sich den
   Tag womöglich weiter frei.
+- Nach jeder Passwortänderung kommt eine Bestätigung an die hinterlegte
+  E-Mail-Adresse — ob selbst geändert, über „Passwort vergessen" neu gesetzt
+  oder von der Leitung neu gesetzt. Setzt die Leitung das Passwort, sagt die
+  Mail das; das Passwort selbst steht nie darin.
 
 ### Geändert
 - Im Dunkelmodus setzen sich Karten und Listen deutlicher vom Hintergrund ab:
@@ -686,6 +690,13 @@ Versionsüberschrift.
   in den Namen der Symbole zur Auswahl („Glühbirne", „Kopfhörer"), bei der
   Reaktion „Gefällt mir" und in einigen Fehlermeldungen. Vorlesehilfen sprechen
   „Änderungen speichern" jetzt richtig aus.
+- „Passwort vergessen" erreicht jedes Konto mit der eingegebenen Adresse: Wer
+  in mehreren Gemeinden ein Konto mit derselben Adresse hat, bekommt für jedes
+  eine eigene Mail mit eigenem Link, darin Gemeinde und Benutzername. Bisher
+  bekam nur eines den Link — und auch gesperrte oder gelöschte Konten, mit
+  denen man sich gar nicht anmelden kann.
+- Die Mail „Passwort zurücksetzen" nennt die richtige Gültigkeit des Links:
+  24 Stunden statt einer Stunde.
 
 ### Sonstiges
 - Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.
