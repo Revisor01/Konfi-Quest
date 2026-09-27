@@ -26,6 +26,7 @@ import {
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
+import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
 
 export interface ActivityRequest {
   id: number;
@@ -109,21 +110,11 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
 
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return datumUhrzeit(dateString);
   };
 
   if (!request) {

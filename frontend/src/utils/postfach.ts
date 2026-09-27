@@ -1,3 +1,4 @@
+import { datumKurz } from './dateUtils';
 // Postfach oeffnen — von ueberall, ohne Router und ohne Context.
 //
 // Die Glocke steht in JEDER Kopfzeile (AppKopfzeile), das Postfach selbst
@@ -57,7 +58,7 @@ export const zeitpunktText = (iso: string, jetzt: Date = new Date()): string => 
   const gestern = new Date(jetzt);
   gestern.setDate(gestern.getDate() - 1);
   if (dann.toDateString() === gestern.toDateString()) return 'gestern';
-  return dann.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return datumKurz(dann);
 };
 
 /**

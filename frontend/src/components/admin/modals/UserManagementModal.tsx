@@ -34,6 +34,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { AdminUser } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface Role {
   id: number;
@@ -678,7 +679,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           {assignment.name}
                         </span>
                         <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)' }}>
-                          {assignment.assigned_at && new Date(assignment.assigned_at).toLocaleDateString('de-DE')}
+                          {assignment.assigned_at && datumKurz(assignment.assigned_at)}
                           {assignment.assigned_by_name && ` von ${assignment.assigned_by_name}`}
                         </span>
                       </div>

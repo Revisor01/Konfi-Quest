@@ -24,6 +24,7 @@ import ZaehlerKugel from '../../shared/ZaehlerKugel';
 import type { KonfiChallenge, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
 
 /**
  * Loest den gespeicherten Icon-Namen einer Challenge auf (Rueckfall: Flagge).
@@ -87,7 +88,7 @@ const formatDate = (value?: string | null): string => {
   if (!value) return '';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return datumKurz(d);
 };
 
 /**
@@ -104,10 +105,7 @@ const formatDateRange = (startValue?: string | null, endValue?: string | null): 
   if (isNaN(start.getTime()) || !endDate || isNaN(endDate.getTime())) return end;
 
   const sameYear = start.getFullYear() === endDate.getFullYear();
-  const startFormatted = start.toLocaleDateString(
-    'de-DE',
-    sameYear ? { day: '2-digit', month: '2-digit' } : { day: '2-digit', month: '2-digit', year: 'numeric' }
-  );
+  const startFormatted = datumKurz(start, { ohneJahr: sameYear });
   return `${startFormatted} – ${end}`;
 };
 

@@ -46,6 +46,7 @@ import {
   MatrixZellStatus,
   MatrixZeilenStats
 } from '../../../utils/anwesenheitsMatrix';
+import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
 
 interface Jahrgang {
   id: number;
@@ -107,7 +108,7 @@ interface AttendanceMatrixModalProps {
 const formatShortDate = (iso: string): string => {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    return datumKurz(d, { ohneJahr: true });
   } catch {
     return iso;
   }
@@ -345,7 +346,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                           <td className="attendance-matrix__td-konfi">{s.display_name}</td>
                           <td className="attendance-matrix__td-cell">
                             {s.konfirmation_date
-                              ? `${new Date(s.konfirmation_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${new Date(s.konfirmation_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`
+                              ? `${datumKurz(s.konfirmation_date)}, ${uhrzeit(s.konfirmation_date)} Uhr`
                               : <span style={{ color: 'var(--app-text-muted)', fontStyle: 'italic' }}>nicht gebucht</span>}
                           </td>
                           <td className="attendance-matrix__td-cell">
@@ -519,7 +520,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
             <div style={{ fontWeight: 'var(--app-schrift-halbfett)', fontSize: 'var(--app-text-basis)' }}>{eventPopover?.event.name}</div>
             <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
               {eventPopover
-                ? new Date(eventPopover.event.event_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                ? datumKurz(eventPopover.event.event_date)
                 : ''}
             </div>
           </div>

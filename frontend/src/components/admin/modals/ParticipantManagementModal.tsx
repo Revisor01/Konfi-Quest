@@ -35,6 +35,7 @@ import type { Participant } from '../../../types/event';
 // spiegelt gehoertZumTermin im Backend und hat dort ihre Erklaerung.
 import { passtZumTermin } from '../../../utils/jahrgangsPassung';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { uhrzeit } from '../../../utils/dateUtils';
 
 interface Konfi {
   id: number;
@@ -223,10 +224,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     if (!dateString) return '';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return uhrzeit(date);
   };
 
   const handleKonfiSelection = (konfiId: number) => {

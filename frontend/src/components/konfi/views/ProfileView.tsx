@@ -42,6 +42,7 @@ import { PUNKTE_PARAMETER, RUECKBLICK_PARAMETER, waehleRueckblick } from '../../
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
 
 interface KonfiProfile {
   id: number;
@@ -323,11 +324,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     if (!dateString) return 'Unbekannt';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Ungültiges Datum';
-    return date.toLocaleDateString('de-DE', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    return datumKurz(date);
   };
 
   return (
@@ -427,7 +424,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                     color: 'rgba(255, 255, 255, 0.8)', 
                     fontSize: 'var(--app-text-basis)' 
                   }}>
-                    {new Date(profile.confirmation_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                    {uhrzeit(profile.confirmation_date)} Uhr
                   </p>
                   {profile.confirmation_location && (
                     <button type="button" className="app-knopf-nackt" aria-label={`${profile.confirmation_location} auf der Karte öffnen`} 
@@ -501,7 +498,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                         </div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">
-                            {new Date(entry.computed_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {datumKurz(entry.computed_at)}
                           </span>
                         </div>
                       </div>

@@ -44,6 +44,7 @@ import FileViewerModal, { FileItem } from '../../shared/FileViewerModal';
 import { haptik, triggerPullHaptic, ImpactStyle } from '../../../utils/haptics';
 import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface MaterialFile {
   id: number;
@@ -117,11 +118,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
   const openFile = async (file: MaterialFile) => {

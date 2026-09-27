@@ -26,6 +26,7 @@ import {
 import { Category, Jahrgang } from '../../../types/event';
 import { istPunkteartAktiv, PUNKTEART_NAME, type Punkteart } from '../../../utils/punktearten';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumLang } from '../../../utils/dateUtils';
 
 // ---- Shared form data type ----
 
@@ -711,7 +712,7 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
               {lastDate && (
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel color="medium">
-                    <p>Letzter Termin: {lastDate.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                    <p>Letzter Termin: {datumLang(lastDate)}</p>
                   </IonLabel>
                 </IonItem>
               )}

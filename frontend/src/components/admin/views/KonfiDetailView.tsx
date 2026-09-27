@@ -43,6 +43,7 @@ import {
 import KonfiModal from '../modals/KonfiModal';
 import type { Konfi, Activity } from './KonfiDetailSections';
 import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
+import { datumKurz } from '../../../utils/dateUtils';
 
 /**
  * Ein Aktivitaets-Antrag aus GET /admin/activities/requests, soweit diese
@@ -534,11 +535,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
   const handlePasswordAction = () => {

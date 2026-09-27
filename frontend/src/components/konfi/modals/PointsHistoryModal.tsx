@@ -29,6 +29,7 @@ import {
 import api from '../../../services/api';
 import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface PointsHistoryModalProps {
   onClose: () => void;
@@ -83,11 +84,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     if (!dateString) return 'Unbekannt';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Ungültig';
-    return date.toLocaleDateString('de-DE', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    return datumKurz(date);
   };
 
   // Gefilterte Historie: deaktivierte Typen ausblenden

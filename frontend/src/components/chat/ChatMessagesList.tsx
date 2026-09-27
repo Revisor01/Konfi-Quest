@@ -1,6 +1,7 @@
 import React from 'react';
 import { Message } from '../../types/chat';
 import MessageBubble from './MessageBubble';
+import { datumKurz } from '../../utils/dateUtils';
 
 /**
  * Nachrichtenliste des Chatraums (beim Aufteilen von ChatRoom.tsx hierher
@@ -14,7 +15,7 @@ const formatDayDivider = (d: Date): string => {
   const yest = new Date(); yest.setDate(today.getDate() - 1);
   if (d.toDateString() === today.toDateString()) return 'Heute';
   if (d.toDateString() === yest.toDateString()) return 'Gestern';
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return datumKurz(d);
 };
 
 // Pro Raum: Message-ID, an der der "Neue Nachrichten"-Trenner bereits gezeigt

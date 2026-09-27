@@ -68,6 +68,7 @@ import type {
   KonfiChallenge,
   ChallengeSubmission
 } from '../../../types/challenges';
+import { datumUhrzeit } from '../../../utils/dateUtils';
 
 // Die vier Moderations-Aktionen als grobe Messwerte. Fest verdrahtet, damit
 // nie ein technischer Bezeichner aus dem Backend an die Messung durchrutscht.
@@ -242,8 +243,7 @@ const formatDateTime = (value?: string) => {
   if (!value) return '';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  return datumUhrzeit(d);
 };
 
 export interface ChallengeLeitungModalProps {

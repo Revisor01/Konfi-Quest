@@ -38,6 +38,7 @@ import type { UseIonModalResult } from '@ionic/react';
 import type { AxiosInstance } from 'axios';
 import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz, datumLang, uhrzeit } from '../../../utils/dateUtils';
 
 /**
  * Die "present"-Funktion aus useIonModal — erste Haelfte des Rueckgabepaars.
@@ -236,7 +237,7 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
           fontSize: 'var(--app-text-hinweis)'
         }}
       >
-        Teamer:in seit {new Date(currentKonfi.teamer_since).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
+        Teamer:in seit {datumKurz(currentKonfi.teamer_since)}
       </div>
     )}
 
@@ -465,9 +466,9 @@ export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspr
             <div className="app-info-row__label">Konfirmationstermin</div>
             {confirmationDate ? (
               <div className="app-info-row__value">
-                {new Date(confirmationDate).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                {datumLang(confirmationDate)}
                 {' · '}
-                {new Date(confirmationDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                {uhrzeit(confirmationDate)} Uhr
                 {confirmationLocation && ` · ${confirmationLocation}`}
               </div>
             ) : (
@@ -587,10 +588,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
                         <span className="app-list-item__meta-item">
                           <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-icon-color--events" />
                           {eventPoint.awarded_date &&
-                            new Date(eventPoint.awarded_date).toLocaleDateString('de-DE', {
-                              day: '2-digit',
-                              month: '2-digit'
-                            })}
+                            datumKurz(eventPoint.awarded_date, { ohneJahr: true })}
                         </span>
                         <span className="app-list-item__meta-item">
                           <IonIcon icon={ICON_PERSON} className="app-icon-color--konfis" />

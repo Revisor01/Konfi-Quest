@@ -19,6 +19,7 @@ import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { AdminUser } from '../../types/user';
 import { triggerPullHaptic } from '../../utils/haptics';
+import { datumKurz } from '../../utils/dateUtils';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -94,11 +95,7 @@ const UsersView: React.FC<UsersViewProps> = ({
 
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
 

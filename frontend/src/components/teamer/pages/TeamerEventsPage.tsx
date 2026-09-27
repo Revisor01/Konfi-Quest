@@ -43,6 +43,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { datumKurz } from '../../../utils/dateUtils';
 
 /** Ein Eintrag aus GET /material/by-event/:eventId (material.js). */
 interface EventMaterial {
@@ -200,11 +201,7 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   const formatRequestDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
   const getFilteredRequests = () => {
@@ -1069,11 +1066,11 @@ const TeamerEventsPage: React.FC = () => {
                       {selectedEvent.registration_opens_at ? (
                         <>
                           <div className="app-info-row__value">
-                            von {new Date(selectedEvent.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(selectedEvent.registration_opens_at)}
+                            von {datumKurz(selectedEvent.registration_opens_at)} – {formatTime(selectedEvent.registration_opens_at)}
                           </div>
                           {selectedEvent.registration_closes_at && (
                             <div className="app-info-row__value">
-                              bis {new Date(selectedEvent.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(selectedEvent.registration_closes_at)}
+                              bis {datumKurz(selectedEvent.registration_closes_at)} – {formatTime(selectedEvent.registration_closes_at)}
                             </div>
                           )}
                         </>

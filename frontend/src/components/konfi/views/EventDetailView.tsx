@@ -61,6 +61,7 @@ import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateConte
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -731,11 +732,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     {eventData.registration_opens_at ? (
                       <>
                         <div className="app-info-row__value">
-                          von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(eventData.registration_opens_at)}
+                          von {datumKurz(eventData.registration_opens_at)} – {formatTime(eventData.registration_opens_at)}
                         </div>
                         {eventData.registration_closes_at && (
                           <div className="app-info-row__value">
-                            bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(eventData.registration_closes_at)}
+                            bis {datumKurz(eventData.registration_closes_at)} – {formatTime(eventData.registration_closes_at)}
                           </div>
                         )}
                       </>

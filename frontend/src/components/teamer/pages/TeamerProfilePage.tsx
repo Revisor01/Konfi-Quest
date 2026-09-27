@@ -66,6 +66,7 @@ import { safeUUID } from '../../../utils/uuid';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface TeamerProfile {
   user: {
@@ -343,7 +344,7 @@ const TeamerProfilePage: React.FC = () => {
               {profile.user.teamer_since && (
                 <div className="app-detail-header__info-chip">
                   <IonIcon icon={ICON_TERMIN} style={{ fontSize: 'var(--app-text-sekundaer)' }} />
-                  Dabei seit {new Date(profile.user.teamer_since).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  Dabei seit {datumKurz(profile.user.teamer_since)}
                 </div>
               )}
             </div>
@@ -391,7 +392,7 @@ const TeamerProfilePage: React.FC = () => {
                           </div>
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
-                              {new Date(entry.computed_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              {datumKurz(entry.computed_at)}
                             </span>
                           </div>
                         </div>

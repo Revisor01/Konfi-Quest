@@ -8,6 +8,7 @@
 // ihre Komponente.
 
 import { METRIK_AMPEL } from '../theme/colors';
+import { datumKurz } from './dateUtils';
 
 // Nur die Felder, die fuer das Urteil gebraucht werden. Der Rest des
 // Snapshots interessiert hier nicht.
@@ -197,7 +198,7 @@ export interface Tagesbilanz { tag: string; anfragen: number; fehler: number; sc
 export function tagesbilanz(deltas: HistorieDelta[]): Tagesbilanz[] {
   const proTag = new Map<string, Tagesbilanz>();
   for (const d of deltas) {
-    const tag = new Date(d.at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    const tag = datumKurz(d.at, { ohneJahr: true });
     let e = proTag.get(tag);
     if (!e) { e = { tag, anfragen: 0, fehler: 0, schlimmsteMs: 0, schlimmsteRoute: null }; proTag.set(tag, e); }
     e.anfragen += d.requests;

@@ -14,6 +14,7 @@ import {
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { Badge } from '../../../types/dashboard';
+import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
 
 // Badge Icon Mapping
 
@@ -154,20 +155,13 @@ export { formatTimeUntil };
 export const formatEventTime = (dateString: string | undefined) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleTimeString('de-DE', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  return uhrzeit(date);
 };
 
 export const formatEventDate = (dateString: string | undefined) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleDateString('de-DE', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short'
-  });
+  return datumKurz(date);
 };
 
 /**

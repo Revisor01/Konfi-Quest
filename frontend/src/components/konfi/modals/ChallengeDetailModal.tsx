@@ -39,6 +39,7 @@ import {
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
+import { datumUhrzeit } from '../../../utils/dateUtils';
 
 /** Reiter im Challenge-Detail: Gruppen-Feed oder eigene Beitraege. */
 type KonfiReiter = 'feed' | 'meins';
@@ -111,8 +112,7 @@ const formatDateTime = (value?: string): string => {
   if (!value) return '';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  return datumUhrzeit(d);
 };
 
 // Rollen-Kennzeichnung in der Galerie: Beitraege von Pastor:innen/Teamer:innen

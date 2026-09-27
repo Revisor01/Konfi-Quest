@@ -27,6 +27,7 @@ import TerminAbsagenModal from '../modals/TerminAbsagenModal';
 import { Event, Timeslot } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { aktuelleTermine, zuVerbuchendeTermine, vergangeneTermine, istAbgesagt } from '../../shared';
+import { datumLang } from '../../../utils/dateUtils';
 
 /**
  * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
@@ -184,9 +185,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     get terminDatum() {
       const termin = absageTerminRef.current;
       if (!termin) return '';
-      return new Date(termin.event_date).toLocaleDateString('de-DE', {
-        weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
-      });
+      return datumLang(termin.event_date);
     },
     // registered_count IST bereits die Konfi-Zahl: Das Backend filtert Teamer
     // heraus und zaehlt sie in teamer_count getrennt. Ein Abzug zog sie ein

@@ -54,6 +54,7 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
 import { materialStats } from '../../../utils/materialStats';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface Material {
   id: number;
@@ -207,11 +208,7 @@ const TeamerMaterialPage: React.FC = () => {
 
 
   const formatDateLong = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
   // File-Handling Funktionen

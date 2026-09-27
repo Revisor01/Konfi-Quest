@@ -23,6 +23,7 @@ import {
 } from '../shared/icons';
 import { SectionHeader, ListSection, StatusBadge } from '../shared';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
+import { datumKurz } from '../../utils/dateUtils';
 
 interface ActivityRequest {
   id: number;
@@ -93,11 +94,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
     if (!dateString) return '';
     const d = new Date(dateString);
     if (isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(d);
   };
 
   const getTypeIcon = (type: string) => {

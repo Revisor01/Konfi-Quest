@@ -55,6 +55,7 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istWebLink } from '../../../utils/linkDisplay';
 import { trackHandlung } from '../../../services/analytics';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface MaterialFile {
   id: number;
@@ -529,7 +530,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                                     <div className="app-list-item__title">{ev.name}</div>
                                     {ev.event_date && (
                                       <div className="app-list-item__subtitle">
-                                        {new Date(ev.event_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                        {datumKurz(ev.event_date)}
                                       </div>
                                     )}
                                   </div>

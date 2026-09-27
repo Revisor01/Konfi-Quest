@@ -23,6 +23,7 @@ import { formatFileSize } from '../../utils/helpers';
 import VideoPreview from './VideoPreview';
 import LazyImage from './LazyImage';
 import { tastaturKlick } from '../../utils/tastatur';
+import { datumUhrzeit, uhrzeit } from '../../utils/dateUtils';
 
 const getMimeFromFileName = (fileName: string): string => {
   const ext = (fileName.split('.').pop() || '').toLowerCase();
@@ -115,14 +116,9 @@ const formatMessageTime = (dateString: string) => {
   const isToday = date.toDateString() === now.toDateString();
 
   if (isToday) {
-    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    return uhrzeit(date);
   } else {
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return datumUhrzeit(date, { ohneJahr: true });
   }
 };
 
@@ -454,7 +450,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     <span style={{ fontWeight: 'var(--app-schrift-mittel)' }}>Beendet</span>
                   ) : (
                     <span>
-                      Endet: {expiresDate.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      Endet: {datumUhrzeit(expiresDate, { ohneJahr: true })}
                       {hoursRemaining < 24 && ` (${hoursRemaining > 0 ? `${hoursRemaining}h ` : ''}${minutesRemaining}min)`}
                     </span>
                   )}

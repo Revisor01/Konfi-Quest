@@ -38,6 +38,7 @@ import EinladungenKarte from '../../shared/EinladungenKarte';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
+import { datumKurz } from '../../../utils/dateUtils';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
@@ -173,7 +174,7 @@ const AdminProfilePage: React.FC = () => {
               {profileData?.created_at && (
                 <div className="app-detail-header__info-chip">
                   <IonIcon icon={ICON_TERMIN} style={{ fontSize: 'var(--app-text-sekundaer)' }} />
-                  Seit {new Date(profileData?.created_at || '').toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  Seit {datumKurz(profileData?.created_at)}
                 </div>
               )}
             </div>

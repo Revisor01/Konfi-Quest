@@ -39,6 +39,7 @@ import {
   type RoutenSortierung,
   type RoutenZeile,
 } from '../../../utils/betriebsKennzahlen';
+import { datumUhrzeit, uhrzeit } from '../../../utils/dateUtils';
 
 interface RouteRow {
   route: string;
@@ -107,8 +108,8 @@ const fmtUptime = (s: number) => {
   if (h > 0) return `${h} Std ${m} Min`;
   return `${m} Min`;
 };
-const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-const fmtDateTime = (iso: string) => new Date(iso).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const fmtTime = (iso: string) => uhrzeit(iso);
+const fmtDateTime = (iso: string) => datumUhrzeit(iso, { ohneJahr: true });
 const fmtZahl = (n: number) => n.toLocaleString('de-DE');
 
 // Millisekunden lesbar: unter einer Sekunde in ms, darueber in s/min.

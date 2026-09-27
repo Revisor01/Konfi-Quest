@@ -3,6 +3,7 @@ import { IonIcon } from '@ionic/react';
 import { ICON_UHRZEIT, ICON_WARNHINWEIS } from './icons';
 import { useApp } from '../../contexts/AppContext';
 import { tageBis } from './eventFormatting';
+import { datumKurz } from '../../utils/dateUtils';
 
 /**
  * Hinweis-Banner für laufende Testphasen.
@@ -60,7 +61,7 @@ const TrialBanner: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
             : `Testphase: noch ${days} Tag${days === 1 ? '' : 'e'}`}
         </strong>
         <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)' }}>
-          Läuft bis {end.toLocaleDateString('de-DE')}. Danach wird der Zugang gesperrt.
+          Läuft bis {datumKurz(end)}. Danach wird der Zugang gesperrt.
         </div>
       </div>
     </div>

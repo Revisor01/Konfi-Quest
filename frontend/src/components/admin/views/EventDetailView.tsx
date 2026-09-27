@@ -61,6 +61,7 @@ import AbmeldungNachtragenModal from '../modals/AbmeldungNachtragenModal';
 import TerminAbsagenModal from '../modals/TerminAbsagenModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { trackHandlung } from '../../../services/analytics';
+import { datumLang } from '../../../utils/dateUtils';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -419,9 +420,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     get terminName() { return eventData?.name ?? ''; },
     get terminDatum() {
       if (!eventData?.event_date) return '';
-      return new Date(eventData.event_date).toLocaleDateString('de-DE', {
-        weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
-      });
+      return datumLang(eventData.event_date);
     },
     // BEFUND 16.09.2026: Hier stand `participants.filter(p => p.role_name ===
     // 'konfi').length` -- ALLE Konfi-Buchungen, gleich welchen Status. Simons

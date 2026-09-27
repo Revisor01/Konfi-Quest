@@ -242,6 +242,11 @@ Versionsüberschrift.
 - Teamer:innen bekommen die Mitteilung über neue Beiträge auch bei Challenges
   nur fürs Team, die sie ja mitverwalten. Wer selbst etwas einreicht, bekommt
   über den eigenen Beitrag keine Mitteilung mehr.
+- Daten stehen überall in derselben Form: kurz als 14.09.2026 in Listen,
+  Karten und Übersichten — auch dort, wo bisher „8. Sept. 2026", „8.9.2026"
+  oder „Mo., 14. Sept." stand —, ausgeschrieben als „Montag, 14. September
+  2026" in Einzelansichten und Rückfragen, Uhrzeiten als 18:00. Wo der Platz
+  knapp ist (Chat, Anwesenheitsliste), fällt das Jahr weg: 14.09.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

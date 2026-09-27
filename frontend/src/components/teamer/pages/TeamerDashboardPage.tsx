@@ -54,6 +54,7 @@ import { getIconFromString } from '../../../utils/badgeIcons';
 import BadgePopoverContent, { BadgePopoverData, getBadgeColor } from '../../shared/BadgePopoverContent';
 import { formatTimeUntil, kalendertag } from '../../shared/eventFormatting';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
 
 
 
@@ -195,12 +196,12 @@ const CertPopoverContent: React.FC<{
       </div>
       {cert.issued_date && (
         <div style={{ fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-secondary)', marginBottom: 'var(--app-abstand-mini)' }}>
-          Ausgestellt: {new Date(cert.issued_date).toLocaleDateString('de-DE')}
+          Ausgestellt: {datumKurz(cert.issued_date)}
         </div>
       )}
       {cert.expiry_date && (
         <div style={{ fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-secondary)' }}>
-          Ablauf: {new Date(cert.expiry_date).toLocaleDateString('de-DE')}
+          Ablauf: {datumKurz(cert.expiry_date)}
         </div>
       )}
     </div>
@@ -426,20 +427,13 @@ const TeamerDashboardPage: React.FC = () => {
   const formatEventTime = (dateString: string | undefined) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return uhrzeit(date);
   };
 
   const formatEventDate = (dateString: string | undefined) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short'
-    });
+    return datumKurz(date);
   };
 
   const config = dashboardData?.config;
@@ -759,7 +753,7 @@ const TeamerDashboardPage: React.FC = () => {
                         </span>
                         {isValid && cert.issued_date && (
                           <span style={{ fontSize: 'var(--app-text-mini)', color: 'rgba(255,255,255,0.7)' }}>
-                            Seit {new Date(cert.issued_date).toLocaleDateString('de-DE', { month: 'short', year: 'numeric' })}
+                            Seit {datumKurz(cert.issued_date)}
                           </span>
                         )}
                         {isExpired && (

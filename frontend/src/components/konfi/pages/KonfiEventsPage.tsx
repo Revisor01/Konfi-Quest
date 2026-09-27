@@ -44,6 +44,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 // unterschiedlicher Nullbarkeit haben genau dort gebissen. Der Modal-Typ ist
 // der genauere — er kennt Teamer-Antraege ohne Punkte und ohne Typ.
 import type { ActivityRequest } from '../modals/RequestDetailModal';
+import { datumKurz } from '../../../utils/dateUtils';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten sind aus ihrem eigenen
 // Tab in dieses Segment gewandert.
@@ -163,11 +164,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
   const getFilteredRequests = () => {

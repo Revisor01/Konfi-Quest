@@ -45,6 +45,7 @@ import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface KonfiBadge {
   badge_id: number;
@@ -327,10 +328,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
                             fontSize: 'var(--app-text-winzig)',
                             color: 'var(--app-text-tertiary)'
                           }}>
-                            {new Date(badge.awarded_date).toLocaleDateString('de-DE', {
-                              day: 'numeric',
-                              month: 'short'
-                            })}
+                            {datumKurz(badge.awarded_date, { ohneJahr: true })}
                           </span>
                         )
                       }))}

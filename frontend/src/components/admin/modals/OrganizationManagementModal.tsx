@@ -66,6 +66,7 @@ import AdminPasswordResetModal from './AdminPasswordResetModal';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { generateStrongPassword } from '../../../utils/passwortVorschlag';
 import { tageBis } from '../../shared/eventFormatting';
+import { datumKurz } from '../../../utils/dateUtils';
 
 interface Organization {
   id: number;
@@ -757,8 +758,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                                 const end = new Date(organization.trial_ends_at);
                                 const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                                 return days >= 0
-                                  ? <span>{end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig){organization.is_trial ? ' · Testphase' : ''}</span>
-                                  : <span style={{ color: 'var(--app-text-events)' }}>{end.toLocaleDateString('de-DE')} (abgelaufen)</span>;
+                                  ? <span>{datumKurz(end)} ({days} Tag{days === 1 ? '' : 'e'} übrig){organization.is_trial ? ' · Testphase' : ''}</span>
+                                  : <span style={{ color: 'var(--app-text-events)' }}>{datumKurz(end)} (abgelaufen)</span>;
                               })()
                             : <span>unbegrenzt</span>}
                         </div>
@@ -783,14 +784,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <IonIcon icon={ICON_UHRZEIT} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                     <div>
                       <div className="app-info-row__label">Erstellt</div>
-                      <div className="app-info-row__value">{new Date(organization.created_at).toLocaleDateString('de-DE')}</div>
+                      <div className="app-info-row__value">{datumKurz(organization.created_at)}</div>
                     </div>
                   </div>
                   <div className="app-info-row">
                     <IonIcon icon={ICON_TERMIN} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                     <div>
                       <div className="app-info-row__label">Aktualisiert</div>
-                      <div className="app-info-row__value">{new Date(organization.updated_at).toLocaleDateString('de-DE')}</div>
+                      <div className="app-info-row__value">{datumKurz(organization.updated_at)}</div>
                     </div>
                   </div>
                 </IonCardContent>
@@ -1353,8 +1354,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         const end = new Date(trialEndsAt);
                         const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                         return days >= 0
-                          ? <span><strong>{end.toLocaleDateString('de-DE')}</strong> ({days} Tag{days === 1 ? '' : 'e'} übrig){isTrial ? ' · Testphase' : ''}</span>
-                          : <span style={{ color: 'var(--app-text-events)' }}><strong>{end.toLocaleDateString('de-DE')}</strong> (abgelaufen)</span>;
+                          ? <span><strong>{datumKurz(end)}</strong> ({days} Tag{days === 1 ? '' : 'e'} übrig){isTrial ? ' · Testphase' : ''}</span>
+                          : <span style={{ color: 'var(--app-text-events)' }}><strong>{datumKurz(end)}</strong> (abgelaufen)</span>;
                       })()
                     : <span><strong>unbegrenzt</strong></span>}
                 </div>

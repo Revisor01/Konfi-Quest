@@ -31,6 +31,11 @@ für Team und Leitung neue Beiträge und solche, die auf Freigabe warten (siehe
 [Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen)). Die
 Summe aller Reiter steht als Zahl am App-Symbol.
 
+Daten schreibt die App überall gleich: kurz als 14.09.2026 in Listen und auf
+Karten, ausgeschrieben als „Montag, 14. September 2026" in den Einzelansichten,
+Uhrzeiten als 18:00. Wo wenig Platz ist — im Chat, in der Anwesenheitsliste —,
+steht nur 14.09. Maßgeblich ist die Zeit, auf die das Handy eingestellt ist.
+
 ### Mitteilungen im Postfach nachlesen
 
 Oben rechts steht eine **Glocke**. Dahinter liegt das Postfach: alles, was die

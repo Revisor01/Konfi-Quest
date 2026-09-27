@@ -43,13 +43,15 @@ describe('BadgePopoverContent', () => {
     expect(screen.getByText('Fleissige Biene')).toBeTruthy();
     expect(screen.getByText('5 Aktivitäten')).toBeTruthy();
     expect(screen.getByText('Erreicht')).toBeTruthy();
-    expect(screen.getByText('24. Aug. 2026')).toBeTruthy();
+    // Kurzes Datumsformat der App (utils/dateUtils.ts, UI-Audit BF-14);
+    // bis 27.09.2026 stand hier „24. Aug. 2026".
+    expect(screen.getByText('24.08.2026')).toBeTruthy();
   });
 
   it('liest das Datum auch aus awarded_date', () => {
     // Die Teamer-Ansichten fuehren dasselbe Datum unter anderem Namen.
     zeige({ badge: { name: 'Treue Seele', earned: true, awarded_date: '2026-08-24T10:00:00Z' } });
-    expect(screen.getByText('24. Aug. 2026')).toBeTruthy();
+    expect(screen.getByText('24.08.2026')).toBeTruthy();
   });
 
   it('gilt ohne Statusangabe als erreicht', () => {

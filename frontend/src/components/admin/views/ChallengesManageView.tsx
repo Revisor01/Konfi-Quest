@@ -35,6 +35,7 @@ import ZaehlerKugel from '../../shared/ZaehlerKugel';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { anzahlBeitraege, wartenAufFreigabe } from '../../../utils/challengeTexte';
+import { datumKurz } from '../../../utils/dateUtils';
 
 // Gemeinsame Verwaltungs-Ansicht für Admin UND Teamer. Bewusst ohne eigenen
 // Datenzugriff: Laden/Modale liegen in der jeweiligen Seite, hier nur Darstellung
@@ -191,7 +192,7 @@ const formatDate = (value?: string | null) => {
   if (!value) return '';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return datumKurz(d);
 };
 
 const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({

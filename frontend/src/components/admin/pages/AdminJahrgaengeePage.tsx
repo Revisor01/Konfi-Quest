@@ -58,6 +58,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz } from '../../../utils/dateUtils';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -704,7 +705,7 @@ const AdminJahrgaengeePage: React.FC = () => {
                                       style={{ color: jahrgang.wrapped_released_at ? 'var(--app-color-warning)' : 'var(--app-text-system)' }}
                                     />
                                     {jahrgang.wrapped_released_at
-                                      ? `Rückblick gestartet am ${new Date(jahrgang.wrapped_released_at).toLocaleDateString('de-DE')}`
+                                      ? `Rückblick gestartet am ${datumKurz(jahrgang.wrapped_released_at)}`
                                       : 'Noch kein Rückblick'}
                                   </span>
                                 </div>

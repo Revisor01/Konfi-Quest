@@ -28,6 +28,7 @@ import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { SectionHeader, EmptyState } from '../../shared';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { datumKurz } from '../../../utils/dateUtils';
 
 /**
  * Die Rueckblick-Ausgaben verwalten.
@@ -80,7 +81,7 @@ interface Jahrgang {
 }
 
 const datum = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+  iso ? datumKurz(iso) : '';
 
 /**
  * Die waehlbaren Jahre fuer einen TEAM-Rueckblick.

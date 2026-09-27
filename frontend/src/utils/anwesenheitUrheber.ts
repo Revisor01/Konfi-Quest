@@ -1,3 +1,4 @@
+import { datumKurz } from './dateUtils';
 // Wer hat die Anwesenheit eingetragen? (Migration 148, 13.09.2026)
 //
 // Simons Fall: In der Teilnehmerliste steht "Abgemeldet: krank, Mutter hat
@@ -221,5 +222,5 @@ const kurzesDatum = (zeitstempel: string | null | undefined): string | null => {
   if (!zeitstempel) return null;
   const d = new Date(zeitstempel);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+  return datumKurz(d, { ohneJahr: true });
 };

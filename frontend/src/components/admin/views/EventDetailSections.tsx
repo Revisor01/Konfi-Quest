@@ -46,6 +46,7 @@ import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/an
 import { teilnahmeDarstellung, listItemKlasse, iconKreisKlasse, eckBadgeKlasse } from '../../../utils/teilnahmeStatus';
 import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
 
@@ -206,11 +207,11 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
               {eventData.registration_opens_at ? (
                 <>
                   <div className="app-info-row__value">
-                    von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(eventData.registration_opens_at)}
+                    von {datumKurz(eventData.registration_opens_at)} – {formatTime(eventData.registration_opens_at)}
                   </div>
                   {eventData.registration_closes_at && (
                     <div className="app-info-row__value">
-                      bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(eventData.registration_closes_at)}
+                      bis {datumKurz(eventData.registration_closes_at)} – {formatTime(eventData.registration_closes_at)}
                     </div>
                   )}
                 </>
@@ -609,13 +610,7 @@ export const UnregistrationsSection = React.memo<UnregistrationsSectionProps>(({
                     {unreg.konfi_name}
                   </div>
                   <div className="app-list-item__subtitle">
-                    Abgemeldet am {new Date(unreg.unregistered_at).toLocaleString('de-DE', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    Abgemeldet am {datumUhrzeit(unreg.unregistered_at)}
                   </div>
                 </div>
               </div>

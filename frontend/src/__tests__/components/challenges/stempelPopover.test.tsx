@@ -65,8 +65,9 @@ describe('Stempel-Popover', () => {
     expect(screen.getByText('Geh nachts raus')).toBeInTheDocument();
     expect(screen.getByText('Mach ein Foto vom Nachthimmel.')).toBeInTheDocument();
     expect(screen.getByText('Erhalten')).toBeInTheDocument();
-    // Dasselbe Datumsformat wie im Abzeichen-Popover.
-    expect(screen.getByText('4. März 2026')).toBeInTheDocument();
+    // Dasselbe Datumsformat wie im Abzeichen-Popover: das kurze der App
+    // (utils/dateUtils.ts, UI-Audit BF-14; bis 27.09.2026 „4. März 2026").
+    expect(screen.getByText('04.03.2026')).toBeInTheDocument();
   });
 
   it('erhaltener Stempel ohne Datum zeigt trotzdem den Rest', () => {
@@ -75,7 +76,7 @@ describe('Stempel-Popover', () => {
     zeige({ stempel: { ...ERHALTEN, earned_at: null }, erhalten: true });
     expect(screen.getByText('Nachtwanderer')).toBeInTheDocument();
     expect(screen.getByText('Erhalten')).toBeInTheDocument();
-    expect(screen.queryByText('4. März 2026')).toBeNull();
+    expect(screen.queryByText('04.03.2026')).toBeNull();
   });
 
   it('offener Stempel einer laufenden Challenge sagt, wie man ihn bekommt', () => {

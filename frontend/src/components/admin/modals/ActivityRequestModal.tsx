@@ -33,6 +33,7 @@ import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
+import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
 // triggerRefresh nicht direkt nutzen — Modal rendert via useIonModal außerhalb des Provider-Trees
 // Stattdessen onSuccess Callback nutzen, Parent-Page hat useLiveRefresh
 
@@ -197,21 +198,11 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return datumKurz(dateString);
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return datumUhrzeit(dateString);
   };
 
   const isPending = request?.status === 'pending';
