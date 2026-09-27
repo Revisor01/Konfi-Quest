@@ -318,12 +318,16 @@ class PushService {
    * Die Zahl, die aus dem Ruder laufen kann, ist die der EMPFAENGER -- die
    * drosselt sendToMultipleUsers.
    *
+   * @param {number|null} [badgeAlteApps] Zahl fuer Geraete der Store-Apps
+   *   2.2.x (siehe badgeFuerGeraet); null = alle Geraete bekommen payload.badge.
    * @returns {Promise<{erfolge: number, fehler: number}>}
    */
-  static async sendeAnGeraete(db, tokens, payload, sammler = null) {
+  static async sendeAnGeraete(db, tokens, payload, sammler = null, badgeAlteApps = null) {
     const ergebnisse = await Promise.all(tokens.map(async (token) => {
+      const badge = this.badgeFuerGeraet(token, payload.badge, badgeAlteApps);
+      const nutzlast = badge === payload.badge ? payload : { ...payload, badge };
       const result = await this.sendeMitWiederholung(
-        () => firebase.sendFirebasePushNotification(token.token, payload)
+        () => firebase.sendFirebasePushNotification(token.token, nutzlast)
       );
       return this.verarbeiteErgebnis(db, token, result, sammler);
     }));
@@ -491,6 +495,39 @@ class PushService {
   }
 
   /**
+   * Wie berechneBadge, aber mit der Zahl fuer die Store-Apps 2.2.x daneben
+   * (siehe badgeFuerGeraet). null, wenn die Zahl nicht ermittelbar ist.
+   *
+   * @returns {Promise<{badge: number, badgeAlteApps: number}|null>}
+   */
+  static async berechneBadgePaar(db, userId) {
+    const { badges, badgesAlteApps } = await this.berechneBadgesFuerAlle(db, [userId]);
+    const id = Number(userId);
+    if (!badges.has(id)) return null;
+    return { badge: badges.get(id), badgeAlteApps: badgesAlteApps.get(id) };
+  }
+
+  /**
+   * Welche Zahl ans App-Symbol DIESES Geraets geht (27.09.2026,
+   * Kompatibilitaetspruefung vor dem Deploy von 2.3.0).
+   *
+   * Die volle Zahl zaehlt seit 24./25.09.2026 auch ungelesene
+   * Postfach-Mitteilungen und Challenge-Neuigkeiten. Die Store-Apps 2.2.x
+   * kennen beides nicht -- kein Postfach, kein mark-read fuer Challenges --
+   * und koennten diese Anteile nie abbauen: Die Zahl am Symbol bliebe
+   * dauerhaft zu hoch, auf iOS sichtbar, weil dort aps.badge sie direkt
+   * setzt. Diese Geraete melden ihren Token ohne app_version (erst 2.3.0
+   * schickt sie mit, Migration 156); sie bekommen die Rechnung von 2.2.0.
+   *
+   * Ist badgeAlteApps null (ausdruecklich uebergebene Zahl, oder die Summe
+   * liess sich nicht ermitteln), bekommen alle Geraete dieselbe Zahl.
+   */
+  static badgeFuerGeraet(token, badge, badgeAlteApps) {
+    if (badgeAlteApps == null || (token && token.app_version)) return badge;
+    return badgeAlteApps;
+  }
+
+  /**
    * Die Zahl fuers App-Icon fuer VIELE Empfaenger in wenigen Abfragen
    * (24.09.2026).
    *
@@ -517,31 +554,35 @@ class PushService {
    * Payload. Holte er sie weiter selbst (resolveRecipientOrgId), waere das die
    * naechste Abfrage je Kopf.
    *
-   * @returns {Promise<{badges: Map<number, number|null>, orgs: Map<number, string>}>}
+   * @returns {Promise<{badges: Map<number, number|null>, badgesAlteApps: Map<number, number>, orgs: Map<number, string>}>}
    *   badges: je userId die Zahl (fehlt der Eintrag, liess sie sich nicht
-   *   ermitteln). orgs: je userId die Primaer-Org als String.
+   *   ermitteln). badgesAlteApps: dieselbe Zahl fuer Geraete der Store-Apps
+   *   2.2.x (siehe badgeFuerGeraet). orgs: je userId die Primaer-Org als
+   *   String.
    */
   static async berechneBadgesFuerAlle(db, userIds) {
     const badges = new Map();
+    const badgesAlteApps = new Map();
     const orgs = new Map();
     const eindeutige = [...new Set(userIds)];
-    if (eindeutige.length === 0) return { badges, orgs };
+    if (eindeutige.length === 0) return { badges, badgesAlteApps, orgs };
 
     try {
       const jePerson = await appIconSummenAllerGemeinden(db, eindeutige);
-      for (const [userId, { summe, stamm_organization_id }] of jePerson) {
+      for (const [userId, { summe, summeAlteApps, stamm_organization_id }] of jePerson) {
         badges.set(userId, summe);
+        badgesAlteApps.set(userId, summeAlteApps);
         // Primaer-Org als String, weil FCM-data immer String ist (dieselbe
         // Regel wie in resolveRecipientOrgId).
         if (stamm_organization_id != null) orgs.set(userId, String(stamm_organization_id));
       }
-      return { badges, orgs };
+      return { badges, badgesAlteApps, orgs };
     } catch (err) {
       // Fehlertolerant: Ohne Zahl geht der Push trotzdem raus (der Aufrufer
       // faellt dann auf 1 zurueck). Eine Nachricht darf nicht daran
       // scheitern, dass eine Zahl fehlt.
       console.error('berechneBadgesFuerAlle error:', err.message);
-      return { badges, orgs };
+      return { badges, badgesAlteApps, orgs };
     }
   }
 
@@ -562,7 +603,7 @@ class PushService {
    * Helper: Sendet Push an einen User
    *
    * @param {object} [vorberechnet] Optional, nur vom Versand an viele belegt:
-   *   { badge, orgId, tokens } -- die schon fuer ALLE Empfaenger gemeinsam
+   *   { badge, badgeAlteApps?, orgId, tokens } -- die schon fuer ALLE Empfaenger gemeinsam
    *   ermittelten Werte. Ohne den Parameter holt die Methode sie wie bisher
    *   selbst; alle bestehenden Aufrufstellen bleiben unveraendert gueltig.
    */
@@ -628,11 +669,20 @@ class PushService {
       // Beim Versand an viele ist die Zahl schon fuer ALLE zusammen gerechnet
       // (berechneBadgesFuerAlle). Dann NICHT erneut rechnen -- genau das war
       // der Befund: eine Bulk-Abfrage je Kopf statt einer fuer alle.
-      const berechneterBadge = notification.badge != null
-        ? notification.badge
-        : (vorberechnet && 'badge' in vorberechnet
-          ? vorberechnet.badge
-          : await this.berechneBadge(db, userId));
+      // Daneben die Zahl fuer Geraete der Store-Apps 2.2.x (badgeFuerGeraet);
+      // eine ausdruecklich uebergebene Zahl gilt fuer alle Geraete.
+      let berechneterBadge;
+      let badgeAlteApps = null;
+      if (notification.badge != null) {
+        berechneterBadge = notification.badge;
+      } else if (vorberechnet && 'badge' in vorberechnet) {
+        berechneterBadge = vorberechnet.badge;
+        badgeAlteApps = vorberechnet.badgeAlteApps != null ? vorberechnet.badgeAlteApps : null;
+      } else {
+        const paar = await this.berechneBadgePaar(db, userId);
+        berechneterBadge = paar ? paar.badge : null;
+        badgeAlteApps = paar ? paar.badgeAlteApps : null;
+      }
 
       // Alle Geraete dieser Person in EINEM FCM-Aufruf (sendEach) statt je
       // Geraet einzeln, mit Wiederholung bei zeitweiligen Fehlern. Die
@@ -646,7 +696,8 @@ class PushService {
         badge: berechneterBadge != null ? berechneterBadge : 1,
         sound: 'default',
         data: data
-      }, (vorberechnet && vorberechnet.sammler) || null);
+      }, (vorberechnet && vorberechnet.sammler) || null,
+      berechneterBadge != null ? badgeAlteApps : null);
 
       // `success` sagt jetzt die Wahrheit (24.09.2026). Vorher stand hier hart
       // `success: true`, auch wenn KEIN einziger Push zugestellt wurde -- ein
@@ -718,9 +769,9 @@ class PushService {
       // Zeilen im Speicher, bevor der erste Push raus ist; genau die Spitze,
       // die die Drosselung vermeiden soll. So kostet ein Block eine feste,
       // kleine Zahl von Abfragen, unabhaengig davon, wie viele Bloecke folgen.
-      const { badges, orgs } = braucheVorarbeit
+      const { badges, badgesAlteApps, orgs } = braucheVorarbeit
         ? await this.berechneBadgesFuerAlle(db, block)
-        : { badges: new Map(), orgs: new Map() };
+        : { badges: new Map(), badgesAlteApps: new Map(), orgs: new Map() };
       const tokensJeUser = await this.getTokensForUsers(db, block, notification.data && notification.data.type);
 
       // Token-Buchfuehrung fuer den ganzen Block gesammelt (drei Abfragen
@@ -734,6 +785,7 @@ class PushService {
           // wir haetten die Abfrage je Kopf wieder. Dasselbe gilt fuer orgId.
           const vorberechnet = {
             badge: badges.has(userId) ? badges.get(userId) : null,
+            badgeAlteApps: badgesAlteApps.has(userId) ? badgesAlteApps.get(userId) : null,
             orgId: orgs.has(userId) ? orgs.get(userId) : null,
             tokens: tokensJeUser.get(userId) || [],
             sammler,
@@ -842,7 +894,7 @@ class PushService {
       };
 
       // Vorarbeit EINMAL fuer alle: App-Icon-Zahl und Tokens.
-      const { badges } = await this.berechneBadgesFuerAlle(db, empfaenger);
+      const { badges, badgesAlteApps } = await this.berechneBadgesFuerAlle(db, empfaenger);
       const tokensJeUser = await this.getTokensForUsers(db, empfaenger, 'chat');
 
       const ergebnisse = [];
@@ -866,6 +918,7 @@ class PushService {
             badge: badges.has(userId)
               ? badges.get(userId)
               : (notificationData.badge != null ? notificationData.badge : null),
+            badgeAlteApps: badgesAlteApps.has(userId) ? badgesAlteApps.get(userId) : null,
             orgId: chatOrgId || null,
             tokens,
             sammler,
@@ -936,10 +989,11 @@ class PushService {
         return { success: false, message: 'No tokens found' };
       }
 
-      const badgeCount = await this.berechneBadge(db, userId);
-      if (badgeCount == null) {
+      const paar = await this.berechneBadgePaar(db, userId);
+      if (paar == null || paar.badge == null) {
         return { success: false, message: 'Badge nicht ermittelbar' };
       }
+      const badgeCount = paar.badge;
 
       let successCount = 0;
       let errorCount = 0;
@@ -950,8 +1004,10 @@ class PushService {
         // faellt er wegen quota-exceeded aus, steht dort bis zum naechsten
         // Ereignis eine veraltete Zahl.
         //
+        // Je Geraet die passende Zahl (Store-Apps 2.2.x, badgeFuerGeraet).
+        const zahl = this.badgeFuerGeraet(token, badgeCount, paar.badgeAlteApps);
         const result = await this.sendeMitWiederholung(
-          () => firebase.sendFirebaseSilentPush(token.token, badgeCount)
+          () => firebase.sendFirebaseSilentPush(token.token, zahl)
         );
 
         if (result.success) {
@@ -983,7 +1039,10 @@ class PushService {
       // gar nicht mehr.
       // `success` nach dem tatsaechlichen Versand (24.09.2026), wie in
       // sendToUser und sendChatNotification.
-      return { success: successCount > 0, sent: successCount, errors: errorCount, total: tokens.length, badge: badgeCount };
+      return {
+        success: successCount > 0, sent: successCount, errors: errorCount, total: tokens.length,
+        badge: badgeCount, badgeAlteApps: paar.badgeAlteApps
+      };
 
     } catch (error) {
  console.error('PushService.sendBadgeUpdate error:', error);
@@ -1012,7 +1071,9 @@ class PushService {
    * App noch nutzt), fatale Fehler loeschen den Token, sonstige zaehlen hoch.
    *
    * @param {object} db
-   * @param {Array<{userId:number, badge:number}>} eintraege
+   * @param {Array<{userId:number, badge:number, badgeAlteApps?:number}>} eintraege
+   *   badgeAlteApps: Zahl fuer Geraete der Store-Apps 2.2.x (badgeFuerGeraet);
+   *   fehlt sie, bekommen alle Geraete `badge`.
    * @returns {Promise<{sent:number, errors:number, total:number}>}
    */
   static async sendBadgeUpdates(db, eintraege) {
@@ -1026,12 +1087,13 @@ class PushService {
       const tokensJeUser = await this.getTokensForUsers(db, block.map((e) => e.userId));
       const sammler = { zurueckgesetzt: [], ungueltig: [], fehlgeschlagen: [] };
 
-      await Promise.all(block.map(async ({ userId, badge }) => {
+      await Promise.all(block.map(async ({ userId, badge, badgeAlteApps }) => {
         const tokens = tokensJeUser.get(userId) || [];
         for (const token of tokens) {
           total++;
+          const zahl = this.badgeFuerGeraet(token, badge, badgeAlteApps);
           const result = await this.sendeMitWiederholung(
-            () => firebase.sendFirebaseSilentPush(token.token, badge)
+            () => firebase.sendFirebaseSilentPush(token.token, zahl)
           );
           if (result.success) {
             sent++;

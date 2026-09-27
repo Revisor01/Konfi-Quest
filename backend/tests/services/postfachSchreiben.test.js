@@ -46,10 +46,13 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
     await seed(db);
     // Nur konfi1 und admin1 haben ein Push-Geraet. Alle anderen Empfaenger
     // sind ohne Token -- und muessen die Mitteilung trotzdem bekommen.
+    // Geraete mit einer App, die das Postfach kennt (app_version gesetzt);
+    // ohne Version rechnet der Server die Zahl wie fuer die Store-Apps 2.2.x
+    // (tests/services/appSymbolAlteApps.test.js).
     await db.query(
-      `INSERT INTO push_tokens (user_id, token, platform, device_id) VALUES
-       ($1, 'token-konfi1', 'ios', 'dev-konfi1'),
-       ($2, 'token-admin1', 'ios', 'dev-admin1')`,
+      `INSERT INTO push_tokens (user_id, token, platform, device_id, app_version) VALUES
+       ($1, 'token-konfi1', 'ios', 'dev-konfi1', '2.3.0'),
+       ($2, 'token-admin1', 'ios', 'dev-admin1', '2.3.0')`,
       [USERS.konfi1.id, USERS.admin1.id]
     );
     sendFirebasePushNotification.mockClear();

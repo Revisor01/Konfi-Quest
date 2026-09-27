@@ -97,7 +97,10 @@ ist eine Aufgabe, kein Hinweis.
 Die ungelesenen Mitteilungen zählen auch in der **Zahl am App-Symbol** mit:
 Sie ist die Summe aller Zahlen, die die App zeigt — die Reiter und die Glocke,
 bei mehreren Gemeinden die Reiter aller Gemeinden. Jede Mitteilung zählt
-dabei genau einmal.
+dabei genau einmal. Auf einem Gerät, auf dem noch eine ältere App ohne
+Postfach läuft, fehlen Postfach und Challenge-Neuigkeiten in dieser Zahl —
+dort ließen sie sich nicht als gelesen markieren. Nach dem Aktualisieren der
+App zählen sie mit.
 Ein offener Antrag, zu dem noch „Neuer Antrag eingegangen" ungelesen ist,
 steht deshalb zweimal darin — am Reiter und an der Glocke — und beides muss
 weg, bevor das Symbol auf null geht. „Events warten auf Verbuchung" kommt

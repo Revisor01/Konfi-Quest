@@ -2440,7 +2440,7 @@ paths:
                 token: { type: string }
                 platform: { type: string, enum: [ios, android, web] }
                 device_id: { type: string, description: Optional, wird sonst generiert }
-                app_version: { type: string, maxLength: 32, nullable: true, description: "ADDITIV 23.09.2026 (Migration 156) - Marketing-Version der App, z.B. 2.3.0. Optional; ausgelieferte Fassungen schicken es nicht, dann bleibt die Spalte NULL (= unbekannt). Eine Registrierung OHNE die Angabe ueberschreibt eine bereits bekannte Fassung nicht (COALESCE im Upsert)." }
+                app_version: { type: string, maxLength: 32, nullable: true, description: "ADDITIV 23.09.2026 (Migration 156) - Marketing-Version der App, z.B. 2.3.0. Optional; ausgelieferte Fassungen schicken es nicht, dann bleibt die Spalte NULL (= unbekannt). Eine Registrierung OHNE die Angabe ueberschreibt eine bereits bekannte Fassung nicht (COALESCE im Upsert). SEIT 27.09.2026 bestimmt die Angabe auch die Zahl am App-Symbol (aps.badge, stiller Push): Geraete OHNE Fassung (Store-Apps 2.2.x) bekommen sie ohne ungelesene Postfach-Mitteilungen und ohne Challenge-Neuigkeiten, weil die alte App beides nicht abbauen kann; Geraete MIT Fassung die volle Summe." }
                 app_build: { type: string, maxLength: 32, nullable: true, description: "ADDITIV 23.09.2026 (Migration 156) - Build-Nummer als Text, z.B. 117 (Android versionCode) oder 211 (iOS). Text, weil beide Plattformen unterschiedlich zaehlen." }
       responses:
         '200': { description: Gespeichert }

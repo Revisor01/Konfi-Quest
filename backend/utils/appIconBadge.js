@@ -330,7 +330,7 @@ function istLeitung(empfaenger) {
  * @returns {Promise<Map<string, number>>}  Schluessel `${id}_${type}`, Wert nie negativ
  */
 async function appIconSummenFuerAlle(db, empfaenger) {
-  return summenBerechnen(db, empfaenger, (id, type) => schluessel(id, type));
+  return (await summenBerechnen(db, empfaenger, (id, type) => schluessel(id, type))).summen;
 }
 
 /**
@@ -353,7 +353,7 @@ async function appIconSummenFuerAlle(db, empfaenger) {
  * @returns {Promise<Map<string, number>>}  Schluessel `${id}_${type}_${organization_id}`
  */
 async function appIconSummenJeOrganisation(db, empfaenger) {
-  return summenBerechnen(db, empfaenger, (id, type, orgId) => `${schluessel(id, type)}_${orgId}`);
+  return (await summenBerechnen(db, empfaenger, (id, type, orgId) => `${schluessel(id, type)}_${orgId}`)).summen;
 }
 
 /**
@@ -410,18 +410,25 @@ async function appIconSummenAllerGemeinden(db, userIds) {
       });
     }
   }
-  const summen = await appIconSummenJeOrganisation(db, empfaenger);
+  const { summen, alteApps } = await summenBerechnen(
+    db, empfaenger, (id, type, orgId) => `${schluessel(id, type)}_${orgId}`
+  );
 
   const ergebnis = new Map();
   for (const [userId, { mitgliedschaften, stamm_organization_id }] of jePerson) {
     const jeOrganisation = new Map();
     let summe = 0;
+    let summeAlteApps = 0;
     for (const m of mitgliedschaften) {
-      const wert = summen.get(`${schluessel(userId, m.type)}_${m.organization_id}`) || 0;
+      const k = `${schluessel(userId, m.type)}_${m.organization_id}`;
+      const wert = summen.get(k) || 0;
       jeOrganisation.set(m.organization_id, wert);
       summe += wert;
+      summeAlteApps += alteApps.get(k) || 0;
     }
-    ergebnis.set(userId, { summe, jeOrganisation, stamm_organization_id });
+    // summeAlteApps: die Zahl fuer Geraete der Store-Apps 2.2.x (ohne
+    // Postfach und Challenge-Neuigkeiten, siehe summenBerechnen).
+    ergebnis.set(userId, { summe, summeAlteApps, jeOrganisation, stamm_organization_id });
   }
   return ergebnis;
 }
@@ -432,7 +439,7 @@ async function appIconSummenAllerGemeinden(db, userIds) {
 // Faellen dieselben; es gibt absichtlich keine zweite Fassung davon.
 async function summenBerechnen(db, empfaenger, schluesselVon) {
   const summen = new Map();
-  if (!empfaenger || empfaenger.length === 0) return summen;
+  if (!empfaenger || empfaenger.length === 0) return { summen, alteApps: new Map() };
 
   for (const p of empfaenger) summen.set(schluesselVon(p.id, p.type, p.organization_id), 0);
 
@@ -481,9 +488,18 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
     challengeNeuigkeitenLeitungJeChallenge(db, [...leitung, ...teamer])
   ]);
 
-  const addiere = (userId, userType, orgId, wert) => {
+  // Zwei Summen in einem Durchgang (27.09.2026, Kompatibilitaet mit den
+  // Store-Apps 2.2.x): `summen` ist die volle Zahl, `alteApps` die Rechnung
+  // von 2.2.0 -- OHNE Postfach und OHNE Challenge-Neuigkeiten. Beides kam
+  // nach 2.2.0 (18.09.2026) dazu, und die alte App kann es nicht abbauen:
+  // Sie hat kein Postfach und ruft nie mark-read fuer Challenges auf. Welche
+  // Summe ein Geraet bekommt, entscheidet der Versand je Push-Token
+  // (pushService.badgeFuerGeraet). Keine zusaetzliche Abfrage.
+  const alteApps = new Map([...summen.keys()].map((k) => [k, 0]));
+  const addiere = (userId, userType, orgId, wert, auchAlteApps = true) => {
     const k = schluesselVon(userId, userType, orgId);
     if (summen.has(k)) summen.set(k, summen.get(k) + (wert || 0));
+    if (auchAlteApps && alteApps.has(k)) alteApps.set(k, alteApps.get(k) + (wert || 0));
   };
 
   // Wohin eine Postfach-Zeile gehoert (27.09.2026, Befund BF-12): zum Eintrag
@@ -509,14 +525,15 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   for (const r of gebundeneAntraege) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneTermine) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of abzeichen) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  // Postfach und Challenge-Neuigkeiten nur in die volle Summe (siehe oben).
   for (const r of postfach) {
     const ziel = postfachZiel(r.user_id, r.organization_id);
-    if (ziel) addiere(ziel.id, ziel.type, ziel.organization_id, r.c);
+    if (ziel) addiere(ziel.id, ziel.type, ziel.organization_id, r.c, false);
   }
   for (const r of neuigkeiten) {
-    addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c);
+    addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c, false);
   }
-  for (const r of leitungsNeuigkeiten) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  for (const r of leitungsNeuigkeiten) addiere(r.user_id, r.user_type, r.organization_id, r.c, false);
 
   // Die org-weiten Zahlen auf jede ORG-WEITE Leitung dieser Organisation
   // verteilen (gebundene Admins haben ihre Zahlen oben schon bekommen).
@@ -527,7 +544,8 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   for (const p of leitungOrgWeit) addiere(p.id, p.type, p.organization_id, proOrg.get(p.organization_id) || 0);
 
   for (const [k, wert] of summen) summen.set(k, Math.max(0, wert));
-  return summen;
+  for (const [k, wert] of alteApps) alteApps.set(k, Math.max(0, wert));
+  return { summen, alteApps };
 }
 
 /**

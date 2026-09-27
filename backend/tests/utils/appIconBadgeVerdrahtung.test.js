@@ -64,12 +64,15 @@ describe('Der Push-Weg verwendet die berechnete Summe (B2b)', () => {
 
   it('sendToUser laesst einen ausdruecklich uebergebenen Wert gewinnen', () => {
     // Umgekehrt hier: Wer bewusst einen Badge mitgibt, meint ihn auch.
+    // Seit 27.09.2026 mit der Zahl fuer die Store-Apps 2.2.x daneben
+    // (berechneBadgePaar); eine uebergebene Zahl gilt fuer alle Geraete --
+    // das Verhalten prueft tests/services/appSymbolAlteApps.test.js.
     const stelle = quelle.slice(
-      quelle.indexOf('const berechneterBadge = notification.badge != null'),
+      quelle.indexOf('let berechneterBadge;'),
       quelle.indexOf('badge: berechneterBadge != null')
     );
-    expect(stelle).toContain('notification.badge != null');
-    expect(stelle).toContain('await this.berechneBadge(db, userId)');
+    expect(stelle).toContain('if (notification.badge != null) {\n        berechneterBadge = notification.badge;');
+    expect(stelle).toContain('await this.berechneBadgePaar(db, userId)');
   });
 
   it('die Zaehlung ist fehlertolerant verdrahtet', async () => {

@@ -94,7 +94,10 @@ Versionsüberschrift.
   Beiträge und 3 Chat-Nachrichten hatte, sah am Symbol eine 12. Jetzt steht
   dort 35 — die Summe aller Zahlen, die die App zeigt, Reiter und Glocke.
   Eine Mitteilung „Termine warten auf Verbuchung" ersetzt die vom Vortag,
-  solange die noch ungelesen ist, statt sich täglich zu stapeln.
+  solange die noch ungelesen ist, statt sich täglich zu stapeln. Geräte, auf
+  denen noch eine ältere App ohne Postfach läuft, bekommen die Zahl ohne
+  Postfach und ohne Challenge-Neuigkeiten — dort ließen sie sich nicht
+  abbauen, und die Zahl ginge nie auf null.
 - Mitteilungen zu einem Termin, einer Challenge oder einem Jahrgang
   verschwinden mit, wenn der Termin, die Challenge oder der Jahrgang gelöscht
   wird — statt beim Antippen ins Leere zu führen. Die Meldung „Konfi hat sich

@@ -64,6 +64,11 @@ class BackgroundService {
   // jeder Takt dieselbe Zahl erneut schickt, und erlaubt trotzdem das
   // Zuruecknehmen auf null (siehe updateAllUserBadges).
   static letzterZaehler = new Map();
+  // Dasselbe fuer die Zahl der Store-Apps 2.2.x (27.09.2026, siehe
+  // PushService.badgeFuerGeraet). Gesendet wird, wenn sich EINE der beiden
+  // Zahlen aendert -- liest jemand nur Postfach-Mitteilungen, sinkt die volle
+  // Zahl, die alte bleibt, und das neue Geraet muss es trotzdem erfahren.
+  static letzterZaehlerAlteApps = new Map();
   // Ist der Merker seit dem Prozessstart einmal gefuellt worden? Der erste
   // Lauf nach einem Neustart fuellt ihn nur und sendet NICHTS (Audit
   // 26.09.2026, Betrieb BF-02): Mit leerem Merker "weicht" jeder Stand ab,
@@ -283,7 +288,10 @@ class BackgroundService {
       if (this.letzterZaehler.size > users.length) {
         const aktuell = new Set(users.map(u => `${u.user_id}_${u.user_type}`));
         for (const schluessel of this.letzterZaehler.keys()) {
-          if (!aktuell.has(schluessel)) this.letzterZaehler.delete(schluessel);
+          if (!aktuell.has(schluessel)) {
+            this.letzterZaehler.delete(schluessel);
+            this.letzterZaehlerAlteApps.delete(schluessel);
+          }
         }
       }
 
@@ -317,9 +325,13 @@ class BackgroundService {
       // wie am Umschalter; oeffnen liesse sich dort ohnehin nichts.
       const jePerson = await appIconSummenAllerGemeinden(db, users.map(u => u.user_id));
       const summen = new Map();
+      const summenAlteApps = new Map();
       for (const u of users) {
         const person = jePerson.get(Number(u.user_id));
-        if (person) summen.set(`${u.user_id}_${u.user_type}`, person.summe);
+        if (person) {
+          summen.set(`${u.user_id}_${u.user_type}`, person.summe);
+          summenAlteApps.set(`${u.user_id}_${u.user_type}`, person.summeAlteApps);
+        }
       }
 
       // AUSWAHL FUER DIE ABZEICHEN-PRUEFUNG (14.09.2026).
@@ -414,13 +426,16 @@ class BackgroundService {
             // Erst vergleichen, dann senden — sonst ginge bei JEDEM Lauf ein
             // stiller Push raus und der Merker liefe leer.
             const zuSenden = summen.get(schluessel);
+            const zuSendenAlteApps = summenAlteApps.get(schluessel);
 
-            if (zuSenden != null && this.letzterZaehler.get(schluessel) !== zuSenden) {
+            if (zuSenden != null && (this.letzterZaehler.get(schluessel) !== zuSenden
+                || this.letzterZaehlerAlteApps.get(schluessel) !== zuSendenAlteApps)) {
               if (this.zaehlerMerkerGefuellt) {
-                zuSendende.push({ userId: user.user_id, badge: zuSenden, schluessel });
+                zuSendende.push({ userId: user.user_id, badge: zuSenden, badgeAlteApps: zuSendenAlteApps, schluessel });
               } else {
                 // Erster Lauf nach dem Start: nur merken, nicht senden.
                 this.letzterZaehler.set(schluessel, zuSenden);
+                this.letzterZaehlerAlteApps.set(schluessel, zuSendenAlteApps);
               }
             }
           }
@@ -465,7 +480,10 @@ class BackgroundService {
       // abweichend und holt sie nach (wie vorher beim Einzelweg).
       if (zuSendende.length > 0) {
         await PushService.sendBadgeUpdates(db, zuSendende);
-        for (const e of zuSendende) this.letzterZaehler.set(e.schluessel, e.badge);
+        for (const e of zuSendende) {
+          this.letzterZaehler.set(e.schluessel, e.badge);
+          this.letzterZaehlerAlteApps.set(e.schluessel, e.badgeAlteApps);
+        }
         updatedCount = zuSendende.length;
       }
       this.zaehlerMerkerGefuellt = true;
