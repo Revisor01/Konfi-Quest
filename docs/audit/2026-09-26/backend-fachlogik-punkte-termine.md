@@ -454,7 +454,7 @@ Konfis einer weiteren Gemeinde betreffen, treffen also nur Altbestand. Zeilenang
   als jahrgangsfrei: als Teamer:in dort an Termine fremder Jahrgänge buchen (`utils/bookingUtils.js:822`,
   `darfTeamerAnDiesenTermin`) und von der Leitung in solche Termine eingetragen werden
   (`routes/events/teilnehmer.js:89`).
-  - **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht).
+  - **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit `4dd491b3`).
 
 **Offen:**
 

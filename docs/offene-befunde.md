@@ -530,3 +530,7 @@ stand bis zum 26.09.2026 auf „Der Umbau läuft" (Doku-Bericht BF-12).
 `attendance-count` stehen Teamer:innen weiter offen (`routes/events/checkin.js`,
 `requireTeamer`). Ob der Check-in vor Ort bewusst beim Team bleibt, ist
 nirgends festgehalten (Sicherheits-Bericht BF-21).
+
+**Entschieden 27.09.2026 (Simon):** Der Check-in vor Ort bleibt beim Team —
+Teamer:innen erzeugen QR-Codes, damit mehrere gleichzeitig einchecken lassen
+können. Das Handbuch (`70-termine.md`) nennt den Grund.

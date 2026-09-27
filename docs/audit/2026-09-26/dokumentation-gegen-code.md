@@ -177,7 +177,7 @@ abreißt.
 ### BF-04: Rechte-Tabelle und Teamer-Kapitel widersprechen sich und dem Code bei Challenges
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — Tabelle in `05-rollen.md`: Teamer:in „nur eigene Jahrgänge" beim Anlegen und Begleiten, neue Zeile „Challenges und Beiträge löschen" nur Admin/Org-Admin; `20-teamer.md` nennt das Löschen als Leitungssache. Geprüft: `challenges.js` POST/PUT/moderate/export `requireTeamer`, beide DELETE `requireAdmin`; `ChallengesManageView.tsx` `darfLoeschen`.
-- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Die Tabelle „Nachschlagen, wer was darf" in `05-rollen.md` (Zeile „Challenges anlegen und begleiten", heute Zeile 117) stimmt nach der Regel vom 27.09. (CLAUDE.md, „Wer sieht und bekommt was"; Challenges mit drei Zielgruppen, `da9bc4bc`) nicht mehr: Admins stehen dort mit „ja" statt „nur eigene Jahrgänge", und Teamer:innen haben bei Challenges „Nur das Team" Zugriff ohne Jahrgang. Behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Die Tabelle „Nachschlagen, wer was darf" in `05-rollen.md` (Zeile „Challenges anlegen und begleiten", heute Zeile 117) stimmt nach der Regel vom 27.09. (CLAUDE.md, „Wer sieht und bekommt was"; Challenges mit drei Zielgruppen, `da9bc4bc`) nicht mehr: Admins stehen dort mit „ja" statt „nur eigene Jahrgänge", und Teamer:innen haben bei Challenges „Nur das Team" Zugriff ohne Jahrgang. Behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit `c565fa14`).
 - **Fundstelle:** `docs/handbuch/05-rollen.md:117` („Challenges anlegen und begleiten
   | — | — | ja | ja" — Teamer:in: nein); `docs/handbuch/20-teamer.md:52-56`
   („anlegen und bearbeiten, löschen, Beiträge freigeben …");
@@ -205,7 +205,7 @@ abreißt.
 ### BF-05: Store-Texte für 2.3.0 fehlen, `release-notes-de.txt` ist schon umgestellt
 - **Schwere:** MITTEL
 - **Status:** behoben 26.09.2026 — `docs/store-texte-2.3.0.md` angelegt (iOS-Text 1.8 k Zeichen ohne Plattform-Wörter, Play-Text unter 500 Zeichen mit Postfach und Push-Reparatur, Screenshot-Liste, Konsolen-Angaben mit offener Datenschutz-Frage zur Multi-Gemeinde); `frontend/release-notes-de.txt` auf den Play-Text gesetzt.
-- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Zwei Stellen stimmten nicht mehr: `docs/store-texte-2.3.0.md` nannte Android versionCode 124 und iOS-Build 230, `frontend/version.json` steht inzwischen auf **125 / 231**; und der iOS-Text sagte noch „Termine"/„Abzeichen", während App und Handbuch seit der Begriffsentscheidung vom 27.09. „Events"/„Badges" sagen (UI BF-10). Behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht).
+- **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Zwei Stellen stimmten nicht mehr: `docs/store-texte-2.3.0.md` nannte Android versionCode 124 und iOS-Build 230, `frontend/version.json` steht inzwischen auf **125 / 231**; und der iOS-Text sagte noch „Termine"/„Abzeichen", während App und Handbuch seit der Begriffsentscheidung vom 27.09. „Events"/„Badges" sagen (UI BF-10). Behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit `8e7062b6`).
 - **Fundstelle:** `docs/store-texte-2.2.0.md` (letzte Fassung), `frontend/release-notes-de.txt`
   (489 Zeichen, Inhalt 2.3.0), `.github/workflows/android-release.yml:120`,
   `.github/workflows/ios-release.yml:48-61`

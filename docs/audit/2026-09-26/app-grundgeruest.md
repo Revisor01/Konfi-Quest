@@ -396,7 +396,6 @@ so nicht haltbar.
 ### BF-08: Fehlgeschlagener Login schreibt das Passwort ins Konsolen-Log
 
 - **Schwere:** MITTEL
-- **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht) — `fullError` im Login-Log (am Stand `b6a67ed1` noch `auth.ts:59-66`) und das Fehlerobjekt beim Senden des FCM-Tokens (`AppContext.tsx:295`) gehen nicht mehr ins Konsolen-Log.
 - **Fundstelle:** `frontend/src/services/auth.ts:36-43` (`fullError: error`).
 - **Kennzeichnung:** reproduziert — `audit-passwort-im-log.test.ts`: das
   geloggte Objekt enthält `config.data = '{"username":"anna","password":"Geheim!2026"}'`.

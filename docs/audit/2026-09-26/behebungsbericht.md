@@ -266,8 +266,7 @@ vor den Merge gezogen, dazu die Mindestversion (Feature E-05).
   wegklickbaren Hinweis mit „Später" umgestellt (Simon: „Keine Zwangsupdates"; Stand bei E-05).
 - **Deploy-Falle:** Alle drei Deploy-Wege schickten Portainer eine leere Liste der
   Stack-Variablen; Portainer ersetzt sie damit. In Produktion folgenlos, weil die Werte direkt in
-  der Stack-Datei stehen — jetzt gehen vorhandene Variablen unverändert zurück (`b168c55f`
-  vor dem Merge von `main`). Referenz-Compose: Fotoschlüssel und Doku-Passwort als Pflicht,
+  der Stack-Datei stehen — jetzt gehen vorhandene Variablen unverändert zurück (`6cd0d52d`). Referenz-Compose: Fotoschlüssel und Doku-Passwort als Pflicht,
   `TZ` bewusst nicht gesetzt (`b677bba5`).
 - **Zeitzone gemessen:** Produktion rechnet in UTC (Node-Prozess und Datenbanksitzung), die Tests
   gingen von Berlin aus. Die volle Suite wie Produktion (beides UTC) lief bis auf die zwei Tests,
@@ -315,103 +314,144 @@ vor den Merge gezogen, dazu die Mindestversion (Feature E-05).
   im Chat beendet ein Zeilenumbruch allein keinen Satz mehr, großgeschrieben wird nur am Anfang und
   nach . ! ? (`0e114bdf`).
 
+### Vor dem Merge (27.09., nachts)
+
+Nach dem Produktionsbefund zu den Badges hat Simon die Prüfung aller Berichte gegen Code, Tests
+und CHANGELOG angestoßen („filtern und mir alles sagen, was noch offen ist") und am Ende
+entschieden: die kleinen Punkte vor dem Merge beheben, dazu vier Entscheidungen.
+
+- **Badges nach der Rolle am Konto** (Produktionsbefund): Eine Leitung, die sich in Hennstedt als
+  anwesend eintrug, bekam 12 Konfi-Badges von Kirchspiel West — die Prüfung las die Rolle am
+  Konto, nahm ein Konfi-Profil aus einer Testgemeinde und verwechselte über `kp.*,
+  u.organization_id` die Gemeinden. Jetzt: nur Konfis und Teamer:innen, nur in der Gemeinde, in
+  der sie das sind, mit derselben Rollenregel wie App und `rbac.js`; „Teamer-Jahr" zählt nur die
+  eigene Gemeinde; „Badge neu prüfen" wählt nach der Rolle in der Gemeinde (`c26ad08a` vom
+  lokalen Agenten, `b6a67ed1`). Die 12 falschen Badges samt Mitteilungen hat der lokale Agent in
+  Produktion gelöscht; bis 2.3.0 live ist, können sie bei derselben Konstellation wiederkommen.
+- **Vollzugriff auf Termine** kam aus der Rolle der Stamm-Gemeinde: Wer zuhause Org-Admin und in B
+  nur Teamer:in ist, durfte in B jeden Termin buchen. Jetzt die Rolle in der Gemeinde des Termins;
+  Org-Admin über `user_organizations` bekommt den Vollzugriff jetzt auch (`4dd491b3`).
+- **Fremde Konfi** bei Bonuspunkten, Aktivitäten und Event-Punkten: 404 statt 500 bzw. 200
+  (`a614098f`; Sicherheit BF-11).
+- **Passwort und Tokens im Konsolen-Log** bei fehlgeschlagener Anmeldung, beim Abmelden, bei
+  Biometrie und beim Push-Token (`1a596d0e`; Grundgerüst BF-08, S-23).
+- **Umfragen im Dunkelmodus** und das Zitat in der eigenen Blase: weiße Fläche mit heller Schrift
+  (`42b336dd`, neuer Befund der Prüfung).
+- **Hinweistext im Konfi-Formular** versprach ein später einsehbares Passwort (`7cb275f0`;
+  Leitung BF-05). **Umlaute** in 9 weiteren Server-Meldungen, der Test liest jetzt auch
+  Prüfregeln und Anfragegrenzen (`07db97ef`; UI BF-11).
+- **Einladungen einsehen und zurückziehen** in der Benutzerliste (`(Einladungen: Commit folgt)`; Leitung BF-02) —
+  CHANGELOG und Handbuch versprachen es, die App hatte keine Oberfläche dafür.
+- **Mindestversion** zeigt einen wegklickbaren Hinweis statt einer Sperre (`3df23705`; Simon:
+  „Keine Zwangsupdates").
+- **CHANGELOG, Store-Texte, Handbuch:** rund 80 Stellen in den Begriffen der App, Sätze, die mehr
+  versprachen als der Stand, am Code berichtigt, Store-Texte auf Build 125/231, Rechte-Tabelle
+  der Challenges, Ranking wie die App es zeigt, QR-Check-in durch Teamer:innen mit Grund
+  (`13dfa7dc`, `8e7062b6`, `c565fa14`).
+- **Kompatibilität mit der Store-App 2.2.0** — siehe den Abschnitt oben (`48c998cc`, `504acb29`).
+- **Alle Berichte geradegezogen:** jeder Befund trägt eine Status-Zeile, geprüft gegen Code,
+  Tests und CHANGELOG; veraltete Zeilen sind ergänzt, nicht gelöscht (`6902994a`, `b6bda5fb`,
+  `446e73ac`).
+
 ## Was offen bleibt
 
-Aus den Status-Zeilen aller Berichte (Stand 27.09., abends). Nichts davon blockiert das
-Release 2.3.0; die Gesamtabnahme führt es unter „Vor EKD-Ausrollung" und „Danach".
+Stand 27.09.2026, vor dem Merge. Gezählt aus den Status-Zeilen der 15 Bereichsberichte und des
+Audits „Wer bekommt was": **238 Befunde, 125 behoben, 22 teilweise, 79 offen, 8 bewusst so
+gelassen, 4 beim Betrieb.** Kein KRITISCH- oder HOCH-Befund ist offen; die offenen sind MITTEL
+und NIEDRIG. Dazu kommen rund 100 Punkte, die nur in Produktion oder am Gerät zu klären sind.
+Die Einzelheiten stehen je Befund in den Berichten.
 
-**Entschieden am 27.09. und damit erledigt:** Farben (Simon nimmt die verbleibenden Stellen an:
-eigene Chat-Blase, Kopfbanner der Event-Details, „Event absagen" auf dunkler Karte, Bereichsfarben
-als Schrift im Hellmodus, „Passwort vergessen?"), Begriffe (Events, Badges, Challenges, Stempel —
-umgesetzt), kein Betriebs-Kapitel im Handbuch („Ich bin der Betreiber!"), Mitteilungen an die
-Leitung nur nach Jahrgang (umgesetzt, Abschnitt oben), Entfernen statt Löschen bei weiteren
-Gemeinden (umgesetzt).
+**Entschieden (Simon, 27.09.):** Farben (die verbleibenden Stellen bleiben: eigene Chat-Blase,
+Kopfbanner der Event-Details, „Event absagen" auf dunkler Karte, Bereichsfarben als Schrift im
+Hellmodus, „Passwort vergessen?"); Begriffe (Events, Badges, Challenges, Stempel); kein
+Betriebs-Kapitel im Handbuch; Mitteilungen an die Leitung nur nach Jahrgang; Entfernen statt
+Löschen bei weiteren Gemeinden; Einladungen zurückziehen gebaut; Ranking bleibt, das Handbuch
+beschreibt es; keine Zwangsupdates; Teamer:innen erzeugen QR-Codes, damit mehrere gleichzeitig
+einchecken können.
 
-**Offen zur Entscheidung (Simon):**
-- Nutzungsmessung: die Vorschläge S1–S17 in `docs/messung/umami.md` (etwa Bibelstelle des
-  Konfispruchs, Anträge-Ansicht, Postfach, Push-Auswahl, Dunkelmodus).
-- Material-Bilder werden beim Hochladen wie im Chat verkleinert (lange Kante 1920 px). Wer Bilder
-  zum Drucken ablegen will, bekommt sie kleiner; eine Zeile schaltet das für Material ab.
-- Videos werden nicht verkleinert, nur gegen die Größengrenze geprüft. Empfehlung: so lassen,
-  keine neue Bibliothek.
+### Nach dem Deploy (Betrieb, `docs/auftraege/lokaler-agent/`)
 
-**Bekannte Reste ohne Regelverstoß:**
-- Mitteilungen, die vor 2.3.0 über eine Person geschrieben wurden, tragen keinen Personenschlüssel
-  und verschwinden nicht mit deren Konto, sondern wie bisher mit Event, Challenge oder nach
-  365 Tagen („Wer bekommt was" BF-13). Wie viele es in Produktion sind, ist nicht gemessen.
-- `sendToUserByRole` wählt den Live-Raum nach der Rolle in der Stamm-Gemeinde: Wer in der aktiven
-  Gemeinde eine andere Rolle hat, verpasst sein eigenes Nachlade-Signal (kein Fremdempfang, BF-15).
-- Mehr als zehn Material-Dateien auf einmal prüft die App nicht vorab; der Server nimmt höchstens
-  zehn an.
-- **Zeitzone:** Produktion läuft in UTC. 24 Spalten speichern eine Uhrzeit ohne Zone (in UTC
-  geschrieben); vier SQL-Stellen rechnen mit `CURRENT_DATE` und nehmen zwischen 0 und 2 Uhr
-  Berliner Zeit den Vortag (Zertifikatsablauf, Team-Eventliste, „Teamer:in seit",
-  Löschfristen) — wie in 2.2.x. Saubere Lösung nach dem Release: die Spalten auf
-  `timestamptz` umstellen (Muster Migration 138); `TZ` bis dahin nicht setzen.
-- **Refresh-Tokens:** 1.232 offene auf 129 Konten (größte 189); kein Lauf entfernt abgelaufene
-  oder widerrufene. Aufräumen und eine Obergrenze je Konto nach dem Release.
-- **Nach dem Deploy zu messen (Kompatibilität):** wie viele Push-Tokens ohne `app_version`
-  (= Geräte mit 2.2.x) und wie viele ungelesene Mitteilungen es je Person gibt; ob die
-  IP-Grenzen je Adresse zählen (in `rate_limit_zaehler` viele Schlüssel je Limiter, nicht einer
-  für alle — die Adresse kommt aus `X-Real-IP`, wenn der Proxy aus dem Docker-Netz kommt);
-  wie viele Pflichttermine ohne Jahrgang aktiv sind.
-- **Anmeldesperre:** Die Test-API arbeitet auf derselben Datenbank; bis sie den neuen Stand fährt
-  (`test-backend.yml` nach dem Merge), gilt dort keine Sperre. Ein gezieltes Aussperren eines
-  bekannten Kontos bleibt möglich (10 Versuche je Stunde), begrenzt durch das Fenster und
-  sofort aufhebbar mit neuem Passwort.
+- Phase B–D der Ablaufliste: Deploy beobachten, `RUN_BACKGROUND_JOBS=false` bei `backend2`
+  entfernen, `backend-test` in Portainer von Hand auf `test-latest` stellen und
+  `test-backend.yml` laufen lassen (erst dann gilt die Anmeldesperre auch dort), echte Mail,
+  Testbuilds (Android nur `internal`), CHANGELOG-Überschrift `## [2.3.0] - Datum` mit Build-Zeile
+  und Git-Tag `2.3.0`, Screenshots neu ziehen (Auflage 22), Umami bereinigen.
+- **Messen:** Konten mit verschiedenen Rollen in verschiedenen Gemeinden (Umfang für den Block
+  „Rolle je Gemeinde" unten); Konfis, deren Profil-Gemeinde weder Stamm- noch Zusatzgemeinde ist
+  (vor dem Deploy, wegen `a614098f`); Konfis ohne Jahrgang; aktive Pflicht-Events ohne Jahrgang;
+  Push-Tokens ohne `app_version`; ungelesene Mitteilungen je Person; Schlüssel je Limiter in
+  `rate_limit_zaehler` (IP-Grenzen je Adresse); `idx_scan` der Indizes; Schema der Test-Datenbank
+  gegen Produktion (Dump 5 Wochen alt); Erinnerungszeiten und Laufzeiten; Log-Volumen.
+- **Am Gerät:** Funkloch (Flugmodus), VoiceOver/TalkBack, Schrift „Größt", Dunkelmodus am iPhone
+  (Auflage 18a), Kaltstart-Blitz, Statusleiste.
 
-**Barrierefreiheit:** Dynamic Type auf iOS am Gerät bestätigen (UI BF-07 b, nach dem Code kein
-Befund); echtes VoiceOver/TalkBack wurde nicht geprüft.
+### Für 2.3.x vorgemerkt (MITTEL)
 
-**CI und Release:** Reihenfolge zweier Deploys bei ungleicher Testdauer (CI BF-04, Rest); aktive
-Benachrichtigung bei rotem `main` (BF-07, Rest); Git-Tag je Store-Upload und Zurückcommitten der
-Info.plist-Build-Nummer (BF-09, Rest); Action-Pinning, `test-backend.yml`, `frontend.yml`,
-Compose-`version`, Kommentar in `ci.yml` (BF-15); Sitemap-Erzeugung reproduzierbar und geprüft
-(Doku BF-13).
+- **Rolle je Gemeinde:** rund 20 Stellen lesen Rolle oder Gemeinde nur am Konto — Kontingente für
+  Konfi- und Team-Plätze, automatische Löschung (wer zuhause Konfi und woanders im Team ist,
+  würde ganz gelöscht), Jahrgangs-Chat, Konfi-Rückblick, Badges und Zertifikate von
+  Teamer:innen der Zweitgemeinde (404), Challenge-Autor:innen, Pflicht-Einschreibung, Pushes
+  (Liste mit Fundstellen: Fachlogik Punkte/Termine, Nachtrag „Rolle je Gemeinde"). Betroffen sind
+  nur Konten mit verschiedenen Rollen in verschiedenen Gemeinden; zuerst messen.
+- **Anmeldung und Sitzung:** Refresh-Token bei Biometrie nach der Rotation wieder im Klartext
+  (Grundgerüst BF-06), Refresh ohne Zeitlimit (BF-07), keine Sperre gegen eine 401-Schleife
+  (BF-09); 102 weitere Log-Aufrufe geben rohe Fehlerobjekte samt Zugangs-Token aus — zentral in
+  `api.ts` schwärzen; Formulare fallen bei einem Netzfehler nicht in die Warteschlange (BF-01
+  Teil 2); Refresh-Token ohne Gerätebindung (Sicherheit BF-08).
+- **Chat:** nur die letzten 100 Nachrichten, kein Nachladen (Screens BF-04); Datei-Token im Query
+  (Chat BF-09).
+- **Events und Warteliste:** Ende vor Beginn möglich (Leitung BF-03); Überbuchen beim Hinzufügen,
+  `status` → 500 (Punkte BF-04); Wartelistenrang bei Wiederanmeldung (BF-05); Kapazität 0 lässt
+  die Warteliste stehen (BF-06); Teamer-Aktivität an eine fremde Gemeinde (BF-07); Jahrgang
+  löschen macht dessen Pflicht-Events gemeindeweit sichtbar und läuft ohne Transaktion (BF-08);
+  Beförderung löscht vergangene Teilnahmen (BF-09); zweite Abmeldung ohne Netz → 400 (BF-03).
+- **Leitung und Team:** Antrag lädt die ganze Historie (Leitung BF-04); Umschalter in der
+  Teamer-Detailansicht (Screens BF-05); Rückblick-Hinweis für Teamer:innen ohne Ausgabe (BF-07);
+  leere Team-Ausgabe sperrt die Neuerzeugung (Chat BF-05).
+- **CI und Werkzeug:** Backend-Image (root, `npm install pg`, keine `.dockerignore`), eine
+  Node-Version, Backend-Lint, `node-fetch` deklarieren, Handbuch-Bilder (33 MB) aus dem
+  App-Bundle, CSP-Header, Play-Upload nicht sofort zu 100 %, Meldung bei rotem `main`, Tests für
+  `release-gate.py` und `rollend.sh`, Shutdown-Test gegen SIGTERM beim Start; Quelltext-Tests
+  (44 %) und E2E über Smoke hinaus; Sitemap reproduzierbar.
+- **Betrieb:** Log-Volumen (Betrieb BF-11), letzte Laufzeit je Job (BF-10), Obergrenze der
+  Refresh-Tokens je Konto (abgelaufene und widerrufene räumt `auth.js` schon weg; 1.232 offene
+  auf 129 Konten, größte 189), Sicherung als Dienst im Stack statt Host-Skript.
+- **Zeitzone:** Produktion läuft in UTC; 24 Spalten ohne Zone und vier `CURRENT_DATE`-Stellen
+  (zwischen 0 und 2 Uhr Berliner Zeit der Vortag). Lösung: `timestamptz` (Muster Migration 138),
+  `TZ` bis dahin nicht setzen.
 
-**Betrieb (nur mit Zugang zur Produktion):** Portainer-Stack an die Compose-Referenz angleichen
-(Betrieb BF-13, Datenbank BF-07 — Referenz steht, Anwendung fehlt); Sicherungs-Rhythmus,
-Aufbewahrung und Rückspielprobe im Betrieb einrichten (Datenbank BF-05); Log-Sammelzeilen
-(Betrieb BF-11); Absender-Adresse `moin@` gegen `SMTP_FROM` messen (Doku BF-20). Die Schritte
-stehen als Aufträge für einen Agenten mit Zugang in `docs/auftraege/lokaler-agent/`, dazu neu:
-die in Umami gesammelten Fehlermeldungen bereinigen und Sitzungssalz sowie Ortsangaben der
-Umami-Instanz prüfen (`03-nach-dem-deploy.md`, Abschnitt 6).
+### Später (NIEDRIG)
 
-**Recht und Rechenschaft:** Datenschutzerklärung auf 2.3.0, Verarbeitungsverzeichnis, TOM, AVV
-(Doku BF-08, Sammelbefund S-20); Sichtbarkeit von Daten in einer zweiten Gemeinde als
-Datenschutzfrage.
+Die NIEDRIG-Befunde der Berichte ohne Paket — unter anderem Tipp-Anzeige, zwei
+Ungelesen-Zähler, E-Mail-HTML roh, Doppeltipp auf „Anmelden", QR-Scanner-Closure,
+Body-Parser-Fehler → 500, JWT mit E-Mail, `check-username` ohne Limiter, Aufräumskripte ohne
+`uploads/challenges`, Text-Uploads ohne Inhaltsprüfung, redundante Indizes, `settings` ohne PK,
+Kommentar- und Zahlen-Drift, Dependabot-Regeln, 1,39-MB-Icon-Chunk, 17 Flächen-Hexwerte der
+Kriterien, dunkle Screenshots.
 
-**Hygiene:** 27 unreferenzierte Screenshots im Handbuch-Spiegel, 42 neu zu ziehende Bilder
-(S-17, nach dem Deploy); undeklarierte Importe, tote Einträge und `overrides` (Toolchain BF-10,
-Rest); Zahlen in Test-Kommentaren (Tests BF-11); drei Schema-Kommentare (Datenbank BF-13); die
-17 Flächen-Hexwerte der Abzeichen-Kriterien außerhalb der Tokens (darkmode BF-10, Rest);
-Feature-Empfehlungen (Punkt 32) und NIEDRIG-Befunde ohne Paket (Punkt 36).
+### Vor der EKD-Ausrollung
+
+Datenschutzerklärung (mehrere Gemeinden, Crashlytics), Verarbeitungsverzeichnis, TOM, AVV;
+Absturzdiagnose abschaltbar; Chat-Texte im Push an Firebase/Apple klären; Datenauskunft nach
+Art. 15; Melden und Blockieren im Chat, falls die Store-Prüfung es verlangt; Sicherung mit
+Rückspielprobe üben, Notfall-Deploy proben; Lasttest (Sockets, Node-Speicher); Universal Links
+(AASA-Platzhalter); Feature-Empfehlungen E-01 bis E-04, E-06 bis E-08 und die zehn offenen
+Produktfragen.
 
 ## Was bei Simon liegt
 
 1. **Apple-Schlüssel** `7AQA623H3T` und `A29U7SN796` — am 27.09. widerrufen, erledigt.
-2. **Vor dem Deploy** in Portainer: `SMTP_HOST`, `SMTP_USER`, `SMTP_HOST_IP` als Stack-Variablen;
-   SMTP-Zertifikat gegen den Hostnamen prüfen, sonst Notnagel `SMTP_TLS_REJECT_UNAUTHORIZED=false`.
-3. **Vor dem Deploy zählen:** `SELECT count(*) FILTER (WHERE password_plain IS NOT NULL) FROM
-   konfi_profiles;` und `SELECT count(*) FROM user_activities;` (Backfill unter 30 s halten).
-4. **Portainer-Stack angleichen:** Postgres 2 CPU / 3 GB mit den Vorgaben, `PG_POOL_MAX=50` und
-   die übrigen `PG_*`, `SHUTDOWN_DRAIN_MS`, `RUN_BACKGROUND_JOBS=false` bei `backend2` entfernen;
-   einmal `CREATE EXTENSION IF NOT EXISTS pg_stat_statements`; den ersten zweistufigen Deploy
-   beobachten.
-5. **Nach dem Deploy:** Screenshots neu ziehen (Punkt 22), Produktionsmessungen aus dem Abschnitt
-   „Auf Produktion nachzumessen" der Gesamtabnahme.
-6. **Nach dem Deploy, Umami:** die gesammelten Fehlermeldungen bereinigen (Auftrag
-   `03-nach-dem-deploy.md`, Abschnitt 6: sichern, zählen, ersetzen, erneut zählen), solange
-   Store-Fassungen ohne die Korrektur im Umlauf sind monatlich wiederholen; Sitzungssalz
-   (`SALT_ROTATION`) und die Speicherung von Region und Stadt mit der Datenschutzerklärung
-   abgleichen (B4).
-7. **Offene Entscheidungen** aus dem Abschnitt oben (Messvorschläge S1–S17, Material-Bilder,
-   Videos).
-8. **Autorenschaft der älteren Commits:** 50 Commits tragen noch „Claude" als Autor, 56 als
-   Committer. Das Umschreiben ändert alle Commit-Kennungen des Branches und braucht einen
-   Force-Push; die Rechteprüfung dieser Sitzung hat es abgelehnt. Nach dem Umschreiben müssen
-   die Commit-Verweise in Gesamtabnahme, Behebungsbericht und Doku-Bericht nachgezogen werden.
-   `main` bleibt, wie es ist (Simon, 27.09.).
+2. **Phase A** (Sicherung, Mail-Zertifikat, Zählungen, Postgres 2 CPU / 3 GB, Pool 50,
+   `pg_stat_statements`, Umgebung der Backends) — vom lokalen Agenten am 27.09. erledigt
+   (`docs/auftraege/lokaler-agent/01`, `02`). Die Werte stehen direkt in der Stack-Datei; auf
+   Stack-Variablen umstellen erst nach dem Merge mit dem neuen Deploy-Workflow.
+3. **Den Merge freigeben.** Danach Phase B–D (Abschnitt oben).
+4. **Entscheidungen, die noch offen sind:** Nutzungsmessung S1–S17 (`docs/messung/umami.md`);
+   Material-Bilder beim Hochladen verkleinern oder nicht; Videos (Empfehlung: so lassen); die
+   zehn Produktfragen der Feature-Empfehlungen; Universal Links.
+5. **Autorenschaft älterer Commits:** Ein Teil des Branches trägt noch „Claude" als Autor.
+   Umschreiben ginge nur mit Force-Push und neuen Commit-Kennungen; bleibt, wie es ist, solange
+   Simon nichts anderes sagt. `main` bleibt, wie es ist (Simon, 27.09.).
 
 ## Entscheidungen der Umsetzung, die Simon kippen kann
 

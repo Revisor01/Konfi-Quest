@@ -180,7 +180,6 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-11: Bonuspunkte an fremden Konfi enden mit 500, Org-Grenze nur durch spätes UPDATE
 - **Schwere:** MITTEL
-- **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht) — `darfKonfi` prüft die Gemeinde mit; Bonuspunkte an eine fremde Konfi ergeben 404 statt 500.
 - **Status:** behoben 27.09.2026 — `darfKonfi` liest `konfi_profiles` nur noch in der aktiven Gemeinde (`WHERE user_id = $1 AND organization_id = $2`); eine Konfi einer anderen Gemeinde gilt als nicht gefunden. Damit greift die Grenze an allen Aufrufern zugleich: Bonuspunkte und nachgetragene Aktivität antworten 404 statt 500, die Event-Punkte 404 statt 200 mit leerer Liste, Teamer:innen und Admins 404 statt 403. Die Gemeinde kommt aus `konfi_profiles.organization_id`, nicht aus `users.organization_id` — eine Konfi, die über `user_organizations` in einer Zweitgemeinde Konfi ist, hat ihr Profil dort. Tests (verboten und erlaubt, dazu die Zweitgemeinde) in `tests/routes/fremdeGemeinde.test.js`.
 - **Fundstelle:** `backend/routes/konfi-management.js:1161-1168` (`darfKonfi` prüft Jahrgang, für `org_admin` ohne Org-Prüfung), `:1180-1191` (INSERT in `bonus_points` mit fremder `konfi_id`, danach UPDATE mit `u.organization_id = $3` → 0 Zeilen → `throw` → ROLLBACK → 500); gleiches Muster `:1351`
 - **Kennzeichnung:** reproduziert — `POST /api/admin/konfis/6/bonus-points` als `orgadmin1` → **500** `{"error":"Datenbankfehler"}`; DB danach unverändert (`bonus_points`-Zeilen: 0, Punkte 0/0).

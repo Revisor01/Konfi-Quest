@@ -211,7 +211,6 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 ### BF-05: Hinweis beim Konfi-Anlegen verspricht, das Passwort sei später einsehbar
 
 - **Schwere:** MITTEL
-- **Status:** behoben 27.09.2026 (vor dem Merge von 2.3.0; Commit im Behebungsbericht) — der Hinweis im Konfi-Formular (`KonfiModal.tsx`) sagt nicht mehr, das Passwort sei später in der Detailansicht einsehbar, und deckt sich mit `35-passwoerter.md`.
 - **Fundstelle:** `frontend/src/components/admin/modals/KonfiModal.tsx:295`;
   Gegenstücke `backend/routes/konfi-management.js:215-216` (bcrypt),
   `:599-697` (nur Neu-Generieren), `frontend/src/components/admin/views/KonfiDetailView.tsx:607-637`;

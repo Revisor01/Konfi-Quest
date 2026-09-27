@@ -55,6 +55,16 @@ Mandantentrennung hält in 150 gezielten Fremdzugriffen. Die Testsuiten sind gr�
 in 11 von 15 Gegenproben echte Fehler. Das ist die gute Nachricht; sie ändert nichts an den
 vier Punkten oben.
 
+**Stand vor dem Merge (27.09., nachts):** Alle sieben Blocker und 17 der 18 Auflagen sind
+behoben; offen ist Auflage 22 (Screenshots nach dem Deploy). Jeder Befund aller Berichte trägt
+eine gegen Code, Tests und CHANGELOG geprüfte Status-Zeile: 238 Befunde, 125 behoben,
+22 teilweise, 79 offen, 8 bewusst so gelassen, 4 beim Betrieb; **kein KRITISCH- oder HOCH-Befund
+ist offen.** Vor dem Merge kamen dazu: der Produktionsbefund zu den Badges (Rolle je Gemeinde),
+Vollzugriff auf Termine je Gemeinde, fremde Konfi 404, Passwort nicht im Log, Umfragen im
+Dunkelmodus, Einladungen zurückziehen, Mindestversion als Hinweis statt Sperre, CHANGELOG und
+Handbuch in den Begriffen der App. Was bleibt, steht gegliedert im Behebungsbericht („Was offen
+bleibt": nach dem Deploy, 2.3.x, später, vor EKD-Ausrollung).
+
 **Stand der Behebung (26.09., Abend):** Sechs der sieben Blocker sind im Release-Branch
 behoben und mit Tests belegt; offen ist allein Blocker 3
 (Widerruf der Apple-Schlüssel, nur Simon im Developer-Portal). **Nachtrag 27.09.:** Simon hat
@@ -105,8 +115,8 @@ Einzelheiten im Abschnitt „Behebungsstand" und im Behebungsbericht.
 | CI, Deployment, Store-Reife | `ci-deployment-store.md` | 0 | 1 | 8 | 9 | mit Auflage | hält (BF-01 über GitHub-API, BF-03 nachgestellt) |
 | Dokumentation gegen Code | `dokumentation-gegen-code.md` | 0 | 0 | 8 | 12 | mit Auflage | hält |
 | Toolchain und Abhängigkeiten | `toolchain-abhaengigkeiten.md` | 0 | 0 | 5 | 7 | freigeben | hält |
-| Betrieb, Skalierung, Lastverhalten | `betrieb-skalierung.md` | 0 | 5 | 7 | 4 | mit Auflage | hält (BF-01 reproduziert) |
-| **Summe der 14 Befundberichte** | | **1** | **29** | **93** | **93** | | **216 Befunde** |
+| Betrieb, Skalierung, Lastverhalten | `betrieb-skalierung.md` | 0 | 5 | 8 | 3 | mit Auflage | hält (BF-01 reproduziert) |
+| **Summe der 14 Befundberichte** | | **1** | **29** | **94** | **92** | | **216 Befunde** |
 | Feature-Empfehlungen für die EKD-Ausrollung | `feature-empfehlungen.md` | 33 Empfehlungen (9 vor Release, 12 in den ersten drei Monaten, 5 danach, 7 bewusst nicht), 10 offene Produktfragen | | | | kein Befundbericht | hält |
 
 Doppelungen zwischen Berichten sind in der Summe **nicht** herausgerechnet; die
@@ -142,6 +152,16 @@ zusammengeführten Sammelbefunde stehen im nächsten Abschnitt.
 | S-24 | `lang="en"` auf einer deutschen App | UI BF-05, Feature E-09, Koordination K-04 | MITTEL |
 | S-25 | Grüne Tests, die das Falsche prüfen: 124 von 264 Frontend-Testdateien lesen Quelltext statt zu rendern; die Dunkelmodus-Tests prüfen das Stylesheet als Text und übersehen 104 gerenderte Kontrastverstöße | Tests BF-02, Dunkelmodus BF-09 | MITTEL |
 | S-26 | Bereichsfarben als Textfarbe ohne dunkle Variante (234 Stellen, im Dunkeln 1,7–4,2:1) und Hellmodus-Grautöne unter 4,5:1 (119 Stellen) — dieselbe Ursache: keine Text-Token-Familie | Dunkelmodus BF-01/BF-05/BF-06, UI BF-04 | MITTEL (Anmeldeseite HOCH) |
+
+**Nachtrag 27.09.2026 (vor dem Merge):** S-03 — bewusst so gelassen: Das Ranking bleibt (die
+Leitung kann es unter Mehr › Dashboard abschalten), das Handbuch beschreibt jetzt, was die App
+zeigt (`c565fa14`). S-13 — die App-Version steht überall auf 2.3.0; Info.plist (220) und
+pbxproj (218) tragen im Repo noch alte Build-Nummern, der Store-Build liest sie aus
+`version.json` (CI BF-09, Rest). S-23 — Passwort und Tokens gehen im Client nicht mehr ins
+Konsolen-Log (`1a596d0e`); offen bleiben der Benutzername im Server-Log bei jedem Login
+(Sicherheit BF-14) und rohe Fehlerobjekte samt Zugangs-Token in weiteren Client-Logs
+(für 2.3.x, zentral in `api.ts`). S-06 — der Verweis „Screens BF-11/BF-13" meint Screens BF-11;
+einen BF-13 hat der Screens-Bericht nicht.
 
 ## Gegenprüfungen der Koordination
 
@@ -485,6 +505,9 @@ seinen Platz in den Top 10 und wird Produktentscheidung. E-03 (Gemeinden anlegen
 Installationen braucht ein Vorlagenkatalog ein Austauschformat zwischen Instanzen statt einer
 gemeinsamen Tabelle, und eine Verbandssicht über mehrere Instanzen ist ein anderes Produkt.
 Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit dieser Fußnote.
+**Überholt (27.09.):** Punkt 25 ist mit Lesart (a) entschieden — alle Gemeinden in einer
+Datenbank. Getrennte Installationen sind damit vom Tisch; E-03, E-10, E-11 und E-26 stehen im
+Feature-Bericht mit dieser Prämisse.
 
 ## Behebungsstand (fortlaufend)
 
@@ -546,7 +569,8 @@ Zum Vergleich die Baseline vor dem Audit: Backend 139 Dateien / 3.399 Tests, Fro
 | M2, M3 Medien | Ein Medien-Cache für Chat, Challenges, Material; geleert beim Abmelden und Konto-/Gemeindewechsel; Verkleinerung und Größengrenzen auf einem Weg; Challenges und Material ohne Netz; Nachweisfotos nur anzeigen, nie ablegen | Aufträge Simon | eingebaut (`17266eae`–`4407180c`, `2a17f82d`–`71c5e0fc`) |
 | N, N2 Nutzungsmessung | Messkonzept; Mitmachen getrennt, Aktivität eingereicht, Anträge entschieden, Material angesehen/abgerufen, Konfispruch; Fehlermessung nur über eine Positivliste (vorher Namen aus Server-Meldungen an Umami und Crashlytics), Bereinigung als Auftrag | Aufträge Simon, Messung B1 | eingebaut (`e7a6dc92`, `0f4212d0`, `8fbefc85`, `7428d316`, `4fca331a`, `5f916540`, `9e7fa4c8`) |
 | P, Q, R Handbuch, Barrierefreiheit, Begriffe | Unterpunkte in der Handbuch-Navigation; jeder Dialog mit Namen (92 → 0), kein Knopf im Knopf, Zoom frei, Reiter 8,8 → 11,2 px, drei Datumsformate; Events, Badges, Challenges, Stempel; echte Umlaute 19 → 0; Überschriften als Tätigkeiten | UI BF-07, 10, 11, 14, 16; Doku BF-17 | eingebaut (`f0074acd`–`6473c310`) |
-| Letzte HOCH-Befunde und E-05 (27.09. abends) | Funkloch per Probe als offline erkannt; gespeicherter Stand und Warteschlange ans Konto gebunden; Anmeldesperre je Konto (10 Fehlversuche je Stunde, Durchprobieren 25,6 h → im Mittel 64 Tage), Anmeldeseite nennt den Grund statt „Keine Verbindung"; Mindestversion und Wartungshinweis; Deploy schickt Stack-Variablen unverändert zurück; Zeitzone gemessen (Produktion UTC, Suite wie Produktion grün bis auf die zwei Berlin-Annahme-Tests) | Grundgerüst BF-01, BF-04, Sicherheit BF-04, E-05 | eingebaut (`1a379aba`, `c526cdfa`, `1a047f86`, `fc2b7add`, `d7802549`, `b168c55f`, `b677bba5`) |
+| Letzte HOCH-Befunde und E-05 (27.09. abends) | Funkloch per Probe als offline erkannt; gespeicherter Stand und Warteschlange ans Konto gebunden; Anmeldesperre je Konto (10 Fehlversuche je Stunde, Durchprobieren 25,6 h → im Mittel 64 Tage), Anmeldeseite nennt den Grund statt „Keine Verbindung"; Mindestversion und Wartungshinweis; Deploy schickt Stack-Variablen unverändert zurück; Zeitzone gemessen (Produktion UTC, Suite wie Produktion grün bis auf die zwei Berlin-Annahme-Tests) | Grundgerüst BF-01, BF-04, Sicherheit BF-04, E-05 | eingebaut (`1a379aba`, `c526cdfa`, `1a047f86`, `fc2b7add`, `d7802549`, `6cd0d52d`, `b677bba5`) |
+| Vor dem Merge (27.09. nachts) | Kompatibilität mit der Store-App 2.2.0 (Zahl am App-Symbol ohne Postfach für Geräte ohne Versionsangabe, Rolle weiterer Mitglieder mit leeren Feldern); Produktionsbefund Badges an eine Leitung (Rolle je Gemeinde, Konfi-Profil nur der eigenen Gemeinde, Teamer-Jahr je Gemeinde); Vollzugriff auf Termine nach der Rolle in der Gemeinde des Termins; fremde Konfi 404; Passwort und Tokens nicht im Konsolen-Log; Umfragen im Dunkelmodus; Hinweistext Konfi-Formular; Umlaute in Prüfmeldungen; Einladungen einsehen und zurückziehen; Mindestversion als Hinweis (keine Zwangsupdates); CHANGELOG, Store-Texte und Handbuch in den Begriffen der App; alle Berichte mit geprüften Status-Zeilen | Kompatibilität, Produktion, Sicherheit BF-11, Grundgerüst BF-08, Leitung BF-02/BF-05, UI BF-10/BF-11, E-05/E-29, Doku | eingebaut (`48c998cc`, `504acb29`, `c26ad08a`, `b6a67ed1`, `4dd491b3`, `a614098f`, `1a596d0e`, `42b336dd`, `7cb275f0`, `07db97ef`, `(Einladungen: Commit folgt)`, `3df23705`, `13dfa7dc`, `8e7062b6`, `c565fa14`, `6902994a`, `b6bda5fb`) |
 | Kleinere Nachträge 27.09. | Wochentag auf den Event-Karten; Chat-Großschreibung nur am Anfang und nach . ! ?; Wettlauf-Test der Zertifikatstypen mit fester Schranke statt Zeitglück | Gerätebefunde | eingebaut (`6ddd003d`, `0e114bdf`, `6bcaf158`) |
 
 **Neu gestartet nach Abbruch (Sitzungslimit des Werkzeugs, 26.09. 17:10 UTC):** Paket M lief im
@@ -554,10 +578,16 @@ zweiten Anlauf durch (Zeile oben). Datumsformate und Zoom (UI BF-14, BF-07) kame
 Paket Q; Dynamic Type auf iOS ist nach dem Code kein Befund und am Gerät zu bestätigen.
 
 **Noch nicht begonnen:** Handbuch-Bilder aus dem Store-Bundle (S-17), Feature-Empfehlungen A
-(Punkt 32), Rechenschaft/Datenschutz (Punkt 28, Produkt- und Rechtsfragen), NIEDRIG-Befunde
+(Punkt 32) außer E-05 (umgesetzt, seit 27.09. als Hinweis ohne Sperre) und E-09 (teilweise), Rechenschaft/Datenschutz (Punkt 28, Produkt- und Rechtsfragen), NIEDRIG-Befunde
 (Punkt 36) außer den in M, K2, Q und R erledigten.
 
 **Bei Simon:**
+
+*Stand 27.09.: Punkte 2–4 hat der lokale Agent in Phase A erledigt — Mail-Zertifikat passt
+(die Werte stehen direkt in der Stack-Datei; auf Stack-Variablen erst nach dem Merge
+umstellen), `password_plain` 0 von 130, `user_activities` 424, Postgres 2 CPU / 3 GB mit
+`pg_stat_statements`, Pool 50, `SHUTDOWN_DRAIN_MS`. Offen daraus nur `RUN_BACKGROUND_JOBS`
+bei `backend2` und die Beobachtung des ersten zweistufigen Deploys (Phase B).*
 
 1. Apple-Schlüssel `7AQA623H3T` und `A29U7SN796` — am 27.09. widerrufen, erledigt (Blocker 3).
 2. Vor dem Deploy in Portainer: `SMTP_HOST`, `SMTP_USER`, `SMTP_HOST_IP` als Stack-Variablen;
