@@ -219,7 +219,12 @@ describe('Abzeichen-Lauf: nur veraenderte Personen pruefen', () => {
     // 25.09.2026: 28 -> 30. Das Postfach kam als siebter Baustein in die
     // App-Icon-Summe (utils/appIconBadge.js, postfachZaehler) -- wieder eine
     // Abfrage je Organisation, also zwei. Konstant, nicht je Person.
-    expect(z.stand()).toBe(30);
+    // 27.09.2026: 30 -> 32. Neue Challenge-Beitraege fuer Leitung und Team
+    // (challengeNeuigkeitenLeitungJeChallenge) kamen als achter Baustein in
+    // die App-Icon-Summe -- eine Abfrage fuer alle Leitungs- und Team-Konten
+    // der Organisation, bei zwei Organisationen zwei. Konstant, nicht je
+    // Person.
+    expect(z.stand()).toBe(32);
   });
 
   it('wer eine neue Aktivitaet bekommt, wird geprueft — und sonst niemand', async () => {
