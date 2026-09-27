@@ -244,24 +244,16 @@ describe('Die vier Datei-Stellen geben je einen eigenen Ort mit', () => {
   ];
 
   it.each(stellen)('%s meldet den Ort %s', (datei, ort) => {
-    // Der Chat oeffnet seit dem 27.09.2026 ueber den gemeinsamen Hook
-    // useDateiOeffnen (Chat und Challenges): Die Meldung steht dort, der Ort
-    // kommt als fehlerOrt aus dem Aufrufer. Beides wird geprueft.
-    if (datei.endsWith('useChatDateien.ts')) {
-      const hook = lies('src/hooks/useDateiOeffnen.ts');
-      expect(hook).toContain('Fehler beim Öffnen der Datei');
-      expect(hook).toMatch(/ort: fehlerOrt,\s*fehler:/);
-      expect(lies(datei)).toContain(`fehlerOrt: '${ort}'`);
-      return;
-    }
-    const quelle = lies(datei);
-    // Der Nutzertext ist unveraendert — echte Umlaute, kein technischer Zusatz.
-    expect(quelle).toContain('Fehler beim Öffnen der Datei');
-    expect(quelle).toContain(`ort: '${ort}'`);
-    // Und der gefangene Fehler wird mitgegeben, sonst bliebe `art` leer.
-    expect(quelle).toMatch(
-      new RegExp(`ort: '${ort}',\\s*fehler:`)
-    );
+    // Alle vier oeffnen seit dem 27.09.2026 ueber den gemeinsamen Hook
+    // useDateiOeffnen (Chat, Challenges, Material): Die Meldung steht dort —
+    // der Nutzertext unveraendert, der gefangene Fehler wird mitgegeben —,
+    // der Ort kommt als fehlerOrt aus dem Aufrufer. Beides wird geprueft.
+    // Bis dahin setzten die drei Material-Stellen die Meldung selbst; die
+    // Erwartung ist mit dem Aufruf in den Hook umgezogen.
+    const hook = lies('src/hooks/useDateiOeffnen.ts');
+    expect(hook).toContain('Fehler beim Öffnen der Datei');
+    expect(hook).toMatch(/ort: fehlerOrt,\s*fehler:/);
+    expect(lies(datei)).toContain(`fehlerOrt: '${ort}'`);
   });
 
   it('die vier Orte sind paarweise verschieden', () => {

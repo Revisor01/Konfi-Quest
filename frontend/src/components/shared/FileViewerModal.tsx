@@ -18,8 +18,9 @@ const resolveUrl = async (url: string, mimeType: string): Promise<string> => {
   if (!isApiPath(url)) return url;
   // Relativer API-Pfad → per axios (mit Auth-Header) laden
   const cleanPath = url.startsWith('/api/') ? url.substring(4) : url.startsWith('api/') ? '/' + url.substring(4) : url;
-  // Dateien aus Chat und Challenges über den Medien-Cache (27.09.2026): Wer
-  // im Betrachter zu den übrigen Dateien wischt, lud jede davon bisher an
+  // Dateien aus Chat, Challenges und Material über den Medien-Cache
+  // (27.09.2026): Wer im Betrachter zu den übrigen Dateien wischt, lud jede
+  // davon bisher an
   // ihm vorbei — bei jedem Wischen neu. Der Typ kommt aus dem Dateinamen;
   // beim Treffer im Cache gibt es keinen Antwort-Header.
   const medium = medienAusApiPfad(cleanPath);

@@ -450,15 +450,16 @@ Formularen steht statt des Hakens ein Wolken-Symbol mit **„Du bist offline"**.
 
 ### Erkennen, was du ohne Netz noch siehst
 
-Alles, was du zuletzt geöffnet hattest — Events, Chats, Challenges, dein
-Profil, die Badges. Die App merkt sich den Stand und zeigt ihn weiter. Er ist
-dann vielleicht ein paar Minuten alt, aber er ist da. Fotos und Dateien, die du
-schon einmal geöffnet hattest, kommen dabei vom Gerät (siehe
+Alles, was du zuletzt geöffnet hattest — Events, Chats, Challenges, Material,
+dein Profil, die Badges. Die App merkt sich den Stand und zeigt ihn weiter. Er
+ist dann vielleicht ein paar Minuten alt, aber er ist da. Fotos und Dateien,
+die du schon einmal geöffnet hattest, kommen dabei vom Gerät (siehe
 [Geladene Bilder und Dateien auf dem Gerät behalten](#geladene-bilder-und-dateien-auf-dem-geraet-behalten)).
 
-Bei einer Challenge fragt die App mit Netz immer zuerst den Server; den
-gespeicherten Stand nimmt sie nur, wenn keine Antwort kommt. So erscheint ein
-Beitrag, den die Leitung inzwischen ausgeblendet hat, nicht noch einmal.
+Bei einer Challenge und einem Material fragt die App mit Netz immer zuerst den
+Server; den gespeicherten Stand nimmt sie nur, wenn keine Antwort kommt. So
+erscheint ein Beitrag, den die Leitung inzwischen ausgeblendet hat, oder eine
+gelöschte Datei nicht noch einmal.
 
 Was sich wirklich nicht zeigen lässt, sagt die App als graue Zeile mit einem
 Wolken-Symbol, etwa: „Die Teilnehmerliste ist offline nicht verfügbar."
@@ -470,12 +471,14 @@ Wolken-Symbol, etwa: „Die Teilnehmerliste ist offline nicht verfügbar."
 
 ## Geladene Bilder und Dateien auf dem Gerät behalten
 
-Bilder, Videos, Tonaufnahmen und Dateien aus dem [Chat](90-chat.md) und aus
-[Challenges](80-challenges.md) lädt die App nur einmal. Danach liegen sie auf
-dem Gerät und öffnen sich beim nächsten Mal sofort — auch ohne Netz. Beides
-liegt in einem gemeinsamen Speicher, in der App **Medien-Cache** genannt. Wird
-er zu groß (mehr als 500 MB), wirft die App von selbst weg, was am längsten
-niemand geöffnet hat.
+Bilder, Videos, Tonaufnahmen und Dateien aus dem [Chat](90-chat.md), aus
+[Challenges](80-challenges.md) und aus dem
+[Material](20-teamer.md#material-oeffnen) lädt die App nur einmal. Danach
+liegen sie auf dem Gerät und öffnen sich beim nächsten Mal sofort — auch ohne
+Netz. Alles liegt in einem gemeinsamen Speicher, in der App **Medien-Cache**
+genannt. Wird er zu groß (mehr als 500 MB), wirft die App von selbst weg, was
+am längsten niemand geöffnet hat. Links im Material sind keine Dateien: Sie
+öffnen im Browser und landen nicht im Speicher.
 
 Solange ein Bild oder Video lädt, steht an seiner Stelle *„Wird geladen…"* mit
 Prozentzahl und einem Balken — dieselbe Anzeige wie beim Antippen einer Datei.
@@ -485,11 +488,13 @@ Bild noch nicht auf dem Gerät, steht dort die graue Zeile mit der Wolke
 (*„Das Bild ist offline nicht verfügbar."*); sobald wieder Netz da ist, lädt es
 von selbst.
 
-Ein Foto antippen öffnet es — im Chat wie in einer Challenge. Auf dem Handy
-erscheint die Vorschau des Systems mit Teilen und Sichern, im Browser der
-Betrachter der App mit Herunterladen; dort lässt sich durch die übrigen Fotos
-der Ansicht wischen. Auch der Betrachter und das Teilen nehmen die Datei vom
-Gerät, wenn sie dort schon liegt.
+Ein Foto antippen öffnet es — im Chat wie in einer Challenge, und genauso jede
+Datei eines Materials. Auf dem Handy erscheint die Vorschau des Systems mit
+Teilen und Sichern, im Browser der Betrachter der App mit Herunterladen; dort
+lässt sich durch die übrigen Dateien der Ansicht wischen. Auch der Betrachter
+und das Teilen nehmen die Datei vom Gerät, wenn sie dort schon liegt. Muss
+sie erst laden, steht in ihrer Zeile *„Wird geladen…"* mit Prozentzahl und
+Balken.
 
 Angezeigt wird nur, was die Liste gerade führt, und die kommt vom Server.
 Ein ausgeblendeter oder gelöschter Challenge-Beitrag steht nicht mehr darin —
@@ -499,6 +504,13 @@ App deshalb bei Netz immer erst beim Server nach. Ist ein Beitrag inzwischen
 gelöscht, steht dort *„Das Foto ist nicht mehr verfügbar."*, und die Datei
 verschwindet vom Gerät. Wer einen Beitrag löscht, räumt ihn auch aus dem
 eigenen Speicher.
+
+Ein Material fragt die App beim Öffnen ebenfalls erst beim Server nach;
+den zuletzt geladenen Stand zeigt sie nur ohne Netz. Hat die Leitung eine
+Datei gelöscht, steht sie nicht mehr in der Liste und verschwindet dabei vom
+Gerät — ist das ganze Material gelöscht, gehen alle seine Dateien. Wer ein
+Material oder eine Datei löscht, räumt sie sofort auch aus dem eigenen
+Speicher.
 
 ### Verstehen, warum Nachweisfotos nicht auf dem Gerät bleiben
 
@@ -533,4 +545,4 @@ Von selbst leert die App ihn,
   Dateien dort liegen — etwa nach einer abgelaufenen Anmeldung.
 
 So findet niemand, der das Gerät nach dir benutzt, deine Bilder und Dateien
-vor — weder aus dem Chat noch aus Challenges.
+vor — weder aus dem Chat noch aus Challenges oder dem Material.

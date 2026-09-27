@@ -67,22 +67,22 @@ const STELLEN: Array<{
   {
     datei: 'src/components/teamer/pages/TeamerMaterialPage.tsx',
     handlung: 'material-angesehen',
-    vorher: 'api.get(`/material/${matId}`)'
+    vorher: 'await materialDetailLaden<MaterialDetail>(matId)'
   },
   {
     datei: 'src/components/teamer/pages/TeamerMaterialPage.tsx',
     handlung: 'material-abgerufen',
-    vorher: 'api.get(`/material/files/${file.stored_name}`'
+    vorher: 'await dateiOeffnen(file.stored_name, file.original_name, file.mime_type)'
   },
   {
     datei: 'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
     handlung: 'material-angesehen',
-    vorher: 'api.get(`/material/${materialId}`)'
+    vorher: 'await materialDetailLaden<MaterialDetail>(materialId)'
   },
   {
     datei: 'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
     handlung: 'material-abgerufen',
-    vorher: 'api.get(`/material/files/${file.stored_name}`'
+    vorher: 'await dateiOeffnen(file.stored_name, file.original_name, file.mime_type)'
   },
   {
     datei: 'src/components/konfi/modals/KonfispruchSelectModal.tsx',

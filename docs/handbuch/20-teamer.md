@@ -133,6 +133,14 @@ eigenen Abschnitt ganz oben, am Globus zu erkennen. Links öffnen sich im
 Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
 [Für die Leitung](30-leitung.md#material-anlegen-und-sichtbar-machen).
 
+Eine Datei antippen öffnet sie; solange sie lädt, steht in ihrer Zeile
+*„Wird geladen…"* mit Prozentzahl. Danach liegt sie auf dem Gerät und öffnet
+sich beim nächsten Mal sofort, auch ohne Netz — ein Material, das du schon
+einmal offen hattest, zeigt sich dann mit dem zuletzt geladenen Stand. Was die
+Leitung inzwischen gelöscht hat, verschwindet beim nächsten Öffnen mit Netz
+auch vom Gerät. Mehr dazu unter
+[Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
+
 ## Dein Profil öffnen
 
 ![Das Profil einer Teamer:in.](/docs/bilder/iphone/teamer-profil.png)
@@ -146,8 +154,8 @@ Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
 - **Benachrichtigungen** — welche Mitteilungen aufs Handy kommen; siehe
   [Auswählen, welche Mitteilungen aufs Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen)
 - **App-Tour ansehen** und **Medien-Cache leeren** — Letzteres wirft die
-  Dateien aus Chat und Challenges weg, die zum schnelleren Öffnen auf dem
-  Gerät liegen (siehe
+  Dateien aus Chat, Challenges und Material weg, die zum schnelleren Öffnen
+  auf dem Gerät liegen (siehe
   [Den Medien-Cache leeren](03-bedienung.md#den-medien-cache-leeren))
 - **Badges** — deine Badges; welche
   [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen-zaehlen) gelten,

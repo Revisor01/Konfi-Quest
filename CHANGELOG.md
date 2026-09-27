@@ -10,6 +10,13 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
+- Dateien im Material bleiben nach dem ersten Öffnen auf dem Gerät und öffnen
+  sich beim nächsten Mal sofort — auch ohne Netz, dann mit dem zuletzt
+  geladenen Stand des Materials. Beim Laden steht in der Zeile, wie weit es
+  ist, und im Betrachter lässt sich durch alle Dateien des Materials wischen.
+  Was die Leitung löscht, verschwindet auch vom Gerät; Links öffnen weiter im
+  Browser. „Medien-Cache leeren" im Profil leert Material zusammen mit Chat
+  und Challenges.
 - Bilder und Dateien in Challenges bleiben auf dem Gerät gespeichert und laden
   beim zweiten Öffnen sofort — in der Galerie, bei den eigenen Beiträgen, in
   der Ansicht der Leitung und im Jahresrückblick, auch ohne Netz. Beim Laden
@@ -162,6 +169,9 @@ Versionsüberschrift.
 - Ein Event ohne Jahrgang gilt der ganzen Gemeinde: Alle Konfis sehen es in
   ihrer Event-Liste und können sich anmelden, auch Konfis ohne Jahrgang.
   Bisher sahen Konfis solche Events gar nicht.
+- Beim Anlegen von Material werden Fotos wie im Chat verkleinert, und eine
+  Datei über 20 MB meldet die App gleich bei der Auswahl statt erst beim
+  Speichern. Beim Speichern steht, wie weit das Hochladen ist.
 - Das Foto zu einer gemeldeten Aktivität zeigt beim Laden, wie weit es ist,
   und lässt sich mit „Erneut versuchen" neu laden — beim Konfi, beim Team und
   bei der Leitung, auch groß im Konfi-Profil, das sich dafür sofort öffnet.

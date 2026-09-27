@@ -43,6 +43,7 @@ import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { materialVergessen, type MaterialDateiVerweis } from '../../../services/materialDetail';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
@@ -149,7 +150,14 @@ const AdminMaterialPage: React.FC = () => {
           role: 'destructive',
           handler: async () => {
             try {
+              // Welche Dateien daran hängen, führt nur das Detail — die Liste
+              // kennt bloß die Anzahl. Gebraucht, um sie nach dem Löschen
+              // auch vom eigenen Gerät zu nehmen (Medien-Cache, 27.09.2026).
+              const dateien: MaterialDateiVerweis[] = material.file_count !== 0
+                ? await api.get(`/material/${material.id}`).then(r => r.data?.files || []).catch(() => [])
+                : [];
               await api.delete(`/material/${material.id}`);
+              await materialVergessen(material.id, dateien);
               refreshMaterial();
             } catch (err) {
               setError(fehlerText(err, 'Fehler beim Löschen'));

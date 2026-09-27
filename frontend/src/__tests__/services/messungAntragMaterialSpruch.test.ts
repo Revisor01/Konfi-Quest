@@ -328,28 +328,39 @@ describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
     );
   });
 
+  // Seit dem gemeinsamen Medien-Weg (27.09.2026, Paket M3) laedt das Detail
+  // ueber materialDetailLaden (erst der Server, ohne Netz der gemerkte Stand)
+  // und eine Datei ueber useDateiOeffnen (Medien-Cache). Gemessen wird weiter
+  // erst nach dem Erfolg: angesehen nur mit einer Antwort des Servers
+  // (!ausSpeicher), abgerufen nur, wenn dateiOeffnen die Datei geladen hat.
   it('Material-Reiter: Detail geöffnet (TeamerMaterialPage.openDetail)', () => {
     hinterAufrufVorCatch(
       'src/components/teamer/pages/TeamerMaterialPage.tsx',
-      'const res = await api.get(`/material/${matId}`);',
-      "trackHandlung('material-angesehen', {"
+      'const { daten, ausSpeicher } = await materialDetailLaden<MaterialDetail>(matId);',
+      "if (!ausSpeicher) {\n        trackHandlung('material-angesehen', {"
     );
   });
 
-  it('Material-Reiter: Datei geöffnet (TeamerMaterialPage.openFile)', () => {
-    hinterAufrufVorCatch(
-      'src/components/teamer/pages/TeamerMaterialPage.tsx',
-      'const response = await api.get(`/material/files/${file.stored_name}`',
-      "trackHandlung('material-abgerufen', { inhalt: 'datei' });"
+  it.each([
+    'src/components/teamer/pages/TeamerMaterialPage.tsx',
+    'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
+  ])('%s: Datei abgerufen nur, wenn dateiOeffnen sie geladen hat', (datei) => {
+    expect(lies(datei)).toContain(
+      "    if (await dateiOeffnen(file.stored_name, file.original_name, file.mime_type)) {\n" +
+      "      trackHandlung('material-abgerufen', { inhalt: 'datei' });\n" +
+      '    }'
     );
   });
 
-  it('Material an einem Event: Datei geöffnet (TeamerMaterialDetailPage.openFile)', () => {
-    hinterAufrufVorCatch(
-      'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
-      'const response = await api.get(`/material/files/${file.stored_name}`',
-      "trackHandlung('material-abgerufen', { inhalt: 'datei' });"
-    );
+  it('dateiOeffnen meldet Erfolg erst nach dem Laden der Datei, nie im catch vor dem Laden', () => {
+    const quelle = lies('src/hooks/useDateiOeffnen.ts');
+    const posLaden = quelle.indexOf('const blob = await getMediaBlob(filePath, {');
+    const posGeladen = quelle.indexOf('geladen = true;', posLaden);
+    expect(posLaden).toBeGreaterThan(-1);
+    expect(posGeladen).toBeGreaterThan(posLaden);
+    expect(quelle).toContain('let geladen = false;');
+    expect(quelle).toContain('if (ladendeDatei) return false;');
+    expect(catchRumpf(quelle, quelle.indexOf('} catch', posGeladen))).toContain('return geladen;');
   });
 
   it.each([
@@ -367,10 +378,15 @@ describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
 
   it('Material an einem Event: angesehen erst nach der erfolgreichen Antwort, einmal je Öffnen', () => {
     const quelle = lies('src/components/teamer/pages/TeamerMaterialDetailPage.tsx');
-    // Über onSuccess von useOfflineQuery: der ruft erst nach dem erfolgreichen
-    // Abruf — ein Stand nur aus dem Zwischenspeicher zählt nicht.
+    // Nach materialDetailLaden und nur mit einer Antwort des Servers — ein
+    // Stand nur vom Gerät (ohne Netz) zählt nicht; einmal je Öffnen.
+    hinterAufrufVorCatch(
+      'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
+      'const { daten, ausSpeicher } = await materialDetailLaden<MaterialDetail>(materialId);',
+      "trackHandlung('material-angesehen', {"
+    );
     expect(quelle).toMatch(
-      /onSuccess: \(geladen\) => \{\s*if \(angesehenGemeldet\.current\) return;\s*angesehenGemeldet\.current = true;\s*trackHandlung\('material-angesehen', \{/
+      /if \(!ausSpeicher && !angesehenGemeldet\.current\) \{\s*angesehenGemeldet\.current = true;\s*trackHandlung\('material-angesehen', \{/
     );
     expect(quelle).toContain('const angesehenGemeldet = useRef(false);');
   });

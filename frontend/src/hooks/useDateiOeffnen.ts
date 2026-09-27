@@ -68,10 +68,13 @@ export function useDateiOeffnen({ quelle, kontext, fehlerOrt }: DateiOeffnenOpti
     }
   });
 
-  const dateiOeffnen = async (filePath: string, fileName: string, mimeType?: string) => {
+  // Liefert true, sobald die Datei geladen ist (vom Server oder aus dem
+  // Cache) — die anonyme Messung „Material abgerufen" zaehlt erst dann.
+  const dateiOeffnen = async (filePath: string, fileName: string, mimeType?: string): Promise<boolean> => {
     // Zweiter Tipp auf dieselbe Datei, waehrend sie laedt: ignorieren statt
     // einen zweiten Download zu starten.
-    if (ladendeDatei) return;
+    if (ladendeDatei) return false;
+    let geladen = false;
     try {
       await haptik(ImpactStyle.Light);
 
@@ -89,6 +92,7 @@ export function useDateiOeffnen({ quelle, kontext, fehlerOrt }: DateiOeffnenOpti
           setLadendeDatei({ pfad: filePath, prozent });
         },
       });
+      geladen = true;
       // Der MIME-Typ kommt aus dem Dateinamen statt aus dem Antwort-Header —
       // beim Cache-Treffer gibt es keine Antwort. mimeType ist der vom
       // Aufrufer gemeldete Typ.
@@ -96,7 +100,7 @@ export function useDateiOeffnen({ quelle, kontext, fehlerOrt }: DateiOeffnenOpti
 
       // Nativ oeffnen versuchen (per D-12)
       const openedNatively = await openFileNatively(blob, fileName, mime);
-      if (openedNatively) return;
+      if (openedNatively) return true;
 
       // Web-Fallback: FileViewerModal mit Swipe-Kontext. Die übrigen Dateien
       // gehen als API-Pfad hinein; der Betrachter holt sie über denselben
@@ -118,8 +122,10 @@ export function useDateiOeffnen({ quelle, kontext, fehlerOrt }: DateiOeffnenOpti
         ? { files, initialIndex: clickedIndex }
         : { files: [{ url: blobUrl, fileName, mimeType: mime }], initialIndex: 0 };
       presentFileViewer({ cssClass: 'file-viewer-modal' });
+      return true;
     } catch (err) {
       setError('Fehler beim Öffnen der Datei', { ort: fehlerOrt, fehler: err });
+      return geladen;
     } finally {
       // finally statt einzelner Aufrufe: Der Zweig "nativ geoeffnet" steigt
       // per return aus, und ohne finally bliebe die Anzeige dort haengen.

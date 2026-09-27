@@ -34,7 +34,8 @@ const SIZE_THRESHOLD = 500 * 1024; // 500 KB
 /**
  * Größte Datei je Ziel, in Bytes — dieselben Werte wie auf dem Server
  * (backend/createApp.js: chatUpload 5 MB, CHALLENGE_UPLOAD_LIMIT 50 MB,
- * requestUpload 5 MB für das Nachweisfoto eines Antrags).
+ * requestUpload 5 MB für das Nachweisfoto eines Antrags, materialUpload
+ * 20 MB je Material-Datei).
  *
  * Der Chat prüfte bis zum 27.09.2026 auf 10 MB, der Server nimmt aber nur
  * 5 MB an: Eine Datei dazwischen ging durch die Prüfung und scheiterte dann
@@ -45,6 +46,7 @@ export const UPLOAD_GRENZE = {
   chat: 5 * 1024 * 1024,
   challenges: 50 * 1024 * 1024,
   nachweisfoto: 5 * 1024 * 1024,
+  material: 20 * 1024 * 1024,
 } as const;
 
 /**

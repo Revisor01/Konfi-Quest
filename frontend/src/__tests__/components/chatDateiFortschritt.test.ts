@@ -126,7 +126,9 @@ describe('Laden: eine angetippte Datei zeigt, dass sie laedt', () => {
       oeffnen.indexOf('const dateiOeffnen'),
       oeffnen.indexOf('const dateiOeffnen') + 300
     );
-    expect(klick).toContain('if (ladendeDatei) return;');
+    // Seit 27.09.2026 mit Rückgabewert (false = nichts geladen, siehe Messung
+    // „Material abgerufen")
+    expect(klick).toContain('if (ladendeDatei) return false;');
   });
 
   it('raeumt die Anzeige im finally weg', () => {

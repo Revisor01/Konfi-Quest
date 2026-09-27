@@ -19,7 +19,7 @@ import {
   ICON_WELT,
 } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   IonPage,
   IonContent,
@@ -35,20 +35,20 @@ import {
   IonItemGroup,
   IonInput,
   IonSelect,
-  IonSelectOption,
-  useIonModal
+  IonSelectOption
 } from '@ionic/react';
-import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useLocation } from 'react-router-dom';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
-import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
+import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { materialDetailLaden } from '../../../services/materialDetail';
 import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
+import LadeStandZeile from '../../shared/LadeStandZeile';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import FileViewerModal from '../../shared/FileViewerModal';
 import { haptik, triggerPullHaptic, ImpactStyle } from '../../../utils/haptics';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
@@ -173,40 +173,37 @@ const TeamerMaterialPage: React.FC = () => {
     [materials]
   );
 
-  // FileViewer Modal (In-App Dateivorschau mit Backdrop)
-  const viewerDataRef = useRef({ blobUrl: '', fileName: '', mimeType: '' });
-  const [presentFileViewer, dismissFileViewer] = useIonModal(FileViewerModal, {
-    get blobUrl() { return viewerDataRef.current.blobUrl; },
-    get fileName() { return viewerDataRef.current.fileName; },
-    get mimeType() { return viewerDataRef.current.mimeType; },
-    onClose: () => {
-      dismissFileViewer();
-      if (viewerDataRef.current.blobUrl) {
-        URL.revokeObjectURL(viewerDataRef.current.blobUrl);
-        viewerDataRef.current = { blobUrl: '', fileName: '', mimeType: '' };
-      }
-    }
+  // Dateien über den gemeinsamen Weg von Chat und Challenges (27.09.2026,
+  // Simon: „Fotos Anträge und Material ja bitte."): Medien-Cache (zweites
+  // Öffnen ohne Download, auch ohne Netz), Fortschritt in der Zeile, nativ
+  // mit Teilen und Sichern, sonst der Betrachter mit den übrigen Dateien des
+  // Materials zum Wischen (vorher: nur die eine Datei).
+  const { dateiOeffnen, ladendeDatei } = useDateiOeffnen({
+    quelle: 'material',
+    kontext: () => (selectedMaterial?.files || []).map((f) => ({ pfad: f.stored_name, name: f.original_name, typ: f.mime_type })),
+    fehlerOrt: 'material-teamer-liste',
   });
 
-  const openInAppViewer = (blob: Blob, fileName: string, mimeType: string) => {
-    const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
-    viewerDataRef.current = { blobUrl: url, fileName, mimeType };
-    presentFileViewer();
-  };
-
-  // Detail öffnen - API laden und inline anzeigen
+  // Detail öffnen und inline anzeigen. Erst der Server, den zuletzt
+  // geladenen Stand nur ohne Netz (materialDetailLaden, 27.09.2026) — so
+  // öffnet sich ein Material auch offline samt Dateien vom Gerät, und was die
+  // Leitung inzwischen gelöscht hat, geht vom Gerät. Vorher: ohne Netz nur
+  // "Fehler beim Laden des Materials".
   const openDetail = async (matId: number) => {
     try {
       setDetailLoading(true);
-      const res = await api.get(`/material/${matId}`);
-      setSelectedMaterial(res.data);
-      // Anonyme Messung NACH der erfolgreichen Antwort: das Material ist
-      // angesehen (Simon, 27.09.2026). Einmal je Oeffnen — das Aktualisieren
-      // im Detail laedt ueber einen eigenen Aufruf und meldet nicht. Nur die
-      // Art des Inhalts, kein Titel, keine Kennung.
-      trackHandlung('material-angesehen', {
-        inhalt: materialInhalt((res.data?.files?.length ?? 0) > 0, materialLinks(res.data ?? {}).length > 0)
-      });
+      const { daten, ausSpeicher } = await materialDetailLaden<MaterialDetail>(matId);
+      setSelectedMaterial(daten);
+      // Anonyme Messung NACH der erfolgreichen Antwort des Servers: das
+      // Material ist angesehen (Simon, 27.09.2026). Ein Stand nur vom Gerät
+      // (ohne Netz) zaehlt nicht. Einmal je Oeffnen — das Aktualisieren im
+      // Detail laedt ueber einen eigenen Aufruf und meldet nicht. Nur die Art
+      // des Inhalts, kein Titel, keine Kennung.
+      if (!ausSpeicher) {
+        trackHandlung('material-angesehen', {
+          inhalt: materialInhalt((daten?.files?.length ?? 0) > 0, materialLinks(daten ?? {}).length > 0)
+        });
+      }
     } catch {
       setError('Fehler beim Laden des Materials');
     } finally {
@@ -233,25 +230,13 @@ const TeamerMaterialPage: React.FC = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // Der Typ kommt vom Server (mime_type): Beim Treffer im Cache gibt es keine
+  // Antwort, deren Kopf ihn nennen könnte.
   const openFile = async (file: MaterialFile) => {
-    try {
-      await haptik(ImpactStyle.Medium);
-      const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
-      // Anonyme Messung NACH dem erfolgreichen Laden: eine Datei ist
-      // abgerufen. Kein Dateiname, kein Dateityp.
+    // Anonyme Messung NACH dem erfolgreichen Laden (auch aus dem Cache): eine
+    // Datei ist abgerufen. Kein Dateiname, kein Dateityp.
+    if (await dateiOeffnen(file.stored_name, file.original_name, file.mime_type)) {
       trackHandlung('material-abgerufen', { inhalt: 'datei' });
-      const blob = response.data;
-      const contentType = response.headers?.['content-type'];
-      const mime: string = typeof contentType === 'string' ? contentType : file.mime_type;
-
-      // Nativ oeffnen versuchen (per D-15)
-      const openedNatively = await openFileNatively(blob, file.original_name, mime);
-      if (openedNatively) return;
-
-      // Web-Fallback: In-App Viewer
-      openInAppViewer(blob, file.original_name, mime);
-    } catch (err) {
-      setError('Fehler beim Öffnen der Datei', { ort: 'material-teamer-liste', fehler: err });
     }
   };
 
@@ -288,8 +273,8 @@ const TeamerMaterialPage: React.FC = () => {
 
           <IonRefresher slot="fixed" onIonRefresh={async (e) => {
             try {
-              const res = await api.get(`/material/${selectedMaterial.id}`);
-              setSelectedMaterial(res.data);
+              const { daten } = await materialDetailLaden<MaterialDetail>(selectedMaterial.id);
+              setSelectedMaterial(daten);
             } catch { /* ignore */ }
             e.detail.complete();
           }} onIonPull={triggerPullHaptic}>
@@ -471,11 +456,12 @@ const TeamerMaterialPage: React.FC = () => {
                           </div>
                           <div className="app-list-item__content">
                             <div className="app-list-item__title">{file.original_name}</div>
-                            <div className="app-list-item__meta">
-                              <span className="app-list-item__meta-item">
-                                {formatFileSize(file.file_size)}
-                              </span>
-                            </div>
+                            <LadeStandZeile
+                              laedt={ladendeDatei?.pfad === file.stored_name}
+                              prozent={ladendeDatei?.prozent ?? null}
+                              sonst={formatFileSize(file.file_size)}
+                              farbe="var(--app-text-material)"
+                            />
                           </div>
                         </div>
                       </div>

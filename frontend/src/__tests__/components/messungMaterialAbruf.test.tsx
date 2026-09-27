@@ -21,6 +21,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
+// Dateien laufen seit dem gemeinsamen Medien-Weg (Paket M3) ueber den
+// Medien-Cache; das Dateisystem ist die Attrappe der Medien-Tests.
+vi.mock('@capacitor/filesystem', async () => (await import('../medienAttrappen')).dateisystemModul);
+
 const mockApiGet = vi.fn();
 vi.mock('../../services/api', () => ({
   default: {
@@ -49,13 +53,15 @@ vi.mock('../../contexts/AppContext', () => ({
   }),
 }));
 
-// Echter useOfflineQuery, Zwischenspeicher steuerbar.
+// Zwischenspeicher steuerbar: useOfflineQuery (Liste) und materialDetailLaden
+// (Detail: erst der Server, ohne Antwort der gemerkte Stand).
 let mockCache: { data: unknown } | null = null;
 vi.mock('../../services/offlineCache', () => ({
   CACHE_TTL: { PROFILE: 1000, STAMMDATEN: 1000 },
   offlineCache: {
     get: vi.fn(async () => mockCache),
     set: vi.fn(async () => undefined),
+    remove: vi.fn(async () => undefined),
     isStale: () => false,
   },
 }));
@@ -79,6 +85,20 @@ vi.mock('../../contexts/LiveUpdateContext', () => ({
   useLiveUpdate: () => ({ triggerRefresh: vi.fn() }),
 }));
 
+// Herunterziehen zum Aktualisieren als Knopf: Das Ereignis des echten
+// ion-refresher erreicht den Handler in jsdom nicht.
+vi.mock('@ionic/react', async (original) => {
+  const { createElement } = await import('react');
+  return {
+    ...(await original<typeof import('@ionic/react')>()),
+    IonRefresher: ({ onIonRefresh }: { onIonRefresh?: (e: unknown) => unknown }) =>
+      createElement('button', {
+        type: 'button',
+        onClick: () => onIonRefresh?.({ detail: { complete: () => undefined } }),
+      }, 'Aktualisieren'),
+  };
+});
+
 const mockOpenNatively = vi.fn();
 vi.mock('../../utils/nativeFileViewer', () => ({
   openFileNatively: (...args: unknown[]) => mockOpenNatively(...args),
@@ -89,6 +109,7 @@ vi.mock('../../utils/haptics', () => ({
   ImpactStyle: { Light: 'LIGHT', Medium: 'MEDIUM', Heavy: 'HEAVY' },
 }));
 
+import { dateien as geraeteDateien } from '../medienAttrappen';
 import TeamerMaterialDetailPage from '../../components/teamer/pages/TeamerMaterialDetailPage';
 import TeamerMaterialPage from '../../components/teamer/pages/TeamerMaterialPage';
 
@@ -132,6 +153,9 @@ let fensterOeffnen: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   cleanup();
+  // Der Medien-Cache der Attrappe lebt über die Tests hinweg — eine Datei aus
+  // dem vorigen Test läge sonst schon „auf dem Gerät".
+  geraeteDateien.clear();
   mockApiGet.mockReset();
   mockTrackHandlung.mockReset();
   mockSetError.mockReset();
@@ -176,8 +200,8 @@ describe('Material an einem Event (TeamerMaterialDetailPage)', () => {
     render(<TeamerMaterialDetailPage materialId={7} onClose={vi.fn()} />);
     await screen.findByText(DATEI.original_name);
 
-    // Wiederverbinden lädt die Ansicht frisch (useOfflineQuery, sync:reconnect).
-    await act(async () => { window.dispatchEvent(new Event('sync:reconnect')); });
+    // Herunterziehen lädt die Ansicht frisch vom Server.
+    await klicken('Aktualisieren');
     await waitFor(() =>
       expect(mockApiGet.mock.calls.filter(([u]) => u === '/material/7').length).toBe(2)
     );
@@ -207,9 +231,11 @@ describe('Material an einem Event (TeamerMaterialDetailPage)', () => {
   it('nur aus dem Zwischenspeicher (offline) wird nichts gemeldet', async () => {
     mockCache = { data: material() };
     mockOnline = false;
+    // Ohne Netz kommt keine Antwort (kein response) — dann der gemerkte Stand.
+    mockApiGet.mockRejectedValue(new Error('Network Error'));
     render(<TeamerMaterialDetailPage materialId={7} onClose={vi.fn()} />);
     await screen.findByText(DATEI.original_name);
-    expect(mockApiGet).not.toHaveBeenCalled();
+    expect(mockApiGet).toHaveBeenCalledWith('/material/7');
     expect(mockTrackHandlung).not.toHaveBeenCalled();
   });
 
@@ -230,7 +256,7 @@ describe('Material an einem Event (TeamerMaterialDetailPage)', () => {
 
     await act(async () => { datei.antworten({ data: new Blob(['%PDF']), headers: {} }); });
 
-    expect(abgerufen()).toEqual([['material-abgerufen', { inhalt: 'datei' }]]);
+    await waitFor(() => expect(abgerufen()).toEqual([['material-abgerufen', { inhalt: 'datei' }]]));
     expect(JSON.stringify(mockTrackHandlung.mock.calls)).not.toMatch(/Liedblatt|a1b2c3|pdf|Dorfkirche/);
   });
 

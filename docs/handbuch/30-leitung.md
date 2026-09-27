@@ -216,6 +216,16 @@ Ein Material trägt **Dateien und Links zugleich** — etwa ein PDF und dazu
 mehrere Videos. Beide Bereiche stehen im Formular offen, beide sind freiwillig.
 Dateien werden verschlüsselt abgelegt, Links öffnen sich im Browser.
 
+Fotos verkleinert die App beim Auswählen wie im Chat (lange Kante 1920
+Pixel). Wer ein Bild in voller Auflösung braucht, etwa zum Drucken, legt es
+als PDF ab. Eine Datei darf danach höchstens 20 MB groß sein; was darüber
+liegt, meldet die App gleich bei der Auswahl mit „Datei ist zu groß (max.
+20 MB)." und nimmt es nicht auf. Beim Speichern steht unter der Kopfzeile,
+wie weit das Hochladen ist — „Wird gesendet… 40 %", zuletzt „Wird
+verarbeitet…". Wie die Dateien danach auf den Geräten liegen und wieder
+verschwinden, steht unter
+[Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
+
 Wer es sieht, hängt allein an der Jahrgangs-Zuordnung:
 
 | Zuordnung | Wer sieht es |
