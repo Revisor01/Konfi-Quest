@@ -44,13 +44,17 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
   // Seit 25.09.2026 fuer ALLE Rollen plus die ungelesenen Postfach-
   // Mitteilungen (Simon: "lass es dagegen zaehlen"). Bewusst ohne Fallback
   // -- fehlt das Feld, soll der Test fallen, nicht 0 addieren.
+  //
+  // Seit 27.09.2026 auch fuer Leitung und Team plus Challenge-Neuigkeiten
+  // (Simon: "Die Challenges sollen sich verhalten wie der Chat").
   const clientSumme = (body, rolle) => {
     const postfach = body.postfach.ungelesen;
     if (rolle === 'admin') {
-      return body.chat.total + body.pendingRequests + body.pendingEvents + body.pendingChallenges + postfach;
+      return body.chat.total + body.pendingRequests + body.pendingEvents + body.pendingChallenges
+        + body.challengeUpdates.total + postfach;
     }
     if (rolle === 'teamer') {
-      return body.chat.total + body.pendingChallenges + body.newBadges + postfach;
+      return body.chat.total + body.pendingChallenges + body.newBadges + body.challengeUpdates.total + postfach;
     }
     // Konfi (seit 24.09.2026): plus Challenge-Neuigkeiten.
     return body.chat.total + body.newBadges + body.challengeUpdates.total + postfach;
@@ -293,6 +297,35 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
     });
     expect(server).toBe(clientSumme(res.body, 'admin'));
     expect(server).toBe(2);
+  });
+
+  it('Leitung und Team: neuer Beitrag ohne Freigabe zaehlt auf beiden Seiten (27.09.2026)', async () => {
+    const { rows: [c] } = await db.query(
+      `INSERT INTO challenges (organization_id, title, description, audience, moderated, badge_name,
+         created_by, starts_at, ends_at, is_draft)
+       VALUES ($1, 'Runde', 'd', 'konfis_und_team', false, 'A', $2,
+               NOW() - interval '1 day', NOW() + interval '7 days', false) RETURNING id`,
+      [ORGS.testGemeinde.id, USERS.orgAdmin1.id]
+    );
+    await db.query('INSERT INTO challenge_jahrgang_assignments (challenge_id, jahrgang_id) VALUES ($1, $2)',
+      [c.id, JAHRGAENGE.jahrgang1.id]);
+    await db.query(
+      `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, text_content, moderation_status)
+       VALUES ($1, $2, $3, 'text', 'Hallo', 'approved')`,
+      [c.id, USERS.konfi1.id, ORGS.testGemeinde.id]
+    );
+    await mitteilung(USERS.orgAdmin1.id, 'challenge_submission', { challengeId: String(c.id) });
+    await mitteilung(USERS.teamer1.id, 'challenge_submission', { challengeId: String(c.id) });
+
+    // 1 neuer Beitrag an der Challenge + 1 Mitteilung im Postfach.
+    const leitung = await vergleiche(USERS.orgAdmin1, 'admin', 'orgAdmin1');
+    expect(leitung.body.challengeUpdates.total).toBe(1);
+    expect(leitung.server).toBe(2);
+    expect(leitung.client).toBe(2);
+    const team = await vergleiche(USERS.teamer1, 'teamer', 'teamer1');
+    expect(team.body.challengeUpdates.total).toBe(1);
+    expect(team.server).toBe(2);
+    expect(team.client).toBe(2);
   });
 
   it('Teamer: mit Chat', async () => {

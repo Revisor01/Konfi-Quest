@@ -2,7 +2,7 @@ const express = require('express');
 const { gruppenFuerRolle, bereinigeStumm } = require('../utils/pushGruppen');
 const { body } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
-const { challengeNeuigkeitenJeChallenge } = require('../utils/challengeNeuigkeiten');
+const { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge } = require('../utils/challengeNeuigkeiten');
 const { appIconSummenJeOrganisation } = require('../utils/appIconBadge');
 const { ladeMitgliedschaftenDerPerson } = require('../utils/orgMitglieder');
 const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
@@ -243,9 +243,23 @@ module.exports = (db, verifyTokenRBAC) => {
       // Konfis; die Leitung hat am selben Reiter ihre Freigaben (oben).
       // Die Regel steht EINMAL in utils/challengeNeuigkeiten.js, dieselbe
       // Fassung speist die App-Icon-Summe fuer Pushes (Paritaet B2b).
+      //
+      // Seit 27.09.2026 auch fuer Leitung und Team (Simon: "Die Challenges
+      // sollen sich verhalten wie der Chat"): fremde, sichtbare Beitraege
+      // seit dem letzten Oeffnen -- wartende stehen weiter in
+      // pendingChallenges, ein Beitrag zaehlt nie doppelt. Alt-Apps
+      // (2.2.x) lesen challengeUpdates nur im Konfi-Zweig und ignorieren
+      // das Feld fuer Leitung und Team; die Antwortform bleibt.
+      // Admins mit Super-Admin-Merkmal zaehlen wie oben org-weit.
       const neuigkeitenPromise = (userType === 'konfi')
         ? challengeNeuigkeitenJeChallenge(db, [{ id: userId, type: userType, organization_id: organizationId }])
-        : Promise.resolve([]);
+        : challengeNeuigkeitenLeitungJeChallenge(db, [{
+            id: userId,
+            type: userType,
+            organization_id: organizationId,
+            role_name: (req.user.role_name === 'admin' && req.user.is_super_admin) ? 'org_admin' : req.user.role_name,
+            assigned_jahrgaenge: req.user.assigned_jahrgaenge || []
+          }]);
 
       // Postfach (25.09.2026): ungelesene Mitteilungen des KONTOS ueber alle
       // Organisationen -- dieselbe Zaehlung wie GET /postfach.ungelesen, damit

@@ -45,7 +45,7 @@ describe('Challenge-Neuigkeiten: drei Orte, eine Quelle', () => {
     // 25.09.2026, Simon: "Auf der Challenge muss auch ein Badge sein wie
     // bei den Chats" -- dieselbe Quelle wie der Reiter (pendingChallenges),
     // NICHT challenge.pending_count aus der Liste.
-    expect(leitungsSeite).toContain('pendingChallengesByChallenge } = useBadge()');
+    expect(leitungsSeite).toMatch(/const \{[^}]*pendingChallengesByChallenge[^}]*\} = useBadge\(\)/);
     expect(leitungsSeite).toContain('offeneFreigaben={pendingChallengesByChallenge}');
     expect(leitungsListe).toContain('offeneFreigaben[challenge.id]');
     expect(leitungsListe).not.toContain('challenge.pending_count');
@@ -54,12 +54,18 @@ describe('Challenge-Neuigkeiten: drei Orte, eine Quelle', () => {
   it('eine Kugel fuer Chat und Challenges statt zweier Abschriften', () => {
     expect(chatListe).toContain("import ZaehlerKugel from '../shared/ZaehlerKugel'");
     expect(challengeListe).toContain("import ZaehlerKugel from '../../shared/ZaehlerKugel'");
-    // Die Leitungs-Liste traegt KEINE Kugel: Freigaben stehen dort als
-    // oranges Eck-Badge mit Uhr (Simon, 25.09.2026: "fuer Freigaben ja,
-    // sonst nur der rote Badge") -- die Kugel bleibt Neuem vorbehalten.
-    expect(leitungsListe).not.toContain("from '../../shared/ZaehlerKugel'");
-    expect(leitungsListe).not.toContain('<ZaehlerKugel');
+    // Die Leitungs-Liste traegt seit 27.09.2026 ebenfalls die Kugel -- fuer
+    // Neues (Simon: "Die Challenges sollen sich verhalten wie der Chat").
+    // Freigaben bleiben das orange Eck-Badge mit Uhr (25.09.2026): zwei
+    // Zeichen, zwei Bedeutungen, ein Beitrag zaehlt nie in beiden.
+    expect(leitungsListe).toContain("import ZaehlerKugel from '../../shared/ZaehlerKugel'");
+    expect(leitungsListe).toContain('<ZaehlerKugel anzahl={neu} label="neue Beiträge" />');
+    expect(leitungsListe).toContain('neuigkeiten[challenge.id]');
     expect(leitungsListe).toContain('wartenAufFreigabe(pending)');
+    expect(leitungsSeite).toContain('neuigkeiten={challengeUpdatesByChallenge}');
+    // Oeffnen setzt die Zahl zurueck, beim Aufgehen und beim Schliessen.
+    expect(leitungsSeite).toMatch(/const openModeration[\s\S]*?void gesehen\(challenge\)/);
+    expect(leitungsSeite).toMatch(/onClose: \(\) => \{[\s\S]*?void gesehen\(moderationChallenge\)/);
     // Die alte Inline-Kugel der Chat-Liste ist weg -- sonst gaebe es wieder
     // zwei Fassungen, die auseinanderlaufen.
     expect(chatListe).not.toContain("'9+'");

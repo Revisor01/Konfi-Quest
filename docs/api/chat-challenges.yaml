@@ -1357,7 +1357,10 @@ paths:
         Galerie-Beitraege, Moderation eigener Beitraege). Zugriffsregeln wie
         GET /api/challenges/konfi/{id}: Wer die Challenge nicht oeffnen darf,
         kann sie auch nicht als gelesen markieren. Team-Rollen duerfen rufen
-        (dieselbe Detailansicht), fuer sie wird aber nichts gezaehlt.
+        (dieselbe Detailansicht). GEAENDERT 2026-09-27: auch fuer sie zaehlt
+        challengeUpdates ab dann neu; die Leitungsansicht ruft es beim Oeffnen
+        und Schliessen einer gestarteten Challenge. Migration 168 setzt fuer
+        die bestehende Leitung einmalig den Stand auf den Update-Zeitpunkt.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Challenge" }
       responses:
@@ -1794,8 +1797,14 @@ paths:
         Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes
         Feld aendert Form oder Typ, aeltere Apps ignorieren es): die
         Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das
-        Gegenstueck zu chat.byRoom/chat.total. Fuer Team und Leitung ist es
-        0/leer; ihr Challenge-Reiter zaehlt pendingChallenges.
+        Gegenstueck zu chat.byRoom/chat.total. GEAENDERT 2026-09-27 (Simon:
+        "Die Challenges sollen sich verhalten wie der Chat"): auch fuer Team
+        und Leitung gefuellt -- fremde, freigegebene Beitraege seit dem
+        letzten Oeffnen in laufenden Challenges, die die Person sieht
+        (utils/challengeNeuigkeiten.js, challengeNeuigkeitenLeitungJeChallenge).
+        Wartende Beitraege zaehlen weiter nur in pendingChallenges, ein Beitrag
+        nie in beiden. Store-Apps 2.2.x lesen das Feld fuer Team und Leitung
+        nicht; ihr Reiter zeigt weiter nur pendingChallenges.
         Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe
         Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen),
         aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der
@@ -1839,7 +1848,9 @@ paths:
                   challengeUpdates:
                     type: object
                     description: >
-                      NEU 24.09.2026, nur fuer Konfis gefuellt. Je laufender
+                      NEU 24.09.2026 fuer Konfis, seit 27.09.2026 auch fuer
+                      Team und Leitung (fremde freigegebene Beitraege seit dem
+                      letzten Oeffnen, wartende nicht). Fuer Konfis: je laufender
                       Challenge des eigenen Jahrgangs, was seit dem letzten
                       Oeffnen (POST /api/challenges/konfi/{id}/mark-read)
                       dazukam: die Challenge selbst, wenn nie geoeffnet;

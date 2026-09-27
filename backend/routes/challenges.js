@@ -685,9 +685,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // participantMayAccess (403). Wer eine Challenge nicht oeffnen darf, kann
   // sie auch nicht als gelesen markieren.
   //
-  // Team-Rollen duerfen den Aufruf ebenfalls machen (harmlos, gleiche
-  // Detailansicht), gezaehlt wird fuer sie aber nichts -- ihr Reiter zaehlt
-  // Freigaben.
+  // Team-Rollen rufen es ebenso (seit 27.09.2026 zaehlt auch fuer sie, was
+  // seit dem letzten Oeffnen neu ist -- challengeNeuigkeitenLeitungJeChallenge);
+  // die Leitungsansicht meldet das Oeffnen beim Aufgehen und Schliessen.
   router.post('/konfi/:id/mark-read',
     rbacVerifier,
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),

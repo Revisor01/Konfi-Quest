@@ -186,11 +186,13 @@ describe('BadgeContext: Challenge-Neuigkeiten', () => {
     expect(captured.current!.totalBadgeCount).toBe(3);
   });
 
-  it('Teamer: Neuigkeiten zaehlen weder am Reiter noch im App-Icon -- ihr Reiter zaehlt Freigaben', async () => {
+  it('Teamer: Neuigkeiten zaehlen am Reiter und im App-Icon, getrennt von den Freigaben (27.09.2026)', async () => {
+    // Bis 27.09.2026 zaehlte fuer Team und Leitung nur die Freigabe. Simon:
+    // "Die Challenges sollen sich verhalten wie der Chat. Neue Nachricht: ein
+    // Abzeichen, ein Badge." Der Server liefert fuer sie seitdem fremde
+    // Beitraege seit dem letzten Oeffnen in challengeUpdates -- wartende
+    // stehen weiter getrennt in pendingChallenges.
     mockUser = TEAMER;
-    // Der Server schickt Team-Rollen hier 0/leer. Selbst wenn er es nicht
-    // taete, darf der Client den Anteil nicht uebernehmen -- die Aufteilung
-    // je Rolle muss auf beiden Seiten dieselbe sein.
     mockApiGet.mockResolvedValue({
       data: {
         chat: { total: 1, byRoom: { 3: 1 } },
@@ -207,15 +209,19 @@ describe('BadgeContext: Challenge-Neuigkeiten', () => {
     await waitFor(() => {
       expect(captured.current?.pendingChallengesCount).toBe(2);
     });
-    expect(captured.current!.challengeUpdatesByChallenge).toEqual({});
-    expect(captured.current!.challengeUpdatesTotal).toBe(0);
-    // 1 Chat + 2 Freigaben + 1 Abzeichen -- wie appIconBadge.js fuer teamer.
-    expect(captured.current!.totalBadgeCount).toBe(4);
+    expect(captured.current!.challengeUpdatesByChallenge).toEqual({ 7: 5 });
+    expect(captured.current!.challengeUpdatesTotal).toBe(5);
+    // 1 Chat + 2 Freigaben + 1 Abzeichen + 5 Neue -- wie appIconBadge.js fuer teamer.
+    expect(captured.current!.totalBadgeCount).toBe(9);
 
     await act(async () => {
       await captured.current!.markChallengeAsRead(7);
     });
-    // Kein Request fuer eine Zahl, die es fuer diese Rolle nicht gibt.
-    expect(mockApiPost).not.toHaveBeenCalled();
+    // Oeffnen meldet die Challenge als gesehen, wie im Chat.
+    expect(mockApiPost).toHaveBeenCalledWith('/challenges/konfi/7/mark-read');
+    expect(captured.current!.challengeUpdatesByChallenge).toEqual({});
+    expect(captured.current!.challengeUpdatesTotal).toBe(0);
+    // Die Freigaben bleiben stehen -- Oeffnen ist keine Freigabe.
+    expect(captured.current!.pendingChallengesCount).toBe(2);
   });
 });

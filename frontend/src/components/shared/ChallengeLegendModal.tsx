@@ -24,7 +24,9 @@ export interface ChallengeLegendModalProps {
 
 interface LegendEntry {
   color: string;
-  icon: string;
+  icon?: string;
+  /** Statt eines Symbols eine Zahl im Kreis (rote Kugel fuer Neues). */
+  zahl?: string;
   label: string;
   description: string;
 }
@@ -69,6 +71,15 @@ const COUNTER_ENTRY: LegendEntry = {
   icon: ICON_UHRZEIT,
   label: 'Zahl mit Uhr',
   description: 'So viele Beiträge warten noch auf Freigabe.',
+};
+
+// Rote Kugel am Symbol (27.09.2026, Simon: "Die Challenges sollen sich
+// verhalten wie der Chat") -- neue Beitraege seit dem letzten Oeffnen.
+const NEU_ENTRY: LegendEntry = {
+  color: 'var(--app-color-danger)',
+  zahl: '1',
+  label: 'Rote Zahl am Symbol',
+  description: 'So viele neue Beiträge sind seit deinem letzten Öffnen dazugekommen — wie ungelesene Nachrichten im Chat. Beim Öffnen der Challenge verschwindet die Zahl.',
 };
 
 // Moderations-Badges aus ChallengeLeitungModal (STATUS_BADGE + CONSENT_BADGE).
@@ -136,7 +147,9 @@ const renderRow = (entry: LegendEntry, i: number) => (
         background: entry.color, display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}
     >
-      <IonIcon icon={entry.icon} style={{ color: 'white', fontSize: 'var(--app-text-untertitel)' }} />
+      {entry.zahl
+        ? <span style={{ color: 'white', fontSize: 'var(--app-text-untertitel)', fontWeight: 'var(--app-schrift-fett)' }}>{entry.zahl}</span>
+        : <IonIcon icon={entry.icon} style={{ color: 'white', fontSize: 'var(--app-text-untertitel)' }} />}
     </div>
     <div>
       <div style={{ fontSize: 'var(--app-text-standard)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-text-emphasis)', marginBottom: 'var(--app-abstand-winzig)' }}>
@@ -184,6 +197,7 @@ const ChallengeLegendModal: React.FC<ChallengeLegendModalProps> = ({ onClose }) 
           <div style={{ maxWidth: '520px', width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-schmal)' }}>
             {STATUS_ENTRIES.map(renderRow)}
             {renderRow(COUNTER_ENTRY, STATUS_ENTRIES.length)}
+            {renderRow(NEU_ENTRY, STATUS_ENTRIES.length + 1)}
           </div>
 
           <h2 style={{ fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-extrafett)', margin: 'var(--app-abstand-sehrweit) 0 var(--app-abstand-kompakt)', textAlign: 'center', color: 'var(--app-text-emphasis)' }}>

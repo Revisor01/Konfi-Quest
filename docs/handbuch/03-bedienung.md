@@ -27,8 +27,8 @@ Eine kleine Zahl am Reiter zeigt, dass dort etwas Neues wartet: im Chat
 ungelesene Nachrichten, bei den Abzeichen neu verliehene, bei den Challenges
 für Konfis Neuigkeiten in ihren laufenden Challenges (siehe
 [Neuigkeiten an Challenges erkennen](10-konfis.md#neuigkeiten-an-challenges-erkennen)),
-für Team und Leitung Beiträge, die auf Freigabe warten (siehe
-[Offene Freigaben erkennen](80-challenges.md#offene-freigaben-erkennen)). Die
+für Team und Leitung neue Beiträge und solche, die auf Freigabe warten (siehe
+[Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen)). Die
 Summe aller Reiter steht als Zahl am App-Symbol.
 
 ### Mitteilungen im Postfach nachlesen

@@ -18,7 +18,7 @@
 // BadgeContext.totalBadgeCount uebereinstimmen -- dieselbe Aufteilung je
 // Rolle, dieselben Bestandteile. Aendert sich eine Seite, gehoert die andere
 // nachgezogen; ein Test haelt die Zusammensetzung fest.
-const { challengeNeuigkeitenJeChallenge } = require('./challengeNeuigkeiten');
+const { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge } = require('./challengeNeuigkeiten');
 const { leitungSiehtChallengeSql } = require('./challengeLeitungSicht');
 
 /**
@@ -386,11 +386,11 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   const mitAbzeichen = empfaenger.filter((p) => p.type === 'konfi' || p.type === 'teamer');
   const leitungsOrgs = [...new Set(leitungOrgWeit.map((p) => p.organization_id))];
 
-  // Challenge-Neuigkeiten gibt es nur fuer Konfis (24.09.2026): Die Leitung
-  // hat am selben Reiter ihre Freigaben, beides in einer Zahl waere unlesbar.
+  // Challenge-Neuigkeiten: Konfis mit ihrer Regel (24.09.2026), Leitung und
+  // Team seit 27.09.2026 mit der schlankeren aus challengeNeuigkeiten.js.
   const konfis = empfaenger.filter((p) => p.type === 'konfi');
 
-  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, postfach] = await Promise.all([
+  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, postfach, leitungsNeuigkeiten] = await Promise.all([
     chatZaehler(db, empfaenger),
     antragZaehlerProOrg(db, leitungsOrgs),
     terminZaehlerProOrg(db, leitungsOrgs),
@@ -405,7 +405,10 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
     // kommen je Challenge, hier werden sie je Person aufsummiert.
     challengeNeuigkeitenJeChallenge(db, konfis),
     // Postfach fuer ALLE Rollen, alle ungelesenen.
-    postfachZaehler(db, empfaenger)
+    postfachZaehler(db, empfaenger),
+    // Challenge-Neuigkeiten fuer Leitung und Team (27.09.2026) -- dieselbe
+    // SQL-Fassung wie badge-counts.challengeUpdates fuer diese Rollen.
+    challengeNeuigkeitenLeitungJeChallenge(db, [...leitung, ...teamer])
   ]);
 
   const addiere = (userId, userType, orgId, wert) => {
@@ -422,6 +425,7 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   for (const r of neuigkeiten) {
     addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c);
   }
+  for (const r of leitungsNeuigkeiten) addiere(r.user_id, r.user_type, r.organization_id, r.c);
 
   // Die org-weiten Zahlen auf jede ORG-WEITE Leitung dieser Organisation
   // verteilen (gebundene Admins haben ihre Zahlen oben schon bekommen).

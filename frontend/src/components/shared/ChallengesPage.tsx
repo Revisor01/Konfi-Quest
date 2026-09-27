@@ -77,7 +77,10 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
   // pendingChallengesByChallenge: offene Freigaben je Challenge fuer das
   // orange Eck-Badge am Listeneintrag (25.09.2026) -- dieselbe Quelle wie
   // der Reiter, statt pending_count aus der nur bei Aktion neu geladenen Liste.
-  const { refreshAllCounts, pendingChallengesByChallenge } = useBadge();
+  // challengeUpdatesByChallenge: neue Beitraege seit dem letzten Oeffnen
+  // (27.09.2026, "wie der Chat") -- rote Kugel am Symbol; markChallengeAsRead
+  // setzt sie beim Oeffnen und Schliessen der Challenge zurueck.
+  const { refreshAllCounts, pendingChallengesByChallenge, challengeUpdatesByChallenge, markChallengeAsRead } = useBadge();
   const { pageRef, presentingElement } = useModalPage(modalPageId);
 
   // Admin/Teamer ohne Jahrgangs-Zuweisung bekommt vom Server eine leere
@@ -181,7 +184,12 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
     onEdit: (challenge: AdminChallenge) => openEdit(challenge),
     // Für die Card-Optik des Einreichen-Modals (schiebt die Seite nach hinten).
     get presentingElement() { return pageRef.current || presentingElement; },
-    onClose: () => { dismissModerationModal(); },
+    onClose: () => {
+      dismissModerationModal();
+      // Was waehrend des Ansehens hereinkam, hat man gesehen -- wie im Chat
+      // beim Verlassen des Raums.
+      if (moderationChallenge) void gesehen(moderationChallenge);
+    },
     onChanged: () => {
       refreshChallenges();
       // Tab-Badge (offene Freigaben) direkt nachziehen.
@@ -238,9 +246,19 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
     });
   };
 
+  // Eine gestartete Challenge als gesehen melden und die Zaehler nachziehen.
+  // Entwuerfe und geplante haben keine Beitraege; dort gibt es nichts zu melden.
+  const gesehen = async (challenge: AdminChallenge) => {
+    const status = getChallengeStatus(challenge);
+    if (status !== 'active' && status !== 'ended') return;
+    await markChallengeAsRead(challenge.id);
+    refreshAllCounts();
+  };
+
   const openModeration = (challenge: AdminChallenge) => {
     setModerationChallenge(challenge);
     presentModerationModal({ presentingElement: presentingElement });
+    void gesehen(challenge);
   };
 
   const { handleDelete } = useChallengeDelete({ onDeleted: refreshChallenges });
@@ -275,6 +293,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
             marks={marks}
             offeneStempel={offeneStempel}
             offeneFreigaben={pendingChallengesByChallenge}
+            neuigkeiten={challengeUpdatesByChallenge}
             onSelectChallenge={openModeration}
             onEditChallenge={openEdit}
             onDeleteChallenge={handleDelete}

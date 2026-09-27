@@ -31,6 +31,7 @@ import {
 } from '../../shared/icons';
 import { SectionHeader, ListSection, ChallengeLegendModal, EmptyState } from '../../shared';
 import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
+import ZaehlerKugel from '../../shared/ZaehlerKugel';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { anzahlBeitraege, wartenAufFreigabe } from '../../../utils/challengeTexte';
@@ -81,6 +82,13 @@ interface ChallengesManageViewProps {
    * Aufschluesselung nicht liefern.
    */
   offeneFreigaben?: Record<number, number>;
+  /**
+   * Neue Beitraege je Challenge seit dem letzten Oeffnen
+   * (BadgeContext.challengeUpdatesByChallenge, 27.09.2026): rote Kugel am
+   * Symbol wie im Chat. Wartende Freigaben stehen getrennt im orangen Feld
+   * mit Uhr -- ein Beitrag zaehlt nie in beiden.
+   */
+  neuigkeiten?: Record<number, number>;
 }
 
 // Status wird NICHT gespeichert, sondern aus is_draft/starts_at/ends_at abgeleitet
@@ -194,7 +202,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   marks: marksRaw = [],
   offeneStempel: offeneStempelRaw = [],
   ohneJahrgang = false,
-  offeneFreigaben = {}
+  offeneFreigaben = {},
+  neuigkeiten = {}
 }) => {
   // Fehlt die Jahrgangs-Zuweisung, ist JEDER Reiter aus demselben Grund
   // leer — deshalb bekommen alle drei denselben erklaerenden Text.
@@ -245,6 +254,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           // die Liste laedt nur nach eigener Aktion neu, die Zaehler bei
           // jedem Socket-Ereignis und Reiterwechsel.
           const pending = offeneFreigaben[challenge.id] ?? 0;
+          const neu = neuigkeiten[challenge.id] ?? 0;
 
           return (
             <IonItemSliding
@@ -342,11 +352,17 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
-                      <div
-                        className="app-icon-circle app-icon-circle--lg"
-                        style={{ backgroundColor: statusColor }}
-                      >
-                        <IonIcon icon={STATUS_ICON[status]} />
+                      {/* Neue Beitraege seit dem letzten Oeffnen: rote Kugel am
+                          Symbol wie in der Chat-Liste und bei den Konfis
+                          (Simon, 27.09.2026: "wie der Chat"). */}
+                      <div className="app-zaehler-anker">
+                        <div
+                          className="app-icon-circle app-icon-circle--lg"
+                          style={{ backgroundColor: statusColor }}
+                        >
+                          <IonIcon icon={STATUS_ICON[status]} />
+                        </div>
+                        <ZaehlerKugel anzahl={neu} label="neue Beiträge" />
                       </div>
 
                       <div className="app-list-item__content">

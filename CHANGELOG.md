@@ -122,6 +122,12 @@ Versionsüberschrift.
   wird wahlweise nach Zeit pro Aufruf oder nach Häufigkeit.
 - Fehler stehen jetzt zusammengefasst statt als Rohliste: was, wie oft, seit
   wann und wann zuletzt. Die Einzelfälle stehen weiterhin darunter.
+- Leitung und Team sehen neue Challenge-Beiträge wie ungelesene Nachrichten im
+  Chat: eine rote Zahl am Reiter und am Symbol der Challenge, bis sie die
+  Challenge öffnen — auch bei Challenges ohne Freigabe, bei denen ein Beitrag
+  sofort in der Galerie steht. Wartende Freigaben stehen weiter im orangen
+  Feld mit Uhr; ein Beitrag zählt nie doppelt. Gemeinde-Umschalter und
+  App-Symbol zählen die neuen Beiträge mit.
 
 ### Geändert
 - Im Dunkelmodus setzen sich Karten und Listen deutlicher vom Hintergrund ab:
