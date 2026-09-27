@@ -52,9 +52,10 @@ Mandantentrennung hält in 150 gezielten Fremdzugriffen. Die Testsuiten sind gr�
 in 11 von 15 Gegenproben echte Fehler. Das ist die gute Nachricht; sie ändert nichts an den
 vier Punkten oben.
 
-**Stand der Behebung (26.09., Abend):** Sechs der sieben Blocker sind im Branch
-`claude/fervent-edison-wp5yfj` behoben und mit Tests belegt; offen ist allein Blocker 3
-(Widerruf der Apple-Schlüssel, nur Simon im Developer-Portal). Von den Auflagen 8–24 sind alle
+**Stand der Behebung (26.09., Abend):** Sechs der sieben Blocker sind im Release-Branch
+behoben und mit Tests belegt; offen ist allein Blocker 3
+(Widerruf der Apple-Schlüssel, nur Simon im Developer-Portal). **Nachtrag 27.09.:** Simon hat
+beide Schlüssel widerrufen — alle sieben Blocker sind erledigt. Von den Auflagen 8–24 sind alle
 umgesetzt bis auf die Screenshots nach dem Deploy (Punkt 22). Die vollen Suiten sind auf dem
 zusammengeführten Stand grün. Einzelheiten im Abschnitt „Behebungsstand".
 
@@ -200,6 +201,7 @@ für den gesamten Projektcode leer.
    antwortet ohne `display_name`/`username`/`user_id` (einheitlich, ohne Existenzbestätigung).
 3. **Sicherheit BF-02 (HOCH, Betriebsfrage):** Widerruf der Apple-Key-IDs `7AQA623H3T` und
    `A29U7SN796` bestätigen oder jetzt durchführen. Ohne Nachweis blockierend.
+   **Erledigt 27.09.2026:** Simon hat beide Schlüssel widerrufen.
 4. **Leitung BF-01 (HOCH):** `GET /users` und `PUT /users/:id` auf beide Zugehörigkeitsquellen
    (`users.organization_id` und `user_organizations`) erweitern — oder den Einladungsknopf für
    2.3.0 zurückhalten.
@@ -479,7 +481,7 @@ Der Feature-Bericht ist nicht umgeschrieben; seine Top-10-Liste liest sich mit d
 
 ## Behebungsstand (fortlaufend)
 
-Stand 27.09.2026, 06:45 UTC (122 Commits über `main`). Jeder Eintrag steht als Commit auf `claude/fervent-edison-wp5yfj`,
+Stand 27.09.2026, 06:45 UTC (122 Commits über `main`). Jeder Eintrag steht als Commit auf dem Release-Branch,
 jeder Befund trägt im Bereichsbericht eine Status-Zeile mit Datum. Regeln für jeden Fix: Test
 für den verbotenen und den erlaubten Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG,
 Handbuch, API-Doku, Antwortformen unverändert, Migrationen additiv.

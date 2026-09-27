@@ -1,7 +1,7 @@
 # Behebungsbericht zum Release-Audit 2.3.0
 
 Stand 27.09.2026, 11:30 UTC. Was seit der Gesamtabnahme vom 26.09. behoben wurde, was offen
-bleibt und was bei Simon liegt. Jeder Punkt steht als Commit auf `claude/fervent-edison-wp5yfj`;
+bleibt und was bei Simon liegt. Jeder Punkt steht als Commit auf dem Release-Branch;
 die Berichte je Bereich tragen an jedem Befund eine Status-Zeile mit Datum. Die Regeln für jede
 Behebung standen im gemeinsamen Auftrag der Pakete: Test für den verbotenen und den erlaubten
 Fall, Gegenprobe (Fix raus → Test rot), CHANGELOG, Handbuch und API-Doku im selben Commit,

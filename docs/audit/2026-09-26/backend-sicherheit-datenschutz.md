@@ -81,6 +81,7 @@ bestätigen, sonst ebenfalls blockierend.
 
 ### BF-02: Apple-Signaturschlüssel und Server-Zugang in der öffentlichen Git-Historie
 - **Schwere:** HOCH (KRITISCH, falls die Schlüssel nicht widerrufen sind)
+- **Status:** behoben 27.09.2026 — Simon hat beide Key-IDs (`7AQA623H3T`, `A29U7SN796`) im Apple-Developer-Portal widerrufen (Bestätigung 27.09.2026). Die Blobs bleiben in der Historie, sind ohne gültigen Schlüssel aber wertlos; Blocker 3 der Gesamtabnahme ist damit erledigt.
 - **Fundstelle:** Commit `02c8b37f` (23.03.2026) fügt `docs/AuthKey_7AQA623H3T.p8` und `docs/AuthKey_A29U7SN796.p8` hinzu (je 257 Byte, Blobs `9e82395a…`, `600830143…`); Commit `cb4d4372` (24.03.2026) entfernt sie nur aus dem Arbeitsbaum. Derselbe Commit `02c8b37f` fügt `backend/.claude/settings.local.json` mit `ssh root@server.<anbieter> …` und Container-/DB-Namen hinzu.
 - **Kennzeichnung:** reproduziert — `git log --all --diff-filter=A -- 'docs/AuthKey_*.p8'`, `git log --all -S'BEGIN PRIVATE KEY'` (2 Treffer, beide diese Dateien), `curl https://api.github.com/repos/Revisor01/Konfi-Quest` → `"private": false, "visibility": "public"`.
 - **Beschreibung:** Ein `.p8`-Schlüssel (APNs-Auth-Key oder App-Store-Connect-API-Key) ist ein Signaturschlüssel des Apple-Entwicklerkontos; einmal öffentlich, gilt er als kompromittiert, bis er im Apple-Portal widerrufen wird. Das Entfernen aus dem Tracking ändert an der Historie nichts. Die historische `portainer-stack.yml` enthielt nur `${…}`-Platzhalter (0 Klartextwerte), das ist in Ordnung.

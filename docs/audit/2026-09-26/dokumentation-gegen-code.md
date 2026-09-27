@@ -3,7 +3,7 @@
 ## Umfang und Methode
 
 Geprüft wurden alle Textquellen des Repos gegen den heutigen Code (HEAD `fce1ab01`,
-Branch `claude/fervent-edison-wp5yfj`):
+Release-Branch zu 2.3.0):
 
 - `docs/handbuch/*.md` (14 Kapitel, 284 kB) — jedes Kapitel vollständig gelesen; jede
   Aussage mit Zahl, Frist, Grenze oder Rollenrecht im Backend (`backend/routes/**`,
@@ -478,7 +478,7 @@ abreißt.
 
 ### BF-16: Handbuch dokumentiert die Super-Admin-Rolle und drei ihrer Funktionen nicht
 - **Schwere:** NIEDRIG
-- **Status:** offen 26.09.2026 — kein reiner Textfehler: Ein Kapitel „Für den Betrieb" (Super-Admin, Gemeinde anlegen, Testphase, Betriebs-Überblick) braucht Produktentscheidungen (was davon Gemeinden lesen sollen); als Frage in der Abschlussmeldung des Doku-Pakets.
+- **Status:** entfällt 27.09.2026 — Entscheidung Simon: „Ein Betriebs-Kapitel wird es nicht geben. Ich bin der Betreiber!" Das Handbuch richtet sich an Gemeinden; Super-Admin, Gemeinden anlegen und Betriebs-Überblick bleiben undokumentiert, weil nur der Betreiber sie nutzt. Offen bleibt als Randnotiz: Den Hinweis der 30-Tage-Testphase sehen auch Gemeinden. Vorher: offen 26.09.2026 — kein reiner Textfehler: Ein Kapitel „Für den Betrieb" (Super-Admin, Gemeinde anlegen, Testphase, Betriebs-Überblick) braucht Produktentscheidungen (was davon Gemeinden lesen sollen); als Frage in der Abschlussmeldung des Doku-Pakets.
 - **Fundstelle:** `docs/handbuch/05-rollen.md:7-8` („Jede Person … hat genau eine
   Rolle: Konfi, Teamer:in, Admin oder Org-Admin"), `00-start.md:15` („Es gibt vier
   Rollen"); `backend/middleware/rbac.js:55-60` (fünf Rollen);
