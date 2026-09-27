@@ -91,6 +91,13 @@ der Deploy ändert, damit es einen Vergleich gibt:
       Gesamtabnahme verschiebt deshalb um zwei Stunden. Richtig gelesen:
       145 Vortags-Erinnerungen um 00:00 Berlin, 69 um 02:00, jede andere
       Stunde höchstens 13.
+      Nachgemessen 27.09.2026: Die **Datenbanksitzungen der Backends laufen in
+      UTC.** `postgresql.conf` hat `timezone = 'UTC'` aus dem initdb. Eine
+      Abfrage aus `backend` über dessen eigenen Pool ergibt `TimeZone` UTC,
+      das Backend hat weder `PGTZ` noch `TZ`. Nur `psql` im Postgres-Container
+      zeigt Europe/Berlin (Quelle `client`), weil dort `PGTZ` gesetzt ist;
+      `env -u PGTZ psql … -c 'SHOW timezone'` ergibt UTC. Wer im Container mit
+      psql misst, sieht also nicht, was die App sieht.
 - [x] Nr. 6: letzte fünf Einträge in `schema_migrations`, Anzahl `Migration FAILED` im Log.
       **Ergebnis 27.09.2026:** 89 Einträge, jüngster
       `159_gemeinde_einladungen.sql` (davor 158, 157, 156, 155).
