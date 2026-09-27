@@ -186,6 +186,19 @@ mit „Erneut senden" und „Nachricht löschen".
 > **Achtung:** Der Haken bedeutet **nicht** „gelesen". Lesebestätigungen gibt es
 > im Konfi-Quest-Chat nicht, und es gibt keine „schreibt gerade…"-Anzeige.
 
+### Die Aktionen einer Nachricht öffnen
+
+Reagieren, antworten, teilen und — wer darf — löschen: Das steht in einer
+kleinen Leiste unter der Nachricht.
+
+- **Auf dem Handy** die Nachricht lange gedrückt halten.
+- **Am Rechner** mit der Maus über die Nachricht fahren. Daneben erscheint ein
+  Knopf mit drei Punkten; ein Klick öffnet die Leiste, ein zweiter schließt sie.
+- **Mit der Tastatur** per Tab zum Knopf „Aktionen zu dieser Nachricht", Enter
+  öffnet die Leiste und springt auf die erste Aktion. Unter „Reaktion
+  hinzufügen" springt Enter auf die erste Reaktion. Escape schließt beides und
+  führt zurück zum Knopf.
+
 ### Auf eine Nachricht antworten
 
 Wer auf eine Nachricht antwortet, bekommt sie als kurzes Zitat mit Namen über
@@ -230,7 +243,9 @@ Es gibt genau sechs Reaktionen, keine freie Auswahl:
 Es gibt bewusst kein „Daumen runter" und kein „wütend": In einem Konfi-Chat soll
 niemand mit einem Tipp abgewatscht werden können.
 
-Ein Tipp setzt die Reaktion, ein zweiter auf dieselbe nimmt sie zurück. Mehrere
+Die Reaktionen stehen hinter „Reaktion hinzufügen" in der
+[Leiste der Nachricht](#die-aktionen-einer-nachricht-oeffnen). Ein Tipp setzt
+die Reaktion, ein zweiter auf dieselbe nimmt sie zurück. Mehrere
 verschiedene Reaktionen auf dieselbe Nachricht sind möglich. Unter der Nachricht
 steht, wie oft jede gewählt wurde; die eigenen sind hervorgehoben. Alle im Raum
 dürfen reagieren, auch Konfis — aber nur, wer wirklich Mitglied ist.

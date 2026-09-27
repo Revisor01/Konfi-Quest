@@ -9,6 +9,7 @@ import {
   ICON_HAKEN_GEFUELLT,
   ICON_HINZUFUEGEN,
   ICON_LOESCHEN,
+  ICON_MEHR,
   ICON_RUECKGAENGIG,
   ICON_TEILEN,
   ICON_UHRZEIT,
@@ -166,6 +167,56 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   // ersten sofort wieder auf, weil onLongPress ein Toggle ist.
   const longPressFiredRef = React.useRef(false);
 
+  // AKTIONEN OHNE LANGEN DRUCK (27.09.2026). Die Auswahl einer Nachricht --
+  // und damit Reaktion, Antworten, Teilen, Löschen -- öffnete nur über den
+  // langen Druck bzw. das Kontextmenü. Am Rechner war das ein unsichtbarer
+  // Rechtsklick, ein langer Mausdruck tat nichts, per Tastatur gab es keinen
+  // Weg (Nebenbefund Paket M; Simon: "Der Long press im Chat im Browser, das
+  // sollten wir noch beheben"). Der Knopf neben der Blase ruft dasselbe
+  // onLongPress -- Umschaltung und Haptik bleiben an einer Stelle (ChatRoom).
+  // Sichtbarkeit regelt barrierefreiheit.css: am Rechner beim Überfahren,
+  // per Tastatur immer, auf Touch-Geräten ohne Trefffläche.
+  const ausgewaehlt = selectedMessage?.id === message.id;
+  const leisteOffen = ausgewaehlt && !showReactionPicker;
+  const pickerOffen = showReactionPicker && reactionTargetMessage?.id === message.id;
+  const aktionenKnopfRef = React.useRef<HTMLButtonElement>(null);
+  const ersteAktionRef = React.useRef<HTMLDivElement>(null);
+  const ersteReaktionRef = React.useRef<HTMLDivElement>(null);
+  // Über den Knopf geöffnet -> Fokus auf die erste Aktion der Leiste.
+  const fokusInLeisteRef = React.useRef(false);
+  // Picker per Tastatur geöffnet -> Fokus auf die erste Reaktion, danach
+  // zurück auf den Knopf (sonst fiele er an den Seitenanfang).
+  const pickerPerTastaturRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (leisteOffen && fokusInLeisteRef.current) {
+      fokusInLeisteRef.current = false;
+      ersteAktionRef.current?.focus();
+    }
+  }, [leisteOffen]);
+
+  React.useEffect(() => {
+    if (!pickerPerTastaturRef.current) return;
+    if (pickerOffen) {
+      ersteReaktionRef.current?.focus();
+    } else {
+      pickerPerTastaturRef.current = false;
+      aktionenKnopfRef.current?.focus();
+    }
+  }, [pickerOffen]);
+
+  // Escape schließt Leiste bzw. Picker und gibt den Fokus an den Knopf
+  // zurück. Nur wenn hier etwas offen ist -- sonst gehört Escape dem Fenster
+  // darüber (der Chatraum kann in einem Modal stehen).
+  const mitEscapeSchliessen = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key !== 'Escape' || !(ausgewaehlt || pickerOffen)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    pickerPerTastaturRef.current = false;
+    onDeselectMessage();
+    aktionenKnopfRef.current?.focus();
+  };
+
   if (message.deleted) {
     return (
       <div key={message.id} style={{
@@ -181,7 +232,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   }
 
   return (
-    <div key={message.id} id={`msg-${message.id}`} style={{
+    <div key={message.id} id={`msg-${message.id}`} className="app-chat-nachricht" style={{
       display: 'flex',
       flexDirection: isOwnMessage ? 'row-reverse' : 'row',
       margin: 'var(--app-abstand-eng) var(--app-abstand-basis)',
@@ -793,8 +844,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
 
         {/* Inline Aktionsleiste unter ausgewählter Nachricht */}
-        {selectedMessage?.id === message.id && !showReactionPicker && (
+        {leisteOffen && (
           <div role="presentation"
+            id={`aktionen-${message.id}`}
             style={{
               display: 'flex',
               gap: 'var(--app-abstand-mini)',
@@ -802,9 +854,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               justifyContent: isOwnMessage ? 'flex-end' : 'flex-start'
             }}
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={mitEscapeSchliessen}
           >
             <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label="Reaktion hinzufügen"
-              onClick={() => onOpenReactionPicker(message)}
+              ref={ersteAktionRef}
+              onClick={(e) => {
+                // detail 0: ausgelöst über Enter/Leertaste (tastaturKlick ruft
+                // click()), nicht über Maus oder Finger.
+                if (e.detail === 0) pickerPerTastaturRef.current = true;
+                onOpenReactionPicker(message);
+              }}
               style={{
                 width: '32px',
                 height: '32px',
@@ -884,8 +943,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
 
         {/* Inline Reaktions-Picker */}
-        {showReactionPicker && reactionTargetMessage?.id === message.id && (
+        {pickerOffen && (
           <div role="presentation"
+            onKeyDown={mitEscapeSchliessen}
             style={{
               display: 'flex',
               gap: 'var(--app-abstand-winzig)',
@@ -898,13 +958,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {Object.entries(REACTION_EMOJIS).map(([emoji, data]) => {
+            {Object.entries(REACTION_EMOJIS).map(([emoji, data], index) => {
               const userHasThisReaction = message.reactions?.some(
                 r => r.user_id === user?.id && r.user_type === user?.type && r.emoji === emoji
               );
               return (
                 <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={userHasThisReaction} aria-label={`Mit ${emoji} reagieren`}
                   key={emoji}
+                  ref={index === 0 ? ersteReaktionRef : undefined}
                   onClick={() => onToggleReaction(message.id, emoji)}
                   style={{
                     width: '36px',
@@ -929,6 +990,27 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         )}
       </div>
+
+      {/* Aktionen per Maus und Tastatur -- in der Zeile neben der Blase (bei
+          eigenen Nachrichten links, sonst rechts), damit die Blase nicht
+          verrutscht. Klick bis hierher stoppen: sonst wählte der Klick-Handler
+          des Chatinhalts die gerade geöffnete Auswahl sofort wieder ab. */}
+      <button
+        type="button"
+        ref={aktionenKnopfRef}
+        className="app-knopf-nackt app-beruehrungsziel app-chat-aktionen-knopf"
+        aria-label="Aktionen zu dieser Nachricht"
+        aria-expanded={ausgewaehlt || pickerOffen}
+        aria-controls={leisteOffen ? `aktionen-${message.id}` : undefined}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!ausgewaehlt) fokusInLeisteRef.current = true;
+          onLongPress(message);
+        }}
+        onKeyDown={mitEscapeSchliessen}
+      >
+        <IonIcon icon={ICON_MEHR} aria-hidden="true" />
+      </button>
     </div>
   );
 };

@@ -98,6 +98,43 @@ a.app-auth-link {
   transform: translate(-50%, -50%);
 }
 
+/* Aktionen zu einer Chat-Nachricht (27.09.2026). Der Knopf steht neben jeder
+   Blase und öffnet dieselbe Auswahl wie der lange Druck (Reaktion,
+   Antworten, Teilen, Löschen). Geparkt mit Deckkraft 0 statt display:none,
+   damit Tab ihn immer erreicht:
+   - am Rechner (feiner Zeiger mit Hover) beim Überfahren der Nachricht und
+     solange die Auswahl offen ist,
+   - per Tastatur bei Fokus (:focus-visible),
+   - auf Touch-Geräten sonst ohne Trefffläche -- kein unsichtbares Ziel neben
+     der Blase; dort bleibt der lange Druck. */
+.app-chat-aktionen-knopf {
+  flex-shrink: 0;
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  margin: 0 var(--app-abstand-mini);
+  border-radius: var(--app-radius-kreis);
+  color: var(--app-text-secondary);
+  font-size: var(--app-text-gross);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .app-chat-nachricht:hover .app-chat-aktionen-knopf,
+  .app-chat-aktionen-knopf[aria-expanded="true"] {
+    opacity: 1;
+  }
+}
+.app-chat-aktionen-knopf:focus-visible {
+  opacity: 1;
+}
+@media not all and (hover: hover) and (pointer: fine) {
+  .app-chat-aktionen-knopf:not(:focus-visible) {
+    pointer-events: none;
+  }
+}
+
 /* Bewegung reduzieren (UI BF-12): Wer es im System eingeschaltet hat, bekam
    bisher nur Wrapped und das „Was ist neu"-Banner ruhig -- Login-Schuetteln,
    pulsierende Ladepunkte, Kacheln, Karten und alle Uebergaenge liefen

@@ -723,7 +723,13 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           ladendeDatei={ladendeDatei}
           uploadFortschritt={uploadFortschritt}
           onError={setError}
-          onDeselectMessage={() => setSelectedMessage(null)}
+          // Abwählen schließt auch den Reaktions-Picker (Escape darin, 27.09.2026).
+          // Nach Antworten und Löschen ist er ohnehin zu -- dort ändert sich nichts.
+          onDeselectMessage={() => {
+            setSelectedMessage(null);
+            setShowReactionPicker(false);
+            setReactionTargetMessage(null);
+          }}
           textareaRef={textareaRef}
           onRetry={handleRetryMessage}
         />

@@ -578,6 +578,12 @@ Versionsüberschrift.
   Fehlermeldungen, Anhängen und Senden im Chat — lassen sich leichter
   treffen: Die Fläche, die auf den Finger reagiert, ist jetzt mindestens
   44 Punkte groß, die Knöpfe sehen aber aus wie zuvor.
+- Am Rechner und mit der Tastatur lassen sich die Aktionen zu einer
+  Chat-Nachricht öffnen — Reagieren, Antworten, Teilen, Löschen: über einen
+  Knopf neben der Nachricht, der beim Überfahren mit der Maus erscheint und per
+  Tab erreichbar ist; Escape schließt die Auswahl wieder. Bisher ging das nur
+  mit langem Druck auf dem Handy oder einem Rechtsklick, den niemand kannte.
+  Auf dem Handy bleibt alles wie gewohnt.
 
 ### Sonstiges
 - Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.
