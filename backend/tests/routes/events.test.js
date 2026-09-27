@@ -487,6 +487,11 @@ describe('Events Routes', () => {
         });
 
       expect(res.status).toBe(400);
+      // Das Event-Formular zeigt die details-Texte an (EventModal) -- mit
+      // echtem Umlaut (27.09.2026, Audit UI BF-11).
+      expect(res.body.details).toEqual([
+        { field: 'max_participants', message: 'Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder größer sein' },
+      ]);
     });
 
     it('Leerer name gibt 400', async () => {

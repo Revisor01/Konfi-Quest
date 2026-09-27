@@ -21,6 +21,12 @@ import {
 // Fehlermeldung im Badge-Formular ("Pruefung") und drei Fehlermeldungen des
 // Backends ("loeschen", "enthaelt", "ungueltige").
 //
+// Der Rest (27.09.2026): Die Pruefregeln der Eingaben (express-validator,
+// .withMessage) und die Meldungen der Anfragegrenzen in server.js las der
+// Parser nicht -- dort standen "groesser", "hoechstens", "enthaelt" und
+// fuenfmal "spaeter". Seitdem zaehlen withMessage-Argumente, middleware/,
+// server.js und createApp.js mit.
+//
 // Die aelteren Pruefungen (wrappedTexteUmlaute, umlauteUndZurueckIcon) decken
 // nur den Rueckblick ab und arbeiten mit Wortlisten. Dieser Test deckt die
 // ganze App und die Nutzertexte des Backends ab und arbeitet mit einer
@@ -48,6 +54,7 @@ const AUSNAHMEN: Record<string, string> = {
   Zuerst: '"zu" + "erst", kein Umlaut',
   pmueller: 'Beispiel-Benutzername; Benutzernamen erlauben nur a-z, 0-9, Punkt und Bindestrich (USERNAME_REGEX)',
   true: 'englisches Schluesselwort in einer Fehlermeldung an Entwickler:innen ("als true oder false angeben")',
+  sprueche: 'Wert des Parameters type in POST /jahrgaenge/:id/matrix-email ("type muss \'anwesenheit\' oder \'sprueche\' sein") -- so steht er in der Schnittstelle',
 };
 
 /** Wortstaemme, die mit ß geschrieben werden, als ss-Schreibung. */
@@ -115,7 +122,9 @@ describe('Umlaute in Nutzertexten', () => {
   it('findet die Texte ueberhaupt', () => {
     // Ohne diese Zusicherung waere ein falscher Pfad nach einem Umbau ein
     // gruener Test, der nichts geprueft hat. Gemessen 27.09.2026: 5 283
-    // Texte in der App, 1 450 im Backend.
+    // Texte in der App, 1 450 im Backend. Nachgemessen am selben Tag, als die
+    // Pruefregeln (withMessage), middleware/ und server.js dazukamen:
+    // 5 517 in der App, im Backend 1 470 -> 1 733.
     expect(APP.length).toBeGreaterThan(4000);
     expect(BACKEND.length).toBeGreaterThan(1000);
   });

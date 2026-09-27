@@ -2295,10 +2295,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       .isString().withMessage('Der Name muss Text sein')
       .bail()
       .trim()
-      .isLength({ max: 40 }).withMessage('Der Name darf hoechstens 40 Zeichen lang sein')
+      .isLength({ max: 40 }).withMessage('Der Name darf höchstens 40 Zeichen lang sein')
       // Steuerzeichen (auch Zeilenumbrueche) haben in einer Ueberschrift
       // nichts zu suchen. Emoji und Umlaute bleiben ausdruecklich erlaubt.
-      .matches(/^[^\p{Cc}\p{Cf}]*$/u).withMessage('Der Name enthaelt unerlaubte Zeichen'),
+      .matches(/^[^\p{Cc}\p{Cf}]*$/u).withMessage('Der Name enthält unerlaubte Zeichen'),
     handleValidationErrors,
     async (req, res) => {
       const client = await db.getClient();

@@ -3701,6 +3701,9 @@ describe('Wrapped Routes', () => {
       // Anzeige-Entscheidung, und die gehoert vor die Speicherung.
       const res = await anlegen('x'.repeat(41));
       expect(res.status).toBe(400);
+      // Mit echtem Umlaut (27.09.2026, Audit UI BF-11) -- die Leitung liest
+      // den Text in der App.
+      expect(res.body.details.map((d) => d.message)).toEqual(['Der Name darf höchstens 40 Zeichen lang sein']);
     });
 
     it('Genau 40 Zeichen gehen noch durch', async () => {
@@ -3724,6 +3727,7 @@ describe('Wrapped Routes', () => {
       // GEMESSEN: Sie gingen ungeprueft durch, bis auf die Folie.
       const res = await anlegen('Te' + String.fromCharCode(7) + 'st');
       expect(res.status).toBe(400);
+      expect(res.body.details.map((d) => d.message)).toEqual(['Der Name enthält unerlaubte Zeichen']);
     });
 
     it('Nur Leerzeichen gilt wie keine Angabe', async () => {

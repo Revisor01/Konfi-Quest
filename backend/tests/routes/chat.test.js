@@ -1957,7 +1957,7 @@ describe('Chat Routes', () => {
             chatClearLimiter: rateLimit({
               windowMs: 60 * 1000,
               max,
-              message: { error: 'Zu viele Leerungen des Team-Chats. Bitte versuche es spaeter erneut.' },
+              message: { error: 'Zu viele Leerungen des Team-Chats. Bitte versuche es später erneut.' },
               standardHeaders: true,
               legacyHeaders: false
             })
@@ -1981,7 +1981,7 @@ describe('Chat Routes', () => {
           .delete(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
           .set('Authorization', `Bearer ${admin1Token}`);
         expect(res.status).toBe(429);
-        expect(res.body.error).toBe('Zu viele Leerungen des Team-Chats. Bitte versuche es spaeter erneut.');
+        expect(res.body.error).toBe('Zu viele Leerungen des Team-Chats. Bitte versuche es später erneut.');
       });
 
       it('der Limiter haengt nur am Leeren, nicht am Lesen der Nachrichten', async () => {

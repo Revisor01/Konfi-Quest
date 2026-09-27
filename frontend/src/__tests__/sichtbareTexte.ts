@@ -163,15 +163,32 @@ export function nutzertexteDesBackends(pfad: string, quelle = readFileSync(pfad,
       sammle(knoten, knoten);
       return;
     }
+    // express-validator: .withMessage('...') landet ueber handleValidationErrors
+    // als `error` in der Antwort und damit auf dem Bildschirm. Nur die
+    // Argumente sammeln -- die Kette davor (body('feld'), isLength(...))
+    // traegt Feldnamen, keine Texte.
+    if (ts.isCallExpression(knoten) && ts.isPropertyAccessExpression(knoten.expression)
+      && knoten.expression.name.getText() === 'withMessage') {
+      knoten.arguments.forEach((arg) => sammle(arg, knoten.expression.name));
+      besuche(knoten.expression);
+      return;
+    }
     ts.forEachChild(knoten, besuche);
   };
   besuche(datei);
   return raus;
 }
 
-/** Nutzertexte aus backend/routes, backend/services und backend/utils. */
+/**
+ * Nutzertexte aus backend/routes, backend/services, backend/utils und
+ * backend/middleware (Pruefregeln mit withMessage), dazu server.js und
+ * createApp.js: Dort stehen die Meldungen der Anfragegrenzen ("Zu viele
+ * Anfragen ..."), die die App bei 429 anzeigt.
+ */
 export function nutzertexteDesBackendsGesamt(): SichtbarerText[] {
-  return ['routes', 'services', 'utils']
-    .flatMap((o) => quelldateien(join(REPO, 'backend', o), /\.js$/))
-    .flatMap((pfad) => nutzertexteDesBackends(pfad));
+  return [
+    ...['routes', 'services', 'utils', 'middleware']
+      .flatMap((o) => quelldateien(join(REPO, 'backend', o), /\.js$/)),
+    ...['server.js', 'createApp.js'].map((d) => join(REPO, 'backend', d)),
+  ].flatMap((pfad) => nutzertexteDesBackends(pfad));
 }

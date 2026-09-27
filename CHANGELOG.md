@@ -914,7 +914,10 @@ Versionsüberschrift.
   Mitteilungsgruppen in den Android-Einstellungen („Änderungen", „Rückblick"),
   in den Namen der Symbole zur Auswahl („Glühbirne", „Kopfhörer"), bei der
   Reaktion „Gefällt mir" und in einigen Fehlermeldungen. Vorlesehilfen sprechen
-  „Änderungen speichern" jetzt richtig aus.
+  „Änderungen speichern" jetzt richtig aus. Auch die Hinweise bei zu vielen
+  Anfragen („Bitte versuche es später erneut") und die Prüfmeldungen beim
+  Anlegen von Events und Rückblicken („größer", „höchstens", „enthält")
+  schreiben Umlaute.
 - „Passwort vergessen" erreicht jedes Konto mit der eingegebenen Adresse: Wer
   in mehreren Gemeinden ein Konto mit derselben Adresse hat, bekommt für jedes
   eine eigene Mail mit eigenem Link, darin Gemeinde und Benutzername. Bisher

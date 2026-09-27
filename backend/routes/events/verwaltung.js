@@ -48,7 +48,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     body('bring_items').optional({ nullable: true }).isString().withMessage('bring_items muss ein String sein'),
     // 0 = unbegrenzt, darum min: 0 und NICHT notEmpty (das wuerde die 0 verwerfen).
     body('max_participants').optional({ nullable: true }).isInt({ min: 0 })
-      .withMessage('Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder groesser sein'),
+      .withMessage('Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder größer sein'),
     handleValidationErrors
   ];
 
@@ -59,7 +59,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     body('is_konfirmation').optional().isBoolean().withMessage('is_konfirmation muss ein Boolean sein'),
     body('bring_items').optional({ nullable: true }).isString().withMessage('bring_items muss ein String sein'),
     body('max_participants').optional({ nullable: true }).isInt({ min: 0 })
-      .withMessage('Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder groesser sein'),
+      .withMessage('Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder größer sein'),
     handleValidationErrors
   ];
 

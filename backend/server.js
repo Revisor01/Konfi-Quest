@@ -272,7 +272,7 @@ const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 2000,
   keyGenerator: userOrIpKey,
-  message: { error: 'Zu viele Anfragen. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Anfragen. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -340,7 +340,7 @@ const eventBookingLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 60,
   keyGenerator: userOrIpKey,
-  message: { error: 'Zu viele Buchungsanfragen. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Buchungsanfragen. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -350,7 +350,7 @@ const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   keyGenerator: userOrIpKey,
-  message: { error: 'Zu viele Uploads. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Uploads. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -365,7 +365,7 @@ const chatClearLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   keyGenerator: userOrIpKey,
-  message: { error: 'Zu viele Leerungen des Team-Chats. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Leerungen des Team-Chats. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -379,7 +379,7 @@ const orgLimiter = rateLimit({
   max: 500,
   keyGenerator: userOrIpKey,
   skip: (req) => req.method === 'GET',
-  message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
