@@ -103,7 +103,9 @@ describe('Push-Kanaele: jeder Typ hat einen', () => {
     // 26.09.2026: 31 -> 32. 'gemeinde_einladung' kam dazu.
     // 27.09.2026: 32 -> 34. 'event_removed' und 'event_waitlisted' (die
     // Leitung traegt aus bzw. setzt auf die Warteliste, F-06/BF-14).
-    expect(typen.length).toBe(34);
+    // 27.09.2026: 34 -> 35. 'gemeinde_einladung_beantwortet' (Antwort auf
+    // eine Einladung an die einladende Leitung, F-13/BF-21).
+    expect(typen.length).toBe(35);
     expect(typen).toContain('chat');
     expect(typen).toContain('event_reminder');
 

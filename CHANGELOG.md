@@ -146,6 +146,10 @@ Versionsüberschrift.
   E-Mail-Adresse — ob selbst geändert, über „Passwort vergessen" neu gesetzt
   oder von der Leitung neu gesetzt. Setzt die Leitung das Passwort, sagt die
   Mail das; das Passwort selbst steht nie darin.
+- Wer jemanden in die eigene Gemeinde eingeladen hat, erfährt, ob die Person
+  zusagt oder absagt — als Mitteilung und im Postfach; Antippen öffnet die
+  Benutzerliste. Ist die einladende Person dort nicht mehr Org-Admin, geht die
+  Mitteilung an die Org-Admins der Gemeinde.
 
 ### Geändert
 - Im Dunkelmodus setzen sich Karten und Listen deutlicher vom Hintergrund ab:

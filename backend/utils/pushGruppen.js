@@ -121,7 +121,10 @@ const GRUPPE_JE_ART = Object.freeze({
   jahrgang_deletion_warning: GRUPPE_VERWALTUNG,
   // Eine Einladung wartet auf die Entscheidung des Empfaengers -- genau das
   // meint "Anfragen und Freigaben" (26.09.2026).
-  gemeinde_einladung: GRUPPE_VERWALTUNG
+  gemeinde_einladung: GRUPPE_VERWALTUNG,
+  // Die Antwort darauf an die einladende Leitung (27.09.2026) -- dieselbe
+  // Gruppe wie die uebrigen Meldungen an Leitung und Team.
+  gemeinde_einladung_beantwortet: GRUPPE_VERWALTUNG
 });
 
 /** Gruppe zu einer Push-Art; unbekannte Arten fallen auf GRUPPE_STANDARD. */

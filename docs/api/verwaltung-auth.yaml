@@ -498,6 +498,18 @@ paths:
         user_organizations. Danach invalidateUserCache, sonst haelt der
         RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der
         Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.
+
+
+        BEHOBEN 27.09.2026 (Bericht "Wer bekommt was", BF-21; Simons
+        Entscheidung F-13: "Ja, als Postfach-Eintrag"): Die einladende
+        Leitung erfuhr nichts. Jetzt nach der Antwort Push mit
+        Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet',
+        status 'angenommen', einladung_id, user_id, organization_id = die
+        einladende Gemeinde) an die Person aus eingeladen_von, solange sie
+        dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst
+        an die Org-Admins der Gemeinde; nie an die eingeladene Person
+        selbst. Dazu das Live-Signal 'users' an die Gemeinde (die
+        Benutzerliste laedt nach). Die Antwortform ist unveraendert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -515,6 +527,12 @@ paths:
     post:
       tags: ["Benutzer & Rollen"]
       summary: Einladung ablehnen
+      description: >
+        BEHOBEN 27.09.2026 (BF-21 / F-13): Auch die Absage meldet sich bei
+        der einladenden Leitung -- Push mit Postfach-Eintrag
+        'gemeinde_einladung_beantwortet' (status 'abgelehnt'), Empfaenger
+        wie bei annehmen. Kein Live-Signal, die Benutzerliste aendert sich
+        nicht. Die Antwortform ist unveraendert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:

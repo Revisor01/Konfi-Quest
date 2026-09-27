@@ -2039,7 +2039,10 @@ paths:
         Antwortform bleibt; `type` ist ein freier String, und eine App, die
         eine Art nicht kennt, zeigt Titel und Text wie jede Zeile, in der
         neutralen Farbe (bzw. der Terminfarbe beim Praefix event_) und ohne
-        Sprungziel.
+        Sprungziel. Ebenso additiv (BF-21 / F-13):
+        gemeinde_einladung_beantwortet ("Einladung angenommen" /
+        "Einladung abgelehnt") an die einladende Leitung, mit einladung_id,
+        user_id, status und organization_id der einladenden Gemeinde.
         events_pending_approval ersetzt die noch ungelesene Mitteilung
         derselben Person und Gemeinde vom Vortag, statt sich taeglich zu
         stapeln. `data` traegt die Kennungen des Pushes (event_id bzw.

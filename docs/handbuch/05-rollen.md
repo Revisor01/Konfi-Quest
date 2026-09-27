@@ -170,6 +170,13 @@ Sie behält Benutzername und Passwort; ihre bisherige Gemeinde bleibt
 unverändert. Die Einladung gilt **14 Tage** und lässt sich zurückziehen,
 solange sie offen ist.
 
+**Sagt sie zu oder ab, erfährst du es** — als Mitteilung aufs Handy und im
+Postfach: „Einladung angenommen" oder „Einladung abgelehnt", mit Name, Rolle
+und Gemeinde. Antippen führt zu **Mehr › Benutzer:innen**, wo die Person nach
+einer Zusage steht. Die Mitteilung geht an dich, wenn du eingeladen hast;
+bist du in der Gemeinde inzwischen nicht mehr Org-Admin, geht sie an die
+Org-Admins der Gemeinde.
+
 ### Mitglieder aus anderen Gemeinden verwalten
 
 Nach der Zusage steht die Person unter **Mehr › Benutzer:innen** — mit dem

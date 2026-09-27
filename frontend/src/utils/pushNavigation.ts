@@ -434,6 +434,14 @@ export const buildPushTargetUrl = (
       // die offenen Einladungen zeigt.
       return `${routePrefix}/profile`;
 
+    case 'gemeinde_einladung_beantwortet':
+      // Die Antwort auf eine Einladung, an die einladende Leitung
+      // (27.09.2026). Die Meldung traegt die einladende Gemeinde;
+      // resolveOrgForPush wechselt dorthin, und die Benutzerliste zeigt,
+      // wer jetzt mitarbeitet. Nur Org-Admins bekommen sie -- faellt doch
+      // jemand anderes hinein, bleibt es bei seiner Startseite.
+      return userType === 'admin' ? '/admin/users' : `${routePrefix}/dashboard`;
+
     case 'jahrgang_deletion_warning':
       // Vorwarnung zur Jahrgangs-Archivierung. Betrifft die Leitung:
       // Einstellungen -> Jahrgaenge. Teamer:innen und Konfis haben diese

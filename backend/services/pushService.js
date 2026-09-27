@@ -75,6 +75,7 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
  * challenge_started (Feed)    | sendChallengeFeedToJahrgaenge        | Jahrgangs-Konfis| ja
  * challenge_badge_earned      | sendChallengeBadgeEarnedToKonfi      | Konfi           | ja
  * challenge_submission_hidden | sendChallengeSubmissionHiddenToUser  | Einreichende:r  | ja
+ * gemeinde_einladung_beantwortet | sendEinladungBeantwortetToLeitung | Einladende:r / Org-Admins | ja
  *
  * Helper-Methoden (nicht direkt als Push-Type):
  * - getTokensForUser(db, userId)
@@ -1626,6 +1627,64 @@ class PushService {
     } catch (error) {
       console.error('sendGemeindeEinladungToUser error:', error);
       return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Eine Einladung in eine weitere Gemeinde wurde angenommen oder abgelehnt
+   * -- Postfach und Push an die Person, die eingeladen hat (27.09.2026).
+   *
+   * Befund BF-21 (Bericht "Wer bekommt was"): Die einladende Leitung erfuhr
+   * nichts; die offene Einladung verschwand nur aus GET /einladungen, und
+   * die App zeigt diese Liste nicht einmal an. Simons Entscheidung zu F-13:
+   * "Ja, als Postfach-Eintrag." Push dazu wie bei allen uebrigen Meldungen
+   * an die Leitung (Teamer-Buchung, Abmeldung, Registrierung): Sie laufen
+   * durch sendToMultipleUsers, das Postfach und Push zusammen schreibt.
+   *
+   * EMPFAENGER nach "Mitteilung = Sichtbarkeit" (CLAUDE.md): Einladen und
+   * die Einladungen sehen darf nur der Org-Admin (requireOrgAdmin in
+   * routes/einladungen.js). Deshalb geht die Meldung an die Person, die
+   * eingeladen hat (org_einladungen.eingeladen_von) -- solange sie in DIESER
+   * Gemeinde noch Org-Admin ist (beide Quellen der Zugehoerigkeit, aktiv,
+   * nicht geloescht; utils/orgMitglieder.js). Ist sie es nicht mehr, gehen
+   * die Org-Admins der Gemeinde an ihre Stelle. Die eingeladene Person ist
+   * nie Empfaengerin, auch wenn sie mit der Annahme selbst Org-Admin wird.
+   *
+   * @param {object} p
+   * @param {number} p.organizationId  die EINLADENDE Gemeinde (Org des Inhalts)
+   * @param {number|null} p.eingeladenVon
+   * @param {number} p.eingeladenId    die eingeladene Person
+   * @param {boolean} p.angenommen
+   * @returns {Promise<Array>} Ergebnis je Empfaenger (sendToMultipleUsers)
+   */
+  static async sendEinladungBeantwortetToLeitung(db, { einladungId, organizationId, eingeladenVon, eingeladenId, personName, rolleName, orgName, angenommen }) {
+    try {
+      const orgAdmins = (await ladeMitgliederDerOrganisation(db, organizationId, ['org_admin']))
+        .filter((id) => Number(id) !== Number(eingeladenId));
+      const einladende = orgAdmins.filter((id) => eingeladenVon != null && Number(id) === Number(eingeladenVon));
+      const empfaenger = einladende.length > 0 ? einladende : orgAdmins;
+      if (empfaenger.length === 0) return [];
+
+      const person = personName || 'Die eingeladene Person';
+      const rolle = rolleName || 'Mitglied';
+      const gemeinde = orgName || 'eurer Gemeinde';
+      const notification = {
+        title: angenommen ? 'Einladung angenommen' : 'Einladung abgelehnt',
+        body: angenommen
+          ? `${person} hat die Einladung angenommen und arbeitet jetzt als ${rolle} in ${gemeinde} mit.`
+          : `${person} hat die Einladung als ${rolle} in ${gemeinde} abgelehnt.`,
+        data: {
+          type: 'gemeinde_einladung_beantwortet',
+          einladung_id: einladungId?.toString() || '',
+          user_id: eingeladenId?.toString() || '',
+          status: angenommen ? 'angenommen' : 'abgelehnt',
+          organization_id: String(organizationId)
+        }
+      };
+      return await this.sendToMultipleUsers(db, empfaenger, notification);
+    } catch (error) {
+      console.error('sendEinladungBeantwortetToLeitung error:', error);
+      return [];
     }
   }
 

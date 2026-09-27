@@ -186,6 +186,26 @@ describe('Postfach: neue Termin-Arten und unbekannte Arten', () => {
     warnung.mockRestore();
   });
 
+  it('"Einladung angenommen" fuehrt die Leitung in die Benutzerliste', async () => {
+    mockUserType = 'admin';
+    mockGet.mockResolvedValue(antwort([
+      eintrag(60, {
+        type: 'gemeinde_einladung_beantwortet',
+        title: 'Einladung angenommen',
+        message: 'Test Teamer 1 hat die Einladung angenommen und arbeitet jetzt als Teamer:in in Test-Gemeinde mit.',
+        data: { type: 'gemeinde_einladung_beantwortet', einladung_id: '3', user_id: '3', status: 'angenommen', organization_id: '1' },
+      }),
+    ]));
+    render(<PostfachModal />);
+    await oeffnen();
+
+    await screen.findByText('Einladung angenommen');
+    // Kein Termin, kein Antrag: die neutrale Farbe, wie bei der Einladung selbst.
+    expect(zeileZu('Einladung angenommen').getAttribute('data-bereich')).toBe('info');
+    fireEvent.click(zeileZu('Einladung angenommen'));
+    await waitFor(() => expect(pushZielMelden).toHaveBeenCalledWith('/admin/users', 'inApp'));
+  });
+
   it('Farbregel und Sprungziel der neuen Arten, ohne Rendern', () => {
     expect(postfachBereich('event_removed')).toBe('events');
     expect(postfachBereich('event_waitlisted')).toBe('events');
@@ -194,5 +214,10 @@ describe('Postfach: neue Termin-Arten und unbekannte Arten', () => {
     expect(buildPushTargetUrl('event_waitlisted', { event_id: 7 }, 'teamer')).toBe('/teamer/events/7');
     // Ohne Kennung: die Terminliste der Rolle, wie bei der Anmeldung.
     expect(buildPushTargetUrl('event_waitlisted', {}, 'konfi')).toBe('/konfi/events');
+    // Antwort auf eine Einladung: Leitung in die Benutzerliste, andere Rollen
+    // (bekommen sie nicht) auf ihre Startseite.
+    expect(postfachBereich('gemeinde_einladung_beantwortet')).toBe('info');
+    expect(buildPushTargetUrl('gemeinde_einladung_beantwortet', { status: 'abgelehnt' }, 'admin')).toBe('/admin/users');
+    expect(buildPushTargetUrl('gemeinde_einladung_beantwortet', {}, 'teamer')).toBe('/teamer/dashboard');
   });
 });

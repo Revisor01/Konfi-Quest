@@ -429,7 +429,9 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
       // eine weitere Gemeinde).
       // 27.09.2026: 24 -> 26. 'event_removed' und 'event_waitlisted' (die
       // Leitung traegt aus bzw. setzt auf die Warteliste, F-06/BF-14).
-      expect(POSTFACH_ARTEN.size).toBe(26);
+      // 27.09.2026: 26 -> 27. 'gemeinde_einladung_beantwortet' (Antwort auf
+      // eine Einladung an die einladende Leitung, F-13/BF-21).
+      expect(POSTFACH_ARTEN.size).toBe(27);
       expect(Object.keys(NICHT_IM_POSTFACH)).toHaveLength(9);
     });
   });

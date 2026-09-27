@@ -58,6 +58,9 @@ const POSTFACH_ARTEN = new Set([
   'gemeinde_einladung',   // in eine weitere Gemeinde eingeladen (26.09.2026)   // Warnung vor der Jahrgangs-Loeschung
   'event_opt_out',               // Konfi hat sich von einem Pflichttermin abgemeldet
   'event_opt_in',                // ... und wieder angemeldet
+  // Einladung in eine weitere Gemeinde beantwortet -- an die einladende
+  // Leitung (Simon, 27.09.2026, F-13: "Ja, als Postfach-Eintrag")
+  'gemeinde_einladung_beantwortet',
   // ---- Nachtraeglich entschieden (Simon, 25.09.2026: beide rein) ----
   // wrapped traegt seit dem 25.09.2026 zusaetzlich ausgabe_id, damit das
   // Antippen den JEWEILIGEN Rueckblick oeffnet (pushNavigation, ?rueckblick=).

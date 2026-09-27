@@ -73,7 +73,9 @@ Beiträge. Als Teamer:in oder Leitung zusätzlich: Abmeldungen
 von Konfis, Buchungen und Absagen des Teams, Events, die auf Verbuchung
 warten, neue Registrierungen, Beiträge zur Freigabe, Ab- und
 Wieder-Anmeldungen von Pflicht-Events, die Warnung vor dem Löschen eines
-Jahrgangs, der Team-Rückblick und ein neues Zertifikat. Neue Anträge landen
+Jahrgangs, als Gemeindeleitung die Antwort auf eine
+[Einladung in deine Gemeinde](05-rollen.md#jemanden-in-die-eigene-gemeinde-einladen),
+der Team-Rückblick und ein neues Zertifikat. Neue Anträge landen
 bei der Leitung, die sie in ihrer Antragsliste sieht — siehe
 [Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt).
 

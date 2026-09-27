@@ -312,6 +312,7 @@ Mitteilung = Push; jede Art aus `postfachArten.js` bzw. mit eigenem `INSERT` ste
 
 ### BF-21: Einladung beantwortet — die einladende Leitung erfährt nichts
 - **Schwere:** NIEDRIG
+- **Status:** behoben 27.09.2026 — nach F-13 neue Art `gemeinde_einladung_beantwortet` mit Push und Postfach-Eintrag („Einladung angenommen"/„abgelehnt", `PushService.sendEinladungBeantwortetToLeitung`, aus `einladungen.js` nach der Antwort). Gespeichert ist `org_einladungen.eingeladen_von`; Empfänger ist diese Person, solange sie in der Gemeinde Org-Admin ist (beide Quellen, `orgMitglieder.js`) — einladen und die Einladungen sehen darf nur `org_admin` —, sonst die Org-Admins der Gemeinde, nie die eingeladene Person selbst. Beim Annehmen zusätzlich Live-Signal `users` an die Gemeinde. Antippen führt zu `/admin/users` (`tests/routes/einladungBeantwortet.test.js`).
 - **Fundstelle:** `backend/routes/einladungen.js:275-340` (keine Mitteilung, kein Live-Signal; die offene Einladung verschwindet nur aus `GET /einladungen`)
 - **Kennzeichnung:** aus Code gelesen
 - **Empfehlung:** Nach F-13 Postfach-Eintrag an die einladende Person; Live-Signal `users` an die Gemeinde.
