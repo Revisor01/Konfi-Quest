@@ -159,14 +159,29 @@ describe('Der Betrachter holt weitere Dateien über den Cache', () => {
     expect(apiGet).toHaveBeenCalledTimes(1);
   });
 
-  it('andere API-Adressen (Material) laufen weiter direkt', async () => {
+  // Bis zum 27.09.2026 lief Material hier "weiter direkt" am Cache vorbei;
+  // seit Simons „Fotos Anträge und Material ja bitte." gehört es dazu.
+  it('Material-Dateien laufen ebenfalls über den Cache', async () => {
     const material = { url: '/api/material/files/xy99', fileName: 'plan.jpg', mimeType: 'image/jpeg' };
+
+    const erstes = render(<FileViewerModal files={[material]} onClose={vi.fn()} />);
+    await waitFor(() => expect(erstes.container.querySelector('img')).not.toBeNull());
+    erstes.unmount();
+    const zweites = render(<FileViewerModal files={[material]} onClose={vi.fn()} />);
+    await waitFor(() => expect(zweites.container.querySelector('img')).not.toBeNull());
+
+    expect(apiGet.mock.calls.map(([r]) => r)).toEqual(['/material/files/xy99']);
+    expect(cacheInhalt()).toEqual(['material-xy99']);
+  });
+
+  it('andere API-Adressen laufen weiter direkt und landen nicht auf dem Gerät', async () => {
+    const foto = { url: '/api/admin/activities/requests/41/photo', fileName: 'foto.jpg', mimeType: 'image/jpeg' };
     apiGet.mockResolvedValue({ data: new Blob(['x']), headers: { 'content-type': 'image/jpeg' } });
 
-    const { container } = render(<FileViewerModal files={[material]} onClose={vi.fn()} />);
+    const { container } = render(<FileViewerModal files={[foto]} onClose={vi.fn()} />);
     await waitFor(() => expect(container.querySelector('img')).not.toBeNull());
 
-    expect(apiGet.mock.calls[0][0]).toBe('/material/files/xy99');
+    expect(apiGet.mock.calls[0][0]).toBe('/admin/activities/requests/41/photo');
     expect(cacheInhalt()).toEqual([]);
   });
 });

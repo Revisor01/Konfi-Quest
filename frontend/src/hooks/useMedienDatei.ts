@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  bleibtAufDemGeraet,
   getCachedObjectUrl,
   getMediaBlob,
   getMediaObjectUrl,
@@ -8,8 +9,8 @@ import {
 } from '../services/mediaCache';
 import { networkMonitor } from '../services/networkMonitor';
 
-// Ein Medium aus einer geschützten Route laden und anzeigen — für Chat und
-// Challenges derselbe Weg (27.09.2026).
+// Ein Medium aus einer geschützten Route laden und anzeigen — für Chat,
+// Challenges und die Nachweisfotos der Anträge derselbe Weg (27.09.2026).
 //
 // Vorher hatte jede Anzeige ihren eigenen Lader: LazyImage und VideoPreview
 // im Chat (mit Cache), dazu drei Challenge-Lader ohne Cache, ohne
@@ -62,8 +63,9 @@ export function useMedienDatei(
 ): MedienDatei {
   // Geteilte Object-URL nur ohne eigenen Typ und ohne "Netz zuerst" — die
   // geteilte URL überdauert das Abhängen und würde den Server sonst beim
-  // nächsten Mal nicht mehr fragen.
-  const geteilt = !typ && !netzZuerst;
+  // nächsten Mal nicht mehr fragen. Nachweisfotos nie (bleibtAufDemGeraet):
+  // Ihre URL gehört der Anzeige und geht beim Schließen mit.
+  const geteilt = !typ && !netzZuerst && bleibtAufDemGeraet(quelle);
 
   // Synchron prüfen, ob das Medium schon im Speicher liegt: dann ist es beim
   // ERSTEN Zeichnen da — ohne Ladeanzeige, ohne Springen beim Scrollen.

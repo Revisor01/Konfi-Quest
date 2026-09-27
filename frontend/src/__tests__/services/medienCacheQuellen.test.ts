@@ -238,6 +238,101 @@ describe('Netz zuerst: der Server entscheidet, der Cache hilft nur ohne Netz', (
   });
 });
 
+// Material und Nachweisfotos (27.09.2026, Simon: „Fotos Anträge und Material
+// ja bitte."). Material bleibt wie Chat und Challenges auf dem Gerät; die
+// Nachweisfotos laufen über denselben Lader, landen aber nie im Cache
+// (Begründung in mediaCache.ts, NUR_ANZEIGEN).
+describe('Material: eigene Quelle, eine Datei wird nur einmal geladen', () => {
+  it('lädt über /material/files/ mit Datei-Zeitlimit und Blob-Antwort', async () => {
+    await getMediaBlob(NAME, { quelle: 'material' });
+
+    const [route, optionen] = apiGet.mock.calls[0];
+    expect(route).toBe(`/material/files/${NAME}`);
+    expect(optionen).toMatchObject({ responseType: 'blob', timeout: 180000 });
+    expect(cacheInhalt()).toEqual([`material-${NAME}`]);
+  });
+
+  it('zweites Öffnen derselben Material-Datei: 1 statt 2 Aufrufe', async () => {
+    await getMediaBlob(NAME, { quelle: 'material' });
+    const zweites = await getMediaBlob(NAME, { quelle: 'material' });
+
+    expect(aufrufeAn('/material/files/')).toBe(1);
+    expect(await blobText(zweites)).toBe(`inhalt:/material/files/${NAME}`);
+  });
+
+  it('gleicher Name in Chat, Challenges und Material: drei Einträge, jeder mit seinem Inhalt', async () => {
+    const ausChat = await getMediaBlob(NAME);
+    const ausChallenge = await getMediaBlob(NAME, { quelle: 'challenges' });
+    const ausMaterial = await getMediaBlob(NAME, { quelle: 'material' });
+    // Jede Quelle ein zweites Mal: kein Treffer der einen beantwortet die andere.
+    await getMediaBlob(NAME);
+    await getMediaBlob(NAME, { quelle: 'challenges' });
+    await getMediaBlob(NAME, { quelle: 'material' });
+
+    expect(apiGet).toHaveBeenCalledTimes(3);
+    expect(cacheInhalt()).toEqual([`challenges-${NAME}`, `chat-${NAME}`, `material-${NAME}`]);
+    expect(await blobText(ausChat)).toBe(`inhalt:/chat/files/${NAME}`);
+    expect(await blobText(ausChallenge)).toBe(`inhalt:/challenges/files/${NAME}`);
+    expect(await blobText(ausMaterial)).toBe(`inhalt:/material/files/${NAME}`);
+  });
+
+  it('"Cache leeren" nimmt Material mit', async () => {
+    const url = await getMediaObjectUrl(NAME, { quelle: 'material' });
+    await getMediaBlob(NAME);
+
+    await clearMediaCache();
+
+    expect(cacheInhalt()).toEqual([]);
+    expect(getCachedObjectUrl(NAME, 'material')).toBeNull();
+    expect(urls.freigegeben).toContain(url);
+  });
+});
+
+describe('Nachweisfotos: laden ja, auf dem Gerät ablegen nie', () => {
+  it('Konfi und Team laden über die eigene Route — mit Zeitlimit, ohne Spur auf dem Gerät', async () => {
+    const blob = await getMediaBlob('41', { quelle: 'nachweisfoto' });
+
+    const [route, optionen] = apiGet.mock.calls[0];
+    expect(route).toBe('/konfi/activity-requests/41/photo');
+    expect(optionen).toMatchObject({ responseType: 'blob', timeout: 180000 });
+    expect(await blobText(blob)).toBe('inhalt:/konfi/activity-requests/41/photo');
+    expect(dateien.size).toBe(0);
+  });
+
+  it('die Leitung lädt über ihre Route, ebenfalls ohne Spur', async () => {
+    await getMediaBlob('41', { quelle: 'nachweisfotoLeitung' });
+
+    expect(apiGet.mock.calls[0][0]).toBe('/admin/activities/requests/41/photo');
+    expect(dateien.size).toBe(0);
+  });
+
+  it('jedes Öffnen fragt den Server: 2 Öffnungen, 2 Aufrufe — bewusst', async () => {
+    await getMediaBlob('41', { quelle: 'nachweisfotoLeitung' });
+    await getMediaBlob('41', { quelle: 'nachweisfotoLeitung' });
+
+    expect(aufrufeAn('/admin/activities/requests/')).toBe(2);
+    expect(await istGecacht('41', 'nachweisfotoLeitung')).toBe(false);
+  });
+
+  it('der Fortschritt kommt trotzdem an', async () => {
+    const fortschritt = vi.fn();
+    apiGet.mockImplementation(async (route: string, optionen: { onDownloadProgress?: (e: { loaded: number; total?: number }) => void }) => {
+      optionen.onDownloadProgress?.({ loaded: 30, total: 100 });
+      return serverAntwort(route);
+    });
+
+    await getMediaBlob('41', { quelle: 'nachweisfoto', onFortschritt: fortschritt });
+
+    expect(fortschritt).toHaveBeenCalledWith(30);
+  });
+
+  it('eine geteilte Object-URL gibt es dafür nicht', async () => {
+    await expect(getMediaObjectUrl('41', { quelle: 'nachweisfoto' })).rejects.toThrow('wird nicht geteilt');
+    expect(getCachedObjectUrl('41', 'nachweisfoto')).toBeNull();
+    expect(apiGet).not.toHaveBeenCalled();
+  });
+});
+
 describe('Pfade und Typen', () => {
   it('baut die Route je Quelle', () => {
     expect(medienApiPfad('ab12')).toBe('/chat/files/ab12');
@@ -247,8 +342,17 @@ describe('Pfade und Typen', () => {
   it('erkennt eine Medien-Route in einem API-Pfad, mit und ohne /api', () => {
     expect(medienAusApiPfad('/api/chat/files/ab12')).toEqual({ quelle: 'chat', datei: 'ab12' });
     expect(medienAusApiPfad('/challenges/files/ab12')).toEqual({ quelle: 'challenges', datei: 'ab12' });
-    expect(medienAusApiPfad('/api/material/files/ab12')).toBeNull();
+    // Seit dem 27.09.2026 läuft auch Material über den Cache — bis dahin
+    // stand hier null ("Material weiter direkt").
+    expect(medienAusApiPfad('/api/material/files/ab12')).toEqual({ quelle: 'material', datei: 'ab12' });
     expect(medienAusApiPfad('/api/chat/files/')).toBeNull();
+  });
+
+  it('Nachweisfotos hängen am Antrag und werden nie als Cache-Datei erkannt', () => {
+    expect(medienApiPfad('41', 'nachweisfoto')).toBe('/konfi/activity-requests/41/photo');
+    expect(medienApiPfad('41', 'nachweisfotoLeitung')).toBe('/admin/activities/requests/41/photo');
+    expect(medienAusApiPfad('/api/konfi/activity-requests/41/photo')).toBeNull();
+    expect(medienAusApiPfad('/api/admin/activities/requests/41/photo')).toBeNull();
   });
 
   it('leitet den MIME-Typ aus dem Originalnamen ab', () => {

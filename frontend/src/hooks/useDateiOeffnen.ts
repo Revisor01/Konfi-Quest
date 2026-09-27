@@ -18,15 +18,24 @@ import FileViewerModal, { FileItem } from '../components/shared/FileViewerModal'
 // die übrigen Dateien der Ansicht wischen lässt.
 //
 // Entstanden in useChatDateien (Chat) und seit dem 27.09.2026 gemeinsam für
-// Chat und Challenges (Simon: "Und wir brauchen die gleichen Systeme wie
-// Download-Fortschritt etc. bei Challenges."). Vorher ließ sich ein
+// Chat, Challenges und Material (Simon: "Und wir brauchen die gleichen Systeme
+// wie Download-Fortschritt etc. bei Challenges."). Vorher ließ sich ein
 // Challenge-Foto gar nicht öffnen, nur in der Karte ansehen.
+//
+// Nicht für die Nachweisfotos der Anträge: Das native Öffnen legt eine Kopie
+// in Documents ab (Datensicherung des Geräts), und diese Fotos sollen das
+// Gerät nie erreichen (mediaCache, NUR_ANZEIGEN).
 
 /** Eine Datei der Ansicht, für den Wisch-Kontext im Betrachter. */
 export interface OeffenbareDatei {
   pfad: string;
   /** Originalname mit Endung, etwa "foto.jpg"; bestimmt den Typ. */
   name?: string | null;
+  /**
+   * Typ, wenn der Server ihn kennt (Material führt ihn je Datei). Sonst
+   * kommt er aus der Endung des Namens.
+   */
+  typ?: string | null;
 }
 
 interface DateiOeffnenOptionen {
@@ -101,7 +110,7 @@ export function useDateiOeffnen({ quelle, kontext, fehlerOrt }: DateiOeffnenOpti
         return {
           url: `/api${medienApiPfad(d.pfad, quelle)}`,
           fileName: d.name || 'Datei',
-          mimeType: mimeAusDateiname(d.name),
+          mimeType: d.typ || mimeAusDateiname(d.name),
         };
       });
       const clickedIndex = alle.findIndex((d) => d.pfad === filePath);

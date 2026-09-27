@@ -1,5 +1,6 @@
-// Lokaler Cache für geschützte Medien der App: Chat-Anhänge und die Dateien
-// der Challenge-Beiträge.
+// Lokaler Cache für geschützte Medien der App: Chat-Anhänge, die Dateien der
+// Challenge-Beiträge und die Material-Dateien. Die Nachweisfotos der Anträge
+// laufen durch denselben Lader, landen aber nie im Cache (siehe NUR_ANZEIGEN).
 //
 // Problem davor: LazyImage/VideoPreview luden jedes Medium bei jedem
 // Sichtbarwerden NEU vom Server (GET /chat/files/:path) und erzeugten dabei
@@ -30,30 +31,69 @@ const CACHE_DIR = 'media-cache';
 /**
  * Die geschützten Medien-Routen der App. Eine neue Route kommt hier dazu —
  * sonst nirgends.
+ *
+ * Seit dem 27.09.2026 auch Material und die Nachweisfotos der Anträge (Simon:
+ * „Fotos Anträge und Material ja bitte."). Die Nachweisfotos haben zwei
+ * Routen: die eigene von Konfi und Team (nur offene Anträge) und die der
+ * Leitung (jeder Stand, gebunden an die Jahrgänge).
  */
-export type MedienQuelle = 'chat' | 'challenges';
+export type MedienQuelle = 'chat' | 'challenges' | 'material' | 'nachweisfoto' | 'nachweisfotoLeitung';
 
-const ROUTEN: Record<MedienQuelle, string> = {
-  chat: '/chat/files/',
-  challenges: '/challenges/files/',
+// Route = davor + Datei + danach. Chat, Challenges und Material nennen die
+// Datei beim Namen (64 Hexzeichen), die Nachweisfotos hängen am Antrag:
+// ".../requests/41/photo".
+const ROUTEN: Record<MedienQuelle, { davor: string; danach: string }> = {
+  chat: { davor: '/chat/files/', danach: '' },
+  challenges: { davor: '/challenges/files/', danach: '' },
+  material: { davor: '/material/files/', danach: '' },
+  nachweisfoto: { davor: '/konfi/activity-requests/', danach: '/photo' },
+  nachweisfotoLeitung: { davor: '/admin/activities/requests/', danach: '/photo' },
 };
+
+/**
+ * Quellen, die NIE auf dem Gerät abgelegt werden — weder im Dateisystem noch
+ * als geteilte Object-URL im Speicher: die Nachweisfotos der Anträge
+ * (Entscheidung 27.09.2026). Sie laufen über dieselben Bausteine — Laden mit
+ * Fortschritt, Fehler mit „Erneut versuchen", die Zeile ohne Netz —, werden
+ * aber bei jedem Öffnen vom Server geholt und beim Schließen verworfen.
+ *
+ * Warum nicht cachen:
+ *  - Der Server legt sie verschlüsselt ab (eigener Schlüssel) und gibt sie nur
+ *    an die Verantwortlichen der Jahrgänge heraus. Der Cache läge
+ *    unverschlüsselt im App-Speicher, im Browser in IndexedDB.
+ *  - Ein Leitungsgerät sammelte so die Fotos vieler fremder, meist
+ *    minderjähriger Konfis. Entzieht die Gemeinde jemandem einen Jahrgang,
+ *    leert das den Cache nicht (er hängt am Konto, nicht an den Jahrgängen) —
+ *    ohne Netz stünden die Fotos weiter da, an der Prüfung des Servers vorbei.
+ *  - Konfis und Team sehen ihr Foto nur, solange der Antrag offen ist. Ein
+ *    entschiedener oder gelöschter Antrag darf sein Foto nicht aus dem Speicher
+ *    weiter zeigen.
+ *  - Der Gewinn wäre klein: Ein Nachweisfoto wird zum Entscheiden ein-, zweimal
+ *    angesehen, nicht wie ein Chat-Bild immer wieder.
+ */
+const NUR_ANZEIGEN: ReadonlySet<MedienQuelle> = new Set<MedienQuelle>(['nachweisfoto', 'nachweisfotoLeitung']);
+
+/** false: Dateien dieser Quelle werden nur angezeigt, nie auf dem Gerät abgelegt. */
+export const bleibtAufDemGeraet = (quelle: MedienQuelle): boolean => !NUR_ANZEIGEN.has(quelle);
 
 /** Pfad der Datei-Route relativ zur API, etwa `/challenges/files/ab12…`. */
 export const medienApiPfad = (datei: string, quelle: MedienQuelle = 'chat'): string =>
-  `${ROUTEN[quelle]}${datei}`;
+  `${ROUTEN[quelle].davor}${datei}${ROUTEN[quelle].danach}`;
 
 /**
  * Umkehrung von medienApiPfad: erkennt eine geschützte Medien-Route in einem
  * API-Pfad (mit oder ohne führendes /api). Damit laufen auch Dateien, die als
  * Adresse weitergereicht werden (Wisch-Kontext im Datei-Betrachter), über
- * diesen Cache statt am ihm vorbei.
+ * diesen Cache statt am ihm vorbei. Nur Quellen, die auf dem Gerät bleiben —
+ * ein Nachweisfoto geht nie in den Betrachter.
  */
 export const medienAusApiPfad = (pfad: string): { quelle: MedienQuelle; datei: string } | null => {
   const ohneApi = pfad.replace(/^\/?api(?=\/)/, '');
   for (const quelle of Object.keys(ROUTEN) as MedienQuelle[]) {
-    const route = ROUTEN[quelle];
-    if (ohneApi.startsWith(route)) {
-      const datei = ohneApi.slice(route.length);
+    const { davor, danach } = ROUTEN[quelle];
+    if (!bleibtAufDemGeraet(quelle) || danach) continue;
+    if (ohneApi.startsWith(davor)) {
+      const datei = ohneApi.slice(davor.length);
       if (datei && !datei.includes('/')) return { quelle, datei };
     }
   }
@@ -264,6 +304,7 @@ const endgueltigWeg = (err: unknown): boolean => {
  * blitzt nur unangenehm auf.
  */
 export async function istGecacht(filePath: string, quelle: MedienQuelle = 'chat'): Promise<boolean> {
+  if (!bleibtAufDemGeraet(quelle)) return false;
   try {
     await Filesystem.stat({ path: `${CACHE_DIR}/${cacheKey(filePath, quelle)}`, directory: Directory.Cache });
     return true;
@@ -281,6 +322,13 @@ export async function istGecacht(filePath: string, quelle: MedienQuelle = 'chat'
  */
 export async function getMediaBlob(filePath: string, abruf?: FortschrittHandler | MedienAbruf): Promise<Blob> {
   const { quelle, onFortschritt, netzZuerst } = abrufLesen(abruf);
+
+  // Nachweisfotos: nur laden, nie ablegen und nie aus dem Cache nehmen (siehe
+  // NUR_ANZEIGEN).
+  if (!bleibtAufDemGeraet(quelle)) {
+    return downloadBlob(medienApiPfad(filePath, quelle), onFortschritt);
+  }
+
   const key = cacheKey(filePath, quelle);
 
   if (netzZuerst) {
@@ -336,6 +384,12 @@ export function getCachedObjectUrl(filePath: string, quelle: MedienQuelle = 'cha
  */
 export async function getMediaObjectUrl(filePath: string, abruf?: MedienAbruf): Promise<string> {
   const { quelle } = abrufLesen(abruf);
+  // Eine geteilte URL überdauert das Schließen der Ansicht — genau das darf ein
+  // Nachweisfoto nicht (siehe NUR_ANZEIGEN). useMedienDatei nimmt dafür einen
+  // eigenen Blob, den es beim Abhängen freigibt.
+  if (!bleibtAufDemGeraet(quelle)) {
+    throw new Error(`Medien-Cache: ${quelle} wird nicht geteilt`);
+  }
   const key = cacheKey(filePath, quelle);
   const cached = objectUrlCache.get(key);
   if (cached) return cached;
@@ -382,8 +436,9 @@ export async function medienVergessen(filePath: string, quelle: MedienQuelle = '
 // Seit auch Dokumente und Audio gecacht werden, waechst er deutlich schneller.
 //
 // 500 MB, weil die groesste Einzeldatei ein Challenge-Beitrag mit 50 MB ist
-// (Chat: 5 MB) — es passen also immer mindestens zehn davon hinein, und der
-// uebliche Bestand aus Bildern liegt um Groessenordnungen darunter.
+// (Material: 20 MB, Chat: 5 MB) — es passen also immer mindestens zehn davon
+// hinein, und der uebliche Bestand aus Bildern liegt um Groessenordnungen
+// darunter.
 const MAX_CACHE_BYTES = 500 * 1024 * 1024;
 
 type CacheEintrag = { name: string; size: number; mtime: number };
@@ -483,9 +538,9 @@ export async function getMediaCacheSize(): Promise<number> {
 }
 
 /**
- * Loescht den kompletten Medien-Cache aller Quellen (Filesystem +
- * In-Memory-Object-URLs). Läuft von Hand ("Medien-Cache leeren") und beim
- * Abmelden sowie beim Wechsel der Gemeinde.
+ * Loescht den kompletten Medien-Cache aller Quellen — Chat, Challenges,
+ * Material (Filesystem + In-Memory-Object-URLs). Läuft von Hand
+ * ("Medien-Cache leeren") und beim Abmelden sowie beim Wechsel der Gemeinde.
  */
 export async function clearMediaCache(): Promise<void> {
   inflight.clear();

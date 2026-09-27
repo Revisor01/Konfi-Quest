@@ -43,8 +43,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { track } from '../../../services/analytics';
 import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE, zuGrossText } from '../../../services/mediaCompression';
-import FortschrittsBalken from '../../shared/FortschrittsBalken';
-import { sendeText } from '../../../utils/fortschritt';
+import SendeAnzeige from '../../shared/SendeAnzeige';
 import { pruefeMusikLink, ERLAUBTE_DIENSTE_TEXT } from '../../../utils/musikLinks';
 import { getVisibilityInfo, getSuccessMessage } from '../../../utils/challengeTexte';
 import { AudioPlayer } from '../../shared';
@@ -460,23 +459,8 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
         {/* Dieselbe Anzeige wie beim Senden im Chat (27.09.2026): Prozent und
             Balken, bei 100 % "Wird verarbeitet…" — der Server verschlüsselt
             dann noch, bei einem 50-MB-Video spürbar lange. */}
-        {isSubmitting && uploadProgress > 0 && (
-          <div
-            aria-live="polite"
-            style={{
-              padding: '0 var(--app-abstand-basis) var(--app-abstand-eng)',
-              fontSize: 'var(--app-text-klein)',
-              color: 'var(--app-text-secondary)'
-            }}
-          >
-            {sendeText(uploadProgress)}
-            <div style={{ color: 'var(--app-text-challenges)' }}>
-              <FortschrittsBalken
-                prozent={uploadProgress}
-                beschriftung={`Beitrag wird gesendet: ${uploadProgress} Prozent`}
-              />
-            </div>
-          </div>
+        {isSubmitting && (
+          <SendeAnzeige prozent={uploadProgress} was="Beitrag" farbe="var(--app-text-challenges)" />
         )}
       </IonHeader>
 
