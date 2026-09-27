@@ -162,6 +162,11 @@ Versionsüberschrift.
 - Eine neue Challenge, bei der das Team mitmacht, steht bei Teamer:innen und
   Leitung als rote Zahl an der Challenge und am Reiter, bis sie geöffnet
   wird — wie bei den Konfis. Bisher zählten fürs Team nur neue Beiträge.
+- Eine Challenge lässt sich ohne Netz öffnen: Sie zeigt den zuletzt geladenen
+  Stand samt Fotos vom Gerät. War sie noch nie offen, sagt sie, dass die
+  Beiträge offline nicht verfügbar sind — bisher kamen eine Fehlermeldung und
+  eine leere Galerie, als gäbe es keine Beiträge. Mit Netz gilt wie bisher
+  immer der Stand des Servers.
 - Beim Einreichen eines Challenge-Beitrags mit Foto, Video oder Aufnahme steht
   wie im Chat, wie weit das Hochladen ist — mit Prozentzahl und Balken, bei
   100 % „Wird verarbeitet…". Fotos werden in Chat und Challenges auf demselben

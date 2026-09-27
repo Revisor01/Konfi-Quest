@@ -420,6 +420,11 @@ im Einzelnen geht, steht unter
 [Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
 Ein Foto antippen öffnet es — mit Teilen und Sichern.
 
+Ohne Netz zeigt eine Challenge den zuletzt geladenen Stand, die Fotos kommen
+dann vom Gerät. War sie auf dem Gerät noch nie offen, steht dort *„Die Liste
+der Beiträge ist offline nicht verfügbar."* Mit Netz gilt immer, was der
+Server sagt.
+
 ---
 
 ## Eine Challenge löschen

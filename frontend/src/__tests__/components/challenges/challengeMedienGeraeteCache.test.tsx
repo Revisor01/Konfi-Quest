@@ -25,8 +25,9 @@ vi.mock('../../../services/api', () => ({
   DATEI_TIMEOUT_MS: 180000,
 }));
 
+let online = true;
 vi.mock('../../../services/networkMonitor', () => ({
-  networkMonitor: { isOnline: true, subscribe: () => () => undefined },
+  networkMonitor: { get isOnline() { return online; }, subscribe: () => () => undefined },
 }));
 
 vi.mock('../../../utils/haptics', () => ({
@@ -93,6 +94,10 @@ const dateiAufrufe = () => apiGet.mock.calls.filter(([r]) => String(r).startsWit
 beforeEach(async () => {
   await clearMediaCache();
   dateien.clear();
+  // Der zuletzt geladene Stand der Listen (offlineCache) liegt im Browser in
+  // localStorage — je Test frisch.
+  localStorage.clear();
+  online = true;
   apiGet.mockReset();
   apiDelete.mockClear();
   betrachterZeigen.mockReset();
@@ -221,5 +226,66 @@ describe('Rückblick-Folie: der Server entscheidet', () => {
     await waitFor(() => expect(container.textContent).toContain('Das Foto ist nicht mehr verfügbar.'));
     expect(container.querySelector('img')).toBeNull();
     expect(cacheInhalt()).toEqual([]);
+  });
+});
+
+describe('Ohne Netz', () => {
+  const netzWeg = Object.assign(new Error('Network Error'), { code: 'ERR_NETWORK' });
+
+  /** Wie nach einem Neustart: Speicher leer, die Dateien liegen auf dem Gerät. */
+  const neustart = async () => {
+    const aufDemGeraet = new Map(dateien);
+    await clearMediaCache();
+    aufDemGeraet.forEach((d, p) => dateien.set(p, d));
+  };
+
+  it('zeigt den zuletzt geladenen Stand mit dem Foto vom Gerät — ohne Server', async () => {
+    (await oeffnen()).unmount();
+    await neustart();
+    online = false;
+    apiGet.mockReset();
+    apiGet.mockRejectedValue(netzWeg);
+
+    const { container } = render(<ChallengeDetailModal challenge={challenge as never} onClose={vi.fn()} />);
+
+    await waitFor(() => expect(container.querySelector('img[alt="foto.png"]')).not.toBeNull());
+    expect(dateiAufrufe()).toBe(0);
+  });
+
+  it('nie geladen: sagt, dass die Beiträge offline fehlen, statt "keine Beiträge"', async () => {
+    online = false;
+    apiGet.mockRejectedValue(netzWeg);
+
+    const { container } = render(<ChallengeDetailModal challenge={challenge as never} onClose={vi.fn()} />);
+
+    await waitFor(() => expect(container.textContent).toContain('Die Liste der Beiträge ist offline nicht verfügbar.'));
+    expect(container.textContent).not.toContain('Noch keine geteilten Beiträge');
+  });
+
+  it('antwortet der Server mit "kein Zugriff", gibt es keinen gespeicherten Stand', async () => {
+    (await oeffnen()).unmount();
+    apiGet.mockReset();
+    apiGet.mockRejectedValue(Object.assign(new Error('403'), { response: { status: 403, data: { error: 'Zugriff verweigert' } } }));
+
+    const { container } = render(<ChallengeDetailModal challenge={challenge as never} onClose={vi.fn()} />);
+
+    await waitFor(() => expect(stabil.setError).toHaveBeenCalled());
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.textContent).not.toContain('offline nicht verfügbar');
+  });
+
+  it('Leitungsansicht: dasselbe — Stand vom Gerät ohne Netz', async () => {
+    const erstes = render(<ChallengeLeitungModal challenge={challenge as never} onClose={vi.fn()} />);
+    await waitFor(() => expect(erstes.container.querySelector('img[alt="foto.png"]')).not.toBeNull());
+    erstes.unmount();
+    await neustart();
+    online = false;
+    apiGet.mockReset();
+    apiGet.mockRejectedValue(netzWeg);
+
+    const zweites = render(<ChallengeLeitungModal challenge={challenge as never} onClose={vi.fn()} />);
+
+    await waitFor(() => expect(zweites.container.querySelector('img[alt="foto.png"]')).not.toBeNull());
+    expect(dateiAufrufe()).toBe(0);
   });
 });

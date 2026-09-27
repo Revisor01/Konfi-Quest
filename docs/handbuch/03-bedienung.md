@@ -426,9 +426,15 @@ Formularen steht statt des Hakens ein Wolken-Symbol mit **„Du bist offline"**.
 
 ### Erkennen, was du ohne Netz noch siehst
 
-Alles, was du zuletzt geöffnet hattest — Events, Chats, dein Profil, die
-Badges. Die App merkt sich den Stand und zeigt ihn weiter. Er ist dann
-vielleicht ein paar Minuten alt, aber er ist da.
+Alles, was du zuletzt geöffnet hattest — Events, Chats, Challenges, dein
+Profil, die Badges. Die App merkt sich den Stand und zeigt ihn weiter. Er ist
+dann vielleicht ein paar Minuten alt, aber er ist da. Fotos und Dateien, die du
+schon einmal geöffnet hattest, kommen dabei vom Gerät (siehe
+[Geladene Bilder und Dateien auf dem Gerät behalten](#geladene-bilder-und-dateien-auf-dem-geraet-behalten)).
+
+Bei einer Challenge fragt die App mit Netz immer zuerst den Server; den
+gespeicherten Stand nimmt sie nur, wenn keine Antwort kommt. So erscheint ein
+Beitrag, den die Leitung inzwischen ausgeblendet hat, nicht noch einmal.
 
 Was sich wirklich nicht zeigen lässt, sagt die App als graue Zeile mit einem
 Wolken-Symbol, etwa: „Die Teilnehmerliste ist offline nicht verfügbar."

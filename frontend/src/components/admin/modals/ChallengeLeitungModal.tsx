@@ -58,6 +58,9 @@ import { EmptyState, SectionHeader } from '../../shared';
 import ChallengeMedium from '../../shared/ChallengeMedium';
 import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
 import { medienVergessen } from '../../../services/mediaCache';
+import { netzZuerstLaden } from '../../../services/netzZuerst';
+import { CACHE_TTL } from '../../../services/offlineCache';
+import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istWebLink } from '../../../utils/linkDisplay';
@@ -217,13 +220,26 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
 
   const challengeId = challenge?.id;
 
+  // Ohne Netz und ohne gespeicherten Stand: sagen, dass die Beiträge offline
+  // fehlen, statt "keine Beiträge" zu behaupten.
+  const [offlineOhneStand, setOfflineOhneStand] = useState(false);
+  const benutzerId = user?.id;
+
   const loadSubmissions = useCallback(async () => {
     if (!challengeId) return;
     try {
-      const res = await api.get(`/challenges/admin/${challengeId}/submissions`);
+      // Netz zuerst wie in der Konfi-Ansicht (27.09.2026): Bei Netz gilt der
+      // Server, ohne Netz der zuletzt geladene Stand samt Fotos vom Gerät.
+      const { daten } = await netzZuerstLaden<unknown>(
+        `leitung:challenge-beitraege:${benutzerId}:${challengeId}`,
+        () => api.get(`/challenges/admin/${challengeId}/submissions`).then((res) => res.data),
+        CACHE_TTL.REQUESTS
+      );
+      setOfflineOhneStand(false);
+      const antwort = daten as { submissions?: ChallengeSubmission[] } | ChallengeSubmission[] | null;
       // Backend liefert { challenge, submissions } — die Liste daraus ziehen und
       // den Konfi-Namen aus display_name normalisieren.
-      const raw = Array.isArray(res.data) ? res.data : (res.data?.submissions || []);
+      const raw = Array.isArray(antwort) ? antwort : (antwort?.submissions || []);
       setSubmissions(
         // display_name ist die Altform des Namensfeldes — deshalb hier
         // zusaetzlich zum Typ des Beitrags aufgefuehrt.
@@ -233,11 +249,15 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
         }))
       );
     } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Laden der Beiträge'));
+      if ((err as { response?: unknown })?.response === undefined) {
+        setOfflineOhneStand(true);
+      } else {
+        setError(fehlerText(err, 'Fehler beim Laden der Beiträge'));
+      }
     } finally {
       setLoading(false);
     }
-  }, [challengeId, setError]);
+  }, [challengeId, benutzerId, setError]);
 
   useEffect(() => {
     setLoading(true);
@@ -766,6 +786,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
           <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-block)' }}>
             <IonSpinner name="crescent" />
           </div>
+        ) : offlineOhneStand ? (
+          <OfflinePlatzhalter was="Die Liste der Beiträge" />
         ) : (
           <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
             <IonListHeader>

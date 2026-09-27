@@ -44,6 +44,9 @@ import { datumUhrzeit } from '../../../utils/dateUtils';
 /** Reiter im Challenge-Detail: Gruppen-Feed oder eigene Beitraege. */
 type KonfiReiter = 'feed' | 'meins';
 import api from '../../../services/api';
+import { netzZuerstLaden } from '../../../services/netzZuerst';
+import { CACHE_TTL } from '../../../services/offlineCache';
+import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import { EmptyState } from '../../shared';
 import ChallengeMedium from '../../shared/ChallengeMedium';
 import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
@@ -244,10 +247,15 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   onClose,
   onSubmit
 }) => {
-  const { setError } = useApp();
+  const { user, setError } = useApp();
   const { markChallengeAsRead } = useBadge();
   const [detail, setDetail] = useState<KonfiChallengeDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  // Ohne Netz und ohne gespeicherten Stand: sagen, dass die Beiträge offline
+  // fehlen, statt eine leere Galerie zu zeigen ("Noch keine geteilten
+  // Beiträge" wäre dann schlicht falsch).
+  const [offlineOhneStand, setOfflineOhneStand] = useState(false);
+  const benutzerId = user?.id;
 
   // Beim Oeffnen als gelesen melden -- wie ChatRoom beim Betreten eines
   // Raums. Ab jetzt zaehlt der Neuigkeiten-Zaehler neu; ohne den Aufruf
@@ -260,11 +268,20 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
 
   const loadDetail = useCallback(async () => {
     try {
-      const res = await api.get(`/challenges/konfi/${challenge.id}`);
+      // Netz zuerst (27.09.2026): Bei Netz entscheidet immer der Server, was
+      // in der Galerie steht — ein ausgeblendeter oder gelöschter Beitrag
+      // erscheint nicht, auch nicht kurz aus dem Speicher. Ohne Netz zeigt
+      // die Ansicht den zuletzt geladenen Stand, die Fotos kommen dann aus
+      // dem Medien-Cache.
+      const { daten: data } = await netzZuerstLaden(
+        `konfi:challenge:${benutzerId}:${challenge.id}`,
+        () => api.get(`/challenges/konfi/${challenge.id}`).then((res) => res.data),
+        CACHE_TTL.REQUESTS
+      );
+      setOfflineOhneStand(false);
       // Backend liefert { challenge, gallery, own_submissions } — Challenge-Felder
       // müssen auf die oberste Ebene, sonst ist starts_at/ends_at undefined und
       // die Challenge erscheint faelschlich als beendet.
-      const data = res.data;
       // Die Galerie-Query liefert den Namen als display_name (bei anonymen
       // Beitraegen NULL), das UI liest konfi_name -> hier normalisieren, sonst
       // erscheint JEDER Galerie-Beitrag als "Anonym".
@@ -278,11 +295,15 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
           : null
       );
     } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Laden der Challenge'));
+      if ((err as { response?: unknown })?.response === undefined) {
+        setOfflineOhneStand(true);
+      } else {
+        setError(fehlerText(err, 'Fehler beim Laden der Challenge'));
+      }
     } finally {
       setLoading(false);
     }
-  }, [challenge.id, setError]);
+  }, [challenge.id, benutzerId, setError]);
 
   useEffect(() => {
     setLoading(true);
@@ -453,6 +474,8 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
           <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-extraweit)' }}>
             <IonSpinner name="crescent" />
           </div>
+        ) : offlineOhneStand ? (
+          <OfflinePlatzhalter was="Die Liste der Beiträge" />
         ) : (
           <>
             {/* Reiter statt zweier gestapelter Bloecke: Der eigene Beitrag
