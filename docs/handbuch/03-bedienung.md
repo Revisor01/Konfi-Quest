@@ -560,6 +560,11 @@ schickt los, sobald der Server wieder antwortet oder das Handy wieder eine
 Verbindung meldet. Antwortet der Server trotz der Meldung, bleibt die App
 online — manche Geräte melden „keine Verbindung", obwohl Netz da ist.
 
+Reißt die Verbindung ab, während die App im Hintergrund deine Anmeldung
+erneuert — etwa beim Wechsel zwischen WLAN und Mobilfunk —, wartet sie
+höchstens 20 Sekunden. Du bleibst angemeldet; beim nächsten Laden versucht sie
+es von selbst noch einmal.
+
 ### Erkennen, was du ohne Netz noch siehst
 
 Alles, was du zuletzt geöffnet hattest — Events, Chats, Challenges, Material,

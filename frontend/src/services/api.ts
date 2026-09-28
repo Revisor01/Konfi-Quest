@@ -6,6 +6,7 @@ import { networkMonitor } from './networkMonitor';
 import { rotationUebernehmen, istBiometrieAktiv } from './biometrics';
 
 import { API_BASE_URL } from './apiBasis';
+import { refreshAnfordern } from './refreshAnfrage';
 import { fehlerFuersProtokoll } from '../utils/fehler';
 
 const api = axios.create({
@@ -140,11 +141,14 @@ const addRefreshSubscriber = (onSuccess: (token: string) => void, onFail: (err: 
 
 // Refresh-Request selbst (direktes axios, nicht api — vermeidet Interceptor-Loop).
 // Aktive Org mitsenden, damit das neue Token den Org-Claim behält.
+// Mit Zeitlimit 20 s wie die Instanz (refreshAnfrage.ts, Audit Grundgeruest
+// BF-07): ohne es hing bei einem Netzwechsel die ganze App am Refresh.
 const performRefresh = async (refreshToken: string): Promise<string> => {
   const activeOrgId = getActiveOrgId();
-  const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-    refresh_token: refreshToken
-  }, activeOrgId ? { headers: { 'X-Active-Organization': String(activeOrgId) } } : undefined);
+  const response = await refreshAnfordern(
+    { refresh_token: refreshToken },
+    activeOrgId ? { 'X-Active-Organization': String(activeOrgId) } : undefined
+  );
 
   const { token: newToken, refresh_token: newRefreshToken } = response.data;
 
@@ -372,7 +376,16 @@ api.interceptors.response.use(
           await clearAuth();
           return Promise.reject(refreshError);
         }
-        // Refresh fehlgeschlagen → Re-Login-Dialog
+        // Keine Antwort des Servers (Zeitlimit, Netz weg): Die Sitzung
+        // bleibt, die Anfrage scheitert als Netzfehler -- wie im
+        // Offline-Zweig oben. Seit der Refresh ein Zeitlimit hat (BF-07,
+        // 28.09.2026), kaeme ein Netzwechsel sonst nach 20 s als
+        // "Sitzung abgelaufen" an; vorher hing die App, und ein Neustart
+        // behielt die Sitzung. Ob der Token noch gilt, sagt nur der Server.
+        if (!(refreshError as { response?: unknown })?.response) {
+          return Promise.reject(refreshError);
+        }
+        // Refresh vom Server abgelehnt → Re-Login-Dialog
         await clearAuth();
         window.dispatchEvent(new CustomEvent('auth:relogin-required'));
         return Promise.reject(refreshError);

@@ -91,6 +91,9 @@ Versionsüberschrift.
   die Anmeldung im Kopf der Anfrage steht, nicht mehr in der Adresse. Dort
   hätte sie in den Zugriffsprotokollen des Servers gestanden. Die App hat sie
   nie so geschickt; im Chat ändert sich dadurch nichts.
+- Wechselt das Handy zwischen WLAN und Mobilfunk, während die App die
+  Anmeldung im Hintergrund erneuert, hängt die App nicht mehr minutenlang:
+  Nach spätestens 20 Sekunden geht es weiter, und du bleibst angemeldet.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

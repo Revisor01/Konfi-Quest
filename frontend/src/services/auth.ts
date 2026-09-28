@@ -1,5 +1,5 @@
-import axios from 'axios';
-import api, { API_URL } from './api';
+import api from './api';
+import { refreshAnfordern } from './refreshAnfrage';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
 import { setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setLoggingOut } from './tokenStore';
@@ -293,7 +293,8 @@ export const mitBiometrieAnmelden = async (): Promise<BiometrieAnmeldung> => {
   if (!networkMonitor.isOnline) return { status: 'offline' };
 
   try {
-    const antwort = await axios.post(`${API_URL}/auth/refresh`, {
+    // Mit Zeitlimit 20 s (refreshAnfrage.ts, Audit Grundgeruest BF-07).
+    const antwort = await refreshAnfordern({
       refresh_token: entsperrt.refreshToken
     });
     const { token, refresh_token: neuerRefreshToken } = antwort.data || {};
