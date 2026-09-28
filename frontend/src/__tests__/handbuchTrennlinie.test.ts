@@ -41,7 +41,9 @@ describe('Handbuch: Trennlinien', () => {
 
   it('die Zählung trifft die Kapitel mit Trennlinien (Stand 27.09.2026)', () => {
     expect(trennlinienDerQuelle('80-challenges.md')).toBe(10);
-    expect(trennlinienDerQuelle('90-chat.md')).toBe(12);
+    // 13 seit 28.09.2026: der Abschnitt „Im Verlauf zurückblättern" steht wie
+    // jeder h2 des Kapitels hinter einer eigenen Trennlinie.
+    expect(trennlinienDerQuelle('90-chat.md')).toBe(13);
     expect(trennlinienDerQuelle('60-badges.md')).toBe(2);
   });
 });

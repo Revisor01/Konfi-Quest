@@ -1075,6 +1075,44 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       
       const after = parseInt(req.query.after) || null;
 
+      /*
+       * Aeltere Nachrichten nachladen: ?before=<message_id> (28.09.2026,
+       * Audit app-screens-konfi-teamer BF-04).
+       *
+       * Die App lud einmal die juengsten 100 und danach nur noch Neues
+       * (?after=) — alles davor war unerreichbar. Mit before blaettert sie
+       * per Keyset nach oben: die <limit> Nachrichten DIESES Raums, die im
+       * Tupel (created_at, id) vor der Anker-Nachricht liegen. Das Tupel ist
+       * dieselbe Reihenfolge wie im Standardzweig; ein reiner Zeitvergleich
+       * verloere Nachrichten mit gleichem Zeitstempel an der Seitengrenze.
+       *
+       * Additiv: Ohne before bleibt alles wie bisher (die Store-Apps rufen
+       * limit=100 und after=). Ein leeres ?before= gilt als nicht gesetzt.
+       *
+       * - Keine positive ganze Zahl → 400. Die Obergrenze (15 Stellen, sicher
+       *   als JS-Zahl und als bigint) haelt Unsinn von der Datenbank fern.
+       * - Zusammen mit after → 400: zwei Richtungen zugleich ergeben nichts.
+       * - Liegt die Anker-Nachricht nicht in diesem Raum (fremder Raum,
+       *   unbekannte id), liefert die Unterabfrage keine Zeile, der Vergleich
+       *   ergibt NULL und die Antwort ist leer. Kein Zeitstempel eines
+       *   anderen Raums fliesst ein, und die Antwort verraet nicht, ob die id
+       *   anderswo existiert.
+       * - offset wird mit before nicht ausgewertet — Keyset ersetzt das
+       *   Ueberspringen.
+       */
+      const beforeRoh = req.query.before;
+      let before = null;
+      if (beforeRoh !== undefined && beforeRoh !== '') {
+        const gueltig = typeof beforeRoh === 'string' && /^[0-9]{1,15}$/.test(beforeRoh);
+        before = gueltig ? Number(beforeRoh) : 0;
+        if (!gueltig || before < 1) {
+          return res.status(400).json({ error: 'Ungültiger Wert für before' });
+        }
+        if (req.query.after !== undefined && req.query.after !== '') {
+          return res.status(400).json({ error: 'before und after lassen sich nicht kombinieren' });
+        }
+      }
+
       const selectColumns = `
       SELECT m.*,
               m.user_id as sender_id,
@@ -1115,6 +1153,17 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         ORDER BY m.created_at ASC
         LIMIT 200`;
         queryParams = [roomId, after];
+      } else if (before) {
+        messagesQuery = `${selectColumns}
+        WHERE m.room_id = $1
+          AND (m.created_at, m.id) < (
+            SELECT anker.created_at, anker.id
+            FROM chat_messages anker
+            WHERE anker.id = $2 AND anker.room_id = $1
+          )
+        ORDER BY m.created_at DESC, m.id DESC
+        LIMIT $3`;
+        queryParams = [roomId, before, limit];
       } else {
         messagesQuery = `${selectColumns}
         WHERE m.room_id = $1

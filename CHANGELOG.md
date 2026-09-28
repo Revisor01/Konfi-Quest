@@ -37,6 +37,9 @@ Versionsüberschrift.
   Datum in der Zukunft tragen.
 - Die Zahl am App-Symbol zählt keine Chat-Nachrichten mit einem Datum in der
   Zukunft mehr mit und stimmt damit wieder mit den Reitern überein.
+- Ältere Chat-Nachrichten lassen sich durch Hochscrollen nachladen — bisher
+  endete jeder Chat nach den letzten 100 Nachrichten. Oben steht „Anfang des
+  Chats", wenn der ganze Verlauf geladen ist.
 
 ## [2.3.0] - 2026-09-27
 

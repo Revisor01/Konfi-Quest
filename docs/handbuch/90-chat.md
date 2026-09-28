@@ -193,6 +193,26 @@ Umfrage hineinstellen. Ein Zweiergespräch ist privat, auch in einer Gemeinde.
 
 ---
 
+## Im Verlauf zurückblättern
+
+Ein Chat öffnet mit den letzten 100 Nachrichten, die neueste unten. Wer nach
+oben scrollt, bekommt kurz vor dem Anfang der geladenen Nachrichten die
+nächsten 50 älteren dazu. Oben steht solange *„Ältere Nachrichten werden
+geladen..."*; die Stelle, an der du gerade liest, bleibt dabei stehen. So geht
+es weiter bis zur ersten Nachricht des Chats — dort steht **„Anfang des
+Chats"**.
+
+Klappt das Nachladen nicht, etwa im Funkloch, steht oben **„Ältere Nachrichten
+laden"**; ein Tipp darauf versucht es erneut. Ohne Internet zeigt der Chat, was
+das Gerät zuletzt geladen hat — höchstens die letzten 100 Nachrichten. Ältere
+kommen, sobald wieder Netz da ist (mehr unter
+[Ohne Internet weiterarbeiten](03-bedienung.md#ohne-internet-weiterarbeiten)).
+
+Den ganzen Verlauf auf einmal gibt es als [Export](#einen-chat-exportieren),
+den nur Leitung und Org-Leitung ziehen dürfen.
+
+---
+
 ## Nachrichten schreiben, zitieren und löschen
 
 ### Eine Nachricht schreiben
