@@ -436,6 +436,40 @@ einchecken können.
   (zwischen 0 und 2 Uhr Berliner Zeit der Vortag). Lösung: `timestamptz` (Muster Migration 138),
   `TZ` bis dahin nicht setzen.
 
+### Löschungen als Ganzes prüfen (Simon 28.09.: „Wir müssen die Löschungen irgendwann nochmal anschauen.")
+
+Am 28.09. behoben: Jahrgang löschen nimmt Events und Challenges mit, die nur an ihm hängen, in
+einer Transaktion (Punkte/Termine BF-08); die Beförderung legt vorher eine Kopie der Konfi-Zeit an
+(BF-09). Dabei sind diese Löschwege begegnet — jeder mit eigener Regel, was mitgeht und was
+bleibt:
+
+- **Event** (`DELETE /events/:id`, `utils/terminLoeschen.js`): Chat, Buchungen, Zeitfenster,
+  Postfach; Punkte werden zurückgenommen, Absage-Push. Dieselben Schritte beim **Jahrgang**, dort
+  ohne Punkte-Rücknahme und ohne Push. Die App löscht Serien mit parallelen Anfragen — seit
+  28.09. hinter einer Sperre je Gemeinde.
+- **Jahrgang** (`DELETE /admin/jahrgaenge/:id`, `utils/jahrgangLoeschen.js`): Chat, Events und
+  Challenges nur dieses Jahrgangs; Profile Beförderter nur gelöst; Rückblicke bleiben.
+  **Offen:** Material des Jahrgangs verliert per Kaskade seine Zuordnung und ist danach für das
+  ganze Team sichtbar (`material.js`, „ohne Jahrgang“) — dieselbe Klasse wie BF-08;
+  Einladungscodes gehen per Kaskade mit.
+- **Challenge** (`DELETE /challenges/admin/:id`, `utils/challengeLoeschen.js`): Beiträge, Dateien,
+  Postfach und die Stempel aller. Nur beim Jahrgang bleiben die Stempel des Teams
+  (`bewahrte_stempel`). Einzelne Beiträge (`/konfi/submissions/:id`, `/admin/submissions/:id`)
+  nehmen den abgeleiteten Stempel mit.
+- **Badge** (`DELETE /badges/:id`): nimmt alle verliehenen Exemplare aus `user_badges` mit — auch
+  die „hart gespeicherten“ Konfi-Badges Beförderter; nur die Kopie der Konfi-Zeit hält sie fest.
+- **Konfi/Konto** (`DELETE /admin/konfis/:id`, Selbstlöschung, automatische Löschung nach der
+  Konfirmation: 60 Tage weich, 120 Tage hart; `utils/konfiDeletion.js`): Konfi-Zeit und bewahrte
+  Stempel gehen mit dem Konto (ON DELETE CASCADE).
+- **Beförderung** (`promote-teamer`): Buchungen und offene Anträge; seit 28.09. vorher die Kopie.
+- **Gemeinde** (`DELETE /organizations/:id`): alles, einzeln aufgezählt.
+- **Aktivität, Kategorie, Level**: blockieren, solange etwas daran hängt (409).
+- **Chat** (Raum, Verlauf, Nachricht), **Material**, **Rückblick-Ausgaben**, **Bonuspunkte und
+  zugeordnete Aktivitäten** je eigene Routen.
+
+Leitfrage für den Durchgang: Was ist Verlauf (bleibt als Kopie), was ist Zustand (geht mit), und
+wer erfährt es — heute beantwortet jede Route das selbst.
+
 ### Später (NIEDRIG)
 
 Die NIEDRIG-Befunde der Berichte ohne Paket — unter anderem Tipp-Anzeige, zwei
