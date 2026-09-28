@@ -7,7 +7,7 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [Unreleased]
+## [Unreleased] - 2.4.0
 
 ### Hinzugefügt
 - Eine orange Zahl in den Umschaltern oben zeigt, hinter welchem Reiter etwas
@@ -53,7 +53,7 @@ Versionsüberschrift.
 ### Behoben
 - In der Detailansicht einer Konfi stehen ihre offenen Anträge wieder als
   „gemeldet" zwischen den Aktivitäten.
-- In der Termin-Detailansicht der Teamer:innen steht kein
+- In der Detailansicht eines Events steht bei den Teamer:innen kein
   Gemeinde-Umschalter mehr — wie in allen anderen Detailansichten.
 - Teamer:innen, die den Hinweis auf ihren Rückblick auf der Startseite
   weggeklickt haben, sehen den nächsten Team-Rückblick dort wieder. Wer ihn
@@ -105,13 +105,6 @@ Versionsüberschrift.
   Bibelübersetzung und bei der Leitung das Bearbeiten von Badges, Leveln,
   Aktivitäten, Kategorien, Zertifikaten, Jahrgängen und Dashboard-Einstellungen
   unter „Wird gesendet…" statt in einer Fehlermeldung.
-
-### Sonstiges
-- Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,
-  reicht die App die Ablehnung weiter, statt es endlos erneut zu versuchen.
-- Die mit Face ID oder Fingerabdruck gesicherte Anmeldung (derzeit ohne
-  Schalter in der App) legt den Anmeldeschlüssel auch nach dem regelmäßigen
-  Erneuern nur noch geschützt ab, nicht zusätzlich offen auf dem Gerät.
 - Ein Event, dessen Ende vor dem Beginn liegt, lässt sich nicht mehr
   speichern; das Formular sagt es vor dem Absenden, und die Endzeit lässt sich
   nicht mehr vor den Beginn stellen.
@@ -135,6 +128,11 @@ Versionsüberschrift.
   für Teamer:innen fremder Gemeinden.
 
 ### Sonstiges
+- Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,
+  reicht die App die Ablehnung weiter, statt es endlos erneut zu versuchen.
+- Die mit Face ID oder Fingerabdruck gesicherte Anmeldung (derzeit ohne
+  Schalter in der App) legt den Anmeldeschlüssel auch nach dem regelmäßigen
+  Erneuern nur noch geschützt ab, nicht zusätzlich offen auf dem Gerät.
 - Ein fehlerhafter Aufruf beim Eintragen von Teilnehmenden von Hand bekommt
   eine klare Meldung statt eines Datenbankfehlers und legt keine Buchung mit
   unbekanntem Status mehr an.
