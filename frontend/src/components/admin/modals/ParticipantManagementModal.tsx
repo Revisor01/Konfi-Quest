@@ -16,7 +16,8 @@ import {
   IonCard,
   IonCardContent,
   IonSelect,
-  IonSelectOption
+  IonSelectOption,
+  useIonAlert
 } from '@ionic/react';
 import {
   ICON_FILTER,
@@ -37,6 +38,7 @@ import { passtZumTermin } from '../../../utils/jahrgangsPassung';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { uhrzeit } from '../../../utils/dateUtils';
 import { fehlerText } from '../../../utils/fehler';
+import { eintragenMitRueckfrage, type UeberbuchenFrage } from '../../../utils/ueberbuchen';
 
 interface Konfi {
   id: number;
@@ -96,6 +98,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   filterRole
 }) => {
   const { setError, isOnline } = useApp();
+  const [presentAlert] = useIonAlert();
   const [searchTerm, setSearchTerm] = useState('');
   const [availableKonfis, setAvailableKonfis] = useState<Konfi[]>([]);
   const [selectedKonfis, setSelectedKonfis] = useState<number[]>([]);
@@ -236,6 +239,21 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     );
   };
 
+  // Rueckfrage "voll -- trotzdem eintragen?" als Ja/Nein-Alert, wie beim
+  // Bestaetigen von der Warteliste (EventDetailView). Tippen neben den Dialog
+  // ist ein Nein; ein zweites resolve nach dem Button bleibt wirkungslos.
+  const frageUeberbuchen = (frage: UeberbuchenFrage) => new Promise<boolean>((resolve) => {
+    presentAlert({
+      header: frage.header,
+      message: frage.message,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel', handler: () => resolve(false) },
+        { text: 'Trotzdem eintragen', handler: () => resolve(true) }
+      ],
+      onDidDismiss: () => resolve(false)
+    });
+  });
+
   const handleAddParticipants = async () => {
     if (selectedKonfis.length === 0) return;
 
@@ -252,29 +270,39 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       await guard(async () => {
       setLoading(true);
       try {
-        // Add each selected konfi as participant
-        for (const konfiId of selectedKonfis) {
-          // timeslot_id kommt nur dazu, wenn der Termin Zeitfenster hat.
-          const requestData: { user_id: number; status: 'confirmed'; timeslot_id?: number } = {
-            user_id: konfiId,
-            status: 'confirmed' // Admin fügt direkt als bestätigt hinzu (übersteuert Kapazität)
-          };
+        // Von Hand Eingetragene sind bestaetigt, auch ueber die Grenze -- aber
+        // erst nach einer Rueckfrage (Simon, 28.09.2026: "Die sollten wir auch
+        // einfügen, wenn wir Konfi hinzufügen ... oder auch bei Teamern").
+        // Jede Person geht zuerst mit ueberbuchen: false hinaus; meldet der
+        // Server "voll", fragt die App einmal je Kontingent (Konfi/Team) fuer
+        // alle Uebrigen (utils/ueberbuchen.ts).
+        const auswahl = selectedKonfis.map(
+          (id) => availableKonfis.find((k) => k.id === id) ?? { id, name: '' }
+        );
+        const ergebnis = await eintragenMitRueckfrage(
+          auswahl,
+          (person, ueberbuchen) => api.post(`/events/${eventId}/participants`, {
+            user_id: person.id,
+            status: 'confirmed',
+            // timeslot_id kommt nur dazu, wenn der Termin Zeitfenster hat.
+            ...(eventData?.has_timeslots && selectedTimeslot ? { timeslot_id: selectedTimeslot } : {}),
+            ueberbuchen
+          }).then(() => undefined),
+          frageUeberbuchen,
+          (person) => ({ name: person.name || undefined, seite: person.role_name === 'konfi' ? 'konfi' : 'team' })
+        );
 
-          // Add timeslot_id if event has timeslots
-          if (eventData?.has_timeslots && selectedTimeslot) {
-            requestData.timeslot_id = selectedTimeslot;
-          }
-
-          await api.post(`/events/${eventId}/participants`, requestData);
-        }
-
-        setSelectedKonfis([]);
+        // Wer drin ist, bleibt drin -- auch nach Abbruch oder Fehler. Die
+        // Uebrigen bleiben ausgewaehlt, damit man sie abwaehlen oder die
+        // Teilnehmerzahl erhoehen und es noch einmal versuchen kann.
+        setSelectedKonfis(ergebnis.offen.map((person) => person.id));
         // Participants und verfügbare Konfis neu laden
         const eventResponse = await api.get(`/events/${eventId}`);
         const updatedParticipants: Participant[] = eventResponse.data.participants || [];
         setCurrentParticipants(updatedParticipants);
         await loadAvailableKonfis(updatedParticipants);
-        onSuccess();
+        if (ergebnis.eingetragen.length > 0) onSuccess();
+        if (ergebnis.fehler) throw ergebnis.fehler;
       } catch (err) {
         // Die Meldung des Servers zeigen, wenn er eine hat — etwa "… gehört
         // zu keinem Jahrgang dieses Termins" (403). Sonst der Sammelbegriff.

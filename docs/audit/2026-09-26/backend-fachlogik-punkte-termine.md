@@ -247,6 +247,14 @@ bestehender Aktivitäten nicht zu ändern.
   bestätigen?" und schickt danach `ueberbuchen: true`. Tests: `bestaetigenUeberbuchen.test.js`
   (5, vorher 4 rot; ohne die Bedingung 2 rot), Frontend `ueberbuchen.test.ts` (12, gegen die
   alte Detailansicht 2 rot).
+- **Nachtrag 28.09.2026 (Vormittag):** Dieselbe Rückfrage beim Eintragen von Hand, für Konfis und
+  Team (Simon: „Die sollten wir auch einfügen, wenn wir Konfi hinzufügen … oder auch bei
+  Teamern"). `POST /events/:id/participants` prüft mit `ueberbuchen: false` das Kontingent der
+  Person (Konfi-Plätze bzw. Zeitfenster, sonst Team-Plätze) und antwortet 400 `event_voll` mit
+  `max`, `belegt`, `seite`; ohne das Feld überbucht die Route wie bisher still (Store-Apps). Die
+  App fragt einmal je Kontingent für alle Übrigen. Beide Routen melden jetzt `seite`. Tests:
+  `vonHandUeberbuchen.test.js` (10; vorher 5 rot, ohne die Prüfung 3 rot, darunter Team-Warteliste
+  und Zeitfenster), Frontend `ueberbuchen.test.ts` (22).
 
 ### BF-05: Wiederanmeldung nach Abmeldung behält den alten Wartelistenrang; Positionsanzeige widerspricht sich
 - **Schwere:** MITTEL

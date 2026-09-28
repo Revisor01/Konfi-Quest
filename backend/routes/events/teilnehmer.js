@@ -45,6 +45,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // 'confirmed' UEBERBUCHT BEWUSST (Simon, 28.09.2026): "Überbuchen ist
     // gewollt, kann ja sein das ich mehr brauche von der Warteliste." Wer von
     // Hand eingetragen wird, ist bestaetigt, auch wenn das Event voll ist.
+    // Die neue App fragt vorher nach (`ueberbuchen: false`, siehe unten).
     // Das Bestaetigen einer Wartenden (PUT /:id/participants/:id/status)
     // prueft die Kapazitaet und ueberbucht erst nach einer Rueckfrage
     // (`ueberbuchen: true`, Simon 28.09.2026, Variante c).
@@ -162,6 +163,39 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       );
       const addedIsKonfi = addedUser?.role_name === 'konfi';
       const addedIsTeamer = !addedIsKonfi;
+
+      // ERST FRAGEN, DANN UEBERBUCHEN (Simon, 28.09.2026: "Die sollten wir
+      // auch einfügen, wenn wir Konfi hinzufügen ... oder auch bei
+      // Teamern"). 'confirmed' ueberbucht hier seit jeher still, und die
+      // Store-Apps 2.2.x/2.3.0 bauen darauf -- sie schicken das Feld nie und
+      // bekommen weiter 201. Die neue App schickt zuerst `ueberbuchen: false`:
+      // Ist das Kontingent der Person voll, kommt dieselbe Ablehnung wie beim
+      // Bestaetigen einer Wartenden (PUT .../status), die App fragt nach und
+      // schickt dann `ueberbuchen: true`. Gezaehlt wird wie dort: Konfis
+      // gegen die Konfi-Plaetze bzw. ihr Zeitfenster, alle anderen (Team,
+      // Leitung) gegen die Team-Plaetze.
+      if (status === 'confirmed' && req.body.ueberbuchen === false) {
+        const seite = addedIsKonfi ? 'konfi' : 'team';
+        const zeitfenster = addedIsKonfi && timeslot ? timeslot.id : null;
+        const maxKapazitaet = addedIsKonfi
+          ? (zeitfenster ? (timeslot.max_participants || 0) : (event.max_participants || 0))
+          : (event.teamer_max_participants || 0);
+        const frei = await freiePlaetze(client, { eventId, timeslotId: zeitfenster, seite }, maxKapazitaet);
+        if (frei !== null && frei <= 0) {
+          const belegt = await zaehleBestaetigte(
+            client, zeitfenster ? { timeslotId: zeitfenster } : { eventId }, seite
+          );
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(400).json({
+            error: 'Das Event ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.',
+            error_code: 'event_voll',
+            max: maxKapazitaet,
+            belegt,
+            seite
+          });
+        }
+      }
 
       if (status === 'auto') {
         // Rolle des hinzugefuegten Users bestimmt, GEGEN WELCHES Kontingent
@@ -696,7 +730,8 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
               error: 'Das Event ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.',
               error_code: 'event_voll',
               max: maxKapazitaet,
-              belegt
+              belegt,
+              seite: booking.ist_team ? 'team' : 'konfi'
             });
           }
 

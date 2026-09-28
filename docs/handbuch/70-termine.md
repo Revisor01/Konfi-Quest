@@ -1200,21 +1200,31 @@ In der Detailansicht kannst du Leute selbst eintragen — praktisch für alle, d
 keine App haben oder die Frist verpasst haben. Der Anmeldezeitraum gilt hier
 nicht, du kannst also auch nach Anmeldeschluss noch jemanden eintragen.
 
-**Auch die Platzgrenze gilt hier bewusst nicht.** Wen du von Hand einträgst,
-ist angemeldet, auch wenn das Event schon voll ist — vielleicht brauchst du
-doch mehr Leute, als du geplant hattest. Die Zahl zeigt dann mehr Angemeldete
-als Plätze. Solange das so ist, rückt niemand von der Warteliste nach, wenn
-jemand abspringt; erst wenn wieder weniger Leute angemeldet als Plätze da
-sind, greift die Grenze.
+**Über die Platzgrenze geht es nur nach einer Rückfrage.** Wen du von Hand
+einträgst, ist angemeldet, auch wenn das Event schon voll ist — vielleicht
+brauchst du doch mehr Leute, als du geplant hattest. Ist kein Platz mehr frei,
+fragt die App vorher: „Das Event ist voll — Alle 12 Plätze sind vergeben. Mia
+trotzdem eintragen? Das Event ist dann überbucht." Hast du mehrere ausgewählt,
+fragt sie einmal für alle Übrigen („Die übrigen 3 trotzdem eintragen?"). Mit
+**Trotzdem eintragen** kommen sie dazu; mit **Abbrechen** bleiben die schon
+Eingetragenen drin und die Übrigen ausgewählt.
 
-Beim **Bestätigen einer Person, die auf der Warteliste steht**, fragt die App
-nach, wenn das Event voll ist: „Das Event ist voll — Alle 12 Plätze sind
-vergeben. Mia trotzdem bestätigen? Das Event ist dann überbucht." Mit
-**Trotzdem bestätigen** nimmst du genau diese Person mit, auch über die
-Grenze; mit **Abbrechen** bleibt sie auf der Warteliste. Willst du stattdessen
-mehr Plätze für alle schaffen, erhöhst du die Teilnehmerzahl — die Wartenden
-rücken dann der Reihe nach von selbst nach (siehe
-[Nachvollziehen, wann jemand nachrückt](#nachvollziehen-wann-jemand-nachrueckt)).
+Konfis und Team haben getrennte Plätze. Sind die Team-Plätze voll, heißt die
+Rückfrage „Die Team-Plätze sind voll — Alle 2 Team-Plätze sind vergeben …",
+auch wenn für Konfis noch Platz ist; Leitung zählt dabei zum Team. Bei
+Zeitfenster-Events zählt das gewählte Fenster.
+
+Nach dem Überbuchen zeigt die Zahl mehr Angemeldete als Plätze. Solange das
+so ist, rückt niemand von der Warteliste nach, wenn jemand abspringt; erst
+wenn wieder weniger Leute angemeldet als Plätze da sind, greift die Grenze.
+
+Genauso beim **Bestätigen einer Person, die auf der Warteliste steht** —
+Konfi oder Team: Ist kein Platz frei, fragt die App „… Mia trotzdem
+bestätigen? Das Event ist dann überbucht." Mit **Trotzdem bestätigen** nimmst
+du genau diese Person mit; mit **Abbrechen** bleibt sie auf der Warteliste.
+Willst du stattdessen mehr Plätze für alle schaffen, erhöhst du die
+Teilnehmerzahl — die Wartenden rücken dann der Reihe nach von selbst nach
+(siehe [Nachvollziehen, wann jemand nachrückt](#nachvollziehen-wann-jemand-nachrueckt)).
 
 Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
 

@@ -48,6 +48,7 @@ vi.mock('@ionic/react', async () => {
       React.createElement('button', { onClick }, children),
     IonIcon: () => null,
     IonInput: () => null,
+    useIonAlert: () => [vi.fn(), vi.fn()],
   };
 });
 

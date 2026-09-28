@@ -413,7 +413,9 @@ Migrationen 169–171).
   Teamer-Aktivitäten nur an Personen der eigenen Gemeinde (`39c915d0`; BF-07). Am Morgen danach
   hat Simon die offene Frage entschieden (Variante c): Das Bestätigen einer Wartenden bei vollem
   Event fragt „Trotzdem bestätigen?" und überbucht nach dem Ja (`ueberbuchen: true`, additiv;
-  ohne das Feld bleibt die Ablehnung wie bisher, jetzt mit `error_code: 'event_voll'`).
+  ohne das Feld bleibt die Ablehnung wie bisher, jetzt mit `error_code: 'event_voll'`). Gleich
+  danach dieselbe Rückfrage beim Eintragen von Hand, für Konfis und Team getrennt (einmal je
+  Kontingent für alle Übrigen); Store-Apps ohne das Feld überbuchen dort weiter still.
 - **Anmeldung und Sitzung:** Der rotierte Refresh-Token liegt bei Biometrie nicht mehr im
   Klartext (`4e4d8d14`; Grundgerüst BF-06). Nach einem Refresh höchstens eine Wiederholung bei
   401 — gemessen vorher 8 Versuche und 7 Refreshs, jetzt 2 und 1 (`fb4b01d0`; BF-09). Der

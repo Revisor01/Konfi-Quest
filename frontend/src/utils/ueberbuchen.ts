@@ -27,15 +27,26 @@ export function istEventVoll(daten: ApiFehlerAntwort | undefined): boolean {
 const zahl = (wert: unknown): number | undefined =>
   typeof wert === 'number' && Number.isFinite(wert) ? wert : undefined;
 
-/** Rueckfrage mit Person, Plaetzen und der Folge. */
-export function ueberbuchenFrage(name: string | undefined, daten: ApiFehlerAntwort | undefined): UeberbuchenFrage {
+/**
+ * Rueckfrage mit Person, Plaetzen und der Folge. `wer` ist ein Name oder eine
+ * Menge ("Die übrigen 3"), `tun` das Verb der Handlung. Ist das Team voll
+ * (seite 'team'), nennt die Frage die Team-Plaetze -- die Konfi-Plaetze
+ * koennen dann noch frei sein.
+ */
+export function ueberbuchenFrage(
+  wer: string | undefined,
+  daten: ApiFehlerAntwort | undefined,
+  tun: 'bestätigen' | 'eintragen' = 'bestätigen'
+): UeberbuchenFrage {
   const max = zahl(daten?.max);
   const belegt = zahl(daten?.belegt);
-  const plaetze = max !== undefined ? `Alle ${max} Plätze sind vergeben` : 'Alle Plätze sind vergeben';
+  const team = daten?.seite === 'team';
+  const art = team ? 'Team-Plätze' : 'Plätze';
+  const plaetze = max !== undefined ? `Alle ${max} ${art} sind vergeben` : `Alle ${art} sind vergeben`;
   const schonUeber = max !== undefined && belegt !== undefined && belegt > max ? `, ${belegt} sind bestätigt` : '';
   return {
-    header: 'Das Event ist voll',
-    message: `${plaetze}${schonUeber}. ${name || 'Diese Person'} trotzdem bestätigen? Das Event ist dann überbucht.`
+    header: team ? 'Die Team-Plätze sind voll' : 'Das Event ist voll',
+    message: `${plaetze}${schonUeber}. ${wer || 'Diese Person'} trotzdem ${tun}? Das Event ist dann überbucht.`
   };
 }
 
@@ -62,4 +73,65 @@ export async function bestaetigenMitRueckfrage(
     await senden(true);
     return 'ueberbucht';
   }
+}
+
+export type Kontingent = 'konfi' | 'team';
+
+export interface EintragenErgebnis<P> {
+  /** Wer eingetragen ist -- auch bei Abbruch oder Fehler bleiben sie es. */
+  eingetragen: P[];
+  /** Wer nicht mehr drankam, in der Reihenfolge der Auswahl. */
+  offen: P[];
+  /** true, wenn die Leitung die Rueckfrage mit Abbrechen beantwortet hat. */
+  abgebrochen?: true;
+  /** Ein anderer Fehler als "voll"; er beendet den Durchlauf. */
+  fehler?: unknown;
+}
+
+/**
+ * Traegt mehrere Personen nacheinander von Hand ein (Simon, 28.09.2026:
+ * "Die sollten wir auch einfügen, wenn wir Konfi hinzufügen ... oder auch
+ * bei Teamern").
+ *
+ * Jede Person geht zuerst mit `ueberbuchen: false` hinaus. Meldet der Server
+ * "voll", fragt die App EINMAL fuer alle Uebrigen desselben Kontingents
+ * ("Die übrigen 3 trotzdem eintragen?") und schickt sie danach mit
+ * `ueberbuchen: true`. Konfi- und Team-Plaetze sind getrennt: Das Ja fuer die
+ * Konfis ueberbucht das Team nicht still mit, dort wird eigens gefragt.
+ *
+ * Kein Wurf: Abbruch und Fehler kommen im Ergebnis zurueck, zusammen mit
+ * denen, die schon eingetragen sind -- die Liste muss danach neu laden.
+ */
+export async function eintragenMitRueckfrage<P>(
+  personen: P[],
+  senden: (person: P, ueberbuchen: boolean) => Promise<void>,
+  fragen: (frage: UeberbuchenFrage) => Promise<boolean>,
+  beschreibe: (person: P) => { name?: string; seite: Kontingent }
+): Promise<EintragenErgebnis<P>> {
+  const erlaubt = new Set<Kontingent>();
+  const eingetragen: P[] = [];
+  for (let i = 0; i < personen.length; i++) {
+    const person = personen[i];
+    const { name, seite } = beschreibe(person);
+    try {
+      await senden(person, erlaubt.has(seite));
+    } catch (err) {
+      const daten = fehlerDaten(err);
+      if (!istEventVoll(daten)) return { eingetragen, offen: personen.slice(i), fehler: err };
+      const gleiche = personen.slice(i).filter((p) => beschreibe(p).seite === seite).length;
+      const schonDabei = eingetragen.some((p) => beschreibe(p).seite === seite);
+      const wer = gleiche === 1 ? name : (schonDabei ? `Die übrigen ${gleiche}` : `Die ${gleiche} Ausgewählten`);
+      if (!(await fragen(ueberbuchenFrage(wer, daten, 'eintragen')))) {
+        return { eingetragen, offen: personen.slice(i), abgebrochen: true };
+      }
+      erlaubt.add(seite);
+      try {
+        await senden(person, true);
+      } catch (err2) {
+        return { eingetragen, offen: personen.slice(i), fehler: err2 };
+      }
+    }
+    eingetragen.push(person);
+  }
+  return { eingetragen, offen: [] };
 }

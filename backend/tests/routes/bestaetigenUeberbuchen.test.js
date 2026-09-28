@@ -100,7 +100,7 @@ describe('Wartende bewusst ueber die Grenze bestaetigen', () => {
       const res = await bestaetige(eventId, zwei.id);
 
       expect(res.status).toBe(400);
-      expect(res.body).toEqual({ error: VOLL_TEXT, error_code: 'event_voll', max: 1, belegt: 1 });
+      expect(res.body).toEqual({ error: VOLL_TEXT, error_code: 'event_voll', max: 1, belegt: 1, seite: 'konfi' });
       expect((await lies(zwei.id)).status).toBe('waitlist');
       expect(await bestaetigte(eventId)).toBe(1);
     });
@@ -157,7 +157,7 @@ describe('Wartende bewusst ueber die Grenze bestaetigen', () => {
       const res = await bestaetige(eventId, drei.id);
 
       expect(res.status).toBe(400);
-      expect(res.body).toEqual({ error: VOLL_TEXT, error_code: 'event_voll', max: 1, belegt: 2 });
+      expect(res.body).toEqual({ error: VOLL_TEXT, error_code: 'event_voll', max: 1, belegt: 2, seite: 'konfi' });
     });
 
     it('aendert nichts, wo Platz ist: ohne und mit Flag wird bestaetigt', async () => {
