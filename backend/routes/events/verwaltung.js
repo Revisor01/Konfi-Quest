@@ -30,7 +30,7 @@ const { isRegistrationOpenForKonfis, zaehleBuchungen, rueckeNach, freiePlaetze, 
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { syncEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
-const { validateTeamerQuota, pruefeAnmeldeschluss } = require('./validierung');
+const { validateTeamerQuota, pruefeAnmeldeschluss, pruefeEndeNachBeginn } = require('./validierung');
 const { formatDatum } = require('../../utils/zeitformat');
 const { darfTermin, darfJahrgang } = require('../../utils/jahrgangsZugriff');
 const { loescheTermin, entferneChatDateien } = require('../../utils/terminLoeschen');
@@ -121,6 +121,13 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     const schlussFehler = pruefeAnmeldeschluss(registration_closes_at, event_date);
     if (schlussFehler) {
       return res.status(400).json({ error: schlussFehler });
+    }
+
+    // Das Ende darf nicht vor dem Beginn liegen (Begruendung bei
+    // pruefeEndeNachBeginn in validierung.js).
+    const endeFehler = pruefeEndeNachBeginn(event_date, event_end_time);
+    if (endeFehler) {
+      return res.status(400).json(endeFehler);
     }
 
     // max_participants ist die KONFI-Teilnehmerzahl. Bei Pflicht-Events (ganzer
@@ -390,6 +397,12 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     const schlussFehlerUpdate = pruefeAnmeldeschluss(registration_closes_at, event_date);
     if (schlussFehlerUpdate) {
       return res.status(400).json({ error: schlussFehlerUpdate });
+    }
+
+    // Wie beim Anlegen: das Ende nicht vor den Beginn.
+    const endeFehlerUpdate = pruefeEndeNachBeginn(event_date, event_end_time);
+    if (endeFehlerUpdate) {
+      return res.status(400).json(endeFehlerUpdate);
     }
 
     // Guards für Pflicht-Events

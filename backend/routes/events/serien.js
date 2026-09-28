@@ -6,7 +6,7 @@ const liveUpdate = require('../../utils/liveUpdate');
 const { formatDatum } = require('../../utils/zeitformat');
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { darfJahrgang } = require('../../utils/jahrgangsZugriff');
-const { validateTeamerQuota, pruefeAnmeldeschluss } = require('./validierung');
+const { validateTeamerQuota, pruefeAnmeldeschluss, pruefeEndeNachBeginn } = require('./validierung');
 
 //
 // TERMINVERWALTUNG IST LEITUNGSSACHE (16.09.2026, Simon woertlich):
@@ -58,6 +58,14 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     const seriesSchlussFehler = pruefeAnmeldeschluss(registration_closes_at, event_date);
     if (seriesSchlussFehler) {
       return res.status(400).json({ error: seriesSchlussFehler });
+    }
+
+    // Ende nicht vor dem Beginn -- wie in POST / und PUT /:id. Geprueft wird
+    // die Eingabe fuer den ersten Termin; die Folgetermine erben weiter unten
+    // dieselbe DAUER und stehen damit ebenso stimmig.
+    const seriesEndeFehler = pruefeEndeNachBeginn(event_date, event_end_time);
+    if (seriesEndeFehler) {
+      return res.status(400).json(seriesEndeFehler);
     }
 
     // DIESELBEN Zwangsregeln wie POST / — vorher wendete die Serien-Route
@@ -151,13 +159,20 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         const date = seriesDates[i];
         const eventName = `${name} #${i + 1}`;
 
-        // Calculate dates for this specific event in series
+        // Ende jedes Termins: dieselbe DAUER wie beim ersten (28.09.2026, Audit
+        // Leitung BF-03). Vorher wurde nur die UHRZEIT des Endes auf den Tag
+        // des jeweiligen Termins gesetzt (setHours). Endete der erste Termin
+        // an einem spaeteren Tag -- ein Wochenende, eine Nacht ueber
+        // Mitternacht --, lag das Ende jedes Serientermins damit VOR seinem
+        // Beginn: genau der Widerspruch, den pruefeEndeNachBeginn oben
+        // abweist, nur vom Server selbst erzeugt. Fuer Termine, die am selben
+        // Tag enden (der Normalfall), kommt dasselbe heraus wie vorher.
+        // Dasselbe Prinzip wie beim Anmeldefenster darunter: Der Abstand in
+        // Millisekunden traegt, die Uhrzeit allein nicht.
         const eventStartDate = new Date(date);
-        const eventEndDate = event_end_time ? new Date(date) : null;
-        if (eventEndDate && event_end_time) {
-          const endTime = new Date(event_end_time);
-          eventEndDate.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
-        }
+        const eventEndDate = event_end_time
+          ? new Date(date.getTime() + (new Date(event_end_time) - new Date(event_date)))
+          : null;
 
         // Anmeldefenster: derselbe zeitliche Abstand wie beim ersten Termin
         // (Befund 28.08.2026).

@@ -106,6 +106,10 @@ Jahrgang. Nur wer das Event sieht, bekommt die
 | Warteliste | an, 3 Plätze |
 | Check-in-Fenster | 30 Minuten |
 
+Die Endzeit liegt nie vor dem Beginn: Die Auswahl fängt beim Beginn an, und
+ein Event, dessen Ende davor liegt, lässt sich nicht speichern — es kommt
+„Das Ende liegt vor dem Beginn". Ein Ende genau zum Beginn geht.
+
 ## Ein Event kopieren
 
 Wiederholt sich ein Event, ohne eine Serie zu sein — die Freizeit im nächsten
@@ -825,6 +829,8 @@ Die Events werden durchnummeriert: aus „Konfi-Stunde" wird „Konfi-Stunde #1"
 Alle Einstellungen — Punkte, Plätze, Warteliste, Kategorien, Jahrgänge,
 Pflicht-Häkchen, Check-in-Fenster, Teamer-Kontingent — werden auf jedes Event
 der Serie übertragen, mit denselben Zwangsregeln wie beim einzelnen Event.
+Jedes Event dauert so lange wie das erste: Endet das erste erst am nächsten
+Tag, endet jedes weitere ebenfalls einen Tag nach seinem Beginn.
 
 ### Verstehen, wie das Anmeldefenster mitwandert
 

@@ -4614,7 +4614,8 @@
                   },
                   "event_end_time": {
                     "type": "string",
-                    "format": "date-time"
+                    "format": "date-time",
+                    "description": "Optional. SEIT 28.09.2026 geprueft (Audit Leitung BF-03): Liegt das Ende vor event_date, antwortet die Route mit 400 {\"error\": \"Das Ende liegt vor dem Beginn\", \"error_code\": \"ende_vor_beginn\"} und legt nichts an. Ein Ende gleich dem Beginn und null (kein Ende) bleiben erlaubt. Dieselbe Regel gilt fuer PUT /api/events/{id} und POST /api/events/series (routes/events/validierung.js, pruefeEndeNachBeginn).\n"
                   },
                   "location": {
                     "type": "string"
@@ -4733,7 +4734,7 @@
             "description": "id + message"
           },
           "400": {
-            "description": "Validierungs-/Regel-Fehler (fehlende Felder, fremde IDs, Kontingent ungueltig; seit 17.09.2026 auch: Anmeldeschluss abgelaufen, waehrend der Termin noch bevorsteht)"
+            "description": "Validierungs-/Regel-Fehler (fehlende Felder, fremde IDs, Kontingent ungueltig; seit 17.09.2026 auch: Anmeldeschluss abgelaufen, waehrend der Termin noch bevorsteht; seit 28.09.2026 auch: Ende vor dem Beginn, error_code ende_vor_beginn)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -5057,7 +5058,7 @@
             "description": "message, promoted_count, promoted_teamer_count"
           },
           "400": {
-            "description": "Validierungs-/Regel-Fehler; seit 17.09.2026 auch: registration_closes_at liegt in der Vergangenheit, waehrend event_date noch bevorsteht (bei vergangenem event_date weiterhin erlaubt)"
+            "description": "Validierungs-/Regel-Fehler; seit 17.09.2026 auch: registration_closes_at liegt in der Vergangenheit, waehrend event_date noch bevorsteht (bei vergangenem event_date weiterhin erlaubt); seit 28.09.2026 auch: event_end_time vor event_date (error_code ende_vor_beginn, der gespeicherte Stand bleibt)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -5436,7 +5437,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event-Serie erstellen (2-26 Termine, max 12 Monate)",
-        "description": "Erzeugt eine Serie (\"Name #n\") mit Intervall day | week | 2weeks | month. Gleiche Zwangsregeln und Org-Checks wie POST /api/events, inkl. Auto-Enrollment bei Pflicht-Serien.\n\nBEHOBEN 17.09.2026 — ANMELDESCHLUSS: Der Riegel gegen einen bereits abgelaufenen Anmeldeschluss (siehe POST /api/events) fehlte hier. Ueber \"Serie anlegen\" liess sich damit genau der Widerspruch bauen, den die Einzelroute abweist: Termin kommt noch, Anmeldung war nie offen. Geprueft wird der ERSTE Termin — die Folgetermine erben den zeitlichen Abstand zum Beginn, ihr Schluss wandert also mit in die Zukunft. Nachtragen vergangener Reihen bleibt erlaubt. Die Regel liegt jetzt gemeinsam in routes/events/validierung.js.\n",
+        "description": "Erzeugt eine Serie (\"Name #n\") mit Intervall day | week | 2weeks | month. Gleiche Zwangsregeln und Org-Checks wie POST /api/events, inkl. Auto-Enrollment bei Pflicht-Serien.\n\nBEHOBEN 17.09.2026 — ANMELDESCHLUSS: Der Riegel gegen einen bereits abgelaufenen Anmeldeschluss (siehe POST /api/events) fehlte hier. Ueber \"Serie anlegen\" liess sich damit genau der Widerspruch bauen, den die Einzelroute abweist: Termin kommt noch, Anmeldung war nie offen. Geprueft wird der ERSTE Termin — die Folgetermine erben den zeitlichen Abstand zum Beginn, ihr Schluss wandert also mit in die Zukunft. Nachtragen vergangener Reihen bleibt erlaubt. Die Regel liegt jetzt gemeinsam in routes/events/validierung.js.\n\nBEHOBEN 28.09.2026 — ENDE (Audit Leitung BF-03): event_end_time vor event_date wird wie bei POST /api/events mit 400 (error_code ende_vor_beginn) abgewiesen, es entsteht keine Serie. Jeder Folgetermin erbt die DAUER des ersten (Ende minus Beginn in Millisekunden). Vorher wurde nur die Uhrzeit des Endes auf den Tag jedes Termins gesetzt: Ein erster Termin, der erst am Folgetag endet, ergab Serientermine, die vor ihrem Beginn endeten. Fuer Termine, die am selben Tag enden, bleibt das Ergebnis gleich.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5488,7 +5489,7 @@
             "description": "message, series_id, events_created"
           },
           "400": {
-            "description": "Serien-Limits/Validierung verletzt"
+            "description": "Serien-Limits/Validierung verletzt; seit 28.09.2026 auch: Ende vor dem Beginn (error_code ende_vor_beginn)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"

@@ -112,6 +112,11 @@ Versionsüberschrift.
 - Die mit Face ID oder Fingerabdruck gesicherte Anmeldung (derzeit ohne
   Schalter in der App) legt den Anmeldeschlüssel auch nach dem regelmäßigen
   Erneuern nur noch geschützt ab, nicht zusätzlich offen auf dem Gerät.
+- Ein Event, dessen Ende vor dem Beginn liegt, lässt sich nicht mehr
+  speichern; das Formular sagt es vor dem Absenden, und die Endzeit lässt sich
+  nicht mehr vor den Beginn stellen.
+- Eine Serie, deren erstes Event erst am nächsten Tag endet, überträgt die
+  Dauer auf jedes Event, statt Events anzulegen, die vor ihrem Beginn enden.
 
 ## [2.3.0] - 2026-09-27
 

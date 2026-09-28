@@ -179,6 +179,16 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 - **Empfehlung:** Im Formular `min={formData.event_date}` am Ende-Picker und
   eine Meldung „Das Ende liegt vor dem Beginn"; im Backend dieselbe Regel in
   `validierung.js` (für POST /, PUT /:id, POST /series) mit Test.
+- **Nachtrag 28.09.2026:** behoben — Backend `pruefeEndeNachBeginn` in
+  `routes/events/validierung.js`, aufgerufen von POST /, PUT /:id und
+  POST /series: Ende vor Beginn → 400 `ende_vor_beginn`, Ende gleich Beginn
+  und kein Ende bleiben erlaubt. Die Serie übernimmt dazu die Dauer des ersten
+  Termins statt nur die Uhrzeit des Endes (ein Ende am Folgetag ergab vorher
+  Serientermine, die vor ihrem Beginn endeten). Formular: `min` am Ende-Picker
+  und die Meldung „Das Ende liegt vor dem Beginn" vor dem Absenden. Tests
+  `backend/tests/routes/endeNichtVorBeginn.test.js` (12, ohne Fix 6 rot) und
+  `frontend/src/__tests__/components/terminEndeVorBeginn.test.ts` (9, ohne
+  Formular-Änderung 2 rot).
 
 ### BF-04: Einzelner Antrag lädt die gesamte Antragshistorie der Gemeinde
 
