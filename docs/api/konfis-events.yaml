@@ -815,6 +815,16 @@ paths:
         letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene
         Buchung (booking_status, attendance_status, Timeslot,
         waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt).
+        GEAENDERT 28.09.2026 — waitlist_position (Audit Punkte/Termine
+        BF-05): Liste, Status-Route und Nachruecken lesen EINE Reihenfolge
+        (utils/bookingUtils.js, wartelistenRangSql: booking_date, bei
+        Gleichstand die Buchungs-ID). Der Platz zaehlt nur die Warteliste,
+        aus der nachgerueckt wird: Konfis (ohne geloeschte Konten), bei
+        einer Buchung mit Zeitfenster nur dieses Fenster. Vorher zaehlte die
+        Liste nach created_at und die Status-Route nach booking_date, beide
+        ueber alle Rollen und Zeitfenster -- nach einer Wiederanmeldung
+        nannten sie derselben Person zwei verschiedene Plaetze. Feld und Typ
+        (Zahl, 1 = rueckt als naechste nach) unveraendert.
         BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die
         Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht
         'closed') und den Wert 'mandatory' für Pflichttermine.
@@ -893,6 +903,16 @@ paths:
         (max_participants=0 = unbegrenzt) und 'mandatory'-Wert wie die
         Admin-Liste; confirmed_count/waitlist_count zählen jetzt konfi-rein
         (Teamer-Kontingent getrennt, vorher ohne Rollenfilter).
+        GEAENDERT 28.09.2026 — waitlist_position (Audit Punkte/Termine
+        BF-05): Liste, Status-Route und Nachruecken lesen EINE Reihenfolge
+        (utils/bookingUtils.js, wartelistenRangSql: booking_date, bei
+        Gleichstand die Buchungs-ID). Der Platz zaehlt nur die Warteliste,
+        aus der nachgerueckt wird: Konfis (ohne geloeschte Konten), bei
+        einer Buchung mit Zeitfenster nur dieses Fenster. Vorher zaehlte die
+        Liste nach created_at und die Status-Route nach booking_date, beide
+        ueber alle Rollen und Zeitfenster -- nach einer Wiederanmeldung
+        nannten sie derselben Person zwei verschiedene Plaetze. Feld und Typ
+        (Zahl, 1 = rueckt als naechste nach) unveraendert.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -2263,6 +2283,15 @@ paths:
         Nachrücken"): Die Degradierung nimmt die Person aus dem Chat zum
         Termin, die Befoerderung auf 'confirmed' traegt sie ein. Bis dahin
         blieb die Herabgestufte im Chat ("angemeldet ist angemeldet").
+
+
+        BEHOBEN 28.09.2026 (Audit Punkte/Termine BF-05): Die Degradierung
+        setzt booking_date auf jetzt -- die Herabgestufte stellt sich hinten
+        an die Warteliste (Reihenfolge utils/bookingUtils.js,
+        wartelistenRangSql). Vorher behielt sie ihren alten Rang; hatte sie
+        vor den Wartenden gebucht, rueckte sie beim Nachruecken selbst
+        wieder nach, die Route nahm das zurueck, und der geraeumte Platz
+        blieb leer, obwohl andere warteten. Antwortform unveraendert.
 
 
         BEHOBEN 15.09.2026: Die Degradierung gibt einen bestaetigten Platz

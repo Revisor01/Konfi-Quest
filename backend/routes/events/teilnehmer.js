@@ -589,8 +589,17 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         eventDatum = booking.event_date;
 
         if (status === 'waitlist') {
-          // Auf Warteliste: attendance_status löschen und Event-Punkte zurücknehmen
-          await client.query("UPDATE event_bookings SET status = 'waitlist', attendance_status = NULL WHERE id = $1", [participantId]);
+          // Auf Warteliste: attendance_status löschen und Event-Punkte zurücknehmen.
+          //
+          // booking_date auf jetzt (28.09.2026, Audit BF-05): Wer auf die
+          // Warteliste zurueckgesetzt wird, stellt sich HINTEN an -- dieselbe
+          // Regel wie bei der Wiederanmeldung (bookingUtils.js,
+          // wartelistenRangSql). Bis dahin behielt die Herabgestufte ihren
+          // alten Rang. Hatte sie vor den Wartenden gebucht (der Normalfall:
+          // wer bestaetigt ist, war meist zuerst da), rueckte sie unten selbst
+          // wieder nach, die Route nahm das zurueck -- und der geraeumte Platz
+          // blieb leer, waehrend andere warteten.
+          await client.query("UPDATE event_bookings SET status = 'waitlist', attendance_status = NULL, booking_date = NOW() WHERE id = $1", [participantId]);
 
           // Punkte-Ruecknahme ueber den gemeinsamen Helfer: Derselbe Block lag
           // vorher viermal im Code, zweimal transaktional und zweimal nicht.
@@ -602,11 +611,13 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           // stand danach selbst auf der Warteliste und konkurrierte um den
           // Platz, den sie eben geraeumt hatte.
           //
-          // Sie kann dabei nicht sich selbst nachruecken: Der FIFO-Zugriff
-          // nimmt den AELTESTEN Wartelisten-Eintrag (ORDER BY created_at), und
-          // ihr Eintrag ist der aelteste nur, wenn sonst niemand wartet -- dann
-          // aber stuende sie ohnehin allein da, und die Herabstufung waere
-          // wirkungslos. Deshalb wird sie ausgeschlossen.
+          // Sie kann dabei nicht sich selbst nachruecken: Seit dem 28.09.2026
+          // steht sie oben mit booking_date = jetzt HINTEN in der Warteliste
+          // und ist die naechste nur, wenn sonst niemand wartet -- dann aber
+          // stuende sie ohnehin allein da, und die Herabstufung waere
+          // wirkungslos. Deshalb wird sie ausgeschlossen. (Der Kommentar
+          // behauptete das schon vorher; es stimmte nicht, solange das
+          // Nachruecken nach created_at der urspruenglichen Buchung ging.)
           const [nachgerueckt] = await rueckeNach(client, {
             eventId,
             timeslotId: booking.ist_team ? null : booking.timeslot_id,

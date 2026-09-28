@@ -345,6 +345,13 @@ paths:
         (200 statt 403). Jetzt zaehlt die Rolle in der Gemeinde des Termins
         (Stamm-Gemeinde: users.role_id, weitere: user_organizations); das Flag
         is_super_admin bleibt gemeindeuebergreifend.
+        GEAENDERT 28.09.2026 (Audit Punkte/Termine BF-05): Eine Zusage nach
+        einer Absage (vorher opted_out) setzt booking_date auf jetzt -- wer
+        wieder zusagt, stellt sich hinten an die Team-Warteliste, wie bei der
+        Wiederanmeldung ueber bucheTermin. Vorher blieb booking_date stehen,
+        und die erneute Zusage ueberholte alle, die inzwischen warteten. Eine
+        wiederholte Zusage (vorher schon confirmed/waitlist, etwa ein
+        Doppelversand) behaelt ihren Platz. Antwortform unveraendert.
         Fachlicher Kern in utils/bookingUtils.js (setzeTeamerZusage). Pushes
         an die Leitung ueber die Teamer-Typen teamer_event_booking bzw.
         teamer_event_cancellation (Absage seit 01.09.2026 mit Grund im Text);

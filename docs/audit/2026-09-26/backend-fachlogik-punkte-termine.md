@@ -269,6 +269,21 @@ bestehender Aktivitäten nicht zu ändern.
   Nachrücken und beide Positionsabfragen auf `booking_date` umstellen — dann
   auch BF-11 mit erledigt); ein Test, der die Reihenfolge nach Reaktivierung
   festhält.
+- **Nachtrag 28.09.2026:** behoben — Nachrücken, beide Positionsabfragen und
+  die Teilnehmerliste der Leitung lesen eine Reihenfolge aus
+  `utils/bookingUtils.js` (`wartelistenRangSql`: `booking_date`, bei
+  Gleichstand `id`; `COALESCE` auf `-infinity` für Altbestand ohne Wert —
+  alle Schreibwege setzen `booking_date`). Der Platz zählt nur die
+  Warteliste, aus der nachgerückt wird (`wartelistenPlatzSql`: Kontingent,
+  Zeitfenster, ohne gelöschte Konten); vorher zählten beide Abfragen auch
+  wartende Teamer:innen und fremde Zeitfenster. Dieselbe Regel „wer sich neu
+  anstellt, steht hinten" jetzt auch bei der erneuten Teamer-Zusage nach einer
+  Absage (`setzeTeamerZusage`) und beim Herabstufen durch die Leitung — dort
+  rückte die Herabgestufte, wenn sie früher gebucht hatte, selbst wieder nach,
+  die Route nahm das zurück, und der Platz blieb leer (das Handbuch versprach
+  anderes; `bestaetigenKapazitaet.test.js` umging es mit einem
+  zurückdatierten `created_at`). Test
+  `backend/tests/routes/wartelisteReihenfolge.test.js` (8, ohne Fix 6 rot).
 
 ### BF-06: Konfi-Kapazität auf „unbegrenzt“ setzen lässt die Warteliste stehen
 - **Schwere:** MITTEL
@@ -411,6 +426,9 @@ bestehender Aktivitäten nicht zu ändern.
 - **Empfehlung:** Nachrücken und Positionen auf `booking_date` (timestamptz)
   umstellen — siehe BF-05 — oder die Spalte additiv als timestamptz
   nachziehen.
+- **Nachtrag 28.09.2026:** behoben mit BF-05 — keine Reihenfolge der
+  Warteliste liest mehr `created_at`; der Schlüssel ist `booking_date`
+  (timestamptz). Die Spalte `created_at` bleibt unverändert stehen.
 
 ### BF-12: `series_events` in `GET /events/:id` liefert seit 22.09.2026 weniger Felder
 - **Schwere:** NIEDRIG

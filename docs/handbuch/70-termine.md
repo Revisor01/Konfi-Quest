@@ -389,9 +389,18 @@ ein Platz frei wird — nicht nur für die Abmeldung durch die Person selbst:
 | Du erhöhst die Plätze eines Zeitfensters | dasselbe, aber nur in diesem Zeitfenster |
 | Du erhöhst das Teamer-Kontingent | die wartenden Teamer:innen rücken nach |
 
-Nachgerückt wird in der Reihenfolge der Anmeldung; die nachgerückte Person
-bekommt einen Push und kommt in den Chat zum Event, falls es einen gibt.
-Gelöschte Nutzer:innen rücken nie nach.
+Nachgerückt wird in der Reihenfolge, in der sich die Wartenden angestellt
+haben; die nachgerückte Person bekommt einen Push und kommt in den Chat zum
+Event, falls es einen gibt. Gelöschte Nutzer:innen rücken nie nach.
+
+**Wer sich neu anstellt, steht hinten** — auch wer schon einmal auf der Liste
+war: eine Konfi, die sich nach einer Abmeldung wieder anmeldet, eine
+Teamer:in, die nach einer Absage wieder zusagt, und wen du auf die Warteliste
+zurücksetzt. Den Platz, den die Konfi in der App sieht, zählt die App genau
+so: Platz 1 rückt als Nächstes nach. Gezählt werden nur die Wartenden ihrer
+eigenen Warteliste — wartende Teamer:innen nicht, und bei Zeitfenstern nur
+die im selben Fenster. In der Teilnehmerliste der Detailansicht stehen die
+Wartenden in derselben Reihenfolge.
 
 > **Ein frei gewordener Konfi-Platz geht niemals an eine wartende Teamer:in** —
 > und umgekehrt. Die beiden Wartelisten werden strikt getrennt geführt.
@@ -401,8 +410,10 @@ Gelöschte Nutzer:innen rücken nie nach.
 > wäre dort schlicht falsch. Wer auf der Warteliste steht, bleibt stehen.
 
 Setzt du jemanden auf die Warteliste zurück, geht der geräumte Platz an die
-**nächste wartende Person** — nicht an die eben herabgestufte zurück. Wartet
-sonst niemand, bleibt sie schlicht auf der Warteliste stehen.
+**nächste wartende Person** — nicht an die eben herabgestufte zurück, auch
+wenn sie sich früher angemeldet hatte. Sie steht danach hinten auf der
+Warteliste. Wartet sonst niemand, bleibt sie schlicht auf der Warteliste
+stehen.
 
 Reduzierst du die Plätze, wird **niemand zurückgestuft**. Wer bestätigt ist,
 bleibt bestätigt, auch wenn dadurch mehr Leute drin sind als erlaubt. Erst

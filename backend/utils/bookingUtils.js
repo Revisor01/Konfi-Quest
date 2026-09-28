@@ -460,6 +460,60 @@ async function hebeAbsageAbmeldungenAuf(client, eventId) {
   return rows;
 }
 
+// ====================================================================
+// DIE REIHENFOLGE DER WARTELISTE: EINE STELLE (28.09.2026)
+// ====================================================================
+//
+// Audit 26.09.2026, Punkte/Termine BF-05 und BF-11. Bis dahin lasen drei
+// Stellen drei verschiedene Reihenfolgen: das Nachruecken (promoteFromWaitlist)
+// nach created_at, die Konfi-Liste (GET /konfi/events) ebenfalls nach
+// created_at, die Status-Route (GET /konfi/events/:id/status) nach
+// booking_date. Die Wiederanmeldung nach einer Abmeldung (bucheTermin,
+// "Reaktivierung") setzt aber nur booking_date neu -- wer abgemeldet war und
+// sich wieder anmeldete, ueberholte damit beim Nachruecken alle, die seit
+// seiner Abmeldung warteten, und sah in Liste und Detail zwei verschiedene
+// Plaetze.
+//
+// DER SCHLUESSEL IST booking_date: der Zeitpunkt der Entscheidung, auf die es
+// ankommt -- Anmeldung, Wiederanmeldung, erneute Zusage, Herabstufung. Er ist
+// timestamptz; created_at ist TEXT und sortiert in der Nacht der Zeitumstellung
+// nach Uhrzeit statt nach Zeitpunkt (BF-11). Alle Schreibwege setzen
+// booking_date (NOW() oder der Spalten-Default now()); fuer Altbestand ohne
+// Wert steht das COALESCE auf '-infinity' da -- solche Zeilen gelten als die
+// aeltesten, statt aus der Zaehlung zu fallen. Bei Gleichstand (dieselbe
+// Transaktion, etwa die Auto-Anmeldung eines Pflichttermins) entscheidet die
+// Buchungs-ID.
+//
+// Wer die Reihenfolge aendern will, aendert sie HIER -- Nachruecken,
+// Positionsanzeigen und die Teilnehmerliste der Leitung folgen.
+
+/** ORDER-BY-Schluessel (aufsteigend = wer zuerst dran ist) einer Buchung `alias`. */
+function wartelistenRangSql(alias = 'eb') {
+  return `COALESCE(${alias}.booking_date, '-infinity'::timestamptz), ${alias}.id`;
+}
+
+/**
+ * SQL-Ausdruck: der Platz der wartenden Buchung `alias` in IHRER Warteliste
+ * (1 = rueckt als naechste nach). Gezaehlt wird genau die Liste, aus der
+ * promoteFromWaitlist nachrueckt: dieselbe Kontingent-Seite (Konfi oder Team,
+ * geloeschte Konten nie), bei einer Buchung mit Zeitfenster nur dieses
+ * Fenster, und nur, wer im Rang davor steht.
+ *
+ * `alias` muss event_id, timeslot_id, booking_date und id tragen.
+ * Ergebnis ist bigint (COUNT + 1), wie die bisherigen Abfragen.
+ *
+ * @param {string} alias
+ * @param {'konfi'|'team'} seite
+ */
+function wartelistenPlatzSql(alias, seite) {
+  return `(SELECT COUNT(*) + 1 FROM event_bookings wv
+            WHERE wv.event_id = ${alias}.event_id
+              AND wv.status = 'waitlist'
+              AND (${alias}.timeslot_id IS NULL OR wv.timeslot_id = ${alias}.timeslot_id)
+              AND ${rollenBedingung(seite, 'wv')}
+              AND (${wartelistenRangSql('wv')}) < (${wartelistenRangSql(alias)}))`;
+}
+
 /**
  * Rueckt den ersten Wartelisten-Eintrag nach (timeslot-aware, rollen-gefiltert)
  *
@@ -525,15 +579,17 @@ async function promoteFromWaitlist(db, eventId, timeslotId, roleFilter) {
   // Atomar: SELECT des nächsten Wartelisten-Eintrags und UPDATE in EINEM Statement.
   // FOR UPDATE SKIP LOCKED verhindert, dass zwei gleichzeitige Stornierungen
   // denselben Wartelistenplatz nachruecken (Race -> Doppel-Promotion über Kapazität).
+  // Reihenfolge: wartelistenRangSql (booking_date, dann id) -- dieselbe wie
+  // in den Positionsanzeigen (28.09.2026, Audit BF-05).
   const subSelect = timeslotId
     ? `SELECT eb.id FROM event_bookings eb
         WHERE eb.event_id = $1 AND eb.timeslot_id = $2 AND eb.status = 'waitlist'
           AND ${roleCondition}
-        ORDER BY eb.created_at ASC LIMIT 1 FOR UPDATE OF eb SKIP LOCKED`
+        ORDER BY ${wartelistenRangSql('eb')} LIMIT 1 FOR UPDATE OF eb SKIP LOCKED`
     : `SELECT eb.id FROM event_bookings eb
         WHERE eb.event_id = $1 AND eb.status = 'waitlist'
           AND ${roleCondition}
-        ORDER BY eb.created_at ASC LIMIT 1 FOR UPDATE OF eb SKIP LOCKED`;
+        ORDER BY ${wartelistenRangSql('eb')} LIMIT 1 FOR UPDATE OF eb SKIP LOCKED`;
   const params = timeslotId ? [eventId, timeslotId] : [eventId];
 
   // war_auf_warteliste haelt fest, was dieses UPDATE ueberschreibt (Migration
@@ -1223,6 +1279,15 @@ async function setzeTeamerZusage(client, eingabe) {
   if (bestehend) {
     const nahmZusageZurueck =
       status === 'opted_out' && (vorherigerStatus === 'confirmed' || vorherigerStatus === 'waitlist');
+    // ZUSAGE NACH EINER ABSAGE STELLT SICH HINTEN AN (28.09.2026, Audit
+    // BF-05): booking_date auf jetzt -- dieselbe Regel wie die
+    // Wiederanmeldung in bucheTermin ("Fuer Warteliste und Nachruecken
+    // zaehlt die NEUE Entscheidung"). Bis dahin blieb booking_date stehen,
+    // und wer nach seiner Absage wieder zusagte, ueberholte alle, die
+    // inzwischen warteten. Eine WIEDERHOLTE Zusage (war schon confirmed
+    // oder waitlist, etwa ein Doppelversand) behaelt ihren Platz.
+    const stelltSichNeuAn =
+      status !== 'opted_out' && vorherigerStatus !== 'confirmed' && vorherigerStatus !== 'waitlist';
     await client.query(
       `UPDATE event_bookings
           SET status = $3,
@@ -1232,9 +1297,10 @@ async function setzeTeamerZusage(client, eingabe) {
                 WHEN $3 <> 'opted_out' THEN false
                 WHEN $5 THEN true
                 ELSE absage_nach_zusage
-              END
+              END,
+              booking_date = CASE WHEN $8::boolean THEN NOW() ELSE booking_date END
         WHERE id = $6 AND organization_id = $7 AND user_id = $1 AND event_id = $2`,
-      [userId, eventId, status, grund, nahmZusageZurueck, bestehend.id, orgId]
+      [userId, eventId, status, grund, nahmZusageZurueck, bestehend.id, orgId, stelltSichNeuAn]
     );
   } else {
     await client.query(
@@ -1301,6 +1367,8 @@ function pruefeKonfiStorno({ event, buchung, now = new Date() }) {
 }
 
 module.exports = {
+  wartelistenRangSql,
+  wartelistenPlatzSql,
   ABSAGE_OHNE_GRUND,
   ladeBetroffeneEinesAusfalls,
   meldeAlleAbBeiAbsage,

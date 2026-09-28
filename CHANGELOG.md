@@ -120,6 +120,13 @@ Versionsüberschrift.
 - Eine Abmeldung von einem Event, die ohne Netz abgegeben und doppelt
   gesendet wurde, erscheint nicht mehr als „Nicht gesendet", obwohl sie
   angekommen ist.
+- Wer sich nach einer Abmeldung wieder anmeldet oder nach einer Absage wieder
+  zusagt, stellt sich auf der Warteliste hinten an, statt die Wartenden zu
+  überholen. Liste und Detailansicht zeigen denselben Wartelistenplatz, und
+  wartende Teamer:innen zählen beim Platz einer Konfi nicht mehr mit.
+- Setzt die Leitung jemanden auf die Warteliste zurück, rückt die nächste
+  wartende Person nach, auch wenn die zurückgesetzte Person sich früher
+  angemeldet hatte; vorher blieb der Platz in diesem Fall leer.
 
 ### Sonstiges
 - Ein fehlerhafter Aufruf beim Eintragen von Teilnehmenden von Hand bekommt
