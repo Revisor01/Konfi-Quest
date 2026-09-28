@@ -6,7 +6,7 @@ const express = require('express');
 const { formatUhrzeit } = require('../../utils/zeitformat');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
-const { rueckeNach, takeBackEventPoints, freiePlaetze } = require('../../utils/bookingUtils');
+const { rueckeNach, takeBackEventPoints, freiePlaetze, zaehleBestaetigte } = require('../../utils/bookingUtils');
 const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
@@ -46,7 +46,8 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // gewollt, kann ja sein das ich mehr brauche von der Warteliste." Wer von
     // Hand eingetragen wird, ist bestaetigt, auch wenn das Event voll ist.
     // Das Bestaetigen einer Wartenden (PUT /:id/participants/:id/status)
-    // prueft die Kapazitaet dagegen weiter (Entscheidung 16.09.2026).
+    // prueft die Kapazitaet und ueberbucht erst nach einer Rueckfrage
+    // (`ueberbuchen: true`, Simon 28.09.2026, Variante c).
     if (!STATUS_VON_HAND.includes(status)) {
       return res.status(400).json({
         error: 'Ungültiger Status. Erlaubt sind auto, confirmed und waitlist',
@@ -499,6 +500,9 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
   router.put('/:id/participants/:participantId/status', rbacVerifier, requireAdmin, async (req, res) => {
     const { id: eventId, participantId } = req.params;
     const { status } = req.body;
+    // Bewusst ueberbuchen (Simon, 28.09.2026, Variante c): nur der Boolean
+    // true, den die App nach der Rueckfrage schickt -- kein "true" als Text.
+    const ueberbuchen = req.body?.ueberbuchen === true;
     
     try {
       if (!['confirmed', 'waitlist'].includes(status)) {
@@ -668,10 +672,31 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
             },
             maxKapazitaet
           );
-          if (frei !== null && frei <= 0) {
+          //
+          // NACHFRAGEN, DANN UEBERBUCHEN (Simon, 28.09.2026, Variante c):
+          // "Überbuchen ist gewollt, kann ja sein das ich mehr brauche von der
+          // Warteliste." Die Grenze bleibt ein Halt, aber keine Sperre mehr:
+          // Ohne `ueberbuchen: true` antwortet die Route wie bisher mit 400 --
+          // derselbe Text, dazu additiv error_code, max und belegt. Die App
+          // fragt daran nach ("Trotzdem bestätigen?") und schickt dann
+          // `ueberbuchen: true`. Still ueberbucht wird damit weiter nicht; wer
+          // ueberbucht, hat es vorher bestaetigt. Store-Apps 2.2.x/2.3.0
+          // schicken das Feld nie und bekommen dieselbe Ablehnung wie bisher.
+          if (frei !== null && frei <= 0 && !ueberbuchen) {
+            // belegt wird gezaehlt, nicht aus `frei` errechnet: freiePlaetze
+            // endet bei 0, ein schon ueberbuchtes Event haette sonst belegt =
+            // max gemeldet.
+            const belegt = await zaehleBestaetigte(
+              client,
+              !booking.ist_team && booking.timeslot_id ? { timeslotId: booking.timeslot_id } : { eventId },
+              booking.ist_team ? 'team' : 'konfi'
+            );
             await client.query('ROLLBACK');
             return res.status(400).json({
-              error: 'Das Event ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.'
+              error: 'Das Event ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.',
+              error_code: 'event_voll',
+              max: maxKapazitaet,
+              belegt
             });
           }
 

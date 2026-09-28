@@ -241,6 +241,12 @@ bestehender Aktivitäten nicht zu ändern.
   `foo`, 201 mit einer Buchung im Status `cancelled`/`opted_out`/`excused`/
   `pending` und eine Buchung ohne Status bei `null`. Test
   `backend/tests/routes/teilnehmerVonHandStatus.test.js` (12, ohne Fix 8 rot).
+- **Nachtrag 28.09.2026 (später):** Bestätigen von der Warteliste nach Simons Entscheidung
+  (Variante c: nachfragen, dann bestätigen): Die 400 bei vollem Event bleibt mit demselben Text
+  und trägt additiv `error_code: 'event_voll'`, `max` und `belegt`; die App fragt „Trotzdem
+  bestätigen?" und schickt danach `ueberbuchen: true`. Tests: `bestaetigenUeberbuchen.test.js`
+  (5, vorher 4 rot; ohne die Bedingung 2 rot), Frontend `ueberbuchen.test.ts` (12, gegen die
+  alte Detailansicht 2 rot).
 
 ### BF-05: Wiederanmeldung nach Abmeldung behält den alten Wartelistenrang; Positionsanzeige widerspricht sich
 - **Schwere:** MITTEL

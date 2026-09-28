@@ -1207,10 +1207,14 @@ als Plätze. Solange das so ist, rückt niemand von der Warteliste nach, wenn
 jemand abspringt; erst wenn wieder weniger Leute angemeldet als Plätze da
 sind, greift die Grenze.
 
-Anders beim **Bestätigen einer Person, die auf der Warteliste steht**: Ist das
-Event voll, lehnt die App das ab. Willst du sie trotzdem mitnehmen, erhöhst du
-zuerst die Teilnehmerzahl — die Wartenden rücken dann der Reihe nach von selbst
-nach (siehe [Nachvollziehen, wann jemand nachrückt](#nachvollziehen-wann-jemand-nachrueckt)).
+Beim **Bestätigen einer Person, die auf der Warteliste steht**, fragt die App
+nach, wenn das Event voll ist: „Das Event ist voll — Alle 12 Plätze sind
+vergeben. Mia trotzdem bestätigen? Das Event ist dann überbucht." Mit
+**Trotzdem bestätigen** nimmst du genau diese Person mit, auch über die
+Grenze; mit **Abbrechen** bleibt sie auf der Warteliste. Willst du stattdessen
+mehr Plätze für alle schaffen, erhöhst du die Teilnehmerzahl — die Wartenden
+rücken dann der Reihe nach von selbst nach (siehe
+[Nachvollziehen, wann jemand nachrückt](#nachvollziehen-wann-jemand-nachrueckt)).
 
 Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
 

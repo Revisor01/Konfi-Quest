@@ -23,6 +23,10 @@ Versionsüberschrift.
   Jahrgang gelöscht ist.
 
 ### Geändert
+- Wer eine wartende Person bestätigt, obwohl das Event voll ist, bekommt eine
+  Rückfrage und kann sie trotzdem mitnehmen; das Event ist dann überbucht.
+  Bisher lehnte die App das nur mit „Fehler beim Bestätigen des Teilnehmers"
+  ab.
 - Beim Löschen eines Jahrgangs gehen die Events und Challenges mit, die nur zu
   ihm gehören — samt Anmeldungen, Chats und Beiträgen. Gehören sie auch zu
   einem anderen Jahrgang, fällt nur die Zuordnung weg; Events „Nur Team" und

@@ -410,7 +410,10 @@ Migrationen 169–171).
   Warteliste: Wer sich neu anstellt, steht hinten, Liste und Detail zeigen denselben Platz;
   dabei fiel auf, dass das Herabstufen durch die Leitung den Platz leer ließ (`95083e1f`; BF-05,
   BF-11). Konfi-Plätze auf unbegrenzt lassen alle Wartenden nachrücken (`b70ae325`; BF-06).
-  Teamer-Aktivitäten nur an Personen der eigenen Gemeinde (`39c915d0`; BF-07).
+  Teamer-Aktivitäten nur an Personen der eigenen Gemeinde (`39c915d0`; BF-07). Am Morgen danach
+  hat Simon die offene Frage entschieden (Variante c): Das Bestätigen einer Wartenden bei vollem
+  Event fragt „Trotzdem bestätigen?" und überbucht nach dem Ja (`ueberbuchen: true`, additiv;
+  ohne das Feld bleibt die Ablehnung wie bisher, jetzt mit `error_code: 'event_voll'`).
 - **Anmeldung und Sitzung:** Der rotierte Refresh-Token liegt bei Biometrie nicht mehr im
   Klartext (`4e4d8d14`; Grundgerüst BF-06). Nach einem Refresh höchstens eine Wiederholung bei
   401 — gemessen vorher 8 Versuche und 7 Refreshs, jetzt 2 und 1 (`fb4b01d0`; BF-09). Der
@@ -564,11 +567,9 @@ Produktfragen.
 3. **Den Merge freigeben.** Danach Phase B–D (Abschnitt oben).
 4. **Entscheidungen, die noch offen sind:** Nutzungsmessung S1–S17 (`docs/messung/umami.md`);
    Material-Bilder beim Hochladen verkleinern oder nicht; Videos (Empfehlung: so lassen); die
-   zehn Produktfragen der Feature-Empfehlungen; Universal Links. Neu am 28.09.: Darf auch das
-   **Bestätigen einer Wartenden** überbuchen? Heute lehnt es bei vollem Event ab (Entscheidung
-   16.09.), und die App zeigt nur „Fehler beim Bestätigen des Teilnehmers"; Hinzufügen von Hand
-   überbucht. Möglich: (a) so lassen, aber den Grund zeigen; (b) ohne Grenze bestätigen; (c) bei
-   vollem Event nachfragen und dann bestätigen.
+   zehn Produktfragen der Feature-Empfehlungen; Universal Links. Am 28.09. gestellt und
+   **entschieden:** Das Bestätigen einer Wartenden bei vollem Event fragt nach und bestätigt dann
+   trotzdem (Simon: „C bitte", Variante c) — gebaut am 28.09., siehe Abschnitt „Nacht zum 28.09."
 5. **Autorenschaft älterer Commits:** Ein Teil des Branches trägt noch „Claude" als Autor.
    Umschreiben ginge nur mit Force-Push und neuen Commit-Kennungen; bleibt, wie es ist, solange
    Simon nichts anderes sagt. `main` bleibt, wie es ist (Simon, 27.09.).

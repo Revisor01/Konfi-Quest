@@ -2069,8 +2069,9 @@ paths:
         status='confirmed' prueft keine Kapazitaet -- wer von Hand
         eingetragen wird, ist bestaetigt, auch wenn der Termin voll ist.
         Anders PUT /{id}/participants/{participantId}/status mit
-        status='confirmed' (Bestaetigen einer Wartenden): dort weiterhin 400
-        bei vollem Termin (Entscheidung 16.09.2026).
+        status='confirmed' (Bestaetigen einer Wartenden): dort 400
+        (error_code event_voll) bei vollem Termin, bis die Leitung nach der
+        Rueckfrage mit ueberbuchen=true bestaetigt (Simon 28.09.2026).
       x-berechtigung:
         rollen: [org_admin, admin]
         x-geaendert: >
@@ -2337,6 +2338,20 @@ paths:
         Bewusstes Ueberbuchen laeuft ueber das Erhoehen der Teilnehmerzahl.
 
 
+        GEAENDERT 28.09.2026 — UEBERBUCHEN NACH RUECKFRAGE (Simon, Variante
+        c: "Überbuchen ist gewollt, kann ja sein das ich mehr brauche von der
+        Warteliste"): Die 400 bei vollem Kontingent bleibt mit demselben
+        Text, dazu additiv error_code 'event_voll', max (Obergrenze des
+        Kontingents bzw. Zeitfensters) und belegt (bestaetigte, gezaehlt --
+        kann bei schon ueberbuchtem Event ueber max liegen). Die App fragt
+        daran nach ("Das Event ist voll ... trotzdem bestätigen?") und
+        schickt nach dem Ja `ueberbuchen: true`; dann bestaetigt die Route
+        trotz voller Plaetze (war_auf_warteliste, Push und Termin-Chat wie
+        sonst). Nur der Boolean true zaehlt, "true" als Text oder 1 nicht.
+        Still ueberbucht wird weiter nicht. Store-Apps 2.2.x/2.3.0 schicken
+        das Feld nie und bekommen die Ablehnung wie bisher.
+
+
         GEPRUEFT 16.09.2026 — war_auf_warteliste: Die Spalte wird beim
         Bestaetigen nur gesetzt, wenn die Buchung wirklich auf 'waitlist'
         stand. Der Verdacht, sie werde auch bei einer Befoerderung aus
@@ -2393,9 +2408,12 @@ paths:
               required: [status]
               properties:
                 status: { type: string, enum: [confirmed, waitlist] }
+                ueberbuchen:
+                  type: boolean
+                  description: "Nur mit status=confirmed: bestaetigt auch bei vollem Kontingent. Die App schickt es erst nach der Rueckfrage (seit 28.09.2026, additiv)."
       responses:
         "200": { description: "message, status" }
-        "400": { description: Ungueltiger Status oder Status unveraendert }
+        "400": { description: "Ungueltiger Status oder Status unveraendert; abgesagtes Event; volles Kontingent ohne ueberbuchen=true: error 'Das Event ist voll. …', error_code 'event_voll', max, belegt (die drei Felder seit 28.09.2026, additiv)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Fremde Organisation; seit 14.09.2026 auch 'Kein Zugriff auf dieses Event' bei fremdem Jahrgang" }
         "404": { description: Buchung nicht gefunden }
