@@ -60,6 +60,7 @@ import { Event } from '../../../types/event';
 import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 
@@ -127,32 +128,41 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
     const clientId = safeUUID();
 
-    if (networkMonitor.isOnline) {
-      try {
-        await api.post(`/konfi/events/${eventData.id}/opt-out`, {
+    try {
+      // Offline -- oder online, aber das Netz reisst ab: in die
+      // Warteschlange statt in eine Fehlermeldung (Audit Grundgeruest BF-01,
+      // utils/sendenOderEinreihen.ts). Ein zweiter Eingang ist harmlos: Der
+      // Server antwortet dann 200 mit bereits_abgemeldet.
+      const { weg } = await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: 'POST',
+        idempotent: true,
+        senden: () => api.post(`/konfi/events/${eventData.id}/opt-out`, {
           reason: reason.trim(),
           client_id: clientId,
-        });
-        // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
-        await refreshEvents();
-        triggerRefresh('events');
-      } catch (err) {
-        setError(fehlerText(err, 'Fehler bei der Abmeldung'));
-      }
-    } else {
-      await writeQueue.enqueue({
-        method: 'POST',
-        url: `/konfi/events/${eventData.id}/opt-out`,
-        body: { reason: reason.trim(), client_id: clientId },
-        maxRetries: 5,
-        hasFileUpload: false,
-        metadata: {
-          type: 'opt-out',
-          clientId,
-          label: `Abmeldung von "${eventData.name}"`,
-        },
+        }),
+        einreihen: () => writeQueue.enqueue({
+          method: 'POST',
+          url: `/konfi/events/${eventData.id}/opt-out`,
+          body: { reason: reason.trim(), client_id: clientId },
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'opt-out',
+            clientId,
+            label: `Abmeldung von "${eventData.name}"`,
+          },
+        }),
       });
-      setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
+      if (weg === 'eingereiht') {
+        setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
+        return;
+      }
+      // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
+      await refreshEvents();
+      triggerRefresh('events');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Abmeldung'));
     }
   };
 
@@ -181,27 +191,33 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // vom Anmelden, das wegen der begrenzten Plaetze gesperrt bleibt.
     const clientId = safeUUID();
 
-    if (!networkMonitor.isOnline) {
-      await writeQueue.enqueue({
-        method: 'DELETE',
-        url: `/konfi/events/${eventData.id}/register`,
-        body: { reason: reason.trim(), client_id: clientId },
-        maxRetries: 5,
-        hasFileUpload: false,
-        metadata: {
-          type: 'opt-out',
-          clientId,
-          label: `Abmeldung von "${eventData.name}"`,
-        },
-      });
-      setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
-      return;
-    }
-
     try {
-      await api.delete(`/konfi/events/${eventData.id}/register`, {
-        data: { reason: reason.trim(), client_id: clientId }
+      // Wie beim Opt-out: auch ein Netzabbruch im Online-Zweig landet in der
+      // Warteschlange (utils/sendenOderEinreihen.ts). DELETE ist
+      // wiederholbar -- eine zweite Abmeldung gibt keinen zweiten Platz frei.
+      const { weg } = await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: 'DELETE',
+        senden: () => api.delete(`/konfi/events/${eventData.id}/register`, {
+          data: { reason: reason.trim(), client_id: clientId }
+        }),
+        einreihen: () => writeQueue.enqueue({
+          method: 'DELETE',
+          url: `/konfi/events/${eventData.id}/register`,
+          body: { reason: reason.trim(), client_id: clientId },
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'opt-out',
+            clientId,
+            label: `Abmeldung von "${eventData.name}"`,
+          },
+        }),
       });
+      if (weg === 'eingereiht') {
+        setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
+        return;
+      }
 
       // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();

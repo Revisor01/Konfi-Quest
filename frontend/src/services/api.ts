@@ -3,10 +3,11 @@ import axiosRetry from 'axios-retry';
 import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth, isLoggingOut, getActiveOrgId, setActiveOrgId } from './tokenStore';
 import { networkMonitor } from './networkMonitor';
 // Kein Zirkelbezug: biometrics.ts importiert nur tokenStore/Preferences, nie api.
-import { rotationUebernehmen } from './biometrics';
+import { rotationUebernehmen, istBiometrieAktiv } from './biometrics';
 
 import { API_BASE_URL } from './apiBasis';
-import { fehlerFuersProtokoll } from '../utils/fehler';
+import { refreshAnfordern } from './refreshAnfrage';
+import { fehlerFuersProtokoll, fehlerEntschaerfen, istEntschaerft } from '../utils/fehler';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -140,13 +141,25 @@ const addRefreshSubscriber = (onSuccess: (token: string) => void, onFail: (err: 
 
 // Refresh-Request selbst (direktes axios, nicht api — vermeidet Interceptor-Loop).
 // Aktive Org mitsenden, damit das neue Token den Org-Claim behält.
+// Mit Zeitlimit 20 s wie die Instanz (refreshAnfrage.ts, Audit Grundgeruest
+// BF-07): ohne es hing bei einem Netzwechsel die ganze App am Refresh.
 const performRefresh = async (refreshToken: string): Promise<string> => {
   const activeOrgId = getActiveOrgId();
-  const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-    refresh_token: refreshToken
-  }, activeOrgId ? { headers: { 'X-Active-Organization': String(activeOrgId) } } : undefined);
+  const response = await refreshAnfordern(
+    { refresh_token: refreshToken },
+    activeOrgId ? { 'X-Active-Organization': String(activeOrgId) } : undefined
+  );
 
   const { token: newToken, refresh_token: newRefreshToken } = response.data;
+
+  // Biometrische Anmeldung eingeschaltet? Dann gehoert der rotierte Token NUR
+  // in den sicheren Speicher, nicht zusaetzlich im Klartext in die
+  // Preferences (Audit Grundgeruest BF-06; biometrics.ts,
+  // Sicherheitsabwaegung a). Bis 28.09.2026 schrieb diese Stelle ihn ohne
+  // Ruecksicht auf den Schalter zurueck -- eine Viertelstunde nach dem
+  // Einschalten lag die Klartext-Kopie wieder da, und die App startete ohne
+  // jede Abfrage.
+  const nurGesichert = await istBiometrieAktiv();
 
   // REIHENFOLGE IST KRITISCH (Android-Session-Verlust, 1.5.0):
   // Der Server rotiert bei jedem Refresh und REVOKED den alten Refresh-Token
@@ -157,7 +170,9 @@ const performRefresh = async (refreshToken: string): Promise<string> => {
   // daher MUSS der Refresh-Token ZUERST und bestaetigt persistiert werden.
   // Der Access-Token ist unkritisch: geht er bei einem Crash verloren, holt ihn
   // der nächste ensureFreshToken() über den (gesicherten) Refresh-Token neu.
-  await setRefreshToken(newRefreshToken);
+  // Bei eingeschalteter Biometrie ist die dauerhafte Ablage der sichere
+  // Speicher (rotationUebernehmen unten); hier nur der Arbeitsspeicher.
+  await setRefreshToken(newRefreshToken, { klartext: !nurGesichert });
   await setToken(newToken);
 
   // Ist die biometrische Anmeldung aktiv, muss die gesichert abgelegte Sitzung
@@ -264,9 +279,8 @@ const tokenOhneOrgClaimBeschaffen = async (): Promise<string | null> => {
 };
 
 // Handle auth errors and rate limiting
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- axios reicht den Fehler untypisiert herein; wie bisher im Interceptor.
+const fehlerBehandeln = async (error: any): Promise<unknown> => {
     const originalRequest = error.config;
 
     // SICHERHEITSNETZ Multi-Org: Wenn ein Request mit aktivem Org-Header ein
@@ -297,6 +311,16 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      // Schon einmal nach einem Refresh wiederholt und wieder 401? Dann liegt
+      // es nicht am Token -- durchreichen (Audit Grundgeruest BF-09). Ohne
+      // diesen Merker drehte der Client im Kreis, rotierte in jeder Runde den
+      // Refresh-Token und kam nie zurueck (gemessen: 8 Versuche, 7 Refreshs
+      // bis zur Notbremse des Tests). Die Sitzung bleibt bestehen: Sie wurde
+      // gerade erst erneuert.
+      if (originalRequest?._retry) {
+        return Promise.reject(error);
+      }
+
       // Offline: Token behalten, gecachte Daten nutzen
       if (!networkMonitor.isOnline) {
         console.warn('401 während Offline — Token wird behalten');
@@ -322,6 +346,7 @@ api.interceptors.response.use(
           addRefreshSubscriber(
             (newToken: string) => {
               originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              originalRequest._retry = true;
               resolve(api(originalRequest));
             },
             (err) => reject(err)
@@ -337,8 +362,9 @@ api.interceptors.response.use(
         isRefreshing = false;
         onTokenRefreshed(newToken);
 
-        // Original-Request mit neuem Token wiederholen
+        // Original-Request mit neuem Token wiederholen -- genau einmal (_retry).
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        originalRequest._retry = true;
         return api(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
@@ -349,7 +375,16 @@ api.interceptors.response.use(
           await clearAuth();
           return Promise.reject(refreshError);
         }
-        // Refresh fehlgeschlagen → Re-Login-Dialog
+        // Keine Antwort des Servers (Zeitlimit, Netz weg): Die Sitzung
+        // bleibt, die Anfrage scheitert als Netzfehler -- wie im
+        // Offline-Zweig oben. Seit der Refresh ein Zeitlimit hat (BF-07,
+        // 28.09.2026), kaeme ein Netzwechsel sonst nach 20 s als
+        // "Sitzung abgelaufen" an; vorher hing die App, und ein Neustart
+        // behielt die Sitzung. Ob der Token noch gilt, sagt nur der Server.
+        if (!(refreshError as { response?: unknown })?.response) {
+          return Promise.reject(refreshError);
+        }
+        // Refresh vom Server abgelehnt → Re-Login-Dialog
         await clearAuth();
         window.dispatchEvent(new CustomEvent('auth:relogin-required'));
         return Promise.reject(refreshError);
@@ -375,6 +410,29 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
+};
+
+// Jeder Fehler, den die Instanz an einen Aufrufer weitergibt, ist vorher
+// entschaerft: ohne Zugangs-Token, Anfragekoerper und Leitung (Audit
+// Grundgeruest BF-08, Nebenbefund; utils/fehler.ts fehlerEntschaerfen). Rund
+// 100 Stellen geben gefangene Fehler roh an die Konsole -- hier wird es EINMAL
+// geloest statt an jeder Stelle.
+//
+// ERST AM ENDE: fehlerBehandeln braucht Kopfzeilen und Koerper noch, um die
+// Anfrage nach einem Refresh zu wiederholen; axios-retry (vor diesem
+// Interceptor registriert) hat seine Entscheidung schon getroffen. Ein Fehler,
+// der hier schon einmal durchlief -- er kommt aus der Kette einer Wiederholung
+// zurueck --, geht unveraendert weiter; sonst liefen Rueckfall, Refresh und
+// Rate-Limit-Meldung doppelt.
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (istEntschaerft(error)) throw error;
+    try {
+      return await fehlerBehandeln(error);
+    } catch (endgueltig) {
+      throw fehlerEntschaerfen(endgueltig);
+    }
   }
 );
 

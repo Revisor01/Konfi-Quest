@@ -9,6 +9,7 @@ const { anmeldeStatusSql, kapazitaetSql, ZEITFENSTER_SQL } = require('../../util
 const { buchungszahlenJeTerminSql } = require('../../utils/buchungszahlen');
 const { darfTermin } = require('../../utils/jahrgangsZugriff');
 const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTermin } = require('../../utils/terminLeitungSicht');
+const { wartelistenRangSql } = require('../../utils/bookingUtils');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
   const router = express.Router();
@@ -760,7 +761,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
             WHEN 'opted_out' THEN 3
             ELSE 3
           END,
-          eb.created_at ASC
+          -- Innerhalb der Gruppe die Reihenfolge des Nachrueckens (28.09.2026,
+          -- Audit BF-05, utils/bookingUtils.js wartelistenRangSql): Wer oben
+          -- in der Warteliste steht, rueckt als naechste nach. Vorher
+          -- created_at -- nach einer Wiederanmeldung stand die Person hier an
+          -- ihrem alten Platz, obwohl sie sich hinten angestellt hatte.
+          ${wartelistenRangSql('eb')}
       `;
       const { rows: participants } = await db.query(participantsQuery, [eventId, req.user.organization_id]);
       

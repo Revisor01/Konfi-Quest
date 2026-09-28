@@ -141,16 +141,37 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         const expiresAt = new Date(Date.now() + GUELTIG_MS);
         let einladung;
+        const client = await db.getClient();
         try {
-          const { rows: [neu] } = await db.query(
+          await client.query('BEGIN');
+          // ABGELAUFENE EINLADUNG RAEUMEN (28.09.2026): Nach 14 Tagen bleibt
+          // der Status 'offen', nur expires_at liegt zurueck. Der Teilindex
+          // idx_org_einladungen_offen kennt nur den Status -- ohne diesen
+          // Schritt sperrte die abgelaufene Einladung jede neue fuer dieselbe
+          // Person (409), obwohl Liste und Karte sie laengst nicht mehr
+          // zeigten. Sie geht samt Postfach-Eintrag; beantwortete Einladungen
+          // (Verlauf) und die anderer Personen bleiben.
+          const { rows: abgelaufen } = await client.query(
+            `DELETE FROM org_einladungen
+              WHERE organization_id = $1 AND user_id = $2
+                AND status = 'offen' AND expires_at <= NOW()
+              RETURNING id`,
+            [organizationId, ziel.id]
+          );
+          for (const { id } of abgelaufen) {
+            await loescheMitteilungenZuEinladung(client, id);
+          }
+          const { rows: [neu] } = await client.query(
             `INSERT INTO org_einladungen
                (organization_id, user_id, role_id, eingeladen_von, expires_at)
              VALUES ($1, $2, $3, $4, $5)
              RETURNING id, expires_at`,
             [organizationId, ziel.id, rolle.id, req.user.id, expiresAt]
           );
+          await client.query('COMMIT');
           einladung = neu;
         } catch (err) {
+          await client.query('ROLLBACK').catch(() => {});
           // Der Teilindex idx_org_einladungen_offen laesst nur EINE offene
           // Einladung je Person und Gemeinde zu.
           if (err.code === '23505') {
@@ -160,6 +181,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
             });
           }
           throw err;
+        } finally {
+          client.release();
         }
 
         // Antwortform: das Noetige fuer die Liste, additiv erweiterbar.
@@ -341,6 +364,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
               WHERE id = $1 AND status = 'offen'`,
             [einladung.id]
           );
+          // "Einladung in eine Gemeinde ... Tippe, um zu antworten" wartet
+          // jetzt auf nichts mehr -- er geht wie beim Zurueckziehen
+          // (28.09.2026, utils/postfachAufraeumen.js). Die Zusage an die
+          // Leitung (meldeAntwort unten) bleibt.
+          await loescheMitteilungenZuEinladung(client, einladung.id);
           // Die Mitgliedschaft entsteht ERST hier -- das ist der Kern des
           // Features. ON CONFLICT DO NOTHING, falls sie zwischenzeitlich von
           // Hand angelegt wurde.
@@ -388,12 +416,26 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         const { fehler, einladung } = await holeEigeneEinladung(req.params.id, req.user.id);
         if (fehler) return res.status(fehler.status).json(fehler.body);
 
-        await db.query(
-          `UPDATE org_einladungen
-              SET status = 'abgelehnt', beantwortet_at = NOW()
-            WHERE id = $1 AND status = 'offen'`,
-          [einladung.id]
-        );
+        // Status und Postfach in EINER Transaktion wie beim Zurueckziehen
+        // (28.09.2026): Der Eintrag "Tippe, um zu antworten" geht mit der
+        // Absage; die Absage an die Leitung (meldeAntwort unten) bleibt.
+        const client = await db.getClient();
+        try {
+          await client.query('BEGIN');
+          await client.query(
+            `UPDATE org_einladungen
+                SET status = 'abgelehnt', beantwortet_at = NOW()
+              WHERE id = $1 AND status = 'offen'`,
+            [einladung.id]
+          );
+          await loescheMitteilungenZuEinladung(client, einladung.id);
+          await client.query('COMMIT');
+        } catch (txErr) {
+          await client.query('ROLLBACK').catch(() => {});
+          throw txErr;
+        } finally {
+          client.release();
+        }
         res.json({ message: 'Einladung abgelehnt' });
 
         // Auch die Absage erfaehrt die einladende Leitung (F-13).

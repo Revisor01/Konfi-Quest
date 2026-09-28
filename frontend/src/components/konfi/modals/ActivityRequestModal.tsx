@@ -52,6 +52,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { track } from '../../../services/analytics';
+import { sendenOderEinreihen, istVerbindungsabbruch } from '../../../utils/sendenOderEinreihen';
 
 interface Activity {
   id: number;
@@ -155,6 +156,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
       return response.data.filename;
     } catch (error) {
+      // Netz abgerissen: unverpackt weiterreichen, damit der Vorgang in die
+      // Warteschlange faellt (sendenOderEinreihen erkennt nur den Netzfehler).
+      if (istVerbindungsabbruch(error)) throw error;
       throw new Error(fehlerText(error, 'Fehler beim Hochladen des Fotos'), { cause: error });
     }
   };
@@ -186,38 +190,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
       const clientId = safeUUID();
 
-      if (networkMonitor.isOnline) {
-        // Online-Pfad: direkt senden
-        try {
-          let photoFilename: string | null = null;
-
-          if (formData.photo_file) {
-            photoFilename = await uploadPhoto();
-          }
-
-          const requestData: AktivitaetMelden = {
-            activity_id: parseInt(formData.activity_id),
-            description: formData.description.trim(),
-            requested_date: formData.requested_date,
-            photo_filename: photoFilename,
-            client_id: clientId,
-          };
-
-          await api.post('/konfi/requests', requestData);
-          // Anonyme Messung (Simon, 27.09.2026): Wie oft werden Aktivitäten
-          // eingereicht, und mit Nachweisfoto? Erst nach der erfolgreichen
-          // Antwort; kein Name, keine Aktivität, keine Kennung.
-          track('aktivitaet-eingereicht', { mit_foto: !!photoFilename });
-
-          setSuccess('Aktivität erfolgreich eingereicht!');
-          onSuccess();
-        } catch (error) {
-          setError(fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
-        } finally {
-          setUploadProgress(0);
-        }
-      } else {
-        // Offline-Pfad: Queue-Fallback
+      // In die Warteschlange: derselbe Vorgang mit derselben client_id, das
+      // Foto lokal gesichert (die Warteschlange laedt es beim Senden hoch).
+      let fotoNichtGesichert = false;
+      const einreihen = async () => {
         let hasFileUpload = false;
         const queueBody: QueueBody & AktivitaetMelden = {
           activity_id: parseInt(formData.activity_id),
@@ -244,9 +220,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             });
             queueBody._localPhotoPath = `queue-uploads/${fileName}`;
             queueBody._photoFileName = formData.photo_file.name;
-          } catch {
-            setError('Foto konnte nicht lokal gespeichert werden');
-            return;
+          } catch (fehler) {
+            fotoNichtGesichert = true;
+            throw fehler;
           }
         }
 
@@ -262,9 +238,51 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             label: 'Aktivität melden',
           },
         });
+      };
 
-        setSuccess('Aktivität wird gesendet sobald du wieder online bist');
+      try {
+        // Offline -- oder online, aber das Netz reisst ab: in die
+        // Warteschlange statt in eine Fehlermeldung (Audit Grundgeruest
+        // BF-01, utils/sendenOderEinreihen.ts). Ein zweiter Eingang ist
+        // harmlos: Der Server erkennt ihn an der client_id.
+        const { weg } = await sendenOderEinreihen({
+          online: networkMonitor.isOnline,
+          methode: 'POST',
+          idempotent: true,
+          senden: async () => {
+            let photoFilename: string | null = null;
+
+            if (formData.photo_file) {
+              photoFilename = await uploadPhoto();
+            }
+
+            const requestData: AktivitaetMelden = {
+              activity_id: parseInt(formData.activity_id),
+              description: formData.description.trim(),
+              requested_date: formData.requested_date,
+              photo_filename: photoFilename,
+              client_id: clientId,
+            };
+
+            await api.post('/konfi/requests', requestData);
+            // Anonyme Messung (Simon, 27.09.2026): Wie oft werden Aktivitäten
+            // eingereicht, und mit Nachweisfoto? Erst nach der erfolgreichen
+            // Antwort; kein Name, keine Aktivität, keine Kennung.
+            track('aktivitaet-eingereicht', { mit_foto: !!photoFilename });
+          },
+          einreihen,
+        });
+
+        setSuccess(weg === 'eingereiht'
+          ? 'Aktivität wird gesendet sobald du wieder online bist'
+          : 'Aktivität erfolgreich eingereicht!');
         onSuccess();
+      } catch (error) {
+        setError(fotoNichtGesichert
+          ? 'Foto konnte nicht lokal gespeichert werden'
+          : fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
+      } finally {
+        setUploadProgress(0);
       }
     });
   };

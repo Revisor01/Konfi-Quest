@@ -94,9 +94,26 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   // SHA-256 Hash für DB-Speicherung (konsistent mit Phase 66)
   const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
+  // Geraete-Kennung aus dem Anfragekoerper (Audit 26.09.2026, Sicherheit
+  // BF-08; Migration 171). Die App schickt sie bei Anmeldung, Registrierung
+  // und Refresh als `device_id` mit -- dieselbe Kennung wie bei den
+  // Push-Tokens. Nur ein nicht-leerer Text bis 255 Zeichen zaehlt; alles
+  // andere gilt als "keine Kennung". Ausgelieferte Apps (2.2.x, 2.3.0) senden
+  // an diesen Routen nie eine.
+  const geraeteKennung = (req) => {
+    const roh = req.body?.device_id;
+    if (typeof roh !== 'string') return null;
+    const kennung = roh.trim();
+    return kennung.length > 0 && kennung.length <= 255 ? kennung : null;
+  };
+
   // Frisches Token-Paar für einen User erzeugen. Wird nach dem Passwortwechsel
   // gebraucht: dort werden alle Sitzungen invalidiert, und ohne neues Paar
   // wuerde der eigene Client sofort mitfliegen.
+  // Bewusst OHNE Geraetebindung (Migration 171): Auch ausgelieferte Apps
+  // schicken beim Passwortwechsel schon eine device_id mit, beim Refresh aber
+  // nie -- ein gebundenes Token sperrte sie nach 15 Minuten aus. Die
+  // aktualisierte App bindet das Token beim ersten Refresh.
   // Gibt null zurück, wenn der User nicht (mehr) ladbar ist — der Aufrufer
   // antwortet dann ohne Token, der Wechsel selbst bleibt gueltig.
   const erstelleTokenPaarFuerUser = async (dbConn, userId) => {
@@ -300,9 +317,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const refreshToken = generateRefreshToken();
       const refreshTokenHash = hashToken(refreshToken);
       const refreshExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 Tage
+      // An das Geraet gebunden, wenn die App ihre Kennung mitschickt (BF-08).
       await db.query(
-        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
-        [user.id, refreshTokenHash, refreshExpiresAt]
+        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, device_id) VALUES ($1, $2, $3, $4)',
+        [user.id, refreshTokenHash, refreshExpiresAt, geraeteKennung(req)]
       );
 
       const responseUser = {
@@ -1219,9 +1237,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         const refreshToken = generateRefreshToken();
         const refreshTokenHash = hashToken(refreshToken);
         const refreshExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 Tage
+        // An das Geraet gebunden, wenn die App ihre Kennung mitschickt (BF-08).
         await db.query(
-          'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
-          [newUser.id, refreshTokenHash, refreshExpiresAt]
+          'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, device_id) VALUES ($1, $2, $3, $4)',
+          [newUser.id, refreshTokenHash, refreshExpiresAt, geraeteKennung(req)]
         );
 
         res.json({
@@ -1337,10 +1356,48 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
     const tokenHash = hashToken(refresh_token);
 
+    // GERAETEBINDUNG (Audit 26.09.2026, Sicherheit BF-08, zweiter Teil;
+    // Migration 171). Traegt das Token eine Kennung, gilt es nur zusammen mit
+    // DERSELBEN Kennung. Eine andere -- oder gar keine -- heisst: Das Token
+    // wird woanders eingeloest als dort, wo es ausgestellt wurde. Antwort 401
+    // wie bei jedem ungueltigen Token, und DIESES Token wird widerrufen und
+    // sofort ablaufen gelassen (sonst fiele es in die Gnadenfrist und liesse
+    // sich mit einer geratenen Kennung noch einmal versuchen).
+    //
+    // Bewusst NUR dieses Token, nicht die ganze Familie wie bei der dritten
+    // Verwendung in der Gnadenfrist: Dort haben zwei Parteien nachweislich
+    // ein GUELTIGES Token benutzt. Hier ist der Versuch gescheitert; und eine
+    // Kennung, die sich auf dem echten Geraet aendert (etwa wenn das Geraet
+    // die Kennung beim ersten Start nicht liefern konnte), soll die Person
+    // nicht auf allen anderen Geraeten mit abmelden.
+    //
+    // "Keine Kennung" zaehlt wie "andere": Sonst liesse sich die Bindung durch
+    // Weglassen umgehen. Ausgelieferte Apps (2.2.x, 2.3.0) sperrt das nicht
+    // aus -- sie senden bei Anmeldung, Registrierung und Refresh nie eine
+    // Kennung und halten deshalb nur ungebundene Tokens. Der Passwortwechsel
+    // bindet nicht (erstelleTokenPaarFuerUser), obwohl dort auch alte Apps eine
+    // device_id schicken.
+    //
+    // Ungebundene Tokens gelten wie bisher. Schickt die Anfrage eine Kennung
+    // mit (die App nach dem Update), ist das NEUE Token an sie gebunden -- so
+    // sind auch Sitzungen von vor dem Update nach dem ersten Refresh geschuetzt.
+    const kennung = geraeteKennung(req);
+    const fremdesGeraet = (gebundenAn) => Boolean(gebundenAn) && gebundenAn !== kennung;
+    const ablehnenUndWiderrufen = async (tokenId, userId) => {
+      await db.query(
+        `UPDATE refresh_tokens
+            SET revoked_at = COALESCE(revoked_at, NOW()), expires_at = NOW()
+          WHERE id = $1`,
+        [tokenId]
+      );
+      console.warn(`Refresh-Token von User ${userId} mit ${kennung ? 'fremder' : 'fehlender'} Geraete-Kennung vorgelegt: Token widerrufen`);
+      return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token' });
+    };
+
     try {
       // Altes Token suchen (nicht revoked, nicht abgelaufen)
       const { rows: [existing] } = await db.query(
-        'SELECT id, user_id, expires_at FROM refresh_tokens WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > NOW()',
+        'SELECT id, user_id, expires_at, device_id FROM refresh_tokens WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > NOW()',
         [tokenHash]
       );
 
@@ -1385,7 +1442,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         // Refreshes ohnehin (isRefreshing in services/api.ts); ein falscher Alarm
         // waere hier teurer als ein zweites Token fuer fuenf Minuten.
         const { rows: [alt] } = await db.query(
-          `SELECT id, user_id, ersetzt_durch, gnade_genutzt_at,
+          `SELECT id, user_id, ersetzt_durch, gnade_genutzt_at, device_id,
                   (revoked_at > NOW() - INTERVAL '5 minutes' AND expires_at > NOW()) AS im_fenster
              FROM refresh_tokens
             WHERE token_hash = $1 AND revoked_at IS NOT NULL`,
@@ -1393,6 +1450,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         );
         if (!alt) {
           return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token' });
+        }
+        // Geraetebindung VOR der Gnadenfrist: Ein Versuch von fremder Stelle
+        // verbraucht weder die Gnade noch loest er den Widerruf der Familie
+        // aus -- er beendet nur die Gnadenfrist dieses Tokens. Der Nachfolger
+        // des echten Geraets bleibt gueltig.
+        if (fremdesGeraet(alt.device_id)) {
+          return await ablehnenUndWiderrufen(alt.id, alt.user_id);
         }
         if (alt.gnade_genutzt_at) {
           await db.query(
@@ -1416,13 +1480,19 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
             [alt.ersetzt_durch]
           );
         }
-        return await issueRefreshedTokens(db, res, alt.user_id, activeOrgId, alt.id);
+        return await issueRefreshedTokens(db, res, alt.user_id, activeOrgId, alt.id, alt.device_id || kennung);
+      }
+
+      if (fremdesGeraet(existing.device_id)) {
+        return await ablehnenUndWiderrufen(existing.id, existing.user_id);
       }
 
       // Altes Token sofort revoken (Rotation)
       await db.query('UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1', [existing.id]);
 
-      return await issueRefreshedTokens(db, res, existing.user_id, activeOrgId, existing.id);
+      // Die Rotation uebernimmt die Bindung; ein ungebundenes Token wird an
+      // die mitgeschickte Kennung gebunden (siehe oben).
+      return await issueRefreshedTokens(db, res, existing.user_id, activeOrgId, existing.id, existing.device_id || kennung);
     } catch (err) {
       console.error('Database error in POST /api/auth/refresh:', err);
       res.status(500).json({ error: 'Fehler beim Token-Refresh' });
@@ -1437,7 +1507,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   // vorgaengerId (optional): das Refresh-Token, an dessen Stelle das neue tritt.
   // Es bekommt ersetzt_durch gesetzt, damit die Gnadenfrist den Nachfolger
   // widerrufen kann (Migration 166).
-  async function issueRefreshedTokens(db, res, userId, activeOrgId = null, vorgaengerId = null) {
+  // geraet (optional): Geraete-Kennung, an die das neue Token gebunden wird
+  // (Migration 171) -- die des Vorgaengers oder, war der ungebunden, die
+  // mitgeschickte.
+  async function issueRefreshedTokens(db, res, userId, activeOrgId = null, vorgaengerId = null, geraet = null) {
     const { rows: [user] } = await db.query(`
       SELECT u.id, u.username, u.display_name, u.organization_id, u.email, u.role_id,
              u.is_super_admin, u.is_active as user_active, u.deleted_at,
@@ -1505,8 +1578,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     const newRefreshHash = hashToken(newRefreshToken);
     const newRefreshExpiry = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
     const { rows: [neu] } = await db.query(
-      'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3) RETURNING id',
-      [user.id, newRefreshHash, newRefreshExpiry]
+      'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, device_id) VALUES ($1, $2, $3, $4) RETURNING id',
+      [user.id, newRefreshHash, newRefreshExpiry, geraet]
     );
     if (vorgaengerId) {
       await db.query('UPDATE refresh_tokens SET ersetzt_durch = $1 WHERE id = $2', [neu.id, vorgaengerId]);

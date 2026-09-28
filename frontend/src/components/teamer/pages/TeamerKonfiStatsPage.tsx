@@ -46,6 +46,8 @@ import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
 import { datumKurz } from '../../../utils/dateUtils';
+import KonfiZeitTermine from '../../shared/KonfiZeitTermine';
+import { alsKonfiZeit } from '../../../utils/konfiZeit';
 
 interface KonfiBadge {
   badge_id: number;
@@ -118,6 +120,18 @@ const TeamerKonfiStatsPage: React.FC = () => {
   useLiveRefresh(['points', 'badges', 'requests', 'konfis'], useCallback(() => { refreshLive(); }, [refreshLive]));
   const konfiData = profileData?.konfi_data || null;
 
+  // Die dauerhafte Kopie der Konfi-Zeit (28.09.2026): Die Befoerderung hat
+  // die Buchungen geloescht, das Loeschen des alten Jahrgangs nimmt spaeter
+  // auch dessen Termine mit -- welche Termine die Person besucht hat, steht
+  // nur noch hier. Ein aelterer Server kennt die Route nicht; dann fehlt der
+  // Abschnitt, der Rest der Seite bleibt.
+  const { data: konfiZeitAntwort, refresh: refreshKonfiZeit } = useOfflineQuery<unknown>(
+    'teamer:konfi-zeit:' + user?.id,
+    async () => (await api.get('/teamer/konfi-zeit')).data,
+    { ttl: CACHE_TTL.PROFILE }
+  );
+  const konfiZeit = alsKonfiZeit(konfiZeitAntwort);
+
   // Konfi-Wrapped laden
   const [konfiWrapped, setKonfiWrapped] = useState<WrappedHistoryEntry | null>(null);
 
@@ -174,7 +188,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
         <AppKopfzeileGross titel="Konfi-Historie" />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
-          await refresh();
+          await Promise.all([refresh(), refreshKonfiZeit()]);
           e.detail.complete();
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
@@ -229,6 +243,9 @@ const TeamerKonfiStatsPage: React.FC = () => {
             </IonCard>
           </IonList>
         )}
+
+        {/* Besuchte Termine aus der dauerhaften Kopie */}
+        {konfiZeit && <KonfiZeitTermine termine={konfiZeit.termine} />}
 
         {/* Konfi-Badges */}
         {konfiData.badges.length > 0 && (() => {

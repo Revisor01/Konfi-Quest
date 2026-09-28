@@ -88,6 +88,10 @@
 #  S7  DELETE /admin/jahrgaenge/{id}?force=true löscht Chat-Räume samt
 #      Nachrichten unwiderruflich. Der zugehoerige Datei-Cleanup (uploads/chat)
 #      läuft ohne Entschluesselungs-Pfadpruefung und ignoriert Fehler still.
+#      BEHOBEN (2026-09-28, Audit BF-08): Die Route laeuft in EINER
+#      Transaktion; die Dateien gehen erst nach dem COMMIT, ueber
+#      deleteChatFile (nur Basename, Fehler geloggt). Seitdem nimmt sie auch
+#      die Termine und Challenges mit, die nur an diesem Jahrgang haengen.
 #  S8  POST /admin/jahrgaenge/{id}/matrix-email versendet Konfispruch- bzw.
 #      Anwesenheitslisten ausschliesslich an die in users.email hinterlegte
 #      Adresse der aufrufenden Person — kein frei waehlbarer Empfaenger. Das
@@ -737,6 +741,23 @@ paths:
         GET /api/wrapped/history/{userId} abrufbar. Bis dahin nahm ein
         CASCADE Ausgabe und Snapshots mit. Konfi-Ausgaben dieses Jahrgangs
         ohne einen einzigen Snapshot werden mit entfernt.
+        TERMINE UND CHALLENGES GEHEN MIT (28.09.2026, Simons Entscheidung,
+        Audit BF-08): Termine und Challenges, die NUR an diesem Jahrgang
+        haengen, werden auf demselben Weg geloescht wie einzeln
+        (utils/terminLoeschen.js, utils/challengeLoeschen.js) — samt
+        Buchungen, Zeitfenstern, Termin-Chats, Erinnerungen, Beitraegen,
+        Dateien und Postfach-Eintraegen. Haengen sie zusaetzlich an einem
+        anderen Jahrgang, faellt nur die Zuordnung weg. Termine "Nur Team"
+        (teamer_only) und Challenges "Nur das Team" (audience nur_team)
+        bleiben immer; Termine und Challenges ohne Jahrgang sind nicht
+        betroffen. Abweichend vom Einzel-Loeschen bleiben vergebene
+        Event-Punkte gutgeschrieben, und es geht keine Absage-Mitteilung
+        hinaus. Die Stempel von Teamer:innen und Leitung aus den geloeschten
+        Challenges werden vorher in bewahrte_stempel abgelegt (Migration
+        169) und kommen ueber GET /api/challenges/bewahrte-stempel. Alles
+        in EINER Transaktion; die Dateien verschwinden erst nach dem COMMIT.
+        Was mitgeht, nennt vorher GET /api/admin/jahrgaenge/{id}/loeschvorschau.
+        Antwortform unveraendert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
         - name: force
@@ -745,11 +766,12 @@ paths:
           schema: { type: string, enum: ["true"] }
           description: "force=true löscht den Jahrgangs-Chat samt aller Nachrichten unwiderruflich"
       responses:
-        "200": { description: "Geloescht; Live-Update an Org-Admins" }
+        "200": { description: "Geloescht; Live-Update an Org-Admins, bei geloeschten Terminen/Challenges zusaetzlich 'events'/'challenges' an die Gemeinde (nur { count })" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "Jahrgang nicht in dieser Organisation" }
         "409": { description: "Aktive Konfis zugeordnet ODER Chat enthaelt Nachrichten ({ error, canForceDelete: true })" }
+        "500": { description: "Datenbankfehler — die Transaktion wurde zurueckgerollt, nichts ist geloescht" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateJahrgangId]
@@ -767,6 +789,46 @@ paths:
           (Einzel-Queries ohne BEGIN/COMMIT). Bricht sie in der Mitte ab,
           bleibt ein halb abgeraeumter Chat zurück. Datei-Loeschfehler
           werden nur geloggt.
+          BEHOBEN 28.09.2026: eine Transaktion ueber alle Schritte, die
+          Jahrgangszeile mit FOR UPDATE gesperrt; Dateien nach dem COMMIT.
+
+  /api/admin/jahrgaenge/{id}/loeschvorschau:
+    get:
+      tags: ["Jahrgänge"]
+      summary: Was beim Loeschen dieses Jahrgangs mitgeht (fuer den Bestaetigungsdialog)
+      description: >
+        Seit dem 28.09.2026. Liest dieselbe Regel-Stelle wie
+        DELETE /api/admin/jahrgaenge/{id} (utils/jahrgangLoeschen.js), damit
+        die Zahlen im Dialog genau das sind, was dann verschwindet.
+        Aendert nichts. Aeltere Apps rufen die Route nicht und fragen ohne
+        Zahlen nach.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
+      responses:
+        "200":
+          description: Zahlen zum Loeschen
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [aktive_konfis, befoerderte, chat_nachrichten, events_geloescht, events_kuenftig, events_behalten, challenges_geloescht, challenges_behalten]
+                properties:
+                  aktive_konfis: { type: integer, description: "Konfis (Rolle konfi) im Jahrgang — blockieren das Loeschen" }
+                  befoerderte: { type: integer, description: "Ex-Konfis mit anderer Rolle, deren Profil nur vom Jahrgang geloest wird" }
+                  chat_nachrichten: { type: integer, description: "Nachrichten im Jahrgangs-Chat — verlangen force=true" }
+                  events_geloescht: { type: integer, description: "Termine nur dieses Jahrgangs (ohne 'Nur Team')" }
+                  events_kuenftig: { type: integer, description: "davon mit event_date in der Zukunft" }
+                  events_behalten: { type: integer, description: "Termine mit weiterem Jahrgang oder 'Nur Team' — verlieren nur die Zuordnung" }
+                  challenges_geloescht: { type: integer, description: "Challenges nur dieses Jahrgangs (ohne 'Nur das Team')" }
+                  challenges_behalten: { type: integer, description: "Challenges mit weiterem Jahrgang oder 'Nur das Team'" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Jahrgang nicht in dieser Organisation" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateJahrgangId]
+        org-scope: true
+        objekt-pruefung: "Wie DELETE: org-gescopter Existenz-Check, danach darfJahrgang(edit) — 403 fuer admin ohne edit-Zuweisung (org_admin ausgenommen), fremde Gemeinde 404"
 
   /api/admin/jahrgaenge/{id}/attendance-matrix:
     get:

@@ -18,6 +18,7 @@ import {
 } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
+import { bestaetigenMitRueckfrage, type UeberbuchenFrage } from '../../../utils/ueberbuchen';
 import { darfTermineVerwalten } from '../../../utils/terminRechte';
 import { kopiereTermin } from '../../../utils/terminVorbelegung';
 import { welcheKnoepfe, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
@@ -928,14 +929,39 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     });
   };
 
+  // Wartende bestaetigen. Ist das Event voll, fragt die App nach und
+  // ueberbucht erst nach dem Ja (Simon, 28.09.2026, Variante c;
+  // utils/ueberbuchen.ts). ALERT, kein Modal: Ja/Nein ohne Eingabe.
+  const frageUeberbuchen = (frage: UeberbuchenFrage) => new Promise<boolean>((resolve) => {
+    presentAlert({
+      header: frage.header,
+      message: frage.message,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel', handler: () => resolve(false) },
+        { text: 'Trotzdem bestätigen', handler: () => resolve(true) }
+      ],
+      // Tippen neben den Dialog ist ein Nein; ein zweites resolve nach dem
+      // Button-Handler bleibt wirkungslos.
+      onDidDismiss: () => resolve(false)
+    });
+  });
+
   const handlePromoteParticipant = async (participant: Participant) => {
     try {
-      await api.put(`/events/${eventId}/participants/${participant.id}/status`, { status: 'confirmed' });
+      const ergebnis = await bestaetigenMitRueckfrage(
+        (ueberbuchen) => api.put(
+          `/events/${eventId}/participants/${participant.id}/status`,
+          ueberbuchen ? { status: 'confirmed', ueberbuchen: true } : { status: 'confirmed' }
+        ).then(() => undefined),
+        frageUeberbuchen,
+        participant.participant_name
+      );
+      if (ergebnis === 'abgebrochen') return;
       await loadEventData();
       triggerRefresh('events');
     } catch (error) {
- console.error('Promote participant error:', error);
-      setError('Fehler beim Bestätigen des Teilnehmers');
+      console.error('Promote participant error:', error);
+      setError(fehlerText(error, 'Fehler beim Bestätigen des Teilnehmers'));
     }
   };
 

@@ -30,10 +30,10 @@ const { isRegistrationOpenForKonfis, zaehleBuchungen, rueckeNach, freiePlaetze, 
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { syncEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
-const { validateTeamerQuota, pruefeAnmeldeschluss } = require('./validierung');
+const { validateTeamerQuota, pruefeAnmeldeschluss, pruefeEndeNachBeginn } = require('./validierung');
 const { formatDatum } = require('../../utils/zeitformat');
 const { darfTermin, darfJahrgang } = require('../../utils/jahrgangsZugriff');
-const { loescheMitteilungenZuTermin } = require('../../utils/postfachAufraeumen');
+const { loescheTermin, entferneChatDateien } = require('../../utils/terminLoeschen');
 
 module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
@@ -121,6 +121,13 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     const schlussFehler = pruefeAnmeldeschluss(registration_closes_at, event_date);
     if (schlussFehler) {
       return res.status(400).json({ error: schlussFehler });
+    }
+
+    // Das Ende darf nicht vor dem Beginn liegen (Begruendung bei
+    // pruefeEndeNachBeginn in validierung.js).
+    const endeFehler = pruefeEndeNachBeginn(event_date, event_end_time);
+    if (endeFehler) {
+      return res.status(400).json(endeFehler);
     }
 
     // max_participants ist die KONFI-Teilnehmerzahl. Bei Pflicht-Events (ganzer
@@ -392,6 +399,12 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       return res.status(400).json({ error: schlussFehlerUpdate });
     }
 
+    // Wie beim Anlegen: das Ende nicht vor den Beginn.
+    const endeFehlerUpdate = pruefeEndeNachBeginn(event_date, event_end_time);
+    if (endeFehlerUpdate) {
+      return res.status(400).json(endeFehlerUpdate);
+    }
+
     // Guards für Pflicht-Events
     // Pflicht- UND Konfirmations-Events geben keine Punkte (serverseitig erzwungen).
     const effectivePoints = (mandatory || is_konfirmation) ? 0 : points;
@@ -410,6 +423,12 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     }
     // Reine Teamer-Events haben keine Konfi-Plaetze -> 0 (= unbegrenzt/irrelevant)
     const effectiveMaxParticipants = (mandatory || teamer_only) ? 0 : max_participants;
+    // Konfi-Plaetze ausdruecklich unbegrenzt (0, auch bei Pflicht-Events) --
+    // dann ruecken unten alle wartenden Konfis nach (Audit BF-06). Nicht bei
+    // reinen Teamer-Events: Dort gibt es keine Konfi-Plaetze.
+    const konfiUnbegrenzt = !teamer_only
+      && effectiveMaxParticipants !== undefined && effectiveMaxParticipants !== null
+      && effectiveMaxParticipants !== '' && Number(effectiveMaxParticipants) === 0;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
     // Timeslots bei Pflicht-Events UND Konfirmationen nicht erlaubt (siehe POST).
     // Wird ein Event nachträglich zu mandatory/is_konfirmation, fällt es unten in
@@ -617,11 +636,21 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
             promotedUsers.push(...nachgerueckt);
           }
         }
-      } else if (max_participants > 0) {
-        // Bei normalen Events: Gesamtkapazität prüfen (Teamer zählen nicht mit)
-        const frei = await freiePlaetze(client, { eventId: id, seite: 'konfi' }, max_participants);
-        if (frei > 0) {
-          const nachgerueckt = await rueckeNach(client, { eventId: id, seite: 'konfi', anzahl: frei });
+      } else if (konfiUnbegrenzt || max_participants > 0) {
+        // Bei normalen Events: Gesamtkapazität prüfen (Teamer zählen nicht mit).
+        //
+        // 0 = UNBEGRENZT -> ALLE Wartenden ruecken nach (28.09.2026, Audit
+        // Punkte/Termine BF-06). Hier stand nur `max_participants > 0`; die 0
+        // fiel durch, niemand rueckte nach, waehrend jede neue Anmeldung
+        // sofort bestaetigt wurde -- wer frueh wartete, sah spaeter
+        // Angemeldete vor sich. Jetzt dieselbe Regel wie beim
+        // Team-Kontingent darunter: Ohne Obergrenze ist die Zahl der Wartenden
+        // die natuerliche Grenze (freiePlaetze liefert dann null).
+        const frei = await freiePlaetze(client, { eventId: id, seite: 'konfi' }, konfiUnbegrenzt ? 0 : max_participants);
+        const { waitlist: wartende } = await zaehleBuchungen(client, { eventId: id }, 'konfi');
+        const obergrenze = frei === null ? wartende : Math.min(frei, wartende);
+        if (obergrenze > 0) {
+          const nachgerueckt = await rueckeNach(client, { eventId: id, seite: 'konfi', anzahl: obergrenze });
           promotedUsers.push(...nachgerueckt);
         }
       }
@@ -790,6 +819,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     let fruehAntwort = null;
     let betroffeneUserIds = [];
     let awardedPoints = [];
+    let chatDateien = [];
     try {
       await client.query('BEGIN');
 
@@ -868,88 +898,18 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       // ein Termin geloescht wurde -- bei "Nur Team"-Terminen also niemand.
       betroffeneUserIds = await ladeBetroffeneEinesAusfalls(client, id);
 
-      // Get event chat rooms and their files before deletion
-      const { rows: eventChatRooms } = await client.query("SELECT id FROM chat_rooms WHERE event_id = $1", [id]);
-      const allFiles = [];
+      // Die Loeschschritte selbst (Chat, Punkte, Buchungen, Postfach,
+      // Serien-Verweis, Termin) stehen seit dem 28.09.2026 in
+      // utils/terminLoeschen.js -- DELETE /admin/jahrgaenge/:id loescht die
+      // Termine eines Jahrgangs auf demselben Weg. Vergebene Event-Punkte
+      // werden hier zurueckgenommen (Befund H1): das blosse Kaskaden-Loeschen
+      // liess sie in konfi_profiles stehen -- ohne Beleg, nicht
+      // rekonstruierbar.
+      const ergebnis = await loescheTermin(client, id, { punkteZuruecknehmen: true });
+      awardedPoints = ergebnis.vergebenePunkte;
+      chatDateien = ergebnis.dateien;
 
-      for (const room of eventChatRooms) {
-        const { rows: roomFiles } = await client.query("SELECT file_path FROM chat_messages WHERE room_id = $1 AND file_path IS NOT NULL", [room.id]);
-        allFiles.push(...roomFiles);
-      }
-
-      // Proceed with deletions. Order matters due to foreign keys.
-      // 1. Delete chat data first
-      for (const room of eventChatRooms) {
-        // Delete poll votes first (polls are linked via message_id, not room_id)
-        await client.query(`
-          DELETE FROM chat_poll_votes WHERE poll_id IN (
-            SELECT cp.id FROM chat_polls cp
-            JOIN chat_messages cm ON cp.message_id = cm.id
-            WHERE cm.room_id = $1
-          )
-        `, [room.id]);
-
-        // Delete polls (via message_id)
-        await client.query(`
-          DELETE FROM chat_polls WHERE message_id IN (
-            SELECT id FROM chat_messages WHERE room_id = $1
-          )
-        `, [room.id]);
-        await client.query("DELETE FROM chat_read_status WHERE room_id = $1", [room.id]);
-        await client.query("DELETE FROM chat_messages WHERE room_id = $1", [room.id]);
-        await client.query("DELETE FROM chat_participants WHERE room_id = $1", [room.id]);
-      }
-      await client.query("DELETE FROM chat_rooms WHERE event_id = $1", [id]);
-
-      // 2. Vergebene Event-Punkte zurücknehmen (Befund H1): das blosse
-      // Kaskaden-Löschen von event_points liess die Punkte in konfi_profiles
-      // stehen — ohne Beleg, nicht rekonstruierbar. Muster wie beim
-      // Einzel-Storno (PUT /:id/participants/:participantId/status): pro
-      // Punkt-Typ abziehen, GREATEST(0, ...) gegen negative Salden.
-      const { rows: vergebenePunkte } = await client.query(
-        "SELECT konfi_id, points, point_type FROM event_points WHERE event_id = $1",
-        [id]
-      );
-      awardedPoints = vergebenePunkte;
-      for (const pts of awardedPoints) {
-        const updateProfileQuery = pts.point_type === 'gottesdienst'
-          ? "UPDATE konfi_profiles SET gottesdienst_points = GREATEST(0, gottesdienst_points - $1) WHERE user_id = $2"
-          : "UPDATE konfi_profiles SET gemeinde_points = GREATEST(0, gemeinde_points - $1) WHERE user_id = $2";
-        await client.query(updateProfileQuery, [pts.points, pts.konfi_id]);
-      }
-      await client.query("DELETE FROM event_points WHERE event_id = $1", [id]);
-
-      // 3. Delete event-specific data
-      await client.query("DELETE FROM event_bookings WHERE event_id = $1", [id]);
-      await client.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
-      await client.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
-      await client.query("DELETE FROM event_jahrgang_assignments WHERE event_id = $1", [id]);
-
-      // 4. Clean up files from filesystem (best effort)
-      const fs = require('fs').promises;
-      const path = require('path');
-
-      for (const fileRecord of allFiles) {
-        try {
-          // Seit der Aufteilung liegt diese Datei eine Ebene tiefer
-          // (routes/events/ statt routes/), daher ZWEI '..' bis backend/.
-          const fullPath = path.join(__dirname, '..', '..', 'uploads', 'chat', fileRecord.file_path);
-          await fs.unlink(fullPath);
-        } catch (fileErr) {
- console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
-        }
-      }
-
-      // Mitteilungen zum Termin gehen mit ihm (utils/postfachAufraeumen.js):
-      // Anmeldung, Absage, Teilnahme, Team-Buchung -- jede zeigt beim
-      // Antippen auf diesen Termin, und den gibt es gleich nicht mehr. In
-      // derselben Transaktion, damit bei einem ROLLBACK auch sie stehen bleiben.
-      await loescheMitteilungenZuTermin(client, id);
-
-      // Finally, delete the event itself
-      const { rowCount } = await client.query("DELETE FROM events WHERE id = $1", [id]);
-
-      if (rowCount === 0) {
+      if (!ergebnis.geloescht) {
         await client.query('ROLLBACK');
         fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
       } else {
@@ -969,6 +929,10 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     if (fruehAntwort) {
       return res.status(fruehAntwort.status).json(fruehAntwort.body);
     }
+
+    // Chat-Anhaenge erst nach dem COMMIT vom Dateisystem nehmen: Ein
+    // ROLLBACK soll keine Dateien verlieren, deren Nachrichten noch stehen.
+    await entferneChatDateien(chatDateien);
 
     res.json({ message: 'Event erfolgreich gelöscht' });
 

@@ -256,6 +256,43 @@ components:
       type: object
       properties:
         message: { type: string }
+    KonfiZeitAntwort:
+      type: object
+      required: [konfi_zeit]
+      properties:
+        konfi_zeit:
+          description: Juengste Kopie der Konfi-Zeit (konfi_historie, Migration 170) oder null
+          oneOf:
+            - type: 'null'
+            - type: object
+              properties:
+                version: { type: integer, description: "Aufbau der Kopie, heute 1" }
+                jahrgang_name: { type: [string, 'null'], description: "Bleibt, auch wenn der Jahrgang geloescht ist" }
+                anlass: { type: string, enum: [befoerderung, jahrgang_geloescht] }
+                erstellt_am: { type: [string, 'null'], format: date-time }
+                jahrgang: { type: [object, 'null'], properties: { id: { type: integer }, name: { type: string } } }
+                punkte: { type: object, properties: { gottesdienst: { type: integer }, gemeinde: { type: integer }, gesamt: { type: integer } } }
+                level: { type: [object, 'null'], properties: { id: { type: integer }, titel: { type: string } } }
+                termine:
+                  type: array
+                  description: "Vergangene Buchungen und alle Termine mit Event-Punkten, nach Datum"
+                  items:
+                    type: object
+                    properties:
+                      event_id: { type: integer }
+                      name: { type: string }
+                      datum: { type: string, format: date-time }
+                      ort: { type: [string, 'null'] }
+                      abgesagt: { type: boolean }
+                      status: { type: [string, 'null'], description: "Buchungsstatus; null = nur Punkte" }
+                      anwesenheit: { type: [string, 'null'], description: "present | absent | excused" }
+                      punkte: { type: integer }
+                      punktart: { type: [string, 'null'] }
+                aktivitaeten: { type: array, items: { type: object, properties: { name: { type: string }, art: { type: string }, punkte: { type: integer }, datum: { type: string }, kommentar: { type: [string, 'null'] } } } }
+                bonuspunkte: { type: array, items: { type: object, properties: { beschreibung: { type: string }, art: { type: string }, punkte: { type: integer }, datum: { type: string } } } }
+                abzeichen: { type: array, items: { type: object, properties: { badge_id: { type: integer }, name: { type: string }, beschreibung: { type: [string, 'null'] }, icon: { type: string }, farbe: { type: string }, kriterium: { type: string }, kriterium_wert: { type: [integer, 'null'] }, verliehen_am: { type: string } } } }
+                stempel: { type: array, items: { type: object, properties: { challenge_id: { type: integer }, titel: { type: string }, badge_name: { type: string }, badge_icon: { type: string }, erhalten_am: { type: string } } } }
+                konfispruch: { type: [object, 'null'], description: "wie GET /api/teamer/profile bzw. utils/konfspruch.loeseKonfspruchAuf" }
   responses:
     Unauthorized:
       description: Kein/ungueltiges/abgelaufenes Token, inaktiver Account oder inaktive Organisation
@@ -308,6 +345,13 @@ paths:
         (200 statt 403). Jetzt zaehlt die Rolle in der Gemeinde des Termins
         (Stamm-Gemeinde: users.role_id, weitere: user_organizations); das Flag
         is_super_admin bleibt gemeindeuebergreifend.
+        GEAENDERT 28.09.2026 (Audit Punkte/Termine BF-05): Eine Zusage nach
+        einer Absage (vorher opted_out) setzt booking_date auf jetzt -- wer
+        wieder zusagt, stellt sich hinten an die Team-Warteliste, wie bei der
+        Wiederanmeldung ueber bucheTermin. Vorher blieb booking_date stehen,
+        und die erneute Zusage ueberholte alle, die inzwischen warteten. Eine
+        wiederholte Zusage (vorher schon confirmed/waitlist, etwa ein
+        Doppelversand) behaelt ihren Platz. Antwortform unveraendert.
         Fachlicher Kern in utils/bookingUtils.js (setzeTeamerZusage). Pushes
         an die Leitung ueber die Teamer-Typen teamer_event_booking bzw.
         teamer_event_cancellation (Absage seit 01.09.2026 mit Grund im Text);
@@ -516,6 +560,62 @@ paths:
         "200": { description: "history[] (id, title, points, category, date, comment, source_type activity|bonus|event) + totals {gottesdienst, gemeinde, total}" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/konfi-zeit:
+    get:
+      tags: ["Teamer:innen"]
+      summary: Eigene Konfi-Zeit als dauerhafte Kopie
+      description: >
+        Seit dem 28.09.2026 (Migration 170, utils/konfiHistorie.js). Die
+        Befoerderung loescht alle Buchungen (gewollt), das Loeschen des alten
+        Jahrgangs spaeter dessen Termine und Event-Punkte. Vorher legt der
+        Server eine Kopie der Konfi-Zeit an — bei der Befoerderung, und beim
+        Loeschen des Jahrgangs fuer Befoerderte, die noch keine haben. Diese
+        Route liefert die juengste Kopie der aufrufenden Person in der aktiven
+        Gemeinde. Eigene Route statt eines Feldes an /teamer/profile oder
+        /teamer/konfi-history: deren Antworten lesen die Apps im Store.
+      x-berechtigung:
+        rollen: [teamer, admin, org_admin]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten (user_id = Token) der aktiven Gemeinde"
+      responses:
+        "200":
+          description: "{ konfi_zeit } — ohne Kopie { konfi_zeit: null }"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KonfiZeitAntwort' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Konfis (requireTeamer)" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/{userId}/konfi-zeit:
+    get:
+      tags: ["Teamer:innen"]
+      summary: Konfi-Zeit einer Person (Detailansicht der Leitung)
+      description: >
+        Seit dem 28.09.2026. Wie GET /api/teamer/konfi-zeit, fuer die
+        angesehene Person. Eine Kopie gibt es nur von Befoerderten, und
+        Teamer:innen sieht die Leitung ohne Jahrgangsgrenze
+        (utils/jahrgangsZugriff.js); die Gemeinde begrenzt die Zeile — aus
+        einer fremden Gemeinde { konfi_zeit: null }.
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: integer }, description: "ID der Person" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, param-userId-Validierung]
+        org-scope: true
+        objekt-pruefung: "Zeile der aktiven Gemeinde (organization_id = req.user.organization_id)"
+      responses:
+        "200":
+          description: "{ konfi_zeit } — ohne Kopie { konfi_zeit: null }"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KonfiZeitAntwort' }
+        "400": { description: "Ungueltige ID" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Teamer:innen und Konfis (requireAdmin)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/teamer/badges:
@@ -920,6 +1020,18 @@ paths:
         "kein Grund angegeben", bei den Namen "unbekannt". Kein bestehendes
         Feld entfaellt oder aendert Form; ausgelieferte Fassungen lesen die
         neuen Schluessel nicht und verhalten sich unveraendert.
+        GEAENDERT 28.09.2026 (Screens Konfi/Teamer BF-07, behoben): ADDITIV
+        wrapped_ausgabe_id und wrapped_titel, wie im Konfi-Dashboard
+        (GET /api/konfi/dashboard) — die Ausgabe, die GET /api/wrapped/me
+        oeffnet: der juengste freigegebene Teamer-Rueckblick der aktiven
+        Gemeinde (Alt-Snapshots ohne Ausgabe: beide null). Die App merkt sich
+        das Wegklicken des Hinweises je Ausgabe
+        (wrapped_hinweis_t_<user>_<wrapped_ausgabe_id>); ohne das Feld endete
+        der Schluessel immer auf "_alt", und der naechste Team-Rueckblick
+        meldete sich auf der Startseite nie. Die Store-Apps 2.2.x/2.3.0 bauen
+        den Schluessel schon so und profitieren ohne Update; wer den Hinweis
+        bisher weggeklickt hat, sieht ihn fuer die aktuelle Ausgabe einmal
+        wieder.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
@@ -929,6 +1041,9 @@ paths:
           Die Wrapped-Prüfung fragt wrapped_snapshots nur über user_id +
           wrapped_type ab, ohne organization_id - dieselbe Multi-Org-Unschaerfe
           wie in GET /api/wrapped/me (Befund W1).
+          BEHOBEN 26.09.2026 (Audit Chat BF-06): has_wrapped und seit
+          28.09.2026 auch wrapped_ausgabe_id/wrapped_titel pruefen die aktive
+          Organisation (wrapped_snapshots.organization_id).
       responses:
         "200":
           description: Dashboard-Daten
@@ -944,6 +1059,8 @@ paths:
                   config: { type: object, description: "show_zertifikate, show_challenges, show_konfispruch, show_events, show_badges, show_losung, section_order" }
                   has_wrapped: { type: boolean }
                   konfspruch: { type: [object, "null"], description: "source (liste|freitext), reference, text, ggf. id + translation" }
+                  wrapped_ausgabe_id: { type: [integer, "null"], description: "ADDITIV 28.09.2026: Id der juengsten freigegebenen Teamer-Ausgabe der aktiven Gemeinde; null ohne Rueckblick oder bei Alt-Snapshots ohne Ausgabe" }
+                  wrapped_titel: { type: [string, "null"], description: "ADDITIV 28.09.2026: Titel derselben Ausgabe (bei Teamer-Ausgaben der Platzhalter 'Team-Rückblick <Jahr>'; die App zeigt ihn nicht)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer" }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -1971,7 +2088,8 @@ paths:
       tags: ["Wrapped"]
       summary: Teamer-Jahresrueckblicke der Organisation löschen
       description: >
-        Loescht alle Teamer-Snapshots der aktiven Organisation. Seit
+        Loescht alle Teamer-Snapshots der aktiven Organisation samt ihrer
+        Teamer-Ausgaben (seit 28.09.2026, siehe unten). Seit
         01.09.2026 (Befund W3): Teamer-Snapshots werden ohne jahrgang_id
         gespeichert und waren ueber den Jahrgangs-Weg nie erreichbar - einmal
         erzeugt, blieben sie fuer immer stehen, auch wenn der Lauf fehlerhafte
@@ -1988,7 +2106,19 @@ paths:
         Jahrgangsfilter, Teamer haben keinen Jahrgang, dort ist das Jahr die
         einzige Trennlinie. OHNE `year` bleibt es beim bisherigen Verhalten
         (alle Jahre), damit der Aufruf der ausgelieferten Oberfläche gültig
-        bleibt.
+        bleibt. (Stand 28.09.2026: Keine ausgelieferte App ruft die Route; die
+        Oberfläche löscht seit 2.2.0 über DELETE /api/wrapped/ausgabe/{id}.
+        Die Route ist ein Betriebswerkzeug, siehe ABRISS.md.)
+
+        BEHOBEN 28.09.2026 (Audit Chat/Challenges/Rückblick BF-05): Die Route
+        löschte nur die Snapshots und ließ die leere Teamer-Ausgabe stehen.
+        Seit der Ausgaben-Sperre in POST /api/wrapped/generate-teamer
+        (08.09.2026) war der Team-Rückblick des Jahres danach nicht mehr
+        erzeugbar ("besteht bereits", generated 0). Jetzt gehen die
+        Teamer-Ausgaben des Umfangs mit (ohne year alle, mit year die des
+        Jahres und jede, an der ein Snapshot dieses Jahres hängt) — auch eine
+        leere, die der frühere Weg zurückgelassen hat. Alles in einer
+        Transaktion.
       parameters:
         - name: year
           in: query
@@ -2001,9 +2131,9 @@ paths:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]
         org-scope: true
-        objekt-pruefung: "DELETE mit wrapped_type='teamer' + organization_id aus dem Token, optional year"
+        objekt-pruefung: "DELETE mit wrapped_type='teamer' + organization_id aus dem Token, optional year; ebenso die Teamer-Ausgaben (wrapped_ausgaben) dieser Organisation"
       responses:
-        "200": { description: "message, deleted (Anzahl geloeschter Snapshots)" }
+        "200": { description: "message, deleted (Anzahl geloeschter Snapshots, unveraendert), ausgaben_geloescht (ADDITIV 28.09.2026: Anzahl mitgeloeschter Teamer-Ausgaben)" }
         "400": { description: "year ist keine gültige Jahreszahl" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }

@@ -18,7 +18,7 @@ const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
 // (27.09.2026, Regel in utils/terminLeitungSicht.js).
 const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
 const { nachAntwort } = require('../utils/nachAntwort');
-const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach, pruefeKonfiStorno } = require('../utils/bookingUtils');
+const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach, pruefeKonfiStorno, wartelistenPlatzSql } = require('../utils/bookingUtils');
 const { buchungszahlenJeTerminSql } = require('../utils/buchungszahlen');
 const { konfiSiehtTerminSql, konfiSiehtTermin } = require('../utils/konfiTerminSicht');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
@@ -1282,19 +1282,23 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           WHERE ec.event_id = e.id
         ) cats ON true
         LEFT JOIN LATERAL (
-          SELECT eb_konfi_i.id, eb_konfi_i.status, eb_konfi_i.attendance_status,
-                 eb_konfi_i.timeslot_id, eb_konfi_i.created_at
+          SELECT eb_konfi_i.id, eb_konfi_i.event_id, eb_konfi_i.status, eb_konfi_i.attendance_status,
+                 eb_konfi_i.timeslot_id, eb_konfi_i.booking_date
           FROM event_bookings eb_konfi_i
           WHERE eb_konfi_i.event_id = e.id AND eb_konfi_i.user_id = $2
           LIMIT 1
         ) eb_konfi ON true
         LEFT JOIN event_timeslots et_booked ON eb_konfi.timeslot_id = et_booked.id
+        -- Wartelisten-Platz: dieselbe Regel wie das Nachruecken und die
+        -- Status-Route (28.09.2026, Audit BF-05, utils/bookingUtils.js
+        -- wartelistenPlatzSql). Vorher nach created_at, ueber alle Rollen und
+        -- Zeitfenster -- die Status-Route zaehlte nach booking_date, und
+        -- dieselbe Person sah zwei verschiedene Plaetze. Nur fuer Wartende
+        -- gerechnet.
         LEFT JOIN LATERAL (
-          SELECT COUNT(*) + 1 as waitlist_position
-          FROM event_bookings eb2
-          WHERE eb2.event_id = e.id
-            AND eb2.status = 'waitlist'
-            AND eb2.created_at < eb_konfi.created_at
+          SELECT CASE WHEN eb_konfi.status = 'waitlist'
+                      THEN ${wartelistenPlatzSql('eb_konfi', 'konfi')}
+                 END as waitlist_position
         ) wpos ON true
         LEFT JOIN LATERAL (
           SELECT SUM(max_participants) as total_capacity
@@ -1451,12 +1455,17 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Get waitlist position if user is on waitlist
       let waitlist_position = null;
       if (registration && registration.status === 'waitlist') {
+        // Dieselbe Regel wie die Liste und das Nachruecken (28.09.2026, Audit
+        // BF-05, utils/bookingUtils.js wartelistenPlatzSql): nur die eigene
+        // Warteliste (Konfis, eigenes Zeitfenster), Rang nach booking_date.
+        // Vorher zaehlte hier jede wartende Buchung des Termins -- auch
+        // Teamer:innen und andere Zeitfenster.
         const positionQuery = `
-          SELECT COUNT(*) + 1 as position
-          FROM event_bookings
-          WHERE event_id = $1 AND status = 'waitlist' AND booking_date < $2
+          SELECT ${wartelistenPlatzSql('ich', 'konfi')} as position
+          FROM event_bookings ich
+          WHERE ich.id = $1
         `;
-        const { rows: [posResult] } = await db.query(positionQuery, [eventId, registration.booking_date]);
+        const { rows: [posResult] } = await db.query(positionQuery, [registration.id]);
         waitlist_position = parseInt(posResult.position) || 1;
       }
       
@@ -1694,7 +1703,31 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       );
 
       if (!registration) {
-        return res.status(400).json({ error: 'Du bist nicht für dieses Event angemeldet' });
+        // Keine Buchung (mehr) -- zwei sehr verschiedene Faelle (28.09.2026,
+        // Audit Punkte/Termine BF-03), unterschieden wie in
+        // DELETE /events/:id/book (events/buchung.js):
+        //
+        // a) Das Event gibt es in dieser Gemeinde nicht -> 404.
+        //
+        // b) Das Event gibt es, die Buchung ist schon weg. Das Ziel ist
+        //    erreicht. Genau so kommt eine im Funkloch abgegebene Abmeldung
+        //    zurueck, wenn die Antwort auf dem Rueckweg verloren ging und die
+        //    Warteschlange sie erneut vorlegt. Hier stand ein 400 "Du bist
+        //    nicht fuer dieses Event angemeldet" -- die App meldete damit
+        //    einen Fehlschlag fuer eine gelungene Abmeldung. Der Zweig
+        //    `bereits_abgemeldet` weiter unten griff nie, weil diese Stelle
+        //    vorher antwortete.
+        //
+        //    Kein zweites Protokoll, keine zweite Mitteilung, kein
+        //    Nachruecken: Es ist nichts passiert.
+        const { rows: [terminDa] } = await db.query(
+          'SELECT 1 FROM events WHERE id = $1 AND organization_id = $2',
+          [eventId, req.user.organization_id]
+        );
+        if (!terminDa) {
+          return res.status(404).json({ error: 'Event nicht gefunden' });
+        }
+        return res.json({ message: 'Abmeldung erfolgreich', bereits_abgemeldet: true });
       }
 
       // Check if event exists and get event details.

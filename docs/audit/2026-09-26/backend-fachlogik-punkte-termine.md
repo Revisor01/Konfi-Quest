@@ -190,6 +190,11 @@ bestehender Aktivitäten nicht zu ändern.
   unterscheiden: Termin existiert → 200 `bereits_abgemeldet`, sonst 404.
   Test „zweite Abmeldung antwortet 200“ ergänzen (die Suite
   `nachrueckenLuecken` hat ihn nur für den Opt-out).
+- **Nachtrag 28.09.2026:** behoben — der Vorab-Check in
+  `DELETE /konfi/events/:id/register` unterscheidet jetzt wie `buchung.js`:
+  Event der Gemeinde vorhanden → 200 `{ message, bereits_abgemeldet: true }`
+  ohne Protokoll, Mitteilung und Nachrücken; sonst 404. Test
+  `backend/tests/routes/abmeldungZweimal.test.js` (7, ohne Fix 6 rot).
 
 ### BF-04: „Teilnehmende von Hand hinzufügen“ überbucht still; ungültiger `status` endet im 500
 - **Schwere:** MITTEL
@@ -225,6 +230,31 @@ bestehender Aktivitäten nicht zu ändern.
   `confirmed` dieselbe Kapazitätsprüfung wie beim Bestätigen von Hand; das
   Modal auf `auto` umstellen oder die bewusste Überbuchung ausdrücklich
   anbieten und im Handbuch so beschreiben.
+- **Nachtrag 28.09.2026:** Überbuchen bewusst so, Simon 28.09.: „Überbuchen
+  ist gewollt, kann ja sein das ich mehr brauche von der Warteliste." Das
+  Hinzufügen von Hand mit `confirmed` prüft weiter keine Kapazität; das
+  Handbuch (70-termine, „Teilnehmende von Hand hinzufügen") beschreibt es so
+  und grenzt das Bestätigen von der Warteliste ab, das bei vollem Event
+  weiter abgelehnt wird (Entscheidung 16.09.2026, unverändert). 500 behoben:
+  `status` wird vor dem Schreiben auf `auto|confirmed|waitlist` geprüft
+  (`null` gilt als `auto`), sonst 400 `status_ungueltig` — vorher 500 bei
+  `foo`, 201 mit einer Buchung im Status `cancelled`/`opted_out`/`excused`/
+  `pending` und eine Buchung ohne Status bei `null`. Test
+  `backend/tests/routes/teilnehmerVonHandStatus.test.js` (12, ohne Fix 8 rot).
+- **Nachtrag 28.09.2026 (später):** Bestätigen von der Warteliste nach Simons Entscheidung
+  (Variante c: nachfragen, dann bestätigen): Die 400 bei vollem Event bleibt mit demselben Text
+  und trägt additiv `error_code: 'event_voll'`, `max` und `belegt`; die App fragt „Trotzdem
+  bestätigen?" und schickt danach `ueberbuchen: true`. Tests: `bestaetigenUeberbuchen.test.js`
+  (5, vorher 4 rot; ohne die Bedingung 2 rot), Frontend `ueberbuchen.test.ts` (12, gegen die
+  alte Detailansicht 2 rot).
+- **Nachtrag 28.09.2026 (Vormittag):** Dieselbe Rückfrage beim Eintragen von Hand, für Konfis und
+  Team (Simon: „Die sollten wir auch einfügen, wenn wir Konfi hinzufügen … oder auch bei
+  Teamern"). `POST /events/:id/participants` prüft mit `ueberbuchen: false` das Kontingent der
+  Person (Konfi-Plätze bzw. Zeitfenster, sonst Team-Plätze) und antwortet 400 `event_voll` mit
+  `max`, `belegt`, `seite`; ohne das Feld überbucht die Route wie bisher still (Store-Apps). Die
+  App fragt einmal je Kontingent für alle Übrigen. Beide Routen melden jetzt `seite`. Tests:
+  `vonHandUeberbuchen.test.js` (10; vorher 5 rot, ohne die Prüfung 3 rot, darunter Team-Warteliste
+  und Zeitfenster), Frontend `ueberbuchen.test.ts` (22).
 
 ### BF-05: Wiederanmeldung nach Abmeldung behält den alten Wartelistenrang; Positionsanzeige widerspricht sich
 - **Schwere:** MITTEL
@@ -253,6 +283,21 @@ bestehender Aktivitäten nicht zu ändern.
   Nachrücken und beide Positionsabfragen auf `booking_date` umstellen — dann
   auch BF-11 mit erledigt); ein Test, der die Reihenfolge nach Reaktivierung
   festhält.
+- **Nachtrag 28.09.2026:** behoben — Nachrücken, beide Positionsabfragen und
+  die Teilnehmerliste der Leitung lesen eine Reihenfolge aus
+  `utils/bookingUtils.js` (`wartelistenRangSql`: `booking_date`, bei
+  Gleichstand `id`; `COALESCE` auf `-infinity` für Altbestand ohne Wert —
+  alle Schreibwege setzen `booking_date`). Der Platz zählt nur die
+  Warteliste, aus der nachgerückt wird (`wartelistenPlatzSql`: Kontingent,
+  Zeitfenster, ohne gelöschte Konten); vorher zählten beide Abfragen auch
+  wartende Teamer:innen und fremde Zeitfenster. Dieselbe Regel „wer sich neu
+  anstellt, steht hinten" jetzt auch bei der erneuten Teamer-Zusage nach einer
+  Absage (`setzeTeamerZusage`) und beim Herabstufen durch die Leitung — dort
+  rückte die Herabgestufte, wenn sie früher gebucht hatte, selbst wieder nach,
+  die Route nahm das zurück, und der Platz blieb leer (das Handbuch versprach
+  anderes; `bestaetigenKapazitaet.test.js` umging es mit einem
+  zurückdatierten `created_at`). Test
+  `backend/tests/routes/wartelisteReihenfolge.test.js` (8, ohne Fix 6 rot).
 
 ### BF-06: Konfi-Kapazität auf „unbegrenzt“ setzen lässt die Warteliste stehen
 - **Schwere:** MITTEL
@@ -277,6 +322,12 @@ bestehender Aktivitäten nicht zu ändern.
   `promoted_teamer_count: 1`, teamer1 **confirmed**.
 - **Empfehlung:** Konfi-Zweig wie der Team-Zweig behandeln (`max_participants
   === 0 || …`, Obergrenze = Zahl der Wartenden); Test.
+- **Nachtrag 28.09.2026:** behoben — `PUT /events/:id` behandelt Konfi-Plätze
+  0 (unbegrenzt, auch Pflicht) wie der Team-Zweig: Obergrenze ist die Zahl der
+  wartenden Konfis, alle rücken über `rueckeNach` nach (Push, Live-Update,
+  `war_auf_warteliste`, Termin-Chat wie beim Erhöhen auf eine Zahl); wartende
+  Teamer:innen bleiben. Test `backend/tests/routes/unbegrenztRuecktNach.test.js`
+  (5, ohne Fix 3 rot; Gegenprobe Team-Seite grün).
 
 ### BF-07: Teamer-Aktivität lässt sich einer Person einer fremden Gemeinde zuordnen
 - **Schwere:** MITTEL
@@ -304,6 +355,15 @@ bestehender Aktivitäten nicht zu ändern.
 - **Empfehlung:** Vor dem Zweig die Zielperson wie in `activities.js:767`
   gegen `users.organization_id` prüfen; Test für Org-fremde Person (404) und
   eigene (201).
+- **Nachtrag 28.09.2026:** behoben — der Teamer-Zweig prüft die Zielperson
+  über `istMitgliedDerOrganisation` (`utils/orgMitglieder.js`, beide Quellen:
+  `users.organization_id` und `user_organizations`, gelöschte Konten nie) →
+  404 „Person nicht gefunden", bevor etwas geschrieben wird. Abweichend von der
+  Empfehlung nicht nur `users.organization_id`: Eine Teamer:in mit
+  Zweitmitgliedschaft in der Gemeinde bekommt ihre Aktivität weiter. Test
+  `backend/tests/routes/teamerAktivitaetGemeindegrenze.test.js` (5: fremde
+  Person, unbekannte ID, gelöschtes Konto 404; eigene und Zweitmitgliedschaft
+  201; ohne Fix 3 rot — 201, 500, 201).
 
 ### BF-08: Jahrgang löschen hinterlässt Pflichttermine ohne Jahrgang und läuft ohne Transaktion
 - **Schwere:** MITTEL
@@ -335,6 +395,7 @@ bestehender Aktivitäten nicht zu ändern.
 - **Empfehlung:** Vor dem Löschen Termine mit ausschließlich diesem Jahrgang
   zählen und wie Konfis/Chat mit 409 blockieren (oder Pflichttermine
   mitlöschen/absagen lassen); die Route in eine Transaktion legen.
+- **Nachtrag 28.09.2026:** behoben nach Simons Entscheidung („Events die im Jahrgang liegen müssen mit dem Jahrgang gelöscht werden. Event mit zwei Jahrgänge bleiben … Löschen muss auch challenges mit umfassen. Teamer und Admins sollten aber ihre Stempel behalten") — kein 409, sondern Mitlöschen. `DELETE /admin/jahrgaenge/:id` läuft in einer Transaktion und löscht Termine und Challenges, die nur an diesem Jahrgang hängen, über dieselben Wege wie das Einzel-Löschen (`utils/terminLoeschen.js`, `utils/challengeLoeschen.js`); mit weiterem Jahrgang fällt nur die Zuordnung weg, „Nur Team"-Termine und „Nur das Team"-Challenges bleiben. Vergebene Event-Punkte bleiben gutgeschrieben, keine Absage-Push. Stempel von Teamer:innen und Leitung werden vorher bewahrt (Migration 169, `GET /challenges/bewahrte-stempel`). Neue Vorschau `GET /admin/jahrgaenge/:id/loeschvorschau` für die Rückfrage mit Zahlen. Nebenbei behoben: Der erste Termin einer Serie ließ sich nicht löschen (500, `events.series_id` ohne ON DELETE). Tests: `jahrgangLoeschenNimmtMit.test.js` (18), vor dem Fix 10 rot (alte Route); Gegenproben: ohne Stempel-Bewahrung 2 rot, ohne Serien-Umhängen 2 rot, ohne Sperre gegen parallele Serien-Löschung 2 von 3 Läufen rot. Frontend `jahrgangLoeschen.test.ts` (8), `bewahrteStempel.test.ts` (5), gegen die alten Seiten 4 rot.
 
 ### BF-09: Beförderung zur Teamer:in löscht vergangene Teilnahmen
 - **Schwere:** MITTEL
@@ -359,6 +420,7 @@ bestehender Aktivitäten nicht zu ändern.
   **0**, `event_points` **1**; `GET /api/events/1` → `participants: []`.
 - **Empfehlung:** Nur künftige Buchungen (`event_date > NOW()`) löschen und
   nachrücken lassen; vergangene stehen lassen.
+- **Nachtrag 28.09.2026:** behoben anders als empfohlen, nach Simons Entscheidung („Löschen bei Beförderung ist gewollt damit der Jahrgang später weg kann. Wir legen eine persistent kopie der Konfi history für den Teamer.") — die Beförderung löscht weiter alle Buchungen, legt aber vorher in derselben Transaktion eine dauerhafte Kopie der Konfi-Zeit an (Migration 170 `konfi_historie`, `utils/konfiHistorie.js`): vergangene Buchungen mit Status und Anwesenheit, alle Termine mit Event-Punkten, Aktivitäten, Bonuspunkte, Konfi-Abzeichen, Stempel, Level, Konfispruch, Punktestand. Beim Löschen eines Jahrgangs bekommen früher Beförderte ohne Kopie eine (Anlass `jahrgang_geloescht`). Sichtbar über `GET /teamer/konfi-zeit` (Person, Liste „Events der Konfi-Zeit“ in der Konfi-Historie) und `GET /teamer/:userId/konfi-zeit` (Leitung, Detailansicht). Die Teilnehmerliste des vergangenen Termins bleibt nach der Beförderung leer — das ist die gewollte Folge. Tests: `konfiZeitBeiBefoerderung.test.js` (8), ohne die beiden Aufrufe 5 rot; Frontend `konfiZeit.test.ts` (7).
 
 ### BF-10: Zielwert 0 wird als 10 ausgeliefert
 - **Schwere:** NIEDRIG
@@ -393,6 +455,9 @@ bestehender Aktivitäten nicht zu ändern.
 - **Empfehlung:** Nachrücken und Positionen auf `booking_date` (timestamptz)
   umstellen — siehe BF-05 — oder die Spalte additiv als timestamptz
   nachziehen.
+- **Nachtrag 28.09.2026:** behoben mit BF-05 — keine Reihenfolge der
+  Warteliste liest mehr `created_at`; der Schlüssel ist `booking_date`
+  (timestamptz). Die Spalte `created_at` bleibt unverändert stehen.
 
 ### BF-12: `series_events` in `GET /events/:id` liefert seit 22.09.2026 weniger Felder
 - **Schwere:** NIEDRIG

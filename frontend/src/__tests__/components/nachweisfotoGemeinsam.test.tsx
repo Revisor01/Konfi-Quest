@@ -88,6 +88,8 @@ const leitungsAntrag = { ...antrag, konfi_id: 9, konfi_name: 'Emilia Test' };
 
 const KONFI_ROUTE = '/konfi/activity-requests/41/photo';
 const LEITUNG_ROUTE = '/admin/activities/requests/41/photo';
+// Der Antragsdialog der Leitung lädt nur diesen einen Antrag (28.09.2026).
+const LEITUNG_ANTRAG = '/admin/activities/requests/41';
 
 const fotoAufrufe = () => apiGet.mock.calls.filter(([r]) => String(r).endsWith('/photo')).length;
 
@@ -103,7 +105,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
   apiGet.mockReset();
   apiGet.mockImplementation(async (route: string) => {
-    if (route === '/admin/activities/requests') return { data: [leitungsAntrag] };
+    if (route === LEITUNG_ANTRAG) return { data: leitungsAntrag };
     if (route.endsWith('/photo') || route.startsWith('/chat/files/')) {
       return { data: new Blob([`foto:${route}`], { type: 'image/jpeg' }) };
     }
@@ -228,7 +230,7 @@ describe('Leitung: Antrag prüfen', () => {
   it('lädt über die Route der Leitung und zeigt den Fortschritt', async () => {
     let fertig: () => void = () => undefined;
     apiGet.mockImplementation(async (route: string, optionen?: { onDownloadProgress?: (e: { loaded: number; total: number }) => void }) => {
-      if (route === '/admin/activities/requests') return { data: [leitungsAntrag] };
+      if (route === LEITUNG_ANTRAG) return { data: leitungsAntrag };
       optionen?.onDownloadProgress?.({ loaded: 25, total: 100 });
       return new Promise((resolveFoto) => { fertig = () => resolveFoto({ data: new Blob([`foto:${route}`], { type: 'image/jpeg' }) }); });
     });
@@ -238,12 +240,12 @@ describe('Leitung: Antrag prüfen', () => {
     await waitFor(() => expect(container.textContent).toContain('Wird geladen… 25 %'));
     await act(async () => { fertig(); });
     await waitFor(() => expect(fotoIn(container)).not.toBeNull());
-    expect(apiGet.mock.calls.map(([r]) => r)).toEqual(['/admin/activities/requests', LEITUNG_ROUTE]);
+    expect(apiGet.mock.calls.map(([r]) => r)).toEqual([LEITUNG_ANTRAG, LEITUNG_ROUTE]);
   });
 
   it('ein Fehler bleibt nicht als "Lade Foto..." stehen, sondern bietet "Erneut versuchen"', async () => {
     apiGet.mockImplementation(async (route: string) => {
-      if (route === '/admin/activities/requests') return { data: [leitungsAntrag] };
+      if (route === LEITUNG_ANTRAG) return { data: leitungsAntrag };
       throw serverFehler(500);
     });
 

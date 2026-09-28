@@ -36,7 +36,7 @@ const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { deleteChallengeFile } = require('../utils/photoStorage');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
-const { loescheMitteilungenZuChallenge } = require('../utils/postfachAufraeumen');
+const { loescheChallenge, entferneChallengeDateien } = require('../utils/challengeLoeschen');
 const { pruefeMusikLink, holeLinkMetadaten, ERLAUBTE_DIENSTE_TEXT } = require('../utils/musikLinks');
 
 const MEDIA_TYPES = ['text', 'photo', 'audio', 'video', 'link'];
@@ -569,6 +569,74 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
+
+  // ====================================================================
+  // BEWAHRTE STEMPEL (28.09.2026, Migration 169)
+  // ====================================================================
+  //
+  // Loescht die Leitung einen Jahrgang, gehen die Challenges mit, die nur an
+  // ihm hingen -- und mit ihnen die Beitraege, aus denen der Stempel
+  // abgeleitet wird. Die Stempel des Teams werden vorher in bewahrte_stempel
+  // abgelegt (utils/challengeLoeschen.js). Diese beiden Routen liefern sie.
+  //
+  // WARUM EIGENE ROUTEN: Die Stempel des Teams stehen in der App auf der
+  // Challenge-Seite ("Deine Stempel") und werden dort aus GET /admin
+  // abgeleitet -- einem Array von Challenges, in das eine geloeschte
+  // Challenge nicht mehr gehoert und dem sich kein Feld anhaengen laesst.
+  // Die Form jedes Eintrags ist die eines erhaltenen Stempels (`marks`):
+  // challenge_id bleibt die alte Kennung und damit eine Zahl.
+  //
+  // Nur Stempel, deren Challenge es nicht mehr gibt (challenge_id IS NULL):
+  // Lebt die Challenge noch, kommt ihr Stempel wie bisher aus den
+  // Beitraegen -- zweimal derselbe Stempel waere falsch.
+  const BEWAHRTE_STEMPEL_SQL = `
+    SELECT herkunft_challenge_id AS challenge_id, badge_icon, badge_name, title,
+           description, earned_at
+      FROM bewahrte_stempel
+     WHERE user_id = $1 AND organization_id = $2 AND challenge_id IS NULL
+     ORDER BY earned_at DESC NULLS LAST, id DESC`;
+
+  const bewahrteStempelAlsMarks = (rows) => rows.map((row) => ({
+    challenge_id: Number(row.challenge_id),
+    badge_icon: row.badge_icon,
+    badge_name: row.badge_name,
+    title: row.title,
+    earned_at: row.earned_at ? new Date(row.earned_at).toISOString() : null,
+    description: row.description || null,
+    bewahrt: true
+  }));
+
+  // GET /bewahrte-stempel — die eigenen, in der aktiven Gemeinde.
+  router.get('/bewahrte-stempel', rbacVerifier, async (req, res) => {
+    try {
+      const { rows } = await db.query(BEWAHRTE_STEMPEL_SQL, [req.user.id, req.user.organization_id]);
+      res.json(bewahrteStempelAlsMarks(rows));
+    } catch (err) {
+      console.error('Database error in GET /challenges/bewahrte-stempel:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // GET /admin/bewahrte-stempel/:userId — die einer Person, fuer deren
+  // Detailansicht bei der Leitung. Bewahrt werden nur Stempel des Teams, und
+  // Teamer:innen sieht die Leitung ohne Jahrgangsgrenze (utils/
+  // jahrgangsZugriff.js); die Gemeinde begrenzt die Zeilen selbst -- aus
+  // einer fremden Gemeinde kommt eine leere Liste.
+  router.get('/admin/bewahrte-stempel/:userId',
+    rbacVerifier,
+    requireAdmin,
+    param('userId').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors,
+    async (req, res) => {
+      try {
+        const { rows } = await db.query(BEWAHRTE_STEMPEL_SQL, [parseInt(req.params.userId, 10), req.user.organization_id]);
+        res.json(bewahrteStempelAlsMarks(rows));
+      } catch (err) {
+        console.error('Database error in GET /challenges/admin/bewahrte-stempel/:userId:', err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+      }
+    }
+  );
 
   // GET /konfi/:id — Detail inkl. Galerie (oeffentliche Beitraege) und eigenen
   // Beitraegen (immer, mit Status).
@@ -1615,21 +1683,12 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           });
         }
 
-        // Dateien VOR dem DB-Delete einsammeln (danach sind die Zeilen weg).
-        const { rows: files } = await db.query(
-          'SELECT file_path FROM challenge_submissions WHERE challenge_id = $1 AND file_path IS NOT NULL',
-          [challengeId]
-        );
-
-        await db.query('DELETE FROM challenges WHERE id = $1 AND organization_id = $2',
-          [challengeId, req.user.organization_id]);
-        // Stempel, "Beitrag ausgeblendet" und "Neuer Beitrag" zu dieser
-        // Challenge zeigen auf nichts mehr (utils/postfachAufraeumen.js).
-        await loescheMitteilungenZuChallenge(db, challengeId);
-
-        for (const f of files) {
-          await deleteChallengeFile(f.file_path);
-        }
+        // Beitraege, Dateien und Postfach-Eintraege: derselbe Weg wie beim
+        // Loeschen eines Jahrgangs (utils/challengeLoeschen.js, 28.09.2026).
+        // Die Stempel gehen hier mit -- wer eine einzelne Challenge loescht,
+        // will sie ganz los sein; bewahrt werden sie nur beim Jahrgang.
+        const { dateien } = await loescheChallenge(db, challengeId, req.user.organization_id);
+        await entferneChallengeDateien(dateien);
 
         res.json({ message: 'Challenge gelöscht' });
 

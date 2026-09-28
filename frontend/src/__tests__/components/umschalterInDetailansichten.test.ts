@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { resolve } from 'path';
 
 /**
@@ -94,6 +94,75 @@ describe('Gemeinde-Umschalter: nicht in Detailansichten (26.09.2026)', () => {
     expect(liste[0]).not.toMatch(/gemeindeUmschalter=\{false\}/);
   });
 
+  // SIMON, 28.09.2026: "Gemeinde Umschalter kommt nie in Details."
+  //
+  // Die Termin-Detailansicht der Teamer:innen lebt -- anders als bei Konfi
+  // und Leitung -- inline in TeamerEventsPage (renderDetail), dazu der
+  // Hinweis "Nicht deinem Jahrgang zugeordnet" (renderJahrgangHinweis). Bis
+  // zum 28.09.2026 stand die GANZE Datei unten unter "die Listen behalten
+  // ihn" -- der Waechter verlangte damit, dass auch die Detailansicht den
+  // Umschalter traegt (Befund Screens Konfi/Teamer BF-05). Jetzt wie
+  // TeamerMaterialPage: Liste behaelt, Detail schaltet ab.
+  it('die Termin-Detailansicht im Teamer-Tab schaltet ihn ab, die Liste behaelt ihn', () => {
+    const quelle = lies('src/components/teamer/pages/TeamerEventsPage.tsx');
+    const gefunden = kopfzeilen(quelle);
+    const detail = gefunden.filter((k) => k.includes('titel={selectedEvent.name}'));
+    const jahrgangHinweis = gefunden.filter((k) => k.includes('titel="Event"'));
+    const liste = gefunden.filter((k) => k.includes('titel={pageTitle}'));
+
+    expect(detail.length, 'Detail-Kopfzeile nicht gefunden').toBe(1);
+    expect(jahrgangHinweis.length, 'Kopfzeile des Jahrgang-Hinweises nicht gefunden').toBe(1);
+    expect(liste.length, 'Listen-Kopfzeile nicht gefunden').toBe(1);
+    // Jede Kopfzeile der Datei ist einer der drei Ansichten zugeordnet --
+    // eine vierte faellt auf, statt ungeprueft durchzurutschen.
+    expect(gefunden.length).toBe(3);
+    expect(detail[0]).toMatch(/gemeindeUmschalter=\{false\}/);
+    expect(jahrgangHinweis[0]).toMatch(/gemeindeUmschalter=\{false\}/);
+    expect(liste[0]).not.toMatch(/gemeindeUmschalter=\{false\}/);
+  });
+
+  // DIE ALLGEMEINE REGEL, ueber alle drei Rollen (28.09.2026): Eine
+  // Kopfzeile mit Zurueck-Knopf gehoert zu einer Unter- oder Detailseite --
+  // dort gibt es keinen Wechsel. So faellt eine Detailansicht auf, die
+  // niemand in die Liste oben eingetragen hat (genau so blieb die
+  // Teamer-Terminansicht zwei Tage stehen).
+  //
+  // Die einzige Ausnahme: die Material-LISTE der Teamer:innen. Laeuft
+  // Material nicht als eigener Reiter, fuehrt ein Zurueck zur Startseite --
+  // es bleibt aber die Liste der Gemeinde, und die behaelt den Umschalter
+  // (Test oben).
+  const AUSNAHMEN_MIT_ZURUECK: Array<{ datei: string; merkmal: string }> = [
+    { datei: 'src/components/teamer/pages/TeamerMaterialPage.tsx', merkmal: 'titel="Material"' },
+  ];
+
+  it('jede Kopfzeile mit Zurueck-Knopf schaltet ihn ab (Konfi, Teamer, Leitung)', () => {
+    const alleDateien = (verzeichnis: string): string[] =>
+      readdirSync(resolve(process.cwd(), verzeichnis), { withFileTypes: true }).flatMap((e) => {
+        const pfad = `${verzeichnis}/${e.name}`;
+        if (e.isDirectory()) return alleDateien(pfad);
+        return pfad.endsWith('.tsx') ? [pfad] : [];
+      });
+
+    const verstoesse: string[] = [];
+    let geprueft = 0;
+    for (const datei of alleDateien('src/components')) {
+      if (datei.endsWith('shared/AppKopfzeile.tsx')) continue;
+      for (const kopf of kopfzeilen(lies(datei))) {
+        if (!/onZurueck=/.test(kopf)) continue;
+        if (AUSNAHMEN_MIT_ZURUECK.some((a) => a.datei === datei && kopf.includes(a.merkmal))) continue;
+        geprueft++;
+        if (!/gemeindeUmschalter=\{false\}/.test(kopf)) {
+          verstoesse.push(`${datei}: ${kopf.split('\n')[0]} ${kopf.match(/titel=\S+/)?.[0] ?? ''}`);
+        }
+      }
+    }
+
+    // Stand 28.09.2026: 35 Kopfzeilen mit Zurueck-Knopf. Die Untergrenze
+    // stellt sicher, dass die Suche ueberhaupt etwas findet.
+    expect(geprueft).toBeGreaterThanOrEqual(30);
+    expect(verstoesse).toEqual([]);
+  });
+
   // REITER-SEITEN behalten ihn, Unterseiten nicht -- was eine Reiter-Seite
   // ist, steht in navigation/rollenBaeume.ts (tabs je Rolle).
   //
@@ -104,10 +173,12 @@ describe('Gemeinde-Umschalter: nicht in Detailansichten (26.09.2026)', () => {
   // Mitmachen, Challenges und Mehr. Beim Teamer ist Material dagegen sehr
   // wohl ein Reiter ('teamer-material') -- deshalb steht TeamerMaterialPage
   // weiter oben und behaelt ihn fuer die Liste.
+  //
+  // TeamerEventsPage steht seit dem 28.09.2026 nicht mehr hier, sondern im
+  // eigenen Test oben: Die Datei traegt auch die Detailansicht.
   it('die Listen behalten ihn -- dort ist der Wechsel sinnvoll', () => {
     for (const datei of [
       'src/components/konfi/pages/KonfiEventsPage.tsx',
-      'src/components/teamer/pages/TeamerEventsPage.tsx',
       'src/components/admin/pages/AdminEventsPage.tsx',
     ]) {
       for (const kopf of kopfzeilen(lies(datei))) {

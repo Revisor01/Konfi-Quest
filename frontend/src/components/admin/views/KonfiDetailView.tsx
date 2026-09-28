@@ -47,13 +47,13 @@ import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
 import { datumKurz } from '../../../utils/dateUtils';
 
 /**
- * Ein Aktivitaets-Antrag aus GET /admin/activities/requests, soweit diese
- * Ansicht ihn liest: Die offenen Antraege der Konfi werden als "wartende"
- * Aktivitaeten unter die verbuchten gemischt.
+ * Ein Aktivitaets-Antrag aus GET /admin/activities/requests?user_id=,
+ * soweit diese Ansicht ihn liest: Die offenen Antraege der Konfi werden als
+ * "wartende" Aktivitaeten unter die verbuchten gemischt.
  */
 interface OffenerAntrag {
   id: number;
-  konfi_id: number;
+  user_id: number;
   status: 'pending' | 'approved' | 'rejected';
   activity_name: string;
   activity_points: number;
@@ -62,6 +62,11 @@ interface OffenerAntrag {
 }
 import KonfiBadgesSection from './KonfiBadgesSection';
 import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
+import { mitBewahrtenStempeln } from '../../../utils/bewahrteStempel';
+import KonfiZeitTermine from '../../shared/KonfiZeitTermine';
+import { alsKonfiZeit } from '../../../utils/konfiZeit';
+import type { KonfiZeit } from '../../../types/konfiZeit';
+import type { ChallengeMark } from '../../../types/challenges';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { triggerPullHaptic } from '../../../utils/haptics';
@@ -132,6 +137,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     booking_status: string;
     booking_date: string;
   }>>([]);
+  // Stempel einer Teamer:in aus Challenges, die mit ihrem Jahrgang geloescht
+  // wurden (28.09.2026). GET /admin/konfis/:id leitet challengeMarks aus den
+  // lebenden Beitraegen ab -- die bewahrten kommen aus einer eigenen Route.
+  const [bewahrteStempel, setBewahrteStempel] = useState<ChallengeMark[]>([]);
+  // Die dauerhafte Kopie der Konfi-Zeit einer befoerderten Teamer:in
+  // (28.09.2026): besuchte Termine samt Anwesenheit und Punkten, die mit der
+  // Befoerderung bzw. dem Loeschen des alten Jahrgangs sonst verschwunden
+  // waeren.
+  const [konfiZeit, setKonfiZeit] = useState<KonfiZeit | null>(null);
   const [konfiHistory, setKonfiHistory] = useState<{
     history: Array<{ id: number; title: string; points: number; category: string; date: string; source_type: string }>;
     totals: { gottesdienst: number; gemeinde: number; total: number };
@@ -423,9 +437,16 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     try {
       const konfiRes = await api.get(`/admin/konfis/${konfiId}`);
 
-      let requestsRes = { data: [] };
+      // Nur die OFFENEN Anträge DIESER Person (28.09.2026, Leitung BF-04).
+      // Vorher lud die Ansicht die ganze Antragsgeschichte der Gemeinde und
+      // filterte sie hier nach `konfi_id` — ein Feld, das die Liste seit der
+      // Umbenennung in `user_id` nicht mehr trägt. Die offenen Anträge
+      // erschienen deshalb nie.
+      let requestsRes: { data: OffenerAntrag[] } = { data: [] };
       try {
-        requestsRes = await api.get('/admin/activities/requests');
+        requestsRes = await api.get<OffenerAntrag[]>('/admin/activities/requests', {
+          params: { user_id: konfiId, status: 'pending' },
+        });
       } catch (requestsError) {
  console.warn('Could not load activity requests:', requestsError);
       }
@@ -444,10 +465,26 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         setCertificates(konfiData.certificates || []);
         setTeamerEvents(konfiData.teamerEvents || []);
         setKonfiHistory(konfiData.konfiHistory || null);
+        // Zusatz: ein Fehler (etwa ein aelterer Server ohne die Route) darf
+        // die Detailansicht nicht kippen -- dann fehlen nur diese Stempel.
+        try {
+          const bewahrtRes = await api.get(`/challenges/admin/bewahrte-stempel/${konfiId}`);
+          setBewahrteStempel(Array.isArray(bewahrtRes.data) ? bewahrtRes.data : []);
+        } catch {
+          setBewahrteStempel([]);
+        }
+        try {
+          const konfiZeitRes = await api.get(`/teamer/${konfiId}/konfi-zeit`);
+          setKonfiZeit(alsKonfiZeit(konfiZeitRes.data));
+        } catch {
+          setKonfiZeit(null);
+        }
       } else {
         setCertificates([]);
         setTeamerEvents([]);
         setKonfiHistory(null);
+        setBewahrteStempel([]);
+        setKonfiZeit(null);
       }
 
       // Zertifikat-Typen laden (für die Zuweisung)
@@ -489,7 +526,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       }));
 
       const pendingRequests: Activity[] = (requestsRes.data || [])
-        .filter((req: OffenerAntrag) => req.konfi_id === konfiId && req.status === 'pending')
+        // Der Server filtert bereits; die Prüfung bleibt als Absicherung.
+        .filter((req: OffenerAntrag) => req.user_id === konfiId && req.status === 'pending')
         .map((req: OffenerAntrag) => ({
           id: `request-${req.id}`,
           name: `${req.activity_name} (gemeldet)`,
@@ -830,6 +868,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           />
         )}
 
+        {/* Besuchte Termine aus der dauerhaften Kopie der Konfi-Zeit */}
+        {isTeamer && konfiZeit && (
+          <KonfiZeitTermine termine={konfiZeit.termine} />
+        )}
+
         {/* Jahresrueckblick der Konfi (Befund N5). Erscheint nur, wenn ein
             freigegebener Snapshot existiert — sonst bleibt die Karte weg. */}
         {wrappedListe.length > 0 && (
@@ -954,7 +997,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             haben. In deren Profil Details unter Badges."). Ohne Stempel faellt
             der Abschnitt ganz weg, genau wie dort. */}
         <ChallengeStempelSektion
-          marks={currentKonfi?.challengeMarks || []}
+          marks={mitBewahrtenStempeln(currentKonfi?.challengeMarks || [], bewahrteStempel)}
           offeneStempel={currentKonfi?.offeneStempel || []}
           titel="Stempel"
         />

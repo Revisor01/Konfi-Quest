@@ -184,6 +184,13 @@ Sie behält Benutzername und Passwort; ihre bisherige Gemeinde bleibt
 unverändert. Die Einladung gilt **14 Tage** und lässt sich
 [zurückziehen](#eine-einladung-zurueckziehen), solange sie offen ist.
 
+Sobald sie zu- oder absagt, verschwindet die Einladung aus ihrem Profil und
+die Mitteilung dazu aus ihrem
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen). Läuft die
+Einladung unbeantwortet ab, verschwindet sie sofort aus dem Profil und die
+Mitteilung in der Nacht danach aus dem Postfach. Danach kannst du dieselbe
+Person wieder einladen; die neue Einladung gilt wieder 14 Tage.
+
 **Sagt sie zu oder ab, erfährst du es** — als Mitteilung aufs Handy und im
 Postfach: „Einladung angenommen" oder „Einladung abgelehnt", mit Name, Rolle
 und Gemeinde. Antippen führt zu **Mehr › Benutzer:innen**, wo die Person nach
@@ -384,7 +391,14 @@ Team-Rückblick. Wie er erstellt und freigegeben wird, steht im Kapitel
 ## Eine Rolle ändern
 
 Eine Konfi lässt sich **zur Teamer:in befördern**. Punkte und Badges bleiben
-dabei als Konfi-Historie erhalten. Eine Jahrgangs-Zuweisung bekommt die frisch
+dabei als Konfi-Historie erhalten. Ihre Anmeldungen zu Events entfallen mit der
+Beförderung — vorher hält die App ihre Konfi-Zeit fest: die besuchten Events mit
+Anwesenheit und Punkten, Aktivitäten, Bonuspunkte, Badges, Stempel und
+Konfispruch. Diese Kopie bleibt, auch wenn der alte Jahrgang später gelöscht
+wird. Sehen kann sie die Person selbst in ihrer
+[Konfi-Historie](20-teamer.md#dein-profil-oeffnen) und die Leitung in der
+[Detailansicht](30-leitung.md#die-detailansicht-einer-person-nutzen). Eine
+Jahrgangs-Zuweisung bekommt die frisch
 beförderte Person bewusst **nicht** automatisch: Teamer:innen dürfen auch ohne
 Jahrgang existieren. Die Zuweisung vergibt die Leitung, sobald sie in einem
 Jahrgang aktiv sein soll — meist im neuen statt im alten eigenen. Der Weg dahin

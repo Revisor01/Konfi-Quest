@@ -8,6 +8,10 @@ const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { darfJahrgang } = require('../utils/jahrgangsZugriff');
 const { canManageRole } = require('../utils/roleHierarchy');
 const { loescheMitteilungenZuJahrgang } = require('../utils/postfachAufraeumen');
+const { ladeLoeschumfang } = require('../utils/jahrgangLoeschen');
+const { loescheTermin, loescheChatRaeume, entferneChatDateien } = require('../utils/terminLoeschen');
+const { loescheChallenge, entferneChallengeDateien } = require('../utils/challengeLoeschen');
+const { sichereKonfiZeitBefoerderter } = require('../utils/konfiHistorie');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten, NUR org_admin darf anlegen
 module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeamer }) => {
@@ -325,16 +329,14 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
     }
   });
 
-  // DELETE a jahrgang
-  router.delete('/:id', rbacVerifier, requireAdmin, validateJahrgangId, async (req, res) => {
+  // Was beim Loeschen dieses Jahrgangs mitgeht -- fuer den
+  // Bestaetigungsdialog (28.09.2026). Dieselben Rechte und dieselbe
+  // Regel-Stelle wie DELETE (utils/jahrgangLoeschen.js), damit die Zahlen im
+  // Dialog genau das sind, was dann verschwindet. Aeltere Apps rufen die
+  // Route nicht und fragen weiter ohne Zahlen nach.
+  router.get('/:id/loeschvorschau', rbacVerifier, requireAdmin, validateJahrgangId, async (req, res) => {
     const jahrgangId = req.params.id;
-    const forceDelete = req.query.force === 'true';
-
     try {
-      // Jahrgangs-Bindung (01.09.2026): Loeschen nur mit edit-Zuweisung —
-      // Simons Regel vom 31.08., org_admin/super_admin ausgenommen. Vorher
-      // Org-Existenz pruefen, damit fremde Organisationen 404 sehen (und die
-      // Konfi-Zaehlung unten nicht mehr ueber fremde Jahrgaenge laeuft).
       const { rows: [jahrgangDa] } = await db.query(
         'SELECT id FROM jahrgaenge WHERE id = $1 AND organization_id = $2',
         [jahrgangId, req.user.organization_id]
@@ -346,11 +348,89 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
       }
 
+      const umfang = await ladeLoeschumfang(db, jahrgangId, req.user.organization_id);
+      const { rows: [zahlen] } = await db.query(
+        `SELECT
+           (SELECT COUNT(*)::int FROM konfi_profiles kp
+              JOIN users u ON kp.user_id = u.id JOIN roles r ON u.role_id = r.id
+             WHERE kp.jahrgang_id = $1 AND r.name = 'konfi') AS aktive_konfis,
+           (SELECT COUNT(*)::int FROM konfi_profiles kp
+              JOIN users u ON kp.user_id = u.id JOIN roles r ON u.role_id = r.id
+             WHERE kp.jahrgang_id = $1 AND r.name <> 'konfi') AS befoerderte,
+           (SELECT COUNT(*)::int FROM chat_messages cm
+              JOIN chat_rooms cr ON cm.room_id = cr.id
+             WHERE cr.type = 'jahrgang' AND cr.jahrgang_id = $1) AS chat_nachrichten`,
+        [jahrgangId]
+      );
+      const jetzt = Date.now();
+
+      res.json({
+        aktive_konfis: zahlen.aktive_konfis,
+        befoerderte: zahlen.befoerderte,
+        chat_nachrichten: zahlen.chat_nachrichten,
+        events_geloescht: umfang.termineLoeschen.length,
+        events_kuenftig: umfang.termineLoeschen.filter((t) => new Date(t.event_date).getTime() > jetzt).length,
+        events_behalten: umfang.termineBehalten.length,
+        challenges_geloescht: umfang.challengesLoeschen.length,
+        challenges_behalten: umfang.challengesBehalten.length
+      });
+    } catch (err) {
+      console.error('Database error in GET /api/jahrgaenge/:id/loeschvorschau:', jahrgangId, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // DELETE a jahrgang
+  //
+  // EINE TRANSAKTION (28.09.2026, Audit BF-08): Bis hierher liefen rund
+  // zwanzig Abfragen einzeln auf dem Pool. Brach das Loeschen zwischen
+  // Chat-Aufraeumen und DELETE FROM jahrgaenge ab, blieb ein Jahrgang ohne
+  // Chat zurueck. Jetzt geht alles oder nichts; die Dateien der Anhaenge
+  // und Beitraege verschwinden erst nach dem COMMIT.
+  //
+  // TERMINE UND CHALLENGES DES JAHRGANGS GEHEN MIT (Simon, 28.09.2026) --
+  // welche, steht in utils/jahrgangLoeschen.js; wie, in utils/terminLoeschen.js
+  // und utils/challengeLoeschen.js (dieselben Wege wie beim Einzel-Loeschen).
+  // Zwei Abweichungen vom Einzel-Loeschen, beide gewollt:
+  //   - Vergebene Event-Punkte bleiben gutgeschrieben. Die Teilnahme hat
+  //     stattgefunden; der Jahrgang wird aufgeraeumt, nicht berichtigt. Wer
+  //     davon betroffen ist, ist ohnehin nicht mehr aktive Konfi dieses
+  //     Jahrgangs (die blockieren das Loeschen).
+  //   - Keine Absage-Mitteilung an Angemeldete: Das Loeschen eines Jahrgangs
+  //     ist Aufraeumen, kein Ereignis fuer das Handy. Die Leitung sieht die
+  //     Zahl der Termine -- auch der kuenftigen -- vorher im Dialog.
+  // Die Stempel des Teams aus den geloeschten Challenges bleiben
+  // (bewahrte_stempel, Migration 169).
+  router.delete('/:id', rbacVerifier, requireAdmin, validateJahrgangId, async (req, res) => {
+    const jahrgangId = req.params.id;
+    const forceDelete = req.query.force === 'true';
+    const organizationId = req.user.organization_id;
+
+    const client = await db.getClient();
+    let fruehAntwort = null;
+    const chatDateien = [];
+    const challengeDateien = [];
+    let geloeschteTermine = 0;
+    let geloeschteChallenges = 0;
+    try {
+      await client.query('BEGIN');
+
+      // Jahrgangs-Bindung (01.09.2026): Loeschen nur mit edit-Zuweisung —
+      // Simons Regel vom 31.08., org_admin/super_admin ausgenommen. Vorher
+      // Org-Existenz pruefen, damit fremde Organisationen 404 sehen (und die
+      // Konfi-Zaehlung unten nicht mehr ueber fremde Jahrgaenge laeuft).
+      // FOR UPDATE: Zwei gleichzeitige Loeschungen desselben Jahrgangs
+      // warten aufeinander, statt beide Termine abzuraeumen.
+      const { rows: [jahrgangDa] } = await client.query(
+        'SELECT id FROM jahrgaenge WHERE id = $1 AND organization_id = $2 FOR UPDATE',
+        [jahrgangId, organizationId]
+      );
+
       // Blockieren NUR AKTIVE Konfis (Rolle = konfi). Beförderte Ex-Konfis
       // (jetzt teamer/admin) behalten beim Befördern bewusst ihr konfi_profiles
       // (Punkte-Historie), sind aber keine aktiven Konfis mehr und duerfen die
       // Löschung NICHT blockieren. Ihre (verwaisten) Profile werden unten vor
-      // dem Jahrgang-Delete entfernt (User + Badges + Historie bleiben).
+      // dem Jahrgang-Delete vom Jahrgang geloest (User + Badges + Historie bleiben).
       const checkKonfisQuery = `
         SELECT COUNT(*)::int as count
         FROM konfi_profiles kp
@@ -358,122 +438,138 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         JOIN roles r ON u.role_id = r.id
         WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'
       `;
-      const { rows: [konfiUsage] } = await db.query(checkKonfisQuery, [jahrgangId]);
-
-      if (konfiUsage.count > 0) {
-        return res.status(409).json({ error: `Jahrgang kann nicht gelöscht werden: ${konfiUsage.count} Konfi(s) zugeordnet.` });
-      }
-
-      // Check if there are chat rooms with messages
+      // Chat-Raeume des Jahrgangs samt Zahl ihrer Nachrichten
       const checkChatQuery = `
         SELECT cr.id,
                (SELECT COUNT(*) FROM chat_messages WHERE room_id = cr.id)::int as message_count
         FROM chat_rooms cr
         WHERE cr.type = 'jahrgang' AND cr.jahrgang_id = $1
       `;
-      const { rows: chatRooms } = await db.query(checkChatQuery, [jahrgangId]);
 
-      if (chatRooms.length > 0) {
-        const roomsWithMessages = chatRooms.filter(room => room.message_count > 0);
-        if (roomsWithMessages.length > 0 && !forceDelete) {
-          return res.status(409).json({
-            error: `Jahrgang kann nicht gelöscht werden: Chat-Raum enthält ${roomsWithMessages[0].message_count} Nachricht(en).`,
-            canForceDelete: true
-          });
-        }
-
-        // Delete chat rooms (with or without messages if force)
-        if (forceDelete || roomsWithMessages.length === 0) {
-          const allFiles = [];
-          for (const room of chatRooms) {
-            const { rows: roomFiles } = await db.query("SELECT file_path FROM chat_messages WHERE room_id = $1 AND file_path IS NOT NULL", [room.id]);
-            allFiles.push(...roomFiles);
-          }
-
-          for (const room of chatRooms) {
-            await db.query(`
-              DELETE FROM chat_poll_votes WHERE poll_id IN (
-                SELECT cp.id FROM chat_polls cp
-                JOIN chat_messages cm ON cp.message_id = cm.id
-                WHERE cm.room_id = $1
-              )
-            `, [room.id]);
-
-            await db.query(`
-              DELETE FROM chat_polls WHERE message_id IN (
-                SELECT id FROM chat_messages WHERE room_id = $1
-              )
-            `, [room.id]);
-
-            await db.query("DELETE FROM chat_read_status WHERE room_id = $1", [room.id]);
-            await db.query("DELETE FROM chat_messages WHERE room_id = $1", [room.id]);
-            await db.query("DELETE FROM chat_participants WHERE room_id = $1", [room.id]);
-          }
-
-          await db.query("DELETE FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1", [jahrgangId]);
-
-          const fs = require('fs').promises;
-          const path = require('path');
-
-          for (const fileRecord of allFiles) {
-            try {
-              const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
-              await fs.unlink(fullPath);
-            } catch (fileErr) {
- console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
-            }
+      let chatRooms = [];
+      if (!jahrgangDa) {
+        fruehAntwort = { status: 404, body: { error: 'Jahrgang nicht gefunden' } };
+      } else if (!darfJahrgang(req, jahrgangId, { edit: true })) {
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Jahrgang' } };
+      } else {
+        const { rows: [konfiUsage] } = await client.query(checkKonfisQuery, [jahrgangId]);
+        if (konfiUsage.count > 0) {
+          fruehAntwort = { status: 409, body: { error: `Jahrgang kann nicht gelöscht werden: ${konfiUsage.count} Konfi(s) zugeordnet.` } };
+        } else {
+          ({ rows: chatRooms } = await client.query(checkChatQuery, [jahrgangId]));
+          const roomsWithMessages = chatRooms.filter(room => room.message_count > 0);
+          if (roomsWithMessages.length > 0 && !forceDelete) {
+            fruehAntwort = { status: 409, body: {
+              error: `Jahrgang kann nicht gelöscht werden: Chat-Raum enthält ${roomsWithMessages[0].message_count} Nachricht(en).`,
+              canForceDelete: true
+            } };
           }
         }
       }
 
-      // konfi_profiles beförderter Ex-Konfis (Rolle != konfi) werden vom Jahrgang
-      // GELOEST (jahrgang_id = NULL), NICHT gelöscht. Sonst blockiert der
-      // NO-ACTION-FK konfi_profiles.jahrgang_id den Jahrgang-Delete. WICHTIG:
-      // Die WERTE des beförderten Konfis (gottesdienst_points/gemeinde_points,
-      // current_level_id, konfspruch_*) stehen IN konfi_profiles -> das Profil
-      // MUSS erhalten bleiben, damit er seine Werte später noch einsehen kann.
-      // Nur die Bindung an den geloeschten Jahrgang fällt weg.
-      await db.query(`
-        UPDATE konfi_profiles kp
-        SET jahrgang_id = NULL
-        FROM users u, roles r
-        WHERE kp.user_id = u.id AND u.role_id = r.id
-          AND kp.jahrgang_id = $1 AND r.name != 'konfi'
-      `, [jahrgangId]);
+      if (fruehAntwort) {
+        await client.query('ROLLBACK');
+      } else {
+        // 0. Konfi-Zeit der Befoerderten sichern, BEVOR ihre Termine,
+        // Event-Punkte und Challenge-Stempel mit dem Jahrgang gehen
+        // (utils/konfiHistorie.js, Migration 170). Wer seit dem 28.09.2026
+        // befoerdert wurde, hat die Kopie schon; wer frueher befoerdert wurde,
+        // bekommt sie hier -- ohne die Anwesenheiten, die die Befoerderung
+        // damals schon geloescht hat.
+        await sichereKonfiZeitBefoerderter(client, jahrgangId, organizationId, req.user.id);
 
-      // Rueckblick-Ausgaben des Jahrgangs (Audit 26.09.2026, Chat BF-02):
-      // Seit Migration 162 haengt wrapped_ausgaben.jahrgang_id mit
-      // ON DELETE SET NULL am Jahrgang -- die Ausgaben und damit die
-      // Snapshots befoerderter Ex-Konfis ueberleben das Loeschen, genau
-      // wie ihr konfi_profiles-Eintrag oben. Vorher nahm ein CASCADE
-      // Ausgabe und Snapshots mit; ohne Jahrgang ist der Rueckblick nicht
-      // neu erzeugbar. Was hier noch weg darf: Konfi-Ausgaben dieses
-      // Jahrgangs OHNE einen einzigen Snapshot -- die haetten sonst als
-      // leere, jahrgangslose Huelle in der Liste der Leitung gestanden.
-      await db.query(`
-        DELETE FROM wrapped_ausgaben a
-        WHERE a.jahrgang_id = $1 AND a.wrapped_type = 'konfi'
-          AND NOT EXISTS (SELECT 1 FROM wrapped_snapshots s WHERE s.ausgabe_id = a.id)
-      `, [jahrgangId]);
+        // 1. Chat des Jahrgangs (mit oder ohne Nachrichten, s.o.)
+        chatDateien.push(...await loescheChatRaeume(client, chatRooms.map(room => room.id)));
 
-      const deleteJahrgangQuery = "DELETE FROM jahrgaenge WHERE id = $1 AND organization_id = $2";
-      const { rowCount } = await db.query(deleteJahrgangQuery, [jahrgangId, req.user.organization_id]);
+        // 2. Termine und Challenges, die nur diesem Jahrgang gehoeren
+        const umfang = await ladeLoeschumfang(client, jahrgangId, organizationId);
+        for (const termin of umfang.termineLoeschen) {
+          const ergebnis = await loescheTermin(client, termin.id, { punkteZuruecknehmen: false });
+          chatDateien.push(...ergebnis.dateien);
+          if (ergebnis.geloescht) geloeschteTermine++;
+        }
+        for (const challengeId of umfang.challengesLoeschen) {
+          const ergebnis = await loescheChallenge(client, challengeId, organizationId, { teamStempelBewahren: true });
+          challengeDateien.push(...ergebnis.dateien);
+          if (ergebnis.geloescht) geloeschteChallenges++;
+        }
 
-      if (rowCount === 0) {
-        return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+        // 3. konfi_profiles beförderter Ex-Konfis (Rolle != konfi) werden vom
+        // Jahrgang GELOEST (jahrgang_id = NULL), NICHT gelöscht. Sonst blockiert
+        // der NO-ACTION-FK konfi_profiles.jahrgang_id den Jahrgang-Delete.
+        // WICHTIG: Die WERTE des beförderten Konfis (gottesdienst_points/
+        // gemeinde_points, current_level_id, konfspruch_*) stehen IN
+        // konfi_profiles -> das Profil MUSS erhalten bleiben, damit er seine
+        // Werte später noch einsehen kann. Nur die Bindung an den geloeschten
+        // Jahrgang fällt weg.
+        await client.query(`
+          UPDATE konfi_profiles kp
+          SET jahrgang_id = NULL
+          FROM users u, roles r
+          WHERE kp.user_id = u.id AND u.role_id = r.id
+            AND kp.jahrgang_id = $1 AND r.name != 'konfi'
+        `, [jahrgangId]);
+
+        // 4. Rueckblick-Ausgaben des Jahrgangs (Audit 26.09.2026, Chat BF-02):
+        // Seit Migration 162 haengt wrapped_ausgaben.jahrgang_id mit
+        // ON DELETE SET NULL am Jahrgang -- die Ausgaben und damit die
+        // Snapshots befoerderter Ex-Konfis ueberleben das Loeschen, genau
+        // wie ihr konfi_profiles-Eintrag oben. Vorher nahm ein CASCADE
+        // Ausgabe und Snapshots mit; ohne Jahrgang ist der Rueckblick nicht
+        // neu erzeugbar. Was hier noch weg darf: Konfi-Ausgaben dieses
+        // Jahrgangs OHNE einen einzigen Snapshot -- die haetten sonst als
+        // leere, jahrgangslose Huelle in der Liste der Leitung gestanden.
+        await client.query(`
+          DELETE FROM wrapped_ausgaben a
+          WHERE a.jahrgang_id = $1 AND a.wrapped_type = 'konfi'
+            AND NOT EXISTS (SELECT 1 FROM wrapped_snapshots s WHERE s.ausgabe_id = a.id)
+        `, [jahrgangId]);
+
+        // 5. Der Jahrgang. Zuordnungen von Terminen, Challenges, Material,
+        // Personen und Einladungscodes gehen per ON DELETE CASCADE mit.
+        const { rowCount } = await client.query(
+          'DELETE FROM jahrgaenge WHERE id = $1 AND organization_id = $2',
+          [jahrgangId, organizationId]
+        );
+
+        if (rowCount === 0) {
+          await client.query('ROLLBACK');
+          fruehAntwort = { status: 404, body: { error: 'Jahrgang nicht gefunden' } };
+        } else {
+          // 6. Die Warnung "Jahrgang wird bald geloescht" ist erledigt -- weg
+          // damit aus dem Postfach der Leitung (utils/postfachAufraeumen.js).
+          await loescheMitteilungenZuJahrgang(client, jahrgangId);
+          await client.query('COMMIT');
+        }
       }
-
-      // Die Warnung "Jahrgang wird bald geloescht" ist erledigt -- weg damit
-      // aus dem Postfach der Leitung (utils/postfachAufraeumen.js).
-      await loescheMitteilungenZuJahrgang(db, jahrgangId);
-
-      res.json({ message: 'Jahrgang erfolgreich gelöscht' });
-
-      // Live-Update an alle Admins senden
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'jahrgaenge', 'delete');
     } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
  console.error('Database error in DELETE /api/jahrgaenge/:jahrgangId:', jahrgangId, err);
-      res.status(500).json({ error: 'Datenbankfehler' });
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      client.release();
+    }
+
+    if (fruehAntwort) {
+      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    }
+
+    // Dateien erst nach dem COMMIT: Ein ROLLBACK soll keine Anhaenge und
+    // Beitraege verlieren, deren Zeilen noch stehen.
+    await entferneChatDateien(chatDateien);
+    await entferneChallengeDateien(challengeDateien);
+
+    res.json({ message: 'Jahrgang erfolgreich gelöscht' });
+
+    // Live-Update an alle Admins senden
+    liveUpdate.sendToOrgAdmins(organizationId, 'jahrgaenge', 'delete');
+    // Termin- und Challenge-Listen neu laden lassen -- nur die Anzahl, kein
+    // Inhalt (Live-Signale an die ganze Gemeinde, BF-15).
+    if (geloeschteTermine > 0) {
+      liveUpdate.sendToOrg(organizationId, 'events', 'delete', { count: geloeschteTermine });
+    }
+    if (geloeschteChallenges > 0) {
+      liveUpdate.sendToOrg(organizationId, 'challenges', 'delete', { count: geloeschteChallenges });
     }
   });
 

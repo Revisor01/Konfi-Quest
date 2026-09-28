@@ -294,6 +294,12 @@ bleibt vollständig.
 
 ## Einen Jahrgang löschen
 
+Vor dem Löschen fragt die App nach und nennt dabei, was mitgeht: wie viele
+Events und Challenges gelöscht werden, wie viele dieser Events noch in der
+Zukunft liegen und wie viele bestehen bleiben, weil sie auch zu anderen
+Jahrgängen gehören. Das Löschen geschieht ganz oder gar nicht — bricht es
+mittendrin ab, bleibt alles so, wie es war.
+
 Das Löschen ist an zwei Stellen abgesichert.
 
 **Blockiert, solange aktive Konfis zugeordnet sind.** Meldung: „Jahrgang kann
@@ -307,13 +313,47 @@ die Rückfrage „Chat-Nachrichten vorhanden“ mit dem Knopf
 **„Dennoch löschen“**. Dann werden **alle Nachrichten, Umfragen und Anhänge
 unwiderruflich gelöscht** ([Chat](90-chat.md)).
 
+### Events und Challenges des Jahrgangs mitlöschen
+
+Was zum Jahrgang gehört, geht mit ihm. Was auch anderen gehört, bleibt:
+
+| Was | Beim Löschen des Jahrgangs |
+|---|---|
+| Event, das nur zu diesem Jahrgang gehört | wird gelöscht — mit Anmeldungen, Anwesenheit, Zeitfenstern, Event-Chat, Erinnerungen und den Mitteilungen dazu, wie beim [Löschen eines Events](70-termine.md#ein-event-loeschen) |
+| Event, das auch zu einem anderen Jahrgang gehört | bleibt; nur die Zuordnung zu diesem Jahrgang fällt weg |
+| Event [„Nur Team“](70-termine.md#die-zielgruppe-waehlen) | bleibt, auch wenn es diesem Jahrgang zugeordnet war — es gehört dem ganzen Team |
+| Event ohne Jahrgang | bleibt unberührt |
+| Challenge, die nur zu diesem Jahrgang gehört | wird gelöscht — mit allen Beiträgen und Dateien, wie beim [Löschen einer Challenge](80-challenges.md#eine-challenge-loeschen) |
+| Challenge, die auch zu einem anderen Jahrgang gehört | bleibt; nur die Zuordnung fällt weg |
+| Challenge [„Nur das Team“](80-challenges.md#festlegen-wer-mitmachen-darf) | bleibt |
+
+Zwei Dinge laufen anders als beim Löschen eines einzelnen Events:
+
+- **Vergebene Punkte bleiben.** Wer bei einem gelöschten Event Punkte bekommen
+  hat, behält sie — die Teilnahme hat stattgefunden, der Jahrgang wird nur
+  aufgeräumt.
+- **Niemand bekommt eine Absage.** Liegen Events des Jahrgangs noch in der
+  Zukunft, nennt die Rückfrage ihre Zahl. Wer dort angemeldet ist, erfährt vom
+  Löschen nichts; [sag solche Events vorher ab](70-termine.md#ein-event-absagen-oder-loeschen),
+  wenn es jemanden betrifft.
+
+**Stempel bleiben.** Stempel, die Teamer:innen und Leitung in einer gelöschten
+Challenge bekommen haben, stehen danach weiter unter **„Deine Stempel“** und in
+der Detailansicht der Person — mit Name, Symbol, Beschreibung und dem Tag, an
+dem sie verliehen wurden. Konfis behalten ihre [Badges](60-badges.md); die
+Stempel ihrer Challenges gehen mit dem Jahrgang.
+
 ### Beförderte Teamer:innen beim Löschen behalten
 
 Ehemalige Konfis, die inzwischen Teamer:in sind, **blockieren das Löschen
 nicht**. Sie verlieren beim Löschen nur ihre Jahrgangs-Bindung.
 
 **Ihre Daten bleiben vollständig erhalten**: Punktestand, Level, Badges,
-Konfispruch und ihr [Konfi-Rückblick](95-wrapped.md). Das ist bewusst so
+Konfispruch, ihr [Konfi-Rückblick](95-wrapped.md) und die Events ihrer
+Konfi-Zeit — die Kopie, die die App bei der
+[Beförderung](05-rollen.md#eine-rolle-aendern) festhält. Fehlt einer
+beförderten Person diese Kopie noch, legt das Löschen des Jahrgangs sie an, mit
+allem, was dann noch da ist. Das ist bewusst so
 gebaut, damit sie ihre eigene Konfizeit später noch nachschauen können — der
 Rückblick steht weiterhin in ihrem Profil, auch wenn der Jahrgang, für den er
 erstellt wurde, nicht mehr existiert. In deiner Liste der Ausgaben bleibt eine

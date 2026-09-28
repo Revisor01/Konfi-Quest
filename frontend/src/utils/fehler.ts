@@ -179,6 +179,75 @@ export function fehlerFuersProtokoll(err: unknown): ProtokollFehler {
   return ergebnis;
 }
 
+// Fehler, die `fehlerEntschaerfen` schon behandelt hat. Ein WeakSet statt
+// eines Feldes am Fehler: Es haelt nichts am Leben und taucht in keiner
+// Ausgabe auf.
+const entschaerfteFehler = new WeakSet<object>();
+
+/** true, wenn der Fehler schon entschaerft (und damit endgueltig) ist. */
+export function istEntschaerft(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && entschaerfteFehler.has(err);
+}
+
+type Kopfzeilen = { delete?: (name: string) => unknown; [name: string]: unknown };
+
+function konfigurationEntschaerfen(config: unknown): void {
+  if (typeof config !== 'object' || config === null) return;
+  const c = config as { headers?: Kopfzeilen; data?: unknown };
+  const headers = c.headers;
+  if (headers && typeof headers === 'object') {
+    // AxiosHeaders loescht ohne Ruecksicht auf Gross-/Kleinschreibung;
+    // ein schlichtes Objekt (Tests, aeltere Aufrufer) Feld fuer Feld.
+    if (typeof headers.delete === 'function') headers.delete('Authorization');
+    for (const name of Object.keys(headers)) {
+      if (name.toLowerCase() === 'authorization') delete headers[name];
+    }
+  }
+  if ('data' in c) delete c.data;
+}
+
+/**
+ * Entfernt aus einem ENDGUELTIG abgelehnten axios-Fehler, was nicht ins
+ * Protokoll gehoert, und gibt denselben Fehler zurueck.
+ *
+ * WARUM ZENTRAL (Audit Grundgeruest BF-08, Nebenbefund; 28.09.2026): Rund 100
+ * Stellen in etwa 40 Dateien geben gefangene Fehler roh an die Konsole
+ * (`console.error('…', err)`). Ein axios-Fehler traegt die gesendete Anfrage
+ * mit: `config.headers.Authorization` ist das Zugangs-Token, `config.data`
+ * der Koerper (beim Anmelden das Passwort, beim Refresh der Refresh-Token,
+ * sonst Chat-Texte, Begruendungen, Namen), `request` die Leitung samt
+ * Kopfzeilen. Nach einem gescheiterten Refresh bekamen die wartenden Anfragen
+ * sogar den Refresh-Fehler mit dem Refresh-Token im Koerper. Statt jede Stelle
+ * einzeln umzubauen, entschaerft die API-Instanz (api.ts) jeden Fehler, bevor
+ * sie ihn an den Aufrufer weitergibt.
+ *
+ * Entfernt: `config.headers.Authorization`, `config.data`, `request`,
+ * `response.request` (und dieselben Felder an `response.config`, falls das
+ * ein eigenes Objekt ist). Bleibt: Status, Code, Meldung, `response.data`
+ * (die Antwort des Servers -- danach richten sich die Fehlermeldungen der
+ * App), `response.headers` (etwa `retry-after`), `config.url`/`method`.
+ *
+ * NUR fuer endgueltige Fehler: Eine Wiederholung nach dem Refresh oder durch
+ * axios-retry braucht Kopfzeilen und Koerper noch. Mehrfaches Anwenden
+ * schadet nicht.
+ */
+export function fehlerEntschaerfen<T>(err: T): T {
+  if (typeof err !== 'object' || err === null) return err;
+  const f = err as unknown as {
+    config?: unknown;
+    request?: unknown;
+    response?: { config?: unknown; request?: unknown };
+  };
+  konfigurationEntschaerfen(f.config);
+  if ('request' in f) delete f.request;
+  if (f.response && typeof f.response === 'object') {
+    if (f.response.config !== f.config) konfigurationEntschaerfen(f.response.config);
+    if ('request' in f.response) delete f.response.request;
+  }
+  entschaerfteFehler.add(err as unknown as object);
+  return err;
+}
+
 /**
  * Grobe Ursache eines gefangenen Fehlers, fuer die anonyme Messung.
  *

@@ -50,6 +50,7 @@ vi.mock('../../services/networkMonitor', () => ({
 
 vi.mock('../../services/biometrics', () => ({
   rotationUebernehmen: vi.fn(async () => undefined),
+  istBiometrieAktiv: vi.fn(async () => false),
 }));
 
 vi.mock('axios-retry', () => ({
@@ -96,7 +97,7 @@ describe('api — 403-Rueckfall auf die Stamm-Gemeinde', () => {
     expect(headers?.['X-Active-Organization']).toBeUndefined();
 
     // 3. Das neue Paar ist gespeichert ...
-    expect(tokenStore.setRefreshToken).toHaveBeenCalledWith('refresh-2');
+    expect(tokenStore.setRefreshToken).toHaveBeenCalledWith('refresh-2', { klartext: true });
     expect(tokenStore.setToken).toHaveBeenCalledWith('token-ohne-claim');
 
     // 4. ... BEVOR der AppContext remountet und den Socket neu aufbaut. Sonst

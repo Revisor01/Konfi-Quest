@@ -20,6 +20,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
+import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { ICON_CHOICES as BADGE_ICONS } from '../../../utils/badgeIcons';
 import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBACK_COLOR } from '../../../utils/badgeCriteria';
 import type { BadgeKriteriumExtra } from '../../../utils/badgeCriteria';
@@ -325,36 +326,39 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         criteria_extra: criteriaExtra
       };
 
-      if (networkMonitor.isOnline) {
-        // Online-Pfad: direkt senden
-        if (isEditMode) {
-          await api.put(`/admin/badges/${badgeId}`, badgeData);
-        } else {
-          await api.post('/admin/badges', badgeData);
-        }
-      } else {
-        // Offline-Pfad: Queue-Fallback
-        if (isEditMode) {
-          await writeQueue.enqueue({
+      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
+      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
+      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
+      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
+      // Audit Grundgeruest BF-01).
+      const { weg } = await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: isEditMode ? 'PUT' : 'POST',
+        senden: () => (isEditMode
+          ? api.put(`/admin/badges/${badgeId}`, badgeData)
+          : api.post('/admin/badges', badgeData)),
+        einreihen: () => (isEditMode
+          ? writeQueue.enqueue({
             method: 'PUT',
             url: `/admin/badges/${badgeId}`,
             body: badgeData,
             maxRetries: 5,
             hasFileUpload: false,
             metadata: { type: 'admin', clientId: safeUUID(), label: 'Badge bearbeiten' },
-          });
-          setSuccess('Badge wird aktualisiert sobald du wieder online bist');
-        } else {
-          await writeQueue.enqueue({
+          })
+          : writeQueue.enqueue({
             method: 'POST',
             url: '/admin/badges',
             body: badgeData,
             maxRetries: 5,
             hasFileUpload: false,
             metadata: { type: 'admin', clientId: safeUUID(), label: 'Badge erstellen' },
-          });
-          setSuccess('Badge wird erstellt sobald du wieder online bist');
-        }
+          })),
+      });
+      if (weg === 'eingereiht') {
+        setSuccess(isEditMode
+          ? 'Badge wird aktualisiert sobald du wieder online bist'
+          : 'Badge wird erstellt sobald du wieder online bist');
       }
 
       setIsDirty(false);

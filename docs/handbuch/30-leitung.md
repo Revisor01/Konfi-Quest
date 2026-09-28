@@ -65,7 +65,9 @@ lassen kannst.
 - **Konfirmation** — Termin und Konfispruch
 - [**Passwort zurücksetzen**](35-passwoerter.md#weg-1-die-leitung-setzt-ein-neues-passwort)
 - **Zur Teamer:in befördern** — Punkte und Badges bleiben als Konfi-Historie
-  erhalten. Eine Jahrgangs-Zuweisung bekommt die neue Teamer:in dabei nicht
+  erhalten; die besuchten Events stehen danach in der Detailansicht unter
+  **„Events der Konfi-Zeit“**, auch wenn der alte Jahrgang gelöscht wird.
+  Eine Jahrgangs-Zuweisung bekommt die neue Teamer:in dabei nicht
   automatisch; die vergibst du unter **Mehr › Benutzer:innen**.
 
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
@@ -261,5 +263,6 @@ Pro Jahrgang legst du fest:
 
 Ein Jahrgang lässt sich
 [nicht löschen](45-jahrgaenge.md#einen-jahrgang-loeschen), solange ihm aktive
-Konfis zugeordnet sind. Wie du dich in der App bewegst, steht im Kapitel
+Konfis zugeordnet sind; beim Löschen gehen die Events und Challenges mit, die
+nur zu ihm gehören. Wie du dich in der App bewegst, steht im Kapitel
 [Die App bedienen](03-bedienung.md).

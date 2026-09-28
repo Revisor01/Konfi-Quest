@@ -239,6 +239,14 @@ paths:
         ein Konto durchprobiert wurde), nur Retry-After. Die IP-Grenze
         (authLimiter) bleibt davor bestehen. Antwortform wie beim
         authLimiter: { error } mit Status 429, zusaetzlich error_code.
+
+
+        GERAETEBINDUNG seit 28.09.2026 (Audit Sicherheit BF-08, Migration
+        171): Schickt die App device_id mit, wird das Refresh-Token an diese
+        Kennung gebunden (refresh_tokens.device_id) und gilt beim Refresh nur
+        mit derselben (siehe POST /api/auth/refresh). Ohne device_id -- die
+        Store-Apps 2.2.x und 2.3.0 senden sie hier nie -- bleibt es
+        ungebunden wie bisher. Antwortform unveraendert.
       requestBody:
         required: true
         content:
@@ -249,6 +257,7 @@ paths:
               properties:
                 username: { type: string }
                 password: { type: string }
+                device_id: { type: string, maxLength: 255, description: "Optional (seit 28.09.2026): Geraete-Kennung (iOS identifierForVendor, Android ANDROID_ID, im Browser eine einmal erzeugte Kennung). Bindet das Refresh-Token an das Geraet. Kein Text, leer oder laenger als 255 Zeichen zaehlt wie keine Angabe." }
       responses:
         "200":
           description: "JWT (15 Min) + Refresh-Token (90 Tage, SHA-256-gehasht gespeichert) + User-Objekt (bei Konfi inkl. jahrgang und Punkten; bei `admin` seit 27.08.2026 zusaetzlich assigned_jahrgaenge[] fuer die Warnung beim Jahrgangswechsel)"
@@ -328,7 +337,7 @@ paths:
               properties:
                 currentPassword: { type: string }
                 newPassword: { type: string, description: "Policy: min 8, Gross/Klein/Zahl/Sonderzeichen, keine Leerzeichen" }
-                device_id: { type: string, description: "Optional: Geraet der aktuellen Sitzung — sein Push-Token wird beim Aufraeumen verschont" }
+                device_id: { type: string, description: "Optional: Geraet der aktuellen Sitzung — sein Push-Token wird beim Aufraeumen verschont. Bindet das neue Refresh-Token bewusst NICHT an das Geraet: Auch die Store-Apps 2.2.x/2.3.0 schicken das Feld hier mit, beim Refresh aber nie -- ein gebundenes Token sperrte sie aus. Die aktualisierte App bindet es beim ersten Refresh (siehe POST /api/auth/refresh)." }
                 platform: { type: string, description: "Optional, zusammen mit device_id (ios/android/web)" }
       responses:
         "200": { description: "Passwort geaendert" }
@@ -490,6 +499,16 @@ paths:
         weil die Abfrage display_name gar nicht las. Dasselbe Wort nennt die
         Meldung "Einladung angenommen/abgelehnt" an die einladende Person
         (vorher roles.display_name, in bestehenden Gemeinden "Hauptamt").
+
+        ABGELAUFENE EINLADUNG SPERRT NICHT MEHR (BEHOBEN 28.09.2026): Nach 14
+        Tagen bleibt der Status 'offen', nur expires_at liegt zurueck; der
+        Teilindex idx_org_einladungen_offen kennt nur den Status. Vorher lief
+        jede neue Einladung derselben Person in dieselbe Gemeinde deshalb auf
+        409 schon_eingeladen, obwohl GET /einladungen und /einladungen/meine
+        die alte nicht mehr zeigten. Jetzt loescht die Route in derselben
+        Transaktion die abgelaufene offene Einladung genau dieser Person in
+        dieser Gemeinde samt Postfach-Eintrag und legt die neue an.
+        Beantwortete Einladungen (Verlauf) und die anderer Personen bleiben.
       requestBody:
         required: true
         content:
@@ -505,7 +524,7 @@ paths:
         "400": { description: "Rolle gehoert nicht zu dieser Gemeinde; konfi-Rolle (error_code konfi_nicht_moeglich); Selbst-Einladung" }
         "403": { description: "Nicht org_admin, oder Rolle laut Hierarchie nicht vergebbar" }
         "404": { description: "Kein Konto mit dieser Kennung ODER die Person ist ein Konfi -- beides identisch (error_code nicht_gefunden)" }
-        "409": { description: "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen)" }
+        "409": { description: "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen; nur bei einer noch gueltigen offenen Einladung)" }
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]
@@ -601,6 +620,17 @@ paths:
         an die Org-Admins der Gemeinde; nie an die eingeladene Person
         selbst. Dazu das Live-Signal 'users' an die Gemeinde (die
         Benutzerliste laedt nach). Die Antwortform ist unveraendert.
+
+
+        BEHOBEN 28.09.2026: Bei der eingeladenen Person blieb nach der
+        Zusage der Postfach-Eintrag "Einladung in eine Gemeinde ... Tippe,
+        um zu antworten" (type 'gemeinde_einladung') stehen und zaehlte als
+        ungelesen. Er geht jetzt in DERSELBEN Transaktion wie Statuswechsel
+        und Mitgliedschaft (loescheMitteilungenZuEinladung, wie beim
+        Zurueckziehen). Die Zusage an die Leitung
+        ('gemeinde_einladung_beantwortet') bleibt. 404/409/410 raeumen nichts
+        auf; einen abgelaufenen Eintrag nimmt das taegliche
+        Postfach-Aufraeumen (02:00) mit.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -624,6 +654,12 @@ paths:
         'gemeinde_einladung_beantwortet' (status 'abgelehnt'), Empfaenger
         wie bei annehmen. Kein Live-Signal, die Benutzerliste aendert sich
         nicht. Die Antwortform ist unveraendert.
+
+
+        BEHOBEN 28.09.2026: Der Postfach-Eintrag 'gemeinde_einladung' der
+        eingeladenen Person geht mit der Absage, in einer Transaktion mit
+        dem Statuswechsel (wie bei annehmen und beim Zurueckziehen). Die
+        Absage an die Leitung bleibt.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -849,6 +885,12 @@ paths:
         SEIT 27.09.2026 (Audit Sicherheit BF-04): Wurde der gewaehlte
         Benutzername vorher durchprobiert, startet das neue Konto trotzdem
         ohne Kontosperre (siehe POST /api/auth/login).
+
+
+        GERAETEBINDUNG seit 28.09.2026 (Audit Sicherheit BF-08): Mit
+        device_id ist das ausgestellte Refresh-Token an das Geraet gebunden,
+        ohne bleibt es ungebunden (siehe POST /api/auth/login und
+        /api/auth/refresh). Antwortform unveraendert.
       requestBody:
         required: true
         content:
@@ -862,6 +904,7 @@ paths:
                 username: { type: string, minLength: 3, pattern: "^[a-zA-Z0-9.-]+$" }
                 password: { type: string, description: "volle Passwort-Policy" }
                 email: { type: string, format: email, description: "optional" }
+                device_id: { type: string, maxLength: 255, description: "Optional (seit 28.09.2026): Geraete-Kennung, bindet das Refresh-Token an das Geraet (wie beim Login)" }
       responses:
         "200": { description: "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an die Leitung des Jahrgangs (Org-Admins immer, Admins mit can_view auf den Jahrgang)" }
         "403": { description: "Konfi-Limit der Org erreicht (limit_exceeded)" }
@@ -932,9 +975,10 @@ paths:
               required: [refresh_token]
               properties:
                 refresh_token: { type: string }
+                device_id: { type: string, maxLength: 255, description: "Optional (seit 28.09.2026): Geraete-Kennung. Pflicht fuer gebundene Tokens; bindet ein ungebundenes Token beim Rotieren an das Geraet. Kein Text, leer oder laenger als 255 Zeichen zaehlt wie keine Angabe." }
       responses:
-        "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt" }
-        "401": { description: "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung" }
+        "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt. Das neue Token uebernimmt die Geraetebindung des alten; war das alte ungebunden und kam device_id mit, ist das neue daran gebunden" }
+        "401": { description: "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung. ODER (seit 28.09.2026) gebundenes Token mit anderer oder fehlender device_id: nur DIESES Token wird widerrufen und sofort ablaufen gelassen (auch im Grace-Window, ohne dessen Gnade zu verbrauchen; der Nachfolger des echten Geraets bleibt), gleiche Fehlermeldung" }
         "403": { description: "User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt / Trial abgelaufen (super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung). Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt" }
       x-berechtigung:
         rollen: [oeffentlich]
@@ -949,6 +993,17 @@ paths:
         # verwendung (Migration 166: ersetzt_durch, gnade_genutzt_at), danach
         # Widerruf aller Refresh-Tokens des Kontos. Antwortform unveraendert.
         # OFFEN bleibt die Geraetebindung (device_id) aus derselben Empfehlung.
+        # BEHOBEN 28.09.2026 (Rest von BF-08, Geraetebindung): Migration 171
+        # (refresh_tokens.device_id, nullable). Login, register-konfi und
+        # Refresh speichern die mitgeschickte device_id am Token; die
+        # Rotation uebernimmt sie. Gebundenes Token + andere oder fehlende
+        # device_id -> 401 und Widerruf dieses Tokens (bewusst nicht der
+        # Familie: der Versuch ist gescheitert, und eine auf dem echten Geraet
+        # geaenderte Kennung soll nicht alle Geraete abmelden). Ungebundene
+        # Tokens (Store-Apps 2.2.x/2.3.0 senden nie eine Kennung, Tokens von
+        # vorher) gelten wie bisher; die aktualisierte App bindet sie beim
+        # ersten Refresh. change-password bindet nicht. Antwortformen
+        # unveraendert. Tests: backend/tests/routes/refreshGeraetebindung.test.js.
 
   /api/auth/logout:
     post:

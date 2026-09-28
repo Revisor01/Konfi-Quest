@@ -121,13 +121,19 @@ describe('Ein Platz wird frei — jemand rueckt nach', () => {
   }
 
   /**
-   * Buchung anlegen. `wartetSeit` steuert created_at, damit die FIFO-Reihenfolge
-   * unabhaengig von der Einfuegereihenfolge pruefbar ist.
+   * Buchung anlegen. `wartetSeit` steuert den Zeitpunkt der Anmeldung, damit
+   * die FIFO-Reihenfolge unabhaengig von der Einfuegereihenfolge pruefbar ist.
+   *
+   * Seit dem 28.09.2026 ist das booking_date (Audit BF-05/BF-11, Reihenfolge
+   * in utils/bookingUtils.js, wartelistenRangSql); vorher sortierte das
+   * Nachruecken nach created_at. Beide Spalten bekommen denselben Wert --
+   * die Erwartungen der Tests bleiben, wie sie waren.
    */
   async function bucht(eventId, userId, status = 'confirmed', wartetSeit = null) {
     const { rows: [b] } = await db.query(
-      `INSERT INTO event_bookings (user_id, event_id, status, organization_id, created_at)
-       VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, NOW())) RETURNING id`,
+      `INSERT INTO event_bookings (user_id, event_id, status, organization_id, created_at, booking_date)
+       VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, NOW()), COALESCE($5::timestamptz, NOW()))
+       RETURNING id`,
       [userId, eventId, status, ORGS.testGemeinde.id, wartetSeit]
     );
     return b.id;

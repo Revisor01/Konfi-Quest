@@ -34,6 +34,7 @@ import {
 
 import api from '../../services/api';
 import { sitzungUebernehmen } from '../../services/auth';
+import { geraeteKennung } from '../../services/geraeteKennung';
 import { hasValidUsernameChars } from '../../utils/usernameValidation';
 import { useApp } from '../../contexts/AppContext';
 
@@ -237,12 +238,16 @@ const KonfiRegisterPage: React.FC = () => {
       setRegistering(true);
       setError(null);
 
+      // Geraete-Kennung mitschicken: Der Server bindet das Refresh-Token an
+      // dieses Geraet (Audit Sicherheit BF-08, services/geraeteKennung.ts).
+      const kennung = await geraeteKennung();
       const response = await api.post('/auth/register-konfi', {
         invite_code: inviteCode,
         display_name: formData.display_name.trim(),
         username: formData.username.toLowerCase().trim(),
         password: formData.password,
-        email: formData.email.trim() || undefined
+        email: formData.email.trim() || undefined,
+        ...(kennung ? { device_id: kennung } : {})
       });
 
       setSuccess(true);

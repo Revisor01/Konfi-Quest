@@ -157,8 +157,13 @@ interface DashboardData {
   config: DashboardConfig;
   has_wrapped?: boolean;
   // Wie im Konfi-Dashboard: Id der Ausgabe, damit sich der Hinweis PRO
-  // Ausgabe wegklicken laesst. Aeltere Antworten liefern sie nicht.
+  // Ausgabe wegklicken laesst. Das Backend liefert sie seit dem 28.09.2026
+  // (vorher nie -- der Schluessel endete immer auf "_alt").
   wrapped_ausgabe_id?: number | null;
+  // Titel der Ausgabe. Bewusst NICHT angezeigt: Team-Rueckblicke tragen
+  // keinen eigenen Titel (Simon: "Dann braucht es auch keine Titel."), in
+  // der Spalte steht nur der Platzhalter "Team-Rückblick <Jahr>".
+  wrapped_titel?: string | null;
   konfspruch?: Konfspruch | null;
 }
 

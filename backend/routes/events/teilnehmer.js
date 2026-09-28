@@ -6,7 +6,7 @@ const express = require('express');
 const { formatUhrzeit } = require('../../utils/zeitformat');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
-const { rueckeNach, takeBackEventPoints, freiePlaetze } = require('../../utils/bookingUtils');
+const { rueckeNach, takeBackEventPoints, freiePlaetze, zaehleBestaetigte } = require('../../utils/bookingUtils');
 const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
@@ -20,13 +20,41 @@ const { darfTermin, gehoertZumTermin } = require('../../utils/jahrgangsZugriff')
 //
 // Deshalb requireAdmin (org_admin, admin) statt des frueheren requireTeamer.
 // Gesperrt wird in BEIDEN Ebenen: Oberflaeche und Backend.
+// Die Werte, die POST /:id/participants fuer `status` annimmt.
+const STATUS_VON_HAND = ['auto', 'confirmed', 'waitlist'];
+
 module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
 
   // Add participant to event (Admin only) - mit Transaktion gegen Race Conditions
   router.post('/:id/participants', rbacVerifier, requireAdmin, async (req, res) => {
     const eventId = req.params.id;
-    const { user_id, status = 'auto', timeslot_id = null } = req.body;
+    const { user_id, timeslot_id = null } = req.body;
+    // Fehlt status (oder ist null), gilt 'auto' -- wie bisher beim Fehlen.
+    const status = req.body.status === undefined || req.body.status === null ? 'auto' : req.body.status;
+
+    // STATUS PRUEFEN, BEVOR ETWAS GESCHRIEBEN WIRD (28.09.2026, Audit
+    // Punkte/Termine BF-04). Der Wert ging bis dahin ungeprueft ins INSERT:
+    // 'foo' scheiterte erst am CHECK der Datenbank und endete als 500
+    // "Datenbankfehler"; 'cancelled' oder 'opted_out' stehen in diesem CHECK
+    // und legten eine Buchung an, die es so nie geben soll. Erlaubt sind die
+    // drei Werte, die dieser Weg kennt: 'auto' (Kapazitaet und Warteliste
+    // wie bei der Selbstanmeldung), 'confirmed' und 'waitlist'. Die App
+    // schickt 'confirmed' (Stand 2.2.0 bis heute).
+    //
+    // 'confirmed' UEBERBUCHT BEWUSST (Simon, 28.09.2026): "Überbuchen ist
+    // gewollt, kann ja sein das ich mehr brauche von der Warteliste." Wer von
+    // Hand eingetragen wird, ist bestaetigt, auch wenn das Event voll ist.
+    // Die neue App fragt vorher nach (`ueberbuchen: false`, siehe unten).
+    // Das Bestaetigen einer Wartenden (PUT /:id/participants/:id/status)
+    // prueft die Kapazitaet und ueberbucht erst nach einer Rueckfrage
+    // (`ueberbuchen: true`, Simon 28.09.2026, Variante c).
+    if (!STATUS_VON_HAND.includes(status)) {
+      return res.status(400).json({
+        error: 'Ungültiger Status. Erlaubt sind auto, confirmed und waitlist',
+        error_code: 'status_ungueltig'
+      });
+    }
 
     const client = await db.getClient();
     try {
@@ -135,6 +163,39 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       );
       const addedIsKonfi = addedUser?.role_name === 'konfi';
       const addedIsTeamer = !addedIsKonfi;
+
+      // ERST FRAGEN, DANN UEBERBUCHEN (Simon, 28.09.2026: "Die sollten wir
+      // auch einfügen, wenn wir Konfi hinzufügen ... oder auch bei
+      // Teamern"). 'confirmed' ueberbucht hier seit jeher still, und die
+      // Store-Apps 2.2.x/2.3.0 bauen darauf -- sie schicken das Feld nie und
+      // bekommen weiter 201. Die neue App schickt zuerst `ueberbuchen: false`:
+      // Ist das Kontingent der Person voll, kommt dieselbe Ablehnung wie beim
+      // Bestaetigen einer Wartenden (PUT .../status), die App fragt nach und
+      // schickt dann `ueberbuchen: true`. Gezaehlt wird wie dort: Konfis
+      // gegen die Konfi-Plaetze bzw. ihr Zeitfenster, alle anderen (Team,
+      // Leitung) gegen die Team-Plaetze.
+      if (status === 'confirmed' && req.body.ueberbuchen === false) {
+        const seite = addedIsKonfi ? 'konfi' : 'team';
+        const zeitfenster = addedIsKonfi && timeslot ? timeslot.id : null;
+        const maxKapazitaet = addedIsKonfi
+          ? (zeitfenster ? (timeslot.max_participants || 0) : (event.max_participants || 0))
+          : (event.teamer_max_participants || 0);
+        const frei = await freiePlaetze(client, { eventId, timeslotId: zeitfenster, seite }, maxKapazitaet);
+        if (frei !== null && frei <= 0) {
+          const belegt = await zaehleBestaetigte(
+            client, zeitfenster ? { timeslotId: zeitfenster } : { eventId }, seite
+          );
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(400).json({
+            error: 'Das Event ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.',
+            error_code: 'event_voll',
+            max: maxKapazitaet,
+            belegt,
+            seite
+          });
+        }
+      }
 
       if (status === 'auto') {
         // Rolle des hinzugefuegten Users bestimmt, GEGEN WELCHES Kontingent
@@ -473,6 +534,9 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
   router.put('/:id/participants/:participantId/status', rbacVerifier, requireAdmin, async (req, res) => {
     const { id: eventId, participantId } = req.params;
     const { status } = req.body;
+    // Bewusst ueberbuchen (Simon, 28.09.2026, Variante c): nur der Boolean
+    // true, den die App nach der Rueckfrage schickt -- kein "true" als Text.
+    const ueberbuchen = req.body?.ueberbuchen === true;
     
     try {
       if (!['confirmed', 'waitlist'].includes(status)) {
@@ -563,8 +627,17 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         eventDatum = booking.event_date;
 
         if (status === 'waitlist') {
-          // Auf Warteliste: attendance_status löschen und Event-Punkte zurücknehmen
-          await client.query("UPDATE event_bookings SET status = 'waitlist', attendance_status = NULL WHERE id = $1", [participantId]);
+          // Auf Warteliste: attendance_status löschen und Event-Punkte zurücknehmen.
+          //
+          // booking_date auf jetzt (28.09.2026, Audit BF-05): Wer auf die
+          // Warteliste zurueckgesetzt wird, stellt sich HINTEN an -- dieselbe
+          // Regel wie bei der Wiederanmeldung (bookingUtils.js,
+          // wartelistenRangSql). Bis dahin behielt die Herabgestufte ihren
+          // alten Rang. Hatte sie vor den Wartenden gebucht (der Normalfall:
+          // wer bestaetigt ist, war meist zuerst da), rueckte sie unten selbst
+          // wieder nach, die Route nahm das zurueck -- und der geraeumte Platz
+          // blieb leer, waehrend andere warteten.
+          await client.query("UPDATE event_bookings SET status = 'waitlist', attendance_status = NULL, booking_date = NOW() WHERE id = $1", [participantId]);
 
           // Punkte-Ruecknahme ueber den gemeinsamen Helfer: Derselbe Block lag
           // vorher viermal im Code, zweimal transaktional und zweimal nicht.
@@ -576,11 +649,13 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           // stand danach selbst auf der Warteliste und konkurrierte um den
           // Platz, den sie eben geraeumt hatte.
           //
-          // Sie kann dabei nicht sich selbst nachruecken: Der FIFO-Zugriff
-          // nimmt den AELTESTEN Wartelisten-Eintrag (ORDER BY created_at), und
-          // ihr Eintrag ist der aelteste nur, wenn sonst niemand wartet -- dann
-          // aber stuende sie ohnehin allein da, und die Herabstufung waere
-          // wirkungslos. Deshalb wird sie ausgeschlossen.
+          // Sie kann dabei nicht sich selbst nachruecken: Seit dem 28.09.2026
+          // steht sie oben mit booking_date = jetzt HINTEN in der Warteliste
+          // und ist die naechste nur, wenn sonst niemand wartet -- dann aber
+          // stuende sie ohnehin allein da, und die Herabstufung waere
+          // wirkungslos. Deshalb wird sie ausgeschlossen. (Der Kommentar
+          // behauptete das schon vorher; es stimmte nicht, solange das
+          // Nachruecken nach created_at der urspruenglichen Buchung ging.)
           const [nachgerueckt] = await rueckeNach(client, {
             eventId,
             timeslotId: booking.ist_team ? null : booking.timeslot_id,
@@ -631,10 +706,32 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
             },
             maxKapazitaet
           );
-          if (frei !== null && frei <= 0) {
+          //
+          // NACHFRAGEN, DANN UEBERBUCHEN (Simon, 28.09.2026, Variante c):
+          // "Überbuchen ist gewollt, kann ja sein das ich mehr brauche von der
+          // Warteliste." Die Grenze bleibt ein Halt, aber keine Sperre mehr:
+          // Ohne `ueberbuchen: true` antwortet die Route wie bisher mit 400 --
+          // derselbe Text, dazu additiv error_code, max und belegt. Die App
+          // fragt daran nach ("Trotzdem bestätigen?") und schickt dann
+          // `ueberbuchen: true`. Still ueberbucht wird damit weiter nicht; wer
+          // ueberbucht, hat es vorher bestaetigt. Store-Apps 2.2.x/2.3.0
+          // schicken das Feld nie und bekommen dieselbe Ablehnung wie bisher.
+          if (frei !== null && frei <= 0 && !ueberbuchen) {
+            // belegt wird gezaehlt, nicht aus `frei` errechnet: freiePlaetze
+            // endet bei 0, ein schon ueberbuchtes Event haette sonst belegt =
+            // max gemeldet.
+            const belegt = await zaehleBestaetigte(
+              client,
+              !booking.ist_team && booking.timeslot_id ? { timeslotId: booking.timeslot_id } : { eventId },
+              booking.ist_team ? 'team' : 'konfi'
+            );
             await client.query('ROLLBACK');
             return res.status(400).json({
-              error: 'Das Event ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.'
+              error: 'Das Event ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.',
+              error_code: 'event_voll',
+              max: maxKapazitaet,
+              belegt,
+              seite: booking.ist_team ? 'team' : 'konfi'
             });
           }
 

@@ -112,17 +112,14 @@ describe('Bestaetigen von Hand: Kapazitaet und war_auf_warteliste', () => {
       const eins = buchungen.find((b) => b.user_id === USERS.konfi1.id);
       const zwei = buchungen.find((b) => b.user_id === USERS.konfi2.id);
 
-      // Nachgemessen (16.09.2026): Ohne diesen Schritt laeuft der Umweg ins
-      // Leere. Das Nachruecken nimmt den AELTESTEN Wartelisten-Eintrag; wird
-      // konfi1 herabgestuft, ist das ihr eigener frischer Eintrag -- nur weil
-      // konfi1 zuerst gebucht hatte und `created_at` damit vorn liegt. Sie
-      // rueckt sich selbst nach, und die Route nimmt das als wirkungslos
-      // zurueck. Im Alltag wartet die andere Person laenger, als die
-      // bestaetigte auf der Warteliste steht; genau das stellt diese Zeile her.
-      await db.query(
-        "UPDATE event_bookings SET created_at = NOW() - INTERVAL '1 day' WHERE id = $1",
-        [zwei.id]
-      );
+      // Bis zum 28.09.2026 stand hier ein Zurueckdatieren von created_at
+      // fuer konfi2: Das Nachruecken nahm den aeltesten Eintrag nach
+      // created_at, und die herabgestufte konfi1 hatte zuerst gebucht -- sie
+      // rueckte sich selbst nach, die Route nahm das zurueck, und der Umweg
+      // lief ins Leere. Das war kein Testproblem, sondern der Fehler selbst:
+      // Seit dem 28.09.2026 stellt sich die Herabgestufte hinten an
+      // (booking_date = jetzt, Audit BF-05, wartelistenReihenfolge.test.js).
+      // Der Test laeuft deshalb jetzt ohne Nachhilfe.
 
       // Schritt 1: konfi1 auf die Warteliste. Dabei rueckt konfi2 nach.
       expect((await setzeStatus(eventId, eins.id, 'waitlist')).status).toBe(200);

@@ -68,8 +68,8 @@ beforeEach(() => {
   revokeMock.mockClear();
   mockApiGet.mockReset();
   mockApiGet.mockImplementation((url: string) => {
-    if (url === '/admin/activities/requests') {
-      return Promise.resolve({ data: [antrag] });
+    if (url === '/admin/activities/requests/41') {
+      return Promise.resolve({ data: antrag });
     }
     return Promise.resolve({ data: new Blob(['jpegdata'], { type: 'image/jpeg' }) });
   });

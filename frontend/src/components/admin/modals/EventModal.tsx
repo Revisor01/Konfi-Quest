@@ -41,7 +41,7 @@ interface EventModalProps {
 // gewandert: "Termin kopieren" braucht dieselbe Regel, und zwei Kopien waeren
 // genau der Fehler, der im Backend gerade erst behoben wurde. Der Re-Export
 // haelt den bisherigen Importpfad gueltig.
-import { anmeldeschlussVorschlag, toIonDatetimeISO, neuerTerminBeginn, endeNachDatumswechsel } from '../../../utils/terminVorbelegung';
+import { anmeldeschlussVorschlag, toIonDatetimeISO, neuerTerminBeginn, endeNachDatumswechsel, endeVorBeginn, ENDE_VOR_BEGINN } from '../../../utils/terminVorbelegung';
 export { anmeldeschlussVorschlag };
 
 const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onClose, onSuccess, dismiss, onDirtyChange }) => {
@@ -204,6 +204,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
     // passierte sichtbar nichts (User-Hinweis 10.08.).
     if (!formData.name.trim()) { setError('Bitte gib dem Event einen Namen'); return; }
     if (!formData.event_date) { setError('Bitte lege Datum und Uhrzeit fest'); return; }
+    // Ende vor Beginn (Audit 26.09.2026, Leitung BF-03): Der Ende-Picker hat
+    // ein min, aber ein bestehender Termin aus der Zeit davor kann den
+    // Widerspruch noch mitbringen. Das Backend lehnt ihn ebenso ab.
+    if (endeVorBeginn(formData.event_date, formData.event_end_time)) { setError(ENDE_VOR_BEGINN); return; }
     if (teamerAccess !== 'teamer_only' && formData.mandatory && formData.jahrgang_ids.length === 0) {
       setError('Pflicht-Events brauchen mindestens einen Jahrgang');
       return;
@@ -618,6 +622,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
       </IonModal>
       <IonModal aria-label="Endzeit wählen" keepContentsMounted={true}>
         <IonDatetime aria-label="Endzeit (optional)" id="end-time-picker" value={formData.event_end_time || formData.event_date}
+          min={formData.event_date || undefined}
           max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, event_end_time: e.detail.value as string })}
           presentation="date-time" minuteValues="0,15,30,45" firstDayOfWeek={1}

@@ -14,6 +14,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
+import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { tastaturKlick } from '../../../utils/tastatur';
 
 interface Activity {
@@ -205,36 +206,39 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         target_role: formData.target_role
       };
 
-      if (networkMonitor.isOnline) {
-        // Online-Pfad: direkt senden
-        if (currentActivity) {
-          await api.put(`/admin/activities/${currentActivity.id}`, payload);
-        } else {
-          await api.post('/admin/activities', payload);
-        }
-      } else {
-        // Offline-Pfad: Queue-Fallback
-        if (currentActivity) {
-          await writeQueue.enqueue({
+      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
+      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
+      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
+      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
+      // Audit Grundgeruest BF-01).
+      const { weg } = await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: currentActivity ? 'PUT' : 'POST',
+        senden: () => (currentActivity
+          ? api.put(`/admin/activities/${currentActivity.id}`, payload)
+          : api.post('/admin/activities', payload)),
+        einreihen: () => (currentActivity
+          ? writeQueue.enqueue({
             method: 'PUT',
             url: `/admin/activities/${currentActivity.id}`,
             body: payload,
             maxRetries: 5,
             hasFileUpload: false,
             metadata: { type: 'admin', clientId: safeUUID(), label: 'Aktivität bearbeiten' },
-          });
-          setSuccess('Aktivität wird aktualisiert sobald du wieder online bist');
-        } else {
-          await writeQueue.enqueue({
+          })
+          : writeQueue.enqueue({
             method: 'POST',
             url: '/admin/activities',
             body: payload,
             maxRetries: 5,
             hasFileUpload: false,
             metadata: { type: 'admin', clientId: safeUUID(), label: 'Aktivität erstellen' },
-          });
-          setSuccess('Aktivität wird erstellt sobald du wieder online bist');
-        }
+          })),
+      });
+      if (weg === 'eingereiht') {
+        setSuccess(currentActivity
+          ? 'Aktivität wird aktualisiert sobald du wieder online bist'
+          : 'Aktivität wird erstellt sobald du wieder online bist');
       }
 
       setIsDirty(false);

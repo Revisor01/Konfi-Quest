@@ -532,6 +532,10 @@ automatisch raus — auch wenn du die App zwischendurch geschlossen hast. Klappt
 etwas endgültig nicht, stehen sie unter **„Nicht gesendet"**, die Glocke wird
 rot, und du kannst sie wegwischen.
 
+Kommt eine Abmeldung von einem Event doppelt an — die erste ging durch, nur
+die Antwort darauf ging unterwegs verloren —, gilt auch die zweite als
+gelungen. Sie landet nicht unter „Nicht gesendet".
+
 ### Erkennen, was Netz braucht
 
 - sich zu einem Event **anmelden**
@@ -559,6 +563,21 @@ sammelt, was sie später schicken kann. Sie fragt alle 15 Sekunden erneut und
 schickt los, sobald der Server wieder antwortet oder das Handy wieder eine
 Verbindung meldet. Antwortet der Server trotz der Meldung, bleibt die App
 online — manche Geräte melden „keine Verbindung", obwohl Netz da ist.
+
+Reißt die Verbindung ab, während die App im Hintergrund deine Anmeldung
+erneuert — etwa beim Wechsel zwischen WLAN und Mobilfunk —, wartet sie
+höchstens 20 Sekunden. Du bleibst angemeldet; beim nächsten Laden versucht sie
+es von selbst noch einmal.
+
+Manchmal merkt die App das Funkloch erst beim Senden: Das Handy meldet noch
+Empfang, aber nichts kommt durch. Eine Abmeldung von einem Event, eine
+gemeldete Aktivität, eine Zu- oder Absage im Team, die Wahl der
+Bibelübersetzung und als Leitung das **Bearbeiten** von Badges, Leveln,
+Aktivitäten, Kategorien, Zertifikaten und Jahrgängen sowie die
+Dashboard-Einstellungen landen dann trotzdem unter **„Wird gesendet…"** statt
+in einer Fehlermeldung. Was der Server bei einem zweiten Eingang doppelt
+ausführen könnte — Bonuspunkte vergeben, etwas **neu anlegen** —, meldet in
+diesem Fall einen Fehler; versuche es dann später noch einmal.
 
 ### Erkennen, was du ohne Netz noch siehst
 

@@ -14,6 +14,7 @@ const { terminWartetAufVerbuchungSql, zaehleWartendeTermineJeLeitung } = require
 const { ladeLeitungZumJahrgang } = require('../utils/jahrgangLeitungSicht');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
+const { loescheMitteilungenZuErledigtenEinladungen } = require('../utils/postfachAufraeumen');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -1279,6 +1280,18 @@ class BackgroundService {
         await this.cleanupAlteMitteilungen(db);
       } catch (e) {
         console.error('Mitteilungs-Aufraeum-Cron failed:', e);
+      }
+      // Vierter Schritt (28.09.2026): "Einladung in eine Gemeinde" zu
+      // Einladungen, die abgelaufen oder erledigt sind. Einen eigenen
+      // Ablauf-Job fuer Einladungen gibt es nicht -- sie laufen still ab
+      // (utils/postfachAufraeumen.js).
+      try {
+        const n = await loescheMitteilungenZuErledigtenEinladungen(db);
+        if (n > 0) {
+          console.log(`Mitteilungs-Aufraeumen: ${n} Einladungs-Mitteilungen ohne offene Einladung geloescht`);
+        }
+      } catch (e) {
+        console.error('Einladungs-Mitteilungen aufraeumen failed:', e);
       }
     }, {
       timezone: 'Europe/Berlin'

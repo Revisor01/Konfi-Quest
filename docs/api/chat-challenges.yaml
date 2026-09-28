@@ -352,6 +352,20 @@ components:
         display_name: { type: string }
         role_name: { type: string, enum: [admin, org_admin, teamer] }
         role_description: { type: string, description: 'role_title oder Fallback nach role_name: "Teamer:in", "Org-Leitung" (org_admin), "Leitung" (admin). Bis 28.09.2026 hiess der Fallback fuer beide Leitungsrollen "Admin" (Simon: admin heisst "Leitung", org_admin "Org-Leitung").' }
+    BewahrterStempel:
+      type: object
+      description: >
+        Stempel aus einer Challenge, die mit ihrem Jahrgang geloescht wurde
+        (Tabelle bewahrte_stempel, Migration 169). Form eines erhaltenen
+        Stempels (marks), dazu bewahrt = true.
+      properties:
+        challenge_id: { type: integer, description: "Kennung der geloeschten Challenge (herkunft_challenge_id) — bleibt eine Zahl" }
+        badge_icon: { type: string }
+        badge_name: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        earned_at: { type: string, format: date-time, nullable: true, description: "Fruehester freigegebener eigener Beitrag" }
+        bewahrt: { type: boolean, const: true }
     KonfiChallenge:
       type: object
       description: Challenge in der Teilnehmer-Sicht (mapChallengeForKonfi).
@@ -773,8 +787,16 @@ paths:
       tags: ["Chat"]
       summary: Nachrichten eines Raums laden
       description: >
-        Paginiert (limit/offset, neueste zuerst, Antwort chronologisch) oder
-        inkrementell per ?after=messageId (bis 200 neue Nachrichten).
+        Paginiert (limit/offset, neueste zuerst, Antwort chronologisch),
+        inkrementell per ?after=messageId (bis 200 neue Nachrichten) oder
+        rueckwaerts per ?before=messageId (Keyset, seit 28.09.2026): die
+        <limit> Nachrichten desselben Raums, die im Tupel (created_at, id)
+        vor der Anker-Nachricht liegen — stabil auch bei gleichen
+        Zeitstempeln; Antwort ebenfalls chronologisch. Die App laedt beim
+        Oeffnen limit=100 und blaettert dann mit before=<aelteste geladene
+        id>&limit=50 nach oben; kommen weniger als angefordert, ist der
+        Anfang des Chats erreicht. Ohne before unveraendert (Store-Apps bis
+        2.3.0 rufen limit=100 und after=).
         Enthaelt Reactions, Reply-Daten und Poll-Daten inkl. Votes.
         limit ist auf 200 gedeckelt — derselbe Wert wie im after-Zweig.
       parameters:
@@ -782,6 +804,7 @@ paths:
         - { name: limit, in: query, required: false, schema: { type: integer, default: 50, minimum: 1, maximum: 200 }, description: "Anzahl Nachrichten pro Seite. Hoehere Werte werden auf 200 gedeckelt, unbrauchbare (0, negativ, nicht-numerisch) auf die Vorgabe 50 (Deckelung 24.09.2026)" }
         - { name: offset, in: query, required: false, schema: { type: integer, default: 0, minimum: 0 }, description: "Anzahl zu überspringender Nachrichten (Blättern)" }
         - { name: after, in: query, required: false, schema: { type: integer }, description: Nur Nachrichten mit id > after (Live-Nachladen) }
+        - { name: before, in: query, required: false, schema: { type: integer, minimum: 1 }, description: "Aeltere Nachrichten nachladen (NEU 28.09.2026): die <limit> Nachrichten dieses Raums vor der Nachricht mit dieser id, geordnet nach (created_at, id). offset wird dabei nicht ausgewertet. Liegt die Anker-Nachricht nicht in diesem Raum (fremder Raum, unbekannte id), ist die Antwort eine leere Liste — kein Zeitstempel eines anderen Raums fliesst ein. Ein leeres ?before= gilt als nicht gesetzt." }
       responses:
         '200':
           description: Nachrichtenliste
@@ -790,6 +813,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/ChatMessage' }
+        '400': { description: "before ist keine positive ganze Zahl (hoechstens 15 Stellen) oder steht zusammen mit after (seit 28.09.2026)" }
         '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '500': { description: Datenbankfehler }
       x-berechtigung:
@@ -1067,27 +1091,32 @@ paths:
       tags: ["Chat"]
       summary: Chat-Datei abrufen (entschluesselt)
       description: >
-        Liefert eine im Chat hochgeladene Datei. Auth per
-        Authorization-Header ODER ?token= (für Video-Elemente). Nur
-        Hex-Dateinamen; Path-Traversal-Schutz via basename.
+        Liefert eine im Chat hochgeladene Datei. Auth NUR per
+        Authorization-Header (seit 28.09.2026; wie GET /challenges/files).
+        Der fruehere Fallback ?token= wird nicht mehr ausgewertet — ein
+        Query-String steht im Zugriffslog des Reverse-Proxys und in
+        Referrern. Keine ausgelieferte App hat ihn gesendet (geprueft an den
+        Tags 1.3.0 bis 2.3.0: Dateien und Videos laufen per axios mit Header
+        ueber den Medien-Cache); der einzige Sender war ein
+        Entwicklungsstand vom 05.08.2025. Nur Hex-Dateinamen;
+        Path-Traversal-Schutz via basename.
         Seit 22.08.2026 wird der Token gegen die Datenbank geprüft (Konto
         aktiv, nicht gelöscht, kein Soft-Revoke) und die aktive Organisation
         über user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre
         Dateien damit auch in der Zweit-Organisation.
-      security: []
       parameters:
         - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" }, description: "Serverseitiger Dateiname (Hex) aus der Upload-Antwort bzw. Nachricht" }
-        - { name: token, in: query, required: false, schema: { type: string }, description: JWT-Fallback fuer Media-Tags }
+        - { name: X-Active-Organization, in: header, required: false, schema: { type: integer }, description: "Aktive Organisation für Multi-Org-Konten (wie beim übrigen API-Zugriff)" }
       responses:
         '200': { description: "Dateiinhalt (Content-Type aus Original-Dateiname)", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
         '400': { description: Ungueltiger Dateiname }
-        '401': { description: Token fehlt oder ungueltig }
+        '401': { description: "Token fehlt oder ungueltig — auch wenn es nur als ?token= im Query steht (seit 28.09.2026)" }
         '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '404': { description: "Datei nicht gefunden (auch bei fremder Org oder wenn die Nachricht soft-gelöscht ist — seit 26.08.2026 werden Anhänge gelöschter Nachrichten nicht mehr ausgeliefert; die Datei bleibt für eine Wiederherstellung erhalten)" }
         '500': { description: Server-/Entschluesselungsfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
-        middleware: ["manuelle JWT-Pruefung mit DB-Abgleich (kein verifyTokenRBAC — Query-Parameter-Auth)"]
+        middleware: ["manuelle JWT-Pruefung mit DB-Abgleich, nur Authorization-Header (kein verifyTokenRBAC — historisch wegen des entfallenen Query-Parameters)"]
         org-scope: true
         objekt-pruefung: "Nachricht mit file_path muss in der AKTIVEN Org liegen UND der Raum nach darfRaumBetreten zu oeffnen sein (dieselbe Regel wie GET /rooms/{roomId}/messages)"
         # BEHOBEN 22.08.2026: Frueher `req.user = decoded` — Token-Angaben
@@ -1096,8 +1125,11 @@ paths:
         # PRIMAER-Org, weshalb Multi-Org-Nutzer in der Zweit-Organisation 404
         # bekamen. Jetzt DB-Abgleich inkl. Soft-Revoke und Aufloesung der
         # aktiven Org (403 bei fehlender Mitgliedschaft).
-        # LUECKE (offen): Token auch als Query-Parameter akzeptiert
-        # (Access-Logs/Referrer).
+        # BEHOBEN 28.09.2026 (Audit BF-09): Token wurde auch als
+        # Query-Parameter ?token= akzeptiert (Access-Logs/Referrer). Jetzt nur
+        # noch Header; kein Vertrag gebrochen, weil keine ausgelieferte App
+        # ?token= gesendet hat (Tags 1.3.0 bis 2.3.0 geprueft). Test:
+        # backend/tests/routes/chatDateiTokenImQuery.test.js.
         # BEHOBEN 27.09.2026 (Audit Wer bekommt was, BF-05): kein
         # Admin-Bypass (Admins konnten Nachrichten fremder Räume lesen, deren
         # Dateien aber nicht abrufen — Inkonsistenz); Mitgliedschafts-Check
@@ -1362,6 +1394,68 @@ paths:
         middleware: [rbacVerifier]
         org-scope: true
         objekt-pruefung: "Jahrgangs-Scoping je Rolle (s. Beschreibung); super_admin explizit ausgeschlossen"
+
+  /api/challenges/bewahrte-stempel:
+    get:
+      tags: ["Challenges (Konfis)"]
+      summary: Eigene Stempel aus Challenges, die mit ihrem Jahrgang geloescht wurden
+      description: >
+        Seit dem 28.09.2026 (Migration 169). Ein Stempel wird sonst aus den
+        eigenen freigegebenen Beitraegen abgeleitet und verschwindet mit der
+        Challenge. Loescht die Leitung einen Jahrgang, gehen dessen
+        Challenges mit (DELETE /api/admin/jahrgaenge/{id}); die Stempel von
+        Teamer:innen und Leitung werden vorher in bewahrte_stempel abgelegt
+        und kommen hier. Nur Stempel, deren Challenge nicht mehr existiert
+        (lebt sie, kommt ihr Stempel wie bisher aus GET /challenges/admin
+        bzw. /challenges/konfi). Jeder Eintrag hat die Form eines
+        erhaltenen Stempels (marks), challenge_id ist die alte Kennung.
+        Eigene Route, weil GET /challenges/admin ein Array von Challenges
+        ist, dem sich kein Feld anhaengen laesst.
+      responses:
+        '200':
+          description: Bewahrte Stempel der aufrufenden Person in der aktiven Gemeinde (Array, auch leer)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/BewahrterStempel' }
+        '401': { description: Nicht angemeldet }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [konfi, teamer, admin, org_admin]
+        middleware: [rbacVerifier]
+        org-scope: true
+        objekt-pruefung: "Nur eigene Zeilen (user_id = req.user.id) der aktiven Gemeinde"
+
+  /api/challenges/admin/bewahrte-stempel/{userId}:
+    get:
+      tags: ["Challenges (Leitung)"]
+      summary: Bewahrte Stempel einer Person (Detailansicht der Leitung)
+      description: >
+        Seit dem 28.09.2026. Wie GET /api/challenges/bewahrte-stempel, aber
+        fuer die angesehene Person — die Detailansicht einer Teamer:in legt
+        sie zu challengeMarks aus GET /api/admin/konfis/{id}. Bewahrt werden
+        nur Stempel des Teams, und Teamer:innen sieht die Leitung ohne
+        Jahrgangsgrenze; die Gemeinde begrenzt die Zeilen (fremde Gemeinde:
+        leere Liste).
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: integer }, description: "ID der Person" }
+      responses:
+        '200':
+          description: Bewahrte Stempel der Person in der aktiven Gemeinde (Array, auch leer)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/BewahrterStempel' }
+        '400': { description: Ungueltige ID }
+        '403': { description: requireAdmin (Teamer:innen und Konfis) }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [rbacVerifier, requireAdmin]
+        org-scope: true
+        objekt-pruefung: "Zeilen der aktiven Gemeinde (organization_id = req.user.organization_id)"
 
   /api/challenges/konfi/{id}:
     get:
@@ -1716,6 +1810,14 @@ paths:
     delete:
       tags: ["Challenges (Leitung)"]
       summary: Challenge löschen (gestartete nur mit force)
+      description: >
+        Beitraege, Dateien und Postfach-Eintraege gehen mit; die Stempel
+        aller Beteiligten ebenfalls. Seit dem 28.09.2026 laeuft das Loeschen
+        ueber utils/challengeLoeschen.js — denselben Weg nimmt
+        DELETE /api/admin/jahrgaenge/{id} fuer Challenges, die nur an dem
+        Jahrgang haengen; nur dort werden die Stempel des Teams vorher
+        bewahrt (GET /api/challenges/bewahrte-stempel). Verhalten dieser
+        Route unveraendert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Challenge" }
         - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] }, description: "true: auch eine bereits gestartete Challenge löschen — samt Beiträgen und Dateien" }

@@ -75,6 +75,10 @@
 #      403 — ein Admin sieht die Anträge seiner Jahrgänge, ein Admin ohne
 #      Zuweisung ein leeres Array. Antwortform bleibt ein Array.
 #      Teamer-Anträge (target_role='teamer') bleiben immer sichtbar.
+#    - GET /api/admin/activities/requests/:id (NEU 28.09.2026): ein Antrag,
+#      dieselbe Sichtregel wie die Liste; Antrag der eigenen Gemeinde, den
+#      die Liste diesem Admin nicht zeigt -> 403 "Kein Zugriff auf diesen
+#      Konfi"; fremde Gemeinde -> 404.
 #    - "Neuer Antrag eingegangen" (Postfach + Push nach POST
 #      /api/konfi/requests und POST /api/teamer/requests): GEAENDERT
 #      27.09.2026 — nur noch an die Leitung, die den Antrag in der Liste
@@ -811,6 +815,16 @@ paths:
         letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene
         Buchung (booking_status, attendance_status, Timeslot,
         waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt).
+        GEAENDERT 28.09.2026 — waitlist_position (Audit Punkte/Termine
+        BF-05): Liste, Status-Route und Nachruecken lesen EINE Reihenfolge
+        (utils/bookingUtils.js, wartelistenRangSql: booking_date, bei
+        Gleichstand die Buchungs-ID). Der Platz zaehlt nur die Warteliste,
+        aus der nachgerueckt wird: Konfis (ohne geloeschte Konten), bei
+        einer Buchung mit Zeitfenster nur dieses Fenster. Vorher zaehlte die
+        Liste nach created_at und die Status-Route nach booking_date, beide
+        ueber alle Rollen und Zeitfenster -- nach einer Wiederanmeldung
+        nannten sie derselben Person zwei verschiedene Plaetze. Feld und Typ
+        (Zahl, 1 = rueckt als naechste nach) unveraendert.
         BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die
         Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht
         'closed') und den Wert 'mandatory' für Pflichttermine.
@@ -889,6 +903,16 @@ paths:
         (max_participants=0 = unbegrenzt) und 'mandatory'-Wert wie die
         Admin-Liste; confirmed_count/waitlist_count zählen jetzt konfi-rein
         (Teamer-Kontingent getrennt, vorher ohne Rollenfilter).
+        GEAENDERT 28.09.2026 — waitlist_position (Audit Punkte/Termine
+        BF-05): Liste, Status-Route und Nachruecken lesen EINE Reihenfolge
+        (utils/bookingUtils.js, wartelistenRangSql: booking_date, bei
+        Gleichstand die Buchungs-ID). Der Platz zaehlt nur die Warteliste,
+        aus der nachgerueckt wird: Konfis (ohne geloeschte Konten), bei
+        einer Buchung mit Zeitfenster nur dieses Fenster. Vorher zaehlte die
+        Liste nach created_at und die Status-Route nach booking_date, beide
+        ueber alle Rollen und Zeitfenster -- nach einer Wiederanmeldung
+        nannten sie derselben Person zwei verschiedene Plaetze. Feld und Typ
+        (Zahl, 1 = rueckt als naechste nach) unveraendert.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -1034,6 +1058,20 @@ paths:
         JEDEN Admin der Gemeinde, auch an Admins fremder Jahrgaenge, die das
         Event danach mit 403 nicht oeffnen konnten. Versand nach der Antwort;
         Antwortform unveraendert.
+
+
+        BEHOBEN 28.09.2026 — WIEDERHOLTE ABMELDUNG (Audit Punkte/Termine
+        BF-03): Hat die Konfi keine Buchung (mehr), unterscheidet die Route
+        wie DELETE /api/events/{id}/book: Gibt es das Event in der aktiven
+        Gemeinde, antwortet sie 200 {"message": "Abmeldung erfolgreich",
+        "bereits_abgemeldet": true} -- ohne Protokoll, ohne Mitteilung, ohne
+        Nachruecken; sonst 404 "Event nicht gefunden". Vorher kam 400 "Du
+        bist nicht fuer dieses Event angemeldet": Eine im Funkloch
+        abgegebene Abmeldung, deren erste Antwort verloren ging, erschien in
+        der App als fehlgeschlagen, obwohl sie gelungen war. Der Riegel fuer
+        Pflicht-Events (400) greift weiter davor. Nur additiv: die
+        Erfolgsantwort traegt message wie bisher, bereits_abgemeldet kommt
+        dazu.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -1048,8 +1086,8 @@ paths:
               properties:
                 reason: { type: string, description: Optionaler Abmeldegrund }
       responses:
-        "200": { description: Abmeldung erfolgreich }
-        "400": { description: Pflicht-Event, nicht angemeldet oder Frist (2 Tage) verstrichen }
+        "200": { description: "Abmeldung erfolgreich (message); bei keiner Buchung (mehr) zusaetzlich bereits_abgemeldet: true" }
+        "400": { description: "Pflicht-Event, Anwesenheit verbucht oder Frist (2 Tage) verstrichen" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -1318,7 +1356,18 @@ paths:
                 name: { type: string, maxLength: 200 }
                 description: { type: string }
                 event_date: { type: string, format: date-time }
-                event_end_time: { type: string, format: date-time }
+                event_end_time:
+                  type: string
+                  format: date-time
+                  description: >
+                    Optional. SEIT 28.09.2026 geprueft (Audit Leitung BF-03):
+                    Liegt das Ende vor event_date, antwortet die Route mit
+                    400 {"error": "Das Ende liegt vor dem Beginn",
+                    "error_code": "ende_vor_beginn"} und legt nichts an.
+                    Ein Ende gleich dem Beginn und null (kein Ende) bleiben
+                    erlaubt. Dieselbe Regel gilt fuer PUT /api/events/{id}
+                    und POST /api/events/series (routes/events/validierung.js,
+                    pruefeEndeNachBeginn).
                 location: { type: string }
                 location_maps_url: { type: string }
                 points: { type: integer }
@@ -1354,7 +1403,7 @@ paths:
                 teamer_max_waitlist_size: { type: integer, default: 10 }
       responses:
         "201": { description: "id + message" }
-        "400": { description: "Validierungs-/Regel-Fehler (fehlende Felder, fremde IDs, Kontingent ungueltig; seit 17.09.2026 auch: Anmeldeschluss abgelaufen, waehrend der Termin noch bevorsteht)" }
+        "400": { description: "Validierungs-/Regel-Fehler (fehlende Felder, fremde IDs, Kontingent ungueltig; seit 17.09.2026 auch: Anmeldeschluss abgelaufen, waehrend der Termin noch bevorsteht; seit 28.09.2026 auch: Ende vor dem Beginn, error_code ende_vor_beginn)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Kein Zugriff auf diesen Jahrgang (seit 14.09.2026, wenn jahrgang_ids einen fremden Jahrgang nennt)" }
         "409": { description: Unique-Konflikt }
@@ -1631,6 +1680,19 @@ paths:
         nachträglich ergaenzten Jahrgangs gebucht — vorher nur bei der
         Umwandlung freiwillig -> Pflicht. Abgemeldete (opted_out) bleiben
         abgemeldet. Relevante Änderungen (Termin/Ort) pushen an Gebuchte.
+
+
+        BEHOBEN 28.09.2026 — KONFI-PLAETZE AUF UNBEGRENZT (Audit
+        Punkte/Termine BF-06): max_participants = 0 (unbegrenzt, auch bei
+        Pflicht-Events) laesst jetzt ALLE wartenden Konfis nachruecken, in
+        der Reihenfolge der Warteliste, mit Push (waitlist_promotion),
+        war_auf_warteliste und Termin-Chat -- wie teamer_max_participants = 0
+        auf der Team-Seite schon vorher. Vorher rueckte bei 0 niemand nach
+        (promoted_count 0), waehrend jede neue Anmeldung sofort bestaetigt
+        wurde. Wartende Teamer:innen bleiben unberuehrt (eigenes
+        Kontingent); reine Teamer-Termine (teamer_only) haben keine
+        Konfi-Plaetze. Antwortform unveraendert, promoted_count zaehlt die
+        Nachgerueckten.
       x-berechtigung:
         rollen: [org_admin, admin]
         x-geaendert: >
@@ -1665,7 +1727,7 @@ paths:
             schema: { type: object, description: "Gleiche Felder wie POST /api/events" }
       responses:
         "200": { description: "message, promoted_count, promoted_teamer_count" }
-        "400": { description: "Validierungs-/Regel-Fehler; seit 17.09.2026 auch: registration_closes_at liegt in der Vergangenheit, waehrend event_date noch bevorsteht (bei vergangenem event_date weiterhin erlaubt)" }
+        "400": { description: "Validierungs-/Regel-Fehler; seit 17.09.2026 auch: registration_closes_at liegt in der Vergangenheit, waehrend event_date noch bevorsteht (bei vergangenem event_date weiterhin erlaubt); seit 28.09.2026 auch: event_end_time vor event_date (error_code ende_vor_beginn, der gespeicherte Stand bleibt)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Kein Zugriff auf dieses Event oder auf diesen Jahrgang (seit 14.09.2026)" }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -1711,6 +1773,21 @@ paths:
         Termin geloescht wurde, bei teamer_only-Terminen also niemand.
         Selbst Abgemeldete (opted_out) und geloeschte Konten bekommen nichts.
         Antwortform unveraendert.
+
+
+        EIN LOESCHWEG FUER ZWEI ROUTEN (28.09.2026): Die Loeschschritte stehen
+        in utils/terminLoeschen.js; DELETE /api/admin/jahrgaenge/{id} loescht
+        die Termine eines Jahrgangs auf demselben Weg (dort ohne
+        Punkte-Ruecknahme und ohne Push). Chat-Anhaenge verschwinden seitdem
+        erst nach dem COMMIT.
+
+
+        BEHOBEN 28.09.2026: Der ERSTE Termin einer Serie liess sich nicht
+        loeschen (500) — die uebrigen zeigen ueber events.series_id auf ihn,
+        ein Fremdschluessel ohne ON DELETE. Jetzt zeigen sie auf den naechsten
+        verbliebenen Termin der Serie. Loeschungen in derselben Gemeinde
+        laufen nacheinander (pg_advisory_xact_lock), weil die App eine Serie
+        mit parallelen Anfragen loescht.
       x-berechtigung:
         rollen: [org_admin, admin]
         x-geaendert: >
@@ -1973,6 +2050,40 @@ paths:
         durch die Absage Abgemeldeten ohnehin von selbst zurueck. Das
         ENTFERNEN einer Buchung (DELETE /{id}/bookings/{bookingId}) bleibt am
         abgesagten Termin moeglich.
+
+
+        STATUS GEPRUEFT seit 28.09.2026 (Audit Punkte/Termine BF-04): Nur
+        auto, confirmed und waitlist; fehlt status oder ist er null, gilt
+        auto. Jeder andere Wert -> 400 {"error": "Ungültiger Status. Erlaubt
+        sind auto, confirmed und waitlist", "error_code":
+        "status_ungueltig"}, es wird nichts angelegt. BEHOBEN: Vorher ging
+        der Wert ungeprueft ins INSERT -- 'foo' endete als 500
+        "Datenbankfehler", Werte aus dem CHECK der Spalte ('cancelled',
+        'opted_out', 'excused', 'pending') legten eine Buchung mit diesem
+        Status an (201), null eine Buchung ohne Status. Die Apps schicken
+        'confirmed' (ParticipantManagementModal, Stand 2.2.0 bis heute).
+
+
+        UEBERBUCHEN BEWUSST ERLAUBT (Simon, 28.09.2026: "Überbuchen ist
+        gewollt, kann ja sein das ich mehr brauche von der Warteliste."):
+        status='confirmed' prueft keine Kapazitaet -- wer von Hand
+        eingetragen wird, ist bestaetigt, auch wenn der Termin voll ist.
+        Anders PUT /{id}/participants/{participantId}/status mit
+        status='confirmed' (Bestaetigen einer Wartenden): dort 400
+        (error_code event_voll) bei vollem Termin, bis die Leitung nach der
+        Rueckfrage mit ueberbuchen=true bestaetigt (Simon 28.09.2026).
+
+
+        RUECKFRAGE AUCH HIER (Simon, 28.09.2026: "Die sollten wir auch
+        einfügen, wenn wir Konfi hinzufügen ... oder auch bei Teamern"): Mit
+        status='confirmed' und `ueberbuchen: false` prueft die Route das
+        Kontingent der Person -- Konfis die Konfi-Plaetze bzw. ihr
+        Zeitfenster, alle anderen (Team, Leitung) die Team-Plaetze. Ist es
+        voll: 400 mit demselben Text wie beim Bestaetigen, error_code
+        event_voll, max, belegt und seite ('konfi' | 'team'); es entsteht
+        keine Buchung. Die App fragt nach und schickt dann `ueberbuchen:
+        true`. OHNE das Feld (Store-Apps 2.2.x/2.3.0) ueberbucht die Route wie
+        bisher still -- darauf bauen die ausgelieferten Apps.
       x-berechtigung:
         rollen: [org_admin, admin]
         x-geaendert: >
@@ -2029,11 +2140,18 @@ paths:
               required: [user_id]
               properties:
                 user_id: { type: integer }
-                status: { type: string, enum: [auto, confirmed, waitlist], default: auto }
+                status:
+                  type: [string, "null"]
+                  enum: [auto, confirmed, waitlist, null]
+                  default: auto
+                  description: "auto: Kapazitaet und Warteliste wie bei der Selbstanmeldung; confirmed: bestaetigt, auch ueber die Platzgrenze (bewusst); waitlist: auf die Warteliste. null gilt wie fehlend (auto). Andere Werte -> 400 status_ungueltig."
                 timeslot_id: { type: [integer, "null"] }
+                ueberbuchen:
+                  type: boolean
+                  description: "Nur mit status=confirmed (seit 28.09.2026, additiv). false: bei vollem Kontingent 400 event_voll statt Buchung; true: bestaetigt auch ueber die Grenze. Fehlt das Feld, ueberbucht confirmed wie bisher still (Store-Apps)."
       responses:
         "201": { description: "id, status, timeslot_id, message" }
-        "400": { description: Slot fehlt, Event nicht fuer Rolle des Users vorgesehen }
+        "400": { description: "Slot fehlt, Event nicht fuer Rolle des Users vorgesehen, Termin abgesagt; seit 28.09.2026 auch ungueltiger status (error_code status_ungueltig) und, nur mit ueberbuchen=false, volles Kontingent (error_code event_voll, max, belegt, seite)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Kein Zugriff auf dieses Event (seit 14.09.2026, Aufrufer ohne den Jahrgang) — oder seit 25.09.2026 '<Name> gehört zu keinem Jahrgang dieses Events' mit error_code person_jahrgang_fremd (die eingetragene Person passt nicht)" }
         "404": { description: Event/Benutzer/Zeitslot nicht gefunden }
@@ -2133,6 +2251,16 @@ paths:
         zeitlichen Abstand zum Beginn, ihr Schluss wandert also mit in die
         Zukunft. Nachtragen vergangener Reihen bleibt erlaubt. Die Regel
         liegt jetzt gemeinsam in routes/events/validierung.js.
+
+
+        BEHOBEN 28.09.2026 — ENDE (Audit Leitung BF-03): event_end_time vor
+        event_date wird wie bei POST /api/events mit 400
+        (error_code ende_vor_beginn) abgewiesen, es entsteht keine Serie.
+        Jeder Folgetermin erbt die DAUER des ersten (Ende minus Beginn in
+        Millisekunden). Vorher wurde nur die Uhrzeit des Endes auf den Tag
+        jedes Termins gesetzt: Ein erster Termin, der erst am Folgetag
+        endet, ergab Serientermine, die vor ihrem Beginn endeten. Fuer
+        Termine, die am selben Tag enden, bleibt das Ergebnis gleich.
       x-berechtigung:
         rollen: [org_admin, admin]
         x-geaendert: >
@@ -2158,7 +2286,7 @@ paths:
               description: "Zusaetzlich alle Felder von POST /api/events"
       responses:
         "201": { description: "message, series_id, events_created" }
-        "400": { description: Serien-Limits/Validierung verletzt }
+        "400": { description: "Serien-Limits/Validierung verletzt; seit 28.09.2026 auch: Ende vor dem Beginn (error_code ende_vor_beginn)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -2184,6 +2312,15 @@ paths:
         Nachrücken"): Die Degradierung nimmt die Person aus dem Chat zum
         Termin, die Befoerderung auf 'confirmed' traegt sie ein. Bis dahin
         blieb die Herabgestufte im Chat ("angemeldet ist angemeldet").
+
+
+        BEHOBEN 28.09.2026 (Audit Punkte/Termine BF-05): Die Degradierung
+        setzt booking_date auf jetzt -- die Herabgestufte stellt sich hinten
+        an die Warteliste (Reihenfolge utils/bookingUtils.js,
+        wartelistenRangSql). Vorher behielt sie ihren alten Rang; hatte sie
+        vor den Wartenden gebucht, rueckte sie beim Nachruecken selbst
+        wieder nach, die Route nahm das zurueck, und der geraeumte Platz
+        blieb leer, obwohl andere warteten. Antwortform unveraendert.
 
 
         BEHOBEN 15.09.2026: Die Degradierung gibt einen bestaetigten Platz
@@ -2214,6 +2351,21 @@ paths:
         ueber denselben Helfer wie das Nachruecken. Ohne Obergrenze (0/NULL)
         aendert sich nichts. Der Weg auf die Warteliste bleibt ungeprueft.
         Bewusstes Ueberbuchen laeuft ueber das Erhoehen der Teilnehmerzahl.
+
+
+        GEAENDERT 28.09.2026 — UEBERBUCHEN NACH RUECKFRAGE (Simon, Variante
+        c: "Überbuchen ist gewollt, kann ja sein das ich mehr brauche von der
+        Warteliste"): Die 400 bei vollem Kontingent bleibt mit demselben
+        Text, dazu additiv error_code 'event_voll', max (Obergrenze des
+        Kontingents bzw. Zeitfensters), belegt (bestaetigte, gezaehlt --
+        kann bei schon ueberbuchtem Event ueber max liegen) und seite
+        ('konfi' | 'team'; Team und Leitung zaehlen gegen die Team-Plaetze). Die App fragt
+        daran nach ("Das Event ist voll ... trotzdem bestätigen?") und
+        schickt nach dem Ja `ueberbuchen: true`; dann bestaetigt die Route
+        trotz voller Plaetze (war_auf_warteliste, Push und Termin-Chat wie
+        sonst). Nur der Boolean true zaehlt, "true" als Text oder 1 nicht.
+        Still ueberbucht wird weiter nicht. Store-Apps 2.2.x/2.3.0 schicken
+        das Feld nie und bekommen die Ablehnung wie bisher.
 
 
         GEPRUEFT 16.09.2026 — war_auf_warteliste: Die Spalte wird beim
@@ -2272,9 +2424,12 @@ paths:
               required: [status]
               properties:
                 status: { type: string, enum: [confirmed, waitlist] }
+                ueberbuchen:
+                  type: boolean
+                  description: "Nur mit status=confirmed: bestaetigt auch bei vollem Kontingent. Die App schickt es erst nach der Rueckfrage (seit 28.09.2026, additiv)."
       responses:
         "200": { description: "message, status" }
-        "400": { description: Ungueltiger Status oder Status unveraendert }
+        "400": { description: "Ungueltiger Status oder Status unveraendert; abgesagtes Event; volles Kontingent ohne ueberbuchen=true: error 'Das Event ist voll. …', error_code 'event_voll', max, belegt, seite ('konfi' | 'team') (die vier Felder seit 28.09.2026, additiv)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Fremde Organisation; seit 14.09.2026 auch 'Kein Zugriff auf dieses Event' bei fremdem Jahrgang" }
         "404": { description: Buchung nicht gefunden }
@@ -3070,15 +3225,33 @@ paths:
       description: >
         Liefert die Aktivitaetsantraege der aktiven Organisation samt
         Konfi-Name, Aktivitaetsdaten und genehmigender Person. Ohne Filter
-        alle, mit ?status= nur die des angegebenen Status.
+        alle, mit ?status= nur die des angegebenen Status, mit ?user_id=
+        nur die einer Person; beide Filter lassen sich verbinden.
         BEHOBEN 2026-08-28: ?status= wurde vorher stillschweigend verworfen —
         die Route lieferte immer alles.
+        GEAENDERT 2026-09-28 (Leitung BF-04, behoben): optionaler Filter
+        ?user_id= (additiv). Die Detailansicht einer Konfi lud vorher die
+        ganze Antragsgeschichte der Gemeinde, um die Anträge einer Person zu
+        finden; der Antragsdialog nutzt GET /api/admin/activities/requests/{id}.
+        OHNE Parameter liefert die Route unverändert alle Anträge der
+        Gemeinde (Store-Apps 2.2.x/2.3.0 suchen darin einen Antrag per
+        .find()).
       parameters:
         - name: status
           in: query
           required: false
           schema: { type: string, enum: [pending, approved, rejected] }
           description: Optionaler Filter. Ein unbekannter Wert ergibt 400.
+        - name: user_id
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1 }
+          description: >
+            Optionaler Filter auf die antragstellende Person
+            (activity_requests.user_id). Kein positiver Ganzzahlwert ergibt
+            400. Die Sichtregel gilt daneben weiter — eine Person, deren
+            Anträge die aufrufende Leitung nicht sieht, ergibt ein leeres
+            Array, kein 403.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
@@ -3115,12 +3288,43 @@ paths:
                 zugewiesen ist und Konfi-Antraege deshalb ausgeblendet sind
                 (gueltiger Fall, Entscheidung 2026-08-31). Fehlt bei
                 org_admin und bei einer Liste, die aus anderem Grund leer ist.
-        "400": { description: "Unbekannter Wert fuer ?status=" }
+        "400": { description: "Unbekannter Wert fuer ?status= oder ungültige ?user_id=" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/admin/activities/requests/{id}:
+    get:
+      tags: ["Aktivitäten & Anträge"]
+      summary: Einen Antrag abrufen
+      description: >
+        NEU 2026-09-28 (Leitung BF-04, behoben): Liefert EINEN Antrag mit
+        denselben Feldern wie ein Eintrag der Liste GET
+        /api/admin/activities/requests (ar.* + konfi_name, activity_name,
+        activity_points, activity_type, activity_target_role,
+        approved_by_name). Der Antragsdialog der Leitung lud vorher die ganze
+        Liste und suchte den Antrag per .find() heraus.
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
+        org-scope: true
+        objekt-pruefung: >
+          Antrag über JOIN activities auf die eigene Organisation
+          eingegrenzt — ein Antrag einer fremden Gemeinde ergibt 404, wie
+          eine unbekannte Id. Danach dieselbe Sichtregel wie die Liste
+          (backend/utils/antragLeitungSicht.js): org_admin/super_admin (Rolle
+          oder Merkmal) sehen jeden Antrag der Gemeinde; die Rolle admin nur
+          Konfi-Anträge aus ihren can_view-Jahrgängen, Teamer-Anträge immer.
+          Sonst 403 "Kein Zugriff auf diesen Konfi" — wie PUT, DELETE und
+          Foto an demselben Antrag.
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "Ein Antrag (Objekt in der Form eines Listeneintrags)" }
+        "400": { description: Ungültige Id }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
     put:
       tags: ["Aktivitäten & Anträge"]
       summary: Antrag genehmigen oder ablehnen
@@ -3828,13 +4032,23 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateAddActivity]
         org-scope: true
-        objekt-pruefung: "Aktivität muss zur eigenen Organisation gehören; bei Konfi-Aktivitäten seit 01.09.2026 darfKonfi(view) — 404/403 wie assign-activity (Teamer-Aktivitaeten ausgenommen: Teamer:innen sieht ein Admin alle); checkPointTypeEnabled bei Konfi-Aktivitäten"
+        objekt-pruefung: "Aktivität muss zur eigenen Organisation gehören; bei Konfi-Aktivitäten seit 01.09.2026 darfKonfi(view) — 404/403 wie assign-activity (Teamer-Aktivitaeten ohne Jahrgangspruefung: Teamer:innen sieht ein Admin alle); bei Teamer-Aktivitäten seit 28.09.2026 Zielperson Mitglied der aktiven Gemeinde (users.organization_id oder user_organizations, nicht geloescht), sonst 404 'Person nicht gefunden'; checkPointTypeEnabled bei Konfi-Aktivitäten"
         hinweis: >
           Anders als POST /api/admin/activities/assign-activity verlangt diese
           Route requireAdmin — Teamer:innen tragen über assign-activity nach.
           BEHOBEN 27.09.2026 (Audit Sicherheit BF-11): Eine Konfi einer
           anderen Gemeinde endete fuer org_admin mit 500; jetzt 404 "Konfi
           nicht gefunden", bevor etwas geschrieben wird (siehe L7 im Kopf).
+          BEHOBEN 28.09.2026 (Audit Punkte/Termine BF-07): Bei Aktivitaeten
+          mit target_role 'teamer' wurde die Zielperson gar nicht geprueft --
+          eine Leitung der Gemeinde A haengte einer Teamer:in der Gemeinde B
+          eine Zuordnung (organization_id A) an und loeste deren
+          Abzeichenlauf aus (201). Jetzt 404 "Person nicht gefunden", bevor
+          etwas geschrieben wird, fuer Personen fremder Gemeinden, unbekannte
+          IDs (vorher 500) und geloeschte Konten. Gezaehlt werden beide
+          Quellen der Zugehoerigkeit (utils/orgMitglieder.js,
+          istMitgliedDerOrganisation): Wer ueber user_organizations in der
+          Gemeinde mitarbeitet, bekommt die Aktivitaet weiter (201).
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -3852,7 +4066,7 @@ paths:
         "400": { description: Pflichtfelder fehlen oder Punkte-Typ deaktiviert }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "404": { $ref: '#/components/responses/NotFound' }
+        "404": { description: "Aktivitaet, Konfi (Konfi-Aktivitaet) oder Person (Teamer-Aktivitaet, seit 28.09.2026: nicht Mitglied der aktiven Gemeinde) nicht gefunden" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/admin/konfis/{id}/activities/{activityId}:
@@ -3954,6 +4168,17 @@ paths:
         bekam deren Nachrichten als Push, bis jemand anderes den Abgleich
         ausloeste; den Team-Chat bekam sie erst nach Ablauf des
         10-Minuten-Merkers. Antwortform unveraendert.
+        KONFI-ZEIT ALS KOPIE (28.09.2026, Audit Punkte/Termine BF-09, Simons
+        Entscheidung: das Loeschen der Buchungen bleibt gewollt). VOR dem
+        Loeschen der Buchungen legt die Route in derselben Transaktion eine
+        dauerhafte Kopie in konfi_historie an (Migration 170,
+        utils/konfiHistorie.js): vergangene Buchungen mit Status und
+        Anwesenheit, alle Termine mit Event-Punkten, Aktivitaeten,
+        Bonuspunkte, Konfi-Abzeichen, Challenge-Stempel, Level, Konfispruch
+        und Punktestand. Die Kopie ueberlebt das Loeschen des Jahrgangs und
+        ist ueber GET /api/teamer/konfi-zeit (die Person) und
+        GET /api/teamer/{userId}/konfi-zeit (Leitung) abrufbar. Antwortform
+        unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]

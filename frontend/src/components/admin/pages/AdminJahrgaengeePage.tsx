@@ -48,6 +48,7 @@ import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { jahrgangLoeschHinweis, istLoeschVorschau, type JahrgangLoeschVorschau } from '../../../utils/jahrgangLoeschen';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -56,6 +57,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
@@ -210,38 +212,37 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       }));
     }
 
-    if (networkMonitor.isOnline) {
-      setLoading(true);
-      try {
-        if (jahrgang) {
-          await api.put(`/admin/jahrgaenge/${jahrgang.id}`, payload);
-        } else {
-          await api.post('/admin/jahrgaenge', payload);
-        }
-
-        onSuccess();
-        handleClose();
-      } catch (error) {
-        setError(fehlerText(error, 'Fehler beim Speichern des Jahrgangs'));
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      await writeQueue.enqueue({
-        method: jahrgang ? 'PUT' : 'POST',
-        url: jahrgang ? `/admin/jahrgaenge/${jahrgang.id}` : '/admin/jahrgaenge',
-        body: payload,
-        maxRetries: 5,
-        hasFileUpload: false,
-        metadata: {
-          type: 'admin',
-          clientId: safeUUID(),
-          label: jahrgang ? 'Jahrgang bearbeiten' : 'Jahrgang erstellen'
-        }
+    setLoading(true);
+    try {
+      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
+      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
+      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
+      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
+      // Audit Grundgeruest BF-01).
+      const { weg } = await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: jahrgang ? 'PUT' : 'POST',
+        senden: () => (jahrgang ? api.put(`/admin/jahrgaenge/${jahrgang.id}`, payload) : api.post('/admin/jahrgaenge', payload)),
+        einreihen: () => writeQueue.enqueue({
+          method: jahrgang ? 'PUT' : 'POST',
+          url: jahrgang ? `/admin/jahrgaenge/${jahrgang.id}` : '/admin/jahrgaenge',
+          body: payload,
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'admin',
+            clientId: safeUUID(),
+            label: jahrgang ? 'Jahrgang bearbeiten' : 'Jahrgang erstellen'
+          }
+        }),
       });
-      setSuccess('Wird gespeichert sobald du wieder online bist');
+      if (weg === 'eingereiht') setSuccess('Wird gespeichert sobald du wieder online bist');
       onSuccess();
       handleClose();
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Speichern des Jahrgangs'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -560,9 +561,21 @@ const AdminJahrgaengeePage: React.FC = () => {
     if (forceDelete) {
       await performDelete();
     } else {
+      // Was mitgeht, mit Zahlen (28.09.2026): Seit das Loeschen die Events
+      // und Challenges des Jahrgangs mitnimmt, fragt die Rueckfrage vorher
+      // beim Server nach -- dieselbe Regel-Stelle wie das Loeschen selbst.
+      // Ohne Antwort (aelterer Server, Netzfehler) steht die allgemeine
+      // Fassung da (utils/jahrgangLoeschen.ts).
+      let vorschau: JahrgangLoeschVorschau | null = null;
+      try {
+        const res = await api.get(`/admin/jahrgaenge/${jahrgang.id}/loeschvorschau`);
+        if (istLoeschVorschau(res.data)) vorschau = res.data;
+      } catch {
+        // Keine Vorschau: die allgemeine Fassung der Rueckfrage.
+      }
       presentAlert({
         header: 'Jahrgang löschen',
-        message: `Jahrgang "${jahrgang.name}" wirklich löschen?\n\nDer Jahrgang und sein Chatverlauf werden unwiderruflich entfernt. Solange dem Jahrgang noch aktive Konfis zugeordnet sind, ist das Löschen nicht möglich. Zu Teamer:innen beförderte Konfis bleiben mit ihren Punkten und Badges erhalten.`,
+        message: jahrgangLoeschHinweis(jahrgang.name, vorschau),
         buttons: [
           { text: 'Abbrechen', role: 'cancel' },
           {

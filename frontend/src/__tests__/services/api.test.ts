@@ -256,7 +256,9 @@ describe('ensureFreshToken', () => {
     expect(postSpy).toHaveBeenCalledTimes(1);
     expect(postSpy.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-1' });
     expect(tokenStore.setToken).toHaveBeenCalledWith(newToken);
-    expect(tokenStore.setRefreshToken).toHaveBeenCalledWith('refresh-2');
+    // Schalter der biometrischen Anmeldung aus (Browser): wie bisher auch in
+    // die Preferences (klartext: true; biometrieOhneKlartextNachRotation.test.ts).
+    expect(tokenStore.setRefreshToken).toHaveBeenCalledWith('refresh-2', { klartext: true });
   });
 
   it('persistiert den Refresh-Token VOR dem Access-Token (Android-Session-Race)', async () => {
@@ -300,6 +302,9 @@ describe('ensureFreshToken', () => {
     const { ensureFreshToken } = await import('../../services/api');
     const p1 = ensureFreshToken();
     const p2 = ensureFreshToken();
+    // Der Refresh ermittelt vorher asynchron die Geraete-Kennung
+    // (refreshAnfrage.ts) -- erst warten, bis er wirklich unterwegs ist.
+    await vi.waitFor(() => expect(postSpy).toHaveBeenCalledTimes(1));
     resolveRefresh!({ data: { token: newToken, refresh_token: 'refresh-2' } });
 
     const [r1, r2] = await Promise.all([p1, p2]);

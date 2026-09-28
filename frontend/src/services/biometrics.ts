@@ -6,7 +6,7 @@ import {
   BiometryType,
   BiometricAuthError
 } from '@capgo/capacitor-native-biometric';
-import { getRefreshToken, getUser } from './tokenStore';
+import { getRefreshToken, getUser, setRefreshToken } from './tokenStore';
 import { BaseUser } from '../types/user';
 
 // ---------------------------------------------------------------------------
@@ -29,7 +29,12 @@ import { BaseUser } from '../types/user';
 // Risiko — gerade bei Konfis, die sich Geraete teilen. Deshalb:
 //   a) Der Token liegt NUR biometrie-geschuetzt im Keystore/Keychain, nie
 //      zusaetzlich im Klartext. Beim Einschalten des Schalters wird die
-//      Preferences-Kopie geloescht (siehe biometrieAktivieren).
+//      Preferences-Kopie geloescht (siehe biometrieAktivieren), und bei jeder
+//      Rotation bleibt es so: api.ts performRefresh und auth.ts
+//      mitBiometrieAnmelden halten den neuen Token dann nur im Arbeitsspeicher
+//      (bis 28.09.2026 kehrte die Klartext-Kopie mit der ersten Rotation
+//      zurueck, Audit Grundgeruest BF-06). Beim Ausschalten ohne Abmelden
+//      kehrt er in die normale Ablage zurueck (biometrieAusschalten).
 //   b) Die gespeicherte Sitzung laeuft mit dem Server-Token mit:
 //      GESPEICHERTE_SITZUNG_MAX_TAGE (90 Tage) — dieselbe Frist wie der
 //      Refresh-Token. Entscheidung Simon 27.08.2026: Eine kuerzere eigene
@@ -315,6 +320,23 @@ export const biometrieAktivieren = async (): Promise<boolean> => {
 };
 
 /**
+ * Schaltet die biometrische Anmeldung aus, OHNE abzumelden (Schalter in den
+ * Einstellungen).
+ *
+ * Solange der Schalter an ist, liegt der Refresh-Token nur im Arbeitsspeicher
+ * und im sicheren Speicher (Sicherheitsabwaegung a; auch nach jeder Rotation,
+ * siehe api.ts performRefresh). Loeschte das Ausschalten nur den sicheren
+ * Speicher, waere die laufende Sitzung beim naechsten Kaltstart weg. Deshalb
+ * kehrt der Token hier in die normale Ablage zurueck -- genau der Zustand
+ * wie vor dem Einschalten.
+ */
+export const biometrieAusschalten = async (): Promise<void> => {
+  await biometrieVergessen();
+  const laufend = getRefreshToken();
+  if (laufend) await setRefreshToken(laufend);
+};
+
+/**
  * Loescht die gespeicherte Sitzung und schaltet den Schalter aus.
  * MUSS bei jedem ausdruecklichen Abmelden laufen.
  */
@@ -458,6 +480,11 @@ export const gespeichertenTokenAuffrischen = async (
  * "best-effort": schlaegt das Schreiben fehl, bleibt die App normal angemeldet.
  * Nur die naechste biometrische Anmeldung scheitert dann und fuehrt auf die
  * normale Anmeldung — kein Datenverlust, keine Schleife.
+ *
+ * Der sichere Speicher ist bei eingeschaltetem Schalter die EINZIGE dauerhafte
+ * Ablage: performRefresh schreibt den rotierten Token dann nicht mehr in die
+ * Preferences (Audit Grundgeruest BF-06, 28.09.2026). Scheitert das Schreiben
+ * hier, lebt der neue Token bis zum Ende des Prozesses nur im Arbeitsspeicher.
  *
  * PLATTFORM-UNTERSCHIED, bewusst in Kauf genommen:
  * Auf iOS ist das Schreiben in die Keychain immer still — dort stimmt die

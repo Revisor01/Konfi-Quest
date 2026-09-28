@@ -106,6 +106,10 @@ Jahrgang. Nur wer das Event sieht, bekommt die
 | Warteliste | an, 3 Plätze |
 | Check-in-Fenster | 30 Minuten |
 
+Die Endzeit liegt nie vor dem Beginn: Die Auswahl fängt beim Beginn an, und
+ein Event, dessen Ende davor liegt, lässt sich nicht speichern — es kommt
+„Das Ende liegt vor dem Beginn". Ein Ende genau zum Beginn geht.
+
 ## Ein Event kopieren
 
 Wiederholt sich ein Event, ohne eine Serie zu sein — die Freizeit im nächsten
@@ -382,12 +386,22 @@ ein Platz frei wird — nicht nur für die Abmeldung durch die Person selbst:
 | Du beförderst eine Konfi zur Teamer:in | dasselbe — ihre Konfi-Plätze werden frei |
 | Du verschiebst eine Konfi in einen anderen Jahrgang | auf den Plätzen der Events des alten Jahrgangs rückt nach |
 | Du erhöhst die Teilnehmerzahl | so viele rücken nach, wie neue Plätze da sind |
+| Du stellst die Teilnehmerzahl auf unbegrenzt | alle wartenden Konfis rücken nach |
 | Du erhöhst die Plätze eines Zeitfensters | dasselbe, aber nur in diesem Zeitfenster |
-| Du erhöhst das Teamer-Kontingent | die wartenden Teamer:innen rücken nach |
+| Du erhöhst das Teamer-Kontingent oder stellst es auf unbegrenzt | die wartenden Teamer:innen rücken nach |
 
-Nachgerückt wird in der Reihenfolge der Anmeldung; die nachgerückte Person
-bekommt einen Push und kommt in den Chat zum Event, falls es einen gibt.
-Gelöschte Nutzer:innen rücken nie nach.
+Nachgerückt wird in der Reihenfolge, in der sich die Wartenden angestellt
+haben; die nachgerückte Person bekommt einen Push und kommt in den Chat zum
+Event, falls es einen gibt. Gelöschte Nutzer:innen rücken nie nach.
+
+**Wer sich neu anstellt, steht hinten** — auch wer schon einmal auf der Liste
+war: eine Konfi, die sich nach einer Abmeldung wieder anmeldet, eine
+Teamer:in, die nach einer Absage wieder zusagt, und wen du auf die Warteliste
+zurücksetzt. Den Platz, den die Konfi in der App sieht, zählt die App genau
+so: Platz 1 rückt als Nächstes nach. Gezählt werden nur die Wartenden ihrer
+eigenen Warteliste — wartende Teamer:innen nicht, und bei Zeitfenstern nur
+die im selben Fenster. In der Teilnehmerliste der Detailansicht stehen die
+Wartenden in derselben Reihenfolge.
 
 > **Ein frei gewordener Konfi-Platz geht niemals an eine wartende Teamer:in** —
 > und umgekehrt. Die beiden Wartelisten werden strikt getrennt geführt.
@@ -397,8 +411,10 @@ Gelöschte Nutzer:innen rücken nie nach.
 > wäre dort schlicht falsch. Wer auf der Warteliste steht, bleibt stehen.
 
 Setzt du jemanden auf die Warteliste zurück, geht der geräumte Platz an die
-**nächste wartende Person** — nicht an die eben herabgestufte zurück. Wartet
-sonst niemand, bleibt sie schlicht auf der Warteliste stehen.
+**nächste wartende Person** — nicht an die eben herabgestufte zurück, auch
+wenn sie sich früher angemeldet hatte. Sie steht danach hinten auf der
+Warteliste. Wartet sonst niemand, bleibt sie schlicht auf der Warteliste
+stehen.
 
 Reduzierst du die Plätze, wird **niemand zurückgestuft**. Wer bestätigt ist,
 bleibt bestätigt, auch wenn dadurch mehr Leute drin sind als erlaubt. Erst
@@ -825,6 +841,8 @@ Die Events werden durchnummeriert: aus „Konfi-Stunde" wird „Konfi-Stunde #1"
 Alle Einstellungen — Punkte, Plätze, Warteliste, Kategorien, Jahrgänge,
 Pflicht-Häkchen, Check-in-Fenster, Teamer-Kontingent — werden auf jedes Event
 der Serie übertragen, mit denselben Zwangsregeln wie beim einzelnen Event.
+Jedes Event dauert so lange wie das erste: Endet das erste erst am nächsten
+Tag, endet jedes weitere ebenfalls einen Tag nach seinem Beginn.
 
 ### Verstehen, wie das Anmeldefenster mitwandert
 
@@ -1090,6 +1108,10 @@ war schon gemeldet, ein zweites Mal sagt sie niemandem etwas Neues.
 > **abgesagt**. Ein Event, das es nie hätte geben sollen (Tippfehler,
 > versehentlich angelegt), wird **gelöscht**.
 
+Löschst du einen Jahrgang, gehen die Events mit, die nur zu ihm gehören —
+ohne Absage an die Angemeldeten und ohne Punkte abzuziehen (siehe
+[Events und Challenges des Jahrgangs mitlöschen](45-jahrgaenge.md#events-und-challenges-des-jahrgangs-mitloeschen)).
+
 ## Nachvollziehen, wann automatisch benachrichtigt wird
 
 Änderst du an einem **zukünftigen, nicht abgesagten** Event das Datum, die
@@ -1178,6 +1200,32 @@ In der Detailansicht kannst du Leute selbst eintragen — praktisch für alle, d
 keine App haben oder die Frist verpasst haben. Der Anmeldezeitraum gilt hier
 nicht, du kannst also auch nach Anmeldeschluss noch jemanden eintragen.
 
+**Über die Platzgrenze geht es nur nach einer Rückfrage.** Wen du von Hand
+einträgst, ist angemeldet, auch wenn das Event schon voll ist — vielleicht
+brauchst du doch mehr Leute, als du geplant hattest. Ist kein Platz mehr frei,
+fragt die App vorher: „Das Event ist voll — Alle 12 Plätze sind vergeben. Mia
+trotzdem eintragen? Das Event ist dann überbucht." Hast du mehrere ausgewählt,
+fragt sie einmal für alle Übrigen („Die übrigen 3 trotzdem eintragen?"). Mit
+**Trotzdem eintragen** kommen sie dazu; mit **Abbrechen** bleiben die schon
+Eingetragenen drin und die Übrigen ausgewählt.
+
+Konfis und Team haben getrennte Plätze. Sind die Team-Plätze voll, heißt die
+Rückfrage „Die Team-Plätze sind voll — Alle 2 Team-Plätze sind vergeben …",
+auch wenn für Konfis noch Platz ist; Leitung zählt dabei zum Team. Bei
+Zeitfenster-Events zählt das gewählte Fenster.
+
+Nach dem Überbuchen zeigt die Zahl mehr Angemeldete als Plätze. Solange das
+so ist, rückt niemand von der Warteliste nach, wenn jemand abspringt; erst
+wenn wieder weniger Leute angemeldet als Plätze da sind, greift die Grenze.
+
+Genauso beim **Bestätigen einer Person, die auf der Warteliste steht** —
+Konfi oder Team: Ist kein Platz frei, fragt die App „… Mia trotzdem
+bestätigen? Das Event ist dann überbucht." Mit **Trotzdem bestätigen** nimmst
+du genau diese Person mit; mit **Abbrechen** bleibt sie auf der Warteliste.
+Willst du stattdessen mehr Plätze für alle schaffen, erhöhst du die
+Teilnehmerzahl — die Wartenden rücken dann der Reihe nach von selbst nach
+(siehe [Nachvollziehen, wann jemand nachrückt](#nachvollziehen-wann-jemand-nachrueckt)).
+
 Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
 
 - Eine Teamer:in lässt sich nur bei „Konfis, Team gesucht" oder „Nur Team"
@@ -1194,10 +1242,8 @@ Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
   bekommt eine Meldung mit dem Namen der Person.
 
 **Wer eingetragen wird, bekommt einen Push** — Konfis, Teamer:innen und
-Leitung gleichermaßen, mit derselben Meldung wie bei der Selbstanmeldung. Ist
-kein Platz mehr frei oder trägst du jemanden bewusst auf die Warteliste ein,
-steht das in der Meldung. Trägst du dich selbst ein, bekommst du nichts aufs
-eigene Handy.
+Leitung gleichermaßen, mit derselben Meldung wie bei der Selbstanmeldung.
+Trägst du dich selbst ein, bekommst du nichts aufs eigene Handy.
 
 ## Teilnehmende austragen oder auf die Warteliste setzen
 

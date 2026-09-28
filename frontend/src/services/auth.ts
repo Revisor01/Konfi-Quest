@@ -1,5 +1,6 @@
-import axios from 'axios';
-import api, { API_URL } from './api';
+import api from './api';
+import { refreshAnfordern } from './refreshAnfrage';
+import { geraeteKennung } from './geraeteKennung';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
 import { setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setLoggingOut } from './tokenStore';
@@ -48,7 +49,11 @@ export const sitzungUebernehmen = async (
 export const loginWithAutoDetection = async (username: string, password: string): Promise<BaseUser> => {
 
   try {
-    const response = await api.post('/auth/login', { username, password });
+    // Geraete-Kennung mitschicken: Der Server bindet das Refresh-Token an
+    // dieses Geraet (Audit Sicherheit BF-08, geraeteKennung.ts). Ohne
+    // ermittelbare Kennung wie bisher ohne -- das Token bleibt dann ungebunden.
+    const kennung = await geraeteKennung();
+    const response = await api.post('/auth/login', kennung ? { username, password, device_id: kennung } : { username, password });
     return await sitzungUebernehmen(response.data);
   } catch (error: unknown) {
     const err = error as {
@@ -293,14 +298,19 @@ export const mitBiometrieAnmelden = async (): Promise<BiometrieAnmeldung> => {
   if (!networkMonitor.isOnline) return { status: 'offline' };
 
   try {
-    const antwort = await axios.post(`${API_URL}/auth/refresh`, {
+    // Mit Zeitlimit 20 s (refreshAnfrage.ts, Audit Grundgeruest BF-07).
+    const antwort = await refreshAnfordern({
       refresh_token: entsperrt.refreshToken
     });
     const { token, refresh_token: neuerRefreshToken } = antwort.data || {};
     if (!token || !neuerRefreshToken) return { status: 'fehler' };
 
     // Reihenfolge wie in api.ts performRefresh: erst der langlebige Schluessel.
-    await setRefreshToken(neuerRefreshToken);
+    // Nur in den Arbeitsspeicher, NICHT in die Preferences: Wer per Biometrie
+    // hereinkommt, hat den Schalter an -- dauerhaft liegt der Token dann allein
+    // im sicheren Speicher (gespeichertenTokenAuffrischen unten; Audit
+    // Grundgeruest BF-06).
+    await setRefreshToken(neuerRefreshToken, { klartext: false });
     await setToken(token);
     await setUser(entsperrt.user);
 

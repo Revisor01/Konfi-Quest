@@ -7,42 +7,22 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [Unreleased]
+## [2.3.0] - 2026-09-28
+
+iOS-Build 233 · Android versionCode 127
 
 ### Hinzugefügt
 - Eine orange Zahl in den Umschaltern oben zeigt, hinter welchem Reiter etwas
   wartet: Freigaben bei den Challenges (auch im Archiv) für alle, die freigeben
   dürfen, dazu für die Leitung zu verbuchende Events und offene Anträge.
-
-### Geändert
-- In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
-  auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
-  die Zahl am Reiter; das orange Feld mit Uhr bleibt zusätzlich stehen.
-- Ungelesene Mitteilungen zeigt die Glocke in jeder Rolle mit einem blauen
-  Briefumschlag statt mit einer Zahl; eine Zahl an der Glocke steht nur noch
-  für Vorgänge, die aus einer Funklücke gesendet werden.
-- Die Zahl am App-Symbol und die Zahlen am Gemeinde-Umschalter zählen das
-  Postfach nicht mehr mit — ein offener Antrag zählt dort einmal, auch wenn
-  die Mitteilung dazu noch ungelesen ist.
-- Die Rollen heißen überall „Leitung" und „Org-Leitung" statt „Admin",
-  „Hauptamt" oder „Org-Admin" — beim Anlegen und Einladen, in der
-  Rollenauswahl, in den Listen, im Chat und im Handbuch. Beide Rollen können
-  Haupt- wie Ehrenamtliche haben.
-
-### Behoben
-- Eine Einladung in eine weitere Gemeinde nennt in Mitteilung und E-Mail die
-  Rolle mit ihrem Namen statt mit dem technischen Wort „admin".
-- Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und
-  kommt beim Zurückgehen in die Liste nicht wieder, auch wenn Beiträge dort ein
-  Datum in der Zukunft tragen.
-- Die Zahl am App-Symbol zählt keine Chat-Nachrichten mit einem Datum in der
-  Zukunft mehr mit und stimmt damit wieder mit den Reitern überein.
-
-## [2.3.0] - 2026-09-27
-
-iOS-Build 231 · Android versionCode 125
-
-### Hinzugefügt
+- Die Rückfrage vor dem Löschen eines Jahrgangs nennt, wie viele Events und
+  Challenges mitgehen, wie viele dieser Events noch in der Zukunft liegen und
+  was bestehen bleibt.
+- Bei der Beförderung zur Teamer:in hält die App die Konfi-Zeit fest: besuchte
+  Events mit Anwesenheit und Punkten, Aktivitäten, Bonuspunkte, Badges,
+  Stempel und Konfispruch. Die Events stehen in der Konfi-Historie der
+  Teamer:in und in der Detailansicht der Leitung — auch nachdem der alte
+  Jahrgang gelöscht ist.
 - Dateien im Material bleiben nach dem ersten Öffnen auf dem Gerät und öffnen
   sich beim nächsten Mal sofort — auch ohne Netz, dann mit dem zuletzt
   geladenen Stand des Materials. Beim Laden steht in der Zeile, wie weit es
@@ -210,6 +190,38 @@ iOS-Build 231 · Android versionCode 125
   Mitteilung an die Org-Admins der Gemeinde.
 
 ### Geändert
+- Ist ein Event voll, fragt die App nach, bevor die Leitung jemanden über die
+  Grenze nimmt — beim Bestätigen von der Warteliste wie beim Eintragen von
+  Hand, für Konfis und Team getrennt. Nach „Trotzdem bestätigen" oder
+  „Trotzdem eintragen" ist das Event überbucht. Bisher lehnte die App das
+  Bestätigen nur mit „Fehler beim Bestätigen des Teilnehmers" ab, und das
+  Eintragen von Hand überbuchte ohne Hinweis.
+- Beim Löschen eines Jahrgangs gehen die Events und Challenges mit, die nur zu
+  ihm gehören — samt Anmeldungen, Chats und Beiträgen. Gehören sie auch zu
+  einem anderen Jahrgang, fällt nur die Zuordnung weg; Events „Nur Team" und
+  Challenges „Nur das Team" bleiben. Vergebene Punkte bleiben gutgeschrieben,
+  und Teamer:innen und Leitung behalten ihre Stempel aus den gelöschten
+  Challenges.
+- In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
+  auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
+  die Zahl am Reiter; das orange Feld mit Uhr bleibt zusätzlich stehen.
+- Ungelesene Mitteilungen zeigt die Glocke in jeder Rolle mit einem blauen
+  Briefumschlag statt mit einer Zahl; eine Zahl an der Glocke steht nur noch
+  für Vorgänge, die aus einer Funklücke gesendet werden.
+- Die Zahl am App-Symbol und die Zahlen am Gemeinde-Umschalter zählen das
+  Postfach nicht mehr mit — ein offener Antrag zählt dort einmal, auch wenn
+  die Mitteilung dazu noch ungelesen ist.
+- Die Rollen heißen überall „Leitung" und „Org-Leitung" statt „Admin",
+  „Hauptamt" oder „Org-Admin" — beim Anlegen und Einladen, in der
+  Rollenauswahl, in den Listen, im Chat und im Handbuch. Beide Rollen können
+  Haupt- wie Ehrenamtliche haben.
+- Beim Öffnen eines Antrags und einer Konfi lädt die App für die Leitung nur
+  noch die Anträge, um die es geht, statt der ganzen Antragsgeschichte der
+  Gemeinde.
+- Eine Anmeldung gilt nur auf dem Gerät, auf dem sie entstanden ist. Landen
+  die gespeicherten Anmeldedaten auf einem anderen Gerät, etwa mit einer
+  Sicherung auf einem neuen Handy, fragt die App dort einmal nach dem
+  Passwort.
 - Ein Event ohne Jahrgang gilt der ganzen Gemeinde: Alle Konfis sehen es in
   ihrer Event-Liste und können sich anmelden, auch Konfis ohne Jahrgang.
   Bisher sahen Konfis solche Events gar nicht.
@@ -415,6 +427,81 @@ iOS-Build 231 · Android versionCode 125
   unter „Fehler".
 
 ### Behoben
+- In der Detailansicht einer Konfi stehen ihre offenen Anträge wieder als
+  „gemeldet" zwischen den Aktivitäten.
+- In der Detailansicht eines Events steht bei den Teamer:innen kein
+  Gemeinde-Umschalter mehr — wie in allen anderen Detailansichten.
+- Teamer:innen, die den Hinweis auf ihren Rückblick auf der Startseite
+  weggeklickt haben, sehen den nächsten Team-Rückblick dort wieder. Wer ihn
+  bisher weggeklickt hat, sieht den aktuellen noch einmal.
+- Nach dem Zu- oder Absagen einer Einladung in eine weitere Gemeinde
+  verschwindet die Mitteilung dazu aus dem Postfach der eingeladenen Person
+  und zählt nicht mehr als ungelesen; bei einer abgelaufenen Einladung
+  geschieht das in der Nacht danach. Die Nachricht an die einladende Leitung
+  bleibt.
+- Eine abgelaufene Einladung in eine weitere Gemeinde verhindert keine neue
+  mehr: Die Leitung kann dieselbe Person wieder einladen, statt die Meldung
+  „steht bereits eine Einladung offen" zu bekommen.
+- Werden die Team-Rückblicke eines Jahres im Betrieb gelöscht, verschwindet
+  auch ihre Ausgabe aus der Liste der Leitung, und der Rückblick lässt sich
+  danach neu erzeugen, statt als „besteht bereits" gesperrt zu bleiben.
+- Nach dem Löschen eines Jahrgangs bleiben dessen Events nicht mehr als Events
+  der ganzen Gemeinde stehen — auch keine Pflicht-Events ohne Jahrgang, die
+  sich danach nicht mehr speichern ließen.
+- Das Löschen eines Jahrgangs geschieht ganz oder gar nicht; ein Abbruch
+  mittendrin hinterlässt keinen halb gelöschten Jahrgang mehr.
+- Der erste Termin einer Serie lässt sich löschen, auch zusammen mit der
+  ganzen Serie; vorher brach das mit einem Fehler ab.
+- Nach der Beförderung zur Teamer:in geht nicht mehr verloren, bei welchen
+  Events jemand als Konfi dabei war.
+- Eine Einladung in eine weitere Gemeinde nennt in Mitteilung und E-Mail die
+  Rolle mit ihrem Namen statt mit dem technischen Wort „admin".
+- Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und
+  kommt beim Zurückgehen in die Liste nicht wieder, auch wenn Beiträge dort ein
+  Datum in der Zukunft tragen.
+- Die Zahl am App-Symbol zählt keine Chat-Nachrichten mit einem Datum in der
+  Zukunft mehr mit und stimmt damit wieder mit den Reitern überein.
+- Ältere Chat-Nachrichten lassen sich durch Hochscrollen nachladen — bisher
+  endete jeder Chat nach den letzten 100 Nachrichten. Oben steht „Anfang des
+  Chats", wenn der ganze Verlauf geladen ist.
+- Wird eine Chat-Nachricht gelöscht, sehen alle im Raum sofort den Platzhalter
+  „Diese Nachricht wurde gelöscht" — bisher stand sie bei den anderen mit
+  Inhalt da, bis sie den Chat neu öffneten.
+- Bilder, Videos und Dateien aus dem Chat gibt der Server nur noch heraus, wenn
+  die Anmeldung im Kopf der Anfrage steht, nicht mehr in der Adresse. Dort
+  hätte sie in den Zugriffsprotokollen des Servers gestanden. Die App hat sie
+  nie so geschickt; im Chat ändert sich dadurch nichts.
+- Wechselt das Handy zwischen WLAN und Mobilfunk, während die App die
+  Anmeldung im Hintergrund erneuert, hängt die App nicht mehr minutenlang:
+  Nach spätestens 20 Sekunden geht es weiter, und du bleibst angemeldet.
+- Scheitert eine Anfrage, steht im Protokoll des Geräts weder der
+  Anmeldeschlüssel noch der Inhalt, der gesendet werden sollte.
+- Reißt im Funkloch die Verbindung erst beim Senden ab, landen Abmeldungen
+  von Events, gemeldete Aktivitäten, Zu- und Absagen im Team, die Wahl der
+  Bibelübersetzung und bei der Leitung das Bearbeiten von Badges, Leveln,
+  Aktivitäten, Kategorien, Zertifikaten, Jahrgängen und Dashboard-Einstellungen
+  unter „Wird gesendet…" statt in einer Fehlermeldung.
+- Ein Event, dessen Ende vor dem Beginn liegt, lässt sich nicht mehr
+  speichern; das Formular sagt es vor dem Absenden, und die Endzeit lässt sich
+  nicht mehr vor den Beginn stellen.
+- Eine Serie, deren erstes Event erst am nächsten Tag endet, überträgt die
+  Dauer auf jedes Event, statt Events anzulegen, die vor ihrem Beginn enden.
+- Eine Abmeldung von einem Event, die ohne Netz abgegeben und doppelt
+  gesendet wurde, erscheint nicht mehr als „Nicht gesendet", obwohl sie
+  angekommen ist.
+- Wer sich nach einer Abmeldung wieder anmeldet oder nach einer Absage wieder
+  zusagt, stellt sich auf der Warteliste hinten an, statt die Wartenden zu
+  überholen. Liste und Detailansicht zeigen denselben Wartelistenplatz, und
+  wartende Teamer:innen zählen beim Platz einer Konfi nicht mehr mit.
+- Setzt die Leitung jemanden auf die Warteliste zurück, rückt die nächste
+  wartende Person nach, auch wenn die zurückgesetzte Person sich früher
+  angemeldet hatte; vorher blieb der Platz in diesem Fall leer.
+- Stellt die Leitung die Teilnehmerzahl eines Events auf unbegrenzt, rücken
+  alle wartenden Konfis nach und bekommen Bescheid — wie beim Team schon
+  bisher.
+- Eine Teamer-Aktivität lässt sich nur noch Personen zuordnen, die in der
+  eigenen Gemeinde mitarbeiten; über die Schnittstelle ging das bisher auch
+  für Teamer:innen fremder Gemeinden.
 - Bei einer fehlgeschlagenen Anmeldung landet das eingegebene Passwort nicht
   mehr im Protokoll des Geräts. Ebenso bleiben die Schlüssel der Sitzung
   draußen, wenn das Abmelden, die Anmeldung per Face ID oder Fingerabdruck
@@ -963,6 +1050,14 @@ iOS-Build 231 · Android versionCode 125
   24 Stunden statt einer Stunde.
 
 ### Sonstiges
+- Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,
+  reicht die App die Ablehnung weiter, statt es endlos erneut zu versuchen.
+- Die mit Face ID oder Fingerabdruck gesicherte Anmeldung (derzeit ohne
+  Schalter in der App) legt den Anmeldeschlüssel auch nach dem regelmäßigen
+  Erneuern nur noch geschützt ab, nicht zusätzlich offen auf dem Gerät.
+- Ein fehlerhafter Aufruf beim Eintragen von Teilnehmenden von Hand bekommt
+  eine klare Meldung statt eines Datenbankfehlers und legt keine Buchung mit
+  unbekanntem Status mehr an.
 - Mitteilungen, die älter als ein Jahr sind, werden nachts aufgeräumt.
 - Die anonyme Nutzungsmessung unterscheidet unter „Mitmachen“ zwischen Events
   und Aktivitäten und zählt eingereichte Aktivitäten (mit oder ohne Foto).
