@@ -117,6 +117,9 @@ Versionsüberschrift.
   nicht mehr vor den Beginn stellen.
 - Eine Serie, deren erstes Event erst am nächsten Tag endet, überträgt die
   Dauer auf jedes Event, statt Events anzulegen, die vor ihrem Beginn enden.
+- Eine Abmeldung von einem Event, die ohne Netz abgegeben und doppelt
+  gesendet wurde, erscheint nicht mehr als „Nicht gesendet", obwohl sie
+  angekommen ist.
 
 ## [2.3.0] - 2026-09-27
 

@@ -190,6 +190,11 @@ bestehender Aktivitäten nicht zu ändern.
   unterscheiden: Termin existiert → 200 `bereits_abgemeldet`, sonst 404.
   Test „zweite Abmeldung antwortet 200“ ergänzen (die Suite
   `nachrueckenLuecken` hat ihn nur für den Opt-out).
+- **Nachtrag 28.09.2026:** behoben — der Vorab-Check in
+  `DELETE /konfi/events/:id/register` unterscheidet jetzt wie `buchung.js`:
+  Event der Gemeinde vorhanden → 200 `{ message, bereits_abgemeldet: true }`
+  ohne Protokoll, Mitteilung und Nachrücken; sonst 404. Test
+  `backend/tests/routes/abmeldungZweimal.test.js` (7, ohne Fix 6 rot).
 
 ### BF-04: „Teilnehmende von Hand hinzufügen“ überbucht still; ungültiger `status` endet im 500
 - **Schwere:** MITTEL

@@ -532,6 +532,10 @@ automatisch raus — auch wenn du die App zwischendurch geschlossen hast. Klappt
 etwas endgültig nicht, stehen sie unter **„Nicht gesendet"**, die Glocke wird
 rot, und du kannst sie wegwischen.
 
+Kommt eine Abmeldung von einem Event doppelt an — die erste ging durch, nur
+die Antwort darauf ging unterwegs verloren —, gilt auch die zweite als
+gelungen. Sie landet nicht unter „Nicht gesendet".
+
 ### Erkennen, was Netz braucht
 
 - sich zu einem Event **anmelden**

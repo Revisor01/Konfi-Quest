@@ -1038,6 +1038,20 @@ paths:
         JEDEN Admin der Gemeinde, auch an Admins fremder Jahrgaenge, die das
         Event danach mit 403 nicht oeffnen konnten. Versand nach der Antwort;
         Antwortform unveraendert.
+
+
+        BEHOBEN 28.09.2026 — WIEDERHOLTE ABMELDUNG (Audit Punkte/Termine
+        BF-03): Hat die Konfi keine Buchung (mehr), unterscheidet die Route
+        wie DELETE /api/events/{id}/book: Gibt es das Event in der aktiven
+        Gemeinde, antwortet sie 200 {"message": "Abmeldung erfolgreich",
+        "bereits_abgemeldet": true} -- ohne Protokoll, ohne Mitteilung, ohne
+        Nachruecken; sonst 404 "Event nicht gefunden". Vorher kam 400 "Du
+        bist nicht fuer dieses Event angemeldet": Eine im Funkloch
+        abgegebene Abmeldung, deren erste Antwort verloren ging, erschien in
+        der App als fehlgeschlagen, obwohl sie gelungen war. Der Riegel fuer
+        Pflicht-Events (400) greift weiter davor. Nur additiv: die
+        Erfolgsantwort traegt message wie bisher, bereits_abgemeldet kommt
+        dazu.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -1052,8 +1066,8 @@ paths:
               properties:
                 reason: { type: string, description: Optionaler Abmeldegrund }
       responses:
-        "200": { description: Abmeldung erfolgreich }
-        "400": { description: Pflicht-Event, nicht angemeldet oder Frist (2 Tage) verstrichen }
+        "200": { description: "Abmeldung erfolgreich (message); bei keiner Buchung (mehr) zusaetzlich bereits_abgemeldet: true" }
+        "400": { description: "Pflicht-Event, Anwesenheit verbucht oder Frist (2 Tage) verstrichen" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }

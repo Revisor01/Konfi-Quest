@@ -1694,7 +1694,31 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       );
 
       if (!registration) {
-        return res.status(400).json({ error: 'Du bist nicht für dieses Event angemeldet' });
+        // Keine Buchung (mehr) -- zwei sehr verschiedene Faelle (28.09.2026,
+        // Audit Punkte/Termine BF-03), unterschieden wie in
+        // DELETE /events/:id/book (events/buchung.js):
+        //
+        // a) Das Event gibt es in dieser Gemeinde nicht -> 404.
+        //
+        // b) Das Event gibt es, die Buchung ist schon weg. Das Ziel ist
+        //    erreicht. Genau so kommt eine im Funkloch abgegebene Abmeldung
+        //    zurueck, wenn die Antwort auf dem Rueckweg verloren ging und die
+        //    Warteschlange sie erneut vorlegt. Hier stand ein 400 "Du bist
+        //    nicht fuer dieses Event angemeldet" -- die App meldete damit
+        //    einen Fehlschlag fuer eine gelungene Abmeldung. Der Zweig
+        //    `bereits_abgemeldet` weiter unten griff nie, weil diese Stelle
+        //    vorher antwortete.
+        //
+        //    Kein zweites Protokoll, keine zweite Mitteilung, kein
+        //    Nachruecken: Es ist nichts passiert.
+        const { rows: [terminDa] } = await db.query(
+          'SELECT 1 FROM events WHERE id = $1 AND organization_id = $2',
+          [eventId, req.user.organization_id]
+        );
+        if (!terminDa) {
+          return res.status(404).json({ error: 'Event nicht gefunden' });
+        }
+        return res.json({ message: 'Abmeldung erfolgreich', bereits_abgemeldet: true });
       }
 
       // Check if event exists and get event details.
