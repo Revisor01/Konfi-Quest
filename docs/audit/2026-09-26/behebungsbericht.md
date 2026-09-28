@@ -1,6 +1,6 @@
 # Behebungsbericht zum Release-Audit 2.3.0
 
-Stand 27.09.2026, abends (Code-Stand `9e7fa4c8`); Nachtrag 28.09.2026 für 2.4.0 (Abschnitt „Nacht zum 28.09.“). Was seit der Gesamtabnahme vom 26.09. behoben
+Stand 27.09.2026, abends (Code-Stand `9e7fa4c8`); Nachtrag 28.09.2026 (Abschnitt „Nacht zum 28.09.“), ausgeliefert als 2.3.0. Was seit der Gesamtabnahme vom 26.09. behoben
 wurde, was offen bleibt und was bei Simon liegt. Dazu gehört das Audit „Wer bekommt was" vom 27.09.
 (`docs/audit/2026-09-27/wer-bekommt-was.md`) samt seinen Behebungspaketen. Jeder Punkt steht als Commit auf dem Release-Branch;
 die Berichte je Bereich tragen an jedem Befund eine Status-Zeile mit Datum. Die Regeln für jede
@@ -369,7 +369,7 @@ und aus der Prüfung vor dem Merge noch diese Punkte:
   wertete den geschlossenen Pool als Startfehler. Jetzt Exit 0 (`bf92aa63`). Das war der
   „wackelnde" Shutdown-Test.
 
-### Nacht zum 28.09.: Chat, Events, Jahrgänge, Leitung, Sitzung (2.4.0)
+### Nacht zum 28.09.: Chat, Events, Jahrgänge, Leitung, Sitzung
 
 Simons Auftrag vom 27.09. abends: „Chat und 1 und 2 machen" — das Nachladen im Chat und die
 Punkte aus „Für 2.3.x vorgemerkt" (Events und Warteliste, Leitung und Team, Anmeldung und
@@ -378,8 +378,10 @@ vorher entsteht eine dauerhafte Kopie der Konfi-Zeit; Events und Challenges, die
 Jahrgang hängen, gehen mit ihm, bei zwei Jahrgängen fällt nur die Zuordnung weg; Teamer:innen und
 Leitung behalten ihre Stempel; Konfi-Badges bleiben; kein Gemeinde-Umschalter in
 Detailansichten. Fünf Pakete in eigenen Arbeitsbäumen, jede Rückmeldung am Code geprüft, die
-Commits einzeln übernommen. Version 2.4.0 (MINOR: neue Funktionen, additive Parameter und Routen,
-Migrationen 169–171).
+Commits einzeln übernommen. Zuerst als 2.4.0 gesetzt (MINOR: neue Funktionen, additive Parameter
+und Routen, Migrationen 169–171); Simon am 28.09.: „alles noch als 2.3.0, denn wir sind gar nicht mit
+2.3.0 live gegangen" — 2.3.0 war nur als Testbuild in TestFlight und im internen Test. Es bleibt
+deshalb bei 2.3.0 mit den nächsten Build-Nummern.
 
 - **Chat:** Ältere Nachrichten laden beim Hochscrollen nach, je 50, bis „Anfang des Chats"
   (`481206b7`; Screens BF-04; `GET /chat/rooms/:id/messages?before=`, Keyset auf
@@ -426,7 +428,7 @@ Migrationen 169–171).
   Geräte-Kennung, ihre Tokens bleiben ungebunden und gelten wie bisher. Formulare fallen bei
   einem Netzabbruch im Senden in die Warteschlange, wo das gefahrlos wiederholbar ist
   (`e8bcfd34`, `7311e96c`, `656f5610`; Grundgerüst BF-01 Teil 2).
-- **Version** 2.4.0, Android 127, iOS 233 (`8d60fd50`).
+- **Version** 2.3.0 (zuerst 2.4.0, `8d60fd50`; zurückgesetzt nach Simons Entscheidung), Android 127, iOS 233.
 - **Beim Zusammenführen gefunden:** Die Liste „Termine der Konfi-Zeit" verstieß gegen die
   Begriffsregel (`ee1a61c7`); die Tabellen der Migrationen 169 und 170 fehlten in der
   TRUNCATE-Liste der Tests (`0807a1cb`); die neue Meldung „Das Ende liegt vor dem Beginn" fehlte
