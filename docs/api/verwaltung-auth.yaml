@@ -490,6 +490,16 @@ paths:
         weil die Abfrage display_name gar nicht las. Dasselbe Wort nennt die
         Meldung "Einladung angenommen/abgelehnt" an die einladende Person
         (vorher roles.display_name, in bestehenden Gemeinden "Hauptamt").
+
+        ABGELAUFENE EINLADUNG SPERRT NICHT MEHR (BEHOBEN 28.09.2026): Nach 14
+        Tagen bleibt der Status 'offen', nur expires_at liegt zurueck; der
+        Teilindex idx_org_einladungen_offen kennt nur den Status. Vorher lief
+        jede neue Einladung derselben Person in dieselbe Gemeinde deshalb auf
+        409 schon_eingeladen, obwohl GET /einladungen und /einladungen/meine
+        die alte nicht mehr zeigten. Jetzt loescht die Route in derselben
+        Transaktion die abgelaufene offene Einladung genau dieser Person in
+        dieser Gemeinde samt Postfach-Eintrag und legt die neue an.
+        Beantwortete Einladungen (Verlauf) und die anderer Personen bleiben.
       requestBody:
         required: true
         content:
@@ -505,7 +515,7 @@ paths:
         "400": { description: "Rolle gehoert nicht zu dieser Gemeinde; konfi-Rolle (error_code konfi_nicht_moeglich); Selbst-Einladung" }
         "403": { description: "Nicht org_admin, oder Rolle laut Hierarchie nicht vergebbar" }
         "404": { description: "Kein Konto mit dieser Kennung ODER die Person ist ein Konfi -- beides identisch (error_code nicht_gefunden)" }
-        "409": { description: "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen)" }
+        "409": { description: "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen; nur bei einer noch gueltigen offenen Einladung)" }
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]

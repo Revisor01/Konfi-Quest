@@ -188,7 +188,8 @@ Sobald sie zu- oder absagt, verschwindet die Einladung aus ihrem Profil und
 die Mitteilung dazu aus ihrem
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen). Läuft die
 Einladung unbeantwortet ab, verschwindet sie sofort aus dem Profil und die
-Mitteilung in der Nacht danach aus dem Postfach.
+Mitteilung in der Nacht danach aus dem Postfach. Danach kannst du dieselbe
+Person wieder einladen; die neue Einladung gilt wieder 14 Tage.
 
 **Sagt sie zu oder ab, erfährst du es** — als Mitteilung aufs Handy und im
 Postfach: „Einladung angenommen" oder „Einladung abgelehnt", mit Name, Rolle

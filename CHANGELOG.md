@@ -59,6 +59,9 @@ Versionsüberschrift.
   und zählt nicht mehr als ungelesen; bei einer abgelaufenen Einladung
   geschieht das in der Nacht danach. Die Nachricht an die einladende Leitung
   bleibt.
+- Eine abgelaufene Einladung in eine weitere Gemeinde verhindert keine neue
+  mehr: Die Leitung kann dieselbe Person wieder einladen, statt die Meldung
+  „steht bereits eine Einladung offen" zu bekommen.
 - Werden die Team-Rückblicke eines Jahres im Betrieb gelöscht, verschwindet
   auch ihre Ausgabe aus der Liste der Leitung, und der Rückblick lässt sich
   danach neu erzeugen, statt als „besteht bereits" gesperrt zu bleiben.

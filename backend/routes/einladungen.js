@@ -141,16 +141,37 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         const expiresAt = new Date(Date.now() + GUELTIG_MS);
         let einladung;
+        const client = await db.getClient();
         try {
-          const { rows: [neu] } = await db.query(
+          await client.query('BEGIN');
+          // ABGELAUFENE EINLADUNG RAEUMEN (28.09.2026): Nach 14 Tagen bleibt
+          // der Status 'offen', nur expires_at liegt zurueck. Der Teilindex
+          // idx_org_einladungen_offen kennt nur den Status -- ohne diesen
+          // Schritt sperrte die abgelaufene Einladung jede neue fuer dieselbe
+          // Person (409), obwohl Liste und Karte sie laengst nicht mehr
+          // zeigten. Sie geht samt Postfach-Eintrag; beantwortete Einladungen
+          // (Verlauf) und die anderer Personen bleiben.
+          const { rows: abgelaufen } = await client.query(
+            `DELETE FROM org_einladungen
+              WHERE organization_id = $1 AND user_id = $2
+                AND status = 'offen' AND expires_at <= NOW()
+              RETURNING id`,
+            [organizationId, ziel.id]
+          );
+          for (const { id } of abgelaufen) {
+            await loescheMitteilungenZuEinladung(client, id);
+          }
+          const { rows: [neu] } = await client.query(
             `INSERT INTO org_einladungen
                (organization_id, user_id, role_id, eingeladen_von, expires_at)
              VALUES ($1, $2, $3, $4, $5)
              RETURNING id, expires_at`,
             [organizationId, ziel.id, rolle.id, req.user.id, expiresAt]
           );
+          await client.query('COMMIT');
           einladung = neu;
         } catch (err) {
+          await client.query('ROLLBACK').catch(() => {});
           // Der Teilindex idx_org_einladungen_offen laesst nur EINE offene
           // Einladung je Person und Gemeinde zu.
           if (err.code === '23505') {
@@ -160,6 +181,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
             });
           }
           throw err;
+        } finally {
+          client.release();
         }
 
         // Antwortform: das Noetige fuer die Liste, additiv erweiterbar.
