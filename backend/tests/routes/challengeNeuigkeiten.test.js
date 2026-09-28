@@ -203,6 +203,29 @@ describe('Challenge-Neuigkeiten (Konfi-Zaehler wie beim Chat)', () => {
     expect((await zaehler(konfiToken)).total).toBe(1);
   });
 
+  // Zeitstempel aus der Zukunft (Befund 28.09.2026, Demo-Gemeinde): Sie
+  // liegen immer nach dem letzten Oeffnen, die Zahl liesse sich nie abbauen.
+  // Wie im Chat seit dem 03.09.2026 zaehlt nur, was nicht in der Zukunft
+  // liegt -- an allen drei Stellen, die gegen den Lesestand vergleichen.
+  it('Beitraege und Moderation mit Datum in der Zukunft zaehlen nicht', async () => {
+    const id = await challengeAnlegen({ moderated: false });
+    await gelesenVorEinerMinute(id);
+    // Fremder Beitrag, eingereicht "naechsten Monat".
+    await db.query(
+      `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, text_content,
+                                          moderation_status, created_at)
+       VALUES ($1, $2, $3, 'text', 'Zukunft', 'approved', NOW() + interval '1 month')`,
+      [id, USERS.konfi2.id, ORGS.testGemeinde.id]
+    );
+    // Eigener Beitrag, freigegeben bzw. ausgeblendet "naechsten Monat".
+    await beitrag(id, USERS.konfi1.id, { approvedBy: USERS.admin1.id, approvedAt: "NOW() + interval '1 month'" });
+    await beitrag(id, USERS.konfi1.id, { status: 'hidden', hiddenBy: USERS.admin1.id, hiddenAt: "NOW() + interval '1 month'" });
+    expect(await zaehler(konfiToken)).toEqual({ total: 0, byChallenge: {} });
+    // Gegenprobe im selben Aufbau: ein fremder Beitrag von jetzt zaehlt.
+    await beitrag(id, USERS.konfi2.id);
+    expect(await zaehler(konfiToken)).toEqual({ total: 1, byChallenge: { [id]: 1 } });
+  });
+
   it('der eigene Beitrag ohne Moderation (automatisch freigegeben) zaehlt nicht', async () => {
     // approved_by bleibt dort NULL (routes/challenges.js) -- niemand hat
     // gehandelt, also gibt es nichts zu melden.

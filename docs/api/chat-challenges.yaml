@@ -1410,7 +1410,12 @@ paths:
         und Schliessen einer gestarteten Challenge. Migration 168 setzt fuer
         die bestehende Leitung einmalig den Stand auf den Update-Zeitpunkt.
         Seit demselben Tag (Audit BF-07) nimmt der erste Aufruf auch die
-        "neue Challenge" (1) aus dem Team-Zaehler.
+        "neue Challenge" (1) aus dem Team-Zaehler. BEHOBEN 2026-09-28:
+        Beitraege mit einem Zeitstempel in der Zukunft (Demo-Gemeinde) lagen
+        immer nach dem gesetzten Zeitpunkt -- die Zahl kam nach jedem Oeffnen
+        zurueck. challengeUpdates zaehlt seitdem nur, was nicht in der
+        Zukunft liegt (wie der Chat seit 03.09.2026). Route und Antwort
+        unveraendert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Challenge" }
       responses:
@@ -1960,7 +1965,11 @@ paths:
                       fremde sichtbare Galerie-Beitraege; Freigabe oder
                       Ausblenden eigener Beitraege durch andere. Dieselbe
                       Rechnung (utils/challengeNeuigkeiten.js) speist die
-                      App-Icon-Summe in utils/appIconBadge.js.
+                      App-Icon-Summe in utils/appIconBadge.js. Zeitstempel in
+                      der Zukunft zaehlen nicht (BEHOBEN 2026-09-28: vorher
+                      liess sich die Zahl durch Oeffnen nicht abbauen); ebenso
+                      zaehlt die App-Icon-Summe keine Chat-Nachrichten aus der
+                      Zukunft mehr (wie chat.byRoom seit 03.09.2026).
                     properties:
                       total: { type: integer }
                       byChallenge:

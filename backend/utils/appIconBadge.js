@@ -63,6 +63,11 @@ async function chatZaehler(db, personen) {
                 WHERE m.room_id = r.id
                   AND m.deleted_at IS NULL
                   AND m.created_at > COALESCE(crs.last_read_at, '1970-01-01')
+                  -- Nachrichten aus der Zukunft zaehlen nicht -- wie am Reiter
+                  -- (routes/notifications.js) seit dem 03.09.2026. Beim
+                  -- Buendeln des Push-Fan-outs (26.09.2026) ging diese Zeile
+                  -- verloren; das Symbol zeigte dann mehr als die Reiter.
+                  AND m.created_at <= NOW()
                   AND NOT (m.user_id = p.user_id AND m.user_type = p.user_type))
             ), 0)::int AS c
        FROM chat_participants p
