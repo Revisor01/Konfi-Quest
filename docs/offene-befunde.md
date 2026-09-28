@@ -303,6 +303,17 @@ beweist nichts: Zwei identische Bilder waren beide „richtig groß".
 > **Stand 26.09.2026 (Release-Audit):** weiter zutreffend — `linkifyText`
 > erzwingt `https://`, `mediaPreview` kommt aus `URL.createObjectURL`, der
 > globale Limiter steht vor allen Routen (Doku-Bericht, „Alte Befunde").
+>
+> **Stand 28.09.2026 — ALLE GESCHLOSSEN.** Alle 12 offenen Meldungen gegen
+> Release 2.3.0 einzeln am Code geprüft (Datenfluss aus der SARIF-Datei) und in
+> GitHub geschlossen: acht als „False positive", vier als „Used in tests".
+> Neu gegenüber der Tabelle unten: `js/path-injection` in `createApp.js:313` und
+> `utils/photoCrypto.js:114`/`:190` — greift nicht, der Pfad ist `req.file.path`
+> aus multer mit vom Server gewähltem Zwischenablage-Namen (24 Zufallsbytes,
+> `createApp.js:193-196`). Richtigstellung zu CORS: Die Liste hat einen
+> Standardwert (`server.js:56`), sie wird in Produktion nur nicht übergeben, weil
+> `CORS_ORIGINS` dort nicht gesetzt ist (`server.js:402`). Live gemessen: fremde
+> Origin ohne CORS-Header, beide Limiter-Routen mit `ratelimit-policy: 2000;w=900`.
 
 Acht offene Code-Scanning-Meldungen, vor dem Release Build 182 einzeln am Code
 nachgesehen. Keine hält einer Prüfung stand; die Liste steht hier, damit die
