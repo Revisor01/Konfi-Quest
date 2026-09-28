@@ -74,6 +74,7 @@ export const BEKANNTE_FEHLERTEXTE: readonly string[] = [
   'Bitte wähle mindestens eine:n Teilnehmer:in aus',
   'Bonus-Punkte konnten nicht gespeichert werden',
   'Das geht nur mit Internetverbindung. Bitte versuche es später noch einmal.',
+  'Das Ende liegt vor dem Beginn',
   'Das Konfi-Limit muss eine Zahl ab 0 oder leer sein',
   'Das neue Passwort erfüllt nicht alle Anforderungen',
   'Das Passwort darf keine Leerzeichen enthalten',
