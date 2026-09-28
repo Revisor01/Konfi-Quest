@@ -87,26 +87,6 @@ und [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachse
 gestartete Challenges (die Challenge-Liste zählt selbst) und Chat-Nachrichten
 (der Chat zählt selbst).
 
-Eine **Zahl an der Glocke** sagt, wie viel Neues wartet. Sie zählt zwei Dinge
-zusammen: ungelesene Mitteilungen und Vorgänge, die noch aus einer Funklücke
-gesendet werden (siehe [Ohne Internet weiterarbeiten](#ohne-internet-weiterarbeiten)).
-Die Farbe verrät, wie dringend es ist: ruhig bei Mitteilungen, orange, solange
-etwas gesendet wird, **rot**, wenn ein Vorgang endgültig nicht durchkam — das
-ist eine Aufgabe, kein Hinweis.
-
-Die ungelesenen Mitteilungen zählen auch in der **Zahl am App-Symbol** mit:
-Sie ist die Summe aller Zahlen, die die App zeigt — die Reiter und die Glocke,
-bei mehreren Gemeinden die Reiter aller Gemeinden. Jede Mitteilung zählt
-dabei genau einmal. Auf einem Gerät, auf dem noch eine ältere App ohne
-Postfach läuft, fehlen Postfach und Challenge-Neuigkeiten in dieser Zahl —
-dort ließen sie sich nicht als gelesen markieren. Nach dem Aktualisieren der
-App zählen sie mit.
-Ein offener Antrag, zu dem noch „Neuer Antrag eingegangen" ungelesen ist,
-steht deshalb zweimal darin — am Reiter und an der Glocke — und beides muss
-weg, bevor das Symbol auf null geht. „Events warten auf Verbuchung" kommt
-täglich; die neue Mitteilung ersetzt die vom Vortag, solange die noch
-ungelesen ist.
-
 Im Postfach steht Ungelesenes fett und mit einem geschlossenen Umschlag in
 der Ecke. **Antippen**
 markiert die Mitteilung als gelesen und führt an die passende Stelle: zum
@@ -159,6 +139,31 @@ wechselt bei Bedarf zuerst in diese Gemeinde — so, wie es ein angetippter Push
 auch tut. Was in den anderen Gemeinden noch offen ist, zeigt der
 Gemeinde-Umschalter oben links an jedem Eintrag (siehe [Sehen, wo etwas offen
 ist](05-rollen.md#sehen-wo-etwas-offen-ist)).
+
+### Ungelesene Mitteilungen an der Glocke erkennen
+
+Liegt mindestens eine ungelesene Mitteilung im Postfach, trägt die Glocke
+einen **blauen Kreis mit einem Briefumschlag** — in jeder Rolle gleich. Eine
+Zahl steht dort nicht: Der Umschlag sagt nur, dass etwas Neues da ist. Er
+verschwindet, sobald alles gelesen ist.
+
+Eine **Zahl an der Glocke** zeigen nur Vorgänge, die noch aus einer Funklücke
+gesendet werden (siehe [Ohne Internet weiterarbeiten](#ohne-internet-weiterarbeiten)):
+**orange**, solange etwas gesendet wird, **rot**, wenn ein Vorgang endgültig
+nicht durchkam — das ist eine Aufgabe, kein Hinweis. Solange so eine Zahl
+steht, tritt der Umschlag dahinter zurück; er kommt wieder, wenn die
+Warteschlange leer ist. Vorleseprogramme nennen beides, etwa „Ungelesene
+Mitteilungen im Postfach, 1 Vorgang wird gesendet".
+
+Die **Zahl am App-Symbol** zählt das Postfach nicht mit. Sie ist die Summe
+der Reiter, bei mehreren Gemeinden die Reiter aller Gemeinden (siehe
+[Sehen, wo etwas offen ist](05-rollen.md#sehen-wo-etwas-offen-ist)). Ein
+offener Antrag zählt dort also einmal — am Reiter —, auch wenn „Neuer Antrag
+eingegangen" noch ungelesen im Postfach liegt. Auf einem Gerät, auf dem noch
+eine ältere App ohne Postfach läuft, fehlen in dieser Zahl zusätzlich die
+Challenge-Neuigkeiten — dort ließen sie sich nicht als gelesen markieren.
+„Events warten auf Verbuchung" kommt täglich ins Postfach; die neue
+Mitteilung ersetzt die vom Vortag, solange die noch ungelesen ist.
 
 ### Das eigene Profil finden
 
@@ -412,7 +417,8 @@ Neue Konten haben alles an.
 > weiterhin im [Postfach](#mitteilungen-im-postfach-nachlesen) unter der Glocke — mit
 > Markierung für Ungelesenes und dem Sprung an die passende Stelle. Wer die
 > Event-Mitteilungen nicht aufs Handy will, verpasst sie deshalb nicht, sondern
-> liest sie, wenn er die App öffnet. Die Zahl am App-Symbol zählt sie weiter.
+> liest sie, wenn er die App öffnet. Solange sie ungelesen sind, trägt die
+> Glocke den Briefumschlag.
 
 Solange das Gerät der App noch keine Mitteilungen erlaubt, steht in der
 Auswahl ein Hinweis mit einem Knopf, der die Erlaubnis anfordert. Die Auswahl

@@ -511,12 +511,13 @@ class PushService {
    * Welche Zahl ans App-Symbol DIESES Geraets geht (27.09.2026,
    * Kompatibilitaetspruefung vor dem Deploy von 2.3.0).
    *
-   * Die volle Zahl zaehlt seit 24./25.09.2026 auch ungelesene
-   * Postfach-Mitteilungen und Challenge-Neuigkeiten. Die Store-Apps 2.2.x
-   * kennen beides nicht -- kein Postfach, kein mark-read fuer Challenges --
-   * und koennten diese Anteile nie abbauen: Die Zahl am Symbol bliebe
+   * Die volle Zahl zaehlt seit 24.09.2026 auch Challenge-Neuigkeiten. Die
+   * Store-Apps 2.2.x kennen sie nicht -- kein mark-read fuer Challenges --
+   * und koennten diesen Anteil nie abbauen: Die Zahl am Symbol bliebe
    * dauerhaft zu hoch, auf iOS sichtbar, weil dort aps.badge sie direkt
-   * setzt. Diese Geraete melden ihren Token ohne app_version (erst 2.3.0
+   * setzt. (Vom 25. bis 28.09.2026 zaehlte die volle Zahl auch das Postfach,
+   * und die alten Geraete bekamen es hier herausgerechnet; seit 28.09.2026
+   * zaehlt es auf keinem Geraet mehr, utils/appIconBadge.js.) Diese Geraete melden ihren Token ohne app_version (erst 2.3.0
    * schickt sie mit, Migration 156); sie bekommen die Rechnung von 2.2.0.
    *
    * Ist badgeAlteApps null (ausdruecklich uebergebene Zahl, oder die Summe
@@ -538,8 +539,8 @@ class PushService {
    *
    * DIE ZAHL SELBST (27.09.2026, Befund BF-12, Entscheidung F-09): die Summe
    * ueber ALLE Gemeinden der Person, je Gemeinde mit der Rolle und den
-   * Jahrgaengen, die sie DORT hat; jede ungelesene Postfach-Mitteilung genau
-   * einmal. Sie kommt aus utils/appIconBadge.js (appIconSummenAllerGemeinden),
+   * Jahrgaengen, die sie DORT hat; das Postfach zaehlt seit 28.09.2026 nicht
+   * mit. Sie kommt aus utils/appIconBadge.js (appIconSummenAllerGemeinden),
    * derselben Funktion wie im Hintergrund-Lauf und am Gemeinde-Umschalter.
    * Die gerade geoeffnete Gemeinde steht nur im Token des Clients -- das Icon
    * beantwortet "wie viel liegt fuer mich an?" (Befund 28.08.2026).
@@ -612,9 +613,10 @@ class PushService {
       // Postfach ZUERST, vor der Token-Pruefung (25.09.2026): Wer kein
       // Push-Geraet hat oder Push abgeschaltet hat, bekommt unten "No tokens
       // found" -- und soll die Mitteilung trotzdem im Postfach finden. Das
-      // ist der ganze Zweck des Postfachs. Ausserdem VOR der Badge-Rechnung,
-      // damit die neue ungelesene Mitteilung in der Zahl am App-Symbol schon
-      // mitzaehlt (utils/appIconBadge.js), die dieser Push traegt.
+      // ist der ganze Zweck des Postfachs. (Bis 28.09.2026 stand er auch
+      // deshalb VOR der Badge-Rechnung, damit die neue Mitteilung in der
+      // Zahl am App-Symbol mitzaehlte; seitdem zaehlt das Postfach dort
+      // nicht mehr, utils/appIconBadge.js.)
       //
       // Beim Versand an viele hat sendToMultipleUsers den Eintrag schon fuer
       // den ganzen Block geschrieben (vorberechnet gesetzt) -- dann nicht
@@ -756,10 +758,9 @@ class PushService {
     for (let i = 0; i < userIds.length; i += this.EMPFAENGER_BLOCK) {
       const block = userIds.slice(i, i + this.EMPFAENGER_BLOCK);
 
-      // Postfach-Eintrag fuer den ganzen Block in EINER Abfrage, und zwar
-      // VOR der Badge-Rechnung, damit die neue Mitteilung in der Zahl am
-      // App-Symbol mitzaehlt (siehe sendToUser). sendToUser schreibt unten
-      // nicht erneut, weil vorberechnet gesetzt ist.
+      // Postfach-Eintrag fuer den ganzen Block in EINER Abfrage, VOR dem
+      // Versand (siehe sendToUser). sendToUser schreibt unten nicht erneut,
+      // weil vorberechnet gesetzt ist.
       await this.schreibePostfach(db, block, notification)
         .catch((err) => console.error('Postfach-Eintrag fehlgeschlagen:', err.message));
 

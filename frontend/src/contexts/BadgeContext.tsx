@@ -46,12 +46,14 @@ interface BadgeContextType {
   challengeUpdatesTotal: number;
   /**
    * Ungelesene Mitteilungen im Postfach (25.09.2026), ueber alle Gemeinden
-   * des Kontos. Speist die Zahl an der Glocke in der Kopfzeile UND zaehlt in
-   * totalBadgeCount mit -- fuer alle Rollen. Simon: "lass es dagegen
-   * zaehlen, bitte! Das, was an Benachrichtigungen drin ist, wird mit
-   * reingezaehlt, damit es logisch konsistent bleibt." Gemessen vorher am
-   * Geraet: Glocke 23, Reiter 12, Symbol 12 -- die 23 fehlten. Der Server
-   * addiert dieselbe Zahl (utils/appIconBadge.js, Paritaet B2b).
+   * des Kontos. Die Glocke in der Kopfzeile zeigt daraus einen blauen
+   * Briefumschlag, sobald die Zahl groesser 0 ist -- keine Zahl
+   * (shared/PostfachGlocke).
+   *
+   * Seit 28.09.2026 (Simon) zaehlt sie NICHT mehr in totalBadgeCount und
+   * nicht in appSymbolZahl, fuer keine Rolle. Vom 25. bis 28.09.2026 zaehlte
+   * sie mit ("lass es dagegen zaehlen"); diese Entscheidung ist ueberholt.
+   * Der Server rechnet ebenso (utils/appIconBadge.js, Paritaet B2b).
    */
   postfachUngelesen: number;
   /**
@@ -60,14 +62,15 @@ interface BadgeContextType {
    */
   markChallengeAsRead: (challengeId: number) => Promise<void>;
   /**
-   * Das Postfach meldet gelesene Mitteilungen: Die Glocke (und das
-   * App-Symbol) zaehlt SOFORT herunter, ohne auf den Server zu warten.
+   * Das Postfach meldet gelesene Mitteilungen: Die Glocke zaehlt SOFORT
+   * herunter, ohne auf den Server zu warten (der Briefumschlag geht bei 0).
+   * Das App-Symbol bleibt unberuehrt -- das Postfach zaehlt dort nicht.
    * 'alle' setzt auf 0. Zaehlungen, die vorher gestartet waren, werden
    * danach verworfen -- sie trugen den Stand von vor dem Lesen (Befund
    * Simon 27.09.2026). Der Aufrufer laedt nach dem PUT wie bisher neu.
    */
   postfachGelesen: (anzahl: number | 'alle') => void;
-  // Gesamt (Role-abhaengig) -- Reiter und Glocke der AKTIVEN Gemeinde
+  // Gesamt (Role-abhaengig) -- die Reiter der AKTIVEN Gemeinde, ohne Postfach
   totalBadgeCount: number;
   /**
    * Die Zahl, die die App aufs App-Symbol setzt (27.09.2026, Befund BF-12).
@@ -188,17 +191,18 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   // totalBadgeCount: Admin = chat + requests + events + challenges,
   // Teamer = chat + challenges + badges, Konfi = chat + badges + Challenge-Neuigkeiten
-  // -- und fuer ALLE Rollen plus die ungelesenen Postfach-Mitteilungen.
+  // -- das Postfach zaehlt seit 28.09.2026 fuer KEINE Rolle mit (unten).
   // Seit 27.08.2026 zaehlen die ungesehenen Abzeichen mit: Vorher fehlten sie
   // im App-Icon, obwohl sie an einem Reiter als rote Zahl standen -- das Icon
   // stimmte nie mit der Summe der Reiter ueberein (Befund B2a).
   // Seit 24.09.2026 kommen fuer Konfis die Challenge-Neuigkeiten dazu.
-  // Seit 25.09.2026 zaehlt das Postfach mit (Simons Messung am Geraet:
-  // Glocke 23 + Challenges 9 + Chat 3, das Symbol zeigte 12 -- jetzt 35).
-  // Das Symbol ist die Summe ALLER Zahlen, die die App zeigt: Reiter UND
-  // Glocke. Warum auch die Mitteilungen zaehlen, deren Gegenstand ein Reiter
-  // schon zaehlt (offener Antrag + "Neuer Antrag eingegangen"), steht in
-  // backend/utils/postfachArten.js.
+  // POSTFACH (28.09.2026, Simon): Das Postfach bekommt keine Zahl mehr,
+  // sondern an der Glocke einen blauen Briefumschlag, und es wird nicht mehr
+  // auf die Zahl am App-Symbol addiert -- in keinem der drei Zweige. Vom
+  // 25. bis 28.09.2026 stand hier `+ postfachUngelesen` in allen drei
+  // Zweigen (Simons Messung damals: Glocke 23 + Challenges 9 + Chat 3 = 35);
+  // diese Entscheidung ist ueberholt. Das Symbol ist wieder die Summe der
+  // Reiter.
   //
   // DIESELBE ZUSAMMENSETZUNG steht serverseitig in utils/appIconBadge.js
   // (App-Icon-Zahl im Push bei geschlossener App). Wer hier etwas aendert,
@@ -211,13 +215,13 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const totalBadgeCount = useMemo(() => {
     if (isAdmin) {
       return chatUnreadTotal + pendingRequestsCount + pendingEventsCount + pendingChallengesCount
-        + challengeUpdatesTotal + postfachUngelesen;
+        + challengeUpdatesTotal;
     }
     if (isLeadership) {
-      return chatUnreadTotal + pendingChallengesCount + newBadgesCount + challengeUpdatesTotal + postfachUngelesen;
+      return chatUnreadTotal + pendingChallengesCount + newBadgesCount + challengeUpdatesTotal;
     }
-    return chatUnreadTotal + newBadgesCount + challengeUpdatesTotal + postfachUngelesen;
-  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount, challengeUpdatesTotal, postfachUngelesen, isAdmin, isLeadership]);
+    return chatUnreadTotal + newBadgesCount + challengeUpdatesTotal;
+  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount, challengeUpdatesTotal, isAdmin, isLeadership]);
 
   // Zentraler Refresh aller Counts. Nutzt den leichtgewichtigen Zähler-Endpoint
   // (Audit Achse 4, Fund 3) statt der frueheren drei Voll-Fetches (/chat/rooms +
@@ -295,8 +299,9 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       // Genau der Widerspruch Icon <-> Reiter, den B2b ausschliessen sollte.
       setNewBadgesCount(Number(data?.newBadges) || 0);
       // Postfach (25.09.2026): fuer alle Rollen, ueber alle Gemeinden --
-      // Glocke und Anteil am App-Symbol. Aeltere Server ohne das Feld: 0,
-      // keine Zahl an der Glocke, kein Fehler.
+      // nur fuer die Glocke (Briefumschlag bei > 0), seit 28.09.2026 kein
+      // Anteil am App-Symbol. Aeltere Server ohne das Feld: 0, kein
+      // Briefumschlag, kein Fehler.
       setPostfachUngelesen(Number(data?.postfach?.ungelesen) || 0);
 
       if (isLeadership) {
@@ -351,7 +356,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   /**
    * Die Zahl am App-Symbol: bei mehreren Gemeinden die Summe aller (sobald
-   * geladen), sonst Reiter plus Glocke der aktiven Gemeinde.
+   * geladen), sonst die Reiter der aktiven Gemeinde (ohne Postfach, seit
+   * 28.09.2026).
    */
   const appSymbolZahl = mehrereGemeinden && summeAllerGemeinden != null
     ? summeAllerGemeinden
@@ -363,7 +369,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
    * Das Postfach bleibt bewusst stehen: Es zaehlt die Mitteilungen des KONTOS
    * ueber alle Gemeinden (routes/notifications.js zaehlt sie ohne Org-Filter,
    * die Begruendung steht dort). Wer wechselt, hat nicht weniger ungelesene
-   * Mitteilungen -- die Zahl an der Glocke darf nicht kurz auf 0 springen.
+   * Mitteilungen -- der Briefumschlag an der Glocke darf nicht kurz
+   * verschwinden.
    * Aus demselben Grund bleibt summeAllerGemeinden stehen: Sie haengt nicht
    * an der aktiven Gemeinde, das Symbol soll beim Wechsel nicht springen.
    */
@@ -444,7 +451,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       : Math.min(postfachStand.current, Math.max(0, anzahl));
     postfachStand.current -= weg;
     setPostfachUngelesen(n => Math.max(0, n - weg));
-    setSummeAllerGemeinden(summe => (summe == null ? summe : Math.max(0, summe - weg)));
+    // summeAllerGemeinden bleibt stehen: Der Server zaehlt das Postfach dort
+    // seit 28.09.2026 nicht mehr mit (bis dahin wurde hier abgezogen).
   }, []);
 
   // markRoomAsRead: Optimistisch + API Call
@@ -657,7 +665,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   // Reset bei Logout. Hier faellt AUCH das Postfach, anders als beim
   // Gemeindewechsel: Ohne Konto gibt es keine Mitteilungen, die zaehlen
-  // koennten -- die Zahl an der Glocke waere die des abgemeldeten Kontos.
+  // koennten -- der Briefumschlag an der Glocke waere der des abgemeldeten Kontos.
   useEffect(() => {
     if (!user) {
       setzeGemeindeZaehlerZurueck();

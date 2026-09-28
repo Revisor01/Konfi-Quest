@@ -137,8 +137,9 @@ describe('BadgeContext: Postfach-Glocke nimmt beim Lesen ab', () => {
 
     act(() => { captured.current!.postfachGelesen(1); });
     expect(captured.current!.postfachUngelesen).toBe(2);
-    // Das App-Symbol zaehlt mit.
-    expect(captured.current!.totalBadgeCount).toBe(2);
+    // Das App-Symbol zaehlt das Postfach seit 28.09.2026 nicht mit -- es
+    // stand vorher auf 0 und bleibt dort.
+    expect(captured.current!.totalBadgeCount).toBe(0);
   });
 
   it('eine Zaehlung, die VOR dem Antippen gestartet war, bringt die alte Zahl nicht zurueck', async () => {
@@ -171,7 +172,11 @@ describe('BadgeContext: Postfach-Glocke nimmt beim Lesen ab', () => {
     expect(captured.current!.postfachUngelesen).toBe(0);
   });
 
-  it('mehrere Gemeinden: auch die Zahl am App-Symbol (Summe aller Gemeinden) zaehlt sofort herunter', async () => {
+  // Bis 28.09.2026 zog postfachGelesen die gelesenen Mitteilungen auch von
+  // der Summe aller Gemeinden ab (7 -> 6 -> 4), weil der Server sie dort
+  // mitzaehlte. Seitdem steht das Postfach in dieser Summe nicht mehr --
+  // Abziehen wuerde Aufgaben verschlucken, die noch offen sind.
+  it('mehrere Gemeinden: die Zahl am App-Symbol (Summe aller Gemeinden) bleibt beim Lesen stehen', async () => {
     mockOrganizations = [
       { id: 1, name: 'A', role_name: 'org_admin' },
       { id: 2, name: 'B', role_name: 'teamer' },
@@ -186,10 +191,10 @@ describe('BadgeContext: Postfach-Glocke nimmt beim Lesen ab', () => {
 
     act(() => { captured.current!.postfachGelesen(1); });
     expect(captured.current!.postfachUngelesen).toBe(2);
-    expect(captured.current!.appSymbolZahl).toBe(6);
+    expect(captured.current!.appSymbolZahl).toBe(7);
 
     act(() => { captured.current!.postfachGelesen('alle'); });
     expect(captured.current!.postfachUngelesen).toBe(0);
-    expect(captured.current!.appSymbolZahl).toBe(4);
+    expect(captured.current!.appSymbolZahl).toBe(7);
   });
 });

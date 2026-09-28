@@ -72,8 +72,9 @@ const Consumer: React.FC = () => {
 const renderProvider = () => render(<BadgeProvider><Consumer /></BadgeProvider>);
 
 // Aktive Gemeinde 1 (Org-Admin): zwei offene Antraege, zwei ungelesene
-// Mitteilungen (eine aus jeder Gemeinde -- das Postfach zaehlt kontoweit).
-// Reiter + Glocke = 4.
+// Mitteilungen (eine aus jeder Gemeinde -- das Postfach ist kontoweit).
+// Seit 28.09.2026 zaehlt das Postfach nicht mehr mit (die Glocke zeigt einen
+// Briefumschlag): Reiter = 2.
 const AKTIVE_GEMEINDE = {
   data: {
     chat: { total: 0, byRoom: {} },
@@ -86,10 +87,10 @@ const AKTIVE_GEMEINDE = {
     postfach: { ungelesen: 2 },
   },
 };
-// Der Umschalter: Gemeinde 1 = 2 Antraege + 1 Mitteilung, Gemeinde 2 (dort
-// Teamer:in) = 1 Freigabe + 1 Mitteilung. Summe 5 -- die Zahl, die Push und
-// Hintergrund setzen.
-const JE_GEMEINDE = { data: { jeOrganisation: { 1: { offen: 3 }, 2: { offen: 2 } } } };
+// Der Umschalter: Gemeinde 1 = 2 Antraege, Gemeinde 2 (dort Teamer:in) =
+// 1 Freigabe; die Mitteilungen zaehlt der Server seit 28.09.2026 nicht mehr.
+// Summe 3 -- die Zahl, die Push und Hintergrund setzen.
+const JE_GEMEINDE = { data: { jeOrganisation: { 1: { offen: 2 }, 2: { offen: 1 } } } };
 
 const letzteSymbolZahl = () => {
   const aufrufe = badgeSet.mock.calls;
@@ -106,38 +107,38 @@ describe('BadgeContext: Zahl am App-Symbol ueber alle Gemeinden (BF-12)', () => 
       Promise.resolve(pfad === JE_ORGANISATION ? JE_GEMEINDE : AKTIVE_GEMEINDE));
   });
 
-  it('mehrere Gemeinden: das Symbol zeigt die Summe des Umschalters (5), nicht die aktive Gemeinde (4)', async () => {
+  it('mehrere Gemeinden: das Symbol zeigt die Summe des Umschalters (3), nicht die aktive Gemeinde (2)', async () => {
     renderProvider();
-    await waitFor(() => expect(letzteSymbolZahl()).toBe(5));
-    // Reiter und Glocke bleiben bei der aktiven Gemeinde.
-    expect(captured.current!.totalBadgeCount).toBe(4);
+    await waitFor(() => expect(letzteSymbolZahl()).toBe(3));
+    // Die Reiter bleiben bei der aktiven Gemeinde; das Postfach zaehlt nicht.
+    expect(captured.current!.totalBadgeCount).toBe(2);
     expect(captured.current!.pendingRequestsCount).toBe(2);
     expect(captured.current!.postfachUngelesen).toBe(2);
-    expect(captured.current!.appSymbolZahl).toBe(5);
+    expect(captured.current!.appSymbolZahl).toBe(3);
   });
 
   it('mehrere Gemeinden: je Zaehler-Aktualisierung genau eine Abfrage des Umschalters', async () => {
     renderProvider();
-    await waitFor(() => expect(letzteSymbolZahl()).toBe(5));
+    await waitFor(() => expect(letzteSymbolZahl()).toBe(3));
     const vorher = { zaehler: aufrufeVon(BADGE_COUNTS), umschalter: aufrufeVon(JE_ORGANISATION) };
     expect(vorher.umschalter).toBe(vorher.zaehler);
 
-    // Etwas in Gemeinde 2 ist erledigt: der naechste Refresh bringt die neue Summe.
+    // In Gemeinde 2 kommt etwas dazu: der naechste Refresh bringt die neue Summe.
     mockApiGet.mockImplementation((pfad: string) =>
       Promise.resolve(pfad === JE_ORGANISATION
-        ? { data: { jeOrganisation: { 1: { offen: 3 }, 2: { offen: 0 } } } }
+        ? { data: { jeOrganisation: { 1: { offen: 2 }, 2: { offen: 4 } } } }
         : AKTIVE_GEMEINDE));
     await act(async () => { await captured.current!.refreshAllCounts(); });
-    expect(letzteSymbolZahl()).toBe(3);
+    expect(letzteSymbolZahl()).toBe(6);
     expect(aufrufeVon(BADGE_COUNTS)).toBe(vorher.zaehler + 1);
     expect(aufrufeVon(JE_ORGANISATION)).toBe(vorher.umschalter + 1);
   });
 
-  it('eine Gemeinde: das Symbol bleibt die Summe von Reitern und Glocke -- ohne Abfrage des Umschalters', async () => {
+  it('eine Gemeinde: das Symbol bleibt die Summe der Reiter (ohne Postfach) -- ohne Abfrage des Umschalters', async () => {
     mockOrganizations = [ZWEI_GEMEINDEN[0]];
     renderProvider();
-    await waitFor(() => expect(letzteSymbolZahl()).toBe(4));
-    expect(captured.current!.appSymbolZahl).toBe(4);
+    await waitFor(() => expect(letzteSymbolZahl()).toBe(2));
+    expect(captured.current!.appSymbolZahl).toBe(2);
     expect(aufrufeVon(BADGE_COUNTS)).toBeGreaterThan(0);
     expect(aufrufeVon(JE_ORGANISATION)).toBe(0);
   });
@@ -145,7 +146,7 @@ describe('BadgeContext: Zahl am App-Symbol ueber alle Gemeinden (BF-12)', () => 
   it('noch keine Gemeinde-Liste geladen: wie eine Gemeinde, ohne Abfrage des Umschalters', async () => {
     mockOrganizations = [];
     renderProvider();
-    await waitFor(() => expect(letzteSymbolZahl()).toBe(4));
+    await waitFor(() => expect(letzteSymbolZahl()).toBe(2));
     expect(aufrufeVon(JE_ORGANISATION)).toBe(0);
   });
 
@@ -156,15 +157,15 @@ describe('BadgeContext: Zahl am App-Symbol ueber alle Gemeinden (BF-12)', () => 
         : Promise.resolve(AKTIVE_GEMEINDE));
     renderProvider();
     await waitFor(() => expect(captured.current?.pendingRequestsCount).toBe(2));
-    await waitFor(() => expect(letzteSymbolZahl()).toBe(4));
-    expect(captured.current!.appSymbolZahl).toBe(4);
+    await waitFor(() => expect(letzteSymbolZahl()).toBe(2));
+    expect(captured.current!.appSymbolZahl).toBe(2);
   });
 
-  it('nichts offen in allen Gemeinden: das Symbol wird geleert', async () => {
+  it('nichts offen in allen Gemeinden: das Symbol wird geleert -- auch mit ungelesenen Mitteilungen', async () => {
     mockApiGet.mockImplementation((pfad: string) =>
       Promise.resolve(pfad === JE_ORGANISATION
         ? { data: { jeOrganisation: { 1: { offen: 0 }, 2: { offen: 0 } } } }
-        : { data: { ...AKTIVE_GEMEINDE.data, pendingRequests: 0, postfach: { ungelesen: 0 } } }));
+        : { data: { ...AKTIVE_GEMEINDE.data, pendingRequests: 0 } }));
     renderProvider();
     await waitFor(() => expect(captured.current?.appSymbolZahl).toBe(0));
     expect(badgeClear).toHaveBeenCalled();

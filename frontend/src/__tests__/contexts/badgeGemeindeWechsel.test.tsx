@@ -187,9 +187,10 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
     expect(captured.current!.chatUnreadTotal).toBe(0);
     expect(captured.current!.chatUnreadByRoom).toEqual({});
     expect(captured.current!.newBadgesCount).toBe(0);
-    // Das Postfach gehoert dem Konto und bleibt stehen.
+    // Das Postfach gehoert dem Konto und bleibt stehen -- es zaehlt aber
+    // seit 28.09.2026 nicht in totalBadgeCount (Glocke: Briefumschlag).
     expect(captured.current!.postfachUngelesen).toBe(4);
-    expect(captured.current!.totalBadgeCount).toBe(4);
+    expect(captured.current!.totalBadgeCount).toBe(0);
 
     await act(async () => {
       spaet.loesen();
@@ -197,7 +198,7 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
     });
 
     expect(captured.current!.challengeUpdatesTotal).toBe(0);
-    expect(captured.current!.totalBadgeCount).toBe(4);
+    expect(captured.current!.totalBadgeCount).toBe(0);
   });
 
   it('Leitung: Freigaben der alten Gemeinde verschwinden SOFORT beim Wechsel', async () => {
@@ -222,7 +223,7 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
     expect(captured.current!.chatUnreadTotal).toBe(0);
     expect(captured.current!.newBadgesCount).toBe(0);
     expect(captured.current!.postfachUngelesen).toBe(4);
-    expect(captured.current!.totalBadgeCount).toBe(4);
+    expect(captured.current!.totalBadgeCount).toBe(0);
   });
 
   it('Leitung: Antraege und Termine der alten Gemeinde verschwinden SOFORT beim Wechsel', async () => {
@@ -234,8 +235,8 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
       expect(captured.current?.pendingRequestsCount).toBe(7);
     });
     expect(captured.current!.pendingEventsCount).toBe(3);
-    // 1 Chat + 7 Antraege + 3 Termine + 2 Freigaben + 4 Postfach.
-    expect(captured.current!.totalBadgeCount).toBe(17);
+    // 1 Chat + 7 Antraege + 3 Termine + 2 Freigaben; die 4 Postfach zaehlen nicht.
+    expect(captured.current!.totalBadgeCount).toBe(13);
 
     const spaet = anhaltendeAntwort(HENNSTEDT_LEER);
     mockApiGet.mockReturnValue(spaet.versprechen);
@@ -249,7 +250,7 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
     expect(captured.current!.pendingChallengesCount).toBe(0);
     expect(captured.current!.chatUnreadTotal).toBe(0);
     expect(captured.current!.postfachUngelesen).toBe(4);
-    expect(captured.current!.totalBadgeCount).toBe(4);
+    expect(captured.current!.totalBadgeCount).toBe(0);
   });
 
   it('nach dem Wechsel werden die Zaehler der NEUEN Gemeinde geladen', async () => {
@@ -280,8 +281,8 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
     });
     expect(captured.current!.challengeUpdatesByChallenge).toEqual({ 99: 2 });
     expect(captured.current!.chatUnreadByRoom).toEqual({ 42: 1 });
-    // 1 Chat + 2 Neuigkeiten + 4 Postfach.
-    expect(captured.current!.totalBadgeCount).toBe(7);
+    // 1 Chat + 2 Neuigkeiten; die 4 Postfach zaehlen nicht.
+    expect(captured.current!.totalBadgeCount).toBe(3);
   });
 
   it('Wettlauf: die spaet eintreffende Antwort der ALTEN Gemeinde wird verworfen', async () => {
@@ -320,7 +321,7 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
     expect(captured.current!.chatUnreadTotal).toBe(0);
     expect(captured.current!.chatUnreadByRoom).toEqual({});
     expect(captured.current!.newBadgesCount).toBe(0);
-    expect(captured.current!.totalBadgeCount).toBe(4);
+    expect(captured.current!.totalBadgeCount).toBe(0);
   });
 
   it('Zugang zur Zweitgemeinde verloren (403): Zaehler fallen genauso zurueck', async () => {
@@ -346,7 +347,7 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
     expect(captured.current!.pendingChallengesByChallenge).toEqual({});
     expect(captured.current!.chatUnreadTotal).toBe(0);
     expect(captured.current!.postfachUngelesen).toBe(4);
-    expect(captured.current!.totalBadgeCount).toBe(4);
+    expect(captured.current!.totalBadgeCount).toBe(0);
   });
 
   it('Rollenwechsel: Freigaben der Leitungs-Gemeinde bleiben nicht in der Konfi-Gemeinde stehen', async () => {
@@ -380,7 +381,7 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
       expect(captured.current?.pendingChallengesCount).toBe(0);
     });
     expect(captured.current!.pendingChallengesByChallenge).toEqual({});
-    expect(captured.current!.totalBadgeCount).toBe(4);
+    expect(captured.current!.totalBadgeCount).toBe(0);
   });
 
   it('ein Wechsel fragt die Zaehler EINMAL ab, nicht zweimal', async () => {
@@ -428,7 +429,8 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
     await waitFor(() => {
       expect(captured.current?.postfachUngelesen).toBe(4);
     });
-    expect(captured.current!.totalBadgeCount).toBe(18);
+    // 3 Chat + 2 Abzeichen + 9 Neuigkeiten; die 4 Postfach zaehlen nicht.
+    expect(captured.current!.totalBadgeCount).toBe(14);
 
     mockUser = null as unknown as typeof KONFI;
     await act(async () => {

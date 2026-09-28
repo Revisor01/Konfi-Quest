@@ -19,6 +19,10 @@
 // Rolle, dieselben Bestandteile. Aendert sich eine Seite, gehoert die andere
 // nachgezogen; ein Test haelt die Zusammensetzung fest.
 //
+// Das Postfach zaehlt seit dem 28.09.2026 NICHT mehr mit (Simon, siehe
+// die Begruendung weiter unten bei "Postfach"): Die Glocke zeigt fuer
+// ungelesene Mitteilungen einen Briefumschlag statt einer Zahl.
+//
 // Bei mehreren Gemeinden (27.09.2026, Befund BF-12) ist die Zahl am Symbol
 // die Summe ueber alle Gemeinden, je Gemeinde mit der dortigen Rolle:
 // appIconSummenAllerGemeinden. Push, Hintergrund-Lauf und Gemeinde-Umschalter
@@ -230,55 +234,32 @@ async function abzeichenZaehler(db, personen) {
   )).rows;
 }
 
-// Ungelesene Postfach-Mitteilungen (25.09.2026, Simon: "lass es dagegen
+// POSTFACH ZAEHLT NICHT MIT (28.09.2026, Entscheidung Simon als
+// Produktverantwortlicher): Das Postfach bekommt keine Zahl mehr, sondern an
+// der Glocke einen blauen Badge mit Briefumschlag, sobald mindestens eine
+// Mitteilung ungelesen ist -- und es wird nicht mehr auf die Zahl am
+// App-Symbol addiert. Gilt fuer alle drei Rollen und an jeder Stelle, die
+// diese Rechnung liest: Push (sichtbar und still), Hintergrund-Lauf und
+// Gemeinde-Umschalter (GET /notifications/badge-counts/je-organisation).
+// Der Client rechnet dasselbe (BadgeContext.totalBadgeCount);
+// tests/utils/appIconBadgeParitaet.test.js haelt beide Seiten fest.
+//
+// Die Zahl am Symbol ist damit wieder die Summe der Zahlen an den Reitern;
+// eine Mitteilung zu einem offenen Antrag zaehlt den Antrag nicht mehr
+// doppelt.
+//
+// UEBERHOLT ist damit die Entscheidung vom 25.09.2026 ("lass es dagegen
 // zaehlen, bitte! Das, was an Benachrichtigungen drin ist, wird mit
-// reingezaehlt, damit es logisch konsistent bleibt").
+// reingezaehlt, damit es logisch konsistent bleibt"), nach der hier ein
+// postfachZaehler alle ungelesenen Mitteilungen ueber alle Gemeinden in die
+// Summe gab (je Mitteilung einmal, bei ihrer Gemeinde oder der
+// Stamm-Gemeinde). Die Abfrage entfaellt ganz -- eine Abfrage weniger je
+// Zaehlrunde.
 //
-// ALLE ungelesenen, ohne Ausschluss je Art -- auch die, deren Gegenstand
-// die Rolle schon ueber einen Reiter zaehlt (offener Antrag, Freigabe,
-// ungesehenes Abzeichen). Warum, steht ausfuehrlich in
-// utils/postfachArten.js: Gemessen am Geraet fehlten 23 Mitteilungen zu
-// laengst entschiedenen Antraegen; ein Ausschluss je Art haette genau die
-// weiter unterschlagen. Das Symbol ist die Summe der Zahlen, die die App
-// zeigt -- Reiter UND Glocke -- und badge-counts.postfach.ungelesen ist
-// dieselbe Zahl, die der Client addiert.
-//
-// OHNE Org-Join, anders als die Zaehler oben: Das Postfach ist persoenlich
-// und liest ueber alle Gemeinden des Kontos (GET /notifications/postfach).
-// Die Zeilen kommen trotzdem je organization_id, damit
-// appIconSummenJeOrganisation sie der richtigen Gemeinde zuordnen kann; in
-// appIconSummenFuerAlle werden sie ueber alle Gemeinden addiert.
-//
-// Der Index idx_notifications_unread (user_id, read_at) WHERE read_at IS
-// NULL traegt genau diese Abfrage.
-//
-// JEDE PERSON NUR EINMAL IN DIE ABFRAGE (27.09.2026, Befund am Geraet: "Postfach
-// 1 -- im Switcher zeigt er 3"). appIconSummenJeOrganisation bekommt die Person
-// einmal JE GEMEINDE. Weil hier nur ueber user_id/user_type verbunden wird,
-// traf jede Mitteilung jede dieser Zeilen und wurde so oft gezaehlt, wie die
-// Person Gemeinden mit derselben Rollenart hat -- als Leitung in drei
-// Gemeinden dreifach. Mit einer Gemeinde (und in appIconSummenFuerAlle, das je
-// Gemeinde einzeln aufgerufen wird) fiel es nie auf. Die Zuordnung zur
-// Gemeinde uebernimmt weiter n.organization_id.
-//
-// SEIT 27.09.2026 (Befund BF-12) je PERSON einmal, nicht je Person und
-// Rollenart: Wer in A Leitung und in B Teamer:in ist, stand zweimal in der
-// Abfrage, jede Mitteilung kam zweimal zurueck. Welche Zeile zaehlt,
-// entschied bisher der Zufall, welcher Schluessel existierte; Mitteilungen
-// aus einer Gemeinde ausserhalb der Liste fielen ganz heraus. Die Zuordnung
-// macht jetzt summenBerechnen (postfachZiel) -- jede Mitteilung genau einmal.
-async function postfachZaehler(db, personen) {
-  if (personen.length === 0) return [];
-  const ids = [...new Set(personen.map((p) => p.id))];
-  return (await db.query(
-    `SELECT n.user_id, n.organization_id, COUNT(*)::int AS c
-       FROM notifications n
-      WHERE n.user_id = ANY($1::int[])
-        AND n.read_at IS NULL
-      GROUP BY n.user_id, n.organization_id`,
-    [ids]
-  )).rows;
-}
+// UNVERAENDERT: badge-counts liefert postfach.ungelesen weiter mit Form und
+// Wert (Vertrag mit der Store-App 2.3.0, die daraus die Anzeige an der
+// Glocke macht). Was einen Push ausloest, bleibt ebenso; nur die
+// mitgeschickte Zahl enthaelt das Postfach nicht mehr.
 
 /** Zerlegt die Empfaengerliste in die drei parallelen Arrays fuer `unnest`. */
 function spalten(personen) {
@@ -366,9 +347,8 @@ async function appIconSummenJeOrganisation(db, empfaenger) {
  * Gemeinden (27.09.2026, Audit "Wer bekommt was", Befund BF-12, Frage F-09).
  *
  * Summe ueber alle Gemeinden der Person, je Gemeinde mit der Rolle und den
- * Jahrgaengen, die sie DORT hat. Jede ungelesene Postfach-Mitteilung zaehlt
- * genau einmal, bei ihrer Gemeinde (sonst bei der Stamm-Gemeinde, siehe
- * postfachZiel in summenBerechnen).
+ * Jahrgaengen, die sie DORT hat. Postfach-Mitteilungen zaehlen seit dem
+ * 28.09.2026 nicht mit (Begruendung oben bei "POSTFACH ZAEHLT NICHT MIT").
  *
  * VORHER gab es drei Rechnungen fuer diese Zahl, und sie liefen auseinander:
  * Push und Hintergrund-Lauf rechneten jede Gemeinde mit der Rolle am
@@ -432,7 +412,7 @@ async function appIconSummenAllerGemeinden(db, userIds) {
       summeAlteApps += alteApps.get(k) || 0;
     }
     // summeAlteApps: die Zahl fuer Geraete der Store-Apps 2.2.x (ohne
-    // Postfach und Challenge-Neuigkeiten, siehe summenBerechnen).
+    // Challenge-Neuigkeiten, siehe summenBerechnen).
     ergebnis.set(userId, { summe, summeAlteApps, jeOrganisation, stamm_organization_id });
   }
   return ergebnis;
@@ -472,7 +452,7 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   // Team seit 27.09.2026 mit der schlankeren aus challengeNeuigkeiten.js.
   const konfis = empfaenger.filter((p) => p.type === 'konfi');
 
-  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, postfach, leitungsNeuigkeiten] = await Promise.all([
+  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, leitungsNeuigkeiten] = await Promise.all([
     chatZaehler(db, empfaenger),
     antragZaehlerProOrg(db, leitungsOrgs),
     terminZaehlerProOrg(db, leitungsOrgs),
@@ -486,8 +466,7 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
     // Dieselbe SQL-Fassung wie badge-counts.challengeUpdates -- die Zeilen
     // kommen je Challenge, hier werden sie je Person aufsummiert.
     challengeNeuigkeitenJeChallenge(db, konfis),
-    // Postfach fuer ALLE Rollen, alle ungelesenen.
-    postfachZaehler(db, empfaenger),
+    // Kein Postfach mehr (28.09.2026, siehe "POSTFACH ZAEHLT NICHT MIT").
     // Challenge-Neuigkeiten fuer Leitung und Team (27.09.2026) -- dieselbe
     // SQL-Fassung wie badge-counts.challengeUpdates fuer diese Rollen.
     challengeNeuigkeitenLeitungJeChallenge(db, [...leitung, ...teamer])
@@ -495,11 +474,12 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
 
   // Zwei Summen in einem Durchgang (27.09.2026, Kompatibilitaet mit den
   // Store-Apps 2.2.x): `summen` ist die volle Zahl, `alteApps` die Rechnung
-  // von 2.2.0 -- OHNE Postfach und OHNE Challenge-Neuigkeiten. Beides kam
-  // nach 2.2.0 (18.09.2026) dazu, und die alte App kann es nicht abbauen:
-  // Sie hat kein Postfach und ruft nie mark-read fuer Challenges auf. Welche
-  // Summe ein Geraet bekommt, entscheidet der Versand je Push-Token
-  // (pushService.badgeFuerGeraet). Keine zusaetzliche Abfrage.
+  // von 2.2.0 -- OHNE Challenge-Neuigkeiten. Sie kamen nach 2.2.0
+  // (18.09.2026) dazu, und die alte App kann sie nicht abbauen: Sie ruft nie
+  // mark-read fuer Challenges auf. Welche Summe ein Geraet bekommt,
+  // entscheidet der Versand je Push-Token (pushService.badgeFuerGeraet).
+  // Keine zusaetzliche Abfrage. (Bis 28.09.2026 fehlte hier auch das
+  // Postfach; seitdem fehlt es in beiden Summen.)
   const alteApps = new Map([...summen.keys()].map((k) => [k, 0]));
   const addiere = (userId, userType, orgId, wert, auchAlteApps = true) => {
     const k = schluesselVon(userId, userType, orgId);
@@ -507,34 +487,12 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
     if (auchAlteApps && alteApps.has(k)) alteApps.set(k, alteApps.get(k) + (wert || 0));
   };
 
-  // Wohin eine Postfach-Zeile gehoert (27.09.2026, Befund BF-12): zum Eintrag
-  // der Person fuer die Gemeinde der Mitteilung. Gibt es den nicht -- die
-  // Person gehoert der Gemeinde nicht (mehr) an, oder sie ist gesperrt --,
-  // zum ERSTEN Eintrag der Person; bei appIconSummenAllerGemeinden ist das
-  // die Stamm-Gemeinde (ladeMitgliedschaftenVieler sortiert sie nach vorn).
-  // Das Postfach zeigt solche Mitteilungen an der Glocke; sie zaehlen am
-  // Symbol deshalb mit, genau einmal, und stehen im Gemeinde-Umschalter dort,
-  // wo die Person zuhause ist -- dessen Summe bleibt so die Zahl am Symbol.
-  const eintragJeGemeinde = new Map();
-  const ersterEintrag = new Map();
-  for (const p of empfaenger) {
-    const k = `${p.id}_${p.organization_id}`;
-    if (!eintragJeGemeinde.has(k)) eintragJeGemeinde.set(k, p);
-    if (!ersterEintrag.has(String(p.id))) ersterEintrag.set(String(p.id), p);
-  }
-  const postfachZiel = (userId, orgId) =>
-    eintragJeGemeinde.get(`${userId}_${orgId}`) || ersterEintrag.get(String(userId));
-
   for (const r of chat) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneFreigaben) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneAntraege) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of gebundeneTermine) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   for (const r of abzeichen) addiere(r.user_id, r.user_type, r.organization_id, r.c);
-  // Postfach und Challenge-Neuigkeiten nur in die volle Summe (siehe oben).
-  for (const r of postfach) {
-    const ziel = postfachZiel(r.user_id, r.organization_id);
-    if (ziel) addiere(ziel.id, ziel.type, ziel.organization_id, r.c, false);
-  }
+  // Challenge-Neuigkeiten nur in die volle Summe (siehe oben).
   for (const r of neuigkeiten) {
     addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c, false);
   }
@@ -569,10 +527,9 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
  *              (seit 24.09.2026: neue Challenge, fremde Galerie-Beitraege,
  *              Moderation eigener Beitraege -- je seit dem letzten Oeffnen,
  *              nur laufende Challenges des eigenen Jahrgangs)
- *   alle       + ungelesene Postfach-Mitteilungen (seit 25.09.2026), ueber
- *              alle Gemeinden -- dieselbe Zahl wie
- *              badge-counts.postfach.ungelesen (Begruendung in
- *              utils/postfachArten.js)
+ *   Postfach   zaehlt fuer KEINE Rolle (seit 28.09.2026; vom 25. bis
+ *              28.09.2026 zaehlte es fuer alle -- siehe "POSTFACH ZAEHLT
+ *              NICHT MIT" oben)
  *
  * Fuer super_admin gilt der Konfi-Zweig (org-fremde Rolle, hat weder
  * Antraege noch Abzeichen noch Challenge-Neuigkeiten) -- der Client

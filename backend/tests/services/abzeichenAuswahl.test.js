@@ -234,7 +234,10 @@ describe('Abzeichen-Lauf: nur veraenderte Personen pruefen', () => {
     // 3 + 2 x 11 + 7 = 32. Die Zahl haengt damit auch nicht mehr an der Zahl
     // der Gemeinden -- gemessen mit 40 weiteren Konfis und einer dritten
     // Gemeinde: vorher 32 / 32 / 38, jetzt 21 / 21 / 21.
-    expect(z.stand()).toBe(21);
+    // 28.09.2026: 21 -> 20. Das Postfach zaehlt am App-Symbol nicht mehr mit
+    // (Entscheidung Simon); die Abfrage postfachZaehler entfaellt aus der
+    // Zaehlrunde (jetzt zehn Bausteine): 1 + 2 + 10 + 7 = 20.
+    expect(z.stand()).toBe(20);
   });
 
   it('wer eine neue Aktivitaet bekommt, wird geprueft — und sonst niemand', async () => {

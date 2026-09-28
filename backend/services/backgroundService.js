@@ -66,8 +66,9 @@ class BackgroundService {
   static letzterZaehler = new Map();
   // Dasselbe fuer die Zahl der Store-Apps 2.2.x (27.09.2026, siehe
   // PushService.badgeFuerGeraet). Gesendet wird, wenn sich EINE der beiden
-  // Zahlen aendert -- liest jemand nur Postfach-Mitteilungen, sinkt die volle
-  // Zahl, die alte bleibt, und das neue Geraet muss es trotzdem erfahren.
+  // Zahlen aendert -- oeffnet jemand nur eine Challenge mit Neuigkeiten,
+  // sinkt die volle Zahl, die alte bleibt, und das neue Geraet muss es
+  // trotzdem erfahren.
   static letzterZaehlerAlteApps = new Map();
   // Ist der Merker seit dem Prozessstart einmal gefuellt worden? Der erste
   // Lauf nach einem Neustart fuellt ihn nur und sendet NICHTS (Audit
@@ -308,7 +309,8 @@ class BackgroundService {
       // Die Zahl kommt aus derselben Funktion wie im Push und am
       // Gemeinde-Umschalter (utils/appIconBadge.js, appIconSummenAllerGemeinden)
       // -- Summe ueber alle Gemeinden der Person, je Gemeinde mit der Rolle und
-      // den Jahrgaengen, die sie DORT hat, jede Postfach-Mitteilung einmal.
+      // den Jahrgaengen, die sie DORT hat; das Postfach zaehlt seit
+      // 28.09.2026 nicht mit.
       //
       // Vorher stand hier eine eigene Fassung: je Gemeinde ein Eintrag mit der
       // Rolle am Nutzerkonto (u.role_name) und eine Zaehlrunde je Gemeinde.

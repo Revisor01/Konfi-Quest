@@ -98,7 +98,17 @@ const NICHT_IM_POSTFACH = Object.freeze({
 const ERSETZENDE_ARTEN = new Set(['events_pending_approval']);
 
 /**
- * WARUM JEDE UNGELESENE MITTEILUNG AM APP-SYMBOL ZAEHLT (25.09.2026)
+ * UEBERHOLT SEIT 28.09.2026: Das Postfach zaehlt am App-Symbol NICHT mehr
+ * mit. Simon (Produktverantwortung) hat entschieden, dass die Glocke fuer
+ * ungelesene Mitteilungen einen blauen Briefumschlag statt einer Zahl zeigt
+ * und das Postfach nicht mehr auf die Zahl am Symbol addiert wird -- fuer
+ * alle Rollen, auf Server und Client. Die neue Regel steht in
+ * utils/appIconBadge.js ("POSTFACH ZAEHLT NICHT MIT"). Der Text darunter
+ * bleibt als Herleitung der frueheren Entscheidung stehen; die Tabelle der
+ * Ueberlappungen je Art gilt weiter und erklaert, warum Reiter und Postfach
+ * oft dasselbe melden.
+ *
+ * FRUEHER: WARUM JEDE UNGELESENE MITTEILUNG AM APP-SYMBOL ZAEHLTE (25.09.2026)
  *
  * Simon: "Ja, doch lass es dagegen zaehlen, bitte! Das, was an
  * Benachrichtigungen drin ist, wird mit reingezaehlt, damit es logisch
@@ -137,10 +147,12 @@ const ERSETZENDE_ARTEN = new Set(['events_pending_approval']);
  * Ueberlappung herausrechnet, stuende dagegen unter der Summe der sichtbaren
  * Zahlen -- und waere die naechste Messung, die nicht aufgeht.
  *
- * Server (utils/appIconBadge.js, postfachZaehler) und Client
- * (BadgeContext.totalBadgeCount, postfachUngelesen) addieren deshalb
- * DIESELBE Zahl: badge-counts.postfach.ungelesen. Der Paritaetstest
- * (tests/utils/appIconBadgeParitaet.test.js) haelt Simons Fall mit 35 fest.
+ * Server (utils/appIconBadge.js, damals postfachZaehler) und Client
+ * (BadgeContext.totalBadgeCount, postfachUngelesen) addierten deshalb
+ * DIESELBE Zahl: badge-counts.postfach.ungelesen. Seit 28.09.2026 addiert
+ * keine Seite sie mehr; der Paritaetstest
+ * (tests/utils/appIconBadgeParitaet.test.js) haelt Simons Fall jetzt mit 12
+ * fest (Reiter ohne Glocke).
  */
 
 /** organization_id aus dem Push-Payload (dort String) als Zahl, sonst null. */

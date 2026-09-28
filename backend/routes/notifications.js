@@ -265,12 +265,12 @@ module.exports = (db, verifyTokenRBAC) => {
       // Glocke und Liste nie auseinanderlaufen. Bewusst OHNE Org-Filter (siehe
       // Begruendung an der Postfach-Route).
       //
-      // Diese Zahl geht seit dem 25.09.2026 in die Zahl am App-Symbol ein --
-      // auf dem Server (utils/appIconBadge.js, postfachZaehler) wie im Client
-      // (BadgeContext.totalBadgeCount). Simon: "lass es dagegen zaehlen".
-      // Gemessen vorher: Glocke 23, Reiter 12, Symbol 12. Jetzt 35. Warum
-      // ALLE ungelesenen zaehlen und nicht nur die Arten ohne eigenen Reiter,
-      // steht in utils/postfachArten.js.
+      // Seit 28.09.2026 (Simon) geht diese Zahl NICHT mehr in die Zahl am
+      // App-Symbol ein -- weder auf dem Server (utils/appIconBadge.js) noch
+      // im Client (BadgeContext.totalBadgeCount). Die App zeigt an der Glocke
+      // nur noch "> 0 -> Briefumschlag". Vom 25. bis 28.09.2026 zaehlte sie
+      // mit ("lass es dagegen zaehlen"); diese Entscheidung ist ueberholt.
+      // Feld, Form und Wert bleiben: Die Store-App 2.3.0 liest es.
       const postfachPromise = db.query(
         `SELECT COUNT(*)::int AS c FROM notifications WHERE user_id = $1 AND read_at IS NULL`,
         [userId]
@@ -328,10 +328,11 @@ module.exports = (db, verifyTokenRBAC) => {
         // NEU 25.09.2026, additiv: dieselbe Summe wie pendingChallenges,
         // dazu die Aufschluesselung je Challenge fuer den Listeneintrag.
         challengeApprovals: { total: freigabenTotal, byChallenge: freigabenByChallenge },
-        // NEU 25.09.2026, additiv: ungelesene Postfach-Mitteilungen -- die
-        // Zahl an der Glocke UND der Anteil des Postfachs an der Zahl am
-        // App-Symbol. Nur ein Objekt, damit spaeter Aufschluesselungen
-        // dazukommen koennen, ohne die Form zu aendern.
+        // NEU 25.09.2026, additiv: ungelesene Postfach-Mitteilungen. Die
+        // App zeigt daraus an der Glocke einen Briefumschlag (> 0); in die
+        // Zahl am App-Symbol geht sie seit 28.09.2026 nicht mehr ein. Nur
+        // ein Objekt, damit spaeter Aufschluesselungen dazukommen koennen,
+        // ohne die Form zu aendern.
         postfach: { ungelesen: postfachRes.rows[0]?.c || 0 }
       });
     } catch (err) {
@@ -370,9 +371,9 @@ module.exports = (db, verifyTokenRBAC) => {
   // EINE RECHNUNG MIT DEM APP-SYMBOL (27.09.2026, Befund BF-12): Push und
   // Hintergrund-Lauf rechnen das Symbol seither aus derselben Funktion
   // (appIconSummenAllerGemeinden); vorher nahmen sie fuer jede Gemeinde die
-  // Rolle am Nutzerkonto. Ungelesene Mitteilungen aus einer Gemeinde, der
-  // die Person nicht (mehr) angehoert, stehen bei der Stamm-Gemeinde -- die
-  // Glocke zeigt sie, also zaehlen sie am Symbol, genau einmal.
+  // Rolle am Nutzerkonto. Ungelesene Postfach-Mitteilungen zaehlen seit
+  // 28.09.2026 in keiner Gemeinde mit -- wie am Symbol (utils/appIconBadge.js).
+  // Die Form der Antwort bleibt unveraendert.
   //
   // Sicherheitsgrenze: ausschliesslich req.user.id aus dem Token. Es gibt
   // keinen Parameter, mit dem sich eine fremde Gemeinde erfragen liesse; wer
