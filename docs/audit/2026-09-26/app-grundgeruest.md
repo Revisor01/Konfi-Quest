@@ -422,6 +422,7 @@ so nicht haltbar.
 
 - **Schwere:** MITTEL
 - **Status:** offen 27.09.2026 — am Code bestätigt (Prüfung vor dem Merge): kein `_retry`-Merker, der Originalrequest geht nach dem Refresh erneut hinaus (heute `api.ts:322` für Wartende, `:339` nach eigenem Refresh). Ein auslösender Fall im Backend ist weiter nicht bekannt. Für 2.3.x vorgemerkt.
+- **Nachtrag 28.09.2026:** behoben — Die nach einem Refresh wiederholte Anfrage trägt `_retry` (eigener Refresh und wartende Anfragen); ein zweites 401 wird durchgereicht, ohne erneuten Refresh und ohne `clearAuth` (die Sitzung wurde gerade erneuert). Test `services/api401Schleife.test.ts` (5, echte api-Instanz, zählender Adapter, Notbremse nur im Test): vorher **8 Versuche, 7 Refreshs**, nachher 2 Versuche und 1 Refresh; zwei gleichzeitige Anfragen je 2 Versuche bei 1 Refresh; Sitzung bleibt; erlaubt: Wiederholung mit neuem Token kommt an, eine neue Anfrage darf wieder refreshen. Vor dem Fix 3 rot. Gegenprobe: Prüfung des Merkers entfernt → 3 rot; nur der Merker im Warte-Pfad entfernt → 1 rot.
 - **Fundstelle:** `frontend/src/services/api.ts:253-261` (`api(originalRequest)`
   ohne `_retry`-Merker).
 - **Kennzeichnung:** reproduziert (Mechanismus) — `audit-401-schleife.test.ts`:

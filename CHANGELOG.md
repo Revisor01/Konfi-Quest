@@ -93,6 +93,8 @@ Versionsüberschrift.
   nie so geschickt; im Chat ändert sich dadurch nichts.
 
 ### Sonstiges
+- Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,
+  reicht die App die Ablehnung weiter, statt es endlos erneut zu versuchen.
 - Die mit Face ID oder Fingerabdruck gesicherte Anmeldung (derzeit ohne
   Schalter in der App) legt den Anmeldeschlüssel auch nach dem regelmäßigen
   Erneuern nur noch geschützt ab, nicht zusätzlich offen auf dem Gerät.

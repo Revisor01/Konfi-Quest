@@ -308,6 +308,16 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      // Schon einmal nach einem Refresh wiederholt und wieder 401? Dann liegt
+      // es nicht am Token -- durchreichen (Audit Grundgeruest BF-09). Ohne
+      // diesen Merker drehte der Client im Kreis, rotierte in jeder Runde den
+      // Refresh-Token und kam nie zurueck (gemessen: 8 Versuche, 7 Refreshs
+      // bis zur Notbremse des Tests). Die Sitzung bleibt bestehen: Sie wurde
+      // gerade erst erneuert.
+      if (originalRequest?._retry) {
+        return Promise.reject(error);
+      }
+
       // Offline: Token behalten, gecachte Daten nutzen
       if (!networkMonitor.isOnline) {
         console.warn('401 während Offline — Token wird behalten');
@@ -333,6 +343,7 @@ api.interceptors.response.use(
           addRefreshSubscriber(
             (newToken: string) => {
               originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              originalRequest._retry = true;
               resolve(api(originalRequest));
             },
             (err) => reject(err)
@@ -348,8 +359,9 @@ api.interceptors.response.use(
         isRefreshing = false;
         onTokenRefreshed(newToken);
 
-        // Original-Request mit neuem Token wiederholen
+        // Original-Request mit neuem Token wiederholen -- genau einmal (_retry).
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        originalRequest._retry = true;
         return api(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
