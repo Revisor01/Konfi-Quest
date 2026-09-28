@@ -1,6 +1,6 @@
 # Behebungsbericht zum Release-Audit 2.3.0
 
-Stand 27.09.2026, abends (Code-Stand `9e7fa4c8`). Was seit der Gesamtabnahme vom 26.09. behoben
+Stand 27.09.2026, abends (Code-Stand `9e7fa4c8`); Nachtrag 28.09.2026 für 2.4.0 (Abschnitt „Nacht zum 28.09.“). Was seit der Gesamtabnahme vom 26.09. behoben
 wurde, was offen bleibt und was bei Simon liegt. Dazu gehört das Audit „Wer bekommt was" vom 27.09.
 (`docs/audit/2026-09-27/wer-bekommt-was.md`) samt seinen Behebungspaketen. Jeder Punkt steht als Commit auf dem Release-Branch;
 die Berichte je Bereich tragen an jedem Befund eine Status-Zeile mit Datum. Die Regeln für jede
@@ -422,6 +422,13 @@ Migrationen 169–171).
   einem Netzabbruch im Senden in die Warteschlange, wo das gefahrlos wiederholbar ist
   (`e8bcfd34`, `7311e96c`, `656f5610`; Grundgerüst BF-01 Teil 2).
 - **Version** 2.4.0, Android 127, iOS 233 (`8d60fd50`).
+- **Beim Zusammenführen gefunden:** Die Liste „Termine der Konfi-Zeit" verstieß gegen die
+  Begriffsregel (`ee1a61c7`); die Tabellen der Migrationen 169 und 170 fehlten in der
+  TRUNCATE-Liste der Tests (`0807a1cb`); die neue Meldung „Das Ende liegt vor dem Beginn" fehlte
+  in der Positivliste der Fehlermessung (`c3ce8c87`). Jeder Fund fiel in der vollen Suite auf,
+  nicht in den Läufen der Pakete.
+- **Tests am Ende:** Backend 212 Dateien / 4.232 Tests, Frontend 351 / 4.748, alle grün;
+  Typprüfung und Lint ohne Fehler, `version:pruefen` gleich, Doku-Generatoren ohne Abweichung.
 
 ## Was offen bleibt
 
