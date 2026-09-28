@@ -369,6 +369,60 @@ und aus der Prüfung vor dem Merge noch diese Punkte:
   wertete den geschlossenen Pool als Startfehler. Jetzt Exit 0 (`bf92aa63`). Das war der
   „wackelnde" Shutdown-Test.
 
+### Nacht zum 28.09.: Chat, Events, Jahrgänge, Leitung, Sitzung (2.4.0)
+
+Simons Auftrag vom 27.09. abends: „Chat und 1 und 2 machen" — das Nachladen im Chat und die
+Punkte aus „Für 2.3.x vorgemerkt" (Events und Warteliste, Leitung und Team, Anmeldung und
+Sitzung). Dazu seine Entscheidungen: Überbuchen ist gewollt; die Beförderung löscht weiter, aber
+vorher entsteht eine dauerhafte Kopie der Konfi-Zeit; Events und Challenges, die nur an einem
+Jahrgang hängen, gehen mit ihm, bei zwei Jahrgängen fällt nur die Zuordnung weg; Teamer:innen und
+Leitung behalten ihre Stempel; Konfi-Badges bleiben; kein Gemeinde-Umschalter in
+Detailansichten. Fünf Pakete in eigenen Arbeitsbäumen, jede Rückmeldung am Code geprüft, die
+Commits einzeln übernommen. Version 2.4.0 (MINOR: neue Funktionen, additive Parameter und Routen,
+Migrationen 169–171).
+
+- **Chat:** Ältere Nachrichten laden beim Hochscrollen nach, je 50, bis „Anfang des Chats"
+  (`481206b7`; Screens BF-04; `GET /chat/rooms/:id/messages?before=`, Keyset auf
+  `created_at, id`). Die Datei-Route nimmt das Token nur noch aus dem Kopf der Anfrage
+  (`2d37c660`; Chat BF-09) — keine ausgelieferte App (1.5.3 bis 2.3.0) hat es je in der Adresse
+  geschickt. Gelöschte Nachrichten stehen bei allen sofort als gelöscht da (`9b0432ac`).
+- **Leitung und Team:** Ein Antrag lädt einzeln statt der ganzen Antragsgeschichte, die
+  Detailansicht einer Konfi nur ihre offenen (`986d3262`; Leitung BF-04; dabei fiel auf, dass
+  die Konfi-Ansicht mit `konfi_id` statt `user_id` filterte). Kein Gemeinde-Umschalter in der
+  Event-Detailansicht der Teamer:innen; der Test prüft die Regel jetzt über alle Kopfzeilen
+  (`d738374b`; Screens BF-05). Der Rückblick-Hinweis ist je Ausgabe wegklickbar (`d925ccac`;
+  Screens BF-07). `DELETE /wrapped/teamer` nimmt die Ausgabe mit (`7a0e9339`; Chat BF-05).
+  Die Einladungs-Mitteilung geht nach Zusage, Absage und Ablauf aus dem Postfach (`03dae260`);
+  eine abgelaufene Einladung sperrt keine neue mehr — vorher 409 „steht bereits eine Einladung
+  offen", obwohl niemand sie mehr sah (`a8f918cc`, Befund beim Prüfen des Pakets).
+- **Jahrgang löschen und Beförderung:** Der Jahrgang geht in einer Transaktion und nimmt Events
+  und Challenges mit, die nur an ihm hängen; „Nur Team" und „Nur das Team" bleiben, vergebene
+  Punkte bleiben, die Stempel des Teams werden bewahrt (`bewahrte_stempel`, Migration 169);
+  eine Vorschau nennt vorher die Zahlen (`42cc211c`; Punkte/Termine BF-08). Nebenbei: Der erste
+  Termin einer Serie ließ sich nicht löschen (500). Die Beförderung legt vor dem Löschen der
+  Buchungen eine Kopie der Konfi-Zeit an (`konfi_historie`, Migration 170), sichtbar in der
+  Konfi-Historie und der Detailansicht der Leitung als „Events der Konfi-Zeit" (`c196c9a5`,
+  `ee1a61c7`; BF-09).
+- **Events und Warteliste:** Ende vor Beginn → 400, Serien übernehmen die Dauer (`ee01fc88`;
+  Leitung BF-03). Die zweite Abmeldung antwortet 200 (`5d0b8f7b`; Punkte BF-03). `status` beim
+  Eintragen von Hand wird geprüft (vorher 500 oder Buchungen mit beliebigem Status),
+  Überbuchen bleibt erlaubt (`bdbccaee`; BF-04, Simon 28.09.). Eine Reihenfolge für die
+  Warteliste: Wer sich neu anstellt, steht hinten, Liste und Detail zeigen denselben Platz;
+  dabei fiel auf, dass das Herabstufen durch die Leitung den Platz leer ließ (`95083e1f`; BF-05,
+  BF-11). Konfi-Plätze auf unbegrenzt lassen alle Wartenden nachrücken (`b70ae325`; BF-06).
+  Teamer-Aktivitäten nur an Personen der eigenen Gemeinde (`39c915d0`; BF-07).
+- **Anmeldung und Sitzung:** Der rotierte Refresh-Token liegt bei Biometrie nicht mehr im
+  Klartext (`4e4d8d14`; Grundgerüst BF-06). Nach einem Refresh höchstens eine Wiederholung bei
+  401 — gemessen vorher 8 Versuche und 7 Refreshs, jetzt 2 und 1 (`fb4b01d0`; BF-09). Der
+  Refresh hat ein Zeitlimit von 20 s (`49d85b5d`; BF-07). Fehler der API tragen weder Tokens noch
+  Anfragekörper ins Protokoll, zentral an einer Stelle statt in 102 Aufrufen (`c21cccff`).
+  Refresh-Tokens sind an das Gerät gebunden (`8fedc664`, Migration 171; Sicherheit BF-08) —
+  geprüft gegen 2.2.0 und 2.3.0: Beide schicken an Anmeldung, Registrierung und Refresh keine
+  Geräte-Kennung, ihre Tokens bleiben ungebunden und gelten wie bisher. Formulare fallen bei
+  einem Netzabbruch im Senden in die Warteschlange, wo das gefahrlos wiederholbar ist
+  (`e8bcfd34`, `7311e96c`, `656f5610`; Grundgerüst BF-01 Teil 2).
+- **Version** 2.4.0, Android 127, iOS 233 (`8d60fd50`).
+
 ## Was offen bleibt
 
 Stand 27.09.2026, vor dem Merge. Gezählt aus den Status-Zeilen der 15 Bereichsberichte und des
@@ -413,17 +467,20 @@ einchecken können.
   (Grundgerüst BF-06), Refresh ohne Zeitlimit (BF-07), keine Sperre gegen eine 401-Schleife
   (BF-09); 102 weitere Log-Aufrufe geben rohe Fehlerobjekte samt Zugangs-Token aus — zentral in
   `api.ts` schwärzen; Formulare fallen bei einem Netzfehler nicht in die Warteschlange (BF-01
-  Teil 2); Refresh-Token ohne Gerätebindung (Sicherheit BF-08).
+  Teil 2); Refresh-Token ohne Gerätebindung (Sicherheit BF-08). **Behoben 28.09.2026** (Abschnitt
+  „Nacht zum 28.09." oben).
 - **Chat:** nur die letzten 100 Nachrichten, kein Nachladen (Screens BF-04); Datei-Token im Query
-  (Chat BF-09).
+  (Chat BF-09). **Behoben 28.09.2026.**
 - **Events und Warteliste:** Ende vor Beginn möglich (Leitung BF-03); Überbuchen beim Hinzufügen,
   `status` → 500 (Punkte BF-04); Wartelistenrang bei Wiederanmeldung (BF-05); Kapazität 0 lässt
   die Warteliste stehen (BF-06); Teamer-Aktivität an eine fremde Gemeinde (BF-07); Jahrgang
   löschen macht dessen Pflicht-Events gemeindeweit sichtbar und läuft ohne Transaktion (BF-08);
   Beförderung löscht vergangene Teilnahmen (BF-09); zweite Abmeldung ohne Netz → 400 (BF-03).
+  **Behoben 28.09.2026**; Überbuchen beim Hinzufügen bleibt nach Simons Entscheidung erlaubt,
+  nur der ungeprüfte `status` ist behoben.
 - **Leitung und Team:** Antrag lädt die ganze Historie (Leitung BF-04); Umschalter in der
   Teamer-Detailansicht (Screens BF-05); Rückblick-Hinweis für Teamer:innen ohne Ausgabe (BF-07);
-  leere Team-Ausgabe sperrt die Neuerzeugung (Chat BF-05).
+  leere Team-Ausgabe sperrt die Neuerzeugung (Chat BF-05). **Behoben 28.09.2026.**
 - **CI und Werkzeug:** Backend-Image (root, `npm install pg`, keine `.dockerignore`), eine
   Node-Version, Backend-Lint, `node-fetch` deklarieren, Handbuch-Bilder (33 MB) aus dem
   App-Bundle, CSP-Header, Play-Upload nicht sofort zu 100 %, Meldung bei rotem `main`, Tests für
@@ -478,7 +535,8 @@ Body-Parser-Fehler → 500, JWT mit E-Mail, `check-username` ohne Limiter, Aufr�
 `uploads/challenges`, Text-Uploads ohne Inhaltsprüfung, redundante Indizes, `settings` ohne PK,
 Kommentar- und Zahlen-Drift, Dependabot-Regeln, 1,39-MB-Icon-Chunk, 17 Flächen-Hexwerte der
 Kriterien, dunkle Screenshots; die Einladungs-Mitteilung im Postfach der eingeladenen Person
-bleibt nach Annehmen, Ablehnen oder Ablauf stehen (nach dem Zurückziehen verschwindet sie).
+bleibt nach Annehmen, Ablehnen oder Ablauf stehen (nach dem Zurückziehen verschwindet sie) —
+**behoben 28.09.2026** (`03dae260`).
 
 ### Vor der EKD-Ausrollung
 
@@ -499,7 +557,11 @@ Produktfragen.
 3. **Den Merge freigeben.** Danach Phase B–D (Abschnitt oben).
 4. **Entscheidungen, die noch offen sind:** Nutzungsmessung S1–S17 (`docs/messung/umami.md`);
    Material-Bilder beim Hochladen verkleinern oder nicht; Videos (Empfehlung: so lassen); die
-   zehn Produktfragen der Feature-Empfehlungen; Universal Links.
+   zehn Produktfragen der Feature-Empfehlungen; Universal Links. Neu am 28.09.: Darf auch das
+   **Bestätigen einer Wartenden** überbuchen? Heute lehnt es bei vollem Event ab (Entscheidung
+   16.09.), und die App zeigt nur „Fehler beim Bestätigen des Teilnehmers"; Hinzufügen von Hand
+   überbucht. Möglich: (a) so lassen, aber den Grund zeigen; (b) ohne Grenze bestätigen; (c) bei
+   vollem Event nachfragen und dann bestätigen.
 5. **Autorenschaft älterer Commits:** Ein Teil des Branches trägt noch „Claude" als Autor.
    Umschreiben ginge nur mit Force-Push und neuen Commit-Kennungen; bleibt, wie es ist, solange
    Simon nichts anderes sagt. `main` bleibt, wie es ist (Simon, 27.09.).
@@ -520,3 +582,19 @@ und beim Wechsel von Konto oder Gemeinde geleert; eine Konfi darf ihre eigene Bu
 weiter öffnen, auch wenn es inzwischen zu einem anderen Jahrgang gehört; die Fehlermessung
 überträgt Server-Texte nur über eine Positivliste von 19 festen Anmeldetexten, alles andere als
 Ersatztext der Stelle mit dem Status.
+
+Dazu vom 28.09. (Nacht): Der Chat lädt je 50 ältere Nachrichten, eine unbekannte oder fremde
+`before`-Kennung liefert eine leere Liste statt eines Fehlers; das Token in der Adresse der
+Datei-Route ist ganz entfallen statt nur für neue Apps; ein Antrag einer anderen Gemeinde
+antwortet 404, einer eines fremden Jahrgangs 403; das Löschen eines Jahrgangs blockiert nicht
+wegen Events oder Challenges, sondern nimmt sie mit (die App nennt vorher die Zahlen, ältere Apps
+fragen ohne Zahlen), ohne Absage-Mitteilung an Angemeldete künftiger Events und ohne Rücknahme
+vergebener Punkte; bewahrt werden die Stempel des Teams nur beim Löschen eines Jahrgangs, nicht
+beim Löschen einer einzelnen Challenge; die Konfi-Zeit sieht auch eine Leitung ohne
+Jahrgangszuweisung; Serien übernehmen die Dauer des ersten Events; wer von der Leitung auf die
+Warteliste zurückgesetzt wird oder nach einer Absage wieder zusagt, stellt sich hinten an; der
+Wartelistenplatz zählt nur die eigene Warteliste (Kontingent und Zeitfenster); eine fehlende
+Geräte-Kennung beim Refresh eines gebundenen Tokens zählt wie eine falsche (401, nur dieses Token
+wird widerrufen, nicht alle Geräte); scheitert der Refresh ohne Antwort des Servers, bleibt die
+Sitzung bestehen statt „Sitzung abgelaufen"; online fallen nur PUT, DELETE und ausdrücklich
+wiederholbare POSTs bei einem Abbruch in die Warteschlange, Anlegen bleibt beim Fehler.
