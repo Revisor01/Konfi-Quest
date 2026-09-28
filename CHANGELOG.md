@@ -37,6 +37,9 @@ Versionsüberschrift.
   „gemeldet" zwischen den Aktivitäten.
 - In der Termin-Detailansicht der Teamer:innen steht kein
   Gemeinde-Umschalter mehr — wie in allen anderen Detailansichten.
+- Teamer:innen, die den Hinweis auf ihren Rückblick auf der Startseite
+  weggeklickt haben, sehen den nächsten Team-Rückblick dort wieder. Wer ihn
+  bisher weggeklickt hat, sieht den aktuellen noch einmal.
 - Eine Einladung in eine weitere Gemeinde nennt in Mitteilung und E-Mail die
   Rolle mit ihrem Namen statt mit dem technischen Wort „admin".
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und

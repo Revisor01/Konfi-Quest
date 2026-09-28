@@ -844,16 +844,45 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // -- in der AKTIVEN Gemeinde (Audit 26.09.2026, Chat BF-06): Sonst
       // hiess es in Gemeinde B "Dein Team-Jahr ist da", und GET /wrapped/me
       // zeigte dort die Zahlen aus Gemeinde A.
+      //
+      // Dazu additiv Id und Titel der Ausgabe (28.09.2026, Screens
+      // Konfi/Teamer BF-07), wie im Konfi-Dashboard (konfi.js): Die App merkt
+      // sich das Wegklicken des Hinweises unter
+      // wrapped_hinweis_t_<user>_<wrapped_ausgabe_id> -- auch die Store-Apps
+      // 2.2.x/2.3.0 bauen den Schluessel so. Ohne das Feld endete er immer
+      // auf "_alt", und wer den Hinweis einmal wegklickte, sah den naechsten
+      // Team-Rueckblick auf der Startseite nie mehr.
+      // Gemeint ist die Ausgabe, die GET /wrapped/me oeffnet: der zuletzt
+      // freigegebene Rueckblick der aktiven Gemeinde (dieselbe Auswahl und
+      // Reihenfolge wie dort). Alt-Snapshots ohne Ausgabe -> null.
       const { rows: [wrappedResult] } = await db.query(
         `SELECT EXISTS(
           SELECT 1 FROM wrapped_snapshots
           WHERE user_id = $1 AND wrapped_type = 'teamer' AND organization_id = $2
-        ) as has_wrapped`,
+        ) as has_wrapped,
+        juengste.ausgabe_id AS wrapped_ausgabe_id,
+        juengste.titel AS wrapped_titel
+        FROM (SELECT 1) AS eins
+        LEFT JOIN LATERAL (
+          SELECT a.id AS ausgabe_id, a.titel
+            FROM wrapped_snapshots s
+            LEFT JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
+           WHERE s.user_id = $1 AND s.wrapped_type = 'teamer'
+             AND s.organization_id = $2
+             AND (a.id IS NULL OR a.freigegeben_at IS NOT NULL)
+           ORDER BY COALESCE(a.freigegeben_at, s.computed_at) DESC, s.year DESC
+           LIMIT 1
+        ) AS juengste ON true`,
         [userId, orgId]
       );
       const has_wrapped = wrappedResult?.has_wrapped || false;
+      const wrapped_ausgabe_id = wrappedResult?.wrapped_ausgabe_id ?? null;
+      const wrapped_titel = wrappedResult?.wrapped_titel ?? null;
 
-      res.json({ greeting, certificates, events, badges, config, has_wrapped, konfspruch });
+      res.json({
+        greeting, certificates, events, badges, config, has_wrapped, konfspruch,
+        wrapped_ausgabe_id, wrapped_titel,
+      });
     } catch (err) {
       console.error('Error loading teamer dashboard:', err);
       res.status(500).json({ error: 'Fehler beim Laden des Teamer-Dashboards' });

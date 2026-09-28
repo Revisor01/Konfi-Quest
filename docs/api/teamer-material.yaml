@@ -920,6 +920,18 @@ paths:
         "kein Grund angegeben", bei den Namen "unbekannt". Kein bestehendes
         Feld entfaellt oder aendert Form; ausgelieferte Fassungen lesen die
         neuen Schluessel nicht und verhalten sich unveraendert.
+        GEAENDERT 28.09.2026 (Screens Konfi/Teamer BF-07, behoben): ADDITIV
+        wrapped_ausgabe_id und wrapped_titel, wie im Konfi-Dashboard
+        (GET /api/konfi/dashboard) — die Ausgabe, die GET /api/wrapped/me
+        oeffnet: der juengste freigegebene Teamer-Rueckblick der aktiven
+        Gemeinde (Alt-Snapshots ohne Ausgabe: beide null). Die App merkt sich
+        das Wegklicken des Hinweises je Ausgabe
+        (wrapped_hinweis_t_<user>_<wrapped_ausgabe_id>); ohne das Feld endete
+        der Schluessel immer auf "_alt", und der naechste Team-Rueckblick
+        meldete sich auf der Startseite nie. Die Store-Apps 2.2.x/2.3.0 bauen
+        den Schluessel schon so und profitieren ohne Update; wer den Hinweis
+        bisher weggeklickt hat, sieht ihn fuer die aktuelle Ausgabe einmal
+        wieder.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
@@ -929,6 +941,9 @@ paths:
           Die Wrapped-Prüfung fragt wrapped_snapshots nur über user_id +
           wrapped_type ab, ohne organization_id - dieselbe Multi-Org-Unschaerfe
           wie in GET /api/wrapped/me (Befund W1).
+          BEHOBEN 26.09.2026 (Audit Chat BF-06): has_wrapped und seit
+          28.09.2026 auch wrapped_ausgabe_id/wrapped_titel pruefen die aktive
+          Organisation (wrapped_snapshots.organization_id).
       responses:
         "200":
           description: Dashboard-Daten
@@ -944,6 +959,8 @@ paths:
                   config: { type: object, description: "show_zertifikate, show_challenges, show_konfispruch, show_events, show_badges, show_losung, section_order" }
                   has_wrapped: { type: boolean }
                   konfspruch: { type: [object, "null"], description: "source (liste|freitext), reference, text, ggf. id + translation" }
+                  wrapped_ausgabe_id: { type: [integer, "null"], description: "ADDITIV 28.09.2026: Id der juengsten freigegebenen Teamer-Ausgabe der aktiven Gemeinde; null ohne Rueckblick oder bei Alt-Snapshots ohne Ausgabe" }
+                  wrapped_titel: { type: [string, "null"], description: "ADDITIV 28.09.2026: Titel derselben Ausgabe (bei Teamer-Ausgaben der Platzhalter 'Team-Rückblick <Jahr>'; die App zeigt ihn nicht)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer" }
         "500": { $ref: '#/components/responses/ServerError' }

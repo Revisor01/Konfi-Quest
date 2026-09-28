@@ -180,6 +180,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 - **Auswirkung aus Nutzersicht:** Eine Teamer:in klickt den Hinweis 2026 weg; der Rückblick 2027 (Cron am 6. Januar) erscheint auf der Startseite nie mehr. Er bleibt nur im Profil unter „Meine Rückblicke" erreichbar.
 - **Beleg:** `teamer.js:847`: `res.json({ greeting, certificates, events, badges, config, has_wrapped, konfspruch });` — `TeamerDashboardPage.tsx:158` deklariert `wrapped_ausgabe_id?: number | null`, liest also ein Feld, das nie kommt.
 - **Empfehlung:** In `GET /teamer/dashboard` additiv `wrapped_ausgabe_id` (und `wrapped_titel`) aus `wrapped_snapshots JOIN wrapped_ausgaben` liefern, wie `konfi.js:222-236`.
+- **Nachtrag 28.09.2026:** behoben — `GET /teamer/dashboard` liefert additiv `wrapped_ausgabe_id` und `wrapped_titel`: die Ausgabe, die `GET /wrapped/me` öffnet (jüngste freigegebene der aktiven Gemeinde, Alt-Snapshots `null`). Die Store-Apps bauen den Schlüssel schon je Ausgabe und profitieren ohne Update; wer den Hinweis bisher (unter `_alt`) weggeklickt hat, sieht die aktuelle Ausgabe einmal wieder. `wrapped_titel` zeigt die App bewusst nicht an (Team-Rückblicke tragen nur den Platzhalter „Team-Rückblick <Jahr>"). Tests `teamerDashboardRueckblick.test.js` (6, vorher 6 rot) und `teamerRueckblickHinweisJeAusgabe.test.tsx` (3; mit einem Schlüssel ohne Id 3 rot).
 
 ### BF-08: Chat-Dateigrenze: App prüft 10 MB, Server nimmt 5 MB — Datei dazwischen scheitert nach dem Upload
 - **Schwere:** MITTEL
