@@ -70,16 +70,18 @@ const COUNTER_ENTRY: LegendEntry = {
   color: 'var(--app-color-warning)',
   icon: ICON_UHRZEIT,
   label: 'Zahl mit Uhr',
-  description: 'So viele Beiträge warten noch auf Freigabe.',
+  description: 'So viele Beiträge warten noch auf Freigabe. Sie zählen auch in der roten Zahl am Symbol mit.',
 };
 
 // Rote Kugel am Symbol (27.09.2026, Simon: "Die Challenges sollen sich
-// verhalten wie der Chat") -- neue Beitraege seit dem letzten Oeffnen.
+// verhalten wie der Chat"): neue Beitraege seit dem letzten Oeffnen, seit
+// 28.09.2026 plus wartende Freigaben (Simon: "Ich erwarte auch einen roten
+// Kreis auf dem Listen Element") -- zusammen ergeben sie die Zahl am Reiter.
 const NEU_ENTRY: LegendEntry = {
   color: 'var(--app-color-danger)',
   zahl: '1',
   label: 'Rote Zahl am Symbol',
-  description: 'So viele neue Beiträge sind seit deinem letzten Öffnen dazugekommen — wie ungelesene Nachrichten im Chat. Beim Öffnen der Challenge verschwindet die Zahl.',
+  description: 'Alles, was an der Challenge auf dich wartet: Beiträge, die auf Freigabe warten, und neue Beiträge seit deinem letzten Öffnen — wie ungelesene Nachrichten im Chat. Die neuen verschwinden beim Öffnen, die wartenden erst mit der Freigabe.',
 };
 
 // Moderations-Badges aus ChallengeLeitungModal (STATUS_BADGE + CONSENT_BADGE).

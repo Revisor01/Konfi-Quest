@@ -7,8 +7,8 @@ import type { AdminChallenge } from '../../../types/challenges';
 // Challenges wie der Chat -- auch fuer die Leitung (Simon, 27.09.2026):
 // "Neue Nachricht: ein Abzeichen, ein Badge. Ich will sehen, ob da etwas
 // Neues passiert." Gerendert: Die Leitungsliste zeigt neue Beitraege als rote
-// Kugel am Symbol und wartende Freigaben weiter als oranges Feld mit Uhr --
-// zwei Zeichen, zwei Bedeutungen.
+// Kugel am Symbol und wartende Freigaben als oranges Feld mit Uhr; seit
+// 28.09.2026 zaehlen die Freigaben zusaetzlich in der Kugel mit.
 
 vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: { id: 4, type: 'admin', role_name: 'org_admin' } }),
@@ -55,11 +55,14 @@ describe('Leitungsliste: neue Beitraege als rote Kugel', () => {
     expect(kugeln[0].closest('.app-list-item')?.textContent).toContain('Ohne Freigabe');
   });
 
-  it('Freigabe und Neues stehen getrennt: oranges Feld mit Uhr an der einen, Kugel an der anderen', () => {
+  it('Freigabe: oranges Feld mit Uhr UND rote Kugel am Eintrag (28.09.2026), Neues nur als Kugel', () => {
     const { container } = zeige({ 3: 2 }, { 4: 1 });
-    expect(container.querySelectorAll('.app-zaehler-kugel').length).toBe(1);
-    const freigabe = container.querySelector('[aria-label*="Freigabe"]');
-    expect(freigabe).not.toBeNull();
+    const kugeln = [...container.querySelectorAll('.app-zaehler-kugel')];
+    expect(kugeln.map((k) => k.textContent)).toEqual(['2', '1']);
+    expect(kugeln[0].closest('.app-list-item')?.textContent).toContain('Ohne Freigabe');
+    expect(kugeln[1].closest('.app-list-item')?.textContent).toContain('Mit Freigabe');
+    const freigabe = container.querySelector('.app-corner-badge[aria-label*="Freigabe"]');
+    expect(freigabe?.textContent).toBe('1');
     expect(freigabe?.closest('.app-list-item')?.textContent).toContain('Mit Freigabe');
   });
 
