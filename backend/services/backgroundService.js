@@ -245,10 +245,12 @@ class BackgroundService {
       // Push-Bericht): Hier stand `r.name != 'admin'` unter dem Kommentar
       // "Alle Konfis und Teamer:innen" — beides zusammen ergab weder das
       // eine noch das andere. Jede Organisation hat ZWEI Leitungsrollen
-      // (`organizations.js`): `org_admin` ("Organisations-Admin") und
-      // `admin` ("Hauptamt"). Die Negation liess also org_admin MITLAUFEN
-      // und schloss nur das Hauptamt aus: dessen App-Icon wurde im
-      // Hintergrund nie nachgefuehrt, waehrend org_admin bedient wurde.
+      // (`organizations.js`): `org_admin` ("Org-Leitung") und `admin`
+      // ("Leitung"; in aelteren Gemeinden steht als display_name noch
+      // "Organisations-Admin" bzw. "Hauptamt"). Die Negation liess also
+      // org_admin MITLAUFEN und schloss nur die Rolle `admin` aus: deren
+      // App-Icon wurde im Hintergrund nie nachgefuehrt, waehrend org_admin
+      // bedient wurde.
       // Beide Leitungsrollen haben sehr wohl einen Zaehler
       // (`BadgeContext.tsx`: Chat + Antraege + Termine + Freigaben), und
       // `appIconSummenAllerGemeinden` rechnet ihn fuer sie. Jetzt ausdruecklich

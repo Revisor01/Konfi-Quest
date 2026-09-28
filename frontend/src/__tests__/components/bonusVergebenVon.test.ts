@@ -31,7 +31,7 @@ const eintrag: BonusEintrag = {
 const alteAnzeige = (b: BonusEintrag) =>
   (b as unknown as { admin?: string }).admin || 'Admin';
 // RICHTIG
-const vergebenVon = (b: BonusEintrag) => b.admin_name || 'Admin';
+const vergebenVon = (b: BonusEintrag) => b.admin_name || 'Leitung';
 
 const datumAnzeige = (b: BonusEintrag) => b.completed_date || b.created_at || '';
 
@@ -44,9 +44,9 @@ describe('Bonuspunkte: wer hat vergeben', () => {
     expect(alteAnzeige(eintrag)).toBe('Admin');
   });
 
-  it('faellt ohne Namen auf "Admin" zurueck', () => {
+  it('faellt ohne Namen auf "Leitung" zurueck (Rollenname seit 28.09.2026)', () => {
     const ohneNamen: BonusEintrag = { ...eintrag, admin_name: undefined };
-    expect(vergebenVon(ohneNamen)).toBe('Admin');
+    expect(vergebenVon(ohneNamen)).toBe('Leitung');
   });
 });
 

@@ -35,6 +35,7 @@ import api from '../../../services/api';
 import { AdminUser } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
+import { rollenName } from '../../../utils/rollenNamen';
 
 interface Role {
   id: number;
@@ -351,15 +352,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const getRoleColor = (roleName: string) => `var(--app-color-${getRoleToken(roleName)})`;
   const getRoleTint = (roleName: string) => `rgba(var(--app-color-${getRoleToken(roleName)}-rgb), 0.08)`;
 
-  const getRoleDisplayName = (roleName: string) => {
-    switch (roleName) {
-      case 'org_admin': return 'Org-Admin';
-      case 'admin': return 'Admin';
-      case 'teamer': return 'Teamer:in';
-      default: return roleName;
-    }
-  };
-
   // Klare Beschreibung je Rolle (unabhaengig vom technischen DB-Text).
   const getRoleDescription = (roleName: string) => {
     switch (roleName) {
@@ -548,7 +540,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           </div>
                           <div>
                             <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)', display: 'block' }}>
-                              {getRoleDisplayName(role.name)}
+                              {rollenName(role.name)}
                             </span>
                             {getRoleDescription(role.name) && (
                               <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', display: 'block', marginTop: 'var(--app-abstand-winzig)', lineHeight: 1.35 }}>

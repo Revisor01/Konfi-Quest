@@ -36,8 +36,8 @@ und in welcher Reihenfolge, stellt deine Gemeinde ein:
   mit Namen und Punkten; bist du selbst unter den ersten drei, siehst du alle
   drei mit Namen und Punkten. Stehst du weiter hinten, zeigt die Karte neben
   dir nur die Plätze direkt vor und hinter dir, ohne Namen und Punkte. Die
-  Gemeindeleitung kann das Ranking unter
-  [Mehr › Dashboard](30-leitung.md#verwaltung-nur-org-admin) ausschalten.
+  Org-Leitung kann das Ranking unter
+  [Mehr › Dashboard](30-leitung.md#verwaltung-nur-org-leitung) ausschalten.
 
 ## Mit deinem Team schreiben
 

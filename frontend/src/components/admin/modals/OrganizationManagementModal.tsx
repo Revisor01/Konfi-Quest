@@ -67,6 +67,7 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { generateStrongPassword } from '../../../utils/passwortVorschlag';
 import { tageBis } from '../../shared/eventFormatting';
 import { datumKurz } from '../../../utils/dateUtils';
+import { rollenName } from '../../../utils/rollenNamen';
 
 interface Organization {
   id: number;
@@ -121,11 +122,9 @@ interface MemberSearchResult {
   primary_role_name?: string;
 }
 
-const MEMBER_ROLE_OPTIONS = [
-  { value: 'org_admin', label: 'Org-Admin' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'teamer', label: 'Teamer:in' }
-];
+const MEMBER_ROLE_OPTIONS = ['org_admin', 'admin', 'teamer'].map((value) => ({
+  value, label: rollenName(value)
+}));
 
 interface OrganizationManagementModalProps {
   organizationId?: number | null;
@@ -379,7 +378,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     // Validate admin fields for new organizations
     if (!isEditMode) {
       if (!formData.admin_name.trim() || !formData.admin_username.trim() || !formData.admin_password.trim()) {
-        setError('Alle Administrator-Felder sind erforderlich');
+        setError('Alle Felder der Org-Leitung sind erforderlich');
         return;
       }
       // Dieselbe Policy wie ueberall sonst (Audit 22.08.2026): Hier galten
@@ -529,7 +528,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       setNewAdminData({ display_name: '', username: '', password: '' });
       setShowAddAdmin(false);
     } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Hinzufügen des Administrators'));
+      setError(fehlerText(err, 'Fehler beim Hinzufügen der Org-Leitung'));
     } finally {
       setAddingAdmin(false);
     }
@@ -661,7 +660,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               stats={[
                 { value: organization.konfi_count || 0, label: 'Konfis' },
                 { value: organization.teamer_count || 0, label: 'Team' },
-                { value: organization.admin_count || 0, label: 'Admins' }
+                { value: organization.admin_count || 0, label: 'Leitung' }
               ]}
             />
 
@@ -917,7 +916,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     if (!checked && isEditMode) {
                       presentAlert({
                         header: 'Organisation deaktivieren?',
-                        message: 'Alle Konfis, das Team und die Admins dieser Organisation können sich dann nicht mehr anmelden und werden aus laufenden Sitzungen abgemeldet. Fortfahren?',
+                        message: 'Alle Konfis, das Team und die Leitung dieser Organisation können sich dann nicht mehr anmelden und werden aus laufenden Sitzungen abgemeldet. Fortfahren?',
                         buttons: [
                           {
                             text: 'Abbrechen',
@@ -958,14 +957,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <div className="app-section-icon app-section-icon--organizations">
                 <IonIcon icon={ICON_PERSON} />
               </div>
-              <IonLabel>Organisations-Administrator</IonLabel>
+              <IonLabel>Org-Leitung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked">Name des Administrators *</IonLabel>
-                    <IonInput aria-label="Name des Administrators" aria-required="true" value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Müller" disabled={isSubmitting} />
+                    <IonLabel position="stacked">Name der Org-Leitung *</IonLabel>
+                    <IonInput aria-label="Name der Org-Leitung" aria-required="true" value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Müller" disabled={isSubmitting} />
                   </IonItem>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Login-Benutzername *</IonLabel>
@@ -990,7 +989,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   <IonIcon icon={ICON_SCHILD} slot="start" style={{ color: 'var(--app-text-users)' }} />
                   <IonLabel>
                     <p style={{ color: 'var(--app-text-users)', margin: 0, fontWeight: 'var(--app-schrift-mittel)', fontSize: 'var(--app-text-sekundaer)' }}>
-                      Der Administrator kann die gesamte Organisation verwalten
+                      Die Org-Leitung kann die gesamte Organisation verwalten
                     </p>
                   </IonLabel>
                 </IonItem>
@@ -1006,7 +1005,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <div className="app-section-icon app-section-icon--organizations">
                 <IonIcon icon={ICON_PERSON} />
               </div>
-              <IonLabel>Organisations-Administratoren</IonLabel>
+              <IonLabel>Org-Leitung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
@@ -1067,14 +1066,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 ) : (
                   <div style={{ textAlign: 'center', padding: 'var(--app-abstand-basis)', color: 'var(--app-text-secondary)' }}>
                     <IonIcon icon={ICON_WARNHINWEIS} style={{ fontSize: 'var(--app-anzeige-zahl)', color: 'var(--app-text-badges)', marginBottom: 'var(--app-abstand-eng)', display: 'block' }} />
-                    Kein Administrator vorhanden
+                    Noch niemand in der Org-Leitung
                   </div>
                 )}
 
                 {/* Neuen Admin hinzufügen */}
                 {showAddAdmin && (
                   <div style={{ marginTop: 'var(--app-abstand-basis)', padding: 'var(--app-abstand-basis)', background: 'rgba(var(--app-color-users-rgb), 0.05)', borderRadius: 'var(--app-radius-karte)', border: '1px dashed var(--app-color-users)' }}>
-                    <h4 style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-betont)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)' }}>Neuen Administrator hinzufügen</h4>
+                    <h4 style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-betont)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)' }}>Org-Leitung hinzufügen</h4>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': 'var(--app-radius-knopf)', marginBottom: 'var(--app-abstand-eng)' }}>
                         <IonLabel position="stacked">Name *</IonLabel>
@@ -1139,7 +1138,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       onClick={() => setShowAddAdmin(true)}
                     >
                       <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} slot="start" />
-                      Administrator hinzufügen
+                      Org-Leitung hinzufügen
                     </IonButton>
                   </div>
                 )}
@@ -1160,7 +1159,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <p style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-secondary)' }}>
-                  Bestehende Admins oder Team-Mitglieder anderer Organisationen dieser
+                  Bestehende Mitglieder aus Leitung oder Team anderer Organisationen dieser
                   Organisation zuweisen — sie können dann per Org-Wechsler hierher
                   springen. Konfis sind ausgenommen.
                 </p>
@@ -1241,7 +1240,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0', '--inner-padding-end': '0' }}>
                         <IonLabel>
                           <h3 style={{ margin: 0 }}>{m.display_name}</h3>
-                          <p style={{ margin: 0 }}>@{m.username} · {m.role_display_name || m.role_name}</p>
+                          <p style={{ margin: 0 }}>@{m.username} · {rollenName(m.role_name, m.role_display_name)}</p>
                         </IonLabel>
                         {m.is_primary && <IonNote slot="end">Primär</IonNote>}
                       </IonItem>

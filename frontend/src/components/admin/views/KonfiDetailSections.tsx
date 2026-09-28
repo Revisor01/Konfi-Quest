@@ -386,7 +386,7 @@ export const BonusSection = React.memo<BonusSectionProps>(({
                             </span>
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={ICON_PERSON} className="app-icon-color--konfis" />
-                              {bonus.admin_name || 'Admin'}
+                              {bonus.admin_name || 'Leitung'}
                             </span>
                           </div>
                         </div>
@@ -592,7 +592,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
                         </span>
                         <span className="app-list-item__meta-item">
                           <IonIcon icon={ICON_PERSON} className="app-icon-color--konfis" />
-                          {eventPoint.admin_name || 'Admin'}
+                          {eventPoint.admin_name || 'Leitung'}
                         </span>
                       </div>
                     </div>
@@ -850,7 +850,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                             </span>
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={ICON_PERSON} className="app-icon-color--konfis" />
-                              {activity.admin || activity.admin_name || 'Admin'}
+                              {activity.admin || activity.admin_name || 'Leitung'}
                             </span>
                           </div>
                         </div>

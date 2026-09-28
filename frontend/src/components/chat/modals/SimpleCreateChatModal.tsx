@@ -550,9 +550,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             <div
                               className="app-corner-badge"
                               style={{ backgroundColor: isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
-                              title={isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
+                              title={isAdmin ? (targetUser.role_description || 'Leitung') : 'Konfi'}
                               role="img"
-                              aria-label={isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
+                              aria-label={isAdmin ? (targetUser.role_description || 'Leitung') : 'Konfi'}
                             >
                               <IonIcon icon={isAdmin ? ICON_GRUPPE_GEFUELLT : ICON_PERSON_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                             </div>

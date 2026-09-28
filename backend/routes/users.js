@@ -749,7 +749,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             ['org_admin', organizationId, id]
           );
           if (orgAdminCount.rows[0].count === 0) {
-            return res.status(409).json({ error: 'Letzter Org-Admin kann nicht gelöscht werden' });
+            return res.status(409).json({ error: 'Die letzte Org-Leitung kann nicht gelöscht werden' });
           }
         }
       }

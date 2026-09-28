@@ -10,6 +10,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import { fehlerText } from '../../../utils/fehler';
 import { ICON_SCHLIESSEN, ICON_GEMEINDE_GEFUELLT, ICON_PERSON, ICON_SCHILD } from '../../shared/icons';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { rollenName } from '../../../utils/rollenNamen';
 
 /**
  * Eine bestehende Person in diese Gemeinde einladen (26.09.2026).
@@ -66,8 +67,6 @@ const EinladungModal: React.FC<Props> = ({ onClose, onSuccess }) => {
     name === 'teamer' ? 'teamer' : (name === 'org_admin' || name === 'admin') ? 'users' : 'neutral';
   const rolleFarbe = (name: string) => `var(--app-color-${rolleToken(name)})`;
   const rolleTint = (name: string) => `rgba(var(--app-color-${rolleToken(name)}-rgb), 0.08)`;
-  const rolleName = (name: string) =>
-    name === 'org_admin' ? 'Org-Admin' : name === 'admin' ? 'Admin' : name === 'teamer' ? 'Teamer:in' : name;
   const rolleBeschreibung = (name: string) => {
     switch (name) {
       case 'org_admin': return 'Voller Zugriff auf Konfis, Aktivitäten, Badges und Events – über alle Jahrgänge. Verwaltet zusätzlich die Benutzer:innen und deren Jahrgangs-Zuordnung.';
@@ -175,7 +174,7 @@ const EinladungModal: React.FC<Props> = ({ onClose, onSuccess }) => {
                         </div>
                         <div>
                           <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)', display: 'block' }}>
-                            {rolleName(r.name)}
+                            {rollenName(r.name)}
                           </span>
                           {rolleBeschreibung(r.name) && (
                             <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', display: 'block', marginTop: 'var(--app-abstand-winzig)', lineHeight: 1.35 }}>

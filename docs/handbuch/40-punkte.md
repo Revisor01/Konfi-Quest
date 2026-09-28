@@ -86,9 +86,9 @@ solange sie offen ist; nach der Entscheidung nur noch die Leitung.
 
 **2. Die Leitung prüft.** Die Anträge stehen in der Antragsliste.
 [Teamer:innen sehen sie nicht](05-rollen.md#nachschlagen-wer-was-darf) — in Beschreibung
-und Foto kann Privates stehen. Ein Admin sieht dort nur die Anträge aus
-[seinen Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert);
-Anträge von Teamer:innen sieht er immer. Wer den Antrag sieht, bekommt ihn
+und Foto kann Privates stehen. Die Leitung sieht dort nur die Anträge aus
+[ihren Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert);
+Anträge von Teamer:innen sieht sie immer. Die Org-Leitung sieht alle. Wer den Antrag sieht, bekommt ihn
 auch gemeldet — siehe
 [Nachsehen, wer von einem neuen Antrag erfährt](#nachsehen-wer-von-einem-neuen-antrag-erfaehrt).
 
@@ -153,12 +153,12 @@ Ein neuer Antrag kommt als Push und im
 Antrag eingegangen" an — bei genau denen, die ihn in ihrer Antragsliste sehen
 und entscheiden dürfen:
 
-- **Die Gemeindeleitung** (Org-Admins) bekommt jeden Antrag der Gemeinde.
-- **Admins** bekommen die Anträge der Konfis aus
+- **Die Org-Leitung** bekommt jeden Antrag der Gemeinde.
+- **Die Leitung** bekommt die Anträge der Konfis aus
   [ihren Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
-  und alle Anträge von Teamer:innen. Ein Admin ohne Jahrgang bekommt also nur
-  die Anträge des Teams.
-- **Ein Konfi ohne Jahrgang** meldet sich nur bei der Gemeindeleitung — nur
+  und alle Anträge von Teamer:innen. Wer als Leitung keinen Jahrgang hat,
+  bekommt also nur die Anträge des Teams.
+- **Ein Konfi ohne Jahrgang** meldet sich nur bei der Org-Leitung — nur
   sie sieht seinen Antrag.
 - **Teamer:innen** bekommen keine Meldung über neue Anträge; die Antragsliste
   ist ihnen verschlossen.

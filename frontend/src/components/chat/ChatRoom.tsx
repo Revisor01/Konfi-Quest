@@ -698,7 +698,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
             color: 'var(--app-text-secondary)',
             textAlign: 'center'
           }}>
-            Admins können Chats nicht verlassen. Chats können nur gelöscht werden.
+            Die Leitung kann Chats nicht verlassen. Chats können nur gelöscht werden.
           </div>
         )}
 

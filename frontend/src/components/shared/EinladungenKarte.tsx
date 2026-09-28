@@ -3,6 +3,7 @@ import { IonButton, IonCard, IonCardContent, IonIcon, IonList, IonListHeader, Io
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 import { fehlerText } from '../../utils/fehler';
+import { rollenName } from '../../utils/rollenNamen';
 import { ICON_GEMEINDE_GEFUELLT, ICON_ZUSAGE_GEFUELLT, ICON_ABSAGE } from './icons';
 
 /**
@@ -95,7 +96,7 @@ const EinladungenKarte: React.FC<Props> = ({ variante }) => {
                     <div className="app-list-item__title">{e.organization_display_name}</div>
                     <div className="app-list-item__meta">
                       <span className="app-list-item__meta-item">
-                        als {e.role_display_name || e.role_name}
+                        als {rollenName(e.role_name, e.role_display_name)}
                         {e.eingeladen_von_name ? ` · von ${e.eingeladen_von_name}` : ''}
                       </span>
                     </div>

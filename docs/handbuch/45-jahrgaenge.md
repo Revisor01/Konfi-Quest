@@ -15,16 +15,17 @@ sortieren Aktivitäten und Events.
 
 ## Einen Jahrgang anlegen
 
-**Neue Jahrgänge legt nur der Org-Admin an.** Admins sehen den Knopf zum
-Anlegen nicht; sie bearbeiten und löschen nur die Jahrgänge, die ihnen
+**Neue Jahrgänge legt nur die Org-Leitung an.** Die Leitung sieht den Knopf
+zum Anlegen nicht; sie bearbeitet und löscht nur die Jahrgänge, die ihr
 zugewiesen sind. Welche Rolle was darf, steht im Kapitel
 [Rollen und Rechte](05-rollen.md).
 
-Beim Anlegen wählt der Org-Admin direkt aus, welche **Admins und
-Teamer:innen** Zugriff auf den neuen Jahrgang bekommen. Die ausgewählten
-Personen sehen und bearbeiten den Jahrgang sofort und sind auch gleich im
-Jahrgangs-Chat. Die Auswahl ist freiwillig — ohne sie entsteht der Jahrgang
-zunächst ohne Zuweisungen, und der Org-Admin vergibt sie später unter
+Beim Anlegen wählt die Org-Leitung direkt aus, welche Personen der
+**Leitung und welche Teamer:innen** Zugriff auf den neuen Jahrgang bekommen.
+Die ausgewählten Personen sehen und bearbeiten den Jahrgang sofort und sind
+auch gleich im Jahrgangs-Chat. Die Auswahl ist freiwillig — ohne sie entsteht
+der Jahrgang zunächst ohne Zuweisungen, und die Org-Leitung vergibt sie später
+unter
 **Mehr › Benutzer:innen**.
 
 Zwei Jahrgänge dürfen nicht denselben Namen haben („Jahrgang-Name existiert
@@ -170,17 +171,17 @@ Konfirmationsablauf.
 
 ## Nachvollziehen, was die Jahrgangs-Zuweisung steuert
 
-Admins und Teamer:innen werden einzelnen Jahrgängen zugewiesen. Diese
+Leitung und Teamer:innen werden einzelnen Jahrgängen zugewiesen. Diese
 Zuweisung ist die **wichtigste Berechtigungseinstellung im ganzen System** —
 sie entscheidet in sehr vielen Bereichen mit.
 
-Für den **Org-Admin** gilt das alles nicht: Er sieht immer die ganze
-Gemeinde, unabhängig davon, welche Jahrgänge bei ihm eingetragen sind. Für
-**Admins** gilt das so nicht — bei der Konfi-Liste und im Chat sind auch sie
-auf ihre zugewiesenen Jahrgänge beschränkt. Ein Admin ohne Zuweisung sieht
-deshalb keine Konfis. Er kann auch nur in seinen Jahrgängen Konfis anlegen
-und sie nur zwischen ihnen verschieben; ändert er die Jahrgänge einer
-Teamer:in, bleiben deren übrige Zuweisungen erhalten. Was das im Chat
+Für die **Org-Leitung** gilt das alles nicht: Sie sieht immer die ganze
+Gemeinde, unabhängig davon, welche Jahrgänge bei ihr eingetragen sind. Für
+die **Leitung** gilt das so nicht — bei der Konfi-Liste und im Chat ist auch
+sie auf ihre zugewiesenen Jahrgänge beschränkt. Wer als Leitung keine
+Zuweisung hat, sieht deshalb keine Konfis. Die Leitung kann auch nur in ihren
+Jahrgängen Konfis anlegen und sie nur zwischen ihnen verschieben; ändert sie
+die Jahrgänge einer Teamer:in, bleiben deren übrige Zuweisungen erhalten. Was das im Chat
 konkret bedeutet, steht im Kapitel
 [Chat](90-chat.md#nachschlagen-wer-wen-anschreiben-darf); die Unterschiede zwischen den
 Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
@@ -189,26 +190,26 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 |---|---|
 | Konfi-Liste | die Liste bleibt **komplett leer** |
 | Konfi-Profil ansehen | kein Zugriff; Teamer:innen bleiben dagegen für die ganze Leitung sichtbar |
-| Jahrgangs-Liste (Admin) | zeigt nur die eigenen Jahrgänge |
-| Konfi anlegen oder verschieben (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
-| Konfi löschen, befördern, Passwort zurücksetzen (Admin) | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
+| Jahrgangs-Liste (Leitung) | zeigt nur die eigenen Jahrgänge |
+| Konfi anlegen oder verschieben (Leitung) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
+| Konfi löschen, befördern, Passwort zurücksetzen (Leitung) | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
 | Punkte vergeben und zurücknehmen | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
 | Nachweisfotos zu Aktivitäten | nur für Verantwortliche der betreffenden Jahrgänge sichtbar |
-| Anträge auf Aktivitäten (Admin) | Anträge von Konfis dieser Jahrgänge stehen nicht in der Antragsliste, zählen nicht am Reiter und melden sich nicht als „Neuer Antrag eingegangen“; Anträge von Teamer:innen bleiben ([wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt)) |
+| Anträge auf Aktivitäten (Leitung) | Anträge von Konfis dieser Jahrgänge stehen nicht in der Antragsliste, zählen nicht am Reiter und melden sich nicht als „Neuer Antrag eingegangen“; Anträge von Teamer:innen bleiben ([wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt)) |
 | Events | jahrgangsgebundene Events sind unsichtbar und nicht buchbar; führt eine Mitteilung oder ein Link auf ein solches Event, steht dort der Grund („Nicht deinem Jahrgang zugeordnet") |
-| Abmeldungen und Zusagen zu Events (Admin) | Abmeldungen von Konfis, Pflicht-Abmeldungen und Zu- oder Absagen des Teams melden sich nicht; Events „Nur Team“ und Events ohne Jahrgang melden sich bei allen Admins ([wer davon erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)) |
-| „Events warten auf Verbuchung“ (Admin) | zählt nur die Events, die der Reiter „Verbuchen“ zeigt; ist dort nichts offen, kommt keine Erinnerung |
-| Neue Registrierung (Admin) | keine Meldung; sie geht an die Gemeindeleitung und die Admins des Jahrgangs ([wer davon erfährt](#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt)) |
-| „Jahrgang wird bald gelöscht“ (Admin) | keine Warnung; sie bekommt nur, wer im Jahrgang bearbeiten und damit befördern darf |
+| Abmeldungen und Zusagen zu Events (Leitung) | Abmeldungen von Konfis, Pflicht-Abmeldungen und Zu- oder Absagen des Teams melden sich nicht; Events „Nur Team“ und Events ohne Jahrgang melden sich bei der ganzen Leitung ([wer davon erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)) |
+| „Events warten auf Verbuchung“ (Leitung) | zählt nur die Events, die der Reiter „Verbuchen“ zeigt; ist dort nichts offen, kommt keine Erinnerung |
+| Neue Registrierung (Leitung) | keine Meldung; sie geht an die Org-Leitung und die Leitung des Jahrgangs ([wer davon erfährt](#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt)) |
+| „Jahrgang wird bald gelöscht“ (Leitung) | keine Warnung; sie bekommt nur, wer im Jahrgang bearbeiten und damit befördern darf |
 | Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
-| Anwesenheits- und Spruchlisten (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
+| Anwesenheits- und Spruchlisten (Leitung) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Jahresrückblick: Liste der Ausgaben | zeigt nur Ausgaben der eigenen Jahrgänge; ohne jede Zuweisung bleibt sie leer und nennt den Grund („Kein Jahrgang zugewiesen“) |
-| Jahresrückblick freigeben (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
-| Chat: Teamer:in oder Admin schreibt Konfi an | „Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“ |
-| Chat: Konfi schreibt Teamer:in oder Admin an | „Diese Teamer:in ist nicht für deinen Jahrgang zuständig“ bzw. „Dieser Admin ist nicht für deinen Jahrgang zuständig“ (die Org-Admins erreicht ein Konfi dagegen immer) |
+| Jahresrückblick freigeben (Leitung) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
+| Chat: Teamer:in oder Leitung schreibt Konfi an | „Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“ |
+| Chat: Konfi schreibt Teamer:in oder Leitung an | „Diese Teamer:in ist nicht für deinen Jahrgang zuständig“ bzw. „Diese Person aus der Leitung ist nicht für deinen Jahrgang zuständig“ (die Org-Leitung erreicht ein Konfi dagegen immer) |
 | Chat: Kontaktliste | die Teamer:in taucht bei den Konfis gar nicht erst auf |
-| Jahrgangs-Chatraum | keine Aufnahme in den Raum; auch ein Admin öffnet ihn dann nicht („Zugriff verweigert“) |
-| Event-Chats und Gruppen mit Konfis | ohne eigene Mitgliedschaft zu; einen Event-Chat öffnet ein Admin nur, wenn das Event in seiner Event-Liste steht ([Chat](90-chat.md#nachvollziehen-was-die-leitung-sehen-kann)) |
+| Jahrgangs-Chatraum | keine Aufnahme in den Raum; auch die Leitung öffnet ihn dann nicht („Zugriff verweigert“) |
+| Event-Chats und Gruppen mit Konfis | ohne eigene Mitgliedschaft zu; einen Event-Chat öffnet die Leitung nur, wenn das Event in ihrer Event-Liste steht ([Chat](90-chat.md#nachvollziehen-was-die-leitung-sehen-kann)) |
 | Challenges | jahrgangsgebundene Challenges sind unsichtbar (Team-Runden bleiben) |
 | Meldungs-Zähler an den Reitern und am App-Symbol | zählen nur, was die eigenen Listen zeigen |
 | Mitteilungen und Push | nur für die eigenen Jahrgänge |
@@ -237,16 +238,16 @@ Zwei Meldungen hängen an einem Jahrgang selbst. Beide kommen als Push und im
 
 - **„Neue Registrierung“** — eine Konfi hat sich mit einem
   [Einladungscode](35-passwoerter.md#sich-als-konfi-registrieren) angemeldet.
-  Sie geht an die Gemeindeleitung (Org-Admins) und an die Admins, denen der
+  Sie geht an die Org-Leitung und an die Leitung, der der
   Jahrgang zugewiesen ist — genau an die, bei denen die neue Konfi sofort in
-  der Konfi-Liste steht. Ist dem Jahrgang kein Admin zugewiesen, bekommt sie
-  nur die Gemeindeleitung.
+  der Konfi-Liste steht. Ist der Jahrgang niemandem aus der Leitung
+  zugewiesen, bekommt sie nur die Org-Leitung.
 - **„Jahrgang wird bald gelöscht“** — sieben Tage bevor die Konfis eines
   Jahrgangs nach der Konfirmation
   [aus den Listen genommen werden](35-passwoerter.md#weiterkommen-wenn-gar-nichts-geht),
   mit dem Hinweis, wer bleiben soll, jetzt noch zur Teamer:in zu befördern.
-  Sie kommt zusätzlich per E-Mail, und zwar an die Gemeindeleitung und an die
-  Admins, die im Jahrgang bearbeiten dürfen — denn nur sie können befördern.
+  Sie kommt zusätzlich per E-Mail, und zwar an die Org-Leitung und an die
+  Leitung, soweit sie im Jahrgang bearbeiten darf — denn nur sie können befördern.
   Eine Zuweisung, die nur zum Ansehen berechtigt, reicht dafür nicht.
 
 Teamer:innen bekommen keine der beiden. Wer in mehreren Gemeinden
@@ -301,8 +302,8 @@ einen anderen Jahrgang.
 
 **Blockiert, solange der Chatverlauf Nachrichten enthält.** Meldung:
 „Jahrgang kann nicht gelöscht werden: Chat-Raum enthält 148 Nachricht(en).“
-Hier gibt es allerdings einen Ausweg: Als Organisations-Administration
-bekommst du die Rückfrage „Chat-Nachrichten vorhanden“ mit dem Knopf
+Hier gibt es allerdings einen Ausweg: Wer den Jahrgang löschen darf, bekommt
+die Rückfrage „Chat-Nachrichten vorhanden“ mit dem Knopf
 **„Dennoch löschen“**. Dann werden **alle Nachrichten, Umfragen und Anhänge
 unwiderruflich gelöscht** ([Chat](90-chat.md)).
 

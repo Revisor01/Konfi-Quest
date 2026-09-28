@@ -201,12 +201,12 @@ describe('Sicherheitsabfrage beim Entfernen aus "Benutzer:innen"', () => {
   });
 
   it('scheitert das Entfernen, steht der Grund des Servers in der Fehlermeldung', async () => {
-    apiDelete.mockRejectedValue({ response: { status: 409, data: { error: 'Letzter Org-Admin kann nicht gelöscht werden' } } });
+    apiDelete.mockRejectedValue({ response: { status: 409, data: { error: 'Die letzte Org-Leitung kann nicht gelöscht werden' } } });
     oeffneAbfrage(person({ mitgliedschaft: 'stamm', weitere_gemeinden: 1 }));
 
     await tippeAlertKnopf('Entfernen');
 
-    expect(setError).toHaveBeenCalledWith('Letzter Org-Admin kann nicht gelöscht werden');
+    expect(setError).toHaveBeenCalledWith('Die letzte Org-Leitung kann nicht gelöscht werden');
     expect(setSuccess).not.toHaveBeenCalled();
   });
 });

@@ -314,7 +314,7 @@ const AdminMaterialPage: React.FC = () => {
                       title={ohneJahrgang && !search && !nurGlobal ? 'Kein Jahrgang zugewiesen' : 'Keine Materialien'}
                       message={
                         ohneJahrgang && !search && !nurGlobal
-                          ? 'Dir ist noch kein Jahrgang zugewiesen — du siehst nur Material, das für alle freigegeben ist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+                          ? 'Dir ist noch kein Jahrgang zugewiesen — du siehst nur Material, das für alle freigegeben ist. Die Org-Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
                           : 'Erstelle dein erstes Material mit dem + Button'
                       }
                       iconColor="var(--app-color-material)"

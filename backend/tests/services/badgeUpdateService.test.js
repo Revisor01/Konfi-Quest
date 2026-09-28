@@ -95,10 +95,10 @@ describe('Hintergrunddienst: Zaehler und Abzeichen-Pruefung sind getrennt', () =
   // beiden Leitungsrollen aus.
   //
   // Jede Organisation hat ZWEI Leitungsrollen: `org_admin`
-  // ("Organisations-Admin") und `admin` ("Hauptamt"). Der Filter lautete
+  // ("Org-Leitung") und `admin` ("Leitung"). Der Filter lautete
   // `r.name != 'admin'` unter dem Kommentar "Alle Konfis und
   // Teamer:innen" — die Negation liess org_admin also MITLAUFEN und
-  // schloss nur das Hauptamt aus. Dessen App-Icon wurde im Hintergrund
+  // schloss nur die Rolle `admin` aus. Deren App-Icon wurde im Hintergrund
   // nie nachgefuehrt, obwohl es einen Zaehler hat (Chat + Antraege +
   // Termine + Freigaben, siehe BadgeContext).
   // ==================================================================

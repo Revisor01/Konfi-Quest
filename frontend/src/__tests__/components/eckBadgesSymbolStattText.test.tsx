@@ -98,7 +98,8 @@ describe('Benutzerliste: Rolle als Symbol', () => {
   // Postfach) -- der Org-Admin ist die Rolle fuer die ganze Gemeinde.
   it('drei Rollen, drei Zeichen: Gebaeude, Schild, Person', () => {
     const quelle = code(pfad);
-    expect(quelle).toContain("const rolleText = user.role_name === 'org_admin' ? 'Org-Admin' : user.role_name === 'admin' ? 'Admin' : 'Teamer:in';");
+    // Das Wort kommt aus utils/rollenNamen (Simon, 28.09.2026: Leitung, Org-Leitung).
+    expect(quelle).toContain("const rolleText = rollenName(user.role_name);");
     expect(quelle).toContain("const rolleIcon = user.role_name === 'org_admin' ? ICON_ORGANISATION_GEFUELLT : user.role_name === 'admin' ? ICON_SCHILD_GEFUELLT : ICON_PERSON_GEFUELLT;");
     expect(quelle).not.toContain('ICON_SCHLUESSEL');
     expect(ICON_ORGANISATION_GEFUELLT.length).toBeGreaterThan(0);

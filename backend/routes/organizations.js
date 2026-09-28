@@ -337,9 +337,12 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       // 2. Create default roles for the organization
       // WICHTIG: inkl. 'konfi' — konfi-management sucht die Rolle org-gescopt;
       // ohne sie kann die neue Organisation keine Konfis anlegen.
+      // Namen wie in utils/rollenNamen.js (Simon, 28.09.2026): 'admin' heisst
+      // "Leitung", 'org_admin' "Org-Leitung". Bestehende Gemeinden behalten
+      // ihre alten display_name-Werte, die Oberflaeche beschriftet nach name.
       const defaultRoles = [
-        { name: 'org_admin', display_name: 'Organisations-Admin', description: 'Vollzugriff auf alle Jahrgänge der Organisation', is_system_role: true },
-        { name: 'admin', display_name: 'Hauptamt', description: 'Vollzugriff mit Jahrgangs-Beschränkungen', is_system_role: true },
+        { name: 'org_admin', display_name: 'Org-Leitung', description: 'Vollzugriff auf alle Jahrgänge der Organisation', is_system_role: true },
+        { name: 'admin', display_name: 'Leitung', description: 'Vollzugriff mit Jahrgangs-Beschränkungen', is_system_role: true },
         { name: 'teamer', display_name: 'Teamer:in', description: 'Kann Anträge bearbeiten und zugewiesene Jahrgänge verwalten', is_system_role: true },
         { name: 'konfi', display_name: 'Konfirmand:in', description: 'Konfirmand:innen haben Zugriff auf eigene Daten und können Aktivitäten beantragen', is_system_role: true }
       ];

@@ -30,7 +30,7 @@ const eintrag: Activity = {
 const alteAnzeige = (a: Activity) =>
   (a as unknown as { admin?: string }).admin;
 // RICHTIG
-const eingetragenVon = (a: Activity) => a.admin || a.admin_name || 'Admin';
+const eingetragenVon = (a: Activity) => a.admin || a.admin_name || 'Leitung';
 
 describe('Aktivitaeten: wer hat eingetragen', () => {
   it('zeigt den Namen aus admin_name', () => {
@@ -41,9 +41,9 @@ describe('Aktivitaeten: wer hat eingetragen', () => {
     expect(alteAnzeige(eintrag)).toBeUndefined();
   });
 
-  it('faellt ohne Namen auf "Admin" zurueck', () => {
+  it('faellt ohne Namen auf "Leitung" zurueck', () => {
     const ohneNamen: Activity = { ...eintrag, admin_name: undefined };
-    expect(eingetragenVon(ohneNamen)).toBe('Admin');
+    expect(eingetragenVon(ohneNamen)).toBe('Leitung');
   });
 
   it('behaelt bei offenen Antraegen den Wartetext aus `admin`', () => {

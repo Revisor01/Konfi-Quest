@@ -26,6 +26,7 @@ import FortschrittsBalken from '../shared/FortschrittsBalken';
 import { ladeText, sendeText } from '../../utils/fortschritt';
 import { tastaturKlick } from '../../utils/tastatur';
 import { datumUhrzeit, uhrzeit } from '../../utils/dateUtils';
+import { rollenName } from '../../utils/rollenNamen';
 
 const getMimeFromFileName = (fileName: string): string => {
   const ext = (fileName.split('.').pop() || '').toLowerCase();
@@ -147,6 +148,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onRetry,
 }) => {
   const isOwnMessage = message.sender_id === user?.id && message.sender_type === user?.type;
+  // Eigene Funktionsbezeichnung vor dem festen Rollenwort (utils/rollenNamen);
+  // sender_role_display_name traegt in bestehenden Gemeinden die alten Namen.
+  const rolleImChat = message.sender_role_title
+    || (message.sender_role_name || message.sender_role_display_name
+      ? rollenName(message.sender_role_name, message.sender_role_display_name)
+      : '');
 
   // Laedt GENAU diese Datei gerade? Der Vergleich laeuft ueber den Pfad, damit
   // bei mehreren Dateien im Raum nur die angetippte den Fortschritt zeigt.
@@ -318,14 +325,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             color: 'var(--app-text-chat)'
           }}>
             {message.sender_name || 'Unbekannter User'}
-            {(message.sender_role_title || message.sender_role_display_name) && (
+            {rolleImChat && (
               <span style={{
                 fontWeight: 'var(--app-schrift-normal)',
                 color: 'var(--app-text-system)',
                 marginLeft: 'var(--app-abstand-kompakt)',
                 fontSize: 'var(--app-text-meta)'
               }}>
-                ({message.sender_role_title || message.sender_role_display_name})
+                ({rolleImChat})
               </span>
             )}
           </div>

@@ -125,7 +125,8 @@ const anna: Einladung = {
 };
 const ben: Einladung = {
   id: 13, user_id: 4, display_name: 'Test Admin 1', username: 'admin1',
-  role_name: 'admin', role_display_name: 'Admin',
+  // So steht die Rolle in bestehenden Gemeinden in der Datenbank.
+  role_name: 'admin', role_display_name: 'Hauptamt',
   created_at: '2026-09-26T12:00:00Z', expires_at: '2026-10-10T12:00:00Z',
   eingeladen_von_name: 'Test Org-Admin 2',
 };
@@ -199,7 +200,9 @@ describe('Abschnitt "Offene Einladungen" in "Benutzer:innen"', () => {
     expect(screen.getByText('gültig bis 09.10.2026')).toBeTruthy();
 
     expect(screen.getByText('Test Admin 1')).toBeTruthy();
-    expect(screen.getByText('als Admin')).toBeTruthy();
+    // Das feste Wort nach role_name, nicht der Datenbank-Name (28.09.2026).
+    expect(screen.getByText('als Leitung')).toBeTruthy();
+    expect(screen.queryByText('als Hauptamt')).toBeNull();
     expect(screen.getByText('gültig bis 10.10.2026')).toBeTruthy();
 
     // Jeder Knopf trägt den Namen der Person -- ein Screenreader liest

@@ -214,7 +214,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   // leer — deshalb bekommen alle drei denselben erklaerenden Text.
   const ohneJahrgangLeerText = {
     emptyTitle: 'Kein Jahrgang zugewiesen',
-    emptyMessage: 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du hier keine Challenges. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+    emptyMessage: 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du hier keine Challenges. Die Org-Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
   };
   // Loeschen ist der Leitung vorbehalten (Nutzerentscheid 28.08.2026):
   // Teamer:innen moderieren voll mit -- anlegen, bearbeiten, freigeben,

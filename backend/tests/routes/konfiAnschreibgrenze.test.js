@@ -156,7 +156,7 @@ describe('Anschreibgrenze fuer Konfis (01.09.2026)', () => {
         .send({ target_user_id: ADMIN_FREMD });
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Dieser Admin ist nicht für deinen Jahrgang zuständig');
+      expect(res.body.error).toBe('Diese Person aus der Leitung ist nicht für deinen Jahrgang zuständig');
       expect(await direktRaeume(KONFI_A, ADMIN_FREMD)).toBe(0);
     });
 
@@ -167,7 +167,7 @@ describe('Anschreibgrenze fuer Konfis (01.09.2026)', () => {
         .send({ target_user_id: ADMIN_OHNE_JG });
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Dieser Admin ist nicht für deinen Jahrgang zuständig');
+      expect(res.body.error).toBe('Diese Person aus der Leitung ist nicht für deinen Jahrgang zuständig');
       expect(await direktRaeume(KONFI_A, ADMIN_OHNE_JG)).toBe(0);
     });
 
@@ -297,7 +297,7 @@ describe('Anschreibgrenze fuer Konfis (01.09.2026)', () => {
         .send({ type: 'direct', name: 'Umweg', participants: [ADMIN_FREMD] });
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Dieser Admin ist nicht für deinen Jahrgang zuständig');
+      expect(res.body.error).toBe('Diese Person aus der Leitung ist nicht für deinen Jahrgang zuständig');
 
       const nachher = await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms');
       expect(nachher.rows[0].c).toBe(vorher.rows[0].c);

@@ -10,7 +10,7 @@ Organisation ist, kommt nicht hinein — und wer drin ist, erreicht nicht
 automatisch jede andere Person. Diese Grenzen sind der eigentliche Inhalt
 dieses Kapitels.
 
-Wo unten „Leitung und Admins" steht, sind beide Rollen gemeint; Teamer:innen
+Wo unten „Leitung und Org-Leitung" steht, sind genau diese beiden Rollen gemeint; Teamer:innen
 dürfen dort nicht. Was die Rollen sonst unterscheidet, steht im Kapitel
 [Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
 
@@ -21,9 +21,9 @@ dürfen dort nicht. Was die Rollen sonst unterscheidet, steht im Kapitel
 | Art | Wer ist drin | Wie er entsteht | Verlassbar |
 |---|---|---|---|
 | **Direktnachricht** | genau zwei Personen | jemand schreibt jemanden an | **nein** |
-| **Gruppe** | frei zusammengestellt | Leitung, Admin oder Teamer:in legt sie an | ja |
+| **Gruppe** | frei zusammengestellt | Org-Leitung, Leitung oder Teamer:in legt sie an | ja |
 | **Jahrgangs-Chat** | alle Konfis des Jahrgangs plus zuständige Begleitung | **automatisch** mit dem Jahrgang | **nein** |
-| **Team-Chat** | alle mit Leitungs-, Admin- oder Teamer-Rolle | **automatisch**, einer pro Gemeinde | ja, außer für Leitung und Admins |
+| **Team-Chat** | alle mit der Rolle Org-Leitung, Leitung oder Teamer:in | **automatisch**, einer pro Gemeinde | ja, außer für Leitung und Org-Leitung |
 | **Event-Chat** | wer bestätigt angemeldet ist, auch später Angemeldete und Nachrückende | die Leitung legt ihn beim Event an | Konfis nur übers Abmelden |
 
 ### Eine Direktnachricht beginnen
@@ -35,19 +35,19 @@ alten. Verlassen lässt es sich nicht.
 
 Ein Zweiergespräch hat immer genau zwei Personen — das ist der Grund, warum die
 Leitung es nicht mitliest. Sollen mehrere Personen miteinander schreiben,
-entsteht eine [Gruppe](#eine-gruppe-anlegen), und die kann der Org-Admin
+entsteht eine [Gruppe](#eine-gruppe-anlegen), und die kann die Org-Leitung
 öffnen.
 Einen „Direktchat" mit drei oder mehr Personen gibt es nicht; Konfis schreiben
 einander nur in Räumen, die die Leitung einsehen kann.
 
 ### Eine Gruppe anlegen
 
-Der einzige frei zusammenstellbare Raum. Über „Neuer Gruppenchat" geben Leitung,
-Admins und Teamer:innen ihr einen Namen und wählen die Personen aus. Konfis
+Der einzige frei zusammenstellbare Raum. Über „Neuer Gruppenchat" geben Org-Leitung, Leitung
+und Teamer:innen ihr einen Namen und wählen die Personen aus. Konfis
 können das nicht — bei ihnen gibt es nur „Neue Direktnachricht".
 
-Wen du dabei zur Auswahl bekommst, hängt an deiner Rolle: Die Leitung sieht alle
-Konfis der Gemeinde, eine Teamer:in nur die ihrer zugewiesenen Jahrgänge, ein
+Wen du dabei zur Auswahl bekommst, hängt an deiner Rolle: Die Org-Leitung sieht alle
+Konfis der Gemeinde, Leitung und Teamer:innen nur die ihrer zugewiesenen Jahrgänge, ein
 Konfi nur das für ihn zuständige Team.
 
 ### Den Jahrgangs-Chat nutzen
@@ -60,9 +60,9 @@ und pflegt seine Mitglieder selbst:
   — auch die, die sich
   [per Einladungscode registriert](35-passwoerter.md#konfis-mit-einem-einladungscode-aufnehmen)
   haben.
-- **Die Leitung (Org-Admin)** ist immer in allen Jahrgangs-Chats der Gemeinde
+- **Die Org-Leitung** ist immer in allen Jahrgangs-Chats der Gemeinde
   und bleibt es auch ohne Zuweisung.
-- **Admins und Teamer:innen** sind drin, solange ihnen der Jahrgang zugewiesen
+- **Leitung und Teamer:innen** sind drin, solange ihnen der Jahrgang zugewiesen
   ist. Wird die Zuweisung entzogen, fliegen sie wieder heraus. Was die Zuweisung
   sonst noch steuert, steht bei den
   [Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert).
@@ -74,7 +74,7 @@ können nicht direkt gelöscht werden. Bitte den Jahrgang löschen."* Das geht n
 ### Den Team-Chat nutzen
 
 Ein Raum pro Gemeinde, schlicht „Team" genannt, ebenfalls automatisch. Drin sind
-alle aktiven Personen mit Leitungs-, Admin- oder Teamer-Rolle. Konfis sind nie
+alle aktiven Personen mit der Rolle Org-Leitung, Leitung oder Teamer:in. Konfis sind nie
 drin und sehen ihn nicht.
 
 Wer eine Team-Rolle bekommt, ist beim nächsten Abgleich automatisch dabei; wer
@@ -84,7 +84,7 @@ die Rolle verliert, ist wieder draußen.
 > Abgleich ist sie aber wieder drin, weil sie weiter zum Team gehört. Wer
 > dauerhaft heraus soll, braucht eine Rollenänderung, kein Verlassen.
 
-Leitung und Admins können den Team-Chat **leeren**: Der Knopf „Team-Chat leeren"
+Leitung und Org-Leitung können den Team-Chat **leeren**: Der Knopf „Team-Chat leeren"
 oben im Chat entfernt alle Nachrichten samt Dateien, der Raum und seine
 Mitglieder bleiben. Das geht nur hier — *„Nur der Team-Chat lässt sich leeren."*
 
@@ -106,12 +106,12 @@ Einzelheiten stehen beim [Event](70-termine.md#einen-event-chat-einrichten).
 
 ## Nachschlagen, wer wen anschreiben darf
 
-| ↓ schreibt an → | Konfi | Teamer:in | Admin | Leitung (Org-Admin) |
+| ↓ schreibt an → | Konfi | Teamer:in | Leitung | Org-Leitung |
 |---|---|---|---|---|
 | **Konfi** | **nie** | nur bei **gemeinsamem Jahrgang** | nur bei **gemeinsamem Jahrgang** | immer |
 | **Teamer:in** | nur bei **zugewiesenem Jahrgang** | ja | ja | ja |
-| **Admin** | nur bei **zugewiesenem Jahrgang** | ja | ja | ja |
-| **Leitung (Org-Admin)** | immer | ja | ja | ja |
+| **Leitung** | nur bei **zugewiesenem Jahrgang** | ja | ja | ja |
+| **Org-Leitung** | immer | ja | ja | ja |
 
 Vier Regeln stecken darin:
 
@@ -120,12 +120,12 @@ nicht (*„Konfis können keine anderen Konfis anschreiben"*), und Konfis könne
 keine Gruppen anlegen. Miteinander reden sie im Jahrgangs-Chat.
 
 **2. Team und Konfis erreichen einander nur über einen gemeinsamen Jahrgang —
-in beide Richtungen.** Eine Teamer:in oder ein Admin sieht in der Kontaktliste
+in beide Richtungen.** Eine Teamer:in oder die Leitung sieht in der Kontaktliste
 nur die Konfis der zugewiesenen Jahrgänge; umgekehrt sehen Konfis nur die
-Teamer:innen und Admins, die für ihren Jahrgang zuständig sind. Das gilt fürs
+Teamer:innen und die Leitung, die für ihren Jahrgang zuständig sind. Das gilt fürs
 Anschreiben und fürs Aufnehmen in Gruppen gleichermaßen.
 
-**3. Die Leitung (Org-Admin) erreicht alle und ist für alle erreichbar.** Sie
+**3. Die Org-Leitung erreicht alle und ist für alle erreichbar.** Sie
 ist als Einzige nicht an die Jahrgangs-Grenze gebunden — ohne Ansprechperson
 bleibt damit niemand zurück.
 
@@ -138,17 +138,17 @@ Die Meldungen, wenn es doch jemand versucht:
 - *„Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben"*
 - *„Diese Konfirmand:in ist keinem deiner Jahrgänge zugeordnet"*
 - *„Diese Teamer:in ist nicht für deinen Jahrgang zuständig"*
-- *„Dieser Admin ist nicht für deinen Jahrgang zuständig"*
+- *„Diese Person aus der Leitung ist nicht für deinen Jahrgang zuständig"*
 
-> **Achtung, häufiger Anruf:** Eine Teamer:in oder ein Admin **ohne zugewiesenen
+> **Achtung, häufiger Anruf:** Eine Teamer:in oder die Leitung **ohne zugewiesenen
 > Jahrgang** erreicht keinen einzigen Konfi — und taucht umgekehrt in keiner
 > Konfi-Kontaktliste auf. Wenn jemand meldet „ich sehe meine Konfis nicht im
 > Chat", ist fast immer die
 > [Jahrgangs-Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
 > die Ursache. Prüf sie in der Nutzerverwaltung.
 
-> **Achtung:** Ein Konfi **ohne Jahrgang** ist nur für die Leitung erreichbar.
-> Bis der Jahrgang gesetzt ist, kommt weder eine Teamer:in noch ein Admin an
+> **Achtung:** Ein Konfi **ohne Jahrgang** ist nur für die Org-Leitung erreichbar.
+> Bis der Jahrgang gesetzt ist, kommt weder eine Teamer:in noch die Leitung an
 > ihn heran.
 
 ---
@@ -157,11 +157,11 @@ Die Meldungen, wenn es doch jemand versucht:
 
 Wer Mitglied eines Chats ist, kann ihn öffnen — in jeder Rolle. Ohne eigene
 Mitgliedschaft gilt dieselbe Regel wie überall in Konfi Quest: Der
-**Org-Admin** ist für die ganze Gemeinde zuständig, ein **Admin** für seine
+**Org-Leitung** ist für die ganze Gemeinde zuständig, die **Leitung** für ihre
 zugewiesenen Jahrgänge, und was nur das Team betrifft, ist fürs ganze Team
 offen.
 
-| Raum, in dem du nicht Mitglied bist | Org-Admin | Admin | Teamer:in, Konfi |
+| Raum, in dem du nicht Mitglied bist | Org-Leitung | Leitung | Teamer:in, Konfi |
 |---|---|---|---|
 | **Jahrgangs-Chat** | ja | nur bei zugewiesenem Jahrgang | nein |
 | **Event-Chat** | ja | wenn das Event in deiner Event-Liste steht | nein |
@@ -169,9 +169,9 @@ offen.
 | **Gruppe mit Konfis** | ja | nein | nein |
 | **Direktnachricht** | nein | nein | nein |
 
-In der Event-Liste eines Admins stehen die Events seiner Jahrgänge, Events
-„Nur Team" und Events ohne Jahrgang — genau deren Chats kann er öffnen. Ein
-Jahrgangs-Chat gehört ihm, sobald ihm der Jahrgang zugewiesen ist; dann ist er
+In der Event-Liste der Leitung stehen die Events ihrer Jahrgänge, Events
+„Nur Team" und Events ohne Jahrgang — genau deren Chats kann sie öffnen. Einen
+Jahrgangs-Chat hat sie, sobald ihr der Jahrgang zugewiesen ist; dann ist sie
 ohnehin [Mitglied](#den-jahrgangs-chat-nutzen).
 
 Öffnen heißt alles, was deine Rolle im Raum darf: lesen, schreiben, Dateien
@@ -187,7 +187,7 @@ davon lässt sich öffnen. Einen Event-Chat, in dem du nicht Mitglied bist,
 erreichst du über das [Event](70-termine.md#einen-event-chat-einrichten).
 
 **Fremde Zweiergespräche sind für alle zu.** Wer nicht selbst in einem
-Direktchat steht, kommt nicht hinein — auch der Org-Admin nicht. Er kann ihn
+Direktchat steht, kommt nicht hinein — auch die Org-Leitung nicht. Sie kann ihn
 weder lesen noch exportieren, löschen, eine Nachricht darin löschen oder eine
 Umfrage hineinstellen. Ein Zweiergespräch ist privat, auch in einer Gemeinde.
 
@@ -242,7 +242,7 @@ wird — dann steht dort das Zitat ohne Inhalt.
 
 | Wer | Darf löschen |
 |---|---|
-| **Leitung und Admins** | eigene und **fremde** Nachrichten — aber nur in Räumen, die sie [öffnen dürfen](#nachvollziehen-was-die-leitung-sehen-kann), also nie in fremden Zweiergesprächen |
+| **Leitung und Org-Leitung** | eigene und **fremde** Nachrichten — aber nur in Räumen, die sie [öffnen dürfen](#nachvollziehen-was-die-leitung-sehen-kann), also nie in fremden Zweiergesprächen |
 | **Teamer:innen** | nur eigene |
 | **Konfis** | nur eigene — sie sehen den Papierkorb gar nicht erst |
 
@@ -346,8 +346,8 @@ wie sie sind — für ein längeres Video ist der Chat zu knapp.
 In jedem Chat lässt sich eine Umfrage stellen — praktisch für „Wer kann am
 Samstag?" oder „Welches Lied nehmen wir?".
 
-**Anlegen dürfen sie nur Leitung und Admins.** Teamer:innen und Konfis stimmen
-ab, sehen den Umfrage-Knopf aber nicht (*„Nur Admins können Umfragen
+**Anlegen dürfen sie nur Leitung und Org-Leitung.** Teamer:innen und Konfis stimmen
+ab, sehen den Umfrage-Knopf aber nicht (*„Nur die Leitung kann Umfragen
 erstellen"*).
 
 Unter „Neue Umfrage" stehen:
@@ -429,9 +429,9 @@ beide den Zuschlag — die zweite bekommt „bereits vergeben".
 Wer in einem Chat ist, sehen **alle Mitglieder** über das Personen-Symbol oben
 im Chat — in Zweiergesprächen fehlt der Knopf, dort ist die Sache klar.
 
-**Ändern dürfen die Liste nur Leitung und Admins, nur in Gruppen, die sie
+**Ändern dürfen die Liste nur Leitung und Org-Leitung, nur in Gruppen, die sie
 [öffnen dürfen](#nachvollziehen-was-die-leitung-sehen-kann).** In eine Gruppe
-mit Konfis, in der er nicht Mitglied ist, trägt ein Admin deshalb niemanden
+mit Konfis, in der sie nicht Mitglied ist, trägt die Leitung deshalb niemanden
 ein — auch sich selbst nicht. In allen
 anderen Chat-Arten ergibt sich aus der Sache selbst, wer drin ist: aus dem
 Jahrgang, aus der Rolle, aus der Event-Anmeldung. Wer es anderswo versucht,
@@ -439,13 +439,13 @@ bekommt: *„Teilnehmer können nur zu Gruppenchats hinzugefügt werden"*
 beziehungsweise *„… aus Gruppenchats entfernt werden"*.
 
 Nur Personen aus der eigenen Gemeinde lassen sich hinzufügen — dazu zählen
-auch Teamer:innen und Admins, die [über eine Einladung](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)
+auch Teamer:innen und Leitung, die [über eine Einladung](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)
 hier mitarbeiten und in einer anderen Gemeinde zuhause sind. Ihre Rolle wird
 immer aus dem echten Konto ermittelt, und zwar die Rolle **in dieser
 Gemeinde** — niemand landet mit falschen Rechten in einer Gruppe.
 
 > **Achtung:** Beim nachträglichen Hinzufügen greift nur die Jahrgangsgrenze für
-> Konfis: Ein Admin kann nur Konfis seiner eigenen Jahrgänge eintragen. Alles
+> Konfis: Die Leitung kann nur Konfis ihrer eigenen Jahrgänge eintragen. Alles
 > andere bleibt ungeprüft — die Leitung kann einen Konfi und eine fachfremde
 > Teamer:in in dieselbe Gruppe setzen, obwohl die beiden einander nicht direkt
 > anschreiben könnten. Wer eine Gruppe zusammenstellt, sollte selbst hinschauen,
@@ -465,14 +465,14 @@ Gemeinde** — niemand landet mit falschen Rechten in einer Gruppe.
 
 Der Knopf steckt im Drei-Punkte-Menü oben im Chat, als „Chat verlassen".
 
-**Leitung und Admins können gar keinen Chat verlassen** — *„Admins können Chats
-nicht verlassen"*. Wer die Verantwortung trägt, bleibt in den Räumen.
+**Leitung und Org-Leitung können gar keinen Chat verlassen** — *„Die Leitung kann
+Chats nicht verlassen"*. Wer die Verantwortung trägt, bleibt in den Räumen.
 
 ---
 
 ## Einen Chat löschen
 
-Einen ganzen Chat löschen dürfen **Leitung und Admins**, in der Übersicht über
+Einen ganzen Chat löschen dürfen **Leitung und Org-Leitung**, in der Übersicht über
 die [Wischgeste nach links](03-bedienung.md#etwas-loeschen-nach-links-wischen) —
 jeden Chat, den sie
 [öffnen dürfen](#nachvollziehen-was-die-leitung-sehen-kann). Ein fremdes
@@ -493,11 +493,11 @@ Ein ganzer Chatverlauf lässt sich über das Drei-Punkte-Menü als Textdatei
 sichern („Chat-Verlauf exportieren") — gedacht dafür, aus einem Gespräch
 weiterzuarbeiten, etwa an einer Gottesdienst-Vorbereitung.
 
-**Nur Leitung und Admins dürfen das**, Teamer:innen und Konfis nicht (*„Nur die
+**Nur Leitung und Org-Leitung dürfen das**, Teamer:innen und Konfis nicht (*„Nur die
 Leitung darf Chats exportieren"*). Ein Export nimmt den ganzen Verlauf aus dem
 Zusammenhang des Chats heraus; wer ihn zieht, soll dieselbe Verantwortung tragen
 wie beim Löschen. Exportieren lässt sich nur, was du
-[öffnen darfst](#nachvollziehen-was-die-leitung-sehen-kann) — als Admin also
+[öffnen darfst](#nachvollziehen-was-die-leitung-sehen-kann) — als Leitung also
 nur Räume deiner Jahrgänge, deiner Events und des Teams. **Fremde
 Zweiergespräche lassen sich nicht exportieren**
 (*„Private Zweiergespräche lassen sich nicht exportieren"*).

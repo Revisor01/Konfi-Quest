@@ -158,21 +158,21 @@ Team-Rückblicke lassen sich genauso löschen. Sie stehen allerdings in einer
 
 | | Eigene Jahrgänge | Alle Jahrgänge | Teamer-Rückblicke |
 |---|---|---|---|
-| **Admin** | ja | nein | nein |
-| **Leitung (org_admin)** | ja | ja | ja |
+| **Leitung** | ja | nein | nein |
+| **Org-Leitung** | ja | ja | ja |
 
-Ein Admin sieht und verwaltet die Ausgaben **seiner** Jahrgänge — für einen
-fremden Jahrgang lehnt der Server ab. Die Leitung sieht alle Jahrgänge und ist
+Die Leitung sieht und verwaltet die Ausgaben **ihrer** Jahrgänge — für einen
+fremden Jahrgang lehnt der Server ab. Die Org-Leitung sieht alle Jahrgänge und ist
 zusätzlich die einzige Rolle, die Team-Rückblicke anlegen und löschen darf; die
 betreffen die ganze Gemeinde und hängen an keinem Jahrgang. Der Reiter **Team**
-ist für Admins deshalb gesperrt.
+ist für die Leitung deshalb gesperrt.
 
 ## Den Team-Rückblick anlegen — oder ihn laufen lassen
 
 | | Konfis | Team |
 |---|---|---|
 | Erstellt für | einen Jahrgang | die ganze Gemeinde |
-| Wer darf | Admin (eigene Jahrgänge) und Leitung | nur die Leitung |
+| Wer darf | Leitung (eigene Jahrgänge) und Org-Leitung | nur die Org-Leitung |
 | Zeitraum | Beginn der Konfi-Zeit bis heute | ein Kalenderjahr, 1.1. bis 31.12. |
 | Name | frei, mit Vorschlag | keiner, das Jahr genügt |
 | Automatisch | nein | **ja, jedes Jahr am 6. Januar** |
@@ -503,7 +503,7 @@ andere zählt, was du dem Jahrgang aufgegeben hast. Entwürfe zählen nicht, die
 hat niemand gesehen.
 
 **„Nicht allein" nennt keine Namen.** Gezählt werden nur Teamer:innen auf
-denselben Jahrgängen, keine Admins.
+denselben Jahrgängen, niemand aus Leitung oder Org-Leitung.
 
 **„Deine Konfis" hängt an der Jahrgangs-Zuweisung.** Wer keinem Jahrgang
 zugewiesen ist, steht hier bei null und bekommt die Seite nicht — meist ein
@@ -538,7 +538,7 @@ noch keinen, fehlt auch die Karte — die andere Gemeinde zeigt ihren weiterhin.
 
 Öffnest du das Profil einer Konfi oder einer Teamer:in, siehst du **alle ihre
 Rückblicke** mit Datum. So kannst du bei Rückfragen nachvollziehen, was die
-Person selbst sieht. Das steht Admins und der Leitung offen, jeweils für die
+Person selbst sieht. Das steht Leitung und Org-Leitung offen, jeweils für die
 eigene Gemeinde.
 
 ## Eine Seite teilen
