@@ -13,6 +13,12 @@ Versionsüberschrift.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
   die Zahl am Reiter; das orange Feld mit Uhr bleibt zusätzlich stehen.
+- Ungelesene Mitteilungen zeigt die Glocke in jeder Rolle mit einem blauen
+  Briefumschlag statt mit einer Zahl; eine Zahl an der Glocke steht nur noch
+  für Vorgänge, die aus einer Funklücke gesendet werden.
+- Die Zahl am App-Symbol und die Zahlen am Gemeinde-Umschalter zählen das
+  Postfach nicht mehr mit — ein offener Antrag zählt dort einmal, auch wenn
+  die Mitteilung dazu noch ungelesen ist.
 
 ### Behoben
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und

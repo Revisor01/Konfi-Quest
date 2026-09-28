@@ -4517,6 +4517,32 @@ ion-buttons:has(> .app-postfach-glocke) {
   top: -8px;
   right: 2px;
 }
+/* Ungelesene Mitteilungen (28.09.2026, Simon): Briefumschlag statt Zahl --
+   derselbe blaue Kreis an derselben Stelle (Lage und Freigaben oben gelten
+   unveraendert), darin das Symbol weiss wie sonst die Ziffer. Nur Token:
+   Im Dunkelmodus hellt Ionics Palette --ion-color-primary selbst auf; auf
+   Android (MD3) sitzt der Kreis ueber die .md-Regel an derselben Stelle wie
+   die Zahl. Keine eigene Lage und Groesse -- sonst liefe die gemessene
+   Geometrie auseinander. */
+.app-postfach-glocke__zahl--umschlag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+/* SPEZIFITAET: Beide Themes setzen die Groesse JEDES Symbols in einem
+   Toolbar-Knopf -- ios27 `ion-button.ios:not(...).button-has-icon-only
+   ion-icon` auf 1.4rem (0,3,2), MD3 `ion-button.md:not(.md3-disabled)
+   ion-icon` auf 24px (0,2,2). Der Umschlag sitzt in einem solchen Knopf und
+   waere damit groesser als sein 18px-Kreis. Diese Regel hat (0,4,2) und
+   gewinnt auf beiden Plattformen, unabhaengig von der Ladereihenfolge
+   (Test: postfachGlocke.test.tsx). [data-variante] traegt der Knopf immer
+   (PostfachGlocke setzt es in jedem Zustand). */
+ion-button.app-postfach-glocke[data-variante] .app-postfach-glocke__zahl.app-postfach-glocke__zahl--umschlag ion-icon {
+  color: var(--app-weiss);
+  /* 12px im 18px-Kreis: 3px Rand rundum, gut lesbar. */
+  font-size: var(--app-text-klein);
+}
 .app-postfach-glocke[data-variante="warning"] .app-postfach-glocke__zahl {
   background: var(--app-color-warning);
 }

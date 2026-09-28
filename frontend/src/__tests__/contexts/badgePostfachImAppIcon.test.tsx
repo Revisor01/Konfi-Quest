@@ -2,18 +2,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 
-// Das Postfach zaehlt am App-Symbol mit (25.09.2026).
+// Das Postfach zaehlt am App-Symbol NICHT mit (28.09.2026, Simon).
 //
-// Simons Messung am Geraet (Leitung, Konto 41): Postfach 23 ungelesen,
-// Challenges 9, Chat 3 -- das Symbol zeigte 12. totalBadgeCount addierte
-// postfachUngelesen in keinem der drei Zweige. Simon: "lass es dagegen
-// zaehlen, bitte! Das, was an Benachrichtigungen drin ist, wird mit
-// reingezaehlt, damit es logisch konsistent bleibt."
+// Das Postfach bekommt keine Zahl mehr, sondern an der Glocke einen blauen
+// Briefumschlag, sobald mindestens eine Mitteilung ungelesen ist -- und es
+// wird nicht mehr auf die Zahl am App-Symbol addiert, fuer alle drei Rollen.
+// Das kehrt die Entscheidung vom 25.09.2026 um ("lass es dagegen zaehlen"),
+// nach der totalBadgeCount postfachUngelesen in allen drei Zweigen addierte
+// (Simons Messung damals: Postfach 23 + Challenges 9 + Chat 3 = 35).
 //
 // Hier wird festgehalten, was der Client aus badge-counts.postfach.ungelesen
-// macht: Zahl an der Glocke UND Anteil an totalBadgeCount, in ALLEN drei
-// Rollen. Die Serverseite (utils/appIconBadge.js) addiert dieselbe Zahl;
-// tests/utils/appIconBadgeParitaet.test.js haelt beide Seiten fest.
+// macht: Er uebernimmt die Zahl (die Glocke macht daraus den Briefumschlag),
+// aber sie geht weder in totalBadgeCount noch in appSymbolZahl ein. Die
+// Serverseite (utils/appIconBadge.js) rechnet ebenso;
+// tests/utils/appIconBadgeParitaet.test.js haelt beide Seiten fest. Jeder
+// Fall traegt ungelesene Mitteilungen -- kaeme das Postfach zurueck in die
+// Summe, fielen die konkreten Zahlen.
 
 const mockApiGet = vi.fn();
 const mockApiPost = vi.fn().mockResolvedValue({});
@@ -86,14 +90,14 @@ const renderProvider = () =>
     </BadgeProvider>
   );
 
-describe('BadgeContext: Postfach am App-Symbol', () => {
+describe('BadgeContext: Postfach zaehlt nicht am App-Symbol', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     captured.current = null;
     mockUser = LEITUNG;
   });
 
-  it('Simons Messung (Leitung): Postfach 23 + Challenges 9 + Chat 3 = 35, nicht 12', async () => {
+  it('Simons Messung (Leitung): Postfach 23, Challenges 9, Chat 3 -> Symbol 12, Glocke bekommt 23', async () => {
     mockApiGet.mockResolvedValue({
       data: {
         chat: { total: 3, byRoom: { 5: 3 } },
@@ -111,13 +115,14 @@ describe('BadgeContext: Postfach am App-Symbol', () => {
     await waitFor(() => {
       expect(captured.current?.postfachUngelesen).toBe(23);
     });
-    // Die Glocke zeigt 23 ...
+    // Die Glocke kennt die 23 (sie zeigt daraus den Briefumschlag) ...
     expect(captured.current!.postfachUngelesen).toBe(23);
-    // ... und das Symbol die Summe aller sichtbaren Zahlen -- vorher 12.
-    expect(captured.current!.totalBadgeCount).toBe(35);
+    // ... das Symbol zaehlt nur die Reiter.
+    expect(captured.current!.totalBadgeCount).toBe(12);
+    expect(captured.current!.appSymbolZahl).toBe(12);
   });
 
-  it('Leitung: offener Antrag und seine ungelesene Mitteilung -> Reiter 1 + Glocke 1 = 2 (bewusst, siehe postfachArten.js)', async () => {
+  it('Leitung: offener Antrag und seine ungelesene Mitteilung -> 1, nur der Reiter', async () => {
     mockApiGet.mockResolvedValue({
       data: {
         chat: { total: 0, byRoom: {} },
@@ -134,10 +139,11 @@ describe('BadgeContext: Postfach am App-Symbol', () => {
     await waitFor(() => {
       expect(captured.current?.pendingRequestsCount).toBe(1);
     });
-    expect(captured.current!.totalBadgeCount).toBe(2);
+    expect(captured.current!.postfachUngelesen).toBe(1);
+    expect(captured.current!.totalBadgeCount).toBe(1);
   });
 
-  it('Teamer: Chat 1 + Freigaben 2 + Abzeichen 1 + Postfach 4 = 8', async () => {
+  it('Teamer: Chat 1 + Freigaben 2 + Abzeichen 1 = 4, Postfach 4 zaehlt nicht', async () => {
     mockUser = TEAMER;
     mockApiGet.mockResolvedValue({
       data: {
@@ -155,10 +161,10 @@ describe('BadgeContext: Postfach am App-Symbol', () => {
     await waitFor(() => {
       expect(captured.current?.postfachUngelesen).toBe(4);
     });
-    expect(captured.current!.totalBadgeCount).toBe(8);
+    expect(captured.current!.totalBadgeCount).toBe(4);
   });
 
-  it('Konfi: "Punkte erhalten" hat keinen Reiter -- ohne das Postfach staende das Symbol auf 0', async () => {
+  it('Konfi: nur "Punkte erhalten" im Postfach -> Symbol 0', async () => {
     mockUser = KONFI;
     mockApiGet.mockResolvedValue({
       data: {
@@ -178,10 +184,11 @@ describe('BadgeContext: Postfach am App-Symbol', () => {
     await waitFor(() => {
       expect(captured.current?.postfachUngelesen).toBe(3);
     });
-    expect(captured.current!.totalBadgeCount).toBe(3);
+    expect(captured.current!.totalBadgeCount).toBe(0);
+    expect(captured.current!.appSymbolZahl).toBe(0);
   });
 
-  it('Konfi: Chat 2 + Abzeichen 1 + Neuigkeiten 3 + Postfach 5 = 11', async () => {
+  it('Konfi: Chat 2 + Abzeichen 1 + Neuigkeiten 3 = 6, Postfach 5 zaehlt nicht', async () => {
     mockUser = KONFI;
     mockApiGet.mockResolvedValue({
       data: {
@@ -200,10 +207,10 @@ describe('BadgeContext: Postfach am App-Symbol', () => {
     await waitFor(() => {
       expect(captured.current?.postfachUngelesen).toBe(5);
     });
-    expect(captured.current!.totalBadgeCount).toBe(11);
+    expect(captured.current!.totalBadgeCount).toBe(6);
   });
 
-  it('aelterer Server ohne das Feld: Postfach 0, Summe wie vorher, kein Fehler', async () => {
+  it('aelterer Server ohne das Feld: Postfach 0, Summe unveraendert, kein Fehler', async () => {
     mockUser = KONFI;
     mockApiGet.mockResolvedValue({
       data: { chat: { total: 2, byRoom: { 1: 2 } }, newBadges: 1 },

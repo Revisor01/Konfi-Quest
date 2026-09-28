@@ -41,23 +41,26 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
 
   // Bildet totalBadgeCount aus BadgeContext.tsx nach.
   //
-  // Seit 25.09.2026 fuer ALLE Rollen plus die ungelesenen Postfach-
-  // Mitteilungen (Simon: "lass es dagegen zaehlen"). Bewusst ohne Fallback
-  // -- fehlt das Feld, soll der Test fallen, nicht 0 addieren.
+  // OHNE Postfach (28.09.2026, Simon): Das Postfach zeigt an der Glocke einen
+  // Briefumschlag statt einer Zahl und zaehlt am Symbol nicht mehr mit --
+  // auf beiden Seiten. Vom 25. bis 28.09.2026 stand hier
+  // `+ body.postfach.ungelesen` in allen drei Zweigen ("lass es dagegen
+  // zaehlen"); diese Entscheidung ist ueberholt. Das Feld liefert
+  // badge-counts weiter (Vertrag mit der Store-App 2.3.0), die Faelle unten
+  // pruefen, dass es dort steht und trotzdem nicht in die Summe geht.
   //
   // Seit 27.09.2026 auch fuer Leitung und Team plus Challenge-Neuigkeiten
   // (Simon: "Die Challenges sollen sich verhalten wie der Chat").
   const clientSumme = (body, rolle) => {
-    const postfach = body.postfach.ungelesen;
     if (rolle === 'admin') {
       return body.chat.total + body.pendingRequests + body.pendingEvents + body.pendingChallenges
-        + body.challengeUpdates.total + postfach;
+        + body.challengeUpdates.total;
     }
     if (rolle === 'teamer') {
-      return body.chat.total + body.pendingChallenges + body.newBadges + body.challengeUpdates.total + postfach;
+      return body.chat.total + body.pendingChallenges + body.newBadges + body.challengeUpdates.total;
     }
     // Konfi (seit 24.09.2026): plus Challenge-Neuigkeiten.
-    return body.chat.total + body.newBadges + body.challengeUpdates.total + postfach;
+    return body.chat.total + body.newBadges + body.challengeUpdates.total;
   };
 
   /** Eine Postfach-Mitteilung, wie die Schreibstellen sie anlegen. */
@@ -179,13 +182,15 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
   });
 
   // ------------------------------------------------------------------
-  // Postfach am App-Symbol (25.09.2026)
+  // Postfach am App-Symbol: zaehlt nicht mit (28.09.2026)
   // ------------------------------------------------------------------
 
-  it('Simons Messung (Leitung, Konto 41): Postfach 23 + Challenges 9 + Chat 3 = 35, nicht 12', async () => {
-    // Vorher zeigte das Symbol 12 -- die 23 fehlten vollstaendig, weil
-    // totalBadgeCount das Postfach in keinem Zweig addierte. Nachgestellt
-    // mit orgAdmin1 (org-weit, wie Konto 41).
+  it('Simons Messung (Leitung, Konto 41): Postfach 23 + Challenges 9 + Chat 3 -> Symbol 12, Glocke meldet 23', async () => {
+    // Am 25.09.2026 zeigte das Symbol hier 12, Simon wollte 35 ("lass es
+    // dagegen zaehlen"). Seit 28.09.2026 gilt wieder 12: Das Postfach traegt
+    // einen Briefumschlag an der Glocke, keine Zahl, und das Symbol zaehlt
+    // nur, was an den Reitern steht. Nachgestellt mit orgAdmin1 (org-weit,
+    // wie Konto 41).
     // 23 ungelesene Mitteilungen zu laengst entschiedenen Antraegen: keine
     // davon ist noch offen, pendingRequests bleibt 0 -- genau wie gemessen.
     for (let i = 0; i < 23; i++) {
@@ -232,21 +237,22 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
       id: USERS.orgAdmin1.id, type: 'admin', role_name: 'org_admin',
       organization_id: ORGS.testGemeinde.id, assigned_jahrgaenge: []
     });
-    expect(clientSumme(res.body, 'admin')).toBe(35);
-    expect(server).toBe(35);
+    expect(clientSumme(res.body, 'admin')).toBe(12);
+    expect(server).toBe(12);
   });
 
-  it('Postfach: gelesene Mitteilungen zaehlen auf keiner Seite', async () => {
+  it('Postfach: weder gelesene noch ungelesene Mitteilungen zaehlen -- auf keiner Seite', async () => {
     await mitteilung(USERS.konfi1.id, 'bonus_points', { points: '2' }, true);
     await mitteilung(USERS.konfi1.id, 'bonus_points', { points: '3' }, false);
 
     const { server, client, body } = await vergleiche(USERS.konfi1, 'konfi', 'konfi1');
-    expect(body.postfach.ungelesen).toBe(1);
+    // Das Feld steht unveraendert in der Antwort (Store-App 2.3.0 liest es).
+    expect(body.postfach).toEqual({ ungelesen: 1 });
     expect(server).toBe(client);
-    expect(server).toBe(1);
+    expect(server).toBe(0);
   });
 
-  it('Konfi: "Punkte erhalten" zaehlt am Symbol -- vorher gab es dafuer nur den Push', async () => {
+  it('Konfi: "Punkte erhalten" zaehlt nicht am Symbol -- nur als Briefumschlag an der Glocke', async () => {
     await mitteilung(USERS.konfi1.id, 'bonus_points', { points: '5' });
     await mitteilung(USERS.konfi1.id, 'event_attendance', { event_id: '1', points: '2' });
     await mitteilung(USERS.konfi1.id, 'level_up', { level_id: '2' });
@@ -254,15 +260,15 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
     const { server, client, body } = await vergleiche(USERS.konfi1, 'konfi', 'konfi1');
     expect(body.newBadges).toBe(0);
     expect(body.challengeUpdates.total).toBe(0);
+    expect(body.postfach.ungelesen).toBe(3);
     expect(server).toBe(client);
-    expect(server).toBe(3);
+    expect(server).toBe(0);
   });
 
-  it('Leitung: offener Antrag UND seine ungelesene Mitteilung -> 2 auf beiden Seiten (Reiter + Glocke, bewusst)', async () => {
-    // Die Ueberlappung besteht, solange der Antrag offen UND die Mitteilung
-    // ungelesen ist -- dann zeigt die App auch zwei Zahlen (Reiter 1,
-    // Glocke 1), und das Symbol verspricht nicht mehr als das. Warum kein
-    // Ausschluss je Art: utils/postfachArten.js.
+  it('Leitung: offener Antrag UND seine ungelesene Mitteilung -> 1 auf beiden Seiten (nur der Reiter)', async () => {
+    // Bis 28.09.2026 zaehlte das Paar doppelt (Reiter 1 + Glocke 1 = 2).
+    // Jetzt zeigt die Glocke einen Briefumschlag, und das Symbol zaehlt den
+    // offenen Antrag genau einmal.
     const { rows: [{ id: requestId }] } = await db.query(
       `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id)
        VALUES ($1, $2, '2026-08-27', 'pending', $3) RETURNING id`,
@@ -274,10 +280,10 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
     expect(body.pendingRequests).toBe(1);
     expect(body.postfach.ungelesen).toBe(1);
     expect(server).toBe(client);
-    expect(server).toBe(2);
+    expect(server).toBe(1);
   });
 
-  it('Postfach zaehlt ueber alle Gemeinden -- auf beiden Seiten', async () => {
+  it('Postfach ueber alle Gemeinden: die Glocke meldet 2, das Symbol zaehlt 0 -- auf beiden Seiten', async () => {
     // orgAdmin1 bekommt eine Mitteilung aus Org 2 (Zweit-Gemeinde).
     await db.query(
       `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
@@ -296,7 +302,7 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
       organization_id: ORGS.testGemeinde.id, assigned_jahrgaenge: []
     });
     expect(server).toBe(clientSumme(res.body, 'admin'));
-    expect(server).toBe(2);
+    expect(server).toBe(0);
   });
 
   it('Leitung und Team: neuer Beitrag ohne Freigabe zaehlt auf beiden Seiten (27.09.2026)', async () => {
@@ -318,16 +324,18 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
     await mitteilung(USERS.teamer1.id, 'challenge_submission', { challengeId: String(c.id) });
 
     // 1 neuer Beitrag an der Challenge + die Challenge selbst, nie geoeffnet
-    // und das Team macht mit (seit 27.09.2026, Audit BF-07) + 1 Mitteilung
-    // im Postfach -- auf beiden Seiten gleich.
+    // und das Team macht mit (seit 27.09.2026, Audit BF-07). Die 1 Mitteilung
+    // im Postfach zaehlt seit 28.09.2026 nicht mehr -- auf beiden Seiten gleich.
     const leitung = await vergleiche(USERS.admin1, 'admin', 'admin1');
     expect(leitung.body.challengeUpdates.total).toBe(2);
-    expect(leitung.server).toBe(3);
-    expect(leitung.client).toBe(3);
+    expect(leitung.body.postfach.ungelesen).toBe(1);
+    expect(leitung.server).toBe(2);
+    expect(leitung.client).toBe(2);
     const team = await vergleiche(USERS.teamer1, 'teamer', 'teamer1');
     expect(team.body.challengeUpdates.total).toBe(2);
-    expect(team.server).toBe(3);
-    expect(team.client).toBe(3);
+    expect(team.body.postfach.ungelesen).toBe(1);
+    expect(team.server).toBe(2);
+    expect(team.client).toBe(2);
   });
 
   it('Teamer: mit Chat', async () => {

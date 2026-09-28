@@ -254,7 +254,7 @@ Gemeinde angehört, sieht den Namen nicht.
 Auch die **roten Zahlen an den Reitern** gehören zur Gemeinde, in der man
 gerade arbeitet: Beim Wechsel verschwinden sie und kommen mit den Zahlen der
 neuen Gemeinde zurück. Eine Gemeinde ohne Challenges trägt also keine Zahl an
-den Challenges. Nur die Zahl an der **Glocke** bleibt stehen — das
+den Challenges. Nur der **Briefumschlag an der Glocke** bleibt stehen — das
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) gehört zum
 Konto und umfasst alle Gemeinden. Ebenso die **Zahl am App-Symbol**: Sie
 zählt alle Gemeinden zusammen und ändert sich durch den Wechsel nicht.
@@ -265,12 +265,12 @@ In dieser Liste trägt jede Gemeinde eine **rote Zahl**, wenn dort etwas auf
 dich wartet. So siehst du, wo Arbeit liegt, ohne erst hineinzuwechseln. Was
 mitzählt, hängt von deiner Rolle **in dieser Gemeinde** ab: als Leitung offene
 Anträge, unverbuchte Events, wartende Challenge-Beiträge und ungelesene
-Chats; als Teamer:in wartende Beiträge, Chats und neue Badges. Dazu in
-jeder Rolle die ungelesenen Mitteilungen aus dieser Gemeinde im
-[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) — Mitteilungen
-aus einer gesperrten Gemeinde stehen bei deiner Stamm-Gemeinde; die einer
-Gemeinde, die du verlässt, gehen mit der Mitgliedschaft. Bist du an Jahrgänge
-gebunden, zählt nur, was du dort auch sehen darfst. Eine Gemeinde ohne Zahl hat nichts Offenes.
+Chats; als Teamer:in wartende Beiträge, Chats und neue Badges. Ungelesene
+Mitteilungen im [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen)
+zählen hier nicht mit — sie zeigt der Briefumschlag an der Glocke (siehe
+[Ungelesene Mitteilungen an der Glocke erkennen](03-bedienung.md#ungelesene-mitteilungen-an-der-glocke-erkennen)).
+Bist du an Jahrgänge gebunden, zählt nur, was du dort auch sehen darfst. Eine
+Gemeinde ohne Zahl hat nichts Offenes.
 
 **Die Zahlen der Liste zusammengezählt ergeben die Zahl am App-Symbol.** Das
 Symbol zeigt immer die Summe aller deiner Gemeinden, jede mit der Rolle, die

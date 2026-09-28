@@ -20,6 +20,11 @@
 // und Umschalter dieselbe Zahl ergeben. Was die offene App daraus macht, steht
 // in frontend/src/__tests__/contexts/badgeAppSymbolAlleGemeinden.test.tsx.
 //
+// POSTFACH (28.09.2026, Simon): Ungelesene Mitteilungen zaehlen am Symbol
+// und im Umschalter NICHT mehr mit -- das Postfach zeigt an der Glocke einen
+// Briefumschlag statt einer Zahl. Die Faelle unten tragen weiter Mitteilungen,
+// damit ein Rueckfall in die alte Summe sofort auffaellt.
+//
 // Assertions auf konkrete Zahlen, kein toBeDefined auf einem Zaehler.
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
@@ -138,14 +143,15 @@ describe('App-Symbol bei mehreren Gemeinden (BF-12)', () => {
     // Zuweisung auf Jahrgang 2 (einem Jahrgang von Org 2).
     //
     // Org 1: zwei offene Antraege (org-weit sichtbar)         -> 2
-    //        eine ungelesene Mitteilung aus Org 1             -> 1
+    //        eine ungelesene Mitteilung aus Org 1             -> 0 (seit 28.09.2026)
     // Org 2: ein offener Antrag -- sieht eine Teamer:in NICHT -> 0
     //        ein wartender Beitrag im Jahrgang 2              -> 1
-    //        eine ungelesene Mitteilung aus Org 2             -> 1
+    //        eine ungelesene Mitteilung aus Org 2             -> 0 (seit 28.09.2026)
     //
-    // Richtig: Org 1 = 3, Org 2 = 2, Symbol = 5.
-    // Vorher am Push und im Hintergrund: Org 2 mit der Stamm-Rolle org_admin
-    // (Antrag zaehlt mit) und das Postfach je Gemeinde ganz: (2+2) + (1+1+2) = 8.
+    // Richtig: Org 1 = 2, Org 2 = 1, Symbol = 3.
+    // Bis 27.09.2026 am Push und im Hintergrund: Org 2 mit der Stamm-Rolle
+    // org_admin (Antrag zaehlt mit) und das Postfach je Gemeinde ganz:
+    // (2+2) + (1+1+2) = 8. Vom 27. bis 28.09.2026 mit Postfach: 3 + 2 = 5.
     beforeEach(async () => {
       await zusatz(USERS.orgAdmin1.id, ORGS.andereGemeinde.id, ROLES.teamer2.id);
       await db.query(
@@ -161,22 +167,22 @@ describe('App-Symbol bei mehreren Gemeinden (BF-12)', () => {
       invalidateUserCache(USERS.orgAdmin1.id);
     });
 
-    it('der Umschalter zeigt je Gemeinde die Zahl mit der dortigen Rolle: 3 und 2', async () => {
+    it('der Umschalter zeigt je Gemeinde die Zahl mit der dortigen Rolle: 2 und 1', async () => {
       const { jeOrg, summe } = await umschalter('orgAdmin1');
-      expect(jeOrg).toEqual({ 1: 3, 2: 2 });
-      expect(summe).toBe(5);
+      expect(jeOrg).toEqual({ 1: 2, 2: 1 });
+      expect(summe).toBe(3);
     });
 
-    it('Push an eine Person: 5 -- die Summe des Umschalters, nicht 8', async () => {
-      expect(await push(USERS.orgAdmin1)).toBe(5);
+    it('Push an eine Person: 3 -- die Summe des Umschalters, ohne die zwei Mitteilungen', async () => {
+      expect(await push(USERS.orgAdmin1)).toBe(3);
     });
 
-    it('Push an viele: 5', async () => {
-      expect(await pushAnViele(USERS.orgAdmin1)).toBe(5);
+    it('Push an viele: 3', async () => {
+      expect(await pushAnViele(USERS.orgAdmin1)).toBe(3);
     });
 
-    it('Hintergrund-Lauf: 5', async () => {
-      expect(await hintergrund(USERS.orgAdmin1)).toBe(5);
+    it('Hintergrund-Lauf: 3', async () => {
+      expect(await hintergrund(USERS.orgAdmin1)).toBe(3);
     });
 
     it('alle drei Stellen ergeben dieselbe Zahl', async () => {
@@ -185,13 +191,13 @@ describe('App-Symbol bei mehreren Gemeinden (BF-12)', () => {
       expect(werte).toEqual([summe, summe, summe]);
     });
 
-    it('ohne Jahrgang in Org 2 zaehlt der Beitrag dort nirgends: 4', async () => {
+    it('ohne Jahrgang in Org 2 zaehlt der Beitrag dort nirgends: 2', async () => {
       await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.orgAdmin1.id]);
       invalidateUserCache(USERS.orgAdmin1.id);
       const { jeOrg } = await umschalter('orgAdmin1');
-      expect(jeOrg).toEqual({ 1: 3, 2: 1 });
-      expect(await push(USERS.orgAdmin1)).toBe(4);
-      expect(await hintergrund(USERS.orgAdmin1)).toBe(4);
+      expect(jeOrg).toEqual({ 1: 2, 2: 0 });
+      expect(await push(USERS.orgAdmin1)).toBe(2);
+      expect(await hintergrund(USERS.orgAdmin1)).toBe(2);
     });
 
     it('die Summe entsteht in EINER Zaehlrunde, nicht einer je Gemeinde', async () => {
@@ -202,28 +208,31 @@ describe('App-Symbol bei mehreren Gemeinden (BF-12)', () => {
         query: (text, params) => { sqls.push(String(text)); return db.query(text, params); },
         getClient: () => db.getClient(),
       };
-      expect(await PushService.berechneBadge(zaehlDb, USERS.orgAdmin1.id)).toBe(5);
+      expect(await PushService.berechneBadge(zaehlDb, USERS.orgAdmin1.id)).toBe(3);
       expect(sqls.filter((q) => q.includes('FROM chat_messages m')).length).toBe(1);
     });
   });
 
-  describe('Postfach genau einmal', () => {
-    it('Org-Admin in zwei Gemeinden, eine Mitteilung: 1, nicht 2', async () => {
+  // Bis 28.09.2026 hiess dieser Block "Postfach genau einmal": Jede
+  // Mitteilung zaehlte am Symbol einmal, bei ihrer Gemeinde oder der
+  // Stamm-Gemeinde. Seit Simons Entscheidung zaehlt sie nirgends -- weder am
+  // Symbol noch im Umschalter, in keiner Gemeinde.
+  describe('Postfach zaehlt am Symbol und im Umschalter nicht mit (28.09.2026)', () => {
+    it('Org-Admin in zwei Gemeinden, eine Mitteilung: 0 ueberall', async () => {
       await zusatz(USERS.orgAdmin1.id, ORGS.andereGemeinde.id, ROLES.orgAdmin2.id);
       await mitteilung(USERS.orgAdmin1.id, ORGS.andereGemeinde.id);
       invalidateUserCache(USERS.orgAdmin1.id);
 
       const { jeOrg } = await umschalter('orgAdmin1');
-      expect(jeOrg).toEqual({ 1: 0, 2: 1 });
-      expect(await push(USERS.orgAdmin1)).toBe(1);
-      expect(await pushAnViele(USERS.orgAdmin1)).toBe(1);
-      expect(await hintergrund(USERS.orgAdmin1)).toBe(1);
+      expect(jeOrg).toEqual({ 1: 0, 2: 0 });
+      expect(await push(USERS.orgAdmin1)).toBe(0);
+      expect(await pushAnViele(USERS.orgAdmin1)).toBe(0);
+      expect(await hintergrund(USERS.orgAdmin1)).toBe(0);
     });
 
-    it('eine Mitteilung aus einer Gemeinde, der die Person nicht (mehr) angehoert, zaehlt einmal -- bei der Stamm-Gemeinde', async () => {
+    it('eine Mitteilung aus einer Gemeinde, der die Person nicht (mehr) angehoert, zaehlt auch nicht bei der Stamm-Gemeinde', async () => {
       // Das Postfach liest ueber alle Gemeinden des Kontos, die Glocke zeigt
-      // sie also. Das Symbol zaehlt sie mit, genau einmal; im Umschalter steht
-      // sie bei der Stamm-Gemeinde, damit dessen Summe die Zahl am Symbol ist.
+      // dafuer den Briefumschlag. Am Symbol und im Umschalter steht nichts.
       const ORG3 = 3;
       await db.query(
         "INSERT INTO organizations (id, name, slug, display_name, is_active) VALUES ($1, 'Dritte', 'dritte', 'Dritte', true)",
@@ -234,12 +243,12 @@ describe('App-Symbol bei mehreren Gemeinden (BF-12)', () => {
       invalidateUserCache(USERS.orgAdmin1.id);
 
       const { jeOrg } = await umschalter('orgAdmin1');
-      expect(jeOrg).toEqual({ 1: 1, 2: 0 });
-      expect(await push(USERS.orgAdmin1)).toBe(1);
-      expect(await hintergrund(USERS.orgAdmin1)).toBe(1);
+      expect(jeOrg).toEqual({ 1: 0, 2: 0 });
+      expect(await push(USERS.orgAdmin1)).toBe(0);
+      expect(await hintergrund(USERS.orgAdmin1)).toBe(0);
     });
 
-    it('eine gesperrte Zweitgemeinde zaehlt nicht mit, ihre Mitteilung schon (bei der Stamm-Gemeinde)', async () => {
+    it('eine gesperrte Zweitgemeinde zaehlt nicht mit, ihre Mitteilung auch nicht', async () => {
       // Gesperrte Gemeinden fuehrt der Umschalter nicht (wie
       // GET /auth/my-organizations); oeffnen laesst sich dort nichts.
       await zusatz(USERS.orgAdmin1.id, ORGS.andereGemeinde.id, ROLES.orgAdmin2.id);
@@ -249,16 +258,16 @@ describe('App-Symbol bei mehreren Gemeinden (BF-12)', () => {
       invalidateUserCache(USERS.orgAdmin1.id);
 
       const { jeOrg } = await umschalter('orgAdmin1');
-      expect(jeOrg).toEqual({ 1: 1 });
-      expect(await push(USERS.orgAdmin1)).toBe(1);
-      expect(await hintergrund(USERS.orgAdmin1)).toBe(1);
+      expect(jeOrg).toEqual({ 1: 0 });
+      expect(await push(USERS.orgAdmin1)).toBe(0);
+      expect(await hintergrund(USERS.orgAdmin1)).toBe(0);
     });
   });
 
   describe('eine Gemeinde: nichts aendert sich', () => {
     // Referenz ist die Rechnung fuer EINE Gemeinde (berechneAppIconSumme),
     // die appIconBadgeParitaet.test.js gegen die Reiter der App prueft.
-    it('Konfi: Mitteilung und Challenge-Neuigkeit -- ueberall 2', async () => {
+    it('Konfi: Mitteilung und Challenge-Neuigkeit -- ueberall 1, die Mitteilung zaehlt nicht', async () => {
       const { rows: [c] } = await db.query(
         `INSERT INTO challenges (organization_id, title, description, badge_name, starts_at, ends_at, is_draft, audience)
          VALUES ($1, 'Neu', 'B', 'A', NOW() - interval '1 day', NOW() + interval '7 days', false, 'konfis') RETURNING id`,
@@ -272,16 +281,16 @@ describe('App-Symbol bei mehreren Gemeinden (BF-12)', () => {
         id: USERS.konfi1.id, type: 'konfi', role_name: 'konfi',
         organization_id: ORGS.testGemeinde.id, assigned_jahrgaenge: []
       });
-      expect(eineGemeinde).toBe(2);
-      expect(await push(USERS.konfi1)).toBe(2);
-      expect(await hintergrund(USERS.konfi1)).toBe(2);
-      expect((await umschalter('konfi1')).summe).toBe(2);
+      expect(eineGemeinde).toBe(1);
+      expect(await push(USERS.konfi1)).toBe(1);
+      expect(await hintergrund(USERS.konfi1)).toBe(1);
+      expect((await umschalter('konfi1')).summe).toBe(1);
     });
 
-    it('Admin mit Mitteilung aus einer fremden Gemeinde: am Symbol wie bisher 2, der Umschalter zaehlt sie jetzt mit', async () => {
+    it('Admin mit Mitteilung aus einer fremden Gemeinde: am Symbol und im Umschalter nur der Antrag', async () => {
       // admin2 gehoert nur Org 2 an. Eine Mitteilung aus Org 1 (etwa aus
-      // einer frueheren Mitgliedschaft) zeigt die Glocke -- sie zaehlte am
-      // Symbol schon immer und bleibt dabei.
+      // einer frueheren Mitgliedschaft) zeigt die Glocke als Briefumschlag;
+      // am Symbol zaehlt sie seit 28.09.2026 nicht mehr.
       await offenerAntrag(USERS.konfi3.id, AKTIVITAET_ORG2, ORGS.andereGemeinde.id);
       await db.query(
         'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
@@ -295,11 +304,11 @@ describe('App-Symbol bei mehreren Gemeinden (BF-12)', () => {
         organization_id: ORGS.andereGemeinde.id,
         assigned_jahrgaenge: [{ id: JAHRGAENGE.jahrgang2.id, can_view: true }]
       });
-      expect(eineGemeinde).toBe(2);
-      expect(await push(USERS.admin2)).toBe(2);
-      expect(await pushAnViele(USERS.admin2)).toBe(2);
-      expect(await hintergrund(USERS.admin2)).toBe(2);
-      expect(await umschalter('admin2')).toEqual({ jeOrg: { 2: 2 }, summe: 2 });
+      expect(eineGemeinde).toBe(1);
+      expect(await push(USERS.admin2)).toBe(1);
+      expect(await pushAnViele(USERS.admin2)).toBe(1);
+      expect(await hintergrund(USERS.admin2)).toBe(1);
+      expect(await umschalter('admin2')).toEqual({ jeOrg: { 2: 1 }, summe: 1 });
     });
   });
 });

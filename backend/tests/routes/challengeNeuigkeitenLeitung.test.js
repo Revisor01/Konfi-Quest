@@ -70,14 +70,14 @@ describe('Challenge-Neuigkeiten fuer Leitung und Team', () => {
     expect(res.status).toBe(200);
   };
 
-  it('Beitrag ohne Freigabe: 1 an der Challenge, 1 im Postfach, 2 am Umschalter', async () => {
+  it('Beitrag ohne Freigabe: 1 an der Challenge, 1 im Postfach, 1 am Umschalter (Postfach zaehlt dort nicht)', async () => {
     const c = await challenge();
     await beitrag('konfi1', c.id);
     const z = await zaehler('orgAdmin1');
     expect(z.pendingChallenges).toBe(0);
     expect(z.challengeUpdates).toEqual({ total: 1, byChallenge: { [c.id]: 1 } });
     expect(z.postfach.ungelesen).toBe(1);
-    expect(await umschalter('orgAdmin1')).toEqual({ [ORGS.testGemeinde.id]: { offen: 2 } });
+    expect(await umschalter('orgAdmin1')).toEqual({ [ORGS.testGemeinde.id]: { offen: 1 } });
   });
 
   it('Oeffnen der Challenge setzt die Zahl zurueck, wie im Chat', async () => {

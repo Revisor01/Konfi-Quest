@@ -186,7 +186,7 @@ describe('Postfach: Mitteilungen gehen mit dem Konto und mit der Mitgliedschaft 
       expect(await mitteilungenMit('Emma Beispiel')).toBe(0);
     });
 
-    it('ERLAUBT: die Mitteilung ueber eine andere Konfi bleibt -- Glocke 1, Umschalter 1', async () => {
+    it('ERLAUBT: die Mitteilung ueber eine andere Konfi bleibt -- Glocke 1, Umschalter 0', async () => {
       const emma = await emmaMitAllenMeldungen();
       await optOutKonfi1();
       const vorherKonfi1 = await mitteilungenMit('Test Konfi 1');
@@ -199,8 +199,9 @@ describe('Postfach: Mitteilungen gehen mit dem Konto und mit der Mitgliedschaft 
 
       expect(await mitteilungenMit('Test Konfi 1')).toBe(vorherKonfi1);
       expect(await glocke('orgAdmin1')).toBe(1);
-      // Umschalter und App-Symbol: sonst ist fuer orgAdmin1 nichts offen.
-      expect(await umschalter('orgAdmin1')).toEqual({ [ORGS.testGemeinde.id]: { offen: 1 } });
+      // Umschalter und App-Symbol zaehlen das Postfach seit 28.09.2026 nicht
+      // mehr mit; sonst ist fuer orgAdmin1 nichts offen.
+      expect(await umschalter('orgAdmin1')).toEqual({ [ORGS.testGemeinde.id]: { offen: 0 } });
     });
 
     it('Selbstloeschung (POST /auth/delete-account) geht denselben Weg', async () => {
@@ -300,10 +301,11 @@ describe('Postfach: Mitteilungen gehen mit dem Konto und mit der Mitgliedschaft 
       await mitteilung(USERS.admin1.id, ORGS.andereGemeinde.id, 'challenge_submission', 'Neuer Challenge-Beitrag');
       await mitteilung(USERS.admin1.id, ORGS.andereGemeinde.id, 'events_pending_approval', 'Events warten');
       expect(await gemeindenImPostfach(USERS.admin1.id)).toEqual([[1, 2], [2, 2]]);
-      expect(await umschalter('admin1')).toEqual({ 1: { offen: 2 }, 2: { offen: 2 } });
+      // Nur Mitteilungen, und die zaehlen im Umschalter seit 28.09.2026 nicht.
+      expect(await umschalter('admin1')).toEqual({ 1: { offen: 0 }, 2: { offen: 0 } });
     }
 
-    it('Leitung beendet die Mitgliedschaft (DELETE /admin/users/:id, Fall 1): Org-2-Eintraege weg, Glocke 2, Umschalter 2', async () => {
+    it('Leitung beendet die Mitgliedschaft (DELETE /admin/users/:id, Fall 1): Org-2-Eintraege weg, Glocke 2, Umschalter 0', async () => {
       await admin1AuchInOrg2();
 
       const res = await request(app)
@@ -316,7 +318,7 @@ describe('Postfach: Mitteilungen gehen mit dem Konto und mit der Mitgliedschaft 
 
       expect(await gemeindenImPostfach(USERS.admin1.id)).toEqual([[1, 2]]);
       expect(await glocke('admin1')).toBe(2);
-      expect(await umschalter('admin1')).toEqual({ 1: { offen: 2 } });
+      expect(await umschalter('admin1')).toEqual({ 1: { offen: 0 } });
     });
 
     it('Super-Admin entzieht die Mitgliedschaft (DELETE /organizations/:id/members/:userId): dasselbe', async () => {
@@ -331,7 +333,7 @@ describe('Postfach: Mitteilungen gehen mit dem Konto und mit der Mitgliedschaft 
 
       expect(await gemeindenImPostfach(USERS.admin1.id)).toEqual([[1, 2]]);
       expect(await glocke('admin1')).toBe(2);
-      expect(await umschalter('admin1')).toEqual({ 1: { offen: 2 } });
+      expect(await umschalter('admin1')).toEqual({ 1: { offen: 0 } });
     });
 
     it('Umzug (DELETE /admin/users/:id, hier zuhause und anderswo Mitglied): die Eintraege der alten Gemeinde gehen, die der neuen bleiben', async () => {

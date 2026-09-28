@@ -236,13 +236,16 @@ describe('GET /api/notifications/badge-counts/je-organisation', () => {
     });
   });
 
-  describe('Postfach je Gemeinde: jede Mitteilung genau einmal', () => {
+  describe('Postfach je Gemeinde: zaehlt im Umschalter nicht (28.09.2026)', () => {
     // Befund am Geraet (Simon, 27.09.2026): "Postfach 1 -- im Switcher zeigt er
-    // 3." Ein Challenge-Beitrag in einer Gemeinde mit Freigabe ergab am
-    // Umschalter 3 statt 2 (1 Freigabe + 1 Mitteilung). Der Postfach-Zaehler
-    // nahm die Person einmal JE GEMEINDE in seine Abfrage (die Empfaengerliste
-    // der Route traegt sie je Mitgliedschaft) und zaehlte jede Mitteilung so
-    // oft mit, wie die Person Gemeinden hat. Bei einer Gemeinde fiel es nie auf.
+    // 3." Der Postfach-Zaehler zaehlte jede Mitteilung so oft mit, wie die
+    // Person Gemeinden hat; behoben am 27.09.2026 (je Mitteilung einmal).
+    //
+    // Seit 28.09.2026 (Simon) zaehlt das Postfach im Umschalter GAR NICHT
+    // mehr: Die Zahl je Gemeinde ist dieselbe Rechnung wie das App-Symbol,
+    // und dort zaehlt es nicht mehr mit. Die Glocke zeigt fuer ungelesene
+    // Mitteilungen einen Briefumschlag. badge-counts.postfach.ungelesen
+    // bleibt unveraendert (Vertrag mit der Store-App 2.3.0).
     const mitteilung = (userId, orgId, type = 'challenge_submission') => db.query(
       `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
        VALUES ($1, 'Neuer Challenge-Beitrag', 'x', $2, '{}'::jsonb, $3)`,
@@ -256,26 +259,27 @@ describe('GET /api/notifications/badge-counts/je-organisation', () => {
       invalidateUserCache(USERS.orgAdmin1.id);
     });
 
-    it('je eine ungelesene Mitteilung aus Org 2 und Org 3: je 1, nicht je 3', async () => {
+    it('je eine ungelesene Mitteilung aus Org 2 und Org 3: ueberall 0', async () => {
       await mitteilung(USERS.orgAdmin1.id, ORGS.andereGemeinde.id);
       await mitteilung(USERS.orgAdmin1.id, ORG3.id);
       const res = await hole(app, generateToken('orgAdmin1'));
       expect(res.status).toBe(200);
-      expect(res.body.jeOrganisation).toEqual({ 1: { offen: 0 }, 2: { offen: 1 }, 3: { offen: 1 } });
+      expect(res.body.jeOrganisation).toEqual({ 1: { offen: 0 }, 2: { offen: 0 }, 3: { offen: 0 } });
     });
 
-    it('Summe ueber alle Gemeinden = Zahl an der Glocke', async () => {
+    it('die Glocke meldet die Mitteilungen weiter, der Umschalter nicht', async () => {
       await mitteilung(USERS.orgAdmin1.id, ORGS.andereGemeinde.id);
       await mitteilung(USERS.orgAdmin1.id, ORG3.id);
       const token = generateToken('orgAdmin1');
       const umschalter = await hole(app, token);
       const glocke = await request(app).get('/api/notifications/badge-counts').set('Authorization', `Bearer ${token}`);
       const summe = Object.values(umschalter.body.jeOrganisation).reduce((n, o) => n + o.offen, 0);
-      expect(glocke.body.postfach.ungelesen).toBe(2);
-      expect(summe).toBe(2);
+      // Feld und Wert unveraendert -- die Store-App 2.3.0 liest es.
+      expect(glocke.body.postfach).toEqual({ ungelesen: 2 });
+      expect(summe).toBe(0);
     });
 
-    it('Simons Fall: ein Beitrag mit Freigabe in Org 3 und seine Mitteilung ergeben 2', async () => {
+    it('Simons Fall: ein Beitrag mit Freigabe in Org 3 und seine Mitteilung ergeben 1 -- nur die Freigabe', async () => {
       const jahrgang3 = (await db.query(
         "INSERT INTO jahrgaenge (name, organization_id) VALUES ('J3', $1) RETURNING id", [ORG3.id]
       )).rows[0].id;
@@ -283,14 +287,14 @@ describe('GET /api/notifications/badge-counts/je-organisation', () => {
       await mitteilung(USERS.orgAdmin1.id, ORG3.id);
       const res = await hole(app, generateToken('orgAdmin1'));
       expect(res.status).toBe(200);
-      expect(res.body.jeOrganisation[3]).toEqual({ offen: 2 });
+      expect(res.body.jeOrganisation[3]).toEqual({ offen: 1 });
     });
 
-    it('eine Person mit nur einer Gemeinde zaehlt ihre Mitteilung unveraendert einmal', async () => {
+    it('eine Person mit nur einer Gemeinde: ihre Mitteilung zaehlt auch dort nicht', async () => {
       await mitteilung(USERS.admin2.id, ORGS.andereGemeinde.id, 'activity_request');
       const res = await hole(app, generateToken('admin2'));
       expect(res.status).toBe(200);
-      expect(res.body.jeOrganisation).toEqual({ 2: { offen: 1 } });
+      expect(res.body.jeOrganisation).toEqual({ 2: { offen: 0 } });
     });
   });
 

@@ -482,13 +482,16 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
       expect(await anzahl()).toBe(3);
     });
 
-    it('die Zahl am App-Symbol im Push zaehlt die neue Mitteilung schon mit', async () => {
-      // konfi1 hat sonst nichts Offenes: Die Zahl im Push muss 1 sein --
-      // also NACH dem Postfach-Eintrag gerechnet, nicht davor.
+    it('die Zahl am App-Symbol im Push zaehlt die neue Mitteilung nicht mit -- der Eintrag steht trotzdem im Postfach', async () => {
+      // Bis 28.09.2026 musste die Zahl hier 1 sein (Postfach-Eintrag vor der
+      // Rechnung). Seit Simons Entscheidung zaehlt das Postfach am Symbol
+      // nicht mehr: konfi1 hat sonst nichts Offenes, also 0 -- und die
+      // Mitteilung liegt ungelesen im Postfach (Briefumschlag an der Glocke).
       await PushService.sendBonusPointsToKonfi(db, USERS.konfi1.id, 2, 'Test', 'gemeinde');
 
       const [[, payload]] = sendFirebasePushNotification.mock.calls;
-      expect(payload.badge).toBe(1);
+      expect(payload.badge).toBe(0);
+      expect(await anzahl()).toBe(1);
     });
 
     it('ein ueberlanger Titel wird auf 255 Zeichen gekuerzt statt den Eintrag zu verlieren', async () => {
