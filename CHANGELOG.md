@@ -7,6 +7,15 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased]
+
+### Behoben
+- Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und
+  kommt beim Zurückgehen in die Liste nicht wieder, auch wenn Beiträge dort ein
+  Datum in der Zukunft tragen.
+- Die Zahl am App-Symbol zählt keine Chat-Nachrichten mit einem Datum in der
+  Zukunft mehr mit und stimmt damit wieder mit den Reitern überein.
+
 ## [2.3.0] - 2026-09-27
 
 iOS-Build 231 · Android versionCode 125

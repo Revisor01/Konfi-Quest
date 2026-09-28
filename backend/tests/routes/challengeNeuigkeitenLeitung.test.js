@@ -19,6 +19,7 @@ const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 const { invalidateUserCache } = require('../../middleware/rbac');
+const { berechneAppIconSumme } = require('../../utils/appIconBadge');
 
 describe('Challenge-Neuigkeiten fuer Leitung und Team', () => {
   let app;
@@ -169,5 +170,34 @@ describe('Challenge-Neuigkeiten fuer Leitung und Team', () => {
     );
     await db.query("UPDATE challenges SET ends_at = NOW() - interval '1 hour' WHERE id = $1", [c.id]);
     expect((await zaehler('orgAdmin1')).challengeUpdates.total).toBe(0);
+  });
+
+  // Befund Simon 28.09.2026 am Geraet (Org-Admin, Demo-Gemeinde): An
+  // "Schoepfung entdeckt" stand eine 5. Oeffnen -- weg; zurueck in die
+  // Liste -- wieder da. Der Lesestand wurde richtig geschrieben (gemessen:
+  // challenge_read_status 20/41/admin, last_read_at = jetzt), aber alle fuenf
+  // Beitraege trugen ein Einreichungsdatum im Oktober. Ein Zeitstempel aus
+  // der Zukunft liegt IMMER nach dem letzten Oeffnen -- die Zahl liess sich
+  // nicht abbauen. Dieselbe Fehlerklasse hatte der Chat am 03.09.2026
+  // (Zukunftsnachrichten der Demo-Gemeinde); dort zaehlt seitdem nur, was
+  // nicht in der Zukunft liegt.
+  it('ein Beitrag mit Datum in der Zukunft haelt die Zahl nach dem Oeffnen nicht fest', async () => {
+    const c = await challenge();
+    await db.query(
+      `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, text_content,
+                                          moderation_status, created_at)
+       VALUES ($1, $2, $3, 'text', 'Aus der Zukunft', 'approved', NOW() + interval '1 month')`,
+      [c.id, USERS.konfi1.id, ORGS.testGemeinde.id]
+    );
+    await geoeffnet('orgAdmin1', c.id);
+    expect((await zaehler('orgAdmin1')).challengeUpdates).toEqual({ total: 0, byChallenge: {} });
+    // Dieselbe Regel speist das App-Symbol: auch dort nichts.
+    expect(await berechneAppIconSumme(db, {
+      id: USERS.orgAdmin1.id, type: 'admin', role_name: 'org_admin',
+      organization_id: ORGS.testGemeinde.id, assigned_jahrgaenge: []
+    })).toBe(0);
+    // Gegenprobe im selben Aufbau: ein Beitrag von jetzt zaehlt weiter.
+    await beitrag('konfi2', c.id);
+    expect((await zaehler('orgAdmin1')).challengeUpdates).toEqual({ total: 1, byChallenge: { [c.id]: 1 } });
   });
 });

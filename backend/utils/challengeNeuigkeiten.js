@@ -45,6 +45,16 @@
 // nie Entwuerfe, nie ungestartete -- exakt der Scope von GET /challenges/konfi.
 // Wer die Challenge nicht oeffnen darf, bekommt auch keine Zahl dafuer.
 //
+// NICHTS AUS DER ZUKUNFT (28.09.2026, Simons Befund am Geraet: "Schoepfung
+// entdeckt" trug eine 5, Oeffnen -- weg, zurueck in die Liste -- wieder da).
+// Das Oeffnen setzt den Lesestand auf NOW(). Ein Zeitstempel aus der Zukunft
+// liegt immer danach -- die Zahl liesse sich nie abbauen. Gemessen: Die fuenf
+// Beitraege der Demo-Gemeinde trugen Einreichungsdaten im Oktober, der
+// Lesestand war richtig geschrieben. Wie im Chat seit dem 03.09.2026
+// (routes/notifications.js, chatQuery) zaehlt deshalb an JEDER Stelle, die
+// gegen den Lesestand vergleicht, nur, was nicht in der Zukunft liegt. Ist
+// der Zeitpunkt erreicht, zaehlt der Beitrag wie jeder andere.
+//
 // EINE SQL-FASSUNG fuer beide Abnehmer: GET /notifications/badge-counts
 // (Zahl je Challenge fuer Reiter und Listeneintrag) und utils/appIconBadge.js
 // (Summe je Person fuers App-Icon im Push). Zwei getrennte Fassungen
@@ -102,7 +112,8 @@ async function challengeNeuigkeitenJeChallenge(db, konfis) {
                   WHERE cs.challenge_id = s.challenge_id
                     AND cs.user_id <> s.user_id
                     AND ${PUBLIC_SUBMISSION_SQL}
-                    AND COALESCE(cs.approved_at, cs.created_at) > s.gelesen_bis)
+                    AND COALESCE(cs.approved_at, cs.created_at) > s.gelesen_bis
+                    AND COALESCE(cs.approved_at, cs.created_at) <= NOW())
               -- 3. Eigene Beitraege, seit dem letzten Oeffnen von anderen moderiert
               + (SELECT COUNT(*)
                    FROM challenge_submissions cs
@@ -112,11 +123,13 @@ async function challengeNeuigkeitenJeChallenge(db, konfis) {
                       (cs.moderation_status = 'approved'
                        AND cs.approved_by IS NOT NULL
                        AND cs.approved_by <> s.user_id
-                       AND cs.approved_at > s.gelesen_bis)
+                       AND cs.approved_at > s.gelesen_bis
+                       AND cs.approved_at <= NOW())
                       OR
                       (cs.moderation_status = 'hidden'
                        AND cs.hidden_by IS DISTINCT FROM s.user_id
-                       AND cs.hidden_at > s.gelesen_bis)
+                       AND cs.hidden_at > s.gelesen_bis
+                       AND cs.hidden_at <= NOW())
                     ))
             )::int AS c
        FROM sichtbar s`,
@@ -187,7 +200,8 @@ async function challengeNeuigkeitenLeitungJeChallenge(db, personen) {
                   WHERE cs.challenge_id = c.id
                     AND cs.user_id <> z.user_id
                     AND cs.moderation_status = 'approved'
-                    AND cs.created_at > COALESCE(crs.last_read_at, '1970-01-01'::timestamptz))
+                    AND cs.created_at > COALESCE(crs.last_read_at, '1970-01-01'::timestamptz)
+                    AND cs.created_at <= NOW())
             )::int AS c
        FROM z
        JOIN challenges c

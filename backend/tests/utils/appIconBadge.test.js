@@ -49,6 +49,26 @@ describe('berechneAppIconSumme (Befund B2b)', () => {
     expect(summe).toBe(2);
   });
 
+  // Regression vom 26.09.2026: Die Zukunftsgrenze aus dem Chat-Fix vom
+  // 03.09.2026 (Demo-Gemeinde, Nachrichten bis November) stand an allen
+  // Zaehlstellen -- bis das Buendeln des Push-Fan-outs die Chat-Zaehlung
+  // hierher verlegte und die Grenze dabei verlor. Reiter (badge-counts) und
+  // Raumliste ignorieren Zukunftsnachrichten, das App-Symbol zaehlte sie.
+  it('Chat-Nachrichten aus der Zukunft zaehlen nicht -- wie am Reiter', async () => {
+    await db.query(
+      `INSERT INTO chat_messages (room_id, user_id, user_type, content, created_at)
+       VALUES (1, $1, 'admin', 'Aus der Zukunft', NOW() + interval '1 year')`,
+      [USERS.admin1.id]
+    );
+    expect(await berechneAppIconSumme(db, alsEmpfaenger(USERS.konfi1))).toBe(0);
+    // Gegenprobe: eine Nachricht von jetzt zaehlt.
+    await db.query(
+      `INSERT INTO chat_messages (room_id, user_id, user_type, content) VALUES (1, $1, 'admin', 'Jetzt')`,
+      [USERS.admin1.id]
+    );
+    expect(await berechneAppIconSumme(db, alsEmpfaenger(USERS.konfi1))).toBe(1);
+  });
+
   it('eigene Nachrichten zaehlen NICHT mit', async () => {
     // Sonst stuende nach der eigenen letzten Nachricht dauerhaft eine Eins
     // am Icon. Dieselbe Bedingung wie in badge-counts.
