@@ -55,8 +55,25 @@ export const setPushTokenTimestamp = async (ts: number): Promise<void> => {
   await Preferences.set({ key: 'push_token_last_refresh', value: ts.toString() });
 };
 
-export const setRefreshToken = async (token: string): Promise<void> => {
+/**
+ * Refresh-Token setzen.
+ *
+ * `klartext: false` haelt ihn NUR im Arbeitsspeicher und entfernt eine
+ * vorhandene Klartext-Kopie aus den Preferences. So legt der Refresh-Pfad den
+ * rotierten Token ab, solange die biometrische Anmeldung eingeschaltet ist:
+ * Dauerhaft liegt er dann allein im sicheren Speicher (biometrics.ts,
+ * Sicherheitsabwaegung a). Bis 28.09.2026 schrieb jede Rotation ihn wieder in
+ * die Preferences (Audit Grundgeruest BF-06).
+ */
+export const setRefreshToken = async (
+  token: string,
+  optionen: { klartext?: boolean } = {}
+): Promise<void> => {
   _refreshToken = token;
+  if (optionen.klartext === false) {
+    await Preferences.remove({ key: 'konfi_refresh_token' });
+    return;
+  }
   await Preferences.set({ key: 'konfi_refresh_token', value: token });
 };
 

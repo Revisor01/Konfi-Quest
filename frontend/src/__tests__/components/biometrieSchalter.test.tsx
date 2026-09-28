@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 // Der Schalter darf NUR erscheinen, wenn das Geraet Biometrie eingerichtet hat.
 // Ein Schalter, der ins Leere fuehrt, ist schlimmer als gar keiner — und im
@@ -9,21 +9,35 @@ import { render, screen, waitFor } from '@testing-library/react';
 const mockVerfuegbar = vi.fn();
 const mockIstAktiv = vi.fn();
 const mockAktivieren = vi.fn();
+const mockAusschalten = vi.fn(async () => undefined);
 const mockVergessen = vi.fn(async () => undefined);
 
 vi.mock('../../services/biometrics', () => ({
   biometrieVerfuegbar: (...a: unknown[]) => mockVerfuegbar(...(a as [])),
   istBiometrieAktiv: (...a: unknown[]) => mockIstAktiv(...(a as [])),
   biometrieAktivieren: (...a: unknown[]) => mockAktivieren(...(a as [])),
+  biometrieAusschalten: (...a: unknown[]) => mockAusschalten(...(a as [])),
   biometrieVergessen: (...a: unknown[]) => mockVergessen(...(a as [])),
   GESPEICHERTE_SITZUNG_MAX_TAGE: 14,
 }));
 
 const mockPresentAlert = vi.fn();
+// JSDOM reicht ionChange nicht an React durch (siehe pushAuswahl.test.tsx):
+// der Schalter wird durch ein schlichtes Kontrollkaestchen mit denselben
+// Props ersetzt.
 vi.mock('@ionic/react', async () => {
   const echt = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
+  const ReactEcht = await vi.importActual<typeof import('react')>('react');
+  const IonToggle = (p: { checked?: boolean; 'aria-label'?: string; onIonChange?: (e: { detail: { checked: boolean } }) => void }) =>
+    ReactEcht.createElement('input', {
+      type: 'checkbox',
+      'aria-label': p['aria-label'],
+      checked: !!p.checked,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => p.onIonChange?.({ detail: { checked: e.target.checked } })
+    });
   return {
     ...echt,
+    IonToggle,
     useIonAlert: () => [mockPresentAlert, vi.fn()],
   };
 });
@@ -81,6 +95,19 @@ describe('BiometrieSchalter', () => {
 
   it('zeigt den Hinweistext, solange die Anmeldung nicht gesichert ist', async () => {
     render(<BiometrieSchalter variante="purple" />);
+    expect(await screen.findByText('Ohne Passwort in die App')).toBeInTheDocument();
+  });
+
+  it('Ausschalten meldet nicht ab: es ruft biometrieAusschalten, nicht biometrieVergessen', async () => {
+    // biometrieVergessen allein liesse den Refresh-Token nur im
+    // Arbeitsspeicher zurueck -- beim naechsten Kaltstart waere die Sitzung
+    // weg (Audit Grundgeruest BF-06, biometrieOhneKlartextNachRotation.test.ts).
+    mockIstAktiv.mockResolvedValue(true);
+    render(<BiometrieSchalter variante="purple" />);
+    const schalter = await screen.findByLabelText('Anmelden mit Face ID');
+    fireEvent.click(schalter);
+    await waitFor(() => expect(mockAusschalten).toHaveBeenCalledTimes(1));
+    expect(mockVergessen).not.toHaveBeenCalled();
     expect(await screen.findByText('Ohne Passwort in die App')).toBeInTheDocument();
   });
 });

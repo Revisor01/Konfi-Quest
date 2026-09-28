@@ -300,7 +300,11 @@ export const mitBiometrieAnmelden = async (): Promise<BiometrieAnmeldung> => {
     if (!token || !neuerRefreshToken) return { status: 'fehler' };
 
     // Reihenfolge wie in api.ts performRefresh: erst der langlebige Schluessel.
-    await setRefreshToken(neuerRefreshToken);
+    // Nur in den Arbeitsspeicher, NICHT in die Preferences: Wer per Biometrie
+    // hereinkommt, hat den Schalter an -- dauerhaft liegt der Token dann allein
+    // im sicheren Speicher (gespeichertenTokenAuffrischen unten; Audit
+    // Grundgeruest BF-06).
+    await setRefreshToken(neuerRefreshToken, { klartext: false });
     await setToken(token);
     await setUser(entsperrt.user);
 

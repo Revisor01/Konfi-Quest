@@ -256,7 +256,9 @@ describe('ensureFreshToken', () => {
     expect(postSpy).toHaveBeenCalledTimes(1);
     expect(postSpy.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-1' });
     expect(tokenStore.setToken).toHaveBeenCalledWith(newToken);
-    expect(tokenStore.setRefreshToken).toHaveBeenCalledWith('refresh-2');
+    // Schalter der biometrischen Anmeldung aus (Browser): wie bisher auch in
+    // die Preferences (klartext: true; biometrieOhneKlartextNachRotation.test.ts).
+    expect(tokenStore.setRefreshToken).toHaveBeenCalledWith('refresh-2', { klartext: true });
   });
 
   it('persistiert den Refresh-Token VOR dem Access-Token (Android-Session-Race)', async () => {

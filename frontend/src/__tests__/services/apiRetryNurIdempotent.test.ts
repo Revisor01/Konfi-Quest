@@ -38,6 +38,7 @@ vi.mock('../../services/networkMonitor', () => ({
 }));
 vi.mock('../../services/biometrics', () => ({
   rotationUebernehmen: vi.fn(),
+  istBiometrieAktiv: vi.fn(async () => false),
 }));
 
 import api from '../../services/api';

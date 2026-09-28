@@ -92,6 +92,11 @@ Versionsüberschrift.
   hätte sie in den Zugriffsprotokollen des Servers gestanden. Die App hat sie
   nie so geschickt; im Chat ändert sich dadurch nichts.
 
+### Sonstiges
+- Die mit Face ID oder Fingerabdruck gesicherte Anmeldung (derzeit ohne
+  Schalter in der App) legt den Anmeldeschlüssel auch nach dem regelmäßigen
+  Erneuern nur noch geschützt ab, nicht zusätzlich offen auf dem Gerät.
+
 ## [2.3.0] - 2026-09-27
 
 iOS-Build 231 · Android versionCode 125

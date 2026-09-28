@@ -123,7 +123,9 @@ describe('mitBiometrieAnmelden', () => {
     if (ergebnis.status !== 'ok') throw new Error('unerwarteter Status');
     expect(ergebnis.user.id).toBe(42);
 
-    expect(mockSetRefreshToken).toHaveBeenCalledWith('refresh-neu');
+    // Nur Arbeitsspeicher, keine Klartext-Kopie in den Preferences (Audit
+    // Grundgeruest BF-06) -- dauerhaft liegt er im sicheren Speicher.
+    expect(mockSetRefreshToken).toHaveBeenCalledWith('refresh-neu', { klartext: false });
     expect(mockSetToken).toHaveBeenCalledWith('access-neu');
     // Rotierter Token muss zurueck in den sicheren Speicher, sonst ist die
     // gespeicherte Sitzung nach 5 Minuten wertlos.

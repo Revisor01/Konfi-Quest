@@ -3,7 +3,7 @@ import axiosRetry from 'axios-retry';
 import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth, isLoggingOut, getActiveOrgId, setActiveOrgId } from './tokenStore';
 import { networkMonitor } from './networkMonitor';
 // Kein Zirkelbezug: biometrics.ts importiert nur tokenStore/Preferences, nie api.
-import { rotationUebernehmen } from './biometrics';
+import { rotationUebernehmen, istBiometrieAktiv } from './biometrics';
 
 import { API_BASE_URL } from './apiBasis';
 import { fehlerFuersProtokoll } from '../utils/fehler';
@@ -148,6 +148,15 @@ const performRefresh = async (refreshToken: string): Promise<string> => {
 
   const { token: newToken, refresh_token: newRefreshToken } = response.data;
 
+  // Biometrische Anmeldung eingeschaltet? Dann gehoert der rotierte Token NUR
+  // in den sicheren Speicher, nicht zusaetzlich im Klartext in die
+  // Preferences (Audit Grundgeruest BF-06; biometrics.ts,
+  // Sicherheitsabwaegung a). Bis 28.09.2026 schrieb diese Stelle ihn ohne
+  // Ruecksicht auf den Schalter zurueck -- eine Viertelstunde nach dem
+  // Einschalten lag die Klartext-Kopie wieder da, und die App startete ohne
+  // jede Abfrage.
+  const nurGesichert = await istBiometrieAktiv();
+
   // REIHENFOLGE IST KRITISCH (Android-Session-Verlust, 1.5.0):
   // Der Server rotiert bei jedem Refresh und REVOKED den alten Refresh-Token
   // sofort (Grace-Window nur 30s). Der neue Refresh-Token ist der einzige
@@ -157,7 +166,9 @@ const performRefresh = async (refreshToken: string): Promise<string> => {
   // daher MUSS der Refresh-Token ZUERST und bestaetigt persistiert werden.
   // Der Access-Token ist unkritisch: geht er bei einem Crash verloren, holt ihn
   // der nächste ensureFreshToken() über den (gesicherten) Refresh-Token neu.
-  await setRefreshToken(newRefreshToken);
+  // Bei eingeschalteter Biometrie ist die dauerhafte Ablage der sichere
+  // Speicher (rotationUebernehmen unten); hier nur der Arbeitsspeicher.
+  await setRefreshToken(newRefreshToken, { klartext: !nurGesichert });
   await setToken(newToken);
 
   // Ist die biometrische Anmeldung aktiv, muss die gesichert abgelegte Sitzung
