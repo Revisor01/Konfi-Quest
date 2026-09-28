@@ -3998,13 +3998,23 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateAddActivity]
         org-scope: true
-        objekt-pruefung: "Aktivität muss zur eigenen Organisation gehören; bei Konfi-Aktivitäten seit 01.09.2026 darfKonfi(view) — 404/403 wie assign-activity (Teamer-Aktivitaeten ausgenommen: Teamer:innen sieht ein Admin alle); checkPointTypeEnabled bei Konfi-Aktivitäten"
+        objekt-pruefung: "Aktivität muss zur eigenen Organisation gehören; bei Konfi-Aktivitäten seit 01.09.2026 darfKonfi(view) — 404/403 wie assign-activity (Teamer-Aktivitaeten ohne Jahrgangspruefung: Teamer:innen sieht ein Admin alle); bei Teamer-Aktivitäten seit 28.09.2026 Zielperson Mitglied der aktiven Gemeinde (users.organization_id oder user_organizations, nicht geloescht), sonst 404 'Person nicht gefunden'; checkPointTypeEnabled bei Konfi-Aktivitäten"
         hinweis: >
           Anders als POST /api/admin/activities/assign-activity verlangt diese
           Route requireAdmin — Teamer:innen tragen über assign-activity nach.
           BEHOBEN 27.09.2026 (Audit Sicherheit BF-11): Eine Konfi einer
           anderen Gemeinde endete fuer org_admin mit 500; jetzt 404 "Konfi
           nicht gefunden", bevor etwas geschrieben wird (siehe L7 im Kopf).
+          BEHOBEN 28.09.2026 (Audit Punkte/Termine BF-07): Bei Aktivitaeten
+          mit target_role 'teamer' wurde die Zielperson gar nicht geprueft --
+          eine Leitung der Gemeinde A haengte einer Teamer:in der Gemeinde B
+          eine Zuordnung (organization_id A) an und loeste deren
+          Abzeichenlauf aus (201). Jetzt 404 "Person nicht gefunden", bevor
+          etwas geschrieben wird, fuer Personen fremder Gemeinden, unbekannte
+          IDs (vorher 500) und geloeschte Konten. Gezaehlt werden beide
+          Quellen der Zugehoerigkeit (utils/orgMitglieder.js,
+          istMitgliedDerOrganisation): Wer ueber user_organizations in der
+          Gemeinde mitarbeitet, bekommt die Aktivitaet weiter (201).
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -4022,7 +4032,7 @@ paths:
         "400": { description: Pflichtfelder fehlen oder Punkte-Typ deaktiviert }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "404": { $ref: '#/components/responses/NotFound' }
+        "404": { description: "Aktivitaet, Konfi (Konfi-Aktivitaet) oder Person (Teamer-Aktivitaet, seit 28.09.2026: nicht Mitglied der aktiven Gemeinde) nicht gefunden" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/admin/konfis/{id}/activities/{activityId}:

@@ -341,6 +341,15 @@ bestehender Aktivitäten nicht zu ändern.
 - **Empfehlung:** Vor dem Zweig die Zielperson wie in `activities.js:767`
   gegen `users.organization_id` prüfen; Test für Org-fremde Person (404) und
   eigene (201).
+- **Nachtrag 28.09.2026:** behoben — der Teamer-Zweig prüft die Zielperson
+  über `istMitgliedDerOrganisation` (`utils/orgMitglieder.js`, beide Quellen:
+  `users.organization_id` und `user_organizations`, gelöschte Konten nie) →
+  404 „Person nicht gefunden", bevor etwas geschrieben wird. Abweichend von der
+  Empfehlung nicht nur `users.organization_id`: Eine Teamer:in mit
+  Zweitmitgliedschaft in der Gemeinde bekommt ihre Aktivität weiter. Test
+  `backend/tests/routes/teamerAktivitaetGemeindegrenze.test.js` (5: fremde
+  Person, unbekannte ID, gelöschtes Konto 404; eigene und Zweitmitgliedschaft
+  201; ohne Fix 3 rot — 201, 500, 201).
 
 ### BF-08: Jahrgang löschen hinterlässt Pflichttermine ohne Jahrgang und läuft ohne Transaktion
 - **Schwere:** MITTEL

@@ -220,7 +220,34 @@ async function ladeMitgliedschaftenVieler(db, userIds) {
   return jePerson;
 }
 
+/**
+ * Gehoert diese Person zur Gemeinde? Ueber BEIDE Quellen der Zugehoerigkeit
+ * (28.09.2026, Audit Punkte/Termine BF-07): Stamm-Gemeinde
+ * (users.organization_id) oder Zusatzzugehoerigkeit (user_organizations).
+ * Geloeschte Konten gehoeren nirgends mehr dazu. Die Rolle spielt hier keine
+ * Rolle -- es geht darum, ob ein Schreibweg die Gemeindegrenze ueberschreitet.
+ *
+ * @param {object} db
+ * @param {number|string} userId
+ * @param {number} organizationId
+ * @returns {Promise<boolean>}
+ */
+async function istMitgliedDerOrganisation(db, userId, organizationId) {
+  const { rows: [r] } = await db.query(
+    `SELECT EXISTS (
+       SELECT 1 FROM users u
+        WHERE u.id = $1 AND u.deleted_at IS NULL
+          AND (u.organization_id = $2
+               OR EXISTS (SELECT 1 FROM user_organizations uo
+                           WHERE uo.user_id = u.id AND uo.organization_id = $2))
+     ) AS mitglied`,
+    [userId, organizationId]
+  );
+  return r.mitglied === true;
+}
+
 module.exports = {
+  istMitgliedDerOrganisation,
   ladeMitgliederDerOrganisation,
   ladeLeitungDerOrganisation,
   ladeMitgliedschaftenDerPerson,

@@ -130,6 +130,9 @@ Versionsüberschrift.
 - Stellt die Leitung die Teilnehmerzahl eines Events auf unbegrenzt, rücken
   alle wartenden Konfis nach und bekommen Bescheid — wie beim Team schon
   bisher.
+- Eine Teamer-Aktivität lässt sich nur noch Personen zuordnen, die in der
+  eigenen Gemeinde mitarbeiten; über die Schnittstelle ging das bisher auch
+  für Teamer:innen fremder Gemeinden.
 
 ### Sonstiges
 - Ein fehlerhafter Aufruf beim Eintragen von Teilnehmenden von Hand bekommt

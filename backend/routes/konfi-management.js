@@ -18,6 +18,7 @@ const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 // super_admin sind ausgenommen, admin und teamer brauchen die Zuweisung.
 // Hier immer mit { edit: true }: Anlegen und Verschieben sind Schreibwege.
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
+const { istMitgliedDerOrganisation } = require('../utils/orgMitglieder');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { rueckeNach } = require('../utils/bookingUtils');
@@ -1341,6 +1342,21 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             }
 
             const isTeamerActivity = activity.target_role === 'teamer';
+
+            if (isTeamerActivity) {
+                // GEMEINDEGRENZE AUCH FUER TEAMER-AKTIVITAETEN (28.09.2026,
+                // Audit Punkte/Termine BF-07). Der Konfi-Zweig unten prueft
+                // die Zielperson ueber darfKonfi; dieser Zweig pruefte sie gar
+                // nicht (keine Punkte, kein Jahrgang). Eine Leitung der
+                // Gemeinde A haengte so einer Teamer:in der Gemeinde B eine
+                // Zuordnung an und loeste deren Abzeichenlauf aus. Jetzt wie
+                // assign-activity (activities.js) -> 404, aber ueber BEIDE
+                // Quellen der Zugehoerigkeit: Wer ueber user_organizations in
+                // dieser Gemeinde mitarbeitet, bekommt die Aktivitaet weiter.
+                if (!(await istMitgliedDerOrganisation(db, req.params.id, req.user.organization_id))) {
+                    return res.status(404).json({ error: 'Person nicht gefunden' });
+                }
+            }
 
             if (!isTeamerActivity) {
                 // Jahrgangs-Bindung (01.09.2026): dieselbe Pruefung wie
