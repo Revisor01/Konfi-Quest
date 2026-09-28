@@ -11,6 +11,22 @@ export const anzahlBeitraege = (n: number): string =>
 export const wartenAufFreigabe = (n: number): string =>
   n === 1 ? '1 Beitrag wartet auf Freigabe' : `${n} Beiträge warten auf Freigabe`;
 
+/**
+ * Vorlesetext der roten Kugel am Challenge-Eintrag der Leitung (ohne die
+ * fuehrende Zahl -- die setzt ZaehlerKugel davor). Die Kugel zaehlt seit
+ * 28.09.2026 wartende Freigaben PLUS neue Beitraege; der Text nennt beides,
+ * damit niemand die Summe fuer "5 neue Beitraege" haelt.
+ *   (0, 3) -> "neue Beiträge"                       => "3 neue Beiträge"
+ *   (1, 0) -> "offen: 1 Beitrag wartet auf Freigabe" => "1 offen: ..."
+ *   (2, 3) -> "offen: 2 Beiträge warten auf Freigabe, 3 neue Beiträge"
+ */
+export const kugelTextAmEintrag = (pending: number, neu: number): string => {
+  if (!(pending > 0)) return 'neue Beiträge';
+  const teile = [wartenAufFreigabe(pending)];
+  if (neu > 0) teile.push(`${neu} neue Beiträge`);
+  return `offen: ${teile.join(', ')}`;
+};
+
 type SichtbarkeitsRelevant = Pick<KonfiChallenge, 'visibility' | 'moderated'>;
 
 /**

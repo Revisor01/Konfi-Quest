@@ -9,6 +9,11 @@ Versionsüberschrift.
 
 ## [Unreleased]
 
+### Geändert
+- In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
+  auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
+  die Zahl am Reiter; das orange Feld mit Uhr bleibt zusätzlich stehen.
+
 ### Behoben
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und
   kommt beim Zurückgehen in die Liste nicht wieder, auch wenn Beiträge dort ein

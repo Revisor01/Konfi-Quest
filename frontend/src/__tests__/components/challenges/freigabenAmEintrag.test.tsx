@@ -5,10 +5,11 @@ import ChallengesManageView from '../../../components/admin/views/ChallengesMana
 import type { AdminChallenge } from '../../../types/challenges';
 
 // Freigaben-Badge am einzelnen Challenge-Eintrag der Leitung: das orange
-// Eck-Badge (Zahl + Uhr), nicht die rote Kugel am Symbol. Simon, 25.09.2026:
-// "Das corner badge darf bleiben, das verweist ja auch auf Freigaben. Die
-// kann man auch spaeter machen. Also fuer Freigaben ja, sonst nur der rote
-// Badge." Die Zahl kommt je Challenge-ID aus dem BadgeContext
+// Eck-Badge (Zahl + Uhr). Simon, 25.09.2026: "Das corner badge darf bleiben,
+// das verweist ja auch auf Freigaben." Seit 28.09.2026 zaehlen dieselben
+// Freigaben ZUSAETZLICH in der roten Kugel am Symbol (Simon: "Ich erwarte
+// auch einen roten Kreis auf dem Listen Element"; roteKugelMitFreigaben.test.tsx).
+// Die Zahl kommt je Challenge-ID aus dem BadgeContext
 // (pendingChallengesByChallenge) -- dieselbe Quelle wie der Reiter, damit
 // Reiter und Eintrag nie verschiedene Zahlen zeigen. Gegenstueck zu
 // neuigkeitenAmEintrag.test.tsx fuer die Konfi-Liste (dort die rote Kugel).
@@ -59,8 +60,9 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     expect(badge.textContent).toBe('1');
     expect(badge.className).toBe('app-corner-badge');
     expect(badge.style.backgroundColor).toBe(ORANGE);
-    // Challenge 40 traegt kein Badge -- insgesamt genau eines im Baum.
-    expect(queryAllByLabelText(/Freigabe$/)).toHaveLength(1);
+    // Challenge 40 traegt kein Badge -- insgesamt genau ein oranges Feld im
+    // Baum (die rote Kugel nennt die Freigabe ebenfalls, sitzt aber am Symbol).
+    expect(queryAllByLabelText(/Freigabe$/).filter((el) => el.classList.contains('app-corner-badge'))).toHaveLength(1);
   });
 
   it('mehrere Beitraege: Mehrzahl im Text, Zahl im Badge', () => {
@@ -73,13 +75,16 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     expect(getByLabelText('12 Beiträge warten auf Freigabe').textContent).toBe('12');
   });
 
-  it('sitzt in der Eck-Badge-Leiste, nicht als rote Kugel am Symbol', () => {
+  it('sitzt in der Eck-Badge-Leiste -- und zaehlt zusaetzlich in der roten Kugel am Symbol', () => {
     const { getByLabelText, container } = renderListe({ 31: 3 });
     const badge = getByLabelText('3 Beiträge warten auf Freigabe');
     expect(badge.closest('.app-corner-badges')).not.toBeNull();
     // Die rote Kugel (ZaehlerKugel) legt sich als span.app-zaehler-kugel ans
-    // Symbol; hier keine.
-    expect(container.querySelectorAll('.app-zaehler-kugel')).toHaveLength(0);
+    // Symbol; seit 28.09.2026 zaehlt sie die wartenden Freigaben mit.
+    const kugeln = container.querySelectorAll('.app-zaehler-kugel');
+    expect(kugeln).toHaveLength(1);
+    expect(kugeln[0].textContent).toBe('3');
+    expect(kugeln[0].getAttribute('aria-label')).toBe('3 offen: 3 Beiträge warten auf Freigabe');
   });
 
   it('haelt den Titel vom Badge frei: breiterer Freiraum nur mit offenen Freigaben', () => {

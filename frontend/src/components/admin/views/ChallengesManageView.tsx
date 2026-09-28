@@ -34,7 +34,7 @@ import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
 import ZaehlerKugel from '../../shared/ZaehlerKugel';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { anzahlBeitraege, wartenAufFreigabe } from '../../../utils/challengeTexte';
+import { anzahlBeitraege, kugelTextAmEintrag, wartenAufFreigabe } from '../../../utils/challengeTexte';
 import { datumKurz } from '../../../utils/dateUtils';
 
 // Gemeinsame Verwaltungs-Ansicht für Admin UND Teamer. Bewusst ohne eigenen
@@ -76,18 +76,20 @@ interface ChallengesManageViewProps {
   ohneJahrgang?: boolean;
   /**
    * Offene Freigaben je Challenge-ID (BadgeContext.pendingChallengesByChallenge):
-   * speist das orange Eck-Badge (Zahl + Uhr) am Eintrag. Freigaben tragen
-   * in der ganzen App dieses Badge; die rote Kugel am Symbol steht fuer
-   * Neues (Chat, Konfi-Neuigkeiten) -- Simon, 25.09.2026: "fuer Freigaben
-   * ja, sonst nur der rote Badge". Optional, weil aeltere Server die
-   * Aufschluesselung nicht liefern.
+   * speist das orange Eck-Badge (Zahl + Uhr) am Eintrag UND zaehlt in der
+   * roten Kugel am Symbol mit (Simon, 28.09.2026, Messung am Geraet: "Ich
+   * erwarte auch einen roten Kreis auf dem Listen Element" -- der Reiter
+   * zeigte eine rote 1, der Eintrag keine). Das hebt die Entscheidung vom
+   * 25.09.2026 ("fuer Freigaben ja [orange], sonst nur der rote Badge")
+   * auf. Optional, weil aeltere Server die Aufschluesselung nicht liefern.
    */
   offeneFreigaben?: Record<number, number>;
   /**
    * Neue Beitraege je Challenge seit dem letzten Oeffnen
    * (BadgeContext.challengeUpdatesByChallenge, 27.09.2026): rote Kugel am
-   * Symbol wie im Chat. Wartende Freigaben stehen getrennt im orangen Feld
-   * mit Uhr -- ein Beitrag zaehlt nie in beiden.
+   * Symbol wie im Chat, zusammen mit den wartenden Freigaben. Ein Beitrag
+   * steht nie in beiden Quellen (der Server zaehlt wartende nicht als neu),
+   * die Summe zaehlt ihn also nie doppelt.
    */
   neuigkeiten?: Record<number, number>;
 }
@@ -292,12 +294,13 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   <div className="app-corner-badges">
                     {/* Offene Freigaben: Zahl plus Uhr statt "{n} offen"
                         (Nutzerentscheid 24.08.2026) -- was gemeint ist, sagen
-                        title/aria-label in ganzen Worten. Bewusst KEINE rote
-                        ZaehlerKugel am Symbol wie im Chat: Die Kugel steht
-                        fuer Neues, das orange Uhr-Badge fuer Freigaben, die
-                        man auch spaeter erledigen kann (Simon, 25.09.2026).
-                        So kennt die Legende (ChallengeLegendModal) genau
-                        eine Darstellung dafuer. */}
+                        title/aria-label in ganzen Worten. Dieselben Freigaben
+                        zaehlen seit 28.09.2026 zusaetzlich in der roten
+                        Kugel am Symbol (Simon: "Etwas Wartendes bekommt auch
+                        ein Badge fuer den Admin. Ich muss das doch sehen.");
+                        das orange Feld bleibt stehen und sagt, WAS wartet.
+                        Die Entscheidung vom 25.09.2026 (Freigaben nur orange)
+                        ist damit aufgehoben. */}
                     {pending > 0 && (
                       <>
                         <div
@@ -355,9 +358,13 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
-                      {/* Neue Beitraege seit dem letzten Oeffnen: rote Kugel am
-                          Symbol wie in der Chat-Liste und bei den Konfis
-                          (Simon, 27.09.2026: "wie der Chat"). */}
+                      {/* Rote Kugel am Symbol wie in der Chat-Liste und bei
+                          den Konfis (Simon, 27.09.2026: "wie der Chat"):
+                          wartende Freigaben PLUS neue Beitraege seit dem
+                          letzten Oeffnen (28.09.2026). So ergibt die Summe
+                          der Eintraege die Zahl am Reiter
+                          (pendingChallengesCount + challengeUpdatesTotal in
+                          MainTabs). Der Vorlesetext nennt beide Anteile. */}
                       <div className="app-zaehler-anker">
                         <div
                           className="app-icon-circle app-icon-circle--lg"
@@ -365,7 +372,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                         >
                           <IonIcon icon={STATUS_ICON[status]} />
                         </div>
-                        <ZaehlerKugel anzahl={neu} label="neue Beiträge" />
+                        <ZaehlerKugel anzahl={pending + neu} label={kugelTextAmEintrag(pending, neu)} />
                       </div>
 
                       <div className="app-list-item__content">

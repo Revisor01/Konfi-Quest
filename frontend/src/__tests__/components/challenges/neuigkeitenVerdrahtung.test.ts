@@ -56,10 +56,11 @@ describe('Challenge-Neuigkeiten: drei Orte, eine Quelle', () => {
     expect(challengeListe).toContain("import ZaehlerKugel from '../../shared/ZaehlerKugel'");
     // Die Leitungs-Liste traegt seit 27.09.2026 ebenfalls die Kugel -- fuer
     // Neues (Simon: "Die Challenges sollen sich verhalten wie der Chat").
-    // Freigaben bleiben das orange Eck-Badge mit Uhr (25.09.2026): zwei
-    // Zeichen, zwei Bedeutungen, ein Beitrag zaehlt nie in beiden.
+    // Seit 28.09.2026 zaehlen wartende Freigaben mit (Simon: "Ich erwarte
+    // auch einen roten Kreis auf dem Listen Element"); das orange Eck-Badge
+    // mit Uhr bleibt zusaetzlich stehen.
     expect(leitungsListe).toContain("import ZaehlerKugel from '../../shared/ZaehlerKugel'");
-    expect(leitungsListe).toContain('<ZaehlerKugel anzahl={neu} label="neue Beiträge" />');
+    expect(leitungsListe).toContain('<ZaehlerKugel anzahl={pending + neu} label={kugelTextAmEintrag(pending, neu)} />');
     expect(leitungsListe).toContain('neuigkeiten[challenge.id]');
     expect(leitungsListe).toContain('wartenAufFreigabe(pending)');
     expect(leitungsSeite).toContain('neuigkeiten={challengeUpdatesByChallenge}');
