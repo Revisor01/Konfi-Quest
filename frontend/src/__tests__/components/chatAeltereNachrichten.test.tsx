@@ -42,11 +42,12 @@ const reihe = (von: number, bis: number) => Array.from({ length: bis - von + 1 }
 // --- Netz ------------------------------------------------------------------
 type Antwort = { data: Message[] } | Promise<{ data: Message[] }>;
 const apiGet = vi.fn<(url: string) => Antwort>();
+const apiDelete = vi.fn(async (_url: string) => ({ data: {} }));
 vi.mock('../../services/api', () => ({
   default: {
     get: (url: string) => Promise.resolve(apiGet(url)),
     post: vi.fn(async () => ({ data: {} })),
-    delete: vi.fn(async () => ({ data: {} })),
+    delete: (url: string) => apiDelete(url),
   },
 }));
 const aufrufe = (teil: string) => apiGet.mock.calls.map(([url]) => url).filter(u => u.includes(teil));
@@ -112,7 +113,7 @@ vi.mock('@ionic/react', () => {
     IonRefresherContent: () => null,
     IonAvatar: durch,
     useIonModal: () => [vi.fn(), vi.fn()],
-    useIonAlert: () => [vi.fn()],
+    useIonAlert: () => [presentAlert],
     useIonActionSheet: () => [vi.fn()],
   };
 });
@@ -148,14 +149,25 @@ vi.mock('@capacitor/filesystem', () => ({ Filesystem: {}, Directory: { Data: 'DA
 vi.mock('@capacitor/keyboard', () => ({ Keyboard: { addListener: () => Promise.resolve({ remove: vi.fn() }) } }));
 vi.mock('../../services/networkMonitor', () => ({ networkMonitor: { isOnline: true } }));
 let beimReconnect: (() => void) | null = null;
+// Ein Socket, dessen Ereignisse der Test selbst ausloest.
+const socketEreignisse: Record<string, (daten: unknown) => void> = {};
+const socketAttrappe = {
+  connected: false,
+  on: (ereignis: string, cb: (daten: unknown) => void) => { socketEreignisse[ereignis] = cb; },
+  off: () => {},
+};
 vi.mock('../../services/websocket', () => ({
-  initializeWebSocket: vi.fn(),
-  getSocket: () => null,
+  initializeWebSocket: () => socketAttrappe,
+  getSocket: () => socketAttrappe,
   joinRoom: vi.fn(),
   leaveRoom: vi.fn(),
   onReconnect: (cb: () => void) => { beimReconnect = cb; return () => { beimReconnect = null; }; },
 }));
-vi.mock('../../services/tokenStore', () => ({ getToken: () => null }));
+vi.mock('../../services/tokenStore', () => ({ getToken: () => 'sitzung' }));
+// Der Bestaetigungsdialog beim Loeschen: seine Knoepfe merkt sich der Test.
+type AlertKnopf = { text: string; handler?: () => void };
+let letzterDialog: { buttons: AlertKnopf[] } | null = null;
+const presentAlert = (optionen: { buttons: AlertKnopf[] }) => { letzterDialog = optionen; };
 vi.mock('../../components/chat/ChatRoomSections', () => ({
   ChatHeader: () => null,
   MessageInput: () => null,
@@ -184,11 +196,14 @@ vi.mock('../../components/chat/useChatVerwaltung', () => ({
     handleChatOptions: vi.fn(), handleClearChat: vi.fn(),
   }),
 }));
-// Die Blase selbst: nur id und Text. Ihr Verhalten hat eigene Tests.
+// Die Blase selbst: nur id und Text. Ihr Verhalten hat eigene Tests. Den
+// Loeschen-Weg (onDelete) reicht sie an den Test durch.
+let loeschenAn: ((id: number) => void) | null = null;
 vi.mock('../../components/chat/MessageBubble', () => ({
-  default: ({ message }: { message: Message }) => (
-    <div id={`msg-${message.id}`} data-bubble>{message.content}</div>
-  ),
+  default: ({ message, onDelete }: { message: Message; onDelete: (id: number) => void }) => {
+    loeschenAn = onDelete;
+    return <div id={`msg-${message.id}`} data-bubble>{message.content}</div>;
+  },
 }));
 
 import ChatRoom from '../../components/chat/ChatRoom';
@@ -228,6 +243,10 @@ beforeEach(() => {
   scrollTop = 0;
   scrollEl = null;
   beimReconnect = null;
+  letzterDialog = null;
+  loeschenAn = null;
+  apiDelete.mockClear();
+  for (const k of Object.keys(socketEreignisse)) delete socketEreignisse[k];
   layoutNachbauen();
 });
 
@@ -385,5 +404,48 @@ describe('Chat: aeltere Nachrichten beim Hochscrollen nachladen', () => {
     await act(async () => { fireEvent.click(knopf); });
     await waitFor(() => expect(angezeigteIds()[0]).toBe(51));
     expect(versuch).toBe(2);
+  });
+
+  // Der juengste Block, der nach dem Loeschen nachgeladen wird, enthaelt eine
+  // nachgeladene aeltere Nachricht nicht. Ohne eigene Markierung stuende sie
+  // bis zum naechsten Oeffnen weiter mit Inhalt da.
+  const text = (id: number) => document.getElementById(`msg-${id}`)?.textContent;
+
+  it('eine geloeschte nachgeladene Nachricht zeigt sofort den Platzhalter', async () => {
+    apiGet.mockImplementation((url) => {
+      if (url === '/chat/rooms/7/messages?limit=100') return { data: reihe(101, 200) };
+      if (url === '/chat/rooms/7/messages?before=101&limit=50') return { data: reihe(51, 100) };
+      throw new Error(`unerwartet: ${url}`);
+    });
+
+    await oeffnen();
+    await scrollenNach(0);
+    await waitFor(() => expect(angezeigteIds()[0]).toBe(51));
+    expect(text(60)).toBe('Nachricht 60');
+
+    act(() => { loeschenAn!(60); });
+    const loeschen = letzterDialog!.buttons.find(b => b.text === 'Löschen')!;
+    await act(async () => { loeschen.handler!(); });
+
+    expect(apiDelete).toHaveBeenCalledWith('/chat/messages/60');
+    await waitFor(() => expect(text(60)).toBe('Diese Nachricht wurde gelöscht'));
+    // Der Verlauf davor bleibt stehen.
+    expect(angezeigteIds()).toEqual(reihe(51, 200).map(m => m.id));
+  });
+
+  it('eine anderswo geloeschte Nachricht (Socket) zeigt sofort den Platzhalter', async () => {
+    apiGet.mockImplementation((url) => {
+      if (url === '/chat/rooms/7/messages?limit=100') return { data: reihe(101, 200) };
+      throw new Error(`unerwartet: ${url}`);
+    });
+
+    await oeffnen();
+    await act(async () => { socketEreignisse.messageDeleted({ roomId: 7, messageId: 150 }); });
+
+    expect(text(150)).toBe('Diese Nachricht wurde gelöscht');
+    expect(text(151)).toBe('Nachricht 151');
+    // Ein Ereignis fuer einen anderen Raum aendert nichts.
+    await act(async () => { socketEreignisse.messageDeleted({ roomId: 8, messageId: 151 }); });
+    expect(text(151)).toBe('Nachricht 151');
   });
 });

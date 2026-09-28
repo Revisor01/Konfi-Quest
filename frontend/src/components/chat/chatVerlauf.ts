@@ -91,6 +91,22 @@ export function juengstenBlockEinpflegen(
   return [...aeltere, ...mitLokalen];
 }
 
+/** Der Platzhalter, den der Server fuer eine geloeschte Nachricht ausliefert. */
+export const GELOESCHT_TEXT = 'Diese Nachricht wurde gelöscht';
+
+/**
+ * Eine Nachricht so markieren, wie der Server sie nach dem Loeschen liefert
+ * (GET messages: is_deleted, Platzhalter statt Inhalt). Noetig, seit die
+ * Liste nachgeladene aeltere Nachrichten haelt: Der juengste Block, der nach
+ * dem Loeschen nachgeladen wird, enthaelt sie nicht — ohne diese Markierung
+ * stuende eine geloeschte aeltere Nachricht bis zum naechsten Oeffnen mit
+ * Inhalt da. Dasselbe gilt fuer das Socket-Ereignis, wenn anderswo geloescht
+ * wird: Es setzte bisher nur deleted_at, das die Blase nicht auswertet.
+ */
+export function alsGeloescht(m: Message): Message {
+  return { ...m, is_deleted: 1, content: GELOESCHT_TEXT };
+}
+
 /**
  * Ist der Anfang des Chats erreicht? `anfangBei` ist die id der aeltesten
  * Nachricht in dem Moment, als der Server weniger lieferte als angefordert.

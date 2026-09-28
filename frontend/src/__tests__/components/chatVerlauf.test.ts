@@ -10,6 +10,7 @@ import {
   ERSTER_BLOCK,
   aeltereVoranstellen,
   aeltesteServerId,
+  alsGeloescht,
   anfangErreicht,
   juengstenBlockEinpflegen,
 } from '../../components/chat/chatVerlauf';
@@ -174,5 +175,20 @@ describe('anfangErreicht', () => {
   it('nein ohne Merker und bei leerer Liste', () => {
     expect(anfangErreicht(reihe(1, 10), null)).toBe(false);
     expect(anfangErreicht([], 1)).toBe(false);
+  });
+});
+
+describe('alsGeloescht', () => {
+  it('markiert wie der Server: is_deleted und Platzhalter statt Inhalt', () => {
+    const vorher = n(60, { reactions: [], file_name: 'foto.jpg' });
+    const nachher = alsGeloescht(vorher);
+    expect(nachher.is_deleted).toBeTruthy();
+    expect(nachher.content).toBe('Diese Nachricht wurde gelöscht');
+    // Alles andere bleibt (Position, Absender, Zeit).
+    expect(nachher.id).toBe(60);
+    expect(nachher.created_at).toBe(vorher.created_at);
+    expect(nachher.sender_name).toBe('Kim');
+    // Das Original bleibt unangetastet (React-Zustand wird nicht veraendert).
+    expect(vorher.content).toBe('Nachricht 60');
   });
 });

@@ -40,6 +40,9 @@ Versionsüberschrift.
 - Ältere Chat-Nachrichten lassen sich durch Hochscrollen nachladen — bisher
   endete jeder Chat nach den letzten 100 Nachrichten. Oben steht „Anfang des
   Chats", wenn der ganze Verlauf geladen ist.
+- Wird eine Chat-Nachricht gelöscht, sehen alle im Raum sofort den Platzhalter
+  „Diese Nachricht wurde gelöscht" — bisher stand sie bei den anderen mit
+  Inhalt da, bis sie den Chat neu öffneten.
 - Bilder, Videos und Dateien aus dem Chat gibt der Server nur noch heraus, wenn
   die Anmeldung im Kopf der Anfrage steht, nicht mehr in der Adresse. Dort
   hätte sie in den Zugriffsprotokollen des Servers gestanden. Die App hat sie

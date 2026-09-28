@@ -43,6 +43,7 @@ import {
   ERSTER_BLOCK,
   aeltereVoranstellen,
   aeltesteServerId,
+  alsGeloescht,
   anfangErreicht,
   juengstenBlockEinpflegen,
 } from './chatVerlauf';
@@ -587,6 +588,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           handler: () => {
             api.delete(`/chat/messages/${messageId}`)
               .then(() => {
+                // Sofort als geloescht zeigen: Liegt die Nachricht im
+                // nachgeladenen aelteren Teil, bringt der juengste Block sie
+                // nicht mit.
+                setMessages(prev => prev.map(m => (m.id === messageId ? alsGeloescht(m) : m)));
                 loadMessages();
               })
               .catch((err) => {
