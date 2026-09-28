@@ -1,4 +1,4 @@
-// Die Termine der Konfi-Zeit lesbar machen (28.09.2026).
+// Die Events der Konfi-Zeit lesbar machen (28.09.2026).
 //
 // Die Kopie haelt Buchungsstatus und Anwesenheit so fest, wie sie am Tag der
 // Befoerderung standen. Daraus wird EIN Wort, das sagt, wie es war -- die

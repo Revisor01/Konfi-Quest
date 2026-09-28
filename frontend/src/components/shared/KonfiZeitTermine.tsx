@@ -6,7 +6,7 @@ import { konfiZeitTerminStatus } from '../../utils/konfiZeit';
 import type { KonfiZeitTermin } from '../../types/konfiZeit';
 
 /**
- * Die Termine der Konfi-Zeit einer befoerderten Person -- aus der
+ * Die Events der Konfi-Zeit einer befoerderten Person -- aus der
  * dauerhaften Kopie (GET /teamer/konfi-zeit, 28.09.2026).
  *
  * Die Befoerderung loescht die Buchungen, das Loeschen des alten Jahrgangs
@@ -20,11 +20,11 @@ import type { KonfiZeitTermin } from '../../types/konfiZeit';
  */
 interface KonfiZeitTermineProps {
   termine: KonfiZeitTermin[];
-  /** Ueberschrift, vorbelegt mit "Termine der Konfi-Zeit". */
+  /** Ueberschrift, vorbelegt mit "Events der Konfi-Zeit". */
   titel?: string;
 }
 
-const KonfiZeitTermine: React.FC<KonfiZeitTermineProps> = ({ termine, titel = 'Termine der Konfi-Zeit' }) => {
+const KonfiZeitTermine: React.FC<KonfiZeitTermineProps> = ({ termine, titel = 'Events der Konfi-Zeit' }) => {
   const liste = Array.isArray(termine) ? termine : [];
   if (liste.length === 0) return null;
 

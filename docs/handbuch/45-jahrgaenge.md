@@ -349,7 +349,7 @@ Ehemalige Konfis, die inzwischen Teamer:in sind, **blockieren das Löschen
 nicht**. Sie verlieren beim Löschen nur ihre Jahrgangs-Bindung.
 
 **Ihre Daten bleiben vollständig erhalten**: Punktestand, Level, Badges,
-Konfispruch, ihr [Konfi-Rückblick](95-wrapped.md) und die Termine ihrer
+Konfispruch, ihr [Konfi-Rückblick](95-wrapped.md) und die Events ihrer
 Konfi-Zeit — die Kopie, die die App bei der
 [Beförderung](05-rollen.md#eine-rolle-aendern) festhält. Fehlt einer
 beförderten Person diese Kopie noch, legt das Löschen des Jahrgangs sie an, mit
