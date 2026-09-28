@@ -11,6 +11,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
+const { ladeKonfiHistorie } = require('../utils/konfiHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
 const { heuteBerlin } = require('../utils/zeitformat');
@@ -240,6 +241,49 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
+
+  // ====================================================================
+  // KONFI-ZEIT: die dauerhafte Kopie (28.09.2026, Migration 170)
+  // ====================================================================
+  //
+  // Die Befoerderung loescht alle Buchungen (gewollt, Simon 28.09.2026), das
+  // Loeschen des alten Jahrgangs spaeter dessen Termine und Event-Punkte.
+  // Was die Konfi-Zeit ausgemacht hat, steht vorher in konfi_historie
+  // (utils/konfiHistorie.js): besuchte Termine samt Anwesenheit und Punkten,
+  // Aktivitaeten, Bonuspunkte, Abzeichen, Stempel, Level, Konfispruch.
+  //
+  // EIGENE ROUTEN statt eines Feldes an /teamer/profile oder
+  // /teamer/konfi-history: deren Antworten lesen die Apps im Store, und die
+  // Kopie ist ein eigener Gegenstand mit eigenem Stand (erstellt_am).
+  // Antwort immer { konfi_zeit }, ohne Kopie { konfi_zeit: null }.
+
+  // GET /teamer/konfi-zeit — die eigene, in der aktiven Gemeinde.
+  router.get('/konfi-zeit', rbacVerifier, requireTeamer, async (req, res) => {
+    try {
+      const konfiZeit = await ladeKonfiHistorie(db, req.user.id, req.user.organization_id);
+      res.json({ konfi_zeit: konfiZeit });
+    } catch (err) {
+      console.error('Database error in GET /teamer/konfi-zeit:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // GET /teamer/:userId/konfi-zeit — die einer Person, fuer deren
+  // Detailansicht bei der Leitung. Eine Kopie gibt es nur von Befoerderten,
+  // und Teamer:innen sieht die Leitung ohne Jahrgangsgrenze
+  // (utils/jahrgangsZugriff.js); die Gemeinde begrenzt die Zeile selbst.
+  router.get('/:userId/konfi-zeit', rbacVerifier, requireAdmin,
+    [param('userId').isInt({ min: 1 }).withMessage('Ungültige ID'), handleValidationErrors],
+    async (req, res) => {
+      try {
+        const konfiZeit = await ladeKonfiHistorie(db, parseInt(req.params.userId, 10), req.user.organization_id);
+        res.json({ konfi_zeit: konfiZeit });
+      } catch (err) {
+        console.error('Database error in GET /teamer/:userId/konfi-zeit:', err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+      }
+    }
+  );
 
   // ====================================================================
   // TEAMER-BADGES

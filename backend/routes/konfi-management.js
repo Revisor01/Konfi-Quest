@@ -1535,6 +1535,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         }
     });
 
+    // Dauerhafte Kopie der Konfi-Zeit (utils/konfiHistorie.js, Migration 170).
+    // Hier und nicht oben bei den Importen: Die Datei teilen sich zwei
+    // Arbeitsstraenge, die Befoerderung ist die einzige Nutzerin.
+    const { legeKonfiHistorieAn } = require('../utils/konfiHistorie');
+
     // POST promote konfi to teamer
     router.post('/:id/promote-teamer', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const konfiId = parseInt(req.params.id);
@@ -1590,6 +1595,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 await client.query('ROLLBACK');
                 return res.status(500).json({ error: 'Teamer-Rolle nicht gefunden' });
             }
+
+            // 2b. Die Konfi-Zeit festhalten, BEVOR Schritt 4 die Buchungen
+            // loescht (Simon, 28.09.2026: "Loeschen bei Befoerderung ist
+            // gewollt damit der Jahrgang spaeter weg kann. Wir legen eine
+            // persistent kopie der Konfi history fuer den Teamer."). Die Kopie
+            // haelt besuchte Termine samt Anwesenheit und Punkten, Aktivitaeten,
+            // Bonuspunkte, Abzeichen, Stempel, Level, Konfispruch und
+            // Punktestand -- und ueberlebt auch das spaetere Loeschen des
+            // Jahrgangs. Audit 26.09.2026, BF-09.
+            await legeKonfiHistorieAn(client, konfiId, req.user.organization_id, {
+                anlass: 'befoerderung',
+                erstelltVon: req.user.id
+            });
 
             // 3. Rolle ändern + teamer_since setzen
             await client.query('UPDATE users SET role_id = $1, teamer_since = CURRENT_DATE WHERE id = $2', [teamerRole.id, konfiId]);

@@ -256,6 +256,43 @@ components:
       type: object
       properties:
         message: { type: string }
+    KonfiZeitAntwort:
+      type: object
+      required: [konfi_zeit]
+      properties:
+        konfi_zeit:
+          description: Juengste Kopie der Konfi-Zeit (konfi_historie, Migration 170) oder null
+          oneOf:
+            - type: 'null'
+            - type: object
+              properties:
+                version: { type: integer, description: "Aufbau der Kopie, heute 1" }
+                jahrgang_name: { type: [string, 'null'], description: "Bleibt, auch wenn der Jahrgang geloescht ist" }
+                anlass: { type: string, enum: [befoerderung, jahrgang_geloescht] }
+                erstellt_am: { type: [string, 'null'], format: date-time }
+                jahrgang: { type: [object, 'null'], properties: { id: { type: integer }, name: { type: string } } }
+                punkte: { type: object, properties: { gottesdienst: { type: integer }, gemeinde: { type: integer }, gesamt: { type: integer } } }
+                level: { type: [object, 'null'], properties: { id: { type: integer }, titel: { type: string } } }
+                termine:
+                  type: array
+                  description: "Vergangene Buchungen und alle Termine mit Event-Punkten, nach Datum"
+                  items:
+                    type: object
+                    properties:
+                      event_id: { type: integer }
+                      name: { type: string }
+                      datum: { type: string, format: date-time }
+                      ort: { type: [string, 'null'] }
+                      abgesagt: { type: boolean }
+                      status: { type: [string, 'null'], description: "Buchungsstatus; null = nur Punkte" }
+                      anwesenheit: { type: [string, 'null'], description: "present | absent | excused" }
+                      punkte: { type: integer }
+                      punktart: { type: [string, 'null'] }
+                aktivitaeten: { type: array, items: { type: object, properties: { name: { type: string }, art: { type: string }, punkte: { type: integer }, datum: { type: string }, kommentar: { type: [string, 'null'] } } } }
+                bonuspunkte: { type: array, items: { type: object, properties: { beschreibung: { type: string }, art: { type: string }, punkte: { type: integer }, datum: { type: string } } } }
+                abzeichen: { type: array, items: { type: object, properties: { badge_id: { type: integer }, name: { type: string }, beschreibung: { type: [string, 'null'] }, icon: { type: string }, farbe: { type: string }, kriterium: { type: string }, kriterium_wert: { type: [integer, 'null'] }, verliehen_am: { type: string } } } }
+                stempel: { type: array, items: { type: object, properties: { challenge_id: { type: integer }, titel: { type: string }, badge_name: { type: string }, badge_icon: { type: string }, erhalten_am: { type: string } } } }
+                konfispruch: { type: [object, 'null'], description: "wie GET /api/teamer/profile bzw. utils/konfspruch.loeseKonfspruchAuf" }
   responses:
     Unauthorized:
       description: Kein/ungueltiges/abgelaufenes Token, inaktiver Account oder inaktive Organisation
@@ -516,6 +553,62 @@ paths:
         "200": { description: "history[] (id, title, points, category, date, comment, source_type activity|bonus|event) + totals {gottesdienst, gemeinde, total}" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/konfi-zeit:
+    get:
+      tags: ["Teamer:innen"]
+      summary: Eigene Konfi-Zeit als dauerhafte Kopie
+      description: >
+        Seit dem 28.09.2026 (Migration 170, utils/konfiHistorie.js). Die
+        Befoerderung loescht alle Buchungen (gewollt), das Loeschen des alten
+        Jahrgangs spaeter dessen Termine und Event-Punkte. Vorher legt der
+        Server eine Kopie der Konfi-Zeit an — bei der Befoerderung, und beim
+        Loeschen des Jahrgangs fuer Befoerderte, die noch keine haben. Diese
+        Route liefert die juengste Kopie der aufrufenden Person in der aktiven
+        Gemeinde. Eigene Route statt eines Feldes an /teamer/profile oder
+        /teamer/konfi-history: deren Antworten lesen die Apps im Store.
+      x-berechtigung:
+        rollen: [teamer, admin, org_admin]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten (user_id = Token) der aktiven Gemeinde"
+      responses:
+        "200":
+          description: "{ konfi_zeit } — ohne Kopie { konfi_zeit: null }"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KonfiZeitAntwort' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Konfis (requireTeamer)" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/{userId}/konfi-zeit:
+    get:
+      tags: ["Teamer:innen"]
+      summary: Konfi-Zeit einer Person (Detailansicht der Leitung)
+      description: >
+        Seit dem 28.09.2026. Wie GET /api/teamer/konfi-zeit, fuer die
+        angesehene Person. Eine Kopie gibt es nur von Befoerderten, und
+        Teamer:innen sieht die Leitung ohne Jahrgangsgrenze
+        (utils/jahrgangsZugriff.js); die Gemeinde begrenzt die Zeile — aus
+        einer fremden Gemeinde { konfi_zeit: null }.
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: integer }, description: "ID der Person" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, param-userId-Validierung]
+        org-scope: true
+        objekt-pruefung: "Zeile der aktiven Gemeinde (organization_id = req.user.organization_id)"
+      responses:
+        "200":
+          description: "{ konfi_zeit } — ohne Kopie { konfi_zeit: null }"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KonfiZeitAntwort' }
+        "400": { description: "Ungueltige ID" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Teamer:innen und Konfis (requireAdmin)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/teamer/badges:

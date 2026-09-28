@@ -166,8 +166,11 @@ auch vom Gerät. Mehr dazu unter
   hast. Gibt es weder erhaltene noch offene Stempel, steht der Abschnitt nicht
   da.
 - **Konfi-Historie** — wenn du früher selbst Konfi warst: deine damaligen
-  Punkte und Badges. Hier steht nur deine Konfi-Zeit; deine Teamer-Badges
-  stehen unter **Badges**.
+  Punkte und Badges und unter **„Termine der Konfi-Zeit“** die Events, bei
+  denen du dabei oder angemeldet warst, mit den Punkten dafür. Diese Liste
+  hält die App bei deiner Beförderung fest; sie bleibt, auch wenn dein alter
+  Jahrgang gelöscht wird. Hier steht nur deine Konfi-Zeit; deine
+  Teamer-Badges stehen unter **Badges**.
 - **Meine Rückblicke** — deine [Jahresrückblicke](95-wrapped.md) als Teamer:in
 
 Wie du dich in der App bewegst, steht im Kapitel

@@ -4022,6 +4022,17 @@ paths:
         bekam deren Nachrichten als Push, bis jemand anderes den Abgleich
         ausloeste; den Team-Chat bekam sie erst nach Ablauf des
         10-Minuten-Merkers. Antwortform unveraendert.
+        KONFI-ZEIT ALS KOPIE (28.09.2026, Audit Punkte/Termine BF-09, Simons
+        Entscheidung: das Loeschen der Buchungen bleibt gewollt). VOR dem
+        Loeschen der Buchungen legt die Route in derselben Transaktion eine
+        dauerhafte Kopie in konfi_historie an (Migration 170,
+        utils/konfiHistorie.js): vergangene Buchungen mit Status und
+        Anwesenheit, alle Termine mit Event-Punkten, Aktivitaeten,
+        Bonuspunkte, Konfi-Abzeichen, Challenge-Stempel, Level, Konfispruch
+        und Punktestand. Die Kopie ueberlebt das Loeschen des Jahrgangs und
+        ist ueber GET /api/teamer/konfi-zeit (die Person) und
+        GET /api/teamer/{userId}/konfi-zeit (Leitung) abrufbar. Antwortform
+        unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]

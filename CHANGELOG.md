@@ -16,6 +16,11 @@ Versionsüberschrift.
 - Die Rückfrage vor dem Löschen eines Jahrgangs nennt, wie viele Events und
   Challenges mitgehen, wie viele dieser Events noch in der Zukunft liegen und
   was bestehen bleibt.
+- Bei der Beförderung zur Teamer:in hält die App die Konfi-Zeit fest: besuchte
+  Events mit Anwesenheit und Punkten, Aktivitäten, Bonuspunkte, Badges,
+  Stempel und Konfispruch. Die Events stehen in der Konfi-Historie der
+  Teamer:in und in der Detailansicht der Leitung — auch nachdem der alte
+  Jahrgang gelöscht ist.
 
 ### Geändert
 - Beim Löschen eines Jahrgangs gehen die Events und Challenges mit, die nur zu
@@ -64,6 +69,8 @@ Versionsüberschrift.
   mittendrin hinterlässt keinen halb gelöschten Jahrgang mehr.
 - Der erste Termin einer Serie lässt sich löschen, auch zusammen mit der
   ganzen Serie; vorher brach das mit einem Fehler ab.
+- Nach der Beförderung zur Teamer:in geht nicht mehr verloren, bei welchen
+  Events jemand als Konfi dabei war.
 - Eine Einladung in eine weitere Gemeinde nennt in Mitteilung und E-Mail die
   Rolle mit ihrem Namen statt mit dem technischen Wort „admin".
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und

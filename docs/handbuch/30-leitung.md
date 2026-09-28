@@ -65,7 +65,9 @@ lassen kannst.
 - **Konfirmation** — Termin und Konfispruch
 - [**Passwort zurücksetzen**](35-passwoerter.md#weg-1-die-leitung-setzt-ein-neues-passwort)
 - **Zur Teamer:in befördern** — Punkte und Badges bleiben als Konfi-Historie
-  erhalten. Eine Jahrgangs-Zuweisung bekommt die neue Teamer:in dabei nicht
+  erhalten; die besuchten Events stehen danach in der Detailansicht unter
+  **„Termine der Konfi-Zeit“**, auch wenn der alte Jahrgang gelöscht wird.
+  Eine Jahrgangs-Zuweisung bekommt die neue Teamer:in dabei nicht
   automatisch; die vergibst du unter **Mehr › Benutzer:innen**.
 
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,

@@ -11,6 +11,7 @@ const { loescheMitteilungenZuJahrgang } = require('../utils/postfachAufraeumen')
 const { ladeLoeschumfang } = require('../utils/jahrgangLoeschen');
 const { loescheTermin, loescheChatRaeume, entferneChatDateien } = require('../utils/terminLoeschen');
 const { loescheChallenge, entferneChallengeDateien } = require('../utils/challengeLoeschen');
+const { sichereKonfiZeitBefoerderter } = require('../utils/konfiHistorie');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten, NUR org_admin darf anlegen
 module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeamer }) => {
@@ -469,6 +470,14 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
       if (fruehAntwort) {
         await client.query('ROLLBACK');
       } else {
+        // 0. Konfi-Zeit der Befoerderten sichern, BEVOR ihre Termine,
+        // Event-Punkte und Challenge-Stempel mit dem Jahrgang gehen
+        // (utils/konfiHistorie.js, Migration 170). Wer seit dem 28.09.2026
+        // befoerdert wurde, hat die Kopie schon; wer frueher befoerdert wurde,
+        // bekommt sie hier -- ohne die Anwesenheiten, die die Befoerderung
+        // damals schon geloescht hat.
+        await sichereKonfiZeitBefoerderter(client, jahrgangId, organizationId, req.user.id);
+
         // 1. Chat des Jahrgangs (mit oder ohne Nachrichten, s.o.)
         chatDateien.push(...await loescheChatRaeume(client, chatRooms.map(room => room.id)));
 
