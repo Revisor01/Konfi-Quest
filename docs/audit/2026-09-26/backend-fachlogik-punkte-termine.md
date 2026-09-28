@@ -308,6 +308,12 @@ bestehender Aktivitäten nicht zu ändern.
   `promoted_teamer_count: 1`, teamer1 **confirmed**.
 - **Empfehlung:** Konfi-Zweig wie der Team-Zweig behandeln (`max_participants
   === 0 || …`, Obergrenze = Zahl der Wartenden); Test.
+- **Nachtrag 28.09.2026:** behoben — `PUT /events/:id` behandelt Konfi-Plätze
+  0 (unbegrenzt, auch Pflicht) wie der Team-Zweig: Obergrenze ist die Zahl der
+  wartenden Konfis, alle rücken über `rueckeNach` nach (Push, Live-Update,
+  `war_auf_warteliste`, Termin-Chat wie beim Erhöhen auf eine Zahl); wartende
+  Teamer:innen bleiben. Test `backend/tests/routes/unbegrenztRuecktNach.test.js`
+  (5, ohne Fix 3 rot; Gegenprobe Team-Seite grün).
 
 ### BF-07: Teamer-Aktivität lässt sich einer Person einer fremden Gemeinde zuordnen
 - **Schwere:** MITTEL

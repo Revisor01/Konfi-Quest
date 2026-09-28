@@ -386,8 +386,9 @@ ein Platz frei wird — nicht nur für die Abmeldung durch die Person selbst:
 | Du beförderst eine Konfi zur Teamer:in | dasselbe — ihre Konfi-Plätze werden frei |
 | Du verschiebst eine Konfi in einen anderen Jahrgang | auf den Plätzen der Events des alten Jahrgangs rückt nach |
 | Du erhöhst die Teilnehmerzahl | so viele rücken nach, wie neue Plätze da sind |
+| Du stellst die Teilnehmerzahl auf unbegrenzt | alle wartenden Konfis rücken nach |
 | Du erhöhst die Plätze eines Zeitfensters | dasselbe, aber nur in diesem Zeitfenster |
-| Du erhöhst das Teamer-Kontingent | die wartenden Teamer:innen rücken nach |
+| Du erhöhst das Teamer-Kontingent oder stellst es auf unbegrenzt | die wartenden Teamer:innen rücken nach |
 
 Nachgerückt wird in der Reihenfolge, in der sich die Wartenden angestellt
 haben; die nachgerückte Person bekommt einen Push und kommt in den Chat zum

@@ -423,6 +423,12 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     }
     // Reine Teamer-Events haben keine Konfi-Plaetze -> 0 (= unbegrenzt/irrelevant)
     const effectiveMaxParticipants = (mandatory || teamer_only) ? 0 : max_participants;
+    // Konfi-Plaetze ausdruecklich unbegrenzt (0, auch bei Pflicht-Events) --
+    // dann ruecken unten alle wartenden Konfis nach (Audit BF-06). Nicht bei
+    // reinen Teamer-Events: Dort gibt es keine Konfi-Plaetze.
+    const konfiUnbegrenzt = !teamer_only
+      && effectiveMaxParticipants !== undefined && effectiveMaxParticipants !== null
+      && effectiveMaxParticipants !== '' && Number(effectiveMaxParticipants) === 0;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
     // Timeslots bei Pflicht-Events UND Konfirmationen nicht erlaubt (siehe POST).
     // Wird ein Event nachträglich zu mandatory/is_konfirmation, fällt es unten in
@@ -630,11 +636,21 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
             promotedUsers.push(...nachgerueckt);
           }
         }
-      } else if (max_participants > 0) {
-        // Bei normalen Events: Gesamtkapazität prüfen (Teamer zählen nicht mit)
-        const frei = await freiePlaetze(client, { eventId: id, seite: 'konfi' }, max_participants);
-        if (frei > 0) {
-          const nachgerueckt = await rueckeNach(client, { eventId: id, seite: 'konfi', anzahl: frei });
+      } else if (konfiUnbegrenzt || max_participants > 0) {
+        // Bei normalen Events: Gesamtkapazität prüfen (Teamer zählen nicht mit).
+        //
+        // 0 = UNBEGRENZT -> ALLE Wartenden ruecken nach (28.09.2026, Audit
+        // Punkte/Termine BF-06). Hier stand nur `max_participants > 0`; die 0
+        // fiel durch, niemand rueckte nach, waehrend jede neue Anmeldung
+        // sofort bestaetigt wurde -- wer frueh wartete, sah spaeter
+        // Angemeldete vor sich. Jetzt dieselbe Regel wie beim
+        // Team-Kontingent darunter: Ohne Obergrenze ist die Zahl der Wartenden
+        // die natuerliche Grenze (freiePlaetze liefert dann null).
+        const frei = await freiePlaetze(client, { eventId: id, seite: 'konfi' }, konfiUnbegrenzt ? 0 : max_participants);
+        const { waitlist: wartende } = await zaehleBuchungen(client, { eventId: id }, 'konfi');
+        const obergrenze = frei === null ? wartende : Math.min(frei, wartende);
+        if (obergrenze > 0) {
+          const nachgerueckt = await rueckeNach(client, { eventId: id, seite: 'konfi', anzahl: obergrenze });
           promotedUsers.push(...nachgerueckt);
         }
       }

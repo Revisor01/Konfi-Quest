@@ -127,6 +127,9 @@ Versionsüberschrift.
 - Setzt die Leitung jemanden auf die Warteliste zurück, rückt die nächste
   wartende Person nach, auch wenn die zurückgesetzte Person sich früher
   angemeldet hatte; vorher blieb der Platz in diesem Fall leer.
+- Stellt die Leitung die Teilnehmerzahl eines Events auf unbegrenzt, rücken
+  alle wartenden Konfis nach und bekommen Bescheid — wie beim Team schon
+  bisher.
 
 ### Sonstiges
 - Ein fehlerhafter Aufruf beim Eintragen von Teilnehmenden von Hand bekommt

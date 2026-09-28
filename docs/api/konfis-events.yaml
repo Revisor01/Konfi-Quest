@@ -1680,6 +1680,19 @@ paths:
         nachträglich ergaenzten Jahrgangs gebucht — vorher nur bei der
         Umwandlung freiwillig -> Pflicht. Abgemeldete (opted_out) bleiben
         abgemeldet. Relevante Änderungen (Termin/Ort) pushen an Gebuchte.
+
+
+        BEHOBEN 28.09.2026 — KONFI-PLAETZE AUF UNBEGRENZT (Audit
+        Punkte/Termine BF-06): max_participants = 0 (unbegrenzt, auch bei
+        Pflicht-Events) laesst jetzt ALLE wartenden Konfis nachruecken, in
+        der Reihenfolge der Warteliste, mit Push (waitlist_promotion),
+        war_auf_warteliste und Termin-Chat -- wie teamer_max_participants = 0
+        auf der Team-Seite schon vorher. Vorher rueckte bei 0 niemand nach
+        (promoted_count 0), waehrend jede neue Anmeldung sofort bestaetigt
+        wurde. Wartende Teamer:innen bleiben unberuehrt (eigenes
+        Kontingent); reine Teamer-Termine (teamer_only) haben keine
+        Konfi-Plaetze. Antwortform unveraendert, promoted_count zaehlt die
+        Nachgerueckten.
       x-berechtigung:
         rollen: [org_admin, admin]
         x-geaendert: >
