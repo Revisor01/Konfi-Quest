@@ -84,20 +84,19 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
     setLoading(true);
     try {
-      const response = await api.get('/admin/activities/requests');
-      const requests = response.data;
-      const foundRequest = requests.find((r: ActivityRequest) => r.id === requestId);
-
-      if (foundRequest) {
-        setRequest(foundRequest);
-        setAdminComment(foundRequest.admin_comment || '');
-        // Das Nachweisfoto lädt NachweisFoto selbst, sobald es gezeigt wird —
-        // für die Leitung in jedem Status (auch verbucht/abgelehnt).
-      } else {
-        setError('Aktivität nicht gefunden');
-      }
+      // Nur DIESER Antrag (28.09.2026, Leitung BF-04). Vorher kam die ganze
+      // Antragsgeschichte der Gemeinde über die Leitung, um per .find() einen
+      // Eintrag herauszusuchen. Die Antwort hat die Form eines Listeneintrags.
+      const response = await api.get<ActivityRequest>(`/admin/activities/requests/${requestId}`);
+      const foundRequest = response.data;
+      setRequest(foundRequest);
+      setAdminComment(foundRequest.admin_comment || '');
+      // Das Nachweisfoto lädt NachweisFoto selbst, sobald es gezeigt wird —
+      // für die Leitung in jedem Status (auch verbucht/abgelehnt).
     } catch (err) {
-      setError('Fehler beim Laden der Aktivität');
+      // 404: Antrag gibt es (in dieser Gemeinde) nicht; 403: Konfi außerhalb
+      // der eigenen Jahrgänge. Beides meldet der Server mit eigenem Text.
+      setError(fehlerText(err, 'Fehler beim Laden der Aktivität'));
  console.error('Error loading request:', err);
     } finally {
       setLoading(false);

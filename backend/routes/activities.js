@@ -328,6 +328,25 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // ACTIVITY REQUESTS MANAGEMENT
   // ====================================================================
 
+  // Die Felder EINES Antrags, wie Liste und Einzelabruf sie liefern -- ein
+  // Ort, damit GET /requests/:id genau die Form eines Listeneintrags hat
+  // (28.09.2026). An der Liste ist die Form ein Vertrag: Store-Apps 2.2.x und
+  // 2.3.0 oeffnen einen Antrag, indem sie ihn per .find() aus ihr heraussuchen.
+  const ANTRAG_AUSWAHL = `
+        SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points, a.type as activity_type,
+               a.target_role as activity_target_role,
+               u_approved.display_name as approved_by_name
+        FROM activity_requests ar
+        JOIN users u_konfi ON ar.user_id = u_konfi.id
+        JOIN activities a ON ar.activity_id = a.id
+        LEFT JOIN users u_approved ON ar.approved_by = u_approved.id`;
+
+  // Die can_view-Jahrgaenge eines jahrgangsgebundenen Admins -- Eingabe fuer
+  // gebundeneLeitungSiehtAntragSql (utils/antragLeitungSicht.js).
+  const sichtbareJahrgaenge = (user) => (user.assigned_jahrgaenge || [])
+    .filter(j => j.can_view)
+    .map(j => j.id);
+
   // GET all activity requests for an organization
   // Pfad: GET /api/admin/activities/requests
   //
@@ -335,14 +354,26 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // der Parameter stillschweigend verworfen: Die Route lieferte immer alle
   // Antraege, und wer sich auf den Filter verliess, sah falsche Zahlen. Ein
   // unbekannter Wert ist jetzt ein Fehler statt einer stillen Vollausgabe.
+  //
+  // Optionaler Filter ?user_id=<id> (28.09.2026, Leitung BF-04): nur die
+  // Antraege dieser Person. Die Detailansicht einer Konfi lud vorher die
+  // ganze Antragsgeschichte der Gemeinde, um die Antraege EINER Person zu
+  // finden. Die Sichtregel gilt unveraendert daneben -- wer die Person nicht
+  // sieht, bekommt ein leeres Array. Ohne Parameter bleibt die Liste exakt,
+  // wie sie war (Vertrag mit den Store-Apps).
   router.get('/requests', rbacVerifier, requireAdmin, async (req, res) => {
     try {
-      const { status } = req.query;
+      const { status, user_id: userIdRoh } = req.query;
       const erlaubteStatus = ['pending', 'approved', 'rejected'];
       if (status !== undefined && !erlaubteStatus.includes(status)) {
         return res.status(400).json({
           error: `Unbekannter Status. Erlaubt: ${erlaubteStatus.join(', ')}`
         });
+      }
+      // Wie bei ?status=: ein unbrauchbarer Wert ist ein Fehler, keine
+      // stille Vollausgabe.
+      if (userIdRoh !== undefined && !(typeof userIdRoh === 'string' && /^[1-9]\d*$/.test(userIdRoh))) {
+        return res.status(400).json({ error: 'Ungültige user_id' });
       }
 
       const params = [req.user.organization_id];
@@ -350,6 +381,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       if (status) {
         params.push(status);
         statusFilter = ` AND ar.status = $${params.length}`;
+      }
+      let personFilter = '';
+      if (userIdRoh !== undefined) {
+        params.push(userIdRoh);
+        personFilter = ` AND ar.user_id = $${params.length}`;
       }
 
       // Jahrgangs-Bindung (31.08.2026) als FILTER, nicht als 403: Die Liste
@@ -370,9 +406,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       // Antrag hier nicht sieht, bekommt auch keine Mitteilung dazu.
       let jahrgangFilter = '';
       if (!leitungSiehtAlleAntraege(req.user)) {
-        const sichtbare = (req.user.assigned_jahrgaenge || [])
-          .filter(j => j.can_view)
-          .map(j => j.id);
+        const sichtbare = sichtbareJahrgaenge(req.user);
         if (sichtbare.length === 0) {
           // Ohne Zuweisung fallen alle Konfi-Antraege weg -- fuer den Admin
           // sieht die Liste dann grundlos leer aus (oder es stehen nur noch
@@ -389,15 +423,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         jahrgangFilter = ` AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: `$${params.length}::int[]` })}`;
       }
 
-      const query = `
-        SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points, a.type as activity_type,
-               a.target_role as activity_target_role,
-               u_approved.display_name as approved_by_name
-        FROM activity_requests ar
-        JOIN users u_konfi ON ar.user_id = u_konfi.id
-        JOIN activities a ON ar.activity_id = a.id
-        LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
-        WHERE a.organization_id = $1${statusFilter}${jahrgangFilter}
+      const query = `${ANTRAG_AUSWAHL}
+        WHERE a.organization_id = $1${statusFilter}${personFilter}${jahrgangFilter}
         ORDER BY ar.created_at DESC
       `;
 
@@ -409,6 +436,52 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
+
+  // EIN Antrag (28.09.2026, Leitung BF-04).
+  // Pfad: GET /api/admin/activities/requests/:id
+  //
+  // Additiv: Der Antragsdialog der Leitung lud vorher die ganze Liste (ohne
+  // LIMIT, genehmigte Antraege werden nie geloescht) und suchte den einen
+  // Antrag per .find() heraus. Die Antwort ist genau ein Listeneintrag
+  // (ANTRAG_AUSWAHL), die Sichtregel dieselbe wie in der Liste
+  // (utils/antragLeitungSicht.js):
+  //   - fremde Gemeinde oder unbekannte Id: 404 -- ob es den Antrag
+  //     anderswo gibt, verraet die Route nicht;
+  //   - Antrag der eigenen Gemeinde, den die Liste diesem Admin nicht zeigt
+  //     (Konfi ausserhalb seiner can_view-Jahrgaenge): 403 "Kein Zugriff auf
+  //     diesen Konfi", wie PUT/DELETE/Foto an demselben Antrag.
+  router.get('/requests/:id', rbacVerifier, requireAdmin,
+    [param('id').isInt({ min: 1 }).withMessage('Ungültige ID'), handleValidationErrors],
+    async (req, res) => {
+      const requestId = req.params.id;
+      try {
+        const { rows: [antrag] } = await db.query(
+          `${ANTRAG_AUSWAHL}
+          WHERE a.organization_id = $1 AND ar.id = $2`,
+          [req.user.organization_id, requestId]
+        );
+        if (!antrag) return res.status(404).json({ error: 'Antrag nicht gefunden' });
+
+        if (!leitungSiehtAlleAntraege(req.user)) {
+          const { rows: [sichtbar] } = await db.query(
+            `SELECT 1
+               FROM activity_requests ar
+               JOIN activities a ON a.id = ar.activity_id
+              WHERE ar.id = $1
+                AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: '$2::int[]' })}`,
+            [requestId, sichtbareJahrgaenge(req.user)]
+          );
+          if (!sichtbar) {
+            return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+          }
+        }
+
+        res.json(antrag);
+      } catch (err) {
+        console.error('Database error in GET /api/admin/activities/requests/%s:', requestId, err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+      }
+    });
 
   // PUT (update) an activity request status - zurück zu pending
   // Pfad: PUT /api/activities/requests/:id/reset

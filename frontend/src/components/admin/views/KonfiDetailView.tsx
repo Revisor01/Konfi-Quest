@@ -47,13 +47,13 @@ import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
 import { datumKurz } from '../../../utils/dateUtils';
 
 /**
- * Ein Aktivitaets-Antrag aus GET /admin/activities/requests, soweit diese
- * Ansicht ihn liest: Die offenen Antraege der Konfi werden als "wartende"
- * Aktivitaeten unter die verbuchten gemischt.
+ * Ein Aktivitaets-Antrag aus GET /admin/activities/requests?user_id=,
+ * soweit diese Ansicht ihn liest: Die offenen Antraege der Konfi werden als
+ * "wartende" Aktivitaeten unter die verbuchten gemischt.
  */
 interface OffenerAntrag {
   id: number;
-  konfi_id: number;
+  user_id: number;
   status: 'pending' | 'approved' | 'rejected';
   activity_name: string;
   activity_points: number;
@@ -423,9 +423,16 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     try {
       const konfiRes = await api.get(`/admin/konfis/${konfiId}`);
 
-      let requestsRes = { data: [] };
+      // Nur die OFFENEN Anträge DIESER Person (28.09.2026, Leitung BF-04).
+      // Vorher lud die Ansicht die ganze Antragsgeschichte der Gemeinde und
+      // filterte sie hier nach `konfi_id` — ein Feld, das die Liste seit der
+      // Umbenennung in `user_id` nicht mehr trägt. Die offenen Anträge
+      // erschienen deshalb nie.
+      let requestsRes: { data: OffenerAntrag[] } = { data: [] };
       try {
-        requestsRes = await api.get('/admin/activities/requests');
+        requestsRes = await api.get<OffenerAntrag[]>('/admin/activities/requests', {
+          params: { user_id: konfiId, status: 'pending' },
+        });
       } catch (requestsError) {
  console.warn('Could not load activity requests:', requestsError);
       }
@@ -489,7 +496,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       }));
 
       const pendingRequests: Activity[] = (requestsRes.data || [])
-        .filter((req: OffenerAntrag) => req.konfi_id === konfiId && req.status === 'pending')
+        // Der Server filtert bereits; die Prüfung bleibt als Absicherung.
+        .filter((req: OffenerAntrag) => req.user_id === konfiId && req.status === 'pending')
         .map((req: OffenerAntrag) => ({
           id: `request-${req.id}`,
           name: `${req.activity_name} (gemeldet)`,

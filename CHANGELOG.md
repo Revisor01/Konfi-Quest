@@ -28,8 +28,13 @@ Versionsüberschrift.
   „Hauptamt" oder „Org-Admin" — beim Anlegen und Einladen, in der
   Rollenauswahl, in den Listen, im Chat und im Handbuch. Beide Rollen können
   Haupt- wie Ehrenamtliche haben.
+- Beim Öffnen eines Antrags und einer Konfi lädt die App für die Leitung nur
+  noch die Anträge, um die es geht, statt der ganzen Antragsgeschichte der
+  Gemeinde.
 
 ### Behoben
+- In der Detailansicht einer Konfi stehen ihre offenen Anträge wieder als
+  „gemeldet" zwischen den Aktivitäten.
 - Eine Einladung in eine weitere Gemeinde nennt in Mitteilung und E-Mail die
   Rolle mit ihrem Namen statt mit dem technischen Wort „admin".
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und

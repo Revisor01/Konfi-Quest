@@ -86,8 +86,8 @@ const offenerPut = () => {
 
 const oeffnen = async (daten: Record<string, unknown>) => {
   mockApiGet.mockImplementation((url: string) =>
-    url === '/admin/activities/requests'
-      ? Promise.resolve({ data: [daten] })
+    url === '/admin/activities/requests/41'
+      ? Promise.resolve({ data: daten })
       : Promise.resolve({ data: new Blob([]) })
   );
   const onSuccess = vi.fn();

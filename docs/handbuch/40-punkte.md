@@ -97,7 +97,10 @@ auch gemeldet — siehe
 
 Das Nachweisfoto lädt beim Öffnen des Antrags, mit Prozentzahl und Balken;
 klappt es nicht, holt „Erneut versuchen" es noch einmal. Im Konfi-Profil
-öffnet ein Tipp auf einen offenen Antrag mit Bild-Symbol das Foto groß. Auf
+stehen die offenen Anträge der Person zwischen ihren Aktivitäten, mit
+„(gemeldet)" hinter dem Namen und „Wartend auf Genehmigung"; die Punkte
+davor zählen noch nicht mit. Ein Tipp auf einen offenen Antrag mit
+Bild-Symbol öffnet das Foto groß. Auf
 dem Gerät bleibt es dabei nicht — ohne Netz ist es nicht zu sehen (siehe
 [Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten)).
 
