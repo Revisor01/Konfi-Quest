@@ -8685,8 +8685,7 @@
           "Chat"
         ],
         "summary": "Chat-Datei abrufen (entschluesselt)",
-        "description": "Liefert eine im Chat hochgeladene Datei. Auth per Authorization-Header ODER ?token= (für Video-Elemente). Nur Hex-Dateinamen; Path-Traversal-Schutz via basename. Seit 22.08.2026 wird der Token gegen die Datenbank geprüft (Konto aktiv, nicht gelöscht, kein Soft-Revoke) und die aktive Organisation über user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre Dateien damit auch in der Zweit-Organisation.\n",
-        "security": [],
+        "description": "Liefert eine im Chat hochgeladene Datei. Auth NUR per Authorization-Header (seit 28.09.2026; wie GET /challenges/files). Der fruehere Fallback ?token= wird nicht mehr ausgewertet — ein Query-String steht im Zugriffslog des Reverse-Proxys und in Referrern. Keine ausgelieferte App hat ihn gesendet (geprueft an den Tags 1.3.0 bis 2.3.0: Dateien und Videos laufen per axios mit Header ueber den Medien-Cache); der einzige Sender war ein Entwicklungsstand vom 05.08.2025. Nur Hex-Dateinamen; Path-Traversal-Schutz via basename. Seit 22.08.2026 wird der Token gegen die Datenbank geprüft (Konto aktiv, nicht gelöscht, kein Soft-Revoke) und die aktive Organisation über user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre Dateien damit auch in der Zweit-Organisation.\n",
         "parameters": [
           {
             "name": "filename",
@@ -8699,13 +8698,13 @@
             "description": "Serverseitiger Dateiname (Hex) aus der Upload-Antwort bzw. Nachricht"
           },
           {
-            "name": "token",
-            "in": "query",
+            "name": "X-Active-Organization",
+            "in": "header",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": "integer"
             },
-            "description": "JWT-Fallback fuer Media-Tags"
+            "description": "Aktive Organisation für Multi-Org-Konten (wie beim übrigen API-Zugriff)"
           }
         ],
         "responses": {
@@ -8724,7 +8723,7 @@
             "description": "Ungueltiger Dateiname"
           },
           "401": {
-            "description": "Token fehlt oder ungueltig"
+            "description": "Token fehlt oder ungueltig — auch wenn es nur als ?token= im Query steht (seit 28.09.2026)"
           },
           "403": {
             "description": "Raum darf nicht geoeffnet werden (darfRaumBetreten)"
@@ -8744,7 +8743,7 @@
             "konfi"
           ],
           "middleware": [
-            "manuelle JWT-Pruefung mit DB-Abgleich (kein verifyTokenRBAC — Query-Parameter-Auth)"
+            "manuelle JWT-Pruefung mit DB-Abgleich, nur Authorization-Header (kein verifyTokenRBAC — historisch wegen des entfallenen Query-Parameters)"
           ],
           "org-scope": true,
           "objekt-pruefung": "Nachricht mit file_path muss in der AKTIVEN Org liegen UND der Raum nach darfRaumBetreten zu oeffnen sein (dieselbe Regel wie GET /rooms/{roomId}/messages)"

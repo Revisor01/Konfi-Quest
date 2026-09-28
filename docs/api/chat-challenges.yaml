@@ -1077,27 +1077,32 @@ paths:
       tags: ["Chat"]
       summary: Chat-Datei abrufen (entschluesselt)
       description: >
-        Liefert eine im Chat hochgeladene Datei. Auth per
-        Authorization-Header ODER ?token= (für Video-Elemente). Nur
-        Hex-Dateinamen; Path-Traversal-Schutz via basename.
+        Liefert eine im Chat hochgeladene Datei. Auth NUR per
+        Authorization-Header (seit 28.09.2026; wie GET /challenges/files).
+        Der fruehere Fallback ?token= wird nicht mehr ausgewertet — ein
+        Query-String steht im Zugriffslog des Reverse-Proxys und in
+        Referrern. Keine ausgelieferte App hat ihn gesendet (geprueft an den
+        Tags 1.3.0 bis 2.3.0: Dateien und Videos laufen per axios mit Header
+        ueber den Medien-Cache); der einzige Sender war ein
+        Entwicklungsstand vom 05.08.2025. Nur Hex-Dateinamen;
+        Path-Traversal-Schutz via basename.
         Seit 22.08.2026 wird der Token gegen die Datenbank geprüft (Konto
         aktiv, nicht gelöscht, kein Soft-Revoke) und die aktive Organisation
         über user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre
         Dateien damit auch in der Zweit-Organisation.
-      security: []
       parameters:
         - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" }, description: "Serverseitiger Dateiname (Hex) aus der Upload-Antwort bzw. Nachricht" }
-        - { name: token, in: query, required: false, schema: { type: string }, description: JWT-Fallback fuer Media-Tags }
+        - { name: X-Active-Organization, in: header, required: false, schema: { type: integer }, description: "Aktive Organisation für Multi-Org-Konten (wie beim übrigen API-Zugriff)" }
       responses:
         '200': { description: "Dateiinhalt (Content-Type aus Original-Dateiname)", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
         '400': { description: Ungueltiger Dateiname }
-        '401': { description: Token fehlt oder ungueltig }
+        '401': { description: "Token fehlt oder ungueltig — auch wenn es nur als ?token= im Query steht (seit 28.09.2026)" }
         '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '404': { description: "Datei nicht gefunden (auch bei fremder Org oder wenn die Nachricht soft-gelöscht ist — seit 26.08.2026 werden Anhänge gelöschter Nachrichten nicht mehr ausgeliefert; die Datei bleibt für eine Wiederherstellung erhalten)" }
         '500': { description: Server-/Entschluesselungsfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
-        middleware: ["manuelle JWT-Pruefung mit DB-Abgleich (kein verifyTokenRBAC — Query-Parameter-Auth)"]
+        middleware: ["manuelle JWT-Pruefung mit DB-Abgleich, nur Authorization-Header (kein verifyTokenRBAC — historisch wegen des entfallenen Query-Parameters)"]
         org-scope: true
         objekt-pruefung: "Nachricht mit file_path muss in der AKTIVEN Org liegen UND der Raum nach darfRaumBetreten zu oeffnen sein (dieselbe Regel wie GET /rooms/{roomId}/messages)"
         # BEHOBEN 22.08.2026: Frueher `req.user = decoded` — Token-Angaben
@@ -1106,8 +1111,11 @@ paths:
         # PRIMAER-Org, weshalb Multi-Org-Nutzer in der Zweit-Organisation 404
         # bekamen. Jetzt DB-Abgleich inkl. Soft-Revoke und Aufloesung der
         # aktiven Org (403 bei fehlender Mitgliedschaft).
-        # LUECKE (offen): Token auch als Query-Parameter akzeptiert
-        # (Access-Logs/Referrer).
+        # BEHOBEN 28.09.2026 (Audit BF-09): Token wurde auch als
+        # Query-Parameter ?token= akzeptiert (Access-Logs/Referrer). Jetzt nur
+        # noch Header; kein Vertrag gebrochen, weil keine ausgelieferte App
+        # ?token= gesendet hat (Tags 1.3.0 bis 2.3.0 geprueft). Test:
+        # backend/tests/routes/chatDateiTokenImQuery.test.js.
         # BEHOBEN 27.09.2026 (Audit Wer bekommt was, BF-05): kein
         # Admin-Bypass (Admins konnten Nachrichten fremder Räume lesen, deren
         # Dateien aber nicht abrufen — Inkonsistenz); Mitgliedschafts-Check

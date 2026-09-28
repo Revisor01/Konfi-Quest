@@ -1873,15 +1873,26 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
   // Protected file serving route
   router.get('/files/:filename', async (req, res) => {
-    // Support token from header OR query parameter (for video elements)
-    const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
-    
+    // Token NUR aus dem Authorization-Header (28.09.2026, Audit BF-09).
+    //
+    // Bis hierhin nahm die Route es auch aus ?token= — fuer Video-Elemente,
+    // die keine Header senden koennen. Ein Query-String landet aber im
+    // Zugriffslog des Reverse-Proxys und in Referrern; die Challenge-
+    // Dateiroute lehnt das Muster deshalb seit 04.08.2026 ab.
+    //
+    // Gesendet hat ?token= keine ausgelieferte App: Geprueft an den Tags
+    // 1.3.0, 2.0.0, 2.1.1, 2.2.0 und 2.3.0 und am aktuellen Stand laden alle
+    // Chat-Dateien (auch Videos, ueber den Medien-Cache) per axios mit
+    // Header. Der einzige Sender war ein Entwicklungsstand vom 05.08.2025,
+    // am Tag darauf ersetzt — lange vor dem ersten Store-Build.
+    const token = req.headers.authorization?.replace('Bearer ', '');
+
     if (!token) {
       return res.status(401).json({ error: 'Kein Token vorhanden' });
     }
-    
-    // Token von Hand prüfen, weil die Middleware den Query-Parameter nicht
-    // unterstuetzt (Video-Elemente können keine Header senden).
+
+    // Token von Hand prüfen statt per verifyTokenRBAC — historisch, weil die
+    // Middleware den (inzwischen entfallenen) Query-Parameter nicht kannte.
     //
     // Frueher stand hier schlicht `req.user = decoded`. Zwei Folgen
     // (Audit 22.08.2026):

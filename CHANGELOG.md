@@ -40,6 +40,10 @@ Versionsüberschrift.
 - Ältere Chat-Nachrichten lassen sich durch Hochscrollen nachladen — bisher
   endete jeder Chat nach den letzten 100 Nachrichten. Oben steht „Anfang des
   Chats", wenn der ganze Verlauf geladen ist.
+- Bilder, Videos und Dateien aus dem Chat gibt der Server nur noch heraus, wenn
+  die Anmeldung im Kopf der Anfrage steht, nicht mehr in der Adresse. Dort
+  hätte sie in den Zugriffsprotokollen des Servers gestanden. Die App hat sie
+  nie so geschickt; im Chat ändert sich dadurch nichts.
 
 ## [2.3.0] - 2026-09-27
 

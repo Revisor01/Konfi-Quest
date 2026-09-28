@@ -1116,8 +1116,9 @@ describe('Chat Routes', () => {
       expect(onDisk.subarray(0, 8).equals(pngBuffer.subarray(0, 8))).toBe(false);
     });
 
-    // Die Route prüft den Token von Hand (Video-Elemente können keine Header
-    // senden). Frueher hiess das `req.user = decoded`: Angaben ungeprueft für
+    // Die Route prüft den Token von Hand (historisch wegen des ?token=-
+    // Fallbacks fuer Video-Elemente, der am 28.09.2026 entfallen ist, siehe
+    // chatDateiTokenImQuery.test.js). Frueher hiess das `req.user = decoded`: Angaben ungeprueft für
     // die volle Token-Laufzeit, und organization_id immer die PRIMAER-Org —
     // in einer Zweit-Gemeinde bekam man die eigenen Dateien nicht
     // (Audit 22.08.2026).
