@@ -184,6 +184,12 @@ Sie behält Benutzername und Passwort; ihre bisherige Gemeinde bleibt
 unverändert. Die Einladung gilt **14 Tage** und lässt sich
 [zurückziehen](#eine-einladung-zurueckziehen), solange sie offen ist.
 
+Sobald sie zu- oder absagt, verschwindet die Einladung aus ihrem Profil und
+die Mitteilung dazu aus ihrem
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen). Läuft die
+Einladung unbeantwortet ab, verschwindet sie sofort aus dem Profil und die
+Mitteilung in der Nacht danach aus dem Postfach.
+
 **Sagt sie zu oder ab, erfährst du es** — als Mitteilung aufs Handy und im
 Postfach: „Einladung angenommen" oder „Einladung abgelehnt", mit Name, Rolle
 und Gemeinde. Antippen führt zu **Mehr › Benutzer:innen**, wo die Person nach

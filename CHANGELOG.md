@@ -40,6 +40,11 @@ Versionsüberschrift.
 - Teamer:innen, die den Hinweis auf ihren Rückblick auf der Startseite
   weggeklickt haben, sehen den nächsten Team-Rückblick dort wieder. Wer ihn
   bisher weggeklickt hat, sieht den aktuellen noch einmal.
+- Nach dem Zu- oder Absagen einer Einladung in eine weitere Gemeinde
+  verschwindet die Mitteilung dazu aus dem Postfach der eingeladenen Person
+  und zählt nicht mehr als ungelesen; bei einer abgelaufenen Einladung
+  geschieht das in der Nacht danach. Die Nachricht an die einladende Leitung
+  bleibt.
 - Werden die Team-Rückblicke eines Jahres im Betrieb gelöscht, verschwindet
   auch ihre Ausgabe aus der Liste der Leitung, und der Rückblick lässt sich
   danach neu erzeugen, statt als „besteht bereits" gesperrt zu bleiben.

@@ -571,7 +571,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Einladung annehmen -- legt die Mitgliedschaft an",
-        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n\nBEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-21; Simons Entscheidung F-13: \"Ja, als Postfach-Eintrag\"): Die einladende Leitung erfuhr nichts. Jetzt nach der Antwort Push mit Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet', status 'angenommen', einladung_id, user_id, organization_id = die einladende Gemeinde) an die Person aus eingeladen_von, solange sie dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst an die Org-Admins der Gemeinde; nie an die eingeladene Person selbst. Dazu das Live-Signal 'users' an die Gemeinde (die Benutzerliste laedt nach). Die Antwortform ist unveraendert.\n",
+        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n\nBEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-21; Simons Entscheidung F-13: \"Ja, als Postfach-Eintrag\"): Die einladende Leitung erfuhr nichts. Jetzt nach der Antwort Push mit Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet', status 'angenommen', einladung_id, user_id, organization_id = die einladende Gemeinde) an die Person aus eingeladen_von, solange sie dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst an die Org-Admins der Gemeinde; nie an die eingeladene Person selbst. Dazu das Live-Signal 'users' an die Gemeinde (die Benutzerliste laedt nach). Die Antwortform ist unveraendert.\n\nBEHOBEN 28.09.2026: Bei der eingeladenen Person blieb nach der Zusage der Postfach-Eintrag \"Einladung in eine Gemeinde ... Tippe, um zu antworten\" (type 'gemeinde_einladung') stehen und zaehlte als ungelesen. Er geht jetzt in DERSELBEN Transaktion wie Statuswechsel und Mitgliedschaft (loescheMitteilungenZuEinladung, wie beim Zurueckziehen). Die Zusage an die Leitung ('gemeinde_einladung_beantwortet') bleibt. 404/409/410 raeumen nichts auf; einen abgelaufenen Eintrag nimmt das taegliche Postfach-Aufraeumen (02:00) mit.\n",
         "parameters": [
           {
             "name": "id",
@@ -614,7 +614,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Einladung ablehnen",
-        "description": "BEHOBEN 27.09.2026 (BF-21 / F-13): Auch die Absage meldet sich bei der einladenden Leitung -- Push mit Postfach-Eintrag 'gemeinde_einladung_beantwortet' (status 'abgelehnt'), Empfaenger wie bei annehmen. Kein Live-Signal, die Benutzerliste aendert sich nicht. Die Antwortform ist unveraendert.\n",
+        "description": "BEHOBEN 27.09.2026 (BF-21 / F-13): Auch die Absage meldet sich bei der einladenden Leitung -- Push mit Postfach-Eintrag 'gemeinde_einladung_beantwortet' (status 'abgelehnt'), Empfaenger wie bei annehmen. Kein Live-Signal, die Benutzerliste aendert sich nicht. Die Antwortform ist unveraendert.\n\nBEHOBEN 28.09.2026: Der Postfach-Eintrag 'gemeinde_einladung' der eingeladenen Person geht mit der Absage, in einer Transaktion mit dem Statuswechsel (wie bei annehmen und beim Zurueckziehen). Die Absage an die Leitung bleibt.\n",
         "parameters": [
           {
             "name": "id",

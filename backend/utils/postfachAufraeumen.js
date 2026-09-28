@@ -92,6 +92,14 @@
 // abgelehnt") haelt eine Entscheidung fest und bleibt -- sie kann bei einer
 // zurueckgezogenen Einladung ohnehin nicht entstehen.
 //
+// SEIT DEM 28.09.2026 AUCH NACH ANNEHMEN, ABLEHNEN UND ABLAUF: Derselbe
+// Eintrag wartet danach ebenso auf nichts mehr. Er blieb stehen, zaehlte als
+// ungelesen und fuehrte ins Profil ohne Karte. Annehmen und Ablehnen nehmen
+// ihn in ihrer Transaktion mit (routes/einladungen.js); den Ablauf zieht das
+// taegliche Postfach-Aufraeumen nach (loescheMitteilungenZuErledigtenEinladungen,
+// einen eigenen Ablauf-Job gibt es nicht). Die Zusage oder Absage an die
+// einladende Leitung bleibt als Verlauf.
+//
 // Alle Funktionen nehmen db ODER einen Transaktions-Client: Sie fuehren
 // kein BEGIN/COMMIT aus, der Aufrufer bestimmt die Transaktion.
 
@@ -268,6 +276,40 @@ async function loescheMitteilungenZuEinladung(db, einladungId) {
   return rowCount;
 }
 
+/**
+ * Entfernt "Einladung in eine Gemeinde" zu jeder Einladung, die nicht mehr
+ * auf eine Antwort wartet: beantwortet, zurueckgezogen, abgelaufen oder
+ * verschwunden (28.09.2026).
+ *
+ * Fuer den ABLAUF gibt es keinen eigenen Job: Eine Einladung laeuft nach
+ * 14 Tagen still ab (expires_at), ihr Status bleibt 'offen', und nur die
+ * Lesestellen filtern sie heraus. Dieser Schritt laeuft deshalb im
+ * taeglichen Postfach-Aufraeumen (BackgroundService.startAutoDeletionCron)
+ * und zieht dort das Postfach nach. Er erfasst zugleich die Eintraege, die
+ * vor dem 28.09.2026 nach Annehmen oder Ablehnen stehen blieben.
+ *
+ * Eintraege ohne Kennung werden nicht geraten -- sie bleiben (wie bei
+ * loescheMitteilungenZuEinladung).
+ *
+ * @param {{query: Function}} db  Pool oder Client
+ * @returns {Promise<number>} Anzahl entfernter Mitteilungen
+ */
+async function loescheMitteilungenZuErledigtenEinladungen(db) {
+  const { rowCount } = await db.query(
+    `DELETE FROM notifications n
+      WHERE n.type = ANY($1::text[])
+        AND COALESCE(n.data->>'einladung_id', '') <> ''
+        AND NOT EXISTS (
+          SELECT 1 FROM org_einladungen e
+           WHERE e.id::text = n.data->>'einladung_id'
+             AND e.status = 'offen'
+             AND e.expires_at > NOW()
+        )`,
+    [ARTEN_AN_EINLADUNG]
+  );
+  return rowCount;
+}
+
 module.exports = {
   loescheMitteilungenZuAntraegen,
   loescheMitteilungenZuAbzeichen,
@@ -276,6 +318,7 @@ module.exports = {
   loescheMitteilungenZuJahrgang,
   loescheMitteilungenUeberPerson,
   loescheMitteilungenZuEinladung,
+  loescheMitteilungenZuErledigtenEinladungen,
   ZUSTANDS_ARTEN_ANTRAG,
   ARTEN_AM_TERMIN,
   ARTEN_AN_CHALLENGE,

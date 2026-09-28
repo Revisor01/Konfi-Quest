@@ -148,10 +148,23 @@ describe('Einladung zurueckgezogen: die eingeladene Person sieht sie nicht mehr'
       .set('Authorization', `Bearer ${generateToken('teamer1')}`).expect(200);
     await warteAufNachwehen(app);
 
+    // Seit dem 28.09.2026 nimmt schon die Absage den Eintrag der
+    // eingeladenen Person mit (einladungPostfachNachAntwort.test.js); die
+    // Absage an die Leitung bleibt. Bis dahin stand hier [id] -- genau der
+    // Rest, den die Absage jetzt aufraeumt.
+    const postfach = async () => (await db.query(
+      `SELECT user_id, type, data->>'einladung_id' AS e FROM notifications ORDER BY id`
+    )).rows;
+    const vorher = await postfach();
+    expect(vorher).toEqual([
+      { user_id: USERS.orgAdmin2.id, type: 'gemeinde_einladung_beantwortet', e: String(id) },
+    ]);
+
     const res = await zurueckziehen('orgAdmin2', id);
     expect(res.status).toBe(404);
 
-    expect(await einladungenImPostfach(USERS.teamer1.id)).toEqual([id]);
+    // Der gescheiterte Rueckzug aendert am Postfach nichts.
+    expect(await postfach()).toEqual(vorher);
     const { rows: [zeile] } = await db.query('SELECT status FROM org_einladungen WHERE id = $1', [id]);
     expect(zeile.status).toBe('abgelehnt');
   });

@@ -601,6 +601,17 @@ paths:
         an die Org-Admins der Gemeinde; nie an die eingeladene Person
         selbst. Dazu das Live-Signal 'users' an die Gemeinde (die
         Benutzerliste laedt nach). Die Antwortform ist unveraendert.
+
+
+        BEHOBEN 28.09.2026: Bei der eingeladenen Person blieb nach der
+        Zusage der Postfach-Eintrag "Einladung in eine Gemeinde ... Tippe,
+        um zu antworten" (type 'gemeinde_einladung') stehen und zaehlte als
+        ungelesen. Er geht jetzt in DERSELBEN Transaktion wie Statuswechsel
+        und Mitgliedschaft (loescheMitteilungenZuEinladung, wie beim
+        Zurueckziehen). Die Zusage an die Leitung
+        ('gemeinde_einladung_beantwortet') bleibt. 404/409/410 raeumen nichts
+        auf; einen abgelaufenen Eintrag nimmt das taegliche
+        Postfach-Aufraeumen (02:00) mit.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -624,6 +635,12 @@ paths:
         'gemeinde_einladung_beantwortet' (status 'abgelehnt'), Empfaenger
         wie bei annehmen. Kein Live-Signal, die Benutzerliste aendert sich
         nicht. Die Antwortform ist unveraendert.
+
+
+        BEHOBEN 28.09.2026: Der Postfach-Eintrag 'gemeinde_einladung' der
+        eingeladenen Person geht mit der Absage, in einer Transaktion mit
+        dem Statuswechsel (wie bei annehmen und beim Zurueckziehen). Die
+        Absage an die Leitung bleibt.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
