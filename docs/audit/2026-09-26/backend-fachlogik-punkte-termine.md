@@ -230,6 +230,17 @@ bestehender Aktivitäten nicht zu ändern.
   `confirmed` dieselbe Kapazitätsprüfung wie beim Bestätigen von Hand; das
   Modal auf `auto` umstellen oder die bewusste Überbuchung ausdrücklich
   anbieten und im Handbuch so beschreiben.
+- **Nachtrag 28.09.2026:** Überbuchen bewusst so, Simon 28.09.: „Überbuchen
+  ist gewollt, kann ja sein das ich mehr brauche von der Warteliste." Das
+  Hinzufügen von Hand mit `confirmed` prüft weiter keine Kapazität; das
+  Handbuch (70-termine, „Teilnehmende von Hand hinzufügen") beschreibt es so
+  und grenzt das Bestätigen von der Warteliste ab, das bei vollem Event
+  weiter abgelehnt wird (Entscheidung 16.09.2026, unverändert). 500 behoben:
+  `status` wird vor dem Schreiben auf `auto|confirmed|waitlist` geprüft
+  (`null` gilt als `auto`), sonst 400 `status_ungueltig` — vorher 500 bei
+  `foo`, 201 mit einer Buchung im Status `cancelled`/`opted_out`/`excused`/
+  `pending` und eine Buchung ohne Status bei `null`. Test
+  `backend/tests/routes/teilnehmerVonHandStatus.test.js` (12, ohne Fix 8 rot).
 
 ### BF-05: Wiederanmeldung nach Abmeldung behält den alten Wartelistenrang; Positionsanzeige widerspricht sich
 - **Schwere:** MITTEL

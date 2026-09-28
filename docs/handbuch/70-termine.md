@@ -1188,6 +1188,18 @@ In der Detailansicht kannst du Leute selbst eintragen — praktisch für alle, d
 keine App haben oder die Frist verpasst haben. Der Anmeldezeitraum gilt hier
 nicht, du kannst also auch nach Anmeldeschluss noch jemanden eintragen.
 
+**Auch die Platzgrenze gilt hier bewusst nicht.** Wen du von Hand einträgst,
+ist angemeldet, auch wenn das Event schon voll ist — vielleicht brauchst du
+doch mehr Leute, als du geplant hattest. Die Zahl zeigt dann mehr Angemeldete
+als Plätze. Solange das so ist, rückt niemand von der Warteliste nach, wenn
+jemand abspringt; erst wenn wieder weniger Leute angemeldet als Plätze da
+sind, greift die Grenze.
+
+Anders beim **Bestätigen einer Person, die auf der Warteliste steht**: Ist das
+Event voll, lehnt die App das ab. Willst du sie trotzdem mitnehmen, erhöhst du
+zuerst die Teilnehmerzahl — die Wartenden rücken dann der Reihe nach von selbst
+nach (siehe [Nachvollziehen, wann jemand nachrückt](#nachvollziehen-wann-jemand-nachrueckt)).
+
 Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
 
 - Eine Teamer:in lässt sich nur bei „Konfis, Team gesucht" oder „Nur Team"
@@ -1204,10 +1216,8 @@ Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
   bekommt eine Meldung mit dem Namen der Person.
 
 **Wer eingetragen wird, bekommt einen Push** — Konfis, Teamer:innen und
-Leitung gleichermaßen, mit derselben Meldung wie bei der Selbstanmeldung. Ist
-kein Platz mehr frei oder trägst du jemanden bewusst auf die Warteliste ein,
-steht das in der Meldung. Trägst du dich selbst ein, bekommst du nichts aufs
-eigene Handy.
+Leitung gleichermaßen, mit derselben Meldung wie bei der Selbstanmeldung.
+Trägst du dich selbst ein, bekommst du nichts aufs eigene Handy.
 
 ## Teilnehmende austragen oder auf die Warteliste setzen
 

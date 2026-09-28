@@ -20,13 +20,39 @@ const { darfTermin, gehoertZumTermin } = require('../../utils/jahrgangsZugriff')
 //
 // Deshalb requireAdmin (org_admin, admin) statt des frueheren requireTeamer.
 // Gesperrt wird in BEIDEN Ebenen: Oberflaeche und Backend.
+// Die Werte, die POST /:id/participants fuer `status` annimmt.
+const STATUS_VON_HAND = ['auto', 'confirmed', 'waitlist'];
+
 module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
 
   // Add participant to event (Admin only) - mit Transaktion gegen Race Conditions
   router.post('/:id/participants', rbacVerifier, requireAdmin, async (req, res) => {
     const eventId = req.params.id;
-    const { user_id, status = 'auto', timeslot_id = null } = req.body;
+    const { user_id, timeslot_id = null } = req.body;
+    // Fehlt status (oder ist null), gilt 'auto' -- wie bisher beim Fehlen.
+    const status = req.body.status === undefined || req.body.status === null ? 'auto' : req.body.status;
+
+    // STATUS PRUEFEN, BEVOR ETWAS GESCHRIEBEN WIRD (28.09.2026, Audit
+    // Punkte/Termine BF-04). Der Wert ging bis dahin ungeprueft ins INSERT:
+    // 'foo' scheiterte erst am CHECK der Datenbank und endete als 500
+    // "Datenbankfehler"; 'cancelled' oder 'opted_out' stehen in diesem CHECK
+    // und legten eine Buchung an, die es so nie geben soll. Erlaubt sind die
+    // drei Werte, die dieser Weg kennt: 'auto' (Kapazitaet und Warteliste
+    // wie bei der Selbstanmeldung), 'confirmed' und 'waitlist'. Die App
+    // schickt 'confirmed' (Stand 2.2.0 bis heute).
+    //
+    // 'confirmed' UEBERBUCHT BEWUSST (Simon, 28.09.2026): "Überbuchen ist
+    // gewollt, kann ja sein das ich mehr brauche von der Warteliste." Wer von
+    // Hand eingetragen wird, ist bestaetigt, auch wenn das Event voll ist.
+    // Das Bestaetigen einer Wartenden (PUT /:id/participants/:id/status)
+    // prueft die Kapazitaet dagegen weiter (Entscheidung 16.09.2026).
+    if (!STATUS_VON_HAND.includes(status)) {
+      return res.status(400).json({
+        error: 'Ungültiger Status. Erlaubt sind auto, confirmed und waitlist',
+        error_code: 'status_ungueltig'
+      });
+    }
 
     const client = await db.getClient();
     try {

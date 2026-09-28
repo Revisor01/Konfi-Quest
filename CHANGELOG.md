@@ -121,6 +121,11 @@ Versionsüberschrift.
   gesendet wurde, erscheint nicht mehr als „Nicht gesendet", obwohl sie
   angekommen ist.
 
+### Sonstiges
+- Ein fehlerhafter Aufruf beim Eintragen von Teilnehmenden von Hand bekommt
+  eine klare Meldung statt eines Datenbankfehlers und legt keine Buchung mit
+  unbekanntem Status mehr an.
+
 ## [2.3.0] - 2026-09-27
 
 iOS-Build 231 · Android versionCode 125
