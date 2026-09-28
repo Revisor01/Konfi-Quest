@@ -438,6 +438,10 @@ Beim Löschen verschwindet alles: die Challenge, sämtliche Beiträge, sämtlich
 Dateien vom Server — und damit auch der Stempel bei allen, die ihn hatten. Das
 lässt sich nicht rückgängig machen, einen Papierkorb gibt es nicht.
 
+Anders, wenn die Challenge mit ihrem Jahrgang geht: Dann behalten Teamer:innen
+und Leitung ihren Stempel (siehe
+[Events und Challenges des Jahrgangs mitlöschen](45-jahrgaenge.md#events-und-challenges-des-jahrgangs-mitloeschen)).
+
 > **Achtung:** Willst du eine Challenge nur aus dem Weg räumen, ohne jemandem
 > etwas wegzunehmen, lass sie einfach auslaufen. Beendete Challenges wandern von
 > selbst ins Archiv und stören dort niemanden.

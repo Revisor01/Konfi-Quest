@@ -48,6 +48,7 @@ import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { jahrgangLoeschHinweis, istLoeschVorschau, type JahrgangLoeschVorschau } from '../../../utils/jahrgangLoeschen';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -560,9 +561,21 @@ const AdminJahrgaengeePage: React.FC = () => {
     if (forceDelete) {
       await performDelete();
     } else {
+      // Was mitgeht, mit Zahlen (28.09.2026): Seit das Loeschen die Events
+      // und Challenges des Jahrgangs mitnimmt, fragt die Rueckfrage vorher
+      // beim Server nach -- dieselbe Regel-Stelle wie das Loeschen selbst.
+      // Ohne Antwort (aelterer Server, Netzfehler) steht die allgemeine
+      // Fassung da (utils/jahrgangLoeschen.ts).
+      let vorschau: JahrgangLoeschVorschau | null = null;
+      try {
+        const res = await api.get(`/admin/jahrgaenge/${jahrgang.id}/loeschvorschau`);
+        if (istLoeschVorschau(res.data)) vorschau = res.data;
+      } catch {
+        // Keine Vorschau: die allgemeine Fassung der Rueckfrage.
+      }
       presentAlert({
         header: 'Jahrgang löschen',
-        message: `Jahrgang "${jahrgang.name}" wirklich löschen?\n\nDer Jahrgang und sein Chatverlauf werden unwiderruflich entfernt. Solange dem Jahrgang noch aktive Konfis zugeordnet sind, ist das Löschen nicht möglich. Zu Teamer:innen beförderte Konfis bleiben mit ihren Punkten und Badges erhalten.`,
+        message: jahrgangLoeschHinweis(jahrgang.name, vorschau),
         buttons: [
           { text: 'Abbrechen', role: 'cancel' },
           {

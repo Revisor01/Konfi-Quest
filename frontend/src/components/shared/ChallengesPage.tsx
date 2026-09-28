@@ -23,7 +23,9 @@ import ChallengesManageView, { getChallengeStatus } from '../admin/views/Challen
 import ChallengeManageModal from '../admin/modals/ChallengeManageModal';
 import ChallengeLeitungModal from '../admin/modals/ChallengeLeitungModal';
 import { triggerPullHaptic } from '../../utils/haptics';
-import type { AdminChallenge } from '../../types/challenges';
+import type { AdminChallenge, ChallengeMark } from '../../types/challenges';
+import { mitBewahrtenStempeln } from '../../utils/bewahrteStempel';
+import { useApp } from '../../contexts/AppContext';
 
 // Befund N7 (27.08.2026): Diese Seite lag zweimal im Baum —
 // AdminChallengesPage und TeamerChallengesPage wichen in 24 von rund 197
@@ -82,6 +84,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
   // setzt sie beim Oeffnen und Schliessen der Challenge zurueck.
   const { refreshAllCounts, pendingChallengesByChallenge, challengeUpdatesByChallenge, markChallengeAsRead } = useBadge();
   const { pageRef, presentingElement } = useModalPage(modalPageId);
+  const { user } = useApp();
 
   // Admin/Teamer ohne Jahrgangs-Zuweisung bekommt vom Server eine leere
   // Liste -- gueltig (Simons Entscheidung 31.08.2026), aber ohne Erklaerung
@@ -104,10 +107,23 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
 
   const [presentAlert] = useIonAlert();
 
+  // Stempel aus Challenges, die es nicht mehr gibt (28.09.2026): Loescht die
+  // Leitung einen Jahrgang, gehen seine Challenges mit -- die Stempel des
+  // Teams daraus bewahrt der Server auf. In GET /challenges/admin stehen sie
+  // nicht mehr (die Challenge ist weg), deshalb eine eigene, kleine Abfrage.
+  // Ein aelterer Server kennt die Route nicht: dann bleibt es bei den
+  // abgeleiteten Stempeln (mitBewahrtenStempeln nimmt alles Nicht-Array als
+  // leer).
+  const { data: bewahrteStempel, refreshLive: refreshBewahrteLive } = useOfflineQuery<ChallengeMark[]>(
+    `challenges:bewahrte-stempel:${user?.organization_id}:${user?.id}`,
+    async () => (await api.get('/challenges/bewahrte-stempel')).data,
+    { ttl: CACHE_TTL.REQUESTS }
+  );
+
   // Eigene Stempel aus der EINEN Liste ableiten: has_badge liefert
   // GET /challenges/admin seit der Zusammenlegung mit (11.08.) — dadurch
   // braucht es keinen zweiten Endpunkt für die Teilnehmer-Sicht.
-  const marks = useMemo(
+  const abgeleiteteMarks = useMemo(
     () => (Array.isArray(challenges) ? challenges : [])
       .filter((c) => c.has_badge && gehoertInsStempelraster(c))
       .map((c) => ({
@@ -122,6 +138,10 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
         description: c.description ?? null
       })),
     [challenges]
+  );
+  const marks = useMemo(
+    () => mitBewahrtenStempeln(abgeleiteteMarks, bewahrteStempel),
+    [abgeleiteteMarks, bewahrteStempel]
   );
 
   // Die NOCH NICHT erhaltenen Stempel — dieselbe Rechnung wie in der
@@ -216,6 +236,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
   };
 
   useLiveRefresh('challenges', refreshChallengesLive);
+  useLiveRefresh('challenges', refreshBewahrteLive);
 
   // Die geöffnete Beitrags-Ansicht hält ihre Challenge als eigenen State.
   // Nach einem Bearbeiten (oder Live-Refresh) käme sonst weiter der alte

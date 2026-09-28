@@ -352,6 +352,20 @@ components:
         display_name: { type: string }
         role_name: { type: string, enum: [admin, org_admin, teamer] }
         role_description: { type: string, description: 'role_title oder Fallback nach role_name: "Teamer:in", "Org-Leitung" (org_admin), "Leitung" (admin). Bis 28.09.2026 hiess der Fallback fuer beide Leitungsrollen "Admin" (Simon: admin heisst "Leitung", org_admin "Org-Leitung").' }
+    BewahrterStempel:
+      type: object
+      description: >
+        Stempel aus einer Challenge, die mit ihrem Jahrgang geloescht wurde
+        (Tabelle bewahrte_stempel, Migration 169). Form eines erhaltenen
+        Stempels (marks), dazu bewahrt = true.
+      properties:
+        challenge_id: { type: integer, description: "Kennung der geloeschten Challenge (herkunft_challenge_id) — bleibt eine Zahl" }
+        badge_icon: { type: string }
+        badge_name: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        earned_at: { type: string, format: date-time, nullable: true, description: "Fruehester freigegebener eigener Beitrag" }
+        bewahrt: { type: boolean, const: true }
     KonfiChallenge:
       type: object
       description: Challenge in der Teilnehmer-Sicht (mapChallengeForKonfi).
@@ -1381,6 +1395,68 @@ paths:
         org-scope: true
         objekt-pruefung: "Jahrgangs-Scoping je Rolle (s. Beschreibung); super_admin explizit ausgeschlossen"
 
+  /api/challenges/bewahrte-stempel:
+    get:
+      tags: ["Challenges (Konfis)"]
+      summary: Eigene Stempel aus Challenges, die mit ihrem Jahrgang geloescht wurden
+      description: >
+        Seit dem 28.09.2026 (Migration 169). Ein Stempel wird sonst aus den
+        eigenen freigegebenen Beitraegen abgeleitet und verschwindet mit der
+        Challenge. Loescht die Leitung einen Jahrgang, gehen dessen
+        Challenges mit (DELETE /api/admin/jahrgaenge/{id}); die Stempel von
+        Teamer:innen und Leitung werden vorher in bewahrte_stempel abgelegt
+        und kommen hier. Nur Stempel, deren Challenge nicht mehr existiert
+        (lebt sie, kommt ihr Stempel wie bisher aus GET /challenges/admin
+        bzw. /challenges/konfi). Jeder Eintrag hat die Form eines
+        erhaltenen Stempels (marks), challenge_id ist die alte Kennung.
+        Eigene Route, weil GET /challenges/admin ein Array von Challenges
+        ist, dem sich kein Feld anhaengen laesst.
+      responses:
+        '200':
+          description: Bewahrte Stempel der aufrufenden Person in der aktiven Gemeinde (Array, auch leer)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/BewahrterStempel' }
+        '401': { description: Nicht angemeldet }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [konfi, teamer, admin, org_admin]
+        middleware: [rbacVerifier]
+        org-scope: true
+        objekt-pruefung: "Nur eigene Zeilen (user_id = req.user.id) der aktiven Gemeinde"
+
+  /api/challenges/admin/bewahrte-stempel/{userId}:
+    get:
+      tags: ["Challenges (Leitung)"]
+      summary: Bewahrte Stempel einer Person (Detailansicht der Leitung)
+      description: >
+        Seit dem 28.09.2026. Wie GET /api/challenges/bewahrte-stempel, aber
+        fuer die angesehene Person — die Detailansicht einer Teamer:in legt
+        sie zu challengeMarks aus GET /api/admin/konfis/{id}. Bewahrt werden
+        nur Stempel des Teams, und Teamer:innen sieht die Leitung ohne
+        Jahrgangsgrenze; die Gemeinde begrenzt die Zeilen (fremde Gemeinde:
+        leere Liste).
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: integer }, description: "ID der Person" }
+      responses:
+        '200':
+          description: Bewahrte Stempel der Person in der aktiven Gemeinde (Array, auch leer)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/BewahrterStempel' }
+        '400': { description: Ungueltige ID }
+        '403': { description: requireAdmin (Teamer:innen und Konfis) }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [rbacVerifier, requireAdmin]
+        org-scope: true
+        objekt-pruefung: "Zeilen der aktiven Gemeinde (organization_id = req.user.organization_id)"
+
   /api/challenges/konfi/{id}:
     get:
       tags: ["Challenges (Konfis)"]
@@ -1734,6 +1810,14 @@ paths:
     delete:
       tags: ["Challenges (Leitung)"]
       summary: Challenge löschen (gestartete nur mit force)
+      description: >
+        Beitraege, Dateien und Postfach-Eintraege gehen mit; die Stempel
+        aller Beteiligten ebenfalls. Seit dem 28.09.2026 laeuft das Loeschen
+        ueber utils/challengeLoeschen.js — denselben Weg nimmt
+        DELETE /api/admin/jahrgaenge/{id} fuer Challenges, die nur an dem
+        Jahrgang haengen; nur dort werden die Stempel des Teams vorher
+        bewahrt (GET /api/challenges/bewahrte-stempel). Verhalten dieser
+        Route unveraendert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Challenge" }
         - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] }, description: "true: auch eine bereits gestartete Challenge löschen — samt Beiträgen und Dateien" }

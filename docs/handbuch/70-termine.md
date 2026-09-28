@@ -1090,6 +1090,10 @@ war schon gemeldet, ein zweites Mal sagt sie niemandem etwas Neues.
 > **abgesagt**. Ein Event, das es nie hätte geben sollen (Tippfehler,
 > versehentlich angelegt), wird **gelöscht**.
 
+Löschst du einen Jahrgang, gehen die Events mit, die nur zu ihm gehören —
+ohne Absage an die Angemeldeten und ohne Punkte abzuziehen (siehe
+[Events und Challenges des Jahrgangs mitlöschen](45-jahrgaenge.md#events-und-challenges-des-jahrgangs-mitloeschen)).
+
 ## Nachvollziehen, wann automatisch benachrichtigt wird
 
 Änderst du an einem **zukünftigen, nicht abgesagten** Event das Datum, die

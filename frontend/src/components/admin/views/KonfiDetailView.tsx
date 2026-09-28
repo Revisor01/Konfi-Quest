@@ -62,6 +62,8 @@ interface OffenerAntrag {
 }
 import KonfiBadgesSection from './KonfiBadgesSection';
 import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
+import { mitBewahrtenStempeln } from '../../../utils/bewahrteStempel';
+import type { ChallengeMark } from '../../../types/challenges';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { triggerPullHaptic } from '../../../utils/haptics';
@@ -132,6 +134,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     booking_status: string;
     booking_date: string;
   }>>([]);
+  // Stempel einer Teamer:in aus Challenges, die mit ihrem Jahrgang geloescht
+  // wurden (28.09.2026). GET /admin/konfis/:id leitet challengeMarks aus den
+  // lebenden Beitraegen ab -- die bewahrten kommen aus einer eigenen Route.
+  const [bewahrteStempel, setBewahrteStempel] = useState<ChallengeMark[]>([]);
   const [konfiHistory, setKonfiHistory] = useState<{
     history: Array<{ id: number; title: string; points: number; category: string; date: string; source_type: string }>;
     totals: { gottesdienst: number; gemeinde: number; total: number };
@@ -451,10 +457,19 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         setCertificates(konfiData.certificates || []);
         setTeamerEvents(konfiData.teamerEvents || []);
         setKonfiHistory(konfiData.konfiHistory || null);
+        // Zusatz: ein Fehler (etwa ein aelterer Server ohne die Route) darf
+        // die Detailansicht nicht kippen -- dann fehlen nur diese Stempel.
+        try {
+          const bewahrtRes = await api.get(`/challenges/admin/bewahrte-stempel/${konfiId}`);
+          setBewahrteStempel(Array.isArray(bewahrtRes.data) ? bewahrtRes.data : []);
+        } catch {
+          setBewahrteStempel([]);
+        }
       } else {
         setCertificates([]);
         setTeamerEvents([]);
         setKonfiHistory(null);
+        setBewahrteStempel([]);
       }
 
       // Zertifikat-Typen laden (für die Zuweisung)
@@ -962,7 +977,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             haben. In deren Profil Details unter Badges."). Ohne Stempel faellt
             der Abschnitt ganz weg, genau wie dort. */}
         <ChallengeStempelSektion
-          marks={currentKonfi?.challengeMarks || []}
+          marks={mitBewahrtenStempeln(currentKonfi?.challengeMarks || [], bewahrteStempel)}
           offeneStempel={currentKonfi?.offeneStempel || []}
           titel="Stempel"
         />

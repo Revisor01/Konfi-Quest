@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n266 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n268 Operationen."
   },
   "servers": [
     {
@@ -571,7 +571,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Einladung annehmen -- legt die Mitgliedschaft an",
-        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n\nBEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-21; Simons Entscheidung F-13: \"Ja, als Postfach-Eintrag\"): Die einladende Leitung erfuhr nichts. Jetzt nach der Antwort Push mit Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet', status 'angenommen', einladung_id, user_id, organization_id = die einladende Gemeinde) an die Person aus eingeladen_von, solange sie dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst an die Org-Admins der Gemeinde; nie an die eingeladene Person selbst. Dazu das Live-Signal 'users' an die Gemeinde (die Benutzerliste laedt nach). Die Antwortform ist unveraendert.\n\nBEHOBEN 28.09.2026: Bei der eingeladenen Person blieb nach der Zusage der Postfach-Eintrag \"Einladung in eine Gemeinde ... Tippe, um zu antworten\" (type 'gemeinde_einladung') stehen und zaehlte als ungelesen. Er geht jetzt in DERSELBEN Transaktion wie Statuswechsel und Mitgliedschaft (loescheMitteilungenZuEinladung, wie beim Zurueckziehen). Die Zusage an die Leitung ('gemeinde_einladung_beantwortet') bleibt. 404/409/410 raeumen nichts auf; einen abgelaufenen Eintrag nimmt das taegliche Postfach-Aufraeumen (02:00) mit.\n",
+        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n\nBEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-21; Simons Entscheidung F-13: \"Ja, als Postfach-Eintrag\"): Die einladende Leitung erfuhr nichts. Jetzt nach der Antwort Push mit Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet', status 'angenommen', einladung_id, user_id, organization_id = die einladende Gemeinde) an die Person aus eingeladen_von, solange sie dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst an die Org-Admins der Gemeinde; nie an die eingeladene Person selbst. Dazu das Live-Signal 'users' an die Gemeinde (die Benutzerliste laedt nach). Die Antwortform ist unveraendert.\n",
         "parameters": [
           {
             "name": "id",
@@ -614,7 +614,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Einladung ablehnen",
-        "description": "BEHOBEN 27.09.2026 (BF-21 / F-13): Auch die Absage meldet sich bei der einladenden Leitung -- Push mit Postfach-Eintrag 'gemeinde_einladung_beantwortet' (status 'abgelehnt'), Empfaenger wie bei annehmen. Kein Live-Signal, die Benutzerliste aendert sich nicht. Die Antwortform ist unveraendert.\n\nBEHOBEN 28.09.2026: Der Postfach-Eintrag 'gemeinde_einladung' der eingeladenen Person geht mit der Absage, in einer Transaktion mit dem Statuswechsel (wie bei annehmen und beim Zurueckziehen). Die Absage an die Leitung bleibt.\n",
+        "description": "BEHOBEN 27.09.2026 (BF-21 / F-13): Auch die Absage meldet sich bei der einladenden Leitung -- Push mit Postfach-Eintrag 'gemeinde_einladung_beantwortet' (status 'abgelehnt'), Empfaenger wie bei annehmen. Kein Live-Signal, die Benutzerliste aendert sich nicht. Die Antwortform ist unveraendert.\n",
         "parameters": [
           {
             "name": "id",
@@ -5063,7 +5063,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event löschen (mit force-Bestaetigung)",
-        "description": "Loescht Event samt Buchungen, Timeslots, Kategorien, Jahrgangs- Zuweisungen und Event-Chat (inkl. Dateien). Bereits vergebene Event-Punkte werden dabei aus konfi_profiles zurueckgerechnet (GREATEST(0, ...), Befund H1, behoben 26.08.2026). Ohne ?force=true blockt die Route mit EINEM 409 (error_code event_delete_confirm), wenn Anmeldungen, Chat-Nachrichten oder vergebene Punkte existieren — mit booking_count, message_count, points_count und points_total fuer die Rueckfrage im Frontend (Befund M2/M3, behoben 26.08.2026; vorher zwei getrennte 409er event_has_bookings/event_has_chat, die das Frontend per pauschalem force=true umging).\n\nGEBUCHTE KONFIS WERDEN PER PUSH INFORMIERT — ABER NUR, WENN DER TERMIN NICHT SCHON ABGESAGT WAR (BEHOBEN 15.09.2026). Bis dahin ging bei JEDEM Loeschen ein event_cancelled-Push raus. Wer einen Termin erst absagt und ihn spaeter aufraeumt (der Weg, den das Handbuch empfiehlt), schickte denselben Konfis zweimal \"Leider abgesagt\" fuer denselben Termin — beim zweiten Mal stand er in der App laengst durchgestrichen. Kein Vertragsbruch gegenueber ausgelieferten Fassungen: Ein Push ist ein Ereignis, kein Antwortfeld; die Antwortform bleibt unveraendert.\n\nOHNE event_id IM PUSH: Der Termin ist in derselben Transaktion geloescht, ein Sprung dorthin fuehrte ins Leere. Die Meldung landet auf der Terminliste. Beim ABSAGEN (PUT /{id}/cancel) traegt der Push seit dem 15.09.2026 sehr wohl eine event_id.\n\nBEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-06): Empfaenger sind DIESELBEN wie beim Absagen (utils/bookingUtils.js, ladeBetroffeneEinesAusfalls): alle Gebuchten mit status confirmed, waitlist oder excused, ohne Rollenfilter -- Konfis, Teamer:innen und Leitungen, die sich eingetragen haben. Bis dahin nur Buchungen mit der Stamm-Rolle 'konfi': Gebuchte Teamer:innen erfuhren nie, dass ein Termin geloescht wurde, bei teamer_only-Terminen also niemand. Selbst Abgemeldete (opted_out) und geloeschte Konten bekommen nichts. Antwortform unveraendert.\n",
+        "description": "Loescht Event samt Buchungen, Timeslots, Kategorien, Jahrgangs- Zuweisungen und Event-Chat (inkl. Dateien). Bereits vergebene Event-Punkte werden dabei aus konfi_profiles zurueckgerechnet (GREATEST(0, ...), Befund H1, behoben 26.08.2026). Ohne ?force=true blockt die Route mit EINEM 409 (error_code event_delete_confirm), wenn Anmeldungen, Chat-Nachrichten oder vergebene Punkte existieren — mit booking_count, message_count, points_count und points_total fuer die Rueckfrage im Frontend (Befund M2/M3, behoben 26.08.2026; vorher zwei getrennte 409er event_has_bookings/event_has_chat, die das Frontend per pauschalem force=true umging).\n\nGEBUCHTE KONFIS WERDEN PER PUSH INFORMIERT — ABER NUR, WENN DER TERMIN NICHT SCHON ABGESAGT WAR (BEHOBEN 15.09.2026). Bis dahin ging bei JEDEM Loeschen ein event_cancelled-Push raus. Wer einen Termin erst absagt und ihn spaeter aufraeumt (der Weg, den das Handbuch empfiehlt), schickte denselben Konfis zweimal \"Leider abgesagt\" fuer denselben Termin — beim zweiten Mal stand er in der App laengst durchgestrichen. Kein Vertragsbruch gegenueber ausgelieferten Fassungen: Ein Push ist ein Ereignis, kein Antwortfeld; die Antwortform bleibt unveraendert.\n\nOHNE event_id IM PUSH: Der Termin ist in derselben Transaktion geloescht, ein Sprung dorthin fuehrte ins Leere. Die Meldung landet auf der Terminliste. Beim ABSAGEN (PUT /{id}/cancel) traegt der Push seit dem 15.09.2026 sehr wohl eine event_id.\n\nBEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-06): Empfaenger sind DIESELBEN wie beim Absagen (utils/bookingUtils.js, ladeBetroffeneEinesAusfalls): alle Gebuchten mit status confirmed, waitlist oder excused, ohne Rollenfilter -- Konfis, Teamer:innen und Leitungen, die sich eingetragen haben. Bis dahin nur Buchungen mit der Stamm-Rolle 'konfi': Gebuchte Teamer:innen erfuhren nie, dass ein Termin geloescht wurde, bei teamer_only-Terminen also niemand. Selbst Abgemeldete (opted_out) und geloeschte Konten bekommen nichts. Antwortform unveraendert.\n\nEIN LOESCHWEG FUER ZWEI ROUTEN (28.09.2026): Die Loeschschritte stehen in utils/terminLoeschen.js; DELETE /api/admin/jahrgaenge/{id} loescht die Termine eines Jahrgangs auf demselben Weg (dort ohne Punkte-Ruecknahme und ohne Push). Chat-Anhaenge verschwinden seitdem erst nach dem COMMIT.\n\nBEHOBEN 28.09.2026: Der ERSTE Termin einer Serie liess sich nicht loeschen (500) — die uebrigen zeigen ueber events.series_id auf ihn, ein Fremdschluessel ohne ON DELETE. Jetzt zeigen sie auf den naechsten verbliebenen Termin der Serie. Loeschungen in derselben Gemeinde laufen nacheinander (pg_advisory_xact_lock), weil die App eine Serie mit parallelen Anfragen loescht.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6201,7 +6201,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Alle Anträge der Organisation",
-        "description": "Liefert die Aktivitaetsantraege der aktiven Organisation samt Konfi-Name, Aktivitaetsdaten und genehmigender Person. Ohne Filter alle, mit ?status= nur die des angegebenen Status, mit ?user_id= nur die einer Person; beide Filter lassen sich verbinden. BEHOBEN 2026-08-28: ?status= wurde vorher stillschweigend verworfen — die Route lieferte immer alles. GEAENDERT 2026-09-28 (Leitung BF-04, behoben): optionaler Filter ?user_id= (additiv). Die Detailansicht einer Konfi lud vorher die ganze Antragsgeschichte der Gemeinde, um die Anträge einer Person zu finden; der Antragsdialog nutzt GET /api/admin/activities/requests/{id}. OHNE Parameter liefert die Route unverändert alle Anträge der Gemeinde (Store-Apps 2.2.x/2.3.0 suchen darin einen Antrag per .find()).\n",
+        "description": "Liefert die Aktivitaetsantraege der aktiven Organisation samt Konfi-Name, Aktivitaetsdaten und genehmigender Person. Ohne Filter alle, mit ?status= nur die des angegebenen Status. BEHOBEN 2026-08-28: ?status= wurde vorher stillschweigend verworfen — die Route lieferte immer alles.\n",
         "parameters": [
           {
             "name": "status",
@@ -6216,16 +6216,6 @@
               ]
             },
             "description": "Optionaler Filter. Ein unbekannter Wert ergibt 400."
-          },
-          {
-            "name": "user_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "description": "Optionaler Filter auf die antragstellende Person (activity_requests.user_id). Kein positiver Ganzzahlwert ergibt 400. Die Sichtregel gilt daneben weiter — eine Person, deren Anträge die aufrufende Leitung nicht sieht, ergibt ein leeres Array, kein 403.\n"
           }
         ],
         "x-berechtigung": {
@@ -6257,7 +6247,7 @@
             }
           },
           "400": {
-            "description": "Unbekannter Wert fuer ?status= oder ungültige ?user_id="
+            "description": "Unbekannter Wert fuer ?status="
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -6272,51 +6262,6 @@
       }
     },
     "/api/admin/activities/requests/{id}": {
-      "get": {
-        "tags": [
-          "Aktivitäten & Anträge"
-        ],
-        "summary": "Einen Antrag abrufen",
-        "description": "NEU 2026-09-28 (Leitung BF-04, behoben): Liefert EINEN Antrag mit denselben Feldern wie ein Eintrag der Liste GET /api/admin/activities/requests (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name). Der Antragsdialog der Leitung lud vorher die ganze Liste und suchte den Antrag per .find() heraus.\n",
-        "x-berechtigung": {
-          "rollen": [
-            "org_admin",
-            "admin"
-          ],
-          "middleware": [
-            "verifyTokenRBAC",
-            "requireAdmin",
-            "param-id-Validierung"
-          ],
-          "org-scope": true,
-          "objekt-pruefung": "Antrag über JOIN activities auf die eigene Organisation eingegrenzt — ein Antrag einer fremden Gemeinde ergibt 404, wie eine unbekannte Id. Danach dieselbe Sichtregel wie die Liste (backend/utils/antragLeitungSicht.js): org_admin/super_admin (Rolle oder Merkmal) sehen jeden Antrag der Gemeinde; die Rolle admin nur Konfi-Anträge aus ihren can_view-Jahrgängen, Teamer-Anträge immer. Sonst 403 \"Kein Zugriff auf diesen Konfi\" — wie PUT, DELETE und Foto an demselben Antrag.\n"
-        },
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/pathId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Ein Antrag (Objekt in der Form eines Listeneintrags)"
-          },
-          "400": {
-            "description": "Ungültige Id"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          }
-        }
-      },
       "put": {
         "tags": [
           "Aktivitäten & Anträge"
@@ -8060,7 +8005,7 @@
           "Chat"
         ],
         "summary": "Nachrichten eines Raums laden",
-        "description": "Paginiert (limit/offset, neueste zuerst, Antwort chronologisch), inkrementell per ?after=messageId (bis 200 neue Nachrichten) oder rueckwaerts per ?before=messageId (Keyset, seit 28.09.2026): die <limit> Nachrichten desselben Raums, die im Tupel (created_at, id) vor der Anker-Nachricht liegen — stabil auch bei gleichen Zeitstempeln; Antwort ebenfalls chronologisch. Die App laedt beim Oeffnen limit=100 und blaettert dann mit before=<aelteste geladene id>&limit=50 nach oben; kommen weniger als angefordert, ist der Anfang des Chats erreicht. Ohne before unveraendert (Store-Apps bis 2.3.0 rufen limit=100 und after=). Enthaelt Reactions, Reply-Daten und Poll-Daten inkl. Votes. limit ist auf 200 gedeckelt — derselbe Wert wie im after-Zweig.\n",
+        "description": "Paginiert (limit/offset, neueste zuerst, Antwort chronologisch) oder inkrementell per ?after=messageId (bis 200 neue Nachrichten). Enthaelt Reactions, Reply-Daten und Poll-Daten inkl. Votes. limit ist auf 200 gedeckelt — derselbe Wert wie im after-Zweig.\n",
         "parameters": [
           {
             "name": "roomId",
@@ -8102,16 +8047,6 @@
               "type": "integer"
             },
             "description": "Nur Nachrichten mit id > after (Live-Nachladen)"
-          },
-          {
-            "name": "before",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "description": "Aeltere Nachrichten nachladen (NEU 28.09.2026): die <limit> Nachrichten dieses Raums vor der Nachricht mit dieser id, geordnet nach (created_at, id). offset wird dabei nicht ausgewertet. Liegt die Anker-Nachricht nicht in diesem Raum (fremder Raum, unbekannte id), ist die Antwort eine leere Liste — kein Zeitstempel eines anderen Raums fliesst ein. Ein leeres ?before= gilt als nicht gesetzt."
           }
         ],
         "responses": {
@@ -8127,9 +8062,6 @@
                 }
               }
             }
-          },
-          "400": {
-            "description": "before ist keine positive ganze Zahl (hoechstens 15 Stellen) oder steht zusammen mit after (seit 28.09.2026)"
           },
           "403": {
             "description": "Raum darf nicht geoeffnet werden (darfRaumBetreten)"
@@ -8740,7 +8672,8 @@
           "Chat"
         ],
         "summary": "Chat-Datei abrufen (entschluesselt)",
-        "description": "Liefert eine im Chat hochgeladene Datei. Auth NUR per Authorization-Header (seit 28.09.2026; wie GET /challenges/files). Der fruehere Fallback ?token= wird nicht mehr ausgewertet — ein Query-String steht im Zugriffslog des Reverse-Proxys und in Referrern. Keine ausgelieferte App hat ihn gesendet (geprueft an den Tags 1.3.0 bis 2.3.0: Dateien und Videos laufen per axios mit Header ueber den Medien-Cache); der einzige Sender war ein Entwicklungsstand vom 05.08.2025. Nur Hex-Dateinamen; Path-Traversal-Schutz via basename. Seit 22.08.2026 wird der Token gegen die Datenbank geprüft (Konto aktiv, nicht gelöscht, kein Soft-Revoke) und die aktive Organisation über user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre Dateien damit auch in der Zweit-Organisation.\n",
+        "description": "Liefert eine im Chat hochgeladene Datei. Auth per Authorization-Header ODER ?token= (für Video-Elemente). Nur Hex-Dateinamen; Path-Traversal-Schutz via basename. Seit 22.08.2026 wird der Token gegen die Datenbank geprüft (Konto aktiv, nicht gelöscht, kein Soft-Revoke) und die aktive Organisation über user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre Dateien damit auch in der Zweit-Organisation.\n",
+        "security": [],
         "parameters": [
           {
             "name": "filename",
@@ -8753,13 +8686,13 @@
             "description": "Serverseitiger Dateiname (Hex) aus der Upload-Antwort bzw. Nachricht"
           },
           {
-            "name": "X-Active-Organization",
-            "in": "header",
+            "name": "token",
+            "in": "query",
             "required": false,
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "Aktive Organisation für Multi-Org-Konten (wie beim übrigen API-Zugriff)"
+            "description": "JWT-Fallback fuer Media-Tags"
           }
         ],
         "responses": {
@@ -8778,7 +8711,7 @@
             "description": "Ungueltiger Dateiname"
           },
           "401": {
-            "description": "Token fehlt oder ungueltig — auch wenn es nur als ?token= im Query steht (seit 28.09.2026)"
+            "description": "Token fehlt oder ungueltig"
           },
           "403": {
             "description": "Raum darf nicht geoeffnet werden (darfRaumBetreten)"
@@ -8798,7 +8731,7 @@
             "konfi"
           ],
           "middleware": [
-            "manuelle JWT-Pruefung mit DB-Abgleich, nur Authorization-Header (kein verifyTokenRBAC — historisch wegen des entfallenen Query-Parameters)"
+            "manuelle JWT-Pruefung mit DB-Abgleich (kein verifyTokenRBAC — Query-Parameter-Auth)"
           ],
           "org-scope": true,
           "objekt-pruefung": "Nachricht mit file_path muss in der AKTIVEN Org liegen UND der Raum nach darfRaumBetreten zu oeffnen sein (dieselbe Regel wie GET /rooms/{roomId}/messages)"
@@ -9288,6 +9221,105 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Jahrgangs-Scoping je Rolle (s. Beschreibung); super_admin explizit ausgeschlossen"
+        }
+      }
+    },
+    "/api/challenges/bewahrte-stempel": {
+      "get": {
+        "tags": [
+          "Challenges (Konfis)"
+        ],
+        "summary": "Eigene Stempel aus Challenges, die mit ihrem Jahrgang geloescht wurden",
+        "description": "Seit dem 28.09.2026 (Migration 169). Ein Stempel wird sonst aus den eigenen freigegebenen Beitraegen abgeleitet und verschwindet mit der Challenge. Loescht die Leitung einen Jahrgang, gehen dessen Challenges mit (DELETE /api/admin/jahrgaenge/{id}); die Stempel von Teamer:innen und Leitung werden vorher in bewahrte_stempel abgelegt und kommen hier. Nur Stempel, deren Challenge nicht mehr existiert (lebt sie, kommt ihr Stempel wie bisher aus GET /challenges/admin bzw. /challenges/konfi). Jeder Eintrag hat die Form eines erhaltenen Stempels (marks), challenge_id ist die alte Kennung. Eigene Route, weil GET /challenges/admin ein Array von Challenges ist, dem sich kein Feld anhaengen laesst.\n",
+        "responses": {
+          "200": {
+            "description": "Bewahrte Stempel der aufrufenden Person in der aktiven Gemeinde (Array, auch leer)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BewahrterStempel"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet"
+          },
+          "500": {
+            "description": "Datenbankfehler"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "konfi",
+            "teamer",
+            "admin",
+            "org_admin"
+          ],
+          "middleware": [
+            "rbacVerifier"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Nur eigene Zeilen (user_id = req.user.id) der aktiven Gemeinde"
+        }
+      }
+    },
+    "/api/challenges/admin/bewahrte-stempel/{userId}": {
+      "get": {
+        "tags": [
+          "Challenges (Leitung)"
+        ],
+        "summary": "Bewahrte Stempel einer Person (Detailansicht der Leitung)",
+        "description": "Seit dem 28.09.2026. Wie GET /api/challenges/bewahrte-stempel, aber fuer die angesehene Person — die Detailansicht einer Teamer:in legt sie zu challengeMarks aus GET /api/admin/konfis/{id}. Bewahrt werden nur Stempel des Teams, und Teamer:innen sieht die Leitung ohne Jahrgangsgrenze; die Gemeinde begrenzt die Zeilen (fremde Gemeinde: leere Liste).\n",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID der Person"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bewahrte Stempel der Person in der aktiven Gemeinde (Array, auch leer)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BewahrterStempel"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ungueltige ID"
+          },
+          "403": {
+            "description": "requireAdmin (Teamer:innen und Konfis)"
+          },
+          "500": {
+            "description": "Datenbankfehler"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "rbacVerifier",
+            "requireAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Zeilen der aktiven Gemeinde (organization_id = req.user.organization_id)"
         }
       }
     },
@@ -9949,6 +9981,7 @@
           "Challenges (Leitung)"
         ],
         "summary": "Challenge löschen (gestartete nur mit force)",
+        "description": "Beitraege, Dateien und Postfach-Eintraege gehen mit; die Stempel aller Beteiligten ebenfalls. Seit dem 28.09.2026 laeuft das Loeschen ueber utils/challengeLoeschen.js — denselben Weg nimmt DELETE /api/admin/jahrgaenge/{id} fuer Challenges, die nur an dem Jahrgang haengen; nur dort werden die Stempel des Teams vorher bewahrt (GET /api/challenges/bewahrte-stempel). Verhalten dieser Route unveraendert.\n",
         "parameters": [
           {
             "name": "id",
@@ -11986,7 +12019,7 @@
           "Teamer:innen"
         ],
         "summary": "Teamer-Dashboard (Zertifikate, Termine, Abzeichen, Konfiguration)",
-        "description": "Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit eigenem Status (valid | expired | not_earned), die nächsten bis zu fuenf zukuenftigen Termine, für die die Teamer:in selbst gebucht ist oder für die Team gesucht wird, die letzten drei erreichten Teamer-Abzeichen mit Zaehlern sowie die Dashboard-Konfiguration der Organisation (show_zertifikate, show_challenges, show_konfispruch, show_events, show_badges, show_losung und section_order aus den settings-Schluesseln teamer_dashboard_*). Dazu kommt der eigene Konfispruch aus konfi_profiles (aufgeloeste Listen-Wahl oder Freitext, null ohne Eintrag oder bei abgeschaltetem Schalter — dann wird die Tabelle gar nicht erst abgefragt). Zuletzt wird geprüft, ob ein Teamer-Wrapped-Snapshot in der AKTIVEN Organisation vorliegt (has_wrapped; BEHOBEN 26.09.2026, Audit Chat BF-06: vorher ohne Org-Filter, die Flagge stand in Gemeinde B auf true, obwohl nur Gemeinde A einen Rueckblick hatte). Die Challenges-Teaser selbst laedt das Frontend separat über GET /api/challenges/admin. GEAENDERT 15.09.2026 — ABGESAGTE TERMINE: Bis dahin filterte die Abfrage sie hart weg (AND e.cancelled IS NOT TRUE), und die Spaltenliste holte zwar e.cancelled, aber weder cancelled_reason noch die Namen — der cancelled-Zweig der Teamer-Startseite konnte gar nicht greifen. Jetzt gilt dieselbe Regel wie in der Konfi-Liste (GET /api/konfi/events, Entscheidung Simon 27.08.2026): abgesagt UND eigene Buchung -> steht in der Liste; abgesagt OHNE eigene Buchung -> steht NICHT darin. Wer zugesagt hat, muss auf der Startseite sehen, dass der Termin ausfaellt; eine Einladung (\"Teamer:innen gesucht\") zu etwas, das nicht stattfindet, ist dagegen keine. ADDITIV dazu fuenf Felder je Termin: cancelled_reason, cancelled_by, cancelled_at, cancelled_by_name und cancelled_reason_set_by_name (Migration 150/152). Die beiden Namen kommen ueber LEFT JOIN — Termine, die vor diesen Migrationen abgesagt wurden, haben keinen Urheber und muessen trotzdem in der Liste stehen. NULL heisst bei cancelled_reason \"kein Grund angegeben\", bei den Namen \"unbekannt\". Kein bestehendes Feld entfaellt oder aendert Form; ausgelieferte Fassungen lesen die neuen Schluessel nicht und verhalten sich unveraendert. GEAENDERT 28.09.2026 (Screens Konfi/Teamer BF-07, behoben): ADDITIV wrapped_ausgabe_id und wrapped_titel, wie im Konfi-Dashboard (GET /api/konfi/dashboard) — die Ausgabe, die GET /api/wrapped/me oeffnet: der juengste freigegebene Teamer-Rueckblick der aktiven Gemeinde (Alt-Snapshots ohne Ausgabe: beide null). Die App merkt sich das Wegklicken des Hinweises je Ausgabe (wrapped_hinweis_t_<user>_<wrapped_ausgabe_id>); ohne das Feld endete der Schluessel immer auf \"_alt\", und der naechste Team-Rueckblick meldete sich auf der Startseite nie. Die Store-Apps 2.2.x/2.3.0 bauen den Schluessel schon so und profitieren ohne Update; wer den Hinweis bisher weggeklickt hat, sieht ihn fuer die aktuelle Ausgabe einmal wieder.\n",
+        "description": "Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit eigenem Status (valid | expired | not_earned), die nächsten bis zu fuenf zukuenftigen Termine, für die die Teamer:in selbst gebucht ist oder für die Team gesucht wird, die letzten drei erreichten Teamer-Abzeichen mit Zaehlern sowie die Dashboard-Konfiguration der Organisation (show_zertifikate, show_challenges, show_konfispruch, show_events, show_badges, show_losung und section_order aus den settings-Schluesseln teamer_dashboard_*). Dazu kommt der eigene Konfispruch aus konfi_profiles (aufgeloeste Listen-Wahl oder Freitext, null ohne Eintrag oder bei abgeschaltetem Schalter — dann wird die Tabelle gar nicht erst abgefragt). Zuletzt wird geprüft, ob ein Teamer-Wrapped-Snapshot in der AKTIVEN Organisation vorliegt (has_wrapped; BEHOBEN 26.09.2026, Audit Chat BF-06: vorher ohne Org-Filter, die Flagge stand in Gemeinde B auf true, obwohl nur Gemeinde A einen Rueckblick hatte). Die Challenges-Teaser selbst laedt das Frontend separat über GET /api/challenges/admin. GEAENDERT 15.09.2026 — ABGESAGTE TERMINE: Bis dahin filterte die Abfrage sie hart weg (AND e.cancelled IS NOT TRUE), und die Spaltenliste holte zwar e.cancelled, aber weder cancelled_reason noch die Namen — der cancelled-Zweig der Teamer-Startseite konnte gar nicht greifen. Jetzt gilt dieselbe Regel wie in der Konfi-Liste (GET /api/konfi/events, Entscheidung Simon 27.08.2026): abgesagt UND eigene Buchung -> steht in der Liste; abgesagt OHNE eigene Buchung -> steht NICHT darin. Wer zugesagt hat, muss auf der Startseite sehen, dass der Termin ausfaellt; eine Einladung (\"Teamer:innen gesucht\") zu etwas, das nicht stattfindet, ist dagegen keine. ADDITIV dazu fuenf Felder je Termin: cancelled_reason, cancelled_by, cancelled_at, cancelled_by_name und cancelled_reason_set_by_name (Migration 150/152). Die beiden Namen kommen ueber LEFT JOIN — Termine, die vor diesen Migrationen abgesagt wurden, haben keinen Urheber und muessen trotzdem in der Liste stehen. NULL heisst bei cancelled_reason \"kein Grund angegeben\", bei den Namen \"unbekannt\". Kein bestehendes Feld entfaellt oder aendert Form; ausgelieferte Fassungen lesen die neuen Schluessel nicht und verhalten sich unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -11998,7 +12031,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "nur eigene Daten; Zertifikate/Abzeichen/Termine mit user_id + organization_id",
-          "hinweis": "Die Wrapped-Prüfung fragt wrapped_snapshots nur über user_id + wrapped_type ab, ohne organization_id - dieselbe Multi-Org-Unschaerfe wie in GET /api/wrapped/me (Befund W1). BEHOBEN 26.09.2026 (Audit Chat BF-06): has_wrapped und seit 28.09.2026 auch wrapped_ausgabe_id/wrapped_titel pruefen die aktive Organisation (wrapped_snapshots.organization_id).\n"
+          "hinweis": "Die Wrapped-Prüfung fragt wrapped_snapshots nur über user_id + wrapped_type ab, ohne organization_id - dieselbe Multi-Org-Unschaerfe wie in GET /api/wrapped/me (Befund W1).\n"
         },
         "responses": {
           "200": {
@@ -12043,20 +12076,6 @@
                         "null"
                       ],
                       "description": "source (liste|freitext), reference, text, ggf. id + translation"
-                    },
-                    "wrapped_ausgabe_id": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ],
-                      "description": "ADDITIV 28.09.2026: Id der juengsten freigegebenen Teamer-Ausgabe der aktiven Gemeinde; null ohne Rueckblick oder bei Alt-Snapshots ohne Ausgabe"
-                    },
-                    "wrapped_titel": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "description": "ADDITIV 28.09.2026: Titel derselben Ausgabe (bei Teamer-Ausgaben der Platzhalter 'Team-Rückblick <Jahr>'; die App zeigt ihn nicht)"
                     }
                   }
                 }
@@ -13323,7 +13342,7 @@
           "Wrapped"
         ],
         "summary": "Teamer-Jahresrueckblicke der Organisation löschen",
-        "description": "Loescht alle Teamer-Snapshots der aktiven Organisation samt ihrer Teamer-Ausgaben (seit 28.09.2026, siehe unten). Seit 01.09.2026 (Befund W3): Teamer-Snapshots werden ohne jahrgang_id gespeichert und waren ueber den Jahrgangs-Weg nie erreichbar - einmal erzeugt, blieben sie fuer immer stehen, auch wenn der Lauf fehlerhafte Zahlen erzeugt hatte.\nEigene Route statt Erweiterung von DELETE /api/wrapped/{jahrgangId}, weil dort der Jahrgang die Bezugsgroesse ist und hier die Organisation. Anders als beim Jahrgangs-Weg gibt es nichts zurueckzunehmen: Der Teamer-Rueckblick kennt keine Freigabe-Markierung.\nSeit 02.09.2026 optionaler Query-Parameter `year`: löscht nur den Rückblick DIESES Jahres. Teamer:innen bekommen jedes Jahr einen neuen, die alten bleiben erhalten — bei den Konfis leistet das der Jahrgangsfilter, Teamer haben keinen Jahrgang, dort ist das Jahr die einzige Trennlinie. OHNE `year` bleibt es beim bisherigen Verhalten (alle Jahre), damit der Aufruf der ausgelieferten Oberfläche gültig bleibt. (Stand 28.09.2026: Keine ausgelieferte App ruft die Route; die Oberfläche löscht seit 2.2.0 über DELETE /api/wrapped/ausgabe/{id}. Die Route ist ein Betriebswerkzeug, siehe ABRISS.md.)\nBEHOBEN 28.09.2026 (Audit Chat/Challenges/Rückblick BF-05): Die Route löschte nur die Snapshots und ließ die leere Teamer-Ausgabe stehen. Seit der Ausgaben-Sperre in POST /api/wrapped/generate-teamer (08.09.2026) war der Team-Rückblick des Jahres danach nicht mehr erzeugbar (\"besteht bereits\", generated 0). Jetzt gehen die Teamer-Ausgaben des Umfangs mit (ohne year alle, mit year die des Jahres und jede, an der ein Snapshot dieses Jahres hängt) — auch eine leere, die der frühere Weg zurückgelassen hat. Alles in einer Transaktion.\n",
+        "description": "Loescht alle Teamer-Snapshots der aktiven Organisation. Seit 01.09.2026 (Befund W3): Teamer-Snapshots werden ohne jahrgang_id gespeichert und waren ueber den Jahrgangs-Weg nie erreichbar - einmal erzeugt, blieben sie fuer immer stehen, auch wenn der Lauf fehlerhafte Zahlen erzeugt hatte.\nEigene Route statt Erweiterung von DELETE /api/wrapped/{jahrgangId}, weil dort der Jahrgang die Bezugsgroesse ist und hier die Organisation. Anders als beim Jahrgangs-Weg gibt es nichts zurueckzunehmen: Der Teamer-Rueckblick kennt keine Freigabe-Markierung.\nSeit 02.09.2026 optionaler Query-Parameter `year`: löscht nur den Rückblick DIESES Jahres. Teamer:innen bekommen jedes Jahr einen neuen, die alten bleiben erhalten — bei den Konfis leistet das der Jahrgangsfilter, Teamer haben keinen Jahrgang, dort ist das Jahr die einzige Trennlinie. OHNE `year` bleibt es beim bisherigen Verhalten (alle Jahre), damit der Aufruf der ausgelieferten Oberfläche gültig bleibt.\n",
         "parameters": [
           {
             "name": "year",
@@ -13346,11 +13365,11 @@
             "requireOrgAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "DELETE mit wrapped_type='teamer' + organization_id aus dem Token, optional year; ebenso die Teamer-Ausgaben (wrapped_ausgaben) dieser Organisation"
+          "objekt-pruefung": "DELETE mit wrapped_type='teamer' + organization_id aus dem Token, optional year"
         },
         "responses": {
           "200": {
-            "description": "message, deleted (Anzahl geloeschter Snapshots, unveraendert), ausgaben_geloescht (ADDITIV 28.09.2026: Anzahl mitgeloeschter Teamer-Ausgaben)"
+            "description": "message, deleted (Anzahl geloeschter Snapshots)"
           },
           "400": {
             "description": "year ist keine gültige Jahreszahl"
@@ -14677,7 +14696,7 @@
           "Jahrgänge"
         ],
         "summary": "Jahrgang löschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)",
-        "description": "Aktive Konfis (Rolle konfi) blockieren die Löschung immer. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true nötig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien entfernt. RUECKBLICKE BLEIBEN (26.09.2026, Audit Chat BF-02, Migration 162): wrapped_ausgaben.jahrgang_id haengt mit ON DELETE SET NULL am Jahrgang; die Konfi-Ausgabe und die Snapshots befoerderter Ex-Konfis ueberleben das Loeschen und bleiben ueber GET /api/wrapped/history/{userId} abrufbar. Bis dahin nahm ein CASCADE Ausgabe und Snapshots mit. Konfi-Ausgaben dieses Jahrgangs ohne einen einzigen Snapshot werden mit entfernt.\n",
+        "description": "Aktive Konfis (Rolle konfi) blockieren die Löschung immer. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true nötig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien entfernt. RUECKBLICKE BLEIBEN (26.09.2026, Audit Chat BF-02, Migration 162): wrapped_ausgaben.jahrgang_id haengt mit ON DELETE SET NULL am Jahrgang; die Konfi-Ausgabe und die Snapshots befoerderter Ex-Konfis ueberleben das Loeschen und bleiben ueber GET /api/wrapped/history/{userId} abrufbar. Bis dahin nahm ein CASCADE Ausgabe und Snapshots mit. Konfi-Ausgaben dieses Jahrgangs ohne einen einzigen Snapshot werden mit entfernt. TERMINE UND CHALLENGES GEHEN MIT (28.09.2026, Simons Entscheidung, Audit BF-08): Termine und Challenges, die NUR an diesem Jahrgang haengen, werden auf demselben Weg geloescht wie einzeln (utils/terminLoeschen.js, utils/challengeLoeschen.js) — samt Buchungen, Zeitfenstern, Termin-Chats, Erinnerungen, Beitraegen, Dateien und Postfach-Eintraegen. Haengen sie zusaetzlich an einem anderen Jahrgang, faellt nur die Zuordnung weg. Termine \"Nur Team\" (teamer_only) und Challenges \"Nur das Team\" (audience nur_team) bleiben immer; Termine und Challenges ohne Jahrgang sind nicht betroffen. Abweichend vom Einzel-Loeschen bleiben vergebene Event-Punkte gutgeschrieben, und es geht keine Absage-Mitteilung hinaus. Die Stempel von Teamer:innen und Leitung aus den geloeschten Challenges werden vorher in bewahrte_stempel abgelegt (Migration 169) und kommen ueber GET /api/challenges/bewahrte-stempel. Alles in EINER Transaktion; die Dateien verschwinden erst nach dem COMMIT. Was mitgeht, nennt vorher GET /api/admin/jahrgaenge/{id}/loeschvorschau. Antwortform unveraendert.\n",
         "parameters": [
           {
             "name": "id",
@@ -14703,7 +14722,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Geloescht; Live-Update an Org-Admins"
+            "description": "Geloescht; Live-Update an Org-Admins, bei geloeschten Terminen/Challenges zusaetzlich 'events'/'challenges' an die Gemeinde (nur { count })"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -14716,6 +14735,9 @@
           },
           "409": {
             "description": "Aktive Konfis zugeordnet ODER Chat enthaelt Nachrichten ({ error, canForceDelete: true })"
+          },
+          "500": {
+            "description": "Datenbankfehler — die Transaktion wurde zurueckgerollt, nichts ist geloescht"
           }
         },
         "x-berechtigung": {
@@ -14730,7 +14752,105 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Seit 01.09.2026 steht ein org-gescopter Existenz-Check samt darfJahrgang(edit) VOR allen Loesch-Schritten — fremde Org 404, admin ohne edit-Zuweisung 403 (org_admin ausgenommen). Damit ist auch die fruehere Reihenfolgen-Abhaengigkeit entschaerft, bei der Konfi-Zaehlung und Chat-Loeschung ueber jahrgang_id OHNE eigenen Org-Filter liefen, bevor das abschliessende DELETE die Org pruefte.\n",
-          "hinweis": "S7: Die Chat-Löschung läuft NICHT in einer Transaktion (Einzel-Queries ohne BEGIN/COMMIT). Bricht sie in der Mitte ab, bleibt ein halb abgeraeumter Chat zurück. Datei-Loeschfehler werden nur geloggt.\n"
+          "hinweis": "S7: Die Chat-Löschung läuft NICHT in einer Transaktion (Einzel-Queries ohne BEGIN/COMMIT). Bricht sie in der Mitte ab, bleibt ein halb abgeraeumter Chat zurück. Datei-Loeschfehler werden nur geloggt. BEHOBEN 28.09.2026: eine Transaktion ueber alle Schritte, die Jahrgangszeile mit FOR UPDATE gesperrt; Dateien nach dem COMMIT.\n"
+        }
+      }
+    },
+    "/api/admin/jahrgaenge/{id}/loeschvorschau": {
+      "get": {
+        "tags": [
+          "Jahrgänge"
+        ],
+        "summary": "Was beim Loeschen dieses Jahrgangs mitgeht (fuer den Bestaetigungsdialog)",
+        "description": "Seit dem 28.09.2026. Liest dieselbe Regel-Stelle wie DELETE /api/admin/jahrgaenge/{id} (utils/jahrgangLoeschen.js), damit die Zahlen im Dialog genau das sind, was dann verschwindet. Aendert nichts. Aeltere Apps rufen die Route nicht und fragen ohne Zahlen nach.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID des Jahrgangs"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zahlen zum Loeschen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "aktive_konfis",
+                    "befoerderte",
+                    "chat_nachrichten",
+                    "events_geloescht",
+                    "events_kuenftig",
+                    "events_behalten",
+                    "challenges_geloescht",
+                    "challenges_behalten"
+                  ],
+                  "properties": {
+                    "aktive_konfis": {
+                      "type": "integer",
+                      "description": "Konfis (Rolle konfi) im Jahrgang — blockieren das Loeschen"
+                    },
+                    "befoerderte": {
+                      "type": "integer",
+                      "description": "Ex-Konfis mit anderer Rolle, deren Profil nur vom Jahrgang geloest wird"
+                    },
+                    "chat_nachrichten": {
+                      "type": "integer",
+                      "description": "Nachrichten im Jahrgangs-Chat — verlangen force=true"
+                    },
+                    "events_geloescht": {
+                      "type": "integer",
+                      "description": "Termine nur dieses Jahrgangs (ohne 'Nur Team')"
+                    },
+                    "events_kuenftig": {
+                      "type": "integer",
+                      "description": "davon mit event_date in der Zukunft"
+                    },
+                    "events_behalten": {
+                      "type": "integer",
+                      "description": "Termine mit weiterem Jahrgang oder 'Nur Team' — verlieren nur die Zuordnung"
+                    },
+                    "challenges_geloescht": {
+                      "type": "integer",
+                      "description": "Challenges nur dieses Jahrgangs (ohne 'Nur das Team')"
+                    },
+                    "challenges_behalten": {
+                      "type": "integer",
+                      "description": "Challenges mit weiterem Jahrgang oder 'Nur das Team'"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Jahrgang nicht in dieser Organisation"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "validateJahrgangId"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Wie DELETE: org-gescopter Existenz-Check, danach darfJahrgang(edit) — 403 fuer admin ohne edit-Zuweisung (org_admin ausgenommen), fremde Gemeinde 404"
         }
       }
     },
@@ -15515,6 +15635,39 @@
           "role_description": {
             "type": "string",
             "description": "role_title oder Fallback nach role_name: \"Teamer:in\", \"Org-Leitung\" (org_admin), \"Leitung\" (admin). Bis 28.09.2026 hiess der Fallback fuer beide Leitungsrollen \"Admin\" (Simon: admin heisst \"Leitung\", org_admin \"Org-Leitung\")."
+          }
+        }
+      },
+      "BewahrterStempel": {
+        "type": "object",
+        "description": "Stempel aus einer Challenge, die mit ihrem Jahrgang geloescht wurde (Tabelle bewahrte_stempel, Migration 169). Form eines erhaltenen Stempels (marks), dazu bewahrt = true.\n",
+        "properties": {
+          "challenge_id": {
+            "type": "integer",
+            "description": "Kennung der geloeschten Challenge (herkunft_challenge_id) — bleibt eine Zahl"
+          },
+          "badge_icon": {
+            "type": "string"
+          },
+          "badge_name": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "earned_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Fruehester freigegebener eigener Beitrag"
+          },
+          "bewahrt": {
+            "type": "boolean",
+            "const": true
           }
         }
       },

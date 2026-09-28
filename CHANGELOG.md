@@ -13,8 +13,17 @@ Versionsüberschrift.
 - Eine orange Zahl in den Umschaltern oben zeigt, hinter welchem Reiter etwas
   wartet: Freigaben bei den Challenges (auch im Archiv) für alle, die freigeben
   dürfen, dazu für die Leitung zu verbuchende Events und offene Anträge.
+- Die Rückfrage vor dem Löschen eines Jahrgangs nennt, wie viele Events und
+  Challenges mitgehen, wie viele dieser Events noch in der Zukunft liegen und
+  was bestehen bleibt.
 
 ### Geändert
+- Beim Löschen eines Jahrgangs gehen die Events und Challenges mit, die nur zu
+  ihm gehören — samt Anmeldungen, Chats und Beiträgen. Gehören sie auch zu
+  einem anderen Jahrgang, fällt nur die Zuordnung weg; Events „Nur Team" und
+  Challenges „Nur das Team" bleiben. Vergebene Punkte bleiben gutgeschrieben,
+  und Teamer:innen und Leitung behalten ihre Stempel aus den gelöschten
+  Challenges.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
   die Zahl am Reiter; das orange Feld mit Uhr bleibt zusätzlich stehen.
@@ -48,6 +57,13 @@ Versionsüberschrift.
 - Werden die Team-Rückblicke eines Jahres im Betrieb gelöscht, verschwindet
   auch ihre Ausgabe aus der Liste der Leitung, und der Rückblick lässt sich
   danach neu erzeugen, statt als „besteht bereits" gesperrt zu bleiben.
+- Nach dem Löschen eines Jahrgangs bleiben dessen Events nicht mehr als Events
+  der ganzen Gemeinde stehen — auch keine Pflicht-Events ohne Jahrgang, die
+  sich danach nicht mehr speichern ließen.
+- Das Löschen eines Jahrgangs geschieht ganz oder gar nicht; ein Abbruch
+  mittendrin hinterlässt keinen halb gelöschten Jahrgang mehr.
+- Der erste Termin einer Serie lässt sich löschen, auch zusammen mit der
+  ganzen Serie; vorher brach das mit einem Fehler ab.
 - Eine Einladung in eine weitere Gemeinde nennt in Mitteilung und E-Mail die
   Rolle mit ihrem Namen statt mit dem technischen Wort „admin".
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und
