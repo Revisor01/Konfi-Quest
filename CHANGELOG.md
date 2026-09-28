@@ -94,6 +94,8 @@ Versionsüberschrift.
 - Wechselt das Handy zwischen WLAN und Mobilfunk, während die App die
   Anmeldung im Hintergrund erneuert, hängt die App nicht mehr minutenlang:
   Nach spätestens 20 Sekunden geht es weiter, und du bleibst angemeldet.
+- Scheitert eine Anfrage, steht im Protokoll des Geräts weder der
+  Anmeldeschlüssel noch der Inhalt, der gesendet werden sollte.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

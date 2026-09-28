@@ -7,7 +7,7 @@ import { rotationUebernehmen, istBiometrieAktiv } from './biometrics';
 
 import { API_BASE_URL } from './apiBasis';
 import { refreshAnfordern } from './refreshAnfrage';
-import { fehlerFuersProtokoll } from '../utils/fehler';
+import { fehlerFuersProtokoll, fehlerEntschaerfen, istEntschaerft } from '../utils/fehler';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -279,9 +279,8 @@ const tokenOhneOrgClaimBeschaffen = async (): Promise<string | null> => {
 };
 
 // Handle auth errors and rate limiting
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- axios reicht den Fehler untypisiert herein; wie bisher im Interceptor.
+const fehlerBehandeln = async (error: any): Promise<unknown> => {
     const originalRequest = error.config;
 
     // SICHERHEITSNETZ Multi-Org: Wenn ein Request mit aktivem Org-Header ein
@@ -411,6 +410,29 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
+};
+
+// Jeder Fehler, den die Instanz an einen Aufrufer weitergibt, ist vorher
+// entschaerft: ohne Zugangs-Token, Anfragekoerper und Leitung (Audit
+// Grundgeruest BF-08, Nebenbefund; utils/fehler.ts fehlerEntschaerfen). Rund
+// 100 Stellen geben gefangene Fehler roh an die Konsole -- hier wird es EINMAL
+// geloest statt an jeder Stelle.
+//
+// ERST AM ENDE: fehlerBehandeln braucht Kopfzeilen und Koerper noch, um die
+// Anfrage nach einem Refresh zu wiederholen; axios-retry (vor diesem
+// Interceptor registriert) hat seine Entscheidung schon getroffen. Ein Fehler,
+// der hier schon einmal durchlief -- er kommt aus der Kette einer Wiederholung
+// zurueck --, geht unveraendert weiter; sonst liefen Rueckfall, Refresh und
+// Rate-Limit-Meldung doppelt.
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (istEntschaerft(error)) throw error;
+    try {
+      return await fehlerBehandeln(error);
+    } catch (endgueltig) {
+      throw fehlerEntschaerfen(endgueltig);
+    }
   }
 );
 

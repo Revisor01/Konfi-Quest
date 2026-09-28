@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { AxiosError, AxiosHeaders } from 'axios';
-import { alsApiFehler, fehlerDaten, fehlerFuersProtokoll, fehlerStatus, fehlerText, fehlerTextOderMessage, herkunftDesFehlertexts, istNetzwerkfehler } from '../../utils/fehler';
+import { alsApiFehler, fehlerDaten, fehlerEntschaerfen, fehlerFuersProtokoll, fehlerStatus, fehlerText, fehlerTextOderMessage, herkunftDesFehlertexts, istEntschaerft, istNetzwerkfehler } from '../../utils/fehler';
 import { enthaeltText } from '../protokollDurchsuchen';
 
 /** Nachbau eines axios-Fehlers, wie ihn die Catch-Blöcke bisher gesehen haben. */
@@ -242,5 +242,58 @@ describe('fehlerFuersProtokoll', () => {
     expect(fehlerFuersProtokoll(null)).toEqual({});
     expect(fehlerFuersProtokoll(undefined)).toEqual({});
     expect(fehlerFuersProtokoll('kaputt')).toEqual({});
+  });
+});
+
+// Nebenbefund BF-08: Die API-Instanz entschaerft jeden endgueltigen Fehler
+// (Gesamtpruefung mit der echten Instanz: apiFehlerOhneGeheimnisse.test.tsx).
+describe('fehlerEntschaerfen', () => {
+  const PASSWORT = 'Passwort-geheim-44';
+  const TOKEN = 'token-geheim-e7';
+
+  const fehlerMit = (headers: unknown, eigeneAntwortKonfig = false) => {
+    const config = { url: '/auth/login', method: 'post', data: JSON.stringify({ password: PASSWORT }), headers };
+    const antwortKonfig = eigeneAntwortKonfig
+      ? { ...config, headers: { authorization: `Bearer ${TOKEN}` } }
+      : config;
+    return new AxiosError('Request failed with status code 500', 'ERR_BAD_RESPONSE', config as never,
+      { roh: `Authorization: Bearer ${TOKEN}` },
+      { status: 500, statusText: 'x', data: { error: 'Datenbankfehler' }, headers: { 'retry-after': '60' }, config: antwortKonfig, request: { roh: TOKEN } } as never);
+  };
+
+  it('entfernt Token, Koerper und Leitung -- mit AxiosHeaders und mit schlichtem Objekt, auch an einer eigenen Antwort-Konfiguration', () => {
+    for (const fehler of [
+      fehlerMit(new AxiosHeaders({ Authorization: `Bearer ${TOKEN}` })),
+      fehlerMit({ Authorization: `Bearer ${TOKEN}` }, true),
+    ]) {
+      expect(enthaeltText(fehler, TOKEN)).toBe(true);
+      expect(enthaeltText(fehler, PASSWORT)).toBe(true);
+
+      expect(fehlerEntschaerfen(fehler)).toBe(fehler);
+
+      expect(enthaeltText(fehler, TOKEN)).toBe(false);
+      expect(enthaeltText(fehler, PASSWORT)).toBe(false);
+      expect(istEntschaerft(fehler)).toBe(true);
+    }
+  });
+
+  it('laesst, was die App fuer ihre Meldungen braucht, und ist wiederholbar', () => {
+    const fehler = fehlerMit(new AxiosHeaders({ Authorization: `Bearer ${TOKEN}`, 'X-Active-Organization': '2' }));
+    fehlerEntschaerfen(fehler);
+    fehlerEntschaerfen(fehler);
+
+    expect(fehlerFuersProtokoll(fehler)).toEqual({ status: 500, code: 'ERR_BAD_RESPONSE', fehler: 'Datenbankfehler', meldung: 'Request failed with status code 500' });
+    expect(fehlerText(fehler, 'Ersatz')).toBe('Datenbankfehler');
+    expect(fehler.response?.headers['retry-after']).toBe('60');
+    expect(fehler.config?.url).toBe('/auth/login');
+    expect(fehler.config?.headers.get('X-Active-Organization')).toBe('2');
+  });
+
+  it('uebersteht fremde Werte', () => {
+    expect(fehlerEntschaerfen(null)).toBeNull();
+    expect(fehlerEntschaerfen('kaputt')).toBe('kaputt');
+    const schlicht = new Error('Preferences kaputt');
+    expect(fehlerEntschaerfen(schlicht)).toBe(schlicht);
+    expect(istEntschaerft(new Error('neu'))).toBe(false);
   });
 });
