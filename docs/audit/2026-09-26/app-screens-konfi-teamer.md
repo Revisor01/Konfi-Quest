@@ -159,6 +159,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
   ```
   kein `gemeindeUmschalter`. Test `:112-124` verlangt `not.toMatch(/gemeindeUmschalter=\{false\}/)` für **alle** Kopfzeilen der Datei.
 - **Empfehlung:** In `renderDetail` und `renderJahrgangHinweis` `gemeindeUmschalter={false}` setzen; den Wächter für `TeamerEventsPage.tsx` wie für `TeamerMaterialPage.tsx` (Test `:96-108`) auf „Liste behält, Detail schaltet ab" umstellen.
+- **Nachtrag 28.09.2026:** behoben — Simon 28.09.: „Gemeinde Umschalter kommt nie in Details." `renderDetail` und `renderJahrgangHinweis` schalten ihn ab; der Wächter `umschalterInDetailansichten.test.ts` prüft `TeamerEventsPage.tsx` jetzt wie `TeamerMaterialPage.tsx` (Liste behält, Detail und Jahrgang-Hinweis schalten ab) und zusätzlich über alle drei Rollen jede Kopfzeile mit Zurück-Knopf (35 Stück; einzige Ausnahme die Material-Liste der Teamer:innen). Weitere Treffer außer den beiden in `TeamerEventsPage.tsx` gab es nicht. Vorher 2 von 13 Tests rot, danach 13 grün.
 
 ### BF-06: Keine Möglichkeit, Nachrichten oder Personen im Chat zu melden oder zu blockieren
 - **Schwere:** MITTEL (die Gesamtabnahme führt ihn seit dem 26.09. als NIEDRIG, S-16)

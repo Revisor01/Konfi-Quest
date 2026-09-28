@@ -35,6 +35,8 @@ Versionsüberschrift.
 ### Behoben
 - In der Detailansicht einer Konfi stehen ihre offenen Anträge wieder als
   „gemeldet" zwischen den Aktivitäten.
+- In der Termin-Detailansicht der Teamer:innen steht kein
+  Gemeinde-Umschalter mehr — wie in allen anderen Detailansichten.
 - Eine Einladung in eine weitere Gemeinde nennt in Mitteilung und E-Mail die
   Rolle mit ihrem Namen statt mit dem technischen Wort „admin".
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und

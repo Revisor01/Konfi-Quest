@@ -909,10 +909,15 @@ const TeamerEventsPage: React.FC = () => {
       <IonPage ref={pageRef}>
         {/* Zurueck-Knopf nur, wenn die Liste nicht ohnehin daneben steht
             (iPad-Split-View: hideBackButton). Rechts der Event-Chat und der
-            QR-Code, dahinter setzt AppKopfzeile die Glocke. */}
+            QR-Code, dahinter setzt AppKopfzeile die Glocke.
+            Kein Gemeinde-Umschalter (Simon, 28.09.2026: "Gemeinde Umschalter
+            kommt nie in Details."): Der Termin gehoert zu genau einer
+            Gemeinde, ein Wechsel fuehrte hier ins Leere, waehrend die
+            Adresse ?eventId= den alten Termin weitertrug. */}
         <AppKopfzeile
           titel={selectedEvent.name}
           onZurueck={hideBackButton ? undefined : () => setSelectedEvent(null)}
+          gemeindeUmschalter={false}
           rechts={(
             <>
               {/* Einstieg in den Event-Chat — bisher hatte ihn nur die Leitung
@@ -2028,7 +2033,8 @@ const TeamerEventsPage: React.FC = () => {
   // handledEventId verhindert, dass der Effekt oben sofort wieder nachfragt.
   const renderJahrgangHinweis = () => (
     <IonPage ref={pageRef}>
-      <AppKopfzeile titel="Event" onZurueck={() => setJahrgangHinweis(false)} />
+      {/* Dieselbe Seite wie die Detailansicht -- ohne Gemeinde-Umschalter. */}
+      <AppKopfzeile titel="Event" onZurueck={() => setJahrgangHinweis(false)} gemeindeUmschalter={false} />
       <IonContent className="app-gradient-background" fullscreen>
         <EmptyState
           icon={ICON_JAHRGANG}
