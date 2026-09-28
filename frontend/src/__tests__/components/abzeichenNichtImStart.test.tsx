@@ -40,9 +40,14 @@ const startAntworten: Record<string, unknown> = {
   '/konfi/badges/v2': { available: [], earned: [], stats: { totalVisible: 0, totalSecret: 0 } },
 };
 
-const mockApiGet = vi.fn((pfad: string) =>
-  Promise.resolve({ data: startAntworten[pfad] ?? {} })
-);
+// Die Antwort der Startseite laesst sich zurueckhalten: So hat die erste Welle
+// ein festes Ende, das der Test selbst setzt (siehe "erst NACH ihren eigenen
+// Daten"). Ohne Sperre antwortet der Mock sofort.
+let startseitenSperre: Promise<void> | null = null;
+const mockApiGet = vi.fn(async (pfad: string) => {
+  if (pfad === '/konfi/dashboard' && startseitenSperre) await startseitenSperre;
+  return { data: startAntworten[pfad] ?? {} };
+});
 const mockApiPost = vi.fn().mockResolvedValue({ data: {} });
 vi.mock('../../services/api', () => ({
   default: {
@@ -178,6 +183,7 @@ describe('Abzeichen liegen nicht mehr im App-Startschwung', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     offlineQueryAufrufe.length = 0;
+    startseitenSperre = null;
   });
 
   it('die Startseite meldet die Abzeichen-Anfrage beim Start ab', () => {
@@ -200,17 +206,30 @@ describe('Abzeichen liegen nicht mehr im App-Startschwung', () => {
   });
 
   it('die Startseite holt die Abzeichen erst NACH ihren eigenen Daten nach', async () => {
+    // Die Startseite bekommt ihre Antwort erst, wenn der Test sie freigibt.
+    // Frueher antwortete der Mock sofort und der Test zaehlte nach dem ersten
+    // waitFor -- das wartet nach dem Erfolg noch einen setTimeout(0) ab
+    // (@testing-library/react, asyncWrapper). In diesem Fenster konnte die
+    // Seite die Abzeichen schon nachgeladen haben: im CI am 28.09.2026 einmal
+    // "expected 1 to be +0", obwohl die Seite richtig lud.
+    let freigeben!: () => void;
+    startseitenSperre = new Promise<void>(r => { freigeben = r; });
+
     render(<KonfiDashboardPage />);
 
-    // Erste Welle: die Startseite laedt ihre eigenen Daten. Die Abzeichen
-    // sind da noch NICHT dabei — genau das ist die Aenderung.
-    await waitFor(() => expect(mockApiGet).toHaveBeenCalledWith('/konfi/dashboard'));
-    const abzeichenInDerErstenWelle = abzeichenAufrufe();
+    // Erste Welle: Startseite, Profil und Events gehen hinaus. Die Abzeichen
+    // sind NICHT dabei -- genau das ist die Aenderung. Solange die Startseite
+    // keine Daten hat, kann die Seite sie gar nicht anfordern.
+    await waitFor(() => {
+      expect(mockApiGet).toHaveBeenCalledWith('/konfi/dashboard');
+      expect(mockApiGet).toHaveBeenCalledWith('/konfi/profile');
+      expect(mockApiGet).toHaveBeenCalledWith('/konfi/events');
+    });
+    expect(abzeichenAufrufe()).toBe(0);
 
     // Zweite Welle: sobald die Startseite steht, wird genau EINMAL nachgeladen.
+    freigeben();
     await waitFor(() => expect(abzeichenAufrufe()).toBe(1));
-
-    expect(abzeichenInDerErstenWelle).toBe(0);
     expect(abzeichenAufrufe()).toBe(1);
   });
 
