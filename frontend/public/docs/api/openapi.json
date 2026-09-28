@@ -108,7 +108,7 @@
           "Anmeldung & Konto"
         ],
         "summary": "Login für alle Rollen (case-insensitiver Username)",
-        "description": "KONTOSPERRE seit 27.09.2026 (Audit Sicherheit BF-04, HOCH): Nach 10 falschen Passwoertern (401) innerhalb einer Stunde nimmt das Konto keine Anmeldung mehr an -- auch nicht mit dem richtigen Passwort (429, error_code account_locked). Gezaehlt wird je Konto, nicht je IP: Schluessel ist SHA-256 ueber LOWER(username), gerechnet von Postgres (dieselbe Funktion wie die Kontosuche); unbekannte Benutzernamen werden genauso gezaehlt, die Sperre verraet also nicht, ob es ein Konto gibt. Der Zaehler liegt in rate_limit_zaehler (Migration 167) und gilt ueber alle Replicas. Festes Fenster ab dem ersten Fehlversuch; weitere Versuche verlaengern es nicht. Eine erfolgreiche Anmeldung setzt den Zaehler auf 0; jedes neu gesetzte Passwort und jedes neu angelegte Konto ebenso (POST /auth/change-password, /auth/reset-password, /auth/register-konfi, POST und PUT /users, PUT /users/{id}/reset-password, POST /admin/konfis und /admin/konfis/{id}/regenerate-password, POST /organizations und /organizations/{id}/admins). Leere Felder (400), deaktivierte oder geloeschte Konten (403) und Serverfehler zaehlen nicht. Keine RateLimit-Kopfzeilen fuer die Kontosperre (sie verrieten, wie oft ein Konto durchprobiert wurde), nur Retry-After. Die IP-Grenze (authLimiter) bleibt davor bestehen. Antwortform wie beim authLimiter: { error } mit Status 429, zusaetzlich error_code.\n",
+        "description": "KONTOSPERRE seit 27.09.2026 (Audit Sicherheit BF-04, HOCH): Nach 10 falschen Passwoertern (401) innerhalb einer Stunde nimmt das Konto keine Anmeldung mehr an -- auch nicht mit dem richtigen Passwort (429, error_code account_locked). Gezaehlt wird je Konto, nicht je IP: Schluessel ist SHA-256 ueber LOWER(username), gerechnet von Postgres (dieselbe Funktion wie die Kontosuche); unbekannte Benutzernamen werden genauso gezaehlt, die Sperre verraet also nicht, ob es ein Konto gibt. Der Zaehler liegt in rate_limit_zaehler (Migration 167) und gilt ueber alle Replicas. Festes Fenster ab dem ersten Fehlversuch; weitere Versuche verlaengern es nicht. Eine erfolgreiche Anmeldung setzt den Zaehler auf 0; jedes neu gesetzte Passwort und jedes neu angelegte Konto ebenso (POST /auth/change-password, /auth/reset-password, /auth/register-konfi, POST und PUT /users, PUT /users/{id}/reset-password, POST /admin/konfis und /admin/konfis/{id}/regenerate-password, POST /organizations und /organizations/{id}/admins). Leere Felder (400), deaktivierte oder geloeschte Konten (403) und Serverfehler zaehlen nicht. Keine RateLimit-Kopfzeilen fuer die Kontosperre (sie verrieten, wie oft ein Konto durchprobiert wurde), nur Retry-After. Die IP-Grenze (authLimiter) bleibt davor bestehen. Antwortform wie beim authLimiter: { error } mit Status 429, zusaetzlich error_code.\n\nGERAETEBINDUNG seit 28.09.2026 (Audit Sicherheit BF-08, Migration 171): Schickt die App device_id mit, wird das Refresh-Token an diese Kennung gebunden (refresh_tokens.device_id) und gilt beim Refresh nur mit derselben (siehe POST /api/auth/refresh). Ohne device_id -- die Store-Apps 2.2.x und 2.3.0 senden sie hier nie -- bleibt es ungebunden wie bisher. Antwortform unveraendert.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -125,6 +125,11 @@
                   },
                   "password": {
                     "type": "string"
+                  },
+                  "device_id": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Optional (seit 28.09.2026): Geraete-Kennung (iOS identifierForVendor, Android ANDROID_ID, im Browser eine einmal erzeugte Kennung). Bindet das Refresh-Token an das Geraet. Kein Text, leer oder laenger als 255 Zeichen zaehlt wie keine Angabe."
                   }
                 }
               }
@@ -214,7 +219,7 @@
                   },
                   "device_id": {
                     "type": "string",
-                    "description": "Optional: Geraet der aktuellen Sitzung — sein Push-Token wird beim Aufraeumen verschont"
+                    "description": "Optional: Geraet der aktuellen Sitzung — sein Push-Token wird beim Aufraeumen verschont. Bindet das neue Refresh-Token bewusst NICHT an das Geraet: Auch die Store-Apps 2.2.x/2.3.0 schicken das Feld hier mit, beim Refresh aber nie -- ein gebundenes Token sperrte sie aus. Die aktualisierte App bindet es beim ersten Refresh (siehe POST /api/auth/refresh)."
                   },
                   "platform": {
                     "type": "string",
@@ -1016,7 +1021,7 @@
           "Passwörter & Einladungen"
         ],
         "summary": "Selbst-Registrierung als Konfi mit Einladungscode (inkl. Auto-Login)",
-        "description": "GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-03, F-02, F-03): Die Meldung \"Neue Registrierung\" (Push und Postfach, new_konfi_registration) geht an die Leitung des Jahrgangs: org_admin (und admin mit is_super_admin-Merkmal) immer, admin mit can_view-Zuweisung auf den Jahrgang der Einladung, Teamer:innen nie (backend/utils/jahrgangLeitungSicht.js) -- genau wer die neue Konfi in GET /api/admin/konfis sieht. Beide Quellen der Zugehoerigkeit, Rolle je Gemeinde. Vorher verlangte die Empfaengerliste auch von org_admin eine Zuweisung (die Gemeindeleitung fiel heraus, sobald ein Admin zugewiesen war), die can_view-Pruefung fehlte, und ohne zugewiesenen Admin ging die Meldung als Rueckfall an ALLE Admins der Gemeinde. Den Rueckfall gibt es nicht mehr: Ohne zugewiesenen Admin bekommt sie die Gemeindeleitung. Antwortform unveraendert.\n\nSEIT 27.09.2026 (Audit Sicherheit BF-04): Wurde der gewaehlte Benutzername vorher durchprobiert, startet das neue Konto trotzdem ohne Kontosperre (siehe POST /api/auth/login).\n",
+        "description": "GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-03, F-02, F-03): Die Meldung \"Neue Registrierung\" (Push und Postfach, new_konfi_registration) geht an die Leitung des Jahrgangs: org_admin (und admin mit is_super_admin-Merkmal) immer, admin mit can_view-Zuweisung auf den Jahrgang der Einladung, Teamer:innen nie (backend/utils/jahrgangLeitungSicht.js) -- genau wer die neue Konfi in GET /api/admin/konfis sieht. Beide Quellen der Zugehoerigkeit, Rolle je Gemeinde. Vorher verlangte die Empfaengerliste auch von org_admin eine Zuweisung (die Gemeindeleitung fiel heraus, sobald ein Admin zugewiesen war), die can_view-Pruefung fehlte, und ohne zugewiesenen Admin ging die Meldung als Rueckfall an ALLE Admins der Gemeinde. Den Rueckfall gibt es nicht mehr: Ohne zugewiesenen Admin bekommt sie die Gemeindeleitung. Antwortform unveraendert.\n\nSEIT 27.09.2026 (Audit Sicherheit BF-04): Wurde der gewaehlte Benutzername vorher durchprobiert, startet das neue Konto trotzdem ohne Kontosperre (siehe POST /api/auth/login).\n\nGERAETEBINDUNG seit 28.09.2026 (Audit Sicherheit BF-08): Mit device_id ist das ausgestellte Refresh-Token an das Geraet gebunden, ohne bleibt es ungebunden (siehe POST /api/auth/login und /api/auth/refresh). Antwortform unveraendert.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -1049,6 +1054,11 @@
                     "type": "string",
                     "format": "email",
                     "description": "optional"
+                  },
+                  "device_id": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Optional (seit 28.09.2026): Geraete-Kennung, bindet das Refresh-Token an das Geraet (wie beim Login)"
                   }
                 }
               }
@@ -1167,6 +1177,11 @@
                 "properties": {
                   "refresh_token": {
                     "type": "string"
+                  },
+                  "device_id": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Optional (seit 28.09.2026): Geraete-Kennung. Pflicht fuer gebundene Tokens; bindet ein ungebundenes Token beim Rotieren an das Geraet. Kein Text, leer oder laenger als 255 Zeichen zaehlt wie keine Angabe."
                   }
                 }
               }
@@ -1175,10 +1190,10 @@
         },
         "responses": {
           "200": {
-            "description": "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt"
+            "description": "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt. Das neue Token uebernimmt die Geraetebindung des alten; war das alte ungebunden und kam device_id mit, ist das neue daran gebunden"
           },
           "401": {
-            "description": "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung"
+            "description": "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung. ODER (seit 28.09.2026) gebundenes Token mit anderer oder fehlender device_id: nur DIESES Token wird widerrufen und sofort ablaufen gelassen (auch im Grace-Window, ohne dessen Gnade zu verbrauchen; der Nachfolger des echten Geraets bleibt), gleiche Fehlermeldung"
           },
           "403": {
             "description": "User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt / Trial abgelaufen (super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung). Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt"

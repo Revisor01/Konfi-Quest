@@ -302,6 +302,9 @@ describe('ensureFreshToken', () => {
     const { ensureFreshToken } = await import('../../services/api');
     const p1 = ensureFreshToken();
     const p2 = ensureFreshToken();
+    // Der Refresh ermittelt vorher asynchron die Geraete-Kennung
+    // (refreshAnfrage.ts) -- erst warten, bis er wirklich unterwegs ist.
+    await vi.waitFor(() => expect(postSpy).toHaveBeenCalledTimes(1));
     resolveRefresh!({ data: { token: newToken, refresh_token: 'refresh-2' } });
 
     const [r1, r2] = await Promise.all([p1, p2]);

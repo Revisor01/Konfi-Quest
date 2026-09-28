@@ -484,6 +484,15 @@ von der Löschung ausgenommen.
 **Jemand wurde aus der Gemeinde entfernt.** Der Zugang endet sofort, auch auf
 bereits geöffneten Geräten.
 
+## Auf einem neuen Handy anmelden
+
+Eine Anmeldung gehört zu dem Gerät, auf dem sie entstanden ist. Wer die App
+mit einer Sicherung auf ein anderes Handy überträgt, meldet sich dort einmal
+mit Benutzername und Passwort an — die App zeigt dafür „Deine Sitzung ist
+abgelaufen". Das ist Absicht: Gelangen die gespeicherten Anmeldedaten auf ein
+fremdes Gerät, taugen sie dort nichts. Weil beide Geräte dieselbe Anmeldung
+hatten, fragt auch das alte Gerät danach einmal nach dem Passwort.
+
 ## Die E-Mail-Adresse ändern
 
 Im Profil unter **„E-Mail-Adresse ändern"**. Die neue Adresse gilt **sofort**

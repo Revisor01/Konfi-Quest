@@ -45,6 +45,10 @@ Versionsüberschrift.
 - Beim Öffnen eines Antrags und einer Konfi lädt die App für die Leitung nur
   noch die Anträge, um die es geht, statt der ganzen Antragsgeschichte der
   Gemeinde.
+- Eine Anmeldung gilt nur auf dem Gerät, auf dem sie entstanden ist. Landen
+  die gespeicherten Anmeldedaten auf einem anderen Gerät, etwa mit einer
+  Sicherung auf einem neuen Handy, fragt die App dort einmal nach dem
+  Passwort.
 
 ### Behoben
 - In der Detailansicht einer Konfi stehen ihre offenen Anträge wieder als

@@ -1,5 +1,6 @@
 import api from './api';
 import { refreshAnfordern } from './refreshAnfrage';
+import { geraeteKennung } from './geraeteKennung';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
 import { setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setLoggingOut } from './tokenStore';
@@ -48,7 +49,11 @@ export const sitzungUebernehmen = async (
 export const loginWithAutoDetection = async (username: string, password: string): Promise<BaseUser> => {
 
   try {
-    const response = await api.post('/auth/login', { username, password });
+    // Geraete-Kennung mitschicken: Der Server bindet das Refresh-Token an
+    // dieses Geraet (Audit Sicherheit BF-08, geraeteKennung.ts). Ohne
+    // ermittelbare Kennung wie bisher ohne -- das Token bleibt dann ungebunden.
+    const kennung = await geraeteKennung();
+    const response = await api.post('/auth/login', kennung ? { username, password, device_id: kennung } : { username, password });
     return await sitzungUebernehmen(response.data);
   } catch (error: unknown) {
     const err = error as {

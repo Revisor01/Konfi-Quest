@@ -1,5 +1,6 @@
 import axios, { type AxiosResponse } from 'axios';
 import { API_BASE_URL } from './apiBasis';
+import { geraeteKennung } from './geraeteKennung';
 
 /**
  * Der Tausch Refresh-Token -> neues Token-Paar, mit Zeitlimit.
@@ -20,6 +21,12 @@ import { API_BASE_URL } from './apiBasis';
  * beendet -- auch wenn ein Adapter das Limit nicht kennt. Der Fehler sieht aus
  * wie der Zeitlimit-Fehler von axios (`code: 'ECONNABORTED'`, keine Antwort),
  * damit die Aufrufer ihn auf dem bestehenden Fehlerweg behandeln.
+ *
+ * GERAETEBINDUNG (Audit 26.09.2026, Sicherheit BF-08, 28.09.2026): Jeder
+ * Refresh traegt die Geraete-Kennung als `device_id` (geraeteKennung.ts). Der
+ * Server gibt ein an das Geraet gebundenes Token nur mit derselben Kennung
+ * heraus und bindet ein ungebundenes (Sitzung von vor dem Update) an sie.
+ * Ohne ermittelbare Kennung geht der Koerper wie bisher hinaus.
  */
 export const REFRESH_ZEITLIMIT_MS = 20000;
 
@@ -40,15 +47,17 @@ export async function refreshAnfordern(
     }, REFRESH_ZEITLIMIT_MS);
   });
 
+  const anfrage = (async () => {
+    const kennung = await geraeteKennung();
+    return axios.post(`${API_BASE_URL}/auth/refresh`, kennung ? { ...koerper, device_id: kennung } : koerper, {
+      timeout: REFRESH_ZEITLIMIT_MS,
+      signal: abbruch.signal,
+      ...(headers ? { headers } : {}),
+    });
+  })();
+
   try {
-    return await Promise.race([
-      axios.post(`${API_BASE_URL}/auth/refresh`, koerper, {
-        timeout: REFRESH_ZEITLIMIT_MS,
-        signal: abbruch.signal,
-        ...(headers ? { headers } : {}),
-      }),
-      zeitlimit,
-    ]);
+    return await Promise.race([anfrage, zeitlimit]);
   } finally {
     clearTimeout(wecker);
   }
