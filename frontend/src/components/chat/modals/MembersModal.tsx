@@ -47,6 +47,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istTeamTyp } from '../../../utils/chatRoles';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { rollenName } from '../../../utils/rollenNamen';
 
 interface Participant {
   user_id: number;
@@ -154,7 +155,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
         .map((admin) => ({
           ...admin,
           type: 'admin' as const,
-          role_description: admin.role_title || admin.role_display_name
+          role_description: admin.role_title || rollenName(admin.role_name, admin.role_display_name)
         }));
 
       setAllUsers([...konfis, ...adminUsers]);
@@ -287,15 +288,14 @@ const MembersModal: React.FC<MembersModalProps> = ({
       if ('role_title' in targetUser && targetUser.role_title) {
         return targetUser.role_title;
       }
-      if ('role_display_name' in targetUser && targetUser.role_display_name) {
-        return targetUser.role_display_name;
-      }
-      if ('role_description' in targetUser && targetUser.role_description) {
-        return targetUser.role_description;
-      }
-      // Fallback nach echter Rolle (Teamer vs. Admin), wenn kein Titel hinterlegt ist.
+      // Ohne eigenen Titel das feste Wort nach der Rolle (utils/rollenNamen);
+      // role_display_name traegt in bestehenden Gemeinden noch die alten Namen.
       const roleName = 'role_name' in targetUser ? targetUser.role_name : undefined;
-      return roleName === 'teamer' ? 'Teamer:in' : 'Admin';
+      const ausDerAntwort =
+        ('role_display_name' in targetUser && targetUser.role_display_name)
+        || ('role_description' in targetUser && targetUser.role_description)
+        || 'Leitung';
+      return rollenName(roleName, ausDerAntwort);
     }
 
     return 'Konfi';

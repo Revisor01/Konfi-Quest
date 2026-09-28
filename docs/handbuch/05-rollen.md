@@ -5,13 +5,19 @@ farbe: "#7c3aed"
 ---
 
 Jede Person in Konfi Quest hat genau eine Rolle: **Konfi**, **Teamer:in**,
-**Admin** oder **Org-Admin**. Die Rolle entscheidet, welche Ansicht jemand beim
-Anmelden bekommt und was er darin tun kann.
+**Leitung** oder **Org-Leitung**. Die Rolle entscheidet, welche Ansicht jemand
+beim Anmelden bekommt und was er darin tun kann. Über die Anstellung sagt sie
+nichts: Leitung und Org-Leitung können Haupt- wie Ehrenamtliche sein.
 
 Daneben steht eine zweite Stellschraube, die genauso viel entscheidet: die
 [Jahrgangs-Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert).
 Sie legt fest, für welche Jahrgänge jemand zuständig ist, und wirkt bei
-Teamer:innen und bei Admins.
+Teamer:innen und bei der Leitung.
+
+Die Org-Leitung kann alles, was die Leitung kann. Wo das Handbuch deshalb
+allgemein von „der Leitung" spricht — etwa im Kapitel
+[Für die Leitung](30-leitung.md) —, gilt es für beide Rollen; wo nur eine
+gemeint ist, steht sie ausdrücklich da.
 
 ## Die eigene Rolle einordnen
 
@@ -32,78 +38,80 @@ vergeben, Challenges begleiten, im Chat schreiben. Ohne Zuweisung erreicht eine
 Teamer:in keine Konfi und taucht umgekehrt bei keiner Konfi in der Kontaktliste
 auf. Mehr dazu im Kapitel [Für Teamer:innen](20-teamer.md).
 
-### Admin
+### Leitung
 
-Die operative Leitung. Verwaltet Konfis, Events, Punkte, Badges,
+Der laufende Betrieb. Verwaltet Konfis, Events, Punkte, Badges,
 Aktivitäten, Material und Challenges, bestätigt Aktivitäts-Meldungen, trägt
 Anwesenheiten ein und vergibt Bonuspunkte. Was davon wo liegt, steht im Kapitel
 [Für die Leitung](30-leitung.md).
 
-Auch ein Admin braucht Jahrgangs-Zuweisungen — er ist bis auf die Teamer:innen
-überall an sie gebunden. Was das im Einzelnen bedeutet, steht unten unter
+Auch die Leitung braucht Jahrgangs-Zuweisungen — sie ist bis auf die
+Teamer:innen überall an sie gebunden. Was das im Einzelnen bedeutet, steht unten
+unter
 [An die eigenen Jahrgänge gebunden sein](#an-die-eigenen-jahrgaenge-gebunden-sein).
 
-### Org-Admin
+### Org-Leitung
 
-Die Gemeindeleitung. Kann alles, was ein Admin kann, und zusätzlich:
+Verantwortet die ganze Gemeinde. Kann alles, was die Leitung kann, und
+zusätzlich:
 
 - **Benutzer:innen verwalten** — anlegen, Rollen vergeben, Jahrgänge zuweisen
-- **Jahrgänge anlegen** und dabei gleich auswählen, welche Admins und
-  Teamer:innen den neuen Jahrgang sehen und bearbeiten dürfen
+- **Jahrgänge anlegen** und dabei gleich auswählen, welche Personen der Leitung
+  und welche Teamer:innen den neuen Jahrgang sehen und bearbeiten dürfen
 - **Gemeinde-Einstellungen** — Dashboard, Einladungscode, Konfis einladen
 - **Jahresrückblick freigeben** und wieder zurückziehen
 - **Jedes Material bearbeiten und löschen**, auch fremdes und solches, dessen
   erstellende Person die Gemeinde verlassen hat
 
-Er ist außerdem der Einzige, der **an die Jahrgangs-Grenze nicht gebunden** ist:
-Er sieht immer die ganze Gemeinde, alle Konfis, alle Jahrgänge — unabhängig
-davon, welche Zuweisungen bei ihm eingetragen sind.
+Sie ist außerdem die einzige Rolle, die **an die Jahrgangs-Grenze nicht
+gebunden** ist: Die Org-Leitung sieht immer die ganze Gemeinde, alle Konfis,
+alle Jahrgänge — unabhängig davon, welche Zuweisungen bei ihr eingetragen sind.
 
 ## An die eigenen Jahrgänge gebunden sein
 
-Für Teamer:innen und Admins begrenzt die Zuweisung nicht nur, was sie sehen,
-sondern auch, was sie ändern dürfen. Ein frisch angelegter Admin ohne Zuweisung
-sieht deshalb **keine einzige Konfi** — und auch keine jahrgangsgebundenen
-Challenges, Aktivitäts-Meldungen, Events oder Material. Die Jahrgangs-Liste
-zeigt ihm nur seine eigenen Jahrgänge, und die Meldungs-Zähler an den Reitern
-stehen bei ihm auf null, weil sie nur zählen, was er in seinen Listen auch
-sieht. Die App weist an den betroffenen Stellen darauf hin, dass die Zuweisung
+Für Teamer:innen und die Leitung begrenzt die Zuweisung nicht nur, was sie
+sehen, sondern auch, was sie ändern dürfen. Wer frisch als Leitung angelegt ist
+und keine Zuweisung hat, sieht deshalb **keine einzige Konfi** — und auch keine
+jahrgangsgebundenen Challenges, Aktivitäts-Meldungen, Events oder Material. Die
+Jahrgangs-Liste zeigt nur die eigenen Jahrgänge, und die Meldungs-Zähler an den
+Reitern stehen auf null, weil sie nur zählen, was in den eigenen Listen auch
+steht. Die App weist an den betroffenen Stellen darauf hin, dass die Zuweisung
 fehlt.
 
 Das ist ein gültiger Fall, etwa wenn jemand nur mit den Teamer:innen arbeitet.
-Setzen kann die Zuweisung ein Org-Admin unter
-**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-admin)** — und ein
-Admin für seine eigenen Jahrgänge.
+Setzen kann die Zuweisung die Org-Leitung unter
+**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-leitung)** — und die
+Leitung für ihre eigenen Jahrgänge.
 
-Im Einzelnen gilt für einen Admin:
+Im Einzelnen gilt für die Leitung:
 
-- **Konfis anlegen** geht nur in seinen eigenen Jahrgängen.
+- **Konfis anlegen** geht nur in den eigenen Jahrgängen.
 - **Konfis verschieben** geht nur aus einem eigenen Jahrgang in einen anderen
   eigenen.
-- **Konfis löschen, befördern und ihr Passwort neu setzen** geht nur in seinen
+- **Konfis löschen, befördern und ihr Passwort neu setzen** geht nur in den
   eigenen Jahrgängen — genau wie [Punkte vergeben und
   zurücknehmen](40-punkte.md#punkte-wieder-wegnehmen).
-- **Konfis direkt anschreiben** und in Gruppen aufnehmen geht nur in seinen
+- **Konfis direkt anschreiben** und in Gruppen aufnehmen geht nur in den
   eigenen Jahrgängen, und das in beide Richtungen: Auch eine Konfi erreicht nur
-  die Admins ihres Jahrgangs (die Org-Admins dagegen immer). Bestehende
+  die Leitung ihres Jahrgangs (die Org-Leitung dagegen immer). Bestehende
   Gespräche bleiben offen.
 - **Jahrgänge bearbeiten oder löschen** geht nur bei den eigenen. **Neue
-  Jahrgänge anlegen kann er nicht** — das ist Sache des Org-Admins.
-- **Den [Jahresrückblick](95-wrapped.md#wissen-wer-was-darf) freigeben** kann er
-  nur für seine eigenen Jahrgänge.
-- **Material bearbeiten und löschen** geht nur bei Material, das er selbst
-  angelegt hat, Dateien eingeschlossen. Fremdes Material sieht er im Rahmen
-  seiner Jahrgänge, öffnet es aber nur schreibgeschützt. Neues anlegen darf er
+  Jahrgänge anlegen kann die Leitung nicht** — das ist Sache der Org-Leitung.
+- **Den [Jahresrückblick](95-wrapped.md#wissen-wer-was-darf) freigeben** geht
+  nur für die eigenen Jahrgänge.
+- **Material bearbeiten und löschen** geht nur bei Material, das sie selbst
+  angelegt hat, Dateien eingeschlossen. Fremdes Material sieht sie im Rahmen
+  ihrer Jahrgänge, öffnet es aber nur schreibgeschützt. Neues anlegen darf sie
   immer. Die Regeln stehen im Kapitel
   [Für die Leitung](30-leitung.md#material-anlegen-und-sichtbar-machen).
-- **Teamer:innen** sieht er dagegen alle. Er kann ihnen seine Jahrgänge geben
+- **Teamer:innen** sieht sie dagegen alle. Sie kann ihnen ihre Jahrgänge geben
   und sie daraus wieder entfernen; fremde Zuweisungen bleiben dabei unangetastet.
-  Auch ein neues Passwort für eine Teamer:in kann er erzeugen, ohne mit ihr einen
-  Jahrgang zu teilen.
+  Auch ein neues Passwort für eine Teamer:in kann sie erzeugen, ohne mit ihr
+  einen Jahrgang zu teilen.
 
 ## Nachschlagen, wer was darf
 
-| | Konfi | Teamer:in | Admin | Org-Admin |
+| | Konfi | Teamer:in | Leitung | Org-Leitung |
 |---|---|---|---|---|
 | Eigene Punkte und Badges sehen | ja | ja | ja | ja |
 | Aktivitäten melden | ja | ja | ja | ja |
@@ -120,7 +128,7 @@ Im Einzelnen gilt für einen Admin:
 | Material sehen | — | ja | ja | ja |
 | Material anlegen | — | — | ja | ja |
 | Material bearbeiten und löschen | — | — | nur eigenes | ja |
-| Admins und Org-Admins anlegen | — | — | — | ja |
+| Leitung und Org-Leitung anlegen | — | — | — | ja |
 | Jahrgänge anlegen | — | — | — | ja |
 | Jahrgänge bearbeiten und löschen | — | — | nur die eigenen | ja |
 | Jahrgänge zuweisen | — | — | nur die eigenen | ja |
@@ -137,15 +145,17 @@ Gemeinde, und jede:r im Team kann sie anlegen und begleiten. Mehr dazu unter
 
 Angelegt und bearbeitet wird immer nur nach unten:
 
-- **Org-Admin** — alle in der eigenen Gemeinde, auch andere Org-Admins
-- **Admin** — Teamer:innen und Konfis
+- **Org-Leitung** — alle in der eigenen Gemeinde, auch weitere Personen der
+  Org-Leitung
+- **Leitung** — Teamer:innen und Konfis
 - **Teamer:in** und **Konfi** — niemanden
 
-Wer einen weiteren Org-Admin braucht, muss also einen Org-Admin fragen.
+Wer eine weitere Person in der Org-Leitung braucht, muss also die Org-Leitung
+fragen.
 
 In der Benutzerliste zeigt die Marke in der Ecke jeder Karte die Rolle als
-Symbol: ein Gebäude für den Org-Admin (zuständig für die ganze Gemeinde), ein
-Schild für den Admin, eine Person für Teamer:innen. Wer mit dem Finger darauf
+Symbol: ein Gebäude für die Org-Leitung (zuständig für die ganze Gemeinde), ein
+Schild für die Leitung, eine Person für Teamer:innen. Wer mit dem Finger darauf
 bleibt, liest das Wort.
 
 Wie Konten angelegt werden und wie jede Rolle zu einem Passwort kommt, steht im
@@ -154,13 +164,13 @@ Kapitel [Passwörter und Zugänge](35-passwoerter.md).
 ## In mehreren Gemeinden mitarbeiten
 
 Ein Konto kann in mehreren Gemeinden mitarbeiten — mit **eigener Rolle je
-Gemeinde**. Wer in der einen die Gemeindeleitung stellt, kann in der anderen
+Gemeinde**. Wer in der einen zur Org-Leitung gehört, kann in der anderen
 Teamer:in sein; die Rechte richten sich immer nach der Gemeinde, in der man
 gerade arbeitet, nie nach der Gemeinde am Konto.
 
 ### Jemanden in die eigene Gemeinde einladen
 
-Die Gemeindeleitung lädt selbst ein: **Mehr › Benutzer:innen**, oben rechts der
+Die Org-Leitung lädt selbst ein: **Mehr › Benutzer:innen**, oben rechts der
 Knopf mit der Person. Dort trägt sie **Benutzername oder E-Mail-Adresse** der
 Person ein und wählt die **Rolle**, die diese in der eigenen Gemeinde bekommen
 soll.
@@ -178,15 +188,15 @@ unverändert. Die Einladung gilt **14 Tage** und lässt sich
 Postfach: „Einladung angenommen" oder „Einladung abgelehnt", mit Name, Rolle
 und Gemeinde. Antippen führt zu **Mehr › Benutzer:innen**, wo die Person nach
 einer Zusage steht. Die Mitteilung geht an dich, wenn du eingeladen hast;
-bist du in der Gemeinde inzwischen nicht mehr Org-Admin, geht sie an die
-Org-Admins der Gemeinde.
+gehörst du in der Gemeinde inzwischen nicht mehr zur Org-Leitung, geht sie an
+die Org-Leitung der Gemeinde.
 
 ### Eine Einladung zurückziehen
 
 Offene Einladungen stehen unter **Mehr › Benutzer:innen** am Ende der Seite,
 im Abschnitt **Offene Einladungen** — je Person mit Name, Benutzername, Rolle,
 dem Tag der Einladung und dem Tag, bis zu dem sie gilt. Den Abschnitt sehen
-nur Org-Admins, denn nur sie dürfen einladen. Ist nichts offen, fehlt er.
+nur die Org-Leitung, denn nur sie darf einladen. Ist nichts offen, fehlt er.
 
 1. Bei der Person auf **Zurückziehen** tippen.
 2. Die Rückfrage „Einladung zurückziehen" mit **Zurückziehen** bestätigen.
@@ -302,15 +312,16 @@ Rolle hat — nicht nur aus der Stamm-Gemeinde:
 - Meldungen an die Leitung (neue Anträge, Ab- und Anmeldungen von Konfis,
   Challenge-Beiträge, Buchungen des Teams, Registrierungen, die Warnung vor
   dem Löschen eines Jahrgangs, „Events warten auf Verbuchung") aus jeder
-  Gemeinde, in der die Person Admin oder Org-Admin ist. Die Gemeindeleitung
-  bekommt sie alle; ein Admin nur, was die Jahrgänge betrifft, die ihm in
+  Gemeinde, in der die Person Leitung oder Org-Leitung ist. Die Org-Leitung
+  bekommt sie alle; die Leitung nur, was die Jahrgänge betrifft, die ihr in
   dieser Gemeinde zugewiesen sind, dazu Anträge von Teamer:innen und alles
   zu Events „Nur Team" und Events ohne Jahrgang — siehe
   [Nachsehen, wer von einem neuen Antrag erfährt](40-punkte.md#nachsehen-wer-von-einem-neuen-antrag-erfaehrt),
   [Nachsehen, wer von Abmeldungen und Zusagen erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)
   und [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt).
-- Die Erinnerung an eine ablaufende Lizenz per E-Mail an alle Org-Admins der
-  Gemeinde, auch an die, die sie über eine Einladung leiten — nicht an Admins.
+- Die Erinnerung an eine ablaufende Lizenz per E-Mail an alle in der
+  Org-Leitung der Gemeinde, auch an die, die sie über eine Einladung leiten —
+  nicht an die Leitung.
 - Beitrags-Meldungen als Teamer:in aus jeder Gemeinde, in der sie Teamer:in
   mit Zuweisung auf den betreffenden Jahrgang ist.
 
@@ -328,8 +339,8 @@ unter **Mehr › Benutzer:innen**, öffnet sie und weist ihr Jahrgänge zu wie
 jeder anderen.
 
 Angezeigt und geprüft wird dabei immer die Rolle, die die Person **in dieser
-Gemeinde** hat. Wer hier Org-Admin ist und anderswo Teamer:in, gilt hier als
-Org-Admin — ein Admin kann ihn also nicht bearbeiten. Zugewiesen werden
+Gemeinde** hat. Wer hier Org-Leitung ist und anderswo Teamer:in, gilt hier als
+Org-Leitung — die Leitung kann die Person also nicht bearbeiten. Zugewiesen werden
 können nur Jahrgänge dieser Gemeinde; die Zuweisungen der anderen Gemeinden
 bleiben unberührt und werden hier auch nicht angezeigt.
 
@@ -353,8 +364,8 @@ Material, Nachrichten, vergebene Punkte —, bleibt mit ihrem Namen stehen.
 Gehört die Person nur deiner Gemeinde an, fragt die App **„Benutzer löschen"**
 — dann wird ihr Konto gelöscht, und mit ihm verschwinden die Mitteilungen über
 sie aus den Postfächern der Leitung (siehe
-[Mitteilungen im Postfach nachlesen](03-bedienung.md#mitteilungen-im-postfach-nachlesen)). Wer als Letzte:r in deiner Gemeinde Org-Admin
-ist, lässt sich auf keinem der beiden Wege entfernen.
+[Mitteilungen im Postfach nachlesen](03-bedienung.md#mitteilungen-im-postfach-nachlesen)). Wer als Letzte:r in deiner Gemeinde zur
+Org-Leitung gehört, lässt sich auf keinem der beiden Wege entfernen.
 
 Dasselbe geschieht, wenn du eine Teamer:in in der
 [Konfi-Liste](30-leitung.md#konfis-und-teamer-innen-verwalten) unter **Team**
@@ -387,5 +398,5 @@ selbst entfallen mit der Beförderung). Ist ihr der alte Jahrgang schon
 zugewiesen, bleibt sie in dessen Chat — jetzt als Teamer:in. Zweiergespräche
 und Gruppen, in denen sie ist, bleiben bestehen.
 
-Alle anderen Rollenwechsel macht ein Org-Admin unter
-**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-admin)**.
+Alle anderen Rollenwechsel macht die Org-Leitung unter
+**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-leitung)**.

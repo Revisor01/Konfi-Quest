@@ -52,6 +52,7 @@ import ChallengeMedium from '../../shared/ChallengeMedium';
 import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { istWebLink } from '../../../utils/linkDisplay';
+import { ROLLEN_NAMEN, rollenName } from '../../../utils/rollenNamen';
 import MusikLink from '../../shared/MusikLink';
 import { getChallengeBadgeIcon, getAuthorLabel, formatRemaining } from '../views/ChallengesView';
 import type {
@@ -122,11 +123,10 @@ const formatDateTime = (value?: string): string => {
 
 // Rollen-Kennzeichnung in der Galerie: Beitraege von Pastor:innen/Teamer:innen
 // sollen als solche erkennbar sein, ohne sie hervorzuheben (gleichgewichtet).
-const GALLERY_ROLE_LABEL: Record<string, string> = {
-  org_admin: 'Leitung',
-  admin: 'Leitung',
-  teamer: 'Teamer:in'
-};
+// Die Woerter aus utils/rollenNamen; Konfis bekommen keins (dort steht der
+// Jahrgang).
+const galerieRolle = (roleName?: string | null): string | null =>
+  roleName && ROLLEN_NAMEN[roleName] ? rollenName(roleName) : null;
 
 // "Name · Teamer:in" bzw. "Name · Jahrgang 2026". Der Jahrgang hilft, wenn eine
 // Challenge mehrere Jahrgänge umfasst (User-Entscheid 08.08.). Anonyme
@@ -134,7 +134,7 @@ const GALLERY_ROLE_LABEL: Record<string, string> = {
 const buildGalleryAuthorLabel = (submission: ChallengeSubmission): string => {
   const name = submission.konfi_name?.trim();
   if (!name) return 'Anonym';
-  const roleLabel = submission.role_name ? GALLERY_ROLE_LABEL[submission.role_name] : null;
+  const roleLabel = galerieRolle(submission.role_name);
   const suffix = roleLabel || submission.jahrgang_name?.trim();
   return suffix ? `${name} · ${suffix}` : name;
 };

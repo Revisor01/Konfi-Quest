@@ -48,7 +48,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-users)',
     rgb: '--app-color-users-rgb',
     title: 'Mehr Klarheit bei Rechten',
-    text: 'Teamer:innen und Admins sehen und erreichen nur die Konfis ihrer eigenen Jahrgänge — im Chat, in den Listen und bei Events. Bleibt eine Liste leer, ist das kein Fehler, sondern diese Grenze.',
+    text: 'Teamer:innen und die Leitung sehen und erreichen nur die Konfis ihrer eigenen Jahrgänge — im Chat, in den Listen und bei Events. Bleibt eine Liste leer, ist das kein Fehler, sondern diese Grenze.',
   },
   {
     icon: ICON_OFFLINE,

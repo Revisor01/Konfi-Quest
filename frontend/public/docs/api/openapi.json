@@ -425,7 +425,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Eine bestehende Person in die eigene Gemeinde einladen",
-        "description": "NEU 26.09.2026 (Simon: \"ORG Admin kann bestehenden anderen User hinzufuegen, der bekommt Einladung und bestaetigt. Schon ist der switcher da.\"). Gesucht wird EXAKT nach Benutzername oder E-Mail -- keine Teilsuche, sonst liesse sich der Bestand fremder Gemeinden durchblaettern. Die Einladung gilt 14 Tage.\nDIE MITGLIEDSCHAFT ENTSTEHT NICHT HIER, sondern erst mit der Annahme: Eine Zugehoerigkeit aendert, was jemand sieht und darf, und wird deshalb nicht ueber den Kopf der Person hinweg angelegt.\nKONFI IST AUSGESCHLOSSEN -- und zwar zusaetzlich zur Rollenhierarchie: canCreateRole('org_admin', 'konfi') liefert TRUE, die Hierarchie allein wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen ueber invite_codes.\nAUCH ALS ZIEL (BEHOBEN 26.09.2026, Audit Sicherheit BF-03): Ist die gefundene Person ein Konfi (Stammrolle), antwortet die Route mit demselben 404 wie bei einer unbekannten Kennung -- ohne Name, ohne Einladung, ohne Push und Mail. Vorher liess sich ein Konfi einer fremden Gemeinde als Teamer:in einladen, und die Route bestaetigte zu jeder E-Mail-Adresse im System, ob ein Konto existiert (Enumeration, auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre Einladung erscheint ohnehin in der Liste.\nMeldung an die eingeladene Person ueber Postfach, Push (Gruppe \"Anfragen und Freigaben\") und E-Mail, nach der Antwort (nachAntwort).\n",
+        "description": "NEU 26.09.2026 (Simon: \"ORG Admin kann bestehenden anderen User hinzufuegen, der bekommt Einladung und bestaetigt. Schon ist der switcher da.\"). Gesucht wird EXAKT nach Benutzername oder E-Mail -- keine Teilsuche, sonst liesse sich der Bestand fremder Gemeinden durchblaettern. Die Einladung gilt 14 Tage.\nDIE MITGLIEDSCHAFT ENTSTEHT NICHT HIER, sondern erst mit der Annahme: Eine Zugehoerigkeit aendert, was jemand sieht und darf, und wird deshalb nicht ueber den Kopf der Person hinweg angelegt.\nKONFI IST AUSGESCHLOSSEN -- und zwar zusaetzlich zur Rollenhierarchie: canCreateRole('org_admin', 'konfi') liefert TRUE, die Hierarchie allein wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen ueber invite_codes.\nAUCH ALS ZIEL (BEHOBEN 26.09.2026, Audit Sicherheit BF-03): Ist die gefundene Person ein Konfi (Stammrolle), antwortet die Route mit demselben 404 wie bei einer unbekannten Kennung -- ohne Name, ohne Einladung, ohne Push und Mail. Vorher liess sich ein Konfi einer fremden Gemeinde als Teamer:in einladen, und die Route bestaetigte zu jeder E-Mail-Adresse im System, ob ein Konto existiert (Enumeration, auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre Einladung erscheint ohnehin in der Liste.\nMeldung an die eingeladene Person ueber Postfach, Push (Gruppe \"Anfragen und Freigaben\") und E-Mail, nach der Antwort (nachAntwort). Die Rolle steht darin mit dem festen Wort nach role_name (\"Leitung\", \"Org-Leitung\", \"Teamer:in\"; utils/rollenNamen.js). BEHOBEN 28.09.2026: Vorher stand dort der technische Name (\"als admin mitzuarbeiten\"), weil die Abfrage display_name gar nicht las. Dasselbe Wort nennt die Meldung \"Einladung angenommen/abgelehnt\" an die einladende Person (vorher roles.display_name, in bestehenden Gemeinden \"Hauptamt\").\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -1373,6 +1373,7 @@
           "Organisationen"
         ],
         "summary": "Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitäten, 3 Beispiel-Challenges)",
+        "description": "Standardrollen (display_name): org_admin \"Org-Leitung\", admin \"Leitung\", teamer \"Teamer:in\", konfi \"Konfirmand:in\" (seit 28.09.2026; vorher \"Organisations-Admin\" und \"Hauptamt\"). Bestehende Gemeinden behalten ihre display_name-Werte -- keine Migration; die App beschriftet Rollen nach role_name.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -7613,7 +7614,8 @@
                             "type": "string"
                           },
                           "role_description": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "role_title oder Fallback wie TeamContact.role_description (\"Teamer:in\", \"Org-Leitung\", \"Leitung\"; bis 28.09.2026 \"Admin\")"
                           }
                         }
                       }
@@ -8269,7 +8271,7 @@
           "Chat"
         ],
         "summary": "Kompletten Chat-Verlauf exportieren (nur Leitung)",
-        "description": "Gesamter Verlauf als Text (default) oder JSON, geloeschte Nachrichten als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch eingeschlossen) — nicht teamer, nicht konfi.\n",
+        "description": "Gesamter Verlauf als Text (default) oder JSON, geloeschte Nachrichten als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch eingeschlossen) — nicht teamer, nicht konfi. Im Text steht hinter jedem Namen die Rolle in Klammern, fuer die bekannten Rollen nach role_name: \"Leitung\" (admin), \"Org-Leitung\" (org_admin), \"Teamer:in\"; sonst roles.display_name (seit 28.09.2026, vorher immer display_name, in bestehenden Gemeinden also \"Hauptamt\"). Im JSON steht zusaetzlich (ADDITIV) rolle_name neben rolle.\n",
         "parameters": [
           {
             "name": "roomId",
@@ -15227,6 +15229,27 @@
           "sender_name": {
             "type": "string"
           },
+          "sender_role_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Eigene Funktionsbezeichnung (users.role_title)"
+          },
+          "sender_role_display_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "roles.display_name der Stammrolle, unveraendert aus der Datenbank (bestehende Gemeinden: 'Hauptamt', 'Organisations-Admin')"
+          },
+          "sender_role_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ADDITIV 28.09.2026: technischer Rollenname der Stammrolle (admin, org_admin, teamer, konfi). Die App beschriftet danach ('Leitung', 'Org-Leitung'), weil display_name in bestehenden Gemeinden nicht migriert wird."
+          },
           "message_type": {
             "type": "string",
             "enum": [
@@ -15410,7 +15433,7 @@
           },
           "role_description": {
             "type": "string",
-            "description": "role_title oder Fallback (\"Teamer:in\"/\"Admin\")"
+            "description": "role_title oder Fallback nach role_name: \"Teamer:in\", \"Org-Leitung\" (org_admin), \"Leitung\" (admin). Bis 28.09.2026 hiess der Fallback fuer beide Leitungsrollen \"Admin\" (Simon: admin heisst \"Leitung\", org_admin \"Org-Leitung\")."
           }
         }
       },

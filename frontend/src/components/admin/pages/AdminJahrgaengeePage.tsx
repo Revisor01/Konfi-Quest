@@ -59,6 +59,7 @@ import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
+import { rollenName } from '../../../utils/rollenNamen';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -440,7 +441,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
               <div className="app-section-icon app-section-icon--jahrgang">
                 <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
               </div>
-              <IonLabel>Zugriff für Admins & Team</IonLabel>
+              <IonLabel>Zugriff für Leitung & Team</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
@@ -465,7 +466,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                         <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>{person.display_name}</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
                           <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)' }}>
-                            {person.role_name === 'admin' ? 'Admin' : 'Teamer:in'}
+                            {rollenName(person.role_name)}
                           </span>
                           {istGewaehlt && <IonIcon icon={ICON_ZUSAGE_GEFUELLT} style={{ color: 'var(--app-color-success)' }} />}
                         </span>
@@ -536,10 +537,11 @@ const AdminJahrgaengeePage: React.FC = () => {
         }
 
         if (fehlerDaten(error)?.canForceDelete) {
-          // Org Admin kann trotzdem löschen
+          // Wer den Jahrgang loeschen darf, darf es auch mit Chat-Nachrichten
+          // (jahrgaenge.js setzt canForceDelete fuer alle mit Loeschrecht).
           presentAlert({
             header: 'Chat-Nachrichten vorhanden',
-            message: `${fehlerText(error, 'Der Jahrgang enthält Chat-Nachrichten.')}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
+            message: `${fehlerText(error, 'Der Jahrgang enthält Chat-Nachrichten.')}\n\nDu kannst den Jahrgang trotzdem löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
             buttons: [
               { text: 'Abbrechen', role: 'cancel' },
               {

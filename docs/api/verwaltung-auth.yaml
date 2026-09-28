@@ -484,6 +484,12 @@ paths:
 
         Meldung an die eingeladene Person ueber Postfach, Push (Gruppe
         "Anfragen und Freigaben") und E-Mail, nach der Antwort (nachAntwort).
+        Die Rolle steht darin mit dem festen Wort nach role_name ("Leitung",
+        "Org-Leitung", "Teamer:in"; utils/rollenNamen.js). BEHOBEN 28.09.2026:
+        Vorher stand dort der technische Name ("als admin mitzuarbeiten"),
+        weil die Abfrage display_name gar nicht las. Dasselbe Wort nennt die
+        Meldung "Einladung angenommen/abgelehnt" an die einladende Person
+        (vorher roles.display_name, in bestehenden Gemeinden "Hauptamt").
       requestBody:
         required: true
         content:
@@ -1058,6 +1064,12 @@ paths:
     post:
       tags: ["Organisationen"]
       summary: Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitäten, 3 Beispiel-Challenges)
+      description: >
+        Standardrollen (display_name): org_admin "Org-Leitung", admin
+        "Leitung", teamer "Teamer:in", konfi "Konfirmand:in" (seit
+        28.09.2026; vorher "Organisations-Admin" und "Hauptamt"). Bestehende
+        Gemeinden behalten ihre display_name-Werte -- keine Migration; die
+        App beschriftet Rollen nach role_name.
       requestBody:
         required: true
         content:

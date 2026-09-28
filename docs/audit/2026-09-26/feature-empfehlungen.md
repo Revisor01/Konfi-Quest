@@ -344,7 +344,8 @@ unverändert.
 
 ### E-07: Rollenbezeichnungen für Ehrenamtliche
 
-- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): neue Gemeinden bekommen die Rolle `admin` weiter als „Hauptamt" (`organizations.js:342`). Vor EKD-Ausrollung.
+- **Status:** BEHOBEN 28.09.2026 (Entscheidung Simon, abweichend vom Vorschlag unten): `admin` heißt „Leitung", `org_admin` „Org-Leitung" — in der Oberfläche (Benutzer anlegen, Einladen, Rollenauswahl, Listen, Chat, Profil; eine Stelle `frontend/src/utils/rollenNamen.ts`), im Handbuch und in den Texten, die der Server selbst formuliert (Einladung per Push und E-Mail, „Einladung angenommen", Chat-Kontaktlisten und -Export; `backend/utils/rollenNamen.js`). Neue Gemeinden bekommen diese Namen als `display_name`. **Keine Migration** („Alte Orga fassen wir nicht an"): Bestehende Gemeinden behalten „Hauptamt" und „Organisations-Admin" in der Datenbank; die App beschriftet deshalb nach `role_name`, nicht nach `role_display_name`. Offen: Store-Apps bis 2.3.0 zeigen `role_display_name` an einigen Stellen weiter an (Chat-Absender, Einladungskarte, Mitgliederliste).
+- **Vorher:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): neue Gemeinden bekommen die Rolle `admin` weiter als „Hauptamt" (`organizations.js:342`). Vor EKD-Ausrollung.
 - **Für wen:** Leitung / Landeskirche
 - **Warum jetzt:** Jede neu angelegte Gemeinde bekommt die Rolle `admin` mit
   `display_name: 'Hauptamt'` (`organizations.js:340`); Handbuch und Oberfläche

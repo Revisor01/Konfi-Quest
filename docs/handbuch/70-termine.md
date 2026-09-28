@@ -61,12 +61,12 @@ mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)).
 
 **Die Event-Verwaltung liegt bei der Leitung.** Anlegen — einzeln wie als
 Serie —, Ändern, Absagen, Löschen, Personen eintragen oder entfernen und die
-Anwesenheit verbuchen sind Sache der Admins und Org-Admins. Teamer:innen sagen
+Anwesenheit verbuchen sind Sache von Leitung und Org-Leitung. Teamer:innen sagen
 für sich selbst zu oder ab, zeigen den QR-Code zum Einchecken und öffnen den
 Event-Chat; was am Event steht, lesen sie mit — einschließlich des Grundes,
 wenn es abgesagt wurde.
 
-Für die Leitung gilt dabei weiterhin die Jahrgangsgrenze: Anlegen, Ändern,
+Für die Leitung gilt dabei die Jahrgangsgrenze: Anlegen, Ändern,
 Absagen, Löschen, Personen eintragen und Verbuchen gehen nur in den eigenen
 Jahrgängen, und ein Event lässt sich auch nur Jahrgängen zuordnen, die man
 selbst betreut.
@@ -75,8 +75,8 @@ Zwei Ausnahmen: Events mit der Zielgruppe **„Nur Team"** und Events **ohne
 jeden Jahrgang** sind für alle Teamer:innen der Gemeinde offen — die einen
 betreffen keinen Jahrgang, die anderen gelten der ganzen Gemeinde.
 
-Für Admins gilt dieselbe Bindung, für org_admin und super_admin nicht — auch
-bei den Meldungen: Wer ein Event nicht sieht, erfährt nichts von Abmeldungen
+Für die Org-Leitung (und `super_admin`) gilt die Bindung nicht, für die
+Leitung auch bei den Meldungen: Wer ein Event nicht sieht, erfährt nichts von Abmeldungen
 und Zusagen dazu und zählt es nicht unter „Verbuchen"
 ([Nachsehen, wer von Abmeldungen und Zusagen erfährt](#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)).
 Was die Jahrgangs-Zuweisung sonst noch steuert, steht unter
@@ -313,12 +313,12 @@ Ein Event aus einem Jahrgang, dem du nicht zugewiesen bist, geht auch über
 eine Mitteilung oder einen Link nicht auf: Was in deiner Event-Liste fehlt,
 bleibt auch auf diesem Weg verborgen. Statt des Events steht dann „Nicht
 deinem Jahrgang zugeordnet" mit dem Hinweis, dass die Leitung deiner Gemeinde
-die Zuweisung in den Einstellungen ändern kann — für Teamer:innen und Admins
+die Zuweisung in den Einstellungen ändern kann — für Teamer:innen und Leitung
 gleich. Das kann etwa passieren, wenn eine ältere Mitteilung im Postfach zu
 einem Event führt, dessen Jahrgang dir inzwischen nicht mehr zugewiesen ist;
 das Event bleibt zu, bis die [Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert) wieder stimmt.
 Nur Events „Nur Team" und Events ohne Jahrgang sind für alle da; die
-Gemeindeleitung sieht alles.
+Org-Leitung sieht alles.
 
 ### Wissen, bis wann Konfis sich abmelden können
 
@@ -1116,13 +1116,13 @@ das als Push und im
 Meldung trägt Namen und Grund, deshalb bekommen sie genau die, die das Event
 in ihrer Liste sehen:
 
-- **Die Gemeindeleitung** (Org-Admins) bekommt die Meldungen zu jedem Event
+- **Die Org-Leitung** bekommt die Meldungen zu jedem Event
   der Gemeinde.
-- **Admins** bekommen die Meldungen zu Events
+- **Die Leitung** bekommt die Meldungen zu Events
   [ihrer Jahrgänge](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert).
   Gilt ein Event für mehrere Jahrgänge, genügt einer davon.
 - **Events „Nur Team" und Events ohne Jahrgang** gelten der ganzen Gemeinde:
-  Ihre Meldungen bekommen alle Admins, auch ohne Jahrgang.
+  Ihre Meldungen bekommt die ganze Leitung, auch ohne Jahrgang.
 - **Teamer:innen** bekommen keine Meldungen über die Abmeldungen und Zusagen
   anderer.
 - **Wer selbst zu- oder absagt**, bekommt darüber keine Meldung — auch nicht
@@ -1187,7 +1187,7 @@ Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
   Konfi, Teamer:in oder Leitung. Die Auswahl zeigt deshalb nur Personen aus
   diesen Jahrgängen; ein Hinweis über der Liste nennt sie. Hat das Event
   mehrere Jahrgänge, genügt einer davon. Events ohne Jahrgang und „Nur
-  Team"-Events stehen allen offen, die Gemeindeleitung lässt sich immer
+  Team"-Events stehen allen offen, die Org-Leitung lässt sich immer
   eintragen. Wer trotzdem über einen anderen Weg jemanden eintragen will,
   bekommt eine Meldung mit dem Namen der Person.
 

@@ -5,6 +5,7 @@ import { useApp } from '../../contexts/AppContext';
 import { fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { datumKurz } from '../../utils/dateUtils';
+import { rollenName } from '../../utils/rollenNamen';
 import { ListSection } from '../shared';
 import {
   ICON_AT_ZEICHEN,
@@ -63,10 +64,10 @@ interface Props {
 }
 
 // Dieselben Rollenfarben und -woerter wie in der Benutzerliste (UsersView).
+// Das Wort nach role_name (utils/rollenNamen): role_display_name traegt in
+// bestehenden Gemeinden noch die alten Namen aus der Datenbank.
 const rolleToken = (name: string) =>
   name === 'org_admin' || name === 'admin' ? 'users' : name === 'teamer' ? 'teamer' : 'neutral';
-const rolleWort = (name: string) =>
-  name === 'org_admin' ? 'Org-Admin' : name === 'admin' ? 'Admin' : 'Teamer:in';
 
 const OffeneEinladungen: React.FC<Props> = ({ aktualisierung }) => {
   const { setError, setSuccess, isOnline } = useApp();
@@ -138,7 +139,7 @@ const OffeneEinladungen: React.FC<Props> = ({ aktualisierung }) => {
     >
       {einladungen.map((einladung, index) => {
         const farbe = `var(--app-color-${rolleToken(einladung.role_name)})`;
-        const rolle = einladung.role_display_name || rolleWort(einladung.role_name);
+        const rolle = rollenName(einladung.role_name, einladung.role_display_name ?? undefined);
         return (
           <div
             key={einladung.id}

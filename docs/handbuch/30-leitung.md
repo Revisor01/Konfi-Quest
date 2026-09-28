@@ -20,12 +20,13 @@ fehlt er — was dort steht, gehört zum Konto oder zu genau einer Gemeinde.
 Dazwischen der Titel, daneben die Knöpfe der jeweiligen Seite, etwa das Plus
 zum Anlegen.
 
-Die Leitung hat zwei Stufen: **Admins** kümmern sich um den laufenden Betrieb,
-**Org-Admins** zusätzlich um Benutzer:innen, Jahrgangs-Zuweisungen und die
-Einstellungen der Gemeinde. Der Unterschied steht im Kapitel
+Dieses Kapitel gilt für zwei Rollen: Die **Leitung** kümmert sich um den
+laufenden Betrieb, die **Org-Leitung** zusätzlich um Benutzer:innen,
+Jahrgangs-Zuweisungen und die Einstellungen der Gemeinde. Wo unten „die
+Leitung" steht, sind beide gemeint. Der Unterschied steht im Kapitel
 [Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
 
-Ein Punkt vorweg, weil er oft für Verwirrung sorgt: Auch als **Admin** brauchst
+Ein Punkt vorweg, weil er oft für Verwirrung sorgt: Auch als **Leitung** brauchst
 du Jahrgangs-Zuweisungen. Konfi-Liste und Chat zeigen dir nur die Jahrgänge,
 für die du eingetragen bist — ohne Zuweisung bleibt die Konfi-Liste leer.
 Teamer:innen siehst du dagegen alle. Was die Zuweisung je Rolle bedeutet, steht
@@ -58,7 +59,7 @@ lassen kannst.
 - [**Badges**](60-badges.md) ansehen
 - [**Challenge-Stempel**](80-challenges.md) ansehen — direkt unter den
   Badges. Es erscheinen nur Stempel aus eigenen, freigegebenen Beiträgen;
-  wer keinen hat, bei dem fehlt der Abschnitt ganz. Als **Admin** siehst du
+  wer keinen hat, bei dem fehlt der Abschnitt ganz. Als **Leitung** siehst du
   die Stempel der Konfis aus deinen Jahrgängen; bei Teamer:innen siehst du sie
   immer.
 - **Konfirmation** — Termin und Konfispruch
@@ -75,7 +76,7 @@ seit wann sie dabei sind. Wer wen anlegen darf, steht unter
 
 ![Die Chat-Übersicht der Leitung.](/docs/bilder/iphone/leitung-chat.png)
 
-Als **Org-Admin** erreichst du jeden in deiner Gemeinde. Als **Admin** gilt
+Als **Org-Leitung** erreichst du jeden in deiner Gemeinde. Als **Leitung** gilt
 auch im Chat deine Jahrgangs-Zuweisung: Du schreibst nur Konfis deiner eigenen
 Jahrgänge an oder nimmst sie in Gruppen auf, und umgekehrt erreichen dich nur
 die Konfis dieser Jahrgänge
@@ -87,8 +88,8 @@ Chats und fremde Nachrichten löschen, den
 [Umfragen anlegen](90-chat.md#eine-umfrage-stellen).
 
 In deiner Chatliste stehen die Chats, in denen du Mitglied bist. Ohne eigene
-Mitgliedschaft öffnest du als **Org-Admin** jeden gemeinschaftlichen Raum
-deiner Gemeinde, als **Admin** nur Jahrgangs-Chats deiner Jahrgänge,
+Mitgliedschaft öffnest du als **Org-Leitung** jeden gemeinschaftlichen Raum
+deiner Gemeinde, als **Leitung** nur Jahrgangs-Chats deiner Jahrgänge,
 Event-Chats von Events aus deiner Event-Liste und Räume nur fürs Team.
 Fremde Zweiergespräche und die Stimmen anonymer Umfragen bleiben für alle zu.
 Die ganze Übersicht steht unter
@@ -110,7 +111,7 @@ sobald das Event begonnen hat. Ein laufendes Event steht deshalb in beiden
 Reitern: unter „Aktuell", weil es noch läuft, und unter „Verbuchen", weil es
 schon etwas einzutragen gibt. Die Zahl am Reiter, die am App-Symbol und die
 Erinnerung „Events warten auf Verbuchung" jeden Morgen um 9 Uhr zählen genau
-die Events, die bei dir unter „Verbuchen" stehen — als Admin also nur die
+die Events, die bei dir unter „Verbuchen" stehen — als Leitung also nur die
 deiner Jahrgänge, dazu „Nur Team" und Events ohne Jahrgang
 ([Nachsehen, wer von Abmeldungen und Zusagen erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)).
 
@@ -185,7 +186,7 @@ Mitteilungen aufs Handy kommen, siehe [Auswählen, welche Mitteilungen aufs
 Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen))
 und **App-Tour ansehen**.
 
-### Verwaltung (nur Org-Admin)
+### Verwaltung (nur Org-Leitung)
 
 | Bereich | Wofür |
 |---|---|
@@ -193,9 +194,10 @@ und **App-Tour ansehen**.
 | **Dashboard** | Welche Bereiche Konfis und Team auf ihrer Startseite sehen, und in welcher Reihenfolge |
 | **Konfis einladen** | [QR-Code für die Selbstregistrierung](35-passwoerter.md#die-einladung-erzeugen) |
 
-Läuft die Lizenz der Gemeinde ab, bekommen **alle Org-Admins** 14 Tage vorher
-eine E-Mail — auch wer die Gemeinde über eine Einladung mitleitet. Admins
-bekommen sie nicht. Hinterlege deshalb bei allen Org-Admins eine E-Mail-Adresse.
+Läuft die Lizenz der Gemeinde ab, bekommen **alle in der Org-Leitung** 14 Tage
+vorher eine E-Mail — auch wer die Gemeinde über eine Einladung mitleitet. Die
+Leitung bekommt sie nicht. Hinterlege deshalb bei allen in der Org-Leitung eine
+E-Mail-Adresse.
 
 ### Inhalt
 
@@ -233,15 +235,15 @@ Wer es sieht, hängt allein an der Jahrgangs-Zuordnung:
 | **Mit Jahrgang** | nur die Teamer:innen der zugeordneten Jahrgänge |
 | **Ohne Jahrgang** | alle Teamer:innen der Gemeinde, mit Globus in der Liste |
 
-„Alle" heißt immer: alle Teamer:innen. Konfis sehen Material nicht. Auch Admins
-sind an ihre Jahrgänge gebunden — hat ein Admin gar keinen Jahrgang und gibt es
-kein Material ohne Jahrgang, bleibt seine Liste leer und nennt den Grund („Kein
-Jahrgang zugewiesen"). Nur der Org-Admin sieht immer alles.
+„Alle" heißt immer: alle Teamer:innen. Konfis sehen Material nicht. Auch die
+Leitung ist an ihre Jahrgänge gebunden — hat sie gar keinen Jahrgang und gibt es
+kein Material ohne Jahrgang, bleibt ihre Liste leer und nennt den Grund („Kein
+Jahrgang zugewiesen"). Nur die Org-Leitung sieht immer alles.
 
 Bearbeiten und löschen kann nur, wer das Material angelegt hat; fremdes
-Material öffnet sich schreibgeschützt und nennt die anlegende Person. Der
-Org-Admin darf immer alles bearbeiten — so bleibt Material verwaltbar, wenn
-jemand die Gemeinde verlässt. Anlegen darf die ganze Leitung.
+Material öffnet sich schreibgeschützt und nennt die anlegende Person. Die
+Org-Leitung darf immer alles bearbeiten — so bleibt Material verwaltbar, wenn
+jemand die Gemeinde verlässt. Anlegen dürfen Leitung und Org-Leitung.
 
 Hängt Material an einem Event, steht es in dessen Detailansicht bei den
 Eckdaten: [Material am Event](70-termine.md#material-an-einem-event-finden).

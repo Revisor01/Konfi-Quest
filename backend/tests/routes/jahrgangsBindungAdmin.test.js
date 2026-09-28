@@ -1634,7 +1634,7 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
         .send({ target_user_id: ADMIN_MIT_JG });
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Dieser Admin ist nicht für deinen Jahrgang zuständig');
+      expect(res.body.error).toBe('Diese Person aus der Leitung ist nicht für deinen Jahrgang zuständig');
       expect(await direktRaeume(KONFI_B, ADMIN_MIT_JG)).toBe(0);
     });
 

@@ -39,6 +39,7 @@ import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import { datumKurz } from '../../../utils/dateUtils';
+import { rollenName } from '../../../utils/rollenNamen';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
@@ -122,10 +123,10 @@ const AdminProfilePage: React.FC = () => {
   return (
     <IonPage ref={pageRef}>
       {/* Kein Gemeinde-Umschalter: das Profil gehoert zum Konto, nicht zur Gemeinde. */}
-      <AppKopfzeile titel="Admin-Profil" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
+      <AppKopfzeile titel="Profil" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <AppKopfzeileGross titel="Admin-Profil" />
+        <AppKopfzeileGross titel="Profil" />
 
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshProfile().then(() => e.detail.complete());
@@ -158,11 +159,12 @@ const AdminProfilePage: React.FC = () => {
             }}>
               {user?.display_name?.charAt(0)?.toUpperCase() || 'A'}
             </div>
-            <h1 className="app-detail-header__title">{user?.display_name || 'Administrator'}</h1>
+            <h1 className="app-detail-header__title">{user?.display_name || rollenName(user?.role_name, 'Leitung')}</h1>
             <p className="app-detail-header__subtitle">
+              {/* Rolle nach role_name (utils/rollenNamen), wie ueberall in der App. */}
               {profileData?.role_title
-                ? `Administrator - ${profileData.role_title}`
-                : 'Administrator'}
+                ? `${rollenName(user?.role_name, 'Leitung')} · ${profileData.role_title}`
+                : rollenName(user?.role_name, 'Leitung')}
             </p>
             <div className="app-detail-header__info-row" style={{ justifyContent: 'center' }}>
               {(profileData?.email || user?.email) && (

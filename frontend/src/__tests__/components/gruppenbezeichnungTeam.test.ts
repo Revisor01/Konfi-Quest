@@ -18,7 +18,10 @@ describe('Gruppenbezeichnung: die Gruppe heisst "Team"', () => {
   it('UsersView nennt Kachel und Segment gleich', () => {
     const quelle = lies('src/components/admin/UsersView.tsx');
     expect(quelle).toContain("label: 'Team'");
-    expect(quelle).toContain('subtitle="Admins, Team und Rollen"');
+    // Leitung und Org-Leitung zusammen heissen "Leitung" (Simon, 28.09.2026).
+    expect(quelle).toContain('subtitle="Leitung, Team und Rollen"');
+    expect(quelle).toContain("label: 'Leitung'");
+    expect(quelle).toContain('<IonLabel>Leitung</IonLabel>');
     expect(quelle).not.toContain("label: 'Teamer:in'");
   });
 

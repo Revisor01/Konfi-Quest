@@ -4,6 +4,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { canCreateRole } = require('../utils/roleHierarchy');
 const { nachAntwort } = require('../utils/nachAntwort');
+const { rollenAnzeigename } = require('../utils/rollenNamen');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
 const { loescheMitteilungenZuEinladung } = require('../utils/postfachAufraeumen');
@@ -178,12 +179,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         nachAntwort(req, async () => {
           const orgName = req.user.organization_name || 'einer Gemeinde';
           await PushService.sendGemeindeEinladungToUser(
-            db, ziel.id, orgName, rolle.display_name || rolle.name, einladung.id, organizationId
+            db, ziel.id, orgName, rollenAnzeigename(rolle.name), einladung.id, organizationId
           );
           if (ziel.email) {
             await emailService.sendGemeindeEinladungEmail(
               ziel.email, ziel.display_name, orgName,
-              rolle.display_name || rolle.name, einladung.expires_at
+              rollenAnzeigename(rolle.name), einladung.expires_at
             );
           }
         }, 'Einladung melden');
@@ -318,7 +319,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       eingeladenVon: einladung.eingeladen_von,
       eingeladenId: einladung.user_id,
       personName: namen?.person,
-      rolleName: namen?.rolle_anzeige || namen?.rolle,
+      rolleName: rollenAnzeigename(namen?.rolle, namen?.rolle_anzeige),
       orgName: namen?.gemeinde,
       angenommen
     });

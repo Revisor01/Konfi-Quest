@@ -300,6 +300,9 @@ components:
         sender_id: { type: integer }
         sender_type: { type: string, enum: [admin, teamer, konfi] }
         sender_name: { type: string }
+        sender_role_title: { type: [string, "null"], description: Eigene Funktionsbezeichnung (users.role_title) }
+        sender_role_display_name: { type: [string, "null"], description: "roles.display_name der Stammrolle, unveraendert aus der Datenbank (bestehende Gemeinden: 'Hauptamt', 'Organisations-Admin')" }
+        sender_role_name: { type: [string, "null"], description: "ADDITIV 28.09.2026: technischer Rollenname der Stammrolle (admin, org_admin, teamer, konfi). Die App beschriftet danach ('Leitung', 'Org-Leitung'), weil display_name in bestehenden Gemeinden nicht migriert wird." }
         message_type: { type: string, enum: [text, image, video, file, poll] }
         content: { type: [string, "null"], description: Bei geloeschten Nachrichten der Platzhaltertext }
         is_deleted: { type: boolean }
@@ -348,7 +351,7 @@ components:
         id: { type: integer }
         display_name: { type: string }
         role_name: { type: string, enum: [admin, org_admin, teamer] }
-        role_description: { type: string, description: role_title oder Fallback ("Teamer:in"/"Admin") }
+        role_description: { type: string, description: 'role_title oder Fallback nach role_name: "Teamer:in", "Org-Leitung" (org_admin), "Leitung" (admin). Bis 28.09.2026 hiess der Fallback fuer beide Leitungsrollen "Admin" (Simon: admin heisst "Leitung", org_admin "Org-Leitung").' }
     KonfiChallenge:
       type: object
       description: Challenge in der Teilnehmer-Sicht (mapChallengeForKonfi).
@@ -505,7 +508,7 @@ paths:
                         name: { type: string }
                         type: { type: string, const: admin }
                         role_name: { type: string }
-                        role_description: { type: string }
+                        role_description: { type: string, description: 'role_title oder Fallback wie TeamContact.role_description ("Teamer:in", "Org-Leitung", "Leitung"; bis 28.09.2026 "Admin")' }
                   jahrgang: { type: string }
                   permissions: { type: string, const: direct_only_admin }
         '400': { description: Konfi ist keinem Jahrgang zugewiesen }
@@ -886,6 +889,11 @@ paths:
         Gesamter Verlauf als Text (default) oder JSON, geloeschte Nachrichten
         als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch
         eingeschlossen) — nicht teamer, nicht konfi.
+        Im Text steht hinter jedem Namen die Rolle in Klammern, fuer die
+        bekannten Rollen nach role_name: "Leitung" (admin), "Org-Leitung"
+        (org_admin), "Teamer:in"; sonst roles.display_name (seit 28.09.2026,
+        vorher immer display_name, in bestehenden Gemeinden also "Hauptamt").
+        Im JSON steht zusaetzlich (ADDITIV) rolle_name neben rolle.
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
         - { name: format, in: query, required: false, schema: { type: string, enum: [txt, json], default: txt }, description: "Export-Format: txt (Standard) oder json" }

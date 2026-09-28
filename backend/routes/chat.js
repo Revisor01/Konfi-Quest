@@ -9,6 +9,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const { chatPushText } = require('../utils/pushText');
+const { rollenAnzeigename } = require('../utils/rollenNamen');
 const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
 const { syncJahrgangChat, roleToParticipantType } = require('../utils/jahrgangChat');
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
@@ -260,7 +261,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   router.get('/team-contacts', verifyTokenRBAC, async (req, res) => {
     try {
       if (!['admin', 'org_admin', 'teamer'].includes(req.user.role_name)) {
-        return res.status(403).json({ error: 'Nur für Team und Admins' });
+        return res.status(403).json({ error: 'Nur für das Team und die Leitung' });
       }
 
       // Mitgliedschaft und Rolle ueber TEAM_MITGLIED_ROLLE (Stamm-Org ODER
@@ -275,9 +276,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const query = `
         SELECT u.id, u.display_name, r.name AS role_name,
                COALESCE(NULLIF(u.role_title, ''),
+                 -- Woerter wie utils/rollenNamen.js (Simon, 28.09.2026).
                  CASE
                    WHEN r.name = 'teamer' THEN 'Teamer:in'
-                   ELSE 'Admin'
+                   WHEN r.name = 'org_admin' THEN 'Org-Leitung'
+                   ELSE 'Leitung'
                  END
                ) AS role_description
           FROM users u
@@ -456,7 +459,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // Gleiche Tonlage fuer beide Rollen: sagt WARUM es nicht geht, ohne
       // die Gemeindestruktur (Zuweisungen, andere Jahrgaenge) auszubreiten.
       return zielRolle === 'admin'
-        ? 'Dieser Admin ist nicht für deinen Jahrgang zuständig'
+        ? 'Diese Person aus der Leitung ist nicht für deinen Jahrgang zuständig'
         : 'Diese Teamer:in ist nicht für deinen Jahrgang zuständig';
     }
     return null;
@@ -649,7 +652,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (req.user.type === 'konfi') {
         if (type !== 'direct') {
           return res.status(403).json({
-            error: 'Konfirmanden können nur Direktnachrichten mit Admins erstellen',
+            error: 'Konfis können nur Direktnachrichten erstellen',
             allowed_types: ['direct'],
             user_type: req.user.type
           });
@@ -1079,6 +1082,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               u.display_name as sender_name,
               u.role_title as sender_role_title,
               ro.display_name as sender_role_display_name,
+              ro.name as sender_role_name,
               u.username as sender_username,
               p.question, p.options, p.expires_at, p.multiple_choice,
               p.anonymous, p.exclusive_options,
@@ -1466,6 +1470,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
                 CASE WHEN m.deleted_at IS NOT NULL THEN NULL ELSE m.content END AS content,
                 u.display_name AS absender,
                 ro.display_name AS rolle,
+                ro.name AS rolle_name,
                 p.question AS umfrage_frage,
                 p.options  AS umfrage_optionen,
                 reply_user.display_name AS antwort_auf_absender,
@@ -1533,7 +1538,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
         const uhrzeit = formatUhrzeit(m.created_at);
         const absender = m.absender || 'Unbekannt';
-        const rolle = m.rolle ? ` (${m.rolle})` : '';
+        // Das feste Wort nach der Rolle (utils/rollenNamen): display_name
+        // traegt in bestehenden Gemeinden noch "Hauptamt".
+        const rollenWort = rollenAnzeigename(m.rolle_name, m.rolle);
+        const rolle = rollenWort ? ` (${rollenWort})` : '';
         let text;
 
         if (m.geloescht) {
@@ -1625,7 +1633,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const organizationId = req.user.organization_id;
 
       if (requesterType !== 'admin') {
-        return res.status(403).json({ error: 'Nur Admins können Teilnehmer hinzufügen' });
+        return res.status(403).json({ error: 'Nur die Leitung kann Teilnehmer hinzufügen' });
       }
       if (!user_id) {
         return res.status(400).json({ error: 'user_id ist erforderlich' });
@@ -1716,7 +1724,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const organizationId = req.user.organization_id;
 
       if (requesterType !== 'admin') {
-        return res.status(403).json({ error: 'Nur Admins können Teilnehmer entfernen' });
+        return res.status(403).json({ error: 'Nur die Leitung kann Teilnehmer entfernen' });
       }
 
       const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, organizationId]);
@@ -1771,7 +1779,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
       // Admins duerfen NIEMALS irgendeinen Chat verlassen
       if (userType === 'admin') {
-        return res.status(403).json({ error: 'Admins können Chats nicht verlassen' });
+        return res.status(403).json({ error: 'Die Leitung kann Chats nicht verlassen' });
       }
 
       // Jahrgang und Direct sind generell nicht verlassbar
@@ -1991,7 +1999,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
     // Only admins can create polls
     if (userType !== 'admin') {
-      return res.status(403).json({ error: 'Nur Admins können Umfragen erstellen' });
+      return res.status(403).json({ error: 'Nur die Leitung kann Umfragen erstellen' });
     }
     
     // Validate input
@@ -2390,7 +2398,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     const forceDelete = req.query.force === 'true';
     
     if (userType !== 'admin') {
-      return res.status(403).json({ error: 'Nur Admins können Chat-Räume löschen' });
+      return res.status(403).json({ error: 'Nur die Leitung kann Chat-Räume löschen' });
     }
     
     try {
@@ -2779,9 +2787,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           CASE WHEN r.name = 'teamer' THEN 'teamer' ELSE 'admin' END as type,
           r.name as role_name,
           COALESCE(NULLIF(u.role_title, ''),
+            -- Woerter wie utils/rollenNamen.js (Simon, 28.09.2026).
             CASE
               WHEN r.name = 'teamer' THEN 'Teamer:in'
-              ELSE 'Admin'
+              WHEN r.name = 'org_admin' THEN 'Org-Leitung'
+              ELSE 'Leitung'
             END
           ) as role_description,
           null as jahrgang_name

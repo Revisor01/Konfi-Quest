@@ -13,8 +13,14 @@ Versionsüberschrift.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
   die Zahl am Reiter; das orange Feld mit Uhr bleibt zusätzlich stehen.
+- Die Rollen heißen überall „Leitung" und „Org-Leitung" statt „Admin",
+  „Hauptamt" oder „Org-Admin" — beim Anlegen und Einladen, in der
+  Rollenauswahl, in den Listen, im Chat und im Handbuch. Beide Rollen können
+  Haupt- wie Ehrenamtliche haben.
 
 ### Behoben
+- Eine Einladung in eine weitere Gemeinde nennt in Mitteilung und E-Mail die
+  Rolle mit ihrem Namen statt mit dem technischen Wort „admin".
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und
   kommt beim Zurückgehen in die Liste nicht wieder, auch wenn Beiträge dort ein
   Datum in der Zukunft tragen.

@@ -98,6 +98,8 @@ export interface Message {
   sender_name: string;
   sender_role_title?: string;
   sender_role_display_name?: string;
+  /** Technischer Rollenname (admin, org_admin, teamer, konfi) -- für das feste Wort. */
+  sender_role_name?: string;
   sender_type: ChatUserType;
   created_at: string;
   file_path?: string;

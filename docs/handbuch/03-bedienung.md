@@ -74,7 +74,7 @@ Team-Rückblick und ein neues Zertifikat. Als Leitung außerdem neue Anträge,
 Abmeldungen von Konfis, Buchungen und Absagen des Teams, Events, die auf
 Verbuchung warten, neue Registrierungen, Ab- und Wieder-Anmeldungen von
 Pflicht-Events und die Warnung vor dem Löschen eines Jahrgangs, als
-Gemeindeleitung die Antwort auf eine
+Org-Leitung die Antwort auf eine
 [Einladung in deine Gemeinde](05-rollen.md#jemanden-in-die-eigene-gemeinde-einladen).
 Anträge und Meldungen zu Events und Jahrgängen bekommst du nur, wenn du sie in
 deinen Listen siehst: siehe
@@ -135,7 +135,7 @@ Badge, geht „Neues Badge erhalten" dazu. Wird ein Event gelöscht, gehen
 alle Mitteilungen zu ihm — Anmeldung, Absage, Teilnahme, Buchungen des Teams;
 mit einer gelöschten Challenge gehen Stempel, „Beitrag ausgeblendet" und
 „Neuer Beitrag", mit einem gelöschten Jahrgang die Warnung vor seiner
-Löschung. Zieht die Gemeindeleitung eine
+Löschung. Zieht die Org-Leitung eine
 [Einladung zurück](05-rollen.md#eine-einladung-zurueckziehen), geht
 „Einladung in eine Gemeinde" bei der eingeladenen Person. Entscheidungen und
 Punkte bleiben — „Antrag verbucht", „Antrag abgelehnt", Bonuspunkte und
