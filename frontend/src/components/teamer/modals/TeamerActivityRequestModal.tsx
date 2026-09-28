@@ -195,6 +195,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
 
       // In die Warteschlange: derselbe Vorgang mit derselben client_id, das
       // Foto lokal gesichert (die Warteschlange laedt es beim Senden hoch).
+      let fotoNichtGesichert = false;
       const einreihen = async () => {
         let hasFileUpload = false;
         const queueBody: QueueBody & AktivitaetMelden = {
@@ -222,8 +223,9 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
             });
             queueBody._localPhotoPath = `queue-uploads/${fileName}`;
             queueBody._photoFileName = formData.photo_file.name;
-          } catch {
-            throw new Error('Foto konnte nicht lokal gespeichert werden');
+          } catch (fehler) {
+            fotoNichtGesichert = true;
+            throw fehler;
           }
         }
 
@@ -279,7 +281,9 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
           : 'Aktivität erfolgreich eingereicht!');
         onSuccess();
       } catch (error) {
-        setError(fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
+        setError(fotoNichtGesichert
+          ? 'Foto konnte nicht lokal gespeichert werden'
+          : fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
       } finally {
         setUploadProgress(0);
       }

@@ -192,6 +192,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
       // In die Warteschlange: derselbe Vorgang mit derselben client_id, das
       // Foto lokal gesichert (die Warteschlange laedt es beim Senden hoch).
+      let fotoNichtGesichert = false;
       const einreihen = async () => {
         let hasFileUpload = false;
         const queueBody: QueueBody & AktivitaetMelden = {
@@ -219,8 +220,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             });
             queueBody._localPhotoPath = `queue-uploads/${fileName}`;
             queueBody._photoFileName = formData.photo_file.name;
-          } catch {
-            throw new Error('Foto konnte nicht lokal gespeichert werden');
+          } catch (fehler) {
+            fotoNichtGesichert = true;
+            throw fehler;
           }
         }
 
@@ -276,7 +278,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           : 'Aktivität erfolgreich eingereicht!');
         onSuccess();
       } catch (error) {
-        setError(fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
+        setError(fotoNichtGesichert
+          ? 'Foto konnte nicht lokal gespeichert werden'
+          : fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
       } finally {
         setUploadProgress(0);
       }
