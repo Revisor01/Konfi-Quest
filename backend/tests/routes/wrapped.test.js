@@ -1617,6 +1617,153 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`);
       expect(alsKonfi.status).toBe(403);
     });
+
+    // BEFUND Chat/Challenges/Rueckblick BF-05 (26.09.2026, reproduziert):
+    // DELETE /teamer loeschte nur die Snapshots und liess die leere Ausgabe
+    // stehen. Seit der Ausgaben-Sperre (08.09.2026) heisst "Ausgabe da" fuer
+    // POST /generate-teamer "nichts tun" -- der Team-Rueckblick des Jahres
+    // liess sich danach nicht mehr erzeugen ("besteht bereits",
+    // generated 0), und die Leitung sah eine Ausgabe mit 0 Rueckblicken.
+    describe('nimmt die Ausgabe mit (BF-05)', () => {
+      const teamerAusgaben = async (orgId = ORGS.testGemeinde.id) => {
+        const { rows } = await db.query(
+          `SELECT EXTRACT(YEAR FROM zeitraum_start)::int AS jahr FROM wrapped_ausgaben
+            WHERE organization_id = $1 AND wrapped_type = 'teamer' ORDER BY zeitraum_start`,
+          [orgId]
+        );
+        return rows.map((r) => r.jahr);
+      };
+
+      it('generieren -> loeschen -> erneut generieren erzeugt wieder', async () => {
+        const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+        const jahr = new Date().getFullYear() - 1;
+
+        const erst = await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ jahr });
+        expect(erst.body.generated).toBe(1);
+
+        const weg = await request(app)
+          .delete('/api/wrapped/teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`);
+        expect(weg.status).toBe(200);
+        // Antwortform unveraendert: message + deleted (Zahl der Rueckblicke).
+        expect(weg.body.deleted).toBe(1);
+        expect(weg.body.message).toBe('1 Wrapped-Snapshots gelöscht');
+        expect(await teamerAusgaben()).toEqual([]);
+
+        const nochmal = await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ jahr });
+        expect(nochmal.status).toBe(200);
+        expect(nochmal.body.generated).toBe(1);
+        expect(nochmal.body.benachrichtigt).toBe(true);
+        expect(await teamerAusgaben()).toEqual([jahr]);
+
+        const meine = await request(app)
+          .get('/api/wrapped/meine')
+          .set('Authorization', `Bearer ${teamerToken}`);
+        expect(meine.body).toHaveLength(1);
+
+        // Additiv: wie viele Ausgaben mitgingen.
+        expect(weg.body.ausgaben_geloescht).toBe(1);
+
+        spy.mockRestore();
+      });
+
+      it('mit year: nur die Ausgabe dieses Jahres, die des Vorjahres bleibt samt Rueckblick', async () => {
+        const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+        const jahr = new Date().getFullYear() - 1;
+        for (const j of [jahr - 1, jahr]) {
+          await request(app)
+            .post('/api/wrapped/generate-teamer')
+            .set('Authorization', `Bearer ${orgAdminToken}`)
+            .send({ jahr: j });
+        }
+        expect(await teamerAusgaben()).toEqual([jahr - 1, jahr]);
+
+        const weg = await request(app)
+          .delete(`/api/wrapped/teamer?year=${jahr}`)
+          .set('Authorization', `Bearer ${orgAdminToken}`);
+        expect(weg.body.deleted).toBe(1);
+
+        expect(await teamerAusgaben()).toEqual([jahr - 1]);
+        const { rows } = await db.query(
+          `SELECT year FROM wrapped_snapshots WHERE wrapped_type = 'teamer'`
+        );
+        expect(rows.map((r) => r.year)).toEqual([jahr - 1]);
+        expect(weg.body.ausgaben_geloescht).toBe(1);
+
+        spy.mockRestore();
+      });
+
+      it('raeumt eine leere Ausgabe auf, die der fruehere Loeschweg zuruecklies', async () => {
+        const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+        const jahr = new Date().getFullYear() - 1;
+        // So steht es nach einem Aufruf der alten Route: Ausgabe ohne Snapshot.
+        await db.query(
+          `INSERT INTO wrapped_ausgaben
+             (organization_id, wrapped_type, jahrgang_id, titel, zeitraum_start, zeitraum_ende, freigegeben_at)
+           VALUES ($1, 'teamer', NULL, $2, make_date($3, 1, 1), make_date($3, 12, 31), NOW())`,
+          [ORGS.testGemeinde.id, `Team-Rückblick ${jahr}`, jahr]
+        );
+
+        const weg = await request(app)
+          .delete(`/api/wrapped/teamer?year=${jahr}`)
+          .set('Authorization', `Bearer ${orgAdminToken}`);
+        expect(weg.body.deleted).toBe(0);
+        expect(await teamerAusgaben()).toEqual([]);
+
+        const neu = await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ jahr });
+        expect(neu.body.generated).toBe(1);
+        expect(weg.body.ausgaben_geloescht).toBe(1);
+
+        spy.mockRestore();
+      });
+
+      it('laesst Ausgaben einer fremden Gemeinde und Konfi-Ausgaben stehen', async () => {
+        const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+        const jahr = new Date().getFullYear() - 1;
+        await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ jahr });
+        await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdmin2Token}`)
+          .send({ jahr });
+        await request(app)
+          .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+          .set('Authorization', `Bearer ${orgAdminToken}`);
+        const { rows: [konfiVorher] } = await db.query(
+          `SELECT COUNT(*)::int AS anzahl FROM wrapped_ausgaben
+            WHERE organization_id = $1 AND wrapped_type = 'konfi'`,
+          [ORGS.testGemeinde.id]
+        );
+        expect(konfiVorher.anzahl).toBe(1);
+
+        const weg = await request(app)
+          .delete('/api/wrapped/teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`);
+
+        expect(await teamerAusgaben(ORGS.testGemeinde.id)).toEqual([]);
+        expect(await teamerAusgaben(ORGS.andereGemeinde.id)).toEqual([jahr]);
+        const { rows: [konfiNachher] } = await db.query(
+          `SELECT COUNT(*)::int AS anzahl FROM wrapped_ausgaben
+            WHERE organization_id = $1 AND wrapped_type = 'konfi'`,
+          [ORGS.testGemeinde.id]
+        );
+        expect(konfiNachher.anzahl).toBe(1);
+        expect(weg.body.ausgaben_geloescht).toBe(1);
+
+        spy.mockRestore();
+      });
+    });
   });
 
   // ================================================================

@@ -40,6 +40,9 @@ Versionsüberschrift.
 - Teamer:innen, die den Hinweis auf ihren Rückblick auf der Startseite
   weggeklickt haben, sehen den nächsten Team-Rückblick dort wieder. Wer ihn
   bisher weggeklickt hat, sieht den aktuellen noch einmal.
+- Werden die Team-Rückblicke eines Jahres im Betrieb gelöscht, verschwindet
+  auch ihre Ausgabe aus der Liste der Leitung, und der Rückblick lässt sich
+  danach neu erzeugen, statt als „besteht bereits" gesperrt zu bleiben.
 - Eine Einladung in eine weitere Gemeinde nennt in Mitteilung und E-Mail die
   Rolle mit ihrem Namen statt mit dem technischen Wort „admin".
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und

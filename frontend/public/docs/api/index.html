@@ -1141,7 +1141,7 @@ BEHOBEN 26.09.2026: Die Teamer-Auswahl filterte nicht auf deleted_at (anders als
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/wrapped/teamer</code></div>
         <p class="summary">Teamer-Jahresrueckblicke der Organisation löschen</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireOrgAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>DELETE mit wrapped_type='teamer' + organization_id aus dem Token, optional year</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireOrgAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>DELETE mit wrapped_type='teamer' + organization_id aus dem Token, optional year; ebenso die Teamer-Ausgaben (wrapped_ausgaben) dieser Organisation</div>
       </article></div>
     </section><section id="stammdaten-einstellungen" class="service" style="--service:#78716c">
       <header class="service-kopf"><h2>Stammdaten &amp; Einstellungen</h2><p class="service-meta">11 Operationen</p></header>

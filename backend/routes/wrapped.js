@@ -3006,8 +3006,21 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // Teamer-Snapshots werden ohne Jahrgang gespeichert (jahrgang_id IS NULL)
   // und waren damit ueber KEINE Route erreichbar: einmal erzeugt, blieben sie
   // fuer immer stehen -- auch wenn der Lauf fehlerhafte Zahlen erzeugt hatte.
-  // Erneutes Generieren ueberschreibt zwar, hilft aber nicht bei Teamer:innen,
-  // die inzwischen keine mehr sind.
+  //
+  // DIE AUSGABE GEHT MIT (28.09.2026, Befund Chat/Challenges/Rueckblick
+  // BF-05). Bis dahin loeschte die Route nur die Snapshots und liess die
+  // leere Ausgabe stehen. Seit der Ausgaben-Sperre in POST /generate-teamer
+  // (08.09.2026: Ausgabe des Jahres da -> nichts tun) war der
+  // Team-Rueckblick des Jahres danach nicht mehr erzeugbar ("besteht
+  // bereits", generated 0), und die Leitung sah eine Ausgabe mit 0
+  // Rueckblicken. Jetzt verschwinden die Teamer-Ausgaben des Umfangs mit
+  // (Snapshots per ON DELETE CASCADE, Migration 143) -- auch eine leere,
+  // die der fruehere Weg zurueckgelassen hat. Die Oberflaeche loescht
+  // ueber DELETE /ausgabe/:id; diese Route ist ein Betriebswerkzeug
+  // (docs/api/ABRISS.md), keine ausgelieferte App ruft sie.
+  //
+  // Antwortform unveraendert: message und deleted (Zahl der geloeschten
+  // Rueckblicke, auch die ueber die Kaskade), additiv ausgaben_geloescht.
   //
   // Eigene Route statt Erweiterung von DELETE /:jahrgangId: Dort ist der
   // Jahrgang die Bezugsgroesse, hier die Organisation. Das mit einem
@@ -3029,18 +3042,59 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     query('year').optional().isInt({ min: 2000, max: 2100 }),
     handleValidationErrors,
     async (req, res) => {
+      const client = await db.getClient();
       try {
         const jahr = req.query.year ? parseInt(req.query.year, 10) : null;
-        const { rowCount } = await db.query(
+        const orgId = req.user.organization_id;
+        await client.query('BEGIN');
+
+        // Welche Teamer-Ausgaben gehen mit? Die des Jahres (ein
+        // Team-Rueckblick umfasst ein Kalenderjahr, zeitraum_start = 1.1.)
+        // oder ohne Jahr alle -- dazu jede, an der ein Snapshot des Umfangs
+        // haengt.
+        const { rows: ausgaben } = await client.query(
+          `SELECT a.id FROM wrapped_ausgaben a
+            WHERE a.organization_id = $1 AND a.wrapped_type = 'teamer'
+              AND (
+                $2::int IS NULL
+                OR EXTRACT(YEAR FROM a.zeitraum_start)::int = $2::int
+                OR EXISTS (
+                  SELECT 1 FROM wrapped_snapshots s
+                   WHERE s.ausgabe_id = a.id AND s.wrapped_type = 'teamer'
+                     AND s.organization_id = $1 AND s.year = $2::int
+                )
+              )
+            FOR UPDATE`,
+          [orgId, jahr]
+        );
+        const ausgabeIds = ausgaben.map((a) => a.id);
+
+        // Die Snapshots ausdruecklich loeschen statt nur ueber die Kaskade:
+        // So zaehlt `deleted` wie bisher jeden Rueckblick, und Alt-Snapshots
+        // ohne Ausgabe (ausgabe_id NULL) gehen ebenfalls mit.
+        const { rowCount } = await client.query(
           `DELETE FROM wrapped_snapshots
            WHERE wrapped_type = 'teamer' AND organization_id = $1
-             AND ($2::int IS NULL OR year = $2::int)`,
-          [req.user.organization_id, jahr]
+             AND ($2::int IS NULL OR year = $2::int OR ausgabe_id = ANY($3::int[]))`,
+          [orgId, jahr, ausgabeIds]
         );
-        res.json({ message: `${rowCount} Wrapped-Snapshots gel\u00f6scht`, deleted: rowCount });
+        const { rowCount: ausgabenGeloescht } = await client.query(
+          `DELETE FROM wrapped_ausgaben WHERE id = ANY($1::int[])`,
+          [ausgabeIds]
+        );
+
+        await client.query('COMMIT');
+        res.json({
+          message: `${rowCount} Wrapped-Snapshots gel\u00f6scht`,
+          deleted: rowCount,
+          ausgaben_geloescht: ausgabenGeloescht,
+        });
       } catch (err) {
+        try { await client.query('ROLLBACK'); } catch { /* ignore */ }
         console.error('Error deleting teamer wrapped snapshots:', err);
         res.status(500).json({ error: 'Fehler beim L\u00f6schen der Wrapped-Snapshots' });
+      } finally {
+        client.release();
       }
     }
   );

@@ -13323,7 +13323,7 @@
           "Wrapped"
         ],
         "summary": "Teamer-Jahresrueckblicke der Organisation löschen",
-        "description": "Loescht alle Teamer-Snapshots der aktiven Organisation. Seit 01.09.2026 (Befund W3): Teamer-Snapshots werden ohne jahrgang_id gespeichert und waren ueber den Jahrgangs-Weg nie erreichbar - einmal erzeugt, blieben sie fuer immer stehen, auch wenn der Lauf fehlerhafte Zahlen erzeugt hatte.\nEigene Route statt Erweiterung von DELETE /api/wrapped/{jahrgangId}, weil dort der Jahrgang die Bezugsgroesse ist und hier die Organisation. Anders als beim Jahrgangs-Weg gibt es nichts zurueckzunehmen: Der Teamer-Rueckblick kennt keine Freigabe-Markierung.\nSeit 02.09.2026 optionaler Query-Parameter `year`: löscht nur den Rückblick DIESES Jahres. Teamer:innen bekommen jedes Jahr einen neuen, die alten bleiben erhalten — bei den Konfis leistet das der Jahrgangsfilter, Teamer haben keinen Jahrgang, dort ist das Jahr die einzige Trennlinie. OHNE `year` bleibt es beim bisherigen Verhalten (alle Jahre), damit der Aufruf der ausgelieferten Oberfläche gültig bleibt.\n",
+        "description": "Loescht alle Teamer-Snapshots der aktiven Organisation samt ihrer Teamer-Ausgaben (seit 28.09.2026, siehe unten). Seit 01.09.2026 (Befund W3): Teamer-Snapshots werden ohne jahrgang_id gespeichert und waren ueber den Jahrgangs-Weg nie erreichbar - einmal erzeugt, blieben sie fuer immer stehen, auch wenn der Lauf fehlerhafte Zahlen erzeugt hatte.\nEigene Route statt Erweiterung von DELETE /api/wrapped/{jahrgangId}, weil dort der Jahrgang die Bezugsgroesse ist und hier die Organisation. Anders als beim Jahrgangs-Weg gibt es nichts zurueckzunehmen: Der Teamer-Rueckblick kennt keine Freigabe-Markierung.\nSeit 02.09.2026 optionaler Query-Parameter `year`: löscht nur den Rückblick DIESES Jahres. Teamer:innen bekommen jedes Jahr einen neuen, die alten bleiben erhalten — bei den Konfis leistet das der Jahrgangsfilter, Teamer haben keinen Jahrgang, dort ist das Jahr die einzige Trennlinie. OHNE `year` bleibt es beim bisherigen Verhalten (alle Jahre), damit der Aufruf der ausgelieferten Oberfläche gültig bleibt. (Stand 28.09.2026: Keine ausgelieferte App ruft die Route; die Oberfläche löscht seit 2.2.0 über DELETE /api/wrapped/ausgabe/{id}. Die Route ist ein Betriebswerkzeug, siehe ABRISS.md.)\nBEHOBEN 28.09.2026 (Audit Chat/Challenges/Rückblick BF-05): Die Route löschte nur die Snapshots und ließ die leere Teamer-Ausgabe stehen. Seit der Ausgaben-Sperre in POST /api/wrapped/generate-teamer (08.09.2026) war der Team-Rückblick des Jahres danach nicht mehr erzeugbar (\"besteht bereits\", generated 0). Jetzt gehen die Teamer-Ausgaben des Umfangs mit (ohne year alle, mit year die des Jahres und jede, an der ein Snapshot dieses Jahres hängt) — auch eine leere, die der frühere Weg zurückgelassen hat. Alles in einer Transaktion.\n",
         "parameters": [
           {
             "name": "year",
@@ -13346,11 +13346,11 @@
             "requireOrgAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "DELETE mit wrapped_type='teamer' + organization_id aus dem Token, optional year"
+          "objekt-pruefung": "DELETE mit wrapped_type='teamer' + organization_id aus dem Token, optional year; ebenso die Teamer-Ausgaben (wrapped_ausgaben) dieser Organisation"
         },
         "responses": {
           "200": {
-            "description": "message, deleted (Anzahl geloeschter Snapshots)"
+            "description": "message, deleted (Anzahl geloeschter Snapshots, unveraendert), ausgaben_geloescht (ADDITIV 28.09.2026: Anzahl mitgeloeschter Teamer-Ausgaben)"
           },
           "400": {
             "description": "year ist keine gültige Jahreszahl"
