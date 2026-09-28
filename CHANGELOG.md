@@ -9,6 +9,11 @@ Versionsüberschrift.
 
 ## [Unreleased]
 
+### Hinzugefügt
+- Eine orange Zahl in den Umschaltern oben zeigt, hinter welchem Reiter etwas
+  wartet: Freigaben bei den Challenges (auch im Archiv) für alle, die freigeben
+  dürfen, dazu für die Leitung zu verbuchende Events und offene Anträge.
+
 ### Geändert
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge

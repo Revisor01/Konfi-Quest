@@ -24,6 +24,7 @@ import {
 import { SectionHeader, ListSection, StatusBadge } from '../shared';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { datumKurz } from '../../utils/dateUtils';
+import SegmentZahl from '../shared/SegmentZahl';
 
 interface ActivityRequest {
   id: number;
@@ -58,6 +59,12 @@ interface ActivityRequestsViewProps {
   // Jahrgangs-Zuweisung, Entscheidung 31.08.2026). Dann erklaert der
   // Leerzustand den Grund — dasselbe Muster wie in KonfisView.
   ohneJahrgang?: boolean;
+  /**
+   * Offene Antraege (BadgeContext.pendingRequestsCount): orange Zahl im
+   * Reiter-Knopf "Offen" (28.09.2026, zur Ansicht). Dieselbe Quelle wie der
+   * Events-Reiter; der Server zaehlt nur fuer die Leitung.
+   */
+  offeneAntraege?: number;
 }
 
 const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
@@ -65,7 +72,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   onSelectRequest,
   onResetRequest,
   headerSlot,
-  ohneJahrgang = false
+  ohneJahrgang = false,
+  offeneAntraege = 0
 }) => {
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
   const requests: ActivityRequest[] = Array.isArray(requestsRaw) ? requestsRaw : [];
@@ -129,7 +137,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
           onIonChange={(e) => setStatusFilter(e.detail.value as 'all' | 'pending' | 'approved' | 'rejected')}
         >
           <IonSegmentButton value="pending">
-            <IonLabel>Offen</IonLabel>
+            <IonLabel>Offen<SegmentZahl anzahl={offeneAntraege} label={offeneAntraege === 1 ? 'Antrag wartet auf Entscheidung' : 'Anträge warten auf Entscheidung'} /></IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="approved">
             <IonLabel>Verbucht</IonLabel>

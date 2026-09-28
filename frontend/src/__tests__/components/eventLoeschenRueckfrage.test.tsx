@@ -139,6 +139,12 @@ vi.mock('../../contexts/AppContext', () => ({
   }),
 }));
 
+// Die Seite liest seit 28.09.2026 die Wartezahlen fuer die Reiter-Knoepfe
+// (segmentZahlenLeitung.test.tsx); hier nicht Thema.
+vi.mock('../../contexts/BadgeContext', () => ({
+  useBadge: () => ({ pendingEventsCount: 0, pendingRequestsCount: 0 }),
+}));
+
 vi.mock('../../contexts/ModalContext', () => ({
   useModalPage: () => ({ pageRef: { current: null }, presentingElement: null }),
 }));

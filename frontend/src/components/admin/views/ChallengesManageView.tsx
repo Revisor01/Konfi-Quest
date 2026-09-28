@@ -32,9 +32,10 @@ import {
 import { SectionHeader, ListSection, ChallengeLegendModal, EmptyState } from '../../shared';
 import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
 import ZaehlerKugel from '../../shared/ZaehlerKugel';
+import SegmentZahl from '../../shared/SegmentZahl';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { anzahlBeitraege, kugelTextAmEintrag, wartenAufFreigabe } from '../../../utils/challengeTexte';
+import { anzahlBeitraege, kugelTextAmEintrag, wartenAufFreigabe, wartenAufFreigabeKurz } from '../../../utils/challengeTexte';
 import { datumKurz } from '../../../utils/dateUtils';
 
 // Gemeinsame Verwaltungs-Ansicht für Admin UND Teamer. Bewusst ohne eigenen
@@ -108,6 +109,20 @@ export const getChallengeStatus = (challenge: AdminChallenge, now: number = Date
 
 // Aufteilung auf die drei Reiter — als pure Funktion exportiert, damit die
 // Zuordnung testbar ist, ohne die Ionic-Ansicht zu rendern.
+/**
+ * Wartende Freigaben je Reiter (Aktuell/Geplant/Archiv): Summe von
+ * offeneFreigaben ueber die Challenges, die teileChallengesAuf dem Reiter
+ * zuordnet. Pure Funktion, damit Test und Liste dieselbe Aufteilung lesen.
+ */
+export const wartendeFreigabenJeReiter = (
+  teile: { current: AdminChallenge[]; planned: AdminChallenge[]; archived: AdminChallenge[] },
+  offeneFreigaben: Record<number, number>
+): { aktuell: number; geplant: number; archiv: number } => {
+  const summe = (liste: AdminChallenge[]) =>
+    liste.reduce((s, c) => s + (offeneFreigaben[c.id] ?? 0), 0);
+  return { aktuell: summe(teile.current), geplant: summe(teile.planned), archiv: summe(teile.archived) };
+};
+
 export const teileChallengesAuf = (
   challenges: AdminChallenge[],
   now: number = Date.now()
@@ -246,6 +261,18 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   // Entwurf), Archiv = was vorbei ist. Die Zuordnung selbst liegt in
   // teileChallengesAuf (pure Funktion, testbar).
   const { current, planned, archived } = useMemo(() => teileChallengesAuf(challenges), [challenges]);
+
+  // Orange Zahl im Reiter-Knopf (28.09.2026, zur Ansicht): wartende
+  // Freigaben je Reiter, dieselbe Aufteilung wie die Liste (teileChallengesAuf)
+  // -- ARCHIV eingeschlossen, damit Einreichungen an beendeten Challenges
+  // nicht unentdeckt bleiben. Nur Wartendes, keine Neuigkeiten. Wer sie
+  // sieht, entscheidet der Server (challengeApprovals je Challenge nach
+  // challengeLeitungSicht): Leitung und die Teamer:innen, die fuer die
+  // Challenge Freigaben bekommen.
+  const wartendJeReiter = useMemo(
+    () => wartendeFreigabenJeReiter({ current, planned, archived }, offeneFreigaben),
+    [current, planned, archived, offeneFreigaben]
+  );
 
   // Ein Listeneintrag — identisch in "Aktuelle Challenges" und "Archiv",
   // deshalb einmal hier statt zweimal im JSX.
@@ -517,13 +544,13 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           onIonChange={(e) => setReiter(e.detail.value as 'aktuell' | 'geplant' | 'archiv')}
         >
           <IonSegmentButton value="aktuell">
-            <IonLabel>Aktuell</IonLabel>
+            <IonLabel>Aktuell<SegmentZahl anzahl={wartendJeReiter.aktuell} label={wartenAufFreigabeKurz(wartendJeReiter.aktuell)} /></IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="geplant">
-            <IonLabel>Geplant</IonLabel>
+            <IonLabel>Geplant<SegmentZahl anzahl={wartendJeReiter.geplant} label={wartenAufFreigabeKurz(wartendJeReiter.geplant)} /></IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="archiv">
-            <IonLabel>Archiv</IonLabel>
+            <IonLabel>Archiv<SegmentZahl anzahl={wartendJeReiter.archiv} label={wartenAufFreigabeKurz(wartendJeReiter.archiv)} /></IonLabel>
           </IonSegmentButton>
         </IonSegment>
       </div>

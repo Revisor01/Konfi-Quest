@@ -499,6 +499,12 @@ Team, die Gemeindeleitung alle der Gemeinde.
 Neue Beiträge zählen nur in laufenden Challenges. Die Legende hinter dem
 Fragezeichen erklärt beide Zeichen zusammen mit den Status-Symbolen.
 
+Die Umschalter **Aktuell**, **Geplant** und **Archiv** tragen eine orange
+Zahl, sobald dort Beiträge auf eure Freigabe warten — so findest du auch
+wartende Beiträge an beendeten Challenges im Archiv. Neue Beiträge zählen
+dort nicht mit; siehe
+[Den Umschalter finden, hinter dem etwas auf dich wartet](03-bedienung.md#den-umschalter-finden-hinter-dem-etwas-auf-dich-wartet).
+
 Konfis sehen an der Challenge ebenfalls eine rote Zahl für ihre
 [Neuigkeiten](10-konfis.md#neuigkeiten-an-challenges-erkennen).
 

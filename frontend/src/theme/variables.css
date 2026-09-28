@@ -1679,6 +1679,30 @@ ion-item {
 .app-segment-wrapper {
   margin: var(--app-abstand-basis);
 }
+/* Zahl im Segment-Knopf (SegmentZahl.tsx, 28.09.2026, zur Ansicht):
+   Wegweiser "hier wartet etwas auf dich", NUR Wartendes. Orange wie das
+   Eck-Badge "n Uhr"; rot bleibt Reiter/App-Symbol und Listen-Kugel.
+   Die Farbe steht in genau diesem einen Token -- Wechsel auf Rot:
+   var(--app-color-danger). Im Textfluss neben der Beschriftung, denn
+   absolut ueber dem Rand schnitte Ionic sie ab (iOS-Glas-Pill, MD3). */
+.app-segment-zahl {
+  --app-segment-zahl-farbe: var(--app-color-warning);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 var(--app-abstand-mini);
+  margin-left: var(--app-abstand-mini);
+  box-sizing: border-box;
+  border-radius: var(--app-radius-knopf);
+  background: var(--app-segment-zahl-farbe);
+  color: var(--app-weiss);
+  font-size: var(--app-text-winzig);
+  font-weight: var(--app-schrift-fett);
+  line-height: 1;
+  vertical-align: middle;
+}
 
 /* === Info Box === */
 .app-info-box {
