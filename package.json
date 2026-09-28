@@ -10,7 +10,7 @@
     "version:pruefen": "node scripts/version-setzen.mjs --pruefen"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.63.0",
     "pg": "^8.23.0"
   }
 }
