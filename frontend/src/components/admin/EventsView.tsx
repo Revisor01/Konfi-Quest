@@ -25,6 +25,7 @@ import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, Absage
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
+import SegmentZahl from '../shared/SegmentZahl';
 
 interface EventsViewProps {
   events: Event[];
@@ -43,6 +44,13 @@ interface EventsViewProps {
     verbuchen: number;
     vergangen: number;
   };
+  /**
+   * Termine, die auf Verbuchung warten (BadgeContext.pendingEventsCount):
+   * orange Zahl im Reiter-Knopf "Verbuchen" (28.09.2026, zur Ansicht).
+   * Dieselbe Quelle wie der Events-Reiter, nicht die gefilterte Liste --
+   * die Zahl haengt nicht an Suche oder Jahrgangsfilter.
+   */
+  wartendVerbuchen?: number;
   jahrgaenge?: Array<{id: number; name: string}>;
   selectedJahrgang?: number | null;
   onJahrgangChange?: (jahrgangId: number | null) => void;
@@ -67,6 +75,7 @@ const EventsView: React.FC<EventsViewProps> = ({
   activeTab = 'aktuell',
   onTabChange,
   eventCounts,
+  wartendVerbuchen = 0,
   jahrgaenge,
   selectedJahrgang,
   onJahrgangChange,
@@ -169,7 +178,7 @@ const EventsView: React.FC<EventsViewProps> = ({
               <IonLabel>Aktuell</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="verbuchen">
-              <IonLabel>Verbuchen</IonLabel>
+              <IonLabel>Verbuchen<SegmentZahl anzahl={wartendVerbuchen} label={wartendVerbuchen === 1 ? 'Event wartet auf Verbuchung' : 'Events warten auf Verbuchung'} /></IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="vergangen">
               <IonLabel>Vergangen</IonLabel>

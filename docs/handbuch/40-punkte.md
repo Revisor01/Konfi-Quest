@@ -84,7 +84,10 @@ steht unter der Kopfzeile, wie weit das Hochladen ist — „Wird gesendet…
 40 %", zuletzt „Wird verarbeitet…". Sein Foto sieht der Konfi in der Meldung,
 solange sie offen ist; nach der Entscheidung nur noch die Leitung.
 
-**2. Die Leitung prüft.** Die Anträge stehen in der Antragsliste.
+**2. Die Leitung prüft.** Die Anträge stehen in der Antragsliste. Wie viele
+auf eure Entscheidung warten, zeigt die orange Zahl an den Umschaltern
+„Aktivitäten" und „Offen" (siehe
+[Den Umschalter finden, hinter dem etwas auf dich wartet](03-bedienung.md#den-umschalter-finden-hinter-dem-etwas-auf-dich-wartet)).
 [Teamer:innen sehen sie nicht](05-rollen.md#nachschlagen-wer-was-darf) — in Beschreibung
 und Foto kann Privates stehen. Die Leitung sieht dort nur die Anträge aus
 [ihren Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert);

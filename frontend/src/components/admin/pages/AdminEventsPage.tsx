@@ -28,6 +28,8 @@ import { Event, Timeslot } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { aktuelleTermine, zuVerbuchendeTermine, vergangeneTermine, istAbgesagt } from '../../shared';
 import { datumLang } from '../../../utils/dateUtils';
+import { useBadge } from '../../../contexts/BadgeContext';
+import SegmentZahl from '../../shared/SegmentZahl';
 
 /**
  * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
@@ -71,6 +73,12 @@ interface AdminEventsPageProps {
 
 const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, selectedEventId }) => {
   const { user, setSuccess, setError, isOnline } = useApp();
+  // Orange Zahl in den Reiter-Knoepfen (28.09.2026, zur Ansicht): NUR
+  // Wartendes, aus derselben Quelle wie der Events-Reiter unten
+  // (pendingEventsCount + pendingRequestsCount). Der Server zaehlt beides
+  // nur fuer die Leitung (Rolle admin, nach terminLeitungSicht bzw.
+  // antragLeitungSicht); diese Seite gibt es nur im Leitungs-Baum.
+  const { pendingEventsCount, pendingRequestsCount } = useBadge();
   const { pageRef, presentingElement } = useModalPage('admin-events');
   const router = useIonRouter();
   const routerLocation = useAppLocation();
@@ -740,10 +748,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           onIonChange={(e) => setMainSegment(e.detail.value as 'events' | 'antraege')}
         >
           <IonSegmentButton value="events">
-            <IonLabel>Events</IonLabel>
+            <IonLabel>Events<SegmentZahl anzahl={pendingEventsCount} label={pendingEventsCount === 1 ? 'Event wartet auf Verbuchung' : 'Events warten auf Verbuchung'} /></IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="antraege">
-            <IonLabel>Aktivitäten</IonLabel>
+            <IonLabel>Aktivitäten<SegmentZahl anzahl={pendingRequestsCount} label={pendingRequestsCount === 1 ? 'Antrag wartet auf Entscheidung' : 'Anträge warten auf Entscheidung'} /></IonLabel>
           </IonSegmentButton>
         </IonSegment>
       </div>
@@ -785,6 +793,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             <ActivityRequestsView
               requests={requests || []}
               ohneJahrgang={ohneJahrgang}
+              offeneAntraege={pendingRequestsCount}
               onSelectRequest={handleSelectRequest}
               onResetRequest={handleResetRequest}
               headerSlot={mainSegmentSlot}
@@ -809,6 +818,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             onKopieren={canCreate ? handleKopiereEvent : undefined}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            wartendVerbuchen={pendingEventsCount}
             eventCounts={{
               aktuell: applySearch(filterByJahrgang(getAktuellEvents())).length,
               verbuchen: applySearch(filterByJahrgang(getVerbuchenEvents())).length,

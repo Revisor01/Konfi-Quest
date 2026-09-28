@@ -1129,7 +1129,9 @@ in ihrer Liste sehen:
   als Leitung.
 
 **„Events warten auf Verbuchung"** kommt jeden Morgen um 9 Uhr, solange
-etwas offen ist. Die Zahl darin ist die Zahl an deinem Reiter „Verbuchen":
+etwas offen ist. Die Zahl darin ist die orange Zahl an den Umschaltern
+„Events" und „Verbuchen" (siehe
+[Den Umschalter finden, hinter dem etwas auf dich wartet](03-bedienung.md#den-umschalter-finden-hinter-dem-etwas-auf-dich-wartet)):
 Gezählt werden nur Events, die du siehst, und zwar ab ihrem Beginn. Steht bei
 dir nichts offen, kommt keine Erinnerung. Wer in mehreren Gemeinden
 mitarbeitet, bekommt je Gemeinde eine eigene Erinnerung mit der Zahl dieser

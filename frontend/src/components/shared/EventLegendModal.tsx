@@ -102,7 +102,7 @@ const ENTRIES: LegendEntry[] = [
     color: 'var(--app-color-info)',
     icon: ICON_KREIS_LEER,
     label: 'Verbuchen',
-    description: 'Das Event ist vorbei und muss noch verbucht werden.',
+    description: 'Das Event ist vorbei und muss noch verbucht werden. Wie viele es sind, zeigt die orange Zahl an den Umschaltern „Events" und „Verbuchen".',
     variants: ['admin'],
   },
   {

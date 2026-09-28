@@ -11,6 +11,10 @@ export const anzahlBeitraege = (n: number): string =>
 export const wartenAufFreigabe = (n: number): string =>
   n === 1 ? '1 Beitrag wartet auf Freigabe' : `${n} Beiträge warten auf Freigabe`;
 
+/** Vorlesetext der orangen Zahl im Reiter-Knopf, ohne fuehrende Zahl: "wartet auf Freigabe" / "warten auf Freigabe". */
+export const wartenAufFreigabeKurz = (n: number): string =>
+  n === 1 ? 'wartet auf Freigabe' : 'warten auf Freigabe';
+
 /**
  * Vorlesetext der roten Kugel am Challenge-Eintrag der Leitung (ohne die
  * fuehrende Zahl -- die setzt ZaehlerKugel davor). Die Kugel zaehlt seit

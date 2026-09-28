@@ -84,6 +84,15 @@ const NEU_ENTRY: LegendEntry = {
   description: 'Alles, was an der Challenge auf dich wartet: Beiträge, die auf Freigabe warten, und neue Beiträge seit deinem letzten Öffnen — wie ungelesene Nachrichten im Chat. Die neuen verschwinden beim Öffnen, die wartenden erst mit der Freigabe.',
 };
 
+// Orange Zahl im Umschalter Aktuell/Geplant/Archiv (28.09.2026, zur
+// Ansicht): Wegweiser zum Reiter mit wartenden Freigaben, nur Wartendes.
+const SEGMENT_ENTRY: LegendEntry = {
+  color: 'var(--app-color-warning)',
+  zahl: '1',
+  label: 'Orange Zahl am Umschalter',
+  description: 'Hinter diesem Umschalter warten Beiträge auf Freigabe — auch im Archiv. Neue Beiträge zählen hier nicht mit.',
+};
+
 // Moderations-Badges aus ChallengeLeitungModal (STATUS_BADGE + CONSENT_BADGE).
 const MODERATION_ENTRIES: LegendEntry[] = [
   {
@@ -200,6 +209,7 @@ const ChallengeLegendModal: React.FC<ChallengeLegendModalProps> = ({ onClose }) 
             {STATUS_ENTRIES.map(renderRow)}
             {renderRow(COUNTER_ENTRY, STATUS_ENTRIES.length)}
             {renderRow(NEU_ENTRY, STATUS_ENTRIES.length + 1)}
+            {renderRow(SEGMENT_ENTRY, STATUS_ENTRIES.length + 2)}
           </div>
 
           <h2 style={{ fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-extrafett)', margin: 'var(--app-abstand-sehrweit) 0 var(--app-abstand-kompakt)', textAlign: 'center', color: 'var(--app-text-emphasis)' }}>

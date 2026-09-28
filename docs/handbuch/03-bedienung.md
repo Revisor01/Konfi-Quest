@@ -41,6 +41,26 @@ Wochentag: Mo., 14.09.2026. Wo wenig Platz ist — im Chat, in der
 Anwesenheitsliste —, steht nur 14.09. Maßgeblich ist die Zeit, auf die das
 Handy eingestellt ist.
 
+### Den Umschalter finden, hinter dem etwas auf dich wartet
+
+Als Leitung und in den Challenges auch als Teamer:in siehst du in den
+Umschaltern oben auf einer Seite eine **orange Zahl** neben der Beschriftung.
+Sie zeigt, hinter welchem Umschalter etwas auf dich wartet, und zählt nur
+das — keine Neuigkeiten. Die rote Zahl bleibt dem Reiter unten, dem
+App-Symbol und den einzelnen Einträgen in der Liste.
+
+| Seite | Umschalter | Was die orange Zahl zählt |
+|---|---|---|
+| Challenges | Aktuell, Geplant, Archiv | Beiträge, die auf Freigabe warten — auch an beendeten Challenges im Archiv |
+| Mitmachen | Events | Events, die auf Verbuchung warten; dieselbe Zahl steht unter „Verbuchen" |
+| Mitmachen | Aktivitäten | Anträge, die auf eure Entscheidung warten; dieselbe Zahl steht unter „Offen" |
+
+In den Challenges bekommt die Zahl, wer die Beiträge dieser Challenge
+freigeben darf: die Gemeindeleitung, Admins und Teamer:innen für die
+Challenges ihrer Jahrgänge und die Challenges nur fürs Team. Events und
+Aktivitäten zählen nur für die Leitung, nach denselben Regeln wie der Reiter
+**Mitmachen**.
+
 ### Die Begriffe der App kennen
 
 App und Handbuch nennen dieselben Dinge mit denselben Wörtern:
