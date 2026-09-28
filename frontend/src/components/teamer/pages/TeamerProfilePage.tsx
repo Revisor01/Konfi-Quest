@@ -63,6 +63,7 @@ import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTra
 import { networkMonitor } from '../../../services/networkMonitor';
 import { writeQueue } from '../../../services/writeQueue';
 import { safeUUID } from '../../../utils/uuid';
+import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { tastaturKlick } from '../../../utils/tastatur';
@@ -123,23 +124,26 @@ const TeamerProfilePage: React.FC = () => {
     // Setzen — die Auswahl sah uebernommen aus, war beim naechsten Start aber
     // wieder weg. Das Konfi-Profil reiht sie seit jeher in die Warteschlange
     // ein; jetzt beide gleich.
-    if (!networkMonitor.isOnline) {
-      setSelectedTranslation(translation);
-      writeQueue.enqueue({
-        method: 'PUT',
-        url: '/teamer/bible-translation',
-        body: { translation },
-        maxRetries: 3,
-        hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Bibelübersetzung' },
-      });
-      return;
-    }
-
+    //
+    // Auch ein Netzabbruch im Online-Zweig landet in der Warteschlange
+    // (Audit Grundgeruest BF-01, utils/sendenOderEinreihen.ts); PUT ist
+    // wiederholbar.
     setSelectedTranslation(translation); // optimistisch
     try {
-      await api.put('/teamer/bible-translation', { translation });
-      refresh();
+      const { weg } = await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: 'PUT',
+        senden: () => api.put('/teamer/bible-translation', { translation }),
+        einreihen: () => writeQueue.enqueue({
+          method: 'PUT',
+          url: '/teamer/bible-translation',
+          body: { translation },
+          maxRetries: 3,
+          hasFileUpload: false,
+          metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Bibelübersetzung' },
+        }),
+      });
+      if (weg === 'gesendet') refresh();
     } catch (err) {
       setError(fehlerText(err, 'Fehler beim Ändern der Bibelübersetzung'));
     }

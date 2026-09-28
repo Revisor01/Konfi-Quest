@@ -565,6 +565,14 @@ erneuert — etwa beim Wechsel zwischen WLAN und Mobilfunk —, wartet sie
 höchstens 20 Sekunden. Du bleibst angemeldet; beim nächsten Laden versucht sie
 es von selbst noch einmal.
 
+Manchmal merkt die App das Funkloch erst beim Senden: Das Handy meldet noch
+Empfang, aber nichts kommt durch. Eine Abmeldung von einem Event, eine
+gemeldete Aktivität, eine Zu- oder Absage im Team und die Wahl der
+Bibelübersetzung landen dann trotzdem unter **„Wird gesendet…"** statt in
+einer Fehlermeldung. Was der Server bei einem zweiten Eingang doppelt ausführen
+könnte — etwa Bonuspunkte oder ein neu angelegtes Event —, meldet in diesem
+Fall einen Fehler; versuche es dann später noch einmal.
+
 ### Erkennen, was du ohne Netz noch siehst
 
 Alles, was du zuletzt geöffnet hattest — Events, Chats, Challenges, Material,

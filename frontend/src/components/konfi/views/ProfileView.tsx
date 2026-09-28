@@ -37,6 +37,7 @@ import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
 import KonfiUpdate230WalkthroughModal from '../modals/KonfiUpdate230WalkthroughModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { safeUUID } from '../../../utils/uuid';
+import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { useAppLocation } from '../../../navigation/useAppLocation';
 import { PUNKTE_PARAMETER, RUECKBLICK_PARAMETER, waehleRueckblick } from '../../../utils/pushNavigation';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
@@ -164,25 +165,26 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   }, []);
 
   const handleTranslationChange = async (translation: string) => {
-    // Offline: Optimistic UI + Queue-Fallback (fire-and-forget)
-    if (!networkMonitor.isOnline) {
-      setSelectedTranslation(translation);
-      writeQueue.enqueue({
-        method: 'PUT',
-        url: '/konfi/bible-translation',
-        body: { translation },
-        maxRetries: 3,
-        hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Bibelübersetzung' },
-      });
-      return;
-    }
-
+    // Offline -- oder online, aber das Netz reisst ab: Auswahl uebernehmen
+    // und in die Warteschlange (fire-and-forget; Audit Grundgeruest BF-01,
+    // utils/sendenOderEinreihen.ts). PUT ist wiederholbar.
     try {
-      await api.put('/konfi/bible-translation', { translation });
+      const { weg } = await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: 'PUT',
+        senden: () => api.put('/konfi/bible-translation', { translation }),
+        einreihen: () => writeQueue.enqueue({
+          method: 'PUT',
+          url: '/konfi/bible-translation',
+          body: { translation },
+          maxRetries: 3,
+          hasFileUpload: false,
+          metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Bibelübersetzung' },
+        }),
+      });
       setSelectedTranslation(translation);
       // Update profile to reflect the change
-      await onReload();
+      if (weg === 'gesendet') await onReload();
     } catch (err) {
       setError(fehlerText(err, 'Fehler beim Ändern der Bibelübersetzung'));
     }

@@ -100,6 +100,9 @@ Versionsüberschrift.
   Nach spätestens 20 Sekunden geht es weiter, und du bleibst angemeldet.
 - Scheitert eine Anfrage, steht im Protokoll des Geräts weder der
   Anmeldeschlüssel noch der Inhalt, der gesendet werden sollte.
+- Reißt im Funkloch die Verbindung erst beim Senden ab, landen Abmeldungen
+  von Events, gemeldete Aktivitäten, Zu- und Absagen im Team und die Wahl der
+  Bibelübersetzung unter „Wird gesendet…" statt in einer Fehlermeldung.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

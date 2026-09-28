@@ -85,6 +85,7 @@ import { teilnahmeDarstellung, listItemKlasse, iconKreisKlasse, eckBadgeKlasse }
 import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 // Kein eigener ActivityRequest mehr: Die Seite reicht die Antraege an
 // RequestDetailModal weiter, und zwei gleichnamige Typen mit
 // unterschiedlicher Nullbarkeit haben genau dort gebissen. Der Modal-Typ ist
@@ -554,8 +555,32 @@ const TeamerEventsPage: React.FC = () => {
     setBookingLoading(true);
     const body = reason && reason.trim() ? { dabei, reason: reason.trim() } : { dabei };
     try {
-      if (networkMonitor.isOnline) {
-        const res = await api.post(`/teamer/events/${event.id}/zusage`, body);
+      // Offline -- oder online, aber das Netz reisst ab: in die Warteschlange
+      // (Audit Grundgeruest BF-01, utils/sendenOderEinreihen.ts). Ein zweiter
+      // Eingang ist harmlos: Die Zusage setzt einen Zustand, eine wiederholte
+      // Absage laesst Grund und Kennzeichen stehen (setzeTeamerZusage).
+      const versand = await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: 'POST',
+        idempotent: true,
+        senden: () => api.post(`/teamer/events/${event.id}/zusage`, body),
+        einreihen: () => writeQueue.enqueue({
+          method: 'POST',
+          url: `/teamer/events/${event.id}/zusage`,
+          body,
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'teamer',
+            clientId: safeUUID(),
+            label: dabei ? 'Zusage' : 'Absage',
+          },
+        }),
+      });
+      if (versand.weg === 'eingereiht') {
+        setSuccess('Wird gesendet, sobald du wieder online bist');
+      } else {
+        const res = versand.ergebnis;
         // Termin UND Teilnehmerliste frisch aus der Detailantwort -- die
         // Liste (GET /events) traegt keine `participants`, und ein blosser
         // Objekttausch liess den Lade-Effekt kalt (Begruendung oben bei
@@ -568,20 +593,6 @@ const TeamerEventsPage: React.FC = () => {
         } else {
           setSuccess(dabei ? 'Du bist dabei' : 'Absage gespeichert');
         }
-      } else {
-        await writeQueue.enqueue({
-          method: 'POST',
-          url: `/teamer/events/${event.id}/zusage`,
-          body,
-          maxRetries: 5,
-          hasFileUpload: false,
-          metadata: {
-            type: 'teamer',
-            clientId: safeUUID(),
-            label: dabei ? 'Zusage' : 'Absage',
-          },
-        });
-        setSuccess('Wird gesendet, sobald du wieder online bist');
       }
       refreshLive();
     } catch (err) {
