@@ -101,8 +101,10 @@ Versionsüberschrift.
 - Scheitert eine Anfrage, steht im Protokoll des Geräts weder der
   Anmeldeschlüssel noch der Inhalt, der gesendet werden sollte.
 - Reißt im Funkloch die Verbindung erst beim Senden ab, landen Abmeldungen
-  von Events, gemeldete Aktivitäten, Zu- und Absagen im Team und die Wahl der
-  Bibelübersetzung unter „Wird gesendet…" statt in einer Fehlermeldung.
+  von Events, gemeldete Aktivitäten, Zu- und Absagen im Team, die Wahl der
+  Bibelübersetzung und bei der Leitung das Bearbeiten von Badges, Leveln,
+  Aktivitäten, Kategorien, Zertifikaten, Jahrgängen und Dashboard-Einstellungen
+  unter „Wird gesendet…" statt in einer Fehlermeldung.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

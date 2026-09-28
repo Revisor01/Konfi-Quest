@@ -29,6 +29,7 @@ import { SectionHeader } from '../../shared';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import {
   mergeSectionOrder,
   DEFAULT_KONFI_SECTION_ORDER,
@@ -129,20 +130,24 @@ const AdminDashboardSettingsPage: React.FC = () => {
   const [konfiOrder, setKonfiOrder] = useState<string[]>(DEFAULT_KONFI_ORDER);
   const [teamerOrder, setTeamerOrder] = useState<string[]>(DEFAULT_TEAMER_ORDER);
 
+  // Einstellungen sind PUT: Offline und auch bei einem Netzabbruch im
+  // Online-Zweig gehen sie in die Warteschlange (utils/sendenOderEinreihen.ts,
+  // Audit Grundgeruest BF-01).
   const handleSaveOrder = async (key: string, value: string) => {
-    if (!networkMonitor.isOnline) {
-      writeQueue.enqueue({
-        method: 'PUT',
-        url: '/settings',
-        body: { [key]: value },
-        maxRetries: 3,
-        hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Dashboard-Reihenfolge' },
-      });
-      return;
-    }
     try {
-      await api.put('/settings', { [key]: value });
+      await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: 'PUT',
+        senden: () => api.put('/settings', { [key]: value }),
+        einreihen: () => writeQueue.enqueue({
+          method: 'PUT',
+          url: '/settings',
+          body: { [key]: value },
+          maxRetries: 3,
+          hasFileUpload: false,
+          metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Dashboard-Reihenfolge' },
+        }),
+      });
     } catch {
       setError('Fehler beim Speichern der Reihenfolge');
     }
@@ -186,20 +191,20 @@ const AdminDashboardSettingsPage: React.FC = () => {
     // Optimistic UI zuerst
     setDashboardConfig(prev => ({ ...prev, [key]: value }));
 
-    if (!networkMonitor.isOnline) {
-      writeQueue.enqueue({
-        method: 'PUT',
-        url: '/settings',
-        body: { [`dashboard_${key}`]: value },
-        maxRetries: 3,
-        hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Dashboard-Einstellung' },
-      });
-      return;
-    }
-
     try {
-      await api.put('/settings', { [`dashboard_${key}`]: value });
+      await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: 'PUT',
+        senden: () => api.put('/settings', { [`dashboard_${key}`]: value }),
+        einreihen: () => writeQueue.enqueue({
+          method: 'PUT',
+          url: '/settings',
+          body: { [`dashboard_${key}`]: value },
+          maxRetries: 3,
+          hasFileUpload: false,
+          metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Dashboard-Einstellung' },
+        }),
+      });
     } catch {
       // Revert bei Fehler
       setDashboardConfig(prev => ({ ...prev, [key]: !value }));
@@ -211,20 +216,20 @@ const AdminDashboardSettingsPage: React.FC = () => {
     // Optimistic UI zuerst
     setTeamerDashboardConfig(prev => ({ ...prev, [key]: value }));
 
-    if (!networkMonitor.isOnline) {
-      writeQueue.enqueue({
-        method: 'PUT',
-        url: '/settings',
-        body: { [`teamer_dashboard_${key}`]: value },
-        maxRetries: 3,
-        hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Teamer-Dashboard-Einstellung' },
-      });
-      return;
-    }
-
     try {
-      await api.put('/settings', { [`teamer_dashboard_${key}`]: value });
+      await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: 'PUT',
+        senden: () => api.put('/settings', { [`teamer_dashboard_${key}`]: value }),
+        einreihen: () => writeQueue.enqueue({
+          method: 'PUT',
+          url: '/settings',
+          body: { [`teamer_dashboard_${key}`]: value },
+          maxRetries: 3,
+          hasFileUpload: false,
+          metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Teamer-Dashboard-Einstellung' },
+        }),
+      });
     } catch {
       // Revert bei Fehler
       setTeamerDashboardConfig(prev => ({ ...prev, [key]: !value }));

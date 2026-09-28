@@ -50,6 +50,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { ICON_CHOICES, getIconFromString, type IconChoice } from '../../../utils/badgeIcons';
 import { tastaturKlick } from '../../../utils/tastatur';
@@ -115,38 +116,37 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
 
     const payload = { name: name.trim(), icon };
 
-    if (networkMonitor.isOnline) {
-      setLoading(true);
-      try {
-        if (certificateType) {
-          await api.put(`/teamer/certificate-types/${certificateType.id}`, payload);
-        } else {
-          await api.post('/teamer/certificate-types', payload);
-        }
-
-        onSuccess();
-        handleClose();
-      } catch (error) {
-        setError(fehlerText(error, 'Fehler beim Speichern'));
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      await writeQueue.enqueue({
-        method: certificateType ? 'PUT' : 'POST',
-        url: certificateType ? `/teamer/certificate-types/${certificateType.id}` : '/teamer/certificate-types',
-        body: payload,
-        maxRetries: 5,
-        hasFileUpload: false,
-        metadata: {
-          type: 'admin',
-          clientId: safeUUID(),
-          label: certificateType ? 'Zertifikat bearbeiten' : 'Zertifikat erstellen'
-        }
+    setLoading(true);
+    try {
+      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
+      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
+      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
+      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
+      // Audit Grundgeruest BF-01).
+      const { weg } = await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: certificateType ? 'PUT' : 'POST',
+        senden: () => (certificateType ? api.put(`/teamer/certificate-types/${certificateType.id}`, payload) : api.post('/teamer/certificate-types', payload)),
+        einreihen: () => writeQueue.enqueue({
+          method: certificateType ? 'PUT' : 'POST',
+          url: certificateType ? `/teamer/certificate-types/${certificateType.id}` : '/teamer/certificate-types',
+          body: payload,
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'admin',
+            clientId: safeUUID(),
+            label: certificateType ? 'Zertifikat bearbeiten' : 'Zertifikat erstellen'
+          }
+        }),
       });
-      setSuccess('Wird gespeichert sobald du wieder online bist');
+      if (weg === 'eingereiht') setSuccess('Wird gespeichert sobald du wieder online bist');
       onSuccess();
       handleClose();
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Speichern'));
+    } finally {
+      setLoading(false);
     }
   };
 

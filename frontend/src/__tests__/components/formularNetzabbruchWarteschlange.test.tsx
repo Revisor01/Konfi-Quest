@@ -176,3 +176,25 @@ describe('Formulare mit Warteschlange fallen bei Netzabbruch in sie zurueck', ()
     expect(bonus).not.toContain('idempotent: true');
   });
 });
+
+// Leitungs-Formulare: Bearbeiten (PUT) faellt bei einem Abbruch in die
+// Warteschlange, Anlegen (POST ohne Idempotenzschluessel) nicht -- die
+// Methode entscheidet die Hilfsfunktion, keine Zusicherung.
+describe('Leitung: Bearbeiten ja, Anlegen nein', () => {
+  const faelle: Array<[string, string]> = [
+    ['admin/modals/BadgeManagementModal.tsx', "methode: isEditMode ? 'PUT' : 'POST'"],
+    ['admin/modals/LevelManagementModal.tsx', "methode: level?.id ? 'PUT' : 'POST'"],
+    ['admin/modals/ActivityManagementModal.tsx', "methode: currentActivity ? 'PUT' : 'POST'"],
+    ['admin/pages/AdminCategoriesPage.tsx', "methode: category ? 'PUT' : 'POST'"],
+    ['admin/pages/AdminCertificatesPage.tsx', "methode: certificateType ? 'PUT' : 'POST'"],
+    ['admin/pages/AdminJahrgaengeePage.tsx', "methode: jahrgang ? 'PUT' : 'POST'"],
+    ['admin/pages/AdminDashboardSettingsPage.tsx', "methode: 'PUT'"],
+  ];
+
+  it.each(faelle)('%s', (datei, methode) => {
+    const inhalt = lies(datei);
+    expect(inhalt).toContain('sendenOderEinreihen(');
+    expect(inhalt).toContain(methode);
+    expect(inhalt).not.toContain('idempotent: true');
+  });
+});

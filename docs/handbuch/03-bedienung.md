@@ -567,11 +567,13 @@ es von selbst noch einmal.
 
 Manchmal merkt die App das Funkloch erst beim Senden: Das Handy meldet noch
 Empfang, aber nichts kommt durch. Eine Abmeldung von einem Event, eine
-gemeldete Aktivität, eine Zu- oder Absage im Team und die Wahl der
-Bibelübersetzung landen dann trotzdem unter **„Wird gesendet…"** statt in
-einer Fehlermeldung. Was der Server bei einem zweiten Eingang doppelt ausführen
-könnte — etwa Bonuspunkte oder ein neu angelegtes Event —, meldet in diesem
-Fall einen Fehler; versuche es dann später noch einmal.
+gemeldete Aktivität, eine Zu- oder Absage im Team, die Wahl der
+Bibelübersetzung und als Leitung das **Bearbeiten** von Badges, Leveln,
+Aktivitäten, Kategorien, Zertifikaten und Jahrgängen sowie die
+Dashboard-Einstellungen landen dann trotzdem unter **„Wird gesendet…"** statt
+in einer Fehlermeldung. Was der Server bei einem zweiten Eingang doppelt
+ausführen könnte — Bonuspunkte vergeben, etwas **neu anlegen** —, meldet in
+diesem Fall einen Fehler; versuche es dann später noch einmal.
 
 ### Erkennen, was du ohne Netz noch siehst
 

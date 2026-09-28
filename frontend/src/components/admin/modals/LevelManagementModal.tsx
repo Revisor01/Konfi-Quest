@@ -29,6 +29,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
+import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { ICON_CHOICES as LEVEL_ICONS, getIconFromString } from '../../../utils/badgeIcons';
 import { tastaturKlick } from '../../../utils/tastatur';
 
@@ -112,36 +113,39 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
         is_active: formData.is_active !== false
       };
 
-      if (networkMonitor.isOnline) {
-        // Online-Pfad: direkt senden
-        if (level?.id) {
-          await api.put(`/levels/${level.id}`, payload);
-        } else {
-          await api.post('/levels', payload);
-        }
-      } else {
-        // Offline-Pfad: Queue-Fallback
-        if (level?.id) {
-          await writeQueue.enqueue({
+      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
+      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
+      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
+      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
+      // Audit Grundgeruest BF-01).
+      const { weg } = await sendenOderEinreihen({
+        online: networkMonitor.isOnline,
+        methode: level?.id ? 'PUT' : 'POST',
+        senden: () => (level?.id
+          ? api.put(`/levels/${level.id}`, payload)
+          : api.post('/levels', payload)),
+        einreihen: () => (level?.id
+          ? writeQueue.enqueue({
             method: 'PUT',
             url: `/levels/${level.id}`,
             body: payload,
             maxRetries: 5,
             hasFileUpload: false,
             metadata: { type: 'admin', clientId: safeUUID(), label: 'Level bearbeiten' },
-          });
-          setSuccess('Level wird aktualisiert sobald du wieder online bist');
-        } else {
-          await writeQueue.enqueue({
+          })
+          : writeQueue.enqueue({
             method: 'POST',
             url: '/levels',
             body: payload,
             maxRetries: 5,
             hasFileUpload: false,
             metadata: { type: 'admin', clientId: safeUUID(), label: 'Level erstellen' },
-          });
-          setSuccess('Level wird erstellt sobald du wieder online bist');
-        }
+          })),
+      });
+      if (weg === 'eingereiht') {
+        setSuccess(level?.id
+          ? 'Level wird aktualisiert sobald du wieder online bist'
+          : 'Level wird erstellt sobald du wieder online bist');
       }
       onSuccess();
       handleClose();
