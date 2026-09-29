@@ -1247,6 +1247,9 @@ iOS-Build 234 · Android versionCode 128
 - Wer in einer weiteren Gemeinde im Team ist, sieht dort im Profil keine
   Konfi-Historie aus der eigenen Gemeinde mehr; sie steht in der Gemeinde, in
   der die Konfi-Zeit war.
+- Ein Jahrgang lässt sich nicht mehr löschen, solange darin jemand Konfi ist,
+  der in einer anderen Gemeinde zum Team gehört. Bisher galt diese Person als
+  befördert und verlor beim Löschen ihren Jahrgang.
 
 ### Sonstiges
 - Server, Web-Version und alle automatischen Prüfungen laufen auf derselben
