@@ -579,6 +579,10 @@ describe('Wrapped Routes', () => {
     }
 
     async function abzeichen(userId, badgeId, datum) {
+      // Ein Team-Abzeichen: Der Seed legt alle Abzeichen als Konfi-Abzeichen
+      // an, und seit dem 29.09.2026 zaehlt der Team-Rueckblick nur noch
+      // target_role = 'teamer' (wrappedTeamerNurTeamAbzeichen.test.js).
+      await db.query("UPDATE custom_badges SET target_role = 'teamer' WHERE id = $1", [badgeId]);
       await db.query(
         `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
          VALUES ($1, $2, $3, $4::timestamptz)`,

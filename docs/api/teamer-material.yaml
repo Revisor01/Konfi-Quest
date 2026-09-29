@@ -2120,6 +2120,12 @@ paths:
         Zertifikate und bereits vorhandene Teamer-Ausgaben. Ein reiner
         Konfi-Termin macht ein Jahr NICHT lieferbar.
 
+        Behoben 29.09.2026: Die Abzeichen-Quelle filterte target_role nicht —
+        ein Konfi-Abzeichen einer befoerderten Teamer:in machte ein Jahr
+        lieferbar. Dieselbe Grenze gilt jetzt auch im Snapshot
+        (POST /api/wrapped/generate-teamer: slides.badges und
+        slides.erstes_abzeichen nur target_role teamer).
+
         Das laufende Jahr steht immer in der Liste, aber gesperrt — sonst
         hielte man sein Fehlen fuer einen Fehler.
 

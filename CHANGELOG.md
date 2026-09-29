@@ -1241,6 +1241,9 @@ iOS-Build 234 · Android versionCode 128
   es mitsamt der Arbeit in der anderen Gemeinde. Die übrigen Konten gehen
   vollständig, auch mit ihren Spuren in anderen Gemeinden — bisher konnte das
   Löschen der Gemeinde daran scheitern.
+- Der Team-Rückblick zählt nur Team-Badges. Badges aus der Konfi-Zeit stehen
+  dort nicht mehr — weder in der Zahl noch als erstes Badge des Jahres — und
+  machen kein Jahr mehr wählbar.
 
 ### Sonstiges
 - Server, Web-Version und alle automatischen Prüfungen laufen auf derselben
