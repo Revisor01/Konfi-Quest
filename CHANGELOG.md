@@ -1276,8 +1276,9 @@ iOS-Build 234 · Android versionCode 128
   gefahrlos proben, ohne etwas zu ändern.
 - Die Web-Version gibt beim Öffnen fremder Links nur noch ihre Adresse weiter,
   nie Einladungscodes oder Passwort-Links, und erlaubt Kamera und Mikrofon
-  nur sich selbst. Eine Schutzregel gegen eingeschleuste Skripte läuft
-  zunächst im Beobachtungsmodus.
+  nur sich selbst. Eine Schutzregel gegen eingeschleuste Skripte ist in
+  Kraft: Die Web-Version führt nur ihre eigenen Programmteile aus und lädt
+  Inhalte nur von bekannten Adressen.
 - Ein neues Android-Update erreicht über Google Play zuerst einen Teil der
   Nutzer:innen (10 %) und erst nach Freigabe alle; Testfassungen bleiben
   sofort für alle Testenden verfügbar.

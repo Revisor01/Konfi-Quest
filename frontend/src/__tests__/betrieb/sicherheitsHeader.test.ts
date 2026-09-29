@@ -9,14 +9,15 @@ import { join, resolve } from 'node:path';
 // server-Blocks -- ein Header, der in einer location fehlt, fehlt dort ganz.
 // Deshalb prueft der Test jede location einzeln.
 //
-// Die Content-Security-Policy der Web-App steht als Report-Only: Sie meldet
-// Verstoesse, blockiert nichts. Lokal gegen das gebaute Image und ein
-// Test-Backend in Chromium an 21 Stationen geprueft (Anmeldung, Reiter von
-// Konfi, Org-Admin und Team, Chat mit Bild, PDF-Ansicht): 0 Meldungen, auch
-// mit scharf geschalteter Policy. Zwei Luecken fand erst dieser Lauf:
+// Die Content-Security-Policy der Web-App ist SCHARF (29.09.2026, Simon: "CSP
+// sofort scharf"; bis dahin Report-Only): Der Browser blockiert, was sie nicht
+// erlaubt. Zuerst lokal gegen das gebaute Image und ein Test-Backend in
+// Chromium an 21 Stationen geprueft; zwei Luecken fand erst dieser Lauf:
 // Ionicons laden ihre SVGs per fetch aus data:-Adressen, die PDF-Ansicht
 // liest die Datei per fetch aus einer blob:-Adresse -- beides braucht
-// connect-src.
+// connect-src. Vor dem Umschalten noch einmal an 66 Stationen, Report-Only
+// und scharf: je 0 Meldungen (auch QR-Scanner, Sprachaufnahme, Rueckblick
+// als Bild, Material, PDF mit JPEG-2000-Bild).
 
 const wurzel = resolve(__dirname, '../../../..');
 const nginx = readFileSync(join(wurzel, 'frontend/nginx.conf'), 'utf-8');
@@ -72,8 +73,12 @@ describe('nginx: Sicherheits-Header in jeder Dokument-location', () => {
 describe('nginx: Content-Security-Policy der Web-App', () => {
   const app = locations().find((l) => l.kopf === '/')!;
 
-  it('gilt fuer die Web-App (SPA-Rueckfall), vorerst als Report-Only', () => {
-    expect(app.rumpf).toContain('add_header Content-Security-Policy-Report-Only $csp_app always;');
+  it('gilt fuer die Web-App (SPA-Rueckfall), und zwar scharf', () => {
+    expect(app.rumpf).toContain('add_header Content-Security-Policy $csp_app always;');
+  });
+
+  it('nirgends mehr nur als Report-Only (der Browser meldete dann bloss, statt zu blockieren)', () => {
+    expect(nginx).not.toMatch(/add_header Content-Security-Policy-Report-Only/);
   });
 
   it('nicht fuer statische Seiten mit eigenen Inline-Skripten (Handbuch, Rechtstexte)', () => {
