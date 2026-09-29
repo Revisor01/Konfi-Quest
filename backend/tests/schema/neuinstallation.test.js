@@ -26,128 +26,25 @@
 // Dieser Test baut eine Wegwerf-Datenbank GENAU so auf, wie es eine neue
 // Instanz tut — init-scripts einspielen, dann die Migrationen —, und
 // vergleicht das Ergebnis mit dem Produktionsschema.
-const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
+//
+// Seit dem 29.09.2026 (Audit Datenbank BF-15) vergleicht er den ganzen
+// Katalog -- nicht mehr nur Tabellen, Spaltentypen, CHECKs und Views, sondern
+// auch Indizes, Fremdschluessel samt Loeschregel, UNIQUE und
+// Primaerschluessel, Defaults, NOT NULL, Sequenzen, Trigger und Funktionen
+// (scripts/schemaVergleich.js). Ein fehlender Index oder eine andere
+// Loeschregel zwischen den beiden Wegen blieb vorher unsichtbar.
+const { schemaFingerabdruck, vergleiche } = require('../../scripts/schemaVergleich');
+const {
+  dbAnlegen, dbWegraeumen, neueInstanzAufbauen, produktionAufbauen,
+} = require('../helpers/schemaAufbau');
 
-const ADMIN_URL = process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/postgres';
 const DB_NAME = 'konfi_test_neuinstallation';
-
-const WURZEL = path.join(__dirname, '..', '..', '..');
-const INIT_DIR = path.join(WURZEL, 'init-scripts');
-const MIGRATIONS_DIR = path.join(WURZEL, 'backend', 'migrations');
-const PROD_SCHEMA = path.join(__dirname, 'prod-schema.sql');
-const PROD_MIGRATIONEN = path.join(__dirname, 'prod-migrations.txt');
-
-// Die Dateien in init-scripts in genau der Reihenfolge, in der das
-// postgres-Entrypoint sie ausfuehrt (alphabetisch).
-function initDateien() {
-  return fs.readdirSync(INIT_DIR).filter(f => f.endsWith('.sql')).sort();
-}
-
-async function dbAnlegen(name) {
-  const admin = new Pool({ connectionString: ADMIN_URL });
-  await admin.query(`DROP DATABASE IF EXISTS "${name}"`);
-  await admin.query(`CREATE DATABASE "${name}"`);
-  await admin.end();
-  const url = ADMIN_URL.replace(/\/[^/]+$/, `/${name}`);
-  return new Pool({ connectionString: url });
-}
-
-async function dbWegraeumen(pool, name) {
-  if (pool) await pool.end();
-  const admin = new Pool({ connectionString: ADMIN_URL });
-  await admin.query(
-    `SELECT pg_terminate_backend(pid) FROM pg_stat_activity
-     WHERE datname = $1 AND pid <> pg_backend_pid()`,
-    [name]
-  );
-  await admin.query(`DROP DATABASE IF EXISTS "${name}"`);
-  await admin.end();
-}
-
-// Baut die Datenbank so auf, wie eine neue Instanz startet:
-// 1. init-scripts (einmalig durch /docker-entrypoint-initdb.d),
-// 2. danach backend/database.js runMigrations — alles, was noch nicht
-//    in schema_migrations steht.
-async function neueInstanzAufbauen(pool) {
-  for (const datei of initDateien()) {
-    const sql = fs.readFileSync(path.join(INIT_DIR, datei), 'utf8');
-    // Ein query()-Aufruf pro Datei = eine implizite Transaktion, und
-    // ON_ERROR_STOP-Verhalten wie im Entrypoint: faellt ein Statement,
-    // faellt die Datei.
-    await pool.query(sql);
-  }
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-      name TEXT PRIMARY KEY,
-      applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  const { rows: applied } = await pool.query('SELECT name FROM schema_migrations');
-  const appliedSet = new Set(applied.map(r => r.name));
-
-  const offen = [];
-  for (const datei of fs.readdirSync(MIGRATIONS_DIR).filter(f => f.endsWith('.sql')).sort()) {
-    if (appliedSet.has(datei)) continue;
-    const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, datei), 'utf8');
-    try {
-      await pool.query(sql);
-      await pool.query('INSERT INTO schema_migrations (name) VALUES ($1)', [datei]);
-      offen.push(datei);
-    } catch (err) {
-      throw new Error(`Migration ${datei} laeuft auf einer NEUEN Instanz nicht durch: ${err.message}`, { cause: err });
-    }
-  }
-  return offen;
-}
-
-// Baut die Vergleichsdatenbank aus dem Produktions-Dump — derselbe Weg wie
-// globalSetup.js fuer die regulaere Testsuite.
-async function produktionAufbauen(pool) {
-  await pool.query(fs.readFileSync(PROD_SCHEMA, 'utf8'));
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-      name TEXT PRIMARY KEY,
-      applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  for (const name of fs.readFileSync(PROD_MIGRATIONEN, 'utf8').split('\n').map(z => z.trim()).filter(Boolean)) {
-    await pool.query('INSERT INTO schema_migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', [name]);
-  }
-  const { rows: applied } = await pool.query('SELECT name FROM schema_migrations');
-  const appliedSet = new Set(applied.map(r => r.name));
-  for (const datei of fs.readdirSync(MIGRATIONS_DIR).filter(f => f.endsWith('.sql')).sort()) {
-    if (appliedSet.has(datei)) continue;
-    await pool.query(fs.readFileSync(path.join(MIGRATIONS_DIR, datei), 'utf8'));
-    await pool.query('INSERT INTO schema_migrations (name) VALUES ($1)', [datei]);
-  }
-}
-
-const TABELLEN_SQL = `
-  SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename
-`;
-const SPALTEN_SQL = `
-  SELECT table_name, column_name, data_type
-  FROM information_schema.columns
-  WHERE table_schema = 'public'
-  ORDER BY table_name, column_name
-`;
-const CHECKS_SQL = `
-  SELECT t.relname AS tabelle, pg_get_constraintdef(c.oid) AS definition
-  FROM pg_constraint c
-  JOIN pg_class t ON t.oid = c.conrelid
-  JOIN pg_namespace n ON n.oid = t.relnamespace
-  WHERE n.nspname = 'public' AND c.contype = 'c'
-  ORDER BY t.relname, pg_get_constraintdef(c.oid)
-`;
-const VIEWS_SQL = `
-  SELECT viewname FROM pg_views WHERE schemaname = 'public' ORDER BY viewname
-`;
 
 describe('Neuinstallation: init-scripts + Migrationen ergeben das Produktionsschema', () => {
   let neu;
   let prod;
+  let abdruckNeu;
+  let abdruckProd;
   const NEU_DB = DB_NAME;
   const PROD_DB = `${DB_NAME}_referenz`;
 
@@ -156,6 +53,8 @@ describe('Neuinstallation: init-scripts + Migrationen ergeben das Produktionssch
     await neueInstanzAufbauen(neu);
     prod = await dbAnlegen(PROD_DB);
     await produktionAufbauen(prod);
+    abdruckNeu = await schemaFingerabdruck(neu);
+    abdruckProd = await schemaFingerabdruck(prod);
   }, 180000);
 
   afterAll(async () => {
@@ -166,38 +65,91 @@ describe('Neuinstallation: init-scripts + Migrationen ergeben das Produktionssch
   it('init-scripts laeuft auf einer leeren Datenbank fehlerfrei durch', async () => {
     // Beweis, dass der Aufbau oben nicht stillschweigend gescheitert ist:
     // ohne Tabellen waere jeder folgende Vergleich wertlos.
-    const { rows } = await neu.query(TABELLEN_SQL);
-    expect(rows.length).toBeGreaterThan(0);
+    expect(abdruckNeu.tabellen.length).toBeGreaterThan(50);
+    expect(abdruckNeu.tabellen).toContain('users');
   });
 
-  it('dieselben Tabellen wie in Produktion', async () => {
-    const { rows: a } = await neu.query(TABELLEN_SQL);
-    const { rows: b } = await prod.query(TABELLEN_SQL);
-    expect(a.map(r => r.tablename)).toEqual(b.map(r => r.tablename));
+  // Je Objektart ein Fall, damit der Bericht sagt, WAS abweicht.
+  // views: event_booking_stats entsteht erst in Migration 128/136/154 -- ein
+  // fehlender View fiele sonst erst beim ersten Seitenaufruf auf.
+  // constraints: die Klasse Fehler, die den Anlass gab (ein CHECK, der einen
+  // Wert verbietet, den der Code schreibt), dazu Loeschregeln und UNIQUE.
+  it.each([
+    'tabellen', 'spalten', 'constraints', 'indizes', 'views',
+    'sequenzen', 'trigger', 'funktionen', 'erweiterungen',
+  ])('dieselben %s wie in Produktion', (art) => {
+    expect(abdruckNeu[art]).toEqual(abdruckProd[art]);
   });
 
-  it('dieselben Views wie in Produktion', async () => {
-    // event_booking_stats entsteht erst in Migration 128/136/154 — ein
-    // fehlender View faellt sonst erst beim ersten Seitenaufruf auf.
-    const { rows: a } = await neu.query(VIEWS_SQL);
-    const { rows: b } = await prod.query(VIEWS_SQL);
-    expect(a.map(r => r.viewname)).toEqual(b.map(r => r.viewname));
+  it('der Vergleich deckt alle Objektarten des Fingerabdrucks ab', () => {
+    // Kommt in schemaVergleich.js eine Art dazu, muss sie oben in die Liste.
+    expect(Object.keys(abdruckNeu).sort()).toEqual([
+      'constraints', 'erweiterungen', 'funktionen', 'indizes', 'sequenzen',
+      'spalten', 'tabellen', 'trigger', 'views',
+    ]);
+  });
+});
+
+describe('Neuinstallation: der Waechter sieht die Abweichungen, die er fangen soll', () => {
+  // Gegenprobe im Test selbst (Audit Datenbank BF-15): Fuenf Abweichungen,
+  // die der alte Waechter nicht gesehen haette, auf einer sonst gleichen
+  // Datenbank -- jede muss als Unterschied auftauchen.
+  let referenz;
+  let abweichend;
+  const REF_DB = `${DB_NAME}_gegenprobe_a`;
+  const ABW_DB = `${DB_NAME}_gegenprobe_b`;
+  let unterschiede;
+
+  beforeAll(async () => {
+    referenz = await dbAnlegen(REF_DB);
+    await neueInstanzAufbauen(referenz);
+    abweichend = await dbAnlegen(ABW_DB);
+    await neueInstanzAufbauen(abweichend);
+    // 1. fehlender Index
+    await abweichend.query('DROP INDEX idx_chat_messages_reply_to');
+    // 2. andere Loeschregel an einem Fremdschluessel
+    await abweichend.query(`ALTER TABLE chat_messages DROP CONSTRAINT chat_messages_reply_to_fkey,
+      ADD CONSTRAINT chat_messages_reply_to_fkey FOREIGN KEY (reply_to) REFERENCES chat_messages(id) ON DELETE CASCADE`);
+    // 3. fehlendes UNIQUE
+    await abweichend.query('ALTER TABLE daily_verses DROP CONSTRAINT daily_verses_date_translation_key');
+    // 4. anderer Default
+    await abweichend.query("ALTER TABLE event_bookings ALTER COLUMN status SET DEFAULT 'waitlist'");
+    // 5. fehlendes NOT NULL
+    await abweichend.query('ALTER TABLE jahrgaenge ALTER COLUMN konfspruch_enabled DROP NOT NULL');
+    unterschiede = vergleiche(await schemaFingerabdruck(referenz), await schemaFingerabdruck(abweichend));
+  }, 180000);
+
+  afterAll(async () => {
+    await dbWegraeumen(referenz, REF_DB);
+    await dbWegraeumen(abweichend, ABW_DB);
+  }, 120000);
+
+  it('fehlender Index', () => {
+    expect(unterschiede.indizes.nurA.some((z) => z.includes('idx_chat_messages_reply_to'))).toBe(true);
   });
 
-  it('dieselben Spalten mit denselben Typen', async () => {
-    const schluessel = rows => rows.map(r => `${r.table_name}.${r.column_name}:${r.data_type}`);
-    const { rows: a } = await neu.query(SPALTEN_SQL);
-    const { rows: b } = await prod.query(SPALTEN_SQL);
-    expect(schluessel(a)).toEqual(schluessel(b));
+  it('andere Loeschregel', () => {
+    expect(unterschiede.constraints.nurB).toContain(
+      'chat_messages chat_messages_reply_to_fkey f: FOREIGN KEY (reply_to) REFERENCES chat_messages(id) ON DELETE CASCADE'
+    );
   });
 
-  it('dieselben CHECK-Constraints', async () => {
-    // Die Klasse Fehler, die den Anlass gab: ein CHECK, der einen Wert
-    // verbietet, den der Code schreibt.
-    const schluessel = rows => rows.map(r => `${r.tabelle}: ${r.definition}`);
-    const { rows: a } = await neu.query(CHECKS_SQL);
-    const { rows: b } = await prod.query(CHECKS_SQL);
-    expect(schluessel(a)).toEqual(schluessel(b));
+  it('fehlendes UNIQUE', () => {
+    expect(unterschiede.constraints.nurA).toContain(
+      'daily_verses daily_verses_date_translation_key u: UNIQUE (date, translation)'
+    );
+  });
+
+  it('anderer Default', () => {
+    expect(unterschiede.spalten.nurB.some((z) => z.startsWith('event_bookings.status ') && z.includes("DEFAULT 'waitlist'"))).toBe(true);
+  });
+
+  it('fehlendes NOT NULL', () => {
+    expect(unterschiede.spalten.nurA.some((z) => z.startsWith('jahrgaenge.konfspruch_enabled ') && z.includes('NOT NULL'))).toBe(true);
+  });
+
+  it('sonst nichts: genau diese drei Objektarten weichen ab', () => {
+    expect(Object.keys(unterschiede).sort()).toEqual(['constraints', 'indizes', 'spalten']);
   });
 });
 
