@@ -20,6 +20,7 @@
  * nicht von einem fremden Host abhaengen und auch offline funktionieren.
  */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,14 +39,17 @@ const DATEIEN = [
   { datei: 'stammdaten.yaml' },
 ];
 
+// js-yaml steht in frontend/package.json (devDependencies) und wird ueber die
+// Paketaufloesung des Frontends geladen -- nicht ueber einen festen Dateipfad.
+// Bis 29.09.2026 stand hier `frontend/node_modules/js-yaml/index.js`; die Datei
+// gibt es ab js-yaml 5 nicht mehr (Einstieg dist/js-yaml.cjs.js), und der
+// Dependabot-PR #169 liess den Generator damit scheitern.
 async function ladeYamlParser() {
-  for (const pfad of ['js-yaml', join(WURZEL, 'frontend/node_modules/js-yaml/index.js')]) {
-    try {
-      const mod = await import(pfad);
-      return (mod.default ?? mod).load;
-    } catch { /* naechsten Pfad versuchen */ }
+  try {
+    return createRequire(join(WURZEL, 'frontend', 'package.json'))('js-yaml').load;
+  } catch {
+    throw new Error('js-yaml nicht gefunden. Installieren mit:  npm --prefix frontend ci');
   }
-  throw new Error('js-yaml nicht gefunden. Installieren mit:  npm --prefix frontend install js-yaml');
 }
 
 

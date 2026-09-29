@@ -13,6 +13,7 @@
  * Plus Jakarta Sans für Text, Bereichsfarben aus theme/variables.css.
  */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -83,21 +84,19 @@ function e(text) {
 }
 
 /**
- * YAML einlesen. js-yaml liegt transitiv in frontend/node_modules, steht aber
- * in keiner package.json — deshalb wird es dynamisch geladen und ein
- * verstaendlicher Hinweis ausgegeben, falls es fehlt, statt mit einem
- * Modul-Fehler abzubrechen.
+ * YAML einlesen. js-yaml steht in frontend/package.json (devDependencies) und
+ * wird ueber die Paketaufloesung des Frontends geladen, mit verstaendlichem
+ * Hinweis, falls es fehlt. Bis 29.09.2026 stand hier ein fester Pfad auf
+ * `frontend/node_modules/js-yaml/index.js`; die Datei gibt es ab js-yaml 5
+ * nicht mehr (Einstieg dist/js-yaml.cjs.js), und der Dependabot-PR #169 liess
+ * den Generator damit scheitern.
  */
 async function ladeYamlParser() {
-  for (const pfad of ['js-yaml', join(WURZEL, 'frontend/node_modules/js-yaml/index.js')]) {
-    try {
-      const mod = await import(pfad);
-      return (mod.default ?? mod).load;
-    } catch { /* naechsten Pfad versuchen */ }
+  try {
+    return createRequire(join(WURZEL, 'frontend', 'package.json'))('js-yaml').load;
+  } catch {
+    throw new Error('js-yaml nicht gefunden. Installieren mit:  npm --prefix frontend ci');
   }
-  throw new Error(
-    'js-yaml nicht gefunden. Installieren mit:  npm --prefix frontend install js-yaml'
-  );
 }
 
 function rollenChips(rollen) {
