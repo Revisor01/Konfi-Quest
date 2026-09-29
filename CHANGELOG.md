@@ -478,6 +478,8 @@ iOS-Build 234 · Android versionCode 128
 - Auf dem iPhone erscheint Konfi Quest nicht mehr in der Dateien-App: Fotos,
   die auf das Hochladen warten, und geteilte Chat-Dateien liegen dort nicht
   mehr offen — auch nicht an der App-Sperre vorbei.
+- Eine aus dem Chat geteilte Datei bleibt auf Android nicht mehr im
+  öffentlichen Ordner „Dokumente“ liegen, wo andere Apps sie lesen konnten.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

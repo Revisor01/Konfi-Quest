@@ -258,8 +258,9 @@ wie gewohnt, und Bildschirmfotos gehen auf allen Geräten.
 
 **Was die App auf dem Gerät ablegt, bleibt in der App.** Fotos und Dateien, die
 noch auf das Hochladen warten, und Dateien, die du aus dem Chat teilst,
-erscheinen auf dem iPhone nicht in der Dateien-App. Willst du eine Datei
-behalten, sicherst du sie über das Teilen-Menü, etwa mit „In Dateien sichern“.
+erscheinen auf dem iPhone nicht in der Dateien-App und auf Android nicht im
+Ordner „Dokumente“. Willst du eine Datei behalten, sicherst du sie über das
+Teilen-Menü, etwa mit „In Dateien sichern“.
 
 ### Die Einstellung gilt nur auf diesem Gerät
 
