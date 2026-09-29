@@ -212,7 +212,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 
 ### BF-12: Node-Versionen uneinheitlich — CI 26, Docker-Images 26, `engines` ≥ 22, lokal 22, E2E-Job 20
 - **Schwere:** NIEDRIG
-- **Status:** offen 27.09.2026 — wie Toolchain BF-04 (Node 20 im E2E-Job, keine `.nvmrc`). Später.
+- **Status:** behoben 29.09.2026 — CI, E2E-Job, Docker-Images und `engines` folgen `.nvmrc` (`24`), README nennt 24; der E2E-Job nutzt dieselben Action-Fassungen wie die übrigen Jobs. Einzelheiten: CI BF-11 (`ci-deployment-store.md`), Wächter `frontend/src/__tests__/betrieb/nodeVersionEineLinie.test.ts`.
 - **Fundstelle:** `.github/workflows/ci.yml:91,127` (26), `:225` (`'20'`), `:220` (`actions/checkout@v4` statt v7), `backend/Dockerfile:1` (`node:26-bookworm`), `frontend/Dockerfile:2` (`node:26-alpine`), `backend/package.json:44` (`>=22.0.0`), `README.md:135` („Node 22“)
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Getestet wird unter 26 und (E2E-Seed via `seed.js`/bcrypt) unter 20, entwickelt unter 22, dokumentiert ist 22. Drei Laufzeiten für dieselbe Codebasis; der E2E-Job nutzt zudem ältere Action-Versionen als die übrigen Jobs.

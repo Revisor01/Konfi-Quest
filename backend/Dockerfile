@@ -17,12 +17,12 @@
 #   2. Laufzeit: das schlanke Image, node_modules aus Stufe 1, der Code ohne
 #      Tests und Doku (backend/.dockerignore).
 
-FROM node:26-bookworm AS abhaengigkeiten
+FROM node:24-bookworm AS abhaengigkeiten
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 
-FROM node:26-bookworm-slim
+FROM node:24-bookworm-slim
 WORKDIR /app
 
 # curl NUR fuer den Healthcheck des Stacks: deploy/compose.konfi_quest.yml

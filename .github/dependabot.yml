@@ -111,3 +111,12 @@ updates:
     open-pull-requests-limit: 2
     commit-message:
       prefix: chore(deps)
+    # NODE-LINIE (29.09.2026, Audit CI BF-11): Die Node-Hauptversion steht in
+    # .nvmrc und gilt fuer CI, beide Images und engines zugleich (Test
+    # nodeVersionEineLinie). Ein Sprung nur im Dockerfile risse die Linie auf
+    # und liefe in Produktion auf einer Fassung, die CI nie gesehen hat.
+    # Hauptversion deshalb bewusst von Hand an allen Stellen; Patch und Minor
+    # innerhalb der Linie kommen weiter durch.
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]

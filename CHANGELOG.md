@@ -1232,6 +1232,8 @@ iOS-Build 234 · Android versionCode 128
   Fehler ab.
 
 ### Sonstiges
+- Server, Web-Version und alle automatischen Prüfungen laufen auf derselben
+  Fassung der Laufzeitumgebung, einer mit Langzeitunterstützung.
 - Der Notfallweg zum schnellen Ausrollen oder Zurückdrehen eines Stands tauscht
   die Server nacheinander wie jede reguläre Auslieferung und lässt sich
   gefahrlos proben, ohne etwas zu ändern.

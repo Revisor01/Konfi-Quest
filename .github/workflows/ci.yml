@@ -118,7 +118,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 26
+          node-version-file: .nvmrc
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
@@ -156,7 +156,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 26
+          node-version-file: .nvmrc
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -283,11 +283,17 @@ jobs:
     # als unzuverlaessig erweisen (andere Maschine, andere Zeiten), gehoert
     # der FLATTERNDE TEST repariert -- nicht das Gate wieder aufgemacht.
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      # Dieselbe Node-Linie wie alle anderen Jobs und die Images (.nvmrc,
+      # 29.09.2026, Audit CI BF-11). Bis dahin lief dieser Job als einziger
+      # auf Node 20 (seit dem 30.04.2026 ohne Sicherheitsupdates) und mit
+      # den alten Action-Versionen v4.
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version-file: .nvmrc
           cache: 'npm'
 
       - name: Abhaengigkeiten
@@ -314,9 +320,12 @@ jobs:
       - name: E2E-Tests
         run: npx playwright test --reporter=line
 
+      # v7 statt v4 (29.09.2026): v4 laeuft auf der Node-20-Laufzeit der
+      # Actions; name, path und retention-days gibt es in v7 unveraendert
+      # (action.yml der Fassung 7.0.1 nachgesehen).
       - name: Bericht bei Fehlschlag sichern
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-bericht
           path: |

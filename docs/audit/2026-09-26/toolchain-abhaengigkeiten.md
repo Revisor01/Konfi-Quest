@@ -158,7 +158,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-04: Node-Versionen: E2E-Job auf Node 20 (End-of-Life seit 30.04.2026), Produktion auf Node 26 (noch kein LTS)
 - **Schwere:** MITTEL
-- **Status:** offen 27.09.2026 — weiter Node 20 im E2E-Job, `>=22` in `engines`, 26 in CI und Produktion (live v26.10.0), keine `.nvmrc`. Für 2.3.x vorgemerkt.
+- **Status:** behoben 29.09.2026 — eine Linie aus `.nvmrc` (`24`, Active LTS; 26 wird erst am 28.10.2026 LTS): CI (alle `setup-node` über `node-version-file`), E2E-Job (vorher Node 20 mit `setup-node@v4`), beide Dockerfiles, `engines` des Backends `>=24`; Dependabot hebt die Node-Hauptversion der Images nicht mehr allein. Einzelheiten, Messungen und Begründung: CI BF-11 (`ci-deployment-store.md`), Wächter `frontend/src/__tests__/betrieb/nodeVersionEineLinie.test.ts`.
 - **Fundstelle:** `.github/workflows/ci.yml:245-247` (`actions/setup-node@v4`,
   `node-version: '20'`), `backend/Dockerfile:1` und `frontend/Dockerfile:2` (`node:26`),
   `.github/workflows/ci.yml:95-97,127-129` (Node 26, `setup-node@v7`),
