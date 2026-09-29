@@ -1064,13 +1064,18 @@
           },
           "410": {
             "description": "Code abgelaufen (error_code: expired)"
+          },
+          "429": {
+            "description": "{ error } -- mehr als 60 unbekannte Codes (404) je Viertelstunde von derselben Adresse (einladungscodeLimiter, seit 29.09.2026)"
           }
         },
         "x-berechtigung": {
           "rollen": [
             "oeffentlich"
           ],
-          "middleware": [],
+          "middleware": [
+            "einladungscodeLimiter"
+          ],
           "org-scope": false,
           "objekt-pruefung": "Nur Existenz + Ablauf"
         }
@@ -1195,6 +1200,9 @@
           },
           "400": {
             "description": "Token ungueltig/abgelaufen/benutzt oder Policy verletzt"
+          },
+          "429": {
+            "description": "{ error } -- mehr als 20 ungueltige Tokens je Viertelstunde von derselben Adresse (resetTokenLimiter, seit 29.09.2026)"
           }
         },
         "x-berechtigung": {
@@ -1202,6 +1210,7 @@
             "oeffentlich"
           ],
           "middleware": [
+            "resetTokenLimiter",
             "validateResetPassword"
           ],
           "org-scope": false,
@@ -1258,13 +1267,18 @@
           },
           "403": {
             "description": "{ error, error_code } -- User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt (org_inactive) / Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung. Code, Reihenfolge (erst Konto, dann Gemeinde) und Text sind seit 28.09.2026 dieselben wie bei POST /api/auth/login (eine Quelle, SPERR_MELDUNGEN); die App zeigt den Text nach einem abgelehnten Refresh auf der Anmeldeseite statt 'Sitzung abgelaufen'. Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt"
+          },
+          "429": {
+            "description": "{ error } -- mehr als 300 abgelehnte Tokens (401) je Viertelstunde von derselben Adresse (refreshLimiter, seit 29.09.2026). Erfolgreiche Erneuerungen, 403, 400 und 500 zaehlen nicht. ACHTUNG: Die App (2.2.x, 2.3.0) meldet sich bei jeder abgelehnten Erneuerung ab, auch bei 429 -- deshalb so weit wie die Fehlversuche beim Login; ein Geraet erzeugt hoechstens zwei 401, bevor die App den Token verwirft"
           }
         },
         "x-berechtigung": {
           "rollen": [
             "oeffentlich"
           ],
-          "middleware": [],
+          "middleware": [
+            "refreshLimiter"
+          ],
           "org-scope": false,
           "objekt-pruefung": "SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login",
           "hinweis": "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
@@ -1764,6 +1778,7 @@
           "Organisationen"
         ],
         "summary": "Organisation vollstaendig löschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)",
+        "description": "Konten der Gemeinde (users.organization_id = id), 29.09.2026:\n- auch in einer anderen Gemeinde Mitglied (user_organizations): das Konto zieht um,\n  wie DELETE /api/users/{id} Fall 2 (aktive Gemeinde vor gesperrter, dann die älteste\n  Mitgliedschaft; Rolle von dort). Anmeldungen, Geräte und die Arbeit in der anderen\n  Gemeinde bleiben.\n- nur hier Mitglied: gemeinsame Kontolöschung wie auf allen Löschwegen\n  (utils/kontoLoeschen.js, für alle Konten in einem Durchgang) — auch Anträge,\n  Dateien, Zweiergespräche und Buchungen in anderen Gemeinden (Nachrücken dort).\nBehoben 29.09.2026: Vorher `DELETE FROM users WHERE organization_id` — Spuren eines\nKontos in einer anderen Gemeinde (Antrag, angelegter Termin) ließen die Löschung am\nFremdschlüssel mit 500 scheitern, Dateien und Zweiergespräche dort blieben liegen, und\nKonten mit weiterer Mitgliedschaft verschwanden ganz.\n",
         "parameters": [
           {
             "name": "id",
@@ -1777,7 +1792,27 @@
         ],
         "responses": {
           "200": {
-            "description": "Org und alle zugehoerigen Daten geloescht; Gast-User fremder Orgs bleiben"
+            "description": "Org und alle zugehoerigen Daten geloescht; Gast-User fremder Orgs bleiben",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "konten_geloescht": {
+                      "type": "integer",
+                      "description": "Konten, die nur zu dieser Gemeinde gehörten (additiv, 29.09.2026)"
+                    },
+                    "konten_umgezogen": {
+                      "type": "integer",
+                      "description": "Konten, die in eine weitere Gemeinde umgezogen sind (additiv, 29.09.2026)"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -3782,7 +3817,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Nachweisfoto für Antrag hochladen (verschlüsselt at-rest)",
-        "description": "multipart/form-data, Feld \"photo\". Magic-Bytes-Prüfung (nur echte Bilder, sonst 415), AES-256-GCM-Verschluesselung, zufaelliger 64-Hex-Dateiname wird zurueckgegeben (für POST /api/konfi/requests).\n",
+        "description": "multipart/form-data, Feld \"photo\". Magic-Bytes-Prüfung (nur echte Bilder, sonst 415), AES-256-GCM-Verschluesselung, zufaelliger 64-Hex-Dateiname wird zurueckgegeben (für POST /api/konfi/requests). Typ-Filter utils/uploadTypen.js (REGELN.antrag): jedes gemeldete Bild; bei allgemeiner Angabe (leer, application/octet-stream) der Typ der Endung, sofern sie ein Bild nennt. BEHOBEN 29.09.2026: Vorher verwarf der Filter alles andere still (400 \"Kein Foto hochgeladen\"); jetzt 415 \"Dieser Dateityp kann nicht hochgeladen werden.\".\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -3830,7 +3865,7 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "415": {
-            "description": "Datei ist kein Bild (Magic-Bytes)"
+            "description": "Datei ist kein Bild: am gemeldeten Typ bzw. der Endung (\"Dieser Dateityp kann nicht hochgeladen werden.\", seit 29.09.2026) oder an den Magic-Bytes"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -4191,7 +4226,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Zeitslots eines Events (Konfi-Sicht)",
-        "description": "Identische Antwort wie GET /api/events/{id}/timeslots. Seit 01.09.2026 rechnen beide Routen ueber utils/terminAnmeldeStatus.js (ladeZeitfenster); vorher lag dieselbe Query zweimal im Code. Unterschied bleibt allein der Rollen-Guard: hier nur Konfis.",
+        "description": "Identische Antwort wie GET /api/events/{id}/timeslots. Seit 01.09.2026 rechnen beide Routen ueber utils/terminAnmeldeStatus.js (ladeZeitfenster); vorher lag dieselbe Query zweimal im Code. Unterschied bleibt allein der Rollen-Guard: hier nur Konfis. GEAENDERT 29.09.2026 (Migration 177): created_at jedes Zeitfensters kommt als ISO-Zeitpunkt (date-time, \"2026-09-26T11:53:58.597Z\") statt als Text der Datenbank (\"2026-09-26 13:53:58.597731+02\"); die Spalte ist jetzt timestamptz. Typ bleibt string, keine App liest das Feld (geprueft: Store 2.2.0 und heutiger Stand).",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -5000,7 +5035,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Zeitslots eines Events (alle Rollen)",
-        "description": "Identische Antwort wie GET /api/konfi/events/{id}/timeslots; beide Routen rechnen seit 01.09.2026 ueber utils/terminAnmeldeStatus.js (ladeZeitfenster). Sortierung nach start_time aufsteigend, Zaehler als Zahlen (nicht Strings).",
+        "description": "Identische Antwort wie GET /api/konfi/events/{id}/timeslots; beide Routen rechnen seit 01.09.2026 ueber utils/terminAnmeldeStatus.js (ladeZeitfenster). Sortierung nach start_time aufsteigend, Zaehler als Zahlen (nicht Strings). GEAENDERT 29.09.2026 (Migration 177): created_at jedes Zeitfensters kommt als ISO-Zeitpunkt (date-time, \"2026-09-26T11:53:58.597Z\") statt als Text der Datenbank (\"2026-09-26 13:53:58.597731+02\"); die Spalte ist jetzt timestamptz. Typ bleibt string, keine App liest das Feld (geprueft: Store 2.2.0 und heutiger Stand).",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5041,7 +5076,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event-Details mit Teilnehmern (rollenabhaengig reduziert)",
-        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants. BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte \"Ausgebucht\" melden, die Liste \"Offen\"); Teamer stehen getrennt in teamer_count/teamer_waitlist_count. BEHOBEN 16.09.2026: series_events[].registered_count zaehlte als letzte Stelle noch ohne Rollenfilter und ohne deleted_at-Filter — Teamer:innen, zugeordnete Leitung und Buchungen geloeschter Konten gingen als Konfis mit. Angezeigt wird die Zahl als \"N/max TN\", mit demselben Wort wie die konfi-reine Zahl darueber; ein Serientermin mit 19 Konfis und 4 Teamer:innen meldete dort 23. Liest jetzt konfi_confirmed aus event_booking_stats wie alle anderen Zaehler. Wert-Aenderung, keine Formaenderung: Feldname und Typ bleiben. ADDITIV 15.09.2026: cancelled_reason, cancelled_by und cancelled_by_name (Migration 150) — der freiwillige Absagegrund und wer abgesagt hat. Alle nullable; NULL beim Namen heisst \"unbekannt\" (Termine, die vor der Migration abgesagt wurden). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. ADDITIV 01.09.2026: participants[]-Eintraege tragen zusaetzlich absage_nach_zusage (boolean, Migration 141) — hat diese Absage eine vorherige Zusage zurueckgenommen? Gesetzt nur vom Teamer-Zusage-Weg (POST /api/teamer/events/{id}/zusage). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. BEHOBEN 06.09.2026: Die Antwort traegt jetzt registration_status und teamer_registration_status — beide berechnet mit denselben Helfern wie GET /api/events (utils/terminAnmeldeStatus.js). Vorher lieferte nur die Liste den Status; die Leitungs-Detailansicht las ihn hier als undefined und zeigte deshalb \"Geschlossen\" an offenen Terminen (sichtbar vor allem ohne Anmeldefrist und ohne Kapazitaet). ADDITIV — kein vorhandenes Feld aendert Form oder Typ. ADDITIV 12.09.2026 (Migration 147): participants[]-Eintraege tragen zusaetzlich excuse_reason und attendance_note (beide text, nullbar), und attendance_status kann jetzt auch 'excused' sein. Ausgelieferte Apps lesen die neuen Felder nicht und kennen den neuen Wert nicht — sie zeigen ihn wie einen unbekannten Status, kein Feld aendert Form oder Typ. ADDITIV 13.09.2026 (Migration 148): participants[]-Eintraege tragen zusaetzlich attendance_set_by (integer, nullbar), attendance_set_at (date-time, nullbar) und attendance_set_by_name (string, nullbar) — wer die Anwesenheit zuletzt gesetzt hat und wann. NULL heisst UNBEKANNT, nicht \"niemand\": Buchungen von vor der Migration und Selbst-Check-ins per QR-Code tragen keinen Urheber. Der Name kommt ueber einen LEFT JOIN auf users — eine Buchung ohne Urheber bleibt in der Liste. Kein vorhandenes Feld aendert Form oder Typ. ADDITIV 13.09.2026 (Migration 149): dazu note_set_by (integer, nullbar), note_set_at (date-time, nullbar) und note_set_by_name (string, nullbar) — wer die NOTIZ (attendance_note) zuletzt geschrieben hat. attendance_set_by/_at gelten seither fuer den STATUS samt excuse_reason; Name, Typ und Nullbarkeit dieser Felder bleiben unveraendert, nur ihre Bedeutung verengt sich von \"alles\" auf \"Status samt Grund\". Hintergrund: Schreibt A den Grund und B spaeter die Notiz, ueberschrieb B mit einem gemeinsamen Paar den Urheber des Grundes — die Anzeige nannte dann die falsche Person. Auch der zweite Name kommt ueber einen LEFT JOIN: eine Buchung ohne Notiz (der Normalfall) bleibt in der Liste, note_set_by_name ist dann null. ADDITIV 15.09.2026 (Migration 151): dazu checkin_quelle (string, nullbar: 'qr' | 'manuell') und checked_in_at (date-time, nullbar) — WOHER die Anwesenheit kam und wann. Ergaenzt die Urheber-Felder, ersetzt sie nicht: Beim Selbst-Check-in bleibt attendance_set_by bewusst null (ein Selbst-Check-in ist keine Leitungsentscheidung und traegt keinen Namen), sodass er vorher im selben null stand wie der Altbestand. Die Quelle trennt beides; die Anzeige macht aus 'qr' die Zeile \"Eingecheckt per QR-Code, 15.09.\". NULL heisst weiterhin UNBEKANNT — Buchungen von vor der Migration, kein Backfill. Kein vorhandenes Feld aendert Form oder Typ. BEHOBEN 22.09.2026 (Sicherheit): series_events[] trug den qr_token JEDES weiteren Serientermins — fuer ALLE Rollen. Der Filter oben nimmt den Token nur vom Haupttermin und nur fuer Konfis; die Serientermine gingen daran vorbei (SELECT e.*). Das ist derselbe Weg, den die Liste seit dem Audit vom 22.08.2026 schliesst: Mit dem Token traegt sich ein Konfi per POST /api/events/qr-checkin von zu Hause als anwesend ein — hier fuer die ganze Serie auf einmal. series_events[] liefert jetzt nur noch die Felder, die die Serienliste anzeigt: id, name, event_date, max_participants, registered_count. FORMAENDERUNG, bewusst: Weggefallen sind ausschliesslich Felder, die keine Ansicht liest (geprueft gegen frontend/src). Konfi- und Teamer-Ansicht werten series_events[] gar nicht aus, nur die Leitungsansicht (EventDetailSections.tsx, SeriesEventsSection) — und die liest genau diese fuenf. Name, Typ und Bedeutung der verbliebenen Felder sind unveraendert.\n",
+        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants. GEAENDERT 29.09.2026 (Migration 177): participants[].created_at und timeslots[].created_at kommen als ISO-Zeitpunkt (date-time) statt als Text der Datenbank (\"2026-09-26 13:53:58.597731+02\"); die Spalten sind jetzt timestamptz. Typ bleibt string, keine App liest die Felder (geprueft: Store 2.2.0 und heutiger Stand). BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte \"Ausgebucht\" melden, die Liste \"Offen\"); Teamer stehen getrennt in teamer_count/teamer_waitlist_count. BEHOBEN 16.09.2026: series_events[].registered_count zaehlte als letzte Stelle noch ohne Rollenfilter und ohne deleted_at-Filter — Teamer:innen, zugeordnete Leitung und Buchungen geloeschter Konten gingen als Konfis mit. Angezeigt wird die Zahl als \"N/max TN\", mit demselben Wort wie die konfi-reine Zahl darueber; ein Serientermin mit 19 Konfis und 4 Teamer:innen meldete dort 23. Liest jetzt konfi_confirmed aus event_booking_stats wie alle anderen Zaehler. Wert-Aenderung, keine Formaenderung: Feldname und Typ bleiben. ADDITIV 15.09.2026: cancelled_reason, cancelled_by und cancelled_by_name (Migration 150) — der freiwillige Absagegrund und wer abgesagt hat. Alle nullable; NULL beim Namen heisst \"unbekannt\" (Termine, die vor der Migration abgesagt wurden). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. ADDITIV 01.09.2026: participants[]-Eintraege tragen zusaetzlich absage_nach_zusage (boolean, Migration 141) — hat diese Absage eine vorherige Zusage zurueckgenommen? Gesetzt nur vom Teamer-Zusage-Weg (POST /api/teamer/events/{id}/zusage). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. BEHOBEN 06.09.2026: Die Antwort traegt jetzt registration_status und teamer_registration_status — beide berechnet mit denselben Helfern wie GET /api/events (utils/terminAnmeldeStatus.js). Vorher lieferte nur die Liste den Status; die Leitungs-Detailansicht las ihn hier als undefined und zeigte deshalb \"Geschlossen\" an offenen Terminen (sichtbar vor allem ohne Anmeldefrist und ohne Kapazitaet). ADDITIV — kein vorhandenes Feld aendert Form oder Typ. ADDITIV 12.09.2026 (Migration 147): participants[]-Eintraege tragen zusaetzlich excuse_reason und attendance_note (beide text, nullbar), und attendance_status kann jetzt auch 'excused' sein. Ausgelieferte Apps lesen die neuen Felder nicht und kennen den neuen Wert nicht — sie zeigen ihn wie einen unbekannten Status, kein Feld aendert Form oder Typ. ADDITIV 13.09.2026 (Migration 148): participants[]-Eintraege tragen zusaetzlich attendance_set_by (integer, nullbar), attendance_set_at (date-time, nullbar) und attendance_set_by_name (string, nullbar) — wer die Anwesenheit zuletzt gesetzt hat und wann. NULL heisst UNBEKANNT, nicht \"niemand\": Buchungen von vor der Migration und Selbst-Check-ins per QR-Code tragen keinen Urheber. Der Name kommt ueber einen LEFT JOIN auf users — eine Buchung ohne Urheber bleibt in der Liste. Kein vorhandenes Feld aendert Form oder Typ. ADDITIV 13.09.2026 (Migration 149): dazu note_set_by (integer, nullbar), note_set_at (date-time, nullbar) und note_set_by_name (string, nullbar) — wer die NOTIZ (attendance_note) zuletzt geschrieben hat. attendance_set_by/_at gelten seither fuer den STATUS samt excuse_reason; Name, Typ und Nullbarkeit dieser Felder bleiben unveraendert, nur ihre Bedeutung verengt sich von \"alles\" auf \"Status samt Grund\". Hintergrund: Schreibt A den Grund und B spaeter die Notiz, ueberschrieb B mit einem gemeinsamen Paar den Urheber des Grundes — die Anzeige nannte dann die falsche Person. Auch der zweite Name kommt ueber einen LEFT JOIN: eine Buchung ohne Notiz (der Normalfall) bleibt in der Liste, note_set_by_name ist dann null. ADDITIV 15.09.2026 (Migration 151): dazu checkin_quelle (string, nullbar: 'qr' | 'manuell') und checked_in_at (date-time, nullbar) — WOHER die Anwesenheit kam und wann. Ergaenzt die Urheber-Felder, ersetzt sie nicht: Beim Selbst-Check-in bleibt attendance_set_by bewusst null (ein Selbst-Check-in ist keine Leitungsentscheidung und traegt keinen Namen), sodass er vorher im selben null stand wie der Altbestand. Die Quelle trennt beides; die Anzeige macht aus 'qr' die Zeile \"Eingecheckt per QR-Code, 15.09.\". NULL heisst weiterhin UNBEKANNT — Buchungen von vor der Migration, kein Backfill. Kein vorhandenes Feld aendert Form oder Typ. BEHOBEN 22.09.2026 (Sicherheit): series_events[] trug den qr_token JEDES weiteren Serientermins — fuer ALLE Rollen. Der Filter oben nimmt den Token nur vom Haupttermin und nur fuer Konfis; die Serientermine gingen daran vorbei (SELECT e.*). Das ist derselbe Weg, den die Liste seit dem Audit vom 22.08.2026 schliesst: Mit dem Token traegt sich ein Konfi per POST /api/events/qr-checkin von zu Hause als anwesend ein — hier fuer die ganze Serie auf einmal. series_events[] liefert jetzt nur noch die Felder, die die Serienliste anzeigt: id, name, event_date, max_participants, registered_count. FORMAENDERUNG, bewusst: Weggefallen sind ausschliesslich Felder, die keine Ansicht liest (geprueft gegen frontend/src). Konfi- und Teamer-Ansicht werten series_events[] gar nicht aus, nur die Leitungsansicht (EventDetailSections.tsx, SeriesEventsSection) — und die liest genau diese fuenf. Name, Typ und Bedeutung der verbliebenen Felder sind unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5265,7 +5300,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Eigene Buchung stornieren",
-        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer). Wiederholbar: Ist die Buchung schon weg, der Termin aber vorhanden, kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404. SEIT 01.09.2026 ohne Aufrufer in der Oberflaeche (siehe ABRISS.md): Die Teamer-Abmeldung laeuft ueber POST /api/teamer/events/{id}/zusage (dabei=false), die die Absage samt Grund stehen laesst statt zu loeschen. Die Route bleibt unveraendert fuer ausgelieferte Apps. KONFI-PFAD SEIT 26.09.2026 MIT DENSELBEN REGELN WIE DELETE /api/konfi/events/{id}/register (Audit Punkte/Termine BF-01, utils/bookingUtils.pruefeKonfiStorno, eine Funktion fuer beide Routen): verbuchte Anwesenheit (present/absent) -> 400 \"Die Anwesenheit ist bereits verbucht\", Pflichttermin -> 400 \"nur ueber Opt-out\", bestaetigter Platz in den letzten zwei Tagen -> 400 \"nur bis 2 Tage vor dem Event\". Wartende sind von der Frist ausgenommen. Die Abmeldung wird wie auf der Konfi-Route in event_unregistrations protokolliert. Bis dahin loeschte dieser Weg jede Konfi-Buchung -- auch ein von der Leitung eingetragenes \"gefehlt\" am Pflichttermin. Fuer Teamer:innen unveraendert (keine Frist, kein Pflicht-Riegel, kein Konfi-Protokoll).\n\nBEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-18): Der Konfi-Pfad meldete sich bei niemandem -- die Abmeldung stand in der Liste der Leitung, ohne Mitteilung. Jetzt dieselben Mitteilungen wie auf DELETE /api/konfi/events/{id}/register: Bestaetigung an die Konfi (event_unregistered) und \"Event-Abmeldung\" samt optionalem reason an die Leitung, die das Event sieht (event_unregistration, backend/utils/terminLeitungSicht.js). Fuer Konfis bleibt die Route erreichbar (keine App-Fassung ruft sie fuer Konfis, geprueft 1.5.3 bis 2.2.0; Regeln und Protokoll gleichen seit 26.09.2026 der Konfi-Route). Die Teamer-Absage (\"Teamer:in abgemeldet\", teamer_event_cancellation) geht seit demselben Tag ebenfalls nur an die Leitung, die das Event sieht; vorher an jeden Admin. requestBody optional: reason (nur Konfi-Pfad, landet im Protokoll und in der Meldung). Antwortform unveraendert.\n",
+        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer). Wiederholbar: Ist die Buchung schon weg, der Termin aber vorhanden, kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404. SEIT 01.09.2026 ohne Aufrufer in der Oberflaeche (siehe ABRISS.md): Die Teamer-Abmeldung laeuft ueber POST /api/teamer/events/{id}/zusage (dabei=false), die die Absage samt Grund stehen laesst statt zu loeschen. Die Route bleibt unveraendert fuer ausgelieferte Apps. KONFI-PFAD SEIT 26.09.2026 MIT DENSELBEN REGELN WIE DELETE /api/konfi/events/{id}/register (Audit Punkte/Termine BF-01, utils/bookingUtils.pruefeKonfiStorno, eine Funktion fuer beide Routen): verbuchte Anwesenheit (present/absent) -> 400 \"Die Anwesenheit ist bereits verbucht\", Pflichttermin -> 400 \"nur ueber Opt-out\", bestaetigter Platz in den letzten zwei Tagen -> 400 \"nur bis 2 Tage vor dem Event\". Wartende sind von der Frist ausgenommen. Die Abmeldung wird wie auf der Konfi-Route in event_unregistrations protokolliert. Bis dahin loeschte dieser Weg jede Konfi-Buchung -- auch ein von der Leitung eingetragenes \"gefehlt\" am Pflichttermin. Fuer Teamer:innen unveraendert (keine Frist, kein Pflicht-Riegel, kein Konfi-Protokoll).\n\nBEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-18): Der Konfi-Pfad meldete sich bei niemandem -- die Abmeldung stand in der Liste der Leitung, ohne Mitteilung. Jetzt dieselben Mitteilungen wie auf DELETE /api/konfi/events/{id}/register: Bestaetigung an die Konfi (event_unregistered) und \"Event-Abmeldung\" samt optionalem reason an die Leitung, die das Event sieht (event_unregistration, backend/utils/terminLeitungSicht.js). Fuer Konfis bleibt die Route erreichbar (keine App-Fassung ruft sie fuer Konfis, geprueft 1.5.3 bis 2.2.0; Regeln und Protokoll gleichen seit 26.09.2026 der Konfi-Route). Die Teamer-Absage (\"Teamer:in abgemeldet\", teamer_event_cancellation) geht seit demselben Tag ebenfalls nur an die Leitung, die das Event sieht; vorher an jeden Admin. requestBody optional: reason (nur Konfi-Pfad, landet im Protokoll und in der Meldung). Antwortform unveraendert. BEHOBEN 29.09.2026: Die \"Event-Abmeldung\" an die Leitung trug hier als einziger Weg keine konfi_id in data -- nach der Loeschung der Konfi blieb ihr Name im Postfach der Leitung stehen (bis 365 Tage). Jetzt mit konfi_id wie auf DELETE /api/konfi/events/{id}/register; loescheMitteilungenUeberPerson nimmt den Eintrag mit dem Konto mit.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -5489,7 +5524,7 @@
         },
         "responses": {
           "200": {
-            "description": "Array (eb.*, event_name, event_date, location, mandatory, bring_items)"
+            "description": "Array (eb.*, event_name, event_date, location, mandatory, bring_items). created_at kommt seit 29.09.2026 (Migration 177) als ISO-Zeitpunkt statt als Text der Datenbank; Typ bleibt string."
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -7183,8 +7218,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und nicht gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)",
-          "hinweis": "Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges. Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner).\n"
+          "objekt-pruefung": "Ziel muss IN DER AKTIVEN GEMEINDE Rolle konfi haben (ladeRolleInGemeinde: users.role_id zuhause, user_organizations.role_id in einer weiteren), dort ein Konfi-Profil haben (darfKonfi) und nicht gelöscht sein, sonst 404; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)",
+          "hinweis": "Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges. Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner). Behoben 29.09.2026: Die Zugehoerigkeit las nur users.organization_id und die Rolle am Konto — eine Konfi, die ueber user_organizations in dieser Gemeinde Konfi ist, bekam 404, waehrend /:id/event-points (darfKonfi) fuer sie antwortete.\n"
         },
         "parameters": [
           {
@@ -8250,7 +8285,7 @@
           "Chat"
         ],
         "summary": "Nachricht senden (Text oder Datei)",
-        "description": "multipart/form-data mit optionalem Feld 'file' (verschluesselte Ablage, Magic-Bytes-Prüfung) oder JSON mit content. client_id (UUID) macht den Aufruf idempotent. reply_to wird gegen den Raum validiert. Verteilt via WebSocket und Push an alle Teilnehmer. TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): text/plain und text/csv haben keine Magic Bytes; statt dem Header zu vertrauen, prüft der Server den Inhalt (utils/textDatei.js): höchstens 2 MB (413), keine Binärdaten (415 \"Die Datei ist keine Textdatei.\"), keine HTML-/Skript-Signatur (415 \"Textdateien mit HTML oder Skript werden nicht angenommen.\"). Kein UTF-8-Zwang: Excel-CSV in Windows-1252 geht durch.\n",
+        "description": "multipart/form-data mit optionalem Feld 'file' (verschluesselte Ablage, Magic-Bytes-Prüfung) oder JSON mit content. client_id (UUID) macht den Aufruf idempotent. reply_to wird gegen den Raum validiert. Verteilt via WebSocket und Push an alle Teilnehmer. TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): text/plain und text/csv haben keine Magic Bytes; statt dem Header zu vertrauen, prüft der Server den Inhalt (utils/textDatei.js): höchstens 2 MB (413), keine Binärdaten (415 \"Die Datei ist keine Textdatei.\"), keine HTML-/Skript-Signatur (415 \"Textdateien mit HTML oder Skript werden nicht angenommen.\"). Kein UTF-8-Zwang: Excel-CSV in Windows-1252 geht durch. DATEITYPEN (utils/uploadTypen.js, REGELN.chat): JPG, PNG, GIF, WebP, HEIC/HEIF, MP4, MOV, WebM, MP3, M4A, OGG, WAV, PDF, DOC, DOCX, PPT, PPTX, TXT, CSV. Steht der gemeldete Typ auf der Liste, gilt er. Ist die Angabe allgemein (leer, application/octet-stream, binary/octet-stream, oder text/plain bei einer Nicht-Text-Endung -- busboy-Vorgabe für einen Teil ohne Content-Type) oder steht der Typ nicht auf der Liste, die Endung aber schon (etwa audio/x-m4a bei .m4a), gilt der Typ der Endung. Den Inhalt prüfen weiterhin die Kopfbytes bzw. die Textprüfung; ein umbenanntes Programm fällt dort durch (415 \"Dateityp konnte nicht verifiziert werden\"). BEHOBEN 29.09.2026 (Simons Befund, Android-Testbuild 128: eine .docx liess sich nicht senden): Bis dahin verwarf der Filter jede Datei still, deren gemeldeter Typ nicht auf der Liste stand -- auch eine Word-Datei als application/octet-stream. Die Route antwortete dann 400 \"Inhalt oder Datei erforderlich\"; mit Text dabei ging die Nachricht OHNE die Datei raus (200). Jetzt: 415 \"Dieser Dateityp kann nicht gesendet werden.\" und keine Nachricht. Store-Apps bis 2.3.0 werten jeden 4xx gleich aus (Warteschlange: Fehlschlag ohne Wiederholung); ihre Warteschlange schickt Dateien ohne Typ als image/jpeg -- das geht weiter durch.\n",
         "parameters": [
           {
             "name": "roomId",
@@ -8314,7 +8349,7 @@
             "description": "Datei über 5 MB, Textdatei über 2 MB (seit 29.09.2026)"
           },
           "415": {
-            "description": "Dateityp per Magic Bytes nicht verifizierbar; Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)"
+            "description": "Dateityp nicht erlaubt (\"Dieser Dateityp kann nicht gesendet werden.\", seit 29.09.2026 -- vorher still verworfen, dann 400 oder Nachricht ohne Datei); Dateityp per Magic Bytes nicht verifizierbar (\"Dateityp konnte nicht verifiziert werden\"); Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -9610,7 +9645,7 @@
           "Challenges (Konfis)"
         ],
         "summary": "Beitrag einreichen",
-        "description": "multipart (Feld 'file') für photo/audio/video, JSON für text/link. Links nur von Musikdiensten (Erlaubnisliste utils/musikLinks auf Hostname-Basis): Spotify, Apple Music, YouTube Music, Deezer — alles andere wird mit 400 abgelehnt (seit 24.08.2026). Der Server holt beim Einreichen einmalig Titel/Interpret (link_title, link_author); scheitert der Abruf, wird ohne Metadaten gespeichert. Nur bei Status 'active'. audience steuert, wer einreichen darf (maySubmit): konfi bei 'konfis'/'konfis_und_team', Team bei 'konfis_und_team'/'nur_team'. konfi_consent nur bei visibility='konfi_choice' (Default 'publish'). Ohne Moderation Auto-Approve. Magic-Bytes-Prüfung der Datei; verschluesselte Ablage.\n",
+        "description": "multipart (Feld 'file') für photo/audio/video, JSON für text/link. Links nur von Musikdiensten (Erlaubnisliste utils/musikLinks auf Hostname-Basis): Spotify, Apple Music, YouTube Music, Deezer — alles andere wird mit 400 abgelehnt (seit 24.08.2026). Der Server holt beim Einreichen einmalig Titel/Interpret (link_title, link_author); scheitert der Abruf, wird ohne Metadaten gespeichert. Nur bei Status 'active'. audience steuert, wer einreichen darf (maySubmit): konfi bei 'konfis'/'konfis_und_team', Team bei 'konfis_und_team'/'nur_team'. konfi_consent nur bei visibility='konfi_choice' (Default 'publish'). Ohne Moderation Auto-Approve. Magic-Bytes-Prüfung der Datei; verschluesselte Ablage. DATEITYPEN (utils/uploadTypen.js, REGELN.challenge): jedes gemeldete Bild, dazu MP4, MOV, M4V, WebM, MP3, M4A, AAC, OGG, WAV. Bei allgemeiner Angabe (leer, application/octet-stream) oder einem Typ, der nicht auf der Liste steht, gilt der Typ der Endung, sofern sie erlaubt ist. BEHOBEN 29.09.2026: Vorher verwarf der Filter solche Dateien still, und die Route antwortete 400 \"Bitte wähle eine Datei aus.\"; jetzt 415 \"Dieser Dateityp kann nicht hochgeladen werden.\" für Dateien, die nicht passen.\n",
         "parameters": [
           {
             "name": "id",
@@ -9690,7 +9725,7 @@
             "description": "Challenge nicht aktiv ODER bereits eingereicht (allow_multiple=false). Seit 28.09.2026 auch bei gleichzeitigen Anfragen verlaesslich: Pruefung und INSERT laufen in einer Transaktion unter pg_advisory_xact_lock je (Challenge, Person); vorher kamen zwei gleichzeitige Einreichungen beide durch (Audit Fachlogik Chat, 'Unklar', behoben). Antwortform unveraendert."
           },
           "415": {
-            "description": "Dateityp nicht verifizierbar"
+            "description": "Dateityp nicht erlaubt (\"Dieser Dateityp kann nicht hochgeladen werden.\", seit 29.09.2026) oder per Magic Bytes nicht verifizierbar"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -11124,7 +11159,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Push-Token registrieren/aktualisieren",
-        "description": "Upsert auf (user_id, platform, device_id). Ein Token existiert global genau einmal: Vorkommen bei anderen Usern/Geraeten werden vorher gelöscht (Account-Wechsel, Neuinstallation). ADDITIV 23.09.2026: app_version und app_build (Migration 156). Anlass war eine Fehlersuche, bei der nicht feststellbar war, ob auf einem Geraet die korrigierte Fassung lief oder noch die alte — beides sah serverseitig identisch aus. Jede Registrierung wird seither auch protokolliert (ohne den Token selbst, nur dessen letzte sechs Zeichen).\n",
+        "description": "Upsert auf (user_id, platform, device_id). Ein Token existiert global genau einmal: Vorkommen bei anderen Usern/Geraeten werden vorher gelöscht (Account-Wechsel, Neuinstallation). ADDITIV 23.09.2026: app_version und app_build (Migration 156). Anlass war eine Fehlersuche, bei der nicht feststellbar war, ob auf einem Geraet die korrigierte Fassung lief oder noch die alte — beides sah serverseitig identisch aus. Jede Registrierung wird seither auch protokolliert (ohne den Token selbst, nur dessen letzte sechs Zeichen). ADDITIV 29.09.2026: app_symbol_weg und startbildschirm (Migration 185, nur Android) — die Zahl am App-Symbol soll auf Android dieselbe sein wie auf dem iPhone; welcher Weg dorthin fuehrt, haengt am Startbildschirm des Geraets. Das Protokoll nennt beide Angaben mit. Antwortform unveraendert.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -11163,6 +11198,22 @@
                     "maxLength": 32,
                     "nullable": true,
                     "description": "ADDITIV 23.09.2026 (Migration 156) - Build-Nummer als Text, z.B. 117 (Android versionCode) oder 211 (iOS). Text, weil beide Plattformen unterschiedlich zaehlen."
+                  },
+                  "app_symbol_weg": {
+                    "type": "string",
+                    "enum": [
+                      "anbieter",
+                      "mitteilungen",
+                      "punkt"
+                    ],
+                    "nullable": true,
+                    "description": "ADDITIV 29.09.2026 (Migration 185), nur Android - wie die Zahl ans App-Symbol kommt; die App bestimmt es aus dem Startbildschirm des Geraets (backend/utils/appSymbolWeg.js). anbieter = die App setzt die Zahl selbst (Sony, Huawei), der Server schickt nach jeder sichtbaren Mitteilung ein stilles badge_update mit derselben Zahl; mitteilungen = der Startbildschirm rechnet aus den Mitteilungen (Samsung, Xiaomi), jede sichtbare Mitteilung traegt deshalb android.notification.tag = konfi_app_symbol (ersetzt die vorige) und notificationCount = dieselbe Zahl wie aps.badge; punkt = kein bekannter Weg. Optional und OHNE 400: Fehlt das Feld oder ist der Wert unbekannt, wird NULL gespeichert, und der Versand bleibt wie bisher (Store-Apps 2.2.x, 2.3.0 bis Build 128, iOS). Bei iOS wird nie ein Weg gespeichert. Eine Registrierung ohne Angabe ueberschreibt eine bekannte nicht (COALESCE)."
+                  },
+                  "startbildschirm": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "nullable": true,
+                    "description": "ADDITIV 29.09.2026 (Migration 185), nur Android - Paketname des Startbildschirms, z.B. com.sonymobile.launcher. Nur zum Nachsehen (Protokoll, Datenbank). Was kein Paketname ist oder laenger als 128 Zeichen, wird zu NULL statt zu einem 400."
                   }
                 }
               }
@@ -11329,7 +11380,7 @@
           "Teamer:innen"
         ],
         "summary": "Eigenes Teamer-Profil inkl. eingefrorener Konfi-Vergangenheit",
-        "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation).\nBEHOBEN 26.09.2026: organization_name kam ueber `LEFT JOIN organizations o ON u.organization_id = o.id`, also aus der STAMM-Gemeinde. Wer ueber user_organizations in einer zweiten Gemeinde arbeitet, las im Profil trotzdem den Namen seiner Stamm-Gemeinde. Jetzt wird die AKTIVE Gemeinde (req.user.organization_id) genommen. Antwortform unveraendert -- nur der Wert stimmt.\nExistiert ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\nkonfi_data.badges enthaelt ausschliesslich Abzeichen mit custom_badges.target_role = 'konfi' aus der EIGENEN Organisation (BEHOBEN 2026-09-16): Vorher fehlte beides. user_badges kennt die Art eines Abzeichens nicht, die steht allein in custom_badges.target_role - Teamer-Abzeichen (z. B. criteria_type 'teamer_year') landeten dadurch in der Konfi-Historie. Teamer-Abzeichen liefert GET /api/teamer/badges/v2.\nAUS DER KOPIE DER KONFI-ZEIT (28.09.2026, Simon: \"Geloeschte Badges muessen bei befoerdertem erhalten bleiben. Auch wenn wir die zb aendern.\"): Gibt es fuer die Person in der aktiven Gemeinde eine Kopie (konfi_historie, juengste), kommt konfi_data.badges aus deren `abzeichen` — so, wie die Badges verdient wurden, auch nachdem die Leitung ein Badge geloescht oder geaendert hat. Ohne Kopie wie bisher live aus user_badges/custom_badges. DIESELBE FORM wie live (Vertrag der Store-Apps 2.2.0/2.3.0, TeamerKonfiStatsPage und BadgePopoverContent): badge_id (integer), name, description (string|null), icon, color, criteria_type, criteria_value (integer), awarded_date (ISO-Zeitstempel), neueste zuerst. Die Kopie traegt alle acht Felder (beschreibung, farbe, kriterium, kriterium_wert, verliehen_am); nichts muss erfunden werden.\n",
+        "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation).\nBEHOBEN 26.09.2026: organization_name kam ueber `LEFT JOIN organizations o ON u.organization_id = o.id`, also aus der STAMM-Gemeinde. Wer ueber user_organizations in einer zweiten Gemeinde arbeitet, las im Profil trotzdem den Namen seiner Stamm-Gemeinde. Jetzt wird die AKTIVE Gemeinde (req.user.organization_id) genommen. Antwortform unveraendert -- nur der Wert stimmt.\nExistiert ein konfi_profiles-Datensatz aus der Konfi-Zeit IN DER AKTIVEN GEMEINDE, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. BEHOBEN 29.09.2026: Die Abfrage auf konfi_profiles filterte nicht auf die Gemeinde -- in einer zweiten Gemeinde kamen Punkte und Jahrgang von zuhause, waehrend Badges und GET /api/teamer/konfi-history dort schon leer waren. Die Erkennung hängt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\nkonfi_data.badges enthaelt ausschliesslich Abzeichen mit custom_badges.target_role = 'konfi' aus der EIGENEN Organisation (BEHOBEN 2026-09-16): Vorher fehlte beides. user_badges kennt die Art eines Abzeichens nicht, die steht allein in custom_badges.target_role - Teamer-Abzeichen (z. B. criteria_type 'teamer_year') landeten dadurch in der Konfi-Historie. Teamer-Abzeichen liefert GET /api/teamer/badges/v2.\nAUS DER KOPIE DER KONFI-ZEIT (28.09.2026, Simon: \"Geloeschte Badges muessen bei befoerdertem erhalten bleiben. Auch wenn wir die zb aendern.\"): Gibt es fuer die Person in der aktiven Gemeinde eine Kopie (konfi_historie, juengste), kommt konfi_data.badges aus deren `abzeichen` — so, wie die Badges verdient wurden, auch nachdem die Leitung ein Badge geloescht oder geaendert hat. Ohne Kopie wie bisher live aus user_badges/custom_badges. DIESELBE FORM wie live (Vertrag der Store-Apps 2.2.0/2.3.0, TeamerKonfiStatsPage und BadgePopoverContent): badge_id (integer), name, description (string|null), icon, color, criteria_type, criteria_value (integer), awarded_date (ISO-Zeitstempel), neueste zuerst. Die Kopie traegt alle acht Felder (beschreibung, farbe, kriterium, kriterium_wert, verliehen_am); nichts muss erfunden werden.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -13195,7 +13246,7 @@
           "Material"
         ],
         "summary": "Dateien zu einem Material hochladen (verschlüsselt at-rest)",
-        "description": "multipart/form-data, Feld \"files\", bis zu 10 Dateien pro Request, je max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Prüfung: erst der MIME-Filter von multer (Bilder, PDF, Video, Audio, Office- und OpenDocument-Formate, ZIP, text/plain, text/csv), dann eine Magic-Bytes-Prüfung auf dem Buffer (415 bei Nichtuebereinstimmung; text/plain und text/csv sind ausgenommen, weil sie keine Signatur haben). Gespeichert wird AES-256-GCM-verschlüsselt unter einem zufaelligen 64-Hex-Dateinamen. TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): Statt dem Header zu vertrauen, prüft der Server den Inhalt -- höchstens 2 MB (413), keine Binärdaten, keine HTML-/Skript-Signatur (415, Meldung mit dem Dateinamen in Klammern). Kein UTF-8-Zwang (Excel-CSV in Windows-1252 geht durch). Geprüft wird weiterhin alles, bevor die erste Datei abgelegt wird.\n",
+        "description": "multipart/form-data, Feld \"files\", bis zu 10 Dateien pro Request, je max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Prüfung: erst der Typ-Filter von multer (utils/uploadTypen.js, REGELN.material: Bilder, PDF, Video, Audio, Word, Excel, PowerPoint, OpenDocument, text/plain, text/csv), dann eine Magic-Bytes-Prüfung auf den Kopfbytes (415 bei Nichtuebereinstimmung; text/plain und text/csv sind ausgenommen, weil sie keine Signatur haben). Gespeichert wird AES-256-GCM-verschlüsselt unter einem zufaelligen 64-Hex-Dateinamen. OHNE TYP VOM GERAET (BEHOBEN 29.09.2026, Simons Befund Android): Ist die Angabe allgemein (leer, application/octet-stream) oder steht der Typ nicht auf der Liste, die Endung aber schon (etwa audio/x-m4a bei .m4a), gilt der Typ der Endung -- auch als mime_type in material_files. Vorher verwarf der Filter solche Dateien still (400 \"Keine Dateien hochgeladen\", bei mehreren Dateien fehlte die eine ohne Hinweis). Eine Datei, die nicht passt, bricht den ganzen Request mit 415 \"Dieser Dateityp kann nicht hochgeladen werden.\" ab; es wird nichts abgelegt. TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): Statt dem Header zu vertrauen, prüft der Server den Inhalt -- höchstens 2 MB (413), keine Binärdaten, keine HTML-/Skript-Signatur (415, Meldung mit dem Dateinamen in Klammern). Kein UTF-8-Zwang (Excel-CSV in Windows-1252 geht durch). Geprüft wird weiterhin alles, bevor die erste Datei abgelegt wird.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -13255,7 +13306,7 @@
             "description": "Datei ueberschreitet 20 MB (globaler Multer-Handler in createApp.js); Textdatei über 2 MB (seit 29.09.2026)"
           },
           "415": {
-            "description": "Dateityp nicht verifizierbar (Magic-Bytes); Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)"
+            "description": "Dateityp nicht erlaubt (\"Dieser Dateityp kann nicht hochgeladen werden.\", seit 29.09.2026); Dateityp nicht verifizierbar (Magic-Bytes); Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -13624,7 +13675,7 @@
           "Wrapped"
         ],
         "summary": "Jahre, fuer die ein Team-Rueckblick erzeugt werden kann",
-        "description": "Seit 08.09.2026. Liefert die Jahre, in denen es fuer Teamer:innen der aktiven Organisation etwas zu erzaehlen gibt — dieselbe Grenze wie der Rueckblick selbst (Simon, 09.09.2026: \"Wenn es fuer Teamer nichts zu verarbeiten gibt aus einem Jahr, dann darf das auch nicht angezeigt werden\"). Quellen: anwesende Teamer:innen an Terminen, Teamer-Aktivitaeten (target_role teamer), Teamer-Abzeichen, Zertifikate und bereits vorhandene Teamer-Ausgaben. Ein reiner Konfi-Termin macht ein Jahr NICHT lieferbar.\nDas laufende Jahr steht immer in der Liste, aber gesperrt — sonst hielte man sein Fehlen fuer einen Fehler.\nNachdokumentiert am 26.09.2026 (Audit Dokumentation BF-09).\n",
+        "description": "Seit 08.09.2026. Liefert die Jahre, in denen es fuer Teamer:innen der aktiven Organisation etwas zu erzaehlen gibt — dieselbe Grenze wie der Rueckblick selbst (Simon, 09.09.2026: \"Wenn es fuer Teamer nichts zu verarbeiten gibt aus einem Jahr, dann darf das auch nicht angezeigt werden\"). Quellen: anwesende Teamer:innen an Terminen, Teamer-Aktivitaeten (target_role teamer), Teamer-Abzeichen, Zertifikate und bereits vorhandene Teamer-Ausgaben. Ein reiner Konfi-Termin macht ein Jahr NICHT lieferbar.\nBehoben 29.09.2026: Die Abzeichen-Quelle filterte target_role nicht — ein Konfi-Abzeichen einer befoerderten Teamer:in machte ein Jahr lieferbar. Dieselbe Grenze gilt jetzt auch im Snapshot (POST /api/wrapped/generate-teamer: slides.badges und slides.erstes_abzeichen nur target_role teamer).\nDas laufende Jahr steht immer in der Liste, aber gesperrt — sonst hielte man sein Fehlen fuer einen Fehler.\nNachdokumentiert am 26.09.2026 (Audit Dokumentation BF-09).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin"
@@ -15069,7 +15120,7 @@
           "Jahrgänge"
         ],
         "summary": "Jahrgang löschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)",
-        "description": "Aktive Konfis (Rolle konfi) blockieren die Löschung immer. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true nötig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien entfernt. RUECKBLICKE BLEIBEN (26.09.2026, Audit Chat BF-02, Migration 162): wrapped_ausgaben.jahrgang_id haengt mit ON DELETE SET NULL am Jahrgang; die Konfi-Ausgabe und die Snapshots befoerderter Ex-Konfis ueberleben das Loeschen und bleiben ueber GET /api/wrapped/history/{userId} abrufbar. Bis dahin nahm ein CASCADE Ausgabe und Snapshots mit. Konfi-Ausgaben dieses Jahrgangs ohne einen einzigen Snapshot werden mit entfernt. TERMINE UND CHALLENGES GEHEN MIT (28.09.2026, Simons Entscheidung, Audit BF-08): Termine und Challenges, die NUR an diesem Jahrgang haengen, werden auf demselben Weg geloescht wie einzeln (utils/terminLoeschen.js, utils/challengeLoeschen.js) — samt Buchungen, Zeitfenstern, Termin-Chats, Erinnerungen, Beitraegen, Dateien und Postfach-Eintraegen. Haengen sie zusaetzlich an einem anderen Jahrgang, faellt nur die Zuordnung weg. Termine \"Nur Team\" (teamer_only) und Challenges \"Nur das Team\" (audience nur_team) bleiben immer; Termine und Challenges ohne Jahrgang sind nicht betroffen. Abweichend vom Einzel-Loeschen bleiben vergebene Event-Punkte gutgeschrieben, und es geht keine Absage-Mitteilung hinaus. Die Stempel von Teamer:innen und Leitung aus den geloeschten Challenges werden vorher in bewahrte_stempel abgelegt (Migration 169) und kommen ueber GET /api/challenges/bewahrte-stempel. Alles in EINER Transaktion; die Dateien verschwinden erst nach dem COMMIT. MATERIAL WIRD GLOBAL (28.09.2026, Simons Entscheidung \"Material wird global ja.\"): Material wird nicht geloescht. Haengt es NUR an diesem Jahrgang, setzt dieselbe Transaktion materials.ist_global = true (utils/jahrgangLoeschen.js, materialGlobalMachen) — danach sehen es alle Teamer:innen der Gemeinde, mit Globus. Bis dahin fiel nur die Zuordnung per Kaskade weg, und das Material rutschte stillschweigend in den Zweig \"kein Jahrgang\" der Lese-Schranke. Material mit weiterem Jahrgang verliert nur die Zuordnung. Was mitgeht, nennt vorher GET /api/admin/jahrgaenge/{id}/loeschvorschau. Antwortform unveraendert.\n",
+        "description": "Aktive Konfis (Rolle konfi) blockieren die Löschung immer. Massgeblich ist die Rolle IN DER GEMEINDE DES KONFI-PROFILS (users.role_id fuer die Stamm-Gemeinde, user_organizations.role_id fuer eine weitere; utils/konfiHistorie.js ROLLE_IN_PROFIL_GEMEINDE), an allen vier Stellen gleich: Vorschau (loeschvorschau), Sperre, Sicherung der Konfi-Zeit, Loesen des Profils. BEHOBEN 29.09.2026: Vorher las jede Stelle die Rolle am Konto -- ein Konto, das zuhause Leitung und hier Konfi ist, galt als befoerdert: keine Sperre, eine Kopie \"Konfi-Zeit\", Profil ohne Jahrgang. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true nötig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien entfernt. RUECKBLICKE BLEIBEN (26.09.2026, Audit Chat BF-02, Migration 162): wrapped_ausgaben.jahrgang_id haengt mit ON DELETE SET NULL am Jahrgang; die Konfi-Ausgabe und die Snapshots befoerderter Ex-Konfis ueberleben das Loeschen und bleiben ueber GET /api/wrapped/history/{userId} abrufbar. Bis dahin nahm ein CASCADE Ausgabe und Snapshots mit. Konfi-Ausgaben dieses Jahrgangs ohne einen einzigen Snapshot werden mit entfernt. TERMINE UND CHALLENGES GEHEN MIT (28.09.2026, Simons Entscheidung, Audit BF-08): Termine und Challenges, die NUR an diesem Jahrgang haengen, werden auf demselben Weg geloescht wie einzeln (utils/terminLoeschen.js, utils/challengeLoeschen.js) — samt Buchungen, Zeitfenstern, Termin-Chats, Erinnerungen, Beitraegen, Dateien und Postfach-Eintraegen. Haengen sie zusaetzlich an einem anderen Jahrgang, faellt nur die Zuordnung weg. Termine \"Nur Team\" (teamer_only) und Challenges \"Nur das Team\" (audience nur_team) bleiben immer; Termine und Challenges ohne Jahrgang sind nicht betroffen. Abweichend vom Einzel-Loeschen bleiben vergebene Event-Punkte gutgeschrieben, und es geht keine Absage-Mitteilung hinaus. Die Stempel von Teamer:innen und Leitung aus den geloeschten Challenges werden vorher in bewahrte_stempel abgelegt (Migration 169) und kommen ueber GET /api/challenges/bewahrte-stempel. Alles in EINER Transaktion; die Dateien verschwinden erst nach dem COMMIT. MATERIAL WIRD GLOBAL (28.09.2026, Simons Entscheidung \"Material wird global ja.\"): Material wird nicht geloescht. Haengt es NUR an diesem Jahrgang, setzt dieselbe Transaktion materials.ist_global = true (utils/jahrgangLoeschen.js, materialGlobalMachen) — danach sehen es alle Teamer:innen der Gemeinde, mit Globus. Bis dahin fiel nur die Zuordnung per Kaskade weg, und das Material rutschte stillschweigend in den Zweig \"kein Jahrgang\" der Lese-Schranke. Material mit weiterem Jahrgang verliert nur die Zuordnung. Was mitgeht, nennt vorher GET /api/admin/jahrgaenge/{id}/loeschvorschau. Antwortform unveraendert.\n",
         "parameters": [
           {
             "name": "id",
@@ -15384,10 +15435,7 @@
             "description": "Jahrgang nicht in dieser Organisation"
           },
           "500": {
-            "description": "Fehler beim Senden der E-Mail"
-          },
-          "502": {
-            "description": "SMTP-Fehler — E-Mail konnte nicht versendet werden"
+            "description": "Fehler beim Senden der E-Mail -- auch jeder SMTP-Fehler (sendEmail wirft). Behoben 29.09.2026 (Audit Chat BF-11, Rest): Hier stand ein 502 'SMTP-Fehler', den die Route nie liefern konnte; der tote Zweig ist entfernt, das Verhalten unveraendert."
           }
         },
         "x-berechtigung": {
