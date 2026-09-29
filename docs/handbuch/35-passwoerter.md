@@ -198,7 +198,8 @@ Word-Dokument), und die Face-ID-Abfrage selbst — all das schickt die App
 technisch in den Hintergrund, zählt aber nicht als Verlassen. Auch bei
 **„Sofort"** sperrt die App dabei nicht, und auch dann nicht, wenn du länger in
 der anderen App liest. Du wirst also nicht mitten in einer Challenge-Abgabe
-ausgesperrt.
+ausgesperrt. Wo eine Datei aufgeht, steht unter
+[Eine Datei öffnen und vergrößern](03-bedienung.md#eine-datei-oeffnen-und-vergroessern).
 
 ### Wieder hineinkommen
 

@@ -323,6 +323,8 @@ Während eine Datei gesendet wird, steht an der Nachricht, wie weit sie ist
 *„Wird verarbeitet…"* — der Server rechnet dann noch. Dasselbe beim Antippen
 einer empfangenen Datei: Sie zeigt *„Wird geladen…"* mit Prozentzahl, bis sie
 sich öffnet. Ein zweites Antippen währenddessen bewirkt nichts; einmal reicht.
+Wo sie aufgeht, steht unter
+[Eine Datei öffnen und vergrößern](03-bedienung.md#eine-datei-oeffnen-und-vergroessern).
 
 Geladen wird jede Datei nur einmal. Danach liegt sie auf dem Gerät und öffnet
 sich beim nächsten Antippen sofort, ohne Ladeanzeige — auch ohne Netz. Das gilt

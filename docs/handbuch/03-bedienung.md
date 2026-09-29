@@ -654,12 +654,11 @@ Bild noch nicht auf dem Gerät, steht dort die graue Zeile mit der Wolke
 von selbst.
 
 Ein Foto antippen öffnet es — im Chat wie in einer Challenge, und genauso jede
-Datei eines Materials. Auf dem Handy erscheint die Vorschau des Systems mit
-Teilen und Sichern, im Browser der Betrachter der App mit Herunterladen; dort
-lässt sich durch die übrigen Dateien der Ansicht wischen. Auch der Betrachter
-und das Teilen nehmen die Datei vom Gerät, wenn sie dort schon liegt. Muss
-sie erst laden, steht in ihrer Zeile *„Wird geladen…"* mit Prozentzahl und
-Balken.
+Datei eines Materials. Wo es aufgeht, steht unter
+[Eine Datei öffnen und vergrößern](#eine-datei-oeffnen-und-vergroessern).
+Auch der Betrachter und das Teilen nehmen die Datei vom Gerät, wenn sie dort
+schon liegt. Muss sie erst laden, steht in ihrer Zeile *„Wird geladen…"* mit
+Prozentzahl und Balken.
 
 Angezeigt wird nur, was die Liste gerade führt, und die kommt vom Server.
 Ein ausgeblendeter oder gelöschter Challenge-Beitrag steht nicht mehr darin —
@@ -676,6 +675,30 @@ Datei gelöscht, steht sie nicht mehr in der Liste und verschwindet dabei vom
 Gerät — ist das ganze Material gelöscht, gehen alle seine Dateien. Wer ein
 Material oder eine Datei löscht, räumt sie sofort auch aus dem eigenen
 Speicher.
+
+### Eine Datei öffnen und vergrößern
+
+Wo eine Datei aufgeht, hängt vom Gerät ab:
+
+| Gerät | Bilder, Videos, PDFs | Word, Excel und andere Dokumente |
+|---|---|---|
+| **iPhone und iPad** | Vorschau des Systems, mit Teilen und Sichern | Vorschau des Systems |
+| **Android** | Betrachter der App, mit Teilen | eine passende App auf dem Handy |
+| **Browser** | Betrachter der App, mit Herunterladen | Herunterladen |
+
+Im Betrachter wischst du zur Seite, um zur nächsten oder vorigen Datei der
+Ansicht zu kommen — bei einem Video oberhalb der Zeitleiste, die selbst zum
+Spulen da ist —, und nach unten, um ein Foto zu schließen. Ein Foto
+vergrößerst du mit zwei Fingern oder einem Doppeltipp. Eine PDF zeigt er mit
+allen Seiten untereinander; vergrößern geht mit zwei Fingern, einem Doppeltipp
+oder den Knöpfen **−** und **+** unten rechts, danach lässt sich die Seite in
+alle Richtungen schieben. Zur nächsten Datei wischen geht bei einer PDF nur,
+solange sie nicht vergrößert ist.
+
+Kann der Betrachter auf Android eine Datei nicht darstellen — etwa ein Video
+in einem Format, das das Handy nicht abspielt —, öffnet sie in einer passenden
+App. Kommst du von dort zurück, fragt die
+[App-Sperre](35-passwoerter.md#kurze-abstecher-sperren-nicht) nicht nach.
 
 ### Verstehen, warum Nachweisfotos nicht auf dem Gerät bleiben
 

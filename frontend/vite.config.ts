@@ -21,6 +21,14 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
   },
+  // Worker als ES-Modul bündeln (29.09.2026). Einziger Worker über Vite ist
+  // der von pdf.js (utils/pdfDokument.ts, ?worker&url). pdf.js startet ihn mit
+  // `new Worker(url, { type: 'module' })`, und der Worker selbst ist ein
+  // ES-Modul mit export und import.meta.url — das Vite-Standardformat iife
+  // passt dazu nicht.
+  worker: {
+    format: 'es',
+  },
   // host: true bindet den Entwicklungsserver an alle Netzwerkschnittstellen
   // statt nur an localhost -- sonst erreicht ihn das iPhone nicht.
   // Gebraucht fuer den Live-Betrieb auf dem Geraet (`npm run live:ios`,

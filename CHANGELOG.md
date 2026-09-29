@@ -195,6 +195,9 @@ iOS-Build 233 · Android versionCode 127
   Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
 
 ### Geändert
+- Im Browser zeigt der Betrachter PDFs so wie die App auf Android: alle Seiten
+  untereinander, mit Zoom. Bisher zeigte jeder Browser sie auf seine eigene
+  Weise.
 - Die orange Zahl in den Umschaltern steht mittig zur Beschriftung statt ein
   Stück darunter.
 - Die Leitung hat eine eigene Farbe (Petrol) und ist damit auf einen Blick von
@@ -470,6 +473,9 @@ iOS-Build 233 · Android versionCode 127
   unter „Fehler".
 
 ### Behoben
+- Auf Android öffnen Bilder, Videos und PDFs jetzt in der App: im Betrachter
+  mit Zoom und Wischen zu den übrigen Dateien, PDFs mit allen Seiten
+  untereinander. Bisher gingen sie in eine andere App.
 - Wer eine Datei in einer anderen App öffnet — auf Android etwa ein
   Word-Dokument — und zurückkommt, wird bei eingeschalteter App-Sperre nicht
   mehr nach Fingerabdruck oder Face ID gefragt. Bisher kam die Abfrage bei

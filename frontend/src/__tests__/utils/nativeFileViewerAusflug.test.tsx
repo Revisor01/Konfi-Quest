@@ -3,8 +3,9 @@ import React from 'react';
 import { render, screen, act, fireEvent, cleanup } from '@testing-library/react';
 import { dateien } from '../medienAttrappen';
 
-// Eine Datei in einer fremden App öffnen, ohne Biometrie-Abfrage bei der
-// Rückkehr (Simons Befund 29.09.2026, Android-Testbuild 2.3.0): „Auf Android werden
+// Dateien auf Android in der App statt in einer fremden App — und wo es doch
+// eine fremde App sein muss, ohne Biometrie-Abfrage bei der Rückkehr
+// (Simons Befund 29.09.2026, Android-Testbuild 2.3.0): „Auf Android werden
 // Bilder, Videos, PDFs immer extern geöffnet, nicht mit einem File-Viewer aus
 // Capacitor wie bei iOS. […] Das führt bei aktivierter Biometrie sofort immer
 // zu einer Biometrie-Abfrage."
@@ -92,6 +93,8 @@ afterEach(() => {
   expect(laeuftAusflug()).toBe(false);
 });
 
+const temporaereKopien = () => [...dateien.keys()].filter((p) => p.startsWith('temp/'));
+
 /**
  * Wartet, bis das Plugin gerufen ist — ohne die Uhr vorzustellen (vi.waitFor
  * täte das bei falschen Uhren in jedem Schritt und verschöbe die Notbremse).
@@ -102,6 +105,23 @@ const bisGerufen = async (plugin: ReturnType<typeof vi.fn>) => {
   }
   expect(plugin).toHaveBeenCalledTimes(1);
 };
+
+describe('Android: Bilder, Videos und PDFs gehen in den Betrachter der App', () => {
+  it.each([
+    ['foto.jpg', 'image/jpeg'],
+    ['clip.mp4', 'video/mp4'],
+    ['iphone.mov', 'video/quicktime'],
+    ['plan.pdf', 'application/pdf'],
+  ])('%s: kein Plugin, keine Kopie auf dem Gerät, false für den Betrachter', async (name, typ) => {
+    const ergebnis = await openFileNatively(datei(), name, typ);
+
+    expect(ergebnis).toBe(false);
+    expect(fileOpenerOeffnen).toHaveBeenCalledTimes(0);
+    expect(fileViewerOeffnen).toHaveBeenCalledTimes(0);
+    expect(temporaereKopien()).toEqual([]);
+    expect(laeuftAusflug()).toBe(false);
+  });
+});
 
 describe('Android: ein Word-Dokument geht in eine fremde App, mit Ausflug', () => {
   it('öffnet über den FileViewer und hält den Merker 1,5 s über die Antwort hinaus', async () => {
@@ -282,6 +302,16 @@ describe('Die App-Sperre fragt nach einer Datei in einer fremden App nicht', () 
     vi.advanceTimersByTime(DATEI_NACHLAUF_MS);
     wegwechseln();
     vi.advanceTimersByTime(1000);
+    zurueckkommen();
+
+    expect(zustand()).toBe('gesperrt');
+  });
+
+  it('Android-Foto geht gar nicht erst aus der App: wegwechseln danach sperrt', async () => {
+    await appOffen();
+
+    await act(async () => { expect(await openFileNatively(datei(), 'foto.jpg', 'image/jpeg')).toBe(false); });
+    wegwechseln();
     zurueckkommen();
 
     expect(zustand()).toBe('gesperrt');
