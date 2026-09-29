@@ -328,6 +328,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
   Fehler bei sich.
 - **Empfehlung:** Handbuchsatz auf die drei tatsächlich ausgewerteten Typen
   eingrenzen oder den Fall im Teamer-Zweig ergänzen.
+- **Nachtrag 28.09.2026:** behoben (Handbuch an den Code angepasst) — `60-badges.md`: „Pflicht-Anwesenheit" steht für Teamer:innen auf „nein" mit dem Satz, dass ein solches Badge nie vergeben wird; „Nur im Bestand" gilt für die übrigen drei (Event-Teilnahmen, Zeitbasiert, Serie), die der Teamer-Zweig weiter auswertet. Der Code bleibt. Wächter `frontend/src/__tests__/handbuchBadgeZielgruppen.test.ts` (5): liest die Teamer-Spalte der Tabelle und prüft sie gegen `checkAndAwardTeamerBadges` (`badges.js`) und `TEAMER_HIDDEN_TYPES` (`BadgeManagementModal.tsx`), dazu das Zahlwort; gegen das alte Handbuch 1 rot. Ob es in Produktion ein solches Teamer-Badge gibt, bleibt nach dem Deploy zu messen (Punkt 3 unten).
 
 ### BF-10: Löschwarnung für Konfis nennt nicht alles, was verschwindet; Handbuch ohne Abschnitt
 

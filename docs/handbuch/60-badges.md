@@ -331,7 +331,7 @@ zählt das Jahr der ältesten Teamer-Aktivität; fehlt auch das, zählt es null.
 | Aktivitäten & Events | ja | ja |
 | Event-Teilnahmen | ja | nur im Bestand |
 | Verschiedene Aktivitäten | ja | ja |
-| Pflicht-Anwesenheit | ja | nur im Bestand |
+| Pflicht-Anwesenheit | ja | nein |
 | Spezifische Aktivität | ja | ja |
 | Aktivitäts-Kombination | ja | ja |
 | Kategorie-Aktivitäten | ja | ja |
@@ -341,9 +341,12 @@ zählt das Jahr der ältesten Teamer-Aktivität; fehlt auch das, zählt es null.
 
 Teamer:innen sammeln keine Punkte — deshalb entfallen alle punktebasierten
 Bedingungen. Ein Punkte-Badge mit Zielgruppe „Teamer:innen" wird nie
-vergeben, auch wenn es in der Datenbank steht.
+vergeben, auch wenn es in der Datenbank steht. Dasselbe gilt für
+„Pflicht-Anwesenheit": Für Teamer:innen wird sie nicht ausgewertet, ein
+solches Badge mit Zielgruppe „Teamer:innen" bekommt niemand. Wer eines
+vorfindet, kann es löschen oder durch „Aktivitäten & Events" ersetzen.
 
-**„Nur im Bestand" heißt:** Diese vier lassen sich für „Teamer:innen" nicht
+**„Nur im Bestand" heißt:** Diese drei lassen sich für „Teamer:innen" nicht
 **auswählen** — im Anlegeformular stehen sie dort nicht zur Wahl. Ein
 Badge dieser Art, das es schon gibt, wird aber weiterhin ganz normal
 **vergeben**. Wer eines vorfindet, muss es also nicht ersetzen.
