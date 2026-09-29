@@ -201,6 +201,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 - **Auswirkung aus Nutzersicht:** Nach ungeduldigem Doppeltipp erscheint „Du bist bereits für dieses Event angemeldet" in Rot; die Konfi glaubt, etwas sei schiefgelaufen.
 - **Beleg:** Test: zwei `fireEvent.click` → `apiPost` zweimal, zweiter Aufruf 409 → `setError` mit Servertext.
 - **Empfehlung:** `doRegister` in `guard()` wickeln und den Knopf während `isSubmitting` deaktivieren; 409 „bereits angemeldet" nach eigenem Erfolg stumm schalten.
+- **Nachtrag 28.09.2026:** behoben — `EventDetailView.tsx`: der ganze Anmeldeweg (`handleRegister` samt Konfirmations-Vorabfrage und Zeitfenster-Auswahl, `doRegister`) läuft unter `useActionGuard`; ein zweiter Tipp tut still nichts, die vier Anmelde-Knöpfe sind während des Sendens gesperrt und werden erst nach dem Neuladen der Liste frei. Den 409 stumm zu schalten war danach nicht mehr nötig: Er erreicht die Ansicht nur noch, wenn die Buchung von woanders kam, und dann stimmt die Meldung. Test `components/konfiAnmeldungDoppeltipp.test.tsx` (5: einfacher Termin, Sperre des Knopfs, Konfirmation mit hängender Vorabfrage, Zeitfenster, Gegenprobe Serverfehler sichtbar); ohne Fix 4 rot.
 
 ### BF-10: QR-Scanner liest `isOnline` und `scanning` aus einer veralteten Closure
 - **Schwere:** NIEDRIG

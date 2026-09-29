@@ -66,6 +66,9 @@ describe('Anmelden bleibt offline gesperrt — mit Grund', () => {
     // nur wiederfinden. Deshalb jetzt ein Muster, das den Zaehler-Ausdruck
     // offen laesst.
     expect(konfiTermin).toMatch(/`Anmelden \(\$\{eventData\.registered_count/);
-    expect(konfiTermin).toMatch(/disabled=\{!isOnline\}/);
+    // 28.09.2026: Die Anmelde-Knoepfe sind zusaetzlich waehrend des Sendens
+    // gesperrt (Doppeltipp, Audit Screens BF-09; Verhalten in
+    // konfiAnmeldungDoppeltipp.test.tsx). Offline gesperrt bleiben sie.
+    expect(konfiTermin).toMatch(/disabled=\{!isOnline(?: \|\| anmeldungLaeuft)?\}/);
   });
 });

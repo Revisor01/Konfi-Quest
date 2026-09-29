@@ -1099,6 +1099,10 @@ iOS-Build 233 · Android versionCode 127
 - Android: Beim Öffnen der App bleiben die Mitteilungen der Leitung in der
   Leiste liegen, sodass Punkt oder Zahl am App-Symbol nicht mehr jedes Mal
   verschwinden.
+- Ein schneller zweiter Tipp auf „Anmelden" bei einem Event schickt keine
+  zweite Anmeldung mehr und zeigt nicht mehr „Du bist bereits für dieses Event
+  angemeldet", obwohl alles geklappt hat; der Knopf ist gesperrt, bis die
+  Anmeldung durch ist.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,
