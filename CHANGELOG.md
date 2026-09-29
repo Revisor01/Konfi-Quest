@@ -202,6 +202,9 @@ iOS-Build 233 · Android versionCode 127
   Challenges „Nur das Team" bleiben. Vergebene Punkte bleiben gutgeschrieben,
   und Teamer:innen und Leitung behalten ihre Stempel aus den gelöschten
   Challenges.
+- Material, das nur zu einem gelöschten Jahrgang gehörte, bleibt erhalten und
+  gilt danach ausdrücklich für das ganze Team, mit Globus in der Liste; die
+  Rückfrage vor dem Löschen nennt, wie viel Material das betrifft.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
   die Zahl am Reiter; das orange Feld mit Uhr bleibt zusätzlich stehen.

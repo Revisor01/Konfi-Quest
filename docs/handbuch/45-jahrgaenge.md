@@ -296,8 +296,9 @@ bleibt vollständig.
 
 Vor dem Löschen fragt die App nach und nennt dabei, was mitgeht: wie viele
 Events und Challenges gelöscht werden, wie viele dieser Events noch in der
-Zukunft liegen und wie viele bestehen bleiben, weil sie auch zu anderen
-Jahrgängen gehören. Das Löschen geschieht ganz oder gar nicht — bricht es
+Zukunft liegen, wie viele bestehen bleiben, weil sie auch zu anderen
+Jahrgängen gehören, und wie viel Material danach für das ganze Team sichtbar
+wird. Das Löschen geschieht ganz oder gar nicht — bricht es
 mittendrin ab, bleibt alles so, wie es war.
 
 Das Löschen ist an zwei Stellen abgesichert.
@@ -326,6 +327,8 @@ Was zum Jahrgang gehört, geht mit ihm. Was auch anderen gehört, bleibt:
 | Challenge, die nur zu diesem Jahrgang gehört | wird gelöscht — mit allen Beiträgen und Dateien, wie beim [Löschen einer Challenge](80-challenges.md#eine-challenge-loeschen) |
 | Challenge, die auch zu einem anderen Jahrgang gehört | bleibt; nur die Zuordnung fällt weg |
 | Challenge [„Nur das Team“](80-challenges.md#festlegen-wer-mitmachen-darf) | bleibt |
+| Material, das nur zu diesem Jahrgang gehört | bleibt und gilt danach für alle — alle Teamer:innen der Gemeinde sehen es, mit Globus in der Liste ([Material](30-leitung.md#material-anlegen-und-sichtbar-machen)) |
+| Material, das auch zu einem anderen Jahrgang gehört | bleibt; nur die Zuordnung zu diesem Jahrgang fällt weg |
 
 Zwei Dinge laufen anders als beim Löschen eines einzelnen Events:
 

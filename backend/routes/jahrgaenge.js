@@ -8,7 +8,7 @@ const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { darfJahrgang } = require('../utils/jahrgangsZugriff');
 const { canManageRole } = require('../utils/roleHierarchy');
 const { loescheMitteilungenZuJahrgang } = require('../utils/postfachAufraeumen');
-const { ladeLoeschumfang } = require('../utils/jahrgangLoeschen');
+const { ladeLoeschumfang, materialGlobalMachen } = require('../utils/jahrgangLoeschen');
 const { loescheTermin, loescheChatRaeume, entferneChatDateien } = require('../utils/terminLoeschen');
 const { loescheChallenge, entferneChallengeDateien } = require('../utils/challengeLoeschen');
 const { sichereKonfiZeitBefoerderter } = require('../utils/konfiHistorie');
@@ -372,7 +372,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         events_kuenftig: umfang.termineLoeschen.filter((t) => new Date(t.event_date).getTime() > jetzt).length,
         events_behalten: umfang.termineBehalten.length,
         challenges_geloescht: umfang.challengesLoeschen.length,
-        challenges_behalten: umfang.challengesBehalten.length
+        challenges_behalten: umfang.challengesBehalten.length,
+        // Additiv (Simon, 28.09.2026: "Material wird global ja."): Material,
+        // das nur an diesem Jahrgang hing und danach das ganze Team sieht.
+        material_global: umfang.materialNeuFuerAlle.length
       });
     } catch (err) {
       console.error('Database error in GET /api/jahrgaenge/:id/loeschvorschau:', jahrgangId, err);
@@ -494,6 +497,12 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
           if (ergebnis.geloescht) geloeschteChallenges++;
         }
 
+        // 2b. Material, das nur an diesem Jahrgang haengt, wird ausdruecklich
+        // global (Simon, 28.09.2026) -- VOR dem Jahrgang, dessen Kaskade die
+        // Zuordnungen nimmt. Material mit weiteren Jahrgaengen verliert nur
+        // die Zuordnung (Schritt 5).
+        await materialGlobalMachen(client, umfang);
+
         // 3. konfi_profiles beförderter Ex-Konfis (Rolle != konfi) werden vom
         // Jahrgang GELOEST (jahrgang_id = NULL), NICHT gelöscht. Sonst blockiert
         // der NO-ACTION-FK konfi_profiles.jahrgang_id den Jahrgang-Delete.
@@ -526,7 +535,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         `, [jahrgangId]);
 
         // 5. Der Jahrgang. Zuordnungen von Terminen, Challenges, Material,
-        // Personen und Einladungscodes gehen per ON DELETE CASCADE mit.
+        // Personen und Einladungscodes gehen per ON DELETE CASCADE mit
+        // (Material ohne weiteren Jahrgang ist seit 2b global).
         const { rowCount } = await client.query(
           'DELETE FROM jahrgaenge WHERE id = $1 AND organization_id = $2',
           [jahrgangId, organizationId]

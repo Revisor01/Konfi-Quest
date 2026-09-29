@@ -73,6 +73,18 @@ describe('Jahrgang loeschen nimmt Termine und Challenges mit (BF-08)', () => {
     return c.id;
   }
 
+  async function material({ titel = 'Material', jahrgaenge = [], global = false } = {}) {
+    const { rows: [m] } = await db.query(
+      `INSERT INTO materials (title, organization_id, created_by, ist_global)
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+      [titel, ORGS.testGemeinde.id, USERS.orgAdmin1.id, global]
+    );
+    for (const jg of jahrgaenge) {
+      await db.query('INSERT INTO material_jahrgaenge (material_id, jahrgang_id) VALUES ($1, $2)', [m.id, jg]);
+    }
+    return m.id;
+  }
+
   async function beitrag(challengeId, userId, status = 'approved') {
     await db.query(
       `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, text_content,
@@ -329,6 +341,59 @@ describe('Jahrgang loeschen nimmt Termine und Challenges mit (BF-08)', () => {
   });
 
   // ------------------------------------------------------------------
+  // Material (Simon, 28.09.2026: "Material wird global ja.")
+  // ------------------------------------------------------------------
+  describe('Material', () => {
+    const istGlobal = async (id) => (await db.query('SELECT ist_global FROM materials WHERE id = $1', [id])).rows[0].ist_global;
+    const materialListe = async (token) => {
+      const res = await request(app).get('/api/material').set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      return res.body;
+    };
+
+    it('Material NUR in diesem Jahrgang bleibt und wird ausdruecklich global -- das ganze Team sieht es mit Globus', async () => {
+      const m = await material({ titel: 'Freizeit-Liederheft', jahrgaenge: [alt] });
+      // teamer1 hat nur jahrgang1 und sieht das Material vorher nicht
+      expect((await materialListe(generateToken('teamer1'))).map((x) => x.id)).not.toContain(m);
+
+      expect((await loeschen()).status).toBe(200);
+
+      expect(await istGlobal(m)).toBe(true);
+      expect(await zahl('SELECT COUNT(*)::int AS n FROM material_jahrgaenge WHERE material_id = $1', [m])).toBe(0);
+      const sicht = (await materialListe(generateToken('teamer1'))).find((x) => x.id === m);
+      expect(sicht.title).toBe('Freizeit-Liederheft');
+      expect(sicht.ist_global).toBe(true);
+    });
+
+    it('Material mit ZWEI Jahrgaengen bleibt an dem anderen und wird NICHT global', async () => {
+      const zweiter = (await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date) VALUES ('2024/2025', $1, '2025-05-01') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      )).rows[0].id;
+      const m = await material({ titel: 'Zwei Jahrgaenge', jahrgaenge: [alt, zweiter] });
+
+      expect((await loeschen()).status).toBe(200);
+
+      expect(await istGlobal(m)).toBe(false);
+      expect((await db.query('SELECT jahrgang_id FROM material_jahrgaenge WHERE material_id = $1', [m])).rows)
+        .toEqual([{ jahrgang_id: zweiter }]);
+      // teamer1 (nur jahrgang1) sieht es weiterhin nicht
+      expect((await materialListe(generateToken('teamer1'))).map((x) => x.id)).not.toContain(m);
+    });
+
+    it('anderes Material bleibt unberuehrt: ohne Jahrgang, an einem anderen Jahrgang', async () => {
+      const ohne = await material({ titel: 'Ohne Jahrgang', jahrgaenge: [] });
+      const anderer = await material({ titel: 'Anderer Jahrgang', jahrgaenge: [JAHRGAENGE.jahrgang1.id] });
+
+      expect((await loeschen()).status).toBe(200);
+
+      expect(await istGlobal(ohne)).toBe(false);
+      expect(await istGlobal(anderer)).toBe(false);
+      expect(await zahl('SELECT COUNT(*)::int AS n FROM material_jahrgaenge WHERE material_id = $1', [anderer])).toBe(1);
+    });
+  });
+
+  // ------------------------------------------------------------------
   // Transaktion
   // ------------------------------------------------------------------
   describe('eine Transaktion', () => {
@@ -345,6 +410,7 @@ describe('Jahrgang loeschen nimmt Termine und Challenges mit (BF-08)', () => {
          VALUES ('Jahrgang 2023/2024', 'jahrgang', $1, $2, $3) RETURNING id`,
         [alt, USERS.orgAdmin1.id, ORGS.testGemeinde.id]
       );
+      const m = await material({ titel: 'Liederheft', jahrgaenge: [alt] });
 
       // Erzwungener Fehler genau beim DELETE FROM jahrgaenge -- nach allen
       // anderen Schritten.
@@ -370,6 +436,8 @@ describe('Jahrgang loeschen nimmt Termine und Challenges mit (BF-08)', () => {
       expect(await zahl('SELECT COUNT(*)::int AS n FROM challenge_submissions WHERE challenge_id = $1', [c])).toBe(1);
       expect(await zahl('SELECT COUNT(*)::int AS n FROM chat_rooms WHERE id = $1', [raum.id])).toBe(1);
       expect(await zahl('SELECT COUNT(*)::int AS n FROM bewahrte_stempel', [])).toBe(0);
+      expect((await db.query('SELECT ist_global FROM materials WHERE id = $1', [m])).rows[0].ist_global).toBe(false);
+      expect(await zahl('SELECT COUNT(*)::int AS n FROM material_jahrgaenge WHERE material_id = $1', [m])).toBe(1);
     });
   });
 
@@ -385,6 +453,10 @@ describe('Jahrgang loeschen nimmt Termine und Challenges mit (BF-08)', () => {
       await termin({ name: 'Ohne', jahrgaenge: [] });
       await challenge({ titel: 'Nur hier', jahrgaenge: [alt] });
       await challenge({ titel: 'Zwei', jahrgaenge: [alt, JAHRGAENGE.jahrgang1.id] });
+      const nurHier = await material({ titel: 'Nur hier', jahrgaenge: [alt] });
+      await material({ titel: 'Nur hier, schon global', jahrgaenge: [alt], global: true });
+      await material({ titel: 'Zwei', jahrgaenge: [alt, JAHRGAENGE.jahrgang1.id] });
+      await material({ titel: 'Ohne', jahrgaenge: [] });
       await db.query(
         `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
          VALUES ($1, $2, 0, 0, $3)`,
@@ -402,12 +474,19 @@ describe('Jahrgang loeschen nimmt Termine und Challenges mit (BF-08)', () => {
         events_kuenftig: 1,
         events_behalten: 2,
         challenges_geloescht: 1,
-        challenges_behalten: 1
+        challenges_behalten: 1,
+        // nur das bisher NICHT globale Material ohne weiteren Jahrgang --
+        // das schon globale sah das Team vorher auch
+        material_global: 1
       });
 
-      // Und das Loeschen tut genau das: 5 Termine vorher, 3 danach.
+      // Und das Loeschen tut genau das: 5 Termine vorher, 3 danach; genau
+      // ein Material wechselt auf global.
       expect((await loeschen()).status).toBe(200);
       expect(await zahl('SELECT COUNT(*)::int AS n FROM events WHERE name = ANY($1)', [['Vergangen', 'Kuenftig', 'Zwei', 'Team', 'Ohne']])).toBe(3);
+      expect((await db.query('SELECT id FROM materials WHERE ist_global = true AND title = $1', ['Nur hier'])).rows)
+        .toEqual([{ id: nurHier }]);
+      expect(await zahl('SELECT COUNT(*)::int AS n FROM materials WHERE ist_global = true', [])).toBe(2);
     });
 
     it('zaehlt aktive Konfis und Chat-Nachrichten mit (die das Loeschen blockieren bzw. bestaetigen lassen)', async () => {

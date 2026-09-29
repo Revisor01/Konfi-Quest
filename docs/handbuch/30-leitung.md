@@ -239,6 +239,10 @@ Wer es sieht, hängt allein an der Jahrgangs-Zuordnung:
 | **Mit Jahrgang** | nur die Teamer:innen der zugeordneten Jahrgänge |
 | **Ohne Jahrgang** | alle Teamer:innen der Gemeinde, mit Globus in der Liste |
 
+Wird ein Jahrgang gelöscht, bleibt sein Material erhalten: Was nur zu ihm
+gehörte, gilt danach für alle
+([Einen Jahrgang löschen](45-jahrgaenge.md#events-und-challenges-des-jahrgangs-mitloeschen)).
+
 „Alle" heißt immer: alle Teamer:innen. Konfis sehen Material nicht. Auch die
 Leitung ist an ihre Jahrgänge gebunden — hat sie gar keinen Jahrgang und gibt es
 kein Material ohne Jahrgang, bleibt ihre Liste leer und nennt den Grund („Kein

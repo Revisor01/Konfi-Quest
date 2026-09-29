@@ -756,6 +756,14 @@ paths:
         Challenges werden vorher in bewahrte_stempel abgelegt (Migration
         169) und kommen ueber GET /api/challenges/bewahrte-stempel. Alles
         in EINER Transaktion; die Dateien verschwinden erst nach dem COMMIT.
+        MATERIAL WIRD GLOBAL (28.09.2026, Simons Entscheidung "Material
+        wird global ja."): Material wird nicht geloescht. Haengt es NUR an
+        diesem Jahrgang, setzt dieselbe Transaktion materials.ist_global =
+        true (utils/jahrgangLoeschen.js, materialGlobalMachen) — danach sehen
+        es alle Teamer:innen der Gemeinde, mit Globus. Bis dahin fiel nur
+        die Zuordnung per Kaskade weg, und das Material rutschte
+        stillschweigend in den Zweig "kein Jahrgang" der Lese-Schranke.
+        Material mit weiterem Jahrgang verliert nur die Zuordnung.
         Was mitgeht, nennt vorher GET /api/admin/jahrgaenge/{id}/loeschvorschau.
         Antwortform unveraendert.
       parameters:
@@ -821,6 +829,7 @@ paths:
                   events_behalten: { type: integer, description: "Termine mit weiterem Jahrgang oder 'Nur Team' — verlieren nur die Zuordnung" }
                   challenges_geloescht: { type: integer, description: "Challenges nur dieses Jahrgangs (ohne 'Nur das Team')" }
                   challenges_behalten: { type: integer, description: "Challenges mit weiterem Jahrgang oder 'Nur das Team'" }
+                  material_global: { type: integer, description: "Seit 28.09.2026 (additiv): Material nur dieses Jahrgangs, das bisher nicht global war — wird beim Loeschen global und ist danach fuer das ganze Team sichtbar. Schon globales Material zaehlt nicht mit." }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "Jahrgang nicht in dieser Organisation" }
