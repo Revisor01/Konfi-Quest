@@ -45,6 +45,8 @@ Stunden überrollt.
 
 Die 42 Bilder unter `docs/screenshots/` zeigen den Stand vom 10.09. Sie
 dienen als Handbuch-Bilder und als Store-Bilder für 2.3.0.
+Welche Bilder was zeigen müssen und woran man ein gelungenes Bild erkennt,
+steht ausführlich in [08](08-screenshots-2.3.md).
 
 - [ ] Erst **nach** dem Deploy ziehen — sonst zeigen sie den alten Stand
       (CLAUDE.md, „Screenshots").
