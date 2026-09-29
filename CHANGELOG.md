@@ -1183,6 +1183,10 @@ iOS-Build 234 · Android versionCode 128
 - Android: Startbildschirme, die eine Zahl am App-Symbol von der App annehmen,
   bekommen sie jetzt gemeldet; wo das nicht geht, etwa auf Pixel-Geräten,
   zeigt das Symbol einen Punkt, solange eine Mitteilung in der Leiste liegt.
+- Android: Auf Huawei-Geräten kam die Zahl, die die App ans App-Symbol meldet,
+  in der Store-Fassung nicht an; auf Samsung-Geräten nahm sie nur einen von
+  zwei Wegen. Beides ist behoben, und Sony-Geräte mit dem älteren
+  Xperia-Startbildschirm erreicht die Zahl jetzt ebenfalls.
 - Beim Öffnen der App bleiben die Mitteilungen der Leitung in der Leiste
   liegen, auf iPhone und Android, bis sie angetippt oder weggewischt werden;
   auf Android verschwinden dadurch auch Punkt oder Zahl am App-Symbol nicht

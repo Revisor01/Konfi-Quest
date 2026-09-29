@@ -185,9 +185,22 @@
 
          Angemeldet ist nur, was ShortcutBadger tatsaechlich benutzt:
          die Suche nach dem Startbildschirm, der Broadcast, ueber den Samsung
-         die Zahl annimmt, und die Zahl-Anbieter von Samsung, Huawei und
-         OPPO. Bewusst NICHT QUERY_ALL_PACKAGES, das verlangt im Play Store
-         eine eigene Begruendung.
+         die Zahl annimmt (ab Android 8 sucht ShortcutBadger zuerst seine
+         eigene Fassung me.leolin.shortcutbadger.BADGE_COUNT_UPDATE), und die
+         Zahl-Anbieter von Sony, Samsung, Huawei, OPPO/ZUK und ZTE. Bewusst
+         NICHT QUERY_ALL_PACKAGES, das verlangt im Play Store eine eigene
+         Begruendung.
+
+         SONY (29.09.2026, Simon am Xperia 1 VI: "nur ein kleiner blauer
+         Kreis", WhatsApp zeigt eine Zahl): SonyHomeBadger prueft mit
+         resolveContentProvider, ob es Sonys Zahl-Anbieter gibt, und nimmt
+         sonst den alten Broadcast com.sonyericsson.home.action.UPDATE_BADGE,
+         den heutige Xperia-Startbildschirme nicht mehr beachten. Ohne den
+         Eintrag hier sieht die App den Anbieter nicht.
+
+         Abgeglichen mit dem Quelltext von ShortcutBadger 1.1.22 (29.09.2026).
+         Weggelassen sind nur die Wege zu Startbildschirmen, die es nicht
+         mehr gibt: HTC, Apex, ADW, Nova ueber TeslaUnread, EverythingMe.
 
          Der Pixel-Launcher und andere Standard-Launcher kennen keine Zahl von
          aussen; dort zeigt Android einen Punkt, solange eine Mitteilung der
@@ -201,8 +214,13 @@
         <intent>
             <action android:name="android.intent.action.BADGE_COUNT_UPDATE" />
         </intent>
+        <intent>
+            <action android:name="me.leolin.shortcutbadger.BADGE_COUNT_UPDATE" />
+        </intent>
+        <provider android:authorities="com.sonymobile.home.resourceprovider" />
         <provider android:authorities="com.sec.badge" />
         <provider android:authorities="com.huawei.android.launcher.settings" />
         <provider android:authorities="com.android.badge" />
+        <provider android:authorities="com.android.launcher3.cornermark.unreadbadge" />
     </queries>
 </manifest>

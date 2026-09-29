@@ -25,12 +25,22 @@
 //    such as queryIntentActivities()"; der Launcher steht nicht in der Liste
 //    der automatisch sichtbaren Pakete). Konfi Quest baut mit targetSdk 36
 //    und hatte keinen <queries>-Block. Dann findet ShortcutBadger den
-//    Launcher nicht, und bei leerer Liste wirft es in initBadger sogar
-//    (Collections.swap auf einer leeren Liste) -- Badge.set() wird
-//    abgewiesen, BadgeContext schreibt nur "Badge nicht verfuegbar" ins
-//    Protokoll. Das ist der Teil, der im Code lag. Abgeleitet aus Doku und
-//    Quelltext; an einem Geraet gemessen ist es nicht (hier gibt es kein
-//    Android-SDK).
+//    Launcher nicht und nimmt den DefaultBadger, dessen Broadcast niemand
+//    hoert; applyCount meldet nur false, Badge.set() tut sichtbar nichts.
+//    (Hier stand, initBadger werfe bei leerer Liste -- das trifft auf
+//    ShortcutBadger 1.1.22 nicht zu, nachgesehen im Quelltext des AAR,
+//    29.09.2026.)
+//
+// SONY (29.09.2026, Simon am Xperia 1 VI: "nur ein kleiner blauer Kreis").
+// SonyHomeBadger prueft mit resolveContentProvider, ob es Sonys Zahl-Anbieter
+// com.sonymobile.home.resourceprovider gibt, und nimmt sonst den alten
+// Broadcast com.sonyericsson.home.action.UPDATE_BADGE. Auch dieser Anbieter
+// ist fuer die App nur sichtbar, wenn er unter <queries> steht.
+//
+// Die Liste unten ist gegen den Quelltext von ShortcutBadger 1.1.22
+// abgeglichen (29.09.2026). Weggelassen sind nur Wege zu Startbildschirmen,
+// die es nicht mehr gibt: HTC, Apex, ADW, Nova ueber TeslaUnread,
+// EverythingMe.
 //
 // Was auch mit <queries> NICHT geht: der Pixel-Launcher und andere
 // Android-Standard-Launcher kennen keine Zahl von aussen, nur den Punkt aus
@@ -107,10 +117,39 @@ describe('Zahl am App-Symbol (Android): das Manifest macht den Launcher sichtbar
     expect(broadcast).toHaveLength(1);
   });
 
-  it('meldet die Zahl-Anbieter von Samsung, Huawei und OPPO an', () => {
-    expect(anbieterInQueries().sort()).toEqual(
-      ['com.android.badge', 'com.huawei.android.launcher.settings', 'com.sec.badge'].sort(),
-    );
+  it('meldet auch die Oreo-Fassung des Broadcasts an, die ShortcutBadger zuerst sucht', () => {
+    // BroadcastHelper.sendDefaultIntentExplicitly: ab Android 8 zuerst
+    // me.leolin.shortcutbadger.BADGE_COUNT_UPDATE, dann der alte Name.
+    // Beide werden per queryBroadcastReceivers gesucht.
+    const broadcast = intentsInQueries().filter((i) => i.aktionen.includes('me.leolin.shortcutbadger.BADGE_COUNT_UPDATE'));
+    expect(broadcast).toHaveLength(1);
+  });
+
+  it('meldet die Zahl-Anbieter von Sony, Samsung, Huawei, OPPO/ZUK und ZTE an', () => {
+    // Abgeglichen mit ShortcutBadger 1.1.22: SonyHomeBadger
+    // (resolveContentProvider), SamsungHomeBadger (content://com.sec.badge),
+    // HuaweiHomeBadger (call auf com.huawei.android.launcher.settings),
+    // OPPOHomeBader und ZukHomeBadger (com.android.badge), ZTEHomeBadger
+    // (com.android.launcher3.cornermark.unreadbadge).
+    expect(anbieterInQueries().sort()).toEqual([
+      'com.android.badge',
+      'com.android.launcher3.cornermark.unreadbadge',
+      'com.huawei.android.launcher.settings',
+      'com.sec.badge',
+      'com.sonymobile.home.resourceprovider',
+    ]);
+  });
+
+  it('laesst ShortcutBadger im Release-Bau ganz (R8 entfernte sonst Samsung und Huawei)', () => {
+    // Gemessen am 29.09.2026 (usage.txt des Release-Baus): Ohne diese Regel
+    // entfernte R8 die Konstruktoren von SamsungHomeBadger und
+    // HuaweiHomeBadger, weil ShortcutBadger sie nur per Class.newInstance
+    // anlegt. Auf Huawei kam die Zahl im Store-Bau nie an; Samsung behielt
+    // nur den allgemeinen Broadcast.
+    const regeln = readFileSync(join(process.cwd(), 'android/app/proguard-rules.pro'), 'utf8')
+      .split('\n')
+      .filter((z) => !z.trim().startsWith('#'));
+    expect(regeln).toContain('-keep class me.leolin.shortcutbadger.** { *; }');
   });
 
   it('fragt nicht nach allen Paketen (QUERY_ALL_PACKAGES braeuchte eine Begruendung im Play Store)', () => {
