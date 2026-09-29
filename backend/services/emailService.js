@@ -198,7 +198,7 @@ Dein Konfi Quest Team
       ${kontoHtml ? `<p>Dieser Link gilt für dein Konto:<br>${kontoHtml}</p>` : ''}
       <p>Klicke auf den Button unten, um ein neues Passwort zu setzen:</p>
       <p style="text-align: center;">
-        <a href="${resetUrl}" class="button">Neues Passwort setzen</a>
+        <a href="${escapeHtml(resetUrl)}" class="button">Neues Passwort setzen</a>
       </p>
       <div class="warning">
         <strong>Hinweis:</strong> Dieser Link ist 24 Stunden gültig. Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.
@@ -280,9 +280,9 @@ Dein Konfi Quest Team
   `.trim();
 
   const html = wrapHtml(`
-      <h2>Hallo ${name}!</h2>
-      <p>die Lizenz für eure Organisation <strong>${orgName}</strong> läuft bald ab:</p>
-      <div class="date">${dateStr} &middot; noch ${daysLeft} Tag${daysLeft === 1 ? '' : 'e'}</div>
+      <h2>Hallo ${escapeHtml(name)}!</h2>
+      <p>die Lizenz für eure Organisation <strong>${escapeHtml(orgName)}</strong> läuft bald ab:</p>
+      <div class="date">${escapeHtml(dateStr)} &middot; noch ${escapeHtml(daysLeft)} Tag${daysLeft === 1 ? '' : 'e'}</div>
       <div class="warning">
         <strong>Hinweis:</strong> Nach Ablauf wird der Zugang für eure Organisation automatisch gesperrt, bis die Lizenz verlängert wird. Bitte wende dich rechtzeitig an uns, um die Lizenz zu verlängern.
       </div>
@@ -338,7 +338,10 @@ Dein Konfi Quest Team
 };
 
 const sendJahrgangDeletionWarningEmail = async (email, name, orgName, jahrgangName, daysLeft) => {
-  const subject = `Jahrgang "${jahrgangName}" wird in ${daysLeft} Tagen gelöscht - Konfi Quest`;
+  // CR/LF raus: Der Jahrgangsname (von der Leitung vergeben) steht im Betreff
+  // (Header-Injection-Schutz wie bei sendKonfiMatrixEmail).
+  const betreffName = String(jahrgangName).replace(/[\r\n]+/g, ' ').trim();
+  const subject = `Jahrgang "${betreffName}" wird in ${daysLeft} Tagen gelöscht - Konfi Quest`;
 
   const text = `
 Hallo ${name},
@@ -354,9 +357,9 @@ Dein Konfi Quest Team
   `.trim();
 
   const html = wrapHtml(`
-      <h2>Hallo ${name}!</h2>
-      <p>der Jahrgang <strong>${jahrgangName}</strong> in eurer Organisation <strong>${orgName}</strong> wird bald gelöscht:</p>
-      <div class="date">Löschung in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'}</div>
+      <h2>Hallo ${escapeHtml(name)}!</h2>
+      <p>der Jahrgang <strong>${escapeHtml(jahrgangName)}</strong> in eurer Organisation <strong>${escapeHtml(orgName)}</strong> wird bald gelöscht:</p>
+      <div class="date">Löschung in ${escapeHtml(daysLeft)} Tag${daysLeft === 1 ? '' : 'en'}</div>
       <div class="warning">
         <strong>Letzte Chance:</strong> Befördert jetzt noch Konfis dieses Jahrgangs zu Teamer:innen, wenn sie euch erhalten bleiben sollen. Beförderte Teamer:innen behalten ihre Punkte und Badges. Alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt. Geschieht nichts, wird der Jahrgang automatisch gelöscht.
       </div>
@@ -365,12 +368,19 @@ Dein Konfi Quest Team
   return sendEmail({ to: email, subject, text, html });
 };
 
-// HTML-Escaping für Nutzereingaben (Konfi-Namen, Freitext-Sprueche) im Mail-HTML.
+// HTML-Escaping für JEDEN Wert, der ins Mail-HTML eingesetzt wird
+// (Audit Chat/Challenges/Rückblick BF-11, 29.09.2026): Anzeigename,
+// Gemeinde- und Jahrgangsname sind frei wählbar. Bis dahin maskierten nur
+// drei der sechs Vorlagen; Lizenz- und Löschwarnung setzten die Namen roh
+// ein -- Layoutbruch und Phishing-Optik über einen präparierten Namen. Auch
+// server-eigene Werte (Link, Datum, Zahl) gehen hier durch, damit die Regel
+// ohne Ausnahme gilt. Der Textteil bleibt Klartext und wird nicht maskiert.
 const escapeHtml = (value) => String(value == null ? '' : value)
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;');
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 
 // Formatiert ein Datum (oder null) als deutsches Datum bzw. einen Platzhalter.
 const formatKonfirmationDate = (value) => {

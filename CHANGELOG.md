@@ -1141,6 +1141,9 @@ iOS-Build 233 · Android versionCode 127
 - Beim Anlegen einer Konfi entsteht das Konto nur zusammen mit ihren
   Pflicht-Events: Klappt die Einschreibung nicht, meldet die App einen Fehler,
   statt eine Konfi ohne Pflicht-Events anzulegen.
+- Die Mails zum Ablauf der Lizenz und zur Löschung eines Jahrgangs zeigen
+  Namen mit Sonderzeichen wie „&" oder „<" so an, wie sie eingegeben wurden,
+  statt sie als Formatierung zu lesen.
 
 ### Sonstiges
 - Fehlerhafte oder zu große Anfragen beantwortet der Server als solche, mit
