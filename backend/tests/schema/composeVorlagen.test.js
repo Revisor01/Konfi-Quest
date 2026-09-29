@@ -21,6 +21,7 @@ const path = require('path');
 
 const WURZEL = path.join(__dirname, '..', '..', '..');
 const VORLAGE = fs.readFileSync(path.join(WURZEL, 'deploy', 'compose.konfi_quest.yml'), 'utf8');
+const E2E = fs.readFileSync(path.join(WURZEL, 'docker-compose.e2e.yml'), 'utf8');
 
 // Der Block eines Dienstes: von "  <name>:" bis zum naechsten Dienst auf
 // derselben Einrueckung (oder Dateiende).
@@ -36,6 +37,8 @@ function dienst(text, name) {
 const ohneKommentare = (block) => block.split('\n').filter((z) => !/^\s*#/.test(z)).join('\n');
 
 const vorlageDb = ohneKommentare(dienst(VORLAGE, 'postgres'));
+const e2eDb = ohneKommentare(dienst(E2E, 'e2e-db'));
+const e2eBackend = ohneKommentare(dienst(E2E, 'e2e-backend'));
 
 const imageVon = (block) => (block.match(/^\s+image:\s*(\S+)/m) || [])[1];
 
@@ -47,5 +50,35 @@ describe('Compose-Vorlage: eine neue Instanz verhaelt sich wie die Produktion', 
 
   it('Postgres 15 wie die Produktion', () => {
     expect(imageVon(vorlageDb)).toBe('postgres:15-alpine');
+  });
+});
+
+describe('E2E-Stack: Datenbank wie die Produktion', () => {
+  it('dasselbe Postgres-Image wie die Vorlage', () => {
+    expect(imageVon(e2eDb)).toBe(imageVon(vorlageDb));
+  });
+
+  it('dieselbe Server-Zeitzone (UTC)', () => {
+    expect(e2eDb).toContain('command: ["postgres", "-c", "timezone=UTC"]');
+  });
+
+  it('das ganze init-scripts/ als Startschema -- Dump UND Migrationsstand', () => {
+    expect(e2eDb).toContain('- ./init-scripts:/docker-entrypoint-initdb.d:ro');
+    // Nur der Dump ohne Migrationsstand war der Befund.
+    expect(e2eDb).not.toContain('prod-schema.sql');
+  });
+
+  it('"bereit" erst, wenn init-scripts durch ist (Pruefung ueber TCP)', () => {
+    // Der Zwischen-Server des Entrypoints hoert nur auf dem Socket.
+    expect(e2eDb).toContain('pg_isready -h 127.0.0.1 -U postgres');
+  });
+
+  it('das Backend hat QR_SECRET und einen gueltigen Foto-Schluessel', () => {
+    expect(e2eBackend).toMatch(/^\s+QR_SECRET:\s*\S+/m);
+    expect(e2eBackend).toMatch(/^\s+ACTIVITY_PHOTO_ENCRYPTION_KEY:\s*"[0-9a-f]{64}"/m);
+  });
+
+  it('das Backend setzt keine TZ (Produktion: Node in UTC)', () => {
+    expect(e2eBackend).not.toMatch(/^\s+TZ:/m);
   });
 });
