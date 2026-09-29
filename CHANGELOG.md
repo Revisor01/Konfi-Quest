@@ -457,6 +457,8 @@ iOS-Build 233 · Android versionCode 127
 - Die automatische Löschung nach der Konfirmation lässt ein Konto stehen, das
   noch zu einer weiteren Gemeinde gehört. Bisher sperrte und löschte sie das
   ganze Konto, und die andere Gemeinde verlor die Person mit.
+- Die Beschriftungen der Reiter unten sind wieder ganz zu lesen: Bei
+  „Challenges" und „Badges" fehlte auf iOS und Android der untere Bogen des g.
 - In der Detailansicht einer Konfi stehen ihre offenen Anträge wieder als
   „gemeldet" zwischen den Aktivitäten.
 - In der Detailansicht eines Events steht bei den Teamer:innen kein

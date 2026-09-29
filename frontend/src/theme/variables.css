@@ -1272,6 +1272,13 @@ ion-tab-bar.md ion-tab-button .tab-button-text {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   max-width: 100% !important;
+  /* Unterlaengen: siehe iOS-Block unten. */
+  flex-shrink: 0 !important;
+  /* 4 statt der 6 px des MD3-Themes: Die Beschriftung behaelt seit dem
+     29.09.2026 ihre ganze Zeile (Herleitung am iOS-Block unten). In 56 px waeren das sonst
+     58 px, und Flexbox staucht dann das Symbol samt Pille (gemessen 28 px
+     statt 32; vorher 29,33 px). Mit 4 px: 30 px. */
+  margin-bottom: 4px !important;
 }
 
 /* Reiter-Beschriftung im iOS-Look (UI-Audit BF-07). Das iOS-Theme setzt
@@ -1286,10 +1293,29 @@ ion-tab-bar.md ion-tab-button .tab-button-text {
    Nachbarin laufen: ab 12,75 px beruehren sich die Woerter (0,1 px). Darum
    die Obergrenze 12 px -- auch bei groesserer Systemschrift bleibt eine
    Luecke, wie bei der Reiterleiste von iOS selbst, die ebenfalls nicht
-   mitwaechst. */
+   mitwaechst.
+
+   UNTERLAENGEN GANZ SICHTBAR (Simon, TestFlight 233, 29.09.2026: "das G bei
+   Challenges abgeschnitten, zumindest auf iOS. Da liegt irgendwas drueber").
+   Es lag nichts darueber: Die Beschriftung beschnitt sich selbst. Sie ist
+   ein Flex-Kind in einem Reiter fester Hoehe und traegt overflow hidden
+   (Auslassungspunkte). Seit der groesseren Schrift (27.09.2026) passt ihre
+   Zeile nicht mehr in den Rest -- iOS: 54 - 7 - 7 - 26 - 2 = 12 px Platz fuer
+   14,28 px Zeile (Wurzel 17 px) --, Flexbox staucht den Kasten, die Zeile
+   darin bleibt, ihr unteres Ende faellt weg und mit ihm g, j, p, y.
+   Gemessen (Playwright, alle drei Rollen, 360/393 px): iOS 2,14 px der
+   Tinte von "Challenges" und "Badges" unter dem Kasten, Android
+   (Kasten 11,80 px) 2,20 px. Mit flex-shrink 0 keine Beschriftung mehr.
+   Die Zeile steht dabei, wo sie stand (sie beginnt oben im Kasten); auf iOS
+   reicht der Kasten 2,3 px in den unteren Innenabstand (7 px), den der
+   Knopf freigibt (::part(native) overflow visible im Theme).
+   Die Regel steht in beiden Looks je in ihrem Block (Android oben), wie
+   jede Reiter-Regel (md3LayoutPasst.test.ts).
+   Vertrag: reiterUnterlaengen.test.ts. */
 ion-tab-bar.ios ion-tab-button ion-label {
   font-size: min(var(--app-text-reiter), 12px) !important;
   white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 
 /* iOS26-Library Content-Gradient komplett neutralisieren */
