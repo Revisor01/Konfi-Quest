@@ -39,9 +39,10 @@
  * Release-Workflows prüfen nach `cap sync` noch einmal die Kopie im
  * nativen Projekt (scripts/app-buendel-pruefen.mjs).
  */
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gzipSync } from 'node:zlib';
 
 /** Verzeichnis neben frontend/dist, das Capacitor als webDir nimmt. */
 export const APP_VERZEICHNIS = 'dist-app';
@@ -56,6 +57,22 @@ export const APP_VERZEICHNIS = 'dist-app';
  * wird sie begründet angehoben.
  */
 export const APP_BUDGET_BYTES = 11_000_000;
+
+/**
+ * Obergrenze für das, was die Seite beim START lädt — gzip, wie es über die
+ * Leitung geht (29.09.2026, Toolchain-Audit BF-11).
+ *
+ * Gemessen: 36 Dateien, 2.348.605 Bytes roh, 535.707 gzip (Stufe 9; vor
+ * BF-11 37 Dateien, 2.362.006 / 538.260). Der große Brocken ist ein Chunk
+ * von 1,4 MB — kein Symbol-Chunk, wie der
+ * Befund vermutete: 1,02 MB davon ist die Komponenten-Bibliothek von Ionic,
+ * die @ionic/react beim Start vollständig lädt; die Symbole sind 0,16 MB
+ * (284 Stück), dazu axios, socket.io und 64 kB eigener Code. Ihn zu teilen
+ * änderte nichts an der Menge, die der Start braucht. Vites Warnung "chunk
+ * larger than 500 kB" ist deshalb in vite.config.ts angehoben, und diese
+ * Grenze wacht stattdessen über die Summe.
+ */
+export const START_BUDGET_GZIP_BYTES = 600_000;
 
 /**
  * Dateien aus public/, die die App selbst lädt. Pfade relativ zu public/,
@@ -132,7 +149,24 @@ export function istNurWeb(pfad) {
  * es unter demselben Pfad in public/ gibt, auf der Positivliste stehen muss
  * — so fällt auch ein Rückfall auf `webDir: 'dist'` in der nativen Kopie auf.
  */
-export function appBuendelPruefen(verzeichnis, { budget = APP_BUDGET_BYTES, publicVerzeichnis } = {}) {
+/**
+ * Was index.html beim Start lädt: das Einstiegsskript, jede modulepreload-
+ * Datei und die Stile. Liefert die Pfade und die Summe roh und gzip.
+ */
+export function startGroesse(verzeichnis) {
+  const html = readFileSync(join(verzeichnis, 'index.html'), 'utf8');
+  const dateien = [...new Set([...html.matchAll(/<(?:script\b[^>]*\bsrc|link\b[^>]*\bhref)="\/?(assets\/[^"]+\.(?:js|css))"/g)].map((m) => m[1]))];
+  let roh = 0;
+  let gzip = 0;
+  for (const pfad of dateien) {
+    const daten = readFileSync(join(verzeichnis, pfad));
+    roh += daten.length;
+    gzip += gzipSync(daten, { level: 9 }).length;
+  }
+  return { dateien, roh, gzip };
+}
+
+export function appBuendelPruefen(verzeichnis, { budget = APP_BUDGET_BYTES, startBudget = START_BUDGET_GZIP_BYTES, publicVerzeichnis } = {}) {
   const fehler = [];
   if (!existsSync(join(verzeichnis, 'index.html'))) {
     fehler.push(`${verzeichnis}: index.html fehlt — ist das ein App-Bündel?`);
@@ -150,6 +184,10 @@ export function appBuendelPruefen(verzeichnis, { budget = APP_BUDGET_BYTES, publ
   }
   if (bytes > budget) {
     fehler.push(`App-Bündel ist ${bytes} Bytes groß, erlaubt sind ${budget} (APP_BUDGET_BYTES in scripts/app-buendel.mjs)`);
+  }
+  const start = startGroesse(verzeichnis);
+  if (start.gzip > startBudget) {
+    fehler.push(`Start lädt ${start.dateien.length} Dateien, ${start.gzip} Bytes gzip, erlaubt sind ${startBudget} (START_BUDGET_GZIP_BYTES in scripts/app-buendel.mjs)`);
   }
   return fehler;
 }
@@ -195,7 +233,9 @@ export function appBuendelPlugin() {
       // anlegen, der eigentliche Fehler steht schon im Log.
       if (!existsSync(join(outDir, 'index.html'))) return;
       const { ziel, dateien, bytes } = appBuendelErzeugen(outDir, publicDir);
-      console.log(`App-Bündel: ${relative(process.cwd(), ziel) || ziel} — ${dateien} Dateien, ${bytes} Bytes (Grenze ${APP_BUDGET_BYTES})`);
+      const start = startGroesse(ziel);
+      console.log(`App-Bündel: ${relative(process.cwd(), ziel) || ziel} — ${dateien} Dateien, ${bytes} Bytes (Grenze ${APP_BUDGET_BYTES}); `
+        + `Start ${start.dateien.length} Dateien, ${start.roh} Bytes, gzip ${start.gzip} (Grenze ${START_BUDGET_GZIP_BYTES})`);
     },
   };
 }

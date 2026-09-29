@@ -28,6 +28,16 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
   },
+  build: {
+    // Vites Warnung "Some chunks are larger than 500 kB" angehoben
+    // (29.09.2026, Toolchain-Audit BF-11). Der eine grosse Chunk (1.405.726
+    // Bytes) ist zu 1,02 MB die Komponenten-Bibliothek von Ionic, die
+    // @ionic/react beim Start vollstaendig laedt -- ihn zu teilen aenderte
+    // nichts an der Menge, die der Start braucht. Die Summe des Starts
+    // bewacht START_BUDGET_GZIP_BYTES in scripts/app-buendel.mjs (der Build
+    // bricht dort ab). Die Grenze hier warnt, wenn der Chunk noch waechst.
+    chunkSizeWarningLimit: 1500,
+  },
   // Worker als ES-Modul bündeln (29.09.2026). Einziger Worker über Vite ist
   // der von pdf.js (utils/pdfDokument.ts, ?worker&url). pdf.js startet ihn mit
   // `new Worker(url, { type: 'module' })`, und der Worker selbst ist ein
