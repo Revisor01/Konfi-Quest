@@ -285,3 +285,27 @@ describe('Begriffe: das Handbuch spricht wie die App', () => {
     expect(readFileSync(join(HANDBUCH, '00-start.md'), 'utf8')).toContain('(03-bedienung.md#die-begriffe-der-app-kennen)');
   });
 });
+
+// Die Landingpage spricht wie App und Handbuch (Simon, 29.09.2026:
+// "Landingpage auch umstellen"). Geprueft wird der sichtbare Text: ohne
+// HTML-Kommentare (dort steht der schema.org-Typ "Organization" als
+// Fachwort). Der Tarif fuer mehrere Gemeinden heisst "Verbund".
+describe('Begriffe: die Landingpage spricht wie die App', () => {
+  const roh = readFileSync(join(FRONTEND, 'public/landing.html'), 'utf8');
+  const sichtbar = roh.replace(/<!--[\s\S]*?-->/g, '');
+
+  it('„Organisation" kommt nicht vor — auch nicht in Lizenz und Rollen', () => {
+    expect(sichtbar.match(/Organisation\w*/g) ?? []).toEqual([]);
+  });
+
+  it('die Rolle heißt „Gemeindeleitung", nicht „Org-Admin" oder „Organisations-Admin"', () => {
+    expect(sichtbar.match(ALTE_ORG_BEGRIFFE) ?? []).toEqual([]);
+    expect(sichtbar).toContain('Worin unterscheiden sich Gemeindeleitung und Leitung?');
+  });
+
+  it('der Tarif für mehrere Gemeinden heißt überall „Verbund"', () => {
+    expect(sichtbar).toContain('<div class="tier">Verbund</div>');
+    expect(sichtbar).toContain('"name": "Verbund – bis 4 Gemeinden"');
+    expect(sichtbar.match(/Verbundlizenz/g)).toHaveLength(2);
+  });
+});

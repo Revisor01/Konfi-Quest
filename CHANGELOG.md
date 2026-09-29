@@ -236,7 +236,8 @@ iOS-Build 233 · Android versionCode 127
   „Organisation" — etwa bei „Gemeinde wechseln", in der Verwaltung der
   Gemeinden und im Hinweis auf eine gesperrte Gemeinde.
 - Die Rolle „Org-Leitung" heißt jetzt „Gemeindeleitung" — in der App, in
-  Mitteilungen, Mails und im Handbuch.
+  Mitteilungen, Mails, im Handbuch und auf der Startseite im Web. Dort heißt
+  der Tarif für bis zu vier Gemeinden jetzt „Verbund".
 - Beim Öffnen eines Antrags und einer Konfi lädt die App für die Leitung nur
   noch die Anträge, um die es geht, statt der ganzen Antragsgeschichte der
   Gemeinde.
