@@ -417,7 +417,7 @@ paths:
         "200": { description: "{ message: 'Account erfolgreich gelöscht' } -- Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Seit 28.09.2026 ueber utils/kontoLoeschen.js, dieselbe Funktion wie DELETE /admin/konfis/{id} (Regel und Umfang dort): alles der Person in ALLEN Gemeinden, Zweiergespraeche ganz, Zaehler der Anmeldesperre, Dateien nach dem COMMIT; was sie fuer eine Gemeinde angelegt hat, bleibt ohne Verweis. Antwortform unveraendert" }
         "400": { description: "Passwort fehlt oder falsch" }
         "401": { $ref: "#/components/responses/Unauthorized" }
-        "409": { description: "Letzte Person mit Org-Leitung in ihrer Gemeinde (seit 26.08.2026)" }
+        "409": { description: "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026)" }
         "500": { description: "BEHOBEN 28.09.2026: Hatte die Person Antraege in einer WEITEREN Gemeinde, scheiterte die Loeschung am Fremdschluessel activity_requests_konfi_id_fkey (die alte Kaskade raeumte nur die Stamm-Gemeinde ab) -- eine eingeladene Teamer:in konnte ihr Konto nicht loeschen" }
       x-berechtigung:
         rollen: [alle authentifizierten]
@@ -545,7 +545,7 @@ paths:
         Meldung an die eingeladene Person ueber Postfach, Push (Gruppe
         "Anfragen und Freigaben") und E-Mail, nach der Antwort (nachAntwort).
         Die Rolle steht darin mit dem festen Wort nach role_name ("Leitung",
-        "Org-Leitung", "Teamer:in"; utils/rollenNamen.js). BEHOBEN 28.09.2026:
+        "Gemeindeleitung", "Teamer:in"; utils/rollenNamen.js). BEHOBEN 28.09.2026:
         Vorher stand dort der technische Name ("als admin mitzuarbeiten"),
         weil die Abfrage display_name gar nicht las. Dasselbe Wort nennt die
         Meldung "Einladung angenommen/abgelehnt" an die einladende Person
@@ -667,8 +667,8 @@ paths:
         Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet',
         status 'angenommen', einladung_id, user_id, organization_id = die
         einladende Gemeinde) an die Person aus eingeladen_von, solange sie
-        dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst
-        an die Org-Admins der Gemeinde; nie an die eingeladene Person
+        dort zur Gemeindeleitung gehoert (beide Quellen, aktiv, nicht
+        geloescht) -- sonst an die Gemeindeleitung; nie an die eingeladene Person
         selbst. Dazu das Live-Signal 'users' an die Gemeinde (die
         Benutzerliste laedt nach). Die Antwortform ist unveraendert.
 
@@ -844,7 +844,7 @@ paths:
       responses:
         "201": { description: "invite_code, jahrgang_name, expires_at, gueltig_tage (seit 28.09.2026) — Status ist 200" }
         "400": { description: "gueltig_tage nicht 7, 14, 30, 60 oder 90 — { error }" }
-        "403": { description: "Nur Org-Admins" }
+        "403": { description: "Nur die Gemeindeleitung" }
         "404": { description: "Jahrgang nicht in eigener Org" }
       x-berechtigung:
         rollen: [org_admin]
@@ -1006,7 +1006,7 @@ paths:
                 email: { type: string, format: email, description: "optional" }
                 device_id: { type: string, maxLength: 255, description: "Optional (seit 28.09.2026): Geraete-Kennung, bindet das Refresh-Token an das Geraet (wie beim Login)" }
       responses:
-        "200": { description: "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an die Leitung des Jahrgangs (Org-Admins immer, Admins mit can_view auf den Jahrgang)" }
+        "200": { description: "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an die Leitung des Jahrgangs (die Gemeindeleitung immer, Admins mit can_view auf den Jahrgang)" }
         "403": { description: "Konfi-Limit der Org erreicht (limit_exceeded)" }
         "404": { description: "Code existiert nicht" }
         "409": { description: "Username vergeben" }
@@ -1793,7 +1793,7 @@ paths:
         hinweis: >
           GEAENDERT 31.08.2026: war requireOrgAdmin. admin darf die Zuweisungen
           der von ihm verwalteten Personen (teamer, konfi) sehen — die von
-          anderen Admins und von Org-Admins nicht (403), fremde Organisationen
+          anderen Admins und der Gemeindeleitung nicht (403), fremde Organisationen
           gar nicht (404). requireAdmin allein waere eine Rechteausweitung
           gewesen; die Grenze zieht checkUserHierarchy.
           BEHOBEN 26.09.2026: checkUserHierarchy suchte den Ziel-User allein
@@ -1844,7 +1844,7 @@ paths:
           Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben
           koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig.
           admin kommt damit an teamer und konfi, NICHT an andere Admins oder
-          Org-Admins (403) und nicht an fremde Organisationen (404).
+          die Gemeindeleitung (403) und nicht an fremde Organisationen (404).
           BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des
           Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm
           damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht

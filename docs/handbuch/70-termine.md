@@ -61,7 +61,7 @@ mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)).
 
 **Die Event-Verwaltung liegt bei der Leitung.** Anlegen — einzeln wie als
 Serie —, Ändern, Absagen, Löschen, Personen eintragen oder entfernen und die
-Anwesenheit verbuchen sind Sache von Leitung und Org-Leitung. Teamer:innen sagen
+Anwesenheit verbuchen sind Sache von Leitung und Gemeindeleitung. Teamer:innen sagen
 für sich selbst zu oder ab, zeigen den QR-Code zum Einchecken und öffnen den
 Event-Chat; was am Event steht, lesen sie mit — einschließlich des Grundes,
 wenn es abgesagt wurde.
@@ -75,7 +75,7 @@ Zwei Ausnahmen: Events mit der Zielgruppe **„Nur Team"** und Events **ohne
 jeden Jahrgang** sind für alle Teamer:innen der Gemeinde offen — die einen
 betreffen keinen Jahrgang, die anderen gelten der ganzen Gemeinde.
 
-Für die Org-Leitung (und `super_admin`) gilt die Bindung nicht, für die
+Für die Gemeindeleitung (und `super_admin`) gilt die Bindung nicht, für die
 Leitung auch bei den Meldungen: Wer ein Event nicht sieht, erfährt nichts von Abmeldungen
 und Zusagen dazu und zählt es nicht unter „Verbuchen"
 ([Nachsehen, wer von Abmeldungen und Zusagen erfährt](#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)).
@@ -322,7 +322,7 @@ gleich. Das kann etwa passieren, wenn eine ältere Mitteilung im Postfach zu
 einem Event führt, dessen Jahrgang dir inzwischen nicht mehr zugewiesen ist;
 das Event bleibt zu, bis die [Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert) wieder stimmt.
 Nur Events „Nur Team" und Events ohne Jahrgang sind für alle da; die
-Org-Leitung sieht alles.
+Gemeindeleitung sieht alles.
 
 ### Wissen, bis wann Konfis sich abmelden können
 
@@ -815,7 +815,7 @@ geöffneten Event über das QR-Symbol. Sind vor Ort nur Teamer:innen, reicht
 das also. Das ist gewollt: So können mehrere aus dem Team gleichzeitig den Code
 zeigen und die Konfis einchecken lassen. Code und Zähler gibt es nur für Events,
 die man in der eigenen Liste sieht — also in den eigenen Jahrgängen, dazu „Nur
-Team" und Events ohne Jahrgang; die Org-Leitung kommt an jeden Code der
+Team" und Events ohne Jahrgang; die Gemeindeleitung kommt an jeden Code der
 Gemeinde (siehe die Jahrgangsgrenze oben). Der Code wird beim ersten Anzeigen
 erzeugt, bleibt danach gleich und läuft nicht ab; die zeitliche Begrenzung
 macht allein das Check-in-Fenster.
@@ -1141,7 +1141,7 @@ das als Push und im
 Meldung trägt Namen und Grund, deshalb bekommen sie genau die, die das Event
 in ihrer Liste sehen:
 
-- **Die Org-Leitung** bekommt die Meldungen zu jedem Event
+- **Die Gemeindeleitung** bekommt die Meldungen zu jedem Event
   der Gemeinde.
 - **Die Leitung** bekommt die Meldungen zu Events
   [ihrer Jahrgänge](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert).
@@ -1240,7 +1240,7 @@ Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
   Konfi, Teamer:in oder Leitung. Die Auswahl zeigt deshalb nur Personen aus
   diesen Jahrgängen; ein Hinweis über der Liste nennt sie. Hat das Event
   mehrere Jahrgänge, genügt einer davon. Events ohne Jahrgang und „Nur
-  Team"-Events stehen allen offen, die Org-Leitung lässt sich immer
+  Team"-Events stehen allen offen, die Gemeindeleitung lässt sich immer
   eintragen. Wer trotzdem über einen anderen Weg jemanden eintragen will,
   bekommt eine Meldung mit dem Namen der Person.
 - Zur Auswahl stehen alle aus Team und Leitung deiner Gemeinde — auch wer

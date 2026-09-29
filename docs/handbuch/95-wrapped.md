@@ -159,12 +159,12 @@ Team-Rückblicke lassen sich genauso löschen. Sie stehen allerdings in einer
 | | Eigene Jahrgänge | Alle Jahrgänge | Teamer-Rückblicke |
 |---|---|---|---|
 | **Leitung** | ja | nein | nein |
-| **Org-Leitung** | ja | ja | ja |
+| **Gemeindeleitung** | ja | ja | ja |
 
 Die Leitung sieht und verwaltet die Ausgaben **ihrer** Jahrgänge — für einen
 fremden Jahrgang lehnt der Server ab. Anlegen und löschen darf sie nur, wo sie
 im Jahrgang bearbeiten darf; eine Zuweisung, die nur zum Ansehen berechtigt,
-reicht für beides nicht. Die Org-Leitung sieht alle Jahrgänge und ist
+reicht für beides nicht. Die Gemeindeleitung sieht alle Jahrgänge und ist
 zusätzlich die einzige Rolle, die Team-Rückblicke anlegen und löschen darf; die
 betreffen die ganze Gemeinde und hängen an keinem Jahrgang. Der Reiter **Team**
 ist für die Leitung deshalb gesperrt.
@@ -174,7 +174,7 @@ ist für die Leitung deshalb gesperrt.
 | | Konfis | Team |
 |---|---|---|
 | Erstellt für | einen Jahrgang | die ganze Gemeinde |
-| Wer darf | Leitung (eigene Jahrgänge) und Org-Leitung | nur die Org-Leitung |
+| Wer darf | Leitung (eigene Jahrgänge) und Gemeindeleitung | nur die Gemeindeleitung |
 | Zeitraum | Beginn der Konfi-Zeit bis heute | ein Kalenderjahr, 1.1. bis 31.12. |
 | Name | frei, mit Vorschlag | keiner, das Jahr genügt |
 | Automatisch | nein | **ja, jedes Jahr am 6. Januar** |
@@ -505,7 +505,7 @@ andere zählt, was du dem Jahrgang aufgegeben hast. Entwürfe zählen nicht, die
 hat niemand gesehen.
 
 **„Nicht allein" nennt keine Namen.** Gezählt werden nur Teamer:innen auf
-denselben Jahrgängen, niemand aus Leitung oder Org-Leitung.
+denselben Jahrgängen, niemand aus Leitung oder Gemeindeleitung.
 
 **„Deine Konfis" hängt an der Jahrgangs-Zuweisung.** Wer keinem Jahrgang
 zugewiesen ist, steht hier bei null und bekommt die Seite nicht — meist ein
@@ -540,7 +540,7 @@ noch keinen, fehlt auch die Karte — die andere Gemeinde zeigt ihren weiterhin.
 
 Öffnest du das Profil einer Konfi oder einer Teamer:in, siehst du **alle ihre
 Rückblicke** mit Datum. So kannst du bei Rückfragen nachvollziehen, was die
-Person selbst sieht. Das steht Leitung und Org-Leitung offen, jeweils für die
+Person selbst sieht. Das steht Leitung und Gemeindeleitung offen, jeweils für die
 eigene Gemeinde.
 
 ## Eine Seite teilen

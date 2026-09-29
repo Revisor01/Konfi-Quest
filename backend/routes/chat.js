@@ -281,7 +281,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
                  -- Woerter wie utils/rollenNamen.js (Simon, 28.09.2026).
                  CASE
                    WHEN r.name = 'teamer' THEN 'Teamer:in'
-                   WHEN r.name = 'org_admin' THEN 'Org-Leitung'
+                   WHEN r.name = 'org_admin' THEN 'Gemeindeleitung'
                    ELSE 'Leitung'
                  END
                ) AS role_description
@@ -2884,7 +2884,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             -- Woerter wie utils/rollenNamen.js (Simon, 28.09.2026).
             CASE
               WHEN r.name = 'teamer' THEN 'Teamer:in'
-              WHEN r.name = 'org_admin' THEN 'Org-Leitung'
+              WHEN r.name = 'org_admin' THEN 'Gemeindeleitung'
               ELSE 'Leitung'
             END
           ) as role_description,

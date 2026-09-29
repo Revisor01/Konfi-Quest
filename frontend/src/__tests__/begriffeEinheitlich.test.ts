@@ -105,9 +105,15 @@ describe('Begriffe: eine Sprache für App und Backend', () => {
 // Wer die App nutzt, gehört zu einer Gemeinde — so heißt es in Oberfläche,
 // Server-Meldungen, Mails und Handbuch. „Organisation" bleibt nur in
 // Bezeichnern (organization_id, /organizations/…) und Kommentaren.
-// „Org-Leitung", „Org-Admin" und „Org-Wechsler" sind eigene Begriffe; über
-// sie entscheidet Simon noch, dieser Test lässt sie in Ruhe.
+//
+// Dasselbe für die Rolle (Simon, 29.09.2026: „Ja, umbenennen."): `org_admin`
+// heißt „Gemeindeleitung" statt „Org-Leitung" oder „Org-Admin", und das
+// Bedienelement zum Wechseln heißt „Gemeinde-Umschalter" statt
+// „Org-Wechsler".
 // ---------------------------------------------------------------------------
+
+/** Die alten Wörter für Rolle und Umschalter. */
+const ALTE_ORG_BEGRIFFE = /\bOrg[- ]?(Leitung|Admin|Wechsler)/i;
 
 /**
  * Server-Texte, die noch „Organisation" sagen müssen — jede mit Grund.
@@ -156,6 +162,23 @@ describe('Begriffe: „Gemeinde" statt „Organisation"', () => {
     // Gegenprobe gegen einen leeren Scan: die Lizenz-Mail wird gefunden.
     expect(texte.some(({ text }) => text.includes('die Lizenz für eure Gemeinde'))).toBe(true);
     expect(texte.filter(({ text }) => /organisation/i.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
+  });
+
+  it('die Rolle heißt „Gemeindeleitung", der Umschalter „Gemeinde-Umschalter" — in App, Server-Meldungen und Mails', () => {
+    const mails = zeichenkettenOhneKonsole(join(REPO, 'backend/services/emailService.js'));
+    const treffer = [...ALLE, ...mails]
+      .filter(({ text }) => ALTE_ORG_BEGRIFFE.test(text))
+      .map(({ ort, text }) => `${ort}: ${text}`);
+    expect(treffer).toEqual([]);
+  });
+
+  it('das Muster erkennt die alten Wörter (Gegenprobe)', () => {
+    for (const alt of ['Die Org-Leitung kann', 'Org-Admin', 'per Org-Wechsler hierher', 'Nur die org-leitung']) {
+      expect(ALTE_ORG_BEGRIFFE.test(alt), alt).toBe(true);
+    }
+    for (const neu of ['Die Gemeindeleitung kann', 'per Gemeinde-Umschalter hierher', 'organization_id', 'Multi-Org']) {
+      expect(ALTE_ORG_BEGRIFFE.test(neu), neu).toBe(false);
+    }
   });
 });
 
@@ -228,6 +251,14 @@ describe('Begriffe: das Handbuch spricht wie die App', () => {
 
   it('„Organisation" kommt nicht vor — es heißt „Gemeinde"', () => {
     expect(zeilen.filter(({ text }) => /organisation/i.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
+  });
+
+  it('die Rolle heißt „Gemeindeleitung" — auch in Überschriften und Verweisen', () => {
+    // Ohne die Link-Ziel-Bereinigung: Ein Anker wie #verwaltung-nur-org-leitung
+    // zeigte auf eine Überschrift, die es nicht mehr gibt.
+    const roh = kapitel.flatMap((d) => readFileSync(join(HANDBUCH, d), 'utf8').split('\n')
+      .map((z, i) => ({ ort: `${d}:${i + 1}`, text: z })));
+    expect(roh.filter(({ text }) => ALTE_ORG_BEGRIFFE.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
   });
 
   it('„Termin" steht nur für den Zeitpunkt', () => {

@@ -15,7 +15,7 @@
  */
 
 export const ROLLEN_NAMEN: Readonly<Record<string, string>> = {
-  org_admin: 'Org-Leitung',
+  org_admin: 'Gemeindeleitung',
   admin: 'Leitung',
   teamer: 'Teamer:in',
 };

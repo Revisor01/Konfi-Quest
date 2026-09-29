@@ -91,7 +91,7 @@ auf eure Entscheidung warten, zeigt die orange Zahl an den Umschaltern
 [Teamer:innen sehen sie nicht](05-rollen.md#nachschlagen-wer-was-darf) — in Beschreibung
 und Foto kann Privates stehen. Die Leitung sieht dort nur die Anträge aus
 [ihren Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert);
-Anträge von Teamer:innen sieht sie immer. Die Org-Leitung sieht alle. Wer den Antrag sieht, bekommt ihn
+Anträge von Teamer:innen sieht sie immer. Die Gemeindeleitung sieht alle. Wer den Antrag sieht, bekommt ihn
 auch gemeldet — siehe
 [Nachsehen, wer von einem neuen Antrag erfährt](#nachsehen-wer-von-einem-neuen-antrag-erfaehrt).
 
@@ -159,12 +159,12 @@ Ein neuer Antrag kommt als Push und im
 Antrag eingegangen" an — bei genau denen, die ihn in ihrer Antragsliste sehen
 und entscheiden dürfen:
 
-- **Die Org-Leitung** bekommt jeden Antrag der Gemeinde.
+- **Die Gemeindeleitung** bekommt jeden Antrag der Gemeinde.
 - **Die Leitung** bekommt die Anträge der Konfis aus
   [ihren Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
   und alle Anträge von Teamer:innen. Wer als Leitung keinen Jahrgang hat,
   bekommt also nur die Anträge des Teams.
-- **Ein Konfi ohne Jahrgang** meldet sich nur bei der Org-Leitung — nur
+- **Ein Konfi ohne Jahrgang** meldet sich nur bei der Gemeindeleitung — nur
   sie sieht seinen Antrag.
 - **Teamer:innen** bekommen keine Meldung über neue Anträge; die Antragsliste
   ist ihnen verschlossen.

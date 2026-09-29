@@ -444,7 +444,7 @@ paths:
       tags: ["Chat"]
       summary: Team-Kontaktliste für Direktchats
       description: >
-        Liefert alle aktiven Admins, Org-Admins und Teamer:innen der aktiven
+        Liefert alle aktiven Admins, die Gemeindeleitung und Teamer:innen der aktiven
         Organisation (ohne den Aufrufer selbst) — bewusst nur die für einen
         Chat noetigen Felder, keine E-Mail/Login-Daten. Mitgliedschaft und
         Rolle werden wie bei /chat/admins ueber Stamm-Organisation ODER
@@ -529,7 +529,7 @@ paths:
                         name: { type: string }
                         type: { type: string, const: admin }
                         role_name: { type: string }
-                        role_description: { type: string, description: 'role_title oder Fallback wie TeamContact.role_description ("Teamer:in", "Org-Leitung", "Leitung"; bis 28.09.2026 "Admin")' }
+                        role_description: { type: string, description: 'role_title oder Fallback wie TeamContact.role_description ("Teamer:in", "Gemeindeleitung", "Leitung"; bis 28.09.2026 "Admin", bis 29.09.2026 "Org-Leitung")' }
                   jahrgang: { type: string }
                   permissions: { type: string, const: direct_only_admin }
         '400': { description: Konfi ist keinem Jahrgang zugewiesen }
@@ -929,8 +929,8 @@ paths:
         als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch
         eingeschlossen) — nicht teamer, nicht konfi.
         Im Text steht hinter jedem Namen die Rolle in Klammern, fuer die
-        bekannten Rollen nach role_name: "Leitung" (admin), "Org-Leitung"
-        (org_admin), "Teamer:in"; sonst roles.display_name (seit 28.09.2026,
+        bekannten Rollen nach role_name: "Leitung" (admin), "Gemeindeleitung"
+        (org_admin, bis 29.09.2026 "Org-Leitung"), "Teamer:in"; sonst roles.display_name (seit 28.09.2026,
         vorher immer display_name, in bestehenden Gemeinden also "Hauptamt").
         Im JSON steht zusaetzlich (ADDITIV) rolle_name neben rolle.
       parameters:

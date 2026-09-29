@@ -410,7 +410,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
               // Befund Rollen-Bericht: Vorher stand hier "Noch keine Konfis
               // angelegt" -- was schlicht falsch war. Es gibt Konfis, dieser
               // Zugang darf sie nur nicht sehen.
-              ? 'Dir ist noch kein Jahrgang zugewiesen. Die Org-Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+              ? 'Dir ist noch kein Jahrgang zugewiesen. Die Gemeindeleitung kann das in den Einstellungen ändern.'
               : 'Noch keine Konfis angelegt'
         }
         emptyIconColor="var(--app-color-konfis)"

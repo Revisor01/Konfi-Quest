@@ -973,7 +973,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
     // Only org_admin can generate invite codes
     if (req.user.role_name !== 'org_admin' && !req.user.is_super_admin) {
-      return res.status(403).json({ error: 'Nur die Org-Leitung kann Einladungscodes erstellen' });
+      return res.status(403).json({ error: 'Nur die Gemeindeleitung kann Einladungscodes erstellen' });
     }
 
     if (!jahrgang_id) {
@@ -1024,7 +1024,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     const organizationId = req.user.organization_id;
 
     if (req.user.role_name !== 'org_admin') {
-      return res.status(403).json({ error: 'Nur die Org-Leitung kann Einladungscodes einsehen' });
+      return res.status(403).json({ error: 'Nur die Gemeindeleitung kann Einladungscodes einsehen' });
     }
 
     try {
@@ -1062,7 +1062,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     const organizationId = req.user.organization_id;
 
     if (req.user.role_name !== 'org_admin') {
-      return res.status(403).json({ error: 'Nur die Org-Leitung kann Einladungscodes verlängern' });
+      return res.status(403).json({ error: 'Nur die Gemeindeleitung kann Einladungscodes verlängern' });
     }
 
     const verlaengerung = leseEinladungsTage(req.body ? req.body.tage : undefined);
@@ -1108,7 +1108,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   router.delete('/invite-codes/:id', rbacVerifier, async (req, res) => {
     const organizationId = req.user.organization_id;
     if (req.user.role_name !== 'org_admin') {
-      return res.status(403).json({ error: 'Nur die Org-Leitung kann Einladungscodes löschen' });
+      return res.status(403).json({ error: 'Nur die Gemeindeleitung kann Einladungscodes löschen' });
     }
     try {
       const { rowCount } = await db.query(

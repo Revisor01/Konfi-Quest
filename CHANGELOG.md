@@ -16,7 +16,7 @@ iOS-Build 233 · Android versionCode 127
   wartet: Freigaben bei den Challenges (auch im Archiv) für alle, die freigeben
   dürfen, dazu für die Leitung zu verbuchende Events und offene Anträge.
 - Einladungscodes gelten wahlweise 7, 14, 30, 60 oder 90 Tage. Beim
-  Verlängern wählt die Org-Leitung ebenfalls, um wie viele Tage — höchstens
+  Verlängern wählt die Gemeindeleitung ebenfalls, um wie viele Tage — höchstens
   bis 90 Tage im Voraus. Jeder Code läuft ab; abgelaufene lassen sich nicht
   wieder aufleben.
 - Die Rückfrage vor dem Löschen eines Jahrgangs nennt, wie viele Events und
@@ -191,14 +191,14 @@ iOS-Build 233 · Android versionCode 127
   Mail das; das Passwort selbst steht nie darin.
 - Wer jemanden in die eigene Gemeinde eingeladen hat, erfährt, ob die Person
   zusagt oder absagt — als Mitteilung und im Postfach; Antippen öffnet die
-  Benutzerliste. Ist die einladende Person dort nicht mehr Org-Admin, geht die
-  Mitteilung an die Org-Admins der Gemeinde.
+  Benutzerliste. Gehört die einladende Person dort nicht mehr zur
+  Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
 
 ### Geändert
 - Die orange Zahl in den Umschaltern steht mittig zur Beschriftung statt ein
   Stück darunter.
 - Die Leitung hat eine eigene Farbe (Petrol) und ist damit auf einen Blick von
-  der Org-Leitung (Indigo) und den Teamer:innen (Beere) zu unterscheiden — in
+  der Gemeindeleitung (Indigo) und den Teamer:innen (Beere) zu unterscheiden — in
   der Benutzerliste, beim Anlegen und Einladen, bei den offenen Einladungen und
   bei den Mitgliedern eines Chats.
 - Ist ein Event voll, fragt die App nach, bevor die Leitung jemanden über die
@@ -228,13 +228,15 @@ iOS-Build 233 · Android versionCode 127
   Punkt statt mit einer Zahl; eine Zahl an der Glocke steht nur noch für
   Vorgänge, die aus einer Funklücke gesendet werden. Im Postfach trägt jede
   ungelesene Mitteilung denselben Punkt in der Ecke.
-- Die Rollen heißen überall „Leitung" und „Org-Leitung" statt „Admin",
+- Die Rollen heißen überall „Leitung" und „Gemeindeleitung" statt „Admin",
   „Hauptamt" oder „Org-Admin" — beim Anlegen und Einladen, in der
   Rollenauswahl, in den Listen, im Chat und im Handbuch. Beide Rollen können
   Haupt- wie Ehrenamtliche haben.
 - App, Meldungen, Mails und Handbuch sprechen von „Gemeinde" statt von
   „Organisation" — etwa bei „Gemeinde wechseln", in der Verwaltung der
   Gemeinden und im Hinweis auf eine gesperrte Gemeinde.
+- Die Rolle „Org-Leitung" heißt jetzt „Gemeindeleitung" — in der App, in
+  Mitteilungen, Mails und im Handbuch.
 - Beim Öffnen eines Antrags und einer Konfi lädt die App für die Leitung nur
   noch die Anträge, um die es geht, statt der ganzen Antragsgeschichte der
   Gemeinde.
@@ -282,7 +284,7 @@ iOS-Build 233 · Android versionCode 127
   und werfen einen leichten Schatten. Auf Android war der Unterschied bisher
   am kleinsten.
 - Die kleinen Marken in der Ecke von Karten zeigen jetzt durchgehend Symbole
-  statt Wörter: die Rolle in der Benutzerliste (Gebäude für Org-Admin, Schild
+  statt Wörter: die Rolle in der Benutzerliste (Gebäude für die Gemeindeleitung, Schild
   für Admin, Person für Teamer:in), „Voll"/„Frei" bei den Events einer Serie
   (Kreuz/Haken), „Aktiviert" bei den Benachrichtigungen (Haken), „Neu" im
   Postfach (ein blauer Punkt) und die Restlaufzeit von Einladungscodes
@@ -413,8 +415,8 @@ iOS-Build 233 · Android versionCode 127
   Gemeinde die Meldung. Die Warnung vor dem Löschen eines Jahrgangs geht an
   die Gemeindeleitung und die Admins, die in diesem Jahrgang befördern dürfen,
   statt an jeden Admin.
-- Die Erinnerung an eine ablaufende Lizenz geht an alle Org-Admins der
-  Gemeinde, auch an die, die sie über eine Einladung mitleiten — und nicht
+- Die Erinnerung an eine ablaufende Lizenz geht an alle in der
+  Gemeindeleitung, auch an die, die sie über eine Einladung mitleiten — und nicht
   mehr an Admins.
 - Mitteilungen zu Challenge-Beiträgen bekommt nur noch, wer den Jahrgang auch
   ansehen darf; eine Zuweisung ohne Leserecht reicht dafür nicht mehr.
@@ -435,7 +437,7 @@ iOS-Build 233 · Android versionCode 127
   ihrer Event-Liste und Räume nur fürs Team. Jahrgangs-Chats, Event-Chats und
   Gruppen mit Konfis anderer Jahrgänge lassen sich nicht mehr lesen,
   beschreiben, exportieren oder live mitverfolgen, und niemand trägt sich
-  dort selbst ein oder löscht sie. Der Org-Admin öffnet weiterhin jeden
+  dort selbst ein oder löscht sie. Die Gemeindeleitung öffnet weiterhin jeden
   gemeinschaftlichen Chat der Gemeinde; fremde Zweiergespräche bleiben für
   alle zu und lassen sich auch nicht mehr löschen. In der Chatliste ändert
   sich nichts.
@@ -449,7 +451,7 @@ iOS-Build 233 · Android versionCode 127
 - Den QR-Code zum Einchecken und den Zähler darunter zeigen Admins und
   Teamer:innen nur noch für Events ihrer Jahrgänge, für Events „Nur Team" und
   für Events ohne Jahrgang — also für die Events, die sie in ihrer Liste sehen.
-  Die Org-Leitung kommt weiter an jeden Code der Gemeinde.
+  Die Gemeindeleitung kommt weiter an jeden Code der Gemeinde.
 - Wird ein Konto gelöscht, bleiben die Einladungscodes, die die Person für
   die Gemeinde angelegt hat, gültig — wie ihre Events, ihr Material und ihre
   Badges, jeweils ohne ihren Namen. Bisher verschwanden die Codes mit dem
@@ -643,8 +645,8 @@ iOS-Build 233 · Android versionCode 127
   wenn die Gemeindeleitung die Person entfernt. Bisher blieb sie in Gruppen
   und Einzelchats und bekam deren Nachrichten weiter aufs Handy; bei einer
   erneuten Aufnahme galten die alten Jahrgänge sofort wieder.
-- Wer einen Chat öffnen darf, ohne darin Mitglied zu sein — etwa der Org-Admin
-  in einer Gruppe —, sieht dort jetzt auch Bilder und Dateien. Bisher blieben
+- Wer einen Chat öffnen darf, ohne darin Mitglied zu sein — etwa die
+  Gemeindeleitung in einer Gruppe —, sieht dort jetzt auch Bilder und Dateien. Bisher blieben
   sie leer, obwohl die Nachrichten lesbar waren.
 - Startet eine Challenge, bekommen jetzt alle die Mitteilung „Neue Challenge",
   die mitmachen: bei „Nur das Team" das ganze Team, bei „Jahrgang und Team"

@@ -159,7 +159,7 @@ const AdminSettingsPage: React.FC = () => {
       paragraphs: [
         'Im Material-Bereich legst du Unterlagen und Dokumente fürs Team ab.',
         'Material kann allgemein sein oder direkt einem Event zugeordnet werden — so finden alle die passenden Dokumente zum richtigen Event.',
-        'Unter Sichtbarkeit legst du fest, für wen es gedacht ist: nach Jahrgang — dann sieht es nur das Team dieses Jahrgangs — oder ausdrücklich für alle, dann sieht es das ganze Team der Gemeinde. Freigeben und zurückziehen kann nur die Org-Leitung.',
+        'Unter Sichtbarkeit legst du fest, für wen es gedacht ist: nach Jahrgang — dann sieht es nur das Team dieses Jahrgangs — oder ausdrücklich für alle, dann sieht es das ganze Team der Gemeinde. Freigeben und zurückziehen kann nur die Gemeindeleitung.',
         'Wichtig: Material ist nur für das Team sichtbar, nicht für die Konfis. Für alle heißt also immer: das ganze Team.',
       ],
     },
@@ -169,7 +169,7 @@ const AdminSettingsPage: React.FC = () => {
         'Der Jahresrückblick zeigt jeder Konfi und jeder Teamer:in am Ende eines Abschnitts, was sie erlebt hat — Events, Punkte, Badges, ihre Schwerpunkte und die Momente aus den Challenges.',
         'Ein Jahrgang läuft über mehrere Jahre. Deshalb kannst du mehrere Ausgaben anlegen und jeder einen eigenen Namen geben: „Dein erstes Jahr", „Zwischenstand", „Dein Abschluss". Frühere Ausgaben bleiben erhalten, wenn eine neue dazukommt.',
         'Jede Ausgabe wird beim Erstellen sofort freigegeben, und alle Betroffenen bekommen eine Mitteilung. Einzelne Ausgaben lassen sich gezielt löschen, ohne die anderen anzurühren.',
-        'Als Leitung verwaltest du die Rückblicke deiner eigenen Jahrgänge. Die Org-Leitung sieht alle Jahrgänge und verwaltet zusätzlich die Rückblicke des Teams.',
+        'Als Leitung verwaltest du die Rückblicke deiner eigenen Jahrgänge. Die Gemeindeleitung sieht alle Jahrgänge und verwaltet zusätzlich die Rückblicke des Teams.',
       ],
     },
     certificates: {

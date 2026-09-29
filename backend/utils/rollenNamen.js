@@ -12,7 +12,7 @@
 // Gegenstueck in der App: frontend/src/utils/rollenNamen.ts (dieselben Woerter).
 
 const ROLLEN_NAMEN = Object.freeze({
-  org_admin: 'Org-Leitung',
+  org_admin: 'Gemeindeleitung',
   admin: 'Leitung',
   teamer: 'Teamer:in'
 });

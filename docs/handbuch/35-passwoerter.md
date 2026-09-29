@@ -14,7 +14,7 @@ ist.
 | **Konfi ohne E-Mail** | Die Leitung erzeugt ein Einmalpasswort |
 | **Konfi mit E-Mail** | selbst über „Passwort vergessen" — oder Einmalpasswort |
 | **Teamer:in** | selbst über „Passwort vergessen" — oder Einmalpasswort |
-| **Leitung / Org-Leitung** | selbst über „Passwort vergessen"; sonst setzt die Org-Leitung in der Benutzerverwaltung ein Passwort |
+| **Leitung / Gemeindeleitung** | selbst über „Passwort vergessen"; sonst setzt die Gemeindeleitung in der Benutzerverwaltung ein Passwort |
 | **Zu viele falsche Passwörter** | eine Stunde warten oder ein neues Passwort — siehe [Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen) |
 | **Niemand kommt mehr rein** | siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht) |
 
@@ -41,7 +41,7 @@ Mit dem neuen Passwort endet zugleich jede laufende Sitzung der Person: Wer
 gerade auf einem anderen Gerät angemeldet ist, fliegt heraus und muss sich neu
 anmelden — auch wenn dieses Gerät jemand anderem gehört. Genau darum geht es,
 wenn ein Passwort zurückgesetzt wird, weil ein Konto in falsche Hände geraten
-ist. Dasselbe gilt, wenn die Org-Leitung ein Leitungspasswort setzt.
+ist. Dasselbe gilt, wenn die Gemeindeleitung ein Leitungspasswort setzt.
 
 Hat die Person eine E-Mail-Adresse hinterlegt, bekommt sie eine
 [Bestätigung](#die-bestaetigung-nach-einer-passwortaenderung-einordnen), dass
@@ -50,11 +50,11 @@ darin — das gibst du weiter.
 
 Konten mit Super-Admin-Rechten kann nur ein Super-Admin bearbeiten — auch
 dann, wenn ein solches Konto in deiner Gemeinde zuhause ist. Passwort, Name,
-Sperre und Löschung sind für die Org-Leitung dort gesperrt.
+Sperre und Löschung sind für die Gemeindeleitung dort gesperrt.
 
-**Leitungskonten laufen anders:** Für Leitung und Org-Leitung gibt es kein
-Einmalpasswort. Die Org-Leitung öffnet
-**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-leitung)**, wählt die
+**Leitungskonten laufen anders:** Für Leitung und Gemeindeleitung gibt es kein
+Einmalpasswort. Die Gemeindeleitung öffnet
+**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-gemeindeleitung)**, wählt die
 Person und tippt dort ein Passwort selbst ein — es muss die
 [Anforderungen](#ein-gueltiges-passwort-waehlen) erfüllen.
 
@@ -278,7 +278,7 @@ Einmalpasswörter erfüllen dieselben Regeln — das Komma zählt als Sonderzeic
 
 ### Ein Passwort vorschlagen lassen
 
-Wo die Org-Leitung ein Passwort selbst vergibt, steht unter dem Feld der Knopf
+Wo die Gemeindeleitung ein Passwort selbst vergibt, steht unter dem Feld der Knopf
 **„Sicheres Passwort vorschlagen"** — beim Setzen eines Leitungspassworts
 ebenso wie beim Anlegen einer neuen Gemeinde. Ein Tipp darauf füllt das
 Feld mit vierzehn zufälligen Zeichen, die alle Regeln oben erfüllen, und macht
@@ -291,14 +291,14 @@ den Knopf.
 
 ## Konfis mit einem Einladungscode aufnehmen
 
-Neue Konfis muss niemand von Hand anlegen: Die Org-Leitung erzeugt eine Einladung,
+Neue Konfis muss niemand von Hand anlegen: Die Gemeindeleitung erzeugt eine Einladung,
 die Konfis registrieren sich damit selbst und legen ihr Passwort dabei gleich
 fest.
 
 ### Die Einladung erzeugen
 
-1. **[Mehr](30-leitung.md#verwaltung-nur-org-leitung) → Konfis einladen** — das
-   kann nur die **Org-Leitung**
+1. **[Mehr](30-leitung.md#verwaltung-nur-gemeindeleitung) → Konfis einladen** — das
+   kann nur die **Gemeindeleitung**
 2. **Jahrgang wählen.** Jede Einladung gehört zu genau einem Jahrgang; wer sich
    damit registriert, landet automatisch darin.
 3. **Gültigkeit wählen:** 7, 14, 30, 60 oder 90 Tage. Voreingestellt sind
@@ -381,7 +381,7 @@ Dabei passiert automatisch:
 - Sie wird zu allen zukünftigen
   **[Pflicht-Events](70-termine.md#ein-pflicht-event-einrichten)** ihres Jahrgangs
   angemeldet — als wäre sie von Anfang an dabei gewesen.
-- Die **Org-Leitung und die Leitung des Jahrgangs bekommen einen Push**,
+- Die **Gemeindeleitung und die Leitung des Jahrgangs bekommen einen Push**,
   und die Person erscheint bei ihnen sofort in der Konfi-Liste — wer genau,
   steht unter
   [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt).
@@ -391,9 +391,9 @@ Dabei passiert automatisch:
 | Meldung | Ursache und Ausweg |
 |---|---|
 | „Dieser Einladungscode existiert nicht" | Vertipper oder gelöschter Code — Groß- und Kleinschreibung ist egal, aber jede Stelle zählt. Zur Not neue Einladung erzeugen. |
-| „Dieser Einladungscode ist abgelaufen" | Die gewählte Gültigkeit ist um. Die Org-Leitung erzeugt einen neuen Code. |
+| „Dieser Einladungscode ist abgelaufen" | Die gewählte Gültigkeit ist um. Die Gemeindeleitung erzeugt einen neuen Code. |
 | „Benutzername bereits vergeben" | Einen anderen wählen — geprüft wird schon beim Eintippen, nicht erst beim Absenden. Wurden aus demselben Netz in einer Viertelstunde sehr viele vergebene Namen geprüft, bleibt der Hinweis beim Eintippen eine Weile aus; das Absenden meldet einen vergebenen Namen trotzdem. |
-| „Die Anzahl der Konfis ist erreicht …" | Das Konfi-Kontingent des Tarifs ist voll. Da hilft nur die Org-Leitung — sie muss den Tarif anpassen. |
+| „Die Anzahl der Konfis ist erreicht …" | Das Konfi-Kontingent des Tarifs ist voll. Da hilft nur die Gemeindeleitung — sie muss den Tarif anpassen. |
 
 ## Den richtigen Benutzernamen finden
 
@@ -417,7 +417,7 @@ und darunter, woran es liegt:
 | „Zu viele falsche Anmeldeversuche für dieses Konto. …" | Für dieses Konto kamen zehn falsche Passwörter innerhalb einer Stunde — siehe [Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen). |
 | „Zu viele Login-Versuche. Bitte warte 15 Minuten." | Aus demselben Netz kamen in einer Viertelstunde sehr viele falsche Passwörter, etwa im Gemeinde-WLAN. Warten hilft. |
 | „Dein Zugang wurde deaktiviert. …" | Das Konto ist deaktiviert oder die Konfi-Zeit ist vorbei — siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht). |
-| „Diese Gemeinde ist derzeit gesperrt. …" oder „Die Testphase dieser Gemeinde ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Org-Leitung mit dem Betrieb von Konfi Quest. |
+| „Diese Gemeinde ist derzeit gesperrt. …" oder „Die Testphase dieser Gemeinde ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Gemeindeleitung mit dem Betrieb von Konfi Quest. |
 | „Keine Verbindung zum Server. …" | Das Gerät erreicht Konfi Quest nicht. WLAN oder mobile Daten prüfen und noch einmal versuchen. |
 | „Deine Sitzung ist abgelaufen. …" | Die Anmeldung auf diesem Gerät gilt nicht mehr. Neu anmelden hilft. |
 
@@ -477,18 +477,18 @@ dann trifft es die Sperre nicht mehr.
 hilft nur warten. Es gibt keinen anderen Weg — sonst könnte sich jemand
 Fremdes als Konfi ausgeben.
 
-**Die einzige Person in der Org-Leitung kommt nicht rein.** Die Org-Leitung
+**Die einzige Person in der Gemeindeleitung kommt nicht rein.** Die Gemeindeleitung
 verwaltet die Benutzer; kommt niemand mehr hinein, kann auch niemand mehr etwas
 zurücksetzen. Hat die Person eine E-Mail hinterlegt, geht „Passwort vergessen".
 Sonst muss der Betreiber der App helfen (Kontakt über die Website).
 
-> **Vorbeugen:** Sorge dafür, dass es **mindestens zwei Personen in der Org-Leitung** gibt und
+> **Vorbeugen:** Sorge dafür, dass es **mindestens zwei Personen in der Gemeindeleitung** gibt und
 > dass bei beiden eine funktionierende E-Mail-Adresse hinterlegt ist. Das ist
 > die einzige wirksame Absicherung.
 
 **Das Konto ist deaktiviert.** Dann ist die Anmeldung gesperrt, unabhängig vom
-Passwort. Die Org-Leitung aktiviert es unter
-**[Mehr → Benutzer:innen](30-leitung.md#verwaltung-nur-org-leitung)** wieder.
+Passwort. Die Gemeindeleitung aktiviert es unter
+**[Mehr → Benutzer:innen](30-leitung.md#verwaltung-nur-gemeindeleitung)** wieder.
 Sich selbst kann niemand deaktivieren.
 
 **Die Konfi-Zeit ist vorbei.** 60 Tage nach der Konfirmation nimmt die App

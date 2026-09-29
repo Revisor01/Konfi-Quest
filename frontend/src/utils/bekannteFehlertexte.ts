@@ -42,7 +42,7 @@
 export const BEKANNTE_FEHLERTEXTE: readonly string[] = [
   'Aktivität konnte nicht gespeichert werden',
   'Aktivität nicht gefunden',
-  'Alle Felder der Org-Leitung sind erforderlich',
+  'Alle Felder der Gemeindeleitung sind erforderlich',
   'Alle Felder sind erforderlich',
   'Anmeldung fehlgeschlagen',
   'Anzeigename und Rolle sind erforderlich',
@@ -146,8 +146,8 @@ export const BEKANNTE_FEHLERTEXTE: readonly string[] = [
   'Fehler beim Erstellen der Umfrage',
   'Fehler beim Erstellen des Chats',
   'Fehler beim Generieren des Codes',
+  'Fehler beim Hinzufügen der Gemeindeleitung',
   'Fehler beim Hinzufügen der Mitglieder',
-  'Fehler beim Hinzufügen der Org-Leitung',
   'Fehler beim Hinzufügen der Teilnehmer:innen',
   'Fehler beim Hinzufügen des Konfis',
   'Fehler beim Hochladen des Fotos',

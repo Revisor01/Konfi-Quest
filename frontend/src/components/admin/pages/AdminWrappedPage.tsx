@@ -320,12 +320,12 @@ const AdminWrappedPage: React.FC = () => {
                     // Derselbe Wortlaut wie in der Konfi-Liste
                     // (KonfisView.tsx): Es GIBT Rückblicke, dieser Zugang
                     // darf sie nur nicht sehen.
-                    ? 'Dir ist noch kein Jahrgang zugewiesen. Die Org-Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+                    ? 'Dir ist noch kein Jahrgang zugewiesen. Die Gemeindeleitung kann das in den Einstellungen ändern.'
                     : segment === 'konfi'
                       ? 'Über das Plus oben legst du einen an — du wählst nur den Jahrgang, alles andere steht fest.'
                       : istLeitung
                         ? 'Über das Plus oben legst du einen an — fürs ganze Team gemeinsam, du wählst nur das Jahr.'
-                        : 'Für das Team ist noch keiner erstellt. Rückblicke fürs Team legt die Org-Leitung deiner Gemeinde an.'}
+                        : 'Für das Team ist noch keiner erstellt. Rückblicke fürs Team legt die Gemeindeleitung an.'}
                   iconColor="var(--app-color-wrapped)"
                 />
               </IonCardContent>

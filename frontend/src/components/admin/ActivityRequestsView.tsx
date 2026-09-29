@@ -162,7 +162,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
             // ausgeblendet (Header X-Kein-Jahrgang-Zugewiesen) — das ist kein
             // Fehler, sondern Simons Regel vom 31.08.2026. Teamer-Meldungen
             // bleiben sichtbar, deshalb spricht der Text nur von Konfis.
-            ? 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du keine Meldungen von Konfis. Die Org-Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+            ? 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du keine Meldungen von Konfis. Die Gemeindeleitung kann das in den Einstellungen ändern.'
             : 'Konfirmand:innen können Aktivitäten beantragen'
         }
         emptyIconColor="var(--app-color-success-strong)"

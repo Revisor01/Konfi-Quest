@@ -48,7 +48,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-jahrgang)',
     rgb: '--app-color-jahrgang-rgb',
     title: 'Rollen und Jahrgänge',
-    text: 'Als Leitung siehst du jetzt überall nur die Jahrgänge, die dir zugewiesen sind — bei Konfis, Anträgen, Events und im Rückblick. Das Team bleibt davon ausgenommen, das erreichst du ganz. Bleibt eine Liste leer, steht künftig dabei, dass dir noch kein Jahrgang zugewiesen ist; das ist kein Fehler. Die Org-Leitung darf weiterhin alles, und nur sie legt Jahrgänge an.',
+    text: 'Als Leitung siehst du jetzt überall nur die Jahrgänge, die dir zugewiesen sind — bei Konfis, Anträgen, Events und im Rückblick. Das Team bleibt davon ausgenommen, das erreichst du ganz. Bleibt eine Liste leer, steht künftig dabei, dass dir noch kein Jahrgang zugewiesen ist; das ist kein Fehler. Die Gemeindeleitung darf weiterhin alles, und nur sie legt Jahrgänge an.',
   },
   {
     icon: ICON_FUNKELN,

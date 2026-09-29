@@ -378,7 +378,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     // Validate admin fields for new organizations
     if (!isEditMode) {
       if (!formData.admin_name.trim() || !formData.admin_username.trim() || !formData.admin_password.trim()) {
-        setError('Alle Felder der Org-Leitung sind erforderlich');
+        setError('Alle Felder der Gemeindeleitung sind erforderlich');
         return;
       }
       // Dieselbe Policy wie ueberall sonst (Audit 22.08.2026): Hier galten
@@ -528,7 +528,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       setNewAdminData({ display_name: '', username: '', password: '' });
       setShowAddAdmin(false);
     } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Hinzufügen der Org-Leitung'));
+      setError(fehlerText(err, 'Fehler beim Hinzufügen der Gemeindeleitung'));
     } finally {
       setAddingAdmin(false);
     }
@@ -957,14 +957,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <div className="app-section-icon app-section-icon--organizations">
                 <IonIcon icon={ICON_PERSON} />
               </div>
-              <IonLabel>Org-Leitung</IonLabel>
+              <IonLabel>Gemeindeleitung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked">Name der Org-Leitung *</IonLabel>
-                    <IonInput aria-label="Name der Org-Leitung" aria-required="true" value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Müller" disabled={isSubmitting} />
+                    <IonLabel position="stacked">Name der Gemeindeleitung *</IonLabel>
+                    <IonInput aria-label="Name der Gemeindeleitung" aria-required="true" value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Müller" disabled={isSubmitting} />
                   </IonItem>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Login-Benutzername *</IonLabel>
@@ -989,7 +989,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   <IonIcon icon={ICON_SCHILD} slot="start" style={{ color: 'var(--app-text-users)' }} />
                   <IonLabel>
                     <p style={{ color: 'var(--app-text-users)', margin: 0, fontWeight: 'var(--app-schrift-mittel)', fontSize: 'var(--app-text-sekundaer)' }}>
-                      Die Org-Leitung kann die gesamte Gemeinde verwalten
+                      Die Gemeindeleitung kann die gesamte Gemeinde verwalten
                     </p>
                   </IonLabel>
                 </IonItem>
@@ -1005,7 +1005,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <div className="app-section-icon app-section-icon--organizations">
                 <IonIcon icon={ICON_PERSON} />
               </div>
-              <IonLabel>Org-Leitung</IonLabel>
+              <IonLabel>Gemeindeleitung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
@@ -1066,14 +1066,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 ) : (
                   <div style={{ textAlign: 'center', padding: 'var(--app-abstand-basis)', color: 'var(--app-text-secondary)' }}>
                     <IonIcon icon={ICON_WARNHINWEIS} style={{ fontSize: 'var(--app-anzeige-zahl)', color: 'var(--app-text-badges)', marginBottom: 'var(--app-abstand-eng)', display: 'block' }} />
-                    Noch niemand in der Org-Leitung
+                    Noch niemand in der Gemeindeleitung
                   </div>
                 )}
 
                 {/* Neuen Admin hinzufügen */}
                 {showAddAdmin && (
                   <div style={{ marginTop: 'var(--app-abstand-basis)', padding: 'var(--app-abstand-basis)', background: 'rgba(var(--app-color-users-rgb), 0.05)', borderRadius: 'var(--app-radius-karte)', border: '1px dashed var(--app-color-users)' }}>
-                    <h4 style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-betont)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)' }}>Org-Leitung hinzufügen</h4>
+                    <h4 style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-betont)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)' }}>Gemeindeleitung hinzufügen</h4>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': 'var(--app-radius-knopf)', marginBottom: 'var(--app-abstand-eng)' }}>
                         <IonLabel position="stacked">Name *</IonLabel>
@@ -1138,7 +1138,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       onClick={() => setShowAddAdmin(true)}
                     >
                       <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} slot="start" />
-                      Org-Leitung hinzufügen
+                      Gemeindeleitung hinzufügen
                     </IonButton>
                   </div>
                 )}
@@ -1160,7 +1160,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <p style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-secondary)' }}>
                   Bestehende Mitglieder aus Leitung oder Team anderer Gemeinden dieser
-                  Gemeinde zuweisen — sie können dann per Org-Wechsler hierher
+                  Gemeinde zuweisen — sie können dann per Gemeinde-Umschalter hierher
                   springen. Konfis sind ausgenommen.
                 </p>
 

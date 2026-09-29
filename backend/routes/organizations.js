@@ -342,7 +342,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       // "Leitung", 'org_admin' "Org-Leitung". Bestehende Gemeinden behalten
       // ihre alten display_name-Werte, die Oberflaeche beschriftet nach name.
       const defaultRoles = [
-        { name: 'org_admin', display_name: 'Org-Leitung', description: 'Vollzugriff auf alle Jahrgänge der Gemeinde', is_system_role: true },
+        { name: 'org_admin', display_name: 'Gemeindeleitung', description: 'Vollzugriff auf alle Jahrgänge der Gemeinde', is_system_role: true },
         { name: 'admin', display_name: 'Leitung', description: 'Vollzugriff mit Jahrgangs-Beschränkungen', is_system_role: true },
         { name: 'teamer', display_name: 'Teamer:in', description: 'Kann Anträge bearbeiten und zugewiesene Jahrgänge verwalten', is_system_role: true },
         { name: 'konfi', display_name: 'Konfirmand:in', description: 'Konfirmand:innen haben Zugriff auf eigene Daten und können Aktivitäten beantragen', is_system_role: true }
@@ -1068,7 +1068,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       );
 
       if (!role) {
-        return res.status(500).json({ error: 'Org-Admin Rolle für Gemeinde nicht gefunden' });
+        return res.status(500).json({ error: 'Rolle der Gemeindeleitung für die Gemeinde nicht gefunden' });
       }
 
       // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig!)

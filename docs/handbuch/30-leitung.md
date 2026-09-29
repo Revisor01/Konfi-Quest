@@ -21,7 +21,7 @@ Dazwischen der Titel, daneben die Knöpfe der jeweiligen Seite, etwa das Plus
 zum Anlegen.
 
 Dieses Kapitel gilt für zwei Rollen: Die **Leitung** kümmert sich um den
-laufenden Betrieb, die **Org-Leitung** zusätzlich um Benutzer:innen,
+laufenden Betrieb, die **Gemeindeleitung** zusätzlich um Benutzer:innen,
 Jahrgangs-Zuweisungen und die Einstellungen der Gemeinde. Wo unten „die
 Leitung" steht, sind beide gemeint. Der Unterschied steht im Kapitel
 [Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
@@ -80,7 +80,7 @@ Gemeinde; ein Zertifikat, das du verleihst, gehört deiner Gemeinde
 
 ![Die Chat-Übersicht der Leitung.](/docs/bilder/iphone/leitung-chat.png)
 
-Als **Org-Leitung** erreichst du jeden in deiner Gemeinde. Als **Leitung** gilt
+Als **Gemeindeleitung** erreichst du jeden in deiner Gemeinde. Als **Leitung** gilt
 auch im Chat deine Jahrgangs-Zuweisung: Du schreibst nur Konfis deiner eigenen
 Jahrgänge an oder nimmst sie in Gruppen auf, und umgekehrt erreichen dich nur
 die Konfis dieser Jahrgänge
@@ -92,7 +92,7 @@ Chats und fremde Nachrichten löschen, den
 [Umfragen anlegen](90-chat.md#eine-umfrage-stellen).
 
 In deiner Chatliste stehen die Chats, in denen du Mitglied bist. Ohne eigene
-Mitgliedschaft öffnest du als **Org-Leitung** jeden gemeinschaftlichen Raum
+Mitgliedschaft öffnest du als **Gemeindeleitung** jeden gemeinschaftlichen Raum
 deiner Gemeinde, als **Leitung** nur Jahrgangs-Chats deiner Jahrgänge,
 Event-Chats von Events aus deiner Event-Liste und Räume nur fürs Team.
 Fremde Zweiergespräche und die Stimmen anonymer Umfragen bleiben für alle zu.
@@ -190,7 +190,7 @@ Mitteilungen aufs Handy kommen, siehe [Auswählen, welche Mitteilungen aufs
 Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen))
 und **App-Tour ansehen**.
 
-### Verwaltung (nur Org-Leitung)
+### Verwaltung (nur Gemeindeleitung)
 
 | Bereich | Wofür |
 |---|---|
@@ -198,9 +198,9 @@ und **App-Tour ansehen**.
 | **Dashboard** | Welche Bereiche Konfis und Team auf ihrer Startseite sehen, und in welcher Reihenfolge |
 | **Konfis einladen** | [QR-Code für die Selbstregistrierung](35-passwoerter.md#die-einladung-erzeugen) |
 
-Läuft die Lizenz der Gemeinde ab, bekommen **alle in der Org-Leitung** 14 Tage
+Läuft die Lizenz der Gemeinde ab, bekommen **alle in der Gemeindeleitung** 14 Tage
 vorher eine E-Mail — auch wer die Gemeinde über eine Einladung mitleitet. Die
-Leitung bekommt sie nicht. Hinterlege deshalb bei allen in der Org-Leitung eine
+Leitung bekommt sie nicht. Hinterlege deshalb bei allen in der Gemeindeleitung eine
 E-Mail-Adresse.
 
 ### Inhalt
@@ -249,12 +249,12 @@ gehörte, gilt danach für alle
 „Alle" heißt immer: alle Teamer:innen. Konfis sehen Material nicht. Auch die
 Leitung ist an ihre Jahrgänge gebunden — hat sie gar keinen Jahrgang und gibt es
 kein Material ohne Jahrgang, bleibt ihre Liste leer und nennt den Grund („Kein
-Jahrgang zugewiesen"). Nur die Org-Leitung sieht immer alles.
+Jahrgang zugewiesen"). Nur die Gemeindeleitung sieht immer alles.
 
 Bearbeiten und löschen kann nur, wer das Material angelegt hat; fremdes
 Material öffnet sich schreibgeschützt und nennt die anlegende Person. Die
-Org-Leitung darf immer alles bearbeiten — so bleibt Material verwaltbar, wenn
-jemand die Gemeinde verlässt. Anlegen dürfen Leitung und Org-Leitung.
+Gemeindeleitung darf immer alles bearbeiten — so bleibt Material verwaltbar, wenn
+jemand die Gemeinde verlässt. Anlegen dürfen Leitung und Gemeindeleitung.
 
 Hängt Material an einem Event, steht es in dessen Detailansicht bei den
 Eckdaten: [Material am Event](70-termine.md#material-an-einem-event-finden).

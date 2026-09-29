@@ -225,7 +225,7 @@ paths:
                 color: { type: string, default: "#667eea" }
                 target_role: { type: string, enum: [konfi, teamer], default: konfi }
       responses:
-        "201": { description: "{ id, message }; Live-Update an Org-Admins UND Org-Konfis" }
+        "201": { description: "{ id, message }; Live-Update an die Gemeindeleitung UND Org-Konfis" }
         "400": { description: "Pflichtfeld fehlt oder Validierung verletzt (Name 2-100 Zeichen, criteria_value >= 1, fehlende Auswahl in criteria_extra je nach criteria_type)" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -290,7 +290,7 @@ paths:
                 is_hidden: { type: boolean, description: "Fehlt das Feld, wird es auf false gesetzt (siehe S5)" }
                 color: { type: string, default: "#667eea" }
       responses:
-        "200": { description: "Aktualisiert; Live-Update an Org-Admins UND Org-Konfis" }
+        "200": { description: "Aktualisiert; Live-Update an die Gemeindeleitung UND Org-Konfis" }
         "400": { description: "Validierung verletzt" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -329,7 +329,7 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Abzeichens" }
       responses:
-        "200": { description: "Geloescht; Live-Update an Org-Admins UND Org-Konfis" }
+        "200": { description: "Geloescht; Live-Update an die Gemeindeleitung UND Org-Konfis" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "Abzeichen nicht in dieser Organisation" }
@@ -438,7 +438,7 @@ paths:
                 reward_type: { type: string }
                 reward_value: { type: string }
       responses:
-        "201": { description: "Angelegtes Level (vollstaendige Zeile); Live-Update an Org-Admins" }
+        "201": { description: "Angelegtes Level (vollstaendige Zeile); Live-Update an die Gemeindeleitung" }
         "400": { description: "Pflichtfeld fehlt, points_required negativ, oder bereits ein Level mit dieser Punktzahl (auch als 23505-Unique-Violation)" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { description: "Rolle nicht org_admin oder admin ('Keine Berechtigung zum Verwalten von Leveln')" }
@@ -473,7 +473,7 @@ paths:
                 reward_value: { type: string }
                 is_active: { type: boolean }
       responses:
-        "200": { description: "Aktualisiertes Level (vollstaendige Zeile); Live-Update an Org-Admins" }
+        "200": { description: "Aktualisiertes Level (vollstaendige Zeile); Live-Update an die Gemeindeleitung" }
         "400": { description: "Pflichtfeld fehlt, points_required negativ, oder ein ANDERES Level hat bereits diese Punktzahl" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { description: "Rolle nicht org_admin oder admin" }
@@ -490,7 +490,7 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Levels" }
       responses:
-        "200": { description: "Geloescht; Live-Update an Org-Admins" }
+        "200": { description: "Geloescht; Live-Update an die Gemeindeleitung" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { description: "Rolle nicht org_admin oder admin" }
         "404": { description: "Level nicht in dieser Organisation" }
@@ -564,7 +564,7 @@ paths:
                 description: { type: string, maxLength: 500 }
                 type: { type: string, enum: [gottesdienst, gemeinde, both], default: both }
       responses:
-        "201": { description: "{ id, message }; Live-Update an Org-Admins" }
+        "201": { description: "{ id, message }; Live-Update an die Gemeindeleitung" }
         "400": { description: "Name fehlt / Validierung verletzt" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -593,7 +593,7 @@ paths:
                 description: { type: string, maxLength: 500 }
                 type: { type: string, enum: [gottesdienst, gemeinde, both] }
       responses:
-        "200": { description: "Aktualisiert; Live-Update an Org-Admins" }
+        "200": { description: "Aktualisiert; Live-Update an die Gemeindeleitung" }
         "400": { description: "Name fehlt / Validierung verletzt" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -611,7 +611,7 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Kategorie" }
       responses:
-        "200": { description: "Geloescht; Live-Update an Org-Admins" }
+        "200": { description: "Geloescht; Live-Update an die Gemeindeleitung" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "Kategorie nicht in dieser Organisation (seit 29.09.2026 VOR der Verwendungs-Prüfung)" }
@@ -683,7 +683,7 @@ paths:
                       can_view: { type: boolean, default: true }
                       can_edit: { type: boolean, default: false }
       responses:
-        "201": { description: "Angelegter Jahrgang (vollstaendige Zeile, unveraendert) + ADDITIV assigned_user_ids (int[], leer ohne user_assignments); Live-Update an Org-Admins" }
+        "201": { description: "Angelegter Jahrgang (vollstaendige Zeile, unveraendert) + ADDITIV assigned_user_ids (int[], leer ohne user_assignments); Live-Update an die Gemeindeleitung" }
         "400": { description: "Name fehlt / Validierung verletzt / Person doppelt in user_assignments" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { description: "Rolle unterhalb org_admin — oder eine Zuweisung an eine Person, die canManageRole dem Aufrufer verbietet (fuer org_admin: super_admin)" }
@@ -803,7 +803,7 @@ paths:
           schema: { type: string, enum: ["true"] }
           description: "force=true löscht den Jahrgangs-Chat samt aller Nachrichten unwiderruflich"
       responses:
-        "200": { description: "Geloescht; Live-Update an Org-Admins, bei geloeschten Terminen/Challenges zusaetzlich 'events'/'challenges' an die Gemeinde (nur { count })" }
+        "200": { description: "Geloescht; Live-Update an die Gemeindeleitung, bei geloeschten Terminen/Challenges zusaetzlich 'events'/'challenges' an die Gemeinde (nur { count })" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "Jahrgang nicht in dieser Organisation" }
