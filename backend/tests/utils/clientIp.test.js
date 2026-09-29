@@ -58,6 +58,13 @@ describe('clientIp: X-Real-IP nur vom vertrauten Proxy', () => {
         .toBe('203.0.113.9');
     });
 
+    it('oeffentliche Peer-Adresse: ein aus X-Forwarded-For gelesenes req.ip gilt nicht, der Peer gilt', () => {
+      // req.ip = 198.51.100.1 ist, was Express mit `trust proxy 1` aus einem
+      // vom Client geschickten X-Forwarded-For macht.
+      expect(clientIp(anfrage({ peer: '203.0.113.9', ip: '198.51.100.1' }))).toBe('203.0.113.9');
+      expect(clientIp(anfrage({ peer: '::ffff:203.0.113.9', ip: '198.51.100.1' }))).toBe('203.0.113.9');
+    });
+
     it('oeffentliche IPv6-Peer-Adresse: Header wird ignoriert', () => {
       expect(clientIp(anfrage({ header: '198.51.100.1', peer: '2001:db8::10', ip: '2001:db8::10' })))
         .toBe('2001:db8::10');
@@ -111,6 +118,35 @@ describe('clientIp: X-Real-IP nur vom vertrauten Proxy', () => {
         status.push(res.status);
       }
       expect(status).toEqual([200, 200, 429]);
+    });
+
+    // RUECKFALL OHNE PROXY-MERKMAL (29.09.2026): Der Rueckfall war req.ip --
+    // und das liest wegen `trust proxy 1` (createApp.js) den letzten Eintrag
+    // aus X-Forwarded-For, egal wer ihn geschickt hat. Wer das Backend am
+    // Proxy vorbei erreicht, setzte damit seine Adresse ueber diesen Header
+    // statt ueber X-Real-IP. Jetzt gilt ohne vertrauten Gegenueber dessen
+    // eigene Adresse (req.socket.remoteAddress).
+    it('ohne Proxy-Merkmal hilft auch ein wechselndes X-Forwarded-For nicht (verboten)', async () => {
+      const app = appMitPeer('203.0.113.9');
+      const status = [];
+      for (const ip of ['198.51.100.1', '198.51.100.2', '198.51.100.3']) {
+        const res = await request(app).get('/').set('X-Forwarded-For', ip).set('X-Real-IP', ip);
+        status.push(res.status);
+      }
+      expect(status).toEqual([200, 200, 429]);
+    });
+
+    it('vom Proxy ohne X-Real-IP gilt wie bisher req.ip -- der Eintrag, den der Proxy anhaengt (erlaubt)', async () => {
+      // Traefik haengt die Adresse seines Gegenuebers an X-Forwarded-For an;
+      // req.ip (trust proxy 1) ist dieser letzte Eintrag. Zwei verschiedene
+      // Absender vor dem Proxy zaehlen getrennt.
+      const app = appMitPeer('172.18.0.5');
+      const status = [];
+      for (const ip of ['198.51.100.1', '198.51.100.2', '198.51.100.3']) {
+        const res = await request(app).get('/').set('X-Forwarded-For', `10.9.9.9, ${ip}`);
+        status.push(res.status);
+      }
+      expect(status).toEqual([200, 200, 200]);
     });
 
     it('vom Proxy im Docker-Netz zaehlt der Limiter je X-Real-IP', async () => {

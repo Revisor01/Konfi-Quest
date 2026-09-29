@@ -30,18 +30,43 @@
 // wird von proxy-addr auf IPv4 zurueckgefuehrt. Loopback deckt die lokale
 // Entwicklung und die Tests (supertest verbindet ueber 127.0.0.1) ab.
 //
-// Faellt der Header weg -- kein vertrauter Peer, kein Header, kein gueltiger
-// Wert --, gilt req.ip. Das ist hinter dem Proxy die Proxy-Adresse (der alte
-// Zustand), ohne Proxy die echte Adresse des Clients.
+// RUECKFALL, wenn der Header nicht gilt:
+//   - vertrauter Peer, aber kein oder kein gueltiger Header: req.ip. Das ist
+//     wegen `trust proxy 1` (createApp.js) der letzte Eintrag in
+//     X-Forwarded-For -- den haengt der Proxy selbst an (Traefik: die Adresse
+//     SEINES Gegenuebers). Hinter dem vorderen Proxy ist das dessen Adresse,
+//     fuer alle dieselbe (der alte Zustand, Fall C im Auftrag 07).
+//   - KEIN vertrauter Peer: dessen eigene Adresse (req.socket.remoteAddress),
+//     NICHT req.ip (29.09.2026). Mit `trust proxy 1` liest Express req.ip aus
+//     X-Forwarded-For, egal wer den Header geschickt hat -- wer das Backend am
+//     Proxy vorbei erreicht, haette seine Adresse sonst ueber diesen Header
+//     statt ueber X-Real-IP gesetzt. Gegenprobe in tests/utils/clientIp.test.js.
+//   - ohne Peer-Adresse (Socket schon geschlossen): req.ip.
+//
+// WAS DAS BACKEND NICHT PRUEFEN KANN: ob der vordere Proxy einen vom Client
+// geschickten X-Real-IP ueberschreibt (Fall B) oder durchreicht. Das haengt an
+// dessen Konfiguration (`RequestHeader set`, nicht "nur wenn leer") und an
+// Traefik (vorderer Proxy unter forwardedHeaders.trustedIPs, NICHT insecure --
+// Traefik ersetzt X-Real-Ip von nicht vertrauten Absendern durch die eigene
+// Sicht). Messweg: docs/auftraege/lokaler-agent/07-client-adresse-hinter-dem-proxy.md.
 const net = require('net');
 const proxyaddr = require('proxy-addr');
 
 const vertrauterProxy = proxyaddr.compile(['loopback', 'linklocal', 'uniquelocal']);
 
+// IPv4-mapped-IPv6 (::ffff:203.0.113.9) wie IPv4 zaehlen -- so, wie req.ip es
+// liefert; sonst truegen Anfragen ueber IPv4 zwei verschiedene Schluessel.
+const ohneMapping = (adresse) => {
+  const m = /^::ffff:(.+)$/i.exec(adresse);
+  return m && net.isIPv4(m[1]) ? m[1] : adresse;
+};
+
 const clientIp = (req) => {
   const header = req.headers && req.headers['x-real-ip'];
   const peer = req.socket && req.socket.remoteAddress;
-  if (typeof header === 'string' && peer && vertrauterProxy(peer, 0)) {
+  if (!peer) return req.ip;
+  if (!vertrauterProxy(peer, 0)) return ohneMapping(peer);
+  if (typeof header === 'string') {
     const kandidat = header.trim();
     if (net.isIP(kandidat) !== 0) return kandidat;
   }
