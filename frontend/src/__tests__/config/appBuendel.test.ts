@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import capacitorConfig from '../../../capacitor.config';
 import {
@@ -23,7 +24,8 @@ import {
  * 45.707.476 Bytes, davon 34.607.641 Handbuch und API-Referenz, dazu
  * Werbeseite und Rechtstexte — nichts davon zeigt die App an. Jetzt nimmt
  * Capacitor dist-app/, das der Build mit einer Positivliste daneben anlegt
- * (scripts/app-buendel.mjs). Gemessen nach der Umstellung: 9.448.148 Bytes.
+ * (scripts/app-buendel.mjs). Gemessen nach der Umstellung: 9.448.148 Bytes,
+ * nach dem Aufräumen der Bilder (unten) 9.228.301.
  *
  * Geprüft wird hier, dass
  *  - Capacitor wirklich dist-app/ nimmt und der Build es wirklich anlegt,
@@ -113,7 +115,11 @@ describe('App-Bündel: was hinein muss', () => {
       'manifest.json',
       'apple-touch-icon.png',
     ]));
-    expect(geladen.size).toBeGreaterThanOrEqual(40);
+  });
+
+  it('umgekehrt: jede Datei der Positivliste lädt die App auch (kein totes Gewicht)', () => {
+    const ungenutzt = alleDateien(PUBLIC).filter((p) => istAppDateiAusPublic(p) && !geladen.has(p));
+    expect(ungenutzt).toEqual([]);
   });
 
   it('jede Datei, die die App aus public/ lädt, liegt dort und kommt ins Bündel', () => {
@@ -238,5 +244,47 @@ describe('App-Bündel: Anlegen und Prüfen', () => {
   it('ohne index.html ist es kein App-Bündel', () => {
     mkdirSync(join(wurzel, 'leer'));
     expect(appBuendelPruefen(join(wurzel, 'leer'))[0]).toMatch(/index\.html fehlt/);
+  });
+});
+
+/**
+ * Bilder aus public/ (29.09.2026, Paket App-Größe, Punkt 3). Gefunden:
+ * `assets/icon/logo-mark-white.png` war byte-gleich mit `logo-mark.png` —
+ * trotz des Namens nicht weißer, die Rose ist in beiden weiß — und lag als
+ * zweite Kopie (99.936 Bytes) in jeder App; `assets/icon/icon.png` war eine
+ * Kopie von `icon-512x512.png` (460.159 Bytes) und `assets/icon/favicon.png`
+ * eine von `/favicon.png`, beide von nichts geladen.
+ */
+describe('Bilder aus public/: keine Kopien, nichts Verwaistes', () => {
+  const bilder = alleDateien(PUBLIC).filter((p) => !p.startsWith('docs/') && /\.(png|webp|jpe?g|svg|ico)$/.test(p));
+
+  /** Wo ein Bild aus public/ genannt sein darf, damit es als benutzt gilt. */
+  const verweisTexte = (() => {
+    const texte: string[] = quelldateien().map((d) => readFileSync(d, 'utf8'));
+    texte.push(readFileSync(join(FRONTEND, 'index.html'), 'utf8'));
+    for (const p of alleDateien(PUBLIC)) {
+      if (/\.(html|json|xml|txt)$/.test(p)) texte.push(readFileSync(join(PUBLIC, p), 'utf8'));
+    }
+    // Die Mails des Servers binden das App-Symbol per Adresse ein.
+    texte.push(readFileSync(join(FRONTEND, '../backend/services/emailService.js'), 'utf8'));
+    return texte.join('\n');
+  })();
+
+  it('findet die Bilder (Suche greift)', () => {
+    expect(bilder).toEqual(expect.arrayContaining(['assets/icon/logo-mark.png', 'hero-ios-1.webp', 'og-image.png']));
+  });
+
+  it('keine zwei Dateien der App sind byte-gleich', () => {
+    const hash = (p: string) => createHash('sha256').update(readFileSync(join(PUBLIC, p))).digest('hex');
+    const nachHash = new Map<string, string[]>();
+    for (const p of alleDateien(PUBLIC).filter(istAppDateiAusPublic)) {
+      nachHash.set(hash(p), [...(nachHash.get(hash(p)) ?? []), p]);
+    }
+    expect([...nachHash.values()].filter((l) => l.length > 1)).toEqual([]);
+  });
+
+  it('jedes Bild in public/ wird von App, Webseiten, Manifest oder Server-Mails benutzt', () => {
+    const verwaist = bilder.filter((p) => !verweisTexte.includes(`/${p}`) && !verweisTexte.includes(`"${p}"`));
+    expect(verwaist).toEqual([]);
   });
 });

@@ -49,9 +49,9 @@ export const APP_VERZEICHNIS = 'dist-app';
 /**
  * Obergrenze für das App-Bündel in Bytes.
  *
- * Gemessen am 29.09.2026: 9.448.148 Bytes (davon 6,48 MB Skripte, 0,43 MB
- * Stile, 1,79 MB Rückblick-Hintergründe, 0,36 MB wasm von pdf.js, 0,38 MB
- * Symbole und Bilder). Die Grenze lässt rund 1,5 MB Luft für normales
+ * Gemessen am 29.09.2026: 9.228.301 Bytes (davon 6,48 MB Skripte, 0,43 MB
+ * Stile, 1,79 MB Rückblick-Hintergründe, 0,36 MB wasm von pdf.js, 0,16 MB
+ * Symbole und Bilder). Die Grenze lässt rund 1,8 MB Luft für normales
  * Wachstum. Wer sie reißt, sieht zuerst nach, WAS gewachsen ist — erst dann
  * wird sie begründet angehoben.
  */
@@ -64,15 +64,13 @@ export const APP_BUDGET_BYTES = 11_000_000;
 export const APP_DATEIEN_AUS_PUBLIC = [
   // Hülle von index.html (<link rel=manifest/icon/apple-touch-icon>). Die
   // WebView fragt sie nicht zwingend an, aber index.html verweist darauf —
-  // mitgenommen, damit dort nichts ins Leere zeigt. Zusammen 58 kB.
+  // mitgenommen, damit dort nichts ins Leere zeigt. Zusammen 37 kB.
   'manifest.json',
-  'favicon.png',
   'apple-touch-icon.png',
   'assets/icon/favicon-16x16.png',
   'assets/icon/favicon-32x32.png',
   // Lutherrose auf Anmeldung, Ladebildschirm, Sperre, Fehlerseite, Tour.
   'assets/icon/logo-mark.png',
-  'assets/icon/logo-mark-white.png',
   // Absender-Symbol auf der Teilen-Karte des Rückblicks (ShareCard).
   'assets/icon/icon-192x192.png',
   // Taube im Fuß der Seiten (SpiritFooter).

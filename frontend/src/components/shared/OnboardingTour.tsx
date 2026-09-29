@@ -99,7 +99,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ slides, onClose, displa
 
       {/* Lutherrose (wandert je Slide), darf bis in die Safe-Area reichen. */}
       <img
-        src="/assets/icon/logo-mark-white.png"
+        src="/assets/icon/logo-mark.png"
         alt=""
         aria-hidden="true"
         style={{
