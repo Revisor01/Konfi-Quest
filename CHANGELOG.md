@@ -491,6 +491,8 @@ iOS-Build 234 · Android versionCode 128
 - Auf Android öffnen Bilder, Videos und PDFs jetzt in der App: im Betrachter
   mit Zoom und Wischen zu den übrigen Dateien, PDFs mit allen Seiten
   untereinander. Bisher gingen sie in eine andere App.
+- Mitteilungen zeigen auf Android in der Statusleiste und in der Mitteilung
+  die Lutherrose von Konfi Quest in Violett statt eines weißen Flecks.
 - Wer eine Datei in einer anderen App öffnet — auf Android etwa ein
   Word-Dokument — und zurückkommt, wird bei eingeschalteter App-Sperre nicht
   mehr nach Fingerabdruck oder Face ID gefragt. Bisher kam die Abfrage bei

@@ -502,6 +502,21 @@ richtig machen oder bis dahin entfernen.
   `GoogleService-Info.plist` sind Client-Konfigurationen (öffentlich per Design). Ob die beiden
   API-Schlüssel in der Google-Cloud-Konsole auf Paket/Bundle beschränkt sind, ist nur dort prüfbar.
   - **Status:** offen 27.09.2026 — in der Google-Cloud-Konsole prüfen; liegt bei Simon.
+- **Android: Mitteilungssymbol** (Simon am Gerät, Build 128, 29.09.2026: „die notification ist nicht korrekt
+  gestyled“). Das Manifest nannte weder `default_notification_icon` noch `default_notification_color`, der Server
+  schickt weder `icon` noch `color`; das FCM-SDK nahm das App-Symbol, von dem Android nur die Deckkraft auswertet
+  (volles Quadrat → weißer bzw. grauer Fleck, keine Akzentfarbe).
+  - **Status:** behoben 29.09.2026 — `drawable-{m,h,xh,xxh,xxxh}dpi/ic_stat_konfi.png` (24/36/48/72/96 px, Lutherrose
+    aus `ic_launcher_monochrome` der xxxhdpi-Ebene, Linien um 1,25 dp verdickt, damit sie bei 24 dp nicht zerfallen,
+    20 dp Motiv mit 2 dp Rand, weiß auf durchsichtig) und `benachrichtigung_farbe` #7C3AED hell (5,7:1 auf Weiß) /
+    #A78BFA in `values-night` (5,9:1 auf #202124), beide aus den Text-Tokens der App; im Manifest als die zwei
+    `meta-data` von FCM eingetragen. Beide Anzeige-Wege lesen dieselben Metadaten: FCM-SDK bei geschlossener App,
+    `@capacitor/push-notifications` bei offener App (`CommonNotificationBuilder` mit den Metadaten der App; das Plugin
+    hat keine eigene Einstellung dafür). Server unverändert: Ein `icon` zeigte bei Store-Apps 2.2.x ohne das Drawable
+    ins Leere, eine `color` überschriebe die Hell/Dunkel-Farbe der App. Test
+    `frontend/src/__tests__/config/androidMitteilungsSymbol.test.ts` (9: Manifest, fünf Dichten mit Maßen, Weiß, Rand
+    und Anteil, Löcher im Motiv, Kontrast hell und dunkel, Server ohne `icon`/`color`); Gegenprobe (altes Manifest,
+    volles weißes Quadrat) → 3 rot. Am Gerät ansehen.
 
 ## Alte Befunde nachgeprüft
 

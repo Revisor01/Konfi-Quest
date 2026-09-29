@@ -86,6 +86,30 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Symbol und Farbe der Mitteilungen (29.09.2026, Simon am Geraet:
+             "die notification ist nicht korrekt gestyled").
+
+             Ohne diese Eintraege nimmt das FCM-SDK das App-Symbol als kleines
+             Symbol. Android wertet davon nur die Deckkraft aus; das
+             Launcher-Symbol ist ein volles Quadrat, heraus kam ein weisser
+             bzw. grauer Fleck in Statusleiste und Mitteilung, ohne Farbe.
+             ic_stat_konfi ist die Lutherrose der Monochrom-Ebene des
+             App-Symbols, weiss auf durchsichtig, 20 dp Motiv auf 24 dp. Die
+             Farbe steht in values/ und values-night/benachrichtigung.xml.
+
+             Beide Wege lesen dieselben Eintraege: die Mitteilung, die Android
+             bei geschlossener App selbst zeigt (FCM-SDK), und die, die
+             @capacitor/push-notifications bei offener App baut
+             (CommonNotificationBuilder mit den Metadaten der App). Das Plugin
+             hat dafuer keine eigene Einstellung.
+             Geprueft in frontend/src/__tests__/config/androidMitteilungsSymbol.test.ts. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_konfi" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/benachrichtigung_farbe" />
     </application>
 
     <!-- Permissions -->
