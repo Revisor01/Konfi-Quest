@@ -47,7 +47,7 @@ const { darfJahrgang, darfTermin } = require('./jahrgangsZugriff');
  * beitreten) darf.
  *
  * Der Nutzer ist so geformt, wie rbac.js (req.user) und die Socket-Anmeldung
- * in server.js (socket.user) ihn bauen: id, organization_id (aktive Gemeinde),
+ * (utils/socketAnmeldung.js, socket.user) ihn bauen: id, organization_id (aktive Gemeinde),
  * role_name (Rolle IN dieser Gemeinde) und type. Zuweisungen und das
  * Super-Admin-Merkmal liest die Funktion selbst aus der Datenbank — der Socket
  * trägt sie nicht, und so antworten beide Wege aus derselben Quelle.

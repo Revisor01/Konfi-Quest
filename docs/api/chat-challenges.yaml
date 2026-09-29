@@ -135,6 +135,13 @@
 #      geprüft, jeder Angemeldete derselben Gemeinde konnte damit jedem Raum
 #      beitreten und über newMessage/pollUpdated/reactionAdded alle neuen
 #      Nachrichten fremder Chats mitlesen.)
+#    - Socket-Anmeldung (utils/socketAnmeldung.js, eingehaengt in server.js):
+#      socket.user traegt id, organization_id (aktive Gemeinde), role_name,
+#      type und display_name aus der Datenbank. userTyping sendet
+#      { roomId, userId, userName }. (BEHOBEN 2026-09-28, Audit Fachlogik
+#      Chat BF-12: seit 2026-08-22 fehlte display_name, userName war
+#      undefined. Die App zeigt keine Tipp-Anzeige; das Ereignis hat keinen
+#      Leser.)
 #
 # 4. WER DARF NACHRICHTEN LOESCHEN (DELETE /chat/messages/:messageId)?
 #    - Eigene Nachrichten: jede Rolle (auch Konfi), Soft-Delete.

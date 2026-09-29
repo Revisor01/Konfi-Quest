@@ -142,6 +142,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 - **Beschreibung:** Das Feld fehlt seit der Umstellung der Socket-Authentifizierung auf Datenbankprüfung (22.08.2026). Das Handbuch sagt, es gebe keine „schreibt gerade…"-Anzeige (`90-chat.md:181`) — der Server sendet trotzdem `userTyping`-Ereignisse, nur ohne Namen.
 - **Auswirkung aus Nutzersicht:** keine sichtbare; toter Zweig.
 - **Empfehlung:** `display_name` in der Socket-Auth mitladen oder die Tipp-Ereignisse entfernen.
+- **Nachtrag 28.09.2026:** behoben — `display_name` in der Socket-Anmeldung mitgeladen (dieselbe Abfrage, keine weitere). Die Anmeldung steht dafür aus `server.js` in `utils/socketAnmeldung.js`, damit ein Test sie einhängen kann; `server.js` ruft `io.use(socketAnmeldung(db, JWT_SECRET))`. Die Tipp-Ereignisse bleiben (kein Client sendet `typing`, geprüft in 2.0.0, 2.2.0, 2.3.0 und heute; der Horcher in `useChatSocket.ts` tut nichts). Test `backend/tests/utils/socketAnmeldungAnzeigename.test.js` (4, echter Socket.io-Server mit echtem Token: Name in `userTyping`, Name aus der Datenbank statt aus dem Token, Gegenproben ohne Token und deaktiviertes Konto); ohne `display_name` 2 rot.
 
 ### BF-13: Ausgabe löschen verlangt weniger Rechte als Ausgabe anlegen
 - **Schwere:** NIEDRIG
