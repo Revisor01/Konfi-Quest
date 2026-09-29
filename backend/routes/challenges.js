@@ -51,6 +51,13 @@ const AUDIENCES = ['konfis', 'konfis_und_team', 'nur_team'];
 // Rollen, die als "Team" gelten (duerfen bei audience != 'konfis' einreichen).
 const TEAM_ROLES = ['org_admin', 'admin', 'teamer'];
 
+// Erster Teil des zweiteiligen Sperrschluessels fuer "ein Beitrag je Person"
+// (allow_multiple = false, POST /konfi/:id/submissions); der zweite ist ein
+// Hash aus Challenge und Person. Zweiteilige Schluessel liegen in einem
+// anderen Raum als die einteiligen (Migrationen, Cron-Leader); neben
+// TERMIN_LOESCHEN_SPERRE (280926, utils/terminLoeschen.js) eindeutig.
+const CHALLENGE_BEITRAG_SPERRE = 280927;
+
 // Darf diese Rolle bei dieser Challenge einen eigenen Beitrag einreichen?
 // Konfis nur bei 'konfis'/'konfis_und_team', Team nur bei
 // 'konfis_und_team'/'nur_team'. super_admin nie (org-fremde Rolle).
@@ -839,7 +846,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.status(400).json({ error: 'Diese Medienart ist für diese Challenge nicht erlaubt.' });
         }
 
-        // Mehrfach-Einreichung
+        // Mehrfach-Einreichung: frueher Abbruch, bevor Datei und Link-Titel
+        // Arbeit machen. Verbindlich ist die zweite Pruefung unter der Sperre
+        // direkt vor dem INSERT (unten).
         if (!challenge.allow_multiple) {
           const { rows: [existing] } = await db.query(
             'SELECT 1 FROM challenge_submissions WHERE challenge_id = $1 AND user_id = $2 LIMIT 1',
@@ -919,7 +928,39 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           linkMeta = await holeLinkMetadaten(link_url);
         }
 
-        const { rows: [created] } = await db.query(
+        // Pruefen und Schreiben in EINER Transaktion unter einer Sperre je
+        // (Challenge, Person) -- nur bei allow_multiple = false (Audit
+        // 26.09.2026, Fachlogik Chat/Challenges/Rueckblick, "Unklar"). Bis
+        // 28.09.2026 lagen zwischen der Pruefung oben und dem INSERT Datei-
+        // pruefung, Verschluesselung und der Abruf der Link-Titel (Sekunden):
+        // zwei gleichzeitige Anfragen (Doppeltipp, Wiederholung aus der
+        // Warteschlange) kamen beide durch. Ein Unique-Index geht nicht --
+        // allow_multiple steht an der Challenge, nicht am Beitrag. Die Sperre
+        // haelt nur die Dauer dieser Transaktion; andere Personen und andere
+        // Challenges warten nicht aufeinander (Hash-Kollisionen liessen
+        // hoechstens kurz warten).
+        const client = await db.getClient();
+        let created;
+        try {
+          await client.query('BEGIN');
+          if (!challenge.allow_multiple) {
+            await client.query(
+              'SELECT pg_advisory_xact_lock($1, hashtext($2))',
+              [CHALLENGE_BEITRAG_SPERRE, `${challengeId}:${req.user.id}`]
+            );
+            const { rows: [schonDa] } = await client.query(
+              'SELECT 1 FROM challenge_submissions WHERE challenge_id = $1 AND user_id = $2 LIMIT 1',
+              [challengeId, req.user.id]
+            );
+            if (schonDa) {
+              await client.query('ROLLBACK');
+              if (filePath) {
+                await fs.promises.unlink(path.join(challengeDir, filePath)).catch(() => {});
+              }
+              return res.status(409).json({ error: 'Du hast für diese Challenge bereits einen Beitrag abgegeben.' });
+            }
+          }
+          ({ rows: [created] } = await client.query(
           `INSERT INTO challenge_submissions
              (challenge_id, user_id, organization_id, media_type, text_content,
               file_path, file_name, link_url, link_title, link_author, link_album,
@@ -942,7 +983,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
             consent,
             moderationStatus
           ]
-        );
+        ));
+          await client.query('COMMIT');
+        } catch (err) {
+          await client.query('ROLLBACK').catch(() => {});
+          throw err;
+        } finally {
+          client.release();
+        }
 
         res.status(201).json(created);
 

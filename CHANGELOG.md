@@ -1125,6 +1125,9 @@ iOS-Build 233 · Android versionCode 127
 - Nach einer eigenen Nachricht steht an diesem Chat keine Eins mehr, auch
   nicht kurz beim Öffnen der Chat-Übersicht; auch die Markierung „Neu" beim
   Öffnen eines Chats zählt eigene Nachrichten nicht mehr mit.
+- Bei einer Challenge, die nur einen Beitrag je Person annimmt, entstehen aus
+  zwei gleichzeitig abgeschickten Beiträgen (etwa nach einem doppelten Tipp
+  oder einer Wiederholung nach Netzabbruch) nicht mehr zwei.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

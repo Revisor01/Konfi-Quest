@@ -1578,7 +1578,7 @@ paths:
         '400': { description: Ungueltige Medienart / Pflichtfeld fehlt / Consent ungueltig / Link nicht von einem erlaubten Musikdienst }
         '403': { description: Kein Zugriff auf die Challenge ODER Rolle darf bei dieser audience nicht einreichen }
         '404': { description: Challenge nicht gefunden oder Entwurf }
-        '409': { description: Challenge nicht aktiv ODER bereits eingereicht (allow_multiple=false) }
+        '409': { description: "Challenge nicht aktiv ODER bereits eingereicht (allow_multiple=false). Seit 28.09.2026 auch bei gleichzeitigen Anfragen verlaesslich: Pruefung und INSERT laufen in einer Transaktion unter pg_advisory_xact_lock je (Challenge, Person); vorher kamen zwei gleichzeitige Einreichungen beide durch (Audit Fachlogik Chat, 'Unklar', behoben). Antwortform unveraendert." }
         '415': { description: Dateityp nicht verifizierbar }
         '500': { description: Datenbankfehler }
       x-berechtigung:
