@@ -253,6 +253,7 @@ Die drei wichtigsten Punkte: (1) Termin-Detailansicht ohne Fremd-Gemeinde-Test, 
 ### BF-16: Backend ohne Lint
 - **Schwere:** NIEDRIG
 - **Status:** offen 27.09.2026 — wie Toolchain BF-06. Später.
+- **Status:** behoben 29.09.2026 — wie Toolchain BF-06: `backend/eslint.config.js` mit `no-undef` als Fehler und `no-unused-vars` als Warnung, `npm run lint`, CI-Schritt „Lint" im Job `backend-test`; 0 Fehler, 85 Warnungen. Gegenprobe mit einem undefinierten Bezeichner: Exit 1.
 - **Fundstelle:** `backend/` — keine `eslint.config.*`, kein `eslint` in `backend/package.json`
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Das Frontend hat ein (nicht wirksames, BF-07) Lint-Gate, das Backend gar keines. Fehler wie `console.warn` mit einem Leerzeichen Einzug (`routes/auth.js:183`) oder ungenutzte Variablen fallen nicht auf.

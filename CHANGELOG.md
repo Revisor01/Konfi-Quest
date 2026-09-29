@@ -1334,7 +1334,9 @@ iOS-Build 234 · Android versionCode 128
   Sicherheitslücken in Abhängigkeiten stoppen ihn ab der Stufe „hoch".
 - Die Code-Regeln der App werden bei jeder Änderung geprüft, nicht mehr nur
   bei Pull Requests; der Altbestand an Regelverstößen in der App ist
-  abgebaut. Für den Server gibt es eine solche Prüfung noch nicht.
+  abgebaut. Der Server hat jetzt eine eigene solche Prüfung, die vor allem
+  Tippfehler in selten laufenden Abläufen findet, bevor sie ausgeliefert
+  werden.
 - An 21 geschützten Routen, für die es das bisher nicht gab, prüfen die Tests
   jetzt, dass eine fremde Gemeinde nichts sieht und nichts ändert. Zehn weiche
   Prüfungen, die auch eine falsche Antwort durchgehen ließen, erwarten jetzt

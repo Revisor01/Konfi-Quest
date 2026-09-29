@@ -212,6 +212,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 ### BF-06: Backend ohne Lint-Konfiguration — 96 Fehler mit Standardregeln, aber keine undefinierten Bezeichner
 - **Schwere:** NIEDRIG
 - **Status:** offen 27.09.2026 — das Backend hat weiter keine Lint-Konfiguration (Tests BF-16). Später.
+- **Status:** behoben 29.09.2026 — `backend/eslint.config.js` (flat config: `js.configs.recommended`, Node-Globals, Vitest-Globals für `tests/`, `sourceType: module` für `pushKennungMitsenden.test.js`), `npm run lint`, ESLint 10 als devDependency, CI-Schritt „Lint" im Job `backend-test` (Fehler blockieren, Warnungen nicht). `no-undef` ist Fehler — Gegenprobe: eine Datei mit einem Tippfehler-Bezeichner lässt `npx eslint` mit Exit 1 enden. Herabgestuft auf Warnung, begründet in der Konfiguration: `no-unused-vars` (71, Altbestand) und `no-useless-assignment` (12, Muster „erst `null`, dann im `try`"). Die 9 Fehler des ersten Laufs sind behoben: `preserve-caught-error` 4 (`cause` angehängt, darunter `push/firebase.js`), `no-empty` 2 (`konfi-management.js`), `no-useless-escape` 2 (`validatePassword`, neuer Test über alle 30 Sonderzeichen), `no-control-regex` 1 (`musikLinks.js`, begründete Ausnahme an der Zeile). Stand: 370 Dateien, 0 Fehler, 85 Warnungen (davon 2 ungenutzte `eslint-disable`-Kommentare), rund 22 s.
 - **Fundstelle:** `backend/package.json` (kein `lint`-Skript, kein ESLint installiert), im Repo
   existiert nur `frontend/eslint.config.js`
 - **Kennzeichnung:** reproduziert (ESLint 10.10.0 aus `frontend/node_modules` mit

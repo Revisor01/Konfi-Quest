@@ -126,6 +126,18 @@ jobs:
         working-directory: backend
         run: npm ci
 
+      # Lint ueber den GANZEN Backend-Baum, bei Push und Pull Request
+      # (29.09.2026, Release-Audit Toolchain BF-06 / Tests BF-16; bis dahin
+      # hatte das Backend gar keine Lint-Pruefung). Wie im Frontend zaehlen
+      # nur FEHLER, kein --max-warnings: `no-undef` faengt Tippfehler in selten
+      # laufenden Pfaden (Cron-Jobs, Fehlerzweige), die sonst erst in
+      # Produktion auffallen. Der Altbestand an ungenutzten Variablen steht als
+      # Warnung im Log; die Begruendung steht in backend/eslint.config.js.
+      # Gemessen am 29.09.2026: 370 Dateien, 0 Fehler, 85 Warnungen, rund 22 s.
+      - name: Lint
+        working-directory: backend
+        run: npx eslint .
+
       # Ab "high" rot (26.09.2026, Release-Audit Toolchain BF-08); vorher erst ab
       # "critical". Gemessen am 26.09.2026: 0 Schwachstellen.
       - name: Security audit
