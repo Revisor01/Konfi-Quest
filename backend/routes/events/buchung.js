@@ -324,10 +324,14 @@ module.exports = (db, rbacVerifier) => {
             console.error('Push notification failed for konfi cancellation:', pushErr);
           }
           const empfaenger = await ladeLeitungZumTermin(db, eventId);
+          // Mit konfi_id (29.09.2026): Ohne sie blieb die Mitteilung mit dem
+          // Namen der Konfi nach deren Kontoloeschung im Postfach der Leitung
+          // stehen (loescheMitteilungenUeberPerson findet sie ueber die
+          // Kennung). Alle uebrigen Aufrufer gaben sie schon mit.
           await PushService.sendEventUnregistrationToLeadership(
             db, req.user.organization_id, empfaenger,
             req.user.display_name || 'Ein Konfi', eventName,
-            (req.body && req.body.reason) || null, eventId
+            (req.body && req.body.reason) || null, eventId, userId
           );
         }
       }, 'DELETE /events/:eventId/book');

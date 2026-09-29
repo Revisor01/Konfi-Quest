@@ -2027,6 +2027,11 @@ paths:
         die Leitung, die das Event sieht; vorher an jeden Admin.
         requestBody optional: reason (nur Konfi-Pfad, landet im Protokoll und
         in der Meldung). Antwortform unveraendert.
+        BEHOBEN 29.09.2026: Die "Event-Abmeldung" an die Leitung trug hier
+        als einziger Weg keine konfi_id in data -- nach der Loeschung der
+        Konfi blieb ihr Name im Postfach der Leitung stehen (bis 365 Tage).
+        Jetzt mit konfi_id wie auf DELETE /api/konfi/events/{id}/register;
+        loescheMitteilungenUeberPerson nimmt den Eintrag mit dem Konto mit.
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
