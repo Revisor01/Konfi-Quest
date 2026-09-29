@@ -5273,7 +5273,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event UND Ziel-User müssen zur eigenen Org gehören",
+          "objekt-pruefung": "Event gehört zur eigenen Gemeinde; die Ziel-Person ist Mitglied dieser Gemeinde — Stamm-Gemeinde am Konto oder weitere Gemeinde über user_organizations (seit 29.09.2026; vorher nur users.organization_id, Eingeladene bekamen 404). Konfi oder Team entscheidet die Rolle in DIESER Gemeinde.",
           "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf dieses Event\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
           "hinweis": "BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — eine Teamer:in konnte Personen in einen Termin eintragen, den sie selbst nicht sah.\n",
           "jahrgang-der-person": "Seit 25.09.2026: gehoertZumTermin (utils/jahrgangsZugriff.js) prueft zusaetzlich die HINZUGEFUEGTE Person (user_id), nicht nur den Aufrufer. Sie braucht EINEN gemeinsamen Jahrgang mit dem Termin (Termine sind n:m ueber event_jahrgang_assignments). Konfis ueber konfi_profiles.jahrgang_id, Team und Leitung ueber user_jahrgang_assignments (can_view/can_edit spielen keine Rolle, es geht um Zugehoerigkeit). Ausgenommen: teamer_only, Termine ohne Jahrgang, org_admin/super_admin (Rolle oder Flag). Bei Verstoss 403 { error: \"<Name> gehört zu keinem Jahrgang dieses Events\", error_code: \"person_jahrgang_fremd\" }. BEHOBEN 25.09.2026 (war: die eingetragene Person wurde nur ueber organization_id geholt — ein Konfi aus Jahrgang B liess sich in einen Termin von Jahrgang A eintragen, eine Teamer:in ohne Zuweisung ebenso; die Selbstanmeldung prueft das seit 08.09.2026, nur dieser Weg nicht). Dieselbe Semantik nutzt seither auch bucheTermin/setzeTeamerZusage (darfTeamerAnDiesenTermin delegiert). Ausgelieferte Apps (2.2.x) filterten die Konfi-Auswahl schon ueber den Jahrgangsnamen; nur die Team-Auswahl konnte in die neue 403 laufen — sie faengt jeden Fehler mit einer Sammelmeldung ab. GEAENDERT 27.09.2026: Die Ausnahme org_admin/super_admin gilt mit der Rolle, die die Person in der Gemeinde des Termins hat (Stamm-Gemeinde: users.role_id, weitere: user_organizations.role_id), nicht mehr mit der Rolle am Konto; das Flag is_super_admin bleibt gemeindeuebergreifend.\n"
@@ -6803,8 +6803,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "WHERE r.name = 'teamer' AND u.organization_id = Token-Org",
-          "hinweis": "Kein Jahrgangs-Filter: Teamer:innen sehen hier alle Kolleg:innen der Organisation, auch aus fremden Jahrgängen. Es werden keine Login-Daten außer dem username ausgeliefert.\n"
+          "objekt-pruefung": "Rolle teamer in der Token-Gemeinde: Stamm-Gemeinde mit der Rolle am Konto (users.organization_id/role_id) oder weitere Gemeinde mit der Rolle aus user_organizations; deleted_at IS NULL",
+          "hinweis": "Kein Jahrgangs-Filter: Teamer:innen sehen hier alle Kolleg:innen der Gemeinde, auch aus fremden Jahrgängen. Es werden keine Login-Daten außer dem username ausgeliefert. BEHOBEN 29.09.2026: Die Liste las nur users.organization_id — Teamer:innen, die per Einladung in der Gemeinde sind, fehlten (in der Team-Verwaltung und in der Auswahl am Event). jahrgang_ids kam als Text-Array ([\"1\"]) statt als integer[], weil pg bigint[] als Text liefert; die Auswahl am Event verglich streng und bot deshalb niemanden aus dem Team an. Seitdem integer[] wie hier dokumentiert, und Jahrgänge, Jahrgangsnamen und badge_count nur aus dieser Gemeinde.\n"
         },
         "responses": {
           "200": {
@@ -6840,8 +6840,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "WHERE r.name IN ('admin','org_admin') AND u.organization_id = Token-Org AND deleted_at IS NULL",
-          "hinweis": "Kein Jahrgangs-Filter (wie bei /konfis/teamer). Es werden keine Login-Daten ausser dem username ausgeliefert. Super-Admins ohne org_admin-Rolle stehen nicht in der Liste.\n"
+          "objekt-pruefung": "Rolle admin oder org_admin in der Token-Gemeinde, über beide Quellen wie /konfis/teamer; deleted_at IS NULL",
+          "hinweis": "Kein Jahrgangs-Filter (wie bei /konfis/teamer). Es werden keine Login-Daten ausser dem username ausgeliefert. Super-Admins ohne org_admin-Rolle stehen nicht in der Liste. BEHOBEN 29.09.2026: role_name ist die Rolle in DIESER Gemeinde (vorher die am Konto), eingeladene Leitung steht mit in der Liste, und jahrgang_ids kommt als integer[] nur mit Jahrgängen dieser Gemeinde (vorher Text-Array, siehe /konfis/teamer).\n"
         },
         "responses": {
           "200": {
@@ -6877,7 +6877,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "WHERE u.id = :id AND u.organization_id = Token-Org AND r.name IN ('konfi','teamer') AND deleted_at IS NULL",
+          "objekt-pruefung": "Konfi oder Teamer:in der Stamm-Gemeinde (u.organization_id = Token-Org, Rolle am Konto) ODER Teamer:in per Einladung (user_organizations der Token-Org mit Rolle teamer); deleted_at IS NULL. Seit 29.09.2026 — vorher nur die Stamm-Gemeinde, eingeladene Teamer:innen aus der Team-Liste bekamen 404. role_name ist die Rolle in der Token-Gemeinde, das Konfi-Profil (Punkte, Jahrgang, konfiHistory) kommt nur aus der Stamm-Gemeinde, badgeCount zählt nur Badges der Token-Gemeinde.",
           "jahrgangs-bindung": "Die GANZE Route (seit 13.09.2026): Steht die angesehene Person in einem Jahrgang ausserhalb der eigenen Zuweisungen, antwortet die Route mit 403 (darfKonfi, view-Stufe). org_admin und super_admin sind ausgenommen. Teamer:innen als Zielobjekt sind nicht an einen Jahrgang gebunden (\"admin sieht alle Teamer:innen\"), ihr Profil bleibt fuer die ganze Leitung erreichbar. Gleiche Stufe wie die Schwesterroute GET /:id/event-points, die dieselben Daten zeigt.\n",
           "hinweis": "BEHOBEN 13.09.2026: Bis dahin hatte die uebrige Route KEINEN Jahrgangs-Check — eine Teamer:in konnte ueber eine direkt geratene ID das vollstaendige Profil samt Punktehistorie jedes Konfis der Organisation abrufen, auch aus Jahrgaengen ohne Zuweisung. Nur das am selben Tag ergaenzte Feld `challengeMarks` war gebunden; seit der Bindung am Kopf der Route braucht es dort keine eigene Pruefung mehr. Die Oberflaeche war nicht betroffen: Die Detailansicht haengt allein im Admin-Rollenbaum, und die ID stammt dort aus der bereits gefilterten Liste GET /api/admin/konfis (nachgemessen 13.09.2026).\n"
         },

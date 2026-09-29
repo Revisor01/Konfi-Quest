@@ -123,28 +123,58 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         }
     });
 
+    // Wer in DIESER Gemeinde eine der Rollen hat (29.09.2026): Stamm-Gemeinde mit
+    // der Rolle am Konto, jede weitere Gemeinde mit der Rolle aus
+    // user_organizations -- wie utils/orgMitglieder.js. Vorher lasen /teamer und
+    // /leitung nur users.organization_id: Wer per Einladung im Team einer
+    // Gemeinde war, fehlte in der Team-Verwaltung und in der Auswahl am Event
+    // (Simon, 29.09.: "kann keine Teamer zu Events hinzufügen Liste ist leer").
+    // In der Stamm-Gemeinde gilt die Rolle am Konto; eine user_organizations-
+    // Zeile fuer die eigene Stamm-Gemeinde zaehlt deshalb nicht noch einmal.
+    const mitgliederSql = `
+        SELECT u.id, r.name AS role_name
+          FROM users u
+          JOIN roles r ON r.id = u.role_id
+         WHERE u.organization_id = $1
+           AND r.name = ANY($2::text[])
+           AND u.deleted_at IS NULL
+        UNION
+        SELECT u.id, r.name AS role_name
+          FROM user_organizations uo
+          JOIN users u ON u.id = uo.user_id
+          JOIN roles r ON r.id = uo.role_id
+         WHERE uo.organization_id = $1
+           AND u.organization_id IS DISTINCT FROM $1
+           AND r.name = ANY($2::text[])
+           AND u.deleted_at IS NULL`;
+
     // GET all teamers for the admin's organization
     router.get('/teamer', rbacVerifier, requireTeamer, async (req, res) => {
         try {
+            // Jahrgaenge und Badges nur aus DIESER Gemeinde (29.09.2026): Eine
+            // Teamer:in mehrerer Gemeinden trug vorher die Jahrgangsnamen der
+            // anderen Gemeinde mit in diese Liste. Badges bleiben an der
+            // Gemeinde (Simon, 28.09.: "Es bleibt immer an der Gemeinde!").
             const query = `
+                WITH mitglieder AS (${mitgliederSql})
                 SELECT u.id, u.display_name as name, u.username, u.teamer_since,
                        STRING_AGG(DISTINCT j.name, ', ' ORDER BY j.name) as jahrgang_name,
                        -- ADDITIV (25.09.2026): die IDs zu den Namen. Die
                        -- Teilnehmerauswahl am Termin bietet nur Personen aus
                        -- den Jahrgaengen des Termins an und braucht dafuer
                        -- die IDs statt der zusammengefuegten Namen.
-                       ARRAY_REMOVE(ARRAY_AGG(DISTINCT j.id), NULL) as jahrgang_ids,
+                       ARRAY_REMOVE(ARRAY_AGG(DISTINCT j.id), NULL)::int[] as jahrgang_ids,
                        COALESCE(badge_counts.badge_count, 0)::int as badge_count,
                        COALESCE(cert_counts.cert_count, 0)::int as cert_count
-                FROM users u
-                JOIN roles r ON u.role_id = r.id
+                FROM mitglieder m
+                JOIN users u ON u.id = m.id
                 LEFT JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
-                LEFT JOIN jahrgaenge j ON uja.jahrgang_id = j.id
+                LEFT JOIN jahrgaenge j ON uja.jahrgang_id = j.id AND j.organization_id = $1
                 LEFT JOIN (
                     SELECT ub.user_id, COUNT(*) as badge_count
                     FROM user_badges ub
                     JOIN custom_badges cb ON ub.badge_id = cb.id
-                    WHERE cb.target_role = 'teamer'
+                    WHERE cb.target_role = 'teamer' AND cb.organization_id = $1
                     GROUP BY ub.user_id
                 ) badge_counts ON u.id = badge_counts.user_id
                 LEFT JOIN (
@@ -153,12 +183,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                     WHERE organization_id = $1
                     GROUP BY user_id
                 ) cert_counts ON u.id = cert_counts.user_id
-                WHERE r.name = 'teamer' AND u.organization_id = $1
                 GROUP BY u.id, u.display_name, u.username, u.teamer_since,
                          badge_counts.badge_count, cert_counts.cert_count
                 ORDER BY u.display_name
             `;
-            const { rows } = await db.query(query, [req.user.organization_id]);
+            const { rows } = await db.query(query, [req.user.organization_id, ['teamer']]);
             res.json(rows);
         } catch (err) {
             console.error('Database error in GET /konfis/teamer:', err);
@@ -183,24 +212,25 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     // ausser dem username, wie bei /teamer.
     router.get('/leitung', rbacVerifier, requireTeamer, async (req, res) => {
         try {
+            // role_name ist die Rolle in DIESER Gemeinde (29.09.2026), die
+            // Jahrgaenge nur die dieser Gemeinde -- siehe mitgliederSql oben.
             const { rows } = await db.query(
-                `SELECT u.id, u.display_name as name, u.username, r.name as role_name,
+                `WITH mitglieder AS (${mitgliederSql})
+                 SELECT u.id, u.display_name as name, u.username, m.role_name,
                         -- ADDITIV (25.09.2026): Jahrgaenge und Vollzugriffs-Flag,
                         -- damit die Teilnehmerauswahl am Termin nur Leitung
                         -- aus den Jahrgaengen des Termins anbietet. org_admin
                         -- und super_admin sind davon ausgenommen — das Flag
                         -- steht deshalb mit dabei.
                         u.is_super_admin,
-                        ARRAY_REMOVE(ARRAY_AGG(DISTINCT uja.jahrgang_id), NULL) as jahrgang_ids
-                   FROM users u
-                   JOIN roles r ON u.role_id = r.id
+                        ARRAY_REMOVE(ARRAY_AGG(DISTINCT j.id), NULL)::int[] as jahrgang_ids
+                   FROM mitglieder m
+                   JOIN users u ON u.id = m.id
                    LEFT JOIN user_jahrgang_assignments uja ON uja.user_id = u.id
-                  WHERE r.name IN ('admin', 'org_admin')
-                    AND u.organization_id = $1
-                    AND u.deleted_at IS NULL
-                  GROUP BY u.id, u.display_name, u.username, r.name, u.is_super_admin
+                   LEFT JOIN jahrgaenge j ON j.id = uja.jahrgang_id AND j.organization_id = $1
+                  GROUP BY u.id, u.display_name, u.username, m.role_name, u.is_super_admin
                   ORDER BY u.display_name`,
-                [req.user.organization_id]
+                [req.user.organization_id, ['admin', 'org_admin']]
             );
             res.json(rows);
         } catch (err) {
@@ -734,10 +764,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                        j.gottesdienst_enabled, j.gemeinde_enabled,
                        j.target_gottesdienst, j.target_gemeinde,
                        ce.event_date as confirmation_date, ce.location as confirmation_location,
-                       r.name as role_name
+                       -- Rolle in DIESER Gemeinde (29.09.2026): zuhause die am
+                       -- Konto, sonst die aus user_organizations. Siehe unten.
+                       CASE WHEN u.organization_id = $2 THEN r.name ELSE uo_r.name END as role_name
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
-                LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+                LEFT JOIN user_organizations uo
+                  ON uo.user_id = u.id AND uo.organization_id = $2
+                 AND u.organization_id IS DISTINCT FROM $2
+                LEFT JOIN roles uo_r ON uo_r.id = uo.role_id
+                -- Das Konfi-Profil nur aus der Stamm-Gemeinde: Eine per
+                -- Einladung hier mitarbeitende Teamer:in bringt sonst Punkte
+                -- und Jahrgang ihrer Konfi-Zeit aus der anderen Gemeinde mit.
+                LEFT JOIN konfi_profiles kp ON u.id = kp.user_id AND u.organization_id = $2
                 LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
                 LEFT JOIN (
                   -- Konfirmationstermin/-ort PRO KONFI: das is_konfirmation-Event, zu dem
@@ -751,7 +790,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                     AND e.organization_id = $2
                     AND (e.cancelled IS NULL OR e.cancelled = false)
                 ) ce ON ce.user_id = u.id
-                WHERE u.id = $1 AND r.name IN ('konfi', 'teamer') AND u.organization_id = $2 AND u.deleted_at IS NULL
+                -- Mitglied DIESER Gemeinde (29.09.2026): Konfis und Team der
+                -- Stamm-Gemeinde wie bisher, dazu Teamer:innen, die per
+                -- Einladung hier sind. Seit sie in der Team-Liste stehen
+                -- (GET /teamer ueber beide Quellen), fuehrte ihr Eintrag hier
+                -- sonst auf 404. Konfis gibt es nur in der Stamm-Gemeinde.
+                WHERE u.id = $1 AND u.deleted_at IS NULL
+                  AND ((u.organization_id = $2 AND r.name IN ('konfi', 'teamer'))
+                       OR uo_r.name = 'teamer')
             `;
             const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);
 
@@ -811,8 +857,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 SELECT COUNT(*) as "badgeCount" FROM user_badges ub
                 JOIN custom_badges cb ON ub.badge_id = cb.id
                 WHERE ub.user_id = $1 AND cb.target_role = $2
+                  AND cb.organization_id = $3
             `;
-            const { rows: [badgeResult] } = await db.query(badgeQuery, [konfiId, konfi.role_name]);
+            // Nur Badges DIESER Gemeinde (29.09.2026) -- Badges bleiben an der
+            // Gemeinde, in der sie entstanden sind (Simon, 28.09.2026).
+            const { rows: [badgeResult] } = await db.query(badgeQuery, [konfiId, konfi.role_name, req.user.organization_id]);
 
             // Challenge-Stempel der angesehenen Person (Simon, 13.09.2026:
             // "Also ich als Admin will sehen welche Stempel die Teamer und

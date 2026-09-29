@@ -2095,7 +2095,7 @@ paths:
           Zusage POST /api/teamer/events/{id}/zusage.
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "Event UND Ziel-User müssen zur eigenen Org gehören"
+        objekt-pruefung: "Event gehört zur eigenen Gemeinde; die Ziel-Person ist Mitglied dieser Gemeinde — Stamm-Gemeinde am Konto oder weitere Gemeinde über user_organizations (seit 29.09.2026; vorher nur users.organization_id, Eingeladene bekamen 404). Konfi oder Team entscheidet die Rolle in DIESER Gemeinde."
         jahrgangs-bindung: >
           Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem
           fremden Jahrgang wird mit 403 "Kein Zugriff auf dieses Event"
@@ -3619,11 +3619,19 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "WHERE r.name = 'teamer' AND u.organization_id = Token-Org"
+        objekt-pruefung: "Rolle teamer in der Token-Gemeinde: Stamm-Gemeinde mit der Rolle am Konto (users.organization_id/role_id) oder weitere Gemeinde mit der Rolle aus user_organizations; deleted_at IS NULL"
         hinweis: >
           Kein Jahrgangs-Filter: Teamer:innen sehen hier alle Kolleg:innen der
-          Organisation, auch aus fremden Jahrgängen. Es werden keine
+          Gemeinde, auch aus fremden Jahrgängen. Es werden keine
           Login-Daten außer dem username ausgeliefert.
+          BEHOBEN 29.09.2026: Die Liste las nur users.organization_id —
+          Teamer:innen, die per Einladung in der Gemeinde sind, fehlten
+          (in der Team-Verwaltung und in der Auswahl am Event). jahrgang_ids
+          kam als Text-Array (["1"]) statt als integer[], weil pg bigint[]
+          als Text liefert; die Auswahl am Event verglich streng und bot
+          deshalb niemanden aus dem Team an. Seitdem integer[] wie hier
+          dokumentiert, und Jahrgänge, Jahrgangsnamen und badge_count nur aus
+          dieser Gemeinde.
       responses:
         "200": { description: "Array (id, name, username, teamer_since, jahrgang_name, jahrgang_ids, badge_count, cert_count). ADDITIV 25.09.2026: jahrgang_ids (integer[], leer ohne Zuweisung) — die Teilnehmerauswahl am Termin bietet nur Personen aus den Jahrgaengen des Termins an und braucht die IDs statt der zusammengefuegten Namen." }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -3645,11 +3653,15 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "WHERE r.name IN ('admin','org_admin') AND u.organization_id = Token-Org AND deleted_at IS NULL"
+        objekt-pruefung: "Rolle admin oder org_admin in der Token-Gemeinde, über beide Quellen wie /konfis/teamer; deleted_at IS NULL"
         hinweis: >
           Kein Jahrgangs-Filter (wie bei /konfis/teamer). Es werden keine
           Login-Daten ausser dem username ausgeliefert. Super-Admins ohne
           org_admin-Rolle stehen nicht in der Liste.
+          BEHOBEN 29.09.2026: role_name ist die Rolle in DIESER Gemeinde
+          (vorher die am Konto), eingeladene Leitung steht mit in der Liste,
+          und jahrgang_ids kommt als integer[] nur mit Jahrgängen dieser
+          Gemeinde (vorher Text-Array, siehe /konfis/teamer).
       responses:
         "200": { description: "Array (id, name, username, role_name, is_super_admin, jahrgang_ids). ADDITIV 25.09.2026: is_super_admin (boolean) und jahrgang_ids (integer[]) — die Teilnehmerauswahl am Termin zeigt Leitung mit Rolle admin nur bei gemeinsamem Jahrgang; org_admin und das Flag sind ausgenommen." }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -3693,7 +3705,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "WHERE u.id = :id AND u.organization_id = Token-Org AND r.name IN ('konfi','teamer') AND deleted_at IS NULL"
+        objekt-pruefung: "Konfi oder Teamer:in der Stamm-Gemeinde (u.organization_id = Token-Org, Rolle am Konto) ODER Teamer:in per Einladung (user_organizations der Token-Org mit Rolle teamer); deleted_at IS NULL. Seit 29.09.2026 — vorher nur die Stamm-Gemeinde, eingeladene Teamer:innen aus der Team-Liste bekamen 404. role_name ist die Rolle in der Token-Gemeinde, das Konfi-Profil (Punkte, Jahrgang, konfiHistory) kommt nur aus der Stamm-Gemeinde, badgeCount zählt nur Badges der Token-Gemeinde."
         jahrgangs-bindung: >
           Die GANZE Route (seit 13.09.2026): Steht die angesehene Person in
           einem Jahrgang ausserhalb der eigenen Zuweisungen, antwortet die
