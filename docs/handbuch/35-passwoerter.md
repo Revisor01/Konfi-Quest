@@ -479,7 +479,10 @@ wie bei einem deaktivierten Konto — die App meldet „Dein Zugang wurde
 deaktiviert", und wer noch angemeldet war, wird abgemeldet. Wer nach der
 Konfirmation weiter dabei sein soll, wird vorher
 [zur Teamer:in befördert](05-rollen.md#eine-rolle-aendern); Teamer:innen sind
-von der Löschung ausgenommen.
+von der Löschung ausgenommen. Ebenso bleibt ein Konfi-Konto stehen, das noch
+zu einer weiteren Gemeinde gehört: [Konfi und Team gehen nicht
+zusammen](05-rollen.md#in-mehreren-gemeinden-mitarbeiten), und über solche
+Konten entscheidet der Betrieb von Konfi Quest, nicht die Löschfrist.
 
 **Jemand wurde aus der Gemeinde entfernt.** Der Zugang endet sofort, auch auf
 bereits geöffneten Geräten.

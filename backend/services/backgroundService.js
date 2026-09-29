@@ -15,6 +15,7 @@ const { ladeLeitungZumJahrgang } = require('../utils/jahrgangLeitungSicht');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
 const { loescheMitteilungenZuErledigtenEinladungen } = require('../utils/postfachAufraeumen');
+const { WOANDERS_MITGLIED_SQL } = require('../utils/konfiOderTeam');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -1573,13 +1574,16 @@ class BackgroundService {
 
           // Gibt es überhaupt noch AKTIVE Konfis, die gelöscht wuerden?
           // Sonst ist die Warnung sinnlos (nur befoerderte/keine).
+          // Wer woanders noch Mitglied ist, wird nicht geloescht (siehe
+          // runAutoDeletion) und zaehlt hier deshalb auch nicht mit.
           const { rows: [{ count: konfiCount }] } = await db.query(
             `SELECT COUNT(*)::int AS count
                FROM users u
                JOIN konfi_profiles kp ON kp.user_id = u.id
                JOIN roles r ON u.role_id = r.id
               WHERE kp.jahrgang_id = $1 AND u.organization_id = $2
-                AND r.name = 'konfi' AND u.deleted_at IS NULL`,
+                AND r.name = 'konfi' AND u.deleted_at IS NULL
+                AND NOT ${WOANDERS_MITGLIED_SQL('u')}`,
             [jg.id, jg.organization_id]
           );
           if (konfiCount === 0) continue;
@@ -1696,6 +1700,36 @@ class BackgroundService {
           continue;
         }
 
+        // --- KONTEN, DIE WOANDERS NOCH MITGLIED SIND (28.09.2026) ---
+        // Konfi und Team gehen nicht zusammen (Simon, 28.09.2026;
+        // utils/konfiOderTeam.js). Aus der Zeit davor kann es Konfi-Konten
+        // geben, die ueber user_organizations in einer anderen Gemeinde im
+        // Team sind. Soft- und Hard-Loeschung treffen das GANZE Konto --
+        // die andere Gemeinde verloere die Person samt Anmeldung, Chats und
+        // allem, was daran haengt (Audit Punkte/Termine, Tabelle "Rolle je
+        // Gemeinde", die schwerste Zeile). Deshalb ueberspringen beide
+        // Schritte diese Konten. Protokolliert wird NUR die Kennung, kein
+        // Name: Das Log verlaesst den Server. Wie viele es sind, misst
+        // docs/auftraege/lokaler-agent/06-mischkonten.md.
+        const { rows: uebersprungen } = await db.query(
+          `SELECT u.id, (CURRENT_DATE - $2::date) AS tag
+             FROM users u
+             JOIN konfi_profiles kp ON kp.user_id = u.id
+             JOIN roles r ON u.role_id = r.id
+            WHERE kp.jahrgang_id = $1
+              AND u.organization_id = $3
+              AND r.name = 'konfi'
+              AND (CURRENT_DATE - $2::date) >= 60
+              AND ${WOANDERS_MITGLIED_SQL('u')}`,
+          [jg.id, stichtag, jg.organization_id]
+        );
+        for (const { id, tag } of uebersprungen) {
+          console.warn(
+            `Auto-Deletion: Konto ${id} übersprungen (Jahrgang ${jg.id}, Tag ${tag} nach der Konfirmation): ` +
+            'gehört noch zu einer weiteren Gemeinde.'
+          );
+        }
+
         // --- HARD-DELETE (>= 120 Tage) ---
         // Nur aktive Konfis (r.name='konfi'); promotete Teamer (role gewechselt,
         // teamer_since gesetzt) werden durch den Rollen-Filter NIE erfasst (D-10).
@@ -1711,7 +1745,8 @@ class BackgroundService {
             WHERE kp.jahrgang_id = $1
               AND u.organization_id = $3
               AND r.name = 'konfi'
-              AND (CURRENT_DATE - $2::date) >= 120`,
+              AND (CURRENT_DATE - $2::date) >= 120
+              AND NOT ${WOANDERS_MITGLIED_SQL('u')}`,
           [jg.id, stichtag, jg.organization_id]
         );
 
@@ -1757,6 +1792,7 @@ class BackgroundService {
               AND u.deleted_at IS NULL
               AND (CURRENT_DATE - $2::date) >= 60
               AND (CURRENT_DATE - $2::date) < 120
+              AND NOT ${WOANDERS_MITGLIED_SQL('u')}
             RETURNING u.id`,
           [jg.id, stichtag, jg.organization_id]
         );
