@@ -487,6 +487,9 @@ iOS-Build 234 · Android versionCode 128
 - Die Datenschutzerklärung beschreibt genau, wann die App einen Absturzbericht
   sendet: auch bei abgefangenen Fehlern im Hintergrund, höchstens 20 bis zum
   nächsten Start, dazu der Beginn jeder Sitzung.
+- Die Datenschutzerklärung nennt die Geräte-Kennung, die die App bei der
+  Anmeldung und beim Verlängern der Anmeldung sendet, wozu sie gespeichert und
+  wann sie gelöscht wird.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
