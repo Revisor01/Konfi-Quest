@@ -296,6 +296,9 @@ Wertung Teamer (badges.js:389-557).
   Fortschritt weiter als aktueller Streak angezeigt. Für die Vergabe egal
   (der stündliche Check hätte damals vergeben), für die Anzeige leicht
   irreführend.
+  **Nachtrag 29.09.2026:** behoben für die Anzeige — der Fortschritt liest
+  `angezeigteSerie` (0, wenn die letzte aktive Woche älter als die Vorwoche
+  ist); die Vergabe bleibt bei `computeCurrentStreak`.
 - Konfi-`specific_activity` zählt über den Aktivitätsnamen (badges.js:216-218)
   ohne `target_role`-Filter; teilen sich eine Konfi- und eine Teamer-Aktivität
   denselben Namen, werden sie zusammengezählt.

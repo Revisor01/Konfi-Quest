@@ -231,6 +231,10 @@ iOS-Build 234 · Android versionCode 128
   Konfi-Badges so, wie er sie verdient hat — auch wenn die Leitung ein Badge
   später löscht, umbenennt oder den Zielwert ändert. Aktuelle Konfis sehen
   Änderungen weiter sofort, ein gelöschtes Badge verschwindet bei ihnen.
+- Der Fortschritt an einem Serien-Badge zeigt 0, sobald die Serie gerissen
+  ist — also wenn weder in dieser noch in der vergangenen Woche etwas
+  eingetragen wurde. Bisher stand dort etwa „3/4" für eine Serie, die seit
+  Monaten vorbei war. Wann das Badge vergeben wird, ändert sich nicht.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   jeden neuen Beitrag seit dem letzten Öffnen, auch einen, der noch auf
   Freigabe wartet, und verschwindet beim Öffnen — wie im Chat. Orange steht

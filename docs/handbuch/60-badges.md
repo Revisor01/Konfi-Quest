@@ -307,6 +307,12 @@ Wochen **in Folge** mit mindestens einem Eintrag.
 > vor einem Jahr vier Wochen am Stück aktiv war und seitdem nichts, erfüllt
 > die Bedingung weiterhin und bekommt das Badge beim Anlegen sofort.
 
+Der **Fortschritt** am offenen Badge zeigt dagegen die Serie, die gerade läuft:
+War die letzte aktive Woche die laufende oder die Vorwoche, steht dort die
+Zahl der Wochen am Stück („3/4" — diese Woche kann die vierte werden). Liegt
+die letzte aktive Woche weiter zurück, ist die Serie gerissen und dort steht 0 —
+die nächste aktive Woche zählt wieder als erste.
+
 ### Nur für Teamer:innen zählen
 
 #### Teamer-Jahr

@@ -734,6 +734,14 @@ paths:
         das Dashboard nannte dann ein Ziel, das niemand vollmachen konnte.
         Verdiente Abzeichen bleiben in earned sichtbar, auch wenn sie
         inzwischen abgeschaltet sind; als offenes Ziel zaehlen sie nicht.
+        GEAENDERT 29.09.2026 (nur der Wert, nicht die Form; Entscheidung
+        Simon "Serie im Fortschritt ehrlich zeigen"): progress.current und
+        progress.percentage eines offenen streak-Abzeichens sind 0, wenn die
+        letzte aktive Woche aelter als die Vorwoche ist -- die naechste aktive
+        Woche beginnt dann wieder bei 1 (utils/streakCalculation.js,
+        angezeigteSerie). Die Wertung zaehlt unveraendert ab der letzten
+        aktiven Woche. Gilt ebenso fuer /v2, GET /api/admin/konfis/{id}/badges
+        und die Teamer-Routen.
         Ersetzt durch GET /api/konfi/badges/v2 (31.08.2026), das dieselbe
         Huelle ohne die Verwaltungsfelder liefert. Diese Route bleibt
         unveraendert stehen, bis keine App im Store sie mehr ruft —

@@ -17,7 +17,7 @@
 // muessen exakt gleich zaehlen, sonst zeigt die App 10/10 ohne dass das
 // Abzeichen kommt.
 
-const { computeCurrentStreak } = require('./streakCalculation');
+const { angezeigteSerie } = require('./streakCalculation');
 const { berechneBadgeProgress, bedingungFehlt } = require('./badgeProgress');
 const { TEAMER_KATEGORIE_NAMEN_SQL } = require('./badgeKategorieRegel');
 
@@ -160,7 +160,10 @@ async function getTeamerBadgeProgress(db, userId, orgId) {
   // Einmal vorberechnen: Der Wert haengt allein an allDates, wurde aber
   // bisher je Abzeichen neu gerechnet (Befund N2). Der Konfi-Pfad macht
   // es seit jeher einmal.
-  const currentStreak = computeCurrentStreak(allDates);
+  // Fuer die ANZEIGE: eine gerissene Serie zeigt 0 (29.09.2026, Begruendung
+  // in utils/streakCalculation.js angezeigteSerie). Die Wertung in badges.js
+  // zaehlt unveraendert ab der letzten aktiven Woche.
+  const currentStreak = angezeigteSerie(allDates);
 
   // Startjahr für teamer_year (konsistent zur Wertung badges.js):
   // 1. users.teamer_since; 2. Fallback aelteste aktive Jahr (entspricht aelteste Teamer-Aktivität).

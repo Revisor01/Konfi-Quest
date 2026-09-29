@@ -677,6 +677,11 @@ paths:
         (total_points etc.) sind für Teamer irrelevant und liefern 0;
         collection und yearly sind in der Wertung noch nicht implementiert und
         liefern ebenfalls 0.
+        AUSNAHME seit 29.09.2026 (nur der Wert, nicht die Form): Bei streak
+        zeigt der Fortschritt 0, wenn die letzte aktive Woche aelter als die
+        Vorwoche ist (utils/streakCalculation.js, angezeigteSerie); die
+        Wertung zaehlt weiter ab der letzten aktiven Woche. Gilt ebenso fuer
+        /v2.
         Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht
         mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt
         offen da, während der Konfi-Pfad sie korrekt zurückhielt. Verdiente
