@@ -32,7 +32,7 @@
 # Warnung -- backend2 wurde in Stufe 1 mit neu erstellt, die Annahme gilt so
 # nicht. Die neuen Container standen zudem 13-20 s auf "created", was zu einem
 # mit neu erstellten Postgres passt (depends_on: service_healthy). Messung und
-# Gegenmittel: docs/auftraege/lokaler-agent/09-deploy-luecke.md.
+# Gegenmittel: docs/auftraege/lokaler-agent/10-deploy-luecke.md.
 #
 # Umgebung (kommt aus dem Workflow; keine Werte hier, das Repo ist oeffentlich):
 #   P_URL, P_KEY          Portainer-Adresse und API-Key

@@ -1,4 +1,4 @@
-# 08 — Backend-Container: Healthcheck und Nutzer ohne root (CI BF-06)
+# 09 — Backend-Container: Healthcheck und Nutzer ohne root (CI BF-06)
 
 Nach dem Deploy des Stands vom 29.09.2026. Befund: CI BF-06 in
 `docs/audit/2026-09-26/ci-deployment-store.md`.

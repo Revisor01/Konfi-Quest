@@ -1,4 +1,4 @@
-# 09 — Deploy-Lücke: Was erstellt Portainer beim Update neu? (CI BF-05)
+# 10 — Deploy-Lücke: Was erstellt Portainer beim Update neu? (CI BF-05)
 
 Befund: CI BF-05 in `docs/audit/2026-09-26/ci-deployment-store.md`. Der
 rollende Deploy (`deploy/rollend.sh`) soll erst `backend` (+ `frontend`) und

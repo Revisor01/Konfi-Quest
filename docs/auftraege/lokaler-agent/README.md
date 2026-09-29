@@ -22,8 +22,8 @@ Produktions-Deploy; den Merge gibt Simon frei.
 | [06-mischkonten.md](06-mischkonten.md) | Konten messen, die Konfi und Team zugleich sind (Altbestand), und verschiedene Team-Rollen je Gemeinde | nach dem Deploy, vor dem Gespräch „Mehrfach-Konten" |
 | [07-client-adresse-hinter-dem-proxy.md](07-client-adresse-hinter-dem-proxy.md) | Kommt die echte Client-Adresse im Backend an? Messung, ggf. Proxy-Einstellung (Sicherheit BF-13) | nach dem Deploy des Stands vom 29.09.2026 |
 | [08-screenshots-2.3.md](08-screenshots-2.3.md) | Die 42 Handbuch- und Store-Bilder neu ziehen: welche, warum, woran ein gelungenes Bild zu erkennen ist (UI BF-09) | nach dem Deploy des Stands vom 29.09.2026 |
-| [08-backend-container.md](08-backend-container.md) | Healthcheck des Stacks ohne curl, Backend als Nutzer ohne root (CI BF-06) | nach dem Deploy des Stands vom 29.09.2026 |
-| [09-deploy-luecke.md](09-deploy-luecke.md) | Deploy-Lücke messen: Erstellt Portainer beim Update alle Dienste (auch Postgres) neu? Postgres per Digest (CI BF-05) | beim nächsten Deploy |
+| [09-backend-container.md](09-backend-container.md) | Healthcheck des Stacks ohne curl, Backend als Nutzer ohne root (CI BF-06) | nach dem Deploy des Stands vom 29.09.2026 |
+| [10-deploy-luecke.md](10-deploy-luecke.md) | Deploy-Lücke messen: Erstellt Portainer beim Update alle Dienste (auch Postgres) neu? Postgres per Digest (CI BF-05) | beim nächsten Deploy |
 
 ## Regeln
 
