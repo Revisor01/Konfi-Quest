@@ -126,7 +126,7 @@ describe('Material als Link: Anzeige', () => {
     ['Teamer-Detailseite', () => teamerDetail],
     ['Teamer-Liste (Detailbereich)', () => teamerListe],
   ])('%s oeffnet den Link extern im Browser', (_name, quelle) => {
-    expect(quelle()).toContain("window.open(url, '_blank')");
+    expect(quelle()).toContain('linkOeffnen(url)');
   });
 
   it('die Material-Liste am Termin zeigt Link statt Dateizahl', () => {

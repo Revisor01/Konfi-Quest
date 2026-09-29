@@ -509,6 +509,8 @@ iOS-Build 234 · Android versionCode 128
   unter „Fehler".
 
 ### Behoben
+- Karten, Store-, Musik- und Weblinks aus der App lösen die App-Sperre nicht
+  mehr aus, auch nicht bei „Sofort“.
 - Auf Android erscheint eine Mitteilung auch, während die App offen ist — wie
   auf dem iPhone —, und die Zahlen an den Reitern stellen sich sofort darauf
   ein.

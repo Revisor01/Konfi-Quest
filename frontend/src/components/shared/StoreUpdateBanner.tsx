@@ -8,6 +8,7 @@ import {
   merkeHinweisWeggeklickt,
   StoreUpdateInfo
 } from '../../services/updateCheck';
+import { linkOeffnen } from '../../services/systemDialoge';
 
 /**
  * Hinweis "Neue Version im Store" fuer die drei Dashboards.
@@ -50,7 +51,7 @@ const StoreUpdateBanner: React.FC<{ style?: React.CSSProperties }> = ({
 
   if (!info) return null;
 
-  const oeffneStore = () => window.open(info.url, '_blank');
+  const oeffneStore = () => linkOeffnen(info.url);
 
   return (
     // Kein Knopf im Knopf: Karte role="presentation", Knopf ist der Text, das

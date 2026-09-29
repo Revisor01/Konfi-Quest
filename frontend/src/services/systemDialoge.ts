@@ -27,10 +27,11 @@ import { mitTypAusEndung } from '../utils/dateiTypen';
 // Dateiauswahl der App; der Test dateiAuswahlNurUeberHuelle schlaegt an,
 // sobald irgendwo sonst eine Datei-Eingabe entsteht.
 //
-// Was NICHT durch diese Datei laeuft: window.open auf Karten und Weblinks
-// (linkOeffnen steht bereit, ist aber noch nirgends angeschlossen). Bei
-// „Sofort" sperrt die App nach so einem Abstecher einmal zu oft — harmlos,
-// siehe KARENZZEIT in appSperre.ts.
+// Karten, Store, Musik- und Weblinks (29.09.2026): Bis dahin rief jede
+// Stelle window.open selbst, an linkOeffnen vorbei — bei „Sofort" stand man
+// nach jedem Blick in die Karte vor dem Sperrbildschirm. Jetzt oeffnet nur
+// linkOeffnen ein Fenster nach draussen; der Test linksNurUeberHuelle
+// schlaegt an, sobald irgendwo sonst window.open steht.
 // ---------------------------------------------------------------------------
 
 /**

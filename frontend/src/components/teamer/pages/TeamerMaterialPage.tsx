@@ -56,6 +56,7 @@ import { materialStats } from '../../../utils/materialStats';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 import { materialInhalt, trackHandlung } from '../../../services/analytics';
+import { linkOeffnen } from '../../../services/systemDialoge';
 
 interface Material {
   id: number;
@@ -250,7 +251,7 @@ const TeamerMaterialPage: React.FC = () => {
       return;
     }
     await haptik(ImpactStyle.Medium);
-    window.open(url, '_blank');
+    linkOeffnen(url);
     // Anonyme Messung: ein Link ist abgerufen — ohne seine Adresse.
     trackHandlung('material-abgerufen', { inhalt: 'link' });
   };

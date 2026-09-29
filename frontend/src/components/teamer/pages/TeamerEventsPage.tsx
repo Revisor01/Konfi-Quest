@@ -93,6 +93,7 @@ import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import type { ActivityRequest } from '../../konfi/modals/RequestDetailModal';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { trackMitmachenAnsicht } from '../../../services/analytics';
+import { linkOeffnen } from '../../../services/systemDialoge';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
@@ -1184,9 +1185,9 @@ const TeamerEventsPage: React.FC = () => {
                     <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       onClick={() => {
                         if (selectedEvent.location_maps_url) {
-                          window.open(selectedEvent.location_maps_url, '_blank');
+                          linkOeffnen(selectedEvent.location_maps_url);
                         } else if (selectedEvent.location) {
-                          window.open(`https://maps.apple.com/?q=${encodeURIComponent(selectedEvent.location)}`, '_blank');
+                          linkOeffnen(`https://maps.apple.com/?q=${encodeURIComponent(selectedEvent.location)}`);
                         }
                       }}
                     >

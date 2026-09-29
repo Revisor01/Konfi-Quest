@@ -28,6 +28,7 @@ import { tastaturKlick } from '../../utils/tastatur';
 import { datumUhrzeit, uhrzeit } from '../../utils/dateUtils';
 import { rollenName } from '../../utils/rollenNamen';
 import { mimeAusDateiname } from '../../utils/dateiTypen';
+import { linkOeffnen } from '../../services/systemDialoge';
 
 // Endung -> Typ kommt aus der einen Tabelle der App (utils/dateiTypen.ts).
 // Bis zum 29.09.2026 stand hier eine eigene, kuerzere: .doc, .pptx, .txt und
@@ -60,7 +61,7 @@ const linkifyText = (text: string): React.ReactNode => {
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            window.open(href, '_blank');
+            linkOeffnen(href);
           }}
           style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}
         >

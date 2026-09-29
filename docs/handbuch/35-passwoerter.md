@@ -193,8 +193,8 @@ Fingerabdruck eingerichtet ist. Im Browser steht er nicht.
 ### Kurze Abstecher sperren nicht
 
 Ein Foto oder eine Datei auswählen — im Chat, im Material, für einen Antrag
-oder eine Challenge —, der Teilen-Dialog, ein Link, der eine Karte oder den
-Store öffnet, eine Datei, die in einer anderen App aufgeht (auf Android etwa ein
+oder eine Challenge —, der Teilen-Dialog, ein Link nach draußen (Karte, Store,
+Musik oder eine Webseite), eine Datei, die in einer anderen App aufgeht (auf Android etwa ein
 Word-Dokument), und die Face-ID-Abfrage selbst — all das schickt die App
 technisch in den Hintergrund, zählt aber nicht als Verlassen. Auch bei
 **„Sofort"** sperrt die App dabei nicht, und auch dann nicht, wenn du länger in

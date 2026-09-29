@@ -95,8 +95,9 @@ const EINSTELLUNG_SCHLUESSEL = 'konfi_app_sperre_verzoegerung';
  *     (Simons Befund, Android-Testbuild 128).
  *   - Teilen-Dialog   (Share.share / navigator.share in chatTeilen.ts,
  *     shareUtils.ts, FileViewerModal, ChallengeLeitungModal, AdminInvitePage)
- *   - Karten und Links (window.open auf Maps/Store/Weblinks in EventDetailView,
- *     TeamerEventsPage, MessageBubble, StoreUpdateBanner, …)
+ *   - Karten und Links (Maps, Store, Musik- und Weblinks) — über linkOeffnen
+ *     in services/systemDialoge.ts. Bis zum 29.09.2026 riefen die Stellen
+ *     window.open selbst, an der Hülle vorbei.
  *   - Dateien, die in einer fremden App oder der Vorschau des Systems aufgehen
  *     (Word, Excel; auf Android jede Datei, die der Betrachter der App nicht
  *     selbst zeigt) — über dateiExternOeffnen in services/systemDialoge.ts

@@ -64,6 +64,7 @@ import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 import { useActionGuard } from '../../../hooks/useActionGuard';
+import { linkOeffnen } from '../../../services/systemDialoge';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -853,10 +854,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     onClick={() => {
                       if (eventData.location_maps_url) {
-                        window.open(eventData.location_maps_url, '_blank');
+                        linkOeffnen(eventData.location_maps_url);
                       } else if (eventData.location) {
                         const mapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(eventData.location)}`;
-                        window.open(mapsUrl, '_blank');
+                        linkOeffnen(mapsUrl);
                       }
                     }}
                   >
