@@ -9,6 +9,12 @@
 //   - die erste Versionsüberschrift im CHANGELOG
 //   - MARKETING_VERSION im iOS-Projekt (apply-version.sh schreibt sie beim
 //     Store-Build ebenfalls; hier steht sie, damit das Repo nicht lügt)
+//   - die iOS-Build-Nummer im Repo: CFBundleShortVersionString und
+//     CFBundleVersion in Info.plist, CURRENT_PROJECT_VERSION im Projekt
+//     (29.09.2026, Audit CI BF-09). Gebaut wird zwar mit den Werten, die
+//     apply-version.sh im Runner einsetzt -- im Repo stand aber Build 220
+//     bzw. 218, waehrend version.json 234 nannte. Wer lokal in Xcode baut
+//     oder im Repo nachsieht, bekam einen falschen Stand.
 //
 // Aufruf (aus der Repo-Wurzel):
 //   npm run version:setzen -- 2.4.0                  App-Version überall setzen
@@ -28,10 +34,23 @@ const VERSION_JSON = join(WURZEL, 'frontend', 'version.json');
 const PAKETE = ['.', 'frontend', 'backend'];
 const CHANGELOG = join(WURZEL, 'CHANGELOG.md');
 const PBXPROJ = join(WURZEL, 'frontend', 'ios', 'App', 'App.xcodeproj', 'project.pbxproj');
+const INFO_PLIST = join(WURZEL, 'frontend', 'ios', 'App', 'App', 'Info.plist');
 
 const liesJson = (pfad) => JSON.parse(readFileSync(pfad, 'utf-8'));
 
-/** Alle Stellen, die der Quelle folgen müssen, mit ihrem aktuellen Wert. */
+/** Wert eines <string>-Eintrags in der Info.plist (ohne Plist-Paket). */
+const plistWert = (text, schluessel) =>
+  text.match(new RegExp(`<key>${schluessel}</key>\\s*<string>([^<]*)</string>`))?.[1];
+const plistSetzen = (text, schluessel, wert) =>
+  text.replace(new RegExp(`(<key>${schluessel}</key>\\s*<string>)[^<]*(</string>)`), `$1${wert}$2`);
+/** Alle (verschiedenen) Werte einer Build-Einstellung im Projekt. */
+const pbxWerte = (text, name) =>
+  [...new Set([...text.matchAll(new RegExp(`${name} = ([^;]+);`, 'g'))].map((x) => x[1].trim()))];
+
+/**
+ * Alle Stellen, die der Quelle folgen müssen, mit aktuellem Wert und Soll.
+ * Die meisten tragen die App-Version, drei die iOS-Build-Nummer.
+ */
 export function versionsstaende(wurzel = WURZEL) {
   const quelle = liesJson(join(wurzel, 'frontend', 'version.json'));
   const staende = [{ stelle: 'frontend/version.json', wert: quelle.version }];
@@ -49,14 +68,22 @@ export function versionsstaende(wurzel = WURZEL) {
   const m = changelog.match(/^## \[(?:Unreleased\] - |)(\d+\.\d+\.\d+)/m);
   staende.push({ stelle: 'CHANGELOG.md (erste Versionsüberschrift)', wert: m ? m[1] : undefined });
   const pbx = readFileSync(join(wurzel, 'frontend/ios/App/App.xcodeproj/project.pbxproj'), 'utf-8');
-  const marketing = [...pbx.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((x) => x[1].trim());
-  staende.push({ stelle: 'ios project.pbxproj (MARKETING_VERSION)', wert: marketing.length ? [...new Set(marketing)].join(', ') : undefined });
+  const marketing = pbxWerte(pbx, 'MARKETING_VERSION');
+  staende.push({ stelle: 'ios project.pbxproj (MARKETING_VERSION)', wert: marketing.length ? marketing.join(', ') : undefined });
+  const plist = readFileSync(join(wurzel, 'frontend/ios/App/App/Info.plist'), 'utf-8');
+  staende.push({ stelle: 'ios Info.plist (CFBundleShortVersionString)', wert: plistWert(plist, 'CFBundleShortVersionString') });
+  for (const s of staende) s.soll = quelle.version;
+
+  const build = String(quelle.iosBuildNumber);
+  const projektBuild = pbxWerte(pbx, 'CURRENT_PROJECT_VERSION');
+  staende.push({ stelle: 'ios Info.plist (CFBundleVersion)', wert: plistWert(plist, 'CFBundleVersion'), soll: build });
+  staende.push({ stelle: 'ios project.pbxproj (CURRENT_PROJECT_VERSION)', wert: projektBuild.length ? projektBuild.join(', ') : undefined, soll: build });
   return { quelle, staende };
 }
 
 export function pruefen(wurzel = WURZEL) {
   const { quelle, staende } = versionsstaende(wurzel);
-  const abweichungen = staende.filter((s) => s.wert !== quelle.version);
+  const abweichungen = staende.filter((s) => s.wert !== s.soll);
   return { quelle, staende, abweichungen };
 }
 
@@ -75,16 +102,23 @@ function setzen(version, { android, ios }) {
       cwd: join(WURZEL, p), stdio: 'ignore',
     });
   }
-  // iOS-Projekt: dieselbe Ersetzung wie apply-version.sh, damit das Repo den Stand trägt.
-  const pbx = readFileSync(PBXPROJ, 'utf-8').replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${version};`);
+  // iOS-Projekt und Info.plist: dieselben Ersetzungen wie apply-version.sh,
+  // damit das Repo den Stand trägt (Version und Build-Nummer).
+  const pbx = readFileSync(PBXPROJ, 'utf-8')
+    .replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${version};`)
+    .replace(/CURRENT_PROJECT_VERSION = [^;]+;/g, `CURRENT_PROJECT_VERSION = ${quelle.iosBuildNumber};`);
   writeFileSync(PBXPROJ, pbx);
+  let plist = readFileSync(INFO_PLIST, 'utf-8');
+  plist = plistSetzen(plist, 'CFBundleShortVersionString', version);
+  plist = plistSetzen(plist, 'CFBundleVersion', String(quelle.iosBuildNumber));
+  writeFileSync(INFO_PLIST, plist);
 }
 
 function ausgeben({ quelle, staende, abweichungen }) {
   console.log(`Quelle frontend/version.json: ${quelle.version} (Android ${quelle.androidVersionCode}, iOS ${quelle.iosBuildNumber})`);
   for (const s of staende) {
-    const ok = s.wert === quelle.version ? '  ' : '!!';
-    console.log(`${ok} ${s.stelle.padEnd(48)} ${s.wert}`);
+    const ok = s.wert === s.soll ? '  ' : '!!';
+    console.log(`${ok} ${s.stelle.padEnd(48)} ${s.wert}${s.wert === s.soll ? '' : ` (soll ${s.soll})`}`);
   }
   if (abweichungen.length) {
     console.error(`\n${abweichungen.length} Abweichung(en) — mit \`npm run version:setzen -- ${quelle.version}\` gleichziehen.`);
