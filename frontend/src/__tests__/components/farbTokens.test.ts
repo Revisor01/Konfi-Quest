@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { resolve, join } from 'path';
-import { FARBEN, QR_FARBEN } from '../../theme/colors';
+import { FARBEN, QR_FARBEN, KRITERIUM_FARBEN } from '../../theme/colors';
+import { CRITERIA_COLORS, CRITERIA_FALLBACK_COLOR } from '../../utils/badgeCriteria';
 
 // Farb-Konsolidierung 05.09.2026. Vorgeschichte, dreimal derselbe Fehler:
 //
@@ -252,5 +253,59 @@ describe('theme/colors.ts spiegelt variables.css', () => {
   it('QR-Farben sind Schwarz auf Weiss (Scanner-Kontrast)', () => {
     expect(QR_FARBEN.dunkel).toBe('#000000');
     expect(QR_FARBEN.hell).toBe('#ffffff');
+  });
+});
+
+describe('Abzeichen-Kriterienfarben leben als Tokens (Dunkelmodus-Audit BF-10)', () => {
+  /*
+   * Bis 29.09.2026 standen die 16 Kriterienfarben und der Rueckfall als rohe
+   * Hexwerte in utils/badgeCriteria.ts -- die einzigen Farben ausserhalb des
+   * Themes. Jetzt: Tokens in variables.css, Hex-Spiegel in colors.ts (fuer
+   * Alpha-Suffix, SVG und die gespeicherte Badge-Farbe), badgeCriteria.ts
+   * liest den Spiegel.
+   */
+  const css = lies('src/theme/variables.css');
+  const token = (name: string): string | undefined => css.match(new RegExp(`--${name}:\\s*([^;]+);`))?.[1].trim();
+
+  // Die Werte VOR der Ueberfuehrung (badgeCriteria.ts am Stand beb745e6).
+  // Das Aussehen darf sich nicht aendern: Wer eine Farbe aendern will, aendert
+  // sie hier bewusst mit.
+  const VORHER: Record<string, string> = {
+    total_points: '#ffd700', gottesdienst_points: '#ff9500', gemeinde_points: '#059669',
+    bonus_points: '#ff6b9d', both_categories: '#5856d6', activity_count: '#3880ff',
+    unique_activities: '#10dc60', activity_combination: '#7044ff', category_activities: '#0cd1e8',
+    category_combination: '#0891b2', specific_activity: '#ffce00', streak: '#eb445a',
+    time_based: '#8e8e93', event_count: '#e63946', mandatory_event_count: '#b91c1c',
+    teamer_year: '#5b21b6',
+  };
+
+  it('jede Kriterienfarbe hat ihr Token, und der Spiegel traegt exakt dessen Wert', () => {
+    const abweichungen: string[] = [];
+    for (const [schluessel, wert] of Object.entries(KRITERIUM_FARBEN)) {
+      const name = `app-color-kriterium-${schluessel.replace(/_/g, '-')}`;
+      if (token(name) !== wert) abweichungen.push(`${schluessel} (${wert}) != --${name} (${token(name)})`);
+    }
+    expect(abweichungen).toEqual([]);
+    expect(Object.keys(KRITERIUM_FARBEN)).toHaveLength(17);
+  });
+
+  it('das Aussehen bleibt: dieselben 16 Werte und derselbe Rueckfall wie vorher', () => {
+    expect(CRITERIA_COLORS).toEqual(VORHER);
+    expect(CRITERIA_FALLBACK_COLOR).toBe('#667eea');
+    expect(CRITERIA_FALLBACK_COLOR).toBe(FARBEN.users);
+  });
+
+  it('badgeCriteria.ts enthaelt keinen eigenen Hexwert mehr', () => {
+    const code = ohneKommentare(lies('src/utils/badgeCriteria.ts'));
+    expect(code.match(HEX) ?? []).toEqual([]);
+  });
+
+  it('als Schrift gilt weiter das Text-Token: hell gleich der Flaechenfarbe', () => {
+    const abweichend: string[] = [];
+    for (const schluessel of Object.keys(KRITERIUM_FARBEN)) {
+      const n = schluessel.replace(/_/g, '-');
+      if (token(`app-text-kriterium-${n}`) !== token(`app-color-kriterium-${n}`)) abweichend.push(n);
+    }
+    expect(abweichend).toEqual([]);
   });
 });

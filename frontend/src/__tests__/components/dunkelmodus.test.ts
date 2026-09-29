@@ -114,6 +114,23 @@ const GLEICH_IN_BEIDEN_MODI: Record<string, string> = {
   '--app-gradient-nacht': 'ist schon ein Nachtverlauf',
   '--app-schatten-punkt-erfolg': 'gruener Glow des Status-Punkts, haengt an der Erfolgsfarbe',
   '--app-schatten-glow-challenges': 'farbiger Glow, folgt der Bereichsfarbe ueber ihr -rgb-Token',
+  '--app-color-kriterium-total-points': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-gottesdienst-points': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-gemeinde-points': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-bonus-points': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-both-categories': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-activity-count': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-unique-activities': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-activity-combination': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-category-activities': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-category-combination': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-specific-activity': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-streak': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-time-based': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-event-count': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-mandatory-event-count': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-teamer-year': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
+  '--app-color-kriterium-standard': 'Abzeichen-Kriterium als Flaeche (Symbolkreis, Ring) mit weissem Symbol, bleibt wie die Bereichsfarben; Schrift ueber --app-text-kriterium-*',
 };
 
 const helleTokens = tokens(hellMitSchatten);
