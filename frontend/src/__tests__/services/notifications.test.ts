@@ -21,12 +21,11 @@ vi.mock('@capacitor/push-notifications', () => ({
   },
 }));
 
+import * as benachrichtigungen from '../../services/notifications';
 import {
   removeDeliveredById,
-  removeAllDelivered,
   removeDeliveredForChatRoom,
   removeDeliveredForEvents,
-  raeumtBeimAktivwerdenAllesAuf,
 } from '../../services/notifications';
 
 // Nur die Felder, die der Code auswertet — die Tests liefern bewusst
@@ -44,20 +43,6 @@ beforeEach(() => {
   getDeliveredNotifications.mockReset();
   removeDeliveredNotifications.mockReset();
   removeAllDeliveredNotifications.mockReset();
-});
-
-describe('removeAllDelivered', () => {
-  it('entfernt alle Notifications nativ', async () => {
-    removeAllDeliveredNotifications.mockResolvedValue(undefined);
-    await removeAllDelivered();
-    expect(removeAllDeliveredNotifications).toHaveBeenCalledTimes(1);
-  });
-
-  it('ist no-op im Web', async () => {
-    isNative = false;
-    await removeAllDelivered();
-    expect(removeAllDeliveredNotifications).not.toHaveBeenCalled();
-  });
 });
 
 describe('removeDeliveredById', () => {
@@ -166,37 +151,20 @@ describe('removeDeliveredForEvents', () => {
   });
 });
 
-describe('raeumtBeimAktivwerdenAllesAuf', () => {
-  // Simon, 29.09.2026: "auf dem Icon keine Badges auf Android". Auf Android
-  // IST die liegende Mitteilung die Marke am App-Symbol: Der Launcher zeigt
-  // Punkt bzw. Zahl nur, solange eine Mitteilung der App in der Leiste liegt.
-  // Das globale Aufraeumen beim Oeffnen nahm Leitungskonten dort also jedes
-  // Mal die Marke, waehrend die Reiter weiter zaehlten. Auf dem iPhone setzt
-  // die App die Zahl danach selbst neu (badge:resync), dort bleibt es.
-  it('Leitung auf dem iPhone: alles aufraeumen wie bisher', () => {
-    expect(raeumtBeimAktivwerdenAllesAuf('admin', 'ios')).toBe(true);
+// Simon, 29.09.2026: "warum sollten die keine Benachrichtigungen behalten?"
+// Keine Rolle verliert ihre Mitteilungen beim Oeffnen der App. Bis dahin
+// raeumte AppContext der Leitung alles weg (auf Android zuletzt nicht mehr,
+// auf dem iPhone schon). Weggeraeumt wird nur noch gezielt.
+describe('kein globales Aufraeumen', () => {
+  it('der Dienst bietet kein "alles wegraeumen" mehr an', () => {
+    expect(Object.keys(benachrichtigungen)).not.toContain('removeAllDelivered');
+    expect(Object.keys(benachrichtigungen)).not.toContain('raeumtBeimAktivwerdenAllesAuf');
   });
 
-  it('Leitung auf Android: liegen lassen, sonst verschwindet die Marke am Symbol', () => {
-    expect(raeumtBeimAktivwerdenAllesAuf('admin', 'android')).toBe(false);
-  });
-
-  it('Konfis und Teamer:innen behalten ihre Mitteilungen auf beiden Plattformen', () => {
-    for (const p of ['ios', 'android']) {
-      expect(raeumtBeimAktivwerdenAllesAuf('konfi', p)).toBe(false);
-      expect(raeumtBeimAktivwerdenAllesAuf('teamer', p)).toBe(false);
-    }
-    expect(raeumtBeimAktivwerdenAllesAuf(undefined, 'ios')).toBe(false);
-  });
-
-  it('im Browser gibt es nichts aufzuraeumen', () => {
-    expect(raeumtBeimAktivwerdenAllesAuf('admin', 'web')).toBe(false);
-  });
-
-  it('liest die Plattform von Capacitor, wenn keine uebergeben wird', () => {
-    plattform = 'android';
-    expect(raeumtBeimAktivwerdenAllesAuf('admin')).toBe(false);
-    plattform = 'ios';
-    expect(raeumtBeimAktivwerdenAllesAuf('admin')).toBe(true);
+  it('gezieltes Wegraeumen bleibt: eine Mitteilung, ein Chat, die Events', () => {
+    expect(typeof removeDeliveredById).toBe('function');
+    expect(typeof removeDeliveredForChatRoom).toBe('function');
+    expect(typeof removeDeliveredForEvents).toBe('function');
+    expect(removeAllDeliveredNotifications).not.toHaveBeenCalled();
   });
 });

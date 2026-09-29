@@ -9,7 +9,7 @@ import { ensureSocketConnected, reconnectWithToken } from '../services/websocket
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { FirebaseMessaging } from '@capacitor-firebase/messaging';
-import { removeDeliveredById, removeAllDelivered, benachrichtigungskanaeleAnlegen, raeumtBeimAktivwerdenAllesAuf } from '../services/notifications';
+import { removeDeliveredById, benachrichtigungskanaeleAnlegen } from '../services/notifications';
 import { writeQueue } from '../services/writeQueue';
 import { offlineCache } from '../services/offlineCache';
 import { clearMediaCache, medienCacheKontoPruefen } from '../services/mediaCache';
@@ -1110,27 +1110,8 @@ useEffect(() => {
 
           handleAppActive();
 
-          // Admins bekommen ohnehin laufend Erinnerungen -> beim Aktiv-werden
-          // global aufräumen. Konfis/Teamer NICHT (dort gezielt pro Bereich/
-          // beim Antippen, damit ungelesene Erinnerungen nicht verschwinden).
-          // Auf Android auch fuer Admins nicht: Dort ist die liegende
-          // Mitteilung die Marke am App-Symbol (29.09.2026, Begruendung an
-          // raeumtBeimAktivwerdenAllesAuf in services/notifications.ts).
-          if (raeumtBeimAktivwerdenAllesAuf(user?.type)) {
-            // removeAllDeliveredNotifications() raeumt auf iOS nicht nur die
-            // Mitteilungszentrale auf, es setzt auch die Zahl am App-Icon auf
-            // null (Befund 28.08.2026, am Geraet nachgestellt: App zu -> Zahl
-            // da; App auf und wieder zu -> Zahl weg, waehrend die Reiter in der
-            // App weiter richtig zaehlten).
-            //
-            // Deshalb danach ausdruecklich neu setzen. Der Effekt in
-            // BadgeContext haengt an [appSymbolZahl] und feuert NICHT, wenn
-            // sich der Wert nicht geaendert hat -- das Icon bliebe sonst leer,
-            // bis zufaellig eine neue Zahl hereinkommt.
-            removeAllDelivered().finally(() => {
-              window.dispatchEvent(new CustomEvent('badge:resync'));
-            });
-          }
+          // Kein globales Aufraeumen der Mitteilungen, fuer keine Rolle
+          // (29.09.2026, services/notifications.ts).
           // Koordinierte Resume-Sequenz: flush -> invalidate -> badges
           writeQueue.flush().then(async (result) => {
             if (result.failed.length > 0) {

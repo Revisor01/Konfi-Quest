@@ -493,10 +493,8 @@ weiterhin die roten Zahlen an den Reitern und die
 
 Die App nimmt eine Mitteilung aus der Leiste, sobald du sie antippst oder den
 Bereich öffnest, zu dem sie gehört — etwa den Chat. Alles andere bleibt
-liegen, bis du es wegwischst; auf Android gilt das auch für die Leitung, damit
-die Marke am Symbol stehen bleibt. Auf dem iPhone räumt die App der Leitung
-beim Öffnen die ganze Liste weg — die Zahl am Symbol bleibt dort trotzdem
-stehen.
+liegen, bis du es wegwischst. Das gilt für jede Rolle, auch für die Leitung,
+auf iPhone und Android: Beim Öffnen der App verschwindet keine Mitteilung.
 
 ## Benachrichtigungen wieder zum Laufen bringen
 

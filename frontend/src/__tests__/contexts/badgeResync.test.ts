@@ -1,55 +1,49 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync, readdirSync, statSync } from 'fs';
+import { join, resolve } from 'path';
 
-// Befund 28.08.2026, am Geraet nachgestellt: App geschlossen -> Zahl am Icon
-// da und zaehlt sauber hoch. App geoeffnet -> kurz die richtige Zahl. App zu
-// und wieder auf -> KEINE Zahl mehr, waehrend die Reiter in der App weiter
-// richtig zaehlten.
+// Mitteilungen bleiben beim Oeffnen der App liegen -- fuer jede Rolle
+// (Simon, 29.09.2026: "warum sollten die keine Benachrichtigungen
+// behalten?").
 //
-// Ursache, zweiteilig:
-//  1. AppContext ruft beim Aktiv-werden fuer Admins removeAllDelivered().
-//     removeAllDeliveredNotifications() raeumt auf iOS nicht nur die
-//     Mitteilungszentrale auf, es setzt auch die Zahl am App-Icon auf null.
-//  2. Der Badge-Effekt in BadgeContext haengt an [totalBadgeCount] und feuert
-//     NICHT, wenn sich der Wert nicht geaendert hat. Das Icon blieb also leer,
-//     bis zufaellig eine andere Zahl hereinkam.
+// Bis dahin rief AppContext beim Aktivwerden fuer Leitungskonten
+// removeAllDeliveredNotifications() auf. Auf dem iPhone setzte das auch die
+// Zahl am App-Symbol auf null (Befund 28.08.2026), deshalb schickte AppContext
+// danach 'badge:resync' an BadgeContext. Auf Android nahm es die Marke am
+// Symbol ganz (sie haengt dort an der liegenden Mitteilung). Beides entfaellt:
+// Die App raeumt nur noch gezielt weg -- eine angetippte Mitteilung, einen
+// geoeffneten Chat, die Events.
 //
-// Geprueft wird die Verdrahtung an der Quelle: ein Render-Test muesste
-// Capacitor, das Badge-Plugin und den ganzen Context nachbauen und wuerde
-// gerade die Kopplung nicht abdecken, um die es hier geht.
+// Geprueft wird an der Quelle, ueber ALLE Dateien: Ein Render-Test muesste
+// Capacitor und den ganzen Context nachbauen und saehe einen zweiten Aufruf
+// an anderer Stelle nicht.
 
-const lies = (p: string) => readFileSync(resolve(__dirname, '../..', p), 'utf-8');
+const SRC = resolve(__dirname, '../..');
+const lies = (p: string) => readFileSync(join(SRC, p), 'utf-8');
 
-describe('Icon-Zahl ueberlebt das Aufraeumen der Mitteilungen', () => {
-  it('AppContext meldet nach removeAllDelivered ein Resync', () => {
-    const s = lies('contexts/AppContext.tsx');
-    // Verbotener Fall: aufraeumen ohne Nachsetzen -- so war es vor dem Fix.
-    expect(s).not.toMatch(/removeAllDelivered\(\);\s*\n\s*\}/);
-    // Erlaubter Fall: das Signal geht raus, egal ob das Aufraeumen klappt.
-    expect(s).toContain("removeAllDelivered().finally(");
-    expect(s).toContain("new CustomEvent('badge:resync')");
+const quellen = (ordner: string): string[] => readdirSync(ordner).flatMap((name) => {
+  const pfad = join(ordner, name);
+  if (statSync(pfad).isDirectory()) return name === '__tests__' ? [] : quellen(pfad);
+  return /\.(ts|tsx)$/.test(name) ? [pfad] : [];
+});
+
+describe('Mitteilungen bleiben beim Oeffnen liegen', () => {
+  it('VERBOTEN: kein Code raeumt alle zugestellten Mitteilungen auf einmal weg', () => {
+    const treffer = quellen(SRC).filter((p) => readFileSync(p, 'utf-8').includes('removeAllDeliveredNotifications'));
+    expect(treffer).toEqual([]);
   });
 
-  it('BadgeContext hoert auf das Signal und setzt die Zahl neu', () => {
-    const s = lies('contexts/BadgeContext.tsx');
-    expect(s).toContain("window.addEventListener('badge:resync'");
-    expect(s).toContain("window.removeEventListener('badge:resync'");
-    // Die Setz-Logik liegt in einer eigenen Funktion, damit Effekt UND Signal
-    // denselben Weg nehmen -- sonst laufen beide auseinander.
-    expect(s).toContain('setzeGeraeteBadge');
-  });
-
-  it('das Aufraeumen bleibt auf Leitungskonten beschraenkt, und zwar auf dem iPhone', () => {
-    // Gegenprobe: Konfis und Teamer:innen duerfen ihre Erinnerungen behalten,
-    // daran aendert der Fix nichts. Seit 29.09.2026 entscheidet eine Regel
-    // (services/notifications.ts, raeumtBeimAktivwerdenAllesAuf), die auch
-    // Android ausnimmt: Dort ist die liegende Mitteilung die Marke am
-    // App-Symbol. Die Regel selbst pruefen die Tests in
-    // __tests__/services/notifications.test.ts; hier nur, dass AppContext sie
-    // benutzt und nicht wieder am Typ allein entscheidet.
+  it('VERBOTEN: AppContext entscheidet beim Aktivwerden nicht mehr nach Rolle ueber das Aufraeumen', () => {
     const s = lies('contexts/AppContext.tsx');
-    expect(s).toContain('if (raeumtBeimAktivwerdenAllesAuf(user?.type)) {');
+    expect(s).not.toContain('removeAllDelivered');
+    expect(s).not.toContain('raeumtBeimAktivwerdenAllesAuf');
     expect(s).not.toContain("if (user?.type === 'admin') {");
+  });
+
+  it('ERLAUBT: gezieltes Wegraeumen und die Zahl am Symbol bleiben verdrahtet', () => {
+    expect(lies('contexts/AppContext.tsx')).toContain('removeDeliveredById');
+    const badge = lies('contexts/BadgeContext.tsx');
+    expect(badge).toContain('removeDeliveredForChatRoom(roomId)');
+    expect(badge).toContain('setzeGeraeteBadge');
   });
 });

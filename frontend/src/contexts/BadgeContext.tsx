@@ -591,18 +591,6 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => { setzeGeraeteBadge(); }, [setzeGeraeteBadge]);
 
-  // Ausdrueckliches Neusetzen auf Zuruf (Befund 28.08.2026): Der Effekt oben
-  // haengt am WERT und feuert nicht, wenn sich dieser nicht geaendert hat. Nach
-  // removeAllDeliveredNotifications() ist das Icon aber leer, waehrend
-  // appSymbolZahl unveraendert im Speicher steht -- die Zahl kaeme erst
-  // zurueck, wenn zufaellig eine andere hereinkommt. AppContext schickt dieses
-  // Signal deshalb direkt nach dem Aufraeumen.
-  useEffect(() => {
-    const bei = () => setzeGeraeteBadge();
-    window.addEventListener('badge:resync', bei);
-    return () => window.removeEventListener('badge:resync', bei);
-  }, [setzeGeraeteBadge]);
-
   // WebSocket: Live-Update bei neuen Nachrichten
   useEffect(() => {
     const token = getToken();
