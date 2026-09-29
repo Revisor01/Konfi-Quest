@@ -17,16 +17,15 @@ import { join } from 'node:path';
  */
 const lies = (pfad: string) => readFileSync(join(process.cwd(), pfad), 'utf8');
 
-/** Sichtbarer Text der Seite: ohne Tags, Entitaeten aufgeloest, Leerraum vereinheitlicht. */
-const text = lies('public/datenschutz.html')
-  .replace(/<script[\s\S]*?<\/script>/g, '')
-  .replace(/<style[\s\S]*?<\/style>/g, '')
-  .replace(/<!--[\s\S]*?-->/g, '')
-  .replace(/<[^>]+>/g, ' ')
-  .replace(/&nbsp;/g, ' ')
-  .replace(/&#8222;/g, '„')
-  .replace(/&#8220;/g, '“')
-  .replace(/\s+/g, ' ');
+/**
+ * Sichtbarer Text der Seite, wie ein Browser ihn zeigt: per DOMParser (jsdom)
+ * statt mit Regex-Ersetzungen -- die meldete CodeQL als unvollstaendige
+ * HTML-Filterung (29.09.2026). Entitaeten loest der Parser selbst auf; Skripte
+ * und Stile fallen weg, Leerraum wird vereinheitlicht.
+ */
+const seite = new DOMParser().parseFromString(lies('public/datenschutz.html'), 'text/html');
+seite.querySelectorAll('script, style').forEach((el) => el.remove());
+const text = (seite.body.textContent ?? '').replace(/\s+/g, ' ');
 
 /** Numerische Konstante aus einer Quelldatei lesen. */
 function konstante(datei: string, name: string): number {
