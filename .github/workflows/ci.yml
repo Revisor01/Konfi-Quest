@@ -23,6 +23,19 @@ on:
       # der Betrieb still auf einem alten Stand.
       - 'e2e/**'
       - 'playwright.config.ts'
+      # Alles, was die Jobs sonst noch lesen (29.09.2026, Audit CI BF-17):
+      # Wurzel-package.json und -Lockfile installiert der E2E-Job (Playwright,
+      # pg) -- ein Dependabot-Update nur dort loeste keinen Lauf aus, dieselbe
+      # Fehlerklasse wie oben. .nvmrc legt die Node-Fassung aller Jobs fest,
+      # docker-compose.e2e.yml den E2E-Stack, deploy/rollend.sh IST der Deploy,
+      # und frontend-test prueft deploy/ und .github/scripts/ mit.
+      # Test ciPfadfilter.test.ts haelt die Liste fest.
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
+      - 'docker-compose.e2e.yml'
+      - 'deploy/**'
+      - '.github/scripts/**'
   pull_request:
     branches:
       - main

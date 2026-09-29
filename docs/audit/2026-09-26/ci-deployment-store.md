@@ -443,7 +443,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-17: `paths:`-Filter der CI lässt Wurzel-`package.json`/`package-lock.json` (E2E-Abhängigkeiten) aus
 - **Schwere:** NIEDRIG
-- **Status:** offen 27.09.2026 — der `paths`-Filter nennt Wurzel-`package.json` und `package-lock.json` weiter nicht. Später.
+- **Status:** behoben 29.09.2026 — der `paths`-Filter für `push` nennt zusätzlich `package.json` und `package-lock.json` der Wurzel (E2E-Abhängigkeiten), `.nvmrc` (Node-Fassung aller Jobs), `docker-compose.e2e.yml` (E2E-Stack), `deploy/**` (der Deploy selbst, `rollend.sh`) und `.github/scripts/**` (von `frontend-test` mitgeprüft). Reine Doku (`docs/audit/`, `README.md`, `CHANGELOG.md`) löst weiter keinen Lauf und damit keinen Deploy aus. Wächter `frontend/src/__tests__/betrieb/ciPfadfilter.test.ts` (19 Fälle, mit dem alten Filter 7 rot).
 - **Fundstelle:** `.github/workflows/ci.yml:7-25`.
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Der E2E-Job installiert aus der Wurzel (`npm ci`, `ci.yml:251`; `package.json` mit
