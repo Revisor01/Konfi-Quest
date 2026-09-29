@@ -2420,8 +2420,25 @@ describe('Wrapped Routes', () => {
         return rows.map((r) => `${r.art} ${r.name}: ${r.def}`);
       };
       let standVorher;
+      // Die Kommentare der beiden Spalten so, wie sie VOR dem ersten Test
+      // stehen. Seit der Schema-Dump bis Migration 173 reicht (29.09.2026)
+      // kommt die Test-DB aus einem Dump mit --no-comments, die Spalten tragen
+      // dort keinen Kommentar -- in Produktion (per Migration) schon. Der
+      // Rueckbau stellt deshalb genau den vorherigen Stand her, statt den Text
+      // der Migration fest einzusetzen.
+      let kommentarVorher = {};
+      const kommentarSql = (wert) => (wert == null ? 'NULL' : `'${String(wert).replace(/'/g, "''")}'`);
       beforeAll(async () => {
         standVorher = await schemaStand();
+        const { rows } = await db.query(
+          `SELECT c.table_name || '.' || c.column_name AS name,
+                  col_description(('public.' || c.table_name)::regclass, c.ordinal_position::int) AS kommentar
+             FROM information_schema.columns c
+            WHERE c.table_schema = 'public'
+              AND (c.table_name, c.column_name) IN (('event_bookings', 'war_auf_warteliste'),
+                                                    ('challenge_submissions', 'approved_by'))`
+        );
+        kommentarVorher = Object.fromEntries(rows.map((r) => [r.name, r.kommentar]));
       });
 
       // Die Spalten kommen nach jedem Test zurueck. truncateAll leert nur
@@ -2432,8 +2449,7 @@ describe('Wrapped Routes', () => {
           'ALTER TABLE event_bookings ADD COLUMN IF NOT EXISTS war_auf_warteliste BOOLEAN'
         );
         await db.query(
-          `COMMENT ON COLUMN event_bookings.war_auf_warteliste IS
-             'true = diese Buchung ist von der Warteliste nachgerueckt. NULL = unbekannt (Bestandszeilen vor Migration 145).'`
+          `COMMENT ON COLUMN event_bookings.war_auf_warteliste IS ${kommentarSql(kommentarVorher['event_bookings.war_auf_warteliste'])}`
         );
         await db.query(
           `ALTER TABLE challenge_submissions
@@ -2441,8 +2457,7 @@ describe('Wrapped Routes', () => {
              ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE`
         );
         await db.query(
-          `COMMENT ON COLUMN challenge_submissions.approved_by IS
-             'Wer den Beitrag freigegeben hat. NULL = unbekannt (Bestandszeilen vor Migration 146).'`
+          `COMMENT ON COLUMN challenge_submissions.approved_by IS ${kommentarSql(kommentarVorher['challenge_submissions.approved_by'])}`
         );
         // Mit der Spalte ging ihr Fremdschluessel -- ihn wie Migration 146
         // wiederherstellen (29.09.2026). Ohne ihn fehlte er allen Dateien, die
