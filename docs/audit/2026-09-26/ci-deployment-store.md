@@ -428,7 +428,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-16: Play-Upload veröffentlicht sofort zu 100 %; Track-Namen ungeprüft
 - **Schwere:** NIEDRIG
-- **Status:** offen 27.09.2026 — `upload-play.py` veröffentlicht weiter mit `status: completed` (`:108`) und prüft die Track-Namen nicht (`:112`). Vor EKD-Ausrollung (gestaffelte Freigabe bei vielen Installationen).
+- **Status:** behoben 29.09.2026 — `upload-play.py` setzt den Track `production` auf `status: inProgress` mit `userFraction` (neue Eingabe `production_anteil` im Android-Workflow, Vorgabe `0.1`; `1` heißt sofort an alle), die Testkanäle `internal`, `alpha`, `beta` bleiben `completed` und sind sofort für alle Testenden da. Track-Namen werden getrimmt, doppelte zusammengefasst und gegen die feste Liste `internal, alpha, beta, production` geprüft; der Anteil muss zwischen 0 (ausschließlich) und 1 liegen. Neuer Modus `--pruefen` (ohne Netz und Schlüssel) läuft im Job `ci-gate` **vor** dem Warten auf die CI und dem Bau — ein Tippfehler bricht nach Sekunden ab statt nach dem Upload. Eingaben gehen über `env` statt inline in das Skript. Geprüft mit `frontend/src/__tests__/betrieb/playUpload.test.ts` (14 Fälle; ohne Staffelung 2 rot, ohne Namensprüfung 1 rot) und actionlint. Auf GitHub zu sehen erst beim nächsten Production-Release (Ausgabe „gestaffelt an 10 %"); den Anteil erhöht man in der Play Console.
 - **Fundstelle:** `.github/scripts/upload-play.py:107-113` (`"status": "completed"`, `TRACKS.split(",")`
   ohne `strip()`/Prüfung).
 - **Kennzeichnung:** aus Code gelesen
