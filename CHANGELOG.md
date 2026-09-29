@@ -1405,6 +1405,9 @@ iOS-Build 234 · Android versionCode 128
   genommen, und Zeiten etwa im Postfach wären um zwei Stunden verrutscht.
 - Die Datenbank nimmt keine Passwörter im Klartext mehr an: Das alte Feld
   dafür aus der Anfangszeit bleibt leer und lässt sich nicht mehr befüllen.
+- Wann eine Anmeldung oder ein Zeitfenster angelegt wurde, speichert die
+  Datenbank als Zeitpunkt statt als Text; sortiert wird damit nach dem
+  Zeitpunkt, auch über die Nacht der Zeitumstellung hinweg.
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.
