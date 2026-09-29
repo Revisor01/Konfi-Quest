@@ -16,7 +16,7 @@ import { dateien, cacheInhalt, objectUrlAttrappe } from '../../medienAttrappen';
 vi.mock('@capacitor/filesystem', async () => (await import('../../medienAttrappen')).dateisystemModul);
 
 const apiGet = vi.fn();
-const apiDelete = vi.fn(async () => ({ data: {} }));
+const apiDelete = vi.fn(async (..._args: unknown[]) => ({ data: {} }));
 vi.mock('../../../services/api', () => ({
   default: {
     get: (...args: unknown[]) => apiGet(...args),

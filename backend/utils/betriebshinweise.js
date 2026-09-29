@@ -32,7 +32,7 @@
 // damit sich alles ohne Eingriff in process.env pruefen laesst.
 
 // Nur x.y.z aus Ziffern — die Stores nehmen ohnehin nichts anderes an
-// (scripts/apply-version.sh), und die App vergleicht segmentweise
+// (frontend/scripts/apply-version.sh), und die App vergleicht segmentweise
 // (frontend/src/utils/versionVergleich.ts).
 const VERSIONS_FORM = /^[0-9]+\.[0-9]+\.[0-9]+$/;
 

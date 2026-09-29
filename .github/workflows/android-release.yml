@@ -28,8 +28,12 @@ on:
   workflow_dispatch:
     inputs:
       tracks:
-        description: "Ziel-Tracks (kommagetrennt). production NUR bewusst setzen — das reicht sofort zur Pruefung ein."
+        description: "Ziel-Tracks (kommagetrennt: internal, alpha, beta, production). production NUR bewusst setzen — das reicht sofort zur Pruefung ein."
         default: "internal,alpha"
+        required: true
+      production_anteil:
+        description: "Nur fuer production: Anteil der Nutzer:innen, die das Update zuerst bekommen (0.1 = 10 %). 1 = sofort an alle. Erhoehen spaeter in der Play Console."
+        default: "0.1"
         required: true
       dry_run:
         description: "Dry-Run: kompletter Durchlauf, aber Play-Edit wird verworfen (kein Release)"
@@ -64,7 +68,18 @@ jobs:
       actions: read
     steps:
       - name: Checkout (fuer das Skript)
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Tracks und Anteil pruefen, BEVOR gewartet und gebaut wird (29.09.2026,
+      # Audit CI BF-16). Ein Tippfehler ("internal, alhpa") fiel bisher erst
+      # nach Bau und Upload auf, als 404 auf den Track -- ein verlorener Lauf.
+      # Gibt die geplanten Releases aus: production gestaffelt (inProgress mit
+      # dem Anteil), die Testkanaele sofort (completed).
+      - name: Tracks und Anteil pruefen
+        env:
+          TRACKS: ${{ inputs.tracks }}
+          ANTEIL: ${{ inputs.production_anteil }}
+        run: python3 .github/scripts/upload-play.py --pruefen "$TRACKS" "$ANTEIL"
 
       - name: Auf main? CI fuer diesen Commit gruen?
         env:
@@ -81,7 +96,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Gebauter Commit ist der geprüfte Commit
         # Das Tor hat github.sha geprueft; gebaut wird, was der Checkout
@@ -95,15 +110,15 @@ jobs:
           echo "Baue $IST (vom Release-Tor geprueft)."
 
       - name: JDK 21 einrichten
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: 21
 
       - name: Node einrichten
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 26
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -121,6 +136,10 @@ jobs:
           npm ci --no-audit --no-fund
           npm run build
           npx cap sync android
+          # Was wirklich in die App geht: nur das App-Buendel, ohne Handbuch,
+          # API-Referenz und Webseiten, unter der Groessengrenze (Toolchain-
+          # Audit BF-02). Rot, wenn cap sync doch das Web-Verzeichnis nahm.
+          node scripts/app-buendel-pruefen.mjs android/app/src/main/assets/public
           ./scripts/prepare-android.sh
 
       - name: Keystore ablegen
@@ -165,10 +184,49 @@ jobs:
       - name: Zu Google Play hochladen
         env:
           GPLAY_SA_JSON_BASE64: ${{ secrets.GPLAY_SA_JSON_BASE64 }}
+          TRACKS: ${{ inputs.tracks }}
+          MODUS: ${{ inputs.dry_run && 'validate' || 'commit' }}
+          ANTEIL: ${{ inputs.production_anteil }}
         run: |
           echo "$GPLAY_SA_JSON_BASE64" | base64 --decode > /tmp/gplay-sa.json
           python3 .github/scripts/upload-play.py /tmp/gplay-sa.json \
             frontend/android/app/build/outputs/bundle/release/app-release.aab \
             frontend/release-notes-de.txt \
-            "${{ inputs.tracks }}" \
-            "${{ inputs.dry_run && 'validate' || 'commit' }}"
+            "$TRACKS" "$MODUS" "$ANTEIL"
+
+  store-tag:
+    # STORE-TAG (29.09.2026, Audit CI BF-09; Simon: "Store-Tag automatisch").
+    # Nach erfolgreichem Upload bekommt der gebaute Commit den Tag
+    # <version>+android.<androidVersionCode> (z. B. 2.3.0+android.128),
+    # Version und Nummer aus frontend/version.json DIESES COMMITS -- nicht aus
+    # dem Arbeitsverzeichnis, das der Dry-Run um 10000 anhebt. Schema und
+    # Verhalten (schon da -> nichts; zeigt woanders hin -> Warnung, kein
+    # Ueberschreiben) in .github/scripts/store-tag.py.
+    #
+    # NICHT beim Dry-Run: Dort wird die Edit verworfen, nichts ist
+    # veroeffentlicht (Bedingung hier und DRY_RUN fuers Skript).
+    #
+    # EIGENER JOB, damit das Schreibrecht (contents: write) nur hier gilt:
+    # build-upload fuehrt npm ci und Gradle aus -- fremder Code, der mit einem
+    # schreibenden Token ins Repo pushen koennte. Die Bedingung unten enthaelt
+    # kein always(), also gilt zusaetzlich success(): nur, wenn build-upload
+    # (letzter Schritt: Upload) gruen ist. Scheitert nur dieser Job, ist der
+    # Upload trotzdem erfolgt -- dann "Re-run failed jobs", nicht den ganzen
+    # Workflow (der versionCode ist verbraucht).
+    needs: [build-upload]
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Tag setzen
+        env:
+          PLATTFORM: android
+          SHA: ${{ github.sha }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 .github/scripts/store-tag.py

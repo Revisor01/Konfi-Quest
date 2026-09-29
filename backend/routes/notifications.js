@@ -8,6 +8,7 @@ const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
 const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
 const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('../utils/terminLeitungSicht');
 const { kennwortFuersProtokoll, diagnoseHinweisFuersProtokoll } = require('../utils/protokoll');
+const { wegAusAnmeldung, startbildschirmAusAnmeldung } = require('../utils/appSymbolWeg');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -690,6 +691,14 @@ module.exports = (db, verifyTokenRBAC) => {
     const { token, platform, device_id, app_version, app_build } = req.body;
     const userId = req.user.id;
     const userType = req.user.type;
+    // Zahl am App-Symbol auf Android (29.09.2026, Migration 185): welcher Weg
+    // zum Startbildschirm des Geraets passt, und welcher Startbildschirm es
+    // ist. Beides OPTIONAL und ohne 400: Ausgelieferte Apps schicken es nicht,
+    // und eine kuenftige App mit unbekanntem Wert darf ihre Anmeldung nicht
+    // verlieren -- Unbekanntes wird zu NULL ("ohne Angabe", Versand wie
+    // bisher). Die Wege stehen in utils/appSymbolWeg.js.
+    const appSymbolWeg = wegAusAnmeldung(req.body.app_symbol_weg);
+    const startbildschirm = startbildschirmAusAnmeldung(req.body.startbildschirm);
 
     /*
      * JEDE Registrierung wird protokolliert (23.09.2026).
@@ -706,11 +715,12 @@ module.exports = (db, verifyTokenRBAC) => {
      * sechs Zeichen genuegen, um zwei Registrierungen zu unterscheiden.
      */
     console.log(
-      '[PUSH] Registrierung: user=%s (%s) platform=%s app=%s/%s geraet=%s token=…%s',
+      '[PUSH] Registrierung: user=%s (%s) platform=%s app=%s/%s geraet=%s token=…%s symbol=%s start=%s',
       userId, userType, platform,
       app_version || 'unbekannt', app_build || '?',
       (device_id || 'ohne').slice(0, 12),
-      String(token).slice(-6)
+      String(token).slice(-6),
+      appSymbolWeg || '-', startbildschirm || '-'
     );
 
     if (!token || !platform) {
@@ -735,8 +745,8 @@ module.exports = (db, verifyTokenRBAC) => {
       // Upsert: Token speichern oder aktualisieren
       await db.query(`
         INSERT INTO push_tokens (user_id, user_type, token, platform, device_id, updated_at,
-                                 app_version, app_build)
-        VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)
+                                 app_version, app_build, app_symbol_weg, startbildschirm)
+        VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7, $8, $9)
         ON CONFLICT (user_id, platform, device_id)
         DO UPDATE SET
           token = EXCLUDED.token,
@@ -746,9 +756,14 @@ module.exports = (db, verifyTokenRBAC) => {
           -- App-Fassung ohne die Felder, soll die zuletzt BEKANNTE Angabe
           -- stehen bleiben statt durch NULL ersetzt zu werden.
           app_version = COALESCE(EXCLUDED.app_version, push_tokens.app_version),
-          app_build = COALESCE(EXCLUDED.app_build, push_tokens.app_build)`,
+          app_build = COALESCE(EXCLUDED.app_build, push_tokens.app_build),
+          app_symbol_weg = COALESCE(EXCLUDED.app_symbol_weg, push_tokens.app_symbol_weg),
+          startbildschirm = COALESCE(EXCLUDED.startbildschirm, push_tokens.startbildschirm)`,
         [userId, userType, token, platform, finalDeviceId,
-         app_version || null, app_build || null]
+         app_version || null, app_build || null,
+         // Nur Android kennt einen Weg (iOS setzt die Zahl ueber aps.badge).
+         platform === 'android' ? appSymbolWeg : null,
+         platform === 'android' ? startbildschirm : null]
       );
 
 

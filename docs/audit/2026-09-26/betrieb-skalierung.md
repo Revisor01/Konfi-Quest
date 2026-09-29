@@ -484,6 +484,7 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 ### BF-11: Log-Volumen bei Zielgröße überrollt die Aufbewahrung binnen Stunden
 - **Schwere:** MITTEL
 - **Status:** teilweise behoben 27.09.2026 — der Chat-Fan-out schreibt eine Sammelzeile statt einer Zeile je Person ohne Gerät (BF-04); offen sind die Warnung je Kopf in den übrigen Versandwegen (`services/pushService.js:641`), strukturierte Zeilen mit Anfrage-Kennung und die Rotation (weiter 10 MB × 3). Für 2.3.x vorgemerkt; das Log-Volumen nach dem Deploy messen (Auftrag `03-nach-dem-deploy.md`, Abschnitt 3).
+- **Status:** behoben 29.09.2026 (Menge; Rotation und strukturierte Zeilen bleiben beim Betrieb) — Gemessen, was je Vorgang ins Log geht (20.000 Konten, die Hälfte ohne Gerät wie in Produktion, FCM auf „zugestellt“ gestellt; Zeilen und Bytes im json-file-Format des Containers): Anfragen selbst schreiben keine Zeile (kein Zugriffsprotokoll; nur Fehler, „[APM] LANGSAM“ über 1 s und Sicherheitsereignisse wie fehlgeschlagene Anmeldungen). Übrig war die Zeile je Person ohne Gerät im Versand an viele und je Gerät bei FCM-Fehlern. Vorher → nachher: Absage an 1.000 Personen 500 Zeilen / 55 kB → 1 / 137 B; Anmeldung-offen-Lauf (jede Minute) 400 / 44 kB → 20 / 2,6 kB (eine je Termin); Erinnerungslauf mit 800 Empfänger:innen 400 / 44 kB → 100 / 13 kB (eine je Termin); FCM-Ausfall bei einer Absage an 1.000 Personen 1.000 / 111 kB → 2 / 330 B; abgemeldete Geräte 1.000 / 122 kB → 2 / 299 B; FCM-Ausfall im Chat (60 Teilnehmende) 31 → 2 Zeilen; zusammen über die zehn Messpunkte 3.353 Zeilen / 383 kB → 130 / 17 kB. Umsetzung in `services/pushService.js`: eine Bilanz je Versand an viele (ohne Gerät, gelöschte Tokens und Fehlschläge je Fehlercode samt erster Meldung), daraus höchstens drei Zeilen; der Einzelversand an eine Person behält seine Zeile („Keine Push-Tokens für User …“, „Push failed for token …“). Fehler- und Sicherheitsprotokolle bleiben also, nur nicht tausendfach. Test `backend/tests/services/pushProtokollMenge.test.js` (6 Fälle, vorher 3 rot); `chatPushFanout.test.js` F4 weiter grün. **Offen beim Betrieb:** Rotation (`max-size`/`max-file`, heute 10 MB × 3) und ein Log-Sammler; Log-Volumen in Produktion nach dem Deploy messen (Auftrag 03 Abschnitt 3, Auftrag 11).
 - **Fundstelle:** `deploy/compose.konfi_quest.yml:115–119` (json-file 10 m × 3 je
   Container), `backend/services/pushService.js:720, 938` (`console.warn('Keine Push-Tokens
   …')` je Empfänger), `backend/utils/apm.js:437` (`[APM] LANGSAM` je Anfrage > 1 s), 543
@@ -619,11 +620,13 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
   Passwort-Mails hinaus (Dutzende je Tag). Bei einem Massenversand wäre das Limit des
   Anbieters (`server.<anbieter>`) die Grenze — unbekannt.
   - **Status:** offen 27.09.2026 — die Sendegrenze ist beim Anbieter nicht erfragt; liegt bei Simon/Betrieb, vor EKD-Ausrollung (vor einem Massenversand Pflicht). Geklärt ist der Absender: die `moin@`-Adresse über `SMTP_USER` (Auftrag `01-vor-dem-deploy.md`, Abschnitt 2).
+  - **Status:** im Code behoben 29.09.2026, die Grenze des Anbieters bleibt zu erfragen — Massenversand kommt vor: die nächtlichen Läufe Lizenz-Erinnerung (jede Gemeindeleitung jeder Gemeinde mit ablaufender Lizenz) und Löschwarnung (Leitung jedes Jahrgangs vor der Frist) schicken bei gleichem Stichtag vieler Gemeinden Hunderte Mails in einem Lauf; sonst gehen nur Einzelmails hinaus (Passwort, Einladung, Bestätigung, Listen an die eigene Adresse, Reset an höchstens die Konten einer Adresse). Die beiden Läufe nutzen jetzt einen eigenen Transport: eine gepoolte Verbindung (bis 100 Mails je Verbindung) und höchstens `SMTP_MASSEN_JE_MINUTE` Mails je Minute (Standard 20 = 1.200/h; `utils/smtpKonfiguration.js` `smtpMassenKonfiguration`). Einzelmails bleiben beim bisherigen Transport, damit ein Passwort-Reset nicht hinter einem Lauf wartet. Gemessen gegen einen SMTP-Attrappen-Server: zehn Mails vorher 10 Verbindungen, über den Massentransport 1; bei 4 je Fenster nie mehr als 4 Mails in einem Fenster. Test `backend/tests/services/mailMassenversand.test.js` (6 Fälle; Gegenprobe ohne Pool/Drosselung bzw. mit den Läufen auf dem Einzeltransport: 4 rot). Offen beim Betrieb: die Grenze des Anbieters erfragen und `SMTP_MASSEN_JE_MINUTE` darauf setzen (Auftrag 11).
 - **`X-Real-IP` wird ungeprüft übernommen** (`server.js:261–265`): Die IP-basierten
   Limiter (Login, Registrierung, Doku) lassen sich mit einem selbstgesetzten Header
   umgehen, falls Apache/Traefik den Header nicht überschreiben. Ob sie das tun, steht
   nicht im Repo. Fehlt: Traefik-/Apache-Konfiguration.
   - **Status:** im Code behoben 26.09.2026 — nur noch aus dem Docker-Netz (Sicherheit BF-13, `utils/clientIp.js`); ob der Proxy den Header überschreibt, nach dem Deploy messen.
+  - **Status:** bleibt offen 29.09.2026 — im Code geschlossen: `X-Real-IP` gilt nur vom Gegenüber im Docker-Netz (seit 26.09.), und seit heute gilt ohne vertrauten Gegenüber dessen eigene Adresse statt `req.ip` — `req.ip` las wegen `trust proxy 1` den letzten Eintrag aus einem vom Client geschickten `X-Forwarded-For`, der Header ließ sich also am Proxy vorbei über diesen Weg fälschen (`utils/clientIp.js`; Tests `tests/utils/clientIp.test.js`, 3 neue: gefälschtes `X-Forwarded-For` ohne Proxy-Merkmal zählt auf den Peer, im Limiter 429 trotz wechselnder Header — vorher 2 rot; vom Proxy ohne `X-Real-IP` zählt weiter `req.ip` je Absender). Am Verhalten in Produktion ändert das nichts: Dort ist der Gegenüber immer Traefik im Docker-Netz. Ob der vordere Proxy einen vom Client geschickten `X-Real-IP` überschreibt, kann das Backend nicht erkennen — offen allein die Messung nach Auftrag `07-client-adresse-hinter-dem-proxy.md`.
 - **1-Tag-Erinnerung um Mitternacht:** `sendEventReminders` (`backgroundService.js:665–690`)
   wählt Termine des Folgetags ohne Uhrzeitfenster — die Erinnerung „Morgen: …" geht im
   ersten Takt nach 00:00 hinaus. Fachlich anderer Bereich; für die Last bedeutet es einen
@@ -694,6 +697,17 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 - **Check-in-Transaktion** (`checkin.js:55–226`): 7 Abfragen, 0,3 ms, Client nur innerhalb
   der Transaktion gehalten, Nacharbeit nach `release()`. Anwesenheitszähler für das
   10-s-Polling 0,11 ms (EXPLAIN direkt, Abfrage 10).
+  - **Nachtrag 29.09.2026 (Paket I2):** Zwei Routen hielten es anders (Nebenbefund Paket
+    B1): `POST /teamer/events/:id/zusage` (`routes/teamer.js`) und `POST /events`
+    (`routes/events/verwaltung.js`) gaben den Client erst im `finally` frei; dazwischen liefen
+    Chat-Mitgliedschaft, Empfänger-Abfrage und Pushes — Chat und Empfänger-Abfrage mit einer
+    zweiten Pool-Verbindung. **Behoben:** Transaktion, `finally` mit `release()`, dann Antwort,
+    dann Chat/Live-Update/Push über `nachAntwort`. `POST /events` schickte außerdem bei einem
+    Fehler nach der Antwort noch ein `ROLLBACK` und einen zweiten Status. Test
+    `tests/routes/verbindungFreigabeVorPush.test.js` (3; Wrapper zählt ausgeliehene
+    Verbindungen und Pool-Abfragen währenddessen): vor dem Fix 3 rot (`INSERT INTO
+    chat_participants` und `SELECT organization_id FROM events` bei ausgeliehener
+    Verbindung; beide Pushes mit Stand 1), danach grün; 20 Termin-Suites, 471 Tests grün.
 - **Rate-Limits gegen Schulklassen hinter einer NAT-Adresse:** `userOrIpKey`
   (`server.js:266–277`) zählt angemeldete Anfragen je Konto; die IP greift nur für
   Login/Refresh/Registrierung mit `skipSuccessfulRequests`. 30 Konfis × 25 Start-Anfragen

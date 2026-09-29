@@ -139,6 +139,55 @@ describe('Konfi-Ansicht in der Zweitgemeinde', () => {
     expect(res.status).toBe(403);
   });
 
+  // DIE LEITUNG DIESER GEMEINDE (Nebenbefund 29.09.2026): GET
+  // /admin/konfis/:id/badges verlangte `u.organization_id = aktive Gemeinde`
+  // und die Rolle am Konto -- fuer diese Person 404, waehrend die
+  // Schwesterroute /:id/event-points (darfKonfi, Profil in dieser Gemeinde)
+  // laengst antwortete. Jetzt beide Quellen: Rolle in DIESER Gemeinde
+  // (ladeRolleInGemeinde) und das Profil hier (darfKonfi).
+  describe('GET /admin/konfis/:id/badges', () => {
+    const badgesAls = (wer, orgId) => {
+      const u = USERS[wer];
+      return request(app)
+        .get(`/api/admin/konfis/${DOPPEL}/badges`)
+        .set('Authorization', `Bearer ${tokenFuer(u.id, u.role_id, u.org_id, u.type)}`)
+        .set('X-Active-Organization', String(orgId));
+    };
+
+    it('die Leitung der Gemeinde, in der sie Konfi ist, sieht ihre Abzeichen (erlaubt)', async () => {
+      const res = await badgesAls('orgAdmin2', 2);
+      expect(res.status).toBe(200);
+      const vorher = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${tokenFuer(DOPPEL, ROLES.orgAdmin.id, 1, 'konfi')}`)
+        .set('X-Active-Organization', '2');
+      // Dieselbe Quelle wie die eigene Ansicht der Konfi.
+      expect(res.body).toEqual(vorher.body);
+    });
+
+    it('Teamer:in mit dem Jahrgang sieht sie ebenfalls (erlaubt)', async () => {
+      const res = await badgesAls('teamer2', 2);
+      expect(res.status).toBe(200);
+    });
+
+    it('Admin ohne den Jahrgang: 403 (verboten)', async () => {
+      const res = await badgesAls('admin2', 2);
+      expect(res.status).toBe(403);
+    });
+
+    it('die Leitung der Stamm-Gemeinde, wo sie keine Konfi ist: 404 (verboten)', async () => {
+      const res = await badgesAls('orgAdmin1', 1);
+      expect(res.status).toBe(404);
+    });
+
+    it('eine Teamer:in ist keine Konfi: 404 (verboten)', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.teamer2.id}/badges`)
+        .set('Authorization', `Bearer ${tokenFuer(USERS.orgAdmin2.id, ROLES.orgAdmin2.id, 2, 'admin')}`);
+      expect(res.status).toBe(404);
+    });
+  });
+
   it('eine gewoehnliche Konfi bleibt unveraendert erreichbar', async () => {
     // Gegenprobe: Der Normalfall (Rolle am Konto = Rolle der Gemeinde) darf
     // durch die Umstellung nicht kaputtgehen.

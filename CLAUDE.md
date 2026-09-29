@@ -143,7 +143,11 @@ Welche Stelle steigt: **PATCH** für Fehlerbehebungen ohne neue Funktion,
 **MINOR** für neue Funktionen (auch mit additiven API-Feldern oder Migrationen),
 **MAJOR** nur, wenn eine ausgelieferte App brechen würde — was nach der Regel
 oben nicht vorkommt. Die Store-Build-Nummern steigen mit jedem Store-Upload um
-eins, unabhängig von der App-Version. Git-Tags tragen die App-Version ohne `v`.
+eins, unabhängig von der App-Version. Git-Tags tragen die App-Version ohne `v`:
+den Versions-Tag (`2.3.0`) beim Store-Release; dazu setzen die Release-Workflows
+nach jedem erfolgreichen Upload automatisch `2.3.0+ios.234` bzw.
+`2.3.0+android.128` auf den gebauten Commit (Build-Metadaten nach Semantic
+Versioning; beim Dry-Run keiner, ein vorhandener Tag wird nie überschrieben).
 
 *Konkret passiert (bis 27.09.2026): Wurzel 2.9.0, `frontend/` 0.0.1, `backend/`
 1.0.1 und `version.json` 2.3.0 standen nebeneinander; `/api/status` meldete 1.0.1

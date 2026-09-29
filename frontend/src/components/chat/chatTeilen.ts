@@ -26,7 +26,13 @@ export async function nachrichtTeilen(
       const blob = await getMediaBlob(message.file_path);
       const fileName = message.file_name || 'file';
 
-      // Write to Documents directory for sharing
+      // In den CACHE schreiben, nicht nach Documents (29.09.2026). Documents
+      // ist auf Android der OEFFENTLICHE Ordner "Dokumente" -- dort lesen
+      // andere Apps und jeder Dateimanager mit --, auf dem iPhone der
+      // Documents-Ordner der App. Geteilt werden Chat-Anhaenge, oft Fotos
+      // von Jugendlichen, und sie blieben dort liegen. Aus dem Cache nimmt
+      // das Teilen-Blatt sie genauso (Android: cache-path in file_paths.xml),
+      // der Chat-Export unten macht es schon so.
       const base64Data = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -40,13 +46,13 @@ export async function nachrichtTeilen(
       await Filesystem.writeFile({
         path,
         data: base64Data,
-        directory: Directory.Documents,
+        directory: Directory.Cache,
         recursive: true
       });
 
       // Get local file URI for sharing
       const fileUri = await Filesystem.getUri({
-        directory: Directory.Documents,
+        directory: Directory.Cache,
         path
       });
 

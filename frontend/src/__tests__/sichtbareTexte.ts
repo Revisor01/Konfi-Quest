@@ -169,7 +169,8 @@ export function nutzertexteDesBackends(pfad: string, quelle = readFileSync(pfad,
     // traegt Feldnamen, keine Texte.
     if (ts.isCallExpression(knoten) && ts.isPropertyAccessExpression(knoten.expression)
       && knoten.expression.name.getText() === 'withMessage') {
-      knoten.arguments.forEach((arg) => sammle(arg, knoten.expression.name));
+      const methode = knoten.expression.name;
+      knoten.arguments.forEach((arg) => sammle(arg, methode));
       besuche(knoten.expression);
       return;
     }

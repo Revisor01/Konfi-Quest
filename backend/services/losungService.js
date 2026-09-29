@@ -86,8 +86,11 @@ async function holeTageslosung(db, translation, today) {
     throw new Error('Losungen API zuletzt nicht erreichbar (Sperrfrist aktiv)');
   }
 
-  // Von API abrufen
-  const fetch = (await import('node-fetch')).default;
+  // Von API abrufen -- mit dem eingebauten `fetch` der Node-Laufzeit.
+  // Bis 29.09.2026 stand hier `import('node-fetch')`. Das Paket war nie
+  // deklariert und lag nur im Baum, weil firebase-admin einen OPTIONALEN
+  // Storage-Client mitbringt, der es braucht (Release-Audit Toolchain BF-05).
+  // Test: tests/services/losungOhneNodeFetch.test.js.
   const losungApiKey = process.env.LOSUNG_API_KEY;
   if (!losungApiKey) {
     throw new Error('LOSUNG_API_KEY Umgebungsvariable fehlt');
@@ -103,12 +106,15 @@ async function holeTageslosung(db, translation, today) {
     const apiUrl = `${basis}/api/?api_key=${losungApiKey}&translation=${translation}`;
 
     try {
+      // Zeitlimit als AbortSignal: Das eingebaute fetch kennt die Option
+      // `timeout` von node-fetch nicht und wuerde sie still ignorieren -- ein
+      // haengender interner Container hielte dann jede Anfrage unbegrenzt fest.
       const response = await fetch(apiUrl, {
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'Konfi-Quest-App/1.0'
         },
-        timeout: istIntern ? TIMEOUT_INTERN_MS : TIMEOUT_OEFFENTLICH_MS
+        signal: AbortSignal.timeout(istIntern ? TIMEOUT_INTERN_MS : TIMEOUT_OEFFENTLICH_MS)
       });
 
       if (!response.ok) {

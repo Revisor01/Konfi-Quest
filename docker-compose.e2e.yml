@@ -1,12 +1,21 @@
 services:
   e2e-db:
-    image: postgres:16-alpine
+    # Wie die Produktion (deploy/compose.konfi_quest.yml): Postgres 15 --
+    # bis zum 29.09.2026 stand hier 16 (Audit Tests BF-13).
+    image: postgres:15-alpine
     ports:
       - "5444:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
+      # Zeitzone wie die Produktion: Die Sitzungen der Backends laufen dort in
+      # UTC (gemessen 27.09.2026), TZ/PGTZ wirken nur auf psql im Container.
+      # Die Server-Zeitzone steht deshalb unten fest auf UTC -- ein frisches
+      # Datenverzeichnis uebernaehme sonst TZ in postgresql.conf.
+      TZ: Europe/Berlin
+      PGTZ: Europe/Berlin
+    command: ["postgres", "-c", "timezone=UTC"]
     tmpfs:
       - /var/lib/postgresql/data
     # Schema beim Start einspielen. Ohne das startete die E2E-Datenbank leer,
@@ -14,18 +23,25 @@ services:
     # ganze Stack kam nie hoch (gefunden 30.08.2026) — die E2E-Specs liefen
     # deshalb faktisch nie.
     #
-    # Genommen wird derselbe Produktions-Dump wie in den Backend-Tests
-    # (backend/tests/schema/prod-schema.sql, aktualisierbar mit
-    # backend/tests/schema/refresh-schema.sh). Aus den Migrationen bauen geht
-    # nicht: Die Kette beginnt erst bei 064, mehrere Objekte haben nirgends
-    # ein DDL — wer daraus baut, testet ein Schema, das es so nie gab.
+    # Seit dem 29.09.2026 (Audit Tests BF-03) derselbe Weg wie eine neue
+    # Instanz der Produktion: das ganze init-scripts/, also Dump UND
+    # Migrationsstand. Vorher hing nur der Dump hier; schema_migrations kam
+    # leer, das Backend spielte alle Migrationen ein zweites Mal ein, und zwei
+    # scheiterten bei jedem Start ("Migration FAILED") -- das verdeckte echte
+    # Migrationsfehler im Log.
     volumes:
-      - ./backend/tests/schema/prod-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      # Ueber TCP (-h 127.0.0.1), nicht ueber den Socket: Waehrend das
+      # Entrypoint init-scripts einspielt, laeuft ein Zwischen-Server, der
+      # nur auf dem Socket hoert -- pg_isready ohne -h meldete "bereit",
+      # das Backend startete und bekam ECONNREFUSED (nachgestellt
+      # 29.09.2026). Unter NODE_ENV=test beendet es sich dann nicht, sondern
+      # laeuft ohne Migrationslauf weiter.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres"]
       interval: 2s
       timeout: 5s
-      retries: 10
+      retries: 30
 
   e2e-backend:
     build:
@@ -39,6 +55,13 @@ services:
       CORS_ORIGINS: "http://localhost:5556"
       PORT: "5000"
       NODE_ENV: test
+      # Beide Schluessel wie in Produktion gesetzt (Audit Tests BF-13): Ohne
+      # QR_SECRET waeren Check-in-Codes unsigniert (NODE_ENV=test unterdrueckt
+      # nur den Abbruch), ohne ACTIVITY_PHOTO_ENCRYPTION_KEY scheiterte das
+      # erste Foto. Feste Testwerte, keine Geheimnisse.
+      QR_SECRET: e2e-qr-secret-nur-fuer-tests
+      ACTIVITY_PHOTO_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      # Keine TZ: Der Node-Prozess laeuft in Produktion in UTC.
     depends_on:
       e2e-db:
         condition: service_healthy
@@ -55,6 +78,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: "http://localhost:5555/api"
+        # Die API liegt hier unter einer anderen Adresse als die App; die CSP
+        # (frontend/nginx.conf) muss sie erlauben. Nur in diesem Bau gesetzt.
+        CSP_CONNECT_EXTRA: "http://localhost:5555 ws://localhost:5555"
     ports:
       - "5556:80"
     depends_on:

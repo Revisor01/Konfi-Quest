@@ -13,7 +13,7 @@ import { SLIDES as teamerUpdate } from '../../components/teamer/modals/TeamerUpd
 import { SLIDES as adminOnboarding } from '../../components/admin/modals/AdminOnboardingModal';
 import { SLIDES as adminUpdate } from '../../components/admin/modals/AdminUpdateWalkthroughModal';
 
-type Slide = { title: string; text: string; color?: string };
+type Slide = { title: string; text: string; color?: string; rgb?: string };
 
 const ALLE_TOUREN: [string, Slide[]][] = [
   ['Konfi-Onboarding', konfiOnboarding],
@@ -578,9 +578,9 @@ describe('Änderungsanzeige 2.3.0', () => {
     // rgb(var(--...-rgb)). Ein Paar, das nicht zusammenpasst, faerbt den
     // Hintergrund anders als das Symbol.
     for (const s of slides) {
-      const erwartet = s.color.replace('var(', '').replace(')', '') + '-rgb';
+      const erwartet = (s.color ?? '').replace('var(', '').replace(')', '') + '-rgb';
       expect(s.rgb, `Farbpaar passt nicht bei "${s.title}"`).toBe(erwartet);
-      expect(s.rgb.startsWith('--'), `rgb muss der nackte Name sein: "${s.title}"`).toBe(true);
+      expect((s.rgb ?? '').startsWith('--'), `rgb muss der nackte Name sein: "${s.title}"`).toBe(true);
     }
   });
 

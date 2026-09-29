@@ -38,7 +38,7 @@ vi.mock('../../contexts/AppContext', () => ({
   useApp: () => ({ setError }),
 }));
 
-const teilen = vi.fn(async () => undefined);
+const teilen = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock('../../services/systemDialoge', () => ({
   teilen: (...args: unknown[]) => teilen(...args),
 }));
@@ -120,7 +120,7 @@ describe('Eine Challenge-Datei öffnen', () => {
       return wert;
     });
 
-    let laeuft: Promise<void> = Promise.resolve();
+    let laeuft: Promise<unknown> = Promise.resolve();
     act(() => { laeuft = result.current.dateiOeffnen('ab12', 'erstes.jpg'); });
     await waitFor(() => expect(result.current.ladendeDatei).toEqual({ pfad: 'ab12', prozent: 50 }));
     await act(async () => { fertig(); await laeuft; });

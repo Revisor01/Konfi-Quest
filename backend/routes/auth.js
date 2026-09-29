@@ -111,6 +111,90 @@ const erzeugeNamensLimiter = (db) => rateLimit({
   store: new PostgresRateLimitStore(db, { prefix: 'namenspruefung' })
 });
 
+// Grenzen fuer drei oeffentliche Routen, die bis zum 29.09.2026 nur der
+// allgemeine Flutschutz bremste (2000 Anfragen je Viertelstunde und Adresse,
+// je Replica): GET /validate-invite/:code, POST /reset-password und
+// POST /refresh (Audit Sicherheit N3, Nebenbefund der Pakete vom 29.09.).
+//
+// DAS MUSTER wie bei der Namenspruefung oben: Schluessel ist die
+// Client-Adresse (clientIp, Header nur aus dem Docker-Netz), Zaehler im
+// gemeinsamen Store (beide Replicas), und GEZAEHLT WIRD NUR DER FALL, DER
+// AUF RATEN HINDEUTET. Echte Nutzung erzeugt ihn selten, und was sie
+// staendig tut -- gueltige Codes pruefen, Tokens erneuern --, zaehlt nicht.
+//
+// 1. EINLADUNGSCODE (GET /validate-invite/:code): gezaehlt wird nur 404
+//    "existiert nicht". Ein Code hat 8 Hex-Zeichen (32 Bit, POST
+//    /invite-code), und ein Treffer nennt Gemeinde und Jahrgang -- mit ihm
+//    registriert man sich dort als Konfi, samt Jahrgangs-Chat. Die App ruft
+//    die Route einmal je Deep-Link (/register?code=...) oder je Druck auf
+//    "Code pruefen" (KonfiRegisterPage.validateCode, ab 6 Zeichen), nicht
+//    beim Tippen. Eine Konfi-Gruppe im Gemeinde-WLAN teilt sich eine
+//    Adresse: 30 Personen mit je zwei Vertippern sind 60. Gueltige (200) und
+//    abgelaufene Codes (410, ohne Namen) zaehlen nicht -- sonst sperrte ein
+//    abgelaufener Code an der Tafel die ganze Gruppe, auch fuer den neuen.
+//    Vorher: bis 2000 Versuche je Viertelstunde und Adresse (je Replica).
+//
+// 2. RESET-TOKEN (POST /reset-password): gezaehlt wird nur "Ungueltiger oder
+//    abgelaufener Reset-Token". Das Token hat 32 Zufallsbytes, raten ist
+//    aussichtslos; die Grenze haelt Skripte fern. Echte Nutzung: ein Klick
+//    auf den Link aus der Mail, bei einem alten Link einer oder zwei
+//    Versuche. Ein zu schwaches neues Passwort (400 der Pruefung) zaehlt
+//    nicht -- die Seite laesst so oft probieren, wie es dauert.
+//
+// 3. REFRESH (POST /refresh): gezaehlt wird nur 401 (unbekanntes,
+//    abgelaufenes, widerrufenes oder geraetefremdes Token). Refresh-Tokens
+//    haben 64 Zufallsbytes, raten ist aussichtslos; die Grenze bremst nur
+//    Fluten. SIE MUSS WEIT SEIN: Die App meldet sich bei JEDER abgelehnten
+//    Erneuerung ab, auch bei 429 (services/api.ts, fehlerBehandeln:
+//    "Refresh vom Server abgelehnt -> Re-Login", in 2.2.x und 2.3.0).
+//    Erfolgreiche Erneuerungen -- alle 15 Minuten je aktivem Geraet, dazu
+//    bei jedem Start -- zaehlen nicht, 403 (Sperre von Konto oder Gemeinde)
+//    und 400/500 auch nicht. Ein Geraet erzeugt hoechstens zwei 401: Nach
+//    dem ersten verwirft die App den Token (ensureFreshToken behaelt den
+//    alten Zugangs-Token, die naechste Anfrage laeuft in 401, der zweite
+//    Refresh scheitert, die App meldet ab). 300 je Viertelstunde und
+//    Adresse -- dieselbe Zahl wie die Fehlversuche beim Anmelden
+//    (authLimiter) -- heisst also: 150 Geraete hinter einer Adresse werden
+//    binnen 15 Minuten abgemeldet. Das kommt nicht vor, auch nicht hinter
+//    Carrier-NAT (IPv6 zaehlt je /56).
+const EINLADUNGSCODE_FEHLVERSUCHE = 60;
+const RESET_TOKEN_FEHLVERSUCHE = 20;
+const REFRESH_FEHLVERSUCHE = 300;
+const erzeugeOeffentlicheGrenzen = (db) => {
+  const grenze = ({ prefix, max, gezaehlt, error }) => rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max,
+    keyGenerator: (req) => ipKeyGenerator(clientIp(req)),
+    skipSuccessfulRequests: true,
+    // "Erfolgreich" = nicht gezaehlt: alles ausser dem Ratefall.
+    requestWasSuccessful: (req, res) => !gezaehlt(req, res),
+    message: { error },
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: new PostgresRateLimitStore(db, { prefix })
+  });
+  return {
+    einladungscodeLimiter: grenze({
+      prefix: 'einladungscode',
+      max: EINLADUNGSCODE_FEHLVERSUCHE,
+      gezaehlt: (req, res) => res.statusCode === 404,
+      error: 'Zu viele unbekannte Einladungscodes. Bitte prüfe den Code und versuche es in 15 Minuten erneut.'
+    }),
+    resetTokenLimiter: grenze({
+      prefix: 'reset-token',
+      max: RESET_TOKEN_FEHLVERSUCHE,
+      gezaehlt: (req, res) => res.locals.resetTokenUngueltig === true,
+      error: 'Zu viele ungültige Links zum Zurücksetzen. Bitte fordere einen neuen Link an und versuche es in 15 Minuten erneut.'
+    }),
+    refreshLimiter: grenze({
+      prefix: 'refresh',
+      max: REFRESH_FEHLVERSUCHE,
+      gezaehlt: (req, res) => res.statusCode === 401,
+      error: 'Zu viele abgelaufene Anmeldungen von dieser Verbindung. Bitte melde dich in 15 Minuten neu an.'
+    }),
+  };
+};
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Zugangs-Sperre: EINE Quelle fuer Anmeldung und Refresh (Audit 26.09.2026,
@@ -154,6 +238,7 @@ if (!JWT_SECRET) {
 module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, rbacVerifier) => {
   const { passwordResetLimiter, passwordResetEmailLimiter } = erzeugeResetLimiter(db);
   const namensLimiter = erzeugeNamensLimiter(db);
+  const { einladungscodeLimiter, resetTokenLimiter, refreshLimiter } = erzeugeOeffentlicheGrenzen(db);
   const { authLimiter, registerLimiter } = rateLimiters;
   const emailService = require('../services/emailService');
 
@@ -616,14 +701,19 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // Benachrichtigung NACH dem COMMIT und fehlertolerant — die Loeschung
       // ist festgeschrieben, ein Push-Fehler darf sie nicht mehr kippen.
       // Nachgerueckte je Gemeinde ihres Events, dazu die Chatlisten der
-      // Gespraechspartner:innen.
-      await meldeNachKontoLoeschung(db, ergebnis);
+      // Gespraechspartner:innen. Ueber nachAntwort wie DELETE /users/:id
+      // (29.09.2026, Begruendung dort); ein Fehler darin landet damit auch
+      // nicht mehr im catch unten, der nach der Antwort einen 500 versuchte.
+      const organizationId = req.user.organization_id;
+      nachAntwort(req, async () => {
+        await meldeNachKontoLoeschung(db, ergebnis);
 
-      // Admin-Liste aktualisieren und den Socket des geloeschten Kontos trennen —
-      // sonst empfing er weiter Org-Updates und die Liste blieb stehen
-      // (Audit 22.08.2026).
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { userId });
-      liveUpdate.disconnectUserSockets(userId);
+        // Admin-Liste aktualisieren und den Socket des geloeschten Kontos trennen —
+        // sonst empfing er weiter Org-Updates und die Liste blieb stehen
+        // (Audit 22.08.2026).
+        liveUpdate.sendToOrgAdmins(organizationId, 'konfis', 'delete', { userId });
+        liveUpdate.disconnectUserSockets(userId);
+      }, 'POST /auth/delete-account (Meldungen nach Kontoloeschung)');
 
     } catch (err) {
  console.error('Database error in POST /api/auth/delete-account:', err);
@@ -1156,7 +1246,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   });
 
   // Validate invite code (public endpoint)
-  router.get('/validate-invite/:code', async (req, res) => {
+  router.get('/validate-invite/:code', einladungscodeLimiter, async (req, res) => {
     const { code } = req.params;
 
     try {
@@ -1388,7 +1478,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   });
 
   // Reset password with token
-  router.post('/reset-password', validateResetPassword, async (req, res) => {
+  router.post('/reset-password', resetTokenLimiter, validateResetPassword, async (req, res) => {
     const { token, newPassword } = req.body;
     
     if (!token || !newPassword) return res.status(400).json({ error: 'Token und neues Passwort sind erforderlich' });
@@ -1411,6 +1501,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       );
 
       if (!resetRecord) {
+        // Nur dieser Fall zaehlt fuer den resetTokenLimiter.
+        res.locals.resetTokenUngueltig = true;
         return res.status(400).json({ error: 'Ungültiger oder abgelaufener Reset-Token' });
       }
       
@@ -1453,7 +1545,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   // ===== TOKEN REFRESH =====
 
   // Refresh Access-Token mit Rotation (altes Refresh-Token wird ungültig)
-  router.post('/refresh', async (req, res) => {
+  router.post('/refresh', refreshLimiter, async (req, res) => {
     const { refresh_token } = req.body;
     if (!refresh_token) {
       return res.status(400).json({ error: 'Refresh-Token ist erforderlich' });
@@ -1745,17 +1837,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   });
 
-  // Abgelaufene + revoked Refresh-Tokens alle 24h aufräumen
-  setInterval(async () => {
-    try {
-      const { rowCount } = await db.query(
-        "DELETE FROM refresh_tokens WHERE expires_at < NOW() OR (revoked_at IS NOT NULL AND revoked_at < NOW() - INTERVAL '7 days')"
-      );
-      if (rowCount > 0) console.log(`Cleanup: ${rowCount} abgelaufene Refresh-Tokens entfernt`);
-    } catch (err) {
-      console.error('Refresh-Token Cleanup Fehler:', err);
-    }
-  }, 24 * 60 * 60 * 1000);
+  // Abgelaufene und widerrufene Refresh-Tokens raeumt seit dem 29.09.2026
+  // BackgroundService.cleanupRefreshTokens auf (Cron-Leader, erster Lauf beim
+  // Start). Hier stand ein setInterval(24 h) ohne ersten Lauf, das wegen der
+  // Neustarts bei jedem Deploy praktisch nie feuerte.
 
   return router;
 };

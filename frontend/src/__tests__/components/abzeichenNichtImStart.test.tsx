@@ -271,7 +271,7 @@ describe('Offline: der Cache traegt die Abzeichen weiterhin', () => {
       'konfi:badges:v2:7': { available: [], earned: [], stats: { totalVisible: 4, totalSecret: 1 } },
     };
     vi.mocked(offlineCache.get).mockImplementation(async (key: string) =>
-      gecacht[key] ? { data: gecacht[key] } : null
+      gecacht[key] ? { data: gecacht[key], timestamp: Date.now(), ttl: 60_000 } : null
     );
 
     render(<KonfiDashboardPage />);

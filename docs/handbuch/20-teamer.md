@@ -165,8 +165,8 @@ auch vom Gerät. Mehr dazu unter
   Ein Tipp auf einen Stempel zeigt, wofür er steht und wann du ihn bekommen
   hast. Gibt es weder erhaltene noch offene Stempel, steht der Abschnitt nicht
   da.
-- **Konfi-Historie** — wenn du früher selbst Konfi warst: deine damaligen
-  Punkte und Badges und unter **„Events der Konfi-Zeit“** die Events, bei
+- **Konfi-Historie** — wenn du früher selbst Konfi warst, in der Gemeinde, in
+  der du gerade arbeitest: deine damaligen Punkte und Badges und unter **„Events der Konfi-Zeit“** die Events, bei
   denen du dabei oder angemeldet warst, mit den Punkten dafür. Diese Liste
   hält die App bei deiner Beförderung fest; sie bleibt, auch wenn dein alter
   Jahrgang gelöscht wird. Deine Konfi-Badges stehen dort so, wie du sie

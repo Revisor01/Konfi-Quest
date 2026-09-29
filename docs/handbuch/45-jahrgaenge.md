@@ -305,7 +305,8 @@ Das Löschen ist an zwei Stellen abgesichert.
 
 **Blockiert, solange aktive Konfis zugeordnet sind.** Meldung: „Jahrgang kann
 nicht gelöscht werden: 12 Konfi(s) zugeordnet.“ Verschiebe die Konfis erst in
-einen anderen Jahrgang.
+einen anderen Jahrgang. Als aktive Konfi zählt, wer in deiner Gemeinde Konfi
+ist — auch wenn die Person in einer anderen Gemeinde eine andere Rolle hat.
 
 **Blockiert, solange der Chatverlauf Nachrichten enthält.** Meldung:
 „Jahrgang kann nicht gelöscht werden: Chat-Raum enthält 148 Nachricht(en).“

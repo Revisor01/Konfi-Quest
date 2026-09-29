@@ -27,6 +27,13 @@ import {
   nachrichtNeuEinreihen,
   wartendeNachrichtAufraeumen,
 } from './chatOutbox';
+import {
+  sendeFehlerText,
+  SENDEFEHLER_ZU_GROSS,
+  SENDEFEHLER_DATEITYP,
+  SENDEFEHLER_ABGELEHNT,
+} from './sendeFehler';
+import { fehlerStatus } from '../../utils/fehler';
 import { safeUUID } from '../../utils/uuid';
 import { networkMonitor } from '../../services/networkMonitor';
 import { ChatHeader, MessageInput, autoCapitalize } from './ChatRoomSections';
@@ -121,8 +128,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       if (item.metadata.type !== 'chat') return;
       if (room?.id && item.metadata.roomId !== room.id) return;
       const clientId = item.metadata.clientId;
+      // Mit dem Status: Bei einer endgueltigen Ablehnung (413, 415 ...) steht
+      // der Grund an der Nachricht, und das Menue bietet kein "Erneut senden".
       setMessages(prev => prev.map(m =>
-        m.localId === clientId ? { ...m, queueStatus: 'error' as const } : m
+        m.localId === clientId ? { ...m, queueStatus: 'error' as const, sendeFehlerStatus: item.error.status } : m
       ));
     });
   }, [room?.id]);
@@ -156,7 +165,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const {
     selectedFile,
     selectedFilePreview,
-    handleFileSelect,
+    dateiWaehlen,
     clearSelectedFile,
     handleFileClick,
     ladendeDatei,
@@ -195,7 +204,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     newDividerRef,
     onNaheAmAnfang: () => ladeAeltereRef.current(),
   });
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
   // client_ids eigener Sendungen, deren Server-Kopie noch nicht per Socket
   // angekommen ist — Fallback-Reload nur wenn der Socket nicht liefert.
@@ -207,6 +215,32 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const [presentActionSheet] = useIonActionSheet();
 
   const handleRetryMessage = (message: Message) => {
+    const loeschen = {
+      text: 'Nachricht löschen',
+      role: 'destructive',
+      handler: async () => {
+        // Aus UI entfernen
+        setMessages(prev => prev.filter(m => m.localId !== message.localId));
+        // Queue-Item, Fehl-Merker und lokale Dateikopien aufraeumen
+        // (Loeschen ist eine bewusste Entscheidung).
+        await wartendeNachrichtAufraeumen(room?.id, message.localId);
+      }
+    };
+    const abbrechen = { text: 'Abbrechen', role: 'cancel' };
+
+    // Endgueltig abgelehnt (413 zu gross, 415 Dateityp, sonst 4xx ausser
+    // 408/429): Ein neuer Versuch schickte dieselbe Datei und scheiterte
+    // gleich. Das Menue nennt den Grund und bietet nur das Loeschen an.
+    const grund = sendeFehlerText(message.sendeFehlerStatus);
+    if (grund) {
+      presentActionSheet({
+        header: 'Nachricht nicht gesendet',
+        subHeader: grund,
+        buttons: [loeschen, abbrechen]
+      });
+      return;
+    }
+
     presentActionSheet({
       header: 'Nachricht fehlgeschlagen',
       buttons: [
@@ -235,21 +269,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
             }
           }
         },
-        {
-          text: 'Nachricht löschen',
-          role: 'destructive',
-          handler: async () => {
-            // Aus UI entfernen
-            setMessages(prev => prev.filter(m => m.localId !== message.localId));
-            // Queue-Item, Fehl-Merker und lokale Dateikopien aufraeumen
-            // (Loeschen ist eine bewusste Entscheidung).
-            await wartendeNachrichtAufraeumen(room?.id, message.localId);
-          }
-        },
-        {
-          text: 'Abbrechen',
-          role: 'cancel'
-        }
+        loeschen,
+        abbrechen
       ]
     });
   };
@@ -447,7 +468,15 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     if (!room) return;
 
     const clientId = safeUUID();
-    const localId = safeUUID();
+    // EINE Kennung fuer die Blase und fuer Warteschlange und Fehl-Merker
+    // (29.09.2026). Bis dahin bekam die Blase eine eigene localId, waehrend
+    // onItemFailed, "Erneut senden" und "Nachricht löschen" sie mit der
+    // client_id der Warteschlange verglichen -- fuer eine in dieser Sitzung
+    // geschriebene Nachricht passte das nie: Sie blieb nach einem Fehlschlag
+    // auf "wartet", Loeschen raeumte den Merker nicht, und sie kam beim
+    // naechsten Oeffnen wieder. Die Blasen aus Warteschlange und Merker
+    // (chatOutbox) tragen schon immer beides gleich.
+    const localId = clientId;
     const content = messageText.trim();
     const file = selectedFile;
     const currentReplyTo = replyToMessage;
@@ -536,8 +565,34 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
         if (room) markRoomAsRead();
         setShouldAutoScroll(true);
-      } catch {
+      } catch (err) {
         pendingSendsRef.current.delete(clientId);
+        // Endgueltig abgelehnt (Nebenbefund Paket G2, 29.09.2026): 413 (Datei
+        // zu gross), 415 (Dateityp nicht erlaubt oder nicht verifizierbar),
+        // sonst 4xx ausser 408/429 -- dieselbe Regel wie in der Warteschlange.
+        // Bis dahin ging auch so eine Nachricht in die Warteschlange, die
+        // dieselbe Datei sofort noch einmal hochlud und am selben Fehler
+        // scheiterte; danach stand sie ohne Grund mit dem Warnsymbol da. Jetzt:
+        // gleich als fehlgeschlagen, mit festem Text je Status an der
+        // Nachricht und als Hinweis, gemerkt fuer das naechste Oeffnen.
+        const status = fehlerStatus(err);
+        const grund = sendeFehlerText(status);
+        if (status !== undefined && grund) {
+          setMessages(prev => prev.map(m =>
+            m.localId === localId ? { ...m, queueStatus: 'error' as const, sendeFehlerStatus: status } : m
+          ));
+          // Feste Texte (Positivliste der Fehlermessung), nie der des Servers.
+          setError(status === 413 ? SENDEFEHLER_ZU_GROSS : status === 415 ? SENDEFEHLER_DATEITYP : SENDEFEHLER_ABGELEHNT);
+          try {
+            await writeQueue.chatAblehnungMerken(
+              { clientId, roomId: room.id, content, fileName: file?.name, fileType: file?.type, createdAt: Date.now() },
+              { status, message: grund }
+            );
+          } catch (merkErr) {
+            console.error('Abgelehnte Nachricht konnte nicht gemerkt werden:', merkErr);
+          }
+          return;
+        }
         // Fehlgeschlagener Online-Versand: Die Nachricht lebte bisher NUR im
         // React-State — Raum verlassen oder App neu gestartet, und sie war
         // weg (verschwundene Nachricht). Jetzt wird sie in die Queue
@@ -843,11 +898,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         selectedFilePreview={selectedFilePreview}
         replyToMessage={replyToMessage}
         textareaRef={textareaRef}
-        fileInputRef={fileInputRef}
         onTextChange={handleTextInputChange}
         onFocus={handleTextareaFocus}
         onSend={sendMessage}
-        onFileSelect={handleFileSelect}
+        onDateiWaehlen={dateiWaehlen}
         onClearFile={clearSelectedFile}
         onClearReply={() => setReplyToMessage(null)}
       />

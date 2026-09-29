@@ -1,5 +1,5 @@
 # Multi-stage Build für Production Frontend
-FROM node:26-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -27,6 +27,15 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Nur fuer die E2E-Umgebung (29.09.2026): Dort liegt die API unter einer
+# anderen Adresse als die Web-App (localhost:5555 statt 5556), und die scharfe
+# CSP liess den Aufruf nicht durch -- jede Anmeldung scheiterte. In Produktion
+# teilen sich App und API die Adresse, der Produktionsbau setzt das ARG nicht
+# (ci.yml, build-and-push), die Richtlinie bleibt dort unveraendert.
+ARG CSP_CONNECT_EXTRA=""
+RUN if [ -n "$CSP_CONNECT_EXTRA" ]; then \
+      sed -i "s#connect-src 'self'#connect-src 'self' ${CSP_CONNECT_EXTRA}#" /etc/nginx/conf.d/default.conf; \
+    fi
 
 EXPOSE 80
 

@@ -204,6 +204,40 @@ describe('Postfach: Mitteilungen gehen mit dem Konto und mit der Mitgliedschaft 
       expect(await umschalter('orgAdmin1')).toEqual({ [ORGS.testGemeinde.id]: { offen: 0 } });
     });
 
+    // DIE KONFI STORNIERT UEBER DELETE /events/:id/book (29.09.2026, Unklar
+    // aus Sicherheit: "Enthaelt notifications.data Namen anderer Personen,
+    // die nach deren Loeschung stehen bleiben?"). Dieser Weg schrieb die
+    // Mitteilung "Event-Abmeldung" an die Leitung mit Namen, aber OHNE
+    // konfi_id -- als einziger der Aufrufer von
+    // sendEventUnregistrationToLeadership. Nach der Loeschung der Konfi blieb
+    // ihr Name im Postfach der Leitung stehen, bis zu 365 Tage.
+    it('VERBOTEN: Abmeldung ueber DELETE /events/:id/book geht mit dem Konto', async () => {
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id)
+         VALUES ($1, $2, 'confirmed', $3)`,
+        [USERS.konfi1.id, EVENTS.gottesdienstEvent.id, ORGS.testGemeinde.id]
+      );
+      const storno = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', bearer('konfi1'))
+        .send({ reason: 'krank' });
+      expect(storno.status).toBe(200);
+      await warteBis(async () => (await mitteilungenMit('Test Konfi 1', USERS.orgAdmin1.id)) === 1);
+      const { rows: [eintrag] } = await db.query(
+        `SELECT data->>'konfi_id' AS konfi_id FROM notifications
+          WHERE user_id = $1 AND type = 'event_unregistration'`,
+        [USERS.orgAdmin1.id]
+      );
+      expect(eintrag).toEqual({ konfi_id: String(USERS.konfi1.id) });
+
+      const res = await request(app)
+        .delete(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', bearer('orgAdmin1'));
+      expect(res.status).toBe(200);
+      await warteAufNachwehen(app);
+      expect(await mitteilungenMit('Test Konfi 1')).toBe(0);
+    });
+
     it('Selbstloeschung (POST /auth/delete-account) geht denselben Weg', async () => {
       await optOutKonfi1();
       expect(await mitteilungenMit('Test Konfi 1', USERS.orgAdmin1.id)).toBe(1);

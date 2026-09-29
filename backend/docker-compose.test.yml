@@ -19,7 +19,8 @@ services:
     tmpfs:
       # nr_inodes explizit erhoehen: Die tmpfs kam mit dem Standard-Budget von
       # rund 500.000 Inodes. Jeder Test macht TRUNCATE ... RESTART IDENTITY ueber
-      # ~45 Tabellen, und jedes TRUNCATE legt neue Relationsdateien an. Ueber die
+      # alle Tabellen (damals rund 45, am 29.09.2026 61), und jedes TRUNCATE
+      # legt neue Relationsdateien an. Ueber die
       # 2062 Tests der 69 Dateien lief der Zaehler auf exakt 100 % (gemessen
       # 02.09.2026: 499.955 Inodes bei nur 464 MB belegtem Platz). Postgres
       # meldete daraufhin "No space left on device", obwohl df noch 1,5 GB frei

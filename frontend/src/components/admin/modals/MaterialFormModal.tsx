@@ -48,6 +48,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { medienVergessen } from '../../../services/mediaCache';
 import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE } from '../../../services/mediaCompression';
+import { dateiAuswaehlen } from '../../../services/systemDialoge';
 import FileViewerModal from '../../shared/FileViewerModal';
 import LadeStandZeile from '../../shared/LadeStandZeile';
 import SendeAnzeige from '../../shared/SendeAnzeige';
@@ -57,6 +58,9 @@ import { istWebLink } from '../../../utils/linkDisplay';
 import { materialInhalt, trackHandlung } from '../../../services/analytics';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
+
+/** Was die Leitung ins Material hochladen kann (Auswahl im System). */
+const MATERIAL_DATEIAUSWAHL = 'image/*,application/pdf,video/*,audio/*,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp';
 
 interface MaterialFile {
   id: number;
@@ -114,7 +118,6 @@ interface MaterialFormModalProps {
 const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLesen = false, onClose, onSuccess }) => {
   const { setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const pageRef = useRef<HTMLElement>(null);
 
   const [title, setTitle] = useState(material?.title || '');
@@ -233,27 +236,19 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
     if (fertig.length > 0) setNewFiles(prev => [...prev, ...fertig]);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Die Dateiliste SOFORT auslesen, bevor der Input geleert wird
-    // (Simons Befund 04.09.2026: "es passiert gar nichts", im Netz-Mitschnitt
-    // fehlte der POST auf /material/:id/files).
-    //
-    // Vorher stand Array.from(e.target.files) INNERHALB des
-    // setNewFiles(prev => ...)-Updaters. React ruft diesen Updater verzoegert
-    // auf -- zu diesem Zeitpunkt hatte die Zeile darunter den Input laengst
-    // geleert, und die Datei kam nie im State an. Gemessen: files.length
-    // 1 -> 1 -> 0 ueber das change-Event hinweg.
-    //
-    // Das Leeren selbst bleibt noetig, damit dieselbe Datei ein zweites Mal
-    // gewaehlt werden kann (ohne Wertwechsel feuert change nicht). Das
-    // Vorbereiten (verkleinern, Grenze) arbeitet mit der schon ausgelesenen
-    // Liste weiter.
-    const gewaehlt = e.target.files ? Array.from(e.target.files) : [];
-    if (gewaehlt.length > 0) {
+  // Die Auswahl des Systems über die Hülle (services/systemDialoge): Sie
+  // meldet den Ausflug der App-Sperre an — ohne ihn sperrte die Dateiauswahl
+  // bei „Sofort" die App (Simons Befund 29.09.2026, Android). Sie liefert die
+  // Liste schon ausgelesen und legt je Auswahl ein frisches Feld an; dieselbe
+  // Datei ist damit gleich wieder wählbar.
+  //
+  // Die Liste geht als fertiges Array an dateienVorbereiten — nie aus einem
+  // State-Updater heraus gelesen (Simons Befund 04.09.2026: "es passiert gar
+  // nichts"; das Feld war geleert, bevor React den Updater aufrief).
+  const dateienWaehlen = async () => {
+    const gewaehlt = await dateiAuswaehlen({ accept: MATERIAL_DATEIAUSWAHL, multiple: true });
+    if (gewaehlt && gewaehlt.length > 0) {
       void dateienVorbereiten(gewaehlt);
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
 
@@ -808,18 +803,10 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                   ))}
                 </div>
               )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*,application/pdf,video/*,audio/*,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp"
-                style={{ display: 'none' }}
-                onChange={handleFileSelect}
-              />
               <IonButton
                 expand="block"
                 fill="solid"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => void dateienWaehlen()}
                 style={{
                   '--background': 'var(--ion-color-primary)',
                   marginTop: 'var(--app-abstand-basis)',

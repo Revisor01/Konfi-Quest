@@ -43,6 +43,12 @@ function getTestPool() {
     pool = new Pool({
       connectionString: TEST_DB_URL,
       max: 5,
+      // Wie database.js (PG_CONN_TIMEOUT, Vorgabe 5000): Wer auf eine freie
+      // Verbindung wartet, gibt nach 5 s mit Fehler auf, statt ewig zu
+      // warten. Ohne diese Grenze haengt pool.end() fuer immer, sobald ein
+      // Nachlauf eine Verbindung haelt und auf eine zweite wartet (siehe
+      // closePool unten).
+      connectionTimeoutMillis: 5000,
       // TEST_DB_SITZUNGSZONE=UTC bildet die Produktion ab, wie sie am
       // 27.09.2026 gemessen wurde: postgresql.conf gibt dort timezone = 'UTC'
       // vor, die Sitzungen der App laufen in UTC (TZ/PGTZ des
@@ -68,7 +74,8 @@ function getTestPool() {
 
 // Feste Lock-ID, an der sich alle parallelen Test-Suites anstellen.
 // Verhindert, dass zwei TRUNCATE-CASCADE-Statements gleichzeitig dieselben
-// ~45 Tabellen sperren und sich gegenseitig zum Deadlock verriegeln.
+// Tabellen (die ganze Liste unten) sperren und sich gegenseitig zum Deadlock
+// verriegeln.
 const TRUNCATE_LOCK_ID = 4711;
 
 /**
@@ -162,9 +169,40 @@ async function truncateAll(db) {
 
 /**
  * Pool sauber schliessen (afterAll in Test-Suites).
+ *
+ * ERST WARTEN, DANN SCHLIESSEN (29.09.2026, Audit CI "Unklar": Test-Deadlocks).
+ * Die beiden roten backend-test-Laeufe 931 und 938 scheiterten NICHT am
+ * "deadlock detected" im Postgres-Log -- die Deadlocks fangen truncateAll
+ * (Wiederholung) und berechneBadgesFuerAlle (catch) ab. Rot war beide Male
+ * derselbe Hook: afterAll(closePool) in teamerZaehlerNachAbmeldung.test.js,
+ * "Hook timed out in 10000ms".
+ *
+ * Der Grund: Die Zusage-Route (routes/teamer.js) haelt ihre
+ * Transaktions-Verbindung nach dem COMMIT, schickt die Antwort und wartet
+ * dann noch auf den Event-Chat (weitere Abfragen ueber den Pool); parallel
+ * laeuft der Push an die Leitung (nachAntwort) mit bis zu zehn Abfragen.
+ * Endet die Datei in diesem Moment, ruft afterAll pool.end() -- und ein
+ * endender Pool bedient seine Warteschlange nicht mehr. Die Route wartet
+ * auf eine Verbindung, die nie kommt, gibt ihre eigene nie zurueck, und
+ * pool.end() wartet auf genau diese. Nachgestellt mit zwei Verbindungen:
+ * pool.end() haengt; mit connectionTimeoutMillis endet es nach der Grenze.
+ *
+ * Deshalb: Nachwehen abwarten, dann warten, bis keine Verbindung mehr
+ * ausgeliehen ist und niemand mehr wartet (hoechstens 4 s), erst dann end().
+ * Die Zeitgrenze oben ist das Netz darunter.
  */
 async function closePool() {
   if (pool) {
+    try {
+      const { warteAufAlleNachwehen } = require('./testApp');
+      await warteAufAlleNachwehen();
+    } catch {
+      // Kein testApp im Spiel (reine Unit-Suite).
+    }
+    const bis = Date.now() + 4000;
+    while ((pool.totalCount > pool.idleCount || pool.waitingCount > 0) && Date.now() < bis) {
+      await new Promise((r) => setTimeout(r, 20));
+    }
     await pool.end();
     pool = null;
   }

@@ -414,6 +414,18 @@ wenn du es genau wissen willst.
 > Auf der Seite mit den **Einladungscodes** fehlt die Geste. Wer dort einen
 > frischen Stand braucht, verlässt die Seite und öffnet sie erneut.
 
+## In langen Listen weiterscrollen
+
+Die Listen der Leitung — **Konfis**, **Events** und die gemeldeten
+**Aktivitäten** — zeigen zuerst 30 Einträge. Scrollst du nach unten, kommen die
+nächsten 30 von selbst dazu, bevor du das Ende erreichst. Darunter steht
+außerdem ein Knopf wie **„Weitere 30 Konfis zeigen (noch 120)"** — für alle,
+die lieber tippen oder mit Tastatur und Vorlesefunktion arbeiten.
+
+Suche, Jahrgangsfilter, Sortierung und die Zahlen oben gelten immer für die
+**ganze** Liste, nicht nur für die gezeigten Einträge. Tippst du einen neuen
+Suchbegriff oder wechselst Filter oder Reiter, beginnt die Liste wieder oben.
+
 ## Auswählen, welche Mitteilungen aufs Handy kommen
 
 Konfi Quest sortiert seine Mitteilungen in vier Gruppen. In der App lässt sich
@@ -447,6 +459,10 @@ Solange das Gerät der App noch keine Mitteilungen erlaubt, steht in der
 Auswahl ein Hinweis mit einem Knopf, der die Erlaubnis anfordert. Die Auswahl
 selbst gilt dann, sobald sie erteilt ist.
 
+Auch wenn die App gerade offen ist, erscheint eine Mitteilung oben am
+Bildschirm — auf dem iPhone wie auf Android. Die Zahlen an den Reitern und am
+App-Symbol stellen sich dabei gleich auf das Neue ein.
+
 ## Auf Android Ton und Lautstärke je Gruppe einstellen
 
 Auf Android sind die vier Gruppen außerdem Kanäle des Systems. In den
@@ -478,24 +494,51 @@ Welche Gruppen ankommen, entscheidest du dort über die
 
 Auf dem iPhone steht am App-Symbol die Zahl dessen, was auf dich wartet —
 dieselbe Summe wie in der [Liste deiner Gemeinden](05-rollen.md#sehen-wo-etwas-offen-ist).
-Auf Android entscheidet der Startbildschirm des Geräts, was am Symbol
-erscheint:
+Auf Android zeigt das Symbol dieselbe Zahl, wo der Startbildschirm des Geräts
+eine Zahl anzeigen kann. Welcher Weg dorthin führt, erkennt die App beim Start
+selbst:
 
-| Startbildschirm | Was am Symbol steht |
-|---|---|
-| Samsung | ein Punkt oder eine Zahl, je nach Einstellung *App-Symbolindikator* in den Benachrichtigungseinstellungen; die Zahl zählt die Mitteilungen von Konfi Quest, die gerade in der Benachrichtigungsleiste liegen |
-| Google Pixel und andere mit Android-Standard | ein Punkt, solange eine Mitteilung von Konfi Quest in der Leiste liegt — eine Zahl gibt es dort nicht; langes Drücken auf das Symbol zeigt die Mitteilungen |
-| einige andere Hersteller | die Zahl, die die App selbst meldet — dieselbe Summe wie auf dem iPhone |
+| Startbildschirm | Was am Symbol steht | Mitteilungen in der Leiste |
+|---|---|---|
+| Sony Xperia | die Summe wie auf dem iPhone — auch bei geschlossener App | bleiben einzeln liegen |
+| Huawei (mit Google-Diensten) | die Summe wie auf dem iPhone — auch bei geschlossener App | bleiben einzeln liegen |
+| Samsung | mit der Einstellung *App-Symbolindikator → Zahl* die Summe wie auf dem iPhone, sonst ein Punkt | jede neue Mitteilung von Konfi Quest ersetzt die vorige; es liegt immer nur die neueste |
+| Xiaomi, Redmi, POCO | die Summe wie auf dem iPhone | jede neue Mitteilung ersetzt die vorige |
+| Google Pixel und andere mit Android-Standard | ein Punkt, solange eine Mitteilung von Konfi Quest in der Leiste liegt — eine Zahl gibt es dort nicht; langes Drücken auf das Symbol zeigt die Mitteilungen | bleiben einzeln liegen |
+| Motorola, Nothing, OnePlus, OPPO, realme, vivo, Honor | ein Punkt oder die Zahl der Mitteilungen in der Leiste, je nach Gerät — die Summe wie auf dem iPhone kommt dort nicht an | bleiben einzeln liegen |
 
-Ein Punkt oder eine Zahl aus der Leiste verschwindet mit den Mitteilungen:
-Wer sie wegwischt, sieht am Symbol nichts mehr. Was offen ist, zeigen
-weiterhin die roten Zahlen an den Reitern und die
-[Glocke](#ungelesene-mitteilungen-an-der-glocke-erkennen).
+Kommt eine Mitteilung, zieht die Zahl am Symbol sofort mit. Liest oder
+erledigst du etwas in der App, sinkt sie gleich mit. Ändert sich bei
+geschlossener App etwas, ohne dass eine Mitteilung kommt — etwa weil die
+Leitung einen Antrag schon erledigt hat —, stimmt die Zahl spätestens nach
+fünf Minuten wieder, wie auf dem iPhone.
+
+Auf Samsung und Xiaomi hängt die Zahl an der einen Mitteilung in der Leiste.
+Wer sie wegwischt, nimmt damit auch die Zahl vom Symbol; die roten Zahlen an
+den Reitern und die [Glocke](#ungelesene-mitteilungen-an-der-glocke-erkennen)
+zeigen weiter, was offen ist. Sinkt die Zahl auf 0 — weil du alles gelesen
+und erledigt hast, in der App oder im Browser —, nimmt die App diese eine
+Mitteilung aus der Leiste, und am Symbol steht nichts mehr. Bei geschlossener
+App geschieht das, sobald die Zahl nachgezogen wird, spätestens nach fünf
+Minuten. Kam die Mitteilung, als ohnehin nichts offen war — etwa eine
+Event-Erinnerung —, bleibt sie liegen, bis du sie antippst oder wegwischst;
+so lange steht am Symbol eine 1.
+
+> **Noch nicht an jedem Gerät geprüft.** Sony: Die App spricht Sonys
+> Zahl-Schnittstelle direkt an; ob jedes Xperia-Modell sie anbietet, zeigt
+> sich erst am Gerät. Findet die App sie nicht, bleibt es beim Punkt.
+> Xiaomi: Ob HyperOS die mitgeschickte Gesamtzahl zeigt oder nur die
+> Mitteilungen zählt (dann stünde dort eine 1), ist nicht nachgemessen.
+> Honor, OPPO, OnePlus, realme und vivo nehmen Zahlen von Apps nur mit
+> Freigabe des Herstellers an oder bieten keinen bekannten Weg; dort bleibt
+> es beim Punkt.
 
 Die App nimmt eine Mitteilung aus der Leiste, sobald du sie antippst oder den
 Bereich öffnest, zu dem sie gehört — etwa den Chat. Alles andere bleibt
 liegen, bis du es wegwischst. Das gilt für jede Rolle, auch für die Leitung,
 auf iPhone und Android: Beim Öffnen der App verschwindet keine Mitteilung.
+Die eine Ausnahme ist die Mitteilung auf Samsung und Xiaomi, an der die Zahl
+hängt, wenn nichts mehr offen ist (siehe oben).
 
 ## Benachrichtigungen wieder zum Laufen bringen
 
@@ -735,3 +778,24 @@ Von selbst leert die App ihn,
 
 So findet niemand, der das Gerät nach dir benutzt, deine Bilder und Dateien
 vor — weder aus dem Chat noch aus Challenges oder dem Material.
+
+## Absturzberichte abschalten
+
+Stürzt die App ab oder fängt sie einen Programmfehler ab, schickt sie einen
+Bericht an einen Absturzdienst, damit sich der Fehler finden lässt — ohne
+Namen, Benutzernamen, Inhalte oder Eingaben. Was darin steht, beschreibt die
+[Datenschutzerklärung](/datenschutz.html) in Abschnitt 9b.
+
+Im eigenen [Profil](#das-eigene-profil-finden) steht unter
+**„Konto-Einstellungen"** der Schalter **„Absturzberichte senden"**. Er ist an,
+bis du ihn ausschaltest.
+
+| Schalter | Was passiert |
+|---|---|
+| **Aus** | Die App sendet ab sofort keine Berichte mehr und verwirft, was noch auf dem Gerät liegt. Stürzt sie vor dem nächsten Start noch einmal ab, wird auch dieser Bericht beim Neustart verworfen statt gesendet. |
+| **An** | Berichte gehen wieder hinaus; ganz greift das ab dem nächsten Start. |
+
+**Die Einstellung gilt für dieses Gerät**, nicht für dein Konto: Sie bleibt,
+wenn du dich abmeldest oder sich jemand anderes auf dem Gerät anmeldet. Den
+Schalter gibt es nur in der App auf dem Handy oder Tablet — im Browser sendet
+die App keine Absturzberichte.

@@ -128,6 +128,10 @@ export interface Message {
   reactions?: Reaction[];
   // Queue-Status (Offline-Queue)
   queueStatus?: 'pending' | 'error';
+  // Nur lokal: HTTP-Status, mit dem der Server eine eigene Nachricht
+  // abgelehnt hat. Bei einer endgueltigen Ablehnung (413, 415, sonst 4xx
+  // ausser 408/429) steht der Grund an der Nachricht (chatOutbox.sendeFehlerText).
+  sendeFehlerStatus?: number;
   localId?: string;
   // client_id der eigenen optimistischen Nachricht — Match gegen das
   // newMessage-Event (message.client_id) für In-Place-Ersetzen ohne Flackern

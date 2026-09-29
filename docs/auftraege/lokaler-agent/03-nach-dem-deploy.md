@@ -45,6 +45,8 @@ Stunden überrollt.
 
 Die 42 Bilder unter `docs/screenshots/` zeigen den Stand vom 10.09. Sie
 dienen als Handbuch-Bilder und als Store-Bilder für 2.3.0.
+Welche Bilder was zeigen müssen und woran man ein gelungenes Bild erkennt,
+steht ausführlich in [08](08-screenshots-2.3.md).
 
 - [ ] Erst **nach** dem Deploy ziehen — sonst zeigen sie den alten Stand
       (CLAUDE.md, „Screenshots").
@@ -54,13 +56,15 @@ dienen als Handbuch-Bilder und als Store-Bilder für 2.3.0.
 - [ ] **Jedes Bild ansehen.** Keine 404-Seite, kein Ladezustand, kein
       Anmeldefehler, keine echten Namen aus anderen Gemeinden. MD5 über alle:
       keine Dubletten.
-- [ ] `npm --prefix frontend run docs:handbuch` (spiegelt die Bilder nach
-      `frontend/public/docs/bilder/`), dann `git status` — die gespiegelten
-      Bilder gehören in denselben Commit. `frontend/public/sitemap.xml` nicht
-      mit einchecken.
-- [ ] Die unreferenzierten Bilder im Handbuch-Spiegel (Sammelbefund S-17, 27
-      Stück laut Bericht) nachzählen und entfernen, wenn wirklich nichts auf
-      sie verweist.
+- [ ] `npm --prefix frontend run docs:handbuch` (legt die im Handbuch
+      eingebundenen Bilder als WebP unter `frontend/public/docs/bilder/` ab
+      und schreibt `stand.json`; zum Kodieren braucht er Playwright mit
+      Chromium wie `screenshots.mjs`), dann `git status` — WebP-Dateien und
+      `stand.json` gehören in denselben Commit. `frontend/public/sitemap.xml`
+      nicht mit einchecken.
+- [x] Die unreferenzierten Bilder im Handbuch-Spiegel (Sammelbefund S-17):
+      erledigt 29.09.2026 — der Generator legt nur noch ab, was ein Kapitel
+      einbindet, und räumt den Rest weg (Doku-Audit BF-18).
 
 ## 5. Am Gerät (für Simon vorbereiten)
 

@@ -106,7 +106,9 @@ Gemeinde steht auch im Betreff. Gelöschte und gesperrte Konten bekommen keinen
 Link — mit ihnen ginge die Anmeldung ohnehin nicht.
 
 **Der Link gilt 24 Stunden** und lässt sich nur einmal verwenden. Wer zu spät
-kommt, fordert einen neuen an. Ist das neue Passwort gesetzt, kommt eine
+kommt, fordert einen neuen an. Kommen aus demselben Netz in einer Viertelstunde
+20 ungültige Links an, meldet die Seite „Zu viele ungültige Links zum
+Zurücksetzen." — nach 15 Minuten geht es mit einem neuen Link weiter. Ist das neue Passwort gesetzt, kommt eine
 [Bestätigung](#die-bestaetigung-nach-einer-passwortaenderung-einordnen) an
 dieselbe Adresse.
 
@@ -192,13 +194,14 @@ Fingerabdruck eingerichtet ist. Im Browser steht er nicht.
 
 ### Kurze Abstecher sperren nicht
 
-Ein Foto auswählen, der Teilen-Dialog, ein Link, der eine Karte oder den Store
-öffnet, eine Datei, die in einer anderen App aufgeht (auf Android etwa ein
+Ein Foto oder eine Datei auswählen — im Chat, im Material, für einen Antrag
+oder eine Challenge —, der Teilen-Dialog, ein Link nach draußen (Karte, Store,
+Musik oder eine Webseite), eine Datei, die in einer anderen App aufgeht (auf Android etwa ein
 Word-Dokument), und die Face-ID-Abfrage selbst — all das schickt die App
 technisch in den Hintergrund, zählt aber nicht als Verlassen. Auch bei
 **„Sofort"** sperrt die App dabei nicht, und auch dann nicht, wenn du länger in
-der anderen App liest. Du wirst also nicht mitten in einer Challenge-Abgabe
-ausgesperrt. Wo eine Datei aufgeht, steht unter
+der Auswahl blätterst oder in der anderen App liest. Du wirst also nicht mitten
+in einer Challenge-Abgabe ausgesperrt. Wo eine Datei aufgeht, steht unter
 [Eine Datei öffnen und vergrößern](03-bedienung.md#eine-datei-oeffnen-und-vergroessern).
 
 ### Wieder hineinkommen
@@ -255,6 +258,12 @@ wie gewohnt, und Bildschirmfotos gehen auf allen Geräten.
 > neugierige Blicke, wenn das Handy herumliegt. Sie verschlüsselt nichts und
 > hält niemanden auf, der das Gerät technisch auseinandernimmt. Für den Alltag
 > reicht das — mehr verspricht sie nicht.
+
+**Was die App auf dem Gerät ablegt, bleibt in der App.** Fotos und Dateien, die
+noch auf das Hochladen warten, und Dateien, die du aus dem Chat teilst,
+erscheinen auf dem iPhone nicht in der Dateien-App und auf Android nicht im
+Ordner „Dokumente“. Willst du eine Datei behalten, sicherst du sie über das
+Teilen-Menü, etwa mit „In Dateien sichern“.
 
 ### Die Einstellung gilt nur auf diesem Gerät
 
@@ -395,6 +404,7 @@ Dabei passiert automatisch:
 |---|---|
 | „Dieser Einladungscode existiert nicht" | Vertipper oder gelöschter Code — Groß- und Kleinschreibung ist egal, aber jede Stelle zählt. Zur Not neue Einladung erzeugen. |
 | „Dieser Einladungscode ist abgelaufen" | Die gewählte Gültigkeit ist um. Die Gemeindeleitung erzeugt einen neuen Code. |
+| „Zu viele unbekannte Einladungscodes. …" | Aus demselben Netz wurden in einer Viertelstunde 60 Codes geprüft, die es nicht gibt — etwa eine ganze Gruppe mit Vertippern im Gemeinde-WLAN. Nach 15 Minuten geht es wieder; gültige und abgelaufene Codes zählen dabei nicht mit. |
 | „Benutzername bereits vergeben" | Einen anderen wählen — geprüft wird schon beim Eintippen, nicht erst beim Absenden. Wurden aus demselben Netz in einer Viertelstunde sehr viele vergebene Namen geprüft, bleibt der Hinweis beim Eintippen eine Weile aus; das Absenden meldet einen vergebenen Namen trotzdem. |
 | „Die Anzahl der Konfis ist erreicht …" | Das Konfi-Kontingent des Tarifs ist voll. Da hilft nur die Gemeindeleitung — sie muss den Tarif anpassen. |
 
@@ -419,6 +429,7 @@ und darunter, woran es liegt:
 | „Falsches Passwort. Bitte versuche es erneut." | Benutzername oder Passwort stimmt nicht — welches von beiden, sagt die App absichtlich nicht. Beim Passwort zählt Groß- und Kleinschreibung, beim [Benutzernamen](#den-richtigen-benutzernamen-finden) nicht. |
 | „Zu viele falsche Anmeldeversuche für dieses Konto. …" | Für dieses Konto kamen zehn falsche Passwörter innerhalb einer Stunde — siehe [Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen). |
 | „Zu viele Login-Versuche. Bitte warte 15 Minuten." | Aus demselben Netz kamen in einer Viertelstunde sehr viele falsche Passwörter, etwa im Gemeinde-WLAN. Warten hilft. |
+| „Zu viele abgelaufene Anmeldungen von dieser Verbindung. …" | Aus demselben Netz wurden in einer Viertelstunde sehr viele abgelaufene Anmeldungen erneuert. Nach 15 Minuten neu anmelden. |
 | „Dein Zugang wurde deaktiviert. …" | Das Konto ist deaktiviert oder die Konfi-Zeit ist vorbei — siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht). |
 | „Diese Gemeinde ist derzeit gesperrt. …" oder „Die Testphase dieser Gemeinde ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Gemeindeleitung mit dem Betrieb von Konfi Quest. |
 | „Keine Verbindung zum Server. …" | Das Gerät erreicht Konfi Quest nicht. WLAN oder mobile Daten prüfen und noch einmal versuchen. |

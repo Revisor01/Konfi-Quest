@@ -756,6 +756,14 @@ paths:
       summary: Jahrgang löschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)
       description: >
         Aktive Konfis (Rolle konfi) blockieren die Löschung immer.
+        Massgeblich ist die Rolle IN DER GEMEINDE DES KONFI-PROFILS
+        (users.role_id fuer die Stamm-Gemeinde, user_organizations.role_id
+        fuer eine weitere; utils/konfiHistorie.js ROLLE_IN_PROFIL_GEMEINDE),
+        an allen vier Stellen gleich: Vorschau (loeschvorschau), Sperre,
+        Sicherung der Konfi-Zeit, Loesen des Profils. BEHOBEN 29.09.2026:
+        Vorher las jede Stelle die Rolle am Konto -- ein Konto, das zuhause
+        Leitung und hier Konfi ist, galt als befoerdert: keine Sperre, eine
+        Kopie "Konfi-Zeit", Profil ohne Jahrgang.
         Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr
         konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom
         Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und
@@ -955,8 +963,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "Jahrgang nicht in dieser Organisation" }
-        "502": { description: "SMTP-Fehler — E-Mail konnte nicht versendet werden" }
-        "500": { description: "Fehler beim Senden der E-Mail" }
+        "500": { description: "Fehler beim Senden der E-Mail -- auch jeder SMTP-Fehler (sendEmail wirft). Behoben 29.09.2026 (Audit Chat BF-11, Rest): Hier stand ein 502 'SMTP-Fehler', den die Route nie liefern konnte; der tote Zweig ist entfernt, das Verhalten unveraendert." }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateMatrixEmail]

@@ -27,6 +27,7 @@ import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import EinladungenKarte from '../../shared/EinladungenKarte';
 import PushAuswahlEintrag from '../../shared/PushAuswahl';
+import AbsturzberichteSchalter from '../../shared/AbsturzberichteSchalter';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
@@ -44,6 +45,7 @@ import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
+import { linkOeffnen } from '../../../services/systemDialoge';
 
 interface KonfiProfile {
   id: number;
@@ -442,7 +444,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                       }}
                       onClick={() => {
                         if (profile.confirmation_location) {
-                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.confirmation_location)}`, '_blank');
+                          linkOeffnen(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.confirmation_location)}`);
                         }
                       }}
                     >
@@ -651,6 +653,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                   Blendet sich selbst aus, wenn das Geraet keine eingerichtete
                   Biometrie hat. */}
               <AppSperreSchalter variante="purple" />
+              {/* Absturzberichte an/aus (nur in der App, im Browser leer) */}
+              <AbsturzberichteSchalter variante="purple" />
               <EinladungenKarte variante="purple" />
               <PushAuswahlEintrag variante="purple" presentingRef={pageRef} presentingElement={presentingElement} />
 

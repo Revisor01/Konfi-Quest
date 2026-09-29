@@ -40,7 +40,7 @@ vi.mock('@capacitor/preferences', () => ({
 // Sicherer Speicher als einfache Map. setData/getSecureData/deleteData bilden
 // das Verhalten des Plugins nach; die Fehlerfaelle werden je Test gesetzt.
 const sicher = new Map<string, string>();
-const mockSetData = vi.fn(async ({ key, value }: { key: string; value: string }) => {
+const mockSetData = vi.fn(async ({ key, value }: { key: string; value: string; accessControl?: number }) => {
   sicher.set(key, value);
 });
 const mockGetSecureData = vi.fn(async ({ key }: { key: string }) => {

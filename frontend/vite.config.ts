@@ -1,9 +1,11 @@
-/// <reference types="vitest" />
-
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+// defineConfig aus vitest/config: Es kennt den Block `test` unten. Das
+// frühere `/// <reference types="vitest" />` hängt die Typen seit Vitest 4
+// nicht mehr ein, `tsc -p tsconfig.test.json` meldete den Block als Fehler.
+import { defineConfig } from 'vitest/config'
+import { appBuendelPlugin } from './scripts/app-buendel.mjs'
 
 // Version aus version.json zur Bauzeit einsetzen (__APP_VERSION__).
 // Gebraucht von utils/appVersion.ts als Browser-Rueckfallebene: Dort gibt es
@@ -16,10 +18,26 @@ const appVersion = JSON.parse(readFileSync(versionsDatei, 'utf8')).version as st
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react()
+    react(),
+    // Legt nach dem Build dist-app/ an: das Bündel fuer die nativen Apps,
+    // ohne Handbuch, API-Referenz, Werbeseite und Rechtstexte (29.09.2026,
+    // Toolchain-Audit BF-02). Capacitor nimmt nur dieses Verzeichnis
+    // (capacitor.config.ts, webDir). dist/ bleibt die Web-Auslieferung.
+    // Was hinein darf und warum: scripts/app-buendel.mjs.
+    appBuendelPlugin(),
   ],
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
+  },
+  build: {
+    // Vites Warnung "Some chunks are larger than 500 kB" angehoben
+    // (29.09.2026, Toolchain-Audit BF-11). Der eine grosse Chunk (1.405.726
+    // Bytes) ist zu 1,02 MB die Komponenten-Bibliothek von Ionic, die
+    // @ionic/react beim Start vollstaendig laedt -- ihn zu teilen aenderte
+    // nichts an der Menge, die der Start braucht. Die Summe des Starts
+    // bewacht START_BUDGET_GZIP_BYTES in scripts/app-buendel.mjs (der Build
+    // bricht dort ab). Die Grenze hier warnt, wenn der Chunk noch waechst.
+    chunkSizeWarningLimit: 1500,
   },
   // Worker als ES-Modul bündeln (29.09.2026). Einziger Worker über Vite ist
   // der von pdf.js (utils/pdfDokument.ts, ?worker&url). pdf.js startet ihn mit
@@ -72,6 +90,14 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
+    // Feste Zeitzone fuer jeden Lauf (Audit Tests 26.09.2026, BF-15). Die App
+    // rechnet Datum und Uhrzeit in der Zone des Geraets, und die Geraete
+    // stehen in Deutschland. Ohne diese Zeile lief die Suite lokal in der
+    // Zone des Rechners und in der CI in UTC; unter UTC+14 fielen 13 Tests
+    // (29.09.2026 gemessen). Wacht: src/__tests__/zeitzoneFest.test.ts.
+    env: {
+      TZ: 'Europe/Berlin',
+    },
     alias: {
       /*
        * Im Testlauf zusaetzlich auf die ESM-Fassung des Plugins zeigen.

@@ -11,7 +11,7 @@
 // Wertung in badges.js (checkAndAwardBadges). Progress und Vergabe müssen
 // exakt gleich zählen, sonst zeigt die App 10/10 ohne dass der Badge kommt.
 
-const { computeCurrentStreak } = require('./streakCalculation');
+const { angezeigteSerie } = require('./streakCalculation');
 const { KONFI_BADGE_EVENT_CONDITION } = require('./badgeEventRule');
 const { berechneBadgeProgress, bedingungFehlt } = require('./badgeProgress');
 const { KONFI_KATEGORIE_NAMEN_SQL } = require('./badgeKategorieRegel');
@@ -143,7 +143,10 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
   const uniqueActivityCount = parseInt(uniqueActivitiesRes.rows[0]?.count || 0);
   const bonusPointsTotal = parseInt(bonusPointsRes.rows[0]?.total || 0);
   const allDates = datesRes.rows.map(r => r.date);
-  const currentStreak = computeCurrentStreak(allDates);
+  // Fuer die ANZEIGE: eine gerissene Serie zeigt 0 (29.09.2026, Begruendung
+  // in utils/streakCalculation.js angezeigteSerie). Die Wertung in badges.js
+  // zaehlt unveraendert ab der letzten aktiven Woche.
+  const currentStreak = angezeigteSerie(allDates);
   // Map statt Plain Object: schuetzt vor Prototype-Keys als Kategorie-/Aktivitaetsnamen.
   const categoryCounts = new Map(categoryCountsRes.rows.map(r => [r.name, parseInt(r.count)]));
   const activityNameCounts = new Map(activityNameCountsRes.rows.map(r => [r.name, parseInt(r.count)]));

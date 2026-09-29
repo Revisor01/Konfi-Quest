@@ -131,7 +131,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/refresh</code></div>
         <p class="summary">Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window genau einmal)</p>
-        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login</div><div class="hinweis">token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette</div>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>refreshLimiter</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login</div><div class="hinweis">token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/switch-org</code></div>
         <p class="summary">Aktive Organisation wechseln — neues Access-Token mit active_organization_id-Claim</p>
@@ -178,11 +178,11 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/reset-password</code></div>
         <p class="summary">Passwort mit Reset-Token setzen (oeffentlich)</p>
-        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>validateResetPassword</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Token-Lookup in password_resets (used_at IS NULL, expires_at &gt; NOW)</div>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>resetTokenLimiter</code> · <code>validateResetPassword</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Token-Lookup in password_resets (used_at IS NULL, expires_at &gt; NOW)</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/auth/validate-invite/{code}</code></div>
         <p class="summary">Einladungscode prüfen (oeffentlich) — liefert Jahrgang + Org-Name</p>
-        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur Existenz + Ablauf</div>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>einladungscodeLimiter</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur Existenz + Ablauf</div>
       </article></div>
     </section><section id="organisationen" class="service" style="--service:#0369a1">
       <header class="service-kopf"><h2>Organisationen</h2><p class="service-meta">15 Operationen</p></header>
@@ -395,7 +395,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/konfis/{id}/badges</code></div>
         <p class="summary">Abzeichen und Fortschritt eines Konfis (Leitungs-Einsicht)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und nicht gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)</div><div class="hinweis">Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges. Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner).</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel muss IN DER AKTIVEN GEMEINDE Rolle konfi haben (ladeRolleInGemeinde: users.role_id zuhause, user_organizations.role_id in einer weiteren), dort ein Konfi-Profil haben (darfKonfi) und nicht gelöscht sein, sonst 404; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)</div><div class="hinweis">Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges. Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner). Behoben 29.09.2026: Die Zugehoerigkeit las nur users.organization_id und die Rolle am Konto — eine Konfi, die ueber user_organizations in dieser Gemeinde Konfi ist, bekam 404, waehrend /:id/event-points (darfKonfi) fuer sie antwortete.</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/admin/konfis/{id}/bonus-points</code></div>
         <p class="summary">Bonuspunkte vergeben</p>

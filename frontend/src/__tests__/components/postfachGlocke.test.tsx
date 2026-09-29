@@ -64,7 +64,7 @@ import { ICON_GLOCKE } from '../../components/shared/icons';
 const item = (id: string): QueueItem => ({
   id, method: 'POST', url: '/x', maxRetries: 3, retryCount: 0,
   createdAt: 0, hasFileUpload: false,
-  metadata: { type: 'konfi', clientId: id, label: 'Aktivität melden' },
+  metadata: { type: 'request', clientId: id, label: 'Aktivität melden' },
 });
 const fehlschlag = (id: string): FailedAction => ({
   id, label: 'Abmeldung', type: 'opt-out', createdAt: 0, failedAt: 0,

@@ -1695,10 +1695,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     //
     // "Das erste Abzeichen" weiter unten ist davon unberuehrt -- die Seite
     // will das FRUEHESTE des Zeitraums und hat ihren eigenen Zeitfilter.
+    //
+    // NUR TEAM-ABZEICHEN (29.09.2026): Eine befoerderte Teamer:in behaelt
+    // ihre Konfi-Abzeichen. Ohne die Grenze zaehlte die Seite sie mit --
+    // ueber einem Nenner, der nur die Team-Abzeichen kennt ("3 von 1").
+    // Dieselbe Grenze wie der Nenner darunter und die Aktivitaeten oben.
     const { rows: teamerBadges } = await client.query(
       `SELECT cb.name, cb.icon, cb.color FROM user_badges ub
        JOIN custom_badges cb ON ub.badge_id = cb.id
        WHERE ub.user_id = $1 AND ub.organization_id = $2
+         AND cb.target_role = 'teamer'
        ORDER BY ub.awarded_date DESC`,
       [userId, orgId]
     );
@@ -1744,11 +1750,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
 
     // DAS ERSTE ABZEICHEN des Jahres -- dieselbe Idee wie beim ersten
-    // Termin: nicht wie viele, sondern welches zuerst.
+    // Termin: nicht wie viele, sondern welches zuerst. Nur Team-Abzeichen
+    // (29.09.2026): Wer im Fruehjahr noch Konfi war, bekam hier sonst ein
+    // Konfi-Abzeichen aus der Zeit vor der Befoerderung.
     const { rows: [erstesAbzeichen] } = await client.query(
       `SELECT cb.name, cb.icon, cb.color, ub.awarded_date FROM user_badges ub
          JOIN custom_badges cb ON ub.badge_id = cb.id
         WHERE ub.user_id = $1 AND ub.organization_id = $2
+          AND cb.target_role = 'teamer'
           AND ub.awarded_date >= $3::date
           AND ub.awarded_date < ($4::date + INTERVAL '1 day')
         ORDER BY ub.awarded_date ASC
@@ -2888,11 +2897,15 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
               WHERE ua.organization_id = $1 AND r.name = 'teamer'
                 AND a.target_role = 'teamer'
              UNION ALL
+             -- Abzeichen: nur Team-Abzeichen (29.09.2026) -- die
+             -- Konfi-Abzeichen Befoerderter kommen im Rueckblick nicht vor.
              SELECT EXTRACT(YEAR FROM ub.awarded_date)::int
                FROM user_badges ub
+               JOIN custom_badges cb ON cb.id = ub.badge_id
                JOIN users u ON ub.user_id = u.id
                JOIN roles r ON u.role_id = r.id
               WHERE ub.organization_id = $1 AND r.name = 'teamer'
+                AND cb.target_role = 'teamer'
              UNION ALL
              -- Zertifikate: sie haben im Teamer-Rueckblick eine eigene
              -- Seite, gehoeren also zu den Quellen.

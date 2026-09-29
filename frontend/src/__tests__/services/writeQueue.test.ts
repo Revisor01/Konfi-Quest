@@ -10,8 +10,8 @@ vi.mock('@capacitor/preferences', () => ({
   },
 }));
 
-const mockReadFile = vi.fn(async () => ({ data: btoa('fake-image-bytes') }));
-const mockDeleteFile = vi.fn(async () => undefined);
+const mockReadFile = vi.fn(async (..._args: unknown[]) => ({ data: btoa('fake-image-bytes') }));
+const mockDeleteFile = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock('@capacitor/filesystem', () => ({
   Filesystem: {
     readFile: (...args: unknown[]) => mockReadFile(...args),
@@ -91,6 +91,46 @@ describe('writeQueue — Chat-Bild Offline-Upload (Datenverlust-Regression)', ()
     // Der Request muss FormData (multipart) gesendet haben, nicht den rohen Body
     const sentBody = mockPost.mock.calls[0][1];
     expect(sentBody instanceof FormData).toBe(true);
+  });
+
+  // Simons Befund 29.09.2026 (Android): Eine Datei ohne Typ ging aus der
+  // Warteschlange als image/jpeg hinaus — auch ein Word-Dokument.
+  const gesendeteDatei = async (body: Record<string, string>) => {
+    mockPost.mockResolvedValue({ data: { id: 99 } });
+    const { writeQueue } = await import('../../services/writeQueue');
+    await writeQueue.enqueue({
+      method: 'POST',
+      url: '/chat/rooms/1/messages',
+      body: { _localFilePath: 'queue-uploads/x', content: '', client_id: 'c3', ...body },
+      maxRetries: 5,
+      hasFileUpload: true,
+      metadata: { type: 'chat', clientId: 'c3', roomId: 1 },
+    });
+    await writeQueue.flush();
+    const datei = (mockPost.mock.calls[0][1] as FormData).get('file') as File;
+    return [datei.name, datei.type];
+  };
+
+  it('eine Word-Datei ohne Typ geht mit dem Typ ihrer Endung hinaus, nicht als image/jpeg', async () => {
+    expect(await gesendeteDatei({ _fileName: 'Einladung.docx', _fileType: '' }))
+      .toEqual(['Einladung.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+  });
+
+  it('application/octet-stream zählt wie kein Typ', async () => {
+    expect(await gesendeteDatei({ _fileName: 'Plan.pdf', _fileType: 'application/octet-stream' }))
+      .toEqual(['Plan.pdf', 'application/pdf']);
+  });
+
+  it('ein gespeicherter Typ bleibt', async () => {
+    expect(await gesendeteDatei({ _fileName: 'abc.jpg', _fileType: 'image/png' })).toEqual(['abc.jpg', 'image/png']);
+  });
+
+  it('ohne Endung wird nichts geraten: application/octet-stream, der Server entscheidet', async () => {
+    expect(await gesendeteDatei({ _fileName: 'Einladung', _fileType: '' })).toEqual(['Einladung', 'application/octet-stream']);
+  });
+
+  it('alte Einträge ganz ohne Namen und Typ bleiben ein Foto (image.jpg)', async () => {
+    expect(await gesendeteDatei({})).toEqual(['image.jpg', 'image/jpeg']);
   });
 });
 
@@ -655,5 +695,64 @@ describe('writeQueue — meldet Aenderungen an die Anzeige', () => {
     expect(JSON.parse(store['queue:items'] || '[]')).toHaveLength(0);
 
     abmelden();
+  });
+});
+
+describe('writeQueue — endgueltig abgelehnt: eine Regel fuer Warteschlange und Direktversand', () => {
+  beforeEach(() => {
+    store = {};
+    mockOnline = true;
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  it('4xx ausser 408/429 ist endgueltig, alles andere nicht', async () => {
+    const { endgueltigAbgelehnt } = await import('../../utils/fehler');
+    for (const status of [400, 401, 403, 404, 409, 413, 415, 422]) expect(endgueltigAbgelehnt(status)).toBe(true);
+    for (const status of [undefined, 0, 200, 408, 429, 500, 502, 503]) expect(endgueltigAbgelehnt(status)).toBe(false);
+  });
+
+  it('413 beim Nachsenden: kein zweiter Versuch, die Nachricht landet im Merker', async () => {
+    mockPost.mockRejectedValue({ response: { status: 413, data: { error: 'Datei ist zu groß (max. 5 MB).' } } });
+    const { writeQueue } = await import('../../services/writeQueue');
+    await writeQueue.enqueue(chatItem('gross-1'));
+
+    await writeQueue.flush();
+    await writeQueue.flush();
+
+    expect(mockPost).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(store['queue:items'] || '[]')).toHaveLength(0);
+    const merker = await writeQueue.getFailedChat(1);
+    expect(merker.map((m) => [m.clientId, m.error.status])).toEqual([['gross-1', 413]]);
+  });
+
+  it('chatAblehnungMerken: eine beim Direktversand abgelehnte Nachricht kommt in den Merker, nicht in die Warteschlange', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+
+    await writeQueue.chatAblehnungMerken(
+      { clientId: 'direkt-1', roomId: 1, content: 'Hier das Plakat', fileName: 'Plakat.pdf', fileType: 'application/pdf', createdAt: 1000 },
+      { status: 415, message: 'Dieser Dateityp kann nicht gesendet werden.' }
+    );
+
+    expect(JSON.parse(store['queue:items'] || '[]')).toHaveLength(0);
+    const merker = await writeQueue.getFailedChat(1);
+    expect(merker).toHaveLength(1);
+    expect(merker[0]).toMatchObject({
+      clientId: 'direkt-1', roomId: 1, content: 'Hier das Plakat', fileName: 'Plakat.pdf', fileType: 'application/pdf',
+      createdAt: 1000, error: { status: 415, message: 'Dieser Dateityp kann nicht gesendet werden.' },
+    });
+    // Keine lokale Kopie: Die Datei geht so ohnehin nicht durch.
+    expect(merker[0].localFilePath).toBeUndefined();
+    expect(await writeQueue.getFailedChat(2)).toHaveLength(0);
+  });
+
+  it('chatAblehnungMerken ersetzt einen alten Eintrag derselben client_id', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    const eintrag = { clientId: 'direkt-2', roomId: 1, content: '', fileName: 'a.pdf', fileType: 'application/pdf', createdAt: 1 };
+    await writeQueue.chatAblehnungMerken(eintrag, { status: 413, message: 'x' });
+    await writeQueue.chatAblehnungMerken(eintrag, { status: 415, message: 'y' });
+
+    const merker = await writeQueue.getFailedChat(1);
+    expect(merker.map((m) => m.error.status)).toEqual([415]);
   });
 });

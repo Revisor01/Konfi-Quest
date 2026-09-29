@@ -113,6 +113,17 @@ export function fehlerStatus(err: unknown): number | undefined {
 }
 
 /**
+ * Hat der Server endgueltig abgelehnt, sodass ein neuer Versuch nichts
+ * aendert? 4xx ausser 408 (Zeitueberschreitung) und 429 (zu viele Anfragen).
+ * Dieselbe Regel gilt fuer die Warteschlange (services/writeQueue.ts, flush)
+ * und den direkten Versand im Chat (components/chat/ChatRoom.tsx) -- an einer
+ * Stelle, damit sie nicht auseinanderlaufen (29.09.2026).
+ */
+export function endgueltigAbgelehnt(status: number | undefined): boolean {
+  return typeof status === 'number' && status >= 400 && status < 500 && status !== 408 && status !== 429;
+}
+
+/**
  * Netzwerkfehler: keine Response vorhanden oder axios-Code ERR_NETWORK.
  * (Ein plain `Error` ohne response zählt wie bisher als Netzwerkfehler.)
  */

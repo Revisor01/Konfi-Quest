@@ -36,13 +36,17 @@ vi.mock('../../contexts/AppContext', () => ({
   useApp: () => ({ setError, setSuccess, isOnline: true }),
 }));
 
-const apiPost = vi.fn(async () => ({ data: {} }));
+type Hochladen = (
+  route: string,
+  daten?: unknown,
+  optionen?: { onUploadProgress?: (e: { loaded: number; total: number }) => void },
+) => Promise<unknown>;
+const apiPost = vi.fn<Hochladen>(async () => ({ data: {} }));
 vi.mock('../../services/api', () => ({
-  default: { post: (...args: unknown[]) => apiPost(...args), get: vi.fn() },
+  default: { post: (...args: Parameters<Hochladen>) => apiPost(...args), get: vi.fn() },
   DATEI_TIMEOUT_MS: 180000,
 }));
 vi.mock('../../services/analytics', () => ({ track: vi.fn() }));
-vi.mock('../../services/appSperre', () => ({ ohneSperre: (ablauf: () => Promise<unknown>) => ablauf() }));
 vi.mock('../../hooks/useDateiOeffnen', () => ({
   useDateiOeffnen: () => ({ dateiOeffnen: vi.fn(), ladendeDatei: null }),
 }));
@@ -50,6 +54,7 @@ vi.mock('../../hooks/useDateiOeffnen', () => ({
 import { useChatDateien } from '../../components/chat/useChatDateien';
 import ChallengeSubmitModal from '../../components/konfi/modals/ChallengeSubmitModal';
 import { fuerUploadVorbereiten, UPLOAD_GRENZE, zuGrossText } from '../../services/mediaCompression';
+import { laeuftAusflug } from '../../services/appSperre';
 
 const datei = (bytes: number, name: string, typ: string) =>
   new File([new Uint8Array(bytes)], name, { type: typ });
@@ -107,7 +112,7 @@ describe('Chat: derselbe Weg', () => {
   const auswaehlen = async (gewaehlt: File) => {
     const { result } = renderHook(() => useChatDateien({ messages: [] }));
     await act(async () => {
-      await result.current.handleFileSelect({ target: { files: [gewaehlt], value: 'x' } } as unknown as React.ChangeEvent<HTMLInputElement>);
+      await result.current.dateiUebernehmen(gewaehlt);
     });
     return result;
   };
@@ -141,9 +146,14 @@ describe('Challenge-Foto einreichen: verkleinert, mit der Sende-Anzeige des Chat
     starts_at: new Date(Date.now() - 86400000).toISOString(), ends_at: new Date(Date.now() + 86400000).toISOString(),
   };
 
+  // Ob die App-Sperre beim Öffnen der Auswahl abgemeldet war.
+  let ausflugBeimOeffnen: boolean | null = null;
+
   const fotoWaehlen = (gewaehlt: File) => {
     // Die Dateiauswahl des Systems: Das unsichtbare Feld meldet die Datei.
+    ausflugBeimOeffnen = null;
     HTMLInputElement.prototype.click = function (this: HTMLInputElement) {
+      ausflugBeimOeffnen = laeuftAusflug();
       Object.defineProperty(this, 'files', { value: [gewaehlt], configurable: true });
       this.onchange?.({ target: this } as unknown as Event);
     };
@@ -156,6 +166,8 @@ describe('Challenge-Foto einreichen: verkleinert, mit der Sende-Anzeige des Chat
     );
 
     await act(async () => { fireEvent.click(getByText('Foto hinzufügen')); });
+    // Die Auswahl ging über die Hülle auf — mit abgemeldeter App-Sperre.
+    expect(ausflugBeimOeffnen).toBe(true);
     await waitFor(() => expect(container.querySelector('img[alt="Dein Foto"]')).not.toBeNull());
 
     await act(async () => { fireEvent.click(container.querySelector('[aria-label="Beitrag einreichen"]')!); });
@@ -172,8 +184,8 @@ describe('Challenge-Foto einreichen: verkleinert, mit der Sende-Anzeige des Chat
     fotoWaehlen(datei(100 * 1024, 'klein.jpg', 'image/jpeg'));
     let fortschritt: ((e: { loaded: number; total: number }) => void) | undefined;
     let fertig: () => void = () => undefined;
-    apiPost.mockImplementationOnce((_route: string, _daten: unknown, optionen: { onUploadProgress?: (e: { loaded: number; total: number }) => void }) => {
-      fortschritt = optionen.onUploadProgress;
+    apiPost.mockImplementationOnce((_route, _daten, optionen) => {
+      fortschritt = optionen?.onUploadProgress;
       return new Promise((resolve) => { fertig = () => resolve({ data: {} }); });
     });
     const { container, getByText } = render(

@@ -1417,12 +1417,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         payload: message,
         textFuer: ({ roomName, isDirectChat }) => ({
           title: isDirectChat ? message.sender_name : roomName,
-          // Text der Mitteilung: siehe utils/pushText.js — dort steht auch,
-          // warum es KEINE echte Bildvorschau gibt.
+          // Text der Mitteilung: nur Absender und Art, kein Inhalt (Simon,
+          // 29.09.2026) — Begruendung in utils/pushText.js, dort auch, warum
+          // es KEINE echte Bildvorschau gibt.
           body: chatPushText({
-            content,
             messageType: message.message_type,
-            fileName: message.file_name,
             senderName: message.sender_name,
             isDirectChat,
           }),
@@ -2227,9 +2226,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           sender: { id: userId, type: userType, name: senderName },
           messageId,
           payload: pollMessage,
-          textFuer: ({ roomName }) => ({
-            title: roomName,
-            body: `${senderName}: [Umfrage] ${question}`,
+          // Ohne die Frage selbst, wie bei jeder Chat-Nachricht (utils/pushText.js).
+          textFuer: ({ roomName, isDirectChat }) => ({
+            title: isDirectChat ? senderName : roomName,
+            body: chatPushText({ messageType: 'poll', senderName, isDirectChat }),
           }),
         });
       }, 'Umfrage-Nacharbeit');

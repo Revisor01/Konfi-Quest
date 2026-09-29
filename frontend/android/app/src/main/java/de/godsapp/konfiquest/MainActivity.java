@@ -1,6 +1,7 @@
 package de.godsapp.konfiquest;
 
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.view.WindowManager;
 
 import com.getcapacitor.BridgeActivity;
@@ -40,6 +41,16 @@ public class MainActivity extends BridgeActivity {
 
     /** Schluessel der Sperr-Einstellung, identisch zu services/appSperre.ts. */
     private static final String SCHLUESSEL = "konfi_app_sperre_verzoegerung";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        // Eigene Plugins VOR super.onCreate anmelden: Dort entsteht die
+        // Bruecke, und sie kennt danach nur, was bis dahin angemeldet ist.
+        // AppSymbolZahl setzt auf Android die Zahl am App-Symbol
+        // (services/appSymbolZahl.ts, 29.09.2026).
+        registerPlugin(AppSymbolZahlPlugin.class);
+        super.onCreate(savedInstanceState);
+    }
 
     @Override
     public void onResume() {

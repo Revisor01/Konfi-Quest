@@ -22,6 +22,11 @@ import { useAppLocation } from '../../navigation/useAppLocation';
 import { useBadge } from '../../contexts/BadgeContext';
 import { bereichAusPfad, trackBereich } from '../../services/analytics';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
+// Statisch (29.09.2026, Toolchain-Audit BF-11): Das Theme laden App.tsx und
+// segmentGlas.ts ohnehin beim Start; das fruehere `await import()` hier
+// brachte keinen eigenen Chunk, nur die Build-Warnung
+// INEFFECTIVE_DYNAMIC_IMPORT.
+import { registerTabBarEffect } from '@rdlabo/ionic-theme-ios27';
 // AdminRolesPage entfernt - Rollen sind jetzt hardcoded
 
 
@@ -161,11 +166,9 @@ const MainTabs: React.FC = () => {
     let cleanupFns: Array<() => void> = [];
     let cancelled = false;
 
-    const setup = async () => {
+    const setup = () => {
       try {
-        const mod = await import('@rdlabo/ionic-theme-ios27');
-        if (cancelled) return;
-        const register = mod.registerTabBarEffect;
+        const register = registerTabBarEffect;
         if (typeof register !== 'function') return;
 
         let attempts = 0;
@@ -191,7 +194,7 @@ const MainTabs: React.FC = () => {
         };
         tryRegister();
       } catch (e) {
-        console.warn('TabBar effect import failed:', e);
+        console.warn('TabBar effect setup failed:', e);
       }
     };
 

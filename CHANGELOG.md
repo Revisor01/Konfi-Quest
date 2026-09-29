@@ -193,8 +193,16 @@ iOS-Build 234 · Android versionCode 128
   zusagt oder absagt — als Mitteilung und im Postfach; Antippen öffnet die
   Benutzerliste. Gehört die einladende Person dort nicht mehr zur
   Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
+- Im Profil lassen sich die Absturzberichte abschalten: Der Schalter
+  „Absturzberichte senden" unter „Konto-Einstellungen" gilt für das Gerät;
+  ausgeschaltet geht kein Bericht mehr hinaus, und was noch auf dem Gerät lag,
+  wird verworfen.
 
 ### Geändert
+- Chat-Benachrichtigungen nennen nur noch, wer geschrieben hat und was es ist
+  („Neue Nachricht von Anna", „Neues Foto von Anna"). Text, Dateinamen und
+  Umfragefragen zeigt erst die App — sie stehen damit weder auf dem
+  Sperrbildschirm noch bei Google oder Apple.
 - Im Browser zeigt der Betrachter PDFs so wie die App auf Android: alle Seiten
   untereinander, mit Zoom. Bisher zeigte jeder Browser sie auf seine eigene
   Weise.
@@ -223,6 +231,10 @@ iOS-Build 234 · Android versionCode 128
   Konfi-Badges so, wie er sie verdient hat — auch wenn die Leitung ein Badge
   später löscht, umbenennt oder den Zielwert ändert. Aktuelle Konfis sehen
   Änderungen weiter sofort, ein gelöschtes Badge verschwindet bei ihnen.
+- Der Fortschritt an einem Serien-Badge zeigt 0, sobald die Serie gerissen
+  ist — also wenn weder in dieser noch in der vergangenen Woche etwas
+  eingetragen wurde. Bisher stand dort etwa „3/4" für eine Serie, die seit
+  Monaten vorbei war. Wann das Badge vergeben wird, ändert sich nicht.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   jeden neuen Beitrag seit dem letzten Öffnen, auch einen, der noch auf
   Freigabe wartet, und verschwindet beim Öffnen — wie im Chat. Orange steht
@@ -468,6 +480,35 @@ iOS-Build 234 · Android versionCode 128
   was verschwindet: Punkte, Badges, Stempel, Anträge samt Fotos,
   Event-Anmeldungen, Challenge-Beiträge, Chat-Nachrichten und
   Zweiergespräche; beim Team auch, was der Gemeinde bleibt.
+- Die App ist beim Herunterladen und bei jedem Update deutlich kleiner: Das
+  Handbuch mit seinen Bildern, die Werbeseite und die Rechtstexte, die sie nie
+  angezeigt hat, liegen nicht mehr darin — rund 36 MB weniger. Im Browser ist
+  alles unverändert erreichbar.
+- Das Handbuch im Browser lädt seine Bildschirmfotos viel schneller: zusammen
+  1,4 statt 12 MB, in voller Schärfe. Nach dem Austausch eines Bildes zeigt
+  der Browser gleich das neue.
+- Auf dem iPhone erscheint Konfi Quest nicht mehr in der Dateien-App: Fotos,
+  die auf das Hochladen warten, und geteilte Chat-Dateien liegen dort nicht
+  mehr offen — auch nicht an der App-Sperre vorbei.
+- Eine aus dem Chat geteilte Datei bleibt auf Android nicht mehr im
+  öffentlichen Ordner „Dokumente“ liegen, wo andere Apps sie lesen konnten.
+- Die Datenschutzerklärung beschreibt genau, wann die App einen Absturzbericht
+  sendet: auch bei abgefangenen Fehlern im Hintergrund, höchstens 20 bis zum
+  nächsten Start, dazu der Beginn jeder Sitzung.
+- Die Datenschutzerklärung nennt die Geräte-Kennung, die die App bei der
+  Anmeldung und beim Verlängern der Anmeldung sendet, wozu sie gespeichert und
+  wann sie gelöscht wird.
+- Die Datenschutzerklärung sagt, was in einer Push-Benachrichtigung steht — bei
+  Chat-Nachrichten der vollständige Text — und dass sie auf iPhone und iPad
+  auch über Apple zugestellt wird.
+- Lange Listen der Leitung — Konfis, Events und gemeldete Aktivitäten — öffnen
+  schneller: Sie zeigen zuerst 30 Einträge und laden beim Scrollen die nächsten
+  nach; ein Knopf unter der Liste tut dasselbe. Suche, Filter und Zahlen gelten
+  weiter für die ganze Liste.
+- Auf Android steht am App-Symbol dieselbe Zahl wie auf dem iPhone, wo das
+  Handy eine Zahl anzeigen kann. Auf Samsung- und Xiaomi-Geräten, die die
+  Zahl aus den Mitteilungen bilden, ersetzt dafür jede neue Mitteilung von
+  Konfi Quest die vorige; in der Leiste steht dort nur die neueste.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
@@ -476,13 +517,50 @@ iOS-Build 234 · Android versionCode 128
   unter „Fehler".
 
 ### Behoben
+- Karten, Store-, Musik- und Weblinks aus der App lösen die App-Sperre nicht
+  mehr aus, auch nicht bei „Sofort“.
+- Lehnt der Server eine Chat-Nachricht ab — etwa weil die Datei zu groß ist
+  oder ihr Format nicht angenommen wird —, steht der Grund an der Nachricht
+  und oben als Hinweis. Die App versucht es dann nicht mehr sinnlos noch
+  einmal, und das Menü an der Nachricht bietet nur noch das Löschen an.
+- Eine im Chat geschriebene Nachricht, die nicht rausging, steht sofort als
+  fehlgeschlagen da statt weiter als „wartet“, und „Nachricht löschen“ nimmt
+  sie auch nach dem nächsten Öffnen des Chats nicht wieder zurück in die Liste.
+- Der Titel der Konfi-Liste der Leitung wird auf Android nicht mehr
+  abgeschnitten („Konfirmand…“): Er heißt wie der Reiter „Konfis“, im
+  Umschalter auf „Team“ entsprechend „Team“.
+- Die Rückfrage vor dem Löschen einer ganzen Gemeinde sagt nicht mehr, alle
+  Benutzer:innen würden gelöscht: Gelöscht werden die Konten, die nur zu
+  dieser Gemeinde gehören; wer auch zu einer anderen gehört, behält sein
+  Konto. Die Meldung danach nennt, wie viele Konten gelöscht und wie viele
+  umgezogen sind.
+- Auf Samsung- und Xiaomi-Geräten nimmt die App die Mitteilung, an der die
+  Zahl am App-Symbol hängt, aus der Leiste, sobald die Zahl auf 0 sinkt.
+  Bisher blieb dort eine 1 stehen, bis man die Mitteilung wegwischte. Alle
+  anderen Mitteilungen bleiben liegen, bis man sie antippt oder wegwischt.
+- Auf Android erscheint eine Mitteilung auch, während die App offen ist — wie
+  auf dem iPhone —, und die Zahlen an den Reitern stellen sich sofort darauf
+  ein.
 - Auf Android öffnen Bilder, Videos und PDFs jetzt in der App: im Betrachter
   mit Zoom und Wischen zu den übrigen Dateien, PDFs mit allen Seiten
   untereinander. Bisher gingen sie in eine andere App.
+- Mitteilungen zeigen auf Android in der Statusleiste und in der Mitteilung
+  die Lutherrose von Konfi Quest in Violett statt eines weißen Flecks.
 - Wer eine Datei in einer anderen App öffnet — auf Android etwa ein
   Word-Dokument — und zurückkommt, wird bei eingeschalteter App-Sperre nicht
   mehr nach Fingerabdruck oder Face ID gefragt. Bisher kam die Abfrage bei
   „Sofort" nach jeder Datei.
+- Die Dateiauswahl löst die App-Sperre nicht mehr aus: Wer im Chat, im
+  Material oder für einen Antrag ein Foto oder eine Datei auswählt, wird danach
+  nicht mehr nach Fingerabdruck oder Face ID gefragt.
+- Word-Dateien lassen sich auf Android wieder im Chat senden. Nennt das Handy
+  keinen Dateityp, zählt die Endung des Dateinamens — ebenso im Material, bei
+  Challenge-Beiträgen und beim Foto zu einem Antrag.
+- Die Dateiauswahl im Chat bietet alle Formate an, die der Chat annimmt, auch
+  PowerPoint, CSV und Tondateien.
+- Eine Datei in einem Format, das Chat oder Material nicht annehmen, fällt
+  nicht mehr still weg: Die Chat-Nachricht geht dann nicht ohne sie raus, und
+  das Material meldet „Dieser Dateityp kann nicht hochgeladen werden."
 - Teamer:innen und Leitung lassen sich wieder von Hand zu Events hinzufügen:
   Die Auswahl blieb leer, obwohl sie dem Jahrgang des Events zugewiesen waren.
 - Wer über eine Einladung im Team oder in der Leitung einer Gemeinde ist, steht
@@ -532,6 +610,9 @@ iOS-Build 234 · Android versionCode 128
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und
   kommt beim Zurückgehen in die Liste nicht wieder, auch wenn Beiträge dort ein
   Datum in der Zukunft tragen.
+- Endet oder beginnt eine Challenge, während sie offen ist, zeigt die Ansicht
+  das im selben Moment: Eine gerade beendete Challenge bietet kein Einreichen
+  mehr an, statt bis zum nächsten Laden als laufend dazustehen.
 - Die Zahl am App-Symbol zählt keine Chat-Nachrichten mit einem Datum in der
   Zukunft mehr mit und stimmt damit wieder mit den Reitern überein.
 - Ältere Chat-Nachrichten lassen sich durch Hochscrollen nachladen — bisher
@@ -671,6 +752,19 @@ iOS-Build 234 · Android versionCode 128
   angemeldet waren oder auf der Warteliste standen — auch Teamer:innen und
   Leitung, genau wie bei einer Absage. Bisher bekamen nur Konfis die Meldung;
   bei einem Event „Nur Team" erfuhr es niemand.
+- Eine neue Gemeinde entsteht ganz oder gar nicht: Geht beim Anlegen etwas
+  schief, bleibt keine halb angelegte Gemeinde zurück. Der Benutzername der
+  ersten Gemeindeleitung muss im ganzen System frei sein, wie bei jedem
+  anderen Konto, und der Systemname behält Umlaute als ae, oe, ue und ss
+  („buesum" statt „bsum"). Bestehende Gemeinden behalten ihren Namen.
+- Ein Konto mit Super-Admin-Recht kann die eigene Gemeinde nicht mehr löschen,
+  wenn es nur dort Mitglied ist — es hätte sich dabei selbst mitgelöscht und
+  ausgesperrt. Die Meldung sagt, wer es stattdessen tun kann.
+- Wird ein Pflicht-Event abgesagt, gilt auch eine Konfi als entschuldigt, die
+  sich abgemeldet hatte, dann doch kam und schon verbucht war. Bisher blieb
+  sie anwesend, und das abgesagte Event zählte bei ihr als besuchtes
+  Pflicht-Event. Ihre Abmeldung bleibt sichtbar; wird die Absage
+  zurückgenommen, steht sie wieder als abgemeldet da.
 - Die Mitteilung „Neues Event!" bekommen nur noch die Konfis, die das Event
   in ihrer Event-Liste finden — die Konfis der Jahrgänge, für die es gilt, bei
   einem Event ohne Jahrgang alle Konfis der Gemeinde. Bisher ging sie an alle
@@ -711,6 +805,9 @@ iOS-Build 234 · Android versionCode 128
 - Auf der Startseite fürs Team waren die Sprechblasen an Badges und
   Urkunden schmaler als anderswo, sodass Texte unnötig umbrachen. Sie sind
   jetzt so breit wie überall sonst.
+- Die Begrüßung auf der Startseite fürs Team springt beim Neuladen nicht mehr
+  zwischen „Moin" und der Tageszeit hin und her; sie wird einmal beim Öffnen
+  festgelegt.
 - Ein laufendes Event steht jetzt schon unter „Verbuchen", nicht erst nach
   seinem Ende. Bisher zeigte der Reiter „Mitmachen" während des Events eine
   rote Zahl, hinter der eine leere Liste wartete — wer mitten im Konfisamstag
@@ -1126,6 +1223,16 @@ iOS-Build 234 · Android versionCode 128
 - Android: Startbildschirme, die eine Zahl am App-Symbol von der App annehmen,
   bekommen sie jetzt gemeldet; wo das nicht geht, etwa auf Pixel-Geräten,
   zeigt das Symbol einen Punkt, solange eine Mitteilung in der Leiste liegt.
+- Android: Auf Huawei-Geräten kam die Zahl, die die App ans App-Symbol meldet,
+  in der Store-Fassung nicht an; auf Samsung-Geräten nahm sie nur einen von
+  zwei Wegen. Beides ist behoben, und Sony-Geräte mit dem älteren
+  Xperia-Startbildschirm erreicht die Zahl jetzt ebenfalls.
+- Android: Auf Sony-Geräten steht am App-Symbol die Zahl der App statt nur
+  eines Punkts — dieselbe Summe wie auf dem iPhone, auch bei geschlossener
+  App.
+- Android: Mit jeder Mitteilung zieht die Zahl am App-Symbol auf Sony- und
+  Huawei-Geräten sofort nach, wie auf dem iPhone — auch wenn die App
+  geschlossen ist.
 - Beim Öffnen der App bleiben die Mitteilungen der Leitung in der Leiste
   liegen, auf iPhone und Android, bis sie angetippt oder weggewischt werden;
   auf Android verschwinden dadurch auch Punkt oder Zahl am App-Symbol nicht
@@ -1179,8 +1286,52 @@ iOS-Build 234 · Android versionCode 128
 - Wer in einer weiteren Gemeinde mitarbeitet und dort einen Antrag gestellt
   hat, kann sein Konto wieder selbst löschen; bisher brach das mit einem
   Fehler ab.
+- Wird eine ganze Gemeinde gelöscht, behält, wer auch zu einer anderen
+  Gemeinde gehört, sein Konto und ist ab dann dort zuhause; bisher verschwand
+  es mitsamt der Arbeit in der anderen Gemeinde. Die übrigen Konten gehen
+  vollständig, auch mit ihren Spuren in anderen Gemeinden — bisher konnte das
+  Löschen der Gemeinde daran scheitern.
+- Der Team-Rückblick zählt nur Team-Badges. Badges aus der Konfi-Zeit stehen
+  dort nicht mehr — weder in der Zahl noch als erstes Badge des Jahres — und
+  machen kein Jahr mehr wählbar.
+- Wer in einer weiteren Gemeinde im Team ist, sieht dort im Profil keine
+  Konfi-Historie aus der eigenen Gemeinde mehr; sie steht in der Gemeinde, in
+  der die Konfi-Zeit war.
+- Ein Jahrgang lässt sich nicht mehr löschen, solange darin jemand Konfi ist,
+  der in einer anderen Gemeinde zum Team gehört. Bisher galt diese Person als
+  befördert und verlor beim Löschen ihren Jahrgang.
+- Eine geplante, noch nicht gestartete Challenge lässt sich nach einer
+  einfachen Rückfrage löschen, wie im Handbuch beschrieben; bisher warnte die
+  App, sie sei bereits gestartet.
 
 ### Sonstiges
+- Server, Web-Version und alle automatischen Prüfungen laufen auf derselben
+  Fassung der Laufzeitumgebung, einer mit Langzeitunterstützung.
+- Der Notfallweg zum schnellen Ausrollen oder Zurückdrehen eines Stands tauscht
+  die Server nacheinander wie jede reguläre Auslieferung und lässt sich
+  gefahrlos proben, ohne etwas zu ändern.
+- Die Web-Version gibt beim Öffnen fremder Links nur noch ihre Adresse weiter,
+  nie Einladungscodes oder Passwort-Links, und erlaubt Kamera und Mikrofon
+  nur sich selbst. Eine Schutzregel gegen eingeschleuste Skripte ist in
+  Kraft: Die Web-Version führt nur ihre eigenen Programmteile aus und lädt
+  Inhalte nur von bekannten Adressen.
+- Ein neues Android-Update erreicht über Google Play zuerst einen Teil der
+  Nutzer:innen (10 %) und erst nach Freigabe alle; Testfassungen bleiben
+  sofort für alle Testenden verfügbar.
+- Ein Stand, dessen Prüfungen länger dauern als die eines neueren, wird nicht
+  mehr nachträglich über den neueren ausgeliefert; die Web-Version kann so
+  nicht mehr unbemerkt auf einen älteren Stand zurückfallen.
+- Die Zuordnung der Web-Adresse zur iPhone-App ist korrekt hinterlegt statt
+  als Platzhalter. Einladungs- und Passwort-Links öffnen auf dem iPhone die
+  App, sobald die App diese Zuordnung selbst anmeldet.
+- Das Server-Abbild wird genau aus den festgelegten Paketständen gebaut und
+  enthält nur noch, was zum Betrieb gebraucht wird — keine Tests, keine
+  Entwicklungswerkzeuge, keine Kopie des Datenbankschemas. Es ist damit
+  rund viermal kleiner.
+- Einladungscodes, Links zum Zurücksetzen des Passworts und das Erneuern der
+  Anmeldung lassen sich nicht mehr beliebig oft durchprobieren: Nach vielen
+  Fehlversuchen aus demselben Netz ist für 15 Minuten Pause. Gültige Codes,
+  gültige Links und laufende Anmeldungen zählen dabei nicht mit.
 - Der Anmeldeschlüssel, den die App bei jeder Anfrage mitschickt, enthält
   Name und E-Mail-Adresse nicht mehr.
 - Ob ein Benutzername schon vergeben ist, lässt sich ohne Anmeldung nur noch
@@ -1223,9 +1374,21 @@ iOS-Build 234 · Android versionCode 128
 - Die iPhone-App ist auf das Startverfahren umgestellt, das neuere
   iOS-Fassungen verlangen. Für die Bedienung ändert sich nichts — ohne die
   Umstellung ließe sich die App künftig aber nicht mehr öffnen.
+- Beim Anlegen eines Events und bei der Zu- oder Absage des Teams gibt der
+  Server seine Datenbankverbindung frei, bevor Chat und Mitteilungen
+  erledigt werden. Unter Last konnten sich solche Anfragen sonst gegenseitig
+  die Verbindungen wegnehmen.
 - Der Server bricht eine Datenbankabfrage ab, die nicht mehr antwortet, statt
   ihren Platz dauerhaft zu belegen. In der Auslastungsanzeige steht jetzt auch,
   wie viele Anfragen gerade auf eine freie Datenbankverbindung warten.
+- Die Tageslosung hängt nicht mehr an einem Zusatzpaket, das auf dem Server
+  nur zufällig mitinstalliert war; fehlt es einmal, fällt sie nicht aus.
+- Zwei Bausteine des Servers — für Datei-Uploads und für die Anfragegrenzen —
+  sind auf Fassungen ohne die zuletzt gemeldeten mittelschweren
+  Sicherheitslücken gehoben.
+- Auch der Baustein für den Mailversand ist auf eine Fassung ohne die zuletzt
+  gemeldete mittelschwere Sicherheitslücke gehoben; für den Server ist damit
+  keine bekannte Lücke mehr offen.
 - Stürzt die App ab, wird das jetzt automatisch gemeldet, damit die Ursache
   gefunden werden kann. Übertragen werden nur technische Angaben und die Rolle
   in grober Einteilung — kein Name, keine Kennung. Was dabei an Google geht,
@@ -1256,7 +1419,9 @@ iOS-Build 234 · Android versionCode 128
   Sicherheitslücken in Abhängigkeiten stoppen ihn ab der Stufe „hoch".
 - Die Code-Regeln der App werden bei jeder Änderung geprüft, nicht mehr nur
   bei Pull Requests; der Altbestand an Regelverstößen in der App ist
-  abgebaut. Für den Server gibt es eine solche Prüfung noch nicht.
+  abgebaut. Der Server hat jetzt eine eigene solche Prüfung, die vor allem
+  Tippfehler in selten laufenden Abläufen findet, bevor sie ausgeliefert
+  werden.
 - An 21 geschützten Routen, für die es das bisher nicht gab, prüfen die Tests
   jetzt, dass eine fremde Gemeinde nichts sieht und nichts ändert. Zehn weiche
   Prüfungen, die auch eine falsche Antwort durchgehen ließen, erwarten jetzt
@@ -1306,6 +1471,38 @@ iOS-Build 234 · Android versionCode 128
   eine Sicherung geprüft wird, wie sie in eine leere Datenbank zurückgespielt
   wird und wie die Rückspielprobe läuft — samt Prüfliste für den Betrieb und
   einem Referenzskript.
+- Eine neu eingerichtete Instanz kommt beim ersten Start wieder hoch: Ein
+  Hilfsskript im Ordner für die Ersteinrichtung der Datenbank wurde dort
+  mit ausgeführt und brach den Start ab.
+- Eine Sicherung lässt sich mit einem Skript in eine leere Datenbank
+  zurückspielen, auch auf einer frisch eingerichteten Instanz; der bisher
+  beschriebene Weg brach dort ab und hinterließ eine leere Datenbank. Das
+  Skript weigert sich, eine Datenbank mit Konten ohne ausdrückliche
+  Bestätigung zu ersetzen.
+- Eine neu eingerichtete Datenbank rechnet in derselben Zeitzone wie der
+  laufende Betrieb. Nach der bisherigen Vorlage hätte sie Berliner Zeit
+  genommen, und Zeiten etwa im Postfach wären um zwei Stunden verrutscht.
+- Für eine neu eingerichtete Instanz gibt es einen beschriebenen Weg zum
+  ersten Zugang: Ein Skript legt die erste Gemeinde und ein Konto mit
+  Super-Admin-Recht an, von dem aus sich in der App alle weiteren Gemeinden
+  anlegen lassen.
+- Die Datenbank nimmt keine Passwörter im Klartext mehr an: Das alte Feld
+  dafür aus der Anfangszeit bleibt leer und lässt sich nicht mehr befüllen.
+- Wann eine Anmeldung oder ein Zeitfenster angelegt wurde, speichert die
+  Datenbank als Zeitpunkt statt als Text; sortiert wird damit nach dem
+  Zeitpunkt, auch über die Nacht der Zeitumstellung hinweg.
+- Das Server-Protokoll fasst Mitteilungen an viele zusammen: eine Zeile je
+  Versand statt einer je Person ohne Gerät, und bei einer Störung des
+  Mitteilungsdienstes eine Fehlerzeile mit Anzahl und erster Meldung statt
+  einer je Gerät. So bleiben frühere Einträge länger lesbar.
+- Nächtliche E-Mails an viele — Lizenz-Erinnerungen und Löschwarnungen —
+  gehen gebündelt über eine Verbindung und in begrenztem Tempo hinaus, damit
+  der Mailanbieter sie nicht ablehnt. Einzelne Mails wie ein Passwort-Reset
+  warten dabei nicht.
+- Abgelaufene und längst widerrufene Anmeldungen werden jetzt tatsächlich
+  aus der Datenbank entfernt: gleich beim Start des Servers und danach alle
+  sechs Stunden. Vorher geschah das nur nach einem ganzen Tag ohne Neustart,
+  also praktisch nie.
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.
@@ -1314,6 +1511,17 @@ iOS-Build 234 · Android versionCode 128
   selbst.
 - Beim Öffnen der Konfi-Liste lädt die App keine Angaben zur Gemeinde mehr,
   die sie gar nicht anzeigt.
+- Die automatischen Prüfungen zeigen mehr Ansichten wirklich an, statt nur den
+  Programmtext zu lesen — darunter Termin-Detail, Chat-Übersicht,
+  Gemeinde-Einladung und Abmeldung; sie hängen nicht mehr von Uhrzeit und
+  Zeitzone des Prüfrechners ab, und der Durchlauf im Browser prüft den
+  Punktestand nach einer Vergabe auf den genauen Wert.
+- Bleibt eine Auslieferung aus, weil die automatischen Prüfungen fehlschlagen,
+  meldet sich das sofort als offener Eintrag im Projekt; er schließt sich
+  selbst, sobald die Prüfungen wieder durchlaufen.
+- Jede an die Stores hochgeladene Fassung ist im Quellcode mit Version,
+  Plattform und Build-Nummer markiert; ein Absturzbericht lässt sich so dem
+  genauen Stand zuordnen.
 
 ## [2.2.0] - 2026-09-18
 

@@ -6,7 +6,7 @@ import { Page } from '@playwright/test';
  * Die Version, die der Browser-Build als laufende Version meldet.
  *
  * Gelesen aus derselben Datei, die vite.config.ts zur Bauzeit in
- * `__APP_VERSION__` einsetzt und die `scripts/apply-version.sh` pflegt --
+ * `__APP_VERSION__` einsetzt und die `frontend/scripts/apply-version.sh` pflegt --
  * NICHT hier noch einmal als Zahl hingeschrieben. Sonst zeigte die
  * Aenderungsanzeige beim naechsten Release wieder in jedem Test, und
  * irgendjemand muesste raten, warum.
@@ -79,6 +79,38 @@ export async function loginOhneMarker(page: Page, username: string, password = '
   await passwordInput.fill(password);
   await page.locator('ion-button.app-auth-button').click();
   await page.waitForURL(/\/(?:konfi|admin|teamer)\//, { timeout: 15_000 });
+}
+
+/**
+ * Meldet ab, damit sich jemand anderes anmelden kann.
+ *
+ * Der blosse Aufruf von /login genuegt NICHT: Die App leitet eine bestehende
+ * Sitzung sofort aufs Dashboard zurueck, das Formular erscheint nie. Deshalb
+ * die gespeicherte Sitzung wegraeumen -- Capacitor Preferences liegen im
+ * Browser in localStorage -- samt Offline-Cache, sonst saehe die naechste
+ * Person kurz die Zahlen der vorigen.
+ */
+export async function abmelden(page: Page) {
+  await page.evaluate(() => {
+    for (const k of Object.keys(window.localStorage)) {
+      if (k.includes('token') || k.includes('konfi_user') || k.startsWith('CapacitorStorage.cache:')) {
+        window.localStorage.removeItem(k);
+      }
+    }
+  });
+}
+
+/**
+ * Der Punktestand einer Art, wie ihn die Legende unter den Ringen auf dem
+ * Konfi-Dashboard zeigt ("Gottesdienst: 4/10"). Wartet, bis die Zeile da ist.
+ */
+export async function punkteStand(page: Page, art: 'Gottesdienst' | 'Gemeinde'): Promise<number> {
+  const zeile = page.getByText(new RegExp(`^${art}: \\d+`));
+  await zeile.waitFor({ state: 'visible', timeout: 15_000 });
+  const text = (await zeile.textContent()) ?? '';
+  const treffer = text.match(new RegExp(`^${art}: (\\d+)`));
+  if (!treffer) throw new Error(`Kein Punktestand "${art}" in "${text}"`);
+  return Number(treffer[1]);
 }
 
 /**

@@ -18,7 +18,7 @@ const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 // super_admin sind ausgenommen, admin und teamer brauchen die Zuweisung.
 // Hier immer mit { edit: true }: Anlegen und Verschieben sind Schreibwege.
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
-const { istMitgliedDerOrganisation } = require('../utils/orgMitglieder');
+const { istMitgliedDerOrganisation, ladeRolleInGemeinde } = require('../utils/orgMitglieder');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { rueckeNach } = require('../utils/bookingUtils');
@@ -646,11 +646,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         // Org-Updates, bis die App neu gestartet wird (Audit 22.08.2026).
         liveUpdate.disconnectUserSockets(userId);
 
-        // Nachgerueckte benachrichtigen, Chatlisten der Gespraechspartner auffrischen.
-        await meldeNachKontoLoeschung(db, ergebnis);
+        // Nachgerueckte benachrichtigen, Chatlisten der Gespraechspartner
+        // auffrischen -- ueber nachAntwort wie DELETE /users/:id (29.09.2026,
+        // Begruendung dort).
+        nachAntwort(req, async () => {
+            await meldeNachKontoLoeschung(db, ergebnis);
 
-        // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
-        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
+            // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
+            liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
+        }, 'DELETE /admin/konfis/:id (Meldungen nach Kontoloeschung)');
     });
 
     // Regenerate password for a konfi
@@ -736,8 +740,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // weiter Push-Nachrichten samt Chat-Inhalten.
             await client.query('DELETE FROM push_tokens WHERE user_id = $1', [req.params.id]);
 
-            const updateProfileQuery = "UPDATE konfi_profiles SET password_plain = NULL WHERE user_id = $1";
-            await client.query(updateProfileQuery, [req.params.id]);
+            // Hier wurde bis zum 29.09.2026 die Klartext-Spalte aus der
+            // SQLite-Zeit geleert. Sie ist seit Migration 165 ueberall leer und
+            // laesst seit Migration 176 nur noch NULL zu (Audit Datenbank
+            // BF-06) -- keine Code-Stelle fasst sie mehr an.
 
             // Neues Passwort: Eine Sperre nach Fehlversuchen endet damit
             // (Audit 26.09.2026, BF-04) -- der Weg, den die Leitung geht,
@@ -1122,23 +1128,27 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         const konfiId = req.params.id;
 
         try {
-            // Org-Zugehoerigkeit + Konfi-Rolle prüfen (Badge-Progress ist
-            // konfi-spezifisch; Teamer haben eigene Badges über teamer.js).
-            const { rows: [konfi] } = await db.query(
-                `SELECT u.id FROM users u
-                 JOIN roles r ON u.role_id = r.id
-                 WHERE u.id = $1 AND r.name = 'konfi' AND u.organization_id = $2 AND u.deleted_at IS NULL`,
-                [konfiId, req.user.organization_id]
-            );
+            // Konfi IN DIESER GEMEINDE (Badge-Progress ist konfi-spezifisch;
+            // Teamer haben eigene Badges über teamer.js). BEIDE QUELLEN
+            // (29.09.2026): die Rolle in dieser Gemeinde -- users.role_id
+            // zuhause, user_organizations.role_id in einer weiteren
+            // (ladeRolleInGemeinde, prueft auch deleted_at) -- und das Profil
+            // hier (darfKonfi). Vorher `u.organization_id = aktive Gemeinde`
+            // mit der Rolle am Konto: Eine Konfi, die ueber
+            // user_organizations hier Konfi ist, bekam 404, waehrend
+            // /:id/event-points (nur darfKonfi) fuer sie antwortete.
+            const rolleHier = await ladeRolleInGemeinde(db, konfiId, req.user.organization_id);
+            const zugriff = rolleHier === 'konfi'
+                ? await darfKonfi(db, req, konfiId)
+                : { gefunden: false, erlaubt: false };
 
-            if (!konfi) {
+            if (!zugriff.gefunden) {
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
             // Jahrgangs-Bindung (01.09.2026): Abzeichen samt Fortschritt sind
             // Konfi-Daten — sichtbar nur, wer den Jahrgang sehen darf (view),
             // wie die Detailansicht GET /:id. org_admin bleibt ausgenommen.
-            const zugriff = await darfKonfi(db, req, konfiId);
             if (!zugriff.erlaubt) {
                 return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
@@ -1291,9 +1301,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
-                const newBadges = await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
-                if (newBadges > 0) {
-                }
+                await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
             } catch (badgeErr) {
  console.error('Error checking badges after bonus points:', badgeErr);
                 // Don't fail the request if badge checking fails
@@ -1470,9 +1478,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
-                const newBadges = await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
-                if (newBadges > 0) {
-                }
+                await checkAndAwardBadges(db, req.params.id, { organizationId: req.user.organization_id });
             } catch (badgeErr) {
  console.error('Error checking badges after activity:', badgeErr);
                 // Don't fail the request if badge checking fails

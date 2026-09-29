@@ -188,6 +188,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           FROM event_bookings eb
           JOIN users u ON eb.user_id = u.id AND u.deleted_at IS NULL
           WHERE eb.event_id = e.id AND eb.abgemeldet_durch_absage = TRUE
+            -- Die verbuchte Selbstabmeldung, die die Absage entschuldigt hat
+            -- (29.09.2026), kommt beim Zuruecknehmen nicht als Angemeldete
+            -- zurueck und bekommt keinen Push (hebeAbsageAbmeldungenAuf).
+            AND eb.status <> 'opted_out'
         ) absage_abm ON true
         LEFT JOIN LATERAL (
           SELECT STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
@@ -434,6 +438,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           FROM event_bookings eb
           JOIN users u ON eb.user_id = u.id AND u.deleted_at IS NULL
           WHERE eb.event_id = e.id AND eb.abgemeldet_durch_absage = TRUE
+            -- Die verbuchte Selbstabmeldung, die die Absage entschuldigt hat
+            -- (29.09.2026), kommt beim Zuruecknehmen nicht als Angemeldete
+            -- zurueck und bekommt keinen Push (hebeAbsageAbmeldungenAuf).
+            AND eb.status <> 'opted_out'
         ) absage_abm ON true
         LEFT JOIN event_categories ec ON e.id = ec.event_id
         LEFT JOIN categories c ON ec.category_id = c.id
@@ -485,9 +493,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           }
         }
         
-        // Abgesagte Termine: unprocessed_count zaehlt hier bereits ueber ALLE
-        // Rollen (events.js:305, keine Rollen-Trennung) — nicht addieren,
-        // das wuerde Teamer doppelt zaehlen.
+        // Abgesagte Termine: Dieser Kommentar sagte bis 29.09.2026,
+        // unprocessed_count zaehle hier ueber ALLE Rollen (damals events.js:305)
+        // und duerfe deshalb nicht addiert werden. Das stimmt nicht mehr: Die
+        // Abfrage oben liefert Konfi-rein `ebs.konfi_offen` und die Teamer
+        // getrennt in teamer_unprocessed_count. Hier zaehlen also nur die
+        // Konfis -- ob das fuer abgesagte Termine so gewollt ist, ist offen
+        // (Nebenbefund Paket F, 29.09.2026; Verhalten unveraendert).
         const unprocessedCount = parseInt(row.unprocessed_count, 10) || 0;
         return {
           ...row,
@@ -631,6 +643,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           FROM event_bookings eb
           JOIN users u ON eb.user_id = u.id AND u.deleted_at IS NULL
           WHERE eb.event_id = e.id AND eb.abgemeldet_durch_absage = TRUE
+            -- Die verbuchte Selbstabmeldung, die die Absage entschuldigt hat
+            -- (29.09.2026), kommt beim Zuruecknehmen nicht als Angemeldete
+            -- zurueck und bekommt keinen Push (hebeAbsageAbmeldungenAuf).
+            AND eb.status <> 'opted_out'
         ) absage_abm ON true
         LEFT JOIN LATERAL (
           SELECT SUM(et.max_participants) as total_capacity

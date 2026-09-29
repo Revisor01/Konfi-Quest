@@ -68,7 +68,7 @@ vi.mock('@capacitor/push-notifications', () => ({
 }));
 
 let aktiverToken: string | null = null;
-const getTokenMock = vi.fn(async () => ({ token: aktiverToken }));
+const getTokenMock = vi.fn(async (..._a: unknown[]) => ({ token: aktiverToken }));
 vi.mock('@capacitor-firebase/messaging', () => ({
   FirebaseMessaging: { getToken: (...a: unknown[]) => getTokenMock(...a) },
 }));

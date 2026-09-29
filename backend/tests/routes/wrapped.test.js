@@ -282,7 +282,22 @@ describe('Wrapped Routes', () => {
     // 07.09.2026 stand Produktion auf Migration 144, waehrend der Code schon
     // 145/146 voraussetzte. Genau so entsteht der Fehler mitten in der
     // Transaktion. Das Umbenennen macht ihn hier reproduzierbar.
+    //
+    // DER RECHTE-CACHE WIRD VORHER FRISCH GEFUELLT (29.09.2026, Paket I2).
+    // Fehlt user_jahrgang_assignments.jahrgang_id, scheitert auch die Abfrage,
+    // mit der middleware/rbac.js den Benutzer laedt -- die Anfrage endete dann
+    // schon dort mit 500 "Database error", nicht in der Route. Die Tests
+    // liefen nur, weil ein frueherer Test orgAdmin1 innerhalb der 30 s TTL in
+    // den Cache gebracht hatte; unter Last lag das laenger zurueck (einmal
+    // rot beobachtet). Deshalb gezielt: Eintrag leeren, eine Anfrage mit
+    // intaktem Schema laedt ihn neu, dann erst umbenennen. Der
+    // Produktionscode bleibt, wie er ist.
     async function ohneSpalte(tabelle, spalte, fn) {
+      require('../../middleware/rbac').invalidateUserCache(USERS.orgAdmin1.id);
+      const vorwaermen = await request(app)
+        .get('/api/wrapped/me')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(vorwaermen.status).toBe(404);
       await db.query(`ALTER TABLE ${tabelle} RENAME COLUMN ${spalte} TO ${spalte}_weg`);
       try {
         return await fn();
@@ -579,6 +594,10 @@ describe('Wrapped Routes', () => {
     }
 
     async function abzeichen(userId, badgeId, datum) {
+      // Ein Team-Abzeichen: Der Seed legt alle Abzeichen als Konfi-Abzeichen
+      // an, und seit dem 29.09.2026 zaehlt der Team-Rueckblick nur noch
+      // target_role = 'teamer' (wrappedTeamerNurTeamAbzeichen.test.js).
+      await db.query("UPDATE custom_badges SET target_role = 'teamer' WHERE id = $1", [badgeId]);
       await db.query(
         `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
          VALUES ($1, $2, $3, $4::timestamptz)`,
@@ -2388,6 +2407,55 @@ describe('Wrapped Routes', () => {
     // durchlaeuft.
     // ------------------------------------------------------------
     describe('Fehlende Spalten aus neuen Migrationen', () => {
+      // Wie die beiden Tabellen vor dem ersten Test aussehen: Spalten mit
+      // Typ, Pflicht, Default und Kommentar, dazu Constraints und Indizes.
+      // Die Reihenfolge der Spalten zaehlt nicht -- eine neu angelegte Spalte
+      // steht immer hinten, das stoert keine Abfrage.
+      const schemaStand = async () => {
+        const { rows } = await db.query(
+          `SELECT 'spalte' AS art, c.table_name || '.' || c.column_name AS name,
+                  c.data_type || ' null=' || c.is_nullable
+                    || ' default=' || COALESCE(c.column_default, '')
+                    || ' kommentar=' || COALESCE(col_description(
+                         ('public.' || c.table_name)::regclass, c.ordinal_position::int), '') AS def
+             FROM information_schema.columns c
+            WHERE c.table_schema = 'public'
+              AND c.table_name IN ('event_bookings', 'challenge_submissions')
+           UNION ALL
+           SELECT 'constraint', conrelid::regclass::text || '.' || conname, pg_get_constraintdef(oid)
+             FROM pg_constraint
+            WHERE conrelid IN ('event_bookings'::regclass, 'challenge_submissions'::regclass)
+           UNION ALL
+           SELECT 'index', indexname, indexdef
+             FROM pg_indexes
+            WHERE schemaname = 'public'
+              AND tablename IN ('event_bookings', 'challenge_submissions')
+           ORDER BY 1, 2`
+        );
+        return rows.map((r) => `${r.art} ${r.name}: ${r.def}`);
+      };
+      let standVorher;
+      // Die Kommentare der beiden Spalten so, wie sie VOR dem ersten Test
+      // stehen. Seit der Schema-Dump bis Migration 173 reicht (29.09.2026)
+      // kommt die Test-DB aus einem Dump mit --no-comments, die Spalten tragen
+      // dort keinen Kommentar -- in Produktion (per Migration) schon. Der
+      // Rueckbau stellt deshalb genau den vorherigen Stand her, statt den Text
+      // der Migration fest einzusetzen.
+      let kommentarVorher = {};
+      const kommentarSql = (wert) => (wert == null ? 'NULL' : `'${String(wert).replace(/'/g, "''")}'`);
+      beforeAll(async () => {
+        standVorher = await schemaStand();
+        const { rows } = await db.query(
+          `SELECT c.table_name || '.' || c.column_name AS name,
+                  col_description(('public.' || c.table_name)::regclass, c.ordinal_position::int) AS kommentar
+             FROM information_schema.columns c
+            WHERE c.table_schema = 'public'
+              AND (c.table_name, c.column_name) IN (('event_bookings', 'war_auf_warteliste'),
+                                                    ('challenge_submissions', 'approved_by'))`
+        );
+        kommentarVorher = Object.fromEntries(rows.map((r) => [r.name, r.kommentar]));
+      });
+
       // Die Spalten kommen nach jedem Test zurueck. truncateAll leert nur
       // Zeilen, es stellt kein Schema wieder her -- ohne dieses afterEach
       // liefe der Rest der Datei gegen eine kaputte Test-DB.
@@ -2396,9 +2464,15 @@ describe('Wrapped Routes', () => {
           'ALTER TABLE event_bookings ADD COLUMN IF NOT EXISTS war_auf_warteliste BOOLEAN'
         );
         await db.query(
+          `COMMENT ON COLUMN event_bookings.war_auf_warteliste IS ${kommentarSql(kommentarVorher['event_bookings.war_auf_warteliste'])}`
+        );
+        await db.query(
           `ALTER TABLE challenge_submissions
              ADD COLUMN IF NOT EXISTS approved_by INTEGER,
              ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE`
+        );
+        await db.query(
+          `COMMENT ON COLUMN challenge_submissions.approved_by IS ${kommentarSql(kommentarVorher['challenge_submissions.approved_by'])}`
         );
         // Mit der Spalte ging ihr Fremdschluessel -- ihn wie Migration 146
         // wiederherstellen (29.09.2026). Ohne ihn fehlte er allen Dateien, die
@@ -2418,6 +2492,11 @@ describe('Wrapped Routes', () => {
              END IF;
            END $$`
         );
+        // Waechter (29.09.2026): Der Rueckbau muss VOLLSTAENDIG sein. Vergisst
+        // ein kuenftiger Test hier einen Fremdschluessel, einen Index oder einen
+        // Kommentar, faellt es an dieser Stelle auf -- nicht erst in einer
+        // anderen Datei, die zufaellig danach laeuft.
+        expect(await schemaStand()).toEqual(standVorher);
       });
 
       it('Ohne war_auf_warteliste (Migration 145) laeuft der Snapshot durch und die Seite fehlt', async () => {

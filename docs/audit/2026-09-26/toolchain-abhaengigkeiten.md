@@ -102,7 +102,9 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-02: Native App-Bundles enthalten 33 MB Handbuch-Screenshots und Swagger-UI
 - **Schwere:** MITTEL
-- **Status:** offen 27.09.2026 — beide Release-Workflows bauen weiter `dist/` samt `dist/docs` in die App, kein Entfernen vor `cap sync`. Für 2.3.x vorgemerkt (trifft schon den Store-Build 2.3.0).
+- **Status:** behoben 29.09.2026 — Eigenes App-Verzeichnis statt Löschschritt im Workflow: `vite build` legt neben `dist/` das Verzeichnis `dist-app/` an (Vite-Plugin in `frontend/scripts/app-buendel.mjs`), `capacitor.config.ts` nimmt `webDir: 'dist-app'`. Damit greift es in beiden Release-Workflows, beim lokalen `npx cap sync` und bei `npx vite build` allein, ohne dass jemand daran denken muss; fehlt der Build, bricht `cap sync` ab, statt `dist/` einzupacken. `dist/` (Web-Image) ist byte-gleich geblieben (`diff -r` gegen den Stand vorher leer); nginx mit `dist/` und `nginx.conf` liefert `/`, `/datenschutz`, `/impressum`, `/konto-loeschen`, `/account-deletion`, `/docs/`, Handbuch-Bilder, `/docs/api/`, `openapi.json`, `robots.txt`, `sitemap.xml`, `.well-known/*`, `og-image.png`, Hero-Bilder weiter mit 200 aus. Was die App braucht, vorher belegt: Aus `public/` lädt der App-Quelltext nur `assets/icon/logo-mark.png` (8 Stellen), `logo-mark-white.png` (Tour), `icon-192x192.png` (Teilen-Karte), `assets/branding/bird.png` und die 32 Rückblick-Hintergründe, `index.html` dazu Manifest, Favicons und `apple-touch-icon.png`. Datenschutz, Impressum und Handbuch öffnet die App nirgends — kein Verweis in `src/` (Anmeldung, Registrierung, Einstellungen, Tour durchgesehen), Android-App-Links lassen die Pfade im Browser (`deepLinks.ts`, Manifest). Positivliste: Vite-Erzeugnisse immer, aus `public/` nur die genannten Dateien; `docs/` und jede HTML-Seite außer `index.html` nie; Grenze 11.000.000 Bytes — der Build bricht bei einem Verstoß ab. Gemessen: App-Inhalt 45.707.476 → 9.448.148 Bytes (`npx cap copy android`/`ios`: je 9.448.148 Bytes, vorher 45.707.476). Test `frontend/src/__tests__/config/appBuendel.test.ts` (29 Fälle: `webDir`, Plugin eingetragen, jede im Quelltext geladene `public/`-Datei im Bündel, Web-Dateien draußen, Rückfall auf `dist/`, Grenze); Gegenproben `webDir: 'dist'` → 1 rot, Plugin entfernt → 1 rot, `docs/` in der Liste → 9 rot. Die Release-Workflows prüfen nach `cap sync` die Kopie im nativen Projekt (`frontend/scripts/app-buendel-pruefen.mjs`). Die Screenshots nach WebP: siehe Doku BF-18.
+- **Nachtrag 29.09.2026 (Bilder der App):** `assets/icon/logo-mark-white.png` war byte-gleich mit `logo-mark.png` (die Rose ist in beiden weiß) — die Tour lädt jetzt `logo-mark.png`, die Kopie ist weg. `assets/icon/icon.png` (Kopie von `icon-512x512.png`, 460.159 Bytes) und `assets/icon/favicon.png` (Kopie von `/favicon.png`) lud nichts, beide gelöscht; `index.html` verweist nicht mehr zusätzlich per `shortcut icon` auf `/favicon.png` (gleich mit `favicon-32x32.png`). Zehn PNGs verlustfrei neu kodiert — dekodierte RGBA-Pixel gegen den alten Stand byte-gleich, Farbangaben (gAMA, cHRM, iCCP) erhalten: `logo-mark.png` 99.936 → 34.422 (Palette, 256 Farben reichen exakt), `icon-512x512.png` 460.159 → 333.456, `icon-192x192.png` 56.982 → 38.958, `apple-touch-icon.png` 49.785 → 33.822, `bird.png` 65.417 → 50.414, dazu Favicons, `bird-56.png`, `logo-mark-512.png`. App-Bündel 9.448.148 → 9.228.301 Bytes, Web-Auslieferung 45.707.476 → 44.897.498. Die Rückblick-Hintergründe (32 WebP, 1080×1920, im Schnitt 56 kB, zusammen 1.791.904 Bytes) sind schon knapp kodiert; ein zweites verlustbehaftetes Kodieren lohnt nicht, unverändert. Tests in `appBuendel.test.ts`: keine byte-gleichen App-Dateien, jedes Bild in `public/` wird von App, Webseiten, Manifest oder Server-Mails benutzt, jede Datei der Positivliste lädt die App; Gegenprobe (Kopie und `icon.png` zurück) → 2 rot.
+- **Nachtrag 29.09.2026 (Store-Pakete und Android-Release):** Gemessen aus den Logs der Release-Läufe zu 2.3.0 (`beb745e6`): AAB versionCode 128 = 41.207.688 Bytes (`ls -la` im Android-Workflow, Lauf 36542693203), IPA Build 234 = 41.237.658 Bytes (altool „Transferred“, Lauf 36542689891). Der Web-Inhalt darin, so gepackt wie im Paket (Deflate, Bilder und wasm ungepackt): vorher 37.723.186 Bytes, nachher 4.106.717 — beide Pakete sollten also um rund 33,6 MB auf etwa 7,6 MB schrumpfen. Das ist gerechnet, nicht gemessen; der nächste Release-Lauf zeigt die echte Größe an derselben Stelle. Android-Release: `minifyEnabled` und `shrinkResources` sind seit 19.09.2026 an (`android/app/build.gradle`, Regeln in `proguard-rules.pro`) — kein Befund, nichts geändert. Ungenutzte native Abhängigkeit: `@capacitor/status-bar` (kein Import in `src/`, die Leisten macht Capacitors SystemBars) — gehört zu BF-10 (Abhängigkeiten), hier nicht angefasst.
 - **Fundstelle:** `frontend/capacitor.config.ts:8` (`webDir: 'dist'`), `frontend/public/docs/`
   (33 MB), `.github/workflows/android-release.yml:70-71` und
   `.github/workflows/ios-release.yml:106-107` (`npm run build` → `npx cap sync`),
@@ -129,7 +131,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-03: Backend-Image ist nicht aus dem Lockfile reproduzierbar
 - **Schwere:** MITTEL
-- **Status:** offen 27.09.2026 — `backend/Dockerfile:17` unverändert (`npm install --omit=dev && npm install pg`), keine `backend/.dockerignore` (CI BF-06). Für 2.3.x vorgemerkt.
+- **Status:** behoben 29.09.2026 — `backend/Dockerfile` installiert mit `npm ci --omit=dev` (Abbruch, wenn `package.json` und Lockfile auseinanderlaufen), `npm install pg` ist gestrichen (`pg` 8.23.0 steht in `dependencies` und im Lockfile), `backend/.dockerignore` hält `node_modules`, `tests`, `uploads`, `.env*`, `push/*.json` heraus. Im gebauten Image `pg` 8.23.0 wie im Lockfile, kein vitest/nodemon/supertest; node-fetch (optional-transitiv über firebase-admin) ist da und lädt. Wächter `frontend/src/__tests__/betrieb/backendImage.test.ts` prüft zusätzlich, dass jedes Paket, das der Backend-Code lädt, im Lockfile als Laufzeit-Paket steht. Einzelheiten und Messwerte: CI BF-06.
 - **Fundstelle:** `backend/Dockerfile:17` (`RUN npm install --omit=dev && npm install pg`),
   `backend/Dockerfile:20` (`COPY . .`), fehlende `backend/.dockerignore`
 - **Kennzeichnung:** reproduziert (Scratchpad-Kopie von `backend/package.json` +
@@ -156,7 +158,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-04: Node-Versionen: E2E-Job auf Node 20 (End-of-Life seit 30.04.2026), Produktion auf Node 26 (noch kein LTS)
 - **Schwere:** MITTEL
-- **Status:** offen 27.09.2026 — weiter Node 20 im E2E-Job, `>=22` in `engines`, 26 in CI und Produktion (live v26.10.0), keine `.nvmrc`. Für 2.3.x vorgemerkt.
+- **Status:** behoben 29.09.2026 — eine Linie aus `.nvmrc` (`24`, Active LTS; 26 wird erst am 28.10.2026 LTS): CI (alle `setup-node` über `node-version-file`), E2E-Job (vorher Node 20 mit `setup-node@v4`), beide Dockerfiles, `engines` des Backends `>=24`; Dependabot hebt die Node-Hauptversion der Images nicht mehr allein. Einzelheiten, Messungen und Begründung: CI BF-11 (`ci-deployment-store.md`), Wächter `frontend/src/__tests__/betrieb/nodeVersionEineLinie.test.ts`.
 - **Fundstelle:** `.github/workflows/ci.yml:245-247` (`actions/setup-node@v4`,
   `node-version: '20'`), `backend/Dockerfile:1` und `frontend/Dockerfile:2` (`node:26`),
   `.github/workflows/ci.yml:95-97,127-129` (Node 26, `setup-node@v7`),
@@ -183,6 +185,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 ### BF-05: Tageslosung hängt an `node-fetch`, das nur über eine optionale, transitive Kette installiert ist
 - **Schwere:** MITTEL
 - **Status:** offen 27.09.2026 — `losungService.js:90` importiert weiter `node-fetch`, `validator` ist weiter nicht deklariert. Für 2.3.x vorgemerkt.
+- **Status:** behoben 29.09.2026 — `losungService.js` nutzt das eingebaute `fetch` der Node-Laufzeit; das Zeitlimit (intern 2 s, öffentlich 5 s) läuft über `AbortSignal.timeout`, weil das eingebaute `fetch` die node-fetch-Option `timeout` still ignoriert. Test `tests/services/losungOhneNodeFetch.test.js` (2 Fälle): `node-fetch` per Resolve-Hook unauffindbar, `fetch` durch eine Attrappe ersetzt (kein Netz) — Abruf gelingt und landet im Cache; ein hängender interner Abruf bricht nach 2 s ab und weicht auf die öffentliche Domain aus. Vor dem Fix fielen beide mit „Cannot find package 'node-fetch'"; Gegenprobe (Signal wieder durch `timeout` ersetzt): der zweite Fall endet am Test-Timeout (10 s). `validator` ist seit dem 29.09. deklariert (BF-10).
 - **Fundstelle:** `backend/services/losungService.js:90` (`const fetch = (await import('node-fetch')).default;`),
   `backend/package.json` (kein Eintrag `node-fetch`), aufgerufen aus `routes/konfi.js:10,1514`
   und `routes/teamer.js:5,1048`
@@ -209,6 +212,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 ### BF-06: Backend ohne Lint-Konfiguration — 96 Fehler mit Standardregeln, aber keine undefinierten Bezeichner
 - **Schwere:** NIEDRIG
 - **Status:** offen 27.09.2026 — das Backend hat weiter keine Lint-Konfiguration (Tests BF-16). Später.
+- **Status:** behoben 29.09.2026 — `backend/eslint.config.js` (flat config: `js.configs.recommended`, Node-Globals, Vitest-Globals für `tests/`, `sourceType: module` für `pushKennungMitsenden.test.js`), `npm run lint`, ESLint 10 als devDependency, CI-Schritt „Lint" im Job `backend-test` (Fehler blockieren, Warnungen nicht). `no-undef` ist Fehler — Gegenprobe: eine Datei mit einem Tippfehler-Bezeichner lässt `npx eslint` mit Exit 1 enden. Herabgestuft auf Warnung, begründet in der Konfiguration: `no-unused-vars` (71, Altbestand) und `no-useless-assignment` (12, Muster „erst `null`, dann im `try`"). Die 9 Fehler des ersten Laufs sind behoben: `preserve-caught-error` 4 (`cause` angehängt, darunter `push/firebase.js`), `no-empty` 2 (`konfi-management.js`), `no-useless-escape` 2 (`validatePassword`, neuer Test über alle 30 Sonderzeichen), `no-control-regex` 1 (`musikLinks.js`, begründete Ausnahme an der Zeile). Stand: 370 Dateien, 0 Fehler, 85 Warnungen (davon 2 ungenutzte `eslint-disable`-Kommentare), rund 22 s.
 - **Fundstelle:** `backend/package.json` (kein `lint`-Skript, kein ESLint installiert), im Repo
   existiert nur `frontend/eslint.config.js`
 - **Kennzeichnung:** reproduziert (ESLint 10.10.0 aus `frontend/node_modules` mit
@@ -234,7 +238,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-07: 267 Testdateien, `vite.config.ts` und `capacitor.config.ts` werden von keiner Typprüfung erfasst — 64 Typfehler darin
 - **Schwere:** NIEDRIG
-- **Status:** offen 27.09.2026 — die CI prüft seit dem 26.09. `tsc --noEmit` für `src/` (CI BF-07); Testdateien, `vite.config.ts` und `capacitor.config.ts` bleiben ohne Typprüfung. Später.
+- **Status:** behoben 29.09.2026 — `frontend/tsconfig.test.json` (erbt `tsconfig.json`, nimmt ganz `src/` samt Tests, `vite.config.ts` und `capacitor.config.ts` auf, Typen `vitest/globals`, `node`, `jest-dom`) und das Skript `npm run typecheck:tests`. Vorher gemessen mit genau dieser Konfiguration: 98 Fehler in 37 Dateien (26.09.: 64, damals ohne die Vitest-Globals gezählt). Nachher 0. Behoben in den Tests, nicht durch Abschalten: Mock-Funktionen mit Parameterliste, fehlende Pflicht-Props, `metadata.type: 'konfi'` → `'request'` (den Typ gibt es in der Warteschlange nicht), `series_id` als Zahl, `ctx.loading` entfernt (das Feld gibt es im Kontext nicht), ein Import aus einem nicht existierenden `types/konfi`; `vite.config.ts` nimmt `defineConfig` aus `vitest/config`, `capacitor.config.ts` typisiert `resize` als `KeyboardResize` (nur Typ-Import, die CLI liest die Datei in Node); `jsdom` hat eine schmale Typdatei `src/__tests__/jsdom.d.ts`. Keine Laufzeitänderung: die 36 berührten Testdateien laufen grün (541 Tests), `tsc --noEmit` und `vite build` unverändert grün. Gegenprobe: ein Zugriff auf ein nicht vorhandenes Feld in `chatOutbox.test.ts` → `typecheck:tests` meldet TS2339. Der CI-Schritt steht noch aus (Koordination).
 - **Fundstelle:** `frontend/tsconfig.json:18-20` (`include: ["src"]`, `exclude` aller Tests,
   `references` ohne `tsc -b`), `frontend/tsconfig.node.json`, `frontend/package.json:15`
   (`"build": "tsc && vite build"`)
@@ -274,6 +278,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 ### BF-09: Dependabot — 9 PRs offen seit dem 07.09., Ignore-Liste ohne TypeScript-Hauptversion
 - **Schwere:** NIEDRIG
 - **Status:** offen 27.09.2026 — `dependabot.yml` ignoriert weiter keine TypeScript-Hauptversion. Später.
+- **Status:** behoben 29.09.2026 — `.github/dependabot.yml`: `typescript` semver-major ignoriert (typescript-eslint 8.71 verlangt `>=4.8.4 <6.1.0`; PR #157 scheitert in der CI an `npm ci` mit ERESOLVE, Job-Log vom 18.09.). Dazu ein neuer Befund derselben Art: Die react-router-Ignores wirkten nur auf Versions-Updates — `update-types` gilt nicht für Sicherheits-Updates, und am 29.09. legte Dependabot den Sicherheits-PR #188 an (react-router 6.30.6 → 7.18.2; `npm ci` scheitert am Peer `react-router >=6.4.0 <7` von `@ionic/react-router`). `react-router` und `react-router-dom` stehen deshalb auf `versions: [">= 7.0.0"]`, das gilt für beide Arten. Hinweis zu vitest 5 (beide Projekte gemeinsam) als Kommentar. Offene Dependabot-PRs am 29.09.: 11 (#157, #158, #163, #166, #167, #169, #176, #178, #185, #188, #190); die Empfehlung je PR steht im Abschlussbericht des Pakets B2, gemergt oder geschlossen wurde keiner.
 - **Fundstelle:** `.github/dependabot.yml:34-45` (Ignore nur react-router-Familie);
   GitHub-PRs #157, #158, #163, #164, #166, #167, #169, #170, #176
 - **Kennzeichnung:** reproduziert (GitHub-API `list_pull_requests state=open` →
@@ -294,6 +299,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 - **Schwere:** NIEDRIG
 - **Status:** teilweise behoben 27.09.2026 — der Teil Versionsnummern: die drei `package.json` tragen die App-Version aus `frontend/version.json` (2.3.0), gesetzt und geprüft über `npm run version:setzen`/`version:pruefen`, Test `versionsnummernEineQuelle`. Undeklarierte Importe, tote Einträge und `overrides` bleiben offen (kein Paket).
 - **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt; undeklarierte Importe, tote Einträge und `overrides` später.
+- **Status:** behoben 29.09.2026 — Undeklarierte Importe deklariert: Backend `validator` und `proxy-addr` (seit dem Audit dazugekommen, `utils/clientIp.js`) in `dependencies`, `ws` (Test-Hilfe) in `devDependencies` (`~8.21.0` wie engine.io, eine Kopie); Frontend `@ionic/core` (heute vier Dateien, neu `services/writeQueue.ts`) in `dependencies`, `lightningcss` und `plist` (Tests) in `devDependencies`; Wurzel `playwright` (`scripts/screenshots.mjs`). `@types/qrcode` nach `devDependencies`. Alle auf den schon installierten Ständen, die Lockfiles ändern sich nur in den Deklarationen. Overrides `protobufjs` und `websocket-driver` gestrichen — mit npm 11 nachgeprüft: ohne sie derselbe Lockfile, eine frische Auflösung landet auf protobufjs 7.6.6 und websocket-driver 0.7.5; `uuid` bleibt in beiden Projekten (wirkt: Backend gegen gaxios `^9.0.1`, Frontend gegen xcode `^7.0.3`, je `overridden` in `npm ls uuid`). Wächter: `backend/tests/utils/abhaengigkeitenDeklariert.test.js` (Betriebscode lädt nur aus `dependencies`, weil das Image ohne devDependencies installiert; Tests nur Deklariertes) und `frontend/src/__tests__/config/abhaengigkeitenDeklariert.test.ts` (dasselbe, dazu keine `@types/*` zur Laufzeit und genau eine `@ionic/core` im Lockfile, dieselbe, die `@ionic/react` verlangt). Gegenproben: Pakete aus `package.json` genommen bzw. `multer` nach devDependencies verschoben bzw. eine zweite `@ionic/core` in den Lockfile geschrieben — die Fälle fallen und nennen Datei und Paket. **Nicht umgesetzt:** `@capacitor/status-bar` entfernen. Kein toter Eintrag: Das Plugin wirkt beim Laden, auch ohne Aufruf im Code (Android `StatusBarPlugin.load()` setzt Hintergrund `#000000`, Symbolstil `DEFAULT` und `overlaysWebView = true`; iOS `load()` liest dieselben Werte). Entfernen änderte die Statusleiste nativ neben dem eingebauten SystemBars und ist nur am Gerät zu prüfen — Frage an Simon. Versionsnummern: seit dem 27.09. erledigt (s. o.).
 - **Fundstelle:** `backend/routes/auth.js:7`; `frontend/src/components/chat/useChatVerwaltung.ts`,
   `frontend/src/components/konfi/views/EventDetailView.tsx`, `frontend/src/contexts/ModalContext.tsx`
   (Import `@ionic/core`); `frontend/package.json:25,33,38` (`@types/qrcode` in `dependencies`,
@@ -325,7 +331,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-11: Startbündel lädt 1,39 MB Icon-Chunk (305 kB gzip) sofort; drei Build-Warnungen
 - **Schwere:** NIEDRIG
-- **Status:** offen 27.09.2026 — der Icon-Chunk lädt weiter beim Start. Später.
+- **Status:** behoben 29.09.2026, soweit ohne Risiko möglich — Befund präzisiert: Der Chunk (heute `dateUtils-*.js`, 1.405.726 Bytes, gzip 306.509; rolldown benennt ihn nach einem seiner Module) ist kein Icon-Chunk. Nach Sourcemap: 1.019.304 Bytes Ionic-Komponenten (`@ionic/core/components` — `@ionic/react` lädt die ganze Bibliothek beim Start, das Paket erklärt keine `sideEffects`), 176.013 ionicons (davon 155.756 die 284 Symbole), 50.191 axios, rund 40.000 socket.io, 63.974 eigener Code. Ihn zu teilen änderte nichts an der Startmenge; die Badge-Symbole asynchron zu laden hieße, 23 Dateien auf nachladende Symbole umzubauen (Flackern) — nicht ohne Risiko, nicht gemacht. Umgesetzt: `float-elements.css` nicht mehr eingebunden (keine Stelle nutzt `ion-float-*`; einzige Quelle der lightningcss-Warnung `'host-context'`), der wirkungslose dynamische Import des iOS-Themes in `MainTabs.tsx` statisch (Warnung `INEFFECTIVE_DYNAMIC_IMPORT` weg), Vites Chunk-Warnung auf 1.500 kB angehoben und stattdessen eine Grenze für die Startmenge: `START_BUDGET_GZIP_BYTES` = 600.000 in `frontend/scripts/app-buendel.mjs`, der Build bricht darüber ab. Gemessen (was `index.html` per Skript, `modulepreload` und Stil lädt, gzip Stufe 9): vorher 37 Dateien, 2.362.006 Bytes, gzip 538.260; nachher 36 Dateien, 2.348.605, gzip 535.707. Build-Ausgabe: vorher drei Warnungsarten, nachher keine. Test `frontend/src/__tests__/config/startBuendel.test.ts` (5: kein dynamischer Import eines Moduls, das der Start statisch enthält; keine `ion-float-*`-Klasse ohne die CSS; Startmenge zählen und Grenze); Gegenprobe mit altem `MainTabs.tsx` und `App.tsx` → 2 rot.
 - **Fundstelle:** `frontend/src/components/shared/icons.ts`, `frontend/src/utils/badgeIcons.ts`;
   Build-Ausgabe (`vite build`) Zeilen 305–311
 - **Kennzeichnung:** reproduziert (`cd frontend && npm run build`, 61,6 s gesamt, davon Vite
@@ -348,6 +354,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 ### BF-12: Zwei der als „harmlos" eingestuften Hook-Warnungen haben sichtbare Nebenwirkungen
 - **Schwere:** NIEDRIG
 - **Status:** offen 27.09.2026 — `Math.random()` im Render der Begrüßung und das memoisierte `Date.now()` stehen weiter. Später.
+- **Status:** behoben 29.09.2026 — Beide Stellen am Code bestätigt und behoben. Begrüßung: `TeamerDashboardPage.tsx` würfelt „Moin" einmal je Öffnen (`useState(() => Math.random() < 0.2)`) statt bei jedem Rendern; Test `teamerBegruessungStabil.test.tsx` (2 Fälle, Zufall zwischen den Renderdurchgängen umgestellt, Begrüßung muss gleich bleiben) — vor dem Fix beide rot („Guten Morgen" statt „Moin" und umgekehrt). Challenge-Detail: `isActive` folgt der Uhr über den neuen Hook `hooks/useJetztMitGrenzen.ts`, der zu Beginn und Ende (`ende + 1`, weil „bis einschließlich Ende") einen Wecker stellt und neu zeichnet (auch nach geänderten Grenzen, Wartezeiten über 24,8 Tage in Etappen); Test `challengeEndetBeiOffenemDetail.test.tsx` mit echter Zeit (Ende bzw. Beginn 1,2 s nach dem Öffnen, genau ein Abruf) — vor dem Fix beide rot. Beim ersten Entwurf blieb der Test ohne Fix grün: Die Kontext-Attrappe lieferte je Rendern ein neues `setError`, `loadDetail` entstand jedes Mal neu und lud das Detail endlos nach; mit stabilen Attrappen und der Prüfung „genau ein Abruf" zeigt der Test den Fehler. Die zwei `react-hooks/purity`-Warnungen der Stellen sind weg (Teamer-Startseite 17 → 16, Challenge-Detail 2 → 1 Warnung). Handbuch `80-challenges.md` ergänzt.
 - **Fundstelle:** `frontend/src/components/teamer/pages/TeamerDashboardPage.tsx:412`,
   `frontend/src/components/konfi/modals/ChallengeDetailModal.tsx:374`
 - **Kennzeichnung:** aus Code gelesen (10 Warnungen der sechs Regeln stichprobenartig geprüft)
@@ -427,6 +434,33 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
   moderate = eine Kette (`react-router`, `react-router-dom`, `@ionic/react-router`), zwei
   Advisories, beide nicht erreichbar (s. o.). Prüfmethode: `npm audit --json` /
   `--omit=dev` in allen drei Projekten, Code-Lesen der Navigationsziele.
+  - **Nachtrag 29.09.2026:** Seit dem 26.09. sind im Backend drei moderate Meldungen
+    dazugekommen (`npm audit`, Produktion und Dev gleich): `multer` 2.3.0
+    (GHSA-3pph-fpjx-jg34, verwaiste Dateien bei abgebrochenem Upload), `ip-address` 10.4.0
+    über `express-rate-limit` (GHSA-rpw4-54j3-4h4q, GHSA-2vr4-cq9g-pvrc) und `nodemailer`
+    9.1.1 (GHSA-6vj9-mwq6-2f5v). **Behoben 29.09.2026:** `multer` auf 2.4.0 (Untergrenze in
+    `package.json` auf `^2.4.0`), `ip-address` innerhalb von `^10.2.0` auf 10.7.2 — beides
+    ohne Hauptversionssprung, `npm ls multer ip-address` belegt die Stände. Backend danach
+    1 moderate. **Bleibt offen:** `nodemailer` — den Fix gibt es nur ab 10.0.2
+    (Hauptversion; Dependabot-PR #166). Im Code nicht ausnutzbar: Die Lücke setzt mehrere
+    Transporte zu **verschiedenen** SMTP-Servern voraus, deren TLS-Servername über den
+    prozessweiten DNS-Cache vertauscht wird; beide Transporte des Backends
+    (`server.js`, `services/emailService.js`) nutzen dieselbe `smtpKonfiguration()`, also
+    denselben Server mit denselben Zugangsdaten. Der Sprung auf 10 ist trotzdem empfohlen
+    (Bruch laut Changelog nur „Node.js 20 oder neuer", Produktion läuft auf 26). Probe am
+    29.09. (danach zurückgesetzt): mit `nodemailer` 10.0.12 meldet `npm audit` im Backend 0,
+    die 14 Testdateien rund um den Mailversand (223 Tests) sind grün, ein SMTP-Transport aus
+    `smtpKonfiguration()` und ein Versand über den Stream-Transport (Betreff mit Umlaut)
+    funktionieren. Frontend unverändert 3 moderate (react-router 6, s. o.), Wurzel 0.
+  - **Nachtrag 29.09.2026 (Paket I2):** **behoben** — Simons Entscheidung vom 29.09.:
+    `nodemailer` auf `^10.0.12` (Lockfile mit npm 11.20.0 wie die CI; Diff nur
+    `nodemailer`, keine weiteren Pakete). Breaking Change von 10 laut Changelog nur
+    „Node.js 20 oder neuer" (Image `node:24`, `engines` ≥ 24); der CommonJS-Einstieg
+    bleibt `require('nodemailer').createTransport` (beschreibbar, die Test-Spione greifen
+    weiter), die Pool-Optionen des Massentransports (`pool`, `maxConnections`,
+    `maxMessages`, `rateDelta`, `rateLimit`) liest `smtp-pool` unverändert. `npm audit`
+    im Backend vorher 1 moderate, nachher 0 (auch `--omit=dev`). Die 26 Testdateien mit
+    Mailbezug (517 Tests) sind grün. Dependabot-PR #166 ist damit überflüssig.
 - **Lockfile-Konsistenz und Peers:** `npm ls --all` in Backend und Frontend Exit 0, nur
   `UNMET OPTIONAL DEPENDENCY` (normal). Peer-Ranges geprüft: typescript-eslint 8.70.0 ↔
   TypeScript 6.0.3 (`<6.1.0`), `@vitejs/plugin-react` 6.1.1 ↔ Vite 8.2.2 (`^8.0.0`),
@@ -453,6 +487,19 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
   `require('sys')`: 0 Treffer. Kein `require` eines devDependency-Pakets außerhalb `tests/`
   → `--omit=dev` ist sicher. Root `@playwright/test@1.62.1` verlangt `node >=20` → der
   Node-20-Job ist technisch kompatibel (aber EOL, BF-04).
+  - **Nachtrag 29.09.2026 (Paket I2):** Eine Deprecation von `pg` stand im Testlauf:
+    „Calling client.query() when the client is already executing a query is deprecated and
+    will be removed in pg@9.0". Gefunden mit `--trace-deprecation`: `checkAndAwardBadges`
+    (`routes/badges.js`) bündelte seine Vorab-Abfragen (Konfi- und Teamer-Zweig) und das
+    Eintragen mehrerer Abzeichen mit `Promise.all` und wird aus der Anwesenheit
+    (`routes/events/anwesenheit.js`) und dem Check-in (`routes/events/checkin.js`) mit dem
+    Client der laufenden Transaktion gerufen — bis zu 6 gleichzeitige Abfragen auf einer
+    Verbindung, die pg 8 intern einreiht und pg 9 nicht mehr. **Behoben:**
+    `utils/abfragenBuendeln.js` — auf einem Client nacheinander, über den Pool weiter
+    parallel. Test `tests/routes/badgesEinClientNacheinander.test.js` (5; zählt gleichzeitig
+    offene Abfragen): vor dem Fix 3 rot (6, 5 und 6 statt 1), Gegenprobe nur das Eintragen
+    zurückgedreht → 1 rot (2 statt 1). Anwesenheits-, Termin- und Abzeichen-Suites danach
+    ohne die Warnung.
 - **Typprüfung:** `npx tsc --noEmit` im Frontend 0 Fehler (25,5 s); `strict: true`,
   `skipLibCheck: true` (üblich), `isolatedModules`, `moduleResolution: bundler`.
   `noUncheckedIndexedAccess`/`noUnusedLocals` fehlen (Hinweis, kein Befund).

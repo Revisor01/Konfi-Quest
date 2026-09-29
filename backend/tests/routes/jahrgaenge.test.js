@@ -995,6 +995,35 @@ describe('Jahrgaenge Routes', () => {
       expect(konfi2Row.total_count).toBe(2);
     });
 
+    // Chat BF-11, Rest (29.09.2026): Die Route hatte einen Zweig
+    // `mailResult.success === false -> 502`, den es nie gab: sendEmail
+    // (services/emailService.js) gibt nur { success: true } zurueck und WIRFT
+    // bei jedem Fehler. Der Zweig ist weg; das Verhalten bleibt, wie es in
+    // Produktion immer war -- ein SMTP-Fehler endet als 500 mit fester Meldung.
+    it('SMTP-Fehler -> 500 "Fehler beim Senden der E-Mail" (Verhalten wie bisher)', async () => {
+      sendMailSpy.mockRejectedValue(Object.assign(new Error('Verbindung abgelehnt'), { code: 'ECONNECTION' }));
+      const res = await request(app)
+        .post(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/matrix-email`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ type: 'anwesenheit' });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: 'Fehler beim Senden der E-Mail' });
+    });
+
+    it('das Ergebnis von sendEmail entscheidet nicht über die Antwort: kein 502 mehr', async () => {
+      // Selbst ein (nie vorkommendes) { success: false } ergibt 200 -- die
+      // Route verlaesst sich allein darauf, dass sendEmail bei Fehlern wirft.
+      sendMailSpy.mockResolvedValue({ success: false });
+      const res = await request(app)
+        .post(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/matrix-email`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ type: 'sprueche' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ success: true });
+    });
+
     it('type=sprueche -> 200 + Zeilen enthalten Name, Termin und Spruch', async () => {
       const res = await request(app)
         .post(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/matrix-email`)

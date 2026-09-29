@@ -1,4 +1,3 @@
-version: '3.8'
 # Konfi-Quest Stack (Portainer Stack 249) — Referenzkopie im Repo.
 # QUELLE DER WAHRHEIT bleibt der Portainer-Stack; diese Datei dokumentiert die Struktur.
 #
@@ -70,6 +69,19 @@ services:
       - "maintenance_work_mem=128MB"
       - "-c"
       - "shared_preload_libraries=pg_stat_statements"
+      # Server-Zeitzone fest auf UTC (29.09.2026, Audit Datenbank "Erst-
+      # Einrichtung" / BF-11). Die Produktion laeuft so (gemessen 27.09.2026:
+      # postgresql.conf timezone = 'UTC', Sitzungen der Backends in UTC) --
+      # aber nur, weil ihr Datenverzeichnis vor dem Eintrag TZ unten
+      # angelegt wurde. Eine NEUE Instanz nach dieser Vorlage uebernahm TZ
+      # beim ersten Start in postgresql.conf (nachgestellt mit
+      # postgres:15-alpine: timezone = 'Europe/Berlin'): Ihre Backends haetten
+      # NOW() in die 24 Spalten `timestamp` ohne Zeitzone in Berliner Zeit
+      # geschrieben, der Node-Prozess (UTC) haette sie als UTC gelesen --
+      # zwei Stunden Versatz in Postfach und Co. Fuer die bestehende
+      # Produktion aendert die Zeile nichts. TZ/PGTZ bleiben fuer Log und psql.
+      - "-c"
+      - "timezone=UTC"
     environment:
       POSTGRES_DB: konfi_db
       POSTGRES_USER: konfi_user
@@ -159,6 +171,11 @@ services:
       #   openssl s_client -connect <SMTP_HOST>:465 -servername <SMTP_HOST> </dev/null
       # Nur als Notnagel, bis das Zertifikat stimmt (Warnzeile im Log):
       # SMTP_TLS_REJECT_UNAUTHORIZED: "false"
+      # Naechtliche Laeufe an viele (Lizenz-Erinnerung, Loeschwarnung) gehen
+      # ueber EINE gepoolte Verbindung und hoechstens so viele Mails je
+      # Minute (Standard 20, utils/smtpKonfiguration.js). Auf die Grenze des
+      # Anbieters setzen, sobald sie bekannt ist:
+      # SMTP_MASSEN_JE_MINUTE: "20"
       # Metrics-Aggregation: /api/metrics fragt BEIDE Replicas (interne Compose-
       # Servicenamen im internal-Netz) ab und mergt sie zu einem Gesamtbild.
       METRICS_PEERS: "http://backend:5000,http://backend2:5000"

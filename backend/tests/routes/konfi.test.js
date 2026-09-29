@@ -1999,7 +1999,7 @@ describe('Konfi Routes', () => {
   // Befund N1 (27.08.2026): Guards der Konfi-Buchungsroute
   //
   // POST /konfi/events/:id/register hatte weder den teamer_only- noch den
-  // cancelled-Guard, die der regulaere Weg seit jeher hat (events.js:1666
+  // cancelled-Guard, die der regulaere Weg seit jeher hat (damals events.js:1666
   // bzw. teamer.js:1314).
   //
   // Nachgemessen, bevor es repariert wurde: BEIDE Anmeldungen lieferten 200.
@@ -2007,7 +2007,7 @@ describe('Konfi Routes', () => {
   // einem abgesagten Termin anmelden. Der Bericht hielt das fuer "praktisch
   // vermutlich folgenlos" -- das gilt nur, solange niemand die API direkt
   // anspricht. Ueber die Oberflaeche ist es nicht erreichbar, weil die
-  // Terminliste teamer_only fuer Konfis herausfiltert (events.js:254-256).
+  // Terminliste teamer_only fuer Konfis herausfiltert (damals events.js:254-256).
   // ================================================================
   describe('N1: Guards der Konfi-Anmeldung', () => {
     const terminAnlegen = async (zusatzSpalte, zusatzWert) => {

@@ -26,6 +26,8 @@ import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import SegmentZahl from '../shared/SegmentZahl';
+import WeitereEintraege from '../shared/WeitereEintraege';
+import { useSchrittweiseListe } from '../../hooks/useSchrittweiseListe';
 
 interface EventsViewProps {
   events: Event[];
@@ -93,6 +95,11 @@ const EventsView: React.FC<EventsViewProps> = ({
 
   // Events werden bereits von der Page sortiert übergeben
   const filteredAndSortedEvents = events;
+  // Schrittweise rendern (Leitung BF-14): bei 62 anstehenden Terminen bringt
+  // es gedrosselt kaum etwas (2,0 s vorher wie nachher), bei mehr waechst der
+  // Abstand; die Reiter-Zaehler oben rechnen weiter ueber alle.
+  const { sichtbar: sichtbareEvents, weitere: weitereEvents, mehrZeigen: mehrEvents } =
+    useSchrittweiseListe(filteredAndSortedEvents, `${activeTab}|${selectedJahrgang ?? ''}|${searchText ?? ''}`);
 
   // Mehrtaegige Events gelten erst nach ihrem ENDE (event_end_time) als
   // vergangen. Seit Befund N6 (27.08.2026) aus der geteilten Quelle.
@@ -245,7 +252,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         }
         emptyIconColor="var(--app-color-events)"
       >
-        {filteredAndSortedEvents.map((event, index) => {
+        {sichtbareEvents.map((event, index) => {
               const isPastEvent = istVergangen(event);
               // istAbgesagt() prueft BEIDE Felder: GET /events liefert
               // registration_status, GET /events/cancelled zusaetzlich
@@ -306,7 +313,7 @@ const EventsView: React.FC<EventsViewProps> = ({
               const statusIcon = getStatusIcon(statusText) || ICON_TERMIN_GEFUELLT;
 
               return (
-              <IonItemSliding key={event.id} style={{ marginBottom: index < filteredAndSortedEvents.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
+              <IonItemSliding key={event.id} style={{ marginBottom: index < sichtbareEvents.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
                 <IonItem
                   button
                   onClick={() => onSelectEvent(event)}
@@ -555,6 +562,7 @@ const EventsView: React.FC<EventsViewProps> = ({
               );
             })}
       </ListSection>
+      <WeitereEintraege weitere={weitereEvents} onMehr={mehrEvents} bezeichnung="Events" />
     </>
   );
 };

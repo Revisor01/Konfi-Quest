@@ -1,14 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockWriteFile = vi.fn(async () => undefined);
+const mockWriteFile = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock('@capacitor/filesystem', () => ({
   Filesystem: { writeFile: (...args: unknown[]) => mockWriteFile(...args) },
   Directory: { Data: 'DATA' },
 }));
 
-const mockEnqueue = vi.fn(async () => undefined);
+// Die Felder, die die Tests am eingereihten Auftrag lesen.
+interface EingereihterAuftrag {
+  url: string;
+  hasFileUpload: boolean;
+  metadata: Record<string, unknown>;
+  body: Record<string, unknown>;
+}
+const mockEnqueue = vi.fn(async (_auftrag: EingereihterAuftrag) => undefined);
 vi.mock('../../services/writeQueue', () => ({
-  writeQueue: { enqueue: (...args: unknown[]) => mockEnqueue(...args) },
+  writeQueue: { enqueue: (auftrag: EingereihterAuftrag) => mockEnqueue(auftrag) },
 }));
 
 import {
@@ -79,6 +86,19 @@ describe('chatOutbox — Bubbles aus Queue und Fehl-Merker rekonstruieren', () =
     expect(bubble.queueStatus).toBe('error');
     expect(bubble.localId).toBe('c3');
     expect(bubble.content).toBe('kaputt gegangen');
+  });
+
+  it('die error-Bubble aus dem Merker traegt den Status -- nach dem Oeffnen steht der Grund wieder dran', () => {
+    // 29.09.2026: Bei einer endgueltigen Ablehnung (413, 415 ...) zeigt die
+    // Blase den Grund und das Menue kein "Erneut senden" (sendeFehler.ts).
+    const bubble = fehlgeschlageneZuBubble(
+      fehlRecord('c4', 4000, { content: '', fileName: 'Plakat.pdf', error: { status: 413, message: 'Datei ist zu groß (max. 5 MB).' } }),
+      absender
+    );
+
+    expect(bubble.sendeFehlerStatus).toBe(413);
+    expect(bubble.content).toBe('Plakat.pdf');
+    expect(fehlgeschlageneZuBubble(fehlRecord('c5', 5000), absender).sendeFehlerStatus).toBe(500);
   });
 
   it('ergaenzt nur unbekannte Nachrichten — Server-Kopie und vorhandene Bubbles gewinnen', () => {
@@ -179,7 +199,7 @@ describe('mergeMitLokalen', () => {
     sender_id: 1,
     sender_name: 'A',
     sender_type: 'konfi',
-    created_at: new Date().toISOString(),
+    created_at: '2026-09-01T08:00:00.000Z',
     message_type: 'text',
     queueStatus: status,
     localId: clientId,

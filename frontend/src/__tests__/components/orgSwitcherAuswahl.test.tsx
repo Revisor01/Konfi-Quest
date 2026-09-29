@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { ReactNode } from 'react';
+import type { AriaAttributes, ReactNode } from 'react';
 
 // Die Auswahlliste des Gemeinde-Umschalters (25.09.2026). Simon am Geraet:
 // "der gruene Haken passt null ins Design, mach das ausgewaehlt fett und
@@ -25,7 +25,7 @@ vi.mock('@ionic/react', () => ({
   IonContent: (p: StubProps) => <div>{p.children}</div>,
   IonList: (p: StubProps) => <ul>{p.children}</ul>,
   IonListHeader: (p: StubProps) => <li>{p.children}</li>,
-  IonItem: (p: StubProps & { onClick?: () => void; className?: string; 'aria-current'?: string }) => (
+  IonItem: (p: StubProps & { onClick?: () => void; className?: string; 'aria-current'?: AriaAttributes['aria-current'] }) => (
     <li data-testid="org" className={p.className} aria-current={p['aria-current']} onClick={p.onClick}>{p.children}</li>
   ),
   IonLabel: (p: StubProps) => <span data-testid="name">{p.children}</span>,

@@ -1,0 +1,76 @@
+name: CI-Meldung
+
+# ROTES MAIN MELDET SICH ALS ISSUE (29.09.2026, Audit CI BF-07; Simon:
+# "Wenn die CI auf main rot wird -> GitHub-Issue automatisch").
+#
+# Sobald ein Lauf von ci.yml auf main (push) fertig ist, gleicht
+# .github/scripts/ci-meldung.py EIN Issue mit dem Label ci-rot-main ab:
+# rot -> anlegen oder um den Lauf ergaenzen (Commit, rote Jobs, Link), gruen
+# -> mit Kommentar schliessen. Massgeblich ist der juengste fertige Lauf auf
+# main, nicht der ausloesende -- Einzelheiten im Skript.
+#
+# WARUM EIN EIGENER WORKFLOW (workflow_run) UND KEIN JOB IN ci.yml:
+#   - Er kann das Ergebnis von ci.yml nicht veraendern. Ein Job in ci.yml,
+#     der selbst scheitert (API-Stoerung, Rechte), machte den Lauf rot -- und
+#     das Release-Tor (.github/scripts/release-gate.py) verlangt einen
+#     GRUENEN ci.yml-Lauf fuer den Commit: Ein Meldungsfehler blockierte dann
+#     den Store-Build. continue-on-error haelt das zwar auf, aber:
+#   - Ein Fehler in DIESER Datei (Tippfehler im Ausdruck, ungueltiges YAML)
+#     legt nur die Meldung lahm. Derselbe Fehler in ci.yml machte die ganze
+#     Datei ungueltig: keine Tests, kein Build, kein Deploy.
+#   - Er sieht das Endergebnis des ganzen Laufs einschliesslich Deploy; ein
+#     Job in ci.yml muesste auf den Deploy warten und haelt den Lauf so lange
+#     offen (das Release-Tor wartet auf "completed").
+#   Der Deploy haengt an nichts hiervon: ci.yml kennt diese Datei nicht.
+#
+# SICHERHEIT: workflow_run laeuft im Kontext des Standard-Branch, mit den
+# Rechten unten -- auch wenn der ausloesende Lauf von einem Pull Request aus
+# einem Fork kam. Deshalb (a) nur push-Laeufe dieses Repos (Bedingung am
+# Job; ein Fork-PR mit Branch "main" hiesse sonst auch head_branch main),
+# (b) KEIN Code des ausloesenden Commits: ausgecheckt wird der Stand von
+# main (github.sha ist bei workflow_run der Kopf des Standard-Branch), und
+# das Skript liest nur Metadaten ueber die API, (c) Schreibrecht nur fuer
+# Issues. Kein Geheimnis.
+#
+# Der Workflow-Name "CI Pipeline" unten muss dem name: in ci.yml gleichen,
+# sonst loest nichts aus -- still (Test ciMeldung.test.ts haelt beide fest).
+# Wirksam erst, wenn diese Datei auf main liegt (workflow_run liest die
+# Fassung des Standard-Branch).
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
+    branches: [main]
+
+permissions: {}
+
+# Nacheinander, damit zwei fertige Laeufe nicht gleichzeitig zwei Issues
+# anlegen. Ein WARTENDER Lauf wird von einem neueren ersetzt; das verliert
+# nichts, weil jeder Lauf den juengsten Stand von main abgleicht.
+concurrency:
+  group: ci-meldung
+  cancel-in-progress: false
+
+jobs:
+  melden:
+    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read  # Checkout des Skripts (Stand main)
+      actions: read   # Laeufe und Jobs von ci.yml lesen
+      issues: write   # Issue, Kommentar, Label
+    steps:
+      - name: Checkout (nur das Skript, Stand main)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Issue anlegen, ergaenzen oder schliessen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          AUSLOESER: ${{ github.event.workflow_run.id }}
+        run: python3 .github/scripts/ci-meldung.py

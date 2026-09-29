@@ -51,7 +51,12 @@ import '@ionic/react/css/typography.css';
 
 /* Optional CSS utils that can be commented out */
 import '@ionic/react/css/padding.css';
-import '@ionic/react/css/float-elements.css';
+// float-elements.css (Ionics Hilfsklassen zum Umfliessen) steht hier nicht
+// (29.09.2026, Toolchain-Audit BF-11): Keine Stelle der App nutzt diese
+// Klassen, und die Datei war die einzige Quelle der Build-Warnung
+// "'host-context' is not recognized" (zehn :host-context([dir=rtl])-Regeln,
+// 2.952 Bytes). startBuendel.test.ts schlaegt an, wenn eine Klasse davon
+// auftaucht.
 import '@ionic/react/css/text-alignment.css';
 import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';

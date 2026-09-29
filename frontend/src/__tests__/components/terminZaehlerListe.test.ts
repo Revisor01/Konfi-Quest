@@ -5,7 +5,8 @@ import { describe, it, expect } from 'vitest';
 //
 // Ursache: Das Frontend rechnete `registered_count - teamer_count`. Seit
 // Migration 120 schliesst registered_count die Teamer aber bereits AUS
-// (backend/routes/events.js:145: FILTER ... r_book.name <> 'teamer'), und
+// (damals backend/routes/events.js, Zeile 145: FILTER ... r_book.name <> 'teamer';
+// heute routes/events/lesen.js, `ebs.konfi_confirmed`), und
 // teamer_count zaehlt sie getrennt. Die Subtraktion zog sie ein zweites Mal
 // ab: 19 - 4 = 15.
 //

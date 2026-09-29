@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE } from '../../services/mediaCompression';
 import { useDateiOeffnen } from '../../hooks/useDateiOeffnen';
+import { dateiAuswaehlen } from '../../services/systemDialoge';
+import { CHAT_DATEIAUSWAHL } from '../../utils/dateiTypen';
 import { Message } from '../../types/chat';
 
 /**
@@ -34,12 +36,16 @@ export function useChatDateien({ messages }: ChatDateienDeps) {
       .map(m => ({ pfad: m.file_path!, name: m.file_name })),
   });
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = event.target.files?.[0];
-    // Input zuruecksetzen, damit dieselbe Datei erneut waehlbar ist.
-    event.target.value = '';
-    if (!picked) return;
+  // Die Auswahl des Systems oeffnen — ueber die Huelle, damit die App-Sperre
+  // sie nicht fuer "App verlassen" haelt (Simons Befund 29.09.2026, Android).
+  // Die Huelle legt je Auswahl ein frisches Feld an: dieselbe Datei ist gleich
+  // wieder waehlbar.
+  const dateiWaehlen = async () => {
+    const auswahl = await dateiAuswaehlen({ accept: CHAT_DATEIAUSWAHL });
+    if (auswahl) await dateiUebernehmen(auswahl[0]);
+  };
 
+  const dateiUebernehmen = async (picked: File) => {
     // Bilder vor Upload resizen + komprimieren (max 1920px lange Kante), dann
     // gegen die Grenze pruefen — derselbe Weg wie bei den Challenges
     // (27.09.2026). Andere Dateien (Videos, PDFs) bleiben unverändert.
@@ -76,7 +82,8 @@ export function useChatDateien({ messages }: ChatDateienDeps) {
   return {
     selectedFile,
     selectedFilePreview,
-    handleFileSelect,
+    dateiWaehlen,
+    dateiUebernehmen,
     clearSelectedFile,
     handleFileClick,
     ladendeDatei,

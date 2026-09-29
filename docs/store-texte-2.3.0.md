@@ -113,7 +113,7 @@ keine 404-Seite).
 ```bash
 KONFI_DEMO_PASSWORT=… node scripts/screenshots.mjs                 # iPhone, 21 Bilder
 KONFI_DEMO_PASSWORT=… node scripts/screenshots.mjs --geraet play   # Android, 21 Bilder
-npm --prefix frontend run docs:handbuch                            # spiegelt nach frontend/public/docs/bilder/
+npm --prefix frontend run docs:handbuch                            # eingebundene Bilder als WebP nach frontend/public/docs/bilder/
 ```
 
 Je Gerät (`docs/screenshots/iphone/` und `docs/screenshots/play/`) dieselben

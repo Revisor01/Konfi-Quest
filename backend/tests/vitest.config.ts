@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     pool: 'forks',
-    // maxWorkers MUSS 1 bleiben: alle 24 Suites teilen sich EINE Test-DB
+    // maxWorkers MUSS 1 bleiben: alle Testdateien teilen sich EINE Test-DB
     // (globalSetup) und seed.js nutzt FESTE IDs (organizations id=1/2, roles
     // id=1..). Parallele Worker wuerden sich per truncate+seed gegenseitig die
     // Daten ueberschreiben -> "duplicate key" / "FK not present". Echte

@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './helpers/auth';
+import { loginAs, abmelden } from './helpers/auth';
 
 test.describe('Event-Buchung', () => {
   test('Konfi bucht Event, Buchung wird bestaetigt', async ({ page }) => {
+    // Zwei Anmeldungen hintereinander.
+    test.setTimeout(90_000);
     // 1. Als Konfi einloggen
     await loginAs(page, 'konfi1');
 
@@ -45,5 +47,15 @@ test.describe('Event-Buchung', () => {
     await page.waitForSelector('ion-content', { state: 'visible' });
     const eventEntry = page.getByRole('button', { name: /Weihnachtsgottesdienst/i });
     await expect(eventEntry).toBeVisible({ timeout: 10_000 });
+
+    // 7. Die Buchung kommt bei der Leitung an (Audit Tests BF-09): In der
+    //    Teilnehmerliste des Termins steht Test Konfi 1 als gebucht --
+    //    nicht nur ein geaenderter Knopf in der eigenen Ansicht.
+    await abmelden(page);
+    await loginAs(page, 'admin1');
+    await page.goto('/admin/events/1');
+    const teilnahme = page.locator('.app-list-item').filter({ hasText: 'Test Konfi 1' });
+    await expect(teilnahme).toHaveCount(1, { timeout: 15_000 });
+    await expect(teilnahme.getByRole('img', { name: 'Gebucht' })).toBeVisible();
   });
 });

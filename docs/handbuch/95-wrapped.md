@@ -65,7 +65,7 @@ Team-Rückblicke tragen keinen eingetippten Namen; sie heißen nach ihrem Jahr.
 
 Angeboten werden nur Jahre, in denen es für **Teamer:innen** tatsächlich etwas
 zu berichten gibt: ein Event, bei dem eine Teamer:in anwesend war, eine
-Teamer-Aktivität, ein verliehenes Badge, ein Zertifikat oder ein früherer
+Teamer-Aktivität, ein verliehenes Team-Badge, ein Zertifikat oder ein früherer
 Team-Rückblick.
 
 Dass in einem Jahr überhaupt etwas los war, genügt nicht. Ein Jahr, in dem nur
@@ -461,7 +461,7 @@ etwas zusammengekommen ist.
 | **Stavanger 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Event der Kategorie „Sommerfreizeit" zwischen 1.6. und 30.9.2026 | 5 % |
 | **Deine Konfis** | Zahl der betreuten Konfis, die Jahrgänge | mindestens ein Konfi über die Jahrgangs-Zuweisung | 90 % |
 | **Nicht allein** | mit wie vielen anderen zusammen die Jahrgänge betreut wurden | mindestens eine weitere Teamer:in auf denselben Jahrgängen | 75 % |
-| **Deine Badges** | Zahl und bis zu sechs Badges | mindestens ein Badge im Zeitraum | 80 % |
+| **Deine Badges** | Zahl und bis zu sechs Team-Badges; Badges aus der Konfi-Zeit zählen hier nicht | mindestens ein Team-Badge | 80 % |
 | **Deine Zertifikate** | Zahl und das zuletzt erhaltene Zertifikat; JuLeiCa und Teamer-Card werden eigens genannt | mindestens ein Zertifikat im Zeitraum | 40 % |
 | **Deine Kraftproben** | wie oft du selbst bei einer Challenge mitgemacht hast, und wobei am liebsten | mindestens ein eigener Beitrag | 60 % |
 | **Deine Challenges** | wie viele du selbst gestellt hast, mit den drei neuesten Titeln | mindestens drei gestellte Challenges (kein Entwurf) | 20 % |

@@ -7,6 +7,8 @@ const liveUpdate = require('../utils/liveUpdate');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
 // Seiteneffekte nach der Antwort (abwartbar im Test) -- siehe utils/nachAntwort.js
 const { nachAntwort } = require('../utils/nachAntwort');
+// Auf einem Transaktions-Client nacheinander, ueber den Pool parallel (pg 9).
+const { abfragenBuendeln } = require('../utils/abfragenBuendeln');
 const { ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
 // Single Source of Truth: welche Events zählen für Badges (Konfi vs. Teamer).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
@@ -249,6 +251,11 @@ const checkAndAwardBadges = async (db, userId, optionen = {}) => {
     const earnedBadgeDetails = [];
 
     // Vorab-Queries: activity_count, event_count, bonus_count, completed_activities, unique_activities
+    //
+    // abfragenBuendeln statt Promise.all (29.09.2026): Anwesenheit und
+    // Check-in rufen diese Funktion mit dem CLIENT ihrer Transaktion -- dort
+    // nacheinander (pg 9 streicht die interne Warteschlange fuer gleichzeitige
+    // Abfragen auf einem Client), ueber den Pool weiter parallel.
     const [
       { rows: [preActCount] },
       { rows: [preEvCount] },
@@ -256,19 +263,19 @@ const checkAndAwardBadges = async (db, userId, optionen = {}) => {
       { rows: preCompletedActs },
       { rows: preUniqueActs },
       { rows: preKategorienKonfi }
-    ] = await Promise.all([
-      db.query("SELECT COUNT(*) as count FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
+    ] = await abfragenBuendeln(db, [
+      () => db.query("SELECT COUNT(*) as count FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
       // event_count/activity_count: nur freiwillige, bestaetigte Events (kein Pflicht/Konfirmation).
-      db.query(`SELECT COUNT(*) as count FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.user_id = $1 AND ${KONFI_BADGE_EVENT_CONDITION} AND eb.organization_id = $2`, [userId, konfi.organization_id]),
+      () => db.query(`SELECT COUNT(*) as count FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.user_id = $1 AND ${KONFI_BADGE_EVENT_CONDITION} AND eb.organization_id = $2`, [userId, konfi.organization_id]),
       // bonus_points-Badge meint die SUMME der Bonuspunkte (Frontend-Label "Punkte"),
       // nicht die Anzahl der Eintraege -> SUM(points), konsistent zum Progress (konfi.js).
-      db.query("SELECT COALESCE(SUM(points), 0) as count FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
-      db.query("SELECT DISTINCT a.name FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND a.organization_id = $2", [userId, konfi.organization_id]),
-      db.query("SELECT DISTINCT activity_id FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
+      () => db.query("SELECT COALESCE(SUM(points), 0) as count FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
+      () => db.query("SELECT DISTINCT a.name FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND a.organization_id = $2", [userId, konfi.organization_id]),
+      () => db.query("SELECT DISTINCT activity_id FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
       // category_combination: aus welchen Kategorien war der Konfi dabei.
       // Query-Text aus utils/badgeKategorieRegel.js -- derselbe, den der
       // Fortschritt in utils/konfiBadgeProgress.js benutzt.
-      db.query(KONFI_KATEGORIE_NAMEN_SQL, [userId, konfi.organization_id])
+      () => db.query(KONFI_KATEGORIE_NAMEN_SQL, [userId, konfi.organization_id])
     ]);
 
     const preloaded = {
@@ -482,17 +489,17 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId, still = fal
     { rows: teamerCompletedActs },
     { rows: teamerUniqueActs },
     { rows: teamerKategorien }
-  ] = await Promise.all([
-    db.query(`SELECT COUNT(*) as count FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId]),
+  ] = await abfragenBuendeln(db, [
+    () => db.query(`SELECT COUNT(*) as count FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId]),
     // Teamer: ALLE bestaetigten Events zählen (inkl. Pflicht/Konfirmation) — Teamer
     // arbeiten dort mit, das ist eine legitime Zählung. (Anders als bei Konfis.)
-    db.query("SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2", [userId, organizationId]),
-    db.query(`SELECT DISTINCT a.name FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND a.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId]),
-    db.query(`SELECT DISTINCT ua.activity_id FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId]),
+    () => db.query("SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2", [userId, organizationId]),
+    () => db.query(`SELECT DISTINCT a.name FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND a.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId]),
+    () => db.query(`SELECT DISTINCT ua.activity_id FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId]),
     // category_combination: aus welchen Kategorien war die Teamer:in dabei.
     // Query-Text aus utils/badgeKategorieRegel.js -- derselbe, den der
     // Fortschritt in utils/teamerBadgeProgress.js benutzt.
-    db.query(TEAMER_KATEGORIE_NAMEN_SQL, [userId, organizationId])
+    () => db.query(TEAMER_KATEGORIE_NAMEN_SQL, [userId, organizationId])
   ]);
 
   const teamerPreloaded = {
@@ -751,10 +758,10 @@ async function checkStreakCriteria(db, userId, organizationId, criteriaValue, is
 // Shared: Badges einfuegen und Notifications senden
 // =====================================================================
 async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails, still = false) {
-  const insertPromises = earnedBadgeIds.map(badgeId =>
+  // Auf einem Client nacheinander, ueber den Pool parallel (utils/abfragenBuendeln.js).
+  await abfragenBuendeln(db, earnedBadgeIds.map(badgeId => () =>
     db.query("INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)", [userId, badgeId, organizationId])
-  );
-  await Promise.all(insertPromises);
+  ));
 
   try {
     // Stille Vergabe (Nachhol-Lauf ueber "Abzeichen neu pruefen"): weder

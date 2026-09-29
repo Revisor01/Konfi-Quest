@@ -28,12 +28,23 @@ Entrypoint-Skript laeuft mit `set -e`). Der Container endet mit Exit-Code 3,
 und `restart: unless-stopped` startet ihn in eine Endlosschleife. Eine
 kaputte Datei hier heisst also: die neue Instanz kommt gar nicht erst hoch.
 
+**Hier liegen nur die beiden `.sql`-Dateien und diese Beschreibung.** Das
+Entrypoint spielt jede `*.sql` ein und fuehrt jede `*.sh` aus; nur andere
+Endungen ignoriert es. Bis zum 29.09.2026 lag hier das Hilfsskript
+`refresh.sh` — das Entrypoint fuehrte es aus, es fand im Container seine
+Quelle nicht, und die neue Instanz endete beim ersten Start (nachgestellt mit
+`postgres:15-alpine`). Es heisst jetzt
+`backend/tests/schema/init-scripts-spiegeln.sh`; der Waechter
+`backend/tests/schema/initScriptsInhalt.test.js` faellt, sobald hier wieder
+etwas anderes liegt.
+
 ## Warum das Schema ein Produktions-Dump ist
 
-`01-create-schema.sql` ist ein `pg_dump --schema-only` der echten
-Produktionsdatenbank — dieselbe Datei, aus der auch die Testsuite ihre
-Datenbank aufbaut (`backend/tests/globalSetup.js`). Beide Seiten lesen
-denselben Stand; es gibt keine zweite, handgepflegte Fassung mehr.
+`01-create-schema.sql` ist ein `pg_dump --schema-only` der
+Produktionsdatenbank, fortgeschrieben um die Migrationen, die dort seitdem
+gelaufen sind — dieselbe Datei, aus der auch die Testsuite ihre Datenbank
+aufbaut (`backend/tests/globalSetup.js`). Beide Seiten lesen denselben Stand;
+es gibt keine zweite, handgepflegte Fassung mehr.
 
 Ein handgeschriebenes Schema waere eine zweite Quelle neben den Migrationen,
 und zwei Quellen laufen auseinander. Genau das war passiert: Die frueher hier
@@ -44,11 +55,11 @@ CHECK-Constraint Werte, die der Code laengst schreibt. Aufgefallen ist das
 keinem Test, weil die Tests aus dem Dump bauen und diese Datei nie anfassten.
 
 Die Migrationskette kann die Luecke nicht schliessen: Sie beginnt erst bei
-`064`, und fuer mehrere Objekte (`daily_verses`, `activities.category`,
-`konfi_profiles.password_plain`) existiert nirgends im Repo ein DDL — sie
-wurden in Produktion von Hand angelegt. Das Repo kann die Produktion also
-nicht aus Migrationen reproduzieren; der Dump ist der einzige ehrliche
-Startpunkt.
+`064`, und fuer `konfi_profiles.password_plain` existiert nirgends im Repo
+ein DDL — die Spalte wurde in Produktion von Hand angelegt
+(`daily_verses` und `activities.category`, frueher ebenso, liefert seit dem
+22.08.2026 Migration 124). Das Repo kann die Produktion also nicht allein
+aus Migrationen reproduzieren; der Dump ist der einzige ehrliche Startpunkt.
 
 ## Ablauf bei einer Neuinstallation
 
@@ -60,17 +71,54 @@ Startpunkt.
    sie erneut anwenden.
 3. Das Backend startet und laesst ueber `backend/database.js` alle noch
    nicht vermerkten Migrationen laufen — derselbe Weg wie bei jedem Deploy.
+4. **Der erste Zugang.** Das Schema ist jetzt vollstaendig, aber leer: keine
+   Gemeinde, kein Konto. Gemeinden legt nur ein Super-Admin an, Konten nur
+   eine Leitung — ohne diesen Schritt kommt niemand hinein. Im
+   Backend-Container:
+
+   ```bash
+   docker exec -e ERST_BENUTZERNAME=<name> -e ERST_ANZEIGENAME=<anzeige> \
+     -e ERST_PASSWORT=<passwort> [-e ERST_EMAIL=<adresse>] [-e ERST_GEMEINDE=Betrieb] \
+     <backend-container> node scripts/ersteinrichtung.js
+   ```
+
+   Das legt eine Gemeinde fuer den Betrieb an, ihre vier Standardrollen und
+   ein Konto mit Super-Admin-Recht (Rolle Gemeindeleitung plus
+   `is_super_admin`); es laeuft nur auf einer leeren Datenbank und bricht
+   sonst ohne Aenderung ab. Das Passwort muss die Regeln der App erfuellen.
+   Danach in der App anmelden, das Passwort aendern und die eigentlichen
+   Gemeinden anlegen — jede bekommt dabei ihre Rollen, Abzeichen,
+   Zertifikatstypen und Stufen. Test: `backend/tests/schema/ersteinrichtung.test.js`.
 
 Ergebnis: eine neue Instanz durchlaeuft exakt dieselben Migrationen wie die
 Produktion und landet auf demselben Schema.
 
+Die Vorlage `deploy/compose.konfi_quest.yml` setzt die Server-Zeitzone fest
+auf UTC wie die Produktion; ohne das uebernaehme das Image beim ersten Start
+`TZ` in `postgresql.conf` (Berliner Zeit), und Zeitspalten ohne Zone
+landeten zwei Stunden versetzt.
+
 ## Aktualisieren
 
-Beide Dateien entstehen aus der Produktion und werden gemeinsam erneuert:
+Beide Dateien werden gemeinsam erneuert, **mit jedem Release** — aus dem
+Migrationsstand des Repos, reproduzierbar und ohne Zugang zur Produktion:
 
 ```bash
-bash backend/tests/schema/refresh-schema.sh   # holt Dump + Migrationsstand
-bash init-scripts/refresh.sh                  # spiegelt beides hierher
+# Dump + Migrationsstand fortschreiben (Docker, postgres:15-alpine) und
+# hierher spiegeln. BIS = letzte Migration, die in der Produktion gelaufen ist.
+bash backend/tests/schema/schema-erneuern.sh 173_einladungscode_ohne_urheber.sql
+```
+
+Vergessen faellt auf: `backend/tests/schema/dumpAktualitaet.test.js`
+schlaegt an, sobald mehr als 20 Migrationen ueber dem Dump laufen, und wenn
+dieses Verzeichnis nicht mehr zum Dump passt. Ob die Produktion dem
+fortgeschriebenen Stand wirklich entspricht (Handaenderungen dort sieht kein
+Migrationsstand), misst der Betrieb mit `backend/scripts/schemaVergleich.js`.
+Direkt aus der Produktion geht es weiterhin:
+
+```bash
+bash backend/tests/schema/refresh-schema.sh         # holt Dump + Migrationsstand
+bash backend/tests/schema/init-scripts-spiegeln.sh  # spiegelt beides hierher
 ```
 
 Nie einzeln anfassen: Ein Dump ohne den passenden Migrationsstand laesst den

@@ -4,13 +4,13 @@ import { resolve } from 'path';
 
 // Befund H5 (26.08.2026): "Alle bestätigen" gab es nur über der Konfi-Sektion.
 // Das Backend unterstützt die Sammelverbuchung für Teamer:innen seit dem
-// 25.08. ausdrücklich (events.js:2782, `rolle: 'teamer'`, bewusst getrennt
+// 25.08. ausdrücklich (PUT /:id/participants/attendance-all in routes/events/anwesenheit.js, `rolle: 'teamer'`, bewusst getrennt
 // weil Teamer:innen Abzeichen aber KEINE Punkte bekommen) — das Frontend rief
 // die Route ohne Body auf und bot den Knopf für Teamer:innen gar nicht an.
 //
 // Folge: Die Leitung musste Teamer:innen einzeln verbuchen, und der Termin
 // blieb im "Verbuchen"-Reiter hängen, weil pending_bookings_count beide Rollen
-// zählt (events.js:270-274). Bei reinen Teamer-Terminen fehlte der Knopf
+// zählt (routes/events/lesen.js, `unprocessedCount`). Bei reinen Teamer-Terminen fehlte der Knopf
 // vollständig, weil die Konfi-Sektion dort gar nicht gerendert wird.
 //
 // Dieser Test liest die Quelldatei, statt die Ansicht zu rendern: Die

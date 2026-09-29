@@ -220,7 +220,11 @@ den nur Leitung und Gemeindeleitung ziehen dürfen.
 Text ins Feld „Nachricht schreiben…" eintippen und senden, höchstens **4000
 Zeichen**. Alle im Raum sehen die Nachricht sofort und bekommen eine
 Benachrichtigung aufs Gerät — bei einem Zweiergespräch mit dem Namen des
-Absenders als Überschrift, sonst mit dem Namen des Chats.
+Absenders als Überschrift, sonst mit dem Namen des Chats. Die Benachrichtigung
+sagt nur, wer geschrieben hat und was es ist („Neue Nachricht von Anna",
+„Neues Foto von Anna", „Neue Umfrage von Anna"); den Text, Dateinamen und die
+Frage einer Umfrage zeigt erst die App. So steht nichts davon auf dem
+Sperrbildschirm und nichts bei den Diensten, die Benachrichtigungen zustellen.
 
 Den ersten Buchstaben einer Nachricht und den nach einem Punkt, Ausrufe- oder
 Fragezeichen schreibt die App groß. Ein Zeilenumbruch allein beendet keinen
@@ -232,6 +236,21 @@ wieder geht; mehr dazu unter
 Eine Uhr heißt „wartet noch", ein Haken „abgeschickt", ein rotes Warnsymbol
 „fehlgeschlagen". Ein Tipp auf eine fehlgeschlagene Nachricht öffnet ein Menü
 mit „Erneut senden" und „Nachricht löschen".
+
+Hat der Server die Nachricht abgelehnt, steht der Grund darunter, und die App
+versucht es nicht noch einmal — ein zweiter Versuch scheiterte genauso. Das
+Menü bietet dann nur „Nachricht löschen":
+
+- *„Nicht gesendet: Die Datei ist zu groß."* — höchstens 5 MB, eine Textdatei
+  (TXT, CSV) höchstens 2 MB; siehe [Eine Datei mitschicken](#eine-datei-mitschicken).
+- *„Nicht gesendet: Dieser Dateityp kann nicht gesendet werden."* — siehe
+  [Verstehen, was mit der Datei passiert](#verstehen-was-mit-der-datei-passiert).
+- *„Nicht gesendet: Die Nachricht wurde nicht angenommen."* — etwa wenn du
+  nicht mehr Mitglied des Chats bist.
+
+Lehnt der Server sie gleich beim Abschicken ab, erscheint derselbe Satz oben
+als Hinweis. Die Nachricht bleibt so stehen, auch wenn du den Chat verlässt und
+wieder öffnest, bis du sie löschst.
 
 > **Achtung:** Der Haken bedeutet **nicht** „gelesen". Lesebestätigungen gibt es
 > im Konfi-Quest-Chat nicht, und es gibt keine „schreibt gerade…"-Anzeige.
@@ -314,9 +333,10 @@ An jede Nachricht lässt sich eine Datei hängen, ein Text darf dabeistehen.
 | **Audio** | MP3, M4A, OGG, WAV |
 | **Dokumente** | PDF, Word, PowerPoint, TXT, CSV |
 
-Bilder und Videos erscheinen direkt im Chat, alles andere als Anhang mit
-Dateinamen zum Antippen. Bilder werden vor dem Senden automatisch verkleinert —
-auf demselben Weg wie bei den [Challenges](80-challenges.md).
+Die Dateiauswahl auf dem Handy bietet genau diese Formate an. Bilder und
+Videos erscheinen direkt im Chat, alles andere als Anhang mit Dateinamen zum
+Antippen. Bilder werden vor dem Senden automatisch verkleinert — auf demselben
+Weg wie bei den [Challenges](80-challenges.md).
 
 Während eine Datei gesendet wird, steht an der Nachricht, wie weit sie ist
 (*„Wird gesendet… 40 %"*), darunter ein Balken. Bei 100 % wechselt der Text auf
@@ -350,12 +370,20 @@ wie sie sind — für ein längeres Video ist der Chat zu knapp.
 
 - Sie wird beim Hochladen **auf ihren echten Typ geprüft** — nicht am
   Dateinamen, sondern an den ersten Bytes. Ein umbenanntes Programm kommt nicht
-  durch (*„Dateityp konnte nicht verifiziert werden"*). Reine Textdateien
-  (TXT, CSV) haben keine solche Kennung; bei ihnen prüft der Server den
-  Inhalt: höchstens 2 MB, keine Programmdaten (*„Die Datei ist keine
-  Textdatei."*) und keine Webseite oder kein Skript darin (*„Textdateien mit
-  HTML oder Skript werden nicht angenommen."*). Eine CSV aus Excel geht durch,
-  auch mit Umlauten.
+  durch. Reine Textdateien (TXT, CSV) haben keine solche Kennung; bei ihnen
+  prüft der Server den Inhalt: höchstens 2 MB, keine Programmdaten und keine
+  Webseite oder kein Skript darin. Eine CSV aus Excel geht durch, auch mit
+  Umlauten. Fällt eine Datei durch, steht an der Nachricht *„Nicht gesendet:
+  Dieser Dateityp kann nicht gesendet werden."*, bei einer zu großen
+  Textdatei *„Nicht gesendet: Die Datei ist zu groß."*
+- Sagt das Handy nicht, was für eine Datei es ist — auf Android kommt das etwa
+  bei Word-Dateien vor —, zählt die **Endung des Dateinamens**: Eine
+  `Einladung.docx` geht als Word-Datei durch, geprüft wird ihr Inhalt trotzdem.
+  Eine Datei in einem Format, das nicht in der Tabelle oben steht, nimmt der
+  Chat nicht an. Die Nachricht geht dann gar nicht raus, auch nicht ihr Text,
+  und bleibt mit dem roten Warnsymbol und dem Grund stehen (*„Nicht gesendet:
+  Dieser Dateityp kann nicht gesendet werden."*) — lösch sie und schick die
+  Datei in einem der Formate oben.
 - Sie liegt danach **verschlüsselt** auf dem Server, unter einem zufälligen
   Namen ohne Bezug zu Inhalt oder Absender.
 - Abrufen kann sie nur, wer angemeldet ist und den Chat öffnen darf. Es gibt

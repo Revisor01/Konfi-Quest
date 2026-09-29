@@ -15,7 +15,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { TeamerListenEintrag } from '../../types/user';
-import type { Konfi } from '../../types/konfi';
+// Die Seite reicht die Konfi nur durch; die Abfrage liest id und name.
+interface Konfi { id: number; name: string }
 
 interface AlertKnopf { text: string; role?: string; handler?: () => unknown | Promise<unknown> }
 interface AlertOptionen { header?: string; message?: string; buttons: AlertKnopf[] }
@@ -71,7 +72,7 @@ vi.mock('../../hooks/useOnboardingOnce', () => ({
   }),
 }));
 
-const konfi = { id: 1, name: 'Test Konfi 1' } as unknown as Konfi;
+const konfi: Konfi = { id: 1, name: 'Test Konfi 1' };
 const teamer: TeamerListenEintrag = { id: 3, name: 'Test Teamer 1', username: 'teamer1' };
 
 vi.mock('../../components/admin/KonfisView', () => ({

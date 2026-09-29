@@ -63,7 +63,7 @@ describe('Abmeldung im Buchungsstatus', () => {
   async function bucht(eventId, userId, status = 'confirmed') {
     const { rows: [b] } = await db.query(
       `INSERT INTO event_bookings (user_id, event_id, status, organization_id, created_at)
-       VALUES ($1, $2, $3, $4, NOW()::text) RETURNING id`,
+       VALUES ($1, $2, $3, $4, NOW()) RETURNING id`,
       [userId, eventId, status, ORGS.testGemeinde.id]
     );
     return b.id;

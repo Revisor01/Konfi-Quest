@@ -32,12 +32,15 @@ module.exports = async function globalSetup() {
   //    die Suite gruen war (Audit 22.08.2026).
   //
   //    Warum ein Dump und nicht die Migrationen? Das Repo KANN Produktion
-  //    nicht reproduzieren: Die Kette beginnt erst bei 064, und für mehrere
-  //    Objekte (daily_verses, activities.category, konfi_profiles.password_plain)
-  //    gibt es nirgends ein DDL. Wer aus den Migrationen baut, testet ein
-  //    Schema, das es so nie gab.
+  //    nicht allein aus Migrationen reproduzieren: Die Kette beginnt erst bei
+  //    064, und fuer konfi_profiles.password_plain gibt es nirgends ein DDL
+  //    (daily_verses und activities.category liefert seit dem 22.08.2026
+  //    Migration 124). Wer aus den Migrationen baut, testet ein Schema, das
+  //    es so nie gab.
   //
-  //    Aktualisieren: bash backend/tests/schema/refresh-schema.sh
+  //    Aktualisieren (mit jedem Release, Waechter dumpAktualitaet.test.js):
+  //      bash backend/tests/schema/schema-erneuern.sh <letzte Migration der Produktion>
+  //    Direkt aus der Produktion: bash backend/tests/schema/refresh-schema.sh
   const schemaDatei = path.join(__dirname, 'schema', 'prod-schema.sql');
   if (!fs.existsSync(schemaDatei)) {
     throw new Error(
@@ -105,7 +108,8 @@ module.exports = async function globalSetup() {
         `[globalSetup] Migration ${file} fehlgeschlagen: ${err.message}\n` +
         'Die Migration laeuft so auch beim Deploy nicht durch. Entweder sie ist ' +
         'fehlerhaft, oder sie setzt einen Schema-Stand voraus, den ' +
-        'backend/tests/schema/prod-schema.sql noch nicht hat (dann refresh-schema.sh).'
+        'backend/tests/schema/prod-schema.sql noch nicht hat (dann refresh-schema.sh).',
+        { cause: err }
       );
     }
   }

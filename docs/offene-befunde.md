@@ -559,3 +559,22 @@ nirgends festgehalten (Sicherheits-Bericht BF-21).
 **Entschieden 27.09.2026 (Simon):** Der Check-in vor Ort bleibt beim Team —
 Teamer:innen erzeugen QR-Codes, damit mehrere gleichzeitig einchecken lassen
 können. Das Handbuch (`70-termine.md`) nennt den Grund.
+
+## 14. GitGuardian meldet „Generic Password" in Tests (29.09.2026) — GEPRÜFT, FEHLALARM
+
+Der GitGuardian-Check am Release-PR meldete zwei Fundstellen als Passwort.
+Beide sind am Code geprüft und kein Geheimnis; es gibt nichts zu widerrufen.
+
+- `backend/tests/utils/passwordUtils.test.js` (Commit `004b4fe9`): die
+  Konstante `SONDERZEICHEN` — die Liste der Zeichen, die `validatePassword`
+  als Sonderzeichen zählt. Der Block hält fest, dass die Liste beim
+  Einführen des Backend-Lints gleich geblieben ist.
+- `backend/tests/schema/schema-erneuern.sh` (Commit `ee95e49e`):
+  `POSTGRES_PASSWORD=wegwerf` für den Wegwerf-Container, in dem das Skript den
+  Schema-Dump erneuert. Der Container ist nur lokal erreichbar und wird am
+  Ende des Laufs gelöscht.
+
+Frühere Meldungen derselben Art (Release-PR 2.3.0): `konfi1` und das
+Beispiel-Passwort im Bibelvers-Format sind Testwerte der Test-Datenbank. In
+GitGuardian lassen sich die Fundstellen als Fehlalarm markieren; der Check
+ist „neutral" und blockiert den Merge nicht.

@@ -82,6 +82,36 @@ export const FARBEN = {
 } as const;
 
 /**
+ * Abzeichen-Kriterienfarben als FLAECHE (Dunkelmodus-Audit BF-10, 29.09.2026).
+ *
+ * Spiegel von --app-color-kriterium-<typ> in variables.css. Hexwerte, weil
+ * die Aufrufer daraus rechnen: Alpha-Suffix (`${farbe}40`), SVG-stroke im
+ * Fortschrittsring und die Vorgabe fuer die gespeicherte Badge-Farbe (die
+ * Datenbank und die Store-Apps kennen nur Hex). In beiden Modi gleich;
+ * als SCHRIFT gilt getCriteriaTextColor() in utils/badgeCriteria.ts.
+ * Schluessel = criteria_type; `standard` ist der Rueckfall (== users).
+ */
+export const KRITERIUM_FARBEN = {
+  total_points: '#ffd700', // --app-color-kriterium-total-points
+  gottesdienst_points: '#ff9500', // --app-color-kriterium-gottesdienst-points
+  gemeinde_points: '#059669', // --app-color-kriterium-gemeinde-points
+  bonus_points: '#ff6b9d', // --app-color-kriterium-bonus-points
+  both_categories: '#5856d6', // --app-color-kriterium-both-categories
+  activity_count: '#3880ff', // --app-color-kriterium-activity-count
+  unique_activities: '#10dc60', // --app-color-kriterium-unique-activities
+  activity_combination: '#7044ff', // --app-color-kriterium-activity-combination
+  category_activities: '#0cd1e8', // --app-color-kriterium-category-activities
+  category_combination: '#0891b2', // --app-color-kriterium-category-combination
+  specific_activity: '#ffce00', // --app-color-kriterium-specific-activity
+  streak: '#eb445a', // --app-color-kriterium-streak
+  time_based: '#8e8e93', // --app-color-kriterium-time-based
+  event_count: '#e63946', // --app-color-kriterium-event-count
+  mandatory_event_count: '#b91c1c', // --app-color-kriterium-mandatory-event-count
+  teamer_year: '#5b21b6', // --app-color-kriterium-teamer-year
+  standard: '#667eea', // --app-color-kriterium-standard
+} as const;
+
+/**
  * QR-Codes: Die qrcode-Bibliothek malt selbst (Canvas/SVG-Attribute) und
  * kann keine CSS-Variablen aufloesen — deshalb echte Hexwerte.
  */

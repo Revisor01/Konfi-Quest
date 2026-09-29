@@ -185,9 +185,33 @@ async function legeKonfiHistorieAn(client, userId, organizationId, { anlass, ers
 }
 
 /**
+ * Die Rolle einer Person IN DER GEMEINDE IHRES KONFI-PROFILS -- als
+ * SQL-Ausdruck fuer Abfragen mit den Aliasen `kp` (konfi_profiles) und `u`
+ * (users). users.role_id gilt fuer die Stamm-Gemeinde, user_organizations.
+ * role_id fuer eine weitere (utils/orgMitglieder.js). NULL, wenn die Person
+ * dort nicht (mehr) Mitglied ist -- dann ist sie dort keine aktive Konfi.
+ *
+ * Aktiv ist, wo der Ausdruck 'konfi' ergibt; befoerdert (oder ehemals dort),
+ * wo `COALESCE(<Ausdruck>, '') <> 'konfi'`.
+ *
+ * WARUM (29.09.2026): Die Loeschung eines Jahrgangs las an vier Stellen die
+ * Rolle am Konto. Ein Konto aus dem Altbestand, zuhause Leitung und in einer
+ * zweiten Gemeinde Konfi, galt dort als befoerdert: Sein Jahrgang liess sich
+ * loeschen, es bekam eine Kopie "Konfi-Zeit" und blieb Konfi ohne Jahrgang.
+ * Vorschau, Sperre, Sicherung und Loesen in routes/jahrgaenge.js und
+ * sichereKonfiZeitBefoerderter lesen jetzt diesen einen Ausdruck.
+ */
+const ROLLE_IN_PROFIL_GEMEINDE = `(SELECT r_pg.name FROM roles r_pg
+   WHERE r_pg.id = CASE WHEN u.organization_id = kp.organization_id THEN u.role_id
+                        ELSE (SELECT uo_pg.role_id FROM user_organizations uo_pg
+                               WHERE uo_pg.user_id = u.id AND uo_pg.organization_id = kp.organization_id)
+                   END)`;
+
+/**
  * Beim Loeschen eines Jahrgangs: Kopie fuer jede befoerderte Person aus
  * diesem Jahrgang, die noch keine hat. Dieselbe Abgrenzung wie das Loesen
- * der Profile in DELETE /admin/jahrgaenge/:id (Rolle am Konto != konfi).
+ * der Profile in DELETE /admin/jahrgaenge/:id: die Rolle in der Gemeinde
+ * des Profils ist nicht konfi (ROLLE_IN_PROFIL_GEMEINDE).
  *
  * @returns {Promise<number>} Anzahl neuer Kopien
  */
@@ -196,8 +220,8 @@ async function sichereKonfiZeitBefoerderter(client, jahrgangId, organizationId, 
     `SELECT kp.user_id
        FROM konfi_profiles kp
        JOIN users u ON u.id = kp.user_id
-       JOIN roles r ON r.id = u.role_id
-      WHERE kp.jahrgang_id = $1 AND kp.organization_id = $2 AND r.name <> 'konfi'
+      WHERE kp.jahrgang_id = $1 AND kp.organization_id = $2
+        AND COALESCE(${ROLLE_IN_PROFIL_GEMEINDE}, '') <> 'konfi'
         AND NOT EXISTS (SELECT 1 FROM konfi_historie h
                          WHERE h.user_id = kp.user_id AND h.organization_id = kp.organization_id)
       ORDER BY kp.user_id`,
@@ -315,6 +339,7 @@ module.exports = {
   sammleKonfiZeit,
   legeKonfiHistorieAn,
   sichereKonfiZeitBefoerderter,
+  ROLLE_IN_PROFIL_GEMEINDE,
   sichereKonfiZeitVorAbzeichenAenderung,
   ladeKonfiHistorie,
   konfiBadgesAusKopie

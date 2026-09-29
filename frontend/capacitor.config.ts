@@ -1,11 +1,21 @@
 /// <reference types="@capawesome/capacitor-badge" />
 
 import type { CapacitorConfig } from '@capacitor/cli';
+// Nur der Typ: Die CLI liest diese Datei in Node, ein Wert-Import zoege das
+// Plugin samt @capacitor/core mit hinein.
+import type { KeyboardResize } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
   appId: 'de.godsapp.konfiquest',
   appName: 'Konfi Quest',
-  webDir: 'dist',
+  // NUR das App-Buendel, nicht dist/ (29.09.2026, Toolchain-Audit BF-02).
+  // dist/ ist die Web-Auslieferung und traegt Handbuch, API-Referenz,
+  // Werbeseite und Rechtstexte -- bis hierher gingen davon rund 35 MB in jede
+  // App, angezeigt hat sie nichts davon. `vite build` legt dist-app/ daneben
+  // an (scripts/app-buendel.mjs, dort steht auch, was hinein darf). Der Name
+  // muss mit APP_VERZEICHNIS dort uebereinstimmen; appBuendel.test.ts prueft
+  // das.
+  webDir: 'dist-app',
   // androidScheme https: WebView laeuft auf https://localhost statt http://localhost,
   // sonst blockt Android HTTPS-Calls zur API als Mixed-Content ("Keine Verbindung").
   //
@@ -105,7 +115,8 @@ const config: CapacitorConfig = {
       // (Build 76) und sah SCHLECHTER aus (WebView-Frame springt unanimiert).
       // Das eigentliche Problem "Tastatur klappt nach Senden zu" war ein
       // Fokus-Verlust im Send-Flow, nicht der Resize-Modus.
-      resize: 'ionic'
+      // In der Datei steht nur der Wert des Enums KeyboardResize.Ionic.
+      resize: 'ionic' as KeyboardResize,
     },
     Badge: {
       persist: true,

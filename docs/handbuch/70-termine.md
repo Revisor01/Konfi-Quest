@@ -969,6 +969,13 @@ gehört der Person und nicht dem Event. Dasselbe gilt für Konfis, die sich
 selbst von einem Pflicht-Event abgemeldet haben, und für Teamer:innen, die
 schon abgesagt hatten: Ihre Rückmeldung bleibt so stehen, wie sie ist.
 
+Hattest du eine solche Selbstabmeldung aber schon
+[von Hand verbucht](#eine-selbstabmeldung-nachtraeglich-verbuchen) — sie hatte
+sich abgemeldet und kam doch —, wird auch dieser Eintrag mit der Absage zu
+„abgemeldet" mit dem Absagegrund, genau wie bei allen anderen. Das abgesagte
+Event zählt dann nicht in ihre Pflicht-Summe. Die Selbstabmeldung bleibt
+dabei sichtbar, samt ihrer eigenen Begründung.
+
 ### Den Grund nachtragen oder ändern
 
 Der Grund lässt sich an einem abgesagten Event jederzeit nachtragen, ändern
@@ -1038,6 +1045,9 @@ Listen: Man kann sich anmelden, und die Warteliste rückt wieder nach.
   sich selbst abgemeldet hat oder du ihn abgemeldet hast, weil die Mutter
   angerufen hatte: Diese Entscheidung galt unabhängig von der Absage und gilt
   weiter. Auch der eigene Grund („krank, Mutter hat angerufen") bleibt stehen.
+  Eine Selbstabmeldung, die du verbucht hattest und die die Absage
+  entschuldigt hat, steht danach wieder als Selbstabmeldung ohne Eintrag da —
+  angemeldet wird sie nicht, und eine Mitteilung bekommt sie nicht.
 - **Punkte werden nicht wiederhergestellt.** Das Event steht ja erst bevor.
   Punkte gibt es, wenn du die Anwesenheit verbuchst — wie an jedem anderen
   Event.

@@ -33,6 +33,7 @@ const log = vi.fn();
 const setEnabled = vi.fn();
 const recordException = vi.fn();
 const didCrashOnPreviousExecution = vi.fn();
+const deleteUnsentReports = vi.fn();
 vi.mock('@capacitor-firebase/crashlytics', () => ({
   FirebaseCrashlytics: {
     setCustomKey: (...a: unknown[]) => setCustomKey(...a),
@@ -41,6 +42,22 @@ vi.mock('@capacitor-firebase/crashlytics', () => ({
     setEnabled: (...a: unknown[]) => setEnabled(...a),
     recordException: (...a: unknown[]) => recordException(...a),
     didCrashOnPreviousExecution: (...a: unknown[]) => didCrashOnPreviousExecution(...a),
+    deleteUnsentReports: (...a: unknown[]) => deleteUnsentReports(...a),
+  },
+}));
+
+// Geraete-Einstellung "Absturzberichte senden" (Preferences). Ein Map als
+// Speicher; `prefLesenWirft` bildet ein kaputtes Plugin nach.
+const prefSpeicher = new Map<string, string>();
+let prefLesenWirft = false;
+vi.mock('@capacitor/preferences', () => ({
+  Preferences: {
+    get: async ({ key }: { key: string }) => {
+      if (prefLesenWirft) throw new Error('Preferences kaputt');
+      return { value: prefSpeicher.has(key) ? prefSpeicher.get(key)! : null };
+    },
+    set: async ({ key, value }: { key: string; value: string }) => { prefSpeicher.set(key, value); },
+    remove: async ({ key }: { key: string }) => { prefSpeicher.delete(key); },
   },
 }));
 
@@ -52,7 +69,16 @@ import {
   istVorigerStartAbgestuerzt,
   globaleFehlerkanaeleAnhaengen,
   drosselungZuruecksetzen,
+  diagnoseStarten,
+  diagnoseEinstellungVergessen,
+  DIAGNOSE_SCHLUESSEL,
 } from '../../services/absturzdiagnose';
+
+/**
+ * Die globalen Handler melden ohne await, und fehlerMelden liest vorher die
+ * Geraete-Einstellung. Ein Makrotask laesst alle Mikrotasks davor ablaufen.
+ */
+const abwarten = () => new Promise((r) => setTimeout(r, 0));
 
 beforeEach(() => {
   isNative = true;
@@ -63,7 +89,11 @@ beforeEach(() => {
   setEnabled.mockReset().mockResolvedValue(undefined);
   recordException.mockReset().mockResolvedValue(undefined);
   didCrashOnPreviousExecution.mockReset();
+  deleteUnsentReports.mockReset().mockResolvedValue(undefined);
   drosselungZuruecksetzen();
+  prefSpeicher.clear();
+  prefLesenWirft = false;
+  diagnoseEinstellungVergessen();
 });
 
 /** Alle an setCustomKey uebergebenen Schluessel-Wert-Paare flach einsammeln. */
@@ -333,8 +363,8 @@ describe('globaleFehlerkanaeleAnhaengen', () => {
     const ereignis = new Event('unhandledrejection') as Event & { reason: unknown };
     ereignis.reason = new Error('niemand hat gefangen');
     window.dispatchEvent(ereignis);
-    // Der Handler meldet ohne await; ein Mikrotask-Durchlauf genuegt.
-    await Promise.resolve();
+    // Der Handler meldet ohne await.
+    await abwarten();
 
     expect(recordException).toHaveBeenCalledTimes(1);
     expect(recordException).toHaveBeenCalledWith({
@@ -350,7 +380,7 @@ describe('globaleFehlerkanaeleAnhaengen', () => {
     const ereignis = new Event('error') as Event & { error: unknown; message: string };
     ereignis.error = new TypeError('x ist kein Objekt');
     window.dispatchEvent(ereignis);
-    await Promise.resolve();
+    await abwarten();
 
     expect(recordException).toHaveBeenCalledWith({
       message: '[window-onerror] TypeError: x ist kein Objekt',
@@ -366,7 +396,7 @@ describe('globaleFehlerkanaeleAnhaengen', () => {
     const ereignis = new Event('unhandledrejection') as Event & { reason: unknown };
     ereignis.reason = new Error('nach dem Abmelden');
     window.dispatchEvent(ereignis);
-    await Promise.resolve();
+    await abwarten();
 
     expect(recordException).not.toHaveBeenCalled();
   });
@@ -378,9 +408,111 @@ describe('globaleFehlerkanaeleAnhaengen', () => {
     const ereignis = new Event('unhandledrejection') as Event & { reason: unknown };
     ereignis.reason = new Error('im Browser');
     window.dispatchEvent(ereignis);
-    await Promise.resolve();
+    await abwarten();
 
     expect(recordException).not.toHaveBeenCalled();
     abmelden();
+  });
+});
+
+describe('Schalter "Absturzberichte senden" (Sicherheit BF-22)', () => {
+  /*
+   * DIE ZUSAGE: Wer im Profil ausschaltet, von dessen Geraet geht nichts mehr
+   * an Crashlytics -- kein Bericht, keine Wegmarke, keine Merkmale. Die Tests
+   * pruefen den verbotenen Fall (aus -> nichts) und den erlaubten (an bzw.
+   * ohne Eintrag -> wie bisher).
+   */
+  describe('ausgeschaltet (Eintrag "aus")', () => {
+    beforeEach(() => { prefSpeicher.set(DIAGNOSE_SCHLUESSEL, 'aus'); });
+
+    it('fehlerMelden sendet nichts und meldet false', async () => {
+      expect(await fehlerMelden('error-boundary', new Error('kaputt'))).toBe(false);
+      expect(recordException).not.toHaveBeenCalled();
+    });
+
+    it('wegmarke schreibt nichts ins Absturzprotokoll', async () => {
+      await wegmarke('fehler chat-datei http-404');
+      expect(log).not.toHaveBeenCalled();
+    });
+
+    it('diagnoseMerkmaleSetzen setzt keine Merkmale', async () => {
+      await diagnoseMerkmaleSetzen({ rolle: 'konfi', organisationId: 4, appFassung: '2.3.0' });
+      expect(setCustomKey).not.toHaveBeenCalled();
+    });
+
+    it('die globalen Fehlerkanaele melden nichts', async () => {
+      const abmelden = globaleFehlerkanaeleAnhaengen();
+      const ereignis = new Event('unhandledrejection') as Event & { reason: unknown };
+      ereignis.reason = new Error('niemand hat gefangen');
+      window.dispatchEvent(ereignis);
+      const fehler = new Event('error') as Event & { error: unknown };
+      fehler.error = new TypeError('x ist kein Objekt');
+      window.dispatchEvent(fehler);
+      await abwarten();
+      expect(recordException).not.toHaveBeenCalled();
+      abmelden();
+    });
+
+    it('beim Start: Sammeln aus und liegengebliebene Berichte verworfen', async () => {
+      await diagnoseStarten();
+      expect(setEnabled).toHaveBeenCalledTimes(1);
+      expect(setEnabled).toHaveBeenCalledWith({ enabled: false });
+      expect(deleteUnsentReports).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('eingeschaltet', () => {
+    it('ohne Eintrag ist die Diagnose an und meldet wie bisher', async () => {
+      expect(await fehlerMelden('error-boundary', new Error('kaputt'))).toBe(true);
+      expect(recordException).toHaveBeenCalledTimes(1);
+    });
+
+    it('beim Start: Sammeln an, nichts wird verworfen', async () => {
+      await diagnoseStarten();
+      expect(setEnabled).toHaveBeenCalledTimes(1);
+      expect(setEnabled).toHaveBeenCalledWith({ enabled: true });
+      expect(deleteUnsentReports).not.toHaveBeenCalled();
+    });
+  });
+
+  it('Ausschalten wirkt sofort und wird auf dem Geraet gemerkt', async () => {
+    await diagnoseSchalten(false);
+    expect(prefSpeicher.get(DIAGNOSE_SCHLUESSEL)).toBe('aus');
+    expect(setEnabled).toHaveBeenCalledWith({ enabled: false });
+    expect(deleteUnsentReports).toHaveBeenCalledTimes(1);
+
+    // im selben Lauf ...
+    expect(await fehlerMelden('x', new Error('nach dem Ausschalten'))).toBe(false);
+    // ... und nach einem Neustart (Einstellung frisch gelesen)
+    diagnoseEinstellungVergessen();
+    await wegmarke('nach dem Neustart');
+    expect(recordException).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it('Wiedereinschalten entfernt den Eintrag und meldet wieder', async () => {
+    prefSpeicher.set(DIAGNOSE_SCHLUESSEL, 'aus');
+    await diagnoseSchalten(true);
+    expect(prefSpeicher.has(DIAGNOSE_SCHLUESSEL)).toBe(false);
+    expect(setEnabled).toHaveBeenCalledWith({ enabled: true });
+    expect(deleteUnsentReports).not.toHaveBeenCalled();
+    expect(await fehlerMelden('x', new Error('wieder an'))).toBe(true);
+    expect(recordException).toHaveBeenCalledTimes(1);
+  });
+
+  it('laesst sich die Einstellung nicht lesen, geht nichts hinaus', async () => {
+    // Lieber ein Bericht zu wenig als einer gegen den erklaerten Willen.
+    prefLesenWirft = true;
+    expect(await fehlerMelden('x', new Error('y'))).toBe(false);
+    expect(recordException).not.toHaveBeenCalled();
+  });
+
+  it('im Web weder Plugin noch Einstellung', async () => {
+    isNative = false;
+    await diagnoseSchalten(false);
+    await diagnoseStarten();
+    expect(setEnabled).not.toHaveBeenCalled();
+    expect(deleteUnsentReports).not.toHaveBeenCalled();
+    expect(prefSpeicher.size).toBe(0);
   });
 });

@@ -16,7 +16,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
-const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
+const { gemeindeZugehoerigkeitRaeumen, inWeitereGemeindeUmziehen } = require('../utils/mitgliedschaftEnde');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 
 // User management routes
@@ -624,37 +624,16 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         'SELECT id FROM users WHERE id = $1 AND organization_id = $2 FOR UPDATE',
         [userId, organizationId]
       );
+      // Zielgemeinde waehlen, umziehen und Zuweisungen, Chat-Plaetze und
+      // Postfach DIESER Gemeinde raeumen -- dieselbe Funktion wie beim
+      // Loeschen einer ganzen Gemeinde (utils/mitgliedschaftEnde.js).
       if (hier) {
-        const { rows: [z] } = await client.query(
-          `SELECT uo.organization_id, uo.role_id
-             FROM user_organizations uo
-             JOIN organizations o ON o.id = uo.organization_id
-            WHERE uo.user_id = $1 AND uo.organization_id <> $2
-            ORDER BY COALESCE(o.is_active, true) DESC,
-                     uo.created_at ASC NULLS LAST,
-                     uo.id ASC
-            LIMIT 1`,
-          [userId, organizationId]
-        );
-        ziel = z || null;
+        ziel = await inWeitereGemeindeUmziehen(client, userId, organizationId);
       }
       if (!ziel) {
         await client.query('ROLLBACK');
         return false;
       }
-
-      await client.query(
-        'UPDATE users SET organization_id = $2, role_id = $3, updated_at = NOW() WHERE id = $1',
-        [userId, ziel.organization_id, ziel.role_id]
-      );
-      await client.query(
-        'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id IN ($2, $3)',
-        [userId, ziel.organization_id, organizationId]
-      );
-      // Zuweisungen und Chat-Plaetze DIESER Gemeinde -- dieselbe Funktion wie
-      // beim Ende einer Zusatz-Mitgliedschaft und beim Entzug durch den
-      // Super-Admin (utils/mitgliedschaftEnde.js).
-      await gemeindeZugehoerigkeitRaeumen(client, userId, organizationId);
       await client.query('COMMIT');
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
@@ -882,15 +861,20 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     res.json({ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false });
 
     // Nachgerueckte benachrichtigen (je Gemeinde ihres Events), Chatlisten
-    // der Gespraechspartner:innen auffrischen. Wirft nie.
-    await meldeNachKontoLoeschung(db, ergebnis);
+    // der Gespraechspartner:innen auffrischen. Wirft nie. UEBER nachAntwort
+    // (29.09.2026): Vorher stand hier ein blankes await nach res.json --
+    // warteAufNachwehen wusste davon nichts, und kontoLoeschenWege ("Team-Platz
+    // nachruecken") war wacklig, je nachdem, ob der Push vor der Pruefung kam.
+    nachAntwort(req, async () => {
+      await meldeNachKontoLoeschung(db, ergebnis);
 
-    // Live-Update NACH der Response: geloeschter Benutzer aus der Benutzer-Liste.
-    try {
-      liveUpdate.sendToOrgAdmins(organizationId, 'users', 'delete', { userId: parseInt(id) });
-    } catch (liveErr) {
-      console.error('Live-Update nach DELETE /users/%s fehlgeschlagen:', id, liveErr);
-    }
+      // Live-Update NACH der Response: geloeschter Benutzer aus der Benutzer-Liste.
+      try {
+        liveUpdate.sendToOrgAdmins(organizationId, 'users', 'delete', { userId: parseInt(id) });
+      } catch (liveErr) {
+        console.error('Live-Update nach DELETE /users/%s fehlgeschlagen:', id, liveErr);
+      }
+    }, 'DELETE /users/:id (Meldungen nach Kontoloeschung)');
   });
 
   // Assign jahrgaenge to user

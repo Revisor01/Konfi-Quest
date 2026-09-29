@@ -12,24 +12,32 @@
 // ein). Geprueft wird deshalb ihre WIRKUNG: Der Vorher-Zustand wird
 // kuenstlich hergestellt und die echte Datei aus backend/migrations/
 // erneut ausgefuehrt -- wie bei Migration 153 (tests/utils).
-const fs = require('fs');
-const path = require('path');
-const { getTestPool, truncateAll, closePool } = require('../helpers/db');
+//
+// Seit Migration 176 (29.09.2026) laesst die Spalte nur noch NULL zu; einen
+// Klartext kann der Test im gemeinsamen Test-Schema also nicht mehr
+// hinschreiben. Er baut sich deshalb eine eigene Datenbank auf dem Stand
+// VOR 176 -- dem Stand, auf den 165 beim Deploy traf.
+const { truncateAll } = require('../helpers/db');
 const { seed, USERS } = require('../helpers/seed');
+const {
+  dbAnlegen, dbWegraeumen, produktionAufbauen, migrationLesen,
+} = require('../helpers/schemaAufbau');
 
-const MIGRATION = fs.readFileSync(
-  path.join(__dirname, '..', '..', 'migrations', '165_password_plain_leeren.sql'),
-  'utf8'
-);
+const MIGRATION = migrationLesen('165_password_plain_leeren.sql');
+const DB = 'konfi_test_mig165';
 
 describe('Migration 165: Klartext-Passwoerter leeren', () => {
   let db;
 
-  beforeAll(() => { db = getTestPool(); });
-  afterAll(async () => { await closePool(); });
+  beforeAll(async () => {
+    db = await dbAnlegen(DB);
+    await produktionAufbauen(db, { vor: '176_kein_klartext_passwort.sql' });
+  }, 180000);
+  afterAll(async () => { await dbWegraeumen(db, DB); }, 120000);
 
   beforeEach(async () => {
-    await truncateAll(db);
+    // truncateAll erwartet die Schnittstelle von database.js (getClient).
+    await truncateAll({ query: (t, p) => db.query(t, p), getClient: () => db.connect() });
     await seed(db);
   });
 

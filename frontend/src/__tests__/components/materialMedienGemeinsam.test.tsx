@@ -25,7 +25,7 @@ vi.mock('@capacitor/filesystem', async () => (await import('../medienAttrappen')
 
 const apiGet = vi.fn();
 const apiPost = vi.fn();
-const apiDelete = vi.fn(async () => ({ data: {} }));
+const apiDelete = vi.fn(async (..._args: unknown[]) => ({ data: {} }));
 vi.mock('../../services/api', () => ({
   default: {
     get: (...args: unknown[]) => apiGet(...args),
@@ -87,6 +87,7 @@ import MaterialFormModal from '../../components/admin/modals/MaterialFormModal';
 import AdminMaterialPage from '../../components/admin/pages/AdminMaterialPage';
 import { clearMediaCache, getMediaBlob } from '../../services/mediaCache';
 import { UPLOAD_GRENZE } from '../../services/mediaCompression';
+import { laeuftAusflug } from '../../services/appSperre';
 
 const PLAN = 'a'.repeat(64);
 const FOTO = 'b'.repeat(64);
@@ -359,10 +360,22 @@ describe('Hochladen: verkleinert, mit der Grenze des Servers und der Sende-Anzei
     };
   });
 
+  // Die Dateiauswahl des Systems: Das Feld, das die Hülle dateiAuswaehlen
+  // anlegt, meldet die Dateien. Mitgeschrieben wird, ob die App-Sperre dabei
+  // abgemeldet war (Simons Befund 29.09.2026: die Auswahl sperrte bei „Sofort").
+  const echterKlick = HTMLInputElement.prototype.click;
+  let ausflugBeimOeffnen: boolean[] = [];
+  afterEach(() => { HTMLInputElement.prototype.click = echterKlick; });
+
   const waehlen = async (ansicht: ReturnType<typeof render>, gewaehlt: File[]) => {
-    const feld = ansicht.container.querySelector('input[type="file"]') as HTMLInputElement;
-    Object.defineProperty(feld, 'files', { value: gewaehlt, configurable: true });
-    await act(async () => { fireEvent.change(feld); });
+    ausflugBeimOeffnen = [];
+    HTMLInputElement.prototype.click = function (this: HTMLInputElement) {
+      ausflugBeimOeffnen.push(laeuftAusflug());
+      Object.defineProperty(this, 'files', { value: gewaehlt, configurable: true });
+      this.onchange?.(new Event('change'));
+    };
+    await act(async () => { fireEvent.click(ansicht.getByText('Datei auswählen')); });
+    expect(ausflugBeimOeffnen).toEqual([true]);
   };
 
   it('die Grenze ist die des Servers: 20 MB je Datei', () => {

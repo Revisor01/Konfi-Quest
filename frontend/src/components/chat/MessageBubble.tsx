@@ -27,18 +27,14 @@ import { ladeText, sendeText } from '../../utils/fortschritt';
 import { tastaturKlick } from '../../utils/tastatur';
 import { datumUhrzeit, uhrzeit } from '../../utils/dateUtils';
 import { rollenName } from '../../utils/rollenNamen';
+import { mimeAusDateiname } from '../../utils/dateiTypen';
+import { linkOeffnen } from '../../services/systemDialoge';
+import { sendeFehlerText } from './sendeFehler';
 
-const getMimeFromFileName = (fileName: string): string => {
-  const ext = (fileName.split('.').pop() || '').toLowerCase();
-  const mimeMap: Record<string, string> = {
-    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
-    mp4: 'video/mp4', mov: 'video/quicktime', avi: 'video/x-msvideo', webm: 'video/webm', m4v: 'video/mp4',
-    pdf: 'application/pdf',
-    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  };
-  return mimeMap[ext] || 'application/octet-stream';
-};
+// Endung -> Typ kommt aus der einen Tabelle der App (utils/dateiTypen.ts).
+// Bis zum 29.09.2026 stand hier eine eigene, kuerzere: .doc, .pptx, .txt und
+// .csv gingen als application/octet-stream an den Betrachter.
+const getMimeFromFileName = (fileName: string): string => mimeAusDateiname(fileName);
 
 // Wandelt URLs (http/https und www.) in klickbare Links um. Gibt ein Array aus
 // Text-Fragmenten und <a>-Elementen zurück, das direkt in JSX gerendert werden kann.
@@ -66,7 +62,7 @@ const linkifyText = (text: string): React.ReactNode => {
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            window.open(href, '_blank');
+            linkOeffnen(href);
           }}
           style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}
         >
@@ -165,6 +161,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     uploadFortschritt != null &&
     message.localId != null &&
     uploadFortschritt.localId === message.localId;
+
+  // Vom Server endgueltig abgelehnt (413, 415 ...)? Dann der feste Text dazu,
+  // sonst null (components/chat/sendeFehler.ts).
+  const sendeFehlerGrund = message.queueStatus === 'error' ? sendeFehlerText(message.sendeFehlerStatus) : null;
 
   // Merkt sich, ob die aktuelle Long-Press-Geste schon behandelt wurde. Android
   // löst bei einem langen Druck BEIDE Wege aus (eigener Touch-Timer und danach
@@ -726,7 +726,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             <button
               type="button"
               className="app-knopf-nackt"
-              aria-label="Nachricht erneut senden"
+              aria-label={sendeFehlerGrund ? 'Nachricht nicht gesendet' : 'Nachricht erneut senden'}
               style={{ marginLeft: 'var(--app-abstand-mini)', verticalAlign: 'middle', cursor: 'pointer' }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -741,6 +741,21 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             </button>
           )}
         </div>
+
+        {/* Der Grund einer endgueltigen Ablehnung (413, 415 ...) steht an der
+            Nachricht selbst -- bis zum 29.09.2026 stand dort nur das
+            Warnsymbol. Das Menue dahinter bietet dann kein "Erneut senden"
+            (ChatRoom.handleRetryMessage), der Name des Knopfs sagt das. */}
+        {message.queueStatus === 'error' && sendeFehlerGrund && (
+          <div style={{
+            fontSize: 'var(--app-text-meta)',
+            marginTop: 'var(--app-abstand-mini)',
+            textAlign: 'right',
+            fontWeight: 'var(--app-schrift-mittel)'
+          }}>
+            {`Nicht gesendet: ${sendeFehlerGrund}`}
+          </div>
+        )}
 
         {sendetGerade && (
           <FortschrittsBalken

@@ -14,6 +14,27 @@ ersten Start bereits das Schema anlegt. Mit einer gemeinsamen Datenbank für
 alle Gemeinden ist ein Datenverlust nicht mehr der Verlust einer Gemeinde,
 sondern aller.
 
+Am 29.09.2026 auf einer frisch aufgesetzten Instanz nachgestellt
+(`postgres:15-alpine` wie die Referenz, Sicherung wie `deploy/sicherung.sh`,
+20.000 Konten, 100.000 Buchungen). Drei Stellen scheiterten, alle drei sind
+behoben:
+
+- Die neue Instanz kam gar nicht erst hoch: Ein Hilfsskript in
+  `init-scripts/` wurde vom Entrypoint des Images ausgeführt und brach ab.
+  Es liegt jetzt anderswo; ein Test hält das Verzeichnis sauber.
+- Einspielen in die Datenbank, die der erste Start angelegt hat: 477
+  Fehlerzeilen, danach 0 Konten.
+- Der hier beschriebene Weg selbst: `pg_restore -j 4` aus der
+  Standardeingabe (`docker exec -i … < dump`) bricht sofort mit „parallel
+  restore from standard input is not supported" ab; die Datenbank blieb leer.
+
+Seitdem erledigt **`deploy/wiederherstellung.sh`** die Wiederherstellung:
+leere Datenbank anlegen, Sicherung aus einer Datei parallel einspielen, beim
+ersten Fehler abbrechen, zählen. Dieselbe Sicherung kam damit auf derselben
+frischen Instanz in 5 s vollständig zurück, Schema Objekt für Objekt gleich.
+Der Test `backend/tests/schema/wiederherstellung.test.js` spielt das bei
+jedem Testlauf durch.
+
 ## Was gesichert wird
 
 | Bestand | Wo er liegt (Referenz `deploy/compose.konfi_quest.yml`) | Womit | Ohne ihn |
@@ -83,39 +104,47 @@ scheiterte die Prüfung am 10.09.2026: „OK, 2 frische Dateien", eine davon
 ## Wiederherstellung in eine leere Datenbank
 
 **Grundregel:** Der Dump kommt in eine Datenbank, in der **noch kein Schema**
-liegt. Nicht in eine, in der `init-scripts/` gelaufen ist (2.825 Fehler,
-`users` danach leer), und nicht mit `--clean` in eine vorinitialisierte
-(141 Zeilen Schema-Reste, die kein Migrationslauf mehr repariert). Gemessen
-am 26.09.2026 mit 20.000 Nutzer:innen und 490.400 Nachrichten: **leere
-Datenbank → fehlerfrei in 4 s**, alle Zählungen gleich.
+liegt. Nicht in eine, in der `init-scripts/` gelaufen ist (477 bzw. 2.825
+Fehlerzeilen, `users` danach leer), und nicht mit `--clean` in eine
+vorinitialisierte (141 Zeilen Schema-Reste, die kein Migrationslauf mehr
+repariert). `deploy/wiederherstellung.sh` sorgt dafür: Es löscht die
+Zieldatenbank und legt sie leer neu an.
+
+Das Skript nimmt alles Instanzspezifische aus der Umgebung:
+
+| Variable | Bedeutung |
+|---|---|
+| `DUMP` | Pfad zur Sicherung (`konfi_db_<stempel>.dump`), Pflicht |
+| `PG_CONTAINER` | Name des Postgres-Containers; ohne ihn laufen `psql`/`pg_restore` direkt über `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` |
+| `PG_DB`, `PG_USER` | Zieldatenbank und Eigentümer (Standard `konfi_db`, `konfi_user`) |
+| `JOBS` | parallele Prozesse beim Einspielen (Standard 2; der Dienst hat 2 CPU) |
+| `BESTAETIGT` | `ja`, wenn die Zieldatenbank schon Konten enthält — sie wird ersetzt |
+
+Es bricht ab, **bevor** es etwas anfasst, wenn die Sicherung nicht lesbar ist
+oder eine der Kerntabellen fehlt, wenn die Zieldatenbank Konten enthält und
+`BESTAETIGT=ja` fehlt, und wenn noch ein Backend mit ihr verbunden ist.
 
 ### Fall A: Datenbank kaputt, Server und Stack stehen noch
 
 ```bash
 # 1. Backends anhalten -- sie würden sonst beim Start Migrationen gegen eine
-#    halbe Datenbank fahren. In Portainer: backend, backend2, backend-test stoppen.
+#    halbe Datenbank fahren. In Portainer: backend, backend2, backend-test
+#    stoppen. (Das Skript prüft das und bricht sonst ab.)
 
-# 2. Datenbank leer neu anlegen (Postgres läuft weiter).
-docker exec -i <postgres-container> psql -U konfi_user -d postgres <<'SQL'
-DROP DATABASE IF EXISTS konfi_db;
-CREATE DATABASE konfi_db OWNER konfi_user TEMPLATE template0 ENCODING 'UTF8';
-SQL
+# 2. Wiederherstellen: leere Datenbank, Sicherung einspielen, zählen.
+PG_CONTAINER=<postgres-container> DUMP=<ablage>/konfi_db_<stempel>.dump \
+  BESTAETIGT=ja bash deploy/wiederherstellung.sh
 
-# 3. Dump einspielen. --no-owner, weil der Dump mit --no-owner geschrieben ist
-#    und konfi_user ohnehin alles besitzt; -j 4 nutzt die 2+ CPUs des Dienstes.
-docker exec -i <postgres-container> pg_restore -U konfi_user -d konfi_db --no-owner -j 4 < konfi_db_<stempel>.dump
+# 3. Die Zählungen am Ende gegen die Zahlen der letzten Prüfung oder aus dem
+#    Log vergleichen.
 
-# 4. Zählen -- gegen die Zahlen aus der letzten Prüfung oder aus dem Log.
-docker exec -i <postgres-container> psql -U konfi_user -d konfi_db -Atc \
-  "SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM konfi_profiles),
-          (SELECT COUNT(*) FROM chat_messages), (SELECT COUNT(*) FROM schema_migrations)"
-
-# 5. Uploads zurückspielen (erst leeren, dann entpacken -- kein Mischbestand).
+# 4. Uploads zurückspielen (erst leeren, dann entpacken -- kein Mischbestand).
 tar -xzf uploads_<stempel>.tar.gz -C /opt/Konfi-Quest/
 
-# 6. Backends starten. Der Migrationslauf (backend/utils/migrationslauf.js)
-#    zieht alles nach, was jünger ist als der Dump -- ohne Zeitgrenze, unter
-#    dem Advisory-Lock, eine Replica nach der anderen.
+# 5. Backends starten. Der Migrationslauf (backend/utils/migrationslauf.js)
+#    zieht alles nach, was jünger ist als die Sicherung -- ohne Zeitgrenze,
+#    unter dem Advisory-Lock, eine Replica nach der anderen. Das Skript nennt
+#    am Ende die jüngste Migration der Sicherung.
 ```
 
 Danach `GET /api/status` prüfen: `checks.database: ok`,
@@ -129,43 +158,41 @@ der richtige ist.
 1. Stack aus der Referenzkopie anlegen, **alle** Geheimnisse aus der
    Geheimnis-Ablage eintragen — insbesondere `ACTIVITY_PHOTO_ENCRYPTION_KEY`
    identisch zum alten Wert, sonst sind die Fotos verloren.
-2. **Vor dem ersten Start** die Zeile
-   `- /opt/Konfi-Quest/init-scripts:/docker-entrypoint-initdb.d` beim
-   Postgres-Dienst auskommentieren. `init-scripts/` ist der Weg einer
-   *Neuinstallation ohne Daten*; für eine Wiederherstellung legt es genau das
-   Schema an, das der Dump gleich mitbringt.
-3. Nur den Postgres-Dienst starten, dann Fall A ab Schritt 2 (die Datenbank
-   `konfi_db` legt das Image beim ersten Start leer an — `DROP`/`CREATE` ist
-   dann überflüssig, schadet aber nicht).
+2. Nur den Postgres-Dienst starten. Beim ersten Start spielt das Image
+   `init-scripts/` ein (Schema ohne Daten); das stört nicht, das Skript
+   ersetzt die Datenbank ohnehin.
+3. Fall A ab Schritt 2. `BESTAETIGT` ist hier nicht nötig: Die frische
+   Datenbank hat noch keine Konten.
 4. Uploads und Firebase-Datei an ihre Pfade, Backends und Frontend starten.
-5. Die `init-scripts`-Zeile wieder einkommentieren — sie wirkt auf eine
-   bestehende Datenbank nie mehr, gehört aber zur Referenz.
 
 ### Fall C: einzelne Gemeinde oder einzelne Tabelle
 
 `pg_restore` kann mit `-t <tabelle>` einzelne Tabellen in eine **Probe-**
 Datenbank zurückholen; von dort lassen sich Zeilen per SQL in die laufende
 Datenbank übertragen. Nie direkt in die laufende Datenbank restaurieren —
-Fremdschlüssel und Sequenzen laufen sonst auseinander.
+Fremdschlüssel und Sequenzen laufen sonst auseinander. Die Probe-Datenbank
+entsteht wie bei der Rückspielprobe unten.
 
 ## Rückspielprobe
 
 Eine Sicherung, die nie zurückgespielt wurde, ist eine Vermutung. Die Probe
-kostet zwei Minuten und läuft neben der Produktion, ohne sie zu berühren:
+kostet zwei Minuten und läuft neben der Produktion, ohne sie zu berühren —
+in eine eigene Datenbank `konfi_probe` auf derselben Instanz (oder lokal in
+einem `postgres:15-alpine`-Container):
 
 ```bash
-# Probe-Datenbank auf derselben Instanz (oder lokal in einem postgres:15-Container)
-docker exec -i <postgres-container> psql -U konfi_user -d postgres -c \
-  "CREATE DATABASE konfi_probe OWNER konfi_user TEMPLATE template0"
-docker exec -i <postgres-container> pg_restore -U konfi_user -d konfi_probe --no-owner < konfi_db_<stempel>.dump
-docker exec -i <postgres-container> psql -U konfi_user -d konfi_probe -Atc \
-  "SELECT COUNT(*) FROM users UNION ALL SELECT COUNT(*) FROM chat_messages UNION ALL SELECT COUNT(*) FROM schema_migrations"
+PG_CONTAINER=<postgres-container> PG_DB=konfi_probe \
+  DUMP=<ablage>/konfi_db_<stempel>.dump bash deploy/wiederherstellung.sh
+# Zählungen mit der Produktion vergleichen, dann wegräumen:
 docker exec -i <postgres-container> psql -U konfi_user -d postgres -c "DROP DATABASE konfi_probe"
 ```
 
-Erwartet: `pg_restore` ohne Fehlerzeile, Zählungen wie in der Produktion.
-Rhythmus: **vor jedem Release** und nach jeder Änderung an Postgres-Version
-oder Sicherungsskript; das Datum der letzten Probe steht in der Prüfliste.
+Erwartet: kein `FEHLER`, am Ende `OK: konfi_probe wiederhergestellt.`,
+Zählungen wie in der Produktion. Wer zusätzlich das Schema vergleichen will:
+`node backend/scripts/schemaVergleich.js vergleichen <url-produktion> <url-probe>`
+(nur Lese-Abfragen). Rhythmus: **vor jedem Release** und nach jeder Änderung
+an Postgres-Version oder Sicherungsskript; das Datum der letzten Probe steht
+in der Prüfliste.
 
 Die Postgres-Version des Zielsystems muss mindestens der des Dumps
 entsprechen (`pg_restore` ist abwärts-, nicht aufwärtskompatibel). Der Stack

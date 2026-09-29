@@ -47,6 +47,7 @@ import { teilnahmeDarstellung, listItemKlasse, iconKreisKlasse, eckBadgeKlasse }
 import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
+import { linkOeffnen } from '../../../services/systemDialoge';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
 
@@ -386,10 +387,10 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
             <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
               onClick={() => {
                 if (eventData.location_maps_url) {
-                  window.open(eventData.location_maps_url, '_blank');
+                  linkOeffnen(eventData.location_maps_url);
                 } else if (eventData.location) {
                   const mapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(eventData.location)}`;
-                  window.open(mapsUrl, '_blank');
+                  linkOeffnen(mapsUrl);
                 }
               }}
             >

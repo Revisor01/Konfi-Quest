@@ -21,8 +21,6 @@
 // kann dann in der Luecke zwischen Abbau und Aufbau landen. Die neu montierte
 // Komponente liest das Ziel beim Mount aus dem Merker nach.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import {
   pushZielMelden,
   pushZielAbholen,
@@ -99,24 +97,7 @@ describe('pushZielMelden: Uebergabe ohne harten Reload', () => {
   });
 });
 
-describe('Die Absturzstelle ist weg (Quelltext-Zusicherung)', () => {
-  // Diese Zusicherung ist bewusst am Quelltext und nicht am Verhalten: Ein
-  // harter Reload laesst sich in jsdom nicht ausloesen (jsdom bricht bei
-  // location-Zuweisungen nur mit einer Warnung ab), auf dem Geraet aber
-  // reisst er die App ab. Der Quelltext ist hier die einzige Stelle, an der
-  // sich der Rueckfall verlaesslich bemerken laesst.
-  const quelle = readFileSync(join(process.cwd(), 'src/contexts/AppContext.tsx'), 'utf8');
-
-  /** AppContext ohne Kommentare — Kommentare dürfen von location.href reden. */
-  const ohneKommentare = quelle
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/.*$/gm, '');
-
-  it('der Push-Handler setzt window.location.href nicht mehr', () => {
-    expect(ohneKommentare).not.toMatch(/window\.location\.href\s*=/);
-  });
-
-  it('der Push-Handler uebergibt das Ziel ueber pushZielMelden', () => {
-    expect(ohneKommentare).toContain('pushZielMelden(');
-  });
-});
+// Dass der Push-Handler das Ziel ueber pushZielMelden uebergibt und die Seite
+// nicht mehr per window.location.href neu laedt, prueft seit dem 29.09.2026
+// contexts/pushAntippenNavigiert.test.tsx am echten AppProvider (Audit Tests
+// BF-02) -- vorher stand hier eine Quelltext-Zusicherung.

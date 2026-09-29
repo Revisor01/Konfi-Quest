@@ -123,7 +123,6 @@ const TestConsumer: React.FC<{ onContext?: (ctx: ReturnType<typeof useApp>) => v
   return (
     <div>
       <span data-testid="user">{ctx.user?.display_name || 'none'}</span>
-      <span data-testid="loading">{String(ctx.loading)}</span>
       <span data-testid="error">{ctx.error || 'no-error'}</span>
       <span data-testid="success">{ctx.success || 'no-success'}</span>
       <span data-testid="isOnline">{String(ctx.isOnline)}</span>

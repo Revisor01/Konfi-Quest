@@ -1,3 +1,14 @@
+-- ====================================================================
+-- Schema der Produktion, fortgeschrieben aus dem Migrationsstand.
+--
+-- ERZEUGT, NICHT VON HAND GEPFLEGT: bash backend/tests/schema/schema-erneuern.sh
+-- Grundlage ist der zuletzt mit refresh-schema.sh aus der Produktion geholte
+-- Dump, darauf alle Migrationen bis einschliesslich
+-- 173_einladungscode_ohne_urheber.sql -- also der Stand, den die Produktion nach
+-- diesen Migrationen hat, sofern dort nichts von Hand geaendert wurde. Den
+-- Abgleich mit der Produktion misst backend/scripts/schemaVergleich.js.
+-- ====================================================================
+
 --
 -- PostgreSQL database dump
 --
@@ -177,6 +188,45 @@ ALTER SEQUENCE public.apm_snapshots_id_seq OWNED BY public.apm_snapshots.id;
 
 
 --
+-- Name: bewahrte_stempel; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.bewahrte_stempel (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    organization_id integer NOT NULL,
+    challenge_id integer,
+    herkunft_challenge_id integer NOT NULL,
+    title character varying(200) NOT NULL,
+    description text,
+    badge_icon character varying(50) NOT NULL,
+    badge_name character varying(100) NOT NULL,
+    earned_at timestamp with time zone,
+    bewahrt_am timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: bewahrte_stempel_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.bewahrte_stempel_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bewahrte_stempel_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.bewahrte_stempel_id_seq OWNED BY public.bewahrte_stempel.id;
+
+
+--
 -- Name: bonus_points; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -311,6 +361,19 @@ ALTER SEQUENCE public.challenge_jahrgang_assignments_id_seq OWNED BY public.chal
 
 
 --
+-- Name: challenge_read_status; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.challenge_read_status (
+    challenge_id integer NOT NULL,
+    user_id integer NOT NULL,
+    user_type text NOT NULL,
+    last_read_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT challenge_read_status_user_type_check CHECK ((user_type = ANY (ARRAY['admin'::text, 'teamer'::text, 'konfi'::text])))
+);
+
+
+--
 -- Name: challenge_submissions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -328,7 +391,13 @@ CREATE TABLE public.challenge_submissions (
     moderation_status character varying(20) DEFAULT 'pending'::character varying NOT NULL,
     hidden_by integer,
     hidden_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    link_title text,
+    link_author text,
+    moderation_note text,
+    link_album character varying(200),
+    approved_by integer,
+    approved_at timestamp with time zone
 );
 
 
@@ -378,7 +447,7 @@ CREATE TABLE public.challenges (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     audience character varying(20) DEFAULT 'konfis_und_team'::character varying NOT NULL,
-    CONSTRAINT challenges_audience_check CHECK (((audience)::text = ANY ((ARRAY['konfis'::character varying, 'konfis_und_team'::character varying, 'nur_team'::character varying])::text[])))
+    CONSTRAINT challenges_audience_check CHECK (((audience)::text = ANY (ARRAY[('konfis'::character varying)::text, ('konfis_und_team'::character varying)::text, ('nur_team'::character varying)::text])))
 );
 
 
@@ -413,7 +482,7 @@ CREATE TABLE public.chat_message_reactions (
     user_type character varying(10) NOT NULL,
     emoji character varying(10) NOT NULL,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chat_message_reactions_user_type_check CHECK (((user_type)::text = ANY (ARRAY[('admin'::character varying)::text, ('konfi'::character varying)::text])))
+    CONSTRAINT chat_message_reactions_user_type_check CHECK (((user_type)::text = ANY (ARRAY[('admin'::character varying)::text, ('teamer'::character varying)::text, ('konfi'::character varying)::text])))
 );
 
 
@@ -741,8 +810,90 @@ CREATE TABLE public.event_bookings (
     attendance_status text,
     opt_out_reason text,
     opt_out_date timestamp with time zone,
-    CONSTRAINT event_bookings_status_check CHECK ((status = ANY (ARRAY['confirmed'::text, 'waitlist'::text, 'cancelled'::text, 'opted_out'::text, 'pending'::text])))
+    absage_nach_zusage boolean DEFAULT false NOT NULL,
+    war_auf_warteliste boolean,
+    excuse_reason text,
+    attendance_note text,
+    attendance_set_by integer,
+    attendance_set_at timestamp with time zone,
+    note_set_by integer,
+    note_set_at timestamp with time zone,
+    checkin_quelle character varying(20),
+    checked_in_at timestamp with time zone,
+    abgemeldet_durch_absage boolean DEFAULT false NOT NULL,
+    status_vor_absage text,
+    CONSTRAINT event_bookings_checkin_quelle_check CHECK (((checkin_quelle IS NULL) OR ((checkin_quelle)::text = ANY (ARRAY[('qr'::character varying)::text, ('manuell'::character varying)::text])))),
+    CONSTRAINT event_bookings_status_check CHECK ((status = ANY (ARRAY['confirmed'::text, 'waitlist'::text, 'cancelled'::text, 'opted_out'::text, 'pending'::text, 'excused'::text]))),
+    CONSTRAINT event_bookings_status_vor_absage_check CHECK (((status_vor_absage IS NULL) OR (status_vor_absage = ANY (ARRAY['confirmed'::text, 'waitlist'::text]))))
 );
+
+
+--
+-- Name: roles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.roles (
+    id bigint NOT NULL,
+    organization_id bigint,
+    name text,
+    display_name text,
+    description text,
+    is_system_role boolean DEFAULT false,
+    is_active boolean DEFAULT true,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.users (
+    id bigint NOT NULL,
+    organization_id bigint NOT NULL,
+    username text,
+    email text,
+    display_name text,
+    password_hash text,
+    role_id bigint NOT NULL,
+    is_active boolean DEFAULT true,
+    last_login_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    role_title text,
+    is_super_admin boolean DEFAULT false,
+    teamer_since date,
+    token_invalidated_at timestamp with time zone,
+    deleted_at timestamp without time zone,
+    archived_at timestamp without time zone,
+    push_enabled boolean DEFAULT true NOT NULL,
+    bible_translation character varying(10) DEFAULT 'LUT'::character varying NOT NULL,
+    push_gruppen_stumm text[] DEFAULT '{}'::text[] NOT NULL
+);
+
+
+--
+-- Name: event_booking_stats; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.event_booking_stats AS
+ SELECT eb.event_id,
+    (count(*) FILTER (WHERE ((eb.status = 'confirmed'::text) AND (r.name = 'konfi'::text))))::integer AS konfi_confirmed,
+    (count(*) FILTER (WHERE ((eb.status = 'waitlist'::text) AND (r.name = 'konfi'::text))))::integer AS konfi_waitlist,
+    (count(*) FILTER (WHERE ((eb.status = 'opted_out'::text) AND (r.name = 'konfi'::text))))::integer AS konfi_opted_out,
+    (count(*) FILTER (WHERE ((eb.status = 'confirmed'::text) AND (eb.attendance_status IS NULL) AND (r.name = 'konfi'::text))))::integer AS konfi_offen,
+    (count(*) FILTER (WHERE ((eb.status = 'confirmed'::text) AND (COALESCE(r.name, ''::text) <> 'konfi'::text))))::integer AS teamer_confirmed,
+    (count(*) FILTER (WHERE ((eb.status = 'waitlist'::text) AND (COALESCE(r.name, ''::text) <> 'konfi'::text))))::integer AS teamer_waitlist,
+    (count(*) FILTER (WHERE ((eb.status = 'opted_out'::text) AND (COALESCE(r.name, ''::text) <> 'konfi'::text))))::integer AS teamer_opted_out,
+    (count(*) FILTER (WHERE ((eb.status = 'confirmed'::text) AND (eb.attendance_status IS NULL) AND (COALESCE(r.name, ''::text) <> 'konfi'::text))))::integer AS teamer_offen,
+    (count(*) FILTER (WHERE (eb.status <> ALL (ARRAY['opted_out'::text, 'excused'::text]))))::integer AS gebucht_gesamt,
+    (count(*) FILTER (WHERE ((eb.status = 'excused'::text) AND (r.name = 'konfi'::text))))::integer AS konfi_excused,
+    (count(*) FILTER (WHERE ((eb.status = 'excused'::text) AND (COALESCE(r.name, ''::text) <> 'konfi'::text))))::integer AS teamer_excused
+   FROM ((public.event_bookings eb
+     JOIN public.users u ON (((eb.user_id = u.id) AND (u.deleted_at IS NULL))))
+     LEFT JOIN public.roles r ON ((u.role_id = r.id)))
+  GROUP BY eb.event_id;
 
 
 --
@@ -940,7 +1091,7 @@ CREATE TABLE public.event_unregistrations (
     user_id integer NOT NULL,
     event_id integer NOT NULL,
     reason text,
-    unregistered_at timestamp without time zone DEFAULT now(),
+    unregistered_at timestamp with time zone DEFAULT now(),
     organization_id integer NOT NULL
 );
 
@@ -1004,6 +1155,10 @@ CREATE TABLE public.events (
     teamer_max_participants integer DEFAULT 0 NOT NULL,
     teamer_waitlist_enabled boolean DEFAULT true NOT NULL,
     teamer_max_waitlist_size integer DEFAULT 10 NOT NULL,
+    cancelled_reason text,
+    cancelled_by integer,
+    cancelled_reason_set_by integer,
+    cancelled_reason_set_at timestamp with time zone,
     CONSTRAINT events_max_participants_check CHECK ((max_participants >= 0)),
     CONSTRAINT events_teamer_exclusive CHECK ((NOT (teamer_needed AND teamer_only))),
     CONSTRAINT events_teamer_max_participants_check CHECK ((teamer_max_participants >= 0)),
@@ -1039,9 +1194,9 @@ CREATE TABLE public.invite_codes (
     code character varying(10) NOT NULL,
     organization_id integer NOT NULL,
     jahrgang_id integer NOT NULL,
-    created_by integer NOT NULL,
-    expires_at timestamp without time zone NOT NULL,
-    used_at timestamp without time zone,
+    created_by integer,
+    expires_at timestamp with time zone NOT NULL,
+    used_at timestamp with time zone,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -1117,7 +1272,8 @@ CREATE TABLE public.user_activities (
     completed_date date DEFAULT CURRENT_DATE,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     comment text,
-    organization_id bigint
+    organization_id bigint,
+    points bigint
 );
 
 
@@ -1174,6 +1330,44 @@ ALTER SEQUENCE public.konfi_badges_id_seq OWNED BY public.user_badges.id;
 
 
 --
+-- Name: konfi_historie; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.konfi_historie (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    organization_id integer NOT NULL,
+    jahrgang_id integer,
+    jahrgang_name text,
+    anlass character varying(30) NOT NULL,
+    erstellt_von integer,
+    erstellt_am timestamp with time zone DEFAULT now() NOT NULL,
+    daten jsonb NOT NULL,
+    CONSTRAINT konfi_historie_anlass_check CHECK (((anlass)::text = ANY (ARRAY[('befoerderung'::character varying)::text, ('jahrgang_geloescht'::character varying)::text, ('abzeichen_geloescht'::character varying)::text, ('abzeichen_geaendert'::character varying)::text])))
+);
+
+
+--
+-- Name: konfi_historie_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.konfi_historie_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: konfi_historie_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.konfi_historie_id_seq OWNED BY public.konfi_historie.id;
+
+
+--
 -- Name: konfi_profiles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1186,7 +1380,6 @@ CREATE TABLE public.konfi_profiles (
     password_plain text,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     organization_id bigint NOT NULL,
-    bible_translation character varying(10) DEFAULT 'LUT'::character varying,
     current_level_id integer,
     invite_code_id bigint,
     konfspruch_id integer,
@@ -1339,16 +1532,6 @@ CREATE TABLE public.material_events (
 
 
 --
--- Name: material_file_tags; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.material_file_tags (
-    material_id integer NOT NULL,
-    tag_id integer NOT NULL
-);
-
-
---
 -- Name: material_files; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1394,22 +1577,22 @@ CREATE TABLE public.material_jahrgaenge (
 
 
 --
--- Name: material_tags; Type: TABLE; Schema: public; Owner: -
+-- Name: material_links; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.material_tags (
+CREATE TABLE public.material_links (
     id integer NOT NULL,
-    name character varying(100) NOT NULL,
-    organization_id integer,
+    material_id integer NOT NULL,
+    url text NOT NULL,
     created_at timestamp without time zone DEFAULT now()
 );
 
 
 --
--- Name: material_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: material_links_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.material_tags_id_seq
+CREATE SEQUENCE public.material_links_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -1419,10 +1602,10 @@ CREATE SEQUENCE public.material_tags_id_seq
 
 
 --
--- Name: material_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: material_links_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.material_tags_id_seq OWNED BY public.material_tags.id;
+ALTER SEQUENCE public.material_links_id_seq OWNED BY public.material_links.id;
 
 
 --
@@ -1438,7 +1621,9 @@ CREATE TABLE public.materials (
     organization_id integer,
     created_by integer,
     created_at timestamp without time zone DEFAULT now(),
-    updated_at timestamp without time zone DEFAULT now()
+    updated_at timestamp without time zone DEFAULT now(),
+    link_url text,
+    ist_global boolean DEFAULT false NOT NULL
 );
 
 
@@ -1500,6 +1685,44 @@ ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
 
 
 --
+-- Name: org_einladungen; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.org_einladungen (
+    id integer NOT NULL,
+    organization_id integer NOT NULL,
+    user_id integer NOT NULL,
+    role_id integer NOT NULL,
+    eingeladen_von integer,
+    status text DEFAULT 'offen'::text NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    beantwortet_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT org_einladungen_status_check CHECK ((status = ANY (ARRAY['offen'::text, 'angenommen'::text, 'abgelehnt'::text, 'zurueckgezogen'::text])))
+);
+
+
+--
+-- Name: org_einladungen_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.org_einladungen_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: org_einladungen_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.org_einladungen_id_seq OWNED BY public.org_einladungen.id;
+
+
+--
 -- Name: organizations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1519,7 +1742,7 @@ CREATE TABLE public.organizations (
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     max_konfis integer,
     kirchenkreis text,
-    trial_ends_at timestamp without time zone,
+    trial_ends_at timestamp with time zone,
     is_trial boolean DEFAULT false NOT NULL,
     contact_name text,
     license_reminder_sent_at timestamp without time zone
@@ -1626,7 +1849,9 @@ CREATE TABLE public.push_tokens (
     device_id text,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     error_count integer DEFAULT 0,
-    last_error_at timestamp with time zone
+    last_error_at timestamp with time zone,
+    app_version text,
+    app_build text
 );
 
 
@@ -1650,6 +1875,17 @@ ALTER SEQUENCE public.push_tokens_id_seq OWNED BY public.push_tokens.id;
 
 
 --
+-- Name: rate_limit_zaehler; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE UNLOGGED TABLE public.rate_limit_zaehler (
+    schluessel text NOT NULL,
+    treffer integer DEFAULT 0 NOT NULL,
+    ablauf timestamp with time zone NOT NULL
+);
+
+
+--
 -- Name: refresh_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1659,7 +1895,10 @@ CREATE TABLE public.refresh_tokens (
     token_hash character varying(64) NOT NULL,
     expires_at timestamp without time zone NOT NULL,
     created_at timestamp without time zone DEFAULT now(),
-    revoked_at timestamp without time zone
+    revoked_at timestamp without time zone,
+    ersetzt_durch integer,
+    gnade_genutzt_at timestamp with time zone,
+    device_id text
 );
 
 
@@ -1713,23 +1952,6 @@ CREATE SEQUENCE public.role_permissions_id_seq
 --
 
 ALTER SEQUENCE public.role_permissions_id_seq OWNED BY public.role_permissions.id;
-
-
---
--- Name: roles; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.roles (
-    id bigint NOT NULL,
-    organization_id bigint,
-    name text,
-    display_name text,
-    description text,
-    is_system_role boolean DEFAULT false,
-    is_active boolean DEFAULT true,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
-);
 
 
 --
@@ -1906,33 +2128,6 @@ ALTER SEQUENCE public.user_organizations_id_seq OWNED BY public.user_organizatio
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.users (
-    id bigint NOT NULL,
-    organization_id bigint NOT NULL,
-    username text,
-    email text,
-    display_name text,
-    password_hash text,
-    role_id bigint NOT NULL,
-    is_active boolean DEFAULT true,
-    last_login_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    role_title text,
-    is_super_admin boolean DEFAULT false,
-    teamer_since date,
-    token_invalidated_at timestamp without time zone,
-    deleted_at timestamp without time zone,
-    archived_at timestamp without time zone,
-    push_enabled boolean DEFAULT true NOT NULL,
-    bible_translation character varying(10) DEFAULT 'LUT'::character varying NOT NULL
-);
-
-
---
 -- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -1952,6 +2147,49 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
+-- Name: wrapped_ausgaben; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.wrapped_ausgaben (
+    id integer NOT NULL,
+    organization_id integer NOT NULL,
+    wrapped_type character varying(10) NOT NULL,
+    jahrgang_id integer,
+    titel character varying(120) NOT NULL,
+    zeitraum_start date NOT NULL,
+    zeitraum_ende date NOT NULL,
+    freigegeben_at timestamp with time zone,
+    freigegeben_von integer,
+    erstellt_von integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT wrapped_ausgaben_jahrgang_passt CHECK ((((wrapped_type)::text = 'konfi'::text) OR (((wrapped_type)::text = 'teamer'::text) AND (jahrgang_id IS NULL)))),
+    CONSTRAINT wrapped_ausgaben_wrapped_type_check CHECK (((wrapped_type)::text = ANY (ARRAY[('konfi'::character varying)::text, ('teamer'::character varying)::text]))),
+    CONSTRAINT wrapped_ausgaben_zeitraum CHECK ((zeitraum_ende >= zeitraum_start))
+);
+
+
+--
+-- Name: wrapped_ausgaben_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.wrapped_ausgaben_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: wrapped_ausgaben_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.wrapped_ausgaben_id_seq OWNED BY public.wrapped_ausgaben.id;
+
+
+--
 -- Name: wrapped_snapshots; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1963,7 +2201,8 @@ CREATE TABLE public.wrapped_snapshots (
     jahrgang_id integer,
     year integer NOT NULL,
     data jsonb NOT NULL,
-    computed_at timestamp without time zone DEFAULT now() NOT NULL,
+    computed_at timestamp with time zone DEFAULT now() NOT NULL,
+    ausgabe_id integer,
     CONSTRAINT wrapped_snapshots_wrapped_type_check CHECK (((wrapped_type)::text = ANY (ARRAY[('konfi'::character varying)::text, ('teamer'::character varying)::text])))
 );
 
@@ -2014,6 +2253,13 @@ ALTER TABLE ONLY public.activity_requests ALTER COLUMN id SET DEFAULT nextval('p
 --
 
 ALTER TABLE ONLY public.apm_snapshots ALTER COLUMN id SET DEFAULT nextval('public.apm_snapshots_id_seq'::regclass);
+
+
+--
+-- Name: bewahrte_stempel id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bewahrte_stempel ALTER COLUMN id SET DEFAULT nextval('public.bewahrte_stempel_id_seq'::regclass);
 
 
 --
@@ -2192,6 +2438,13 @@ ALTER TABLE ONLY public.jahrgaenge ALTER COLUMN id SET DEFAULT nextval('public.j
 
 
 --
+-- Name: konfi_historie id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfi_historie ALTER COLUMN id SET DEFAULT nextval('public.konfi_historie_id_seq'::regclass);
+
+
+--
 -- Name: konfi_profiles id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2227,10 +2480,10 @@ ALTER TABLE ONLY public.material_files ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
--- Name: material_tags id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: material_links id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.material_tags ALTER COLUMN id SET DEFAULT nextval('public.material_tags_id_seq'::regclass);
+ALTER TABLE ONLY public.material_links ALTER COLUMN id SET DEFAULT nextval('public.material_links_id_seq'::regclass);
 
 
 --
@@ -2245,6 +2498,13 @@ ALTER TABLE ONLY public.materials ALTER COLUMN id SET DEFAULT nextval('public.ma
 --
 
 ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
+
+
+--
+-- Name: org_einladungen id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.org_einladungen ALTER COLUMN id SET DEFAULT nextval('public.org_einladungen_id_seq'::regclass);
 
 
 --
@@ -2346,6 +2606,13 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 
 --
+-- Name: wrapped_ausgaben id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wrapped_ausgaben ALTER COLUMN id SET DEFAULT nextval('public.wrapped_ausgaben_id_seq'::regclass);
+
+
+--
 -- Name: wrapped_snapshots id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2358,6 +2625,22 @@ ALTER TABLE ONLY public.wrapped_snapshots ALTER COLUMN id SET DEFAULT nextval('p
 
 ALTER TABLE ONLY public.apm_snapshots
     ADD CONSTRAINT apm_snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bewahrte_stempel bewahrte_stempel_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bewahrte_stempel
+    ADD CONSTRAINT bewahrte_stempel_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bewahrte_stempel bewahrte_stempel_user_id_herkunft_challenge_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bewahrte_stempel
+    ADD CONSTRAINT bewahrte_stempel_user_id_herkunft_challenge_id_key UNIQUE (user_id, herkunft_challenge_id);
 
 
 --
@@ -2390,6 +2673,14 @@ ALTER TABLE ONLY public.challenge_jahrgang_assignments
 
 ALTER TABLE ONLY public.challenge_jahrgang_assignments
     ADD CONSTRAINT challenge_jahrgang_assignments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: challenge_read_status challenge_read_status_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.challenge_read_status
+    ADD CONSTRAINT challenge_read_status_pkey PRIMARY KEY (challenge_id, user_id, user_type);
 
 
 --
@@ -2729,6 +3020,14 @@ ALTER TABLE ONLY public.invite_codes
 
 
 --
+-- Name: konfi_historie konfi_historie_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfi_historie
+    ADD CONSTRAINT konfi_historie_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: konfspruch_uebersetzungen konfspruch_uebersetzungen_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2785,14 +3084,6 @@ ALTER TABLE ONLY public.material_events
 
 
 --
--- Name: material_file_tags material_file_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.material_file_tags
-    ADD CONSTRAINT material_file_tags_pkey PRIMARY KEY (material_id, tag_id);
-
-
---
 -- Name: material_files material_files_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2809,19 +3100,11 @@ ALTER TABLE ONLY public.material_jahrgaenge
 
 
 --
--- Name: material_tags material_tags_organization_id_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: material_links material_links_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.material_tags
-    ADD CONSTRAINT material_tags_organization_id_name_key UNIQUE (organization_id, name);
-
-
---
--- Name: material_tags material_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.material_tags
-    ADD CONSTRAINT material_tags_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.material_links
+    ADD CONSTRAINT material_links_pkey PRIMARY KEY (id);
 
 
 --
@@ -2838,6 +3121,22 @@ ALTER TABLE ONLY public.materials
 
 ALTER TABLE ONLY public.notifications
     ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: org_einladungen org_einladungen_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.org_einladungen
+    ADD CONSTRAINT org_einladungen_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: rate_limit_zaehler rate_limit_zaehler_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rate_limit_zaehler
+    ADD CONSTRAINT rate_limit_zaehler_pkey PRIMARY KEY (schluessel);
 
 
 --
@@ -2913,19 +3212,19 @@ ALTER TABLE ONLY public.user_organizations
 
 
 --
+-- Name: wrapped_ausgaben wrapped_ausgaben_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wrapped_ausgaben
+    ADD CONSTRAINT wrapped_ausgaben_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: wrapped_snapshots wrapped_snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.wrapped_snapshots
     ADD CONSTRAINT wrapped_snapshots_pkey PRIMARY KEY (id);
-
-
---
--- Name: wrapped_snapshots wrapped_snapshots_user_id_wrapped_type_year_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.wrapped_snapshots
-    ADD CONSTRAINT wrapped_snapshots_user_id_wrapped_type_year_key UNIQUE (user_id, wrapped_type, year);
 
 
 --
@@ -3097,6 +3396,13 @@ CREATE INDEX idx_apm_snapshots_captured_at ON public.apm_snapshots USING btree (
 
 
 --
+-- Name: idx_bewahrte_stempel_person; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_bewahrte_stempel_person ON public.bewahrte_stempel USING btree (user_id, organization_id);
+
+
+--
 -- Name: idx_bonus_points_konfi_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3174,6 +3480,13 @@ CREATE INDEX idx_chat_messages_file_path ON public.chat_messages USING btree (fi
 
 
 --
+-- Name: idx_chat_messages_reply_to; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_chat_messages_reply_to ON public.chat_messages USING btree (reply_to) WHERE (reply_to IS NOT NULL);
+
+
+--
 -- Name: idx_chat_messages_room_created; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3192,6 +3505,13 @@ CREATE INDEX idx_chat_messages_room_id ON public.chat_messages USING btree (room
 --
 
 CREATE INDEX idx_chat_messages_type ON public.chat_messages USING btree (message_type);
+
+
+--
+-- Name: idx_chat_messages_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_chat_messages_user_id ON public.chat_messages USING btree (user_id);
 
 
 --
@@ -3489,6 +3809,13 @@ CREATE INDEX idx_jahrgaenge_organization_id ON public.jahrgaenge USING btree (or
 
 
 --
+-- Name: idx_konfi_historie_person; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_konfi_historie_person ON public.konfi_historie USING btree (user_id, organization_id);
+
+
+--
 -- Name: idx_konfi_profiles_current_level; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3566,20 +3893,6 @@ CREATE INDEX idx_material_events_material_id ON public.material_events USING btr
 
 
 --
--- Name: idx_material_file_tags_material_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_material_file_tags_material_id ON public.material_file_tags USING btree (material_id);
-
-
---
--- Name: idx_material_file_tags_tag_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_material_file_tags_tag_id ON public.material_file_tags USING btree (tag_id);
-
-
---
 -- Name: idx_material_files_material_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3598,6 +3911,13 @@ CREATE INDEX idx_material_jahrgaenge_jahrgang_id ON public.material_jahrgaenge U
 --
 
 CREATE INDEX idx_material_jahrgaenge_material_id ON public.material_jahrgaenge USING btree (material_id);
+
+
+--
+-- Name: idx_material_links_material_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_material_links_material_id ON public.material_links USING btree (material_id);
 
 
 --
@@ -3650,6 +3970,27 @@ CREATE INDEX idx_notifications_user_id ON public.notifications USING btree (user
 
 
 --
+-- Name: idx_org_einladungen_offen; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_org_einladungen_offen ON public.org_einladungen USING btree (organization_id, user_id) WHERE (status = 'offen'::text);
+
+
+--
+-- Name: idx_org_einladungen_org; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_org_einladungen_org ON public.org_einladungen USING btree (organization_id, status);
+
+
+--
+-- Name: idx_org_einladungen_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_org_einladungen_user ON public.org_einladungen USING btree (user_id, status);
+
+
+--
 -- Name: idx_password_resets_token; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3675,6 +4016,13 @@ CREATE UNIQUE INDEX idx_push_tokens_token_unique ON public.push_tokens USING btr
 --
 
 CREATE INDEX idx_push_tokens_user_id ON public.push_tokens USING btree (user_id);
+
+
+--
+-- Name: idx_rate_limit_zaehler_ablauf; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rate_limit_zaehler_ablauf ON public.rate_limit_zaehler USING btree (ablauf);
 
 
 --
@@ -3832,6 +4180,27 @@ CREATE INDEX idx_users_username ON public.users USING btree (username);
 
 
 --
+-- Name: idx_wrapped_ausgaben_jahrgang; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_wrapped_ausgaben_jahrgang ON public.wrapped_ausgaben USING btree (jahrgang_id);
+
+
+--
+-- Name: idx_wrapped_ausgaben_org; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_wrapped_ausgaben_org ON public.wrapped_ausgaben USING btree (organization_id, wrapped_type);
+
+
+--
+-- Name: idx_wrapped_snapshots_ausgabe; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_wrapped_snapshots_ausgabe ON public.wrapped_snapshots USING btree (ausgabe_id);
+
+
+--
 -- Name: idx_wrapped_snapshots_org_year; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3881,6 +4250,20 @@ CREATE UNIQUE INDEX uq_user_badges_user_badge ON public.user_badges USING btree 
 
 
 --
+-- Name: wrapped_snapshots_user_ausgabe_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX wrapped_snapshots_user_ausgabe_key ON public.wrapped_snapshots USING btree (user_id, ausgabe_id) WHERE (ausgabe_id IS NOT NULL);
+
+
+--
+-- Name: wrapped_snapshots_user_type_jahr_jahrgang_ausgabe_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX wrapped_snapshots_user_type_jahr_jahrgang_ausgabe_key ON public.wrapped_snapshots USING btree (user_id, wrapped_type, year, COALESCE(jahrgang_id, 0), COALESCE(ausgabe_id, 0));
+
+
+--
 -- Name: activity_categories activity_categories_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3910,6 +4293,30 @@ ALTER TABLE ONLY public.activity_requests
 
 ALTER TABLE ONLY public.activity_requests
     ADD CONSTRAINT activity_requests_konfi_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: bewahrte_stempel bewahrte_stempel_challenge_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bewahrte_stempel
+    ADD CONSTRAINT bewahrte_stempel_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES public.challenges(id) ON DELETE SET NULL;
+
+
+--
+-- Name: bewahrte_stempel bewahrte_stempel_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bewahrte_stempel
+    ADD CONSTRAINT bewahrte_stempel_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: bewahrte_stempel bewahrte_stempel_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bewahrte_stempel
+    ADD CONSTRAINT bewahrte_stempel_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -3958,6 +4365,30 @@ ALTER TABLE ONLY public.challenge_jahrgang_assignments
 
 ALTER TABLE ONLY public.challenge_jahrgang_assignments
     ADD CONSTRAINT challenge_jahrgang_assignments_jahrgang_id_fkey FOREIGN KEY (jahrgang_id) REFERENCES public.jahrgaenge(id) ON DELETE CASCADE;
+
+
+--
+-- Name: challenge_read_status challenge_read_status_challenge_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.challenge_read_status
+    ADD CONSTRAINT challenge_read_status_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES public.challenges(id) ON DELETE CASCADE;
+
+
+--
+-- Name: challenge_read_status challenge_read_status_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.challenge_read_status
+    ADD CONSTRAINT challenge_read_status_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: challenge_submissions challenge_submissions_approved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.challenge_submissions
+    ADD CONSTRAINT challenge_submissions_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -4105,11 +4536,27 @@ ALTER TABLE ONLY public.custom_badges
 
 
 --
+-- Name: event_bookings event_bookings_attendance_set_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_bookings
+    ADD CONSTRAINT event_bookings_attendance_set_by_fkey FOREIGN KEY (attendance_set_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: event_bookings event_bookings_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.event_bookings
     ADD CONSTRAINT event_bookings_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+
+
+--
+-- Name: event_bookings event_bookings_note_set_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_bookings
+    ADD CONSTRAINT event_bookings_note_set_by_fkey FOREIGN KEY (note_set_by) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -4230,6 +4677,22 @@ ALTER TABLE ONLY public.event_unregistrations
 
 ALTER TABLE ONLY public.event_unregistrations
     ADD CONSTRAINT event_unregistrations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: events events_cancelled_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events
+    ADD CONSTRAINT events_cancelled_by_fkey FOREIGN KEY (cancelled_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: events events_cancelled_reason_set_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events
+    ADD CONSTRAINT events_cancelled_reason_set_by_fkey FOREIGN KEY (cancelled_reason_set_by) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -4521,6 +4984,38 @@ ALTER TABLE ONLY public.user_badges
 
 
 --
+-- Name: konfi_historie konfi_historie_erstellt_von_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfi_historie
+    ADD CONSTRAINT konfi_historie_erstellt_von_fkey FOREIGN KEY (erstellt_von) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: konfi_historie konfi_historie_jahrgang_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfi_historie
+    ADD CONSTRAINT konfi_historie_jahrgang_id_fkey FOREIGN KEY (jahrgang_id) REFERENCES public.jahrgaenge(id) ON DELETE SET NULL;
+
+
+--
+-- Name: konfi_historie konfi_historie_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfi_historie
+    ADD CONSTRAINT konfi_historie_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: konfi_historie konfi_historie_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfi_historie
+    ADD CONSTRAINT konfi_historie_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: konfi_profiles konfi_profiles_current_level_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4533,7 +5028,7 @@ ALTER TABLE ONLY public.konfi_profiles
 --
 
 ALTER TABLE ONLY public.konfi_profiles
-    ADD CONSTRAINT konfi_profiles_invite_code_id_fkey FOREIGN KEY (invite_code_id) REFERENCES public.invite_codes(id);
+    ADD CONSTRAINT konfi_profiles_invite_code_id_fkey FOREIGN KEY (invite_code_id) REFERENCES public.invite_codes(id) ON DELETE SET NULL;
 
 
 --
@@ -4617,22 +5112,6 @@ ALTER TABLE ONLY public.material_events
 
 
 --
--- Name: material_file_tags material_file_tags_material_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.material_file_tags
-    ADD CONSTRAINT material_file_tags_material_id_fkey FOREIGN KEY (material_id) REFERENCES public.materials(id) ON DELETE CASCADE;
-
-
---
--- Name: material_file_tags material_file_tags_tag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.material_file_tags
-    ADD CONSTRAINT material_file_tags_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES public.material_tags(id) ON DELETE CASCADE;
-
-
---
 -- Name: material_files material_files_material_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4657,11 +5136,11 @@ ALTER TABLE ONLY public.material_jahrgaenge
 
 
 --
--- Name: material_tags material_tags_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: material_links material_links_material_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.material_tags
-    ADD CONSTRAINT material_tags_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+ALTER TABLE ONLY public.material_links
+    ADD CONSTRAINT material_links_material_id_fkey FOREIGN KEY (material_id) REFERENCES public.materials(id) ON DELETE CASCADE;
 
 
 --
@@ -4694,6 +5173,38 @@ ALTER TABLE ONLY public.materials
 
 ALTER TABLE ONLY public.materials
     ADD CONSTRAINT materials_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: org_einladungen org_einladungen_eingeladen_von_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.org_einladungen
+    ADD CONSTRAINT org_einladungen_eingeladen_von_fkey FOREIGN KEY (eingeladen_von) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: org_einladungen org_einladungen_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.org_einladungen
+    ADD CONSTRAINT org_einladungen_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: org_einladungen org_einladungen_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.org_einladungen
+    ADD CONSTRAINT org_einladungen_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: org_einladungen org_einladungen_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.org_einladungen
+    ADD CONSTRAINT org_einladungen_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -4830,6 +5341,46 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id);
+
+
+--
+-- Name: wrapped_ausgaben wrapped_ausgaben_erstellt_von_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wrapped_ausgaben
+    ADD CONSTRAINT wrapped_ausgaben_erstellt_von_fkey FOREIGN KEY (erstellt_von) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: wrapped_ausgaben wrapped_ausgaben_freigegeben_von_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wrapped_ausgaben
+    ADD CONSTRAINT wrapped_ausgaben_freigegeben_von_fkey FOREIGN KEY (freigegeben_von) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: wrapped_ausgaben wrapped_ausgaben_jahrgang_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wrapped_ausgaben
+    ADD CONSTRAINT wrapped_ausgaben_jahrgang_id_fkey FOREIGN KEY (jahrgang_id) REFERENCES public.jahrgaenge(id) ON DELETE SET NULL;
+
+
+--
+-- Name: wrapped_ausgaben wrapped_ausgaben_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wrapped_ausgaben
+    ADD CONSTRAINT wrapped_ausgaben_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: wrapped_snapshots wrapped_snapshots_ausgabe_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wrapped_snapshots
+    ADD CONSTRAINT wrapped_snapshots_ausgabe_id_fkey FOREIGN KEY (ausgabe_id) REFERENCES public.wrapped_ausgaben(id) ON DELETE CASCADE;
 
 
 --

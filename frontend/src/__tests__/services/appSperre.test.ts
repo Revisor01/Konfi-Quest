@@ -10,7 +10,7 @@ const mockIsNative = vi.fn(() => true);
 const mockGet = vi.fn();
 const mockSet = vi.fn(async () => undefined);
 const mockRemove = vi.fn(async () => undefined);
-const mockVerify = vi.fn(async () => undefined);
+const mockVerify = vi.fn(async (..._args: unknown[]) => undefined);
 const mockVerfuegbar = vi.fn();
 
 vi.mock('@capacitor/core', () => ({

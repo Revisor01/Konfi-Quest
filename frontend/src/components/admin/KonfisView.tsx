@@ -17,6 +17,8 @@ import {
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection, TrialBanner, StoreUpdateBanner } from '../shared';
 import WartungsHinweis from '../shared/WartungsHinweis';
+import WeitereEintraege from '../shared/WeitereEintraege';
+import { useSchrittweiseListe } from '../../hooks/useSchrittweiseListe';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
@@ -155,6 +157,13 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
     return result;
   })();
+
+  // Schrittweise rendern (Leitung BF-14): 150 Konfis kosteten gedrosselt
+  // 3,1 s bis zur letzten Zeile, jetzt 1,7 s (Zahlen im Hook).
+  // Suche, Jahrgang und Sortierung laufen weiter ueber alle; ein neuer
+  // Suchbegriff beginnt wieder oben (hooks/useSchrittweiseListe.ts).
+  const { sichtbar: sichtbareKonfis, weitere: weitereKonfis, mehrZeigen: mehrKonfis } =
+    useSchrittweiseListe(filteredAndSortedKonfis, `${searchTerm}|${selectedJahrgang}|${sortBy}`);
 
   const getInitials = (name: string) => {
     const words = name.trim().split(/\s+/);
@@ -415,7 +424,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         }
         emptyIconColor="var(--app-color-konfis)"
       >
-        {filteredAndSortedKonfis.map((konfi, index) => {
+        {sichtbareKonfis.map((konfi, index) => {
                   const statusColor = getStatusColor(konfi);
                   const totalPoints = getTotalPoints(konfi);
                   const godiPoints = getGottesdienstPoints(konfi);
@@ -426,7 +435,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   const percentGem = targetGem > 0 ? Math.round((gemPoints / targetGem) * 100) : 0;
 
                   return (
-                    <IonItemSliding key={konfi.id} style={{ marginBottom: index < filteredAndSortedKonfis.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
+                    <IonItemSliding key={konfi.id} style={{ marginBottom: index < sichtbareKonfis.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
                       <IonItem
                         button
                         onClick={() => onSelectKonfi(konfi)}
@@ -579,6 +588,9 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   );
                 })}
       </ListSection>
+      )}
+      {viewMode === 'konfis' && (
+        <WeitereEintraege weitere={weitereKonfis} onMehr={mehrKonfis} bezeichnung="Konfis" />
       )}
     </>
   );

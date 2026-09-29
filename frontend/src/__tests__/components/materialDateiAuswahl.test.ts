@@ -13,41 +13,42 @@ import { resolve } from 'path';
 // Input geleert. Im Browser gemessen: files.length 1 -> 1 -> 0 ueber das
 // change-Event hinweg.
 //
-// Das Leeren bleibt richtig -- ohne Wertwechsel feuert change beim zweiten
-// Mal derselben Datei nicht. Es muss nur NACH dem Auslesen passieren.
+// Seit dem 29.09.2026 oeffnet das Modal die Auswahl ueber die Huelle
+// dateiAuswaehlen (services/systemDialoge, wegen der App-Sperre). Die liest
+// das Feld aus, BEVOR sie es leert, und legt je Auswahl ein frisches an --
+// beides ist dort im Ablauf geprueft (dateiAuswahl.test.ts: "das Feld wird
+// erst ausgelesen, dann geleert", "dieselbe Datei laesst sich gleich noch
+// einmal waehlen"). Hier bleibt zu pruefen, dass das Modal die fertige Liste
+// weiterreicht und sie nie aus einem State-Updater heraus liest.
 
 const quelle = readFileSync(
   resolve(process.cwd(), 'src/components/admin/modals/MaterialFormModal.tsx'),
   'utf8'
 );
 
-const handler = quelle.slice(
-  quelle.indexOf('const handleFileSelect'),
+const waehlen = quelle.slice(
+  quelle.indexOf('const dateienWaehlen'),
   quelle.indexOf('const removeNewFile')
 );
 
-// Seit dem 27.09.2026 bereitet dateienVorbereiten die gewaehlten Dateien vor
-// (verkleinern, Grenze des Servers) und haengt sie danach an — mit der Liste,
-// die handleFileSelect vor dem Leeren ausgelesen hat. Der State-Updater steht
-// deshalb dort; geprueft wird er dort.
+// dateienVorbereiten bereitet die gewaehlten Dateien vor (verkleinern,
+// Grenze des Servers) und haengt sie danach an — mit der Liste aus der Huelle.
 const vorbereiten = quelle.slice(
   quelle.indexOf('const dateienVorbereiten'),
-  quelle.indexOf('const handleFileSelect')
+  quelle.indexOf('const dateienWaehlen')
 );
 
 describe('Datei-Auswahl im Material-Modal', () => {
-  it('liest die Dateiliste aus, bevor der Input geleert wird', () => {
-    const auslesen = handler.indexOf('Array.from(e.target.files)');
-    const leeren = handler.indexOf("fileInputRef.current.value = ''");
-    expect(auslesen, 'Array.from nicht gefunden').toBeGreaterThan(-1);
-    expect(leeren, 'Leeren nicht gefunden').toBeGreaterThan(-1);
-    expect(auslesen).toBeLessThan(leeren);
+  it('holt die Liste aus der Hülle und reicht sie fertig weiter', () => {
+    expect(waehlen, 'dateienWaehlen nicht gefunden').toContain('await dateiAuswaehlen(');
+    expect(waehlen).toContain('multiple: true');
+    expect(waehlen).toContain('dateienVorbereiten(gewaehlt)');
   });
 
   it('liest NICHT innerhalb des State-Updaters aus', () => {
     // Genau das war der Fehler: der Updater laeuft verzoegert. Geprueft
-    // wird die Updater-ZEILE selbst -- sie darf nur die vorher ausgelesene
-    // Liste verwenden (vorbereitet als `fertig`), nie erneut e.target.files.
+    // wird die Updater-ZEILE selbst -- sie darf nur die vorher vorbereitete
+    // Liste verwenden (`fertig`), nie ein Datei-Feld.
     const zeile = vorbereiten.split('\n')
       .filter(z => !z.trim().startsWith('//'))
       .find(z => z.includes('setNewFiles(prev'));
@@ -55,17 +56,16 @@ describe('Datei-Auswahl im Material-Modal', () => {
     expect(zeile!).not.toContain('target.files');
     expect(zeile!).toContain('fertig');
     expect(vorbereiten).not.toContain('target.files');
-    // `fertig` entsteht aus genau der Liste, die vor dem Leeren gelesen wurde.
     expect(vorbereiten).toMatch(/for \(const datei of gewaehlt\)/);
-    expect(handler).toContain('dateienVorbereiten(gewaehlt)');
   });
 
-  it('leert den Input weiterhin — dieselbe Datei muss erneut waehlbar sein', () => {
-    expect(handler).toContain("fileInputRef.current.value = ''");
+  it('hält kein eigenes Datei-Feld mehr', () => {
+    expect(quelle).not.toContain('fileInputRef');
+    expect(quelle).not.toContain('target.files');
   });
 
   it('nimmt nur auf, wenn wirklich etwas gewaehlt wurde', () => {
-    expect(handler).toMatch(/gewaehlt\.length > 0/);
+    expect(waehlen).toMatch(/gewaehlt && gewaehlt\.length > 0/);
   });
 });
 
@@ -75,6 +75,7 @@ describe('Andere Upload-Stellen lesen die Datei sofort aus', () => {
     'src/components/konfi/modals/ChallengeSubmitModal.tsx',
     'src/components/konfi/modals/ActivityRequestModal.tsx',
     'src/components/teamer/modals/TeamerActivityRequestModal.tsx',
+    'src/components/chat/useChatDateien.ts',
   ];
 
   it.each(dateien)('%s greift nicht verzoegert auf target.files zu', (pfad) => {

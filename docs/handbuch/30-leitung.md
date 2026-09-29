@@ -37,8 +37,9 @@ unter
 
 ![Die Konfi-Liste der Leitung: oben die Zahlen zur Gemeinde, darunter Suche, Filter und die Liste mit den Punkteständen.](/docs/bilder/iphone/leitung-konfis.png)
 
-Die zentrale Liste, umschaltbar zwischen **Konfis** und **Teamer:innen**. Zu
-jeder Person siehst du die Punkte nach **Godi**, **Gemeinde** und **Gesamt**.
+Die zentrale Liste im Reiter **Konfis**, umschaltbar zwischen **Konfis** und
+**Team**; der Titel oben zeigt, welche der beiden offen ist. Zu jeder Person
+siehst du die Punkte nach **Godi**, **Gemeinde** und **Gesamt**.
 
 Über das Plus legst du an, was gerade geöffnet ist. Dabei erzeugt die App ein
 [Einmalpasswort](35-passwoerter.md#wie-die-einmalpasswoerter-aussehen), das du
@@ -217,6 +218,53 @@ E-Mail-Adresse.
 | **Jahresrückblick** | [Ausgaben anlegen, benennen und freigeben](95-wrapped.md#einen-rueckblick-anlegen) |
 | **Zertifikate** | Nachweise für Teamer:innen, mit Gültigkeit |
 
+## Eine neue Gemeinde einrichten
+
+Eine Gemeinde legt der Betrieb von Konfi Quest an, nicht die Gemeinde selbst.
+Dabei entsteht das erste Konto der **Gemeindeleitung**; Benutzername und
+Passwort bekommst du vom Betrieb. Melde dich damit an, ändere zuerst das
+Passwort (siehe [Selbst ändern, wenn man angemeldet
+ist](35-passwoerter.md#weg-3-selbst-aendern-wenn-man-angemeldet-ist)) und
+hinterlege eine E-Mail-Adresse — dorthin gehen „Passwort vergessen" und der
+Hinweis vor Ablauf der Laufzeit.
+
+**Die Gemeinde startet nicht leer.** Als Vorlage zum Anpassen ist schon da:
+
+| Bereich | Vorlage |
+|---|---|
+| **Badges** | 27 für Konfis, 9 fürs Team |
+| **Level** | 6, von „Noviz:in" (2 Punkte) bis „Legende" (30 Punkte) |
+| **Kategorien** | 14, etwa Fest, Jugend, Freizeit, Kasualien, Teamtreff |
+| **Aktivitäten** | 5 für Konfis (Gottesdienstbesuch, Taufe, Hochzeit, Beerdigung, Küsterdienst), 4 fürs Team |
+| **Zertifikate** | Teamer-Card, JuLeiCa, Rettungsschwimmer, Erste Hilfe |
+| **Challenges** | 3 Beispiele als Entwurf — sie gehen erst live, wenn du sie veröffentlichst |
+
+Es gibt noch **keinen Jahrgang, keine Konfis, kein Team und keine Events**.
+Weiter geht es in dieser Reihenfolge:
+
+1. [Einen Jahrgang anlegen](45-jahrgaenge.md#einen-jahrgang-anlegen) — mit
+   Konfirmationsdatum und Punktezielen.
+2. Das Team dazuholen: unter „Mehr" › **Benutzer:innen** anlegen oder, wer
+   schon ein Konto in einer anderen Gemeinde hat,
+   [einladen](05-rollen.md#jemanden-in-die-eigene-gemeinde-einladen); dabei
+   die Jahrgänge zuweisen.
+3. Konfis aufnehmen — per
+   [Einladungscode](35-passwoerter.md#konfis-mit-einem-einladungscode-aufnehmen)
+   oder selbst angelegt ([Konfis und Teamer:innen
+   verwalten](#konfis-und-teamer-innen-verwalten)).
+4. Die Vorlagen durchsehen: Aktivitäten, Badges, Level und Kategorien an die
+   eigene Gemeinde anpassen, die Beispiel-Challenges bearbeiten oder löschen.
+
+**Laufzeit und Konfi-Zahl** vereinbart die Gemeinde mit dem Betrieb. Ohne
+andere Absprache beginnt eine Gemeinde mit **30 Tagen Testphase**; solange
+steht auf den Startseiten „Testphase: noch … Tage". Danach kann sich in der
+Gemeinde niemand mehr anmelden, bis der Betrieb die Laufzeit verlängert (siehe
+[Die Meldung beim Anmelden einordnen](35-passwoerter.md#die-meldung-beim-anmelden-einordnen)).
+Ist eine Höchstzahl an Konfis vereinbart und erreicht, fragt die App beim
+Anlegen einer Konfi, ob du trotzdem anlegen willst — bis zu fünf über der Zahl,
+danach nicht mehr. Wer sich per Einladungscode selbst registriert, kommt bis zu
+dieser Grenze ohne Rückfrage durch.
+
 ## Material anlegen und sichtbar machen
 
 Ein Material trägt **Dateien und Links zugleich** — etwa ein PDF und dazu
@@ -228,8 +276,12 @@ Pixel). Wer ein Bild in voller Auflösung braucht, etwa zum Drucken, legt es
 als PDF ab. Eine Datei darf danach höchstens 20 MB groß sein; was darüber
 liegt, meldet die App gleich bei der Auswahl mit „Datei ist zu groß (max.
 20 MB)." und nimmt es nicht auf. Textdateien (TXT, CSV) prüft der Server
-wie im Chat auf ihren Inhalt
+wie im Chat auf ihren Inhalt, und eine Datei, für die das Handy keinen Typ
+nennt, geht wie dort nach ihrer Endung
 ([Verstehen, was mit der Datei passiert](90-chat.md#verstehen-was-mit-der-datei-passiert)).
+Ein Format, das das Material nicht kennt, lehnt der Server mit „Dieser
+Dateityp kann nicht hochgeladen werden." ab — dann wird keine der gewählten
+Dateien gespeichert.
 Beim Speichern steht unter der Kopfzeile,
 wie weit das Hochladen ist — „Wird gesendet… 40 %", zuletzt „Wird
 verarbeitet…". Wie die Dateien danach auf den Geräten liegen und wieder

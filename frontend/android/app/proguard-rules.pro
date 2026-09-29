@@ -102,3 +102,22 @@
 
 # Annotationen, die zur Laufzeit gelesen werden (Capacitor tut genau das).
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+
+# ShortcutBadger (Zahl am App-Symbol ueber @capawesome/capacitor-badge und
+# AppSymbolZahl.java), 29.09.2026.
+#
+# ShortcutBadger legt seine Badger ueber eine Liste von Klassen an
+# (Class.newInstance in ShortcutBadger.initBadger). R8 sieht diesen Aufruf
+# nicht. Die mitgelieferten Regeln des AAR schuetzen nur einen Teil der
+# Konstruktoren -- Samsung, Huawei, OPPO, ZUK und ZTE fehlen dort.
+#
+# GEMESSEN am Release-Bau vom 29.09.2026 (minifyReleaseWithR8, usage.txt):
+# R8 entfernte die Konstruktoren von SamsungHomeBadger und HuaweiHomeBadger,
+# bei Huawei dazu executeBadge und getSupportLaunchers. newInstance scheitert
+# dann, ShortcutBadger ueberspringt den Badger still und nimmt den
+# DefaultBadger (einen allgemeinen Broadcast). Huaweis Startbildschirm hoert
+# den nicht -- dort kam die Zahl der App im Store-Bau nie an, im Debug-Bau
+# schon. Samsung verlor seinen eigenen Weg (Broadcast, sonst der Anbieter
+# com.sec.badge) und behielt nur den Broadcast. Die Bibliothek ist klein;
+# sie bleibt ganz.
+-keep class me.leolin.shortcutbadger.** { *; }

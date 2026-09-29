@@ -47,7 +47,7 @@ import SendeAnzeige from '../../shared/SendeAnzeige';
 import { pruefeMusikLink, ERLAUBTE_DIENSTE_TEXT } from '../../../utils/musikLinks';
 import { getVisibilityInfo, getSuccessMessage } from '../../../utils/challengeTexte';
 import { AudioPlayer } from '../../shared';
-import { ohneSperre } from '../../../services/appSperre';
+import { dateiAuswaehlen } from '../../../services/systemDialoge';
 import type {
   KonfiChallenge,
   ChallengeMediaType,
@@ -191,66 +191,27 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
     setMediaType(value);
   };
 
-  // --- Gemeinsamer Datei-Picker für Foto und Video.
+  // --- Gemeinsamer Datei-Picker für Foto und Video: die Hülle dateiAuswaehlen
+  // (services/systemDialoge). Sie meldet den Ausflug der App-Sperre an — wer
+  // länger in der Fotomediathek blättert, säße beim Zurückkommen sonst vor dem
+  // Sperrbildschirm — und erkennt den Abbruch: sofort über das native
+  // 'cancel', sonst über die Rückkehr des Fokus mit großzügiger Frist (15 s),
+  // in der eine späte Auswahl (iOS-HEIC-Konvertierung, große Videos) noch
+  // gewinnt. Früher löste hier nach 1 s pauschal "nichts gewählt" aus, und
+  // die Auswahl ging still verloren.
   //
-  // Der Abbruch muss erkannt werden, weil manche WebViews kein 'cancel'-Event
-  // feuern — sonst bliebe der Spinner nach einem Abbruch stehen. Frueher loeste
-  // ein Fokus-Timeout nach 1 s pauschal mit null auf; dauerte die Auswahl laenger
-  // (iOS-HEIC-Konvertierung, grosse Videos), war das Promise bereits erledigt und
-  // die Auswahl wurde still verworfen — ohne Datei, ohne Fehlermeldung.
-  //
-  // Jetzt gewinnt immer die echte Auswahl: das native 'cancel'-Event löst sofort
-  // auf, der Fokus-Fallback wartet grosszuegig (15 s) und prüft davor noch
-  // einmal, ob inzwischen doch eine Datei angekommen ist.
-  // ohneSperre: Die Dateiauswahl legt die App in den Hintergrund, ohne dass die
-  // Person sie verlaesst — wer laenger in der Fotomediathek blaettert, saesse
-  // beim Zurueckkommen sonst vor dem Sperrbildschirm (siehe services/appSperre).
-  // Die Klammer endet genau dann, wenn das Versprechen einloest: Datei da,
-  // abgebrochen oder Frist abgelaufen.
-  const openFilePicker = (accept: string): Promise<File | null> => ohneSperre(() => {
-    return new Promise<File | null>((resolve) => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = accept;
-
-      let settled = false;
-      let focusTimer: ReturnType<typeof setTimeout> | undefined;
-
-      const finish = (file: File | null) => {
-        if (settled) return;
-        settled = true;
-        if (focusTimer) clearTimeout(focusTimer);
-        window.removeEventListener('focus', onFocus);
-        resolve(file);
-      };
-
-      const onFocus = () => {
-        // Fokus zurück in der App: entweder wurde abgebrochen, oder die Auswahl
-        // läuft noch (Konvertierung/Kopieren). Den Spinner nach kurzer Zeit
-        // beenden, damit die Oberflaeche bei einem Abbruch nicht blockiert —
-        // das Warten auf die Datei läuft davon unabhaengig weiter.
-        setTimeout(() => { if (!settled) setPickingMedia(false); }, 1200);
-        // Erst nach grosszuegiger Frist als Abbruch werten; 'onchange' darf
-        // jederzeit vorher gewinnen.
-        focusTimer = setTimeout(() => {
-          const late = input.files?.[0];
-          finish(late || null);
-        }, 15000);
-      };
-
-      input.onchange = (event: Event) => {
-        const target = event.target as HTMLInputElement;
-        finish(target.files?.[0] || null);
-      };
-      // Natives Abbruch-Event (moderne WebViews) — sofortige, verlaessliche Antwort.
-      input.oncancel = () => finish(null);
-
-      window.addEventListener('focus', onFocus, { once: true });
-      input.click();
+  // Der Spinner endet 1,2 s nach der Rückkehr ohne Auswahl, damit die
+  // Oberfläche bei einem Abbruch nicht blockiert; das Warten auf die Datei
+  // läuft davon unabhängig weiter.
+  const openFilePicker = async (accept: string): Promise<File | null> => {
+    const auswahl = await dateiAuswaehlen({
+      accept,
+      beiRueckkehrOhneAuswahl: () => setPickingMedia(false),
     });
-  });
+    return auswahl?.[0] ?? null;
+  };
 
-  // --- Foto: verstecktes <input type="file"> statt Capacitor Camera.getPhoto.
+  // --- Foto: Dateiauswahl des Systems statt Capacitor Camera.getPhoto.
   // Camera.getPhoto mit CameraSource.Prompt schlug in TestFlight beim Antippen
   // sofort mit "Foto konnte nicht ausgewaehlt werden" fehl. Die Anträge
   // (ActivityRequestModal) nutzen erwiesenermassen zuverlaessig dieses

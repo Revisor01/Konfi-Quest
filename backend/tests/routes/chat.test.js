@@ -1920,6 +1920,29 @@ describe('Chat Routes', () => {
       expect(res.status).toBe(403);
     });
 
+    // super_admin verwaltet Gemeinden, nicht ihre Inhalte (26.08.2026). Bis
+    // zum 29.09.2026 stand das nur als Zeichenkette in einem Frontend-Test
+    // (superAdminChatGate.test.ts las diese Datei); jetzt an der Antwort.
+    it('Verbotener Fall: super_admin (Rolle) bekommt 403, Nachrichten bleiben', async () => {
+      const res = await request(app)
+        .delete(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
+        .set('Authorization', `Bearer ${generateToken('superAdmin')}`);
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({ error: 'Nur die Leitung kann den Team-Chat leeren' });
+      const { rows: [msgCount] } = await db.query(
+        'SELECT COUNT(*)::int AS count FROM chat_messages WHERE room_id = $1', [TEAM_ROOM_ID]
+      );
+      expect(msgCount.count).toBe(2);
+    });
+
+    it('Erlaubter Fall: org_admin leert den Team-Chat', async () => {
+      const res = await request(app)
+        .delete(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
+        .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`);
+      expect(res.status).toBe(200);
+      expect(res.body.deleted_count).toBe(2);
+    });
+
     it('Normaler Chat (kein Team-Chat) laesst sich NICHT leeren -> 409', async () => {
       const res = await request(app)
         .delete(`/api/chat/rooms/${CHAT_ROOMS.group.id}/messages`)

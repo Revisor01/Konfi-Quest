@@ -117,7 +117,7 @@ describe('Zaehler an einem Termin ohne jede Buchung', () => {
     const eventId = await termin({ max: 4 });
     const bucht = (userId, status) => db.query(
       `INSERT INTO event_bookings (user_id, event_id, status, organization_id, created_at)
-       VALUES ($1, $2, $3, $4, NOW()::text)`,
+       VALUES ($1, $2, $3, $4, NOW())`,
       [userId, eventId, status, ORGS.testGemeinde.id]
     );
     await bucht(USERS.konfi1.id, 'confirmed');
@@ -136,7 +136,7 @@ describe('Zaehler an einem Termin ohne jede Buchung', () => {
     await db.query(
       `INSERT INTO event_bookings (user_id, event_id, status, attendance_status,
                                    organization_id, created_at)
-       VALUES ($1, $2, 'excused', 'excused', $3, NOW()::text)`,
+       VALUES ($1, $2, 'excused', 'excused', $3, NOW())`,
       [USERS.konfi1.id, eventId, ORGS.testGemeinde.id]
     );
 

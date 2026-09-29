@@ -6,7 +6,7 @@ name: Notfall-Deploy
 # dauert. Der CI-Deploy laeuft erst nach backend-test (rund 9 Minuten, im
 # Zweifel laenger) und dann nach build-and-push. Am 27.08.2026 kostete das
 # bei einem Absturz-Fix ueber 20 Minuten, in denen das Backend weiter alle
-# paar Minuten neu startete.
+# paar Minuten neu startete. Und zum ZURUECKROLLEN auf einen frueheren Stand.
 #
 # WICHTIG — was diese Action NICHT tut:
 # Sie baut KEINE Images. Sie rollt aus, was auf ghcr bereits unter dem
@@ -19,6 +19,26 @@ name: Notfall-Deploy
 # Fuer den Normalfall. Ungetestet auszurollen ist eine Ausnahme mit Ansage;
 # der regulaere Weg ueber main prueft vorher. Diese Action laeuft nur von
 # Hand und schreibt in die Zusammenfassung, wer sie ausgeloest hat.
+#
+# DERSELBE WEG WIE DER CI-DEPLOY (29.09.2026, Audit CI BF-10): Der Workflow
+# war seit seiner Einfuehrung nie gelaufen, also auch nie geprobt, und
+# tauschte alle Dienste mit EINEM update_stack (Luecke). Jetzt ruft er
+# deploy/rollend.sh -- das Skript, das bei jedem Push auf main ausrollt und
+# dort laufend geprobt wird: zwei Stufen, Warten auf gesund, Verify gegen den
+# vollen Commit. Anders als im CI-Deploy ohne NUR_VORWAERTS, denn
+# Zurueckrollen ist hier der Zweck.
+#
+# PROBELAUF: Mit probelauf=true geht der Workflow denselben Weg bis
+# unmittelbar vor update_stack (Image auf ghcr, Portainer-Zugang,
+# Tag-Umschreibung auf einer Kopie, Gegenprobe auf backend-test, Status) und
+# aendert nichts. So laesst sich der Rueckrollweg jederzeit gefahrlos proben
+# (Auftrag docs/auftraege/lokaler-agent/05-sicherung-und-notfall.md).
+#
+# RUECKROLLEN UND MIGRATIONEN: Zurueckgedreht wird nur der Code. Migrationen
+# bleiben (sie laufen additiv, CLAUDE.md) -- der aeltere Code muss mit dem
+# neueren Schema laufen. Beim Rueckrollen ueber eine Migration hinweg vorher
+# pruefen, ob sie Spalten entfernt oder umbenennt; das darf nach CLAUDE.md
+# nicht vorkommen.
 
 on:
   workflow_dispatch:
@@ -30,17 +50,32 @@ on:
       grund:
         description: "Warum? (steht spaeter im Protokoll)"
         required: true
+      probelauf:
+        description: "Probelauf: alles pruefen, NICHTS aendern (zum Ueben des Rueckrollwegs)"
+        type: boolean
+        default: false
 
+# packages: read fuer `docker manifest inspect` auf ghcr (29.09.2026, Audit
+# CI BF-10): Bis dahin klappte die Pruefung nur, weil die Pakete oeffentlich
+# sind -- mit angemeldetem Token ohne dieses Recht haette ghcr die Anfrage
+# ablehnen koennen, und der Notfall-Deploy haette "Image fehlt" gemeldet.
 permissions:
   contents: read
+  packages: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Nie gleichzeitig mit einem CI-Deploy (dieselbe Gruppe wie in ci.yml).
+    # Ein laufender Deploy wird nicht abgebrochen; ein wartender CI-Deploy
+    # wird durch diesen ersetzt -- beim Zurueckrollen gewollt.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -48,21 +83,32 @@ jobs:
         id: tag
         env:
           GH_TOKEN: ${{ github.token }}
+          EINGABE_TAG: ${{ inputs.image_tag }}
+          AKTEUR: ${{ github.actor }}
         run: |
-          set -e
-          TAG="${{ inputs.image_tag }}"
-          if [ -z "$TAG" ]; then
+          set -euo pipefail
+          if [ -z "$EINGABE_TAG" ]; then
             TAG=$(git rev-parse --short=7 HEAD)
             echo "Kein Tag angegeben -> aktueller Stand: $TAG"
           else
-            TAG=$(echo "$TAG" | cut -c1-7)
+            TAG=$(printf '%s' "$EINGABE_TAG" | cut -c1-7)
             echo "Angegebener Tag: $TAG"
           fi
+          if ! printf '%s' "$TAG" | grep -Eq '^[0-9a-f]{7}$'; then
+            echo "::error::'$TAG' ist kein 7-stelliger Commit-Tag."; exit 1
+          fi
+          # Voller Commit fuer den Verify: /api/status meldet den vollen SHA,
+          # der beim Bau ins Image kam. Mehrdeutig oder unbekannt -> Abbruch.
+          if ! VOLL=$(git rev-parse --verify --quiet "${TAG}^{commit}"); then
+            echo "::error::Zu $TAG gibt es keinen (eindeutigen) Commit im Repo. Abbruch — Produktion bleibt unveraendert."; exit 1
+          fi
+          echo "Commit: $VOLL"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "voll=$VOLL" >> "$GITHUB_OUTPUT"
 
           # Vorab pruefen statt blind deployen: Liegt das Image nicht auf ghcr,
           # zieht der Redeploy sonst den alten Stand und meldet trotzdem Erfolg.
-          echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$AKTEUR" --password-stdin
           fehlt=0
           for repo in backend frontend; do
             if docker manifest inspect "ghcr.io/revisor01/konfi-quest-$repo:$TAG" >/dev/null 2>&1; then
@@ -77,87 +123,46 @@ jobs:
             exit 1
           fi
 
-      - name: Ausrollen (Portainer) + Verify
+      - name: Rollend ausrollen (deploy/rollend.sh) + Verify
         env:
           P_URL: ${{ secrets.PORTAINER_URL }}
           P_KEY: ${{ secrets.PORTAINER_API_KEY }}
           STACK_ID: "249"
           ENDPOINT_ID: "1"
-          IMG_TAG: ${{ steps.tag.outputs.tag }}
+          GIT_SHA: ${{ steps.tag.outputs.voll }}
+          # Immer gegen den Commit pruefen: Beide Backends muessen den
+          # gewaehlten Stand melden.
+          BACKEND_CHANGED: "1"
+          STATUS_URL: https://konfi-quest.de/api/status
+          PROBELAUF: ${{ inputs.probelauf && '1' || '0' }}
+          GRUND: ${{ inputs.grund }}
+          AKTEUR: ${{ github.actor }}
         run: |
-          set -e
-          echo "Notfall-Deploy von $IMG_TAG — ausgeloest von ${{ github.actor }}"
-          echo "Grund: ${{ inputs.grund }}"
+          echo "Notfall-Deploy von ${GIT_SHA:0:7} — ausgeloest von $AKTEUR"
+          echo "Grund: $GRUND"
+          if [ "$PROBELAUF" = "1" ]; then echo "PROBELAUF: nichts wird geaendert."; fi
+          bash deploy/rollend.sh
 
-          curl -sf -H "X-API-Key: $P_KEY" "$P_URL/api/stacks/$STACK_ID/file" \
-            | python3 -c "import sys,json;open('compose.yml','w').write(json.load(sys.stdin)['StackFileContent'])"
-          test -s compose.yml || { echo "::error::compose leer"; exit 1; }
-
-          # NUR die Dienste backend, backend2 und frontend (26.09.2026, Release-Audit
-          # CI BF-03, Nebenbefund): Derselbe Rewrite wie in ci.yml. Bis dahin traf das
-          # Muster auch backend-test (Tag test-latest) -- ein Notfall-Deploy haette die
-          # Test-Umgebung mit auf den Live-Stand gestellt.
-          bt_vorher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
-          IMG_TAG="$IMG_TAG" perl -i -pe '
-            BEGIN { $svc = "" }
-            $svc = ""  if /^\S/;
-            $svc = $1  if /^  ([A-Za-z0-9_.-]+):\s*(?:#.*)?$/;
-            s#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g
-              if $svc =~ /^(?:backend|backend2|frontend)$/;
-          ' compose.yml
-          echo "compose images nach Tag-Rewrite:"; grep -E "image:.*konfi-quest" compose.yml
-          grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
-          grep -q "konfi-quest-frontend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
-          bt_nachher=$(awk '/^  backend-test:/{f=1} f && /image:/{print $2; exit}' compose.yml)
-          if [ "$bt_vorher" != "$bt_nachher" ]; then
-            echo "::error::Tag-Rewrite hat backend-test angefasst ($bt_vorher -> $bt_nachher). Abbruch."; exit 1
-          fi
-
-          redeploy() {
-            python3 <<'PY'
-          import json,os,urllib.request,urllib.error
-          url,key=os.environ["P_URL"],os.environ["P_KEY"]
-          sid,eid=os.environ["STACK_ID"],os.environ["ENDPOINT_ID"]
-          compose=open("compose.yml").read()
-          # Stack-Variablen unverändert zurückschicken (Portainer ersetzt sie
-          # beim Update; "env":[] löschte sie, 27.09.2026).
-          rq=urllib.request.Request(f"{url}/api/stacks/{sid}"); rq.add_header("X-API-Key",key)
-          env=json.load(urllib.request.urlopen(rq,timeout=30)).get("Env") or []
-          body=json.dumps({"stackFileContent":compose,"env":env,"prune":False,"pullImage":True}).encode()
-          req=urllib.request.Request(f"{url}/api/stacks/{sid}?endpointId={eid}",data=body,method="PUT")
-          req.add_header("X-API-Key",key); req.add_header("Content-Type","application/json")
-          try:
-              r=urllib.request.urlopen(req,timeout=180); print(r.status)
-          except urllib.error.HTTPError as e:
-              print(e.code)
-          PY
-          }
-
-          for runde in 1 2 3; do
-            echo "== Deploy-Runde $runde =="
-            code=$(redeploy); echo "Redeploy HTTP $code"
-            [ "$code" = "200" ] || { echo "::warning::Redeploy HTTP $code"; sleep 15; continue; }
-            for i in $(seq 1 12); do
-              sleep 10
-              s=$(curl -s https://konfi-quest.de/api/status || echo "")
-              db=$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('checks',{}).get('database',''))" 2>/dev/null || echo "")
-              live=$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('commit','')[:7])" 2>/dev/null || echo "")
-              if [ "$db" = "ok" ] && [ "$live" = "$IMG_TAG" ]; then
-                echo "OK — live auf $live, Datenbank ok"
-                {
-                  echo "### Notfall-Deploy erfolgreich"
-                  echo ""
-                  echo "- **Stand:** \`$IMG_TAG\`"
-                  echo "- **Ausgeloest von:** @${{ github.actor }}"
-                  echo "- **Grund:** ${{ inputs.grund }}"
-                  echo ""
-                  echo "Ohne Tests ausgerollt. Der regulaere Lauf auf \`main\` prueft nach."
-                } >> "$GITHUB_STEP_SUMMARY"
-                exit 0
-              fi
-              echo "  warte... (db=$db live=$live erwartet=$IMG_TAG)"
-            done
-            echo "Runde $runde ohne Erfolg -> neuer Versuch"
-          done
-          echo "::error::Deploy nicht verifiziert. Produktion pruefen!"
-          exit 1
+      - name: Zusammenfassung
+        if: success()
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          PROBELAUF: ${{ inputs.probelauf && '1' || '0' }}
+          GRUND: ${{ inputs.grund }}
+          AKTEUR: ${{ github.actor }}
+        run: |
+          {
+            if [ "$PROBELAUF" = "1" ]; then
+              echo "### Notfall-Deploy: Probelauf erfolgreich"
+              echo ""
+              echo "Nichts wurde geaendert. Der echte Lauf mit diesem Stand wuerde ausrollen."
+            else
+              echo "### Notfall-Deploy erfolgreich"
+              echo ""
+              echo "Ohne Tests ausgerollt. Der regulaere Lauf auf \`main\` prueft nach."
+            fi
+            echo ""
+            echo "- **Stand:** \`$TAG\`"
+            echo "- **Ausgeloest von:** @$AKTEUR"
+            echo "- **Grund:** $GRUND"
+          } >> "$GITHUB_STEP_SUMMARY"

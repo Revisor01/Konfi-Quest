@@ -10,6 +10,7 @@ import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 import { removeDeliveredById, benachrichtigungskanaeleAnlegen } from '../services/notifications';
+import { appSymbolAngaben } from '../services/appSymbolZahl';
 import { writeQueue } from '../services/writeQueue';
 import { offlineCache } from '../services/offlineCache';
 import { clearMediaCache, medienCacheKontoPruefen } from '../services/mediaCache';
@@ -285,7 +286,12 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
       // Damit im Protokoll steht, WELCHE Fassung sich gemeldet hat
       // (Migration 156). Aeltere Server ignorieren die Felder.
       app_version: fassung.version,
-      app_build: fassung.build
+      app_build: fassung.build,
+      // Nur Android (29.09.2026, Migration 185): wie die Zahl ans App-Symbol
+      // kommt, und welcher Startbildschirm es ist. Der Server richtet danach
+      // den Versand je Geraet aus (backend/utils/appSymbolWeg.js). Fehlen
+      // die Angaben, bleibt dort alles wie bisher.
+      ...(await appSymbolAngaben())
     });
 
     fcmTokenSent = token; // Markiere Token als gesendet

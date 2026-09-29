@@ -26,6 +26,10 @@ const { schreibePostfach } = require('../utils/postfachArten');
 // Hauptschalter push_enabled. Der Postfach-Eintrag entsteht davor und
 // unabhaengig davon.
 const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
+// Zahl am App-Symbol auf Android (29.09.2026): welcher Weg zum Startbildschirm
+// eines Geraets passt, meldet die App bei der Token-Anmeldung
+// (push_tokens.app_symbol_weg, Migration 185).
+const { APP_SYMBOL_WEGE, wegFuerGeraet } = require('../utils/appSymbolWeg');
 
 /**
  * Push Notification Type Registry
@@ -245,21 +249,32 @@ class PushService {
       return true;
     }
 
+    // Log-Zeilen (Audit 26.09.2026, Betrieb BF-11): Im Sammelweg keine Zeile
+    // je Geraet, sondern die Bilanz des Versands -- der Aufrufer schreibt am
+    // Ende EINE Zeile je Art (protokolliereBilanz). Bei einem FCM-Ausfall
+    // standen sonst tausend gleiche Fehlerzeilen im Log und schoben alles
+    // Fruehere aus der Rotation. Der Einzelweg bleibt bei der Zeile je Geraet.
     if (this.istFatal(result.errorCode)) {
       // Fatale Errors: Token sofort löschen
-      if (sammler) sammler.ungueltig.push(token.id);
-      else await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
-      console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
+      if (sammler) {
+        sammler.ungueltig.push(token.id);
+        this.bilanzFehler(sammler.bilanz, result, 'geloescht');
+      } else {
+        await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+        console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
+      }
     } else {
       // Sonstige Errors: Counter erhöhen
-      if (sammler) sammler.fehlgeschlagen.push(token.id);
-      else {
+      if (sammler) {
+        sammler.fehlgeschlagen.push(token.id);
+        this.bilanzFehler(sammler.bilanz, result, 'fehlgeschlagen');
+      } else {
         await db.query(
           'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
           [token.id]
         );
+        console.error('Push failed for token:', result.error);
       }
-      console.error('Push failed for token:', result.error);
     }
     return false;
   }
@@ -279,8 +294,63 @@ class PushService {
    * Der Einzelweg (sendToUser ohne vorberechnet) schreibt weiter sofort:
    * dort gibt es nichts zu sammeln.
    */
-  static neuerErgebnisSammler() {
-    return { erreichbar: [], ungueltig: [], fehlgeschlagen: [] };
+  static neuerErgebnisSammler(bilanz = null) {
+    return { erreichbar: [], ungueltig: [], fehlgeschlagen: [], bilanz };
+  }
+
+  /**
+   * Bilanz eines Versands an viele (Audit 26.09.2026, Betrieb BF-11): zaehlt
+   * statt zu protokollieren -- Personen ohne Geraet, geloeschte und
+   * fehlgeschlagene Tokens je Fehlercode, dazu die erste Fehlermeldung.
+   * protokolliereBilanz schreibt daraus hoechstens drei Zeilen.
+   */
+  static neueBilanz() {
+    return {
+      empfaenger: 0,
+      ohneGeraet: 0,
+      geloescht: { anzahl: 0, codes: new Map() },
+      fehlgeschlagen: { anzahl: 0, codes: new Map() },
+      ersteMeldung: null,
+    };
+  }
+
+  static bilanzFehler(bilanz, result, art) {
+    if (!bilanz) return;
+    const posten = bilanz[art];
+    posten.anzahl++;
+    const code = result.errorCode || 'ohne Code';
+    posten.codes.set(code, (posten.codes.get(code) || 0) + 1);
+    if (art === 'fehlgeschlagen' && bilanz.ersteMeldung === null) {
+      bilanz.ersteMeldung = String(result.error || code);
+    }
+  }
+
+  /**
+   * Hoechstens drei Zeilen je Versand an viele: ohne Geraet (warn),
+   * geloeschte Tokens (warn), Fehlschlaege (error). Gemessen am 29.09.2026
+   * (20.000 Konten, Haelfte ohne Geraet): eine Absage an 1.000 Personen 500
+   * Zeilen / 55 kB, bei FCM-Ausfall 1.000 Zeilen / 111 kB -- jetzt 1 bzw. 2.
+   *
+   * @param {string} bezeichnung  z.B. "Push event_cancelled"
+   * @param {object} bilanz       aus neueBilanz
+   * @param {{ohneGeraet?: boolean}} [optionen]  ohneGeraet: false, wenn der
+   *   Aufrufer die Zeile "ohne Push-Token" selbst schreibt (Chat-Weg)
+   */
+  static protokolliereBilanz(bezeichnung, bilanz, { ohneGeraet = true } = {}) {
+    const codes = (posten) => [...posten.codes.entries()]
+      .map(([code, n]) => `${code} ×${n}`).join(', ');
+    if (ohneGeraet && bilanz.ohneGeraet > 0) {
+      console.warn(`${bezeichnung}: ${bilanz.ohneGeraet} von ${bilanz.empfaenger} Empfänger:innen ohne Push-Token`);
+    }
+    if (bilanz.geloescht.anzahl > 0) {
+      console.warn(`${bezeichnung}: ${bilanz.geloescht.anzahl} Token gelöscht (${codes(bilanz.geloescht)})`);
+    }
+    if (bilanz.fehlgeschlagen.anzahl > 0) {
+      console.error(
+        `${bezeichnung}: an ${bilanz.fehlgeschlagen.anzahl} Geräte fehlgeschlagen `
+        + `(${codes(bilanz.fehlgeschlagen)}), erste Meldung: ${bilanz.ersteMeldung}`
+      );
+    }
   }
 
   static async schreibeErgebnisSammler(db, sammler) {
@@ -325,15 +395,57 @@ class PushService {
   static async sendeAnGeraete(db, tokens, payload, sammler = null, badgeAlteApps = null) {
     const ergebnisse = await Promise.all(tokens.map(async (token) => {
       const badge = this.badgeFuerGeraet(token, payload.badge, badgeAlteApps);
-      const nutzlast = badge === payload.badge ? payload : { ...payload, badge };
+      let nutzlast = badge === payload.badge ? payload : { ...payload, badge };
+      // Weg "mitteilungen" (Samsung, Xiaomi): Der Startbildschirm rechnet die
+      // Zahl aus den liegenden Mitteilungen. firebase.js gibt der Mitteilung
+      // dafuer den festen tag und die Gesamtzahl mit (29.09.2026).
+      if (wegFuerGeraet(token) === APP_SYMBOL_WEGE.MITTEILUNGEN) {
+        nutzlast = { ...nutzlast, appSymbolWeg: APP_SYMBOL_WEGE.MITTEILUNGEN };
+      }
       const result = await this.sendeMitWiederholung(
         () => firebase.sendFirebasePushNotification(token.token, nutzlast)
       );
-      return this.verarbeiteErgebnis(db, token, result, sammler);
+      const angekommen = await this.verarbeiteErgebnis(db, token, result, sammler);
+      if (angekommen) await this.zahlNachMitteilung(token, badge);
+      return angekommen;
     }));
 
     const erfolge = ergebnisse.filter(Boolean).length;
     return { erfolge, fehler: ergebnisse.length - erfolge };
+  }
+
+  /**
+   * Nach einer sichtbaren Mitteilung die Zahl am App-Symbol nachreichen --
+   * nur fuer Android-Geraete mit Weg "anbieter" (29.09.2026, Simon am Sony
+   * Xperia: "Ich will Android exakt gleich wie iOS").
+   *
+   * Auf dem iPhone setzt aps.badge in derselben Nachricht die Zahl. Auf
+   * Android zeigt das FCM-SDK eine Mitteilung bei geschlossener App selbst
+   * an, OHNE die App zu wecken -- die Zahl darin erreicht sie nie. Ein reines
+   * Datenpaket dagegen weckt den Push-Dienst der App (KonfiMessagingService),
+   * und der setzt die Zahl ueber den Zahl-Anbieter des Startbildschirms. Die
+   * Zahl ist dieselbe wie im sichtbaren Push an dieses Geraet
+   * (badgeFuerGeraet).
+   *
+   * Nur fuer "anbieter": Bei "mitteilungen" traegt die Mitteilung die Zahl
+   * selbst, bei "punkt" kann der Startbildschirm keine zeigen, und Geraete
+   * ohne Angabe (Store-Apps 2.2.x, 2.3.0 bis Build 128) bekommen genau das,
+   * was sie bisher bekamen. Ein Fehler hier kippt den sichtbaren Push nicht:
+   * Der ist zu diesem Zeitpunkt zugestellt und verbucht; die Zahl holt
+   * spaetestens der naechste Hintergrundlauf nach (sendBadgeUpdates).
+   */
+  static async zahlNachMitteilung(token, badge) {
+    if (wegFuerGeraet(token) !== APP_SYMBOL_WEGE.ANBIETER || badge == null) return;
+    try {
+      const result = await this.sendeMitWiederholung(
+        () => firebase.sendFirebaseSilentPush(token.token, badge)
+      );
+      if (!result.success) {
+        console.warn(`Zahl nach Mitteilung fuer Token ${token.id} nicht zugestellt: ${result.errorCode || result.error}`);
+      }
+    } catch (err) {
+      console.error('Zahl nach Mitteilung fehlgeschlagen:', err.message);
+    }
   }
 
   /**
@@ -640,7 +752,15 @@ class PushService {
         : await this.getTokensForUser(db, userId, notification.data && notification.data.type);
 
       if (tokens.length === 0) {
- console.warn(`Keine Push-Tokens für User ${userId} gefunden`);
+        // Im Einzelweg eine Zeile -- sie beantwortet "warum kam bei mir
+        // nichts?". Beim Versand an viele zaehlt der Aufrufer nur und
+        // schreibt EINE Sammelzeile (Betrieb BF-11): Dort kamen sonst je
+        // Absage an 1.000 Personen 500 gleiche Zeilen zusammen.
+        if (vorberechnet && vorberechnet.sammler && vorberechnet.sammler.bilanz) {
+          vorberechnet.sammler.bilanz.ohneGeraet++;
+        } else if (!vorberechnet) {
+          console.warn(`Keine Push-Tokens für User ${userId} gefunden`);
+        }
         return { success: false, message: 'No tokens found' };
       }
 
@@ -755,6 +875,8 @@ class PushService {
     const braucheVorarbeit = notification.badge == null || braucheOrgs;
 
     const ergebnisse = [];
+    const bilanz = this.neueBilanz();
+    bilanz.empfaenger = userIds.length;
     for (let i = 0; i < userIds.length; i += this.EMPFAENGER_BLOCK) {
       const block = userIds.slice(i, i + this.EMPFAENGER_BLOCK);
 
@@ -776,8 +898,9 @@ class PushService {
       const tokensJeUser = await this.getTokensForUsers(db, block, notification.data && notification.data.type);
 
       // Token-Buchfuehrung fuer den ganzen Block gesammelt (drei Abfragen
-      // statt einer je Geraet, siehe schreibeErgebnisSammler).
-      const sammler = this.neuerErgebnisSammler();
+      // statt einer je Geraet, siehe schreibeErgebnisSammler); die Bilanz
+      // fuers Log laeuft ueber alle Bloecke.
+      const sammler = this.neuerErgebnisSammler(bilanz);
       const teil = await Promise.all(
         block.map(async (userId) => {
           // `badge: null` heisst hier "fuer diese Person nicht ermittelbar" --
@@ -807,6 +930,8 @@ class PushService {
       }
     }
 
+    const art = (notification.data && notification.data.type) || 'ohne Art';
+    this.protokolliereBilanz(`Push ${art}`, bilanz);
     return ergebnisse;
   }
 
@@ -900,9 +1025,12 @@ class PushService {
 
       const ergebnisse = [];
       let ohneGeraet = 0;
+      // Fehlschlaege und geloeschte Tokens als Bilanz statt je Geraet
+      // (Betrieb BF-11); "ohne Geraet" zaehlt dieser Weg schon selbst.
+      const bilanz = this.neueBilanz();
       for (let i = 0; i < empfaenger.length; i += this.EMPFAENGER_BLOCK) {
         const block = empfaenger.slice(i, i + this.EMPFAENGER_BLOCK);
-        const sammler = this.neuerErgebnisSammler();
+        const sammler = this.neuerErgebnisSammler(bilanz);
         const teil = await Promise.all(block.map(async (userId) => {
           const tokens = tokensJeUser.get(userId) || [];
           if (tokens.length === 0) {
@@ -940,6 +1068,7 @@ class PushService {
           `Chat-Push Raum ${notification.data.roomId}: ${ohneGeraet} von ${empfaenger.length} Empfänger:innen ohne Push-Token`
         );
       }
+      this.protokolliereBilanz(`Chat-Push Raum ${notification.data.roomId}`, bilanz, { ohneGeraet: false });
       return ergebnisse;
     } catch (error) {
       console.error('PushService.sendChatNotificationToMany error:', error);

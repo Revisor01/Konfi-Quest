@@ -89,7 +89,7 @@ describe('Klickbare Nicht-Knoepfe per Tastatur (UI BF-03)', () => {
   });
 
   it('Zeile „App sperren": Enter oeffnet dieselbe Auswahl wie ein Fingertipp', async () => {
-    render(<AppSperreSchalter variante="konfi" />);
+    render(<AppSperreSchalter variante="purple" />);
     const titel = await screen.findByText('App sperren');
     const zeile = titel.closest<HTMLElement>('[role="button"]')!;
     expect(zeile).not.toBeNull();
@@ -100,7 +100,7 @@ describe('Klickbare Nicht-Knoepfe per Tastatur (UI BF-03)', () => {
   });
 
   it('Enter auf einem Knopf IN der Zeile loest die Zeile nicht mit aus', async () => {
-    render(<AppSperreSchalter variante="konfi" />);
+    render(<AppSperreSchalter variante="purple" />);
     const titel = await screen.findByText('App sperren');
     const zeile = titel.closest<HTMLElement>('[role="button"]')!;
     const kind = document.createElement('button');

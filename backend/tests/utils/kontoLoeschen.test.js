@@ -40,7 +40,7 @@ const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ROLES, ORGS } = require('../helpers/seed');
 const {
   LOESCHREGELN, pruefeLoeschregeln, fremdschluesselAufUsers,
-  kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung,
+  kontoDatenLoeschen, kontenDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung,
 } = require('../../utils/kontoLoeschen');
 const { CHAT_DIR, CHALLENGES_DIR, REQUESTS_DIR } = require('../../utils/photoStorage');
 const liveUpdate = require('../../utils/liveUpdate');
@@ -119,9 +119,12 @@ describe('Konto löschen (utils/kontoLoeschen.js)', () => {
     });
 
     it('eine geregelte Spalte ohne Fremdschlüssel stört nicht', async () => {
-      // So hinterlaesst tests/routes/wrapped.test.js die Spalte approved_by:
-      // gedroppt und ohne Fremdschluessel neu angelegt. Die Regel wirkt dort
-      // weiter (UPDATE ueber die Spalte) -- der Waechter darf nicht fallen.
+      // So hinterliess tests/routes/wrapped.test.js bis zum 29.09.2026 die
+      // Spalte approved_by: gedroppt und ohne Fremdschluessel neu angelegt.
+      // Seither stellt die Datei den Fremdschluessel wieder her und prueft den
+      // Rueckbau. Der Fall bleibt trotzdem abgedeckt: Die Regel wirkt auch
+      // ohne Fremdschluessel (UPDATE ueber die Spalte) -- der Waechter darf
+      // nicht fallen.
       const client = await db.getClient();
       try {
         await client.query('BEGIN');
@@ -261,6 +264,64 @@ describe('Konto löschen (utils/kontoLoeschen.js)', () => {
         { eventId: 1, userId: USERS.konfi2.id, seite: 'konfi', organizationId: ORGS.testGemeinde.id },
       ]);
       expect(push).not.toHaveBeenCalled();
+    });
+  });
+
+  // ==================================================================
+  // Mehrere Konten in einem Durchgang (Gemeinde loeschen, 29.09.2026)
+  // ==================================================================
+  describe('kontenDatenLoeschen', () => {
+    it('volle Person und zwei weitere: alles weg, dieselbe Regel wie einzeln', async () => {
+      const P = await neuePerson();
+      voll = await legeVollePersonAn(db, P);
+      const Q = await neuePerson('auch_weg', ROLES.konfi.id);
+      const R = await neuePerson('auch_weg_2');
+      await db.query(
+        `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+         VALUES ($1, 'Neue Registrierung', 'Q', 'new_konfi_registration', $2, 1),
+                ($1, 'Neuer Beitrag', 'R', 'challenge_submission', $3, 1)`,
+        [USERS.admin1.id, JSON.stringify({ konfi_id: Q }), JSON.stringify({ user_id: R })]);
+
+      const ergebnis = await inTransaktion((client) => kontenDatenLoeschen(client, [P, Q, R, 99999]));
+      await kontoDateienLoeschen(ergebnis.dateien);
+
+      expect(ergebnis.geloescht).toEqual([P, Q, R]);
+      expect(await befundNachLoeschung(db, voll)).toEqual(erwarteterBefund(voll));
+      const { rows: [z] } = await db.query('SELECT COUNT(*)::int AS n FROM users WHERE id = ANY($1::int[])', [[P, Q, R]]);
+      expect(z.n).toBe(0);
+      // Die Mitteilungen ueber Q und R bei der Leitung gehen mit.
+      const { rows: [m] } = await db.query(
+        `SELECT COUNT(*)::int AS n FROM notifications WHERE message IN ('Q', 'R')`);
+      expect(m.n).toBe(0);
+    });
+
+    it('rückt nicht eine Person nach, die im selben Durchgang geht', async () => {
+      const P = await neuePerson('bestaetigt_weg', ROLES.konfi.id);
+      const Q = await neuePerson('wartet_weg', ROLES.konfi.id);
+      await db.query('UPDATE events SET max_participants = 1, waitlist_enabled = true WHERE id = 1');
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id, booking_date, created_at)
+         VALUES ($1, 1, 'confirmed', 1, NOW() - interval '2 hours', NOW() - interval '2 hours'),
+                ($2, 1, 'waitlist', 1, NOW() - interval '1 hour', NOW() - interval '1 hour'),
+                ($3, 1, 'waitlist', 1, NOW(), NOW())`,
+        [P, Q, USERS.konfi2.id]);
+
+      const ergebnis = await inTransaktion((client) => kontenDatenLoeschen(client, [P, Q]));
+
+      expect(ergebnis.nachgerueckt).toEqual([
+        { eventId: 1, userId: USERS.konfi2.id, seite: 'konfi', organizationId: ORGS.testGemeinde.id },
+      ]);
+      const { rows } = await db.query('SELECT user_id, status FROM event_bookings WHERE event_id = 1 ORDER BY id');
+      expect(rows.map((r) => ({ user_id: Number(r.user_id), status: r.status })))
+        .toEqual([{ user_id: USERS.konfi2.id, status: 'confirmed' }]);
+    });
+
+    it('leere oder unbekannte Liste: nichts geschieht', async () => {
+      const leer = { geloescht: [], nachgerueckt: [], dateien: { antragsfotos: [], challenge: [], chat: [] }, gespraechspartner: [] };
+      expect(await inTransaktion((client) => kontenDatenLoeschen(client, []))).toEqual(leer);
+      expect(await inTransaktion((client) => kontenDatenLoeschen(client, [99998, 99999]))).toEqual(leer);
+      const { rows: [z] } = await db.query('SELECT COUNT(*)::int AS n FROM users');
+      expect(z.n).toBe(Object.keys(USERS).length);
     });
   });
 

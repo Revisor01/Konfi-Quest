@@ -156,6 +156,14 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // Teamer-Modus faelschlich das Konfi-Formular (Nutzerhinweis 22.08.2026).
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>('konfis');
 
+  // Der Titel folgt dem Segment -- wie "Events | Aktivitäten" im
+  // Mitmachen-Reiter (AdminEventsPage). Hier stand bis zum 29.09.2026
+  // "Konfirmand:innen": Auf Android (md, Titel links neben den Knöpfen) passte
+  // das neben Anwesenheit, Neu und Glocke nicht -- bei 360 px "Konfirmand…",
+  // 161 px Text auf 128 px Platz, bei 412 px auf Kante (gemessen mit
+  // Android-Kennung in Chromium). "Konfis" heißt auch der Reiter.
+  const seitenTitel = viewMode === 'teamer' ? 'Team' : 'Konfis';
+
   // Teamer:innen laufen über dasselbe Formular wie in der Benutzerverwaltung
   // (Rollenauswahl inklusive) — kein zweites Formular, das auseinanderlaufen kann.
   // festeRolle: Der Button heißt "Neue Teamer:in anlegen" — dann soll der
@@ -361,7 +369,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
       {/* Der Gemeinde-Umschalter stand bis 25.09.2026 NUR hier; jetzt bringt
           ihn die gemeinsame Kopfzeile auf jede Seite mit (Audit-Befund C3). */}
       <AppKopfzeile
-        titel="Konfirmand:innen"
+        titel={seitenTitel}
         rechts={['org_admin', 'admin'].includes(user?.role_name || '') ? (
           <>
             <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
@@ -379,7 +387,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         ) : undefined}
       />
       <IonContent className="app-gradient-background" fullscreen>
-        <AppKopfzeileGross titel="Konfirmand:innen" />
+        <AppKopfzeileGross titel={seitenTitel} />
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshAll();

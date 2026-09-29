@@ -120,6 +120,68 @@ describe('Notifications Routes', () => {
       expect(rows[0].app_build).toBe('117');
     });
 
+    /*
+     * ZAHL AM APP-SYMBOL AUF ANDROID (29.09.2026, Migration 185).
+     *
+     * Die App meldet, welcher Weg zum Startbildschirm des Geraets passt
+     * (utils/appSymbolWeg.js). Davon haengt ab, ob nach einer Mitteilung ein
+     * stilles badge_update folgt oder die Mitteilung selbst die Zahl traegt.
+     * Ausgelieferte Apps schicken nichts -- fuer sie bleibt alles wie bisher.
+     */
+    describe('Weg zur Zahl am App-Symbol', () => {
+      const senden = (felder) => request(app)
+        .post('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ token: 'tok-weg', platform: 'android', device_id: 'dev-weg', app_version: '2.3.0', ...felder });
+      const zeile = async () => {
+        const { rows } = await db.query(
+          'SELECT app_symbol_weg, startbildschirm FROM push_tokens WHERE device_id = $1', ['dev-weg']);
+        expect(rows).toHaveLength(1);
+        return rows[0];
+      };
+
+      it('schreibt Weg und Startbildschirm mit', async () => {
+        await senden({ app_symbol_weg: 'anbieter', startbildschirm: 'com.sonymobile.launcher' }).expect(200);
+        expect(await zeile()).toEqual({ app_symbol_weg: 'anbieter', startbildschirm: 'com.sonymobile.launcher' });
+      });
+
+      it('nimmt die Anmeldung einer alten App ohne die Felder an (NULL = wie bisher)', async () => {
+        await senden({}).expect(200);
+        expect(await zeile()).toEqual({ app_symbol_weg: null, startbildschirm: null });
+      });
+
+      it('macht aus einem unbekannten Weg NULL statt die Anmeldung abzuweisen', async () => {
+        // Eine kuenftige App mit einem neuen Weg darf ihren Push-Token nicht
+        // an einem 400 verlieren.
+        const res = await senden({ app_symbol_weg: 'hologramm', startbildschirm: 'kein paketname; DROP' });
+        expect(res.status).toBe(200);
+        expect(await zeile()).toEqual({ app_symbol_weg: null, startbildschirm: null });
+      });
+
+      it('behaelt einen bekannten Weg, wenn eine aeltere App ohne Angabe nachregistriert', async () => {
+        await senden({ app_symbol_weg: 'mitteilungen', startbildschirm: 'com.sec.android.app.launcher' }).expect(200);
+        await senden({}).expect(200);
+        expect(await zeile()).toEqual({ app_symbol_weg: 'mitteilungen', startbildschirm: 'com.sec.android.app.launcher' });
+      });
+
+      it('ueberschreibt den Weg, wenn das Geraet einen anderen meldet', async () => {
+        await senden({ app_symbol_weg: 'mitteilungen', startbildschirm: 'com.sec.android.app.launcher' }).expect(200);
+        await senden({ app_symbol_weg: 'punkt', startbildschirm: 'com.google.android.apps.nexuslauncher' }).expect(200);
+        expect(await zeile()).toEqual({ app_symbol_weg: 'punkt', startbildschirm: 'com.google.android.apps.nexuslauncher' });
+      });
+
+      it('speichert fuer iOS keinen Weg -- dort setzt aps.badge die Zahl', async () => {
+        await request(app)
+          .post('/api/notifications/device-token')
+          .set('Authorization', `Bearer ${konfiToken}`)
+          .send({ token: 'tok-weg-ios', platform: 'ios', device_id: 'dev-weg-ios', app_symbol_weg: 'anbieter', startbildschirm: 'com.example.home' })
+          .expect(200);
+        const { rows } = await db.query(
+          'SELECT app_symbol_weg, startbildschirm FROM push_tokens WHERE device_id = $1', ['dev-weg-ios']);
+        expect(rows).toEqual([{ app_symbol_weg: null, startbildschirm: null }]);
+      });
+    });
+
     it('Ohne Auth-Token -> 401', async () => {
       const res = await request(app)
         .post('/api/notifications/device-token')

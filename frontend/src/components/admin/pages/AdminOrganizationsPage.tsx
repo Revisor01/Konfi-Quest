@@ -42,8 +42,24 @@ interface Organization {
   badge_count: number;
 }
 
+/** Antwort von DELETE /organizations/:id; die Zahlen seit dem 29.09.2026. */
+interface GemeindeGeloeschtAntwort {
+  konten_geloescht?: number;
+  konten_umgezogen?: number;
+}
+
+const konten = (anzahl: number) => `${anzahl} ${anzahl === 1 ? 'Konto' : 'Konten'}`;
+
+/** Die Meldung nach dem Löschen: mit den Zahlen der Konten, wenn der Server sie schickt. */
+const gemeindeGeloeschtMeldung = (name: string, antwort?: GemeindeGeloeschtAntwort | null): string => {
+  const geloescht = antwort?.konten_geloescht;
+  const umgezogen = antwort?.konten_umgezogen;
+  if (typeof geloescht !== 'number' || typeof umgezogen !== 'number') return `Gemeinde "${name}" gelöscht`;
+  return `Gemeinde "${name}" gelöscht: ${konten(geloescht)} gelöscht, ${konten(umgezogen)} in eine andere Gemeinde umgezogen`;
+};
+
 const AdminOrganizationsPage: React.FC = () => {
-  const { setError, isOnline, refreshUser } = useApp();
+  const { setError, setSuccess, isOnline, refreshUser } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-organizations');
   
   // SWR-Cache für Organisationen
@@ -84,11 +100,19 @@ const AdminOrganizationsPage: React.FC = () => {
   // Subscribe to live updates for organizations
   useLiveRefresh('organizations', loadOrganizations);
 
+  // Seit dem 29.09.2026 loescht DELETE /organizations/:id nur die Konten, die
+  // allein zu dieser Gemeinde gehoeren; wer auch in einer anderen Mitglied
+  // ist, zieht dorthin um bzw. bleibt dort (backend/routes/organizations.js).
+  // Abfrage und Meldung sagen das -- die Zahlen kommen aus der Antwort
+  // (konten_geloescht, konten_umgezogen; ein aelterer Server schickt sie nicht).
   const handleDeleteOrganization = async (organization: Organization) => {
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Gemeinde löschen',
-      message: `Gemeinde "${organization.display_name}" (${organization.name}) wirklich löschen?\n\nWarnung: Alle zugehörigen Daten (Benutzer, Konfis, Aktivitäten) werden ebenfalls gelöscht!`,
+      message: `Gemeinde "${organization.display_name}" (${organization.name}) wirklich löschen?\n\n`
+        + 'Alle Daten der Gemeinde werden gelöscht, dazu jedes Konto, das nur zu ihr gehört. '
+        + 'Wer auch zu einer anderen Gemeinde gehört, behält sein Konto und bleibt dort.\n\n'
+        + 'Das lässt sich nicht rückgängig machen.',
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -96,7 +120,8 @@ const AdminOrganizationsPage: React.FC = () => {
           role: 'destructive',
           handler: async () => {
             try {
-              await api.delete(`/organizations/${organization.id}`);
+              const res = await api.delete(`/organizations/${organization.id}`);
+              setSuccess(gemeindeGeloeschtMeldung(organization.display_name, res?.data));
               await loadOrganizations();
             } catch (err) {
               setError(fehlerText(err, 'Fehler beim Löschen der Gemeinde'));

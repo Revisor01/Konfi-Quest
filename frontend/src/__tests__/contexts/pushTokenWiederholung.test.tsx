@@ -75,7 +75,7 @@ vi.mock('@capacitor/push-notifications', () => ({
  */
 type Abruf = { token: string | null } | { fehler: Error };
 let abrufe: Abruf[] = [];
-const getTokenMock = vi.fn(async () => {
+const getTokenMock = vi.fn(async (..._a: unknown[]) => {
   const eintrag = abrufe[Math.min(getTokenMock.mock.calls.length - 1, abrufe.length - 1)];
   if (eintrag && 'fehler' in eintrag) throw eintrag.fehler;
   return { token: eintrag ? eintrag.token : null };

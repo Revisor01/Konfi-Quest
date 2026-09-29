@@ -9,7 +9,7 @@ const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const { cronLeaderVorhanden } = require('./utils/cronLeader');
-const { dateiFuersProtokoll } = require('./utils/protokoll');
+const { dateiFilter } = require('./utils/uploadTypen');
 
 // Upload-Limit für Challenge-Beitraege (Audio/Video sind deutlich größer als
 // Chat-Anhänge). Als Konstante, weil der zentrale Multer-Error-Handler weiter
@@ -199,77 +199,31 @@ function createApp(db, options = {}) {
     filename: (req, file, cb) => cb(null, require('crypto').randomBytes(24).toString('hex')),
   });
 
+  // Welche Dateien Chat, Material, Challenges und Antraege annehmen, steht an
+  // EINER Stelle: utils/uploadTypen.js. Dort auch, warum eine Datei ohne Typ vom
+  // Geraet (application/octet-stream) nach ihrer Endung geht und warum eine
+  // abgewiesene Datei 415 bekommt, statt still zu verschwinden (Simons Befund
+  // 29.09.2026: eine .docx aus Android liess sich nicht senden).
+
   // Chat Upload Config (verschluesselte Dateinamen)
   const chatUpload = multer({
     storage: zwischenlager,
     limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-      const allowedMimes = [
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
-        'application/pdf',
-        'video/mp4', 'video/quicktime', 'video/webm',
-        'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/wav',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'text/plain', 'text/csv'
-      ];
-
-      const isAllowed = allowedMimes.includes(file.mimetype);
-      if (isAllowed) {
-        cb(null, true);
-      } else {
-        // Endung und Typ, nicht der Dateiname (Audit Sicherheit BF-14).
-        console.warn(`Datei abgelehnt: ${dateiFuersProtokoll(file)}`);
-        cb(null, false);
-      }
-    }
+    fileFilter: dateiFilter('chat'),
   });
 
   // Material Upload Config (20MB Limit)
   const materialUpload = multer({
     storage: zwischenlager,
     limits: { fileSize: 20 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-      const allowedMimes = [
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
-        'application/pdf',
-        'video/mp4', 'video/quicktime', 'video/webm',
-        'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/wav',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'application/vnd.oasis.opendocument.text',
-        'application/vnd.oasis.opendocument.spreadsheet',
-        'application/vnd.oasis.opendocument.presentation',
-        'text/plain', 'text/csv'
-      ];
-
-      const isAllowed = allowedMimes.includes(file.mimetype);
-      if (isAllowed) {
-        cb(null, true);
-      } else {
-        console.warn(`Material-Datei abgelehnt: ${dateiFuersProtokoll(file)}`);
-        cb(null, false);
-      }
-    }
+    fileFilter: dateiFilter('material'),
   });
 
   // Request Upload Config (nur Bilder, 5MB)
   const requestUpload = multer({
     storage: zwischenlager,
     limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-      if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-      } else {
-        cb(null, false);
-      }
-    }
+    fileFilter: dateiFilter('antrag'),
   });
 
   // Challenge Upload Config (50MB Limit — Konfis reichen auch Sprachaufnahmen
@@ -277,19 +231,7 @@ function createApp(db, options = {}) {
   const challengeUpload = multer({
     storage: zwischenlager,
     limits: { fileSize: CHALLENGE_UPLOAD_LIMIT },
-    fileFilter: (req, file, cb) => {
-      const allowedMimes = [
-        'video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v',
-        'audio/mpeg', 'audio/mp4', 'audio/m4a', 'audio/x-m4a', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/aac'
-      ];
-      const isAllowed = file.mimetype.startsWith('image/') || allowedMimes.includes(file.mimetype);
-      if (isAllowed) {
-        cb(null, true);
-      } else {
-        console.warn(`Challenge-Datei abgelehnt: ${dateiFuersProtokoll(file)}`);
-        cb(null, false);
-      }
-    }
+    fileFilter: dateiFilter('challenge'),
   });
 
   // Zwischenlager aufraeumen — ausnahmslos.
@@ -638,9 +580,11 @@ function createApp(db, options = {}) {
     app.post('/api/konfi/upload-photo', rateLimiters.uploadLimiter);
   }
 
-  // Challenge-Einreichungen: 50-MB-Uploads laufen durch multer.memoryStorage —
-  // ohne Limiter könnte ein einzelner Konfi per Parallel-Uploads den Heap
-  // fluten (Security-Review 04.08.2026).
+  // Challenge-Einreichungen: 50-MB-Uploads liefen damals durch
+  // multer.memoryStorage — ohne Limiter konnte ein einzelner Konfi per
+  // Parallel-Uploads den Heap fluten (Security-Review 04.08.2026). Seit dem
+  // Zwischenlager oben (diskStorage) landen sie auf der Platte; der Limiter
+  // bleibt, damit Parallel-Uploads nicht stattdessen die Platte fuellen.
   if (rateLimiters.uploadLimiter) {
     app.post('/api/challenges/konfi/:id/submissions', rateLimiters.uploadLimiter);
   }
@@ -701,6 +645,15 @@ function createApp(db, options = {}) {
         return res.status(413).json({ error: 'Datei ist zu groß (max. 20 MB).' });
       }
       return res.status(413).json({ error: 'Datei ist zu groß (max. 5 MB).' });
+    }
+
+    // Vom Upload-Filter abgewiesener Dateityp (utils/uploadTypen.js): 415 mit
+    // einem Satz, den man versteht. Bis zum 29.09.2026 verschwand die Datei
+    // still, und die Route meldete 400 „Inhalt oder Datei erforderlich" --
+    // oder schickte den Text ohne die Datei. Alte Apps werten 4xx ohnehin
+    // gleich aus (Warteschlange: Fehlschlag ohne Wiederholung).
+    if (err && err.code === 'DATEITYP_ABGELEHNT') {
+      return res.status(415).json({ error: err.message });
     }
 
     // Fehler beim Lesen des Anfrage-Koerpers sind Fehler der ANFRAGE, nicht

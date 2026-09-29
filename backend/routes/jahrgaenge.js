@@ -11,7 +11,7 @@ const { loescheMitteilungenZuJahrgang } = require('../utils/postfachAufraeumen')
 const { ladeLoeschumfang, materialGlobalMachen } = require('../utils/jahrgangLoeschen');
 const { loescheTermin, loescheChatRaeume, entferneChatDateien } = require('../utils/terminLoeschen');
 const { loescheChallenge, entferneChallengeDateien } = require('../utils/challengeLoeschen');
-const { sichereKonfiZeitBefoerderter } = require('../utils/konfiHistorie');
+const { sichereKonfiZeitBefoerderter, ROLLE_IN_PROFIL_GEMEINDE } = require('../utils/konfiHistorie');
 const { adresseFuersProtokoll } = require('../utils/protokoll');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten, NUR org_admin darf anlegen
@@ -356,14 +356,16 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
       }
 
       const umfang = await ladeLoeschumfang(db, jahrgangId, req.user.organization_id);
+      // Aktiv oder befoerdert nach der Rolle IN DER GEMEINDE DES PROFILS
+      // (29.09.2026, utils/konfiHistorie.js) -- dieselbe Regel wie DELETE.
       const { rows: [zahlen] } = await db.query(
         `SELECT
            (SELECT COUNT(*)::int FROM konfi_profiles kp
-              JOIN users u ON kp.user_id = u.id JOIN roles r ON u.role_id = r.id
-             WHERE kp.jahrgang_id = $1 AND r.name = 'konfi') AS aktive_konfis,
+              JOIN users u ON kp.user_id = u.id
+             WHERE kp.jahrgang_id = $1 AND ${ROLLE_IN_PROFIL_GEMEINDE} = 'konfi') AS aktive_konfis,
            (SELECT COUNT(*)::int FROM konfi_profiles kp
-              JOIN users u ON kp.user_id = u.id JOIN roles r ON u.role_id = r.id
-             WHERE kp.jahrgang_id = $1 AND r.name <> 'konfi') AS befoerderte,
+              JOIN users u ON kp.user_id = u.id
+             WHERE kp.jahrgang_id = $1 AND COALESCE(${ROLLE_IN_PROFIL_GEMEINDE}, '') <> 'konfi') AS befoerderte,
            (SELECT COUNT(*)::int FROM chat_messages cm
               JOIN chat_rooms cr ON cm.room_id = cr.id
              WHERE cr.type = 'jahrgang' AND cr.jahrgang_id = $1) AS chat_nachrichten`,
@@ -441,12 +443,13 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
       // (Punkte-Historie), sind aber keine aktiven Konfis mehr und duerfen die
       // Löschung NICHT blockieren. Ihre (verwaisten) Profile werden unten vor
       // dem Jahrgang-Delete vom Jahrgang geloest (User + Badges + Historie bleiben).
+      // Die Rolle ist die IN DER GEMEINDE DES PROFILS, nicht die am Konto
+      // (29.09.2026, utils/konfiHistorie.js: ROLLE_IN_PROFIL_GEMEINDE).
       const checkKonfisQuery = `
         SELECT COUNT(*)::int as count
         FROM konfi_profiles kp
         JOIN users u ON kp.user_id = u.id
-        JOIN roles r ON u.role_id = r.id
-        WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'
+        WHERE kp.jahrgang_id = $1 AND ${ROLLE_IN_PROFIL_GEMEINDE} = 'konfi'
       `;
       // Chat-Raeume des Jahrgangs samt Zahl ihrer Nachrichten
       const checkChatQuery = `
@@ -518,12 +521,15 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         // konfi_profiles -> das Profil MUSS erhalten bleiben, damit er seine
         // Werte später noch einsehen kann. Nur die Bindung an den geloeschten
         // Jahrgang fällt weg.
+        // Dieselbe Abgrenzung wie Sperre und Sicherung: Rolle in der Gemeinde
+        // des Profils (ROLLE_IN_PROFIL_GEMEINDE); wer dort nicht mehr Mitglied
+        // ist, gilt nicht als aktive Konfi und wird ebenfalls geloest.
         await client.query(`
           UPDATE konfi_profiles kp
           SET jahrgang_id = NULL
-          FROM users u, roles r
-          WHERE kp.user_id = u.id AND u.role_id = r.id
-            AND kp.jahrgang_id = $1 AND r.name != 'konfi'
+          FROM users u
+          WHERE kp.user_id = u.id
+            AND kp.jahrgang_id = $1 AND COALESCE(${ROLLE_IN_PROFIL_GEMEINDE}, '') <> 'konfi'
         `, [jahrgangId]);
 
         // 4. Rueckblick-Ausgaben des Jahrgangs (Audit 26.09.2026, Chat BF-02):
@@ -876,6 +882,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
       // Ohne Jahrgangsname und Adresse (Audit Sicherheit BF-14, 29.09.2026):
       // Kennung und Domain genuegen, um einen Versand wiederzufinden.
       console.log(`[matrix-email] Versand angefordert: Jahrgang ${jahrgangId}, type=${type}, an=Konto ${req.user.id} (${adresseFuersProtokoll(adminRow.email)}), rows=${rows.length}`);
+      // sendEmail gibt nur { success: true } zurueck und WIRFT bei jedem
+      // Fehler -- der landet unten als 500. Hier stand bis zum 29.09.2026 ein
+      // Zweig `success === false -> 502`, der nie erreicht wurde (Audit Chat
+      // BF-11, Rest).
       const mailResult = await emailService.sendKonfiMatrixEmail(
         adminRow.email,
         adminRow.display_name,
@@ -884,10 +894,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         rows
       );
       console.log(`[matrix-email] Versand-Ergebnis:`, JSON.stringify(mailResult));
-
-      if (mailResult && mailResult.success === false) {
-        return res.status(502).json({ error: 'E-Mail konnte nicht versendet werden (SMTP-Fehler)' });
-      }
       res.json({ success: true });
     } catch (err) {
       console.error('Database error in POST /api/admin/jahrgaenge/:jahrgangId/matrix-email:', jahrgangId, err);

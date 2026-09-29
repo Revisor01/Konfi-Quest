@@ -6,6 +6,7 @@ import {
   mindestversionHinweisSchonGezeigt,
   merkeMindestversionHinweisGezeigt,
 } from '../../services/betriebsstatus';
+import { linkOeffnen } from '../../services/systemDialoge';
 
 interface Props {
   /**
@@ -94,7 +95,7 @@ const MindestversionHinweis: React.FC<Props> = ({ zurueckhalten = false }) => {
           // Wie die Store-Karte (StoreUpdateBanner): window.open fuehrt auf
           // dem Geraet in die Store-App. Der Dialog schliesst dabei; wer ohne
           // Update zurueckkommt, nutzt die App weiter.
-          handler: () => { window.open(aktualisierenUrl, '_blank'); },
+          handler: () => { linkOeffnen(aktualisierenUrl); },
         },
       ],
     });

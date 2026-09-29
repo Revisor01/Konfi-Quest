@@ -2,111 +2,133 @@
 
 Simon, 28.09.2026: „1-4 machen den rest für später. Aber bewahren. Ist das sicher alles."
 
-Diese Liste bewahrt, was nach den Paketen 1–4, F und G (29.09.2026) offen ist. Gezählt aus den
-Status- und Nachtragszeilen aller 15 Bereichsberichte und des Audits „Wer bekommt was", **samt der
-Abschnitte „Unklar" und „Nicht geprüft"** — die fehlten in der Zählung vom 27.09. Dazu kommen die
-Nebenbefunde der Pakete vom 29.09. und die Messliste der Gesamtabnahme. Einzelheiten stehen je
-Befund im verlinkten Bericht.
+Simon, 29.09.2026: „Schnüre ein größeres Paket. Ich möchte möglichst alle Befunde schließen bevor wir
+an die Features gehen. Auch die App Größe finde ich extrem wichtig anzugehen. [...] Der Kontrast ist
+uns erstmal egal."
 
-**Stand:** 55 Befunde offen (20 MITTEL, 35 NIEDRIG), kein KRITISCH, kein HOCH; 24 offene Punkte aus
-„Unklar"/„Nicht geprüft"; 23 Feature-Empfehlungen; 12 Nebenbefunde vom 29.09. Die Pakete 5–8 hat
-Simon auf später gelegt.
+Diese Liste bewahrte, was nach den Paketen 1–4, F und G offen war — gezählt aus den Status- und
+Nachtragszeilen aller 15 Bereichsberichte und des Audits „Wer bekommt was", samt der Abschnitte
+„Unklar" und „Nicht geprüft", den Nebenbefunden der Pakete und der Messliste der Gesamtabnahme. Am
+29.09. hat das Großpaket (Pakete A–I) die Pakete 5–8 abgearbeitet. Jeder Eintrag trägt jetzt hinter
+dem Pfeil seinen Stand; Einzelheiten, Messwerte und Tests stehen in der Status-Zeile des Befunds im
+verlinkten Bericht.
+
+## Stand 29.09.2026, abends
+
+| | Anzahl | behoben | teilweise | offen |
+|---|---|---|---|---|
+| Befunde (20 MITTEL, 35 NIEDRIG) | 55 | 44 | 8 | 3 |
+| Punkte aus „Unklar"/„Nicht geprüft" | 24 | 12 | 1 | 11 (Messungen, Simon, Feature) |
+| Nebenbefunde der Pakete vom 29.09. | 12 | 10 | — | 1 am Gerät, 1 bewusst so |
+| Feature-Empfehlungen | 23 | — | — | 23 (als Nächstes) |
+
+**Was offen bleibt, und warum:**
+
+- **Drei Befunde:** die Deploy-Lücke (CI BF-05, Ursache belegt, braucht den Server — Auftrag 10),
+  die Screenshots (UI BF-09, erst nach dem Deploy — Auftrag 08) und der Kontrast im Hellmodus
+  (UI BF-04, von Simon zurückgestellt).
+- **Acht teilweise:** Der Rest ist jeweils begründet und steht am Befund — root im Container
+  (Auftrag 09), erster echter Notfall-Deploy (Auftrag 05), `password_plain` entfernen (Frage an
+  Simon), 33 Präfix-Indizes und 24 Zeitspalten (erst nach Messung in Produktion, Auftrag 11), 55
+  Fremdschlüssel (bleiben begründet), 150 Quelltext-Tests und 12 Komponenten ohne Test (Leitplanke
+  verhindert neue).
+- **Messungen in Produktion und am Gerät** (Abschnitt unten) und die **Fragen an Simon**
+  (Abschnitt „Bei Simon").
 
 ## Paket 5: Build, CI und Werkzeug
 
-- BF-02: iOS-Deep-Links: `apple-app-site-association` ist ein Platzhalter und wird so ausgeliefert (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-04: Kein `concurrency`-Schutz — parallele Deploys können sich überholen (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-05: Jeder Push auf `main` erzeugt tagsüber eine Deploy-Lücke; „nachts unkritisch" stimmt nicht (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-06: Backend-Image läuft als root, enthält Dev-Abhängigkeiten, Tests, Schema-Dump und Compiler (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-07: Typprüfung und Web-Build laufen erst nach dem Merge — Build-Brüche erreichen `main` und stoppen still den Deploy (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-09: Versionsstände widersprechen sich; ein Store-Build ist nicht sicher einem Commit zuzuordnen (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-10: Notfall-Deploy wurde nie ausgeführt — der Rückrollweg ist ungeprobt (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-11: E2E-Job auf Node 20 (EOL) und Actions v4; Produktions-Image auf Node 26 (kein LTS) (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-13: `sitemap.xml` wird aus Datei-Änderungszeiten erzeugt — nicht reproduzierbar und vom Frischecheck nicht erfasst (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-14: Web-Frontend ohne CSP/Referrer-Policy/Permissions-Policy; veralteter `X-XSS-Protection` (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-15: Hygiene in Workflows und Deploy-Referenz (Sammelbefund) (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-16: Play-Upload veröffentlicht sofort zu 100 %; Track-Namen ungeprüft (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-17: `paths:`-Filter der CI lässt Wurzel-`package.json`/`package-lock.json` (E2E-Abhängigkeiten) aus (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- BF-02: Native App-Bundles enthalten 33 MB Handbuch-Screenshots und Swagger-UI (MITTEL) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md)
-- BF-03: Backend-Image ist nicht aus dem Lockfile reproduzierbar (MITTEL) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md)
-- BF-04: Node-Versionen: E2E-Job auf Node 20 (End-of-Life seit 30.04.2026), Produktion auf Node 26 (noch kein LTS) (MITTEL) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md)
-- BF-05: Tageslosung hängt an `node-fetch`, das nur über eine optionale, transitive Kette installiert ist (MITTEL) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md)
-- BF-06: Backend ohne Lint-Konfiguration — 96 Fehler mit Standardregeln, aber keine undefinierten Bezeichner (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md)
-- BF-07: 267 Testdateien, `vite.config.ts` und `capacitor.config.ts` werden von keiner Typprüfung erfasst — 64 Typfehler d (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md)
-- BF-09: Dependabot — 9 PRs offen seit dem 07.09., Ignore-Liste ohne TypeScript-Hauptversion (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md)
-- BF-10: Abhängigkeits-Hygiene — undeklarierte Importe, tote Einträge, wirkungslose Overrides, bedeutungslose Versionsnumm (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md)
-- BF-11: Startbündel lädt 1,39 MB Icon-Chunk (305 kB gzip) sofort; drei Build-Warnungen (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md)
-- BF-12: Zwei der als „harmlos" eingestuften Hook-Warnungen haben sichtbare Nebenwirkungen (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md)
+- BF-02: iOS-Deep-Links: `apple-app-site-association` ist ein Platzhalter und wird so ausgeliefert (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** (die Datei); Universal Links einschalten liegt bei Simon
+- BF-04: Kein `concurrency`-Schutz — parallele Deploys können sich überholen (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.**
+- BF-05: Jeder Push auf `main` erzeugt tagsüber eine Deploy-Lücke; „nachts unkritisch" stimmt nicht (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **offen** — Ursache belegt: Portainer erstellt bei jedem Deploy alle Dienste neu; Messung und Umbau im Auftrag 10
+- BF-06: Backend-Image läuft als root, enthält Dev-Abhängigkeiten, Tests, Schema-Dump und Compiler (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **teilweise** — Image aus dem Lockfile, ohne Dev-Pakete, Tests und Compiler (1,92 GB → 486 MB); der Prozess läuft weiter als root (Auftrag 09)
+- BF-07: Typprüfung und Web-Build laufen erst nach dem Merge — Build-Brüche erreichen `main` und stoppen still den Deploy (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** — ein roter `main` öffnet ein GitHub-Issue
+- BF-09: Versionsstände widersprechen sich; ein Store-Build ist nicht sicher einem Commit zuzuordnen (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** — Versionen aus einer Quelle, Git-Tag je Store-Upload
+- BF-10: Notfall-Deploy wurde nie ausgeführt — der Rückrollweg ist ungeprobt (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **teilweise** — rollt wie der CI-Deploy und hat einen Probelauf; der erste echte Lauf liegt beim Betrieb (Auftrag 05)
+- BF-11: E2E-Job auf Node 20 (EOL) und Actions v4; Produktions-Image auf Node 26 (kein LTS) (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** — eine Node-Linie (24) aus `.nvmrc`
+- BF-13: `sitemap.xml` wird aus Datei-Änderungszeiten erzeugt — nicht reproduzierbar und vom Frischecheck nicht erfasst (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.**
+- BF-14: Web-Frontend ohne CSP/Referrer-Policy/Permissions-Policy; veralteter `X-XSS-Protection` (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** — CSP scharf
+- BF-15: Hygiene in Workflows und Deploy-Referenz (Sammelbefund) (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.**; `armv7` in der Info.plist bewusst erst beim nächsten Umbau mit Xcode
+- BF-16: Play-Upload veröffentlicht sofort zu 100 %; Track-Namen ungeprüft (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** — gestaffelt, Vorgabe 10 %
+- BF-17: `paths:`-Filter der CI lässt Wurzel-`package.json`/`package-lock.json` (E2E-Abhängigkeiten) aus (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.**
+- BF-02: Native App-Bundles enthalten 33 MB Handbuch-Screenshots und Swagger-UI (MITTEL) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md) → **behoben 29.09.** — Web-Inhalt der App 45,7 → 9,2 MB
+- BF-03: Backend-Image ist nicht aus dem Lockfile reproduzierbar (MITTEL) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md) → **behoben 29.09.**
+- BF-04: Node-Versionen: E2E-Job auf Node 20 (End-of-Life seit 30.04.2026), Produktion auf Node 26 (noch kein LTS) (MITTEL) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md) → **behoben 29.09.**
+- BF-05: Tageslosung hängt an `node-fetch`, das nur über eine optionale, transitive Kette installiert ist (MITTEL) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md) → **behoben 29.09.** — eingebautes `fetch`
+- BF-06: Backend ohne Lint-Konfiguration — 96 Fehler mit Standardregeln, aber keine undefinierten Bezeichner (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md) → **behoben 29.09.**
+- BF-07: 267 Testdateien, `vite.config.ts` und `capacitor.config.ts` werden von keiner Typprüfung erfasst — 64 Typfehler d (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md) → **behoben 29.09.** — eigener CI-Schritt
+- BF-09: Dependabot — 9 PRs offen seit dem 07.09., Ignore-Liste ohne TypeScript-Hauptversion (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md) → **behoben 29.09.**
+- BF-10: Abhängigkeits-Hygiene — undeklarierte Importe, tote Einträge, wirkungslose Overrides, bedeutungslose Versionsnumm (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md) → **behoben 29.09.**
+- BF-11: Startbündel lädt 1,39 MB Icon-Chunk (305 kB gzip) sofort; drei Build-Warnungen (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md) → **behoben 29.09.**, soweit ohne Risiko
+- BF-12: Zwei der als „harmlos" eingestuften Hook-Warnungen haben sichtbare Nebenwirkungen (NIEDRIG) — [toolchain-abhaengigkeiten](../2026-09-26/toolchain-abhaengigkeiten.md) → **behoben 29.09.**
 
 ## Paket 6: Datenbank und Betrieb
 
-- BF-11: Log-Volumen bei Zielgröße überrollt die Aufbewahrung binnen Stunden (MITTEL) — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md)
-- BF-05: Wiederherstellung aus der Sicherung ist nirgends beschrieben und scheitert auf einer frisch aufgesetzten Instanz (MITTEL) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- BF-06: `konfi_profiles.password_plain` — eine Spalte für Klartext-Passwörter Minderjähriger existiert weiter und wird nu (MITTEL) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- BF-08: Fünf von 89 Migrationen sind nicht idempotent — entgegen ihren eigenen Kommentaren (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- BF-09: 42 redundante Indizes, davon 9 exakte Doppelgänger (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- BF-10: `settings` hat keinen Primärschlüssel; mit `organization_id = NULL` sind Duplikate möglich (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- BF-11: 24 Zeitspalten ohne Zeitzone, neue Migrationen legen weiter `TIMESTAMP` an, zwei `created_at` sind TEXT (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- BF-12: Typmischung integer/bigint an 55 Fremdschlüsseln, zwei Sequenzen tragen alte Tabellennamen (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- BF-15: Der Neuinstallations-Wächter vergleicht keine Indizes, Fremdschlüssel, UNIQUE, Defaults und NOT NULL (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- BF-17: Der Test-Dump ist fünf Wochen alt; ob Produktion heute dem Repo entspricht, ist aus dem Repo nicht belegbar (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
+- BF-11: Log-Volumen bei Zielgröße überrollt die Aufbewahrung binnen Stunden (MITTEL) — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md) → **behoben 29.09.** (Menge je Vorgang); Rotation und strukturierte Zeilen beim Betrieb
+- BF-05: Wiederherstellung aus der Sicherung ist nirgends beschrieben und scheitert auf einer frisch aufgesetzten Instanz (MITTEL) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **behoben 29.09.** im Repo; Rhythmus, zweiter Ort und die Probe mit einem echten Dump beim Betrieb (Auftrag 11)
+- BF-06: `konfi_profiles.password_plain` — eine Spalte für Klartext-Passwörter Minderjähriger existiert weiter und wird nu (MITTEL) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **teilweise** — kein Code liest oder schreibt die Spalte, in Produktion 0 Werte; die Spalte selbst entfernen (Frage an Simon)
+- BF-08: Fünf von 89 Migrationen sind nicht idempotent — entgegen ihren eigenen Kommentaren (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **behoben 29.09.**
+- BF-09: 42 redundante Indizes, davon 9 exakte Doppelgänger (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **teilweise** — die 9 Doppelgänger sind weg; die 33 präfix-redundanten erst nach `idx_scan` aus Produktion (Auftrag 11)
+- BF-10: `settings` hat keinen Primärschlüssel; mit `organization_id = NULL` sind Duplikate möglich (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **behoben 29.09.**
+- BF-11: 24 Zeitspalten ohne Zeitzone, neue Migrationen legen weiter `TIMESTAMP` an, zwei `created_at` sind TEXT (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **teilweise** — die beiden TEXT-Spalten sind `timestamptz`, neue Migrationen nur noch mit Zone; die 24 Altspalten erst, wenn die Herkunft der Altzeilen geklärt ist (Auftrag 11)
+- BF-12: Typmischung integer/bigint an 55 Fremdschlüsseln, zwei Sequenzen tragen alte Tabellennamen (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **teilweise** — Sequenzen umbenannt, neue Migrationen nur noch passend; die 55 Fremdschlüssel bleiben begründet (Umbau schriebe große Tabellen unter Sperre neu, ohne Nutzen)
+- BF-15: Der Neuinstallations-Wächter vergleicht keine Indizes, Fremdschlüssel, UNIQUE, Defaults und NOT NULL (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **behoben 29.09.**
+- BF-17: Der Test-Dump ist fünf Wochen alt; ob Produktion heute dem Repo entspricht, ist aus dem Repo nicht belegbar (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **behoben 29.09.** im Repo (Dump reproduzierbar fortgeschrieben); der Abgleich mit Produktion beim Betrieb (Auftrag 11)
 
 ## Paket 7: Tests
 
-- BF-02: 46 % der Frontend-Tests prüfen Quelltext statt Verhalten (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
-- BF-03: E2E-Datenbank startet mit leerem Migrationsstand — 51 Migrationen laufen doppelt, 2 scheitern bei jedem Start (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
-- BF-04: 15 Backend-Routen ohne einen einzigen Test (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
-- BF-09: E2E-Suite ist zu 85 % Smoke; der Punkte-Test prüft „irgendeine Ziffer“ (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
-- BF-10: 49 Frontend-Komponenten ohne Bezug in irgendeinem Test — darunter Termin-Detail, Chat-Übersicht, Chat-Socket und  (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
-- BF-11: Doku- und Kommentar-Drift in der Testinfrastruktur (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
-- BF-12: Node-Versionen uneinheitlich — CI 26, Docker-Images 26, `engines` ≥ 22, lokal 22, E2E-Job 20 (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
-- BF-13: E2E-Compose weicht von Produktion und Backend-Tests ab — Postgres 16 statt 15, keine Zeitzone, fehlende Schlüssel (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
-- BF-14: Schema-Dump ist fünf Wochen alt, 36 Migrationen laufen obendrauf — kein definierter Auffrisch-Rhythmus (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
-- BF-15: Frontend-Testlauf ohne feste Zeitzone, Tests mit echtem `new Date()` (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
-- BF-16: Backend ohne Lint (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md)
+- BF-02: 46 % der Frontend-Tests prüfen Quelltext statt Verhalten (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **teilweise** — 42,4 → 38,7 % der Dateien, die riskanten zuerst; eine Leitplanke lässt keine neuen zu
+- BF-03: E2E-Datenbank startet mit leerem Migrationsstand — 51 Migrationen laufen doppelt, 2 scheitern bei jedem Start (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
+- BF-04: 15 Backend-Routen ohne einen einzigen Test (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
+- BF-09: E2E-Suite ist zu 85 % Smoke; der Punkte-Test prüft „irgendeine Ziffer“ (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
+- BF-10: 49 Frontend-Komponenten ohne Bezug in irgendeinem Test — darunter Termin-Detail, Chat-Übersicht, Chat-Socket und  (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **teilweise** — 49 → 12 Komponenten ohne Test
+- BF-11: Doku- und Kommentar-Drift in der Testinfrastruktur (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
+- BF-12: Node-Versionen uneinheitlich — CI 26, Docker-Images 26, `engines` ≥ 22, lokal 22, E2E-Job 20 (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
+- BF-13: E2E-Compose weicht von Produktion und Backend-Tests ab — Postgres 16 statt 15, keine Zeitzone, fehlende Schlüssel (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
+- BF-14: Schema-Dump ist fünf Wochen alt, 36 Migrationen laufen obendrauf — kein definierter Auffrisch-Rhythmus (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
+- BF-15: Frontend-Testlauf ohne feste Zeitzone, Tests mit echtem `new Date()` (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
+- BF-16: Backend ohne Lint (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
 
 ## Paket 8: Doku, Rechtstext, Oberfläche
 
-- BF-13: Datenschutzerklärung beschreibt die Absturzdiagnose enger als der Code (NIEDRIG) — [app-grundgeruest](../2026-09-26/app-grundgeruest.md)
-- BF-14: Listen ohne Virtualisierung — Renderzeit wächst linear (NIEDRIG) — [app-screens-leitung](../2026-09-26/app-screens-leitung.md)
-- BF-15: Weg zum Anlegen einer neuen Gemeinde ist nirgends dokumentiert (NIEDRIG) — [app-screens-leitung](../2026-09-26/app-screens-leitung.md)
-- BF-22: Absturzdiagnose ohne Einwilligungs- oder Abschaltmöglichkeit (NIEDRIG) — [backend-sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md)
-- BF-10: Abzeichen-Kriterienfarben leben als 17 rohe Hexwerte außerhalb der Tokens (NIEDRIG) — [darkmode](../2026-09-26/darkmode.md)
-- BF-12: Kein dunkler Bild- und Regressionspfad (NIEDRIG) — [darkmode](../2026-09-26/darkmode.md)
-- BF-13: Sitemap-Erzeugung nicht reproduzierbar, von der CI nicht geprüft (NIEDRIG) — [dokumentation-gegen-code](../2026-09-26/dokumentation-gegen-code.md)
-- BF-15: Code-Kommentare mit veralteten Zahlen und toten Dateiverweisen (NIEDRIG) — [dokumentation-gegen-code](../2026-09-26/dokumentation-gegen-code.md)
-- BF-18: 27 unreferenzierte Bildschirmfotos werden mitgespiegelt und ausgeliefert (NIEDRIG) — [dokumentation-gegen-code](../2026-09-26/dokumentation-gegen-code.md)
-- BF-04: Kontraste im Hellmodus unter AA — Grautöne 2,85–3,54:1 an 119 Stellen, Bereichsfarben als Text bis 2,15:1 (MITTEL) — [ui-barrierefreiheit](../2026-09-26/ui-barrierefreiheit.md)
-- BF-09: Alle 42 Screenshots zeigen den Stand vor Glocke, Gemeinde-Umschalter und 2.3-Banner (MITTEL) — [ui-barrierefreiheit](../2026-09-26/ui-barrierefreiheit.md)
+- BF-13: Datenschutzerklärung beschreibt die Absturzdiagnose enger als der Code (NIEDRIG) — [app-grundgeruest](../2026-09-26/app-grundgeruest.md) → **behoben 29.09.**
+- BF-14: Listen ohne Virtualisierung — Renderzeit wächst linear (NIEDRIG) — [app-screens-leitung](../2026-09-26/app-screens-leitung.md) → **behoben 29.09.**
+- BF-15: Weg zum Anlegen einer neuen Gemeinde ist nirgends dokumentiert (NIEDRIG) — [app-screens-leitung](../2026-09-26/app-screens-leitung.md) → **behoben 29.09.** — Handbuch „Eine neue Gemeinde einrichten"
+- BF-22: Absturzdiagnose ohne Einwilligungs- oder Abschaltmöglichkeit (NIEDRIG) — [backend-sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md) → **behoben 29.09.** — Schalter im Profil (Simon: „An, abschaltbar")
+- BF-10: Abzeichen-Kriterienfarben leben als 17 rohe Hexwerte außerhalb der Tokens (NIEDRIG) — [darkmode](../2026-09-26/darkmode.md) → **behoben 29.09.** — Tokens
+- BF-12: Kein dunkler Bild- und Regressionspfad (NIEDRIG) — [darkmode](../2026-09-26/darkmode.md) → **behoben 29.09.**
+- BF-13: Sitemap-Erzeugung nicht reproduzierbar, von der CI nicht geprüft (NIEDRIG) — [dokumentation-gegen-code](../2026-09-26/dokumentation-gegen-code.md) → **behoben 29.09.**
+- BF-15: Code-Kommentare mit veralteten Zahlen und toten Dateiverweisen (NIEDRIG) — [dokumentation-gegen-code](../2026-09-26/dokumentation-gegen-code.md) → **behoben 29.09.**
+- BF-18: 27 unreferenzierte Bildschirmfotos werden mitgespiegelt und ausgeliefert (NIEDRIG) — [dokumentation-gegen-code](../2026-09-26/dokumentation-gegen-code.md) → **behoben 29.09.**
+- BF-04: Kontraste im Hellmodus unter AA — Grautöne 2,85–3,54:1 an 119 Stellen, Bereichsfarben als Text bis 2,15:1 (MITTEL) — [ui-barrierefreiheit](../2026-09-26/ui-barrierefreiheit.md) → **zurückgestellt** (Simon, 29.09.: „Der Kontrast ist uns erstmal egal.")
+- BF-09: Alle 42 Screenshots zeigen den Stand vor Glocke, Gemeinde-Umschalter und 2.3-Banner (MITTEL) — [ui-barrierefreiheit](../2026-09-26/ui-barrierefreiheit.md) → **offen** — erst nach dem Deploy ziehen (Auftrag 08)
 
 ## Offene Punkte aus den Abschnitten „Unklar“ und „Nicht geprüft“
 
-Meist Messungen in Produktion oder Fragen, die bei Simon liegen.
+Meist Messungen in Produktion oder Fragen, die bei Simon liegen. Stand hinter dem Pfeil.
 
-- Unklar: Cron-Leader in Produktion. Ob `backend2` tatsächlich `RUN_BACKGROUND_JOBS=false` trägt, steht nur im Stack; oh — [backend-fachlogik-chat-challenges-rueckblick](../2026-09-26/backend-fachlogik-chat-challenges-rueckblick.md)
-- Unklar: Absage und Selbstabmeldung mit Verbuchung. `meldeAlleAbBeiAbsage` — [backend-fachlogik-punkte-termine](../2026-09-26/backend-fachlogik-punkte-termine.md)
-- Unklar: Check-in-Fenster endet nach dem Beginn. `checkin.js:84-90` prüft — [backend-fachlogik-punkte-termine](../2026-09-26/backend-fachlogik-punkte-termine.md)
-- Unklar: Serienfolge der Abzeichen (`streakCalculation.js:616-646`): endet an der — [backend-fachlogik-punkte-termine](../2026-09-26/backend-fachlogik-punkte-termine.md)
-- Unklar: Sammelverbuchung (`anwesenheit.js:48-184`) prüft weder `cancelled` noch — [backend-fachlogik-punkte-termine](../2026-09-26/backend-fachlogik-punkte-termine.md)
-- Unklar: Werden Chat-Nachrichtentexte im Push-Payload an FCM/APNs übertragen? `pushService.js:763/961` senden `notifica — [backend-sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md)
-- Unklar: Zeigt `X-Real-IP` in Produktion wirklich die Client-IP? Die Limiter hängen daran (BF-05, BF-13). Nur mit Zugri — [backend-sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md)
-- Unklar: Enthält `notifications.data` (JSONB) Namen anderer Personen, die nach deren Löschung stehen bleiben? Struktur  — [backend-sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md)
-- Unklar: Existiert ein Datenexport (Art. 15 DSGVO)? Keine Route gefunden (`grep export\|Auskunft` in `konfi.js`/`auth.js — [backend-sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md)
-- Unklar: Firebase-Zustellrate und -Latenz: Alle Push-Messungen liefen ohne Firebase (schneller — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md)
-- Unklar: SMTP-Grenzen: `emailService.js` sendet ohne Warteschlange, Rate oder Pooling — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md)
-- Unklar: `X-Real-IP` wird ungeprüft übernommen (`server.js:261–265`): Die IP-basierten — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md)
-- Unklar: Speicherbedarf des Node-Prozesses bei 1.000+ Sockets (25 kB je Socket geschätzt → — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md)
-- Unklar: Postgres-Speicher unter Last: `max_connections=200` × `work_mem` 4 MB ist nur bei — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md)
-- Unklar: App-Icon mit Alphakanal. `Assets.xcassets/AppIcon.appiconset/kq.png` ist 1024×1024 RGBA — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- Unklar: `aps-environment = development` in `App.entitlements`. Xcode ersetzt den Wert beim Export mit — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- Unklar: `UIBackgroundModes: fetch`. `AppContext.tsx` nutzt `@capawesome/capacitor-background-task` — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- Unklar: `UIFileSharingEnabled` + `LSSupportsOpeningDocumentsInPlace` = true. Der Documents-Ordner der App — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- Unklar: Test-Deadlocks in der CI. Zwei rote `backend-test`-Läufe (931, 938) zeigen `deadlock detected` — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- Unklar: Sicherheit der Firebase-Client-Schlüssel. `frontend/config/google-services.json` und — [ci-deployment-store](../2026-09-26/ci-deployment-store.md)
-- Unklar: Produktionsschema heute: Der Dump ist vom 22.08.2026. Ob Produktion heute exakt — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- Unklar: Erst-Einrichtung einer neuen Instanz: Das Schema entsteht korrekt, aber — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- Unklar: Wirkung von 0,3 CPU: Alle Zeiten hier stammen von einer unbegrenzten CPU; der Faktor — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md)
-- Nicht geprüft: Produktion: Kein Zugriff. Nachzumessen wären: Zahl der Admins mit Zuweisung auf einzelne Jahrgänge gegenü — [wer-bekommt-was](../2026-09-27/wer-bekommt-was.md)
+- Cron-Leader in Produktion — [chat-challenges-rueckblick](../2026-09-26/backend-fachlogik-chat-challenges-rueckblick.md) → **kein Befund mehr:** `RUN_BACKGROUND_JOBS` entscheidet nur, ob sich eine Replica bewirbt; die Jobs startet allein der Leader.
+- Absage und Selbstabmeldung mit Verbuchung (`meldeAlleAbBeiAbsage`) — [punkte-termine](../2026-09-26/backend-fachlogik-punkte-termine.md) → **behoben 29.09.** nach Simons Entscheidung („Auch sie wird entschuldigt"): Bei der Absage gilt auch eine abgemeldete Konfi als entschuldigt.
+- Check-in-Fenster endet nach dem Beginn — [punkte-termine](../2026-09-26/backend-fachlogik-punkte-termine.md) → **kein Befund mehr:** gewollt, im Handbuch beschrieben.
+- Serienfolge der Abzeichen — [punkte-termine](../2026-09-26/backend-fachlogik-punkte-termine.md) → **behoben 29.09.** nach Simons Entscheidung („Fortschritt ehrlich zeigen").
+- Sammelverbuchung prüft weder `cancelled` noch … — [punkte-termine](../2026-09-26/backend-fachlogik-punkte-termine.md) → **kein Befund mehr:** am Code geklärt, die Sammelverbuchung erreicht abgesagte Buchungen nicht.
+- Chat-Texte im Push an Firebase und Apple — [sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md) → **behoben 29.09.** nach Simons Entscheidung („Absender, ohne Inhalt"); Datenschutzerklärung nachgezogen.
+- `X-Real-IP` in Produktion (zweimal gemeldet: Sicherheit und Betrieb) — [sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md), [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md) → **offen bis zur Messung:** im Code geschlossen, ob der Proxy den Header setzt, misst Auftrag 07.
+- Namen anderer Personen in `notifications.data` — [sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md) → **behoben 29.09. bis auf den Altbestand** (Einträge vor dem 27.09.2026 ohne Kennung; spätestens am 27.09.2027 durch die Frist weg — Frage an Simon, ob früher).
+- Datenexport nach Art. 15 DSGVO — [sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md) → **offen:** Feature E-21 „Selbstauskunft".
+- Firebase-Zustellrate und -Latenz — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md) → **offen:** nach dem Deploy messen.
+- SMTP-Grenzen — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md) → **im Code behoben 29.09.** (Massenversand gepoolt und gedrosselt, Vorgabe 20 Mails je Minute); die Grenze des Anbieters erfragt der Betrieb (Auftrag 11).
+- Speicherbedarf bei 1.000+ Sockets — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md) → **offen:** Lasttest vor der EKD-Ausrollung.
+- Postgres-Speicher unter Last — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md) → **offen:** nach dem Deploy messen.
+- App-Icon mit Alphakanal — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.**
+- `aps-environment = development` — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** (eigene Release-Entitlements); am nächsten IPA gegenprüfen.
+- `UIBackgroundModes: fetch` — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.**
+- `UIFileSharingEnabled` und `LSSupportsOpeningDocumentsInPlace` — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** (Documents-Ordner nicht mehr sichtbar).
+- Test-Deadlocks in der CI — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** (Ursache war `closePool`, nicht der Deadlock).
+- Sicherheit der Firebase-Client-Schlüssel — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **bei Simon:** Einschränkungen in der Google-Cloud-Konsole prüfen.
+- Produktionsschema heute — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **Messweg bereit** (`schemaVergleich.js`), Messung beim Betrieb (Auftrag 11).
+- Erst-Einrichtung einer neuen Instanz — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **behoben 29.09.** (von Null durchgespielt, drei Lücken geschlossen).
+- Wirkung von 0,3 CPU — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **beim Betrieb** (Auftrag 03).
+- Nicht geprüft: die vier Zählungen in Produktion — [wer-bekommt-was](../2026-09-27/wer-bekommt-was.md) → **offen:** nach dem Deploy messen.
 
 ## Feature-Empfehlungen (vor der EKD-Ausrollung)
 
@@ -136,36 +158,77 @@ Meist Messungen in Produktion oder Fragen, die bei Simon liegen.
 
 ## Nebenbefunde der Pakete vom 29.09.2026
 
-Beim Arbeiten aufgefallen, nicht geändert (außerhalb des jeweiligen Pakets):
+Beim Arbeiten an den Paketen 1–4, F und G aufgefallen und damals außerhalb des Pakets. Stand hinter
+dem Pfeil (Commit in Klammern).
 
-- **Gemeinde löschen** (`DELETE /organizations/:id`) nutzt die gemeinsame Kontolöschung
-  (`utils/kontoLoeschen.js`) nicht: Konten der Gemeinde mit Anträgen in einer anderen Gemeinde
-  können dort mit 500 abbrechen; ihre Dateien und Zweiergespräche in anderen Gemeinden bleiben liegen.
-- **Teamer-Rückblick** (`routes/wrapped.js`, um Zeile 1697) zählt Badges ohne Filter auf
-  `target_role` — also auch Konfi-Badges Beförderter.
-- **`GET /teamer/profile`**: `profileQuery` filtert nicht auf die Gemeinde.
-- **`sichereKonfiZeitBefoerderter`** prüft die Rolle nur an `users.role_id`, nicht je Gemeinde.
-- **`GET /admin/konfis/:id/badges`** filtert nur auf `u.organization_id` (vermutlich 404 für
-  Personen, die nur über eine weitere Gemeinde dazugehören).
-- **Android: zwei FCM-Dienste** (`@capacitor/push-notifications` und
-  `@capacitor-firebase/messaging`) melden je einen `MessagingService` an; Android stellt jede
-  Nachricht nur einem zu. Möglicherweise feuert `pushNotificationReceived` in `AppContext` auf
-  Android nie. Nicht geprüft.
-- **Android-Zahl am App-Symbol** am Gerät prüfen (Samsung und Pixel), nach dem nächsten internen
-  Testbuild.
-- **Limiter:** `validate-invite`, `reset-password` und `refresh` haben keinen eigenen Limiter
-  (Sicherheit, N3).
+- **Gemeinde löschen** (`DELETE /organizations/:id`) nutzte die gemeinsame Kontolöschung nicht:
+  Konten mit Anträgen in einer anderen Gemeinde konnten dort mit 500 abbrechen, Dateien und
+  Zweiergespräche in anderen Gemeinden blieben liegen. → **behoben 29.09.** (`f6ab3278`; die
+  Vorschau nennt, was mit den Konten geschieht, `a8f3f304`)
+- **Teamer-Rückblick** zählte Badges ohne Filter auf `target_role`, also auch Konfi-Badges
+  Beförderter. → **behoben 29.09.** (`bb98d665`)
+- **`GET /teamer/profile`** filterte die Konfi-Zeit nicht auf die Gemeinde. → **behoben 29.09.**
+  (`bb91d42f`)
+- **`sichereKonfiZeitBefoerderter`** prüfte die Rolle nur an `users.role_id`. → **behoben 29.09.**
+  mit den drei übrigen Stellen der Jahrgangslöschung (`6db134c4`)
+- **`GET /admin/konfis/:id/badges`** las nur `u.organization_id`. → **behoben 29.09.**, beide Quellen
+  der Zugehörigkeit (`7c7fc414`)
+- **Android: zwei FCM-Dienste.** → **behoben 29.09.:** ein eigener Dienst für alle Nachrichten, auch
+  bei offener App (`6d734d4d`, `4ebec8d8`)
+- **Android-Zahl am App-Symbol** → gebaut wie auf iOS (Simon: „Zahl wie iOS"), bei 0 räumt die App
+  auf Samsung und Xiaomi die Sammel-Mitteilung weg (`448a9d6f`). **Offen:** Prüfung am Gerät (Sony
+  Xperia 1 VI) mit dem nächsten internen Testbuild.
+- **Limiter** für `validate-invite`, `reset-password` und `refresh`. → **behoben 29.09.**
+  (`1ae939c5`)
 - **`POST /register-konfi`** verrät vergebene Namen mit 409 — nur mit gültigem Einladungscode und
-  unter dem Registrierungs-Limiter; bewusst so gelassen.
-- **`jahrgaenge.js`**: der unerreichbare 502-Zweig (Chat BF-11, Rest).
-- **Tests:** `tests/routes/wrapped.test.js` stellt den Fremdschlüssel auf
-  `challenge_submissions.approved_by` nach dem Test nicht wieder her.
-- **Sperr-Texte** des Servers nennen weiter „Organisation" — gehört zum Begriffe-Durchgang
-  „Gemeinde statt Organisation".
-  - **Nachtrag 29.09.2026:** behoben — Sperr-Texte, alle übrigen Server-Meldungen, Mails, App und
-    Handbuch sagen „Gemeinde". Einzige Ausnahme: der 403 „Kein Zugriff auf diese Organisation",
-    den die Store-Apps 2.2.0/2.3.0 wörtlich vergleichen. Test `begriffeEinheitlich.test.ts`
-    (4 neue Fälle).
+  unter dem Registrierungs-Limiter. → **bewusst so gelassen**
+- **`jahrgaenge.js`**: der unerreichbare 502-Zweig. → **entfernt 29.09.** (`9084488d`)
+- **Tests:** `wrapped.test.js` stellte Fremdschlüssel und Spaltenkommentare nicht wieder her. →
+  **behoben 29.09.** (`e5aa7071`, `207c07ea`)
+- **Sperr-Texte** nannten „Organisation". → **behoben 29.09.** — Server-Meldungen, Mails, App und
+  Handbuch sagen „Gemeinde"; einzige Ausnahme der 403 „Kein Zugriff auf diese Organisation", den
+  die Store-Apps 2.2.0/2.3.0 wörtlich vergleichen. Test `begriffeEinheitlich.test.ts`.
+
+### Nachzügler aus dem Großpaket und aus Simons Gerätetest (Xperia, Build 128)
+
+- **Word-Datei (.docx) im Chat** ließ sich nicht senden. → **behoben 29.09.**
+- **Dateiauswahl und Links** lösten beim Zurückkehren die Biometrie-Sperre aus. → **behoben
+  29.09.** (alle Dateiauswahlen und alle externen Links über eine Stelle, je mit Wächter-Test)
+- **Mitteilungssymbol auf Android** war ein graues Quadrat. → **behoben 29.09.** (eigenes
+  Symbol aus der Lutherrose)
+- **Titel der Konfi-Liste** auf Android gekürzt. → **behoben 29.09.** (`171858d1`)
+- **Refresh-Tokens aufräumen** lief erst nach einem vollen Intervall. → **behoben 29.09.**
+  (`ab81b289`, beim Start und auf dem Leader)
+- **Abgesagte Events** zählen als offene Buchungen nur Konfis. → **bewusst so** (Simon: „Nur Konfis,
+  wie heute")
+- **FCM-Grenze von 4 KB** gegen 4.000 Zeichen Chat-Text. → **entfallen:** Mitteilungen tragen keinen
+  Inhalt mehr.
+- **Gemeinde anlegen** (`POST /organizations`) ohne Transaktion, Benutzername der Gemeindeleitung
+  nicht systemweit geprüft, Systemname verlor Umlaute. → **behoben 29.09.** (`e2750c96`)
+- **Eigene Stamm-Gemeinde** ließ sich vom Super-Admin löschen, das Konto war danach weg. →
+  **behoben 29.09.:** 409, solange das Konto nur dort ist (`6c010347`)
+- **Transaktions-Verbindung während Chat und Push** gehalten (Zusage, Event anlegen); drei Routen
+  meldeten nach der Kontolöschung vor der Antwort. → **behoben 29.09.** (`45d3f5e6`, `9ab00f6f`)
+- **pg-Warnung** „client.query() while already executing": bis zu sechs gleichzeitige Abfragen auf
+  dem Client einer Transaktion. → **behoben 29.09.** (`88b037a9`)
+- **Kleinere Reste:** Rechte-Zwischenspeicher im Rückblick-Test, `ensureOrgColumn` (Laufzeit-DDL,
+  hätte den Primärschlüssel aus Migration 174 abgerissen), API-Doku zum Material-Upload. →
+  **behoben 29.09.**
+- **nodemailer 10** (Simon: „Ja, jetzt übernehmen"). → **übernommen 29.09.** (`132afaaf`; `npm
+  audit` im Backend danach 0)
+
+### Neue Nebenbefunde aus dem Großpaket (nur genannt, nicht geändert)
+
+- Weitere Hilfsfunktionen mit Parameter `db` bündeln Abfragen per `Promise.all`
+  (`terminLeitungSicht`, `antragLeitungSicht`, `jahrgangLeitungSicht`, `orgMitglieder`,
+  `appIconBadge`, `punkteHistorie`, `abzeichenKandidaten`, zwei Stellen im `pushService`). Heute
+  ruft sie niemand mit dem Client einer Transaktion; täte es jemand, käme dieselbe pg-Warnung.
+- Die Ausfüllhilfe der App (`generateSystemName`) verliert weiter Umlaute; der Server fängt das beim
+  Anlegen ab. Schriebe die App künftig selbst um, benennte `PUT` bestehende Gemeinden um.
+- `POST /users`, `/:id/admins` und `/organizations` prüfen den Benutzernamen ohne Sperre — zwei
+  gleichzeitige Anlagen mit demselben Namen kämen durch.
+- `verwaltung-auth.yaml`, `POST /organizations`: `admin_password` „nur min 6 Zeichen" (die
+  Passwort-Regel gilt seit 22.08.), die Zusammenfassung nennt veraltete Zahlen zum Startbestand.
 
 ## Mehrfach-Konten (Gespräch mit Simon)
 
@@ -176,22 +239,50 @@ Teamer-Badges gelten je Gemeinde.
 
 ## Messen in Produktion und am Gerät
 
-- Aufträge für den lokalen Agenten: [06 Mischkonten](../../auftraege/lokaler-agent/06-mischkonten.md),
+- Aufträge für den lokalen Agenten: [03 nach dem Deploy](../../auftraege/lokaler-agent/03-nach-dem-deploy.md),
+  [05 Sicherung und Notfall](../../auftraege/lokaler-agent/05-sicherung-und-notfall.md),
+  [06 Mischkonten](../../auftraege/lokaler-agent/06-mischkonten.md),
   [07 Client-Adresse hinter dem Proxy](../../auftraege/lokaler-agent/07-client-adresse-hinter-dem-proxy.md),
-  dazu die offenen Punkte aus [03 nach dem Deploy](../../auftraege/lokaler-agent/03-nach-dem-deploy.md).
+  [08 Screenshots](../../auftraege/lokaler-agent/08-screenshots-2.3.md),
+  [09 Backend-Container ohne root](../../auftraege/lokaler-agent/09-backend-container.md),
+  [10 Deploy-Lücke](../../auftraege/lokaler-agent/10-deploy-luecke.md),
+  [11 Schema und Rückspielprobe](../../auftraege/lokaler-agent/11-schema-und-rueckspielprobe.md).
 - Die Messliste der [Gesamtabnahme](../2026-09-26/00-gesamtabnahme.md#auf-produktion-nachzumessen)
   und die Abschnitte „Auf Produktion nachzumessen" der Berichte.
 - Aus den Paketen vom 29.09.: Jahrgänge mit Punkteziel 0, Teamer-Badges „Pflicht-Anwesenheit" im
   Bestand (Abfragen in den Nachträgen der Berichte).
-- Am Gerät: Funkloch (Flugmodus), VoiceOver/TalkBack, Schrift „Größt", Dunkelmodus, Kaltstart,
-  Android-Symbol und -Zahl, Biometrie-Rotation vor der Rückkehr des Schalters.
+- **Android-Zahl am Xperia** (nächster interner Testbuild): Das Log nennt beim Start
+  `symbol=anbieter`; bei offener App stimmt die Zahl mit der App überein; bei geschlossener App
+  erhöht ein Push die Zahl; Lesen in der App senkt sie; spätestens nach fünf Minuten stimmt sie
+  wieder; die Mitteilungen bleiben einzeln; ein Push bei offener App verhält sich richtig; Antippen
+  führt wie bisher zum Ziel.
+- Am Gerät außerdem: Funkloch (Flugmodus), VoiceOver/TalkBack, Schrift „Größt", Dunkelmodus,
+  Kaltstart, Biometrie-Rotation vor der Rückkehr des Schalters; Word-Datei senden, Dateiauswahl und
+  Links ohne Biometrie-Abfrage; `aps-environment` am nächsten IPA.
 
 ## Bei Simon
 
-- Git-Tag `2.3.0`, sobald 2.3.0 in den Store geht; Store-Texte 2.3.0 (CI BF-08).
-- `RUN_BACKGROUND_JOBS=false` bei `backend2` entfernen, `backend-test` auf `test-latest` stellen.
-- Screenshots neu ziehen (erst nach dem Deploy), Umami bereinigen.
-- `datenschutz.html` 4.3 (Geräte-Kennung), Absturzdiagnose, Chat-Texte im Push.
-- Universal Links (`apple-app-site-association`), App-Icon mit Alphakanal, `aps-environment`,
-  Firebase-Schlüssel.
-
+- **Store und Konten:** Git-Tag `2.3.0` für den schon ausgelieferten Stand (die automatischen Tags
+  gelten ab dem nächsten Upload); Store-Texte 2.3.0 (CI BF-08); Universal Links einschalten
+  (Entitlement `applinks:konfi-quest.de`); Firebase-Schlüssel in der Google-Cloud-Konsole
+  einschränken; ob App Store Connect bei den Uploads 221–230 wegen des Icons gewarnt hat.
+- **Betrieb:** `backend-test` auf `test-latest` stellen; Screenshots nach dem Deploy (Auftrag 08);
+  Umami bereinigen; Grenze des Mail-Anbieters erfragen.
+- **Rückfragen aus dem Großpaket:**
+  - Android: Eine Mitteilung, die mit Zahl 0 ankam, bleibt stehen, bis sie weggewischt wird — so
+    lassen?
+  - Meldung bei rotem `main`: soll das Issue jemanden erwähnen, und passt das Label
+    `ci-rot-main`? Schema der Store-Tags; ein Endpunkt für CSP-Meldungen?
+  - Node 26 nach dem 28.10.2026 (eine Zeile in `.nvmrc` plus die Dockerfiles); `armv7` in der
+    Info.plist beim nächsten Umbau mit Xcode; `frontend.yml` ist gelöscht (baute aus jedem Branch
+    ohne Tests und rollte aus) — einverstanden?
+  - Datenbank: Wurden Zeitspalten je per psql geschrieben (entscheidet über die 24 Altspalten)?
+    `password_plain` mit dem nächsten Release entfernen? Log-Rotation im Stack und
+    `timezone=UTC` für den Produktions-Postgres?
+  - Postfach: den Altbestand ohne Kennung (vor dem 27.09.2026) vor Ablauf der 365-Tage-Frist
+    löschen?
+  - Absage: Eine Selbstabgemeldete, die die Leitung als *abwesend* verbucht hatte, gilt nach der
+    Absage ebenfalls als entschuldigt (wie die als anwesend verbuchte) — so recht? Und sie bekommt
+    wie bisher keine Absage-Mitteilung — so lassen?
+- **Mehrfach-Konten:** die acht Fragen in [mehrfach-konten.md](mehrfach-konten.md).
+- **Feature-Empfehlungen:** die zehn offenen Produktfragen; danach die Features.

@@ -28,6 +28,12 @@
 # Warnung im Lauf, und der Deploy war NICHT lueckenlos (aber auch nicht
 # schlechter als vorher).
 #
+# STAND 29.09.2026: Im ersten echten Lauf (Deploy von beb745e) kam genau diese
+# Warnung -- backend2 wurde in Stufe 1 mit neu erstellt, die Annahme gilt so
+# nicht. Die neuen Container standen zudem 13-20 s auf "created", was zu einem
+# mit neu erstellten Postgres passt (depends_on: service_healthy). Messung und
+# Gegenmittel: docs/auftraege/lokaler-agent/10-deploy-luecke.md.
+#
 # Umgebung (kommt aus dem Workflow; keine Werte hier, das Repo ist oeffentlich):
 #   P_URL, P_KEY          Portainer-Adresse und API-Key
 #   STACK_ID, ENDPOINT_ID Stack und Docker-Endpoint in Portainer
@@ -36,6 +42,13 @@
 #   STATUS_URL            oeffentliche /api/status-Adresse fuer den Verify
 #   COMPOSE_PROJECT       Compose-Projektname der Container-Labels (Standard konfi_quest)
 #   WARTE_S / WARTE_MAX   Abstand und Anzahl der Gesundheitsabfragen je Stufe (5 s x 36 = 3 min)
+#   VERIFY_PAUSE_S        Abstand der Verify-Abfragen (2 s)
+#   FEHLER_PAUSE_S        Pause nach einem update_stack ohne 200 (15 s)
+#   NUR_VORWAERTS         1 = nicht ausrollen, wenn schon ein NEUERER Stand live ist
+#                         (CI-Deploy; siehe nur_vorwaerts unten). Der Notfall-Deploy
+#                         setzt es nicht -- er darf bewusst zurueckrollen.
+#   PROBELAUF             1 = alles lesen und pruefen, aber NICHTS am Stack aendern
+#                         (Notfall-Deploy proben, siehe probelauf unten)
 set -euo pipefail
 : "${P_URL:?P_URL fehlt}" "${P_KEY:?P_KEY fehlt}" "${STACK_ID:?STACK_ID fehlt}"
 : "${ENDPOINT_ID:?ENDPOINT_ID fehlt}" "${GIT_SHA:?GIT_SHA fehlt}" "${STATUS_URL:?STATUS_URL fehlt}"
@@ -44,6 +57,10 @@ COMPOSE_PROJECT="${COMPOSE_PROJECT:-konfi_quest}"
 WARTE_S="${WARTE_S:-5}"
 WARTE_MAX="${WARTE_MAX:-36}"
 VERIFY_ABFRAGEN="${VERIFY_ABFRAGEN:-6}"
+VERIFY_PAUSE_S="${VERIFY_PAUSE_S:-2}"
+FEHLER_PAUSE_S="${FEHLER_PAUSE_S:-15}"
+NUR_VORWAERTS="${NUR_VORWAERTS:-0}"
+PROBELAUF="${PROBELAUF:-0}"
 
 # Image-Tag: docker/metadata-action (type=sha,prefix=) pusht den KURZEN
 # 7-stelligen SHA-Tag -- NICHT den vollen github.sha. GIT_SHA (voll) bleibt
@@ -52,6 +69,54 @@ IMG_TAG="${GIT_SHA:0:7}"
 echo "Image-Tag (kurz): $IMG_TAG, Backend geaendert: $BACKEND_CHANGED"
 
 api() { curl -sS -H "X-API-Key: $P_KEY" "$@"; }
+
+# Nur vorwaerts (29.09.2026, Audit CI BF-04). Die concurrency-Gruppe im
+# Workflow serialisiert die Deploys, sie ordnet sie nicht: Braucht der Test-
+# lauf eines aelteren Pushs laenger, kommt sein Deploy NACH dem des neueren
+# an die Reihe und setzte Produktion auf den aelteren Stand zurueck -- beide
+# Verifies waeren gruen.
+#
+# Uebersprungen wird NUR, wenn es belegt ist: Jede der VERIFY_ABFRAGEN
+# Antworten von /api/status nennt denselben Commit, dieser Commit ist nicht
+# GIT_SHA, liegt im geklonten Verlauf (der Deploy-Job holt fetch-depth: 0),
+# und GIT_SHA ist sein Vorfahre -- Produktion enthaelt diesen Stand also
+# schon. In jedem anderen Fall (Status nicht erreichbar, Antworten
+# uneinheitlich wie mitten in einem abgebrochenen Tausch, Commit unbekannt,
+# Verlauf auseinandergelaufen) wird wie bisher ausgerollt. Die Pruefung kann
+# einen noetigen Deploy also nicht still verhindern.
+nur_vorwaerts() {
+  local live="" c i
+  for i in $(seq 1 "$VERIFY_ABFRAGEN"); do
+    c="$(curl -sS --max-time 10 "$STATUS_URL" 2>/dev/null \
+         | python3 -c "import sys,json;print(json.load(sys.stdin).get('commit',''))" 2>/dev/null || echo "")"
+    if [ -z "$c" ]; then echo "Vorwaerts-Pruefung: Abfrage $i ohne Commit -> ausrollen"; return 1; fi
+    if [ -n "$live" ] && [ "$c" != "$live" ]; then
+      echo "Vorwaerts-Pruefung: uneinheitlich (${live:0:12} / ${c:0:12}) -> ausrollen"; return 1
+    fi
+    live="$c"
+    if [ "$i" -lt "$VERIFY_ABFRAGEN" ]; then sleep "$VERIFY_PAUSE_S"; fi
+  done
+  if [ "$live" = "$GIT_SHA" ]; then echo "Vorwaerts-Pruefung: ${GIT_SHA:0:12} ist schon live -> erneut ausrollen"; return 1; fi
+  if ! git cat-file -e "${live}^{commit}" 2>/dev/null; then
+    echo "Vorwaerts-Pruefung: live ${live:0:12} nicht im Verlauf -> ausrollen"; return 1
+  fi
+  if git merge-base --is-ancestor "$GIT_SHA" "$live" 2>/dev/null; then
+    echo "::notice::Deploy uebersprungen: Produktion laeuft schon auf ${live:0:12}, einem neueren Stand, der ${GIT_SHA:0:12} enthaelt."
+    if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+      # Backticks sind Markdown fuer die Zusammenfassung, keine Befehle.
+      # shellcheck disable=SC2016
+      printf '### Deploy uebersprungen\n\nProduktion laeuft schon auf `%s`, einem neueren Stand, der `%s` enthaelt. Ein Ausrollen haette zurueckgedreht.\n' \
+        "${live:0:12}" "${GIT_SHA:0:12}" >> "$GITHUB_STEP_SUMMARY"
+    fi
+    return 0
+  fi
+  echo "Vorwaerts-Pruefung: live ${live:0:12} ist aelter oder abgezweigt -> ausrollen"
+  return 1
+}
+
+if [ "$NUR_VORWAERTS" = "1" ] && nur_vorwaerts; then
+  exit 0
+fi
 
 # compose-Inhalt vom Stack holen (einmal, fuer beide Stufen).
 hole_compose() {
@@ -163,7 +228,7 @@ stufe() {  # <dienste-alternation> <zu-pruefender-dienst>
     echo "== Stufe '$dienste', Runde $runde =="
     schreibe_tags "$dienste"
     local code; code="$(update_stack)"; echo "update_stack HTTP $code"
-    if [ "$code" != "200" ]; then echo "::warning::update_stack HTTP $code"; sleep 15; continue; fi
+    if [ "$code" != "200" ]; then echo "::warning::update_stack HTTP $code"; sleep "$FEHLER_PAUSE_S"; continue; fi
     if warte_gesund "$pruefe"; then echo "OK $pruefe gesund auf :$IMG_TAG"; return 0; fi
     echo "Runde $runde: $pruefe nicht gesund auf :$IMG_TAG -> erneut"
   done
@@ -173,6 +238,36 @@ stufe() {  # <dienste-alternation> <zu-pruefender-dienst>
 
 hole_compose
 bt_vorher="$(image_von backend-test)"
+
+# Probelauf (29.09.2026, Audit CI BF-10): Der Notfall-Deploy war nie gelaufen,
+# und ein echter Lauf veraendert Produktion. Der Probelauf geht denselben Weg
+# bis unmittelbar vor update_stack -- Zugang zur Portainer-API (Stack-Datei,
+# Variablen, Container), Tag-Umschreibung aller drei Dienste auf einer Kopie,
+# Gegenprobe auf backend-test, Statusabfrage -- und schreibt NICHTS. Was
+# danach kommt (update_stack, Warten auf gesund, Verify), laeuft bei jedem
+# Push auf main im CI-Deploy mit genau diesem Skript.
+if [ "$PROBELAUF" = "1" ]; then
+  echo "== Probelauf: es wird nichts am Stack geaendert =="
+  cp compose.yml compose.vorher.yml
+  schreibe_tags "backend|frontend|backend2"
+  for d in backend backend2 frontend backend-test; do
+    echo "  $d: $(awk -v svc="$d" '$0 ~ "^  "svc":" {f=1; next} f && /^  [A-Za-z0-9_.-]+:/ {f=0} f && /image:/ {print $2; exit}' compose.vorher.yml) -> $(image_von "$d")"
+  done
+  fehler=0
+  for d in backend backend2 frontend; do
+    case "$(image_von "$d")" in *":$IMG_TAG") ;; *) echo "::error::Probelauf: $d stuende nicht auf :$IMG_TAG"; fehler=1 ;; esac
+  done
+  if [ "$(image_von backend-test)" != "$bt_vorher" ]; then echo "::error::Probelauf: Tag-Umschreibung wuerde backend-test anfassen"; fehler=1; fi
+  anzahl_env="$(api "$P_URL/api/stacks/$STACK_ID" | python3 -c "import sys,json;print(len(json.load(sys.stdin).get('Env') or []))" 2>/dev/null || echo "?")"
+  echo "  Stack-Variablen, die mitgeschickt wuerden: $anzahl_env"
+  for d in backend backend2 frontend; do echo "  laufend $d: $(container_zustand "$d" | cut -f2,3)"; done
+  echo "  live: $(curl -sS --max-time 10 "$STATUS_URL" 2>/dev/null | head -c 300 || echo "nicht erreichbar")"
+  rm -f compose.vorher.yml
+  if [ "$fehler" != "0" ]; then echo "::error::Probelauf mit Fehlern -- ein echter Lauf wuerde hier abbrechen."; exit 1; fi
+  echo "OK Probelauf: Zugang, Images und Umschreibung stimmen, update_stack wurde NICHT aufgerufen."
+  exit 0
+fi
+
 b2_vorher="$(container_id backend2)"
 echo "backend2 vor Stufe 1: ${b2_vorher:-<kein Container>}"
 
@@ -217,7 +312,7 @@ for i in $(seq 1 "$VERIFY_ABFRAGEN"); do
   else
     echo "  $i: db=$db commit=${live:0:12} (erwarte ${GIT_SHA:0:12})"
   fi
-  sleep 2
+  sleep "$VERIFY_PAUSE_S"
 done
 if [ "$treffer" = "$VERIFY_ABFRAGEN" ]; then
   echo "OK Rollender Deploy verifiziert: $s"; exit 0

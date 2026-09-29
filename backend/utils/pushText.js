@@ -23,13 +23,34 @@ function anhangText(messageType, fileName) {
   }
 }
 
-/**
- * Der Text der Mitteilung. Im Direktchat ohne Namen (der steht im Titel),
- * in Gruppen mit vorangestelltem Absender.
- */
-function chatPushText({ content, messageType, fileName, senderName, isDirectChat }) {
-  const text = (content && content.trim()) ? content : anhangText(messageType, fileName);
-  return isDirectChat ? text : `${senderName}: ${text}`;
+/** Was eine Chat-Mitteilung über die Art der Nachricht sagt — ohne ihren Inhalt. */
+function chatArtText(messageType) {
+  switch (messageType) {
+    case 'image': return 'Neues Foto';
+    case 'video': return 'Neues Video';
+    case 'audio': return 'Neue Sprachnachricht';
+    case 'file':  return 'Neue Datei';
+    case 'poll':  return 'Neue Umfrage';
+    default:      return 'Neue Nachricht';
+  }
 }
 
-module.exports = { anhangText, chatPushText };
+/**
+ * Der Text einer Chat-Mitteilung: wer geschrieben hat und was für eine
+ * Nachricht es ist, aber NICHT ihr Inhalt (Simon, 29.09.2026: „Absender, ohne
+ * Inhalt"). Bis dahin stand hier der vollständige Nachrichtentext — er lag
+ * damit bei Google (FCM) und auf iPhone und iPad bei Apple, und er war auf dem
+ * Sperrbildschirm lesbar, auch aus Direktchats Minderjähriger mit der Leitung.
+ * Dateinamen gehen aus demselben Grund nicht mehr mit. Nebenbei scheitern lange
+ * Nachrichten nicht mehr an der 4-KB-Grenze eines FCM-Pakets.
+ *
+ * Im Direktchat steht der Name im Titel, der Text sagt nur die Art; in Gruppen
+ * ist der Titel der Raumname, deshalb nennt der Text den Absender.
+ * `content` und `fileName` werden bewusst nicht mehr gelesen.
+ */
+function chatPushText({ messageType, senderName, isDirectChat }) {
+  const art = chatArtText(messageType);
+  return isDirectChat ? art : `${art} von ${senderName}`;
+}
+
+module.exports = { anhangText, chatArtText, chatPushText };

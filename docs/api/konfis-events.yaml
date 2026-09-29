@@ -621,6 +621,11 @@ paths:
         multipart/form-data, Feld "photo". Magic-Bytes-Prüfung (nur echte
         Bilder, sonst 415), AES-256-GCM-Verschluesselung, zufaelliger
         64-Hex-Dateiname wird zurueckgegeben (für POST /api/konfi/requests).
+        Typ-Filter utils/uploadTypen.js (REGELN.antrag): jedes gemeldete
+        Bild; bei allgemeiner Angabe (leer, application/octet-stream) der
+        Typ der Endung, sofern sie ein Bild nennt. BEHOBEN 29.09.2026: Vorher verwarf der Filter alles
+        andere still (400 "Kein Foto hochgeladen"); jetzt 415 "Dieser
+        Dateityp kann nicht hochgeladen werden.".
       requestBody:
         required: true
         content:
@@ -641,7 +646,7 @@ paths:
         "400": { description: Kein Foto im Request }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "415": { description: Datei ist kein Bild (Magic-Bytes) }
+        "415": { description: "Datei ist kein Bild: am gemeldeten Typ bzw. der Endung (\"Dieser Dateityp kann nicht hochgeladen werden.\", seit 29.09.2026) oder an den Magic-Bytes" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/konfi/activity-requests/{id}/photo:
@@ -729,6 +734,14 @@ paths:
         das Dashboard nannte dann ein Ziel, das niemand vollmachen konnte.
         Verdiente Abzeichen bleiben in earned sichtbar, auch wenn sie
         inzwischen abgeschaltet sind; als offenes Ziel zaehlen sie nicht.
+        GEAENDERT 29.09.2026 (nur der Wert, nicht die Form; Entscheidung
+        Simon "Serie im Fortschritt ehrlich zeigen"): progress.current und
+        progress.percentage eines offenen streak-Abzeichens sind 0, wenn die
+        letzte aktive Woche aelter als die Vorwoche ist -- die naechste aktive
+        Woche beginnt dann wieder bei 1 (utils/streakCalculation.js,
+        angezeigteSerie). Die Wertung zaehlt unveraendert ab der letzten
+        aktiven Woche. Gilt ebenso fuer /v2, GET /api/admin/konfis/{id}/badges
+        und die Teamer-Routen.
         Ersetzt durch GET /api/konfi/badges/v2 (31.08.2026), das dieselbe
         Huelle ohne die Verwaltungsfelder liefert. Diese Route bleibt
         unveraendert stehen, bis keine App im Store sie mehr ruft —
@@ -966,6 +979,11 @@ paths:
         rechnen beide Routen ueber utils/terminAnmeldeStatus.js (ladeZeitfenster);
         vorher lag dieselbe Query zweimal im Code. Unterschied bleibt allein der
         Rollen-Guard: hier nur Konfis.
+        GEAENDERT 29.09.2026 (Migration 177): created_at jedes Zeitfensters
+        kommt als ISO-Zeitpunkt (date-time, "2026-09-26T11:53:58.597Z") statt
+        als Text der Datenbank ("2026-09-26 13:53:58.597731+02"); die Spalte
+        ist jetzt timestamptz. Typ bleibt string, keine App liest das Feld
+        (geprueft: Store 2.2.0 und heutiger Stand).
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -1554,6 +1572,11 @@ paths:
         Routen rechnen seit 01.09.2026 ueber utils/terminAnmeldeStatus.js
         (ladeZeitfenster). Sortierung nach start_time aufsteigend, Zaehler als
         Zahlen (nicht Strings).
+        GEAENDERT 29.09.2026 (Migration 177): created_at jedes Zeitfensters
+        kommt als ISO-Zeitpunkt (date-time, "2026-09-26T11:53:58.597Z") statt
+        als Text der Datenbank ("2026-09-26 13:53:58.597731+02"); die Spalte
+        ist jetzt timestamptz. Typ bleibt string, keine App liest das Feld
+        (geprueft: Store 2.2.0 und heutiger Stand).
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
@@ -1579,6 +1602,11 @@ paths:
         entfernt sowie participants und unregistrations geleert
         (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route
         /api/konfi/events/:id/participants.
+        GEAENDERT 29.09.2026 (Migration 177): participants[].created_at und
+        timeslots[].created_at kommen als ISO-Zeitpunkt (date-time) statt als
+        Text der Datenbank ("2026-09-26 13:53:58.597731+02"); die Spalten sind
+        jetzt timestamptz. Typ bleibt string, keine App liest die Felder
+        (geprueft: Store 2.2.0 und heutiger Stand).
         BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen
         jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte
         "Ausgebucht" melden, die Liste "Offen"); Teamer stehen getrennt in
@@ -2007,6 +2035,11 @@ paths:
         die Leitung, die das Event sieht; vorher an jeden Admin.
         requestBody optional: reason (nur Konfi-Pfad, landet im Protokoll und
         in der Meldung). Antwortform unveraendert.
+        BEHOBEN 29.09.2026: Die "Event-Abmeldung" an die Leitung trug hier
+        als einziger Weg keine konfi_id in data -- nach der Loeschung der
+        Konfi blieb ihr Name im Postfach der Leitung stehen (bis 365 Tage).
+        Jetzt mit konfi_id wie auf DELETE /api/konfi/events/{id}/register;
+        loescheMitteilungenUeberPerson nimmt den Eintrag mit dem Konto mit.
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
@@ -2248,7 +2281,7 @@ paths:
         org-scope: true
         objekt-pruefung: "nur eigene Buchungen (confirmed/waitlist)"
       responses:
-        "200": { description: "Array (eb.*, event_name, event_date, location, mandatory, bring_items)" }
+        "200": { description: "Array (eb.*, event_name, event_date, location, mandatory, bring_items). created_at kommt seit 29.09.2026 (Migration 177) als ISO-Zeitpunkt statt als Text der Datenbank; Typ bleibt string." }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -2788,6 +2821,21 @@ paths:
         angerufen") wird deshalb NICHT vom Absagegrund ueberschrieben, und
         abgemeldet_durch_absage bleibt dort FALSE.
 
+        GEAENDERT 29.09.2026 — AUCH DIE VERBUCHTE SELBSTABMELDUNG WIRD
+        ENTSCHULDIGT (Entscheidung Simon: "Auch sie wird entschuldigt"). Eine
+        Buchung mit status='opted_out', die die Leitung schon auf 'present'
+        oder 'absent' verbucht hatte ("hatte sich abgemeldet, kam doch"),
+        blieb bis dahin verbucht -- der abgesagte Pflichttermin zaehlte als
+        besuchter (mandatory_event_count). Sie steht jetzt in derselben
+        Auswahl (utils/bookingUtils.js, vonAbsageErfasstSql; auch die
+        Punkte-Ruecknahme fasst sie): attendance_status='excused',
+        excuse_reason = der Absagegrund, abgemeldet_durch_absage=TRUE,
+        Urheber/Quelle geleert. Das Opt-out BLEIBT SICHTBAR: status bleibt
+        'opted_out' samt opt_out_reason, status_vor_absage bleibt NULL
+        (Migration 155 kennt dort nur confirmed/waitlist). Eine unverbuchte
+        Selbstabmeldung und ein schon eingetragenes 'excused' mit eigenem
+        Grund bleiben unangetastet. Antwortform unveraendert.
+
         attendance_set_by, attendance_set_at, checkin_quelle und
         checked_in_at werden auf NULL gesetzt: Die Absage ist keine
         Anwesenheitsbeurteilung (Begruendung Migration 148/151) und traegt
@@ -3011,6 +3059,17 @@ paths:
         zurueckgenommen; dieses UPDATE setzt attendance_status auf NULL. Die
         alte Anwesenheit ist damit weg, die Punkte ebenfalls. Gewollt: Der
         Termin steht wieder BEVOR, verbucht wird, wenn er gelaufen ist.
+
+
+        DIE VERBUCHTE SELBSTABMELDUNG (29.09.2026, siehe PUT /{id}/cancel):
+        Ihre Entschuldigung aus der Absage wird ebenso geraeumt, status BLEIBT
+        aber 'opted_out' -- sie steht wieder als Selbstabmeldung ohne
+        Verbuchung da. Sie ist NICHT wieder angemeldet: Sie zaehlt weder in
+        reaktiviert/participants_notified noch in durch_absage_abgemeldet_count
+        (GET /api/events, /api/events/cancelled, /api/events/{id}) und bekommt
+        keinen Push. Traegt die Leitung nach der Absage selbst etwas an ihrer
+        Zeile ein (PUT .../attendance), ist das eine Einzelentscheidung
+        (abgemeldet_durch_absage=FALSE) und bleibt beim Zuruecknehmen stehen.
 
 
         JEDE PERSON KEHRT AUF IHREN EIGENEN ALTEN STATUS ZURUECK
@@ -3961,10 +4020,14 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und nicht gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)"
+        objekt-pruefung: "Ziel muss IN DER AKTIVEN GEMEINDE Rolle konfi haben (ladeRolleInGemeinde: users.role_id zuhause, user_organizations.role_id in einer weiteren), dort ein Konfi-Profil haben (darfKonfi) und nicht gelöscht sein, sonst 404; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)"
         hinweis: >
           Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges.
           Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner).
+          Behoben 29.09.2026: Die Zugehoerigkeit las nur users.organization_id
+          und die Rolle am Konto — eine Konfi, die ueber user_organizations in
+          dieser Gemeinde Konfi ist, bekam 404, waehrend /:id/event-points
+          (darfKonfi) fuer sie antwortete.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Abzeichen mit Fortschritt }

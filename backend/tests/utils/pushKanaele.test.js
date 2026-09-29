@@ -216,8 +216,10 @@ describe('Zahl am App-Symbol auf Android: kommt aus den liegenden Mitteilungen',
   // jede Mitteilung die Gesamtzahl, ergaeben drei Pushes mit 3, 4 und 5
   // offenen Dingen am Symbol 12 statt 5. Ohne das Feld zaehlt jede
   // Mitteilung als eine -- das ist, was Samsung als Zahl und Pixel als Punkt
-  // zeigt. Die Zahl der App selbst geht auf Android ueber das Badge-Plugin
-  // (frontend/src/__tests__/config/androidAppSymbolZahl.test.ts).
+  // zeigt. Die Zahl der App selbst setzt auf Android die App (AppSymbolZahl,
+  // frontend/src/__tests__/config/androidPushEmpfang.test.ts). Einzige
+  // Ausnahme: Geraete mit Weg "mitteilungen" (naechster Block) -- dort
+  // zusammen mit einem festen tag, damit nur eine Mitteilung liegt.
   beforeEach(() => {
     gesendet.length = 0;
   });
@@ -237,6 +239,64 @@ describe('Zahl am App-Symbol auf Android: kommt aus den liegenden Mitteilungen',
     expect(gesendet[0].android.notification.notificationCount).toBeUndefined();
     // iOS bleibt, wie es ist: dort setzt aps.badge die Zahl direkt.
     expect(gesendet[0].apns.payload.aps.badge).toBe(7);
+  });
+
+  it('schickt auch Geraeten mit Weg "anbieter" keinen tag und keine Zahl', async () => {
+    // Dort setzt die App die Zahl selbst (stilles badge_update hinterher);
+    // die Mitteilungen bleiben einzeln in der Leiste wie auf dem iPhone.
+    await firebaseModul.sendFirebasePushNotification('token-x', {
+      title: 'Neue Nachricht', body: 'B', badge: 7, appSymbolWeg: 'anbieter', data: { type: 'chat' }
+    });
+
+    expect(Object.keys(gesendet[0].android.notification).sort()).toEqual(['channelId', 'defaultSound', 'sound']);
+  });
+});
+
+describe('Zahl am App-Symbol auf Android, Weg "mitteilungen" (Samsung, Xiaomi)', () => {
+  // Simon, 29.09.2026: "Ich will Android exakt gleich wie iOS" -- gewaehlt
+  // "Zahl wie iOS". Wo der Startbildschirm die Zahl nur aus den liegenden
+  // Mitteilungen rechnet, gibt es keinen anderen Weg: Jede Mitteilung
+  // ersetzt die vorige (fester tag) und traegt die Gesamtzahl. Weil dann
+  // immer nur EINE liegt, ist die Summe des Startbildschirms die Zahl --
+  // das Problem der Addition (Test oben) tritt nicht auf.
+  beforeEach(() => {
+    gesendet.length = 0;
+  });
+
+  it('gibt der Mitteilung den festen tag und die Gesamtzahl mit', async () => {
+    await firebaseModul.sendFirebasePushNotification('token-x', {
+      title: 'Neue Nachricht', body: 'B', badge: 7, appSymbolWeg: 'mitteilungen', data: { type: 'chat', roomId: '96' }
+    });
+
+    expect(gesendet).toHaveLength(1);
+    expect(gesendet[0].android.notification).toEqual({
+      channelId: 'konfi_chat',
+      sound: 'default',
+      defaultSound: true,
+      tag: 'konfi_app_symbol',
+      notificationCount: 7,
+    });
+    // Alles andere bleibt: Prioritaet, iOS-Zahl, data ohne Zusatzfeld.
+    expect(gesendet[0].android.priority).toBe('high');
+    expect(gesendet[0].apns.payload.aps.badge).toBe(7);
+    expect(gesendet[0].data).toEqual({ type: 'chat', roomId: '96' });
+  });
+
+  it('traegt auch die 0, wenn nichts offen ist', async () => {
+    await firebaseModul.sendFirebasePushNotification('token-x', {
+      title: 'Morgen', body: 'Konfistunde', badge: 0, appSymbolWeg: 'mitteilungen', data: { type: 'event_reminder' }
+    });
+
+    expect(gesendet[0].android.notification.tag).toBe('konfi_app_symbol');
+    expect(gesendet[0].android.notification.notificationCount).toBe(0);
+  });
+
+  it('der tag ist derselbe, unter dem die App die liegende Mitteilung sucht', () => {
+    const { MITTEILUNG_TAG } = require('../../utils/appSymbolWeg');
+    const java = fs.readFileSync(path.join(__dirname,
+      '../../../frontend/android/app/src/main/java/de/godsapp/konfiquest/AppSymbolZahl.java'), 'utf8');
+    expect(MITTEILUNG_TAG).toBe('konfi_app_symbol');
+    expect(java).toContain(`static final String MITTEILUNG_TAG = "${MITTEILUNG_TAG}";`);
   });
 });
 

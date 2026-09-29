@@ -369,7 +369,7 @@ describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
   ])('%s: Link erst nach der Prüfung und dem Öffnen', (datei) => {
     const quelle = lies(datei);
     const posPruefung = quelle.indexOf('if (!istWebLink(url)) {');
-    const posOeffnen = quelle.indexOf("window.open(url, '_blank');", posPruefung);
+    const posOeffnen = quelle.indexOf('linkOeffnen(url);', posPruefung);
     const posMessung = quelle.indexOf("trackHandlung('material-abgerufen', { inhalt: 'link' });");
     expect(posPruefung).toBeGreaterThan(-1);
     expect(posOeffnen).toBeGreaterThan(posPruefung);

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- allowBackup=false: Die App haelt Login-Token und Chat-Inhalte von
          Jugendlichen vor. Mit Androids Auto-Backup landeten die im Google-Konto
@@ -77,6 +78,43 @@
 
         </activity>
 
+        <!-- EIN Empfaenger fuer Push-Nachrichten (29.09.2026).
+
+             KonfiMessagingService setzt die Zahl am App-Symbol auch bei
+             geschlossener App: Der Server schickt dafuer ein reines
+             Datenpaket (badge_update), und nur ein Messaging-Dienst wird
+             davon geweckt, nicht die WebView. Auf dem iPhone erledigt das
+             aps.badge. Alles andere reicht der Dienst unveraendert an
+             @capacitor/push-notifications weiter, von dessen Dienst er
+             abgeleitet ist: Empfang bei offener App
+             ('pushNotificationReceived') und neuer Token ('registration')
+             bleiben, wie sie waren. Das Antippen laeuft ueber die Activity.
+
+             Die Dienste der beiden Plugins sind abgemeldet. Beide hoeren auf
+             MESSAGING_EVENT, und FCM stellt jede Nachricht nur EINEM Dienst
+             zu (resolveService; bei gleicher Prioritaet der erste im
+             gemergten Manifest). Gemessen am gemergten Manifest des
+             Debug-Baus vom 29.09.2026: Der Dienst von
+             @capacitor-firebase/messaging stand dort vor dem des
+             Push-Plugins und bekam alles; 'pushNotificationReceived'
+             feuerte auf Android nie. Von @capacitor-firebase/messaging
+             braucht die App nur getToken() und deleteToken(); beides spricht
+             das Firebase-SDK direkt an, ohne Dienst.
+             Geprueft in frontend/src/__tests__/config/androidPushEmpfang.test.ts. -->
+        <service
+            android:name=".KonfiMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <service
+            android:name="com.capacitorjs.plugins.pushnotifications.MessagingService"
+            tools:node="remove" />
+        <service
+            android:name="io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService"
+            tools:node="remove" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -86,6 +124,30 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Symbol und Farbe der Mitteilungen (29.09.2026, Simon am Geraet:
+             "die notification ist nicht korrekt gestyled").
+
+             Ohne diese Eintraege nimmt das FCM-SDK das App-Symbol als kleines
+             Symbol. Android wertet davon nur die Deckkraft aus; das
+             Launcher-Symbol ist ein volles Quadrat, heraus kam ein weisser
+             bzw. grauer Fleck in Statusleiste und Mitteilung, ohne Farbe.
+             ic_stat_konfi ist die Lutherrose der Monochrom-Ebene des
+             App-Symbols, weiss auf durchsichtig, 20 dp Motiv auf 24 dp. Die
+             Farbe steht in values/ und values-night/benachrichtigung.xml.
+
+             Beide Wege lesen dieselben Eintraege: die Mitteilung, die Android
+             bei geschlossener App selbst zeigt (FCM-SDK), und die, die
+             @capacitor/push-notifications bei offener App baut
+             (CommonNotificationBuilder mit den Metadaten der App). Das Plugin
+             hat dafuer keine eigene Einstellung.
+             Geprueft in frontend/src/__tests__/config/androidMitteilungsSymbol.test.ts. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_konfi" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/benachrichtigung_farbe" />
     </application>
 
     <!-- Permissions -->
@@ -121,6 +183,12 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
+    <!-- Sonys Zahl-Anbieter nimmt die Zahl nur mit dieser Berechtigung an
+         (29.09.2026). ShortcutBadger bringt sie ebenfalls mit; hier steht sie,
+         weil die App den Anbieter selbst anspricht (AppSymbolZahl.java) und
+         nicht davon abhaengen soll, welche Bibliothek sie gerade mitbringt. -->
+    <uses-permission android:name="com.sonymobile.home.permission.PROVIDER_INSERT_BADGE" />
+
     <!-- Zahl am App-Symbol (29.09.2026). Android hat dafuer keine offizielle
          Schnittstelle; das Badge-Plugin nutzt ShortcutBadger, das den
          Launcher sucht und ueber dessen eigene Wege anspricht. Seit
@@ -131,9 +199,24 @@
 
          Angemeldet ist nur, was ShortcutBadger tatsaechlich benutzt:
          die Suche nach dem Startbildschirm, der Broadcast, ueber den Samsung
-         die Zahl annimmt, und die Zahl-Anbieter von Samsung, Huawei und
-         OPPO. Bewusst NICHT QUERY_ALL_PACKAGES, das verlangt im Play Store
-         eine eigene Begruendung.
+         die Zahl annimmt (ab Android 8 sucht ShortcutBadger zuerst seine
+         eigene Fassung me.leolin.shortcutbadger.BADGE_COUNT_UPDATE), und die
+         Zahl-Anbieter von Sony, Samsung, Huawei, OPPO/ZUK und ZTE. Bewusst
+         NICHT QUERY_ALL_PACKAGES, das verlangt im Play Store eine eigene
+         Begruendung.
+
+         SONY (29.09.2026, Simon am Xperia 1 VI: "nur ein kleiner blauer
+         Kreis", WhatsApp zeigt eine Zahl): SonyHomeBadger prueft mit
+         resolveContentProvider, ob es Sonys Zahl-Anbieter gibt, und nimmt
+         sonst den alten Broadcast com.sonyericsson.home.action.UPDATE_BADGE,
+         den heutige Xperia-Startbildschirme nicht mehr beachten. Ohne den
+         Eintrag hier sieht die App den Anbieter nicht. Dieselben Eintraege
+         braucht AppSymbolZahl.java: Es fragt den Startbildschirm (HOME) und
+         Sonys Anbieter selbst ab.
+
+         Abgeglichen mit dem Quelltext von ShortcutBadger 1.1.22 (29.09.2026).
+         Weggelassen sind nur die Wege zu Startbildschirmen, die es nicht
+         mehr gibt: HTC, Apex, ADW, Nova ueber TeslaUnread, EverythingMe.
 
          Der Pixel-Launcher und andere Standard-Launcher kennen keine Zahl von
          aussen; dort zeigt Android einen Punkt, solange eine Mitteilung der
@@ -147,8 +230,13 @@
         <intent>
             <action android:name="android.intent.action.BADGE_COUNT_UPDATE" />
         </intent>
+        <intent>
+            <action android:name="me.leolin.shortcutbadger.BADGE_COUNT_UPDATE" />
+        </intent>
+        <provider android:authorities="com.sonymobile.home.resourceprovider" />
         <provider android:authorities="com.sec.badge" />
         <provider android:authorities="com.huawei.android.launcher.settings" />
         <provider android:authorities="com.android.badge" />
+        <provider android:authorities="com.android.launcher3.cornermark.unreadbadge" />
     </queries>
 </manifest>
