@@ -452,6 +452,10 @@ iOS-Build 233 · Android versionCode 127
   Teamer:innen nur noch für Events ihrer Jahrgänge, für Events „Nur Team" und
   für Events ohne Jahrgang — also für die Events, die sie in ihrer Liste sehen.
   Die Org-Leitung kommt weiter an jeden Code der Gemeinde.
+- Wird ein Konto gelöscht, bleiben die Einladungscodes, die die Person für
+  die Gemeinde angelegt hat, gültig — wie ihre Events, ihr Material und ihre
+  Badges, jeweils ohne ihren Namen. Bisher verschwanden die Codes mit dem
+  Konto.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
@@ -1147,6 +1151,14 @@ iOS-Build 233 · Android versionCode 127
 - Die Mails zum Ablauf der Lizenz und zur Löschung eines Jahrgangs zeigen
   Namen mit Sonderzeichen wie „&" oder „<" so an, wie sie eingegeben wurden,
   statt sie als Formatierung zu lesen.
+- Wird ein Konto gelöscht — von der Leitung, von der Person selbst oder nach
+  der Konfirmation von allein —, geht wirklich alles mit, was zu ihr gehört:
+  auch ihre Zweiergespräche samt der Bilder und Dateien darin und alles aus
+  weiteren Gemeinden. Löscht die Leitung eine Teamer:in, rückt auf ihre
+  Plätze bei Events jetzt die Warteliste nach.
+- Wer in einer weiteren Gemeinde mitarbeitet und dort einen Antrag gestellt
+  hat, kann sein Konto wieder selbst löschen; bisher brach das mit einem
+  Fehler ab.
 
 ### Sonstiges
 - Der Anmeldeschlüssel, den die App bei jeder Anfrage mitschickt, enthält

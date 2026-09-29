@@ -1,7 +1,6 @@
 const PushService = require('./pushService');
 const cron = require('node-cron');
-const { deleteKonfiCascade } = require('../utils/konfiDeletion');
-const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
 const emailService = require('./emailService');
 const apm = require('../utils/apm');
 const { formatUhrzeit } = require('../utils/zeitformat');
@@ -1543,7 +1542,8 @@ class BackgroundService {
    * Pro Jahrgang (Fehler-Isolation, D-15):
    *  - HARD-DELETE (>= 120 Tage seit Stichtag): aktive Konfis dieses
    *    Jahrgangs (nur r.name='konfi' -> Teamer-Ausnahme D-10) werden kaskadierend
-   *    via deleteKonfiCascade gelöscht (je Konfi eigene Transaktion).
+   *    via kontoDatenLoeschen gelöscht (je Konfi eigene Transaktion,
+   *    Dateien nach dem COMMIT; utils/kontoLoeschen.js).
    *  - SOFT-DELETE (>= 60 und < 120 Tage, deleted_at IS NULL): aktive Konfis
    *    erhalten deleted_at + archived_at (NOW()). Idempotent durch IS NULL-Bedingung.
    *
@@ -1767,7 +1767,7 @@ class BackgroundService {
         // Bewusst KEIN deleted_at-Guard: ab Tag 120 wird hart gelöscht, auch wenn
         // der Soft-Delete-Lauf (Tag 60-120) nie stattfand (z.B. Cron-Ausfall) —
         // sonst bliebe der Datensatz über die Aufbewahrungsfrist hinaus erhalten.
-        // deleteKonfiCascade entfernt den User physisch -> kein wiederholter Lauf.
+        // kontoDatenLoeschen entfernt den User physisch -> kein wiederholter Lauf.
         const { rows: hardKandidaten } = await db.query(
           `SELECT u.id
              FROM users u
@@ -1790,23 +1790,31 @@ class BackgroundService {
             console.error(`Auto-Deletion: Client-Fehler bei Konfi ${konfi.id} (Jahrgang ${jg.id}):`, clientErr.message);
             continue;
           }
+          let ergebnis = null;
           try {
             await client.query('BEGIN');
-            // Mit dem Konto verschwinden die Buchungen — auf die frei
-            // gewordenen Plaetze rueckt nach (Luecke geschlossen 15.09.2026).
-            const nachgerueckt = await deleteKonfiCascade(client, konfi.id, jg.organization_id);
+            // Dieselbe Funktion wie jeder andere Kontoloeschweg
+            // (utils/kontoLoeschen.js). Mit dem Konto verschwinden die
+            // Buchungen — auf die frei gewordenen Plaetze rueckt nach (Luecke
+            // geschlossen 15.09.2026).
+            ergebnis = await kontoDatenLoeschen(client, konfi.id);
             await client.query('COMMIT');
             totalHard++;
-            // Benachrichtigung nach dem COMMIT; Fehler werden dort je Person
-            // geschluckt und duerfen den Lauf nicht abbrechen. In einer
-            // gesperrten Gemeinde nicht (BF-22) -- nachgerueckt ist trotzdem.
-            if (jg.org_aktiv) await meldeNachrueckern(db, jg.organization_id, nachgerueckt);
           } catch (delErr) {
             try { await client.query('ROLLBACK'); } catch (_) { /* ignore */ }
             console.error(`Auto-Deletion: Hard-Delete fuer Konfi ${konfi.id} (Jahrgang ${jg.id}) fehlgeschlagen:`, delErr.message);
+            continue;
           } finally {
             client.release();
           }
+          // Nach dem COMMIT: Dateien von der Platte, Sitzung beenden, dann
+          // Benachrichtigung; Fehler werden dort geschluckt und duerfen den
+          // Lauf nicht abbrechen. In einer gesperrten Gemeinde keine Meldung
+          // (BF-22) -- nachgerueckt ist trotzdem.
+          await kontoDateienLoeschen(ergebnis?.dateien);
+          invalidateUserCache(konfi.id);
+          liveUpdate.disconnectUserSockets(konfi.id);
+          await meldeNachKontoLoeschung(db, ergebnis, { melden: jg.org_aktiv });
         }
 
         // --- SOFT-DELETE (>= 60 und < 120 Tage, deleted_at IS NULL) ---

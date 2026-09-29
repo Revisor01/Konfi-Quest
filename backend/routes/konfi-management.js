@@ -5,7 +5,7 @@ const { handleValidationErrors, commonValidations, getPointField } = require('..
 const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
-const { deleteKonfiCascade } = require('../utils/konfiDeletion');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
@@ -585,9 +585,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     });
 
     // DELETE a konfi
+    // Das Konto geht mit allem, was zur Person gehoert, auch den Dateien
+    // (utils/kontoLoeschen.js -- dieselbe Funktion wie Selbstloeschung,
+    // automatische Loeschung und DELETE /users/:id; Simon, 28.09.2026:
+    // "konto löschen muss wirklich alles löschen.").
     router.delete('/:id', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const userId = req.params.id;
         const client = await db.getClient();
+        let ergebnis = null;
         try {
             await client.query('BEGIN');
 
@@ -613,35 +618,39 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
 
-            // Kaskadierende Löschung über gemeinsame Funktion (D-04, Single Source of Truth).
-            // Sie raeumt auch die Wartelisten nach: Jede bestaetigte Buchung der
+            // Gemeinsame Loeschfunktion fuer alle Kontoloeschwege. Sie raeumt
+            // auch die Wartelisten nach: Jede bestaetigte Buchung der
             // geloeschten Person gibt einen Platz frei (Luecke geschlossen
             // 15.09.2026) und liefert die Nachgerueckten zurueck.
-            const nachgerueckteLoeschung = await deleteKonfiCascade(client, userId, req.user.organization_id);
+            ergebnis = await kontoDatenLoeschen(client, userId);
 
             await client.query('COMMIT');
-            res.json({ message: 'Konfi erfolgreich gelöscht' });
-
-            // Rechte-Cache leeren (Audit 26.09.2026, Sicherheit BF-10): Sonst
-            // bediente die laufende Sitzung des geloeschten Kontos die API
-            // noch bis zu 30 Sekunden weiter (TTL in rbac.js).
-            invalidateUserCache(parseInt(userId));
-
-            await meldeNachrueckern(db, req.user.organization_id, nachgerueckteLoeschung);
-
-            // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
-            liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
-            // Socket trennen: sonst empfaengt das geloeschte Konto weiter
-            // Org-Updates, bis die App neu gestartet wird (Audit 22.08.2026).
-            liveUpdate.disconnectUserSockets(userId);
-
         } catch (err) {
             await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
  console.error('Database error in DELETE /konfis/:id:', err);
-            res.status(500).json({ error: 'Datenbankfehler' });
+            return res.status(500).json({ error: 'Datenbankfehler' });
         } finally {
             client.release();
         }
+
+        // Nach dem COMMIT: erst die Dateien, dann die Antwort. Ein Fehler
+        // dabei kippt die festgeschriebene Loeschung nicht (wirft nie).
+        await kontoDateienLoeschen(ergebnis?.dateien);
+        res.json({ message: 'Konfi erfolgreich gelöscht' });
+
+        // Rechte-Cache leeren (Audit 26.09.2026, Sicherheit BF-10): Sonst
+        // bediente die laufende Sitzung des geloeschten Kontos die API
+        // noch bis zu 30 Sekunden weiter (TTL in rbac.js).
+        invalidateUserCache(parseInt(userId));
+        // Socket trennen: sonst empfaengt das geloeschte Konto weiter
+        // Org-Updates, bis die App neu gestartet wird (Audit 22.08.2026).
+        liveUpdate.disconnectUserSockets(userId);
+
+        // Nachgerueckte benachrichtigen, Chatlisten der Gespraechspartner auffrischen.
+        await meldeNachKontoLoeschung(db, ergebnis);
+
+        // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
+        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
     });
 
     // Regenerate password for a konfi

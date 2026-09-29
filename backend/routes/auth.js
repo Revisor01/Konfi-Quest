@@ -17,8 +17,7 @@ const { body, param } = require('express-validator');
 const validator = require('validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { validatePassword } = require('../utils/passwordUtils');
-const { deleteKonfiCascade } = require('../utils/konfiDeletion');
-const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
 const { checkKonfiLimit } = require('../utils/konfiLimit');
 const PushService = require('../services/pushService');
 // Empfaenger von "Neue Registrierung": die Leitung des Jahrgangs
@@ -536,7 +535,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
   // Delete own account (Self-Delete, D-01/D-02/D-03)
   // Gilt für ALLE Rollen (Konfi, Teamer, Admin) - nur rbacVerifier, kein requireAdmin.
-  // Sofortiger kaskadierender Hard-Delete nach Passwort-Bestaetigung.
+  // Sofortiger Hard-Delete nach Passwort-Bestaetigung -- ueber alle
+  // Gemeinden, mit allem, was zur Person gehoert (utils/kontoLoeschen.js,
+  // dieselbe Funktion wie die drei anderen Kontoloeschwege).
   router.post('/delete-account', rbacVerifier, async (req, res) => {
     const { password } = req.body;
     const userId = req.user.id;
@@ -583,14 +584,14 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         }
       }
 
-      // Gesamte Kaskade in einer Transaktion (T-114-06): alles oder nichts.
+      // Alles in einer Transaktion (T-114-06): alles oder nichts. Mit dem
+      // Konto verschwinden auch die Buchungen; auf die frei werdenden Plaetze
+      // rueckt nach (Luecke geschlossen 15.09.2026).
       const client = await db.getClient();
-      // Wer auf die frei werdenden Plaetze nachgerueckt ist: Mit dem Konto
-      // verschwinden auch die Buchungen (Luecke geschlossen 15.09.2026).
-      let nachgerueckt = [];
+      let ergebnis = null;
       try {
         await client.query('BEGIN');
-        nachgerueckt = await deleteKonfiCascade(client, userId, user.organization_id);
+        ergebnis = await kontoDatenLoeschen(client, userId);
         await client.query('COMMIT');
       } catch (txErr) {
         await client.query('ROLLBACK');
@@ -598,6 +599,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       } finally {
         client.release();
       }
+
+      // Dateien erst nach dem COMMIT -- ein ROLLBACK darf keine kosten.
+      await kontoDateienLoeschen(ergebnis?.dateien);
 
       res.json({ message: 'Account erfolgreich gelöscht' });
 
@@ -607,7 +611,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       // Benachrichtigung NACH dem COMMIT und fehlertolerant — die Loeschung
       // ist festgeschrieben, ein Push-Fehler darf sie nicht mehr kippen.
-      await meldeNachrueckern(db, user.organization_id, nachgerueckt);
+      // Nachgerueckte je Gemeinde ihres Events, dazu die Chatlisten der
+      // Gespraechspartner:innen.
+      await meldeNachKontoLoeschung(db, ergebnis);
 
       // Admin-Liste aktualisieren und den Socket des geloeschten Kontos trennen —
       // sonst empfing er weiter Org-Updates und die Liste blieb stehen

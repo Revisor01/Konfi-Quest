@@ -493,7 +493,8 @@ Sich selbst kann niemand deaktivieren.
 
 **Die Konfi-Zeit ist vorbei.** 60 Tage nach der Konfirmation nimmt die App
 ehemalige Konfis automatisch aus den Listen der Leitung, nach 120 Tagen werden
-ihre Konten endgültig gelöscht. Dazwischen ist die Anmeldung ebenso gesperrt
+ihre Konten endgültig gelöscht (was dabei verschwindet, steht unter
+[Ein Konto löschen](05-rollen.md#ein-konto-loeschen)). Dazwischen ist die Anmeldung ebenso gesperrt
 wie bei einem deaktivierten Konto — die App meldet „Dein Zugang wurde
 deaktiviert", und wer noch angemeldet war, wird abgemeldet. Wer nach der
 Konfirmation weiter dabei sein soll, wird vorher

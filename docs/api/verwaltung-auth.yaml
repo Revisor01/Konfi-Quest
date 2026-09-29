@@ -402,15 +402,17 @@ paths:
               properties:
                 password: { type: string, description: "Bestaetigung mit aktuellem Passwort" }
       responses:
-        "200": { description: "Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (utils/konfiDeletion.js, loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Antwortform unveraendert" }
+        "200": { description: "{ message: 'Account erfolgreich gelöscht' } -- Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Seit 28.09.2026 ueber utils/kontoLoeschen.js, dieselbe Funktion wie DELETE /admin/konfis/{id} (Regel und Umfang dort): alles der Person in ALLEN Gemeinden, Zweiergespraeche ganz, Zaehler der Anmeldesperre, Dateien nach dem COMMIT; was sie fuer eine Gemeinde angelegt hat, bleibt ohne Verweis. Antwortform unveraendert" }
         "400": { description: "Passwort fehlt oder falsch" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { description: "Letzte Person mit Org-Leitung in ihrer Gemeinde (seit 26.08.2026)" }
+        "500": { description: "BEHOBEN 28.09.2026: Hatte die Person Antraege in einer WEITEREN Gemeinde, scheiterte die Loeschung am Fremdschluessel activity_requests_konfi_id_fkey (die alte Kaskade raeumte nur die Stamm-Gemeinde ab) -- eine eingeladene Teamer:in konnte ihr Konto nicht loeschen" }
       x-berechtigung:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
         org-scope: false
         objekt-pruefung: "Nur eigener Account; Passwort-Bestaetigung im Handler"
-        hinweis: "Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
+        hinweis: "UEBERHOLT seit 26.08.2026: Die letzte Person mit Org-Leitung in ihrer Gemeinde bekommt 409, wie in DELETE /users/:id. Vorher stand hier: Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
 
   /api/auth/update-email:
     post:
@@ -1718,10 +1720,22 @@ paths:
         Einladung beantwortet -- Kennung konfi_id bzw. user_id im data-Teil).
         Vorher standen sie mit Name und Grund bis zum 365-Tage-Aufraeumen bei
         der Leitung.
+        GEAENDERT 28.09.2026 (Simon: "konto löschen muss wirklich alles
+        löschen."): Fall 3 hat keinen eigenen Loeschblock mehr, sondern ruft
+        utils/kontoLoeschen.js -- dieselbe Funktion wie DELETE
+        /admin/konfis/{id}, POST /auth/delete-account und die
+        Auto-Loeschung (Regel und Umfang bei DELETE /admin/konfis/{id} in
+        konfis-events). BEHOBEN dabei: Auf die frei werdenden Plaetze der
+        Person rueckt jetzt die Warteliste nach (Team-Platz an wartende
+        Teamer:innen), mit Push; Zweiergespraeche mit ihr gehen ganz (vorher
+        nur, wenn niemand mehr darin sass); Einladungscodes der Person
+        bleiben der Gemeinde (vorher geloescht); der Zaehler der
+        Anmeldesperre geht mit. Fall 1 und 2 unveraendert -- dort bleibt das
+        Konto.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
-        "200": { description: "{ message, konto_bleibt } -- Fall 1/2: Mitgliedschaft beendet bzw. Konto in eine andere Gemeinde umgezogen (konto_bleibt true, seit 27.09.2026); Fall 3: geloescht (konto_bleibt false). Rechte-Cache geleert (seit 26.09.2026, BF-10); Sockets getrennt; beim Loeschen Nachweisfotos und Challenge-Dateien nach COMMIT entfernt" }
+        "200": { description: "{ message, konto_bleibt } -- Fall 1/2: Mitgliedschaft beendet bzw. Konto in eine andere Gemeinde umgezogen (konto_bleibt true, seit 27.09.2026); Fall 3: geloescht (konto_bleibt false). Rechte-Cache geleert (seit 26.09.2026, BF-10); Sockets getrennt; beim Loeschen alle Dateien der Person (Nachweisfotos, Challenge- und Chat-Dateien, dazu die Dateien ihrer Zweiergespraeche) nach COMMIT entfernt" }
         "400": { description: "Selbst-Loeschung verboten" }
         "403": { description: "Hierarchie verletzt" }
         "404": { $ref: "#/components/responses/NotFound" }

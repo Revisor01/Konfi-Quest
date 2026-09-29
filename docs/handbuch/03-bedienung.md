@@ -146,7 +146,8 @@ Dasselbe gilt für **Personen**: Wird ein Konto gelöscht — von der Leitung,
 von der Person selbst oder nach der Konfirmation von allein —, verschwinden
 bei der Leitung auch alle Mitteilungen über diese Person: Registrierung,
 Ab- und Wieder-Anmeldungen samt Grund, Beiträge, neue Anträge, Zu- und
-Absagen des Teams, die Antwort auf eine Einladung. Endet deine
+Absagen des Teams, die Antwort auf eine Einladung; was sonst mit dem Konto
+geht, steht unter [Ein Konto löschen](05-rollen.md#ein-konto-loeschen). Endet deine
 **Mitgliedschaft in einer Gemeinde**, gehen deine Mitteilungen aus dieser
 Gemeinde mit (siehe [Mitglieder aus anderen Gemeinden
 verwalten](05-rollen.md#mitglieder-aus-anderen-gemeinden-verwalten)). Wird dir

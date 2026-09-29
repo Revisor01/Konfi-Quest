@@ -385,9 +385,8 @@ andere gibt. Was sie bei dir angelegt oder geschrieben hat — Events,
 Material, Nachrichten, vergebene Punkte —, bleibt mit ihrem Namen stehen.
 
 Gehört die Person nur deiner Gemeinde an, fragt die App **„Benutzer löschen"**
-— dann wird ihr Konto gelöscht, und mit ihm verschwinden die Mitteilungen über
-sie aus den Postfächern der Leitung (siehe
-[Mitteilungen im Postfach nachlesen](03-bedienung.md#mitteilungen-im-postfach-nachlesen)). Wer als Letzte:r in deiner Gemeinde zur
+— dann wird ihr Konto gelöscht, und mit ihm verschwindet alles, was zu ihr
+gehört (siehe [Ein Konto löschen](#ein-konto-loeschen)). Wer als Letzte:r in deiner Gemeinde zur
 Org-Leitung gehört, lässt sich auf keinem der beiden Wege entfernen.
 
 Dasselbe geschieht, wenn du eine Teamer:in in der
@@ -432,3 +431,60 @@ Alle anderen Rollenwechsel macht die Org-Leitung unter
 **[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-leitung)**. Die
 Konfi-Rolle lässt sich dabei nur vergeben, wenn die Person zu keiner weiteren
 Gemeinde gehört ([Konfi oder Team, nie beides](#in-mehreren-gemeinden-mitarbeiten)).
+
+## Ein Konto löschen
+
+Ein Konto verschwindet auf vier Wegen, und auf jedem geschieht dasselbe:
+
+- Die Person löscht es selbst, ganz unten im Profil unter **Account löschen**,
+  mit ihrem Passwort.
+- Die Leitung löscht eine Konfi in der
+  [Konfi-Liste](30-leitung.md#konfis-und-teamer-innen-verwalten).
+- Die Leitung löscht eine Teamer:in oder jemanden aus der Leitung unter
+  **Mehr › Benutzer:innen** oder in der Konfi-Liste unter **Team**. Gehört die
+  Person noch einer anderen Gemeinde an, endet dabei nur ihre Mitgliedschaft
+  bei dir, das Konto bleibt (siehe
+  [Jemanden entfernen, der auch in anderen Gemeinden mitarbeitet](#jemanden-entfernen-der-auch-in-anderen-gemeinden-mitarbeitet)).
+- 120 Tage nach der Konfirmation löscht die App die Konten ehemaliger Konfis
+  von allein (siehe
+  [Weiterkommen, wenn gar nichts geht](35-passwoerter.md#weiterkommen-wenn-gar-nichts-geht)).
+
+Rückgängig machen lässt sich das Löschen nicht.
+
+### Nachsehen, was mit dem Konto verschwindet
+
+Alles, was zur Person gehört oder was sie selbst gemacht hat — in allen
+Gemeinden:
+
+- Profil, Anmeldung auf allen Geräten und Mitgliedschaften in weiteren
+  Gemeinden, dazu offene Einladungen an sie
+- Punkte, Aktivitäten, Bonuspunkte, Badges, Stempel, Zertifikate, die
+  festgehaltene Konfi-Zeit und ihre Jahresrückblicke
+- Anmeldungen zu Events samt Abmeldegründen; auf ihre Plätze rückt die
+  Warteliste nach, wie bei einer Abmeldung
+- Anträge samt Nachweisfotos und Challenge-Beiträge samt Fotos, Videos und
+  Tonaufnahmen, auch aus der Galerie
+- ihre Nachrichten in allen Chats — auch im Jahrgangs- und im Team-Chat — mit
+  Bildern, Dateien und Umfragen, dazu ihre Stimmen in Umfragen anderer und
+  ihre Reaktionen. Antworten anderer auf ihre Nachrichten bleiben, ohne das
+  Zitat.
+- Zweiergespräche mit ihr ganz, auch mit den Nachrichten und Dateien der
+  anderen Seite
+- ihr Postfach und die Mitteilungen über sie im Postfach der Leitung (siehe
+  [Mitteilungen im Postfach nachlesen](03-bedienung.md#mitteilungen-im-postfach-nachlesen))
+
+Auch die Dateien auf dem Server werden gelöscht, nicht nur die Einträge.
+
+### Nachsehen, was der Gemeinde bleibt
+
+Was die Person als Leitung oder im Team **für die Gemeinde** angelegt hat,
+bleibt — ohne ihren Namen: Events, Material, Badges, Challenges, Level,
+Chat-Gruppen, Einladungscodes und die Jahresrückblicke, die sie für andere
+erstellt hat, dazu vergebene Punkte, verliehene Zertifikate, Notizen an den
+Anmeldungen anderer und Einladungen, die sie an andere geschickt hat. Wo die App sonst zeigt, wer etwas angelegt
+oder freigegeben hat, steht dann kein Name mehr. Material, das nur sie
+bearbeiten durfte, bearbeitet danach die Org-Leitung.
+
+Wer ihren Namen selbst in eine Nachricht, einen Gruppennamen oder eine Notiz
+geschrieben hat, behält diesen Text; die App kennt darin keinen Bezug zum
+Konto.

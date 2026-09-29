@@ -3843,6 +3843,24 @@ paths:
         geraten; sie gehen mit Termin bzw. Challenge oder nach 365 Tagen.
         Dieselbe Funktion laeuft bei POST /auth/delete-account, in der
         Auto-Loeschung und in DELETE /users/{id} (Fall 3).
+        GEAENDERT 28.09.2026 (Simon: "konto löschen muss wirklich alles
+        löschen."): deleteKonfiCascade ist durch utils/kontoLoeschen.js
+        ersetzt -- EINE Funktion fuer alle vier Kontoloeschwege,
+        DB-Aenderungen in der Transaktion der Route, Dateien erst nach dem
+        COMMIT (Fehler dabei ohne Dateinamen im Protokoll). Regel: Was zur
+        Person gehoert oder was sie als Teilnehmende erzeugt hat, geht, in
+        ALLEN Gemeinden; was sie als Leitung/Team fuer die Gemeinde angelegt
+        hat, bleibt, der Verweis wird NULL (je Fremdschluessel-Spalte in
+        LOESCHREGELN, von einem Waechter-Test gegen information_schema
+        geprueft). Neu mit: Zweiergespraeche der Person ganz (samt
+        Nachrichten und Dateien der anderen Seite -- der Raum trug ihren
+        Namen), der Zaehler der Anmeldesperre, Dateien und Zeilen aus einer
+        weiteren Gemeinde. BEHOBEN: Einladungscodes, die die Person angelegt
+        hatte, gingen mit (Migration 173: created_by darf NULL sein, der Code
+        bleibt der Gemeinde); Dateien wurden vor dem COMMIT geloescht.
+        Nachgerueckte werden je Gemeinde ihres Events benachrichtigt,
+        Gespraechspartner:innen bekommen roomsChanged. Antwortform
+        unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
@@ -3850,7 +3868,7 @@ paths:
         objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und darf nicht bereits gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen)"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "Konfi geloescht; Rechte-Cache der Person geleert (seit 26.09.2026, Audit Sicherheit BF-10 -- vorher galt die laufende Sitzung bis zu 30 s weiter)" }
+        "200": { description: "{ message: 'Konfi erfolgreich gelöscht' } -- Konto und alles der Person geloescht, Dateien nach dem COMMIT entfernt (seit 28.09.2026 utils/kontoLoeschen.js); Rechte-Cache der Person geleert (seit 26.09.2026, Audit Sicherheit BF-10 -- vorher galt die laufende Sitzung bis zu 30 s weiter)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
