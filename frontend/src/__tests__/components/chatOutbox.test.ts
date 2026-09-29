@@ -186,7 +186,7 @@ describe('mergeMitLokalen', () => {
     sender_id: 1,
     sender_name: 'A',
     sender_type: 'konfi',
-    created_at: new Date().toISOString(),
+    created_at: '2026-09-01T08:00:00.000Z',
     message_type: 'text',
     queueStatus: status,
     localId: clientId,

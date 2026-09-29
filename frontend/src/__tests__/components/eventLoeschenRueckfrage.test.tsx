@@ -35,7 +35,7 @@
 //
 // Gegenprobe (Fix zurueckgedreht) ist gelaufen: Beide Rueckfrage-Tests fallen.
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import type { Event } from '../../types/event';
@@ -271,6 +271,18 @@ const oeffneSeite = async () => {
   render(<AdminEventsPage />);
   await act(async () => { await Promise.resolve(); });
 };
+
+// Feste Uhr, nur Date (Audit Tests BF-15, 29.09.2026): Die Termine liegen
+// im Oktober 2026 und muessen unter "Aktuell" stehen. Mit der echten Uhr fiel
+// die ganze Datei ab dem 02.10.2026 -- die Termine rutschten nach
+// "Vergangen", der Loesch-Knopf der Attrappe verschwand mit ihnen.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-09-20T10:00:00+02:00'));
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 beforeEach(() => {
   offeneAlerts = [];

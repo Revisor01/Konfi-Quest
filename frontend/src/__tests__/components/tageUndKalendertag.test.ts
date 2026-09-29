@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { kalendertag, tageBis, formatTimeUntil } from '../../components/shared/eventFormatting';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -77,22 +77,27 @@ describe('tageBis', () => {
 });
 
 describe('formatTimeUntil', () => {
+  // Feste Uhr, nur Date (Audit Tests BF-15, 29.09.2026): Die Faelle unten
+  // rechneten mit der echten Uhr. Mitten am Tag ist das harmlos; fest steht
+  // es trotzdem, damit kein Lauf von Tag und Uhrzeit abhaengt.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 8, 26, 10, 0));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('sagt Heute statt Morgen fuer einen Termin in einer Stunde', () => {
     // Genau der gemeldete Fehler: Der Termin liegt eine Stunde in der
     // Zukunft, aber am selben Kalendertag. Feste Uhrzeit (10:00), damit die
     // Stunde nie ueber Mitternacht rutscht -- frueher stand die Erwartung
     // unter einem `if` und der Test prueft zwischen 23 und 24 Uhr nichts
     // (Audit 26.09.2026, Tests BF-06).
-    vi.useFakeTimers();
-    try {
-      vi.setSystemTime(new Date(2026, 8, 26, 10, 0));
-      const gleich = new Date();
-      gleich.setHours(gleich.getHours() + 1);
-      expect(gleich.getDate()).toBe(26);
-      expect(formatTimeUntil(gleich.toISOString())).toBe('Heute');
-    } finally {
-      vi.useRealTimers();
-    }
+    const gleich = new Date();
+    gleich.setHours(gleich.getHours() + 1);
+    expect(gleich.getDate()).toBe(26);
+    expect(formatTimeUntil(gleich.toISOString())).toBe('Heute');
   });
 
   it('sagt Vorbei fuer einen vergangenen Termin', () => {

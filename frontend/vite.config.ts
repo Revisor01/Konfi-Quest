@@ -90,6 +90,14 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
+    // Feste Zeitzone fuer jeden Lauf (Audit Tests 26.09.2026, BF-15). Die App
+    // rechnet Datum und Uhrzeit in der Zone des Geraets, und die Geraete
+    // stehen in Deutschland. Ohne diese Zeile lief die Suite lokal in der
+    // Zone des Rechners und in der CI in UTC; unter UTC+14 fielen 13 Tests
+    // (29.09.2026 gemessen). Wacht: src/__tests__/zeitzoneFest.test.ts.
+    env: {
+      TZ: 'Europe/Berlin',
+    },
     alias: {
       /*
        * Im Testlauf zusaetzlich auf die ESM-Fassung des Plugins zeigen.
