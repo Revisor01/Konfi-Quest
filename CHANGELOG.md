@@ -1122,6 +1122,9 @@ iOS-Build 233 · Android versionCode 127
 - Eine Rückblick-Ausgabe eines Jahrgangs löschen darf nur, wer im Jahrgang
   auch bearbeiten darf — wie beim Anlegen. Eine Zuweisung nur zum Ansehen
   reichte bisher zum Löschen.
+- Nach einer eigenen Nachricht steht an diesem Chat keine Eins mehr, auch
+  nicht kurz beim Öffnen der Chat-Übersicht; auch die Markierung „Neu" beim
+  Öffnen eines Chats zählt eigene Nachrichten nicht mehr mit.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

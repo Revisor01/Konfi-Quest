@@ -124,6 +124,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 - **Auswirkung aus Nutzersicht:** Im Normalfall keine; im Fallback (Zähler aus `badge-counts` noch nicht geladen) steht kurz eine 1 am eigenen Chat.
 - **Beleg:** `C1 GET /rooms unread_count Raum 1 = 1 | badge-counts byRoom[1] = 0`.
 - **Empfehlung:** In `GET /rooms` `AND NOT (m.user_id = $1 AND m.user_type = $2)` ergänzen (Wert wird kleiner, Form bleibt) und den irreführenden Kommentar in `notifications.js:34-37` korrigieren.
+- **Nachtrag 28.09.2026:** behoben — `GET /chat/rooms` schließt eigene Nachrichten aus (`AND NOT (m.user_id = $1 AND m.user_type = $2)`, wie `badge-counts`); Feld und Werttyp bleiben (Zahl über den bigint-Parser). Die Store-Apps 2.2.0 und 2.3.0 lesen die Zahl als Rückfall hinter `chatUnreadByRoom` (Reiterzahl in `ChatOverview`) und beim Öffnen für den „Neu"-Trenner (`useChatSocket.ts`, `initialUnreadRef`) — beide Stellen werden mit der kleineren Zahl richtig, keine rechnet mit eigenen Nachrichten. Kommentar in `notifications.js` berichtigt. Test `backend/tests/routes/chatUngelesenOhneEigene.test.js` (5: nur eigene → 0, fremde mit eigener dazwischen → 2, Gegenseite zählt, gleiche Nummer anderer Typ zählt, Werttyp), jeweils gegen `badge-counts`; ohne Fix 3 rot. `notifications.test.js`, `chatRoomAccess.test.js` grün. API-Doku `chat-challenges.yaml` (Schema `ChatRoom.unread_count`).
 
 ### BF-11: E-Mail-Vorlagen setzen Namen unmaskiert ins HTML; ein Fehlerzweig ist unerreichbar
 - **Schwere:** NIEDRIG

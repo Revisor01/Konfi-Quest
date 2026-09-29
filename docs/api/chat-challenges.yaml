@@ -289,7 +289,7 @@ components:
         participant_count: { type: integer }
         partner_user_type: { type: [string, "null"], description: Rolle des Direktchat-Partners (admin/teamer/konfi) }
         is_team_only: { type: boolean }
-        unread_count: { type: integer }
+        unread_count: { type: integer, description: "Nachrichten nach dem eigenen Lesestand, ohne eigene, geloeschte und solche mit Datum in der Zukunft -- dieselbe Zaehlung wie chat.byRoom in GET /api/notifications/badge-counts. Bis 28.09.2026 zaehlte die Raumliste eigene Nachrichten mit (Audit Fachlogik Chat BF-10, behoben; Feld und Typ unveraendert)." }
         last_message:
           type: [object, "null"]
           properties:

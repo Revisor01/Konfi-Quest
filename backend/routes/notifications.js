@@ -33,9 +33,11 @@ module.exports = (db, verifyTokenRBAC) => {
   // Ersetzt im BadgeContext die frueheren Voll-Fetches von /chat/rooms +
   // /admin/activities/requests + /events, die nur für Zähler geladen wurden.
   // WICHTIG für Konsistenz mit den Listen-Ansichten:
-  // - chat.byRoom repliziert EXAKT die unread_count-Semantik der
-  //   GET /chat/rooms-Query (inkl. Mitzaehlen eigener Nachrichten) — die Werte
-  //   speisen chatUnreadByRoom, das ChatRoom/ChatOverview konsumieren.
+  // - chat.byRoom zaehlt wie unread_count der GET /chat/rooms-Query: ohne
+  //   eigene Nachrichten, ohne geloeschte und ohne solche mit Datum in der
+  //   Zukunft (bis 28.09.2026 zaehlte /chat/rooms eigene mit, obwohl hier
+  //   "exakt gleich" stand; Audit Fachlogik Chat BF-10) — die Werte speisen
+  //   chatUnreadByRoom, das ChatRoom/ChatOverview konsumieren.
   //   BEWUSST OHNE Mitgliedschafts-Sync (der läuft TTL-gesteuert in /rooms).
   // - pendingRequests entspricht dem pending-Filter der Admin-Antragsliste
   //   (GET /admin/activities/requests ist org-weit über activities.organization_id).

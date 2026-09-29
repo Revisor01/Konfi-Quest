@@ -917,6 +917,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               AND m.deleted_at IS NULL
               AND m.created_at > COALESCE(crs.last_read_at, '1970-01-01')
             AND m.created_at <= NOW()
+              -- Eigene Nachrichten zaehlen nicht (28.09.2026, Audit Fachlogik
+              -- Chat/Challenges/Rueckblick BF-10) -- wie GET
+              -- /notifications/badge-counts. Bis dahin zaehlte diese Stelle
+              -- sie mit; die App faellt ohne Wert aus badge-counts auf diese
+              -- Zahl zurueck (Reiter-Zahl, "Neu"-Trenner beim Oeffnen), die
+              -- Store-Apps 2.2.0/2.3.0 ebenso. Feld und Werttyp bleiben.
+              AND NOT (m.user_id = $1 AND m.user_type = $2)
           ) as unread_count,
           (
               SELECT json_build_object(
