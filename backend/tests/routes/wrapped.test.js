@@ -282,7 +282,22 @@ describe('Wrapped Routes', () => {
     // 07.09.2026 stand Produktion auf Migration 144, waehrend der Code schon
     // 145/146 voraussetzte. Genau so entsteht der Fehler mitten in der
     // Transaktion. Das Umbenennen macht ihn hier reproduzierbar.
+    //
+    // DER RECHTE-CACHE WIRD VORHER FRISCH GEFUELLT (29.09.2026, Paket I2).
+    // Fehlt user_jahrgang_assignments.jahrgang_id, scheitert auch die Abfrage,
+    // mit der middleware/rbac.js den Benutzer laedt -- die Anfrage endete dann
+    // schon dort mit 500 "Database error", nicht in der Route. Die Tests
+    // liefen nur, weil ein frueherer Test orgAdmin1 innerhalb der 30 s TTL in
+    // den Cache gebracht hatte; unter Last lag das laenger zurueck (einmal
+    // rot beobachtet). Deshalb gezielt: Eintrag leeren, eine Anfrage mit
+    // intaktem Schema laedt ihn neu, dann erst umbenennen. Der
+    // Produktionscode bleibt, wie er ist.
     async function ohneSpalte(tabelle, spalte, fn) {
+      require('../../middleware/rbac').invalidateUserCache(USERS.orgAdmin1.id);
+      const vorwaermen = await request(app)
+        .get('/api/wrapped/me')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(vorwaermen.status).toBe(404);
       await db.query(`ALTER TABLE ${tabelle} RENAME COLUMN ${spalte} TO ${spalte}_weg`);
       try {
         return await fn();
