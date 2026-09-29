@@ -220,6 +220,13 @@ jobs:
           npx tsc --noEmit
           npx vite build --logLevel warn
 
+      # Typpruefung der Tests und Konfigurationsdateien (29.09.2026, Audit
+      # Toolchain BF-07): tsconfig.json erfasst src/__tests__, vite.config.ts
+      # und capacitor.config.ts nicht; vorher 64 Typfehler, die niemand sah.
+      - name: Typpruefung der Tests
+        working-directory: frontend
+        run: npm run typecheck:tests
+
       # Die API-Referenz unter frontend/public/docs/api/ wird eingecheckt, damit
       # sie im Docker-Build landet (dessen Kontext ist ./frontend — docs/api/
       # und scripts/ liegen ausserhalb und sind dort nicht erreichbar).
