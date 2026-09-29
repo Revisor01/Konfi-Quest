@@ -222,9 +222,9 @@ Jeder Beitrag hat genau einen von drei Zuständen:
 
 Die Beiträge stehen in der Leitungs-Ansicht der Challenge, aufgeteilt auf
 Reiter: „Feed" zeigt nur Freigegebenes — denselben Blick, den die Konfis auf die
-Galerie haben. „Wartet" kommt nur bei Challenges mit Freigabe-Pflicht dazu,
-„Abgelehnt" nur, wenn es überhaupt eine Galerie gibt (bei „Nur Leitung" also
-nicht). Die Aktionen erreichst du, indem du einen Beitrag antippst oder
+Galerie haben. „Wartet" kommt nur bei Challenges mit Freigabe-Pflicht dazu und
+trägt die Zahl der wartenden Beiträge in Orange, „Abgelehnt" nur, wenn es
+überhaupt eine Galerie gibt (bei „Nur Leitung" also nicht). Die Aktionen erreichst du, indem du einen Beitrag antippst oder
 [nach links wischst](03-bedienung.md#etwas-loeschen-nach-links-wischen).
 
 - **Freigeben** — nur bei wartenden Beiträgen. Die Konfis der Jahrgänge bekommen
@@ -507,7 +507,10 @@ Fragezeichen erklärt die Zeichen zusammen mit den Status-Symbolen.
 Orange steht nur für Wartendes. Die Umschalter **Aktuell**, **Geplant** und
 **Archiv** tragen eine orange Zahl, sobald dort Beiträge auf eure Freigabe
 warten — so findest du auch wartende Beiträge an beendeten Challenges im
-Archiv. Neue Beiträge zählen dort nicht mit; siehe
+Archiv. In der geöffneten Challenge trägt der Reiter **Wartet** dieselbe
+orange Zahl für die Beiträge dieser Challenge; sie geht beim Freigeben und
+Ausblenden sofort mit. Neue Beiträge zählen an beiden Stellen nicht mit;
+siehe
 [Den Umschalter finden, hinter dem etwas auf dich wartet](03-bedienung.md#den-umschalter-finden-hinter-dem-etwas-auf-dich-wartet).
 
 Konfis sehen an der Challenge ebenfalls eine rote Zahl für ihre

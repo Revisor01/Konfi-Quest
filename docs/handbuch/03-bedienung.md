@@ -52,6 +52,7 @@ App-Symbol und den einzelnen Einträgen in der Liste.
 | Seite | Umschalter | Was die orange Zahl zählt |
 |---|---|---|
 | Challenges | Aktuell, Geplant, Archiv | Beiträge, die auf Freigabe warten — auch an beendeten Challenges im Archiv |
+| Geöffnete Challenge | Wartet | Beiträge dieser Challenge, die auf Freigabe warten |
 | Mitmachen | Events | Events, die auf Verbuchung warten; dieselbe Zahl steht unter „Verbuchen" |
 | Mitmachen | Aktivitäten | Anträge, die auf eure Entscheidung warten; dieselbe Zahl steht unter „Offen" |
 

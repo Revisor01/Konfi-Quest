@@ -226,8 +226,9 @@ iOS-Build 233 · Android versionCode 127
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   jeden neuen Beitrag seit dem letzten Öffnen, auch einen, der noch auf
   Freigabe wartet, und verschwindet beim Öffnen — wie im Chat. Orange steht
-  nur für Wartendes: im Feld mit Zahl und Uhr an der Challenge und an den
-  Umschaltern Aktuell, Geplant und Archiv.
+  nur für Wartendes: im Feld mit Zahl und Uhr an der Challenge, an den
+  Umschaltern Aktuell, Geplant und Archiv und in der geöffneten Challenge am
+  Reiter „Wartet“, wo die Zahl beim Freigeben und Ablehnen sofort mitgeht.
 - Ungelesene Mitteilungen zeigt die Glocke in jeder Rolle mit einem blauen
   Punkt statt mit einer Zahl; eine Zahl an der Glocke steht nur noch für
   Vorgänge, die aus einer Funklücke gesendet werden. Im Postfach trägt jede

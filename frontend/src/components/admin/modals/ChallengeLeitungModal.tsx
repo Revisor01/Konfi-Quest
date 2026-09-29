@@ -67,7 +67,8 @@ import { istWebLink } from '../../../utils/linkDisplay';
 import MusikLink from '../../shared/MusikLink';
 import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
 import { getChallengeStatus } from '../views/ChallengesManageView';
-import { anzahlBeitraege } from '../../../utils/challengeTexte';
+import { anzahlBeitraege, wartenAufFreigabeKurz } from '../../../utils/challengeTexte';
+import SegmentZahl from '../../shared/SegmentZahl';
 import { trackHandlung } from '../../../services/analytics';
 import type {
   AdminChallenge,
@@ -75,6 +76,16 @@ import type {
   ChallengeSubmission
 } from '../../../types/challenges';
 import { datumUhrzeit } from '../../../utils/dateUtils';
+
+// Welcher Zustand nach einer Moderations-Aktion gilt -- fuer die sofortige
+// Anzeige, bevor die Liste nachgeladen ist. Anonymisieren aendert ihn nicht.
+// Dieselbe Zuordnung wie im Server (PUT /challenges/admin/submissions/:id/moderate).
+const MODERATION_NEUER_STATUS: Record<'approve' | 'hide' | 'unhide' | 'anonymize', ChallengeSubmission['moderation_status'] | null> = {
+  approve: 'approved',
+  hide: 'hidden',
+  unhide: 'approved',
+  anonymize: null
+};
 
 // Die vier Moderations-Aktionen als grobe Messwerte. Fest verdrahtet, damit
 // nie ein technischer Bezeichner aus dem Backend an die Messung durchrutscht.
@@ -427,6 +438,16 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       // wirklich durchgesehen. Nur die Entscheidung — kein Beitrag, keine
       // Person, keine Begruendung.
       trackHandlung('beitrag-moderiert', { entscheidung: MODERATION_MESSWERT[action] });
+      // Den neuen Zustand SOFORT uebernehmen, nicht erst mit dem Nachladen:
+      // Die orange Zahl am Reiter "Wartet" und die Kachel gehen damit im
+      // selben Augenblick mit (29.09.2026). Das Nachladen bestaetigt danach
+      // den Stand des Servers.
+      const neuerStatus = MODERATION_NEUER_STATUS[action];
+      if (neuerStatus) {
+        setSubmissions((prev) => prev.map((s) => (
+          s.id === submission.id ? { ...s, moderation_status: neuerStatus } : s
+        )));
+      }
       await loadSubmissions();
       onChanged?.();
     } catch (err) {
@@ -767,8 +788,15 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
             {/* "Wartet" nur bei Challenges MIT Freigabe-Pflicht — ohne
                 Moderation ist jeder Beitrag sofort freigegeben, der Filter
                 waere immer leer. */}
+            {/* Orange Zahl wie am Umschalter Aktuell/Geplant/Archiv
+                (SegmentZahl, Simon 29.09.2026): so viele Beitraege dieser
+                Challenge warten auf Freigabe. Dieselbe Zaehlung wie die
+                Kachel "Wartet"; sie geht beim Freigeben und Ablehnen sofort
+                mit (moderate). Bei 0 steht keine Zahl. */}
             {challenge.moderated && (
-              <IonSegmentButton value="pending"><IonLabel>Wartet</IonLabel></IonSegmentButton>
+              <IonSegmentButton value="pending">
+                <IonLabel>Wartet<SegmentZahl anzahl={counts.pending} label={wartenAufFreigabeKurz(counts.pending)} /></IonLabel>
+              </IonSegmentButton>
             )}
             {/* "Ausgeblendet" ergibt nur Sinn, wenn es eine Gruppen-Galerie gibt,
                 aus der etwas herausgenommen werden koennte. Bei "nur Leitung"

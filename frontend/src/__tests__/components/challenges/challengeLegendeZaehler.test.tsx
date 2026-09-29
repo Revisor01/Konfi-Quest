@@ -5,7 +5,8 @@ import ChallengeLegendModal from '../../../components/shared/ChallengeLegendModa
 
 // Die Legende erklaert die Zeichen so, wie sie seit dem 29.09.2026 gelten
 // (Simon): rot am Symbol = neue Beitraege seit dem letzten Oeffnen, auch
-// wartende; orange = nur Wartendes.
+// wartende; orange = nur Wartendes, am Eck-Badge, am Umschalter und am
+// Reiter "Wartet".
 
 afterEach(() => cleanup());
 
@@ -26,5 +27,13 @@ describe('Challenge-Legende: Zaehler', () => {
     const { container } = render(<ChallengeLegendModal onClose={vi.fn()} />);
     expect(zeile(container, 'Zahl mit Uhr')).toBe('So viele Beiträge warten auf Freigabe.');
     expect(container.textContent).not.toContain('zählen auch in der roten Zahl');
+  });
+
+  it('orange Zahl am Umschalter und an „Wartet": wartende Freigaben', () => {
+    const { container } = render(<ChallengeLegendModal onClose={vi.fn()} />);
+    const text = zeile(container, 'Orange Zahl am Umschalter und an „Wartet“');
+    expect(text).toContain('So viele Beiträge warten auf Freigabe');
+    expect(text).toContain('am Reiter „Wartet“');
+    expect(text).toContain('Neue Beiträge zählen hier nicht mit.');
   });
 });

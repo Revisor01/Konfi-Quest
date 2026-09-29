@@ -84,13 +84,13 @@ const NEU_ENTRY: LegendEntry = {
   description: 'Neue Beiträge seit deinem letzten Öffnen, auch solche, die noch auf Freigabe warten — wie ungelesene Nachrichten im Chat. Sie verschwindet beim Öffnen.',
 };
 
-// Orange Zahl im Umschalter Aktuell/Geplant/Archiv (28.09.2026, zur
-// Ansicht): Wegweiser zum Reiter mit wartenden Freigaben, nur Wartendes.
+// Orange Zahl im Umschalter Aktuell/Geplant/Archiv (28.09.2026) und am
+// Reiter "Wartet" in der geoeffneten Challenge (29.09.2026): nur Wartendes.
 const SEGMENT_ENTRY: LegendEntry = {
   color: 'var(--app-color-warning)',
   zahl: '1',
-  label: 'Orange Zahl am Umschalter',
-  description: 'Hinter diesem Umschalter warten Beiträge auf Freigabe — auch im Archiv. Neue Beiträge zählen hier nicht mit.',
+  label: 'Orange Zahl am Umschalter und an „Wartet“',
+  description: 'So viele Beiträge warten auf Freigabe — am Umschalter Aktuell, Geplant und Archiv, auch im Archiv, und in der geöffneten Challenge am Reiter „Wartet“. Neue Beiträge zählen hier nicht mit.',
 };
 
 // Moderations-Badges aus ChallengeLeitungModal (STATUS_BADGE + CONSENT_BADGE).
