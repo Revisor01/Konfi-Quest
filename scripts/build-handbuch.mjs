@@ -19,7 +19,8 @@
  * Absatz, Liste, Tabelle, Zitat, Betonung, Code). Ein eigener kleiner Renderer
  * spart eine Abhaengigkeit, die sonst nur hier gebraucht wuerde.
  */
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, copyFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, statSync, rmSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -516,7 +517,168 @@ const MITLESEN = `
 })();
 </script>`;
 
-function main() {
+/*
+ * --- Bildschirmfotos (29.09.2026, Doku-Audit BF-18) ---
+ *
+ * NUR WAS DAS HANDBUCH ZEIGT. Bis hierher wurden alle PNGs aus
+ * docs/screenshots/ gespiegelt: 42 Bilder, 30.931.765 Bytes. Das Handbuch
+ * zeigt 15 davon; die 21 Play-Bilder und sechs iPhone-Bilder dienen dem
+ * Store. Jetzt landet unter bilder/ genau, was ein Kapitel einbindet — alles
+ * andere räumt der Generator weg.
+ *
+ * ALS WEBP. Die Quellen bleiben PNG (der Store will sie so, und
+ * scripts/screenshots.mjs schreibt sie so). Ausgeliefert wird eine
+ * WebP-Fassung in voller Auflösung, Qualität 0,85: Die 15 Bilder gehen von
+ * 12.055.134 auf rund 1,4 MB, Text und Kanten sind nebeneinander gelegt nicht
+ * zu unterscheiden (PSNR 37,6 bis 41 dB an Startseite und Chat).
+ *
+ * WARUM DIE CI DIESELBEN BYTES SIEHT. Kodiert wird mit dem Chromium aus
+ * Playwright (canvas.toDataURL) — dasselbe Werkzeug, das die Bilder aufnimmt,
+ * keine neue Abhängigkeit. Verschiedene Chromium-Fassungen kodieren aber
+ * nicht bytegleich. Deshalb kodiert der Generator NUR, wenn sich ein
+ * Quellbild geändert hat: bilder/stand.json hält je Bild die Prüfsumme des
+ * PNG und des erzeugten WebP. Passt beides, bleibt die eingecheckte Datei
+ * unangetastet — die CI (Schritt "Handbuch aktuell?") kodiert also nie und
+ * braucht kein Playwright. Ändert jemand ein Bild, ohne den Generator
+ * laufen zu lassen, will die CI neu kodieren, findet kein Playwright und
+ * bricht mit dem Hinweis unten ab — derselbe rote Schritt wie bei jedem
+ * vergessenen Neuerzeugen.
+ *
+ * Die Adresse trägt die Prüfsumme (?v=...). nginx liefert Bilder mit
+ * "immutable" und einem Jahr Gültigkeit aus; ohne sie sähen Leser nach dem
+ * nächsten Neuziehen der Bildschirmfotos bis zu ein Jahr lang die alten.
+ */
+const BILDER_QUELLE = join(WURZEL, 'docs', 'screenshots');
+const BILDER_STANDARD = join(WURZEL, 'frontend', 'public', 'docs', 'bilder');
+const WEBP_QUALITAET = 0.85;
+const STAND_DATEI = 'stand.json';
+
+const pruefsumme = (daten) => createHash('sha256').update(daten).digest('hex');
+
+/** Breite und Höhe aus dem IHDR-Block eines PNG. */
+function pngMasse(daten) {
+  return { breite: daten.readUInt32BE(16), hoehe: daten.readUInt32BE(20) };
+}
+
+function standLesen(verzeichnis) {
+  try {
+    const stand = JSON.parse(readFileSync(join(verzeichnis, STAND_DATEI), 'utf8'));
+    return stand && typeof stand.bilder === 'object' ? stand : { bilder: {} };
+  } catch {
+    return { bilder: {} };
+  }
+}
+
+/** Liegt für `schluessel` eine zum PNG passende WebP-Datei in `verzeichnis`? */
+function passendesWebp(verzeichnis, stand, schluessel, quellSumme) {
+  const eintrag = stand.bilder[schluessel];
+  if (!eintrag || stand.qualitaet !== WEBP_QUALITAET || eintrag.quelle !== quellSumme) return null;
+  const datei = join(verzeichnis, `${schluessel}.webp`);
+  if (!existsSync(datei)) return null;
+  const daten = readFileSync(datei);
+  return pruefsumme(daten) === eintrag.webp ? daten : null;
+}
+
+/** PNG -> WebP über das Chromium aus Playwright (nur wenn sich etwas geändert hat). */
+async function webpKodieren(auftraege) {
+  let chromium;
+  try {
+    ({ chromium } = await import('playwright'));
+  } catch {
+    throw new Error(
+      `Bildschirmfotos ohne passende WebP-Fassung: ${auftraege.map((a) => a.schluessel).join(', ')}.\n` +
+      '  Zum Kodieren braucht der Generator Playwright mit Chromium, wie scripts/screenshots.mjs:\n' +
+      '  "npm ci" in der Wurzel, dann "npx playwright install chromium" und den Generator erneut\n' +
+      '  laufen lassen. In der CI heißt dieser Abbruch: Bilder geändert, Generator nicht gelaufen.');
+  }
+  const browser = await chromium.launch();
+  try {
+    const seite = await browser.newPage();
+    const ergebnis = [];
+    for (const { png } of auftraege) {
+      const base64 = await seite.evaluate(async ({ png: daten, qualitaet }) => {
+        const bild = new Image();
+        bild.src = `data:image/png;base64,${daten}`;
+        await bild.decode();
+        const leinwand = document.createElement('canvas');
+        leinwand.width = bild.naturalWidth;
+        leinwand.height = bild.naturalHeight;
+        // alpha:false — Bildschirmfotos sind deckend, ohne Alphakanal wird
+        // die Datei kleiner.
+        leinwand.getContext('2d', { alpha: false }).drawImage(bild, 0, 0);
+        return leinwand.toDataURL('image/webp', qualitaet).split(',')[1];
+      }, { png: png.toString('base64'), qualitaet: WEBP_QUALITAET });
+      const webp = Buffer.from(base64, 'base64');
+      if (webp.subarray(0, 4).toString('latin1') !== 'RIFF' || webp.subarray(8, 12).toString('latin1') !== 'WEBP') {
+        throw new Error('Chromium hat kein WebP geliefert (canvas.toDataURL)');
+      }
+      ergebnis.push(webp);
+    }
+    return ergebnis;
+  } finally {
+    await browser.close();
+  }
+}
+
+/**
+ * Legt unter `ziel` genau die benutzten Bilder als WebP ab, räumt alles
+ * andere weg und schreibt stand.json. `benutzt`: Schlüssel "geraet/name" ->
+ * Pfad des Quell-PNG. Liefert je Schlüssel Adresse und Maße.
+ */
+async function bilderBereitstellen(benutzt, ziel) {
+  const alt = standLesen(ziel);
+  const vorrat = ziel === BILDER_STANDARD ? null : { verzeichnis: BILDER_STANDARD, stand: standLesen(BILDER_STANDARD) };
+  const neuerStand = { hinweis: 'Erzeugt von scripts/build-handbuch.mjs. Prüfsummen (SHA-256) von Quell-PNG und WebP; passt beides, wird nicht neu kodiert.', qualitaet: WEBP_QUALITAET, bilder: {} };
+  const ergebnis = new Map();
+  const zuKodieren = [];
+
+  for (const schluessel of [...benutzt.keys()].sort()) {
+    const png = readFileSync(benutzt.get(schluessel));
+    const quelle = pruefsumme(png);
+    const webp = passendesWebp(ziel, alt, schluessel, quelle)
+      ?? (vorrat && passendesWebp(vorrat.verzeichnis, vorrat.stand, schluessel, quelle));
+    if (webp) ergebnis.set(schluessel, { png, quelle, webp });
+    else zuKodieren.push({ schluessel, png, quelle });
+  }
+
+  if (zuKodieren.length) {
+    const kodiert = await webpKodieren(zuKodieren);
+    zuKodieren.forEach((a, i) => ergebnis.set(a.schluessel, { png: a.png, quelle: a.quelle, webp: kodiert[i] }));
+    console.log(`Bildschirmfotos neu als WebP kodiert: ${zuKodieren.map((a) => a.schluessel).join(', ')}`);
+  }
+
+  // Alles unter bilder/ entfernen, was nicht gebraucht wird: frühere PNGs,
+  // nicht mehr eingebundene Bilder, leere Geräte-Ordner.
+  const behalten = new Set([STAND_DATEI, ...[...ergebnis.keys()].map((k) => `${k}.webp`)]);
+  const aufraeumen = (ordner, rel = '') => {
+    if (!existsSync(ordner)) return;
+    for (const eintrag of readdirSync(ordner, { withFileTypes: true })) {
+      const pfad = rel ? `${rel}/${eintrag.name}` : eintrag.name;
+      if (eintrag.isDirectory()) {
+        aufraeumen(join(ordner, eintrag.name), pfad);
+        if (!readdirSync(join(ordner, eintrag.name)).length) rmSync(join(ordner, eintrag.name), { recursive: true });
+      } else if (!behalten.has(pfad)) {
+        rmSync(join(ordner, eintrag.name));
+      }
+    }
+  };
+  aufraeumen(ziel);
+
+  const adressen = new Map();
+  for (const [schluessel, { png, quelle, webp }] of [...ergebnis].sort(([a], [b]) => a.localeCompare(b))) {
+    const datei = join(ziel, `${schluessel}.webp`);
+    mkdirSync(dirname(datei), { recursive: true });
+    if (!existsSync(datei) || !readFileSync(datei).equals(webp)) writeFileSync(datei, webp);
+    const summe = pruefsumme(webp);
+    neuerStand.bilder[schluessel] = { quelle, webp: summe };
+    adressen.set(schluessel, { src: `/docs/bilder/${schluessel}.webp?v=${summe.slice(0, 10)}`, ...pngMasse(png) });
+  }
+  mkdirSync(ziel, { recursive: true });
+  writeFileSync(join(ziel, STAND_DATEI), `${JSON.stringify(neuerStand, null, 2)}\n`, 'utf8');
+  return adressen;
+}
+
+async function main() {
   const dateien = readdirSync(QUELLE).filter((f) => f.endsWith('.md')).sort();
   if (!dateien.length) throw new Error('Keine Markdown-Dateien in docs/handbuch/');
 
@@ -625,25 +787,6 @@ ${inhalt}
 `;
 
   mkdirSync(ZIEL_VERZ, { recursive: true });
-
-  // Bildschirmfotos mitnehmen. Sie entstehen per scripts/screenshots.mjs und
-  // liegen in docs/screenshots/<geraet>/; hier landen sie unter
-  // /docs/bilder/<geraet>/, worauf die Kapitel verweisen.
-  const bilderQuelle = join(WURZEL, 'docs', 'screenshots');
-  const bilderZiel = join(ZIEL_VERZ, 'bilder');
-  const vorhandeneBilder = new Set();
-  if (existsSync(bilderQuelle)) {
-    for (const geraet of readdirSync(bilderQuelle)) {
-      const von = join(bilderQuelle, geraet);
-      if (!statSync(von).isDirectory()) continue;
-      mkdirSync(join(bilderZiel, geraet), { recursive: true });
-      for (const bild of readdirSync(von)) {
-        if (!bild.endsWith('.png')) continue;
-        copyFileSync(join(von, bild), join(bilderZiel, geraet, bild));
-        vorhandeneBilder.add(`/docs/bilder/${geraet}/${bild}`);
-      }
-    }
-  }
 
   // Erst alles rendern, dann pruefen, dann schreiben: Die Kapitel verweisen
   // aufeinander wie in einem Wiki, und ein toter Link ist schlimmer als kein
@@ -771,19 +914,36 @@ ${karten}
   // --- Bilder pruefen ---
   // Ein fehlendes Bildschirmfoto faellt im HTML sonst nur als kaputtes Symbol
   // auf, und das sieht niemand vor dem Ausrollen. Gleiche Strenge wie bei den
-  // Verweisen: Der Build bricht ab.
+  // Verweisen: Der Build bricht ab. Die Kapitel nennen das Quellbild
+  // (/docs/bilder/<geraet>/<name>.png = docs/screenshots/<geraet>/<name>.png);
+  // ausgeliefert wird dessen WebP-Fassung (bilderBereitstellen).
+  const benutzt = new Map();
   for (const [datei, seite] of erzeugt) {
     for (const m of seite.html.matchAll(/<img src="([^"]*)"/g)) {
       const src = m[1];
-      if (/^(https?:)?\/\//.test(src)) continue;
-      if (src.startsWith('/docs/bilder/') && !vorhandeneBilder.has(src)) {
+      if (/^(https?:)?\/\//.test(src) || !src.startsWith('/docs/bilder/')) continue;
+      const teile = src.match(/^\/docs\/bilder\/([a-z0-9-]+)\/([a-z0-9-]+)\.png$/);
+      const quelle = teile && join(BILDER_QUELLE, teile[1], `${teile[2]}.png`);
+      if (!quelle || !existsSync(quelle)) {
         fehler.push(`${datei}: Bild "${src}" fehlt — erst "node scripts/screenshots.mjs" laufen lassen`);
+        continue;
       }
+      benutzt.set(`${teile[1]}/${teile[2]}`, quelle);
     }
   }
 
   if (fehler.length) {
     throw new Error(`Tote interne Verweise oder fehlende Bilder:\n  ${fehler.join('\n  ')}`);
+  }
+
+  const bilder = await bilderBereitstellen(benutzt, join(ZIEL_VERZ, 'bilder'));
+  for (const seite of erzeugt.values()) {
+    seite.html = seite.html.replace(/<img src="\/docs\/bilder\/([a-z0-9-]+\/[a-z0-9-]+)\.png"/g, (_, schluessel) => {
+      const { src, breite, hoehe } = bilder.get(schluessel);
+      // Maße im HTML: Der Browser hält den Platz frei, bevor das Bild
+      // (loading="lazy") kommt, und der Text springt beim Lesen nicht.
+      return `<img src="${src}" width="${breite}" height="${hoehe}"`;
+    });
   }
 
   // --- Schreiben ---
@@ -858,4 +1018,7 @@ ${karten}
   console.log(`Handbuch geschrieben: ${ZIEL_VERZ} (${seiten.length} Kapitel + Übersicht, Verweise geprüft)`);
 }
 
-main();
+main().catch((fehler) => {
+  console.error(fehler instanceof Error ? fehler.message : fehler);
+  process.exit(1);
+});

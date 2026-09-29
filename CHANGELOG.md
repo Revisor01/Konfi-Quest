@@ -472,6 +472,9 @@ iOS-Build 234 · Android versionCode 128
   Handbuch mit seinen Bildern, die Werbeseite und die Rechtstexte, die sie nie
   angezeigt hat, liegen nicht mehr darin — rund 36 MB weniger. Im Browser ist
   alles unverändert erreichbar.
+- Das Handbuch im Browser lädt seine Bildschirmfotos viel schneller: zusammen
+  1,4 statt 12 MB, in voller Schärfe. Nach dem Austausch eines Bildes zeigt
+  der Browser gleich das neue.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
