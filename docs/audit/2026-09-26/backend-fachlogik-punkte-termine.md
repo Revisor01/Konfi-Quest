@@ -490,6 +490,7 @@ bestehender Aktivitäten nicht zu ändern.
   aber in keinem Pflichttermin — genau das Bild, das Simon am 26.09.2026 in
   Hennstedt gesehen hat („nur 4 von 12“), dort mit anderer Ursache.
 - **Empfehlung:** Einschreibung in die Transaktion ziehen (wie beim PUT).
+- **Nachtrag 28.09.2026:** behoben — In `POST /admin/konfis` (`konfi-management.js`) laufen die Einschreibung in die künftigen Pflicht-Events und `addToEventChat` jetzt vor dem COMMIT auf dem Transaktions-Client, wie beim PUT; der eigene try/catch, der Fehler nur loggte, ist weg — ein Fehler endet im ROLLBACK mit 500, es entsteht kein Konto. Nicht angefasst: `GET /admin/konfis/teamer` und `/leitung` in derselben Datei (Koordination). Test `backend/tests/routes/konfiAnlegenPflichttermineInTransaktion.test.js` (3: Buchung per Trigger abgelehnt → 500, kein Konto, kein Passwort; erlaubt Buchung plus Chat-Eintritt; Gegenprobe abgesagte/vergangene nicht gebucht); ohne Fix 1 rot. `konfi-management.test.js` (115) grün. API-Doku `konfis-events.yaml`.
 
 ## Nachtrag 27.09.2026: Rolle je Gemeinde
 

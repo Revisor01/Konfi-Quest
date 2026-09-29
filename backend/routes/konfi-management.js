@@ -339,33 +339,35 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // fuegt den neuen Konfi (sowie weiterhin alle Soll-Mitglieder) hinzu.
             await syncJahrgangChat(client, jahrgang_id, req.user.organization_id, req.user.id);
 
-            await client.query('COMMIT');
-
-            // Auto-Enrollment für zukünftige Pflicht-Events
-            try {
-              const enrollFutureEventsQuery = `
-                INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
-                SELECT e.id, $1, 'confirmed', NOW(), $2
-                FROM events e
-                JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
-                WHERE eja.jahrgang_id = $3
-                  AND e.mandatory = true
-                  AND e.event_date > NOW()
-                  AND e.organization_id = $2
-                  AND e.cancelled IS NOT TRUE
-                ON CONFLICT (user_id, event_id) DO NOTHING
-                RETURNING event_id
-              `;
-              const { rows: gebucht } = await db.query(enrollFutureEventsQuery, [userId, req.user.organization_id, jahrgang_id]);
-              // Auch in die Chats der Pflichttermine eintreten (falls die
-              // Leitung dort einen angelegt hat) — sonst fehlt der neue Konfi
-              // in Chats, in denen sein ganzer Jahrgang sitzt.
-              for (const row of gebucht) {
-                await addToEventChat(db, row.event_id, userId, req.user.organization_id);
-              }
-            } catch (enrollErr) {
-              console.error('Auto-enrollment für Pflicht-Events fehlgeschlagen:', enrollErr);
+            // Einschreibung in die kuenftigen Pflicht-Events des Jahrgangs --
+            // INNERHALB der Transaktion (28.09.2026, Audit Fachlogik
+            // Punkte/Termine BF-13), wie beim Jahrgangswechsel (PUT unten).
+            // Bis dahin lief sie nach dem COMMIT auf dem Pool, Fehler nur ins
+            // Log: Scheiterte sie, gab es die Konfi in keinem Pflicht-Event,
+            // und die Leitung bekam trotzdem 201 samt Passwort. Jetzt ganz
+            // oder gar nicht; ein Fehler endet im catch unten (ROLLBACK, 500).
+            const enrollFutureEventsQuery = `
+              INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+              SELECT e.id, $1, 'confirmed', NOW(), $2
+              FROM events e
+              JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+              WHERE eja.jahrgang_id = $3
+                AND e.mandatory = true
+                AND e.event_date > NOW()
+                AND e.organization_id = $2
+                AND e.cancelled IS NOT TRUE
+              ON CONFLICT (user_id, event_id) DO NOTHING
+              RETURNING event_id
+            `;
+            const { rows: gebucht } = await client.query(enrollFutureEventsQuery, [userId, req.user.organization_id, jahrgang_id]);
+            // Auch in die Chats der Pflichttermine eintreten (falls die
+            // Leitung dort einen angelegt hat) — sonst fehlt der neue Konfi
+            // in Chats, in denen sein ganzer Jahrgang sitzt.
+            for (const row of gebucht) {
+              await addToEventChat(client, row.event_id, userId, req.user.organization_id);
             }
+
+            await client.query('COMMIT');
 
             res.status(201).json({ id: userId, username, temporaryPassword: password, message: 'Konfi erfolgreich erstellt' });
 

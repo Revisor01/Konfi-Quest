@@ -3571,7 +3571,12 @@ paths:
         Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation
         wird geprüft. Seit 27.09.2026 (Audit Sicherheit BF-04) startet das
         neue Konto ohne Kontosperre, auch wenn der erzeugte Benutzername
-        vorher durchprobiert wurde.
+        vorher durchprobiert wurde. Seit 28.09.2026 (Audit Fachlogik
+        Punkte/Termine BF-13, behoben) laufen die Einschreibung in die
+        Pflicht-Events und der Eintritt in deren Chats in derselben
+        Transaktion wie das Anlegen: Scheitern sie, entsteht kein Konto und
+        die Antwort ist 500 (vorher 201, Konto ohne Pflicht-Events, Fehler
+        nur im Log). Antwortform unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCreateKonfi]

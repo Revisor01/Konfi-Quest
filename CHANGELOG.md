@@ -1131,6 +1131,9 @@ iOS-Build 233 · Android versionCode 127
 - In der Jahrgangsliste der Leitung steht als Punkteziel dieselbe Zahl, mit
   der auch das Dashboard der Konfis rechnet; ein Ziel von 0 nimmt der Server
   nicht mehr an, wie schon der Regler in der App.
+- Beim Anlegen einer Konfi entsteht das Konto nur zusammen mit ihren
+  Pflicht-Events: Klappt die Einschreibung nicht, meldet die App einen Fehler,
+  statt eine Konfi ohne Pflicht-Events anzulegen.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,
