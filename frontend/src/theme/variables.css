@@ -117,6 +117,18 @@ ion-list-header ion-label {
   --app-color-challenges-rgb: 79, 70, 229;
   --app-color-users: #667eea;
   --app-color-users-rgb: 102, 126, 234;
+  /* Rollenfarbe der Leitung (Rolle admin), 29.09.2026. Simon, TestFlight
+     233: "Es braucht noch eine dritte Farbe. Es gibt die Org-Admins, die
+     Admins und die Teamer. Die Admins brauchen eine andere Farbe, damit es
+     leichter erkennbar ist." Org-Leitung behaelt --app-color-users
+     (Indigo), Teamer:innen --app-color-teamer (Beere). Petrol (Tailwind
+     cyan-700): weisse Schrift darauf 5,36:1 (AA), weit weg von Indigo, Beere
+     und Konfi-Violett und von Warn- und Fehlerfarbe (Orange, Rot); heller
+     und blauer als das Aktivitaeten-Gruen (#047857), dunkler als der
+     Chat-Ton (#06b6d4). Zuordnung Rolle -> Farbe an EINER Stelle:
+     utils/rollenNamen.ts (rollenFarbe). Vertrag: rollenFarben.test.ts. */
+  --app-color-leitung: #0e7490;
+  --app-color-leitung-rgb: 14, 116, 144;
   --app-color-badges: #f59e0b;
   --app-color-badges-rgb: 245, 158, 11;
   /* Jahresrueckblick -- eigene Farbe im System, damit die Seite nicht mit
@@ -404,6 +416,8 @@ ion-list-header ion-label {
   --app-text-challenges-rgb: 79, 70, 229;
   --app-text-users: #667eea;
   --app-text-users-rgb: 102, 126, 234;
+  --app-text-leitung: #0e7490;
+  --app-text-leitung-rgb: 14, 116, 144;
   --app-text-badges: #f59e0b;
   --app-text-badges-rgb: 245, 158, 11;
   --app-text-wrapped: #7c3aed;
@@ -3821,6 +3835,8 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-color-users-rgb: 102, 126, 234;
     --app-color-users-dunkel: #5a67d8;
     --app-color-users-hover: #5a6fd6;
+    --app-color-leitung: #0e7490;
+    --app-color-leitung-rgb: 14, 116, 144;
     --app-color-badges: #f59e0b;
     --app-color-badges-rgb: 245, 158, 11;
     --app-color-badges-dunkel: #d97706;
@@ -3975,6 +3991,8 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-text-challenges-rgb: 129, 140, 248;
     --app-text-users: #a5b4fc;        /* 7,77 */
     --app-text-users-rgb: 165, 180, 252;
+    --app-text-leitung: #67e8f9;      /* 10,71 */
+    --app-text-leitung-rgb: 103, 232, 249;
     --app-text-badges: #fbbf24;       /* 9,28 */
     --app-text-badges-rgb: 251, 191, 36;
     --app-text-wrapped: #a78bfa;      /* 5,69 */

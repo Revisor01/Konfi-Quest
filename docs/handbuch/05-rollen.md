@@ -158,6 +158,11 @@ Symbol: ein Gebäude für die Org-Leitung (zuständig für die ganze Gemeinde), 
 Schild für die Leitung, eine Person für Teamer:innen. Wer mit dem Finger darauf
 bleibt, liest das Wort.
 
+Jede Rolle hat dazu ihre eigene Farbe: **Indigo** für die Org-Leitung,
+**Petrol** für die Leitung, **Beere** für Teamer:innen. So stehen die Karten
+in der Benutzerliste, die Rollen beim Anlegen und Einladen, die offenen
+Einladungen und die Marke in der Ecke bei den Mitgliedern eines Chats.
+
 Wie Konten angelegt werden und wie jede Rolle zu einem Passwort kommt, steht im
 Kapitel [Passwörter und Zugänge](35-passwoerter.md).
 

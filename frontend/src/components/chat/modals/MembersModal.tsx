@@ -47,7 +47,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istTeamTyp } from '../../../utils/chatRoles';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { rollenName } from '../../../utils/rollenNamen';
+import { rollenName, rollenFarbeVar, rollenTextFarbeVar } from '../../../utils/rollenNamen';
 
 interface Participant {
   user_id: number;
@@ -324,7 +324,11 @@ const MembersModal: React.FC<MembersModalProps> = ({
     const participantId = `${isTeam ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
     const roleText = getRoleText(targetUser);
     const jahrgang = getJahrgang(targetUser);
-    const badgeColor = isTeam ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)';
+    // Eck-Marke in der Farbe der Rolle (utils/rollenNamen, 29.09.2026):
+    // Org-Leitung Indigo, Leitung Petrol, Teamer:in Beere; ohne Rollennamen
+    // (aeltere Antworten) bleibt es bei der Team-Farbe.
+    const rolleImTeam = 'role_name' in targetUser ? targetUser.role_name : undefined;
+    const badgeColor = isTeam ? rollenFarbeVar(rolleImTeam, 'teamer') : 'var(--app-color-konfis)';
 
     return (
       <div role={isSelectable ? 'button' : undefined} tabIndex={isSelectable ? 0 : undefined} onKeyDown={isSelectable ? tastaturKlick : undefined} aria-pressed={isSelectable ? isSelected : undefined}
@@ -357,7 +361,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {isTeam && roleText && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-text-teamer)' }} />
+                    <IonIcon icon={ICON_GRUPPE} style={{ color: rollenTextFarbeVar(rolleImTeam, 'teamer') }} />
                     {roleText}
                   </span>
                 </div>

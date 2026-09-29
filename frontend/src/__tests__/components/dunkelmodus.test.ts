@@ -212,7 +212,7 @@ describe('Dunkelmodus: jedes Farbtoken hat eine dunkle Entsprechung', () => {
     // leuchteten im Dunkeln HELLER als im Hellmodus. Simons Befund: "Die
     // Farben sind furchtbar, koennen original bleiben."
     const abweichend: string[] = [];
-    for (const name of ['events', 'activities', 'konfis', 'teamer', 'challenges', 'users', 'badges', 'jahrgang', 'categories', 'chat', 'level']) {
+    for (const name of ['events', 'activities', 'konfis', 'teamer', 'challenges', 'users', 'leitung', 'badges', 'jahrgang', 'categories', 'chat', 'level']) {
       const h = helleTokens.get(`--app-color-${name}`)!;
       const d = dunkleTokens.get(`--app-color-${name}`)!;
       if (h.trim() !== d.trim()) abweichend.push(`${name}: hell ${h}, dunkel ${d}`);
@@ -957,7 +957,7 @@ describe('Dunkelmodus: Text-Token-Familie je Bereichsfarbe (Baustein 2)', () => 
   // umgestellt (nur `color`/`--color*` in style={{}} und im Stylesheet, keine
   // Flaechen, keine Datenfelder).
   const dunkel = tokens(dunkelBloecke[0] ?? '');
-  const FAMILIE = ['events', 'activities', 'konfis', 'teamer', 'challenges', 'users', 'badges', 'wrapped', 'bonus', 'group', 'jahrgang', 'categories', 'material', 'chat', 'level', 'gottesdienst', 'gemeinde', 'organizations', 'requests', 'purple'];
+  const FAMILIE = ['events', 'activities', 'konfis', 'teamer', 'challenges', 'users', 'leitung', 'badges', 'wrapped', 'bonus', 'group', 'jahrgang', 'categories', 'material', 'chat', 'level', 'gottesdienst', 'gemeinde', 'organizations', 'requests', 'purple'];
   const GRUND_IOS = '#000000';
   const GRUND_ANDROID = '#121212';
 

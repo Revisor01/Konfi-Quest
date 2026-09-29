@@ -44,6 +44,7 @@ import api from '../../../services/api';
 import { ChatUser } from '../../../types/user';
 import { EigenerJahrgang, KonfiEintrag, TeamKontakt, VerfuegbarerPartner } from '../../../types/chat';
 import { istTeamTyp } from '../../../utils/chatRoles';
+import { rollenFarbeVar, rollenTextFarbeVar } from '../../../utils/rollenNamen';
 import { tastaturKlick } from '../../../utils/tastatur';
 
 interface SimpleCreateChatModalProps {
@@ -545,11 +546,13 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             background: isSelected ? (isAdmin ? 'rgba(var(--app-color-teamer-rgb), 0.08)' : 'rgba(var(--app-color-konfis-rgb), 0.08)') : undefined
                           }}
                         >
-                          {/* Eselsohr mit Rolle als Icon */}
+                          {/* Eselsohr mit Rolle als Icon, im Team in der Farbe
+                              der Rolle (utils/rollenNamen, 29.09.2026):
+                              Org-Leitung Indigo, Leitung Petrol, Teamer:in Beere. */}
                           <div className="app-corner-badges">
                             <div
                               className="app-corner-badge"
-                              style={{ backgroundColor: isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+                              style={{ backgroundColor: isAdmin ? rollenFarbeVar(targetUser.role_name, 'teamer') : 'var(--app-color-konfis)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                               title={isAdmin ? (targetUser.role_description || 'Leitung') : 'Konfi'}
                               role="img"
                               aria-label={isAdmin ? (targetUser.role_description || 'Leitung') : 'Konfi'}
@@ -570,7 +573,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 {isAdmin && targetUser.role_description && (
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-text-teamer)' }} />
+                                      <IonIcon icon={ICON_GRUPPE} style={{ color: rollenTextFarbeVar(targetUser.role_name, 'teamer') }} />
                                       {targetUser.role_description}
                                     </span>
                                   </div>

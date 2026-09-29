@@ -10,7 +10,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import { fehlerText } from '../../../utils/fehler';
 import { ICON_SCHLIESSEN, ICON_GEMEINDE_GEFUELLT, ICON_PERSON, ICON_SCHILD } from '../../shared/icons';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { rollenName } from '../../../utils/rollenNamen';
+import { rollenName, rollenFarbeVar, rollenTonVar } from '../../../utils/rollenNamen';
 
 /**
  * Eine bestehende Person in diese Gemeinde einladen (26.09.2026).
@@ -63,10 +63,9 @@ const EinladungModal: React.FC<Props> = ({ onClose, onSuccess }) => {
   // 'Neue Benutzerin hinzufuegen' aussieht, damit die Leute wissen, was die
   // Rolle ist"). Zwei Dialoge, die dieselbe Entscheidung verlangen, muessen
   // sie gleich erklaeren -- sonst heisst dieselbe Rolle hier anders als dort.
-  const rolleToken = (name: string) =>
-    name === 'teamer' ? 'teamer' : (name === 'org_admin' || name === 'admin') ? 'users' : 'neutral';
-  const rolleFarbe = (name: string) => `var(--app-color-${rolleToken(name)})`;
-  const rolleTint = (name: string) => `rgba(var(--app-color-${rolleToken(name)}-rgb), 0.08)`;
+  // Farben aus EINER Stelle (utils/rollenNamen: rollenFarbe, 29.09.2026).
+  const rolleFarbe = (name: string) => rollenFarbeVar(name);
+  const rolleTint = (name: string) => rollenTonVar(name);
   const rolleBeschreibung = (name: string) => {
     switch (name) {
       case 'org_admin': return 'Voller Zugriff auf Konfis, Aktivitäten, Badges und Events – über alle Jahrgänge. Verwaltet zusätzlich die Benutzer:innen und deren Jahrgangs-Zuordnung.';

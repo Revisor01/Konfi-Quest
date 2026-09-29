@@ -35,7 +35,7 @@ import api from '../../../services/api';
 import { AdminUser } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
-import { rollenName } from '../../../utils/rollenNamen';
+import { rollenName, rollenFarbeVar, rollenTonVar } from '../../../utils/rollenNamen';
 
 interface Role {
   id: number;
@@ -338,19 +338,10 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     return roles.filter(role => canAssignRole(role.name));
   };
 
-  // Rollenfarbe als Token (25.09.2026): Sie steht als linker Rahmen auf der
-  // Karte und muss im Dunkelmodus heller werden. Der durchscheinende
-  // Hintergrund rechnet mit dem -rgb-Tripel statt mit einem Alpha-Suffix.
-  const getRoleToken = (roleName: string) => {
-    switch (roleName) {
-      case 'org_admin': return 'users';
-      case 'admin': return 'users';
-      case 'teamer': return 'teamer';
-      default: return 'neutral';
-    }
-  };
-  const getRoleColor = (roleName: string) => `var(--app-color-${getRoleToken(roleName)})`;
-  const getRoleTint = (roleName: string) => `rgba(var(--app-color-${getRoleToken(roleName)}-rgb), 0.08)`;
+  // Rollenfarbe als Token (25.09.2026) -- seit 29.09.2026 aus EINER Stelle
+  // (utils/rollenNamen: rollenFarbe), mit eigener Farbe fuer die Leitung.
+  const getRoleColor = (roleName: string) => rollenFarbeVar(roleName);
+  const getRoleTint = (roleName: string) => rollenTonVar(roleName);
 
   // Klare Beschreibung je Rolle (unabhaengig vom technischen DB-Text).
   const getRoleDescription = (roleName: string) => {
