@@ -61,6 +61,7 @@ export function fehlgeschlageneZuBubble(f: FailedChatMessage, absender: Absender
     message_type: messageTypeFuer(f.fileName, f.fileType),
     file_name: f.fileName,
     queueStatus: 'error',
+    ...(typeof f.error?.status === 'number' ? { sendeFehlerStatus: f.error.status } : {}),
     localId: f.clientId,
     clientId: f.clientId,
   };

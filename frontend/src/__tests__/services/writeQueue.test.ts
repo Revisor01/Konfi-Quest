@@ -697,3 +697,62 @@ describe('writeQueue — meldet Aenderungen an die Anzeige', () => {
     abmelden();
   });
 });
+
+describe('writeQueue — endgueltig abgelehnt: eine Regel fuer Warteschlange und Direktversand', () => {
+  beforeEach(() => {
+    store = {};
+    mockOnline = true;
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  it('4xx ausser 408/429 ist endgueltig, alles andere nicht', async () => {
+    const { endgueltigAbgelehnt } = await import('../../utils/fehler');
+    for (const status of [400, 401, 403, 404, 409, 413, 415, 422]) expect(endgueltigAbgelehnt(status)).toBe(true);
+    for (const status of [undefined, 0, 200, 408, 429, 500, 502, 503]) expect(endgueltigAbgelehnt(status)).toBe(false);
+  });
+
+  it('413 beim Nachsenden: kein zweiter Versuch, die Nachricht landet im Merker', async () => {
+    mockPost.mockRejectedValue({ response: { status: 413, data: { error: 'Datei ist zu groß (max. 5 MB).' } } });
+    const { writeQueue } = await import('../../services/writeQueue');
+    await writeQueue.enqueue(chatItem('gross-1'));
+
+    await writeQueue.flush();
+    await writeQueue.flush();
+
+    expect(mockPost).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(store['queue:items'] || '[]')).toHaveLength(0);
+    const merker = await writeQueue.getFailedChat(1);
+    expect(merker.map((m) => [m.clientId, m.error.status])).toEqual([['gross-1', 413]]);
+  });
+
+  it('chatAblehnungMerken: eine beim Direktversand abgelehnte Nachricht kommt in den Merker, nicht in die Warteschlange', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+
+    await writeQueue.chatAblehnungMerken(
+      { clientId: 'direkt-1', roomId: 1, content: 'Hier das Plakat', fileName: 'Plakat.pdf', fileType: 'application/pdf', createdAt: 1000 },
+      { status: 415, message: 'Dieser Dateityp kann nicht gesendet werden.' }
+    );
+
+    expect(JSON.parse(store['queue:items'] || '[]')).toHaveLength(0);
+    const merker = await writeQueue.getFailedChat(1);
+    expect(merker).toHaveLength(1);
+    expect(merker[0]).toMatchObject({
+      clientId: 'direkt-1', roomId: 1, content: 'Hier das Plakat', fileName: 'Plakat.pdf', fileType: 'application/pdf',
+      createdAt: 1000, error: { status: 415, message: 'Dieser Dateityp kann nicht gesendet werden.' },
+    });
+    // Keine lokale Kopie: Die Datei geht so ohnehin nicht durch.
+    expect(merker[0].localFilePath).toBeUndefined();
+    expect(await writeQueue.getFailedChat(2)).toHaveLength(0);
+  });
+
+  it('chatAblehnungMerken ersetzt einen alten Eintrag derselben client_id', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    const eintrag = { clientId: 'direkt-2', roomId: 1, content: '', fileName: 'a.pdf', fileType: 'application/pdf', createdAt: 1 };
+    await writeQueue.chatAblehnungMerken(eintrag, { status: 413, message: 'x' });
+    await writeQueue.chatAblehnungMerken(eintrag, { status: 415, message: 'y' });
+
+    const merker = await writeQueue.getFailedChat(1);
+    expect(merker.map((m) => m.error.status)).toEqual([415]);
+  });
+});

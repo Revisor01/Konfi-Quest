@@ -515,6 +515,13 @@ iOS-Build 234 · Android versionCode 128
 ### Behoben
 - Karten, Store-, Musik- und Weblinks aus der App lösen die App-Sperre nicht
   mehr aus, auch nicht bei „Sofort“.
+- Lehnt der Server eine Chat-Nachricht ab — etwa weil die Datei zu groß ist
+  oder ihr Format nicht angenommen wird —, steht der Grund an der Nachricht
+  und oben als Hinweis. Die App versucht es dann nicht mehr sinnlos noch
+  einmal, und das Menü an der Nachricht bietet nur noch das Löschen an.
+- Eine im Chat geschriebene Nachricht, die nicht rausging, steht sofort als
+  fehlgeschlagen da statt weiter als „wartet“, und „Nachricht löschen“ nimmt
+  sie auch nach dem nächsten Öffnen des Chats nicht wieder zurück in die Liste.
 - Der Titel der Konfi-Liste der Leitung wird auf Android nicht mehr
   abgeschnitten („Konfirmand…“): Er heißt wie der Reiter „Konfis“, im
   Umschalter auf „Team“ entsprechend „Team“.

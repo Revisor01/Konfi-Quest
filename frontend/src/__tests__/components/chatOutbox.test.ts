@@ -88,6 +88,19 @@ describe('chatOutbox — Bubbles aus Queue und Fehl-Merker rekonstruieren', () =
     expect(bubble.content).toBe('kaputt gegangen');
   });
 
+  it('die error-Bubble aus dem Merker traegt den Status -- nach dem Oeffnen steht der Grund wieder dran', () => {
+    // 29.09.2026: Bei einer endgueltigen Ablehnung (413, 415 ...) zeigt die
+    // Blase den Grund und das Menue kein "Erneut senden" (sendeFehler.ts).
+    const bubble = fehlgeschlageneZuBubble(
+      fehlRecord('c4', 4000, { content: '', fileName: 'Plakat.pdf', error: { status: 413, message: 'Datei ist zu groß (max. 5 MB).' } }),
+      absender
+    );
+
+    expect(bubble.sendeFehlerStatus).toBe(413);
+    expect(bubble.content).toBe('Plakat.pdf');
+    expect(fehlgeschlageneZuBubble(fehlRecord('c5', 5000), absender).sendeFehlerStatus).toBe(500);
+  });
+
   it('ergaenzt nur unbekannte Nachrichten — Server-Kopie und vorhandene Bubbles gewinnen', () => {
     const vorhanden = [
       // Vom Server bereits zugestellte Kopie (client_id gesetzt)

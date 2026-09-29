@@ -1,6 +1,6 @@
 import type { AxiosRequestConfig } from 'axios';
 import { Preferences } from '@capacitor/preferences';
-import { fehlerStatus, fehlerTextOderMessage } from '../utils/fehler';
+import { endgueltigAbgelehnt, fehlerStatus, fehlerTextOderMessage } from '../utils/fehler';
 import { typFuerUpload } from '../utils/dateiTypen';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { toastController } from '@ionic/core';
@@ -241,11 +241,17 @@ async function _saveFailedChat(list: FailedChatMessage[]): Promise<void> {
   await Preferences.set({ key: FAILED_CHAT_KEY, value: JSON.stringify(list) });
 }
 
+async function _merkeFehlgeschlagenenChat(eintrag: FailedChatMessage): Promise<void> {
+  const list = await _loadFailedChat();
+  const ohneAlten = list.filter(f => f.clientId !== eintrag.clientId);
+  ohneAlten.push(eintrag);
+  while (ohneAlten.length > FAILED_CHAT_MAX) ohneAlten.shift();
+  await _saveFailedChat(ohneAlten);
+}
+
 async function rememberFailedChat(item: QueueItem, error: { status: number; message: string }): Promise<void> {
   if (item.metadata.type !== 'chat') return;
-  const list = await _loadFailedChat();
-  const ohneAlten = list.filter(f => f.clientId !== item.metadata.clientId);
-  ohneAlten.push({
+  await _merkeFehlgeschlagenenChat({
     clientId: item.metadata.clientId,
     roomId: item.metadata.roomId,
     content: item.body?.content || '',
@@ -256,8 +262,24 @@ async function rememberFailedChat(item: QueueItem, error: { status: number; mess
     failedAt: Date.now(),
     error,
   });
-  while (ohneAlten.length > FAILED_CHAT_MAX) ohneAlten.shift();
-  await _saveFailedChat(ohneAlten);
+}
+
+/**
+ * Eine Chat-Nachricht, die der Server schon beim DIREKTEN Versand endgueltig
+ * abgelehnt hat (endgueltigAbgelehnt, etwa 413 oder 415), in den Merker
+ * schreiben -- ohne sie einzureihen (Nebenbefund Paket G2, 29.09.2026). Bis
+ * dahin ging sie in die Warteschlange, die dieselbe Datei sofort noch einmal
+ * hochlud und am selben Fehler scheiterte. Der Merker haelt sie wie jede
+ * andere fehlgeschlagene Nachricht, damit sie beim naechsten Oeffnen des
+ * Chats mit ihrem Grund wieder dasteht. Ohne lokale Dateikopie: So geht die
+ * Datei ohnehin nicht durch.
+ */
+async function chatAblehnungMerken(
+  eintrag: Pick<FailedChatMessage, 'clientId' | 'roomId' | 'content' | 'fileName' | 'fileType' | 'createdAt'>,
+  error: { status: number; message: string }
+): Promise<void> {
+  await kontoPruefen();
+  await _merkeFehlgeschlagenenChat({ ...eintrag, failedAt: Date.now(), error });
 }
 
 async function forgetFailedChat(clientId?: string | null): Promise<void> {
@@ -604,7 +626,7 @@ async function flush(): Promise<FlushResult> {
         const status = fehlerStatus(err) || 0;
         const message = fehlerTextOderMessage(err, 'Unbekannter Fehler');
 
-        if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+        if (endgueltigAbgelehnt(status)) {
           // 4xx (außer 408/429): Item entfernen, als failed markieren
           const failedItem: FailedQueueItem = { ...item, error: { status, message } };
           await rememberFailedChat(item, failedItem.error);
@@ -783,6 +805,7 @@ export const writeQueue = {
   getAll,
   getByMetadata,
   getFailedChat,
+  chatAblehnungMerken,
   forgetFailedChat,
   forgetFailedChatMany,
   getFailedActions,
