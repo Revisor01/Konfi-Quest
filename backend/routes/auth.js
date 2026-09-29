@@ -79,6 +79,39 @@ const erzeugeResetLimiter = (db) => ({
 });
 
 
+// Grenze fuer die oeffentliche Namenspruefung GET /check-username/:username
+// (Audit Sicherheit BF-18, 29.09.2026; seit dem 22.08.2026 als N3 offen).
+// Die Route verraet, ob es einen Benutzernamen gibt -- bei Konfis meist
+// vorname.nachname. Bis dahin bremste sie allein der allgemeine Flutschutz
+// (2000 je Viertelstunde und IP): Eine Namensliste eines Ortes liess sich in
+// Minuten abgleichen.
+//
+// GEZAEHLT WERDEN NUR TREFFER ("vergeben"): Beim Registrieren prueft die App
+// bei jedem Tastendruck (300 ms Pause), und eine Konfi-Gruppe registriert
+// sich gemeinsam aus einem Gemeinde-WLAN -- dieselbe IP, Hunderte Pruefungen
+// in einer Viertelstunde, fast alle "frei". Die sollen nicht zaehlen. Wer
+// dagegen eine Namensliste abgleicht, sammelt Treffer; nach 30 je
+// Viertelstunde und IP ist Schluss, dann antwortet die Route fuer diese IP
+// 15 Minuten lang 429. Die App (auch 2.2.x) faengt den Fehler ab und zeigt
+// dann nur keinen Hinweis "frei"/"vergeben" -- registrieren geht weiter,
+// POST /register-konfi prueft den Namen selbst.
+//
+// Zaehler im gemeinsamen Store (rate_limit_zaehler), also ueber beide
+// Replicas; Schluessel ist die Client-IP wie bei allen IP-Grenzen.
+const NAMENSPRUEFUNG_TREFFER = 30;
+const erzeugeNamensLimiter = (db) => rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: NAMENSPRUEFUNG_TREFFER,
+  keyGenerator: (req) => ipKeyGenerator(clientIp(req)),
+  skipSuccessfulRequests: true,
+  // "Erfolgreich" = nicht gezaehlt: alles ausser einem Treffer.
+  requestWasSuccessful: (req, res) => res.locals.benutzernameVergeben !== true,
+  message: { error: 'Zu viele Namensprüfungen. Bitte versuche es in 15 Minuten erneut.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new PostgresRateLimitStore(db, { prefix: 'namenspruefung' })
+});
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Zugangs-Sperre: EINE Quelle fuer Anmeldung und Refresh (Audit 26.09.2026,
@@ -102,6 +135,7 @@ if (!JWT_SECRET) {
 // Unified auth routes - combines all login functionality
 module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, rbacVerifier) => {
   const { passwordResetLimiter, passwordResetEmailLimiter } = erzeugeResetLimiter(db);
+  const namensLimiter = erzeugeNamensLimiter(db);
   const { authLimiter, registerLimiter } = rateLimiters;
   const emailService = require('../services/emailService');
 
@@ -1063,8 +1097,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   });
 
-  // Check username availability (public endpoint)
-  router.get('/check-username/:username', async (req, res) => {
+  // Check username availability (public endpoint). Grenze: namensLimiter
+  // oben (30 Treffer je Viertelstunde und IP, Audit Sicherheit BF-18).
+  router.get('/check-username/:username', namensLimiter, async (req, res) => {
     const { username } = req.params;
     const trimmed = username.trim();
 
@@ -1081,6 +1116,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const { rows } = await db.query('SELECT id FROM users WHERE LOWER(username) = LOWER($1)', [trimmed]);
 
       if (rows.length > 0) {
+        // Nur dieser Fall zaehlt fuer den namensLimiter.
+        res.locals.benutzernameVergeben = true;
         return res.json({ available: false, message: 'Benutzername bereits vergeben' });
       }
 

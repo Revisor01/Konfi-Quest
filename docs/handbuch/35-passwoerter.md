@@ -392,7 +392,7 @@ Dabei passiert automatisch:
 |---|---|
 | „Dieser Einladungscode existiert nicht" | Vertipper oder gelöschter Code — Groß- und Kleinschreibung ist egal, aber jede Stelle zählt. Zur Not neue Einladung erzeugen. |
 | „Dieser Einladungscode ist abgelaufen" | Die gewählte Gültigkeit ist um. Die Org-Leitung erzeugt einen neuen Code. |
-| „Benutzername bereits vergeben" | Einen anderen wählen — geprüft wird schon beim Eintippen, nicht erst beim Absenden. |
+| „Benutzername bereits vergeben" | Einen anderen wählen — geprüft wird schon beim Eintippen, nicht erst beim Absenden. Wurden aus demselben Netz in einer Viertelstunde sehr viele vergebene Namen geprüft, bleibt der Hinweis beim Eintippen eine Weile aus; das Absenden meldet einen vergebenen Namen trotzdem. |
 | „Die Anzahl der Konfis ist erreicht …" | Das Konfi-Kontingent des Tarifs ist voll. Da hilft nur die Org-Leitung — sie muss den Tarif anpassen. |
 
 ## Den richtigen Benutzernamen finden

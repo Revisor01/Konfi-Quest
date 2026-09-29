@@ -66,12 +66,16 @@
 #                                     (seit 26.09.2026 genau einmal nutzbar;
 #                                     dritte Verwendung widerruft alle
 #                                     Refresh-Tokens des Kontos, BF-08)
-#      GET  /check-username/:username NUR General-Limiter
+#      GET  /check-username/:username namensLimiter seit 29.09.2026: 30
+#                                     TREFFER ("vergeben") je Viertelstunde
+#                                     und Client-IP, danach 429; freie Namen
+#                                     zaehlen nicht (Audit Sicherheit BF-18)
 #      GET  /validate-invite/:code    NUR General-Limiter
-#    # LÜCKE (NEU): check-username, validate-invite, reset-password und
-#    # refresh haben keinen eigenen (strengeren) Rate-Limiter — Username-
-#    # Enumeration und Invite-Code-Bruteforce (nur 8 Hex-Zeichen = 4 Byte
-#    # Entropie) sind mit bis zu 2000 Requests/15min/IP möglich.
+#    # LÜCKE (N3, teilweise BEHOBEN 29.09.2026): validate-invite,
+#    # reset-password und refresh haben keinen eigenen (strengeren)
+#    # Rate-Limiter — Invite-Code-Bruteforce (nur 8 Hex-Zeichen = 4 Byte
+#    # Entropie) ist mit bis zu 2000 Requests/15min/IP möglich.
+#    # check-username hat seit 29.09.2026 den namensLimiter (siehe oben).
 #    "Pro Client-IP" heisst seit 26.09.2026 (Audit Sicherheit BF-13): der
 #    Header X-Real-IP zaehlt nur, wenn die Anfrage aus dem Docker-Netz kommt
 #    (utils/clientIp.js: Peer in Loopback/Link-Local/privatem Bereich), sonst
@@ -130,6 +134,9 @@
 #      genau die beiden zuletzt geschlossenen Routen sind die, die man
 #      benutzt, wenn ein Konto uebernommen wurde.
 #  N3  Fehlende Spezial-Rate-Limiter auf 4 offenen Auth-Routen (siehe oben).
+#      TEILWEISE BEHOBEN 29.09.2026: check-username hat den namensLimiter
+#      (Audit Sicherheit BF-18); validate-invite, reset-password und refresh
+#      weiter nur mit dem allgemeinen Flutschutz.
 #  N4  GET /levels/konfi/:userId: jeder authentifizierte User der Org (auch
 #      jeder Konfi) kann Punkte/Level JEDES Konfis abrufen — kein Selbst-
 #      oder Rollen-Check.
@@ -894,16 +901,24 @@ paths:
       summary: Username-Verfuegbarkeit prüfen (oeffentlich, case-insensitiv)
       parameters:
         - { name: username, in: path, required: true, schema: { type: string, minLength: 3, pattern: "^[a-zA-Z0-9.-]+$" }, description: "Zu prüfender Benutzername (case-insensitiv)" }
+      description: >-
+        BEHOBEN 29.09.2026 (N3, Audit Sicherheit BF-18): eigene Grenze
+        namensLimiter -- je Client-IP zaehlen nur Treffer ("vergeben"), 30 je
+        Viertelstunde, danach 429 fuer jede Pruefung dieser IP. Freie Namen
+        zaehlen nicht: Eine Konfi-Gruppe registriert sich gemeinsam aus einem
+        Gemeinde-WLAN und prueft bei jedem Tastendruck. Zaehler in
+        rate_limit_zaehler (Praefix namenspruefung), ueber alle Replicas. Die
+        App faengt den 429 ab (auch 2.2.x) und zeigt dann keinen Hinweis;
+        POST /register-konfi prueft den Namen selbst (409).
       responses:
         "200": { description: "{ available: bool, message }" }
         "400": { description: "Zu kurz / ungueltige Zeichen" }
+        "429": { description: "Mehr als 30 Treffer je Viertelstunde von dieser IP (seit 29.09.2026)" }
       x-berechtigung:
         rollen: [oeffentlich]
-        middleware: []
+        middleware: [namensLimiter]
         org-scope: false
         objekt-pruefung: "keine"
-        # LÜCKE (N3): kein eigener Rate-Limiter — systemweite Username-
-        # Enumeration mit bis zu 2000 Requests/15min/IP möglich.
 
   /api/auth/validate-invite/{code}:
     get:
@@ -2181,6 +2196,12 @@ paths:
         hinweis: >
           # HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit
           (GIT_SHA) preis. Bewusst so für die Status-Seite / Uptime Kuma.
+          GEPRÜFT 29.09.2026 (Audit Sicherheit BF-18), bleibt: `commit`
+          liest der Deploy-Verify (deploy/rollend.sh, notfall-deploy.yml),
+          `version` meldet laut CLAUDE.md die App-Version und wird nach
+          jedem Deploy abgelesen; beide stehen ohnehin öffentlich (Repo,
+          Store). `uptimeSeconds` bleibt als Feld der Antwortform (nur der
+          Startzeitpunkt, den auch die öffentlichen Actions-Läufe zeigen).
 
   /api/metrics:
     get:

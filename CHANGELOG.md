@@ -1146,6 +1146,9 @@ iOS-Build 233 · Android versionCode 127
   statt sie als Formatierung zu lesen.
 
 ### Sonstiges
+- Ob ein Benutzername schon vergeben ist, lässt sich ohne Anmeldung nur noch
+  begrenzt oft abfragen, damit niemand Namenslisten abgleicht. Beim
+  Registrieren in einer Gruppe merkt man davon nichts.
 - Textdateien im Chat und im Material prüft der Server auf ihren Inhalt: Eine
   Webseite, ein Skript oder ein Programm unter dem Namen einer Textdatei wird
   abgelehnt, ebenso eine Textdatei über 2 MB. Gewöhnliche Texte und
