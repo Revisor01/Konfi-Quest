@@ -171,6 +171,16 @@ info:
     (15 Min), der von verifyTokenRBAC geprüft wird; die aktive Organisation
     kann per Header X-Active-Organization gewechselt werden (Mitgliedschaft
     wird gegen user_organizations geprüft, 30s-User-Cache).
+    ZUGANGS-TOKEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-15): Claims
+    id, type, organization_id, role_name, is_super_admin, ggf.
+    active_organization_id, iat, exp -- OHNE display_name und email
+    (vorher im Klartext, nur base64-kodiert). Gilt für alle fünf
+    ausstellenden Stellen (login, refresh, switch-org, register-konfi, das
+    neue Paar aus change-password). Geprüft gegen die ausgelieferten Apps
+    1.5.3 bis 2.3.0: Sie lesen aus dem Token nur exp (services/api.ts,
+    getTokenExp); Name und E-Mail kommen aus `user` der Login-Antwort und
+    aus GET /auth/me. Das Backend liest aus dem Token nur id, iat und
+    active_organization_id und lädt alles andere aus der Datenbank.
     PROTOKOLL (BEHOBEN 29.09.2026, Audit Sicherheit BF-14): Das
     Server-Protokoll nennt Personen nur mit Konto-Kennung, E-Mail-Adressen
     nur mit Domain und keinen Freitext vom Client (utils/protokoll.js).
@@ -208,16 +218,6 @@ components:
         JWT im Authorization-Header. Optional Header X-Active-Organization
         (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
         Mitglied ist (sonst 403).
-        Claims seit 29.09.2026 (Audit Sicherheit BF-15): id, type,
-        organization_id, role_name, is_super_admin, ggf.
-        active_organization_id, iat, exp -- OHNE display_name und email
-        (vorher im Klartext, nur base64-kodiert). Alle fünf ausstellenden
-        Stellen (login, refresh, switch-org, register-konfi, das neue Paar
-        aus change-password). Geprüft gegen die ausgelieferten Apps 1.5.3
-        bis 2.3.0: Sie lesen aus dem Token nur exp (services/api.ts,
-        getTokenExp); Name und E-Mail kommen aus `user` der Login-Antwort
-        und aus GET /auth/me. Das Backend liest aus dem Token nur id, iat
-        und active_organization_id und lädt alles andere aus der Datenbank.
   schemas:
     Error:
       type: object
