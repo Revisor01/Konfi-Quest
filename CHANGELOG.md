@@ -1475,6 +1475,9 @@ iOS-Build 234 · Android versionCode 128
 - Bleibt eine Auslieferung aus, weil die automatischen Prüfungen fehlschlagen,
   meldet sich das sofort als offener Eintrag im Projekt; er schließt sich
   selbst, sobald die Prüfungen wieder durchlaufen.
+- Jede an die Stores hochgeladene Fassung ist im Quellcode mit Version,
+  Plattform und Build-Nummer markiert; ein Absturzbericht lässt sich so dem
+  genauen Stand zuordnen.
 
 ## [2.2.0] - 2026-09-18
 

@@ -193,3 +193,40 @@ jobs:
             frontend/android/app/build/outputs/bundle/release/app-release.aab \
             frontend/release-notes-de.txt \
             "$TRACKS" "$MODUS" "$ANTEIL"
+
+  store-tag:
+    # STORE-TAG (29.09.2026, Audit CI BF-09; Simon: "Store-Tag automatisch").
+    # Nach erfolgreichem Upload bekommt der gebaute Commit den Tag
+    # <version>+android.<androidVersionCode> (z. B. 2.3.0+android.128),
+    # Version und Nummer aus frontend/version.json DIESES COMMITS -- nicht aus
+    # dem Arbeitsverzeichnis, das der Dry-Run um 10000 anhebt. Schema und
+    # Verhalten (schon da -> nichts; zeigt woanders hin -> Warnung, kein
+    # Ueberschreiben) in .github/scripts/store-tag.py.
+    #
+    # NICHT beim Dry-Run: Dort wird die Edit verworfen, nichts ist
+    # veroeffentlicht (Bedingung hier und DRY_RUN fuers Skript).
+    #
+    # EIGENER JOB, damit das Schreibrecht (contents: write) nur hier gilt:
+    # build-upload fuehrt npm ci und Gradle aus -- fremder Code, der mit einem
+    # schreibenden Token ins Repo pushen koennte. Die Bedingung unten enthaelt
+    # kein always(), also gilt zusaetzlich success(): nur, wenn build-upload
+    # (letzter Schritt: Upload) gruen ist. Scheitert nur dieser Job, ist der
+    # Upload trotzdem erfolgt -- dann "Re-run failed jobs", nicht den ganzen
+    # Workflow (der versionCode ist verbraucht).
+    needs: [build-upload]
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Tag setzen
+        env:
+          PLATTFORM: android
+          SHA: ${{ github.sha }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 .github/scripts/store-tag.py

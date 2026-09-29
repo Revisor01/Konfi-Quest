@@ -427,3 +427,35 @@ jobs:
         run: |
           xcrun altool --upload-app -f build/export/App.ipa -t ios \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+
+  store-tag:
+    # STORE-TAG (29.09.2026, Audit CI BF-09; Simon: "Store-Tag automatisch").
+    # Nach erfolgreichem Upload bekommt der gebaute Commit den Tag
+    # <version>+ios.<iosBuildNumber> (z. B. 2.3.0+ios.234), Version und
+    # Nummer aus frontend/version.json dieses Commits. Damit laesst sich ein
+    # Absturzbericht "2.3.0 (234)" dem Code zuordnen. Schema und Verhalten
+    # (schon da -> nichts; zeigt woanders hin -> Warnung, kein Ueberschreiben)
+    # in .github/scripts/store-tag.py.
+    #
+    # EIGENER JOB, damit das Schreibrecht (contents: write) nur hier gilt:
+    # build-upload fuehrt npm ci, Pods und xcodebuild aus -- fremder Code, der
+    # mit einem schreibenden Token ins Repo pushen koennte. needs ohne
+    # always(): nur, wenn build-upload (letzter Schritt: Upload) gruen ist.
+    # Scheitert nur dieser Job, ist der Upload trotzdem erfolgt -- dann "Re-run
+    # failed jobs", nicht den ganzen Workflow (die Build-Nummer ist
+    # verbraucht).
+    needs: [build-upload]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Tag setzen
+        env:
+          PLATTFORM: ios
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 .github/scripts/store-tag.py
