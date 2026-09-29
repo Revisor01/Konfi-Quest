@@ -35,8 +35,8 @@ describe('CI: paths-Filter fuer push auf main', () => {
     'init-scripts/01-create-schema.sql',
     '.github/workflows/ci.yml',
     'scripts/build-handbuch.mjs',
-    'docs/api/konfi.yaml',
-    'docs/handbuch/10-start.md',
+    'docs/api/konfis-events.yaml',
+    'docs/handbuch/00-start.md',
     'e2e/login.spec.ts',
     'playwright.config.ts',
     // E2E-Abhaengigkeiten (npm ci in der Wurzel)

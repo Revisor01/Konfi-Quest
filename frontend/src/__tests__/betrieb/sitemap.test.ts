@@ -50,7 +50,13 @@ describe('Sitemap aus dem Inhalt', () => {
   });
 
   it('eine geaenderte Seite bekommt den heutigen Tag, die anderen behalten ihr Datum', () => {
-    const vorher = daten(readFileSync(join(kopie, 'frontend/public/sitemap.xml'), 'utf-8'));
+    // Die eingecheckte Sitemap kann schon den heutigen Tag tragen (am Tag
+    // eines Generatorlaufs, gesehen am 29.09.2026) -- dann laege "heute"
+    // nicht vom alten Datum unterscheidbar. Deshalb stehen in der Kopie
+    // vorher alle Daten auf einem Tag weit in der Vergangenheit.
+    const sitemapPfad = join(kopie, 'frontend/public/sitemap.xml');
+    writeFileSync(sitemapPfad, readFileSync(sitemapPfad, 'utf-8').replace(/<lastmod>[^<]*<\/lastmod>/g, '<lastmod>2000-01-01</lastmod>'));
+    const vorher = daten(readFileSync(sitemapPfad, 'utf-8'));
     const kapitel = readdirSync(join(kopie, 'docs/handbuch')).filter((d) => /^\d+-.+\.md$/.test(d)).sort();
     const quelle = join(kopie, 'docs/handbuch', kapitel[1]);
     writeFileSync(quelle, `${readFileSync(quelle, 'utf-8')}\nEin zusätzlicher Absatz für den Test.\n`);

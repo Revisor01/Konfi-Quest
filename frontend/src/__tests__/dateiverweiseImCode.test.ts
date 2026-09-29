@@ -54,7 +54,10 @@ function dateienUnter(ordner: string): string[] {
 function gibtEs(pfad: string, datei: string): boolean {
   if (existsSync(join(WURZEL, pfad))) return true;
   const paket = datei.split('/')[0];
-  return (paket === 'frontend' || paket === 'backend') && existsSync(join(WURZEL, paket, pfad));
+  if ((paket === 'frontend' || paket === 'backend') && existsSync(join(WURZEL, paket, pfad))) return true;
+  // Im Frontend meint "docs/..." oft die Web-Wurzel (frontend/public bzw.
+  // dist), etwa in den Tests des App-Buendels (29.09.2026).
+  return paket === 'frontend' && existsSync(join(WURZEL, 'frontend', 'public', pfad));
 }
 
 describe('Dateiverweise im Code', () => {

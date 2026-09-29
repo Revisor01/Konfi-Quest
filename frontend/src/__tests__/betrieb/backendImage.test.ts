@@ -69,6 +69,9 @@ function geladenePakete(): Map<string, string> {
       if (['node_modules', 'tests', 'uploads'].includes(name)) continue;
       if (statSync(join(wurzel, pfad)).isDirectory()) { besuche(pfad); continue; }
       if (!name.endsWith('.js')) continue;
+      // Die Lint-Konfiguration laedt Dev-Werkzeug und kommt nicht ins Image
+      // (.dockerignore).
+      if (name === 'eslint.config.js') continue;
       const text = lies(pfad)
         // JSDoc-Typen wie {import('pg').Pool} sind kein Laden.
         .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -90,7 +93,9 @@ describe('Backend-Image: was der Code laedt, installiert `npm ci --omit=dev`', (
   const pakete = geladenePakete();
 
   it('der Suchlauf findet die bekannten Pakete (sonst prueft der naechste Test nichts)', () => {
-    for (const p of ['express', 'pg', 'bcrypt', 'firebase-admin', 'node-fetch']) {
+    // node-fetch stand hier bis zum 29.09.2026; die Tageslosung nutzt seither
+    // das eingebaute fetch (Toolchain BF-05).
+    for (const p of ['express', 'pg', 'bcrypt', 'firebase-admin', 'nodemailer']) {
       expect([...pakete.keys()]).toContain(p);
     }
   });

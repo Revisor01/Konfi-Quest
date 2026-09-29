@@ -28,12 +28,13 @@ const DEV = new Set(Object.keys(pkg.devDependencies ?? {}));
 const EINGEBAUT = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]));
 
 // Begründete Ausnahmen: Paket -> Datei, in der es ohne Deklaration geladen wird.
-const AUSNAHMEN: Record<string, string> = {
+const AUSNAHMEN: Record<string, string[]> = {
   // Messskript für den Dunkelmodus, nur von Hand gestartet. Lädt Playwright
   // aus der Repo-Wurzel (dort deklariert) oder global und meldet sich
   // verständlich, wenn es fehlt — eine zweite Playwright-Installation im
   // Frontend wäre nur Gewicht für jeden CI-Lauf.
-  playwright: 'scripts/dunkelmodus-messen.mjs',
+  // Dasselbe gilt fuer die Bildvergleiche im Dunkelmodus (29.09.2026).
+  playwright: ['scripts/dunkelmodus-messen.mjs', 'scripts/dunkelmodus-bilder.mjs'],
 };
 
 function dateien(pfad: string): string[] {
@@ -79,7 +80,7 @@ function verstoesse(liste: string[], erlaubt: (name: string) => boolean): string
   for (const datei of liste) {
     const rel = relative(frontend, datei).split(sep).join('/');
     for (const name of geladenePakete(datei)) {
-      if (erlaubt(name) || AUSNAHMEN[name] === rel) continue;
+      if (erlaubt(name) || AUSNAHMEN[name]?.includes(rel)) continue;
       ergebnis.push(`${rel}: ${name}`);
     }
   }

@@ -28,6 +28,16 @@ const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 /** Stand 29.09.2026: 150. Nur nach unten anpassen, ausser mit Begruendung. */
 const OBERGRENZE = 150;
 
+// Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
+// Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
+// Manifeste, Workflows, nginx, Dockerfile, Lockfiles, Sitemap --, und dort
+// IST das Lesen der Datei das Verhalten; rendern laesst sich nichts. Die
+// fuenf frueher hier gefuehrten config/-Dateien sind deshalb gestrichen;
+// dazugekommen sind fuenf Leitplanken, die den Quellbaum absuchen
+// (Dateiauswahl, Links nach draussen, Dateiverweise, Handbuch-Bilder,
+// Universal-Links-Datei). Die Zahl bleibt 150.
+const PRUEFORDNER = ['__tests__/config/', '__tests__/betrieb/'];
+
 const BEKANNT: string[] = [
   '__tests__/begriffeEinheitlich.test.ts',
   '__tests__/components/abgesagtFarbeGleichInAllenRollen.test.ts',
@@ -62,6 +72,7 @@ const BEKANNT: string[] = [
   '__tests__/components/chatDateiFortschritt.test.ts',
   '__tests__/components/chatMitgliederliste.test.ts',
   '__tests__/components/chatNutzertypDreiWerte.test.ts',
+  '__tests__/components/dateiAuswahlNurUeberHuelle.test.ts',
   '__tests__/components/diagnoseNurLeitung.test.ts',
   '__tests__/components/direktchatDoppelPruefung.test.ts',
   '__tests__/components/dunkelmodus.test.ts',
@@ -139,17 +150,15 @@ const BEKANNT: string[] = [
   '__tests__/components/zentraleIcons.test.ts',
   '__tests__/components/zoomUndSchrift.test.ts',
   '__tests__/components/zusageKarteHoehe.test.ts',
-  '__tests__/config/androidAppSymbol.test.ts',
-  '__tests__/config/androidAppSymbolZahl.test.ts',
-  '__tests__/config/kameraBerechtigung.test.ts',
-  '__tests__/config/privacyManifest.test.ts',
-  '__tests__/config/systemBars.test.ts',
   '__tests__/contexts/badgeResync.test.ts',
+  '__tests__/dateiverweiseImCode.test.ts',
   '__tests__/handbuchBadgeZielgruppen.test.ts',
+  '__tests__/handbuchBilder.test.ts',
   '__tests__/handbuchNavigation.test.ts',
   '__tests__/handbuchTrennlinie.test.ts',
   '__tests__/handbuchVerweise.test.ts',
   '__tests__/navigation/appLinksAndroid.test.ts',
+  '__tests__/navigation/appLinksIos.test.ts',
   '__tests__/navigation/keinPlatzhalterImOutlet.test.ts',
   '__tests__/navigation/keinTauschImOutlet.test.ts',
   '__tests__/navigation/routenInventar.test.ts',
@@ -161,6 +170,7 @@ const BEKANNT: string[] = [
   '__tests__/services/dateiDownloadHaertung.test.ts',
   '__tests__/services/geraeteKennungMitsenden.test.ts',
   '__tests__/services/keinTokenImQuery.test.ts',
+  '__tests__/services/linkOeffnen.test.ts',
   '__tests__/services/messungAntragMaterialSpruch.test.ts',
   '__tests__/services/mitmachenMessung.test.ts',
   '__tests__/services/nutzungstiefeAufrufstellen.test.ts',
@@ -194,7 +204,7 @@ const istQuelltextTest = (inhalt: string) => inhalt.includes('readFileSync') && 
 describe('Leitplanke: reine Quelltext-Tests', () => {
   const gefunden = testDateien(SRC)
     .map((pfad) => ({ name: relative(SRC, pfad).split('\\').join('/'), inhalt: readFileSync(pfad, 'utf8') }))
-    .filter(({ name, inhalt }) => name !== DIESE_DATEI && istQuelltextTest(inhalt))
+    .filter(({ name, inhalt }) => name !== DIESE_DATEI && !PRUEFORDNER.some((o) => name.startsWith(o)) && istQuelltextTest(inhalt))
     .map(({ name }) => name)
     .sort();
 

@@ -26,6 +26,9 @@ init-scripts
 uploads
 push/*.json
 
+# Werkzeug der Entwicklung (Lint laeuft in der CI, nicht im Container)
+eslint.config.js
+
 # Bau-Beiwerk
 Dockerfile
 .dockerignore
