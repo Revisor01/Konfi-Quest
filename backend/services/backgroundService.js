@@ -1095,6 +1095,8 @@ class BackgroundService {
     // eine unhandled rejection beenden (siehe startEventReminderService).
     this.cleanupStaleTokens(db).catch(err =>
       console.error('Token cleanup (initial) failed:', err));
+    this.cleanupRefreshTokens(db).catch(err =>
+      console.error('Refresh-Token cleanup (initial) failed:', err));
 
     const SIX_HOURS = 6 * 60 * 60 * 1000;
     this.tokenCleanupInterval = setInterval(async () => {
@@ -1103,7 +1105,35 @@ class BackgroundService {
       } catch (error) {
         console.error('Token cleanup service failed:', error);
       }
+      try {
+        await this.cleanupRefreshTokens(db);
+      } catch (error) {
+        console.error('Refresh-Token cleanup failed:', error);
+      }
     }, SIX_HOURS);
+  }
+
+  /**
+   * Loescht abgelaufene Refresh-Tokens und solche, die seit mehr als sieben
+   * Tagen widerrufen sind (die sieben Tage braucht die Erkennung einer
+   * Wiederverwendung, routes/auth.js).
+   *
+   * Bis zum 29.09.2026 lief das per setInterval(24 h) am Ende von
+   * routes/auth.js -- in JEDEM Backend-Prozess (auch im Test-Backend) und
+   * OHNE ersten Lauf beim Start. Jeder Deploy startet die Replicas neu; im
+   * September gab es an fast jedem Tag einen (bis zu 47 Commits auf main je
+   * Tag). Der erste Lauf kam deshalb praktisch nie, die Tabelle wuchs.
+   * Jetzt laeuft es mit dem Push-Token-Aufraeumen: auf dem Cron-Leader, beim
+   * Start sofort und danach alle sechs Stunden.
+   *
+   * @returns {Promise<number>} Zahl der geloeschten Zeilen
+   */
+  static async cleanupRefreshTokens(db) {
+    const { rowCount } = await db.query(
+      "DELETE FROM refresh_tokens WHERE expires_at < NOW() OR (revoked_at IS NOT NULL AND revoked_at < NOW() - INTERVAL '7 days')"
+    );
+    if (rowCount > 0) console.log(`Cleanup: ${rowCount} abgelaufene Refresh-Tokens entfernt`);
+    return rowCount || 0;
   }
 
   /**

@@ -1420,6 +1420,10 @@ iOS-Build 234 · Android versionCode 128
   gehen gebündelt über eine Verbindung und in begrenztem Tempo hinaus, damit
   der Mailanbieter sie nicht ablehnt. Einzelne Mails wie ein Passwort-Reset
   warten dabei nicht.
+- Abgelaufene und längst widerrufene Anmeldungen werden jetzt tatsächlich
+  aus der Datenbank entfernt: gleich beim Start des Servers und danach alle
+  sechs Stunden. Vorher geschah das nur nach einem ganzen Tag ohne Neustart,
+  also praktisch nie.
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.

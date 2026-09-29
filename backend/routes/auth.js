@@ -1745,17 +1745,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   });
 
-  // Abgelaufene + revoked Refresh-Tokens alle 24h aufräumen
-  setInterval(async () => {
-    try {
-      const { rowCount } = await db.query(
-        "DELETE FROM refresh_tokens WHERE expires_at < NOW() OR (revoked_at IS NOT NULL AND revoked_at < NOW() - INTERVAL '7 days')"
-      );
-      if (rowCount > 0) console.log(`Cleanup: ${rowCount} abgelaufene Refresh-Tokens entfernt`);
-    } catch (err) {
-      console.error('Refresh-Token Cleanup Fehler:', err);
-    }
-  }, 24 * 60 * 60 * 1000);
+  // Abgelaufene und widerrufene Refresh-Tokens raeumt seit dem 29.09.2026
+  // BackgroundService.cleanupRefreshTokens auf (Cron-Leader, erster Lauf beim
+  // Start). Hier stand ein setInterval(24 h) ohne ersten Lauf, das wegen der
+  // Neustarts bei jedem Deploy praktisch nie feuerte.
 
   return router;
 };

@@ -40,6 +40,11 @@ Was die Migrationen tun, steht in ihren Kopfkommentaren:
         FROM event_timeslots;
       ```
       Erwartet: `kein_datum` 0. `ohne_zone` sind Zeilen aus der SQLite-Zeit.
+- [ ] Abgelaufene Refresh-Tokens (ihr Aufräumen lief bis zu diesem Stand nur
+      nach 24 h ununterbrochener Laufzeit, also praktisch nie):
+      `SELECT count(*) FILTER (WHERE expires_at < NOW()) AS abgelaufen, count(*) FILTER (WHERE revoked_at < NOW() - INTERVAL '7 days') AS alt_widerrufen, count(*) AS gesamt FROM refresh_tokens;`
+      Nach dem Deploy erneut: `abgelaufen` und `alt_widerrufen` müssen 0 sein
+      (erster Lauf direkt beim Start des Cron-Leaders).
 - [ ] Zugriffe auf die Indizes, über die als Nächstes zu entscheiden ist (BF-09,
       die 33 Einzelspalten-Indizes neben einem längeren):
       ```sql
