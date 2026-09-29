@@ -230,11 +230,15 @@ jobs:
           # muss deshalb das ganze Verzeichnis pruefen — nur index.html haette
           # Aenderungen an einem einzelnen Kapitel durchgelassen. Neue Dateien
           # zaehlen mit (--intent-to-add macht sie fuer git diff sichtbar).
+          # Die Sitemap gehoert dazu (29.09.2026, Audit CI BF-13): Ihr Datum
+          # kommt seitdem aus dem Inhalt der Seiten statt aus der
+          # Aenderungszeit der Dateien, ein Lauf auf sauberem Stand aendert
+          # sie also nicht mehr.
           git add -N frontend/public/docs/
-          if ! git diff --quiet -- frontend/public/docs/ ':!frontend/public/docs/api'; then
-            echo "::error::Das Handbuch ist nicht auf dem Stand von docs/handbuch/."
+          if ! git diff --quiet -- frontend/public/docs/ ':!frontend/public/docs/api' frontend/public/sitemap.xml; then
+            echo "::error::Das Handbuch oder die Sitemap ist nicht auf dem Stand von docs/handbuch/."
             echo "Neu erzeugen und mitcommitten:  npm --prefix frontend run docs:handbuch"
-            git diff --stat -- frontend/public/docs/ ':!frontend/public/docs/api'
+            git diff --stat -- frontend/public/docs/ ':!frontend/public/docs/api' frontend/public/sitemap.xml
             exit 1
           fi
           echo "Handbuch ist aktuell."

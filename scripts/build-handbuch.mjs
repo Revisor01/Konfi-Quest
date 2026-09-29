@@ -947,32 +947,41 @@ ${karten}
   }
 
   // --- Schreiben ---
+  // Vorher vergleichen, welche Seite sich wirklich aendert: Das ist die
+  // Grundlage fuer das Datum in der Sitemap (siehe unten).
+  const geaendert = new Set();
   for (const [datei, seite] of erzeugt) {
-    writeFileSync(join(ZIEL_VERZ, datei), seite.html, 'utf8');
+    const pfad = join(ZIEL_VERZ, datei);
+    const vorher = existsSync(pfad) ? readFileSync(pfad, 'utf8') : null;
+    if (vorher !== seite.html) geaendert.add(datei);
+    writeFileSync(pfad, seite.html, 'utf8');
   }
 
-  // Datum im Format JJJJ-MM-TT. Fuer die Sitemap.
-  const alsDatum = (d) => d.toISOString().slice(0, 10);
-  const heute = () => alsDatum(new Date());
-  // Aenderungsdatum der Quelldatei — nicht "heute", sonst meldete jeder Build
-  // allen Seiten eine Aenderung, die es gar nicht gab.
-  const quellDatum = (quelldatei) => {
-    if (!quelldatei) return heute();
-    try {
-      return alsDatum(statSync(join(QUELLE, quelldatei)).mtime);
-    } catch {
-      return heute();
-    }
-  };
+  // Datum im Format JJJJ-MM-TT, als Kalendertag in Berlin -- nicht in UTC,
+  // sonst schriebe ein Lauf kurz nach Mitternacht den Vortag.
+  const heute = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
 
   // --- Sitemap ---
   // Wird hier mitgeschrieben statt von Hand gepflegt: Die alte Fassung kannte
   // das Handbuch gar nicht und trug ueberall dasselbe alte Datum. Was der
   // Generator erzeugt, weiss er auch — also traegt er es ein.
-  // Das Datum kommt aus der jeweiligen Quelldatei, nicht aus "heute": Sonst
-  // meldete jeder Build allen Seiten eine Aenderung, die es nicht gab.
+  //
+  // DAS DATUM KOMMT AUS DEM INHALT (29.09.2026, Audit CI BF-13 / Doku
+  // BF-13). Bis dahin stammte es aus der Aenderungszeit der Quelldatei. Die
+  // ist in jedem frischen Checkout der Zeitpunkt des Auscheckens: Jeder Lauf
+  // in der CI oder auf einem anderen Rechner schrieb andere Daten, die Datei
+  // war nicht reproduzierbar, und alle setzten sie nach dem Lauf zurueck.
+  // Jetzt: Aendert sich die erzeugte Seite, gilt der heutige Tag; bleibt sie
+  // gleich, bleibt das eingetragene Datum. Damit ist die Sitemap eine
+  // Funktion des Repo-Inhalts -- ein Lauf auf einem sauberen Stand aendert
+  // nichts, und die CI kann sie wie das Handbuch auf Frische pruefen.
+  // Die festen Seiten (Startseite, Impressum, ...) erzeugt dieser Generator
+  // nicht; ihr Datum bleibt, wie es eingetragen ist.
   const sitemapDatei = join(WURZEL, 'frontend', 'public', 'sitemap.xml');
-  if (existsSync(sitemapDatei)) {
+  const standardZiel = ZIEL_VERZ === join(WURZEL, 'frontend', 'public', 'docs');
+  if (!standardZiel) {
+    console.log('Sitemap unveraendert: Handbuch wurde in ein anderes Verzeichnis geschrieben.');
+  } else if (existsSync(sitemapDatei)) {
     const feste = [
       { pfad: '/', freq: 'monthly', prio: '1.0' },
       { pfad: '/impressum', freq: 'yearly', prio: '0.3' },
@@ -998,11 +1007,14 @@ ${karten}
       `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${mod}</lastmod>\n` +
       `    <changefreq>${freq}</changefreq>\n    <priority>${prio}</priority>\n  </url>`;
 
+    // Erzeugte Seite: bei geaendertem Inhalt heute, sonst das eingetragene Datum.
+    const seitenDatum = (datei, pfad) => (geaendert.has(datei) ? heute() : datumVon(pfad));
+
     const zeilen = [
       ...feste.map((f) => eintrag(`https://konfi-quest.de${f.pfad}`, datumVon(f.pfad), f.freq, f.prio)),
-      eintrag('https://konfi-quest.de/docs/', heute(), 'monthly', '0.8'),
+      eintrag('https://konfi-quest.de/docs/', seitenDatum('index.html', '/docs/'), 'monthly', '0.8'),
       ...seiten.map((s) =>
-        eintrag(`https://konfi-quest.de/docs/${s.datei}`, quellDatum(s.quelldatei), 'monthly', '0.6')
+        eintrag(`https://konfi-quest.de/docs/${s.datei}`, seitenDatum(s.datei, `/docs/${s.datei}`), 'monthly', '0.6')
       ),
     ];
 

@@ -375,7 +375,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-13: `sitemap.xml` wird aus Datei-Änderungszeiten erzeugt — nicht reproduzierbar und vom Frischecheck nicht erfasst
 - **Schwere:** NIEDRIG
-- **Status:** offen 27.09.2026 — `lastmod` kommt weiter aus der Änderungszeit (`scripts/build-handbuch.mjs:802`), der Frischecheck sieht `sitemap.xml` nicht (Auftrag `04-ci.md`, Abschnitt 4). Später.
+- **Status:** behoben 29.09.2026 — `scripts/build-handbuch.mjs` nimmt `lastmod` nicht mehr aus der Änderungszeit, sondern aus dem Inhalt: Ändert sich die erzeugte Seite gegenüber der eingecheckten, gilt der heutige Tag (Kalendertag in Berlin), sonst bleibt das eingetragene Datum; auch `/docs/` hängt jetzt an `index.html` statt immer „heute" zu tragen. Damit ist die Sitemap eine Funktion des Repo-Inhalts — unabhängig von Checkout, Rechner, flachem Klon oder Squash-Merge (der in beiden Berichten empfohlene Weg über `git log` hätte daran gehangen). Ein Lauf in ein anderes Zielverzeichnis schreibt keine Sitemap. Der Frischecheck „Handbuch aktuell?" in `ci.yml` vergleicht `frontend/public/sitemap.xml` mit. Geprüft: Generatorlauf auf dem Arbeitsstand → `sitemap.xml` unverändert; `frontend/src/__tests__/betrieb/sitemap.test.ts` (5 Fälle an einer Repo-Kopie mit frischen Änderungszeiten; mit dem alten Generator 2 rot). Die festen Seiten (Startseite, Rechtstexte) erzeugt der Generator nicht, ihr Datum bleibt wie eingetragen.
 - **Fundstelle:** `scripts/build-handbuch.mjs:699-705` (`statSync(...).mtime`), `:714,741-743`;
   `.github/workflows/ci.yml:215-216` (Check nur `frontend/public/docs/`, nicht `frontend/public/sitemap.xml`).
 - **Kennzeichnung:** reproduziert (Generatorlauf + `git diff`)

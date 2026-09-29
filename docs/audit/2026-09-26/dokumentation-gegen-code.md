@@ -440,7 +440,7 @@ abreißt.
 
 ### BF-13: Sitemap-Erzeugung nicht reproduzierbar, von der CI nicht geprüft
 - **Schwere:** NIEDRIG
-- **Status:** offen 26.09.2026 — Generator- und CI-Änderung, gehört zum CI-Paket (Sammelbefund S-21). Im Doku-Paket wurde `frontend/public/sitemap.xml` deshalb nach jedem Generatorlauf bewusst zurückgesetzt und nicht eingecheckt.
+- **Status:** behoben 29.09.2026 — `lastmod` kommt aus dem Inhalt der erzeugten Seite (geändert → heutiger Tag in Berlin, sonst bleibt das Datum), nicht mehr aus der Datei-`mtime`; `/docs/` folgt `index.html`; der CI-Schritt „Handbuch aktuell?" prüft `frontend/public/sitemap.xml` mit. Die Sitemap wird nach einem Generatorlauf nicht mehr zurückgesetzt, sondern mit eingecheckt. Einzelheiten und Nachweis: CI BF-13 (`ci-deployment-store.md`), Test `frontend/src/__tests__/betrieb/sitemap.test.ts`.
 - **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** weiter offen — die CI-Pakete haben die Sitemap nicht aufgenommen (Behebungsbericht, „Was offen bleibt"). Später.
 - **Fundstelle:** `scripts/build-handbuch.mjs:699-707` (`statSync(...).mtime`),
   `:744` (`heute()` für `/docs/`), `.github/workflows/ci.yml:210-219`
