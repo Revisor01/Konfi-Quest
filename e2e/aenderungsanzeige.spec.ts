@@ -101,9 +101,16 @@ test.describe('Aenderungsanzeige nach einem Update', () => {
     await page.locator('ion-tab-button[tab="dashboard"]').click();
     await expect(page).toHaveURL(/\/konfi\/dashboard/);
 
-    // Lange genug warten, dass sie sich gemeldet HAETTE (400 ms Versatz).
-    await page.waitForTimeout(2_000);
-    await expect(overlay).toHaveCount(0);
+    // Lange genug beobachten, dass sie sich gemeldet HAETTE (400 ms Versatz):
+    // zwei Sekunden lang alle 250 ms nachsehen. Strenger als ein einzelner
+    // Blick nach fester Wartezeit -- auch eine Anzeige, die kurz aufgeht und
+    // wieder verschwindet, faellt so auf (Audit Tests BF-09).
+    const gezaehlt: number[] = [];
+    await expect.poll(async () => {
+      gezaehlt.push(await overlay.count());
+      return gezaehlt.length;
+    }, { intervals: [250], timeout: 10_000 }).toBeGreaterThanOrEqual(8);
+    expect(Math.max(...gezaehlt)).toBe(0);
 
     // Und die Seite nimmt wieder Klicks an -- der eigentliche Punkt.
     await expect(page.locator('ion-tab-button[tab="badges"]')).toBeEnabled();

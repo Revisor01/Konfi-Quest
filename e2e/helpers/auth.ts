@@ -82,6 +82,38 @@ export async function loginOhneMarker(page: Page, username: string, password = '
 }
 
 /**
+ * Meldet ab, damit sich jemand anderes anmelden kann.
+ *
+ * Der blosse Aufruf von /login genuegt NICHT: Die App leitet eine bestehende
+ * Sitzung sofort aufs Dashboard zurueck, das Formular erscheint nie. Deshalb
+ * die gespeicherte Sitzung wegraeumen -- Capacitor Preferences liegen im
+ * Browser in localStorage -- samt Offline-Cache, sonst saehe die naechste
+ * Person kurz die Zahlen der vorigen.
+ */
+export async function abmelden(page: Page) {
+  await page.evaluate(() => {
+    for (const k of Object.keys(window.localStorage)) {
+      if (k.includes('token') || k.includes('konfi_user') || k.startsWith('CapacitorStorage.cache:')) {
+        window.localStorage.removeItem(k);
+      }
+    }
+  });
+}
+
+/**
+ * Der Punktestand einer Art, wie ihn die Legende unter den Ringen auf dem
+ * Konfi-Dashboard zeigt ("Gottesdienst: 4/10"). Wartet, bis die Zeile da ist.
+ */
+export async function punkteStand(page: Page, art: 'Gottesdienst' | 'Gemeinde'): Promise<number> {
+  const zeile = page.getByText(new RegExp(`^${art}: \\d+`));
+  await zeile.waitFor({ state: 'visible', timeout: 15_000 });
+  const text = (await zeile.textContent()) ?? '';
+  const treffer = text.match(new RegExp(`^${art}: (\\d+)`));
+  if (!treffer) throw new Error(`Kein Punktestand "${art}" in "${text}"`);
+  return Number(treffer[1]);
+}
+
+/**
  * Setzt die geraetelokalen Marker, die die beiden Vollbild-Overlays
  * unterdruecken. Beide legen sich ueber die ganze Seite und fangen jeden
  * Klick ab ("... subtree intercepts pointer events"):

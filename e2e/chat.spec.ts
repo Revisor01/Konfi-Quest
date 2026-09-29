@@ -3,6 +3,10 @@ import { loginAs } from './helpers/auth';
 
 test.describe('Chat', () => {
   test('Nachricht wird gesendet und beim Empfaenger angezeigt', async ({ browser }) => {
+    // Zwei Anmeldungen hintereinander; die 30 s der Voreinstellung reichten
+    // unter Last nicht (29.09.2026 lokal: Nachricht war beim Empfaenger
+    // sichtbar, der Test lief trotzdem in die Zeitgrenze).
+    test.setTimeout(90_000);
     const uniqueMsg = `E2E-Test-Nachricht ${Date.now()}`;
 
     // 1. Als konfi1 einloggen und Nachricht senden
