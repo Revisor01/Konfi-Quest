@@ -40,10 +40,11 @@ etwas anderes liegt.
 
 ## Warum das Schema ein Produktions-Dump ist
 
-`01-create-schema.sql` ist ein `pg_dump --schema-only` der echten
-Produktionsdatenbank — dieselbe Datei, aus der auch die Testsuite ihre
-Datenbank aufbaut (`backend/tests/globalSetup.js`). Beide Seiten lesen
-denselben Stand; es gibt keine zweite, handgepflegte Fassung mehr.
+`01-create-schema.sql` ist ein `pg_dump --schema-only` der
+Produktionsdatenbank, fortgeschrieben um die Migrationen, die dort seitdem
+gelaufen sind — dieselbe Datei, aus der auch die Testsuite ihre Datenbank
+aufbaut (`backend/tests/globalSetup.js`). Beide Seiten lesen denselben Stand;
+es gibt keine zweite, handgepflegte Fassung mehr.
 
 Ein handgeschriebenes Schema waere eine zweite Quelle neben den Migrationen,
 und zwei Quellen laufen auseinander. Genau das war passiert: Die frueher hier
@@ -54,11 +55,11 @@ CHECK-Constraint Werte, die der Code laengst schreibt. Aufgefallen ist das
 keinem Test, weil die Tests aus dem Dump bauen und diese Datei nie anfassten.
 
 Die Migrationskette kann die Luecke nicht schliessen: Sie beginnt erst bei
-`064`, und fuer mehrere Objekte (`daily_verses`, `activities.category`,
-`konfi_profiles.password_plain`) existiert nirgends im Repo ein DDL — sie
-wurden in Produktion von Hand angelegt. Das Repo kann die Produktion also
-nicht aus Migrationen reproduzieren; der Dump ist der einzige ehrliche
-Startpunkt.
+`064`, und fuer `konfi_profiles.password_plain` existiert nirgends im Repo
+ein DDL — die Spalte wurde in Produktion von Hand angelegt
+(`daily_verses` und `activities.category`, frueher ebenso, liefert seit dem
+22.08.2026 Migration 124). Das Repo kann die Produktion also nicht allein
+aus Migrationen reproduzieren; der Dump ist der einzige ehrliche Startpunkt.
 
 ## Ablauf bei einer Neuinstallation
 
@@ -76,7 +77,21 @@ Produktion und landet auf demselben Schema.
 
 ## Aktualisieren
 
-Beide Dateien entstehen aus der Produktion und werden gemeinsam erneuert:
+Beide Dateien werden gemeinsam erneuert, **mit jedem Release** — aus dem
+Migrationsstand des Repos, reproduzierbar und ohne Zugang zur Produktion:
+
+```bash
+# Dump + Migrationsstand fortschreiben (Docker, postgres:15-alpine) und
+# hierher spiegeln. BIS = letzte Migration, die in der Produktion gelaufen ist.
+bash backend/tests/schema/schema-erneuern.sh 173_einladungscode_ohne_urheber.sql
+```
+
+Vergessen faellt auf: `backend/tests/schema/dumpAktualitaet.test.js`
+schlaegt an, sobald mehr als 20 Migrationen ueber dem Dump laufen, und wenn
+dieses Verzeichnis nicht mehr zum Dump passt. Ob die Produktion dem
+fortgeschriebenen Stand wirklich entspricht (Handaenderungen dort sieht kein
+Migrationsstand), misst der Betrieb mit `backend/scripts/schemaVergleich.js`.
+Direkt aus der Produktion geht es weiterhin:
 
 ```bash
 bash backend/tests/schema/refresh-schema.sh         # holt Dump + Migrationsstand

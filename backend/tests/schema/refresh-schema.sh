@@ -2,11 +2,17 @@
 # Holt das Produktions-Schema als Basis fuer die Test-DB.
 #
 # Warum ein Dump und nicht die Migrationen?
-# Das Repo KANN Produktion nicht reproduzieren: Die Migrationskette beginnt
-# erst bei 064, und fuer einige Objekte (daily_verses, activities.category,
-# konfi_profiles.password_plain) existiert nirgends ein DDL — sie wurden in
-# Produktion von Hand angelegt. Wer aus den Migrationen baut, testet ein
-# Schema, das es so nie gab.
+# Das Repo KANN Produktion nicht allein aus Migrationen reproduzieren: Die
+# Kette beginnt erst bei 064, und fuer konfi_profiles.password_plain existiert
+# nirgends ein DDL -- die Spalte wurde in Produktion von Hand angelegt
+# (daily_verses und activities.category liefert seit dem 22.08.2026
+# Migration 124). Wer aus den Migrationen baut, testet ein Schema, das es so
+# nie gab.
+#
+# Der regelmaessige Weg ist schema-erneuern.sh (fortschreiben aus dem
+# Migrationsstand, ohne Produktionszugang). Dieses Skript holt den Dump
+# direkt aus der Produktion -- etwa wenn schemaVergleich.js dort eine
+# Handaenderung gefunden hat. Danach init-scripts-spiegeln.sh.
 #
 # Ablauf: Dieser Dump ist die Basis, darauf laufen nur noch die Migrationen,
 # die in Produktion noch nicht angewandt sind — derselbe Weg wie beim Deploy.

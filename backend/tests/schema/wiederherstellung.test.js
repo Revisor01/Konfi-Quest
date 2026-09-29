@@ -116,9 +116,14 @@ describe('Wiederherstellung einer Sicherung auf einer frisch aufgesetzten Instan
     await frischeInstanz();
     const naiv = lauf('pg_restore', ['--no-owner', '-d', ZIEL, sicherung]);
     expect(naiv.status).not.toBe(0);
-    expect(naiv.stderr).toMatch(/already exists/);
-    const konten = await mitPool(ZIEL, (p) => p.query('SELECT count(*)::int AS n FROM users'));
-    expect(konten.rows[0].n).toBe(0);
+    // Jedes Objekt, das init-scripts schon angelegt hat, ist ein Fehler.
+    // Was danach in der Datenbank steht, haengt davon ab, ob der Dump und
+    // init-scripts denselben Stand haben: Hier (gleicher Stand) landen die
+    // Zeilen trotzdem, schema_migrations bleibt aber der von init-scripts;
+    // bei verschiedenen Staenden -- nachgestellt am 29.09.2026 -- scheiterte
+    // das Kopieren der Daten, 0 Konten. Beides ist kein Weg.
+    const fehler = (naiv.stderr.match(/already exists/g) || []).length;
+    expect(fehler).toBeGreaterThan(100);
   }, 60000);
 
   it('Ausgangslage: parallel aus der Standardeingabe geht nicht (der alte Doku-Weg)', () => {
