@@ -66,12 +66,16 @@
 #                                     (seit 26.09.2026 genau einmal nutzbar;
 #                                     dritte Verwendung widerruft alle
 #                                     Refresh-Tokens des Kontos, BF-08)
-#      GET  /check-username/:username NUR General-Limiter
+#      GET  /check-username/:username namensLimiter seit 29.09.2026: 30
+#                                     TREFFER ("vergeben") je Viertelstunde
+#                                     und Client-IP, danach 429; freie Namen
+#                                     zaehlen nicht (Audit Sicherheit BF-18)
 #      GET  /validate-invite/:code    NUR General-Limiter
-#    # LÜCKE (NEU): check-username, validate-invite, reset-password und
-#    # refresh haben keinen eigenen (strengeren) Rate-Limiter — Username-
-#    # Enumeration und Invite-Code-Bruteforce (nur 8 Hex-Zeichen = 4 Byte
-#    # Entropie) sind mit bis zu 2000 Requests/15min/IP möglich.
+#    # LÜCKE (N3, teilweise BEHOBEN 29.09.2026): validate-invite,
+#    # reset-password und refresh haben keinen eigenen (strengeren)
+#    # Rate-Limiter — Invite-Code-Bruteforce (nur 8 Hex-Zeichen = 4 Byte
+#    # Entropie) ist mit bis zu 2000 Requests/15min/IP möglich.
+#    # check-username hat seit 29.09.2026 den namensLimiter (siehe oben).
 #    "Pro Client-IP" heisst seit 26.09.2026 (Audit Sicherheit BF-13): der
 #    Header X-Real-IP zaehlt nur, wenn die Anfrage aus dem Docker-Netz kommt
 #    (utils/clientIp.js: Peer in Loopback/Link-Local/privatem Bereich), sonst
@@ -130,6 +134,9 @@
 #      genau die beiden zuletzt geschlossenen Routen sind die, die man
 #      benutzt, wenn ein Konto uebernommen wurde.
 #  N3  Fehlende Spezial-Rate-Limiter auf 4 offenen Auth-Routen (siehe oben).
+#      TEILWEISE BEHOBEN 29.09.2026: check-username hat den namensLimiter
+#      (Audit Sicherheit BF-18); validate-invite, reset-password und refresh
+#      weiter nur mit dem allgemeinen Flutschutz.
 #  N4  GET /levels/konfi/:userId: jeder authentifizierte User der Org (auch
 #      jeder Konfi) kann Punkte/Level JEDES Konfis abrufen — kein Selbst-
 #      oder Rollen-Check.
@@ -164,6 +171,40 @@ info:
     (15 Min), der von verifyTokenRBAC geprüft wird; die aktive Organisation
     kann per Header X-Active-Organization gewechselt werden (Mitgliedschaft
     wird gegen user_organizations geprüft, 30s-User-Cache).
+    FREMDE AKTIVE GEMEINDE (seit 29.09.2026): Ohne Mitgliedschaft antworten
+    verifyTokenRBAC und die Datei-Routen GET /api/chat/files/:filename und
+    GET /api/challenges/files/:filename mit 403 { error: "Kein Zugriff auf
+    diese Organisation", error_code: "org_kein_zugriff" }. error_code ist neu;
+    der Text bleibt bewusst "Organisation", obwohl alle anderen Meldungen
+    "Gemeinde" sagen: Die Store-Apps 2.2.0 und 2.3.0 vergleichen ihn woertlich
+    fuer den Rueckfall in die Stamm-Gemeinde. Die aktuelle App prueft zuerst
+    error_code; der Text darf "Gemeinde" sagen, sobald keine App ohne diese
+    Pruefung mehr ruft.
+    ZUGANGS-TOKEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-15): Claims
+    id, type, organization_id, role_name, is_super_admin, ggf.
+    active_organization_id, iat, exp -- OHNE display_name und email
+    (vorher im Klartext, nur base64-kodiert). Gilt für alle fünf
+    ausstellenden Stellen (login, refresh, switch-org, register-konfi, das
+    neue Paar aus change-password). Geprüft gegen die ausgelieferten Apps
+    1.5.3 bis 2.3.0: Sie lesen aus dem Token nur exp (services/api.ts,
+    getTokenExp); Name und E-Mail kommen aus `user` der Login-Antwort und
+    aus GET /auth/me. Das Backend liest aus dem Token nur id, iat und
+    active_organization_id und lädt alles andere aus der Datenbank.
+    PROTOKOLL (BEHOBEN 29.09.2026, Audit Sicherheit BF-14): Das
+    Server-Protokoll nennt Personen nur mit Konto-Kennung, E-Mail-Adressen
+    nur mit Domain und keinen Freitext vom Client (utils/protokoll.js).
+    POST /api/auth/login schreibt keine Zeile je erfolgreicher Anmeldung und
+    nie den Benutzernamen. Fehlversuche stehen im Protokoll (Simon,
+    29.09.2026): falsches Passwort mit der Konto-Kennung, ein unbekannter
+    Name als "unbekannter Benutzername" ohne den Namen; gezaehlt werden sie
+    in der Kontosperre. Abgewiesene Anmeldungen gesperrter Konten stehen mit
+    der Kennung im Protokoll.
+    FEHLER IM ANFRAGE-KÖRPER (alle Routen, BEHOBEN 29.09.2026, Audit
+    Sicherheit BF-17): Ungültiges JSON antwortet 400 "Die Anfrage enthält
+    kein gültiges JSON.", ein Körper über 100 kB 413 "Die Anfrage ist zu
+    groß.", ein fremder Zeichensatz oder eine unbekannte Kodierung 415 --
+    jeweils { error } ohne Log-Zeile. Vorher 500 "Something went wrong!"
+    mit Stack im Log je Anfrage.
 servers:
   - url: https://konfi-quest.de
 tags:
@@ -188,7 +229,7 @@ components:
       description: >
         JWT im Authorization-Header. Optional Header X-Active-Organization
         (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
-        Mitglied ist (sonst 403).
+        Mitglied ist (sonst 403 mit error_code org_kein_zugriff).
   schemas:
     Error:
       type: object
@@ -373,15 +414,17 @@ paths:
               properties:
                 password: { type: string, description: "Bestaetigung mit aktuellem Passwort" }
       responses:
-        "200": { description: "Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (utils/konfiDeletion.js, loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Antwortform unveraendert" }
+        "200": { description: "{ message: 'Account erfolgreich gelöscht' } -- Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Seit 28.09.2026 ueber utils/kontoLoeschen.js, dieselbe Funktion wie DELETE /admin/konfis/{id} (Regel und Umfang dort): alles der Person in ALLEN Gemeinden, Zweiergespraeche ganz, Zaehler der Anmeldesperre, Dateien nach dem COMMIT; was sie fuer eine Gemeinde angelegt hat, bleibt ohne Verweis. Antwortform unveraendert" }
         "400": { description: "Passwort fehlt oder falsch" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { description: "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026)" }
+        "500": { description: "BEHOBEN 28.09.2026: Hatte die Person Antraege in einer WEITEREN Gemeinde, scheiterte die Loeschung am Fremdschluessel activity_requests_konfi_id_fkey (die alte Kaskade raeumte nur die Stamm-Gemeinde ab) -- eine eingeladene Teamer:in konnte ihr Konto nicht loeschen" }
       x-berechtigung:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
         org-scope: false
         objekt-pruefung: "Nur eigener Account; Passwort-Bestaetigung im Handler"
-        hinweis: "Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
+        hinweis: "UEBERHOLT seit 26.08.2026: Die letzte Person mit Org-Leitung in ihrer Gemeinde bekommt 409, wie in DELETE /users/:id. Vorher stand hier: Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
 
   /api/auth/update-email:
     post:
@@ -491,10 +534,18 @@ paths:
         auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre
         Einladung erscheint ohnehin in der Liste.
 
+        KONFI IRGENDWO REICHT (BEHOBEN 28.09.2026, Simon: "Konfi und Team
+        geht nicht parallel"; utils/konfiOderTeam.js): Vorher zaehlte nur
+        die Stammrolle. Ein Konto, das zuhause Team und ueber
+        user_organizations in einer anderen Gemeinde Konfi ist (Altbestand),
+        liess sich so in eine weitere Gemeinde einladen. Jetzt dieselbe 404
+        nicht_gefunden wie bei einem Konfi. Test
+        tests/routes/konfiOderTeam.test.js.
+
         Meldung an die eingeladene Person ueber Postfach, Push (Gruppe
         "Anfragen und Freigaben") und E-Mail, nach der Antwort (nachAntwort).
         Die Rolle steht darin mit dem festen Wort nach role_name ("Leitung",
-        "Org-Leitung", "Teamer:in"; utils/rollenNamen.js). BEHOBEN 28.09.2026:
+        "Gemeindeleitung", "Teamer:in"; utils/rollenNamen.js). BEHOBEN 28.09.2026:
         Vorher stand dort der technische Name ("als admin mitzuarbeiten"),
         weil die Abfrage display_name gar nicht las. Dasselbe Wort nennt die
         Meldung "Einladung angenommen/abgelehnt" an die einladende Person
@@ -523,7 +574,7 @@ paths:
         "201": { description: "id, user_id, display_name, username, role_id, role_name, status, expires_at" }
         "400": { description: "Rolle gehoert nicht zu dieser Gemeinde; konfi-Rolle (error_code konfi_nicht_moeglich); Selbst-Einladung" }
         "403": { description: "Nicht org_admin, oder Rolle laut Hierarchie nicht vergebbar" }
-        "404": { description: "Kein Konto mit dieser Kennung ODER die Person ist ein Konfi -- beides identisch (error_code nicht_gefunden)" }
+        "404": { description: "Kein Konto mit dieser Kennung ODER die Person ist in irgendeiner Gemeinde Konfi -- beides identisch (error_code nicht_gefunden)" }
         "409": { description: "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen; nur bei einer noch gueltigen offenen Einladung)" }
       x-berechtigung:
         rollen: [org_admin]
@@ -616,8 +667,8 @@ paths:
         Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet',
         status 'angenommen', einladung_id, user_id, organization_id = die
         einladende Gemeinde) an die Person aus eingeladen_von, solange sie
-        dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst
-        an die Org-Admins der Gemeinde; nie an die eingeladene Person
+        dort zur Gemeindeleitung gehoert (beide Quellen, aktiv, nicht
+        geloescht) -- sonst an die Gemeindeleitung; nie an die eingeladene Person
         selbst. Dazu das Live-Signal 'users' an die Gemeinde (die
         Benutzerliste laedt nach). Die Antwortform ist unveraendert.
 
@@ -631,12 +682,21 @@ paths:
         ('gemeinde_einladung_beantwortet') bleibt. 404/409/410 raeumen nichts
         auf; einen abgelaufenen Eintrag nimmt das taegliche
         Postfach-Aufraeumen (02:00) mit.
+
+
+        KONFI UND TEAM NIE ZUGLEICH (BEHOBEN 28.09.2026, Simon: "Konfi und
+        Team geht nicht parallel"; utils/konfiOderTeam.js): Die Annahme
+        prueft Konto und angebotene Rolle mit dem Stand von JETZT. Vorher
+        legte sie die Mitgliedschaft auch an, wenn das Konto inzwischen
+        (oder schon vor dem 26.09.2026, Sicherheit BF-03) Konfi war oder die
+        Einladung die Konfi-Rolle trug. Dann 409 konfi_und_team; die
+        Einladung bleibt offen, nichts wird geschrieben.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "200": { description: "message, organization (id, name, slug, display_name)" }
         "404": { description: "Nicht vorhanden ODER nicht die eigene Einladung -- bewusst dieselbe Antwort, sonst liesse sich durch Durchprobieren erkennen, welche es gibt" }
-        "409": { description: "Bereits beantwortet (error_code schon_beantwortet)" }
+        "409": { description: "Bereits beantwortet (error_code schon_beantwortet); seit 28.09.2026 auch: das Konto ist irgendwo Konfi oder die angebotene Rolle ist konfi (error_code konfi_und_team)" }
         "410": { description: "Abgelaufen (error_code expired)" }
       x-berechtigung:
         rollen: [alle authentifizierten]
@@ -760,7 +820,17 @@ paths:
   /api/auth/invite-code:
     post:
       tags: ["Passwörter & Einladungen"]
-      summary: Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)
+      summary: Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 bis 90 Tage gültig)
+      description: >
+        GUELTIGKEIT WAEHLBAR (28.09.2026, Audit E-08; Simon: "codes laenger
+        als 7 Tage ist gut. Mach es flexibel. Aber mit Zwang die ablaufen zu
+        lassen."): gueltig_tage 7, 14, 30, 60 oder 90, optional. Ohne das
+        Feld (oder mit null) gilt der Code wie bisher 7 Tage — so schicken
+        es die Apps im Store (2.2.0, 2.3.0). Jeder andere Wert: 400 "Ein
+        Einladungscode gilt 7, 14, 30, 60 oder 90 Tage.", es wird kein Code
+        angelegt. Einen Code ohne Ablauf gibt es nicht
+        (invite_codes.expires_at NOT NULL; utils/einladungsGueltigkeit.js).
+        Antwort additiv um gueltig_tage erweitert.
       requestBody:
         required: true
         content:
@@ -770,9 +840,11 @@ paths:
               required: [jahrgang_id]
               properties:
                 jahrgang_id: { type: integer }
+                gueltig_tage: { type: [integer, "null"], enum: [7, 14, 30, 60, 90, null], default: 7, description: "Seit 28.09.2026, optional" }
       responses:
-        "201": { description: "invite_code, jahrgang_name, expires_at (Status ist 200)" }
-        "403": { description: "Nur Org-Admins" }
+        "201": { description: "invite_code, jahrgang_name, expires_at, gueltig_tage (seit 28.09.2026) — Status ist 200" }
+        "400": { description: "gueltig_tage nicht 7, 14, 30, 60 oder 90 — { error }" }
+        "403": { description: "Nur die Gemeindeleitung" }
         "404": { description: "Jahrgang nicht in eigener Org" }
       x-berechtigung:
         rollen: [org_admin]
@@ -797,12 +869,32 @@ paths:
   /api/auth/invite-codes/{id}/extend:
     post:
       tags: ["Passwörter & Einladungen"]
-      summary: Einladungscode um 7 Tage verlaengern
+      summary: Einladungscode verlaengern (um 7 bis 90 Tage, hoechstens bis 90 Tage im Voraus)
+      description: >
+        VERLAENGERN WAEHLBAR, IMMER MIT ABLAUF (28.09.2026, Audit E-08):
+        tage 7, 14, 30, 60 oder 90, optional — ohne Body wie bisher um 7
+        Tage (die Apps im Store schicken keinen). Das neue Ablaufdatum ist
+        das bisherige plus tage, aber NIE mehr als 90 Tage ab jetzt; was
+        darueber hinausginge, wird gekuerzt (begrenzt: true). Bleibt bis zur
+        Grenze nicht einmal ein Tag, 400 und das Datum bleibt. Ein Tag sind
+        24 Stunden (vorher Kalendertage per setDate — ueber eine
+        Zeitumstellung eine Stunde Unterschied). Abgelaufene Codes bleiben
+        abgelaufen (400 wie bisher) — der Vorschlag aus E-08, auch
+        abgelaufene zu verlaengern, ist nach Simons Entscheidung ("mit Zwang
+        die ablaufen zu lassen") bewusst nicht umgesetzt.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Einladungs-Codes" }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tage: { type: [integer, "null"], enum: [7, 14, 30, 60, 90, null], default: 7, description: "Seit 28.09.2026, optional" }
       responses:
-        "200": { description: "Neues expires_at" }
-        "400": { description: "Abgelaufene Codes nicht verlaengerbar" }
+        "200": { description: "{ message, expires_at, begrenzt } — begrenzt (seit 28.09.2026): die 90-Tage-Grenze hat gekuerzt" }
+        "400": { description: "Abgelaufene Codes nicht verlaengerbar; tage nicht 7, 14, 30, 60 oder 90; oder der Code gilt schon 90 Tage im Voraus — jeweils { error } auf Deutsch" }
         "403": { description: "Nur org_admin" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
@@ -833,16 +925,24 @@ paths:
       summary: Username-Verfuegbarkeit prüfen (oeffentlich, case-insensitiv)
       parameters:
         - { name: username, in: path, required: true, schema: { type: string, minLength: 3, pattern: "^[a-zA-Z0-9.-]+$" }, description: "Zu prüfender Benutzername (case-insensitiv)" }
+      description: >-
+        BEHOBEN 29.09.2026 (N3, Audit Sicherheit BF-18): eigene Grenze
+        namensLimiter -- je Client-IP zaehlen nur Treffer ("vergeben"), 30 je
+        Viertelstunde, danach 429 fuer jede Pruefung dieser IP. Freie Namen
+        zaehlen nicht: Eine Konfi-Gruppe registriert sich gemeinsam aus einem
+        Gemeinde-WLAN und prueft bei jedem Tastendruck. Zaehler in
+        rate_limit_zaehler (Praefix namenspruefung), ueber alle Replicas. Die
+        App faengt den 429 ab (auch 2.2.x) und zeigt dann keinen Hinweis;
+        POST /register-konfi prueft den Namen selbst (409).
       responses:
         "200": { description: "{ available: bool, message }" }
         "400": { description: "Zu kurz / ungueltige Zeichen" }
+        "429": { description: "Mehr als 30 Treffer je Viertelstunde von dieser IP (seit 29.09.2026)" }
       x-berechtigung:
         rollen: [oeffentlich]
-        middleware: []
+        middleware: [namensLimiter]
         org-scope: false
         objekt-pruefung: "keine"
-        # LÜCKE (N3): kein eigener Rate-Limiter — systemweite Username-
-        # Enumeration mit bis zu 2000 Requests/15min/IP möglich.
 
   /api/auth/validate-invite/{code}:
     get:
@@ -906,7 +1006,7 @@ paths:
                 email: { type: string, format: email, description: "optional" }
                 device_id: { type: string, maxLength: 255, description: "Optional (seit 28.09.2026): Geraete-Kennung, bindet das Refresh-Token an das Geraet (wie beim Login)" }
       responses:
-        "200": { description: "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an die Leitung des Jahrgangs (Org-Admins immer, Admins mit can_view auf den Jahrgang)" }
+        "200": { description: "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an die Leitung des Jahrgangs (die Gemeindeleitung immer, Admins mit can_view auf den Jahrgang)" }
         "403": { description: "Konfi-Limit der Org erreicht (limit_exceeded)" }
         "404": { description: "Code existiert nicht" }
         "409": { description: "Username vergeben" }
@@ -979,7 +1079,7 @@ paths:
       responses:
         "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt. Das neue Token uebernimmt die Geraetebindung des alten; war das alte ungebunden und kam device_id mit, ist das neue daran gebunden" }
         "401": { description: "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung. ODER (seit 28.09.2026) gebundenes Token mit anderer oder fehlender device_id: nur DIESES Token wird widerrufen und sofort ablaufen gelassen (auch im Grace-Window, ohne dessen Gnade zu verbrauchen; der Nachfolger des echten Geraets bleibt), gleiche Fehlermeldung" }
-        "403": { description: "User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt / Trial abgelaufen (super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung). Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt" }
+        "403": { description: "{ error, error_code } -- User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt (org_inactive) / Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung. Code, Reihenfolge (erst Konto, dann Gemeinde) und Text sind seit 28.09.2026 dieselben wie bei POST /api/auth/login (eine Quelle, SPERR_MELDUNGEN); die App zeigt den Text nach einem abgelehnten Refresh auf der Anmeldeseite statt 'Sitzung abgelaufen'. Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt" }
       x-berechtigung:
         rollen: [oeffentlich]
         middleware: []
@@ -1004,6 +1104,13 @@ paths:
         # vorher) gelten wie bisher; die aktualisierte App bindet sie beim
         # ersten Refresh. change-password bindet nicht. Antwortformen
         # unveraendert. Tests: backend/tests/routes/refreshGeraetebindung.test.js.
+        # BEHOBEN 28.09.2026 (Audit Grundgeruest BF-11): Die 403-Antwort des
+        # Refresh wich von der Anmeldung ab -- ein deaktiviertes Konto bekam
+        # user_inactive mit dem Text der gesperrten Organisation, der Testphase
+        # fehlte der zweite Satz, und Konto-Sperre plus abgelaufene Testphase
+        # meldete org_trial_expired statt user_inactive. Jetzt eine Quelle fuer
+        # beide Routen. Form unveraendert (403 { error, error_code }).
+        # Tests: backend/tests/routes/refreshSperrGrund.test.js.
 
   /api/auth/logout:
     post:
@@ -1370,13 +1477,13 @@ paths:
                 role_name: { type: string, enum: [org_admin, admin, teamer] }
       responses:
         "201": { description: "Mitgliedschaft gespeichert; Chat-Sync (Team-Chat, bei org_admin alle Jahrgangs-Chats); User-Cache invalidiert" }
-        "400": { description: "konfi/super_admin als Rolle verboten; Rolle existiert nicht in Ziel-Org; User ist Konfi" }
+        "400": { description: "konfi/super_admin als Rolle verboten; Rolle existiert nicht in Ziel-Org; User ist Konfi; seit 28.09.2026 auch: User ist in einer anderen Gemeinde Konfi (error_code konfi_und_team)" }
         "404": { description: "User oder Org nicht gefunden" }
       x-berechtigung:
         rollen: [super_admin]
         middleware: [verifyTokenRBAC, requireSuperAdmin, validateAddMember]
         org-scope: false
-        objekt-pruefung: "Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen"
+        objekt-pruefung: "Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen -- seit 28.09.2026 ueber BEIDE Quellen (utils/konfiOderTeam.js): vorher nur die Stammrolle, ein Konto mit Konfi-Zeile in user_organizations einer anderen Gemeinde (Altbestand) kam durch"
 
   /api/organizations/{id}/members/{userId}:
     delete:
@@ -1412,7 +1519,8 @@ paths:
           BEKANNT: laufende Access-Tokens mit active_organization_id-Claim
           wirken serverseitig bis Ablauf nach (max 15 Min + 30s Cache).
           BEHOBEN 26.09.2026 auf Client-Seite (Audit Grundgeruest BF-05): Die
-          App holt beim ersten 403 "Kein Zugriff auf diese Organisation" per
+          App holt beim ersten 403 "Kein Zugriff auf diese Organisation"
+          (seit 29.09.2026 erkannt an error_code org_kein_zugriff) per
           POST /auth/refresh OHNE X-Active-Organization ein Token ohne Claim,
           baut den Socket damit neu auf und faellt sauber auf die Stamm-Org
           zurueck; das alte Token wird nicht mehr weiterbenutzt. rbac.js
@@ -1528,10 +1636,22 @@ paths:
         "400": { description: "Rolle nicht in eigener Org / keine Felder" }
         "403": { description: "Hierarchie verletzt (Ziel-User oder neue Rolle)" }
         "404": { $ref: "#/components/responses/NotFound" }
-        "409": { description: "Username/E-Mail existiert bereits" }
+        "409": { description: "Username/E-Mail existiert bereits; seit 28.09.2026 auch: der Rollenwechsel machte das Konto zugleich Konfi und Team (error_code konfi_und_team)" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateUpdateUser]
+        # BEHOBEN 28.09.2026 (Simon: "Konfi und Team geht nicht parallel";
+        # utils/konfiOderTeam.js): Die Konfi-Rolle bot die Oberflaeche nie
+        # an, der Server schrieb sie aber -- in einer weiteren Gemeinde nach
+        # user_organizations und zuhause auch bei bestehender weiterer
+        # Mitgliedschaft. Jetzt 409 konfi_und_team: in einer weiteren
+        # Gemeinde nie Konfi, zuhause nur ohne weitere Gemeinde, und Team nur,
+        # wenn die Person nirgends sonst Konfi ist (Team -> Team in einem
+        # Altbestands-Mischkonto bleibt moeglich, ebenso Konfi -> Team, das es
+        # aufloest; eine unveraenderte role_id geht immer durch). Rollenwechsel
+        # zuhause schreiben seither auch die Zeile der
+        # Stamm-Gemeinde in user_organizations mit (Altbestand aus Migration
+        # 101), in einer Transaktion. Test tests/routes/konfiOderTeam.test.js.
         # BEHOBEN 26.09.2026 (Audit Sicherheit BF-10): invalidateUserCache lief
         # nur bei role_id. Nach is_active=false arbeitete die alte Sitzung bis
         # zum 30-s-TTL von rbac.js weiter (reproduziert: PUT, direkt danach GET
@@ -1613,10 +1733,22 @@ paths:
         Einladung beantwortet -- Kennung konfi_id bzw. user_id im data-Teil).
         Vorher standen sie mit Name und Grund bis zum 365-Tage-Aufraeumen bei
         der Leitung.
+        GEAENDERT 28.09.2026 (Simon: "konto löschen muss wirklich alles
+        löschen."): Fall 3 hat keinen eigenen Loeschblock mehr, sondern ruft
+        utils/kontoLoeschen.js -- dieselbe Funktion wie DELETE
+        /admin/konfis/{id}, POST /auth/delete-account und die
+        Auto-Loeschung (Regel und Umfang bei DELETE /admin/konfis/{id} in
+        konfis-events). BEHOBEN dabei: Auf die frei werdenden Plaetze der
+        Person rueckt jetzt die Warteliste nach (Team-Platz an wartende
+        Teamer:innen), mit Push; Zweiergespraeche mit ihr gehen ganz (vorher
+        nur, wenn niemand mehr darin sass); Einladungscodes der Person
+        bleiben der Gemeinde (vorher geloescht); der Zaehler der
+        Anmeldesperre geht mit. Fall 1 und 2 unveraendert -- dort bleibt das
+        Konto.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
-        "200": { description: "{ message, konto_bleibt } -- Fall 1/2: Mitgliedschaft beendet bzw. Konto in eine andere Gemeinde umgezogen (konto_bleibt true, seit 27.09.2026); Fall 3: geloescht (konto_bleibt false). Rechte-Cache geleert (seit 26.09.2026, BF-10); Sockets getrennt; beim Loeschen Nachweisfotos und Challenge-Dateien nach COMMIT entfernt" }
+        "200": { description: "{ message, konto_bleibt } -- Fall 1/2: Mitgliedschaft beendet bzw. Konto in eine andere Gemeinde umgezogen (konto_bleibt true, seit 27.09.2026); Fall 3: geloescht (konto_bleibt false). Rechte-Cache geleert (seit 26.09.2026, BF-10); Sockets getrennt; beim Loeschen alle Dateien der Person (Nachweisfotos, Challenge- und Chat-Dateien, dazu die Dateien ihrer Zweiergespraeche) nach COMMIT entfernt" }
         "400": { description: "Selbst-Loeschung verboten" }
         "403": { description: "Hierarchie verletzt" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -1661,7 +1793,7 @@ paths:
         hinweis: >
           GEAENDERT 31.08.2026: war requireOrgAdmin. admin darf die Zuweisungen
           der von ihm verwalteten Personen (teamer, konfi) sehen — die von
-          anderen Admins und von Org-Admins nicht (403), fremde Organisationen
+          anderen Admins und der Gemeindeleitung nicht (403), fremde Organisationen
           gar nicht (404). requireAdmin allein waere eine Rechteausweitung
           gewesen; die Grenze zieht checkUserHierarchy.
           BEHOBEN 26.09.2026: checkUserHierarchy suchte den Ziel-User allein
@@ -1712,7 +1844,7 @@ paths:
           Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben
           koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig.
           admin kommt damit an teamer und konfi, NICHT an andere Admins oder
-          Org-Admins (403) und nicht an fremde Organisationen (404).
+          die Gemeindeleitung (403) und nicht an fremde Organisationen (404).
           BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des
           Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm
           damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht
@@ -2101,6 +2233,12 @@ paths:
         hinweis: >
           # HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit
           (GIT_SHA) preis. Bewusst so für die Status-Seite / Uptime Kuma.
+          GEPRÜFT 29.09.2026 (Audit Sicherheit BF-18), bleibt: `commit`
+          liest der Deploy-Verify (deploy/rollend.sh, notfall-deploy.yml),
+          `version` meldet laut CLAUDE.md die App-Version und wird nach
+          jedem Deploy abgelesen; beide stehen ohnehin öffentlich (Repo,
+          Store). `uptimeSeconds` bleibt als Feld der Antwortform (nur der
+          Startzeitpunkt, den auch die öffentlichen Actions-Läufe zeigen).
 
   /api/metrics:
     get:
@@ -2135,6 +2273,15 @@ paths:
         * `fehlerGruppen` — Fehler nach Route und Status zusammengefasst, mit
           anzahl, seit, zuletzt und beispielUrl. Zählt über die gesamte
           Laufzeit, während recentErrors nach 50 Einträgen überläuft.
+
+        BEHOBEN (29.09.2026, Audit Leitung BF-12): `recentErrors[].url` und
+        `fehlerGruppen[].beispielUrl` hielten die rohe Anfrage-URL — mit
+        Suchbegriff (`search-users?q=`), Benutzername (`check-username/`) und
+        dem Anmeldeschlüssel aus `?token=`. Beide sind weiter Strings, aber
+        geschwärzt (utils/apm.js, urlFuersAnzeige): Query nur mit den Namen
+        der Parameter (`?q=***`), Namen, Einladungscodes, Dateinamen und UUIDs
+        im Pfad als Platzhalter; Zahlen-Kennungen bleiben. Dieselbe Fassung
+        schreibt das Langsam-Log.
 
         Die Route-Zeilen (routesSlowest/routesBusiest/routesPotenzial) haben
         zusätzlich `p50Ms`, `serverP50Ms` (Median = die typische Anfrage),

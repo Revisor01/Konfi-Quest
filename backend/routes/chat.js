@@ -7,6 +7,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 const jwt = require('jsonwebtoken');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
+const { ORG_KEIN_ZUGRIFF } = require('../middleware/rbac');
 const PushService = require('../services/pushService');
 const { chatPushText } = require('../utils/pushText');
 const { rollenAnzeigename } = require('../utils/rollenNamen');
@@ -17,6 +18,7 @@ const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { darfRaumBetreten } = require('../utils/chatRoomAccess');
+const { istTextTyp, pruefeTextDatei, textInhaltsTyp } = require('../utils/textDatei');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -279,7 +281,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
                  -- Woerter wie utils/rollenNamen.js (Simon, 28.09.2026).
                  CASE
                    WHEN r.name = 'teamer' THEN 'Teamer:in'
-                   WHEN r.name = 'org_admin' THEN 'Org-Leitung'
+                   WHEN r.name = 'org_admin' THEN 'Gemeindeleitung'
                    ELSE 'Leitung'
                  END
                ) AS role_description
@@ -537,7 +539,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         [target_user_id, organizationId]
       );
       if (!validUser) {
-        return res.status(403).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
+        return res.status(403).json({ error: 'Benutzer nicht in deiner Gemeinde gefunden' });
       }
 
       // DATENSCHUTZ: Konfi-zu-Konfi-Chats gibt es nicht.
@@ -665,7 +667,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }
         const { rows: [validJahrgang] } = await db.query("SELECT id FROM jahrgaenge WHERE id = $1 AND organization_id = $2", [jahrgang_id, organizationId]);
         if (!validJahrgang) {
-          return res.status(403).json({ error: 'Jahrgang nicht in deiner Organisation gefunden' });
+          return res.status(403).json({ error: 'Jahrgang nicht in deiner Gemeinde gefunden' });
         }
         const { rows: [existing] } = await db.query("SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2", [jahrgang_id, organizationId]);
         if (existing) {
@@ -729,6 +731,20 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               WHERE u.id = ANY($1::int[]) AND u.deleted_at IS NULL`,
             [participantIds, organizationId]
           );
+
+          // Wer nicht zur Gemeinde gehoert, fiel bis hierher STILL heraus
+          // (Audit Sicherheit BF-16, 29.09.2026): Der Raum entstand ohne die
+          // Person, und die Leitung hielt ihn fuer vollstaendig. Jetzt 400,
+          // und der Raum wird nicht angelegt. Die Apps bieten nur Personen
+          // der Gemeinde an (Kontaktliste mit denselben zwei Quellen); die
+          // Meldung erreicht sie als error-Text.
+          if (partUsers.length < new Set(participantIds).size) {
+            await db.query('DELETE FROM chat_rooms WHERE id = $1', [roomId]);
+            return res.status(400).json({
+              error: 'Mindestens eine ausgewählte Person gehört nicht zu dieser Gemeinde.',
+              error_code: 'teilnehmende_nicht_in_gemeinde'
+            });
+          }
 
           // Konfi-zu-Konfi bleibt verboten — auch hier. Geprueft wurde oben nur
           // der Raum-TYP ('direct'), nicht WEN eine Konfi eintraegt. Über
@@ -917,6 +933,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               AND m.deleted_at IS NULL
               AND m.created_at > COALESCE(crs.last_read_at, '1970-01-01')
             AND m.created_at <= NOW()
+              -- Eigene Nachrichten zaehlen nicht (28.09.2026, Audit Fachlogik
+              -- Chat/Challenges/Rueckblick BF-10) -- wie GET
+              -- /notifications/badge-counts. Bis dahin zaehlte diese Stelle
+              -- sie mit; die App faellt ohne Wert aus badge-counts auf diese
+              -- Zahl zurueck (Reiter-Zahl, "Neu"-Trenner beim Oeffnen), die
+              -- Store-Apps 2.2.0/2.3.0 ebenso. Feld und Werttyp bleiben.
+              AND NOT (m.user_id = $1 AND m.user_type = $2)
           ) as unread_count,
           (
               SELECT json_build_object(
@@ -1298,9 +1321,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         // Magic-Bytes-Prüfung auf den Kopfbytes der Temporaerdatei (echte
         // Dateitypen erzwingen) — sie greift damit weiterhin VOR dem
         // endgueltigen Ablegen.
-        // Text-Formate (txt/csv) haben keine Magic Bytes -> Header vertrauen.
-        const textMimes = ['text/plain', 'text/csv'];
-        if (!textMimes.includes(req.file.mimetype)) {
+        // Text-Formate (txt/csv) haben keine Magic Bytes -- statt dem Header
+        // zu vertrauen, wird seit dem 29.09.2026 der Inhalt geprueft
+        // (utils/textDatei.js, Audit Sicherheit BF-20).
+        if (istTextTyp(req.file.mimetype)) {
+          const befund = await pruefeTextDatei(req.file.path, req.file.size, req.app.locals.zwischenlager);
+          if (befund) {
+            return res.status(befund.status).json({ error: befund.error });
+          }
+        } else {
           const { fileTypeFromBuffer } = await import('file-type');
           const detected = await fileTypeFromBuffer(await leseKopfBytes(req.file.path));
           const allowedPrefixes = [
@@ -1717,7 +1746,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         [user_id, organizationId]
       );
       if (!targetUser) {
-        return res.status(404).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
+        return res.status(404).json({ error: 'Benutzer nicht in deiner Gemeinde gefunden' });
       }
       const user_type = roleToParticipantType(targetUser.role_name);
 
@@ -1955,7 +1984,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           [decoded.id, gewuenschteOrg]
         );
         if (!mitgliedschaft) {
-          return res.status(403).json({ error: 'Kein Zugriff auf diese Organisation' });
+          return res.status(403).json(ORG_KEIN_ZUGRIFF);
         }
         req.user.organization_id = mitgliedschaft.organization_id;
         req.user.role_name = mitgliedschaft.role_name;
@@ -2020,7 +2049,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
         if (fileMessage.file_name) {
           const ext = path.extname(fileMessage.file_name).toLowerCase();
-          if (contentTypes[ext]) {
+          // Textdateien immer als text/plain bzw. text/csv mit charset
+          // (Audit Sicherheit BF-20) -- vorher ohne Content-Type.
+          const textTyp = textInhaltsTyp({ dateiname: fileMessage.file_name });
+          if (textTyp) {
+            res.setHeader('Content-Type', textTyp);
+          } else if (contentTypes[ext]) {
             res.setHeader('Content-Type', contentTypes[ext]);
           }
         }
@@ -2850,7 +2884,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             -- Woerter wie utils/rollenNamen.js (Simon, 28.09.2026).
             CASE
               WHEN r.name = 'teamer' THEN 'Teamer:in'
-              WHEN r.name = 'org_admin' THEN 'Org-Leitung'
+              WHEN r.name = 'org_admin' THEN 'Gemeindeleitung'
               ELSE 'Leitung'
             END
           ) as role_description,

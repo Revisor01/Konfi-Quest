@@ -102,6 +102,13 @@ const sendFirebasePushNotification = async (deviceToken, notificationData) => {
           channelId: kanalFuerTyp((notificationData.data || {}).type),
           sound: notificationData.sound || 'default',
           defaultSound: true,
+          // BEWUSST KEIN notificationCount (29.09.2026). Das Feld heisst "the
+          // number of items this notification represents", und der Launcher
+          // addiert es ueber alle liegenden Mitteilungen der App (AOSP
+          // Launcher3, DotInfo). Mit der iOS-Zahl darin ergaeben drei Pushes
+          // mit 3, 4 und 5 offenen Dingen am Symbol 12. Ohne das Feld zaehlt
+          // jede Mitteilung als eine; die Zahl der App selbst setzt auf
+          // Android das Badge-Plugin in der App. Test: pushKanaele.test.js.
         },
       },
       apns: {
@@ -135,13 +142,15 @@ const sendFirebaseSilentPush = async (deviceToken, badgeCount) => {
 
     // Auf iOS setzt aps.badge die Zahl am App-Icon direkt — Android kennt so
     // etwas nicht. Dort müsste die App das Paket entgegennehmen und die Zahl
-    // selbst ans Badge-Plugin geben; einen Empfaenger für 'badge_update' gibt
-    // es im Frontend derzeit nicht (nachgesehen am 24.08.2026). Der
-    // android-Block mit hoher Prioritaet ist die Voraussetzung dafuer, dass
-    // ein solcher Empfaenger das Paket überhaupt erreichen wuerde; ohne ihn
-    // stuft FCM Datenpakete an schlafende Geraete zurück. Solange der
-    // Empfaenger fehlt, bleibt der Android-Zähler das, was die laufende App
-    // über BadgeContext setzt.
+    // selbst ans Badge-Plugin geben; einen Empfaenger eigens für
+    // 'badge_update' gibt es im Frontend nicht (nachgesehen am 24.08.2026).
+    // Laeuft die App und erreicht der Push den allgemeinen Listener in
+    // AppContext, laedt BadgeContext die Zaehler neu ('push:received') und
+    // setzt die Zahl (Stand 29.09.2026). Der android-Block mit
+    // hoher Prioritaet ist die Voraussetzung dafuer, dass das Paket ein
+    // schlafendes Geraet ueberhaupt erreicht; ohne ihn stuft FCM Datenpakete
+    // zurück. Ob der Launcher eine Zahl von der App annimmt, haengt vom
+    // Hersteller ab (Handbuch "Die Zahl am App-Symbol auf Android lesen").
     const message = {
       token: deviceToken,
       apns: {

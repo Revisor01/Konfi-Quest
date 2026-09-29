@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // --- Mocks ---
 let isNative = true;
+let plattform = 'ios';
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
     isNativePlatform: () => isNative,
+    getPlatform: () => plattform,
   },
 }));
 
@@ -19,9 +21,9 @@ vi.mock('@capacitor/push-notifications', () => ({
   },
 }));
 
+import * as benachrichtigungen from '../../services/notifications';
 import {
   removeDeliveredById,
-  removeAllDelivered,
   removeDeliveredForChatRoom,
   removeDeliveredForEvents,
 } from '../../services/notifications';
@@ -37,23 +39,10 @@ const delivered = (notifications: TestNotification[]) => {
 
 beforeEach(() => {
   isNative = true;
+  plattform = 'ios';
   getDeliveredNotifications.mockReset();
   removeDeliveredNotifications.mockReset();
   removeAllDeliveredNotifications.mockReset();
-});
-
-describe('removeAllDelivered', () => {
-  it('entfernt alle Notifications nativ', async () => {
-    removeAllDeliveredNotifications.mockResolvedValue(undefined);
-    await removeAllDelivered();
-    expect(removeAllDeliveredNotifications).toHaveBeenCalledTimes(1);
-  });
-
-  it('ist no-op im Web', async () => {
-    isNative = false;
-    await removeAllDelivered();
-    expect(removeAllDeliveredNotifications).not.toHaveBeenCalled();
-  });
 });
 
 describe('removeDeliveredById', () => {
@@ -159,5 +148,23 @@ describe('removeDeliveredForEvents', () => {
     isNative = false;
     await removeDeliveredForEvents();
     expect(getDeliveredNotifications).not.toHaveBeenCalled();
+  });
+});
+
+// Simon, 29.09.2026: "warum sollten die keine Benachrichtigungen behalten?"
+// Keine Rolle verliert ihre Mitteilungen beim Oeffnen der App. Bis dahin
+// raeumte AppContext der Leitung alles weg (auf Android zuletzt nicht mehr,
+// auf dem iPhone schon). Weggeraeumt wird nur noch gezielt.
+describe('kein globales Aufraeumen', () => {
+  it('der Dienst bietet kein "alles wegraeumen" mehr an', () => {
+    expect(Object.keys(benachrichtigungen)).not.toContain('removeAllDelivered');
+    expect(Object.keys(benachrichtigungen)).not.toContain('raeumtBeimAktivwerdenAllesAuf');
+  });
+
+  it('gezieltes Wegraeumen bleibt: eine Mitteilung, ein Chat, die Events', () => {
+    expect(typeof removeDeliveredById).toBe('function');
+    expect(typeof removeDeliveredForChatRoom).toBe('function');
+    expect(typeof removeDeliveredForEvents).toBe('function');
+    expect(removeAllDeliveredNotifications).not.toHaveBeenCalled();
   });
 });

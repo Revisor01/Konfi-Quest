@@ -1,7 +1,6 @@
 const PushService = require('./pushService');
 const cron = require('node-cron');
-const { deleteKonfiCascade } = require('../utils/konfiDeletion');
-const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
 const emailService = require('./emailService');
 const apm = require('../utils/apm');
 const { formatUhrzeit } = require('../utils/zeitformat');
@@ -15,6 +14,7 @@ const { ladeLeitungZumJahrgang } = require('../utils/jahrgangLeitungSicht');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
 const { loescheMitteilungenZuErledigtenEinladungen } = require('../utils/postfachAufraeumen');
+const { WOANDERS_MITGLIED_SQL } = require('../utils/konfiOderTeam');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -359,9 +359,34 @@ class BackgroundService {
       // verschlucken, was waehrend der Auszeit faellig wurde. Damit dieser
       // eine Lauf den Pool nicht minutenlang belegt, begrenzt
       // ABZEICHEN_MAX_JE_LAUF ihn; der Rest kommt in den Folgelaeufen dran.
-      const abzeichenPersonen = (!nurZaehler)
-        ? users.filter(u => u.user_type === 'konfi' || u.user_type === 'teamer')
-        : [];
+      //
+      // JE GEMEINDE (28.09.2026, Simon: "Es bleibt immer an der Gemeinde!"):
+      // Badges gehoeren der Gemeinde, in der sie entstehen. Bis dahin stand
+      // hier die Rolle am Konto und die Stamm-Gemeinde: Wer in einer
+      // weiteren Gemeinde Teamer:in ist, wurde dort nie geprueft -- und wer
+      // zuhause Leitung ist, gar nicht. Jetzt je Person JEDE aktive Gemeinde,
+      // in der sie Konfi oder Teamer:in ist, mit der Rolle DORT
+      // (ladeMitgliedschaftenVieler: Stamm-Gemeinde mit users.role_id,
+      // weitere mit user_organizations.role_id, gesperrte Gemeinden nicht --
+      // dieselben Mitgliedschaften, aus denen oben der Zaehler rechnet; sie
+      // kommen aus jePerson mit, keine Abfrage mehr).
+      //
+      // abzeichenPersonen hat EINEN Eintrag je (Person, Gemeinde); Auswahl,
+      // Merker und Obergrenze arbeiten weiter je Person, geprueft wird dann
+      // jede ihrer Gemeinden fuer sich.
+      const abzeichenPersonen = [];
+      const abzeichenGemeindenJe = new Map();
+      if (!nurZaehler) {
+        for (const u of users) {
+          const eintrag = jePerson.get(Number(u.user_id));
+          for (const m of (eintrag ? eintrag.mitgliedschaften : [])) {
+            if (m.role_name !== 'konfi' && m.role_name !== 'teamer') continue;
+            abzeichenPersonen.push({ user_id: u.user_id, organization_id: m.organization_id });
+            if (!abzeichenGemeindenJe.has(u.user_id)) abzeichenGemeindenJe.set(u.user_id, []);
+            abzeichenGemeindenJe.get(u.user_id).push(m.organization_id);
+          }
+        }
+      }
       let zuPruefen = new Set();
       let neueAbdruecke = null;
       if (abzeichenPersonen.length > 0) {
@@ -387,9 +412,9 @@ class BackgroundService {
         if (zuPruefen.size > this.ABZEICHEN_MAX_JE_LAUF) {
           // Ab dem Zeiger weiterlaufen und hinten wieder vorn anfangen, damit
           // ueber die Laeufe hinweg jeder drankommt und niemand dauerhaft
-          // hinten liegen bleibt.
-          const warteschlange = abzeichenPersonen
-            .map(u => u.user_id)
+          // hinten liegen bleibt. Je Person EIN Platz, auch mit mehreren
+          // Gemeinden.
+          const warteschlange = [...abzeichenGemeindenJe.keys()]
             .filter(id => zuPruefen.has(id));
           const start = this.abzeichenZeiger % warteschlange.length;
           const dranheute = new Set();
@@ -459,7 +484,12 @@ class BackgroundService {
           // Seit dem 14.09.2026 zusaetzlich: nur wer sich seit dem letzten
           // Lauf veraendert hat (siehe die Auswahl oben).
           if (!nurZaehler && zuPruefen.has(user.user_id)) {
-            await checkAndAwardBadges(db, user.user_id, { organizationId: user.organization_id });
+            // Jede Gemeinde fuer sich (siehe abzeichenPersonen oben):
+            // checkAndAwardBadges zaehlt, prueft und bucht nur in der
+            // uebergebenen Gemeinde.
+            for (const organizationId of (abzeichenGemeindenJe.get(user.user_id) || [])) {
+              await checkAndAwardBadges(db, user.user_id, { organizationId });
+            }
             geprueft++;
 
             // In Bloecken arbeiten statt am Stueck: Nach je
@@ -506,8 +536,8 @@ class BackgroundService {
         }
         // Geloeschte Konten aus dem Merker werfen, sonst waechst er mit der
         // Laufzeit (dieselbe Vorsorge wie bei letzterZaehler oben).
-        if (this.letzterAbzeichenAbdruck.size > abzeichenPersonen.length) {
-          const aktuell = new Set(abzeichenPersonen.map(u => u.user_id));
+        if (this.letzterAbzeichenAbdruck.size > abzeichenGemeindenJe.size) {
+          const aktuell = new Set(abzeichenGemeindenJe.keys());
           for (const id of this.letzterAbzeichenAbdruck.keys()) {
             if (!aktuell.has(id)) this.letzterAbzeichenAbdruck.delete(id);
           }
@@ -1452,7 +1482,7 @@ class BackgroundService {
           // ladeMitgliederDerOrganisation heraus.
           const orgAdminIds = await ladeMitgliederDerOrganisation(db, org.id, ['org_admin']);
           const { rows: admins } = orgAdminIds.length === 0 ? { rows: [] } : await db.query(
-            `SELECT u.display_name, u.email
+            `SELECT u.id, u.display_name, u.email
                FROM users u
               WHERE u.id = ANY($1::bigint[])
                 AND u.email IS NOT NULL AND u.email <> ''
@@ -1472,7 +1502,8 @@ class BackgroundService {
               anySent = true;
               sent++;
             } catch (mailErr) {
-              console.error(`Lizenz-Erinnerung: Mail an ${admin.email} fehlgeschlagen:`, mailErr.message);
+              // Konto-Kennung statt Adresse (Audit Sicherheit BF-14, 29.09.2026).
+              console.error(`Lizenz-Erinnerung: Mail an Konto ${admin.id} fehlgeschlagen:`, mailErr.message);
             }
           }
 
@@ -1511,7 +1542,8 @@ class BackgroundService {
    * Pro Jahrgang (Fehler-Isolation, D-15):
    *  - HARD-DELETE (>= 120 Tage seit Stichtag): aktive Konfis dieses
    *    Jahrgangs (nur r.name='konfi' -> Teamer-Ausnahme D-10) werden kaskadierend
-   *    via deleteKonfiCascade gelöscht (je Konfi eigene Transaktion).
+   *    via kontoDatenLoeschen gelöscht (je Konfi eigene Transaktion,
+   *    Dateien nach dem COMMIT; utils/kontoLoeschen.js).
    *  - SOFT-DELETE (>= 60 und < 120 Tage, deleted_at IS NULL): aktive Konfis
    *    erhalten deleted_at + archived_at (NOW()). Idempotent durch IS NULL-Bedingung.
    *
@@ -1573,13 +1605,16 @@ class BackgroundService {
 
           // Gibt es überhaupt noch AKTIVE Konfis, die gelöscht wuerden?
           // Sonst ist die Warnung sinnlos (nur befoerderte/keine).
+          // Wer woanders noch Mitglied ist, wird nicht geloescht (siehe
+          // runAutoDeletion) und zaehlt hier deshalb auch nicht mit.
           const { rows: [{ count: konfiCount }] } = await db.query(
             `SELECT COUNT(*)::int AS count
                FROM users u
                JOIN konfi_profiles kp ON kp.user_id = u.id
                JOIN roles r ON u.role_id = r.id
               WHERE kp.jahrgang_id = $1 AND u.organization_id = $2
-                AND r.name = 'konfi' AND u.deleted_at IS NULL`,
+                AND r.name = 'konfi' AND u.deleted_at IS NULL
+                AND NOT ${WOANDERS_MITGLIED_SQL('u')}`,
             [jg.id, jg.organization_id]
           );
           if (konfiCount === 0) continue;
@@ -1598,7 +1633,7 @@ class BackgroundService {
           // nicht sehen (Audit wer-bekommt-was, BF-01).
           const leitungIds = await ladeLeitungZumJahrgang(db, jg.organization_id, jg.id, { schreibrecht: true });
           const { rows: admins } = leitungIds.length === 0 ? { rows: [] } : await db.query(
-            `SELECT u.display_name, u.email
+            `SELECT u.id, u.display_name, u.email
                FROM users u
               WHERE u.id = ANY($1::bigint[])
                 AND u.email IS NOT NULL AND u.email <> ''`,
@@ -1617,7 +1652,7 @@ class BackgroundService {
               anySent = true;
               sent++;
             } catch (mailErr) {
-              console.error(`Jahrgang-Loesch-Reminder: Mail an ${admin.email} fehlgeschlagen:`, mailErr.message);
+              console.error(`Jahrgang-Loesch-Reminder: Mail an Konto ${admin.id} fehlgeschlagen:`, mailErr.message);
             }
           }
 
@@ -1696,13 +1731,43 @@ class BackgroundService {
           continue;
         }
 
+        // --- KONTEN, DIE WOANDERS NOCH MITGLIED SIND (28.09.2026) ---
+        // Konfi und Team gehen nicht zusammen (Simon, 28.09.2026;
+        // utils/konfiOderTeam.js). Aus der Zeit davor kann es Konfi-Konten
+        // geben, die ueber user_organizations in einer anderen Gemeinde im
+        // Team sind. Soft- und Hard-Loeschung treffen das GANZE Konto --
+        // die andere Gemeinde verloere die Person samt Anmeldung, Chats und
+        // allem, was daran haengt (Audit Punkte/Termine, Tabelle "Rolle je
+        // Gemeinde", die schwerste Zeile). Deshalb ueberspringen beide
+        // Schritte diese Konten. Protokolliert wird NUR die Kennung, kein
+        // Name: Das Log verlaesst den Server. Wie viele es sind, misst
+        // docs/auftraege/lokaler-agent/06-mischkonten.md.
+        const { rows: uebersprungen } = await db.query(
+          `SELECT u.id, (CURRENT_DATE - $2::date) AS tag
+             FROM users u
+             JOIN konfi_profiles kp ON kp.user_id = u.id
+             JOIN roles r ON u.role_id = r.id
+            WHERE kp.jahrgang_id = $1
+              AND u.organization_id = $3
+              AND r.name = 'konfi'
+              AND (CURRENT_DATE - $2::date) >= 60
+              AND ${WOANDERS_MITGLIED_SQL('u')}`,
+          [jg.id, stichtag, jg.organization_id]
+        );
+        for (const { id, tag } of uebersprungen) {
+          console.warn(
+            `Auto-Deletion: Konto ${id} übersprungen (Jahrgang ${jg.id}, Tag ${tag} nach der Konfirmation): ` +
+            'gehört noch zu einer weiteren Gemeinde.'
+          );
+        }
+
         // --- HARD-DELETE (>= 120 Tage) ---
         // Nur aktive Konfis (r.name='konfi'); promotete Teamer (role gewechselt,
         // teamer_since gesetzt) werden durch den Rollen-Filter NIE erfasst (D-10).
         // Bewusst KEIN deleted_at-Guard: ab Tag 120 wird hart gelöscht, auch wenn
         // der Soft-Delete-Lauf (Tag 60-120) nie stattfand (z.B. Cron-Ausfall) —
         // sonst bliebe der Datensatz über die Aufbewahrungsfrist hinaus erhalten.
-        // deleteKonfiCascade entfernt den User physisch -> kein wiederholter Lauf.
+        // kontoDatenLoeschen entfernt den User physisch -> kein wiederholter Lauf.
         const { rows: hardKandidaten } = await db.query(
           `SELECT u.id
              FROM users u
@@ -1711,7 +1776,8 @@ class BackgroundService {
             WHERE kp.jahrgang_id = $1
               AND u.organization_id = $3
               AND r.name = 'konfi'
-              AND (CURRENT_DATE - $2::date) >= 120`,
+              AND (CURRENT_DATE - $2::date) >= 120
+              AND NOT ${WOANDERS_MITGLIED_SQL('u')}`,
           [jg.id, stichtag, jg.organization_id]
         );
 
@@ -1724,23 +1790,31 @@ class BackgroundService {
             console.error(`Auto-Deletion: Client-Fehler bei Konfi ${konfi.id} (Jahrgang ${jg.id}):`, clientErr.message);
             continue;
           }
+          let ergebnis = null;
           try {
             await client.query('BEGIN');
-            // Mit dem Konto verschwinden die Buchungen — auf die frei
-            // gewordenen Plaetze rueckt nach (Luecke geschlossen 15.09.2026).
-            const nachgerueckt = await deleteKonfiCascade(client, konfi.id, jg.organization_id);
+            // Dieselbe Funktion wie jeder andere Kontoloeschweg
+            // (utils/kontoLoeschen.js). Mit dem Konto verschwinden die
+            // Buchungen — auf die frei gewordenen Plaetze rueckt nach (Luecke
+            // geschlossen 15.09.2026).
+            ergebnis = await kontoDatenLoeschen(client, konfi.id);
             await client.query('COMMIT');
             totalHard++;
-            // Benachrichtigung nach dem COMMIT; Fehler werden dort je Person
-            // geschluckt und duerfen den Lauf nicht abbrechen. In einer
-            // gesperrten Gemeinde nicht (BF-22) -- nachgerueckt ist trotzdem.
-            if (jg.org_aktiv) await meldeNachrueckern(db, jg.organization_id, nachgerueckt);
           } catch (delErr) {
             try { await client.query('ROLLBACK'); } catch (_) { /* ignore */ }
             console.error(`Auto-Deletion: Hard-Delete fuer Konfi ${konfi.id} (Jahrgang ${jg.id}) fehlgeschlagen:`, delErr.message);
+            continue;
           } finally {
             client.release();
           }
+          // Nach dem COMMIT: Dateien von der Platte, Sitzung beenden, dann
+          // Benachrichtigung; Fehler werden dort geschluckt und duerfen den
+          // Lauf nicht abbrechen. In einer gesperrten Gemeinde keine Meldung
+          // (BF-22) -- nachgerueckt ist trotzdem.
+          await kontoDateienLoeschen(ergebnis?.dateien);
+          invalidateUserCache(konfi.id);
+          liveUpdate.disconnectUserSockets(konfi.id);
+          await meldeNachKontoLoeschung(db, ergebnis, { melden: jg.org_aktiv });
         }
 
         // --- SOFT-DELETE (>= 60 und < 120 Tage, deleted_at IS NULL) ---
@@ -1757,6 +1831,7 @@ class BackgroundService {
               AND u.deleted_at IS NULL
               AND (CURRENT_DATE - $2::date) >= 60
               AND (CURRENT_DATE - $2::date) < 120
+              AND NOT ${WOANDERS_MITGLIED_SQL('u')}
             RETURNING u.id`,
           [jg.id, stichtag, jg.organization_id]
         );

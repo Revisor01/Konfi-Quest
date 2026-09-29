@@ -5,7 +5,7 @@ import { useApp } from '../../contexts/AppContext';
 import { fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { datumKurz } from '../../utils/dateUtils';
-import { rollenName } from '../../utils/rollenNamen';
+import { rollenName, rollenFarbeVar, rollenTextFarbeVar } from '../../utils/rollenNamen';
 import { ListSection } from '../shared';
 import {
   ICON_AT_ZEICHEN,
@@ -63,11 +63,9 @@ interface Props {
   aktualisierung: number;
 }
 
-// Dieselben Rollenfarben und -woerter wie in der Benutzerliste (UsersView).
-// Das Wort nach role_name (utils/rollenNamen): role_display_name traegt in
-// bestehenden Gemeinden noch die alten Namen aus der Datenbank.
-const rolleToken = (name: string) =>
-  name === 'org_admin' || name === 'admin' ? 'users' : name === 'teamer' ? 'teamer' : 'neutral';
+// Dieselben Rollenfarben und -woerter wie in der Benutzerliste (UsersView),
+// beide aus utils/rollenNamen. Das Wort nach role_name: role_display_name
+// traegt in bestehenden Gemeinden noch die alten Namen aus der Datenbank.
 
 const OffeneEinladungen: React.FC<Props> = ({ aktualisierung }) => {
   const { setError, setSuccess, isOnline } = useApp();
@@ -138,7 +136,7 @@ const OffeneEinladungen: React.FC<Props> = ({ aktualisierung }) => {
       iconColorClass="users"
     >
       {einladungen.map((einladung, index) => {
-        const farbe = `var(--app-color-${rolleToken(einladung.role_name)})`;
+        const farbe = rollenFarbeVar(einladung.role_name);
         const rolle = rollenName(einladung.role_name, einladung.role_display_name ?? undefined);
         return (
           <div
@@ -164,7 +162,7 @@ const OffeneEinladungen: React.FC<Props> = ({ aktualisierung }) => {
                     <span className="app-list-item__meta-item">
                       <IonIcon
                         icon={einladung.role_name === 'teamer' ? ICON_PERSON_GEFUELLT : ICON_SCHILD_GEFUELLT}
-                        className="app-icon-color--users"
+                        style={{ color: rollenTextFarbeVar(einladung.role_name) }}
                         aria-hidden="true"
                       />
                       als {rolle}

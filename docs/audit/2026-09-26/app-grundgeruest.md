@@ -466,6 +466,7 @@ so nicht haltbar.
 - **Beleg:** `expected '{"id":7,"display_name":"Anna Beispiel…' to be null`.
 - **Empfehlung:** Nach erfolgreicher Migration die vier Schlüssel aus
   `localStorage` entfernen; `clearAuth` räumt sie ebenfalls.
+- **Nachtrag 28.09.2026:** behoben — `migrateStorage.ts` entfernt die vier Schlüssel nach erfolgreicher Migration aus dem `localStorage`, auch auf Geräten, die schon früher migriert wurden (Zweig `storage_migrated_v1` gesetzt); scheitert die Migration, bleiben sie stehen. `clearAuth` räumt die drei Anmelde-Schlüssel ebenfalls (die Gerätekennung bleibt wie in den Preferences). Der Web-Speicher der Preferences (Präfix `CapacitorStorage.`) ist davon getrennt und bleibt unberührt. Test `services/migrationsresteLocalStorage.test.ts` (5: Migration, früher migriertes Gerät, Gegenprobe Fehlschlag, fremde Schlüssel, Abmelden); ohne Fix 3 rot. Kommentare in `public/landing.html` und `umamiKennungen.test.ts` nachgezogen.
 
 ### BF-11: Gesperrte Gemeinde / abgelaufene Testphase erscheint als „Sitzung abgelaufen"
 
@@ -484,6 +485,7 @@ so nicht haltbar.
   Passwort neu und erfährt erst dann den echten Grund.
 - **Empfehlung:** Bei `response.status === 403` mit `error_code` die Meldung des
   Servers in `sessionStorage` durchreichen statt des Standardtexts.
+- **Nachtrag 28.09.2026:** behoben — App: `services/api.ts` gibt bei einem abgelehnten Refresh mit 403 und einem der drei Sperr-Codes (`user_inactive`, `org_inactive`, `org_trial_expired`) die Meldung des Servers im Ereignis `auth:relogin-required` mit; `App.tsx` legt sie ab, `LoginView` zeigt sie statt „Deine Sitzung ist abgelaufen" (neu `utils/anmeldeHinweis.ts`, Ersatztext ohne Servertext „Zugang gesperrt. Bitte wende dich an deine Gemeinde."). Beim Nachsehen im Server fiel auf, dass der Refresh andere Texte schickte als die Anmeldung: ein deaktiviertes Konto bekam `user_inactive` mit dem Text der gesperrten Organisation, der Testphase fehlte der zweite Satz, und Konto-Sperre plus abgelaufene Testphase meldete `org_trial_expired`. `backend/routes/auth.js` hat jetzt eine Quelle (`SPERR_MELDUNGEN`, `sperrAntwort`) für Anmeldung und Refresh, Reihenfolge erst Konto, dann Gemeinde; Form unverändert. Tests: `backend/tests/routes/refreshSperrGrund.test.js` (6; ohne Fix 3 rot), `frontend/src/__tests__/services/refreshSperrGrund.test.ts` (10, echte api-Instanz) und ein Fall in `anmeldeseitenBarrierefrei.test.tsx`; ohne Fix in App 3 rot. Handbuch `35-passwoerter.md` (Tabelle „Die Meldung beim Anmelden einordnen"), API-Doku `verwaltung-auth.yaml`.
 
 ### BF-12: Lint-Fehler im Bereich (toter Code in MainTabs)
 

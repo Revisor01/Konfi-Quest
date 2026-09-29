@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
 const { checkPointTypeEnabled } = require('../../utils/pointTypeGuard');
+const { darfTermin } = require('../../utils/jahrgangsZugriff');
 
 const QR_SECRET = process.env.QR_SECRET;
 if (!QR_SECRET) {
@@ -272,7 +273,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     });
   });
 
-  // Generate QR token for event (Admin/Teamer)
+  // QR-Code eines Termins holen oder erzeugen (Leitung und Team).
+  //
+  // JAHRGANGS-BINDUNG (29.09.2026, Audit Fachlogik Punkte/Termine, „Unklar"):
+  // Dass Teamer:innen den Code zeigen, ist gewollt (Simon 27.09.2026,
+  // Sicherheit BF-21) -- aber nur fuer Termine, die sie auch in ihrer Liste
+  // sehen. Bis dahin war dies die einzige Schreibroute an Terminen ohne
+  // darfTermin: Jede Teamer:in und jede Admin holte den Check-in-Code jedes
+  // Termins der Gemeinde, auch aus fremden Jahrgaengen. darfTermin laesst
+  // „Nur Team", Termine ohne Jahrgang und die Gemeindeleitung durch -- dieselbe
+  // Regel wie Liste, Anwesenheit und Teilnehmerverwaltung.
   router.post('/:id/generate-qr', rbacVerifier, requireTeamer, async (req, res) => {
     const { id } = req.params;
     try {
@@ -283,6 +293,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
+      // Vor dem vorhandenen Token pruefen -- sonst gaebe die Route einen
+      // einmal erzeugten Code an jede:n heraus.
+      const zugriff = await darfTermin(db, req, event.id);
+      if (!zugriff.erlaubt) {
+        return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
       }
 
       // Wenn Token bereits existiert: direkt zurückgeben
@@ -306,10 +323,29 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     }
   });
 
-  // Get attendance count for live polling (Admin/Teamer)
+  // Live-Zaehler zum QR-Code (Leitung und Team).
+  //
+  // Dieselbe Grenze wie generate-qr (29.09.2026): Der Zaehler gehoert zum
+  // QR-Code, die App fragt ihn nur im QR-Fenster ab. Ein fremder oder
+  // unbekannter Termin ist 404 (Sicherheit BF-16; vorher 200 mit {0, 0}), ein
+  // Termin aus fremdem Jahrgang 403. Die App ignoriert Fehler beim Abfragen
+  // still (QRDisplayModal, auch in 2.2.0) -- sie ruft die Route ohnehin nur
+  // fuer Termine, deren Code sie gerade zeigt.
   router.get('/:id/attendance-count', rbacVerifier, requireTeamer, async (req, res) => {
     const { id } = req.params;
     try {
+      const { rows: [event] } = await db.query(
+        'SELECT id FROM events WHERE id = $1 AND organization_id = $2',
+        [id, req.user.organization_id]
+      );
+      if (!event) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+      const zugriff = await darfTermin(db, req, event.id);
+      if (!zugriff.erlaubt) {
+        return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
+      }
+
       // "X von Y eingecheckt" waehrend des Check-ins. `total` sind die
       // ERWARTETEN -- deshalb weiterhin nur status = 'confirmed'.
       //

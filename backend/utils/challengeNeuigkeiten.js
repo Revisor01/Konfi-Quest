@@ -36,10 +36,18 @@
 // Konfis: Es zaehlen fremde, sichtbare Beitraege seit dem letzten Oeffnen
 // und -- wo das Team selbst mitmacht -- die noch nie geoeffnete Challenge
 // (seit demselben Tag, Audit "Wer bekommt was", BF-07). Ein wartender
-// Beitrag zaehlt dort NICHT, er steht schon als Freigabe am Reiter
-// (pendingChallenges) -- so zaehlt nichts doppelt, und an der Challenge
-// bleiben beide Arten unterscheidbar: orange mit Uhr fuer Freigaben, rote
-// Kugel fuer Neues.
+// Beitrag zaehlt in Spalte `c` NICHT, er steht schon als Freigabe am Reiter
+// (pendingChallenges) -- so zaehlt am Reiter und am App-Symbol nichts
+// doppelt.
+//
+// ZWEI SPALTEN AUS EINER ABFRAGE (29.09.2026, Simon: "bei jeden Beitrag.
+// Wie im Chat bei jeder Nachricht. Und zusaetzlich Orangen bei Freigaben."):
+// Die rote Kugel am Challenge-Eintrag von Leitung und Team zaehlt JEDEN
+// fremden Beitrag seit dem letzten Oeffnen, auch den wartenden -- Spalte
+// `neu`, fuer badge-counts.challengeNeueBeitraege. Ein wartender Beitrag
+// steht dann bis zum Oeffnen rot und bis zur Freigabe orange; das ist
+// gewollt. Spalte `c` behaelt ihre Werte fuer challengeUpdates, Reiter und
+// App-Symbol (dort bleibt es bei "wartend + neu freigegeben").
 //
 // SICHTBARKEIT. Ein Konfi sieht Challenges seines Jahrgangs, nie 'nur_team',
 // nie Entwuerfe, nie ungestartete -- exakt der Scope von GET /challenges/konfi.
@@ -163,9 +171,17 @@ async function challengeNeuigkeitenJeChallenge(db, konfis) {
  * (utils/challengeLeitungSicht.js: org_admin alle, admin Team-Challenges und
  * eigene Jahrgaenge, teamer 'nur_team' und eigene Jahrgaenge).
  *
- * Wartende Beitraege zaehlen hier nicht -- sie stehen als Freigabe am
+ * Wartende Beitraege zaehlen in `c` nicht -- sie stehen als Freigabe am
  * Reiter (badge-counts.pendingChallenges). Ausgeblendete auch nicht: Die hat
  * schon jemand gesehen und entschieden.
+ *
+ * Spalte `neu` (29.09.2026) ist dieselbe Rechnung, nur zaehlen die
+ * WARTENDEN fremden Beitraege seit dem letzten Oeffnen mit: `neu` = `c` +
+ * `neu_wartend`. Sie speist die rote Kugel am Challenge-Eintrag
+ * (badge-counts.challengeNeueBeitraege); `neu_wartend` nennt, wie viele
+ * davon noch auf Freigabe warten (fuer den Vorlesetext). Ausgeblendete
+ * zaehlen auch hier nicht. `c` bleibt unveraendert -- Reiter, App-Symbol und
+ * Gemeinde-Umschalter rechnen weiter damit.
  *
  * "Nie geoeffnet" heisst: keine Zeile in challenge_read_status. Migration 168
  * hat fuer die damalige Leitung jede bestehende Challenge als gesehen
@@ -174,7 +190,10 @@ async function challengeNeuigkeitenJeChallenge(db, konfis) {
  * @param {object} db
  * @param {Array<{id:number,type:string,organization_id:number,role_name?:string,assigned_jahrgaenge?:Array}>} personen
  *        Nur Typ 'admin' und 'teamer' (ohne super_admin) werden gezaehlt.
- * @returns {Promise<Array<{user_id:number,user_type:string,organization_id:number,challenge_id:number,c:number}>>}
+ * @returns {Promise<Array<{user_id:number,user_type:string,organization_id:number,challenge_id:number,c:number,neu:number,neu_wartend:number}>>}
+ *          Nur Challenges, bei denen `c` ODER `neu` groesser 0 ist. Wer die
+ *          alten Felder speist, filtert selbst auf `c > 0` (eine Zeile mit
+ *          nur wartenden neuen Beitraegen hat `c = 0`).
  */
 async function challengeNeuigkeitenLeitungJeChallenge(db, personen) {
   const leitung = (personen || []).filter((p) =>
@@ -187,22 +206,12 @@ async function challengeNeuigkeitenLeitungJeChallenge(db, personen) {
          AS z(user_id, user_type, organization_id, rolle, jahrgaenge)
      )
      SELECT z.user_id, z.user_type, z.organization_id, c.id AS challenge_id,
-            (
-              -- 1. Die Challenge selbst: nie geoeffnet, das Team macht mit,
-              --    nicht selbst angelegt
-              CASE WHEN crs.challenge_id IS NULL
-                        AND c.created_by IS DISTINCT FROM z.user_id
-                        AND ${teamMachtMitSql({ rolle: 'z.rolle', jahrgaenge: 'z.jahrgaenge::int[]' })}
-                   THEN 1 ELSE 0 END
-              -- 2. Fremde, freigegebene Beitraege seit dem letzten Oeffnen
-              + (SELECT COUNT(*)
-                   FROM challenge_submissions cs
-                  WHERE cs.challenge_id = c.id
-                    AND cs.user_id <> z.user_id
-                    AND cs.moderation_status = 'approved'
-                    AND cs.created_at > COALESCE(crs.last_read_at, '1970-01-01'::timestamptz)
-                    AND cs.created_at <= NOW())
-            )::int AS c
+            -- Reiter, App-Symbol, challengeUpdates: nie geoeffnet + neue
+            -- freigegebene. Werte unveraendert seit 27.09.2026.
+            (n.nie_geoeffnet + b.freigegeben)::int AS c,
+            -- Rote Kugel am Eintrag (29.09.2026): dazu die neuen wartenden.
+            (n.nie_geoeffnet + b.freigegeben + b.wartend)::int AS neu,
+            b.wartend::int AS neu_wartend
        FROM z
        JOIN challenges c
          ON c.organization_id = z.organization_id
@@ -213,7 +222,27 @@ async function challengeNeuigkeitenLeitungJeChallenge(db, personen) {
        LEFT JOIN challenge_read_status crs
          ON crs.challenge_id = c.id
         AND crs.user_id = z.user_id
-        AND crs.user_type = z.user_type`,
+        AND crs.user_type = z.user_type
+       -- 1. Die Challenge selbst: nie geoeffnet, das Team macht mit,
+       --    nicht selbst angelegt
+       CROSS JOIN LATERAL (
+         SELECT CASE WHEN crs.challenge_id IS NULL
+                          AND c.created_by IS DISTINCT FROM z.user_id
+                          AND ${teamMachtMitSql({ rolle: 'z.rolle', jahrgaenge: 'z.jahrgaenge::int[]' })}
+                     THEN 1 ELSE 0 END AS nie_geoeffnet
+       ) n
+       -- 2. Fremde Beitraege seit dem letzten Oeffnen, nichts aus der
+       --    Zukunft -- getrennt nach freigegeben und wartend. Ausgeblendete
+       --    ('hidden') zaehlen in keiner Spalte.
+       CROSS JOIN LATERAL (
+         SELECT COUNT(*) FILTER (WHERE cs.moderation_status = 'approved') AS freigegeben,
+                COUNT(*) FILTER (WHERE cs.moderation_status = 'pending') AS wartend
+           FROM challenge_submissions cs
+          WHERE cs.challenge_id = c.id
+            AND cs.user_id <> z.user_id
+            AND cs.created_at > COALESCE(crs.last_read_at, '1970-01-01'::timestamptz)
+            AND cs.created_at <= NOW()
+       ) b`,
     [
       leitung.map((p) => p.id),
       leitung.map((p) => p.type),
@@ -222,7 +251,10 @@ async function challengeNeuigkeitenLeitungJeChallenge(db, personen) {
       leitung.map((p) => `{${(p.assigned_jahrgaenge || []).filter((j) => j.can_view).map((j) => j.id).join(',')}}`)
     ]
   );
-  return rows.filter((r) => r.c > 0);
+  // `neu` ist nie kleiner als `c` (dieselbe Rechnung plus die wartenden);
+  // beide Bedingungen stehen trotzdem da, damit keine Zeile verloren geht,
+  // falls sich eine Spalte einmal aendert.
+  return rows.filter((r) => r.c > 0 || r.neu > 0);
 }
 
 module.exports = { challengeNeuigkeitenJeChallenge, challengeNeuigkeitenLeitungJeChallenge };

@@ -30,6 +30,7 @@ import { loginWithAutoDetection, mitBiometrieAnmelden } from '../../services/aut
 import { beiEnter } from '../../utils/tastatur';
 import { biometrieVerfuegbar, istBiometrieAktiv, BiometrieSinnbild } from '../../services/biometrics';
 import { BaseUser } from '../../types/user';
+import { anmeldeHinweisAbholen, ZUGANG_GESPERRT_TEXT } from '../../utils/anmeldeHinweis';
 
 const LoginView: React.FC = () => {
   const { setUser } = useApp();
@@ -56,17 +57,13 @@ const LoginView: React.FC = () => {
   // veraltet waere.
   const fehlerVorhanden = useRef(false);
 
-  // Hinweis "Sitzung abgelaufen" anzeigen, wenn der User wegen abgelaufenem
-  // Refresh-Token hierher umgeleitet wurde (Flag aus App.tsx).
+  // Hinweis anzeigen, wenn die App hierher umgeleitet hat (Merker aus
+  // App.tsx): "Sitzung abgelaufen" -- oder bei einer Zugangs-Sperre deren
+  // Grund, so wie ihn auch die Anmeldung nennen wuerde (Audit Grundgeruest
+  // BF-11, utils/anmeldeHinweis.ts).
   useEffect(() => {
-    try {
-      if (sessionStorage.getItem('session_expired') === '1') {
-        sessionStorage.removeItem('session_expired');
-        setLoginError('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
-      }
-    } catch {
-      // sessionStorage nicht verfuegbar -> kein Hinweis
-    }
+    const hinweis = anmeldeHinweisAbholen();
+    if (hinweis) setLoginError(hinweis);
   }, []);
 
   useEffect(() => {
@@ -220,7 +217,7 @@ const LoginView: React.FC = () => {
       } else if (errorCode === 'org_trial_expired' || errorCode === 'org_inactive' || errorCode === 'user_inactive') {
         // Zugangs-Sperre (Testphase abgelaufen / Org gesperrt / User deaktiviert):
         // klare Server-Meldung direkt anzeigen.
-        displayError = errorMessage || 'Zugang gesperrt. Bitte wende dich an deine Gemeinde.';
+        displayError = errorMessage || ZUGANG_GESPERRT_TEXT;
       } else if (errorMessage.includes('password') || errorMessage.includes('Passwort') || errorMessage.includes('Invalid credentials') || errorMessage.includes('Ungültige Anmeldedaten')) {
         displayError = 'Falsches Passwort. Bitte versuche es erneut.';
       } else if (errorMessage.includes('not found') || errorMessage.includes('nicht gefunden') || errorMessage.includes('User not found')) {

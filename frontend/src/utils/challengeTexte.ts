@@ -16,10 +16,28 @@ export const wartenAufFreigabeKurz = (n: number): string =>
   n === 1 ? 'wartet auf Freigabe' : 'warten auf Freigabe';
 
 /**
- * Vorlesetext der roten Kugel am Challenge-Eintrag der Leitung (ohne die
- * fuehrende Zahl -- die setzt ZaehlerKugel davor). Die Kugel zaehlt seit
- * 28.09.2026 wartende Freigaben PLUS neue Beitraege; der Text nennt beides,
- * damit niemand die Summe fuer "5 neue Beitraege" haelt.
+ * Vorlesetext der roten Kugel am Challenge-Eintrag von Leitung und Team
+ * (29.09.2026), ohne die fuehrende Zahl -- die setzt ZaehlerKugel davor. Die
+ * Kugel zaehlt neue Beitraege seit dem letzten Oeffnen, auch wartende; der
+ * Text sagt, wie viele davon noch auf Freigabe warten.
+ *   (3, 0) -> "neue Beiträge"                         => "3 neue Beiträge"
+ *   (1, 0) -> "neuer Beitrag"                         => "1 neuer Beitrag"
+ *   (3, 1) -> "neue Beiträge, davon wartet 1 auf Freigabe"
+ *   (3, 2) -> "neue Beiträge, davon warten 2 auf Freigabe"
+ *   (1, 1) -> "neuer Beitrag, wartet auf Freigabe"
+ */
+export const kugelTextNeueBeitraege = (anzahl: number, wartend: number): string => {
+  const neu = anzahl === 1 ? 'neuer Beitrag' : 'neue Beiträge';
+  if (!(wartend > 0)) return neu;
+  if (anzahl === 1 && wartend === 1) return `${neu}, wartet auf Freigabe`;
+  return `${neu}, davon ${wartend === 1 ? 'wartet 1' : `warten ${wartend}`} auf Freigabe`;
+};
+
+/**
+ * Vorlesetext der roten Kugel, wenn der Server challengeNeueBeitraege noch
+ * nicht liefert (Rueckfall fuer aeltere Server, Rechnung vom 28.09.2026):
+ * Die Kugel zaehlt dann wartende Freigaben PLUS neue freigegebene Beitraege;
+ * der Text nennt beides, damit niemand die Summe fuer "5 neue Beitraege" haelt.
  *   (0, 3) -> "neue Beiträge"                       => "3 neue Beiträge"
  *   (1, 0) -> "offen: 1 Beitrag wartet auf Freigabe" => "1 offen: ..."
  *   (2, 3) -> "offen: 2 Beiträge warten auf Freigabe, 3 neue Beiträge"

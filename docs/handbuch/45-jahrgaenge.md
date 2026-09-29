@@ -15,21 +15,21 @@ sortieren Aktivitäten und Events.
 
 ## Einen Jahrgang anlegen
 
-**Neue Jahrgänge legt nur die Org-Leitung an.** Die Leitung sieht den Knopf
+**Neue Jahrgänge legt nur die Gemeindeleitung an.** Die Leitung sieht den Knopf
 zum Anlegen nicht; sie bearbeitet und löscht nur die Jahrgänge, die ihr
 zugewiesen sind. Welche Rolle was darf, steht im Kapitel
 [Rollen und Rechte](05-rollen.md).
 
-Beim Anlegen wählt die Org-Leitung direkt aus, welche Personen der
+Beim Anlegen wählt die Gemeindeleitung direkt aus, welche Personen der
 **Leitung und welche Teamer:innen** Zugriff auf den neuen Jahrgang bekommen.
 Die ausgewählten Personen sehen und bearbeiten den Jahrgang sofort und sind
 auch gleich im Jahrgangs-Chat. Die Auswahl ist freiwillig — ohne sie entsteht
-der Jahrgang zunächst ohne Zuweisungen, und die Org-Leitung vergibt sie später
+der Jahrgang zunächst ohne Zuweisungen, und die Gemeindeleitung vergibt sie später
 unter
 **Mehr › Benutzer:innen**.
 
 Zwei Jahrgänge dürfen nicht denselben Namen haben („Jahrgang-Name existiert
-bereits in dieser Organisation“).
+bereits in dieser Gemeinde“).
 
 In der Jahrgangsliste steht zu jedem Jahrgang, welche Ziele gesetzt sind, ob
 der Spruch freigegeben ist („Spruch frei“ oder „Spruch gesperrt“) und wie es
@@ -56,9 +56,9 @@ addiert. Ist Gemeinde abgeschaltet, ist das Gesamtziel nur das
 Gottesdienst-Ziel.
 
 > **Achtung:** Der Bereich 1 bis 20 ist die Begrenzung des Schiebereglers in
-> der App. Die Schnittstelle dahinter akzeptiert jeden Wert ab 0 und kennt
-> kein Maximum. Über die App kannst du aber weder 0 noch mehr als 20
-> einstellen.
+> der App. Die Schnittstelle dahinter nimmt jeden Wert ab 1 und kennt kein
+> Maximum; eine 0 lehnt sie ab. Steht ein Ziel in der Datenbank doch auf 0,
+> zählt es überall als 10.
 
 ## Eine Punktart abschalten
 
@@ -175,7 +175,7 @@ Leitung und Teamer:innen werden einzelnen Jahrgängen zugewiesen. Diese
 Zuweisung ist die **wichtigste Berechtigungseinstellung im ganzen System** —
 sie entscheidet in sehr vielen Bereichen mit.
 
-Für die **Org-Leitung** gilt das alles nicht: Sie sieht immer die ganze
+Für die **Gemeindeleitung** gilt das alles nicht: Sie sieht immer die ganze
 Gemeinde, unabhängig davon, welche Jahrgänge bei ihr eingetragen sind. Für
 die **Leitung** gilt das so nicht — bei der Konfi-Liste und im Chat ist auch
 sie auf ihre zugewiesenen Jahrgänge beschränkt. Wer als Leitung keine
@@ -199,14 +199,14 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Events | jahrgangsgebundene Events sind unsichtbar und nicht buchbar; führt eine Mitteilung oder ein Link auf ein solches Event, steht dort der Grund („Nicht deinem Jahrgang zugeordnet") |
 | Abmeldungen und Zusagen zu Events (Leitung) | Abmeldungen von Konfis, Pflicht-Abmeldungen und Zu- oder Absagen des Teams melden sich nicht; Events „Nur Team“ und Events ohne Jahrgang melden sich bei der ganzen Leitung ([wer davon erfährt](70-termine.md#nachsehen-wer-von-abmeldungen-und-zusagen-erfaehrt)) |
 | „Events warten auf Verbuchung“ (Leitung) | zählt nur die Events, die der Reiter „Verbuchen“ zeigt; ist dort nichts offen, kommt keine Erinnerung |
-| Neue Registrierung (Leitung) | keine Meldung; sie geht an die Org-Leitung und die Leitung des Jahrgangs ([wer davon erfährt](#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt)) |
+| Neue Registrierung (Leitung) | keine Meldung; sie geht an die Gemeindeleitung und die Leitung des Jahrgangs ([wer davon erfährt](#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt)) |
 | „Jahrgang wird bald gelöscht“ (Leitung) | keine Warnung; sie bekommt nur, wer im Jahrgang bearbeiten und damit befördern darf |
 | Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
 | Anwesenheits- und Spruchlisten (Leitung) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Jahresrückblick: Liste der Ausgaben | zeigt nur Ausgaben der eigenen Jahrgänge; ohne jede Zuweisung bleibt sie leer und nennt den Grund („Kein Jahrgang zugewiesen“) |
 | Jahresrückblick freigeben (Leitung) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Chat: Teamer:in oder Leitung schreibt Konfi an | „Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“ |
-| Chat: Konfi schreibt Teamer:in oder Leitung an | „Diese Teamer:in ist nicht für deinen Jahrgang zuständig“ bzw. „Diese Person aus der Leitung ist nicht für deinen Jahrgang zuständig“ (die Org-Leitung erreicht ein Konfi dagegen immer) |
+| Chat: Konfi schreibt Teamer:in oder Leitung an | „Diese Teamer:in ist nicht für deinen Jahrgang zuständig“ bzw. „Diese Person aus der Leitung ist nicht für deinen Jahrgang zuständig“ (die Gemeindeleitung erreicht ein Konfi dagegen immer) |
 | Chat: Kontaktliste | die Teamer:in taucht bei den Konfis gar nicht erst auf |
 | Jahrgangs-Chatraum | keine Aufnahme in den Raum; auch die Leitung öffnet ihn dann nicht („Zugriff verweigert“) |
 | Event-Chats und Gruppen mit Konfis | ohne eigene Mitgliedschaft zu; einen Event-Chat öffnet die Leitung nur, wenn das Event in ihrer Event-Liste steht ([Chat](90-chat.md#nachvollziehen-was-die-leitung-sehen-kann)) |
@@ -238,15 +238,15 @@ Zwei Meldungen hängen an einem Jahrgang selbst. Beide kommen als Push und im
 
 - **„Neue Registrierung“** — eine Konfi hat sich mit einem
   [Einladungscode](35-passwoerter.md#sich-als-konfi-registrieren) angemeldet.
-  Sie geht an die Org-Leitung und an die Leitung, der der
+  Sie geht an die Gemeindeleitung und an die Leitung, der der
   Jahrgang zugewiesen ist — genau an die, bei denen die neue Konfi sofort in
   der Konfi-Liste steht. Ist der Jahrgang niemandem aus der Leitung
-  zugewiesen, bekommt sie nur die Org-Leitung.
+  zugewiesen, bekommt sie nur die Gemeindeleitung.
 - **„Jahrgang wird bald gelöscht“** — sieben Tage bevor die Konfis eines
   Jahrgangs nach der Konfirmation
   [aus den Listen genommen werden](35-passwoerter.md#weiterkommen-wenn-gar-nichts-geht),
   mit dem Hinweis, wer bleiben soll, jetzt noch zur Teamer:in zu befördern.
-  Sie kommt zusätzlich per E-Mail, und zwar an die Org-Leitung und an die
+  Sie kommt zusätzlich per E-Mail, und zwar an die Gemeindeleitung und an die
   Leitung, soweit sie im Jahrgang bearbeiten darf — denn nur sie können befördern.
   Eine Zuweisung, die nur zum Ansehen berechtigt, reicht dafür nicht.
 
@@ -296,8 +296,9 @@ bleibt vollständig.
 
 Vor dem Löschen fragt die App nach und nennt dabei, was mitgeht: wie viele
 Events und Challenges gelöscht werden, wie viele dieser Events noch in der
-Zukunft liegen und wie viele bestehen bleiben, weil sie auch zu anderen
-Jahrgängen gehören. Das Löschen geschieht ganz oder gar nicht — bricht es
+Zukunft liegen, wie viele bestehen bleiben, weil sie auch zu anderen
+Jahrgängen gehören, und wie viel Material danach für das ganze Team sichtbar
+wird. Das Löschen geschieht ganz oder gar nicht — bricht es
 mittendrin ab, bleibt alles so, wie es war.
 
 Das Löschen ist an zwei Stellen abgesichert.
@@ -326,6 +327,8 @@ Was zum Jahrgang gehört, geht mit ihm. Was auch anderen gehört, bleibt:
 | Challenge, die nur zu diesem Jahrgang gehört | wird gelöscht — mit allen Beiträgen und Dateien, wie beim [Löschen einer Challenge](80-challenges.md#eine-challenge-loeschen) |
 | Challenge, die auch zu einem anderen Jahrgang gehört | bleibt; nur die Zuordnung fällt weg |
 | Challenge [„Nur das Team“](80-challenges.md#festlegen-wer-mitmachen-darf) | bleibt |
+| Material, das nur zu diesem Jahrgang gehört | bleibt und gilt danach für alle — alle Teamer:innen der Gemeinde sehen es, mit Globus in der Liste ([Material](30-leitung.md#material-anlegen-und-sichtbar-machen)) |
+| Material, das auch zu einem anderen Jahrgang gehört | bleibt; nur die Zuordnung zu diesem Jahrgang fällt weg |
 
 Zwei Dinge laufen anders als beim Löschen eines einzelnen Events:
 

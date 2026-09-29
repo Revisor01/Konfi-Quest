@@ -87,8 +87,8 @@ const AdminOrganizationsPage: React.FC = () => {
   const handleDeleteOrganization = async (organization: Organization) => {
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
-      header: 'Organisation löschen',
-      message: `Organisation "${organization.display_name}" (${organization.name}) wirklich löschen?\n\nWarnung: Alle zugehörigen Daten (Benutzer, Konfis, Aktivitäten) werden ebenfalls gelöscht!`,
+      header: 'Gemeinde löschen',
+      message: `Gemeinde "${organization.display_name}" (${organization.name}) wirklich löschen?\n\nWarnung: Alle zugehörigen Daten (Benutzer, Konfis, Aktivitäten) werden ebenfalls gelöscht!`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -99,7 +99,7 @@ const AdminOrganizationsPage: React.FC = () => {
               await api.delete(`/organizations/${organization.id}`);
               await loadOrganizations();
             } catch (err) {
-              setError(fehlerText(err, 'Fehler beim Löschen der Organisation'));
+              setError(fehlerText(err, 'Fehler beim Löschen der Gemeinde'));
             }
           }
         }
@@ -125,17 +125,17 @@ const AdminOrganizationsPage: React.FC = () => {
     <IonPage ref={pageRef}>
       {/* Kein Gemeinde-Umschalter: die Seite ist gemeindeuebergreifend (Betrieb). */}
       <AppKopfzeile
-        titel="Organisationen"
+        titel="Gemeinden"
         onZurueck={() => window.history.back()}
         gemeindeUmschalter={false}
         rechts={(
-          <IonButton aria-label="Neue Organisation anlegen" onClick={presentOrganizationModal}>
+          <IonButton aria-label="Neue Gemeinde anlegen" onClick={presentOrganizationModal}>
             <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
           </IonButton>
         )}
       />
       <IonContent className="app-gradient-background" fullscreen>
-        <AppKopfzeileGross titel="Organisationen" />
+        <AppKopfzeileGross titel="Gemeinden" />
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadOrganizations();
           e.detail.complete();
@@ -148,7 +148,7 @@ const AdminOrganizationsPage: React.FC = () => {
         <WartungsHinweis />
 
         {loading ? (
-          <LoadingSpinner message="Organisationen werden geladen..." />
+          <LoadingSpinner message="Gemeinden werden geladen..." />
         ) : (
           <>
             <OrganizationView

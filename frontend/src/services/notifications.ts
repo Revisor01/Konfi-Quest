@@ -110,17 +110,13 @@ export const benachrichtigungskanaeleAnlegen = async (): Promise<void> => {
   }
 };
 
-// ALLE zugestellten Notifications entfernen. Bewusst sparsam einsetzen
-// (z.B. für Admins, die ohnehin laufend Erinnerungen bekommen) — für
-// normale Nutzer wäre "beim App-Start alles weg" zu aggressiv.
-export const removeAllDelivered = async (): Promise<void> => {
-  if (!Capacitor.isNativePlatform()) return;
-  try {
-    await PushNotifications.removeAllDeliveredNotifications();
-  } catch (error) {
-    console.warn('notifications: removeAllDelivered fehlgeschlagen:', error);
-  }
-};
+// Die App raeumt NIE alle zugestellten Mitteilungen auf einmal weg (Simon,
+// 29.09.2026: "warum sollten die keine Benachrichtigungen behalten?"). Jede
+// Rolle behaelt ihre Mitteilungen in der Leiste, bis sie sie antippt, den
+// Bereich oeffnet, zu dem sie gehoert (gezielt: removeDeliveredById, Chat,
+// Events), oder sie wegwischt. Bis dahin raeumte AppContext der Leitung beim
+// Aktivwerden alles weg -- auf Android nahm das die Marke am App-Symbol mit,
+// auf dem iPhone ungelesene Anfragen aus der Mitteilungszentrale.
 
 /*
  * Genau EINE zugestellte Notification anhand ihrer id entfernen.

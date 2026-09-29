@@ -109,12 +109,17 @@ const KonfiBadgesPage: React.FC = () => {
   const badgeStats = badgeData?.stats || { totalVisible: 0, totalSecret: 0 };
 
   const processedBadges: AnzeigeBadge[] = (() => {
-    if (!badgeData || !konfiData) return [];
+    // Nur die Abzeichen sind Pflicht. Das Profil dient allein als Rueckfall
+    // fuer den Punkte-Fortschritt bei Abzeichen ohne `progress` vom Server;
+    // fehlt es (noch nicht geladen, 500, Zeitueberschreitung), zeigt die Seite
+    // die Abzeichen trotzdem -- vorher stand dann "Keine Badges gefunden"
+    // neben den Kopfzahlen (Audit 26.09.2026, Screens Konfi/Teamer BF-12).
+    if (!badgeData) return [];
 
     // Punkte direkt aus konfi_profiles verwenden
-    const currentGottesdienstPoints = konfiData.gottesdienst_points || 0;
-    const currentGemeindePoints = konfiData.gemeinde_points || 0;
-    const currentTotalPoints = konfiData.total_points || (currentGottesdienstPoints + currentGemeindePoints);
+    const currentGottesdienstPoints = konfiData?.gottesdienst_points || 0;
+    const currentGemeindePoints = konfiData?.gemeinde_points || 0;
+    const currentTotalPoints = konfiData?.total_points || (currentGottesdienstPoints + currentGemeindePoints);
 
     // Process ALL badges (available + earned)
     const allBadges = [...badgeData.available, ...badgeData.earned];
@@ -139,7 +144,7 @@ const KonfiBadgesPage: React.FC = () => {
       let progressPoints = badge.progress?.current || 0;
       let progressPercentage = badge.progress?.percentage || 0;
 
-      if (!badge.progress && !isEarned) {
+      if (!badge.progress && !isEarned && konfiData) {
         if (badge.criteria_type === 'total_points') {
           progressPoints = Math.min(currentTotalPoints, badge.criteria_value);
           progressPercentage = (progressPoints / badge.criteria_value) * 100;

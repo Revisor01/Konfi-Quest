@@ -213,6 +213,39 @@ function normalizePath(path) {
 }
 
 /*
+ * Die URL, die das Betriebs-Dashboard als Beispiel zeigt (recentErrors[].url,
+ * fehlerGruppen[].beispielUrl) und die das Langsam-Log schreibt.
+ *
+ * Bis zum 29.09.2026 stand dort req.originalUrl roh (Audit Leitung BF-12):
+ * mit Suchbegriff (`search-users?q=<Name>`), Benutzername
+ * (`check-username/<name>`, etwa bei 429) und dem Anmeldeschluessel, den
+ * Video-Elemente im Chat als `?token=` mitschicken. Jetzt:
+ *   - Query: nur die Namen der Parameter, jeder Wert geschwaerzt
+ *     (`?q=***&limit=***`) -- man sieht noch, welche Parameter kamen.
+ *   - Pfad: Namen, Codes, Dateinamen und UUIDs wie in normalizePath;
+ *     Zahlen-Kennungen bleiben stehen, sie sind das, womit man einen Fehler
+ *     nachstellt, und nennen niemanden beim Namen.
+ * Die Felder bleiben Strings in derselben Form -- die App liest sie.
+ */
+function urlFuersAnzeige(rawUrl) {
+  const text = String(rawUrl || '');
+  const frage = text.indexOf('?');
+  const pfad = (frage >= 0 ? text.slice(0, frage) : text)
+    .replace(/(\/api\/auth\/check-username)\/[^/]+/i, '$1/:name')
+    .replace(/(\/api\/auth\/validate-invite)\/[^/]+/i, '$1/:code')
+    .replace(/(\/files)\/(?!\d+(?:\/|$))[^/]+/i, '$1/:datei')
+    .replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '/:uuid');
+  if (frage < 0) return pfad;
+  const namen = text.slice(frage + 1).split('&')
+    .filter(Boolean)
+    .map((teil) => {
+      const name = teil.split('=')[0];
+      return /^[A-Za-z0-9_.[\]-]{1,40}$/.test(name) ? `${name}=***` : '?=***';
+    });
+  return namen.length ? `${pfad}?${namen.join('&')}` : pfad;
+}
+
+/*
  * Haelt `stats` unter MAX_ROUTE_KEYS: Verworfen wird das seltenste Viertel
  * (Begruendung bei der Konstante). In einem Schwung ein Viertel statt jedes
  * Mal einen einzelnen Schluessel — sonst laeuft bei jeder Anfrage oberhalb der
@@ -430,11 +463,14 @@ function apmMiddleware(req, res, next) {
     // vom Parser schon geschluckt) ist beides gleich.
     const serverMs = bodyFertig ? Number(ende - bodyFertig) / 1e6 : durationMs;
     const rawUrl = req.originalUrl || req.url;
+    // Gespeichert und protokolliert wird nur die geschwaerzte Fassung
+    // (urlFuersAnzeige, Audit Leitung BF-12).
+    const anzeigeUrl = urlFuersAnzeige(rawUrl);
     // req.user setzt verifyTokenRBAC; zum Zeitpunkt von 'finish' ist es da,
     // falls die Route ueberhaupt angemeldet ist.
-    record(req.method, normalizePath(rawUrl), res.statusCode, durationMs, rawUrl, serverMs, req.user?.id);
+    record(req.method, normalizePath(rawUrl), res.statusCode, durationMs, anzeigeUrl, serverMs, req.user?.id);
     if (durationMs > SLOW_MS) {
-      console.warn(`[APM] LANGSAM ${Math.round(durationMs)}ms ${req.method} ${rawUrl} -> ${res.statusCode}`);
+      console.warn(`[APM] LANGSAM ${Math.round(durationMs)}ms ${req.method} ${anzeigeUrl} -> ${res.statusCode}`);
     }
   };
   res.on('finish', finish);
@@ -884,5 +920,5 @@ function _statsLeeren() {
 
 module.exports = {
   apmMiddleware, snapshot, mergeSnapshots, persistSummary,
-  normalizePath, routeSchluessel, _statsLeeren, MAX_ROUTE_KEYS, REPLICA_ID,
+  normalizePath, urlFuersAnzeige, routeSchluessel, _statsLeeren, MAX_ROUTE_KEYS, REPLICA_ID,
 };

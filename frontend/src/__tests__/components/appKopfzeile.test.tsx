@@ -361,7 +361,7 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
 
     const mehr = lies('src/components/admin/pages/AdminSettingsPage.tsx');
     expect(mehr).toContain('rechts={user?.is_super_admin ? (');
-    expect(mehr).toContain('aria-label="Organisationen verwalten"');
+    expect(mehr).toContain('aria-label="Gemeinden verwalten"');
     expect(mehr).toContain('aria-label="Performance anzeigen"');
 
     const termine = lies('src/components/admin/pages/AdminEventsPage.tsx');

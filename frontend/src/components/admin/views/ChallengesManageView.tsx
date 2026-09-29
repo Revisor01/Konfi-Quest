@@ -35,7 +35,7 @@ import ZaehlerKugel from '../../shared/ZaehlerKugel';
 import SegmentZahl from '../../shared/SegmentZahl';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { anzahlBeitraege, kugelTextAmEintrag, wartenAufFreigabe, wartenAufFreigabeKurz } from '../../../utils/challengeTexte';
+import { anzahlBeitraege, kugelTextAmEintrag, kugelTextNeueBeitraege, wartenAufFreigabe, wartenAufFreigabeKurz } from '../../../utils/challengeTexte';
 import { datumKurz } from '../../../utils/dateUtils';
 
 // Gemeinsame Verwaltungs-Ansicht für Admin UND Teamer. Bewusst ohne eigenen
@@ -77,22 +77,31 @@ interface ChallengesManageViewProps {
   ohneJahrgang?: boolean;
   /**
    * Offene Freigaben je Challenge-ID (BadgeContext.pendingChallengesByChallenge):
-   * speist das orange Eck-Badge (Zahl + Uhr) am Eintrag UND zaehlt in der
-   * roten Kugel am Symbol mit (Simon, 28.09.2026, Messung am Geraet: "Ich
-   * erwarte auch einen roten Kreis auf dem Listen Element" -- der Reiter
-   * zeigte eine rote 1, der Eintrag keine). Das hebt die Entscheidung vom
-   * 25.09.2026 ("fuer Freigaben ja [orange], sonst nur der rote Badge")
-   * auf. Optional, weil aeltere Server die Aufschluesselung nicht liefern.
+   * speist das orange Eck-Badge (Uhr, ohne Zahl) am Eintrag und die orange Zahl
+   * am Umschalter. In die rote Kugel am Symbol gehen sie nur noch im
+   * Rueckfall ein (neueBeitraege fehlt, aelterer Server). Optional, weil
+   * aeltere Server die Aufschluesselung nicht liefern.
    */
   offeneFreigaben?: Record<number, number>;
   /**
-   * Neue Beitraege je Challenge seit dem letzten Oeffnen
-   * (BadgeContext.challengeUpdatesByChallenge, 27.09.2026): rote Kugel am
-   * Symbol wie im Chat, zusammen mit den wartenden Freigaben. Ein Beitrag
-   * steht nie in beiden Quellen (der Server zaehlt wartende nicht als neu),
-   * die Summe zaehlt ihn also nie doppelt.
+   * Neue freigegebene Beitraege je Challenge seit dem letzten Oeffnen
+   * (BadgeContext.challengeUpdatesByChallenge, 27.09.2026). Nur noch fuer
+   * den Rueckfall, wenn neueBeitraege fehlt: Dann zeigt die Kugel wie bis
+   * 29.09.2026 offene Freigaben + diese Zahl.
    */
   neuigkeiten?: Record<number, number>;
+  /**
+   * Die rote Kugel am Symbol (29.09.2026, Simon: "bei jeden Beitrag. Wie im
+   * Chat bei jeder Nachricht. Und zusaetzlich Orangen bei Freigaben."): jeder
+   * fremde Beitrag seit dem letzten Oeffnen, AUCH der wartende
+   * (BadgeContext.challengeNeueBeitraegeByChallenge). Ein wartender Beitrag
+   * steht damit rot, bis die Challenge geoeffnet wird, und orange, bis er
+   * freigegeben ist -- gewollt. Bereits gesehene wartende stehen nur orange.
+   * undefined heisst: der Server liefert das Feld nicht -> Rueckfall.
+   */
+  neueBeitraege?: Record<number, number>;
+  /** Wie viele der neuen Beitraege je Challenge auf Freigabe warten -- fuer den Vorlesetext der Kugel. */
+  neueWartend?: Record<number, number>;
 }
 
 // Status wird NICHT gespeichert, sondern aus is_draft/starts_at/ends_at abgeleitet
@@ -223,13 +232,15 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   offeneStempel: offeneStempelRaw = [],
   ohneJahrgang = false,
   offeneFreigaben = {},
-  neuigkeiten = {}
+  neuigkeiten = {},
+  neueBeitraege,
+  neueWartend = {}
 }) => {
   // Fehlt die Jahrgangs-Zuweisung, ist JEDER Reiter aus demselben Grund
   // leer — deshalb bekommen alle drei denselben erklaerenden Text.
   const ohneJahrgangLeerText = {
     emptyTitle: 'Kein Jahrgang zugewiesen',
-    emptyMessage: 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du hier keine Challenges. Die Org-Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+    emptyMessage: 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du hier keine Challenges. Die Gemeindeleitung kann das in den Einstellungen ändern.'
   };
   // Loeschen ist der Leitung vorbehalten (Nutzerentscheid 28.08.2026):
   // Teamer:innen moderieren voll mit -- anlegen, bearbeiten, freigeben,
@@ -286,7 +297,15 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           // die Liste laedt nur nach eigener Aktion neu, die Zaehler bei
           // jedem Socket-Ereignis und Reiterwechsel.
           const pending = offeneFreigaben[challenge.id] ?? 0;
-          const neu = neuigkeiten[challenge.id] ?? 0;
+          // Rote Kugel: neue Beitraege seit dem letzten Oeffnen, wartende
+          // eingeschlossen. Ohne das Feld (aelterer Server) die Rechnung vom
+          // 28.09.2026: wartende Freigaben + neue freigegebene.
+          const kugel = neueBeitraege
+            ? (neueBeitraege[challenge.id] ?? 0)
+            : pending + (neuigkeiten[challenge.id] ?? 0);
+          const kugelText = neueBeitraege
+            ? kugelTextNeueBeitraege(kugel, neueWartend[challenge.id] ?? 0)
+            : kugelTextAmEintrag(pending, neuigkeiten[challenge.id] ?? 0);
 
           return (
             <IonItemSliding
@@ -319,25 +338,24 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   }}
                 >
                   <div className="app-corner-badges">
-                    {/* Offene Freigaben: Zahl plus Uhr statt "{n} offen"
-                        (Nutzerentscheid 24.08.2026) -- was gemeint ist, sagen
-                        title/aria-label in ganzen Worten. Dieselben Freigaben
-                        zaehlen seit 28.09.2026 zusaetzlich in der roten
-                        Kugel am Symbol (Simon: "Etwas Wartendes bekommt auch
-                        ein Badge fuer den Admin. Ich muss das doch sehen.");
-                        das orange Feld bleibt stehen und sagt, WAS wartet.
-                        Die Entscheidung vom 25.09.2026 (Freigaben nur orange)
-                        ist damit aufgehoben. */}
+                    {/* Offene Freigaben: das orange Feld mit Uhr, OHNE Zahl
+                        (Simon, 29.09.2026: "Im corner badge soll keine Zahl
+                        stehen!"). Die Zahl der wartenden Beitraege steht an
+                        den orangen Zahlen am Umschalter und am Reiter
+                        "Wartet" in der Challenge; das Feld sagt nur, DASS
+                        hier etwas wartet. Wie viele, sagen title/aria-label
+                        in ganzen Worten. Orange steht NUR fuer Wartendes:
+                        Das Feld bleibt, bis freigegeben oder abgelehnt ist;
+                        Oeffnen aendert daran nichts. */}
                     {pending > 0 && (
                       <>
                         <div
                           className="app-corner-badge"
-                          style={{ backgroundColor: 'var(--app-color-warning)', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)' }}
+                          style={{ backgroundColor: 'var(--app-color-warning)', padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
                           title={wartenAufFreigabe(pending)}
                           role="img"
                           aria-label={wartenAufFreigabe(pending)}
                         >
-                          {pending}
                           <IonIcon icon={ICON_UHRZEIT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
                         </div>
                         <div className="app-corner-badges__separator" />
@@ -385,13 +403,14 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
-                      {/* Rote Kugel am Symbol wie in der Chat-Liste und bei
-                          den Konfis (Simon, 27.09.2026: "wie der Chat"):
-                          wartende Freigaben PLUS neue Beitraege seit dem
-                          letzten Oeffnen (28.09.2026). So ergibt die Summe
-                          der Eintraege die Zahl am Reiter
-                          (pendingChallengesCount + challengeUpdatesTotal in
-                          MainTabs). Der Vorlesetext nennt beide Anteile. */}
+                      {/* EINE rote Kugel am Symbol, baugleich zum Chat
+                          (Simon, 29.09.2026: "bei jeden Beitrag. Wie im Chat
+                          bei jeder Nachricht."): neue Beitraege seit dem
+                          letzten Oeffnen, auch wartende. Kein oranger Kreis
+                          am Symbol -- Wartendes steht orange im Eck-Badge.
+                          Der Reiter zaehlt anders (wartend + neu
+                          freigegeben, nichts doppelt); die Kugeln ergeben
+                          zusammen deshalb nicht immer die Reiterzahl. */}
                       <div className="app-zaehler-anker">
                         <div
                           className="app-icon-circle app-icon-circle--lg"
@@ -399,7 +418,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                         >
                           <IonIcon icon={STATUS_ICON[status]} />
                         </div>
-                        <ZaehlerKugel anzahl={pending + neu} label={kugelTextAmEintrag(pending, neu)} />
+                        <ZaehlerKugel anzahl={kugel} label={kugelText} />
                       </div>
 
                       <div className="app-list-item__content">
@@ -407,9 +426,12 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                           className="app-list-item__title"
                           style={{
                             color: isArchived ? 'var(--app-text-muted)' : undefined,
-                            // Das Zähler-Badge ist seit dem Umbau auf Zahl+Uhr
-                            // schmaler als das alte "{n} offen".
-                            paddingRight: pending > 0 ? 'var(--app-freiraum-aktion-xxl-plus)' : 'var(--app-freiraum-aktion-xl)'
+                            // Seit das Freigaben-Feld nur die Uhr traegt
+                            // (29.09.2026), sind alle Eck-Badges gleich breit:
+                            // hoechstens drei (Freigabe, Eingereicht, Status),
+                            // zusammen rund 81 px -- 80 px Freiraum plus 16 px
+                            // Innenabstand der Karte halten den Titel frei.
+                            paddingRight: 'var(--app-freiraum-aktion-xl)'
                           }}
                         >
                           {challenge.title}

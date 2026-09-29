@@ -142,8 +142,10 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         name: jahrgang.name,
         gottesdienst_enabled: jahrgang.gottesdienst_enabled ?? true,
         gemeinde_enabled: jahrgang.gemeinde_enabled ?? true,
-        target_gottesdienst: jahrgang.target_gottesdienst ?? 10,
-        target_gemeinde: jahrgang.target_gemeinde ?? 10,
+        // `|| 10` wie ueberall: eine 0 aus frueheren Tagen heisst 10 (der
+        // Regler beginnt bei 1; Audit Fachlogik Punkte/Termine BF-10).
+        target_gottesdienst: jahrgang.target_gottesdienst || 10,
+        target_gemeinde: jahrgang.target_gemeinde || 10,
         konfspruch_enabled: jahrgang.konfspruch_enabled ?? true
       });
     } else {
@@ -698,13 +700,13 @@ const AdminJahrgaengeePage: React.FC = () => {
                                   {jahrgang.gottesdienst_enabled !== false && (
                                     <span className="app-list-item__meta-item">
                                       <IonIcon icon={ICON_GOTTESDIENST_GEFUELLT} className="app-icon-color--gottesdienst" />
-                                      {`GD-Ziel ${jahrgang.target_gottesdienst ?? 10}`}
+                                      {`GD-Ziel ${jahrgang.target_gottesdienst || 10}`}
                                     </span>
                                   )}
                                   {jahrgang.gemeinde_enabled !== false && (
                                     <span className="app-list-item__meta-item">
                                       <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-icon-color--gemeinde" />
-                                      {`Gem-Ziel ${jahrgang.target_gemeinde ?? 10}`}
+                                      {`Gem-Ziel ${jahrgang.target_gemeinde || 10}`}
                                     </span>
                                   )}
                                   <span className="app-list-item__meta-item">

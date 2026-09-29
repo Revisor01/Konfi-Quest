@@ -94,6 +94,9 @@ const EINSTELLUNG_SCHLUESSEL = 'konfi_app_sperre_verzoegerung';
  *     shareUtils.ts, FileViewerModal, ChallengeLeitungModal, AdminInvitePage)
  *   - Karten und Links (window.open auf Maps/Store/Weblinks in EventDetailView,
  *     TeamerEventsPage, MessageBubble, StoreUpdateBanner, …)
+ *   - Dateien, die in einer fremden App oder der Vorschau des Systems aufgehen
+ *     (Word, Excel; auf Android jede Datei, die der Betrachter der App nicht
+ *     selbst zeigt) — über dateiExternOeffnen in services/systemDialoge.ts
  *   - die Face-ID-Abfrage SELBST: das Systemfenster legt die App auf iOS kurz
  *     in den Hintergrund. Ohne Gegenmaßnahme sperrt sich die App genau in dem
  *     Moment erneut, in dem man sie entsperrt — eine Schleife, aus der niemand

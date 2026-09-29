@@ -8,6 +8,7 @@ const { rollenAnzeigename } = require('../utils/rollenNamen');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
 const { loescheMitteilungenZuEinladung } = require('../utils/postfachAufraeumen');
+const { istIrgendwoKonfi, pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 
 // Einladung einer bestehenden Person in eine weitere Gemeinde (26.09.2026).
 //
@@ -109,9 +110,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // ein Konto gibt -- samt Anzeigename, auch fuer Kinder fremder
         // Gemeinden (Audit, Sicherheit BF-03). Deshalb dieselbe 404-Antwort
         // wie bei einer unbekannten Kennung, ohne Name, ohne Einladung, ohne
-        // Push und Mail. Massgeblich ist die Stammrolle: Konfis koennen keine
-        // Zweitmitgliedschaft haben (organizations.js verbietet sie).
-        if (!ziel || ziel.role_name === 'konfi') {
+        // Push und Mail.
+        //
+        // KONFI IRGENDWO REICHT (28.09.2026, Simon: "Konfi und Team geht
+        // nicht parallel"): Bis dahin zaehlte nur die Stammrolle. Ein Konto,
+        // das zuhause Team und in einer anderen Gemeinde Konfi ist
+        // (Altbestand), liess sich so in eine dritte Gemeinde einladen. Die
+        // Regel steht in utils/konfiOderTeam.js.
+        if (!ziel || ziel.role_name === 'konfi' || await istIrgendwoKonfi(db, ziel.id)) {
           return res.status(404).json({
             error: 'Kein Konto mit diesem Benutzernamen oder dieser E-Mail-Adresse.',
             error_code: 'nicht_gefunden'
@@ -354,6 +360,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       try {
         const { fehler, einladung } = await holeEigeneEinladung(req.params.id, req.user.id);
         if (fehler) return res.status(fehler.status).json(fehler.body);
+
+        // KONFI UND TEAM NIE ZUGLEICH (28.09.2026): Zwischen Einladung und
+        // Annahme kann das Konto zuhause Konfi geworden sein, und vor dem
+        // 26.09.2026 (Sicherheit BF-03) gingen Einladungen auch an Konfis und
+        // mit der Konfi-Rolle hinaus. Deshalb hier noch einmal, mit dem Stand
+        // von JETZT. Die Einladung bleibt offen; sie laeuft nach 14 Tagen ab.
+        const { rows: [angebot] } = await db.query('SELECT name FROM roles WHERE id = $1', [einladung.role_id]);
+        const konflikt = await pruefeKonfiOderTeam(db, {
+          userId: einladung.user_id,
+          organizationId: einladung.organization_id,
+          rolle: angebot && angebot.name
+        });
+        if (konflikt) return res.status(409).json(konflikt);
 
         const client = await db.getClient();
         try {

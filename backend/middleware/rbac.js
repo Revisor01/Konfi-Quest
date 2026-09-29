@@ -12,6 +12,26 @@ const USER_CACHE_TTL = 30 * 1000; // 30 Sekunden
 const USER_CACHE_MAX = 500;
 const userCache = new Map();
 
+// ============================================
+// ABLEHNUNG "nicht Mitglied der aktiven Gemeinde" (403)
+// ============================================
+// Eine Antwort fuer rbac.js und die beiden Datei-Routen mit eigener
+// Anmeldung (challenges.js und chat.js, GET /files/:filename).
+//
+// DER TEXT BLEIBT "... Organisation" -- als einziger Server-Text (Begriffe
+// "Gemeinde statt Organisation", 29.09.2026): Die Store-Apps 2.2.0 und
+// 2.3.0 vergleichen ihn in services/api.ts woertlich und fallen nur damit in
+// die Stamm-Gemeinde zurueck. Mit anderem Wortlaut blieben sie in der
+// entzogenen Gemeinde haengen und zeigten ueberall leere Listen.
+//
+// error_code kam am 29.09.2026 dazu. Die App wertet ihn seitdem vor dem Text
+// aus; sobald keine App ohne diese Pruefung mehr ruft, darf der Text
+// "Kein Zugriff auf diese Gemeinde" heissen.
+const ORG_KEIN_ZUGRIFF = Object.freeze({
+  error: 'Kein Zugriff auf diese Organisation',
+  error_code: 'org_kein_zugriff',
+});
+
 // Cache-Key haelt die AKTIVE Org mit rein: ein User kann (Multi-Org) je nach
 // aktivem Org-Kontext ein voellig anderes req.user-Objekt haben (andere Org,
 // andere Rolle, andere Jahrgänge). Ohne Org im Key wuerde der 30s-Cache nach
@@ -168,7 +188,7 @@ const verifyTokenRBAC = (db) => {
         if (!membership) {
           // Nicht Mitglied der angeforderten Org -> Zugriff verweigern (kein
           // stilles Zurueckfallen auf die Primaer-Org, das wäre verwirrend).
-          return res.status(403).json({ error: 'Kein Zugriff auf diese Organisation' });
+          return res.status(403).json(ORG_KEIN_ZUGRIFF);
         }
 
         user.organization_id = membership.organization_id;
@@ -309,6 +329,7 @@ const requireTeamer = requireRole('org_admin', 'admin', 'teamer'); // Events, Pu
 module.exports = {
   verifyTokenRBAC,
   invalidateUserCache,
+  ORG_KEIN_ZUGRIFF,
   // Rollen-Checks
   requireRole,
   requireSuperAdmin,

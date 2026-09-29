@@ -52,6 +52,7 @@ App-Symbol und den einzelnen Einträgen in der Liste.
 | Seite | Umschalter | Was die orange Zahl zählt |
 |---|---|---|
 | Challenges | Aktuell, Geplant, Archiv | Beiträge, die auf Freigabe warten — auch an beendeten Challenges im Archiv |
+| Geöffnete Challenge | Wartet | Beiträge dieser Challenge, die auf Freigabe warten |
 | Mitmachen | Events | Events, die auf Verbuchung warten; dieselbe Zahl steht unter „Verbuchen" |
 | Mitmachen | Aktivitäten | Anträge, die auf eure Entscheidung warten; dieselbe Zahl steht unter „Offen" |
 
@@ -94,7 +95,7 @@ Team-Rückblick und ein neues Zertifikat. Als Leitung außerdem neue Anträge,
 Abmeldungen von Konfis, Buchungen und Absagen des Teams, Events, die auf
 Verbuchung warten, neue Registrierungen, Ab- und Wieder-Anmeldungen von
 Pflicht-Events und die Warnung vor dem Löschen eines Jahrgangs, als
-Org-Leitung die Antwort auf eine
+Gemeindeleitung die Antwort auf eine
 [Einladung in deine Gemeinde](05-rollen.md#jemanden-in-die-eigene-gemeinde-einladen).
 Anträge und Meldungen zu Events und Jahrgängen bekommst du nur, wenn du sie in
 deinen Listen siehst: siehe
@@ -107,8 +108,8 @@ und [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachse
 gestartete Challenges (die Challenge-Liste zählt selbst) und Chat-Nachrichten
 (der Chat zählt selbst).
 
-Im Postfach steht Ungelesenes fett und mit einem geschlossenen Umschlag in
-der Ecke. **Antippen**
+Im Postfach steht Ungelesenes fett und mit einem **blauen Punkt** in der
+Ecke. **Antippen**
 markiert die Mitteilung als gelesen und führt an die passende Stelle: zum
 Badges, in die Antragsliste, an das Event, bei einem Stempel zu den
 Challenges, bei einem Level-Aufstieg auf die Startseite. Punkte — aus einem
@@ -135,7 +136,7 @@ Badge, geht „Neues Badge erhalten" dazu. Wird ein Event gelöscht, gehen
 alle Mitteilungen zu ihm — Anmeldung, Absage, Teilnahme, Buchungen des Teams;
 mit einer gelöschten Challenge gehen Stempel, „Beitrag ausgeblendet" und
 „Neuer Beitrag", mit einem gelöschten Jahrgang die Warnung vor seiner
-Löschung. Zieht die Org-Leitung eine
+Löschung. Zieht die Gemeindeleitung eine
 [Einladung zurück](05-rollen.md#eine-einladung-zurueckziehen), geht
 „Einladung in eine Gemeinde" bei der eingeladenen Person. Entscheidungen und
 Punkte bleiben — „Antrag verbucht", „Antrag abgelehnt", Bonuspunkte und
@@ -146,7 +147,8 @@ Dasselbe gilt für **Personen**: Wird ein Konto gelöscht — von der Leitung,
 von der Person selbst oder nach der Konfirmation von allein —, verschwinden
 bei der Leitung auch alle Mitteilungen über diese Person: Registrierung,
 Ab- und Wieder-Anmeldungen samt Grund, Beiträge, neue Anträge, Zu- und
-Absagen des Teams, die Antwort auf eine Einladung. Endet deine
+Absagen des Teams, die Antwort auf eine Einladung; was sonst mit dem Konto
+geht, steht unter [Ein Konto löschen](05-rollen.md#ein-konto-loeschen). Endet deine
 **Mitgliedschaft in einer Gemeinde**, gehen deine Mitteilungen aus dieser
 Gemeinde mit (siehe [Mitglieder aus anderen Gemeinden
 verwalten](05-rollen.md#mitglieder-aus-anderen-gemeinden-verwalten)). Wird dir
@@ -163,15 +165,16 @@ ist](05-rollen.md#sehen-wo-etwas-offen-ist)).
 ### Ungelesene Mitteilungen an der Glocke erkennen
 
 Liegt mindestens eine ungelesene Mitteilung im Postfach, trägt die Glocke
-einen **blauen Kreis mit einem Briefumschlag** — in jeder Rolle gleich. Eine
-Zahl steht dort nicht: Der Umschlag sagt nur, dass etwas Neues da ist. Er
-verschwindet, sobald alles gelesen ist.
+oben rechts einen **blauen Punkt** — in jeder Rolle gleich, derselbe Punkt
+wie am ungelesenen Eintrag im Postfach. Eine Zahl steht dort nicht: Der
+Punkt sagt nur, dass etwas Neues da ist. Er verschwindet, sobald alles
+gelesen ist.
 
 Eine **Zahl an der Glocke** zeigen nur Vorgänge, die noch aus einer Funklücke
 gesendet werden (siehe [Ohne Internet weiterarbeiten](#ohne-internet-weiterarbeiten)):
 **orange**, solange etwas gesendet wird, **rot**, wenn ein Vorgang endgültig
 nicht durchkam — das ist eine Aufgabe, kein Hinweis. Solange so eine Zahl
-steht, tritt der Umschlag dahinter zurück; er kommt wieder, wenn die
+steht, tritt der Punkt dahinter zurück; er kommt wieder, wenn die
 Warteschlange leer ist. Vorleseprogramme nennen beides, etwa „Ungelesene
 Mitteilungen im Postfach, 1 Vorgang wird gesendet".
 
@@ -438,7 +441,7 @@ Neue Konten haben alles an.
 > Markierung für Ungelesenes und dem Sprung an die passende Stelle. Wer die
 > Event-Mitteilungen nicht aufs Handy will, verpasst sie deshalb nicht, sondern
 > liest sie, wenn er die App öffnet. Solange sie ungelesen sind, trägt die
-> Glocke den Briefumschlag.
+> Glocke den blauen Punkt.
 
 Solange das Gerät der App noch keine Mitteilungen erlaubt, steht in der
 Auswahl ein Hinweis mit einem Knopf, der die Erlaubnis anfordert. Die Auswahl
@@ -470,6 +473,29 @@ Auf dem iPhone gibt es diese Aufteilung im System nicht: Dort lässt sich unter
 *Einstellungen → Mitteilungen → Konfi Quest* nur die App als Ganzes einstellen.
 Welche Gruppen ankommen, entscheidest du dort über die
 [Auswahl in der App](#auswaehlen-welche-mitteilungen-aufs-handy-kommen).
+
+## Die Zahl am App-Symbol auf Android lesen
+
+Auf dem iPhone steht am App-Symbol die Zahl dessen, was auf dich wartet —
+dieselbe Summe wie in der [Liste deiner Gemeinden](05-rollen.md#sehen-wo-etwas-offen-ist).
+Auf Android entscheidet der Startbildschirm des Geräts, was am Symbol
+erscheint:
+
+| Startbildschirm | Was am Symbol steht |
+|---|---|
+| Samsung | ein Punkt oder eine Zahl, je nach Einstellung *App-Symbolindikator* in den Benachrichtigungseinstellungen; die Zahl zählt die Mitteilungen von Konfi Quest, die gerade in der Benachrichtigungsleiste liegen |
+| Google Pixel und andere mit Android-Standard | ein Punkt, solange eine Mitteilung von Konfi Quest in der Leiste liegt — eine Zahl gibt es dort nicht; langes Drücken auf das Symbol zeigt die Mitteilungen |
+| einige andere Hersteller | die Zahl, die die App selbst meldet — dieselbe Summe wie auf dem iPhone |
+
+Ein Punkt oder eine Zahl aus der Leiste verschwindet mit den Mitteilungen:
+Wer sie wegwischt, sieht am Symbol nichts mehr. Was offen ist, zeigen
+weiterhin die roten Zahlen an den Reitern und die
+[Glocke](#ungelesene-mitteilungen-an-der-glocke-erkennen).
+
+Die App nimmt eine Mitteilung aus der Leiste, sobald du sie antippst oder den
+Bereich öffnest, zu dem sie gehört — etwa den Chat. Alles andere bleibt
+liegen, bis du es wegwischst. Das gilt für jede Rolle, auch für die Leitung,
+auf iPhone und Android: Beim Öffnen der App verschwindet keine Mitteilung.
 
 ## Benachrichtigungen wieder zum Laufen bringen
 
@@ -629,12 +655,11 @@ Bild noch nicht auf dem Gerät, steht dort die graue Zeile mit der Wolke
 von selbst.
 
 Ein Foto antippen öffnet es — im Chat wie in einer Challenge, und genauso jede
-Datei eines Materials. Auf dem Handy erscheint die Vorschau des Systems mit
-Teilen und Sichern, im Browser der Betrachter der App mit Herunterladen; dort
-lässt sich durch die übrigen Dateien der Ansicht wischen. Auch der Betrachter
-und das Teilen nehmen die Datei vom Gerät, wenn sie dort schon liegt. Muss
-sie erst laden, steht in ihrer Zeile *„Wird geladen…"* mit Prozentzahl und
-Balken.
+Datei eines Materials. Wo es aufgeht, steht unter
+[Eine Datei öffnen und vergrößern](#eine-datei-oeffnen-und-vergroessern).
+Auch der Betrachter und das Teilen nehmen die Datei vom Gerät, wenn sie dort
+schon liegt. Muss sie erst laden, steht in ihrer Zeile *„Wird geladen…"* mit
+Prozentzahl und Balken.
 
 Angezeigt wird nur, was die Liste gerade führt, und die kommt vom Server.
 Ein ausgeblendeter oder gelöschter Challenge-Beitrag steht nicht mehr darin —
@@ -651,6 +676,30 @@ Datei gelöscht, steht sie nicht mehr in der Liste und verschwindet dabei vom
 Gerät — ist das ganze Material gelöscht, gehen alle seine Dateien. Wer ein
 Material oder eine Datei löscht, räumt sie sofort auch aus dem eigenen
 Speicher.
+
+### Eine Datei öffnen und vergrößern
+
+Wo eine Datei aufgeht, hängt vom Gerät ab:
+
+| Gerät | Bilder, Videos, PDFs | Word, Excel und andere Dokumente |
+|---|---|---|
+| **iPhone und iPad** | Vorschau des Systems, mit Teilen und Sichern | Vorschau des Systems |
+| **Android** | Betrachter der App, mit Teilen | eine passende App auf dem Handy |
+| **Browser** | Betrachter der App, mit Herunterladen | Herunterladen |
+
+Im Betrachter wischst du zur Seite, um zur nächsten oder vorigen Datei der
+Ansicht zu kommen — bei einem Video oberhalb der Zeitleiste, die selbst zum
+Spulen da ist —, und nach unten, um ein Foto zu schließen. Ein Foto
+vergrößerst du mit zwei Fingern oder einem Doppeltipp. Eine PDF zeigt er mit
+allen Seiten untereinander; vergrößern geht mit zwei Fingern, einem Doppeltipp
+oder den Knöpfen **−** und **+** unten rechts, danach lässt sich die Seite in
+alle Richtungen schieben. Zur nächsten Datei wischen geht bei einer PDF nur,
+solange sie nicht vergrößert ist.
+
+Kann der Betrachter auf Android eine Datei nicht darstellen — etwa ein Video
+in einem Format, das das Handy nicht abspielt —, öffnet sie in einer passenden
+App. Kommst du von dort zurück, fragt die
+[App-Sperre](35-passwoerter.md#kurze-abstecher-sperren-nicht) nicht nach.
 
 ### Verstehen, warum Nachweisfotos nicht auf dem Gerät bleiben
 

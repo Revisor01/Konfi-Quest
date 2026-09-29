@@ -11,7 +11,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
-const { ladeKonfiHistorie } = require('../utils/konfiHistorie');
+const { ladeKonfiHistorie, konfiBadgesAusKopie } = require('../utils/konfiHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
 const { heuteBerlin } = require('../utils/zeitformat');
@@ -23,6 +23,7 @@ const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
 const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
+const { ladeRolleInGemeinde, istMitgliedDerOrganisation } = require('../utils/orgMitglieder');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -132,8 +133,24 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
             AND b.organization_id = $2
           ORDER BY kb.awarded_date DESC
         `;
-        const result = await db.query(badgesQuery, [userId, req.user.organization_id]);
-        badges = result.rows;
+        // AUS DER KOPIE, WENN ES EINE GIBT (Simon, 28.09.2026: "Geloeschte
+        // Badges muessen bei befoerdertem erhalten bleiben. Auch wenn wir
+        // die zb aendern."). Die Kopie der Konfi-Zeit (konfi_historie) haelt
+        // die Konfi-Badges fest, wie sie verdient wurden; live aus
+        // user_badges/custom_badges verschwaende ein geloeschtes Badge, und
+        // ein geaendertes zeigte rueckwirkend den neuen Namen oder Zielwert.
+        // Dieselben Feldnamen und Typen wie die Live-Abfrage
+        // (konfiBadgesAusKopie). Ohne Kopie -- befoerdert vor dem 28.09.2026,
+        // weder Jahrgang noch eines ihrer Badges seither geloescht oder
+        // geaendert -- bleibt es beim Live-Stand, der dann noch unveraendert
+        // ist.
+        const ausKopie = konfiBadgesAusKopie(await ladeKonfiHistorie(db, userId, req.user.organization_id));
+        if (ausKopie) {
+          badges = ausKopie;
+        } else {
+          const result = await db.query(badgesQuery, [userId, req.user.organization_id]);
+          badges = result.rows;
+        }
       }
 
       res.json({
@@ -455,16 +472,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     try {
       const { userId } = req.params;
 
-      // Org-Zugehoerigkeit + Teamer-Rolle prüfen (analog zur Konfi-Variante
-      // in konfi-management.js, die auf r.name = 'konfi' filtert).
-      const { rows: [teamer] } = await db.query(
-        `SELECT u.id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE u.id = $1 AND r.name = 'teamer' AND u.organization_id = $2 AND u.deleted_at IS NULL`,
-        [userId, req.user.organization_id]
-      );
-
-      if (!teamer) {
+      // Teamer:in IN DIESER GEMEINDE (28.09.2026, Simon: "Es bleibt immer an
+      // der Gemeinde!"). Bis dahin stand hier die Rolle am Konto und die
+      // Stamm-Gemeinde (u.organization_id) -- die Leitung einer weiteren
+      // Gemeinde bekam fuer ihre Teamer:in 404 (Audit Punkte/Termine,
+      // Tabelle "Rolle je Gemeinde"). Jetzt beide Quellen, die Rolle DORT.
+      if (await ladeRolleInGemeinde(db, userId, req.user.organization_id) !== 'teamer') {
         return res.status(404).json({ error: 'Teamer:in nicht gefunden' });
       }
 
@@ -589,6 +602,17 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // DELETE /teamer/certificate-types/:id - Typ löschen (nur wenn nicht zugewiesen)
   router.delete('/certificate-types/:id', rbacVerifier, requireAdmin, async (req, res) => {
     try {
+      // Erst die Gemeinde, dann die Nutzung (Audit Sicherheit BF-16,
+      // 29.09.2026): Vorher kam fuer einen Typ einer ANDEREN Gemeinde 409
+      // "bereits im Team vergeben" -- das verriet Existenz und Nutzung.
+      const { rows: [eigener] } = await db.query(
+        'SELECT id FROM certificate_types WHERE id = $1 AND organization_id = $2',
+        [req.params.id, req.user.organization_id]
+      );
+      if (!eigener) {
+        return res.status(404).json({ error: 'Zertifikat-Typ nicht gefunden' });
+      }
+
       // Prüfen ob Zertifikate zugewiesen sind
       const { rows: [usage] } = await db.query(
         'SELECT COUNT(*) as count FROM user_certificates WHERE certificate_type_id = $1',
@@ -623,6 +647,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // GET /teamer/:userId/certificates - Alle Zertifikate eines Teamers
   router.get('/:userId/certificates', rbacVerifier, requireAdmin, async (req, res) => {
     try {
+      // Fremde Person -> 404 statt 200 [] (Audit Sicherheit BF-16,
+      // 29.09.2026). Mitglied ist, wer ueber eine der beiden Quellen zur
+      // aktiven Gemeinde gehoert (utils/orgMitglieder.js). Die Apps rufen
+      // diese Route nicht (2.2.0 und 2.3.0 nur POST und DELETE).
+      if (!(await istMitgliedDerOrganisation(db, req.params.userId, req.user.organization_id))) {
+        return res.status(404).json({ error: 'Person nicht gefunden' });
+      }
       const { rows } = await db.query(
         `SELECT uc.id, uc.issued_date, uc.expiry_date, uc.created_at,
                 ct.id as certificate_type_id, ct.name, ct.icon
@@ -648,15 +679,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         return res.status(400).json({ error: 'Zertifikat-Typ und Ausstellungsdatum sind erforderlich' });
       }
 
-      // Prüfen: User existiert und ist Teamer
-      const { rows: [user] } = await db.query(
-        `SELECT u.id FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE u.id = $1 AND u.organization_id = $2 AND r.name = 'teamer'`,
-        [req.params.userId, req.user.organization_id]
-      );
-
-      if (!user) {
+      // Prüfen: Teamer:in IN DIESER GEMEINDE, ueber beide Quellen
+      // (28.09.2026). Vorher Rolle am Konto und Stamm-Gemeinde -- eine
+      // Teamer:in, die ueber user_organizations hier mitarbeitet, bekam
+      // hier kein Zertifikat (404). Das Zertifikat gehoert der Gemeinde, die
+      // es vergibt (organization_id unten, Typ aus dieser Gemeinde).
+      if (await ladeRolleInGemeinde(db, req.params.userId, req.user.organization_id) !== 'teamer') {
         return res.status(404).json({ error: 'Teamer nicht gefunden' });
       }
 

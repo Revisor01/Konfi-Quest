@@ -5,14 +5,15 @@ import { render, waitFor } from '@testing-library/react';
 // Das Postfach zaehlt am App-Symbol NICHT mit (28.09.2026, Simon).
 //
 // Das Postfach bekommt keine Zahl mehr, sondern an der Glocke einen blauen
-// Briefumschlag, sobald mindestens eine Mitteilung ungelesen ist -- und es
+// Punkt (bis 29.09.2026 einen Briefumschlag), sobald mindestens eine
+// Mitteilung ungelesen ist -- und es
 // wird nicht mehr auf die Zahl am App-Symbol addiert, fuer alle drei Rollen.
 // Das kehrt die Entscheidung vom 25.09.2026 um ("lass es dagegen zaehlen"),
 // nach der totalBadgeCount postfachUngelesen in allen drei Zweigen addierte
 // (Simons Messung damals: Postfach 23 + Challenges 9 + Chat 3 = 35).
 //
 // Hier wird festgehalten, was der Client aus badge-counts.postfach.ungelesen
-// macht: Er uebernimmt die Zahl (die Glocke macht daraus den Briefumschlag),
+// macht: Er uebernimmt die Zahl (die Glocke macht daraus den Punkt),
 // aber sie geht weder in totalBadgeCount noch in appSymbolZahl ein. Die
 // Serverseite (utils/appIconBadge.js) rechnet ebenso;
 // tests/utils/appIconBadgeParitaet.test.js haelt beide Seiten fest. Jeder
@@ -115,7 +116,7 @@ describe('BadgeContext: Postfach zaehlt nicht am App-Symbol', () => {
     await waitFor(() => {
       expect(captured.current?.postfachUngelesen).toBe(23);
     });
-    // Die Glocke kennt die 23 (sie zeigt daraus den Briefumschlag) ...
+    // Die Glocke kennt die 23 (sie zeigt daraus den Punkt) ...
     expect(captured.current!.postfachUngelesen).toBe(23);
     // ... das Symbol zaehlt nur die Reiter.
     expect(captured.current!.totalBadgeCount).toBe(12);

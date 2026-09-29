@@ -2400,6 +2400,24 @@ describe('Wrapped Routes', () => {
              ADD COLUMN IF NOT EXISTS approved_by INTEGER,
              ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE`
         );
+        // Mit der Spalte ging ihr Fremdschluessel -- ihn wie Migration 146
+        // wiederherstellen (29.09.2026). Ohne ihn fehlte er allen Dateien, die
+        // danach in derselben Test-DB laufen: Der Waechter der Kontoloeschung
+        // (tests/utils/kontoLoeschen.test.js) fiel in der vollen Suite, allein
+        // lief er gruen.
+        await db.query(
+          `DO $$
+           BEGIN
+             IF NOT EXISTS (
+               SELECT 1 FROM pg_constraint
+                WHERE conname = 'challenge_submissions_approved_by_fkey'
+             ) THEN
+               ALTER TABLE challenge_submissions
+                 ADD CONSTRAINT challenge_submissions_approved_by_fkey
+                 FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL;
+             END IF;
+           END $$`
+        );
       });
 
       it('Ohne war_auf_warteliste (Migration 145) laeuft der Snapshot durch und die Seite fehlt', async () => {

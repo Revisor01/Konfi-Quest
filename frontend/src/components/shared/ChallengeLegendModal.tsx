@@ -64,33 +64,34 @@ const STATUS_ENTRIES: LegendEntry[] = [
   },
 ];
 
-// Oranges Zähler-Badge in der Liste (pending_count) — Zahl plus Uhr,
-// ohne Wort (Nutzerentscheid 24.08.2026).
+// Oranges Eck-Badge in der Liste — nur die Uhr, ohne Zahl (Simon,
+// 29.09.2026: "Im corner badge soll keine Zahl stehen!"). Wie viele warten,
+// zeigen die orangen Zahlen am Umschalter und an „Wartet". Orange steht nur
+// für Wartendes.
 const COUNTER_ENTRY: LegendEntry = {
   color: 'var(--app-color-warning)',
   icon: ICON_UHRZEIT,
-  label: 'Zahl mit Uhr',
-  description: 'So viele Beiträge warten noch auf Freigabe. Sie zählen auch in der roten Zahl am Symbol mit.',
+  label: 'Oranges Feld mit Uhr',
+  description: 'An dieser Challenge warten Beiträge auf Freigabe. Wie viele, zeigt die orange Zahl an „Wartet“.',
 };
 
-// Rote Kugel am Symbol (27.09.2026, Simon: "Die Challenges sollen sich
-// verhalten wie der Chat"): neue Beitraege seit dem letzten Oeffnen, seit
-// 28.09.2026 plus wartende Freigaben (Simon: "Ich erwarte auch einen roten
-// Kreis auf dem Listen Element") -- zusammen ergeben sie die Zahl am Reiter.
+// Rote Kugel am Symbol (Simon, 29.09.2026: "bei jeden Beitrag. Wie im Chat
+// bei jeder Nachricht. Und zusaetzlich Orangen bei Freigaben."): neue
+// Beitraege seit dem letzten Oeffnen, auch wartende.
 const NEU_ENTRY: LegendEntry = {
   color: 'var(--app-color-danger)',
   zahl: '1',
   label: 'Rote Zahl am Symbol',
-  description: 'Alles, was an der Challenge auf dich wartet: Beiträge, die auf Freigabe warten, und neue Beiträge seit deinem letzten Öffnen — wie ungelesene Nachrichten im Chat. Die neuen verschwinden beim Öffnen, die wartenden erst mit der Freigabe.',
+  description: 'Neue Beiträge seit deinem letzten Öffnen, auch solche, die noch auf Freigabe warten — wie ungelesene Nachrichten im Chat. Sie verschwindet beim Öffnen.',
 };
 
-// Orange Zahl im Umschalter Aktuell/Geplant/Archiv (28.09.2026, zur
-// Ansicht): Wegweiser zum Reiter mit wartenden Freigaben, nur Wartendes.
+// Orange Zahl im Umschalter Aktuell/Geplant/Archiv (28.09.2026) und am
+// Reiter "Wartet" in der geoeffneten Challenge (29.09.2026): nur Wartendes.
 const SEGMENT_ENTRY: LegendEntry = {
   color: 'var(--app-color-warning)',
   zahl: '1',
-  label: 'Orange Zahl am Umschalter',
-  description: 'Hinter diesem Umschalter warten Beiträge auf Freigabe — auch im Archiv. Neue Beiträge zählen hier nicht mit.',
+  label: 'Orange Zahl am Umschalter und an „Wartet“',
+  description: 'So viele Beiträge warten auf Freigabe — am Umschalter Aktuell, Geplant und Archiv, auch im Archiv, und in der geöffneten Challenge am Reiter „Wartet“. Neue Beiträge zählen hier nicht mit.',
 };
 
 // Moderations-Badges aus ChallengeLeitungModal (STATUS_BADGE + CONSENT_BADGE).

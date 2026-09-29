@@ -20,7 +20,7 @@ import { SectionHeader, ListSection } from '../shared';
 import { AdminUser } from '../../types/user';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { datumKurz } from '../../utils/dateUtils';
-import { rollenName } from '../../utils/rollenNamen';
+import { rollenName, rollenFarbeVar } from '../../utils/rollenNamen';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -81,18 +81,10 @@ const UsersView: React.FC<UsersViewProps> = ({
   const getAdminUsers = () => users.filter(user => user.role_name === 'admin' || user.role_name === 'org_admin');
   const getTeamerUsers = () => users.filter(user => user.role_name === 'teamer');
 
-  // Rollenfarbe als Token (25.09.2026): Sie steht als linker Rahmen auf der
-  // Karte und muss im Dunkelmodus heller werden. Der durchscheinende
-  // Hintergrund rechnet mit dem -rgb-Tripel statt mit einem Alpha-Suffix.
-  const getRoleToken = (roleName: string) => {
-    switch (roleName) {
-      case 'org_admin': return 'users';
-      case 'admin': return 'users';
-      case 'teamer': return 'teamer';
-      default: return 'neutral';
-    }
-  };
-  const getRoleColor = (roleName: string) => `var(--app-color-${getRoleToken(roleName)})`;
+  // Rollenfarbe als Token (25.09.2026) -- seit 29.09.2026 aus EINER Stelle
+  // (utils/rollenNamen: rollenFarbe), mit eigener Farbe fuer die Leitung.
+  // Sie steht als linker Rahmen, Symbolkreis und Eck-Marke auf der Karte.
+  const getRoleColor = (roleName: string) => rollenFarbeVar(roleName);
 
 
   const formatDate = (dateString: string) => {

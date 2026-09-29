@@ -470,6 +470,7 @@ richtig machen oder bis dahin entfernen.
 - **Auswirkung aus Nutzersicht:** Verwirrung beim ersten Check-in; geringes Review-Risiko.
 - **Beleg:** Zeilen wie angegeben.
 - **Empfehlung:** „… um QR-Codes beim Check-in zu scannen und Fotos für Chat und Challenges aufzunehmen."
+- **Nachtrag 28.09.2026:** behoben — `NSCameraUsageDescription` in `Info.plist`: „Diese App benötigt Zugriff auf die Kamera, um beim Einchecken zu Events QR-Codes zu scannen und Fotos für Chat-Nachrichten, Challenge-Beiträge und Aktivitäten aufzunehmen." (Aktivitäten dazu: auch „Aktivität melden" nimmt Fotos über dieselbe Dateiauswahl auf). Android geprüft: Dort gibt es keinen eigenen Begründungstext, der Dialog zeigt den Systemtext; nur der Kommentar im `AndroidManifest.xml` nannte allein den QR-Scanner und nennt jetzt auch die Fotos. Wächter `frontend/src/__tests__/config/kameraBerechtigung.test.ts` (4: liest das Plist, koppelt an `QRScannerModal`, Umlaute, Android-Deklaration); ohne Fix 2 rot. Wirkt ab dem nächsten iOS-Store-Build.
 
 ## Unklar
 

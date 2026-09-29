@@ -15,7 +15,7 @@ const lies = (pfad: string): string =>
 describe('rollenName', () => {
   it('admin heißt „Leitung", org_admin „Org-Leitung"', () => {
     expect(rollenName('admin')).toBe('Leitung');
-    expect(rollenName('org_admin')).toBe('Org-Leitung');
+    expect(rollenName('org_admin')).toBe('Gemeindeleitung');
   });
 
   it('teamer bleibt „Teamer:in"', () => {
@@ -25,7 +25,7 @@ describe('rollenName', () => {
   it('der Name aus der Datenbank verliert gegen den festen Namen', () => {
     // Rückfall greift nur bei unbekannten Rollen.
     expect(rollenName('admin', 'Hauptamt')).toBe('Leitung');
-    expect(rollenName('org_admin', 'Organisations-Admin')).toBe('Org-Leitung');
+    expect(rollenName('org_admin', 'Organisations-Admin')).toBe('Gemeindeleitung');
   });
 
   it('unbekannte Rolle: Rückfall, sonst der Name unverändert', () => {
@@ -37,7 +37,7 @@ describe('rollenName', () => {
 
   it('weder „Hauptamt" noch „Admin" unter den Namen', () => {
     const namen = Object.values(ROLLEN_NAMEN);
-    expect(namen).toEqual(['Org-Leitung', 'Leitung', 'Teamer:in']);
+    expect(namen).toEqual(['Gemeindeleitung', 'Leitung', 'Teamer:in']);
   });
 });
 

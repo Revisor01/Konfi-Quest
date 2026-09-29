@@ -198,7 +198,7 @@ describe('Jahrgaenge Routes', () => {
           gottesdienst_enabled: true,
           gemeinde_enabled: false,
           target_gottesdienst: 15,
-          target_gemeinde: 0,
+          target_gemeinde: 5,
         });
 
       expect(res.status).toBe(201);
@@ -350,7 +350,7 @@ describe('Jahrgaenge Routes', () => {
         });
 
       expect(res.status).toBe(404);
-      expect(res.body.error).toBe('Benutzer in dieser Organisation nicht gefunden');
+      expect(res.body.error).toBe('Benutzer in dieser Gemeinde nicht gefunden');
       const { rows } = await db.query(
         "SELECT COUNT(*)::int AS c FROM jahrgaenge WHERE name = '2027/2028'"
       );

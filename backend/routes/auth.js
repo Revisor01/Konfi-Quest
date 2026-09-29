@@ -1,6 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+// Wie lange ein Einladungscode gilt (Simon, 28.09.2026; Audit E-08)
+const {
+  leseTage: leseEinladungsTage,
+  ablaufBeimAnlegen: einladungAblaufBeimAnlegen,
+  ablaufBeimVerlaengern: einladungAblaufBeimVerlaengern,
+  HOECHSTENS_TAGE: EINLADUNG_HOECHSTENS_TAGE
+} = require('../utils/einladungsGueltigkeit');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
@@ -10,8 +17,7 @@ const { body, param } = require('express-validator');
 const validator = require('validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { validatePassword } = require('../utils/passwordUtils');
-const { deleteKonfiCascade } = require('../utils/konfiDeletion');
-const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
 const { checkKonfiLimit } = require('../utils/konfiLimit');
 const PushService = require('../services/pushService');
 // Empfaenger von "Neue Registrierung": die Leitung des Jahrgangs
@@ -72,14 +78,82 @@ const erzeugeResetLimiter = (db) => ({
 });
 
 
+// Grenze fuer die oeffentliche Namenspruefung GET /check-username/:username
+// (Audit Sicherheit BF-18, 29.09.2026; seit dem 22.08.2026 als N3 offen).
+// Die Route verraet, ob es einen Benutzernamen gibt -- bei Konfis meist
+// vorname.nachname. Bis dahin bremste sie allein der allgemeine Flutschutz
+// (2000 je Viertelstunde und IP): Eine Namensliste eines Ortes liess sich in
+// Minuten abgleichen.
+//
+// GEZAEHLT WERDEN NUR TREFFER ("vergeben"): Beim Registrieren prueft die App
+// bei jedem Tastendruck (300 ms Pause), und eine Konfi-Gruppe registriert
+// sich gemeinsam aus einem Gemeinde-WLAN -- dieselbe IP, Hunderte Pruefungen
+// in einer Viertelstunde, fast alle "frei". Die sollen nicht zaehlen. Wer
+// dagegen eine Namensliste abgleicht, sammelt Treffer; nach 30 je
+// Viertelstunde und IP ist Schluss, dann antwortet die Route fuer diese IP
+// 15 Minuten lang 429. Die App (auch 2.2.x) faengt den Fehler ab und zeigt
+// dann nur keinen Hinweis "frei"/"vergeben" -- registrieren geht weiter,
+// POST /register-konfi prueft den Namen selbst.
+//
+// Zaehler im gemeinsamen Store (rate_limit_zaehler), also ueber beide
+// Replicas; Schluessel ist die Client-IP wie bei allen IP-Grenzen.
+const NAMENSPRUEFUNG_TREFFER = 30;
+const erzeugeNamensLimiter = (db) => rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: NAMENSPRUEFUNG_TREFFER,
+  keyGenerator: (req) => ipKeyGenerator(clientIp(req)),
+  skipSuccessfulRequests: true,
+  // "Erfolgreich" = nicht gezaehlt: alles ausser einem Treffer.
+  requestWasSuccessful: (req, res) => res.locals.benutzernameVergeben !== true,
+  message: { error: 'Zu viele Namensprüfungen. Bitte versuche es in 15 Minuten erneut.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new PostgresRateLimitStore(db, { prefix: 'namenspruefung' })
+});
+
 const JWT_SECRET = process.env.JWT_SECRET;
+
+// Zugangs-Sperre: EINE Quelle fuer Anmeldung und Refresh (Audit 26.09.2026,
+// Grundgeruest BF-11). Die App zeigt nach einer Sperre im Refresh den Text,
+// den der Server mitschickt, statt "Deine Sitzung ist abgelaufen" -- er muss
+// deshalb derselbe sein wie bei der Anmeldung. Bis 28.09.2026 standen beide
+// Stellen getrennt: Der Refresh meldete einem deaktivierten Konto
+// 'user_inactive' mit dem Text der gesperrten Organisation, der Testphase
+// fehlte der zweite Satz. Form der Antwort: 403 { error, error_code }.
+const SPERR_MELDUNGEN = {
+  user_inactive: 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.',
+  org_trial_expired: 'Die Testphase dieser Gemeinde ist abgelaufen. Bitte wende dich an die Leitung deiner Gemeinde, um einen Tarif zu buchen.',
+  org_inactive: 'Diese Gemeinde ist derzeit gesperrt. Bitte wende dich an die Leitung deiner Gemeinde.',
+};
+const sperrAntwort = (res, errorCode) =>
+  res.status(403).json({ error: SPERR_MELDUNGEN[errorCode], error_code: errorCode });
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
+// TOKEN_INHALT (Audit Sicherheit BF-15, 29.09.2026): Die Zugangs-Tokens
+// trugen Anzeigename und E-Mail im Klartext -- nur base64-kodiert, lesbar
+// fuer jeden, der ein Token sieht (Geraetespeicher, Proxy-Protokolle). Seit
+// dem 29.09.2026 stehen beide nicht mehr darin, an keiner der fuenf Stellen
+// (Anmeldung, Refresh, Gemeindewechsel, Registrierung, neues Paar nach dem
+// Passwortwechsel).
+//
+// VERTRAG GEPRUEFT: Die ausgelieferten Apps (1.5.3, 2.0.0, 2.1.1, 2.2.0,
+// 2.3.0) dekodieren das Token an genau einer Stelle, services/api.ts
+// getTokenExp, und lesen dort nur `exp`. Name und E-Mail kommen aus der
+// Antwort der Anmeldung (`user`) und aus GET /auth/me. Im Backend liest
+// niemand die beiden Claims: rbac.js, die Socket-Anmeldung und die
+// Datei-Routen laden die Person je Anfrage aus der Datenbank und lesen aus
+// dem Token nur id, iat und active_organization_id.
+//
+// BLEIBT im Token: id, type, organization_id, role_name, is_super_admin,
+// active_organization_id, iat, exp -- keine Personendaten, und ob jemand
+// sie liest, ist nicht Gegenstand dieses Befunds.
+
 // Unified auth routes - combines all login functionality
 module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, rbacVerifier) => {
   const { passwordResetLimiter, passwordResetEmailLimiter } = erzeugeResetLimiter(db);
+  const namensLimiter = erzeugeNamensLimiter(db);
   const { authLimiter, registerLimiter } = rateLimiters;
   const emailService = require('../services/emailService');
 
@@ -136,11 +210,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // auf der Kippe und könnte sich selbst aussperren.
       const iatVordatiert = Math.floor(Date.now() / 1000) + 1;
 
+      // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
       const accessToken = jwt.sign({
         id: u.id,
         type: userType,
-        display_name: u.display_name,
-        email: u.email,
         organization_id: u.organization_id,
         role_name: u.role_name,
         is_super_admin: u.is_super_admin || false,
@@ -225,8 +298,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     // mehr verändert gespeichert -> Login case-insensitiv per LOWER-Vergleich.
     const username = (req.body.username || '').trim();
     const { password } = req.body;
- console.warn(`Login-Versuch: ${username}`);
-
+    // Kein Benutzername im Protokoll (Audit Sicherheit BF-14, 29.09.2026):
+    // Er ist bei Konfis meist vorname.nachname eines Kindes. Erfolgreiche
+    // Anmeldungen schreiben keine Zeile; Fehlversuche schon (Simon,
+    // 29.09.2026), mit der Konto-Kennung oder, wenn es den Namen nicht gibt,
+    // ohne jede Angabe zur Person. Gezaehlt werden sie in der Kontosperre
+    // (utils/kontoSperre.js).
     try {
       const userQuery = `
         SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email, u.role_id,
@@ -247,13 +324,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const { rows: [user] } = await db.query(userQuery, [username]);
 
       if (!user) {
- console.warn(`Login fehlgeschlagen: Benutzer '${username}' not found`);
+        console.warn('Login fehlgeschlagen: unbekannter Benutzername');
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
 
       const passwordMatch = await bcrypt.compare(password, user.password_hash);
       if (!passwordMatch) {
- console.warn(`Login fehlgeschlagen: Falsches Passwort für '${username}'`);
+        console.warn(`Login fehlgeschlagen: falsches Passwort fuer Konto ${user.id}`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
 
@@ -268,27 +345,22 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // beim deaktivierten Konto, damit der Fehler nicht verraet, dass es das
       // Konto noch gibt. Gilt fuer jede Rolle: Loeschung kennt keine Ausnahme.
       if (user.deleted_at) {
- console.warn(`Login blockiert: Benutzer '${username}' ist geloescht (Soft-Delete)`);
-        return res.status(403).json({ error: 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.', error_code: 'user_inactive' });
+        console.warn(`Login blockiert: Konto ${user.id} ist geloescht (Soft-Delete)`);
+        return sperrAntwort(res, 'user_inactive');
       }
 
       if (!isSuperAdmin) {
         // User deaktiviert
         if (user.user_active === false) {
- console.warn(`Login blockiert: Benutzer '${username}' ist deaktiviert`);
-          return res.status(403).json({ error: 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.', error_code: 'user_inactive' });
+          console.warn(`Login blockiert: Konto ${user.id} ist deaktiviert`);
+          return sperrAntwort(res, 'user_inactive');
         }
         // Trial abgelaufen (auch falls der Cron die Org noch nicht auf inaktiv gesetzt hat)
         const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
         // Organisation gesperrt (inaktiv oder Trial abgelaufen)
         if (user.organization_active === false || trialExpired) {
- console.warn(`Login blockiert: Organisation von '${username}' ist gesperrt (active=${user.organization_active}, trialExpired=${trialExpired})`);
-          return res.status(403).json({
-            error: trialExpired
-              ? 'Die Testphase dieser Organisation ist abgelaufen. Bitte wende dich an deine Gemeinde, um einen Tarif zu buchen.'
-              : 'Diese Organisation ist derzeit gesperrt. Bitte wende dich an deine Gemeinde.',
-            error_code: trialExpired ? 'org_trial_expired' : 'org_inactive'
-          });
+          console.warn(`Login blockiert: Gemeinde ${user.organization_id} von Konto ${user.id} ist gesperrt (active=${user.organization_active}, trialExpired=${trialExpired})`);
+          return sperrAntwort(res, trialExpired ? 'org_trial_expired' : 'org_inactive');
         }
       }
 
@@ -303,11 +375,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
 
       // JWT Token - Rollen-basiert (keine Permissions mehr)
+      // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
       const token = jwt.sign({
         id: user.id,
         type: userType,
-        display_name: user.display_name,
-        email: user.email,
         organization_id: user.organization_id,
         role_name: user.role_name,
         is_super_admin: user.is_super_admin || false
@@ -468,7 +539,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
   // Delete own account (Self-Delete, D-01/D-02/D-03)
   // Gilt für ALLE Rollen (Konfi, Teamer, Admin) - nur rbacVerifier, kein requireAdmin.
-  // Sofortiger kaskadierender Hard-Delete nach Passwort-Bestaetigung.
+  // Sofortiger Hard-Delete nach Passwort-Bestaetigung -- ueber alle
+  // Gemeinden, mit allem, was zur Person gehoert (utils/kontoLoeschen.js,
+  // dieselbe Funktion wie die drei anderen Kontoloeschwege).
   router.post('/delete-account', rbacVerifier, async (req, res) => {
     const { password } = req.body;
     const userId = req.user.id;
@@ -515,14 +588,14 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         }
       }
 
-      // Gesamte Kaskade in einer Transaktion (T-114-06): alles oder nichts.
+      // Alles in einer Transaktion (T-114-06): alles oder nichts. Mit dem
+      // Konto verschwinden auch die Buchungen; auf die frei werdenden Plaetze
+      // rueckt nach (Luecke geschlossen 15.09.2026).
       const client = await db.getClient();
-      // Wer auf die frei werdenden Plaetze nachgerueckt ist: Mit dem Konto
-      // verschwinden auch die Buchungen (Luecke geschlossen 15.09.2026).
-      let nachgerueckt = [];
+      let ergebnis = null;
       try {
         await client.query('BEGIN');
-        nachgerueckt = await deleteKonfiCascade(client, userId, user.organization_id);
+        ergebnis = await kontoDatenLoeschen(client, userId);
         await client.query('COMMIT');
       } catch (txErr) {
         await client.query('ROLLBACK');
@@ -530,6 +603,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       } finally {
         client.release();
       }
+
+      // Dateien erst nach dem COMMIT -- ein ROLLBACK darf keine kosten.
+      await kontoDateienLoeschen(ergebnis?.dateien);
 
       res.json({ message: 'Account erfolgreich gelöscht' });
 
@@ -539,7 +615,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       // Benachrichtigung NACH dem COMMIT und fehlertolerant — die Loeschung
       // ist festgeschrieben, ein Push-Fehler darf sie nicht mehr kippen.
-      await meldeNachrueckern(db, user.organization_id, nachgerueckt);
+      // Nachgerueckte je Gemeinde ihres Events, dazu die Chatlisten der
+      // Gespraechspartner:innen.
+      await meldeNachKontoLoeschung(db, ergebnis);
 
       // Admin-Liste aktualisieren und den Socket des geloeschten Kontos trennen —
       // sonst empfing er weiter Org-Updates und die Liste blieb stehen
@@ -714,7 +792,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       res.json(rows);
     } catch (err) {
       console.error('Database error in GET /api/auth/my-organizations:', err);
-      res.status(500).json({ error: 'Fehler beim Laden der Organisationen' });
+      res.status(500).json({ error: 'Fehler beim Laden der Gemeinden' });
     }
   });
 
@@ -752,10 +830,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       `, [userId, targetOrgId]);
 
       if (!membership) {
-        return res.status(403).json({ error: 'Du bist kein Mitglied dieser Organisation' });
+        return res.status(403).json({ error: 'Du bist kein Mitglied dieser Gemeinde' });
       }
       if (membership.is_active === false) {
-        return res.status(403).json({ error: 'Diese Organisation ist derzeit gesperrt' });
+        return res.status(403).json({ error: 'Diese Gemeinde ist derzeit gesperrt' });
       }
 
       const userType = membership.role_name === 'konfi' ? 'konfi'
@@ -764,11 +842,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // Bei Wechsel zur Primaer-Org KEINEN active-Claim setzen (Default-Verhalten).
       const isPrimary = targetOrgId === membership.primary_org_id;
 
+      // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
       const token = jwt.sign({
         id: userId,
         type: userType,
-        display_name: membership.display_name,
-        email: membership.email,
         organization_id: membership.primary_org_id,
         role_name: membership.role_name,
         is_super_admin: membership.is_super_admin || false,
@@ -785,7 +862,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       });
     } catch (err) {
       console.error('Database error in POST /api/auth/switch-org:', err);
-      res.status(500).json({ error: 'Fehler beim Wechsel der Organisation' });
+      res.status(500).json({ error: 'Fehler beim Wechsel der Gemeinde' });
     }
   });
 
@@ -882,6 +959,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   // ===== INVITE CODE SYSTEM =====
 
   // Generate invite code for Konfi registration (org_admin only)
+  //
+  // GUELTIGKEIT WAEHLBAR (Simon, 28.09.2026: "codes laenger als 7 Tage ist
+  // gut. Mach es flexibel. Aber mit Zwang die ablaufen zu lassen."; Audit
+  // E-08): gueltig_tage 7, 14, 30, 60 oder 90, optional. Ohne das Feld bleibt
+  // es bei 7 Tagen -- so schicken es die Apps im Store. Andere Werte: 400.
+  // Einen Code ohne Ablauf gibt es nicht (utils/einladungsGueltigkeit.js).
+  // Antwort additiv um gueltig_tage erweitert.
   router.post('/invite-code', rbacVerifier, validateInviteCode, async (req, res) => {
     const { jahrgang_id } = req.body;
     const userId = req.user.id;
@@ -889,11 +973,16 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
     // Only org_admin can generate invite codes
     if (req.user.role_name !== 'org_admin' && !req.user.is_super_admin) {
-      return res.status(403).json({ error: 'Nur die Org-Leitung kann Einladungscodes erstellen' });
+      return res.status(403).json({ error: 'Nur die Gemeindeleitung kann Einladungscodes erstellen' });
     }
 
     if (!jahrgang_id) {
       return res.status(400).json({ error: 'Jahrgang ist erforderlich' });
+    }
+
+    const gueltigkeit = leseEinladungsTage(req.body.gueltig_tage);
+    if (!gueltigkeit.ok) {
+      return res.status(400).json({ error: 'Ein Einladungscode gilt 7, 14, 30, 60 oder 90 Tage.' });
     }
 
     try {
@@ -909,7 +998,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       // Generate unique invite code (8 characters, uppercase alphanumeric)
       const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      const expiresAt = einladungAblaufBeimAnlegen(gueltigkeit.tage);
 
       // Store invite code
       await db.query(`
@@ -920,7 +1009,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       res.json({
         invite_code: inviteCode,
         jahrgang_name: jahrgang.name,
-        expires_at: expiresAt
+        expires_at: expiresAt,
+        gueltig_tage: gueltigkeit.tage
       });
 
     } catch (err) {
@@ -934,7 +1024,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     const organizationId = req.user.organization_id;
 
     if (req.user.role_name !== 'org_admin') {
-      return res.status(403).json({ error: 'Nur die Org-Leitung kann Einladungscodes einsehen' });
+      return res.status(403).json({ error: 'Nur die Gemeindeleitung kann Einladungscodes einsehen' });
     }
 
     try {
@@ -958,13 +1048,26 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   });
 
-  // Extend invite code by 7 days (org_admin only)
+  // Extend invite code (org_admin only)
+  //
+  // UM WAEHLBARE TAGE, HOECHSTENS 90 IM VORAUS (Simon, 28.09.2026; Audit
+  // E-08): tage 7, 14, 30, 60 oder 90, optional -- ohne das Feld wie bisher
+  // um 7 Tage (Apps im Store schicken keinen Body). Das neue Ablaufdatum
+  // liegt nie mehr als 90 Tage in der Zukunft; was darueber hinausginge,
+  // wird gekuerzt (begrenzt: true). Steht der Code schon an der Grenze: 400.
+  // Abgelaufene Codes bleiben abgelaufen (400 wie bisher). Antwort additiv
+  // um begrenzt erweitert.
   router.post('/invite-codes/:id/extend', rbacVerifier, async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 
     if (req.user.role_name !== 'org_admin') {
-      return res.status(403).json({ error: 'Nur die Org-Leitung kann Einladungscodes verlängern' });
+      return res.status(403).json({ error: 'Nur die Gemeindeleitung kann Einladungscodes verlängern' });
+    }
+
+    const verlaengerung = leseEinladungsTage(req.body ? req.body.tage : undefined);
+    if (!verlaengerung.ok) {
+      return res.status(400).json({ error: 'Ein Einladungscode lässt sich um 7, 14, 30, 60 oder 90 Tage verlängern.' });
     }
 
     try {
@@ -981,15 +1084,19 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return res.status(400).json({ error: 'Abgelaufene Codes können nicht verlängert werden' });
       }
 
-      // Add 7 days to current expiry
-      const newExpiry = new Date(invite.expires_at);
-      newExpiry.setDate(newExpiry.getDate() + 7);
+      const { ablauf: newExpiry, begrenzt, verlaengert } =
+        einladungAblaufBeimVerlaengern(new Date(invite.expires_at), verlaengerung.tage);
+      if (!verlaengert) {
+        return res.status(400).json({
+          error: `Der Code gilt schon ${EINLADUNG_HOECHSTENS_TAGE} Tage im Voraus — länger lässt er sich nicht verlängern.`
+        });
+      }
 
       await db.query(`
         UPDATE invite_codes SET expires_at = $1 WHERE id = $2 AND organization_id = $3
       `, [newExpiry, id, organizationId]);
 
-      res.json({ message: 'Einladungscode verlängert', expires_at: newExpiry });
+      res.json({ message: 'Einladungscode verlängert', expires_at: newExpiry, begrenzt });
 
     } catch (err) {
  console.error('Database error in POST /api/auth/invite-codes/:id/extend:', err);
@@ -1001,7 +1108,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   router.delete('/invite-codes/:id', rbacVerifier, async (req, res) => {
     const organizationId = req.user.organization_id;
     if (req.user.role_name !== 'org_admin') {
-      return res.status(403).json({ error: 'Nur die Org-Leitung kann Einladungscodes löschen' });
+      return res.status(403).json({ error: 'Nur die Gemeindeleitung kann Einladungscodes löschen' });
     }
     try {
       const { rowCount } = await db.query(
@@ -1016,8 +1123,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   });
 
-  // Check username availability (public endpoint)
-  router.get('/check-username/:username', async (req, res) => {
+  // Check username availability (public endpoint). Grenze: namensLimiter
+  // oben (30 Treffer je Viertelstunde und IP, Audit Sicherheit BF-18).
+  router.get('/check-username/:username', namensLimiter, async (req, res) => {
     const { username } = req.params;
     const trimmed = username.trim();
 
@@ -1034,6 +1142,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const { rows } = await db.query('SELECT id FROM users WHERE LOWER(username) = LOWER($1)', [trimmed]);
 
       if (rows.length > 0) {
+        // Nur dieser Fall zaehlt fuer den namensLimiter.
+        res.locals.benutzernameVergeben = true;
         return res.json({ available: false, message: 'Benutzername bereits vergeben' });
       }
 
@@ -1223,11 +1333,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         }
 
         // Auto-Login: JWT Token generieren
+        // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
         const token = jwt.sign({
           id: newUser.id,
           type: 'konfi',
-          display_name: display_name,
-          email: email?.trim() || null,
           organization_id: invite.organization_id,
           role_name: 'konfi',
           is_super_admin: false
@@ -1541,13 +1650,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     const kontoGesperrt = Boolean(user.deleted_at) || (!isSuperAdmin && user.user_active === false);
     const trialExpired = !isSuperAdmin && user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
     const orgGesperrt = !isSuperAdmin && (user.organization_active === false || trialExpired);
-    if (kontoGesperrt || orgGesperrt) {
-      return res.status(403).json({
-        error: trialExpired
-          ? 'Die Testphase dieser Organisation ist abgelaufen.'
-          : 'Diese Organisation ist derzeit gesperrt. Bitte wende dich an deine Gemeinde.',
-        error_code: trialExpired ? 'org_trial_expired' : (kontoGesperrt ? 'user_inactive' : 'org_inactive')
-      });
+    // Reihenfolge wie bei der Anmeldung: erst das Konto, dann die Gemeinde.
+    if (kontoGesperrt) {
+      return sperrAntwort(res, 'user_inactive');
+    }
+    if (orgGesperrt) {
+      return sperrAntwort(res, trialExpired ? 'org_trial_expired' : 'org_inactive');
     }
 
     // Aktive Org nur uebernehmen, wenn sie von der Primaer-Org abweicht UND der
@@ -1563,11 +1671,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
     const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
 
+    // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
     const newAccessToken = jwt.sign({
       id: user.id,
       type: userType,
-      display_name: user.display_name,
-      email: user.email,
       organization_id: user.organization_id,
       role_name: user.role_name,
       is_super_admin: user.is_super_admin || false,

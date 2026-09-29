@@ -20,10 +20,21 @@
 //     noch keine haben -- befoerdert vor dem 28.09.2026. Ihre Buchungen sind
 //     dann schon weg, aber Event-Punkte, Aktivitaeten, Abzeichen und Stempel
 //     stehen noch.
+//   - beim Loeschen oder Aendern eines Konfi-Badges fuer Befoerderte, die es
+//     tragen und noch keine Kopie haben (routes/badges.js, Migration 172).
+//     Simon, 28.09.2026: "Geloeschte Badges muessen bei befoerdertem
+//     erhalten bleiben. Auch wenn wir die zb aendern."
 //
 // WER SIE SIEHT: die Person selbst (GET /teamer/konfi-zeit) und die Leitung
 // ihrer Gemeinde (GET /teamer/:userId/konfi-zeit). Mit dem Konto geht sie
 // (ON DELETE CASCADE).
+//
+// DIE KONFI-BADGES BEFOERDERTER KOMMEN AUS DER KOPIE: GET /teamer/profile
+// liefert konfi_data.badges bei vorhandener Kopie aus `abzeichen`
+// (konfiBadgesAusKopie unten), sonst wie bisher live aus user_badges. So
+// bleibt ein Badge, wie es verdient wurde -- auch wenn die Leitung es spaeter
+// loescht, umbenennt oder den Zielwert senkt. Aktuelle Konfis sehen weiter
+// den lebenden Stand.
 //
 // AUFBAU von `daten` (version 1) -- Schluessel deutsch, wie die Antwort:
 //   jahrgang      { id, name }
@@ -157,7 +168,7 @@ async function sammleKonfiZeit(client, userId, organizationId) {
  * @param {number|string} userId
  * @param {number|string} organizationId
  * @param {object} opt
- * @param {'befoerderung'|'jahrgang_geloescht'} opt.anlass
+ * @param {'befoerderung'|'jahrgang_geloescht'|'abzeichen_geloescht'|'abzeichen_geaendert'} opt.anlass
  * @param {number|string|null} [opt.erstelltVon]
  * @returns {Promise<number|null>} Kennung der Kopie, null ohne Konfi-Profil
  */
@@ -202,6 +213,81 @@ async function sichereKonfiZeitBefoerderter(client, jahrgangId, organizationId, 
 }
 
 /**
+ * Vor dem Loeschen oder Aendern eines Konfi-Badges: Kopie fuer jede
+ * befoerderte Person, die es in dieser Gemeinde traegt und noch keine hat.
+ *
+ * "Befoerdert" heisst: Konfi-Profil in dieser Gemeinde, aber die Rolle IN
+ * DIESER GEMEINDE ist nicht mehr konfi -- users.role_id fuer die
+ * Stamm-Gemeinde, user_organizations.role_id fuer eine weitere
+ * (utils/orgMitglieder.js). Teamer-Badges gehoeren nicht zur Konfi-Zeit und
+ * loesen keine Kopie aus.
+ *
+ * In der Transaktion des Aufrufers, VOR dem DELETE bzw. UPDATE.
+ *
+ * @param {{query: Function}} client
+ * @param {number|string} badgeId
+ * @param {number|string} organizationId
+ * @param {object} opt
+ * @param {'abzeichen_geloescht'|'abzeichen_geaendert'} opt.anlass
+ * @param {number|string|null} [opt.erstelltVon]
+ * @returns {Promise<number>} Anzahl neuer Kopien
+ */
+async function sichereKonfiZeitVorAbzeichenAenderung(client, badgeId, organizationId, { anlass, erstelltVon = null }) {
+  const { rows: personen } = await client.query(
+    `SELECT DISTINCT ub.user_id
+       FROM user_badges ub
+       JOIN custom_badges cb ON cb.id = ub.badge_id
+       JOIN konfi_profiles kp ON kp.user_id = ub.user_id AND kp.organization_id = cb.organization_id
+       JOIN users u ON u.id = ub.user_id
+       LEFT JOIN user_organizations uo ON uo.user_id = u.id AND uo.organization_id = cb.organization_id
+       JOIN roles r ON r.id = CASE WHEN u.organization_id = cb.organization_id THEN u.role_id ELSE uo.role_id END
+      WHERE ub.badge_id = $1 AND cb.organization_id = $2 AND cb.target_role = 'konfi'
+        AND r.name <> 'konfi'
+        AND NOT EXISTS (SELECT 1 FROM konfi_historie h
+                         WHERE h.user_id = ub.user_id AND h.organization_id = cb.organization_id)
+      ORDER BY ub.user_id`,
+    [badgeId, organizationId]
+  );
+  let angelegt = 0;
+  for (const { user_id: userId } of personen) {
+    if (await legeKonfiHistorieAn(client, userId, organizationId, { anlass, erstelltVon })) {
+      angelegt++;
+    }
+  }
+  return angelegt;
+}
+
+/**
+ * Die Konfi-Badges aus der Kopie in der Form von GET /teamer/profile ->
+ * konfi_data.badges: dieselben Feldnamen und Typen wie die Live-Abfrage
+ * (badge_id, name, description, icon, color, criteria_type, criteria_value,
+ * awarded_date), neueste zuerst. Die Apps im Store lesen genau diese Felder
+ * (TeamerKonfiStatsPage, BadgePopoverContent).
+ *
+ * @param {object|null} kopie  aus ladeKonfiHistorie
+ * @returns {Array<object>|null} null, wenn die Kopie keine Abzeichen-Liste traegt
+ */
+function konfiBadgesAusKopie(kopie) {
+  if (!kopie || !Array.isArray(kopie.abzeichen)) return null;
+  const zeit = (wert) => {
+    const t = wert ? new Date(wert).getTime() : NaN;
+    return Number.isNaN(t) ? 0 : t;
+  };
+  return kopie.abzeichen
+    .map((a) => ({
+      badge_id: Number(a.badge_id),
+      name: a.name ?? null,
+      description: a.beschreibung ?? null,
+      icon: a.icon ?? null,
+      color: a.farbe ?? null,
+      criteria_type: a.kriterium ?? null,
+      criteria_value: a.kriterium_wert === null || a.kriterium_wert === undefined ? null : Number(a.kriterium_wert),
+      awarded_date: a.verliehen_am ?? null
+    }))
+    .sort((x, y) => zeit(y.awarded_date) - zeit(x.awarded_date));
+}
+
+/**
  * Die juengste Kopie einer Person in einer Gemeinde, fuer die Anzeige.
  *
  * @returns {Promise<object|null>} { jahrgang_name, anlass, erstellt_am, ...daten } oder null
@@ -225,4 +311,11 @@ async function ladeKonfiHistorie(db, userId, organizationId) {
   };
 }
 
-module.exports = { sammleKonfiZeit, legeKonfiHistorieAn, sichereKonfiZeitBefoerderter, ladeKonfiHistorie };
+module.exports = {
+  sammleKonfiZeit,
+  legeKonfiHistorieAn,
+  sichereKonfiZeitBefoerderter,
+  sichereKonfiZeitVorAbzeichenAenderung,
+  ladeKonfiHistorie,
+  konfiBadgesAusKopie
+};

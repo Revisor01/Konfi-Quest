@@ -33,9 +33,9 @@ const alteNamen = (db) => db.query(
 );
 
 describe('utils/rollenNamen', () => {
-  it('admin heisst Leitung, org_admin Org-Leitung, teamer Teamer:in', () => {
+  it('admin heisst Leitung, org_admin Gemeindeleitung, teamer Teamer:in', () => {
     expect(rollenAnzeigename('admin', 'Hauptamt')).toBe('Leitung');
-    expect(rollenAnzeigename('org_admin', 'Organisations-Admin')).toBe('Org-Leitung');
+    expect(rollenAnzeigename('org_admin', 'Organisations-Admin')).toBe('Gemeindeleitung');
     expect(rollenAnzeigename('teamer', 'Teamer:in')).toBe('Teamer:in');
   });
 
@@ -68,7 +68,7 @@ describe('Rollennamen in Server-Texten und Standardrollen', () => {
 
   // ---- Standardrollen einer neuen Gemeinde ---------------------------------
 
-  it('neue Gemeinde: admin heisst Leitung, org_admin Org-Leitung', async () => {
+  it('neue Gemeinde: admin heisst Leitung, org_admin Gemeindeleitung', async () => {
     const res = await request(app)
       .post('/api/organizations')
       .set('Authorization', `Bearer ${generateToken('superAdmin')}`)
@@ -89,7 +89,7 @@ describe('Rollennamen in Server-Texten und Standardrollen', () => {
     expect(rows).toEqual([
       { name: 'admin', display_name: 'Leitung' },
       { name: 'konfi', display_name: 'Konfirmand:in' },
-      { name: 'org_admin', display_name: 'Org-Leitung' },
+      { name: 'org_admin', display_name: 'Gemeindeleitung' },
       { name: 'teamer', display_name: 'Teamer:in' }
     ]);
   });
@@ -121,11 +121,11 @@ describe('Rollennamen in Server-Texten und Standardrollen', () => {
     expect(emailService.sendGemeindeEinladungEmail.mock.calls[0][3]).toBe('Leitung');
   });
 
-  it('Einladung als Org-Leitung: „Org-Leitung", nicht „Organisations-Admin"', async () => {
+  it('Einladung als Gemeindeleitung: „Gemeindeleitung", nicht „Organisations-Admin"', async () => {
     const res = await einladen(ROLES.orgAdmin2.id);
     expect(res.status).toBe(201);
     await warteAufNachwehen(app);
-    expect(PushService.sendGemeindeEinladungToUser.mock.calls[0][3]).toBe('Org-Leitung');
+    expect(PushService.sendGemeindeEinladungToUser.mock.calls[0][3]).toBe('Gemeindeleitung');
   });
 
   it('Einladung als Teamer:in bleibt „Teamer:in"', async () => {
@@ -153,14 +153,14 @@ describe('Rollennamen in Server-Texten und Standardrollen', () => {
 
   // ---- Chat-Kontaktlisten ---------------------------------------------------
 
-  it('Team-Kontakte: Rollenangabe „Leitung" und „Org-Leitung" statt „Admin"', async () => {
+  it('Team-Kontakte: Rollenangabe „Leitung" und „Gemeindeleitung" statt „Admin"', async () => {
     const res = await request(app)
       .get('/api/chat/team-contacts')
       .set('Authorization', `Bearer ${generateToken('teamer1')}`);
     expect(res.status).toBe(200);
     const rolle = (id) => res.body.find((e) => Number(e.id) === id).role_description;
     expect(rolle(USERS.admin1.id)).toBe('Leitung');
-    expect(rolle(USERS.orgAdmin1.id)).toBe('Org-Leitung');
+    expect(rolle(USERS.orgAdmin1.id)).toBe('Gemeindeleitung');
   });
 
   it('Team-Kontakte: eine eigene Funktionsbezeichnung geht weiter vor', async () => {
@@ -204,12 +204,12 @@ describe('Rollennamen in Server-Texten und Standardrollen', () => {
     expect(n.sender_role_display_name).toBe('Hauptamt');
   });
 
-  it('Konfi-Kontaktliste: die Org-Leitung heisst „Org-Leitung"', async () => {
+  it('Konfi-Kontaktliste: die Gemeindeleitung heisst „Gemeindeleitung"', async () => {
     const res = await request(app)
       .get('/api/chat/available-users')
       .set('Authorization', `Bearer ${generateToken('konfi1')}`);
     expect(res.status).toBe(200);
     const eintrag = res.body.users.find((u) => u.id === USERS.orgAdmin1.id);
-    expect(eintrag.role_description).toBe('Org-Leitung');
+    expect(eintrag.role_description).toBe('Gemeindeleitung');
   });
 });

@@ -55,8 +55,8 @@ Das ist erfüllt, wenn beides zutrifft:
 
 **Die Zugriffe stehen im Traefik-Zugriffslog, NICHT in den Backend-Logs.**
 Das ist der wichtigste Satz dieser Datei. Der Backend-Container
-(`konfi_quest-backend-1`) schreibt nur Startmeldungen, Login-Versuche und
-Fehler — **keine** Zeile pro Anfrage. Wer dort nach einer Route grept,
+(`konfi_quest-backend-1`) schreibt nur Startmeldungen, abgewiesene
+Anmeldungen gesperrter Konten und Fehler — **keine** Zeile pro Anfrage. Wer dort nach einer Route grept,
 bekommt für **jede** Route null Treffer und hält eine lebendige Route für
 tot. Genau diese Sorte falsche Sicherheit hat am 29.08.2026 die Apps
 zerlegt.

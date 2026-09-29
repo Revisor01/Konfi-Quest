@@ -15,6 +15,7 @@ import {
 import { ICON_CHECKBOX, ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
+import { konfiLoeschHinweis, teamKontoLoeschHinweis } from '../../../utils/kontoLoeschen';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
@@ -185,7 +186,9 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Konfi wirklich löschen?',
-      message: `"${konfi.name}" wird unwiderruflich gelöscht.\n\nDabei gehen alle Punkte, Badges, Aktivitäten und Chat-Nachrichten dieses Konfis dauerhaft verloren. Das lässt sich nicht rückgängig machen.`,
+      // Was wirklich verschwindet (Audit 26.09.2026, Leitung BF-10): ein
+      // Wortlaut fuer alle Konto-Loeschdialoge (utils/kontoLoeschen.ts).
+      message: konfiLoeschHinweis(konfi.name),
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -218,7 +221,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         // (GET /admin/konfis/teamer, auch fuer Teamer:innen lesbar) sagt
         // nicht, wer das ist -- deshalb nennt die Abfrage beide Ausgaenge,
         // und die Erfolgsmeldung richtet sich nach der Antwort (konto_bleibt).
-        message: `Teamer:in "${name}" wirklich löschen?\n\nDas Konto wird mit allen zugehörigen Daten entfernt. Punkte und Badges aus einer früheren Konfi-Zeit gehen dabei verloren.\n\nArbeitet die Person auch in einer anderen Gemeinde mit, wird sie nur aus deiner Gemeinde entfernt; ihr Konto bleibt dort bestehen.`,
+        message: `Teamer:in "${name}" wirklich löschen?\n\n${teamKontoLoeschHinweis()}\n\nArbeitet die Person auch in einer anderen Gemeinde mit, wird sie nur aus deiner Gemeinde entfernt; ihr Konto bleibt dort bestehen.`,
         buttons: [
           { text: 'Abbrechen', role: 'cancel', handler: () => resolve() },
           {
@@ -260,12 +263,13 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   };
 
   // Erfolgsbehandlung nach erfolgreichem Anlegen (auch nach Grace-Bestätigung wiederverwendet)
+  //
+  // Den Jahrgangs-Chat pflegt der Server beim Anlegen selbst
+  // (konfi-management.js, syncJahrgangChat in der Transaktion). Hier stand
+  // bis 28.09.2026 vor dem Passwort-Dialog ein Aufruf GET
+  // /admin/jahrgaenge/:id -- eine Route, die es nicht gibt: ein 404 je
+  // Anlage, danach wurde der Fehler geschluckt (Audit Screens Leitung BF-06).
   const handleKonfiCreated = async (response: AxiosResponse<KonfiAngelegtAntwort>, konfiData: KonfiFormDaten) => {
-    // Automatisch Jahrgangschat erstellen/zuweisen
-    if (konfiData.jahrgang_id) {
-      await createOrJoinJahrgangChat(konfiData.jahrgang_id);
-    }
-
     const tempPassword = response.data.temporaryPassword;
     if (tempPassword) {
       presentAlert({
@@ -349,27 +353,6 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
       } else {
         setError(fehlerText(err, 'Fehler beim Hinzufügen des Konfis'));
       }
-    }
-  };
-
-  const createOrJoinJahrgangChat = async (jahrgangId: number) => {
-    try {
-      // Finde den Jahrgang-Namen
-      const jahrgangResponse = await api.get(`/admin/jahrgaenge/${jahrgangId}`);
-      const jahrgangName = jahrgangResponse.data.name;
-
-      // Legt den Jahrgangschat an, falls es ihn noch nicht gibt, und traegt
-      // in beiden Faellen alle Konfis des Jahrgangs ein - auch die, die
-      // spaeter dazugekommen sind.
-      await api.post('/chat/rooms', {
-        type: 'jahrgang',
-        name: `Jahrgang ${jahrgangName}`,
-        jahrgang_id: jahrgangId
-      });
-
-    } catch (err) {
- console.error('Fehler beim Jahrgangschat:', err);
-      // Nicht als kritischer Fehler behandeln, da der Konfi bereits erstellt wurde
     }
   };
 

@@ -6,6 +6,7 @@
 const nodemailer = require('nodemailer');
 const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 const { smtpKonfiguration } = require('../utils/smtpKonfiguration');
+const { adresseFuersProtokoll } = require('../utils/protokoll');
 
 // Gecachter Transporter (wird einmalig erstellt und wiederverwendet)
 let cachedTransporter = null;
@@ -68,7 +69,8 @@ const sendEmail = async ({ to, subject, text, html }) => {
     const info = await transporter.sendMail(mailOptions);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Fehler beim Senden der E-Mail an %s:', to, error);
+    // Nur die Domain der Adresse (Audit Sicherheit BF-14, 29.09.2026).
+    console.error('Fehler beim Senden der E-Mail an %s:', adresseFuersProtokoll(to), error);
     // Transporter-Cache invalidieren bei Verbindungsfehler
     if (error.code === 'ECONNECTION' || error.code === 'EAUTH' || error.code === 'ESOCKET') {
       cachedTransporter = null;
@@ -198,7 +200,7 @@ Dein Konfi Quest Team
       ${kontoHtml ? `<p>Dieser Link gilt für dein Konto:<br>${kontoHtml}</p>` : ''}
       <p>Klicke auf den Button unten, um ein neues Passwort zu setzen:</p>
       <p style="text-align: center;">
-        <a href="${resetUrl}" class="button">Neues Passwort setzen</a>
+        <a href="${escapeHtml(resetUrl)}" class="button">Neues Passwort setzen</a>
       </p>
       <div class="warning">
         <strong>Hinweis:</strong> Dieser Link ist 24 Stunden gültig. Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.
@@ -269,9 +271,9 @@ const sendLicenseExpiryReminderEmail = async (email, name, orgName, endDate, day
   const text = `
 Hallo ${name},
 
-die Lizenz für eure Organisation "${orgName}" bei Konfi Quest läuft am ${dateStr} ab (noch ${daysLeft} Tag${daysLeft === 1 ? '' : 'e'}).
+die Lizenz für eure Gemeinde "${orgName}" bei Konfi Quest läuft am ${dateStr} ab (noch ${daysLeft} Tag${daysLeft === 1 ? '' : 'e'}).
 
-Nach Ablauf wird der Zugang für eure Organisation automatisch gesperrt, bis die Lizenz verlängert wird.
+Nach Ablauf wird der Zugang für eure Gemeinde automatisch gesperrt, bis die Lizenz verlängert wird.
 
 Bitte wende dich rechtzeitig an uns, um die Lizenz zu verlängern.
 
@@ -280,11 +282,11 @@ Dein Konfi Quest Team
   `.trim();
 
   const html = wrapHtml(`
-      <h2>Hallo ${name}!</h2>
-      <p>die Lizenz für eure Organisation <strong>${orgName}</strong> läuft bald ab:</p>
-      <div class="date">${dateStr} &middot; noch ${daysLeft} Tag${daysLeft === 1 ? '' : 'e'}</div>
+      <h2>Hallo ${escapeHtml(name)}!</h2>
+      <p>die Lizenz für eure Gemeinde <strong>${escapeHtml(orgName)}</strong> läuft bald ab:</p>
+      <div class="date">${escapeHtml(dateStr)} &middot; noch ${escapeHtml(daysLeft)} Tag${daysLeft === 1 ? '' : 'e'}</div>
       <div class="warning">
-        <strong>Hinweis:</strong> Nach Ablauf wird der Zugang für eure Organisation automatisch gesperrt, bis die Lizenz verlängert wird. Bitte wende dich rechtzeitig an uns, um die Lizenz zu verlängern.
+        <strong>Hinweis:</strong> Nach Ablauf wird der Zugang für eure Gemeinde automatisch gesperrt, bis die Lizenz verlängert wird. Bitte wende dich rechtzeitig an uns, um die Lizenz zu verlängern.
       </div>
   `);
 
@@ -338,12 +340,15 @@ Dein Konfi Quest Team
 };
 
 const sendJahrgangDeletionWarningEmail = async (email, name, orgName, jahrgangName, daysLeft) => {
-  const subject = `Jahrgang "${jahrgangName}" wird in ${daysLeft} Tagen gelöscht - Konfi Quest`;
+  // CR/LF raus: Der Jahrgangsname (von der Leitung vergeben) steht im Betreff
+  // (Header-Injection-Schutz wie bei sendKonfiMatrixEmail).
+  const betreffName = String(jahrgangName).replace(/[\r\n]+/g, ' ').trim();
+  const subject = `Jahrgang "${betreffName}" wird in ${daysLeft} Tagen gelöscht - Konfi Quest`;
 
   const text = `
 Hallo ${name},
 
-der Jahrgang "${jahrgangName}" in eurer Organisation "${orgName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} automatisch gelöscht.
+der Jahrgang "${jahrgangName}" in eurer Gemeinde "${orgName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} automatisch gelöscht.
 
 Das ist die letzte Gelegenheit, Konfis dieses Jahrgangs noch zu Teamer:innen zu befördern. Beförderte Teamer:innen behalten ihre Punkte und Badges und bleiben euch erhalten - alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt.
 
@@ -354,9 +359,9 @@ Dein Konfi Quest Team
   `.trim();
 
   const html = wrapHtml(`
-      <h2>Hallo ${name}!</h2>
-      <p>der Jahrgang <strong>${jahrgangName}</strong> in eurer Organisation <strong>${orgName}</strong> wird bald gelöscht:</p>
-      <div class="date">Löschung in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'}</div>
+      <h2>Hallo ${escapeHtml(name)}!</h2>
+      <p>der Jahrgang <strong>${escapeHtml(jahrgangName)}</strong> in eurer Gemeinde <strong>${escapeHtml(orgName)}</strong> wird bald gelöscht:</p>
+      <div class="date">Löschung in ${escapeHtml(daysLeft)} Tag${daysLeft === 1 ? '' : 'en'}</div>
       <div class="warning">
         <strong>Letzte Chance:</strong> Befördert jetzt noch Konfis dieses Jahrgangs zu Teamer:innen, wenn sie euch erhalten bleiben sollen. Beförderte Teamer:innen behalten ihre Punkte und Badges. Alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt. Geschieht nichts, wird der Jahrgang automatisch gelöscht.
       </div>
@@ -365,12 +370,19 @@ Dein Konfi Quest Team
   return sendEmail({ to: email, subject, text, html });
 };
 
-// HTML-Escaping für Nutzereingaben (Konfi-Namen, Freitext-Sprueche) im Mail-HTML.
+// HTML-Escaping für JEDEN Wert, der ins Mail-HTML eingesetzt wird
+// (Audit Chat/Challenges/Rückblick BF-11, 29.09.2026): Anzeigename,
+// Gemeinde- und Jahrgangsname sind frei wählbar. Bis dahin maskierten nur
+// drei der sechs Vorlagen; Lizenz- und Löschwarnung setzten die Namen roh
+// ein -- Layoutbruch und Phishing-Optik über einen präparierten Namen. Auch
+// server-eigene Werte (Link, Datum, Zahl) gehen hier durch, damit die Regel
+// ohne Ausnahme gilt. Der Textteil bleibt Klartext und wird nicht maskiert.
 const escapeHtml = (value) => String(value == null ? '' : value)
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;');
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 
 // Formatiert ein Datum (oder null) als deutsches Datum bzw. einen Platzhalter.
 const formatKonfirmationDate = (value) => {

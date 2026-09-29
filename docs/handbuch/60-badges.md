@@ -60,6 +60,11 @@ das Badge. Es gibt keinen Entzug.
 **Die Zielgruppe lässt sich nachträglich nicht ändern.** Beim Bearbeiten fehlt
 die Auswahl. Willst du wechseln, legst du ein neues Badge an.
 
+**Änderungen gelten für alle Konfis, die es tragen.** Benennst du ein Badge um
+oder senkst den Zielwert, sehen Konfis sofort den neuen Stand. Wer inzwischen
+im Team ist, sieht seine Konfi-Badges so, wie er sie verdient hat — siehe
+[Konfi-Badges im Team behalten](#konfi-badges-im-team-behalten).
+
 ### Ein Badge geheim halten
 
 Ein Badge mit dem Schalter „Geheim" sehen Konfis erst, **wenn sie es
@@ -326,7 +331,7 @@ zählt das Jahr der ältesten Teamer-Aktivität; fehlt auch das, zählt es null.
 | Aktivitäten & Events | ja | ja |
 | Event-Teilnahmen | ja | nur im Bestand |
 | Verschiedene Aktivitäten | ja | ja |
-| Pflicht-Anwesenheit | ja | nur im Bestand |
+| Pflicht-Anwesenheit | ja | nein |
 | Spezifische Aktivität | ja | ja |
 | Aktivitäts-Kombination | ja | ja |
 | Kategorie-Aktivitäten | ja | ja |
@@ -336,9 +341,12 @@ zählt das Jahr der ältesten Teamer-Aktivität; fehlt auch das, zählt es null.
 
 Teamer:innen sammeln keine Punkte — deshalb entfallen alle punktebasierten
 Bedingungen. Ein Punkte-Badge mit Zielgruppe „Teamer:innen" wird nie
-vergeben, auch wenn es in der Datenbank steht.
+vergeben, auch wenn es in der Datenbank steht. Dasselbe gilt für
+„Pflicht-Anwesenheit": Für Teamer:innen wird sie nicht ausgewertet, ein
+solches Badge mit Zielgruppe „Teamer:innen" bekommt niemand. Wer eines
+vorfindet, kann es löschen oder durch „Aktivitäten & Events" ersetzen.
 
-**„Nur im Bestand" heißt:** Diese vier lassen sich für „Teamer:innen" nicht
+**„Nur im Bestand" heißt:** Diese drei lassen sich für „Teamer:innen" nicht
 **auswählen** — im Anlegeformular stehen sie dort nicht zur Wahl. Ein
 Badge dieser Art, das es schon gibt, wird aber weiterhin ganz normal
 **vergeben**. Wer eines vorfindet, muss es also nicht ersetzen.
@@ -351,6 +359,12 @@ Badge dieser Art, das es schon gibt, wird aber weiterhin ganz normal
 - **Events:** Umgekehrt großzügiger — es zählt **jedes** Event mit
   eingetragener Anwesenheit, auch Pflicht-Events und Konfirmationen.
   Teamer:innen arbeiten dort ja mit.
+- **Gemeinde:** Teamer-Badges gelten **je Gemeinde**. Wer
+  [in mehreren Gemeinden](05-rollen.md#in-mehreren-gemeinden-mitarbeiten) im
+  Team ist, sieht in jeder die Badges dieser Gemeinde mit dem Fortschritt und
+  den Verleihungen dort; gezählt werden nur Aktivitäten und Events dieser
+  Gemeinde, und ein Badge bleibt bei der Gemeinde, in der es verliehen wurde.
+  Dasselbe gilt für [Zertifikate](30-leitung.md#die-detailansicht-einer-person-nutzen).
 
 ## Nachvollziehen, wann geprüft wird
 
@@ -376,7 +390,8 @@ Bedingungen, die ohne Zutun fällig werden können — „Serie", „Zeitbasiert
 einträgt.
 
 > **Mitteilungen sind dafür nicht nötig.** Der Hintergrundlauf geht alle
-> aktiven Konfis und Teamer:innen durch, ganz gleich ob jemand die App
+> aktiven Konfis und Teamer:innen durch — Teamer:innen in jeder Gemeinde, in
+> der sie im Team sind —, ganz gleich ob jemand die App
 > installiert oder Mitteilungen erlaubt hat. Ohne Mitteilungen erfährt man von
 > dem Badge nur später — beim nächsten Öffnen der App statt sofort per
 > Push. Verliehen wird es genauso.
@@ -413,8 +428,8 @@ Ein Badge kann nie doppelt vergeben werden.
 | | Deaktivieren | Löschen |
 |---|---|---|
 | Neue Vergabe | stoppt | stoppt |
-| Bereits Verliehene | bleiben | **werden mitgelöscht** |
-| Wer es hatte, sieht es weiter | ja, bei Konfis wie Teamer:innen | nein |
+| Bereits Verliehene | bleiben | **werden mitgelöscht** — außer bei Konfis, die inzwischen im Team sind |
+| Wer es hatte, sieht es weiter | ja, bei Konfis wie Teamer:innen | nur, wer inzwischen im Team ist, in seiner Konfi-Historie |
 | Zählt noch als offenes Ziel | nein | nein |
 | Rückgängig | ja | nein |
 
@@ -422,6 +437,23 @@ Ein Badge kann nie doppelt vergeben werden.
 > jemandem etwas wegzunehmen.** Wer es schon hat, behält es und sieht es
 > weiterhin in seiner Liste. Für alle anderen ist es weg — es taucht nicht
 > mehr als erreichbares Ziel auf und wird nicht mehr vergeben. Löschen dagegen
-> nimmt es auch denen weg, die es verdient hatten.
+> nimmt es aktuellen Konfis weg, auch wenn sie es verdient hatten.
 
 Gelöscht wird über die [Wischgeste nach links](03-bedienung.md#etwas-loeschen-nach-links-wischen).
+
+### Konfi-Badges im Team behalten
+
+Wer als Konfi Badges gesammelt hat und dann ins Team
+[befördert](05-rollen.md#eine-rolle-aendern) wurde, behält sie so, wie sie
+verdient wurden. Die Konfi-Historie der Teamer:in zeigt sie aus der Kopie der
+Konfi-Zeit, die die App bei der Beförderung festhält — mit dem Namen, dem
+Symbol, der Beschreibung und dem Zielwert von damals.
+
+- **Löschst du ein Konfi-Badge**, verschwindet es bei aktuellen Konfis. Wer
+  inzwischen im Team ist, sieht es weiter.
+- **Änderst du ein Konfi-Badge** — Name, Symbol, Bedingung oder Zielwert —,
+  sehen aktuelle Konfis den neuen Stand, das Team das Original.
+
+Fehlt einer beförderten Person die Kopie noch, legt die App sie an, bevor sie
+das Badge löscht oder ändert. Teamer-Badges gehören nicht zur Konfi-Zeit:
+Löschen nimmt sie allen weg, Ändern gilt für alle.

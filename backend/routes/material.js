@@ -7,6 +7,7 @@ const { handleValidationErrors } = require('../middleware/validation');
 const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const liveUpdate = require('../utils/liveUpdate');
+const { istTextTyp, pruefeTextDatei, textInhaltsTyp } = require('../utils/textDatei');
 
 module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   const { requireTeamer, requireAdmin } = roleHelpers;
@@ -390,6 +391,18 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const eventId = req.params.eventId;
       const schranke = jahrgangsSchranke(req.user, '$3');
 
+      // Fremder oder unbekannter Termin -> 404 statt 200 [] (Audit
+      // Sicherheit BF-16, 29.09.2026). Beide Apps (2.2.0, 2.3.0) fangen den
+      // Fehler ab und zeigen dann keine Materialien -- wie bei der leeren
+      // Liste.
+      const { rows: [termin] } = await db.query(
+        'SELECT id FROM events WHERE id = $1 AND organization_id = $2',
+        [eventId, orgId]
+      );
+      if (!termin) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
       const { rows: materials } = await db.query(
         `SELECT m.id, m.title, m.description, m.link_url, m.ist_global, m.created_at,
                 m.created_by, u.display_name as created_by_name,
@@ -521,10 +534,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       // Org-Isolation: fremde IDs abweisen (Cross-Org-Referenzen)
       if (!(await allIdsBelongToOrg(db, 'events', event_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Event gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens ein Event gehört nicht zu deiner Gemeinde' });
       }
       if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Gemeinde' });
       }
 
       const { rows: [material] } = await db.query(
@@ -634,10 +647,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       // Org-Isolation: fremde IDs abweisen (Cross-Org-Referenzen)
       if (!(await allIdsBelongToOrg(db, 'events', event_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Event gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens ein Event gehört nicht zu deiner Gemeinde' });
       }
       if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Gemeinde' });
       }
 
       const updates = [];
@@ -845,7 +858,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       // zehn Dateien a 20 MB lagen sonst gleichzeitig im Arbeitsspeicher.
       // Geprueft wird weiterhin ALLES, bevor die ERSTE Datei abgelegt wird.
       const { fileTypeFromBuffer } = await import('file-type');
-      const textMimes = ['text/plain', 'text/csv'];
       const allowedPrefixes = [
         'image/', 'video/', 'audio/', 'application/pdf',
         'application/vnd.openxmlformats', 'application/msword',
@@ -857,7 +869,15 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         if (!file.path) {
           return res.status(400).json({ error: 'Datei konnte nicht gelesen werden' });
         }
-        if (textMimes.includes(file.mimetype)) { continue; }
+        // Text hat keine Magic Bytes: Inhalt pruefen statt dem Header zu
+        // vertrauen (utils/textDatei.js, Audit Sicherheit BF-20).
+        if (istTextTyp(file.mimetype)) {
+          const befund = await pruefeTextDatei(file.path, file.size, req.app.locals.zwischenlager);
+          if (befund) {
+            return res.status(befund.status).json({ error: `${befund.error} (${file.originalname})` });
+          }
+          continue;
+        }
         const detected = await fileTypeFromBuffer(await leseKopfBytes(file.path));
         if (!detected || !allowedPrefixes.some(p => detected.mime.startsWith(p))) {
           return res.status(415).json({ error: `Dateityp nicht verifizierbar: ${file.originalname}` });
@@ -931,7 +951,14 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         return res.status(404).json({ error: 'Datei nicht auf dem Server gefunden' });
       }
 
-      if (fileRecord.mime_type) {
+      // Textdateien immer als text/plain bzw. text/csv mit charset, nicht
+      // mit dem beim Hochladen angegebenen Wert (Audit Sicherheit BF-20).
+      const textTyp = istTextTyp(fileRecord.mime_type)
+        ? textInhaltsTyp({ mimetype: fileRecord.mime_type })
+        : null;
+      if (textTyp) {
+        res.setHeader('Content-Type', textTyp);
+      } else if (fileRecord.mime_type) {
         res.setHeader('Content-Type', fileRecord.mime_type);
       }
       res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileRecord.original_name)}"`);

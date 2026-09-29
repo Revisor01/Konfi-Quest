@@ -36,8 +36,8 @@ und in welcher Reihenfolge, stellt deine Gemeinde ein:
   mit Namen und Punkten; bist du selbst unter den ersten drei, siehst du alle
   drei mit Namen und Punkten. Stehst du weiter hinten, zeigt die Karte neben
   dir nur die Plätze direkt vor und hinter dir, ohne Namen und Punkte. Die
-  Org-Leitung kann das Ranking unter
-  [Mehr › Dashboard](30-leitung.md#verwaltung-nur-org-leitung) ausschalten.
+  Gemeindeleitung kann das Ranking unter
+  [Mehr › Dashboard](30-leitung.md#verwaltung-nur-gemeindeleitung) ausschalten.
 
 ## Mit deinem Team schreiben
 
@@ -151,5 +151,6 @@ im Kapitel [Badges](60-badges.md#die-passende-bedingung-waehlen).
   Nötig ist das selten, die App räumt selbst auf (siehe
   [Den Medien-Cache leeren](03-bedienung.md#den-medien-cache-leeren))
 
-Ganz unten kannst du dich abmelden oder dein Konto löschen. Wie du dich in der
-App bewegst, steht im Kapitel [Die App bedienen](03-bedienung.md).
+Ganz unten kannst du dich abmelden oder dein Konto löschen; was dabei alles
+verschwindet, steht unter [Ein Konto löschen](05-rollen.md#ein-konto-loeschen).
+Wie du dich in der App bewegst, steht im Kapitel [Die App bedienen](03-bedienung.md).

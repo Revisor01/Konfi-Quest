@@ -122,16 +122,20 @@ describe('Gruppenchat mit Teamer:innen aus user_organizations', () => {
       ]);
     });
 
-    it('wer in KEINER der beiden Quellen zur Gemeinde gehoert, bleibt draussen', async () => {
+    // Bis 28.09.2026 fiel die Person still heraus und der Raum entstand ohne
+    // sie; seit dem 29.09. lehnt die Route ab (Audit Sicherheit BF-16,
+    // tests/routes/fremdeKennungen404.test.js).
+    it('wer in KEINER der beiden Quellen zur Gemeinde gehoert: 400, kein Raum', async () => {
       await db.query('DELETE FROM user_organizations WHERE user_id = $1', [USERS.teamer2.id]);
       invalidateUserCache(USERS.teamer2.id);
+      const { rows: [vorher] } = await db.query('SELECT COUNT(*)::int AS n FROM chat_rooms');
 
       const res = await gruppeAnlegen([USERS.teamer2.id, USERS.admin2.id]);
 
-      expect(res.status).toBe(200);
-      expect(await teilnehmer(res.body.room_id)).toEqual([
-        { user_id: USERS.orgAdmin1.id, user_type: 'admin' }
-      ]);
+      expect(res.status).toBe(400);
+      expect(res.body.error_code).toBe('teilnehmende_nicht_in_gemeinde');
+      const { rows: [nachher] } = await db.query('SELECT COUNT(*)::int AS n FROM chat_rooms');
+      expect(nachher.n).toBe(vorher.n);
     });
   });
 
@@ -167,7 +171,7 @@ describe('Gruppenchat mit Teamer:innen aus user_organizations', () => {
       const res = await hinzufuegen(CHAT_ROOMS.group.id, USERS.admin2.id);
 
       expect(res.status).toBe(404);
-      expect(res.body.error).toBe('Benutzer nicht in deiner Organisation gefunden');
+      expect(res.body.error).toBe('Benutzer nicht in deiner Gemeinde gefunden');
       expect(await teilnehmer(CHAT_ROOMS.group.id)).not.toContainEqual(
         expect.objectContaining({ user_id: USERS.admin2.id })
       );

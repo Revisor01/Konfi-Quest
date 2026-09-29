@@ -21,7 +21,7 @@ einen gibt:
 
 - [ ] Nr. 3, 4, 12, 13 erneut (Super-Admin-Konten, Direktchats > 2, soft-gelöschte aktive Konten, Refresh-Tokens).
 - [ ] Nr. 5 nach der nächsten Nacht: Vortags-Erinnerungen kommen 24 h vor Beginn, nicht mehr gesammelt um 00:00.
-- [ ] Nr. 8: `req.ip` gegen `X-Real-IP`/`X-Forwarded-For` — kommt die echte Client-IP im Backend an? (Wichtig für die Anmelde-Sperre nach Fehlversuchen.)
+- [ ] Nr. 8: `req.ip` gegen `X-Real-IP`/`X-Forwarded-For` — kommt die echte Client-IP im Backend an? (Wichtig für die Anmelde-Sperre nach Fehlversuchen.) Messweg ohne Code-Änderung und die nötige Proxy-Einstellung: [06](07-client-adresse-hinter-dem-proxy.md).
 - [ ] Nr. 9: `docker stats` und CPU-Drosselung von Postgres an einem Abend, Cache-Trefferquote aus `pg_stat_database`, Größe der größten Tabellen.
 - [ ] Nr. 11: Zugriffs-Log des Proxys — Tokens in URLs von Chat-Dateien? Löschungen von Buchungen durch Konfi-Konten?
 - [ ] Nr. 14: Dauer eines Push-Versands, Anteil „Keine Push-Tokens", Dauer und Push-Zahl des App-Icon-Zähler-Laufs.

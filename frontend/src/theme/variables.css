@@ -117,6 +117,18 @@ ion-list-header ion-label {
   --app-color-challenges-rgb: 79, 70, 229;
   --app-color-users: #667eea;
   --app-color-users-rgb: 102, 126, 234;
+  /* Rollenfarbe der Leitung (Rolle admin), 29.09.2026. Simon, TestFlight
+     233: "Es braucht noch eine dritte Farbe. Es gibt die Org-Admins, die
+     Admins und die Teamer. Die Admins brauchen eine andere Farbe, damit es
+     leichter erkennbar ist." Org-Leitung behaelt --app-color-users
+     (Indigo), Teamer:innen --app-color-teamer (Beere). Petrol (Tailwind
+     cyan-700): weisse Schrift darauf 5,36:1 (AA), weit weg von Indigo, Beere
+     und Konfi-Violett und von Warn- und Fehlerfarbe (Orange, Rot); heller
+     und blauer als das Aktivitaeten-Gruen (#047857), dunkler als der
+     Chat-Ton (#06b6d4). Zuordnung Rolle -> Farbe an EINER Stelle:
+     utils/rollenNamen.ts (rollenFarbe). Vertrag: rollenFarben.test.ts. */
+  --app-color-leitung: #0e7490;
+  --app-color-leitung-rgb: 14, 116, 144;
   --app-color-badges: #f59e0b;
   --app-color-badges-rgb: 245, 158, 11;
   /* Jahresrueckblick -- eigene Farbe im System, damit die Seite nicht mit
@@ -404,6 +416,8 @@ ion-list-header ion-label {
   --app-text-challenges-rgb: 79, 70, 229;
   --app-text-users: #667eea;
   --app-text-users-rgb: 102, 126, 234;
+  --app-text-leitung: #0e7490;
+  --app-text-leitung-rgb: 14, 116, 144;
   --app-text-badges: #f59e0b;
   --app-text-badges-rgb: 245, 158, 11;
   --app-text-wrapped: #7c3aed;
@@ -1272,6 +1286,13 @@ ion-tab-bar.md ion-tab-button .tab-button-text {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   max-width: 100% !important;
+  /* Unterlaengen: siehe iOS-Block unten. */
+  flex-shrink: 0 !important;
+  /* 4 statt der 6 px des MD3-Themes: Die Beschriftung behaelt seit dem
+     29.09.2026 ihre ganze Zeile (Herleitung am iOS-Block unten). In 56 px waeren das sonst
+     58 px, und Flexbox staucht dann das Symbol samt Pille (gemessen 28 px
+     statt 32; vorher 29,33 px). Mit 4 px: 30 px. */
+  margin-bottom: 4px !important;
 }
 
 /* Reiter-Beschriftung im iOS-Look (UI-Audit BF-07). Das iOS-Theme setzt
@@ -1286,10 +1307,29 @@ ion-tab-bar.md ion-tab-button .tab-button-text {
    Nachbarin laufen: ab 12,75 px beruehren sich die Woerter (0,1 px). Darum
    die Obergrenze 12 px -- auch bei groesserer Systemschrift bleibt eine
    Luecke, wie bei der Reiterleiste von iOS selbst, die ebenfalls nicht
-   mitwaechst. */
+   mitwaechst.
+
+   UNTERLAENGEN GANZ SICHTBAR (Simon, TestFlight 233, 29.09.2026: "das G bei
+   Challenges abgeschnitten, zumindest auf iOS. Da liegt irgendwas drueber").
+   Es lag nichts darueber: Die Beschriftung beschnitt sich selbst. Sie ist
+   ein Flex-Kind in einem Reiter fester Hoehe und traegt overflow hidden
+   (Auslassungspunkte). Seit der groesseren Schrift (27.09.2026) passt ihre
+   Zeile nicht mehr in den Rest -- iOS: 54 - 7 - 7 - 26 - 2 = 12 px Platz fuer
+   14,28 px Zeile (Wurzel 17 px) --, Flexbox staucht den Kasten, die Zeile
+   darin bleibt, ihr unteres Ende faellt weg und mit ihm g, j, p, y.
+   Gemessen (Playwright, alle drei Rollen, 360/393 px): iOS 2,14 px der
+   Tinte von "Challenges" und "Badges" unter dem Kasten, Android
+   (Kasten 11,80 px) 2,20 px. Mit flex-shrink 0 keine Beschriftung mehr.
+   Die Zeile steht dabei, wo sie stand (sie beginnt oben im Kasten); auf iOS
+   reicht der Kasten 2,3 px in den unteren Innenabstand (7 px), den der
+   Knopf freigibt (::part(native) overflow visible im Theme).
+   Die Regel steht in beiden Looks je in ihrem Block (Android oben), wie
+   jede Reiter-Regel (md3LayoutPasst.test.ts).
+   Vertrag: reiterUnterlaengen.test.ts. */
 ion-tab-bar.ios ion-tab-button ion-label {
   font-size: min(var(--app-text-reiter), 12px) !important;
   white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 
 /* iOS26-Library Content-Gradient komplett neutralisieren */
@@ -1702,6 +1742,22 @@ ion-item {
   font-weight: var(--app-schrift-fett);
   line-height: 1;
   vertical-align: middle;
+  /* MITTIG ZUR SCHRIFT (Simon, TestFlight 233, 29.09.2026: "ein bisschen
+     hoeher ... nicht zentriert mit dem Text"). `middle` setzt die Mitte der
+     Zahl auf Grundlinie + halbe x-Hoehe -- das ist die Mitte der
+     Kleinbuchstaben. "Aktuell", "Archiv", "Events" reichen aber bis zur
+     Versalhoehe; das Auge misst die Mitte zwischen Grundlinie und
+     Versalhoehe. Der Unterschied ist (Versal - x) / 2 der Beschriftung:
+     SF Pro (0,705 - 0,53) / 2 = 0,0875 em, Roboto (0,711 - 0,528) / 2 =
+     0,0915 em -- bei 0.81rem (iOS) bzw. 0.75rem (Android) je 1,1 px bei
+     Wurzel 16. Gemessen (Playwright, Chromium-Ersatzschrift): Zahl 1,08 px
+     (iOS) bzw. 1,33 px (Android) unter der Versalmitte.
+     Deshalb 0.075rem hoeher (1,2 px bei Wurzel 16, 1,275 px bei 17): Rest
+     gemessen 0,12 px darueber (iOS) bzw. 0,13 px darunter (Android). In
+     rem, weil Beschriftung und Zahl beide in rem wachsen.
+     Vertrag: segmentZahlenLeitung.test.tsx. */
+  position: relative;
+  top: -0.075rem;
 }
 
 /* === Info Box === */
@@ -3779,6 +3835,8 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-color-users-rgb: 102, 126, 234;
     --app-color-users-dunkel: #5a67d8;
     --app-color-users-hover: #5a6fd6;
+    --app-color-leitung: #0e7490;
+    --app-color-leitung-rgb: 14, 116, 144;
     --app-color-badges: #f59e0b;
     --app-color-badges-rgb: 245, 158, 11;
     --app-color-badges-dunkel: #d97706;
@@ -3933,6 +3991,8 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-text-challenges-rgb: 129, 140, 248;
     --app-text-users: #a5b4fc;        /* 7,77 */
     --app-text-users-rgb: 165, 180, 252;
+    --app-text-leitung: #67e8f9;      /* 10,71 */
+    --app-text-leitung-rgb: 103, 232, 249;
     --app-text-badges: #fbbf24;       /* 9,28 */
     --app-text-badges-rgb: 251, 191, 36;
     --app-text-wrapped: #a78bfa;      /* 5,69 */
@@ -4541,31 +4601,52 @@ ion-buttons:has(> .app-postfach-glocke) {
   top: -8px;
   right: 2px;
 }
-/* Ungelesene Mitteilungen (28.09.2026, Simon): Briefumschlag statt Zahl --
-   derselbe blaue Kreis an derselben Stelle (Lage und Freigaben oben gelten
-   unveraendert), darin das Symbol weiss wie sonst die Ziffer. Nur Token:
-   Im Dunkelmodus hellt Ionics Palette --ion-color-primary selbst auf; auf
-   Android (MD3) sitzt der Kreis ueber die .md-Regel an derselben Stelle wie
-   die Zahl. Keine eigene Lage und Groesse -- sonst liefe die gemessene
-   Geometrie auseinander. */
-.app-postfach-glocke__zahl--umschlag {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
+/* === Ungelesen-Punkt: Glocke und Eintrag im Postfach ===
+   Simon, TestFlight 233 (29.09.2026): "Das Symbol der blauen Briefkaesten
+   fuer die Post am Postfach gefaellt mir nicht." Bis dahin trug die Glocke
+   bei ungelesenen Mitteilungen einen blauen Kreis mit Briefumschlag (seit
+   28.09.2026, vorher eine Zahl), der Eintrag im Postfach einen Umschlag im
+   Eselsohr. Jetzt an beiden Stellen derselbe kleine Punkt, ohne Zahl und
+   ohne Symbol: Er sagt nur "hier ist etwas ungelesen".
+
+   EIN Aussehen (.app-ungelesen-punkt), zwei Lagen. Blau aus
+   --ion-color-primary wie bisher der Kreis -- ruhige Grundfarbe, eine
+   Mitteilung ist keine Aufgabe; im Dunkelmodus hellt Ionics Palette sie
+   selbst auf. 10 px: gross genug, um ihn zu sehen, klein genug, dass er
+   nicht mit der Zahl der Warteschlange (18 px) oder der roten Kugel (16 px)
+   verwechselt wird. Vertrag: postfachGlocke.test.tsx, postfachModal.test.tsx. */
+.app-ungelesen-punkt {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--ion-color-primary);
+  pointer-events: none;
 }
-/* SPEZIFITAET: Beide Themes setzen die Groesse JEDES Symbols in einem
-   Toolbar-Knopf -- ios27 `ion-button.ios:not(...).button-has-icon-only
-   ion-icon` auf 1.4rem (0,3,2), MD3 `ion-button.md:not(.md3-disabled)
-   ion-icon` auf 24px (0,2,2). Der Umschlag sitzt in einem solchen Knopf und
-   waere damit groesser als sein 18px-Kreis. Diese Regel hat (0,4,2) und
-   gewinnt auf beiden Plattformen, unabhaengig von der Ladereihenfolge
-   (Test: postfachGlocke.test.tsx). [data-variante] traegt der Knopf immer
-   (PostfachGlocke setzt es in jedem Zustand). */
-ion-button.app-postfach-glocke[data-variante] .app-postfach-glocke__zahl.app-postfach-glocke__zahl--umschlag ion-icon {
-  color: var(--app-weiss);
-  /* 12px im 18px-Kreis: 3px Rand rundum, gut lesbar. */
-  font-size: var(--app-text-klein);
+/* An der Glocke: 3 px hoeher und 3 px weiter rechts als die Mitte der Zahl
+   der Warteschlange (Herleitung oben), also schraeg ueber der rechten oberen
+   Ecke des Symbols. Simon, 29.09.2026: "Postfach Punkt ist ok, muesste sogar
+   noch ein bisschen hoeher und weiter rechts." Bis dahin lag die Mitte des
+   Punkts genau auf der Mitte der Zahl.
+   iOS: Zahl 18 px bei top 0 / right 0 an .button-inner (40 px breit) ->
+   Mitte (31, 9); Punkt 10 px mit Mitte (34, 6) -> top 1 / right 1.
+   Android (MD3): Zahl bei top -8 / right 2 an .button-inner (48 px breit)
+   -> Mitte (37, 1); Punkt mit Mitte (40, -2) -> top -7 / right 3.
+   Gemessen (Playwright): iOS Mitte 2,8 px rechts und 2,8 px ueber der
+   Symbolecke, auf dem Rand der Glas-Pille; Android 4 px rechts, 2 px
+   darueber; nicht beschnitten (Pille und Knopf geben frei, Herleitung oben).
+   Die Variante mit Linien-Symbol im Punkt (16 px, Umschlag als Linie) ist
+   verworfen: im Dunkeln Weiss auf dem aufgehellten Blau nur 3,2:1, das
+   Symbol 10 px mit Linien unter 1 px, und der Kreis mit Umschlag kommt dem
+   Briefkasten nahe, den Simon nicht wollte. */
+.app-postfach-glocke__punkt {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+}
+.app-postfach-glocke.md .app-postfach-glocke__punkt {
+  top: -7px;
+  right: 3px;
 }
 .app-postfach-glocke[data-variante="warning"] .app-postfach-glocke__zahl {
   background: var(--app-color-warning);
@@ -4579,8 +4660,9 @@ ion-button.app-postfach-glocke[data-variante] .app-postfach-glocke__zahl.app-pos
 
 /* Die Mitteilungen sind .app-list-item wie jede andere Liste der App (Farbe
    ueber .app-list-item--<bereich>, siehe common/PostfachModal). Ungelesen
-   heisst: Titel fett und "Neu" im Eselsohr; gelesen nur der Titel. Die Zeile
-   ist ein Knopf -- Tastatur und Vorleseprogramm sollen sie finden. */
+   heisst: Titel fett und der blaue Punkt in der Ecke; gelesen nur der
+   Titel. Die Zeile ist ein Knopf -- Tastatur und Vorleseprogramm sollen sie
+   finden. */
 .app-postfach-eintrag {
   cursor: pointer;
 }
@@ -4590,6 +4672,17 @@ ion-button.app-postfach-glocke[data-variante] .app-postfach-glocke__zahl.app-pos
 }
 .app-postfach-eintrag--ungelesen .app-list-item__title {
   font-weight: var(--app-schrift-fett);
+}
+/* Der Punkt in der Ecke der Karte, wo bis 29.09.2026 der Umschlag im
+   Eselsohr stand: 10 px von oben und rechts, nah an der Ecke (Simon,
+   29.09.2026: "ein bisschen hoeher und weiter rechts"; zuerst 16 px).
+   Gemessen ab der Kante der Karte: Mitte 16 px von oben und von rechts
+   (vorher 22). Der Titel haelt 24 px frei (PostfachModal), 20 px Luft bis
+   zum Punkt. */
+.app-postfach-eintrag__punkt {
+  position: absolute;
+  top: var(--app-abstand-schmal);
+  right: var(--app-abstand-schmal);
 }
 .app-postfach__laedt {
   display: flex;

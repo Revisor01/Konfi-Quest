@@ -90,27 +90,11 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
   const [teamers, setTeamers] = useState<TeamerListenEintrag[]>([]);
   const [teamerLoading, setTeamerLoading] = useState(false);
-  // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
-  const [, setKonfiLimit] = useState<number | null>(null);
-
-  // Limit der eigenen Organisation laden (kein neuer Endpunkt: GET /organizations/:id liefert max_konfis)
-  useEffect(() => {
-    if (!user?.organization_id) return;
-    let cancelled = false;
-    const loadLimit = async () => {
-      try {
-        const response = await api.get(`/organizations/${user.organization_id}`);
-        if (!cancelled) {
-          const mk = response.data?.max_konfis;
-          setKonfiLimit(mk !== null && mk !== undefined ? Number(mk) : null);
-        }
-      } catch {
-        if (!cancelled) setKonfiLimit(null);
-      }
-    };
-    loadLimit();
-    return () => { cancelled = true; };
-  }, [user?.organization_id]);
+  // Hier lud bis 28.09.2026 jeder Mount GET /organizations/:id (samt sechs
+  // Zaehlabfragen im Server) fuer eine "X von Y Konfis"-Anzeige, die es nie
+  // gab -- der Wert wurde gesetzt, aber nie gelesen (Audit Screens Leitung
+  // BF-07). Die Tarif-Grenze meldet der Server beim Anlegen (limit_grace,
+  // limit_exceeded, AdminKonfisPage).
 
   // Teamer laden (wiederverwendbar: Segment-Wechsel + Reload nach Löschen)
   const loadTeamers = useCallback(async () => {
@@ -426,7 +410,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
               // Befund Rollen-Bericht: Vorher stand hier "Noch keine Konfis
               // angelegt" -- was schlicht falsch war. Es gibt Konfis, dieser
               // Zugang darf sie nur nicht sehen.
-              ? 'Dir ist noch kein Jahrgang zugewiesen. Die Org-Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+              ? 'Dir ist noch kein Jahrgang zugewiesen. Die Gemeindeleitung kann das in den Einstellungen ändern.'
               : 'Noch keine Konfis angelegt'
         }
         emptyIconColor="var(--app-color-konfis)"

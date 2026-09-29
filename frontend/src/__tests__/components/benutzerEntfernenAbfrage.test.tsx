@@ -171,11 +171,19 @@ describe('Sicherheitsabfrage beim Entfernen aus "Benutzer:innen"', () => {
     expect(knoepfe(a)).toEqual(['Abbrechen', 'Entfernen']);
   });
 
-  it('nur hier Mitglied: "Benutzer löschen" wie bisher', () => {
+  it('nur hier Mitglied: "Benutzer löschen", mit dem, was verschwindet und was bleibt', () => {
     const a = oeffneAbfrage(person({ mitgliedschaft: 'stamm', weitere_gemeinden: 0 }));
 
     expect(a.header).toBe('Benutzer löschen');
-    expect(a.message).toBe('Benutzer "Test Teamer 1" (@teamer1) wirklich löschen?');
+    // Seit 28.09.2026 nennt die Abfrage, was mit dem Konto verschwindet und
+    // was der Gemeinde bleibt (utils/kontoLoeschen.ts).
+    expect(a.message).toBe(
+      'Benutzer "Test Teamer 1" (@teamer1) wirklich löschen?\n\n'
+      + 'Mit dem Konto verschwindet alles, was zur Person gehört: Punkte, Badges, Stempel, Anträge samt Fotos, '
+      + 'Event-Anmeldungen, Challenge-Beiträge, Chat-Nachrichten und Zweiergespräche, auch aus einer früheren '
+      + 'Konfi-Zeit. Was die Person für die Gemeinde angelegt hat — Events, Material, Badges, Challenges —, '
+      + 'bleibt ohne ihren Namen. Das lässt sich nicht rückgängig machen.'
+    );
     expect(knoepfe(a)).toEqual(['Abbrechen', 'Löschen']);
   });
 
@@ -201,12 +209,12 @@ describe('Sicherheitsabfrage beim Entfernen aus "Benutzer:innen"', () => {
   });
 
   it('scheitert das Entfernen, steht der Grund des Servers in der Fehlermeldung', async () => {
-    apiDelete.mockRejectedValue({ response: { status: 409, data: { error: 'Die letzte Org-Leitung kann nicht gelöscht werden' } } });
+    apiDelete.mockRejectedValue({ response: { status: 409, data: { error: 'Die letzte Gemeindeleitung kann nicht gelöscht werden' } } });
     oeffneAbfrage(person({ mitgliedschaft: 'stamm', weitere_gemeinden: 1 }));
 
     await tippeAlertKnopf('Entfernen');
 
-    expect(setError).toHaveBeenCalledWith('Die letzte Org-Leitung kann nicht gelöscht werden');
+    expect(setError).toHaveBeenCalledWith('Die letzte Gemeindeleitung kann nicht gelöscht werden');
     expect(setSuccess).not.toHaveBeenCalled();
   });
 });

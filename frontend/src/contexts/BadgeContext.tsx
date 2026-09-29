@@ -45,10 +45,28 @@ interface BadgeContextType {
   challengeUpdatesByChallenge: Record<number, number>;
   challengeUpdatesTotal: number;
   /**
+   * Neue Beitraege je Challenge fuer Leitung und Team (29.09.2026, Simon:
+   * "bei jeden Beitrag. Wie im Chat bei jeder Nachricht. Und zusaetzlich
+   * Orangen bei Freigaben."): jeder fremde Beitrag seit dem letzten Oeffnen,
+   * AUCH die wartenden -- die rote Kugel am Challenge-Eintrag. Aus
+   * badge-counts.challengeNeueBeitraege.byChallenge.
+   *
+   * null heisst: der Server liefert das Feld nicht (aelterer Server) --
+   * dann rechnet die Liste wie bisher offene Freigaben + challengeUpdates.
+   * Fuer Konfis bleibt es null; ihre Kugel liest challengeUpdatesByChallenge.
+   *
+   * Reiter und App-Symbol lesen es NICHT: Dort bleibt es bei
+   * pendingChallengesCount + challengeUpdatesTotal, ein Beitrag zaehlt nie
+   * doppelt.
+   */
+  challengeNeueBeitraegeByChallenge: Record<number, number> | null;
+  /** Wie viele der neuen Beitraege je Challenge noch auf Freigabe warten (Vorlesetext der Kugel). */
+  challengeNeueWartendByChallenge: Record<number, number>;
+  /**
    * Ungelesene Mitteilungen im Postfach (25.09.2026), ueber alle Gemeinden
    * des Kontos. Die Glocke in der Kopfzeile zeigt daraus einen blauen
-   * Briefumschlag, sobald die Zahl groesser 0 ist -- keine Zahl
-   * (shared/PostfachGlocke).
+   * Punkt, sobald die Zahl groesser 0 ist -- keine Zahl
+   * (shared/PostfachGlocke; bis 29.09.2026 ein Briefumschlag).
    *
    * Seit 28.09.2026 (Simon) zaehlt sie NICHT mehr in totalBadgeCount und
    * nicht in appSymbolZahl, fuer keine Rolle. Vom 25. bis 28.09.2026 zaehlte
@@ -58,12 +76,13 @@ interface BadgeContextType {
   postfachUngelesen: number;
   /**
    * Meldet eine Challenge als geoeffnet -- wie markRoomAsRead fuer den Chat:
-   * optimistisch sofort auf 0, dann POST. Fuer Team und Leitung ein No-op.
+   * optimistisch sofort auf 0 (challengeUpdatesByChallenge und
+   * challengeNeueBeitraegeByChallenge), dann POST. Fuer super_admin ein No-op.
    */
   markChallengeAsRead: (challengeId: number) => Promise<void>;
   /**
    * Das Postfach meldet gelesene Mitteilungen: Die Glocke zaehlt SOFORT
-   * herunter, ohne auf den Server zu warten (der Briefumschlag geht bei 0).
+   * herunter, ohne auf den Server zu warten (der Punkt geht bei 0).
    * Das App-Symbol bleibt unberuehrt -- das Postfach zaehlt dort nicht.
    * 'alle' setzt auf 0. Zaehlungen, die vorher gestartet waren, werden
    * danach verworfen -- sie trugen den Stand von vor dem Lesen (Befund
@@ -96,6 +115,24 @@ interface BadgeContextType {
 // Create Context
 const BadgeContext = createContext<BadgeContextType | undefined>(undefined);
 
+/** Zahl je Challenge aus einer Server-Antwort: nur Eintraege > 0, Schluessel als Zahl. */
+const nurPositive = (roh: unknown): Record<number, number> => {
+  const ergebnis: Record<number, number> = {};
+  if (!roh || typeof roh !== 'object') return ergebnis;
+  Object.entries(roh as Record<string, unknown>).forEach(([id, wert]) => {
+    const n = Number(wert) || 0;
+    if (n > 0) ergebnis[Number(id)] = n;
+  });
+  return ergebnis;
+};
+
+/** Gleicher Inhalt? Dann behaelt der State seine Referenz (kein unnoetiges Neuzeichnen). */
+const gleicherInhalt = (a: Record<number, number>, b: Record<number, number>): boolean => {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  return aKeys.length === bKeys.length && bKeys.every(k => a[Number(k)] === b[Number(k)]);
+};
+
 // Badge Provider Component
 export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const { user, organizations } = useApp();
@@ -114,6 +151,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const [newBadgesCount, setNewBadgesCount] = useState(0);
   const [challengeUpdatesByChallenge, setChallengeUpdatesByChallenge] = useState<Record<number, number>>({});
   const [challengeUpdatesTotal, setChallengeUpdatesTotal] = useState(0);
+  const [challengeNeueBeitraegeByChallenge, setChallengeNeueBeitraegeByChallenge] = useState<Record<number, number> | null>(null);
+  const [challengeNeueWartendByChallenge, setChallengeNeueWartendByChallenge] = useState<Record<number, number>>({});
   const [postfachUngelesen, setPostfachUngelesen] = useState(0);
 
   /**
@@ -197,7 +236,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   // stimmte nie mit der Summe der Reiter ueberein (Befund B2a).
   // Seit 24.09.2026 kommen fuer Konfis die Challenge-Neuigkeiten dazu.
   // POSTFACH (28.09.2026, Simon): Das Postfach bekommt keine Zahl mehr,
-  // sondern an der Glocke einen blauen Briefumschlag, und es wird nicht mehr
+  // sondern an der Glocke einen blauen Punkt (bis 29.09.2026 einen
+  // Briefumschlag), und es wird nicht mehr
   // auf die Zahl am App-Symbol addiert -- in keinem der drei Zweige. Vom
   // 25. bis 28.09.2026 stand hier `+ postfachUngelesen` in allen drei
   // Zweigen (Simons Messung damals: Glocke 23 + Challenges 9 + Chat 3 = 35);
@@ -299,9 +339,9 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       // Genau der Widerspruch Icon <-> Reiter, den B2b ausschliessen sollte.
       setNewBadgesCount(Number(data?.newBadges) || 0);
       // Postfach (25.09.2026): fuer alle Rollen, ueber alle Gemeinden --
-      // nur fuer die Glocke (Briefumschlag bei > 0), seit 28.09.2026 kein
+      // nur fuer die Glocke (Punkt bei > 0), seit 28.09.2026 kein
       // Anteil am App-Symbol. Aeltere Server ohne das Feld: 0, kein
-      // Briefumschlag, kein Fehler.
+      // Punkt, kein Fehler.
       setPostfachUngelesen(Number(data?.postfach?.ungelesen) || 0);
 
       if (isLeadership) {
@@ -323,6 +363,20 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
             && nextKeys.every(k => prev[Number(k)] === freigaben[Number(k)]);
           return unveraendert ? prev : freigaben;
         });
+
+        // Neue Beitraege je Challenge, wartende eingeschlossen (29.09.2026) --
+        // die rote Kugel am Eintrag. Fehlt das Feld (aelterer Server), bleibt
+        // es null und die Liste rechnet wie bisher (Freigaben + Neuigkeiten).
+        const neueRaw = data?.challengeNeueBeitraege;
+        if (neueRaw && typeof neueRaw === 'object' && neueRaw.byChallenge && typeof neueRaw.byChallenge === 'object') {
+          const neue = nurPositive(neueRaw.byChallenge);
+          const wartend = nurPositive(neueRaw.wartendByChallenge);
+          setChallengeNeueBeitraegeByChallenge(prev => (prev && gleicherInhalt(prev, neue)) ? prev : neue);
+          setChallengeNeueWartendByChallenge(prev => gleicherInhalt(prev, wartend) ? prev : wartend);
+        } else {
+          setChallengeNeueBeitraegeByChallenge(null);
+          setChallengeNeueWartendByChallenge(prev => Object.keys(prev).length === 0 ? prev : {});
+        }
       }
       // Challenge-Neuigkeiten fuer ALLE Rollen (seit 27.09.2026 auch Leitung
       // und Team): Zahl je Challenge fuer den Listeneintrag, Summe fuer Reiter
@@ -369,7 +423,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
    * Das Postfach bleibt bewusst stehen: Es zaehlt die Mitteilungen des KONTOS
    * ueber alle Gemeinden (routes/notifications.js zaehlt sie ohne Org-Filter,
    * die Begruendung steht dort). Wer wechselt, hat nicht weniger ungelesene
-   * Mitteilungen -- der Briefumschlag an der Glocke darf nicht kurz
+   * Mitteilungen -- der Punkt an der Glocke darf nicht kurz
    * verschwinden.
    * Aus demselben Grund bleibt summeAllerGemeinden stehen: Sie haengt nicht
    * an der aktiven Gemeinde, das Symbol soll beim Wechsel nicht springen.
@@ -384,6 +438,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     setNewBadgesCount(0);
     setChallengeUpdatesByChallenge({});
     setChallengeUpdatesTotal(0);
+    setChallengeNeueBeitraegeByChallenge(null);
+    setChallengeNeueWartendByChallenge({});
   }, []);
 
   /*
@@ -554,6 +610,17 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       return next;
     });
     setChallengeUpdatesTotal(prev => Math.max(0, prev - abgezogen));
+    // Die rote Kugel am Eintrag von Leitung und Team (29.09.2026) geht beim
+    // Oeffnen ebenso sofort auf 0 -- auch wenn darin wartende Beitraege
+    // standen; die bleiben orange, bis jemand freigibt.
+    const ohneDiese = (prev: Record<number, number>) => {
+      if (!(challengeId in prev)) return prev;
+      const next = { ...prev };
+      delete next[challengeId];
+      return next;
+    };
+    setChallengeNeueBeitraegeByChallenge(prev => (prev ? ohneDiese(prev) : prev));
+    setChallengeNeueWartendByChallenge(ohneDiese);
 
     if (!networkMonitor.isOnline) {
       writeQueue.enqueue({
@@ -589,18 +656,6 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   }, [appSymbolZahl]);
 
   useEffect(() => { setzeGeraeteBadge(); }, [setzeGeraeteBadge]);
-
-  // Ausdrueckliches Neusetzen auf Zuruf (Befund 28.08.2026): Der Effekt oben
-  // haengt am WERT und feuert nicht, wenn sich dieser nicht geaendert hat. Nach
-  // removeAllDeliveredNotifications() ist das Icon aber leer, waehrend
-  // appSymbolZahl unveraendert im Speicher steht -- die Zahl kaeme erst
-  // zurueck, wenn zufaellig eine andere hereinkommt. AppContext schickt dieses
-  // Signal deshalb direkt nach dem Aufraeumen.
-  useEffect(() => {
-    const bei = () => setzeGeraeteBadge();
-    window.addEventListener('badge:resync', bei);
-    return () => window.removeEventListener('badge:resync', bei);
-  }, [setzeGeraeteBadge]);
 
   // WebSocket: Live-Update bei neuen Nachrichten
   useEffect(() => {
@@ -665,7 +720,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   // Reset bei Logout. Hier faellt AUCH das Postfach, anders als beim
   // Gemeindewechsel: Ohne Konto gibt es keine Mitteilungen, die zaehlen
-  // koennten -- der Briefumschlag an der Glocke waere der des abgemeldeten Kontos.
+  // koennten -- der Punkt an der Glocke waere der des abgemeldeten Kontos.
   useEffect(() => {
     if (!user) {
       setzeGemeindeZaehlerZurueck();
@@ -685,6 +740,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       newBadgesCount,
       challengeUpdatesByChallenge,
       challengeUpdatesTotal,
+      challengeNeueBeitraegeByChallenge,
+      challengeNeueWartendByChallenge,
       postfachUngelesen,
       totalBadgeCount,
       appSymbolZahl,

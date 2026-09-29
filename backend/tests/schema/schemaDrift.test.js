@@ -194,7 +194,7 @@ describe('Schema-Drift: Test-DB gegen Produktion', () => {
 
     /**
      * Die Spalten, die heute ohne ON-DELETE-Regel dastehen und stattdessen von
-     * einer Loeschroutine abgeraeumt werden (users.js/konfiDeletion.js bzw. der
+     * einer Loeschroutine abgeraeumt werden (utils/kontoLoeschen.js bzw. der
      * Org-Purge in organizations.js).
      *
      * Zweck: Kommt eine NEUE Spalte ohne Regel dazu, faellt dieser Test auf und

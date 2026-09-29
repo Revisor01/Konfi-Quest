@@ -85,7 +85,8 @@ export const initializeWebSocket = (token: string): Socket => {
     // Ohne API-Call zu diesem Zeitpunkt wuerde sonst niemand den Token-Refresh
     // auslösen — der Chat-Tab hängt dann scheinbar grundlos. Wir stossen den
     // zentralen Refresh-/Relogin-Flow an (api.ts -> auth:relogin-required).
-    // Dazu zaehlt "Kein Zugriff auf diese Organisation" (server.js): Die
+    // Dazu zaehlt "Kein Zugriff auf diese Gemeinde" (utils/socketAnmeldung.js,
+    // bis 29.09.2026 "... Organisation"; beide treffen 'zugriff'): Die
     // Mitgliedschaft in der aktiven Zweit-Gemeinde ist weg, das Token traegt
     // ihren Claim aber noch. Der API-Call aus dem Recovery-Pfad laeuft dann in
     // den 403-Rueckfall von api.ts, der ein Token ohne Claim holt und den

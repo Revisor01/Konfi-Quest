@@ -125,7 +125,12 @@ const AdminMaterialPage: React.FC = () => {
       setOhneJahrgang(res.headers?.['x-kein-jahrgang-zugewiesen'] === 'true');
       return res.data;
     },
-    { ttl: CACHE_TTL.PROFILE }
+    // vorigeDatenZeigen: Suchfeld und Jahrgangsauswahl stehen im Inhalt, der
+    // waehrend `loading` durch die Ladeanzeige ersetzt wird. Ein leerer Stand
+    // bei jedem Tippen liesse das Feld verschwinden (Fokus und Tastatur weg);
+    // die alte Liste bleibt deshalb bis zur Antwort stehen -- nach einem
+    // Fehlschlag aber nicht (hooks/useOfflineQuery.ts, Audit Leitung BF-11).
+    { ttl: CACHE_TTL.PROFILE, vorigeDatenZeigen: true }
   );
 
   // Material-Liste live halten: neue oder geloeschte Materialien erschienen
@@ -314,7 +319,7 @@ const AdminMaterialPage: React.FC = () => {
                       title={ohneJahrgang && !search && !nurGlobal ? 'Kein Jahrgang zugewiesen' : 'Keine Materialien'}
                       message={
                         ohneJahrgang && !search && !nurGlobal
-                          ? 'Dir ist noch kein Jahrgang zugewiesen — du siehst nur Material, das für alle freigegeben ist. Die Org-Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+                          ? 'Dir ist noch kein Jahrgang zugewiesen — du siehst nur Material, das für alle freigegeben ist. Die Gemeindeleitung kann das in den Einstellungen ändern.'
                           : 'Erstelle dein erstes Material mit dem + Button'
                       }
                       iconColor="var(--app-color-material)"

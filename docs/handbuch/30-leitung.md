@@ -21,7 +21,7 @@ Dazwischen der Titel, daneben die Knöpfe der jeweiligen Seite, etwa das Plus
 zum Anlegen.
 
 Dieses Kapitel gilt für zwei Rollen: Die **Leitung** kümmert sich um den
-laufenden Betrieb, die **Org-Leitung** zusätzlich um Benutzer:innen,
+laufenden Betrieb, die **Gemeindeleitung** zusätzlich um Benutzer:innen,
 Jahrgangs-Zuweisungen und die Einstellungen der Gemeinde. Wo unten „die
 Leitung" steht, sind beide gemeint. Der Unterschied steht im Kapitel
 [Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
@@ -71,14 +71,16 @@ lassen kannst.
   automatisch; die vergibst du unter **Mehr › Benutzer:innen**.
 
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
-seit wann sie dabei sind. Wer wen anlegen darf, steht unter
+seit wann sie dabei sind. Badges und Zertifikate stehen hier immer für deine
+Gemeinde; ein Zertifikat, das du verleihst, gehört deiner Gemeinde
+([je Gemeinde](60-badges.md#verstehen-was-bei-teamer-badges-anders-zaehlt)). Wer wen anlegen darf, steht unter
 [Wer wen anlegen darf](05-rollen.md#nachschlagen-wer-wen-anlegen-darf).
 
 ## Chats moderieren
 
 ![Die Chat-Übersicht der Leitung.](/docs/bilder/iphone/leitung-chat.png)
 
-Als **Org-Leitung** erreichst du jeden in deiner Gemeinde. Als **Leitung** gilt
+Als **Gemeindeleitung** erreichst du jeden in deiner Gemeinde. Als **Leitung** gilt
 auch im Chat deine Jahrgangs-Zuweisung: Du schreibst nur Konfis deiner eigenen
 Jahrgänge an oder nimmst sie in Gruppen auf, und umgekehrt erreichen dich nur
 die Konfis dieser Jahrgänge
@@ -90,7 +92,7 @@ Chats und fremde Nachrichten löschen, den
 [Umfragen anlegen](90-chat.md#eine-umfrage-stellen).
 
 In deiner Chatliste stehen die Chats, in denen du Mitglied bist. Ohne eigene
-Mitgliedschaft öffnest du als **Org-Leitung** jeden gemeinschaftlichen Raum
+Mitgliedschaft öffnest du als **Gemeindeleitung** jeden gemeinschaftlichen Raum
 deiner Gemeinde, als **Leitung** nur Jahrgangs-Chats deiner Jahrgänge,
 Event-Chats von Events aus deiner Event-Liste und Räume nur fürs Team.
 Fremde Zweiergespräche und die Stimmen anonymer Umfragen bleiben für alle zu.
@@ -159,8 +161,9 @@ im Punkte-Kapitel.
 ![Die Challenges-Verwaltung der Leitung.](/docs/bilder/iphone/leitung-challenges.png)
 
 Drei Reiter: **Aktuell**, **Geplant**, **Archiv**. Eine rote Zahl am Symbol
-einer Challenge zeigt neue Beiträge seit deinem letzten Öffnen, ein oranges
-Feld mit Zahl und Uhr die Beiträge, die auf Freigabe warten — siehe
+einer Challenge zeigt neue Beiträge seit deinem letzten Öffnen, auch solche,
+die noch auf Freigabe warten; ein oranges Feld mit Uhr zeigt, dass Beiträge
+auf Freigabe warten — siehe
 [Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen).
 
 Beim [Anlegen](80-challenges.md#eine-challenge-anlegen) legst du fest, wer
@@ -188,7 +191,7 @@ Mitteilungen aufs Handy kommen, siehe [Auswählen, welche Mitteilungen aufs
 Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen))
 und **App-Tour ansehen**.
 
-### Verwaltung (nur Org-Leitung)
+### Verwaltung (nur Gemeindeleitung)
 
 | Bereich | Wofür |
 |---|---|
@@ -196,9 +199,9 @@ und **App-Tour ansehen**.
 | **Dashboard** | Welche Bereiche Konfis und Team auf ihrer Startseite sehen, und in welcher Reihenfolge |
 | **Konfis einladen** | [QR-Code für die Selbstregistrierung](35-passwoerter.md#die-einladung-erzeugen) |
 
-Läuft die Lizenz der Gemeinde ab, bekommen **alle in der Org-Leitung** 14 Tage
+Läuft die Lizenz der Gemeinde ab, bekommen **alle in der Gemeindeleitung** 14 Tage
 vorher eine E-Mail — auch wer die Gemeinde über eine Einladung mitleitet. Die
-Leitung bekommt sie nicht. Hinterlege deshalb bei allen in der Org-Leitung eine
+Leitung bekommt sie nicht. Hinterlege deshalb bei allen in der Gemeindeleitung eine
 E-Mail-Adresse.
 
 ### Inhalt
@@ -224,7 +227,10 @@ Fotos verkleinert die App beim Auswählen wie im Chat (lange Kante 1920
 Pixel). Wer ein Bild in voller Auflösung braucht, etwa zum Drucken, legt es
 als PDF ab. Eine Datei darf danach höchstens 20 MB groß sein; was darüber
 liegt, meldet die App gleich bei der Auswahl mit „Datei ist zu groß (max.
-20 MB)." und nimmt es nicht auf. Beim Speichern steht unter der Kopfzeile,
+20 MB)." und nimmt es nicht auf. Textdateien (TXT, CSV) prüft der Server
+wie im Chat auf ihren Inhalt
+([Verstehen, was mit der Datei passiert](90-chat.md#verstehen-was-mit-der-datei-passiert)).
+Beim Speichern steht unter der Kopfzeile,
 wie weit das Hochladen ist — „Wird gesendet… 40 %", zuletzt „Wird
 verarbeitet…". Wie die Dateien danach auf den Geräten liegen und wieder
 verschwinden, steht unter
@@ -237,15 +243,19 @@ Wer es sieht, hängt allein an der Jahrgangs-Zuordnung:
 | **Mit Jahrgang** | nur die Teamer:innen der zugeordneten Jahrgänge |
 | **Ohne Jahrgang** | alle Teamer:innen der Gemeinde, mit Globus in der Liste |
 
+Wird ein Jahrgang gelöscht, bleibt sein Material erhalten: Was nur zu ihm
+gehörte, gilt danach für alle
+([Einen Jahrgang löschen](45-jahrgaenge.md#events-und-challenges-des-jahrgangs-mitloeschen)).
+
 „Alle" heißt immer: alle Teamer:innen. Konfis sehen Material nicht. Auch die
 Leitung ist an ihre Jahrgänge gebunden — hat sie gar keinen Jahrgang und gibt es
 kein Material ohne Jahrgang, bleibt ihre Liste leer und nennt den Grund („Kein
-Jahrgang zugewiesen"). Nur die Org-Leitung sieht immer alles.
+Jahrgang zugewiesen"). Nur die Gemeindeleitung sieht immer alles.
 
 Bearbeiten und löschen kann nur, wer das Material angelegt hat; fremdes
 Material öffnet sich schreibgeschützt und nennt die anlegende Person. Die
-Org-Leitung darf immer alles bearbeiten — so bleibt Material verwaltbar, wenn
-jemand die Gemeinde verlässt. Anlegen dürfen Leitung und Org-Leitung.
+Gemeindeleitung darf immer alles bearbeiten — so bleibt Material verwaltbar, wenn
+jemand die Gemeinde verlässt. Anlegen dürfen Leitung und Gemeindeleitung.
 
 Hängt Material an einem Event, steht es in dessen Detailansicht bei den
 Eckdaten: [Material am Event](70-termine.md#material-an-einem-event-finden).

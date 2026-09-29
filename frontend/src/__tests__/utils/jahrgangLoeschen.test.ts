@@ -38,6 +38,18 @@ describe('jahrgangLoeschHinweis', () => {
     expect(text).not.toContain('Stempel');
   });
 
+  it('nennt das Material, das danach das ganze Team sieht (Simon, 28.09.2026: "Material wird global ja.")', () => {
+    const viele = jahrgangLoeschHinweis('A', { ...leer, material_global: 3 });
+    expect(viele).toContain('3 Materialien gehören nur zu diesem Jahrgang. Sie bleiben erhalten und sind danach für das ganze Team sichtbar.');
+    const eins = jahrgangLoeschHinweis('A', { ...leer, material_global: 1 });
+    expect(eins).toContain('1 Material gehört nur zu diesem Jahrgang. Es bleibt erhalten und ist danach für das ganze Team sichtbar.');
+  });
+
+  it('ohne betroffenes Material oder ohne das Feld (Vorschau vom 28.09.) steht kein Material-Satz', () => {
+    expect(jahrgangLoeschHinweis('A', { ...leer, material_global: 0 })).not.toContain('Material');
+    expect(jahrgangLoeschHinweis('A', leer)).not.toContain('Material');
+  });
+
   it('warnt vor aktiven Konfis, die das Loeschen blockieren', () => {
     const text = jahrgangLoeschHinweis('A', { ...leer, aktive_konfis: 12 });
     expect(text).toContain('Dem Jahrgang sind noch 12 aktive Konfis zugeordnet — solange ist das Löschen nicht möglich.');
@@ -46,6 +58,7 @@ describe('jahrgangLoeschHinweis', () => {
   it('ohne Vorschau (aelterer Server) steht die allgemeine Fassung -- ohne Zahlen, aber mit Events und Challenges', () => {
     const text = jahrgangLoeschHinweis('A', null);
     expect(text).toContain('die Events und Challenges, die nur zu ihm gehören, werden unwiderruflich entfernt');
+    expect(text).toContain('Material, das nur zu ihm gehört, bleibt und ist danach für das ganze Team sichtbar.');
     expect(text).not.toMatch(/\d+ Events?/);
   });
 });
@@ -53,6 +66,7 @@ describe('jahrgangLoeschHinweis', () => {
 describe('istLoeschVorschau', () => {
   it('nimmt nur vollstaendige Antworten', () => {
     expect(istLoeschVorschau(leer)).toBe(true);
+    expect(istLoeschVorschau({ ...leer, material_global: 2 })).toBe(true);
     expect(istLoeschVorschau({ ...leer, events_geloescht: '3' })).toBe(false);
     expect(istLoeschVorschau({ aktive_konfis: 0 })).toBe(false);
     expect(istLoeschVorschau(null)).toBe(false);

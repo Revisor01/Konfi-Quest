@@ -19,6 +19,8 @@ Produktions-Deploy; den Merge gibt Simon frei.
 | [03-nach-dem-deploy.md](03-nach-dem-deploy.md) | Nachher-Messungen, Screenshots, Absender, Log-Volumen, Umami bereinigen | nach dem Deploy |
 | [04-ci.md](04-ci.md) | Offene Workflow-Punkte aus dem Audit | nach dem Merge von 2.3.0 nach `main` |
 | [05-sicherung-und-notfall.md](05-sicherung-und-notfall.md) | Sicherungs-Rhythmus, Rückspielprobe, Notfall-Deploy proben | nach dem Deploy, dann regelmäßig |
+| [06-mischkonten.md](06-mischkonten.md) | Konten messen, die Konfi und Team zugleich sind (Altbestand), und verschiedene Team-Rollen je Gemeinde | nach dem Deploy, vor dem Gespräch „Mehrfach-Konten" |
+| [07-client-adresse-hinter-dem-proxy.md](07-client-adresse-hinter-dem-proxy.md) | Kommt die echte Client-Adresse im Backend an? Messung, ggf. Proxy-Einstellung (Sicherheit BF-13) | nach dem Deploy des Stands vom 29.09.2026 |
 
 ## Regeln
 

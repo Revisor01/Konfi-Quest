@@ -1,4 +1,5 @@
 import { Preferences } from '@capacitor/preferences';
+import { alteSchluesselEntfernen } from './migrateStorage';
 import { BaseUser } from '../types/user';
 
 // In-Memory-Cache — synchrone Reads, async Writes nach Preferences
@@ -105,6 +106,9 @@ export const clearAuth = async (): Promise<void> => {
   await Preferences.remove({ key: 'konfi_refresh_token' });
   await Preferences.remove({ key: 'konfi_active_org' });
   await Preferences.remove({ key: 'push_token_last_refresh' });
+  // Alte Anmelde-Reste aus der Zeit vor der Preferences-Migration (Audit
+  // 26.09.2026, Grundgeruest BF-10); die Geraetekennung bleibt wie oben.
+  alteSchluesselEntfernen({ nurAnmeldung: true });
 };
 
 // --- Initialisierung: Preferences -> Memory laden ---

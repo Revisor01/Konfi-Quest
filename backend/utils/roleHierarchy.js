@@ -129,7 +129,7 @@ const checkUserHierarchy = (operation = 'manage') => {
         const { rows: [targetUser] } = await req.db.query(query, [targetUserId, req.user.organization_id]);
 
         if (!targetUser) {
-          return res.status(404).json({ error: 'Zielbenutzer nicht in deiner Organisation gefunden' });
+          return res.status(404).json({ error: 'Zielbenutzer nicht in deiner Gemeinde gefunden' });
         }
 
         // SUPER-ADMIN-KONTEN SIND FUER ALLE ANDEREN UNANTASTBAR (Audit

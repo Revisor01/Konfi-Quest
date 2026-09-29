@@ -8,6 +8,15 @@ interface UseOfflineQueryOptions<T> {
   onSuccess?: (data: T) => void;
   onError?: (error: Error) => void;
   select?: (data: T) => T;
+  /**
+   * Beim Wechsel des Schluessels die Daten des alten stehen lassen, bis der
+   * neue geantwortet hat (ohne Ladeanzeige) -- fuer Such- und Filterfelder,
+   * die selbst im Inhalt der Seite stehen und beim Laden nicht verschwinden
+   * duerfen (Material der Leitung). Scheitert der neue Abruf oder gibt es
+   * offline nichts fuer ihn, verschwinden die alten Daten trotzdem.
+   * Ohne die Option leert ein Schluesselwechsel den Stand sofort.
+   */
+  vorigeDatenZeigen?: boolean;
 }
 
 interface UseOfflineQueryResult<T> {
@@ -33,10 +42,17 @@ export function useOfflineQuery<T>(
     onSuccess,
     onError,
     select,
+    vorigeDatenZeigen = false,
   } = options || {};
 
   const [data, setData] = useState<T | null>(null);
   const dataRef = useRef<T | null>(null);
+  // Zu welchem Schluessel gehoeren die Daten im Zustand? Nur mit
+  // vorigeDatenZeigen kann das ein anderer als der aktuelle sein.
+  const datenSchluesselRef = useRef<string | null>(null);
+  // Schluessel des letzten Initial-Laufs: erkennt einen ECHTEN Wechsel,
+  // nicht das erste Laden und nicht einen Neulauf wegen ttl/enabled.
+  const vorigerSchluesselRef = useRef(cacheKey);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isStale, setIsStale] = useState(false);
@@ -106,6 +122,7 @@ export function useOfflineQuery<T>(
         const transformed = selectRef.current ? selectRef.current(freshData) : freshData;
         setData(transformed);
         dataRef.current = transformed;
+        datenSchluesselRef.current = cacheKey;
         lastSuccessRef.current = { key: cacheKey, t: Date.now() };
         setIsStale(false);
         setError(null);
@@ -116,10 +133,17 @@ export function useOfflineQuery<T>(
 
         const message = err instanceof Error ? err.message : 'Unbekannter Fehler';
 
-        // Wenn Cache vorhanden: Daten behalten, als stale markieren
-        if (dataRef.current !== null) {
+        // Wenn Cache vorhanden: Daten behalten, als stale markieren -- aber
+        // nur Daten DIESES Schluessels. Daten eines vorigen (vorigeDatenZeigen)
+        // waeren sonst als "stale" das Ergebnis einer Anfrage, die gescheitert
+        // ist (Audit Screens Leitung BF-11).
+        if (dataRef.current !== null && datenSchluesselRef.current === cacheKey) {
           setIsStale(true);
         } else {
+          setData(null);
+          dataRef.current = null;
+          datenSchluesselRef.current = null;
+          setIsStale(false);
           setError(message);
           setLoading(false);
         }
@@ -156,6 +180,26 @@ export function useOfflineQuery<T>(
 
   // Initial Load
   useEffect(() => {
+    // Schluesselwechsel innerhalb einer gemounteten Seite (Audit 26.09.2026,
+    // Screens Leitung BF-11): Bis dahin blieb der Stand des alten Schluessels
+    // stehen, bis der neue geantwortet hatte -- auf Badges und Aktivitaeten
+    // der Leitung stand beim Umschalten Konfis <-> Teamer:innen die falsche
+    // Liste unter dem neuen Reiter, bei einem Fehlschlag dauerhaft als
+    // "stale". Jetzt beginnt der neue Schluessel leer und ladend. Nur bei
+    // einem ECHTEN Wechsel: erstes Laden und ein Neulauf wegen ttl oder
+    // enabled lassen den Stand, wie er ist.
+    if (vorigerSchluesselRef.current !== cacheKey) {
+      vorigerSchluesselRef.current = cacheKey;
+      if (!vorigeDatenZeigen) {
+        setData(null);
+        dataRef.current = null;
+        datenSchluesselRef.current = null;
+        setIsStale(false);
+        setLoading(true);
+      }
+      setError(null);
+    }
+
     if (!enabled) {
       setLoading(false);
       return;
@@ -179,6 +223,7 @@ export function useOfflineQuery<T>(
         const transformed = selectRef.current ? selectRef.current(cached.data) : cached.data;
         setData(transformed);
         dataRef.current = transformed;
+        datenSchluesselRef.current = cacheKey;
         setLoading(false);
         setError(null);
 
@@ -203,7 +248,13 @@ export function useOfflineQuery<T>(
           setLoading(false);
         }
       } else {
-        // Kein Cache + offline
+        // Kein Cache + offline. Daten eines vorigen Schluessels
+        // (vorigeDatenZeigen) gehoeren nicht zu diesem.
+        if (datenSchluesselRef.current !== null && datenSchluesselRef.current !== cacheKey) {
+          setData(null);
+          dataRef.current = null;
+          datenSchluesselRef.current = null;
+        }
         setError('Keine Daten verfügbar (offline)');
         setLoading(false);
         setIsStale(false);
@@ -215,7 +266,7 @@ export function useOfflineQuery<T>(
     return () => {
       cancelled = true;
     };
-  }, [cacheKey, enabled, revalidate]);
+  }, [cacheKey, enabled, revalidate, vorigeDatenZeigen]);
 
   // Network-Listener: Bei Online-Wechsel revalidieren
   useEffect(() => {

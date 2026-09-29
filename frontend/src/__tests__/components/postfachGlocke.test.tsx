@@ -15,11 +15,13 @@ import type { QueueItem, FailedAction } from '../../services/writeQueue';
 // Abzeichen-Mitteilung nur eine Nachricht.
 //
 // KEINE ZAHL FUER MITTEILUNGEN (28.09.2026, Simon): Ungelesene Mitteilungen
-// zeigen einen blauen Badge mit Briefumschlag statt einer Zahl -- fuer alle
-// drei Rollen. Vorher stand dort die Summe aus Mitteilungen und
-// Warteschlange. Die Warteschlange behaelt ihre Zahl (orange/rot): Das sind
-// Vorgaenge dieses Geraets, keine Mitteilungen, und ihre Zahl sagt, wie viel
-// noch gesendet werden muss.
+// zeigen keine Zahl -- fuer alle drei Rollen. Vorher stand dort die Summe
+// aus Mitteilungen und Warteschlange. Zuerst ein blauer Kreis mit
+// Briefumschlag, seit 29.09.2026 ein blauer PUNKT ohne Symbol (Simon,
+// TestFlight 233: "Das Symbol der blauen Briefkaesten fuer die Post am
+// Postfach gefaellt mir nicht"). Die Warteschlange behaelt ihre Zahl
+// (orange/rot): Das sind Vorgaenge dieses Geraets, keine Mitteilungen, und
+// ihre Zahl sagt, wie viel noch gesendet werden muss.
 
 type StubProps = { children?: ReactNode };
 
@@ -57,7 +59,7 @@ vi.mock('../../hooks/useWartendeVorgaenge', () => ({
 
 import PostfachGlocke, { glockeZustand } from '../../components/shared/PostfachGlocke';
 import { POSTFACH_OEFFNEN_EVENT } from '../../utils/postfach';
-import { ICON_GLOCKE, ICON_MAIL_GEFUELLT } from '../../components/shared/icons';
+import { ICON_GLOCKE } from '../../components/shared/icons';
 
 const item = (id: string): QueueItem => ({
   id, method: 'POST', url: '/x', maxRetries: 3, retryCount: 0,
@@ -76,17 +78,17 @@ describe('glockeZustand -- die Regel, ohne Rendern', () => {
     expect(glockeZustand(120, 0, 0).anzahl).toBe(0);
   });
 
-  it('ab einer ungelesenen Mitteilung: Briefumschlag', () => {
-    expect(glockeZustand(1, 0, 0).umschlag).toBe(true);
-    expect(glockeZustand(23, 0, 0).umschlag).toBe(true);
-    expect(glockeZustand(0, 0, 0).umschlag).toBe(false);
-    expect(glockeZustand(0, 2, 1).umschlag).toBe(false);
+  it('ab einer ungelesenen Mitteilung: der Punkt', () => {
+    expect(glockeZustand(1, 0, 0).punkt).toBe(true);
+    expect(glockeZustand(23, 0, 0).punkt).toBe(true);
+    expect(glockeZustand(0, 0, 0).punkt).toBe(false);
+    expect(glockeZustand(0, 2, 1).punkt).toBe(false);
   });
 
-  it('nichts Neues: keine Zahl, kein Umschlag, Variante ruhe', () => {
+  it('nichts Neues: keine Zahl, kein Punkt, Variante ruhe', () => {
     const z = glockeZustand(0, 0, 0);
     expect(z.anzahl).toBe(0);
-    expect(z.umschlag).toBe(false);
+    expect(z.punkt).toBe(false);
     expect(z.variante).toBe('ruhe');
     expect(z.text).toBe('Postfach: nichts Neues');
   });
@@ -123,41 +125,45 @@ describe('PostfachGlocke', () => {
     mockGescheitert = [];
   });
 
-  it('steht auch ohne Neues da -- ohne Badge', () => {
+  it('steht auch ohne Neues da -- ohne Zahl, ohne Punkt', () => {
     const { container } = render(<PostfachGlocke />);
     expect(container.querySelector('.app-postfach-glocke')).not.toBeNull();
     expect(container.querySelector('.app-postfach-glocke__zahl')).toBeNull();
+    expect(container.querySelector('.app-postfach-glocke__punkt')).toBeNull();
     expect(container.querySelectorAll('[data-testid="icon"]').length).toBe(1);
     expect(container.querySelector('[data-testid="icon"]')?.getAttribute('data-icon')).toBe(ICON_GLOCKE);
   });
 
-  it('ungelesene Mitteilungen: blauer Badge mit Briefumschlag, keine Zahl', () => {
+  it('ungelesene Mitteilungen: der Punkt -- keine Zahl, kein Symbol', () => {
     mockUngelesen = 3;
     const { container } = render(<PostfachGlocke />);
-    const badge = container.querySelector('.app-postfach-glocke__zahl');
-    expect(badge).not.toBeNull();
-    expect(badge!.classList.contains('app-postfach-glocke__zahl--umschlag')).toBe(true);
-    expect(badge!.textContent).toBe('');
-    expect(badge!.querySelector('[data-testid="icon"]')?.getAttribute('data-icon')).toBe(ICON_MAIL_GEFUELLT);
+    const punkt = container.querySelector('.app-postfach-glocke__punkt');
+    expect(punkt).not.toBeNull();
+    expect(punkt!.classList.contains('app-ungelesen-punkt')).toBe(true);
+    expect(punkt!.textContent).toBe('');
+    expect(punkt!.children.length).toBe(0);
+    // Nur die Glocke ist ein Symbol -- kein Umschlag mehr daneben.
+    expect(container.querySelectorAll('[data-testid="icon"]').length).toBe(1);
+    expect(container.querySelector('[data-testid="icon"]')?.getAttribute('data-icon')).toBe(ICON_GLOCKE);
+    expect(container.querySelector('.app-postfach-glocke__zahl')).toBeNull();
     expect(container.querySelector('.app-postfach-glocke')?.getAttribute('data-variante')).toBe('hinweis');
   });
 
-  it('auch bei 120 ungelesenen steht keine Zahl, kein 99+', () => {
+  it('auch bei 120 ungelesenen steht keine Zahl, kein 99+ -- nur der Punkt', () => {
     mockUngelesen = 120;
     const { container } = render(<PostfachGlocke />);
-    const badge = container.querySelector('.app-postfach-glocke__zahl');
-    expect(badge!.textContent).toBe('');
-    expect(badge!.classList.contains('app-postfach-glocke__zahl--umschlag')).toBe(true);
+    expect(container.querySelector('.app-postfach-glocke__zahl')).toBeNull();
+    expect(container.querySelector('.app-postfach-glocke__punkt')?.textContent).toBe('');
   });
 
-  it('Warteschlange: Zahl der Vorgaenge -- ohne die Mitteilungen, ohne Umschlag', () => {
+  it('Warteschlange: Zahl der Vorgaenge -- ohne die Mitteilungen, der Punkt tritt zurueck', () => {
     mockUngelesen = 3;
     mockWartend = [item('a')];
     mockGescheitert = [fehlschlag('f')];
     const { container } = render(<PostfachGlocke />);
     const badge = container.querySelector('.app-postfach-glocke__zahl');
     expect(badge!.textContent).toBe('2');
-    expect(badge!.classList.contains('app-postfach-glocke__zahl--umschlag')).toBe(false);
+    expect(container.querySelector('.app-postfach-glocke__punkt')).toBeNull();
     expect(container.querySelector('.app-postfach-glocke')?.getAttribute('data-variante')).toBe('warning');
   });
 
@@ -179,10 +185,10 @@ describe('PostfachGlocke', () => {
     expect(b.container.querySelector('.app-postfach-glocke')?.getAttribute('data-variante')).toBe('danger');
   });
 
-  it('Badge und Symbole sind fuer Vorleseprogramme ausgeblendet -- der Knopf spricht', () => {
+  it('Punkt und Symbol sind fuer Vorleseprogramme ausgeblendet -- der Knopf spricht', () => {
     mockUngelesen = 1;
     const { container } = render(<PostfachGlocke />);
-    expect(container.querySelector('.app-postfach-glocke__zahl')?.getAttribute('aria-hidden')).toBe('true');
+    expect(container.querySelector('.app-postfach-glocke__punkt')?.getAttribute('aria-hidden')).toBe('true');
     for (const icon of container.querySelectorAll('[data-testid="icon"]')) {
       expect(icon.getAttribute('aria-hidden')).toBe('true');
     }
@@ -200,70 +206,72 @@ describe('PostfachGlocke', () => {
   });
 });
 
-// Der Briefumschlag sitzt im selben 18px-Kreis wie die Zahl der
-// Warteschlange (gleiche Lage, gleiche Freigaben unten) und traegt die
-// Farben als Token: blau aus --ion-color-primary (im Dunkelmodus hellt
-// Ionics Palette sie selbst auf), das Symbol weiss wie die Zahl.
-describe('Briefumschlag an der Glocke: Token statt fester Farben', () => {
+// Der Punkt (29.09.2026) statt des Briefumschlags: ein Aussehen fuer Glocke
+// und Postfach-Eintrag (.app-ungelesen-punkt), Farbe als Token -- blau aus
+// --ion-color-primary (im Dunkelmodus hellt Ionics Palette sie selbst auf).
+// An der Glocke sitzt er 3 px hoeher und 3 px weiter rechts als die Mitte
+// der Zahl der Warteschlange (Simon, 29.09.2026: "muesste sogar noch ein
+// bisschen hoeher und weiter rechts"), schraeg ueber der Ecke des Symbols.
+// Gemessen (Playwright): iOS 2,8 px rechts und 2,8 px ueber der Symbolecke,
+// Android 4 px rechts, 2 px darueber; nicht beschnitten.
+describe('Punkt an der Glocke: Token statt fester Farben, schraeg ueber der Ecke', () => {
   const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8');
   const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '');
   const bloecke = (selektor: string): string[] =>
     [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
       .filter((m) => m[1].split(',').some((s) => s.trim().replace(/\s+/g, ' ') === selektor))
       .map((m) => m[2]);
+  const px = (quelle: string, name: string): number => {
+    const m = quelle.match(new RegExp(`\\b${name}:\\s*(-?[\\d.]+)(px|;)`));
+    if (!m) throw new Error(`${name} fehlt`);
+    return parseFloat(m[1]);
+  };
 
-  const SYMBOL_REGEL = 'ion-button.app-postfach-glocke[data-variante] .app-postfach-glocke__zahl.app-postfach-glocke__zahl--umschlag ion-icon';
-
-  it('Kreis blau aus dem Token, Symbol weiss aus dem Token', () => {
-    const kreis = bloecke('.app-postfach-glocke__zahl').join('');
-    expect(kreis).toMatch(/background:\s*var\(--ion-color-primary\)/);
-    const umschlag = bloecke(SYMBOL_REGEL).join('');
-    expect(umschlag).toMatch(/color:\s*var\(--app-weiss\)/);
-    expect(umschlag).toMatch(/font-size:\s*var\(--app-text-klein\)/);
+  it('ein Aussehen: 10px, rund, blau aus dem Token', () => {
+    const punkt = bloecke('.app-ungelesen-punkt');
+    expect(punkt).toHaveLength(1);
+    expect(px(punkt[0], 'width')).toBe(10);
+    expect(px(punkt[0], 'height')).toBe(10);
+    expect(punkt[0]).toMatch(/border-radius:\s*var\(--app-radius-kreis\)/);
+    expect(punkt[0]).toMatch(/background:\s*var\(--ion-color-primary\)/);
   });
 
-  // Beide Themes setzen die Groesse jedes Symbols in einem Toolbar-Knopf.
-  // Verliert die Regel, waere der Umschlag auf iOS 22,4px, auf Android 24px
-  // gross -- in einem 18px-Kreis. Die Theme-Regeln stehen hier aus den
-  // ausgelieferten Dateien; aendert ein Update sie, faellt der Test.
-  it('die Symbolgroesse schlaegt die Theme-Regeln fuer Symbole in Toolbar-Knoepfen (iOS 27 und MD3)', () => {
-    const nm = (pfad: string) => readFileSync(join(process.cwd(), 'node_modules/@rdlabo', pfad), 'utf8');
-    const IOS = 'ion-button.ios:not(.ios-theme-disabled,.ios26-disabled).button-has-icon-only ion-icon';
-    const MD = 'ion-button.md:not(.md3-disabled) ion-icon';
-    expect(nm('ionic-theme-ios27/dist/css/ionic-theme-ios27.css')).toContain(`${IOS},`);
-    expect(nm('ionic-theme-md3/dist/css/ionic-theme-md3.css')).toContain(`${MD}{font-size:24px}`);
-
-    // Spezifitaet (a, b, c) als Zahl; Klassen und Attribute zaehlen gleich,
-    // :not() zaehlt mit seinem schaerfsten Argument -- hier eine Klasse.
-    const spezifitaet = (sel: string) => {
-      const ohneFunktionen = sel.replace(/:(not|is)\(([^()]*)\)/g, ' .x ');
-      const klassen = (ohneFunktionen.match(/\.[a-zA-Z_][\w-]*|\[[^\]]+\]/g) || []).length;
-      const elemente = (ohneFunktionen.match(/(^|[\s>+~])[a-z][a-z0-9-]*/g) || []).length;
-      return klassen * 100 + elemente;
-    };
-    expect(spezifitaet(IOS)).toBe(302);
-    expect(spezifitaet(MD)).toBe(202);
-    expect(spezifitaet(SYMBOL_REGEL)).toBe(402);
-    expect(spezifitaet(SYMBOL_REGEL)).toBeGreaterThan(spezifitaet(IOS));
-    expect(spezifitaet(SYMBOL_REGEL)).toBeGreaterThan(spezifitaet(MD));
-    expect(bloecke(SYMBOL_REGEL).length).toBe(1);
+  it('kein Briefumschlag mehr im Stylesheet der Glocke', () => {
+    expect(ohneKommentare).not.toMatch(/app-postfach-glocke__zahl--umschlag/);
   });
 
-  it('keine feste Farbe in den Regeln der Glocke', () => {
-    const glocke = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-      .filter((m) => m[1].includes('.app-postfach-glocke'))
+  it('iOS: 3px hoeher und 3px weiter rechts als die Mitte der 18px-Zahl (.button-inner 40px)', () => {
+    const zahl = bloecke('.app-postfach-glocke__zahl')[0];
+    const punkt = bloecke('.app-postfach-glocke__punkt');
+    expect(punkt).toHaveLength(1);
+    const mitte = (top: number, right: number, groesse: number) => ({ x: 40 - right - groesse / 2, y: top + groesse / 2 });
+    const z = mitte(px(zahl, 'top'), px(zahl, 'right'), 18);
+    const p = mitte(px(punkt[0], 'top'), px(punkt[0], 'right'), 10);
+    expect(z).toEqual({ x: 31, y: 9 });
+    expect(p).toEqual({ x: z.x + 3, y: z.y - 3 });
+  });
+
+  it('Android: ebenso 3px hoeher und 3px weiter rechts als die Zahl (.button-inner 48px)', () => {
+    const zahl = bloecke('.app-postfach-glocke.md .app-postfach-glocke__zahl')[0];
+    const punkt = bloecke('.app-postfach-glocke.md .app-postfach-glocke__punkt');
+    expect(punkt).toHaveLength(1);
+    const mitte = (top: number, right: number, groesse: number) => ({ x: 48 - right - groesse / 2, y: top + groesse / 2 });
+    const z = mitte(px(zahl, 'top'), px(zahl, 'right'), 18);
+    expect(mitte(px(punkt[0], 'top'), px(punkt[0], 'right'), 10)).toEqual({ x: z.x + 3, y: z.y - 3 });
+  });
+
+  it('bleibt ein schlichter Punkt: kein Symbol darin (die Linien-Variante ist verworfen)', () => {
+    const punkt = bloecke('.app-ungelesen-punkt')[0];
+    expect(punkt).not.toMatch(/display:\s*flex/);
+    expect(ohneKommentare).not.toMatch(/\.app-ungelesen-punkt[^{]*(ion-icon|svg)/);
+  });
+
+  it('keine feste Farbe in den Regeln der Glocke und des Punkts', () => {
+    const regeln = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter((m) => m[1].includes('.app-postfach-glocke') || m[1].includes('.app-ungelesen-punkt'))
       .map((m) => m[2])
       .join('');
-    expect(glocke).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d/);
-  });
-
-  it('der Umschlag bleibt im Kreis mittig (flex), die Zahl-Geometrie gilt unveraendert', () => {
-    const umschlag = bloecke('.app-postfach-glocke__zahl--umschlag').join('');
-    expect(umschlag).toMatch(/display:\s*flex/);
-    expect(umschlag).toMatch(/align-items:\s*center/);
-    expect(umschlag).toMatch(/justify-content:\s*center/);
-    // Keine eigene Lage -- sonst liefe die gemessene Geometrie unten auseinander.
-    expect(umschlag).not.toMatch(/\b(top|right|width|height|min-width):/);
+    expect(regeln).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d/);
   });
 });
 

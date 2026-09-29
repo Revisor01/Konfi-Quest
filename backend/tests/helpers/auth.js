@@ -17,10 +17,11 @@ function generateToken(userKey, expiresIn = '1h') {
   const user = USERS[userKey];
   if (!user) throw new Error(`Unbekannter Seed-User: ${userKey}`);
 
+  // Ohne display_name seit 29.09.2026 -- wie die Produktion (Audit
+  // Sicherheit BF-15, tests/routes/tokenOhneKlartext.test.js).
   return jwt.sign({
     id: user.id,
     type: user.type,
-    display_name: user.display_name,
     organization_id: user.org_id,
     role_id: user.role_id,
   }, JWT_SECRET, { expiresIn });
@@ -46,7 +47,6 @@ function generateTokenMitAlter(userKey, alterSekunden = 60) {
   return jwt.sign({
     id: user.id,
     type: user.type,
-    display_name: user.display_name,
     organization_id: user.org_id,
     role_id: user.role_id,
     iat,

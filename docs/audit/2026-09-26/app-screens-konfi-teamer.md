@@ -201,6 +201,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 - **Auswirkung aus Nutzersicht:** Nach ungeduldigem Doppeltipp erscheint „Du bist bereits für dieses Event angemeldet" in Rot; die Konfi glaubt, etwas sei schiefgelaufen.
 - **Beleg:** Test: zwei `fireEvent.click` → `apiPost` zweimal, zweiter Aufruf 409 → `setError` mit Servertext.
 - **Empfehlung:** `doRegister` in `guard()` wickeln und den Knopf während `isSubmitting` deaktivieren; 409 „bereits angemeldet" nach eigenem Erfolg stumm schalten.
+- **Nachtrag 28.09.2026:** behoben — `EventDetailView.tsx`: der ganze Anmeldeweg (`handleRegister` samt Konfirmations-Vorabfrage und Zeitfenster-Auswahl, `doRegister`) läuft unter `useActionGuard`; ein zweiter Tipp tut still nichts, die vier Anmelde-Knöpfe sind während des Sendens gesperrt und werden erst nach dem Neuladen der Liste frei. Den 409 stumm zu schalten war danach nicht mehr nötig: Er erreicht die Ansicht nur noch, wenn die Buchung von woanders kam, und dann stimmt die Meldung. Test `components/konfiAnmeldungDoppeltipp.test.tsx` (5: einfacher Termin, Sperre des Knopfs, Konfirmation mit hängender Vorabfrage, Zeitfenster, Gegenprobe Serverfehler sichtbar); ohne Fix 4 rot.
 
 ### BF-10: QR-Scanner liest `isOnline` und `scanning` aus einer veralteten Closure
 - **Schwere:** NIEDRIG
@@ -211,6 +212,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 - **Auswirkung aus Nutzersicht:** Im Gemeindehaus-Funkloch scannt die Konfi und bekommt eine unpassende Meldung; das Handbuch (70-termine.md:684) verspricht „Du bist offline".
 - **Beleg:** Callback in `new QrScanner(videoRef.current, (result) => handleScanResult(result.data), ...)` innerhalb `useEffect(() => {...}, [])`; `handleScanResult` ist eine pro Rendern neue Funktion, der Callback hält die erste.
 - **Empfehlung:** `isOnline`/`scanning` über `useRef` spiegeln oder `networkMonitor.isOnline` direkt lesen.
+- **Nachtrag 28.09.2026:** behoben — `QRScannerModal.tsx`: Der Scan-Rückruf ruft über ein Ref die jeweils aktuelle `handleScanResult`; `isOnline` wird in ein Ref gespiegelt, der Scan-Merker ist ein Ref statt Zustand (gilt sofort, nicht erst nach dem nächsten Rendern). Ein neuer Scan nimmt einen alten Offline-Hinweis weg. Test `components/qrScannerAktuellerZustand.test.tsx` (4, echte Ansicht, Scanner als Attrappe: offline nach dem Öffnen, Netz zurück, zwei Treffer kurz hintereinander, Neustart nach „bereits eingecheckt"); ohne Fix 3 rot.
 
 ### BF-11: `npm run lint` schlägt im Bereich mit 3 Fehlern fehl; die CI prüft nur geänderte Dateien
 - **Schwere:** NIEDRIG
@@ -231,6 +233,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 - **Auswirkung aus Nutzersicht:** (a) keine sichtbare, Typlüge. (b) Bei fehlgeschlagenem Profilabruf (500, Zeitüberschreitung) zeigt die Badges-Seite „Keine Badges gefunden", obwohl die Abzeichen geladen sind.
 - **Beleg:** Zeilen wie oben zitiert.
 - **Empfehlung:** (a) `ChatUserType` aus `types/chat.ts` verwenden. (b) Abzeichen auch ohne `konfiData` rendern; der Punkte-Rückfall betrifft nur Abzeichen ohne `progress`.
+- **Nachtrag 28.09.2026:** behoben — (a) `ChatRoomView.tsx` nutzt `ChatRoomBase` aus `types/chat.ts` statt eines eigenen Typs; die beiden vorläufigen Reaktionen in `useUmfragenUndReaktionen.ts` tragen `ChatUserType` statt `as 'admin' | 'konfi'` (nur Typen, kein Laufzeitunterschied). (b) `KonfiBadgesPage.tsx` braucht nur noch die Abzeichen; das Profil dient allein dem Punkte-Rückfall bei Abzeichen ohne `progress` (ohne Profil: Fortschritt vom Server oder 0). Tests `components/konfiBadgesOhneProfil.test.tsx` (2, ohne Fix 1 rot) und Wächter `components/chatNutzertypDreiWerte.test.ts` (2, liest die Chat-Quelltexte; ohne Fix 2 rot, drei Fundstellen).
 
 ## Unklar
 

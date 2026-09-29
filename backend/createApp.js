@@ -9,6 +9,7 @@ const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const { cronLeaderVorhanden } = require('./utils/cronLeader');
+const { dateiFuersProtokoll } = require('./utils/protokoll');
 
 // Upload-Limit für Challenge-Beitraege (Audio/Video sind deutlich größer als
 // Chat-Anhänge). Als Konstante, weil der zentrale Multer-Error-Handler weiter
@@ -190,6 +191,9 @@ function createApp(db, options = {}) {
   // sondern req.file.path. Das Aufraeumen der Temporaerdatei macht die
   // Middleware weiter unten — auch im Fehlerfall und bei abgebrochenen
   // Uploads.
+  // Fuer Routen, die eine Temporaerdatei selbst lesen (utils/textDatei.js):
+  // gelesen wird nur, was hier liegt.
+  app.locals.zwischenlager = tmpDir;
   const zwischenlager = multer.diskStorage({
     destination: (req, file, cb) => cb(null, tmpDir),
     filename: (req, file, cb) => cb(null, require('crypto').randomBytes(24).toString('hex')),
@@ -216,7 +220,8 @@ function createApp(db, options = {}) {
       if (isAllowed) {
         cb(null, true);
       } else {
-        console.warn(`Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
+        // Endung und Typ, nicht der Dateiname (Audit Sicherheit BF-14).
+        console.warn(`Datei abgelehnt: ${dateiFuersProtokoll(file)}`);
         cb(null, false);
       }
     }
@@ -248,7 +253,7 @@ function createApp(db, options = {}) {
       if (isAllowed) {
         cb(null, true);
       } else {
-        console.warn(`Material-Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
+        console.warn(`Material-Datei abgelehnt: ${dateiFuersProtokoll(file)}`);
         cb(null, false);
       }
     }
@@ -281,7 +286,7 @@ function createApp(db, options = {}) {
       if (isAllowed) {
         cb(null, true);
       } else {
-        console.warn(`Challenge-Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
+        console.warn(`Challenge-Datei abgelehnt: ${dateiFuersProtokoll(file)}`);
         cb(null, false);
       }
     }
@@ -697,6 +702,19 @@ function createApp(db, options = {}) {
       }
       return res.status(413).json({ error: 'Datei ist zu groß (max. 5 MB).' });
     }
+
+    // Fehler beim Lesen des Anfrage-Koerpers sind Fehler der ANFRAGE, nicht
+    // des Servers (Audit Sicherheit BF-17, 29.09.2026). Bis dahin endeten
+    // ungueltiges JSON und ein Koerper ueber dem Limit (express.json, 100 kB)
+    // als 500 "Something went wrong!" -- mit vollem Stack im Log je Anfrage
+    // und als Serverfehler in den Betriebszahlen. Damit liess sich das Log
+    // fluten. Jetzt: der Status, den der Body-Parser selbst vergibt (400,
+    // 413, 415), eine deutsche Meldung und keine Log-Zeile.
+    const clientStatus = anfrageFehlerStatus(err);
+    if (clientStatus) {
+      return res.status(clientStatus).json({ error: ANFRAGE_FEHLER_TEXTE[err.type] });
+    }
+
     console.error(err.stack);
     res.status(500).json({ error: 'Something went wrong!' });
   });
@@ -705,6 +723,26 @@ function createApp(db, options = {}) {
   app.wrappedRouter = wrappedRouter;
 
   return app;
+}
+
+// Fehler des Body-Parsers (body-parser 2 / raw-body, ueber express.json):
+// Sie tragen err.type und einen 4xx-Status. 'stream.encoding.set' und
+// 'stream.not.readable' sind 500er und bleiben es -- das sind Fehler im
+// Server-Aufbau, nicht in der Anfrage.
+const ANFRAGE_FEHLER_TEXTE = {
+  'entity.parse.failed': 'Die Anfrage enthält kein gültiges JSON.',
+  'entity.too.large': 'Die Anfrage ist zu groß.',
+  'parameters.too.many': 'Die Anfrage ist zu groß.',
+  'encoding.unsupported': 'Die Kodierung der Anfrage wird nicht unterstützt.',
+  'charset.unsupported': 'Der Zeichensatz der Anfrage wird nicht unterstützt.',
+  'request.aborted': 'Die Anfrage wurde abgebrochen.',
+  'request.size.invalid': 'Die Anfrage ist unvollständig.',
+};
+
+function anfrageFehlerStatus(err) {
+  if (!err || typeof err.type !== 'string' || !Object.hasOwn(ANFRAGE_FEHLER_TEXTE, err.type)) return null;
+  const status = Number(err.status || err.statusCode);
+  return status >= 400 && status < 500 ? status : null;
 }
 
 module.exports = { createApp };

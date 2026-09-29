@@ -158,10 +158,10 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // Org-Isolation: fremde jahrgang_ids/category_ids abweisen (Cross-Org-Referenzen)
     try {
       if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Gemeinde' });
       }
       if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Gemeinde' });
       }
 
       // Jahrgangs-Bindung (14.09.2026): Ein Termin darf nur in eigenen
@@ -412,10 +412,10 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // Org-Isolation: fremde jahrgang_ids/category_ids abweisen (Cross-Org-Referenzen)
     try {
       if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Gemeinde' });
       }
       if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Gemeinde' });
       }
     } catch (err) {
       console.error('Org-Ownership-Check fehlgeschlagen:', err);

@@ -14,7 +14,7 @@ ist.
 | **Konfi ohne E-Mail** | Die Leitung erzeugt ein Einmalpasswort |
 | **Konfi mit E-Mail** | selbst über „Passwort vergessen" — oder Einmalpasswort |
 | **Teamer:in** | selbst über „Passwort vergessen" — oder Einmalpasswort |
-| **Leitung / Org-Leitung** | selbst über „Passwort vergessen"; sonst setzt die Org-Leitung in der Benutzerverwaltung ein Passwort |
+| **Leitung / Gemeindeleitung** | selbst über „Passwort vergessen"; sonst setzt die Gemeindeleitung in der Benutzerverwaltung ein Passwort |
 | **Zu viele falsche Passwörter** | eine Stunde warten oder ein neues Passwort — siehe [Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen) |
 | **Niemand kommt mehr rein** | siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht) |
 
@@ -41,7 +41,7 @@ Mit dem neuen Passwort endet zugleich jede laufende Sitzung der Person: Wer
 gerade auf einem anderen Gerät angemeldet ist, fliegt heraus und muss sich neu
 anmelden — auch wenn dieses Gerät jemand anderem gehört. Genau darum geht es,
 wenn ein Passwort zurückgesetzt wird, weil ein Konto in falsche Hände geraten
-ist. Dasselbe gilt, wenn die Org-Leitung ein Leitungspasswort setzt.
+ist. Dasselbe gilt, wenn die Gemeindeleitung ein Leitungspasswort setzt.
 
 Hat die Person eine E-Mail-Adresse hinterlegt, bekommt sie eine
 [Bestätigung](#die-bestaetigung-nach-einer-passwortaenderung-einordnen), dass
@@ -50,11 +50,11 @@ darin — das gibst du weiter.
 
 Konten mit Super-Admin-Rechten kann nur ein Super-Admin bearbeiten — auch
 dann, wenn ein solches Konto in deiner Gemeinde zuhause ist. Passwort, Name,
-Sperre und Löschung sind für die Org-Leitung dort gesperrt.
+Sperre und Löschung sind für die Gemeindeleitung dort gesperrt.
 
-**Leitungskonten laufen anders:** Für Leitung und Org-Leitung gibt es kein
-Einmalpasswort. Die Org-Leitung öffnet
-**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-leitung)**, wählt die
+**Leitungskonten laufen anders:** Für Leitung und Gemeindeleitung gibt es kein
+Einmalpasswort. Die Gemeindeleitung öffnet
+**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-gemeindeleitung)**, wählt die
 Person und tippt dort ein Passwort selbst ein — es muss die
 [Anforderungen](#ein-gueltiges-passwort-waehlen) erfüllen.
 
@@ -193,10 +193,13 @@ Fingerabdruck eingerichtet ist. Im Browser steht er nicht.
 ### Kurze Abstecher sperren nicht
 
 Ein Foto auswählen, der Teilen-Dialog, ein Link, der eine Karte oder den Store
-öffnet, und die Face-ID-Abfrage selbst — all das schickt die App technisch in
-den Hintergrund, zählt aber nicht als Verlassen. Auch bei **„Sofort"** sperrt
-die App dabei nicht. Du wirst also nicht mitten in einer Challenge-Abgabe
-ausgesperrt.
+öffnet, eine Datei, die in einer anderen App aufgeht (auf Android etwa ein
+Word-Dokument), und die Face-ID-Abfrage selbst — all das schickt die App
+technisch in den Hintergrund, zählt aber nicht als Verlassen. Auch bei
+**„Sofort"** sperrt die App dabei nicht, und auch dann nicht, wenn du länger in
+der anderen App liest. Du wirst also nicht mitten in einer Challenge-Abgabe
+ausgesperrt. Wo eine Datei aufgeht, steht unter
+[Eine Datei öffnen und vergrößern](03-bedienung.md#eine-datei-oeffnen-und-vergroessern).
 
 ### Wieder hineinkommen
 
@@ -278,9 +281,9 @@ Einmalpasswörter erfüllen dieselben Regeln — das Komma zählt als Sonderzeic
 
 ### Ein Passwort vorschlagen lassen
 
-Wo die Org-Leitung ein Passwort selbst vergibt, steht unter dem Feld der Knopf
+Wo die Gemeindeleitung ein Passwort selbst vergibt, steht unter dem Feld der Knopf
 **„Sicheres Passwort vorschlagen"** — beim Setzen eines Leitungspassworts
-ebenso wie beim Anlegen einer neuen Organisation. Ein Tipp darauf füllt das
+ebenso wie beim Anlegen einer neuen Gemeinde. Ein Tipp darauf füllt das
 Feld mit vierzehn zufälligen Zeichen, die alle Regeln oben erfüllen, und macht
 es zugleich sichtbar, damit du es notieren und weitergeben kannst.
 
@@ -291,17 +294,19 @@ den Knopf.
 
 ## Konfis mit einem Einladungscode aufnehmen
 
-Neue Konfis muss niemand von Hand anlegen: Die Org-Leitung erzeugt eine Einladung,
+Neue Konfis muss niemand von Hand anlegen: Die Gemeindeleitung erzeugt eine Einladung,
 die Konfis registrieren sich damit selbst und legen ihr Passwort dabei gleich
 fest.
 
 ### Die Einladung erzeugen
 
-1. **[Mehr](30-leitung.md#verwaltung-nur-org-leitung) → Konfis einladen** — das
-   kann nur die **Org-Leitung**
+1. **[Mehr](30-leitung.md#verwaltung-nur-gemeindeleitung) → Konfis einladen** — das
+   kann nur die **Gemeindeleitung**
 2. **Jahrgang wählen.** Jede Einladung gehört zu genau einem Jahrgang; wer sich
    damit registriert, landet automatisch darin.
-3. **„Einladungslink generieren"** antippen
+3. **Gültigkeit wählen:** 7, 14, 30, 60 oder 90 Tage. Voreingestellt sind
+   7 Tage. Für einen Elternbrief mit langem Vorlauf nimmst du mehr.
+4. **„Einladungslink generieren"** antippen
 
 Die App zeigt beides zusammen: einen **QR-Code** und darunter den
 **Einladungscode** — acht Zeichen aus Ziffern und den Buchstaben A bis F, etwa
@@ -325,11 +330,21 @@ sich beliebig oft verwenden — du erzeugst also eine Einladung pro Jahrgang.
 
 ### Eine Einladung verlängern oder löschen
 
-Ein Code gilt **7 Tage**. In der Übersicht der aktiven Einladungen verlängerst
-du ihn um **jeweils 7 Tage** — aber nur, solange er noch gültig ist. Ein
-abgelaufener Code verschwindet aus der Liste und lässt sich nicht wiederbeleben
-(„Abgelaufene Codes können nicht verlängert werden"); dann erzeugst du einen
-neuen.
+Ein Code gilt so lange, wie du es beim Erzeugen gewählt hast, und **läuft
+immer ab** — einen Code ohne Ablauf gibt es nicht. In der Übersicht der aktiven
+Einladungen verlängerst du ihn: Die App fragt, um wie viele Tage — 7, 14, 30, 60
+oder 90 — und nennt zu jeder Wahl das neue Ablaufdatum. **Länger als 90 Tage im
+Voraus gilt kein Code.** Was darüber hinausginge, kürzt die App auf 90 Tage ab
+heute; gilt ein Code schon so lange, sagt sie das („Der Code gilt schon 90 Tage
+im Voraus — länger geht es nicht.").
+
+Verlängern geht nur, solange der Code noch gültig ist. Ein abgelaufener Code
+verschwindet aus der Liste und lässt sich nicht wiederbeleben („Abgelaufene
+Codes können nicht verlängert werden"); dann erzeugst du einen neuen.
+
+**Ein lange gültiger Code ist ein geteiltes Geheimnis.** Wer ihn hat, kann
+sich registrieren, solange er gilt. Neue Konfis meldet die App der Leitung;
+brauchst du den Code nicht mehr, lösch ihn.
 
 In der Liste steht zu jedem Code, zu welchem Jahrgang er gehört und wie viele
 Konfis ihn schon benutzt haben. Wie lange er noch gilt, zeigt die Marke in der
@@ -369,7 +384,7 @@ Dabei passiert automatisch:
 - Sie wird zu allen zukünftigen
   **[Pflicht-Events](70-termine.md#ein-pflicht-event-einrichten)** ihres Jahrgangs
   angemeldet — als wäre sie von Anfang an dabei gewesen.
-- Die **Org-Leitung und die Leitung des Jahrgangs bekommen einen Push**,
+- Die **Gemeindeleitung und die Leitung des Jahrgangs bekommen einen Push**,
   und die Person erscheint bei ihnen sofort in der Konfi-Liste — wer genau,
   steht unter
   [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachsehen-wer-meldungen-zu-einem-jahrgang-bekommt).
@@ -379,9 +394,9 @@ Dabei passiert automatisch:
 | Meldung | Ursache und Ausweg |
 |---|---|
 | „Dieser Einladungscode existiert nicht" | Vertipper oder gelöschter Code — Groß- und Kleinschreibung ist egal, aber jede Stelle zählt. Zur Not neue Einladung erzeugen. |
-| „Dieser Einladungscode ist abgelaufen" | Die 7 Tage sind um. Die Org-Leitung erzeugt einen neuen Code. |
-| „Benutzername bereits vergeben" | Einen anderen wählen — geprüft wird schon beim Eintippen, nicht erst beim Absenden. |
-| „Die Anzahl der Konfis ist erreicht …" | Das Konfi-Kontingent des Tarifs ist voll. Da hilft nur die Org-Leitung — sie muss den Tarif anpassen. |
+| „Dieser Einladungscode ist abgelaufen" | Die gewählte Gültigkeit ist um. Die Gemeindeleitung erzeugt einen neuen Code. |
+| „Benutzername bereits vergeben" | Einen anderen wählen — geprüft wird schon beim Eintippen, nicht erst beim Absenden. Wurden aus demselben Netz in einer Viertelstunde sehr viele vergebene Namen geprüft, bleibt der Hinweis beim Eintippen eine Weile aus; das Absenden meldet einen vergebenen Namen trotzdem. |
+| „Die Anzahl der Konfis ist erreicht …" | Das Konfi-Kontingent des Tarifs ist voll. Da hilft nur die Gemeindeleitung — sie muss den Tarif anpassen. |
 
 ## Den richtigen Benutzernamen finden
 
@@ -405,8 +420,15 @@ und darunter, woran es liegt:
 | „Zu viele falsche Anmeldeversuche für dieses Konto. …" | Für dieses Konto kamen zehn falsche Passwörter innerhalb einer Stunde — siehe [Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen). |
 | „Zu viele Login-Versuche. Bitte warte 15 Minuten." | Aus demselben Netz kamen in einer Viertelstunde sehr viele falsche Passwörter, etwa im Gemeinde-WLAN. Warten hilft. |
 | „Dein Zugang wurde deaktiviert. …" | Das Konto ist deaktiviert oder die Konfi-Zeit ist vorbei — siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht). |
-| „Diese Organisation ist derzeit gesperrt. …" oder „Die Testphase dieser Organisation ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Org-Leitung mit dem Betrieb von Konfi Quest. |
+| „Diese Gemeinde ist derzeit gesperrt. …" oder „Die Testphase dieser Gemeinde ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Gemeindeleitung mit dem Betrieb von Konfi Quest. |
 | „Keine Verbindung zum Server. …" | Das Gerät erreicht Konfi Quest nicht. WLAN oder mobile Daten prüfen und noch einmal versuchen. |
+| „Deine Sitzung ist abgelaufen. …" | Die Anmeldung auf diesem Gerät gilt nicht mehr. Neu anmelden hilft. |
+
+Werden das Konto oder die Gemeinde gesperrt, während jemand angemeldet ist,
+schickt die App zur Anmeldeseite zurück und nennt dort gleich den Grund aus
+der Tabelle — „Dein Zugang wurde deaktiviert", „Diese Gemeinde ist
+derzeit gesperrt" oder „Die Testphase … ist abgelaufen" — statt „Deine
+Sitzung ist abgelaufen". Ein neuer Anmeldeversuch hilft dann nicht.
 
 **„Keine Verbindung" bei jedem Versuch, obwohl das Internet geht?** Dann ist
 die App auf dem Gerät nicht aktuell: Sie meldet jede Ablehnung als fehlende
@@ -458,28 +480,32 @@ dann trifft es die Sperre nicht mehr.
 hilft nur warten. Es gibt keinen anderen Weg — sonst könnte sich jemand
 Fremdes als Konfi ausgeben.
 
-**Die einzige Person in der Org-Leitung kommt nicht rein.** Die Org-Leitung
+**Die einzige Person in der Gemeindeleitung kommt nicht rein.** Die Gemeindeleitung
 verwaltet die Benutzer; kommt niemand mehr hinein, kann auch niemand mehr etwas
 zurücksetzen. Hat die Person eine E-Mail hinterlegt, geht „Passwort vergessen".
 Sonst muss der Betreiber der App helfen (Kontakt über die Website).
 
-> **Vorbeugen:** Sorge dafür, dass es **mindestens zwei Personen in der Org-Leitung** gibt und
+> **Vorbeugen:** Sorge dafür, dass es **mindestens zwei Personen in der Gemeindeleitung** gibt und
 > dass bei beiden eine funktionierende E-Mail-Adresse hinterlegt ist. Das ist
 > die einzige wirksame Absicherung.
 
 **Das Konto ist deaktiviert.** Dann ist die Anmeldung gesperrt, unabhängig vom
-Passwort. Die Org-Leitung aktiviert es unter
-**[Mehr → Benutzer:innen](30-leitung.md#verwaltung-nur-org-leitung)** wieder.
+Passwort. Die Gemeindeleitung aktiviert es unter
+**[Mehr → Benutzer:innen](30-leitung.md#verwaltung-nur-gemeindeleitung)** wieder.
 Sich selbst kann niemand deaktivieren.
 
 **Die Konfi-Zeit ist vorbei.** 60 Tage nach der Konfirmation nimmt die App
 ehemalige Konfis automatisch aus den Listen der Leitung, nach 120 Tagen werden
-ihre Konten endgültig gelöscht. Dazwischen ist die Anmeldung ebenso gesperrt
+ihre Konten endgültig gelöscht (was dabei verschwindet, steht unter
+[Ein Konto löschen](05-rollen.md#ein-konto-loeschen)). Dazwischen ist die Anmeldung ebenso gesperrt
 wie bei einem deaktivierten Konto — die App meldet „Dein Zugang wurde
 deaktiviert", und wer noch angemeldet war, wird abgemeldet. Wer nach der
 Konfirmation weiter dabei sein soll, wird vorher
 [zur Teamer:in befördert](05-rollen.md#eine-rolle-aendern); Teamer:innen sind
-von der Löschung ausgenommen.
+von der Löschung ausgenommen. Ebenso bleibt ein Konfi-Konto stehen, das noch
+zu einer weiteren Gemeinde gehört: [Konfi und Team gehen nicht
+zusammen](05-rollen.md#in-mehreren-gemeinden-mitarbeiten), und über solche
+Konten entscheidet der Betrieb von Konfi Quest, nicht die Löschfrist.
 
 **Jemand wurde aus der Gemeinde entfernt.** Der Zugang endet sofort, auch auf
 bereits geöffneten Geräten.

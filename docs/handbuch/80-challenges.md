@@ -66,8 +66,8 @@ Herschalten nicht verloren.
 In der Verwaltung stehen Entwürfe zusammen mit den geplanten Challenges im
 Reiter „Geplant".
 
-> **Achtung:** Ein Entwurf ohne zugeordnete Jahrgänge ist nur für die Org-Leitung
-> sichtbar — auch für dich selbst nicht mehr, wenn du nicht zur Org-Leitung gehörst. Ordne
+> **Achtung:** Ein Entwurf ohne zugeordnete Jahrgänge ist nur für die Gemeindeleitung
+> sichtbar — auch für dich selbst nicht mehr, wenn du nicht zur Gemeindeleitung gehörst. Ordne
 > die Jahrgänge deshalb schon im Entwurf zu. Das Formular markiert eine leere
 > Auswahl rot.
 
@@ -77,7 +77,7 @@ Welche Jahrgänge die Challenge bekommen. Mehrere sind möglich; die Konfis sehe
 dann auch die Beiträge aus dem jeweils anderen Jahrgang — in der Galerie steht
 der Jahrgangsname dabei.
 
-Wer nicht zur Org-Leitung gehört, kann nur die eigenen
+Wer nicht zur Gemeindeleitung gehört, kann nur die eigenen
 [zugewiesenen Jahrgänge](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
 auswählen. Das gilt für Teamer:innen und Leitung gleichermaßen.
 
@@ -91,7 +91,7 @@ Drei Möglichkeiten unter „Wer macht mit?":
 | Team darf einreichen | ja | nein | ja |
 | Jahrgänge auswählbar | ja, Pflicht, mehrere möglich | ja, Pflicht, mehrere möglich | nein, entfällt |
 | Konfis sehen die Challenge | ja | ja | **nein, gar nicht** |
-| Wer sie sieht und verwaltet | Org-Leitung sowie Leitung und Teamer:innen der gewählten Jahrgänge | Org-Leitung sowie Leitung und Teamer:innen der gewählten Jahrgänge | jede:r im Team der Organisation |
+| Wer sie sieht und verwaltet | Gemeindeleitung sowie Leitung und Teamer:innen der gewählten Jahrgänge | Gemeindeleitung sowie Leitung und Teamer:innen der gewählten Jahrgänge | jede:r im Team der Gemeinde |
 
 „Jahrgang und Team" ist die Voreinstellung: „Die Konfis der gewählten Jahrgänge
 und ihr im Team — alle reichen gleichberechtigt ein."
@@ -102,11 +102,11 @@ Challenge, reicht aber selbst nichts ein." Wer mit dem Jahrgang arbeitet, sieht
 die Challenge trotzdem — auch als Teamer:in.
 
 „Nur das Team" ist eine Runde unter euch. Solche Challenges laufen
-organisationsweit über die Rolle statt über Jahrgänge — deshalb entfällt die
+gemeindeweit über die Rolle statt über Jahrgänge — deshalb entfällt die
 Jahrgangs-Auswahl, und jede:r im Team kann sie sehen und verwalten.
 
 Bei „Jahrgang und Team" und „Nur die Konfis" entscheidet der Jahrgang, wer im
-Team die Challenge sieht: die Org-Leitung immer, Leitung und Teamer:innen, wenn ihnen
+Team die Challenge sieht: die Gemeindeleitung immer, Leitung und Teamer:innen, wenn ihnen
 einer der gewählten Jahrgänge
 [zugewiesen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
 ist. Wer keinen davon hat, sieht die Challenge nicht, zählt sie nicht und
@@ -222,9 +222,9 @@ Jeder Beitrag hat genau einen von drei Zuständen:
 
 Die Beiträge stehen in der Leitungs-Ansicht der Challenge, aufgeteilt auf
 Reiter: „Feed" zeigt nur Freigegebenes — denselben Blick, den die Konfis auf die
-Galerie haben. „Wartet" kommt nur bei Challenges mit Freigabe-Pflicht dazu,
-„Abgelehnt" nur, wenn es überhaupt eine Galerie gibt (bei „Nur Leitung" also
-nicht). Die Aktionen erreichst du, indem du einen Beitrag antippst oder
+Galerie haben. „Wartet" kommt nur bei Challenges mit Freigabe-Pflicht dazu und
+trägt die Zahl der wartenden Beiträge in Orange, „Abgelehnt" nur, wenn es
+überhaupt eine Galerie gibt (bei „Nur Leitung" also nicht). Die Aktionen erreichst du, indem du einen Beitrag antippst oder
 [nach links wischst](03-bedienung.md#etwas-loeschen-nach-links-wischen).
 
 - **Freigeben** — nur bei wartenden Beiträgen. Die Konfis der Jahrgänge bekommen
@@ -240,7 +240,7 @@ nicht). Die Aktionen erreichst du, indem du einen Beitrag antippst oder
 - **Wieder einblenden** — macht den Beitrag freigegeben, als wäre er nie
   ausgeblendet gewesen.
 - **Löschen** — entfernt Beitrag und hochgeladene Datei endgültig, ohne
-  Papierkorb. Das dürfen nur Leitung und Org-Leitung, nicht Teamer:innen. Soll ein
+  Papierkorb. Das dürfen nur Leitung und Gemeindeleitung, nicht Teamer:innen. Soll ein
   Beitrag nur aus der Gruppe verschwinden, ist „Ausblenden" das richtige Mittel.
 
 Den eigenen Beitrag kannst du nicht ausblenden — du kannst ihn aber löschen oder
@@ -407,7 +407,7 @@ abrufen, nie über eine offene Adresse, und nur von Personen, die den Beitrag
 ohnehin sehen dürfen:
 
 - die Person, die ihn eingereicht hat — immer
-- die Org-Leitung — für alles in ihrer Organisation
+- die Gemeindeleitung — für alles in ihrer Gemeinde
 - Leitung und Teamer:innen — für ihre zugewiesenen Jahrgänge, bei Challenges
   nur fürs Team für alles im Team
 - Konfis — nur für Beiträge, die in ihrer Galerie erscheinen dürfen
@@ -473,40 +473,45 @@ entfernt werden soll."
 
 An einer Challenge stehen zwei Zeichen:
 
-- **Die rote Zahl am Symbol** zeigt, was an der Challenge auf dich wartet —
-  wie ungelesene Nachrichten im Chat. Sie zählt zusammen:
-  - die Beiträge, die auf eure Freigabe warten, und
-  - die Beiträge, die seit deinem letzten Öffnen der Challenge dazugekommen
-    sind — auch bei Challenges ohne Freigabe, bei denen ein Beitrag sofort in
-    der Galerie steht. So siehst du, was passiert, und kannst einen Beitrag
-    bei Bedarf ausblenden oder löschen. Eigene Beiträge zählen nicht mit.
-    Eine gestartete Challenge, bei der du selbst mitmachst („Jahrgang und
-    Team", „Nur das Team") und die du noch nie geöffnet hast, zählt dazu als
-    eins — außer du hast sie selbst angelegt.
+- **Die rote Zahl am Symbol** zeigt die Beiträge, die seit deinem letzten
+  Öffnen der Challenge dazugekommen sind — wie ungelesene Nachrichten im
+  Chat. Sie zählt jeden neuen Beitrag, auch einen, der noch auf eure Freigabe
+  wartet, und auch bei Challenges ohne Freigabe, bei denen ein Beitrag sofort
+  in der Galerie steht. So siehst du, was passiert, und kannst einen Beitrag
+  bei Bedarf ausblenden oder löschen. Eigene und ausgeblendete Beiträge
+  zählen nicht mit. Eine gestartete Challenge, bei der du selbst mitmachst
+  („Jahrgang und Team", „Nur das Team") und die du noch nie geöffnet hast,
+  zählt dazu als eins — außer du hast sie selbst angelegt.
 
-  Öffnest du die Challenge, fallen die neuen Beiträge aus der Zahl heraus;
-  was danach kommt, zählt neu. Die wartenden bleiben darin, bis ihr freigebt
-  oder ausblendet. Vorleseprogramme nennen beide Anteile einzeln.
-- **Das orange Feld mit Zahl und Uhr** oben rechts zeigt, wie viele der
-  Beiträge auf eure Freigabe warten. Es bleibt stehen, bis ihr freigebt oder
-  ausblendet; Öffnen allein ändert daran nichts.
+  Öffnest du die Challenge, verschwindet die rote Zahl; was danach kommt,
+  zählt neu. Vorleseprogramme sagen dazu, wie viele der neuen Beiträge noch
+  auf Freigabe warten.
+- **Das orange Feld mit Uhr** oben rechts zeigt, dass Beiträge auf eure
+  Freigabe warten — ohne Zahl. Wie viele es sind, steht orange am Umschalter
+  und in der geöffneten Challenge an **Wartet**. Das Feld bleibt stehen, bis
+  ihr freigebt oder ausblendet; Öffnen allein ändert daran nichts.
 
-Ein Beitrag zählt nie doppelt: Solange er auf Freigabe wartet, zählt er als
-wartend, nicht als neu. Gibt ihn jemand anderes frei, bevor du ihn gesehen
-hast, zählt er bei dir als neu.
+Ein neuer Beitrag, der auf Freigabe wartet, steht deshalb an beiden Stellen:
+rot, bis du die Challenge öffnest, und orange, bis ihn jemand freigibt oder
+ausblendet. Hast du ihn schon gesehen, steht er nur noch orange.
 
-Am Reiter **Challenges** steht die Summe der roten Zahlen aller Challenges,
-ebenso am [Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
-App-Symbol. Gezählt werden nur Challenges, die ihr seht: Leitung und
+Am Reiter **Challenges** steht zusammen, was an allen Challenges auf dich
+wartet: die Beiträge, die auf Freigabe warten, und das Neue seit deinem
+letzten Öffnen — jeder Beitrag nur einmal. Genauso zählen sie am
+[Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
+App-Symbol mit. Gezählt werden nur Challenges, die ihr seht: Leitung und
 Teamer:innen die ihrer zugewiesenen Jahrgänge und die Challenges nur fürs
-Team, die Org-Leitung alle der Gemeinde.
+Team, die Gemeindeleitung alle der Gemeinde.
 Neue Beiträge zählen nur in laufenden Challenges. Die Legende hinter dem
-Fragezeichen erklärt beide Zeichen zusammen mit den Status-Symbolen.
+Fragezeichen erklärt die Zeichen zusammen mit den Status-Symbolen.
 
-Die Umschalter **Aktuell**, **Geplant** und **Archiv** tragen eine orange
-Zahl, sobald dort Beiträge auf eure Freigabe warten — so findest du auch
-wartende Beiträge an beendeten Challenges im Archiv. Neue Beiträge zählen
-dort nicht mit; siehe
+Orange steht nur für Wartendes. Die Umschalter **Aktuell**, **Geplant** und
+**Archiv** tragen eine orange Zahl, sobald dort Beiträge auf eure Freigabe
+warten — so findest du auch wartende Beiträge an beendeten Challenges im
+Archiv. In der geöffneten Challenge trägt der Reiter **Wartet** dieselbe
+orange Zahl für die Beiträge dieser Challenge; sie geht beim Freigeben und
+Ausblenden sofort mit. Neue Beiträge zählen an beiden Stellen nicht mit;
+siehe
 [Den Umschalter finden, hinter dem etwas auf dich wartet](03-bedienung.md#den-umschalter-finden-hinter-dem-etwas-auf-dich-wartet).
 
 Konfis sehen an der Challenge ebenfalls eine rote Zahl für ihre
@@ -520,7 +525,7 @@ Wer sie angelegt hat, bekommt keine, und niemand bekommt sie doppelt:
 
 | „Wer macht mit?" | Wer die Mitteilung zum Start bekommt |
 |---|---|
-| „Jahrgang und Team" | die Konfis der gewählten Jahrgänge, die Org-Leitung sowie Leitung und Teamer:innen dieser Jahrgänge |
+| „Jahrgang und Team" | die Konfis der gewählten Jahrgänge, die Gemeindeleitung sowie Leitung und Teamer:innen dieser Jahrgänge |
 | „Nur die Konfis" | die Konfis der gewählten Jahrgänge — ihr im Team lest mit und seht neue Beiträge an der roten Zahl |
 | „Nur das Team" | das ganze Team der Gemeinde, mit und ohne Jahrgang; Konfis nie |
 
@@ -528,7 +533,7 @@ Außerdem:
 
 - **Wer die Challenge verwaltet**, bekommt eine Mitteilung bei jedem neuen
   Beitrag, auch wenn er ohne Moderation sofort in der Galerie steht: die
-  Org-Leitung immer, Leitung und Teamer:innen für die Challenges ihrer
+  Gemeindeleitung immer, Leitung und Teamer:innen für die Challenges ihrer
   Jahrgänge und die Challenges nur fürs Team. Wer selbst etwas einreicht,
   bekommt über den eigenen Beitrag keine Mitteilung.
 - **Die einreichende Person** bekommt eine Mitteilung, sobald sie den Stempel

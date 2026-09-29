@@ -270,6 +270,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
   Roundtrip, bevor das Einmalpasswort erscheint; im Betriebs-Dashboard je
   Konfi-Anlage ein 404 im Fehlerprotokoll (`apm.js:331-337`).
 - **Empfehlung:** `createOrJoinJahrgangChat` samt Aufruf entfernen.
+- **Nachtrag 28.09.2026:** behoben — `createOrJoinJahrgangChat` samt Aufruf aus `AdminKonfisPage.tsx` entfernt; nach `POST /admin/konfis` folgt direkt der Passwort-Dialog. Der Jahrgangs-Chat entsteht weiter in der Transaktion des Servers (`syncJahrgangChat`, `konfi-management.js`). Test `components/konfiAnlegenOhneToteAnfrage.test.tsx` (2, gerenderte Seite: nur `POST /admin/konfis`, kein `GET /admin/jahrgaenge/:id`, Passwort-Dialog mit dem Passwort der Antwort); ohne Fix 1 rot.
 
 ### BF-07: Toter Aufruf `GET /organizations/:id` bei jedem Öffnen der Konfi-Liste
 
@@ -283,6 +284,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 - **Auswirkung aus Nutzersicht:** Eine unnötige Anfrage pro Öffnen der
   Konfi-Liste; die versprochene „X von Y Konfis"-Anzeige gibt es nicht.
 - **Empfehlung:** Effekt entfernen oder die Anzeige bauen.
+- **Nachtrag 28.09.2026:** behoben — Effekt samt `setKonfiLimit` aus `KonfisView.tsx` entfernt (Entscheidung: entfernen statt die Anzeige „X von Y" zu bauen; die Tarif-Grenze meldet der Server beim Anlegen mit `limit_grace`/`limit_exceeded`). Test `components/konfiListeOhneOrganisationsAbruf.test.tsx` (2, echte Ansicht: kein `GET /organizations/:id`, Gegenprobe Team-Segment lädt weiter); ohne Fix 1 rot.
 
 ### BF-08: Handbuch nennt vier Seiten ohne Gemeinde-Umschalter — es sind alle Unterseiten
 
@@ -326,6 +328,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
   Fehler bei sich.
 - **Empfehlung:** Handbuchsatz auf die drei tatsächlich ausgewerteten Typen
   eingrenzen oder den Fall im Teamer-Zweig ergänzen.
+- **Nachtrag 28.09.2026:** behoben (Handbuch an den Code angepasst) — `60-badges.md`: „Pflicht-Anwesenheit" steht für Teamer:innen auf „nein" mit dem Satz, dass ein solches Badge nie vergeben wird; „Nur im Bestand" gilt für die übrigen drei (Event-Teilnahmen, Zeitbasiert, Serie), die der Teamer-Zweig weiter auswertet. Der Code bleibt. Wächter `frontend/src/__tests__/handbuchBadgeZielgruppen.test.ts` (5): liest die Teamer-Spalte der Tabelle und prüft sie gegen `checkAndAwardTeamerBadges` (`badges.js`) und `TEAMER_HIDDEN_TYPES` (`BadgeManagementModal.tsx`), dazu das Zahlwort; gegen das alte Handbuch 1 rot. Ob es in Produktion ein solches Teamer-Badge gibt, bleibt nach dem Deploy zu messen (Punkt 3 unten).
 
 ### BF-10: Löschwarnung für Konfis nennt nicht alles, was verschwindet; Handbuch ohne Abschnitt
 
@@ -346,6 +349,19 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
   Wartelistenplätze nachrücken.
 - **Empfehlung:** Warntext um „Termin-Anmeldungen, Challenge-Beiträge und
   hochgeladene Fotos" ergänzen; Handbuchabschnitt „Einen Konfi löschen".
+- **Nachtrag 28.09.2026:** behoben — Befund am Code bestätigt (Text nannte nur
+  Punkte, Badges, Aktivitäten, Chat-Nachrichten). Alle vier Konto-Löschdialoge
+  (Konfi und Teamer:in in `AdminKonfisPage.tsx`, „Benutzer löschen" in
+  `AdminUsersPage.tsx`, `DeleteAccountModal.tsx`) lesen einen Wortlaut aus
+  `utils/kontoLoeschen.ts`: Punkte, Badges, Stempel, Anträge samt Fotos,
+  Event-Anmeldungen, Challenge-Beiträge, Chat-Nachrichten, Zweiergespräche;
+  Nachrücken der Warteliste; beim Team, was der Gemeinde bleibt. Backend
+  zugleich auf eine Löschfunktion für alle Wege umgestellt
+  (`backend/utils/kontoLoeschen.js`, Paket 2d). Handbuch `05-rollen.md`
+  „Ein Konto löschen" (für alle Rollen statt „Einen Konfi löschen"). Tests:
+  `kontoLoeschAbfragen.test.tsx` (4), angepasst `teamerEntfernenAbfrage` und
+  `benutzerEntfernenAbfrage` (je 1); Gegenprobe mit den alten Texten 6 von 13
+  rot.
 
 ### BF-11: `useOfflineQuery` zeigt beim Schlüsselwechsel alte Daten bis zur neuen Antwort
 
@@ -369,6 +385,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
   Reiter; bei schlechtem Netz länger.
 - **Empfehlung:** Im Initial-Effekt bei Schlüsselwechsel `setData(null)`
   und `setLoading(true)`, bevor der Cache gelesen wird.
+- **Nachtrag 28.09.2026:** behoben — `hooks/useOfflineQuery.ts`: Nur ein ECHTER Schlüsselwechsel (gemerkt in einem Ref; nicht das erste Laden, nicht ein Neulauf wegen `ttl`/`enabled`) leert `data` und setzt `loading`; ein Fehlschlag markiert nur Daten DESSELBEN Schlüssels als „stale", sonst Fehler ohne Daten; offline ohne Zwischenspeicher für den neuen Schlüssel ebenso. Neue Option `vorigeDatenZeigen` für Such- und Filterschlüssel, deren Eingabefeld im Inhalt steht: `AdminMaterialPage` (Suchfeld und Jahrgangsauswahl liegen im Zweig, den `loading` durch die Ladeanzeige ersetzt — ein leerer Stand beim Tippen hätte das Feld samt Fokus entfernt). Folge auf Badges/Aktivitäten: beim Umschalten kurz die Ladeanzeige statt der falschen Liste; Suchbegriff und Filter in der Ansicht darunter beginnen dabei neu. Tests `hooks/useOfflineQuerySchluesselwechsel.test.ts` (14: online ausstehend/fehlgeschlagen/aus dem Zwischenspeicher/späte alte Antwort/zurück, offline mit und ohne Zwischenspeicher, gleicher Schlüssel mit anderer ttl, erstes Laden, drei Fälle `vorigeDatenZeigen`, Wächter für die Material-Seite); ohne Fix 6 rot. Bestehende `useOfflineQuery.test.ts` (18) unverändert grün.
 
 ### BF-12: Betriebs-Dashboard speichert und zeigt Roh-URLs samt Query-String
 
@@ -388,6 +405,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
   Klarname.
 - **Empfehlung:** Query-String abschneiden und dieselbe Normalisierung wie für
   `route` anwenden, bevor die URL gespeichert wird.
+- **Nachtrag 29.09.2026:** behoben — `utils/apm.js` speichert in `recentErrors[].url` und `fehlerGruppen[].beispielUrl` nur noch eine geschwärzte Fassung (`urlFuersAnzeige`): Query-Werte als `***` (die Parameternamen bleiben, man sieht, was kam), Benutzername, Einladungscode, Dateiname und UUID im Pfad als Platzhalter wie in `route`; Zahlen-Kennungen bleiben zum Nachstellen stehen. Das Langsam-Log schreibt dieselbe Fassung. Mitbehoben: der Anmeldeschlüssel aus `?token=` (Chat-Videos) stand ebenso roh darin. Felder und Typen unverändert, das Dashboard braucht keine Änderung. Tests `tests/utils/apmUrlGeschwaerzt.test.js`, 6 Fälle (4 verboten: Suchbegriff, Benutzername, Token, Langsam-Log; 2 erlaubt: Kennungen und Query-Namen lesbar, Randfälle); Gegenprobe (Middleware übergibt wieder die rohe URL): 4 rot.
 
 ### BF-13: ESLint-Fehler in Admin-Dateien
 

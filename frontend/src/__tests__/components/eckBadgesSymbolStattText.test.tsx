@@ -22,7 +22,6 @@ import StatusBadge, { getStatusIcon } from '../../components/shared/StatusBadge'
 import {
   ICON_ABSAGE,
   ICON_HAKEN_GEFUELLT,
-  ICON_MAIL_GEFUELLT,
   ICON_ORGANISATION_GEFUELLT,
   ICON_SPERRE_GEFUELLT,
   ICON_UHRZEIT,
@@ -127,13 +126,21 @@ describe('Einstellungen: Benachrichtigungen aktiviert', () => {
   });
 });
 
-describe('Postfach: ungelesen als Umschlag', () => {
-  it('geschlossener Umschlag statt "Neu", Klartext in title und aria-label', () => {
-    const block = badgeBlock('src/components/common/PostfachModal.tsx', 'title="Neu — ungelesen"');
-    expect(block).toContain('<IonIcon icon={ICON_MAIL_GEFUELLT}');
+// Seit 29.09.2026 traegt der ungelesene Eintrag im Postfach kein Eck-Badge
+// mehr, sondern den blauen Punkt wie die Glocke (Simon, TestFlight 233:
+// "Das Symbol der blauen Briefkaesten ... gefaellt mir nicht"). Auch dort:
+// kein Wort, der Klartext in title und aria-label (postfachModal.test.tsx).
+describe('Postfach: ungelesen als Punkt, nicht als Wort', () => {
+  it('kein "Neu" als Text, kein Umschlag; Klartext in title und aria-label', () => {
+    const quelle = code('src/components/common/PostfachModal.tsx');
+    const start = quelle.indexOf('title="Neu — ungelesen"');
+    expect(start).toBeGreaterThan(-1);
+    const block = quelle.slice(quelle.lastIndexOf('<span', start), quelle.indexOf('/>', start) + 2);
+    expect(block).toContain('className="app-ungelesen-punkt app-postfach-eintrag__punkt"');
     expect(block).toContain('aria-label="Neu — ungelesen"');
-    expect(block).not.toMatch(/>\s*Neu\s*</);
-    expect(ICON_MAIL_GEFUELLT.length).toBeGreaterThan(0);
+    expect(block).toContain('role="img"');
+    expect(quelle).not.toMatch(/>\s*Neu\s*</);
+    expect(quelle).not.toContain('ICON_MAIL_GEFUELLT');
   });
 });
 

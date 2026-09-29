@@ -144,7 +144,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     try {
       // Org-Isolation: fremde category_ids abweisen (Cross-Org-Referenzen)
       if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Gemeinde' });
       }
 
       const actPoints = activityTargetRole === 'teamer' ? (points || 0) : points;
@@ -188,7 +188,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     try {
       // Org-Isolation: fremde category_ids abweisen (Cross-Org-Referenzen)
       if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Gemeinde' });
       }
 
       const actPoints = activityTargetRole === 'teamer' ? (points || 0) : points;
@@ -980,7 +980,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Organization check
       if (request.organization_id !== req.user.organization_id) {
-        return res.status(403).json({ error: 'Keine Berechtigung für diese Organisation' });
+        return res.status(403).json({ error: 'Keine Berechtigung für diese Gemeinde' });
       }
 
       // Jahrgangs-Bindung (31.08.2026): Ein Nachweisfoto ist das persönlichste
@@ -1050,7 +1050,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       if (request.organization_id !== req.user.organization_id) {
-        return res.status(403).json({ error: 'Keine Berechtigung für diese Organisation' });
+        return res.status(403).json({ error: 'Keine Berechtigung für diese Gemeinde' });
       }
 
       // Jahrgangs-Bindung (31.08.2026): analog zur GET-Foto-Route — das Foto

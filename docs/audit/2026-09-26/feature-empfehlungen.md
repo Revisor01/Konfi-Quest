@@ -391,6 +391,17 @@ unverändert.
   Elternbrief steht, ist ein geteiltes Geheimnis; die Leitung sieht die
   Registrierungen im Postfach (`pushService.js:2190`) und kann den Code
   löschen.
+- **Nachtrag 28.09.2026:** umgesetzt nach Simons Entscheidung („codes länger als 7 Tage ist
+  gut. Mach es flexibel. Aber mit Zwang die ablaufen zu lassen.") — Gültigkeit beim Anlegen
+  wählbar (7, 14, 30, 60, 90 Tage; `gueltig_tage`, ohne Feld 7 Tage wie bisher, andere Werte
+  400), Verlängern ebenfalls wählbar (`tage`, ohne Feld 7) und nie über 90 Tage ab jetzt hinaus
+  (gekürzt, `begrenzt: true`; an der Grenze 400). Abweichend vom Vorschlag lassen sich
+  abgelaufene Codes **nicht** verlängern — sie bleiben abgelaufen. Regel an einer Stelle:
+  `backend/utils/einladungsGueltigkeit.js`, Routen in `backend/routes/auth.js`; App: Auswahl
+  „Gültigkeit" und Rückfrage beim Verlängern in `AdminInvitePage.tsx`. Handbuch
+  `35-passwoerter.md`. Tests: `einladungscodeGueltigkeit.test.js` (35, gegen die alte Route 31
+  rot; ohne die 90-Tage-Grenze 3 rot), Frontend `einladungsGueltigkeit.test.ts` (10, gegen die
+  alte Seite 3 rot).
 
 ### E-09: Sprache und Barrierefreiheit der Web-Variante
 

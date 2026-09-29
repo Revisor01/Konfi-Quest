@@ -74,6 +74,7 @@ import './theme/variables.css';
    variables.css kommen, siehe Kopf der Datei. */
 import './theme/barrierefreiheit.css';
 import { bewegungReduziert } from './utils/bewegung';
+import { anmeldeHinweisMerken } from './utils/anmeldeHinweis';
 
 setupIonicReact({
   // Seitenuebergaenge, Modale und Popover laufen als Web Animations, nicht
@@ -156,13 +157,12 @@ const AppContent: React.FC = () => {
   // crashen. Jetzt setzen wir nur den User auf null -> React rendert sofort die
   // Login-Route (AppContent unten). Der Hinweis "Sitzung abgelaufen" geht per
   // sessionStorage an die LoginView.
+  // Bei einer Zugangs-Sperre traegt das Ereignis die Meldung des Servers; sie
+  // ersetzt dann "Sitzung abgelaufen" (Audit Grundgeruest BF-11).
   useEffect(() => {
-    const handler = () => {
-      try {
-        sessionStorage.setItem('session_expired', '1');
-      } catch {
-        // sessionStorage nicht verfuegbar -> Hinweis entfaellt, Login kommt trotzdem
-      }
+    const handler = (ereignis: Event) => {
+      const detail = (ereignis as CustomEvent<{ sperrMeldung?: string | null } | undefined>).detail;
+      anmeldeHinweisMerken(detail?.sperrMeldung);
       setUser(null);
     };
     window.addEventListener('auth:relogin-required', handler);

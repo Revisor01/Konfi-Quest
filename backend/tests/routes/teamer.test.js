@@ -1685,9 +1685,10 @@ describe('Teamer Routes', () => {
         .get(`/api/teamer/${USERS.teamer1.id}/certificates`)
         .set('Authorization', `Bearer ${admin2Token}`);
 
-      expect(res.status).toBe(200);
-      // Gibt leere Liste zurück (gefiltert nach org_id)
-      expect(res.body.length).toBe(0);
+      // Seit 29.09.2026 404 statt 200 [] (Audit Sicherheit BF-16): Die
+      // Person gehoert nicht zur Gemeinde von admin2.
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Person nicht gefunden' });
     });
   });
 });

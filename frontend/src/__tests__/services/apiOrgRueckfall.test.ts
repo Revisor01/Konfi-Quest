@@ -172,6 +172,49 @@ describe('api — 403-Rueckfall auf die Stamm-Gemeinde', () => {
     expect(dispatchSpy.mock.calls.map(c => (c[0] as Event).type)).not.toContain('auth:org-fallback');
   });
 
+  // Seit dem 29.09.2026 traegt die Ablehnung error_code 'org_kein_zugriff'
+  // (middleware/rbac.js, ORG_KEIN_ZUGRIFF). Die App erkennt sie daran -- auch
+  // mit anderem Text. Nur so kann der Server spaeter „Kein Zugriff auf diese
+  // Gemeinde" sagen, ohne diese App zu brechen.
+  it('erkennt die Ablehnung an error_code, auch wenn der Text „Gemeinde" sagt', async () => {
+    const axios = (await import('axios')).default;
+    const tokenStore = await import('../../services/tokenStore');
+    const postSpy = vi.spyOn(axios, 'post').mockResolvedValue({
+      data: { token: 'token-ohne-claim', refresh_token: 'refresh-2' },
+    });
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+    const { default: api } = await import('../../services/api');
+    const rejected = responseHandler(api)!.rejected!;
+    const fehler = {
+      config: { url: '/konfis', headers: {} },
+      response: { status: 403, data: { error: 'Kein Zugriff auf diese Gemeinde', error_code: 'org_kein_zugriff' } },
+    };
+
+    await expect(rejected(fehler)).rejects.toBe(fehler);
+
+    expect(tokenStore.setActiveOrgId).toHaveBeenCalledWith(null);
+    expect(postSpy).toHaveBeenCalledTimes(1);
+    expect(dispatchSpy.mock.calls.map(c => (c[0] as Event).type)).toContain('auth:org-fallback');
+  });
+
+  it('ein 403 mit anderem error_code loest keinen Rueckfall aus', async () => {
+    const axios = (await import('axios')).default;
+    const tokenStore = await import('../../services/tokenStore');
+    const postSpy = vi.spyOn(axios, 'post');
+
+    const { default: api } = await import('../../services/api');
+    const rejected = responseHandler(api)!.rejected!;
+    const fehler = {
+      config: { url: '/events/7', headers: {} },
+      response: { status: 403, data: { error: 'Kein Zugriff auf dieses Event', error_code: 'jahrgang_nicht_zugewiesen' } },
+    };
+
+    await expect(rejected(fehler)).rejects.toBe(fehler);
+    expect(tokenStore.setActiveOrgId).not.toHaveBeenCalled();
+    expect(postSpy).not.toHaveBeenCalled();
+  });
+
   it('ohne aktive Zweit-Gemeinde greift der Rueckfall nicht (Stamm-Gemeinde kennt kein Zurueck)', async () => {
     mockAktiveOrg = null;
     const axios = (await import('axios')).default;

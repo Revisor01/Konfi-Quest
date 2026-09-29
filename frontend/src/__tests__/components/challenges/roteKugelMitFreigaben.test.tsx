@@ -4,12 +4,14 @@ import { render, cleanup } from '@testing-library/react';
 import ChallengesManageView from '../../../components/admin/views/ChallengesManageView';
 import type { AdminChallenge } from '../../../types/challenges';
 
-// Rote Kugel am Listeneintrag zaehlt auch wartende Freigaben (Simon,
-// 28.09.2026, Messung am Geraet, iOS, Leitung in Org 4): "Ich erwarte auch
-// einen roten Kreis auf dem Listen Element." Der Reiter zeigte eine rote 1,
-// der Eintrag nur das orange Feld -- die Summe der Eintraege muss der
-// Reiterzahl entsprechen (pendingChallenges + challengeUpdatesTotal). Das
-// orange Eck-Badge bleibt zusaetzlich stehen.
+// RUECKFALL fuer Server ohne badge-counts.challengeNeueBeitraege (Prop
+// neueBeitraege fehlt): Dann rechnet die rote Kugel wie vom 28. bis
+// 29.09.2026 -- wartende Freigaben + neue freigegebene Beitraege, und die
+// Summe der Eintraege entspricht der Reiterzahl (pendingChallenges +
+// challengeUpdatesTotal). Mit dem Feld zaehlt die Kugel jeden neuen Beitrag
+// seit dem letzten Oeffnen, auch wartende, und gesehene wartende nicht mehr
+// (roteKugelNeueBeitraege.test.tsx). Das orange Eck-Badge steht in beiden
+// Faellen.
 
 vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: { id: 4, type: 'admin', role_name: 'org_admin' } }),
@@ -47,8 +49,8 @@ const zeige = (offeneFreigaben: Record<number, number>, neuigkeiten: Record<numb
 const eintrag = (container: HTMLElement, titel: string) =>
   [...container.querySelectorAll('.app-list-item')].find((e) => e.textContent?.includes(titel)) as HTMLElement;
 
-describe('Leitungsliste: rote Kugel = wartende Freigaben + Neuigkeiten', () => {
-  it('eine wartende Freigabe, nichts Neues: rote Kugel mit 1 UND oranges Feld mit 1', () => {
+describe('Leitungsliste, Rueckfall ohne neues Feld: rote Kugel = wartende Freigaben + Neuigkeiten', () => {
+  it('eine wartende Freigabe, nichts Neues: rote Kugel mit 1 UND oranges Feld (ohne Zahl)', () => {
     const { container } = zeige({ 1: 1 }, {});
     const kugeln = container.querySelectorAll('.app-zaehler-kugel');
     expect(kugeln.length).toBe(1);
@@ -58,7 +60,7 @@ describe('Leitungsliste: rote Kugel = wartende Freigaben + Neuigkeiten', () => {
     expect(liste.querySelector('.app-zaehler-anker .app-zaehler-kugel')).toBe(kugeln[0]);
     // Das orange Eck-Badge bleibt zusaetzlich stehen.
     const orange = liste.querySelector('.app-corner-badges [aria-label="1 Beitrag wartet auf Freigabe"]');
-    expect(orange?.textContent).toBe('1');
+    expect(orange?.textContent).toBe('');
     // Die andere Challenge traegt keine Kugel.
     expect(eintrag(container, 'Ruhige Challenge').querySelector('.app-zaehler-kugel')).toBeNull();
   });
@@ -71,7 +73,7 @@ describe('Leitungsliste: rote Kugel = wartende Freigaben + Neuigkeiten', () => {
     expect(kugeln[0].getAttribute('aria-label')).toBe('5 offen: 2 Beiträge warten auf Freigabe, 3 neue Beiträge');
     const orange = eintrag(container, 'Ein Wort, das dich begleitet')
       .querySelector('.app-corner-badges [aria-label="2 Beiträge warten auf Freigabe"]');
-    expect(orange?.textContent).toBe('2');
+    expect(orange?.textContent).toBe('');
   });
 
   it('nur Neues: Kugel und Vorlesetext wie bisher', () => {

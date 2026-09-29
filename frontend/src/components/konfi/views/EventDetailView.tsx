@@ -63,6 +63,7 @@ import { safeUUID } from '../../../utils/uuid';
 import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -367,6 +368,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     }
   };
 
+  // Sperre gegen den Doppeltipp (Audit 26.09.2026, Screens BF-09): Ohne sie
+  // schickte ein ungeduldiger zweiter Tipp einen zweiten POST, der Server
+  // antwortete 409 "bereits angemeldet", und die Konfi sah diese Meldung in
+  // Rot, obwohl die Anmeldung geklappt hatte. Die Sperre umfasst den ganzen
+  // Weg bis zum POST -- auch die Vorabfrage bei Konfirmationen und die
+  // Zeitfenster-Auswahl -- und gibt die Knoepfe erst frei, wenn die Liste neu
+  // geladen ist. Ein abgewiesener zweiter Tipp tut still nichts.
+  const { isSubmitting: anmeldungLaeuft, guard: anmeldungGuard } = useActionGuard();
+  const gesperrt = (aktion: () => Promise<void>) => {
+    anmeldungGuard(aktion).catch(() => undefined);
+  };
+
   const doRegister = async (timeslotId?: number) => {
     if (!eventData) return;
 
@@ -394,7 +407,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     }
   };
 
-  const handleRegister = async () => {
+  const handleRegister = () => gesperrt(async () => {
     if (!eventData) return;
 
     // Zeitfenster-Event, dessen Zeitfenster nicht geladen werden konnten:
@@ -456,7 +469,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               setError('Dieser Zeitslot ist ausgebucht und hat keine Warteliste.');
               return false;
             }
-            doRegister(slot.id);
+            gesperrt(() => doRegister(slot.id));
           },
           cssClass: blocked ? 'action-sheet-disabled' : ''
         };
@@ -475,8 +488,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       return;
     }
 
-    doRegister();
-  };
+    await doRegister();
+  });
 
   // Status-Farben für SectionHeader — alle aus globalen Tokens
   const getStatusColors = (): { primary: string; secondary: string } => {
@@ -1015,7 +1028,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                           className="app-action-button"
                           expand="block"
                           color="success"
-                          disabled={!isOnline}
+                          disabled={!isOnline || anmeldungLaeuft}
                           onClick={handleRegister}
                         >
                           <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
@@ -1158,7 +1171,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                           className="app-action-button"
                           expand="block"
                           color="success"
-                          disabled={!isOnline}
+                          disabled={!isOnline || anmeldungLaeuft}
                           onClick={handleRegister}
                         >
                           <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
@@ -1197,7 +1210,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   className="app-action-button"
                   expand="block"
                   color="success"
-                  disabled={!isOnline}
+                  disabled={!isOnline || anmeldungLaeuft}
                   onClick={handleRegister}
                 >
                   <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
@@ -1214,7 +1227,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   className="app-action-button"
                   expand="block"
                   color="warning"
-                  disabled={!isOnline}
+                  disabled={!isOnline || anmeldungLaeuft}
                   onClick={handleRegister}
                 >
                   <IonIcon icon={ICON_WARTEND_GEFUELLT} slot="start" />

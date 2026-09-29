@@ -135,6 +135,13 @@
 #      geprüft, jeder Angemeldete derselben Gemeinde konnte damit jedem Raum
 #      beitreten und über newMessage/pollUpdated/reactionAdded alle neuen
 #      Nachrichten fremder Chats mitlesen.)
+#    - Socket-Anmeldung (utils/socketAnmeldung.js, eingehaengt in server.js):
+#      socket.user traegt id, organization_id (aktive Gemeinde), role_name,
+#      type und display_name aus der Datenbank. userTyping sendet
+#      { roomId, userId, userName }. (BEHOBEN 2026-09-28, Audit Fachlogik
+#      Chat BF-12: seit 2026-08-22 fehlte display_name, userName war
+#      undefined. Die App zeigt keine Tipp-Anzeige; das Ereignis hat keinen
+#      Leser.)
 #
 # 4. WER DARF NACHRICHTEN LOESCHEN (DELETE /chat/messages/:messageId)?
 #    - Eigene Nachrichten: jede Rolle (auch Konfi), Soft-Delete.
@@ -261,7 +268,7 @@ components:
       description: >
         JWT im Authorization-Header. Optional Header X-Active-Organization
         (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
-        Mitglied ist (sonst 403).
+        Mitglied ist (sonst 403 mit error_code org_kein_zugriff).
   schemas:
     Error:
       type: object
@@ -282,7 +289,7 @@ components:
         participant_count: { type: integer }
         partner_user_type: { type: [string, "null"], description: Rolle des Direktchat-Partners (admin/teamer/konfi) }
         is_team_only: { type: boolean }
-        unread_count: { type: integer }
+        unread_count: { type: integer, description: "Nachrichten nach dem eigenen Lesestand, ohne eigene, geloeschte und solche mit Datum in der Zukunft -- dieselbe Zaehlung wie chat.byRoom in GET /api/notifications/badge-counts. Bis 28.09.2026 zaehlte die Raumliste eigene Nachrichten mit (Audit Fachlogik Chat BF-10, behoben; Feld und Typ unveraendert)." }
         last_message:
           type: [object, "null"]
           properties:
@@ -437,7 +444,7 @@ paths:
       tags: ["Chat"]
       summary: Team-Kontaktliste für Direktchats
       description: >
-        Liefert alle aktiven Admins, Org-Admins und Teamer:innen der aktiven
+        Liefert alle aktiven Admins, die Gemeindeleitung und Teamer:innen der aktiven
         Organisation (ohne den Aufrufer selbst) — bewusst nur die für einen
         Chat noetigen Felder, keine E-Mail/Login-Daten. Mitgliedschaft und
         Rolle werden wie bei /chat/admins ueber Stamm-Organisation ODER
@@ -522,7 +529,7 @@ paths:
                         name: { type: string }
                         type: { type: string, const: admin }
                         role_name: { type: string }
-                        role_description: { type: string, description: 'role_title oder Fallback wie TeamContact.role_description ("Teamer:in", "Org-Leitung", "Leitung"; bis 28.09.2026 "Admin")' }
+                        role_description: { type: string, description: 'role_title oder Fallback wie TeamContact.role_description ("Teamer:in", "Gemeindeleitung", "Leitung"; bis 28.09.2026 "Admin", bis 29.09.2026 "Org-Leitung")' }
                   jahrgang: { type: string }
                   permissions: { type: string, const: direct_only_admin }
         '400': { description: Konfi ist keinem Jahrgang zugewiesen }
@@ -661,7 +668,7 @@ paths:
                 properties:
                   room_id: { type: integer }
                   created: { type: boolean }
-        '400': { description: "Typ/Name fehlt, ungueltiger Typ, jahrgang_id fehlt, ODER type='direct' ohne genau eine weitere Person (error_code direct_nur_zu_zweit, seit 26.09.2026)" }
+        '400': { description: "Typ/Name fehlt, ungueltiger Typ, jahrgang_id fehlt, ODER type='direct' ohne genau eine weitere Person (error_code direct_nur_zu_zweit, seit 26.09.2026), ODER eine Person in participants gehört nicht zur Gemeinde (error_code teilnehmende_nicht_in_gemeinde, seit 29.09.2026, Audit Sicherheit BF-16 -- vorher fiel sie still heraus und der Raum entstand ohne sie; jetzt entsteht kein Raum)" }
         '403': { description: "Konfi mit type != direct, Jahrgang nicht in eigener Org, ODER Konfi-Teilnehmer ausserhalb der zugewiesenen Jahrgaenge (admin/teamer)" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
@@ -833,6 +840,13 @@ paths:
         Ablage, Magic-Bytes-Prüfung) oder JSON mit content. client_id (UUID)
         macht den Aufruf idempotent. reply_to wird gegen den Raum validiert.
         Verteilt via WebSocket und Push an alle Teilnehmer.
+        TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): text/plain
+        und text/csv haben keine Magic Bytes; statt dem Header zu vertrauen,
+        prüft der Server den Inhalt (utils/textDatei.js): höchstens 2 MB
+        (413), keine Binärdaten (415 "Die Datei ist keine Textdatei."),
+        keine HTML-/Skript-Signatur (415 "Textdateien mit HTML oder Skript
+        werden nicht angenommen."). Kein UTF-8-Zwang: Excel-CSV in
+        Windows-1252 geht durch.
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       requestBody:
@@ -855,7 +869,8 @@ paths:
               schema: { $ref: '#/components/schemas/ChatMessage' }
         '400': { description: Weder Inhalt noch Datei / Datei unlesbar / Validierungsfehler }
         '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
-        '415': { description: Dateityp per Magic Bytes nicht verifizierbar }
+        '413': { description: "Datei über 5 MB, Textdatei über 2 MB (seit 29.09.2026)" }
+        '415': { description: "Dateityp per Magic Bytes nicht verifizierbar; Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
@@ -914,8 +929,8 @@ paths:
         als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch
         eingeschlossen) — nicht teamer, nicht konfi.
         Im Text steht hinter jedem Namen die Rolle in Klammern, fuer die
-        bekannten Rollen nach role_name: "Leitung" (admin), "Org-Leitung"
-        (org_admin), "Teamer:in"; sonst roles.display_name (seit 28.09.2026,
+        bekannten Rollen nach role_name: "Leitung" (admin), "Gemeindeleitung"
+        (org_admin, bis 29.09.2026 "Org-Leitung"), "Teamer:in"; sonst roles.display_name (seit 28.09.2026,
         vorher immer display_name, in bestehenden Gemeinden also "Hauptamt").
         Im JSON steht zusaetzlich (ADDITIV) rolle_name neben rolle.
       parameters:
@@ -1108,7 +1123,7 @@ paths:
         - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" }, description: "Serverseitiger Dateiname (Hex) aus der Upload-Antwort bzw. Nachricht" }
         - { name: X-Active-Organization, in: header, required: false, schema: { type: integer }, description: "Aktive Organisation für Multi-Org-Konten (wie beim übrigen API-Zugriff)" }
       responses:
-        '200': { description: "Dateiinhalt (Content-Type aus Original-Dateiname)", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+        '200': { description: "Dateiinhalt (Content-Type aus Original-Dateiname; .txt seit 29.09.2026 immer text/plain; charset=utf-8, .csv text/csv; charset=utf-8 -- vorher ohne Content-Type)", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
         '400': { description: Ungueltiger Dateiname }
         '401': { description: "Token fehlt oder ungueltig — auch wenn es nur als ?token= im Query steht (seit 28.09.2026)" }
         '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
@@ -1571,7 +1586,7 @@ paths:
         '400': { description: Ungueltige Medienart / Pflichtfeld fehlt / Consent ungueltig / Link nicht von einem erlaubten Musikdienst }
         '403': { description: Kein Zugriff auf die Challenge ODER Rolle darf bei dieser audience nicht einreichen }
         '404': { description: Challenge nicht gefunden oder Entwurf }
-        '409': { description: Challenge nicht aktiv ODER bereits eingereicht (allow_multiple=false) }
+        '409': { description: "Challenge nicht aktiv ODER bereits eingereicht (allow_multiple=false). Seit 28.09.2026 auch bei gleichzeitigen Anfragen verlaesslich: Pruefung und INSERT laufen in einer Transaktion unter pg_advisory_xact_lock je (Challenge, Person); vorher kamen zwei gleichzeitige Einreichungen beide durch (Audit Fachlogik Chat, 'Unklar', behoben). Antwortform unveraendert." }
         '415': { description: Dateityp nicht verifizierbar }
         '500': { description: Datenbankfehler }
       x-berechtigung:
@@ -2054,6 +2069,30 @@ paths:
         dieser Antwort enthielt das Postfach (chat.total,
         challengeUpdates.total und challengeApprovals.total zaehlen je ihren
         Bereich); deshalb aendert sich hier kein Wert.
+        GEAENDERT 2026-09-29 (nur Anzeige): Statt des Briefumschlags zeigt die
+        App an der Glocke einen blauen Punkt ohne Symbol. Antwort, Feld und
+        Wert unveraendert.
+        NEU 2026-09-29, additiv: challengeNeueBeitraege -- die rote Zahl am
+        Challenge-Eintrag von Team und Leitung (Simon: "bei jeden Beitrag.
+        Wie im Chat bei jeder Nachricht. Und zusaetzlich Orangen bei
+        Freigaben."). Je laufender Challenge, die die Person sieht, jeder
+        fremde Beitrag seit dem letzten Oeffnen (POST
+        /api/challenges/konfi/{id}/mark-read), freigegeben UND wartend, dazu
+        1 fuer die nie geoeffnete Challenge, bei der das Team mitmacht.
+        Ausgeblendete und Zeitstempel in der Zukunft zaehlen nicht. Ein
+        wartender Beitrag steht damit bis zum Oeffnen hier und bis zur
+        Freigabe in challengeApprovals. Dieselbe Regel-Stelle wie
+        challengeUpdates (utils/challengeNeuigkeiten.js,
+        challengeNeuigkeitenLeitungJeChallenge, Spalte neu), dieselbe
+        Sichtbarkeit (utils/challengeLeitungSicht.js). Fuer Konfis immer
+        leer (total 0): ihre Zahl an der Challenge bleibt challengeUpdates.
+        UNVERAENDERT: pendingChallenges, challengeApprovals und
+        challengeUpdates behalten Bedeutung und Werte -- Reiter und
+        App-Symbol rechnen weiter "wartend + neu freigegeben" (die App 2.3.0
+        addiert pendingChallenges + challengeUpdates.total), eine Challenge,
+        an der nur wartende Beitraege neu sind, erscheint in
+        challengeUpdates.byChallenge nicht. Die App-Icon-Summe
+        (utils/appIconBadge.js) liest challengeNeueBeitraege nicht.
       responses:
         '200':
           description: Zähler
@@ -2115,6 +2154,31 @@ paths:
                         type: object
                         description: Challenge-ID -> Anzahl wartender Beitraege; nur Challenges mit Anzahl > 0
                         additionalProperties: { type: integer }
+                  challengeNeueBeitraege:
+                    type: object
+                    description: >
+                      NEU 2026-09-29, additiv, nur fuer Team und Leitung
+                      gefuellt (Konfis: total 0, beide Objekte leer). Neue
+                      fremde Beitraege seit dem letzten Oeffnen, wartende
+                      eingeschlossen, dazu 1 fuer eine nie geoeffnete
+                      Challenge, bei der das Team mitmacht und die die
+                      Person nicht angelegt hat. Nur laufende Challenges, die
+                      die Person sieht. Oeffnen setzt den Wert der Challenge
+                      auf 0. Fehlt das Feld (aelterer Server), rechnet die
+                      App wie bisher challengeApprovals + challengeUpdates.
+                    properties:
+                      total: { type: integer }
+                      byChallenge:
+                        type: object
+                        description: Challenge-ID -> Anzahl; nur Challenges mit Anzahl > 0
+                        additionalProperties: { type: integer }
+                      wartendByChallenge:
+                        type: object
+                        description: >
+                          Challenge-ID -> wie viele der neuen Beitraege noch
+                          auf Freigabe warten (Vorlesetext der Zahl); nur
+                          Challenges mit Anzahl > 0
+                        additionalProperties: { type: integer }
                   postfach:
                     type: object
                     description: >
@@ -2122,8 +2186,8 @@ paths:
                       Postfach-Mitteilungen (notifications.read_at IS NULL)
                       des Kontos ueber ALLE Organisationen -- bewusst ohne
                       Org-Filter, siehe GET /api/notifications/postfach.
-                      Die App zeigt daraus an der Glocke einen Briefumschlag
-                      (> 0). Anteil an der App-Icon-Summe vom 25.09. bis
+                      Die App zeigt daraus an der Glocke einen blauen Punkt
+                      (> 0; vom 28. bis 29.09.2026 ein Briefumschlag). Anteil an der App-Icon-Summe vom 25.09. bis
                       28.09.2026; seit 2026-09-28 nicht mehr (Feld und Wert
                       unveraendert).
                     properties:
@@ -2460,6 +2524,13 @@ paths:
         Eintrag, kein Fehler.
         Absichtlich ohne Schema-Zwang ausser dem Grund: Die App soll melden
         koennen, auch wenn sie selbst nicht weiss, was schiefgeht.
+        PROTOKOLL OHNE FREITEXT (BEHOBEN 29.09.2026, Audit Sicherheit BF-14):
+        Ins Server-Protokoll gehen nur Werte, die wie ein Kennwort aussehen
+        (grund: Buchstaben/Ziffern/Bindestrich, plattform ios|android|web,
+        app_version x.y.z, app_build Ziffern), sonst ein Platzhalter. Vom
+        hinweis bleiben die Zahl der Versuche und Fehlercodes in
+        Grossbuchstaben (z. B. SERVICE_NOT_AVAILABLE) samt Laenge; der Rest
+        wird nicht protokolliert. Anfrage und Antwort unveraendert.
       requestBody:
         required: false
         content:
@@ -2472,7 +2543,7 @@ paths:
                 plattform: { type: string }
                 app_version: { type: string }
                 app_build: { type: string }
-                hinweis: { type: string, description: "Freitext, auf 200 Zeichen gekuerzt" }
+                hinweis: { type: string, description: "Freitext; ins Protokoll gehen seit 29.09.2026 nur Versuche und Fehlercodes daraus" }
       responses:
         '200': { description: Aufgenommen }
         '401': { $ref: '#/components/responses/Unauthorized' }

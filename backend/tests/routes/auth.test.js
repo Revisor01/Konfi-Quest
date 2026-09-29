@@ -1133,7 +1133,7 @@ describe('Auth Routes', () => {
         .set('X-Active-Organization', '1')
         .send({ organization_id: 2 });
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Diese Organisation ist derzeit gesperrt');
+      expect(res.body.error).toBe('Diese Gemeinde ist derzeit gesperrt');
     });
 
     it('X-Active-Organization schaltet org-isolierte Daten auf die aktive Org', async () => {

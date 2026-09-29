@@ -11,13 +11,13 @@ const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { darfJahrgang } = require('../utils/jahrgangsZugriff');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
-const { deletePhotoFile, deleteChallengeFile, deleteChatFile } = require('../utils/photoStorage');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
 const liveUpdate = require('../utils/liveUpdate');
-const { loescheMitteilungenZuAntraegen, loescheMitteilungenUeberPerson } = require('../utils/postfachAufraeumen');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
+const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
@@ -254,7 +254,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       const { rows: [role] } = await db.query(roleCheckQuery, [role_id, organizationId]);
 
       if (!role) {
-        return res.status(400).json({ error: 'Ungültige Rolle für diese Organisation' });
+        return res.status(400).json({ error: 'Ungültige Rolle für diese Gemeinde' });
       }
 
       // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig, case-insensitiv —
@@ -349,15 +349,17 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         [id, organizationId]
       );
       if (!user) {
-        return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+        return res.status(404).json({ error: 'Benutzer in dieser Gemeinde nicht gefunden' });
       }
 
       // Verify role exists in organization if role_id is provided
+      let neueRolle = null;
       if (role_id) {
-        const { rows: [role] } = await db.query("SELECT id FROM roles WHERE id = $1 AND organization_id = $2", [role_id, organizationId]);
+        const { rows: [role] } = await db.query("SELECT id, name FROM roles WHERE id = $1 AND organization_id = $2", [role_id, organizationId]);
         if (!role) {
-          return res.status(400).json({ error: 'Ungültige Rolle für diese Organisation' });
+          return res.status(400).json({ error: 'Ungültige Rolle für diese Gemeinde' });
         }
+        neueRolle = role;
       }
 
       // IN EINER WEITEREN GEMEINDE NUR DIE ROLLE. Name, Benutzername, E-Mail,
@@ -389,6 +391,18 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         }
         if (role_id === undefined) {
           return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
+        }
+      }
+
+      // KONFI UND TEAM NIE ZUGLEICH (Simon, 28.09.2026), auch nicht ueber
+      // Gemeindegrenzen: In einer weiteren Gemeinde gibt es keine Konfis, und
+      // zuhause wird nur Konfi, wer keine weitere Gemeinde hat. Bis dahin
+      // schrieb dieser Weg jede Rolle der Gemeinde -- die Oberflaeche bietet
+      // die Konfi-Rolle nicht an, der Server liess sie aber zu.
+      if (neueRolle) {
+        const konflikt = await pruefeKonfiOderTeam(db, { userId: id, organizationId, rolle: neueRolle.name });
+        if (konflikt) {
+          return res.status(409).json(konflikt);
         }
       }
 
@@ -434,7 +448,29 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         const whereClause = `WHERE id = $${updateParams.length - 1} AND organization_id = $${updateParams.length}`;
         const updateQuery = `UPDATE users SET ${updateFields.join(', ')} ${whereClause}`;
 
-        ({ rowCount } = await db.query(updateQuery, updateParams));
+        // DIE ZEILE DER STAMM-GEMEINDE IN user_organizations WECHSELT MIT
+        // (28.09.2026). Migration 101 hat jedes damalige Konto mit seiner
+        // Rolle auch dort eingetragen. Wechselte danach nur users.role_id,
+        // stand in user_organizations die alte Rolle -- aus einer Teamer:in,
+        // die Konfi war, wurde fuer jede Abfrage ueber user_organizations
+        // wieder eine Konfi. Beides in EINER Transaktion.
+        const client = await db.getClient();
+        try {
+          await client.query('BEGIN');
+          ({ rowCount } = await client.query(updateQuery, updateParams));
+          if (rowCount > 0 && neueRolle) {
+            await client.query(
+              'UPDATE user_organizations SET role_id = $1 WHERE user_id = $2 AND organization_id = $3',
+              [neueRolle.id, id, organizationId]
+            );
+          }
+          await client.query('COMMIT');
+        } catch (txErr) {
+          await client.query('ROLLBACK').catch(() => {});
+          throw txErr;
+        } finally {
+          client.release();
+        }
       } else {
         // Zusatzmitglied: Die Rolle gilt je Gemeinde und steht in
         // user_organizations -- users.role_id (Stamm-Gemeinde) bleibt.
@@ -693,7 +729,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
           );
           if (rowCount === 0) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+            return res.status(404).json({ error: 'Benutzer in dieser Gemeinde nicht gefunden' });
           }
           // Zuweisungen und die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde
           // gehen mit, wie beim Umzug (kontoZiehtUm) und beim Entzug durch den
@@ -749,7 +785,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             ['org_admin', organizationId, id]
           );
           if (orgAdminCount.rows[0].count === 0) {
-            return res.status(409).json({ error: 'Die letzte Org-Leitung kann nicht gelöscht werden' });
+            return res.status(409).json({ error: 'Die letzte Gemeindeleitung kann nicht gelöscht werden' });
           }
         }
       }
@@ -783,167 +819,29 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       return;
     }
 
+    // NUR HIER MITGLIED: DAS KONTO GEHT (dritter Fall). Dieselbe Funktion wie
+    // DELETE /admin/konfis/:id, die Selbstloeschung und die automatische
+    // Loeschung (utils/kontoLoeschen.js; Simon, 28.09.2026: "konto löschen
+    // muss wirklich alles löschen."). Bis dahin stand hier eine eigene Kopie,
+    // die u. a. keine Warteliste nachruecken liess und Zweiergespraeche mit
+    // dem Namen der Person stehen liess.
     const client = await db.getClient();
     // Vor dem try deklariert, weil die Nacharbeit hinter dem finally sie braucht.
-    let photoFilenames = [];
-    let challengeFiles = [];
-    let chatFiles = [];
+    let ergebnis = null;
     let nichtGefunden = false;
     try {
       await client.query('BEGIN');
-
-      // Delete user jahrgang assignments
-      await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [id]);
-
-      // Verwaiste FK-Referenzen auf diesen User aufloesen, bevor users gelöscht wird.
-      // admin_id/created_by referenzieren den HANDELNDEN User (nicht das Subjekt) — diese
-      // Historie der Konfis bleibt erhalten, die Referenz wird anonymisiert (SET NULL).
-      // Tabellen mit NOT-NULL-Referenz (invite_codes.created_by) werden gelöscht.
-      // Pro Statement fehlertolerant: nicht vorhandene Spalten/Tabellen duerfen den
-      // Loeschvorgang nicht kippen (Schema variiert je nach Migrationsstand).
-      const nullifyRefs = [
-        "UPDATE bonus_points SET admin_id = NULL WHERE admin_id = $1",
-        "UPDATE event_points SET admin_id = NULL WHERE admin_id = $1",
-        "UPDATE user_activities SET admin_id = NULL WHERE admin_id = $1",
-        "UPDATE user_certificates SET admin_id = NULL WHERE admin_id = $1",
-        "UPDATE materials SET created_by = NULL WHERE created_by = $1",
-        "UPDATE chat_rooms SET created_by = NULL WHERE created_by = $1",
-        "UPDATE activity_requests SET approved_by = NULL WHERE approved_by = $1",
-        // Diese vier fehlten hier, während konfiDeletion.js sie laengst kennt
-        // (Reparatur vom 22.08.2026, hierher nie übertragen). Wer als
-        // Teamer:in je einen Termin angelegt oder jemandem einen Jahrgang
-        // zugewiesen hat, liess sich deshalb von der Leitung nicht löschen —
-        // die Selbstloeschung derselben Person funktionierte dagegen.
-        "UPDATE events SET created_by = NULL WHERE created_by = $1",
-        "UPDATE custom_badges SET created_by = NULL WHERE created_by = $1",
-        "UPDATE levels SET created_by = NULL WHERE created_by = $1",
-        "UPDATE user_jahrgang_assignments SET assigned_by = NULL WHERE assigned_by = $1",
-      ];
-      for (const sql of nullifyRefs) {
-        // SAVEPOINT: bei nicht vorhandener Spalte/Tabelle (42703/42P01) nur dieses
-        // eine Statement zuruecknehmen, nicht die ganze Transaktion aborten.
-        await client.query('SAVEPOINT ref_nullify');
-        try {
-          await client.query(sql, [id]);
-          await client.query('RELEASE SAVEPOINT ref_nullify');
-        } catch (refErr) {
-          await client.query('ROLLBACK TO SAVEPOINT ref_nullify');
-          if (refErr.code !== '42703' && refErr.code !== '42P01') throw refErr;
-        }
-      }
-      // invite_codes.created_by ist NOT NULL -> Eintraege löschen
-      await client.query("DELETE FROM invite_codes WHERE created_by = $1", [id]);
-      // Chat-Daten des Users (Teamer/Admin können Teilnehmer/Autoren sein)
-      await client.query("DELETE FROM chat_participants WHERE user_id = $1", [id]);
-      await client.query("DELETE FROM chat_read_status WHERE user_id = $1", [id]);
-      // Chat-Anhaenge: Dateipfade VOR dem Löschen der Nachrichten einsammeln —
-      // die DB-Zeilen verschwinden gleich, die verschluesselten Dateien auf der
-      // Platte sonst nicht (DSGVO Art. 17, Befund 26.08.2026). Entfernt werden
-      // sie erst nach erfolgreichem COMMIT.
-      try {
-        const { rows } = await client.query(
-          "SELECT file_path FROM chat_messages WHERE user_id = $1 AND file_path IS NOT NULL",
-          [id]
-        );
-        chatFiles = rows.map(r => r.file_path);
-      } catch (chatErr) {
-        // Spalte/Tabelle evtl. nicht vorhanden (Schema-Varianz) — nicht kippen
-        if (chatErr.code !== '42703' && chatErr.code !== '42P01') throw chatErr;
-      }
-      await client.query("DELETE FROM chat_messages WHERE user_id = $1", [id]);
-      // Verwaiste Direct-Räume (kein Teilnehmer mehr uebrig) mitloeschen —
-      // sonst bleiben Raum-Leichen zurück (Audit Achse 1, F3: Räume 50/51).
-      // Die Cascade-Kette aus Migration 102 nimmt Nachrichten der Partner:in,
-      // Polls und Read-Status automatisch mit.
-      await client.query(`
-        DELETE FROM chat_rooms r
-        WHERE r.type = 'direct'
-        AND NOT EXISTS (SELECT 1 FROM chat_participants p WHERE p.room_id = r.id)
-      `);
-      await client.query("DELETE FROM notifications WHERE user_id = $1", [id]);
-      await client.query("DELETE FROM push_tokens WHERE user_id = $1", [id]);
-      await client.query("DELETE FROM password_resets WHERE user_id = $1", [id]);
-
-      // Nachweisfotos der Anträge dieses Users einsammeln, BEVOR activity_requests
-      // im Purge unten gelöscht wird — sonst blieben die Dateien als Leichen liegen.
-      // Entfernt werden sie erst nach erfolgreichem COMMIT.
-      // Dabei auch die Kennungen der Antraege einsammeln: "Neuer Antrag
-      // eingegangen" liegt im Postfach der LEITUNG und wuerde sonst auf einen
-      // Antrag zeigen, den es nach dem Purge nicht mehr gibt (25.09.2026,
-      // utils/postfachAufraeumen.js).
-      let antragIds = [];
-      try {
-        const { rows } = await client.query(
-          "SELECT id, photo_filename FROM activity_requests WHERE user_id = $1",
-          [id]
-        );
-        antragIds = rows.map(r => r.id);
-        photoFilenames = rows.map(r => r.photo_filename).filter(Boolean);
-      } catch (photoErr) {
-        // activity_requests evtl. nicht vorhanden (Schema-Varianz) — nicht kippen
-        if (photoErr.code !== '42703' && photoErr.code !== '42P01') throw photoErr;
-      }
-
-      // Dasselbe für Challenge-Beitraege: Die DB-Zeilen verschwinden per
-      // CASCADE mit dem User, die verschluesselten Dateien auf der Platte aber
-      // nicht. konfiDeletion.js macht das laengst, dieser Pfad nicht — auch
-      // Teamer:innen reichen Beitraege ein (DSGVO Art. 17, Befund 24.08.2026).
-      try {
-        const { rows } = await client.query(
-          "SELECT file_path FROM challenge_submissions WHERE user_id = $1 AND file_path IS NOT NULL",
-          [id]
-        );
-        challengeFiles = rows.map(r => r.file_path);
-      } catch (chErr) {
-        if (chErr.code !== '42703' && chErr.code !== '42P01') throw chErr;
-      }
-
-      // Konfi-History DIESES Users mitloeschen. Wichtig: Diese Tabellen tragen
-      // (aus der SQLite-Altlast) einen zweiten NO-ACTION-FK auf users(id) neben
-      // dem CASCADE-FK — NO ACTION gewinnt und wuerde den User-Delete sonst mit
-      // "violates foreign key constraint" (500) blocken. Der NO-ACTION-Schutz ist
-      // gewollt für den JAHRGANG-Delete (dort bleibt der User bestehen und behält
-      // seine History). Wird der USER selbst gelöscht, gehört seine History mit weg.
-      // Fehlertolerant (Schema-Varianz je Migrationsstand), analog zu nullifyRefs.
-      const purgeHistory = [
-        "DELETE FROM activity_requests WHERE user_id = $1",
-        "DELETE FROM bonus_points WHERE konfi_id = $1",
-        "DELETE FROM user_activities WHERE user_id = $1",
-        "DELETE FROM user_badges WHERE user_id = $1",
-        "DELETE FROM event_points WHERE konfi_id = $1",
-        "DELETE FROM event_bookings WHERE user_id = $1",
-        "DELETE FROM konfi_profiles WHERE user_id = $1",
-        // Empfangene Urkunden. Der Fremdschlüssel hat kein ON DELETE und
-        // blockierte jede Löschung einer ausgezeichneten Person — oben wird
-        // nur admin_id genullt, also die verleihende Seite (Befund 24.08.2026,
-        // gegen Produktion nachgewiesen).
-        "DELETE FROM user_certificates WHERE user_id = $1",
-      ];
-      for (const sql of purgeHistory) {
-        await client.query('SAVEPOINT hist_purge');
-        try {
-          await client.query(sql, [id]);
-          await client.query('RELEASE SAVEPOINT hist_purge');
-        } catch (histErr) {
-          await client.query('ROLLBACK TO SAVEPOINT hist_purge');
-          if (histErr.code !== '42703' && histErr.code !== '42P01') throw histErr;
-        }
-      }
-      // Postfach (25.09.2026): siehe Einsammeln der Kennungen oben.
-      await loescheMitteilungenZuAntraegen(client, antragIds);
-      // Und die Leitungs-Mitteilungen UEBER die Person -- Zu-/Absagen samt
-      // Grund, Beitraege, bei Konfis Registrierung und Abmeldungen (Audit
-      // "Wer bekommt was" BF-13 / F-07; derselbe Aufruf wie in
-      // utils/konfiDeletion.js).
-      await loescheMitteilungenUeberPerson(client, id);
-
-      // Delete user
-      const deleteUserResult = await client.query("DELETE FROM users WHERE id = $1 AND organization_id = $2", [id, organizationId]);
-
-      if (deleteUserResult.rowCount === 0) {
+      // Gehoert das Konto (noch) hierher? Die Zeile bleibt bis zum COMMIT
+      // gesperrt -- ein gleichzeitiger Umzug oder eine Selbstloeschung wartet.
+      const { rows: [ziel] } = await client.query(
+        'SELECT id FROM users WHERE id = $1 AND organization_id = $2 FOR UPDATE',
+        [id, organizationId]
+      );
+      if (!ziel) {
         await client.query('ROLLBACK');
         nichtGefunden = true;
       } else {
+        ergebnis = await kontoDatenLoeschen(client, id);
         await client.query('COMMIT');
       }
     } catch (err) {
@@ -952,15 +850,15 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       return res.status(500).json({ error: 'Datenbankfehler' });
     } finally {
       // KEIN client.release() im try — nur hier. Die Nacharbeit unten
-      // (Sockets trennen, drei Dateilösch-Schleifen, Antwort, Live-Update)
-      // lief frueher NACH dem Release im try: ein Fehler dort landete im
-      // Transaktions-catch und setzte ein ROLLBACK auf eine Verbindung ab,
-      // die inzwischen ein anderer Request aus dem Pool hatte.
+      // (Sockets trennen, Dateien, Antwort, Live-Update) lief frueher NACH
+      // dem Release im try: ein Fehler dort landete im Transaktions-catch und
+      // setzte ein ROLLBACK auf eine Verbindung ab, die inzwischen ein
+      // anderer Request aus dem Pool hatte.
       client.release();
     }
 
     if (nichtGefunden) {
-      return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+      return res.status(404).json({ error: 'Benutzer in dieser Gemeinde nicht gefunden' });
     }
 
     try {
@@ -973,24 +871,19 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // liest ein noch verbundener Client mit toter Session weiter Live-Updates
       // mit, bis er von selbst neu verbindet. Nach dem COMMIT (User ist weg).
       liveUpdate.disconnectUserSockets(parseInt(id));
-
-      // Foto-Dateien nach COMMIT vom Dateisystem entfernen (nicht blockierend)
-      for (const filename of photoFilenames) {
-        await deletePhotoFile(filename);
-      }
-      for (const filePath of challengeFiles) {
-        await deleteChallengeFile(filePath);
-      }
-      for (const filePath of chatFiles) {
-        await deleteChatFile(filePath);
-      }
     } catch (nachErr) {
       // Der Benutzer ist geloescht — das ist festgeschrieben. Ein Fehler beim
       // Aufraeumen darf die Antwort nicht mehr in einen 500 kippen.
       console.error('Aufraeumen nach DELETE /users/%s fehlgeschlagen:', id, nachErr);
     }
+    // Dateien nach dem COMMIT (wirft nie, protokolliert ohne Dateinamen).
+    await kontoDateienLoeschen(ergebnis?.dateien);
 
     res.json({ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false });
+
+    // Nachgerueckte benachrichtigen (je Gemeinde ihres Events), Chatlisten
+    // der Gespraechspartner:innen auffrischen. Wirft nie.
+    await meldeNachKontoLoeschung(db, ergebnis);
 
     // Live-Update NACH der Response: geloeschter Benutzer aus der Benutzer-Liste.
     try {
@@ -1037,7 +930,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             [userId, organizationId]
         );
         if (!user) {
-            return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+            return res.status(404).json({ error: 'Benutzer in dieser Gemeinde nicht gefunden' });
         }
 
         const client = await db.getClient();
@@ -1138,7 +1031,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             // (user_id, jahrgang_id) mit 500 zu scheitern.
             if (validJahrgaenge.length !== jahrgangIds.length) {
                 await client.query('ROLLBACK');
-                fruehAntwort = { status: 400, body: { error: 'Mindestens eine Jahrgangs-ID ist ungültig oder gehört nicht zu dieser Organisation.' } };
+                fruehAntwort = { status: 400, body: { error: 'Mindestens eine Jahrgangs-ID ist ungültig oder gehört nicht zu dieser Gemeinde.' } };
             } else {
             // Now, insert all new assignments
             for (const assignment of einzufuegen) {

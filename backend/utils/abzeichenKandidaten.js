@@ -61,6 +61,13 @@
  * darum, eine Änderung nicht zu übersehen. Lieber einmal zu viel geprüft als
  * einmal zu wenig.
  *
+ * MEHRERE GEMEINDEN (28.09.2026): Eine Person darf mehrfach in `personen`
+ * stehen, einmal je Gemeinde, in der sie Konfi oder Teamer:in ist (der
+ * Hintergrund-Lauf prueft jede Gemeinde fuer sich). Der Abdruck bleibt EINER
+ * je Person; er enthaelt die Kataloge ALLER ihrer Gemeinden, nach
+ * Gemeinde sortiert -- sonst uebersaehe ein geaenderter Katalog der weiteren
+ * Gemeinde die Person. Mit einer Gemeinde ist der Abdruck derselbe wie zuvor.
+ *
  * @param {object} db            Pool oder Client
  * @param {Array<{user_id:number, organization_id:number}>} personen
  * @returns {Promise<Map<number, string>>}  user_id -> Fingerabdruck
@@ -173,8 +180,18 @@ async function abzeichenFingerabdruecke(db, personen) {
     mKatalog.set(Number(r.organization_id), `${r.anzahl}:${r.summe}:${r.pruefsumme}`);
   }
 
+  // Gemeinden je Person (siehe MEHRERE GEMEINDEN oben).
+  const gemeindenJe = new Map();
   for (const p of personen) {
-    const id = p.user_id;
+    if (!gemeindenJe.has(p.user_id)) gemeindenJe.set(p.user_id, new Set());
+    gemeindenJe.get(p.user_id).add(p.organization_id);
+  }
+
+  for (const [id, gemeinden] of gemeindenJe) {
+    const kataloge = [...gemeinden]
+      .sort((a, b) => Number(a) - Number(b))
+      .map(org => mKatalog.get(Number(org)) || '-')
+      .join(',');
     abdruecke.set(id, [
       mAkt.get(id) || '-',
       mBuch.get(id) || '-',
@@ -182,7 +199,7 @@ async function abzeichenFingerabdruecke(db, personen) {
       mProfil.get(id) || '-',
       mAbz.get(id) || '-',
       mSeit.get(id) || '-',
-      mKatalog.get(p.organization_id) || '-'
+      kataloge
     ].join('|'));
   }
 

@@ -134,7 +134,10 @@
 #      gemeldete MIME-Liste, danach Magic-Bytes-Prüfung mit file-type auf
 #      dem Buffer (415 bei Nichtuebereinstimmung). text/plain und text/csv
 #      sind von der Magic-Bytes-Prüfung ausgenommen, weil sie keine Signatur
-#      haben.
+#      haben; seit 29.09.2026 wird bei ihnen der Inhalt geprüft (Audit
+#      Sicherheit BF-20, utils/textDatei.js: max. 2 MB, keine Binärdaten,
+#      keine HTML-/Skript-Signatur) und beim Download text/plain bzw.
+#      text/csv mit charset=utf-8 gesetzt.
 #    - Ablage: AES-256-GCM-verschlüsselt (utils/photoCrypto), zufaelliger
 #      64-Hex-Dateiname in backend/uploads/material. Das Verzeichnis wird
 #      nicht statisch ausgeliefert.
@@ -191,8 +194,13 @@
 #       werden nicht mehr ueber toISOString gebildet.
 #   T1  POST /api/teamer/requests: client_id-Idempotenz ohne user/org-Scope.
 #   T2  GET /api/teamer/{userId}/certificates ohne Rollen-Prüfung.
-#   T3  DELETE /api/teamer/certificate-types/{id}: 409-Sperre zählt
-#       organisationsuebergreifend.
+#       Seit 29.09.2026 (Audit Sicherheit BF-16): 404 fuer Personen, die
+#       nicht zur aktiven Gemeinde gehoeren (vorher 200 []).
+#   T3  BEHOBEN 29.09.2026 (Audit Sicherheit BF-16). DELETE
+#       /api/teamer/certificate-types/{id}: Die 409-Sperre zaehlte
+#       organisationsuebergreifend und kam VOR der Gemeinde-Pruefung --
+#       ein fremder Typ antwortete "bereits im Team vergeben". Jetzt zuerst
+#       404.
 #   T4  Inline-Check "nur Rolle teamer" nur auf 6 von 12 Selbstbedienungs-
 #       Routen - uneinheitlich.
 # =====================================================================
@@ -227,7 +235,7 @@ components:
       description: >
         JWT im Authorization-Header. Optional Header X-Active-Organization
         (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
-        Mitglied ist (sonst 403).
+        Mitglied ist (sonst 403 mit error_code org_kein_zugriff).
   parameters:
     pathId:
       description: "Numerische ID des Objekts im Pfad (welches Objekt, sagt die jeweilige Route)"
@@ -268,7 +276,7 @@ components:
               properties:
                 version: { type: integer, description: "Aufbau der Kopie, heute 1" }
                 jahrgang_name: { type: [string, 'null'], description: "Bleibt, auch wenn der Jahrgang geloescht ist" }
-                anlass: { type: string, enum: [befoerderung, jahrgang_geloescht] }
+                anlass: { type: string, enum: [befoerderung, jahrgang_geloescht, abzeichen_geloescht, abzeichen_geaendert], description: "abzeichen_*: seit 28.09.2026 (Migration 172) -- Kopie vor dem Loeschen oder Aendern eines Konfi-Badges fuer Befoerderte ohne Kopie" }
                 erstellt_am: { type: [string, 'null'], format: date-time }
                 jahrgang: { type: [object, 'null'], properties: { id: { type: integer }, name: { type: string } } }
                 punkte: { type: object, properties: { gottesdienst: { type: integer }, gemeinde: { type: integer }, gesamt: { type: integer } } }
@@ -419,6 +427,20 @@ paths:
         Teamer-Abzeichen (z. B. criteria_type 'teamer_year') landeten dadurch
         in der Konfi-Historie. Teamer-Abzeichen liefert GET
         /api/teamer/badges/v2.
+
+        AUS DER KOPIE DER KONFI-ZEIT (28.09.2026, Simon: "Geloeschte Badges
+        muessen bei befoerdertem erhalten bleiben. Auch wenn wir die zb
+        aendern."): Gibt es fuer die Person in der aktiven Gemeinde eine
+        Kopie (konfi_historie, juengste), kommt konfi_data.badges aus deren
+        `abzeichen` — so, wie die Badges verdient wurden, auch nachdem die
+        Leitung ein Badge geloescht oder geaendert hat. Ohne Kopie wie
+        bisher live aus user_badges/custom_badges. DIESELBE FORM wie live
+        (Vertrag der Store-Apps 2.2.0/2.3.0, TeamerKonfiStatsPage und
+        BadgePopoverContent): badge_id (integer), name, description
+        (string|null), icon, color, criteria_type, criteria_value (integer),
+        awarded_date (ISO-Zeitstempel), neueste zuerst. Die Kopie traegt alle
+        acht Felder (beschreibung, farbe, kriterium, kriterium_wert,
+        verliehen_am); nichts muss erfunden werden.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, "Inline-Check role_name === 'teamer'"]
@@ -449,6 +471,24 @@ paths:
                   konfi_data:
                     type: [object, "null"]
                     description: "gottesdienst_points, gemeinde_points, jahrgang_name, badges[] - null bei Teamer:innen ohne Konfi-Vergangenheit"
+                    properties:
+                      gottesdienst_points: { type: integer }
+                      gemeinde_points: { type: integer }
+                      jahrgang_name: { type: string, description: "leer, wenn der Jahrgang geloescht wurde" }
+                      badges:
+                        type: array
+                        description: "Konfi-Abzeichen; bei vorhandener Kopie der Konfi-Zeit aus ihr (seit 28.09.2026), sonst live"
+                        items:
+                          type: object
+                          properties:
+                            badge_id: { type: integer }
+                            name: { type: string }
+                            description: { type: [string, "null"] }
+                            icon: { type: [string, "null"] }
+                            color: { type: [string, "null"] }
+                            criteria_type: { type: [string, "null"] }
+                            criteria_value: { type: [integer, "null"] }
+                            awarded_date: { type: [string, "null"], format: date-time }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer (org_admin/admin bekommen hier 403)" }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -703,11 +743,21 @@ paths:
         Erhalten bleiben criteria_type, criteria_value, criteria_extra,
         is_active, is_hidden und sort_order — die Ansichten gruppieren,
         sortieren und filtern danach.
+
+        JE GEMEINDE (geprueft 28.09.2026, Simon: "Es bleibt immer an der
+        Gemeinde!"): Abzeichen, Fortschritt und Verleihungen kommen aus der
+        AKTIVEN Gemeinde (nach switch-org bzw. X-Active-Organization); wer in
+        einer weiteren Gemeinde Teamer:in ist, bekommt dort 200 mit deren
+        Abzeichen, gezaehlt werden nur Aktivitaeten und Events dieser
+        Gemeinde. Dasselbe fuer GET /teamer/badges, /teamer/badges/unseen,
+        PUT und POST /teamer/badges/mark-seen und newBadges in
+        GET /notifications/badge-counts. Test
+        tests/routes/teamerBadgesJeGemeinde.test.js.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
         org-scope: true
-        objekt-pruefung: "nur eigene Daten; alle Teilabfragen mit user_id + organization_id"
+        objekt-pruefung: "nur eigene Daten; alle Teilabfragen mit user_id + organization_id der aktiven Gemeinde"
       responses:
         "200":
           description: "{ available, earned, stats }: available = offene, erreichbare, nicht geheime Abzeichen; earned = alle verdienten (auch geheime und abgeschaltete); je Abzeichen id, name, description, icon, color, criteria_type, criteria_value, criteria_extra, is_hidden, is_active, sort_order, earned, earned_at, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — gezaehlt werden nur aktive, erreichbare Abzeichen."
@@ -790,11 +840,21 @@ paths:
         aus GET /api/teamer/badges wäre hier ungenutzt. Der Zielbenutzer muss
         die Rolle teamer haben, zur eigenen Organisation gehören und darf
         nicht gelöscht sein.
+
+        BEHOBEN 28.09.2026 (Audit Punkte/Termine, Tabelle "Rolle je
+        Gemeinde"; Simon: "Es bleibt immer an der Gemeinde!"): Rolle und
+        Gemeinde kamen vom Konto (users.role_id, users.organization_id) --
+        fuer eine Teamer:in, die ueber user_organizations in der aktiven
+        Gemeinde mitarbeitet, bekam deren Leitung 404. Jetzt die Rolle IN
+        DIESER Gemeinde ueber beide Quellen (utils/orgMitglieder.js,
+        ladeRolleInGemeinde; in der Stamm-Gemeinde gewinnt users.role_id).
+        Die Abzeichen bleiben auf die aktive Gemeinde begrenzt. Antwortform
+        unveraendert. Test tests/routes/teamerBadgesJeGemeinde.test.js.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "Ziel-User muss Rolle 'teamer' haben, zur aktiven Org gehören und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer'"
+        objekt-pruefung: "Ziel-User muss in der aktiven Org die Rolle 'teamer' haben (Stamm-Gemeinde oder user_organizations) und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer' und organization_id der aktiven Org"
       parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
       responses:
         "200": { description: "earned[] (id, name, description, icon, color, criteria_type, criteria_value, is_hidden, earned_at)" }
@@ -898,8 +958,8 @@ paths:
         "200": { description: Geloescht }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "404": { $ref: '#/components/responses/NotFound' }
-        "409": { description: Typ ist bereits vergeben und kann nicht geloescht werden }
+        "404": { description: "Typ nicht in dieser Gemeinde -- seit 29.09.2026 VOR der Vergabe-Prüfung (T3)" }
+        "409": { description: Typ ist bereits vergeben und kann nicht geloescht werden (nur eigene Typen) }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/teamer/{userId}/certificates:
@@ -910,7 +970,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "user_certificates gefiltert auf user_id + organization_id"
+        objekt-pruefung: "Person muss Mitglied der aktiven Gemeinde sein (beide Quellen, utils/orgMitglieder.js; 404 sonst, seit 29.09.2026); user_certificates gefiltert auf user_id + organization_id"
         hinweis: >
           # BEFUND T2: Anders als die Badge- und die POST-Variante prüft diese
           Route NICHT, ob der Ziel-User die Rolle 'teamer' hat. Für beliebige
@@ -921,6 +981,7 @@ paths:
         "200": { description: "Array (id, issued_date, expiry_date, created_at, certificate_type_id, name, icon)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: "Person gehört nicht zur aktiven Gemeinde (seit 29.09.2026; vorher 200 [])" }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
       tags: ["Teamer:innen"]
@@ -932,11 +993,17 @@ paths:
         Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht.
         Seit 25.09.2026 landet die Mitteilung (Art `certificate`) auch im
         Postfach der Teamer:in (utils/postfachArten.js).
+
+        BEHOBEN 28.09.2026 (wie GET /teamer/{userId}/badges): Die Pruefung
+        las Rolle und Gemeinde am Konto; einer Teamer:in aus einer weiteren
+        Gemeinde liess sich hier kein Zertifikat verleihen (404). Jetzt die
+        Rolle IN DIESER Gemeinde ueber beide Quellen. Das Zertifikat gehoert
+        der verleihenden Gemeinde (organization_id, Typ nur aus ihr).
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCertificate]
         org-scope: true
-        objekt-pruefung: "Ziel-User: organization_id + Rolle 'teamer' (404 sonst); certificate_type: organization_id + is_active (404 sonst)"
+        objekt-pruefung: "Ziel-User: Rolle 'teamer' in der aktiven Org, Stamm-Gemeinde oder user_organizations (404 sonst); certificate_type: organization_id + is_active (404 sonst)"
       parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
       requestBody:
         required: true
@@ -1453,7 +1520,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "materials.organization_id; der Termin selbst wird nicht separat geprüft - ein fremder eventId liefert schlicht eine leere Liste"
+        objekt-pruefung: "Termin muss zur aktiven Gemeinde gehören (404 sonst, seit 29.09.2026, Audit Sicherheit BF-16 -- vorher 200 []); materials.organization_id"
         hinweis: >
           Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am
           24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang
@@ -1474,6 +1541,7 @@ paths:
         "200": { description: "Array (id, title, description, link_url, ist_global, created_at, created_by, created_by_name, file_count)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: "Termin nicht in dieser Gemeinde (seit 29.09.2026; die Apps fangen den Fehler ab und zeigen keine Materialien)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/material/{id}:
@@ -1620,6 +1688,12 @@ paths:
         text/plain und text/csv sind ausgenommen, weil sie keine Signatur
         haben). Gespeichert wird AES-256-GCM-verschlüsselt unter einem
         zufaelligen 64-Hex-Dateinamen.
+        TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): Statt dem
+        Header zu vertrauen, prüft der Server den Inhalt -- höchstens 2 MB
+        (413), keine Binärdaten, keine HTML-/Skript-Signatur (415, Meldung
+        mit dem Dateinamen in Klammern). Kein UTF-8-Zwang (Excel-CSV in
+        Windows-1252 geht durch). Geprüft wird weiterhin alles, bevor die
+        erste Datei abgelegt wird.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "multer materialUpload.array('files', 10)"]
@@ -1650,8 +1724,8 @@ paths:
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Rolle nicht berechtigt, oder nicht die erstellende Person (Ersteller-Regel seit 01.09.2026)" }
         "404": { $ref: '#/components/responses/NotFound' }
-        "413": { description: "Datei ueberschreitet 20 MB (globaler Multer-Handler in createApp.js)" }
-        "415": { description: Dateityp nicht verifizierbar (Magic-Bytes) }
+        "413": { description: "Datei ueberschreitet 20 MB (globaler Multer-Handler in createApp.js); Textdatei über 2 MB (seit 29.09.2026)" }
+        "415": { description: "Dateityp nicht verifizierbar (Magic-Bytes); Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/material/files/{fileRef}:
@@ -1683,7 +1757,7 @@ paths:
             GET /api/material/{id}), NICHT die numerische id.
           schema: { type: string, pattern: "^[a-f0-9]{64}$" }
       responses:
-        "200": { description: Datei als Download (Content-Type aus mime_type, Content-Disposition attachment) }
+        "200": { description: "Datei als Download (Content-Type aus mime_type, Content-Disposition attachment); text/plain und text/csv seit 29.09.2026 mit charset=utf-8" }
         "400": { description: Ungueltiger Dateiname }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
@@ -2008,8 +2082,14 @@ paths:
         objekt-pruefung: >
           Ausgabe muss zur aktiven Org gehoeren (sonst 404). Teamer-Ausgaben
           nur org_admin (sonst 403). Konfi-Ausgaben: Admin braucht eine
-          Zuweisung auf den Jahrgang (sonst 403). Rolle super_admin faellt
-          an requireAdmin durch (403); rollen-Zeile nachgezogen am 26.09.2026.
+          Zuweisung MIT can_edit auf den Jahrgang (darfJahrgang edit, wie
+          POST /api/wrapped/generate/{jahrgangId}; sonst 403 "Kein Zugriff
+          auf diesen Jahrgang"). Rolle super_admin faellt an requireAdmin
+          durch (403); rollen-Zeile nachgezogen am 26.09.2026.
+          BEHOBEN 28.09.2026 (Audit Fachlogik Chat/Challenges/Rueckblick
+          BF-13): Vorher genuegte irgendeine Zuweisung -- ein Admin mit reiner
+          Lese-Zuweisung konnte loeschen, aber nicht anlegen. Tests:
+          backend/tests/routes/wrappedAusgabeLoeschenRecht.test.js.
       responses:
         "200": { description: "message, deleted (Anzahl geloeschter Rueckblicke)" }
         "401": { $ref: '#/components/responses/Unauthorized' }

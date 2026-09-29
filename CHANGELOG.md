@@ -7,14 +7,18 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [2.3.0] - 2026-09-28
+## [2.3.0] - 2026-09-29
 
-iOS-Build 233 · Android versionCode 127
+iOS-Build 234 · Android versionCode 128
 
 ### Hinzugefügt
 - Eine orange Zahl in den Umschaltern oben zeigt, hinter welchem Reiter etwas
   wartet: Freigaben bei den Challenges (auch im Archiv) für alle, die freigeben
   dürfen, dazu für die Leitung zu verbuchende Events und offene Anträge.
+- Einladungscodes gelten wahlweise 7, 14, 30, 60 oder 90 Tage. Beim
+  Verlängern wählt die Gemeindeleitung ebenfalls, um wie viele Tage — höchstens
+  bis 90 Tage im Voraus. Jeder Code läuft ab; abgelaufene lassen sich nicht
+  wieder aufleben.
 - Die Rückfrage vor dem Löschen eines Jahrgangs nennt, wie viele Events und
   Challenges mitgehen, wie viele dieser Events noch in der Zukunft liegen und
   was bestehen bleibt.
@@ -106,15 +110,16 @@ iOS-Build 233 · Android versionCode 127
   Challenges und Chat-Nachrichten — dafür gibt es eigene Listen und Zähler.
 - Auch der freigegebene Jahresrückblick und ein neues Zertifikat stehen im
   Postfach. Antippen des Rückblicks öffnet genau die Ausgabe, um die es geht.
-- Die Zahl am App-Symbol zählt die ungelesenen Mitteilungen im Postfach mit.
-  Vorher fehlten sie dort: Wer 23 ungelesene Mitteilungen, 9 wartende
-  Beiträge und 3 Chat-Nachrichten hatte, sah am Symbol eine 12. Jetzt steht
-  dort 35 — die Summe aller Zahlen, die die App zeigt, Reiter und Glocke.
-  Eine Mitteilung „Events warten auf Verbuchung" ersetzt die vom Vortag,
-  solange die noch ungelesen ist, statt sich täglich zu stapeln. Geräte, auf
-  denen noch eine ältere App ohne Postfach läuft, bekommen die Zahl ohne
-  Postfach und ohne Challenge-Neuigkeiten — dort ließen sie sich nicht
-  abbauen, und die Zahl ginge nie auf null.
+- Die Zahl am App-Symbol ist die Summe der Reiter, bei mehreren Gemeinden
+  der Reiter aller Gemeinden. Ungelesene Mitteilungen im Postfach zählen
+  dort nicht mit, ebenso wenig in den Zahlen am Gemeinde-Umschalter — sie
+  zeigt der blaue Punkt an der Glocke. Ein offener Antrag zählt deshalb
+  einmal, am Reiter, auch wenn „Neuer Antrag eingegangen" noch ungelesen im
+  Postfach liegt. Eine Mitteilung „Events warten auf Verbuchung" ersetzt die
+  vom Vortag, solange die noch ungelesen ist, statt sich täglich zu stapeln.
+  Geräte, auf denen noch eine ältere App ohne Postfach läuft, bekommen die
+  Zahl ohne Challenge-Neuigkeiten — dort ließen sie sich nicht abbauen, und
+  die Zahl ginge nie auf null.
 - Mitteilungen zu einem Event, einer Challenge oder einem Jahrgang
   verschwinden mit, wenn das Event, die Challenge oder der Jahrgang gelöscht
   wird — statt beim Antippen ins Leere zu führen. Die Meldung „Konfi hat sich
@@ -134,7 +139,7 @@ iOS-Build 233 · Android versionCode 127
   löscht die Leitung ein Badge, verschwinden die Mitteilungen dazu — bei
   dir und bei der Leitung. Entscheidungen („verbucht", „abgelehnt") bleiben
   als Verlauf stehen.
-- Die Zahl mit Uhr an der einzelnen Challenge, die Leitung und Team offene
+- Das orange Feld an der einzelnen Challenge, das Leitung und Team offene
   Freigaben anzeigt, geht jetzt sofort mit — auch ohne Neuladen der Liste und
   immer im Gleichklang mit der Zahl am Reiter.
 - Konfis sehen jetzt, wo es bei den Challenges etwas Neues gibt — wie im Chat:
@@ -163,9 +168,9 @@ iOS-Build 233 · Android versionCode 127
 - Leitung und Team sehen neue Challenge-Beiträge wie ungelesene Nachrichten im
   Chat: eine rote Zahl am Reiter und am Symbol der Challenge, bis sie die
   Challenge öffnen — auch bei Challenges ohne Freigabe, bei denen ein Beitrag
-  sofort in der Galerie steht. Wartende Freigaben stehen weiter im orangen
-  Feld mit Uhr; ein Beitrag zählt nie doppelt. Gemeinde-Umschalter und
-  App-Symbol zählen die neuen Beiträge mit.
+  sofort in der Galerie steht. Wartende Freigaben zeigt zusätzlich das orange
+  Feld mit Uhr; am Reiter zählt ein Beitrag nie doppelt.
+  Gemeinde-Umschalter und App-Symbol zählen die neuen Beiträge mit.
 - Beim Anlegen einer Challenge gibt es wieder die Zielgruppe „Nur die
   Konfis": Die Konfis der gewählten Jahrgänge reichen ein, das Team dieser
   Jahrgänge sieht die Beiträge und begleitet die Challenge. Bestehende
@@ -186,10 +191,19 @@ iOS-Build 233 · Android versionCode 127
   Mail das; das Passwort selbst steht nie darin.
 - Wer jemanden in die eigene Gemeinde eingeladen hat, erfährt, ob die Person
   zusagt oder absagt — als Mitteilung und im Postfach; Antippen öffnet die
-  Benutzerliste. Ist die einladende Person dort nicht mehr Org-Admin, geht die
-  Mitteilung an die Org-Admins der Gemeinde.
+  Benutzerliste. Gehört die einladende Person dort nicht mehr zur
+  Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
 
 ### Geändert
+- Im Browser zeigt der Betrachter PDFs so wie die App auf Android: alle Seiten
+  untereinander, mit Zoom. Bisher zeigte jeder Browser sie auf seine eigene
+  Weise.
+- Die orange Zahl in den Umschaltern steht mittig zur Beschriftung statt ein
+  Stück darunter.
+- Die Leitung hat eine eigene Farbe (Petrol) und ist damit auf einen Blick von
+  der Gemeindeleitung (Indigo) und den Teamer:innen (Beere) zu unterscheiden — in
+  der Benutzerliste, beim Anlegen und Einladen, bei den offenen Einladungen und
+  bei den Mitgliedern eines Chats.
 - Ist ein Event voll, fragt die App nach, bevor die Leitung jemanden über die
   Grenze nimmt — beim Bestätigen von der Warteliste wie beim Eintragen von
   Hand, für Konfis und Team getrennt. Nach „Trotzdem bestätigen" oder
@@ -202,19 +216,34 @@ iOS-Build 233 · Android versionCode 127
   Challenges „Nur das Team" bleiben. Vergebene Punkte bleiben gutgeschrieben,
   und Teamer:innen und Leitung behalten ihre Stempel aus den gelöschten
   Challenges.
+- Material, das nur zu einem gelöschten Jahrgang gehörte, bleibt erhalten und
+  gilt danach ausdrücklich für das ganze Team, mit Globus in der Liste; die
+  Rückfrage vor dem Löschen nennt, wie viel Material das betrifft.
+- Wer als Konfi ins Team befördert wurde, behält in der Konfi-Historie seine
+  Konfi-Badges so, wie er sie verdient hat — auch wenn die Leitung ein Badge
+  später löscht, umbenennt oder den Zielwert ändert. Aktuelle Konfis sehen
+  Änderungen weiter sofort, ein gelöschtes Badge verschwindet bei ihnen.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
-  auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
-  die Zahl am Reiter; das orange Feld mit Uhr bleibt zusätzlich stehen.
+  jeden neuen Beitrag seit dem letzten Öffnen, auch einen, der noch auf
+  Freigabe wartet, und verschwindet beim Öffnen — wie im Chat. Orange steht
+  nur für Wartendes: im Feld mit Uhr an der Challenge, das keine Zahl mehr
+  trägt, und als Zahl an den Umschaltern Aktuell, Geplant und Archiv und in
+  der geöffneten Challenge am Reiter „Wartet“, wo sie beim Freigeben und
+  Ablehnen sofort mitgeht.
 - Ungelesene Mitteilungen zeigt die Glocke in jeder Rolle mit einem blauen
-  Briefumschlag statt mit einer Zahl; eine Zahl an der Glocke steht nur noch
-  für Vorgänge, die aus einer Funklücke gesendet werden.
-- Die Zahl am App-Symbol und die Zahlen am Gemeinde-Umschalter zählen das
-  Postfach nicht mehr mit — ein offener Antrag zählt dort einmal, auch wenn
-  die Mitteilung dazu noch ungelesen ist.
-- Die Rollen heißen überall „Leitung" und „Org-Leitung" statt „Admin",
+  Punkt statt mit einer Zahl; eine Zahl an der Glocke steht nur noch für
+  Vorgänge, die aus einer Funklücke gesendet werden. Im Postfach trägt jede
+  ungelesene Mitteilung denselben Punkt in der Ecke.
+- Die Rollen heißen überall „Leitung" und „Gemeindeleitung" statt „Admin",
   „Hauptamt" oder „Org-Admin" — beim Anlegen und Einladen, in der
   Rollenauswahl, in den Listen, im Chat und im Handbuch. Beide Rollen können
   Haupt- wie Ehrenamtliche haben.
+- App, Meldungen, Mails und Handbuch sprechen von „Gemeinde" statt von
+  „Organisation" — etwa bei „Gemeinde wechseln", in der Verwaltung der
+  Gemeinden und im Hinweis auf eine gesperrte Gemeinde.
+- Die Rolle „Org-Leitung" heißt jetzt „Gemeindeleitung" — in der App, in
+  Mitteilungen, Mails, im Handbuch und auf der Startseite im Web. Dort heißt
+  der Tarif für bis zu vier Gemeinden jetzt „Verbund".
 - Beim Öffnen eines Antrags und einer Konfi lädt die App für die Leitung nur
   noch die Anträge, um die es geht, statt der ganzen Antragsgeschichte der
   Gemeinde.
@@ -262,10 +291,10 @@ iOS-Build 233 · Android versionCode 127
   und werfen einen leichten Schatten. Auf Android war der Unterschied bisher
   am kleinsten.
 - Die kleinen Marken in der Ecke von Karten zeigen jetzt durchgehend Symbole
-  statt Wörter: die Rolle in der Benutzerliste (Gebäude für Org-Admin, Schild
+  statt Wörter: die Rolle in der Benutzerliste (Gebäude für die Gemeindeleitung, Schild
   für Admin, Person für Teamer:in), „Voll"/„Frei" bei den Events einer Serie
   (Kreuz/Haken), „Aktiviert" bei den Benachrichtigungen (Haken), „Neu" im
-  Postfach (geschlossener Umschlag) und die Restlaufzeit von Einladungscodes
+  Postfach (ein blauer Punkt) und die Restlaufzeit von Einladungscodes
   (Zahl der Tage plus Uhr; am letzten Tag ein oranges, abgelaufen ein rotes
   Warnzeichen). In der Antragsliste der Konfis erschien als Einzige noch ein
   Wort — auch dort steht jetzt das Symbol. Ein Konfirmationstermin, der nicht
@@ -306,8 +335,8 @@ iOS-Build 233 · Android versionCode 127
   nimmt in der Kopfzeile weniger Platz ein.
 - Die Mitteilungen im Postfach sehen aus wie jede andere Liste der App: Karte
   im Hintergrund, farbiger Rand und Symbol je Bereich — Badges in der
-  Badge-Farbe, Anträge in der Aktivitätenfarbe. Ungelesenes trägt ein
-  „Neu" in der Ecke.
+  Badge-Farbe, Anträge in der Aktivitätenfarbe. Ungelesenes trägt einen
+  blauen Punkt in der Ecke.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 - Große Dateien laufen zuverlässiger durch: Fotos, Sprachaufnahmen und
@@ -393,8 +422,8 @@ iOS-Build 233 · Android versionCode 127
   Gemeinde die Meldung. Die Warnung vor dem Löschen eines Jahrgangs geht an
   die Gemeindeleitung und die Admins, die in diesem Jahrgang befördern dürfen,
   statt an jeden Admin.
-- Die Erinnerung an eine ablaufende Lizenz geht an alle Org-Admins der
-  Gemeinde, auch an die, die sie über eine Einladung mitleiten — und nicht
+- Die Erinnerung an eine ablaufende Lizenz geht an alle in der
+  Gemeindeleitung, auch an die, die sie über eine Einladung mitleiten — und nicht
   mehr an Admins.
 - Mitteilungen zu Challenge-Beiträgen bekommt nur noch, wer den Jahrgang auch
   ansehen darf; eine Zuweisung ohne Leserecht reicht dafür nicht mehr.
@@ -415,10 +444,30 @@ iOS-Build 233 · Android versionCode 127
   ihrer Event-Liste und Räume nur fürs Team. Jahrgangs-Chats, Event-Chats und
   Gruppen mit Konfis anderer Jahrgänge lassen sich nicht mehr lesen,
   beschreiben, exportieren oder live mitverfolgen, und niemand trägt sich
-  dort selbst ein oder löscht sie. Der Org-Admin öffnet weiterhin jeden
+  dort selbst ein oder löscht sie. Die Gemeindeleitung öffnet weiterhin jeden
   gemeinschaftlichen Chat der Gemeinde; fremde Zweiergespräche bleiben für
   alle zu und lassen sich auch nicht mehr löschen. In der Chatliste ändert
   sich nichts.
+- Ein Konto ist entweder Konfi oder im Team, auch über Gemeindegrenzen
+  hinweg: Konfi ist nur, wer zu genau einer Gemeinde gehört. Einladungen,
+  Zuweisungen und Rollenwechsel, die beides verbinden würden, lehnt die App
+  mit einer Erklärung ab.
+- Fragt das iPhone zum ersten Mal nach der Kamera, nennt der Text auch das
+  Scannen der QR-Codes beim Einchecken zu Events und Fotos für Aktivitäten —
+  bisher nur Fotos für Chat und Challenges.
+- Den QR-Code zum Einchecken und den Zähler darunter zeigen Admins und
+  Teamer:innen nur noch für Events ihrer Jahrgänge, für Events „Nur Team" und
+  für Events ohne Jahrgang — also für die Events, die sie in ihrer Liste sehen.
+  Die Gemeindeleitung kommt weiter an jeden Code der Gemeinde.
+- Wird ein Konto gelöscht, bleiben die Einladungscodes, die die Person für
+  die Gemeinde angelegt hat, gültig — wie ihre Events, ihr Material und ihre
+  Badges, jeweils ohne ihren Namen. Bisher verschwanden die Codes mit dem
+  Konto.
+- Die Rückfragen vor dem Löschen eines Kontos — einer Konfi, einer
+  Teamer:in, unter „Benutzer:innen" und im eigenen Profil — nennen knapp,
+  was verschwindet: Punkte, Badges, Stempel, Anträge samt Fotos,
+  Event-Anmeldungen, Challenge-Beiträge, Chat-Nachrichten und
+  Zweiergespräche; beim Team auch, was der Gemeinde bleibt.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
@@ -427,12 +476,30 @@ iOS-Build 233 · Android versionCode 127
   unter „Fehler".
 
 ### Behoben
+- Auf Android öffnen Bilder, Videos und PDFs jetzt in der App: im Betrachter
+  mit Zoom und Wischen zu den übrigen Dateien, PDFs mit allen Seiten
+  untereinander. Bisher gingen sie in eine andere App.
+- Wer eine Datei in einer anderen App öffnet — auf Android etwa ein
+  Word-Dokument — und zurückkommt, wird bei eingeschalteter App-Sperre nicht
+  mehr nach Fingerabdruck oder Face ID gefragt. Bisher kam die Abfrage bei
+  „Sofort" nach jeder Datei.
 - Teamer:innen und Leitung lassen sich wieder von Hand zu Events hinzufügen:
   Die Auswahl blieb leer, obwohl sie dem Jahrgang des Events zugewiesen waren.
 - Wer über eine Einladung im Team oder in der Leitung einer Gemeinde ist, steht
   dort jetzt in der Team-Liste, in der Auswahl am Event und in der
   Detailansicht und lässt sich eintragen; Jahrgänge, Badges und Punkte zeigen
   Liste und Detailansicht nur aus dieser Gemeinde.
+- Teamer-Badges und Zertifikate bleiben bei der Gemeinde, in der sie
+  entstanden sind: Wer in mehreren Gemeinden im Team ist, bekommt Badges in
+  jeder Gemeinde auch über die stündliche Prüfung, und die Leitung einer
+  weiteren Gemeinde sieht dort deren Badges und kann Zertifikate verleihen.
+  Bisher prüfte die App nur die Stamm-Gemeinde, und die Leitung der weiteren
+  Gemeinde bekam „nicht gefunden".
+- Die automatische Löschung nach der Konfirmation lässt ein Konto stehen, das
+  noch zu einer weiteren Gemeinde gehört. Bisher sperrte und löschte sie das
+  ganze Konto, und die andere Gemeinde verlor die Person mit.
+- Die Beschriftungen der Reiter unten sind wieder ganz zu lesen: Bei
+  „Challenges" und „Badges" fehlte auf iOS und Android der untere Bogen des g.
 - In der Detailansicht einer Konfi stehen ihre offenen Anträge wieder als
   „gemeldet" zwischen den Aktivitäten.
 - In der Detailansicht eines Events steht bei den Teamer:innen kein
@@ -592,8 +659,8 @@ iOS-Build 233 · Android versionCode 127
   wenn die Gemeindeleitung die Person entfernt. Bisher blieb sie in Gruppen
   und Einzelchats und bekam deren Nachrichten weiter aufs Handy; bei einer
   erneuten Aufnahme galten die alten Jahrgänge sofort wieder.
-- Wer einen Chat öffnen darf, ohne darin Mitglied zu sein — etwa der Org-Admin
-  in einer Gruppe —, sieht dort jetzt auch Bilder und Dateien. Bisher blieben
+- Wer einen Chat öffnen darf, ohne darin Mitglied zu sein — etwa die
+  Gemeindeleitung in einer Gruppe —, sieht dort jetzt auch Bilder und Dateien. Bisher blieben
   sie leer, obwohl die Nachrichten lesbar waren.
 - Startet eine Challenge, bekommen jetzt alle die Mitteilung „Neue Challenge",
   die mitmachen: bei „Nur das Team" das ganze Team, bei „Jahrgang und Team"
@@ -626,10 +693,9 @@ iOS-Build 233 · Android versionCode 127
   Event für alle sichtbar war. In einer Gemeinde standen dadurch nur vier von
   zwölf Konfis an den Pflicht-Events. Events ohne Pflicht dürfen weiterhin
   ohne Jahrgang für die ganze Gemeinde gelten.
-- Die Zahl an der Postfach-Glocke nimmt ab, sobald man eine Mitteilung
-  antippt oder alle als gelesen markiert — bei mehreren Gemeinden auch die
-  Zahl am App-Symbol. Bisher blieb sie oft stehen, weil eine ältere Zählung
-  die neue überschrieb.
+- Der Punkt an der Postfach-Glocke geht sofort weg, sobald man die letzte
+  ungelesene Mitteilung antippt oder alle als gelesen markiert. Bisher blieb
+  die Anzeige oft stehen, weil eine ältere Zählung die neue überschrieb.
 - Im Handbuch stehen zwischen den Abschnitten wieder Trennlinien statt drei
   Striche im Text (Badges, Challenges, Chat).
 - Im Dunkelmodus blieben die Anmeldeseiten hell — Anmeldung, Passwort vergessen,
@@ -1054,8 +1120,88 @@ iOS-Build 233 · Android versionCode 127
   denen man sich gar nicht anmelden kann.
 - Die Mail „Passwort zurücksetzen" nennt die richtige Gültigkeit des Links:
   24 Stunden statt einer Stunde.
+- Android: Das App-Symbol wird nicht mehr beschnitten — die Blüte steht bei
+  jeder Symbolform (Kreis, Squircle, Tropfen) vollständig auf dunklem Grund,
+  auch als einfarbiges Themen-Symbol.
+- Android: Startbildschirme, die eine Zahl am App-Symbol von der App annehmen,
+  bekommen sie jetzt gemeldet; wo das nicht geht, etwa auf Pixel-Geräten,
+  zeigt das Symbol einen Punkt, solange eine Mitteilung in der Leiste liegt.
+- Beim Öffnen der App bleiben die Mitteilungen der Leitung in der Leiste
+  liegen, auf iPhone und Android, bis sie angetippt oder weggewischt werden;
+  auf Android verschwinden dadurch auch Punkt oder Zahl am App-Symbol nicht
+  mehr jedes Mal.
+- Ein schneller zweiter Tipp auf „Anmelden" bei einem Event schickt keine
+  zweite Anmeldung mehr und zeigt nicht mehr „Du bist bereits für dieses Event
+  angemeldet", obwohl alles geklappt hat; der Knopf ist gesperrt, bis die
+  Anmeldung durch ist.
+- Geht das Handy beim Scannen des QR-Codes zum Einchecken offline, meldet die
+  App „Du bist offline" statt „QR-Code konnte nicht verarbeitet werden".
+- Die Badges-Seite der Konfis zeigt die Badges auch dann, wenn die Punkte des
+  Profils gerade nicht geladen werden konnten, statt „Keine Badges gefunden".
+- Auf Geräten, auf denen die App schon lange installiert ist, bleiben nach dem
+  Abmelden keine alten Anmeldedaten mit Name und E-Mail-Adresse mehr im
+  Speicher der App zurück; die App räumt sie beim nächsten Start weg.
+- Wird ein Konto deaktiviert, eine Gemeinde gesperrt oder läuft ihre Testphase
+  ab, während jemand angemeldet ist, nennt die Anmeldeseite gleich diesen
+  Grund statt „Deine Sitzung ist abgelaufen" — bisher erfuhr man ihn erst nach
+  dem nächsten Anmeldeversuch.
+- Wer unter Badges oder Aktivitäten zwischen Konfis und Teamer:innen
+  umschaltet, sieht bis zum Laden der neuen Liste nicht mehr die alte unter
+  dem neuen Reiter — und wenn die neue nicht geladen werden kann, auch danach
+  nicht. Beim Suchen im Material bleibt die bisherige Liste bis zum Ergebnis
+  stehen, nach einem Fehlschlag aber nicht.
+- Eine Rückblick-Ausgabe eines Jahrgangs löschen darf nur, wer im Jahrgang
+  auch bearbeiten darf — wie beim Anlegen. Eine Zuweisung nur zum Ansehen
+  reichte bisher zum Löschen.
+- Nach einer eigenen Nachricht steht an diesem Chat keine Eins mehr, auch
+  nicht kurz beim Öffnen der Chat-Übersicht; auch die Markierung „Neu" beim
+  Öffnen eines Chats zählt eigene Nachrichten nicht mehr mit.
+- Bei einer Challenge, die nur einen Beitrag je Person annimmt, entstehen aus
+  zwei gleichzeitig abgeschickten Beiträgen (etwa nach einem doppelten Tipp
+  oder einer Wiederholung nach Netzabbruch) nicht mehr zwei.
+- In der Jahrgangsliste der Leitung steht als Punkteziel dieselbe Zahl, mit
+  der auch das Dashboard der Konfis rechnet; ein Ziel von 0 nimmt der Server
+  nicht mehr an, wie schon der Regler in der App.
+- Beim Anlegen einer Konfi entsteht das Konto nur zusammen mit ihren
+  Pflicht-Events: Klappt die Einschreibung nicht, meldet die App einen Fehler,
+  statt eine Konfi ohne Pflicht-Events anzulegen.
+- Eine Chat-Gruppe, in der jemand ausgewählt ist, der nicht zur Gemeinde
+  gehört, entsteht nicht mehr stillschweigend ohne diese Person; die App
+  meldet stattdessen, dass die Auswahl nicht stimmt.
+- Die Mails zum Ablauf der Lizenz und zur Löschung eines Jahrgangs zeigen
+  Namen mit Sonderzeichen wie „&" oder „<" so an, wie sie eingegeben wurden,
+  statt sie als Formatierung zu lesen.
+- Wird ein Konto gelöscht — von der Leitung, von der Person selbst oder nach
+  der Konfirmation von allein —, geht wirklich alles mit, was zu ihr gehört:
+  auch ihre Zweiergespräche samt der Bilder und Dateien darin und alles aus
+  weiteren Gemeinden. Löscht die Leitung eine Teamer:in, rückt auf ihre
+  Plätze bei Events jetzt die Warteliste nach.
+- Wer in einer weiteren Gemeinde mitarbeitet und dort einen Antrag gestellt
+  hat, kann sein Konto wieder selbst löschen; bisher brach das mit einem
+  Fehler ab.
 
 ### Sonstiges
+- Der Anmeldeschlüssel, den die App bei jeder Anfrage mitschickt, enthält
+  Name und E-Mail-Adresse nicht mehr.
+- Ob ein Benutzername schon vergeben ist, lässt sich ohne Anmeldung nur noch
+  begrenzt oft abfragen, damit niemand Namenslisten abgleicht. Beim
+  Registrieren in einer Gruppe merkt man davon nichts.
+- Textdateien im Chat und im Material prüft der Server auf ihren Inhalt: Eine
+  Webseite, ein Skript oder ein Programm unter dem Namen einer Textdatei wird
+  abgelehnt, ebenso eine Textdatei über 2 MB. Gewöhnliche Texte und
+  Excel-Listen gehen weiter durch.
+- Das Aufräumen verwaister Dateien auf dem Server und die Verschlüsselung
+  alter Dateien umfassen auch die Beiträge zu Challenges.
+- Die Fehlerliste der Auslastungsanzeige zeigt Adressen ohne Suchbegriffe,
+  Benutzernamen und Anmeldeschlüssel.
+- Das Server-Protokoll führt keine Benutzernamen, E-Mail-Adressen, Dateinamen
+  und Freitexte mehr, sondern nur noch die interne Kennung eines Kontos; auch
+  eine Anmeldung hinterlässt dort keinen Namen. Fehlgeschlagene Anmeldungen
+  stehen weiter im Protokoll, mit der Kennung des Kontos oder als unbekannter
+  Benutzername.
+- Fehlerhafte oder zu große Anfragen beantwortet der Server als solche, mit
+  deutscher Meldung, statt als Serverfehler; sie füllen das Server-Protokoll
+  nicht mehr.
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,
   reicht die App die Ablehnung weiter, statt es endlos erneut zu versuchen.
 - Die mit Face ID oder Fingerabdruck gesicherte Anmeldung (derzeit ohne
@@ -1163,6 +1309,11 @@ iOS-Build 233 · Android versionCode 127
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.
+- Nach dem Anlegen einer Konfi erscheint das Einmalpasswort ohne eine vorher
+  ins Leere laufende Anfrage; den Jahrgangs-Chat pflegt der Server ohnehin
+  selbst.
+- Beim Öffnen der Konfi-Liste lädt die App keine Angaben zur Gemeinde mehr,
+  die sie gar nicht anzeigt.
 
 ## [2.2.0] - 2026-09-18
 

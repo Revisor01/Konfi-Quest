@@ -303,7 +303,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         );
       }
 
-      // Point config aus Jahrgang-Daten
+      // Point config aus Jahrgang-Daten. `|| 10` fuer NULL und fuer eine 0
+      // aus der Zeit, als die Schnittstelle sie noch annahm -- seit
+      // 28.09.2026 lehnt jahrgaenge.js sie ab (Audit Fachlogik Punkte/Termine
+      // BF-10); alle App-Fassungen rechnen ebenfalls `|| 10`.
       const point_config = {
         gottesdienst_enabled: konfi.gottesdienst_enabled !== false,
         gemeinde_enabled: konfi.gemeinde_enabled !== false,

@@ -1,0 +1,73 @@
+// Was in die Server-Protokolle darf (Audit Sicherheit BF-14, 29.09.2026).
+//
+// Die Docker-Protokolle rotieren (10 MB x 3), landen aber in jeder
+// Log-Sammlung, die jemand anschliesst. Bis zum 29.09.2026 stand dort bei
+// jeder Anmeldung der Benutzername -- bei Konfis meist vorname.nachname
+// eines Kindes --, dazu die Adresse der Leitung beim Versand der
+// Anwesenheitsliste, Dateinamen abgewiesener Uploads und bis zu 200 Zeichen
+// Freitext aus der Push-Diagnose der App.
+//
+// Die Regel: Personen erscheinen nur mit ihrer Konto-Kennung (users.id),
+// E-Mail-Adressen nur mit der Domain, Freitext vom Client gar nicht. Was die
+// App zur Diagnose schickt, geht nur durch, wenn es wie ein Kennwort
+// aussieht (Buchstaben, Ziffern, Bindestrich), sonst steht dort ein
+// Platzhalter.
+
+/** "anna.m@gemeinde.de" -> "***@gemeinde.de"; ohne @ -> "***". */
+function adresseFuersProtokoll(adresse) {
+  if (typeof adresse !== 'string' || adresse.trim() === '') return '(keine)';
+  const at = adresse.lastIndexOf('@');
+  if (at < 0) return '***';
+  const domain = adresse.slice(at + 1).trim().toLowerCase();
+  return /^[a-z0-9.-]{1,253}$/.test(domain) ? `***@${domain}` : '***';
+}
+
+/**
+ * Ein Wert aus der Anfrage, der nur dann ins Protokoll darf, wenn er das
+ * erwartete Muster hat. Alles andere wird durch den Platzhalter ersetzt --
+ * nicht gekuerzt, denn ein gekuerzter Name ist immer noch ein Name.
+ */
+function kennwortFuersProtokoll(wert, muster, platzhalter = '?') {
+  if (typeof wert !== 'string' && typeof wert !== 'number') return platzhalter;
+  const text = String(wert);
+  return muster.test(text) ? text : platzhalter;
+}
+
+/**
+ * Abgewiesene Datei: Endung und angegebener Typ, nicht der Dateiname
+ * ("Anna_Mueller_Taufspruch.exe" nennt ein Kind). Beide kommen vom Client
+ * und gehen deshalb durch ein Muster.
+ */
+function dateiFuersProtokoll(file) {
+  const name = file && typeof file.originalname === 'string' ? file.originalname : '';
+  const punkt = name.lastIndexOf('.');
+  const endung = punkt >= 0 ? name.slice(punkt).toLowerCase() : '';
+  return `Endung ${kennwortFuersProtokoll(endung, /^\.[a-z0-9]{1,10}$/, '(keine)')}, `
+    + `Typ ${kennwortFuersProtokoll(file && file.mimetype, /^[a-z0-9.+-]{1,60}\/[a-z0-9.+-]{1,80}$/i)}`;
+}
+
+/**
+ * Der Hinweis der Push-Diagnose: die Zahl der Versuche und Fehlercodes in
+ * GROSSBUCHSTABEN (SERVICE_NOT_AVAILABLE, APNS, FCM) -- das ist, was bei der
+ * Fehlersuche am 23.09.2026 gebraucht wurde. Der Rest ist Freitext und
+ * bleibt draussen; seine Laenge steht dabei, damit man sieht, dass etwas
+ * kam.
+ */
+function diagnoseHinweisFuersProtokoll(hinweis) {
+  if (hinweis == null || hinweis === '') return '';
+  const text = String(hinweis);
+  const teile = [];
+  const versuche = text.match(/versuche=(\d{1,3})/);
+  if (versuche) teile.push(`versuche=${versuche[1]}`);
+  const codes = (text.match(/\b[A-Z][A-Z0-9_]{2,40}\b/g) || []).slice(0, 3);
+  teile.push(...codes);
+  if (/leere Antwort/.test(text)) teile.push('leere-antwort');
+  return `hinweis=[${teile.join(' ')}] (${text.length} Zeichen)`;
+}
+
+module.exports = {
+  adresseFuersProtokoll,
+  kennwortFuersProtokoll,
+  dateiFuersProtokoll,
+  diagnoseHinweisFuersProtokoll,
+};

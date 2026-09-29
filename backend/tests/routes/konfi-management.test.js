@@ -1548,7 +1548,7 @@ describe('Konfi-Management Routes', () => {
         .send({ name: 'Emilia Beispiel', jahrgang_id: fremd.id });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('gehört nicht zu Ihrer Organisation');
+      expect(res.body.error).toContain('gehört nicht zu Ihrer Gemeinde');
     });
 
     it('und die Zuordnung bleibt dabei unveraendert', async () => {
@@ -1618,7 +1618,7 @@ describe('Konfi-Management Routes', () => {
         .send({ name: 'Emilia Beispiel', jahrgang_id: 999999 });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('gehört nicht zu Ihrer Organisation');
+      expect(res.body.error).toContain('gehört nicht zu Ihrer Gemeinde');
     });
   });
 

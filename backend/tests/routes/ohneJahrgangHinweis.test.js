@@ -27,7 +27,7 @@ const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, JAHRGAENGE, ACTIVITIES } = require('../helpers/seed');
+const { seed, USERS, JAHRGAENGE, ACTIVITIES, EVENTS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-vitest';
@@ -421,8 +421,10 @@ describe('Hinweis-Header X-Kein-Jahrgang-Zugewiesen (01.09.2026)', () => {
       // Entscheidung 01.09.2026 (Kommentar an der Route): "kein Material an
       // diesem Termin" ist der Normalzustand einer Termin-Unterliste, der
       // Jahrgangs-Hinweis erklaerte dort meist etwas Falsches.
+      // Ein Termin der eigenen Gemeinde: Eine unbekannte Kennung (frueher
+      // 999) antwortet seit dem 29.09.2026 mit 404 (Audit Sicherheit BF-16).
       const res = await request(app)
-        .get('/api/material/by-event/999')
+        .get(`/api/material/by-event/${EVENTS.gottesdienstEvent.id}`)
         .set('Authorization', `Bearer ${adminOhneJgToken}`);
 
       expect(res.status).toBe(200);

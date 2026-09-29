@@ -74,7 +74,7 @@ const renderProvider = () => render(<BadgeProvider><Consumer /></BadgeProvider>)
 // Aktive Gemeinde 1 (Org-Admin): zwei offene Antraege, zwei ungelesene
 // Mitteilungen (eine aus jeder Gemeinde -- das Postfach ist kontoweit).
 // Seit 28.09.2026 zaehlt das Postfach nicht mehr mit (die Glocke zeigt einen
-// Briefumschlag): Reiter = 2.
+// Punkt, bis 29.09.2026 einen Briefumschlag): Reiter = 2.
 const AKTIVE_GEMEINDE = {
   data: {
     chat: { total: 0, byRoom: {} },

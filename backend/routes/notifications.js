@@ -7,6 +7,7 @@ const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
 const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
 const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('../utils/terminLeitungSicht');
+const { kennwortFuersProtokoll, diagnoseHinweisFuersProtokoll } = require('../utils/protokoll');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -33,9 +34,11 @@ module.exports = (db, verifyTokenRBAC) => {
   // Ersetzt im BadgeContext die frueheren Voll-Fetches von /chat/rooms +
   // /admin/activities/requests + /events, die nur für Zähler geladen wurden.
   // WICHTIG für Konsistenz mit den Listen-Ansichten:
-  // - chat.byRoom repliziert EXAKT die unread_count-Semantik der
-  //   GET /chat/rooms-Query (inkl. Mitzaehlen eigener Nachrichten) — die Werte
-  //   speisen chatUnreadByRoom, das ChatRoom/ChatOverview konsumieren.
+  // - chat.byRoom zaehlt wie unread_count der GET /chat/rooms-Query: ohne
+  //   eigene Nachrichten, ohne geloeschte und ohne solche mit Datum in der
+  //   Zukunft (bis 28.09.2026 zaehlte /chat/rooms eigene mit, obwohl hier
+  //   "exakt gleich" stand; Audit Fachlogik Chat BF-10) — die Werte speisen
+  //   chatUnreadByRoom, das ChatRoom/ChatOverview konsumieren.
   //   BEWUSST OHNE Mitgliedschafts-Sync (der läuft TTL-gesteuert in /rooms).
   // - pendingRequests entspricht dem pending-Filter der Admin-Antragsliste
   //   (GET /admin/activities/requests ist org-weit über activities.organization_id).
@@ -296,12 +299,42 @@ module.exports = (db, verifyTokenRBAC) => {
 
       // Wie chat.byRoom: Zahl je Challenge fuer den Listeneintrag, Summe
       // fuer Reiter und App-Icon.
+      //
+      // Nur Zeilen mit c > 0: Die Leitungs-Regel liefert seit 29.09.2026
+      // auch Challenges, an denen nur wartende Beitraege neu sind (c = 0,
+      // neu > 0). In challengeUpdates duerfen sie nicht als Eintrag mit 0
+      // auftauchen -- Form und Werte des Feldes bleiben wie bisher.
       const byChallenge = {};
       let neuigkeitenTotal = 0;
       neuigkeiten.forEach((r) => {
+        if (!(r.c > 0)) return;
         byChallenge[r.challenge_id] = r.c;
         neuigkeitenTotal += r.c;
       });
+
+      // Neue Beitraege je Challenge fuer Leitung und Team (29.09.2026, Simon:
+      // "bei jeden Beitrag. Wie im Chat bei jeder Nachricht. Und zusaetzlich
+      // Orangen bei Freigaben."): jeder fremde Beitrag seit dem letzten
+      // Oeffnen, AUCH der wartende -- die rote Kugel am Challenge-Eintrag.
+      // Spalte `neu` derselben Regel (utils/challengeNeuigkeiten.js), keine
+      // zweite SQL-Fassung. wartendByChallenge: wie viele davon noch auf
+      // Freigabe warten (Vorlesetext der Kugel).
+      //
+      // Konfis: bleibt leer. Ihre Kugel liest challengeUpdates (dort zaehlen
+      // auch Moderation eigener Beitraege und die neue Challenge -- das sind
+      // keine "neuen Beitraege"); ein Doppel desselben Wertes haette nur eine
+      // zweite Stelle geschaffen, die auseinanderlaufen kann.
+      const neueBeitraegeByChallenge = {};
+      const neueWartendByChallenge = {};
+      let neueBeitraegeTotal = 0;
+      if (userType !== 'konfi') {
+        neuigkeiten.forEach((r) => {
+          if (!(r.neu > 0)) return;
+          neueBeitraegeByChallenge[r.challenge_id] = r.neu;
+          neueBeitraegeTotal += r.neu;
+          if (r.neu_wartend > 0) neueWartendByChallenge[r.challenge_id] = r.neu_wartend;
+        });
+      }
 
       // Offene Freigaben der Leitung, dieselbe Form. Fuer Konfis bleibt es
       // leer/0 -- ihr Anteil steht in challengeUpdates. Die beiden Zahlen
@@ -328,6 +361,15 @@ module.exports = (db, verifyTokenRBAC) => {
         // NEU 25.09.2026, additiv: dieselbe Summe wie pendingChallenges,
         // dazu die Aufschluesselung je Challenge fuer den Listeneintrag.
         challengeApprovals: { total: freigabenTotal, byChallenge: freigabenByChallenge },
+        // NEU 29.09.2026, additiv: neue Beitraege seit dem letzten Oeffnen,
+        // wartende eingeschlossen -- nur Leitung und Team, fuer Konfis leer.
+        // Die App 2.3.0 kennt das Feld nicht und ignoriert es; Reiter und
+        // App-Symbol rechnen weiter mit pendingChallenges + challengeUpdates.
+        challengeNeueBeitraege: {
+          total: neueBeitraegeTotal,
+          byChallenge: neueBeitraegeByChallenge,
+          wartendByChallenge: neueWartendByChallenge
+        },
         // NEU 25.09.2026, additiv: ungelesene Postfach-Mitteilungen. Die
         // App zeigt daraus an der Glocke einen Briefumschlag (> 0); in die
         // Zahl am App-Symbol geht sie seit 28.09.2026 nicht mehr ein. Nur
@@ -734,19 +776,23 @@ module.exports = (db, verifyTokenRBAC) => {
    * jemand ein Geraet an den Rechner haengen muss.
    *
    * Absichtlich anspruchslos: kein Schema, keine Pflichtfelder ausser dem
-   * Grund. Was die App schickt, landet im Protokoll — sie soll melden koennen,
-   * auch wenn sie selbst nicht weiss, was schiefgeht.
+   * Grund -- die App soll melden koennen, auch wenn sie selbst nicht weiss,
+   * was schiefgeht. Ins Protokoll geht aber nur, was wie ein Kennwort
+   * aussieht (Audit Sicherheit BF-14, 29.09.2026): Bis dahin stand dort jeder
+   * Wert roh, der Hinweis mit bis zu 200 Zeichen Freitext. Vom Hinweis
+   * bleiben die Zahl der Versuche und die Fehlercodes (utils/protokoll.js).
    */
   router.post('/push-diagnose', verifyTokenRBAC, async (req, res) => {
     const { grund, berechtigung, plattform, app_version, app_build, hinweis } = req.body || {};
     console.log(
       '[PUSH-DIAGNOSE] user=%s (%s) grund=%s berechtigung=%s plattform=%s app=%s/%s %s',
       req.user.id, req.user.type,
-      grund || 'ohne-angabe',
-      berechtigung || '?',
-      plattform || '?',
-      app_version || 'unbekannt', app_build || '?',
-      hinweis ? `hinweis=${String(hinweis).slice(0, 200)}` : ''
+      grund ? kennwortFuersProtokoll(grund, /^[A-Za-z0-9-]{1,40}$/, 'unlesbar') : 'ohne-angabe',
+      kennwortFuersProtokoll(berechtigung, /^[a-z-]{1,30}$/),
+      kennwortFuersProtokoll(plattform, /^(ios|android|web)$/),
+      kennwortFuersProtokoll(app_version, /^\d{1,3}\.\d{1,3}\.\d{1,3}$/, 'unbekannt'),
+      kennwortFuersProtokoll(app_build, /^\d{1,7}$/),
+      diagnoseHinweisFuersProtokoll(hinweis)
     );
     res.json({ success: true });
   });

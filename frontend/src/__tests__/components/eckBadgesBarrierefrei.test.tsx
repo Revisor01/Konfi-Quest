@@ -89,7 +89,10 @@ describe('Eck-Badges mit Symbol sind fuer Vorlesehilfen beschriftet', () => {
     // oder entfernt, zieht die Zahl nach -- sie stellt sicher, dass der
     // Scanner nicht ins Leere laeuft und die Pruefungen darunter still gruen
     // werden.
-    expect(badges.length).toBe(39);
+    // 29.09.2026: 38 -- der Umschlag im Eselsohr des Postfachs ist dem
+    // blauen Punkt gewichen (kein Eck-Badge mehr; role="img" und
+    // aria-label = title prueft dort postfachModal.test.tsx).
+    expect(badges.length).toBe(38);
   });
 
   it.each(badges.map((b) => [b.ort, b.tag] as const))('%s: role="img" und aria-label = title', (_ort, tag) => {

@@ -20,9 +20,9 @@ Es gibt vier Rollen, und jede bekommt beim Anmelden ihre eigene Ansicht:
 | **Konfi** | Aktivitäten melden, Events buchen, bei Challenges mitmachen, Punkte und Badges sammeln | [Für Konfis](10-konfis.md) |
 | **Teamer:in** | die zugewiesenen Jahrgänge begleiten, zu Events zusagen, Challenges begleiten, Material und Zertifikate ansehen | [Für Teamer:innen](20-teamer.md) |
 | **Leitung** | der laufende Betrieb: Konfis, Events, Punkte, Badges, Aktivitäten, Challenges und Material | [Für die Leitung](30-leitung.md) |
-| **Org-Leitung** | dazu Benutzer:innen, Jahrgänge, Jahrgangs-Zuweisungen und die Einstellungen der Gemeinde | [Für die Leitung](30-leitung.md) |
+| **Gemeindeleitung** | dazu Benutzer:innen, Jahrgänge, Jahrgangs-Zuweisungen und die Einstellungen der Gemeinde | [Für die Leitung](30-leitung.md) |
 
-Leitung und Org-Leitung können Haupt- wie Ehrenamtliche sein. Wer genau was
+Leitung und Gemeindeleitung können Haupt- wie Ehrenamtliche sein. Wer genau was
 darf und wie die Jahrgangs-Zuweisung das begrenzt, steht im
 Kapitel [Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
 

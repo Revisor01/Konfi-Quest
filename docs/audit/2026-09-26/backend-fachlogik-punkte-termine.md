@@ -436,6 +436,7 @@ bestehender Aktivitäten nicht zu ändern.
   **10**, `konfi.target_gottesdienst` **0**.
 - **Empfehlung:** `?? 10` statt `|| 10`, oder 0 in der Validierung ausschließen
   (`min: 1`).
+- **Nachtrag 28.09.2026:** behoben (Weg: 0 ausschließen) — Geprüft, was die Store-Apps bei 0 zeigen: Der Regler der Leitung reicht in 2.0.0, 2.2.0 und 2.3.0 von 1 bis 20 (eine 0 schickt keine App), und alle drei Anzeigen (`KonfiDashboardPage`, `KonfisView`, `KonfiDetailSections`) rechnen selbst `|| 10` — ein `?? 10` im Server hätte an keiner App etwas geändert, und eine echte 0 wäre dort eine Division durch null. Deshalb lehnt `routes/jahrgaenge.js` beim Anlegen und Bearbeiten 0 ab (`isInt({ min: 1 })`, 400); `point_config` behält `|| 10` für NULL und Alt-Nullen, die Jahrgangsliste der Leitung zeigt ebenfalls `|| 10` statt `?? 10` (vorher „GD-Ziel 0" neben einer 10 bei den Konfis). Test `backend/tests/routes/punktezielNull.test.js` (4: 0 beim Anlegen und Bearbeiten → 400 ohne Änderung; 1/20 gespeichert, 3/4 im Dashboard); ohne Fix 2 rot. `jahrgaenge.test.js`: der Fall „optionale Felder" schickte `target_gemeinde: 0` — jetzt 5 (der Test prüft die Felder, nicht die 0). Handbuch `45-jahrgaenge.md`, API-Doku `stammdaten.yaml`. Auf Produktion nachzumessen: `SELECT COUNT(*) FROM jahrgaenge WHERE target_gottesdienst = 0 OR target_gemeinde = 0;`
 
 ### BF-11: `event_bookings.created_at` ist TEXT und dient als Reihenfolge-Schlüssel der Warteliste
 - **Schwere:** NIEDRIG
@@ -489,6 +490,7 @@ bestehender Aktivitäten nicht zu ändern.
   aber in keinem Pflichttermin — genau das Bild, das Simon am 26.09.2026 in
   Hennstedt gesehen hat („nur 4 von 12“), dort mit anderer Ursache.
 - **Empfehlung:** Einschreibung in die Transaktion ziehen (wie beim PUT).
+- **Nachtrag 28.09.2026:** behoben — In `POST /admin/konfis` (`konfi-management.js`) laufen die Einschreibung in die künftigen Pflicht-Events und `addToEventChat` jetzt vor dem COMMIT auf dem Transaktions-Client, wie beim PUT; der eigene try/catch, der Fehler nur loggte, ist weg — ein Fehler endet im ROLLBACK mit 500, es entsteht kein Konto. Nicht angefasst: `GET /admin/konfis/teamer` und `/leitung` in derselben Datei (Koordination). Test `backend/tests/routes/konfiAnlegenPflichttermineInTransaktion.test.js` (3: Buchung per Trigger abgelehnt → 500, kein Konto, kein Passwort; erlaubt Buchung plus Chat-Eintritt; Gegenprobe abgesagte/vergangene nicht gebucht); ohne Fix 1 rot. `konfi-management.test.js` (115) grün. API-Doku `konfis-events.yaml`.
 
 ## Nachtrag 27.09.2026: Rolle je Gemeinde
 
@@ -525,25 +527,39 @@ Konfis einer weiteren Gemeinde betreffen, treffen also nur Altbestand. Zeilenang
 
 - **Status:** offen 27.09.2026 — für 2.3.x vorgemerkt, erst Umfang in Produktion messen (Konten mit
   verschiedenen Rollen in verschiedenen Gemeinden; Abfrage unter der Tabelle).
+- **Nachtrag 28.09.2026:** Simons Regel „Konfi und Team geht nicht parallel": Ein Konto ist entweder
+  Konfi (genau eine Gemeinde, die Stamm-Gemeinde) oder Team (teamer, admin, org_admin, auch in mehreren
+  Gemeinden), nie beides (`utils/konfiOderTeam.js`). Jeder Schreibweg, der eine Rolle vergibt, prüft sie
+  jetzt: Einladung anlegen (Zielkonto nirgends Konfi, sonst dieselbe 404) und annehmen (409
+  `konfi_und_team`, mit dem Stand der Annahme), Zuweisung durch den Super-Admin (400, jetzt über beide
+  Quellen), Rollenwechsel in der Benutzerverwaltung zuhause und in einer weiteren Gemeinde (409). Die
+  Beförderung und der Rollenwechsel zuhause ziehen die Zeile der Stamm-Gemeinde in `user_organizations`
+  mit — Migration 101 hatte jedes damalige Konto dort eingetragen, und nach einer Beförderung stand da
+  weiter `konfi`. Die Registrierung mit Einladungscode legt immer ein neues Konto an (vergebener
+  Benutzername: 409) und ist kein Weg dorthin. Test `tests/routes/konfiOderTeam.test.js` (23, ohne Fix 9
+  rot). Damit sind die Zeilen erledigt, die nur Konfis einer weiteren Gemeinde betreffen, und die, die nur
+  Konfi und Nicht-Konfi trennen; die Messabfrage für den Altbestand steht in
+  `docs/auftraege/lokaler-agent/06-mischkonten.md`. Übrig bleiben Team-Rollen, die je Gemeinde verschieden
+  sind (Gesprächsvorlage `docs/audit/2026-09-28/mehrfach-konten.md`).
 
-| Stelle (Datei:Zeile) | Liest | Auswirkung |
-|---|---|---|
-| `services/backgroundService.js:257-274`, `:457` | Rolle und Gemeinde am Konto | Der Abzeichen- und Zähler-Lauf prüft nur die Stamm-Gemeinde; Badges einer weiteren Gemeinde entstehen nur über die Routen. |
-| `services/backgroundService.js:1690-1700`, `:1731-1742` | Stamm-Rolle `konfi` | Die Auto-Löschung (Tag 60 soft, Tag 120 hart) nimmt das ganze Konto, auch wenn die Person in einer anderen Gemeinde im Team ist — die schwerste Folge der Liste (Datenverlust). |
-| `routes/events/anwesenheit.js:82-85`, `:298-303` | Stamm-Rolle | Die Sammelverbuchung trennt Konfi- und Team-Buchungen und vergibt Punkte nach der Rolle zuhause. |
-| `utils/bookingUtils.js:520-523`, `:728-731`; `utils/buchungszahlen.js:45-82`; `routes/events/teilnehmer.js:131-136`, `:171-200` | Stamm-Rolle | Konfi- und Team-Kontingent, Nachrücken und die Zahlen der Terminlisten zählen eine Person nach ihrer Rolle zuhause. |
-| `utils/eventChat.js:83-88`, `:122-128` | Stamm-Rolle | `user_type` im Event-Chat nach der Rolle zuhause. |
-| `utils/jahrgangChat.js:103-109` | Stamm-Rolle und -Gemeinde | Konfis einer weiteren Gemeinde kommen nicht in den Jahrgangs-Chat. |
-| `utils/konfiTerminSicht.js:101-112` (`ladeKonfisDieTerminSehen`) | Stamm-Rolle und -Gemeinde | „Neues Event!" erreicht Konfis einer weiteren Gemeinde nicht. |
-| `routes/events/verwaltung.js:274-284`, `:306`, `:527`; `routes/events/serien.js:310` | Stamm-Rolle und -Gemeinde | Die Einschreibung in Pflichttermine übergeht Konfis einer weiteren Gemeinde. |
-| `services/pushService.js:2109-2125`, `:2198-2212` | Stamm-Rolle | Challenge-Start und Galerie-Push erreichen Konfis einer weiteren Gemeinde nicht. |
-| `services/pushService.js:462-472` (`resolveRecipientOrgId`) | Stamm-Gemeinde | Ein Push ohne ausdrückliche Gemeinde im Payload wird der Stamm-Gemeinde zugeordnet (Sprungziel, Zähler). |
-| `routes/wrapped.js:716-717`, `:1100-1101`, `:2389-2390` | Stamm-Rolle | Der Konfi-Rückblick zählt nur Konten mit Rolle `konfi` zuhause. |
-| `utils/konfiLimit.js:60-66` | Stamm-Rolle und -Gemeinde | Die Konfi-Grenze der Lizenz zählt Konfis einer weiteren Gemeinde nicht. |
-| `routes/teamer.js:410-425`, `:600-615` | Stamm-Rolle und -Gemeinde | Badges und Zertifikate einer Teamer:in aus einer weiteren Gemeinde: 404. |
-| `routes/challenges.js:1185-1196`, `:1352`, `:1493` | Stamm-Gemeinde | Urheber:innen-Liste und -Prüfung kennen Personen einer weiteren Gemeinde nicht (Chat BF-08, Rest). |
-| `routes/konfi-management.js:108-113`, `:564`, `:1069` | Stamm-Rolle und -Gemeinde | Konfi-Liste und Konfi-Detail zeigen Konfis einer weiteren Gemeinde nicht. |
-| `utils/liveUpdate.js:291` (`sendToUserByRole`) | Stamm-Rolle | Das eigene Nachlade-Signal geht an den Raum der Rolle zuhause — bewusst so gelassen („Wer bekommt was" BF-15, kein Fremdempfang). |
+| Stelle (Datei:Zeile) | Liest | Auswirkung | Status |
+|---|---|---|---|
+| `services/backgroundService.js:257-274`, `:457` | Rolle und Gemeinde am Konto | Der Abzeichen- und Zähler-Lauf prüft nur die Stamm-Gemeinde; Badges einer weiteren Gemeinde entstehen nur über die Routen. | behoben 28.09.2026 — der Lauf prüft je Person jede aktive Gemeinde, in der sie Konfi oder Teamer:in ist, mit der Rolle dort (Mitgliedschaften aus `appIconSummenAllerGemeinden`, keine Abfrage mehr); der Fingerabdruck enthält die Kataloge aller dieser Gemeinden. Test `tests/routes/teamerBadgesJeGemeinde.test.js` (17, ohne Fix 6 rot). |
+| `services/backgroundService.js:1690-1700`, `:1731-1742` | Stamm-Rolle `konfi` | Die Auto-Löschung (Tag 60 soft, Tag 120 hart) nimmt das ganze Konto, auch wenn die Person in einer anderen Gemeinde im Team ist — die schwerste Folge der Liste (Datenverlust). | behoben 28.09.2026 — Soft- und Hard-Löschung überspringen ein Konfi-Konto, das in `user_organizations` noch zu einer anderen Gemeinde gehört (`WOANDERS_MITGLIED_SQL`, `utils/konfiOderTeam.js`), und protokollieren es nur mit Kennung; die Lösch-Warnung an die Leitung zählt es nicht mit. `deleteKonfiCascade` selbst bleibt unverändert (Leitung und Selbstlöschung). Test `tests/services/autoLoeschungWoandersImTeam.test.js` (6, ohne Fix 5 rot). |
+| `routes/events/anwesenheit.js:82-85`, `:298-303` | Stamm-Rolle | Die Sammelverbuchung trennt Konfi- und Team-Buchungen und vergibt Punkte nach der Rolle zuhause. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): Die Stellen trennen nur Konfi und Nicht-Konfi, und das ist für ein Konto jetzt in jeder Gemeinde dasselbe; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `utils/bookingUtils.js:520-523`, `:728-731`; `utils/buchungszahlen.js:45-82`; `routes/events/teilnehmer.js:131-136`, `:171-200` | Stamm-Rolle | Konfi- und Team-Kontingent, Nachrücken und die Zahlen der Terminlisten zählen eine Person nach ihrer Rolle zuhause. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): Die Stellen trennen nur Konfi und Nicht-Konfi, und das ist für ein Konto jetzt in jeder Gemeinde dasselbe; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `utils/eventChat.js:83-88`, `:122-128` | Stamm-Rolle | `user_type` im Event-Chat nach der Rolle zuhause. | offen 28.09.2026 — betrifft verschiedene Team-Rollen je Gemeinde; zur Entscheidung in `docs/audit/2026-09-28/mehrfach-konten.md`, Nr. 1. |
+| `utils/jahrgangChat.js:103-109` | Stamm-Rolle und -Gemeinde | Konfis einer weiteren Gemeinde kommen nicht in den Jahrgangs-Chat. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `utils/konfiTerminSicht.js:101-112` (`ladeKonfisDieTerminSehen`) | Stamm-Rolle und -Gemeinde | „Neues Event!" erreicht Konfis einer weiteren Gemeinde nicht. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `routes/events/verwaltung.js:274-284`, `:306`, `:527`; `routes/events/serien.js:310` | Stamm-Rolle und -Gemeinde | Die Einschreibung in Pflichttermine übergeht Konfis einer weiteren Gemeinde. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `services/pushService.js:2109-2125`, `:2198-2212` | Stamm-Rolle | Challenge-Start und Galerie-Push erreichen Konfis einer weiteren Gemeinde nicht. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `services/pushService.js:462-472` (`resolveRecipientOrgId`) | Stamm-Gemeinde | Ein Push ohne ausdrückliche Gemeinde im Payload wird der Stamm-Gemeinde zugeordnet (Sprungziel, Zähler). | offen 28.09.2026 — betrifft Team in mehreren Gemeinden; zur Entscheidung in `docs/audit/2026-09-28/mehrfach-konten.md`, Nr. 2. |
+| `routes/wrapped.js:716-717`, `:1100-1101`, `:2389-2390` | Stamm-Rolle | Der Konfi-Rückblick zählt nur Konten mit Rolle `konfi` zuhause. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `utils/konfiLimit.js:60-66` | Stamm-Rolle und -Gemeinde | Die Konfi-Grenze der Lizenz zählt Konfis einer weiteren Gemeinde nicht. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `routes/teamer.js:410-425`, `:600-615` | Stamm-Rolle und -Gemeinde | Badges und Zertifikate einer Teamer:in aus einer weiteren Gemeinde: 404. | behoben 28.09.2026 — `GET /teamer/:userId/badges` und `POST /teamer/:userId/certificates` prüfen die Rolle in der aktiven Gemeinde über beide Quellen (`ladeRolleInGemeinde`, `utils/orgMitglieder.js`). Die eigenen Routen der Teamer:in (`/teamer/badges`, `/v2`, `unseen`, `mark-seen`), das Dashboard und `newBadges` in `/notifications/badge-counts` filterten schon nach der aktiven Gemeinde — mit Test festgehalten. Offen: Die Detailansicht selbst (`GET /admin/konfis/:id`) liest weiter die Stamm-Gemeinde (Koordination, Team-Liste). |
+| `routes/challenges.js:1185-1196`, `:1352`, `:1493` | Stamm-Gemeinde | Urheber:innen-Liste und -Prüfung kennen Personen einer weiteren Gemeinde nicht (Chat BF-08, Rest). | offen 28.09.2026 — betrifft Team aus einer weiteren Gemeinde; zur Entscheidung in `docs/audit/2026-09-28/mehrfach-konten.md`, Nr. 3. |
+| `routes/konfi-management.js:108-113`, `:564`, `:1069` | Stamm-Rolle und -Gemeinde | Konfi-Liste und Konfi-Detail zeigen Konfis einer weiteren Gemeinde nicht. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `utils/liveUpdate.js:291` (`sendToUserByRole`) | Stamm-Rolle | Das eigene Nachlade-Signal geht an den Raum der Rolle zuhause — bewusst so gelassen („Wer bekommt was" BF-15, kein Fremdempfang). | bewusst so gelassen (27.09.2026) |
 
 ```sql
 -- Umfang: Konten, die in einer Gemeinde eine andere Rolle haben als am Konto
@@ -584,6 +600,7 @@ SELECT u.id, rs.name AS rolle_am_konto, uo.organization_id, rw.name AS rolle_dor
   der Gemeinde holen. Wirkung gering (Einchecken setzt eine eigene Buchung
   voraus), aber die einzige Schreibroute an Terminen ohne `darfTermin`.
   - **Status:** offen 27.09.2026 — dass Teamer:innen QR-Codes erzeugen, ist gewollt (Entscheidung Simon 27.09., Sicherheit BF-21); die fehlende Jahrgangsbindung (`darfTermin`) bleibt offen, für 2.3.x vorgemerkt.
+  - **Nachtrag 29.09.2026:** behoben — `POST /events/:id/generate-qr` prüft `darfTermin` (`routes/events/checkin.js`), auch bevor ein schon erzeugter Code herausgegeben wird: 403 „Kein Zugriff auf dieses Event" für Termine fremder Jahrgänge; „Nur Team", Termine ohne Jahrgang und Org-Admin bleiben frei. Der Zähler `GET /:id/attendance-count` folgt derselben Regel (fremde/unbekannte Termine 404 statt 200 mit Nullen, Sicherheit BF-16). Tests `tests/routes/qrCodeJahrgangsBindung.test.js`, 14 Fälle (6 verboten, 8 erlaubt); Gegenprobe ohne Fix: 6 rot. `fremdeGemeinde.test.js` angepasst (Code holt dort die Org-Leitung; `admin1` hat keinen Jahrgang).
 - **Serienfolge der Abzeichen** (`streakCalculation.js:616-646`): endet an der
   neuesten aktiven Woche, nicht an „heute“ — eine vor Monaten gerissene Serie
   wird weiter als aktuell angezeigt (Befund 13 in `docs/wissen/abzeichen.md`,

@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, relative } from 'path';
+import ts from 'typescript';
 import {
   FRONTEND,
+  REPO,
   sichtbareTexteDerApp,
   nutzertexteDesBackendsGesamt,
+  type SichtbarerText,
 } from './sichtbareTexte';
 
 // ---------------------------------------------------------------------------
@@ -95,6 +98,90 @@ describe('Begriffe: eine Sprache für App und Backend', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// „Gemeinde" statt „Organisation" (Simon, 28.09.2026: „Vielleicht sprechen
+// wir statt von org von Gemeinde.").
+//
+// Wer die App nutzt, gehört zu einer Gemeinde — so heißt es in Oberfläche,
+// Server-Meldungen, Mails und Handbuch. „Organisation" bleibt nur in
+// Bezeichnern (organization_id, /organizations/…) und Kommentaren.
+//
+// Dasselbe für die Rolle (Simon, 29.09.2026: „Ja, umbenennen."): `org_admin`
+// heißt „Gemeindeleitung" statt „Org-Leitung" oder „Org-Admin", und das
+// Bedienelement zum Wechseln heißt „Gemeinde-Umschalter" statt
+// „Org-Wechsler".
+// ---------------------------------------------------------------------------
+
+/** Die alten Wörter für Rolle und Umschalter. */
+const ALTE_ORG_BEGRIFFE = /\bOrg[- ]?(Leitung|Admin|Wechsler)/i;
+
+/**
+ * Server-Texte, die noch „Organisation" sagen müssen — jede mit Grund.
+ * Geprüft wird gegen den ganzen Text.
+ */
+const ORGANISATION_BLEIBT: Array<[RegExp, string]> = [
+  [/^Kein Zugriff auf diese Organisation$/,
+    'Die Store-Apps 2.2.0 und 2.3.0 vergleichen den 403 wörtlich (services/api.ts) und fallen nur damit in die Stamm-Gemeinde zurück. Erst ändern, wenn keine App ohne error_code-Prüfung mehr ruft.'],
+];
+
+/** Alle Zeichenketten einer Backend-Datei außer console.* — für Mail-Vorlagen, die in lokalen Konstanten stehen. */
+function zeichenkettenOhneKonsole(pfad: string): SichtbarerText[] {
+  const quelle = readFileSync(pfad, 'utf8');
+  const datei = ts.createSourceFile(pfad, quelle, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const raus: SichtbarerText[] = [];
+  const geh = (x: ts.Node) => {
+    if (ts.isCallExpression(x) && /^console\./.test(x.expression.getText())) return;
+    if (ts.isStringLiteral(x) || ts.isNoSubstitutionTemplateLiteral(x)
+      || ts.isTemplateHead(x) || ts.isTemplateMiddle(x) || ts.isTemplateTail(x)) {
+      const zeile = datei.getLineAndCharacterOfPosition(x.getStart()).line + 1;
+      raus.push({ ort: `${relative(REPO, pfad)}:${zeile}`, text: x.text.replace(/\s+/g, ' ').trim() });
+    }
+    ts.forEachChild(x, geh);
+  };
+  geh(datei);
+  return raus;
+}
+
+describe('Begriffe: „Gemeinde" statt „Organisation"', () => {
+  const organisationStellen = () => ALLE.filter(({ text }) => /organisation/i.test(text));
+
+  it('kein sichtbarer Text in App und Server-Meldungen sagt „Organisation"', () => {
+    const offen = organisationStellen()
+      .filter(({ text }) => !ORGANISATION_BLEIBT.some(([muster]) => muster.test(text)))
+      .map(({ ort, text }) => `${ort}: ${text}`);
+    expect(offen).toEqual([]);
+  });
+
+  it('jede Ausnahme wird noch gebraucht', () => {
+    const texte = organisationStellen().map(({ text }) => text);
+    expect(ORGANISATION_BLEIBT.filter(([muster]) => !texte.some((t) => muster.test(t))).map(([, grund]) => grund)).toEqual([]);
+  });
+
+  it('die Mails sagen „Gemeinde"', () => {
+    const texte = zeichenkettenOhneKonsole(join(REPO, 'backend/services/emailService.js'));
+    // Gegenprobe gegen einen leeren Scan: die Lizenz-Mail wird gefunden.
+    expect(texte.some(({ text }) => text.includes('die Lizenz für eure Gemeinde'))).toBe(true);
+    expect(texte.filter(({ text }) => /organisation/i.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
+  });
+
+  it('die Rolle heißt „Gemeindeleitung", der Umschalter „Gemeinde-Umschalter" — in App, Server-Meldungen und Mails', () => {
+    const mails = zeichenkettenOhneKonsole(join(REPO, 'backend/services/emailService.js'));
+    const treffer = [...ALLE, ...mails]
+      .filter(({ text }) => ALTE_ORG_BEGRIFFE.test(text))
+      .map(({ ort, text }) => `${ort}: ${text}`);
+    expect(treffer).toEqual([]);
+  });
+
+  it('das Muster erkennt die alten Wörter (Gegenprobe)', () => {
+    for (const alt of ['Die Org-Leitung kann', 'Org-Admin', 'per Org-Wechsler hierher', 'Nur die org-leitung']) {
+      expect(ALTE_ORG_BEGRIFFE.test(alt), alt).toBe(true);
+    }
+    for (const neu of ['Die Gemeindeleitung kann', 'per Gemeinde-Umschalter hierher', 'organization_id', 'Multi-Org']) {
+      expect(ALTE_ORG_BEGRIFFE.test(neu), neu).toBe(false);
+    }
+  });
+});
+
 describe('Begriffe: dieselbe Suche in allen drei Rollen', () => {
   // Konfi und Team hatten „Events durchsuchen...", die Leitung „Event
   // suchen..."; bei den Badges ebenso. Ein Feld, das dasselbe tut, heißt
@@ -162,6 +249,18 @@ describe('Begriffe: das Handbuch spricht wie die App', () => {
     expect(zeilen.filter(({ text }) => /abzeichen/i.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
   });
 
+  it('„Organisation" kommt nicht vor — es heißt „Gemeinde"', () => {
+    expect(zeilen.filter(({ text }) => /organisation/i.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
+  });
+
+  it('die Rolle heißt „Gemeindeleitung" — auch in Überschriften und Verweisen', () => {
+    // Ohne die Link-Ziel-Bereinigung: Ein Anker wie #verwaltung-nur-org-leitung
+    // zeigte auf eine Überschrift, die es nicht mehr gibt.
+    const roh = kapitel.flatMap((d) => readFileSync(join(HANDBUCH, d), 'utf8').split('\n')
+      .map((z, i) => ({ ort: `${d}:${i + 1}`, text: z })));
+    expect(roh.filter(({ text }) => ALTE_ORG_BEGRIFFE.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
+  });
+
   it('„Termin" steht nur für den Zeitpunkt', () => {
     const offen = zeilen
       .filter(({ text }) => /termin/i.test(text))
@@ -184,5 +283,29 @@ describe('Begriffe: das Handbuch spricht wie die App', () => {
     }
     // Wo die Begriffe zuerst auftauchen, führt ein Verweis dorthin.
     expect(readFileSync(join(HANDBUCH, '00-start.md'), 'utf8')).toContain('(03-bedienung.md#die-begriffe-der-app-kennen)');
+  });
+});
+
+// Die Landingpage spricht wie App und Handbuch (Simon, 29.09.2026:
+// "Landingpage auch umstellen"). Geprueft wird der sichtbare Text: ohne
+// HTML-Kommentare (dort steht der schema.org-Typ "Organization" als
+// Fachwort). Der Tarif fuer mehrere Gemeinden heisst "Verbund".
+describe('Begriffe: die Landingpage spricht wie die App', () => {
+  const roh = readFileSync(join(FRONTEND, 'public/landing.html'), 'utf8');
+  const sichtbar = roh.replace(/<!--[\s\S]*?-->/g, '');
+
+  it('„Organisation" kommt nicht vor — auch nicht in Lizenz und Rollen', () => {
+    expect(sichtbar.match(/Organisation\w*/g) ?? []).toEqual([]);
+  });
+
+  it('die Rolle heißt „Gemeindeleitung", nicht „Org-Admin" oder „Organisations-Admin"', () => {
+    expect(sichtbar.match(ALTE_ORG_BEGRIFFE) ?? []).toEqual([]);
+    expect(sichtbar).toContain('Worin unterscheiden sich Gemeindeleitung und Leitung?');
+  });
+
+  it('der Tarif für mehrere Gemeinden heißt überall „Verbund"', () => {
+    expect(sichtbar).toContain('<div class="tier">Verbund</div>');
+    expect(sichtbar).toContain('"name": "Verbund – bis 4 Gemeinden"');
+    expect(sichtbar.match(/Verbundlizenz/g)).toHaveLength(2);
   });
 });

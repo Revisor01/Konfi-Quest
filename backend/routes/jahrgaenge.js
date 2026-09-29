@@ -8,10 +8,11 @@ const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { darfJahrgang } = require('../utils/jahrgangsZugriff');
 const { canManageRole } = require('../utils/roleHierarchy');
 const { loescheMitteilungenZuJahrgang } = require('../utils/postfachAufraeumen');
-const { ladeLoeschumfang } = require('../utils/jahrgangLoeschen');
+const { ladeLoeschumfang, materialGlobalMachen } = require('../utils/jahrgangLoeschen');
 const { loescheTermin, loescheChatRaeume, entferneChatDateien } = require('../utils/terminLoeschen');
 const { loescheChallenge, entferneChallengeDateien } = require('../utils/challengeLoeschen');
 const { sichereKonfiZeitBefoerderter } = require('../utils/konfiHistorie');
+const { adresseFuersProtokoll } = require('../utils/protokoll');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten, NUR org_admin darf anlegen
 module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeamer }) => {
@@ -19,13 +20,19 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
   // Schema-Migrationen: siehe backend/migrations/064_consolidate_inline_schemas.sql
 
   // Validierungsregeln
+  //
+  // Punkteziele ab 1 (28.09.2026, Audit Fachlogik Punkte/Termine BF-10): Der
+  // Regler der Leitung reicht in jeder App-Fassung von 1 bis 20, und jede
+  // Anzeige rechnet `ziel || 10` -- eine 0 hiess also ueberall 10, waehrend
+  // die Datenbank 0 hielt. Die Schnittstelle nimmt jetzt nur, was der Regler
+  // kann.
   const validateCreateJahrgang = [
     commonValidations.name,
     body('gottesdienst_enabled').optional().isBoolean().withMessage('gottesdienst_enabled muss Boolean sein'),
     body('gemeinde_enabled').optional().isBoolean().withMessage('gemeinde_enabled muss Boolean sein'),
     body('konfspruch_enabled').optional().isBoolean().withMessage('konfspruch_enabled muss Boolean sein'),
-    body('target_gottesdienst').optional().isInt({ min: 0 }).withMessage('target_gottesdienst muss >= 0 sein'),
-    body('target_gemeinde').optional().isInt({ min: 0 }).withMessage('target_gemeinde muss >= 0 sein'),
+    body('target_gottesdienst').optional().isInt({ min: 1 }).withMessage('target_gottesdienst muss mindestens 1 sein'),
+    body('target_gemeinde').optional().isInt({ min: 1 }).withMessage('target_gemeinde muss mindestens 1 sein'),
     // Direkt-Zuweisung beim Anlegen (01.09.2026): OPTIONAL, damit ausgelieferte
     // Apps (die das Feld nicht senden) sich exakt wie bisher verhalten.
     // Form wie bei POST /users/:id/jahrgaenge, nur gespiegelt: dort Jahrgaenge
@@ -43,8 +50,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
     body('gottesdienst_enabled').optional().isBoolean().withMessage('gottesdienst_enabled muss Boolean sein'),
     body('gemeinde_enabled').optional().isBoolean().withMessage('gemeinde_enabled muss Boolean sein'),
     body('konfspruch_enabled').optional().isBoolean().withMessage('konfspruch_enabled muss Boolean sein'),
-    body('target_gottesdienst').optional().isInt({ min: 0 }).withMessage('target_gottesdienst muss >= 0 sein'),
-    body('target_gemeinde').optional().isInt({ min: 0 }).withMessage('target_gemeinde muss >= 0 sein'),
+    body('target_gottesdienst').optional().isInt({ min: 1 }).withMessage('target_gottesdienst muss mindestens 1 sein'),
+    body('target_gemeinde').optional().isInt({ min: 1 }).withMessage('target_gemeinde muss mindestens 1 sein'),
     handleValidationErrors
   ];
 
@@ -163,7 +170,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         );
         if (zielUsers.length !== userIds.length) {
           await client.query('ROLLBACK');
-          return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+          return res.status(404).json({ error: 'Benutzer in dieser Gemeinde nicht gefunden' });
         }
 
         // Rollen-Grenze: canManageRole ist DIE Quelle (fuer org_admin heisst
@@ -216,7 +223,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
       if (err.code === '23505') {
-        return res.status(409).json({ error: 'Jahrgang-Name existiert bereits in dieser Organisation' });
+        return res.status(409).json({ error: 'Jahrgang-Name existiert bereits in dieser Gemeinde' });
       }
  console.error('Database error in POST /api/jahrgaenge:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -372,7 +379,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         events_kuenftig: umfang.termineLoeschen.filter((t) => new Date(t.event_date).getTime() > jetzt).length,
         events_behalten: umfang.termineBehalten.length,
         challenges_geloescht: umfang.challengesLoeschen.length,
-        challenges_behalten: umfang.challengesBehalten.length
+        challenges_behalten: umfang.challengesBehalten.length,
+        // Additiv (Simon, 28.09.2026: "Material wird global ja."): Material,
+        // das nur an diesem Jahrgang hing und danach das ganze Team sieht.
+        material_global: umfang.materialNeuFuerAlle.length
       });
     } catch (err) {
       console.error('Database error in GET /api/jahrgaenge/:id/loeschvorschau:', jahrgangId, err);
@@ -494,6 +504,12 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
           if (ergebnis.geloescht) geloeschteChallenges++;
         }
 
+        // 2b. Material, das nur an diesem Jahrgang haengt, wird ausdruecklich
+        // global (Simon, 28.09.2026) -- VOR dem Jahrgang, dessen Kaskade die
+        // Zuordnungen nimmt. Material mit weiteren Jahrgaengen verliert nur
+        // die Zuordnung (Schritt 5).
+        await materialGlobalMachen(client, umfang);
+
         // 3. konfi_profiles beförderter Ex-Konfis (Rolle != konfi) werden vom
         // Jahrgang GELOEST (jahrgang_id = NULL), NICHT gelöscht. Sonst blockiert
         // der NO-ACTION-FK konfi_profiles.jahrgang_id den Jahrgang-Delete.
@@ -526,7 +542,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         `, [jahrgangId]);
 
         // 5. Der Jahrgang. Zuordnungen von Terminen, Challenges, Material,
-        // Personen und Einladungscodes gehen per ON DELETE CASCADE mit.
+        // Personen und Einladungscodes gehen per ON DELETE CASCADE mit
+        // (Material ohne weiteren Jahrgang ist seit 2b global).
         const { rowCount } = await client.query(
           'DELETE FROM jahrgaenge WHERE id = $1 AND organization_id = $2',
           [jahrgangId, organizationId]
@@ -856,7 +873,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         });
       }
 
-      console.log(`[matrix-email] Versand angefordert: Jahrgang ${jahrgangId} "${jahrgang.name}", type=${type}, an=${adminRow.email}, rows=${rows.length}`);
+      // Ohne Jahrgangsname und Adresse (Audit Sicherheit BF-14, 29.09.2026):
+      // Kennung und Domain genuegen, um einen Versand wiederzufinden.
+      console.log(`[matrix-email] Versand angefordert: Jahrgang ${jahrgangId}, type=${type}, an=Konto ${req.user.id} (${adresseFuersProtokoll(adminRow.email)}), rows=${rows.length}`);
       const mailResult = await emailService.sendKonfiMatrixEmail(
         adminRow.email,
         adminRow.display_name,

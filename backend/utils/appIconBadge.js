@@ -374,11 +374,14 @@ async function appIconSummenJeOrganisation(db, empfaenger) {
  * @param {object} db
  * @param {Array<number>} userIds
  * @returns {Promise<Map<number, {summe:number, jeOrganisation:Map<number, number>,
- *   stamm_organization_id:number|null}>>}
+ *   stamm_organization_id:number|null, mitgliedschaften:Array}>>}
  *   Je Person (Schluessel: id als Zahl) die Summe, die Aufteilung je Gemeinde
  *   (alle aktiven Gemeinden, auch mit 0) und die Stamm-Gemeinde. Geloeschte
  *   oder unbekannte Konten fehlen; wer keiner aktiven Gemeinde angehoert, hat
- *   die Summe 0.
+ *   die Summe 0. `mitgliedschaften` (seit 28.09.2026) reicht die Gemeinden
+ *   mit der Rolle DORT aus ladeMitgliedschaftenVieler durch -- der
+ *   Hintergrund-Lauf prueft damit die Badges je Gemeinde, ohne die zwei
+ *   Abfragen ein zweites Mal zu stellen.
  */
 async function appIconSummenAllerGemeinden(db, userIds) {
   const jePerson = await ladeMitgliedschaftenVieler(db, userIds);
@@ -413,7 +416,7 @@ async function appIconSummenAllerGemeinden(db, userIds) {
     }
     // summeAlteApps: die Zahl fuer Geraete der Store-Apps 2.2.x (ohne
     // Challenge-Neuigkeiten, siehe summenBerechnen).
-    ergebnis.set(userId, { summe, summeAlteApps, jeOrganisation, stamm_organization_id });
+    ergebnis.set(userId, { summe, summeAlteApps, jeOrganisation, stamm_organization_id, mitgliedschaften });
   }
   return ergebnis;
 }
@@ -496,7 +499,13 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   for (const r of neuigkeiten) {
     addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c, false);
   }
-  for (const r of leitungsNeuigkeiten) addiere(r.user_id, r.user_type, r.organization_id, r.c, false);
+  // Nur Spalte `c` -- wartend + neu freigegeben, wie am Reiter. Die Spalte
+  // `neu` (29.09.2026, rote Kugel am Challenge-Eintrag) zaehlt wartende
+  // Beitraege mit, die hier schon als Freigabe stehen; sie gehoert nicht aufs
+  // Symbol. Zeilen mit c = 0 (nur wartende neu) fallen heraus.
+  for (const r of leitungsNeuigkeiten) {
+    if (r.c > 0) addiere(r.user_id, r.user_type, r.organization_id, r.c, false);
+  }
 
   // Die org-weiten Zahlen auf jede ORG-WEITE Leitung dieser Organisation
   // verteilen (gebundene Admins haben ihre Zahlen oben schon bekommen).

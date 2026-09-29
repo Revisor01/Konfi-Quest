@@ -5,7 +5,7 @@ const { handleValidationErrors, commonValidations, getPointField } = require('..
 const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
-const { deleteKonfiCascade } = require('../utils/konfiDeletion');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
@@ -266,7 +266,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             if (!jahrgangExists) {
                 await client.query('ROLLBACK');
-                return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
+                return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Gemeinde' });
             }
 
             // Ein Admin darf Konfis NUR in seinen eigenen Jahrgaengen anlegen
@@ -339,33 +339,35 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // fuegt den neuen Konfi (sowie weiterhin alle Soll-Mitglieder) hinzu.
             await syncJahrgangChat(client, jahrgang_id, req.user.organization_id, req.user.id);
 
-            await client.query('COMMIT');
-
-            // Auto-Enrollment für zukünftige Pflicht-Events
-            try {
-              const enrollFutureEventsQuery = `
-                INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
-                SELECT e.id, $1, 'confirmed', NOW(), $2
-                FROM events e
-                JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
-                WHERE eja.jahrgang_id = $3
-                  AND e.mandatory = true
-                  AND e.event_date > NOW()
-                  AND e.organization_id = $2
-                  AND e.cancelled IS NOT TRUE
-                ON CONFLICT (user_id, event_id) DO NOTHING
-                RETURNING event_id
-              `;
-              const { rows: gebucht } = await db.query(enrollFutureEventsQuery, [userId, req.user.organization_id, jahrgang_id]);
-              // Auch in die Chats der Pflichttermine eintreten (falls die
-              // Leitung dort einen angelegt hat) — sonst fehlt der neue Konfi
-              // in Chats, in denen sein ganzer Jahrgang sitzt.
-              for (const row of gebucht) {
-                await addToEventChat(db, row.event_id, userId, req.user.organization_id);
-              }
-            } catch (enrollErr) {
-              console.error('Auto-enrollment für Pflicht-Events fehlgeschlagen:', enrollErr);
+            // Einschreibung in die kuenftigen Pflicht-Events des Jahrgangs --
+            // INNERHALB der Transaktion (28.09.2026, Audit Fachlogik
+            // Punkte/Termine BF-13), wie beim Jahrgangswechsel (PUT unten).
+            // Bis dahin lief sie nach dem COMMIT auf dem Pool, Fehler nur ins
+            // Log: Scheiterte sie, gab es die Konfi in keinem Pflicht-Event,
+            // und die Leitung bekam trotzdem 201 samt Passwort. Jetzt ganz
+            // oder gar nicht; ein Fehler endet im catch unten (ROLLBACK, 500).
+            const enrollFutureEventsQuery = `
+              INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+              SELECT e.id, $1, 'confirmed', NOW(), $2
+              FROM events e
+              JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+              WHERE eja.jahrgang_id = $3
+                AND e.mandatory = true
+                AND e.event_date > NOW()
+                AND e.organization_id = $2
+                AND e.cancelled IS NOT TRUE
+              ON CONFLICT (user_id, event_id) DO NOTHING
+              RETURNING event_id
+            `;
+            const { rows: gebucht } = await client.query(enrollFutureEventsQuery, [userId, req.user.organization_id, jahrgang_id]);
+            // Auch in die Chats der Pflichttermine eintreten (falls die
+            // Leitung dort einen angelegt hat) — sonst fehlt der neue Konfi
+            // in Chats, in denen sein ganzer Jahrgang sitzt.
+            for (const row of gebucht) {
+              await addToEventChat(client, row.event_id, userId, req.user.organization_id);
             }
+
+            await client.query('COMMIT');
 
             res.status(201).json({ id: userId, username, temporaryPassword: password, message: 'Konfi erfolgreich erstellt' });
 
@@ -432,7 +434,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             );
             if (!zielJahrgang) {
                 await client.query('ROLLBACK');
-                return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
+                return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Gemeinde' });
             }
 
             // Verschieben ist an die eigenen Jahrgaenge gebunden (Simons Regel
@@ -583,9 +585,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     });
 
     // DELETE a konfi
+    // Das Konto geht mit allem, was zur Person gehoert, auch den Dateien
+    // (utils/kontoLoeschen.js -- dieselbe Funktion wie Selbstloeschung,
+    // automatische Loeschung und DELETE /users/:id; Simon, 28.09.2026:
+    // "konto löschen muss wirklich alles löschen.").
     router.delete('/:id', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const userId = req.params.id;
         const client = await db.getClient();
+        let ergebnis = null;
         try {
             await client.query('BEGIN');
 
@@ -611,35 +618,39 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
 
-            // Kaskadierende Löschung über gemeinsame Funktion (D-04, Single Source of Truth).
-            // Sie raeumt auch die Wartelisten nach: Jede bestaetigte Buchung der
+            // Gemeinsame Loeschfunktion fuer alle Kontoloeschwege. Sie raeumt
+            // auch die Wartelisten nach: Jede bestaetigte Buchung der
             // geloeschten Person gibt einen Platz frei (Luecke geschlossen
             // 15.09.2026) und liefert die Nachgerueckten zurueck.
-            const nachgerueckteLoeschung = await deleteKonfiCascade(client, userId, req.user.organization_id);
+            ergebnis = await kontoDatenLoeschen(client, userId);
 
             await client.query('COMMIT');
-            res.json({ message: 'Konfi erfolgreich gelöscht' });
-
-            // Rechte-Cache leeren (Audit 26.09.2026, Sicherheit BF-10): Sonst
-            // bediente die laufende Sitzung des geloeschten Kontos die API
-            // noch bis zu 30 Sekunden weiter (TTL in rbac.js).
-            invalidateUserCache(parseInt(userId));
-
-            await meldeNachrueckern(db, req.user.organization_id, nachgerueckteLoeschung);
-
-            // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
-            liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
-            // Socket trennen: sonst empfaengt das geloeschte Konto weiter
-            // Org-Updates, bis die App neu gestartet wird (Audit 22.08.2026).
-            liveUpdate.disconnectUserSockets(userId);
-
         } catch (err) {
             await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
  console.error('Database error in DELETE /konfis/:id:', err);
-            res.status(500).json({ error: 'Datenbankfehler' });
+            return res.status(500).json({ error: 'Datenbankfehler' });
         } finally {
             client.release();
         }
+
+        // Nach dem COMMIT: erst die Dateien, dann die Antwort. Ein Fehler
+        // dabei kippt die festgeschriebene Loeschung nicht (wirft nie).
+        await kontoDateienLoeschen(ergebnis?.dateien);
+        res.json({ message: 'Konfi erfolgreich gelöscht' });
+
+        // Rechte-Cache leeren (Audit 26.09.2026, Sicherheit BF-10): Sonst
+        // bediente die laufende Sitzung des geloeschten Kontos die API
+        // noch bis zu 30 Sekunden weiter (TTL in rbac.js).
+        invalidateUserCache(parseInt(userId));
+        // Socket trennen: sonst empfaengt das geloeschte Konto weiter
+        // Org-Updates, bis die App neu gestartet wird (Audit 22.08.2026).
+        liveUpdate.disconnectUserSockets(userId);
+
+        // Nachgerueckte benachrichtigen, Chatlisten der Gespraechspartner auffrischen.
+        await meldeNachKontoLoeschung(db, ergebnis);
+
+        // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
+        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
     });
 
     // Regenerate password for a konfi
@@ -1145,25 +1156,24 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         const konfiId = req.params.id;
 
         try {
-            // Jahrgang des Konfis ermitteln
-            const jahrgangResult = await db.query(
-                'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
-                [konfiId]
-            );
-
-            if (jahrgangResult.rows.length === 0) {
-                return res.status(404).json({ error: 'Konfi nicht gefunden' });
-            }
-
             // Jahrgangs-Bindung (01.09.2026): Die Anwesenheitsstatistik listet
             // verpasste Pflichttermine samt Entschuldigungsgruenden — Konfi-
             // Daten, die nur sehen darf, wer den Jahrgang sehen darf (view).
+            //
+            // Konfi einer anderen Gemeinde -> 404 (Audit Sicherheit BF-16,
+            // 29.09.2026). Vorher las die Route konfi_profiles ohne Gemeinde:
+            // Eine fremde Kennung ergab 403 statt 404 und verriet damit, dass
+            // es sie gibt. darfKonfi sucht nur in der aktiven Gemeinde und
+            // liefert den Jahrgang gleich mit (wie GET /:id/event-points).
             const zugriff = await darfKonfi(db, req, konfiId);
+            if (!zugriff.gefunden) {
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
+            }
             if (!zugriff.erlaubt) {
                 return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
 
-            const jahrgangId = jahrgangResult.rows[0].jahrgang_id;
+            const jahrgangId = zugriff.jahrgangId;
 
             if (!jahrgangId) {
                 return res.json({ total_mandatory: 0, attended: 0, percentage: 100, missed_events: [] });
@@ -1676,6 +1686,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // 3. Rolle ändern + teamer_since setzen
             await client.query('UPDATE users SET role_id = $1, teamer_since = CURRENT_DATE WHERE id = $2', [teamerRole.id, konfiId]);
+            // 3a. Die Zeile der Stamm-Gemeinde in user_organizations zieht mit
+            // (28.09.2026, "Konfi und Team geht nicht parallel"): Migration 101
+            // hat jedes damalige Konto mit seiner Rolle auch dort eingetragen.
+            // Blieb dort "konfi" stehen, war die befoerderte Person fuer jede
+            // Abfrage ueber user_organizations weiter Konfi (etwa die
+            // Nachpruefung der Konfi-Abzeichen in badges.js).
+            await client.query(
+                'UPDATE user_organizations SET role_id = $1 WHERE user_id = $2 AND organization_id = $3',
+                [teamerRole.id, konfiId, req.user.organization_id]
+            );
 
             // 4. Event-Buchungen löschen.
             //

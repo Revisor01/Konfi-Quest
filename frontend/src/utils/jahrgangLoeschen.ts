@@ -2,7 +2,8 @@
 //
 // Seit Simons Entscheidung vom 28.09.2026 nimmt das Loeschen eines Jahrgangs
 // die Events und Challenges mit, die nur zu ihm gehoeren (Backend:
-// utils/jahrgangLoeschen.js). Das muss in der Rueckfrage stehen -- mit
+// utils/jahrgangLoeschen.js). Material, das nur zu ihm gehoert, bleibt und
+// wird global -- auch das nennt die Rueckfrage. Das muss in der Rueckfrage stehen -- mit
 // Zahlen, damit niemand zwanzig Termine loescht, weil er einen leeren
 // Jahrgang vermutet hat. Die Zahlen kommen aus
 // GET /admin/jahrgaenge/:id/loeschvorschau, derselben Regel-Stelle wie das
@@ -20,6 +21,12 @@ export interface JahrgangLoeschVorschau {
   events_behalten: number;
   challenges_geloescht: number;
   challenges_behalten: number;
+  /**
+   * Material, das nur an diesem Jahrgang hing und danach das ganze Team
+   * sieht (Simon, 28.09.2026: "Material wird global ja."). Optional: Die
+   * Vorschau kam ohne das Feld heraus; fehlt es, steht der Satz nicht da.
+   */
+  material_global?: number;
 }
 
 const anzahl = (n: number, einzahl: string, mehrzahl: string) => `${n} ${n === 1 ? einzahl : mehrzahl}`;
@@ -45,7 +52,8 @@ export function jahrgangLoeschHinweis(name: string, vorschau: JahrgangLoeschVors
   if (!vorschau) {
     absaetze.push(
       'Der Jahrgang, sein Chatverlauf und die Events und Challenges, die nur zu ihm gehören, werden '
-      + 'unwiderruflich entfernt. Solange dem Jahrgang noch aktive Konfis zugeordnet sind, ist das Löschen '
+      + 'unwiderruflich entfernt. Material, das nur zu ihm gehört, bleibt und ist danach für das ganze Team '
+      + 'sichtbar. Solange dem Jahrgang noch aktive Konfis zugeordnet sind, ist das Löschen '
       + 'nicht möglich. Zu Teamer:innen beförderte Konfis behalten ihre Konfi-Zeit mit Punkten und Badges.'
     );
     return absaetze.join('\n\n');
@@ -75,6 +83,13 @@ export function jahrgangLoeschHinweis(name: string, vorschau: JahrgangLoeschVors
   if (bleiben.length > 0) {
     absaetze.push(`${bleiben.join(' und ')} gehören auch zu anderen Jahrgängen oder dem Team und bleiben bestehen; `
       + 'nur die Zuordnung zu diesem Jahrgang fällt weg.');
+  }
+
+  const materialGlobal = typeof vorschau.material_global === 'number' ? vorschau.material_global : 0;
+  if (materialGlobal > 0) {
+    absaetze.push(materialGlobal === 1
+      ? '1 Material gehört nur zu diesem Jahrgang. Es bleibt erhalten und ist danach für das ganze Team sichtbar.'
+      : `${materialGlobal} Materialien gehören nur zu diesem Jahrgang. Sie bleiben erhalten und sind danach für das ganze Team sichtbar.`);
   }
 
   if (vorschau.challenges_geloescht > 0) {

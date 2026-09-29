@@ -55,9 +55,9 @@ Du arbeitest hier wie die Leitung, begrenzt auf deine zugewiesenen Jahrgänge:
 — und selbst mitmachen. Nur das **Löschen** — einer Challenge wie eines
 Beitrags — bleibt der [Leitung](80-challenges.md#eine-challenge-loeschen)
 vorbehalten. Eine rote Zahl am Symbol einer Challenge zeigt, was seit deinem
-letzten Öffnen neu ist — neue Beiträge und, wo du mitmachst, die gestartete
-Challenge selbst —, ein oranges Feld mit Zahl und Uhr die Beiträge, die auf
-deine Freigabe warten — siehe
+letzten Öffnen neu ist — neue Beiträge, auch solche, die noch auf Freigabe
+warten, und, wo du mitmachst, die gestartete Challenge selbst —, ein oranges
+Feld mit Uhr, dass Beiträge auf deine Freigabe warten — siehe
 [Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen).
 
 Es gibt auch Challenges nur fürs Team; die sehen Konfis gar nicht. Was nach dem
@@ -169,8 +169,12 @@ auch vom Gerät. Mehr dazu unter
   Punkte und Badges und unter **„Events der Konfi-Zeit“** die Events, bei
   denen du dabei oder angemeldet warst, mit den Punkten dafür. Diese Liste
   hält die App bei deiner Beförderung fest; sie bleibt, auch wenn dein alter
-  Jahrgang gelöscht wird. Hier steht nur deine Konfi-Zeit; deine
-  Teamer-Badges stehen unter **Badges**.
+  Jahrgang gelöscht wird. Deine Konfi-Badges stehen dort so, wie du sie
+  verdient hast — auch wenn die Leitung ein Badge später ändert oder löscht
+  ([Konfi-Badges im Team behalten](60-badges.md#konfi-badges-im-team-behalten)).
+  Hier steht nur deine Konfi-Zeit; deine Teamer-Badges stehen unter
+  **Badges** — in jeder Gemeinde die Badges dieser Gemeinde
+  ([je Gemeinde](60-badges.md#verstehen-was-bei-teamer-badges-anders-zaehlt)).
 - **Meine Rückblicke** — deine [Jahresrückblicke](95-wrapped.md) als Teamer:in
 
 Wie du dich in der App bewegst, steht im Kapitel

@@ -137,7 +137,12 @@ describe('Teamer:in aus der Konfi-Liste entfernen', () => {
     expect(a.header).toBe('Teamer:in löschen');
     expect(a.message).toBe(
       'Teamer:in "Test Teamer 1" wirklich löschen?\n\n'
-      + 'Das Konto wird mit allen zugehörigen Daten entfernt. Punkte und Badges aus einer früheren Konfi-Zeit gehen dabei verloren.\n\n'
+      // Seit 28.09.2026 nennt die Abfrage, was verschwindet und was der
+      // Gemeinde bleibt (utils/kontoLoeschen.ts).
+      + 'Mit dem Konto verschwindet alles, was zur Person gehört: Punkte, Badges, Stempel, Anträge samt Fotos, '
+      + 'Event-Anmeldungen, Challenge-Beiträge, Chat-Nachrichten und Zweiergespräche, auch aus einer früheren '
+      + 'Konfi-Zeit. Was die Person für die Gemeinde angelegt hat — Events, Material, Badges, Challenges —, '
+      + 'bleibt ohne ihren Namen. Das lässt sich nicht rückgängig machen.\n\n'
       + 'Arbeitet die Person auch in einer anderen Gemeinde mit, wird sie nur aus deiner Gemeinde entfernt; ihr Konto bleibt dort bestehen.'
     );
   });
