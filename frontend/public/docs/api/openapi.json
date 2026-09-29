@@ -430,7 +430,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Eine bestehende Person in die eigene Gemeinde einladen",
-        "description": "NEU 26.09.2026 (Simon: \"ORG Admin kann bestehenden anderen User hinzufuegen, der bekommt Einladung und bestaetigt. Schon ist der switcher da.\"). Gesucht wird EXAKT nach Benutzername oder E-Mail -- keine Teilsuche, sonst liesse sich der Bestand fremder Gemeinden durchblaettern. Die Einladung gilt 14 Tage.\nDIE MITGLIEDSCHAFT ENTSTEHT NICHT HIER, sondern erst mit der Annahme: Eine Zugehoerigkeit aendert, was jemand sieht und darf, und wird deshalb nicht ueber den Kopf der Person hinweg angelegt.\nKONFI IST AUSGESCHLOSSEN -- und zwar zusaetzlich zur Rollenhierarchie: canCreateRole('org_admin', 'konfi') liefert TRUE, die Hierarchie allein wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen ueber invite_codes.\nAUCH ALS ZIEL (BEHOBEN 26.09.2026, Audit Sicherheit BF-03): Ist die gefundene Person ein Konfi (Stammrolle), antwortet die Route mit demselben 404 wie bei einer unbekannten Kennung -- ohne Name, ohne Einladung, ohne Push und Mail. Vorher liess sich ein Konfi einer fremden Gemeinde als Teamer:in einladen, und die Route bestaetigte zu jeder E-Mail-Adresse im System, ob ein Konto existiert (Enumeration, auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre Einladung erscheint ohnehin in der Liste.\nMeldung an die eingeladene Person ueber Postfach, Push (Gruppe \"Anfragen und Freigaben\") und E-Mail, nach der Antwort (nachAntwort). Die Rolle steht darin mit dem festen Wort nach role_name (\"Leitung\", \"Org-Leitung\", \"Teamer:in\"; utils/rollenNamen.js). BEHOBEN 28.09.2026: Vorher stand dort der technische Name (\"als admin mitzuarbeiten\"), weil die Abfrage display_name gar nicht las. Dasselbe Wort nennt die Meldung \"Einladung angenommen/abgelehnt\" an die einladende Person (vorher roles.display_name, in bestehenden Gemeinden \"Hauptamt\").\nABGELAUFENE EINLADUNG SPERRT NICHT MEHR (BEHOBEN 28.09.2026): Nach 14 Tagen bleibt der Status 'offen', nur expires_at liegt zurueck; der Teilindex idx_org_einladungen_offen kennt nur den Status. Vorher lief jede neue Einladung derselben Person in dieselbe Gemeinde deshalb auf 409 schon_eingeladen, obwohl GET /einladungen und /einladungen/meine die alte nicht mehr zeigten. Jetzt loescht die Route in derselben Transaktion die abgelaufene offene Einladung genau dieser Person in dieser Gemeinde samt Postfach-Eintrag und legt die neue an. Beantwortete Einladungen (Verlauf) und die anderer Personen bleiben.\n",
+        "description": "NEU 26.09.2026 (Simon: \"ORG Admin kann bestehenden anderen User hinzufuegen, der bekommt Einladung und bestaetigt. Schon ist der switcher da.\"). Gesucht wird EXAKT nach Benutzername oder E-Mail -- keine Teilsuche, sonst liesse sich der Bestand fremder Gemeinden durchblaettern. Die Einladung gilt 14 Tage.\nDIE MITGLIEDSCHAFT ENTSTEHT NICHT HIER, sondern erst mit der Annahme: Eine Zugehoerigkeit aendert, was jemand sieht und darf, und wird deshalb nicht ueber den Kopf der Person hinweg angelegt.\nKONFI IST AUSGESCHLOSSEN -- und zwar zusaetzlich zur Rollenhierarchie: canCreateRole('org_admin', 'konfi') liefert TRUE, die Hierarchie allein wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen ueber invite_codes.\nAUCH ALS ZIEL (BEHOBEN 26.09.2026, Audit Sicherheit BF-03): Ist die gefundene Person ein Konfi (Stammrolle), antwortet die Route mit demselben 404 wie bei einer unbekannten Kennung -- ohne Name, ohne Einladung, ohne Push und Mail. Vorher liess sich ein Konfi einer fremden Gemeinde als Teamer:in einladen, und die Route bestaetigte zu jeder E-Mail-Adresse im System, ob ein Konto existiert (Enumeration, auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre Einladung erscheint ohnehin in der Liste.\nKONFI IRGENDWO REICHT (BEHOBEN 28.09.2026, Simon: \"Konfi und Team geht nicht parallel\"; utils/konfiOderTeam.js): Vorher zaehlte nur die Stammrolle. Ein Konto, das zuhause Team und ueber user_organizations in einer anderen Gemeinde Konfi ist (Altbestand), liess sich so in eine weitere Gemeinde einladen. Jetzt dieselbe 404 nicht_gefunden wie bei einem Konfi. Test tests/routes/konfiOderTeam.test.js.\nMeldung an die eingeladene Person ueber Postfach, Push (Gruppe \"Anfragen und Freigaben\") und E-Mail, nach der Antwort (nachAntwort). Die Rolle steht darin mit dem festen Wort nach role_name (\"Leitung\", \"Org-Leitung\", \"Teamer:in\"; utils/rollenNamen.js). BEHOBEN 28.09.2026: Vorher stand dort der technische Name (\"als admin mitzuarbeiten\"), weil die Abfrage display_name gar nicht las. Dasselbe Wort nennt die Meldung \"Einladung angenommen/abgelehnt\" an die einladende Person (vorher roles.display_name, in bestehenden Gemeinden \"Hauptamt\").\nABGELAUFENE EINLADUNG SPERRT NICHT MEHR (BEHOBEN 28.09.2026): Nach 14 Tagen bleibt der Status 'offen', nur expires_at liegt zurueck; der Teilindex idx_org_einladungen_offen kennt nur den Status. Vorher lief jede neue Einladung derselben Person in dieselbe Gemeinde deshalb auf 409 schon_eingeladen, obwohl GET /einladungen und /einladungen/meine die alte nicht mehr zeigten. Jetzt loescht die Route in derselben Transaktion die abgelaufene offene Einladung genau dieser Person in dieser Gemeinde samt Postfach-Eintrag und legt die neue an. Beantwortete Einladungen (Verlauf) und die anderer Personen bleiben.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -466,7 +466,7 @@
             "description": "Nicht org_admin, oder Rolle laut Hierarchie nicht vergebbar"
           },
           "404": {
-            "description": "Kein Konto mit dieser Kennung ODER die Person ist ein Konfi -- beides identisch (error_code nicht_gefunden)"
+            "description": "Kein Konto mit dieser Kennung ODER die Person ist in irgendeiner Gemeinde Konfi -- beides identisch (error_code nicht_gefunden)"
           },
           "409": {
             "description": "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen; nur bei einer noch gueltigen offenen Einladung)"
@@ -576,7 +576,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Einladung annehmen -- legt die Mitgliedschaft an",
-        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n\nBEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-21; Simons Entscheidung F-13: \"Ja, als Postfach-Eintrag\"): Die einladende Leitung erfuhr nichts. Jetzt nach der Antwort Push mit Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet', status 'angenommen', einladung_id, user_id, organization_id = die einladende Gemeinde) an die Person aus eingeladen_von, solange sie dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst an die Org-Admins der Gemeinde; nie an die eingeladene Person selbst. Dazu das Live-Signal 'users' an die Gemeinde (die Benutzerliste laedt nach). Die Antwortform ist unveraendert.\n\nBEHOBEN 28.09.2026: Bei der eingeladenen Person blieb nach der Zusage der Postfach-Eintrag \"Einladung in eine Gemeinde ... Tippe, um zu antworten\" (type 'gemeinde_einladung') stehen und zaehlte als ungelesen. Er geht jetzt in DERSELBEN Transaktion wie Statuswechsel und Mitgliedschaft (loescheMitteilungenZuEinladung, wie beim Zurueckziehen). Die Zusage an die Leitung ('gemeinde_einladung_beantwortet') bleibt. 404/409/410 raeumen nichts auf; einen abgelaufenen Eintrag nimmt das taegliche Postfach-Aufraeumen (02:00) mit.\n",
+        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n\nBEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-21; Simons Entscheidung F-13: \"Ja, als Postfach-Eintrag\"): Die einladende Leitung erfuhr nichts. Jetzt nach der Antwort Push mit Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet', status 'angenommen', einladung_id, user_id, organization_id = die einladende Gemeinde) an die Person aus eingeladen_von, solange sie dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst an die Org-Admins der Gemeinde; nie an die eingeladene Person selbst. Dazu das Live-Signal 'users' an die Gemeinde (die Benutzerliste laedt nach). Die Antwortform ist unveraendert.\n\nBEHOBEN 28.09.2026: Bei der eingeladenen Person blieb nach der Zusage der Postfach-Eintrag \"Einladung in eine Gemeinde ... Tippe, um zu antworten\" (type 'gemeinde_einladung') stehen und zaehlte als ungelesen. Er geht jetzt in DERSELBEN Transaktion wie Statuswechsel und Mitgliedschaft (loescheMitteilungenZuEinladung, wie beim Zurueckziehen). Die Zusage an die Leitung ('gemeinde_einladung_beantwortet') bleibt. 404/409/410 raeumen nichts auf; einen abgelaufenen Eintrag nimmt das taegliche Postfach-Aufraeumen (02:00) mit.\n\nKONFI UND TEAM NIE ZUGLEICH (BEHOBEN 28.09.2026, Simon: \"Konfi und Team geht nicht parallel\"; utils/konfiOderTeam.js): Die Annahme prueft Konto und angebotene Rolle mit dem Stand von JETZT. Vorher legte sie die Mitgliedschaft auch an, wenn das Konto inzwischen (oder schon vor dem 26.09.2026, Sicherheit BF-03) Konfi war oder die Einladung die Konfi-Rolle trug. Dann 409 konfi_und_team; die Einladung bleibt offen, nichts wird geschrieben.\n",
         "parameters": [
           {
             "name": "id",
@@ -595,7 +595,7 @@
             "description": "Nicht vorhanden ODER nicht die eigene Einladung -- bewusst dieselbe Antwort, sonst liesse sich durch Durchprobieren erkennen, welche es gibt"
           },
           "409": {
-            "description": "Bereits beantwortet (error_code schon_beantwortet)"
+            "description": "Bereits beantwortet (error_code schon_beantwortet); seit 28.09.2026 auch: das Konto ist irgendwo Konfi oder die angebotene Rolle ist konfi (error_code konfi_und_team)"
           },
           "410": {
             "description": "Abgelaufen (error_code expired)"
@@ -787,7 +787,8 @@
         "tags": [
           "Passwörter & Einladungen"
         ],
-        "summary": "Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)",
+        "summary": "Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 bis 90 Tage gültig)",
+        "description": "GUELTIGKEIT WAEHLBAR (28.09.2026, Audit E-08; Simon: \"codes laenger als 7 Tage ist gut. Mach es flexibel. Aber mit Zwang die ablaufen zu lassen.\"): gueltig_tage 7, 14, 30, 60 oder 90, optional. Ohne das Feld (oder mit null) gilt der Code wie bisher 7 Tage — so schicken es die Apps im Store (2.2.0, 2.3.0). Jeder andere Wert: 400 \"Ein Einladungscode gilt 7, 14, 30, 60 oder 90 Tage.\", es wird kein Code angelegt. Einen Code ohne Ablauf gibt es nicht (invite_codes.expires_at NOT NULL; utils/einladungsGueltigkeit.js). Antwort additiv um gueltig_tage erweitert.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -800,6 +801,22 @@
                 "properties": {
                   "jahrgang_id": {
                     "type": "integer"
+                  },
+                  "gueltig_tage": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "enum": [
+                      7,
+                      14,
+                      30,
+                      60,
+                      90,
+                      null
+                    ],
+                    "default": 7,
+                    "description": "Seit 28.09.2026, optional"
                   }
                 }
               }
@@ -808,7 +825,10 @@
         },
         "responses": {
           "201": {
-            "description": "invite_code, jahrgang_name, expires_at (Status ist 200)"
+            "description": "invite_code, jahrgang_name, expires_at, gueltig_tage (seit 28.09.2026) — Status ist 200"
+          },
+          "400": {
+            "description": "gueltig_tage nicht 7, 14, 30, 60 oder 90 — { error }"
           },
           "403": {
             "description": "Nur Org-Admins"
@@ -862,7 +882,8 @@
         "tags": [
           "Passwörter & Einladungen"
         ],
-        "summary": "Einladungscode um 7 Tage verlaengern",
+        "summary": "Einladungscode verlaengern (um 7 bis 90 Tage, hoechstens bis 90 Tage im Voraus)",
+        "description": "VERLAENGERN WAEHLBAR, IMMER MIT ABLAUF (28.09.2026, Audit E-08): tage 7, 14, 30, 60 oder 90, optional — ohne Body wie bisher um 7 Tage (die Apps im Store schicken keinen). Das neue Ablaufdatum ist das bisherige plus tage, aber NIE mehr als 90 Tage ab jetzt; was darueber hinausginge, wird gekuerzt (begrenzt: true). Bleibt bis zur Grenze nicht einmal ein Tag, 400 und das Datum bleibt. Ein Tag sind 24 Stunden (vorher Kalendertage per setDate — ueber eine Zeitumstellung eine Stunde Unterschied). Abgelaufene Codes bleiben abgelaufen (400 wie bisher) — der Vorschlag aus E-08, auch abgelaufene zu verlaengern, ist nach Simons Entscheidung (\"mit Zwang die ablaufen zu lassen\") bewusst nicht umgesetzt.\n",
         "parameters": [
           {
             "name": "id",
@@ -874,12 +895,40 @@
             "description": "ID des Einladungs-Codes"
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tage": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "enum": [
+                      7,
+                      14,
+                      30,
+                      60,
+                      90,
+                      null
+                    ],
+                    "default": 7,
+                    "description": "Seit 28.09.2026, optional"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Neues expires_at"
+            "description": "{ message, expires_at, begrenzt } — begrenzt (seit 28.09.2026): die 90-Tage-Grenze hat gekuerzt"
           },
           "400": {
-            "description": "Abgelaufene Codes nicht verlaengerbar"
+            "description": "Abgelaufene Codes nicht verlaengerbar; tage nicht 7, 14, 30, 60 oder 90; oder der Code gilt schon 90 Tage im Voraus — jeweils { error } auf Deutsch"
           },
           "403": {
             "description": "Nur org_admin"
@@ -2035,7 +2084,7 @@
             "description": "Mitgliedschaft gespeichert; Chat-Sync (Team-Chat, bei org_admin alle Jahrgangs-Chats); User-Cache invalidiert"
           },
           "400": {
-            "description": "konfi/super_admin als Rolle verboten; Rolle existiert nicht in Ziel-Org; User ist Konfi"
+            "description": "konfi/super_admin als Rolle verboten; Rolle existiert nicht in Ziel-Org; User ist Konfi; seit 28.09.2026 auch: User ist in einer anderen Gemeinde Konfi (error_code konfi_und_team)"
           },
           "404": {
             "description": "User oder Org nicht gefunden"
@@ -2051,7 +2100,7 @@
             "validateAddMember"
           ],
           "org-scope": false,
-          "objekt-pruefung": "Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen"
+          "objekt-pruefung": "Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen -- seit 28.09.2026 ueber BEIDE Quellen (utils/konfiOderTeam.js): vorher nur die Stammrolle, ein Konto mit Konfi-Zeile in user_organizations einer anderen Gemeinde (Altbestand) kam durch"
         }
       }
     },
@@ -2361,7 +2410,7 @@
             "$ref": "#/components/responses/NotFound"
           },
           "409": {
-            "description": "Username/E-Mail existiert bereits"
+            "description": "Username/E-Mail existiert bereits; seit 28.09.2026 auch: der Rollenwechsel machte das Konto zugleich Konfi und Team (error_code konfi_und_team)"
           }
         },
         "x-berechtigung": {
@@ -7521,7 +7570,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Konfi zur Teamer:in befoerdern",
-        "description": "Setzt die Rolle auf teamer und teamer_since auf heute und löscht Event-Buchungen und offene Anträge. Seit 01.09.2026 wird der Konfi-Jahrgang NICHT mehr automatisch nach user_jahrgang_assignments uebertragen: Die frisch befoerderte Person bekam dadurch view+edit auf ihren alten Jahrgang (die eigene Peergroup) — Simons Regel sagt, Teamer:innen existieren auch ohne Jahrgang und die Zuweisung kommt bewusst spaeter ueber die Benutzerverwaltung. Die eigenen eingefrorenen Konfi-Daten bleiben davon unberuehrt (haengen an konfi_profiles, nicht an der Zuweisung). BEHOBEN 15.09.2026: Die geloeschten Buchungen geben Konfi-Plaetze frei — dort rueckt jetzt die naechste wartende KONFI nach (fest 'konfi', nicht aus der bereits gewechselten Rolle abgeleitet). An abgesagten Terminen rueckt niemand nach. Seit 25.09.2026 gehen mit den geloeschten offenen Anträgen auch deren Postfach-Mitteilungen (\"Neuer Antrag eingegangen\" bei der Leitung, \"Antrag eingereicht\" bei der befoerderten Person; utils/postfachAufraeumen.js). BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-19): In derselben Transaktion gleichen sich die Chat-Plaetze der neuen Rolle an — syncJahrgangChat fuer den alten Jahrgang (ohne can_view-Zuweisung faellt die Person heraus, mit bleibt sie als teamer), Austritt aus den Termin-Chats aller geloeschten Buchungen (removeFromEventChat) und sofort in den Team-Chat (syncTeamChat). Vorher blieb sie im Jahrgangs-Chat der ehemaligen Mitkonfis und in den Termin-Chats und bekam deren Nachrichten als Push, bis jemand anderes den Abgleich ausloeste; den Team-Chat bekam sie erst nach Ablauf des 10-Minuten-Merkers. Antwortform unveraendert. KONFI-ZEIT ALS KOPIE (28.09.2026, Audit Punkte/Termine BF-09, Simons Entscheidung: das Loeschen der Buchungen bleibt gewollt). VOR dem Loeschen der Buchungen legt die Route in derselben Transaktion eine dauerhafte Kopie in konfi_historie an (Migration 170, utils/konfiHistorie.js): vergangene Buchungen mit Status und Anwesenheit, alle Termine mit Event-Punkten, Aktivitaeten, Bonuspunkte, Konfi-Abzeichen, Challenge-Stempel, Level, Konfispruch und Punktestand. Die Kopie ueberlebt das Loeschen des Jahrgangs und ist ueber GET /api/teamer/konfi-zeit (die Person) und GET /api/teamer/{userId}/konfi-zeit (Leitung) abrufbar. Antwortform unveraendert.\n",
+        "description": "Setzt die Rolle auf teamer und teamer_since auf heute und löscht Event-Buchungen und offene Anträge. Seit 01.09.2026 wird der Konfi-Jahrgang NICHT mehr automatisch nach user_jahrgang_assignments uebertragen: Die frisch befoerderte Person bekam dadurch view+edit auf ihren alten Jahrgang (die eigene Peergroup) — Simons Regel sagt, Teamer:innen existieren auch ohne Jahrgang und die Zuweisung kommt bewusst spaeter ueber die Benutzerverwaltung. Die eigenen eingefrorenen Konfi-Daten bleiben davon unberuehrt (haengen an konfi_profiles, nicht an der Zuweisung). BEHOBEN 15.09.2026: Die geloeschten Buchungen geben Konfi-Plaetze frei — dort rueckt jetzt die naechste wartende KONFI nach (fest 'konfi', nicht aus der bereits gewechselten Rolle abgeleitet). An abgesagten Terminen rueckt niemand nach. Seit 25.09.2026 gehen mit den geloeschten offenen Anträgen auch deren Postfach-Mitteilungen (\"Neuer Antrag eingegangen\" bei der Leitung, \"Antrag eingereicht\" bei der befoerderten Person; utils/postfachAufraeumen.js). BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-19): In derselben Transaktion gleichen sich die Chat-Plaetze der neuen Rolle an — syncJahrgangChat fuer den alten Jahrgang (ohne can_view-Zuweisung faellt die Person heraus, mit bleibt sie als teamer), Austritt aus den Termin-Chats aller geloeschten Buchungen (removeFromEventChat) und sofort in den Team-Chat (syncTeamChat). Vorher blieb sie im Jahrgangs-Chat der ehemaligen Mitkonfis und in den Termin-Chats und bekam deren Nachrichten als Push, bis jemand anderes den Abgleich ausloeste; den Team-Chat bekam sie erst nach Ablauf des 10-Minuten-Merkers. Antwortform unveraendert. KONFI-ZEIT ALS KOPIE (28.09.2026, Audit Punkte/Termine BF-09, Simons Entscheidung: das Loeschen der Buchungen bleibt gewollt). VOR dem Loeschen der Buchungen legt die Route in derselben Transaktion eine dauerhafte Kopie in konfi_historie an (Migration 170, utils/konfiHistorie.js): vergangene Buchungen mit Status und Anwesenheit, alle Termine mit Event-Punkten, Aktivitaeten, Bonuspunkte, Konfi-Abzeichen, Challenge-Stempel, Level, Konfispruch und Punktestand. Die Kopie ueberlebt das Loeschen des Jahrgangs und ist ueber GET /api/teamer/konfi-zeit (die Person) und GET /api/teamer/{userId}/konfi-zeit (Leitung) abrufbar. Antwortform unveraendert. BEHOBEN 28.09.2026 (Simon: \"Konfi und Team geht nicht parallel\"): Migration 101 hat jedes damalige Konto mit seiner Rolle auch in user_organizations eingetragen, auch fuer die Stamm-Gemeinde. Die Befoerderung setzte nur users.role_id -- in user_organizations blieb \"konfi\" stehen, und fuer jede Abfrage ueber diese Tabelle war die Person weiter Konfi. Jetzt wechselt die Zeile der Stamm-Gemeinde in derselben Transaktion mit. Test tests/routes/konfiOderTeam.test.js.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10369,7 +10418,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Leichtgewichtige Badge-Zähler für die Tab-Leiste",
-        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. GEAENDERT 27.09.2026: pendingRequests zaehlt ueber die gemeinsame Regel in backend/utils/antragLeitungSicht.js -- dieselbe, nach der die Antragsliste filtert und die Empfaenger von \"Neuer Antrag eingegangen\" bestimmt werden. Die Zahl selbst und die Antwortform sind unveraendert; neu ist, dass ein Admin fuer einen Antrag, den dieser Zaehler nicht zaehlt, auch keine Postfach-Mitteilung mehr bekommt (die sonst in postfach.ungelesen mitzaehlte). BEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-11): pendingEvents zaehlte fuer gebundene Admins \"Team gesucht\"-Events (teamer_needed) fremder Jahrgaenge mit -- die Eventliste hatte diesen Sichtbarkeitsgrund am 08.09.2026 gestrichen, die Zahl stand vor einem Event, das sich weder finden noch oeffnen liess. Jetzt zaehlt pendingEvents ueber die gemeinsame Regel in backend/utils/terminLeitungSicht.js, dieselbe wie GET /api/events, die Zahl am App-Symbol und die Erinnerung \"Events warten auf Verbuchung\" (die seitdem jeder Person genau diese Zahl nennt, BF-10). Buchungen geloeschter Konten zaehlen dabei wie in der Liste nicht mehr mit. Antwortform unveraendert. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage. Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst \"nicht abgesagt\"). Der Verbuchen-Tab blendet sie aus, die Zahl stand also vor einer leeren Liste. Dieselbe Bedingung gilt in der App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich zaehlen. Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes Feld aendert Form oder Typ, aeltere Apps ignorieren es): die Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das Gegenstueck zu chat.byRoom/chat.total. GEAENDERT 2026-09-27 (Simon: \"Die Challenges sollen sich verhalten wie der Chat\"): auch fuer Team und Leitung gefuellt -- fremde, freigegebene Beitraege seit dem letzten Oeffnen in laufenden Challenges, die die Person sieht (utils/challengeNeuigkeiten.js, challengeNeuigkeitenLeitungJeChallenge). Wartende Beitraege zaehlen weiter nur in pendingChallenges, ein Beitrag nie in beiden. Store-Apps 2.2.x lesen das Feld fuer Team und Leitung nicht; ihr Reiter zeigt weiter nur pendingChallenges. BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-07): Fuer Team und Leitung zaehlt dazu die laufende Challenge selbst (1), solange sie nie geoeffnet wurde, das Team bei ihr mitmacht ('konfis_und_team', 'nur_team' -- utils/challengeLeitungSicht.js, teamMachtMitSql) und die Person sie nicht angelegt hat (challenges.created_by). Bei 'konfis' nicht. Nur Werte aendern sich, die Antwortform bleibt; dieselbe Rechnung speist die App-Icon-Summe und den Gemeinde-Umschalter. Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen), aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der Leitung. pendingChallenges bleibt unveraendert eine Zahl -- die Store-Apps 2.2.x lesen sie so. Fuer Konfis ist challengeApprovals 0/leer; Neuigkeiten (Konfis) und offene Freigaben (Leitung) werden nie in ein Feld gemischt. Seit 25.09.2026 kommt postfach additiv dazu: die Zahl ungelesener Postfach-Mitteilungen des KONTOS ueber alle Organisationen (dieselbe Zaehlung wie GET /api/notifications/postfach.ungelesen). Sie speist die Glocke -- und seit demselben Tag auch die Zahl am App-Symbol: Der Client addiert sie in allen drei Rollen zu den Reiter-Zahlen, der Server rechnet dieselbe Summe fuer den Push (utils/appIconBadge.js, postfachZaehler; Paritaetstest appIconBadgeParitaet.test.js). Gemessen vorher am Geraet: Glocke 23, Challenges 9, Chat 3, Symbol 12 -- jetzt 35. Ungelesene Mitteilungen zaehlen ALLE, auch die, deren Gegenstand ein Reiter schon zaehlt (offener Antrag + \"Neuer Antrag eingegangen\"); Begruendung in backend/utils/postfachArten.js. Kein bestehendes Feld aendert sich. Store-Apps 2.2.x addieren das Postfach nicht: Sie zeigen nach dem Oeffnen die kleinere Summe der Reiter, bis die naechste Fassung im Store ist. GEAENDERT 2026-09-28 (Entscheidung Simon, hebt die Entscheidung vom 25.09.2026 auf): postfach.ungelesen geht NICHT mehr in die Zahl am App-Symbol ein -- weder im Client (BadgeContext.totalBadgeCount, alle drei Rollen) noch auf dem Server (utils/appIconBadge.js: Push, stiller Push, Hintergrund-Lauf, je-organisation). Die App zeigt an der Glocke nur noch \"ungelesen > 0 -> blauer Briefumschlag\", keine Zahl. Das Feld bleibt mit Form, Typ und Wert unveraendert: Die Store-App 2.3.0 liest es fuer diese Anzeige (bis zu ihrem naechsten Build addiert sie es im Vordergrund noch selbst). Keine Summe in dieser Antwort enthielt das Postfach (chat.total, challengeUpdates.total und challengeApprovals.total zaehlen je ihren Bereich); deshalb aendert sich hier kein Wert.\n",
+        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. GEAENDERT 27.09.2026: pendingRequests zaehlt ueber die gemeinsame Regel in backend/utils/antragLeitungSicht.js -- dieselbe, nach der die Antragsliste filtert und die Empfaenger von \"Neuer Antrag eingegangen\" bestimmt werden. Die Zahl selbst und die Antwortform sind unveraendert; neu ist, dass ein Admin fuer einen Antrag, den dieser Zaehler nicht zaehlt, auch keine Postfach-Mitteilung mehr bekommt (die sonst in postfach.ungelesen mitzaehlte). BEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-11): pendingEvents zaehlte fuer gebundene Admins \"Team gesucht\"-Events (teamer_needed) fremder Jahrgaenge mit -- die Eventliste hatte diesen Sichtbarkeitsgrund am 08.09.2026 gestrichen, die Zahl stand vor einem Event, das sich weder finden noch oeffnen liess. Jetzt zaehlt pendingEvents ueber die gemeinsame Regel in backend/utils/terminLeitungSicht.js, dieselbe wie GET /api/events, die Zahl am App-Symbol und die Erinnerung \"Events warten auf Verbuchung\" (die seitdem jeder Person genau diese Zahl nennt, BF-10). Buchungen geloeschter Konten zaehlen dabei wie in der Liste nicht mehr mit. Antwortform unveraendert. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage. Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst \"nicht abgesagt\"). Der Verbuchen-Tab blendet sie aus, die Zahl stand also vor einer leeren Liste. Dieselbe Bedingung gilt in der App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich zaehlen. Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes Feld aendert Form oder Typ, aeltere Apps ignorieren es): die Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das Gegenstueck zu chat.byRoom/chat.total. GEAENDERT 2026-09-27 (Simon: \"Die Challenges sollen sich verhalten wie der Chat\"): auch fuer Team und Leitung gefuellt -- fremde, freigegebene Beitraege seit dem letzten Oeffnen in laufenden Challenges, die die Person sieht (utils/challengeNeuigkeiten.js, challengeNeuigkeitenLeitungJeChallenge). Wartende Beitraege zaehlen weiter nur in pendingChallenges, ein Beitrag nie in beiden. Store-Apps 2.2.x lesen das Feld fuer Team und Leitung nicht; ihr Reiter zeigt weiter nur pendingChallenges. BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-07): Fuer Team und Leitung zaehlt dazu die laufende Challenge selbst (1), solange sie nie geoeffnet wurde, das Team bei ihr mitmacht ('konfis_und_team', 'nur_team' -- utils/challengeLeitungSicht.js, teamMachtMitSql) und die Person sie nicht angelegt hat (challenges.created_by). Bei 'konfis' nicht. Nur Werte aendern sich, die Antwortform bleibt; dieselbe Rechnung speist die App-Icon-Summe und den Gemeinde-Umschalter. Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen), aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der Leitung. pendingChallenges bleibt unveraendert eine Zahl -- die Store-Apps 2.2.x lesen sie so. Fuer Konfis ist challengeApprovals 0/leer; Neuigkeiten (Konfis) und offene Freigaben (Leitung) werden nie in ein Feld gemischt. Seit 25.09.2026 kommt postfach additiv dazu: die Zahl ungelesener Postfach-Mitteilungen des KONTOS ueber alle Organisationen (dieselbe Zaehlung wie GET /api/notifications/postfach.ungelesen). Sie speist die Glocke -- und seit demselben Tag auch die Zahl am App-Symbol: Der Client addiert sie in allen drei Rollen zu den Reiter-Zahlen, der Server rechnet dieselbe Summe fuer den Push (utils/appIconBadge.js, postfachZaehler; Paritaetstest appIconBadgeParitaet.test.js). Gemessen vorher am Geraet: Glocke 23, Challenges 9, Chat 3, Symbol 12 -- jetzt 35. Ungelesene Mitteilungen zaehlen ALLE, auch die, deren Gegenstand ein Reiter schon zaehlt (offener Antrag + \"Neuer Antrag eingegangen\"); Begruendung in backend/utils/postfachArten.js. Kein bestehendes Feld aendert sich. Store-Apps 2.2.x addieren das Postfach nicht: Sie zeigen nach dem Oeffnen die kleinere Summe der Reiter, bis die naechste Fassung im Store ist. GEAENDERT 2026-09-28 (Entscheidung Simon, hebt die Entscheidung vom 25.09.2026 auf): postfach.ungelesen geht NICHT mehr in die Zahl am App-Symbol ein -- weder im Client (BadgeContext.totalBadgeCount, alle drei Rollen) noch auf dem Server (utils/appIconBadge.js: Push, stiller Push, Hintergrund-Lauf, je-organisation). Die App zeigt an der Glocke nur noch \"ungelesen > 0 -> blauer Briefumschlag\", keine Zahl. Das Feld bleibt mit Form, Typ und Wert unveraendert: Die Store-App 2.3.0 liest es fuer diese Anzeige (bis zu ihrem naechsten Build addiert sie es im Vordergrund noch selbst). Keine Summe in dieser Antwort enthielt das Postfach (chat.total, challengeUpdates.total und challengeApprovals.total zaehlen je ihren Bereich); deshalb aendert sich hier kein Wert. GEAENDERT 2026-09-29 (nur Anzeige): Statt des Briefumschlags zeigt die App an der Glocke einen blauen Punkt ohne Symbol. Antwort, Feld und Wert unveraendert.\n",
         "responses": {
           "200": {
             "description": "Zähler",
@@ -10438,7 +10487,7 @@
                     },
                     "postfach": {
                       "type": "object",
-                      "description": "NEU 25.09.2026, additiv, fuer alle Rollen. Ungelesene Postfach-Mitteilungen (notifications.read_at IS NULL) des Kontos ueber ALLE Organisationen -- bewusst ohne Org-Filter, siehe GET /api/notifications/postfach. Die App zeigt daraus an der Glocke einen Briefumschlag (> 0). Anteil an der App-Icon-Summe vom 25.09. bis 28.09.2026; seit 2026-09-28 nicht mehr (Feld und Wert unveraendert).\n",
+                      "description": "NEU 25.09.2026, additiv, fuer alle Rollen. Ungelesene Postfach-Mitteilungen (notifications.read_at IS NULL) des Kontos ueber ALLE Organisationen -- bewusst ohne Org-Filter, siehe GET /api/notifications/postfach. Die App zeigt daraus an der Glocke einen blauen Punkt (> 0; vom 28. bis 29.09.2026 ein Briefumschlag). Anteil an der App-Icon-Summe vom 25.09. bis 28.09.2026; seit 2026-09-28 nicht mehr (Feld und Wert unveraendert).\n",
                       "properties": {
                         "ungelesen": {
                           "type": "integer"
@@ -11238,7 +11287,7 @@
           "Teamer:innen"
         ],
         "summary": "Eigenes Teamer-Profil inkl. eingefrorener Konfi-Vergangenheit",
-        "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation).\nBEHOBEN 26.09.2026: organization_name kam ueber `LEFT JOIN organizations o ON u.organization_id = o.id`, also aus der STAMM-Gemeinde. Wer ueber user_organizations in einer zweiten Gemeinde arbeitet, las im Profil trotzdem den Namen seiner Stamm-Gemeinde. Jetzt wird die AKTIVE Gemeinde (req.user.organization_id) genommen. Antwortform unveraendert -- nur der Wert stimmt.\nExistiert ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\nkonfi_data.badges enthaelt ausschliesslich Abzeichen mit custom_badges.target_role = 'konfi' aus der EIGENEN Organisation (BEHOBEN 2026-09-16): Vorher fehlte beides. user_badges kennt die Art eines Abzeichens nicht, die steht allein in custom_badges.target_role - Teamer-Abzeichen (z. B. criteria_type 'teamer_year') landeten dadurch in der Konfi-Historie. Teamer-Abzeichen liefert GET /api/teamer/badges/v2.\n",
+        "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation).\nBEHOBEN 26.09.2026: organization_name kam ueber `LEFT JOIN organizations o ON u.organization_id = o.id`, also aus der STAMM-Gemeinde. Wer ueber user_organizations in einer zweiten Gemeinde arbeitet, las im Profil trotzdem den Namen seiner Stamm-Gemeinde. Jetzt wird die AKTIVE Gemeinde (req.user.organization_id) genommen. Antwortform unveraendert -- nur der Wert stimmt.\nExistiert ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\nkonfi_data.badges enthaelt ausschliesslich Abzeichen mit custom_badges.target_role = 'konfi' aus der EIGENEN Organisation (BEHOBEN 2026-09-16): Vorher fehlte beides. user_badges kennt die Art eines Abzeichens nicht, die steht allein in custom_badges.target_role - Teamer-Abzeichen (z. B. criteria_type 'teamer_year') landeten dadurch in der Konfi-Historie. Teamer-Abzeichen liefert GET /api/teamer/badges/v2.\nAUS DER KOPIE DER KONFI-ZEIT (28.09.2026, Simon: \"Geloeschte Badges muessen bei befoerdertem erhalten bleiben. Auch wenn wir die zb aendern.\"): Gibt es fuer die Person in der aktiven Gemeinde eine Kopie (konfi_historie, juengste), kommt konfi_data.badges aus deren `abzeichen` — so, wie die Badges verdient wurden, auch nachdem die Leitung ein Badge geloescht oder geaendert hat. Ohne Kopie wie bisher live aus user_badges/custom_badges. DIESELBE FORM wie live (Vertrag der Store-Apps 2.2.0/2.3.0, TeamerKonfiStatsPage und BadgePopoverContent): badge_id (integer), name, description (string|null), icon, color, criteria_type, criteria_value (integer), awarded_date (ISO-Zeitstempel), neueste zuerst. Die Kopie traegt alle acht Felder (beschreibung, farbe, kriterium, kriterium_wert, verliehen_am); nichts muss erfunden werden.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -11294,7 +11343,71 @@
                         "object",
                         "null"
                       ],
-                      "description": "gottesdienst_points, gemeinde_points, jahrgang_name, badges[] - null bei Teamer:innen ohne Konfi-Vergangenheit"
+                      "description": "gottesdienst_points, gemeinde_points, jahrgang_name, badges[] - null bei Teamer:innen ohne Konfi-Vergangenheit",
+                      "properties": {
+                        "gottesdienst_points": {
+                          "type": "integer"
+                        },
+                        "gemeinde_points": {
+                          "type": "integer"
+                        },
+                        "jahrgang_name": {
+                          "type": "string",
+                          "description": "leer, wenn der Jahrgang geloescht wurde"
+                        },
+                        "badges": {
+                          "type": "array",
+                          "description": "Konfi-Abzeichen; bei vorhandener Kopie der Konfi-Zeit aus ihr (seit 28.09.2026), sonst live",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "badge_id": {
+                                "type": "integer"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "icon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "color": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "criteria_type": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "criteria_value": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "awarded_date": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -11645,7 +11758,7 @@
           "Abzeichen"
         ],
         "summary": "Eigene Teamer-Abzeichen mit Fortschritt (Generation v2)",
-        "description": "Abzeichen-Generation v2 (31.08.2026). Gleiche Huelle wie GET /api/konfi/badges/v2 — { available, earned, stats } —, damit Konfi und Teamer denselben Vertrag haben: dieselben Feldnamen, dieselbe Semantik, die Zaehler im RUMPF statt in Kopfzeilen (der App-Zwischenspeicher sichert nur Daten, keine Kopfzeilen). Gerechnet wird in utils/teamerBadgeProgress.js — dieselbe Quelle wie die alte Route GET /api/teamer/badges, die nur anders verpackt. So koennen alte und neue Route nicht auseinanderlaufen. Gegenueber der alten Route fehlen die Verwaltungsfelder created_at, created_by, organization_id und target_role: Sie landen auf keinem Bildschirm und kosten rund ein Viertel der Antwortgroesse (gemessen: 27 Abzeichen = 13,4 kB, davon ~3,3 kB Verwaltungsfelder). Erhalten bleiben criteria_type, criteria_value, criteria_extra, is_active, is_hidden und sort_order — die Ansichten gruppieren, sortieren und filtern danach.\n",
+        "description": "Abzeichen-Generation v2 (31.08.2026). Gleiche Huelle wie GET /api/konfi/badges/v2 — { available, earned, stats } —, damit Konfi und Teamer denselben Vertrag haben: dieselben Feldnamen, dieselbe Semantik, die Zaehler im RUMPF statt in Kopfzeilen (der App-Zwischenspeicher sichert nur Daten, keine Kopfzeilen). Gerechnet wird in utils/teamerBadgeProgress.js — dieselbe Quelle wie die alte Route GET /api/teamer/badges, die nur anders verpackt. So koennen alte und neue Route nicht auseinanderlaufen. Gegenueber der alten Route fehlen die Verwaltungsfelder created_at, created_by, organization_id und target_role: Sie landen auf keinem Bildschirm und kosten rund ein Viertel der Antwortgroesse (gemessen: 27 Abzeichen = 13,4 kB, davon ~3,3 kB Verwaltungsfelder). Erhalten bleiben criteria_type, criteria_value, criteria_extra, is_active, is_hidden und sort_order — die Ansichten gruppieren, sortieren und filtern danach.\nJE GEMEINDE (geprueft 28.09.2026, Simon: \"Es bleibt immer an der Gemeinde!\"): Abzeichen, Fortschritt und Verleihungen kommen aus der AKTIVEN Gemeinde (nach switch-org bzw. X-Active-Organization); wer in einer weiteren Gemeinde Teamer:in ist, bekommt dort 200 mit deren Abzeichen, gezaehlt werden nur Aktivitaeten und Events dieser Gemeinde. Dasselbe fuer GET /teamer/badges, /teamer/badges/unseen, PUT und POST /teamer/badges/mark-seen und newBadges in GET /notifications/badge-counts. Test tests/routes/teamerBadgesJeGemeinde.test.js.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -11656,7 +11769,7 @@
             "Inline-Check role_name === 'teamer'"
           ],
           "org-scope": true,
-          "objekt-pruefung": "nur eigene Daten; alle Teilabfragen mit user_id + organization_id"
+          "objekt-pruefung": "nur eigene Daten; alle Teilabfragen mit user_id + organization_id der aktiven Gemeinde"
         },
         "responses": {
           "200": {
@@ -11783,7 +11896,7 @@
           "Abzeichen"
         ],
         "summary": "Erreichte Abzeichen einer Teamer:in (Leitungs-Einsicht)",
-        "description": "Für die Teamer-Detailseite der Leitung. Liefert bewusst nur die erreichten Abzeichen ohne Fortschrittsberechnung - die teure Berechnung aus GET /api/teamer/badges wäre hier ungenutzt. Der Zielbenutzer muss die Rolle teamer haben, zur eigenen Organisation gehören und darf nicht gelöscht sein.\n",
+        "description": "Für die Teamer-Detailseite der Leitung. Liefert bewusst nur die erreichten Abzeichen ohne Fortschrittsberechnung - die teure Berechnung aus GET /api/teamer/badges wäre hier ungenutzt. Der Zielbenutzer muss die Rolle teamer haben, zur eigenen Organisation gehören und darf nicht gelöscht sein.\nBEHOBEN 28.09.2026 (Audit Punkte/Termine, Tabelle \"Rolle je Gemeinde\"; Simon: \"Es bleibt immer an der Gemeinde!\"): Rolle und Gemeinde kamen vom Konto (users.role_id, users.organization_id) -- fuer eine Teamer:in, die ueber user_organizations in der aktiven Gemeinde mitarbeitet, bekam deren Leitung 404. Jetzt die Rolle IN DIESER Gemeinde ueber beide Quellen (utils/orgMitglieder.js, ladeRolleInGemeinde; in der Stamm-Gemeinde gewinnt users.role_id). Die Abzeichen bleiben auf die aktive Gemeinde begrenzt. Antwortform unveraendert. Test tests/routes/teamerBadgesJeGemeinde.test.js.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11794,7 +11907,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User muss Rolle 'teamer' haben, zur aktiven Org gehören und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer'"
+          "objekt-pruefung": "Ziel-User muss in der aktiven Org die Rolle 'teamer' haben (Stamm-Gemeinde oder user_organizations) und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer' und organization_id der aktiven Org"
         },
         "parameters": [
           {
@@ -12083,7 +12196,7 @@
           "Teamer:innen"
         ],
         "summary": "Zertifikat an eine Teamer:in vergeben",
-        "description": "Prueft, dass der Ziel-User zur eigenen Organisation gehört und die Rolle teamer hat, und dass der Zertifikat-Typ zur Organisation gehört und aktiv ist. Nach dem Speichern gehen eine Push-Nachricht und ein Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht. Seit 25.09.2026 landet die Mitteilung (Art `certificate`) auch im Postfach der Teamer:in (utils/postfachArten.js).\n",
+        "description": "Prueft, dass der Ziel-User zur eigenen Organisation gehört und die Rolle teamer hat, und dass der Zertifikat-Typ zur Organisation gehört und aktiv ist. Nach dem Speichern gehen eine Push-Nachricht und ein Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht. Seit 25.09.2026 landet die Mitteilung (Art `certificate`) auch im Postfach der Teamer:in (utils/postfachArten.js).\nBEHOBEN 28.09.2026 (wie GET /teamer/{userId}/badges): Die Pruefung las Rolle und Gemeinde am Konto; einer Teamer:in aus einer weiteren Gemeinde liess sich hier kein Zertifikat verleihen (404). Jetzt die Rolle IN DIESER Gemeinde ueber beide Quellen. Das Zertifikat gehoert der verleihenden Gemeinde (organization_id, Typ nur aus ihr).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -12095,7 +12208,7 @@
             "validateCertificate"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User: organization_id + Rolle 'teamer' (404 sonst); certificate_type: organization_id + is_active (404 sonst)"
+          "objekt-pruefung": "Ziel-User: Rolle 'teamer' in der aktiven Org, Stamm-Gemeinde oder user_organizations (404 sonst); certificate_type: organization_id + is_active (404 sonst)"
         },
         "parameters": [
           {
@@ -13920,6 +14033,7 @@
           "Abzeichen"
         ],
         "summary": "Abzeichen bearbeiten",
+        "description": "KONFI-BADGES BEFOERDERTER BLEIBEN IM ORIGINAL (28.09.2026, Simon: \"Geloeschte Badges muessen bei befoerdertem erhalten bleiben. Auch wenn wir die zb aendern.\"). Vor dem UPDATE bekommt in derselben Transaktion jede Person, die dieses Konfi-Abzeichen traegt, ein Konfi-Profil in dieser Organisation hat, dort nicht mehr die Rolle konfi traegt und noch keine Kopie der Konfi-Zeit hat, eine Kopie (konfi_historie, anlass 'abzeichen_geaendert', Migration 172; utils/konfiHistorie.js sichereKonfiZeitVorAbzeichenAenderung). GET /api/teamer/profile liest konfi_data.badges bei vorhandener Kopie aus ihr — Befoerderte sehen Name, Symbol, Beschreibung, Kriterium und Zielwert von damals. Aktuelle Konfis sehen die Aenderung sofort. Teamer-Abzeichen loesen keine Kopie aus. Antwortform unveraendert.\n",
         "parameters": [
           {
             "name": "id",
@@ -14019,7 +14133,7 @@
           "Abzeichen"
         ],
         "summary": "Abzeichen löschen (inklusive aller bereits vergebenen Exemplare)",
-        "description": "Loescht das Abzeichen samt user_badges in einer Transaktion. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen \"Neues Badge erhalten\" zu diesem Abzeichen mit (data.badge_id; utils/postfachAufraeumen.js) — bei 404 rollt alles zurueck, auch das.\n",
+        "description": "Loescht das Abzeichen samt user_badges in einer Transaktion. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen \"Neues Badge erhalten\" zu diesem Abzeichen mit (data.badge_id; utils/postfachAufraeumen.js) — bei 404 rollt alles zurueck, auch das. KONFI-BADGES BEFOERDERTER BLEIBEN (28.09.2026, Simon: \"Geloeschte Badges muessen bei befoerdertem erhalten bleiben.\"): Vor dem Loeschen bekommt in derselben Transaktion jede Person, die dieses Konfi-Abzeichen traegt, ein Konfi-Profil in dieser Organisation hat, dort nicht mehr die Rolle konfi traegt (users.role_id bzw. user_organizations.role_id) und noch keine Kopie der Konfi-Zeit hat, eine Kopie (konfi_historie, anlass 'abzeichen_geloescht', Migration 172). GET /api/teamer/profile zeigt ihre Konfi-Badges danach aus der Kopie — das geloeschte Abzeichen bleibt dort stehen. Aktuelle Konfis verlieren es wie bisher. Antwortform unveraendert.\n",
         "parameters": [
           {
             "name": "id",
@@ -14057,7 +14171,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Transaktional: erst DELETE FROM user_badges WHERE badge_id = :id (OHNE Org-Filter), dann DELETE FROM custom_badges WHERE id AND organization_id. Greift die zweite Löschung nicht (fremde Org), wird die Transaktion zurueckgerollt — die vergebenen Exemplare bleiben also erhalten.\n",
-          "hinweis": "Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien"
+          "hinweis": "Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien. TEILWEISE BEHOBEN 28.09.2026: Befoerderte (nicht mehr konfi) behalten ihre Konfi-Abzeichen ueber die Kopie der Konfi-Zeit; aktuelle Konfis verlieren sie weiterhin (gewollt).\n"
         }
       }
     },
@@ -14904,7 +15018,7 @@
           "Jahrgänge"
         ],
         "summary": "Jahrgang löschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)",
-        "description": "Aktive Konfis (Rolle konfi) blockieren die Löschung immer. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true nötig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien entfernt. RUECKBLICKE BLEIBEN (26.09.2026, Audit Chat BF-02, Migration 162): wrapped_ausgaben.jahrgang_id haengt mit ON DELETE SET NULL am Jahrgang; die Konfi-Ausgabe und die Snapshots befoerderter Ex-Konfis ueberleben das Loeschen und bleiben ueber GET /api/wrapped/history/{userId} abrufbar. Bis dahin nahm ein CASCADE Ausgabe und Snapshots mit. Konfi-Ausgaben dieses Jahrgangs ohne einen einzigen Snapshot werden mit entfernt. TERMINE UND CHALLENGES GEHEN MIT (28.09.2026, Simons Entscheidung, Audit BF-08): Termine und Challenges, die NUR an diesem Jahrgang haengen, werden auf demselben Weg geloescht wie einzeln (utils/terminLoeschen.js, utils/challengeLoeschen.js) — samt Buchungen, Zeitfenstern, Termin-Chats, Erinnerungen, Beitraegen, Dateien und Postfach-Eintraegen. Haengen sie zusaetzlich an einem anderen Jahrgang, faellt nur die Zuordnung weg. Termine \"Nur Team\" (teamer_only) und Challenges \"Nur das Team\" (audience nur_team) bleiben immer; Termine und Challenges ohne Jahrgang sind nicht betroffen. Abweichend vom Einzel-Loeschen bleiben vergebene Event-Punkte gutgeschrieben, und es geht keine Absage-Mitteilung hinaus. Die Stempel von Teamer:innen und Leitung aus den geloeschten Challenges werden vorher in bewahrte_stempel abgelegt (Migration 169) und kommen ueber GET /api/challenges/bewahrte-stempel. Alles in EINER Transaktion; die Dateien verschwinden erst nach dem COMMIT. Was mitgeht, nennt vorher GET /api/admin/jahrgaenge/{id}/loeschvorschau. Antwortform unveraendert.\n",
+        "description": "Aktive Konfis (Rolle konfi) blockieren die Löschung immer. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true nötig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien entfernt. RUECKBLICKE BLEIBEN (26.09.2026, Audit Chat BF-02, Migration 162): wrapped_ausgaben.jahrgang_id haengt mit ON DELETE SET NULL am Jahrgang; die Konfi-Ausgabe und die Snapshots befoerderter Ex-Konfis ueberleben das Loeschen und bleiben ueber GET /api/wrapped/history/{userId} abrufbar. Bis dahin nahm ein CASCADE Ausgabe und Snapshots mit. Konfi-Ausgaben dieses Jahrgangs ohne einen einzigen Snapshot werden mit entfernt. TERMINE UND CHALLENGES GEHEN MIT (28.09.2026, Simons Entscheidung, Audit BF-08): Termine und Challenges, die NUR an diesem Jahrgang haengen, werden auf demselben Weg geloescht wie einzeln (utils/terminLoeschen.js, utils/challengeLoeschen.js) — samt Buchungen, Zeitfenstern, Termin-Chats, Erinnerungen, Beitraegen, Dateien und Postfach-Eintraegen. Haengen sie zusaetzlich an einem anderen Jahrgang, faellt nur die Zuordnung weg. Termine \"Nur Team\" (teamer_only) und Challenges \"Nur das Team\" (audience nur_team) bleiben immer; Termine und Challenges ohne Jahrgang sind nicht betroffen. Abweichend vom Einzel-Loeschen bleiben vergebene Event-Punkte gutgeschrieben, und es geht keine Absage-Mitteilung hinaus. Die Stempel von Teamer:innen und Leitung aus den geloeschten Challenges werden vorher in bewahrte_stempel abgelegt (Migration 169) und kommen ueber GET /api/challenges/bewahrte-stempel. Alles in EINER Transaktion; die Dateien verschwinden erst nach dem COMMIT. MATERIAL WIRD GLOBAL (28.09.2026, Simons Entscheidung \"Material wird global ja.\"): Material wird nicht geloescht. Haengt es NUR an diesem Jahrgang, setzt dieselbe Transaktion materials.ist_global = true (utils/jahrgangLoeschen.js, materialGlobalMachen) — danach sehen es alle Teamer:innen der Gemeinde, mit Globus. Bis dahin fiel nur die Zuordnung per Kaskade weg, und das Material rutschte stillschweigend in den Zweig \"kein Jahrgang\" der Lese-Schranke. Material mit weiterem Jahrgang verliert nur die Zuordnung. Was mitgeht, nennt vorher GET /api/admin/jahrgaenge/{id}/loeschvorschau. Antwortform unveraendert.\n",
         "parameters": [
           {
             "name": "id",
@@ -15031,6 +15145,10 @@
                     "challenges_behalten": {
                       "type": "integer",
                       "description": "Challenges mit weiterem Jahrgang oder 'Nur das Team'"
+                    },
+                    "material_global": {
+                      "type": "integer",
+                      "description": "Seit 28.09.2026 (additiv): Material nur dieses Jahrgangs, das bisher nicht global war — wird beim Loeschen global und ist danach fuer das ganze Team sichtbar. Schon globales Material zaehlt nicht mit."
                     }
                   }
                 }
@@ -16191,8 +16309,11 @@
                     "type": "string",
                     "enum": [
                       "befoerderung",
-                      "jahrgang_geloescht"
-                    ]
+                      "jahrgang_geloescht",
+                      "abzeichen_geloescht",
+                      "abzeichen_geaendert"
+                    ],
+                    "description": "abzeichen_*: seit 28.09.2026 (Migration 172) -- Kopie vor dem Loeschen oder Aendern eines Konfi-Badges fuer Befoerderte ohne Kopie"
                   },
                   "erstellt_am": {
                     "type": [

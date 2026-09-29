@@ -153,7 +153,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/invite-code</code></div>
-        <p class="summary">Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)</p>
+        <p class="summary">Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 bis 90 Tage gültig)</p>
         <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>validateInviteCode</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Jahrgang muss zur eigenen Org gehören</div><div class="hinweis">Inline-Check erlaubt auch is_super_admin-Flag (abweichend von den drei anderen Invite-Routen, die strikt role_name==='org_admin' verlangen)</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/auth/invite-codes</code></div>
@@ -165,7 +165,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Code muss zur eigenen Org gehören</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/invite-codes/{id}/extend</code></div>
-        <p class="summary">Einladungscode um 7 Tage verlaengern</p>
+        <p class="summary">Einladungscode verlaengern (um 7 bis 90 Tage, hoechstens bis 90 Tage im Voraus)</p>
         <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Code muss zur eigenen Org gehören</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/register-konfi</code></div>
@@ -225,7 +225,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/organizations/{id}/members</code></div>
         <p class="summary">Bestehenden User als Multi-Org-Mitglied zuweisen (Upsert der Rolle)</p>
-        <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireSuperAdmin</code> · <code>validateAddMember</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen</div>
+        <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireSuperAdmin</code> · <code>validateAddMember</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen -- seit 28.09.2026 ueber BEIDE Quellen (utils/konfiOderTeam.js): vorher nur die Stammrolle, ein Konto mit Konfi-Zeile in user_organizations einer anderen Gemeinde (Altbestand) kam durch</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/organizations/{id}/members/{userId}</code></div>
         <p class="summary">Multi-Org-Mitgliedschaft entziehen (Primaer-Org nicht entfernbar)</p>
@@ -548,7 +548,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/admin/badges/{id}</code></div>
         <p class="summary">Abzeichen löschen (inklusive aller bereits vergebenen Exemplare)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateBadgeId</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Transaktional: erst DELETE FROM user_badges WHERE badge_id = :id (OHNE Org-Filter), dann DELETE FROM custom_badges WHERE id AND organization_id. Greift die zweite Löschung nicht (fremde Org), wird die Transaktion zurueckgerollt — die vergebenen Exemplare bleiben also erhalten.</div><div class="hinweis">Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateBadgeId</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Transaktional: erst DELETE FROM user_badges WHERE badge_id = :id (OHNE Org-Filter), dann DELETE FROM custom_badges WHERE id AND organization_id. Greift die zweite Löschung nicht (fremde Org), wird die Transaktion zurueckgerollt — die vergebenen Exemplare bleiben also erhalten.</div><div class="hinweis behoben">Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien. TEILWEISE BEHOBEN 28.09.2026: Befoerderte (nicht mehr konfi) behalten ihre Konfi-Abzeichen ueber die Kopie der Konfi-Zeit; aktuelle Konfis verlieren sie weiterhin (gewollt).</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/badges/{id}</code></div>
         <p class="summary">Einzelnes Abzeichen der eigenen Organisation</p>
@@ -584,7 +584,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/teamer/{userId}/badges</code></div>
         <p class="summary">Erreichte Abzeichen einer Teamer:in (Leitungs-Einsicht)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel-User muss Rolle 'teamer' haben, zur aktiven Org gehören und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer'</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel-User muss in der aktiven Org die Rolle 'teamer' haben (Stamm-Gemeinde oder user_organizations) und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer' und organization_id der aktiven Org</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/teamer/badges</code></div>
         <p class="summary">Eigene Teamer-Abzeichen mit Fortschritt</p>
@@ -604,7 +604,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/teamer/badges/v2</code></div>
         <p class="summary">Eigene Teamer-Abzeichen mit Fortschritt (Generation v2)</p>
-        <div class="zugriff"><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code> · <code>Inline-Check role_name === 'teamer'</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur eigene Daten; alle Teilabfragen mit user_id + organization_id</div>
+        <div class="zugriff"><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code> · <code>Inline-Check role_name === 'teamer'</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur eigene Daten; alle Teilabfragen mit user_id + organization_id der aktiven Gemeinde</div>
       </article></div>
     </section><section id="jahrgänge" class="service" style="--service:#0e7490">
       <header class="service-kopf"><h2>Jahrgänge</h2><p class="service-meta">8 Operationen</p></header>
@@ -996,7 +996,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/teamer/{userId}/certificates</code></div>
         <p class="summary">Zertifikat an eine Teamer:in vergeben</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateCertificate</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel-User: organization_id + Rolle 'teamer' (404 sonst); certificate_type: organization_id + is_active (404 sonst)</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateCertificate</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel-User: Rolle 'teamer' in der aktiven Org, Stamm-Gemeinde oder user_organizations (404 sonst); certificate_type: organization_id + is_active (404 sonst)</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/teamer/{userId}/certificates/{certId}</code></div>
         <p class="summary">Zertifikat einer Teamer:in entfernen</p>
