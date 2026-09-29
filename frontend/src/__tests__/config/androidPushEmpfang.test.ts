@@ -202,19 +202,72 @@ describe('Zahl am App-Symbol: eine Stelle fuer offene und geschlossene App', () 
     expect(bau).toContain('implementation "me.leolin:ShortcutBadger:$shortcutBadgerVersion@aar"');
   });
 
-  it('Weg "mitteilungen": die liegende Mitteilung bekommt die neue Zahl -- still, und weggenommen wird sie nie', () => {
+  const nachfuehren = zahl.slice(zahl.indexOf('static void mitteilungNachfuehren('), zahl.indexOf('static void ausNachricht('));
+
+  it('Weg "mitteilungen": die liegende Mitteilung bekommt die neue Zahl -- still', () => {
     // Samsung und Xiaomi rechnen die Zahl aus den liegenden Mitteilungen.
     // Sinkt die Zahl (gelesen, erledigt), traegt die eine liegende
-    // Mitteilung (fester tag) die neue. Die App raeumt keine Mitteilungen ab
-    // (Simon, 29.09.2026) -- auch bei 0 nicht.
+    // Mitteilung (fester tag) die neue.
     const setzen = zahl.slice(zahl.indexOf('static void setzen('), zahl.indexOf('static void mitteilungNachfuehren('));
     expect(setzen).toMatch(/if \(WEG_MITTEILUNGEN\.equals\(weg\(app\)\)\) \{\s*mitteilungNachfuehren\(app, ganz\);/);
-    const nachfuehren = zahl.slice(zahl.indexOf('static void mitteilungNachfuehren('), zahl.indexOf('static void ausNachricht('));
     expect(nachfuehren).toContain('MITTEILUNG_TAG.equals(liegend.getTag())');
     expect(nachfuehren).toContain('.setNumber(zahl)');
     expect(nachfuehren).toContain('.setOnlyAlertOnce(true)');
-    expect(nachfuehren).toContain('verwalter.notify(liegend.getTag(), liegend.getId(), neu)');
-    expect(zahl).not.toMatch(/\.cancel(All)?\(/);
+    expect(nachfuehren).toContain('verwalter.notify(MITTEILUNG_TAG, MITTEILUNG_ID, neu)');
+  });
+
+  it('Weg "mitteilungen": sinkt die Zahl auf 0, nimmt die App genau die eine Sammel-Mitteilung weg', () => {
+    // Simon, 29.09.2026: "Ja, bei 0 wegräumen." Bis dahin blieb auf Samsung
+    // und Xiaomi eine 1 am Symbol, solange die Sammel-Mitteilung lag -- der
+    // Startbildschirm zaehlt eine liegende Mitteilung mit number 0 als 1.
+    //
+    // Weg kommt NUR sie: tag konfi_app_symbol und die ID, unter der das
+    // FCM-SDK (und bei offener App das Push-Plugin) eine Mitteilung mit tag
+    // ablegt. Nur, wenn sie eine Zahl trug (number > 0) -- eine Mitteilung,
+    // die schon mit 0 kam (nichts offen, etwa eine Event-Erinnerung), ist
+    // nicht "auf 0 gesunken" und bleibt, bis sie jemand antippt oder
+    // wegwischt.
+    expect(zahl).toContain('static final int MITTEILUNG_ID = 0;');
+    // Der Filter steht VOR jeder Aenderung: fremde tags und IDs bleiben liegen.
+    const filter = nachfuehren.indexOf('if (!MITTEILUNG_TAG.equals(liegend.getTag()) || liegend.getId() != MITTEILUNG_ID) continue;');
+    // number == zahl (also auch 0 == 0) laesst sie stehen, bevor die 0 greift.
+    const gleich = nachfuehren.indexOf('if (alt == null || alt.number == zahl) continue;');
+    const beiNull = nachfuehren.search(/if \(zahl == 0\) \{\s*verwalter\.cancel\(MITTEILUNG_TAG, MITTEILUNG_ID\);\s*continue;\s*\}/);
+    expect(filter).toBeGreaterThan(0);
+    expect(gleich).toBeGreaterThan(filter);
+    expect(beiNull).toBeGreaterThan(gleich);
+    // Genau EIN Wegnehmen in der ganzen Klasse, kein cancelAll: Alle anderen
+    // Mitteilungen raeumt die App weiter nicht ab.
+    expect(zahl.match(/\.cancel\w*\(/g)).toEqual(['.cancel(']);
+    expect(nachfuehren.match(/\.cancel\(/g)).toHaveLength(1);
+  });
+
+  it('das Wegnehmen gibt es nur auf Weg "mitteilungen" -- nie bei "anbieter" oder "punkt"', () => {
+    // mitteilungNachfuehren ist der einzige Ort mit cancel (oben) und wird
+    // nur unter WEG_MITTEILUNGEN gerufen. iOS hat diese Klasse nicht.
+    const aufrufe = [...zahl.matchAll(/mitteilungNachfuehren\(/g)].map((m) => m.index ?? 0);
+    expect(aufrufe).toHaveLength(2); // Definition + ein Aufruf
+    const aufruf = aufrufe.find((i) => !zahl.slice(i - 20, i).includes('static void'))!;
+    expect(zahl.slice(aufruf - 60, aufruf)).toMatch(/if \(WEG_MITTEILUNGEN\.equals\(weg\(app\)\)\) \{\s*$/);
+    // Die offene App kommt ueber das Plugin an dieselbe Stelle, ohne eigenes Wegnehmen.
+    const plugin = javaDerApp('AppSymbolZahlPlugin');
+    expect(plugin).toContain('AppSymbolZahl.setzen(getContext(), zahl);');
+    expect(plugin).not.toMatch(/\.cancel\w*\(|NotificationManager/);
+    expect(javaDerApp('KonfiMessagingService')).not.toMatch(/\.cancel\w*\(|NotificationManager/);
+  });
+
+  it('die ID der Sammel-Mitteilung ist die, unter der das Push-Plugin bei offener App ablegt', () => {
+    // Bei offener App zeigt das Push-Plugin die Mitteilung selbst an -- mit
+    // CommonNotificationBuilder.createNotificationInfo aus dem FCM-SDK, also
+    // unter demselben (tag, id) wie das SDK bei geschlossener App. Dass das
+    // SDK dort die ID 0 vergibt, steht im Bytecode von firebase-messaging
+    // 25.0.1 (CommonNotificationBuilder: new DisplayNotificationInfo(builder,
+    // getTag(params), 0); nachgesehen per javap am 29.09.2026) -- das AAR
+    // liegt nicht im Repo, deshalb hier nur die Fassung und der Weg des Plugins.
+    const plugin = lies('node_modules/@capacitor/push-notifications/android/src/main/java/com/capacitorjs/plugins/pushnotifications/PushNotificationsPlugin.java');
+    expect(plugin).toContain('CommonNotificationBuilder.createNotificationInfo(');
+    expect(plugin).toContain('notificationManager.notify(notificationInfo.tag, notificationInfo.id, notificationInfo.notificationBuilder.build());');
+    expect(lies('android/variables.gradle')).toContain("firebaseMessagingVersion = '25.0.1'");
   });
 
   it('der tag der liegenden Mitteilung ist derselbe, den der Server schickt', () => {

@@ -117,6 +117,10 @@ export const benachrichtigungskanaeleAnlegen = async (): Promise<void> => {
 // Events), oder sie wegwischt. Bis dahin raeumte AppContext der Leitung beim
 // Aktivwerden alles weg -- auf Android nahm das die Marke am App-Symbol mit,
 // auf dem iPhone ungelesene Anfragen aus der Mitteilungszentrale.
+// Die eine Ausnahme liegt nativ, nicht hier: Auf Samsung und Xiaomi (Weg
+// "mitteilungen") nimmt die App die Sammel-Mitteilung weg, wenn die Zahl am
+// Symbol auf 0 sinkt (AppSymbolZahl.mitteilungNachfuehren, Simon, 29.09.2026:
+// "Ja, bei 0 wegräumen").
 
 /*
  * Genau EINE zugestellte Notification anhand ihrer id entfernen.

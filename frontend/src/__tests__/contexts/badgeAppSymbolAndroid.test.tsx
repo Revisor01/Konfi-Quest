@@ -114,6 +114,30 @@ describe('BadgeContext auf Android: Zahl ueber das eigene Plugin', () => {
     expect(badgeClear).not.toHaveBeenCalled();
   });
 
+  it('sinkt die Zahl auf 0, bekommt das Plugin die 0 -- auf Samsung und Xiaomi raeumt es damit die Sammel-Mitteilung weg', async () => {
+    // Simon, 29.09.2026: "Ja, bei 0 wegräumen." Das Wegnehmen selbst macht
+    // AppSymbolZahl.mitteilungNachfuehren (Weg "mitteilungen"); dafuer muss
+    // die offene App die 0 wirklich weitergeben, nachdem sie vorher eine Zahl
+    // gesetzt hat -- hier: vier offene Dinge, dann gelesen (neue Zaehlung
+    // nach einem Push).
+    let zaehlung = 0;
+    mockApiGet.mockImplementation((pfad: string) => {
+      if (pfad !== BADGE_COUNTS) return Promise.resolve({ data: {} });
+      zaehlung += 1;
+      return Promise.resolve(zaehlung === 1
+        ? ZAEHLER
+        : { data: { chat: { total: 0, byRoom: {} }, newBadges: 0, challengeUpdates: { total: 0, byChallenge: {} }, postfach: { ungelesen: 0 } } });
+    });
+    render(<BadgeProvider><span /></BadgeProvider>);
+    await waitFor(() => expect(pluginSetzen).toHaveBeenCalledWith({ zahl: 4 }));
+
+    window.dispatchEvent(new Event('push:received'));
+
+    await waitFor(() => expect(pluginSetzen).toHaveBeenCalledTimes(2));
+    expect(pluginSetzen.mock.calls).toEqual([[{ zahl: 4 }], [{ zahl: 0 }]]);
+    expect(badgeClear).not.toHaveBeenCalled();
+  });
+
   it('das iPhone bleibt beim Badge-Plugin, wie bisher', async () => {
     plattform = 'ios';
     render(<BadgeProvider><span /></BadgeProvider>);

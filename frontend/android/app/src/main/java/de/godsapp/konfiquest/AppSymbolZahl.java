@@ -43,7 +43,9 @@ import me.leolin.shortcutbadger.ShortcutBadger;
  *                 (HuaweiHomeBadger).
  *   mitteilungen  Der Startbildschirm rechnet die Zahl aus den liegenden
  *                 Mitteilungen (Samsung One UI, Xiaomi). Der Server schickt
- *                 dafuer jede Mitteilung mit festem tag und der Gesamtzahl.
+ *                 dafuer jede Mitteilung mit festem tag und der Gesamtzahl;
+ *                 sinkt sie auf 0, nimmt die App diese eine Mitteilung weg
+ *                 (mitteilungNachfuehren).
  *   punkt         Kein bekannter Weg zu einer Zahl (Pixel u. a.).
  *
  * Alles hier faengt seine Fehler selbst: Eine Zahl, die nicht ankommt, ist
@@ -65,6 +67,17 @@ final class AppSymbolZahl {
      * damit unter diesem tag ab, und jede neue ersetzt die vorige.
      */
     static final String MITTEILUNG_TAG = "konfi_app_symbol";
+
+    /**
+     * ID, unter der die Mitteilung mit diesem tag liegt. Das FCM-SDK legt
+     * jede Mitteilung unter (tag, 0) ab: CommonNotificationBuilder baut
+     * DisplayNotificationInfo(builder, getTag(params), 0), und
+     * DisplayNotification ruft notify(info.tag, info.id, ...) -- nachgesehen
+     * im Bytecode von firebase-messaging 25.0.1 (javap, 29.09.2026). Bei
+     * offener App zeigt das Push-Plugin die Mitteilung mit demselben
+     * CommonNotificationBuilder an, also ebenfalls unter (tag, 0).
+     */
+    static final int MITTEILUNG_ID = 0;
 
     /** Sonys Zahl-Anbieter; muss im Manifest unter queries stehen, sonst sieht die App ihn nicht. */
     static final String SONY_ANBIETER = "com.sonymobile.home.resourceprovider";
@@ -152,23 +165,35 @@ final class AppSymbolZahl {
      *
      * Sinkt die Zahl, weil etwas gelesen oder erledigt ist, bekommt diese
      * Mitteilung hier die neue Zahl, still (setOnlyAlertOnce), mit Titel,
-     * Text und Ziel wie zuvor (recoverBuilder). Weggenommen wird sie NIE --
-     * auch bei 0 nicht: Die App raeumt keine Mitteilungen ab, die jemand noch
-     * lesen will (Simon, 29.09.2026). Bei 0 zeigt das Symbol deshalb eine 1,
-     * bis die Mitteilung angetippt oder weggewischt ist.
+     * Text und Ziel wie zuvor (recoverBuilder).
+     *
+     * SINKT SIE AUF 0, nimmt die App genau diese eine Mitteilung weg (Simon,
+     * 29.09.2026: "Ja, bei 0 wegräumen"). Der Startbildschirm zaehlt eine
+     * liegende Mitteilung mit number 0 als 1 -- bis dahin blieb deshalb eine
+     * 1 am Symbol, obwohl nichts mehr offen war. Weggenommen wird nur, was
+     * unter (MITTEILUNG_TAG, MITTEILUNG_ID) liegt und eine Zahl trug: Eine
+     * Mitteilung, die schon mit 0 kam (nichts offen, etwa eine
+     * Event-Erinnerung), ist nicht "auf 0 gesunken" und bleibt, bis sie
+     * angetippt oder weggewischt ist. Alle anderen Mitteilungen raeumt die
+     * App weiter nie ab, und auf den Wegen "anbieter" und "punkt" kommt sie
+     * hier gar nicht hin (setzen).
      */
     static void mitteilungNachfuehren(Context context, int zahl) {
         NotificationManager verwalter = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (verwalter == null) return;
         for (StatusBarNotification liegend : verwalter.getActiveNotifications()) {
-            if (!MITTEILUNG_TAG.equals(liegend.getTag())) continue;
+            if (!MITTEILUNG_TAG.equals(liegend.getTag()) || liegend.getId() != MITTEILUNG_ID) continue;
             Notification alt = liegend.getNotification();
             if (alt == null || alt.number == zahl) continue;
+            if (zahl == 0) {
+                verwalter.cancel(MITTEILUNG_TAG, MITTEILUNG_ID);
+                continue;
+            }
             Notification neu = Notification.Builder.recoverBuilder(context, alt)
                 .setNumber(zahl)
                 .setOnlyAlertOnce(true)
                 .build();
-            verwalter.notify(liegend.getTag(), liegend.getId(), neu);
+            verwalter.notify(MITTEILUNG_TAG, MITTEILUNG_ID, neu);
         }
     }
 

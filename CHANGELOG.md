@@ -515,6 +515,10 @@ iOS-Build 234 · Android versionCode 128
 ### Behoben
 - Karten, Store-, Musik- und Weblinks aus der App lösen die App-Sperre nicht
   mehr aus, auch nicht bei „Sofort“.
+- Auf Samsung- und Xiaomi-Geräten nimmt die App die Mitteilung, an der die
+  Zahl am App-Symbol hängt, aus der Leiste, sobald die Zahl auf 0 sinkt.
+  Bisher blieb dort eine 1 stehen, bis man die Mitteilung wegwischte. Alle
+  anderen Mitteilungen bleiben liegen, bis man sie antippt oder wegwischt.
 - Auf Android erscheint eine Mitteilung auch, während die App offen ist — wie
   auf dem iPhone —, und die Zahlen an den Reitern stellen sich sofort darauf
   ein.

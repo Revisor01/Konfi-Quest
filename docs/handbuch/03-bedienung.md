@@ -516,9 +516,13 @@ fünf Minuten wieder, wie auf dem iPhone.
 Auf Samsung und Xiaomi hängt die Zahl an der einen Mitteilung in der Leiste.
 Wer sie wegwischt, nimmt damit auch die Zahl vom Symbol; die roten Zahlen an
 den Reitern und die [Glocke](#ungelesene-mitteilungen-an-der-glocke-erkennen)
-zeigen weiter, was offen ist. Ist nichts mehr offen, die Mitteilung aber noch
-nicht weggewischt, steht dort eine 1 — die App räumt keine Mitteilung weg,
-die du vielleicht noch lesen willst.
+zeigen weiter, was offen ist. Sinkt die Zahl auf 0 — weil du alles gelesen
+und erledigt hast, in der App oder im Browser —, nimmt die App diese eine
+Mitteilung aus der Leiste, und am Symbol steht nichts mehr. Bei geschlossener
+App geschieht das, sobald die Zahl nachgezogen wird, spätestens nach fünf
+Minuten. Kam die Mitteilung, als ohnehin nichts offen war — etwa eine
+Event-Erinnerung —, bleibt sie liegen, bis du sie antippst oder wegwischst;
+so lange steht am Symbol eine 1.
 
 > **Noch nicht an jedem Gerät geprüft.** Sony: Die App spricht Sonys
 > Zahl-Schnittstelle direkt an; ob jedes Xperia-Modell sie anbietet, zeigt
@@ -533,6 +537,8 @@ Die App nimmt eine Mitteilung aus der Leiste, sobald du sie antippst oder den
 Bereich öffnest, zu dem sie gehört — etwa den Chat. Alles andere bleibt
 liegen, bis du es wegwischst. Das gilt für jede Rolle, auch für die Leitung,
 auf iPhone und Android: Beim Öffnen der App verschwindet keine Mitteilung.
+Die eine Ausnahme ist die Mitteilung auf Samsung und Xiaomi, an der die Zahl
+hängt, wenn nichts mehr offen ist (siehe oben).
 
 ## Benachrichtigungen wieder zum Laufen bringen
 
