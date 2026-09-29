@@ -26,8 +26,6 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Diese App benötigt Zugriff auf die Kamera, um beim Einchecken zu Events QR-Codes zu scannen und Fotos für Chat-Nachrichten, Challenge-Beiträge und Aktivitäten aufzunehmen.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
@@ -60,10 +58,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
-		<string>fetch</string>
 	</array>
-	<key>UIFileSharingEnabled</key>
-	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -76,8 +71,6 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
-	<key>UISupportsDocumentBrowser</key>
-	<true/>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 </dict>

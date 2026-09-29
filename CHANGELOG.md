@@ -475,6 +475,9 @@ iOS-Build 234 · Android versionCode 128
 - Das Handbuch im Browser lädt seine Bildschirmfotos viel schneller: zusammen
   1,4 statt 12 MB, in voller Schärfe. Nach dem Austausch eines Bildes zeigt
   der Browser gleich das neue.
+- Auf dem iPhone erscheint Konfi Quest nicht mehr in der Dateien-App: Fotos,
+  die auf das Hochladen warten, und geteilte Chat-Dateien liegen dort nicht
+  mehr offen — auch nicht an der App-Sperre vorbei.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

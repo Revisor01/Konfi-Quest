@@ -478,20 +478,20 @@ richtig machen oder bis dahin entfernen.
   (PNG-Farbtyp 6). App Store Connect lehnt Marketing-Icons mit Transparenz ab (ITMS-90717). Die Uploads
   221–230 liefen durch — entweder ist der Kanal vollständig deckend und Xcode entfernt ihn, oder ASC hat
   gewarnt. Zu klären in App Store Connect (Build-Verarbeitung, Warnungen).
-  - **Status:** offen 27.09.2026 — in App Store Connect zu klären; liegt bei Simon.
+  - **Status:** behoben 29.09.2026 — Der Alphakanal war überall 255, das Symbol also schon deckend; `kq.png` ist jetzt RGB (PNG-Farbtyp 2), dekodierte Pixel gegen den alten Stand gleich, sRGB-Angabe erhalten, 1.605.317 → 1.097.006 Bytes. Ob App Store Connect bei den Uploads 221–230 gewarnt hat, bleibt dort nachzusehen (Simon); künftig gibt es nichts mehr zu warnen. Test `frontend/src/__tests__/config/iosNativ.test.ts` (Farbtyp, Maße, kein tRNS).
 - **`aps-environment = development` in `App.entitlements`.** Xcode ersetzt den Wert beim Export mit
   App-Store-Profil nach gängiger Dokumentation durch `production`; Produktions-Push funktioniert laut
   Historie (Push-Ausfall betraf nur Android). Am IPA nicht geprüft (`codesign -d --entitlements`).
-  - **Status:** offen 27.09.2026 — am IPA prüfen; liegt bei Simon.
+  - **Status:** behoben 29.09.2026 — Nicht mehr dem Export überlassen: Die Release-Konfiguration (manuell signiert mit dem App-Store-Profil „Konfi Quest AppStore CI“, nur für den Store-Build) liest `App/AppRelease.entitlements` mit `production`, Debug weiter `App/App.entitlements` mit `development`. Das ist der Wert, den der Export bisher schon einsetzte — Push aus dem Store funktioniert (sonst hätten iOS-Geräte Sandbox-Tokens, die gegen Produktion scheitern). Ein Build mit falschem Pfad oder Profil schlägt laut im Archiv-Schritt fehl, nicht still. Test `iosNativ.test.ts`: Release → `AppRelease.entitlements`/`production`, Debug → `development`, beide Dateien mit denselben Schlüsseln (eine neue Fähigkeit muss in beide). Am IPA (`codesign -d --entitlements :- Payload/App.app`) beim nächsten Store-Build gegenprüfen — kein macOS hier.
 - **`UIBackgroundModes: fetch`.** `AppContext.tsx` nutzt `@capawesome/capacitor-background-task`
   (Hintergrundzeit beim Wechsel), was den Modus `fetch` nicht braucht. Ob `fetch` irgendwo genutzt wird,
   war nicht feststellbar; Apple prüft ungenutzte Modi gelegentlich.
-  - **Status:** offen 27.09.2026 — klären, ob `fetch` gebraucht wird. Später.
+  - **Status:** behoben 29.09.2026 — `fetch` entfernt: Kein Code nutzt Hintergrundabruf (kein `performFetchWithCompletionHandler`, kein `BGTaskScheduler`, kein `setMinimumBackgroundFetchInterval` in `ios/App/App` und den iOS-Teilen der Plugins); `@capawesome/capacitor-background-task` nutzt `beginBackgroundTask` und braucht keinen Modus. `remote-notification` bleibt — `backend/push/firebase.js` schickt `content-available: 1`. Test `iosNativ.test.ts`.
 - **`UIFileSharingEnabled` + `LSSupportsOpeningDocumentsInPlace` = true.** Der Documents-Ordner der App
   ist in der Dateien-App sichtbar. `MaterialFormModal.tsx:218-228` und `chatTeilen.ts:41-47` schreiben
   temporär nach `Directory.Documents`. Ob dort Chat-Anhänge liegen bleiben (auch bei aktiver App-Sperre
   sichtbar), war ohne Gerät nicht prüfbar.
-  - **Status:** offen 27.09.2026 — am Gerät prüfen; liegt bei Simon.
+  - **Status:** behoben 29.09.2026 — Am Code geprüft statt am Gerät: Auf iOS legt Capacitor-Filesystem `Directory.Data` UND `Directory.Documents` in den Documents-Ordner (`IONFileStructures+Converters.swift`). Dort lagen also die wartenden Uploads (`queue-uploads/`: Fotos aus Anträgen, Chat-Anhänge, `writeQueue.ts`, `chatOutbox.ts`) und jede aus dem Chat geteilte Datei (`share/`, `chatTeilen.ts`, nie gelöscht) — sichtbar in der Dateien-App und im Finder, auch an der App-Sperre vorbei. Der Medien-Cache (Chat-Bilder, Material) liegt in `Caches` und war nicht betroffen. Keine Funktion braucht die Freigabe: Sichern geht über das Teilen-Blatt, `CFBundleDocumentTypes` gibt es nicht (kein ITMS-90737). `UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace` und `UISupportsDocumentBrowser` (macht den Ordner ebenfalls sichtbar) entfernt. Test `iosNativ.test.ts`.
 - **Test-Deadlocks in der CI.** Zwei rote `backend-test`-Läufe (931, 938) zeigen `deadlock detected`
   zwischen `truncateAll` und Zähler-Abfragen (`events`/`activity_requests`/`challenge_submissions`), die
   offenbar aus einem vorigen Test noch liefen. Sieht nach systematischem Flattern aus; gehört zum

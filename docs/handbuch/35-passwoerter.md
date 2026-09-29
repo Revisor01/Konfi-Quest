@@ -256,6 +256,11 @@ wie gewohnt, und Bildschirmfotos gehen auf allen Geräten.
 > hält niemanden auf, der das Gerät technisch auseinandernimmt. Für den Alltag
 > reicht das — mehr verspricht sie nicht.
 
+**Was die App auf dem Gerät ablegt, bleibt in der App.** Fotos und Dateien, die
+noch auf das Hochladen warten, und Dateien, die du aus dem Chat teilst,
+erscheinen auf dem iPhone nicht in der Dateien-App. Willst du eine Datei
+behalten, sicherst du sie über das Teilen-Menü, etwa mit „In Dateien sichern“.
+
 ### Die Einstellung gilt nur auf diesem Gerät
 
 Sie hängt am Handy, nicht am Konto. Wer die App auf zwei Geräten nutzt, stellt

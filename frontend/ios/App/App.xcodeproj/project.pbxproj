@@ -36,6 +36,7 @@
 		AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
 		F804907B2E311E8D004820A3 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		F804907C2E311E8D004820A3 /* AppRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AppRelease.entitlements; sourceTree = "<group>"; };
 		F804907C2E316408004820A3 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		F818A4AC2E33D0B400F29E73 /* FCMPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FCMPlugin.m; sourceTree = "<group>"; };
 		F818A4AD2E33D0B400F29E73 /* FCMPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FCMPlugin.swift; sourceTree = "<group>"; };
@@ -86,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				F804907B2E311E8D004820A3 /* App.entitlements */,
+				F804907C2E311E8D004820A3 /* AppRelease.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				5CE0FDE12A0000010000SCENE /* SceneDelegate.swift */,
@@ -430,7 +432,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				CODE_SIGN_ENTITLEMENTS = App/AppRelease.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 218;
