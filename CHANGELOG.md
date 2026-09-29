@@ -1190,6 +1190,9 @@ iOS-Build 234 · Android versionCode 128
 - Android: Auf Sony-Geräten steht am App-Symbol die Zahl der App statt nur
   eines Punkts — dieselbe Summe wie auf dem iPhone, auch bei geschlossener
   App.
+- Android: Mit jeder Mitteilung zieht die Zahl am App-Symbol auf Sony- und
+  Huawei-Geräten sofort nach, wie auf dem iPhone — auch wenn die App
+  geschlossen ist.
 - Beim Öffnen der App bleiben die Mitteilungen der Leitung in der Leiste
   liegen, auf iPhone und Android, bis sie angetippt oder weggewischt werden;
   auf Android verschwinden dadurch auch Punkt oder Zahl am App-Symbol nicht

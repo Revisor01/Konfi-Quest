@@ -160,6 +160,16 @@ describe('Zahl am App-Symbol: eine Stelle fuer offene und geschlossene App', () 
     expect(zahl).toContain('daten.get("count")');
   });
 
+  it('kennt dieselben Wege wie Server und App', () => {
+    const server = lies('../backend/utils/appSymbolWeg.js');
+    const app = lies('src/services/appSymbolZahl.ts');
+    for (const [konstante, wert] of [['WEG_ANBIETER', 'anbieter'], ['WEG_MITTEILUNGEN', 'mitteilungen'], ['WEG_PUNKT', 'punkt']]) {
+      expect(zahl).toContain(`static final String ${konstante} = "${wert}";`);
+      expect(server).toContain(`'${wert}'`);
+      expect(app).toContain(`'${wert}'`);
+    }
+  });
+
   it('schreibt die Zahl dorthin, woher das Badge-Plugin sie beim Start wiederherstellt', () => {
     const badge = lies('node_modules/@capawesome/capacitor-badge/android/src/main/java/io/capawesome/capacitorjs/plugins/badge/Badge.java');
     const schluessel = badge.match(/STORAGE_KEY = "([^"]+)"/)?.[1];

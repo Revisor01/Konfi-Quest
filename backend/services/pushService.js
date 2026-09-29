@@ -26,6 +26,10 @@ const { schreibePostfach } = require('../utils/postfachArten');
 // Hauptschalter push_enabled. Der Postfach-Eintrag entsteht davor und
 // unabhaengig davon.
 const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
+// Zahl am App-Symbol auf Android (29.09.2026): welcher Weg zum Startbildschirm
+// eines Geraets passt, meldet die App bei der Token-Anmeldung
+// (push_tokens.app_symbol_weg, Migration 185).
+const { APP_SYMBOL_WEGE, wegFuerGeraet } = require('../utils/appSymbolWeg');
 
 /**
  * Push Notification Type Registry
@@ -395,11 +399,47 @@ class PushService {
       const result = await this.sendeMitWiederholung(
         () => firebase.sendFirebasePushNotification(token.token, nutzlast)
       );
-      return this.verarbeiteErgebnis(db, token, result, sammler);
+      const angekommen = await this.verarbeiteErgebnis(db, token, result, sammler);
+      if (angekommen) await this.zahlNachMitteilung(token, badge);
+      return angekommen;
     }));
 
     const erfolge = ergebnisse.filter(Boolean).length;
     return { erfolge, fehler: ergebnisse.length - erfolge };
+  }
+
+  /**
+   * Nach einer sichtbaren Mitteilung die Zahl am App-Symbol nachreichen --
+   * nur fuer Android-Geraete mit Weg "anbieter" (29.09.2026, Simon am Sony
+   * Xperia: "Ich will Android exakt gleich wie iOS").
+   *
+   * Auf dem iPhone setzt aps.badge in derselben Nachricht die Zahl. Auf
+   * Android zeigt das FCM-SDK eine Mitteilung bei geschlossener App selbst
+   * an, OHNE die App zu wecken -- die Zahl darin erreicht sie nie. Ein reines
+   * Datenpaket dagegen weckt den Push-Dienst der App (KonfiMessagingService),
+   * und der setzt die Zahl ueber den Zahl-Anbieter des Startbildschirms. Die
+   * Zahl ist dieselbe wie im sichtbaren Push an dieses Geraet
+   * (badgeFuerGeraet).
+   *
+   * Nur fuer "anbieter": Bei "mitteilungen" traegt die Mitteilung die Zahl
+   * selbst, bei "punkt" kann der Startbildschirm keine zeigen, und Geraete
+   * ohne Angabe (Store-Apps 2.2.x, 2.3.0 bis Build 128) bekommen genau das,
+   * was sie bisher bekamen. Ein Fehler hier kippt den sichtbaren Push nicht:
+   * Der ist zu diesem Zeitpunkt zugestellt und verbucht; die Zahl holt
+   * spaetestens der naechste Hintergrundlauf nach (sendBadgeUpdates).
+   */
+  static async zahlNachMitteilung(token, badge) {
+    if (wegFuerGeraet(token) !== APP_SYMBOL_WEGE.ANBIETER || badge == null) return;
+    try {
+      const result = await this.sendeMitWiederholung(
+        () => firebase.sendFirebaseSilentPush(token.token, badge)
+      );
+      if (!result.success) {
+        console.warn(`Zahl nach Mitteilung fuer Token ${token.id} nicht zugestellt: ${result.errorCode || result.error}`);
+      }
+    } catch (err) {
+      console.error('Zahl nach Mitteilung fehlgeschlagen:', err.message);
+    }
   }
 
   /**

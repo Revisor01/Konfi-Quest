@@ -141,16 +141,20 @@ const sendFirebaseSilentPush = async (deviceToken, badgeCount) => {
     }
 
     // Auf iOS setzt aps.badge die Zahl am App-Icon direkt — Android kennt so
-    // etwas nicht. Dort müsste die App das Paket entgegennehmen und die Zahl
-    // selbst ans Badge-Plugin geben; einen Empfaenger eigens für
-    // 'badge_update' gibt es im Frontend nicht (nachgesehen am 24.08.2026).
-    // Laeuft die App und erreicht der Push den allgemeinen Listener in
-    // AppContext, laedt BadgeContext die Zaehler neu ('push:received') und
-    // setzt die Zahl (Stand 29.09.2026). Der android-Block mit
-    // hoher Prioritaet ist die Voraussetzung dafuer, dass das Paket ein
-    // schlafendes Geraet ueberhaupt erreicht; ohne ihn stuft FCM Datenpakete
-    // zurück. Ob der Launcher eine Zahl von der App annimmt, haengt vom
-    // Hersteller ab (Handbuch "Die Zahl am App-Symbol auf Android lesen").
+    // etwas nicht. Dort nimmt der Push-Dienst der App das Paket entgegen,
+    // auch bei geschlossener App (KonfiMessagingService, seit 29.09.2026),
+    // und setzt die Zahl ueber den Startbildschirm; laeuft die App, laedt
+    // BadgeContext ausserdem die Zaehler neu ('push:received'). Der
+    // android-Block mit hoher Prioritaet ist die Voraussetzung dafuer, dass
+    // das Paket ein schlafendes Geraet ueberhaupt erreicht; ohne ihn stuft FCM
+    // Datenpakete zurück. Ob der Startbildschirm eine Zahl annimmt, haengt vom
+    // Hersteller ab (utils/appSymbolWeg.js; Handbuch "Die Zahl am App-Symbol
+    // auf Android lesen").
+    //
+    // ALTE APPS (Store 2.2.x, kein eigener Dienst; nachgesehen am Tag 2.2.0):
+    // Das Paket hat keinen notification-Block, das Push-Plugin zeigt deshalb
+    // nichts an und reicht es nur als 'pushNotificationReceived' weiter; die
+    // App laedt daraufhin ihre Zaehler neu. Sichtbar wird nichts.
     const message = {
       token: deviceToken,
       apns: {
