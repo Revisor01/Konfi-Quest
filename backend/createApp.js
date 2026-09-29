@@ -9,6 +9,7 @@ const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const { cronLeaderVorhanden } = require('./utils/cronLeader');
+const { dateiFuersProtokoll } = require('./utils/protokoll');
 
 // Upload-Limit für Challenge-Beitraege (Audio/Video sind deutlich größer als
 // Chat-Anhänge). Als Konstante, weil der zentrale Multer-Error-Handler weiter
@@ -216,7 +217,8 @@ function createApp(db, options = {}) {
       if (isAllowed) {
         cb(null, true);
       } else {
-        console.warn(`Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
+        // Endung und Typ, nicht der Dateiname (Audit Sicherheit BF-14).
+        console.warn(`Datei abgelehnt: ${dateiFuersProtokoll(file)}`);
         cb(null, false);
       }
     }
@@ -248,7 +250,7 @@ function createApp(db, options = {}) {
       if (isAllowed) {
         cb(null, true);
       } else {
-        console.warn(`Material-Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
+        console.warn(`Material-Datei abgelehnt: ${dateiFuersProtokoll(file)}`);
         cb(null, false);
       }
     }
@@ -281,7 +283,7 @@ function createApp(db, options = {}) {
       if (isAllowed) {
         cb(null, true);
       } else {
-        console.warn(`Challenge-Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
+        console.warn(`Challenge-Datei abgelehnt: ${dateiFuersProtokoll(file)}`);
         cb(null, false);
       }
     }

@@ -6,6 +6,7 @@
 const nodemailer = require('nodemailer');
 const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 const { smtpKonfiguration } = require('../utils/smtpKonfiguration');
+const { adresseFuersProtokoll } = require('../utils/protokoll');
 
 // Gecachter Transporter (wird einmalig erstellt und wiederverwendet)
 let cachedTransporter = null;
@@ -68,7 +69,8 @@ const sendEmail = async ({ to, subject, text, html }) => {
     const info = await transporter.sendMail(mailOptions);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Fehler beim Senden der E-Mail an %s:', to, error);
+    // Nur die Domain der Adresse (Audit Sicherheit BF-14, 29.09.2026).
+    console.error('Fehler beim Senden der E-Mail an %s:', adresseFuersProtokoll(to), error);
     // Transporter-Cache invalidieren bei Verbindungsfehler
     if (error.code === 'ECONNECTION' || error.code === 'EAUTH' || error.code === 'ESOCKET') {
       cachedTransporter = null;

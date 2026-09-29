@@ -1483,7 +1483,7 @@ class BackgroundService {
           // ladeMitgliederDerOrganisation heraus.
           const orgAdminIds = await ladeMitgliederDerOrganisation(db, org.id, ['org_admin']);
           const { rows: admins } = orgAdminIds.length === 0 ? { rows: [] } : await db.query(
-            `SELECT u.display_name, u.email
+            `SELECT u.id, u.display_name, u.email
                FROM users u
               WHERE u.id = ANY($1::bigint[])
                 AND u.email IS NOT NULL AND u.email <> ''
@@ -1503,7 +1503,8 @@ class BackgroundService {
               anySent = true;
               sent++;
             } catch (mailErr) {
-              console.error(`Lizenz-Erinnerung: Mail an ${admin.email} fehlgeschlagen:`, mailErr.message);
+              // Konto-Kennung statt Adresse (Audit Sicherheit BF-14, 29.09.2026).
+              console.error(`Lizenz-Erinnerung: Mail an Konto ${admin.id} fehlgeschlagen:`, mailErr.message);
             }
           }
 
@@ -1632,7 +1633,7 @@ class BackgroundService {
           // nicht sehen (Audit wer-bekommt-was, BF-01).
           const leitungIds = await ladeLeitungZumJahrgang(db, jg.organization_id, jg.id, { schreibrecht: true });
           const { rows: admins } = leitungIds.length === 0 ? { rows: [] } : await db.query(
-            `SELECT u.display_name, u.email
+            `SELECT u.id, u.display_name, u.email
                FROM users u
               WHERE u.id = ANY($1::bigint[])
                 AND u.email IS NOT NULL AND u.email <> ''`,
@@ -1651,7 +1652,7 @@ class BackgroundService {
               anySent = true;
               sent++;
             } catch (mailErr) {
-              console.error(`Jahrgang-Loesch-Reminder: Mail an ${admin.email} fehlgeschlagen:`, mailErr.message);
+              console.error(`Jahrgang-Loesch-Reminder: Mail an Konto ${admin.id} fehlgeschlagen:`, mailErr.message);
             }
           }
 

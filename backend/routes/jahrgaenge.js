@@ -12,6 +12,7 @@ const { ladeLoeschumfang, materialGlobalMachen } = require('../utils/jahrgangLoe
 const { loescheTermin, loescheChatRaeume, entferneChatDateien } = require('../utils/terminLoeschen');
 const { loescheChallenge, entferneChallengeDateien } = require('../utils/challengeLoeschen');
 const { sichereKonfiZeitBefoerderter } = require('../utils/konfiHistorie');
+const { adresseFuersProtokoll } = require('../utils/protokoll');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten, NUR org_admin darf anlegen
 module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeamer }) => {
@@ -872,7 +873,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         });
       }
 
-      console.log(`[matrix-email] Versand angefordert: Jahrgang ${jahrgangId} "${jahrgang.name}", type=${type}, an=${adminRow.email}, rows=${rows.length}`);
+      // Ohne Jahrgangsname und Adresse (Audit Sicherheit BF-14, 29.09.2026):
+      // Kennung und Domain genuegen, um einen Versand wiederzufinden.
+      console.log(`[matrix-email] Versand angefordert: Jahrgang ${jahrgangId}, type=${type}, an=Konto ${req.user.id} (${adresseFuersProtokoll(adminRow.email)}), rows=${rows.length}`);
       const mailResult = await emailService.sendKonfiMatrixEmail(
         adminRow.email,
         adminRow.display_name,

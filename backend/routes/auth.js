@@ -247,8 +247,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     // mehr verändert gespeichert -> Login case-insensitiv per LOWER-Vergleich.
     const username = (req.body.username || '').trim();
     const { password } = req.body;
- console.warn(`Login-Versuch: ${username}`);
-
+    // Keine Zeile je Anmeldung und kein Benutzername im Protokoll (Audit
+    // Sicherheit BF-14, 29.09.2026): Der Benutzername ist bei Konfis meist
+    // vorname.nachname eines Kindes. Fehlversuche zaehlt die Kontosperre
+    // (utils/kontoSperre.js); hier steht hoechstens die Konto-Kennung.
     try {
       const userQuery = `
         SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email, u.role_id,
@@ -269,13 +271,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const { rows: [user] } = await db.query(userQuery, [username]);
 
       if (!user) {
- console.warn(`Login fehlgeschlagen: Benutzer '${username}' not found`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
 
       const passwordMatch = await bcrypt.compare(password, user.password_hash);
       if (!passwordMatch) {
- console.warn(`Login fehlgeschlagen: Falsches Passwort für '${username}'`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
 
@@ -290,21 +290,21 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // beim deaktivierten Konto, damit der Fehler nicht verraet, dass es das
       // Konto noch gibt. Gilt fuer jede Rolle: Loeschung kennt keine Ausnahme.
       if (user.deleted_at) {
- console.warn(`Login blockiert: Benutzer '${username}' ist geloescht (Soft-Delete)`);
+        console.warn(`Login blockiert: Konto ${user.id} ist geloescht (Soft-Delete)`);
         return sperrAntwort(res, 'user_inactive');
       }
 
       if (!isSuperAdmin) {
         // User deaktiviert
         if (user.user_active === false) {
- console.warn(`Login blockiert: Benutzer '${username}' ist deaktiviert`);
+          console.warn(`Login blockiert: Konto ${user.id} ist deaktiviert`);
           return sperrAntwort(res, 'user_inactive');
         }
         // Trial abgelaufen (auch falls der Cron die Org noch nicht auf inaktiv gesetzt hat)
         const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
         // Organisation gesperrt (inaktiv oder Trial abgelaufen)
         if (user.organization_active === false || trialExpired) {
- console.warn(`Login blockiert: Organisation von '${username}' ist gesperrt (active=${user.organization_active}, trialExpired=${trialExpired})`);
+          console.warn(`Login blockiert: Gemeinde ${user.organization_id} von Konto ${user.id} ist gesperrt (active=${user.organization_active}, trialExpired=${trialExpired})`);
           return sperrAntwort(res, trialExpired ? 'org_trial_expired' : 'org_inactive');
         }
       }

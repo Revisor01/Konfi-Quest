@@ -7,6 +7,7 @@ const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
 const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
 const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('../utils/terminLeitungSicht');
+const { kennwortFuersProtokoll, diagnoseHinweisFuersProtokoll } = require('../utils/protokoll');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -736,19 +737,23 @@ module.exports = (db, verifyTokenRBAC) => {
    * jemand ein Geraet an den Rechner haengen muss.
    *
    * Absichtlich anspruchslos: kein Schema, keine Pflichtfelder ausser dem
-   * Grund. Was die App schickt, landet im Protokoll — sie soll melden koennen,
-   * auch wenn sie selbst nicht weiss, was schiefgeht.
+   * Grund -- die App soll melden koennen, auch wenn sie selbst nicht weiss,
+   * was schiefgeht. Ins Protokoll geht aber nur, was wie ein Kennwort
+   * aussieht (Audit Sicherheit BF-14, 29.09.2026): Bis dahin stand dort jeder
+   * Wert roh, der Hinweis mit bis zu 200 Zeichen Freitext. Vom Hinweis
+   * bleiben die Zahl der Versuche und die Fehlercodes (utils/protokoll.js).
    */
   router.post('/push-diagnose', verifyTokenRBAC, async (req, res) => {
     const { grund, berechtigung, plattform, app_version, app_build, hinweis } = req.body || {};
     console.log(
       '[PUSH-DIAGNOSE] user=%s (%s) grund=%s berechtigung=%s plattform=%s app=%s/%s %s',
       req.user.id, req.user.type,
-      grund || 'ohne-angabe',
-      berechtigung || '?',
-      plattform || '?',
-      app_version || 'unbekannt', app_build || '?',
-      hinweis ? `hinweis=${String(hinweis).slice(0, 200)}` : ''
+      grund ? kennwortFuersProtokoll(grund, /^[A-Za-z0-9-]{1,40}$/, 'unlesbar') : 'ohne-angabe',
+      kennwortFuersProtokoll(berechtigung, /^[a-z-]{1,30}$/),
+      kennwortFuersProtokoll(plattform, /^(ios|android|web)$/),
+      kennwortFuersProtokoll(app_version, /^\d{1,3}\.\d{1,3}\.\d{1,3}$/, 'unbekannt'),
+      kennwortFuersProtokoll(app_build, /^\d{1,7}$/),
+      diagnoseHinweisFuersProtokoll(hinweis)
     );
     res.json({ success: true });
   });

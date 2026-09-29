@@ -164,6 +164,12 @@ info:
     (15 Min), der von verifyTokenRBAC geprüft wird; die aktive Organisation
     kann per Header X-Active-Organization gewechselt werden (Mitgliedschaft
     wird gegen user_organizations geprüft, 30s-User-Cache).
+    PROTOKOLL (BEHOBEN 29.09.2026, Audit Sicherheit BF-14): Das
+    Server-Protokoll nennt Personen nur mit Konto-Kennung, E-Mail-Adressen
+    nur mit Domain und keinen Freitext vom Client (utils/protokoll.js).
+    POST /api/auth/login schreibt keine Zeile je Anmeldung mehr und nie den
+    Benutzernamen; Fehlversuche zaehlt die Kontosperre, abgewiesene
+    Anmeldungen gesperrter Konten stehen mit der Kennung im Protokoll.
     FEHLER IM ANFRAGE-KÖRPER (alle Routen, BEHOBEN 29.09.2026, Audit
     Sicherheit BF-17): Ungültiges JSON antwortet 400 "Die Anfrage enthält
     kein gültiges JSON.", ein Körper über 100 kB 413 "Die Anfrage ist zu

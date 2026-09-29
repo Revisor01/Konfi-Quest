@@ -1146,6 +1146,9 @@ iOS-Build 233 · Android versionCode 127
   statt sie als Formatierung zu lesen.
 
 ### Sonstiges
+- Das Server-Protokoll führt keine Benutzernamen, E-Mail-Adressen, Dateinamen
+  und Freitexte mehr, sondern nur noch Kontonummern; auch eine Anmeldung
+  hinterlässt dort keinen Namen.
 - Fehlerhafte oder zu große Anfragen beantwortet der Server als solche, mit
   deutscher Meldung, statt als Serverfehler; sie füllen das Server-Protokoll
   nicht mehr.

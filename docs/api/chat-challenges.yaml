@@ -2470,6 +2470,13 @@ paths:
         Eintrag, kein Fehler.
         Absichtlich ohne Schema-Zwang ausser dem Grund: Die App soll melden
         koennen, auch wenn sie selbst nicht weiss, was schiefgeht.
+        PROTOKOLL OHNE FREITEXT (BEHOBEN 29.09.2026, Audit Sicherheit BF-14):
+        Ins Server-Protokoll gehen nur Werte, die wie ein Kennwort aussehen
+        (grund: Buchstaben/Ziffern/Bindestrich, plattform ios|android|web,
+        app_version x.y.z, app_build Ziffern), sonst ein Platzhalter. Vom
+        hinweis bleiben die Zahl der Versuche und Fehlercodes in
+        Grossbuchstaben (z. B. SERVICE_NOT_AVAILABLE) samt Laenge; der Rest
+        wird nicht protokolliert. Anfrage und Antwort unveraendert.
       requestBody:
         required: false
         content:
@@ -2482,7 +2489,7 @@ paths:
                 plattform: { type: string }
                 app_version: { type: string }
                 app_build: { type: string }
-                hinweis: { type: string, description: "Freitext, auf 200 Zeichen gekuerzt" }
+                hinweis: { type: string, description: "Freitext; ins Protokoll gehen seit 29.09.2026 nur Versuche und Fehlercodes daraus" }
       responses:
         '200': { description: Aufgenommen }
         '401': { $ref: '#/components/responses/Unauthorized' }

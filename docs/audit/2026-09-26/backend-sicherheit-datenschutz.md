@@ -217,6 +217,7 @@ bestätigen, sonst ebenfalls blockierend.
 - **Kennzeichnung:** reproduziert — `console.warn`-Spy beim Login: `["Login-Versuch: konfi1","Login fehlgeschlagen: Falsches Passwort für 'konfi1'"]`
 - **Beschreibung:** Benutzername = `vorname.nachname` eines Kindes, jede Anmeldung eine Zeile. Docker-Logs rotieren (10 MB × 3), landen aber in jeder Log-Sammlung. Der Freitext aus `push-diagnose` kommt vom Client und kann alles enthalten.
 - **Empfehlung:** Nur Nutzer-ID loggen, Fehlversuche zählen statt benennen; Freitext nicht protokollieren.
+- **Nachtrag 29.09.2026:** behoben — `POST /auth/login` schreibt keine Zeile je Anmeldung und keinen Benutzernamen mehr (Fehlversuche zählt die Kontosperre, gesperrte Konten stehen mit `Konto <id>` im Protokoll); `push-diagnose` protokolliert nur Werte nach Muster und vom `hinweis` nur Versuche und Fehlercodes; die Matrix-Mail nennt Konto-Kennung und Domain statt Adresse und Jahrgangsname. Mitbehoben, dieselbe Klasse: `sendEmail` im Fehlerfall nur die Domain, Lizenz- und Löschwarnung die Konto-Kennung statt der Adresse, abgewiesene Uploads Endung und Typ statt Dateiname. Regel-Stelle `utils/protokoll.js`. Tests `tests/routes/protokollOhneNamen.test.js`, 14 Fälle (9 verboten, drei davon prüfen zugleich den erlaubten Teil; 2 erlaubt; 3 Hilfsfunktionen); Gegenprobe ohne Fix: 10 rot (alle verbotenen und „gesperrtes Konto mit Kennung“).
 
 ### BF-15: JWT trägt E-Mail und Anzeigename im Klartext
 - **Schwere:** NIEDRIG
