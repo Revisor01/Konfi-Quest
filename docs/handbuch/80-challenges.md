@@ -47,7 +47,8 @@ nach dem Start liegen, sonst kommt „Das Ende muss nach dem Start liegen."
   Beiträge einreichen. Das Ende kannst du weiter verschieben, die Challenge also
   verlängern oder früher beenden.
 - **Nach dem Ende** wandert sie ins Archiv. Die Beiträge bleiben sichtbar, neue
-  kommen nicht mehr dazu.
+  kommen nicht mehr dazu. Wer die Challenge gerade offen hat, sieht sie im
+  selben Moment als beendet; das Einreichen verschwindet.
 
 **Mehrere Beiträge erlauben** ist voreingestellt an: Jede Person darf beliebig
 oft einreichen. Ist der Schalter aus, gibt es genau einen Beitrag pro Person —

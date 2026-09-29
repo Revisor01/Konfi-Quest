@@ -583,6 +583,9 @@ iOS-Build 234 · Android versionCode 128
 - Die rote Zahl an einer Challenge verschwindet nach dem Öffnen dauerhaft und
   kommt beim Zurückgehen in die Liste nicht wieder, auch wenn Beiträge dort ein
   Datum in der Zukunft tragen.
+- Endet oder beginnt eine Challenge, während sie offen ist, zeigt die Ansicht
+  das im selben Moment: Eine gerade beendete Challenge bietet kein Einreichen
+  mehr an, statt bis zum nächsten Laden als laufend dazustehen.
 - Die Zahl am App-Symbol zählt keine Chat-Nachrichten mit einem Datum in der
   Zukunft mehr mit und stimmt damit wieder mit den Reitern überein.
 - Ältere Chat-Nachrichten lassen sich durch Hochscrollen nachladen — bisher
@@ -762,6 +765,9 @@ iOS-Build 234 · Android versionCode 128
 - Auf der Startseite fürs Team waren die Sprechblasen an Badges und
   Urkunden schmaler als anderswo, sodass Texte unnötig umbrachen. Sie sind
   jetzt so breit wie überall sonst.
+- Die Begrüßung auf der Startseite fürs Team springt beim Neuladen nicht mehr
+  zwischen „Moin" und der Tageszeit hin und her; sie wird einmal beim Öffnen
+  festgelegt.
 - Ein laufendes Event steht jetzt schon unter „Verbuchen", nicht erst nach
   seinem Ende. Bisher zeigte der Reiter „Mitmachen" während des Events eine
   rote Zahl, hinter der eine leere Liste wartete — wer mitten im Konfisamstag

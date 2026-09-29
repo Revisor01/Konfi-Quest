@@ -218,6 +218,11 @@ const TeamerDashboardPage: React.FC = () => {
   const router = useIonRouter();
   const { user, setError } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
+  // „Moin" statt Tageszeit in rund jedem fünften Aufruf — EINMAL beim Öffnen
+  // gewürfelt. Bis 29.09.2026 stand Math.random() im Render, und jedes
+  // Neuzeichnen konnte die Begrüßung umspringen lassen (Release-Audit
+  // Toolchain BF-12, Test teamerBegruessungStabil).
+  const [moinGruss] = useState(() => Math.random() < 0.2);
   // Onboarding-Tour einmal pro Teamer-Account (beim ersten Betreten der
   // Startseite) — bzw. für Bestandsnutzer die Änderungsanzeige nach einem
   // Update. Nie beides gleichzeitig, dafür sorgt der Hook; die Anzeige meldet
@@ -417,7 +422,7 @@ const TeamerDashboardPage: React.FC = () => {
 
   const getGreeting = (displayName: string): string => {
     const firstName = getFirstName(displayName);
-    if (Math.random() < 0.2) {
+    if (moinGruss) {
       return `Moin, ${firstName}!`;
     }
 

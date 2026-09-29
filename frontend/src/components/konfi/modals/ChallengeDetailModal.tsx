@@ -39,6 +39,7 @@ import {
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
+import { useJetztMitGrenzen } from '../../../hooks/useJetztMitGrenzen';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 
 /** Reiter im Challenge-Detail: Gruppen-Feed oder eigene Beitraege. */
@@ -313,12 +314,15 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   // Basis für Kopf/Status: das Detail (frisch) hat Vorrang vor der Listenkarte.
   const current: KonfiChallenge = detail || challenge;
   const author = getAuthorLabel(current);
-  const isActive = useMemo(() => {
-    const start = new Date(current.starts_at).getTime();
-    const end = new Date(current.ends_at).getTime();
-    const now = Date.now();
-    return !current.is_draft && now >= start && now <= end;
-  }, [current]);
+  // „Läuft" folgt der Uhr, nicht nur den Daten: Beginn und Ende stellen einen
+  // Wecker, der die Ansicht genau dann neu zeichnet. Bis 29.09.2026 hing der
+  // Wert per useMemo an `current` — endete die Challenge bei offenem Detail,
+  // blieb sie „laufend" samt Plus zum Einreichen (Release-Audit Toolchain
+  // BF-12, Test challengeEndetBeiOffenemDetail).
+  const startMs = new Date(current.starts_at).getTime();
+  const endeMs = new Date(current.ends_at).getTime();
+  const jetzt = useJetztMitGrenzen([startMs, endeMs + 1]);
+  const isActive = !current.is_draft && jetzt >= startMs && jetzt <= endeMs;
 
   const [reiter, setReiter] = useState<KonfiReiter>('feed');
   const gallery = detail?.gallery || [];
