@@ -260,12 +260,13 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   };
 
   // Erfolgsbehandlung nach erfolgreichem Anlegen (auch nach Grace-Bestätigung wiederverwendet)
+  //
+  // Den Jahrgangs-Chat pflegt der Server beim Anlegen selbst
+  // (konfi-management.js, syncJahrgangChat in der Transaktion). Hier stand
+  // bis 28.09.2026 vor dem Passwort-Dialog ein Aufruf GET
+  // /admin/jahrgaenge/:id -- eine Route, die es nicht gibt: ein 404 je
+  // Anlage, danach wurde der Fehler geschluckt (Audit Screens Leitung BF-06).
   const handleKonfiCreated = async (response: AxiosResponse<KonfiAngelegtAntwort>, konfiData: KonfiFormDaten) => {
-    // Automatisch Jahrgangschat erstellen/zuweisen
-    if (konfiData.jahrgang_id) {
-      await createOrJoinJahrgangChat(konfiData.jahrgang_id);
-    }
-
     const tempPassword = response.data.temporaryPassword;
     if (tempPassword) {
       presentAlert({
@@ -349,27 +350,6 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
       } else {
         setError(fehlerText(err, 'Fehler beim Hinzufügen des Konfis'));
       }
-    }
-  };
-
-  const createOrJoinJahrgangChat = async (jahrgangId: number) => {
-    try {
-      // Finde den Jahrgang-Namen
-      const jahrgangResponse = await api.get(`/admin/jahrgaenge/${jahrgangId}`);
-      const jahrgangName = jahrgangResponse.data.name;
-
-      // Legt den Jahrgangschat an, falls es ihn noch nicht gibt, und traegt
-      // in beiden Faellen alle Konfis des Jahrgangs ein - auch die, die
-      // spaeter dazugekommen sind.
-      await api.post('/chat/rooms', {
-        type: 'jahrgang',
-        name: `Jahrgang ${jahrgangName}`,
-        jahrgang_id: jahrgangId
-      });
-
-    } catch (err) {
- console.error('Fehler beim Jahrgangschat:', err);
-      // Nicht als kritischer Fehler behandeln, da der Konfi bereits erstellt wurde
     }
   };
 

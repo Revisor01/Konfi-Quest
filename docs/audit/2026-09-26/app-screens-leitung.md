@@ -270,6 +270,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
   Roundtrip, bevor das Einmalpasswort erscheint; im Betriebs-Dashboard je
   Konfi-Anlage ein 404 im Fehlerprotokoll (`apm.js:331-337`).
 - **Empfehlung:** `createOrJoinJahrgangChat` samt Aufruf entfernen.
+- **Nachtrag 28.09.2026:** behoben — `createOrJoinJahrgangChat` samt Aufruf aus `AdminKonfisPage.tsx` entfernt; nach `POST /admin/konfis` folgt direkt der Passwort-Dialog. Der Jahrgangs-Chat entsteht weiter in der Transaktion des Servers (`syncJahrgangChat`, `konfi-management.js`). Test `components/konfiAnlegenOhneToteAnfrage.test.tsx` (2, gerenderte Seite: nur `POST /admin/konfis`, kein `GET /admin/jahrgaenge/:id`, Passwort-Dialog mit dem Passwort der Antwort); ohne Fix 1 rot.
 
 ### BF-07: Toter Aufruf `GET /organizations/:id` bei jedem Öffnen der Konfi-Liste
 

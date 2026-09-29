@@ -1223,6 +1223,9 @@ iOS-Build 233 · Android versionCode 127
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.
+- Nach dem Anlegen einer Konfi erscheint das Einmalpasswort ohne eine vorher
+  ins Leere laufende Anfrage; den Jahrgangs-Chat pflegt der Server ohnehin
+  selbst.
 
 ## [2.2.0] - 2026-09-18
 
