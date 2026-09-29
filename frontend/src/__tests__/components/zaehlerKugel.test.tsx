@@ -173,3 +173,43 @@ describe('ZaehlerKugel: die Zeile beschneidet sie nicht mehr', () => {
     expect((container.firstChild as HTMLElement).textContent).toBe('9+');
   });
 });
+
+// Punkt ohne Ziffer (29.09.2026): Simon, TestFlight 233, zur Challenge-Liste
+// der Leitung: "Zahl nur auf der corner badge". Der Punkt nimmt DIESELBE
+// Mitte wie die Kugel -- Vertrag oben, 45-Grad-Diagonale, 3px ausserhalb des
+// Kreisrands --, nur kleiner (12px, roter Kern 10px wie der blaue
+// Ungelesen-Punkt am Postfach). Gemessen (Playwright, iOS und Android, 32er
+// Kreis): Abstand 18,95 statt 18,94, 45 Grad, 100 % sichtbar.
+describe('ZaehlerKugel als Punkt', () => {
+  const PUNKT = 12;
+  const PUNKT_REGEL = '.app-zaehler-kugel--punkt';
+  const PUNKT_LG_REGEL = '.app-zaehler-anker:has(> .app-icon-circle--lg) > .app-zaehler-kugel--punkt';
+
+  it('keine Ziffer, role img, die Zahl im Vorlesetext -- auch ab zehn', () => {
+    const { container } = render(<ZaehlerKugel anzahl={12} label="offen: 12 Beiträge warten auf Freigabe" punkt />);
+    const el = container.firstChild as HTMLElement;
+    expect(el.className).toBe('app-zaehler-kugel app-zaehler-kugel--punkt');
+    expect(el.textContent).toBe('');
+    expect(el.getAttribute('role')).toBe('img');
+    expect(el.getAttribute('aria-label')).toBe('12 offen: 12 Beiträge warten auf Freigabe');
+    expect(render(<ZaehlerKugel anzahl={0} label="x" punkt />).container.firstChild).toBeNull();
+  });
+
+  it('12px, ohne Innenabstand, weisser Rand und Farbe von der Kugel', () => {
+    const punkt = block(PUNKT_REGEL);
+    expect(px(punkt, /\bwidth:\s*(\d+)px/)).toBe(PUNKT);
+    expect(px(punkt, /\bheight:\s*(\d+)px/)).toBe(PUNKT);
+    expect(px(punkt, /\bmin-width:\s*(\d+)px/)).toBe(PUNKT);
+    expect(punkt).toMatch(/padding:\s*0/);
+    expect(punkt).not.toMatch(/background|border|\bleft:/);
+  });
+
+  it.each([
+    ['28er Kreis', KUGEL_REGEL, PUNKT_REGEL],
+    ['32er Kreis (--lg)', KUGEL_LG_REGEL, PUNKT_LG_REGEL],
+  ])('%s: dieselbe Mitte wie die Kugel', (_name, kugelRegel, punktRegel) => {
+    const kugelTop = px(block(kugelRegel), /\btop:\s*(-?[\d.]+)px/);
+    const punktTop = px(block(punktRegel), /\btop:\s*(-?[\d.]+)/);
+    expect(punktTop + PUNKT / 2).toBeCloseTo(kugelTop + KUGEL / 2, 5);
+  });
+});

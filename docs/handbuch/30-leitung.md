@@ -160,9 +160,10 @@ im Punkte-Kapitel.
 
 ![Die Challenges-Verwaltung der Leitung.](/docs/bilder/iphone/leitung-challenges.png)
 
-Drei Reiter: **Aktuell**, **Geplant**, **Archiv**. Eine rote Zahl am Symbol
-einer Challenge zählt, was dort auf dich wartet, ein oranges Feld mit Uhr
-zeigt, dass Beiträge auf Freigabe warten — siehe
+Drei Reiter: **Aktuell**, **Geplant**, **Archiv**. Ein roter Punkt am Symbol
+einer Challenge zeigt, dass dort etwas auf dich wartet — neue Beiträge seit
+deinem letzten Öffnen oder Freigaben —, ein oranges Feld mit Zahl und Uhr,
+wie viele Beiträge auf Freigabe warten — siehe
 [Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen).
 
 Beim [Anlegen](80-challenges.md#eine-challenge-anlegen) legst du fest, wer

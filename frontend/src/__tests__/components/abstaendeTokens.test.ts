@@ -122,9 +122,7 @@ describe('Design-Tokens: Abstaende, Radien, Schatten (05.09.2026)', () => {
       '--app-freiraum-aktion-l': '70px',
       '--app-freiraum-aktion-xl': '80px',
       '--app-freiraum-aktion-xxl': '100px',
-      // xxl-plus (110px) entfiel am 29.09.2026: Es hielt den Titel einer
-      // Challenge neben dem Freigaben-Feld "Zahl + Uhr" frei; seit das Feld
-      // nur noch die Uhr traegt, reicht xl.
+      '--app-freiraum-aktion-xxl-plus': '110px',
       '--app-freiraum-aktion-xxxl': '120px',
       // kopf-s (50px) und kopf-xxl (90px) entfielen am 05.09.2026 mit dem
       // Angleichen der Rollen-Unterschiede -- niemand nutzte sie mehr.

@@ -54,10 +54,11 @@ Du arbeitest hier wie die Leitung, begrenzt auf deine zugewiesenen Jahrgänge:
 [freigeben, anonymisieren oder ausblenden](80-challenges.md#beitraege-freigeben-ausblenden-loeschen)
 — und selbst mitmachen. Nur das **Löschen** — einer Challenge wie eines
 Beitrags — bleibt der [Leitung](80-challenges.md#eine-challenge-loeschen)
-vorbehalten. Eine rote Zahl am Symbol einer Challenge zeigt, was seit deinem
-letzten Öffnen neu ist — neue Beiträge und, wo du mitmachst, die gestartete
-Challenge selbst —, ein oranges Feld mit Uhr, dass Beiträge auf deine
-Freigabe warten; sie zählen in der roten Zahl mit — siehe
+vorbehalten. Ein roter Punkt am Symbol einer Challenge zeigt, dass dort etwas
+auf dich wartet — neue Beiträge seit deinem letzten Öffnen, wo du mitmachst
+die gestartete Challenge selbst, oder Beiträge, die auf deine Freigabe
+warten —, ein oranges Feld mit Zahl und Uhr, wie viele auf Freigabe warten —
+siehe
 [Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen).
 
 Es gibt auch Challenges nur fürs Team; die sehen Konfis gar nicht. Was nach dem

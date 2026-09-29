@@ -473,10 +473,11 @@ entfernt werden soll."
 
 An einer Challenge stehen zwei Zeichen:
 
-- **Die rote Zahl am Symbol** zeigt, was an der Challenge auf dich wartet —
-  wie ungelesene Nachrichten im Chat. Sie zählt zusammen:
-  - die Beiträge, die auf eure Freigabe warten, und
-  - die Beiträge, die seit deinem letzten Öffnen der Challenge dazugekommen
+- **Der rote Punkt am Symbol** zeigt, dass an der Challenge etwas auf dich
+  wartet — wie ungelesene Nachrichten im Chat. Er steht, sobald es eines
+  davon gibt:
+  - Beiträge, die auf eure Freigabe warten, oder
+  - Beiträge, die seit deinem letzten Öffnen der Challenge dazugekommen
     sind — auch bei Challenges ohne Freigabe, bei denen ein Beitrag sofort in
     der Galerie steht. So siehst du, was passiert, und kannst einen Beitrag
     bei Bedarf ausblenden oder löschen. Eigene Beiträge zählen nicht mit.
@@ -484,21 +485,21 @@ An einer Challenge stehen zwei Zeichen:
     Team", „Nur das Team") und die du noch nie geöffnet hast, zählt dazu als
     eins — außer du hast sie selbst angelegt.
 
-  Öffnest du die Challenge, fallen die neuen Beiträge aus der Zahl heraus;
-  was danach kommt, zählt neu. Die wartenden bleiben darin, bis ihr freigebt
-  oder ausblendet. Vorleseprogramme nennen beide Anteile einzeln.
-- **Das orange Feld mit Uhr** oben rechts zeigt, dass Beiträge auf eure
-  Freigabe warten — wie viele, zählt die rote Zahl am Symbol mit. Es bleibt
-  stehen, bis ihr alle freigebt oder ausblendet; Öffnen allein ändert daran
-  nichts. Wer mit dem Finger darauf bleibt oder eine Vorlesehilfe nutzt,
-  bekommt die Zahl im ganzen Satz („2 Beiträge warten auf Freigabe").
+  Öffnest du die Challenge, gelten die neuen Beiträge als gesehen; was
+  danach kommt, zählt neu. Wartende halten den Punkt, bis ihr freigebt oder
+  ausblendet. Eine Zahl trägt der Punkt nicht; Vorleseprogramme nennen beide
+  Anteile mit Zahl.
+- **Das orange Feld mit Zahl und Uhr** oben rechts zeigt, wie viele der
+  Beiträge auf eure Freigabe warten — die einzige Zahl an der Challenge. Es
+  bleibt stehen, bis ihr freigebt oder ausblendet; Öffnen allein ändert
+  daran nichts.
 
 Ein Beitrag zählt nie doppelt: Solange er auf Freigabe wartet, zählt er als
 wartend, nicht als neu. Gibt ihn jemand anderes frei, bevor du ihn gesehen
 hast, zählt er bei dir als neu.
 
-Am Reiter **Challenges** steht die Summe der roten Zahlen aller Challenges,
-ebenso am [Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
+Am Reiter **Challenges** steht als Zahl zusammengezählt, was an allen
+Challenges wartet — Freigaben und neue Beiträge —, ebenso am [Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
 App-Symbol. Gezählt werden nur Challenges, die ihr seht: Leitung und
 Teamer:innen die ihrer zugewiesenen Jahrgänge und die Challenges nur fürs
 Team, die Org-Leitung alle der Gemeinde.

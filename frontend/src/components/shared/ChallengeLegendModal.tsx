@@ -25,8 +25,10 @@ export interface ChallengeLegendModalProps {
 interface LegendEntry {
   color: string;
   icon?: string;
-  /** Statt eines Symbols eine Zahl im Kreis (rote Kugel fuer Neues). */
+  /** Statt eines Symbols eine Zahl im Kreis (orange Zahl am Umschalter). */
   zahl?: string;
+  /** Nur ein kleiner Punkt in der Farbe, ohne Zahl und Symbol (roter Punkt am Symbol). */
+  punkt?: boolean;
   label: string;
   description: string;
 }
@@ -64,26 +66,26 @@ const STATUS_ENTRIES: LegendEntry[] = [
   },
 ];
 
-// Oranges Eck-Badge in der Liste: nur die Uhr, ohne Zahl (Simon,
-// TestFlight 233, 29.09.2026: "Das reicht dann. Das Corner Badge."). Bis
-// dahin Zahl plus Uhr (Nutzerentscheid 24.08.2026); wie viele warten, sagt
-// jetzt die rote Zahl am Symbol.
+// Oranges Zähler-Badge in der Liste (pending_count) — Zahl plus Uhr,
+// ohne Wort (Nutzerentscheid 24.08.2026).
 const COUNTER_ENTRY: LegendEntry = {
   color: 'var(--app-color-warning)',
   icon: ICON_UHRZEIT,
-  label: 'Oranges Feld mit Uhr',
-  description: 'An dieser Challenge warten Beiträge auf Freigabe. Wie viele, zählt die rote Zahl am Symbol mit.',
+  label: 'Zahl mit Uhr',
+  description: 'So viele Beiträge warten noch auf Freigabe.',
 };
 
-// Rote Kugel am Symbol (27.09.2026, Simon: "Die Challenges sollen sich
+// Roter Punkt am Symbol (27.09.2026, Simon: "Die Challenges sollen sich
 // verhalten wie der Chat"): neue Beitraege seit dem letzten Oeffnen, seit
 // 28.09.2026 plus wartende Freigaben (Simon: "Ich erwarte auch einen roten
-// Kreis auf dem Listen Element") -- zusammen ergeben sie die Zahl am Reiter.
+// Kreis auf dem Listen Element"). Seit 29.09.2026 ohne Zahl (Simon: "Zahl
+// nur auf der corner badge") -- die Zahl der Freigaben steht im orangen
+// Feld, die Summe am Reiter.
 const NEU_ENTRY: LegendEntry = {
   color: 'var(--app-color-danger)',
-  zahl: '1',
-  label: 'Rote Zahl am Symbol',
-  description: 'Alles, was an der Challenge auf dich wartet: Beiträge, die auf Freigabe warten, und neue Beiträge seit deinem letzten Öffnen — wie ungelesene Nachrichten im Chat. Die neuen verschwinden beim Öffnen, die wartenden erst mit der Freigabe.',
+  punkt: true,
+  label: 'Roter Punkt am Symbol',
+  description: 'An der Challenge wartet etwas auf dich: Beiträge, die auf Freigabe warten, oder neue Beiträge seit deinem letzten Öffnen — wie ungelesene Nachrichten im Chat. Der Punkt geht, wenn du die Challenge öffnest und nichts mehr auf Freigabe wartet.',
 };
 
 // Orange Zahl im Umschalter Aktuell/Geplant/Archiv (28.09.2026, zur
@@ -157,12 +159,14 @@ const renderRow = (entry: LegendEntry, i: number) => (
     <div
       style={{
         width: '40px', height: '40px', flexShrink: 0, borderRadius: 'var(--app-radius-kreis)',
-        background: entry.color, display: 'flex', alignItems: 'center', justifyContent: 'center'
+        background: entry.punkt ? 'transparent' : entry.color, display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}
     >
-      {entry.zahl
-        ? <span style={{ color: 'white', fontSize: 'var(--app-text-untertitel)', fontWeight: 'var(--app-schrift-fett)' }}>{entry.zahl}</span>
-        : <IonIcon icon={entry.icon} style={{ color: 'white', fontSize: 'var(--app-text-untertitel)' }} />}
+      {entry.punkt
+        ? <span data-testid="legende-punkt" style={{ width: '14px', height: '14px', borderRadius: 'var(--app-radius-kreis)', background: entry.color }} />
+        : entry.zahl
+          ? <span style={{ color: 'white', fontSize: 'var(--app-text-untertitel)', fontWeight: 'var(--app-schrift-fett)' }}>{entry.zahl}</span>
+          : <IonIcon icon={entry.icon} style={{ color: 'white', fontSize: 'var(--app-text-untertitel)' }} />}
     </div>
     <div>
       <div style={{ fontSize: 'var(--app-text-standard)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-text-emphasis)', marginBottom: 'var(--app-abstand-winzig)' }}>

@@ -46,26 +46,28 @@ const zeige = (neuigkeiten: Record<number, number>, offeneFreigaben: Record<numb
 );
 
 describe('Leitungsliste: neue Beitraege als rote Kugel', () => {
-  it('ein neuer Beitrag: Kugel mit 1 an genau dieser Challenge', () => {
+  it('ein neuer Beitrag: roter Punkt an genau dieser Challenge, die Zahl im Vorlesetext', () => {
+    // Seit 29.09.2026 ein Punkt ohne Ziffer (Simon: "Zahl nur auf der corner
+    // badge"); wie viele neu sind, sagt der Vorlesetext.
     const { container } = zeige({ 3: 1 }, {});
     const kugeln = container.querySelectorAll('.app-zaehler-kugel');
     expect(kugeln.length).toBe(1);
-    expect(kugeln[0].textContent).toBe('1');
+    expect(kugeln[0].classList.contains('app-zaehler-kugel--punkt')).toBe(true);
+    expect(kugeln[0].textContent).toBe('');
     expect(kugeln[0].getAttribute('aria-label')).toBe('1 neue Beiträge');
     expect(kugeln[0].closest('.app-list-item')?.textContent).toContain('Ohne Freigabe');
   });
 
-  it('Freigabe: oranges Feld mit Uhr UND rote Kugel am Eintrag (28.09.2026), Neues nur als Kugel', () => {
+  it('Freigabe: oranges Feld mit Zahl und Uhr UND roter Punkt am Eintrag, Neues nur als Punkt', () => {
     const { container } = zeige({ 3: 2 }, { 4: 1 });
     const kugeln = [...container.querySelectorAll('.app-zaehler-kugel')];
-    expect(kugeln.map((k) => k.textContent)).toEqual(['2', '1']);
+    // Punkte ohne Ziffer; die Anteile stehen im Vorlesetext.
+    expect(kugeln.map((k) => k.textContent)).toEqual(['', '']);
+    expect(kugeln.map((k) => k.getAttribute('aria-label'))).toEqual(['2 neue Beiträge', '1 offen: 1 Beitrag wartet auf Freigabe']);
     expect(kugeln[0].closest('.app-list-item')?.textContent).toContain('Ohne Freigabe');
     expect(kugeln[1].closest('.app-list-item')?.textContent).toContain('Mit Freigabe');
-    // Das orange Feld traegt seit 29.09.2026 nur die Uhr; die Zahl nennt
-    // der Vorlesetext.
     const freigabe = container.querySelector('.app-corner-badge[aria-label*="Freigabe"]');
-    expect(freigabe?.getAttribute('aria-label')).toBe('1 Beitrag wartet auf Freigabe');
-    expect(freigabe?.textContent).toBe('');
+    expect(freigabe?.textContent).toBe('1');
     expect(freigabe?.closest('.app-list-item')?.textContent).toContain('Mit Freigabe');
   });
 
