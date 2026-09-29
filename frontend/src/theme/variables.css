@@ -1728,6 +1728,22 @@ ion-item {
   font-weight: var(--app-schrift-fett);
   line-height: 1;
   vertical-align: middle;
+  /* MITTIG ZUR SCHRIFT (Simon, TestFlight 233, 29.09.2026: "ein bisschen
+     hoeher ... nicht zentriert mit dem Text"). `middle` setzt die Mitte der
+     Zahl auf Grundlinie + halbe x-Hoehe -- das ist die Mitte der
+     Kleinbuchstaben. "Aktuell", "Archiv", "Events" reichen aber bis zur
+     Versalhoehe; das Auge misst die Mitte zwischen Grundlinie und
+     Versalhoehe. Der Unterschied ist (Versal - x) / 2 der Beschriftung:
+     SF Pro (0,705 - 0,53) / 2 = 0,0875 em, Roboto (0,711 - 0,528) / 2 =
+     0,0915 em -- bei 0.81rem (iOS) bzw. 0.75rem (Android) je 1,1 px bei
+     Wurzel 16. Gemessen (Playwright, Chromium-Ersatzschrift): Zahl 1,08 px
+     (iOS) bzw. 1,33 px (Android) unter der Versalmitte.
+     Deshalb 0.075rem hoeher (1,2 px bei Wurzel 16, 1,275 px bei 17): Rest
+     gemessen 0,12 px darueber (iOS) bzw. 0,13 px darunter (Android). In
+     rem, weil Beschriftung und Zahl beide in rem wachsen.
+     Vertrag: segmentZahlenLeitung.test.tsx. */
+  position: relative;
+  top: -0.075rem;
 }
 
 /* === Info Box === */

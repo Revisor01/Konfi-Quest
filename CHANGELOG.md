@@ -194,6 +194,8 @@ iOS-Build 233 · Android versionCode 127
   Mitteilung an die Org-Admins der Gemeinde.
 
 ### Geändert
+- Die orange Zahl in den Umschaltern steht mittig zur Beschriftung statt ein
+  Stück darunter.
 - Ist ein Event voll, fragt die App nach, bevor die Leitung jemanden über die
   Grenze nimmt — beim Bestätigen von der Warteliste wie beim Eintragen von
   Hand, für Konfis und Team getrennt. Nach „Trotzdem bestätigen" oder
