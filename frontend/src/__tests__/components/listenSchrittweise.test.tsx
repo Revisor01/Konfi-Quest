@@ -136,6 +136,7 @@ describe('Konfi-Liste der Leitung', () => {
   }));
   const props = {
     konfis, jahrgaenge: [{ id: 2, name: '2026/27' }], onSelectKonfi: vi.fn(),
+    onDeleteKonfi: vi.fn(), onDeleteTeamer: vi.fn(),
   };
 
   // 20 s statt 5 s: Ionic-Zeilen rendern in JSDOM langsam, im vollen Lauf auf

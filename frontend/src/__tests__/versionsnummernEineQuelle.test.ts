@@ -17,7 +17,9 @@ import { pruefen } from '../../../scripts/version-setzen.mjs';
 const wurzel = resolve(__dirname, '../../..');
 
 describe('Versionsnummern folgen frontend/version.json', () => {
-  const { quelle, staende, abweichungen } = pruefen(wurzel);
+  const { quelle, staende: roheStaende, abweichungen } = pruefen(wurzel);
+  // version-setzen.mjs ist JavaScript; `soll` kommt erst nach dem Anlegen dazu.
+  const staende = roheStaende as Array<{ stelle: string; wert: unknown; soll?: string }>;
 
   it('die Quelle ist eine Semantic-Versioning-Nummer mit Store-Build-Nummern', () => {
     expect(quelle.version).toMatch(/^\d+\.\d+\.\d+$/);

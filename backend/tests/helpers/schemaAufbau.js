@@ -88,7 +88,7 @@ async function offeneMigrationenAnwenden(pool, { wegBeschreibung = 'diesem Weg',
       await pool.query('INSERT INTO schema_migrations (name) VALUES ($1)', [datei]);
       angewandt.push(datei);
     } catch (err) {
-      throw new Error(`Migration ${datei} laeuft auf ${wegBeschreibung} nicht durch: ${err.message}`);
+      throw new Error(`Migration ${datei} laeuft auf ${wegBeschreibung} nicht durch: ${err.message}`, { cause: err });
     }
   }
   return angewandt;

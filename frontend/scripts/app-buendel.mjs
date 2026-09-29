@@ -166,6 +166,10 @@ export function startGroesse(verzeichnis) {
   return { dateien, roh, gzip };
 }
 
+/**
+ * @param {string} verzeichnis
+ * @param {{ budget?: number, startBudget?: number, publicVerzeichnis?: string }} [optionen]
+ */
 export function appBuendelPruefen(verzeichnis, { budget = APP_BUDGET_BYTES, startBudget = START_BUDGET_GZIP_BYTES, publicVerzeichnis } = {}) {
   const fehler = [];
   if (!existsSync(join(verzeichnis, 'index.html'))) {

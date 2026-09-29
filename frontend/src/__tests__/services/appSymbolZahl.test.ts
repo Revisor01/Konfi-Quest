@@ -13,7 +13,7 @@ let plattform = 'android';
 let pluginDa = true;
 const art = vi.fn();
 const setzen = vi.fn();
-const registerPlugin = vi.fn(() => ({ art: (...a: unknown[]) => art(...a), setzen: (...a: unknown[]) => setzen(...a) }));
+const registerPlugin = vi.fn((..._a: unknown[]) => ({ art: (...a: unknown[]) => art(...a), setzen: (...a: unknown[]) => setzen(...a) }));
 
 vi.mock('@capacitor/core', () => ({
   Capacitor: {

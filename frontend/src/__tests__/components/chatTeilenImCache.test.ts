@@ -37,9 +37,9 @@ describe('Chat: Datei teilen', () => {
     const nachricht = { id: 7, file_path: 'ab12', file_name: 'foto.jpg', content: '' } as unknown as Message;
     await nachrichtTeilen(nachricht, vi.fn());
 
-    const geschrieben = Filesystem.writeFile.mock.calls.map(([o]) => (o as { directory: string }).directory);
+    const geschrieben = Filesystem.writeFile.mock.calls.map(([o]) => (o as unknown as { directory: string }).directory);
     expect(geschrieben).toEqual(['CACHE']);
-    const uri = Filesystem.getUri.mock.calls.map(([o]) => (o as { directory: string }).directory);
+    const uri = Filesystem.getUri.mock.calls.map(([o]) => (o as unknown as { directory: string }).directory);
     expect(uri).toEqual(['CACHE']);
     expect(teilen).toHaveBeenCalledWith(expect.objectContaining({ url: 'file:///cache/share/foto.jpg' }));
   });
