@@ -1264,6 +1264,9 @@ iOS-Build 234 · Android versionCode 128
 - Ein Jahrgang lässt sich nicht mehr löschen, solange darin jemand Konfi ist,
   der in einer anderen Gemeinde zum Team gehört. Bisher galt diese Person als
   befördert und verlor beim Löschen ihren Jahrgang.
+- Eine geplante, noch nicht gestartete Challenge lässt sich nach einer
+  einfachen Rückfrage löschen, wie im Handbuch beschrieben; bisher warnte die
+  App, sie sei bereits gestartet.
 
 ### Sonstiges
 - Server, Web-Version und alle automatischen Prüfungen laufen auf derselben
