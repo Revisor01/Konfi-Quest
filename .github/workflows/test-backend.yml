@@ -16,10 +16,13 @@ name: Test-Backend Image
 on:
   workflow_dispatch:
     inputs:
+      # KEINE Vorgabe (29.09.2026, Audit CI BF-15): Sie stand auf
+      # 'feat/ionic-9', einem seit dem 01.09.2026 gemergten Branch -- ein
+      # Aufruf ohne Angabe baute still einen alten Stand. Jetzt muss der
+      # Branch genannt werden: gh workflow run test-backend.yml -f branch=<name>
       branch:
-        description: 'Branch, aus dem gebaut wird'
-        required: false
-        default: 'feat/ionic-9'
+        description: 'Branch, aus dem gebaut wird (z. B. main oder ein Feature-Branch)'
+        required: true
 
 permissions:
   contents: read
@@ -34,6 +37,8 @@ env:
 jobs:
   build-test-image:
     runs-on: ubuntu-latest
+    # Wie alle anderen Jobs mit Grenze statt GitHubs Vorgabe von sechs Stunden.
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7

@@ -274,9 +274,10 @@ jobs:
   e2e-test:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # SCHARF seit 31.08.2026: Die Suite steht auf 32/32 und haengt in den
-    # needs von build-and-push. Ab hier gilt: E2E rot -> kein Build -> kein
-    # Deploy, genauso wie bei den Unit-Tests.
+    # SCHARF seit 31.08.2026: Die Suite haengt in den needs von
+    # build-and-push. Ab hier gilt: E2E rot -> kein Build -> kein Deploy,
+    # genauso wie bei den Unit-Tests. (Die Zahl der Tests steht im Lauf, nicht
+    # hier -- "32/32" war schon am 26.09. veraltet.)
     #
     # Die Beobachtungsphase davor war kurz. Sollte sich die Suite in der CI
     # als unzuverlaessig erweisen (andere Maschine, andere Zeiten), gehoert
@@ -400,12 +401,18 @@ jobs:
     # einmal. Getestet wurde ZUERST ueber test-api.konfi-quest.de und einen
     # TestFlight-Build.
     #
-    # WIEDER AKTIV seit 02.09.2026 (Simons Entscheidung): Test-Backend laeuft
-    # auf dem Stand von main, Migration 142 ist ausgerollt und nachgemessen
-    # (material_links: 1 Zeile aus dem Backfill, materials.link_url unveraendert
-    # -- der Vertrag der Store-Apps bleibt). Die Datenbank traegt bereits ALLE
-    # 72 Migrationen des Repos; ein Live-Deploy tauscht also nur noch den Code
-    # und fuehrt keine Migration mehr aus.
+    # WIEDER AKTIV seit 02.09.2026 (Simons Entscheidung): Migration 142 ist
+    # ausgerollt und nachgemessen (material_links: 1 Zeile aus dem Backfill,
+    # materials.link_url unveraendert -- der Vertrag der Store-Apps bleibt).
+    #
+    # MIGRATIONEN (Stand 29.09.2026, der fruehere Satz "ein Live-Deploy fuehrt
+    # keine Migration mehr aus" galt nur am 02.09.): Jeder Deploy mit neuen
+    # Dateien in backend/migrations/ fuehrt sie beim Start des ersten neuen
+    # Backends aus (database.js, unter Advisory-Lock, je Migration eine
+    # Transaktion). Der Verify in deploy/rollend.sh bricht ab, wenn
+    # /api/status eine uebersprungene Migration meldet. Das Test-Backend
+    # (backend-test) steht NICHT auf main, sondern auf test-latest aus
+    # test-backend.yml.
     #
     # ZUM PAUSIEREN: in der if-Zeile unten ein "false &&" voranstellen -- und
     # oben vermerken, seit wann und warum. Ein pausierter Deploy ohne Notiz
