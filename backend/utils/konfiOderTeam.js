@@ -99,6 +99,11 @@ async function pruefeKonfiOderTeam(db, { userId, organizationId, rolle }) {
   const hier = mitgliedschaften.find((m) => m.organization_id === orgId);
   const andere = mitgliedschaften.filter((m) => m.organization_id !== orgId);
 
+  // Unveraenderte Rolle erzeugt nichts Neues. Die Oberflaeche schickt beim
+  // Bearbeiten das ganze Formular samt role_id mit -- ein Altbestands-
+  // Mischkonto muss sich trotzdem umbenennen oder sperren lassen.
+  if (hier && hier.role_name === rolle) return null;
+
   if (rolle === KONFI) {
     if (andere.length > 0) {
       return {

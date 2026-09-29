@@ -1557,7 +1557,8 @@ paths:
         # Gemeinde nie Konfi, zuhause nur ohne weitere Gemeinde, und Team nur,
         # wenn die Person nirgends sonst Konfi ist (Team -> Team in einem
         # Altbestands-Mischkonto bleibt moeglich, ebenso Konfi -> Team, das es
-        # aufloest). Rollenwechsel zuhause schreiben seither auch die Zeile der
+        # aufloest; eine unveraenderte role_id geht immer durch). Rollenwechsel
+        # zuhause schreiben seither auch die Zeile der
         # Stamm-Gemeinde in user_organizations mit (Altbestand aus Migration
         # 101), in einer Transaktion. Test tests/routes/konfiOderTeam.test.js.
         # BEHOBEN 26.09.2026 (Audit Sicherheit BF-10): invalidateUserCache lief

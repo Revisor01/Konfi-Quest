@@ -534,7 +534,7 @@ Konfis einer weiteren Gemeinde betreffen, treffen also nur Altbestand. Zeilenang
   Beförderung und der Rollenwechsel zuhause ziehen die Zeile der Stamm-Gemeinde in `user_organizations`
   mit — Migration 101 hatte jedes damalige Konto dort eingetragen, und nach einer Beförderung stand da
   weiter `konfi`. Die Registrierung mit Einladungscode legt immer ein neues Konto an (vergebener
-  Benutzername: 409) und ist kein Weg dorthin. Test `tests/routes/konfiOderTeam.test.js` (22, ohne Fix 9
+  Benutzername: 409) und ist kein Weg dorthin. Test `tests/routes/konfiOderTeam.test.js` (23, ohne Fix 9
   rot). Damit sind die Zeilen erledigt, die nur Konfis einer weiteren Gemeinde betreffen, und die, die nur
   Konfi und Nicht-Konfi trennen; die Messabfrage für den Altbestand steht in
   `docs/auftraege/lokaler-agent/06-mischkonten.md`. Übrig bleiben Team-Rollen, die je Gemeinde verschieden

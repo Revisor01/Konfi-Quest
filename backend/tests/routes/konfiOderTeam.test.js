@@ -289,6 +289,22 @@ describe('Konfi oder Team -- nie beides', () => {
       expect(await mitgliedschaft(USERS.admin1.id, 2)).toBe('teamer');
     });
 
+    it('erlaubt: Altbestand mit unveraenderter Rolle bearbeiten (die Oberflaeche schickt role_id immer mit)', async () => {
+      // Konfi 1 (zuhause Konfi) ist in Org 2 Teamer:in -- Altbestand. Die
+      // Leitung zuhause aendert nur den Namen; role_id kommt unveraendert mit.
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, 2, $2)',
+        [USERS.konfi1.id, ROLES.teamer2.id]
+      );
+      const res = await request(app).put(`/api/users/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`)
+        .send({ role_id: ROLES.konfi.id, display_name: 'Konfi Eins neu' });
+
+      expect(res.status).toBe(200);
+      const { rows: [u] } = await db.query('SELECT display_name FROM users WHERE id = $1', [USERS.konfi1.id]);
+      expect(u.display_name).toBe('Konfi Eins neu');
+    });
+
     it('zuhause: die Zeile der Stamm-Gemeinde in user_organizations wechselt mit', async () => {
       // Migration 101 hat JEDES Konto mit seiner damaligen Rolle auch in
       // user_organizations eingetragen. Wechselte danach nur users.role_id,
