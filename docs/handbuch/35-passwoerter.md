@@ -301,7 +301,9 @@ fest.
    kann nur die **Org-Leitung**
 2. **Jahrgang wählen.** Jede Einladung gehört zu genau einem Jahrgang; wer sich
    damit registriert, landet automatisch darin.
-3. **„Einladungslink generieren"** antippen
+3. **Gültigkeit wählen:** 7, 14, 30, 60 oder 90 Tage. Voreingestellt sind
+   7 Tage. Für einen Elternbrief mit langem Vorlauf nimmst du mehr.
+4. **„Einladungslink generieren"** antippen
 
 Die App zeigt beides zusammen: einen **QR-Code** und darunter den
 **Einladungscode** — acht Zeichen aus Ziffern und den Buchstaben A bis F, etwa
@@ -325,11 +327,21 @@ sich beliebig oft verwenden — du erzeugst also eine Einladung pro Jahrgang.
 
 ### Eine Einladung verlängern oder löschen
 
-Ein Code gilt **7 Tage**. In der Übersicht der aktiven Einladungen verlängerst
-du ihn um **jeweils 7 Tage** — aber nur, solange er noch gültig ist. Ein
-abgelaufener Code verschwindet aus der Liste und lässt sich nicht wiederbeleben
-(„Abgelaufene Codes können nicht verlängert werden"); dann erzeugst du einen
-neuen.
+Ein Code gilt so lange, wie du es beim Erzeugen gewählt hast, und **läuft
+immer ab** — einen Code ohne Ablauf gibt es nicht. In der Übersicht der aktiven
+Einladungen verlängerst du ihn: Die App fragt, um wie viele Tage — 7, 14, 30, 60
+oder 90 — und nennt zu jeder Wahl das neue Ablaufdatum. **Länger als 90 Tage im
+Voraus gilt kein Code.** Was darüber hinausginge, kürzt die App auf 90 Tage ab
+heute; gilt ein Code schon so lange, sagt sie das („Der Code gilt schon 90 Tage
+im Voraus — länger geht es nicht.").
+
+Verlängern geht nur, solange der Code noch gültig ist. Ein abgelaufener Code
+verschwindet aus der Liste und lässt sich nicht wiederbeleben („Abgelaufene
+Codes können nicht verlängert werden"); dann erzeugst du einen neuen.
+
+**Ein lange gültiger Code ist ein geteiltes Geheimnis.** Wer ihn hat, kann
+sich registrieren, solange er gilt. Neue Konfis meldet die App der Leitung;
+brauchst du den Code nicht mehr, lösch ihn.
 
 In der Liste steht zu jedem Code, zu welchem Jahrgang er gehört und wie viele
 Konfis ihn schon benutzt haben. Wie lange er noch gilt, zeigt die Marke in der
@@ -379,7 +391,7 @@ Dabei passiert automatisch:
 | Meldung | Ursache und Ausweg |
 |---|---|
 | „Dieser Einladungscode existiert nicht" | Vertipper oder gelöschter Code — Groß- und Kleinschreibung ist egal, aber jede Stelle zählt. Zur Not neue Einladung erzeugen. |
-| „Dieser Einladungscode ist abgelaufen" | Die 7 Tage sind um. Die Org-Leitung erzeugt einen neuen Code. |
+| „Dieser Einladungscode ist abgelaufen" | Die gewählte Gültigkeit ist um. Die Org-Leitung erzeugt einen neuen Code. |
 | „Benutzername bereits vergeben" | Einen anderen wählen — geprüft wird schon beim Eintippen, nicht erst beim Absenden. |
 | „Die Anzahl der Konfis ist erreicht …" | Das Konfi-Kontingent des Tarifs ist voll. Da hilft nur die Org-Leitung — sie muss den Tarif anpassen. |
 

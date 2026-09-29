@@ -15,6 +15,10 @@ iOS-Build 233 · Android versionCode 127
 - Eine orange Zahl in den Umschaltern oben zeigt, hinter welchem Reiter etwas
   wartet: Freigaben bei den Challenges (auch im Archiv) für alle, die freigeben
   dürfen, dazu für die Leitung zu verbuchende Events und offene Anträge.
+- Einladungscodes gelten wahlweise 7, 14, 30, 60 oder 90 Tage. Beim
+  Verlängern wählt die Org-Leitung ebenfalls, um wie viele Tage — höchstens
+  bis 90 Tage im Voraus. Jeder Code läuft ab; abgelaufene lassen sich nicht
+  wieder aufleben.
 - Die Rückfrage vor dem Löschen eines Jahrgangs nennt, wie viele Events und
   Challenges mitgehen, wie viele dieser Events noch in der Zukunft liegen und
   was bestehen bleibt.

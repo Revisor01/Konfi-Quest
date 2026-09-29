@@ -777,7 +777,17 @@ paths:
   /api/auth/invite-code:
     post:
       tags: ["Passwörter & Einladungen"]
-      summary: Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)
+      summary: Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 bis 90 Tage gültig)
+      description: >
+        GUELTIGKEIT WAEHLBAR (28.09.2026, Audit E-08; Simon: "codes laenger
+        als 7 Tage ist gut. Mach es flexibel. Aber mit Zwang die ablaufen zu
+        lassen."): gueltig_tage 7, 14, 30, 60 oder 90, optional. Ohne das
+        Feld (oder mit null) gilt der Code wie bisher 7 Tage — so schicken
+        es die Apps im Store (2.2.0, 2.3.0). Jeder andere Wert: 400 "Ein
+        Einladungscode gilt 7, 14, 30, 60 oder 90 Tage.", es wird kein Code
+        angelegt. Einen Code ohne Ablauf gibt es nicht
+        (invite_codes.expires_at NOT NULL; utils/einladungsGueltigkeit.js).
+        Antwort additiv um gueltig_tage erweitert.
       requestBody:
         required: true
         content:
@@ -787,8 +797,10 @@ paths:
               required: [jahrgang_id]
               properties:
                 jahrgang_id: { type: integer }
+                gueltig_tage: { type: [integer, "null"], enum: [7, 14, 30, 60, 90, null], default: 7, description: "Seit 28.09.2026, optional" }
       responses:
-        "201": { description: "invite_code, jahrgang_name, expires_at (Status ist 200)" }
+        "201": { description: "invite_code, jahrgang_name, expires_at, gueltig_tage (seit 28.09.2026) — Status ist 200" }
+        "400": { description: "gueltig_tage nicht 7, 14, 30, 60 oder 90 — { error }" }
         "403": { description: "Nur Org-Admins" }
         "404": { description: "Jahrgang nicht in eigener Org" }
       x-berechtigung:
@@ -814,12 +826,32 @@ paths:
   /api/auth/invite-codes/{id}/extend:
     post:
       tags: ["Passwörter & Einladungen"]
-      summary: Einladungscode um 7 Tage verlaengern
+      summary: Einladungscode verlaengern (um 7 bis 90 Tage, hoechstens bis 90 Tage im Voraus)
+      description: >
+        VERLAENGERN WAEHLBAR, IMMER MIT ABLAUF (28.09.2026, Audit E-08):
+        tage 7, 14, 30, 60 oder 90, optional — ohne Body wie bisher um 7
+        Tage (die Apps im Store schicken keinen). Das neue Ablaufdatum ist
+        das bisherige plus tage, aber NIE mehr als 90 Tage ab jetzt; was
+        darueber hinausginge, wird gekuerzt (begrenzt: true). Bleibt bis zur
+        Grenze nicht einmal ein Tag, 400 und das Datum bleibt. Ein Tag sind
+        24 Stunden (vorher Kalendertage per setDate — ueber eine
+        Zeitumstellung eine Stunde Unterschied). Abgelaufene Codes bleiben
+        abgelaufen (400 wie bisher) — der Vorschlag aus E-08, auch
+        abgelaufene zu verlaengern, ist nach Simons Entscheidung ("mit Zwang
+        die ablaufen zu lassen") bewusst nicht umgesetzt.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Einladungs-Codes" }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tage: { type: [integer, "null"], enum: [7, 14, 30, 60, 90, null], default: 7, description: "Seit 28.09.2026, optional" }
       responses:
-        "200": { description: "Neues expires_at" }
-        "400": { description: "Abgelaufene Codes nicht verlaengerbar" }
+        "200": { description: "{ message, expires_at, begrenzt } — begrenzt (seit 28.09.2026): die 90-Tage-Grenze hat gekuerzt" }
+        "400": { description: "Abgelaufene Codes nicht verlaengerbar; tage nicht 7, 14, 30, 60 oder 90; oder der Code gilt schon 90 Tage im Voraus — jeweils { error } auf Deutsch" }
         "403": { description: "Nur org_admin" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:

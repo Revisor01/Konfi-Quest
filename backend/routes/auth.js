@@ -1,6 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+// Wie lange ein Einladungscode gilt (Simon, 28.09.2026; Audit E-08)
+const {
+  leseTage: leseEinladungsTage,
+  ablaufBeimAnlegen: einladungAblaufBeimAnlegen,
+  ablaufBeimVerlaengern: einladungAblaufBeimVerlaengern,
+  HOECHSTENS_TAGE: EINLADUNG_HOECHSTENS_TAGE
+} = require('../utils/einladungsGueltigkeit');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
@@ -882,6 +889,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   // ===== INVITE CODE SYSTEM =====
 
   // Generate invite code for Konfi registration (org_admin only)
+  //
+  // GUELTIGKEIT WAEHLBAR (Simon, 28.09.2026: "codes laenger als 7 Tage ist
+  // gut. Mach es flexibel. Aber mit Zwang die ablaufen zu lassen."; Audit
+  // E-08): gueltig_tage 7, 14, 30, 60 oder 90, optional. Ohne das Feld bleibt
+  // es bei 7 Tagen -- so schicken es die Apps im Store. Andere Werte: 400.
+  // Einen Code ohne Ablauf gibt es nicht (utils/einladungsGueltigkeit.js).
+  // Antwort additiv um gueltig_tage erweitert.
   router.post('/invite-code', rbacVerifier, validateInviteCode, async (req, res) => {
     const { jahrgang_id } = req.body;
     const userId = req.user.id;
@@ -894,6 +908,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
     if (!jahrgang_id) {
       return res.status(400).json({ error: 'Jahrgang ist erforderlich' });
+    }
+
+    const gueltigkeit = leseEinladungsTage(req.body.gueltig_tage);
+    if (!gueltigkeit.ok) {
+      return res.status(400).json({ error: 'Ein Einladungscode gilt 7, 14, 30, 60 oder 90 Tage.' });
     }
 
     try {
@@ -909,7 +928,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       // Generate unique invite code (8 characters, uppercase alphanumeric)
       const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      const expiresAt = einladungAblaufBeimAnlegen(gueltigkeit.tage);
 
       // Store invite code
       await db.query(`
@@ -920,7 +939,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       res.json({
         invite_code: inviteCode,
         jahrgang_name: jahrgang.name,
-        expires_at: expiresAt
+        expires_at: expiresAt,
+        gueltig_tage: gueltigkeit.tage
       });
 
     } catch (err) {
@@ -958,13 +978,26 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   });
 
-  // Extend invite code by 7 days (org_admin only)
+  // Extend invite code (org_admin only)
+  //
+  // UM WAEHLBARE TAGE, HOECHSTENS 90 IM VORAUS (Simon, 28.09.2026; Audit
+  // E-08): tage 7, 14, 30, 60 oder 90, optional -- ohne das Feld wie bisher
+  // um 7 Tage (Apps im Store schicken keinen Body). Das neue Ablaufdatum
+  // liegt nie mehr als 90 Tage in der Zukunft; was darueber hinausginge,
+  // wird gekuerzt (begrenzt: true). Steht der Code schon an der Grenze: 400.
+  // Abgelaufene Codes bleiben abgelaufen (400 wie bisher). Antwort additiv
+  // um begrenzt erweitert.
   router.post('/invite-codes/:id/extend', rbacVerifier, async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 
     if (req.user.role_name !== 'org_admin') {
       return res.status(403).json({ error: 'Nur die Org-Leitung kann Einladungscodes verlängern' });
+    }
+
+    const verlaengerung = leseEinladungsTage(req.body ? req.body.tage : undefined);
+    if (!verlaengerung.ok) {
+      return res.status(400).json({ error: 'Ein Einladungscode lässt sich um 7, 14, 30, 60 oder 90 Tage verlängern.' });
     }
 
     try {
@@ -981,15 +1014,19 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return res.status(400).json({ error: 'Abgelaufene Codes können nicht verlängert werden' });
       }
 
-      // Add 7 days to current expiry
-      const newExpiry = new Date(invite.expires_at);
-      newExpiry.setDate(newExpiry.getDate() + 7);
+      const { ablauf: newExpiry, begrenzt, verlaengert } =
+        einladungAblaufBeimVerlaengern(new Date(invite.expires_at), verlaengerung.tage);
+      if (!verlaengert) {
+        return res.status(400).json({
+          error: `Der Code gilt schon ${EINLADUNG_HOECHSTENS_TAGE} Tage im Voraus — länger lässt er sich nicht verlängern.`
+        });
+      }
 
       await db.query(`
         UPDATE invite_codes SET expires_at = $1 WHERE id = $2 AND organization_id = $3
       `, [newExpiry, id, organizationId]);
 
-      res.json({ message: 'Einladungscode verlängert', expires_at: newExpiry });
+      res.json({ message: 'Einladungscode verlängert', expires_at: newExpiry, begrenzt });
 
     } catch (err) {
  console.error('Database error in POST /api/auth/invite-codes/:id/extend:', err);
