@@ -212,6 +212,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 - **Auswirkung aus Nutzersicht:** Im Gemeindehaus-Funkloch scannt die Konfi und bekommt eine unpassende Meldung; das Handbuch (70-termine.md:684) verspricht „Du bist offline".
 - **Beleg:** Callback in `new QrScanner(videoRef.current, (result) => handleScanResult(result.data), ...)` innerhalb `useEffect(() => {...}, [])`; `handleScanResult` ist eine pro Rendern neue Funktion, der Callback hält die erste.
 - **Empfehlung:** `isOnline`/`scanning` über `useRef` spiegeln oder `networkMonitor.isOnline` direkt lesen.
+- **Nachtrag 28.09.2026:** behoben — `QRScannerModal.tsx`: Der Scan-Rückruf ruft über ein Ref die jeweils aktuelle `handleScanResult`; `isOnline` wird in ein Ref gespiegelt, der Scan-Merker ist ein Ref statt Zustand (gilt sofort, nicht erst nach dem nächsten Rendern). Ein neuer Scan nimmt einen alten Offline-Hinweis weg. Test `components/qrScannerAktuellerZustand.test.tsx` (4, echte Ansicht, Scanner als Attrappe: offline nach dem Öffnen, Netz zurück, zwei Treffer kurz hintereinander, Neustart nach „bereits eingecheckt"); ohne Fix 3 rot.
 
 ### BF-11: `npm run lint` schlägt im Bereich mit 3 Fehlern fehl; die CI prüft nur geänderte Dateien
 - **Schwere:** NIEDRIG

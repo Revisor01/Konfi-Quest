@@ -1103,6 +1103,8 @@ iOS-Build 233 · Android versionCode 127
   zweite Anmeldung mehr und zeigt nicht mehr „Du bist bereits für dieses Event
   angemeldet", obwohl alles geklappt hat; der Knopf ist gesperrt, bis die
   Anmeldung durch ist.
+- Geht das Handy beim Scannen des QR-Codes zum Einchecken offline, meldet die
+  App „Du bist offline" statt „QR-Code konnte nicht verarbeitet werden".
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,
