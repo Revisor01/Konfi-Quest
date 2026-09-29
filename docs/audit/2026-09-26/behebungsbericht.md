@@ -1,6 +1,6 @@
 # Behebungsbericht zum Release-Audit 2.3.0
 
-Stand 27.09.2026, abends (Code-Stand `9e7fa4c8`); Nachtrag 28.09.2026 (Abschnitt „Nacht zum 28.09.“), ausgeliefert als 2.3.0; Nachtrag 29.09.2026 (Abschnitt „29.09.: Pakete nach Simons Entscheidungen“, offene Punkte in `docs/audit/2026-09-28/offene-punkte.md`). Was seit der Gesamtabnahme vom 26.09. behoben
+Stand 27.09.2026, abends (Code-Stand `9e7fa4c8`); Nachtrag 28.09.2026 (Abschnitt „Nacht zum 28.09.“), ausgeliefert als 2.3.0; Nachtrag 29.09.2026 (Abschnitte „29.09.: Pakete nach Simons Entscheidungen“ und „29.09., abends: Großpaket“, offene Punkte in `docs/audit/2026-09-28/offene-punkte.md`). Was seit der Gesamtabnahme vom 26.09. behoben
 wurde, was offen bleibt und was bei Simon liegt. Dazu gehört das Audit „Wer bekommt was" vom 27.09.
 (`docs/audit/2026-09-27/wer-bekommt-was.md`) samt seinen Behebungspaketen. Jeder Punkt steht als Commit auf dem Release-Branch;
 die Berichte je Bereich tragen an jedem Befund eine Status-Zeile mit Datum. Die Regeln für jede
@@ -500,11 +500,85 @@ Nachträgen der Berichte. Was offen bleibt, steht vollständig in
 `docs/audit/2026-09-28/offene-punkte.md` — erstmals samt der Abschnitte „Unklar" und
 „Nicht geprüft" und der Nebenbefunde vom 29.09.
 
+### 29.09., abends: Großpaket — Pakete 5–8, App-Größe, Gerätetest
+
+Simon, 29.09.2026: „Schnüre ein größeres Paket. Ich möchte möglichst alle Befunde schließen bevor
+wir an die Features gehen. Auch die App Größe finde ich extrem wichtig anzugehen. Warum soll das
+mit in der App liegen. Der Kontrast ist uns erstmal egal." Dazu am Nachmittag sein Gerätetest mit
+Build 128 auf einem Sony Xperia 1 VI.
+
+Zwölf Pakete (A, B1, B2, C, D, E, F, G2, H, I1, I2, I3) liefen parallel, jedes in eigenem
+Arbeitsbaum mit eigener Test-Datenbank und demselben Auftrag wie bisher (Test und Gegenprobe je
+Befund, CHANGELOG, Handbuch und API-Doku im selben Commit, Antwortformen unverändert, Migrationen
+additiv). Die Commits wurden einzeln übernommen, danach die Leitplanken der Pakete gegeneinander
+abgeglichen, die Generatoren und beide Vollsuiten gefahren. Von den 55 offenen Befunden sind 44
+behoben, 8 teilweise (Rest begründet), 3 offen; Einzelheiten in
+`docs/audit/2026-09-28/offene-punkte.md`.
+
+- **App-Größe:** Handbuch, Bildschirmfotos, API-Referenz und Webseiten liegen nicht mehr in der
+  App. Ein eigenes App-Verzeichnis nimmt aus `public/` nur, was die App lädt, und der Build bricht
+  über 11 MB ab; die Release-Workflows prüfen die Kopie im nativen Projekt. Web-Inhalt der App
+  45,7 → 9,2 MB (gemessen mit `cap copy`). Die Store-Pakete (41,2 MB bei Build 128/234) sollten
+  auf etwa 8 MB fallen — gerechnet, der nächste Release-Lauf misst. Handbuch-Bilder als WebP, nur
+  die eingebundenen; Symbole verlustfrei kleiner; der Build läuft ohne Warnungen.
+- **Build, CI, Deploy:** Backend-Image aus dem Lockfile, ohne Dev-Pakete, Tests und Compiler
+  (1,92 GB → 486 MB); eine Node-Linie (24 LTS) für CI, Images und `engines`; Backend-Lint und
+  Typprüfung der Tests als CI-Schritte; alle Actions auf Commits festgenagelt; der Deploy rollt
+  keinen älteren Stand über einen neueren; der Notfall-Deploy läuft über dasselbe Skript und hat
+  einen Probelauf; Production im Play Store gestaffelt (Vorgabe 10 %); ein roter `main` legt ein
+  GitHub-Issue an und schließt es bei Grün; jeder Store-Upload setzt einen Git-Tag; die CSP der
+  Web-App ist scharf; Sitemap aus dem Inhalt; `apple-app-site-association` statt Platzhalter;
+  iOS-Symbol ohne Alphakanal, Release-Push auf `production`, Dokumente-Ordner nicht mehr
+  freigegeben.
+- **Datenbank und Betrieb (Migrationen 174–178):** Wiederherstellung und Erst-Einrichtung auf einer
+  frischen Instanz durchgespielt und als Skript; `settings` mit Primärschlüssel; neun doppelte
+  Indizes weg; die TEXT-Zeitspalten als `timestamptz`; fünf Migrationen laufen auch ein zweites Mal;
+  der Neuinstallations-Wächter vergleicht den ganzen Katalog; der Test-Dump wird reproduzierbar
+  fortgeschrieben (0 statt 49 offene Migrationen); Push an viele schreibt Sammelzeilen ins Log;
+  Massenmails gepoolt und gedrosselt; Refresh-Tokens schon beim Start aufgeräumt.
+- **Tests:** E2E-Datenbank wie eine neue Instanz, Punkte-Test auf den konkreten Wert; jede
+  Backend-Route hat einen Test; reine Quelltext-Tests 42,4 → 38,7 % der Dateien, eine Leitplanke
+  lässt keine neuen zu; Komponenten ohne Test 49 → 12; feste Zeitzone; die roten CI-Läufe mit
+  „deadlock detected" gingen auf `closePool` zurück.
+- **Wer sieht was und Sicherheit:** Gemeinde löschen nutzt die gemeinsame Kontolöschung und nennt
+  vorher, was mit den Konten geschieht; der Team-Rückblick zählt nur Team-Abzeichen; Teamer-Profil,
+  Konfi-Badges der Leitung und die Jahrgangslöschung lesen die Rolle je Gemeinde; eigene Grenzen
+  für `validate-invite`, `reset-password` und `refresh`; die Client-Adresse kommt ohne
+  Proxy-Merkmal nicht aus `X-Forwarded-For`; die Event-Abmeldung trägt die Kennung und geht mit dem
+  Konto.
+- **Doku, Datenschutz, Oberfläche:** Die Datenschutzerklärung beschreibt Absturzberichte,
+  Geräte-Kennung und Push-Inhalt so, wie der Code arbeitet; Absturzberichte lassen sich im Profil
+  abschalten (Simon: „An, abschaltbar"); Handbuch „Eine neue Gemeinde einrichten"; lange Listen der
+  Leitung rendern schrittweise; Kriterienfarben als Tokens; Dunkelmodus als Bildvergleich; tote
+  Dateiverweise in Kommentaren mit Prüfung.
+- **Simons Gerätetest (Xperia, Build 128):** Word-Dateien lassen sich senden (Dateien ohne Typ
+  gehen nach ihrer Endung, eine Ablehnung nennt den Grund); Dateiauswahl und alle Links nach
+  draußen lösen keine Biometrie-Abfrage mehr aus (eine Stelle je Weg, je mit Wächter-Test); das
+  Mitteilungssymbol ist die Lutherrose statt eines weißen Flecks; nur noch ein FCM-Dienst, damit
+  kommen Mitteilungen auch bei offener App an. **Zahl am App-Symbol** (Simon: „Ich will Android
+  exakt gleich wie iOS", Wahl „Zahl wie iOS"): Android selbst kennt keine Zahl — Pixel zeigt
+  technisch nur einen Punkt, die Zahl malen die Startbildschirme der Hersteller. Die App erkennt
+  beim Start, welcher Weg gilt: Sony und Huawei über deren Zahl-Schnittstelle (ein eigener
+  Push-Dienst setzt sie auch bei geschlossener App), Samsung und Xiaomi über die Zahl an einer
+  Sammel-Mitteilung, die bei 0 verschwindet; nach jeder Mitteilung gleicht ein stiller Push die
+  Zahl ab (Migration 185). Handbuch „Bedienung" mit Tabelle je Hersteller. Am Xperia noch zu
+  prüfen.
+- **Nach Simons Entscheidungen:** Chat-Mitteilungen nennen Absender und Art, nicht den Inhalt
+  („Absender, ohne Inhalt"); bei einer Absage gilt auch eine abgemeldete Konfi als entschuldigt;
+  die Serie zeigt den Fortschritt ehrlich; nodemailer 10; Gemeinde anlegen in einer Transaktion
+  mit systemweit geprüftem Benutzernamen. Einladungscodes bleiben bei 8 Zeichen; abgesagte Events
+  zählen als offene Buchungen weiter nur Konfis.
+
 ## Was offen bleibt
 
-**Stand 29.09.2026:** Die vollständige Liste steht in `docs/audit/2026-09-28/offene-punkte.md` (55 Befunde,
-24 Punkte aus „Unklar"/„Nicht geprüft", 23 Feature-Empfehlungen, 12 Nebenbefunde). Die Abschnitte
-hier unten sind der Stand vom 27./28.09. und bleiben zur Nachverfolgung stehen.
+**Stand 29.09.2026, abends:** Die vollständige Liste steht in
+`docs/audit/2026-09-28/offene-punkte.md`, jeder Eintrag mit seinem Stand. Von 55 Befunden sind 44
+behoben, 8 teilweise und 3 offen: die Deploy-Lücke (braucht den Server, Auftrag 10), die
+Screenshots (nach dem Deploy, Auftrag 08) und der Kontrast im Hellmodus (von Simon zurückgestellt).
+Von 24 Punkten aus „Unklar"/„Nicht geprüft" sind 12 geklärt oder behoben; der Rest sind Messungen
+in Produktion, Fragen an Simon und die Datenauskunft (Feature E-21). Danach kommen die 23
+Feature-Empfehlungen. Die Abschnitte hier unten sind der Stand vom 27./28.09. und bleiben zur
+Nachverfolgung stehen.
 
 Stand 27.09.2026, vor dem Merge. Gezählt aus den Status-Zeilen der 15 Bereichsberichte und des
 Audits „Wer bekommt was": **238 Befunde, 125 behoben, 22 teilweise, 79 offen, 8 bewusst so
@@ -650,6 +724,14 @@ Produktfragen.
 5. **Autorenschaft älterer Commits:** Ein Teil des Branches trägt noch „Claude" als Autor.
    Umschreiben ginge nur mit Force-Push und neuen Commit-Kennungen; bleibt, wie es ist, solange
    Simon nichts anderes sagt. `main` bleibt, wie es ist (Simon, 27.09.).
+6. **Aus dem Großpaket vom 29.09.:** Rückfragen und die Gerätekontrolle der Android-Zahl stehen in
+   `docs/audit/2026-09-28/offene-punkte.md`, Abschnitte „Bei Simon" und „Messen in Produktion und
+   am Gerät". Entschieden hat Simon am 29.09.: Chat-Mitteilungen „Absender, ohne Inhalt";
+   Absturzberichte „An, abschaltbar"; offene Buchungen abgesagter Events „Nur Konfis, wie heute";
+   roter `main` → „GitHub-Issue automatisch"; Git-Tag je Store-Upload „Ja, automatisch"; CSP
+   „Sofort scharf"; nodemailer 10 „Ja, jetzt übernehmen"; Absage bei abgemeldeter Konfi „Auch sie
+   wird entschuldigt"; Serie „Fortschritt ehrlich zeigen"; Einladungscodes „Bei 8 bleiben"; bei
+   Zahl 0 auf Samsung und Xiaomi „Ja, bei 0 wegräumen"; Android-Zahl „Zahl wie iOS".
 
 ## Entscheidungen der Umsetzung, die Simon kippen kann
 
