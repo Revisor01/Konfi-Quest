@@ -1400,6 +1400,9 @@ iOS-Build 234 · Android versionCode 128
   beschriebene Weg brach dort ab und hinterließ eine leere Datenbank. Das
   Skript weigert sich, eine Datenbank mit Konten ohne ausdrückliche
   Bestätigung zu ersetzen.
+- Eine neu eingerichtete Datenbank rechnet in derselben Zeitzone wie der
+  laufende Betrieb. Nach der bisherigen Vorlage hätte sie Berliner Zeit
+  genommen, und Zeiten etwa im Postfach wären um zwei Stunden verrutscht.
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.

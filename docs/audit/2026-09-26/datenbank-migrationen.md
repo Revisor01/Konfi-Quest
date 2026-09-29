@@ -406,6 +406,7 @@ Vertragsbruch.
   Landeskirche den ersten Zugang bekommt, ist im Repo nicht beschrieben — nicht vertieft,
   gehört zur Betriebsdoku.
   - **Status:** offen 27.09.2026 — weiter nicht beschrieben (erster `super_admin`, Rollen, Berechtigungen). Vor EKD-Ausrollung.
+  - **Nachtrag 29.09.2026 (Server-Zeitzone):** Beim Durchspielen mit `postgres:15-alpine` nach der Referenz-Compose übernahm die frische Instanz `TZ: Europe/Berlin` beim ersten Start in `postgresql.conf` (`timezone = 'Europe/Berlin'`); die Produktion läuft in UTC, weil ihr Datenverzeichnis älter ist als der TZ-Eintrag. Die Backends einer neuen Instanz hätten `NOW()` in die 24 Spalten `timestamp` ohne Zeitzone in Berliner Zeit geschrieben, der Node-Prozess (UTC) hätte sie als UTC gelesen — zwei Stunden Versatz. Behoben: `deploy/compose.konfi_quest.yml` setzt `-c timezone=UTC` (für die bestehende Produktion ohne Wirkung); nachgemessen: Sitzung eines Clients ohne `PGTZ` ohne die Zeile `Europe/Berlin`, mit ihr `UTC`. Test `backend/tests/schema/composeVorlagen.test.js` (Gegenprobe mit der alten Datei rot). Der Portainer-Stack sollte die Zeile ebenfalls bekommen (Auftrag 08).
 - **Wirkung von 0,3 CPU:** Alle Zeiten hier stammen von einer unbegrenzten CPU; der Faktor
   in Produktion ist nur dort messbar.
   - **Status:** überholt 27.09.2026 — Postgres hat seit Phase A 2 CPU; die Wirkung unter Last nach dem Deploy messen.
