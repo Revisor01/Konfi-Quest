@@ -466,6 +466,7 @@ so nicht haltbar.
 - **Beleg:** `expected '{"id":7,"display_name":"Anna Beispiel…' to be null`.
 - **Empfehlung:** Nach erfolgreicher Migration die vier Schlüssel aus
   `localStorage` entfernen; `clearAuth` räumt sie ebenfalls.
+- **Nachtrag 28.09.2026:** behoben — `migrateStorage.ts` entfernt die vier Schlüssel nach erfolgreicher Migration aus dem `localStorage`, auch auf Geräten, die schon früher migriert wurden (Zweig `storage_migrated_v1` gesetzt); scheitert die Migration, bleiben sie stehen. `clearAuth` räumt die drei Anmelde-Schlüssel ebenfalls (die Gerätekennung bleibt wie in den Preferences). Der Web-Speicher der Preferences (Präfix `CapacitorStorage.`) ist davon getrennt und bleibt unberührt. Test `services/migrationsresteLocalStorage.test.ts` (5: Migration, früher migriertes Gerät, Gegenprobe Fehlschlag, fremde Schlüssel, Abmelden); ohne Fix 3 rot. Kommentare in `public/landing.html` und `umamiKennungen.test.ts` nachgezogen.
 
 ### BF-11: Gesperrte Gemeinde / abgelaufene Testphase erscheint als „Sitzung abgelaufen"
 

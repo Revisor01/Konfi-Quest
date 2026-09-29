@@ -1107,6 +1107,9 @@ iOS-Build 233 · Android versionCode 127
   App „Du bist offline" statt „QR-Code konnte nicht verarbeitet werden".
 - Die Badges-Seite der Konfis zeigt die Badges auch dann, wenn die Punkte des
   Profils gerade nicht geladen werden konnten, statt „Keine Badges gefunden".
+- Auf Geräten, auf denen die App schon lange installiert ist, bleiben nach dem
+  Abmelden keine alten Anmeldedaten mit Name und E-Mail-Adresse mehr im
+  Speicher der App zurück; die App räumt sie beim nächsten Start weg.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

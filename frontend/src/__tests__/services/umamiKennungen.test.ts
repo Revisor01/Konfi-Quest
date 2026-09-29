@@ -160,7 +160,7 @@ describe('Durchlaeufer werden auf der Startseite markiert', () => {
   it('geprueft wird nur die EXISTENZ des Schluessels, nie sein Wert', () => {
     const html = landing();
     // Beide Schreibweisen: heutiger Praefix und der alte Name, den
-    // migrateStorage.ts als Rueckfallebene stehen laesst.
+    // migrateStorage.ts bis 28.09.2026 als Rueckfallebene stehen liess.
     expect(html).toContain("localStorage.getItem('CapacitorStorage.konfi_token') !== null");
     expect(html).toContain("localStorage.getItem('konfi_token') !== null");
 

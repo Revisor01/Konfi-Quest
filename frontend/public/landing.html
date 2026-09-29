@@ -574,8 +574,9 @@ footer a:hover{color:#fff}
 
   // 1. Hat sich dieser Browser hier schon einmal angemeldet? Nur die
   //    Existenz des Schluessels zaehlt. "CapacitorStorage."-Praefix ist der
-  //    heutige Stand, der nackte Name der alte (migrateStorage.ts laesst ihn
-  //    als Rueckfallebene stehen) — beide gelten.
+  //    heutige Stand, der nackte Name der alte (bis 28.09.2026 liess
+  //    migrateStorage.ts ihn als Rueckfallebene stehen, seitdem raeumt die App
+  //    ihn beim Start weg) — beide gelten.
   //    localStorage kann werfen (Privatmodus, gesperrte Websitedaten); dann
   //    gilt schlicht "nicht erkannt".
   var angemeldet = false;
