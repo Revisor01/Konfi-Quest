@@ -204,6 +204,42 @@ describe('Push-Kanaele: die channelId steht im Payload', () => {
   });
 });
 
+describe('Zahl am App-Symbol auf Android: kommt aus den liegenden Mitteilungen', () => {
+  // Simon, 29.09.2026: "auf dem Icon keine Badges auf Android". Naheliegend
+  // waere, die iOS-Zahl (aps.badge) auch als android.notification.
+  // notificationCount mitzuschicken. Das waere falsch:
+  //
+  // notificationCount heisst laut firebase-admin "the number of items this
+  // notification represents". Der Launcher ADDIERT die Zahlen aller
+  // liegenden Mitteilungen einer App (AOSP Launcher3, DotInfo: mTotalCount
+  // += notificationKey.count, count = max(1, notification.number)). Truege
+  // jede Mitteilung die Gesamtzahl, ergaeben drei Pushes mit 3, 4 und 5
+  // offenen Dingen am Symbol 12 statt 5. Ohne das Feld zaehlt jede
+  // Mitteilung als eine -- das ist, was Samsung als Zahl und Pixel als Punkt
+  // zeigt. Die Zahl der App selbst geht auf Android ueber das Badge-Plugin
+  // (frontend/src/__tests__/config/androidAppSymbolZahl.test.ts).
+  beforeEach(() => {
+    gesendet.length = 0;
+  });
+
+  it('schickt die iOS-Zahl nicht als notificationCount an Android', async () => {
+    await firebaseModul.sendFirebasePushNotification('token-x', {
+      title: 'Neue Nachricht',
+      body: 'Jahrgang 2026/27',
+      badge: 7,
+      data: { type: 'chat', roomId: '96' }
+    });
+
+    expect(gesendet.length).toBe(1);
+    expect(Object.keys(gesendet[0].android.notification).sort()).toEqual(
+      ['channelId', 'defaultSound', 'sound']
+    );
+    expect(gesendet[0].android.notification.notificationCount).toBeUndefined();
+    // iOS bleibt, wie es ist: dort setzt aps.badge die Zahl direkt.
+    expect(gesendet[0].apns.payload.aps.badge).toBe(7);
+  });
+});
+
 describe('Push-Kanaele: Server und App meinen dieselben', () => {
   it('kennt in der App genau die Kanaele, auf die der Server schickt', () => {
     const inDerApp = kanaeleAusApp().sort();
