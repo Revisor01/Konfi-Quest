@@ -204,11 +204,31 @@ dem Pfeil (Commit in Klammern).
 - **FCM-Grenze von 4 KB** gegen 4.000 Zeichen Chat-Text. → **entfallen:** Mitteilungen tragen keinen
   Inhalt mehr.
 - **Gemeinde anlegen** (`POST /organizations`) ohne Transaktion, Benutzername der Gemeindeleitung
-  nicht systemweit geprüft, Systemname verlor Umlaute; die eigene Stamm-Gemeinde ließ sich vom
-  Super-Admin löschen; zwei Routen hielten ihre Transaktions-Verbindung während des Push-Versands;
-  kleinere Reste (Rechte-Zwischenspeicher im Rückblick, `ensureOrgColumn`, API-Doku zum Upload,
-  pg-Warnung). → **Paket I2**
-- **nodemailer 10** (Simon: „Ja, jetzt übernehmen"). → **Paket I2**
+  nicht systemweit geprüft, Systemname verlor Umlaute. → **behoben 29.09.** (`e2750c96`)
+- **Eigene Stamm-Gemeinde** ließ sich vom Super-Admin löschen, das Konto war danach weg. →
+  **behoben 29.09.:** 409, solange das Konto nur dort ist (`6c010347`)
+- **Transaktions-Verbindung während Chat und Push** gehalten (Zusage, Event anlegen); drei Routen
+  meldeten nach der Kontolöschung vor der Antwort. → **behoben 29.09.** (`45d3f5e6`, `9ab00f6f`)
+- **pg-Warnung** „client.query() while already executing": bis zu sechs gleichzeitige Abfragen auf
+  dem Client einer Transaktion. → **behoben 29.09.** (`88b037a9`)
+- **Kleinere Reste:** Rechte-Zwischenspeicher im Rückblick-Test, `ensureOrgColumn` (Laufzeit-DDL,
+  hätte den Primärschlüssel aus Migration 174 abgerissen), API-Doku zum Material-Upload. →
+  **behoben 29.09.**
+- **nodemailer 10** (Simon: „Ja, jetzt übernehmen"). → **übernommen 29.09.** (`132afaaf`; `npm
+  audit` im Backend danach 0)
+
+### Neue Nebenbefunde aus dem Großpaket (nur genannt, nicht geändert)
+
+- Weitere Hilfsfunktionen mit Parameter `db` bündeln Abfragen per `Promise.all`
+  (`terminLeitungSicht`, `antragLeitungSicht`, `jahrgangLeitungSicht`, `orgMitglieder`,
+  `appIconBadge`, `punkteHistorie`, `abzeichenKandidaten`, zwei Stellen im `pushService`). Heute
+  ruft sie niemand mit dem Client einer Transaktion; täte es jemand, käme dieselbe pg-Warnung.
+- Die Ausfüllhilfe der App (`generateSystemName`) verliert weiter Umlaute; der Server fängt das beim
+  Anlegen ab. Schriebe die App künftig selbst um, benennte `PUT` bestehende Gemeinden um.
+- `POST /users`, `/:id/admins` und `/organizations` prüfen den Benutzernamen ohne Sperre — zwei
+  gleichzeitige Anlagen mit demselben Namen kämen durch.
+- `verwaltung-auth.yaml`, `POST /organizations`: `admin_password` „nur min 6 Zeichen" (die
+  Passwort-Regel gilt seit 22.08.), die Zusammenfassung nennt veraltete Zahlen zum Startbestand.
 
 ## Mehrfach-Konten (Gespräch mit Simon)
 
@@ -261,5 +281,8 @@ Teamer-Badges gelten je Gemeinde.
     `timezone=UTC` für den Produktions-Postgres?
   - Postfach: den Altbestand ohne Kennung (vor dem 27.09.2026) vor Ablauf der 365-Tage-Frist
     löschen?
+  - Absage: Eine Selbstabgemeldete, die die Leitung als *abwesend* verbucht hatte, gilt nach der
+    Absage ebenfalls als entschuldigt (wie die als anwesend verbuchte) — so recht? Und sie bekommt
+    wie bisher keine Absage-Mitteilung — so lassen?
 - **Mehrfach-Konten:** die acht Fragen in [mehrfach-konten.md](mehrfach-konten.md).
 - **Feature-Empfehlungen:** die zehn offenen Produktfragen; danach die Features.
