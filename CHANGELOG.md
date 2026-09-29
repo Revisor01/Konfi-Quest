@@ -1114,6 +1114,11 @@ iOS-Build 233 · Android versionCode 127
   ab, während jemand angemeldet ist, nennt die Anmeldeseite gleich diesen
   Grund statt „Deine Sitzung ist abgelaufen" — bisher erfuhr man ihn erst nach
   dem nächsten Anmeldeversuch.
+- Wer unter Badges oder Aktivitäten zwischen Konfis und Teamer:innen
+  umschaltet, sieht bis zum Laden der neuen Liste nicht mehr die alte unter
+  dem neuen Reiter — und wenn die neue nicht geladen werden kann, auch danach
+  nicht. Beim Suchen im Material bleibt die bisherige Liste bis zum Ergebnis
+  stehen, nach einem Fehlschlag aber nicht.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

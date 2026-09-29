@@ -372,6 +372,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
   Reiter; bei schlechtem Netz länger.
 - **Empfehlung:** Im Initial-Effekt bei Schlüsselwechsel `setData(null)`
   und `setLoading(true)`, bevor der Cache gelesen wird.
+- **Nachtrag 28.09.2026:** behoben — `hooks/useOfflineQuery.ts`: Nur ein ECHTER Schlüsselwechsel (gemerkt in einem Ref; nicht das erste Laden, nicht ein Neulauf wegen `ttl`/`enabled`) leert `data` und setzt `loading`; ein Fehlschlag markiert nur Daten DESSELBEN Schlüssels als „stale", sonst Fehler ohne Daten; offline ohne Zwischenspeicher für den neuen Schlüssel ebenso. Neue Option `vorigeDatenZeigen` für Such- und Filterschlüssel, deren Eingabefeld im Inhalt steht: `AdminMaterialPage` (Suchfeld und Jahrgangsauswahl liegen im Zweig, den `loading` durch die Ladeanzeige ersetzt — ein leerer Stand beim Tippen hätte das Feld samt Fokus entfernt). Folge auf Badges/Aktivitäten: beim Umschalten kurz die Ladeanzeige statt der falschen Liste; Suchbegriff und Filter in der Ansicht darunter beginnen dabei neu. Tests `hooks/useOfflineQuerySchluesselwechsel.test.ts` (14: online ausstehend/fehlgeschlagen/aus dem Zwischenspeicher/späte alte Antwort/zurück, offline mit und ohne Zwischenspeicher, gleicher Schlüssel mit anderer ttl, erstes Laden, drei Fälle `vorigeDatenZeigen`, Wächter für die Material-Seite); ohne Fix 6 rot. Bestehende `useOfflineQuery.test.ts` (18) unverändert grün.
 
 ### BF-12: Betriebs-Dashboard speichert und zeigt Roh-URLs samt Query-String
 

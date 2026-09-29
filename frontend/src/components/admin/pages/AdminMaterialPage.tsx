@@ -125,7 +125,12 @@ const AdminMaterialPage: React.FC = () => {
       setOhneJahrgang(res.headers?.['x-kein-jahrgang-zugewiesen'] === 'true');
       return res.data;
     },
-    { ttl: CACHE_TTL.PROFILE }
+    // vorigeDatenZeigen: Suchfeld und Jahrgangsauswahl stehen im Inhalt, der
+    // waehrend `loading` durch die Ladeanzeige ersetzt wird. Ein leerer Stand
+    // bei jedem Tippen liesse das Feld verschwinden (Fokus und Tastatur weg);
+    // die alte Liste bleibt deshalb bis zur Antwort stehen -- nach einem
+    // Fehlschlag aber nicht (hooks/useOfflineQuery.ts, Audit Leitung BF-11).
+    { ttl: CACHE_TTL.PROFILE, vorigeDatenZeigen: true }
   );
 
   // Material-Liste live halten: neue oder geloeschte Materialien erschienen
