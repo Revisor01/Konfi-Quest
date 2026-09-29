@@ -494,19 +494,40 @@ Welche Gruppen ankommen, entscheidest du dort über die
 
 Auf dem iPhone steht am App-Symbol die Zahl dessen, was auf dich wartet —
 dieselbe Summe wie in der [Liste deiner Gemeinden](05-rollen.md#sehen-wo-etwas-offen-ist).
-Auf Android entscheidet der Startbildschirm des Geräts, was am Symbol
-erscheint:
+Auf Android zeigt das Symbol dieselbe Zahl, wo der Startbildschirm des Geräts
+eine Zahl anzeigen kann. Welcher Weg dorthin führt, erkennt die App beim Start
+selbst:
 
-| Startbildschirm | Was am Symbol steht |
-|---|---|
-| Samsung | ein Punkt oder eine Zahl, je nach Einstellung *App-Symbolindikator* in den Benachrichtigungseinstellungen; die Zahl zählt die Mitteilungen von Konfi Quest, die gerade in der Benachrichtigungsleiste liegen |
-| Google Pixel und andere mit Android-Standard | ein Punkt, solange eine Mitteilung von Konfi Quest in der Leiste liegt — eine Zahl gibt es dort nicht; langes Drücken auf das Symbol zeigt die Mitteilungen |
-| einige andere Hersteller | die Zahl, die die App selbst meldet — dieselbe Summe wie auf dem iPhone |
+| Startbildschirm | Was am Symbol steht | Mitteilungen in der Leiste |
+|---|---|---|
+| Sony Xperia | die Summe wie auf dem iPhone — auch bei geschlossener App | bleiben einzeln liegen |
+| Huawei (mit Google-Diensten) | die Summe wie auf dem iPhone — auch bei geschlossener App | bleiben einzeln liegen |
+| Samsung | mit der Einstellung *App-Symbolindikator → Zahl* die Summe wie auf dem iPhone, sonst ein Punkt | jede neue Mitteilung von Konfi Quest ersetzt die vorige; es liegt immer nur die neueste |
+| Xiaomi, Redmi, POCO | die Summe wie auf dem iPhone | jede neue Mitteilung ersetzt die vorige |
+| Google Pixel und andere mit Android-Standard | ein Punkt, solange eine Mitteilung von Konfi Quest in der Leiste liegt — eine Zahl gibt es dort nicht; langes Drücken auf das Symbol zeigt die Mitteilungen | bleiben einzeln liegen |
+| Motorola, Nothing, OnePlus, OPPO, realme, vivo, Honor | ein Punkt oder die Zahl der Mitteilungen in der Leiste, je nach Gerät — die Summe wie auf dem iPhone kommt dort nicht an | bleiben einzeln liegen |
 
-Ein Punkt oder eine Zahl aus der Leiste verschwindet mit den Mitteilungen:
-Wer sie wegwischt, sieht am Symbol nichts mehr. Was offen ist, zeigen
-weiterhin die roten Zahlen an den Reitern und die
-[Glocke](#ungelesene-mitteilungen-an-der-glocke-erkennen).
+Kommt eine Mitteilung, zieht die Zahl am Symbol sofort mit. Liest oder
+erledigst du etwas in der App, sinkt sie gleich mit. Ändert sich bei
+geschlossener App etwas, ohne dass eine Mitteilung kommt — etwa weil die
+Leitung einen Antrag schon erledigt hat —, stimmt die Zahl spätestens nach
+fünf Minuten wieder, wie auf dem iPhone.
+
+Auf Samsung und Xiaomi hängt die Zahl an der einen Mitteilung in der Leiste.
+Wer sie wegwischt, nimmt damit auch die Zahl vom Symbol; die roten Zahlen an
+den Reitern und die [Glocke](#ungelesene-mitteilungen-an-der-glocke-erkennen)
+zeigen weiter, was offen ist. Ist nichts mehr offen, die Mitteilung aber noch
+nicht weggewischt, steht dort eine 1 — die App räumt keine Mitteilung weg,
+die du vielleicht noch lesen willst.
+
+> **Noch nicht an jedem Gerät geprüft.** Sony: Die App spricht Sonys
+> Zahl-Schnittstelle direkt an; ob jedes Xperia-Modell sie anbietet, zeigt
+> sich erst am Gerät. Findet die App sie nicht, bleibt es beim Punkt.
+> Xiaomi: Ob HyperOS die mitgeschickte Gesamtzahl zeigt oder nur die
+> Mitteilungen zählt (dann stünde dort eine 1), ist nicht nachgemessen.
+> Honor, OPPO, OnePlus, realme und vivo nehmen Zahlen von Apps nur mit
+> Freigabe des Herstellers an oder bieten keinen bekannten Weg; dort bleibt
+> es beim Punkt.
 
 Die App nimmt eine Mitteilung aus der Leiste, sobald du sie antippst oder den
 Bereich öffnest, zu dem sie gehört — etwa den Chat. Alles andere bleibt
