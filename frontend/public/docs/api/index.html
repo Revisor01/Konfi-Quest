@@ -111,7 +111,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/delete-account</code></div>
         <p class="summary">Eigenen Account sofort und kaskadierend löschen (alle Rollen)</p>
-        <div class="zugriff"><span class="chip r-alle">alle Angemeldeten</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur eigener Account; Passwort-Bestaetigung im Handler</div><div class="hinweis">Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier</div>
+        <div class="zugriff"><span class="chip r-alle">alle Angemeldeten</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur eigener Account; Passwort-Bestaetigung im Handler</div><div class="hinweis">UEBERHOLT seit 26.08.2026: Die letzte Person mit Org-Leitung in ihrer Gemeinde bekommt 409, wie in DELETE /users/:id. Vorher stand hier: Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/login</code></div>
         <p class="summary">Login für alle Rollen (case-insensitiver Username)</p>
@@ -150,7 +150,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       <div class="routen"><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/auth/check-username/{username}</code></div>
         <p class="summary">Username-Verfuegbarkeit prüfen (oeffentlich, case-insensitiv)</p>
-        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>namensLimiter</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/auth/invite-code</code></div>
         <p class="summary">Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 bis 90 Tage gültig)</p>
@@ -670,7 +670,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/events/{id}/attendance-count</code></div>
         <p class="summary">Live-Zähler eingecheckter Teilnehmer</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event org-gescopt; nur Zahlen</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event org-gescopt (404 sonst); darfTermin wie generate-qr; nur Zahlen</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/events/{id}/book</code></div>
         <p class="summary">Eigene Buchung stornieren</p>
@@ -694,7 +694,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/events/{id}/generate-qr</code></div>
         <p class="summary">QR-Token für Event erzeugen/abrufen</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event org-gescopt; kein Jahrgang-Check</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event org-gescopt; darfTermin (seit 29.09.2026): admin/teamer nur bei gemeinsamem Jahrgang, 'Nur Team' und Termine ohne Jahrgang frei, org_admin immer</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/events/{id}/participants</code></div>
         <p class="summary">Teilnehmer manuell hinzufuegen (Leitung)</p>
@@ -992,7 +992,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       <div class="routen"><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/teamer/{userId}/certificates</code></div>
         <p class="summary">Zertifikate einer Teamer:in auflisten (Leitungs-Einsicht)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>user_certificates gefiltert auf user_id + organization_id</div><div class="hinweis"># BEFUND T2: Anders als die Badge- und die POST-Variante prüft diese Route NICHT, ob der Ziel-User die Rolle 'teamer' hat. Für beliebige User-IDs der eigenen Org kommt daher 200 mit (in der Praxis) leerer Liste statt 404.</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Person muss Mitglied der aktiven Gemeinde sein (beide Quellen, utils/orgMitglieder.js; 404 sonst, seit 29.09.2026); user_certificates gefiltert auf user_id + organization_id</div><div class="hinweis"># BEFUND T2: Anders als die Badge- und die POST-Variante prüft diese Route NICHT, ob der Ziel-User die Rolle 'teamer' hat. Für beliebige User-IDs der eigenen Org kommt daher 200 mit (in der Praxis) leerer Liste statt 404.</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/teamer/{userId}/certificates</code></div>
         <p class="summary">Zertifikat an eine Teamer:in vergeben</p>
@@ -1108,7 +1108,7 @@ Feld-Pruefung seit 31.08.2026: Sowohl das Setzen (false -&gt; true) als auch das
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/material/by-event/{eventId}</code></div>
         <p class="summary">Materialien zu einem Termin auflisten</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>materials.organization_id; der Termin selbst wird nicht separat geprüft - ein fremder eventId liefert schlicht eine leere Liste</div><div class="hinweis">Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am 24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang nur für zugewiesene teamer/admin, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle; nur org_admin sieht alles. BEWUSST OHNE den Header X-Kein-Jahrgang-Zugewiesen (Entscheidung 01.09.2026): &quot;kein Material an diesem Termin&quot; ist der Normalzustand einer Termin-Unterliste; den Grund &quot;keine Zuweisung&quot; nennen bereits die Terminliste (GET /api/events) und GET /api/material.</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Termin muss zur aktiven Gemeinde gehören (404 sonst, seit 29.09.2026, Audit Sicherheit BF-16 -- vorher 200 []); materials.organization_id</div><div class="hinweis">Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am 24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang nur für zugewiesene teamer/admin, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle; nur org_admin sieht alles. BEWUSST OHNE den Header X-Kein-Jahrgang-Zugewiesen (Entscheidung 01.09.2026): &quot;kein Material an diesem Termin&quot; ist der Normalzustand einer Termin-Unterliste; den Grund &quot;keine Zuweisung&quot; nennen bereits die Terminliste (GET /api/events) und GET /api/material.</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/material/files/{fileRef}</code></div>
         <p class="summary">Einzelne Material-Datei löschen</p>
@@ -1128,7 +1128,7 @@ Achtung, derselbe Pfad wird mit ZWEI verschiedenen Kennungen bedient: der GET er
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/wrapped/ausgabe/{id}</code></div>
         <p class="summary">Eine einzelne Rueckblick-Ausgabe samt ihrer Snapshots loeschen</p>
-        <div class="zugriff"><span class="chip r-admin">Admin</span><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ausgabe muss zur aktiven Org gehoeren (sonst 404). Teamer-Ausgaben nur org_admin (sonst 403). Konfi-Ausgaben: Admin braucht eine Zuweisung auf den Jahrgang (sonst 403). Rolle super_admin faellt an requireAdmin durch (403); rollen-Zeile nachgezogen am 26.09.2026.</div>
+        <div class="zugriff"><span class="chip r-admin">Admin</span><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ausgabe muss zur aktiven Org gehoeren (sonst 404). Teamer-Ausgaben nur org_admin (sonst 403). Konfi-Ausgaben: Admin braucht eine Zuweisung MIT can_edit auf den Jahrgang (darfJahrgang edit, wie POST /api/wrapped/generate/{jahrgangId}; sonst 403 &quot;Kein Zugriff auf diesen Jahrgang&quot;). Rolle super_admin faellt an requireAdmin durch (403); rollen-Zeile nachgezogen am 26.09.2026. BEHOBEN 28.09.2026 (Audit Fachlogik Chat/Challenges/Rueckblick BF-13): Vorher genuegte irgendeine Zuweisung -- ein Admin mit reiner Lese-Zuweisung konnte loeschen, aber nicht anlegen. Tests: backend/tests/routes/wrappedAusgabeLoeschenRecht.test.js.</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/wrapped/ausgaben</code></div>
         <p class="summary">Rueckblick-Ausgaben der Organisation auflisten</p>
@@ -1176,7 +1176,7 @@ BEHOBEN 26.09.2026: Die Teamer-Auswahl filterte nicht auf deleted_at (anders als
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/admin/categories/{id}</code></div>
         <p class="summary">Kategorie löschen (nur wenn keiner Aktivität und keinem Event zugeordnet)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateCategoryId</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>DELETE mit organization_id im WHERE; die vorgelagerte Verwendungs-Prüfung zählt activity_categories und event_categories</div><div class="hinweis">S3: die Verwendungs-Prüfung filtert NICHT auf organization_id. Da category_id systemweit vergeben wird, ist das praktisch folgenlos — es entsteht kein Fremdzugriff, weil das DELETE selbst org-gescopt bleibt</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateCategoryId</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>erst Gemeinde (404), dann Verwendungs-Prüfung (activity_categories, event_categories), dann DELETE mit organization_id im WHERE</div><div class="hinweis behoben">S3 BEHOBEN 29.09.2026 (Audit Sicherheit BF-16): Die Verwendungs-Prüfung lief vor der Gemeinde-Prüfung — eine fremde Kategorie antwortete 409 mit ihren Nutzungszahlen und verriet so Existenz und Nutzung. Jetzt zuerst 404.</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/admin/categories/{id}</code></div>
         <p class="summary">Kategorie bearbeiten</p>
@@ -1235,7 +1235,7 @@ BEHOBEN 26.09.2026: Die Teamer-Auswahl filterte nicht auf deleted_at (anders als
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/status</code></div>
         <p class="summary">Readiness-Check mit Datenbank-Prüfung (ohne Anmeldung)</p>
-        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div><div class="hinweis"># HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit (GIT_SHA) preis. Bewusst so für die Status-Seite / Uptime Kuma.</div>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div><div class="hinweis"># HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit (GIT_SHA) preis. Bewusst so für die Status-Seite / Uptime Kuma. GEPRÜFT 29.09.2026 (Audit Sicherheit BF-18), bleibt: `commit` liest der Deploy-Verify (deploy/rollend.sh, notfall-deploy.yml), `version` meldet laut CLAUDE.md die App-Version und wird nach jedem Deploy abgelesen; beide stehen ohnehin öffentlich (Repo, Store). `uptimeSeconds` bleibt als Feld der Antwortform (nur der Startzeitpunkt, den auch die öffentlichen Actions-Läufe zeigen).</div>
       </article></div>
     </section><section id="doku-zugang" class="service" style="--service:#57534e">
       <header class="service-kopf"><h2>Doku-Zugang</h2><p class="service-meta">3 Operationen</p></header>

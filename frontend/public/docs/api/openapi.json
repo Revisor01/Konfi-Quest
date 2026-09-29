@@ -281,13 +281,19 @@
         },
         "responses": {
           "200": {
-            "description": "Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (utils/konfiDeletion.js, loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Antwortform unveraendert"
+            "description": "{ message: 'Account erfolgreich gelöscht' } -- Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Seit 28.09.2026 ueber utils/kontoLoeschen.js, dieselbe Funktion wie DELETE /admin/konfis/{id} (Regel und Umfang dort): alles der Person in ALLEN Gemeinden, Zweiergespraeche ganz, Zaehler der Anmeldesperre, Dateien nach dem COMMIT; was sie fuer eine Gemeinde angelegt hat, bleibt ohne Verweis. Antwortform unveraendert"
           },
           "400": {
             "description": "Passwort fehlt oder falsch"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "description": "Letzte Person mit Org-Leitung in ihrer Gemeinde (seit 26.08.2026)"
+          },
+          "500": {
+            "description": "BEHOBEN 28.09.2026: Hatte die Person Antraege in einer WEITEREN Gemeinde, scheiterte die Loeschung am Fremdschluessel activity_requests_konfi_id_fkey (die alte Kaskade raeumte nur die Stamm-Gemeinde ab) -- eine eingeladene Teamer:in konnte ihr Konto nicht loeschen"
           }
         },
         "x-berechtigung": {
@@ -299,7 +305,7 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Nur eigener Account; Passwort-Bestaetigung im Handler",
-          "hinweis": "Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
+          "hinweis": "UEBERHOLT seit 26.08.2026: Die letzte Person mit Org-Leitung in ihrer Gemeinde bekommt 409, wie in DELETE /users/:id. Vorher stand hier: Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
         }
       }
     },
@@ -1008,19 +1014,25 @@
             "description": "Zu prüfender Benutzername (case-insensitiv)"
           }
         ],
+        "description": "BEHOBEN 29.09.2026 (N3, Audit Sicherheit BF-18): eigene Grenze namensLimiter -- je Client-IP zaehlen nur Treffer (\"vergeben\"), 30 je Viertelstunde, danach 429 fuer jede Pruefung dieser IP. Freie Namen zaehlen nicht: Eine Konfi-Gruppe registriert sich gemeinsam aus einem Gemeinde-WLAN und prueft bei jedem Tastendruck. Zaehler in rate_limit_zaehler (Praefix namenspruefung), ueber alle Replicas. Die App faengt den 429 ab (auch 2.2.x) und zeigt dann keinen Hinweis; POST /register-konfi prueft den Namen selbst (409).",
         "responses": {
           "200": {
             "description": "{ available: bool, message }"
           },
           "400": {
             "description": "Zu kurz / ungueltige Zeichen"
+          },
+          "429": {
+            "description": "Mehr als 30 Treffer je Viertelstunde von dieser IP (seit 29.09.2026)"
           }
         },
         "x-berechtigung": {
           "rollen": [
             "oeffentlich"
           ],
-          "middleware": [],
+          "middleware": [
+            "namensLimiter"
+          ],
           "org-scope": false,
           "objekt-pruefung": "keine"
         }
@@ -1245,7 +1257,7 @@
             "description": "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung. ODER (seit 28.09.2026) gebundenes Token mit anderer oder fehlender device_id: nur DIESES Token wird widerrufen und sofort ablaufen gelassen (auch im Grace-Window, ohne dessen Gnade zu verbrauchen; der Nachfolger des echten Geraets bleibt), gleiche Fehlermeldung"
           },
           "403": {
-            "description": "User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt / Trial abgelaufen (super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung). Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt"
+            "description": "{ error, error_code } -- User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt (org_inactive) / Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung. Code, Reihenfolge (erst Konto, dann Gemeinde) und Text sind seit 28.09.2026 dieselben wie bei POST /api/auth/login (eine Quelle, SPERR_MELDUNGEN); die App zeigt den Text nach einem abgelehnten Refresh auf der Anmeldeseite statt 'Sitzung abgelaufen'. Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt"
           }
         },
         "x-berechtigung": {
@@ -2434,7 +2446,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "User aus der Gemeinde entfernen -- Hard-Delete nur, wenn die Person keiner anderen Gemeinde angehört",
-        "description": "Drei Fälle (seit 27.09.2026), die Antwort trägt additiv `konto_bleibt` (boolean): (1) Die Person ist in einer anderen Gemeinde zuhause und arbeitet hier über user_organizations mit: nur diese Mitgliedschaft endet, `{ message: 'Mitgliedschaft in dieser Gemeinde beendet', konto_bleibt: true }`. BEHOBEN 27.09.2026: Mit der Mitgliedschaft gehen die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde (vorher nur, was syncTeamChat und syncJahrgangChat fuer zugewiesene Jahrgaenge erfassten -- Gruppen, Zweierraeume und Jahrgangs-Chats ohne Zuweisung blieben, samt Push zu jeder Nachricht). Antwortform unveraendert. Seit 27.09.2026 raeumen Fall 1, Fall 2 und DELETE /organizations/{id}/members/{userId} ueber DIESELBE Funktion (utils/mitgliedschaftEnde.js: Zuweisungen und Chat-Plaetze der Gemeinde), damit die Wege nicht wieder auseinanderlaufen (Audit \"Wer bekommt was\", BF-08). BEHOBEN 27.09.2026 (BF-13 / F-07): Dieselbe Funktion nimmt in Fall 1 und Fall 2 auch die eigenen Postfach-Mitteilungen der Person aus DIESER Gemeinde mit (notifications.organization_id); die aus anderen Gemeinden bleiben. Vorher las sie das Postfach der alten Gemeinde weiter, und es zaehlte an Glocke und App-Symbol. (2) Die Person ist hier zuhause UND hat eine Zeile in user_organizations für eine andere Gemeinde: Das Konto zieht um, `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`. Neue Stamm-Gemeinde ist bevorzugt eine aktive, darunter die älteste Mitgliedschaft (created_at, bei Gleichstand die Zeilen-ID); users.organization_id und users.role_id übernehmen Gemeinde und Rolle dieser Mitgliedschaft, ihre Zeile und eine etwaige Zeile für diese Gemeinde verschwinden. Mit ihr gehen die Jahrgangs-Zuweisungen dieser Gemeinde und die Plätze in ALLEN Chat-Räumen dieser Gemeinde (Team, Jahrgänge, Gruppen, Zweiergespräche); was die Person hier angelegt hat, bleibt unverändert und wird nicht anonymisiert. Rechte-Cache geleert, Sockets getrennt; token_invalidated_at bleibt unberührt, weil rbac.js und die Socket-Anmeldung Gemeinde und Rolle je Anfrage aus der Datenbank lesen. Keine Namen fremder Gemeinden in der Antwort. (3) Die Person gehört nur dieser Gemeinde an: Hard-Delete wie folgt, `{ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false }`.\nHard-Delete (Fall 3): Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unlöschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen \"Neuer Antrag eingegangen\" bei der Leitung mit, die auf Anträge der geloeschten Person zeigten (utils/postfachAufraeumen.js). BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-13 / F-07): Ebenso alle Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson: Registrierung, Abmeldung, Opt-out/-in, Challenge-Beitrag, Teamer-Zu-/Absage, neuer Antrag, Einladung beantwortet -- Kennung konfi_id bzw. user_id im data-Teil). Vorher standen sie mit Name und Grund bis zum 365-Tage-Aufraeumen bei der Leitung.\n",
+        "description": "Drei Fälle (seit 27.09.2026), die Antwort trägt additiv `konto_bleibt` (boolean): (1) Die Person ist in einer anderen Gemeinde zuhause und arbeitet hier über user_organizations mit: nur diese Mitgliedschaft endet, `{ message: 'Mitgliedschaft in dieser Gemeinde beendet', konto_bleibt: true }`. BEHOBEN 27.09.2026: Mit der Mitgliedschaft gehen die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde (vorher nur, was syncTeamChat und syncJahrgangChat fuer zugewiesene Jahrgaenge erfassten -- Gruppen, Zweierraeume und Jahrgangs-Chats ohne Zuweisung blieben, samt Push zu jeder Nachricht). Antwortform unveraendert. Seit 27.09.2026 raeumen Fall 1, Fall 2 und DELETE /organizations/{id}/members/{userId} ueber DIESELBE Funktion (utils/mitgliedschaftEnde.js: Zuweisungen und Chat-Plaetze der Gemeinde), damit die Wege nicht wieder auseinanderlaufen (Audit \"Wer bekommt was\", BF-08). BEHOBEN 27.09.2026 (BF-13 / F-07): Dieselbe Funktion nimmt in Fall 1 und Fall 2 auch die eigenen Postfach-Mitteilungen der Person aus DIESER Gemeinde mit (notifications.organization_id); die aus anderen Gemeinden bleiben. Vorher las sie das Postfach der alten Gemeinde weiter, und es zaehlte an Glocke und App-Symbol. (2) Die Person ist hier zuhause UND hat eine Zeile in user_organizations für eine andere Gemeinde: Das Konto zieht um, `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`. Neue Stamm-Gemeinde ist bevorzugt eine aktive, darunter die älteste Mitgliedschaft (created_at, bei Gleichstand die Zeilen-ID); users.organization_id und users.role_id übernehmen Gemeinde und Rolle dieser Mitgliedschaft, ihre Zeile und eine etwaige Zeile für diese Gemeinde verschwinden. Mit ihr gehen die Jahrgangs-Zuweisungen dieser Gemeinde und die Plätze in ALLEN Chat-Räumen dieser Gemeinde (Team, Jahrgänge, Gruppen, Zweiergespräche); was die Person hier angelegt hat, bleibt unverändert und wird nicht anonymisiert. Rechte-Cache geleert, Sockets getrennt; token_invalidated_at bleibt unberührt, weil rbac.js und die Socket-Anmeldung Gemeinde und Rolle je Anfrage aus der Datenbank lesen. Keine Namen fremder Gemeinden in der Antwort. (3) Die Person gehört nur dieser Gemeinde an: Hard-Delete wie folgt, `{ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false }`.\nHard-Delete (Fall 3): Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unlöschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen \"Neuer Antrag eingegangen\" bei der Leitung mit, die auf Anträge der geloeschten Person zeigten (utils/postfachAufraeumen.js). BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-13 / F-07): Ebenso alle Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson: Registrierung, Abmeldung, Opt-out/-in, Challenge-Beitrag, Teamer-Zu-/Absage, neuer Antrag, Einladung beantwortet -- Kennung konfi_id bzw. user_id im data-Teil). Vorher standen sie mit Name und Grund bis zum 365-Tage-Aufraeumen bei der Leitung. GEAENDERT 28.09.2026 (Simon: \"konto löschen muss wirklich alles löschen.\"): Fall 3 hat keinen eigenen Loeschblock mehr, sondern ruft utils/kontoLoeschen.js -- dieselbe Funktion wie DELETE /admin/konfis/{id}, POST /auth/delete-account und die Auto-Loeschung (Regel und Umfang bei DELETE /admin/konfis/{id} in konfis-events). BEHOBEN dabei: Auf die frei werdenden Plaetze der Person rueckt jetzt die Warteliste nach (Team-Platz an wartende Teamer:innen), mit Push; Zweiergespraeche mit ihr gehen ganz (vorher nur, wenn niemand mehr darin sass); Einladungscodes der Person bleiben der Gemeinde (vorher geloescht); der Zaehler der Anmeldesperre geht mit. Fall 1 und 2 unveraendert -- dort bleibt das Konto.\n",
         "parameters": [
           {
             "name": "id",
@@ -2448,7 +2460,7 @@
         ],
         "responses": {
           "200": {
-            "description": "{ message, konto_bleibt } -- Fall 1/2: Mitgliedschaft beendet bzw. Konto in eine andere Gemeinde umgezogen (konto_bleibt true, seit 27.09.2026); Fall 3: geloescht (konto_bleibt false). Rechte-Cache geleert (seit 26.09.2026, BF-10); Sockets getrennt; beim Loeschen Nachweisfotos und Challenge-Dateien nach COMMIT entfernt"
+            "description": "{ message, konto_bleibt } -- Fall 1/2: Mitgliedschaft beendet bzw. Konto in eine andere Gemeinde umgezogen (konto_bleibt true, seit 27.09.2026); Fall 3: geloescht (konto_bleibt false). Rechte-Cache geleert (seit 26.09.2026, BF-10); Sockets getrennt; beim Loeschen alle Dateien der Person (Nachweisfotos, Challenge- und Chat-Dateien, dazu die Dateien ihrer Zweiergespraeche) nach COMMIT entfernt"
           },
           "400": {
             "description": "Selbst-Loeschung verboten"
@@ -3154,7 +3166,7 @@
           "middleware": [],
           "org-scope": false,
           "objekt-pruefung": "keine",
-          "hinweis": "# HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit (GIT_SHA) preis. Bewusst so für die Status-Seite / Uptime Kuma.\n"
+          "hinweis": "# HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit (GIT_SHA) preis. Bewusst so für die Status-Seite / Uptime Kuma. GEPRÜFT 29.09.2026 (Audit Sicherheit BF-18), bleibt: `commit` liest der Deploy-Verify (deploy/rollend.sh, notfall-deploy.yml), `version` meldet laut CLAUDE.md die App-Version und wird nach jedem Deploy abgelesen; beide stehen ohnehin öffentlich (Repo, Store). `uptimeSeconds` bleibt als Feld der Antwortform (nur der Startzeitpunkt, den auch die öffentlichen Actions-Läufe zeigen).\n"
         }
       }
     },
@@ -3164,7 +3176,7 @@
           "System & Monitoring"
         ],
         "summary": "APM-Kennzahlen aller Replicas (nur super_admin)",
-        "description": "Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen, parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS gesetzt, werden alle Peers über /metrics/local abgefragt und zu einem Gesamtbild inklusive Lastverteilung gemergt.\nERWEITERT (22.09.2026) — rein additiv, alle bisherigen Felder bleiben mit unveränderten Namen und Typen erhalten. Neu sind:\n* `apdex` — {wert, zufrieden, toleriert, frustriert, schwelleMs,\n  toleriertBisMs}. Eine Zahl zwischen 0 und 1 für \"waren die Anfragen\n  schnell genug\", gemessen an der SERVERZEIT (ohne Warten auf die\n  Leitung). Schwelle 500 ms, frustriert ab 2000 ms; 5xx zählen immer\n  als frustriert. Ohne Anfragen ist `wert` null, nicht 0.\n* `ueber1s` — {anzahl, quote, schwelleMs}. Anfragen, deren GESAMTZEIT\n  inklusive Leitung über einer Sekunde lag: das gefühlte Warten.\n* `statusKlassen` — {erfolg, ausDemCache, umleitung, nichtGefunden,\n  abgelehnt, serverfehler}. Die Summe entspricht totalRequests.\n* `nutzer` — {fensterMinuten, aktiv, betroffen, schluessel,\n  betroffeneSchluessel}. Verschiedene angemeldete Konten der letzten\n  60 Minuten; `betroffen` sind die mit Warten über 1 s oder einem\n  Serverfehler. Gespeichert werden gekürzte Hashes, keine Konto-IDs;\n  sie stehen in der Antwort, damit über mehrere Replicas die\n  Vereinigung statt der Summe gebildet werden kann.\n* `routesPotenzial` — dieselben Route-Zeilen, sortiert nach GESAMTER\n  Serverzeit (Aufrufe × Dauer) statt nach p95.\n* `fehlerGruppen` — Fehler nach Route und Status zusammengefasst, mit\n  anzahl, seit, zuletzt und beispielUrl. Zählt über die gesamte\n  Laufzeit, während recentErrors nach 50 Einträgen überläuft.\n\nDie Route-Zeilen (routesSlowest/routesBusiest/routesPotenzial) haben zusätzlich `p50Ms`, `serverP50Ms` (Median = die typische Anfrage), `langsam`, `langsamQuote`, `serverZeitGesamtMs` und `apdex`.\nERWEITERT (24.09.2026) — ebenfalls rein additiv:\n* `routeSchluessel` — {anzahl, grenze, verworfen}. Wie viele\n  Route-Schlüssel gemessen werden und wie viele die Obergrenze\n  verworfen hat. `verworfen` gehört bei 0 zu stehen; ein Ausschlag\n  heißt, dass ein Pfad mit freiem Text oder einem Zufallsnamen nicht\n  auf einen Platzhalter abgebildet wird. Über mehrere Replicas ist\n  `anzahl` das Maximum (alle sehen dieselben Routen), `verworfen` die\n  Summe (jede räumt für sich).\n* `dbPool` — {gesamt, frei, wartend, max}. Zustand des\n  Datenbank-Verbindungspools. `wartend` ist die Zahl, auf die es\n  ankommt: Anfragen stehen an, weil alle Plaetze belegt sind. Ein\n  Konfi-Dashboard-Aufruf belegt allein zehn Plaetze (neun parallele\n  Abfragen plus die aeussere Verbindung). Bei mehreren Replicas ist\n  `dbPool` die Summe und `replicas[].dbPool` der Zustand je Replica —\n  jede hat ihren EIGENEN Pool, und es blockiert der einzelne volle,\n  nicht die Summe. Der Wert steht bewusst NICHT in /api/health: der\n  Pfad ist oeffentlich und dient Traefik als Gesundheitspruefung.\n\nBEHOBEN (22.09.2026): Beim Zusammenführen mehrerer Replicas wurde eine Route, die sowohl in routesSlowest als auch in routesBusiest stand, doppelt addiert — aus 200 Anfragen wurden 400. Gegen den vorherigen Stand nachgemessen.\nBEHOBEN (24.09.2026): Die Normalisierung der Pfade fasste drei Pfadarten nicht zusammen — die Namensprüfung beim Registrieren, den Einladungscode und die Dateinamen in Chat, Material und Challenges. Jede Variante war ein eigener, nie aufgeräumter Schlüssel. Ebenfalls behoben: UUIDs mit führender Ziffer wurden gar nicht zusammengefasst, weil die Ziffern-Regel vor der UUID-Regel lief.\n",
+        "description": "Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen, parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS gesetzt, werden alle Peers über /metrics/local abgefragt und zu einem Gesamtbild inklusive Lastverteilung gemergt.\nERWEITERT (22.09.2026) — rein additiv, alle bisherigen Felder bleiben mit unveränderten Namen und Typen erhalten. Neu sind:\n* `apdex` — {wert, zufrieden, toleriert, frustriert, schwelleMs,\n  toleriertBisMs}. Eine Zahl zwischen 0 und 1 für \"waren die Anfragen\n  schnell genug\", gemessen an der SERVERZEIT (ohne Warten auf die\n  Leitung). Schwelle 500 ms, frustriert ab 2000 ms; 5xx zählen immer\n  als frustriert. Ohne Anfragen ist `wert` null, nicht 0.\n* `ueber1s` — {anzahl, quote, schwelleMs}. Anfragen, deren GESAMTZEIT\n  inklusive Leitung über einer Sekunde lag: das gefühlte Warten.\n* `statusKlassen` — {erfolg, ausDemCache, umleitung, nichtGefunden,\n  abgelehnt, serverfehler}. Die Summe entspricht totalRequests.\n* `nutzer` — {fensterMinuten, aktiv, betroffen, schluessel,\n  betroffeneSchluessel}. Verschiedene angemeldete Konten der letzten\n  60 Minuten; `betroffen` sind die mit Warten über 1 s oder einem\n  Serverfehler. Gespeichert werden gekürzte Hashes, keine Konto-IDs;\n  sie stehen in der Antwort, damit über mehrere Replicas die\n  Vereinigung statt der Summe gebildet werden kann.\n* `routesPotenzial` — dieselben Route-Zeilen, sortiert nach GESAMTER\n  Serverzeit (Aufrufe × Dauer) statt nach p95.\n* `fehlerGruppen` — Fehler nach Route und Status zusammengefasst, mit\n  anzahl, seit, zuletzt und beispielUrl. Zählt über die gesamte\n  Laufzeit, während recentErrors nach 50 Einträgen überläuft.\n\nBEHOBEN (29.09.2026, Audit Leitung BF-12): `recentErrors[].url` und `fehlerGruppen[].beispielUrl` hielten die rohe Anfrage-URL — mit Suchbegriff (`search-users?q=`), Benutzername (`check-username/`) und dem Anmeldeschlüssel aus `?token=`. Beide sind weiter Strings, aber geschwärzt (utils/apm.js, urlFuersAnzeige): Query nur mit den Namen der Parameter (`?q=***`), Namen, Einladungscodes, Dateinamen und UUIDs im Pfad als Platzhalter; Zahlen-Kennungen bleiben. Dieselbe Fassung schreibt das Langsam-Log.\nDie Route-Zeilen (routesSlowest/routesBusiest/routesPotenzial) haben zusätzlich `p50Ms`, `serverP50Ms` (Median = die typische Anfrage), `langsam`, `langsamQuote`, `serverZeitGesamtMs` und `apdex`.\nERWEITERT (24.09.2026) — ebenfalls rein additiv:\n* `routeSchluessel` — {anzahl, grenze, verworfen}. Wie viele\n  Route-Schlüssel gemessen werden und wie viele die Obergrenze\n  verworfen hat. `verworfen` gehört bei 0 zu stehen; ein Ausschlag\n  heißt, dass ein Pfad mit freiem Text oder einem Zufallsnamen nicht\n  auf einen Platzhalter abgebildet wird. Über mehrere Replicas ist\n  `anzahl` das Maximum (alle sehen dieselben Routen), `verworfen` die\n  Summe (jede räumt für sich).\n* `dbPool` — {gesamt, frei, wartend, max}. Zustand des\n  Datenbank-Verbindungspools. `wartend` ist die Zahl, auf die es\n  ankommt: Anfragen stehen an, weil alle Plaetze belegt sind. Ein\n  Konfi-Dashboard-Aufruf belegt allein zehn Plaetze (neun parallele\n  Abfragen plus die aeussere Verbindung). Bei mehreren Replicas ist\n  `dbPool` die Summe und `replicas[].dbPool` der Zustand je Replica —\n  jede hat ihren EIGENEN Pool, und es blockiert der einzelne volle,\n  nicht die Summe. Der Wert steht bewusst NICHT in /api/health: der\n  Pfad ist oeffentlich und dient Traefik als Gesundheitspruefung.\n\nBEHOBEN (22.09.2026): Beim Zusammenführen mehrerer Replicas wurde eine Route, die sowohl in routesSlowest als auch in routesBusiest stand, doppelt addiert — aus 200 Anfragen wurden 400. Gegen den vorherigen Stand nachgemessen.\nBEHOBEN (24.09.2026): Die Normalisierung der Pfade fasste drei Pfadarten nicht zusammen — die Namensprüfung beim Registrieren, den Einladungscode und die Dateinamen in Chat, Material und Challenges. Jede Variante war ein eigener, nie aufgeräumter Schlüssel. Ebenfalls behoben: UUIDs mit führender Ziffer wurden gar nicht zusammengefasst, weil die Ziffern-Regel vor der UUID-Regel lief.\n",
         "responses": {
           "200": {
             "description": "Zusammengefuehrter APM-Snapshot inkl. replicas, dbPool, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial, fehlerGruppen und routeSchluessel"
@@ -4900,7 +4912,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "QR-Token für Event erzeugen/abrufen",
-        "description": "Gibt vorhandenen qr_token zurück oder erzeugt einen neuen (HS256, kein Ablauf - Zeitfenster läuft über event_date).",
+        "description": "Gibt vorhandenen qr_token zurück oder erzeugt einen neuen (HS256, kein Ablauf - Zeitfenster läuft über event_date). BEHOBEN 29.09.2026 (L8): Jahrgangs-Bindung über darfTermin, geprüft auch vor der Herausgabe eines schon erzeugten Codes.",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4912,7 +4924,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event org-gescopt; kein Jahrgang-Check"
+          "objekt-pruefung": "Event org-gescopt; darfTermin (seit 29.09.2026): admin/teamer nur bei gemeinsamem Jahrgang, 'Nur Team' und Termine ohne Jahrgang frei, org_admin immer"
         },
         "parameters": [
           {
@@ -4927,7 +4939,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Keine Berechtigung (Rolle) oder 'Kein Zugriff auf dieses Event' (fremder Jahrgang, seit 29.09.2026)"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -4944,6 +4956,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Live-Zähler eingecheckter Teilnehmer",
+        "description": "BEHOBEN 29.09.2026 (L8, Sicherheit BF-16): Fremde oder unbekannte Termine antworten 404 statt 200 mit {checked_in: 0, total: 0}; ein Termin fremden Jahrgangs 403 wie POST /{id}/generate-qr. Die App fragt den Zähler nur im QR-Fenster ab und ignoriert Fehler dabei still.",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4955,7 +4968,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event org-gescopt; nur Zahlen"
+          "objekt-pruefung": "Event org-gescopt (404 sonst); darfTermin wie generate-qr; nur Zahlen"
         },
         "parameters": [
           {
@@ -4970,7 +4983,10 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Keine Berechtigung (Rolle) oder 'Kein Zugriff auf dieses Event' (fremder Jahrgang, seit 29.09.2026)"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -6768,7 +6784,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Neuen Konfi anlegen",
-        "description": "Legt User + konfi_profiles an, erzeugt Username und Startpasswort, hängt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation wird geprüft. Seit 27.09.2026 (Audit Sicherheit BF-04) startet das neue Konto ohne Kontosperre, auch wenn der erzeugte Benutzername vorher durchprobiert wurde.\n",
+        "description": "Legt User + konfi_profiles an, erzeugt Username und Startpasswort, hängt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation wird geprüft. Seit 27.09.2026 (Audit Sicherheit BF-04) startet das neue Konto ohne Kontosperre, auch wenn der erzeugte Benutzername vorher durchprobiert wurde. Seit 28.09.2026 (Audit Fachlogik Punkte/Termine BF-13, behoben) laufen die Einschreibung in die Pflicht-Events und der Eintritt in deren Chats in derselben Transaktion wie das Anlegen: Scheitern sie, entsteht kein Konto und die Antwort ist 500 (vorher 201, Konto ohne Pflicht-Events, Fehler nur im Log). Antwortform unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -7021,7 +7037,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Konfi löschen (inkl. abhaengiger Daten)",
-        "description": "Loescht den Konfi und die daran haengenden Daten über deleteKonfiCascade (Aktivitäten, Bonuspunkte, Buchungen, Anträge, Chat-Mitgliedschaften, seit 24.08.2026 auch erhaltene Urkunden — deren Fremdschlüssel blockierte das Löschen vorher mit 500). Dieselbe Funktion trägt die Selbstloeschung über POST /auth/delete-account, dort für jede Rolle. BEHOBEN 15.09.2026: deleteKonfiCascade sammelt die bestaetigten Buchungen VOR dem Loeschen ein und laesst auf jeden frei gewordenen Platz die naechste wartende Person nachruecken — Kontingent-Seite nach der Rolle der geloeschten Person, damit ein Team-Platz nie an eine wartende Konfi geht. Die Funktion liefert die Nachgerueckten zurueck, der Push geht nach dem COMMIT raus. An abgesagten Terminen rueckt niemand nach. Seit 25.09.2026 nimmt deleteKonfiCascade auch die Postfach-Mitteilungen \"Neuer Antrag eingegangen\" bei der LEITUNG mit, die auf Anträge der geloeschten Person zeigten (die eigenen Mitteilungen gingen schon immer mit dem Konto; utils/postfachAufraeumen.js). BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-13, MITTEL; Simon zu F-07: \"ja\"): Mit dem Konto gehen ALLE Leitungs-Mitteilungen ueber die Person (loescheMitteilungenUeberPerson) -- \"Neue Registrierung\", Abmeldung samt Grund, Opt-out/-in, Challenge-Beitrag, Zu-/Absage (bei Teamer:innen). Die Kennung steht seitdem additiv im data-Teil: konfi_id (new_konfi_registration, event_unregistration, event_opt_out, event_opt_in; new_activity_request trug sie schon) bzw. user_id (challenge_submission, teamer_event_booking, teamer_event_cancellation; gemeinde_einladung_beantwortet trug sie schon). Vorher standen die Mitteilungen mit Name und Grund bis zum 365-Tage-Aufraeumen bei der Leitung (Audit A13: 5 Reste bei 5 Personen). Bestandszeilen ohne Kennung werden nicht ueber den Namen geraten; sie gehen mit Termin bzw. Challenge oder nach 365 Tagen. Dieselbe Funktion laeuft bei POST /auth/delete-account, in der Auto-Loeschung und in DELETE /users/{id} (Fall 3).\n",
+        "description": "Loescht den Konfi und die daran haengenden Daten über deleteKonfiCascade (Aktivitäten, Bonuspunkte, Buchungen, Anträge, Chat-Mitgliedschaften, seit 24.08.2026 auch erhaltene Urkunden — deren Fremdschlüssel blockierte das Löschen vorher mit 500). Dieselbe Funktion trägt die Selbstloeschung über POST /auth/delete-account, dort für jede Rolle. BEHOBEN 15.09.2026: deleteKonfiCascade sammelt die bestaetigten Buchungen VOR dem Loeschen ein und laesst auf jeden frei gewordenen Platz die naechste wartende Person nachruecken — Kontingent-Seite nach der Rolle der geloeschten Person, damit ein Team-Platz nie an eine wartende Konfi geht. Die Funktion liefert die Nachgerueckten zurueck, der Push geht nach dem COMMIT raus. An abgesagten Terminen rueckt niemand nach. Seit 25.09.2026 nimmt deleteKonfiCascade auch die Postfach-Mitteilungen \"Neuer Antrag eingegangen\" bei der LEITUNG mit, die auf Anträge der geloeschten Person zeigten (die eigenen Mitteilungen gingen schon immer mit dem Konto; utils/postfachAufraeumen.js). BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-13, MITTEL; Simon zu F-07: \"ja\"): Mit dem Konto gehen ALLE Leitungs-Mitteilungen ueber die Person (loescheMitteilungenUeberPerson) -- \"Neue Registrierung\", Abmeldung samt Grund, Opt-out/-in, Challenge-Beitrag, Zu-/Absage (bei Teamer:innen). Die Kennung steht seitdem additiv im data-Teil: konfi_id (new_konfi_registration, event_unregistration, event_opt_out, event_opt_in; new_activity_request trug sie schon) bzw. user_id (challenge_submission, teamer_event_booking, teamer_event_cancellation; gemeinde_einladung_beantwortet trug sie schon). Vorher standen die Mitteilungen mit Name und Grund bis zum 365-Tage-Aufraeumen bei der Leitung (Audit A13: 5 Reste bei 5 Personen). Bestandszeilen ohne Kennung werden nicht ueber den Namen geraten; sie gehen mit Termin bzw. Challenge oder nach 365 Tagen. Dieselbe Funktion laeuft bei POST /auth/delete-account, in der Auto-Loeschung und in DELETE /users/{id} (Fall 3). GEAENDERT 28.09.2026 (Simon: \"konto löschen muss wirklich alles löschen.\"): deleteKonfiCascade ist durch utils/kontoLoeschen.js ersetzt -- EINE Funktion fuer alle vier Kontoloeschwege, DB-Aenderungen in der Transaktion der Route, Dateien erst nach dem COMMIT (Fehler dabei ohne Dateinamen im Protokoll). Regel: Was zur Person gehoert oder was sie als Teilnehmende erzeugt hat, geht, in ALLEN Gemeinden; was sie als Leitung/Team fuer die Gemeinde angelegt hat, bleibt, der Verweis wird NULL (je Fremdschluessel-Spalte in LOESCHREGELN, von einem Waechter-Test gegen information_schema geprueft). Neu mit: Zweiergespraeche der Person ganz (samt Nachrichten und Dateien der anderen Seite -- der Raum trug ihren Namen), der Zaehler der Anmeldesperre, Dateien und Zeilen aus einer weiteren Gemeinde. BEHOBEN: Einladungscodes, die die Person angelegt hatte, gingen mit (Migration 173: created_by darf NULL sein, der Code bleibt der Gemeinde); Dateien wurden vor dem COMMIT geloescht. Nachgerueckte werden je Gemeinde ihres Events benachrichtigt, Gespraechspartner:innen bekommen roomsChanged. Antwortform unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -7042,7 +7058,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Konfi geloescht; Rechte-Cache der Person geleert (seit 26.09.2026, Audit Sicherheit BF-10 -- vorher galt die laufende Sitzung bis zu 30 s weiter)"
+            "description": "{ message: 'Konfi erfolgreich gelöscht' } -- Konto und alles der Person geloescht, Dateien nach dem COMMIT entfernt (seit 28.09.2026 utils/kontoLoeschen.js); Rechte-Cache der Person geleert (seit 26.09.2026, Audit Sicherheit BF-10 -- vorher galt die laufende Sitzung bis zu 30 s weiter)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -7230,7 +7246,7 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "404": {
-            "description": "Konfi ohne Profil"
+            "description": "Konfi nicht in der aktiven Gemeinde (seit 29.09.2026 über darfKonfi, Audit Sicherheit BF-16 -- vorher 403 für fremde Konfis, das die Kennung bestätigte)"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -7925,7 +7941,7 @@
             }
           },
           "400": {
-            "description": "Typ/Name fehlt, ungueltiger Typ, jahrgang_id fehlt, ODER type='direct' ohne genau eine weitere Person (error_code direct_nur_zu_zweit, seit 26.09.2026)"
+            "description": "Typ/Name fehlt, ungueltiger Typ, jahrgang_id fehlt, ODER type='direct' ohne genau eine weitere Person (error_code direct_nur_zu_zweit, seit 26.09.2026), ODER eine Person in participants gehört nicht zur Gemeinde (error_code teilnehmende_nicht_in_gemeinde, seit 29.09.2026, Audit Sicherheit BF-16 -- vorher fiel sie still heraus und der Raum entstand ohne sie; jetzt entsteht kein Raum)"
           },
           "403": {
             "description": "Konfi mit type != direct, Jahrgang nicht in eigener Org, ODER Konfi-Teilnehmer ausserhalb der zugewiesenen Jahrgaenge (admin/teamer)"
@@ -8234,7 +8250,7 @@
           "Chat"
         ],
         "summary": "Nachricht senden (Text oder Datei)",
-        "description": "multipart/form-data mit optionalem Feld 'file' (verschluesselte Ablage, Magic-Bytes-Prüfung) oder JSON mit content. client_id (UUID) macht den Aufruf idempotent. reply_to wird gegen den Raum validiert. Verteilt via WebSocket und Push an alle Teilnehmer.\n",
+        "description": "multipart/form-data mit optionalem Feld 'file' (verschluesselte Ablage, Magic-Bytes-Prüfung) oder JSON mit content. client_id (UUID) macht den Aufruf idempotent. reply_to wird gegen den Raum validiert. Verteilt via WebSocket und Push an alle Teilnehmer. TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): text/plain und text/csv haben keine Magic Bytes; statt dem Header zu vertrauen, prüft der Server den Inhalt (utils/textDatei.js): höchstens 2 MB (413), keine Binärdaten (415 \"Die Datei ist keine Textdatei.\"), keine HTML-/Skript-Signatur (415 \"Textdateien mit HTML oder Skript werden nicht angenommen.\"). Kein UTF-8-Zwang: Excel-CSV in Windows-1252 geht durch.\n",
         "parameters": [
           {
             "name": "roomId",
@@ -8294,8 +8310,11 @@
           "403": {
             "description": "Raum darf nicht geoeffnet werden (darfRaumBetreten)"
           },
+          "413": {
+            "description": "Datei über 5 MB, Textdatei über 2 MB (seit 29.09.2026)"
+          },
           "415": {
-            "description": "Dateityp per Magic Bytes nicht verifizierbar"
+            "description": "Dateityp per Magic Bytes nicht verifizierbar; Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -8840,7 +8859,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Dateiinhalt (Content-Type aus Original-Dateiname)",
+            "description": "Dateiinhalt (Content-Type aus Original-Dateiname; .txt seit 29.09.2026 immer text/plain; charset=utf-8, .csv text/csv; charset=utf-8 -- vorher ohne Content-Type)",
             "content": {
               "application/octet-stream": {
                 "schema": {
@@ -9668,7 +9687,7 @@
             "description": "Challenge nicht gefunden oder Entwurf"
           },
           "409": {
-            "description": "Challenge nicht aktiv ODER bereits eingereicht (allow_multiple=false)"
+            "description": "Challenge nicht aktiv ODER bereits eingereicht (allow_multiple=false). Seit 28.09.2026 auch bei gleichzeitigen Anfragen verlaesslich: Pruefung und INSERT laufen in einer Transaktion unter pg_advisory_xact_lock je (Challenge, Person); vorher kamen zwei gleichzeitige Einreichungen beide durch (Audit Fachlogik Chat, 'Unklar', behoben). Antwortform unveraendert."
           },
           "415": {
             "description": "Dateityp nicht verifizierbar"
@@ -10864,7 +10883,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Meldet, warum KEINE Push-Registrierung zustande kam",
-        "description": "NEU 23.09.2026. Speichert nichts, protokolliert nur. Hintergrund: Kommt auf dem Geraet gar kein Push-Token zustande, gibt es auch keinen POST /device-token — und damit serverseitig keine Spur. \"Die App fragt nicht\" und \"die App fragt, bekommt aber nichts\" sahen identisch aus, naemlich wie Stille. Genau daran scheiterte eine Fehlersuche zu fehlenden Android-Push-Nachrichten: drei Anmeldungen eines Testers, kein Eintrag, kein Fehler. Absichtlich ohne Schema-Zwang ausser dem Grund: Die App soll melden koennen, auch wenn sie selbst nicht weiss, was schiefgeht.\n",
+        "description": "NEU 23.09.2026. Speichert nichts, protokolliert nur. Hintergrund: Kommt auf dem Geraet gar kein Push-Token zustande, gibt es auch keinen POST /device-token — und damit serverseitig keine Spur. \"Die App fragt nicht\" und \"die App fragt, bekommt aber nichts\" sahen identisch aus, naemlich wie Stille. Genau daran scheiterte eine Fehlersuche zu fehlenden Android-Push-Nachrichten: drei Anmeldungen eines Testers, kein Eintrag, kein Fehler. Absichtlich ohne Schema-Zwang ausser dem Grund: Die App soll melden koennen, auch wenn sie selbst nicht weiss, was schiefgeht. PROTOKOLL OHNE FREITEXT (BEHOBEN 29.09.2026, Audit Sicherheit BF-14): Ins Server-Protokoll gehen nur Werte, die wie ein Kennwort aussehen (grund: Buchstaben/Ziffern/Bindestrich, plattform ios|android|web, app_version x.y.z, app_build Ziffern), sonst ein Platzhalter. Vom hinweis bleiben die Zahl der Versuche und Fehlercodes in Grossbuchstaben (z. B. SERVICE_NOT_AVAILABLE) samt Laenge; der Rest wird nicht protokolliert. Anfrage und Antwort unveraendert.\n",
         "requestBody": {
           "required": false,
           "content": {
@@ -10891,7 +10910,7 @@
                   },
                   "hinweis": {
                     "type": "string",
-                    "description": "Freitext, auf 200 Zeichen gekuerzt"
+                    "description": "Freitext; ins Protokoll gehen seit 29.09.2026 nur Versuche und Fehlercodes daraus"
                   }
                 }
               }
@@ -12141,10 +12160,10 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "404": {
-            "$ref": "#/components/responses/NotFound"
+            "description": "Typ nicht in dieser Gemeinde -- seit 29.09.2026 VOR der Vergabe-Prüfung (T3)"
           },
           "409": {
-            "description": "Typ ist bereits vergeben und kann nicht geloescht werden"
+            "description": "Typ ist bereits vergeben und kann nicht geloescht werden (nur eigene Typen)"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -12168,7 +12187,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "user_certificates gefiltert auf user_id + organization_id",
+          "objekt-pruefung": "Person muss Mitglied der aktiven Gemeinde sein (beide Quellen, utils/orgMitglieder.js; 404 sonst, seit 29.09.2026); user_certificates gefiltert auf user_id + organization_id",
           "hinweis": "# BEFUND T2: Anders als die Badge- und die POST-Variante prüft diese Route NICHT, ob der Ziel-User die Rolle 'teamer' hat. Für beliebige User-IDs der eigenen Org kommt daher 200 mit (in der Praxis) leerer Liste statt 404.\n"
         },
         "parameters": [
@@ -12185,6 +12204,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Person gehört nicht zur aktiven Gemeinde (seit 29.09.2026; vorher 200 [])"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -12919,7 +12941,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "materials.organization_id; der Termin selbst wird nicht separat geprüft - ein fremder eventId liefert schlicht eine leere Liste",
+          "objekt-pruefung": "Termin muss zur aktiven Gemeinde gehören (404 sonst, seit 29.09.2026, Audit Sicherheit BF-16 -- vorher 200 []); materials.organization_id",
           "hinweis": "Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am 24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang nur für zugewiesene teamer/admin, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle; nur org_admin sieht alles. BEWUSST OHNE den Header X-Kein-Jahrgang-Zugewiesen (Entscheidung 01.09.2026): \"kein Material an diesem Termin\" ist der Normalzustand einer Termin-Unterliste; den Grund \"keine Zuweisung\" nennen bereits die Terminliste (GET /api/events) und GET /api/material.\n"
         },
         "parameters": [
@@ -12943,6 +12965,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Termin nicht in dieser Gemeinde (seit 29.09.2026; die Apps fangen den Fehler ab und zeigen keine Materialien)"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -13147,7 +13172,7 @@
           "Material"
         ],
         "summary": "Dateien zu einem Material hochladen (verschlüsselt at-rest)",
-        "description": "multipart/form-data, Feld \"files\", bis zu 10 Dateien pro Request, je max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Prüfung: erst der MIME-Filter von multer (Bilder, PDF, Video, Audio, Office- und OpenDocument-Formate, ZIP, text/plain, text/csv), dann eine Magic-Bytes-Prüfung auf dem Buffer (415 bei Nichtuebereinstimmung; text/plain und text/csv sind ausgenommen, weil sie keine Signatur haben). Gespeichert wird AES-256-GCM-verschlüsselt unter einem zufaelligen 64-Hex-Dateinamen.\n",
+        "description": "multipart/form-data, Feld \"files\", bis zu 10 Dateien pro Request, je max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Prüfung: erst der MIME-Filter von multer (Bilder, PDF, Video, Audio, Office- und OpenDocument-Formate, ZIP, text/plain, text/csv), dann eine Magic-Bytes-Prüfung auf dem Buffer (415 bei Nichtuebereinstimmung; text/plain und text/csv sind ausgenommen, weil sie keine Signatur haben). Gespeichert wird AES-256-GCM-verschlüsselt unter einem zufaelligen 64-Hex-Dateinamen. TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): Statt dem Header zu vertrauen, prüft der Server den Inhalt -- höchstens 2 MB (413), keine Binärdaten, keine HTML-/Skript-Signatur (415, Meldung mit dem Dateinamen in Klammern). Kein UTF-8-Zwang (Excel-CSV in Windows-1252 geht durch). Geprüft wird weiterhin alles, bevor die erste Datei abgelegt wird.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -13204,10 +13229,10 @@
             "$ref": "#/components/responses/NotFound"
           },
           "413": {
-            "description": "Datei ueberschreitet 20 MB (globaler Multer-Handler in createApp.js)"
+            "description": "Datei ueberschreitet 20 MB (globaler Multer-Handler in createApp.js); Textdatei über 2 MB (seit 29.09.2026)"
           },
           "415": {
-            "description": "Dateityp nicht verifizierbar (Magic-Bytes)"
+            "description": "Dateityp nicht verifizierbar (Magic-Bytes); Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -13250,8 +13275,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Datei als Download (Content-Type aus mime_type",
-            "Content-Disposition attachment)": null
+            "description": "Datei als Download (Content-Type aus mime_type, Content-Disposition attachment); text/plain und text/csv seit 29.09.2026 mit charset=utf-8"
           },
           "400": {
             "description": "Ungueltiger Dateiname"
@@ -13550,7 +13574,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ausgabe muss zur aktiven Org gehoeren (sonst 404). Teamer-Ausgaben nur org_admin (sonst 403). Konfi-Ausgaben: Admin braucht eine Zuweisung auf den Jahrgang (sonst 403). Rolle super_admin faellt an requireAdmin durch (403); rollen-Zeile nachgezogen am 26.09.2026.\n"
+          "objekt-pruefung": "Ausgabe muss zur aktiven Org gehoeren (sonst 404). Teamer-Ausgaben nur org_admin (sonst 403). Konfi-Ausgaben: Admin braucht eine Zuweisung MIT can_edit auf den Jahrgang (darfJahrgang edit, wie POST /api/wrapped/generate/{jahrgangId}; sonst 403 \"Kein Zugriff auf diesen Jahrgang\"). Rolle super_admin faellt an requireAdmin durch (403); rollen-Zeile nachgezogen am 26.09.2026. BEHOBEN 28.09.2026 (Audit Fachlogik Chat/Challenges/Rueckblick BF-13): Vorher genuegte irgendeine Zuweisung -- ein Admin mit reiner Lese-Zuweisung konnte loeschen, aber nicht anlegen. Tests: backend/tests/routes/wrappedAusgabeLoeschenRecht.test.js.\n"
         },
         "responses": {
           "200": {
@@ -14758,10 +14782,10 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "404": {
-            "description": "Kategorie nicht in dieser Organisation"
+            "description": "Kategorie nicht in dieser Organisation (seit 29.09.2026 VOR der Verwendungs-Prüfung)"
           },
           "409": {
-            "description": "Kategorie ist X Aktivitaet(en) und/oder Y Event(s) zugeordnet"
+            "description": "Kategorie ist X Aktivitaet(en) und/oder Y Event(s) zugeordnet (nur für eigene Kategorien)"
           }
         },
         "x-berechtigung": {
@@ -14775,8 +14799,8 @@
             "validateCategoryId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "DELETE mit organization_id im WHERE; die vorgelagerte Verwendungs-Prüfung zählt activity_categories und event_categories",
-          "hinweis": "S3: die Verwendungs-Prüfung filtert NICHT auf organization_id. Da category_id systemweit vergeben wird, ist das praktisch folgenlos — es entsteht kein Fremdzugriff, weil das DELETE selbst org-gescopt bleibt"
+          "objekt-pruefung": "erst Gemeinde (404), dann Verwendungs-Prüfung (activity_categories, event_categories), dann DELETE mit organization_id im WHERE",
+          "hinweis": "S3 BEHOBEN 29.09.2026 (Audit Sicherheit BF-16): Die Verwendungs-Prüfung lief vor der Gemeinde-Prüfung — eine fremde Kategorie antwortete 409 mit ihren Nutzungszahlen und verriet so Existenz und Nutzung. Jetzt zuerst 404."
         }
       }
     },
@@ -14849,13 +14873,15 @@
                   },
                   "target_gottesdienst": {
                     "type": "integer",
-                    "minimum": 0,
-                    "default": 10
+                    "minimum": 1,
+                    "default": 10,
+                    "description": "Seit 28.09.2026 ab 1 (vorher ab 0; eine 0 lieferte das Konfi-Dashboard als 10 aus, jede App-Fassung rechnet `|| 10`, der Regler beginnt bei 1). 0 -> 400. Audit Fachlogik Punkte/Termine BF-10, behoben."
                   },
                   "target_gemeinde": {
                     "type": "integer",
-                    "minimum": 0,
-                    "default": 10
+                    "minimum": 1,
+                    "default": 10,
+                    "description": "Wie target_gottesdienst: ab 1, 0 -> 400 (seit 28.09.2026)."
                   },
                   "user_assignments": {
                     "type": "array",
@@ -14967,11 +14993,13 @@
                   },
                   "target_gottesdienst": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 1,
+                    "description": "Seit 28.09.2026 ab 1, 0 -> 400 (siehe POST). Nicht uebergeben = unveraendert."
                   },
                   "target_gemeinde": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 1,
+                    "description": "Seit 28.09.2026 ab 1, 0 -> 400 (siehe POST). Nicht uebergeben = unveraendert."
                   }
                 }
               }
@@ -15692,7 +15720,8 @@
             "type": "boolean"
           },
           "unread_count": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Nachrichten nach dem eigenen Lesestand, ohne eigene, geloeschte und solche mit Datum in der Zukunft -- dieselbe Zaehlung wie chat.byRoom in GET /api/notifications/badge-counts. Bis 28.09.2026 zaehlte die Raumliste eigene Nachrichten mit (Audit Fachlogik Chat BF-10, behoben; Feld und Typ unveraendert)."
           },
           "last_message": {
             "type": [
