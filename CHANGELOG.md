@@ -748,6 +748,11 @@ iOS-Build 234 · Android versionCode 128
   angemeldet waren oder auf der Warteliste standen — auch Teamer:innen und
   Leitung, genau wie bei einer Absage. Bisher bekamen nur Konfis die Meldung;
   bei einem Event „Nur Team" erfuhr es niemand.
+- Wird ein Pflicht-Event abgesagt, gilt auch eine Konfi als entschuldigt, die
+  sich abgemeldet hatte, dann doch kam und schon verbucht war. Bisher blieb
+  sie anwesend, und das abgesagte Event zählte bei ihr als besuchtes
+  Pflicht-Event. Ihre Abmeldung bleibt sichtbar; wird die Absage
+  zurückgenommen, steht sie wieder als abgemeldet da.
 - Die Mitteilung „Neues Event!" bekommen nur noch die Konfis, die das Event
   in ihrer Event-Liste finden — die Konfis der Jahrgänge, für die es gilt, bei
   einem Event ohne Jahrgang alle Konfis der Gemeinde. Bisher ging sie an alle

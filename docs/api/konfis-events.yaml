@@ -2813,6 +2813,21 @@ paths:
         angerufen") wird deshalb NICHT vom Absagegrund ueberschrieben, und
         abgemeldet_durch_absage bleibt dort FALSE.
 
+        GEAENDERT 29.09.2026 — AUCH DIE VERBUCHTE SELBSTABMELDUNG WIRD
+        ENTSCHULDIGT (Entscheidung Simon: "Auch sie wird entschuldigt"). Eine
+        Buchung mit status='opted_out', die die Leitung schon auf 'present'
+        oder 'absent' verbucht hatte ("hatte sich abgemeldet, kam doch"),
+        blieb bis dahin verbucht -- der abgesagte Pflichttermin zaehlte als
+        besuchter (mandatory_event_count). Sie steht jetzt in derselben
+        Auswahl (utils/bookingUtils.js, vonAbsageErfasstSql; auch die
+        Punkte-Ruecknahme fasst sie): attendance_status='excused',
+        excuse_reason = der Absagegrund, abgemeldet_durch_absage=TRUE,
+        Urheber/Quelle geleert. Das Opt-out BLEIBT SICHTBAR: status bleibt
+        'opted_out' samt opt_out_reason, status_vor_absage bleibt NULL
+        (Migration 155 kennt dort nur confirmed/waitlist). Eine unverbuchte
+        Selbstabmeldung und ein schon eingetragenes 'excused' mit eigenem
+        Grund bleiben unangetastet. Antwortform unveraendert.
+
         attendance_set_by, attendance_set_at, checkin_quelle und
         checked_in_at werden auf NULL gesetzt: Die Absage ist keine
         Anwesenheitsbeurteilung (Begruendung Migration 148/151) und traegt
@@ -3036,6 +3051,17 @@ paths:
         zurueckgenommen; dieses UPDATE setzt attendance_status auf NULL. Die
         alte Anwesenheit ist damit weg, die Punkte ebenfalls. Gewollt: Der
         Termin steht wieder BEVOR, verbucht wird, wenn er gelaufen ist.
+
+
+        DIE VERBUCHTE SELBSTABMELDUNG (29.09.2026, siehe PUT /{id}/cancel):
+        Ihre Entschuldigung aus der Absage wird ebenso geraeumt, status BLEIBT
+        aber 'opted_out' -- sie steht wieder als Selbstabmeldung ohne
+        Verbuchung da. Sie ist NICHT wieder angemeldet: Sie zaehlt weder in
+        reaktiviert/participants_notified noch in durch_absage_abgemeldet_count
+        (GET /api/events, /api/events/cancelled, /api/events/{id}) und bekommt
+        keinen Push. Traegt die Leitung nach der Absage selbst etwas an ihrer
+        Zeile ein (PUT .../attendance), ist das eine Einzelentscheidung
+        (abgemeldet_durch_absage=FALSE) und bleibt beim Zuruecknehmen stehen.
 
 
         JEDE PERSON KEHRT AUF IHREN EIGENEN ALTEN STATUS ZURUECK

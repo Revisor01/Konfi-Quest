@@ -121,6 +121,27 @@ async function takeBackEventPoints(client, userId, eventId) {
 const ABSAGE_OHNE_GRUND = 'Event abgesagt';
 
 /**
+ * SQL-Bedingung: Welche Buchungen `alias` erfasst eine Terminabsage?
+ * EINE Stelle fuer Punkte-Ruecknahme und Abmeldung in meldeAlleAbBeiAbsage --
+ * beide muessen dieselbe Menge fassen, sonst wird doppelt oder gar nicht
+ * abgezogen.
+ *
+ *   - jede lebende Anmeldung ('confirmed', 'waitlist'), verbucht oder nicht;
+ *   - eine VERBUCHTE Selbstabmeldung ('opted_out' mit present/absent):
+ *     abgemeldet, doch gekommen, von der Leitung eingetragen. Entscheidung
+ *     Simon, 29.09.2026: „Auch sie wird entschuldigt." Bis dahin blieb sie
+ *     'present', und der abgesagte Termin zaehlte als besuchter Pflichttermin.
+ *
+ * Nicht erfasst: die unverbuchte Selbstabmeldung (ihre eigene Rueckmeldung,
+ * es gibt nichts zu entschuldigen) und jede schon eingetragene Abmeldung mit
+ * eigenem Grund ('excused', auch an einem Opt-out).
+ */
+function vonAbsageErfasstSql(alias) {
+  return `(${alias}.status IN ('confirmed', 'waitlist')
+           OR (${alias}.status = 'opted_out' AND ${alias}.attendance_status IN ('present', 'absent')))`;
+}
+
+/**
  * Wer erfaehrt, dass ein Termin ausfaellt -- beim ABSAGEN und beim LOESCHEN
  * eines noch nicht abgesagten Termins dieselben Personen (27.09.2026, Audit
  * "Wer bekommt was", BF-06).
@@ -209,7 +230,11 @@ async function ladeBetroffeneEinesAusfalls(db, eventId) {
  *
  *   - 'opted_out' (Selbstabmeldung von einer Pflicht, Teamer-Absage): eine
  *     eigene, sichtbare Rueckmeldung. Sie belegt keinen Platz und ist keine
- *     Anmeldung, die man noch abmelden koennte.
+ *     Anmeldung, die man noch abmelden koennte. AUSNAHME seit dem 29.09.2026
+ *     (Simon: „Auch sie wird entschuldigt."): Hat die Leitung sie doch als
+ *     anwesend oder abwesend verbucht, wird diese Verbuchung entschuldigt
+ *     wie bei allen anderen; das Opt-out selbst bleibt stehen
+ *     (vonAbsageErfasstSql).
  *   - 'excused' MIT EIGENEM GRUND (Einzelabmeldung durch die Leitung): steht
  *     seit Migration 153 ebenfalls auf status = 'excused'
  *     (routes/events/anwesenheit.js setzt beides gemeinsam, Migration 153 C1
@@ -259,6 +284,9 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
   //    worden, ein zweiter Abzug wuerde den Saldo unter den richtigen Wert
   //    druecken. Wer auf 'present' steht, faellt seit dem 16.09.2026 in BEIDE
   //    Mengen -- er wird abgemeldet, und seine Punkte gehen mit.
+  //
+  //    Seit dem 29.09.2026 steht die Bedingung in vonAbsageErfasstSql -- sie
+  //    fasst auch die verbuchte Selbstabmeldung (siehe dort).
   const { rows: punkte } = await client.query(
     `SELECT ep.konfi_id, ep.points, ep.point_type
        FROM event_points ep
@@ -266,7 +294,7 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
         AND EXISTS (
           SELECT 1 FROM event_bookings eb
            WHERE eb.event_id = ep.event_id AND eb.user_id = ep.konfi_id
-             AND eb.status IN ('confirmed', 'waitlist')
+             AND ${vonAbsageErfasstSql('eb')}
         )`,
     [eventId]
   );
@@ -355,19 +383,29 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
   //    Migration 148: Die Absage beurteilt keine Anwesenheit, also traegt sie
   //    auch keine Urheberin ein -- sie raeumt die alte nur mit ab. Wer
   //    abgesagt hat, steht in events.cancelled_by.
+  //
+  //    DIE VERBUCHTE SELBSTABMELDUNG (Entscheidung Simon, 29.09.2026: „Auch
+  //    sie wird entschuldigt."): Sie wird wie alle anderen auf „entschuldigt"
+  //    mit dem Absagegrund gesetzt und traegt abgemeldet_durch_absage = TRUE
+  //    -- damit zieht ein korrigierter Absagegrund zu ihr mit, und das
+  //    Zuruecknehmen raeumt die Entschuldigung wieder ab. Das Opt-out bleibt
+  //    sichtbar: status bleibt 'opted_out' (samt opt_out_reason), und
+  //    status_vor_absage bleibt NULL -- die Spalte kennt nur
+  //    'confirmed'/'waitlist' (Migration 155), und wohin es zurueckgeht, steht
+  //    ohnehin in status.
   const { rowCount } = await client.query(
-    `UPDATE event_bookings
+    `UPDATE event_bookings eb
         SET attendance_status = 'excused',
-            status_vor_absage = status,
-            status = 'excused',
+            status_vor_absage = CASE WHEN eb.status = 'opted_out' THEN NULL ELSE eb.status END,
+            status = CASE WHEN eb.status = 'opted_out' THEN 'opted_out' ELSE 'excused' END,
             abgemeldet_durch_absage = TRUE,
             excuse_reason = $2,
             attendance_set_by = NULL,
             attendance_set_at = NULL,
             checkin_quelle = NULL,
             checked_in_at = NULL
-      WHERE event_id = $1
-        AND status IN ('confirmed', 'waitlist')`,
+      WHERE eb.event_id = $1
+        AND ${vonAbsageErfasstSql('eb')}`,
     [eventId, abmeldeGrund]
   );
 
@@ -444,9 +482,15 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
 async function hebeAbsageAbmeldungenAuf(client, eventId) {
   verlangeClient(client, 'hebeAbsageAbmeldungenAuf');
 
+  // DIE VERBUCHTE SELBSTABMELDUNG (29.09.2026, siehe meldeAlleAbBeiAbsage)
+  // bleibt 'opted_out': Die Absage hat ihre Verbuchung entschuldigt, nicht
+  // ihre Abmeldung aufgehoben. Zurueck steht sie wie jede Verbuchte ohne
+  // Verbuchung da -- als Selbstabmeldung. Angemeldet war sie nicht, also
+  // gehoert sie auch nicht zu den Wiederangemeldeten, die den Push bekommen.
   const { rows } = await client.query(
     `UPDATE event_bookings
-        SET status = COALESCE(status_vor_absage, 'confirmed'),
+        SET status = CASE WHEN status = 'opted_out' THEN 'opted_out'
+                          ELSE COALESCE(status_vor_absage, 'confirmed') END,
             status_vor_absage = NULL,
             abgemeldet_durch_absage = FALSE,
             attendance_status = NULL,
@@ -457,7 +501,7 @@ async function hebeAbsageAbmeldungenAuf(client, eventId) {
     [eventId]
   );
 
-  return rows;
+  return rows.filter((b) => b.status !== 'opted_out');
 }
 
 // ====================================================================

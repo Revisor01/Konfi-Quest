@@ -407,6 +407,13 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
       // entschuldigt, dann machen wir es doch. Status bei allen zurueck ausser
       // bei denen."
       //
+      // Dasselbe an einer SELBSTABMELDUNG ('opted_out'), deren Verbuchung eine
+      // Terminabsage entschuldigt hat (29.09.2026, bookingUtils
+      // vonAbsageErfasstSql): Traegt die Leitung danach selbst etwas ein, ist
+      // das ihre Entscheidung -- abgemeldet_durch_absage faellt auf FALSE,
+      // sonst kassierte das Zuruecknehmen der Absage den Eintrag wieder und
+      // ein korrigierter Absagegrund landete an ihrer Zeile.
+      //
       // BEIM ZURUECKSETZEN ($1 IS NULL) durchlaufen die Zweige der Reihe nach:
       //   attendance_status        -> NULL (der Eintrag ist weg)
       //   status                   -> war er 'excused', faellt er auf
@@ -439,6 +446,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
                   ELSE status
                 END,
                 abgemeldet_durch_absage = CASE
+                  WHEN status = 'opted_out' THEN FALSE
                   WHEN status NOT IN ('confirmed', 'waitlist', 'excused') THEN abgemeldet_durch_absage
                   WHEN $1 = 'excused' THEN FALSE
                   WHEN status = 'excused' THEN FALSE
