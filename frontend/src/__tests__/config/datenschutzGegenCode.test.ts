@@ -75,6 +75,31 @@ describe('4.3 Geraete-Kennung: der Text folgt dem Code', () => {
   });
 });
 
+describe('9 Push: was in einer Benachrichtigung steht', () => {
+  /*
+   * Audit 26.09.2026, Sicherheit, Abschnitt "Unklar": Chat-Pushes tragen den
+   * Nachrichtentext als notification.body (utils/pushText.js, chatPushText),
+   * er liegt damit bei Google (FCM) und auf Apple-Geraeten bei Apple (APNs).
+   * Die Erklaerung sagte nur "Inhalt der Benachrichtigung (z. B. Titel und
+   * Text)". Wer den Push-Inhalt aendert (Entscheidung Simon offen), muss hier
+   * und im Text nachziehen.
+   */
+  const backend = (p: string) => readFileSync(join(process.cwd(), '..', 'backend', p), 'utf8');
+
+  it('nennt den vollstaendigen Nachrichtentext, solange der Code ihn schickt', () => {
+    const pushText = backend('utils/pushText.js');
+    // Mit Text: der Text selbst; nur ohne Text die Art des Anhangs.
+    expect(pushText).toMatch(/const text = \(content && content\.trim\(\)\) \? content : anhangText/);
+    expect(backend('routes/chat.js')).toMatch(/body: chatPushText\(/);
+    expect(text).toContain('vollständige Text der Nachricht');
+  });
+
+  it('nennt Apple als Zustellweg auf iPhone und iPad', () => {
+    expect(backend('push/firebase.js')).toMatch(/apns: \{/);
+    expect(text).toContain('über den Apple Push Notification Service zu; dabei erhält auch Apple den Inhalt');
+  });
+});
+
 describe('9b Absturzberichte: der Text folgt dem Code', () => {
   const DIAGNOSE = 'src/services/absturzdiagnose.ts';
 

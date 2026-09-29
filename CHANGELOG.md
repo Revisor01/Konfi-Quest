@@ -490,6 +490,9 @@ iOS-Build 234 · Android versionCode 128
 - Die Datenschutzerklärung nennt die Geräte-Kennung, die die App bei der
   Anmeldung und beim Verlängern der Anmeldung sendet, wozu sie gespeichert und
   wann sie gelöscht wird.
+- Die Datenschutzerklärung sagt, was in einer Push-Benachrichtigung steht — bei
+  Chat-Nachrichten der vollständige Text — und dass sie auf iPhone und iPad
+  auch über Apple zugestellt wird.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

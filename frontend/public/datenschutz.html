@@ -242,12 +242,14 @@
         <div class="section">
             <h2>8. Chat-Funktion</h2>
             <p>Die App enthält eine Chat-Funktion zur Kommunikation. Chat-Nachrichten werden auf unserem Server gespeichert und sind nur für die jeweiligen Chat-Teilnehmer:innen sichtbar. Administrator:innen haben zu Moderationszwecken Zugriff auf die Nachrichten.</p>
+            <p>Haben Empfänger:innen Push-Benachrichtigungen aktiviert, geht eine neue Nachricht samt ihrem Text als Benachrichtigung an deren Geräte — über Firebase Cloud Messaging und auf iPhone und iPad zusätzlich über Apple (siehe Abschnitt&nbsp;9).</p>
         </div>
 
         <div class="section">
             <h2>9. Push-Benachrichtigungen (Firebase Cloud Messaging)</h2>
             <p>Die App bietet optionale Push-Benachrichtigungen an, etwa über neue Chat-Nachrichten, Veranstaltungen oder vergebene Punkte. Hierfür wird ein gerätespezifisches Push-Token gespeichert.</p>
-            <p>Für den technischen Versand der Push-Benachrichtigungen nutzen wir den Dienst <strong>Firebase Cloud Messaging (FCM)</strong> der Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland. An Firebase werden das Push-Token Ihres Geräts sowie der Inhalt der jeweiligen Benachrichtigung (z.&nbsp;B. Titel und Text) übermittelt, damit diese an Ihr Gerät zugestellt werden kann.</p>
+            <p>Für den technischen Versand der Push-Benachrichtigungen nutzen wir den Dienst <strong>Firebase Cloud Messaging (FCM)</strong> der Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland. An Firebase werden das Push-Token Ihres Geräts sowie der Inhalt der jeweiligen Benachrichtigung (Titel und Text) übermittelt, damit diese an Ihr Gerät zugestellt werden kann. Auf iPhone und iPad stellt Firebase die Benachrichtigung über den Apple Push Notification Service zu; dabei erhält auch Apple den Inhalt.</p>
+            <p>Was in einer Benachrichtigung steht: Bei <strong>Chat-Nachrichten</strong> der Name der absendenden Person bzw. des Chats und der <strong>vollständige Text der Nachricht</strong> — bei Anhängen deren Art (Foto, Video, Sprachnachricht, Datei, Umfrage), bei Videos und Dateien auch der Dateiname. Bei anderen Benachrichtigungen sind es zum Beispiel Namen von Konfirmand:innen, Aktivitäten, Veranstaltungen, Badges und die Zahl der Punkte.</p>
             <p>Dabei kann es zu einer Übermittlung von Daten an Server der Google LLC in den USA kommen. Für diese Übermittlung in ein Drittland stützen wir uns auf die von der EU-Kommission erlassenen Standardvertragsklauseln. Es besteht das Risiko, dass US-Behörden unter bestimmten Voraussetzungen auf diese Daten zugreifen können.</p>
             <p>Die Verarbeitung erfolgt ausschließlich auf Grundlage Ihrer Einwilligung, die Sie durch das Aktivieren der Push-Benachrichtigungen erteilen. Rechtsgrundlage: § 6 Nr. 2 DSG-EKD. Sie können Push-Benachrichtigungen jederzeit in den Einstellungen Ihres Geräts deaktivieren und damit Ihre Einwilligung mit Wirkung für die Zukunft widerrufen.</p>
         </div>
