@@ -882,6 +882,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
       // Ohne Jahrgangsname und Adresse (Audit Sicherheit BF-14, 29.09.2026):
       // Kennung und Domain genuegen, um einen Versand wiederzufinden.
       console.log(`[matrix-email] Versand angefordert: Jahrgang ${jahrgangId}, type=${type}, an=Konto ${req.user.id} (${adresseFuersProtokoll(adminRow.email)}), rows=${rows.length}`);
+      // sendEmail gibt nur { success: true } zurueck und WIRFT bei jedem
+      // Fehler -- der landet unten als 500. Hier stand bis zum 29.09.2026 ein
+      // Zweig `success === false -> 502`, der nie erreicht wurde (Audit Chat
+      // BF-11, Rest).
       const mailResult = await emailService.sendKonfiMatrixEmail(
         adminRow.email,
         adminRow.display_name,
@@ -890,10 +894,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         rows
       );
       console.log(`[matrix-email] Versand-Ergebnis:`, JSON.stringify(mailResult));
-
-      if (mailResult && mailResult.success === false) {
-        return res.status(502).json({ error: 'E-Mail konnte nicht versendet werden (SMTP-Fehler)' });
-      }
       res.json({ success: true });
     } catch (err) {
       console.error('Database error in POST /api/admin/jahrgaenge/:jahrgangId/matrix-email:', jahrgangId, err);

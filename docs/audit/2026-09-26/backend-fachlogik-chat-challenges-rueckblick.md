@@ -135,6 +135,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 - **Auswirkung aus Nutzersicht:** Gering (eigene Mail bzw. Mail an die Leitung); Hygiene.
 - **Empfehlung:** `escapeHtml` in allen sechs Vorlagen; in `jahrgaenge.js` den toten Zweig entfernen oder `sendEmail` einheitlich ein Ergebnis zurückgeben lassen.
 - **Nachtrag 29.09.2026:** behoben bis auf den toten Zweig — alle sechs Vorlagen in `services/emailService.js` maskieren jeden eingesetzten Wert im HTML, auch Link, Datum und Zahl; Lizenz- und Löschwarnung taten es gar nicht, `escapeHtml` maskiert jetzt zusätzlich `'`; der Jahrgangsname im Betreff der Löschwarnung verliert Zeilenumbrüche (wie bei der Matrix-Mail). Der Textteil bleibt Klartext. Tests `tests/services/mailVorlagenMaskierung.test.js`, 10 Fälle (7 verboten: je Vorlage kein roher Name im HTML, Betreff ohne Umbruch; 3 erlaubt: Umlaute unverändert, Textteil unmaskiert, Link mit `&amp;` benutzbar); Gegenprobe ohne Fix: 9 rot. Offen: der unerreichbare 502-Zweig in `jahrgaenge.js` (nicht Teil dieses Pakets).
+- **Status:** behoben 29.09.2026 — der tote Zweig `mailResult.success === false → 502` in `POST /admin/jahrgaenge/:id/matrix-email` ist entfernt; das Verhalten bleibt (SMTP-Fehler → 500 „Fehler beim Senden der E-Mail", wie in Produktion immer). API-Doku ohne den nie gelieferten 502. Tests in `tests/routes/jahrgaenge.test.js`: SMTP-Fehler → 500 (vorher und nachher grün), `{ success: false }` → 200 (vor dem Aufräumen rot: 502).
 
 ### BF-12: Tipp-Anzeige sendet `userName: undefined`
 - **Schwere:** NIEDRIG

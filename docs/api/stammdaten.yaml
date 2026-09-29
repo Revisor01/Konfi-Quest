@@ -963,8 +963,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "Jahrgang nicht in dieser Organisation" }
-        "502": { description: "SMTP-Fehler — E-Mail konnte nicht versendet werden" }
-        "500": { description: "Fehler beim Senden der E-Mail" }
+        "500": { description: "Fehler beim Senden der E-Mail -- auch jeder SMTP-Fehler (sendEmail wirft). Behoben 29.09.2026 (Audit Chat BF-11, Rest): Hier stand ein 502 'SMTP-Fehler', den die Route nie liefern konnte; der tote Zweig ist entfernt, das Verhalten unveraendert." }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateMatrixEmail]
