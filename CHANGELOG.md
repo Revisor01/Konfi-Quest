@@ -1232,6 +1232,9 @@ iOS-Build 234 · Android versionCode 128
   Fehler ab.
 
 ### Sonstiges
+- Der Notfallweg zum schnellen Ausrollen oder Zurückdrehen eines Stands tauscht
+  die Server nacheinander wie jede reguläre Auslieferung und lässt sich
+  gefahrlos proben, ohne etwas zu ändern.
 - Die Web-Version gibt beim Öffnen fremder Links nur noch ihre Adresse weiter,
   nie Einladungscodes oder Passwort-Links, und erlaubt Kamera und Mikrofon
   nur sich selbst. Eine Schutzregel gegen eingeschleuste Skripte läuft

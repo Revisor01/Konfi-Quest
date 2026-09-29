@@ -37,6 +37,22 @@ steht in [docs/betrieb/sicherung.md](../../betrieb/sicherung.md), das Skript in
 `.github/workflows/notfall-deploy.yml` ist der Rückrollweg und wurde nie
 ausgeführt.
 
+**Stand 29.09.2026 (Repo):** Der Workflow rollt über `deploy/rollend.sh` aus,
+dasselbe Skript wie jeder CI-Deploy (zwei Stufen, Warten auf gesund, Verify
+gegen den vollen Commit), hat `packages: read` und läuft in derselben
+`concurrency`-Gruppe wie der CI-Deploy. Neu ist die Eingabe **`probelauf`**:
+Sie geht denselben Weg bis unmittelbar vor `update_stack` (Image auf ghcr,
+Portainer-Zugang, Tag-Umschreibung auf einer Kopie, Gegenprobe auf
+`backend-test`, Status) und ändert nichts. Gegen eine nachgebaute
+Portainer-API getestet (`frontend/src/__tests__/betrieb/rollenderDeploy.test.ts`).
+
+- [ ] Zuerst den **Probelauf** auslösen, ohne Rücksprache möglich:
+      `gh workflow run notfall-deploy.yml --ref main -f grund="Probelauf" -f probelauf=true`
+      (Tag leer = aktueller `main`-Stand; zusätzlich einmal mit dem Tag des
+      vorigen Deploys). Erwartet: grün, im Log „OK Probelauf", die drei
+      Dienste mit `alt -> neu`, `backend-test` unverändert, die Zahl der
+      Stack-Variablen > 0. Im Portainer-Stack darf sich nichts geändert
+      haben (Stand der Stack-Datei vorher/nachher vergleichen).
 - [ ] Einmal bewusst mit dem aktuellen `main`-Stand auslösen (idempotent —
       derselbe Stand wird erneut ausgerollt). Vorher Simon Bescheid geben.
 - [ ] Beobachten: Läuft er durch, wie lange, gibt es eine Lücke? Braucht der

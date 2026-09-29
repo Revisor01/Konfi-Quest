@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http';
 import { execFile, execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
@@ -18,6 +18,10 @@ import { join, resolve } from 'node:path';
 // BF-04): Sie darf einen Deploy NUR ueberspringen, wenn Produktion belegbar
 // schon einen neueren Stand faehrt, der diesen enthaelt -- in jedem
 // Zweifelsfall wird ausgerollt.
+
+// Jeder Lauf startet bash mit rund zwanzig curl- und python-Aufrufen; auf
+// einem ausgelasteten Rechner dauert das laenger als die 5 s Vorgabe.
+vi.setConfig({ testTimeout: 30_000 });
 
 const wurzel = resolve(__dirname, '../../../..');
 const SKRIPT = join(wurzel, 'deploy/rollend.sh');
@@ -274,6 +278,59 @@ describe('rollender Deploy: nur vorwaerts (NUR_VORWAERTS=1)', () => {
     expect(code, aus).toBe(0);
     expect(aus).toContain('aelter oder abgezweigt -> ausrollen');
     expect(portainer.puts).toHaveLength(2);
+  });
+});
+
+describe('Probelauf (Notfall-Deploy proben, Audit CI BF-10)', () => {
+  it('liest alles, schreibt die Tags auf einer Kopie um -- und ruft update_stack NICHT', async () => {
+    portainer.anfang(kurz(C));
+    const stackVorher = portainer.stack;
+    const { code, aus } = await rolle(A, { PROBELAUF: '1' });
+    expect(code, aus).toBe(0);
+    expect(aus).toContain('OK Probelauf');
+    expect(portainer.puts).toHaveLength(0);
+    expect(portainer.stack).toBe(stackVorher);
+    // Der Plan nennt alle drei Dienste auf dem Zielstand, backend-test bleibt.
+    for (const d of ['backend', 'backend2', 'frontend']) {
+      expect(aus).toMatch(new RegExp(`${d}: \\S+:${kurz(C)} -> \\S+:${kurz(A)}`));
+    }
+    expect(aus).toMatch(/backend-test: \S+:test-latest -> \S+:test-latest/);
+    expect(aus).toContain('Stack-Variablen, die mitgeschickt wuerden: 1');
+  });
+
+  it('meldet einen falschen Schluessel, statt still durchzulaufen', async () => {
+    portainer.anfang(kurz(C));
+    const { code } = await rolle(A, { PROBELAUF: '1', P_KEY: 'falsch' });
+    expect(code).not.toBe(0);
+    expect(portainer.puts).toHaveLength(0);
+  });
+});
+
+describe('Notfall-Deploy-Workflow', () => {
+  const nf = readFileSync(join(wurzel, '.github/workflows/notfall-deploy.yml'), 'utf-8');
+
+  it('rollt ueber deploy/rollend.sh aus -- denselben Weg wie der CI-Deploy', () => {
+    expect(nf).toMatch(/run: \|\n(?:.*\n)*? {10}bash deploy\/rollend\.sh/);
+    expect(nf).not.toMatch(/api\/stacks\/\$STACK_ID\?endpointId/);
+  });
+
+  it('darf zurueckrollen: kein NUR_VORWAERTS', () => {
+    expect(nf).not.toMatch(/^\s+NUR_VORWAERTS:/m);
+  });
+
+  it('hat einen Probelauf, der als Eingabe beim Auslosen waehlbar ist', () => {
+    expect(nf).toMatch(/probelauf:\n {8}description: [^\n]+\n {8}type: boolean\n {8}default: false/);
+    expect(nf).toMatch(/PROBELAUF: \$\{\{ inputs\.probelauf && '1' \|\| '0' \}\}/);
+  });
+
+  it('darf die Images auf ghcr lesen und laeuft nie neben einem CI-Deploy', () => {
+    expect(nf).toMatch(/permissions:\n {2}contents: read\n {2}packages: read/);
+    expect(nf).toMatch(/concurrency:\n {6}group: deploy-production\n {6}cancel-in-progress: false/);
+  });
+
+  it('prueft gegen den vollen Commit (wie /api/status ihn meldet)', () => {
+    expect(nf).toMatch(/GIT_SHA: \$\{\{ steps\.tag\.outputs\.voll \}\}/);
+    expect(nf).toMatch(/BACKEND_CHANGED: "1"/);
   });
 });
 

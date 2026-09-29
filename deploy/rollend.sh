@@ -41,6 +41,8 @@
 #   NUR_VORWAERTS         1 = nicht ausrollen, wenn schon ein NEUERER Stand live ist
 #                         (CI-Deploy; siehe nur_vorwaerts unten). Der Notfall-Deploy
 #                         setzt es nicht -- er darf bewusst zurueckrollen.
+#   PROBELAUF             1 = alles lesen und pruefen, aber NICHTS am Stack aendern
+#                         (Notfall-Deploy proben, siehe probelauf unten)
 set -euo pipefail
 : "${P_URL:?P_URL fehlt}" "${P_KEY:?P_KEY fehlt}" "${STACK_ID:?STACK_ID fehlt}"
 : "${ENDPOINT_ID:?ENDPOINT_ID fehlt}" "${GIT_SHA:?GIT_SHA fehlt}" "${STATUS_URL:?STATUS_URL fehlt}"
@@ -52,6 +54,7 @@ VERIFY_ABFRAGEN="${VERIFY_ABFRAGEN:-6}"
 VERIFY_PAUSE_S="${VERIFY_PAUSE_S:-2}"
 FEHLER_PAUSE_S="${FEHLER_PAUSE_S:-15}"
 NUR_VORWAERTS="${NUR_VORWAERTS:-0}"
+PROBELAUF="${PROBELAUF:-0}"
 
 # Image-Tag: docker/metadata-action (type=sha,prefix=) pusht den KURZEN
 # 7-stelligen SHA-Tag -- NICHT den vollen github.sha. GIT_SHA (voll) bleibt
@@ -229,6 +232,36 @@ stufe() {  # <dienste-alternation> <zu-pruefender-dienst>
 
 hole_compose
 bt_vorher="$(image_von backend-test)"
+
+# Probelauf (29.09.2026, Audit CI BF-10): Der Notfall-Deploy war nie gelaufen,
+# und ein echter Lauf veraendert Produktion. Der Probelauf geht denselben Weg
+# bis unmittelbar vor update_stack -- Zugang zur Portainer-API (Stack-Datei,
+# Variablen, Container), Tag-Umschreibung aller drei Dienste auf einer Kopie,
+# Gegenprobe auf backend-test, Statusabfrage -- und schreibt NICHTS. Was
+# danach kommt (update_stack, Warten auf gesund, Verify), laeuft bei jedem
+# Push auf main im CI-Deploy mit genau diesem Skript.
+if [ "$PROBELAUF" = "1" ]; then
+  echo "== Probelauf: es wird nichts am Stack geaendert =="
+  cp compose.yml compose.vorher.yml
+  schreibe_tags "backend|frontend|backend2"
+  for d in backend backend2 frontend backend-test; do
+    echo "  $d: $(awk -v svc="$d" '$0 ~ "^  "svc":" {f=1; next} f && /^  [A-Za-z0-9_.-]+:/ {f=0} f && /image:/ {print $2; exit}' compose.vorher.yml) -> $(image_von "$d")"
+  done
+  fehler=0
+  for d in backend backend2 frontend; do
+    case "$(image_von "$d")" in *":$IMG_TAG") ;; *) echo "::error::Probelauf: $d stuende nicht auf :$IMG_TAG"; fehler=1 ;; esac
+  done
+  if [ "$(image_von backend-test)" != "$bt_vorher" ]; then echo "::error::Probelauf: Tag-Umschreibung wuerde backend-test anfassen"; fehler=1; fi
+  anzahl_env="$(api "$P_URL/api/stacks/$STACK_ID" | python3 -c "import sys,json;print(len(json.load(sys.stdin).get('Env') or []))" 2>/dev/null || echo "?")"
+  echo "  Stack-Variablen, die mitgeschickt wuerden: $anzahl_env"
+  for d in backend backend2 frontend; do echo "  laufend $d: $(container_zustand "$d" | cut -f2,3)"; done
+  echo "  live: $(curl -sS --max-time 10 "$STATUS_URL" 2>/dev/null | head -c 300 || echo "nicht erreichbar")"
+  rm -f compose.vorher.yml
+  if [ "$fehler" != "0" ]; then echo "::error::Probelauf mit Fehlern -- ein echter Lauf wuerde hier abbrechen."; exit 1; fi
+  echo "OK Probelauf: Zugang, Images und Umschreibung stimmen, update_stack wurde NICHT aufgerufen."
+  exit 0
+fi
+
 b2_vorher="$(container_id backend2)"
 echo "backend2 vor Stufe 1: ${b2_vorher:-<kein Container>}"
 
