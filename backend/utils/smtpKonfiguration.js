@@ -66,4 +66,34 @@ const smtpKonfiguration = (env = process.env) => {
   };
 };
 
-module.exports = { smtpTlsOptionen, smtpKonfiguration };
+// MASSENVERSAND (29.09.2026, Audit Betrieb "SMTP-Grenzen"): Die naechtlichen
+// Laeufe schreiben an viele auf einmal -- Lizenz-Erinnerung an die
+// Gemeindeleitung jeder Gemeinde, deren Lizenz ablaeuft, Loeschwarnung an
+// die Leitung jedes Jahrgangs, dessen Frist naht. Bei vielen Gemeinden mit
+// gleichem Stichtag sind das Hunderte Mails in einem Lauf. Ohne Pool baute
+// jede Mail eine eigene Verbindung samt TLS auf, und nichts begrenzte die
+// Rate; die Grenze des Anbieters (Mails je Stunde, Verbindungen je Minute)
+// ist nicht bekannt. Ueberschritten, lehnt er ab -- die Erinnerung faellt
+// dann fuer diese Nacht aus.
+//
+// Deshalb fuer diese Laeufe ein eigener Transport: EINE gepoolte
+// Verbindung (bis zu 100 Mails je Verbindung) und hoechstens
+// SMTP_MASSEN_JE_MINUTE Mails je Minute (Standard 20, also 1.200 je Stunde).
+// Einzelmails (Passwort, Einladung, Bestaetigung, Listen fuer die Leitung)
+// laufen weiter ueber den normalen Transport -- sie sollen nicht hinter
+// einem Massenlauf in der Warteschlange stehen.
+const MASSEN_STANDARD_JE_MINUTE = 20;
+
+const smtpMassenKonfiguration = (env = process.env, { zeitfensterMs = 60 * 1000 } = {}) => {
+  const jeMinute = parseInt(env.SMTP_MASSEN_JE_MINUTE, 10);
+  return {
+    ...smtpKonfiguration(env),
+    pool: true,
+    maxConnections: 1,
+    maxMessages: 100,
+    rateDelta: zeitfensterMs,
+    rateLimit: Number.isInteger(jeMinute) && jeMinute > 0 ? jeMinute : MASSEN_STANDARD_JE_MINUTE,
+  };
+};
+
+module.exports = { smtpTlsOptionen, smtpKonfiguration, smtpMassenKonfiguration, MASSEN_STANDARD_JE_MINUTE };

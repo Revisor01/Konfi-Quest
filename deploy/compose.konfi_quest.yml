@@ -171,6 +171,11 @@ services:
       #   openssl s_client -connect <SMTP_HOST>:465 -servername <SMTP_HOST> </dev/null
       # Nur als Notnagel, bis das Zertifikat stimmt (Warnzeile im Log):
       # SMTP_TLS_REJECT_UNAUTHORIZED: "false"
+      # Naechtliche Laeufe an viele (Lizenz-Erinnerung, Loeschwarnung) gehen
+      # ueber EINE gepoolte Verbindung und hoechstens so viele Mails je
+      # Minute (Standard 20, utils/smtpKonfiguration.js). Auf die Grenze des
+      # Anbieters setzen, sobald sie bekannt ist:
+      # SMTP_MASSEN_JE_MINUTE: "20"
       # Metrics-Aggregation: /api/metrics fragt BEIDE Replicas (interne Compose-
       # Servicenamen im internal-Netz) ab und mergt sie zu einem Gesamtbild.
       METRICS_PEERS: "http://backend:5000,http://backend2:5000"

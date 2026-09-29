@@ -1412,6 +1412,10 @@ iOS-Build 234 · Android versionCode 128
   Versand statt einer je Person ohne Gerät, und bei einer Störung des
   Mitteilungsdienstes eine Fehlerzeile mit Anzahl und erster Meldung statt
   einer je Gerät. So bleiben frühere Einträge länger lesbar.
+- Nächtliche E-Mails an viele — Lizenz-Erinnerungen und Löschwarnungen —
+  gehen gebündelt über eine Verbindung und in begrenztem Tempo hinaus, damit
+  der Mailanbieter sie nicht ablehnt. Einzelne Mails wie ein Passwort-Reset
+  warten dabei nicht.
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.

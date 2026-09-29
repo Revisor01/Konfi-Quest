@@ -5,11 +5,14 @@
 
 const nodemailer = require('nodemailer');
 const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
-const { smtpKonfiguration } = require('../utils/smtpKonfiguration');
+const { smtpKonfiguration, smtpMassenKonfiguration } = require('../utils/smtpKonfiguration');
 const { adresseFuersProtokoll } = require('../utils/protokoll');
 
-// Gecachter Transporter (wird einmalig erstellt und wiederverwendet)
+// Gecachte Transporter (einmalig erstellt und wiederverwendet): einer fuer
+// Einzelmails, einer fuer die naechtlichen Laeufe an viele (gepoolt und
+// gedrosselt, siehe utils/smtpKonfiguration.js smtpMassenKonfiguration).
 let cachedTransporter = null;
+let cachedMassenTransporter = null;
 
 // SMTP-Konfiguration prüfen. Host und Nutzer kommen AUSSCHLIESSLICH aus der
 // Umgebung (Audit 26.09.2026, Sicherheit BF-12 / S-15): Hier stand ein
@@ -25,10 +28,9 @@ const validateSmtpConfig = () => {
 };
 
 // SMTP Transporter erstellen oder aus Cache holen
-const getTransporter = () => {
-  if (cachedTransporter) {
-    return cachedTransporter;
-  }
+const getTransporter = ({ massenversand = false } = {}) => {
+  if (massenversand && cachedMassenTransporter) return cachedMassenTransporter;
+  if (!massenversand && cachedTransporter) return cachedTransporter;
 
   if (!validateSmtpConfig()) {
     throw new Error('SMTP nicht konfiguriert. SMTP_HOST, SMTP_USER und SMTP_PASS müssen als Umgebungsvariablen gesetzt sein.');
@@ -37,9 +39,22 @@ const getTransporter = () => {
   // Dieselbe Konfiguration wie der Transport in server.js: Zertifikat wird
   // geprueft (BF-09; hier stand `rejectUnauthorized: false`), kein
   // eingebauter Host (BF-12). Begruendung: utils/smtpKonfiguration.js.
+  if (massenversand) {
+    cachedMassenTransporter = nodemailer.createTransport(smtpMassenKonfiguration());
+    return cachedMassenTransporter;
+  }
   cachedTransporter = nodemailer.createTransport(smtpKonfiguration());
-
   return cachedTransporter;
+};
+
+// Beide Transporte schliessen (der gepoolte haelt seine Verbindung offen).
+// Fuer Tests und das Herunterfahren; danach baut der naechste Versand neu auf.
+const transporteSchliessen = () => {
+  for (const t of [cachedTransporter, cachedMassenTransporter]) {
+    if (t && typeof t.close === 'function') t.close();
+  }
+  cachedTransporter = null;
+  cachedMassenTransporter = null;
 };
 
 /**
@@ -50,8 +65,8 @@ const getTransporter = () => {
  * @param {string} options.text - Klartext-Inhalt
  * @param {string} options.html - HTML-Inhalt (optional)
  */
-const sendEmail = async ({ to, subject, text, html }) => {
-  const transporter = getTransporter();
+const sendEmail = async ({ to, subject, text, html, massenversand = false }) => {
+  const transporter = getTransporter({ massenversand });
 
   // Absender aus SMTP_FROM, sonst der SMTP-Nutzer -- kein eingebauter
   // Fallback mehr (BF-12); getTransporter() hat SMTP_USER bereits verlangt.
@@ -73,7 +88,12 @@ const sendEmail = async ({ to, subject, text, html }) => {
     console.error('Fehler beim Senden der E-Mail an %s:', adresseFuersProtokoll(to), error);
     // Transporter-Cache invalidieren bei Verbindungsfehler
     if (error.code === 'ECONNECTION' || error.code === 'EAUTH' || error.code === 'ESOCKET') {
-      cachedTransporter = null;
+      if (massenversand) {
+        if (cachedMassenTransporter) cachedMassenTransporter.close();
+        cachedMassenTransporter = null;
+      } else {
+        cachedTransporter = null;
+      }
     }
     throw error;
   }
@@ -290,7 +310,8 @@ Dein Konfi Quest Team
       </div>
   `);
 
-  return sendEmail({ to: email, subject, text, html });
+  // Naechtlicher Lauf an die Gemeindeleitungen: gepoolt und gedrosselt.
+  return sendEmail({ to: email, subject, text, html, massenversand: true });
 };
 
 /**
@@ -367,7 +388,8 @@ Dein Konfi Quest Team
       </div>
   `);
 
-  return sendEmail({ to: email, subject, text, html });
+  // Naechtlicher Lauf an die Jahrgangsleitungen: gepoolt und gedrosselt.
+  return sendEmail({ to: email, subject, text, html, massenversand: true });
 };
 
 // HTML-Escaping für JEDEN Wert, der ins Mail-HTML eingesetzt wird
@@ -505,6 +527,7 @@ Dein Konfi Quest Team
 
 module.exports = {
   sendEmail,
+  transporteSchliessen,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
   sendLicenseExpiryReminderEmail,
