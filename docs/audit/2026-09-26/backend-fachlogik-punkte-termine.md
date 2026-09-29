@@ -589,12 +589,14 @@ SELECT u.id, rs.name AS rolle_am_konto, uo.organization_id, rw.name AS rolle_dor
   Bewertung („gewollt: die Leitung darf nach der Absage einzelne auf present
   setzen“) offen ist.
   - **Status:** offen 27.09.2026 — Bewertung weiter offen. Später.
+  - **Status:** bleibt offen 29.09.2026 — reproduziert (Pflichttermin, Konfi A `opted_out` und von Hand `present`, Konfi B `confirmed` und `present`, dann `PUT /events/:id/cancel`): A bleibt `opted_out`/`present`, B wird `excused`/`excused` mit `abgemeldet_durch_absage`. Punkte sind nicht berührt (Pflichttermine geben keine), der abgesagte Termin zählt bei A aber als besuchter Pflichttermin. Produktfrage an Simon (Varianten im Abschlussbericht Paket E); keine Änderung ohne Entscheidung.
 - **Check-in-Fenster endet nach dem Beginn.** `checkin.js:84-90` prüft
   `event_date ± checkin_window`; das Fenster schließt also 30 Minuten (Default)
   nach *Beginn*, nicht nach Ende. Wer zu einem zweistündigen Termin 40 Minuten
   zu spät kommt, kann nicht mehr einchecken. Ob das so gemeint ist, sagt das
   Handbuch nicht (`70-termine.md:94` nennt nur den Default).
   - **Status:** offen 27.09.2026 — das Handbuch nennt weiter nur den Standardwert. Später.
+  - **Status:** kein Befund mehr 29.09.2026 — das Verhalten ist gewollt und beschrieben: `70-termine.md`, „Das Check-in-Fenster einstellen" sagt, dass die Zahl in beide Richtungen ab dem Terminbeginn gilt, nie ab der Endzeit, mit Beispiel und Hinweis für lange Konfi-Tage; Nachzügler verbucht die Leitung von Hand. Ob das Fenster bis zum Terminende reichen soll, ist eine Produktfrage (Abschlussbericht Paket E, Empfehlung: so lassen — der QR-Code läuft nicht ab, ein längeres Fenster verlängert die Zeit, in der ein weitergereichtes Foto des Codes wirkt).
 - **`POST /events/:id/generate-qr` ohne Jahrgangsbindung** (`checkin.js:276-307`,
   nur `requireTeamer`): Eine Teamer:in kann den Check-in-Token jedes Termins
   der Gemeinde holen. Wirkung gering (Einchecken setzt eine eigene Buchung
@@ -606,10 +608,12 @@ SELECT u.id, rs.name AS rolle_am_konto, uo.organization_id, rw.name AS rolle_dor
   wird weiter als aktuell angezeigt (Befund 13 in `docs/wissen/abzeichen.md`,
   unverändert). Nur Anzeige, nicht gemessen.
   - **Status:** offen 27.09.2026 — unverändert (nur Anzeige). Später.
+  - **Status:** kein Befund mehr 29.09.2026 — gewollt und beschrieben: `60-badges.md`, „Serie": „Gezählt wird ab der letzten aktiven Woche rückwärts, nicht ab heute." Wertung und Fortschritt lesen dieselbe Funktion (`utils/streakCalculation.js`), laufen also nicht auseinander. Ob der Fortschritt eine gerissene Serie als 0 zeigen soll, während die Wertung bleibt, ist eine Produktfrage (Abschlussbericht Paket E).
 - **Sammelverbuchung** (`anwesenheit.js:48-184`) prüft weder `cancelled` noch
   das Datum; faktisch harmlos, weil eine Absage alle auf `excused` setzt und
   die Oberfläche den Knopf erst ab Terminbeginn zeigt.
   - **Status:** offen 27.09.2026 — unverändert, faktisch harmlos. Später.
+  - **Status:** kein Befund mehr 29.09.2026 — am Code geklärt: Die Sammelverbuchung nimmt nur `status = 'confirmed'` ohne `attendance_status`; die Absage setzt alle Angemeldeten und Wartenden auf `excused`. Nach einer Absage verbucht der Knopf niemanden und vergibt keine Punkte — eine eigene Prüfung auf `cancelled` wäre doppelt. Punkte nach einer Absage gibt es nur einzeln durch die Leitung (Simon, 15.09.2026). Test `tests/routes/sammelverbuchungNachAbsage.test.js` (2: nach Absage 0 verbucht und 0 Punkte, Gegenprobe ohne Absage 2 und 2). Das Datum prüft auch die Einzelverbuchung nicht; den Knopf zeigt die Oberfläche erst ab Terminbeginn.
 - **Sicht `event_booking_stats`** macht einen `Seq Scan` auf `users`
   (161 Zeilen, 3,5 ms je Termin). Wie sich das bei 25.000 Nutzern verhält,
   wenn die Terminliste die Sicht je Termin per LATERAL aufruft, ist hier nicht
