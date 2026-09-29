@@ -44,17 +44,72 @@
  * steht device_id neben der Nutzer-ID). Der Nutzen rechtfertigt das nicht.
  *
  * ---------------------------------------------------------------------------
- * ABSCHALTBARKEIT
+ * ABSCHALTBARKEIT (Audit 26.09.2026, Sicherheit BF-22; Schalter seit 29.09.2026)
  * ---------------------------------------------------------------------------
- * `diagnoseSchalten` reicht auf `setEnabled` durch. Das Plugin wendet den
- * Wert erst beim NAECHSTEN App-Start an (so arbeitet das Firebase-SDK) —
- * eine Oberflaeche dafuer muesste das also so formulieren. Die Funktion
- * existiert, damit eine Einwilligungsabfrage sie nur noch aufrufen muss;
- * eine solche Oberflaeche gibt es heute nicht.
+ * Im Profil steht in allen drei Rollen der Schalter "Absturzberichte senden"
+ * (shared/AbsturzberichteSchalter.tsx). Die Wahl gilt fuer das GERAET, nicht
+ * fuer das Konto, und liegt in den Preferences (`DIAGNOSE_SCHLUESSEL`): steht
+ * dort 'aus', ist die Diagnose aus; fehlt der Eintrag, ist sie an.
+ *
+ * VORGABE "AN", und warum: Die Datenschutzerklaerung stuetzt die Diagnose auf
+ * das berechtigte Interesse (§ 6 Nr. 8 DSG-EKD, stabiler Betrieb). Dazu passt
+ * ein Widerspruch (§ 25 DSG-EKD), keine Einwilligung vorab -- der Schalter IST
+ * dieser Widerspruch, jederzeit und ohne Begruendung. Uebertragen wird ohnehin
+ * nur das Datensparsame oben. Eine Einwilligung vorab (Vorgabe "aus") waere
+ * die strengere Wahl; sie liegt bei Simon (Rechtsgrundlage), nicht im Code.
+ *
+ * WAS "AUS" HEISST -- zwei Ebenen, weil eine allein nicht reicht:
+ *   1. In JavaScript sendet keine Funktion dieses Moduls mehr etwas: kein
+ *      Bericht, keine Wegmarke, keine Merkmale (`diagnoseErlaubt`). Das wirkt
+ *      sofort.
+ *   2. Nativ: `setEnabled(false)` schaltet das Sammeln von Crashlytics ab, und
+ *      `deleteUnsentReports` verwirft, was noch auf dem Geraet liegt. Das
+ *      Firebase-SDK wendet `setEnabled` erst beim NAECHSTEN Start an; ein
+ *      Absturz im selben Lauf wird zwar noch aufgezeichnet, geht aber nicht
+ *      mehr hinaus: Beim naechsten Start ist das Sammeln aus, und
+ *      `diagnoseStarten` verwirft den Bericht, bevor er gesendet wird.
+ *
+ * Laesst sich die Einstellung nicht lesen, gilt "aus" -- lieber ein Bericht zu
+ * wenig als einer gegen den erklaerten Willen.
  */
 
 import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
 import { FirebaseCrashlytics } from '@capacitor-firebase/crashlytics';
+
+/**
+ * Preferences-Schluessel der Geraete-Einstellung. 'aus' = keine
+ * Absturzberichte; fehlt der Eintrag, ist die Diagnose an (siehe
+ * ABSCHALTBARKEIT oben). Ueberlebt das Abmelden -- wie die App-Sperre ist es
+ * eine Aussage ueber das Geraet, nicht ueber das Konto.
+ */
+export const DIAGNOSE_SCHLUESSEL = 'konfi_absturzberichte';
+
+/** Gelesene Einstellung, einmal je App-Lauf (der Schalter setzt sie neu). */
+let erlaubtStand: Promise<boolean> | null = null;
+
+/** Nur fuer Tests: gelesene Einstellung vergessen (entspricht einem Neustart). */
+export function diagnoseEinstellungVergessen(): void {
+  erlaubtStand = null;
+}
+
+/**
+ * Darf die Diagnose senden? Liest die Geraete-Einstellung einmal je Lauf.
+ * Nicht lesbar -> false (siehe ABSCHALTBARKEIT: lieber ein Bericht zu wenig).
+ */
+export function diagnoseErlaubt(): Promise<boolean> {
+  if (!erlaubtStand) {
+    erlaubtStand = (async () => {
+      try {
+        const { value } = await Preferences.get({ key: DIAGNOSE_SCHLUESSEL });
+        return value !== 'aus';
+      } catch {
+        return false;
+      }
+    })();
+  }
+  return erlaubtStand;
+}
 
 /**
  * Obergrenze fuer nicht-fatale Meldungen JE APP-SITZUNG.
@@ -143,6 +198,7 @@ export async function diagnoseMerkmaleSetzen(angaben: {
   appFassung?: string | null;
 }): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
+  if (!(await diagnoseErlaubt())) return;
 
   await still(async () => {
     await FirebaseCrashlytics.setCustomKey({
@@ -197,6 +253,9 @@ export async function fehlerMelden(
   zusatz?: { komponente?: string },
 ): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) return false;
+  // Ausgeschaltet zaehlt auch nicht gegen die Drosselung: Wer die Diagnose
+  // spaeter wieder einschaltet, bekommt ab dann die volle Zahl Berichte.
+  if (!(await diagnoseErlaubt())) return false;
 
   const text = fehler instanceof Error
     ? `${fehler.name}: ${fehler.message}`
@@ -234,18 +293,44 @@ export async function fehlerMelden(
  */
 export async function wegmarke(text: string): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
+  if (!(await diagnoseErlaubt())) return;
   await still(() => FirebaseCrashlytics.log({ message: gekuerzt(text) }));
 }
 
 /**
- * Absturzdiagnose ein- oder ausschalten.
+ * Absturzdiagnose ein- oder ausschalten (Schalter im Profil).
  *
- * Wirkt erst beim naechsten App-Start (so arbeitet das Firebase-SDK). Fuer
- * eine Einwilligungsabfrage gedacht, die es heute noch nicht gibt.
+ * Merkt die Wahl auf dem Geraet und wirkt in JavaScript sofort; nativ greift
+ * `setEnabled` ab dem naechsten Start, bis dahin verwirft
+ * `deleteUnsentReports` beim Ausschalten, was noch auf dem Geraet liegt
+ * (siehe ABSCHALTBARKEIT oben). Im Web ein no-op -- dort gibt es weder
+ * Crashlytics noch den Schalter.
  */
 export async function diagnoseSchalten(aktiv: boolean): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
+  erlaubtStand = Promise.resolve(aktiv);
+  try {
+    if (aktiv) await Preferences.remove({ key: DIAGNOSE_SCHLUESSEL });
+    else await Preferences.set({ key: DIAGNOSE_SCHLUESSEL, value: 'aus' });
+  } catch {
+    // best-effort: Fuer diesen Lauf gilt die Wahl trotzdem (erlaubtStand).
+  }
   await still(() => FirebaseCrashlytics.setEnabled({ enabled: aktiv }));
+  if (!aktiv) await still(() => FirebaseCrashlytics.deleteUnsentReports());
+}
+
+/**
+ * Beim App-Start: die gemerkte Wahl an Crashlytics geben.
+ *
+ * Ist die Diagnose aus, verwirft das die Berichte, die noch auf dem Geraet
+ * liegen -- auch den eines Absturzes aus dem Lauf, in dem ausgeschaltet
+ * wurde. Ist sie an, bleibt alles wie gehabt. Im Web ein no-op.
+ */
+export async function diagnoseStarten(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  const aktiv = await diagnoseErlaubt();
+  await still(() => FirebaseCrashlytics.setEnabled({ enabled: aktiv }));
+  if (!aktiv) await still(() => FirebaseCrashlytics.deleteUnsentReports());
 }
 
 /**

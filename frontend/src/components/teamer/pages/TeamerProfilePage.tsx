@@ -47,6 +47,7 @@ import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import EinladungenKarte from '../../shared/EinladungenKarte';
 import PushAuswahlEintrag from '../../shared/PushAuswahl';
+import AbsturzberichteSchalter from '../../shared/AbsturzberichteSchalter';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import SpiritFooter from '../../shared/SpiritFooter';
@@ -580,6 +581,8 @@ const TeamerProfilePage: React.FC = () => {
 
                 {/* App-Sperre: Face ID / Fingerabdruck vor der laufenden App */}
                 <AppSperreSchalter variante="teamer" />
+                {/* Absturzberichte an/aus (nur in der App, im Browser leer) */}
+                <AbsturzberichteSchalter variante="teamer" />
                 <EinladungenKarte variante="teamer" />
                 <PushAuswahlEintrag variante="teamer" presentingRef={pageRef} />
 

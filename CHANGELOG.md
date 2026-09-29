@@ -193,6 +193,10 @@ iOS-Build 234 · Android versionCode 128
   zusagt oder absagt — als Mitteilung und im Postfach; Antippen öffnet die
   Benutzerliste. Gehört die einladende Person dort nicht mehr zur
   Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
+- Im Profil lassen sich die Absturzberichte abschalten: Der Schalter
+  „Absturzberichte senden" unter „Konto-Einstellungen" gilt für das Gerät;
+  ausgeschaltet geht kein Bericht mehr hinaus, und was noch auf dem Gerät lag,
+  wird verworfen.
 
 ### Geändert
 - Im Browser zeigt der Betrachter PDFs so wie die App auf Android: alle Seiten

@@ -739,3 +739,24 @@ Von selbst leert die App ihn,
 
 So findet niemand, der das Gerät nach dir benutzt, deine Bilder und Dateien
 vor — weder aus dem Chat noch aus Challenges oder dem Material.
+
+## Absturzberichte abschalten
+
+Stürzt die App ab oder fängt sie einen Programmfehler ab, schickt sie einen
+Bericht an einen Absturzdienst, damit sich der Fehler finden lässt — ohne
+Namen, Benutzernamen, Inhalte oder Eingaben. Was darin steht, beschreibt die
+[Datenschutzerklärung](/datenschutz.html) in Abschnitt 9b.
+
+Im eigenen [Profil](#das-eigene-profil-finden) steht unter
+**„Konto-Einstellungen"** der Schalter **„Absturzberichte senden"**. Er ist an,
+bis du ihn ausschaltest.
+
+| Schalter | Was passiert |
+|---|---|
+| **Aus** | Die App sendet ab sofort keine Berichte mehr und verwirft, was noch auf dem Gerät liegt. Stürzt sie vor dem nächsten Start noch einmal ab, wird auch dieser Bericht beim Neustart verworfen statt gesendet. |
+| **An** | Berichte gehen wieder hinaus; ganz greift das ab dem nächsten Start. |
+
+**Die Einstellung gilt für dieses Gerät**, nicht für dein Konto: Sie bleibt,
+wenn du dich abmeldest oder sich jemand anderes auf dem Gerät anmeldet. Den
+Schalter gibt es nur in der App auf dem Handy oder Tablet — im Browser sendet
+die App keine Absturzberichte.

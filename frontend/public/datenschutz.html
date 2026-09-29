@@ -225,7 +225,7 @@
             </ul>
             <p>Der Hostingdienstleister hat als Auftragsverarbeiter technisch Zugriff auf die Daten und ist vertraglich zur Einhaltung des DSG-EKD verpflichtet.</p>
             <p>Beim Versand von Push-Benachrichtigungen werden das Push-Token und der Inhalt der Benachrichtigung an den Dienst Firebase Cloud Messaging von Google übermittelt (siehe Abschnitt&nbsp;9).</p>
-            <p>Stürzt die App ab oder fängt sie einen Programmfehler ab, werden technische Angaben dazu an den Dienst Firebase Crashlytics von Google übermittelt (siehe Abschnitt&nbsp;9b).</p>
+            <p>Stürzt die App ab oder fängt sie einen Programmfehler ab, werden technische Angaben dazu an den Dienst Firebase Crashlytics von Google übermittelt, solange Sie die Absturzberichte nicht im Profil abgeschaltet haben (siehe Abschnitt&nbsp;9b).</p>
             <p>Eine Weitergabe an sonstige Dritte erfolgt nicht, es sei denn, eine gesetzliche Verpflichtung besteht.</p>
         </div>
 
@@ -275,7 +275,8 @@
             </ul>
             <p>Ausdrücklich <strong>nicht</strong> übermittelt werden: Name, Benutzername oder Nutzerkennung, E-Mail-Adresse, Jahrgang, der Name der Gemeinde, Inhalte von Beiträgen, Fotos oder Chat-Nachrichten sowie Eingaben aus Formularen. Wir setzen bewusst <strong>keine eigene Nutzer- oder Gerätekennung</strong>, über die sich Berichte einer Person zuordnen ließen.</p>
             <p>Dabei kann es zu einer Übermittlung von Daten an Server der Google LLC in den USA kommen. Für diese Übermittlung in ein Drittland stützen wir uns auf die von der EU-Kommission erlassenen Standardvertragsklauseln. Es besteht das Risiko, dass US-Behörden unter bestimmten Voraussetzungen auf diese Daten zugreifen können.</p>
-            <p>Rechtsgrundlage ist unser berechtigtes Interesse an einem stabilen und sicheren Betrieb der App (§ 6 Nr. 8 DSG-EKD). Absturzberichte werden bei Firebase Crashlytics nach 90 Tagen gelöscht.</p>
+            <p><strong>Abschalten:</strong> Im Profil der App steht unter „Konto-Einstellungen“ der Schalter <strong>„Absturzberichte senden“</strong>. Er ist eingeschaltet, bis Sie ihn ausschalten. Ausgeschaltet sendet die App keine Berichte, Fehlermeldungen und Merkmale mehr an Firebase Crashlytics, und was noch nicht gesendet auf dem Gerät liegt, wird verworfen. Das Sammeln durch den Dienst selbst endet mit dem nächsten Start der App; ein Absturz vor diesem Neustart wird noch aufgezeichnet, beim Neustart aber verworfen statt gesendet. Die Einstellung gilt für das Gerät und bleibt auch nach dem Abmelden bestehen.</p>
+            <p>Rechtsgrundlage ist unser berechtigtes Interesse an einem stabilen und sicheren Betrieb der App (§ 6 Nr. 8 DSG-EKD). Mit dem Schalter können Sie dieser Verarbeitung jederzeit und ohne Angabe von Gründen widersprechen (§ 25 DSG-EKD). Absturzberichte werden bei Firebase Crashlytics nach 90 Tagen gelöscht.</p>
         </div>
 
         <div class="section">

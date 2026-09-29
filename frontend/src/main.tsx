@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { migrateToPreferences } from './services/migrateStorage';
 import { initTokenStore } from './services/tokenStore';
-import { globaleFehlerkanaeleAnhaengen } from './services/absturzdiagnose';
+import { globaleFehlerkanaeleAnhaengen, diagnoseStarten } from './services/absturzdiagnose';
 import { tempDateienAufraeumen } from './utils/nativeFileViewer';
 
 // KEINE Messung an dieser Stelle — und das ist Absicht.
@@ -36,6 +36,13 @@ import { tempDateienAufraeumen } from './utils/nativeFileViewer';
 // Kandidaten fuer eine unbehandelte Ablehnung sind. Der Aufruf ist im Browser
 // harmlos: die Handler werden gesetzt, melden dort aber nichts (no-op).
 globaleFehlerkanaeleAnhaengen();
+
+// Die Wahl "Absturzberichte senden" aus dem Profil an Crashlytics geben --
+// ohne await, der Start haengt an nichts (siehe unten). Ist sie aus, verwirft
+// das die Berichte, die noch auf dem Geraet liegen, bevor Crashlytics sie
+// hinausschickt (services/absturzdiagnose.ts, ABSCHALTBARKEIT). Im Browser
+// ein no-op.
+void diagnoseStarten();
 
 const container = document.getElementById('root');
 const root = createRoot(container!);

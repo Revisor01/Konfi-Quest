@@ -60,4 +60,22 @@ describe('9b Absturzberichte: der Text folgt dem Code', () => {
     expect(zeichen).toBe(200);
     expect(text).toContain(`die Fehlermeldung (auf ${zeichen} Zeichen gekürzt)`);
   });
+
+  it('nennt den Schalter unter dem Namen, den die App zeigt (Sicherheit BF-22)', () => {
+    const titel = lies('src/components/shared/AbsturzberichteSchalter.tsx')
+      .match(/app-list-item__title">([^<]+)</)?.[1];
+    expect(titel).toBe('Absturzberichte senden');
+    expect(text).toContain(`der Schalter „${titel}“`);
+    // und das Handbuch unter demselben Namen
+    expect(readFileSync(join(process.cwd(), '../docs/handbuch/03-bedienung.md'), 'utf8'))
+      .toContain(`**„${titel}"**`);
+  });
+
+  it('sagt, dass das Abschalten nativ erst mit dem naechsten Start ganz greift', () => {
+    // absturzdiagnose.ts: setEnabled wirkt erst beim naechsten Start; bis
+    // dahin verwirft deleteUnsentReports / diagnoseStarten. Der Text darf
+    // nicht "sofort, vollstaendig" versprechen.
+    expect(lies(DIAGNOSE)).toMatch(/deleteUnsentReports\(\)/);
+    expect(text).toContain('Das Sammeln durch den Dienst selbst endet mit dem nächsten Start der App');
+  });
 });

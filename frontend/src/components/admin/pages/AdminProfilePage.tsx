@@ -35,6 +35,7 @@ import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import EinladungenKarte from '../../shared/EinladungenKarte';
+import AbsturzberichteSchalter from '../../shared/AbsturzberichteSchalter';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
@@ -315,6 +316,8 @@ const AdminProfilePage: React.FC = () => {
 
                 {/* App-Sperre: Face ID / Fingerabdruck vor der laufenden App */}
                 <AppSperreSchalter variante="users" />
+                {/* Absturzberichte an/aus (nur in der App, im Browser leer) */}
+                <AbsturzberichteSchalter variante="users" />
                 {/* Offene Einladungen in eine weitere Gemeinde -- im Profil
                     wie bei Konfis und Team; Push und Postfach fuehren hierher
                     (pushNavigation: gemeinde_einladung -> /admin/profile).
