@@ -4191,6 +4191,13 @@ paths:
         ist ueber GET /api/teamer/konfi-zeit (die Person) und
         GET /api/teamer/{userId}/konfi-zeit (Leitung) abrufbar. Antwortform
         unveraendert.
+        BEHOBEN 28.09.2026 (Simon: "Konfi und Team geht nicht parallel"):
+        Migration 101 hat jedes damalige Konto mit seiner Rolle auch in
+        user_organizations eingetragen, auch fuer die Stamm-Gemeinde. Die
+        Befoerderung setzte nur users.role_id -- in user_organizations blieb
+        "konfi" stehen, und fuer jede Abfrage ueber diese Tabelle war die
+        Person weiter Konfi. Jetzt wechselt die Zeile der Stamm-Gemeinde in
+        derselben Transaktion mit. Test tests/routes/konfiOderTeam.test.js.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]

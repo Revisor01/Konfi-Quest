@@ -1676,6 +1676,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // 3. Rolle ändern + teamer_since setzen
             await client.query('UPDATE users SET role_id = $1, teamer_since = CURRENT_DATE WHERE id = $2', [teamerRole.id, konfiId]);
+            // 3a. Die Zeile der Stamm-Gemeinde in user_organizations zieht mit
+            // (28.09.2026, "Konfi und Team geht nicht parallel"): Migration 101
+            // hat jedes damalige Konto mit seiner Rolle auch dort eingetragen.
+            // Blieb dort "konfi" stehen, war die befoerderte Person fuer jede
+            // Abfrage ueber user_organizations weiter Konfi (etwa die
+            // Nachpruefung der Konfi-Abzeichen in badges.js).
+            await client.query(
+                'UPDATE user_organizations SET role_id = $1 WHERE user_id = $2 AND organization_id = $3',
+                [teamerRole.id, konfiId, req.user.organization_id]
+            );
 
             // 4. Event-Buchungen löschen.
             //

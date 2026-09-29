@@ -18,6 +18,7 @@ const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
+const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
@@ -353,11 +354,13 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       }
 
       // Verify role exists in organization if role_id is provided
+      let neueRolle = null;
       if (role_id) {
-        const { rows: [role] } = await db.query("SELECT id FROM roles WHERE id = $1 AND organization_id = $2", [role_id, organizationId]);
+        const { rows: [role] } = await db.query("SELECT id, name FROM roles WHERE id = $1 AND organization_id = $2", [role_id, organizationId]);
         if (!role) {
           return res.status(400).json({ error: 'Ungültige Rolle für diese Organisation' });
         }
+        neueRolle = role;
       }
 
       // IN EINER WEITEREN GEMEINDE NUR DIE ROLLE. Name, Benutzername, E-Mail,
@@ -389,6 +392,18 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         }
         if (role_id === undefined) {
           return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
+        }
+      }
+
+      // KONFI UND TEAM NIE ZUGLEICH (Simon, 28.09.2026), auch nicht ueber
+      // Gemeindegrenzen: In einer weiteren Gemeinde gibt es keine Konfis, und
+      // zuhause wird nur Konfi, wer keine weitere Gemeinde hat. Bis dahin
+      // schrieb dieser Weg jede Rolle der Gemeinde -- die Oberflaeche bietet
+      // die Konfi-Rolle nicht an, der Server liess sie aber zu.
+      if (neueRolle) {
+        const konflikt = await pruefeKonfiOderTeam(db, { userId: id, organizationId, rolle: neueRolle.name });
+        if (konflikt) {
+          return res.status(409).json(konflikt);
         }
       }
 
@@ -434,7 +449,29 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         const whereClause = `WHERE id = $${updateParams.length - 1} AND organization_id = $${updateParams.length}`;
         const updateQuery = `UPDATE users SET ${updateFields.join(', ')} ${whereClause}`;
 
-        ({ rowCount } = await db.query(updateQuery, updateParams));
+        // DIE ZEILE DER STAMM-GEMEINDE IN user_organizations WECHSELT MIT
+        // (28.09.2026). Migration 101 hat jedes damalige Konto mit seiner
+        // Rolle auch dort eingetragen. Wechselte danach nur users.role_id,
+        // stand in user_organizations die alte Rolle -- aus einer Teamer:in,
+        // die Konfi war, wurde fuer jede Abfrage ueber user_organizations
+        // wieder eine Konfi. Beides in EINER Transaktion.
+        const client = await db.getClient();
+        try {
+          await client.query('BEGIN');
+          ({ rowCount } = await client.query(updateQuery, updateParams));
+          if (rowCount > 0 && neueRolle) {
+            await client.query(
+              'UPDATE user_organizations SET role_id = $1 WHERE user_id = $2 AND organization_id = $3',
+              [neueRolle.id, id, organizationId]
+            );
+          }
+          await client.query('COMMIT');
+        } catch (txErr) {
+          await client.query('ROLLBACK').catch(() => {});
+          throw txErr;
+        } finally {
+          client.release();
+        }
       } else {
         // Zusatzmitglied: Die Rolle gilt je Gemeinde und steht in
         // user_organizations -- users.role_id (Stamm-Gemeinde) bleibt.

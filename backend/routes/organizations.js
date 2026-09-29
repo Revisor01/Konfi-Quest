@@ -12,6 +12,7 @@ const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
+const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 
 // Organizations routes
 // ============================================
@@ -1195,6 +1196,15 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       );
       if (!role) {
         return res.status(400).json({ error: `Rolle '${role_name}' existiert in dieser Organisation nicht` });
+      }
+
+      // KONFI UND TEAM NIE ZUGLEICH, auch nicht ueber eine weitere Gemeinde
+      // (Simon, 28.09.2026). Oben steht nur die Stammrolle; ein Konto, das
+      // zuhause Team und anderswo Konfi ist (Altbestand), kaeme sonst in
+      // eine weitere Gemeinde. Status 400 wie die Konfi-Ablehnung oben.
+      const konflikt = await pruefeKonfiOderTeam(db, { userId: user_id, organizationId: orgId, rolle: role_name });
+      if (konflikt) {
+        return res.status(400).json(konflikt);
       }
 
       // Upsert: vorhandene Mitgliedschaft aktualisiert die Rolle

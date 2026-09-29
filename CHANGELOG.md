@@ -419,6 +419,10 @@ iOS-Build 233 · Android versionCode 127
   gemeinschaftlichen Chat der Gemeinde; fremde Zweiergespräche bleiben für
   alle zu und lassen sich auch nicht mehr löschen. In der Chatliste ändert
   sich nichts.
+- Ein Konto ist entweder Konfi oder im Team, auch über Gemeindegrenzen
+  hinweg: Konfi ist nur, wer zu genau einer Gemeinde gehört. Einladungen,
+  Zuweisungen und Rollenwechsel, die beides verbinden würden, lehnt die App
+  mit einer Erklärung ab.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

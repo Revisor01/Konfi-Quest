@@ -168,6 +168,14 @@ Gemeinde**. Wer in der einen zur Org-Leitung gehört, kann in der anderen
 Teamer:in sein; die Rechte richten sich immer nach der Gemeinde, in der man
 gerade arbeitet, nie nach der Gemeinde am Konto.
 
+**Konfi oder Team, nie beides.** Ein Konto ist entweder Konfi — dann gehört es
+zu genau einer Gemeinde — oder im Team (Teamer:in, Leitung, Org-Leitung), dann
+auch in mehreren Gemeinden. Wer irgendwo Konfi ist, lässt sich in keine weitere
+Gemeinde einladen oder aufnehmen, und wer noch zu einer weiteren Gemeinde
+gehört, wird nirgends Konfi. Die App lehnt solche Einladungen, Zusagen und
+Rollenwechsel mit einer Erklärung ab. Aus einer Konfi wird Team über die
+[Beförderung](#eine-rolle-aendern).
+
 ### Jemanden in die eigene Gemeinde einladen
 
 Die Org-Leitung lädt selbst ein: **Mehr › Benutzer:innen**, oben rechts der
@@ -413,4 +421,6 @@ zugewiesen, bleibt sie in dessen Chat — jetzt als Teamer:in. Zweiergespräche
 und Gruppen, in denen sie ist, bleiben bestehen.
 
 Alle anderen Rollenwechsel macht die Org-Leitung unter
-**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-leitung)**.
+**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-leitung)**. Die
+Konfi-Rolle lässt sich dabei nur vergeben, wenn die Person zu keiner weiteren
+Gemeinde gehört ([Konfi oder Team, nie beides](#in-mehreren-gemeinden-mitarbeiten)).

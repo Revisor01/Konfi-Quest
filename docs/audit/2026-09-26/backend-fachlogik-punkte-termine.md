@@ -525,25 +525,39 @@ Konfis einer weiteren Gemeinde betreffen, treffen also nur Altbestand. Zeilenang
 
 - **Status:** offen 27.09.2026 — für 2.3.x vorgemerkt, erst Umfang in Produktion messen (Konten mit
   verschiedenen Rollen in verschiedenen Gemeinden; Abfrage unter der Tabelle).
+- **Nachtrag 28.09.2026:** Simons Regel „Konfi und Team geht nicht parallel": Ein Konto ist entweder
+  Konfi (genau eine Gemeinde, die Stamm-Gemeinde) oder Team (teamer, admin, org_admin, auch in mehreren
+  Gemeinden), nie beides (`utils/konfiOderTeam.js`). Jeder Schreibweg, der eine Rolle vergibt, prüft sie
+  jetzt: Einladung anlegen (Zielkonto nirgends Konfi, sonst dieselbe 404) und annehmen (409
+  `konfi_und_team`, mit dem Stand der Annahme), Zuweisung durch den Super-Admin (400, jetzt über beide
+  Quellen), Rollenwechsel in der Benutzerverwaltung zuhause und in einer weiteren Gemeinde (409). Die
+  Beförderung und der Rollenwechsel zuhause ziehen die Zeile der Stamm-Gemeinde in `user_organizations`
+  mit — Migration 101 hatte jedes damalige Konto dort eingetragen, und nach einer Beförderung stand da
+  weiter `konfi`. Die Registrierung mit Einladungscode legt immer ein neues Konto an (vergebener
+  Benutzername: 409) und ist kein Weg dorthin. Test `tests/routes/konfiOderTeam.test.js` (22, ohne Fix 9
+  rot). Damit sind die Zeilen erledigt, die nur Konfis einer weiteren Gemeinde betreffen, und die, die nur
+  Konfi und Nicht-Konfi trennen; die Messabfrage für den Altbestand steht in
+  `docs/auftraege/lokaler-agent/06-mischkonten.md`. Übrig bleiben Team-Rollen, die je Gemeinde verschieden
+  sind (Gesprächsvorlage `docs/audit/2026-09-28/mehrfach-konten.md`).
 
-| Stelle (Datei:Zeile) | Liest | Auswirkung |
-|---|---|---|
-| `services/backgroundService.js:257-274`, `:457` | Rolle und Gemeinde am Konto | Der Abzeichen- und Zähler-Lauf prüft nur die Stamm-Gemeinde; Badges einer weiteren Gemeinde entstehen nur über die Routen. |
-| `services/backgroundService.js:1690-1700`, `:1731-1742` | Stamm-Rolle `konfi` | Die Auto-Löschung (Tag 60 soft, Tag 120 hart) nimmt das ganze Konto, auch wenn die Person in einer anderen Gemeinde im Team ist — die schwerste Folge der Liste (Datenverlust). |
-| `routes/events/anwesenheit.js:82-85`, `:298-303` | Stamm-Rolle | Die Sammelverbuchung trennt Konfi- und Team-Buchungen und vergibt Punkte nach der Rolle zuhause. |
-| `utils/bookingUtils.js:520-523`, `:728-731`; `utils/buchungszahlen.js:45-82`; `routes/events/teilnehmer.js:131-136`, `:171-200` | Stamm-Rolle | Konfi- und Team-Kontingent, Nachrücken und die Zahlen der Terminlisten zählen eine Person nach ihrer Rolle zuhause. |
-| `utils/eventChat.js:83-88`, `:122-128` | Stamm-Rolle | `user_type` im Event-Chat nach der Rolle zuhause. |
-| `utils/jahrgangChat.js:103-109` | Stamm-Rolle und -Gemeinde | Konfis einer weiteren Gemeinde kommen nicht in den Jahrgangs-Chat. |
-| `utils/konfiTerminSicht.js:101-112` (`ladeKonfisDieTerminSehen`) | Stamm-Rolle und -Gemeinde | „Neues Event!" erreicht Konfis einer weiteren Gemeinde nicht. |
-| `routes/events/verwaltung.js:274-284`, `:306`, `:527`; `routes/events/serien.js:310` | Stamm-Rolle und -Gemeinde | Die Einschreibung in Pflichttermine übergeht Konfis einer weiteren Gemeinde. |
-| `services/pushService.js:2109-2125`, `:2198-2212` | Stamm-Rolle | Challenge-Start und Galerie-Push erreichen Konfis einer weiteren Gemeinde nicht. |
-| `services/pushService.js:462-472` (`resolveRecipientOrgId`) | Stamm-Gemeinde | Ein Push ohne ausdrückliche Gemeinde im Payload wird der Stamm-Gemeinde zugeordnet (Sprungziel, Zähler). |
-| `routes/wrapped.js:716-717`, `:1100-1101`, `:2389-2390` | Stamm-Rolle | Der Konfi-Rückblick zählt nur Konten mit Rolle `konfi` zuhause. |
-| `utils/konfiLimit.js:60-66` | Stamm-Rolle und -Gemeinde | Die Konfi-Grenze der Lizenz zählt Konfis einer weiteren Gemeinde nicht. |
-| `routes/teamer.js:410-425`, `:600-615` | Stamm-Rolle und -Gemeinde | Badges und Zertifikate einer Teamer:in aus einer weiteren Gemeinde: 404. |
-| `routes/challenges.js:1185-1196`, `:1352`, `:1493` | Stamm-Gemeinde | Urheber:innen-Liste und -Prüfung kennen Personen einer weiteren Gemeinde nicht (Chat BF-08, Rest). |
-| `routes/konfi-management.js:108-113`, `:564`, `:1069` | Stamm-Rolle und -Gemeinde | Konfi-Liste und Konfi-Detail zeigen Konfis einer weiteren Gemeinde nicht. |
-| `utils/liveUpdate.js:291` (`sendToUserByRole`) | Stamm-Rolle | Das eigene Nachlade-Signal geht an den Raum der Rolle zuhause — bewusst so gelassen („Wer bekommt was" BF-15, kein Fremdempfang). |
+| Stelle (Datei:Zeile) | Liest | Auswirkung | Status |
+|---|---|---|---|
+| `services/backgroundService.js:257-274`, `:457` | Rolle und Gemeinde am Konto | Der Abzeichen- und Zähler-Lauf prüft nur die Stamm-Gemeinde; Badges einer weiteren Gemeinde entstehen nur über die Routen. | offen |
+| `services/backgroundService.js:1690-1700`, `:1731-1742` | Stamm-Rolle `konfi` | Die Auto-Löschung (Tag 60 soft, Tag 120 hart) nimmt das ganze Konto, auch wenn die Person in einer anderen Gemeinde im Team ist — die schwerste Folge der Liste (Datenverlust). | offen |
+| `routes/events/anwesenheit.js:82-85`, `:298-303` | Stamm-Rolle | Die Sammelverbuchung trennt Konfi- und Team-Buchungen und vergibt Punkte nach der Rolle zuhause. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): Die Stellen trennen nur Konfi und Nicht-Konfi, und das ist für ein Konto jetzt in jeder Gemeinde dasselbe; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `utils/bookingUtils.js:520-523`, `:728-731`; `utils/buchungszahlen.js:45-82`; `routes/events/teilnehmer.js:131-136`, `:171-200` | Stamm-Rolle | Konfi- und Team-Kontingent, Nachrücken und die Zahlen der Terminlisten zählen eine Person nach ihrer Rolle zuhause. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): Die Stellen trennen nur Konfi und Nicht-Konfi, und das ist für ein Konto jetzt in jeder Gemeinde dasselbe; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `utils/eventChat.js:83-88`, `:122-128` | Stamm-Rolle | `user_type` im Event-Chat nach der Rolle zuhause. | offen |
+| `utils/jahrgangChat.js:103-109` | Stamm-Rolle und -Gemeinde | Konfis einer weiteren Gemeinde kommen nicht in den Jahrgangs-Chat. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `utils/konfiTerminSicht.js:101-112` (`ladeKonfisDieTerminSehen`) | Stamm-Rolle und -Gemeinde | „Neues Event!" erreicht Konfis einer weiteren Gemeinde nicht. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `routes/events/verwaltung.js:274-284`, `:306`, `:527`; `routes/events/serien.js:310` | Stamm-Rolle und -Gemeinde | Die Einschreibung in Pflichttermine übergeht Konfis einer weiteren Gemeinde. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `services/pushService.js:2109-2125`, `:2198-2212` | Stamm-Rolle | Challenge-Start und Galerie-Push erreichen Konfis einer weiteren Gemeinde nicht. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `services/pushService.js:462-472` (`resolveRecipientOrgId`) | Stamm-Gemeinde | Ein Push ohne ausdrückliche Gemeinde im Payload wird der Stamm-Gemeinde zugeordnet (Sprungziel, Zähler). | offen |
+| `routes/wrapped.js:716-717`, `:1100-1101`, `:2389-2390` | Stamm-Rolle | Der Konfi-Rückblick zählt nur Konten mit Rolle `konfi` zuhause. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `utils/konfiLimit.js:60-66` | Stamm-Rolle und -Gemeinde | Die Konfi-Grenze der Lizenz zählt Konfis einer weiteren Gemeinde nicht. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `routes/teamer.js:410-425`, `:600-615` | Stamm-Rolle und -Gemeinde | Badges und Zertifikate einer Teamer:in aus einer weiteren Gemeinde: 404. | offen |
+| `routes/challenges.js:1185-1196`, `:1352`, `:1493` | Stamm-Gemeinde | Urheber:innen-Liste und -Prüfung kennen Personen einer weiteren Gemeinde nicht (Chat BF-08, Rest). | offen |
+| `routes/konfi-management.js:108-113`, `:564`, `:1069` | Stamm-Rolle und -Gemeinde | Konfi-Liste und Konfi-Detail zeigen Konfis einer weiteren Gemeinde nicht. | erledigt durch die Regel „Konfi oder Team" (28.09.2026): betrifft nur Konfis einer weiteren Gemeinde, die es nicht mehr geben kann; Altbestand misst `docs/auftraege/lokaler-agent/06-mischkonten.md`. |
+| `utils/liveUpdate.js:291` (`sendToUserByRole`) | Stamm-Rolle | Das eigene Nachlade-Signal geht an den Raum der Rolle zuhause — bewusst so gelassen („Wer bekommt was" BF-15, kein Fremdempfang). | bewusst so gelassen (27.09.2026) |
 
 ```sql
 -- Umfang: Konten, die in einer Gemeinde eine andere Rolle haben als am Konto

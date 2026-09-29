@@ -491,6 +491,14 @@ paths:
         auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre
         Einladung erscheint ohnehin in der Liste.
 
+        KONFI IRGENDWO REICHT (BEHOBEN 28.09.2026, Simon: "Konfi und Team
+        geht nicht parallel"; utils/konfiOderTeam.js): Vorher zaehlte nur
+        die Stammrolle. Ein Konto, das zuhause Team und ueber
+        user_organizations in einer anderen Gemeinde Konfi ist (Altbestand),
+        liess sich so in eine weitere Gemeinde einladen. Jetzt dieselbe 404
+        nicht_gefunden wie bei einem Konfi. Test
+        tests/routes/konfiOderTeam.test.js.
+
         Meldung an die eingeladene Person ueber Postfach, Push (Gruppe
         "Anfragen und Freigaben") und E-Mail, nach der Antwort (nachAntwort).
         Die Rolle steht darin mit dem festen Wort nach role_name ("Leitung",
@@ -523,7 +531,7 @@ paths:
         "201": { description: "id, user_id, display_name, username, role_id, role_name, status, expires_at" }
         "400": { description: "Rolle gehoert nicht zu dieser Gemeinde; konfi-Rolle (error_code konfi_nicht_moeglich); Selbst-Einladung" }
         "403": { description: "Nicht org_admin, oder Rolle laut Hierarchie nicht vergebbar" }
-        "404": { description: "Kein Konto mit dieser Kennung ODER die Person ist ein Konfi -- beides identisch (error_code nicht_gefunden)" }
+        "404": { description: "Kein Konto mit dieser Kennung ODER die Person ist in irgendeiner Gemeinde Konfi -- beides identisch (error_code nicht_gefunden)" }
         "409": { description: "Schon Mitglied (schon_mitglied) oder schon eingeladen (schon_eingeladen; nur bei einer noch gueltigen offenen Einladung)" }
       x-berechtigung:
         rollen: [org_admin]
@@ -631,12 +639,21 @@ paths:
         ('gemeinde_einladung_beantwortet') bleibt. 404/409/410 raeumen nichts
         auf; einen abgelaufenen Eintrag nimmt das taegliche
         Postfach-Aufraeumen (02:00) mit.
+
+
+        KONFI UND TEAM NIE ZUGLEICH (BEHOBEN 28.09.2026, Simon: "Konfi und
+        Team geht nicht parallel"; utils/konfiOderTeam.js): Die Annahme
+        prueft Konto und angebotene Rolle mit dem Stand von JETZT. Vorher
+        legte sie die Mitgliedschaft auch an, wenn das Konto inzwischen
+        (oder schon vor dem 26.09.2026, Sicherheit BF-03) Konfi war oder die
+        Einladung die Konfi-Rolle trug. Dann 409 konfi_und_team; die
+        Einladung bleibt offen, nichts wird geschrieben.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "200": { description: "message, organization (id, name, slug, display_name)" }
         "404": { description: "Nicht vorhanden ODER nicht die eigene Einladung -- bewusst dieselbe Antwort, sonst liesse sich durch Durchprobieren erkennen, welche es gibt" }
-        "409": { description: "Bereits beantwortet (error_code schon_beantwortet)" }
+        "409": { description: "Bereits beantwortet (error_code schon_beantwortet); seit 28.09.2026 auch: das Konto ist irgendwo Konfi oder die angebotene Rolle ist konfi (error_code konfi_und_team)" }
         "410": { description: "Abgelaufen (error_code expired)" }
       x-berechtigung:
         rollen: [alle authentifizierten]
@@ -1370,13 +1387,13 @@ paths:
                 role_name: { type: string, enum: [org_admin, admin, teamer] }
       responses:
         "201": { description: "Mitgliedschaft gespeichert; Chat-Sync (Team-Chat, bei org_admin alle Jahrgangs-Chats); User-Cache invalidiert" }
-        "400": { description: "konfi/super_admin als Rolle verboten; Rolle existiert nicht in Ziel-Org; User ist Konfi" }
+        "400": { description: "konfi/super_admin als Rolle verboten; Rolle existiert nicht in Ziel-Org; User ist Konfi; seit 28.09.2026 auch: User ist in einer anderen Gemeinde Konfi (error_code konfi_und_team)" }
         "404": { description: "User oder Org nicht gefunden" }
       x-berechtigung:
         rollen: [super_admin]
         middleware: [verifyTokenRBAC, requireSuperAdmin, validateAddMember]
         org-scope: false
-        objekt-pruefung: "Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen"
+        objekt-pruefung: "Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen -- seit 28.09.2026 ueber BEIDE Quellen (utils/konfiOderTeam.js): vorher nur die Stammrolle, ein Konto mit Konfi-Zeile in user_organizations einer anderen Gemeinde (Altbestand) kam durch"
 
   /api/organizations/{id}/members/{userId}:
     delete:
@@ -1528,10 +1545,21 @@ paths:
         "400": { description: "Rolle nicht in eigener Org / keine Felder" }
         "403": { description: "Hierarchie verletzt (Ziel-User oder neue Rolle)" }
         "404": { $ref: "#/components/responses/NotFound" }
-        "409": { description: "Username/E-Mail existiert bereits" }
+        "409": { description: "Username/E-Mail existiert bereits; seit 28.09.2026 auch: der Rollenwechsel machte das Konto zugleich Konfi und Team (error_code konfi_und_team)" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateUpdateUser]
+        # BEHOBEN 28.09.2026 (Simon: "Konfi und Team geht nicht parallel";
+        # utils/konfiOderTeam.js): Die Konfi-Rolle bot die Oberflaeche nie
+        # an, der Server schrieb sie aber -- in einer weiteren Gemeinde nach
+        # user_organizations und zuhause auch bei bestehender weiterer
+        # Mitgliedschaft. Jetzt 409 konfi_und_team: in einer weiteren
+        # Gemeinde nie Konfi, zuhause nur ohne weitere Gemeinde, und Team nur,
+        # wenn die Person nirgends sonst Konfi ist (Team -> Team in einem
+        # Altbestands-Mischkonto bleibt moeglich, ebenso Konfi -> Team, das es
+        # aufloest). Rollenwechsel zuhause schreiben seither auch die Zeile der
+        # Stamm-Gemeinde in user_organizations mit (Altbestand aus Migration
+        # 101), in einer Transaktion. Test tests/routes/konfiOderTeam.test.js.
         # BEHOBEN 26.09.2026 (Audit Sicherheit BF-10): invalidateUserCache lief
         # nur bei role_id. Nach is_active=false arbeitete die alte Sitzung bis
         # zum 30-s-TTL von rbac.js weiter (reproduziert: PUT, direkt danach GET
