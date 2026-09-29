@@ -165,6 +165,10 @@ jobs:
           npm ci --no-audit --no-fund
           npm run build
           npx cap sync ios
+          # Was wirklich in die App geht: nur das App-Buendel, ohne Handbuch,
+          # API-Referenz und Webseiten, unter der Groessengrenze (Toolchain-
+          # Audit BF-02). Rot, wenn cap sync doch das Web-Verzeichnis nahm.
+          node scripts/app-buendel-pruefen.mjs ios/App/App/public
           # Firebase-Config wiederherstellen UND verifizieren. Das nackte `cp`,
           # das hier bis 24.09.2026 stand, kopierte ohne jede Pruefung — die
           # Fehlerklasse des Android-Push-Ausfalls 1.5.0 war auf der iOS-Seite

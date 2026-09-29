@@ -121,6 +121,10 @@ jobs:
           npm ci --no-audit --no-fund
           npm run build
           npx cap sync android
+          # Was wirklich in die App geht: nur das App-Buendel, ohne Handbuch,
+          # API-Referenz und Webseiten, unter der Groessengrenze (Toolchain-
+          # Audit BF-02). Rot, wenn cap sync doch das Web-Verzeichnis nahm.
+          node scripts/app-buendel-pruefen.mjs android/app/src/main/assets/public
           ./scripts/prepare-android.sh
 
       - name: Keystore ablegen
