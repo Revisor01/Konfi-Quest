@@ -697,6 +697,17 @@ lokal mit dem hier hinterlegten Datenbestand nachmessen lassen:
 - **Check-in-Transaktion** (`checkin.js:55–226`): 7 Abfragen, 0,3 ms, Client nur innerhalb
   der Transaktion gehalten, Nacharbeit nach `release()`. Anwesenheitszähler für das
   10-s-Polling 0,11 ms (EXPLAIN direkt, Abfrage 10).
+  - **Nachtrag 29.09.2026 (Paket I2):** Zwei Routen hielten es anders (Nebenbefund Paket
+    B1): `POST /teamer/events/:id/zusage` (`routes/teamer.js`) und `POST /events`
+    (`routes/events/verwaltung.js`) gaben den Client erst im `finally` frei; dazwischen liefen
+    Chat-Mitgliedschaft, Empfänger-Abfrage und Pushes — Chat und Empfänger-Abfrage mit einer
+    zweiten Pool-Verbindung. **Behoben:** Transaktion, `finally` mit `release()`, dann Antwort,
+    dann Chat/Live-Update/Push über `nachAntwort`. `POST /events` schickte außerdem bei einem
+    Fehler nach der Antwort noch ein `ROLLBACK` und einen zweiten Status. Test
+    `tests/routes/verbindungFreigabeVorPush.test.js` (3; Wrapper zählt ausgeliehene
+    Verbindungen und Pool-Abfragen währenddessen): vor dem Fix 3 rot (`INSERT INTO
+    chat_participants` und `SELECT organization_id FROM events` bei ausgeliehener
+    Verbindung; beide Pushes mit Stand 1), danach grün; 20 Termin-Suites, 471 Tests grün.
 - **Rate-Limits gegen Schulklassen hinter einer NAT-Adresse:** `userOrIpKey`
   (`server.js:266–277`) zählt angemeldete Anfragen je Konto; die IP greift nur für
   Login/Refresh/Registrierung mit `skipSuccessfulRequests`. 30 Konfis × 25 Start-Anfragen

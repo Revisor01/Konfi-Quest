@@ -209,7 +209,17 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // Jahrgaengen hiess ein Termin ohne Jahrgangs-Zuordnung — fuer niemanden
     // sichtbar, ohne Teilnehmer, und der Client legte ihn nach dem 500er
     // vermutlich noch einmal an.
+    //
+    // DIE VERBINDUNG GEHT NACH DEM COMMIT ZURUECK (29.09.2026, Nebenbefund
+    // Paket B1): Bis dahin stand client.release() erst im finally, und
+    // Empfaenger-Abfrage und Push liefen dazwischen -- mit ausgeliehener
+    // Transaktions-Verbindung und einer zweiten aus dem Pool. Ausserdem
+    // schickte ein Fehler NACH der Antwort (Live-Update, Push) noch ein
+    // ROLLBACK und einen zweiten Status hinterher. Jetzt: Transaktion,
+    // finally mit release, dann Antwort, dann Push ueber nachAntwort.
+    // Test: tests/routes/verbindungFreigabeVorPush.test.js.
     const client = await db.getClient();
+    let eventId = null;
     try {
       await client.query('BEGIN');
 
@@ -239,7 +249,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         req.user.id, req.user.organization_id
       ]);
       
-      const eventId = newEvent.id;
+      eventId = newEvent.id;
 
       // Sequentiell statt Promise.all: Auf einem einzelnen Client gibt es
       // keine echte Parallelitaet, und das alte Promise.all checkte pro
@@ -294,51 +304,50 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       }
 
       await client.query('COMMIT');
-
-      res.status(201).json({ id: eventId, message: 'Event erfolgreich erstellt' });
-
-      // Live Update: Notify all konfis and admins about the new event
-      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'create', { eventId });
-
-      // Push Notification
-      try {
-        if (mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
-          // Push nur an tatsaechlich enrollte Konfis (jahrgangs-spezifisch)
-          const { rows: enrolledUsers } = await db.query(`
-            SELECT u.id FROM users u
-            JOIN konfi_profiles kp ON u.id = kp.user_id
-            JOIN roles r ON u.role_id = r.id
-            WHERE kp.jahrgang_id = ANY($1::int[])
-              AND u.organization_id = $2
-              AND r.name = 'konfi'
-              AND u.deleted_at IS NULL
-          `, [jahrgang_ids, req.user.organization_id]);
-
-          if (enrolledUsers.length > 0) {
-            const userIds = enrolledUsers.map(u => u.id);
-            await PushService.sendMandatoryEventCreated(db, userIds, name, event_date, eventId, req.user.organization_id);
-          }
-        }
-        // Freiwillige Events: KEIN direkter "Anmeldung möglich"-Push hier.
-        // Das Flag registration_open_notified bleibt false (Default) -> der Cron
-        // (backgroundService, atomar, alle 1 Min) sendet GENAU EINEN Push, sobald
-        // das Event anmeldbar ist. Verhindert Doppel-Pushes (POST + Cron).
-      } catch (pushErr) {
-        console.error('Push notification failed for new event:', pushErr);
-      }
-
     } catch (err) {
-      // Rollback ist ein No-op, wenn der Fehler NACH dem COMMIT auftrat
-      // (Push, LiveUpdate) — dann ist die Transaktion bereits abgeschlossen.
       await client.query('ROLLBACK').catch(() => {});
- console.error('Database error in POST /events:', err);
+      console.error('Database error in POST /events:', err);
       // '23505' is the PostgreSQL code for unique_violation
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Ein ähnliches Event existiert möglicherweise bereits.' });
       }
-      res.status(500).json({ error: 'Datenbankfehler' });
+      return res.status(500).json({ error: 'Datenbankfehler' });
     } finally {
       client.release();
+    }
+
+    res.status(201).json({ id: eventId, message: 'Event erfolgreich erstellt' });
+
+    // Live Update: Notify all konfis and admins about the new event
+    try {
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'create', { eventId });
+    } catch (liveErr) {
+      console.error('Live-Update nach POST /events fehlgeschlagen:', liveErr);
+    }
+
+    // Push Notification
+    // Freiwillige Events: KEIN direkter "Anmeldung möglich"-Push hier.
+    // Das Flag registration_open_notified bleibt false (Default) -> der Cron
+    // (backgroundService, atomar, alle 1 Min) sendet GENAU EINEN Push, sobald
+    // das Event anmeldbar ist. Verhindert Doppel-Pushes (POST + Cron).
+    if (mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
+      nachAntwort(req, async () => {
+        // Push nur an tatsaechlich enrollte Konfis (jahrgangs-spezifisch)
+        const { rows: enrolledUsers } = await db.query(`
+          SELECT u.id FROM users u
+          JOIN konfi_profiles kp ON u.id = kp.user_id
+          JOIN roles r ON u.role_id = r.id
+          WHERE kp.jahrgang_id = ANY($1::int[])
+            AND u.organization_id = $2
+            AND r.name = 'konfi'
+            AND u.deleted_at IS NULL
+        `, [jahrgang_ids, req.user.organization_id]);
+
+        if (enrolledUsers.length > 0) {
+          const userIds = enrolledUsers.map(u => u.id);
+          await PushService.sendMandatoryEventCreated(db, userIds, name, event_date, eventId, req.user.organization_id);
+        }
+      }, 'Push nach POST /events');
     }
   });
   

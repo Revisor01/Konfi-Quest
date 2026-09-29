@@ -1374,6 +1374,10 @@ iOS-Build 234 · Android versionCode 128
 - Die iPhone-App ist auf das Startverfahren umgestellt, das neuere
   iOS-Fassungen verlangen. Für die Bedienung ändert sich nichts — ohne die
   Umstellung ließe sich die App künftig aber nicht mehr öffnen.
+- Beim Anlegen eines Events und bei der Zu- oder Absage des Teams gibt der
+  Server seine Datenbankverbindung frei, bevor Chat und Mitteilungen
+  erledigt werden. Unter Last konnten sich solche Anfragen sonst gegenseitig
+  die Verbindungen wegnehmen.
 - Der Server bricht eine Datenbankabfrage ab, die nicht mehr antwortet, statt
   ihren Platz dauerhaft zu belegen. In der Auslastungsanzeige steht jetzt auch,
   wie viele Anfragen gerade auf eine freie Datenbankverbindung warten.

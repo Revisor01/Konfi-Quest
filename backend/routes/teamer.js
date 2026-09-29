@@ -1281,8 +1281,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         return res.status(400).json({ error: 'Bitte "dabei" als true oder false angeben' });
       }
 
+      // DIE VERBINDUNG GEHT NACH DEM COMMIT ZURUECK (29.09.2026, Nebenbefund
+      // Paket B1). Bis dahin stand client.release() erst im finally am Ende:
+      // Chat-Mitgliedschaft, Empfaenger-Abfrage und Pushes liefen, waehrend
+      // die Verbindung der Transaktion noch ausgeliehen war -- und Chat und
+      // Empfaenger-Abfrage holten sich dabei eine ZWEITE aus dem Pool. Unter
+      // Last haelt so jede Anfrage eine und wartet auf eine zweite; bei so
+      // vielen Anfragen wie Pool-Plaetzen steht alles. Jetzt: Transaktion,
+      // finally mit release, dann Antwort, dann alles Weitere ueber
+      // nachAntwort wie in den uebrigen Termin-Routen.
+      // Test: tests/routes/verbindungFreigabeVorPush.test.js.
       const client = await db.getClient();
       let ergebnis;
+      let fruehAntwort = null;
       try {
         await client.query('BEGIN');
         ergebnis = await setzeTeamerZusage(client, {
@@ -1299,17 +1310,31 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           // Apps lesen nur error, neue erkennen daran den Pflicht-Grund.
           const antwort = { error: ergebnis.error };
           if (ergebnis.error_code) antwort.error_code = ergebnis.error_code;
-          return res.status(ergebnis.status).json(antwort);
+          fruehAntwort = { status: ergebnis.status, body: antwort };
+        } else {
+          await client.query('COMMIT');
         }
+      } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (_) { /* Connection evtl. tot */ }
+        console.error('Database error in POST /teamer/events/:id/zusage:', eventId, err);
+        return res.status(500).json({ error: 'Datenbankfehler' });
+      } finally {
+        client.release();
+      }
 
-        await client.query('COMMIT');
-        res.json({
-          status: ergebnis.status,
-          message: dabei ? 'Zusage gespeichert' : 'Absage gespeichert'
-        });
+      if (fruehAntwort) {
+        return res.status(fruehAntwort.status).json(fruehAntwort.body);
+      }
 
-        // Chat-Mitgliedschaft dem Stand anpassen und die Leitung informieren.
-        // NACH COMMIT und fehlertolerant: daran darf die Zusage nie scheitern.
+      res.json({
+        status: ergebnis.status,
+        message: dabei ? 'Zusage gespeichert' : 'Absage gespeichert'
+      });
+
+      // Chat-Mitgliedschaft dem Stand anpassen, danach die Live-Updates
+      // (eine offene Ansicht laedt dann schon den neuen Chat-Stand).
+      // NACH COMMIT und fehlertolerant: daran darf die Zusage nie scheitern.
+      nachAntwort(req, async () => {
         try {
           if (dabei) {
             await addToEventChat(db, eventId, req.user.id, req.user.organization_id);
@@ -1321,55 +1346,45 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         }
         liveUpdate.sendToUserByRole(req.user.id, 'events', 'update', { eventId });
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'teamer_zusage' });
+      }, 'Chat und Live-Update nach Teamer-Zusage/-Absage');
 
-        // Pushes an die Leitung — fehlten hier bis 01.09.2026 komplett: Der
-        // regulaere Buchungs-/Storno-Weg meldete sich, die Zusage-Route
-        // schwieg. Es sind bewusst die vorhandenen TEAMER-Typen
-        // (teamer_event_booking / teamer_event_cancellation), NICHT die
-        // Konfi-Typen event_unregistration/event_opt_out: Deren Texte und
-        // data-Felder (konfi_name) sind auf Konfis zugeschnitten, und die
-        // Leitungs-App behandelt Teamer-Meldungen ueber die eigenen Typen.
-        //
-        // EMPFAENGER (27.09.2026): die Leitung, die das Event sieht
-        // (utils/terminLeitungSicht.js) -- Org-Admins immer, Admins bei
-        // Jahrgangs-Events nur mit Zuweisung, bei "Nur Team" und Events ohne
-        // Jahrgang alle. Vorher jeder Admin der Gemeinde (BF-01). Die
-        // zusagende Person selbst nie: Die Route steht hinter requireTeamer,
-        // auch die Leitung sagt hier zu. Ueber nachAntwort, damit Tests darauf
-        // warten koennen.
-        const grund = typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null;
-        nachAntwort(req, async () => {
-          const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: req.user.id });
-          if (dabei) {
-            await PushService.sendTeamerEventBookingToLeadership(
-              db, req.user.organization_id, empfaenger, req.user.display_name,
-              ergebnis.event.name, ergebnis.status, eventId, req.user.id
-            );
-          } else {
-            await PushService.sendTeamerEventCancellationToLeadership(
-              db, req.user.organization_id, empfaenger, req.user.display_name,
-              ergebnis.event.name, eventId, grund, req.user.id
-            );
-          }
-        }, 'Push nach Teamer-Zusage/-Absage');
-
-        // Ist nach einer Absage jemand von der Team-Warteliste nachgerueckt,
-        // erfaehrt er das per Push — wie beim Storno-Weg.
-        if (ergebnis.promotedUserId) {
-          try {
-            await PushService.sendWaitlistPromotionToTeamer(
-              db, ergebnis.promotedUserId, ergebnis.event.name, null, eventId, req.user.organization_id
-            );
-          } catch (pushErr) {
-            console.error('Push an nachgerueckte Teamer:in:', pushErr);
-          }
+      // Pushes an die Leitung — fehlten hier bis 01.09.2026 komplett: Der
+      // regulaere Buchungs-/Storno-Weg meldete sich, die Zusage-Route
+      // schwieg. Es sind bewusst die vorhandenen TEAMER-Typen
+      // (teamer_event_booking / teamer_event_cancellation), NICHT die
+      // Konfi-Typen event_unregistration/event_opt_out: Deren Texte und
+      // data-Felder (konfi_name) sind auf Konfis zugeschnitten, und die
+      // Leitungs-App behandelt Teamer-Meldungen ueber die eigenen Typen.
+      //
+      // EMPFAENGER (27.09.2026): die Leitung, die das Event sieht
+      // (utils/terminLeitungSicht.js) -- Org-Admins immer, Admins bei
+      // Jahrgangs-Events nur mit Zuweisung, bei "Nur Team" und Events ohne
+      // Jahrgang alle. Vorher jeder Admin der Gemeinde (BF-01). Die
+      // zusagende Person selbst nie: Die Route steht hinter requireTeamer,
+      // auch die Leitung sagt hier zu. Ueber nachAntwort, damit Tests darauf
+      // warten koennen.
+      const grund = typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null;
+      nachAntwort(req, async () => {
+        const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: req.user.id });
+        if (dabei) {
+          await PushService.sendTeamerEventBookingToLeadership(
+            db, req.user.organization_id, empfaenger, req.user.display_name,
+            ergebnis.event.name, ergebnis.status, eventId, req.user.id
+          );
+        } else {
+          await PushService.sendTeamerEventCancellationToLeadership(
+            db, req.user.organization_id, empfaenger, req.user.display_name,
+            ergebnis.event.name, eventId, grund, req.user.id
+          );
         }
-      } catch (err) {
-        try { await client.query('ROLLBACK'); } catch (_) { /* Connection evtl. tot */ }
-        console.error('Database error in POST /teamer/events/:id/zusage:', eventId, err);
-        res.status(500).json({ error: 'Datenbankfehler' });
-      } finally {
-        client.release();
+      }, 'Push nach Teamer-Zusage/-Absage');
+
+      // Ist nach einer Absage jemand von der Team-Warteliste nachgerueckt,
+      // erfaehrt er das per Push — wie beim Storno-Weg.
+      if (ergebnis.promotedUserId) {
+        nachAntwort(req, () => PushService.sendWaitlistPromotionToTeamer(
+          db, ergebnis.promotedUserId, ergebnis.event.name, null, eventId, req.user.organization_id
+        ), 'Push an nachgerueckte Teamer:in');
       }
     });
 
