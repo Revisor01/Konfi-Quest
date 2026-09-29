@@ -70,6 +70,7 @@ import AktivitaetMeldenModal from '../../components/konfi/modals/ActivityRequest
 import TeamerAktivitaetMeldenModal from '../../components/teamer/modals/TeamerActivityRequestModal';
 import { clearMediaCache, getMediaBlob } from '../../services/mediaCache';
 import { UPLOAD_GRENZE } from '../../services/mediaCompression';
+import { laeuftAusflug } from '../../services/appSperre';
 
 const antrag: ActivityRequest = {
   id: 41,
@@ -306,9 +307,15 @@ class HandyfotoBild {
 
 const datei = (bytes: number, name: string, typ: string) => new File([new Uint8Array(bytes)], name, { type: typ });
 
+// Ob die App-Sperre beim Öffnen der Auswahl abgemeldet war (Simons Befund
+// 29.09.2026: die Fotoauswahl sperrte bei „Sofort" die App).
+let ausflugBeimOeffnen: boolean | null = null;
+
 const fotoWaehlen = (gewaehlt: File) => {
   // Die Dateiauswahl des Systems: Das unsichtbare Feld meldet die Datei.
+  ausflugBeimOeffnen = null;
   HTMLInputElement.prototype.click = function (this: HTMLInputElement) {
+    ausflugBeimOeffnen = laeuftAusflug();
     Object.defineProperty(this, 'files', { value: [gewaehlt], configurable: true });
     this.onchange?.({ target: this } as unknown as Event);
   };
@@ -331,6 +338,8 @@ describe('Hochladen: verkleinert, mit der Grenze des Servers und der Sende-Anzei
     const ansicht = render(<Modal onClose={vi.fn()} onSuccess={vi.fn()} />);
     await act(async () => { fireEvent.click(ansicht.getByText('Gottesdienst besucht')); });
     await act(async () => { fireEvent.click(ansicht.getByText('Foto hinzufügen')); });
+    // Die Auswahl ging über die Hülle auf — mit abgemeldeter App-Sperre.
+    expect(ausflugBeimOeffnen).toBe(true);
     return ansicht;
   };
 

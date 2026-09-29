@@ -88,8 +88,11 @@ const EINSTELLUNG_SCHLUESSEL = 'konfi_app_sperre_verzoegerung';
  * DAS PROBLEM:
  * Die App wandert bei ganz normaler Bedienung in den Hintergrund, ohne dass die
  * Person sie verlässt. Im Code nachgesehen, welche Abläufe das auslösen:
- *   - Foto auswählen  (verstecktes <input type="file">, ChallengeSubmitModal,
- *     ChatRoomSections, MaterialFormModal)
+ *   - Foto oder Datei auswählen (Chat, Material, Anträge, Challenge-Abgabe) —
+ *     über dateiAuswaehlen in services/systemDialoge.ts. Bis zum 29.09.2026
+ *     öffneten Chat, Material und Anträge ein verstecktes <input type="file">
+ *     an der Hülle vorbei, und bei 'sofort' sperrte jede Dateiauswahl
+ *     (Simons Befund, Android-Testbuild 128).
  *   - Teilen-Dialog   (Share.share / navigator.share in chatTeilen.ts,
  *     shareUtils.ts, FileViewerModal, ChallengeLeitungModal, AdminInvitePage)
  *   - Karten und Links (window.open auf Maps/Store/Weblinks in EventDetailView,
@@ -128,6 +131,9 @@ const EINSTELLUNG_SCHLUESSEL = 'konfi_app_sperre_verzoegerung';
  *      Dialog dazu, der den Merker nicht setzt, sperrt die App einmal zu oft —
  *      ärgerlich, aber harmlos. Der umgekehrte Fehler ist ein Sicherheitsleck.
  *      Bei 1/5/15 Minuten deckt die eingestellte Wartezeit das ohnehin ab.
+ *      Damit das nicht wieder passiert, laufen Dateiauswahl, Teilen und das
+ *      Öffnen fremder Apps durch services/systemDialoge.ts; für die
+ *      Dateiauswahl wacht der Test dateiAuswahlNurUeberHuelle darüber.
  */
 
 /** Einstellung lesen. Voreinstellung ist 'aus' — ein Update darf niemandem eine Sperre vorsetzen. */

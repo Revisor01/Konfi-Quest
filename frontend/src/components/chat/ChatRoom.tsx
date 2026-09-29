@@ -156,7 +156,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const {
     selectedFile,
     selectedFilePreview,
-    handleFileSelect,
+    dateiWaehlen,
     clearSelectedFile,
     handleFileClick,
     ladendeDatei,
@@ -195,7 +195,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     newDividerRef,
     onNaheAmAnfang: () => ladeAeltereRef.current(),
   });
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
   // client_ids eigener Sendungen, deren Server-Kopie noch nicht per Socket
   // angekommen ist — Fallback-Reload nur wenn der Socket nicht liefert.
@@ -843,11 +842,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         selectedFilePreview={selectedFilePreview}
         replyToMessage={replyToMessage}
         textareaRef={textareaRef}
-        fileInputRef={fileInputRef}
         onTextChange={handleTextInputChange}
         onFocus={handleTextareaFocus}
         onSend={sendMessage}
-        onFileSelect={handleFileSelect}
+        onDateiWaehlen={dateiWaehlen}
         onClearFile={clearSelectedFile}
         onClearReply={() => setReplyToMessage(null)}
       />

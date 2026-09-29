@@ -250,11 +250,11 @@ interface MessageInputProps {
   selectedFilePreview: string | null;
   replyToMessage: Message | null;
   textareaRef: React.RefObject<HTMLIonTextareaElement | null>;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
   onTextChange: (value: string) => void;
   onFocus: () => void;
   onSend: () => void;
-  onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Öffnet die Dateiauswahl (useChatDateien.dateiWaehlen, über die Hülle in services/systemDialoge). */
+  onDateiWaehlen: () => void;
   onClearFile: () => void;
   onClearReply: () => void;
 }
@@ -266,11 +266,10 @@ export const MessageInput = React.memo<MessageInputProps>(({
   selectedFilePreview,
   replyToMessage,
   textareaRef,
-  fileInputRef,
   onTextChange,
   onFocus,
   onSend,
-  onFileSelect,
+  onDateiWaehlen,
   onClearFile,
   onClearReply
 }) => {
@@ -328,7 +327,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
         <IonButton aria-label="Datei anhängen" className="app-beruehrungsziel"
           fill="clear"
           size="small"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => onDateiWaehlen()}
           style={{
             '--padding-start': 'var(--app-abstand-mini)',
             '--padding-end': 'var(--app-abstand-mini)',
@@ -431,14 +430,6 @@ export const MessageInput = React.memo<MessageInputProps>(({
         >
           {uploading ? <IonSpinner name="dots" /> : <IonIcon icon={ICON_SENDEN_GEFUELLT} />}
         </IonButton>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          style={{ display: 'none' }}
-          onChange={onFileSelect}
-          accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-        />
       </div>
     </IonToolbar>
   </IonFooter>

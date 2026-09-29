@@ -46,6 +46,7 @@ import { AktivitaetMelden } from '../../../types/request';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE } from '../../../services/mediaCompression';
+import { dateiAuswaehlen } from '../../../services/systemDialoge';
 import SendeAnzeige from '../../shared/SendeAnzeige';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -102,19 +103,15 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
   );
   const activities = activitiesData || [];
 
-  const handlePhotoSelect = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.multiple = false;
-    input.onchange = (e: Event) => handleFileSelect(e);
-    input.click();
+  // Über die Hülle (services/systemDialoge): Sie meldet den Ausflug der
+  // App-Sperre an — ohne ihn sperrte die Fotoauswahl bei „Sofort" die App
+  // (Simons Befund 29.09.2026, Android).
+  const handlePhotoSelect = async () => {
+    const auswahl = await dateiAuswaehlen({ accept: 'image/*' });
+    if (auswahl) await fotoUebernehmen(auswahl[0]);
   };
 
-  const handleFileSelect = async (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (!file) return;
+  const fotoUebernehmen = async (file: File) => {
     try {
       // Derselbe Weg wie in Chat und Challenges (27.09.2026): erst
       // verkleinern (1920 px, JPEG), DANN gegen die Grenze des Servers prüfen

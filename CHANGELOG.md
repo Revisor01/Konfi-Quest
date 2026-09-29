@@ -521,6 +521,9 @@ iOS-Build 234 · Android versionCode 128
   Word-Dokument — und zurückkommt, wird bei eingeschalteter App-Sperre nicht
   mehr nach Fingerabdruck oder Face ID gefragt. Bisher kam die Abfrage bei
   „Sofort" nach jeder Datei.
+- Die Dateiauswahl löst die App-Sperre nicht mehr aus: Wer im Chat, im
+  Material oder für einen Antrag ein Foto oder eine Datei auswählt, wird danach
+  nicht mehr nach Fingerabdruck oder Face ID gefragt.
 - Teamer:innen und Leitung lassen sich wieder von Hand zu Events hinzufügen:
   Die Auswahl blieb leer, obwohl sie dem Jahrgang des Events zugewiesen waren.
 - Wer über eine Einladung im Team oder in der Leitung einer Gemeinde ist, steht

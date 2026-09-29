@@ -17,9 +17,19 @@ import { ohneSperre, ausflugStarten, ausflugBeenden } from './appSperre';
 // abmeldet. Wer kuenftig teilt, importiert von hier und bekommt das Verhalten
 // geschenkt.
 //
-// Die Karenzzeit in appSperre.ts bleibt trotzdem noetig: sie faengt die
-// Dialoge ab, die nie durch diese Datei laufen (Fotoauswahl ueber ein
-// verstecktes <input type="file">, window.open auf Karten und Weblinks).
+// DIE DATEIAUSWAHL gehoert dazu (Simons Befund 29.09.2026, Android-Testbuild
+// 128: „Dateiauswahl ist auch noch nicht als Ausnahme beim Biometrie
+// öffnen."). Bis dahin oeffneten Chat, Material und Antraege ein verstecktes
+// <input type="file"> an der Huelle vorbei; nur die Challenge-Abgabe meldete
+// den Ausflug an. Bei „Sofort" stand man nach jeder Dateiauswahl vor dem
+// Sperrbildschirm. Jetzt oeffnet `dateiAuswaehlen` hier die EINZIGE
+// Dateiauswahl der App; der Test dateiAuswahlNurUeberHuelle schlaegt an,
+// sobald irgendwo sonst eine Datei-Eingabe entsteht.
+//
+// Was NICHT durch diese Datei laeuft: window.open auf Karten und Weblinks
+// (linkOeffnen steht bereit, ist aber noch nirgends angeschlossen). Bei
+// „Sofort" sperrt die App nach so einem Abstecher einmal zu oft — harmlos,
+// siehe KARENZZEIT in appSperre.ts.
 // ---------------------------------------------------------------------------
 
 /**
@@ -108,3 +118,133 @@ export const dateiExternOeffnen = async <T>(oeffnen: () => Promise<T>): Promise<
     setTimeout(beenden, DATEI_NACHLAUF_MS);
   }
 };
+
+// --- Dateiauswahl -----------------------------------------------------------
+
+/**
+ * Nach der Rückkehr in die App: So lange darf das System noch an der Auswahl
+ * arbeiten (HEIC umrechnen, ein großes Video kopieren), bevor eine Auswahl
+ * ohne `change` und ohne `cancel` als Abbruch gilt. `change` gewinnt jederzeit
+ * vorher. Der Wert stammt aus der Challenge-Abgabe: Dort löste früher schon
+ * nach 1 s ein Fokus-Rückfall mit „nichts gewählt" aus, und eine langsame
+ * Auswahl ging still verloren.
+ */
+export const AUSWAHL_RUECKKEHR_FRIST_MS = 15000;
+
+/**
+ * Nach dieser Spanne ohne Auswahl meldet `beiRueckkehrOhneAuswahl` — für eine
+ * Ladeanzeige, die bei einem Abbruch nicht 15 s stehen bleiben soll.
+ */
+export const AUSWAHL_RUECKKEHR_HINWEIS_MS = 1200;
+
+/** Nachlauf nach Auswahl oder Abbruch — dieselbe Spanne wie beim Öffnen einer Datei. */
+export const AUSWAHL_NACHLAUF_MS = DATEI_NACHLAUF_MS;
+
+export interface DateiAuswahlOptionen {
+  /** Wie das `accept` einer Datei-Eingabe, z. B. 'image/*'. */
+  accept?: string;
+  multiple?: boolean;
+  /**
+   * Die App ist zurück, eine Auswahl aber (noch) nicht da — gerufen
+   * `AUSWAHL_RUECKKEHR_HINWEIS_MS` nach der Rückkehr. Die Auswahl kann danach
+   * immer noch eintreffen.
+   */
+  beiRueckkehrOhneAuswahl?: () => void;
+}
+
+// Die Eingabefelder hängen in keinem Dokument. Dieser Verweis hält jedes am
+// Leben, bis seine Auswahl erledigt ist — sonst dürfte der Browser ein Feld
+// wegräumen, dessen `change` noch aussteht.
+const offeneAuswahlen = new Set<HTMLInputElement>();
+
+/**
+ * Öffnet die Dateiauswahl des Systems — mit abgemeldeter App-Sperre. Die
+ * EINZIGE Stelle der App, an der eine Datei-Eingabe entsteht (Leitplanke:
+ * dateiAuswahlNurUeberHuelle.test.ts).
+ *
+ * Das Versprechen löst mit den gewählten Dateien auf, oder mit `null`, wenn
+ * nichts gewählt wurde (Abbruch). Es wirft nie.
+ *
+ * DER AUSFLUG beginnt, bevor die Auswahl aufgeht, und endet genau einmal:
+ *   - nach der Auswahl (`change`) oder dem Abbruch (`cancel`, wo das WebView
+ *     es kennt), jeweils nach `AUSWAHL_NACHLAUF_MS` — der Rückweg in die App
+ *     (appStateChange) darf nicht nach dem Ende des Ausflugs ankommen;
+ *   - sonst über die Rückkehr des Fokus: `AUSWAHL_RUECKKEHR_FRIST_MS` danach
+ *     gilt die Auswahl als erledigt, mit dem, was dann im Feld steht;
+ *   - spätestens nach `DATEI_AUSFLUG_HOECHSTENS_MS` (Notbremse), falls gar
+ *     kein Ereignis kommt. Die Auswahl bleibt dann offen, nur die Sperre ist
+ *     wieder scharf — lieber einmal zu oft gesperrt als nie wieder.
+ *
+ * Jeder Aufruf legt ein frisches Feld an und leert es nach dem Auslesen.
+ * Dieselbe Datei lässt sich deshalb gleich noch einmal wählen — bei einem
+ * wiederverwendeten Feld feuerte `change` ohne Wertwechsel nicht.
+ */
+export const dateiAuswaehlen = ({
+  accept,
+  multiple = false,
+  beiRueckkehrOhneAuswahl,
+}: DateiAuswahlOptionen = {}): Promise<File[] | null> =>
+  new Promise((aufloesen) => {
+    const feld = document.createElement('input');
+    feld.type = 'file';
+    if (accept) feld.accept = accept;
+    feld.multiple = multiple;
+    offeneAuswahlen.add(feld);
+
+    ausflugStarten();
+    let ausflugLaeuft = true;
+    // Notbremse und Nachlauf können beide feuern — abgemeldet wird trotzdem
+    // nur einmal, sonst räumte das einen fremden, gleichzeitig laufenden
+    // Ausflug mit ab (der Merker zählt; wie in dateiExternOeffnen).
+    const ausflugEnde = () => {
+      if (!ausflugLaeuft) return;
+      ausflugLaeuft = false;
+      clearTimeout(notbremse);
+      ausflugBeenden();
+    };
+    const notbremse = setTimeout(ausflugEnde, DATEI_AUSFLUG_HOECHSTENS_MS);
+
+    let erledigt = false;
+    let frist: ReturnType<typeof setTimeout> | undefined;
+    let hinweis: ReturnType<typeof setTimeout> | undefined;
+
+    const gewaehlt = (): File[] => Array.from(feld.files ?? []);
+
+    const fertig = (dateien: File[]) => {
+      if (erledigt) return;
+      erledigt = true;
+      clearTimeout(frist);
+      clearTimeout(hinweis);
+      window.removeEventListener('focus', beiRueckkehr);
+      // Erst ausgelesen (dateien), dann geleert.
+      try {
+        feld.value = '';
+      } catch {
+        // Manche Umgebungen lassen das nicht zu — das Feld wird ohnehin verworfen.
+      }
+      offeneAuswahlen.delete(feld);
+      setTimeout(ausflugEnde, AUSWAHL_NACHLAUF_MS);
+      aufloesen(dateien.length > 0 ? dateien : null);
+    };
+
+    const beiRueckkehr = () => {
+      hinweis = setTimeout(() => {
+        if (!erledigt) beiRueckkehrOhneAuswahl?.();
+      }, AUSWAHL_RUECKKEHR_HINWEIS_MS);
+      // Zum Ende der Frist noch einmal ins Feld sehen: Eine Auswahl, deren
+      // `change` verloren ging, zählt trotzdem.
+      frist = setTimeout(() => fertig(gewaehlt()), AUSWAHL_RUECKKEHR_FRIST_MS);
+    };
+
+    feld.onchange = () => fertig(gewaehlt());
+    // Natives Abbruch-Ereignis (neuere WebViews) — sofort und verlässlich.
+    feld.oncancel = () => fertig([]);
+    window.addEventListener('focus', beiRueckkehr, { once: true });
+
+    try {
+      feld.click();
+    } catch {
+      // Ließ sich die Auswahl gar nicht öffnen, ist auch nichts zu schützen.
+      fertig([]);
+    }
+  });

@@ -180,7 +180,7 @@ vi.mock('../../utils/haptics', () => ({ haptik: vi.fn(), triggerPullHaptic: vi.f
 vi.mock('../../components/chat/chatTeilen', () => ({ nachrichtTeilen: vi.fn() }));
 vi.mock('../../components/chat/useChatDateien', () => ({
   useChatDateien: () => ({
-    selectedFile: null, selectedFilePreview: null, handleFileSelect: vi.fn(),
+    selectedFile: null, selectedFilePreview: null, dateiWaehlen: vi.fn(),
     clearSelectedFile: vi.fn(), handleFileClick: vi.fn(), ladendeDatei: null,
   }),
 }));
