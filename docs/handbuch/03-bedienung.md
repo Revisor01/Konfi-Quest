@@ -447,6 +447,10 @@ Solange das Gerät der App noch keine Mitteilungen erlaubt, steht in der
 Auswahl ein Hinweis mit einem Knopf, der die Erlaubnis anfordert. Die Auswahl
 selbst gilt dann, sobald sie erteilt ist.
 
+Auch wenn die App gerade offen ist, erscheint eine Mitteilung oben am
+Bildschirm — auf dem iPhone wie auf Android. Die Zahlen an den Reitern und am
+App-Symbol stellen sich dabei gleich auf das Neue ein.
+
 ## Auf Android Ton und Lautstärke je Gruppe einstellen
 
 Auf Android sind die vier Gruppen außerdem Kanäle des Systems. In den

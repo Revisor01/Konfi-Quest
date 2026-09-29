@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- allowBackup=false: Die App haelt Login-Token und Chat-Inhalte von
          Jugendlichen vor. Mit Androids Auto-Backup landeten die im Google-Konto
@@ -76,6 +77,35 @@
             </intent-filter>
 
         </activity>
+
+        <!-- EIN Empfaenger fuer Push-Nachrichten (29.09.2026).
+
+             Zwei Plugins melden je einen FirebaseMessagingService mit
+             MESSAGING_EVENT an: @capacitor/push-notifications und
+             @capacitor-firebase/messaging. Android stellt jede Nachricht nur
+             EINEM Dienst zu: FCM loest ihn per resolveService auf, und bei
+             gleicher Prioritaet gewinnt der erste im gemergten Manifest; die
+             Bibliotheken stehen dort in der Reihenfolge aus
+             capacitor.build.gradle, das Firebase-Plugin vor dem Push-Plugin.
+             Damit bekam der Dienst von @capacitor-firebase/messaging alles:
+             'pushNotificationReceived' (AppContext -> push:received ->
+             Zaehler neu laden) feuerte auf Android nie, und bei offener App
+             erschien keine Mitteilung, obwohl presentationOptions "alert"
+             verlangt. Das Firebase-Plugin warnt selbst davor, neben einem
+             anderen Push-Plugin zu laufen.
+
+             Gebraucht wird @capacitor-firebase/messaging nur fuer getToken()
+             und deleteToken(), beides spricht das Firebase-SDK direkt an,
+             ohne den Dienst. Dessen Ereignisse (notificationReceived,
+             tokenReceived) hoert die App nicht ab. Deshalb nimmt die App hier
+             den Dienst des Firebase-Plugins heraus; es bleibt der von
+             @capacitor/push-notifications: Empfang bei offener App, neuer
+             Token ('registration'). Das Antippen einer Mitteilung laeuft
+             ohnehin ueber die Activity, nicht ueber den Dienst.
+             Geprueft in frontend/src/__tests__/config/androidPushDienst.test.ts. -->
+        <service
+            android:name="io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService"
+            tools:node="remove" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

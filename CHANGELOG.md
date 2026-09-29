@@ -488,6 +488,9 @@ iOS-Build 234 · Android versionCode 128
   unter „Fehler".
 
 ### Behoben
+- Auf Android erscheint eine Mitteilung auch, während die App offen ist — wie
+  auf dem iPhone —, und die Zahlen an den Reitern stellen sich sofort darauf
+  ein.
 - Auf Android öffnen Bilder, Videos und PDFs jetzt in der App: im Betrachter
   mit Zoom und Wischen zu den übrigen Dateien, PDFs mit allen Seiten
   untereinander. Bisher gingen sie in eine andere App.

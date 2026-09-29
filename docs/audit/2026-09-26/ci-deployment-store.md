@@ -493,6 +493,25 @@ richtig machen oder bis dahin entfernen.
   sichtbar), war ohne Gerät nicht prüfbar.
   - **Status:** behoben 29.09.2026 — Am Code geprüft statt am Gerät: Auf iOS legt Capacitor-Filesystem `Directory.Data` UND `Directory.Documents` in den Documents-Ordner (`IONFileStructures+Converters.swift`). Dort lagen also die wartenden Uploads (`queue-uploads/`: Fotos aus Anträgen, Chat-Anhänge, `writeQueue.ts`, `chatOutbox.ts`) und jede aus dem Chat geteilte Datei (`share/`, `chatTeilen.ts`, nie gelöscht) — sichtbar in der Dateien-App und im Finder, auch an der App-Sperre vorbei. Der Medien-Cache (Chat-Bilder, Material) liegt in `Caches` und war nicht betroffen. Keine Funktion braucht die Freigabe: Sichern geht über das Teilen-Blatt, `CFBundleDocumentTypes` gibt es nicht (kein ITMS-90737). `UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace` und `UISupportsDocumentBrowser` (macht den Ordner ebenfalls sichtbar) entfernt. Test `iosNativ.test.ts`.
   - **Nachtrag 29.09.2026 (Nebenbefund, mitbehoben):** `nachrichtTeilen` (`chatTeilen.ts`) schrieb jede geteilte Chat-Datei nach `Directory.Documents/share/` und löschte sie nie — auf Android ist das der ÖFFENTLICHE Ordner „Dokumente“ (`Environment.DIRECTORY_DOCUMENTS`), lesbar für andere Apps und Dateimanager. Jetzt `Directory.Cache` wie beim Chat-Export; das Teilen-Blatt nimmt Cache-Dateien auf beiden Systemen (`cache-path` in `file_paths.xml`). Test `chatTeilenImCache.test.ts` (2), vor dem Fix 1 rot. Nicht gemacht: Altbestände in `Dokumente/share/` löschen — der Ordnername ist allgemein, ein Löschen könnte fremde Dateien treffen.
+- **Android: zwei FCM-Dienste** (Nebenbefund vom 29.09.2026, in `docs/audit/2026-09-28/offene-punkte.md`).
+  `@capacitor/push-notifications` und `@capacitor-firebase/messaging` melden je einen `FirebaseMessagingService` mit
+  `MESSAGING_EVENT` an; Android stellt jede Nachricht nur einem zu.
+  - **Status:** behoben 29.09.2026 — Aus den Quellen belegt, nicht am Gerät und nicht am gemergten Manifest gemessen
+    (der Gradle-Lauf `processReleaseMainManifest` scheiterte hier an 429 von Maven Central und am Plattenplatz): FCM
+    startet den Dienst, den `resolveService` für `MESSAGING_EVENT` liefert — bei gleicher Priorität den ersten im
+    gemergten Manifest; die Bibliotheken stehen dort in der Reihenfolge aus `capacitor.build.gradle`, das
+    Firebase-Plugin (Platz 3) vor dem Push-Plugin (Platz 12). Der Dienst des Firebase-Plugins meldet nur dessen
+    eigenes `notificationReceived` (hört die App nicht ab) und zeigt auf Android bei offener App nichts an. Also
+    feuerte `pushNotificationReceived` in `AppContext` (→ `push:received` → `BadgeContext` lädt die Zähler neu) auf
+    Android nie, und bei offener App erschien keine Mitteilung, obwohl `presentationOptions` `alert` verlangt. Das
+    Firebase-Plugin warnt in seiner Doku selbst vor dem Nebeneinander. Nicht betroffen: Token (beide Plugins holen ihn
+    direkt beim SDK), Antippen (läuft über die Activity, `handleOnNewIntent`), Zahl am Symbol (JS, Badge-Plugin), iOS
+    (Capacitors `NotificationRouter` ist Delegat, `AppDelegate` setzt ihn nur beim Start). Fix: Das App-Manifest nimmt
+    den Dienst des Firebase-Plugins per `tools:node="remove"` heraus; die App braucht davon nur `getToken()`/
+    `deleteToken()`, die ohne Dienst arbeiten. Test `frontend/src/__tests__/config/androidPushDienst.test.ts` (5:
+    Manifest gültig, beide Dienste in den Plugins gefunden, nach dem Merge genau der des Push-Plugins, keine Ereignisse
+    des Firebase-Plugins abgehört, `alert` gesetzt); gegen das alte Manifest 2 rot. Am Gerät nach dem nächsten
+    internen Testbuild gegenprüfen: Mitteilung bei offener App sichtbar, Zähler springen.
 - **Test-Deadlocks in der CI.** Zwei rote `backend-test`-Läufe (931, 938) zeigen `deadlock detected`
   zwischen `truncateAll` und Zähler-Abfragen (`events`/`activity_requests`/`challenge_submissions`), die
   offenbar aus einem vorigen Test noch liefen. Sieht nach systematischem Flattern aus; gehört zum
