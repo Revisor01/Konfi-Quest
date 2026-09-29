@@ -7,9 +7,9 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [2.3.0] - 2026-09-28
+## [2.3.0] - 2026-09-29
 
-iOS-Build 233 · Android versionCode 127
+iOS-Build 234 · Android versionCode 128
 
 ### Hinzugefügt
 - Eine orange Zahl in den Umschaltern oben zeigt, hinter welchem Reiter etwas
