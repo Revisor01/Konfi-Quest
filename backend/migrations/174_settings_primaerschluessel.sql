@@ -16,7 +16,7 @@
 -- Gemeinden aendert sich kein gelesener Wert. Doppelungen MIT Gemeinde
 -- verhinderte das bestehende UNIQUE schon immer.
 --
--- VOR DEM DEPLOY ZAEHLEN (Auftrag 08, nur lesend):
+-- VOR DEM DEPLOY ZAEHLEN (Auftrag 11, nur lesend):
 --   SELECT key, count(*) FROM settings WHERE organization_id IS NULL GROUP BY key;
 --
 -- ALTE SERVER-FASSUNGEN (rollender Deploy, backend-test): Sie schreiben mit

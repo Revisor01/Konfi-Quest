@@ -28,7 +28,7 @@
 -- (etwa idx_chat_messages_room_id neben idx_chat_messages_room_created),
 -- bleiben: Ein Einzelspalten-Index ist kleiner und kann dem Planer lieber
 -- sein. Ueber sie entscheidet die Zahl der Zugriffe in der Produktion
--- (pg_stat_user_indexes.idx_scan, Auftrag 08).
+-- (pg_stat_user_indexes.idx_scan, Auftrag 11).
 --
 -- SPERRE: DROP INDEX liest keine Zeile, braucht aber kurz ACCESS EXCLUSIVE auf
 -- der Tabelle (der Migrationslauf gibt nach lock_timeout 10 s auf und

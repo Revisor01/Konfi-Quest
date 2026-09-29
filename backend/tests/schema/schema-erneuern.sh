@@ -22,7 +22,7 @@
 # (zu viele offene Migrationen ueber dem Dump). Ob die Produktion dem
 # erneuerten Stand entspricht, misst der Betrieb mit
 # backend/scripts/schemaVergleich.js (Auftrag
-# docs/auftraege/lokaler-agent/08-schema-und-rueckspielprobe.md);
+# docs/auftraege/lokaler-agent/11-schema-und-rueckspielprobe.md);
 # refresh-schema.sh holt den Dump bei Bedarf direkt aus der Produktion.
 set -euo pipefail
 # Sortierung wie der Migrationslauf (JavaScript sort = Bytefolge), nicht nach

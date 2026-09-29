@@ -16,7 +16,7 @@
 -- Kein Code schreibt die Spalten ausdruecklich, alle nehmen den Default.
 -- Ein Wert, der sich gar nicht als Zeitpunkt lesen laesst, wird NULL, statt
 -- die Migration bei jedem Start scheitern zu lassen (Zaehlung vorher:
--- Auftrag 08).
+-- Auftrag 11).
 --
 -- ANTWORTFORM: GET /events/:id liefert Buchungen (eb.*) und Zeitfenster
 -- (et.*) samt created_at. Das Feld bleibt eine Zeichenkette, jetzt im

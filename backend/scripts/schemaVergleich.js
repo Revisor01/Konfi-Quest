@@ -15,7 +15,7 @@
 //   - tests/schema/neuinstallation.test.js (init-scripts gegen Dump-Weg),
 //   - tests/schema/wiederherstellung.test.js (Sicherung zurueckgespielt),
 //   - der Messung in Produktion (Auftrag
-//     docs/auftraege/lokaler-agent/08-schema-und-rueckspielprobe.md).
+//     docs/auftraege/lokaler-agent/11-schema-und-rueckspielprobe.md).
 //
 // Aufruf (eigener Pool -- NICHT database.js, das startet Migrationen):
 //   node scripts/schemaVergleich.js erfassen [DATABASE_URL] > stand.json

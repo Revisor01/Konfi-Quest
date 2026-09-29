@@ -1,4 +1,4 @@
-# 08 — Datenbank: Zählungen, Schema-Abgleich, Rückspielprobe
+# 11 — Datenbank: Zählungen, Schema-Abgleich, Rückspielprobe
 
 Zum Stand vom 29.09.2026 mit den Migrationen 174–178. Gehört zu
 `docs/audit/2026-09-26/datenbank-migrationen.md` (BF-05, BF-06, BF-09, BF-10,
