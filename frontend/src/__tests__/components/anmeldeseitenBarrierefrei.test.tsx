@@ -216,10 +216,10 @@ describe('Anmeldung (LoginView)', () => {
   // Audit Grundgeruest BF-11: Schickte der Refresh eine Zugangs-Sperre,
   // steht deren Grund da -- nicht „Sitzung abgelaufen".
   it('nach einer Sperre im Refresh nennt der Alarm den Grund', () => {
-    sessionStorage.setItem('zugang_gesperrt', 'Die Testphase dieser Organisation ist abgelaufen. Bitte wende dich an deine Gemeinde, um einen Tarif zu buchen.');
+    sessionStorage.setItem('zugang_gesperrt', 'Die Testphase dieser Gemeinde ist abgelaufen. Bitte wende dich an die Leitung deiner Gemeinde, um einen Tarif zu buchen.');
     render(<LoginView />);
     const alarm = screen.getByRole('alert');
-    expect(alarm).toHaveTextContent('Die Testphase dieser Organisation ist abgelaufen');
+    expect(alarm).toHaveTextContent('Die Testphase dieser Gemeinde ist abgelaufen');
     expect(alarm).not.toHaveTextContent('Sitzung');
     expect(sessionStorage.getItem('zugang_gesperrt')).toBeNull();
   });

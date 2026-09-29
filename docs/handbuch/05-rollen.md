@@ -274,7 +274,7 @@ zeigen einen Gegenstand, der zu genau einer Gemeinde gehört; ein Wechsel
 führte ins Leere, weil es ihn in der anderen Gemeinde nicht gibt. Und die
 **Unterseiten** unter „Mehr" beziehungsweise im Profil — Profil,
 Benutzer:innen, Aktivitäten, Badges, Jahrgänge, Kategorien, Level, Material,
-Jahresrückblick, Zertifikate, Dashboard, Organisationen, Betrieb — gehören
+Jahresrückblick, Zertifikate, Dashboard, Gemeinden, Betrieb — gehören
 entweder zum Konto oder zu genau der Gemeinde, aus der man sie geöffnet hat.
 Ein Tippen auf den Namen öffnet die Liste aller eigenen Gemeinden mit ihren
 vollen Namen; die aktive steht **fett** und leicht hinterlegt. Nach dem

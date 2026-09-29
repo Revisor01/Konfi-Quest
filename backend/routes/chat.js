@@ -538,7 +538,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         [target_user_id, organizationId]
       );
       if (!validUser) {
-        return res.status(403).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
+        return res.status(403).json({ error: 'Benutzer nicht in deiner Gemeinde gefunden' });
       }
 
       // DATENSCHUTZ: Konfi-zu-Konfi-Chats gibt es nicht.
@@ -666,7 +666,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }
         const { rows: [validJahrgang] } = await db.query("SELECT id FROM jahrgaenge WHERE id = $1 AND organization_id = $2", [jahrgang_id, organizationId]);
         if (!validJahrgang) {
-          return res.status(403).json({ error: 'Jahrgang nicht in deiner Organisation gefunden' });
+          return res.status(403).json({ error: 'Jahrgang nicht in deiner Gemeinde gefunden' });
         }
         const { rows: [existing] } = await db.query("SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2", [jahrgang_id, organizationId]);
         if (existing) {
@@ -1745,7 +1745,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         [user_id, organizationId]
       );
       if (!targetUser) {
-        return res.status(404).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
+        return res.status(404).json({ error: 'Benutzer nicht in deiner Gemeinde gefunden' });
       }
       const user_type = roleToParticipantType(targetUser.role_name);
 

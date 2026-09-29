@@ -254,7 +254,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       const { rows: [role] } = await db.query(roleCheckQuery, [role_id, organizationId]);
 
       if (!role) {
-        return res.status(400).json({ error: 'Ungültige Rolle für diese Organisation' });
+        return res.status(400).json({ error: 'Ungültige Rolle für diese Gemeinde' });
       }
 
       // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig, case-insensitiv —
@@ -349,7 +349,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         [id, organizationId]
       );
       if (!user) {
-        return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+        return res.status(404).json({ error: 'Benutzer in dieser Gemeinde nicht gefunden' });
       }
 
       // Verify role exists in organization if role_id is provided
@@ -357,7 +357,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       if (role_id) {
         const { rows: [role] } = await db.query("SELECT id, name FROM roles WHERE id = $1 AND organization_id = $2", [role_id, organizationId]);
         if (!role) {
-          return res.status(400).json({ error: 'Ungültige Rolle für diese Organisation' });
+          return res.status(400).json({ error: 'Ungültige Rolle für diese Gemeinde' });
         }
         neueRolle = role;
       }
@@ -729,7 +729,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
           );
           if (rowCount === 0) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+            return res.status(404).json({ error: 'Benutzer in dieser Gemeinde nicht gefunden' });
           }
           // Zuweisungen und die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde
           // gehen mit, wie beim Umzug (kontoZiehtUm) und beim Entzug durch den
@@ -858,7 +858,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     }
 
     if (nichtGefunden) {
-      return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+      return res.status(404).json({ error: 'Benutzer in dieser Gemeinde nicht gefunden' });
     }
 
     try {
@@ -930,7 +930,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             [userId, organizationId]
         );
         if (!user) {
-            return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+            return res.status(404).json({ error: 'Benutzer in dieser Gemeinde nicht gefunden' });
         }
 
         const client = await db.getClient();
@@ -1031,7 +1031,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             // (user_id, jahrgang_id) mit 500 zu scheitern.
             if (validJahrgaenge.length !== jahrgangIds.length) {
                 await client.query('ROLLBACK');
-                fruehAntwort = { status: 400, body: { error: 'Mindestens eine Jahrgangs-ID ist ungültig oder gehört nicht zu dieser Organisation.' } };
+                fruehAntwort = { status: 400, body: { error: 'Mindestens eine Jahrgangs-ID ist ungültig oder gehört nicht zu dieser Gemeinde.' } };
             } else {
             // Now, insert all new assignments
             for (const assignment of einzufuegen) {

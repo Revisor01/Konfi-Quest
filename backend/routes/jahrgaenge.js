@@ -170,7 +170,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         );
         if (zielUsers.length !== userIds.length) {
           await client.query('ROLLBACK');
-          return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
+          return res.status(404).json({ error: 'Benutzer in dieser Gemeinde nicht gefunden' });
         }
 
         // Rollen-Grenze: canManageRole ist DIE Quelle (fuer org_admin heisst
@@ -223,7 +223,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
       if (err.code === '23505') {
-        return res.status(409).json({ error: 'Jahrgang-Name existiert bereits in dieser Organisation' });
+        return res.status(409).json({ error: 'Jahrgang-Name existiert bereits in dieser Gemeinde' });
       }
  console.error('Database error in POST /api/jahrgaenge:', err);
       res.status(500).json({ error: 'Datenbankfehler' });

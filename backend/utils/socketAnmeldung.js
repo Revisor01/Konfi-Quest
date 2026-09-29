@@ -76,7 +76,7 @@ function socketAnmeldung(db, jwtSecret) {
           [decoded.id, tokenOrg]
         );
         if (!mitgliedschaft) {
-          return next(new Error('Kein Zugriff auf diese Organisation'));
+          return next(new Error('Kein Zugriff auf diese Gemeinde'));
         }
         orgId = mitgliedschaft.organization_id;
         rolle = mitgliedschaft.role_name;

@@ -99,14 +99,14 @@ describe('Mail-Vorlagen maskieren alle eingesetzten Werte', () => {
       expect(html).toContain('<strong>2025/2026 Nord</strong>');
       expect(html).toContain('<strong>Kirchspiel Süd</strong>');
       expect(html).toContain('Löschung in 5 Tagen');
-      expect(text).toContain('der Jahrgang "2025/2026 Nord" in eurer Organisation "Kirchspiel Süd"');
+      expect(text).toContain('der Jahrgang "2025/2026 Nord" in eurer Gemeinde "Kirchspiel Süd"');
     });
 
     it('der Textteil setzt auch Sonderzeichen unmaskiert ein (kein HTML)', async () => {
       await mail.sendLicenseExpiryReminderEmail('a@example.test', 'A & B', 'Gemeinde "Ost"', new Date('2026-10-15T10:00:00Z'), 1);
       const { html, text } = gesendet();
       expect(text).toContain('Hallo A & B,');
-      expect(text).toContain('Organisation "Gemeinde "Ost""');
+      expect(text).toContain('Gemeinde "Gemeinde "Ost""');
       expect(html).toContain('Hallo A &amp; B!');
       expect(html).toContain('<strong>Gemeinde &quot;Ost&quot;</strong>');
       expect(html).toContain('noch 1 Tag</div>');

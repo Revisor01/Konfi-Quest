@@ -162,6 +162,10 @@ Beim Arbeiten aufgefallen, nicht geändert (außerhalb des jeweiligen Pakets):
   `challenge_submissions.approved_by` nach dem Test nicht wieder her.
 - **Sperr-Texte** des Servers nennen weiter „Organisation" — gehört zum Begriffe-Durchgang
   „Gemeinde statt Organisation".
+  - **Nachtrag 29.09.2026:** behoben — Sperr-Texte, alle übrigen Server-Meldungen, Mails, App und
+    Handbuch sagen „Gemeinde". Einzige Ausnahme: der 403 „Kein Zugriff auf diese Organisation",
+    den die Store-Apps 2.2.0/2.3.0 wörtlich vergleichen. Test `begriffeEinheitlich.test.ts`
+    (4 neue Fälle).
 
 ## Mehrfach-Konten (Gespräch mit Simon)
 

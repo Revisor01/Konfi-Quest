@@ -534,10 +534,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       // Org-Isolation: fremde IDs abweisen (Cross-Org-Referenzen)
       if (!(await allIdsBelongToOrg(db, 'events', event_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Event gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens ein Event gehört nicht zu deiner Gemeinde' });
       }
       if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Gemeinde' });
       }
 
       const { rows: [material] } = await db.query(
@@ -647,10 +647,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       // Org-Isolation: fremde IDs abweisen (Cross-Org-Referenzen)
       if (!(await allIdsBelongToOrg(db, 'events', event_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Event gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens ein Event gehört nicht zu deiner Gemeinde' });
       }
       if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
+        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Gemeinde' });
       }
 
       const updates = [];

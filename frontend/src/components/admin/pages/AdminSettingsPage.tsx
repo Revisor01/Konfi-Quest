@@ -93,7 +93,7 @@ const AdminSettingsPage: React.FC = () => {
     users: {
       title: 'Benutzer:innen', icon: ICON_GRUPPE_GEFUELLT, color: 'var(--app-color-users)',
       paragraphs: [
-        'Hier verwaltest du alle Personen in deiner Organisation: Leitung, Team und ihre Rollen.',
+        'Hier verwaltest du alle Personen in deiner Gemeinde: Leitung, Team und ihre Rollen.',
         'Die Rolle entscheidet, was jemand darf — z.B. ob jemand Punkte vergeben, Events anlegen oder die ganze Verwaltung sehen kann.',
         'Dem Team ordnest du außerdem Jahrgänge zu, damit alle genau ihre Gruppen sehen.',
       ],
@@ -205,7 +205,7 @@ const AdminSettingsPage: React.FC = () => {
         titel="Mehr"
         rechts={user?.is_super_admin ? (
           <>
-            <IonButton onClick={() => router.push('/admin/organizations')} title="Organisationen" aria-label="Organisationen verwalten">
+            <IonButton onClick={() => router.push('/admin/organizations')} title="Gemeinden" aria-label="Gemeinden verwalten">
               <IonIcon slot="icon-only" icon={ICON_ORGANISATION_GEFUELLT} />
             </IonButton>
             <IonButton onClick={() => router.push('/admin/metrics')} title="Performance" aria-label="Performance anzeigen">

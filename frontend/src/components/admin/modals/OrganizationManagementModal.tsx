@@ -362,7 +362,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         loadMembers();
       }
     } catch (err) {
-      setError('Fehler beim Laden der Organisation');
+      setError('Fehler beim Laden der Gemeinde');
  console.error('Error loading organization:', err);
     } finally {
       setLoading(false);
@@ -371,7 +371,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
   const handleSave = async () => {
     if (!formData.display_name.trim()) {
-      setError('Name der Organisation ist erforderlich');
+      setError('Name der Gemeinde ist erforderlich');
       return;
     }
 
@@ -611,7 +611,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       <IonPage>
         <IonHeader>
           <IonToolbar>
-            <IonTitle>{isEditMode ? 'Organisation bearbeiten' : 'Neue Organisation'}</IonTitle>
+            <IonTitle>{isEditMode ? 'Gemeinde bearbeiten' : 'Neue Gemeinde'}</IonTitle>
             <IonButtons slot="start">
               <IonButton aria-label="Schließen" onClick={handleClose} className="app-modal-close-btn"><IonIcon icon={ICON_SCHLIESSEN} /></IonButton>
             </IonButtons>
@@ -630,17 +630,17 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     <IonPage ref={pageRef}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>{!isEditMode ? 'Neue Organisation' : viewMode === 'view' ? 'Organisation' : 'Organisation bearbeiten'}</IonTitle>
+          <IonTitle>{!isEditMode ? 'Neue Gemeinde' : viewMode === 'view' ? 'Gemeinde' : 'Gemeinde bearbeiten'}</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn"><IonIcon icon={ICON_SCHLIESSEN} /></IonButton>
           </IonButtons>
           <IonButtons slot="end">
             {isEditMode && viewMode === 'view' ? (
-              <IonButton aria-label="Organisation bearbeiten" onClick={() => setViewMode('edit')} className="app-modal-submit-btn app-modal-submit-btn--settings">
+              <IonButton aria-label="Gemeinde bearbeiten" onClick={() => setViewMode('edit')} className="app-modal-submit-btn app-modal-submit-btn--settings">
                 <IonIcon icon={ICON_BEARBEITEN} />
               </IonButton>
             ) : (
-              <IonButton aria-label="Organisation speichern" onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
+              <IonButton aria-label="Gemeinde speichern" onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
                 {!isOnline ? <><IonIcon icon={ICON_OFFLINE} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
               </IonButton>
             )}
@@ -654,7 +654,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           <>
             <SectionHeader
               title={organization.display_name}
-              subtitle={organization.kirchenkreis || 'Organisation'}
+              subtitle={organization.kirchenkreis || 'Gemeinde'}
               icon={ICON_ORGANISATION}
               preset="organizations"
               stats={[
@@ -806,14 +806,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             <div className="app-section-icon app-section-icon--organizations">
               <IonIcon icon={ICON_ORGANISATION} />
             </div>
-            <IonLabel>Organisation</IonLabel>
+            <IonLabel>Gemeinde</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Name der Organisation *</IonLabel>
-                  <IonInput aria-label="Name der Organisation" aria-required="true"
+                  <IonLabel position="stacked">Name der Gemeinde *</IonLabel>
+                  <IonInput aria-label="Name der Gemeinde" aria-required="true"
                     value={formData.display_name}
                     onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
                     placeholder="z.B. Kirchspiel West"
@@ -907,16 +907,16 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel>
-                    <h3 style={{ fontWeight: 'var(--app-schrift-mittel)', margin: '0 0 var(--app-abstand-mini) 0' }}>Organisation aktiv</h3>
+                    <h3 style={{ fontWeight: 'var(--app-schrift-mittel)', margin: '0 0 var(--app-abstand-mini) 0' }}>Gemeinde aktiv</h3>
                     <p style={{ color: 'var(--app-text-secondary)', margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>Benutzer können sich anmelden</p>
                   </IonLabel>
-                  <IonToggle aria-label="Organisation aktiv" slot="end" className="app-toggle--users" checked={formData.is_active} onIonChange={(e) => {
+                  <IonToggle aria-label="Gemeinde aktiv" slot="end" className="app-toggle--users" checked={formData.is_active} onIonChange={(e) => {
                     const checked = e.detail.checked;
                     // Beim Deaktivieren einer bestehenden Org warnen: alle Nutzer werden ausgesperrt.
                     if (!checked && isEditMode) {
                       presentAlert({
-                        header: 'Organisation deaktivieren?',
-                        message: 'Alle Konfis, das Team und die Leitung dieser Organisation können sich dann nicht mehr anmelden und werden aus laufenden Sitzungen abgemeldet. Fortfahren?',
+                        header: 'Gemeinde deaktivieren?',
+                        message: 'Alle Konfis, das Team und die Leitung dieser Gemeinde können sich dann nicht mehr anmelden und werden aus laufenden Sitzungen abgemeldet. Fortfahren?',
                         buttons: [
                           {
                             text: 'Abbrechen',
@@ -941,7 +941,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 {!formData.is_active && (
                   <IonItem lines="none" style={{ '--background': 'rgba(var(--app-color-danger-rgb), 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-eng)' }}>
                     <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-color-danger)' }} />
-                    <IonLabel><p style={{ color: 'var(--app-color-danger)', margin: 0, fontWeight: 'var(--app-schrift-mittel)' }}>Inaktive Organisationen sind gesperrt</p></IonLabel>
+                    <IonLabel><p style={{ color: 'var(--app-color-danger)', margin: 0, fontWeight: 'var(--app-schrift-mittel)' }}>Inaktive Gemeinden sind gesperrt</p></IonLabel>
                   </IonItem>
                 )}
               </IonList>
@@ -989,7 +989,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   <IonIcon icon={ICON_SCHILD} slot="start" style={{ color: 'var(--app-text-users)' }} />
                   <IonLabel>
                     <p style={{ color: 'var(--app-text-users)', margin: 0, fontWeight: 'var(--app-schrift-mittel)', fontSize: 'var(--app-text-sekundaer)' }}>
-                      Die Org-Leitung kann die gesamte Organisation verwalten
+                      Die Org-Leitung kann die gesamte Gemeinde verwalten
                     </p>
                   </IonLabel>
                 </IonItem>
@@ -1159,8 +1159,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <p style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-secondary)' }}>
-                  Bestehende Mitglieder aus Leitung oder Team anderer Organisationen dieser
-                  Organisation zuweisen — sie können dann per Org-Wechsler hierher
+                  Bestehende Mitglieder aus Leitung oder Team anderer Gemeinden dieser
+                  Gemeinde zuweisen — sie können dann per Org-Wechsler hierher
                   springen. Konfis sind ausgenommen.
                 </p>
 
@@ -1430,7 +1430,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-text-users)' }} />
                   <IonLabel>
                     <p style={{ color: 'var(--app-text-users)', margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>
-                      Nach Ablauf des Zeitraums wird die Organisation automatisch gesperrt — niemand kann sich mehr anmelden. Ohne Datum bleibt der Zugang unbegrenzt. Wird beim Speichern oben übernommen.
+                      Nach Ablauf des Zeitraums wird die Gemeinde automatisch gesperrt — niemand kann sich mehr anmelden. Ohne Datum bleibt der Zugang unbegrenzt. Wird beim Speichern oben übernommen.
                     </p>
                   </IonLabel>
                 </IonItem>

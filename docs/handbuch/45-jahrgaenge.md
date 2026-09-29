@@ -29,7 +29,7 @@ unter
 **Mehr › Benutzer:innen**.
 
 Zwei Jahrgänge dürfen nicht denselben Namen haben („Jahrgang-Name existiert
-bereits in dieser Organisation“).
+bereits in dieser Gemeinde“).
 
 In der Jahrgangsliste steht zu jedem Jahrgang, welche Ziele gesetzt sind, ob
 der Spruch freigegeben ist („Spruch frei“ oder „Spruch gesperrt“) und wie es

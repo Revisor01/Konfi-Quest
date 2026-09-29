@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, relative } from 'path';
+import ts from 'typescript';
 import {
   FRONTEND,
+  REPO,
   sichtbareTexteDerApp,
   nutzertexteDesBackendsGesamt,
+  type SichtbarerText,
 } from './sichtbareTexte';
 
 // ---------------------------------------------------------------------------
@@ -95,6 +98,67 @@ describe('Begriffe: eine Sprache für App und Backend', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// „Gemeinde" statt „Organisation" (Simon, 28.09.2026: „Vielleicht sprechen
+// wir statt von org von Gemeinde.").
+//
+// Wer die App nutzt, gehört zu einer Gemeinde — so heißt es in Oberfläche,
+// Server-Meldungen, Mails und Handbuch. „Organisation" bleibt nur in
+// Bezeichnern (organization_id, /organizations/…) und Kommentaren.
+// „Org-Leitung", „Org-Admin" und „Org-Wechsler" sind eigene Begriffe; über
+// sie entscheidet Simon noch, dieser Test lässt sie in Ruhe.
+// ---------------------------------------------------------------------------
+
+/**
+ * Server-Texte, die noch „Organisation" sagen müssen — jede mit Grund.
+ * Geprüft wird gegen den ganzen Text.
+ */
+const ORGANISATION_BLEIBT: Array<[RegExp, string]> = [
+  [/^Kein Zugriff auf diese Organisation$/,
+    'Die Store-Apps 2.2.0 und 2.3.0 vergleichen den 403 wörtlich (services/api.ts) und fallen nur damit in die Stamm-Gemeinde zurück. Erst ändern, wenn keine App ohne error_code-Prüfung mehr ruft.'],
+];
+
+/** Alle Zeichenketten einer Backend-Datei außer console.* — für Mail-Vorlagen, die in lokalen Konstanten stehen. */
+function zeichenkettenOhneKonsole(pfad: string): SichtbarerText[] {
+  const quelle = readFileSync(pfad, 'utf8');
+  const datei = ts.createSourceFile(pfad, quelle, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const raus: SichtbarerText[] = [];
+  const geh = (x: ts.Node) => {
+    if (ts.isCallExpression(x) && /^console\./.test(x.expression.getText())) return;
+    if (ts.isStringLiteral(x) || ts.isNoSubstitutionTemplateLiteral(x)
+      || ts.isTemplateHead(x) || ts.isTemplateMiddle(x) || ts.isTemplateTail(x)) {
+      const zeile = datei.getLineAndCharacterOfPosition(x.getStart()).line + 1;
+      raus.push({ ort: `${relative(REPO, pfad)}:${zeile}`, text: x.text.replace(/\s+/g, ' ').trim() });
+    }
+    ts.forEachChild(x, geh);
+  };
+  geh(datei);
+  return raus;
+}
+
+describe('Begriffe: „Gemeinde" statt „Organisation"', () => {
+  const organisationStellen = () => ALLE.filter(({ text }) => /organisation/i.test(text));
+
+  it('kein sichtbarer Text in App und Server-Meldungen sagt „Organisation"', () => {
+    const offen = organisationStellen()
+      .filter(({ text }) => !ORGANISATION_BLEIBT.some(([muster]) => muster.test(text)))
+      .map(({ ort, text }) => `${ort}: ${text}`);
+    expect(offen).toEqual([]);
+  });
+
+  it('jede Ausnahme wird noch gebraucht', () => {
+    const texte = organisationStellen().map(({ text }) => text);
+    expect(ORGANISATION_BLEIBT.filter(([muster]) => !texte.some((t) => muster.test(t))).map(([, grund]) => grund)).toEqual([]);
+  });
+
+  it('die Mails sagen „Gemeinde"', () => {
+    const texte = zeichenkettenOhneKonsole(join(REPO, 'backend/services/emailService.js'));
+    // Gegenprobe gegen einen leeren Scan: die Lizenz-Mail wird gefunden.
+    expect(texte.some(({ text }) => text.includes('die Lizenz für eure Gemeinde'))).toBe(true);
+    expect(texte.filter(({ text }) => /organisation/i.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
+  });
+});
+
 describe('Begriffe: dieselbe Suche in allen drei Rollen', () => {
   // Konfi und Team hatten „Events durchsuchen...", die Leitung „Event
   // suchen..."; bei den Badges ebenso. Ein Feld, das dasselbe tut, heißt
@@ -160,6 +224,10 @@ describe('Begriffe: das Handbuch spricht wie die App', () => {
 
   it('„Abzeichen" kommt nicht mehr vor', () => {
     expect(zeilen.filter(({ text }) => /abzeichen/i.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
+  });
+
+  it('„Organisation" kommt nicht vor — es heißt „Gemeinde"', () => {
+    expect(zeilen.filter(({ text }) => /organisation/i.test(text)).map(({ ort, text }) => `${ort}: ${text}`)).toEqual([]);
   });
 
   it('„Termin" steht nur für den Zeitpunkt', () => {

@@ -45,7 +45,7 @@ import api from '../../services/api';
 import * as tokenStore from '../../services/tokenStore';
 import { anmeldeHinweisMerken, anmeldeHinweisAbholen, sperrMeldungAus } from '../../utils/anmeldeHinweis';
 
-const TESTPHASE = 'Die Testphase dieser Organisation ist abgelaufen. Bitte wende dich an deine Gemeinde, um einen Tarif zu buchen.';
+const TESTPHASE = 'Die Testphase dieser Gemeinde ist abgelaufen. Bitte wende dich an die Leitung deiner Gemeinde, um einen Tarif zu buchen.';
 
 let ereignisse: CustomEvent[] = [];
 const merke = (e: Event) => { ereignisse.push(e as CustomEvent); };

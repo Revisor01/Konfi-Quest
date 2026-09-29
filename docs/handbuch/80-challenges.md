@@ -91,7 +91,7 @@ Drei Möglichkeiten unter „Wer macht mit?":
 | Team darf einreichen | ja | nein | ja |
 | Jahrgänge auswählbar | ja, Pflicht, mehrere möglich | ja, Pflicht, mehrere möglich | nein, entfällt |
 | Konfis sehen die Challenge | ja | ja | **nein, gar nicht** |
-| Wer sie sieht und verwaltet | Org-Leitung sowie Leitung und Teamer:innen der gewählten Jahrgänge | Org-Leitung sowie Leitung und Teamer:innen der gewählten Jahrgänge | jede:r im Team der Organisation |
+| Wer sie sieht und verwaltet | Org-Leitung sowie Leitung und Teamer:innen der gewählten Jahrgänge | Org-Leitung sowie Leitung und Teamer:innen der gewählten Jahrgänge | jede:r im Team der Gemeinde |
 
 „Jahrgang und Team" ist die Voreinstellung: „Die Konfis der gewählten Jahrgänge
 und ihr im Team — alle reichen gleichberechtigt ein."
@@ -102,7 +102,7 @@ Challenge, reicht aber selbst nichts ein." Wer mit dem Jahrgang arbeitet, sieht
 die Challenge trotzdem — auch als Teamer:in.
 
 „Nur das Team" ist eine Runde unter euch. Solche Challenges laufen
-organisationsweit über die Rolle statt über Jahrgänge — deshalb entfällt die
+gemeindeweit über die Rolle statt über Jahrgänge — deshalb entfällt die
 Jahrgangs-Auswahl, und jede:r im Team kann sie sehen und verwalten.
 
 Bei „Jahrgang und Team" und „Nur die Konfis" entscheidet der Jahrgang, wer im
@@ -407,7 +407,7 @@ abrufen, nie über eine offene Adresse, und nur von Personen, die den Beitrag
 ohnehin sehen dürfen:
 
 - die Person, die ihn eingereicht hat — immer
-- die Org-Leitung — für alles in ihrer Organisation
+- die Org-Leitung — für alles in ihrer Gemeinde
 - Leitung und Teamer:innen — für ihre zugewiesenen Jahrgänge, bei Challenges
   nur fürs Team für alles im Team
 - Konfis — nur für Beiträge, die in ihrer Galerie erscheinen dürfen

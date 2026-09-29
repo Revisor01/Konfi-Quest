@@ -6,7 +6,7 @@ gruppe: Nachschlagen
 ---
 
 Der Chat ist der geschützte Nachrichtenraum der Gemeinde. Wer nicht in eurer
-Organisation ist, kommt nicht hinein — und wer drin ist, erreicht nicht
+Gemeinde ist, kommt nicht hinein — und wer drin ist, erreicht nicht
 automatisch jede andere Person. Diese Grenzen sind der eigentliche Inhalt
 dieses Kapitels.
 

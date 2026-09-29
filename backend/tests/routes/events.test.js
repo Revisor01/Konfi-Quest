@@ -558,7 +558,7 @@ describe('Events Routes', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('Organisation');
+      expect(res.body.error).toBe('Mindestens ein Jahrgang gehört nicht zu deiner Gemeinde');
 
       const { rows } = await db.query(
         "SELECT COUNT(*)::int AS n FROM events WHERE name = 'Cross-Org-Event'"
@@ -586,7 +586,7 @@ describe('Events Routes', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('Organisation');
+      expect(res.body.error).toBe('Mindestens eine Kategorie gehört nicht zu deiner Gemeinde');
     });
 
     it('Org-Isolation: eigener Jahrgang bleibt erlaubt (201, Auto-Enrollment)', async () => {
@@ -633,7 +633,7 @@ describe('Events Routes', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('Organisation');
+      expect(res.body.error).toBe('Mindestens ein Jahrgang gehört nicht zu deiner Gemeinde');
     });
   });
 

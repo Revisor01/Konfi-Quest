@@ -232,6 +232,9 @@ iOS-Build 233 · Android versionCode 127
   „Hauptamt" oder „Org-Admin" — beim Anlegen und Einladen, in der
   Rollenauswahl, in den Listen, im Chat und im Handbuch. Beide Rollen können
   Haupt- wie Ehrenamtliche haben.
+- App, Meldungen, Mails und Handbuch sprechen von „Gemeinde" statt von
+  „Organisation" — etwa bei „Gemeinde wechseln", in der Verwaltung der
+  Gemeinden und im Hinweis auf eine gesperrte Gemeinde.
 - Beim Öffnen eines Antrags und einer Konfi lädt die App für die Leitung nur
   noch die Anträge, um die es geht, statt der ganzen Antragsgeschichte der
   Gemeinde.

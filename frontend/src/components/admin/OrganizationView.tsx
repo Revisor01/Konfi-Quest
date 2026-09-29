@@ -108,7 +108,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
       </IonRefresher>
 
       <SectionHeader
-        title="Organisationen"
+        title="Gemeinden"
         subtitle="Gemeinden verwalten"
         icon={ICON_ORGANISATION_GEFUELLT}
         preset="organizations"
@@ -131,10 +131,10 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
           {/* Suchfeld */}
           <IonItem>
             <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
-            <IonInput aria-label="Organisation suchen"
+            <IonInput aria-label="Gemeinde suchen"
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder="Organisation suchen..."
+              placeholder="Gemeinde suchen..."
             />
           </IonItem>
           {/* Status-Filter */}
@@ -159,12 +159,12 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
       {/* Organisationen-Liste */}
       <ListSection
         icon={ICON_ORGANISATION}
-        title="Organisationen"
+        title="Gemeinden"
         count={filteredAndSortedOrganizations.length}
         iconColorClass="organizations"
         isEmpty={filteredAndSortedOrganizations.length === 0}
         emptyIcon={ICON_ORGANISATION}
-        emptyTitle="Keine Organisationen gefunden"
+        emptyTitle="Keine Gemeinden gefunden"
         emptyMessage="Noch keine Gemeinden angelegt"
         emptyIconColor="var(--app-color-users)"
       >
@@ -280,7 +280,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       onSelectOrganization(organization);
                     }}
                     className="app-swipe-action"
-                    aria-label="Organisation bearbeiten"
+                    aria-label="Gemeinde bearbeiten"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations">
                       <IonIcon icon={ICON_BEARBEITEN} />
@@ -292,7 +292,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       onDeleteOrganization(organization);
                     }}
                     className="app-swipe-action"
-                    aria-label="Organisation löschen"
+                    aria-label="Gemeinde löschen"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                       <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />

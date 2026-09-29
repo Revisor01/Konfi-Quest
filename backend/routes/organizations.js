@@ -70,7 +70,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
   ];
 
   const validateCreateOrgAdmin = [
-    param('id').isInt({ min: 1 }).withMessage('Ungültige Organisations-ID'),
+    param('id').isInt({ min: 1 }).withMessage('Ungültige Gemeinde-ID'),
     body('username').trim().notEmpty().withMessage('Benutzername ist erforderlich'),
     body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
     passwortPolicy('password'),
@@ -186,7 +186,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const { rows: [organization] } = await db.query(query, [organizationId]);
 
       if (!organization) {
-        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+        return res.status(404).json({ error: 'Gemeinde nicht gefunden' });
       }
 
       res.json(organization);
@@ -267,7 +267,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const organization = orgResult.rows[0];
 
       if (!organization) {
-        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+        return res.status(404).json({ error: 'Gemeinde nicht gefunden' });
       }
 
       // Statistiken zum Ergebnis hinzufügen
@@ -342,7 +342,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       // "Leitung", 'org_admin' "Org-Leitung". Bestehende Gemeinden behalten
       // ihre alten display_name-Werte, die Oberflaeche beschriftet nach name.
       const defaultRoles = [
-        { name: 'org_admin', display_name: 'Org-Leitung', description: 'Vollzugriff auf alle Jahrgänge der Organisation', is_system_role: true },
+        { name: 'org_admin', display_name: 'Org-Leitung', description: 'Vollzugriff auf alle Jahrgänge der Gemeinde', is_system_role: true },
         { name: 'admin', display_name: 'Leitung', description: 'Vollzugriff mit Jahrgangs-Beschränkungen', is_system_role: true },
         { name: 'teamer', display_name: 'Teamer:in', description: 'Kann Anträge bearbeiten und zugewiesene Jahrgänge verwalten', is_system_role: true },
         { name: 'konfi', display_name: 'Konfirmand:in', description: 'Konfirmand:innen haben Zugriff auf eigene Daten und können Aktivitäten beantragen', is_system_role: true }
@@ -647,7 +647,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         default_categories_created: defaultCategories.length,
         default_activities_created: defaultActivities.length + defaultTeamerActivities.length,
         default_challenges_created: defaultChallenges.length,
-        message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length + defaultTeamerBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
+        message: `Gemeinde erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length + defaultTeamerBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
       });
 
       // Live-Update NACH der Response: nur an den ausfuehrenden Super-Admin selbst
@@ -658,7 +658,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
 
     } catch (err) {
       if (err.code === '23505') { // unique_violation
-        return res.status(409).json({ error: 'Organisations-Slug existiert bereits' });
+        return res.status(409).json({ error: 'Gemeinde-Slug existiert bereits' });
       }
  console.error('Error creating organization:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -726,17 +726,17 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const { rowCount } = await db.query(query, params);
         
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+        return res.status(404).json({ error: 'Gemeinde nicht gefunden' });
       }
         
-      res.json({ message: 'Organisation erfolgreich aktualisiert' });
+      res.json({ message: 'Gemeinde erfolgreich aktualisiert' });
 
       // Live-Update NACH der Response an den Ausfuehrenden selbst (Multi-Device).
       // Passt für super_admin (org-uebergreifende Verwaltung) und org_admin (eigene Org).
       liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'update');
     } catch (err) {
       if (err.code === '23505') { // unique_violation
-        return res.status(409).json({ error: 'Organisations-Slug existiert bereits' });
+        return res.status(409).json({ error: 'Gemeinde-Slug existiert bereits' });
       }
  console.error('Error updating organization:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -754,7 +754,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const { rows: [org] } = await client.query('SELECT id FROM organizations WHERE id = $1', [id]);
       if (!org) {
         await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+        return res.status(404).json({ error: 'Gemeinde nicht gefunden' });
       }
 
       // VOLLSTAENDIGE LOESCHUNG aller Org-Daten in abhaengigkeitssicherer
@@ -890,7 +890,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const { rowCount } = await client.query('DELETE FROM organizations WHERE id = $1', [id]);
       if (rowCount === 0) {
         await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+        return res.status(404).json({ error: 'Gemeinde nicht gefunden' });
       }
 
       await client.query('COMMIT');
@@ -903,7 +903,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         invalidateUserCache(m.user_id);
       }
 
-      res.json({ message: 'Organisation und alle zugehörigen Daten erfolgreich gelöscht' });
+      res.json({ message: 'Gemeinde und alle zugehörigen Daten erfolgreich gelöscht' });
 
       // Dateien nach dem COMMIT entfernen (nicht blockierend — ein fehlendes
       // File darf die bereits erfolgte Löschung nicht scheitern lassen).
@@ -926,7 +926,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     } catch (err) {
       await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
       console.error('Error deleting organization:', err);
-      res.status(500).json({ error: 'Datenbankfehler beim Löschen der Organisation' });
+      res.status(500).json({ error: 'Datenbankfehler beim Löschen der Gemeinde' });
     } finally {
       client.release();
     }
@@ -956,7 +956,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       );
 
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+        return res.status(404).json({ error: 'Gemeinde nicht gefunden' });
       }
 
       res.json({ message: 'Konfi-Limit erfolgreich aktualisiert', max_konfis: value });
@@ -1058,7 +1058,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       // Prüfen ob Organisation existiert
       const { rows: [org] } = await db.query("SELECT id FROM organizations WHERE id = $1", [id]);
       if (!org) {
-        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+        return res.status(404).json({ error: 'Gemeinde nicht gefunden' });
       }
 
       // org_admin Rolle für diese Organisation finden
@@ -1068,7 +1068,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       );
 
       if (!role) {
-        return res.status(500).json({ error: 'Org-Admin Rolle für Organisation nicht gefunden' });
+        return res.status(500).json({ error: 'Org-Admin Rolle für Gemeinde nicht gefunden' });
       }
 
       // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig!)
@@ -1109,7 +1109,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
   // ausgenommen (Switcher ist ein Verwaltungs-Feature).
 
   const validateAddMember = [
-    param('id').isInt({ min: 1 }).withMessage('Ungültige Organisations-ID'),
+    param('id').isInt({ min: 1 }).withMessage('Ungültige Gemeinde-ID'),
     body('user_id').isInt({ min: 1 }).withMessage('Ungültige Benutzer-ID'),
     body('role_name').trim().notEmpty().withMessage('Rolle ist erforderlich'),
     handleValidationErrors
@@ -1180,13 +1180,13 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
       if (user.role_name === 'konfi') {
-        return res.status(400).json({ error: 'Konfis können nicht mehreren Organisationen zugewiesen werden' });
+        return res.status(400).json({ error: 'Konfis können nicht mehreren Gemeinden zugewiesen werden' });
       }
 
       // Organisation existiert?
       const { rows: [org] } = await db.query('SELECT id FROM organizations WHERE id = $1', [orgId]);
       if (!org) {
-        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+        return res.status(404).json({ error: 'Gemeinde nicht gefunden' });
       }
 
       // Rolle in der ZIEL-Org aufloesen
@@ -1195,7 +1195,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         [orgId, role_name]
       );
       if (!role) {
-        return res.status(400).json({ error: `Rolle '${role_name}' existiert in dieser Organisation nicht` });
+        return res.status(400).json({ error: `Rolle '${role_name}' existiert in dieser Gemeinde nicht` });
       }
 
       // KONFI UND TEAM NIE ZUGLEICH, auch nicht ueber eine weitere Gemeinde
@@ -1256,7 +1256,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
       if (user.organization_id === orgId) {
-        return res.status(400).json({ error: 'Die Primär-Organisation kann hier nicht entfernt werden' });
+        return res.status(400).json({ error: 'Die Stamm-Gemeinde kann hier nicht entfernt werden' });
       }
       // Mitgliedschaft, Zuweisungen und Chat-Plaetze DIESER Gemeinde in einer
       // Transaktion -- dieselbe Funktion wie auf dem Weg ueber die Leitung

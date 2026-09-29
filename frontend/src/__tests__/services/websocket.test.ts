@@ -105,14 +105,19 @@ describe('websocket — Org-Entzug beim Handshake', () => {
   const connectErrorHandler = (s: FakeSocket) =>
     s.on.mock.calls.find((c: unknown[]) => c[0] === 'connect_error')?.[1] as ((e: Error) => void) | undefined;
 
-  it('"Kein Zugriff auf diese Organisation" feuert socket:auth-error', async () => {
+  // Der Server sagt seit dem 29.09.2026 „Gemeinde" (socketAnmeldung.js),
+  // vorher „Organisation". Beide enthalten „Zugriff" -- darauf hoert die App.
+  it.each([
+    'Kein Zugriff auf diese Gemeinde',
+    'Kein Zugriff auf diese Organisation',
+  ])('"%s" feuert socket:auth-error', async (meldung) => {
     const ws = await import('../../services/websocket');
     ws.initializeWebSocket('token-mit-claim');
     const dispatch = vi.spyOn(window, 'dispatchEvent');
 
     const handler = connectErrorHandler(createdSockets[0]);
     expect(handler).toBeDefined();
-    handler!(new Error('Kein Zugriff auf diese Organisation'));
+    handler!(new Error(meldung));
 
     expect(dispatch.mock.calls.map(c => (c[0] as Event).type)).toContain('socket:auth-error');
   });

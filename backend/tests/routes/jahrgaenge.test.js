@@ -350,7 +350,7 @@ describe('Jahrgaenge Routes', () => {
         });
 
       expect(res.status).toBe(404);
-      expect(res.body.error).toBe('Benutzer in dieser Organisation nicht gefunden');
+      expect(res.body.error).toBe('Benutzer in dieser Gemeinde nicht gefunden');
       const { rows } = await db.query(
         "SELECT COUNT(*)::int AS c FROM jahrgaenge WHERE name = '2027/2028'"
       );

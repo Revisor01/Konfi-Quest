@@ -150,7 +150,7 @@ const OrgSwitcherButton: React.FC = () => {
         <IonContent>
           <IonList>
             <IonListHeader>
-              <IonLabel>Organisation wechseln</IonLabel>
+              <IonLabel>Gemeinde wechseln</IonLabel>
             </IonListHeader>
             {organizations.map((org) => {
               const offen = offenJeOrg[org.id] || 0;

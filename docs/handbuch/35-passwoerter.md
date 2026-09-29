@@ -280,7 +280,7 @@ Einmalpasswörter erfüllen dieselben Regeln — das Komma zählt als Sonderzeic
 
 Wo die Org-Leitung ein Passwort selbst vergibt, steht unter dem Feld der Knopf
 **„Sicheres Passwort vorschlagen"** — beim Setzen eines Leitungspassworts
-ebenso wie beim Anlegen einer neuen Organisation. Ein Tipp darauf füllt das
+ebenso wie beim Anlegen einer neuen Gemeinde. Ein Tipp darauf füllt das
 Feld mit vierzehn zufälligen Zeichen, die alle Regeln oben erfüllen, und macht
 es zugleich sichtbar, damit du es notieren und weitergeben kannst.
 
@@ -417,13 +417,13 @@ und darunter, woran es liegt:
 | „Zu viele falsche Anmeldeversuche für dieses Konto. …" | Für dieses Konto kamen zehn falsche Passwörter innerhalb einer Stunde — siehe [Nach zu vielen falschen Passwörtern wieder hineinkommen](#nach-zu-vielen-falschen-passwoertern-wieder-hineinkommen). |
 | „Zu viele Login-Versuche. Bitte warte 15 Minuten." | Aus demselben Netz kamen in einer Viertelstunde sehr viele falsche Passwörter, etwa im Gemeinde-WLAN. Warten hilft. |
 | „Dein Zugang wurde deaktiviert. …" | Das Konto ist deaktiviert oder die Konfi-Zeit ist vorbei — siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht). |
-| „Diese Organisation ist derzeit gesperrt. …" oder „Die Testphase dieser Organisation ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Org-Leitung mit dem Betrieb von Konfi Quest. |
+| „Diese Gemeinde ist derzeit gesperrt. …" oder „Die Testphase dieser Gemeinde ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Org-Leitung mit dem Betrieb von Konfi Quest. |
 | „Keine Verbindung zum Server. …" | Das Gerät erreicht Konfi Quest nicht. WLAN oder mobile Daten prüfen und noch einmal versuchen. |
 | „Deine Sitzung ist abgelaufen. …" | Die Anmeldung auf diesem Gerät gilt nicht mehr. Neu anmelden hilft. |
 
 Werden das Konto oder die Gemeinde gesperrt, während jemand angemeldet ist,
 schickt die App zur Anmeldeseite zurück und nennt dort gleich den Grund aus
-der Tabelle — „Dein Zugang wurde deaktiviert", „Diese Organisation ist
+der Tabelle — „Dein Zugang wurde deaktiviert", „Diese Gemeinde ist
 derzeit gesperrt" oder „Die Testphase … ist abgelaufen" — statt „Deine
 Sitzung ist abgelaufen". Ein neuer Anmeldeversuch hilft dann nicht.
 

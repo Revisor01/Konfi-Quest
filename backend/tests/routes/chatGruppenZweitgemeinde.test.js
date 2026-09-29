@@ -171,7 +171,7 @@ describe('Gruppenchat mit Teamer:innen aus user_organizations', () => {
       const res = await hinzufuegen(CHAT_ROOMS.group.id, USERS.admin2.id);
 
       expect(res.status).toBe(404);
-      expect(res.body.error).toBe('Benutzer nicht in deiner Organisation gefunden');
+      expect(res.body.error).toBe('Benutzer nicht in deiner Gemeinde gefunden');
       expect(await teilnehmer(CHAT_ROOMS.group.id)).not.toContainEqual(
         expect.objectContaining({ user_id: USERS.admin2.id })
       );

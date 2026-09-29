@@ -307,7 +307,7 @@ const orgLimiter = rateLimit({
   max: 500,
   keyGenerator: userOrIpKey,
   skip: (req) => req.method === 'GET',
-  message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es später erneut.' },
+  message: { error: 'Zu viele Anfragen an die Gemeinde-Verwaltung. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });

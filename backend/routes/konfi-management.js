@@ -266,7 +266,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             if (!jahrgangExists) {
                 await client.query('ROLLBACK');
-                return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
+                return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Gemeinde' });
             }
 
             // Ein Admin darf Konfis NUR in seinen eigenen Jahrgaengen anlegen
@@ -434,7 +434,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             );
             if (!zielJahrgang) {
                 await client.query('ROLLBACK');
-                return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
+                return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Gemeinde' });
             }
 
             // Verschieben ist an die eigenen Jahrgaenge gebunden (Simons Regel

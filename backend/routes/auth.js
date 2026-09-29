@@ -122,8 +122,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 // fehlte der zweite Satz. Form der Antwort: 403 { error, error_code }.
 const SPERR_MELDUNGEN = {
   user_inactive: 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.',
-  org_trial_expired: 'Die Testphase dieser Organisation ist abgelaufen. Bitte wende dich an deine Gemeinde, um einen Tarif zu buchen.',
-  org_inactive: 'Diese Organisation ist derzeit gesperrt. Bitte wende dich an deine Gemeinde.',
+  org_trial_expired: 'Die Testphase dieser Gemeinde ist abgelaufen. Bitte wende dich an die Leitung deiner Gemeinde, um einen Tarif zu buchen.',
+  org_inactive: 'Diese Gemeinde ist derzeit gesperrt. Bitte wende dich an die Leitung deiner Gemeinde.',
 };
 const sperrAntwort = (res, errorCode) =>
   res.status(403).json({ error: SPERR_MELDUNGEN[errorCode], error_code: errorCode });
@@ -792,7 +792,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       res.json(rows);
     } catch (err) {
       console.error('Database error in GET /api/auth/my-organizations:', err);
-      res.status(500).json({ error: 'Fehler beim Laden der Organisationen' });
+      res.status(500).json({ error: 'Fehler beim Laden der Gemeinden' });
     }
   });
 
@@ -830,10 +830,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       `, [userId, targetOrgId]);
 
       if (!membership) {
-        return res.status(403).json({ error: 'Du bist kein Mitglied dieser Organisation' });
+        return res.status(403).json({ error: 'Du bist kein Mitglied dieser Gemeinde' });
       }
       if (membership.is_active === false) {
-        return res.status(403).json({ error: 'Diese Organisation ist derzeit gesperrt' });
+        return res.status(403).json({ error: 'Diese Gemeinde ist derzeit gesperrt' });
       }
 
       const userType = membership.role_name === 'konfi' ? 'konfi'
@@ -862,7 +862,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       });
     } catch (err) {
       console.error('Database error in POST /api/auth/switch-org:', err);
-      res.status(500).json({ error: 'Fehler beim Wechsel der Organisation' });
+      res.status(500).json({ error: 'Fehler beim Wechsel der Gemeinde' });
     }
   });
 

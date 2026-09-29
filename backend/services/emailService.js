@@ -271,9 +271,9 @@ const sendLicenseExpiryReminderEmail = async (email, name, orgName, endDate, day
   const text = `
 Hallo ${name},
 
-die Lizenz für eure Organisation "${orgName}" bei Konfi Quest läuft am ${dateStr} ab (noch ${daysLeft} Tag${daysLeft === 1 ? '' : 'e'}).
+die Lizenz für eure Gemeinde "${orgName}" bei Konfi Quest läuft am ${dateStr} ab (noch ${daysLeft} Tag${daysLeft === 1 ? '' : 'e'}).
 
-Nach Ablauf wird der Zugang für eure Organisation automatisch gesperrt, bis die Lizenz verlängert wird.
+Nach Ablauf wird der Zugang für eure Gemeinde automatisch gesperrt, bis die Lizenz verlängert wird.
 
 Bitte wende dich rechtzeitig an uns, um die Lizenz zu verlängern.
 
@@ -283,10 +283,10 @@ Dein Konfi Quest Team
 
   const html = wrapHtml(`
       <h2>Hallo ${escapeHtml(name)}!</h2>
-      <p>die Lizenz für eure Organisation <strong>${escapeHtml(orgName)}</strong> läuft bald ab:</p>
+      <p>die Lizenz für eure Gemeinde <strong>${escapeHtml(orgName)}</strong> läuft bald ab:</p>
       <div class="date">${escapeHtml(dateStr)} &middot; noch ${escapeHtml(daysLeft)} Tag${daysLeft === 1 ? '' : 'e'}</div>
       <div class="warning">
-        <strong>Hinweis:</strong> Nach Ablauf wird der Zugang für eure Organisation automatisch gesperrt, bis die Lizenz verlängert wird. Bitte wende dich rechtzeitig an uns, um die Lizenz zu verlängern.
+        <strong>Hinweis:</strong> Nach Ablauf wird der Zugang für eure Gemeinde automatisch gesperrt, bis die Lizenz verlängert wird. Bitte wende dich rechtzeitig an uns, um die Lizenz zu verlängern.
       </div>
   `);
 
@@ -348,7 +348,7 @@ const sendJahrgangDeletionWarningEmail = async (email, name, orgName, jahrgangNa
   const text = `
 Hallo ${name},
 
-der Jahrgang "${jahrgangName}" in eurer Organisation "${orgName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} automatisch gelöscht.
+der Jahrgang "${jahrgangName}" in eurer Gemeinde "${orgName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} automatisch gelöscht.
 
 Das ist die letzte Gelegenheit, Konfis dieses Jahrgangs noch zu Teamer:innen zu befördern. Beförderte Teamer:innen behalten ihre Punkte und Badges und bleiben euch erhalten - alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt.
 
@@ -360,7 +360,7 @@ Dein Konfi Quest Team
 
   const html = wrapHtml(`
       <h2>Hallo ${escapeHtml(name)}!</h2>
-      <p>der Jahrgang <strong>${escapeHtml(jahrgangName)}</strong> in eurer Organisation <strong>${escapeHtml(orgName)}</strong> wird bald gelöscht:</p>
+      <p>der Jahrgang <strong>${escapeHtml(jahrgangName)}</strong> in eurer Gemeinde <strong>${escapeHtml(orgName)}</strong> wird bald gelöscht:</p>
       <div class="date">Löschung in ${escapeHtml(daysLeft)} Tag${daysLeft === 1 ? '' : 'en'}</div>
       <div class="warning">
         <strong>Letzte Chance:</strong> Befördert jetzt noch Konfis dieses Jahrgangs zu Teamer:innen, wenn sie euch erhalten bleiben sollen. Beförderte Teamer:innen behalten ihre Punkte und Badges. Alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt. Geschieht nichts, wird der Jahrgang automatisch gelöscht.

@@ -751,7 +751,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Wechsel laengst geklappt hatte. Deshalb best-effort + eigenes catch.
     } catch (err) {
       console.error('Org-Wechsel fehlgeschlagen:', err);
-      setError('Organisation konnte nicht gewechselt werden');
+      setError('Gemeinde konnte nicht gewechselt werden');
       return { ok: false };
     }
 
