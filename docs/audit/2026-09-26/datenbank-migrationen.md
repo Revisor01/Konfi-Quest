@@ -403,6 +403,7 @@ Vertragsbruch.
 - **Produktionsschema heute:** Der Dump ist vom 22.08.2026. Ob Produktion heute exakt
   Dump + 36 Migrationen ist, lässt sich nur dort messen (SQL unten).
   - **Status:** offen 27.09.2026 — Migrationsstand gemessen (89 bis 159), der Schema-Diff nicht (BF-17).
+  - **Status:** Messweg bereit 29.09.2026, Messung beim Betrieb — `backend/scripts/schemaVergleich.js erfassen` im Backend-Container (nur Katalog-Abfragen) gegen den Stand aus dem Repo, `vergleichen` nennt jede Abweichung; Schritte in `docs/auftraege/lokaler-agent/08-schema-und-rueckspielprobe.md`, Abschnitt 3.
 - **Inhalt von `password_plain`:** Ob und wie viele Zeilen noch Klartext tragen, ist nur
   in Produktion zählbar; davon hängt ab, ob BF-06 KRITISCH ist.
   - **Status:** geklärt 27.09.2026 — 0 von 130; BF-06 war nicht kritisch.
@@ -417,6 +418,7 @@ Vertragsbruch.
 - **Wirkung von 0,3 CPU:** Alle Zeiten hier stammen von einer unbegrenzten CPU; der Faktor
   in Produktion ist nur dort messbar.
   - **Status:** überholt 27.09.2026 — Postgres hat seit Phase A 2 CPU; die Wirkung unter Last nach dem Deploy messen.
+  - **Status:** 29.09.2026 unverändert beim Betrieb — nicht von hier messbar; die Messung der Drosselung nach dem Deploy steht in Auftrag 03 (Abschnitt 2, Nr. 9), Auftrag 08 verweist darauf.
 - **Fremde Änderung im Arbeitsbaum:** `git status` zeigt `backend/routes/events/lesen.js`
   als geändert (`WHERE e.id = $1 AND e.organization_id = $2` → `AND ($2::int IS NOT
   NULL)`, also Wegfall der Mandantenprüfung im Termin-Detail). Diese Änderung stammt
