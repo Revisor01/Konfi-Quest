@@ -77,18 +77,18 @@ interface ChallengesManageViewProps {
   ohneJahrgang?: boolean;
   /**
    * Offene Freigaben je Challenge-ID (BadgeContext.pendingChallengesByChallenge):
-   * speist das orange Eck-Badge (Zahl + Uhr) am Eintrag UND den roten Punkt
-   * am Symbol (Simon, 28.09.2026, Messung am Geraet: "Ich erwarte auch einen
-   * roten Kreis auf dem Listen Element" -- der Reiter zeigte eine rote 1,
-   * der Eintrag keine). Die ZAHL steht seit 29.09.2026 nur noch im Eck-Badge
-   * (Simon: "Zahl nur auf der corner badge"), der rote Kreis ist ein Punkt.
-   * Optional, weil aeltere Server die Aufschluesselung nicht liefern.
+   * speist das orange Eck-Badge (Zahl + Uhr) am Eintrag UND zaehlt in der
+   * roten Kugel am Symbol mit (Simon, 28.09.2026, Messung am Geraet: "Ich
+   * erwarte auch einen roten Kreis auf dem Listen Element" -- der Reiter
+   * zeigte eine rote 1, der Eintrag keine). Das hebt die Entscheidung vom
+   * 25.09.2026 ("fuer Freigaben ja [orange], sonst nur der rote Badge")
+   * auf. Optional, weil aeltere Server die Aufschluesselung nicht liefern.
    */
   offeneFreigaben?: Record<number, number>;
   /**
    * Neue Beitraege je Challenge seit dem letzten Oeffnen
-   * (BadgeContext.challengeUpdatesByChallenge, 27.09.2026): roter Punkt am
-   * Symbol, zusammen mit den wartenden Freigaben. Ein Beitrag
+   * (BadgeContext.challengeUpdatesByChallenge, 27.09.2026): rote Kugel am
+   * Symbol wie im Chat, zusammen mit den wartenden Freigaben. Ein Beitrag
    * steht nie in beiden Quellen (der Server zaehlt wartende nicht als neu),
    * die Summe zaehlt ihn also nie doppelt.
    */
@@ -321,10 +321,13 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   <div className="app-corner-badges">
                     {/* Offene Freigaben: Zahl plus Uhr statt "{n} offen"
                         (Nutzerentscheid 24.08.2026) -- was gemeint ist, sagen
-                        title/aria-label in ganzen Worten. Hier und NUR hier
-                        steht die Zahl (Simon, TestFlight 233, 29.09.2026:
-                        "Zahl nur auf der corner badge"); der rote Punkt am
-                        Symbol sagt nur noch, DASS etwas wartet. */}
+                        title/aria-label in ganzen Worten. Dieselben Freigaben
+                        zaehlen seit 28.09.2026 zusaetzlich in der roten
+                        Kugel am Symbol (Simon: "Etwas Wartendes bekommt auch
+                        ein Badge fuer den Admin. Ich muss das doch sehen.");
+                        das orange Feld bleibt stehen und sagt, WAS wartet.
+                        Die Entscheidung vom 25.09.2026 (Freigaben nur orange)
+                        ist damit aufgehoben. */}
                     {pending > 0 && (
                       <>
                         <div
@@ -382,16 +385,13 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
-                      {/* Roter PUNKT am Symbol (29.09.2026, Simon: "Zahl nur
-                          auf der corner badge"): Er erscheint, sobald an der
-                          Challenge etwas auf dich wartet -- wartende
-                          Freigaben (seit 28.09.2026) oder neue Beitraege seit
-                          dem letzten Oeffnen (27.09.2026, "wie der Chat").
-                          Die Zahl der Freigaben steht im orangen Eck-Badge,
-                          die Summe ueber alle Challenges am Reiter
+                      {/* Rote Kugel am Symbol wie in der Chat-Liste und bei
+                          den Konfis (Simon, 27.09.2026: "wie der Chat"):
+                          wartende Freigaben PLUS neue Beitraege seit dem
+                          letzten Oeffnen (28.09.2026). So ergibt die Summe
+                          der Eintraege die Zahl am Reiter
                           (pendingChallengesCount + challengeUpdatesTotal in
-                          MainTabs). Der Vorlesetext nennt beide Anteile mit
-                          Zahl. Bis dahin trug die Kugel die Summe. */}
+                          MainTabs). Der Vorlesetext nennt beide Anteile. */}
                       <div className="app-zaehler-anker">
                         <div
                           className="app-icon-circle app-icon-circle--lg"
@@ -399,7 +399,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                         >
                           <IonIcon icon={STATUS_ICON[status]} />
                         </div>
-                        <ZaehlerKugel anzahl={pending + neu} label={kugelTextAmEintrag(pending, neu)} punkt />
+                        <ZaehlerKugel anzahl={pending + neu} label={kugelTextAmEintrag(pending, neu)} />
                       </div>
 
                       <div className="app-list-item__content">

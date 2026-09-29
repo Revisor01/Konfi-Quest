@@ -166,10 +166,10 @@ iOS-Build 233 · Android versionCode 127
 - Fehler stehen jetzt zusammengefasst statt als Rohliste: was, wie oft, seit
   wann und wann zuletzt. Die Einzelfälle stehen weiterhin darunter.
 - Leitung und Team sehen neue Challenge-Beiträge wie ungelesene Nachrichten im
-  Chat: eine rote Zahl am Reiter und ein roter Punkt am Symbol der Challenge,
-  bis sie die Challenge öffnen — auch bei Challenges ohne Freigabe, bei denen
-  ein Beitrag sofort in der Galerie steht. Wartende Freigaben stehen weiter im
-  orangen Feld mit Zahl und Uhr; ein Beitrag zählt nie doppelt. Gemeinde-Umschalter und
+  Chat: eine rote Zahl am Reiter und am Symbol der Challenge, bis sie die
+  Challenge öffnen — auch bei Challenges ohne Freigabe, bei denen ein Beitrag
+  sofort in der Galerie steht. Wartende Freigaben stehen weiter im orangen
+  Feld mit Zahl und Uhr; ein Beitrag zählt nie doppelt. Gemeinde-Umschalter und
   App-Symbol zählen die neuen Beiträge mit.
 - Beim Anlegen einer Challenge gibt es wieder die Zielgruppe „Nur die
   Konfis": Die Konfis der gewählten Jahrgänge reichen ein, das Team dieser
@@ -222,13 +222,8 @@ iOS-Build 233 · Android versionCode 127
   Änderungen weiter sofort, ein gelöschtes Badge verschwindet bei ihnen.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
-  die Zahl am Reiter. Das orange Feld mit Uhr bleibt zusätzlich stehen und
-  trägt keine Zahl mehr; es sagt nur, dass etwas auf Freigabe wartet.
-- In der Challenge-Liste von Leitung und Team steht die Zahl nur noch im
-  orangen Feld mit Uhr: so viele Beiträge warten auf Freigabe. Am Symbol der
-  Challenge zeigt ein roter Punkt ohne Zahl, dass dort etwas wartet — Beiträge
-  zur Freigabe oder neue Beiträge seit dem letzten Öffnen; die Zahl am Reiter
-  zählt beides zusammen.
+  die Zahl am Reiter; das orange Feld mit Zahl und Uhr bleibt zusätzlich
+  stehen.
 - Ungelesene Mitteilungen zeigt die Glocke in jeder Rolle mit einem blauen
   Punkt statt mit einer Zahl; eine Zahl an der Glocke steht nur noch für
   Vorgänge, die aus einer Funklücke gesendet werden. Im Postfach trägt jede

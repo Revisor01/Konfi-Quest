@@ -27,21 +27,10 @@ interface ZaehlerKugelProps {
   anzahl: number;
   /** Was gezaehlt wird, fuer Vorleseprogramme: "ungelesene Nachrichten". */
   label: string;
-  /**
-   * Nur ein roter Punkt, keine Ziffer (29.09.2026): fuer Eintraege, deren
-   * Zahl schon anderswo sichtbar steht -- in der Challenge-Liste der Leitung
-   * das orange Eck-Badge (Simon, TestFlight 233: "Zahl nur auf der corner
-   * badge"). Mitte wie die Kugel (Stylesheet), der Vorlesetext behaelt die
-   * Zahl; role="img", weil der Punkt keinen Text hat.
-   */
-  punkt?: boolean;
 }
 
-const ZaehlerKugel: React.FC<ZaehlerKugelProps> = ({ anzahl, label, punkt = false }) => {
+const ZaehlerKugel: React.FC<ZaehlerKugelProps> = ({ anzahl, label }) => {
   if (!(anzahl > 0)) return null;
-  if (punkt) {
-    return <span className="app-zaehler-kugel app-zaehler-kugel--punkt" role="img" aria-label={`${anzahl} ${label}`} />;
-  }
   return (
     <span className="app-zaehler-kugel" aria-label={`${anzahl} ${label}`}>
       {anzahl > 9 ? '9+' : anzahl}

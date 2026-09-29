@@ -1106,24 +1106,6 @@ ion-list[inset] ion-list-header {
   top: -1.4px;
   left: calc(100% - 2.6px);
 }
-/* Nur ein Punkt, keine Ziffer (ZaehlerKugel punkt, 29.09.2026): Simon,
-   TestFlight 233, zur Challenge-Liste der Leitung: "Zahl nur auf der corner
-   badge". 12px mit demselben weissen Rand, der rote Kern 10px -- so gross
-   wie der blaue Ungelesen-Punkt am Postfach. DIESELBE MITTE wie die Kugel
-   (Vertrag oben: 45-Grad-Diagonale, 3px ausserhalb des Kreisrands), nur
-   kleiner: Die Mitte liegt waagerecht ohnehin ueber left + translateX(-50%),
-   senkrecht rechnet top aus der Kugel nach -- 28er-Kreis: Mitte 6px ->
-   top 0; 32er-Kreis: Mitte 6,6px -> top 0,6px. */
-.app-zaehler-kugel--punkt {
-  top: 0;
-  min-width: 12px;
-  width: 12px;
-  height: 12px;
-  padding: 0;
-}
-.app-zaehler-anker:has(> .app-icon-circle--lg) > .app-zaehler-kugel--punkt {
-  top: 0.6px;
-}
 .app-list-item__content {
   flex: 1;
   min-width: 0;

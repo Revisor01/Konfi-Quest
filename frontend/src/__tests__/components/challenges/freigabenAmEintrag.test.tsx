@@ -75,19 +75,15 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     expect(getByLabelText('12 Beiträge warten auf Freigabe').textContent).toBe('12');
   });
 
-  it('sitzt in der Eck-Badge-Leiste -- die Zahl NUR dort, am Symbol ein roter Punkt', () => {
-    // Simon, TestFlight 233 (29.09.2026): "Zahl nur auf der corner badge."
-    // Die rote Kugel (ZaehlerKugel punkt) legt sich als Punkt ohne Ziffer ans
-    // Symbol; der Vorlesetext nennt die Zahl weiter.
+  it('sitzt in der Eck-Badge-Leiste -- und zaehlt zusaetzlich in der roten Kugel am Symbol', () => {
     const { getByLabelText, container } = renderListe({ 31: 3 });
     const badge = getByLabelText('3 Beiträge warten auf Freigabe');
     expect(badge.closest('.app-corner-badges')).not.toBeNull();
-    expect(badge.textContent).toBe('3');
+    // Die rote Kugel (ZaehlerKugel) legt sich als span.app-zaehler-kugel ans
+    // Symbol; seit 28.09.2026 zaehlt sie die wartenden Freigaben mit.
     const kugeln = container.querySelectorAll('.app-zaehler-kugel');
     expect(kugeln).toHaveLength(1);
-    expect(kugeln[0].classList.contains('app-zaehler-kugel--punkt')).toBe(true);
-    expect(kugeln[0].textContent).toBe('');
-    expect(kugeln[0].getAttribute('role')).toBe('img');
+    expect(kugeln[0].textContent).toBe('3');
     expect(kugeln[0].getAttribute('aria-label')).toBe('3 offen: 3 Beiträge warten auf Freigabe');
   });
 
