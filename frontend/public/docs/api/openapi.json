@@ -290,7 +290,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "409": {
-            "description": "Letzte Person mit Org-Leitung in ihrer Gemeinde (seit 26.08.2026)"
+            "description": "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026)"
           },
           "500": {
             "description": "BEHOBEN 28.09.2026: Hatte die Person Antraege in einer WEITEREN Gemeinde, scheiterte die Loeschung am Fremdschluessel activity_requests_konfi_id_fkey (die alte Kaskade raeumte nur die Stamm-Gemeinde ab) -- eine eingeladene Teamer:in konnte ihr Konto nicht loeschen"
@@ -436,7 +436,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Eine bestehende Person in die eigene Gemeinde einladen",
-        "description": "NEU 26.09.2026 (Simon: \"ORG Admin kann bestehenden anderen User hinzufuegen, der bekommt Einladung und bestaetigt. Schon ist der switcher da.\"). Gesucht wird EXAKT nach Benutzername oder E-Mail -- keine Teilsuche, sonst liesse sich der Bestand fremder Gemeinden durchblaettern. Die Einladung gilt 14 Tage.\nDIE MITGLIEDSCHAFT ENTSTEHT NICHT HIER, sondern erst mit der Annahme: Eine Zugehoerigkeit aendert, was jemand sieht und darf, und wird deshalb nicht ueber den Kopf der Person hinweg angelegt.\nKONFI IST AUSGESCHLOSSEN -- und zwar zusaetzlich zur Rollenhierarchie: canCreateRole('org_admin', 'konfi') liefert TRUE, die Hierarchie allein wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen ueber invite_codes.\nAUCH ALS ZIEL (BEHOBEN 26.09.2026, Audit Sicherheit BF-03): Ist die gefundene Person ein Konfi (Stammrolle), antwortet die Route mit demselben 404 wie bei einer unbekannten Kennung -- ohne Name, ohne Einladung, ohne Push und Mail. Vorher liess sich ein Konfi einer fremden Gemeinde als Teamer:in einladen, und die Route bestaetigte zu jeder E-Mail-Adresse im System, ob ein Konto existiert (Enumeration, auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre Einladung erscheint ohnehin in der Liste.\nKONFI IRGENDWO REICHT (BEHOBEN 28.09.2026, Simon: \"Konfi und Team geht nicht parallel\"; utils/konfiOderTeam.js): Vorher zaehlte nur die Stammrolle. Ein Konto, das zuhause Team und ueber user_organizations in einer anderen Gemeinde Konfi ist (Altbestand), liess sich so in eine weitere Gemeinde einladen. Jetzt dieselbe 404 nicht_gefunden wie bei einem Konfi. Test tests/routes/konfiOderTeam.test.js.\nMeldung an die eingeladene Person ueber Postfach, Push (Gruppe \"Anfragen und Freigaben\") und E-Mail, nach der Antwort (nachAntwort). Die Rolle steht darin mit dem festen Wort nach role_name (\"Leitung\", \"Org-Leitung\", \"Teamer:in\"; utils/rollenNamen.js). BEHOBEN 28.09.2026: Vorher stand dort der technische Name (\"als admin mitzuarbeiten\"), weil die Abfrage display_name gar nicht las. Dasselbe Wort nennt die Meldung \"Einladung angenommen/abgelehnt\" an die einladende Person (vorher roles.display_name, in bestehenden Gemeinden \"Hauptamt\").\nABGELAUFENE EINLADUNG SPERRT NICHT MEHR (BEHOBEN 28.09.2026): Nach 14 Tagen bleibt der Status 'offen', nur expires_at liegt zurueck; der Teilindex idx_org_einladungen_offen kennt nur den Status. Vorher lief jede neue Einladung derselben Person in dieselbe Gemeinde deshalb auf 409 schon_eingeladen, obwohl GET /einladungen und /einladungen/meine die alte nicht mehr zeigten. Jetzt loescht die Route in derselben Transaktion die abgelaufene offene Einladung genau dieser Person in dieser Gemeinde samt Postfach-Eintrag und legt die neue an. Beantwortete Einladungen (Verlauf) und die anderer Personen bleiben.\n",
+        "description": "NEU 26.09.2026 (Simon: \"ORG Admin kann bestehenden anderen User hinzufuegen, der bekommt Einladung und bestaetigt. Schon ist der switcher da.\"). Gesucht wird EXAKT nach Benutzername oder E-Mail -- keine Teilsuche, sonst liesse sich der Bestand fremder Gemeinden durchblaettern. Die Einladung gilt 14 Tage.\nDIE MITGLIEDSCHAFT ENTSTEHT NICHT HIER, sondern erst mit der Annahme: Eine Zugehoerigkeit aendert, was jemand sieht und darf, und wird deshalb nicht ueber den Kopf der Person hinweg angelegt.\nKONFI IST AUSGESCHLOSSEN -- und zwar zusaetzlich zur Rollenhierarchie: canCreateRole('org_admin', 'konfi') liefert TRUE, die Hierarchie allein wuerde es durchlassen. Konfis gehoeren zu einem Jahrgang und kommen ueber invite_codes.\nAUCH ALS ZIEL (BEHOBEN 26.09.2026, Audit Sicherheit BF-03): Ist die gefundene Person ein Konfi (Stammrolle), antwortet die Route mit demselben 404 wie bei einer unbekannten Kennung -- ohne Name, ohne Einladung, ohne Push und Mail. Vorher liess sich ein Konfi einer fremden Gemeinde als Teamer:in einladen, und die Route bestaetigte zu jeder E-Mail-Adresse im System, ob ein Konto existiert (Enumeration, auch von Kindern). Team-Konten bleiben exakt auffindbar; ihre Einladung erscheint ohnehin in der Liste.\nKONFI IRGENDWO REICHT (BEHOBEN 28.09.2026, Simon: \"Konfi und Team geht nicht parallel\"; utils/konfiOderTeam.js): Vorher zaehlte nur die Stammrolle. Ein Konto, das zuhause Team und ueber user_organizations in einer anderen Gemeinde Konfi ist (Altbestand), liess sich so in eine weitere Gemeinde einladen. Jetzt dieselbe 404 nicht_gefunden wie bei einem Konfi. Test tests/routes/konfiOderTeam.test.js.\nMeldung an die eingeladene Person ueber Postfach, Push (Gruppe \"Anfragen und Freigaben\") und E-Mail, nach der Antwort (nachAntwort). Die Rolle steht darin mit dem festen Wort nach role_name (\"Leitung\", \"Gemeindeleitung\", \"Teamer:in\"; utils/rollenNamen.js). BEHOBEN 28.09.2026: Vorher stand dort der technische Name (\"als admin mitzuarbeiten\"), weil die Abfrage display_name gar nicht las. Dasselbe Wort nennt die Meldung \"Einladung angenommen/abgelehnt\" an die einladende Person (vorher roles.display_name, in bestehenden Gemeinden \"Hauptamt\").\nABGELAUFENE EINLADUNG SPERRT NICHT MEHR (BEHOBEN 28.09.2026): Nach 14 Tagen bleibt der Status 'offen', nur expires_at liegt zurueck; der Teilindex idx_org_einladungen_offen kennt nur den Status. Vorher lief jede neue Einladung derselben Person in dieselbe Gemeinde deshalb auf 409 schon_eingeladen, obwohl GET /einladungen und /einladungen/meine die alte nicht mehr zeigten. Jetzt loescht die Route in derselben Transaktion die abgelaufene offene Einladung genau dieser Person in dieser Gemeinde samt Postfach-Eintrag und legt die neue an. Beantwortete Einladungen (Verlauf) und die anderer Personen bleiben.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -582,7 +582,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Einladung annehmen -- legt die Mitgliedschaft an",
-        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n\nBEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-21; Simons Entscheidung F-13: \"Ja, als Postfach-Eintrag\"): Die einladende Leitung erfuhr nichts. Jetzt nach der Antwort Push mit Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet', status 'angenommen', einladung_id, user_id, organization_id = die einladende Gemeinde) an die Person aus eingeladen_von, solange sie dort Org-Admin ist (beide Quellen, aktiv, nicht geloescht) -- sonst an die Org-Admins der Gemeinde; nie an die eingeladene Person selbst. Dazu das Live-Signal 'users' an die Gemeinde (die Benutzerliste laedt nach). Die Antwortform ist unveraendert.\n\nBEHOBEN 28.09.2026: Bei der eingeladenen Person blieb nach der Zusage der Postfach-Eintrag \"Einladung in eine Gemeinde ... Tippe, um zu antworten\" (type 'gemeinde_einladung') stehen und zaehlte als ungelesen. Er geht jetzt in DERSELBEN Transaktion wie Statuswechsel und Mitgliedschaft (loescheMitteilungenZuEinladung, wie beim Zurueckziehen). Die Zusage an die Leitung ('gemeinde_einladung_beantwortet') bleibt. 404/409/410 raeumen nichts auf; einen abgelaufenen Eintrag nimmt das taegliche Postfach-Aufraeumen (02:00) mit.\n\nKONFI UND TEAM NIE ZUGLEICH (BEHOBEN 28.09.2026, Simon: \"Konfi und Team geht nicht parallel\"; utils/konfiOderTeam.js): Die Annahme prueft Konto und angebotene Rolle mit dem Stand von JETZT. Vorher legte sie die Mitgliedschaft auch an, wenn das Konto inzwischen (oder schon vor dem 26.09.2026, Sicherheit BF-03) Konfi war oder die Einladung die Konfi-Rolle trug. Dann 409 konfi_und_team; die Einladung bleibt offen, nichts wird geschrieben.\n",
+        "description": "Schreibt in einer Transaktion den Status und die Zeile in user_organizations. Danach invalidateUserCache, sonst haelt der RBAC-Cache (30 s) die alte Zugehoerigkeit fest und der Gemeinde-Umschalter zeigt die neue Gemeinde verspaetet.\n\nBEHOBEN 27.09.2026 (Bericht \"Wer bekommt was\", BF-21; Simons Entscheidung F-13: \"Ja, als Postfach-Eintrag\"): Die einladende Leitung erfuhr nichts. Jetzt nach der Antwort Push mit Postfach-Eintrag (data.type 'gemeinde_einladung_beantwortet', status 'angenommen', einladung_id, user_id, organization_id = die einladende Gemeinde) an die Person aus eingeladen_von, solange sie dort zur Gemeindeleitung gehoert (beide Quellen, aktiv, nicht geloescht) -- sonst an die Gemeindeleitung; nie an die eingeladene Person selbst. Dazu das Live-Signal 'users' an die Gemeinde (die Benutzerliste laedt nach). Die Antwortform ist unveraendert.\n\nBEHOBEN 28.09.2026: Bei der eingeladenen Person blieb nach der Zusage der Postfach-Eintrag \"Einladung in eine Gemeinde ... Tippe, um zu antworten\" (type 'gemeinde_einladung') stehen und zaehlte als ungelesen. Er geht jetzt in DERSELBEN Transaktion wie Statuswechsel und Mitgliedschaft (loescheMitteilungenZuEinladung, wie beim Zurueckziehen). Die Zusage an die Leitung ('gemeinde_einladung_beantwortet') bleibt. 404/409/410 raeumen nichts auf; einen abgelaufenen Eintrag nimmt das taegliche Postfach-Aufraeumen (02:00) mit.\n\nKONFI UND TEAM NIE ZUGLEICH (BEHOBEN 28.09.2026, Simon: \"Konfi und Team geht nicht parallel\"; utils/konfiOderTeam.js): Die Annahme prueft Konto und angebotene Rolle mit dem Stand von JETZT. Vorher legte sie die Mitgliedschaft auch an, wenn das Konto inzwischen (oder schon vor dem 26.09.2026, Sicherheit BF-03) Konfi war oder die Einladung die Konfi-Rolle trug. Dann 409 konfi_und_team; die Einladung bleibt offen, nichts wird geschrieben.\n",
         "parameters": [
           {
             "name": "id",
@@ -837,7 +837,7 @@
             "description": "gueltig_tage nicht 7, 14, 30, 60 oder 90 — { error }"
           },
           "403": {
-            "description": "Nur Org-Admins"
+            "description": "Nur die Gemeindeleitung"
           },
           "404": {
             "description": "Jahrgang nicht in eigener Org"
@@ -1128,7 +1128,7 @@
         },
         "responses": {
           "200": {
-            "description": "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an die Leitung des Jahrgangs (Org-Admins immer, Admins mit can_view auf den Jahrgang)"
+            "description": "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an die Leitung des Jahrgangs (die Gemeindeleitung immer, Admins mit can_view auf den Jahrgang)"
           },
           "403": {
             "description": "Konfi-Limit der Org erreicht (limit_exceeded)"
@@ -2163,7 +2163,7 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "users.organization_id !== id (Primaer-Org-Schutz)",
-          "hinweis": "BEKANNT: laufende Access-Tokens mit active_organization_id-Claim wirken serverseitig bis Ablauf nach (max 15 Min + 30s Cache). BEHOBEN 26.09.2026 auf Client-Seite (Audit Grundgeruest BF-05): Die App holt beim ersten 403 \"Kein Zugriff auf diese Organisation\" per POST /auth/refresh OHNE X-Active-Organization ein Token ohne Claim, baut den Socket damit neu auf und faellt sauber auf die Stamm-Org zurueck; das alte Token wird nicht mehr weiterbenutzt. rbac.js faellt weiterhin bewusst NICHT still zurueck.\n"
+          "hinweis": "BEKANNT: laufende Access-Tokens mit active_organization_id-Claim wirken serverseitig bis Ablauf nach (max 15 Min + 30s Cache). BEHOBEN 26.09.2026 auf Client-Seite (Audit Grundgeruest BF-05): Die App holt beim ersten 403 \"Kein Zugriff auf diese Organisation\" (seit 29.09.2026 erkannt an error_code org_kein_zugriff) per POST /auth/refresh OHNE X-Active-Organization ein Token ohne Claim, baut den Socket damit neu auf und faellt sauber auf die Stamm-Org zurueck; das alte Token wird nicht mehr weiterbenutzt. rbac.js faellt weiterhin bewusst NICHT still zurueck.\n"
         }
       }
     },
@@ -2532,7 +2532,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org); Jahrgänge auf die aktive Org gefiltert",
-          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin. admin darf die Zuweisungen der von ihm verwalteten Personen (teamer, konfi) sehen — die von anderen Admins und von Org-Admins nicht (403), fremde Organisationen gar nicht (404). requireAdmin allein waere eine Rechteausweitung gewesen; die Grenze zieht checkUserHierarchy. BEHOBEN 26.09.2026: checkUserHierarchy suchte den Ziel-User allein ueber users.organization_id. Wer ueber user_organizations in der Gemeinde arbeitet, war dort nicht verwaltbar (404) — obwohl das Handbuch den Vorgang beschreibt. Jetzt zaehlen beide Quellen, und die Hierarchie prueft die Rolle DIESER Organisation (uo.role_id), nicht die am Nutzerkonto.\"\n"
+          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin. admin darf die Zuweisungen der von ihm verwalteten Personen (teamer, konfi) sehen — die von anderen Admins und der Gemeindeleitung nicht (403), fremde Organisationen gar nicht (404). requireAdmin allein waere eine Rechteausweitung gewesen; die Grenze zieht checkUserHierarchy. BEHOBEN 26.09.2026: checkUserHierarchy suchte den Ziel-User allein ueber users.organization_id. Wer ueber user_organizations in der Gemeinde arbeitet, war dort nicht verwaltbar (404) — obwohl das Handbuch den Vorgang beschreibt. Jetzt zaehlen beide Quellen, und die Hierarchie prueft die Rolle DIESER Organisation (uo.role_id), nicht die am Nutzerkonto.\"\n"
         }
       },
       "post": {
@@ -2615,7 +2615,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org); alle Jahrgang-IDs müssen zur aktiven Org gehören; seit 31.08.2026 fuer admin zusaetzlich zu seinen eigenen Zuweisungen (can_edit) — sonst 403. org_admin und super_admin ausgenommen.\n",
-          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung. Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig. admin kommt damit an teamer und konfi, NICHT an andere Admins oder Org-Admins (403) und nicht an fremde Organisationen (404). BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht verantwortet. Seither ersetzt ein admin NUR die Zuweisungen auf seine eigenen Jahrgaenge; fremde bleiben unberuehrt, und ein fremder Ziel-Jahrgang wird mit 403 abgewiesen. org_admin ersetzt weiterhin alle. Zusaetzlich wird der Benutzer-Cache geleert, damit eine neue Zuweisung sofort greift statt erst nach 30 Sekunden. BEHOBEN 26.09.2026: Die Existenzpruefung suchte den Ziel-User allein ueber users.organization_id — wer ueber user_organizations in der Gemeinde arbeitet, bekam 404 und war dort nicht verwaltbar. Jetzt zaehlen beide Quellen (dasselbe Muster wie utils/orgMitglieder.js bei den Push-Empfaengern). Die Zuweisungen der ANDEREN Gemeinden bleiben dabei unberuehrt: Das DELETE ist seit 31.08.2026 an die Organisation gebunden.\"\n"
+          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung. Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig. admin kommt damit an teamer und konfi, NICHT an andere Admins oder die Gemeindeleitung (403) und nicht an fremde Organisationen (404). BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht verantwortet. Seither ersetzt ein admin NUR die Zuweisungen auf seine eigenen Jahrgaenge; fremde bleiben unberuehrt, und ein fremder Ziel-Jahrgang wird mit 403 abgewiesen. org_admin ersetzt weiterhin alle. Zusaetzlich wird der Benutzer-Cache geleert, damit eine neue Zuweisung sofort greift statt erst nach 30 Sekunden. BEHOBEN 26.09.2026: Die Existenzpruefung suchte den Ziel-User allein ueber users.organization_id — wer ueber user_organizations in der Gemeinde arbeitet, bekam 404 und war dort nicht verwaltbar. Jetzt zaehlen beide Quellen (dasselbe Muster wie utils/orgMitglieder.js bei den Push-Empfaengern). Die Zuweisungen der ANDEREN Gemeinden bleiben dabei unberuehrt: Das DELETE ist seit 31.08.2026 an die Organisation gebunden.\"\n"
         }
       }
     },
@@ -7634,7 +7634,7 @@
           "Chat"
         ],
         "summary": "Team-Kontaktliste für Direktchats",
-        "description": "Liefert alle aktiven Admins, Org-Admins und Teamer:innen der aktiven Organisation (ohne den Aufrufer selbst) — bewusst nur die für einen Chat noetigen Felder, keine E-Mail/Login-Daten. Mitgliedschaft und Rolle werden wie bei /chat/admins ueber Stamm-Organisation ODER user_organizations aufgeloest (Rolle je Organisation); Multi-Org- Mitglieder erscheinen damit auch im Team ihrer Zweit-Gemeinde (seit 2026-09-25, vorher nur Stamm-Konten).\n",
+        "description": "Liefert alle aktiven Admins, die Gemeindeleitung und Teamer:innen der aktiven Organisation (ohne den Aufrufer selbst) — bewusst nur die für einen Chat noetigen Felder, keine E-Mail/Login-Daten. Mitgliedschaft und Rolle werden wie bei /chat/admins ueber Stamm-Organisation ODER user_organizations aufgeloest (Rolle je Organisation); Multi-Org- Mitglieder erscheinen damit auch im Team ihrer Zweit-Gemeinde (seit 2026-09-25, vorher nur Stamm-Konten).\n",
         "responses": {
           "200": {
             "description": "Liste der Team-Mitglieder",
@@ -7762,7 +7762,7 @@
                           },
                           "role_description": {
                             "type": "string",
-                            "description": "role_title oder Fallback wie TeamContact.role_description (\"Teamer:in\", \"Org-Leitung\", \"Leitung\"; bis 28.09.2026 \"Admin\")"
+                            "description": "role_title oder Fallback wie TeamContact.role_description (\"Teamer:in\", \"Gemeindeleitung\", \"Leitung\"; bis 28.09.2026 \"Admin\", bis 29.09.2026 \"Org-Leitung\")"
                           }
                         }
                       }
@@ -8434,7 +8434,7 @@
           "Chat"
         ],
         "summary": "Kompletten Chat-Verlauf exportieren (nur Leitung)",
-        "description": "Gesamter Verlauf als Text (default) oder JSON, geloeschte Nachrichten als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch eingeschlossen) — nicht teamer, nicht konfi. Im Text steht hinter jedem Namen die Rolle in Klammern, fuer die bekannten Rollen nach role_name: \"Leitung\" (admin), \"Org-Leitung\" (org_admin), \"Teamer:in\"; sonst roles.display_name (seit 28.09.2026, vorher immer display_name, in bestehenden Gemeinden also \"Hauptamt\"). Im JSON steht zusaetzlich (ADDITIV) rolle_name neben rolle.\n",
+        "description": "Gesamter Verlauf als Text (default) oder JSON, geloeschte Nachrichten als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch eingeschlossen) — nicht teamer, nicht konfi. Im Text steht hinter jedem Namen die Rolle in Klammern, fuer die bekannten Rollen nach role_name: \"Leitung\" (admin), \"Gemeindeleitung\" (org_admin, bis 29.09.2026 \"Org-Leitung\"), \"Teamer:in\"; sonst roles.display_name (seit 28.09.2026, vorher immer display_name, in bestehenden Gemeinden also \"Hauptamt\"). Im JSON steht zusaetzlich (ADDITIV) rolle_name neben rolle.\n",
         "parameters": [
           {
             "name": "roomId",
@@ -13976,7 +13976,7 @@
         },
         "responses": {
           "201": {
-            "description": "{ id, message }; Live-Update an Org-Admins UND Org-Konfis"
+            "description": "{ id, message }; Live-Update an die Gemeindeleitung UND Org-Konfis"
           },
           "400": {
             "description": "Pflichtfeld fehlt oder Validierung verletzt (Name 2-100 Zeichen, criteria_value >= 1, fehlende Auswahl in criteria_extra je nach criteria_type)"
@@ -14122,7 +14122,7 @@
         },
         "responses": {
           "200": {
-            "description": "Aktualisiert; Live-Update an Org-Admins UND Org-Konfis"
+            "description": "Aktualisiert; Live-Update an die Gemeindeleitung UND Org-Konfis"
           },
           "400": {
             "description": "Validierung verletzt"
@@ -14171,7 +14171,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Geloescht; Live-Update an Org-Admins UND Org-Konfis"
+            "description": "Geloescht; Live-Update an die Gemeindeleitung UND Org-Konfis"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -14359,7 +14359,7 @@
         },
         "responses": {
           "201": {
-            "description": "Angelegtes Level (vollstaendige Zeile); Live-Update an Org-Admins"
+            "description": "Angelegtes Level (vollstaendige Zeile); Live-Update an die Gemeindeleitung"
           },
           "400": {
             "description": "Pflichtfeld fehlt, points_required negativ, oder bereits ein Level mit dieser Punktzahl (auch als 23505-Unique-Violation)"
@@ -14450,7 +14450,7 @@
         },
         "responses": {
           "200": {
-            "description": "Aktualisiertes Level (vollstaendige Zeile); Live-Update an Org-Admins"
+            "description": "Aktualisiertes Level (vollstaendige Zeile); Live-Update an die Gemeindeleitung"
           },
           "400": {
             "description": "Pflichtfeld fehlt, points_required negativ, oder ein ANDERES Level hat bereits diese Punktzahl"
@@ -14497,7 +14497,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Geloescht; Live-Update an Org-Admins"
+            "description": "Geloescht; Live-Update an die Gemeindeleitung"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -14641,7 +14641,7 @@
         },
         "responses": {
           "201": {
-            "description": "{ id, message }; Live-Update an Org-Admins"
+            "description": "{ id, message }; Live-Update an die Gemeindeleitung"
           },
           "400": {
             "description": "Name fehlt / Validierung verletzt"
@@ -14722,7 +14722,7 @@
         },
         "responses": {
           "200": {
-            "description": "Aktualisiert; Live-Update an Org-Admins"
+            "description": "Aktualisiert; Live-Update an die Gemeindeleitung"
           },
           "400": {
             "description": "Name fehlt / Validierung verletzt"
@@ -14773,7 +14773,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Geloescht; Live-Update an Org-Admins"
+            "description": "Geloescht; Live-Update an die Gemeindeleitung"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -14914,7 +14914,7 @@
         },
         "responses": {
           "201": {
-            "description": "Angelegter Jahrgang (vollstaendige Zeile, unveraendert) + ADDITIV assigned_user_ids (int[], leer ohne user_assignments); Live-Update an Org-Admins"
+            "description": "Angelegter Jahrgang (vollstaendige Zeile, unveraendert) + ADDITIV assigned_user_ids (int[], leer ohne user_assignments); Live-Update an die Gemeindeleitung"
           },
           "400": {
             "description": "Name fehlt / Validierung verletzt / Person doppelt in user_assignments"
@@ -14929,7 +14929,7 @@
             "description": "user_assignments nennt eine Person, die nicht zur eigenen Organisation gehoert"
           },
           "409": {
-            "description": "Jahrgang-Name existiert bereits in dieser Organisation"
+            "description": "Jahrgang-Name existiert bereits in dieser Gemeinde"
           }
         },
         "x-berechtigung": {
@@ -15072,7 +15072,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Geloescht; Live-Update an Org-Admins, bei geloeschten Terminen/Challenges zusaetzlich 'events'/'challenges' an die Gemeinde (nur { count })"
+            "description": "Geloescht; Live-Update an die Gemeindeleitung, bei geloeschten Terminen/Challenges zusaetzlich 'events'/'challenges' an die Gemeinde (nur { count })"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -15639,7 +15639,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "JWT im Authorization-Header. Optional Header X-Active-Organization (Multi-Org): schaltet die aktive Organisation um, sofern der User dort Mitglied ist (sonst 403).\n"
+        "description": "JWT im Authorization-Header. Optional Header X-Active-Organization (Multi-Org): schaltet die aktive Organisation um, sofern der User dort Mitglied ist (sonst 403 mit error_code org_kein_zugriff).\n"
       }
     },
     "schemas": {
