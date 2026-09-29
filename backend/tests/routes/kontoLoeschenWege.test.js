@@ -134,8 +134,12 @@ describe('Konto löschen nimmt auf jedem Weg alles mit', () => {
     await db.query(
       `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
        VALUES ($1, $2, 0, 0, $3)`, [konfi.id, jg.id, ORGS.testGemeinde.id]);
-    voll = await legeVollePersonAn(db, konfi.id);
-    expect(await unbelegteSpalten(db, konfi.id)).toEqual([]);
+    // Ohne Mitgliedschaft in einer weiteren Gemeinde: Eine Konfi ist nie
+    // zugleich woanders im Team (Simon, 28.09.2026: "Konfi und Team geht
+    // nicht parallel"), und ein Altbestands-Mischkonto ueberspringt die
+    // automatische Loeschung bewusst (autoLoeschungWoandersImTeam.test.js).
+    voll = await legeVollePersonAn(db, konfi.id, { weitereGemeinde: false });
+    expect(await unbelegteSpalten(db, konfi.id, { ausser: ['user_organizations.user_id'] })).toEqual([]);
 
     const ergebnis = await BackgroundService.runAutoDeletion(db);
 
