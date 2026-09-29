@@ -1467,6 +1467,11 @@ iOS-Build 234 · Android versionCode 128
   selbst.
 - Beim Öffnen der Konfi-Liste lädt die App keine Angaben zur Gemeinde mehr,
   die sie gar nicht anzeigt.
+- Die automatischen Prüfungen zeigen mehr Ansichten wirklich an, statt nur den
+  Programmtext zu lesen — darunter Termin-Detail, Chat-Übersicht,
+  Gemeinde-Einladung und Abmeldung; sie hängen nicht mehr von Uhrzeit und
+  Zeitzone des Prüfrechners ab, und der Durchlauf im Browser prüft den
+  Punktestand nach einer Vergabe auf den genauen Wert.
 
 ## [2.2.0] - 2026-09-18
 
