@@ -1365,6 +1365,9 @@ iOS-Build 234 · Android versionCode 128
 - Zwei Bausteine des Servers — für Datei-Uploads und für die Anfragegrenzen —
   sind auf Fassungen ohne die zuletzt gemeldeten mittelschweren
   Sicherheitslücken gehoben.
+- Auch der Baustein für den Mailversand ist auf eine Fassung ohne die zuletzt
+  gemeldete mittelschwere Sicherheitslücke gehoben; für den Server ist damit
+  keine bekannte Lücke mehr offen.
 - Stürzt die App ab, wird das jetzt automatisch gemeldet, damit die Ursache
   gefunden werden kann. Übertragen werden nur technische Angaben und die Rolle
   in grober Einteilung — kein Name, keine Kennung. Was dabei an Google geht,

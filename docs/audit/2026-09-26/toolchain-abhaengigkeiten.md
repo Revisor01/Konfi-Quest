@@ -452,6 +452,15 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
     die 14 Testdateien rund um den Mailversand (223 Tests) sind grün, ein SMTP-Transport aus
     `smtpKonfiguration()` und ein Versand über den Stream-Transport (Betreff mit Umlaut)
     funktionieren. Frontend unverändert 3 moderate (react-router 6, s. o.), Wurzel 0.
+  - **Nachtrag 29.09.2026 (Paket I2):** **behoben** — Simons Entscheidung vom 29.09.:
+    `nodemailer` auf `^10.0.12` (Lockfile mit npm 11.20.0 wie die CI; Diff nur
+    `nodemailer`, keine weiteren Pakete). Breaking Change von 10 laut Changelog nur
+    „Node.js 20 oder neuer" (Image `node:24`, `engines` ≥ 24); der CommonJS-Einstieg
+    bleibt `require('nodemailer').createTransport` (beschreibbar, die Test-Spione greifen
+    weiter), die Pool-Optionen des Massentransports (`pool`, `maxConnections`,
+    `maxMessages`, `rateDelta`, `rateLimit`) liest `smtp-pool` unverändert. `npm audit`
+    im Backend vorher 1 moderate, nachher 0 (auch `--omit=dev`). Die 26 Testdateien mit
+    Mailbezug (517 Tests) sind grün. Dependabot-PR #166 ist damit überflüssig.
 - **Lockfile-Konsistenz und Peers:** `npm ls --all` in Backend und Frontend Exit 0, nur
   `UNMET OPTIONAL DEPENDENCY` (normal). Peer-Ranges geprüft: typescript-eslint 8.70.0 ↔
   TypeScript 6.0.3 (`<6.1.0`), `@vitejs/plugin-react` 6.1.1 ↔ Vite 8.2.2 (`^8.0.0`),
