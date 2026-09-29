@@ -600,6 +600,7 @@ SELECT u.id, rs.name AS rolle_am_konto, uo.organization_id, rw.name AS rolle_dor
   der Gemeinde holen. Wirkung gering (Einchecken setzt eine eigene Buchung
   voraus), aber die einzige Schreibroute an Terminen ohne `darfTermin`.
   - **Status:** offen 27.09.2026 — dass Teamer:innen QR-Codes erzeugen, ist gewollt (Entscheidung Simon 27.09., Sicherheit BF-21); die fehlende Jahrgangsbindung (`darfTermin`) bleibt offen, für 2.3.x vorgemerkt.
+  - **Nachtrag 29.09.2026:** behoben — `POST /events/:id/generate-qr` prüft `darfTermin` (`routes/events/checkin.js`), auch bevor ein schon erzeugter Code herausgegeben wird: 403 „Kein Zugriff auf dieses Event" für Termine fremder Jahrgänge; „Nur Team", Termine ohne Jahrgang und Org-Admin bleiben frei. Der Zähler `GET /:id/attendance-count` folgt derselben Regel (fremde/unbekannte Termine 404 statt 200 mit Nullen, Sicherheit BF-16). Tests `tests/routes/qrCodeJahrgangsBindung.test.js`, 14 Fälle (6 verboten, 8 erlaubt); Gegenprobe ohne Fix: 6 rot. `fremdeGemeinde.test.js` angepasst (Code holt dort die Org-Leitung; `admin1` hat keinen Jahrgang).
 - **Serienfolge der Abzeichen** (`streakCalculation.js:616-646`): endet an der
   neuesten aktiven Woche, nicht an „heute“ — eine vor Monaten gerissene Serie
   wird weiter als aktuell angezeigt (Befund 13 in `docs/wissen/abzeichen.md`,

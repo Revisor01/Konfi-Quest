@@ -813,7 +813,10 @@ nie in der Event-Liste.
 Leitung und Teamer:innen kommen gleichermaßen an den Code: oben rechts im
 geöffneten Event über das QR-Symbol. Sind vor Ort nur Teamer:innen, reicht
 das also. Das ist gewollt: So können mehrere aus dem Team gleichzeitig den Code
-zeigen und die Konfis einchecken lassen. Der Code wird beim ersten Anzeigen
+zeigen und die Konfis einchecken lassen. Code und Zähler gibt es nur für Events,
+die man in der eigenen Liste sieht — also in den eigenen Jahrgängen, dazu „Nur
+Team" und Events ohne Jahrgang; die Org-Leitung kommt an jeden Code der
+Gemeinde (siehe die Jahrgangsgrenze oben). Der Code wird beim ersten Anzeigen
 erzeugt, bleibt danach gleich und läuft nicht ab; die zeitliche Begrenzung
 macht allein das Check-in-Fenster.
 

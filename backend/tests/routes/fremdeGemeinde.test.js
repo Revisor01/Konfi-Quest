@@ -18,10 +18,8 @@
 //     Org-2-Zeilen -- auch dann, wenn in der Datenbank eine Zeile mit
 //     Org-1-Bezug fuer diese Person liegt.
 //
-// attendance-count liefert fuer fremde Kennungen heute 200 mit LEEREM
-// Ergebnis ({0, 0}). Der Filter steht im Code, es fliesst nichts ab; ob 404
-// die bessere Antwort waere, ist Sicherheit BF-16 (NIEDRIG). Hier wird der
-// heutige Stand festgeschrieben -- samt Beleg, dass der Filter wirkt: Das
+// attendance-count lieferte fuer fremde Kennungen bis 28.09.2026 200 mit
+// LEEREM Ergebnis ({0, 0}); seit dem 29.09. 404 (Sicherheit BF-16). Das
 // Org-1-Objekt HAT Buchungen, und die fremde Antwort zeigt trotzdem keine.
 // konfi/events/:id/participants antwortet seit 27.09.2026 mit 404: Die
 // Teilnehmenden liest nur, wer den Termin sieht (utils/konfiTerminSicht.js).
@@ -159,9 +157,12 @@ describe('Fremde Gemeinde: Org-2-Token gegen Objekte aus Org 1', () => {
   // ==================================================================
   describe('POST /api/events/qr-checkin', () => {
     async function qrTokenOrg1() {
+      // Die Leitung (org_admin): admin1 hat keinen Jahrgang und bekommt den
+      // Code eines Jahrgangs-Termins seit dem 29.09.2026 nicht mehr
+      // (qrCodeJahrgangsBindung.test.js).
       const qr = await request(app)
         .post(`/api/events/${EVENT_ORG1}/generate-qr`)
-        .set('Authorization', `Bearer ${t.admin1}`);
+        .set('Authorization', `Bearer ${t.orgAdmin1}`);
       expect(qr.status).toBe(200);
       // Der Check-in laeuft nur im Zeitfenster um event_date herum.
       await db.query('UPDATE events SET event_date = NOW() WHERE id = $1', [EVENT_ORG1]);
@@ -203,18 +204,19 @@ describe('Fremde Gemeinde: Org-2-Token gegen Objekte aus Org 1', () => {
 
   // ==================================================================
   // BF-05: GET /api/events/:id/attendance-count
-  // Heute 200 mit {0, 0} fuer fremde Kennungen (Sicherheit BF-16). Der
-  // Filter wirkt: Der Org-1-Termin hat eine bestaetigte Buchung.
+  // Bis 28.09.2026 200 mit {0, 0} fuer fremde Kennungen; seit dem 29.09.
+  // 404 wie jede andere Termin-Route (Sicherheit BF-16). Der Org-1-Termin hat
+  // eine bestaetigte Buchung -- die fremde Antwort zeigt sie nicht.
   // ==================================================================
   describe('GET /api/events/:id/attendance-count', () => {
-    it('Teamer:in aus Org 2 -> 200 mit Nullen, obwohl der Termin eine Buchung hat', async () => {
+    it('Teamer:in aus Org 2 -> 404, obwohl der Termin eine Buchung hat', async () => {
       await buchung(EVENT_ORG1, USERS.konfi1.id);
 
       const res = await request(app)
         .get(`/api/events/${EVENT_ORG1}/attendance-count`)
         .set('Authorization', `Bearer ${t.teamer2}`);
-      expect(res.status).toBe(200);
-      expect(res.body).toEqual({ checked_in: 0, total: 0 });
+      expect(res.status).toBe(404);
+      nurFehler(res.body);
     });
 
     it('eigene Gemeinde: Teamer:in aus Org 1 -> 200 mit der Buchung', async () => {

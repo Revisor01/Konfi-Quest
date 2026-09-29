@@ -448,6 +448,10 @@ iOS-Build 233 · Android versionCode 127
 - Fragt das iPhone zum ersten Mal nach der Kamera, nennt der Text auch das
   Scannen der QR-Codes beim Einchecken zu Events und Fotos für Aktivitäten —
   bisher nur Fotos für Chat und Challenges.
+- Den QR-Code zum Einchecken und den Zähler darunter zeigen Admins und
+  Teamer:innen nur noch für Events ihrer Jahrgänge, für Events „Nur Team" und
+  für Events ohne Jahrgang — also für die Events, die sie in ihrer Liste sehen.
+  Die Org-Leitung kommt weiter an jeden Code der Gemeinde.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
