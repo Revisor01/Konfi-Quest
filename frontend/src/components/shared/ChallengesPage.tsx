@@ -79,10 +79,19 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
   // pendingChallengesByChallenge: offene Freigaben je Challenge fuer das
   // orange Eck-Badge am Listeneintrag (25.09.2026) -- dieselbe Quelle wie
   // der Reiter, statt pending_count aus der nur bei Aktion neu geladenen Liste.
-  // challengeUpdatesByChallenge: neue Beitraege seit dem letzten Oeffnen
-  // (27.09.2026, "wie der Chat") -- rote Kugel am Symbol; markChallengeAsRead
-  // setzt sie beim Oeffnen und Schliessen der Challenge zurueck.
-  const { refreshAllCounts, pendingChallengesByChallenge, challengeUpdatesByChallenge, markChallengeAsRead } = useBadge();
+  // challengeNeueBeitraegeByChallenge: neue Beitraege seit dem letzten
+  // Oeffnen, wartende eingeschlossen (29.09.2026) -- die rote Kugel am
+  // Symbol; markChallengeAsRead setzt sie beim Oeffnen und Schliessen der
+  // Challenge zurueck. challengeUpdatesByChallenge (neue freigegebene) nur
+  // noch fuer den Rueckfall, wenn der Server das neue Feld nicht liefert.
+  const {
+    refreshAllCounts,
+    pendingChallengesByChallenge,
+    challengeUpdatesByChallenge,
+    challengeNeueBeitraegeByChallenge,
+    challengeNeueWartendByChallenge,
+    markChallengeAsRead
+  } = useBadge();
   const { pageRef, presentingElement } = useModalPage(modalPageId);
   const { user } = useApp();
 
@@ -315,6 +324,8 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
             offeneStempel={offeneStempel}
             offeneFreigaben={pendingChallengesByChallenge}
             neuigkeiten={challengeUpdatesByChallenge}
+            neueBeitraege={challengeNeueBeitraegeByChallenge ?? undefined}
+            neueWartend={challengeNeueWartendByChallenge}
             onSelectChallenge={openModeration}
             onEditChallenge={openEdit}
             onDeleteChallenge={handleDelete}

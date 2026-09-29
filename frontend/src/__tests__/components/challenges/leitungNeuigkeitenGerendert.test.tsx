@@ -7,8 +7,9 @@ import type { AdminChallenge } from '../../../types/challenges';
 // Challenges wie der Chat -- auch fuer die Leitung (Simon, 27.09.2026):
 // "Neue Nachricht: ein Abzeichen, ein Badge. Ich will sehen, ob da etwas
 // Neues passiert." Gerendert: Die Leitungsliste zeigt neue Beitraege als rote
-// Kugel am Symbol und wartende Freigaben als oranges Feld mit Uhr; seit
-// 28.09.2026 zaehlen die Freigaben zusaetzlich in der Kugel mit.
+// Kugel am Symbol und wartende Freigaben als oranges Feld mit Uhr. Seit
+// 29.09.2026 zaehlt die Kugel jeden neuen Beitrag seit dem letzten Oeffnen,
+// auch wartende (neueBeitraege aus challengeNeueBeitraege).
 
 vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: { id: 4, type: 'admin', role_name: 'org_admin' } }),
@@ -34,10 +35,10 @@ const laufend = (id: number, title: string): AdminChallenge => ({
 
 afterEach(() => cleanup());
 
-const zeige = (neuigkeiten: Record<number, number>, offeneFreigaben: Record<number, number>) => render(
+const zeige = (neueBeitraege: Record<number, number>, offeneFreigaben: Record<number, number>) => render(
   <ChallengesManageView
     challenges={[laufend(3, 'Ohne Freigabe'), laufend(4, 'Mit Freigabe')]}
-    neuigkeiten={neuigkeiten}
+    neueBeitraege={neueBeitraege}
     offeneFreigaben={offeneFreigaben}
     onSelectChallenge={() => {}}
     onEditChallenge={() => {}}
@@ -51,12 +52,12 @@ describe('Leitungsliste: neue Beitraege als rote Kugel', () => {
     const kugeln = container.querySelectorAll('.app-zaehler-kugel');
     expect(kugeln.length).toBe(1);
     expect(kugeln[0].textContent).toBe('1');
-    expect(kugeln[0].getAttribute('aria-label')).toBe('1 neue Beiträge');
+    expect(kugeln[0].getAttribute('aria-label')).toBe('1 neuer Beitrag');
     expect(kugeln[0].closest('.app-list-item')?.textContent).toContain('Ohne Freigabe');
   });
 
-  it('Freigabe: oranges Feld mit Uhr UND rote Kugel am Eintrag (28.09.2026), Neues nur als Kugel', () => {
-    const { container } = zeige({ 3: 2 }, { 4: 1 });
+  it('neuer wartender Beitrag: oranges Feld mit Uhr UND rote Kugel am Eintrag, Neues ohne Freigabe nur als Kugel', () => {
+    const { container } = zeige({ 3: 2, 4: 1 }, { 4: 1 });
     const kugeln = [...container.querySelectorAll('.app-zaehler-kugel')];
     expect(kugeln.map((k) => k.textContent)).toEqual(['2', '1']);
     expect(kugeln[0].closest('.app-list-item')?.textContent).toContain('Ohne Freigabe');

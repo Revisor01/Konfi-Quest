@@ -473,40 +473,41 @@ entfernt werden soll."
 
 An einer Challenge stehen zwei Zeichen:
 
-- **Die rote Zahl am Symbol** zeigt, was an der Challenge auf dich wartet —
-  wie ungelesene Nachrichten im Chat. Sie zählt zusammen:
-  - die Beiträge, die auf eure Freigabe warten, und
-  - die Beiträge, die seit deinem letzten Öffnen der Challenge dazugekommen
-    sind — auch bei Challenges ohne Freigabe, bei denen ein Beitrag sofort in
-    der Galerie steht. So siehst du, was passiert, und kannst einen Beitrag
-    bei Bedarf ausblenden oder löschen. Eigene Beiträge zählen nicht mit.
-    Eine gestartete Challenge, bei der du selbst mitmachst („Jahrgang und
-    Team", „Nur das Team") und die du noch nie geöffnet hast, zählt dazu als
-    eins — außer du hast sie selbst angelegt.
+- **Die rote Zahl am Symbol** zeigt die Beiträge, die seit deinem letzten
+  Öffnen der Challenge dazugekommen sind — wie ungelesene Nachrichten im
+  Chat. Sie zählt jeden neuen Beitrag, auch einen, der noch auf eure Freigabe
+  wartet, und auch bei Challenges ohne Freigabe, bei denen ein Beitrag sofort
+  in der Galerie steht. So siehst du, was passiert, und kannst einen Beitrag
+  bei Bedarf ausblenden oder löschen. Eigene und ausgeblendete Beiträge
+  zählen nicht mit. Eine gestartete Challenge, bei der du selbst mitmachst
+  („Jahrgang und Team", „Nur das Team") und die du noch nie geöffnet hast,
+  zählt dazu als eins — außer du hast sie selbst angelegt.
 
-  Öffnest du die Challenge, fallen die neuen Beiträge aus der Zahl heraus;
-  was danach kommt, zählt neu. Die wartenden bleiben darin, bis ihr freigebt
-  oder ausblendet. Vorleseprogramme nennen beide Anteile einzeln.
-- **Das orange Feld mit Zahl und Uhr** oben rechts zeigt, wie viele der
-  Beiträge auf eure Freigabe warten. Es bleibt stehen, bis ihr freigebt oder
+  Öffnest du die Challenge, verschwindet die rote Zahl; was danach kommt,
+  zählt neu. Vorleseprogramme sagen dazu, wie viele der neuen Beiträge noch
+  auf Freigabe warten.
+- **Das orange Feld mit Zahl und Uhr** oben rechts zeigt, wie viele Beiträge
+  auf eure Freigabe warten. Es bleibt stehen, bis ihr freigebt oder
   ausblendet; Öffnen allein ändert daran nichts.
 
-Ein Beitrag zählt nie doppelt: Solange er auf Freigabe wartet, zählt er als
-wartend, nicht als neu. Gibt ihn jemand anderes frei, bevor du ihn gesehen
-hast, zählt er bei dir als neu.
+Ein neuer Beitrag, der auf Freigabe wartet, steht deshalb an beiden Stellen:
+rot, bis du die Challenge öffnest, und orange, bis ihn jemand freigibt oder
+ausblendet. Hast du ihn schon gesehen, steht er nur noch orange.
 
-Am Reiter **Challenges** steht die Summe der roten Zahlen aller Challenges,
-ebenso am [Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
+Am Reiter **Challenges** steht zusammen, was an allen Challenges auf dich
+wartet: die Beiträge, die auf Freigabe warten, und das Neue seit deinem
+letzten Öffnen — jeder Beitrag nur einmal. Dieselbe Zahl steht am
+[Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
 App-Symbol. Gezählt werden nur Challenges, die ihr seht: Leitung und
 Teamer:innen die ihrer zugewiesenen Jahrgänge und die Challenges nur fürs
 Team, die Gemeindeleitung alle der Gemeinde.
 Neue Beiträge zählen nur in laufenden Challenges. Die Legende hinter dem
-Fragezeichen erklärt beide Zeichen zusammen mit den Status-Symbolen.
+Fragezeichen erklärt die Zeichen zusammen mit den Status-Symbolen.
 
-Die Umschalter **Aktuell**, **Geplant** und **Archiv** tragen eine orange
-Zahl, sobald dort Beiträge auf eure Freigabe warten — so findest du auch
-wartende Beiträge an beendeten Challenges im Archiv. Neue Beiträge zählen
-dort nicht mit; siehe
+Orange steht nur für Wartendes. Die Umschalter **Aktuell**, **Geplant** und
+**Archiv** tragen eine orange Zahl, sobald dort Beiträge auf eure Freigabe
+warten — so findest du auch wartende Beiträge an beendeten Challenges im
+Archiv. Neue Beiträge zählen dort nicht mit; siehe
 [Den Umschalter finden, hinter dem etwas auf dich wartet](03-bedienung.md#den-umschalter-finden-hinter-dem-etwas-auf-dich-wartet).
 
 Konfis sehen an der Challenge ebenfalls eine rote Zahl für ihre

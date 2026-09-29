@@ -64,24 +64,24 @@ const STATUS_ENTRIES: LegendEntry[] = [
   },
 ];
 
-// Oranges Zähler-Badge in der Liste (pending_count) — Zahl plus Uhr,
-// ohne Wort (Nutzerentscheid 24.08.2026).
+// Oranges Zähler-Badge in der Liste — Zahl plus Uhr, ohne Wort
+// (Nutzerentscheid 24.08.2026). Orange steht nur für Wartendes (Simon,
+// 29.09.2026).
 const COUNTER_ENTRY: LegendEntry = {
   color: 'var(--app-color-warning)',
   icon: ICON_UHRZEIT,
   label: 'Zahl mit Uhr',
-  description: 'So viele Beiträge warten noch auf Freigabe. Sie zählen auch in der roten Zahl am Symbol mit.',
+  description: 'So viele Beiträge warten auf Freigabe.',
 };
 
-// Rote Kugel am Symbol (27.09.2026, Simon: "Die Challenges sollen sich
-// verhalten wie der Chat"): neue Beitraege seit dem letzten Oeffnen, seit
-// 28.09.2026 plus wartende Freigaben (Simon: "Ich erwarte auch einen roten
-// Kreis auf dem Listen Element") -- zusammen ergeben sie die Zahl am Reiter.
+// Rote Kugel am Symbol (Simon, 29.09.2026: "bei jeden Beitrag. Wie im Chat
+// bei jeder Nachricht. Und zusaetzlich Orangen bei Freigaben."): neue
+// Beitraege seit dem letzten Oeffnen, auch wartende.
 const NEU_ENTRY: LegendEntry = {
   color: 'var(--app-color-danger)',
   zahl: '1',
   label: 'Rote Zahl am Symbol',
-  description: 'Alles, was an der Challenge auf dich wartet: Beiträge, die auf Freigabe warten, und neue Beiträge seit deinem letzten Öffnen — wie ungelesene Nachrichten im Chat. Die neuen verschwinden beim Öffnen, die wartenden erst mit der Freigabe.',
+  description: 'Neue Beiträge seit deinem letzten Öffnen, auch solche, die noch auf Freigabe warten — wie ungelesene Nachrichten im Chat. Sie verschwindet beim Öffnen.',
 };
 
 // Orange Zahl im Umschalter Aktuell/Geplant/Archiv (28.09.2026, zur

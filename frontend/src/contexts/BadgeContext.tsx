@@ -45,6 +45,24 @@ interface BadgeContextType {
   challengeUpdatesByChallenge: Record<number, number>;
   challengeUpdatesTotal: number;
   /**
+   * Neue Beitraege je Challenge fuer Leitung und Team (29.09.2026, Simon:
+   * "bei jeden Beitrag. Wie im Chat bei jeder Nachricht. Und zusaetzlich
+   * Orangen bei Freigaben."): jeder fremde Beitrag seit dem letzten Oeffnen,
+   * AUCH die wartenden -- die rote Kugel am Challenge-Eintrag. Aus
+   * badge-counts.challengeNeueBeitraege.byChallenge.
+   *
+   * null heisst: der Server liefert das Feld nicht (aelterer Server) --
+   * dann rechnet die Liste wie bisher offene Freigaben + challengeUpdates.
+   * Fuer Konfis bleibt es null; ihre Kugel liest challengeUpdatesByChallenge.
+   *
+   * Reiter und App-Symbol lesen es NICHT: Dort bleibt es bei
+   * pendingChallengesCount + challengeUpdatesTotal, ein Beitrag zaehlt nie
+   * doppelt.
+   */
+  challengeNeueBeitraegeByChallenge: Record<number, number> | null;
+  /** Wie viele der neuen Beitraege je Challenge noch auf Freigabe warten (Vorlesetext der Kugel). */
+  challengeNeueWartendByChallenge: Record<number, number>;
+  /**
    * Ungelesene Mitteilungen im Postfach (25.09.2026), ueber alle Gemeinden
    * des Kontos. Die Glocke in der Kopfzeile zeigt daraus einen blauen
    * Punkt, sobald die Zahl groesser 0 ist -- keine Zahl
@@ -58,7 +76,8 @@ interface BadgeContextType {
   postfachUngelesen: number;
   /**
    * Meldet eine Challenge als geoeffnet -- wie markRoomAsRead fuer den Chat:
-   * optimistisch sofort auf 0, dann POST. Fuer Team und Leitung ein No-op.
+   * optimistisch sofort auf 0 (challengeUpdatesByChallenge und
+   * challengeNeueBeitraegeByChallenge), dann POST. Fuer super_admin ein No-op.
    */
   markChallengeAsRead: (challengeId: number) => Promise<void>;
   /**
@@ -96,6 +115,24 @@ interface BadgeContextType {
 // Create Context
 const BadgeContext = createContext<BadgeContextType | undefined>(undefined);
 
+/** Zahl je Challenge aus einer Server-Antwort: nur Eintraege > 0, Schluessel als Zahl. */
+const nurPositive = (roh: unknown): Record<number, number> => {
+  const ergebnis: Record<number, number> = {};
+  if (!roh || typeof roh !== 'object') return ergebnis;
+  Object.entries(roh as Record<string, unknown>).forEach(([id, wert]) => {
+    const n = Number(wert) || 0;
+    if (n > 0) ergebnis[Number(id)] = n;
+  });
+  return ergebnis;
+};
+
+/** Gleicher Inhalt? Dann behaelt der State seine Referenz (kein unnoetiges Neuzeichnen). */
+const gleicherInhalt = (a: Record<number, number>, b: Record<number, number>): boolean => {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  return aKeys.length === bKeys.length && bKeys.every(k => a[Number(k)] === b[Number(k)]);
+};
+
 // Badge Provider Component
 export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const { user, organizations } = useApp();
@@ -114,6 +151,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const [newBadgesCount, setNewBadgesCount] = useState(0);
   const [challengeUpdatesByChallenge, setChallengeUpdatesByChallenge] = useState<Record<number, number>>({});
   const [challengeUpdatesTotal, setChallengeUpdatesTotal] = useState(0);
+  const [challengeNeueBeitraegeByChallenge, setChallengeNeueBeitraegeByChallenge] = useState<Record<number, number> | null>(null);
+  const [challengeNeueWartendByChallenge, setChallengeNeueWartendByChallenge] = useState<Record<number, number>>({});
   const [postfachUngelesen, setPostfachUngelesen] = useState(0);
 
   /**
@@ -324,6 +363,20 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
             && nextKeys.every(k => prev[Number(k)] === freigaben[Number(k)]);
           return unveraendert ? prev : freigaben;
         });
+
+        // Neue Beitraege je Challenge, wartende eingeschlossen (29.09.2026) --
+        // die rote Kugel am Eintrag. Fehlt das Feld (aelterer Server), bleibt
+        // es null und die Liste rechnet wie bisher (Freigaben + Neuigkeiten).
+        const neueRaw = data?.challengeNeueBeitraege;
+        if (neueRaw && typeof neueRaw === 'object' && neueRaw.byChallenge && typeof neueRaw.byChallenge === 'object') {
+          const neue = nurPositive(neueRaw.byChallenge);
+          const wartend = nurPositive(neueRaw.wartendByChallenge);
+          setChallengeNeueBeitraegeByChallenge(prev => (prev && gleicherInhalt(prev, neue)) ? prev : neue);
+          setChallengeNeueWartendByChallenge(prev => gleicherInhalt(prev, wartend) ? prev : wartend);
+        } else {
+          setChallengeNeueBeitraegeByChallenge(null);
+          setChallengeNeueWartendByChallenge(prev => Object.keys(prev).length === 0 ? prev : {});
+        }
       }
       // Challenge-Neuigkeiten fuer ALLE Rollen (seit 27.09.2026 auch Leitung
       // und Team): Zahl je Challenge fuer den Listeneintrag, Summe fuer Reiter
@@ -385,6 +438,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     setNewBadgesCount(0);
     setChallengeUpdatesByChallenge({});
     setChallengeUpdatesTotal(0);
+    setChallengeNeueBeitraegeByChallenge(null);
+    setChallengeNeueWartendByChallenge({});
   }, []);
 
   /*
@@ -555,6 +610,17 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       return next;
     });
     setChallengeUpdatesTotal(prev => Math.max(0, prev - abgezogen));
+    // Die rote Kugel am Eintrag von Leitung und Team (29.09.2026) geht beim
+    // Oeffnen ebenso sofort auf 0 -- auch wenn darin wartende Beitraege
+    // standen; die bleiben orange, bis jemand freigibt.
+    const ohneDiese = (prev: Record<number, number>) => {
+      if (!(challengeId in prev)) return prev;
+      const next = { ...prev };
+      delete next[challengeId];
+      return next;
+    };
+    setChallengeNeueBeitraegeByChallenge(prev => (prev ? ohneDiese(prev) : prev));
+    setChallengeNeueWartendByChallenge(ohneDiese);
 
     if (!networkMonitor.isOnline) {
       writeQueue.enqueue({
@@ -674,6 +740,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       newBadgesCount,
       challengeUpdatesByChallenge,
       challengeUpdatesTotal,
+      challengeNeueBeitraegeByChallenge,
+      challengeNeueWartendByChallenge,
       postfachUngelesen,
       totalBadgeCount,
       appSymbolZahl,

@@ -54,16 +54,20 @@ describe('Challenge-Neuigkeiten: drei Orte, eine Quelle', () => {
   it('eine Kugel fuer Chat und Challenges statt zweier Abschriften', () => {
     expect(chatListe).toContain("import ZaehlerKugel from '../shared/ZaehlerKugel'");
     expect(challengeListe).toContain("import ZaehlerKugel from '../../shared/ZaehlerKugel'");
-    // Die Leitungs-Liste traegt seit 27.09.2026 ebenfalls die Kugel -- fuer
-    // Neues (Simon: "Die Challenges sollen sich verhalten wie der Chat").
-    // Seit 28.09.2026 zaehlen wartende Freigaben mit (Simon: "Ich erwarte
-    // auch einen roten Kreis auf dem Listen Element"); das orange Eck-Badge
-    // mit Uhr bleibt zusaetzlich stehen.
+    // Die Leitungs-Liste traegt seit 27.09.2026 ebenfalls die Kugel (Simon:
+    // "Die Challenges sollen sich verhalten wie der Chat"). Seit 29.09.2026
+    // zaehlt sie jeden neuen Beitrag seit dem letzten Oeffnen, auch wartende
+    // (challengeNeueBeitraege); ohne das Feld die Rechnung vom 28.09.2026
+    // (wartend + neu freigegeben). Das orange Eck-Badge mit Uhr steht
+    // daneben fuer Wartendes.
     expect(leitungsListe).toContain("import ZaehlerKugel from '../../shared/ZaehlerKugel'");
-    expect(leitungsListe).toContain('<ZaehlerKugel anzahl={pending + neu} label={kugelTextAmEintrag(pending, neu)} />');
+    expect(leitungsListe).toContain('<ZaehlerKugel anzahl={kugel} label={kugelText} />');
+    expect(leitungsListe).toContain('neueBeitraege[challenge.id]');
     expect(leitungsListe).toContain('neuigkeiten[challenge.id]');
     expect(leitungsListe).toContain('wartenAufFreigabe(pending)');
     expect(leitungsSeite).toContain('neuigkeiten={challengeUpdatesByChallenge}');
+    expect(leitungsSeite).toContain('neueBeitraege={challengeNeueBeitraegeByChallenge ?? undefined}');
+    expect(leitungsSeite).toContain('neueWartend={challengeNeueWartendByChallenge}');
     // Oeffnen setzt die Zahl zurueck, beim Aufgehen und beim Schliessen.
     expect(leitungsSeite).toMatch(/const openModeration[\s\S]*?void gesehen\(challenge\)/);
     expect(leitungsSeite).toMatch(/onClose: \(\) => \{[\s\S]*?void gesehen\(moderationChallenge\)/);

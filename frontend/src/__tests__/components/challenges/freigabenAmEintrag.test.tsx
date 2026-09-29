@@ -6,9 +6,11 @@ import type { AdminChallenge } from '../../../types/challenges';
 
 // Freigaben-Badge am einzelnen Challenge-Eintrag der Leitung: das orange
 // Eck-Badge (Zahl + Uhr). Simon, 25.09.2026: "Das corner badge darf bleiben,
-// das verweist ja auch auf Freigaben." Seit 28.09.2026 zaehlen dieselben
-// Freigaben ZUSAETZLICH in der roten Kugel am Symbol (Simon: "Ich erwarte
-// auch einen roten Kreis auf dem Listen Element"; roteKugelMitFreigaben.test.tsx).
+// das verweist ja auch auf Freigaben." Orange steht nur fuer Wartendes
+// (Simon, 29.09.2026); die rote Kugel am Symbol zaehlt neue Beitraege seit
+// dem letzten Oeffnen -- ein gesehener wartender Beitrag steht nur orange
+// (roteKugelNeueBeitraege.test.tsx; Rueckfall ohne Server-Feld:
+// roteKugelMitFreigaben.test.tsx).
 // Die Zahl kommt je Challenge-ID aus dem BadgeContext
 // (pendingChallengesByChallenge) -- dieselbe Quelle wie der Reiter, damit
 // Reiter und Eintrag nie verschiedene Zahlen zeigen. Gegenstueck zu
@@ -38,11 +40,12 @@ const challenge = (id: number, title: string): AdminChallenge => ({
   jahrgaenge: [],
 } as unknown as AdminChallenge);
 
-const renderListe = (offeneFreigaben?: Record<number, number>) =>
+const renderListe = (offeneFreigaben?: Record<number, number>, neueBeitraege?: Record<number, number>) =>
   render(
     <ChallengesManageView
       challenges={[challenge(31, 'Zeig uns deinen Lieblingsplatz'), challenge(40, 'Text-Challenge')]}
       offeneFreigaben={offeneFreigaben}
+      neueBeitraege={neueBeitraege}
       onSelectChallenge={vi.fn()}
       onEditChallenge={vi.fn()}
       onDeleteChallenge={vi.fn()}
@@ -75,16 +78,13 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     expect(getByLabelText('12 Beiträge warten auf Freigabe').textContent).toBe('12');
   });
 
-  it('sitzt in der Eck-Badge-Leiste -- und zaehlt zusaetzlich in der roten Kugel am Symbol', () => {
-    const { getByLabelText, container } = renderListe({ 31: 3 });
+  it('sitzt in der Eck-Badge-Leiste -- gesehene wartende stehen NICHT in der roten Kugel', () => {
+    // Der Server meldet nichts Neues (neueBeitraege leer): Die drei warten
+    // schon, seit die Challenge zuletzt offen war.
+    const { getByLabelText, container } = renderListe({ 31: 3 }, {});
     const badge = getByLabelText('3 Beiträge warten auf Freigabe');
     expect(badge.closest('.app-corner-badges')).not.toBeNull();
-    // Die rote Kugel (ZaehlerKugel) legt sich als span.app-zaehler-kugel ans
-    // Symbol; seit 28.09.2026 zaehlt sie die wartenden Freigaben mit.
-    const kugeln = container.querySelectorAll('.app-zaehler-kugel');
-    expect(kugeln).toHaveLength(1);
-    expect(kugeln[0].textContent).toBe('3');
-    expect(kugeln[0].getAttribute('aria-label')).toBe('3 offen: 3 Beiträge warten auf Freigabe');
+    expect(container.querySelectorAll('.app-zaehler-kugel')).toHaveLength(0);
   });
 
   it('haelt den Titel vom Badge frei: breiterer Freiraum nur mit offenen Freigaben', () => {

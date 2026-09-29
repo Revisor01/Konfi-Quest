@@ -168,9 +168,9 @@ iOS-Build 233 · Android versionCode 127
 - Leitung und Team sehen neue Challenge-Beiträge wie ungelesene Nachrichten im
   Chat: eine rote Zahl am Reiter und am Symbol der Challenge, bis sie die
   Challenge öffnen — auch bei Challenges ohne Freigabe, bei denen ein Beitrag
-  sofort in der Galerie steht. Wartende Freigaben stehen weiter im orangen
-  Feld mit Zahl und Uhr; ein Beitrag zählt nie doppelt. Gemeinde-Umschalter und
-  App-Symbol zählen die neuen Beiträge mit.
+  sofort in der Galerie steht. Wartende Freigaben stehen zusätzlich im orangen
+  Feld mit Zahl und Uhr; am Reiter zählt ein Beitrag nie doppelt.
+  Gemeinde-Umschalter und App-Symbol zählen die neuen Beiträge mit.
 - Beim Anlegen einer Challenge gibt es wieder die Zielgruppe „Nur die
   Konfis": Die Konfis der gewählten Jahrgänge reichen ein, das Team dieser
   Jahrgänge sieht die Beiträge und begleitet die Challenge. Bestehende
@@ -224,9 +224,10 @@ iOS-Build 233 · Android versionCode 127
   später löscht, umbenennt oder den Zielwert ändert. Aktuelle Konfis sehen
   Änderungen weiter sofort, ein gelöschtes Badge verschwindet bei ihnen.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
-  auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
-  die Zahl am Reiter; das orange Feld mit Zahl und Uhr bleibt zusätzlich
-  stehen.
+  jeden neuen Beitrag seit dem letzten Öffnen, auch einen, der noch auf
+  Freigabe wartet, und verschwindet beim Öffnen — wie im Chat. Orange steht
+  nur für Wartendes: im Feld mit Zahl und Uhr an der Challenge und an den
+  Umschaltern Aktuell, Geplant und Archiv.
 - Ungelesene Mitteilungen zeigt die Glocke in jeder Rolle mit einem blauen
   Punkt statt mit einer Zahl; eine Zahl an der Glocke steht nur noch für
   Vorgänge, die aus einer Funklücke gesendet werden. Im Postfach trägt jede
