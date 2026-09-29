@@ -18,7 +18,7 @@ const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 // super_admin sind ausgenommen, admin und teamer brauchen die Zuweisung.
 // Hier immer mit { edit: true }: Anlegen und Verschieben sind Schreibwege.
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
-const { istMitgliedDerOrganisation } = require('../utils/orgMitglieder');
+const { istMitgliedDerOrganisation, ladeRolleInGemeinde } = require('../utils/orgMitglieder');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { rueckeNach } = require('../utils/bookingUtils');
@@ -1124,23 +1124,27 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         const konfiId = req.params.id;
 
         try {
-            // Org-Zugehoerigkeit + Konfi-Rolle prüfen (Badge-Progress ist
-            // konfi-spezifisch; Teamer haben eigene Badges über teamer.js).
-            const { rows: [konfi] } = await db.query(
-                `SELECT u.id FROM users u
-                 JOIN roles r ON u.role_id = r.id
-                 WHERE u.id = $1 AND r.name = 'konfi' AND u.organization_id = $2 AND u.deleted_at IS NULL`,
-                [konfiId, req.user.organization_id]
-            );
+            // Konfi IN DIESER GEMEINDE (Badge-Progress ist konfi-spezifisch;
+            // Teamer haben eigene Badges über teamer.js). BEIDE QUELLEN
+            // (29.09.2026): die Rolle in dieser Gemeinde -- users.role_id
+            // zuhause, user_organizations.role_id in einer weiteren
+            // (ladeRolleInGemeinde, prueft auch deleted_at) -- und das Profil
+            // hier (darfKonfi). Vorher `u.organization_id = aktive Gemeinde`
+            // mit der Rolle am Konto: Eine Konfi, die ueber
+            // user_organizations hier Konfi ist, bekam 404, waehrend
+            // /:id/event-points (nur darfKonfi) fuer sie antwortete.
+            const rolleHier = await ladeRolleInGemeinde(db, konfiId, req.user.organization_id);
+            const zugriff = rolleHier === 'konfi'
+                ? await darfKonfi(db, req, konfiId)
+                : { gefunden: false, erlaubt: false };
 
-            if (!konfi) {
+            if (!zugriff.gefunden) {
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
             // Jahrgangs-Bindung (01.09.2026): Abzeichen samt Fortschritt sind
             // Konfi-Daten — sichtbar nur, wer den Jahrgang sehen darf (view),
             // wie die Detailansicht GET /:id. org_admin bleibt ausgenommen.
-            const zugriff = await darfKonfi(db, req, konfiId);
             if (!zugriff.erlaubt) {
                 return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }

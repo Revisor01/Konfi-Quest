@@ -3981,10 +3981,14 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und nicht gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)"
+        objekt-pruefung: "Ziel muss IN DER AKTIVEN GEMEINDE Rolle konfi haben (ladeRolleInGemeinde: users.role_id zuhause, user_organizations.role_id in einer weiteren), dort ein Konfi-Profil haben (darfKonfi) und nicht gelöscht sein, sonst 404; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)"
         hinweis: >
           Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges.
           Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner).
+          Behoben 29.09.2026: Die Zugehoerigkeit las nur users.organization_id
+          und die Rolle am Konto — eine Konfi, die ueber user_organizations in
+          dieser Gemeinde Konfi ist, bekam 404, waehrend /:id/event-points
+          (darfKonfi) fuer sie antwortete.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Abzeichen mit Fortschritt }
