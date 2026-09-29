@@ -63,7 +63,9 @@ describe('Leitungsliste: neue Beitraege als rote Kugel', () => {
     expect(kugeln[0].closest('.app-list-item')?.textContent).toContain('Ohne Freigabe');
     expect(kugeln[1].closest('.app-list-item')?.textContent).toContain('Mit Freigabe');
     const freigabe = container.querySelector('.app-corner-badge[aria-label*="Freigabe"]');
-    expect(freigabe?.textContent).toBe('1');
+    // Eck-Badge ohne Zahl (Simon, 29.09.2026); die Zahl steht nur im Vorlesetext.
+    expect(freigabe?.getAttribute('aria-label')).toBe('1 Beitrag wartet auf Freigabe');
+    expect(freigabe?.textContent).toBe('');
     expect(freigabe?.closest('.app-list-item')?.textContent).toContain('Mit Freigabe');
   });
 

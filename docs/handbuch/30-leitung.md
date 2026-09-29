@@ -162,8 +162,8 @@ im Punkte-Kapitel.
 
 Drei Reiter: **Aktuell**, **Geplant**, **Archiv**. Eine rote Zahl am Symbol
 einer Challenge zeigt neue Beiträge seit deinem letzten Öffnen, auch solche,
-die noch auf Freigabe warten; ein oranges Feld mit Zahl und Uhr zeigt die
-Beiträge, die auf Freigabe warten — siehe
+die noch auf Freigabe warten; ein oranges Feld mit Uhr zeigt, dass Beiträge
+auf Freigabe warten — siehe
 [Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen).
 
 Beim [Anlegen](80-challenges.md#eine-challenge-anlegen) legst du fest, wer

@@ -77,7 +77,7 @@ interface ChallengesManageViewProps {
   ohneJahrgang?: boolean;
   /**
    * Offene Freigaben je Challenge-ID (BadgeContext.pendingChallengesByChallenge):
-   * speist das orange Eck-Badge (Zahl + Uhr) am Eintrag und die orange Zahl
+   * speist das orange Eck-Badge (Uhr, ohne Zahl) am Eintrag und die orange Zahl
    * am Umschalter. In die rote Kugel am Symbol gehen sie nur noch im
    * Rueckfall ein (neueBeitraege fehlt, aelterer Server). Optional, weil
    * aeltere Server die Aufschluesselung nicht liefern.
@@ -338,22 +338,24 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   }}
                 >
                   <div className="app-corner-badges">
-                    {/* Offene Freigaben: Zahl plus Uhr statt "{n} offen"
-                        (Nutzerentscheid 24.08.2026) -- was gemeint ist, sagen
-                        title/aria-label in ganzen Worten. Orange steht NUR
-                        fuer Wartendes (Simon, 29.09.2026): Das Feld bleibt,
-                        bis freigegeben oder abgelehnt ist; Oeffnen aendert
-                        daran nichts. */}
+                    {/* Offene Freigaben: das orange Feld mit Uhr, OHNE Zahl
+                        (Simon, 29.09.2026: "Im corner badge soll keine Zahl
+                        stehen!"). Die Zahl der wartenden Beitraege steht an
+                        den orangen Zahlen am Umschalter und am Reiter
+                        "Wartet" in der Challenge; das Feld sagt nur, DASS
+                        hier etwas wartet. Wie viele, sagen title/aria-label
+                        in ganzen Worten. Orange steht NUR fuer Wartendes:
+                        Das Feld bleibt, bis freigegeben oder abgelehnt ist;
+                        Oeffnen aendert daran nichts. */}
                     {pending > 0 && (
                       <>
                         <div
                           className="app-corner-badge"
-                          style={{ backgroundColor: 'var(--app-color-warning)', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)' }}
+                          style={{ backgroundColor: 'var(--app-color-warning)', padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
                           title={wartenAufFreigabe(pending)}
                           role="img"
                           aria-label={wartenAufFreigabe(pending)}
                         >
-                          {pending}
                           <IonIcon icon={ICON_UHRZEIT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
                         </div>
                         <div className="app-corner-badges__separator" />
@@ -424,9 +426,12 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                           className="app-list-item__title"
                           style={{
                             color: isArchived ? 'var(--app-text-muted)' : undefined,
-                            // Das Zähler-Badge ist seit dem Umbau auf Zahl+Uhr
-                            // schmaler als das alte "{n} offen".
-                            paddingRight: pending > 0 ? 'var(--app-freiraum-aktion-xxl-plus)' : 'var(--app-freiraum-aktion-xl)'
+                            // Seit das Freigaben-Feld nur die Uhr traegt
+                            // (29.09.2026), sind alle Eck-Badges gleich breit:
+                            // hoechstens drei (Freigabe, Eingereicht, Status),
+                            // zusammen rund 81 px -- 80 px Freiraum plus 16 px
+                            // Innenabstand der Karte halten den Titel frei.
+                            paddingRight: 'var(--app-freiraum-aktion-xl)'
                           }}
                         >
                           {challenge.title}

@@ -486,9 +486,10 @@ An einer Challenge stehen zwei Zeichen:
   Öffnest du die Challenge, verschwindet die rote Zahl; was danach kommt,
   zählt neu. Vorleseprogramme sagen dazu, wie viele der neuen Beiträge noch
   auf Freigabe warten.
-- **Das orange Feld mit Zahl und Uhr** oben rechts zeigt, wie viele Beiträge
-  auf eure Freigabe warten. Es bleibt stehen, bis ihr freigebt oder
-  ausblendet; Öffnen allein ändert daran nichts.
+- **Das orange Feld mit Uhr** oben rechts zeigt, dass Beiträge auf eure
+  Freigabe warten — ohne Zahl. Wie viele es sind, steht orange am Umschalter
+  und in der geöffneten Challenge an **Wartet**. Das Feld bleibt stehen, bis
+  ihr freigebt oder ausblendet; Öffnen allein ändert daran nichts.
 
 Ein neuer Beitrag, der auf Freigabe wartet, steht deshalb an beiden Stellen:
 rot, bis du die Challenge öffnest, und orange, bis ihn jemand freigibt oder
@@ -496,9 +497,9 @@ ausblendet. Hast du ihn schon gesehen, steht er nur noch orange.
 
 Am Reiter **Challenges** steht zusammen, was an allen Challenges auf dich
 wartet: die Beiträge, die auf Freigabe warten, und das Neue seit deinem
-letzten Öffnen — jeder Beitrag nur einmal. Dieselbe Zahl steht am
+letzten Öffnen — jeder Beitrag nur einmal. Genauso zählen sie am
 [Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
-App-Symbol. Gezählt werden nur Challenges, die ihr seht: Leitung und
+App-Symbol mit. Gezählt werden nur Challenges, die ihr seht: Leitung und
 Teamer:innen die ihrer zugewiesenen Jahrgänge und die Challenges nur fürs
 Team, die Gemeindeleitung alle der Gemeinde.
 Neue Beiträge zählen nur in laufenden Challenges. Die Legende hinter dem

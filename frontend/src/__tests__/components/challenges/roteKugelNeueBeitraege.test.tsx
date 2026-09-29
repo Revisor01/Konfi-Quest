@@ -15,7 +15,7 @@ import type { AdminChallenge } from '../../../types/challenges';
 //   (ZaehlerKugel ohne Sonderform). Er zaehlt jeden neuen Beitrag seit dem
 //   letzten Oeffnen, auch wartende (badge-counts.challengeNeueBeitraege).
 // - Bereits gesehene wartende Beitraege stehen NICHT rot, nur orange.
-// - Orange nur fuer Wartendes: das Eck-Badge mit Zahl und Uhr.
+// - Orange nur fuer Wartendes: das Eck-Badge mit Uhr (ohne Zahl, 29.09.2026).
 // - Fehlt das Feld (aelterer Server), gilt die Rechnung vom 28.09.2026:
 //   wartend + neu freigegeben.
 
@@ -64,7 +64,7 @@ const eintrag = (container: HTMLElement, titel: string) =>
 const EINS = 'Ein Wort, das dich begleitet';
 
 describe('Rote Kugel = neue Beitraege seit dem letzten Oeffnen, wartende eingeschlossen', () => {
-  it('nur wartende neu: Kugel zeigt ihre Zahl, das Eck-Badge dieselben orange', () => {
+  it('nur wartende neu: Kugel zeigt ihre Zahl, das Eck-Badge dieselben orange (ohne Zahl)', () => {
     const { container } = zeige({
       offeneFreigaben: { 1: 2 }, neuigkeiten: {}, neueBeitraege: { 1: 2 }, neueWartend: { 1: 2 }
     });
@@ -74,7 +74,7 @@ describe('Rote Kugel = neue Beitraege seit dem letzten Oeffnen, wartende eingesc
     expect(kugeln[0].getAttribute('aria-label')).toBe('2 neue Beiträge, davon warten 2 auf Freigabe');
     expect(eintrag(container, EINS).querySelector('.app-zaehler-anker .app-zaehler-kugel')).toBe(kugeln[0]);
     const orange = eintrag(container, EINS).querySelector('.app-corner-badges [aria-label="2 Beiträge warten auf Freigabe"]');
-    expect(orange?.textContent).toBe('2');
+    expect(orange?.textContent).toBe('');
   });
 
   it('bereits gesehene wartende: KEINE rote Kugel, nur das orange Feld', () => {
@@ -83,7 +83,7 @@ describe('Rote Kugel = neue Beitraege seit dem letzten Oeffnen, wartende eingesc
     });
     expect(container.querySelectorAll('.app-zaehler-kugel').length).toBe(0);
     const orange = eintrag(container, EINS).querySelector('.app-corner-badges [aria-label="3 Beiträge warten auf Freigabe"]');
-    expect(orange?.textContent).toBe('3');
+    expect(orange?.textContent).toBe('');
   });
 
   it('drei warten, einer davon neu, dazu ein neuer freigegebener: Kugel 2, nicht 3 + 1', () => {
@@ -121,7 +121,7 @@ describe('Rote Kugel = neue Beitraege seit dem letzten Oeffnen, wartende eingesc
       />
     );
     expect(container.querySelectorAll('.app-zaehler-kugel').length).toBe(0);
-    expect(eintrag(container, EINS).querySelector('.app-corner-badges [aria-label="1 Beitrag wartet auf Freigabe"]')?.textContent).toBe('1');
+    expect(eintrag(container, EINS).querySelector('.app-corner-badges [aria-label="1 Beitrag wartet auf Freigabe"]')?.textContent).toBe('');
   });
 });
 
@@ -149,13 +149,15 @@ describe('Am Symbol nur ein Kreis, rot, ohne Sonderform', () => {
   });
 });
 
-describe('Orange Eck-Badge: Zahl und Uhr', () => {
-  it('traegt die Zahl der wartenden und das Uhr-Symbol', () => {
+describe('Orange Eck-Badge: nur die Uhr', () => {
+  // Simon, 29.09.2026: "Im corner badge soll keine Zahl stehen!" Wie viele
+  // warten, sagen Umschalter und "Wartet" -- hier nur der Vorlesetext.
+  it('traegt das Uhr-Symbol und keine Zahl, die Zahl steht im Vorlesetext', () => {
     const { container } = zeige({ offeneFreigaben: { 1: 4 }, neueBeitraege: {}, neueWartend: {} });
     const orange = eintrag(container, EINS).querySelector('.app-corner-badges [aria-label="4 Beiträge warten auf Freigabe"]') as HTMLElement;
     expect(orange.className).toBe('app-corner-badge');
     expect(orange.style.backgroundColor).toBe('var(--app-color-warning)');
-    expect(orange.textContent).toBe('4');
+    expect(orange.textContent).toBe('');
     const uhr = orange.querySelector('ion-icon');
     expect(uhr).not.toBeNull();
     expect(uhr!.getAttribute('icon') ?? (uhr as unknown as { icon?: string }).icon).toBe(ICON_UHRZEIT);

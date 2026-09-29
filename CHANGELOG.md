@@ -139,7 +139,7 @@ iOS-Build 233 · Android versionCode 127
   löscht die Leitung ein Badge, verschwinden die Mitteilungen dazu — bei
   dir und bei der Leitung. Entscheidungen („verbucht", „abgelehnt") bleiben
   als Verlauf stehen.
-- Die Zahl mit Uhr an der einzelnen Challenge, die Leitung und Team offene
+- Das orange Feld an der einzelnen Challenge, das Leitung und Team offene
   Freigaben anzeigt, geht jetzt sofort mit — auch ohne Neuladen der Liste und
   immer im Gleichklang mit der Zahl am Reiter.
 - Konfis sehen jetzt, wo es bei den Challenges etwas Neues gibt — wie im Chat:
@@ -168,8 +168,8 @@ iOS-Build 233 · Android versionCode 127
 - Leitung und Team sehen neue Challenge-Beiträge wie ungelesene Nachrichten im
   Chat: eine rote Zahl am Reiter und am Symbol der Challenge, bis sie die
   Challenge öffnen — auch bei Challenges ohne Freigabe, bei denen ein Beitrag
-  sofort in der Galerie steht. Wartende Freigaben stehen zusätzlich im orangen
-  Feld mit Zahl und Uhr; am Reiter zählt ein Beitrag nie doppelt.
+  sofort in der Galerie steht. Wartende Freigaben zeigt zusätzlich das orange
+  Feld mit Uhr; am Reiter zählt ein Beitrag nie doppelt.
   Gemeinde-Umschalter und App-Symbol zählen die neuen Beiträge mit.
 - Beim Anlegen einer Challenge gibt es wieder die Zielgruppe „Nur die
   Konfis": Die Konfis der gewählten Jahrgänge reichen ein, das Team dieser
@@ -226,9 +226,10 @@ iOS-Build 233 · Android versionCode 127
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   jeden neuen Beitrag seit dem letzten Öffnen, auch einen, der noch auf
   Freigabe wartet, und verschwindet beim Öffnen — wie im Chat. Orange steht
-  nur für Wartendes: im Feld mit Zahl und Uhr an der Challenge, an den
-  Umschaltern Aktuell, Geplant und Archiv und in der geöffneten Challenge am
-  Reiter „Wartet“, wo die Zahl beim Freigeben und Ablehnen sofort mitgeht.
+  nur für Wartendes: im Feld mit Uhr an der Challenge, das keine Zahl mehr
+  trägt, und als Zahl an den Umschaltern Aktuell, Geplant und Archiv und in
+  der geöffneten Challenge am Reiter „Wartet“, wo sie beim Freigeben und
+  Ablehnen sofort mitgeht.
 - Ungelesene Mitteilungen zeigt die Glocke in jeder Rolle mit einem blauen
   Punkt statt mit einer Zahl; eine Zahl an der Glocke steht nur noch für
   Vorgänge, die aus einer Funklücke gesendet werden. Im Postfach trägt jede

@@ -64,14 +64,15 @@ const STATUS_ENTRIES: LegendEntry[] = [
   },
 ];
 
-// Oranges Zähler-Badge in der Liste — Zahl plus Uhr, ohne Wort
-// (Nutzerentscheid 24.08.2026). Orange steht nur für Wartendes (Simon,
-// 29.09.2026).
+// Oranges Eck-Badge in der Liste — nur die Uhr, ohne Zahl (Simon,
+// 29.09.2026: "Im corner badge soll keine Zahl stehen!"). Wie viele warten,
+// zeigen die orangen Zahlen am Umschalter und an „Wartet". Orange steht nur
+// für Wartendes.
 const COUNTER_ENTRY: LegendEntry = {
   color: 'var(--app-color-warning)',
   icon: ICON_UHRZEIT,
-  label: 'Zahl mit Uhr',
-  description: 'So viele Beiträge warten auf Freigabe.',
+  label: 'Oranges Feld mit Uhr',
+  description: 'An dieser Challenge warten Beiträge auf Freigabe. Wie viele, zeigt die orange Zahl an „Wartet“.',
 };
 
 // Rote Kugel am Symbol (Simon, 29.09.2026: "bei jeden Beitrag. Wie im Chat

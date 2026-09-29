@@ -23,9 +23,10 @@ describe('Challenge-Legende: Zaehler', () => {
     );
   });
 
-  it('oranges Feld mit Zahl und Uhr: nur wartende, ohne Hinweis auf die rote Zahl', () => {
+  it('oranges Feld mit Uhr, ohne Zahl: nur wartende, ohne Hinweis auf die rote Zahl', () => {
     const { container } = render(<ChallengeLegendModal onClose={vi.fn()} />);
-    expect(zeile(container, 'Zahl mit Uhr')).toBe('So viele Beiträge warten auf Freigabe.');
+    expect(zeile(container, 'Oranges Feld mit Uhr')).toBe('An dieser Challenge warten Beiträge auf Freigabe. Wie viele, zeigt die orange Zahl an „Wartet“.');
+    expect(container.textContent).not.toContain('Zahl mit Uhr');
     expect(container.textContent).not.toContain('zählen auch in der roten Zahl');
   });
 
