@@ -1395,6 +1395,11 @@ iOS-Build 234 · Android versionCode 128
 - Eine neu eingerichtete Instanz kommt beim ersten Start wieder hoch: Ein
   Hilfsskript im Ordner für die Ersteinrichtung der Datenbank wurde dort
   mit ausgeführt und brach den Start ab.
+- Eine Sicherung lässt sich mit einem Skript in eine leere Datenbank
+  zurückspielen, auch auf einer frisch eingerichteten Instanz; der bisher
+  beschriebene Weg brach dort ab und hinterließ eine leere Datenbank. Das
+  Skript weigert sich, eine Datenbank mit Konten ohne ausdrückliche
+  Bestätigung zu ersetzen.
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.
