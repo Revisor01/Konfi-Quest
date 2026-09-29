@@ -260,6 +260,7 @@ bestätigen, sonst ebenfalls blockierend.
 - **Kennzeichnung:** aus Code gelesen
 - **Beschreibung:** Challenge-Beiträge (Fotos, Sprachaufnahmen, Videos von Konfis, bis 50 MB) haben keinen Sicherheitsnetz-Lauf für Waisen; die Löschpfade räumen sie zwar mit, aber genau für deren Fehlerfälle existiert das Skript.
 - **Empfehlung:** Ziel `uploads/challenges` mit `SELECT file_path FROM challenge_submissions` ergänzen.
+- **Nachtrag 29.09.2026:** behoben — `scripts/cleanupOrphanPhotos.js` räumt `uploads/challenges/` gegen `challenge_submissions.file_path` auf (gemeindeübergreifend wie die übrigen Ziele), `scripts/encryptExistingPhotos.js` verschlüsselt dort liegende Klartext-Altdateien. Geprüft: Ausgeliefert wird eine Challenge-Datei nur über eine Zeile in `challenge_submissions`; Rückblick-Schnappschüsse tragen den Dateinamen zwar in `data`, holen die Datei aber über dieselbe Route — eine Datei ohne Zeile ist also nirgends mehr erreichbar. Beide Skripte starten nur noch als Skript (`require.main`) und geben ihre Bausteine für Tests heraus; Aufruf und Ausgabe unverändert. Messung Nr. 8 unten geht damit per `node scripts/cleanupOrphanPhotos.js --dry-run`. Tests `tests/utils/aufraeumSkripteChallenges.test.js`, 6 Fälle (verwaiste Datei gelöscht, referenzierte auch fremder Gemeinden behalten, Klartext verschlüsselt, Zielliste); Gegenprobe ohne `challenges` in beiden Listen: 6 rot.
 
 ### BF-20: Text-Uploads ohne Inhaltsprüfung
 - **Schwere:** NIEDRIG

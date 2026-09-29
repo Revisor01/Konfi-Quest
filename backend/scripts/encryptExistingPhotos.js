@@ -2,7 +2,10 @@
 //
 // Hintergrund: Antrags-Nachweisfotos (uploads/requests/) UND Chat-Medien
 // (uploads/chat/) lagen bisher unverschluesselt. Dieses Skript verschlüsselt
-// alle vorhandenen Dateien mit AES-256-GCM (siehe utils/photoCrypto.js).
+// alle vorhandenen Dateien mit AES-256-GCM (siehe utils/photoCrypto.js) —
+// auch in uploads/material/ und seit 29.09.2026 in uploads/challenges/
+// (Audit Sicherheit BF-19: die Challenge-Beiträge fehlten in der Liste).
+// Neue Uploads werden überall schon beim Ablegen verschlüsselt.
 // Es ist IDEMPOTENT: bereits verschluesselte Dateien (erkennbar am Magic-
 // Header) werden übersprungen, ein zweiter Lauf richtet keinen Schaden an.
 //
@@ -18,11 +21,11 @@ const path = require('path');
 const { encryptBuffer, isEncrypted } = require('../utils/photoCrypto');
 
 const DRY_RUN = process.argv.includes('--dry-run');
-const DIRS = [
-  path.join(__dirname, '../uploads/requests'),
-  path.join(__dirname, '../uploads/chat'),
-  path.join(__dirname, '../uploads/material'),
-];
+function verzeichnisseFuer(uploadsDir) {
+  return ['requests', 'chat', 'material', 'challenges'].map((name) => path.join(uploadsDir, name));
+}
+
+const DIRS = verzeichnisseFuer(path.join(__dirname, '../uploads'));
 
 async function migrateDir(dir) {
   if (!fs.existsSync(dir)) {
@@ -91,7 +94,12 @@ async function main() {
   if (totalFail > 0) { process.exit(1); }
 }
 
-main().catch((err) => {
-  console.error('Unerwarteter Fehler:', err);
-  process.exit(1);
-});
+// Nur als Skript starten, nicht beim require aus einem Test.
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('Unerwarteter Fehler:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = { verzeichnisseFuer, migrateDir };

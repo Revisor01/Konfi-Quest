@@ -1146,6 +1146,8 @@ iOS-Build 233 · Android versionCode 127
   statt sie als Formatierung zu lesen.
 
 ### Sonstiges
+- Das Aufräumen verwaister Dateien auf dem Server und die Verschlüsselung
+  alter Dateien umfassen auch die Beiträge zu Challenges.
 - Die Fehlerliste der Auslastungsanzeige zeigt Adressen ohne Suchbegriffe,
   Benutzernamen und Anmeldeschlüssel.
 - Das Server-Protokoll führt keine Benutzernamen, E-Mail-Adressen, Dateinamen
