@@ -284,6 +284,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
 - **Auswirkung aus Nutzersicht:** Eine unnötige Anfrage pro Öffnen der
   Konfi-Liste; die versprochene „X von Y Konfis"-Anzeige gibt es nicht.
 - **Empfehlung:** Effekt entfernen oder die Anzeige bauen.
+- **Nachtrag 28.09.2026:** behoben — Effekt samt `setKonfiLimit` aus `KonfisView.tsx` entfernt (Entscheidung: entfernen statt die Anzeige „X von Y" zu bauen; die Tarif-Grenze meldet der Server beim Anlegen mit `limit_grace`/`limit_exceeded`). Test `components/konfiListeOhneOrganisationsAbruf.test.tsx` (2, echte Ansicht: kein `GET /organizations/:id`, Gegenprobe Team-Segment lädt weiter); ohne Fix 1 rot.
 
 ### BF-08: Handbuch nennt vier Seiten ohne Gemeinde-Umschalter — es sind alle Unterseiten
 
