@@ -278,6 +278,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 ### BF-09: Dependabot — 9 PRs offen seit dem 07.09., Ignore-Liste ohne TypeScript-Hauptversion
 - **Schwere:** NIEDRIG
 - **Status:** offen 27.09.2026 — `dependabot.yml` ignoriert weiter keine TypeScript-Hauptversion. Später.
+- **Status:** behoben 29.09.2026 — `.github/dependabot.yml`: `typescript` semver-major ignoriert (typescript-eslint 8.71 verlangt `>=4.8.4 <6.1.0`; PR #157 scheitert in der CI an `npm ci` mit ERESOLVE, Job-Log vom 18.09.). Dazu ein neuer Befund derselben Art: Die react-router-Ignores wirkten nur auf Versions-Updates — `update-types` gilt nicht für Sicherheits-Updates, und am 29.09. legte Dependabot den Sicherheits-PR #188 an (react-router 6.30.6 → 7.18.2; `npm ci` scheitert am Peer `react-router >=6.4.0 <7` von `@ionic/react-router`). `react-router` und `react-router-dom` stehen deshalb auf `versions: [">= 7.0.0"]`, das gilt für beide Arten. Hinweis zu vitest 5 (beide Projekte gemeinsam) als Kommentar. Offene Dependabot-PRs am 29.09.: 11 (#157, #158, #163, #166, #167, #169, #176, #178, #185, #188, #190); die Empfehlung je PR steht im Abschlussbericht des Pakets B2, gemergt oder geschlossen wurde keiner.
 - **Fundstelle:** `.github/dependabot.yml:34-45` (Ignore nur react-router-Familie);
   GitHub-PRs #157, #158, #163, #164, #166, #167, #169, #170, #176
 - **Kennzeichnung:** reproduziert (GitHub-API `list_pull_requests state=open` →

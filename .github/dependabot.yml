@@ -35,12 +35,30 @@ updates:
     #
     # Patch- und Minor-Updates INNERHALB von 6 kommen weiterhin durch; nur
     # die Hauptversionen sind ausgenommen.
+    #
+    # Seit 29.09.2026 per `versions` statt `update-types` (Release-Audit
+    # Toolchain BF-09): `update-types` wirkt nur auf Versions-Updates, nicht
+    # auf Sicherheits-Updates. Deshalb legte Dependabot am 29.09.2026 trotz
+    # Ignore den Sicherheits-PR #188 an (react-router 6.30.6 -> 7.18.2, im
+    # Gruppen-PR frontend-security) -- `npm ci` scheitert dort am
+    # Peer-Konflikt mit @ionic/react-router. Ein `versions`-Bereich gilt fuer
+    # beide Arten. Die zwei moderaten react-router-Meldungen bleiben damit als
+    # Warnung stehen, bekommen aber keinen unmergebaren PR mehr; im Code sind
+    # sie nicht erreichbar (kein SSR, feste Pfad-Praefixe, nachgeprueft im
+    # Release-Audit vom 26.09.2026).
+    #
+    # TYPESCRIPT BLEIBT AUF 6 (29.09.2026): typescript-eslint 8.71 verlangt
+    # `typescript: >=4.8.4 <6.1.0`. TypeScript 7 (PR #157) scheitert deshalb
+    # schon bei `npm ci`. Erst wieder zulassen, wenn typescript-eslint
+    # TypeScript 7 in seinen peerDependencies traegt.
     ignore:
       - dependency-name: react-router
-        update-types: ["version-update:semver-major"]
+        versions: [">= 7.0.0"]
       - dependency-name: react-router-dom
-        update-types: ["version-update:semver-major"]
+        versions: [">= 7.0.0"]
       - dependency-name: "@ionic/react-router"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: typescript
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
@@ -64,6 +82,10 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+    # Hauptversionen kommen einzeln und werden bewusst gemergt. Die
+    # vitest-Hauptversion Backend und Frontend GEMEINSAM anheben (PR #167
+    # hier, #158 im Frontend), damit nicht zwei Hauptversionen desselben
+    # Testwerkzeugs nebeneinander laufen (Release-Audit Toolchain BF-09).
 
   - package-ecosystem: npm
     directory: /
