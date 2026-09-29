@@ -35,7 +35,7 @@ type Termin = {
   event_date: string;
   event_end_time?: string | null;
   pending_bookings_count?: number;
-  registration_status?: string | null;
+  registration_status?: string;
 };
 
 const stunden = (h: number) => new Date(Date.now() + h * 3600_000).toISOString();

@@ -185,7 +185,7 @@ describe('Teilnehmerauswahl bietet nur Personen aus den Jahrgaengen des Termins 
 });
 
 describe('passtZumTermin — die Regel, ohne Oberflaeche', () => {
-  const terminA = { jahrgaenge: [{ id: JG_A, name: 'A' }] };
+  const terminA = { teamer_only: false, jahrgaenge: [{ id: JG_A, name: 'A' }] };
 
   it('Konfi: ueber jahrgang_id (EIN Jahrgang)', () => {
     expect(passtZumTermin({ role_name: 'konfi', jahrgang_id: JG_A }, terminA, [JG_A])).toBe(true);
@@ -207,7 +207,7 @@ describe('passtZumTermin — die Regel, ohne Oberflaeche', () => {
   });
 
   it('Termin ohne Jahrgang und "Nur Team": immer', () => {
-    expect(passtZumTermin({ role_name: 'konfi', jahrgang_id: JG_B }, { jahrgaenge: [] }, [])).toBe(true);
+    expect(passtZumTermin({ role_name: 'konfi', jahrgang_id: JG_B }, { teamer_only: false }, [])).toBe(true);
     expect(passtZumTermin({ role_name: 'teamer', jahrgang_ids: [JG_B] }, { ...terminA, teamer_only: true }, [JG_A])).toBe(true);
   });
 

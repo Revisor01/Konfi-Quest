@@ -382,8 +382,8 @@ describe('Einzeltermin mit Anmeldungen loeschen', () => {
 
 describe('Serien-Termine mit Anmeldungen loeschen', () => {
   const serie = () => [
-    termin(1, { is_series: true, series_id: 'abc', event_date: '2026-10-01T18:00:00.000Z' }),
-    termin(2, { is_series: true, series_id: 'abc', event_date: '2026-10-08T18:00:00.000Z' }),
+    termin(1, { is_series: true, series_id: 7, event_date: '2026-10-01T18:00:00.000Z' }),
+    termin(2, { is_series: true, series_id: 7, event_date: '2026-10-08T18:00:00.000Z' }),
   ];
 
   it('die zweite Rueckfrage geht auf und summiert ueber alle Termine', async () => {

@@ -8,7 +8,7 @@ interface InterceptorHandler<T> {
   fulfilled?: (value: T) => T | Promise<T>;
   rejected?: (error: unknown) => unknown;
 }
-type ManagerMitHandlers<T> = AxiosInterceptorManager<T> & { handlers: (InterceptorHandler<T> | null)[] };
+type ManagerMitHandlers<T> = Omit<AxiosInterceptorManager<T>, 'handlers'> & { handlers: (InterceptorHandler<T> | null)[] };
 
 const requestHandler = (api: AxiosInstance) =>
   (api.interceptors.request as ManagerMitHandlers<InternalAxiosRequestConfig>).handlers

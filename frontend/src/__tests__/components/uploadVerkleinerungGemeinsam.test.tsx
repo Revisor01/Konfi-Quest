@@ -36,9 +36,14 @@ vi.mock('../../contexts/AppContext', () => ({
   useApp: () => ({ setError, setSuccess, isOnline: true }),
 }));
 
-const apiPost = vi.fn(async () => ({ data: {} }));
+type Hochladen = (
+  route: string,
+  daten?: unknown,
+  optionen?: { onUploadProgress?: (e: { loaded: number; total: number }) => void },
+) => Promise<unknown>;
+const apiPost = vi.fn<Hochladen>(async () => ({ data: {} }));
 vi.mock('../../services/api', () => ({
-  default: { post: (...args: unknown[]) => apiPost(...args), get: vi.fn() },
+  default: { post: (...args: Parameters<Hochladen>) => apiPost(...args), get: vi.fn() },
   DATEI_TIMEOUT_MS: 180000,
 }));
 vi.mock('../../services/analytics', () => ({ track: vi.fn() }));
@@ -179,8 +184,8 @@ describe('Challenge-Foto einreichen: verkleinert, mit der Sende-Anzeige des Chat
     fotoWaehlen(datei(100 * 1024, 'klein.jpg', 'image/jpeg'));
     let fortschritt: ((e: { loaded: number; total: number }) => void) | undefined;
     let fertig: () => void = () => undefined;
-    apiPost.mockImplementationOnce((_route: string, _daten: unknown, optionen: { onUploadProgress?: (e: { loaded: number; total: number }) => void }) => {
-      fortschritt = optionen.onUploadProgress;
+    apiPost.mockImplementationOnce((_route, _daten, optionen) => {
+      fortschritt = optionen?.onUploadProgress;
       return new Promise((resolve) => { fertig = () => resolve({ data: {} }); });
     });
     const { container, getByText } = render(

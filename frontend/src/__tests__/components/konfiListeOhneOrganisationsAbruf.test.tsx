@@ -32,6 +32,8 @@ const basisProps = {
   onUpdate: vi.fn(),
   onAddKonfiClick: vi.fn(),
   onSelectKonfi: vi.fn(),
+  onDeleteKonfi: vi.fn(),
+  onDeleteTeamer: vi.fn(),
 };
 
 beforeEach(() => {

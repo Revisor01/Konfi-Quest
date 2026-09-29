@@ -26,7 +26,7 @@ vi.mock('@capacitor/filesystem', () => ({
   Filesystem: { readFile: vi.fn(), deleteFile: vi.fn(async () => undefined) },
   Directory: { Data: 'DATA' },
 }));
-const mockPost = vi.fn(async () => ({ data: {} }));
+const mockPost = vi.fn(async (..._a: unknown[]) => ({ data: {} }));
 vi.mock('../../services/api', () => ({
   default: { post: (...a: unknown[]) => mockPost(...a), put: vi.fn(), delete: vi.fn() },
 }));

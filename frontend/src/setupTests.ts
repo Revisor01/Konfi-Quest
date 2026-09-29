@@ -29,11 +29,12 @@ window.matchMedia = window.matchMedia || function() {
 };
 
 // Mock navigator.setAppBadge / clearAppBadge (jsdom hat das nicht — @capawesome/capacitor-badge ruft es im Web-Fallback auf)
-// Badging API (https://w3c.github.io/badging/), in den lib.dom-Typen noch nicht enthalten
-interface NavigatorMitBadging extends Navigator {
+// Badging API (https://w3c.github.io/badging/): lib.dom fuehrt beide Methoden
+// als vorhanden, jsdom kennt sie nicht -- hier deshalb als optional.
+type NavigatorMitBadging = Omit<Navigator, 'setAppBadge' | 'clearAppBadge'> & {
   setAppBadge?: (contents?: number) => Promise<void>;
   clearAppBadge?: () => Promise<void>;
-}
+};
 
 if (typeof navigator !== 'undefined') {
   const nav = navigator as NavigatorMitBadging;

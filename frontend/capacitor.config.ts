@@ -1,6 +1,9 @@
 /// <reference types="@capawesome/capacitor-badge" />
 
 import type { CapacitorConfig } from '@capacitor/cli';
+// Nur der Typ: Die CLI liest diese Datei in Node, ein Wert-Import zoege das
+// Plugin samt @capacitor/core mit hinein.
+import type { KeyboardResize } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
   appId: 'de.godsapp.konfiquest',
@@ -112,7 +115,8 @@ const config: CapacitorConfig = {
       // (Build 76) und sah SCHLECHTER aus (WebView-Frame springt unanimiert).
       // Das eigentliche Problem "Tastatur klappt nach Senden zu" war ein
       // Fokus-Verlust im Send-Flow, nicht der Resize-Modus.
-      resize: 'ionic'
+      // In der Datei steht nur der Wert des Enums KeyboardResize.Ionic.
+      resize: 'ionic' as KeyboardResize,
     },
     Badge: {
       persist: true,

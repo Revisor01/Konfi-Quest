@@ -12,7 +12,7 @@ import { resolve } from 'path';
 // sofort mit.
 
 const apiGet = vi.fn();
-const apiPut = vi.fn(async () => ({ data: {} }));
+const apiPut = vi.fn(async (..._args: unknown[]) => ({ data: {} }));
 vi.mock('../../../services/api', () => ({
   default: {
     get: (...args: unknown[]) => apiGet(...args),

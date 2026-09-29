@@ -142,7 +142,7 @@ describe('PostfachModal', () => {
   it('zeigt beide Bereiche: Warteschlange und Mitteilungen', async () => {
     mockWartend = [{
       id: 'q1', method: 'POST', url: '/x', maxRetries: 3, retryCount: 0, createdAt: 0, hasFileUpload: false,
-      metadata: { type: 'konfi', clientId: 'q1', label: 'Aktivität melden: Gottesdienst' },
+      metadata: { type: 'request', clientId: 'q1', label: 'Aktivität melden: Gottesdienst' },
     }];
     mockGet.mockResolvedValue(antwort([eintrag(12), eintrag(11, { read_at: '2026-09-24T10:00:00.000Z' })]));
     render(<PostfachModal />);

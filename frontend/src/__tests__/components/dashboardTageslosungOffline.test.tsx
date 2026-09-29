@@ -113,6 +113,9 @@ const dashboardData: DashboardViewProps['dashboardData'] = {
   ranking: [],
 };
 
+// Die übrigen Bereiche sichtbar, wie ohne Einstellung (undefined !== false).
+const alleBereiche = { show_konfirmation: true, show_events: true, show_badges: true, show_ranking: true };
+
 const renderView = (dashboardConfig: DashboardViewProps['dashboardConfig']) =>
   render(
     <DashboardView
@@ -137,7 +140,7 @@ describe('Konfi-Dashboard: Tageslosung offline (aus dem Cache)', () => {
   });
 
   it('lädt die Losung über useOfflineQuery mit TAGESLOSUNG-TTL (24 Std)', () => {
-    const { getByText } = renderView({ show_losung: true, show_challenges: false });
+    const { getByText } = renderView({ ...alleBereiche, show_losung: true, show_challenges: false });
 
     const call = offlineQueryCalls.find(c => c.key.startsWith('konfi:tageslosung:'));
     expect(call).not.toBe(undefined);
@@ -157,7 +160,7 @@ describe('Konfi-Dashboard: Tageslosung offline (aus dem Cache)', () => {
   });
 
   it('abgeschalteter Schalter (show_losung=false): Losung wird NICHT abgerufen', () => {
-    const { queryByText } = renderView({ show_losung: false, show_challenges: false });
+    const { queryByText } = renderView({ ...alleBereiche, show_losung: false, show_challenges: false });
 
     const call = offlineQueryCalls.find(c => c.key.startsWith('konfi:tageslosung:'));
     expect(call).not.toBe(undefined);

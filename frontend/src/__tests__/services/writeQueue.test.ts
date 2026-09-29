@@ -10,8 +10,8 @@ vi.mock('@capacitor/preferences', () => ({
   },
 }));
 
-const mockReadFile = vi.fn(async () => ({ data: btoa('fake-image-bytes') }));
-const mockDeleteFile = vi.fn(async () => undefined);
+const mockReadFile = vi.fn(async (..._args: unknown[]) => ({ data: btoa('fake-image-bytes') }));
+const mockDeleteFile = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock('@capacitor/filesystem', () => ({
   Filesystem: {
     readFile: (...args: unknown[]) => mockReadFile(...args),

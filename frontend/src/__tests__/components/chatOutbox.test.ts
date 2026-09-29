@@ -1,14 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockWriteFile = vi.fn(async () => undefined);
+const mockWriteFile = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock('@capacitor/filesystem', () => ({
   Filesystem: { writeFile: (...args: unknown[]) => mockWriteFile(...args) },
   Directory: { Data: 'DATA' },
 }));
 
-const mockEnqueue = vi.fn(async () => undefined);
+// Die Felder, die die Tests am eingereihten Auftrag lesen.
+interface EingereihterAuftrag {
+  url: string;
+  hasFileUpload: boolean;
+  metadata: Record<string, unknown>;
+  body: Record<string, unknown>;
+}
+const mockEnqueue = vi.fn(async (_auftrag: EingereihterAuftrag) => undefined);
 vi.mock('../../services/writeQueue', () => ({
-  writeQueue: { enqueue: (...args: unknown[]) => mockEnqueue(...args) },
+  writeQueue: { enqueue: (auftrag: EingereihterAuftrag) => mockEnqueue(auftrag) },
 }));
 
 import {

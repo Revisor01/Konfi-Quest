@@ -16,6 +16,7 @@
     "dunkelmodus:messen": "node scripts/dunkelmodus-messen.mjs",
     "preview": "vite preview",
     "test.unit": "vitest",
+    "typecheck:tests": "tsc -p tsconfig.test.json",
     "lint": "eslint"
   },
   "dependencies": {

@@ -1,9 +1,10 @@
-/// <reference types="vitest" />
-
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+// defineConfig aus vitest/config: Es kennt den Block `test` unten. Das
+// frühere `/// <reference types="vitest" />` hängt die Typen seit Vitest 4
+// nicht mehr ein, `tsc -p tsconfig.test.json` meldete den Block als Fehler.
+import { defineConfig } from 'vitest/config'
 import { appBuendelPlugin } from './scripts/app-buendel.mjs'
 
 // Version aus version.json zur Bauzeit einsetzen (__APP_VERSION__).
