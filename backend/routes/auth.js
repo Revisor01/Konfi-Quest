@@ -298,10 +298,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     // mehr verändert gespeichert -> Login case-insensitiv per LOWER-Vergleich.
     const username = (req.body.username || '').trim();
     const { password } = req.body;
-    // Keine Zeile je Anmeldung und kein Benutzername im Protokoll (Audit
-    // Sicherheit BF-14, 29.09.2026): Der Benutzername ist bei Konfis meist
-    // vorname.nachname eines Kindes. Fehlversuche zaehlt die Kontosperre
-    // (utils/kontoSperre.js); hier steht hoechstens die Konto-Kennung.
+    // Kein Benutzername im Protokoll (Audit Sicherheit BF-14, 29.09.2026):
+    // Er ist bei Konfis meist vorname.nachname eines Kindes. Erfolgreiche
+    // Anmeldungen schreiben keine Zeile; Fehlversuche schon (Simon,
+    // 29.09.2026), mit der Konto-Kennung oder, wenn es den Namen nicht gibt,
+    // ohne jede Angabe zur Person. Gezaehlt werden sie in der Kontosperre
+    // (utils/kontoSperre.js).
     try {
       const userQuery = `
         SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email, u.role_id,
@@ -322,11 +324,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const { rows: [user] } = await db.query(userQuery, [username]);
 
       if (!user) {
+        console.warn('Login fehlgeschlagen: unbekannter Benutzername');
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
 
       const passwordMatch = await bcrypt.compare(password, user.password_hash);
       if (!passwordMatch) {
+        console.warn(`Login fehlgeschlagen: falsches Passwort fuer Konto ${user.id}`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
 

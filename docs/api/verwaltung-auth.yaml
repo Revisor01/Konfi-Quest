@@ -184,9 +184,12 @@ info:
     PROTOKOLL (BEHOBEN 29.09.2026, Audit Sicherheit BF-14): Das
     Server-Protokoll nennt Personen nur mit Konto-Kennung, E-Mail-Adressen
     nur mit Domain und keinen Freitext vom Client (utils/protokoll.js).
-    POST /api/auth/login schreibt keine Zeile je Anmeldung mehr und nie den
-    Benutzernamen; Fehlversuche zaehlt die Kontosperre, abgewiesene
-    Anmeldungen gesperrter Konten stehen mit der Kennung im Protokoll.
+    POST /api/auth/login schreibt keine Zeile je erfolgreicher Anmeldung und
+    nie den Benutzernamen. Fehlversuche stehen im Protokoll (Simon,
+    29.09.2026): falsches Passwort mit der Konto-Kennung, ein unbekannter
+    Name als "unbekannter Benutzername" ohne den Namen; gezaehlt werden sie
+    in der Kontosperre. Abgewiesene Anmeldungen gesperrter Konten stehen mit
+    der Kennung im Protokoll.
     FEHLER IM ANFRAGE-KÖRPER (alle Routen, BEHOBEN 29.09.2026, Audit
     Sicherheit BF-17): Ungültiges JSON antwortet 400 "Die Anfrage enthält
     kein gültiges JSON.", ein Körper über 100 kB 413 "Die Anfrage ist zu

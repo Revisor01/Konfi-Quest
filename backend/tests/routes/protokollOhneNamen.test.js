@@ -76,6 +76,26 @@ describe('Server-Protokoll ohne Namen, Adressen und Freitext', () => {
       expect(protokoll()).not.toContain('anna.mustermann');
     });
 
+    // Simon, 29.09.2026: Fehlgeschlagene Anmeldungen sollen im Protokoll
+    // stehen -- mit Konto-Kennung, nie mit dem Namen.
+    it('ERLAUBT: falsches Passwort steht mit der Konto-Kennung im Protokoll', async () => {
+      const res = await request(app).post('/api/auth/login')
+        .send({ username: USERS.konfi1.username, password: 'falsch' });
+      expect(res.status).toBe(401);
+      const text = protokoll();
+      expect(text).toContain(`Login fehlgeschlagen: falsches Passwort fuer Konto ${USERS.konfi1.id}`);
+      expect(text).not.toContain(USERS.konfi1.username);
+    });
+
+    it('ERLAUBT: ein unbekannter Name steht als Fehlversuch im Protokoll, ohne den Namen', async () => {
+      const res = await request(app).post('/api/auth/login')
+        .send({ username: 'anna.mustermann', password: 'falsch' });
+      expect(res.status).toBe(401);
+      const text = protokoll();
+      expect(text).toContain('Login fehlgeschlagen: unbekannter Benutzername');
+      expect(text).not.toContain('anna.mustermann');
+    });
+
     it('ERLAUBT: ein gesperrtes Konto steht mit seiner Kennung im Protokoll, ohne Namen', async () => {
       await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.konfi2.id]);
       const res = await request(app).post('/api/auth/login')

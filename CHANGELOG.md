@@ -1181,7 +1181,9 @@ iOS-Build 233 · Android versionCode 127
   Benutzernamen und Anmeldeschlüssel.
 - Das Server-Protokoll führt keine Benutzernamen, E-Mail-Adressen, Dateinamen
   und Freitexte mehr, sondern nur noch die interne Kennung eines Kontos; auch
-  eine Anmeldung hinterlässt dort keinen Namen.
+  eine Anmeldung hinterlässt dort keinen Namen. Fehlgeschlagene Anmeldungen
+  stehen weiter im Protokoll, mit der Kennung des Kontos oder als unbekannter
+  Benutzername.
 - Fehlerhafte oder zu große Anfragen beantwortet der Server als solche, mit
   deutscher Meldung, statt als Serverfehler; sie füllen das Server-Protokoll
   nicht mehr.
