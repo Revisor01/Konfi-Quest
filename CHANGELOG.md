@@ -1301,6 +1301,9 @@ iOS-Build 234 · Android versionCode 128
   wie viele Anfragen gerade auf eine freie Datenbankverbindung warten.
 - Die Tageslosung hängt nicht mehr an einem Zusatzpaket, das auf dem Server
   nur zufällig mitinstalliert war; fehlt es einmal, fällt sie nicht aus.
+- Zwei Bausteine des Servers — für Datei-Uploads und für die Anfragegrenzen —
+  sind auf Fassungen ohne die zuletzt gemeldeten mittelschweren
+  Sicherheitslücken gehoben.
 - Stürzt die App ab, wird das jetzt automatisch gemeldet, damit die Ursache
   gefunden werden kann. Übertragen werden nur technische Angaben und die Rolle
   in grober Einteilung — kein Name, keine Kennung. Was dabei an Google geht,

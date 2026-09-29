@@ -430,6 +430,21 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
   moderate = eine Kette (`react-router`, `react-router-dom`, `@ionic/react-router`), zwei
   Advisories, beide nicht erreichbar (s. o.). Prüfmethode: `npm audit --json` /
   `--omit=dev` in allen drei Projekten, Code-Lesen der Navigationsziele.
+  - **Nachtrag 29.09.2026:** Seit dem 26.09. sind im Backend drei moderate Meldungen
+    dazugekommen (`npm audit`, Produktion und Dev gleich): `multer` 2.3.0
+    (GHSA-3pph-fpjx-jg34, verwaiste Dateien bei abgebrochenem Upload), `ip-address` 10.4.0
+    über `express-rate-limit` (GHSA-rpw4-54j3-4h4q, GHSA-2vr4-cq9g-pvrc) und `nodemailer`
+    9.1.1 (GHSA-6vj9-mwq6-2f5v). **Behoben 29.09.2026:** `multer` auf 2.4.0 (Untergrenze in
+    `package.json` auf `^2.4.0`), `ip-address` innerhalb von `^10.2.0` auf 10.7.2 — beides
+    ohne Hauptversionssprung, `npm ls multer ip-address` belegt die Stände. Backend danach
+    1 moderate. **Bleibt offen:** `nodemailer` — den Fix gibt es nur ab 10.0.2
+    (Hauptversion; Dependabot-PR #166). Im Code nicht ausnutzbar: Die Lücke setzt mehrere
+    Transporte zu **verschiedenen** SMTP-Servern voraus, deren TLS-Servername über den
+    prozessweiten DNS-Cache vertauscht wird; beide Transporte des Backends
+    (`server.js`, `services/emailService.js`) nutzen dieselbe `smtpKonfiguration()`, also
+    denselben Server mit denselben Zugangsdaten. Der Sprung auf 10 ist trotzdem empfohlen
+    (Bruch laut Changelog nur „Node.js 20 oder neuer", Produktion läuft auf 26). Frontend
+    unverändert 3 moderate (react-router 6, s. o.), Wurzel 0.
 - **Lockfile-Konsistenz und Peers:** `npm ls --all` in Backend und Frontend Exit 0, nur
   `UNMET OPTIONAL DEPENDENCY` (normal). Peer-Ranges geprüft: typescript-eslint 8.70.0 ↔
   TypeScript 6.0.3 (`<6.1.0`), `@vitejs/plugin-react` 6.1.1 ↔ Vite 8.2.2 (`^8.0.0`),
