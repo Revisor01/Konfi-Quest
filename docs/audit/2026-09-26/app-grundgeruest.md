@@ -502,7 +502,7 @@ so nicht haltbar.
 ### BF-13: Datenschutzerklärung beschreibt die Absturzdiagnose enger als der Code
 
 - **Schwere:** NIEDRIG
-- **Status:** offen 27.09.2026 — `datenschutz.html` sagt weiter „ausschließlich dann …, wenn die App abstürzt oder einen Fehler abfängt, der die Bedienung unterbricht" (heute Zeile 266), der Code meldet auch Fehler im Hintergrund. Rechtstext: liegt bei Simon, vor EKD-Ausrollung (zusammen mit Doku BF-08).
+- **Status:** behoben 29.09.2026 — `datenschutz.html` 9b und 6 beschreiben, was der Code meldet: Absturz und abgefangene Programmfehler, auch im Hintergrund; je Fehlerart ein Bericht, höchstens 20 bis zum Neustart; Fehlermeldung auf 200 Zeichen gekürzt; dazu der Sitzungsbeginn, den Crashlytics über das mitgelieferte Firebase-Sessions-SDK meldet (iOS `Podfile.lock`: FirebaseSessions 12.17.0; Netzverkehr am Gerät nicht gemessen). Test `datenschutzGegenCode.test.ts` bindet die Zahlen im Text an `MELDUNGEN_JE_SITZUNG_MAX` und `MELDUNG_MAX_ZEICHEN`; Gegenprobe mit dem alten Text: 4 von 4 rot. Stand der Erklärung 29. September 2026. Vorher: offen 27.09.2026 — `datenschutz.html` sagt weiter „ausschließlich dann …, wenn die App abstürzt oder einen Fehler abfängt, der die Bedienung unterbricht" (heute Zeile 266), der Code meldet auch Fehler im Hintergrund. Rechtstext: liegt bei Simon, vor EKD-Ausrollung (zusammen mit Doku BF-08).
 - **Fundstelle:** `frontend/public/datenschutz.html:265 ff.` („Ein Bericht wird
   ausschließlich dann erzeugt, wenn die App abstürzt oder einen Fehler abfängt,
   der die Bedienung unterbricht — nicht im laufenden Betrieb") gegen

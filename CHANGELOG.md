@@ -480,6 +480,9 @@ iOS-Build 234 · Android versionCode 128
   mehr offen — auch nicht an der App-Sperre vorbei.
 - Eine aus dem Chat geteilte Datei bleibt auf Android nicht mehr im
   öffentlichen Ordner „Dokumente“ liegen, wo andere Apps sie lesen konnten.
+- Die Datenschutzerklärung beschreibt genau, wann die App einen Absturzbericht
+  sendet: auch bei abgefangenen Fehlern im Hintergrund, höchstens 20 bis zum
+  nächsten Start, dazu der Beginn jeder Sitzung.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

@@ -225,7 +225,7 @@
             </ul>
             <p>Der Hostingdienstleister hat als Auftragsverarbeiter technisch Zugriff auf die Daten und ist vertraglich zur Einhaltung des DSG-EKD verpflichtet.</p>
             <p>Beim Versand von Push-Benachrichtigungen werden das Push-Token und der Inhalt der Benachrichtigung an den Dienst Firebase Cloud Messaging von Google übermittelt (siehe Abschnitt&nbsp;9).</p>
-            <p>Stürzt die App ab, werden technische Angaben zum Absturz an den Dienst Firebase Crashlytics von Google übermittelt (siehe Abschnitt&nbsp;9b).</p>
+            <p>Stürzt die App ab oder fängt sie einen Programmfehler ab, werden technische Angaben dazu an den Dienst Firebase Crashlytics von Google übermittelt (siehe Abschnitt&nbsp;9b).</p>
             <p>Eine Weitergabe an sonstige Dritte erfolgt nicht, es sei denn, eine gesetzliche Verpflichtung besteht.</p>
         </div>
 
@@ -263,15 +263,15 @@
 
         <div class="section">
             <h2>9b. Absturzberichte in der App (Firebase Crashlytics)</h2>
-            <p>Damit wir Fehler finden und beheben können, die zum Absturz der App führen, setzen wir in der App (iOS und Android) den Dienst <strong>Firebase Crashlytics</strong> der Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland ein. Ein Bericht wird ausschließlich dann erzeugt, wenn die App abstürzt oder einen Fehler abfängt, der die Bedienung unterbricht — nicht im laufenden Betrieb.</p>
+            <p>Damit wir Fehler finden und beheben können, die zum Absturz der App führen, setzen wir in der App (iOS und Android) den Dienst <strong>Firebase Crashlytics</strong> der Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland ein. Ein Bericht entsteht, wenn die App abstürzt, und wenn sie einen Programmfehler abfängt — auch einen, der im Hintergrund auftritt und die Bedienung nicht unterbricht. Von abgefangenen Fehlern überträgt die App je Fehlerart höchstens einen Bericht und insgesamt höchstens 20 Berichte, bis sie neu gestartet wird. Daneben meldet der Dienst bei jedem Start der App den Beginn einer Sitzung, damit sich der Anteil der Sitzungen ohne Absturz berechnen lässt.</p>
             <p>Übermittelt werden dabei:</p>
             <ul>
-                <li>technische Angaben zum Absturz: die Fehlermeldung und die Stelle im Programm, an der er auftrat (Stapelverlauf),</li>
+                <li>technische Angaben zum Absturz oder Fehler: die Fehlermeldung (auf 200 Zeichen gekürzt) und die Stelle im Programm, an der er auftrat (Stapelverlauf),</li>
                 <li>die zuletzt angezeigten Fehlermeldungen der App, in derselben Form wie bei der Reichweitenmessung (Abschnitt&nbsp;9a) — also ohne Meldungstexte unseres Servers, die Namen, Titel oder Dateinamen enthalten können —, damit wir sehen, was einem Absturz vorausging,</li>
                 <li>Angaben zum Gerät und zum Betriebssystem: Modell, Betriebssystemfassung, verfügbarer Speicher, ob das Gerät verändert wurde (&#8222;Jailbreak&#8220;/&#8222;Root&#8220;),</li>
                 <li>die Fassung der App und die Plattform (iOS oder Android),</li>
                 <li>die Rolle in grober Einteilung (Konfirmand:in, Teamer:in oder Leitung) sowie die Nummer der Gemeinde, damit wir erkennen, wen ein Fehler betrifft,</li>
-                <li>eine von Google vergebene, zufällige Installationskennung des Geräts sowie Zeitpunkt und Dauer der abgestürzten Sitzung.</li>
+                <li>eine von Google vergebene, zufällige Installationskennung des Geräts sowie Beginn und Dauer der Sitzungen.</li>
             </ul>
             <p>Ausdrücklich <strong>nicht</strong> übermittelt werden: Name, Benutzername oder Nutzerkennung, E-Mail-Adresse, Jahrgang, der Name der Gemeinde, Inhalte von Beiträgen, Fotos oder Chat-Nachrichten sowie Eingaben aus Formularen. Wir setzen bewusst <strong>keine eigene Nutzer- oder Gerätekennung</strong>, über die sich Berichte einer Person zuordnen ließen.</p>
             <p>Dabei kann es zu einer Übermittlung von Daten an Server der Google LLC in den USA kommen. Für diese Übermittlung in ein Drittland stützen wir uns auf die von der EU-Kommission erlassenen Standardvertragsklauseln. Es besteht das Risiko, dass US-Behörden unter bestimmten Voraussetzungen auf diese Daten zugreifen können.</p>
@@ -335,7 +335,7 @@
             <p>Wir behalten uns vor, diese Datenschutzerklärung anzupassen, um sie an geänderte Rechtslagen oder bei Änderungen der App anzupassen. Die aktuelle Version ist stets unter dieser Adresse abrufbar.</p>
         </div>
 
-        <p class="last-update">Stand: September 2026</p>
+        <p class="last-update">Stand: 29. September 2026</p>
     </div>
 </body>
 </html>
