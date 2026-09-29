@@ -471,6 +471,24 @@ Auf dem iPhone gibt es diese Aufteilung im System nicht: Dort lässt sich unter
 Welche Gruppen ankommen, entscheidest du dort über die
 [Auswahl in der App](#auswaehlen-welche-mitteilungen-aufs-handy-kommen).
 
+## Die Zahl am App-Symbol auf Android lesen
+
+Auf dem iPhone steht am App-Symbol die Zahl dessen, was auf dich wartet —
+dieselbe Summe wie in der [Liste deiner Gemeinden](05-rollen.md#sehen-wo-etwas-offen-ist).
+Auf Android entscheidet der Startbildschirm des Geräts, was am Symbol
+erscheint:
+
+| Startbildschirm | Was am Symbol steht |
+|---|---|
+| Samsung | ein Punkt oder eine Zahl, je nach Einstellung *App-Symbolindikator* in den Benachrichtigungseinstellungen; die Zahl zählt die Mitteilungen von Konfi Quest, die gerade in der Benachrichtigungsleiste liegen |
+| Google Pixel und andere mit Android-Standard | ein Punkt, solange eine Mitteilung von Konfi Quest in der Leiste liegt — eine Zahl gibt es dort nicht; langes Drücken auf das Symbol zeigt die Mitteilungen |
+| einige andere Hersteller | die Zahl, die die App selbst meldet — dieselbe Summe wie auf dem iPhone |
+
+Ein Punkt oder eine Zahl aus der Leiste verschwindet mit den Mitteilungen:
+Wer sie wegwischt, sieht am Symbol nichts mehr. Was offen ist, zeigen
+weiterhin die roten Zahlen an den Reitern und die
+[Glocke](#ungelesene-mitteilungen-an-der-glocke-erkennen).
+
 ## Benachrichtigungen wieder zum Laufen bringen
 
 Kommen keine Nachrichten mehr an, obwohl in den Einstellungen des Geräts alles

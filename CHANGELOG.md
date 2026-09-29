@@ -1081,6 +1081,9 @@ iOS-Build 233 · Android versionCode 127
 - Android: Das App-Symbol wird nicht mehr beschnitten — die Blüte steht bei
   jeder Symbolform (Kreis, Squircle, Tropfen) vollständig auf dunklem Grund,
   auch als einfarbiges Themen-Symbol.
+- Android: Startbildschirme, die eine Zahl am App-Symbol von der App annehmen,
+  bekommen sie jetzt gemeldet; wo das nicht geht, etwa auf Pixel-Geräten,
+  zeigt das Symbol einen Punkt, solange eine Mitteilung in der Leiste liegt.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

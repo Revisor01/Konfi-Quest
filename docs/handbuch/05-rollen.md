@@ -300,7 +300,10 @@ Gemeinde ohne Zahl hat nichts Offenes.
 **Die Zahlen der Liste zusammengezählt ergeben die Zahl am App-Symbol.** Das
 Symbol zeigt immer die Summe aller deiner Gemeinden, jede mit der Rolle, die
 du dort hast — bei geschlossener wie bei geöffneter App. Die Reiter zeigen
-dagegen nur die Gemeinde, in der du gerade arbeitest.
+dagegen nur die Gemeinde, in der du gerade arbeitest. Auf Android hängt es
+vom Startbildschirm ab, ob dort diese Zahl, die Zahl der Mitteilungen oder
+nur ein Punkt steht (siehe
+[Die Zahl am App-Symbol auf Android lesen](03-bedienung.md#die-zahl-am-app-symbol-auf-android-lesen)).
 
 Der Umschalter steht auf den Seiten, die du über die Leiste unten erreichst.
 Auf Unterseiten und in Detailansichten fehlt er mit Absicht: Was dort steht,
