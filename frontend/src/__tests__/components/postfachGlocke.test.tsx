@@ -209,11 +209,12 @@ describe('PostfachGlocke', () => {
 // Der Punkt (29.09.2026) statt des Briefumschlags: ein Aussehen fuer Glocke
 // und Postfach-Eintrag (.app-ungelesen-punkt), Farbe als Token -- blau aus
 // --ion-color-primary (im Dunkelmodus hellt Ionics Palette sie selbst auf).
-// An der Glocke sitzt er mit DERSELBEN MITTE wie die Zahl der Warteschlange
-// auf der Ecke des Symbols, nur kleiner. Gemessen (Playwright): iOS Mitte
-// 0,28 px neben der Symbolecke, Android wie die Zahl 1 px rechts und 1 px
-// darunter; ganz sichtbar.
-describe('Punkt an der Glocke: Token statt fester Farben, Mitte wie die Zahl', () => {
+// An der Glocke sitzt er 3 px hoeher und 3 px weiter rechts als die Mitte
+// der Zahl der Warteschlange (Simon, 29.09.2026: "muesste sogar noch ein
+// bisschen hoeher und weiter rechts"), schraeg ueber der Ecke des Symbols.
+// Gemessen (Playwright): iOS 2,8 px rechts und 2,8 px ueber der Symbolecke,
+// Android 4 px rechts, 2 px darueber; nicht beschnitten.
+describe('Punkt an der Glocke: Token statt fester Farben, schraeg ueber der Ecke', () => {
   const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8');
   const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '');
   const bloecke = (selektor: string): string[] =>
@@ -239,24 +240,30 @@ describe('Punkt an der Glocke: Token statt fester Farben, Mitte wie die Zahl', (
     expect(ohneKommentare).not.toMatch(/app-postfach-glocke__zahl--umschlag/);
   });
 
-  it('iOS: dieselbe Mitte wie die 18px-Zahl bei top 0 / right 0 (.button-inner 40px)', () => {
+  it('iOS: 3px hoeher und 3px weiter rechts als die Mitte der 18px-Zahl (.button-inner 40px)', () => {
     const zahl = bloecke('.app-postfach-glocke__zahl')[0];
     const punkt = bloecke('.app-postfach-glocke__punkt');
     expect(punkt).toHaveLength(1);
     const mitte = (top: number, right: number, groesse: number) => ({ x: 40 - right - groesse / 2, y: top + groesse / 2 });
     const z = mitte(px(zahl, 'top'), px(zahl, 'right'), 18);
     const p = mitte(px(punkt[0], 'top'), px(punkt[0], 'right'), 10);
-    expect(p).toEqual(z);
-    expect(p).toEqual({ x: 31, y: 9 });
+    expect(z).toEqual({ x: 31, y: 9 });
+    expect(p).toEqual({ x: z.x + 3, y: z.y - 3 });
   });
 
-  it('Android: dieselbe Mitte wie die Zahl bei top -8 / right 2 (.button-inner 48px)', () => {
+  it('Android: ebenso 3px hoeher und 3px weiter rechts als die Zahl (.button-inner 48px)', () => {
     const zahl = bloecke('.app-postfach-glocke.md .app-postfach-glocke__zahl')[0];
     const punkt = bloecke('.app-postfach-glocke.md .app-postfach-glocke__punkt');
     expect(punkt).toHaveLength(1);
     const mitte = (top: number, right: number, groesse: number) => ({ x: 48 - right - groesse / 2, y: top + groesse / 2 });
-    expect(mitte(px(punkt[0], 'top'), px(punkt[0], 'right'), 10))
-      .toEqual(mitte(px(zahl, 'top'), px(zahl, 'right'), 18));
+    const z = mitte(px(zahl, 'top'), px(zahl, 'right'), 18);
+    expect(mitte(px(punkt[0], 'top'), px(punkt[0], 'right'), 10)).toEqual({ x: z.x + 3, y: z.y - 3 });
+  });
+
+  it('bleibt ein schlichter Punkt: kein Symbol darin (die Linien-Variante ist verworfen)', () => {
+    const punkt = bloecke('.app-ungelesen-punkt')[0];
+    expect(punkt).not.toMatch(/display:\s*flex/);
+    expect(ohneKommentare).not.toMatch(/\.app-ungelesen-punkt[^{]*(ion-icon|svg)/);
   });
 
   it('keine feste Farbe in den Regeln der Glocke und des Punkts', () => {

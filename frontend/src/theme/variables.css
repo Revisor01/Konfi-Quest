@@ -4641,22 +4641,30 @@ ion-buttons:has(> .app-postfach-glocke) {
   background: var(--ion-color-primary);
   pointer-events: none;
 }
-/* An der Glocke: dieselbe MITTE wie die Zahl der Warteschlange (Herleitung
-   oben), also auf der rechten oberen Ecke des Symbols -- nur kleiner.
+/* An der Glocke: 3 px hoeher und 3 px weiter rechts als die Mitte der Zahl
+   der Warteschlange (Herleitung oben), also schraeg ueber der rechten oberen
+   Ecke des Symbols. Simon, 29.09.2026: "Postfach Punkt ist ok, muesste sogar
+   noch ein bisschen hoeher und weiter rechts." Bis dahin lag die Mitte des
+   Punkts genau auf der Mitte der Zahl.
    iOS: Zahl 18 px bei top 0 / right 0 an .button-inner (40 px breit) ->
-   Mitte (31, 9); Punkt 10 px -> top 4 / right 4.
+   Mitte (31, 9); Punkt 10 px mit Mitte (34, 6) -> top 1 / right 1.
    Android (MD3): Zahl bei top -8 / right 2 an .button-inner (48 px breit)
-   -> Mitte (37, 1); Punkt -> top -4 / right 6.
-   Die Freigaben von Pille und Knopf oben gelten unveraendert; mit 10 px
-   ragt der Punkt ohnehin weniger weit hinaus als die Zahl. */
+   -> Mitte (37, 1); Punkt mit Mitte (40, -2) -> top -7 / right 3.
+   Gemessen (Playwright): iOS Mitte 2,8 px rechts und 2,8 px ueber der
+   Symbolecke, auf dem Rand der Glas-Pille; Android 4 px rechts, 2 px
+   darueber; nicht beschnitten (Pille und Knopf geben frei, Herleitung oben).
+   Die Variante mit Linien-Symbol im Punkt (16 px, Umschlag als Linie) ist
+   verworfen: im Dunkeln Weiss auf dem aufgehellten Blau nur 3,2:1, das
+   Symbol 10 px mit Linien unter 1 px, und der Kreis mit Umschlag kommt dem
+   Briefkasten nahe, den Simon nicht wollte. */
 .app-postfach-glocke__punkt {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 1px;
+  right: 1px;
 }
 .app-postfach-glocke.md .app-postfach-glocke__punkt {
-  top: -4px;
-  right: 6px;
+  top: -7px;
+  right: 3px;
 }
 .app-postfach-glocke[data-variante="warning"] .app-postfach-glocke__zahl {
   background: var(--app-color-warning);
@@ -4684,15 +4692,15 @@ ion-buttons:has(> .app-postfach-glocke) {
   font-weight: var(--app-schrift-fett);
 }
 /* Der Punkt in der Ecke der Karte, wo bis 29.09.2026 der Umschlag im
-   Eselsohr stand: um den seitlichen Innenabstand der Karte (16 px)
-   eingerueckt, oben wie rechts. Seine Mitte liegt damit auf Hoehe der
-   ersten Titelzeile (gemessen ab Oberkante der Karte: Punkt 22 px,
-   Zeilenmitte iOS 22,8 px, Android 24,4 px). Der Titel haelt 24 px frei
-   (PostfachModal), 14 px Luft bis zum Punkt. */
+   Eselsohr stand: 10 px von oben und rechts, nah an der Ecke (Simon,
+   29.09.2026: "ein bisschen hoeher und weiter rechts"; zuerst 16 px).
+   Gemessen ab der Kante der Karte: Mitte 16 px von oben und von rechts
+   (vorher 22). Der Titel haelt 24 px frei (PostfachModal), 20 px Luft bis
+   zum Punkt. */
 .app-postfach-eintrag__punkt {
   position: absolute;
-  top: var(--app-abstand-basis);
-  right: var(--app-abstand-basis);
+  top: var(--app-abstand-schmal);
+  right: var(--app-abstand-schmal);
 }
 .app-postfach__laedt {
   display: flex;

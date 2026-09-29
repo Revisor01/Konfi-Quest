@@ -341,13 +341,15 @@ describe('PostfachModal', () => {
       expect(zeilen[1].querySelector('.app-postfach-eintrag__punkt')).toBeNull();
     });
 
-    it('der Punkt sitzt in der Ecke, um den Innenabstand der Karte eingerueckt; der Titel haelt ihm Platz frei', async () => {
+    it('der Punkt sitzt nah an der Ecke (10px), der Titel haelt ihm Platz frei', async () => {
+      // Simon, 29.09.2026: "ein bisschen hoeher und weiter rechts" -- zuerst
+      // stand er 16px von oben und rechts, jetzt 10px.
       const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
       const regel = css.match(/\.app-postfach-eintrag__punkt \{([^}]*)\}/);
       expect(regel).not.toBeNull();
       expect(regel![1]).toMatch(/position:\s*absolute/);
-      expect(regel![1]).toMatch(/top:\s*var\(--app-abstand-basis\)/);
-      expect(regel![1]).toMatch(/right:\s*var\(--app-abstand-basis\)/);
+      expect(regel![1]).toMatch(/top:\s*var\(--app-abstand-schmal\)/);
+      expect(regel![1]).toMatch(/right:\s*var\(--app-abstand-schmal\)/);
       mockGet.mockResolvedValue(antwort([eintrag(12)]));
       const { container } = render(<PostfachModal />);
       await oeffnen();
