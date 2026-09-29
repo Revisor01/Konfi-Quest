@@ -470,6 +470,10 @@ iOS-Build 233 · Android versionCode 127
   unter „Fehler".
 
 ### Behoben
+- Wer eine Datei in einer anderen App öffnet — auf Android etwa ein
+  Word-Dokument — und zurückkommt, wird bei eingeschalteter App-Sperre nicht
+  mehr nach Fingerabdruck oder Face ID gefragt. Bisher kam die Abfrage bei
+  „Sofort" nach jeder Datei.
 - Teamer:innen und Leitung lassen sich wieder von Hand zu Events hinzufügen:
   Die Auswahl blieb leer, obwohl sie dem Jahrgang des Events zugewiesen waren.
 - Wer über eine Einladung im Team oder in der Leitung einer Gemeinde ist, steht

@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileOpener } from '@capacitor-community/file-opener';
 import { FileViewer } from '@capacitor/file-viewer';
+import { dateiExternOeffnen } from '../services/systemDialoge';
 
 const TEMP_DIR = 'temp';
 
@@ -62,6 +63,11 @@ export async function tempDateienAufraeumen(): Promise<void> {
  * Oeffnet eine Datei nativ über FileOpener (Bilder) oder FileViewer (Dokumente).
  * Gibt true zurück bei Erfolg auf nativer Plattform, false auf Web oder bei Fehler.
  * Bei false kann der Caller das FileViewerModal als Web-Fallback nutzen.
+ *
+ * Jeder native Aufruf läuft durch dateiExternOeffnen: Auf Android geht die
+ * Datei in einer fremden App auf, auf iOS kann das Teilen-Blatt aus der
+ * Vorschau die App ebenso in den Hintergrund legen. Beides darf die App-Sperre
+ * nicht auslösen.
  */
 export async function openFileNatively(
   blobOrUrl: Blob | string,
@@ -113,10 +119,10 @@ export async function openFileNatively(
 
     // Bilder über FileOpener (bessere native Anzeige)
     if (mimeType.startsWith('image/')) {
-      await FileOpener.open({ filePath: fileUri.uri, contentType: mimeType });
+      await dateiExternOeffnen(() => FileOpener.open({ filePath: fileUri.uri, contentType: mimeType }));
     } else {
       // Dokumente, Videos, PDFs etc. über FileViewer
-      await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
+      await dateiExternOeffnen(() => FileViewer.openDocumentFromLocalPath({ path: fileUri.uri }));
     }
 
     return true;

@@ -193,9 +193,11 @@ Fingerabdruck eingerichtet ist. Im Browser steht er nicht.
 ### Kurze Abstecher sperren nicht
 
 Ein Foto auswählen, der Teilen-Dialog, ein Link, der eine Karte oder den Store
-öffnet, und die Face-ID-Abfrage selbst — all das schickt die App technisch in
-den Hintergrund, zählt aber nicht als Verlassen. Auch bei **„Sofort"** sperrt
-die App dabei nicht. Du wirst also nicht mitten in einer Challenge-Abgabe
+öffnet, eine Datei, die in einer anderen App aufgeht (auf Android etwa ein
+Word-Dokument), und die Face-ID-Abfrage selbst — all das schickt die App
+technisch in den Hintergrund, zählt aber nicht als Verlassen. Auch bei
+**„Sofort"** sperrt die App dabei nicht, und auch dann nicht, wenn du länger in
+der anderen App liest. Du wirst also nicht mitten in einer Challenge-Abgabe
 ausgesperrt.
 
 ### Wieder hineinkommen

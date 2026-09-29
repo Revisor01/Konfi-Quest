@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_DATEI, ICON_HERUNTERLADEN, ICON_SCHLIESSEN, ICON_TEILEN } from './icons';
 import { Capacitor } from '@capacitor/core';
-import { teilen } from '../../services/systemDialoge';
+import { dateiExternOeffnen, teilen } from '../../services/systemDialoge';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileOpener } from '@capacitor-community/file-opener';
 import api, { DATEI_TIMEOUT_MS } from '../../services/api';
@@ -81,10 +81,13 @@ const openFileNatively = async (resolvedUrl: string, fileName: string, mimeType:
             data: base64,
             directory: Directory.Cache
           });
-          await FileOpener.open({
+          // Durch die Hülle: Auf Android geht die Datei in einer fremden App
+          // auf, und die App-Sperre darf das nicht für "verlassen" halten
+          // (Simons Befund 29.09.2026, siehe dateiExternOeffnen).
+          await dateiExternOeffnen(() => FileOpener.open({
             filePath: result.uri,
             contentType: mimeType
-          });
+          }));
           resolve(true);
         } catch {
           resolve(false);
