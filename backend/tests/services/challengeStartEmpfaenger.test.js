@@ -303,10 +303,14 @@ describe('Challenge-Start: Mitteilung und Zaehler fuer alle, die mitmachen (BF-0
   it('Zaehler: die Antwortform von badge-counts bleibt (nur Werte aendern sich)', async () => {
     await challenge({ audience: 'nur_team' });
     const z = await zaehler('teamer1');
+    // challengeNeueBeitraege kam am 29.09.2026 additiv dazu (rote Kugel am
+    // Challenge-Eintrag, wartende eingeschlossen) -- erlaubt, weil kein
+    // bestehendes Feld wegfaellt oder seine Form aendert.
     expect(Object.keys(z).sort()).toEqual([
-      'challengeApprovals', 'challengeUpdates', 'chat', 'newBadges',
+      'challengeApprovals', 'challengeNeueBeitraege', 'challengeUpdates', 'chat', 'newBadges',
       'pendingChallenges', 'pendingEvents', 'pendingRequests', 'postfach'
     ]);
     expect(Object.keys(z.challengeUpdates).sort()).toEqual(['byChallenge', 'total']);
+    expect(Object.keys(z.challengeNeueBeitraege).sort()).toEqual(['byChallenge', 'total', 'wartendByChallenge']);
   });
 });

@@ -2072,6 +2072,27 @@ paths:
         GEAENDERT 2026-09-29 (nur Anzeige): Statt des Briefumschlags zeigt die
         App an der Glocke einen blauen Punkt ohne Symbol. Antwort, Feld und
         Wert unveraendert.
+        NEU 2026-09-29, additiv: challengeNeueBeitraege -- die rote Zahl am
+        Challenge-Eintrag von Team und Leitung (Simon: "bei jeden Beitrag.
+        Wie im Chat bei jeder Nachricht. Und zusaetzlich Orangen bei
+        Freigaben."). Je laufender Challenge, die die Person sieht, jeder
+        fremde Beitrag seit dem letzten Oeffnen (POST
+        /api/challenges/konfi/{id}/mark-read), freigegeben UND wartend, dazu
+        1 fuer die nie geoeffnete Challenge, bei der das Team mitmacht.
+        Ausgeblendete und Zeitstempel in der Zukunft zaehlen nicht. Ein
+        wartender Beitrag steht damit bis zum Oeffnen hier und bis zur
+        Freigabe in challengeApprovals. Dieselbe Regel-Stelle wie
+        challengeUpdates (utils/challengeNeuigkeiten.js,
+        challengeNeuigkeitenLeitungJeChallenge, Spalte neu), dieselbe
+        Sichtbarkeit (utils/challengeLeitungSicht.js). Fuer Konfis immer
+        leer (total 0): ihre Zahl an der Challenge bleibt challengeUpdates.
+        UNVERAENDERT: pendingChallenges, challengeApprovals und
+        challengeUpdates behalten Bedeutung und Werte -- Reiter und
+        App-Symbol rechnen weiter "wartend + neu freigegeben" (die App 2.3.0
+        addiert pendingChallenges + challengeUpdates.total), eine Challenge,
+        an der nur wartende Beitraege neu sind, erscheint in
+        challengeUpdates.byChallenge nicht. Die App-Icon-Summe
+        (utils/appIconBadge.js) liest challengeNeueBeitraege nicht.
       responses:
         '200':
           description: Zähler
@@ -2132,6 +2153,31 @@ paths:
                       byChallenge:
                         type: object
                         description: Challenge-ID -> Anzahl wartender Beitraege; nur Challenges mit Anzahl > 0
+                        additionalProperties: { type: integer }
+                  challengeNeueBeitraege:
+                    type: object
+                    description: >
+                      NEU 2026-09-29, additiv, nur fuer Team und Leitung
+                      gefuellt (Konfis: total 0, beide Objekte leer). Neue
+                      fremde Beitraege seit dem letzten Oeffnen, wartende
+                      eingeschlossen, dazu 1 fuer eine nie geoeffnete
+                      Challenge, bei der das Team mitmacht und die die
+                      Person nicht angelegt hat. Nur laufende Challenges, die
+                      die Person sieht. Oeffnen setzt den Wert der Challenge
+                      auf 0. Fehlt das Feld (aelterer Server), rechnet die
+                      App wie bisher challengeApprovals + challengeUpdates.
+                    properties:
+                      total: { type: integer }
+                      byChallenge:
+                        type: object
+                        description: Challenge-ID -> Anzahl; nur Challenges mit Anzahl > 0
+                        additionalProperties: { type: integer }
+                      wartendByChallenge:
+                        type: object
+                        description: >
+                          Challenge-ID -> wie viele der neuen Beitraege noch
+                          auf Freigabe warten (Vorlesetext der Zahl); nur
+                          Challenges mit Anzahl > 0
                         additionalProperties: { type: integer }
                   postfach:
                     type: object

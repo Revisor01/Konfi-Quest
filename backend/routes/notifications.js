@@ -299,12 +299,42 @@ module.exports = (db, verifyTokenRBAC) => {
 
       // Wie chat.byRoom: Zahl je Challenge fuer den Listeneintrag, Summe
       // fuer Reiter und App-Icon.
+      //
+      // Nur Zeilen mit c > 0: Die Leitungs-Regel liefert seit 29.09.2026
+      // auch Challenges, an denen nur wartende Beitraege neu sind (c = 0,
+      // neu > 0). In challengeUpdates duerfen sie nicht als Eintrag mit 0
+      // auftauchen -- Form und Werte des Feldes bleiben wie bisher.
       const byChallenge = {};
       let neuigkeitenTotal = 0;
       neuigkeiten.forEach((r) => {
+        if (!(r.c > 0)) return;
         byChallenge[r.challenge_id] = r.c;
         neuigkeitenTotal += r.c;
       });
+
+      // Neue Beitraege je Challenge fuer Leitung und Team (29.09.2026, Simon:
+      // "bei jeden Beitrag. Wie im Chat bei jeder Nachricht. Und zusaetzlich
+      // Orangen bei Freigaben."): jeder fremde Beitrag seit dem letzten
+      // Oeffnen, AUCH der wartende -- die rote Kugel am Challenge-Eintrag.
+      // Spalte `neu` derselben Regel (utils/challengeNeuigkeiten.js), keine
+      // zweite SQL-Fassung. wartendByChallenge: wie viele davon noch auf
+      // Freigabe warten (Vorlesetext der Kugel).
+      //
+      // Konfis: bleibt leer. Ihre Kugel liest challengeUpdates (dort zaehlen
+      // auch Moderation eigener Beitraege und die neue Challenge -- das sind
+      // keine "neuen Beitraege"); ein Doppel desselben Wertes haette nur eine
+      // zweite Stelle geschaffen, die auseinanderlaufen kann.
+      const neueBeitraegeByChallenge = {};
+      const neueWartendByChallenge = {};
+      let neueBeitraegeTotal = 0;
+      if (userType !== 'konfi') {
+        neuigkeiten.forEach((r) => {
+          if (!(r.neu > 0)) return;
+          neueBeitraegeByChallenge[r.challenge_id] = r.neu;
+          neueBeitraegeTotal += r.neu;
+          if (r.neu_wartend > 0) neueWartendByChallenge[r.challenge_id] = r.neu_wartend;
+        });
+      }
 
       // Offene Freigaben der Leitung, dieselbe Form. Fuer Konfis bleibt es
       // leer/0 -- ihr Anteil steht in challengeUpdates. Die beiden Zahlen
@@ -331,6 +361,15 @@ module.exports = (db, verifyTokenRBAC) => {
         // NEU 25.09.2026, additiv: dieselbe Summe wie pendingChallenges,
         // dazu die Aufschluesselung je Challenge fuer den Listeneintrag.
         challengeApprovals: { total: freigabenTotal, byChallenge: freigabenByChallenge },
+        // NEU 29.09.2026, additiv: neue Beitraege seit dem letzten Oeffnen,
+        // wartende eingeschlossen -- nur Leitung und Team, fuer Konfis leer.
+        // Die App 2.3.0 kennt das Feld nicht und ignoriert es; Reiter und
+        // App-Symbol rechnen weiter mit pendingChallenges + challengeUpdates.
+        challengeNeueBeitraege: {
+          total: neueBeitraegeTotal,
+          byChallenge: neueBeitraegeByChallenge,
+          wartendByChallenge: neueWartendByChallenge
+        },
         // NEU 25.09.2026, additiv: ungelesene Postfach-Mitteilungen. Die
         // App zeigt daraus an der Glocke einen Briefumschlag (> 0); in die
         // Zahl am App-Symbol geht sie seit 28.09.2026 nicht mehr ein. Nur

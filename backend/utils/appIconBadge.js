@@ -499,7 +499,13 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   for (const r of neuigkeiten) {
     addiere(r.user_id, r.user_type, orgJeKonfi.get(schluessel(r.user_id, r.user_type)), r.c, false);
   }
-  for (const r of leitungsNeuigkeiten) addiere(r.user_id, r.user_type, r.organization_id, r.c, false);
+  // Nur Spalte `c` -- wartend + neu freigegeben, wie am Reiter. Die Spalte
+  // `neu` (29.09.2026, rote Kugel am Challenge-Eintrag) zaehlt wartende
+  // Beitraege mit, die hier schon als Freigabe stehen; sie gehoert nicht aufs
+  // Symbol. Zeilen mit c = 0 (nur wartende neu) fallen heraus.
+  for (const r of leitungsNeuigkeiten) {
+    if (r.c > 0) addiere(r.user_id, r.user_type, r.organization_id, r.c, false);
+  }
 
   // Die org-weiten Zahlen auf jede ORG-WEITE Leitung dieser Organisation
   // verteilen (gebundene Admins haben ihre Zahlen oben schon bekommen).
