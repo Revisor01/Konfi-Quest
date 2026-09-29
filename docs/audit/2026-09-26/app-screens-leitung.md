@@ -349,6 +349,19 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
   Wartelistenplätze nachrücken.
 - **Empfehlung:** Warntext um „Termin-Anmeldungen, Challenge-Beiträge und
   hochgeladene Fotos" ergänzen; Handbuchabschnitt „Einen Konfi löschen".
+- **Nachtrag 28.09.2026:** behoben — Befund am Code bestätigt (Text nannte nur
+  Punkte, Badges, Aktivitäten, Chat-Nachrichten). Alle vier Konto-Löschdialoge
+  (Konfi und Teamer:in in `AdminKonfisPage.tsx`, „Benutzer löschen" in
+  `AdminUsersPage.tsx`, `DeleteAccountModal.tsx`) lesen einen Wortlaut aus
+  `utils/kontoLoeschen.ts`: Punkte, Badges, Stempel, Anträge samt Fotos,
+  Event-Anmeldungen, Challenge-Beiträge, Chat-Nachrichten, Zweiergespräche;
+  Nachrücken der Warteliste; beim Team, was der Gemeinde bleibt. Backend
+  zugleich auf eine Löschfunktion für alle Wege umgestellt
+  (`backend/utils/kontoLoeschen.js`, Paket 2d). Handbuch `05-rollen.md`
+  „Ein Konto löschen" (für alle Rollen statt „Einen Konfi löschen"). Tests:
+  `kontoLoeschAbfragen.test.tsx` (4), angepasst `teamerEntfernenAbfrage` und
+  `benutzerEntfernenAbfrage` (je 1); Gegenprobe mit den alten Texten 6 von 13
+  rot.
 
 ### BF-11: `useOfflineQuery` zeigt beim Schlüsselwechsel alte Daten bis zur neuen Antwort
 

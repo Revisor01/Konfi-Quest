@@ -14,6 +14,7 @@ import {
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
+import { teamKontoLoeschHinweis } from '../../../utils/kontoLoeschen';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
@@ -111,7 +112,9 @@ const AdminUsersPage: React.FC = () => {
           }
         : {
             header: 'Benutzer löschen',
-            message: `Benutzer ${person} wirklich löschen?`
+            // Was mit dem Konto verschwindet und was der Gemeinde bleibt
+            // (28.09.2026, utils/kontoLoeschen.ts).
+            message: `Benutzer ${person} wirklich löschen?\n\n${teamKontoLoeschHinweis()}`
           };
     presentAlert({
       ...abfrage,

@@ -449,7 +449,9 @@ Ein Konto verschwindet auf vier Wegen, und auf jedem geschieht dasselbe:
   von allein (siehe
   [Weiterkommen, wenn gar nichts geht](35-passwoerter.md#weiterkommen-wenn-gar-nichts-geht)).
 
-Rückgängig machen lässt sich das Löschen nicht.
+Die Rückfrage vor dem Löschen nennt knapp, was verschwindet und — bei
+Teamer:innen und Leitung — was der Gemeinde bleibt. Rückgängig machen lässt
+sich das Löschen nicht.
 
 ### Nachsehen, was mit dem Konto verschwindet
 

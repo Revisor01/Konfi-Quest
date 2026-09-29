@@ -456,6 +456,11 @@ iOS-Build 233 · Android versionCode 127
   die Gemeinde angelegt hat, gültig — wie ihre Events, ihr Material und ihre
   Badges, jeweils ohne ihren Namen. Bisher verschwanden die Codes mit dem
   Konto.
+- Die Rückfragen vor dem Löschen eines Kontos — einer Konfi, einer
+  Teamer:in, unter „Benutzer:innen" und im eigenen Profil — nennen knapp,
+  was verschwindet: Punkte, Badges, Stempel, Anträge samt Fotos,
+  Event-Anmeldungen, Challenge-Beiträge, Chat-Nachrichten und
+  Zweiergespräche; beim Team auch, was der Gemeinde bleibt.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
