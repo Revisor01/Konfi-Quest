@@ -487,6 +487,19 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
   `require('sys')`: 0 Treffer. Kein `require` eines devDependency-Pakets außerhalb `tests/`
   → `--omit=dev` ist sicher. Root `@playwright/test@1.62.1` verlangt `node >=20` → der
   Node-20-Job ist technisch kompatibel (aber EOL, BF-04).
+  - **Nachtrag 29.09.2026 (Paket I2):** Eine Deprecation von `pg` stand im Testlauf:
+    „Calling client.query() when the client is already executing a query is deprecated and
+    will be removed in pg@9.0". Gefunden mit `--trace-deprecation`: `checkAndAwardBadges`
+    (`routes/badges.js`) bündelte seine Vorab-Abfragen (Konfi- und Teamer-Zweig) und das
+    Eintragen mehrerer Abzeichen mit `Promise.all` und wird aus der Anwesenheit
+    (`routes/events/anwesenheit.js`) und dem Check-in (`routes/events/checkin.js`) mit dem
+    Client der laufenden Transaktion gerufen — bis zu 6 gleichzeitige Abfragen auf einer
+    Verbindung, die pg 8 intern einreiht und pg 9 nicht mehr. **Behoben:**
+    `utils/abfragenBuendeln.js` — auf einem Client nacheinander, über den Pool weiter
+    parallel. Test `tests/routes/badgesEinClientNacheinander.test.js` (5; zählt gleichzeitig
+    offene Abfragen): vor dem Fix 3 rot (6, 5 und 6 statt 1), Gegenprobe nur das Eintragen
+    zurückgedreht → 1 rot (2 statt 1). Anwesenheits-, Termin- und Abzeichen-Suites danach
+    ohne die Warnung.
 - **Typprüfung:** `npx tsc --noEmit` im Frontend 0 Fehler (25,5 s); `strict: true`,
   `skipLibCheck: true` (üblich), `isolatedModules`, `moduleResolution: bundler`.
   `noUncheckedIndexedAccess`/`noUnusedLocals` fehlen (Hinweis, kein Befund).
