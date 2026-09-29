@@ -1,6 +1,6 @@
 # Behebungsbericht zum Release-Audit 2.3.0
 
-Stand 27.09.2026, abends (Code-Stand `9e7fa4c8`); Nachtrag 28.09.2026 (Abschnitt „Nacht zum 28.09.“), ausgeliefert als 2.3.0. Was seit der Gesamtabnahme vom 26.09. behoben
+Stand 27.09.2026, abends (Code-Stand `9e7fa4c8`); Nachtrag 28.09.2026 (Abschnitt „Nacht zum 28.09.“), ausgeliefert als 2.3.0; Nachtrag 29.09.2026 (Abschnitt „29.09.: Pakete nach Simons Entscheidungen“, offene Punkte in `docs/audit/2026-09-28/offene-punkte.md`). Was seit der Gesamtabnahme vom 26.09. behoben
 wurde, was offen bleibt und was bei Simon liegt. Dazu gehört das Audit „Wer bekommt was" vom 27.09.
 (`docs/audit/2026-09-27/wer-bekommt-was.md`) samt seinen Behebungspaketen. Jeder Punkt steht als Commit auf dem Release-Branch;
 die Berichte je Bereich tragen an jedem Befund eine Status-Zeile mit Datum. Die Regeln für jede
@@ -437,7 +437,58 @@ deshalb bei 2.3.0 mit den nächsten Build-Nummern.
 - **Tests am Ende:** Backend 212 Dateien / 4.232 Tests, Frontend 351 / 4.748, alle grün;
   Typprüfung und Lint ohne Fehler, `version:pruefen` gleich, Doku-Generatoren ohne Abweichung.
 
+### 29.09.: Pakete nach Simons Entscheidungen
+
+Simon, 28.09.2026, auf die Liste der offenen Befunde: „1-4 machen den rest für später. Aber
+bewahren." Dazu seine Entscheidungen: „Konfi und Team geht nicht parallel. [...] Es bleibt immer an
+der Gemeinde!", „Material wird global ja", „Gelöschte Badges müssen bei befördertem erhalten
+bleiben. Auch wenn wir die zb ändern", „codes länger als 7 Tage ist gut. Mach es flexibel. Aber mit
+Zwang die ablaufen zu lassen", „konto löschen muss wirklich alles löschen". Am 29.09. kamen seine
+Rückmeldungen aus TestFlight 233 dazu (Postfach-Symbol, Reiterleiste, dritte Rollenfarbe,
+Zähler, Android-Symbol) und ein Fehler in Produktion.
+
+- **Fehler in Produktion (vorab ausgeliefert, #187, `dfd73e78`):** Team und Leitung ließen sich
+  nicht von Hand zu Events hinzufügen — die Auswahl blieb leer. `jahrgang_ids` kam als Text-Array
+  (pg liest `bigint[]` als Text), die App verglich streng. Dazu fehlten per Einladung
+  Mitarbeitende in Team-Liste, Leitungsliste, Detailansicht und beim Eintragen. Seit 29.09.,
+  03:28 live.
+- **Paket 1 (Gemeinden):** Konfi und Team können auf keinem Weg mehr zugleich bestehen, auch nicht
+  über Gemeindegrenzen; die automatische Löschung überspringt Altbestands-Mischkonten. Teamer-Badges
+  und Zertifikate gelten je Gemeinde (keine 404 mehr in der weiteren Gemeinde). Gesprächsvorlage
+  `docs/audit/2026-09-28/mehrfach-konten.md` mit acht Fragen; Messung `06-mischkonten.md`.
+- **Paket 2 (Löschungen):** Material eines gelöschten Jahrgangs wird ausdrücklich global, die
+  Vorschau nennt die Zahl. Konfi-Badges Beförderter kommen aus der Kopie der Konfi-Zeit und bleiben
+  beim Löschen und Ändern eines Badges (Migration 172). Einladungscodes: Gültigkeit 7–90 Tage,
+  Verlängern höchstens bis 90 Tage ab heute, abgelaufene bleiben abgelaufen. Konto löschen: eine
+  gemeinsame Funktion für alle vier Wege nimmt alles der Person mit, auch Dateien und
+  Zweiergespräche; was sie für die Gemeinde angelegt hat, bleibt ohne Namen (Migration 173); ein
+  Wächter-Test fällt, wenn eine neue Tabelle keine Löschregel hat.
+- **Paket 3 (App-Fehler, 16 Befunde):** unter anderem Doppeltipp auf „Anmelden", Sperrgrund statt
+  „Sitzung abgelaufen", QR-Scanner, Ungelesen-Zahl im Chat, Wettlauf bei Challenge-Beiträgen,
+  Punkteziel 0 wird abgelehnt (Simon: „Demnach ist ablehnen der 0 gut"), Pflicht-Events beim
+  Anlegen in der Transaktion, Rückblick löschen nur mit Schreibrecht.
+- **Paket 4 (Sicherheit und Datenschutz, 12 Punkte):** QR-Code nur für Events der eigenen
+  Jahrgänge, Token ohne Name und E-Mail, Protokoll ohne Namen und Freitexte, Mail-HTML maskiert,
+  400/413/415 statt 500, Text-Uploads geprüft, Aufräumskripte kennen die Challenge-Uploads,
+  Namensprüfung begrenzt, fremde Kennungen 404. BF-13 wartet auf die Messung am Proxy
+  (`07-client-adresse-hinter-dem-proxy.md`).
+- **Paket F (Oberfläche):** Postfach mit blauem Punkt statt Umschlag, Reiterbeschriftungen nicht
+  mehr abgeschnitten, eigene Farbe für die Leitung (Petrol), orange Zahlen mittig, bei Challenges
+  steht die Zahl nur auf dem Corner Badge (Simon: „Zahl nur auf der corner badge").
+- **Paket G (Android):** App-Symbol in der sicheren Zone mit eigenem Hintergrund und
+  Monochrom-Ebene; die Zahl am Symbol erreicht den Launcher (`<queries>`); die Leitung behält auf
+  Android ihre Mitteilungen beim Öffnen. Am Gerät noch zu prüfen.
+
+Alle Pakete mit Test und Gegenprobe je Befund; Zahlen in den Commit-Nachrichten und in den
+Nachträgen der Berichte. Was offen bleibt, steht vollständig in
+`docs/audit/2026-09-28/offene-punkte.md` — erstmals samt der Abschnitte „Unklar" und
+„Nicht geprüft" und der Nebenbefunde vom 29.09.
+
 ## Was offen bleibt
+
+**Stand 29.09.2026:** Die vollständige Liste steht in `docs/audit/2026-09-28/offene-punkte.md` (55 Befunde,
+24 Punkte aus „Unklar"/„Nicht geprüft", 23 Feature-Empfehlungen, 12 Nebenbefunde). Die Abschnitte
+hier unten sind der Stand vom 27./28.09. und bleiben zur Nachverfolgung stehen.
 
 Stand 27.09.2026, vor dem Merge. Gezählt aus den Status-Zeilen der 15 Bereichsberichte und des
 Audits „Wer bekommt was": **238 Befunde, 125 behoben, 22 teilweise, 79 offen, 8 bewusst so
@@ -540,6 +591,12 @@ bleibt:
 
 Leitfrage für den Durchgang: Was ist Verlauf (bleibt als Kopie), was ist Zustand (geht mit), und
 wer erfährt es — heute beantwortet jede Route das selbst.
+
+**Entschieden und umgesetzt 29.09.2026** (Simon, 28.09.): Material eines gelöschten Jahrgangs wird
+global; Konfi-Badges Beförderter bleiben beim Löschen und Ändern eines Badges; Konto löschen nimmt
+auf allen vier Wegen alles der Person mit, eine gemeinsame Funktion mit Wächter-Test;
+Einladungscodes bleiben der Gemeinde. Offen: Gemeinde löschen nutzt die gemeinsame Funktion noch
+nicht (siehe `docs/audit/2026-09-28/offene-punkte.md`).
 
 ### Später (NIEDRIG)
 
