@@ -227,7 +227,10 @@ Fotos verkleinert die App beim Auswählen wie im Chat (lange Kante 1920
 Pixel). Wer ein Bild in voller Auflösung braucht, etwa zum Drucken, legt es
 als PDF ab. Eine Datei darf danach höchstens 20 MB groß sein; was darüber
 liegt, meldet die App gleich bei der Auswahl mit „Datei ist zu groß (max.
-20 MB)." und nimmt es nicht auf. Beim Speichern steht unter der Kopfzeile,
+20 MB)." und nimmt es nicht auf. Textdateien (TXT, CSV) prüft der Server
+wie im Chat auf ihren Inhalt
+([Verstehen, was mit der Datei passiert](90-chat.md#verstehen-was-mit-der-datei-passiert)).
+Beim Speichern steht unter der Kopfzeile,
 wie weit das Hochladen ist — „Wird gesendet… 40 %", zuletzt „Wird
 verarbeitet…". Wie die Dateien danach auf den Geräten liegen und wieder
 verschwinden, steht unter

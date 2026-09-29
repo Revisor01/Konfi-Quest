@@ -1146,6 +1146,10 @@ iOS-Build 233 · Android versionCode 127
   statt sie als Formatierung zu lesen.
 
 ### Sonstiges
+- Textdateien im Chat und im Material prüft der Server auf ihren Inhalt: Eine
+  Webseite, ein Skript oder ein Programm unter dem Namen einer Textdatei wird
+  abgelehnt, ebenso eine Textdatei über 2 MB. Gewöhnliche Texte und
+  Excel-Listen gehen weiter durch.
 - Das Aufräumen verwaister Dateien auf dem Server und die Verschlüsselung
   alter Dateien umfassen auch die Beiträge zu Challenges.
 - Die Fehlerliste der Auslastungsanzeige zeigt Adressen ohne Suchbegriffe,

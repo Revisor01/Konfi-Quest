@@ -134,7 +134,10 @@
 #      gemeldete MIME-Liste, danach Magic-Bytes-Prüfung mit file-type auf
 #      dem Buffer (415 bei Nichtuebereinstimmung). text/plain und text/csv
 #      sind von der Magic-Bytes-Prüfung ausgenommen, weil sie keine Signatur
-#      haben.
+#      haben; seit 29.09.2026 wird bei ihnen der Inhalt geprüft (Audit
+#      Sicherheit BF-20, utils/textDatei.js: max. 2 MB, keine Binärdaten,
+#      keine HTML-/Skript-Signatur) und beim Download text/plain bzw.
+#      text/csv mit charset=utf-8 gesetzt.
 #    - Ablage: AES-256-GCM-verschlüsselt (utils/photoCrypto), zufaelliger
 #      64-Hex-Dateiname in backend/uploads/material. Das Verzeichnis wird
 #      nicht statisch ausgeliefert.
@@ -1678,6 +1681,12 @@ paths:
         text/plain und text/csv sind ausgenommen, weil sie keine Signatur
         haben). Gespeichert wird AES-256-GCM-verschlüsselt unter einem
         zufaelligen 64-Hex-Dateinamen.
+        TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): Statt dem
+        Header zu vertrauen, prüft der Server den Inhalt -- höchstens 2 MB
+        (413), keine Binärdaten, keine HTML-/Skript-Signatur (415, Meldung
+        mit dem Dateinamen in Klammern). Kein UTF-8-Zwang (Excel-CSV in
+        Windows-1252 geht durch). Geprüft wird weiterhin alles, bevor die
+        erste Datei abgelegt wird.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "multer materialUpload.array('files', 10)"]
@@ -1708,8 +1717,8 @@ paths:
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Rolle nicht berechtigt, oder nicht die erstellende Person (Ersteller-Regel seit 01.09.2026)" }
         "404": { $ref: '#/components/responses/NotFound' }
-        "413": { description: "Datei ueberschreitet 20 MB (globaler Multer-Handler in createApp.js)" }
-        "415": { description: Dateityp nicht verifizierbar (Magic-Bytes) }
+        "413": { description: "Datei ueberschreitet 20 MB (globaler Multer-Handler in createApp.js); Textdatei über 2 MB (seit 29.09.2026)" }
+        "415": { description: "Dateityp nicht verifizierbar (Magic-Bytes); Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/material/files/{fileRef}:
@@ -1741,7 +1750,7 @@ paths:
             GET /api/material/{id}), NICHT die numerische id.
           schema: { type: string, pattern: "^[a-f0-9]{64}$" }
       responses:
-        "200": { description: Datei als Download (Content-Type aus mime_type, Content-Disposition attachment) }
+        "200": { description: "Datei als Download (Content-Type aus mime_type, Content-Disposition attachment); text/plain und text/csv seit 29.09.2026 mit charset=utf-8" }
         "400": { description: Ungueltiger Dateiname }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }

@@ -840,6 +840,13 @@ paths:
         Ablage, Magic-Bytes-Prüfung) oder JSON mit content. client_id (UUID)
         macht den Aufruf idempotent. reply_to wird gegen den Raum validiert.
         Verteilt via WebSocket und Push an alle Teilnehmer.
+        TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): text/plain
+        und text/csv haben keine Magic Bytes; statt dem Header zu vertrauen,
+        prüft der Server den Inhalt (utils/textDatei.js): höchstens 2 MB
+        (413), keine Binärdaten (415 "Die Datei ist keine Textdatei."),
+        keine HTML-/Skript-Signatur (415 "Textdateien mit HTML oder Skript
+        werden nicht angenommen."). Kein UTF-8-Zwang: Excel-CSV in
+        Windows-1252 geht durch.
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       requestBody:
@@ -862,7 +869,8 @@ paths:
               schema: { $ref: '#/components/schemas/ChatMessage' }
         '400': { description: Weder Inhalt noch Datei / Datei unlesbar / Validierungsfehler }
         '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
-        '415': { description: Dateityp per Magic Bytes nicht verifizierbar }
+        '413': { description: "Datei über 5 MB, Textdatei über 2 MB (seit 29.09.2026)" }
+        '415': { description: "Dateityp per Magic Bytes nicht verifizierbar; Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
@@ -1115,7 +1123,7 @@ paths:
         - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" }, description: "Serverseitiger Dateiname (Hex) aus der Upload-Antwort bzw. Nachricht" }
         - { name: X-Active-Organization, in: header, required: false, schema: { type: integer }, description: "Aktive Organisation für Multi-Org-Konten (wie beim übrigen API-Zugriff)" }
       responses:
-        '200': { description: "Dateiinhalt (Content-Type aus Original-Dateiname)", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+        '200': { description: "Dateiinhalt (Content-Type aus Original-Dateiname; .txt seit 29.09.2026 immer text/plain; charset=utf-8, .csv text/csv; charset=utf-8 -- vorher ohne Content-Type)", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
         '400': { description: Ungueltiger Dateiname }
         '401': { description: "Token fehlt oder ungueltig — auch wenn es nur als ?token= im Query steht (seit 28.09.2026)" }
         '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }

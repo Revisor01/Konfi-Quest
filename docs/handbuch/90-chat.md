@@ -348,8 +348,12 @@ wie sie sind — für ein längeres Video ist der Chat zu knapp.
 
 - Sie wird beim Hochladen **auf ihren echten Typ geprüft** — nicht am
   Dateinamen, sondern an den ersten Bytes. Ein umbenanntes Programm kommt nicht
-  durch (*„Dateityp konnte nicht verifiziert werden"*). Nur bei reinen
-  Textdateien (TXT, CSV) geht das nicht, weil sie keine solche Kennung haben.
+  durch (*„Dateityp konnte nicht verifiziert werden"*). Reine Textdateien
+  (TXT, CSV) haben keine solche Kennung; bei ihnen prüft der Server den
+  Inhalt: höchstens 2 MB, keine Programmdaten (*„Die Datei ist keine
+  Textdatei."*) und keine Webseite oder kein Skript darin (*„Textdateien mit
+  HTML oder Skript werden nicht angenommen."*). Eine CSV aus Excel geht durch,
+  auch mit Umlauten.
 - Sie liegt danach **verschlüsselt** auf dem Server, unter einem zufälligen
   Namen ohne Bezug zu Inhalt oder Absender.
 - Abrufen kann sie nur, wer angemeldet ist und den Chat öffnen darf. Es gibt

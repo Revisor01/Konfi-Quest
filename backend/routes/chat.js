@@ -17,6 +17,7 @@ const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { darfRaumBetreten } = require('../utils/chatRoomAccess');
+const { istTextTyp, pruefeTextDatei, textInhaltsTyp } = require('../utils/textDatei');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -1305,9 +1306,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         // Magic-Bytes-Prüfung auf den Kopfbytes der Temporaerdatei (echte
         // Dateitypen erzwingen) — sie greift damit weiterhin VOR dem
         // endgueltigen Ablegen.
-        // Text-Formate (txt/csv) haben keine Magic Bytes -> Header vertrauen.
-        const textMimes = ['text/plain', 'text/csv'];
-        if (!textMimes.includes(req.file.mimetype)) {
+        // Text-Formate (txt/csv) haben keine Magic Bytes -- statt dem Header
+        // zu vertrauen, wird seit dem 29.09.2026 der Inhalt geprueft
+        // (utils/textDatei.js, Audit Sicherheit BF-20).
+        if (istTextTyp(req.file.mimetype)) {
+          const befund = await pruefeTextDatei(req.file.path, req.file.size);
+          if (befund) {
+            return res.status(befund.status).json({ error: befund.error });
+          }
+        } else {
           const { fileTypeFromBuffer } = await import('file-type');
           const detected = await fileTypeFromBuffer(await leseKopfBytes(req.file.path));
           const allowedPrefixes = [
@@ -2027,7 +2034,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
         if (fileMessage.file_name) {
           const ext = path.extname(fileMessage.file_name).toLowerCase();
-          if (contentTypes[ext]) {
+          // Textdateien immer als text/plain bzw. text/csv mit charset
+          // (Audit Sicherheit BF-20) -- vorher ohne Content-Type.
+          const textTyp = textInhaltsTyp({ dateiname: fileMessage.file_name });
+          if (textTyp) {
+            res.setHeader('Content-Type', textTyp);
+          } else if (contentTypes[ext]) {
             res.setHeader('Content-Type', contentTypes[ext]);
           }
         }
