@@ -132,6 +132,7 @@ Dazu kommen Kontraste unter AA im Hellmodus (drei Text-Grautöne mit 2,85–3,54
 - **Auswirkung aus Nutzersicht:** Eine Pastorin, die ihr iPhone auf „größere Schrift“ gestellt hat, bekommt in dieser App nichts davon; die fünf Reiterbeschriftungen sind auf Android 8,8 px klein, und im Android-Browser lässt sich nicht heranzoomen. WCAG 1.4.4 (AA) für die Web-Variante.
 - **Beleg:** `Schriftgroessen: … "span 12.8px "Passwort vergessen?""` (Login, iPhone-Kennung); `Nach 150 % Textzoom: {"scrollW":393,"innerW":393,"contentScrollH":974}`.
 - **Empfehlung:** `html { font: -apple-system-body; }` (Ionic-Empfehlung für Dynamic Type) plus `--app-text-schmal` auf ≥ 0,7 rem mit `text-overflow: ellipsis`; `user-scalable=no` und `maximum-scale` aus dem Viewport-Meta streichen (Ionic braucht es nicht mehr).
+- **Nachtrag 29.09.2026:** Folgefehler aus (c) behoben — mit 0.7rem passte die Zeile der Beschriftung nicht mehr in den Reiter fester Höhe (iOS 12 px Platz für 14,28 px Zeile bei Wurzel 17, Android 11,80 für 14,00 px); Flexbox stauchte den Kasten, `overflow: hidden` schnitt die Unterlängen ab (Simon, TestFlight 233: „das G bei Challenges abgeschnitten"). `flex-shrink: 0` an der Beschriftung, auf Android 4 statt 6 px Abstand darunter. Gemessen mit Playwright (drei Rollen, 360/393 px, Wurzel 16/17): Tinte von „Challenges"/„Badges" vorher 2,14 px (iOS) / 2,20 px (Android) unter dem Kasten, nachher 0 von 60 Beschriftungen. Test `reiterUnterlaengen.test.ts` (5), Gegenprobe 3 rot.
 
 ### BF-08: Kein sichtbarer Fokus auf dem Anmelde-Knopf; Fehlermeldung ohne Live-Region
 
