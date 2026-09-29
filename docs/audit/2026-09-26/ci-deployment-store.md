@@ -122,7 +122,7 @@ richtig machen oder bis dahin entfernen.
 
 ### BF-02: iOS-Deep-Links: `apple-app-site-association` ist ein Platzhalter und wird so ausgeliefert
 - **Schwere:** MITTEL
-- **Status:** offen 27.09.2026 — die AASA-Datei trägt weiter `TEAMID` (2 Treffer), ein Associated-Domains-Entitlement fehlt. Simon entscheidet: Universal Links umsetzen oder die Datei entfernen (Auftrag `04-ci.md`, Abschnitt 10). Vor EKD-Ausrollung.
+- **Status:** behoben 29.09.2026 (die Datei) — `apple-app-site-association` trägt statt `TEAMID` die App aus dem Xcode-Projekt (`J459G9CJT5.de.godsapp.konfiquest`, Format `appIDs`/`components`), die Pfade `/login*`, `/register*`, `/reset-password*` wie die Android-App-Links (`utils/deepLinks.ts`), `webcredentials` mit derselben App; nginx liefert sie mit `default_type application/json` (lokal mit `nginx:alpine` gemessen: vorher `application/octet-stream`, jetzt `200 application/json`, keine Umleitung). Wächter `frontend/src/__tests__/navigation/appLinksIos.test.ts` (7 Fälle, mit der alten Datei und nginx.conf 5 rot) koppelt Datei, Xcode-Projekt, Pfadliste und nginx; trägt die App einmal Associated Domains, prüft er auch deren Hosts. Weiter bei Simon: das Entitlement `applinks:konfi-quest.de` (Universal Links einschalten) — ohne es fragt kein iPhone die Datei ab; der Code leitet Universal Links schon heute weiter (`SceneDelegate` → `appUrlOpen` → `deepLinkZiel`).
 - **Fundstelle:** `frontend/public/.well-known/apple-app-site-association:6,7,12`
   (`"appID": "TEAMID.de.godsapp.konfiquest"`, Pfade `/konfi/*`, `/admin/*`),
   `frontend/ios/App/App/App.entitlements:5-6` (nur `aps-environment`, kein

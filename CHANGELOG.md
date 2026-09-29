@@ -1232,6 +1232,9 @@ iOS-Build 234 · Android versionCode 128
   Fehler ab.
 
 ### Sonstiges
+- Die Zuordnung der Web-Adresse zur iPhone-App ist korrekt hinterlegt statt
+  als Platzhalter. Einladungs- und Passwort-Links öffnen auf dem iPhone die
+  App, sobald die App diese Zuordnung selbst anmeldet.
 - Das Server-Abbild wird genau aus den festgelegten Paketständen gebaut und
   enthält nur noch, was zum Betrieb gebraucht wird — keine Tests, keine
   Entwicklungswerkzeuge, keine Kopie des Datenbankschemas. Es ist damit
