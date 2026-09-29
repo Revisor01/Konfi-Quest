@@ -1078,6 +1078,9 @@ iOS-Build 233 · Android versionCode 127
   denen man sich gar nicht anmelden kann.
 - Die Mail „Passwort zurücksetzen" nennt die richtige Gültigkeit des Links:
   24 Stunden statt einer Stunde.
+- Android: Das App-Symbol wird nicht mehr beschnitten — die Blüte steht bei
+  jeder Symbolform (Kreis, Squircle, Tropfen) vollständig auf dunklem Grund,
+  auch als einfarbiges Themen-Symbol.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,
