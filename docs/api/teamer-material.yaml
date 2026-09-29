@@ -194,8 +194,13 @@
 #       werden nicht mehr ueber toISOString gebildet.
 #   T1  POST /api/teamer/requests: client_id-Idempotenz ohne user/org-Scope.
 #   T2  GET /api/teamer/{userId}/certificates ohne Rollen-Prüfung.
-#   T3  DELETE /api/teamer/certificate-types/{id}: 409-Sperre zählt
-#       organisationsuebergreifend.
+#       Seit 29.09.2026 (Audit Sicherheit BF-16): 404 fuer Personen, die
+#       nicht zur aktiven Gemeinde gehoeren (vorher 200 []).
+#   T3  BEHOBEN 29.09.2026 (Audit Sicherheit BF-16). DELETE
+#       /api/teamer/certificate-types/{id}: Die 409-Sperre zaehlte
+#       organisationsuebergreifend und kam VOR der Gemeinde-Pruefung --
+#       ein fremder Typ antwortete "bereits im Team vergeben". Jetzt zuerst
+#       404.
 #   T4  Inline-Check "nur Rolle teamer" nur auf 6 von 12 Selbstbedienungs-
 #       Routen - uneinheitlich.
 # =====================================================================
@@ -953,8 +958,8 @@ paths:
         "200": { description: Geloescht }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "404": { $ref: '#/components/responses/NotFound' }
-        "409": { description: Typ ist bereits vergeben und kann nicht geloescht werden }
+        "404": { description: "Typ nicht in dieser Gemeinde -- seit 29.09.2026 VOR der Vergabe-Prüfung (T3)" }
+        "409": { description: Typ ist bereits vergeben und kann nicht geloescht werden (nur eigene Typen) }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/teamer/{userId}/certificates:
@@ -965,7 +970,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "user_certificates gefiltert auf user_id + organization_id"
+        objekt-pruefung: "Person muss Mitglied der aktiven Gemeinde sein (beide Quellen, utils/orgMitglieder.js; 404 sonst, seit 29.09.2026); user_certificates gefiltert auf user_id + organization_id"
         hinweis: >
           # BEFUND T2: Anders als die Badge- und die POST-Variante prüft diese
           Route NICHT, ob der Ziel-User die Rolle 'teamer' hat. Für beliebige
@@ -976,6 +981,7 @@ paths:
         "200": { description: "Array (id, issued_date, expiry_date, created_at, certificate_type_id, name, icon)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: "Person gehört nicht zur aktiven Gemeinde (seit 29.09.2026; vorher 200 [])" }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
       tags: ["Teamer:innen"]
@@ -1514,7 +1520,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "materials.organization_id; der Termin selbst wird nicht separat geprüft - ein fremder eventId liefert schlicht eine leere Liste"
+        objekt-pruefung: "Termin muss zur aktiven Gemeinde gehören (404 sonst, seit 29.09.2026, Audit Sicherheit BF-16 -- vorher 200 []); materials.organization_id"
         hinweis: >
           Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am
           24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang
@@ -1535,6 +1541,7 @@ paths:
         "200": { description: "Array (id, title, description, link_url, ist_global, created_at, created_by, created_by_name, file_count)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: "Termin nicht in dieser Gemeinde (seit 29.09.2026; die Apps fangen den Fehler ab und zeigen keine Materialien)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/material/{id}:

@@ -391,6 +391,18 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const eventId = req.params.eventId;
       const schranke = jahrgangsSchranke(req.user, '$3');
 
+      // Fremder oder unbekannter Termin -> 404 statt 200 [] (Audit
+      // Sicherheit BF-16, 29.09.2026). Beide Apps (2.2.0, 2.3.0) fangen den
+      // Fehler ab und zeigen dann keine Materialien -- wie bei der leeren
+      // Liste.
+      const { rows: [termin] } = await db.query(
+        'SELECT id FROM events WHERE id = $1 AND organization_id = $2',
+        [eventId, orgId]
+      );
+      if (!termin) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
       const { rows: materials } = await db.query(
         `SELECT m.id, m.title, m.description, m.link_url, m.ist_global, m.created_at,
                 m.created_by, u.display_name as created_by_name,

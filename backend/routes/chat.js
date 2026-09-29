@@ -731,6 +731,20 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             [participantIds, organizationId]
           );
 
+          // Wer nicht zur Gemeinde gehoert, fiel bis hierher STILL heraus
+          // (Audit Sicherheit BF-16, 29.09.2026): Der Raum entstand ohne die
+          // Person, und die Leitung hielt ihn fuer vollstaendig. Jetzt 400,
+          // und der Raum wird nicht angelegt. Die Apps bieten nur Personen
+          // der Gemeinde an (Kontaktliste mit denselben zwei Quellen); die
+          // Meldung erreicht sie als error-Text.
+          if (partUsers.length < new Set(participantIds).size) {
+            await db.query('DELETE FROM chat_rooms WHERE id = $1', [roomId]);
+            return res.status(400).json({
+              error: 'Mindestens eine ausgewählte Person gehört nicht zu dieser Gemeinde.',
+              error_code: 'teilnehmende_nicht_in_gemeinde'
+            });
+          }
+
           // Konfi-zu-Konfi bleibt verboten — auch hier. Geprueft wurde oben nur
           // der Raum-TYP ('direct'), nicht WEN eine Konfi eintraegt. Über
           // participants liess sich POST /direct (das die Kombination korrekt

@@ -668,7 +668,7 @@ paths:
                 properties:
                   room_id: { type: integer }
                   created: { type: boolean }
-        '400': { description: "Typ/Name fehlt, ungueltiger Typ, jahrgang_id fehlt, ODER type='direct' ohne genau eine weitere Person (error_code direct_nur_zu_zweit, seit 26.09.2026)" }
+        '400': { description: "Typ/Name fehlt, ungueltiger Typ, jahrgang_id fehlt, ODER type='direct' ohne genau eine weitere Person (error_code direct_nur_zu_zweit, seit 26.09.2026), ODER eine Person in participants gehört nicht zur Gemeinde (error_code teilnehmende_nicht_in_gemeinde, seit 29.09.2026, Audit Sicherheit BF-16 -- vorher fiel sie still heraus und der Raum entstand ohne sie; jetzt entsteht kein Raum)" }
         '403': { description: "Konfi mit type != direct, Jahrgang nicht in eigener Org, ODER Konfi-Teilnehmer ausserhalb der zugewiesenen Jahrgaenge (admin/teamer)" }
         '500': { description: Datenbankfehler }
       x-berechtigung:

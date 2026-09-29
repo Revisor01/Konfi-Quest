@@ -3978,7 +3978,7 @@ paths:
         "200": { description: "total_mandatory, attended, percentage, missed_events" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "404": { description: Konfi ohne Profil }
+        "404": { description: "Konfi nicht in der aktiven Gemeinde (seit 29.09.2026 über darfKonfi, Audit Sicherheit BF-16 -- vorher 403 für fremde Konfis, das die Kennung bestätigte)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/admin/konfis/{id}/bonus-points:

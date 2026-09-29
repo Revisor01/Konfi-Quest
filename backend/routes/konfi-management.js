@@ -1147,25 +1147,24 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         const konfiId = req.params.id;
 
         try {
-            // Jahrgang des Konfis ermitteln
-            const jahrgangResult = await db.query(
-                'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
-                [konfiId]
-            );
-
-            if (jahrgangResult.rows.length === 0) {
-                return res.status(404).json({ error: 'Konfi nicht gefunden' });
-            }
-
             // Jahrgangs-Bindung (01.09.2026): Die Anwesenheitsstatistik listet
             // verpasste Pflichttermine samt Entschuldigungsgruenden — Konfi-
             // Daten, die nur sehen darf, wer den Jahrgang sehen darf (view).
+            //
+            // Konfi einer anderen Gemeinde -> 404 (Audit Sicherheit BF-16,
+            // 29.09.2026). Vorher las die Route konfi_profiles ohne Gemeinde:
+            // Eine fremde Kennung ergab 403 statt 404 und verriet damit, dass
+            // es sie gibt. darfKonfi sucht nur in der aktiven Gemeinde und
+            // liefert den Jahrgang gleich mit (wie GET /:id/event-points).
             const zugriff = await darfKonfi(db, req, konfiId);
+            if (!zugriff.gefunden) {
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
+            }
             if (!zugriff.erlaubt) {
                 return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
 
-            const jahrgangId = jahrgangResult.rows[0].jahrgang_id;
+            const jahrgangId = zugriff.jahrgangId;
 
             if (!jahrgangId) {
                 return res.json({ total_mandatory: 0, attended: 0, percentage: 100, missed_events: [] });

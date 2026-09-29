@@ -23,7 +23,7 @@ const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
 const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
-const { ladeRolleInGemeinde } = require('../utils/orgMitglieder');
+const { ladeRolleInGemeinde, istMitgliedDerOrganisation } = require('../utils/orgMitglieder');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -602,6 +602,17 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // DELETE /teamer/certificate-types/:id - Typ löschen (nur wenn nicht zugewiesen)
   router.delete('/certificate-types/:id', rbacVerifier, requireAdmin, async (req, res) => {
     try {
+      // Erst die Gemeinde, dann die Nutzung (Audit Sicherheit BF-16,
+      // 29.09.2026): Vorher kam fuer einen Typ einer ANDEREN Gemeinde 409
+      // "bereits im Team vergeben" -- das verriet Existenz und Nutzung.
+      const { rows: [eigener] } = await db.query(
+        'SELECT id FROM certificate_types WHERE id = $1 AND organization_id = $2',
+        [req.params.id, req.user.organization_id]
+      );
+      if (!eigener) {
+        return res.status(404).json({ error: 'Zertifikat-Typ nicht gefunden' });
+      }
+
       // Prüfen ob Zertifikate zugewiesen sind
       const { rows: [usage] } = await db.query(
         'SELECT COUNT(*) as count FROM user_certificates WHERE certificate_type_id = $1',
@@ -636,6 +647,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // GET /teamer/:userId/certificates - Alle Zertifikate eines Teamers
   router.get('/:userId/certificates', rbacVerifier, requireAdmin, async (req, res) => {
     try {
+      // Fremde Person -> 404 statt 200 [] (Audit Sicherheit BF-16,
+      // 29.09.2026). Mitglied ist, wer ueber eine der beiden Quellen zur
+      // aktiven Gemeinde gehoert (utils/orgMitglieder.js). Die Apps rufen
+      // diese Route nicht (2.2.0 und 2.3.0 nur POST und DELETE).
+      if (!(await istMitgliedDerOrganisation(db, req.params.userId, req.user.organization_id))) {
+        return res.status(404).json({ error: 'Person nicht gefunden' });
+      }
       const { rows } = await db.query(
         `SELECT uc.id, uc.issued_date, uc.expiry_date, uc.created_at,
                 ct.id as certificate_type_id, ct.name, ct.icon
