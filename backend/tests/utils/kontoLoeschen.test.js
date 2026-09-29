@@ -119,9 +119,12 @@ describe('Konto löschen (utils/kontoLoeschen.js)', () => {
     });
 
     it('eine geregelte Spalte ohne Fremdschlüssel stört nicht', async () => {
-      // So hinterlaesst tests/routes/wrapped.test.js die Spalte approved_by:
-      // gedroppt und ohne Fremdschluessel neu angelegt. Die Regel wirkt dort
-      // weiter (UPDATE ueber die Spalte) -- der Waechter darf nicht fallen.
+      // So hinterliess tests/routes/wrapped.test.js bis zum 29.09.2026 die
+      // Spalte approved_by: gedroppt und ohne Fremdschluessel neu angelegt.
+      // Seither stellt die Datei den Fremdschluessel wieder her und prueft den
+      // Rueckbau. Der Fall bleibt trotzdem abgedeckt: Die Regel wirkt auch
+      // ohne Fremdschluessel (UPDATE ueber die Spalte) -- der Waechter darf
+      // nicht fallen.
       const client = await db.getClient();
       try {
         await client.query('BEGIN');

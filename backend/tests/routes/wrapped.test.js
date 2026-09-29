@@ -2392,6 +2392,38 @@ describe('Wrapped Routes', () => {
     // durchlaeuft.
     // ------------------------------------------------------------
     describe('Fehlende Spalten aus neuen Migrationen', () => {
+      // Wie die beiden Tabellen vor dem ersten Test aussehen: Spalten mit
+      // Typ, Pflicht, Default und Kommentar, dazu Constraints und Indizes.
+      // Die Reihenfolge der Spalten zaehlt nicht -- eine neu angelegte Spalte
+      // steht immer hinten, das stoert keine Abfrage.
+      const schemaStand = async () => {
+        const { rows } = await db.query(
+          `SELECT 'spalte' AS art, c.table_name || '.' || c.column_name AS name,
+                  c.data_type || ' null=' || c.is_nullable
+                    || ' default=' || COALESCE(c.column_default, '')
+                    || ' kommentar=' || COALESCE(col_description(
+                         ('public.' || c.table_name)::regclass, c.ordinal_position::int), '') AS def
+             FROM information_schema.columns c
+            WHERE c.table_schema = 'public'
+              AND c.table_name IN ('event_bookings', 'challenge_submissions')
+           UNION ALL
+           SELECT 'constraint', conrelid::regclass::text || '.' || conname, pg_get_constraintdef(oid)
+             FROM pg_constraint
+            WHERE conrelid IN ('event_bookings'::regclass, 'challenge_submissions'::regclass)
+           UNION ALL
+           SELECT 'index', indexname, indexdef
+             FROM pg_indexes
+            WHERE schemaname = 'public'
+              AND tablename IN ('event_bookings', 'challenge_submissions')
+           ORDER BY 1, 2`
+        );
+        return rows.map((r) => `${r.art} ${r.name}: ${r.def}`);
+      };
+      let standVorher;
+      beforeAll(async () => {
+        standVorher = await schemaStand();
+      });
+
       // Die Spalten kommen nach jedem Test zurueck. truncateAll leert nur
       // Zeilen, es stellt kein Schema wieder her -- ohne dieses afterEach
       // liefe der Rest der Datei gegen eine kaputte Test-DB.
@@ -2400,9 +2432,17 @@ describe('Wrapped Routes', () => {
           'ALTER TABLE event_bookings ADD COLUMN IF NOT EXISTS war_auf_warteliste BOOLEAN'
         );
         await db.query(
+          `COMMENT ON COLUMN event_bookings.war_auf_warteliste IS
+             'true = diese Buchung ist von der Warteliste nachgerueckt. NULL = unbekannt (Bestandszeilen vor Migration 145).'`
+        );
+        await db.query(
           `ALTER TABLE challenge_submissions
              ADD COLUMN IF NOT EXISTS approved_by INTEGER,
              ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE`
+        );
+        await db.query(
+          `COMMENT ON COLUMN challenge_submissions.approved_by IS
+             'Wer den Beitrag freigegeben hat. NULL = unbekannt (Bestandszeilen vor Migration 146).'`
         );
         // Mit der Spalte ging ihr Fremdschluessel -- ihn wie Migration 146
         // wiederherstellen (29.09.2026). Ohne ihn fehlte er allen Dateien, die
@@ -2422,6 +2462,11 @@ describe('Wrapped Routes', () => {
              END IF;
            END $$`
         );
+        // Waechter (29.09.2026): Der Rueckbau muss VOLLSTAENDIG sein. Vergisst
+        // ein kuenftiger Test hier einen Fremdschluessel, einen Index oder einen
+        // Kommentar, faellt es an dieser Stelle auf -- nicht erst in einer
+        // anderen Datei, die zufaellig danach laeuft.
+        expect(await schemaStand()).toEqual(standVorher);
       });
 
       it('Ohne war_auf_warteliste (Migration 145) laeuft der Snapshot durch und die Seite fehlt', async () => {
