@@ -28,6 +28,17 @@ on:
       - main
   workflow_dispatch:
 
+# Ueberholte Laeufe abbrechen -- aber NIE auf main (29.09.2026, Audit CI
+# BF-04). Auf einem Pull Request macht ein neuer Push den laufenden Lauf
+# wertlos: Gruppe je Ref, der aeltere wird abgebrochen. Auf main hat jeder
+# Commit seine eigene Gruppe (der SHA), damit kein Lauf einen anderen
+# abbricht oder in die Warteschlange schiebt -- jeder gruene Lauf auf main
+# baut und deployt. Die Reihenfolge der Deploys regelt die Gruppe am
+# deploy-Job zusammen mit NUR_VORWAERTS in deploy/rollend.sh.
+concurrency:
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 # Default fuer alle Jobs ohne eigenen permissions-Block (backend-test,
 # frontend-test, deploy brauchen nur Checkout). build-and-push uebersteuert
 # job-lokal mit packages: write.
@@ -462,4 +473,9 @@ jobs:
           GIT_SHA: ${{ github.sha }}
           BACKEND_CHANGED: ${{ steps.diff.outputs.backend_changed }}
           STATUS_URL: https://konfi-quest.de/api/status
+          # Nur vorwaerts (29.09.2026, Audit CI BF-04): Laeuft in Produktion
+          # schon ein NEUERER Stand, der diesen enthaelt, rollt dieser Lauf
+          # nicht zurueck, sondern endet gruen mit Hinweis. Uebersprungen wird
+          # nur bei eindeutigem Beleg -- Einzelheiten in deploy/rollend.sh.
+          NUR_VORWAERTS: "1"
         run: bash deploy/rollend.sh

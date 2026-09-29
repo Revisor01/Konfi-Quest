@@ -1232,6 +1232,9 @@ iOS-Build 234 · Android versionCode 128
   Fehler ab.
 
 ### Sonstiges
+- Ein Stand, dessen Prüfungen länger dauern als die eines neueren, wird nicht
+  mehr nachträglich über den neueren ausgeliefert; die Web-Version kann so
+  nicht mehr unbemerkt auf einen älteren Stand zurückfallen.
 - Die Zuordnung der Web-Adresse zur iPhone-App ist korrekt hinterlegt statt
   als Platzhalter. Einladungs- und Passwort-Links öffnen auf dem iPhone die
   App, sobald die App diese Zuordnung selbst anmeldet.
