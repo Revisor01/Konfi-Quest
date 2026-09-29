@@ -736,8 +736,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // weiter Push-Nachrichten samt Chat-Inhalten.
             await client.query('DELETE FROM push_tokens WHERE user_id = $1', [req.params.id]);
 
-            const updateProfileQuery = "UPDATE konfi_profiles SET password_plain = NULL WHERE user_id = $1";
-            await client.query(updateProfileQuery, [req.params.id]);
+            // Hier wurde bis zum 29.09.2026 die Klartext-Spalte aus der
+            // SQLite-Zeit geleert. Sie ist seit Migration 165 ueberall leer und
+            // laesst seit Migration 176 nur noch NULL zu (Audit Datenbank
+            // BF-06) -- keine Code-Stelle fasst sie mehr an.
 
             // Neues Passwort: Eine Sperre nach Fehlversuchen endet damit
             // (Audit 26.09.2026, BF-04) -- der Weg, den die Leitung geht,
