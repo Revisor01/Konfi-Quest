@@ -34,6 +34,8 @@ describe('CI: paths-Filter fuer push auf main', () => {
     'frontend/src/App.tsx',
     'init-scripts/01-create-schema.sql',
     '.github/workflows/ci.yml',
+    '.github/workflows/android-release.yml',
+    '.github/workflows/ci-meldung.yml',
     'scripts/build-handbuch.mjs',
     'docs/api/konfis-events.yaml',
     'docs/handbuch/00-start.md',

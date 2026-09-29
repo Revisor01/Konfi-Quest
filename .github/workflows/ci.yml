@@ -8,7 +8,12 @@ on:
       - 'backend/**'
       - 'frontend/**'
       - 'init-scripts/**'
-      - '.github/workflows/ci.yml'
+      # Alle Workflows, nicht nur diese Datei (29.09.2026): Die Betriebstests in
+      # frontend-test lesen jeden Workflow, und das Release-Tor verlangt einen
+      # gruenen CI-Lauf auf genau dem Commit. Ein Commit, der nur einen
+      # Release-Workflow aenderte, loeste keinen Lauf aus -- und der Store-Build
+      # fuer ihn waere abgelehnt worden.
+      - '.github/workflows/**'
       # Die Doku-Generatoren und ihre Quellen: Der Frischecheck in
       # frontend-test prueft deren Erzeugnisse, lief bei Aenderungen hier aber
       # gar nicht an (24.08.2026 aufgefallen — ein Fix an scripts/ loeste
