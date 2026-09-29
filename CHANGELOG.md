@@ -1232,6 +1232,10 @@ iOS-Build 234 · Android versionCode 128
   Fehler ab.
 
 ### Sonstiges
+- Das Server-Abbild wird genau aus den festgelegten Paketständen gebaut und
+  enthält nur noch, was zum Betrieb gebraucht wird — keine Tests, keine
+  Entwicklungswerkzeuge, keine Kopie des Datenbankschemas. Es ist damit
+  rund viermal kleiner.
 - Der Anmeldeschlüssel, den die App bei jeder Anfrage mitschickt, enthält
   Name und E-Mail-Adresse nicht mehr.
 - Ob ein Benutzername schon vergeben ist, lässt sich ohne Anmeldung nur noch

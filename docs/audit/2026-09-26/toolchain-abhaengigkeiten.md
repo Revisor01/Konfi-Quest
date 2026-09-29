@@ -131,7 +131,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 
 ### BF-03: Backend-Image ist nicht aus dem Lockfile reproduzierbar
 - **Schwere:** MITTEL
-- **Status:** offen 27.09.2026 — `backend/Dockerfile:17` unverändert (`npm install --omit=dev && npm install pg`), keine `backend/.dockerignore` (CI BF-06). Für 2.3.x vorgemerkt.
+- **Status:** behoben 29.09.2026 — `backend/Dockerfile` installiert mit `npm ci --omit=dev` (Abbruch, wenn `package.json` und Lockfile auseinanderlaufen), `npm install pg` ist gestrichen (`pg` 8.23.0 steht in `dependencies` und im Lockfile), `backend/.dockerignore` hält `node_modules`, `tests`, `uploads`, `.env*`, `push/*.json` heraus. Im gebauten Image `pg` 8.23.0 wie im Lockfile, kein vitest/nodemon/supertest; node-fetch (optional-transitiv über firebase-admin) ist da und lädt. Wächter `frontend/src/__tests__/betrieb/backendImage.test.ts` prüft zusätzlich, dass jedes Paket, das der Backend-Code lädt, im Lockfile als Laufzeit-Paket steht. Einzelheiten und Messwerte: CI BF-06.
 - **Fundstelle:** `backend/Dockerfile:17` (`RUN npm install --omit=dev && npm install pg`),
   `backend/Dockerfile:20` (`COPY . .`), fehlende `backend/.dockerignore`
 - **Kennzeichnung:** reproduziert (Scratchpad-Kopie von `backend/package.json` +
