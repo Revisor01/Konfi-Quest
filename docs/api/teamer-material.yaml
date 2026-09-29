@@ -129,10 +129,13 @@
 #
 # 4. DATEIEN (Material-Uploads)
 #    - Upload: POST /api/material/{id}/files, requireAdmin, multer
-#      memoryStorage, Limit 20 MB, max 10 Dateien pro Request
-#      (createApp.js:149). Zweistufige Prüfung: multer-fileFilter auf die
+#      diskStorage (Zwischenlager uploads/tmp, createApp.js), Limit 20 MB,
+#      max 10 Dateien pro Request. Richtiggestellt 29.09.2026: Hier stand
+#      "memoryStorage" -- das galt bis zur Umstellung aller Upload-Routen auf
+#      das Zwischenlager auf der Platte; seitdem liegt keine Datei mehr ganz
+#      im Speicher. Zweistufige Prüfung: multer-fileFilter auf die
 #      gemeldete MIME-Liste, danach Magic-Bytes-Prüfung mit file-type auf
-#      dem Buffer (415 bei Nichtuebereinstimmung). text/plain und text/csv
+#      den Kopfbytes der Temporärdatei (415 bei Nichtuebereinstimmung). text/plain und text/csv
 #      sind von der Magic-Bytes-Prüfung ausgenommen, weil sie keine Signatur
 #      haben; seit 29.09.2026 wird bei ihnen der Inhalt geprüft (Audit
 #      Sicherheit BF-20, utils/textDatei.js: max. 2 MB, keine Binärdaten,
@@ -1690,7 +1693,9 @@ paths:
       summary: Dateien zu einem Material hochladen (verschlüsselt at-rest)
       description: >
         multipart/form-data, Feld "files", bis zu 10 Dateien pro Request, je
-        max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Prüfung:
+        max. 20 MB (multer diskStorage: Zwischenlager uploads/tmp,
+        createApp.js; richtiggestellt 29.09.2026, hier stand
+        "memoryStorage"). Zweistufige Prüfung:
         erst der Typ-Filter von multer (utils/uploadTypen.js, REGELN.material:
         Bilder, PDF, Video, Audio, Word, Excel, PowerPoint, OpenDocument,
         text/plain, text/csv), dann eine Magic-Bytes-Prüfung auf den
