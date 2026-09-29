@@ -1143,6 +1143,9 @@ iOS-Build 233 · Android versionCode 127
   statt eine Konfi ohne Pflicht-Events anzulegen.
 
 ### Sonstiges
+- Fehlerhafte oder zu große Anfragen beantwortet der Server als solche, mit
+  deutscher Meldung, statt als Serverfehler; sie füllen das Server-Protokoll
+  nicht mehr.
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,
   reicht die App die Ablehnung weiter, statt es endlos erneut zu versuchen.
 - Die mit Face ID oder Fingerabdruck gesicherte Anmeldung (derzeit ohne

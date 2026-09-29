@@ -164,6 +164,12 @@ info:
     (15 Min), der von verifyTokenRBAC geprüft wird; die aktive Organisation
     kann per Header X-Active-Organization gewechselt werden (Mitgliedschaft
     wird gegen user_organizations geprüft, 30s-User-Cache).
+    FEHLER IM ANFRAGE-KÖRPER (alle Routen, BEHOBEN 29.09.2026, Audit
+    Sicherheit BF-17): Ungültiges JSON antwortet 400 "Die Anfrage enthält
+    kein gültiges JSON.", ein Körper über 100 kB 413 "Die Anfrage ist zu
+    groß.", ein fremder Zeichensatz oder eine unbekannte Kodierung 415 --
+    jeweils { error } ohne Log-Zeile. Vorher 500 "Something went wrong!"
+    mit Stack im Log je Anfrage.
 servers:
   - url: https://konfi-quest.de
 tags:

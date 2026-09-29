@@ -697,6 +697,19 @@ function createApp(db, options = {}) {
       }
       return res.status(413).json({ error: 'Datei ist zu groß (max. 5 MB).' });
     }
+
+    // Fehler beim Lesen des Anfrage-Koerpers sind Fehler der ANFRAGE, nicht
+    // des Servers (Audit Sicherheit BF-17, 29.09.2026). Bis dahin endeten
+    // ungueltiges JSON und ein Koerper ueber dem Limit (express.json, 100 kB)
+    // als 500 "Something went wrong!" -- mit vollem Stack im Log je Anfrage
+    // und als Serverfehler in den Betriebszahlen. Damit liess sich das Log
+    // fluten. Jetzt: der Status, den der Body-Parser selbst vergibt (400,
+    // 413, 415), eine deutsche Meldung und keine Log-Zeile.
+    const clientStatus = anfrageFehlerStatus(err);
+    if (clientStatus) {
+      return res.status(clientStatus).json({ error: ANFRAGE_FEHLER_TEXTE[err.type] });
+    }
+
     console.error(err.stack);
     res.status(500).json({ error: 'Something went wrong!' });
   });
@@ -705,6 +718,26 @@ function createApp(db, options = {}) {
   app.wrappedRouter = wrappedRouter;
 
   return app;
+}
+
+// Fehler des Body-Parsers (body-parser 2 / raw-body, ueber express.json):
+// Sie tragen err.type und einen 4xx-Status. 'stream.encoding.set' und
+// 'stream.not.readable' sind 500er und bleiben es -- das sind Fehler im
+// Server-Aufbau, nicht in der Anfrage.
+const ANFRAGE_FEHLER_TEXTE = {
+  'entity.parse.failed': 'Die Anfrage enthält kein gültiges JSON.',
+  'entity.too.large': 'Die Anfrage ist zu groß.',
+  'parameters.too.many': 'Die Anfrage ist zu groß.',
+  'encoding.unsupported': 'Die Kodierung der Anfrage wird nicht unterstützt.',
+  'charset.unsupported': 'Der Zeichensatz der Anfrage wird nicht unterstützt.',
+  'request.aborted': 'Die Anfrage wurde abgebrochen.',
+  'request.size.invalid': 'Die Anfrage ist unvollständig.',
+};
+
+function anfrageFehlerStatus(err) {
+  if (!err || typeof err.type !== 'string' || !Object.hasOwn(ANFRAGE_FEHLER_TEXTE, err.type)) return null;
+  const status = Number(err.status || err.statusCode);
+  return status >= 400 && status < 500 ? status : null;
 }
 
 module.exports = { createApp };

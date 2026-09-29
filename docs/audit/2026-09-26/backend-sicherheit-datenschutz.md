@@ -242,6 +242,7 @@ bestätigen, sonst ebenfalls blockierend.
 - **Kennzeichnung:** reproduziert — ungültiges JSON → 500; 200-kB-Body → 500 (statt 400/413); kein Stacktrace beim Client, aber `console.error(err.stack)` je Anfrage.
 - **Beschreibung:** Jeder Client-Fehler dieser Art wird als Serverfehler gezählt (APM, `/api/metrics`) und mit vollem Stack geloggt — mit 2000 Anfragen je Viertelstunde und Konto lässt sich das Log fluten.
 - **Empfehlung:** `err.type === 'entity.too.large'` → 413, `err.type === 'entity.parse.failed'` → 400, ohne Stack.
+- **Nachtrag 29.09.2026:** behoben — der Fehlerhandler in `createApp.js` antwortet auf Fehler des Body-Parsers mit dessen Status und deutscher Meldung, ohne Log-Zeile: ungültiges JSON 400, Körper über 100 kB 413, fremder Zeichensatz/unbekannte Kodierung 415 (auch `request.aborted`/`request.size.invalid` 400, `parameters.too.many` 413); echte Serverfehler bleiben 500 mit Stack. Tests `tests/routes/anfrageKoerperFehler.test.js`, 7 Fälle (5 Fehlerfälle, 2 erlaubt: gültiges JSON mit 90 kB erreicht die Anmeldung, leerer Körper bleibt ein Fall der Route); Gegenprobe ohne Fix: 5 rot.
 
 ### BF-18: Öffentliche Endpunkte verraten Version/Commit und Kontonamen
 - **Schwere:** NIEDRIG
