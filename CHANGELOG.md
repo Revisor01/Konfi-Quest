@@ -1408,6 +1408,10 @@ iOS-Build 234 · Android versionCode 128
 - Wann eine Anmeldung oder ein Zeitfenster angelegt wurde, speichert die
   Datenbank als Zeitpunkt statt als Text; sortiert wird damit nach dem
   Zeitpunkt, auch über die Nacht der Zeitumstellung hinweg.
+- Das Server-Protokoll fasst Mitteilungen an viele zusammen: eine Zeile je
+  Versand statt einer je Person ohne Gerät, und bei einer Störung des
+  Mitteilungsdienstes eine Fehlerzeile mit Anzahl und erster Meldung statt
+  einer je Gerät. So bleiben frühere Einträge länger lesbar.
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.
