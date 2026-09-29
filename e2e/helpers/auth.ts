@@ -6,7 +6,7 @@ import { Page } from '@playwright/test';
  * Die Version, die der Browser-Build als laufende Version meldet.
  *
  * Gelesen aus derselben Datei, die vite.config.ts zur Bauzeit in
- * `__APP_VERSION__` einsetzt und die `scripts/apply-version.sh` pflegt --
+ * `__APP_VERSION__` einsetzt und die `frontend/scripts/apply-version.sh` pflegt --
  * NICHT hier noch einmal als Zahl hingeschrieben. Sonst zeigte die
  * Aenderungsanzeige beim naechsten Release wieder in jedem Test, und
  * irgendjemand muesste raten, warum.

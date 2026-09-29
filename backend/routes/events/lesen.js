@@ -485,9 +485,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           }
         }
         
-        // Abgesagte Termine: unprocessed_count zaehlt hier bereits ueber ALLE
-        // Rollen (events.js:305, keine Rollen-Trennung) — nicht addieren,
-        // das wuerde Teamer doppelt zaehlen.
+        // Abgesagte Termine: Dieser Kommentar sagte bis 29.09.2026,
+        // unprocessed_count zaehle hier ueber ALLE Rollen (damals events.js:305)
+        // und duerfe deshalb nicht addiert werden. Das stimmt nicht mehr: Die
+        // Abfrage oben liefert Konfi-rein `ebs.konfi_offen` und die Teamer
+        // getrennt in teamer_unprocessed_count. Hier zaehlen also nur die
+        // Konfis -- ob das fuer abgesagte Termine so gewollt ist, ist offen
+        // (Nebenbefund Paket F, 29.09.2026; Verhalten unveraendert).
         const unprocessedCount = parseInt(row.unprocessed_count, 10) || 0;
         return {
           ...row,

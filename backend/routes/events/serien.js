@@ -339,7 +339,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         events_created: seriesDates.length
       });
 
-      // Live-Update an die ganze Org (analog Einzel-Create events.js:766): neue
+      // Live-Update an die ganze Org (analog zum Einzel-Create in routes/events/verwaltung.js): neue
       // Serien-Events erschienen -> Konfis + Admins/Teamer:innen aktualisieren.
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'create', { seriesId, count: seriesDates.length });
 

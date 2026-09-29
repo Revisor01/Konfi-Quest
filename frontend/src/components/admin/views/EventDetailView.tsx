@@ -649,7 +649,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // abgesagter ebenfalls als 'open' (nur die Zeilen darueber fingen
   // 'cancelled' vorher ab), und ein ausgebuchter Termin MIT freier Warteliste
   // galt als 'closed', obwohl die Anmeldung auf die Warteliste offen ist.
-  // Die Berechnung steht in `events.js:124-133`.
+  // Die Berechnung steht in `backend/utils/terminAnmeldeStatus.js`
+  // (`anmeldeStatusSql`).
   //
   // Fehlt der Wert, wird KEIN Status behauptet (Befund 06.09.2026, Prod-Event
   // 130 "Teamerfreizeit"): Bis dahin fiel `undefined` durch die ganze Kette in
@@ -708,7 +709,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // Pflichttermine: Anmeldung entfaellt, die Farbe der Domain passt.
     if (regStatus === 'mandatory') return events;
     // Ausgebucht wird an der Kapazitaet erkannt, nicht am Status: das Backend
-    // meldet bei freier Warteliste weiterhin 'open' (`events.js:129-131`).
+    // meldet bei freier Warteliste weiterhin 'open' (`anmeldeStatusSql` in
+    // `backend/utils/terminAnmeldeStatus.js`).
     const istVoll = eventData.max_participants > 0
       && eventData.registered_count >= eventData.max_participants;
     if (istVoll && eventData.waitlist_enabled) return waitlist;
@@ -973,7 +975,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // an Terminen verbucht -- sie bekommen Abzeichen, aber KEINE Konfi-Punkte.
   // Ein gemeinsamer Durchlauf wuerde entweder Punkte falsch vergeben oder die
   // Trennung verwischen. Das Backend unterstuetzt das seit dem 25.08.
-  // (events.js:2782), das Frontend rief die Route bis 27.08.2026 ohne Body auf
+  // (PUT /:id/participants/attendance-all in `backend/routes/events/anwesenheit.js`),
+  // das Frontend rief die Route bis 27.08.2026 ohne Body auf
   // und bot den Knopf nur ueber der Konfi-Sektion an -- Teamer:innen mussten
   // einzeln verbucht werden, und der Termin blieb im "Verbuchen"-Reiter haengen.
   const handleConfirmAllAttendance = async (
@@ -1792,7 +1795,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       // Anwesenheits-Status. Ohne diesen Knopf musste die
                       // Leitung sie einzeln verbuchen, und der Termin blieb
                       // im "Verbuchen"-Reiter stehen -- pending_bookings_count
-                      // zaehlt beide Rollen (events.js:270-274).
+                      // zaehlt beide Rollen (`backend/routes/events/lesen.js`,
+                      // `unprocessedCount`).
                       const unprocessedTeamer = teamerConfirmed.filter(p => !p.attendance_status).length;
                       if (unprocessedTeamer === 0 || !darfVerwalten) return null;
                       return (

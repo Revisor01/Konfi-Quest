@@ -787,7 +787,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       const action = status === 'confirmed' ? 'Teilnehmer:in von Warteliste bestätigt' : 'Teilnehmer:in auf Warteliste gesetzt';
       res.json({ message: action, status });
 
-      // Push bei Befoerderung von der Warteliste (analog events.js:1010/1513/1731).
+      // Push bei Befoerderung von der Warteliste (Muster wie die uebrigen Nachrueck-Stellen, gemeinsamer Nachlauf in utils/nachrueckMeldung.js).
       // Seiteneffekt NACH res — Push-Fehler darf nichts kippen.
       nachAntwort(req, async () => {
         if (status === 'confirmed' && wasWaitlist) {

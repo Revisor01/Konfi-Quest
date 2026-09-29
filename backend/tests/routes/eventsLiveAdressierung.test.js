@@ -5,9 +5,10 @@
 // angemeldeten Socket stammt: Teamer:innen sitzen in user_teamer_<id>,
 // Konfis in user_konfi_<id>.
 //
-// Befund vom 25.08.2026: Neun Stellen in routes/events.js sendeten hart an
+// Befund vom 25.08.2026: Neun Stellen im damaligen routes/events.js (vor der
+// Aufteilung in routes/events/* am 28.08.2026) sendeten hart an
 // 'konfi'. Teamer:innen duerfen sich aber ausdruecklich anmelden
-// (events.js:1542-1545, eigene Kapazitaet teamer_max_participants) — ihr
+// (damals events.js:1542-1545, eigene Kapazitaet teamer_max_participants) — ihr
 // eigenes Ereignis kam bei ihnen nie an.
 //
 // Verbotener Fall: an user_konfi_<teamerId> senden (dort hoert niemand).
@@ -49,7 +50,7 @@ describe('Events: Live-Updates treffen den richtigen Raum', () => {
     await truncateAll(db);
     await seed(db);
     // Termin fuer Teamer:innen oeffnen: ohne teamer_needed lehnt die Route
-    // mit 403 ab (events.js:1569f), teamer_max_participants gibt die Plaetze.
+    // mit 403 ab (damals events.js:1569f), teamer_max_participants gibt die Plaetze.
     await db.query(
       'UPDATE events SET teamer_needed = true, teamer_max_participants = 10 WHERE id = $1',
       [EVENTS.gottesdienstEvent.id]
