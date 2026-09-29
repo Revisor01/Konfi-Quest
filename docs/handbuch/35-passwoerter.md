@@ -419,6 +419,13 @@ und darunter, woran es liegt:
 | „Dein Zugang wurde deaktiviert. …" | Das Konto ist deaktiviert oder die Konfi-Zeit ist vorbei — siehe [Wenn gar nichts geht](#weiterkommen-wenn-gar-nichts-geht). |
 | „Diese Organisation ist derzeit gesperrt. …" oder „Die Testphase dieser Organisation ist abgelaufen. …" | Nicht das Konto, sondern die ganze Gemeinde ist gesperrt. Das klärt die Org-Leitung mit dem Betrieb von Konfi Quest. |
 | „Keine Verbindung zum Server. …" | Das Gerät erreicht Konfi Quest nicht. WLAN oder mobile Daten prüfen und noch einmal versuchen. |
+| „Deine Sitzung ist abgelaufen. …" | Die Anmeldung auf diesem Gerät gilt nicht mehr. Neu anmelden hilft. |
+
+Werden das Konto oder die Gemeinde gesperrt, während jemand angemeldet ist,
+schickt die App zur Anmeldeseite zurück und nennt dort gleich den Grund aus
+der Tabelle — „Dein Zugang wurde deaktiviert", „Diese Organisation ist
+derzeit gesperrt" oder „Die Testphase … ist abgelaufen" — statt „Deine
+Sitzung ist abgelaufen". Ein neuer Anmeldeversuch hilft dann nicht.
 
 **„Keine Verbindung" bei jedem Versuch, obwohl das Internet geht?** Dann ist
 die App auf dem Gerät nicht aktuell: Sie meldet jede Ablehnung als fehlende

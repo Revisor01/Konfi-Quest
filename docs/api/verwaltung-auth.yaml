@@ -1028,7 +1028,7 @@ paths:
       responses:
         "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt. Das neue Token uebernimmt die Geraetebindung des alten; war das alte ungebunden und kam device_id mit, ist das neue daran gebunden" }
         "401": { description: "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung. ODER (seit 28.09.2026) gebundenes Token mit anderer oder fehlender device_id: nur DIESES Token wird widerrufen und sofort ablaufen gelassen (auch im Grace-Window, ohne dessen Gnade zu verbrauchen; der Nachfolger des echten Geraets bleibt), gleiche Fehlermeldung" }
-        "403": { description: "User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt / Trial abgelaufen (super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung). Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt" }
+        "403": { description: "{ error, error_code } -- User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt (org_inactive) / Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung. Code, Reihenfolge (erst Konto, dann Gemeinde) und Text sind seit 28.09.2026 dieselben wie bei POST /api/auth/login (eine Quelle, SPERR_MELDUNGEN); die App zeigt den Text nach einem abgelehnten Refresh auf der Anmeldeseite statt 'Sitzung abgelaufen'. Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt" }
       x-berechtigung:
         rollen: [oeffentlich]
         middleware: []
@@ -1053,6 +1053,13 @@ paths:
         # vorher) gelten wie bisher; die aktualisierte App bindet sie beim
         # ersten Refresh. change-password bindet nicht. Antwortformen
         # unveraendert. Tests: backend/tests/routes/refreshGeraetebindung.test.js.
+        # BEHOBEN 28.09.2026 (Audit Grundgeruest BF-11): Die 403-Antwort des
+        # Refresh wich von der Anmeldung ab -- ein deaktiviertes Konto bekam
+        # user_inactive mit dem Text der gesperrten Organisation, der Testphase
+        # fehlte der zweite Satz, und Konto-Sperre plus abgelaufene Testphase
+        # meldete org_trial_expired statt user_inactive. Jetzt eine Quelle fuer
+        # beide Routen. Form unveraendert (403 { error, error_code }).
+        # Tests: backend/tests/routes/refreshSperrGrund.test.js.
 
   /api/auth/logout:
     post:

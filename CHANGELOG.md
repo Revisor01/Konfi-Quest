@@ -1110,6 +1110,10 @@ iOS-Build 233 · Android versionCode 127
 - Auf Geräten, auf denen die App schon lange installiert ist, bleiben nach dem
   Abmelden keine alten Anmeldedaten mit Name und E-Mail-Adresse mehr im
   Speicher der App zurück; die App räumt sie beim nächsten Start weg.
+- Wird ein Konto deaktiviert, eine Gemeinde gesperrt oder läuft ihre Testphase
+  ab, während jemand angemeldet ist, nennt die Anmeldeseite gleich diesen
+  Grund statt „Deine Sitzung ist abgelaufen" — bisher erfuhr man ihn erst nach
+  dem nächsten Anmeldeversuch.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

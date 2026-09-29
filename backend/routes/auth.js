@@ -80,6 +80,21 @@ const erzeugeResetLimiter = (db) => ({
 
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+// Zugangs-Sperre: EINE Quelle fuer Anmeldung und Refresh (Audit 26.09.2026,
+// Grundgeruest BF-11). Die App zeigt nach einer Sperre im Refresh den Text,
+// den der Server mitschickt, statt "Deine Sitzung ist abgelaufen" -- er muss
+// deshalb derselbe sein wie bei der Anmeldung. Bis 28.09.2026 standen beide
+// Stellen getrennt: Der Refresh meldete einem deaktivierten Konto
+// 'user_inactive' mit dem Text der gesperrten Organisation, der Testphase
+// fehlte der zweite Satz. Form der Antwort: 403 { error, error_code }.
+const SPERR_MELDUNGEN = {
+  user_inactive: 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.',
+  org_trial_expired: 'Die Testphase dieser Organisation ist abgelaufen. Bitte wende dich an deine Gemeinde, um einen Tarif zu buchen.',
+  org_inactive: 'Diese Organisation ist derzeit gesperrt. Bitte wende dich an deine Gemeinde.',
+};
+const sperrAntwort = (res, errorCode) =>
+  res.status(403).json({ error: SPERR_MELDUNGEN[errorCode], error_code: errorCode });
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
@@ -276,26 +291,21 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // Konto noch gibt. Gilt fuer jede Rolle: Loeschung kennt keine Ausnahme.
       if (user.deleted_at) {
  console.warn(`Login blockiert: Benutzer '${username}' ist geloescht (Soft-Delete)`);
-        return res.status(403).json({ error: 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.', error_code: 'user_inactive' });
+        return sperrAntwort(res, 'user_inactive');
       }
 
       if (!isSuperAdmin) {
         // User deaktiviert
         if (user.user_active === false) {
  console.warn(`Login blockiert: Benutzer '${username}' ist deaktiviert`);
-          return res.status(403).json({ error: 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.', error_code: 'user_inactive' });
+          return sperrAntwort(res, 'user_inactive');
         }
         // Trial abgelaufen (auch falls der Cron die Org noch nicht auf inaktiv gesetzt hat)
         const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
         // Organisation gesperrt (inaktiv oder Trial abgelaufen)
         if (user.organization_active === false || trialExpired) {
  console.warn(`Login blockiert: Organisation von '${username}' ist gesperrt (active=${user.organization_active}, trialExpired=${trialExpired})`);
-          return res.status(403).json({
-            error: trialExpired
-              ? 'Die Testphase dieser Organisation ist abgelaufen. Bitte wende dich an deine Gemeinde, um einen Tarif zu buchen.'
-              : 'Diese Organisation ist derzeit gesperrt. Bitte wende dich an deine Gemeinde.',
-            error_code: trialExpired ? 'org_trial_expired' : 'org_inactive'
-          });
+          return sperrAntwort(res, trialExpired ? 'org_trial_expired' : 'org_inactive');
         }
       }
 
@@ -1578,13 +1588,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     const kontoGesperrt = Boolean(user.deleted_at) || (!isSuperAdmin && user.user_active === false);
     const trialExpired = !isSuperAdmin && user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
     const orgGesperrt = !isSuperAdmin && (user.organization_active === false || trialExpired);
-    if (kontoGesperrt || orgGesperrt) {
-      return res.status(403).json({
-        error: trialExpired
-          ? 'Die Testphase dieser Organisation ist abgelaufen.'
-          : 'Diese Organisation ist derzeit gesperrt. Bitte wende dich an deine Gemeinde.',
-        error_code: trialExpired ? 'org_trial_expired' : (kontoGesperrt ? 'user_inactive' : 'org_inactive')
-      });
+    // Reihenfolge wie bei der Anmeldung: erst das Konto, dann die Gemeinde.
+    if (kontoGesperrt) {
+      return sperrAntwort(res, 'user_inactive');
+    }
+    if (orgGesperrt) {
+      return sperrAntwort(res, trialExpired ? 'org_trial_expired' : 'org_inactive');
     }
 
     // Aktive Org nur uebernehmen, wenn sie von der Primaer-Org abweicht UND der
