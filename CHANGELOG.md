@@ -515,6 +515,9 @@ iOS-Build 234 · Android versionCode 128
 ### Behoben
 - Karten, Store-, Musik- und Weblinks aus der App lösen die App-Sperre nicht
   mehr aus, auch nicht bei „Sofort“.
+- Der Titel der Konfi-Liste der Leitung wird auf Android nicht mehr
+  abgeschnitten („Konfirmand…“): Er heißt wie der Reiter „Konfis“, im
+  Umschalter auf „Team“ entsprechend „Team“.
 - Die Rückfrage vor dem Löschen einer ganzen Gemeinde sagt nicht mehr, alle
   Benutzer:innen würden gelöscht: Gelöscht werden die Konten, die nur zu
   dieser Gemeinde gehören; wer auch zu einer anderen gehört, behält sein

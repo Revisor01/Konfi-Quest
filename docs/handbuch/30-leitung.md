@@ -37,8 +37,9 @@ unter
 
 ![Die Konfi-Liste der Leitung: oben die Zahlen zur Gemeinde, darunter Suche, Filter und die Liste mit den Punkteständen.](/docs/bilder/iphone/leitung-konfis.png)
 
-Die zentrale Liste, umschaltbar zwischen **Konfis** und **Teamer:innen**. Zu
-jeder Person siehst du die Punkte nach **Godi**, **Gemeinde** und **Gesamt**.
+Die zentrale Liste im Reiter **Konfis**, umschaltbar zwischen **Konfis** und
+**Team**; der Titel oben zeigt, welche der beiden offen ist. Zu jeder Person
+siehst du die Punkte nach **Godi**, **Gemeinde** und **Gesamt**.
 
 Über das Plus legst du an, was gerade geöffnet ist. Dabei erzeugt die App ein
 [Einmalpasswort](35-passwoerter.md#wie-die-einmalpasswoerter-aussehen), das du
