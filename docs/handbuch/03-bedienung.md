@@ -489,6 +489,13 @@ Wer sie wegwischt, sieht am Symbol nichts mehr. Was offen ist, zeigen
 weiterhin die roten Zahlen an den Reitern und die
 [Glocke](#ungelesene-mitteilungen-an-der-glocke-erkennen).
 
+Die App nimmt eine Mitteilung aus der Leiste, sobald du sie antippst oder den
+Bereich öffnest, zu dem sie gehört — etwa den Chat. Alles andere bleibt
+liegen, bis du es wegwischst; auf Android gilt das auch für die Leitung, damit
+die Marke am Symbol stehen bleibt. Auf dem iPhone räumt die App der Leitung
+beim Öffnen die ganze Liste weg — die Zahl am Symbol bleibt dort trotzdem
+stehen.
+
 ## Benachrichtigungen wieder zum Laufen bringen
 
 Kommen keine Nachrichten mehr an, obwohl in den Einstellungen des Geräts alles

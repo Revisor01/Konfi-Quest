@@ -110,6 +110,27 @@ export const benachrichtigungskanaeleAnlegen = async (): Promise<void> => {
   }
 };
 
+/**
+ * Beim Aktivwerden der App ALLE zugestellten Mitteilungen wegraeumen?
+ *
+ * Nur Leitungskonten ('admin') -- sie bekommen ohnehin laufend Erinnerungen --
+ * und nur auf dem iPhone. Konfis und Teamer:innen behalten ihre Mitteilungen,
+ * bis sie sie antippen oder den Bereich oeffnen (siehe oben).
+ *
+ * WARUM NICHT AUF ANDROID (29.09.2026, Simon: "auf dem Icon keine Badges auf
+ * Android"): Dort IST die liegende Mitteilung die Marke am App-Symbol. Ab
+ * Android 8 zeigt der Launcher Punkt bzw. Zahl nur, solange eine Mitteilung
+ * der App in der Leiste liegt; eine Zahl von aussen nehmen nur manche
+ * Hersteller an (Badge-Plugin, siehe AndroidManifest <queries>). Das
+ * Aufraeumen beim Oeffnen nahm der Leitung auf Android deshalb jedes Mal die
+ * Marke, waehrend die Reiter weiter zaehlten. Auf dem iPhone setzt die App
+ * die Zahl nach dem Aufraeumen selbst neu (badge:resync in AppContext).
+ */
+export const raeumtBeimAktivwerdenAllesAuf = (
+  userType: string | undefined,
+  plattform: string = Capacitor.getPlatform(),
+): boolean => userType === 'admin' && plattform === 'ios';
+
 // ALLE zugestellten Notifications entfernen. Bewusst sparsam einsetzen
 // (z.B. für Admins, die ohnehin laufend Erinnerungen bekommen) — für
 // normale Nutzer wäre "beim App-Start alles weg" zu aggressiv.

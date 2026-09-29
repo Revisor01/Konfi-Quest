@@ -40,10 +40,16 @@ describe('Icon-Zahl ueberlebt das Aufraeumen der Mitteilungen', () => {
     expect(s).toContain('setzeGeraeteBadge');
   });
 
-  it('das Aufraeumen bleibt auf Leitungskonten beschraenkt', () => {
+  it('das Aufraeumen bleibt auf Leitungskonten beschraenkt, und zwar auf dem iPhone', () => {
     // Gegenprobe: Konfis und Teamer:innen duerfen ihre Erinnerungen behalten,
-    // daran aendert der Fix nichts.
+    // daran aendert der Fix nichts. Seit 29.09.2026 entscheidet eine Regel
+    // (services/notifications.ts, raeumtBeimAktivwerdenAllesAuf), die auch
+    // Android ausnimmt: Dort ist die liegende Mitteilung die Marke am
+    // App-Symbol. Die Regel selbst pruefen die Tests in
+    // __tests__/services/notifications.test.ts; hier nur, dass AppContext sie
+    // benutzt und nicht wieder am Typ allein entscheidet.
     const s = lies('contexts/AppContext.tsx');
-    expect(s).toContain("if (user?.type === 'admin') {");
+    expect(s).toContain('if (raeumtBeimAktivwerdenAllesAuf(user?.type)) {');
+    expect(s).not.toContain("if (user?.type === 'admin') {");
   });
 });

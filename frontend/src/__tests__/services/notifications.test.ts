@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // --- Mocks ---
 let isNative = true;
+let plattform = 'ios';
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
     isNativePlatform: () => isNative,
+    getPlatform: () => plattform,
   },
 }));
 
@@ -24,6 +26,7 @@ import {
   removeAllDelivered,
   removeDeliveredForChatRoom,
   removeDeliveredForEvents,
+  raeumtBeimAktivwerdenAllesAuf,
 } from '../../services/notifications';
 
 // Nur die Felder, die der Code auswertet — die Tests liefern bewusst
@@ -37,6 +40,7 @@ const delivered = (notifications: TestNotification[]) => {
 
 beforeEach(() => {
   isNative = true;
+  plattform = 'ios';
   getDeliveredNotifications.mockReset();
   removeDeliveredNotifications.mockReset();
   removeAllDeliveredNotifications.mockReset();
@@ -159,5 +163,40 @@ describe('removeDeliveredForEvents', () => {
     isNative = false;
     await removeDeliveredForEvents();
     expect(getDeliveredNotifications).not.toHaveBeenCalled();
+  });
+});
+
+describe('raeumtBeimAktivwerdenAllesAuf', () => {
+  // Simon, 29.09.2026: "auf dem Icon keine Badges auf Android". Auf Android
+  // IST die liegende Mitteilung die Marke am App-Symbol: Der Launcher zeigt
+  // Punkt bzw. Zahl nur, solange eine Mitteilung der App in der Leiste liegt.
+  // Das globale Aufraeumen beim Oeffnen nahm Leitungskonten dort also jedes
+  // Mal die Marke, waehrend die Reiter weiter zaehlten. Auf dem iPhone setzt
+  // die App die Zahl danach selbst neu (badge:resync), dort bleibt es.
+  it('Leitung auf dem iPhone: alles aufraeumen wie bisher', () => {
+    expect(raeumtBeimAktivwerdenAllesAuf('admin', 'ios')).toBe(true);
+  });
+
+  it('Leitung auf Android: liegen lassen, sonst verschwindet die Marke am Symbol', () => {
+    expect(raeumtBeimAktivwerdenAllesAuf('admin', 'android')).toBe(false);
+  });
+
+  it('Konfis und Teamer:innen behalten ihre Mitteilungen auf beiden Plattformen', () => {
+    for (const p of ['ios', 'android']) {
+      expect(raeumtBeimAktivwerdenAllesAuf('konfi', p)).toBe(false);
+      expect(raeumtBeimAktivwerdenAllesAuf('teamer', p)).toBe(false);
+    }
+    expect(raeumtBeimAktivwerdenAllesAuf(undefined, 'ios')).toBe(false);
+  });
+
+  it('im Browser gibt es nichts aufzuraeumen', () => {
+    expect(raeumtBeimAktivwerdenAllesAuf('admin', 'web')).toBe(false);
+  });
+
+  it('liest die Plattform von Capacitor, wenn keine uebergeben wird', () => {
+    plattform = 'android';
+    expect(raeumtBeimAktivwerdenAllesAuf('admin')).toBe(false);
+    plattform = 'ios';
+    expect(raeumtBeimAktivwerdenAllesAuf('admin')).toBe(true);
   });
 });

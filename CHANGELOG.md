@@ -1084,6 +1084,9 @@ iOS-Build 233 · Android versionCode 127
 - Android: Startbildschirme, die eine Zahl am App-Symbol von der App annehmen,
   bekommen sie jetzt gemeldet; wo das nicht geht, etwa auf Pixel-Geräten,
   zeigt das Symbol einen Punkt, solange eine Mitteilung in der Leiste liegt.
+- Android: Beim Öffnen der App bleiben die Mitteilungen der Leitung in der
+  Leiste liegen, sodass Punkt oder Zahl am App-Symbol nicht mehr jedes Mal
+  verschwinden.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

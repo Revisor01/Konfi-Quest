@@ -9,7 +9,7 @@ import { ensureSocketConnected, reconnectWithToken } from '../services/websocket
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { FirebaseMessaging } from '@capacitor-firebase/messaging';
-import { removeDeliveredById, removeAllDelivered, benachrichtigungskanaeleAnlegen } from '../services/notifications';
+import { removeDeliveredById, removeAllDelivered, benachrichtigungskanaeleAnlegen, raeumtBeimAktivwerdenAllesAuf } from '../services/notifications';
 import { writeQueue } from '../services/writeQueue';
 import { offlineCache } from '../services/offlineCache';
 import { clearMediaCache, medienCacheKontoPruefen } from '../services/mediaCache';
@@ -1113,7 +1113,10 @@ useEffect(() => {
           // Admins bekommen ohnehin laufend Erinnerungen -> beim Aktiv-werden
           // global aufräumen. Konfis/Teamer NICHT (dort gezielt pro Bereich/
           // beim Antippen, damit ungelesene Erinnerungen nicht verschwinden).
-          if (user?.type === 'admin') {
+          // Auf Android auch fuer Admins nicht: Dort ist die liegende
+          // Mitteilung die Marke am App-Symbol (29.09.2026, Begruendung an
+          // raeumtBeimAktivwerdenAllesAuf in services/notifications.ts).
+          if (raeumtBeimAktivwerdenAllesAuf(user?.type)) {
             // removeAllDeliveredNotifications() raeumt auf iOS nicht nur die
             // Mitteilungszentrale auf, es setzt auch die Zahl am App-Icon auf
             // null (Befund 28.08.2026, am Geraet nachgestellt: App zu -> Zahl
