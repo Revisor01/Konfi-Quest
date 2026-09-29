@@ -84,6 +84,45 @@ describe('Profil in der Zweitgemeinde', () => {
     expect(zweit.body.user.organization_name).toBe('Andere Gemeinde');
   });
 
+  // DIE KONFI-ZEIT GEHOERT IHRER GEMEINDE (Nebenbefund 29.09.2026): Die
+  // Abfrage auf konfi_profiles filterte nicht auf die Gemeinde. Wer zuhause
+  // als Konfi angefangen hat und in einer zweiten Gemeinde im Team ist, bekam
+  // dort konfi_data mit Punkten und Jahrgang von zuhause -- neben Badges und
+  // Punkte-Verlauf, die schon je Gemeinde gelesen werden (leer). Jetzt dieselbe
+  // Grenze wie GET /teamer/konfi-history (utils/punkteHistorie.js).
+  describe('Konfi-Zeit je Gemeinde', () => {
+    beforeEach(async () => {
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
+         VALUES ($1, 1, 7, 4, 1)`,
+        [GAST_TEAMER]
+      );
+    });
+
+    it('in der Zweitgemeinde gibt es keine Konfi-Zeit von zuhause (verboten)', async () => {
+      const token = tokenFuer(GAST_TEAMER, ROLES.teamer.id, 1, 'teamer');
+      const zweit = await mitOrg(
+        request(app).get('/api/teamer/profile').set('Authorization', `Bearer ${token}`), 2
+      );
+      expect(zweit.status).toBe(200);
+      expect(zweit.body.konfi_data).toBeNull();
+    });
+
+    it('in der Gemeinde der Konfi-Zeit steht sie weiter da (erlaubt)', async () => {
+      const token = tokenFuer(GAST_TEAMER, ROLES.teamer.id, 1, 'teamer');
+      const daheim = await mitOrg(
+        request(app).get('/api/teamer/profile').set('Authorization', `Bearer ${token}`), 1
+      );
+      expect(daheim.status).toBe(200);
+      expect(daheim.body.konfi_data).toEqual({
+        gottesdienst_points: 7,
+        gemeinde_points: 4,
+        jahrgang_name: '2025/2026',
+        badges: [],
+      });
+    });
+  });
+
   it('die Leitung sieht die Rueckblick-Historie einer Person aus user_organizations', async () => {
     // orgAdmin2 leitet Org 2. GAST_TEAMER arbeitet dort ueber
     // user_organizations -- die Historie muss einsehbar sein.

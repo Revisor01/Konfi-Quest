@@ -87,14 +87,21 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const { rows: [userData] } = await db.query(userQuery, [userId, req.user.organization_id]);
 
       // Konfi-Profildaten (eingefroren nach Transition)
+      //
+      // NUR DIE KONFI-ZEIT IN DER AKTIVEN GEMEINDE (29.09.2026): Ohne die
+      // Grenze bekam, wer zuhause als Konfi angefangen hat und in einer
+      // zweiten Gemeinde im Team ist, dort Punkte und Jahrgang von zuhause --
+      // neben Badges und Punkte-Verlauf (GET /konfi-history), die schon je
+      // Gemeinde gelesen werden und dort leer sind. Dieselbe Grenze wie
+      // utils/punkteHistorie.js; konfi_profiles.organization_id ist NOT NULL.
       const profileQuery = `
         SELECT kp.gottesdienst_points, kp.gemeinde_points,
                j.name as jahrgang_name
         FROM konfi_profiles kp
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-        WHERE kp.user_id = $1
+        WHERE kp.user_id = $1 AND kp.organization_id = $2
       `;
-      const { rows: [konfiProfile] } = await db.query(profileQuery, [userId]);
+      const { rows: [konfiProfile] } = await db.query(profileQuery, [userId, req.user.organization_id]);
 
       // Beförderter Teamer = hat überhaupt ein konfi_profiles (Konfi-Vergangenheit).
       // NICHT am jahrgang_name festmachen: wird der alte Jahrgang gelöscht, ist

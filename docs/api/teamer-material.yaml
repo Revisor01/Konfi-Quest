@@ -414,9 +414,13 @@ paths:
         Antwortform unveraendert -- nur der Wert stimmt.
 
         Existiert
-        ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als
+        ein konfi_profiles-Datensatz aus der Konfi-Zeit IN DER AKTIVEN
+        GEMEINDE, wird er als
         konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals
-        erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am
+        erreichte Badges); sonst ist konfi_data null. BEHOBEN 29.09.2026: Die
+        Abfrage auf konfi_profiles filterte nicht auf die Gemeinde -- in einer
+        zweiten Gemeinde kamen Punkte und Jahrgang von zuhause, waehrend
+        Badges und GET /api/teamer/konfi-history dort schon leer waren. Die Erkennung hängt am
         Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter
         Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.
 

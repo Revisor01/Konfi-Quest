@@ -1244,6 +1244,9 @@ iOS-Build 234 · Android versionCode 128
 - Der Team-Rückblick zählt nur Team-Badges. Badges aus der Konfi-Zeit stehen
   dort nicht mehr — weder in der Zahl noch als erstes Badge des Jahres — und
   machen kein Jahr mehr wählbar.
+- Wer in einer weiteren Gemeinde im Team ist, sieht dort im Profil keine
+  Konfi-Historie aus der eigenen Gemeinde mehr; sie steht in der Gemeinde, in
+  der die Konfi-Zeit war.
 
 ### Sonstiges
 - Server, Web-Version und alle automatischen Prüfungen laufen auf derselben
