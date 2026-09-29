@@ -479,6 +479,20 @@ Zähler, Android-Symbol) und ein Fehler in Produktion.
   Monochrom-Ebene; die Zahl am Symbol erreicht den Launcher (`<queries>`); die Leitung behält auf
   Android ihre Mitteilungen beim Öffnen. Am Gerät noch zu prüfen.
 
+Simons Antworten vom 29.09. auf die Rückfragen zum PR:
+
+- **Rolle „Org-Leitung“:** heißt überall „Gemeindeleitung“ („Ja bitte umbenennen“); „Org-Admin“
+  und „Org-Wechsler“ gehen mit. Umsetzung im Begriffe-Paket.
+- **Konto löschen:** Zweiergespräche verschwinden ganz, was die Person für die Gemeinde angelegt
+  hat, bleibt ohne Namen — „genau so“.
+- **Mitteilungen der Leitung:** „warum sollten die keine Benachrichtigungen behalten?“ — die App
+  räumt beim Öffnen für keine Rolle mehr alles weg, auch auf dem iPhone nicht mehr (`e30fb0c2`).
+- **Anmeldeprotokoll:** „doch sollen Protokoll schreiben“ — Fehlversuche stehen wieder im
+  Server-Protokoll, mit Konto-Kennung, nie mit dem Namen (`23d3821b`).
+- **Postfach-Punkt** und **Zähler an der Challenge:** Vergleichsbilder vorgelegt (Punkt gegen Punkt
+  mit Umschlag; Ist-Stand und drei Lesarten von „bei jedem Beitrag, wie im Chat, zusätzlich Orange
+  bei Freigaben“), Entscheidung steht aus.
+
 Alle Pakete mit Test und Gegenprobe je Befund; Zahlen in den Commit-Nachrichten und in den
 Nachträgen der Berichte. Was offen bleibt, steht vollständig in
 `docs/audit/2026-09-28/offene-punkte.md` — erstmals samt der Abschnitte „Unklar" und
