@@ -445,6 +445,9 @@ iOS-Build 233 · Android versionCode 127
   hinweg: Konfi ist nur, wer zu genau einer Gemeinde gehört. Einladungen,
   Zuweisungen und Rollenwechsel, die beides verbinden würden, lehnt die App
   mit einer Erklärung ab.
+- Fragt das iPhone zum ersten Mal nach der Kamera, nennt der Text auch das
+  Scannen der QR-Codes beim Einchecken zu Events und Fotos für Aktivitäten —
+  bisher nur Fotos für Chat und Challenges.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

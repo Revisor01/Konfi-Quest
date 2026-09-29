@@ -108,9 +108,12 @@
          installieren koennen, sie sehen den Schalter dann einfach nicht. -->
     <uses-feature android:name="android.hardware.biometrics" android:required="false" />
 
-    <!-- Kamera fuer den QR-Scanner (Event-Checkin). Ohne diese Deklaration
+    <!-- Kamera fuer den QR-Scanner (Event-Checkin) und fuer Fotos aus der
+         Dateiauswahl (Chat, Challenges, Aktivitaeten). Ohne diese Deklaration
          verweigert Android getUserMedia in der WebView, ohne dass der Nutzer
-         ueberhaupt einen Berechtigungsdialog zu sehen bekommt. -->
+         ueberhaupt einen Berechtigungsdialog zu sehen bekommt. Eine eigene
+         Begruendung wie NSCameraUsageDescription auf iOS gibt es bei Android
+         nicht; der Dialog zeigt den Systemtext. -->
     <uses-permission android:name="android.permission.CAMERA" />
 
     <!-- Die Kamera ist kein Muss: Geraete ohne Kamera sollen die App weiterhin
