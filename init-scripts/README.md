@@ -71,9 +71,32 @@ aus Migrationen reproduzieren; der Dump ist der einzige ehrliche Startpunkt.
    sie erneut anwenden.
 3. Das Backend startet und laesst ueber `backend/database.js` alle noch
    nicht vermerkten Migrationen laufen — derselbe Weg wie bei jedem Deploy.
+4. **Der erste Zugang.** Das Schema ist jetzt vollstaendig, aber leer: keine
+   Gemeinde, kein Konto. Gemeinden legt nur ein Super-Admin an, Konten nur
+   eine Leitung — ohne diesen Schritt kommt niemand hinein. Im
+   Backend-Container:
+
+   ```bash
+   docker exec -e ERST_BENUTZERNAME=<name> -e ERST_ANZEIGENAME=<anzeige> \
+     -e ERST_PASSWORT=<passwort> [-e ERST_EMAIL=<adresse>] [-e ERST_GEMEINDE=Betrieb] \
+     <backend-container> node scripts/ersteinrichtung.js
+   ```
+
+   Das legt eine Gemeinde fuer den Betrieb an, ihre vier Standardrollen und
+   ein Konto mit Super-Admin-Recht (Rolle Gemeindeleitung plus
+   `is_super_admin`); es laeuft nur auf einer leeren Datenbank und bricht
+   sonst ohne Aenderung ab. Das Passwort muss die Regeln der App erfuellen.
+   Danach in der App anmelden, das Passwort aendern und die eigentlichen
+   Gemeinden anlegen — jede bekommt dabei ihre Rollen, Abzeichen,
+   Zertifikatstypen und Stufen. Test: `backend/tests/schema/ersteinrichtung.test.js`.
 
 Ergebnis: eine neue Instanz durchlaeuft exakt dieselben Migrationen wie die
 Produktion und landet auf demselben Schema.
+
+Die Vorlage `deploy/compose.konfi_quest.yml` setzt die Server-Zeitzone fest
+auf UTC wie die Produktion; ohne das uebernaehme das Image beim ersten Start
+`TZ` in `postgresql.conf` (Berliner Zeit), und Zeitspalten ohne Zone
+landeten zwei Stunden versetzt.
 
 ## Aktualisieren
 

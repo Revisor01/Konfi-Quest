@@ -1403,6 +1403,10 @@ iOS-Build 234 · Android versionCode 128
 - Eine neu eingerichtete Datenbank rechnet in derselben Zeitzone wie der
   laufende Betrieb. Nach der bisherigen Vorlage hätte sie Berliner Zeit
   genommen, und Zeiten etwa im Postfach wären um zwei Stunden verrutscht.
+- Für eine neu eingerichtete Instanz gibt es einen beschriebenen Weg zum
+  ersten Zugang: Ein Skript legt die erste Gemeinde und ein Konto mit
+  Super-Admin-Recht an, von dem aus sich in der App alle weiteren Gemeinden
+  anlegen lassen.
 - Die Datenbank nimmt keine Passwörter im Klartext mehr an: Das alte Feld
   dafür aus der Anfangszeit bleibt leer und lässt sich nicht mehr befüllen.
 - Wann eine Anmeldung oder ein Zeitfenster angelegt wurde, speichert die
