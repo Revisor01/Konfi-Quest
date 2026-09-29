@@ -138,12 +138,14 @@ describe('Konfi-Liste der Leitung', () => {
     konfis, jahrgaenge: [{ id: 2, name: '2026/27' }], onSelectKonfi: vi.fn(),
   };
 
+  // 20 s statt 5 s: Ionic-Zeilen rendern in JSDOM langsam, im vollen Lauf auf
+  // einer belasteten Maschine lag die Suche bei 5,7 s (29.09.2026).
   it('rendert 150 Konfis in Schritten, der Zaehler nennt alle 150', () => {
     const { container } = render(<KonfisView {...props} />);
     expect(zeilen(container)).toBe(30);
     expect(container.textContent).toContain('Konfis (150)');
     expect(screen.getByText('Weitere 30 Konfis zeigen (noch 120)')).toBeTruthy();
-  });
+  }, 20_000);
 
   it('die Suche sieht alle 150 -- auch Namen hinter dem ersten Schritt', async () => {
     const { container } = render(<KonfisView {...props} />);
@@ -151,5 +153,5 @@ describe('Konfi-Liste der Leitung', () => {
     await waitFor(() => expect(container.textContent).toContain('Konfis (1)'));
     expect(zeilen(container)).toBe(1);
     expect(container.textContent).toContain('Konfi 149');
-  });
+  }, 20_000);
 });
