@@ -74,7 +74,8 @@ function getTestPool() {
 
 // Feste Lock-ID, an der sich alle parallelen Test-Suites anstellen.
 // Verhindert, dass zwei TRUNCATE-CASCADE-Statements gleichzeitig dieselben
-// ~45 Tabellen sperren und sich gegenseitig zum Deadlock verriegeln.
+// Tabellen (die ganze Liste unten) sperren und sich gegenseitig zum Deadlock
+// verriegeln.
 const TRUNCATE_LOCK_ID = 4711;
 
 /**

@@ -47,13 +47,13 @@ function getTestApp(db, extra = {}) {
 
 /**
  * Wartet auf die Nachlaeufer ALLER Test-Apps dieses Workers.
- * Wird von truncateAll gerufen — so muss keine der 65 Testdateien daran denken.
+ * Wird von truncateAll gerufen — so muss keine Testdatei daran denken.
  */
 async function warteAufAlleNachwehen() {
   for (const app of erzeugteApps) {
     await warteAufNachwehen(app);
   }
-  // Live-Updates laufen an nachAntwort() vorbei: Sie werden an 118 Stellen
+  // Live-Updates laufen an nachAntwort() vorbei: Sie werden an vielen Stellen
   // ohne await gerufen und melden ihren Nachlauf deshalb selbst an
   // (utils/liveUpdate.js). Ohne dieses Warten blieb der sporadische
   // "Parse Error: Expected HTTP/" bestehen -- er kam von dort, nicht aus
