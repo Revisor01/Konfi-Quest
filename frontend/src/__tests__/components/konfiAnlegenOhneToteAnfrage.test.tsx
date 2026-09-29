@@ -82,13 +82,16 @@ vi.mock('@ionic/react', () => {
 
 import AdminKonfisPage from '../../components/admin/pages/AdminKonfisPage';
 
+// Kein echtes Passwort -- nur der Wert, den die Attrappe von POST /admin/konfis liefert.
+const EINMALPASSWORT = 'platzhalter';
+
 beforeEach(() => {
   alerts = [];
   formularProps = null;
   apiGet.mockReset();
   apiPost.mockReset();
   apiGet.mockResolvedValue({ data: [], headers: {} });
-  apiPost.mockResolvedValue({ data: { id: 42, username: 'kim.test', temporaryPassword: 'Apfel-Birne-7' } });
+  apiPost.mockResolvedValue({ data: { id: 42, username: 'kim.test', temporaryPassword: EINMALPASSWORT } });
 });
 
 describe('Konfi anlegen', () => {
@@ -107,6 +110,6 @@ describe('Konfi anlegen', () => {
 
     await waitFor(() => expect(alerts).toHaveLength(1));
     expect(alerts[0].header).toBe('Einmalpasswort');
-    expect(alerts[0].subHeader).toBe('Apfel-Birne-7');
+    expect(alerts[0].subHeader).toBe(EINMALPASSWORT);
   });
 });

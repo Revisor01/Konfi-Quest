@@ -43,10 +43,10 @@ describe('APM: URLs im Fehlerprotokoll geschwaerzt', () => {
 
   it('VERBOTEN: der Anmeldeschluessel aus ?token= steht nicht im Fehlerprotokoll', () => {
     const hex = 'ab'.repeat(32);
-    messe(`/api/chat/files/${hex}?token=eyJhbGciOiJIUzI1NiJ9.geheim.signatur`, 401);
+    messe(`/api/chat/files/${hex}?token=platzhalter-kein-echter-schluessel`, 401);
     const fehler = fehlerZu('/api/chat/files');
     expect(fehler.url).toBe('/api/chat/files/:datei?token=***');
-    expect(JSON.stringify(snapshot())).not.toContain('geheim');
+    expect(JSON.stringify(snapshot())).not.toContain('platzhalter');
   });
 
   it('VERBOTEN: das Langsam-Log schreibt die geschwaerzte URL', () => {
