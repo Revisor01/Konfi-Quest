@@ -515,6 +515,11 @@ iOS-Build 234 · Android versionCode 128
 ### Behoben
 - Karten, Store-, Musik- und Weblinks aus der App lösen die App-Sperre nicht
   mehr aus, auch nicht bei „Sofort“.
+- Die Rückfrage vor dem Löschen einer ganzen Gemeinde sagt nicht mehr, alle
+  Benutzer:innen würden gelöscht: Gelöscht werden die Konten, die nur zu
+  dieser Gemeinde gehören; wer auch zu einer anderen gehört, behält sein
+  Konto. Die Meldung danach nennt, wie viele Konten gelöscht und wie viele
+  umgezogen sind.
 - Auf Samsung- und Xiaomi-Geräten nimmt die App die Mitteilung, an der die
   Zahl am App-Symbol hängt, aus der Leiste, sobald die Zahl auf 0 sinkt.
   Bisher blieb dort eine 1 stehen, bis man die Mitteilung wegwischte. Alle

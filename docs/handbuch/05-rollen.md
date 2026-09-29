@@ -452,6 +452,8 @@ Ein Konto verschwindet auf fünf Wegen, und auf jedem geschieht dasselbe:
   Konten, die nur zu ihr gehören. Wer zusätzlich zu einer anderen Gemeinde
   gehört, behält sein Konto und ist ab dann dort zuhause — wie beim
   [Entfernen aus der Gemeinde](#jemanden-entfernen-der-auch-in-anderen-gemeinden-mitarbeitet).
+  Die Rückfrage nennt beide Fälle, die Meldung danach die Zahlen: wie viele
+  Konten gelöscht und wie viele in eine andere Gemeinde umgezogen sind.
 
 Die Rückfrage vor dem Löschen nennt knapp, was verschwindet und — bei
 Teamer:innen und Leitung — was der Gemeinde bleibt. Rückgängig machen lässt
