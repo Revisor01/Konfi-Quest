@@ -473,8 +473,10 @@ Zähler, Android-Symbol) und ein Fehler in Produktion.
   Namensprüfung begrenzt, fremde Kennungen 404. BF-13 wartet auf die Messung am Proxy
   (`07-client-adresse-hinter-dem-proxy.md`).
 - **Paket F (Oberfläche):** Postfach mit blauem Punkt statt Umschlag, Reiterbeschriftungen nicht
-  mehr abgeschnitten, eigene Farbe für die Leitung (Petrol), orange Zahlen mittig, bei Challenges
-  steht die Zahl nur auf dem Corner Badge (Simon: „Zahl nur auf der corner badge").
+  mehr abgeschnitten, eigene Farbe für die Leitung (Petrol), orange Zahlen mittig. Bei Challenges
+  trägt das Symbol die rote Zahl baugleich zum Chat, das orange Eck-Badge Zahl und Uhr
+  (Simon: „bei Challenge soll es baugleich zum Chat"; der Punkt ohne Zahl vom Morgen ist
+  zurückgenommen, `1213773f`).
 - **Paket G (Android):** App-Symbol in der sicheren Zone mit eigenem Hintergrund und
   Monochrom-Ebene; die Zahl am Symbol erreicht den Launcher (`<queries>`); die Leitung behält auf
   Android ihre Mitteilungen beim Öffnen. Am Gerät noch zu prüfen.
@@ -489,9 +491,9 @@ Simons Antworten vom 29.09. auf die Rückfragen zum PR:
   räumt beim Öffnen für keine Rolle mehr alles weg, auch auf dem iPhone nicht mehr (`e30fb0c2`).
 - **Anmeldeprotokoll:** „doch sollen Protokoll schreiben“ — Fehlversuche stehen wieder im
   Server-Protokoll, mit Konto-Kennung, nie mit dem Namen (`23d3821b`).
-- **Postfach-Punkt** und **Zähler an der Challenge:** Vergleichsbilder vorgelegt (Punkt gegen Punkt
-  mit Umschlag; Ist-Stand und drei Lesarten von „bei jedem Beitrag, wie im Chat, zusätzlich Orange
-  bei Freigaben“), Entscheidung steht aus.
+- **Postfach:** „nur den Punkt! Das sieht sehr gut aus“ — der schlichte Punkt bleibt.
+- **Zähler an der Challenge:** „baugleich zum Chat“ — rote Zahl am Symbol für jeden Beitrag, der
+  wartet (Freigaben plus neue), dazu das orange Eck-Badge mit Zahl und Uhr (`1213773f`).
 
 Alle Pakete mit Test und Gegenprobe je Befund; Zahlen in den Commit-Nachrichten und in den
 Nachträgen der Berichte. Was offen bleibt, steht vollständig in
