@@ -62,7 +62,7 @@ const initializeFirebase = () => {
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
       } else {
-        throw new Error('Firebase Service Account not found in file or environment variable');
+        throw new Error('Firebase Service Account not found in file or environment variable', { cause: fileError });
       }
     }
 

@@ -105,7 +105,8 @@ module.exports = async function globalSetup() {
         `[globalSetup] Migration ${file} fehlgeschlagen: ${err.message}\n` +
         'Die Migration laeuft so auch beim Deploy nicht durch. Entweder sie ist ' +
         'fehlerhaft, oder sie setzt einen Schema-Stand voraus, den ' +
-        'backend/tests/schema/prod-schema.sql noch nicht hat (dann refresh-schema.sh).'
+        'backend/tests/schema/prod-schema.sql noch nicht hat (dann refresh-schema.sh).',
+        { cause: err }
       );
     }
   }

@@ -99,7 +99,7 @@ async function fuehreMigrationenAus(pool, optionen = {}) {
       await lock.query('SELECT pg_advisory_lock($1)', [MIGRATION_ADVISORY_LOCK_ID]);
     } catch (err) {
       // Nicht "DB nicht erreichbar": Die Verbindung steht, der Lock kam nicht.
-      throw new Error(`Migrations-Lock nicht bekommen: ${err.message}`);
+      throw new Error(`Migrations-Lock nicht bekommen: ${err.message}`, { cause: err });
     }
 
     // Tracking-Tabelle sicherstellen (idempotent)

@@ -205,3 +205,19 @@ describe('bibelVerszaehlung', () => {
     expect(buecher).not.toContain('Matthaeus');
   });
 });
+
+// Die Sonderzeichen-Liste von validatePassword. Beim Einfuehren der
+// Backend-Lint-Pruefung (29.09.2026, Toolchain BF-06) wurden in der
+// Zeichenklasse zwei ueberfluessige Escapes (`\[`, `\/`) entfernt; dieser
+// Block haelt fest, dass die Liste dabei gleich geblieben ist.
+describe('validatePassword: Sonderzeichen', () => {
+  const SONDERZEICHEN = '!@#$%^&*(),.?":{}|<>_-+=[]\\/~`';
+
+  it.each(SONDERZEICHEN.split(''))('zaehlt %s als Sonderzeichen', (zeichen) => {
+    expect(validatePassword(`Abcdefg1${zeichen}`)).toBeNull();
+  });
+
+  it.each([';', "'", '§', '€'])('zaehlt %s nicht als Sonderzeichen', (zeichen) => {
+    expect(validatePassword(`Abcdefg1${zeichen}`)).toBe('Passwort muss mindestens ein Sonderzeichen enthalten');
+  });
+});

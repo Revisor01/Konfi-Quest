@@ -96,7 +96,7 @@ async function neueInstanzAufbauen(pool) {
       await pool.query('INSERT INTO schema_migrations (name) VALUES ($1)', [datei]);
       offen.push(datei);
     } catch (err) {
-      throw new Error(`Migration ${datei} laeuft auf einer NEUEN Instanz nicht durch: ${err.message}`);
+      throw new Error(`Migration ${datei} laeuft auf einer NEUEN Instanz nicht durch: ${err.message}`, { cause: err });
     }
   }
   return offen;
