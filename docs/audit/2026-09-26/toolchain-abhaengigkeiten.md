@@ -447,8 +447,11 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
     prozessweiten DNS-Cache vertauscht wird; beide Transporte des Backends
     (`server.js`, `services/emailService.js`) nutzen dieselbe `smtpKonfiguration()`, also
     denselben Server mit denselben Zugangsdaten. Der Sprung auf 10 ist trotzdem empfohlen
-    (Bruch laut Changelog nur „Node.js 20 oder neuer", Produktion läuft auf 26). Frontend
-    unverändert 3 moderate (react-router 6, s. o.), Wurzel 0.
+    (Bruch laut Changelog nur „Node.js 20 oder neuer", Produktion läuft auf 26). Probe am
+    29.09. (danach zurückgesetzt): mit `nodemailer` 10.0.12 meldet `npm audit` im Backend 0,
+    die 14 Testdateien rund um den Mailversand (223 Tests) sind grün, ein SMTP-Transport aus
+    `smtpKonfiguration()` und ein Versand über den Stream-Transport (Betreff mit Umlaut)
+    funktionieren. Frontend unverändert 3 moderate (react-router 6, s. o.), Wurzel 0.
 - **Lockfile-Konsistenz und Peers:** `npm ls --all` in Backend und Frontend Exit 0, nur
   `UNMET OPTIONAL DEPENDENCY` (normal). Peer-Ranges geprüft: typescript-eslint 8.70.0 ↔
   TypeScript 6.0.3 (`<6.1.0`), `@vitejs/plugin-react` 6.1.1 ↔ Vite 8.2.2 (`^8.0.0`),
