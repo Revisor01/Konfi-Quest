@@ -118,6 +118,93 @@ describe('Konto löschen nimmt auf jedem Weg alles mit', () => {
     vi.restoreAllMocks();
   });
 
+  // DIE MELDUNG NACH DER LOESCHUNG LAEUFT UEBER nachAntwort (29.09.2026,
+  // Paket I2). Der Test oben war wacklig (1 von 4 Laeufen rot): Die drei
+  // Routen warteten nach res.json direkt auf meldeNachKontoLoeschung, nicht
+  // ueber nachAntwort -- warteAufNachwehen wusste davon nichts, und die
+  // Pruefung kam je nach Last vor oder nach dem Push. Hier sichtbar gemacht
+  // mit einem Push, der sich 200 ms Zeit laesst: Nach warteAufNachwehen muss
+  // er durch sein.
+  describe('Meldung an Nachrückende ist durch, wenn die Nachläufe der Antwort durch sind', () => {
+    const langsamerPush = (methode) => {
+      const stand = { fertig: 0 };
+      vi.spyOn(PushService, methode).mockImplementation(async () => {
+        await new Promise((r) => setTimeout(r, 200));
+        stand.fertig += 1;
+      });
+      return stand;
+    };
+    afterEach(() => { vi.restoreAllMocks(); });
+
+    // Ein Platz im Team fuer teamer1, dahinter eine Wartende.
+    const teamWarteliste = async () => {
+      const { rows: [wartet] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
+         VALUES ('wartet_team2', 'Wartende Teamerin', 'x', $1, $2) RETURNING id`,
+        [ROLES.teamer.id, ORGS.testGemeinde.id]);
+      await db.query(
+        `UPDATE events SET teamer_max_participants = 1, teamer_waitlist_enabled = true, teamer_needed = true
+          WHERE id = 1`);
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id, booking_date, created_at)
+         VALUES ($1, 1, 'confirmed', $3, NOW() - interval '1 hour', NOW() - interval '1 hour'),
+                ($2, 1, 'waitlist', $3, NOW(), NOW())`,
+        [USERS.teamer1.id, wartet.id, ORGS.testGemeinde.id]);
+    };
+
+    it('DELETE /users/:id', async () => {
+      await teamWarteliste();
+      const push = langsamerPush('sendWaitlistPromotionToTeamer');
+
+      const res = await request(app)
+        .delete(`/api/users/${USERS.teamer1.id}`)
+        .set('Authorization', bearer('orgAdmin1'));
+      await warteAufNachwehen(app);
+
+      expect(res.status).toBe(200);
+      expect(push.fertig).toBe(1);
+    });
+
+    it('POST /auth/delete-account', async () => {
+      await teamWarteliste();
+      const push = langsamerPush('sendWaitlistPromotionToTeamer');
+
+      const res = await request(app)
+        .post('/api/auth/delete-account')
+        .set('Authorization', bearer('teamer1'))
+        .send({ password: PASSWORD });
+      await warteAufNachwehen(app);
+
+      expect(res.status).toBe(200);
+      expect(push.fertig).toBe(1);
+    });
+
+    it('DELETE /admin/konfis/:id', async () => {
+      // Ein Konfi-Platz fuer konfi1, konfi2 wartet.
+      await db.query(
+        `UPDATE events SET max_participants = 1, waitlist_enabled = true, cancelled = false,
+                           event_date = NOW() + interval '7 days'
+          WHERE id = 1`);
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id, booking_date, created_at)
+         VALUES ($1, 1, 'confirmed', $3, NOW() - interval '1 hour', NOW() - interval '1 hour'),
+                ($2, 1, 'waitlist', $3, NOW(), NOW())`,
+        [USERS.konfi1.id, USERS.konfi2.id, ORGS.testGemeinde.id]);
+      const push = langsamerPush('sendWaitlistPromotionToKonfi');
+
+      const res = await request(app)
+        .delete(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', bearer('orgAdmin1'));
+      await warteAufNachwehen(app);
+
+      expect(res.status).toBe(200);
+      const { rows: [b] } = await db.query(
+        'SELECT status FROM event_bookings WHERE user_id = $1 AND event_id = 1', [USERS.konfi2.id]);
+      expect(b.status).toBe('confirmed');
+      expect(push.fertig).toBe(1);
+    });
+  });
+
   it('automatische Löschung 120 Tage nach der Konfirmation', async () => {
     // Eigener Jahrgang mit Konfirmation vor 130 Tagen -- der des Seeds hat
     // keine und bleibt unberuehrt (konfi2 ist Gegenueber in der Fixture).

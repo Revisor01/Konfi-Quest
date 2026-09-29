@@ -646,11 +646,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         // Org-Updates, bis die App neu gestartet wird (Audit 22.08.2026).
         liveUpdate.disconnectUserSockets(userId);
 
-        // Nachgerueckte benachrichtigen, Chatlisten der Gespraechspartner auffrischen.
-        await meldeNachKontoLoeschung(db, ergebnis);
+        // Nachgerueckte benachrichtigen, Chatlisten der Gespraechspartner
+        // auffrischen -- ueber nachAntwort wie DELETE /users/:id (29.09.2026,
+        // Begruendung dort).
+        nachAntwort(req, async () => {
+            await meldeNachKontoLoeschung(db, ergebnis);
 
-        // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
-        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
+            // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
+            liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
+        }, 'DELETE /admin/konfis/:id (Meldungen nach Kontoloeschung)');
     });
 
     // Regenerate password for a konfi

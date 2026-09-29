@@ -701,14 +701,19 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // Benachrichtigung NACH dem COMMIT und fehlertolerant — die Loeschung
       // ist festgeschrieben, ein Push-Fehler darf sie nicht mehr kippen.
       // Nachgerueckte je Gemeinde ihres Events, dazu die Chatlisten der
-      // Gespraechspartner:innen.
-      await meldeNachKontoLoeschung(db, ergebnis);
+      // Gespraechspartner:innen. Ueber nachAntwort wie DELETE /users/:id
+      // (29.09.2026, Begruendung dort); ein Fehler darin landet damit auch
+      // nicht mehr im catch unten, der nach der Antwort einen 500 versuchte.
+      const organizationId = req.user.organization_id;
+      nachAntwort(req, async () => {
+        await meldeNachKontoLoeschung(db, ergebnis);
 
-      // Admin-Liste aktualisieren und den Socket des geloeschten Kontos trennen —
-      // sonst empfing er weiter Org-Updates und die Liste blieb stehen
-      // (Audit 22.08.2026).
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { userId });
-      liveUpdate.disconnectUserSockets(userId);
+        // Admin-Liste aktualisieren und den Socket des geloeschten Kontos trennen —
+        // sonst empfing er weiter Org-Updates und die Liste blieb stehen
+        // (Audit 22.08.2026).
+        liveUpdate.sendToOrgAdmins(organizationId, 'konfis', 'delete', { userId });
+        liveUpdate.disconnectUserSockets(userId);
+      }, 'POST /auth/delete-account (Meldungen nach Kontoloeschung)');
 
     } catch (err) {
  console.error('Database error in POST /api/auth/delete-account:', err);

@@ -861,15 +861,20 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     res.json({ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false });
 
     // Nachgerueckte benachrichtigen (je Gemeinde ihres Events), Chatlisten
-    // der Gespraechspartner:innen auffrischen. Wirft nie.
-    await meldeNachKontoLoeschung(db, ergebnis);
+    // der Gespraechspartner:innen auffrischen. Wirft nie. UEBER nachAntwort
+    // (29.09.2026): Vorher stand hier ein blankes await nach res.json --
+    // warteAufNachwehen wusste davon nichts, und kontoLoeschenWege ("Team-Platz
+    // nachruecken") war wacklig, je nachdem, ob der Push vor der Pruefung kam.
+    nachAntwort(req, async () => {
+      await meldeNachKontoLoeschung(db, ergebnis);
 
-    // Live-Update NACH der Response: geloeschter Benutzer aus der Benutzer-Liste.
-    try {
-      liveUpdate.sendToOrgAdmins(organizationId, 'users', 'delete', { userId: parseInt(id) });
-    } catch (liveErr) {
-      console.error('Live-Update nach DELETE /users/%s fehlgeschlagen:', id, liveErr);
-    }
+      // Live-Update NACH der Response: geloeschter Benutzer aus der Benutzer-Liste.
+      try {
+        liveUpdate.sendToOrgAdmins(organizationId, 'users', 'delete', { userId: parseInt(id) });
+      } catch (liveErr) {
+        console.error('Live-Update nach DELETE /users/%s fehlgeschlagen:', id, liveErr);
+      }
+    }, 'DELETE /users/:id (Meldungen nach Kontoloeschung)');
   });
 
   // Assign jahrgaenge to user
