@@ -7,6 +7,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 const jwt = require('jsonwebtoken');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
+const { ORG_KEIN_ZUGRIFF } = require('../middleware/rbac');
 const PushService = require('../services/pushService');
 const { chatPushText } = require('../utils/pushText');
 const { rollenAnzeigename } = require('../utils/rollenNamen');
@@ -1983,7 +1984,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           [decoded.id, gewuenschteOrg]
         );
         if (!mitgliedschaft) {
-          return res.status(403).json({ error: 'Kein Zugriff auf diese Organisation' });
+          return res.status(403).json(ORG_KEIN_ZUGRIFF);
         }
         req.user.organization_id = mitgliedschaft.organization_id;
         req.user.role_name = mitgliedschaft.role_name;

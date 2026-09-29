@@ -268,7 +268,7 @@ components:
       description: >
         JWT im Authorization-Header. Optional Header X-Active-Organization
         (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
-        Mitglied ist (sonst 403).
+        Mitglied ist (sonst 403 mit error_code org_kein_zugriff).
   schemas:
     Error:
       type: object

@@ -31,6 +31,7 @@ const { formatDatum } = require('../utils/zeitformat');
 const jwt = require('jsonwebtoken');
 const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
+const { ORG_KEIN_ZUGRIFF } = require('../middleware/rbac');
 const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { deleteChallengeFile } = require('../utils/photoStorage');
@@ -1169,7 +1170,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           [decoded.id, requestedActiveOrg]
         );
         if (!membership) {
-          return res.status(403).json({ error: 'Kein Zugriff auf diese Organisation' });
+          return res.status(403).json(ORG_KEIN_ZUGRIFF);
         }
         requester.organization_id = membership.organization_id;
         requester.role_name = membership.role_name;

@@ -288,9 +288,14 @@ const fehlerBehandeln = async (error: any): Promise<unknown> => {
     // 403 "Kein Zugriff auf diese Organisation" bekommt (z.B. Mitgliedschaft
     // entzogen, oder Token-Claim nach Refresh verloren), fällt die App auf die
     // Primaer-Org zurück und laedt neu — statt dauerhaft alles leer zu zeigen.
+    // Erkannt wird die Ablehnung an error_code (seit 29.09.2026); der Text
+    // bleibt als Rueckfall fuer einen Server ohne Code. So darf der Server den
+    // Text spaeter auf „Gemeinde" umstellen, ohne diese App zu brechen (die
+    // Store-Apps bis 2.3.0 lesen nur den Text, deshalb bleibt er vorerst).
+    const daten = error.response?.data;
     if (
       error.response?.status === 403 &&
-      error.response?.data?.error === 'Kein Zugriff auf diese Organisation' &&
+      (daten?.error_code === 'org_kein_zugriff' || daten?.error === 'Kein Zugriff auf diese Organisation') &&
       getActiveOrgId()
     ) {
       // Aktive Org zuruecksetzen, ein Token OHNE Org-Claim holen und erst

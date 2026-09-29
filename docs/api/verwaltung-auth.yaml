@@ -171,6 +171,15 @@ info:
     (15 Min), der von verifyTokenRBAC geprüft wird; die aktive Organisation
     kann per Header X-Active-Organization gewechselt werden (Mitgliedschaft
     wird gegen user_organizations geprüft, 30s-User-Cache).
+    FREMDE AKTIVE GEMEINDE (seit 29.09.2026): Ohne Mitgliedschaft antworten
+    verifyTokenRBAC und die Datei-Routen GET /api/chat/files/:filename und
+    GET /api/challenges/files/:filename mit 403 { error: "Kein Zugriff auf
+    diese Organisation", error_code: "org_kein_zugriff" }. error_code ist neu;
+    der Text bleibt bewusst "Organisation", obwohl alle anderen Meldungen
+    "Gemeinde" sagen: Die Store-Apps 2.2.0 und 2.3.0 vergleichen ihn woertlich
+    fuer den Rueckfall in die Stamm-Gemeinde. Die aktuelle App prueft zuerst
+    error_code; der Text darf "Gemeinde" sagen, sobald keine App ohne diese
+    Pruefung mehr ruft.
     ZUGANGS-TOKEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-15): Claims
     id, type, organization_id, role_name, is_super_admin, ggf.
     active_organization_id, iat, exp -- OHNE display_name und email
@@ -220,7 +229,7 @@ components:
       description: >
         JWT im Authorization-Header. Optional Header X-Active-Organization
         (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
-        Mitglied ist (sonst 403).
+        Mitglied ist (sonst 403 mit error_code org_kein_zugriff).
   schemas:
     Error:
       type: object
@@ -1510,7 +1519,8 @@ paths:
           BEKANNT: laufende Access-Tokens mit active_organization_id-Claim
           wirken serverseitig bis Ablauf nach (max 15 Min + 30s Cache).
           BEHOBEN 26.09.2026 auf Client-Seite (Audit Grundgeruest BF-05): Die
-          App holt beim ersten 403 "Kein Zugriff auf diese Organisation" per
+          App holt beim ersten 403 "Kein Zugriff auf diese Organisation"
+          (seit 29.09.2026 erkannt an error_code org_kein_zugriff) per
           POST /auth/refresh OHNE X-Active-Organization ein Token ohne Claim,
           baut den Socket damit neu auf und faellt sauber auf die Stamm-Org
           zurueck; das alte Token wird nicht mehr weiterbenutzt. rbac.js
