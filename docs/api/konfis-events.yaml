@@ -3705,7 +3705,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "WHERE u.id = :id AND u.organization_id = Token-Org AND r.name IN ('konfi','teamer') AND deleted_at IS NULL"
+        objekt-pruefung: "Konfi oder Teamer:in der Stamm-Gemeinde (u.organization_id = Token-Org, Rolle am Konto) ODER Teamer:in per Einladung (user_organizations der Token-Org mit Rolle teamer); deleted_at IS NULL. Seit 29.09.2026 — vorher nur die Stamm-Gemeinde, eingeladene Teamer:innen aus der Team-Liste bekamen 404. role_name ist die Rolle in der Token-Gemeinde, das Konfi-Profil (Punkte, Jahrgang, konfiHistory) kommt nur aus der Stamm-Gemeinde, badgeCount zählt nur Badges der Token-Gemeinde."
         jahrgangs-bindung: >
           Die GANZE Route (seit 13.09.2026): Steht die angesehene Person in
           einem Jahrgang ausserhalb der eigenen Zuweisungen, antwortet die

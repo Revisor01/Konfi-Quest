@@ -764,10 +764,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                        j.gottesdienst_enabled, j.gemeinde_enabled,
                        j.target_gottesdienst, j.target_gemeinde,
                        ce.event_date as confirmation_date, ce.location as confirmation_location,
-                       r.name as role_name
+                       -- Rolle in DIESER Gemeinde (29.09.2026): zuhause die am
+                       -- Konto, sonst die aus user_organizations. Siehe unten.
+                       CASE WHEN u.organization_id = $2 THEN r.name ELSE uo_r.name END as role_name
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
-                LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+                LEFT JOIN user_organizations uo
+                  ON uo.user_id = u.id AND uo.organization_id = $2
+                 AND u.organization_id IS DISTINCT FROM $2
+                LEFT JOIN roles uo_r ON uo_r.id = uo.role_id
+                -- Das Konfi-Profil nur aus der Stamm-Gemeinde: Eine per
+                -- Einladung hier mitarbeitende Teamer:in bringt sonst Punkte
+                -- und Jahrgang ihrer Konfi-Zeit aus der anderen Gemeinde mit.
+                LEFT JOIN konfi_profiles kp ON u.id = kp.user_id AND u.organization_id = $2
                 LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
                 LEFT JOIN (
                   -- Konfirmationstermin/-ort PRO KONFI: das is_konfirmation-Event, zu dem
@@ -781,7 +790,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                     AND e.organization_id = $2
                     AND (e.cancelled IS NULL OR e.cancelled = false)
                 ) ce ON ce.user_id = u.id
-                WHERE u.id = $1 AND r.name IN ('konfi', 'teamer') AND u.organization_id = $2 AND u.deleted_at IS NULL
+                -- Mitglied DIESER Gemeinde (29.09.2026): Konfis und Team der
+                -- Stamm-Gemeinde wie bisher, dazu Teamer:innen, die per
+                -- Einladung hier sind. Seit sie in der Team-Liste stehen
+                -- (GET /teamer ueber beide Quellen), fuehrte ihr Eintrag hier
+                -- sonst auf 404. Konfis gibt es nur in der Stamm-Gemeinde.
+                WHERE u.id = $1 AND u.deleted_at IS NULL
+                  AND ((u.organization_id = $2 AND r.name IN ('konfi', 'teamer'))
+                       OR uo_r.name = 'teamer')
             `;
             const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);
 
@@ -841,8 +857,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 SELECT COUNT(*) as "badgeCount" FROM user_badges ub
                 JOIN custom_badges cb ON ub.badge_id = cb.id
                 WHERE ub.user_id = $1 AND cb.target_role = $2
+                  AND cb.organization_id = $3
             `;
-            const { rows: [badgeResult] } = await db.query(badgeQuery, [konfiId, konfi.role_name]);
+            // Nur Badges DIESER Gemeinde (29.09.2026) -- Badges bleiben an der
+            // Gemeinde, in der sie entstanden sind (Simon, 28.09.2026).
+            const { rows: [badgeResult] } = await db.query(badgeQuery, [konfiId, konfi.role_name, req.user.organization_id]);
 
             // Challenge-Stempel der angesehenen Person (Simon, 13.09.2026:
             // "Also ich als Admin will sehen welche Stempel die Teamer und

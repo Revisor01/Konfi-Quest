@@ -138,6 +138,62 @@ describe('Team und Leitung aus einer weiteren Gemeinde', () => {
     });
   });
 
+  // Seit eingeladene Teamer:innen in der Team-Liste stehen, fuehrt ihr Eintrag
+  // in die Detailansicht GET /admin/konfis/:id -- die las ebenfalls nur die
+  // Stamm-Gemeinde und antwortete 404.
+  describe('GET /admin/konfis/:id (Detailansicht aus der Team-Liste)', () => {
+    const detail = (id) => request(app)
+      .get(`/api/admin/konfis/${id}`)
+      .set('Authorization', `Bearer ${orgAdminToken}`);
+
+    it('zeigt eine eingeladene Teamer:in mit der Rolle in dieser Gemeinde', async () => {
+      const res = await detail(USERS.teamer2.id);
+
+      expect(res.status).toBe(200);
+      expect(res.body.role_name).toBe('teamer');
+      expect(res.body.display_name).toBe(USERS.teamer2.display_name);
+      expect(Array.isArray(res.body.certificates)).toBe(true);
+    });
+
+    it('bringt keine Konfi-Zeit aus der anderen Gemeinde mit', async () => {
+      // teamer2 war Konfi in Gemeinde 2 (Profil mit Punkten dort).
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
+         VALUES ($1, $2, 7, 4, 2)`,
+        [USERS.teamer2.id, JAHRGAENGE.jahrgang2.id]
+      );
+
+      const res = await detail(USERS.teamer2.id);
+
+      expect(res.status).toBe(200);
+      expect(res.body.gottesdienst_points).toBe(null);
+      expect(res.body.jahrgang_id).toBe(null);
+      expect(res.body.konfiHistory).toBe(null);
+    });
+
+    it('zaehlt nur Badges dieser Gemeinde', async () => {
+      await db.query(
+        `INSERT INTO custom_badges (id, name, icon, color, criteria_type, criteria_value, target_role, organization_id)
+         VALUES (901, 'Team Eins', 'star', '#000000', 'total_points', 1, 'teamer', 1),
+                (902, 'Team Zwei', 'star', '#000000', 'total_points', 1, 'teamer', 2)`
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, 901, 1), ($1, 902, 2)`,
+        [USERS.teamer2.id]
+      );
+
+      const res = await detail(USERS.teamer2.id);
+
+      expect(Number(res.body.badgeCount)).toBe(1);
+    });
+
+    it('weist Team der anderen Gemeinde ohne Mitgliedschaft weiter mit 404 ab', async () => {
+      const res = await detail(USERS.admin2.id);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe('POST /events/:id/participants', () => {
     async function event() {
       const { rows: [e] } = await db.query(
