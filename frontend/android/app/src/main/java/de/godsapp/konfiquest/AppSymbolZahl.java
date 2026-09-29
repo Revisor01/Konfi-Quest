@@ -1,5 +1,7 @@
 package de.godsapp.konfiquest;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
 import java.util.Arrays;
@@ -54,6 +57,14 @@ final class AppSymbolZahl {
 
     /** Art des stillen Pakets mit der Zahl (backend/push/firebase.js, sendFirebaseSilentPush). */
     static final String ART_ZAHL = "badge_update";
+
+    /**
+     * Kennung (tag), unter der Mitteilungen auf Geraeten mit Weg
+     * "mitteilungen" liegen. Dieselbe Zeichenkette schickt der Server mit
+     * (backend/utils/appSymbolWeg.js, MITTEILUNG_TAG); FCM legt die Mitteilung
+     * damit unter diesem tag ab, und jede neue ersetzt die vorige.
+     */
+    static final String MITTEILUNG_TAG = "konfi_app_symbol";
 
     /** Sonys Zahl-Anbieter; muss im Manifest unter queries stehen, sonst sieht die App ihn nicht. */
     static final String SONY_ANBIETER = "com.sonymobile.home.resourceprovider";
@@ -115,7 +126,8 @@ final class AppSymbolZahl {
      * Setzt die Zahl am App-Symbol. Sony ueber den Zahl-Anbieter, alle anderen
      * ueber ShortcutBadger -- das ist genau der Aufruf, den das Badge-Plugin
      * bisher machte; wo der Startbildschirm ihn nicht versteht, bleibt er
-     * folgenlos.
+     * folgenlos. Auf Geraeten mit Weg "mitteilungen" traegt ausserdem die
+     * liegende Mitteilung die neue Zahl (mitteilungNachfuehren).
      */
     static void setzen(Context context, int zahl) {
         Context app = context.getApplicationContext();
@@ -125,6 +137,38 @@ final class AppSymbolZahl {
             sonySetzen(app, ganz);
         } else {
             ShortcutBadger.applyCount(app, ganz);
+        }
+        if (WEG_MITTEILUNGEN.equals(weg(app))) {
+            mitteilungNachfuehren(app, ganz);
+        }
+    }
+
+    /**
+     * Weg "mitteilungen" (Samsung, Xiaomi): Der Startbildschirm zaehlt die
+     * Zahlen der liegenden Mitteilungen zusammen (Notification.number, bei 0
+     * zaehlt eine Mitteilung als 1). Der Server schickt deshalb jede
+     * Mitteilung mit festem tag und der Gesamtzahl -- es liegt immer nur eine,
+     * und sie traegt die Zahl.
+     *
+     * Sinkt die Zahl, weil etwas gelesen oder erledigt ist, bekommt diese
+     * Mitteilung hier die neue Zahl, still (setOnlyAlertOnce), mit Titel,
+     * Text und Ziel wie zuvor (recoverBuilder). Weggenommen wird sie NIE --
+     * auch bei 0 nicht: Die App raeumt keine Mitteilungen ab, die jemand noch
+     * lesen will (Simon, 29.09.2026). Bei 0 zeigt das Symbol deshalb eine 1,
+     * bis die Mitteilung angetippt oder weggewischt ist.
+     */
+    static void mitteilungNachfuehren(Context context, int zahl) {
+        NotificationManager verwalter = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (verwalter == null) return;
+        for (StatusBarNotification liegend : verwalter.getActiveNotifications()) {
+            if (!MITTEILUNG_TAG.equals(liegend.getTag())) continue;
+            Notification alt = liegend.getNotification();
+            if (alt == null || alt.number == zahl) continue;
+            Notification neu = Notification.Builder.recoverBuilder(context, alt)
+                .setNumber(zahl)
+                .setOnlyAlertOnce(true)
+                .build();
+            verwalter.notify(liegend.getTag(), liegend.getId(), neu);
         }
     }
 

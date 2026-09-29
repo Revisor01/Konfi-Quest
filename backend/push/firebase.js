@@ -44,6 +44,7 @@ const { GRUPPE_JE_ART, GRUPPE_STANDARD, gruppeFuerArt } = require('../utils/push
 const KANAL_JE_TYP = GRUPPE_JE_ART;
 const KANAL_STANDARD = GRUPPE_STANDARD;
 const kanalFuerTyp = gruppeFuerArt;
+const { APP_SYMBOL_WEGE, MITTEILUNG_TAG } = require('../utils/appSymbolWeg');
 
 // Firebase Admin initialisieren (Service Account wird später hinzugefügt)
 let firebaseApp = null;
@@ -84,6 +85,18 @@ const sendFirebasePushNotification = async (deviceToken, notificationData) => {
       throw new Error('Firebase not initialized');
     }
 
+    // Zahl am App-Symbol auf Startbildschirmen, die sie aus den liegenden
+    // Mitteilungen rechnen (Samsung One UI, Xiaomi; Weg "mitteilungen",
+    // 29.09.2026, Simons Wahl "Zahl wie iOS"). Der Startbildschirm ADDIERT
+    // die Zahlen aller liegenden Mitteilungen der App (Launcher3, DotInfo:
+    // count = max(1, notification.number)). Deshalb beides zusammen:
+    //   tag               jede Mitteilung ersetzt die vorige -- es liegt immer
+    //                     nur eine, in der Leiste steht die neueste;
+    //   notificationCount die Gesamtzahl, dieselbe wie aps.badge.
+    // Nur fuer Geraete, deren App diesen Weg gemeldet hat
+    // (utils/appSymbolWeg.js); fuer alle anderen bleibt der Block, wie er war.
+    const zahlInDerMitteilung = notificationData.appSymbolWeg === APP_SYMBOL_WEGE.MITTEILUNGEN;
+
     const message = {
       token: deviceToken,
       notification: {
@@ -102,13 +115,17 @@ const sendFirebasePushNotification = async (deviceToken, notificationData) => {
           channelId: kanalFuerTyp((notificationData.data || {}).type),
           sound: notificationData.sound || 'default',
           defaultSound: true,
-          // BEWUSST KEIN notificationCount (29.09.2026). Das Feld heisst "the
-          // number of items this notification represents", und der Launcher
-          // addiert es ueber alle liegenden Mitteilungen der App (AOSP
-          // Launcher3, DotInfo). Mit der iOS-Zahl darin ergaeben drei Pushes
-          // mit 3, 4 und 5 offenen Dingen am Symbol 12. Ohne das Feld zaehlt
-          // jede Mitteilung als eine; die Zahl der App selbst setzt auf
-          // Android das Badge-Plugin in der App. Test: pushKanaele.test.js.
+          // notificationCount NUR zusammen mit dem festen tag (oben,
+          // zahlInDerMitteilung). Das Feld heisst "the number of items this
+          // notification represents", und der Launcher addiert es ueber alle
+          // liegenden Mitteilungen der App (AOSP Launcher3, DotInfo). Mit der
+          // iOS-Zahl in JEDER liegenden Mitteilung ergaeben drei Pushes mit
+          // 3, 4 und 5 offenen Dingen am Symbol 12. Ohne das Feld zaehlt jede
+          // Mitteilung als eine; die Zahl der App selbst setzt auf Android
+          // die App (AppSymbolZahl). Test: pushKanaele.test.js.
+          ...(zahlInDerMitteilung
+            ? { tag: MITTEILUNG_TAG, notificationCount: Math.max(0, Math.floor(Number(notificationData.badge) || 0)) }
+            : {}),
         },
       },
       apns: {

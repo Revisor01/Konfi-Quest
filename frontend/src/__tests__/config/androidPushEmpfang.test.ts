@@ -202,6 +202,28 @@ describe('Zahl am App-Symbol: eine Stelle fuer offene und geschlossene App', () 
     expect(bau).toContain('implementation "me.leolin:ShortcutBadger:$shortcutBadgerVersion@aar"');
   });
 
+  it('Weg "mitteilungen": die liegende Mitteilung bekommt die neue Zahl -- still, und weggenommen wird sie nie', () => {
+    // Samsung und Xiaomi rechnen die Zahl aus den liegenden Mitteilungen.
+    // Sinkt die Zahl (gelesen, erledigt), traegt die eine liegende
+    // Mitteilung (fester tag) die neue. Die App raeumt keine Mitteilungen ab
+    // (Simon, 29.09.2026) -- auch bei 0 nicht.
+    const setzen = zahl.slice(zahl.indexOf('static void setzen('), zahl.indexOf('static void mitteilungNachfuehren('));
+    expect(setzen).toMatch(/if \(WEG_MITTEILUNGEN\.equals\(weg\(app\)\)\) \{\s*mitteilungNachfuehren\(app, ganz\);/);
+    const nachfuehren = zahl.slice(zahl.indexOf('static void mitteilungNachfuehren('), zahl.indexOf('static void ausNachricht('));
+    expect(nachfuehren).toContain('MITTEILUNG_TAG.equals(liegend.getTag())');
+    expect(nachfuehren).toContain('.setNumber(zahl)');
+    expect(nachfuehren).toContain('.setOnlyAlertOnce(true)');
+    expect(nachfuehren).toContain('verwalter.notify(liegend.getTag(), liegend.getId(), neu)');
+    expect(zahl).not.toMatch(/\.cancel(All)?\(/);
+  });
+
+  it('der tag der liegenden Mitteilung ist derselbe, den der Server schickt', () => {
+    const server = lies('../backend/utils/appSymbolWeg.js');
+    const tag = server.match(/const MITTEILUNG_TAG = '([^']+)';/)?.[1];
+    expect(tag).toBe('konfi_app_symbol');
+    expect(zahl).toContain(`static final String MITTEILUNG_TAG = "${tag}";`);
+  });
+
   it('faengt Fehler beim Setzen ab, statt den Push-Dienst abstuerzen zu lassen', () => {
     const rumpf = zahl.slice(zahl.indexOf('static void ausNachricht'));
     expect(rumpf.slice(0, rumpf.indexOf('\n    }\n'))).toMatch(/catch \(Throwable/);

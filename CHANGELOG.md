@@ -501,6 +501,10 @@ iOS-Build 234 · Android versionCode 128
   schneller: Sie zeigen zuerst 30 Einträge und laden beim Scrollen die nächsten
   nach; ein Knopf unter der Liste tut dasselbe. Suche, Filter und Zahlen gelten
   weiter für die ganze Liste.
+- Auf Android steht am App-Symbol dieselbe Zahl wie auf dem iPhone, wo das
+  Handy eine Zahl anzeigen kann. Auf Samsung- und Xiaomi-Geräten, die die
+  Zahl aus den Mitteilungen bilden, ersetzt dafür jede neue Mitteilung von
+  Konfi Quest die vorige; in der Leiste steht dort nur die neueste.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

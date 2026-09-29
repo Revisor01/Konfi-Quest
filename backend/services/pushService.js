@@ -395,7 +395,13 @@ class PushService {
   static async sendeAnGeraete(db, tokens, payload, sammler = null, badgeAlteApps = null) {
     const ergebnisse = await Promise.all(tokens.map(async (token) => {
       const badge = this.badgeFuerGeraet(token, payload.badge, badgeAlteApps);
-      const nutzlast = badge === payload.badge ? payload : { ...payload, badge };
+      let nutzlast = badge === payload.badge ? payload : { ...payload, badge };
+      // Weg "mitteilungen" (Samsung, Xiaomi): Der Startbildschirm rechnet die
+      // Zahl aus den liegenden Mitteilungen. firebase.js gibt der Mitteilung
+      // dafuer den festen tag und die Gesamtzahl mit (29.09.2026).
+      if (wegFuerGeraet(token) === APP_SYMBOL_WEGE.MITTEILUNGEN) {
+        nutzlast = { ...nutzlast, appSymbolWeg: APP_SYMBOL_WEGE.MITTEILUNGEN };
+      }
       const result = await this.sendeMitWiederholung(
         () => firebase.sendFirebasePushNotification(token.token, nutzlast)
       );

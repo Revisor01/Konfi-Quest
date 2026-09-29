@@ -12,6 +12,9 @@
 //
 //   anbieter      die sichtbare Mitteilung unveraendert, danach ein stilles
 //                 badge_update mit derselben Zahl
+//   mitteilungen  die Mitteilung mit dem Weg (firebase.js macht daraus tag
+//                 und notificationCount, pushKanaele.test.js), kein
+//                 zusaetzliches Paket
 //   ohne Angabe   genau das, was bisher ging -- kein zusaetzliches Paket
 //   iOS           unveraendert (aps.badge setzt die Zahl)
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
@@ -84,6 +87,27 @@ describe('Zahl am App-Symbol auf Android: Versand je Geraeteart', () => {
       title: 'X', body: 'Y', badge: 4, sound: 'default',
       data: { type: 'info', organization_id: String(ORG1) },
     });
+  });
+
+  it('gibt nur dem Geraet mit Weg "mitteilungen" den Weg mit (tag und Zahl setzt firebase.js)', async () => {
+    await PushService.sendToUser(db, USERS.konfi1.id, { title: 'X', body: 'Y', badge: 4, data: { type: 'info' } });
+
+    const weg = (token) => aufrufeAn(sichtbar, token)[0][1].appSymbolWeg;
+    expect(weg('tok-samsung')).toBe('mitteilungen');
+    expect(aufrufeAn(sichtbar, 'tok-samsung')[0][1].badge).toBe(4);
+    expect(weg('tok-sony')).toBeUndefined();
+    expect(weg('tok-alt')).toBeUndefined();
+    expect(weg('tok-iphone')).toBeUndefined();
+  });
+
+  it('ein Samsung mit der Store-App ohne Angabe bekommt die Mitteilung wie bisher', async () => {
+    // Ohne gemeldeten Weg weiss der Server nicht, was der Startbildschirm
+    // kann -- dann bleibt jede Mitteilung einzeln, ohne Zahl.
+    await db.query(`UPDATE push_tokens SET app_symbol_weg = NULL WHERE token = 'tok-samsung'`);
+
+    await PushService.sendToUser(db, USERS.konfi1.id, { title: 'X', body: 'Y', badge: 4, data: { type: 'info' } });
+
+    expect(aufrufeAn(sichtbar, 'tok-samsung')[0][1]).not.toHaveProperty('appSymbolWeg');
   });
 
   it('schickt die Zahl nicht hinterher, wenn die Mitteilung nicht ankam', async () => {
