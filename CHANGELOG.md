@@ -1105,6 +1105,8 @@ iOS-Build 233 · Android versionCode 127
   Anmeldung durch ist.
 - Geht das Handy beim Scannen des QR-Codes zum Einchecken offline, meldet die
   App „Du bist offline" statt „QR-Code konnte nicht verarbeitet werden".
+- Die Badges-Seite der Konfis zeigt die Badges auch dann, wenn die Punkte des
+  Profils gerade nicht geladen werden konnten, statt „Keine Badges gefunden".
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

@@ -233,6 +233,7 @@ es geht um Daten Minderjähriger, die standardmäßig eingeschaltet sind.
 - **Auswirkung aus Nutzersicht:** (a) keine sichtbare, Typlüge. (b) Bei fehlgeschlagenem Profilabruf (500, Zeitüberschreitung) zeigt die Badges-Seite „Keine Badges gefunden", obwohl die Abzeichen geladen sind.
 - **Beleg:** Zeilen wie oben zitiert.
 - **Empfehlung:** (a) `ChatUserType` aus `types/chat.ts` verwenden. (b) Abzeichen auch ohne `konfiData` rendern; der Punkte-Rückfall betrifft nur Abzeichen ohne `progress`.
+- **Nachtrag 28.09.2026:** behoben — (a) `ChatRoomView.tsx` nutzt `ChatRoomBase` aus `types/chat.ts` statt eines eigenen Typs; die beiden vorläufigen Reaktionen in `useUmfragenUndReaktionen.ts` tragen `ChatUserType` statt `as 'admin' | 'konfi'` (nur Typen, kein Laufzeitunterschied). (b) `KonfiBadgesPage.tsx` braucht nur noch die Abzeichen; das Profil dient allein dem Punkte-Rückfall bei Abzeichen ohne `progress` (ohne Profil: Fortschritt vom Server oder 0). Tests `components/konfiBadgesOhneProfil.test.tsx` (2, ohne Fix 1 rot) und Wächter `components/chatNutzertypDreiWerte.test.ts` (2, liest die Chat-Quelltexte; ohne Fix 2 rot, drei Fundstellen).
 
 ## Unklar
 

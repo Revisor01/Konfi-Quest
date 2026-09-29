@@ -14,13 +14,10 @@ import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
-
-interface ChatRoomData {
-  id: number;
-  name: string;
-  type: 'group' | 'direct' | 'jahrgang' | 'admin';
-  participants?: Array<{ user_id: number; user_type: 'admin' | 'konfi'; name: string; display_name?: string; }>;
-}
+// Derselbe Raum-Typ, den ChatRoom erwartet. Der fruehere eigene Typ kannte
+// als user_type nur 'admin' | 'konfi' -- Teamer:innen fehlten (Audit
+// 26.09.2026, Screens Konfi/Teamer BF-12).
+import type { ChatRoomBase } from '../../../types/chat';
 
 interface ChatRoomViewProps {
   roomId: number;
@@ -32,7 +29,7 @@ const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
   // der Cache sofort den Raum, sodass ChatRoom mit seinem Nachrichten-Cache
   // gerendert wird. Vorher war das ein ungecachter api.get -> offline blieb der
   // Raum null -> "Chat wird geladen" / Fehlerseite, OBWOHL Nachrichten im Cache lagen.
-  const { data: room, loading, isOffline } = useOfflineQuery<ChatRoomData>(
+  const { data: room, loading, isOffline } = useOfflineQuery<ChatRoomBase>(
     'chat:room:' + roomId,
     () => api.get(`/chat/rooms/${roomId}`).then(r => r.data),
     { ttl: CACHE_TTL.CHAT_ROOMS, enabled: !!roomId }
