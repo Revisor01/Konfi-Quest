@@ -56,9 +56,9 @@ addiert. Ist Gemeinde abgeschaltet, ist das Gesamtziel nur das
 Gottesdienst-Ziel.
 
 > **Achtung:** Der Bereich 1 bis 20 ist die Begrenzung des Schiebereglers in
-> der App. Die Schnittstelle dahinter akzeptiert jeden Wert ab 0 und kennt
-> kein Maximum. Über die App kannst du aber weder 0 noch mehr als 20
-> einstellen.
+> der App. Die Schnittstelle dahinter nimmt jeden Wert ab 1 und kennt kein
+> Maximum; eine 0 lehnt sie ab. Steht ein Ziel in der Datenbank doch auf 0,
+> zählt es überall als 10.
 
 ## Eine Punktart abschalten
 

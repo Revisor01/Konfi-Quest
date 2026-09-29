@@ -436,6 +436,7 @@ bestehender Aktivitäten nicht zu ändern.
   **10**, `konfi.target_gottesdienst` **0**.
 - **Empfehlung:** `?? 10` statt `|| 10`, oder 0 in der Validierung ausschließen
   (`min: 1`).
+- **Nachtrag 28.09.2026:** behoben (Weg: 0 ausschließen) — Geprüft, was die Store-Apps bei 0 zeigen: Der Regler der Leitung reicht in 2.0.0, 2.2.0 und 2.3.0 von 1 bis 20 (eine 0 schickt keine App), und alle drei Anzeigen (`KonfiDashboardPage`, `KonfisView`, `KonfiDetailSections`) rechnen selbst `|| 10` — ein `?? 10` im Server hätte an keiner App etwas geändert, und eine echte 0 wäre dort eine Division durch null. Deshalb lehnt `routes/jahrgaenge.js` beim Anlegen und Bearbeiten 0 ab (`isInt({ min: 1 })`, 400); `point_config` behält `|| 10` für NULL und Alt-Nullen, die Jahrgangsliste der Leitung zeigt ebenfalls `|| 10` statt `?? 10` (vorher „GD-Ziel 0" neben einer 10 bei den Konfis). Test `backend/tests/routes/punktezielNull.test.js` (4: 0 beim Anlegen und Bearbeiten → 400 ohne Änderung; 1/20 gespeichert, 3/4 im Dashboard); ohne Fix 2 rot. `jahrgaenge.test.js`: der Fall „optionale Felder" schickte `target_gemeinde: 0` — jetzt 5 (der Test prüft die Felder, nicht die 0). Handbuch `45-jahrgaenge.md`, API-Doku `stammdaten.yaml`. Auf Produktion nachzumessen: `SELECT COUNT(*) FROM jahrgaenge WHERE target_gottesdienst = 0 OR target_gemeinde = 0;`
 
 ### BF-11: `event_bookings.created_at` ist TEXT und dient als Reihenfolge-Schlüssel der Warteliste
 - **Schwere:** NIEDRIG

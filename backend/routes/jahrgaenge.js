@@ -19,13 +19,19 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
   // Schema-Migrationen: siehe backend/migrations/064_consolidate_inline_schemas.sql
 
   // Validierungsregeln
+  //
+  // Punkteziele ab 1 (28.09.2026, Audit Fachlogik Punkte/Termine BF-10): Der
+  // Regler der Leitung reicht in jeder App-Fassung von 1 bis 20, und jede
+  // Anzeige rechnet `ziel || 10` -- eine 0 hiess also ueberall 10, waehrend
+  // die Datenbank 0 hielt. Die Schnittstelle nimmt jetzt nur, was der Regler
+  // kann.
   const validateCreateJahrgang = [
     commonValidations.name,
     body('gottesdienst_enabled').optional().isBoolean().withMessage('gottesdienst_enabled muss Boolean sein'),
     body('gemeinde_enabled').optional().isBoolean().withMessage('gemeinde_enabled muss Boolean sein'),
     body('konfspruch_enabled').optional().isBoolean().withMessage('konfspruch_enabled muss Boolean sein'),
-    body('target_gottesdienst').optional().isInt({ min: 0 }).withMessage('target_gottesdienst muss >= 0 sein'),
-    body('target_gemeinde').optional().isInt({ min: 0 }).withMessage('target_gemeinde muss >= 0 sein'),
+    body('target_gottesdienst').optional().isInt({ min: 1 }).withMessage('target_gottesdienst muss mindestens 1 sein'),
+    body('target_gemeinde').optional().isInt({ min: 1 }).withMessage('target_gemeinde muss mindestens 1 sein'),
     // Direkt-Zuweisung beim Anlegen (01.09.2026): OPTIONAL, damit ausgelieferte
     // Apps (die das Feld nicht senden) sich exakt wie bisher verhalten.
     // Form wie bei POST /users/:id/jahrgaenge, nur gespiegelt: dort Jahrgaenge
@@ -43,8 +49,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
     body('gottesdienst_enabled').optional().isBoolean().withMessage('gottesdienst_enabled muss Boolean sein'),
     body('gemeinde_enabled').optional().isBoolean().withMessage('gemeinde_enabled muss Boolean sein'),
     body('konfspruch_enabled').optional().isBoolean().withMessage('konfspruch_enabled muss Boolean sein'),
-    body('target_gottesdienst').optional().isInt({ min: 0 }).withMessage('target_gottesdienst muss >= 0 sein'),
-    body('target_gemeinde').optional().isInt({ min: 0 }).withMessage('target_gemeinde muss >= 0 sein'),
+    body('target_gottesdienst').optional().isInt({ min: 1 }).withMessage('target_gottesdienst muss mindestens 1 sein'),
+    body('target_gemeinde').optional().isInt({ min: 1 }).withMessage('target_gemeinde muss mindestens 1 sein'),
     handleValidationErrors
   ];
 

@@ -1128,6 +1128,9 @@ iOS-Build 233 · Android versionCode 127
 - Bei einer Challenge, die nur einen Beitrag je Person annimmt, entstehen aus
   zwei gleichzeitig abgeschickten Beiträgen (etwa nach einem doppelten Tipp
   oder einer Wiederholung nach Netzabbruch) nicht mehr zwei.
+- In der Jahrgangsliste der Leitung steht als Punkteziel dieselbe Zahl, mit
+  der auch das Dashboard der Konfis rechnet; ein Ziel von 0 nimmt der Server
+  nicht mehr an, wie schon der Regler in der App.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

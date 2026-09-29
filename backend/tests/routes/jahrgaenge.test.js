@@ -198,7 +198,7 @@ describe('Jahrgaenge Routes', () => {
           gottesdienst_enabled: true,
           gemeinde_enabled: false,
           target_gottesdienst: 15,
-          target_gemeinde: 0,
+          target_gemeinde: 5,
         });
 
       expect(res.status).toBe(201);

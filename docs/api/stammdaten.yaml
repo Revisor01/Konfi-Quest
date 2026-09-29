@@ -664,8 +664,8 @@ paths:
                 gottesdienst_enabled: { type: boolean, default: true }
                 gemeinde_enabled: { type: boolean, default: true }
                 konfspruch_enabled: { type: boolean, default: true }
-                target_gottesdienst: { type: integer, minimum: 0, default: 10 }
-                target_gemeinde: { type: integer, minimum: 0, default: 10 }
+                target_gottesdienst: { type: integer, minimum: 1, default: 10, description: "Seit 28.09.2026 ab 1 (vorher ab 0; eine 0 lieferte das Konfi-Dashboard als 10 aus, jede App-Fassung rechnet `|| 10`, der Regler beginnt bei 1). 0 -> 400. Audit Fachlogik Punkte/Termine BF-10, behoben." }
+                target_gemeinde: { type: integer, minimum: 1, default: 10, description: "Wie target_gottesdienst: ab 1, 0 -> 400 (seit 28.09.2026)." }
                 user_assignments:
                   type: array
                   description: >
@@ -730,8 +730,8 @@ paths:
                 gottesdienst_enabled: { type: boolean, description: "Nicht uebergeben = unveraendert (COALESCE)" }
                 gemeinde_enabled: { type: boolean, description: "Nicht uebergeben = unveraendert (COALESCE)" }
                 konfspruch_enabled: { type: boolean, description: "Nicht uebergeben = unveraendert (COALESCE)" }
-                target_gottesdienst: { type: integer, minimum: 0 }
-                target_gemeinde: { type: integer, minimum: 0 }
+                target_gottesdienst: { type: integer, minimum: 1, description: "Seit 28.09.2026 ab 1, 0 -> 400 (siehe POST). Nicht uebergeben = unveraendert." }
+                target_gemeinde: { type: integer, minimum: 1, description: "Seit 28.09.2026 ab 1, 0 -> 400 (siehe POST). Nicht uebergeben = unveraendert." }
       responses:
         "200":
           description: >
