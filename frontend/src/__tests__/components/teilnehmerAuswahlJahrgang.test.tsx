@@ -210,4 +210,19 @@ describe('passtZumTermin — die Regel, ohne Oberflaeche', () => {
     expect(passtZumTermin({ role_name: 'konfi', jahrgang_id: JG_B }, { jahrgaenge: [] }, [])).toBe(true);
     expect(passtZumTermin({ role_name: 'teamer', jahrgang_ids: [JG_B] }, { ...terminA, teamer_only: true }, [JG_A])).toBe(true);
   });
+
+  // Simon, 29.09.2026: "kann keine Teamer zu Events hinzufügen Liste ist
+  // leer." Der Server lieferte jahrgang_ids als Text (["311"]) -- pg gibt
+  // bigint[] so heraus --, der Termin seine Jahrgaenge als Zahlen. Der strenge
+  // Vergleich fand nie eine Ueberschneidung, niemand aus dem Team passte.
+  // Die Regel vergleicht deshalb die Werte, nicht die Typen.
+  it('passt auch, wenn der Server die Jahrgangs-IDs als Text liefert', () => {
+    const alsText = (ids: number[]) => ids.map(String) as unknown as number[];
+    expect(passtZumTermin({ role_name: 'teamer', jahrgang_ids: alsText([JG_A]) }, terminA, [JG_A])).toBe(true);
+    expect(passtZumTermin({ role_name: 'admin', jahrgang_ids: alsText([JG_A]) }, terminA, [JG_A])).toBe(true);
+    expect(passtZumTermin({ role_name: 'teamer', jahrgang_ids: [JG_A] }, terminA, alsText([JG_A]))).toBe(true);
+    expect(passtZumTermin({ role_name: 'konfi', jahrgang_id: String(JG_A) as unknown as number }, terminA, [JG_A])).toBe(true);
+    // ... und eine fremde ID passt weiterhin nicht.
+    expect(passtZumTermin({ role_name: 'teamer', jahrgang_ids: alsText([JG_B]) }, terminA, [JG_A])).toBe(false);
+  });
 });

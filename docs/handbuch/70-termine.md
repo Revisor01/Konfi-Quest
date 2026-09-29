@@ -1240,6 +1240,9 @@ Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
   Team"-Events stehen allen offen, die Org-Leitung lässt sich immer
   eintragen. Wer trotzdem über einen anderen Weg jemanden eintragen will,
   bekommt eine Meldung mit dem Namen der Person.
+- Zur Auswahl stehen alle aus Team und Leitung deiner Gemeinde — auch wer
+  über eine Einladung aus einer anderen Gemeinde dazugekommen ist. Maßgeblich
+  ist die Rolle in deiner Gemeinde.
 
 **Wer eingetragen wird, bekommt einen Push** — Konfis, Teamer:innen und
 Leitung gleichermaßen, mit derselben Meldung wie bei der Selbstanmeldung.

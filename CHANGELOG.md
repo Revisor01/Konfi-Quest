@@ -427,6 +427,11 @@ iOS-Build 233 · Android versionCode 127
   unter „Fehler".
 
 ### Behoben
+- Teamer:innen und Leitung lassen sich wieder von Hand zu Events hinzufügen:
+  Die Auswahl blieb leer, obwohl sie dem Jahrgang des Events zugewiesen waren.
+- Wer über eine Einladung im Team oder in der Leitung einer Gemeinde ist, steht
+  dort jetzt in der Team-Liste und in der Auswahl am Event und lässt sich
+  eintragen; Jahrgänge und Badges zeigt die Liste nur aus dieser Gemeinde.
 - In der Detailansicht einer Konfi stehen ihre offenen Anträge wieder als
   „gemeldet" zwischen den Aktivitäten.
 - In der Detailansicht eines Events steht bei den Teamer:innen kein

@@ -92,8 +92,25 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
       }
 
-      // 2. Validate user
-      const { rows: [user] } = await client.query("SELECT id, display_name FROM users WHERE id = $1 AND organization_id = $2", [user_id, req.user.organization_id]);
+      // 2. Validate user -- Mitglied DIESER Gemeinde ueber eine der beiden
+      //    Quellen (29.09.2026, utils/orgMitglieder.js): Stamm-Gemeinde mit der
+      //    Rolle am Konto, jede weitere mit der Rolle aus user_organizations.
+      //    Vorher nur users.organization_id -- wer per Einladung im Team war,
+      //    liess sich nicht eintragen (404).
+      const { rows: [user] } = await client.query(
+        `SELECT u.id, u.display_name,
+                COALESCE(
+                  (SELECT r.name FROM roles r WHERE r.id = u.role_id AND u.organization_id = $2),
+                  (SELECT r.name FROM user_organizations uo JOIN roles r ON r.id = uo.role_id
+                    WHERE uo.user_id = u.id AND uo.organization_id = $2 LIMIT 1)
+                ) AS role_name
+           FROM users u
+          WHERE u.id = $1
+            AND (u.organization_id = $2
+                 OR EXISTS (SELECT 1 FROM user_organizations uo
+                             WHERE uo.user_id = u.id AND uo.organization_id = $2))`,
+        [user_id, req.user.organization_id]
+      );
       if (!user) {
         await client.query('ROLLBACK');
         client.release();
@@ -155,13 +172,9 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       // entscheidet unten auch darueber, ueber welchen Einstiegspunkt der
       // Push rausgeht. Mit explizitem status ('confirmed'/'waitlist') war sie
       // frueher gar nicht gesetzt.
-      const { rows: [addedUser] } = await client.query(
-        `SELECT r.name AS role_name FROM users u
-         JOIN roles r ON u.role_id = r.id
-         WHERE u.id = $1 AND u.organization_id = $2`,
-        [user_id, req.user.organization_id]
-      );
-      const addedIsKonfi = addedUser?.role_name === 'konfi';
+      // Die Rolle in DIESER Gemeinde steht seit dem 29.09.2026 schon an `user`
+      // (Schritt 2) -- auch fuer Mitglieder einer weiteren Gemeinde.
+      const addedIsKonfi = user.role_name === 'konfi';
       const addedIsTeamer = !addedIsKonfi;
 
       // ERST FRAGEN, DANN UEBERBUCHEN (Simon, 28.09.2026: "Die sollten wir

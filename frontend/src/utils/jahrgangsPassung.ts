@@ -39,8 +39,15 @@ export function passtZumTermin(
   if (termin?.teamer_only) return true;
   if (terminJahrgangIds.length === 0) return true;
   if (person.role_name === 'org_admin' || person.role_name === 'super_admin' || person.is_super_admin) return true;
+  // Werte vergleichen, nicht Typen (29.09.2026): Der Server lieferte
+  // jahrgang_ids als Text (["12"]) -- pg gibt bigint[] so heraus --, der
+  // Termin seine Jahrgaenge als Zahlen. Mit includes() passte niemand aus dem
+  // Team zu irgendeinem Termin, die Auswahl blieb leer (Simon, 29.09.:
+  // "kann keine Teamer zu Events hinzufügen Liste ist leer"). Der Server
+  // liefert inzwischen Zahlen; die Regel haelt trotzdem beides aus.
+  const terminIds = new Set(terminJahrgangIds.map(Number));
   if (person.role_name === 'konfi') {
-    return person.jahrgang_id != null && terminJahrgangIds.includes(person.jahrgang_id);
+    return person.jahrgang_id != null && terminIds.has(Number(person.jahrgang_id));
   }
-  return (person.jahrgang_ids || []).some(id => terminJahrgangIds.includes(id));
+  return (person.jahrgang_ids || []).some(id => terminIds.has(Number(id)));
 }
