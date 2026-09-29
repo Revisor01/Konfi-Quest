@@ -119,12 +119,21 @@ vi.mock('@ionic/react', () => {
 });
 
 // --- Umgebung ----------------------------------------------------------------
+// Beide Badge-Aufrufe halten fest, in welcher Reihenfolge sie liefen.
+const { badgeGelesen, zaehlerHolen, badgeReihenfolge } = vi.hoisted(() => {
+  const reihenfolge: string[] = [];
+  return {
+    badgeReihenfolge: reihenfolge,
+    badgeGelesen: vi.fn(async (_raum: number) => { reihenfolge.push('gelesen:start'); await Promise.resolve(); reihenfolge.push('gelesen:fertig'); }),
+    zaehlerHolen: vi.fn(async () => { reihenfolge.push('zaehler'); }),
+  };
+});
 const setError = vi.fn();
 vi.mock('../../contexts/AppContext', () => ({
   useApp: () => ({ user: { id: 1, type: 'konfi', display_name: 'Ich' }, setError, isOnline: true }),
 }));
 vi.mock('../../contexts/BadgeContext', () => ({
-  useBadge: () => ({ markRoomAsRead: vi.fn(async () => undefined), refreshAllCounts: vi.fn(async () => undefined), chatUnreadByRoom: {} }),
+  useBadge: () => ({ markRoomAsRead: badgeGelesen, refreshAllCounts: zaehlerHolen, chatUnreadByRoom: {} }),
 }));
 // Der Offline-Cache: einmal abrufen wie beim Oeffnen, sonst nichts.
 vi.mock('../../hooks/useOfflineQuery', () => ({
@@ -447,5 +456,19 @@ describe('Chat: aeltere Nachrichten beim Hochscrollen nachladen', () => {
     // Ein Ereignis fuer einen anderen Raum aendert nichts.
     await act(async () => { socketEreignisse.messageDeleted({ roomId: 8, messageId: 151 }); });
     expect(text(151)).toBe('Nachricht 151');
+  });
+});
+
+// Ersetzt die Quelltext-Pruefung in badgeMarkReadWettlauf.test.ts (Audit Tests
+// BF-02): Befund 03.09.2026 -- ohne das await lief refreshAllCounts() gegen den
+// Stand VOR dem Lesen und schrieb den alten Zaehler zurueck.
+describe('Chat: Raum oeffnen verbucht das Lesen vor dem Nachladen der Zaehler', () => {
+  it('erst markRoomAsRead abwarten, dann refreshAllCounts', async () => {
+    badgeReihenfolge.length = 0;
+    apiGet.mockImplementation(() => ({ data: reihe(1, 3) }));
+    await oeffnen();
+    await waitFor(() => expect(zaehlerHolen).toHaveBeenCalled());
+    expect(badgeGelesen).toHaveBeenCalledWith(RAUM.id);
+    expect(badgeReihenfolge.slice(0, 3)).toEqual(['gelesen:start', 'gelesen:fertig', 'zaehler']);
   });
 });
