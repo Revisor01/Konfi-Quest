@@ -58,9 +58,13 @@ describe('Android: ein Empfänger für Push-Nachrichten', () => {
     ]));
   });
 
-  it('nach dem Merge bleibt genau der Dienst des Push-Plugins', () => {
+  // Seit dem eigenen Dienst fuer die Zahl am App-Symbol (Paket H, 29.09.2026)
+  // bleibt nicht mehr der Dienst des Push-Plugins, sondern die davon
+  // abgeleitete KonfiMessagingService -- Einzelheiten und die Ableitung prueft
+  // androidPushEmpfang.test.ts. Hier bleibt die Kernaussage: genau EINER.
+  it('nach dem Merge bleibt genau ein Empfänger, und er ist der App', () => {
     const bleibt = [...ausPlugins.map((p) => p.dienst), ...fcmDienste(appManifest)].filter((d) => !entfernt.has(d));
-    expect(bleibt).toEqual(['com.capacitorjs.plugins.pushnotifications.MessagingService']);
+    expect(bleibt).toEqual(['.KonfiMessagingService']);
   });
 
   it('die App hört keine Ereignisse des Firebase-Plugins ab, die nur dessen Dienst liefert', () => {
