@@ -1149,6 +1149,8 @@ iOS-Build 233 · Android versionCode 127
   statt sie als Formatierung zu lesen.
 
 ### Sonstiges
+- Der Anmeldeschlüssel, den die App bei jeder Anfrage mitschickt, enthält
+  Name und E-Mail-Adresse nicht mehr.
 - Ob ein Benutzername schon vergeben ist, lässt sich ohne Anmeldung nur noch
   begrenzt oft abfragen, damit niemand Namenslisten abgleicht. Beim
   Registrieren in einer Gruppe merkt man davon nichts.

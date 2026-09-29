@@ -132,6 +132,25 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
+// TOKEN_INHALT (Audit Sicherheit BF-15, 29.09.2026): Die Zugangs-Tokens
+// trugen Anzeigename und E-Mail im Klartext -- nur base64-kodiert, lesbar
+// fuer jeden, der ein Token sieht (Geraetespeicher, Proxy-Protokolle). Seit
+// dem 29.09.2026 stehen beide nicht mehr darin, an keiner der fuenf Stellen
+// (Anmeldung, Refresh, Gemeindewechsel, Registrierung, neues Paar nach dem
+// Passwortwechsel).
+//
+// VERTRAG GEPRUEFT: Die ausgelieferten Apps (1.5.3, 2.0.0, 2.1.1, 2.2.0,
+// 2.3.0) dekodieren das Token an genau einer Stelle, services/api.ts
+// getTokenExp, und lesen dort nur `exp`. Name und E-Mail kommen aus der
+// Antwort der Anmeldung (`user`) und aus GET /auth/me. Im Backend liest
+// niemand die beiden Claims: rbac.js, die Socket-Anmeldung und die
+// Datei-Routen laden die Person je Anfrage aus der Datenbank und lesen aus
+// dem Token nur id, iat und active_organization_id.
+//
+// BLEIBT im Token: id, type, organization_id, role_name, is_super_admin,
+// active_organization_id, iat, exp -- keine Personendaten, und ob jemand
+// sie liest, ist nicht Gegenstand dieses Befunds.
+
 // Unified auth routes - combines all login functionality
 module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, rbacVerifier) => {
   const { passwordResetLimiter, passwordResetEmailLimiter } = erzeugeResetLimiter(db);
@@ -192,11 +211,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // auf der Kippe und könnte sich selbst aussperren.
       const iatVordatiert = Math.floor(Date.now() / 1000) + 1;
 
+      // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
       const accessToken = jwt.sign({
         id: u.id,
         type: userType,
-        display_name: u.display_name,
-        email: u.email,
         organization_id: u.organization_id,
         role_name: u.role_name,
         is_super_admin: u.is_super_admin || false,
@@ -354,11 +372,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
 
       // JWT Token - Rollen-basiert (keine Permissions mehr)
+      // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
       const token = jwt.sign({
         id: user.id,
         type: userType,
-        display_name: user.display_name,
-        email: user.email,
         organization_id: user.organization_id,
         role_name: user.role_name,
         is_super_admin: user.is_super_admin || false
@@ -815,11 +832,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // Bei Wechsel zur Primaer-Org KEINEN active-Claim setzen (Default-Verhalten).
       const isPrimary = targetOrgId === membership.primary_org_id;
 
+      // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
       const token = jwt.sign({
         id: userId,
         type: userType,
-        display_name: membership.display_name,
-        email: membership.email,
         organization_id: membership.primary_org_id,
         role_name: membership.role_name,
         is_super_admin: membership.is_super_admin || false,
@@ -1307,11 +1323,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         }
 
         // Auto-Login: JWT Token generieren
+        // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
         const token = jwt.sign({
           id: newUser.id,
           type: 'konfi',
-          display_name: display_name,
-          email: email?.trim() || null,
           organization_id: invite.organization_id,
           role_name: 'konfi',
           is_super_admin: false
@@ -1646,11 +1661,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
     const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
 
+    // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
     const newAccessToken = jwt.sign({
       id: user.id,
       type: userType,
-      display_name: user.display_name,
-      email: user.email,
       organization_id: user.organization_id,
       role_name: user.role_name,
       is_super_admin: user.is_super_admin || false,
