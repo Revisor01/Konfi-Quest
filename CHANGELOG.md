@@ -110,15 +110,16 @@ iOS-Build 233 · Android versionCode 127
   Challenges und Chat-Nachrichten — dafür gibt es eigene Listen und Zähler.
 - Auch der freigegebene Jahresrückblick und ein neues Zertifikat stehen im
   Postfach. Antippen des Rückblicks öffnet genau die Ausgabe, um die es geht.
-- Die Zahl am App-Symbol zählt die ungelesenen Mitteilungen im Postfach mit.
-  Vorher fehlten sie dort: Wer 23 ungelesene Mitteilungen, 9 wartende
-  Beiträge und 3 Chat-Nachrichten hatte, sah am Symbol eine 12. Jetzt steht
-  dort 35 — die Summe aller Zahlen, die die App zeigt, Reiter und Glocke.
-  Eine Mitteilung „Events warten auf Verbuchung" ersetzt die vom Vortag,
-  solange die noch ungelesen ist, statt sich täglich zu stapeln. Geräte, auf
-  denen noch eine ältere App ohne Postfach läuft, bekommen die Zahl ohne
-  Postfach und ohne Challenge-Neuigkeiten — dort ließen sie sich nicht
-  abbauen, und die Zahl ginge nie auf null.
+- Die Zahl am App-Symbol ist die Summe der Reiter, bei mehreren Gemeinden
+  der Reiter aller Gemeinden. Ungelesene Mitteilungen im Postfach zählen
+  dort nicht mit, ebenso wenig in den Zahlen am Gemeinde-Umschalter — sie
+  zeigt der blaue Punkt an der Glocke. Ein offener Antrag zählt deshalb
+  einmal, am Reiter, auch wenn „Neuer Antrag eingegangen" noch ungelesen im
+  Postfach liegt. Eine Mitteilung „Events warten auf Verbuchung" ersetzt die
+  vom Vortag, solange die noch ungelesen ist, statt sich täglich zu stapeln.
+  Geräte, auf denen noch eine ältere App ohne Postfach läuft, bekommen die
+  Zahl ohne Challenge-Neuigkeiten — dort ließen sie sich nicht abbauen, und
+  die Zahl ginge nie auf null.
 - Mitteilungen zu einem Event, einer Challenge oder einem Jahrgang
   verschwinden mit, wenn das Event, die Challenge oder der Jahrgang gelöscht
   wird — statt beim Antippen ins Leere zu führen. Die Meldung „Konfi hat sich
@@ -232,9 +233,6 @@ iOS-Build 233 · Android versionCode 127
   Punkt statt mit einer Zahl; eine Zahl an der Glocke steht nur noch für
   Vorgänge, die aus einer Funklücke gesendet werden. Im Postfach trägt jede
   ungelesene Mitteilung denselben Punkt in der Ecke.
-- Die Zahl am App-Symbol und die Zahlen am Gemeinde-Umschalter zählen das
-  Postfach nicht mehr mit — ein offener Antrag zählt dort einmal, auch wenn
-  die Mitteilung dazu noch ungelesen ist.
 - Die Rollen heißen überall „Leitung" und „Org-Leitung" statt „Admin",
   „Hauptamt" oder „Org-Admin" — beim Anlegen und Einladen, in der
   Rollenauswahl, in den Listen, im Chat und im Handbuch. Beide Rollen können
@@ -330,8 +328,8 @@ iOS-Build 233 · Android versionCode 127
   nimmt in der Kopfzeile weniger Platz ein.
 - Die Mitteilungen im Postfach sehen aus wie jede andere Liste der App: Karte
   im Hintergrund, farbiger Rand und Symbol je Bereich — Badges in der
-  Badge-Farbe, Anträge in der Aktivitätenfarbe. Ungelesenes trägt ein
-  „Neu" in der Ecke.
+  Badge-Farbe, Anträge in der Aktivitätenfarbe. Ungelesenes trägt einen
+  blauen Punkt in der Ecke.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 - Große Dateien laufen zuverlässiger durch: Fotos, Sprachaufnahmen und
@@ -665,10 +663,9 @@ iOS-Build 233 · Android versionCode 127
   Event für alle sichtbar war. In einer Gemeinde standen dadurch nur vier von
   zwölf Konfis an den Pflicht-Events. Events ohne Pflicht dürfen weiterhin
   ohne Jahrgang für die ganze Gemeinde gelten.
-- Die Zahl an der Postfach-Glocke nimmt ab, sobald man eine Mitteilung
-  antippt oder alle als gelesen markiert — bei mehreren Gemeinden auch die
-  Zahl am App-Symbol. Bisher blieb sie oft stehen, weil eine ältere Zählung
-  die neue überschrieb.
+- Der Punkt an der Postfach-Glocke geht sofort weg, sobald man die letzte
+  ungelesene Mitteilung antippt oder alle als gelesen markiert. Bisher blieb
+  die Anzeige oft stehen, weil eine ältere Zählung die neue überschrieb.
 - Im Handbuch stehen zwischen den Abschnitten wieder Trennlinien statt drei
   Striche im Text (Badges, Challenges, Chat).
 - Im Dunkelmodus blieben die Anmeldeseiten hell — Anmeldung, Passwort vergessen,
