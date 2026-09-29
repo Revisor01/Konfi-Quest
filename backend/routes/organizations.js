@@ -15,6 +15,7 @@ const { kontenDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = r
 const { nachAntwort } = require('../utils/nachAntwort');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
+const { systemnameFuerNeueGemeinde } = require('../utils/gemeindeSystemname');
 
 // Organizations routes
 // ============================================
@@ -286,45 +287,86 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
   });
 
   // Create new organization (super admin only)
+  //
+  // GANZ ODER GAR NICHT (29.09.2026, Nebenbefund Screens/Leitung BF-15):
+  // Gemeinde, Rollen, erste Gemeindeleitung und alle Vorlagen entstehen in
+  // EINER Transaktion. Bis dahin liefen die rund hundert Einfuegungen einzeln
+  // ueber den Pool; scheiterte eine mittendrin, blieb eine halbe Gemeinde
+  // stehen -- mit belegtem Systemnamen, sodass schon der zweite Versuch an
+  // "Gemeinde-Slug existiert bereits" scheiterte. Das Passwort wird VOR dem
+  // Holen der Verbindung gehasht, damit bcrypt keine Pool-Verbindung belegt.
+  //
+  // DER BENUTZERNAME DER ERSTEN GEMEINDELEITUNG wird systemweit geprueft,
+  // genau wie in POST /users und POST /:id/admins (gleicher Text, 409): Die
+  // Anmeldung sucht per LOWER(username), der Index ist nur
+  // (organization_id, username) und greift in einer neuen Gemeinde nie.
+  //
+  // DER SYSTEMNAME behaelt Umlaute als ae/oe/ue/ss (utils/gemeindeSystemname.js).
   router.post('/', rbacVerifier, requireSuperAdmin, validateCreateOrg, async (req, res) => {
+    const {
+      name, slug, display_name, description, contact_name, contact_email,
+      contact_phone, address, website_url, kirchenkreis, max_konfis, admin_username,
+      admin_password, admin_display_name
+    } = req.body;
+
+    if (!name || !slug || !display_name) {
+      return res.status(400).json({ error: 'Name, Slug und Anzeigename sind erforderlich' });
+    }
+
+    if (!admin_username || !admin_password || !admin_display_name) {
+      return res.status(400).json({ error: 'Admin-Benutzername, Passwort und Anzeigename sind erforderlich' });
+    }
+
+    // max_konfis: nur gueltige Zahl >= 0 oder NULL (unbegrenzt)
+    let konfiLimit = null;
+    if (max_konfis !== null && max_konfis !== undefined && max_konfis !== '') {
+      const parsed = parseInt(max_konfis, 10);
+      if (isNaN(parsed) || parsed < 0) {
+        return res.status(400).json({ error: 'Konfi-Limit muss eine Zahl ab 0 oder leer sein' });
+      }
+      konfiLimit = parsed;
+    }
+
+    // Zeitraum (trial_ends_at) + Trial-Kennzeichnung (is_trial). Explizite Werte
+    // haben Vorrang; fehlen sie, startet eine neue Org als 30-Tage-Testphase.
+    //   trial_ends_at: NULL = unbegrenzt; Datum = Zugang bis dahin (dann Sperre).
+    //   is_trial:      true = Dashboard-Hinweis; false = stiller Lizenz-Ablauf.
+    let trialEndsAt;
+    let isTrial;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'trial_ends_at')) {
+      trialEndsAt = req.body.trial_ends_at || null;
+      isTrial = req.body.is_trial === true;
+    } else {
+      trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      isTrial = true;
+    }
+
+    const systemName = systemnameFuerNeueGemeinde(name, display_name);
+    const systemSlug = systemnameFuerNeueGemeinde(slug, display_name);
+
+    let hashedPassword;
     try {
-      const {
-        name, slug, display_name, description, contact_name, contact_email,
-        contact_phone, address, website_url, kirchenkreis, max_konfis, admin_username,
-        admin_password, admin_display_name
-      } = req.body;
+      hashedPassword = await bcrypt.hash(admin_password, 10);
+    } catch (err) {
+      console.error('Error hashing password in POST /organizations:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
 
-      if (!name || !slug || !display_name) {
-        return res.status(400).json({ error: 'Name, Slug und Anzeigename sind erforderlich' });
-      }
+    const client = await db.getClient();
+    let fruehAntwort = null;
+    let antwort = null;
+    try {
+      await client.query('BEGIN');
 
-      if (!admin_username || !admin_password || !admin_display_name) {
-        return res.status(400).json({ error: 'Admin-Benutzername, Passwort und Anzeigename sind erforderlich' });
-      }
-
-      // max_konfis: nur gueltige Zahl >= 0 oder NULL (unbegrenzt)
-      let konfiLimit = null;
-      if (max_konfis !== null && max_konfis !== undefined && max_konfis !== '') {
-        const parsed = parseInt(max_konfis, 10);
-        if (isNaN(parsed) || parsed < 0) {
-          return res.status(400).json({ error: 'Konfi-Limit muss eine Zahl ab 0 oder leer sein' });
-        }
-        konfiLimit = parsed;
-      }
-
-      // Zeitraum (trial_ends_at) + Trial-Kennzeichnung (is_trial). Explizite Werte
-      // haben Vorrang; fehlen sie, startet eine neue Org als 30-Tage-Testphase.
-      //   trial_ends_at: NULL = unbegrenzt; Datum = Zugang bis dahin (dann Sperre).
-      //   is_trial:      true = Dashboard-Hinweis; false = stiller Lizenz-Ablauf.
-      let trialEndsAt;
-      let isTrial;
-      if (Object.prototype.hasOwnProperty.call(req.body, 'trial_ends_at')) {
-        trialEndsAt = req.body.trial_ends_at || null;
-        isTrial = req.body.is_trial === true;
+      // Benutzername systemweit eindeutig -- wie POST /users und /:id/admins.
+      const { rows: [vorhanden] } = await client.query(
+        'SELECT id FROM users WHERE LOWER(username) = LOWER($1)',
+        [admin_username]
+      );
+      if (vorhanden) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 409, body: { error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' } };
       } else {
-        trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        isTrial = true;
-      }
 
       // 1. Create Organization
       const orgQuery = `INSERT INTO organizations (
@@ -332,8 +374,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         contact_phone, address, website_url, kirchenkreis, max_konfis, trial_ends_at, is_trial
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`;
 
-      const { rows: [newOrg] } = await db.query(orgQuery, [
-        name, slug, display_name, description, contact_name || null, contact_email, contact_phone, address, website_url, kirchenkreis || null, konfiLimit, trialEndsAt, isTrial
+      const { rows: [newOrg] } = await client.query(orgQuery, [
+        systemName, systemSlug, display_name, description, contact_name || null, contact_email, contact_phone, address, website_url, kirchenkreis || null, konfiLimit, trialEndsAt, isTrial
       ]);
       const organizationId = newOrg.id;
         
@@ -355,7 +397,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
                          VALUES ($1, $2, $3, $4, $5) RETURNING id`;
       
       for (const role of defaultRoles) {
-          const { rows: [newRole] } = await db.query(roleQuery, [
+          const { rows: [newRole] } = await client.query(roleQuery, [
               organizationId, role.name, role.display_name, role.description, role.is_system_role
           ]);
           if (role.name === 'org_admin') {
@@ -363,17 +405,15 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
           }
       }
       
-      // 3. Create the admin user for the organization
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(admin_password, saltRounds);
-      
-      const userQuery = `INSERT INTO users (organization_id, role_id, username, email, password_hash, display_name, is_active) 
+      // 3. Create the admin user for the organization (Passwort oben gehasht)
+      const userQuery = `INSERT INTO users (organization_id, role_id, username, email, password_hash, display_name, is_active)
                          VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING id`;
-      const { rows: [newAdmin] } = await db.query(userQuery, [
+      const { rows: [newAdmin] } = await client.query(userQuery, [
         organizationId, orgAdminRoleId, admin_username, contact_email, hashedPassword, admin_display_name
       ]);
       // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
-      await kontoSperreAufheben(db, newAdmin.id);
+      // Mit dem Client: Das Konto ist ausserhalb der Transaktion noch unsichtbar.
+      await kontoSperreAufheben(client, newAdmin.id);
 
       // 4. Create default badges for the organization
       const defaultBadges = [
@@ -437,14 +477,14 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       ) VALUES ($1, $2, $3, $4, $5, $6, true, false, $7, $8)`;
 
       for (const badge of defaultBadges) {
-        await db.query(badgeQuery, [
+        await client.query(badgeQuery, [
           organizationId, badge.name, badge.icon, badge.description,
           badge.criteria_type, badge.criteria_value, newAdmin.id, 'konfi'
         ]);
       }
 
       for (const badge of defaultTeamerBadges) {
-        await db.query(badgeQuery, [
+        await client.query(badgeQuery, [
           organizationId, badge.name, badge.icon, badge.description,
           badge.criteria_type, badge.criteria_value, newAdmin.id, 'teamer'
         ]);
@@ -461,7 +501,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const certQuery = `INSERT INTO certificate_types (name, icon, organization_id)
                          VALUES ($1, $2, $3)`;
       for (const cert of defaultCertificates) {
-        await db.query(certQuery, [cert.name, cert.icon, organizationId]);
+        await client.query(certQuery, [cert.name, cert.icon, organizationId]);
       }
 
       // 6. Create default levels (Startpunkt zum Anpassen — Werte wie Referenz-Org)
@@ -484,7 +524,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const levelQuery = `INSERT INTO levels (organization_id, name, title, points_required, icon, color, is_active, created_by)
                           VALUES ($1, $2, $3, $4, $5, $6, true, $7)`;
       for (const level of defaultLevels) {
-        await db.query(levelQuery, [
+        await client.query(levelQuery, [
           organizationId, level.name, level.title, level.points_required, level.icon, level.color, newAdmin.id
         ]);
       }
@@ -541,7 +581,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const categoryQuery = `INSERT INTO categories (name, description, type, organization_id)
                              VALUES ($1, $2, $3, $4) RETURNING id`;
       for (const cat of defaultCategories) {
-        const { rows: [newCat] } = await db.query(categoryQuery, [cat.name, cat.description, cat.type, organizationId]);
+        const { rows: [newCat] } = await client.query(categoryQuery,[cat.name, cat.description, cat.type, organizationId]);
         categoryIdByKey[cat.key] = newCat.id;
       }
 
@@ -575,20 +615,20 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const activityCategoryQuery = `INSERT INTO activity_categories (activity_id, category_id)
                                      VALUES ($1, $2)`;
       for (const act of defaultActivities) {
-        const { rows: [newAct] } = await db.query(activityQuery, [act.name, act.points, act.type, organizationId]);
+        const { rows: [newAct] } = await client.query(activityQuery, [act.name, act.points, act.type, organizationId]);
         const catId = categoryIdByKey[act.categoryKey];
         if (catId) {
-          await db.query(activityCategoryQuery, [newAct.id, catId]);
+          await client.query(activityCategoryQuery, [newAct.id, catId]);
         }
       }
 
       const teamerActivityQuery = `INSERT INTO activities (name, points, type, target_role, organization_id)
                                    VALUES ($1, 0, NULL, 'teamer', $2) RETURNING id`;
       for (const act of defaultTeamerActivities) {
-        const { rows: [newAct] } = await db.query(teamerActivityQuery, [act.name, organizationId]);
+        const { rows: [newAct] } = await client.query(teamerActivityQuery, [act.name, organizationId]);
         const catId = categoryIdByKey[act.categoryKey];
         if (catId) {
-          await db.query(activityCategoryQuery, [newAct.id, catId]);
+          await client.query(activityCategoryQuery, [newAct.id, catId]);
         }
       }
 
@@ -633,13 +673,15 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW() + INTERVAL '7 days', NOW() + INTERVAL '14 days', true)`;
 
       for (const challenge of defaultChallenges) {
-        await db.query(challengeQuery, [
+        await client.query(challengeQuery, [
           organizationId, challenge.title, challenge.description, challenge.challenge_type,
           challenge.visibility, challenge.moderated, challenge.badge_name, newAdmin.id
         ]);
       }
 
-      res.status(201).json({
+      await client.query('COMMIT');
+
+      antwort = {
         id: organizationId,
         admin_user_id: newAdmin.id,
         // Wie bei den Aktivitaeten: Konfi- und Teamer-Vorlagen zusammen.
@@ -650,21 +692,30 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         default_activities_created: defaultActivities.length + defaultTeamerActivities.length,
         default_challenges_created: defaultChallenges.length,
         message: `Gemeinde erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length + defaultTeamerBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
-      });
-
-      // Live-Update NACH der Response: nur an den ausfuehrenden Super-Admin selbst
-      // (Multi-Device-Sync seiner eigenen Sitzung). Die Organisations-Verwaltung ist
-      // super-admin-only und org-uebergreifend; ein Org-Broadcast passt hier nicht.
-      // Andere Super-Admins sind selten und aktualisieren beim nächsten Seitenaufruf.
-      liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'create');
-
+      };
+      }
     } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
       if (err.code === '23505') { // unique_violation
         return res.status(409).json({ error: 'Gemeinde-Slug existiert bereits' });
       }
- console.error('Error creating organization:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
+      console.error('Error creating organization:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      client.release();
     }
+
+    if (fruehAntwort) {
+      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    }
+
+    res.status(201).json(antwort);
+
+    // Live-Update NACH der Response: nur an den ausfuehrenden Super-Admin selbst
+    // (Multi-Device-Sync seiner eigenen Sitzung). Die Organisations-Verwaltung ist
+    // super-admin-only und org-uebergreifend; ein Org-Broadcast passt hier nicht.
+    // Andere Super-Admins sind selten und aktualisieren beim nächsten Seitenaufruf.
+    liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'create');
   });
 
   // Update organization

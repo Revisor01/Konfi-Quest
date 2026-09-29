@@ -752,6 +752,11 @@ iOS-Build 234 · Android versionCode 128
   angemeldet waren oder auf der Warteliste standen — auch Teamer:innen und
   Leitung, genau wie bei einer Absage. Bisher bekamen nur Konfis die Meldung;
   bei einem Event „Nur Team" erfuhr es niemand.
+- Eine neue Gemeinde entsteht ganz oder gar nicht: Geht beim Anlegen etwas
+  schief, bleibt keine halb angelegte Gemeinde zurück. Der Benutzername der
+  ersten Gemeindeleitung muss im ganzen System frei sein, wie bei jedem
+  anderen Konto, und der Systemname behält Umlaute als ae, oe, ue und ss
+  („buesum" statt „bsum"). Bestehende Gemeinden behalten ihren Namen.
 - Wird ein Pflicht-Event abgesagt, gilt auch eine Konfi als entschuldigt, die
   sich abgemeldet hatte, dann doch kam und schon verbucht war. Bisher blieb
   sie anwesend, und das abgesagte Event zählte bei ihr als besuchtes

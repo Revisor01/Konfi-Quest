@@ -22,10 +22,10 @@ direkt zum Ausfüllen.
 
 | Abschnitt | Feld | Pflicht | Wirkung |
 |---|---|---|---|
-| Gemeinde | Name der Gemeinde | ja | Anzeigename überall in der App. Daraus entsteht der **Systemname** (Kleinbuchstaben, Leerzeichen zu Bindestrichen, alles andere fällt weg — auch Umlaute: aus „Büsum" wird `bsum`). Er muss eindeutig sein, sonst meldet der Server „Gemeinde-Slug existiert bereits". |
+| Gemeinde | Name der Gemeinde | ja | Anzeigename überall in der App. Daraus entsteht der **Systemname** (Kleinbuchstaben, Umlaute als ae/oe/ue/ss, Leerzeichen zu Bindestrichen, alles andere fällt weg: aus „Büsum" wird `buesum`). Er muss eindeutig sein, sonst meldet der Server „Gemeinde-Slug existiert bereits". Gemeinden, die vor dem 29.09.2026 angelegt wurden, behalten ihren Systemnamen ohne Umlaut. |
 | Gemeinde | Beschreibung, Kirchenkreis | nein | nur Anzeige |
 | Kontakt | Ansprechpartner:in, E-Mail, Telefon, Adresse, Website | nein | Die **E-Mail** wird zugleich die E-Mail-Adresse des ersten Gemeindeleitungs-Kontos — dorthin gehen „Passwort vergessen" und der Hinweis 14 Tage vor Ablauf der Laufzeit. |
-| Gemeindeleitung | Name, Login-Benutzername, Passwort | ja | das erste Konto mit der Rolle Gemeindeleitung (`org_admin`). Passwort nach der Richtlinie (8 Zeichen, Groß- und Kleinbuchstabe, Ziffer, Sonderzeichen, keine Leerzeichen); „Sicheres Passwort vorschlagen" erzeugt eines. |
+| Gemeindeleitung | Name, Login-Benutzername, Passwort | ja | das erste Konto mit der Rolle Gemeindeleitung (`org_admin`). Der Benutzername muss im ganzen System frei sein, ohne Unterschied zwischen Groß- und Kleinschreibung; sonst meldet der Server „Benutzername existiert bereits (muss systemweit eindeutig sein)" und legt nichts an. Passwort nach der Richtlinie (8 Zeichen, Groß- und Kleinbuchstabe, Ziffer, Sonderzeichen, keine Leerzeichen); „Sicheres Passwort vorschlagen" erzeugt eines. |
 | Laufzeit | 30 Tage (Testphase), 1 Jahr, Unbegrenzt, eigenes Datum | vorbelegt: 30 Tage | Nach dem Datum ist die Anmeldung für alle außer Super-Admins gesperrt. „Testphase" zeigt den Hinweis „Testphase: noch … Tage" auf den Startseiten; eine Lizenz mit Datum läuft still ab. |
 | Konfi-Limit | Tarif (15, 50, 75, 100, Unbegrenzt) oder eigenes Limit | vorbelegt: leer = unbegrenzt | Ab dem Limit fragt die App die Leitung beim Anlegen, ob trotzdem; bis 5 über dem Limit geht es nach Bestätigung, danach nicht mehr. Selbstregistrierung per Einladungscode läuft bis zu dieser festen Grenze ohne Rückfrage. |
 
@@ -50,10 +50,9 @@ Instanz mit dem Stand dieses Commits):
 | Challenges | 3 Beispiele als **Entwurf**, ohne Jahrgang |
 | Jahrgänge, Konfis, Team, Termine, Chats | keine |
 
-Das Anlegen läuft **nicht** in einer Transaktion: Scheitert ein späterer
-Schritt (etwa beim Anlegen der Badges), bleibt die Gemeinde halb angelegt
-stehen. Dann nicht noch einmal mit demselben Namen anlegen, sondern die halbe
-Gemeinde in der Ansicht löschen und neu beginnen.
+Das Anlegen geschieht ganz oder gar nicht: Scheitert ein Schritt (etwa beim
+Anlegen der Badges), bleibt nichts von der Gemeinde stehen, und derselbe Name
+lässt sich gleich noch einmal verwenden.
 
 ## Was danach passiert
 
