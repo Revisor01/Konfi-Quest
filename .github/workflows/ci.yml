@@ -101,8 +101,9 @@ jobs:
         #   Platte, wie es hier vorher lief   106 s
         #   tmpfs, mit genau dieser Option      46 s
         # Der Grund steht in backend/docker-compose.test.yml: Jedes
-        # TRUNCATE ... RESTART IDENTITY ueber ~45 Tabellen legt neue
-        # Relationsdateien an, und `truncateAll` laeuft 111 Mal. Das sind
+        # TRUNCATE ... RESTART IDENTITY ueber alle Tabellen legt neue
+        # Relationsdateien an, und `truncateAll` laeuft vor fast jeder
+        # Testdatei (mehrere hundert Mal je Lauf). Das sind
         # tausende Schreibvorgaenge, die hier auf die Runner-Platte gingen --
         # bei nur 16 % CPU-Auslastung wartete der Lauf fast nur auf die Platte.
         #
