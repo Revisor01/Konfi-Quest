@@ -1232,6 +1232,10 @@ iOS-Build 234 · Android versionCode 128
   Fehler ab.
 
 ### Sonstiges
+- Die Web-Version gibt beim Öffnen fremder Links nur noch ihre Adresse weiter,
+  nie Einladungscodes oder Passwort-Links, und erlaubt Kamera und Mikrofon
+  nur sich selbst. Eine Schutzregel gegen eingeschleuste Skripte läuft
+  zunächst im Beobachtungsmodus.
 - Ein neues Android-Update erreicht über Google Play zuerst einen Teil der
   Nutzer:innen (10 %) und erst nach Freigabe alle; Testfassungen bleiben
   sofort für alle Testenden verfügbar.
