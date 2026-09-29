@@ -28,6 +28,16 @@ Entrypoint-Skript laeuft mit `set -e`). Der Container endet mit Exit-Code 3,
 und `restart: unless-stopped` startet ihn in eine Endlosschleife. Eine
 kaputte Datei hier heisst also: die neue Instanz kommt gar nicht erst hoch.
 
+**Hier liegen nur die beiden `.sql`-Dateien und diese Beschreibung.** Das
+Entrypoint spielt jede `*.sql` ein und fuehrt jede `*.sh` aus; nur andere
+Endungen ignoriert es. Bis zum 29.09.2026 lag hier das Hilfsskript
+`refresh.sh` — das Entrypoint fuehrte es aus, es fand im Container seine
+Quelle nicht, und die neue Instanz endete beim ersten Start (nachgestellt mit
+`postgres:15-alpine`). Es heisst jetzt
+`backend/tests/schema/init-scripts-spiegeln.sh`; der Waechter
+`backend/tests/schema/initScriptsInhalt.test.js` faellt, sobald hier wieder
+etwas anderes liegt.
+
 ## Warum das Schema ein Produktions-Dump ist
 
 `01-create-schema.sql` ist ein `pg_dump --schema-only` der echten
@@ -69,8 +79,8 @@ Produktion und landet auf demselben Schema.
 Beide Dateien entstehen aus der Produktion und werden gemeinsam erneuert:
 
 ```bash
-bash backend/tests/schema/refresh-schema.sh   # holt Dump + Migrationsstand
-bash init-scripts/refresh.sh                  # spiegelt beides hierher
+bash backend/tests/schema/refresh-schema.sh         # holt Dump + Migrationsstand
+bash backend/tests/schema/init-scripts-spiegeln.sh  # spiegelt beides hierher
 ```
 
 Nie einzeln anfassen: Ein Dump ohne den passenden Migrationsstand laesst den

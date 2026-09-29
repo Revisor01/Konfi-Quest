@@ -3,7 +3,7 @@
 --
 -- ERZEUGT, NICHT VON HAND GEPFLEGT.
 -- Quelle: backend/tests/schema/prod-migrations.txt
--- Erneuern mit: bash init-scripts/refresh.sh
+-- Erneuern mit: bash backend/tests/schema/init-scripts-spiegeln.sh
 --
 -- Das Schema oben enthaelt diese Migrationen bereits. Ohne die Eintraege
 -- hier wuerde backend/database.js sie beim ersten Backend-Start erneut

@@ -4,7 +4,7 @@
 -- ERZEUGT, NICHT VON HAND GEPFLEGT.
 -- Quelle: backend/tests/schema/prod-schema.sql (pg_dump der Produktion),
 -- dieselbe Datei, aus der die Testsuite ihre Datenbank aufbaut.
--- Erneuern mit: bash init-scripts/refresh.sh
+-- Erneuern mit: bash backend/tests/schema/init-scripts-spiegeln.sh
 --
 -- Laeuft NUR beim allerersten Start einer leeren Datenbank
 -- (/docker-entrypoint-initdb.d). Fuer bestehende Datenbanken — also fuer

@@ -7,11 +7,19 @@
 #
 #   bash backend/tests/schema/refresh-schema.sh
 #
-# Aufruf:  bash init-scripts/refresh.sh
+# Aufruf:  bash backend/tests/schema/init-scripts-spiegeln.sh
+#
+# WARUM DIESES SKRIPT NICHT IN init-scripts/ LIEGT (29.09.2026, Audit
+# Datenbank BF-05): Bis dahin lag es dort als init-scripts/refresh.sh.
+# Das Verzeichnis haengt als /docker-entrypoint-initdb.d im Postgres-Dienst,
+# und das Entrypoint des Images FUEHRT jede *.sh-Datei dort aus. Im Container
+# fehlt backend/tests/schema/, das Skript brach mit Exit 1 ab -- und mit ihm
+# der erste Start jeder neuen Instanz. Waechter:
+# backend/tests/schema/initScriptsInhalt.test.js.
 set -euo pipefail
 
-HIER="$(cd "$(dirname "$0")" && pwd)"
-QUELLE="$HIER/../backend/tests/schema"
+QUELLE="$(cd "$(dirname "$0")" && pwd)"
+HIER="$(cd "$QUELLE/../../../init-scripts" && pwd)"
 
 SCHEMA_QUELLE="$QUELLE/prod-schema.sql"
 STAND_QUELLE="$QUELLE/prod-migrations.txt"
@@ -35,7 +43,7 @@ fi
 -- ERZEUGT, NICHT VON HAND GEPFLEGT.
 -- Quelle: backend/tests/schema/prod-schema.sql (pg_dump der Produktion),
 -- dieselbe Datei, aus der die Testsuite ihre Datenbank aufbaut.
--- Erneuern mit: bash init-scripts/refresh.sh
+-- Erneuern mit: bash backend/tests/schema/init-scripts-spiegeln.sh
 --
 -- Laeuft NUR beim allerersten Start einer leeren Datenbank
 -- (/docker-entrypoint-initdb.d). Fuer bestehende Datenbanken — also fuer
@@ -57,7 +65,7 @@ KOPF
 --
 -- ERZEUGT, NICHT VON HAND GEPFLEGT.
 -- Quelle: backend/tests/schema/prod-migrations.txt
--- Erneuern mit: bash init-scripts/refresh.sh
+-- Erneuern mit: bash backend/tests/schema/init-scripts-spiegeln.sh
 --
 -- Das Schema oben enthaelt diese Migrationen bereits. Ohne die Eintraege
 -- hier wuerde backend/database.js sie beim ersten Backend-Start erneut

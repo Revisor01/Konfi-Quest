@@ -1392,6 +1392,9 @@ iOS-Build 234 · Android versionCode 128
   eine Sicherung geprüft wird, wie sie in eine leere Datenbank zurückgespielt
   wird und wie die Rückspielprobe läuft — samt Prüfliste für den Betrieb und
   einem Referenzskript.
+- Eine neu eingerichtete Instanz kommt beim ersten Start wieder hoch: Ein
+  Hilfsskript im Ordner für die Ersteinrichtung der Datenbank wurde dort
+  mit ausgeführt und brach den Start ab.
 - Die Statusabfrage des Servers nennt die App-Version statt einer internen
   Paketnummer, und alle Versionsangaben im Projekt folgen einer einzigen Quelle;
   eine Prüfung schlägt an, sobald eine Stelle abweicht.
