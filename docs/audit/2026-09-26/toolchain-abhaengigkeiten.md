@@ -185,6 +185,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 ### BF-05: Tageslosung hängt an `node-fetch`, das nur über eine optionale, transitive Kette installiert ist
 - **Schwere:** MITTEL
 - **Status:** offen 27.09.2026 — `losungService.js:90` importiert weiter `node-fetch`, `validator` ist weiter nicht deklariert. Für 2.3.x vorgemerkt.
+- **Status:** behoben 29.09.2026 — `losungService.js` nutzt das eingebaute `fetch` der Node-Laufzeit; das Zeitlimit (intern 2 s, öffentlich 5 s) läuft über `AbortSignal.timeout`, weil das eingebaute `fetch` die node-fetch-Option `timeout` still ignoriert. Test `tests/services/losungOhneNodeFetch.test.js` (2 Fälle): `node-fetch` per Resolve-Hook unauffindbar, `fetch` durch eine Attrappe ersetzt (kein Netz) — Abruf gelingt und landet im Cache; ein hängender interner Abruf bricht nach 2 s ab und weicht auf die öffentliche Domain aus. Vor dem Fix fielen beide mit „Cannot find package 'node-fetch'"; Gegenprobe (Signal wieder durch `timeout` ersetzt): der zweite Fall endet am Test-Timeout (10 s). `validator` ist seit dem 29.09. deklariert (BF-10).
 - **Fundstelle:** `backend/services/losungService.js:90` (`const fetch = (await import('node-fetch')).default;`),
   `backend/package.json` (kein Eintrag `node-fetch`), aufgerufen aus `routes/konfi.js:10,1514`
   und `routes/teamer.js:5,1048`

@@ -1299,6 +1299,8 @@ iOS-Build 234 · Android versionCode 128
 - Der Server bricht eine Datenbankabfrage ab, die nicht mehr antwortet, statt
   ihren Platz dauerhaft zu belegen. In der Auslastungsanzeige steht jetzt auch,
   wie viele Anfragen gerade auf eine freie Datenbankverbindung warten.
+- Die Tageslosung hängt nicht mehr an einem Zusatzpaket, das auf dem Server
+  nur zufällig mitinstalliert war; fehlt es einmal, fällt sie nicht aus.
 - Stürzt die App ab, wird das jetzt automatisch gemeldet, damit die Ursache
   gefunden werden kann. Übertragen werden nur technische Angaben und die Rolle
   in grober Einteilung — kein Name, keine Kennung. Was dabei an Google geht,
