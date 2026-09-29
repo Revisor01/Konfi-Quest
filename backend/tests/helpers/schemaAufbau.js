@@ -73,13 +73,15 @@ async function schemaMigrationsTabelle(pool) {
 
 // Alles, was noch nicht in schema_migrations steht, der Reihe nach -- wie
 // utils/migrationslauf.js (dort je Datei in einer Transaktion; ein Fehler
-// bricht hier ab, statt uebersprungen zu werden).
-async function offeneMigrationenAnwenden(pool, { wegBeschreibung = 'diesem Weg' } = {}) {
+// bricht hier ab, statt uebersprungen zu werden). Mit `vor` nur die Dateien,
+// deren Name davor liegt: der Stand, auf den eine neue Migration trifft.
+async function offeneMigrationenAnwenden(pool, { wegBeschreibung = 'diesem Weg', vor = null } = {}) {
   const { rows: applied } = await pool.query('SELECT name FROM schema_migrations');
   const appliedSet = new Set(applied.map(r => r.name));
   const angewandt = [];
   for (const datei of migrationsDateien()) {
     if (appliedSet.has(datei)) continue;
+    if (vor && datei >= vor) break;
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, datei), 'utf8');
     try {
       await pool.query(sql);
@@ -117,13 +119,21 @@ async function nurInitScripts(pool) {
 
 // Baut die Vergleichsdatenbank aus dem Produktions-Dump -- derselbe Weg wie
 // globalSetup.js fuer die regulaere Testsuite.
-async function produktionAufbauen(pool) {
+// Mit `vor` (Dateiname einer Migration) endet der Aufbau davor -- fuer Tests,
+// die eine Migration auf genau dem Stand pruefen, auf den sie beim Deploy
+// trifft.
+async function produktionAufbauen(pool, { vor = null } = {}) {
   await pool.query(fs.readFileSync(PROD_SCHEMA, 'utf8'));
   await schemaMigrationsTabelle(pool);
   for (const name of prodMigrationen()) {
     await pool.query('INSERT INTO schema_migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', [name]);
   }
-  return offeneMigrationenAnwenden(pool, { wegBeschreibung: 'dem Deploy-Weg' });
+  return offeneMigrationenAnwenden(pool, { wegBeschreibung: 'dem Deploy-Weg', vor });
+}
+
+// Liest eine Migrationsdatei (fuer Tests, die sie erneut ausfuehren).
+function migrationLesen(datei) {
+  return fs.readFileSync(path.join(MIGRATIONS_DIR, datei), 'utf8');
 }
 
 module.exports = {
@@ -133,6 +143,7 @@ module.exports = {
   dbAnlegen,
   dbWegraeumen,
   migrationsDateien,
+  migrationLesen,
   prodMigrationen,
   neueInstanzAufbauen,
   nurInitScripts,
