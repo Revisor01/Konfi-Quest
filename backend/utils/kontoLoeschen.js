@@ -20,7 +20,10 @@
 // andere Gemeinde (users.js Fall 1 und 2, organizations.js DELETE
 // /:id/members/:userId) -- dort bleibt das Konto (Simon, 27.09.2026;
 // utils/mitgliedschaftEnde.js). Das Loeschen einer ganzen Gemeinde
-// (organizations.js DELETE /:id) raeumt je Tabelle selbst.
+// (organizations.js DELETE /:id) raeumt die Daten der Gemeinde je Tabelle
+// selbst; die Konten, die nur dort Mitglied sind, loescht es seit dem
+// 29.09.2026 hierueber (kontenDatenLoeschen, alle in einem Durchgang), und
+// Konten mit weiterer Gemeinde ziehen um.
 //
 // DIE REGEL (Entscheidung der Umsetzung vom 28.09.2026, Simon kann sie kippen):
 //   1. Was zur Person gehoert oder was sie als Teilnehmende erzeugt hat,
@@ -213,35 +216,70 @@ async function pruefeLoeschregeln(db) {
  * }>}  null, wenn es das Konto nicht gibt
  */
 async function kontoDatenLoeschen(client, userId) {
-  const id = Number(userId);
+  const { geloescht, ...ergebnis } = await kontenDatenLoeschen(client, [userId]);
+  return geloescht.length === 0 ? null : ergebnis;
+}
 
-  // Zeile sperren: Zwei Loeschwege gleichzeitig (Leitung und Selbstloeschung)
+/**
+ * Wie kontoDatenLoeschen, fuer mehrere Konten in EINEM Durchgang -- dieselbe
+ * Regel, jede Abfrage einmal fuer alle statt einmal je Person.
+ *
+ * Wofuer: Das Loeschen einer ganzen Gemeinde (organizations.js DELETE /:id)
+ * loescht alle Konten, die nur dort Mitglied sind. Einzeln kostete das rund
+ * 70 Abfragen je Konto -- gemessen 29.09.2026 bei 200 Konten 3,9 s statt
+ * 0,2 s ohne die Kontoloeschung.
+ *
+ * Kennungen, zu denen es kein Konto gibt, werden uebergangen.
+ *
+ * @param {import('pg').PoolClient} client  in einer Transaktion
+ * @param {Array<number|string>} userIds
+ * @returns {Promise<{
+ *   geloescht: number[],
+ *   nachgerueckt: Array<{eventId: number, userId: number, seite: 'konfi'|'team', organizationId: number}>,
+ *   dateien: {antragsfotos: string[], challenge: string[], chat: string[]},
+ *   gespraechspartner: Array<{user_id: number, user_type: string}>
+ * }>}  geloescht: die Kennungen der tatsaechlich geloeschten Konten
+ */
+async function kontenDatenLoeschen(client, userIds) {
+  const gewuenscht = [...new Set((userIds || []).map(Number).filter(Number.isInteger))];
+  const leer = {
+    geloescht: [],
+    nachgerueckt: [],
+    dateien: { antragsfotos: [], challenge: [], chat: [] },
+    gespraechspartner: [],
+  };
+  if (gewuenscht.length === 0) return leer;
+
+  // Zeilen sperren: Zwei Loeschwege gleichzeitig (Leitung und Selbstloeschung)
   // sollen nacheinander laufen, nicht ineinander.
-  const { rows: [konto] } = await client.query(
+  const { rows: konten } = await client.query(
     `SELECT u.id, COALESCE(r.name, '') <> 'konfi' AS ist_team
        FROM users u LEFT JOIN roles r ON r.id = u.role_id
-      WHERE u.id = $1
+      WHERE u.id = ANY($1::int[])
+      ORDER BY u.id
       FOR UPDATE OF u`,
-    [id]
+    [gewuenscht]
   );
-  if (!konto) return null;
+  if (konten.length === 0) return leer;
+  const ids = konten.map((k) => Number(k.id));
+  const istTeam = new Map(konten.map((k) => [Number(k.id), k.ist_team]));
 
   // 1. BUCHUNGEN UND NACHRUECKEN (Luecke geschlossen 15.09.2026, fuer alle
   //    Wege seit 28.09.2026 -- DELETE /users/:id rueckte bis dahin nicht
   //    nach). Die frei werdenden Plaetze VOR dem Loeschen einsammeln. Die
   //    Kontingent-Seite folgt der Rolle: Ein Team-Platz geht nie an eine
   //    wartende Konfi.
-  const seite = konto.ist_team ? 'team' : 'konfi';
   const { rows: freiwerdend } = await client.query(
-    `SELECT event_id, timeslot_id, organization_id
+    `SELECT user_id, event_id, timeslot_id, organization_id
        FROM event_bookings
-      WHERE user_id = $1 AND status = 'confirmed'
+      WHERE user_id = ANY($1::int[]) AND status = 'confirmed'
       ORDER BY id`,
-    [id]
+    [ids]
   );
-  await client.query('DELETE FROM event_bookings WHERE user_id = $1', [id]);
+  await client.query('DELETE FROM event_bookings WHERE user_id = ANY($1::int[])', [ids]);
   const nachgerueckt = [];
   for (const platz of freiwerdend) {
+    const seite = istTeam.get(Number(platz.user_id)) ? 'team' : 'konfi';
     const [promoted] = await rueckeNach(client, {
       eventId: platz.event_id,
       timeslotId: seite === 'team' ? null : platz.timeslot_id,
@@ -260,12 +298,12 @@ async function kontoDatenLoeschen(client, userId) {
   // 2. DATEIEN EINSAMMELN, solange die Zeilen noch stehen -- in allen
   //    Gemeinden (vorher je Weg nur in der Stamm-Gemeinde).
   const { rows: antraege } = await client.query(
-    'SELECT id, photo_filename FROM activity_requests WHERE user_id = $1',
-    [id]
+    'SELECT id, photo_filename FROM activity_requests WHERE user_id = ANY($1::int[])',
+    [ids]
   );
   const { rows: beitraege } = await client.query(
-    'SELECT file_path FROM challenge_submissions WHERE user_id = $1 AND file_path IS NOT NULL',
-    [id]
+    'SELECT file_path FROM challenge_submissions WHERE user_id = ANY($1::int[]) AND file_path IS NOT NULL',
+    [ids]
   );
   // Zweiergespraeche der Person: Raum, Teilnehmende (fuer die Chatliste der
   // anderen Seite) und ALLE Dateien darin.
@@ -273,32 +311,34 @@ async function kontoDatenLoeschen(client, userId) {
     `SELECT DISTINCT r.id
        FROM chat_rooms r
        JOIN chat_participants p ON p.room_id = r.id
-      WHERE r.type = 'direct' AND p.user_id = $1`,
-    [id]
+      WHERE r.type = 'direct' AND p.user_id = ANY($1::int[])`,
+    [ids]
   );
   const raumIds = zweierraeume.map((r) => Number(r.id));
   const { rows: partner } = raumIds.length === 0 ? { rows: [] } : await client.query(
     `SELECT DISTINCT user_id, user_type
        FROM chat_participants
-      WHERE room_id = ANY($1::bigint[]) AND user_id <> $2`,
-    [raumIds, id]
+      WHERE room_id = ANY($1::bigint[]) AND user_id <> ALL($2::int[])`,
+    [raumIds, ids]
   );
   const { rows: chatDateien } = await client.query(
     `SELECT DISTINCT file_path
        FROM chat_messages
-      WHERE (user_id = $1 OR room_id = ANY($2::bigint[]))
+      WHERE (user_id = ANY($1::int[]) OR room_id = ANY($2::bigint[]))
         AND file_path IS NOT NULL`,
-    [id, raumIds]
+    [ids, raumIds]
   );
 
   // 3. POSTFACH ANDERER: "Neuer Antrag eingegangen" zu ihren Antraegen und
   //    alle Leitungs-Mitteilungen UEBER die Person (BF-13 / F-07).
   await loescheMitteilungenZuAntraegen(client, antraege.map((a) => a.id));
-  await loescheMitteilungenUeberPerson(client, id);
+  await loescheMitteilungenUeberPerson(client, ids);
 
   // 4. ANMELDESPERRE: Der Zaehler haengt am Benutzernamen (Hash), nicht an
   //    der Kennung -- deshalb vor dem Loeschen der Zeile.
-  await kontoSperreAufheben(client, id);
+  for (const id of ids) {
+    await kontoSperreAufheben(client, id);
+  }
 
   // 5. ZWEIERGESPRAECHE ganz: Nachrichten, Teilnehmende, Lesestaende,
   //    Umfragen und Reaktionen haengen per ON DELETE CASCADE am Raum.
@@ -310,16 +350,17 @@ async function kontoDatenLoeschen(client, userId) {
   for (const [spalte, regel] of Object.entries(LOESCHREGELN)) {
     const [tabelle, feld] = spalte.split('.');
     if (regel === 'nullen') {
-      await client.query(`UPDATE ${tabelle} SET ${feld} = NULL WHERE ${feld} = $1`, [id]);
+      await client.query(`UPDATE ${tabelle} SET ${feld} = NULL WHERE ${feld} = ANY($1::int[])`, [ids]);
     } else {
-      await client.query(`DELETE FROM ${tabelle} WHERE ${feld} = $1`, [id]);
+      await client.query(`DELETE FROM ${tabelle} WHERE ${feld} = ANY($1::int[])`, [ids]);
     }
   }
 
-  // 7. Das Konto selbst.
-  await client.query('DELETE FROM users WHERE id = $1', [id]);
+  // 7. Die Konten selbst.
+  await client.query('DELETE FROM users WHERE id = ANY($1::int[])', [ids]);
 
   return {
+    geloescht: ids,
     nachgerueckt,
     dateien: {
       antragsfotos: antraege.map((a) => a.photo_filename).filter(Boolean),
@@ -419,6 +460,7 @@ module.exports = {
   fremdschluesselAufUsers,
   pruefeLoeschregeln,
   kontoDatenLoeschen,
+  kontenDatenLoeschen,
   kontoDateienLoeschen,
   meldeNachKontoLoeschung,
 };

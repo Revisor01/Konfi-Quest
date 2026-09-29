@@ -10,7 +10,9 @@ const { deletePhotoFile, deleteChallengeFile, deleteChatFile, deleteMaterialFile
 const { syncTeamChat } = require('../utils/teamChat');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const chatSyncCache = require('../utils/chatSyncCache');
-const { gemeindeZugehoerigkeitRaeumen } = require('../utils/mitgliedschaftEnde');
+const { gemeindeZugehoerigkeitRaeumen, inWeitereGemeindeUmziehen } = require('../utils/mitgliedschaftEnde');
+const { kontenDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
+const { nachAntwort } = require('../utils/nachAntwort');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 
@@ -764,11 +766,40 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       // einzige nicht abgeraeumte NO-ACTION-Referenz wuerde sonst die ganze
       // Löschung blockieren (Rollback). Alles läuft in EINER Transaktion.
       //
-      // Hinweis Multi-Org: Gast-Mitgliedschaften FREMDER User in dieser Org
-      // (user_organizations.organization_id = id) werden hier gelöscht; die
-      // Gast-User selbst bleiben (gehören ihrer eigenen Org). Die org-eigenen
-      // User werden gelöscht, ihre Gast-Mitgliedschaften in ANDEREN Orgs
-      // kaskadieren über den users-FK (user_organizations.user_id CASCADE).
+      // DIE KONTEN (29.09.2026, Nebenbefund der Pakete vom 29.09.):
+      //  - Gast-Mitgliedschaften FREMDER Konten in dieser Gemeinde
+      //    (user_organizations.organization_id = id) enden; die Konten bleiben
+      //    in ihrer Stamm-Gemeinde.
+      //  - Hier zuhause, aber AUCH anderswo Mitglied: Das Konto zieht um, wie
+      //    beim Entfernen aus der eigenen Gemeinde (users.js, Fall 2; Simon,
+      //    27.09.2026: "Die andere [...] Organisation muss dann den Account
+      //    behalten."). Gleich zu Beginn, damit die Abfragen unten ueber
+      //    users.organization_id seine Geraete und Anmeldungen nicht treffen.
+      //    Bis zum 29.09.2026 verschwand es ganz -- samt Mitgliedschaft und
+      //    Arbeit in der anderen Gemeinde.
+      //  - NUR hier Mitglied: dieselbe Kontoloeschung wie auf allen anderen
+      //    Wegen (utils/kontoLoeschen.js), ganz am Ende, wenn die Daten der
+      //    Gemeinde schon weg sind. Bis dahin endete hier alles mit
+      //    `DELETE FROM users WHERE organization_id`: Spuren in einer anderen
+      //    Gemeinde (Antrag, angelegter Termin aus einer beendeten
+      //    Mitgliedschaft) liessen das am Fremdschluessel scheitern (500, die
+      //    Gemeinde blieb stehen), und Dateien und Zweiergespraeche dort
+      //    blieben liegen.
+      const { rows: mitWeitererGemeinde } = await client.query(
+        `SELECT u.id
+           FROM users u
+          WHERE u.organization_id = $1
+            AND EXISTS (SELECT 1 FROM user_organizations uo
+                         WHERE uo.user_id = u.id AND uo.organization_id <> $1)
+          ORDER BY u.id
+          FOR UPDATE OF u`,
+        [id]
+      );
+      const umgezogen = [];
+      for (const { id: userId } of mitWeitererGemeinde) {
+        const ziel = await inWeitereGemeindeUmziehen(client, userId, id);
+        if (ziel) umgezogen.push({ userId: Number(userId), organizationId: ziel.organization_id });
+      }
 
       // Chat-Anhaenge VOR den DB-Deletes einsammeln, damit die Dateien nach
       // dem COMMIT vom Datenträger entfernt werden können (DSGVO Art. 17,
@@ -873,10 +904,16 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       await client.query('DELETE FROM invite_codes WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM settings WHERE organization_id = $1', [id]);
 
-      // 10. Konfi-Profile + Users der Org. Gast-Mitgliedschaften dieser User in
-      // ANDEREN Orgs kaskadieren über den users-FK.
+      // 10. Konfi-Profile, dann die Konten, die nur hier Mitglied sind --
+      // jedes mit der gemeinsamen Kontoloeschung (Kopf dieser Route). Ihre
+      // Buchungen in DIESER Gemeinde sind oben schon weg; Nachruecken gibt es
+      // deshalb nur noch in anderen Gemeinden.
       await client.query('DELETE FROM konfi_profiles WHERE organization_id = $1', [id]);
-      await client.query('DELETE FROM users WHERE organization_id = $1', [id]);
+      // Alle in einem Durchgang (kontenDatenLoeschen): einzeln waren es rund
+      // 70 Abfragen je Konto.
+      const { rows: nurHier } = await client.query(
+        'SELECT id FROM users WHERE organization_id = $1 ORDER BY id', [id]);
+      const kontoLoeschung = await kontenDatenLoeschen(client, nurHier.map((k) => k.id));
 
       // 11. Jahrgänge (nach users; user_jahrgang_assignments ist weg)
       await client.query('DELETE FROM jahrgaenge WHERE organization_id = $1', [id]);
@@ -902,8 +939,40 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       for (const m of exMitglieder) {
         invalidateUserCache(m.user_id);
       }
+      // Umgezogene Konten arbeiten ab der naechsten Anfrage in ihrer neuen
+      // Stamm-Gemeinde (Rechte-Cache leer); ihre Sockets sitzen noch in den
+      // Raeumen dieser Gemeinde und verbinden neu -- wie in users.js.
+      // Geloeschte Konten: sofort 401 statt bis zu 30 Sekunden weiter.
+      try {
+        for (const u of umgezogen) {
+          invalidateUserCache(u.userId);
+          chatSyncCache.invalidate(u.organizationId, u.userId);
+          liveUpdate.disconnectUserSockets(u.userId);
+          liveUpdate.sendToOrgAdmins(u.organizationId, 'users', 'update', { userId: u.userId });
+        }
+        for (const userId of kontoLoeschung.geloescht) {
+          invalidateUserCache(userId);
+          liveUpdate.disconnectUserSockets(userId);
+        }
+      } catch (nachErr) {
+        console.error('Org-Delete: Nacharbeit an den Konten fehlgeschlagen:', nachErr.message);
+      }
+      // Dateien der geloeschten Konten aus anderen Gemeinden (wirft nie,
+      // protokolliert ohne Dateinamen), wie auf allen Loeschwegen vor der
+      // Antwort.
+      await kontoDateienLoeschen(kontoLoeschung.dateien);
 
-      res.json({ message: 'Gemeinde und alle zugehörigen Daten erfolgreich gelöscht' });
+      // konten_geloescht/konten_umgezogen (29.09.2026) additiv.
+      res.json({
+        message: 'Gemeinde und alle zugehörigen Daten erfolgreich gelöscht',
+        konten_geloescht: kontoLoeschung.geloescht.length,
+        konten_umgezogen: umgezogen.length,
+      });
+
+      // Nachgerueckte in anderen Gemeinden benachrichtigen, Chatlisten der
+      // Gespraechspartner:innen auffrischen. Wirft nie.
+      nachAntwort(req, () => meldeNachKontoLoeschung(db, kontoLoeschung),
+        'DELETE /organizations/:id (Meldungen nach Kontoloeschung)');
 
       // Dateien nach dem COMMIT entfernen (nicht blockierend — ein fehlendes
       // File darf die bereits erfolgte Löschung nicht scheitern lassen).

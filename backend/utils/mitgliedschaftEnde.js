@@ -64,4 +64,65 @@ async function gemeindeZugehoerigkeitRaeumen(db, userId, organizationId) {
   return { jahrgangIds: jahrgaenge.map((r) => r.id), chatPlaetze, mitteilungen };
 }
 
-module.exports = { gemeindeZugehoerigkeitRaeumen };
+/**
+ * HIER ZUHAUSE, ABER AUCH ANDERSWO MITGLIED: DAS KONTO ZIEHT UM (27.09.2026).
+ *
+ * Simon, 27.09.2026: "Ich muss jemanden, der in mehreren Organisationen ist,
+ * in meiner loeschen koennen und dafuer sorgen, dass er dann nicht mehr in
+ * meiner ist. [...] Die andere Institution oder Organisation muss dann den
+ * Account behalten."
+ *
+ * Die Stamm-Gemeinde des Kontos wird eine der weiteren Gemeinden, mit der
+ * Rolle, die es dort hat. Die Zeile dieser weiteren Gemeinde in
+ * user_organizations geht (sie ist jetzt die Stamm-Gemeinde), ebenso eine
+ * alte Stamm-Zeile der verlassenen Gemeinde (Migration 101 hat jede
+ * Stamm-Gemeinde auch dort eingetragen -- sie ist KEINE weitere
+ * Mitgliedschaft). Jahrgaenge, Chat-Plaetze und Postfach der verlassenen
+ * Gemeinde gehen wie bei jedem Ende einer Mitgliedschaft
+ * (gemeindeZugehoerigkeitRaeumen).
+ *
+ * Welche Gemeinde: zuerst eine aktive, dann die aelteste Mitgliedschaft.
+ *
+ * ZWEI WEGE rufen das: die Leitung entfernt eine hier beheimatete Person
+ * (routes/users.js, DELETE /users/:id Fall 2) und der Super-Admin loescht
+ * die ganze Gemeinde (routes/organizations.js, DELETE /:id) -- dort
+ * verschwand ein solches Konto bis zum 29.09.2026 samt seiner Arbeit in der
+ * anderen Gemeinde.
+ *
+ * In der Transaktion des Aufrufers laufen lassen; der Aufrufer sperrt die
+ * Zeile in users vorher und leert danach Rechte-Cache und Sockets.
+ *
+ * @param {object} client  Client in der Transaktion
+ * @param {number|string} userId
+ * @param {number|string} organizationId  die Gemeinde, die das Konto verlaesst
+ * @returns {Promise<null | {organization_id: number, role_id: number}>}
+ *   die neue Stamm-Gemeinde und Rolle; null, wenn es keine weitere
+ *   Mitgliedschaft gibt -- dann ist nichts geaendert.
+ */
+async function inWeitereGemeindeUmziehen(client, userId, organizationId) {
+  const { rows: [ziel] } = await client.query(
+    `SELECT uo.organization_id, uo.role_id
+       FROM user_organizations uo
+       JOIN organizations o ON o.id = uo.organization_id
+      WHERE uo.user_id = $1 AND uo.organization_id <> $2
+      ORDER BY COALESCE(o.is_active, true) DESC,
+               uo.created_at ASC NULLS LAST,
+               uo.id ASC
+      LIMIT 1`,
+    [userId, organizationId]
+  );
+  if (!ziel) return null;
+
+  await client.query(
+    'UPDATE users SET organization_id = $2, role_id = $3, updated_at = NOW() WHERE id = $1',
+    [userId, ziel.organization_id, ziel.role_id]
+  );
+  await client.query(
+    'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id IN ($2, $3)',
+    [userId, ziel.organization_id, organizationId]
+  );
+  await gemeindeZugehoerigkeitRaeumen(client, userId, organizationId);
+  return { organization_id: Number(ziel.organization_id), role_id: Number(ziel.role_id) };
+}
+
+module.exports = { gemeindeZugehoerigkeitRaeumen, inWeitereGemeindeUmziehen };

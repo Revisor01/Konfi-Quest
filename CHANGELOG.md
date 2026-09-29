@@ -1236,6 +1236,11 @@ iOS-Build 234 · Android versionCode 128
 - Wer in einer weiteren Gemeinde mitarbeitet und dort einen Antrag gestellt
   hat, kann sein Konto wieder selbst löschen; bisher brach das mit einem
   Fehler ab.
+- Wird eine ganze Gemeinde gelöscht, behält, wer auch zu einer anderen
+  Gemeinde gehört, sein Konto und ist ab dann dort zuhause; bisher verschwand
+  es mitsamt der Arbeit in der anderen Gemeinde. Die übrigen Konten gehen
+  vollständig, auch mit ihren Spuren in anderen Gemeinden — bisher konnte das
+  Löschen der Gemeinde daran scheitern.
 
 ### Sonstiges
 - Server, Web-Version und alle automatischen Prüfungen laufen auf derselben

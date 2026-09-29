@@ -1351,10 +1351,32 @@ paths:
     delete:
       tags: ["Organisationen"]
       summary: Organisation vollstaendig löschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)
+      description: |
+        Konten der Gemeinde (users.organization_id = id), 29.09.2026:
+        - auch in einer anderen Gemeinde Mitglied (user_organizations): das Konto zieht um,
+          wie DELETE /api/users/{id} Fall 2 (aktive Gemeinde vor gesperrter, dann die älteste
+          Mitgliedschaft; Rolle von dort). Anmeldungen, Geräte und die Arbeit in der anderen
+          Gemeinde bleiben.
+        - nur hier Mitglied: gemeinsame Kontolöschung wie auf allen Löschwegen
+          (utils/kontoLoeschen.js, für alle Konten in einem Durchgang) — auch Anträge,
+          Dateien, Zweiergespräche und Buchungen in anderen Gemeinden (Nachrücken dort).
+        Behoben 29.09.2026: Vorher `DELETE FROM users WHERE organization_id` — Spuren eines
+        Kontos in einer anderen Gemeinde (Antrag, angelegter Termin) ließen die Löschung am
+        Fremdschlüssel mit 500 scheitern, Dateien und Zweiergespräche dort blieben liegen, und
+        Konten mit weiterer Mitgliedschaft verschwanden ganz.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
-        "200": { description: "Org und alle zugehoerigen Daten geloescht; Gast-User fremder Orgs bleiben" }
+        "200":
+          description: "Org und alle zugehoerigen Daten geloescht; Gast-User fremder Orgs bleiben"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  konten_geloescht: { type: integer, description: "Konten, die nur zu dieser Gemeinde gehörten (additiv, 29.09.2026)" }
+                  konten_umgezogen: { type: integer, description: "Konten, die in eine weitere Gemeinde umgezogen sind (additiv, 29.09.2026)" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
         rollen: [super_admin]

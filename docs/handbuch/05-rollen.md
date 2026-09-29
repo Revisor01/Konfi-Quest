@@ -434,7 +434,7 @@ Gemeinde gehört ([Konfi oder Team, nie beides](#in-mehreren-gemeinden-mitarbeit
 
 ## Ein Konto löschen
 
-Ein Konto verschwindet auf vier Wegen, und auf jedem geschieht dasselbe:
+Ein Konto verschwindet auf fünf Wegen, und auf jedem geschieht dasselbe:
 
 - Die Person löscht es selbst, ganz unten im Profil unter **Account löschen**,
   mit ihrem Passwort.
@@ -448,6 +448,10 @@ Ein Konto verschwindet auf vier Wegen, und auf jedem geschieht dasselbe:
 - 120 Tage nach der Konfirmation löscht die App die Konten ehemaliger Konfis
   von allein (siehe
   [Weiterkommen, wenn gar nichts geht](35-passwoerter.md#weiterkommen-wenn-gar-nichts-geht)).
+- Der Betrieb von Konfi Quest löscht eine ganze Gemeinde. Mit ihr gehen die
+  Konten, die nur zu ihr gehören. Wer zusätzlich zu einer anderen Gemeinde
+  gehört, behält sein Konto und ist ab dann dort zuhause — wie beim
+  [Entfernen aus der Gemeinde](#jemanden-entfernen-der-auch-in-anderen-gemeinden-mitarbeitet).
 
 Die Rückfrage vor dem Löschen nennt knapp, was verschwindet und — bei
 Teamer:innen und Leitung — was der Gemeinde bleibt. Rückgängig machen lässt

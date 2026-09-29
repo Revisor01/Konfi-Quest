@@ -237,16 +237,20 @@ const ARTEN_UEBER_PERSON = [
  * geloescht wird. In der Loesch-Transaktion des Aufrufers laufen lassen.
  *
  * @param {{query: Function}} db  Pool oder Client
- * @param {number|string} userId  die Person, deren Konto geht
+ * @param {number|string|Array<number|string>} userId  die Person, deren Konto
+ *   geht -- oder mehrere (Loeschen einer ganzen Gemeinde, 29.09.2026)
  * @returns {Promise<number>} Anzahl entfernter Mitteilungen
  */
 async function loescheMitteilungenUeberPerson(db, userId) {
-  if (userId === null || userId === undefined || String(userId) === '') return 0;
+  const ids = (Array.isArray(userId) ? userId : [userId])
+    .filter((id) => id !== null && id !== undefined && String(id) !== '')
+    .map(String);
+  if (ids.length === 0) return 0;
   const { rowCount } = await db.query(
     `DELETE FROM notifications
       WHERE type = ANY($1::text[])
-        AND (data->>'konfi_id' = $2::text OR data->>'user_id' = $2::text)`,
-    [ARTEN_UEBER_PERSON, String(userId)]
+        AND (data->>'konfi_id' = ANY($2::text[]) OR data->>'user_id' = ANY($2::text[]))`,
+    [ARTEN_UEBER_PERSON, ids]
   );
   return rowCount;
 }
