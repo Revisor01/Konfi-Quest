@@ -1397,6 +1397,13 @@ paths:
         Kontos in einer anderen Gemeinde (Antrag, angelegter Termin) ließen die Löschung am
         Fremdschlüssel mit 500 scheitern, Dateien und Zweiergespräche dort blieben liegen, und
         Konten mit weiterer Mitgliedschaft verschwanden ganz.
+
+        Behoben 29.09.2026 (Nebenbefund Paket E): Die eigene Stamm-Gemeinde
+        (users.organization_id des Aufrufers, nicht die aktive) lässt sich nicht löschen,
+        solange das Konto nirgends sonst Mitglied ist — 409, nichts wird gelöscht. Vorher
+        löschte der Super-Admin dabei sein eigenes Konto mit und sperrte sich aus. Mit einer
+        weiteren Mitgliedschaft bleibt es erlaubt: Das Konto zieht um und behält
+        is_super_admin. Eine andere Person mit Super-Admin-Recht darf die Gemeinde löschen.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
@@ -1411,6 +1418,7 @@ paths:
                   konten_geloescht: { type: integer, description: "Konten, die nur zu dieser Gemeinde gehörten (additiv, 29.09.2026)" }
                   konten_umgezogen: { type: integer, description: "Konten, die in eine weitere Gemeinde umgezogen sind (additiv, 29.09.2026)" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: "Eigene Stamm-Gemeinde, Konto nirgends sonst Mitglied (seit 29.09.2026): \"Deine eigene Gemeinde kannst du nicht löschen: Dein Konto ist nur dort Mitglied und würde mitgelöscht. Lass die Löschung von einer anderen Person mit Super-Admin-Recht ausführen.\"" }
       x-berechtigung:
         rollen: [super_admin]
         middleware: [verifyTokenRBAC, requireSuperAdmin, validateOrgId]

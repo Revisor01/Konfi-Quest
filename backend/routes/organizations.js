@@ -810,6 +810,31 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         return res.status(404).json({ error: 'Gemeinde nicht gefunden' });
       }
 
+      // NICHT DIE EIGENE GEMEINDE, WENN DAS KONTO NUR DORT MITGLIED IST
+      // (29.09.2026, Nebenbefund Paket E). Die Kontoloeschung unten nimmt
+      // jedes Konto mit, das nur hier Mitglied ist -- auch das des
+      // ausfuehrenden Super-Admins. Er loeschte sich damit selbst und war
+      // ausgesperrt; als einziger Super-Admin konnte danach niemand mehr
+      // Gemeinden verwalten. Gezaehlt wird die STAMM-Gemeinde aus der
+      // Datenbank (users.organization_id), nicht die gerade aktive
+      // (req.user.organization_id nach switch-org). Mit einer weiteren
+      // Mitgliedschaft zieht das Konto um (inWeitereGemeindeUmziehen) und
+      // behaelt is_super_admin -- das bleibt erlaubt.
+      const { rows: [selbst] } = await client.query(
+        `SELECT u.organization_id,
+                EXISTS (SELECT 1 FROM user_organizations uo
+                         WHERE uo.user_id = u.id AND uo.organization_id <> u.organization_id) AS anderswo
+           FROM users u WHERE u.id = $1`,
+        [req.user.id]
+      );
+      if (selbst && Number(selbst.organization_id) === Number(id) && !selbst.anderswo) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({
+          error: 'Deine eigene Gemeinde kannst du nicht löschen: Dein Konto ist nur dort Mitglied und würde mitgelöscht. ' +
+            'Lass die Löschung von einer anderen Person mit Super-Admin-Recht ausführen.'
+        });
+      }
+
       // VOLLSTAENDIGE LOESCHUNG aller Org-Daten in abhaengigkeitssicherer
       // Reihenfolge (Blaetter -> Wurzel). Reihenfolge ist bewusst explizit statt
       // sich auf FK-CASCADE zu verlassen, da viele FKs NO ACTION sind (created_by,

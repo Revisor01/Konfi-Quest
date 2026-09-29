@@ -757,6 +757,9 @@ iOS-Build 234 · Android versionCode 128
   ersten Gemeindeleitung muss im ganzen System frei sein, wie bei jedem
   anderen Konto, und der Systemname behält Umlaute als ae, oe, ue und ss
   („buesum" statt „bsum"). Bestehende Gemeinden behalten ihren Namen.
+- Ein Konto mit Super-Admin-Recht kann die eigene Gemeinde nicht mehr löschen,
+  wenn es nur dort Mitglied ist — es hätte sich dabei selbst mitgelöscht und
+  ausgesperrt. Die Meldung sagt, wer es stattdessen tun kann.
 - Wird ein Pflicht-Event abgesagt, gilt auch eine Konfi als entschuldigt, die
   sich abgemeldet hatte, dann doch kam und schon verbucht war. Bisher blieb
   sie anwesend, und das abgesagte Event zählte bei ihr als besuchtes
