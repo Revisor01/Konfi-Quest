@@ -487,9 +487,11 @@ An einer Challenge stehen zwei Zeichen:
   Öffnest du die Challenge, fallen die neuen Beiträge aus der Zahl heraus;
   was danach kommt, zählt neu. Die wartenden bleiben darin, bis ihr freigebt
   oder ausblendet. Vorleseprogramme nennen beide Anteile einzeln.
-- **Das orange Feld mit Zahl und Uhr** oben rechts zeigt, wie viele der
-  Beiträge auf eure Freigabe warten. Es bleibt stehen, bis ihr freigebt oder
-  ausblendet; Öffnen allein ändert daran nichts.
+- **Das orange Feld mit Uhr** oben rechts zeigt, dass Beiträge auf eure
+  Freigabe warten — wie viele, zählt die rote Zahl am Symbol mit. Es bleibt
+  stehen, bis ihr alle freigebt oder ausblendet; Öffnen allein ändert daran
+  nichts. Wer mit dem Finger darauf bleibt oder eine Vorlesehilfe nutzt,
+  bekommt die Zahl im ganzen Satz („2 Beiträge warten auf Freigabe").
 
 Ein Beitrag zählt nie doppelt: Solange er auf Freigabe wartet, zählt er als
 wartend, nicht als neu. Gibt ihn jemand anderes frei, bevor du ihn gesehen

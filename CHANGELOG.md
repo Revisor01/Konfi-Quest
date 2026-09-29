@@ -138,9 +138,9 @@ iOS-Build 233 · Android versionCode 127
   löscht die Leitung ein Badge, verschwinden die Mitteilungen dazu — bei
   dir und bei der Leitung. Entscheidungen („verbucht", „abgelehnt") bleiben
   als Verlauf stehen.
-- Die Zahl mit Uhr an der einzelnen Challenge, die Leitung und Team offene
-  Freigaben anzeigt, geht jetzt sofort mit — auch ohne Neuladen der Liste und
-  immer im Gleichklang mit der Zahl am Reiter.
+- Das orange Feld mit Uhr an der einzelnen Challenge, das Leitung und Team
+  offene Freigaben anzeigt, geht jetzt sofort mit — auch ohne Neuladen der
+  Liste und immer im Gleichklang mit der Zahl am Reiter.
 - Konfis sehen jetzt, wo es bei den Challenges etwas Neues gibt — wie im Chat:
   eine rote Zahl am Reiter, am App-Symbol und an der einzelnen Challenge. Sie
   zählt, was seit dem letzten Öffnen dazukam: eine neue Challenge, neue
@@ -217,7 +217,8 @@ iOS-Build 233 · Android versionCode 127
   Änderungen weiter sofort, ein gelöschtes Badge verschwindet bei ihnen.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
-  die Zahl am Reiter; das orange Feld mit Uhr bleibt zusätzlich stehen.
+  die Zahl am Reiter. Das orange Feld mit Uhr bleibt zusätzlich stehen und
+  trägt keine Zahl mehr; es sagt nur, dass etwas auf Freigabe wartet.
 - Ungelesene Mitteilungen zeigt die Glocke in jeder Rolle mit einem blauen
   Briefumschlag statt mit einer Zahl; eine Zahl an der Glocke steht nur noch
   für Vorgänge, die aus einer Funklücke gesendet werden.

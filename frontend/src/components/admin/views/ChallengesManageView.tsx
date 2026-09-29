@@ -77,8 +77,9 @@ interface ChallengesManageViewProps {
   ohneJahrgang?: boolean;
   /**
    * Offene Freigaben je Challenge-ID (BadgeContext.pendingChallengesByChallenge):
-   * speist das orange Eck-Badge (Zahl + Uhr) am Eintrag UND zaehlt in der
-   * roten Kugel am Symbol mit (Simon, 28.09.2026, Messung am Geraet: "Ich
+   * speist das orange Eck-Badge (Uhr, seit 29.09.2026 ohne Zahl) am Eintrag
+   * UND zaehlt in der roten Kugel am Symbol mit (Simon, 28.09.2026, Messung
+   * am Geraet: "Ich
    * erwarte auch einen roten Kreis auf dem Listen Element" -- der Reiter
    * zeigte eine rote 1, der Eintrag keine). Das hebt die Entscheidung vom
    * 25.09.2026 ("fuer Freigaben ja [orange], sonst nur der rote Badge")
@@ -319,25 +320,27 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   }}
                 >
                   <div className="app-corner-badges">
-                    {/* Offene Freigaben: Zahl plus Uhr statt "{n} offen"
-                        (Nutzerentscheid 24.08.2026) -- was gemeint ist, sagen
-                        title/aria-label in ganzen Worten. Dieselben Freigaben
-                        zaehlen seit 28.09.2026 zusaetzlich in der roten
-                        Kugel am Symbol (Simon: "Etwas Wartendes bekommt auch
-                        ein Badge fuer den Admin. Ich muss das doch sehen.");
-                        das orange Feld bleibt stehen und sagt, WAS wartet.
-                        Die Entscheidung vom 25.09.2026 (Freigaben nur orange)
-                        ist damit aufgehoben. */}
+                    {/* Offene Freigaben: das orange Feld mit Uhr, OHNE Zahl
+                        (Simon, TestFlight 233, 29.09.2026: "kann das Symbol
+                        bei Freigabe warten, bei Challenges ohne Zahl
+                        ausgeliefert werden. Das reicht dann. Das Corner
+                        Badge."). Die Zahl steht schon in der roten Kugel am
+                        Symbol (seit 28.09.2026 wartende Freigaben PLUS neue
+                        Beitraege) und in der orangen Zahl am Umschalter; das
+                        Feld sagt nur noch, WAS wartet -- wie das Uhr-Badge an
+                        einem wartenden Beitrag in der Challenge selbst
+                        (ChallengeLeitungModal). Wie viele es sind, sagen
+                        title/aria-label weiter in ganzen Worten. Bis dahin
+                        Zahl plus Uhr (Nutzerentscheid 24.08.2026). */}
                     {pending > 0 && (
                       <>
                         <div
                           className="app-corner-badge"
-                          style={{ backgroundColor: 'var(--app-color-warning)', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)' }}
+                          style={{ backgroundColor: 'var(--app-color-warning)', padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
                           title={wartenAufFreigabe(pending)}
                           role="img"
                           aria-label={wartenAufFreigabe(pending)}
                         >
-                          {pending}
                           <IonIcon icon={ICON_UHRZEIT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
                         </div>
                         <div className="app-corner-badges__separator" />
@@ -407,9 +410,12 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                           className="app-list-item__title"
                           style={{
                             color: isArchived ? 'var(--app-text-muted)' : undefined,
-                            // Das Zähler-Badge ist seit dem Umbau auf Zahl+Uhr
-                            // schmaler als das alte "{n} offen".
-                            paddingRight: pending > 0 ? 'var(--app-freiraum-aktion-xxl-plus)' : 'var(--app-freiraum-aktion-xl)'
+                            // Seit das Freigaben-Feld nur noch die Uhr traegt
+                            // (29.09.2026), sind alle Eck-Badges gleich breit:
+                            // hoechstens drei (Freigabe, Eingereicht, Status),
+                            // zusammen rund 81 px -- 80 px Freiraum plus 16 px
+                            // Innenabstand der Karte halten den Titel frei.
+                            paddingRight: 'var(--app-freiraum-aktion-xl)'
                           }}
                         >
                           {challenge.title}

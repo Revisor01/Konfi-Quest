@@ -2,11 +2,16 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render } from '@testing-library/react';
 import ChallengesManageView from '../../../components/admin/views/ChallengesManageView';
+import { ICON_UHRZEIT } from '../../../components/shared/icons';
 import type { AdminChallenge } from '../../../types/challenges';
 
 // Freigaben-Badge am einzelnen Challenge-Eintrag der Leitung: das orange
-// Eck-Badge (Zahl + Uhr). Simon, 25.09.2026: "Das corner badge darf bleiben,
-// das verweist ja auch auf Freigaben." Seit 28.09.2026 zaehlen dieselben
+// Eck-Badge mit Uhr. Simon, 25.09.2026: "Das corner badge darf bleiben,
+// das verweist ja auch auf Freigaben." Seit 29.09.2026 OHNE Zahl (Simon,
+// TestFlight 233: "kann das Symbol bei Freigabe warten, bei Challenges ohne
+// Zahl ausgeliefert werden. Das reicht dann. Das Corner Badge.") -- die
+// Zahl steht in der roten Kugel und am Umschalter; wie viele warten, sagt
+// der Vorlesetext weiter in ganzen Worten. Seit 28.09.2026 zaehlen dieselben
 // Freigaben ZUSAETZLICH in der roten Kugel am Symbol (Simon: "Ich erwarte
 // auch einen roten Kreis auf dem Listen Element"; roteKugelMitFreigaben.test.tsx).
 // Die Zahl kommt je Challenge-ID aus dem BadgeContext
@@ -17,6 +22,11 @@ import type { AdminChallenge } from '../../../types/challenges';
 // ChallengesManageView liest useApp nur fuer die Loeschen-Berechtigung.
 vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: { id: 4, type: 'admin' } }),
+}));
+
+vi.mock('@ionic/react', async (original) => ({
+  ...(await original<typeof import('@ionic/react')>()),
+  IonIcon: (props: { icon?: string }) => <span data-testid="icon" data-icon={props.icon} />,
 }));
 
 const vorEinerWoche = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
@@ -49,7 +59,7 @@ const renderListe = (offeneFreigaben?: Record<number, number>) =>
     />
   );
 
-/** Die orange Eck-Badge-Farbe, an der sich die Legende ("Zahl mit Uhr") orientiert. */
+/** Die orange Eck-Badge-Farbe, an der sich die Legende ("Uhr") orientiert. */
 const ORANGE = 'var(--app-color-warning)';
 
 describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
@@ -57,22 +67,31 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     const { getByLabelText, queryAllByLabelText } = renderListe({ 31: 1 });
 
     const badge = getByLabelText('1 Beitrag wartet auf Freigabe');
-    expect(badge.textContent).toBe('1');
     expect(badge.className).toBe('app-corner-badge');
     expect(badge.style.backgroundColor).toBe(ORANGE);
+    expect(badge.getAttribute('role')).toBe('img');
+    expect(badge.getAttribute('title')).toBe('1 Beitrag wartet auf Freigabe');
     // Challenge 40 traegt kein Badge -- insgesamt genau ein oranges Feld im
     // Baum (die rote Kugel nennt die Freigabe ebenfalls, sitzt aber am Symbol).
     expect(queryAllByLabelText(/Freigabe$/).filter((el) => el.classList.contains('app-corner-badge'))).toHaveLength(1);
   });
 
-  it('mehrere Beitraege: Mehrzahl im Text, Zahl im Badge', () => {
-    const { getByLabelText } = renderListe({ 40: 2 });
-    expect(getByLabelText('2 Beiträge warten auf Freigabe').textContent).toBe('2');
+  it('traegt nur die Uhr, keine Zahl -- bei einem wie bei zwoelf Beitraegen', () => {
+    for (const n of [1, 2, 12]) {
+      const { getByLabelText, unmount } = renderListe({ 40: n });
+      const badge = getByLabelText(n === 1 ? '1 Beitrag wartet auf Freigabe' : `${n} Beiträge warten auf Freigabe`);
+      expect(badge.textContent).toBe('');
+      const symbole = badge.querySelectorAll('[data-testid="icon"]');
+      expect(symbole).toHaveLength(1);
+      expect(symbole[0].getAttribute('data-icon')).toBe(ICON_UHRZEIT);
+      unmount();
+    }
   });
 
-  it('zeigt auch ab zehn die volle Zahl -- anders als die Kugel am Reiter', () => {
-    const { getByLabelText } = renderListe({ 40: 12 });
-    expect(getByLabelText('12 Beiträge warten auf Freigabe').textContent).toBe('12');
+  it('so breit wie die anderen Symbol-Badges der Leiste (Innenabstand mini/kompakt)', () => {
+    const { getByLabelText } = renderListe({ 31: 1 });
+    expect(getByLabelText('1 Beitrag wartet auf Freigabe').style.padding)
+      .toBe('var(--app-abstand-mini) var(--app-abstand-kompakt)');
   });
 
   it('sitzt in der Eck-Badge-Leiste -- und zaehlt zusaetzlich in der roten Kugel am Symbol', () => {
@@ -87,11 +106,13 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     expect(kugeln[0].getAttribute('aria-label')).toBe('3 offen: 3 Beiträge warten auf Freigabe');
   });
 
-  it('haelt den Titel vom Badge frei: breiterer Freiraum nur mit offenen Freigaben', () => {
+  it('haelt den Titel vom Badge frei: mit und ohne Freigaben derselbe Freiraum', () => {
+    // Das Feld ist ohne Zahl so breit wie jedes andere Symbol-Badge; drei
+    // davon (Freigabe, Eingereicht, Status) passen in xl plus Kartenrand.
     const mit = renderListe({ 31: 1 });
     const titelMit = mit.getByText('Zeig uns deinen Lieblingsplatz') as HTMLElement;
     const titelOhne = mit.getByText('Text-Challenge') as HTMLElement;
-    expect(titelMit.style.paddingRight).toBe('var(--app-freiraum-aktion-xxl-plus)');
+    expect(titelMit.style.paddingRight).toBe('var(--app-freiraum-aktion-xl)');
     expect(titelOhne.style.paddingRight).toBe('var(--app-freiraum-aktion-xl)');
   });
 

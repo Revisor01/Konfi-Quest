@@ -56,8 +56,8 @@ Du arbeitest hier wie die Leitung, begrenzt auf deine zugewiesenen Jahrgänge:
 Beitrags — bleibt der [Leitung](80-challenges.md#eine-challenge-loeschen)
 vorbehalten. Eine rote Zahl am Symbol einer Challenge zeigt, was seit deinem
 letzten Öffnen neu ist — neue Beiträge und, wo du mitmachst, die gestartete
-Challenge selbst —, ein oranges Feld mit Zahl und Uhr die Beiträge, die auf
-deine Freigabe warten — siehe
+Challenge selbst —, ein oranges Feld mit Uhr, dass Beiträge auf deine
+Freigabe warten; sie zählen in der roten Zahl mit — siehe
 [Neue Beiträge und offene Freigaben erkennen](80-challenges.md#neue-beitraege-und-offene-freigaben-erkennen).
 
 Es gibt auch Challenges nur fürs Team; die sehen Konfis gar nicht. Was nach dem

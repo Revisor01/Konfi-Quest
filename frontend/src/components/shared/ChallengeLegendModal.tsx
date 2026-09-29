@@ -64,13 +64,15 @@ const STATUS_ENTRIES: LegendEntry[] = [
   },
 ];
 
-// Oranges Zähler-Badge in der Liste (pending_count) — Zahl plus Uhr,
-// ohne Wort (Nutzerentscheid 24.08.2026).
+// Oranges Eck-Badge in der Liste: nur die Uhr, ohne Zahl (Simon,
+// TestFlight 233, 29.09.2026: "Das reicht dann. Das Corner Badge."). Bis
+// dahin Zahl plus Uhr (Nutzerentscheid 24.08.2026); wie viele warten, sagt
+// jetzt die rote Zahl am Symbol.
 const COUNTER_ENTRY: LegendEntry = {
   color: 'var(--app-color-warning)',
   icon: ICON_UHRZEIT,
-  label: 'Zahl mit Uhr',
-  description: 'So viele Beiträge warten noch auf Freigabe. Sie zählen auch in der roten Zahl am Symbol mit.',
+  label: 'Oranges Feld mit Uhr',
+  description: 'An dieser Challenge warten Beiträge auf Freigabe. Wie viele, zählt die rote Zahl am Symbol mit.',
 };
 
 // Rote Kugel am Symbol (27.09.2026, Simon: "Die Challenges sollen sich

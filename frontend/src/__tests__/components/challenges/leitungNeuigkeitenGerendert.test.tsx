@@ -61,8 +61,11 @@ describe('Leitungsliste: neue Beitraege als rote Kugel', () => {
     expect(kugeln.map((k) => k.textContent)).toEqual(['2', '1']);
     expect(kugeln[0].closest('.app-list-item')?.textContent).toContain('Ohne Freigabe');
     expect(kugeln[1].closest('.app-list-item')?.textContent).toContain('Mit Freigabe');
+    // Das orange Feld traegt seit 29.09.2026 nur die Uhr; die Zahl nennt
+    // der Vorlesetext.
     const freigabe = container.querySelector('.app-corner-badge[aria-label*="Freigabe"]');
-    expect(freigabe?.textContent).toBe('1');
+    expect(freigabe?.getAttribute('aria-label')).toBe('1 Beitrag wartet auf Freigabe');
+    expect(freigabe?.textContent).toBe('');
     expect(freigabe?.closest('.app-list-item')?.textContent).toContain('Mit Freigabe');
   });
 
