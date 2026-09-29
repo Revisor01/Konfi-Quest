@@ -169,9 +169,12 @@ auch vom Gerät. Mehr dazu unter
   Punkte und Badges und unter **„Events der Konfi-Zeit“** die Events, bei
   denen du dabei oder angemeldet warst, mit den Punkten dafür. Diese Liste
   hält die App bei deiner Beförderung fest; sie bleibt, auch wenn dein alter
-  Jahrgang gelöscht wird. Hier steht nur deine Konfi-Zeit; deine
-  Teamer-Badges stehen unter **Badges** — in jeder Gemeinde die Badges
-  dieser Gemeinde ([je Gemeinde](60-badges.md#verstehen-was-bei-teamer-badges-anders-zaehlt)).
+  Jahrgang gelöscht wird. Deine Konfi-Badges stehen dort so, wie du sie
+  verdient hast — auch wenn die Leitung ein Badge später ändert oder löscht
+  ([Konfi-Badges im Team behalten](60-badges.md#konfi-badges-im-team-behalten)).
+  Hier steht nur deine Konfi-Zeit; deine Teamer-Badges stehen unter
+  **Badges** — in jeder Gemeinde die Badges dieser Gemeinde
+  ([je Gemeinde](60-badges.md#verstehen-was-bei-teamer-badges-anders-zaehlt)).
 - **Meine Rückblicke** — deine [Jahresrückblicke](95-wrapped.md) als Teamer:in
 
 Wie du dich in der App bewegst, steht im Kapitel

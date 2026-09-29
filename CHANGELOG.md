@@ -205,6 +205,10 @@ iOS-Build 233 · Android versionCode 127
 - Material, das nur zu einem gelöschten Jahrgang gehörte, bleibt erhalten und
   gilt danach ausdrücklich für das ganze Team, mit Globus in der Liste; die
   Rückfrage vor dem Löschen nennt, wie viel Material das betrifft.
+- Wer als Konfi ins Team befördert wurde, behält in der Konfi-Historie seine
+  Konfi-Badges so, wie er sie verdient hat — auch wenn die Leitung ein Badge
+  später löscht, umbenennt oder den Zielwert ändert. Aktuelle Konfis sehen
+  Änderungen weiter sofort, ein gelöschtes Badge verschwindet bei ihnen.
 - In der Challenge-Liste von Leitung und Team zählt die rote Zahl am Symbol
   auch die Beiträge, die auf Freigabe warten — zusammen ergeben die Einträge
   die Zahl am Reiter; das orange Feld mit Uhr bleibt zusätzlich stehen.

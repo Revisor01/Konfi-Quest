@@ -23,7 +23,7 @@ export interface KonfiZeitTermin {
 export interface KonfiZeit {
   version?: number;
   jahrgang_name: string | null;
-  anlass: 'befoerderung' | 'jahrgang_geloescht';
+  anlass: 'befoerderung' | 'jahrgang_geloescht' | 'abzeichen_geloescht' | 'abzeichen_geaendert';
   erstellt_am: string | null;
   punkte?: { gottesdienst: number; gemeinde: number; gesamt: number };
   termine: KonfiZeitTermin[];

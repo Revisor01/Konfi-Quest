@@ -256,6 +256,20 @@ paths:
     put:
       tags: ["Abzeichen"]
       summary: Abzeichen bearbeiten
+      description: >
+        KONFI-BADGES BEFOERDERTER BLEIBEN IM ORIGINAL (28.09.2026, Simon:
+        "Geloeschte Badges muessen bei befoerdertem erhalten bleiben. Auch
+        wenn wir die zb aendern."). Vor dem UPDATE bekommt in derselben
+        Transaktion jede Person, die dieses Konfi-Abzeichen traegt, ein
+        Konfi-Profil in dieser Organisation hat, dort nicht mehr die Rolle
+        konfi traegt und noch keine Kopie der Konfi-Zeit hat, eine Kopie
+        (konfi_historie, anlass 'abzeichen_geaendert', Migration 172;
+        utils/konfiHistorie.js sichereKonfiZeitVorAbzeichenAenderung).
+        GET /api/teamer/profile liest konfi_data.badges bei vorhandener
+        Kopie aus ihr — Befoerderte sehen Name, Symbol, Beschreibung,
+        Kriterium und Zielwert von damals. Aktuelle Konfis sehen die
+        Aenderung sofort. Teamer-Abzeichen loesen keine Kopie aus.
+        Antwortform unveraendert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Abzeichens" }
       requestBody:
@@ -302,6 +316,16 @@ paths:
         25.09.2026 gehen auch die Postfach-Mitteilungen "Neues Badge erhalten"
         zu diesem Abzeichen mit (data.badge_id; utils/postfachAufraeumen.js) —
         bei 404 rollt alles zurueck, auch das.
+        KONFI-BADGES BEFOERDERTER BLEIBEN (28.09.2026, Simon: "Geloeschte
+        Badges muessen bei befoerdertem erhalten bleiben."): Vor dem
+        Loeschen bekommt in derselben Transaktion jede Person, die dieses
+        Konfi-Abzeichen traegt, ein Konfi-Profil in dieser Organisation hat,
+        dort nicht mehr die Rolle konfi traegt (users.role_id bzw.
+        user_organizations.role_id) und noch keine Kopie der Konfi-Zeit hat,
+        eine Kopie (konfi_historie, anlass 'abzeichen_geloescht',
+        Migration 172). GET /api/teamer/profile zeigt ihre Konfi-Badges
+        danach aus der Kopie — das geloeschte Abzeichen bleibt dort stehen.
+        Aktuelle Konfis verlieren es wie bisher. Antwortform unveraendert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Abzeichens" }
       responses:
@@ -319,7 +343,12 @@ paths:
           organization_id. Greift die zweite Löschung nicht (fremde Org),
           wird die Transaktion zurueckgerollt — die vergebenen Exemplare
           bleiben also erhalten.
-        hinweis: "Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien"
+        hinweis: >
+          Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne
+          Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder
+          Kategorien. TEILWEISE BEHOBEN 28.09.2026: Befoerderte (nicht mehr
+          konfi) behalten ihre Konfi-Abzeichen ueber die Kopie der
+          Konfi-Zeit; aktuelle Konfis verlieren sie weiterhin (gewollt).
 
   /api/admin/badges/{id}/pruefen:
     post:

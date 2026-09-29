@@ -268,7 +268,7 @@ components:
               properties:
                 version: { type: integer, description: "Aufbau der Kopie, heute 1" }
                 jahrgang_name: { type: [string, 'null'], description: "Bleibt, auch wenn der Jahrgang geloescht ist" }
-                anlass: { type: string, enum: [befoerderung, jahrgang_geloescht] }
+                anlass: { type: string, enum: [befoerderung, jahrgang_geloescht, abzeichen_geloescht, abzeichen_geaendert], description: "abzeichen_*: seit 28.09.2026 (Migration 172) -- Kopie vor dem Loeschen oder Aendern eines Konfi-Badges fuer Befoerderte ohne Kopie" }
                 erstellt_am: { type: [string, 'null'], format: date-time }
                 jahrgang: { type: [object, 'null'], properties: { id: { type: integer }, name: { type: string } } }
                 punkte: { type: object, properties: { gottesdienst: { type: integer }, gemeinde: { type: integer }, gesamt: { type: integer } } }
@@ -419,6 +419,20 @@ paths:
         Teamer-Abzeichen (z. B. criteria_type 'teamer_year') landeten dadurch
         in der Konfi-Historie. Teamer-Abzeichen liefert GET
         /api/teamer/badges/v2.
+
+        AUS DER KOPIE DER KONFI-ZEIT (28.09.2026, Simon: "Geloeschte Badges
+        muessen bei befoerdertem erhalten bleiben. Auch wenn wir die zb
+        aendern."): Gibt es fuer die Person in der aktiven Gemeinde eine
+        Kopie (konfi_historie, juengste), kommt konfi_data.badges aus deren
+        `abzeichen` — so, wie die Badges verdient wurden, auch nachdem die
+        Leitung ein Badge geloescht oder geaendert hat. Ohne Kopie wie
+        bisher live aus user_badges/custom_badges. DIESELBE FORM wie live
+        (Vertrag der Store-Apps 2.2.0/2.3.0, TeamerKonfiStatsPage und
+        BadgePopoverContent): badge_id (integer), name, description
+        (string|null), icon, color, criteria_type, criteria_value (integer),
+        awarded_date (ISO-Zeitstempel), neueste zuerst. Die Kopie traegt alle
+        acht Felder (beschreibung, farbe, kriterium, kriterium_wert,
+        verliehen_am); nichts muss erfunden werden.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, "Inline-Check role_name === 'teamer'"]
@@ -449,6 +463,24 @@ paths:
                   konfi_data:
                     type: [object, "null"]
                     description: "gottesdienst_points, gemeinde_points, jahrgang_name, badges[] - null bei Teamer:innen ohne Konfi-Vergangenheit"
+                    properties:
+                      gottesdienst_points: { type: integer }
+                      gemeinde_points: { type: integer }
+                      jahrgang_name: { type: string, description: "leer, wenn der Jahrgang geloescht wurde" }
+                      badges:
+                        type: array
+                        description: "Konfi-Abzeichen; bei vorhandener Kopie der Konfi-Zeit aus ihr (seit 28.09.2026), sonst live"
+                        items:
+                          type: object
+                          properties:
+                            badge_id: { type: integer }
+                            name: { type: string }
+                            description: { type: [string, "null"] }
+                            icon: { type: [string, "null"] }
+                            color: { type: [string, "null"] }
+                            criteria_type: { type: [string, "null"] }
+                            criteria_value: { type: [integer, "null"] }
+                            awarded_date: { type: [string, "null"], format: date-time }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer (org_admin/admin bekommen hier 403)" }
         "500": { $ref: '#/components/responses/ServerError' }

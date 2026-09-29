@@ -11,7 +11,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
-const { ladeKonfiHistorie } = require('../utils/konfiHistorie');
+const { ladeKonfiHistorie, konfiBadgesAusKopie } = require('../utils/konfiHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
 const { heuteBerlin } = require('../utils/zeitformat');
@@ -133,8 +133,24 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
             AND b.organization_id = $2
           ORDER BY kb.awarded_date DESC
         `;
-        const result = await db.query(badgesQuery, [userId, req.user.organization_id]);
-        badges = result.rows;
+        // AUS DER KOPIE, WENN ES EINE GIBT (Simon, 28.09.2026: "Geloeschte
+        // Badges muessen bei befoerdertem erhalten bleiben. Auch wenn wir
+        // die zb aendern."). Die Kopie der Konfi-Zeit (konfi_historie) haelt
+        // die Konfi-Badges fest, wie sie verdient wurden; live aus
+        // user_badges/custom_badges verschwaende ein geloeschtes Badge, und
+        // ein geaendertes zeigte rueckwirkend den neuen Namen oder Zielwert.
+        // Dieselben Feldnamen und Typen wie die Live-Abfrage
+        // (konfiBadgesAusKopie). Ohne Kopie -- befoerdert vor dem 28.09.2026,
+        // weder Jahrgang noch eines ihrer Badges seither geloescht oder
+        // geaendert -- bleibt es beim Live-Stand, der dann noch unveraendert
+        // ist.
+        const ausKopie = konfiBadgesAusKopie(await ladeKonfiHistorie(db, userId, req.user.organization_id));
+        if (ausKopie) {
+          badges = ausKopie;
+        } else {
+          const result = await db.query(badgesQuery, [userId, req.user.organization_id]);
+          badges = result.rows;
+        }
       }
 
       res.json({

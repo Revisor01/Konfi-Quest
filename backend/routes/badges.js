@@ -11,6 +11,8 @@ const { ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
 // Single Source of Truth: welche Events zählen für Badges (Konfi vs. Teamer).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 const { loescheMitteilungenZuAbzeichen } = require('../utils/postfachAufraeumen');
+// Konfi-Badges Befoerderter bleiben, wie sie verdient wurden (Simon, 28.09.2026)
+const { sichereKonfiZeitVorAbzeichenAenderung } = require('../utils/konfiHistorie');
 // Single Source of Truth: aus welchen Kategorien war jemand dabei (category_combination).
 const {
   KONFI_KATEGORIE_NAMEN_SQL,
@@ -1146,7 +1148,29 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
                     WHERE id = $10 AND organization_id = $11`;
       
       const params = [name, icon, description, criteria_type, criteria_value, extraJson, activeFlag, hiddenFlag, farbeFuerBadge(color, criteria_type), req.params.id, req.user.organization_id];
-      const { rowCount } = await db.query(query, params);
+
+      // KONFI-BADGES BEFOERDERTER BLEIBEN IM ORIGINAL (Simon, 28.09.2026:
+      // "Geloeschte Badges muessen bei befoerdertem erhalten bleiben. Auch
+      // wenn wir die zb aendern. Weil weniger Punkte als Ziel oder so.")
+      // Wer das Badge traegt und inzwischen im Team ist, sieht seine
+      // Konfi-Badges aus der Kopie der Konfi-Zeit (GET /teamer/profile).
+      // Fehlt sie (befoerdert vor dem 28.09.2026), entsteht sie hier -- VOR
+      // dem Aendern und in derselben Transaktion. Konfis sehen die Aenderung
+      // wie bisher sofort.
+      const client = await db.getClient();
+      let rowCount;
+      try {
+        await client.query('BEGIN');
+        await sichereKonfiZeitVorAbzeichenAenderung(client, req.params.id, req.user.organization_id,
+          { anlass: 'abzeichen_geaendert', erstelltVon: req.user.id });
+        ({ rowCount } = await client.query(query, params));
+        await client.query(rowCount === 0 ? 'ROLLBACK' : 'COMMIT');
+      } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw err;
+      } finally {
+        client.release();
+      }
       
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Badge nicht gefunden oder keine Berechtigung' });
@@ -1172,6 +1196,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     const client = await db.getClient();
     try {
       await client.query('BEGIN');
+
+      // KONFI-BADGES BEFOERDERTER BLEIBEN (Simon, 28.09.2026: "Geloeschte
+      // Badges muessen bei befoerdertem erhalten bleiben."). Das Loeschen
+      // nimmt unten alle Exemplare aus user_badges -- bei aktuellen Konfis
+      // gewollt, das Badge verschwindet. Wer inzwischen im Team ist, sieht
+      // seine Konfi-Badges aus der Kopie der Konfi-Zeit (GET /teamer/profile,
+      // utils/konfiHistorie.js). Fehlt sie (befoerdert vor dem 28.09.2026),
+      // entsteht sie hier, solange das Badge noch dran ist.
+      await sichereKonfiZeitVorAbzeichenAenderung(client, req.params.id, req.user.organization_id,
+        { anlass: 'abzeichen_geloescht', erstelltVon: req.user.id });
 
       await client.query("DELETE FROM user_badges WHERE badge_id = $1", [req.params.id]);
       // Postfach (25.09.2026): "Neues Badge erhalten" zu diesem Abzeichen geht
