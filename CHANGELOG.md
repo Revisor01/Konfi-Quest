@@ -1119,6 +1119,9 @@ iOS-Build 233 · Android versionCode 127
   dem neuen Reiter — und wenn die neue nicht geladen werden kann, auch danach
   nicht. Beim Suchen im Material bleibt die bisherige Liste bis zum Ergebnis
   stehen, nach einem Fehlschlag aber nicht.
+- Eine Rückblick-Ausgabe eines Jahrgangs löschen darf nur, wer im Jahrgang
+  auch bearbeiten darf — wie beim Anlegen. Eine Zuweisung nur zum Ansehen
+  reichte bisher zum Löschen.
 
 ### Sonstiges
 - Lehnt der Server eine Anfrage auch nach dem Erneuern der Anmeldung ab,

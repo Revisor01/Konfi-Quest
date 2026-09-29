@@ -151,6 +151,7 @@ Der Bereich ist in weiten Teilen sorgfältig gebaut: Direktchat-Privatsphäre, S
 - **Beschreibung:** Ein Admin mit reiner Lese-Zuweisung darf den Rückblick eines Jahrgangs samt aller Snapshots löschen, aber keinen anlegen.
 - **Auswirkung aus Nutzersicht:** Ein Admin, der nur mitlesen soll, kann die Rückblicke „seines" Jahrgangs entfernen; Wiederherstellen nur durch Neuanlage durch jemanden mit Schreibrecht.
 - **Empfehlung:** `darfJahrgang(req, ausgabe.jahrgang_id, { edit: true })` verwenden — dieselbe Quelle wie beim Anlegen.
+- **Nachtrag 28.09.2026:** behoben — `DELETE /wrapped/ausgabe/:id` prüft Konfi-Ausgaben mit `darfJahrgang(req, ausgabe.jahrgang_id, { edit: true })`, derselben Quelle wie `POST /generate/:jahrgangId`; Teamer-Ausgaben unverändert nur Org-Leitung. Test `backend/tests/routes/wrappedAusgabeLoeschenRecht.test.js` (5: verboten Lese-Zuweisung, keine Zuweisung, Gegenstück Anlegen mit Lese-Zuweisung; erlaubt Schreib-Zuweisung, Org-Leitung); ohne Fix 1 rot. `wrapped.test.js` (175) grün. Handbuch `95-wrapped.md` („Wissen, wer was darf"), API-Doku `teamer-material.yaml`.
 
 ### BF-14: Jahres-Cron läuft über gesperrte Organisationen; Lizenz-Mail nur an Stamm-Mitglieder
 - **Schwere:** NIEDRIG

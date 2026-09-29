@@ -162,7 +162,9 @@ Team-Rückblicke lassen sich genauso löschen. Sie stehen allerdings in einer
 | **Org-Leitung** | ja | ja | ja |
 
 Die Leitung sieht und verwaltet die Ausgaben **ihrer** Jahrgänge — für einen
-fremden Jahrgang lehnt der Server ab. Die Org-Leitung sieht alle Jahrgänge und ist
+fremden Jahrgang lehnt der Server ab. Anlegen und löschen darf sie nur, wo sie
+im Jahrgang bearbeiten darf; eine Zuweisung, die nur zum Ansehen berechtigt,
+reicht für beides nicht. Die Org-Leitung sieht alle Jahrgänge und ist
 zusätzlich die einzige Rolle, die Team-Rückblicke anlegen und löschen darf; die
 betreffen die ganze Gemeinde und hängen an keinem Jahrgang. Der Reiter **Team**
 ist für die Leitung deshalb gesperrt.

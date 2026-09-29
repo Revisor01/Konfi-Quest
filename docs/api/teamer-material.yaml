@@ -2066,8 +2066,14 @@ paths:
         objekt-pruefung: >
           Ausgabe muss zur aktiven Org gehoeren (sonst 404). Teamer-Ausgaben
           nur org_admin (sonst 403). Konfi-Ausgaben: Admin braucht eine
-          Zuweisung auf den Jahrgang (sonst 403). Rolle super_admin faellt
-          an requireAdmin durch (403); rollen-Zeile nachgezogen am 26.09.2026.
+          Zuweisung MIT can_edit auf den Jahrgang (darfJahrgang edit, wie
+          POST /api/wrapped/generate/{jahrgangId}; sonst 403 "Kein Zugriff
+          auf diesen Jahrgang"). Rolle super_admin faellt an requireAdmin
+          durch (403); rollen-Zeile nachgezogen am 26.09.2026.
+          BEHOBEN 28.09.2026 (Audit Fachlogik Chat/Challenges/Rueckblick
+          BF-13): Vorher genuegte irgendeine Zuweisung -- ein Admin mit reiner
+          Lese-Zuweisung konnte loeschen, aber nicht anlegen. Tests:
+          backend/tests/routes/wrappedAusgabeLoeschenRecht.test.js.
       responses:
         "200": { description: "message, deleted (Anzahl geloeschter Rueckblicke)" }
         "401": { $ref: '#/components/responses/Unauthorized' }

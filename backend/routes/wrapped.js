@@ -2774,20 +2774,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           return res.status(404).json({ error: 'Ausgabe nicht gefunden' });
         }
 
-        // Dieselbe Rechte-Grenze wie beim Anlegen und Anzeigen:
-        // Teamer-Ausgaben nur org_admin, Konfi-Ausgaben nur eigene Jahrgaenge.
+        // Dieselbe Rechte-Grenze wie beim Anlegen: Teamer-Ausgaben nur
+        // org_admin, Konfi-Ausgaben nur mit SCHREIB-Zuweisung auf den
+        // Jahrgang -- dieselbe Quelle wie POST /generate/:jahrgangId
+        // (darfJahrgang mit edit). Bis 28.09.2026 genuegte hier irgendeine
+        // Zeile in user_jahrgang_assignments: Ein Admin, der nur lesen darf,
+        // konnte den Rueckblick samt Snapshots loeschen, aber keinen anlegen
+        // (Audit Fachlogik Chat/Challenges/Rueckblick BF-13).
         if (ausgabe.wrapped_type === 'teamer' && !istOrgAdmin) {
           return res.status(403).json({ error: 'Nur die Leitung darf Teamer-Ausgaben löschen' });
         }
-        if (ausgabe.wrapped_type === 'konfi' && !istOrgAdmin) {
-          const { rows: [zugriff] } = await db.query(
-            `SELECT 1 FROM user_jahrgang_assignments
-              WHERE user_id = $1 AND jahrgang_id = $2`,
-            [req.user.id, ausgabe.jahrgang_id]
-          );
-          if (!zugriff) {
-            return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
-          }
+        if (ausgabe.wrapped_type === 'konfi' && !darfJahrgang(req, ausgabe.jahrgang_id, { edit: true })) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
         }
 
         const { rows: [{ anzahl }] } = await db.query(
