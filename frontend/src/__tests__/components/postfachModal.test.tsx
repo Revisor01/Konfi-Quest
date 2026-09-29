@@ -79,6 +79,8 @@ vi.mock('../../utils/pushNavigation', async (original) => {
   return { ...echt, pushZielMelden: vi.fn() };
 });
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import PostfachModal, { POSTFACH_SEITENGROESSE } from '../../components/common/PostfachModal';
 import { mitteilungsTitel, oeffnePostfach, postfachBereich } from '../../utils/postfach';
 import { pushZielMelden } from '../../utils/pushNavigation';
@@ -315,20 +317,43 @@ describe('PostfachModal', () => {
       expect(zeilen[0].querySelector('.app-list-item__subtitle')?.textContent).toBe('Text 3');
     });
 
-    it('ungelesen traegt den Umschlag im Eselsohr (kein Wort), gelesen nicht', async () => {
-      // Eck-Badges zeigen Symbole, keine Woerter (Simon, 25.09.2026). Der
-      // Klartext haengt fuer Vorlesehilfen an title/aria-label.
+    it('ungelesen traegt den blauen Punkt in der Ecke (kein Wort, kein Symbol), gelesen nicht', async () => {
+      // Simon, TestFlight 233 (29.09.2026): "Das Symbol der blauen
+      // Briefkaesten fuer die Post am Postfach gefaellt mir nicht." Bis dahin
+      // ein Umschlag im Eselsohr. Jetzt derselbe Punkt wie an der Glocke;
+      // der Klartext haengt fuer Vorlesehilfen an title/aria-label.
       mockGet.mockResolvedValue(antwort([eintrag(12), eintrag(11, { read_at: '2026-09-24T10:00:00.000Z' })]));
       const { container } = render(<PostfachModal />);
       await oeffnen();
       await screen.findByText('Mitteilung 12');
       const zeilen = container.querySelectorAll('.app-postfach-eintrag');
-      const badge = zeilen[0].querySelector('.app-corner-badge') as HTMLElement;
-      expect(badge.textContent).toBe('');
-      expect(badge.querySelector('[data-icon]')?.getAttribute('data-icon')).toBe(ICON_MAIL_GEFUELLT);
-      expect(badge.getAttribute('title')).toBe('Neu — ungelesen');
-      expect(badge.getAttribute('aria-label')).toBe('Neu — ungelesen');
-      expect(zeilen[1].querySelector('.app-corner-badge')).toBeNull();
+      const punkt = zeilen[0].querySelector('.app-postfach-eintrag__punkt') as HTMLElement;
+      expect(punkt).not.toBeNull();
+      expect(punkt.classList.contains('app-ungelesen-punkt')).toBe(true);
+      expect(punkt.textContent).toBe('');
+      expect(punkt.children.length).toBe(0);
+      expect(punkt.getAttribute('role')).toBe('img');
+      expect(punkt.getAttribute('title')).toBe('Neu — ungelesen');
+      expect(punkt.getAttribute('aria-label')).toBe('Neu — ungelesen');
+      // Kein Umschlag und kein Eselsohr mehr am Eintrag.
+      expect(zeilen[0].querySelector('.app-corner-badge')).toBeNull();
+      expect(zeilen[0].querySelector(`[data-icon="${ICON_MAIL_GEFUELLT}"]`)).toBeNull();
+      expect(zeilen[1].querySelector('.app-postfach-eintrag__punkt')).toBeNull();
+    });
+
+    it('der Punkt sitzt in der Ecke, um den Innenabstand der Karte eingerueckt; der Titel haelt ihm Platz frei', async () => {
+      const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+      const regel = css.match(/\.app-postfach-eintrag__punkt \{([^}]*)\}/);
+      expect(regel).not.toBeNull();
+      expect(regel![1]).toMatch(/position:\s*absolute/);
+      expect(regel![1]).toMatch(/top:\s*var\(--app-abstand-basis\)/);
+      expect(regel![1]).toMatch(/right:\s*var\(--app-abstand-basis\)/);
+      mockGet.mockResolvedValue(antwort([eintrag(12)]));
+      const { container } = render(<PostfachModal />);
+      await oeffnen();
+      await screen.findByText('Mitteilung 12');
+      const titel = container.querySelector('.app-postfach-eintrag .app-list-item__title') as HTMLElement;
+      expect(titel.style.paddingRight).toBe('var(--app-abstand-weit)');
     });
 
     it('die Zeile ist ein Knopf: Enter fuehrt zum Ziel wie ein Tipp', async () => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonButton, IonIcon } from '@ionic/react';
-import { ICON_GLOCKE, ICON_MAIL_GEFUELLT } from './icons';
+import { ICON_GLOCKE } from './icons';
 import { useBadge } from '../../contexts/BadgeContext';
 import { useWartendeVorgaenge } from '../../hooks/useWartendeVorgaenge';
 import { oeffnePostfach } from '../../utils/postfach';
@@ -11,7 +11,8 @@ import { oeffnePostfach } from '../../utils/postfach';
  *  - 'ruhe':    nichts — kein Badge, nur die Glocke.
  *  - 'hinweis': ungelesene Mitteilungen (Abzeichen, Antraege). Eine Nachricht,
  *               keine Aufgabe — deshalb die ruhige Grundfarbe, und seit dem
- *               28.09.2026 ein Briefumschlag statt einer Zahl.
+ *               29.09.2026 ein Punkt ohne Zahl und ohne Symbol (davor seit
+ *               dem 28.09.2026 ein Briefumschlag, davor eine Zahl).
  *  - 'warning': etwas liegt noch in der Offline-Warteschlange. Information,
  *               kein Alarm (orange).
  *  - 'danger':  ein Vorgang ist endgueltig gescheitert und nichts wartet
@@ -27,11 +28,11 @@ export type GlockeVariante = 'ruhe' | 'hinweis' | 'warning' | 'danger';
 export interface GlockeZustand {
   /**
    * Die Zahl an der Glocke: nur die Warteschlange (wartend + gescheitert).
-   * Ungelesene Mitteilungen zaehlen hier nicht -- sie zeigen den Umschlag.
+   * Ungelesene Mitteilungen zaehlen hier nicht -- sie zeigen den Punkt.
    */
   anzahl: number;
-  /** Mindestens eine ungelesene Mitteilung: Briefumschlag statt Zahl. */
-  umschlag: boolean;
+  /** Mindestens eine ungelesene Mitteilung: ein Punkt statt einer Zahl. */
+  punkt: boolean;
   variante: GlockeVariante;
   /** Der volle Satz fuer Vorleseprogramme. */
   text: string;
@@ -44,20 +45,23 @@ const einzahlMehrzahl = (n: number, einzahl: string, mehrzahl: string): string =
  * Reine Funktion, damit die Regel ohne Rendern pruefbar bleibt.
  *
  * KEINE ZAHL FUER MITTEILUNGEN (28.09.2026, Simon): Das Postfach bekommt
- * keine Zahl mehr, sondern einen blauen Badge mit Briefumschlag, sobald
- * mindestens eine Mitteilung ungelesen ist -- fuer alle drei Rollen. Bis
- * dahin stand hier die Summe aus Mitteilungen und Warteschlange.
+ * keine Zahl mehr, sobald mindestens eine Mitteilung ungelesen ist -- fuer
+ * alle drei Rollen. Bis dahin stand hier die Summe aus Mitteilungen und
+ * Warteschlange. Zuerst trug der blaue Kreis einen Briefumschlag; seit dem
+ * 29.09.2026 ist es ein blauer Punkt ohne Symbol (Simon, TestFlight 233:
+ * "Das Symbol der blauen Briefkaesten fuer die Post am Postfach gefaellt
+ * mir nicht") -- derselbe Punkt wie am ungelesenen Eintrag im Postfach.
  *
  * Die Warteschlange behaelt ihre Zahl: Das sind Vorgaenge dieses Geraets
  * (gesendet oder gescheitert), keine Mitteilungen, und die Zahl sagt, wie
  * viel noch offen ist. Liegt etwas in der Warteschlange, steht ihre Zahl
- * (orange/rot) im Kreis -- die dringlichere Nachricht; der Briefumschlag
- * kommt zurueck, sobald sie leer ist. Der Satz fuer Vorleseprogramme nennt
+ * (orange/rot) im Kreis -- die dringlichere Nachricht; der Punkt kommt
+ * zurueck, sobald sie leer ist. Der Satz fuer Vorleseprogramme nennt
  * beides.
  */
 export const glockeZustand = (ungelesen: number, wartend: number, gescheitert: number): GlockeZustand => {
   const anzahl = wartend + gescheitert;
-  const umschlag = ungelesen > 0;
+  const punkt = ungelesen > 0;
   let variante: GlockeVariante = 'ruhe';
   if (gescheitert > 0 && wartend === 0) variante = 'danger';
   else if (wartend > 0) variante = 'warning';
@@ -67,11 +71,11 @@ export const glockeZustand = (ungelesen: number, wartend: number, gescheitert: n
   if (wartend > 0) warteschlange.push(einzahlMehrzahl(wartend, 'Vorgang wird gesendet', 'Vorgänge werden gesendet'));
   if (gescheitert > 0) warteschlange.push(einzahlMehrzahl(gescheitert, 'Vorgang wurde nicht gesendet', 'Vorgänge wurden nicht gesendet'));
   let text: string;
-  if (umschlag) text = ['Ungelesene Mitteilungen im Postfach', ...warteschlange].join(', ');
+  if (punkt) text = ['Ungelesene Mitteilungen im Postfach', ...warteschlange].join(', ');
   else if (warteschlange.length > 0) text = `Postfach: ${warteschlange.join(', ')}`;
   else text = 'Postfach: nichts Neues';
 
-  return { anzahl, umschlag, variante, text };
+  return { anzahl, punkt, variante, text };
 };
 
 /**
@@ -84,17 +88,17 @@ export const glockeZustand = (ungelesen: number, wartend: number, gescheitert: n
  *
  * Zwei Quellen: die ungelesenen Mitteilungen aus dem BadgeContext
  * (GET /notifications/badge-counts, Feld postfach) -- sie zeigen den
- * Briefumschlag -- und die Offline-Warteschlange aus useWartendeVorgaenge,
- * die ihre Zahl behaelt. Beides sitzt im selben Kreis an derselben Stelle
- * (Geometrie in variables.css). Die Farbe traegt nur der Kreis — die Glocke
- * selbst bleibt in Toolbar-Farbe wie ihre Nachbarn.
+ * Punkt -- und die Offline-Warteschlange aus useWartendeVorgaenge, die ihre
+ * Zahl behaelt. Beide sitzen mit derselben Mitte auf der Ecke des Symbols
+ * (Geometrie in variables.css). Die Farbe tragen nur Kreis und Punkt — die
+ * Glocke selbst bleibt in Toolbar-Farbe wie ihre Nachbarn.
  *
  * Gehoert als Kind in IonButtons slot="end"; AppKopfzeile stellt das.
  */
 const PostfachGlocke: React.FC = () => {
   const { postfachUngelesen } = useBadge();
   const { wartend, gescheitert } = useWartendeVorgaenge();
-  const { anzahl, umschlag, variante, text } = glockeZustand(postfachUngelesen, wartend.length, gescheitert.length);
+  const { anzahl, punkt, variante, text } = glockeZustand(postfachUngelesen, wartend.length, gescheitert.length);
 
   return (
     <IonButton
@@ -108,10 +112,8 @@ const PostfachGlocke: React.FC = () => {
         <span className="app-postfach-glocke__zahl" aria-hidden="true">
           {anzahl > 99 ? '99+' : anzahl}
         </span>
-      ) : umschlag && (
-        <span className="app-postfach-glocke__zahl app-postfach-glocke__zahl--umschlag" aria-hidden="true">
-          <IonIcon icon={ICON_MAIL_GEFUELLT} aria-hidden="true" />
-        </span>
+      ) : punkt && (
+        <span className="app-ungelesen-punkt app-postfach-glocke__punkt" aria-hidden="true" />
       )}
     </IonButton>
   );

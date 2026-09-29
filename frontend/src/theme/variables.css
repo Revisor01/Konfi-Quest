@@ -4583,31 +4583,44 @@ ion-buttons:has(> .app-postfach-glocke) {
   top: -8px;
   right: 2px;
 }
-/* Ungelesene Mitteilungen (28.09.2026, Simon): Briefumschlag statt Zahl --
-   derselbe blaue Kreis an derselben Stelle (Lage und Freigaben oben gelten
-   unveraendert), darin das Symbol weiss wie sonst die Ziffer. Nur Token:
-   Im Dunkelmodus hellt Ionics Palette --ion-color-primary selbst auf; auf
-   Android (MD3) sitzt der Kreis ueber die .md-Regel an derselben Stelle wie
-   die Zahl. Keine eigene Lage und Groesse -- sonst liefe die gemessene
-   Geometrie auseinander. */
-.app-postfach-glocke__zahl--umschlag {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
+/* === Ungelesen-Punkt: Glocke und Eintrag im Postfach ===
+   Simon, TestFlight 233 (29.09.2026): "Das Symbol der blauen Briefkaesten
+   fuer die Post am Postfach gefaellt mir nicht." Bis dahin trug die Glocke
+   bei ungelesenen Mitteilungen einen blauen Kreis mit Briefumschlag (seit
+   28.09.2026, vorher eine Zahl), der Eintrag im Postfach einen Umschlag im
+   Eselsohr. Jetzt an beiden Stellen derselbe kleine Punkt, ohne Zahl und
+   ohne Symbol: Er sagt nur "hier ist etwas ungelesen".
+
+   EIN Aussehen (.app-ungelesen-punkt), zwei Lagen. Blau aus
+   --ion-color-primary wie bisher der Kreis -- ruhige Grundfarbe, eine
+   Mitteilung ist keine Aufgabe; im Dunkelmodus hellt Ionics Palette sie
+   selbst auf. 10 px: gross genug, um ihn zu sehen, klein genug, dass er
+   nicht mit der Zahl der Warteschlange (18 px) oder der roten Kugel (16 px)
+   verwechselt wird. Vertrag: postfachGlocke.test.tsx, postfachModal.test.tsx. */
+.app-ungelesen-punkt {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--ion-color-primary);
+  pointer-events: none;
 }
-/* SPEZIFITAET: Beide Themes setzen die Groesse JEDES Symbols in einem
-   Toolbar-Knopf -- ios27 `ion-button.ios:not(...).button-has-icon-only
-   ion-icon` auf 1.4rem (0,3,2), MD3 `ion-button.md:not(.md3-disabled)
-   ion-icon` auf 24px (0,2,2). Der Umschlag sitzt in einem solchen Knopf und
-   waere damit groesser als sein 18px-Kreis. Diese Regel hat (0,4,2) und
-   gewinnt auf beiden Plattformen, unabhaengig von der Ladereihenfolge
-   (Test: postfachGlocke.test.tsx). [data-variante] traegt der Knopf immer
-   (PostfachGlocke setzt es in jedem Zustand). */
-ion-button.app-postfach-glocke[data-variante] .app-postfach-glocke__zahl.app-postfach-glocke__zahl--umschlag ion-icon {
-  color: var(--app-weiss);
-  /* 12px im 18px-Kreis: 3px Rand rundum, gut lesbar. */
-  font-size: var(--app-text-klein);
+/* An der Glocke: dieselbe MITTE wie die Zahl der Warteschlange (Herleitung
+   oben), also auf der rechten oberen Ecke des Symbols -- nur kleiner.
+   iOS: Zahl 18 px bei top 0 / right 0 an .button-inner (40 px breit) ->
+   Mitte (31, 9); Punkt 10 px -> top 4 / right 4.
+   Android (MD3): Zahl bei top -8 / right 2 an .button-inner (48 px breit)
+   -> Mitte (37, 1); Punkt -> top -4 / right 6.
+   Die Freigaben von Pille und Knopf oben gelten unveraendert; mit 10 px
+   ragt der Punkt ohnehin weniger weit hinaus als die Zahl. */
+.app-postfach-glocke__punkt {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+.app-postfach-glocke.md .app-postfach-glocke__punkt {
+  top: -4px;
+  right: 6px;
 }
 .app-postfach-glocke[data-variante="warning"] .app-postfach-glocke__zahl {
   background: var(--app-color-warning);
@@ -4621,8 +4634,9 @@ ion-button.app-postfach-glocke[data-variante] .app-postfach-glocke__zahl.app-pos
 
 /* Die Mitteilungen sind .app-list-item wie jede andere Liste der App (Farbe
    ueber .app-list-item--<bereich>, siehe common/PostfachModal). Ungelesen
-   heisst: Titel fett und "Neu" im Eselsohr; gelesen nur der Titel. Die Zeile
-   ist ein Knopf -- Tastatur und Vorleseprogramm sollen sie finden. */
+   heisst: Titel fett und der blaue Punkt in der Ecke; gelesen nur der
+   Titel. Die Zeile ist ein Knopf -- Tastatur und Vorleseprogramm sollen sie
+   finden. */
 .app-postfach-eintrag {
   cursor: pointer;
 }
@@ -4632,6 +4646,17 @@ ion-button.app-postfach-glocke[data-variante] .app-postfach-glocke__zahl.app-pos
 }
 .app-postfach-eintrag--ungelesen .app-list-item__title {
   font-weight: var(--app-schrift-fett);
+}
+/* Der Punkt in der Ecke der Karte, wo bis 29.09.2026 der Umschlag im
+   Eselsohr stand: um den seitlichen Innenabstand der Karte (16 px)
+   eingerueckt, oben wie rechts. Seine Mitte liegt damit auf Hoehe der
+   ersten Titelzeile (gemessen ab Oberkante der Karte: Punkt 22 px,
+   Zeilenmitte iOS 22,8 px, Android 24,4 px). Der Titel haelt 24 px frei
+   (PostfachModal), 14 px Luft bis zum Punkt. */
+.app-postfach-eintrag__punkt {
+  position: absolute;
+  top: var(--app-abstand-basis);
+  right: var(--app-abstand-basis);
 }
 .app-postfach__laedt {
   display: flex;

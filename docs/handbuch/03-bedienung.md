@@ -107,8 +107,8 @@ und [Nachsehen, wer Meldungen zu einem Jahrgang bekommt](45-jahrgaenge.md#nachse
 gestartete Challenges (die Challenge-Liste zählt selbst) und Chat-Nachrichten
 (der Chat zählt selbst).
 
-Im Postfach steht Ungelesenes fett und mit einem geschlossenen Umschlag in
-der Ecke. **Antippen**
+Im Postfach steht Ungelesenes fett und mit einem **blauen Punkt** in der
+Ecke. **Antippen**
 markiert die Mitteilung als gelesen und führt an die passende Stelle: zum
 Badges, in die Antragsliste, an das Event, bei einem Stempel zu den
 Challenges, bei einem Level-Aufstieg auf die Startseite. Punkte — aus einem
@@ -163,15 +163,16 @@ ist](05-rollen.md#sehen-wo-etwas-offen-ist)).
 ### Ungelesene Mitteilungen an der Glocke erkennen
 
 Liegt mindestens eine ungelesene Mitteilung im Postfach, trägt die Glocke
-einen **blauen Kreis mit einem Briefumschlag** — in jeder Rolle gleich. Eine
-Zahl steht dort nicht: Der Umschlag sagt nur, dass etwas Neues da ist. Er
-verschwindet, sobald alles gelesen ist.
+oben rechts einen **blauen Punkt** — in jeder Rolle gleich, derselbe Punkt
+wie am ungelesenen Eintrag im Postfach. Eine Zahl steht dort nicht: Der
+Punkt sagt nur, dass etwas Neues da ist. Er verschwindet, sobald alles
+gelesen ist.
 
 Eine **Zahl an der Glocke** zeigen nur Vorgänge, die noch aus einer Funklücke
 gesendet werden (siehe [Ohne Internet weiterarbeiten](#ohne-internet-weiterarbeiten)):
 **orange**, solange etwas gesendet wird, **rot**, wenn ein Vorgang endgültig
 nicht durchkam — das ist eine Aufgabe, kein Hinweis. Solange so eine Zahl
-steht, tritt der Umschlag dahinter zurück; er kommt wieder, wenn die
+steht, tritt der Punkt dahinter zurück; er kommt wieder, wenn die
 Warteschlange leer ist. Vorleseprogramme nennen beides, etwa „Ungelesene
 Mitteilungen im Postfach, 1 Vorgang wird gesendet".
 
@@ -438,7 +439,7 @@ Neue Konten haben alles an.
 > Markierung für Ungelesenes und dem Sprung an die passende Stelle. Wer die
 > Event-Mitteilungen nicht aufs Handy will, verpasst sie deshalb nicht, sondern
 > liest sie, wenn er die App öffnet. Solange sie ungelesen sind, trägt die
-> Glocke den Briefumschlag.
+> Glocke den blauen Punkt.
 
 Solange das Gerät der App noch keine Mitteilungen erlaubt, steht in der
 Auswahl ein Hinweis mit einem Knopf, der die Erlaubnis anfordert. Die Auswahl

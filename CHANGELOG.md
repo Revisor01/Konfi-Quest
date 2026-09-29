@@ -220,8 +220,9 @@ iOS-Build 233 · Android versionCode 127
   die Zahl am Reiter. Das orange Feld mit Uhr bleibt zusätzlich stehen und
   trägt keine Zahl mehr; es sagt nur, dass etwas auf Freigabe wartet.
 - Ungelesene Mitteilungen zeigt die Glocke in jeder Rolle mit einem blauen
-  Briefumschlag statt mit einer Zahl; eine Zahl an der Glocke steht nur noch
-  für Vorgänge, die aus einer Funklücke gesendet werden.
+  Punkt statt mit einer Zahl; eine Zahl an der Glocke steht nur noch für
+  Vorgänge, die aus einer Funklücke gesendet werden. Im Postfach trägt jede
+  ungelesene Mitteilung denselben Punkt in der Ecke.
 - Die Zahl am App-Symbol und die Zahlen am Gemeinde-Umschalter zählen das
   Postfach nicht mehr mit — ein offener Antrag zählt dort einmal, auch wenn
   die Mitteilung dazu noch ungelesen ist.
@@ -279,7 +280,7 @@ iOS-Build 233 · Android versionCode 127
   statt Wörter: die Rolle in der Benutzerliste (Gebäude für Org-Admin, Schild
   für Admin, Person für Teamer:in), „Voll"/„Frei" bei den Events einer Serie
   (Kreuz/Haken), „Aktiviert" bei den Benachrichtigungen (Haken), „Neu" im
-  Postfach (geschlossener Umschlag) und die Restlaufzeit von Einladungscodes
+  Postfach (ein blauer Punkt) und die Restlaufzeit von Einladungscodes
   (Zahl der Tage plus Uhr; am letzten Tag ein oranges, abgelaufen ein rotes
   Warnzeichen). In der Antragsliste der Konfis erschien als Einzige noch ein
   Wort — auch dort steht jetzt das Symbol. Ein Konfirmationstermin, der nicht

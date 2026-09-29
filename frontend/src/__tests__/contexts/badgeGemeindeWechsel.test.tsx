@@ -188,7 +188,7 @@ describe('BadgeContext: Zaehler beim Gemeindewechsel', () => {
     expect(captured.current!.chatUnreadByRoom).toEqual({});
     expect(captured.current!.newBadgesCount).toBe(0);
     // Das Postfach gehoert dem Konto und bleibt stehen -- es zaehlt aber
-    // seit 28.09.2026 nicht in totalBadgeCount (Glocke: Briefumschlag).
+    // seit 28.09.2026 nicht in totalBadgeCount (Glocke: Punkt).
     expect(captured.current!.postfachUngelesen).toBe(4);
     expect(captured.current!.totalBadgeCount).toBe(0);
 

@@ -2054,6 +2054,9 @@ paths:
         dieser Antwort enthielt das Postfach (chat.total,
         challengeUpdates.total und challengeApprovals.total zaehlen je ihren
         Bereich); deshalb aendert sich hier kein Wert.
+        GEAENDERT 2026-09-29 (nur Anzeige): Statt des Briefumschlags zeigt die
+        App an der Glocke einen blauen Punkt ohne Symbol. Antwort, Feld und
+        Wert unveraendert.
       responses:
         '200':
           description: Zähler
@@ -2122,8 +2125,8 @@ paths:
                       Postfach-Mitteilungen (notifications.read_at IS NULL)
                       des Kontos ueber ALLE Organisationen -- bewusst ohne
                       Org-Filter, siehe GET /api/notifications/postfach.
-                      Die App zeigt daraus an der Glocke einen Briefumschlag
-                      (> 0). Anteil an der App-Icon-Summe vom 25.09. bis
+                      Die App zeigt daraus an der Glocke einen blauen Punkt
+                      (> 0; vom 28. bis 29.09.2026 ein Briefumschlag). Anteil an der App-Icon-Summe vom 25.09. bis
                       28.09.2026; seit 2026-09-28 nicht mehr (Feld und Wert
                       unveraendert).
                     properties:

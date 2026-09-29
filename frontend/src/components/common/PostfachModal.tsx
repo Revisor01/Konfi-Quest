@@ -33,7 +33,6 @@ import {
   ICON_CHATS_GEFUELLT,
   ICON_CHALLENGE_GEFUELLT,
   ICON_INFO_GEFUELLT,
-  ICON_MAIL_GEFUELLT,
   ICON_ORGANISATION_GEFUELLT,
   ICON_SCHLIESSEN,
 } from '../shared/icons';
@@ -367,23 +366,21 @@ const PostfachModal: React.FC = () => {
                         }
                       }}
                     >
-                      {/* Eselsohr wie der Status in der Antragsliste: ein
-                          geschlossener Umschlag in der Ecke statt eines Punkts
-                          vor der Zeile. Symbol statt "Neu" (Eck-Badges zeigen in
-                          der Regel Symbole, Simon 25.09.2026); der Klartext
-                          steht in title/aria-label. */}
+                      {/* Ungelesen: ein blauer Punkt in der Ecke, ohne Zahl
+                          und ohne Symbol -- derselbe Punkt wie an der Glocke
+                          (Simon, TestFlight 233, 29.09.2026: "Das Symbol der
+                          blauen Briefkaesten fuer die Post am Postfach gefaellt
+                          mir nicht"). Bis dahin ein geschlossener Umschlag im
+                          Eselsohr. Der Klartext steht in title/aria-label;
+                          Lage und Groesse regelt das Stylesheet
+                          (.app-postfach-eintrag__punkt). */}
                       {ungelesenerEintrag && (
-                        <div className="app-corner-badges">
-                          <div
-                            className="app-corner-badge"
-                            style={{ background: 'var(--ion-color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
-                            title="Neu — ungelesen"
-                            role="img"
-                            aria-label="Neu — ungelesen"
-                          >
-                            <IonIcon icon={ICON_MAIL_GEFUELLT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
-                          </div>
-                        </div>
+                        <span
+                          className="app-ungelesen-punkt app-postfach-eintrag__punkt"
+                          title="Neu — ungelesen"
+                          role="img"
+                          aria-label="Neu — ungelesen"
+                        />
                       )}
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
@@ -395,7 +392,7 @@ const PostfachModal: React.FC = () => {
                           <div className="app-list-item__content">
                             <div
                               className="app-list-item__title"
-                              style={ungelesenerEintrag ? { paddingRight: 'var(--app-freiraum-aktion-m)' } : undefined}
+                              style={ungelesenerEintrag ? { paddingRight: 'var(--app-abstand-weit)' } : undefined}
                             >
                               {mitteilungsTitel(eintrag)}
                             </div>
