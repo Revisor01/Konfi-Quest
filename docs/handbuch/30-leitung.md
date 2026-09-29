@@ -71,7 +71,9 @@ lassen kannst.
   automatisch; die vergibst du unter **Mehr › Benutzer:innen**.
 
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
-seit wann sie dabei sind. Wer wen anlegen darf, steht unter
+seit wann sie dabei sind. Badges und Zertifikate stehen hier immer für deine
+Gemeinde; ein Zertifikat, das du verleihst, gehört deiner Gemeinde
+([je Gemeinde](60-badges.md#verstehen-was-bei-teamer-badges-anders-zaehlt)). Wer wen anlegen darf, steht unter
 [Wer wen anlegen darf](05-rollen.md#nachschlagen-wer-wen-anlegen-darf).
 
 ## Chats moderieren

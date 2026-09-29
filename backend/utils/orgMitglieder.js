@@ -246,8 +246,42 @@ async function istMitgliedDerOrganisation(db, userId, organizationId) {
   return r.mitglied === true;
 }
 
+/**
+ * Welche Rolle hat diese Person in DIESER Gemeinde? Ueber beide Quellen
+ * (28.09.2026, Teamer-Badges je Gemeinde): in der Stamm-Gemeinde
+ * users.role_id -- auch wenn user_organizations sie noch einmal mit anderer
+ * Rolle fuehrt (Altbestand aus Migration 101) --, in jeder weiteren
+ * user_organizations.role_id. Dieselbe Regel wie rbac.js, checkAndAwardBadges
+ * und ladeMitgliedschaftenVieler.
+ *
+ * Fuer Routen, in denen die Leitung eine Person ihrer Gemeinde nach deren
+ * Rolle DORT prueft (etwa "ist Teamer:in") -- vorher lasen sie die Rolle am
+ * Konto und die Stamm-Gemeinde, und die Leitung einer weiteren Gemeinde bekam
+ * fuer ihre Teamer:in 404.
+ *
+ * @param {object} db
+ * @param {number|string} userId
+ * @param {number|string} organizationId
+ * @returns {Promise<string|null>}  Rollenname oder null (kein Mitglied,
+ *   geloeschtes Konto)
+ */
+async function ladeRolleInGemeinde(db, userId, organizationId) {
+  const { rows: [z] } = await db.query(
+    `SELECT CASE WHEN u.organization_id = $2 THEN r_stamm.name ELSE r_dort.name END AS role_name
+       FROM users u
+       JOIN roles r_stamm ON r_stamm.id = u.role_id
+       LEFT JOIN user_organizations uo ON uo.user_id = u.id AND uo.organization_id = $2
+       LEFT JOIN roles r_dort ON r_dort.id = uo.role_id
+      WHERE u.id = $1 AND u.deleted_at IS NULL
+        AND (u.organization_id = $2 OR uo.id IS NOT NULL)`,
+    [userId, organizationId]
+  );
+  return z ? z.role_name : null;
+}
+
 module.exports = {
   istMitgliedDerOrganisation,
+  ladeRolleInGemeinde,
   ladeMitgliederDerOrganisation,
   ladeLeitungDerOrganisation,
   ladeMitgliedschaftenDerPerson,

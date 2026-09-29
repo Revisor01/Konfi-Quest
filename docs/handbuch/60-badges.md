@@ -351,6 +351,12 @@ Badge dieser Art, das es schon gibt, wird aber weiterhin ganz normal
 - **Events:** Umgekehrt großzügiger — es zählt **jedes** Event mit
   eingetragener Anwesenheit, auch Pflicht-Events und Konfirmationen.
   Teamer:innen arbeiten dort ja mit.
+- **Gemeinde:** Teamer-Badges gelten **je Gemeinde**. Wer
+  [in mehreren Gemeinden](05-rollen.md#in-mehreren-gemeinden-mitarbeiten) im
+  Team ist, sieht in jeder die Badges dieser Gemeinde mit dem Fortschritt und
+  den Verleihungen dort; gezählt werden nur Aktivitäten und Events dieser
+  Gemeinde, und ein Badge bleibt bei der Gemeinde, in der es verliehen wurde.
+  Dasselbe gilt für [Zertifikate](30-leitung.md#die-detailansicht-einer-person-nutzen).
 
 ## Nachvollziehen, wann geprüft wird
 
@@ -376,7 +382,8 @@ Bedingungen, die ohne Zutun fällig werden können — „Serie", „Zeitbasiert
 einträgt.
 
 > **Mitteilungen sind dafür nicht nötig.** Der Hintergrundlauf geht alle
-> aktiven Konfis und Teamer:innen durch, ganz gleich ob jemand die App
+> aktiven Konfis und Teamer:innen durch — Teamer:innen in jeder Gemeinde, in
+> der sie im Team sind —, ganz gleich ob jemand die App
 > installiert oder Mitteilungen erlaubt hat. Ohne Mitteilungen erfährt man von
 > dem Badge nur später — beim nächsten Öffnen der App statt sofort per
 > Push. Verliehen wird es genauso.

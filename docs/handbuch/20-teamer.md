@@ -170,7 +170,8 @@ auch vom Gerät. Mehr dazu unter
   denen du dabei oder angemeldet warst, mit den Punkten dafür. Diese Liste
   hält die App bei deiner Beförderung fest; sie bleibt, auch wenn dein alter
   Jahrgang gelöscht wird. Hier steht nur deine Konfi-Zeit; deine
-  Teamer-Badges stehen unter **Badges**.
+  Teamer-Badges stehen unter **Badges** — in jeder Gemeinde die Badges
+  dieser Gemeinde ([je Gemeinde](60-badges.md#verstehen-was-bei-teamer-badges-anders-zaehlt)).
 - **Meine Rückblicke** — deine [Jahresrückblicke](95-wrapped.md) als Teamer:in
 
 Wie du dich in der App bewegst, steht im Kapitel

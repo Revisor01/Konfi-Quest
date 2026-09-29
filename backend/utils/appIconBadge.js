@@ -374,11 +374,14 @@ async function appIconSummenJeOrganisation(db, empfaenger) {
  * @param {object} db
  * @param {Array<number>} userIds
  * @returns {Promise<Map<number, {summe:number, jeOrganisation:Map<number, number>,
- *   stamm_organization_id:number|null}>>}
+ *   stamm_organization_id:number|null, mitgliedschaften:Array}>>}
  *   Je Person (Schluessel: id als Zahl) die Summe, die Aufteilung je Gemeinde
  *   (alle aktiven Gemeinden, auch mit 0) und die Stamm-Gemeinde. Geloeschte
  *   oder unbekannte Konten fehlen; wer keiner aktiven Gemeinde angehoert, hat
- *   die Summe 0.
+ *   die Summe 0. `mitgliedschaften` (seit 28.09.2026) reicht die Gemeinden
+ *   mit der Rolle DORT aus ladeMitgliedschaftenVieler durch -- der
+ *   Hintergrund-Lauf prueft damit die Badges je Gemeinde, ohne die zwei
+ *   Abfragen ein zweites Mal zu stellen.
  */
 async function appIconSummenAllerGemeinden(db, userIds) {
   const jePerson = await ladeMitgliedschaftenVieler(db, userIds);
@@ -413,7 +416,7 @@ async function appIconSummenAllerGemeinden(db, userIds) {
     }
     // summeAlteApps: die Zahl fuer Geraete der Store-Apps 2.2.x (ohne
     // Challenge-Neuigkeiten, siehe summenBerechnen).
-    ergebnis.set(userId, { summe, summeAlteApps, jeOrganisation, stamm_organization_id });
+    ergebnis.set(userId, { summe, summeAlteApps, jeOrganisation, stamm_organization_id, mitgliedschaften });
   }
   return ergebnis;
 }

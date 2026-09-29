@@ -437,6 +437,12 @@ iOS-Build 233 · Android versionCode 127
   dort jetzt in der Team-Liste, in der Auswahl am Event und in der
   Detailansicht und lässt sich eintragen; Jahrgänge, Badges und Punkte zeigen
   Liste und Detailansicht nur aus dieser Gemeinde.
+- Teamer-Badges und Zertifikate bleiben bei der Gemeinde, in der sie
+  entstanden sind: Wer in mehreren Gemeinden im Team ist, bekommt Badges in
+  jeder Gemeinde auch über die stündliche Prüfung, und die Leitung einer
+  weiteren Gemeinde sieht dort deren Badges und kann Zertifikate verleihen.
+  Bisher prüfte die App nur die Stamm-Gemeinde, und die Leitung der weiteren
+  Gemeinde bekam „nicht gefunden".
 - Die automatische Löschung nach der Konfirmation lässt ein Konto stehen, das
   noch zu einer weiteren Gemeinde gehört. Bisher sperrte und löschte sie das
   ganze Konto, und die andere Gemeinde verlor die Person mit.

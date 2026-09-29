@@ -360,9 +360,34 @@ class BackgroundService {
       // verschlucken, was waehrend der Auszeit faellig wurde. Damit dieser
       // eine Lauf den Pool nicht minutenlang belegt, begrenzt
       // ABZEICHEN_MAX_JE_LAUF ihn; der Rest kommt in den Folgelaeufen dran.
-      const abzeichenPersonen = (!nurZaehler)
-        ? users.filter(u => u.user_type === 'konfi' || u.user_type === 'teamer')
-        : [];
+      //
+      // JE GEMEINDE (28.09.2026, Simon: "Es bleibt immer an der Gemeinde!"):
+      // Badges gehoeren der Gemeinde, in der sie entstehen. Bis dahin stand
+      // hier die Rolle am Konto und die Stamm-Gemeinde: Wer in einer
+      // weiteren Gemeinde Teamer:in ist, wurde dort nie geprueft -- und wer
+      // zuhause Leitung ist, gar nicht. Jetzt je Person JEDE aktive Gemeinde,
+      // in der sie Konfi oder Teamer:in ist, mit der Rolle DORT
+      // (ladeMitgliedschaftenVieler: Stamm-Gemeinde mit users.role_id,
+      // weitere mit user_organizations.role_id, gesperrte Gemeinden nicht --
+      // dieselben Mitgliedschaften, aus denen oben der Zaehler rechnet; sie
+      // kommen aus jePerson mit, keine Abfrage mehr).
+      //
+      // abzeichenPersonen hat EINEN Eintrag je (Person, Gemeinde); Auswahl,
+      // Merker und Obergrenze arbeiten weiter je Person, geprueft wird dann
+      // jede ihrer Gemeinden fuer sich.
+      const abzeichenPersonen = [];
+      const abzeichenGemeindenJe = new Map();
+      if (!nurZaehler) {
+        for (const u of users) {
+          const eintrag = jePerson.get(Number(u.user_id));
+          for (const m of (eintrag ? eintrag.mitgliedschaften : [])) {
+            if (m.role_name !== 'konfi' && m.role_name !== 'teamer') continue;
+            abzeichenPersonen.push({ user_id: u.user_id, organization_id: m.organization_id });
+            if (!abzeichenGemeindenJe.has(u.user_id)) abzeichenGemeindenJe.set(u.user_id, []);
+            abzeichenGemeindenJe.get(u.user_id).push(m.organization_id);
+          }
+        }
+      }
       let zuPruefen = new Set();
       let neueAbdruecke = null;
       if (abzeichenPersonen.length > 0) {
@@ -388,9 +413,9 @@ class BackgroundService {
         if (zuPruefen.size > this.ABZEICHEN_MAX_JE_LAUF) {
           // Ab dem Zeiger weiterlaufen und hinten wieder vorn anfangen, damit
           // ueber die Laeufe hinweg jeder drankommt und niemand dauerhaft
-          // hinten liegen bleibt.
-          const warteschlange = abzeichenPersonen
-            .map(u => u.user_id)
+          // hinten liegen bleibt. Je Person EIN Platz, auch mit mehreren
+          // Gemeinden.
+          const warteschlange = [...abzeichenGemeindenJe.keys()]
             .filter(id => zuPruefen.has(id));
           const start = this.abzeichenZeiger % warteschlange.length;
           const dranheute = new Set();
@@ -460,7 +485,12 @@ class BackgroundService {
           // Seit dem 14.09.2026 zusaetzlich: nur wer sich seit dem letzten
           // Lauf veraendert hat (siehe die Auswahl oben).
           if (!nurZaehler && zuPruefen.has(user.user_id)) {
-            await checkAndAwardBadges(db, user.user_id, { organizationId: user.organization_id });
+            // Jede Gemeinde fuer sich (siehe abzeichenPersonen oben):
+            // checkAndAwardBadges zaehlt, prueft und bucht nur in der
+            // uebergebenen Gemeinde.
+            for (const organizationId of (abzeichenGemeindenJe.get(user.user_id) || [])) {
+              await checkAndAwardBadges(db, user.user_id, { organizationId });
+            }
             geprueft++;
 
             // In Bloecken arbeiten statt am Stueck: Nach je
@@ -507,8 +537,8 @@ class BackgroundService {
         }
         // Geloeschte Konten aus dem Merker werfen, sonst waechst er mit der
         // Laufzeit (dieselbe Vorsorge wie bei letzterZaehler oben).
-        if (this.letzterAbzeichenAbdruck.size > abzeichenPersonen.length) {
-          const aktuell = new Set(abzeichenPersonen.map(u => u.user_id));
+        if (this.letzterAbzeichenAbdruck.size > abzeichenGemeindenJe.size) {
+          const aktuell = new Set(abzeichenGemeindenJe.keys());
           for (const id of this.letzterAbzeichenAbdruck.keys()) {
             if (!aktuell.has(id)) this.letzterAbzeichenAbdruck.delete(id);
           }

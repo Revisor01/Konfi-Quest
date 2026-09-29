@@ -703,11 +703,21 @@ paths:
         Erhalten bleiben criteria_type, criteria_value, criteria_extra,
         is_active, is_hidden und sort_order — die Ansichten gruppieren,
         sortieren und filtern danach.
+
+        JE GEMEINDE (geprueft 28.09.2026, Simon: "Es bleibt immer an der
+        Gemeinde!"): Abzeichen, Fortschritt und Verleihungen kommen aus der
+        AKTIVEN Gemeinde (nach switch-org bzw. X-Active-Organization); wer in
+        einer weiteren Gemeinde Teamer:in ist, bekommt dort 200 mit deren
+        Abzeichen, gezaehlt werden nur Aktivitaeten und Events dieser
+        Gemeinde. Dasselbe fuer GET /teamer/badges, /teamer/badges/unseen,
+        PUT und POST /teamer/badges/mark-seen und newBadges in
+        GET /notifications/badge-counts. Test
+        tests/routes/teamerBadgesJeGemeinde.test.js.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
         org-scope: true
-        objekt-pruefung: "nur eigene Daten; alle Teilabfragen mit user_id + organization_id"
+        objekt-pruefung: "nur eigene Daten; alle Teilabfragen mit user_id + organization_id der aktiven Gemeinde"
       responses:
         "200":
           description: "{ available, earned, stats }: available = offene, erreichbare, nicht geheime Abzeichen; earned = alle verdienten (auch geheime und abgeschaltete); je Abzeichen id, name, description, icon, color, criteria_type, criteria_value, criteria_extra, is_hidden, is_active, sort_order, earned, earned_at, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — gezaehlt werden nur aktive, erreichbare Abzeichen."
@@ -790,11 +800,21 @@ paths:
         aus GET /api/teamer/badges wäre hier ungenutzt. Der Zielbenutzer muss
         die Rolle teamer haben, zur eigenen Organisation gehören und darf
         nicht gelöscht sein.
+
+        BEHOBEN 28.09.2026 (Audit Punkte/Termine, Tabelle "Rolle je
+        Gemeinde"; Simon: "Es bleibt immer an der Gemeinde!"): Rolle und
+        Gemeinde kamen vom Konto (users.role_id, users.organization_id) --
+        fuer eine Teamer:in, die ueber user_organizations in der aktiven
+        Gemeinde mitarbeitet, bekam deren Leitung 404. Jetzt die Rolle IN
+        DIESER Gemeinde ueber beide Quellen (utils/orgMitglieder.js,
+        ladeRolleInGemeinde; in der Stamm-Gemeinde gewinnt users.role_id).
+        Die Abzeichen bleiben auf die aktive Gemeinde begrenzt. Antwortform
+        unveraendert. Test tests/routes/teamerBadgesJeGemeinde.test.js.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "Ziel-User muss Rolle 'teamer' haben, zur aktiven Org gehören und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer'"
+        objekt-pruefung: "Ziel-User muss in der aktiven Org die Rolle 'teamer' haben (Stamm-Gemeinde oder user_organizations) und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer' und organization_id der aktiven Org"
       parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
       responses:
         "200": { description: "earned[] (id, name, description, icon, color, criteria_type, criteria_value, is_hidden, earned_at)" }
@@ -932,11 +952,17 @@ paths:
         Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht.
         Seit 25.09.2026 landet die Mitteilung (Art `certificate`) auch im
         Postfach der Teamer:in (utils/postfachArten.js).
+
+        BEHOBEN 28.09.2026 (wie GET /teamer/{userId}/badges): Die Pruefung
+        las Rolle und Gemeinde am Konto; einer Teamer:in aus einer weiteren
+        Gemeinde liess sich hier kein Zertifikat verleihen (404). Jetzt die
+        Rolle IN DIESER Gemeinde ueber beide Quellen. Das Zertifikat gehoert
+        der verleihenden Gemeinde (organization_id, Typ nur aus ihr).
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCertificate]
         org-scope: true
-        objekt-pruefung: "Ziel-User: organization_id + Rolle 'teamer' (404 sonst); certificate_type: organization_id + is_active (404 sonst)"
+        objekt-pruefung: "Ziel-User: Rolle 'teamer' in der aktiven Org, Stamm-Gemeinde oder user_organizations (404 sonst); certificate_type: organization_id + is_active (404 sonst)"
       parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
       requestBody:
         required: true
