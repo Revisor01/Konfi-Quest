@@ -1472,6 +1472,9 @@ iOS-Build 234 · Android versionCode 128
   Gemeinde-Einladung und Abmeldung; sie hängen nicht mehr von Uhrzeit und
   Zeitzone des Prüfrechners ab, und der Durchlauf im Browser prüft den
   Punktestand nach einer Vergabe auf den genauen Wert.
+- Bleibt eine Auslieferung aus, weil die automatischen Prüfungen fehlschlagen,
+  meldet sich das sofort als offener Eintrag im Projekt; er schließt sich
+  selbst, sobald die Prüfungen wieder durchlaufen.
 
 ## [2.2.0] - 2026-09-18
 

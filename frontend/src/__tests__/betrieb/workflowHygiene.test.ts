@@ -24,7 +24,7 @@ function jobs(text: string): Array<{ name: string; rumpf: string }> {
 describe('Workflows: Hygiene', () => {
   it('die Workflows werden gefunden', () => {
     expect(workflows.map((w) => w.datei).sort()).toEqual([
-      'android-release.yml', 'ci.yml', 'ios-release.yml', 'notfall-deploy.yml', 'test-backend.yml',
+      'android-release.yml', 'ci-meldung.yml', 'ci.yml', 'ios-release.yml', 'notfall-deploy.yml', 'test-backend.yml',
     ]);
   });
 
