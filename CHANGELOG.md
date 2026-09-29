@@ -1187,6 +1187,9 @@ iOS-Build 234 · Android versionCode 128
   in der Store-Fassung nicht an; auf Samsung-Geräten nahm sie nur einen von
   zwei Wegen. Beides ist behoben, und Sony-Geräte mit dem älteren
   Xperia-Startbildschirm erreicht die Zahl jetzt ebenfalls.
+- Android: Auf Sony-Geräten steht am App-Symbol die Zahl der App statt nur
+  eines Punkts — dieselbe Summe wie auf dem iPhone, auch bei geschlossener
+  App.
 - Beim Öffnen der App bleiben die Mitteilungen der Leitung in der Leiste
   liegen, auf iPhone und Android, bis sie angetippt oder weggewischt werden;
   auf Android verschwinden dadurch auch Punkt oder Zahl am App-Symbol nicht

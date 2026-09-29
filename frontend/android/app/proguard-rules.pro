@@ -103,8 +103,8 @@
 # Annotationen, die zur Laufzeit gelesen werden (Capacitor tut genau das).
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
 
-# ShortcutBadger (Zahl am App-Symbol ueber @capawesome/capacitor-badge),
-# 29.09.2026.
+# ShortcutBadger (Zahl am App-Symbol ueber @capawesome/capacitor-badge und
+# AppSymbolZahl.java), 29.09.2026.
 #
 # ShortcutBadger legt seine Badger ueber eine Liste von Klassen an
 # (Class.newInstance in ShortcutBadger.initBadger). R8 sieht diesen Aufruf

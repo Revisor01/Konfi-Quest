@@ -80,29 +80,37 @@
 
         <!-- EIN Empfaenger fuer Push-Nachrichten (29.09.2026).
 
-             Zwei Plugins melden je einen FirebaseMessagingService mit
-             MESSAGING_EVENT an: @capacitor/push-notifications und
-             @capacitor-firebase/messaging. Android stellt jede Nachricht nur
-             EINEM Dienst zu: FCM loest ihn per resolveService auf, und bei
-             gleicher Prioritaet gewinnt der erste im gemergten Manifest; die
-             Bibliotheken stehen dort in der Reihenfolge aus
-             capacitor.build.gradle, das Firebase-Plugin vor dem Push-Plugin.
-             Damit bekam der Dienst von @capacitor-firebase/messaging alles:
-             'pushNotificationReceived' (AppContext -> push:received ->
-             Zaehler neu laden) feuerte auf Android nie, und bei offener App
-             erschien keine Mitteilung, obwohl presentationOptions "alert"
-             verlangt. Das Firebase-Plugin warnt selbst davor, neben einem
-             anderen Push-Plugin zu laufen.
+             KonfiMessagingService setzt die Zahl am App-Symbol auch bei
+             geschlossener App: Der Server schickt dafuer ein reines
+             Datenpaket (badge_update), und nur ein Messaging-Dienst wird
+             davon geweckt, nicht die WebView. Auf dem iPhone erledigt das
+             aps.badge. Alles andere reicht der Dienst unveraendert an
+             @capacitor/push-notifications weiter, von dessen Dienst er
+             abgeleitet ist: Empfang bei offener App
+             ('pushNotificationReceived') und neuer Token ('registration')
+             bleiben, wie sie waren. Das Antippen laeuft ueber die Activity.
 
-             Gebraucht wird @capacitor-firebase/messaging nur fuer getToken()
-             und deleteToken(), beides spricht das Firebase-SDK direkt an,
-             ohne den Dienst. Dessen Ereignisse (notificationReceived,
-             tokenReceived) hoert die App nicht ab. Deshalb nimmt die App hier
-             den Dienst des Firebase-Plugins heraus; es bleibt der von
-             @capacitor/push-notifications: Empfang bei offener App, neuer
-             Token ('registration'). Das Antippen einer Mitteilung laeuft
-             ohnehin ueber die Activity, nicht ueber den Dienst.
-             Geprueft in frontend/src/__tests__/config/androidPushDienst.test.ts. -->
+             Die Dienste der beiden Plugins sind abgemeldet. Beide hoeren auf
+             MESSAGING_EVENT, und FCM stellt jede Nachricht nur EINEM Dienst
+             zu (resolveService; bei gleicher Prioritaet der erste im
+             gemergten Manifest). Gemessen am gemergten Manifest des
+             Debug-Baus vom 29.09.2026: Der Dienst von
+             @capacitor-firebase/messaging stand dort vor dem des
+             Push-Plugins und bekam alles; 'pushNotificationReceived'
+             feuerte auf Android nie. Von @capacitor-firebase/messaging
+             braucht die App nur getToken() und deleteToken(); beides spricht
+             das Firebase-SDK direkt an, ohne Dienst.
+             Geprueft in frontend/src/__tests__/config/androidPushEmpfang.test.ts. -->
+        <service
+            android:name=".KonfiMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <service
+            android:name="com.capacitorjs.plugins.pushnotifications.MessagingService"
+            tools:node="remove" />
         <service
             android:name="io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService"
             tools:node="remove" />
@@ -175,6 +183,12 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
+    <!-- Sonys Zahl-Anbieter nimmt die Zahl nur mit dieser Berechtigung an
+         (29.09.2026). ShortcutBadger bringt sie ebenfalls mit; hier steht sie,
+         weil die App den Anbieter selbst anspricht (AppSymbolZahl.java) und
+         nicht davon abhaengen soll, welche Bibliothek sie gerade mitbringt. -->
+    <uses-permission android:name="com.sonymobile.home.permission.PROVIDER_INSERT_BADGE" />
+
     <!-- Zahl am App-Symbol (29.09.2026). Android hat dafuer keine offizielle
          Schnittstelle; das Badge-Plugin nutzt ShortcutBadger, das den
          Launcher sucht und ueber dessen eigene Wege anspricht. Seit
@@ -196,7 +210,9 @@
          resolveContentProvider, ob es Sonys Zahl-Anbieter gibt, und nimmt
          sonst den alten Broadcast com.sonyericsson.home.action.UPDATE_BADGE,
          den heutige Xperia-Startbildschirme nicht mehr beachten. Ohne den
-         Eintrag hier sieht die App den Anbieter nicht.
+         Eintrag hier sieht die App den Anbieter nicht. Dieselben Eintraege
+         braucht AppSymbolZahl.java: Es fragt den Startbildschirm (HOME) und
+         Sonys Anbieter selbst ab.
 
          Abgeglichen mit dem Quelltext von ShortcutBadger 1.1.22 (29.09.2026).
          Weggelassen sind nur die Wege zu Startbildschirmen, die es nicht

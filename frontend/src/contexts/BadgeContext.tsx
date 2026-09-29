@@ -7,6 +7,7 @@ import { networkMonitor } from '../services/networkMonitor';
 import { initializeWebSocket } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 import { removeDeliveredForChatRoom } from '../services/notifications';
+import { appSymbolZahlNativ, appSymbolZahlSetzen } from '../services/appSymbolZahl';
 import { offlineCache } from '../services/offlineCache';
 import { summeAllerGemeindenAusAntwort } from '../utils/offenJeGemeinde';
 import { useApp } from './AppContext';
@@ -173,6 +174,17 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
    */
   const [summeAllerGemeinden, setSummeAllerGemeinden] = useState<number | null>(null);
 
+  /**
+   * Hat seit dem Start (bzw. dem letzten Gemeindewechsel) eine Zaehlung
+   * gegolten? Nur fuer Android (29.09.2026): Dort setzt die App die Zahl am
+   * App-Symbol erst, wenn sie eine hat. Vor der ersten Antwort steht
+   * appSymbolZahl auf 0 -- auf dem iPhone stoert das nicht, auf Android
+   * haette es die Zahl, die der stille Push bei geschlossener App gesetzt hat,
+   * beim Oeffnen kurz auf 0 gezogen (und auf Samsung und Xiaomi die Zahl in
+   * der liegenden Mitteilung).
+   */
+  const [zahlGeladen, setZahlGeladen] = useState(false);
+
   // Nur wer mehreren Gemeinden angehoert, braucht die zweite Abfrage. Die
   // Liste kommt aus GET /auth/my-organizations (AppContext) und fuehrt
   // dieselben Gemeinden wie je-organisation (beide Quellen, gesperrte nicht).
@@ -302,6 +314,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       zaehlungGilt.current = nummer;
 
       setSummeAllerGemeinden(alleGemeinden);
+      setZahlGeladen(true);
 
       // chatUnreadByRoom-Struktur (Record<number, number>) beibehalten —
       // ChatRoom (initialUnreadRef) und ChatOverview (Effect-Trigger) hängen dran.
@@ -440,6 +453,9 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     setChallengeUpdatesTotal(0);
     setChallengeNeueBeitraegeByChallenge(null);
     setChallengeNeueWartendByChallenge({});
+    // Bis die neue Gemeinde gezaehlt ist, setzt Android keine Zahl
+    // (zahlGeladen oben) -- sonst stuende dort kurz die zurueckgesetzte 0.
+    setZahlGeladen(false);
   }, []);
 
   /*
@@ -645,15 +661,29 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   // Nur auf nativen Plattformen: im Desktop-Browser existiert navigator.setAppBadge/
   // clearAppBadge nicht (z.B. Firefox) -> der Web-Fallback des Plugins wirft eine
   // unhandled rejection. Promises zusaetzlich mit .catch absichern.
+  //
+  // ANDROID (29.09.2026, Simon am Sony Xperia: "nur ein kleiner blauer
+  // Kreis"): Dort setzt die App die Zahl ueber ihr eigenes Plugin
+  // (services/appSymbolZahl.ts) -- dieselbe Stelle, die bei geschlossener App
+  // der Push-Dienst benutzt. Das Badge-Plugin allein erreicht Sonys
+  // Startbildschirm nicht. Und erst, wenn eine Zaehlung gegolten hat
+  // (zahlGeladen). Das iPhone bleibt beim Badge-Plugin, unveraendert.
   const setzeGeraeteBadge = useCallback(() => {
     if (!Capacitor.isNativePlatform()) return;
+    if (appSymbolZahlNativ()) {
+      if (!zahlGeladen) return;
+      appSymbolZahlSetzen(appSymbolZahl).catch((error) => {
+        console.warn('BadgeContext: Zahl am App-Symbol nicht gesetzt:', error);
+      });
+      return;
+    }
     const p = appSymbolZahl > 0
       ? Badge.set({ count: appSymbolZahl })
       : Badge.clear();
     Promise.resolve(p).catch((error) => {
       console.warn('BadgeContext: Badge nicht verfügbar:', error);
     });
-  }, [appSymbolZahl]);
+  }, [appSymbolZahl, zahlGeladen]);
 
   useEffect(() => { setzeGeraeteBadge(); }, [setzeGeraeteBadge]);
 

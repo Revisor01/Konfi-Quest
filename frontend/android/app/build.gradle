@@ -74,6 +74,14 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    // Zahl am App-Symbol und eigener Push-Dienst (29.09.2026):
+    // KonfiMessagingService ueberschreibt onMessageReceived(RemoteMessage),
+    // AppSymbolZahl ruft ShortcutBadger. Beides bringen die Plugins nur als
+    // "implementation" mit, fuer den Code der App also nicht sichtbar. Die
+    // Fassungen stehen in variables.gradle und gelten dort auch fuer die
+    // Plugins -- es bleibt je EINE Fassung im Bau.
+    implementation "com.google.firebase:firebase-messaging:$firebaseMessagingVersion"
+    implementation "me.leolin:ShortcutBadger:$shortcutBadgerVersion@aar"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
