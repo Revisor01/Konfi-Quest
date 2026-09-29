@@ -847,6 +847,26 @@ paths:
         keine HTML-/Skript-Signatur (415 "Textdateien mit HTML oder Skript
         werden nicht angenommen."). Kein UTF-8-Zwang: Excel-CSV in
         Windows-1252 geht durch.
+        DATEITYPEN (utils/uploadTypen.js, REGELN.chat): JPG, PNG, GIF, WebP,
+        HEIC/HEIF, MP4, MOV, WebM, MP3, M4A, OGG, WAV, PDF, DOC, DOCX, PPT,
+        PPTX, TXT, CSV. Steht der gemeldete Typ auf der Liste, gilt er. Ist
+        die Angabe allgemein (leer, application/octet-stream,
+        binary/octet-stream, oder text/plain bei einer Nicht-Text-Endung --
+        busboy-Vorgabe für einen Teil ohne Content-Type) oder steht der Typ
+        nicht auf der Liste, die Endung aber schon (etwa audio/x-m4a bei
+        .m4a), gilt der Typ der Endung. Den Inhalt prüfen weiterhin die
+        Kopfbytes bzw. die Textprüfung; ein umbenanntes Programm fällt dort
+        durch (415 "Dateityp konnte nicht verifiziert werden").
+        BEHOBEN 29.09.2026 (Simons Befund, Android-Testbuild 128: eine .docx
+        liess sich nicht senden): Bis dahin verwarf der Filter jede Datei
+        still, deren gemeldeter Typ nicht auf der Liste stand -- auch eine
+        Word-Datei als application/octet-stream. Die Route antwortete dann
+        400 "Inhalt oder Datei erforderlich"; mit Text dabei ging die
+        Nachricht OHNE die Datei raus (200). Jetzt: 415 "Dieser Dateityp
+        kann nicht gesendet werden." und keine Nachricht. Store-Apps bis
+        2.3.0 werten jeden 4xx gleich aus (Warteschlange: Fehlschlag ohne
+        Wiederholung); ihre Warteschlange schickt Dateien ohne Typ als
+        image/jpeg -- das geht weiter durch.
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       requestBody:
@@ -870,7 +890,7 @@ paths:
         '400': { description: Weder Inhalt noch Datei / Datei unlesbar / Validierungsfehler }
         '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
         '413': { description: "Datei über 5 MB, Textdatei über 2 MB (seit 29.09.2026)" }
-        '415': { description: "Dateityp per Magic Bytes nicht verifizierbar; Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)" }
+        '415': { description: "Dateityp nicht erlaubt (\"Dieser Dateityp kann nicht gesendet werden.\", seit 29.09.2026 -- vorher still verworfen, dann 400 oder Nachricht ohne Datei); Dateityp per Magic Bytes nicht verifizierbar (\"Dateityp konnte nicht verifiziert werden\"); Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
@@ -1562,6 +1582,14 @@ paths:
         'konfis_und_team'/'nur_team'. konfi_consent nur bei
         visibility='konfi_choice' (Default 'publish'). Ohne Moderation
         Auto-Approve. Magic-Bytes-Prüfung der Datei; verschluesselte Ablage.
+        DATEITYPEN (utils/uploadTypen.js, REGELN.challenge): jedes gemeldete
+        Bild, dazu MP4, MOV, M4V, WebM, MP3, M4A, AAC, OGG, WAV. Bei
+        allgemeiner Angabe (leer, application/octet-stream) oder einem Typ,
+        der nicht auf der Liste steht, gilt der Typ der Endung, sofern sie
+        erlaubt ist. BEHOBEN 29.09.2026: Vorher verwarf der Filter solche Dateien
+        still, und die Route antwortete 400 "Bitte wähle eine Datei aus.";
+        jetzt 415 "Dieser Dateityp kann nicht hochgeladen werden." für
+        Dateien, die nicht passen.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Beitrags" }
       requestBody:
@@ -1587,7 +1615,7 @@ paths:
         '403': { description: Kein Zugriff auf die Challenge ODER Rolle darf bei dieser audience nicht einreichen }
         '404': { description: Challenge nicht gefunden oder Entwurf }
         '409': { description: "Challenge nicht aktiv ODER bereits eingereicht (allow_multiple=false). Seit 28.09.2026 auch bei gleichzeitigen Anfragen verlaesslich: Pruefung und INSERT laufen in einer Transaktion unter pg_advisory_xact_lock je (Challenge, Person); vorher kamen zwei gleichzeitige Einreichungen beide durch (Audit Fachlogik Chat, 'Unklar', behoben). Antwortform unveraendert." }
-        '415': { description: Dateityp nicht verifizierbar }
+        '415': { description: "Dateityp nicht erlaubt (\"Dieser Dateityp kann nicht hochgeladen werden.\", seit 29.09.2026) oder per Magic Bytes nicht verifizierbar" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [konfi, teamer, admin, org_admin]

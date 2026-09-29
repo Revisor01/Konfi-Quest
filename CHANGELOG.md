@@ -524,6 +524,14 @@ iOS-Build 234 · Android versionCode 128
 - Die Dateiauswahl löst die App-Sperre nicht mehr aus: Wer im Chat, im
   Material oder für einen Antrag ein Foto oder eine Datei auswählt, wird danach
   nicht mehr nach Fingerabdruck oder Face ID gefragt.
+- Word-Dateien lassen sich auf Android wieder im Chat senden. Nennt das Handy
+  keinen Dateityp, zählt die Endung des Dateinamens — ebenso im Material, bei
+  Challenge-Beiträgen und beim Foto zu einem Antrag.
+- Die Dateiauswahl im Chat bietet alle Formate an, die der Chat annimmt, auch
+  PowerPoint, CSV und Tondateien.
+- Eine Datei in einem Format, das Chat oder Material nicht annehmen, fällt
+  nicht mehr still weg: Die Chat-Nachricht geht dann nicht ohne sie raus, und
+  das Material meldet „Dieser Dateityp kann nicht hochgeladen werden."
 - Teamer:innen und Leitung lassen sich wieder von Hand zu Events hinzufügen:
   Die Auswahl blieb leer, obwohl sie dem Jahrgang des Events zugewiesen waren.
 - Wer über eine Einladung im Team oder in der Leitung einer Gemeinde ist, steht

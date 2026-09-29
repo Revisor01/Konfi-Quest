@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { mimeAusDateiname } from '../../utils/dateiTypen';
 
 // Medien-Cache fuer ALLE Dateitypen, Groessengrenze, temp-Aufraeumen
 // (13.09.2026, Simon: "Sonst muss man ja immer laden. Die moeglichst alle
@@ -24,29 +25,40 @@ const oeffnen = lies('src/hooks/useDateiOeffnen.ts');
 const viewer = lies('src/utils/nativeFileViewer.ts');
 const main = lies('src/main.tsx');
 
+// Seit dem 29.09.2026 steht die Tabelle Endung -> Typ in utils/dateiTypen.ts
+// (eine fuer Anzeigen, Cache und Hochladen); der Cache liest sie von dort.
+// Die Erwartungen ziehen mit um und pruefen jetzt die Funktion selbst.
 describe('Der Cache kennt auch Dokumente, Audio und Archive', () => {
+  it('liest den Typ aus der gemeinsamen Tabelle', () => {
+    expect(cache).toContain("import { mimeAusDateiname } from '../utils/dateiTypen';");
+    expect(cache).toContain('base64ToBlob(data, mimeFromKey(key))');
+    expect(cache).toContain('const mimeFromKey = (key: string): string => mimeAusDateiname(key);');
+  });
+
   it('fuehrt PDF als eigenen MIME-Typ', () => {
     // Der springende Punkt: Ohne Eintrag kaeme eine PDF als
     // application/octet-stream zurueck und der native Betrachter oeffnete
     // sie nicht.
-    expect(cache).toContain("pdf: 'application/pdf'");
+    expect(mimeAusDateiname('plan.pdf')).toBe('application/pdf');
   });
 
   it('fuehrt die uebrigen Dokumenttypen', () => {
-    expect(cache).toContain("docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'");
-    expect(cache).toContain("xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'");
-    expect(cache).toContain("txt: 'text/plain'");
+    expect(mimeAusDateiname('a.docx')).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    expect(mimeAusDateiname('a.xlsx')).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect(mimeAusDateiname('a.txt')).toBe('text/plain');
+    expect(mimeAusDateiname('a.zip')).toBe('application/zip');
   });
 
   it('fuehrt Audio', () => {
-    expect(cache).toContain("mp3: 'audio/mpeg'");
-    expect(cache).toContain("m4a: 'audio/mp4'");
+    expect(mimeAusDateiname('a.mp3')).toBe('audio/mpeg');
+    expect(mimeAusDateiname('a.m4a')).toBe('audio/mp4');
   });
 
   it('faellt fuer Unbekanntes weiterhin auf octet-stream zurueck', () => {
     // Kein Eintrag darf zum Fehler fuehren — die Datei kommt dann eben
     // generisch zurueck, statt gar nicht.
-    expect(cache).toContain("return map[ext] || 'application/octet-stream';");
+    expect(mimeAusDateiname('a.xyz')).toBe('application/octet-stream');
+    expect(mimeAusDateiname('ohne-endung')).toBe('application/octet-stream');
   });
 });
 

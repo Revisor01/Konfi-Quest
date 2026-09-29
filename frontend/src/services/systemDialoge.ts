@@ -1,6 +1,7 @@
 import { Share } from '@capacitor/share';
 import type { ShareOptions } from '@capacitor/share';
 import { ohneSperre, ausflugStarten, ausflugBeenden } from './appSperre';
+import { mitTypAusEndung } from '../utils/dateiTypen';
 
 // ---------------------------------------------------------------------------
 // Systemdialoge, die die App in den Hintergrund schicken.
@@ -163,7 +164,8 @@ const offeneAuswahlen = new Set<HTMLInputElement>();
  * dateiAuswahlNurUeberHuelle.test.ts).
  *
  * Das Versprechen löst mit den gewählten Dateien auf, oder mit `null`, wenn
- * nichts gewählt wurde (Abbruch). Es wirft nie.
+ * nichts gewählt wurde (Abbruch). Es wirft nie. Jede Datei trägt einen Typ:
+ * Fehlt er oder ist er allgemein, kommt er aus der Endung (mitTypAusEndung).
  *
  * DER AUSFLUG beginnt, bevor die Auswahl aufgeht, und endet genau einmal:
  *   - nach der Auswahl (`change`) oder dem Abbruch (`cancel`, wo das WebView
@@ -208,7 +210,10 @@ export const dateiAuswaehlen = ({
     let frist: ReturnType<typeof setTimeout> | undefined;
     let hinweis: ReturnType<typeof setTimeout> | undefined;
 
-    const gewaehlt = (): File[] => Array.from(feld.files ?? []);
+    // Nennt das Gerät keinen Typ (Android bei manchen Word-Dateien), kommt er
+    // aus der Endung — siehe utils/dateiTypen.ts. Sonst ginge die Datei als
+    // application/octet-stream hinaus.
+    const gewaehlt = (): File[] => Array.from(feld.files ?? []).map(mitTypAusEndung);
 
     const fertig = (dateien: File[]) => {
       if (erledigt) return;

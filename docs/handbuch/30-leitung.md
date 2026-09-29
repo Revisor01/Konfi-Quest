@@ -275,8 +275,12 @@ Pixel). Wer ein Bild in voller Auflösung braucht, etwa zum Drucken, legt es
 als PDF ab. Eine Datei darf danach höchstens 20 MB groß sein; was darüber
 liegt, meldet die App gleich bei der Auswahl mit „Datei ist zu groß (max.
 20 MB)." und nimmt es nicht auf. Textdateien (TXT, CSV) prüft der Server
-wie im Chat auf ihren Inhalt
+wie im Chat auf ihren Inhalt, und eine Datei, für die das Handy keinen Typ
+nennt, geht wie dort nach ihrer Endung
 ([Verstehen, was mit der Datei passiert](90-chat.md#verstehen-was-mit-der-datei-passiert)).
+Ein Format, das das Material nicht kennt, lehnt der Server mit „Dieser
+Dateityp kann nicht hochgeladen werden." ab — dann wird keine der gewählten
+Dateien gespeichert.
 Beim Speichern steht unter der Kopfzeile,
 wie weit das Hochladen ist — „Wird gesendet… 40 %", zuletzt „Wird
 verarbeitet…". Wie die Dateien danach auf den Geräten liegen und wieder

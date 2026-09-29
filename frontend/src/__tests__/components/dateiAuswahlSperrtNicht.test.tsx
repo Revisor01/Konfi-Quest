@@ -72,6 +72,7 @@ const Chat: React.FC = () => {
   return (
     <div>
       <span data-testid="zustand">{gesperrt ? 'gesperrt' : 'offen'}</span>
+      <span data-testid="typ">{selectedFile?.type ?? ''}</span>
       <button onClick={entsperren}>entsperren</button>
       <MessageInput
         messageText=""
@@ -179,5 +180,33 @@ describe('Chat: eine Datei anhängen sperrt die App nicht', () => {
     await wegUndZurueck(() => undefined);
 
     expect(zustand()).toBe('gesperrt');
+  });
+});
+
+describe('Chat: eine Word-Datei aus Android', () => {
+  // Simons Befund 29.09.2026: „docx konnte ich nicht hochladen, schlägt
+  // einfach fehl das senden." Nennt Android keinen Typ, ging die Datei als
+  // application/octet-stream hinaus.
+  it('die Auswahl bietet an, was der Server annimmt — auch PowerPoint, CSV und Tondateien', async () => {
+    await offenerChat();
+
+    await act(async () => { fireEvent.click(screen.getByLabelText('Datei anhängen')); });
+
+    expect(offenesFeld()!.accept).toBe('image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx,.txt,.csv,.mp3,.m4a,.ogg,.wav');
+  });
+
+  it('ohne Typ gewählt, liegt sie mit dem Word-Typ zum Senden bereit', async () => {
+    await offenerChat();
+
+    await act(async () => { fireEvent.click(screen.getByLabelText('Datei anhängen')); });
+    const brief = new File(['PK-Word'], 'Einladung.docx', { type: '' });
+    await act(async () => {
+      Object.defineProperty(offenesFeld()!, 'files', { value: [brief], configurable: true });
+      offenesFeld()!.onchange?.(new Event('change'));
+    });
+
+    await waitFor(() => expect(screen.getByText('Einladung.docx')).toBeTruthy());
+    expect(screen.getByTestId('typ').textContent)
+      .toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
   });
 });

@@ -318,9 +318,10 @@ An jede Nachricht lässt sich eine Datei hängen, ein Text darf dabeistehen.
 | **Audio** | MP3, M4A, OGG, WAV |
 | **Dokumente** | PDF, Word, PowerPoint, TXT, CSV |
 
-Bilder und Videos erscheinen direkt im Chat, alles andere als Anhang mit
-Dateinamen zum Antippen. Bilder werden vor dem Senden automatisch verkleinert —
-auf demselben Weg wie bei den [Challenges](80-challenges.md).
+Die Dateiauswahl auf dem Handy bietet genau diese Formate an. Bilder und
+Videos erscheinen direkt im Chat, alles andere als Anhang mit Dateinamen zum
+Antippen. Bilder werden vor dem Senden automatisch verkleinert — auf demselben
+Weg wie bei den [Challenges](80-challenges.md).
 
 Während eine Datei gesendet wird, steht an der Nachricht, wie weit sie ist
 (*„Wird gesendet… 40 %"*), darunter ein Balken. Bei 100 % wechselt der Text auf
@@ -360,6 +361,13 @@ wie sie sind — für ein längeres Video ist der Chat zu knapp.
   Textdatei."*) und keine Webseite oder kein Skript darin (*„Textdateien mit
   HTML oder Skript werden nicht angenommen."*). Eine CSV aus Excel geht durch,
   auch mit Umlauten.
+- Sagt das Handy nicht, was für eine Datei es ist — auf Android kommt das etwa
+  bei Word-Dateien vor —, zählt die **Endung des Dateinamens**: Eine
+  `Einladung.docx` geht als Word-Datei durch, geprüft wird ihr Inhalt trotzdem.
+  Eine Datei in einem Format, das nicht in der Tabelle oben steht, nimmt der
+  Chat nicht an. Die Nachricht geht dann gar nicht raus, auch nicht ihr Text,
+  und bleibt mit dem roten Warnsymbol stehen; „Erneut senden" hilft dabei
+  nicht — lösch sie und schick die Datei in einem der Formate oben.
 - Sie liegt danach **verschlüsselt** auf dem Server, unter einem zufälligen
   Namen ohne Bezug zu Inhalt oder Absender.
 - Abrufen kann sie nur, wer angemeldet ist und den Chat öffnen darf. Es gibt

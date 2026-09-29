@@ -3,10 +3,8 @@ import { useApp } from '../../contexts/AppContext';
 import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE } from '../../services/mediaCompression';
 import { useDateiOeffnen } from '../../hooks/useDateiOeffnen';
 import { dateiAuswaehlen } from '../../services/systemDialoge';
+import { CHAT_DATEIAUSWAHL } from '../../utils/dateiTypen';
 import { Message } from '../../types/chat';
-
-/** Was der Chat zur Auswahl anbietet. */
-export const CHAT_DATEIAUSWAHL = 'image/*,video/*,.pdf,.doc,.docx,.txt';
 
 /**
  * Datei-Handling des Chatraums (beim Aufteilen von ChatRoom.tsx hierher

@@ -25,6 +25,7 @@
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import api, { DATEI_TIMEOUT_MS } from './api';
+import { mimeAusDateiname } from '../utils/dateiTypen';
 
 const CACHE_DIR = 'media-cache';
 
@@ -161,35 +162,17 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
 // bei PDFs sofort auf: der native Betrachter oeffnet sie dann nicht.
 //
 // 13.09.2026 um Dokumente, Audio und Archive erweitert (Simon: "Sonst muss man
-// ja immer laden. Die moeglichst alle Dateien."). Vorher standen hier nur Bild-
-// und Video-Typen, weil nur die ueberhaupt in den Cache kamen.
-const mimeFromKey = (key: string): string => {
-  const ext = key.includes('.') ? key.split('.').pop()?.toLowerCase() || '' : '';
-  const map: Record<string, string> = {
-    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
-    heic: 'image/heic', heif: 'image/heif', bmp: 'image/bmp', svg: 'image/svg+xml',
-    mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', avi: 'video/x-msvideo', m4v: 'video/mp4',
-    pdf: 'application/pdf',
-    doc: 'application/msword',
-    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    xls: 'application/vnd.ms-excel',
-    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    ppt: 'application/vnd.ms-powerpoint',
-    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    txt: 'text/plain', csv: 'text/csv', rtf: 'application/rtf',
-    mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', aac: 'audio/aac', ogg: 'audio/ogg',
-    zip: 'application/zip',
-  };
-  return map[ext] || 'application/octet-stream';
-};
+// ja immer laden. Die moeglichst alle Dateien."). Seit dem 29.09.2026 steht die
+// Tabelle in utils/dateiTypen.ts — dieselbe fuer Anzeigen, Cache und Hochladen.
+const mimeFromKey = (key: string): string => mimeAusDateiname(key);
 
 /**
  * MIME-Typ aus einem Dateinamen wie "foto.png". Die Server vergeben
  * Dateinamen ohne Endung; der Typ steht deshalb nur im Originalnamen des
  * Beitrags oder der Nachricht — und genau daraus leiten ihn die Anzeigen ab.
+ * Hier weitergereicht, damit bestehende Aufrufer nichts umstellen muessen.
  */
-export const mimeAusDateiname = (name: string | null | undefined): string =>
-  name ? mimeFromKey(name) : 'application/octet-stream';
+export { mimeAusDateiname };
 
 async function ensureDir(): Promise<void> {
   try {

@@ -1682,12 +1682,21 @@ paths:
       description: >
         multipart/form-data, Feld "files", bis zu 10 Dateien pro Request, je
         max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Prüfung:
-        erst der MIME-Filter von multer (Bilder, PDF, Video, Audio,
-        Office- und OpenDocument-Formate, ZIP, text/plain, text/csv), dann eine
-        Magic-Bytes-Prüfung auf dem Buffer (415 bei Nichtuebereinstimmung;
-        text/plain und text/csv sind ausgenommen, weil sie keine Signatur
-        haben). Gespeichert wird AES-256-GCM-verschlüsselt unter einem
-        zufaelligen 64-Hex-Dateinamen.
+        erst der Typ-Filter von multer (utils/uploadTypen.js, REGELN.material:
+        Bilder, PDF, Video, Audio, Word, Excel, PowerPoint, OpenDocument,
+        text/plain, text/csv), dann eine Magic-Bytes-Prüfung auf den
+        Kopfbytes (415 bei Nichtuebereinstimmung; text/plain und text/csv
+        sind ausgenommen, weil sie keine Signatur haben). Gespeichert wird
+        AES-256-GCM-verschlüsselt unter einem zufaelligen 64-Hex-Dateinamen.
+        OHNE TYP VOM GERAET (BEHOBEN 29.09.2026, Simons Befund Android): Ist
+        die Angabe allgemein (leer, application/octet-stream) oder steht der
+        Typ nicht auf der Liste, die Endung aber schon (etwa audio/x-m4a bei
+        .m4a), gilt der Typ der Endung -- auch als mime_type in
+        material_files. Vorher verwarf
+        der Filter solche Dateien still (400 "Keine Dateien hochgeladen",
+        bei mehreren Dateien fehlte die eine ohne Hinweis). Eine Datei, die
+        nicht passt, bricht den ganzen Request mit 415 "Dieser Dateityp kann
+        nicht hochgeladen werden." ab; es wird nichts abgelegt.
         TEXTDATEIEN (BEHOBEN 29.09.2026, Audit Sicherheit BF-20): Statt dem
         Header zu vertrauen, prüft der Server den Inhalt -- höchstens 2 MB
         (413), keine Binärdaten, keine HTML-/Skript-Signatur (415, Meldung
@@ -1725,7 +1734,7 @@ paths:
         "403": { description: "Rolle nicht berechtigt, oder nicht die erstellende Person (Ersteller-Regel seit 01.09.2026)" }
         "404": { $ref: '#/components/responses/NotFound' }
         "413": { description: "Datei ueberschreitet 20 MB (globaler Multer-Handler in createApp.js); Textdatei über 2 MB (seit 29.09.2026)" }
-        "415": { description: "Dateityp nicht verifizierbar (Magic-Bytes); Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)" }
+        "415": { description: "Dateityp nicht erlaubt (\"Dieser Dateityp kann nicht hochgeladen werden.\", seit 29.09.2026); Dateityp nicht verifizierbar (Magic-Bytes); Textdatei mit Binärdaten oder HTML/Skript (seit 29.09.2026)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/material/files/{fileRef}:

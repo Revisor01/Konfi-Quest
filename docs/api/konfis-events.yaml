@@ -621,6 +621,11 @@ paths:
         multipart/form-data, Feld "photo". Magic-Bytes-Prüfung (nur echte
         Bilder, sonst 415), AES-256-GCM-Verschluesselung, zufaelliger
         64-Hex-Dateiname wird zurueckgegeben (für POST /api/konfi/requests).
+        Typ-Filter utils/uploadTypen.js (REGELN.antrag): jedes gemeldete
+        Bild; bei allgemeiner Angabe (leer, application/octet-stream) der
+        Typ der Endung, sofern sie ein Bild nennt. BEHOBEN 29.09.2026: Vorher verwarf der Filter alles
+        andere still (400 "Kein Foto hochgeladen"); jetzt 415 "Dieser
+        Dateityp kann nicht hochgeladen werden.".
       requestBody:
         required: true
         content:
@@ -641,7 +646,7 @@ paths:
         "400": { description: Kein Foto im Request }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "415": { description: Datei ist kein Bild (Magic-Bytes) }
+        "415": { description: "Datei ist kein Bild: am gemeldeten Typ bzw. der Endung (\"Dieser Dateityp kann nicht hochgeladen werden.\", seit 29.09.2026) oder an den Magic-Bytes" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/konfi/activity-requests/{id}/photo:

@@ -27,18 +27,12 @@ import { ladeText, sendeText } from '../../utils/fortschritt';
 import { tastaturKlick } from '../../utils/tastatur';
 import { datumUhrzeit, uhrzeit } from '../../utils/dateUtils';
 import { rollenName } from '../../utils/rollenNamen';
+import { mimeAusDateiname } from '../../utils/dateiTypen';
 
-const getMimeFromFileName = (fileName: string): string => {
-  const ext = (fileName.split('.').pop() || '').toLowerCase();
-  const mimeMap: Record<string, string> = {
-    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
-    mp4: 'video/mp4', mov: 'video/quicktime', avi: 'video/x-msvideo', webm: 'video/webm', m4v: 'video/mp4',
-    pdf: 'application/pdf',
-    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  };
-  return mimeMap[ext] || 'application/octet-stream';
-};
+// Endung -> Typ kommt aus der einen Tabelle der App (utils/dateiTypen.ts).
+// Bis zum 29.09.2026 stand hier eine eigene, kuerzere: .doc, .pptx, .txt und
+// .csv gingen als application/octet-stream an den Betrachter.
+const getMimeFromFileName = (fileName: string): string => mimeAusDateiname(fileName);
 
 // Wandelt URLs (http/https und www.) in klickbare Links um. Gibt ein Array aus
 // Text-Fragmenten und <a>-Elementen zurück, das direkt in JSX gerendert werden kann.

@@ -92,6 +92,46 @@ describe('writeQueue — Chat-Bild Offline-Upload (Datenverlust-Regression)', ()
     const sentBody = mockPost.mock.calls[0][1];
     expect(sentBody instanceof FormData).toBe(true);
   });
+
+  // Simons Befund 29.09.2026 (Android): Eine Datei ohne Typ ging aus der
+  // Warteschlange als image/jpeg hinaus — auch ein Word-Dokument.
+  const gesendeteDatei = async (body: Record<string, string>) => {
+    mockPost.mockResolvedValue({ data: { id: 99 } });
+    const { writeQueue } = await import('../../services/writeQueue');
+    await writeQueue.enqueue({
+      method: 'POST',
+      url: '/chat/rooms/1/messages',
+      body: { _localFilePath: 'queue-uploads/x', content: '', client_id: 'c3', ...body },
+      maxRetries: 5,
+      hasFileUpload: true,
+      metadata: { type: 'chat', clientId: 'c3', roomId: 1 },
+    });
+    await writeQueue.flush();
+    const datei = (mockPost.mock.calls[0][1] as FormData).get('file') as File;
+    return [datei.name, datei.type];
+  };
+
+  it('eine Word-Datei ohne Typ geht mit dem Typ ihrer Endung hinaus, nicht als image/jpeg', async () => {
+    expect(await gesendeteDatei({ _fileName: 'Einladung.docx', _fileType: '' }))
+      .toEqual(['Einladung.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+  });
+
+  it('application/octet-stream zählt wie kein Typ', async () => {
+    expect(await gesendeteDatei({ _fileName: 'Plan.pdf', _fileType: 'application/octet-stream' }))
+      .toEqual(['Plan.pdf', 'application/pdf']);
+  });
+
+  it('ein gespeicherter Typ bleibt', async () => {
+    expect(await gesendeteDatei({ _fileName: 'abc.jpg', _fileType: 'image/png' })).toEqual(['abc.jpg', 'image/png']);
+  });
+
+  it('ohne Endung wird nichts geraten: application/octet-stream, der Server entscheidet', async () => {
+    expect(await gesendeteDatei({ _fileName: 'Einladung', _fileType: '' })).toEqual(['Einladung', 'application/octet-stream']);
+  });
+
+  it('alte Einträge ganz ohne Namen und Typ bleiben ein Foto (image.jpg)', async () => {
+    expect(await gesendeteDatei({})).toEqual(['image.jpg', 'image/jpeg']);
+  });
 });
 
 // ====================================================================

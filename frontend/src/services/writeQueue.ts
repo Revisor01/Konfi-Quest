@@ -1,6 +1,7 @@
 import type { AxiosRequestConfig } from 'axios';
 import { Preferences } from '@capacitor/preferences';
 import { fehlerStatus, fehlerTextOderMessage } from '../utils/fehler';
+import { typFuerUpload } from '../utils/dateiTypen';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { toastController } from '@ionic/core';
 import { networkMonitor } from './networkMonitor';
@@ -447,12 +448,17 @@ async function resolveLocalFile(item: QueueItem): Promise<FormData | null> {
   for (let i = 0; i < byteChars.length; i++) {
     byteArray[i] = byteChars.charCodeAt(i);
   }
-  const blob = new Blob([byteArray], { type: body._fileType || 'image/jpeg' });
+  // Der Typ fuer den Upload: der gespeicherte, sonst der aus der Endung
+  // (Simons Befund 29.09.2026, Android). Bis dahin stand hier pauschal
+  // image/jpeg — auch fuer ein Word-Dokument ohne Typ. Alte Eintraege ganz
+  // ohne Namen gelten weiter als Foto (image.jpg -> image/jpeg).
+  const dateiname = body._fileName || 'image.jpg';
+  const blob = new Blob([byteArray], { type: typFuerUpload(body._fileType, dateiname) });
 
-  // FormData aufbauen (Chat-Bild-Upload)
+  // FormData aufbauen (Chat-Datei-Upload)
   const formData = new FormData();
   formData.append('content', body.content || '');
-  formData.append('file', blob, body._fileName || 'image.jpg');
+  formData.append('file', blob, dateiname);
   if (body.client_id) formData.append('client_id', body.client_id);
 
   return formData;

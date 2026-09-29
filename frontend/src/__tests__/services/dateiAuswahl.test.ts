@@ -104,11 +104,14 @@ describe('Auswahl: die Dateien kommen an, der Ausflug endet nach dem Nachlauf', 
   it('mehrere Dateien, in der gewählten Reihenfolge', async () => {
     const auswahl = dateiAuswaehlen({ multiple: true });
     const a = datei('a.pdf');
-    const b = datei('b.docx', '');
+    const b = datei('b.txt', 'text/plain');
 
     waehlen(geoeffnet[0], [a, b]);
 
-    await expect(auswahl).resolves.toEqual([a, b]);
+    const dateien = await auswahl;
+    expect(dateien).toHaveLength(2);
+    expect(dateien![0]).toBe(a);
+    expect(dateien![1]).toBe(b);
   });
 
   it('das Feld wird erst ausgelesen, dann geleert', async () => {
@@ -142,6 +145,37 @@ describe('Auswahl: die Dateien kommen an, der Ausflug endet nach dem Nachlauf', 
     waehlen(geoeffnet[0], []);
 
     await expect(auswahl).resolves.toBeNull();
+  });
+});
+
+describe('Dateien ohne Typ vom Gerät bekommen ihn aus der Endung', () => {
+  // Simons Befund 29.09.2026 (Android): Eine .docx ging nicht raus. Nennt das
+  // Gerät keinen Typ, schickte das WebView sie als application/octet-stream.
+  const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+  it.each(['', 'application/octet-stream'])('Word-Datei mit Typ %j -> Word-Typ, Name und Inhalt bleiben', async (typ) => {
+    const auswahl = dateiAuswaehlen({ multiple: true });
+    const ohne = new File(['PK-Word'], 'Einladung.docx', { type: typ });
+    const foto = datei('IMG_1.jpg', 'image/jpeg');
+
+    waehlen(geoeffnet[0], [ohne, foto]);
+
+    const dateien = (await auswahl)!;
+    expect(dateien.map((d) => [d.name, d.type])).toEqual([
+      ['Einladung.docx', DOCX],
+      ['IMG_1.jpg', 'image/jpeg'],
+    ]);
+    expect(await dateien[0].text()).toBe('PK-Word');
+    // Eine Datei mit Typ bleibt dieselbe.
+    expect(dateien[1]).toBe(foto);
+  });
+
+  it('ein Foto ohne Typ wird ein Foto — die Verkleinerung hängt an image/', async () => {
+    const auswahl = dateiAuswaehlen({ accept: 'image/*' });
+
+    waehlen(geoeffnet[0], [new File(['x'], 'IMG_2.HEIC', { type: '' })]);
+
+    expect((await auswahl)![0].type).toBe('image/heic');
   });
 });
 
