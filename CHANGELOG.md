@@ -1146,6 +1146,8 @@ iOS-Build 233 · Android versionCode 127
   statt sie als Formatierung zu lesen.
 
 ### Sonstiges
+- Die Fehlerliste der Auslastungsanzeige zeigt Adressen ohne Suchbegriffe,
+  Benutzernamen und Anmeldeschlüssel.
 - Das Server-Protokoll führt keine Benutzernamen, E-Mail-Adressen, Dateinamen
   und Freitexte mehr, sondern nur noch Kontonummern; auch eine Anmeldung
   hinterlässt dort keinen Namen.

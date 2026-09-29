@@ -392,6 +392,7 @@ für 2.3.0 zurückhalten. BF-02 bis BF-05 sollten in 2.3.x folgen.
   Klarname.
 - **Empfehlung:** Query-String abschneiden und dieselbe Normalisierung wie für
   `route` anwenden, bevor die URL gespeichert wird.
+- **Nachtrag 29.09.2026:** behoben — `utils/apm.js` speichert in `recentErrors[].url` und `fehlerGruppen[].beispielUrl` nur noch eine geschwärzte Fassung (`urlFuersAnzeige`): Query-Werte als `***` (die Parameternamen bleiben, man sieht, was kam), Benutzername, Einladungscode, Dateiname und UUID im Pfad als Platzhalter wie in `route`; Zahlen-Kennungen bleiben zum Nachstellen stehen. Das Langsam-Log schreibt dieselbe Fassung. Mitbehoben: der Anmeldeschlüssel aus `?token=` (Chat-Videos) stand ebenso roh darin. Felder und Typen unverändert, das Dashboard braucht keine Änderung. Tests `tests/utils/apmUrlGeschwaerzt.test.js`, 6 Fälle (4 verboten: Suchbegriff, Benutzername, Token, Langsam-Log; 2 erlaubt: Kennungen und Query-Namen lesbar, Randfälle); Gegenprobe (Middleware übergibt wieder die rohe URL): 4 rot.
 
 ### BF-13: ESLint-Fehler in Admin-Dateien
 

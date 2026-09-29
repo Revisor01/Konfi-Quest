@@ -2216,6 +2216,15 @@ paths:
           anzahl, seit, zuletzt und beispielUrl. Zählt über die gesamte
           Laufzeit, während recentErrors nach 50 Einträgen überläuft.
 
+        BEHOBEN (29.09.2026, Audit Leitung BF-12): `recentErrors[].url` und
+        `fehlerGruppen[].beispielUrl` hielten die rohe Anfrage-URL — mit
+        Suchbegriff (`search-users?q=`), Benutzername (`check-username/`) und
+        dem Anmeldeschlüssel aus `?token=`. Beide sind weiter Strings, aber
+        geschwärzt (utils/apm.js, urlFuersAnzeige): Query nur mit den Namen
+        der Parameter (`?q=***`), Namen, Einladungscodes, Dateinamen und UUIDs
+        im Pfad als Platzhalter; Zahlen-Kennungen bleiben. Dieselbe Fassung
+        schreibt das Langsam-Log.
+
         Die Route-Zeilen (routesSlowest/routesBusiest/routesPotenzial) haben
         zusätzlich `p50Ms`, `serverP50Ms` (Median = die typische Anfrage),
         `langsam`, `langsamQuote`, `serverZeitGesamtMs` und `apdex`.
