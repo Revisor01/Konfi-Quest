@@ -54,4 +54,21 @@ describe('Workflows: Hygiene', () => {
     expect(eingabe).toMatch(/required: true/);
     expect(eingabe).not.toMatch(/default:/);
   });
+
+  it('jede Action ist auf einen Commit festgenagelt, mit Fassung als Kommentar', () => {
+    // Ein Tag wie @v7 laesst sich auf der Gegenseite verschieben; der Commit
+    // nicht (29.09.2026, Audit CI BF-15). Dependabot (github-actions)
+    // aktualisiert Commit und Kommentar gemeinsam. Neue Schritte mit uses:
+    // brauchen dieselbe Form: owner/repo@<40 Zeichen> # vX.Y.Z
+    const ungepinnt: string[] = [];
+    let anzahl = 0;
+    for (const w of workflows) {
+      for (const m of w.text.matchAll(/^\s*(?:- )?uses:\s*(.+)$/gm)) {
+        anzahl++;
+        if (!/^[\w.-]+\/[\w.-]+@[0-9a-f]{40} # v\d+\.\d+\.\d+$/.test(m[1].trim())) ungepinnt.push(`${w.datei}: ${m[1].trim()}`);
+      }
+    }
+    expect(anzahl).toBeGreaterThanOrEqual(20);
+    expect(ungepinnt).toEqual([]);
+  });
 });
