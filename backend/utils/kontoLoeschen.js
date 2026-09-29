@@ -166,15 +166,31 @@ async function fremdschluesselAufUsers(db) {
 
 /**
  * Vergleicht die Fremdschluessel mit LOESCHREGELN.
+ *
+ * fehlend:  Fremdschluessel-Spalten auf users ohne Regel -- dort bliebe nach
+ *           der Loeschung ein Verweis stehen, oder das DELETE scheiterte.
+ * veraltet: Regeln fuer Spalten, die es nicht mehr gibt -- kontoDatenLoeschen
+ *           liefe dort auf "column does not exist" und jede Loeschung endete
+ *           mit 500.
+ * Eine Regel fuer eine Spalte, die noch da ist, aber keinen Fremdschluessel
+ * mehr traegt, stoert nicht: UPDATE und DELETE ueber die Spalte wirken
+ * weiter. (Die Suite baut so einen Zustand in tests/routes/wrapped.test.js
+ * nach: approved_by wird gedroppt und ohne Fremdschluessel neu angelegt.)
+ *
  * @returns {Promise<{fehlend: string[], veraltet: string[]}>}
- *   fehlend: Spalten ohne Regel; veraltet: Regeln ohne Spalte.
  */
 async function pruefeLoeschregeln(db) {
-  const ist = await fremdschluesselAufUsers(db);
+  const fremdschluessel = await fremdschluesselAufUsers(db);
+  const { rows } = await db.query(
+    `SELECT table_name || '.' || column_name AS spalte
+       FROM information_schema.columns
+      WHERE table_schema = current_schema()`
+  );
+  const vorhanden = new Set(rows.map((r) => r.spalte));
   const geregelt = Object.keys(LOESCHREGELN);
   return {
-    fehlend: ist.filter((s) => !geregelt.includes(s)),
-    veraltet: geregelt.filter((s) => !ist.includes(s)).sort(),
+    fehlend: fremdschluessel.filter((s) => !geregelt.includes(s)),
+    veraltet: geregelt.filter((s) => !vorhanden.has(s)).sort(),
   };
 }
 

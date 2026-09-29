@@ -96,7 +96,41 @@ describe('Konto löschen (utils/kontoLoeschen.js)', () => {
   describe('Wächter: jede Fremdschlüssel-Spalte auf users hat eine Löschregel', () => {
     it('information_schema und LOESCHREGELN decken sich in beide Richtungen', async () => {
       expect(await pruefeLoeschregeln(db)).toEqual({ fehlend: [], veraltet: [] });
-      expect((await fremdschluesselAufUsers(db)).length).toBe(51);
+      // Jede Fremdschluessel-Spalte ist geregelt (51 im Schema der Produktion;
+      // wrapped.test.js nimmt einer davon zeitweise den Fremdschluessel).
+      const regeln = Object.keys(LOESCHREGELN);
+      expect((await fremdschluesselAufUsers(db)).every((s) => regeln.includes(s))).toBe(true);
+      expect(regeln.length).toBe(51);
+    });
+
+    it('eine Regel für eine Spalte, die es nicht mehr gibt, fällt auf', async () => {
+      const client = await db.getClient();
+      try {
+        await client.query('BEGIN');
+        await client.query('ALTER TABLE levels RENAME COLUMN created_by TO angelegt_von');
+        expect(await pruefeLoeschregeln(client)).toEqual({
+          fehlend: ['levels.angelegt_von'],
+          veraltet: ['levels.created_by'],
+        });
+      } finally {
+        await client.query('ROLLBACK');
+        client.release();
+      }
+    });
+
+    it('eine geregelte Spalte ohne Fremdschlüssel stört nicht', async () => {
+      // So hinterlaesst tests/routes/wrapped.test.js die Spalte approved_by:
+      // gedroppt und ohne Fremdschluessel neu angelegt. Die Regel wirkt dort
+      // weiter (UPDATE ueber die Spalte) -- der Waechter darf nicht fallen.
+      const client = await db.getClient();
+      try {
+        await client.query('BEGIN');
+        await client.query('ALTER TABLE challenge_submissions DROP CONSTRAINT challenge_submissions_approved_by_fkey');
+        expect(await pruefeLoeschregeln(client)).toEqual({ fehlend: [], veraltet: [] });
+      } finally {
+        await client.query('ROLLBACK');
+        client.release();
+      }
     });
 
     it('jede Regel heißt loeschen oder nullen', () => {
