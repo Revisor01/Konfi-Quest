@@ -196,7 +196,14 @@ describe('Chat: Push-Fan-out an viele Teilnehmende', () => {
     // roomId, organization_id).
     const anKonfi2 = pushes.find((p) => p.token === 'tok-konfi2');
     expect(anKonfi2.title).toBe(CHAT_ROOMS.jahrgang.name);
-    expect(anKonfi2.body).toBe(`${USERS.konfi1.display_name}: Hallo alle`);
+    // Absender und Art, aber nie der Inhalt (Simon, 29.09.2026) -- der Text
+    // laege sonst bei Google/Apple und auf dem Sperrbildschirm.
+    expect(anKonfi2.body).toBe(`Neue Nachricht von ${USERS.konfi1.display_name}`);
+    for (const p of pushes) {
+      expect(p.title).not.toContain('Hallo alle');
+      expect(p.body).not.toContain('Hallo alle');
+      expect(JSON.stringify(p.data)).not.toContain('Hallo alle');
+    }
     expect(anKonfi2.data).toEqual({
       type: 'chat',
       roomId: String(CHAT_ROOMS.jahrgang.id),
@@ -298,7 +305,9 @@ describe('Chat: Push-Fan-out an viele Teilnehmende', () => {
     // Alle mit Geraet ausser admin1 (Sender): 136 Extras + konfi1 + konfi2 + teamer1.
     expect(pushes).toHaveLength(TEILNEHMENDE - 4 - OHNE_GERAET + 3);
     expect(pushes.map((p) => p.token)).not.toContain('tok-admin1');
-    expect(pushes[0].body).toBe(`${USERS.admin1.display_name}: [Umfrage] Wann?`);
+    expect(pushes[0].body).toBe(`Neue Umfrage von ${USERS.admin1.display_name}`);
+    // Die Frage selbst geht nicht mit hinaus.
+    for (const p of pushes) expect(`${p.title} ${p.body} ${JSON.stringify(p.data)}`).not.toContain('Wann?');
     expect(pushes[0].data.type).toBe('chat');
     expect(pushes[0].data.messageId).toBe(String(res.body.message_id));
   });

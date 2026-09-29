@@ -199,6 +199,10 @@ iOS-Build 234 · Android versionCode 128
   wird verworfen.
 
 ### Geändert
+- Chat-Benachrichtigungen nennen nur noch, wer geschrieben hat und was es ist
+  („Neue Nachricht von Anna", „Neues Foto von Anna"). Text, Dateinamen und
+  Umfragefragen zeigt erst die App — sie stehen damit weder auf dem
+  Sperrbildschirm noch bei Google oder Apple.
 - Im Browser zeigt der Betrachter PDFs so wie die App auf Android: alle Seiten
   untereinander, mit Zoom. Bisher zeigte jeder Browser sie auf seine eigene
   Weise.

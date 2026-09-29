@@ -220,7 +220,11 @@ den nur Leitung und Gemeindeleitung ziehen dürfen.
 Text ins Feld „Nachricht schreiben…" eintippen und senden, höchstens **4000
 Zeichen**. Alle im Raum sehen die Nachricht sofort und bekommen eine
 Benachrichtigung aufs Gerät — bei einem Zweiergespräch mit dem Namen des
-Absenders als Überschrift, sonst mit dem Namen des Chats.
+Absenders als Überschrift, sonst mit dem Namen des Chats. Die Benachrichtigung
+sagt nur, wer geschrieben hat und was es ist („Neue Nachricht von Anna",
+„Neues Foto von Anna", „Neue Umfrage von Anna"); den Text, Dateinamen und die
+Frage einer Umfrage zeigt erst die App. So steht nichts davon auf dem
+Sperrbildschirm und nichts bei den Diensten, die Benachrichtigungen zustellen.
 
 Den ersten Buchstaben einer Nachricht und den nach einem Punkt, Ausrufe- oder
 Fragezeichen schreibt die App groß. Ein Zeilenumbruch allein beendet keinen

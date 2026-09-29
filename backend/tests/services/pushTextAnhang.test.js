@@ -30,35 +30,36 @@ describe('Mitteilungstext bei Anhaengen', () => {
   });
 });
 
-describe('Mitteilungstext: Direktchat und Gruppe', () => {
-  it('zeigt im Direktchat nur den Text (der Name steht im Titel)', () => {
+describe('Chat-Mitteilung: Absender und Art, nie der Inhalt (Simon, 29.09.2026)', () => {
+  it('nennt im Direktchat nur die Art (der Name steht im Titel)', () => {
     expect(chatPushText({
       content: 'Bis gleich!', messageType: 'text', senderName: 'Emilia', isDirectChat: true,
-    })).toBe('Bis gleich!');
+    })).toBe('Neue Nachricht');
   });
 
-  it('stellt in der Gruppe den Absender voran', () => {
+  it('nennt in der Gruppe Art und Absender', () => {
     expect(chatPushText({
       content: 'Bis gleich!', messageType: 'text', senderName: 'Emilia', isDirectChat: false,
-    })).toBe('Emilia: Bis gleich!');
+    })).toBe('Neue Nachricht von Emilia');
   });
 
-  it('nutzt den Anhang-Text, wenn kein Begleittext da ist', () => {
-    expect(chatPushText({
-      content: null, messageType: 'image', senderName: 'Emilia', isDirectChat: false,
-    })).toBe('Emilia: Foto');
+  it('nennt bei Anhaengen die Art', () => {
+    const art = (messageType) => chatPushText({ messageType, senderName: 'Emilia', isDirectChat: false });
+    expect(art('image')).toBe('Neues Foto von Emilia');
+    expect(art('video')).toBe('Neues Video von Emilia');
+    expect(art('audio')).toBe('Neue Sprachnachricht von Emilia');
+    expect(art('file')).toBe('Neue Datei von Emilia');
+    expect(art('poll')).toBe('Neue Umfrage von Emilia');
+    expect(art(undefined)).toBe('Neue Nachricht von Emilia');
   });
 
-  it('behandelt einen leeren Begleittext wie gar keinen', () => {
-    // Sonst stuende in der Mitteilung nur "Emilia: " ohne Inhalt.
-    expect(chatPushText({
-      content: '   ', messageType: 'file', fileName: 'plan.pdf', senderName: 'Emilia', isDirectChat: false,
-    })).toBe('Emilia: Datei: plan.pdf');
-  });
-
-  it('bevorzugt den Begleittext, wenn es einen gibt', () => {
-    expect(chatPushText({
-      content: 'Schaut mal!', messageType: 'image', senderName: 'Emilia', isDirectChat: false,
-    })).toBe('Emilia: Schaut mal!');
+  it('laesst Nachrichtentext und Dateinamen draussen', () => {
+    const text = chatPushText({
+      content: 'Geheimer Treffpunkt', messageType: 'file', fileName: 'Adressliste.pdf',
+      senderName: 'Emilia', isDirectChat: false,
+    });
+    expect(text).toBe('Neue Datei von Emilia');
+    expect(text).not.toContain('Geheimer');
+    expect(text).not.toContain('Adressliste');
   });
 });

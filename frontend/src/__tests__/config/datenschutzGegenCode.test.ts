@@ -81,17 +81,23 @@ describe('9 Push: was in einer Benachrichtigung steht', () => {
    * Nachrichtentext als notification.body (utils/pushText.js, chatPushText),
    * er liegt damit bei Google (FCM) und auf Apple-Geraeten bei Apple (APNs).
    * Die Erklaerung sagte nur "Inhalt der Benachrichtigung (z. B. Titel und
-   * Text)". Wer den Push-Inhalt aendert (Entscheidung Simon offen), muss hier
-   * und im Text nachziehen.
+   * Text)". Seit Simons Entscheidung vom 29.09.2026 gehen nur Absender und Art
+   * mit. Wer den Push-Inhalt aendert, muss hier und im Text nachziehen.
    */
   const backend = (p: string) => readFileSync(join(process.cwd(), '..', 'backend', p), 'utf8');
 
-  it('nennt den vollstaendigen Nachrichtentext, solange der Code ihn schickt', () => {
+  it('sagt, dass der Nachrichtentext NICHT mitgeht -- und der Code schickt ihn nicht', () => {
+    // Simon, 29.09.2026: "Absender, ohne Inhalt". chatPushText liest weder
+    // content noch fileName; die Route reicht sie auch nicht mehr hinein.
     const pushText = backend('utils/pushText.js');
-    // Mit Text: der Text selbst; nur ohne Text die Art des Anhangs.
-    expect(pushText).toMatch(/const text = \(content && content\.trim\(\)\) \? content : anhangText/);
-    expect(backend('routes/chat.js')).toMatch(/body: chatPushText\(/);
-    expect(text).toContain('vollständige Text der Nachricht');
+    expect(pushText).toMatch(/function chatPushText\(\{ messageType, senderName, isDirectChat \}\)/);
+    const chat = backend('routes/chat.js');
+    expect(chat).toMatch(/body: chatPushText\(/);
+    expect(chat).not.toMatch(/\[Umfrage\] \$\{question\}/);
+    expect(text).not.toContain('vollständige Text der Nachricht');
+    expect(text).not.toContain('samt ihrem Text');
+    expect(text).toMatch(/nicht ihr Text\s*, keine Dateinamen und nicht die Frage einer Umfrage/);
+    expect(text).toMatch(/ohne ihren Text\s*, ohne Dateinamen/);
   });
 
   it('nennt Apple als Zustellweg auf iPhone und iPad', () => {
