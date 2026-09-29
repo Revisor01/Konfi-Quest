@@ -21,6 +21,7 @@
 // Lesarten: als UTF-8, wenn die Bytes gueltig sind, sonst als Latin-1.
 
 const fs = require('fs');
+const path = require('path');
 
 const TEXT_MIMES = ['text/plain', 'text/csv'];
 const TEXT_GRENZE = 2 * 1024 * 1024;
@@ -48,15 +49,25 @@ function alsText(puffer) {
 }
 
 /**
- * @param {string} pfad     Temporaerdatei aus dem Upload
- * @param {number} groesse  req.file.size
+ * @param {string} pfad           Temporaerdatei aus dem Upload (req.file.path)
+ * @param {number} groesse        req.file.size
+ * @param {string} zwischenlager  Ordner, in den multer ablegt
+ *                                (req.app.locals.zwischenlager, createApp.js)
  * @returns {Promise<null | {status: number, error: string}>}  null = in Ordnung
  */
-async function pruefeTextDatei(pfad, groesse) {
+async function pruefeTextDatei(pfad, groesse, zwischenlager) {
   if (groesse > TEXT_GRENZE) {
     return { status: 413, error: 'Textdatei ist zu groß (max. 2 MB).' };
   }
-  const puffer = await fs.promises.readFile(pfad);
+  // Gelesen wird nur aus dem Zwischenlager. Den Pfad waehlt multer selbst
+  // (24 Zufallsbytes als Name), die Pruefung sichert das hier trotzdem ab,
+  // statt sich auf den Aufrufer zu verlassen.
+  const voll = path.resolve(String(pfad));
+  const wurzel = zwischenlager ? path.resolve(zwischenlager) + path.sep : null;
+  if (!wurzel || !voll.startsWith(wurzel)) {
+    return { status: 400, error: 'Datei konnte nicht gelesen werden' };
+  }
+  const puffer = await fs.promises.readFile(voll);
   if (puffer.length > TEXT_GRENZE) {
     return { status: 413, error: 'Textdatei ist zu groß (max. 2 MB).' };
   }

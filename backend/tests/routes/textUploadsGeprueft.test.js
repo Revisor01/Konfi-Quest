@@ -12,6 +12,10 @@ const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, CHAT_ROOMS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { pruefeTextDatei } = require('../../utils/textDatei');
 
 // Rohbytes aus der Antwort, gleich welcher Content-Type.
 function roh(res, callback) {
@@ -148,6 +152,47 @@ describe('Text-Uploads: Inhalt statt Header', () => {
       expect(datei.status).toBe(200);
       expect(datei.headers['content-type']).toBe('text/plain; charset=utf-8');
       expect(datei.body.toString('utf8')).toBe('Ablauf Freizeit\n1. Anreise\n');
+    });
+  });
+
+  // Die Pruefung liest nur aus dem Zwischenlager, in das multer ablegt
+  // (29.09.2026) -- nie eine Datei, deren Pfad auf etwas anderes zeigt.
+  describe('pruefeTextDatei liest nur aus dem Zwischenlager', () => {
+    let wurzel;
+    let lager;
+    let daneben;
+
+    beforeAll(() => {
+      wurzel = fs.mkdtempSync(path.join(os.tmpdir(), 'textdatei-'));
+      lager = path.join(wurzel, 'tmp');
+      daneben = path.join(wurzel, 'tmp-daneben');
+      fs.mkdirSync(lager);
+      fs.mkdirSync(daneben);
+      fs.writeFileSync(path.join(lager, 'a'.repeat(48)), 'Ablauf Freizeit\n');
+      fs.writeFileSync(path.join(daneben, 'b'.repeat(48)), 'Ablauf Freizeit\n');
+    });
+
+    afterAll(() => {
+      fs.rmSync(wurzel, { recursive: true, force: true });
+    });
+
+    it('ERLAUBT: Datei im Zwischenlager -> geprueft, in Ordnung', async () => {
+      expect(await pruefeTextDatei(path.join(lager, 'a'.repeat(48)), 16, lager)).toBe(null);
+    });
+
+    it('VERBOTEN: Pfad aus dem Zwischenlager heraus -> 400, nichts gelesen', async () => {
+      const lesen = vi.spyOn(fs.promises, 'readFile');
+      try {
+        const befund = { status: 400, error: 'Datei konnte nicht gelesen werden' };
+        expect(await pruefeTextDatei(path.join(lager, '..', 'tmp-daneben', 'b'.repeat(48)), 16, lager)).toEqual(befund);
+        // Gleicher Anfang, anderer Ordner: "tmp-daneben" beginnt mit "tmp".
+        expect(await pruefeTextDatei(path.join(daneben, 'b'.repeat(48)), 16, lager)).toEqual(befund);
+        // Ohne bekanntes Zwischenlager wird nichts gelesen.
+        expect(await pruefeTextDatei(path.join(lager, 'a'.repeat(48)), 16, undefined)).toEqual(befund);
+        expect(lesen).not.toHaveBeenCalled();
+      } finally {
+        lesen.mockRestore();
+      }
     });
   });
 });

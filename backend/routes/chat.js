@@ -1324,7 +1324,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         // zu vertrauen, wird seit dem 29.09.2026 der Inhalt geprueft
         // (utils/textDatei.js, Audit Sicherheit BF-20).
         if (istTextTyp(req.file.mimetype)) {
-          const befund = await pruefeTextDatei(req.file.path, req.file.size);
+          const befund = await pruefeTextDatei(req.file.path, req.file.size, req.app.locals.zwischenlager);
           if (befund) {
             return res.status(befund.status).json({ error: befund.error });
           }

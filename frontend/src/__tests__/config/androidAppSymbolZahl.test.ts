@@ -114,8 +114,12 @@ describe('Zahl am App-Symbol (Android): das Manifest macht den Launcher sichtbar
   });
 
   it('fragt nicht nach allen Paketen (QUERY_ALL_PACKAGES braeuchte eine Begruendung im Play Store)', () => {
-    const ohneKommentare = manifest.replace(/<!--[\s\S]*?-->/g, '');
-    expect(ohneKommentare).toContain('<uses-permission');
-    expect(ohneKommentare).not.toContain('android.permission.QUERY_ALL_PACKAGES');
+    // Aus dem geparsten Manifest gelesen, nicht per Textsuche: Kommentare
+    // sind dort keine Elemente, eine Erwaehnung im Kommentar zaehlt nicht.
+    const dom = new DOMParser().parseFromString(manifest, 'application/xml');
+    const rechte = [...dom.getElementsByTagName('uses-permission')]
+      .map((e) => e.getAttributeNS(ANDROID_NS, 'name') ?? '');
+    expect(rechte).toContain('android.permission.INTERNET');
+    expect(rechte).not.toContain('android.permission.QUERY_ALL_PACKAGES');
   });
 });

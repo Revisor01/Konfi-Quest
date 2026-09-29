@@ -191,6 +191,9 @@ function createApp(db, options = {}) {
   // sondern req.file.path. Das Aufraeumen der Temporaerdatei macht die
   // Middleware weiter unten — auch im Fehlerfall und bei abgebrochenen
   // Uploads.
+  // Fuer Routen, die eine Temporaerdatei selbst lesen (utils/textDatei.js):
+  // gelesen wird nur, was hier liegt.
+  app.locals.zwischenlager = tmpDir;
   const zwischenlager = multer.diskStorage({
     destination: (req, file, cb) => cb(null, tmpDir),
     filename: (req, file, cb) => cb(null, require('crypto').randomBytes(24).toString('hex')),

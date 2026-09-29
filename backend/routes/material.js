@@ -872,7 +872,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         // Text hat keine Magic Bytes: Inhalt pruefen statt dem Header zu
         // vertrauen (utils/textDatei.js, Audit Sicherheit BF-20).
         if (istTextTyp(file.mimetype)) {
-          const befund = await pruefeTextDatei(file.path, file.size);
+          const befund = await pruefeTextDatei(file.path, file.size, req.app.locals.zwischenlager);
           if (befund) {
             return res.status(befund.status).json({ error: `${befund.error} (${file.originalname})` });
           }
