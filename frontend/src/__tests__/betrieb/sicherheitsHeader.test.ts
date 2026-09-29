@@ -131,3 +131,28 @@ describe('nginx: Content-Security-Policy der Web-App', () => {
     expect(direktive('connect-src')).toContain(herkunft(umami));
   });
 });
+
+describe('CSP: E2E-Umgebung mit getrennter API-Adresse', () => {
+  // Nach dem Scharfschalten (29.09.2026) scheiterte im E2E-Job jede Anmeldung:
+  // Die App (localhost:5556) ruft die API unter localhost:5555, und
+  // connect-src liess nur 'self' und konfi-quest.de zu.
+  const dockerfile = readFileSync(join(wurzel, 'frontend/Dockerfile'), 'utf-8');
+  const e2e = readFileSync(join(wurzel, 'docker-compose.e2e.yml'), 'utf-8');
+  const ci = readFileSync(join(wurzel, '.github/workflows/ci.yml'), 'utf-8');
+
+  it('der E2E-Bau erlaubt genau die API-Adresse, die er der App mitgibt', () => {
+    const api = e2e.match(/VITE_API_URL: "(https?:\/\/[^/"]+)\/api"/)?.[1];
+    expect(api).toBe('http://localhost:5555');
+    const extra = e2e.match(/CSP_CONNECT_EXTRA: "([^"]+)"/)?.[1] ?? '';
+    expect(extra.split(' ')).toEqual([api, api!.replace(/^http/, 'ws')]);
+  });
+
+  it('das Dockerfile erweitert connect-src nur, wenn das ARG gesetzt ist', () => {
+    expect(dockerfile).toMatch(/ARG CSP_CONNECT_EXTRA=""/);
+    expect(dockerfile).toMatch(/if \[ -n "\$CSP_CONNECT_EXTRA" \]; then/);
+  });
+
+  it('der Produktionsbau setzt das ARG nicht', () => {
+    expect(ci).not.toContain('CSP_CONNECT_EXTRA');
+  });
+});

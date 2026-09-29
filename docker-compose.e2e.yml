@@ -78,6 +78,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: "http://localhost:5555/api"
+        # Die API liegt hier unter einer anderen Adresse als die App; die CSP
+        # (frontend/nginx.conf) muss sie erlauben. Nur in diesem Bau gesetzt.
+        CSP_CONNECT_EXTRA: "http://localhost:5555 ws://localhost:5555"
     ports:
       - "5556:80"
     depends_on:
