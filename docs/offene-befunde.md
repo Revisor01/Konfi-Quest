@@ -314,6 +314,20 @@ beweist nichts: Zwei identische Bilder waren beide „richtig groß".
 > Standardwert (`server.js:56`), sie wird in Produktion nur nicht übergeben, weil
 > `CORS_ORIGINS` dort nicht gesetzt ist (`server.js:402`). Live gemessen: fremde
 > Origin ohne CORS-Header, beide Limiter-Routen mit `ratelimit-policy: 2000;w=900`.
+>
+> **Stand 29.09.2026 — PR mit den Paketen vom 28./29.09.:** drei neue hohe
+> Meldungen. Zwei im Code behoben: `js/path-injection` in `utils/textDatei.js`
+> (die Textprüfung liest jetzt nur, was im Upload-Zwischenlager liegt) und
+> `js/incomplete-multi-character-sanitization` in
+> `androidAppSymbolZahl.test.ts` (Manifest geparst statt per Regex entkommentiert).
+> Die dritte greift nicht: `js/missing-rate-limiting` an
+> `POST /challenges/konfi/:id/submissions` (`routes/challenges.js`, Ende des
+> Handlers). Die Route hat den Upload-Limiter (`createApp.js:645`, 100 je
+> 15 Minuten je Konto oder Adresse, in `server.js` übergeben) und den globalen
+> Limiter. CodeQL sieht beide nicht, weil sie in `createApp.js` hängen, nicht an
+> der Route — dieselbe Lage wie bei `events/checkin.js` unten. Neu gemeldet,
+> weil der Handler seit dem 28.09. selbst eine Datei löscht (abgelegte Datei
+> eines doppelten Beitrags, 409). In GitHub als „False positive" zu schließen.
 
 Acht offene Code-Scanning-Meldungen, vor dem Release Build 182 einzeln am Code
 nachgesehen. Keine hält einer Prüfung stand; die Liste steht hier, damit die
