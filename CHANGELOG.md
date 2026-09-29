@@ -468,6 +468,10 @@ iOS-Build 234 · Android versionCode 128
   was verschwindet: Punkte, Badges, Stempel, Anträge samt Fotos,
   Event-Anmeldungen, Challenge-Beiträge, Chat-Nachrichten und
   Zweiergespräche; beim Team auch, was der Gemeinde bleibt.
+- Die App ist beim Herunterladen und bei jedem Update deutlich kleiner: Das
+  Handbuch mit seinen Bildern, die Werbeseite und die Rechtstexte, die sie nie
+  angezeigt hat, liegen nicht mehr darin — rund 36 MB weniger. Im Browser ist
+  alles unverändert erreichbar.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

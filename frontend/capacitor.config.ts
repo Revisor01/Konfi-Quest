@@ -5,7 +5,14 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'de.godsapp.konfiquest',
   appName: 'Konfi Quest',
-  webDir: 'dist',
+  // NUR das App-Buendel, nicht dist/ (29.09.2026, Toolchain-Audit BF-02).
+  // dist/ ist die Web-Auslieferung und traegt Handbuch, API-Referenz,
+  // Werbeseite und Rechtstexte -- bis hierher gingen davon rund 35 MB in jede
+  // App, angezeigt hat sie nichts davon. `vite build` legt dist-app/ daneben
+  // an (scripts/app-buendel.mjs, dort steht auch, was hinein darf). Der Name
+  // muss mit APP_VERZEICHNIS dort uebereinstimmen; appBuendel.test.ts prueft
+  // das.
+  webDir: 'dist-app',
   // androidScheme https: WebView laeuft auf https://localhost statt http://localhost,
   // sonst blockt Android HTTPS-Calls zur API als Mixed-Content ("Keine Verbindung").
   //

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { appBuendelPlugin } from './scripts/app-buendel.mjs'
 
 // Version aus version.json zur Bauzeit einsetzen (__APP_VERSION__).
 // Gebraucht von utils/appVersion.ts als Browser-Rueckfallebene: Dort gibt es
@@ -16,7 +17,13 @@ const appVersion = JSON.parse(readFileSync(versionsDatei, 'utf8')).version as st
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react()
+    react(),
+    // Legt nach dem Build dist-app/ an: das Bündel fuer die nativen Apps,
+    // ohne Handbuch, API-Referenz, Werbeseite und Rechtstexte (29.09.2026,
+    // Toolchain-Audit BF-02). Capacitor nimmt nur dieses Verzeichnis
+    // (capacitor.config.ts, webDir). dist/ bleibt die Web-Auslieferung.
+    // Was hinein darf und warum: scripts/app-buendel.mjs.
+    appBuendelPlugin(),
   ],
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
