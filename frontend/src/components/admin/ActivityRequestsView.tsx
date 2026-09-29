@@ -25,6 +25,8 @@ import { SectionHeader, ListSection, StatusBadge } from '../shared';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { datumKurz } from '../../utils/dateUtils';
 import SegmentZahl from '../shared/SegmentZahl';
+import WeitereEintraege from '../shared/WeitereEintraege';
+import { useSchrittweiseListe } from '../../hooks/useSchrittweiseListe';
 
 interface ActivityRequest {
   id: number;
@@ -93,6 +95,12 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
 
     return result;
   })();
+
+  // Schrittweise rendern (Leitung BF-14): "Verbucht" waechst ueber das Jahr
+  // auf hunderte Zeilen; 416 davon kosteten gedrosselt 10,5 s, jetzt 1,1 s. Zaehler und
+  // Filter laufen weiter ueber alle (hooks/useSchrittweiseListe.ts).
+  const { sichtbar: sichtbareAntraege, weitere: weitereAntraege, mehrZeigen: mehrAntraege } =
+    useSchrittweiseListe(filteredAndSortedRequests, statusFilter);
 
   const getPendingCount = () => requests.filter(r => r.status === 'pending').length;
   const getApprovedCount = () => requests.filter(r => r.status === 'approved').length;
@@ -167,7 +175,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         }
         emptyIconColor="var(--app-color-success-strong)"
       >
-        {filteredAndSortedRequests.map((request, index) => {
+        {sichtbareAntraege.map((request, index) => {
                   const isPending = request.status === 'pending';
                   const isApproved = request.status === 'approved';
                   const isRejected = request.status === 'rejected';
@@ -181,7 +189,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                   const statusText = isPending ? 'Offen' : isApproved ? 'Verbucht' : 'Abgelehnt';
 
                   return (
-                    <IonItemSliding key={request.id} style={{ marginBottom: index < filteredAndSortedRequests.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
+                    <IonItemSliding key={request.id} style={{ marginBottom: index < sichtbareAntraege.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
                       <IonItem
                         button
                         onClick={() => onSelectRequest(request)}
@@ -315,6 +323,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                   );
                 })}
       </ListSection>
+      <WeitereEintraege weitere={weitereAntraege} onMehr={mehrAntraege} bezeichnung="Aktivitäten" />
     </>
   );
 };

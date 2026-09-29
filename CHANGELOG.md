@@ -493,6 +493,10 @@ iOS-Build 234 · Android versionCode 128
 - Die Datenschutzerklärung sagt, was in einer Push-Benachrichtigung steht — bei
   Chat-Nachrichten der vollständige Text — und dass sie auf iPhone und iPad
   auch über Apple zugestellt wird.
+- Lange Listen der Leitung — Konfis, Events und gemeldete Aktivitäten — öffnen
+  schneller: Sie zeigen zuerst 30 Einträge und laden beim Scrollen die nächsten
+  nach; ein Knopf unter der Liste tut dasselbe. Suche, Filter und Zahlen gelten
+  weiter für die ganze Liste.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.

@@ -414,6 +414,18 @@ wenn du es genau wissen willst.
 > Auf der Seite mit den **Einladungscodes** fehlt die Geste. Wer dort einen
 > frischen Stand braucht, verlässt die Seite und öffnet sie erneut.
 
+## In langen Listen weiterscrollen
+
+Die Listen der Leitung — **Konfis**, **Events** und die gemeldeten
+**Aktivitäten** — zeigen zuerst 30 Einträge. Scrollst du nach unten, kommen die
+nächsten 30 von selbst dazu, bevor du das Ende erreichst. Darunter steht
+außerdem ein Knopf wie **„Weitere 30 Konfis zeigen (noch 120)"** — für alle,
+die lieber tippen oder mit Tastatur und Vorlesefunktion arbeiten.
+
+Suche, Jahrgangsfilter, Sortierung und die Zahlen oben gelten immer für die
+**ganze** Liste, nicht nur für die gezeigten Einträge. Tippst du einen neuen
+Suchbegriff oder wechselst Filter oder Reiter, beginnt die Liste wieder oben.
+
 ## Auswählen, welche Mitteilungen aufs Handy kommen
 
 Konfi Quest sortiert seine Mitteilungen in vier Gruppen. In der App lässt sich
