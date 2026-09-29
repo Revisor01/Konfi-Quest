@@ -1274,6 +1274,10 @@ iOS-Build 234 · Android versionCode 128
   enthält nur noch, was zum Betrieb gebraucht wird — keine Tests, keine
   Entwicklungswerkzeuge, keine Kopie des Datenbankschemas. Es ist damit
   rund viermal kleiner.
+- Einladungscodes, Links zum Zurücksetzen des Passworts und das Erneuern der
+  Anmeldung lassen sich nicht mehr beliebig oft durchprobieren: Nach vielen
+  Fehlversuchen aus demselben Netz ist für 15 Minuten Pause. Gültige Codes,
+  gültige Links und laufende Anmeldungen zählen dabei nicht mit.
 - Der Anmeldeschlüssel, den die App bei jeder Anfrage mitschickt, enthält
   Name und E-Mail-Adresse nicht mehr.
 - Ob ein Benutzername schon vergeben ist, lässt sich ohne Anmeldung nur noch

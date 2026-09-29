@@ -954,13 +954,21 @@ paths:
         "200": { description: "{ valid: true, jahrgang_name, organization_name }" }
         "404": { description: "Code existiert nicht (error_code: not_found)" }
         "410": { description: "Code abgelaufen (error_code: expired)" }
+        "429": { description: "{ error } -- mehr als 60 unbekannte Codes (404) je Viertelstunde von derselben Adresse (einladungscodeLimiter, seit 29.09.2026)" }
       x-berechtigung:
         rollen: [oeffentlich]
-        middleware: []
+        middleware: [einladungscodeLimiter]
         org-scope: false
         objekt-pruefung: "Nur Existenz + Ablauf"
         # LÜCKE (N3): kein eigener Rate-Limiter — 8-Hex-Codes (4 Byte) sind
         # theoretisch bruteforcebar; gueltiger Code leakt Org-/Jahrgangsname.
+        # BEHOBEN 29.09.2026 (Limiter): einladungscodeLimiter, je Adresse
+        # (clientIp), gemeinsamer Store, gezaehlt nur 404 -- gueltige (200)
+        # und abgelaufene (410) Codes zaehlen nicht, damit ein abgelaufener
+        # Code an der Tafel nicht die ganze Gruppe fuer den neuen sperrt.
+        # 60 je Viertelstunde (vorher 2000 je Replica ueber den allgemeinen
+        # Flutschutz). Die Codelaenge (32 Bit) bleibt -- Frage an Simon.
+        # Tests: backend/tests/routes/oeffentlicheGrenzen.test.js.
 
   /api/auth/register-konfi:
     post:
@@ -1046,9 +1054,10 @@ paths:
       responses:
         "200": { description: "Passwort zurueckgesetzt, Token als benutzt markiert (Einmal-Nutzung)" }
         "400": { description: "Token ungueltig/abgelaufen/benutzt oder Policy verletzt" }
+        "429": { description: "{ error } -- mehr als 20 ungueltige Tokens je Viertelstunde von derselben Adresse (resetTokenLimiter, seit 29.09.2026)" }
       x-berechtigung:
         rollen: [oeffentlich]
-        middleware: [validateResetPassword]
+        middleware: [resetTokenLimiter, validateResetPassword]
         org-scope: false
         objekt-pruefung: "Token-Lookup in password_resets (used_at IS NULL, expires_at > NOW)"
         # BEHOBEN 22.08.2026 (war N2): bestehende Refresh-Tokens werden
@@ -1059,6 +1068,10 @@ paths:
         # geloescht — beim Reset ueberlebt keine Sitzung, kein Geraet darf
         # weiter Push-Nachrichten fuer das Konto bekommen. Jedes Geraet
         # registriert sich beim naechsten Login neu.
+        # BEHOBEN 29.09.2026 (Rest von N3, Limiter): resetTokenLimiter, je
+        # Adresse, gemeinsamer Store, gezaehlt nur "Ungueltiger oder
+        # abgelaufener Reset-Token" (nicht die Passwort-Policy), 20 je
+        # Viertelstunde. Tests: backend/tests/routes/oeffentlicheGrenzen.test.js.
 
   /api/auth/refresh:
     post:
@@ -1079,10 +1092,11 @@ paths:
       responses:
         "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt. Das neue Token uebernimmt die Geraetebindung des alten; war das alte ungebunden und kam device_id mit, ist das neue daran gebunden" }
         "401": { description: "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung. ODER (seit 28.09.2026) gebundenes Token mit anderer oder fehlender device_id: nur DIESES Token wird widerrufen und sofort ablaufen gelassen (auch im Grace-Window, ohne dessen Gnade zu verbrauchen; der Nachfolger des echten Geraets bleibt), gleiche Fehlermeldung" }
+        "429": { description: "{ error } -- mehr als 300 abgelehnte Tokens (401) je Viertelstunde von derselben Adresse (refreshLimiter, seit 29.09.2026). Erfolgreiche Erneuerungen, 403, 400 und 500 zaehlen nicht. ACHTUNG: Die App (2.2.x, 2.3.0) meldet sich bei jeder abgelehnten Erneuerung ab, auch bei 429 -- deshalb so weit wie die Fehlversuche beim Login; ein Geraet erzeugt hoechstens zwei 401, bevor die App den Token verwirft" }
         "403": { description: "{ error, error_code } -- User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt (org_inactive) / Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung. Code, Reihenfolge (erst Konto, dann Gemeinde) und Text sind seit 28.09.2026 dieselben wie bei POST /api/auth/login (eine Quelle, SPERR_MELDUNGEN); die App zeigt den Text nach einem abgelehnten Refresh auf der Anmeldeseite statt 'Sitzung abgelaufen'. Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt" }
       x-berechtigung:
         rollen: [oeffentlich]
-        middleware: []
+        middleware: [refreshLimiter]
         org-scope: false
         objekt-pruefung: "SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login"
         hinweis: "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
