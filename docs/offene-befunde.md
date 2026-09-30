@@ -124,6 +124,9 @@ den Fehler durchlassen. Auf den konkreten Wert prüfen.
 
 ## 2. Sicherheitsmeldungen zu react-router (07.09.2026) — GEPRÜFT, TRIFFT UNS NICHT
 
+> **Stand 30.09.2026:** unverändert offen, trifft weiter nicht; neu geprüft
+> mit `@ionic/react-router` 9.0.5 und allen Navigationszielen, siehe Nr. 15.
+>
 > **Stand 26.09.2026 (Release-Audit):** weiter offen, trifft weiter nicht —
 > `npm audit` zeigt dieselben zwei Meldungen für react-router 6.30.6, der Fix
 > liegt nur in 7 und 8, `@ionic/react-router@9.0.3` verlangt weiter `<7`.
@@ -578,3 +581,85 @@ Frühere Meldungen derselben Art (Release-PR 2.3.0): `konfi1` und das
 Beispiel-Passwort im Bibelvers-Format sind Testwerte der Test-Datenbank. In
 GitGuardian lassen sich die Fundstellen als Fehlalarm markieren; der Check
 ist „neutral" und blockiert den Merge nicht.
+
+## 15. Zwei moderate Dependabot-Meldungen zu react-router (30.09.2026) — GEPRÜFT, TRIFFT UNS NICHT
+
+> **Stand 30.09.2026:** offen und ohne Update schließbar, trifft die App
+> nicht. Die beiden Alerts auf GitHub lassen sich mit der Begründung unten
+> als „tolerable risk" schließen. Ergänzt Nr. 2 um den heutigen Stand und
+> die vollständige Suche nach Navigationszielen.
+
+GitHub meldet auf main „2 vulnerabilities (2 moderate)". Gemessen mit
+`npm audit` auf 7d8e945f: Wurzel 0, Backend 0, Frontend 3 moderate. Dahinter
+stehen genau zwei Advisories, beide auf `react-router` 6.30.6, einer direkten
+Laufzeitabhängigkeit in `frontend/package.json`; `react-router-dom` und
+`@ionic/react-router` zählt npm nur mit, weil sie davon abhängen.
+
+| Advisory | Was | Betroffen | Behoben in |
+|---|---|---|---|
+| GHSA-wrjc-x8rr-h8h6 | Open Redirect über Backslash in `<Link>` und `useNavigate` (Umgehung von CVE-2025-68470) | >= 6.0.0 < 7.18.0 | 7.18.0 |
+| GHSA-337j-9hxr-rhxg | Constructor Injection über `deserializeErrors()` bei SSR-Hydration (CVSS 6.1) | >= 6.4.0 < 7.18.0 | 7.18.0 |
+
+**Warum kein Update möglich ist.** 6.30.6 ist die letzte Fassung der Reihe 6,
+einen Fix dort gibt es nicht. `@ionic/react-router` verlangt auch in der
+neuesten Fassung 9.0.5 `react-router >=6.4.0 <7` (CLAUDE.md,
+„Abhängigkeiten"). `npm audit fix` ohne `--force` hebt nur Ionic 9.0.3 → 9.0.5
+und lässt beide Meldungen stehen (30.09.2026 gemessen: 3 Pakete im Lockfile
+geändert, danach weiter 3 moderate); `--force` würde `@ionic/react-router` auf
+8.8.19 herabsetzen bzw. react-router 8.4.0 einsetzen — beides mit Ionic 9
+unvereinbar. `.github/dependabot.yml` schließt react-router ab 7 deshalb für
+Versions- und Sicherheits-Updates aus.
+
+**Constructor Injection trifft nicht:** kein SSR, keine Hydration. Die App ist
+eine Vite-SPA mit `IonReactRouter`; `frontend/src` ruft weder
+`createBrowserRouter` noch einen Static Router auf und übergibt nirgends
+`hydrationData` (0 Treffer außerhalb der Tests).
+
+**Open Redirect trifft nicht.** Er greift nur, wenn ein Navigationsziel mit
+`//` oder `/\` beginnt: Dann scheitert `pushState` an der fremden Adresse, und
+React Router weicht auf `window.location.assign` aus. Am 30.09.2026 geprüft:
+jede Stelle in `frontend/src`, die navigiert (87 Fundstellen, Suche unten),
+dazu jeder Weg, auf dem ein Ziel von außen hereinkommt:
+
+- **Push-Tap und Postfach:** `buildPushTargetUrl`
+  (`frontend/src/utils/pushNavigation.ts`) baut jedes Ziel aus einem festen
+  Präfix (`/admin`, `/teamer`, `/konfi`) und setzt Kennungen aus den
+  Push-Daten nur mittig ein (`${routePrefix}/chat/room/${data.roomId}`); die
+  Rückblick-Ausgabe geht mit `encodeURIComponent` in die Abfrage, ein
+  unbekannter Typ ergibt kein Ziel. Weiter über `pushZielMelden` an
+  `frontend/src/navigation/PushZielNavigation.tsx`. Auch ein `..` in einer
+  Kennung ändert nichts: Das Ziel beginnt mit `/` und einem Buchstaben,
+  `pushState` bleibt auf derselben Adresse.
+- **App-Links (Android):** `deepLinkZiel` (`frontend/src/utils/deepLinks.ts`)
+  nimmt nur `https://konfi-quest.de` und nur Pfade, die mit `/login`,
+  `/register` oder `/reset-password` beginnen — geprüft nach `new URL()`, das
+  Backslashes schon in `/` umwandelt.
+- **Umleitungen alter Adressen:** `umleitungsZiel`
+  (`frontend/src/components/layout/MainTabs.tsx`) füllt Werte aus der
+  Adresszeile nur in feste Vorlagen aus
+  `frontend/src/navigation/rollenBaeume.ts`; der einzige Platzhalter landet in
+  einem Abfragewert (`/teamer/events?eventId=:id`). Die Zurück-Ziele
+  (`elternPfad`) kommen aus den Routendefinitionen.
+- **Abfrageparameter** (`segment`, `eventId`, `punkte`, `rueckblick`,
+  `token`, `code`) wählen nur Ansichten oder gehen an die API; keiner wird
+  Navigationsziel.
+- **Alles Übrige** sind feste Zeichenketten (Anmeldung, Startseiten der
+  Rollen, Einstellungen) oder feste Pfade mit eingesetzter ID aus API-Daten
+  (`/admin/events/${event.id}`).
+
+Ergebnis: Kein Pfad aus Nutzereingabe, Push-Daten, App-Link oder Abfrage
+steht am Anfang eines Navigationsziels.
+
+**Auf GitHub:** Simon kann beide Dependabot-Alerts mit „Dismiss alert" →
+„Risk is tolerable to this project" schließen und auf diesen Eintrag
+verweisen. Wieder prüfen, sobald `@ionic/react-router` react-router 7
+zulässt oder ein Navigationsziel aus Daten gebaut wird, die nicht im Code
+stehen (Merksatz in Nr. 2).
+
+**Zum Gegenprüfen:**
+
+    grep -rnE "useNavigate|navigate\(|useHistory|history\.(push|replace|go)\(|router\.(push|navigate|back)\(|<Redirect|<Navigate|<Link[ >]|routerLink=|window\.location\.(href|assign|replace)|location\.href\s*=" \
+      --include=*.ts --include=*.tsx frontend/src | grep -v __tests__ | grep -v "window.history.back()"
+
+Erwartet: feste Pfade, Kennungen nur hinter einem festen Präfix, und die drei
+Einstiege oben (Push, App-Link, Umleitung) unverändert.
