@@ -517,6 +517,9 @@ iOS-Build 236 · Android versionCode 130
   unter „Fehler".
 
 ### Behoben
+- Im Event-Formular trägt „Jahrgänge“ das Pflicht-Sternchen nur noch bei
+  Pflicht-Events; ohne Auswahl steht dort, dass das Event der ganzen Gemeinde
+  gilt.
 - Ein Benutzername lässt sich beim Bearbeiten nicht mehr auf einen Namen ändern,
   den es schon gibt — auch nicht in anderer Schreibweise oder aus einer anderen
   Gemeinde; die Anmeldung bleibt so eindeutig.
