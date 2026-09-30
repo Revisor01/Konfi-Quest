@@ -67,6 +67,14 @@ describe('Leitungs-Personenansicht ohne Verbindung', () => {
   });
 });
 
+describe('online: kein Offline-Platzhalter bei echter Leere (offlinePlatzhalter)', () => {
+  it('eine Konfi ohne Aktivitäten zeigt online keinen Platzhalter', async () => {
+    zustand.antworten.set(`/admin/konfis/${KONFI_ID}`, konfi({ activities: [] }));
+    await oeffne();
+    expect(screen.queryByText('Die Aktivitäten- und Punkte-Historie ist offline nicht verfügbar.')).toBeNull();
+  });
+});
+
 describe('Ladeanzeige der Personenansicht', () => {
   it('solange geladen wird: "Konfi wird geladen..." statt Ringen auf 0', async () => {
     let antworten: (wert: unknown) => void = () => undefined;

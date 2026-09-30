@@ -25,8 +25,8 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 30.09.2026: 127 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
-const OBERGRENZE = 127;
+/** Stand 30.09.2026: 124 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
+const OBERGRENZE = 124;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -83,14 +83,12 @@ const BEKANNT: string[] = [
   '__tests__/components/laufendeMehrtagesTermine.test.ts',
   '__tests__/components/listenAbstaendeProfil.test.ts',
   '__tests__/components/materialDateiAuswahl.test.ts',
-  '__tests__/components/materialErsteller.test.ts',
   '__tests__/components/materialLink.test.ts',
   '__tests__/components/materialStatsLinks.test.ts',
   '__tests__/components/md3LayoutPasst.test.ts',
   '__tests__/components/modaleBenannt.test.ts',
   '__tests__/components/modaleUeberHookBenannt.test.ts',
   '__tests__/components/neuerungenBannerStartseiten.test.ts',
-  '__tests__/components/offlinePlatzhalter.test.ts',
   '__tests__/components/onboardingTourGeteilt.test.ts',
   '__tests__/components/popoverBreite.test.ts',
   '__tests__/components/profilAbzeichenZahlOhneZusatzabruf.test.ts',
@@ -108,7 +106,6 @@ const BEKANNT: string[] = [
   '__tests__/components/teamerDashboardZertifikate.test.ts',
   '__tests__/components/teamerKonfiHistorieOhneJahrgang.test.ts',
   '__tests__/components/terminDetailDreiAnsichten.test.ts',
-  '__tests__/components/terminEndeVorBeginn.test.ts',
   '__tests__/components/terminKopieren.test.ts',
   '__tests__/components/terminModalDatumsfelder.test.ts',
   '__tests__/components/typografieTokens.test.ts',

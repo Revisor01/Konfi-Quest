@@ -75,6 +75,12 @@ describe('Leitungs-Terminansicht ohne Verbindung', () => {
 });
 
 describe('online: der volle Stand vom Server', () => {
+  it('online und wirklich ohne Teilnehmende: kein Offline-Platzhalter (offlinePlatzhalter)', async () => {
+    zustand.detail = termin({ participants: [] });
+    await oeffne();
+    expect(screen.queryByText('Die Teilnehmerliste ist offline nicht verfügbar.')).toBeNull();
+  });
+
   it('holt den Termin über GET /events/:id und fragt den Cache nicht', async () => {
     await oeffne();
     expect(api.get).toHaveBeenCalledWith('/events/7');
