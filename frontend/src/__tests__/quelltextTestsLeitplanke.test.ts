@@ -25,8 +25,8 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 30.09.2026: 132 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
-const OBERGRENZE = 132;
+/** Stand 30.09.2026: 127 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
+const OBERGRENZE = 127;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -48,7 +48,6 @@ const BEKANNT: string[] = [
   '__tests__/components/abstaendeTokens.test.ts',
   '__tests__/components/abzeichenTypNullbarkeit.test.ts',
   '__tests__/components/abzeichenZaehlerTeamer.test.ts',
-  '__tests__/components/adminKonfiDetailOffline.test.ts',
   '__tests__/components/adminOhneJahrgangHinweis.test.ts',
   '__tests__/components/appAbdeckung.test.ts',
   '__tests__/components/beruehrungsziele.test.ts',
@@ -80,11 +79,8 @@ const BEKANNT: string[] = [
   '__tests__/components/kategorieUndTypInListe.test.ts',
   '__tests__/components/keinStillesOfflineScheitern.test.ts',
   '__tests__/components/klickbareElementeBedienbar.test.ts',
-  '__tests__/components/konfiStammdatenBearbeiten.test.ts',
   '__tests__/components/kontoModaleAlleDreiAnsichten.test.ts',
-  '__tests__/components/ladeanzeigeDetailansichten.test.ts',
   '__tests__/components/laufendeMehrtagesTermine.test.ts',
-  '__tests__/components/leitungSiehtKonfiWrapped.test.ts',
   '__tests__/components/listenAbstaendeProfil.test.ts',
   '__tests__/components/materialDateiAuswahl.test.ts',
   '__tests__/components/materialErsteller.test.ts',
@@ -98,7 +94,6 @@ const BEKANNT: string[] = [
   '__tests__/components/onboardingTourGeteilt.test.ts',
   '__tests__/components/popoverBreite.test.ts',
   '__tests__/components/profilAbzeichenZahlOhneZusatzabruf.test.ts',
-  '__tests__/components/profilReihenfolge.test.ts',
   '__tests__/components/profilWrappedReihenfolge.test.ts',
   '__tests__/components/rankingFeldnamen.test.ts',
   '__tests__/components/reiterUnterlaengen.test.ts',

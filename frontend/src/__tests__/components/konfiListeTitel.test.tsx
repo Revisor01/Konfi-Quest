@@ -41,11 +41,16 @@ vi.mock('../../contexts/LiveUpdateContext', () => ({
   useLiveRefresh: () => {},
 }));
 
+// Unter welchen Schluesseln die Seite ihre Listen haelt (und offline liest).
+const querySchluessel: string[] = [];
 vi.mock('../../hooks/useOfflineQuery', () => ({
-  useOfflineQuery: () => ({
-    data: [], loading: false, error: null, isStale: false, isOffline: false,
-    refresh: vi.fn().mockResolvedValue(undefined), refreshLive: vi.fn(),
-  }),
+  useOfflineQuery: (schluessel: string) => {
+    querySchluessel.push(schluessel);
+    return {
+      data: [], loading: false, error: null, isStale: false, isOffline: false,
+      refresh: vi.fn().mockResolvedValue(undefined), refreshLive: vi.fn(),
+    };
+  },
 }));
 
 vi.mock('../../hooks/useOnboardingOnce', () => ({
@@ -120,5 +125,15 @@ describe('Konfi-Liste der Leitung: der Titel folgt dem Segment', () => {
 
     fireEvent.click(screen.getByText('segment-konfis'));
     expect(titel()).toEqual(['Konfis', 'Konfis']);
+  });
+});
+
+describe('Offline-Grundstand der Personenansicht', () => {
+  // adminKonfiDetailOffline: Die Personenansicht liest offline den Listen-
+  // Cache 'admin:konfis:<Gemeinde>'. Dort muss die Liste ihn auch ablegen.
+  it('die Liste haelt ihre Konfis unter admin:konfis:<Gemeinde>', () => {
+    querySchluessel.length = 0;
+    render(<AdminKonfisPage />);
+    expect(querySchluessel).toContain('admin:konfis:1');
   });
 });
