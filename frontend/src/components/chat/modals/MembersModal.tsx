@@ -94,12 +94,19 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const [searchText, setSearchText] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
+  const isGroupChat = roomType === 'group';
+  const canManageMembers = user?.type === 'admin' && isGroupChat;
+
   useEffect(() => {
-    if (roomId) {
-      loadParticipants();
-      loadAllUsers();
-    }
+    if (roomId) loadParticipants();
   }, [roomId]);
+
+  // Die Personenlisten braucht nur das Hinzufuegen, also nur, wer verwalten
+  // darf (30.09.2026): Vorher holte jedes Mitglied beim Oeffnen
+  // /admin/konfis -- fuer Konfis jedes Mal ein 403.
+  useEffect(() => {
+    if (roomId && canManageMembers) loadAllUsers();
+  }, [roomId, canManageMembers]);
 
   const loadParticipants = async () => {
     try {
@@ -278,9 +285,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
     }
     return user.name || 'Unbekannt';
   };
-
-  const isGroupChat = roomType === 'group';
-  const canManageMembers = user?.type === 'admin' && isGroupChat;
 
   // Rolle/Funktion ermitteln (für Eselsohr)
   const getRoleText = (targetUser: ChatUser | Participant) => {

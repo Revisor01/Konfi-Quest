@@ -133,4 +133,26 @@ describe('Mitglieder-Modal: ansehen darf jedes Mitglied, verwalten nur die Leitu
     expect(screen.getByText('Emilia Test')).toBeInTheDocument();
     expect(verwaltung()).toEqual([null, 0]);
   });
+  // Die Personenlisten braucht nur das Hinzufuegen (30.09.2026, beim
+  // Umstellen dieses Tests aufgefallen): Bis hierher holte das Modal beim
+  // Oeffnen fuer JEDES Mitglied /admin/konfis, /users/me/jahrgaenge und
+  // /users. Eine Konfi bekam auf /admin/konfis jedes Mal ein 403, in der
+  // Konsole stand "Error loading users" -- sichtbar war nichts.
+  const abrufe = () => apiGet.mock.calls.map((c) => c[0]).sort();
+
+  it.each([
+    ['eine Konfi in der Gruppe', { id: 20, type: 'konfi', role_name: 'konfi', organization_id: 1 }, 'group'],
+    ['eine Teamer:in in der Gruppe', { id: 30, type: 'teamer', role_name: 'teamer', organization_id: 1 }, 'group'],
+    ['die Leitung im Jahrgangs-Chat', { id: 4, type: 'admin', role_name: 'admin', organization_id: 1 }, 'jahrgang'],
+  ])('%s lädt nur die Mitglieder, keine Personenlisten', async (_wer, person, raum) => {
+    angemeldet = person;
+    await oeffne(raum);
+    expect(abrufe()).toEqual(['/chat/rooms/5/participants']);
+  });
+
+  it('die Leitung in der Gruppe lädt die Listen zum Hinzufügen', async () => {
+    angemeldet = { id: 4, type: 'admin', role_name: 'admin', organization_id: 1 };
+    await oeffne();
+    expect(abrufe()).toEqual(['/admin/konfis', '/chat/rooms/5/participants', '/users', '/users/me/jahrgaenge']);
+  });
 });

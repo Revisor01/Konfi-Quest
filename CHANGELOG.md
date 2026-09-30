@@ -1307,6 +1307,9 @@ iOS-Build 235 · Android versionCode 129
   Fehler ab.
 
 ### Sonstiges
+- Das Mitglieder-Fenster im Chat lädt die Personenlisten zum Hinzufügen nur
+  noch für die Leitung; bei Konfis lief dabei bisher jedes Mal eine
+  abgelehnte Anfrage ins Leere.
 - Mehr Tests prüfen das Verhalten der App statt ihres Quelltexts.
 - Sicherheitsupdate für die Echtzeitverbindung von Chat und Live-Aktualisierung:
   Eine fehlerhafte Anfrage kann den Server nicht mehr ausbremsen.
