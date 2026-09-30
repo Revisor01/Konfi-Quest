@@ -541,6 +541,12 @@ Konfis einer weiteren Gemeinde betreffen, treffen also nur Altbestand. Zeilenang
   Konfi und Nicht-Konfi trennen; die Messabfrage für den Altbestand steht in
   `docs/auftraege/lokaler-agent/06-mischkonten.md`. Übrig bleiben Team-Rollen, die je Gemeinde verschieden
   sind (Gesprächsvorlage `docs/audit/2026-09-28/mehrfach-konten.md`).
+- **gemessen 01.10.2026** (Auftrag `docs/auftraege/lokaler-agent/06-mischkonten.md`): Konfi-Konten mit
+  weiterer Gemeinde 0; Team-Konten mit Konfi-Zeile in einer anderen Gemeinde 1 (Konfi-Profil dort
+  vorhanden — der Produktionsbefund vom 27.09.2026); Stamm-Zeile mit abweichender Rolle 0; offene
+  Einladungen an Konfis oder mit Konfi-Rolle 0; verschiedene Team-Rollen je Gemeinde: admin→org_admin 1,
+  org_admin→org_admin 1, org_admin→teamer 1; Konten mit weiterer Gemeinde insgesamt 2. Was mit dem einen
+  Mischkonto geschieht, entscheidet Simon.
 
 | Stelle (Datei:Zeile) | Liest | Auswirkung | Status |
 |---|---|---|---|
