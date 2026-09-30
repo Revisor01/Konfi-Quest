@@ -95,8 +95,10 @@ vi.mock('../../../hooks/useWartendeVorgaenge', () => ({
   useWartendeVorgaenge: () => ({ wartend: [], gescheitert: [], vergessen: vi.fn() }),
 }));
 vi.mock('../../../hooks/useOfflineQuery', () => ({
+  // Die Terminliste des Teams -- und die der Konfis (KonfiEventsPage), für
+  // den Vergleich der Reiter "Meine" (wartelisteBleibtMeiner).
   useOfflineQuery: (schluessel: string) => ({
-    data: schluessel.startsWith('teamer:events:') ? zustand.events : [],
+    data: schluessel.startsWith('teamer:events:') || schluessel.startsWith('konfi:events:') ? zustand.events : [],
     loading: false, error: null, isStale: false, isOffline: !zustand.online,
     refresh: vi.fn().mockResolvedValue(undefined),
     refreshLive: vi.fn().mockResolvedValue(undefined),

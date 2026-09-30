@@ -25,8 +25,8 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 30.09.2026: 120 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
-const OBERGRENZE = 120;
+/** Stand 30.09.2026: 117 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
+const OBERGRENZE = 117;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -48,7 +48,6 @@ const BEKANNT: string[] = [
   '__tests__/components/abstaendeTokens.test.ts',
   '__tests__/components/abzeichenTypNullbarkeit.test.ts',
   '__tests__/components/abzeichenZaehlerTeamer.test.ts',
-  '__tests__/components/adminOhneJahrgangHinweis.test.ts',
   '__tests__/components/appAbdeckung.test.ts',
   '__tests__/components/beruehrungsziele.test.ts',
   '__tests__/components/bewegungsreduktion.test.ts',
@@ -61,7 +60,6 @@ const BEKANNT: string[] = [
   '__tests__/components/challenges/stempelStattAbzeichen.test.ts',
   '__tests__/components/chatAufraeumen.test.ts',
   '__tests__/components/chatDateiFortschritt.test.ts',
-  '__tests__/components/chatMitgliederliste.test.ts',
   '__tests__/components/chatNutzertypDreiWerte.test.ts',
   '__tests__/components/dateiAuswahlNurUeberHuelle.test.ts',
   '__tests__/components/diagnoseNurLeitung.test.ts',
@@ -111,7 +109,6 @@ const BEKANNT: string[] = [
   '__tests__/components/umlauteUndZurueckIcon.test.ts',
   '__tests__/components/umschalterInDetailansichten.test.ts',
   '__tests__/components/walkthroughVersionEinheitlich.test.ts',
-  '__tests__/components/wartelisteBleibtMeiner.test.ts',
   '__tests__/components/wrappedBewegungReduzieren.test.ts',
   '__tests__/components/wrappedBildNichtVerdeckt.test.ts',
   '__tests__/components/wrappedDramaturgieHatRenderer.test.ts',
