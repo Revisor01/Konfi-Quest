@@ -9,6 +9,11 @@
 // verbliebenen -- ueberwiegend Stil-Waechter (Tokens, Farben, Abstaende) und
 // Abwesenheits-Pruefungen, fuer die Quelltext lesen der Zweck ist.
 //
+// Am 30.09.2026 weitere 33 umgestellt, je mit Gegenprobe (Terminseiten aller
+// drei Rollen, Personenansicht der Leitung, Offline-Platzhalter, Material,
+// Registrierung, App-Sperre, Chat-Mitglieder): 150 -> 117. Die Gerueste
+// dafuer liegen unter components/gerueste/ und nehmen weitere Umstellungen auf.
+//
 // Gezaehlt wie im Audit: Datei enthaelt `readFileSync` und kein `render(`.
 //
 // Die Liste darf nur SCHRUMPFEN:

@@ -1307,6 +1307,7 @@ iOS-Build 235 · Android versionCode 129
   Fehler ab.
 
 ### Sonstiges
+- Mehr Tests prüfen das Verhalten der App statt ihres Quelltexts.
 - Sicherheitsupdate für die Echtzeitverbindung von Chat und Live-Aktualisierung:
   Eine fehlerhafte Anfrage kann den Server nicht mehr ausbremsen.
 - Server, Web-Version und alle automatischen Prüfungen laufen auf derselben

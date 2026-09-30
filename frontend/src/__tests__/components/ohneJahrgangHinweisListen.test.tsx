@@ -16,7 +16,7 @@ import { resolve } from 'path';
 // nichts), behaelt ihren bisherigen Text. Sonst erklaerte die Oberflaeche
 // etwas Falsches.
 //
-// Muster wie in adminOhneJahrgangHinweis.test.ts (Konfi-Liste).
+// Muster wie in adminOhneJahrgangHinweis.test.tsx (Konfi-Liste).
 
 import ChallengesManageView from '../../components/admin/views/ChallengesManageView';
 import ActivityRequestsView from '../../components/admin/ActivityRequestsView';
@@ -92,8 +92,9 @@ describe('ActivityRequestsView: Leerzustand erklaert fehlenden Jahrgang', () => 
 });
 
 // Die Seiten muessen den Header auch wirklich auslesen und durchreichen --
-// sonst bleiben die Props oben fuer immer false. Quelltext-Assert wie in
-// adminOhneJahrgangHinweis.test.ts: Der Header wird in der Query-Funktion
+// sonst bleiben die Props oben fuer immer false. Quelltext-Assert (die
+// Konfi-Liste prueft dasselbe seit 30.09.2026 gerendert,
+// adminOhneJahrgangHinweis.test.tsx): Der Header wird in der Query-Funktion
 // gelesen (offline aus dem Cache laeuft sie nicht, der Hinweis erscheint
 // dann bewusst nicht -- ein leerer Cache ist etwas anderes als "kein
 // Jahrgang").
@@ -124,8 +125,8 @@ describe('Die Seiten lesen den Header aus', () => {
 // Nachzug Material (01.09.2026): Ein Admin ohne Zuweisung sieht nur noch
 // globales Material und solches ohne Jahrgang -- gibt es davon keins, sah
 // die Liste kaputt aus. Die Seite hat kein separates View, der Leerzustand
-// steht inline -- deshalb Quelltext-Asserts wie in
-// adminOhneJahrgangHinweis.test.ts (Konfi-Liste).
+// steht inline -- deshalb Quelltext-Asserts (die Konfi-Liste prueft
+// dasselbe seit 30.09.2026 gerendert, adminOhneJahrgangHinweis.test.tsx).
 describe('AdminMaterialPage: Leerzustand erklaert fehlenden Jahrgang', () => {
   const lies = (pfad: string) =>
     readFileSync(resolve(process.cwd(), pfad), 'utf8');
