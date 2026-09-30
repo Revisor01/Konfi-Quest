@@ -25,8 +25,8 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 30.09.2026: 142 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
-const OBERGRENZE = 142;
+/** Stand 30.09.2026: 139 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
+const OBERGRENZE = 139;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -44,7 +44,6 @@ const BEKANNT: string[] = [
   '__tests__/components/abgesagteTermineAnsichten.test.ts',
   '__tests__/components/abgesagterTerminBleibtMeiner.test.ts',
   '__tests__/components/abmeldefristSichtbar.test.ts',
-  '__tests__/components/abmeldenOffline.test.ts',
   '__tests__/components/abmeldungUndNotiz.test.ts',
   '__tests__/components/abstaendeTokens.test.ts',
   '__tests__/components/abzeichenTypNullbarkeit.test.ts',
@@ -55,8 +54,6 @@ const BEKANNT: string[] = [
   '__tests__/components/adminOhneJahrgangHinweis.test.ts',
   '__tests__/components/adminZusageAusBookingStatus.test.ts',
   '__tests__/components/alleBestaetigenTeamer.test.ts',
-  '__tests__/components/anmeldeKnopfOhneBuchung.test.ts',
-  '__tests__/components/anmeldenAnAbgesagtemTermin.test.ts',
   '__tests__/components/anwesenheitZuruecksetzen.test.ts',
   '__tests__/components/appAbdeckung.test.ts',
   '__tests__/components/beruehrungsziele.test.ts',
