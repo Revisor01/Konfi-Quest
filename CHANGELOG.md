@@ -517,6 +517,9 @@ iOS-Build 236 · Android versionCode 130
   unter „Fehler".
 
 ### Behoben
+- Ein Update des Servers unterbricht die App nicht mehr; bisher war sie dabei
+  rund eine halbe Minute nicht erreichbar. Nur die Web-Version kann während
+  eines Updates wenige Sekunden lang nicht laden.
 - Ein Benutzername lässt sich beim Bearbeiten nicht mehr auf einen Namen ändern,
   den es schon gibt — auch nicht in anderer Schreibweise oder aus einer anderen
   Gemeinde; die Anmeldung bleibt so eindeutig.
