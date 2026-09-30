@@ -3,64 +3,64 @@
   "qualitaet": 0.85,
   "bilder": {
     "iphone/konfi-abzeichen": {
-      "quelle": "6ff5489265586dffb04ad18e1df33de9065af961327874d8d037fd027a1271bd",
-      "webp": "d8b12d230c8b45064621379a775df8b714cd3acbff9dcfb9922bc42621a07a3b"
+      "quelle": "21a362dcbdbb856b932b1ae9aa7acd9e20293658b27dc50cfbaf914b9dd76093",
+      "webp": "257fc22f73083bb639c33267df89d80619719b00486855db8b26b58404a31db9"
     },
     "iphone/konfi-challenges": {
-      "quelle": "475b7acb6d41097353975dfa633be57a735d090f9a492bf902d62116da304df5",
-      "webp": "bfc7fda0096a52f786d1e3967a22b41321f3ac81079890257e5545829e2abb43"
+      "quelle": "0940ca79acc897ab334f47a0297f5faa0c6efd10ad3743f6953c4894be944ffe",
+      "webp": "f2af9ff685e589f7845d4e508aa8ed5002c8693846461b04a906785342bbd316"
     },
     "iphone/konfi-chat": {
-      "quelle": "52b7ccacbe44d5d81a4c5c8509977e48a9cc3dc97b060b9330d0e858c5189fa7",
-      "webp": "ec87df4957965c0c2cb1e81b27aa679ef43b21c01d7f6264a1cfddab8544e4ca"
+      "quelle": "93ff6270c57fa0ba0cf6da8729eb51c317e6323acea92af5c10140de3e18cd2a",
+      "webp": "93d200c982450d011a95ab391c229095d1ac6ae7402ec971eeffe17e294ecc36"
     },
     "iphone/konfi-profil": {
-      "quelle": "26c799ae8febb5a5f76e7d320ee6df4270d3cc212618a90c8e22be9aaf154da0",
-      "webp": "cc23379ffe6e3c9cb06132d10b0c52915de34f89a53e91066186b460d769d2ca"
+      "quelle": "051abfaf895e6f913675d5334fe5109cf54d80f2d4417b6b187a0580f27d61be",
+      "webp": "51c94be5d1adc91b797e57fdc07eb42c8d90fad2fc06c24965a4a6767a01a0f5"
     },
     "iphone/konfi-startseite": {
-      "quelle": "a1a03ea487beea69d6f775bee8ba1279f6e0d193f367915c3d8af4a38e52da81",
-      "webp": "eae3ab6036435091f88f46b9c1befe6c9cf30ee95abc7ad1a62020c6911018d2"
+      "quelle": "e45c852f0a30d05073e484ad6956c0af024f401ef71de405dcd79b4f31d3d720",
+      "webp": "d8665b9912e7f0254414650afcfd517ef752697ba98f1691f0bf3dc2b5a70d64"
     },
     "iphone/leitung-challenges": {
-      "quelle": "92b810e2759b4249c8c68469f1835d23438b3f22cb3cf4b371542ee692b3dd33",
-      "webp": "c1b08610fc89e5da082824f25d54e52b0076df264575190bf657909e92aad89a"
+      "quelle": "ab71f1441776928aa8d204373445485fc02dc5232499f2f707a05d0ca29ed425",
+      "webp": "fe08110811ec266df86f5dcd307bf7228785980ea5b92b86cc7374bbabc01702"
     },
     "iphone/leitung-chat": {
-      "quelle": "9cbddf035ee3954bd9857def6fed11e53491295dd284c531585d814470c55a22",
-      "webp": "0d28e82e26cf63e506fa4282e08ec369d1220d4c2e3e08637b5fc303a458cda4"
+      "quelle": "600dcd4fa87b7725c0bc72e8e8e19b2819a5db87f1a3178ad493698c0c5fe02a",
+      "webp": "406b85327cb4040985fa659230f883c73b9b030740110db1bc526ce2eb16da77"
     },
     "iphone/leitung-einstellungen": {
-      "quelle": "e15571ee2088edb17da6ce442cb7d7861f64b413bedcaa2f9c57bfd613a5ce67",
-      "webp": "df792327cdbc3a8d1737217fd9e8103f81f776b9ba347ba07fa0a3889961e901"
+      "quelle": "9656021d4e5a586c92b978870929527286ad74b34115a82d455ff7d4f99550bc",
+      "webp": "190dd4341e7bd6787716940f0e9b3a37d7fc699764138e1c805ee2460875e68a"
     },
     "iphone/leitung-konfis": {
-      "quelle": "dea38d33622cf34c5b3ac6c61dbfca53f474f10ef17543dbdfc5b1c63d3d4633",
-      "webp": "5b5d98567070a84dc3012b3a6df8ee01cd5e490f77eae0afda59e0376b97edf4"
+      "quelle": "310174cbc012e7c26c5aa798d8e6c04fd7a06f2abe857f4f6245faf3f0d25b85",
+      "webp": "9ebdfbedd4af324e1affd9b570c1b19aa520d50a66f039db48b8052c25ca4e0b"
     },
     "iphone/leitung-mitmachen": {
-      "quelle": "f47b9d20a92a4f13524ae8cfc5c4441897fc4089026c98a382f2cc90360f00a5",
-      "webp": "415c19390b7f2ed26017ed5b819495b6c25b862cb95e4cd03acf2c913855ec0e"
+      "quelle": "da64b217b1016b194021d538505dc80a4d334b754d6b1e65a6827f316c57c0b6",
+      "webp": "afeba41b3d5717e9e4fa0eb227a400d7d2602fc07874aa47f48501a29b9b7e44"
     },
     "iphone/teamer-challenges": {
-      "quelle": "d23a91dafacb3e8012758fcc271804a44c1d080431a1c769663b184853d42719",
-      "webp": "561e5986638742cb5f96a519f66c468aae0efd99907f05fa08aa97f1eba6ded3"
+      "quelle": "ff6af2afb2ee108ae2f5e2aad5d2f09f3db9f3006130b03f408545ef5c58f3bf",
+      "webp": "c4f7a75cd2a25dd96a3fd4f7e5c0d5e37d87d9dae70692e5167b86e9f04a290f"
     },
     "iphone/teamer-chat": {
-      "quelle": "e061ce5401e6c04a114dd542c9c4025ec555e32825c7eac7d5283b3618599dca",
-      "webp": "c8b0f7c9153396619fbd589f3b29de26a3fbc875202bccc91425165986ce243e"
+      "quelle": "a2af414997bc1d745121cbf8dc822a5c5210bbc16c4a535dd33c582d912dee72",
+      "webp": "bf79abb9eef1d47d00eccd7b3d5e4915c9642c1633d4c17e159679607d9f2f55"
     },
     "iphone/teamer-mitmachen": {
-      "quelle": "79d43b4e5eb8dcb692af1185ccfc11aa0b2f6b718ca83fadbf46b31417b5d4a5",
-      "webp": "ccb3987e7da6e4652917c7780e7297947c267b8acea16a826473b86d1dbc13e2"
+      "quelle": "77eff15c9a06963be76c07cba171de7512c4813f424f9decc064acfad8a4e833",
+      "webp": "7ebbfc8a5d5f2432cd280fd1e3bb8fdc11da6c8f8d8a4115e1315b6f2e8af9a0"
     },
     "iphone/teamer-profil": {
-      "quelle": "b237b765a9be61a0191ac64964558a67a7231b0c27097d2b81c808658fd26316",
-      "webp": "44e85a5a3e1e3460e02aa4e6d1caebd1a917b117b018f129084e6925880fa681"
+      "quelle": "51e000b5dc26465946405b653042293691dc7da75c9f3a676b4931cb77dfd5c0",
+      "webp": "60b92435099bb9b4eb9f2a80babccbbf993d088bf1183f8c7c49992bbf3bb8f4"
     },
     "iphone/teamer-startseite": {
-      "quelle": "7535c7b7d93f71bcfab1baea14643601593dadffc4a8444c21cf2d671329f69b",
-      "webp": "399aea839893631f6c3d832527aa9140e6b48cb516ac3df1d77434a1067c7bed"
+      "quelle": "4969e5136856bfad9c89e33b074917bdebedccdba681a2e90e6be2469c331989",
+      "webp": "10a5364c8d68d924635880aeadb54f81c8ab81af304dd6877d2cc3a13eb313c2"
     }
   }
 }
