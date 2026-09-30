@@ -16,6 +16,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
+const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
 const { gemeindeZugehoerigkeitRaeumen, inWeitereGemeindeUmziehen } = require('../utils/mitgliedschaftEnde');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 
@@ -241,9 +242,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // Benutzername aus dem Anzeigenamen erzeugen, wenn keiner angegeben ist
       // (Nutzerwunsch 23.08.2026) — dieselbe Logik wie bei Konfis. Der Helfer
       // sucht dabei einen global freien Namen und zählt bei Kollision hoch.
-      const username = gewuenschterName && gewuenschterName.trim()
-        ? gewuenschterName.trim()
-        : await generateUniqueUsername(db, display_name);
+      const nameErzeugt = !(gewuenschterName && gewuenschterName.trim());
+      let username = nameErzeugt
+        ? await generateUniqueUsername(db, display_name)
+        : gewuenschterName.trim();
 
       if (!username) {
         return res.status(400).json({ error: 'Aus dem Namen liess sich kein Benutzername bilden' });
@@ -257,35 +259,52 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         return res.status(400).json({ error: 'Ungültige Rolle für diese Gemeinde' });
       }
 
-      // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig, case-insensitiv —
-      // sonst könnten "Anna"/"anna" parallel existieren und der Login wäre mehrdeutig).
-      const { rows: [existingUser] } = await db.query(
-        "SELECT id FROM users WHERE LOWER(username) = LOWER($1)",
-        [username]
-      );
-
-      if (existingUser) {
-        return res.status(409).json({ error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' });
-      }
-
-      // Passwort-Policy prüfen
+      // Passwort-Policy und Hash VOR der Transaktion (bcrypt belegt sonst die
+      // Verbindung); gemeldet wird ein Policy-Fehler wie bisher erst nach der
+      // Namenspruefung.
       const passwordError = validatePassword(password);
-      if (passwordError) {
-        return res.status(400).json({ error: passwordError });
+      const passwordHash = passwordError ? null : await bcrypt.hash(password, 10);
+
+      // Benutzername GLOBAL eindeutig, ohne Gross/klein -- sonst koennten
+      // "Anna"/"anna" parallel existieren und der Login waere mehrdeutig.
+      // Pruefen und Anlegen in EINER Transaktion unter einer Sperre je Namen
+      // (utils/benutzernameSperre.js); bis 30.09.2026 ohne, zwei gleichzeitige
+      // Anlagen desselben Namens kamen beide durch.
+      const client = await db.getClient();
+      let newUser;
+      try {
+        await client.query('BEGIN');
+        while (await benutzernameSperrenUndPruefen(client, username)) {
+          if (!nameErzeugt) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: MELDUNG_VERGEBEN });
+          }
+          // Einen erzeugten Namen hat eine gleichzeitige Anlage eben vergeben:
+          // den naechsten freien nehmen (anna.muster -> anna.muster2).
+          username = await generateUniqueUsername(client, display_name);
+        }
+
+        if (passwordError) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: passwordError });
+        }
+
+        const insertQuery = `
+          INSERT INTO users (organization_id, username, email, display_name, role_title, password_hash, role_id)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING id
+        `;
+        const insertParams = [organizationId, username, email, display_name, role_title || null, passwordHash, role_id];
+        ({ rows: [newUser] } = await client.query(insertQuery, insertParams));
+        // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
+        await kontoSperreAufheben(client, newUser.id);
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw txErr;
+      } finally {
+        client.release();
       }
-
-      // Hash password
-      const passwordHash = await bcrypt.hash(password, 10);
-
-      const insertQuery = `
-        INSERT INTO users (organization_id, username, email, display_name, role_title, password_hash, role_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id
-      `;
-      const insertParams = [organizationId, username, email, display_name, role_title || null, passwordHash, role_id];
-      const { rows: [newUser] } = await db.query(insertQuery, insertParams);
-      // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
-      await kontoSperreAufheben(db, newUser.id);
 
       res.status(201).json({
         id: newUser.id,

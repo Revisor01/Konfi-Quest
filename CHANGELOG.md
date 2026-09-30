@@ -517,6 +517,8 @@ iOS-Build 235 · Android versionCode 129
   unter „Fehler".
 
 ### Behoben
+- Legen zwei Personen im selben Moment ein Konto mit demselben Benutzernamen
+  an, entsteht nur eines; die andere Anlage meldet, dass der Name vergeben ist.
 - Die Badges einer Konfi, die nur über eine weitere Gemeinde dazugehört, lassen
   sich in der Leitung öffnen; bisher kam dort „nicht gefunden".
 - Karten, Store-, Musik- und Weblinks aus der App lösen die App-Sperre nicht

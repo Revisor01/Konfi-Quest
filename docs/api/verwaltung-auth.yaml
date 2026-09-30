@@ -1305,7 +1305,7 @@ paths:
       responses:
         "201": { description: "id, admin_user_id, default_badges_created (36), default_certificates_created (4), default_levels_created (6), default_categories_created (14), default_activities_created (9), default_challenges_created (3), message (dieselben Zahlen als Text)" }
         "400": { description: "Validierungsfehler {error, details[{field, message}]}: Pflichtfeld leer oder admin_password verletzt die Passwort-Policy; nichts wird angelegt" }
-        "409": { description: "\"Gemeinde-Slug existiert bereits\" (auch nach dem Umschreiben der Umlaute) oder \"Benutzername existiert bereits (muss systemweit eindeutig sein)\" (seit 29.09.2026)" }
+        "409": { description: "\"Gemeinde-Slug existiert bereits\" (auch nach dem Umschreiben der Umlaute) oder \"Benutzername existiert bereits (muss systemweit eindeutig sein)\" (seit 29.09.2026). Seit 30.09.2026 auch bei gleichzeitiger Anlage: Pruefen und Anlegen in EINER Transaktion unter pg_advisory_xact_lock je Namen (klein geschrieben; utils/benutzernameSperre.js, dieselbe Sperre in POST /users, POST /organizations/{id}/admins und POST /organizations) -- die zweite Anlage wartet und bekommt diese 409. Vorher kamen zwei gleichzeitige Anlagen desselben Namens beide durch (201/201, zwei Konten), weil der einzige eindeutige Index (organization_id, username) Gross/klein unterscheidet und nur in einer Gemeinde greift; die zweite Gemeinde entsteht dabei nicht" }
         "500": { description: "Fehler beim Anlegen; seit 29.09.2026 bleibt dabei nichts von der Gemeinde stehen" }
       x-berechtigung:
         rollen: [super_admin]
@@ -1517,7 +1517,7 @@ paths:
         "400": { description: "Validierungsfehler: Pflichtfeld leer oder Passwort verletzt die Policy" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "Org nicht gefunden" }
-        "409": { description: "Username/E-Mail existiert bereits" }
+        "409": { description: "\"Benutzername existiert bereits (muss systemweit eindeutig sein)\" -- systemweit, ohne Gross/klein. Seit 30.09.2026 auch bei gleichzeitiger Anlage: Pruefen und Anlegen in EINER Transaktion unter pg_advisory_xact_lock je Namen (klein geschrieben; utils/benutzernameSperre.js, dieselbe Sperre in POST /users, POST /organizations/{id}/admins und POST /organizations) -- die zweite Anlage wartet und bekommt diese 409. Vorher kamen zwei gleichzeitige Anlagen desselben Namens beide durch (201/201, zwei Konten), weil der einzige eindeutige Index (organization_id, username) Gross/klein unterscheidet und nur in einer Gemeinde greift. E-Mail-Konflikt in derselben Gemeinde: \"Benutzername oder E-Mail existiert bereits\"" }
       x-berechtigung:
         rollen: [super_admin, org_admin]
         middleware: [verifyTokenRBAC, validateCreateOrgAdmin]
@@ -1664,7 +1664,7 @@ paths:
         "201": { description: "Neuer User; Chat-Sync (Team-Chat, org_admin zusaetzlich Jahrgangs-Chats)" }
         "400": { description: "Rolle nicht in eigener Org / Policy verletzt" }
         "403": { description: "Hierarchie: Ziel-Rolle nicht anlegbar (canCreateRole)" }
-        "409": { description: "Username existiert (systemweit)" }
+        "409": { description: "\"Benutzername existiert bereits (muss systemweit eindeutig sein)\" -- systemweit, ohne Gross/klein. Seit 30.09.2026 auch bei gleichzeitiger Anlage: Pruefen und Anlegen in EINER Transaktion unter pg_advisory_xact_lock je Namen (klein geschrieben; utils/benutzernameSperre.js, dieselbe Sperre in POST /users, POST /organizations/{id}/admins und POST /organizations) -- die zweite Anlage wartet und bekommt diese 409. Vorher kamen zwei gleichzeitige Anlagen desselben Namens beide durch (201/201, zwei Konten), weil der einzige eindeutige Index (organization_id, username) Gross/klein unterscheidet und nur in einer Gemeinde greift. Ohne mitgeschickten username nimmt der Server bei gleichzeitiger Anlage den naechsten freien erzeugten Namen (anna.muster2) statt 409. E-Mail-Konflikt in derselben Gemeinde: \"Benutzername oder E-Mail existiert bereits\"" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('create')", validateCreateUser]
