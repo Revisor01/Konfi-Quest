@@ -25,8 +25,8 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 30.09.2026: 124 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
-const OBERGRENZE = 124;
+/** Stand 30.09.2026: 120 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
+const OBERGRENZE = 120;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -84,7 +84,6 @@ const BEKANNT: string[] = [
   '__tests__/components/listenAbstaendeProfil.test.ts',
   '__tests__/components/materialDateiAuswahl.test.ts',
   '__tests__/components/materialLink.test.ts',
-  '__tests__/components/materialStatsLinks.test.ts',
   '__tests__/components/md3LayoutPasst.test.ts',
   '__tests__/components/modaleBenannt.test.ts',
   '__tests__/components/modaleUeberHookBenannt.test.ts',
@@ -138,11 +137,8 @@ const BEKANNT: string[] = [
   '__tests__/navigation/routenInventar.test.ts',
   '__tests__/navigation/weisserScreenKaltstart.test.ts',
   '__tests__/services/apiPfadeExistieren.test.ts',
-  '__tests__/services/appSperre.test.ts',
-  '__tests__/services/auth.test.ts',
   '__tests__/services/badgeIconsAufloesung.test.ts',
   '__tests__/services/dateiDownloadHaertung.test.ts',
-  '__tests__/services/geraeteKennungMitsenden.test.ts',
   '__tests__/services/keinTokenImQuery.test.ts',
   '__tests__/services/linkOeffnen.test.ts',
   '__tests__/services/messungAntragMaterialSpruch.test.ts',

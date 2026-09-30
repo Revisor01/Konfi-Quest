@@ -143,12 +143,7 @@ describe('die Kennung geht mit', () => {
     expect(refresh.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-1' });
   });
 
-  it('bei der Registrierung mit Einladungscode (Quelltext der Seite)', async () => {
-    const { readFileSync } = await import('fs');
-    const { resolve } = await import('path');
-    const seite = readFileSync(resolve(process.cwd(), 'src/components/auth/KonfiRegisterPage.tsx'), 'utf8');
-    const aufruf = seite.slice(seite.indexOf("api.post('/auth/register-konfi'"));
-    expect(seite).toContain('const kennung = await geraeteKennung();');
-    expect(aufruf.slice(0, aufruf.indexOf('});'))).toContain('device_id: kennung');
-  });
+  // Bei der Registrierung mit Einladungscode: geprueft an der gerenderten
+  // Seite, components/konfiRegistrierung.test.tsx (bis 30.09.2026 hier am
+  // Quelltext).
 });

@@ -93,7 +93,7 @@ vi.mock('@ionic/react', () => {
     IonNote: ({ children }: K) => <span>{children}</span>,
     IonItem: ({ children, onClick }: K & { onClick?: () => void }) => <div onClick={onClick}>{children}</div>,
     // Das Symbol als leeres Element: welches, und ob es Vorlesehilfen verborgen ist.
-    IonIcon: ({ icon, 'aria-hidden': verborgen }: { icon?: string; 'aria-hidden'?: string | boolean }) => (
+    IonIcon: ({ icon, 'aria-hidden': verborgen }: { icon?: string; 'aria-hidden'?: boolean | 'true' | 'false' }) => (
       <i data-icon={icon} aria-hidden={verborgen} />
     ),
     IonSpinner: () => null, IonRefresher: () => null, IonRefresherContent: () => null,
