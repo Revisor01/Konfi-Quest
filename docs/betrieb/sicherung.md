@@ -194,6 +194,40 @@ Zählungen wie in der Produktion. Wer zusätzlich das Schema vergleichen will:
 an Postgres-Version oder Sicherungsskript; das Datum der letzten Probe steht
 in der Prüfliste.
 
+**Gemessen mit der Produktion (01.10.2026)**, in einem Wegwerf-Container
+`postgres:15-alpine` neben dem Stack, 169 Konten, 62 Tabellen:
+
+| Schritt | Größe | Dauer |
+|---|---|---|
+| Sicherung mit `deploy/sicherung.sh` (Datenbank `-Fc` + Uploads) | 0,9 MB + 248 MB | 10,9 s |
+| Einspielen mit `deploy/wiederherstellung.sh` | 0,9 MB | 1 s (2,2 s mit Prüfen und Zählen) |
+| Einspielen des nächtlichen SQL-Dumps (unten) | 0,7 MB gepackt, 3,3 MB SQL | 1,25 s |
+| Uploads aus dem Archiv entpacken | 411 Dateien | 2,4 s |
+
+Ergebnis: alle 62 Tabellen zeilengleich mit der Quelle, Schema Objekt für
+Objekt gleich (`schemaVergleich.js`), ein Backend gegen die Kopie startet
+ohne `Migration FAILED`, Anmeldung mit Testkonten klappt, alle 408
+verschlüsselten Dateien lassen sich mit dem Schlüssel der Stack-Umgebung
+öffnen. Die Dauer wächst mit dem Bestand; bei der EKD-weiten Ausrollung
+neu messen.
+
+**Nächtliche Sicherung als reines SQL.** Die nächtliche Sicherung des
+Betriebs schreibt (Stand 01.10.2026) `pg_dump --clean --if-exists | gzip`,
+also SQL statt `-Fc`. `deploy/wiederherstellung.sh` liest nur `-Fc`. Für so
+einen Dump ist der Weg: leere Datenbank wie im Skript anlegen (Schritt 3),
+dann
+
+```bash
+set -o pipefail
+zcat konfi_db_<stempel>.sql.gz \
+  | docker exec -i <postgres-container> psql -U konfi_user -d <zieldatenbank> -X -q -v ON_ERROR_STOP=1
+```
+
+`ON_ERROR_STOP` bricht beim ersten Fehler ab, `pipefail` macht einen
+kaputten Dump zum Fehlschlag. Danach die Zählungen wie am Ende des Skripts.
+Einheitlich wird es erst, wenn die nächtliche Sicherung auf
+`deploy/sicherung.sh` umgestellt ist (Entscheidung beim Betrieb).
+
 Die Postgres-Version des Zielsystems muss mindestens der des Dumps
 entsprechen (`pg_restore` ist abwärts-, nicht aufwärtskompatibel). Der Stack
 läuft auf `postgres:15-alpine`; ein Test mit einer 16er-Instanz spielt einen
@@ -216,8 +250,10 @@ festhält:
       die Firebase-Datei — und wer kommt im Notfall daran?
 - [ ] Welche Überwachung prüft Alter **und** Größe der jüngsten Sicherung,
       und wen benachrichtigt sie?
-- [ ] Datum der letzten Rückspielprobe: ____________ · Ergebnis: __________
-- [ ] Größe des jüngsten Dumps: ______ (Vergleichswert für die nächste Prüfung)
+- [x] Datum der letzten Rückspielprobe: 01.10.2026 · Ergebnis: fehlerfrei,
+      zeilen- und schemagleich (Tabelle oben)
+- [x] Größe des jüngsten Dumps: 686.954 Byte (nächtlich, SQL gepackt,
+      30.09.2026); `-Fc` 931.258 Byte (Vergleichswert für die nächste Prüfung)
 
 Verwandt: `init-scripts/README.md` (Neuinstallation ohne Daten),
 `docs/offene-befunde.md` Nr. 3 (leerer Dump am 10.09.2026),

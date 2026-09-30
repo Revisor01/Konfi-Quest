@@ -212,11 +212,17 @@ async function main(argv) {
   return 2;
 }
 
+// process.exitCode statt process.exit (01.10.2026, Auftrag 11): process.exit
+// beendet sofort und wirft weg, was Node noch in eine volle Pipe schreiben
+// will. `docker exec … erfassen > prod-schema.json` lieferte in Produktion
+// genau 65.536 Byte, abgeschnitten mitten im JSON. Mit exitCode endet der
+// Prozess erst, wenn die Ausgabe draussen ist (die Pools sind dann beendet).
+// Test: frontend/src/__tests__/betrieb/schemaVergleichAusgabe.test.ts.
 if (require.main === module) {
   main(process.argv.slice(2))
-    .then((code) => process.exit(code))
+    .then((code) => { process.exitCode = code; })
     .catch((err) => {
       process.stderr.write(`FEHLER: ${err.message}\n`);
-      process.exit(2);
+      process.exitCode = 2;
     });
 }
