@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -42,14 +42,27 @@ afterAll(() => {
   rmSync(ordner, { recursive: true, force: true });
 });
 
+/**
+ * Startet das Skript ohne Shell und liest seine Ausgabe erst nach einer
+ * Sekunde -- bis dahin laeuft die Pipe voll wie hinter docker exec oder ssh.
+ */
+function langsamGelesen(args: string[]): Promise<{ stdout: string; status: number | null }> {
+  return new Promise((fertig, fehler) => {
+    const kind = spawn(process.execPath, [SKRIPT, ...args], { stdio: ['ignore', 'pipe', 'inherit'] });
+    const teile: Buffer[] = [];
+    kind.stdout.on('data', (teil: Buffer) => teile.push(teil));
+    kind.stdout.pause();
+    setTimeout(() => kind.stdout.resume(), 1000);
+    let status: number | null = null;
+    kind.on('error', fehler);
+    kind.on('exit', (code) => { status = code; });
+    kind.on('close', () => fertig({ stdout: Buffer.concat(teile).toString('utf-8'), status }));
+  });
+}
+
 describe('schemaVergleich.js schreibt in eine Pipe vollstaendig', () => {
-  it('vergleichen: alle Abweichungszeilen kommen beim langsamen Leser an, Exit 1 bleibt', () => {
-    // Exit-Status des Skripts selbst, nicht der Pipe: PIPESTATUS gibt es nur
-    // in bash.
-    const lauf = spawnSync('bash', ['-c',
-      'node "$1" vergleichen "$2" "$3" | (sleep 1; cat); exit "${PIPESTATUS[0]}"',
-      '_', SKRIPT, join(ordner, 'a.json'), join(ordner, 'b.json')],
-    { encoding: 'utf-8', maxBuffer: 16 * 1024 * 1024 });
+  it('vergleichen: alle Abweichungszeilen kommen beim langsamen Leser an, Exit 1 bleibt', async () => {
+    const lauf = await langsamGelesen(['vergleichen', join(ordner, 'a.json'), join(ordner, 'b.json')]);
 
     const nurA = (lauf.stdout.match(/^- A: /gm) || []).length;
     const nurB = (lauf.stdout.match(/^\+ B: /gm) || []).length;
@@ -59,11 +72,8 @@ describe('schemaVergleich.js schreibt in eine Pipe vollstaendig', () => {
     expect(lauf.status).toBe(1);
   });
 
-  it('vergleichen: gleicher Stand -> Exit 0 und die Zeile "Gleich"', () => {
-    const lauf = spawnSync('bash', ['-c',
-      'node "$1" vergleichen "$2" "$2" | (sleep 1; cat); exit "${PIPESTATUS[0]}"',
-      '_', SKRIPT, join(ordner, 'a.json')],
-    { encoding: 'utf-8' });
+  it('vergleichen: gleicher Stand -> Exit 0 und die Zeile "Gleich"', async () => {
+    const lauf = await langsamGelesen(['vergleichen', join(ordner, 'a.json'), join(ordner, 'a.json')]);
     expect(lauf.stdout).toBe(`Gleich: 0 tabellen, ${ZEILEN} spalten\n`);
     expect(lauf.status).toBe(0);
   });
