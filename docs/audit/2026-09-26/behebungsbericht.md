@@ -570,6 +570,30 @@ behoben, 8 teilweise (Rest begründet), 3 offen; Einzelheiten in
   mit systemweit geprüftem Benutzernamen. Einladungscodes bleiben bei 8 Zeichen; abgesagte Events
   zählen als offene Buchungen weiter nur Konfis.
 
+### 30.09.: Paket J — Nachzügler, Tests, Abhängigkeiten, Notfall-Probelauf
+
+Simon, 30.09.2026: „Gibt es irgendwas das du erledigen könntest. Das wäre hilfreich." — Er wählte
+alle vier Vorschläge. Drei Agenten liefen parallel (eigener Arbeitsbaum, eigene Test-Datenbank),
+den Probelauf und die Zusammenführung machte die Koordination. Einzelheiten und Commits:
+[offene Punkte, Paket J](../2026-09-28/offene-punkte.md#paket-j-30092026).
+
+- **Notfall-Deploy geprobt** (erstmals auf GitHub): Rückrollweg auf den Stand vom 29.09. grün in
+  24 s, Produktion unverändert. Der Lauf mit leerem Tag brach sicher ab, weil „leer" den letzten
+  Commit nahm und der nur Doku war; jetzt nimmt er den jüngsten Stand mit gebauten Images.
+- **Benutzernamen:** gleichzeitige Anlagen (fünf Routen), Umbenennen und Registrierung prüfen
+  systemweit unter einer Sperre je Namen — vorher gemessen doppelt vergeben bzw. mehrdeutig.
+- **Kleinere Fehler:** Serienanlage und neun Hilfsfunktionen ohne gleichzeitige Abfragen auf einem
+  Client; Systemname der Gemeinde mit Umlauten und beim Bearbeiten stabil; Mitglieder-Fenster ohne
+  403 für Konfis; API-Doku zu Gemeinde und Benutzer:innen auf dem Stand des Codes.
+- **Tests:** keine Komponente mehr ohne Test (vorher 10), Quelltext-Tests 150 → 117; ein
+  wackelnder Mail-Test gemessen und robust gemacht.
+- **Abhängigkeiten:** sechs der sieben Dependabot-PRs übernommen (vitest 5, js-yaml 5, Playwright,
+  setup-java 6, Backend minor/patch); das Web-Bundle bleibt byte-gleich. #195 (nativer Code) wartet
+  bis nach dem Store-Release. Die zwei moderaten Meldungen auf `main` (react-router) sind nicht
+  behebbar und für die App ohne Wirkung — [offene Befunde Nr. 15](../../offene-befunde.md).
+- **Geprüft und bewusst nicht geändert:** `@capacitor/status-bar` wirkt nativ (Statusleiste
+  antippen, Android-Randlage) und bleibt, bis es am Gerät geprüft ist.
+
 ## Was offen bleibt
 
 **Stand 29.09.2026, abends:** Die vollständige Liste steht in
