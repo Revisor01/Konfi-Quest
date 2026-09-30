@@ -132,7 +132,7 @@ services:
     # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
     # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
     # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
-    user: "1000:1000"
+    user: "10001:10001"
     environment: &backend_env
       NODE_ENV: production
       # TZ NICHT uebernehmen, solange nicht geklaert (27.09.2026). Seit dem
@@ -285,7 +285,7 @@ services:
     # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
     # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
     # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
-    user: "1000:1000"
+    user: "10001:10001"
     environment:
       <<: *backend_env
     volumes:
@@ -363,7 +363,7 @@ services:
     # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
     # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
     # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
-    user: "1000:1000"
+    user: "10001:10001"
     environment:
       <<: *backend_env
       RUN_BACKGROUND_JOBS: "false"

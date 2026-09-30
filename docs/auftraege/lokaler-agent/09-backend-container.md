@@ -108,9 +108,25 @@ und den Stand der Stack-Definition exportieren.
 - [ ] Rückweg, falls etwas scheitert: `user:` aus dem Stack nehmen und
       aktualisieren — root darf die Dateien weiter schreiben, am Besitz muss
       nichts zurückgedreht werden.
-- [ ] Wenn alles eine Woche ohne `EACCES` lief (frühestens 08.10.2026): Pull Request mit `USER node`
-      im `backend/Dockerfile` (Upload-Verzeichnis gehört `node` schon),
-      Test dazu, und `user:` im Stack wieder entfernen.
+- [x] Eigene uid statt 1000 (Simon, 01.10.2026). uid 1000 gehört am Host
+      einem bestehenden Systemnutzer, weitere Container laufen dort als 1000;
+      der Hosting-Nutzer schied aus, weil unter ihm Webseiten laufen. Gewählt:
+      `10001:10001`, am Host unbelegt.
+      **Ergebnis 01.10.2026:** Übergang ohne Ausfall: Uploads und Schlüssel
+      zuerst `10001:1000` mit Gruppenrechten, dann `backend` und
+      `backend-test` getauscht (3 von 172 Proben über 3 s ohne Antwort,
+      eine Minute nach dem Start des neuen Backends), dann `backend2`
+      (0 von 277, keine Antwort über 1,5 s). Danach Uploads `10001:10001`
+      ohne Rechte für andere (Verzeichnis 2750, 0 Einträge für andere
+      lesbar), Schlüssel `root:10001 640`. Gegenprobe: der Systemnutzer mit
+      uid 1000 und der Hosting-Nutzer kommen nicht mehr an die Uploads; alle
+      drei Backends laufen als 10001, Schreibprobe und Schlüssel ok,
+      0 `EACCES`, Firebase verbunden, genau ein Cron-Leader.
+- [ ] Wenn alles eine Woche ohne `EACCES` lief (frühestens 08.10.2026):
+      entweder `user: "10001:10001"` im Stack so lassen oder einen Nutzer
+      10001 im `backend/Dockerfile` anlegen und `USER 10001` setzen (dann
+      `user:` im Stack entfernen). `USER node` (uid 1000) scheidet aus,
+      siehe oben.
 
 **Ergebnis** je Punkt mit Datum und Messwert eintragen, im Befund CI BF-06 die
 Status-Zeile fortschreiben.

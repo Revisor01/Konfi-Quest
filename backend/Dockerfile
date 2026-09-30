@@ -38,11 +38,12 @@ ARG GIT_SHA=unknown
 ENV GIT_SHA=$GIT_SHA
 
 # Upload-Verzeichnis. Dem Nutzer `node` (uid 1000) gehoerig, damit das Image
-# auch ohne root laeuft. In Produktion laeuft der Prozess seit dem 01.10.2026
-# als 1000:1000 (`user:` im Stack, Upload-Verzeichnis am Host umgestellt);
-# `USER node` hier folgt, wenn das eine Woche ohne EACCES lief (Auftrag
-# docs/auftraege/lokaler-agent/09-backend-container.md). Mit Mount gilt der
-# Besitzer des Host-Verzeichnisses, ohne Mount (E2E, lokal) dieser hier.
+# auch ohne root laeuft (E2E, lokal: ohne Mount gilt dieser Besitz). In
+# Produktion laeuft der Prozess seit dem 01.10.2026 als eigene uid
+# 10001:10001 (`user:` im Stack); Upload-Verzeichnis und Push-Schluessel
+# gehoeren am Host 10001, fuer andere Nutzer gesperrt. Bewusst nicht 1000:
+# die gehoert am Host einem bestehenden Systemnutzer (Auftrag
+# docs/auftraege/lokaler-agent/09-backend-container.md).
 RUN mkdir -p /app/uploads && chown node:node /app/uploads
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

@@ -160,11 +160,15 @@ describe('Backend-Image: Laufzeit-Stufe ohne Werkzeug und ohne Tests', () => {
     expect(laufzeit).not.toMatch(/\bcurl\b/);
   });
 
-  it('der Stack laesst die Backends als uid 1000 laufen, nicht als root (CI BF-06)', () => {
+  it('der Stack laesst die Backends als eigene uid 10001 laufen, nicht als root (CI BF-06)', () => {
     const compose = lies('deploy/compose.konfi_quest.yml');
     const nutzer = [...compose.matchAll(/^ {4}user: "(\d+):(\d+)"$/gm)].map((m) => `${m[1]}:${m[2]}`);
-    expect(nutzer).toEqual(['1000:1000', '1000:1000', '1000:1000']);
-    // uid 1000 ist `node` im Basis-Image; ihm gehoert das Upload-Verzeichnis.
+    // 10001 statt 1000 (Simon, 01.10.2026): uid 1000 gehoert am Host einem
+    // bestehenden Systemnutzer, und weitere Container laufen dort als 1000.
+    // Eine uid, die am Host niemandem gehoert, laesst ausser root niemanden an
+    // Uploads und Push-Schluessel.
+    expect(nutzer).toEqual(['10001:10001', '10001:10001', '10001:10001']);
+    // Ohne Mount (E2E, lokal) gilt der Besitz im Image.
     expect(laufzeit).toMatch(/chown node:node \/app\/uploads/);
   });
 });
