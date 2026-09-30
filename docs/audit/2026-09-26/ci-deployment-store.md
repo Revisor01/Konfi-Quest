@@ -345,6 +345,7 @@ richtig machen oder bis dahin entfernen.
 - **Beleg:** `list_workflow_runs notfall-deploy.yml` → `{"total_count":0,"workflow_runs":[]}`.
 - **Empfehlung:** Einmal bewusst mit dem aktuellen `main`-Tag proben (idempotent), `permissions:
   packages: read` ergänzen, Rollback-Ablauf inkl. Migrationsfrage kurz in `deploy/` dokumentieren.
+- **Nachtrag 30.09.2026:** Erster Lauf auf GitHub, beide als Probelauf (Freigabe Simon). Mit dem Tag des vorigen Deploys (`67c03dc`): grün in 24 s, Umschreibung aller drei Dienste `76178ec -> 67c03dc`, `backend-test` unverändert, Container gesund, Produktion unverändert (`update_stack` nicht aufgerufen). Mit leerem Tag: sicher abgebrochen, weil „leer" HEAD hieß und HEAD ein reiner Doku-Commit ohne Images war (`7d8e945`). Behoben: `deploy/notfall-tag.sh` nimmt bei leerem Tag den jüngsten Commit, zu dem beide Images liegen; `notfallTag.test.ts` (8 Tests, Wegwerf-Repo mit nachgebautem `docker`), Gegenprobe mit dem alten Verhalten (nur HEAD) → 2 rot; dazu in `rollenderDeploy.test.ts` ein Test, dass der Workflow das Skript aufruft (gegen die alte Workflow-Datei → 1 rot). **Offen:** der idempotente echte Lauf und die Wiederholung mit leerem Tag nach dem Merge (Auftrag 05, Abschnitt 3).
 
 ### BF-11: E2E-Job auf Node 20 (EOL) und Actions v4; Produktions-Image auf Node 26 (kein LTS)
 - **Schwere:** NIEDRIG

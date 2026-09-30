@@ -9,6 +9,11 @@
 // verbliebenen -- ueberwiegend Stil-Waechter (Tokens, Farben, Abstaende) und
 // Abwesenheits-Pruefungen, fuer die Quelltext lesen der Zweck ist.
 //
+// Am 30.09.2026 weitere 33 umgestellt, je mit Gegenprobe (Terminseiten aller
+// drei Rollen, Personenansicht der Leitung, Offline-Platzhalter, Material,
+// Registrierung, App-Sperre, Chat-Mitglieder): 150 -> 117. Die Gerueste
+// dafuer liegen unter components/gerueste/ und nehmen weitere Umstellungen auf.
+//
 // Gezaehlt wie im Audit: Datei enthaelt `readFileSync` und kein `render(`.
 //
 // Die Liste darf nur SCHRUMPFEN:
@@ -25,8 +30,8 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 29.09.2026: 150. Nur nach unten anpassen, ausser mit Begruendung. */
-const OBERGRENZE = 150;
+/** Stand 30.09.2026: 117 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
+const OBERGRENZE = 117;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -44,20 +49,10 @@ const BEKANNT: string[] = [
   '__tests__/components/abgesagteTermineAnsichten.test.ts',
   '__tests__/components/abgesagterTerminBleibtMeiner.test.ts',
   '__tests__/components/abmeldefristSichtbar.test.ts',
-  '__tests__/components/abmeldenOffline.test.ts',
   '__tests__/components/abmeldungUndNotiz.test.ts',
   '__tests__/components/abstaendeTokens.test.ts',
   '__tests__/components/abzeichenTypNullbarkeit.test.ts',
   '__tests__/components/abzeichenZaehlerTeamer.test.ts',
-  '__tests__/components/adminEigeneZusage.test.ts',
-  '__tests__/components/adminEventDetailOffline.test.ts',
-  '__tests__/components/adminKonfiDetailOffline.test.ts',
-  '__tests__/components/adminOhneJahrgangHinweis.test.ts',
-  '__tests__/components/adminZusageAusBookingStatus.test.ts',
-  '__tests__/components/alleBestaetigenTeamer.test.ts',
-  '__tests__/components/anmeldeKnopfOhneBuchung.test.ts',
-  '__tests__/components/anmeldenAnAbgesagtemTermin.test.ts',
-  '__tests__/components/anwesenheitZuruecksetzen.test.ts',
   '__tests__/components/appAbdeckung.test.ts',
   '__tests__/components/beruehrungsziele.test.ts',
   '__tests__/components/bewegungsreduktion.test.ts',
@@ -70,7 +65,6 @@ const BEKANNT: string[] = [
   '__tests__/components/challenges/stempelStattAbzeichen.test.ts',
   '__tests__/components/chatAufraeumen.test.ts',
   '__tests__/components/chatDateiFortschritt.test.ts',
-  '__tests__/components/chatMitgliederliste.test.ts',
   '__tests__/components/chatNutzertypDreiWerte.test.ts',
   '__tests__/components/dateiAuswahlNurUeberHuelle.test.ts',
   '__tests__/components/diagnoseNurLeitung.test.ts',
@@ -88,30 +82,22 @@ const BEKANNT: string[] = [
   '__tests__/components/kategorieUndTypInListe.test.ts',
   '__tests__/components/keinStillesOfflineScheitern.test.ts',
   '__tests__/components/klickbareElementeBedienbar.test.ts',
-  '__tests__/components/konfiStammdatenBearbeiten.test.ts',
   '__tests__/components/kontoModaleAlleDreiAnsichten.test.ts',
-  '__tests__/components/ladeanzeigeDetailansichten.test.ts',
   '__tests__/components/laufendeMehrtagesTermine.test.ts',
-  '__tests__/components/leitungSiehtKonfiWrapped.test.ts',
   '__tests__/components/listenAbstaendeProfil.test.ts',
   '__tests__/components/materialDateiAuswahl.test.ts',
-  '__tests__/components/materialErsteller.test.ts',
   '__tests__/components/materialLink.test.ts',
-  '__tests__/components/materialStatsLinks.test.ts',
   '__tests__/components/md3LayoutPasst.test.ts',
   '__tests__/components/modaleBenannt.test.ts',
   '__tests__/components/modaleUeberHookBenannt.test.ts',
   '__tests__/components/neuerungenBannerStartseiten.test.ts',
-  '__tests__/components/offlinePlatzhalter.test.ts',
   '__tests__/components/onboardingTourGeteilt.test.ts',
   '__tests__/components/popoverBreite.test.ts',
   '__tests__/components/profilAbzeichenZahlOhneZusatzabruf.test.ts',
-  '__tests__/components/profilReihenfolge.test.ts',
   '__tests__/components/profilWrappedReihenfolge.test.ts',
   '__tests__/components/rankingFeldnamen.test.ts',
   '__tests__/components/reiterUnterlaengen.test.ts',
   '__tests__/components/rollenGleichbehandlung.test.ts',
-  '__tests__/components/ruecknahmeKnopfImTermin.test.ts',
   '__tests__/components/shared/hinweisKartenOhnePfeil.test.ts',
   '__tests__/components/statuswortVerbucht.test.ts',
   '__tests__/components/stempelEineStelle.test.ts',
@@ -119,26 +105,15 @@ const BEKANNT: string[] = [
   '__tests__/components/tabLeisteAndroid.test.ts',
   '__tests__/components/tabZaehlerIos.test.ts',
   '__tests__/components/tageUndKalendertag.test.ts',
-  '__tests__/components/teamerAbsageGrund.test.ts',
-  '__tests__/components/teamerBuchungOnlinePflicht.test.ts',
   '__tests__/components/teamerDashboardZertifikate.test.ts',
   '__tests__/components/teamerKonfiHistorieOhneJahrgang.test.ts',
-  '__tests__/components/teamerKontingentStatus.test.ts',
-  '__tests__/components/teamerSiehtGrundUndNotiz.test.ts',
-  '__tests__/components/teamerTeilnehmerlisteNurLesend.test.ts',
-  '__tests__/components/teamerTerminAbsagen.test.ts',
-  '__tests__/components/teamerZusageKarteAbgesagt.test.ts',
-  '__tests__/components/teamerZusageKnoepfe.test.ts',
   '__tests__/components/terminDetailDreiAnsichten.test.ts',
-  '__tests__/components/terminEndeVorBeginn.test.ts',
   '__tests__/components/terminKopieren.test.ts',
   '__tests__/components/terminModalDatumsfelder.test.ts',
-  '__tests__/components/terminStatusDetailansicht.test.ts',
   '__tests__/components/typografieTokens.test.ts',
   '__tests__/components/umlauteUndZurueckIcon.test.ts',
   '__tests__/components/umschalterInDetailansichten.test.ts',
   '__tests__/components/walkthroughVersionEinheitlich.test.ts',
-  '__tests__/components/wartelisteBleibtMeiner.test.ts',
   '__tests__/components/wrappedBewegungReduzieren.test.ts',
   '__tests__/components/wrappedBildNichtVerdeckt.test.ts',
   '__tests__/components/wrappedDramaturgieHatRenderer.test.ts',
@@ -164,11 +139,8 @@ const BEKANNT: string[] = [
   '__tests__/navigation/routenInventar.test.ts',
   '__tests__/navigation/weisserScreenKaltstart.test.ts',
   '__tests__/services/apiPfadeExistieren.test.ts',
-  '__tests__/services/appSperre.test.ts',
-  '__tests__/services/auth.test.ts',
   '__tests__/services/badgeIconsAufloesung.test.ts',
   '__tests__/services/dateiDownloadHaertung.test.ts',
-  '__tests__/services/geraeteKennungMitsenden.test.ts',
   '__tests__/services/keinTokenImQuery.test.ts',
   '__tests__/services/linkOeffnen.test.ts',
   '__tests__/services/messungAntragMaterialSpruch.test.ts',

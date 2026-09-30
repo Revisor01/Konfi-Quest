@@ -44,6 +44,7 @@
 // org_admin-Konten, gemessen 31.08.2026).
 
 const { ladeMitgliederDerOrganisation } = require('./orgMitglieder');
+const { abfragenBuendeln } = require('./abfragenBuendeln');
 
 /**
  * Sieht diese Person ALLE Antraege ihrer aktiven Gemeinde?
@@ -108,9 +109,10 @@ async function ladeLeitungZumAntrag(db, antragId) {
   );
   if (!antrag) return [];
 
-  const [orgWeit, admins] = await Promise.all([
-    ladeMitgliederDerOrganisation(db, antrag.organization_id, ['org_admin']),
-    ladeMitgliederDerOrganisation(db, antrag.organization_id, ['admin'])
+  // Auf dem Client einer Transaktion nacheinander (utils/abfragenBuendeln.js).
+  const [orgWeit, admins] = await abfragenBuendeln(db, [
+    () => ladeMitgliederDerOrganisation(db, antrag.organization_id, ['org_admin']),
+    () => ladeMitgliederDerOrganisation(db, antrag.organization_id, ['admin'])
   ]);
 
   // Die Rolle admin durch DIESELBE Bedingung wie Liste und Zaehler: das

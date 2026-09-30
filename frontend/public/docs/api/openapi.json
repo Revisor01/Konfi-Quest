@@ -1142,7 +1142,7 @@
             "description": "Code existiert nicht"
           },
           "409": {
-            "description": "Username vergeben"
+            "description": "\"Benutzername bereits vergeben\" -- systemweit, ohne Gross/klein. Seit 30.09.2026 auch bei gleichzeitiger Registrierung: die verbindliche Pruefung steht in der Transaktion unter pg_advisory_xact_lock je Namen (utils/benutzernameSperre.js, dieselbe Sperre wie POST /users, /organizations und /admin/konfis); die Pruefung davor spart nur das Hashen. Vorher kamen zwei gleichzeitige Registrierungen mit \"Anna\"/\"anna\" beide durch (200/200)"
           },
           "410": {
             "description": "Code abgelaufen"
@@ -1462,8 +1462,8 @@
         "tags": [
           "Organisationen"
         ],
-        "summary": "Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitäten, 3 Beispiel-Challenges)",
-        "description": "Standardrollen (display_name): org_admin \"Org-Leitung\", admin \"Leitung\", teamer \"Teamer:in\", konfi \"Konfirmand:in\" (seit 28.09.2026; vorher \"Organisations-Admin\" und \"Hauptamt\"). Bestehende Gemeinden behalten ihre display_name-Werte -- keine Migration; die App beschriftet Rollen nach role_name.\nBEHOBEN 29.09.2026 (Nebenbefund Screens/Leitung BF-15): (1) GANZ ODER GAR NICHT: Gemeinde, Rollen, erste Gemeindeleitung und alle Vorlagen entstehen in EINER Transaktion; scheitert ein Schritt, bleibt nichts stehen (500) -- vorher eine halbe Gemeinde mit belegtem Systemnamen. (2) admin_username wird SYSTEMWEIT und ohne Gross/klein geprueft wie in POST /api/users und POST /api/organizations/{id}/admins: 409 \"Benutzername existiert bereits (muss systemweit eindeutig sein)\", nichts wird angelegt. Vorher griff nur der Index (organization_id, username) -- in einer neuen Gemeinde nie; die Anmeldung per LOWER(username) wurde mehrdeutig. (3) SYSTEMNAME MIT UMLAUTEN: Die App bildet name/slug aus dem Anzeigenamen und verliert dabei Umlaute (\"Büsum\" -> \"bsum\"). Entspricht ein geschickter Wert genau dieser Bildung, bildet der Server ihn neu mit ä->ae, ö->oe, ü->ue, ß->ss (\"buesum\"); ein eigener Wert bleibt, nur Umlaute darin werden ebenso umgeschrieben (utils/gemeindeSystemname.js). Nur beim Anlegen -- bestehende Gemeinden werden nicht umbenannt, PUT speichert weiter, was geschickt wird. Antwortform unveraendert.\n",
+        "summary": "Gemeinde anlegen inkl. erster Gemeindeleitung und Standard-Daten (4 Rollen, 36 Badges, 4 Zertifikat-Typen, 6 Levels, 14 Kategorien, 9 Aktivitäten, 3 Beispiel-Challenges)",
+        "description": "Standardrollen (display_name): org_admin \"Org-Leitung\", admin \"Leitung\", teamer \"Teamer:in\", konfi \"Konfirmand:in\" (seit 28.09.2026; vorher \"Organisations-Admin\" und \"Hauptamt\"). Bestehende Gemeinden behalten ihre display_name-Werte -- keine Migration; die App beschriftet Rollen nach role_name.\nBEHOBEN 29.09.2026 (Nebenbefund Screens/Leitung BF-15): (1) GANZ ODER GAR NICHT: Gemeinde, Rollen, erste Gemeindeleitung und alle Vorlagen entstehen in EINER Transaktion; scheitert ein Schritt, bleibt nichts stehen (500) -- vorher eine halbe Gemeinde mit belegtem Systemnamen. (2) admin_username wird SYSTEMWEIT und ohne Gross/klein geprueft wie in POST /api/users und POST /api/organizations/{id}/admins: 409 \"Benutzername existiert bereits (muss systemweit eindeutig sein)\", nichts wird angelegt. Vorher griff nur der Index (organization_id, username) -- in einer neuen Gemeinde nie; die Anmeldung per LOWER(username) wurde mehrdeutig. (3) SYSTEMNAME MIT UMLAUTEN: Die App bildet name/slug aus dem Anzeigenamen und verliert dabei Umlaute (\"Büsum\" -> \"bsum\"). Entspricht ein geschickter Wert genau dieser Bildung, bildet der Server ihn neu mit ä->ae, ö->oe, ü->ue, ß->ss (\"buesum\"); ein eigener Wert bleibt, nur Umlaute darin werden ebenso umgeschrieben (utils/gemeindeSystemname.js). Nur beim Anlegen -- bestehende Gemeinden werden nicht umbenannt, PUT speichert weiter, was geschickt wird. Antwortform unveraendert. NACHTRAG 30.09.2026: Die App ab 2.3.0 bildet name/slug selbst mit derselben Umschrift (frontend/src/utils/gemeindeSystemname.ts, Test gegen diese Funktion); der Server behaelt, was sie schickt. Die Store-App 2.2.x schickt weiter die verlustbehaftete Form.\nSTARTBESTAND (nachgezaehlt 30.09.2026; die Zusammenfassung nannte bis dahin 27 Badges, 5 Kategorien und 5 Aktivitaeten): 4 Rollen (org_admin, admin, teamer, konfi); 36 Badges -- 27 fuer Konfis und 9 fuers Team (target_role 'teamer'); 4 Zertifikat-Typen; 6 Levels; 14 Kategorien; 9 Aktivitaeten -- 5 fuer Konfis mit Punkten und 4 fuers Team ohne Punkte und Punktetyp; 3 Beispiel-Challenges als Entwurf ohne Jahrgang. Die Zaehler der Antwort nennen dieselben Zahlen.\nBEHOBEN 30.09.2026: Das Feld message nannte nur die 5 Aktivitaeten fuer Konfis, default_activities_created daneben 9. Jetzt nennen beide 9. Die App liest message nicht.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -1521,8 +1521,8 @@
                   },
                   "admin_password": {
                     "type": "string",
-                    "minLength": 6,
-                    "description": "BEKANNT: nur min 6 Zeichen, keine Policy"
+                    "minLength": 8,
+                    "description": "Volle Passwort-Policy (validatePassword): min 8 Zeichen, Gross- und Kleinbuchstabe, Zahl, Sonderzeichen, keine Leerzeichen; sonst 400. BEHOBEN 22.08.2026 (N6) -- hier bis 30.09.2026 noch als 'nur min 6 Zeichen, keine Policy' beschrieben"
                   },
                   "admin_display_name": {
                     "type": "string"
@@ -1534,10 +1534,13 @@
         },
         "responses": {
           "201": {
-            "description": "id, admin_user_id, Anzahl angelegter Standard-Objekte"
+            "description": "id, admin_user_id, default_badges_created (36), default_certificates_created (4), default_levels_created (6), default_categories_created (14), default_activities_created (9), default_challenges_created (3), message (dieselben Zahlen als Text)"
+          },
+          "400": {
+            "description": "Validierungsfehler {error, details[{field, message}]}: Pflichtfeld leer oder admin_password verletzt die Passwort-Policy; nichts wird angelegt"
           },
           "409": {
-            "description": "\"Gemeinde-Slug existiert bereits\" (auch nach dem Umschreiben der Umlaute) oder \"Benutzername existiert bereits (muss systemweit eindeutig sein)\" (seit 29.09.2026)"
+            "description": "\"Gemeinde-Slug existiert bereits\" (auch nach dem Umschreiben der Umlaute) oder \"Benutzername existiert bereits (muss systemweit eindeutig sein)\" (seit 29.09.2026). Seit 30.09.2026 auch bei gleichzeitiger Anlage: Pruefen und Anlegen in EINER Transaktion unter pg_advisory_xact_lock je Namen (klein geschrieben; utils/benutzernameSperre.js, dieselbe Sperre in POST /users, POST /organizations/{id}/admins und POST /organizations) -- die zweite Anlage wartet und bekommt diese 409. Vorher kamen zwei gleichzeitige Anlagen desselben Namens beide durch (201/201, zwei Konten), weil der einzige eindeutige Index (organization_id, username) Gross/klein unterscheidet und nur in einer Gemeinde greift; die zweite Gemeinde entsteht dabei nicht"
           },
           "500": {
             "description": "Fehler beim Anlegen; seit 29.09.2026 bleibt dabei nichts von der Gemeinde stehen"
@@ -1700,10 +1703,12 @@
                 ],
                 "properties": {
                   "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Systemname; wird wie geschickt gespeichert. Die App ab 2.3.0 schickt den gespeicherten Wert, solange display_name gleich bleibt, sonst den neu gebildeten mit ae/oe/ue/ss (utils/gemeindeSystemname.ts). Die Store-App 2.2.x bildet ihn bei jedem Speichern ohne Umlaute neu und benennt damit eine seit dem 29.09.2026 angelegte Gemeinde wie 'buesum' auf 'bsum' zurueck"
                   },
                   "slug": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "wie name"
                   },
                   "display_name": {
                     "type": "string"
@@ -1731,7 +1736,7 @@
                   },
                   "is_active": {
                     "type": "boolean",
-                    "description": "BEKANNT: auch org_admin darf die eigene Org (de)aktivieren"
+                    "description": "Nur super_admin; von anderen wird das Feld stillschweigend uebergangen (200, is_active unveraendert). BEHOBEN 22.08.2026 (714b5013, Test organizations.test.js 'PUT /api/organizations/:id — is_active'): vorher durfte auch org_admin die eigene Gemeinde (de)aktivieren und sich damit selbst aussperren -- hier bis 30.09.2026 noch als BEKANNT beschrieben"
                   },
                   "trial_ends_at": {
                     "type": [
@@ -2013,7 +2018,8 @@
                   },
                   "password": {
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 8,
+                    "description": "Volle Passwort-Policy (validatePassword), sonst 400 -- seit 22.08.2026 (N6); hier bis 30.09.2026 noch als minLength 6 beschrieben"
                   },
                   "email": {
                     "type": "string"
@@ -2027,6 +2033,9 @@
           "201": {
             "description": "Neuer Admin"
           },
+          "400": {
+            "description": "Validierungsfehler: Pflichtfeld leer oder Passwort verletzt die Policy"
+          },
           "403": {
             "$ref": "#/components/responses/Forbidden"
           },
@@ -2034,7 +2043,7 @@
             "description": "Org nicht gefunden"
           },
           "409": {
-            "description": "Username/E-Mail existiert bereits"
+            "description": "\"Benutzername existiert bereits (muss systemweit eindeutig sein)\" -- systemweit, ohne Gross/klein. Seit 30.09.2026 auch bei gleichzeitiger Anlage: Pruefen und Anlegen in EINER Transaktion unter pg_advisory_xact_lock je Namen (klein geschrieben; utils/benutzernameSperre.js, dieselbe Sperre in POST /users, POST /organizations/{id}/admins und POST /organizations) -- die zweite Anlage wartet und bekommt diese 409. Vorher kamen zwei gleichzeitige Anlagen desselben Namens beide durch (201/201, zwei Konten), weil der einzige eindeutige Index (organization_id, username) Gross/klein unterscheidet und nur in einer Gemeinde greift. E-Mail-Konflikt in derselben Gemeinde: \"Benutzername oder E-Mail existiert bereits\""
           }
         },
         "x-berechtigung": {
@@ -2289,7 +2298,6 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "username",
                   "display_name",
                   "password",
                   "role_id"
@@ -2299,7 +2307,8 @@
                     "type": "string",
                     "minLength": 3,
                     "maxLength": 50,
-                    "pattern": "^[a-zA-Z0-9.-]+$"
+                    "pattern": "^[a-zA-Z0-9.-]+$",
+                    "description": "Optional (seit 23.08.2026; hier bis 30.09.2026 als Pflicht gefuehrt): fehlt er oder ist leer, erzeugt der Server ihn aus display_name wie bei Konfis (Umlaute ausgeschrieben, bei Kollision mit Zahl: anna.muster2) und gibt ihn in der Antwort zurueck. Mitgeschickt muss er systemweit frei sein, ohne Gross/klein -- sonst 409"
                   },
                   "email": {
                     "type": "string"
@@ -2333,7 +2342,7 @@
             "description": "Hierarchie: Ziel-Rolle nicht anlegbar (canCreateRole)"
           },
           "409": {
-            "description": "Username existiert (systemweit)"
+            "description": "\"Benutzername existiert bereits (muss systemweit eindeutig sein)\" -- systemweit, ohne Gross/klein. Seit 30.09.2026 auch bei gleichzeitiger Anlage: Pruefen und Anlegen in EINER Transaktion unter pg_advisory_xact_lock je Namen (klein geschrieben; utils/benutzernameSperre.js, dieselbe Sperre in POST /users, POST /organizations/{id}/admins und POST /organizations) -- die zweite Anlage wartet und bekommt diese 409. Vorher kamen zwei gleichzeitige Anlagen desselben Namens beide durch (201/201, zwei Konten), weil der einzige eindeutige Index (organization_id, username) Gross/klein unterscheidet und nur in einer Gemeinde greift. Ohne mitgeschickten username nimmt der Server bei gleichzeitiger Anlage den naechsten freien erzeugten Namen (anna.muster2) statt 409. E-Mail-Konflikt in derselben Gemeinde: \"Benutzername oder E-Mail existiert bereits\""
           }
         },
         "x-berechtigung": {
@@ -2422,7 +2431,8 @@
                     "type": "string",
                     "minLength": 3,
                     "maxLength": 50,
-                    "pattern": "^[a-zA-Z0-9.-]+$"
+                    "pattern": "^[a-zA-Z0-9.-]+$",
+                    "description": "Seit 30.09.2026: Ein NEUER Name (ohne Gross/klein verglichen mit dem bisherigen) muss systemweit frei sein, ohne Gross/klein, das eigene Konto ausgenommen -- sonst 409. Geprueft in der Transaktion des Updates unter pg_advisory_xact_lock je Namen (utils/benutzernameSperre.js, dieselbe Sperre wie beim Anlegen). Der unveraenderte Name (so schicken ihn die Store-Apps 2.2.x und 2.3.0 bei jedem Speichern mit) und eine reine Aenderung der Schreibweise des eigenen Namens (anna -> Anna) werden nicht geprueft und gehen wie bisher durch -- auch neben einer Dublette im Altbestand. BEHOBEN 30.09.2026: vorher ohne jede Pruefung; Umbenennen auf den Namen eines Kontos einer anderen Gemeinde oder auf 'ADMIN1' neben 'admin1' gab 200, die Anmeldung wurde mehrdeutig"
                   },
                   "email": {
                     "type": "string"
@@ -2464,7 +2474,7 @@
             "$ref": "#/components/responses/NotFound"
           },
           "409": {
-            "description": "Username/E-Mail existiert bereits; seit 28.09.2026 auch: der Rollenwechsel machte das Konto zugleich Konfi und Team (error_code konfi_und_team)"
+            "description": "\"Benutzername existiert bereits (muss systemweit eindeutig sein)\" -- neuer username vergeben (seit 30.09.2026, siehe username), nichts wird geaendert; \"Benutzername oder E-Mail existiert bereits\" bei einem Konflikt am Index (organization_id, email); seit 28.09.2026 auch: der Rollenwechsel machte das Konto zugleich Konfi und Team (error_code konfi_und_team)"
           }
         },
         "x-berechtigung": {
@@ -6826,7 +6836,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Neuen Konfi anlegen",
-        "description": "Legt User + konfi_profiles an, erzeugt Username und Startpasswort, hängt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation wird geprüft. Seit 27.09.2026 (Audit Sicherheit BF-04) startet das neue Konto ohne Kontosperre, auch wenn der erzeugte Benutzername vorher durchprobiert wurde. Seit 28.09.2026 (Audit Fachlogik Punkte/Termine BF-13, behoben) laufen die Einschreibung in die Pflicht-Events und der Eintritt in deren Chats in derselben Transaktion wie das Anlegen: Scheitern sie, entsteht kein Konto und die Antwort ist 500 (vorher 201, Konto ohne Pflicht-Events, Fehler nur im Log). Antwortform unveraendert.\n",
+        "description": "Legt User + konfi_profiles an, erzeugt Username und Startpasswort, hängt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation wird geprüft. Seit 27.09.2026 (Audit Sicherheit BF-04) startet das neue Konto ohne Kontosperre, auch wenn der erzeugte Benutzername vorher durchprobiert wurde. Seit 28.09.2026 (Audit Fachlogik Punkte/Termine BF-13, behoben) laufen die Einschreibung in die Pflicht-Events und der Eintritt in deren Chats in derselben Transaktion wie das Anlegen: Scheitern sie, entsteht kein Konto und die Antwort ist 500 (vorher 201, Konto ohne Pflicht-Events, Fehler nur im Log). Antwortform unveraendert. BENUTZERNAME: aus dem Namen erzeugt und systemweit frei (ohne Gross/klein), bei Kollision mit angehaengter Zahl (anna.muster2). Seit 30.09.2026 unter pg_advisory_xact_lock je Namen (backend/utils/benutzernameSperre.js, dieselbe Sperre wie bei allen anderen Anlagen): Eine gleichzeitige Anlage mit demselben Namen wartet bis zum COMMIT der ersten und nimmt dann den naechsten freien -- kein 409. Vorher entstanden in zwei Gemeinden zwei Konten \"anna.muster\".\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6869,7 +6879,7 @@
         },
         "responses": {
           "201": {
-            "description": "Angelegter Konfi inkl. Startpasswort"
+            "description": "Angelegter Konfi inkl. Startpasswort: {id, username, temporaryPassword, message}; username ist der erzeugte, systemweit freie Name"
           },
           "400": {
             "description": "Validierung fehlgeschlagen"

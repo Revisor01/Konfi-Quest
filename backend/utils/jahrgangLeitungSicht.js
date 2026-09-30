@@ -27,6 +27,7 @@
 // zustaendigen Admin bleibt es bei ihr (F-03).
 
 const { ladeMitgliederDerOrganisation } = require('./orgMitglieder');
+const { abfragenBuendeln } = require('./abfragenBuendeln');
 
 /**
  * Die Leitung eines Jahrgangs -- Empfaenger von "Neue Registrierung" und
@@ -44,9 +45,10 @@ const { ladeMitgliederDerOrganisation } = require('./orgMitglieder');
  * @returns {Promise<number[]>} Nutzer-IDs, aufsteigend
  */
 async function ladeLeitungZumJahrgang(db, organizationId, jahrgangId, { schreibrecht = false } = {}) {
-  const [orgWeit, admins] = await Promise.all([
-    ladeMitgliederDerOrganisation(db, organizationId, ['org_admin']),
-    ladeMitgliederDerOrganisation(db, organizationId, ['admin'])
+  // Auf dem Client einer Transaktion nacheinander (utils/abfragenBuendeln.js).
+  const [orgWeit, admins] = await abfragenBuendeln(db, [
+    () => ladeMitgliederDerOrganisation(db, organizationId, ['org_admin']),
+    () => ladeMitgliederDerOrganisation(db, organizationId, ['admin'])
   ]);
 
   let gebunden = [];

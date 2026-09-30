@@ -192,7 +192,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireSuperAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine (org-uebergreifend)</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/organizations</code></div>
-        <p class="summary">Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitäten, 3 Beispiel-Challenges)</p>
+        <p class="summary">Gemeinde anlegen inkl. erster Gemeindeleitung und Standard-Daten (4 Rollen, 36 Badges, 4 Zertifikat-Typen, 6 Levels, 14 Kategorien, 9 Aktivitäten, 3 Beispiel-Challenges)</p>
         <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireSuperAdmin</code> · <code>validateCreateOrg</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div><div class="hinweis">Seit 27.09.2026 (Audit Sicherheit BF-04): Der erste org_admin startet ohne Kontosperre, auch wenn sein Benutzername vorher durchprobiert wurde</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/organizations/{id}</code></div>

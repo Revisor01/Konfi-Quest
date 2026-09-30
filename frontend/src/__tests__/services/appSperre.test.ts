@@ -1,6 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
 
 // Die Zeitrechnung der App-Sperre. Geprueft wird mit KONKRETEN Zeiten, nicht
 // mit "irgendwann": eine Sperre, die eine Sekunde zu frueh oder zu spaet
@@ -193,30 +191,9 @@ describe('Einstellung speichern und lesen', () => {
   });
 });
 
-describe('Die Einstellung ueberlebt das Abmelden', () => {
-  // Bewusste Entscheidung: Die Wartezeit ist eine Aussage ueber das GERAET
-  // ("dieses Handy soll sich sperren"), nicht ueber das Konto. Sie verraet
-  // nichts — es steht nur eine Zahl darin. Verschwaende sie beim Abmelden,
-  // waere die Sperre danach still aus, und wer sie eingeschaltet hat, waere
-  // schlechter geschuetzt als er glaubt.
-  const quelle = (pfad: string) =>
-    readFileSync(resolve(__dirname, '../../..', pfad), 'utf-8');
-
-  it('wird vom Abmelden nicht geloescht', () => {
-    for (const pfad of ['src/services/tokenStore.ts', 'src/services/auth.ts']) {
-      expect(quelle(pfad)).not.toContain('konfi_app_sperre_verzoegerung');
-    }
-  });
-
-  it('der Schluessel taucht nur in der App-Sperre selbst auf', () => {
-    // Wer die Einstellung anderswo anfasst, umgeht die Entscheidung oben.
-    // (Ein zweiter Test "biometrieVergessen laeuft beim Logout" waere hier
-    // wertlos: die Funktion wird an zwei Stellen gerufen, ein Wegfall einer
-    // davon bliebe unbemerkt. Das gehoert in den Test der Anmeldung, nicht
-    // hierher.)
-    expect(quelle('src/services/appSperre.ts')).toContain('konfi_app_sperre_verzoegerung');
-  });
-});
+// Dass die Einstellung das Abmelden ueberlebt (bewusste Entscheidung, siehe
+// services/appSperre.ts), prueft appSperreNachAbmelden.test.ts am echten
+// Abmelden (bis 30.09.2026 hier am Quelltext von tokenStore.ts und auth.ts).
 
 describe('Verfuegbarkeit', () => {
   it('ist verfuegbar, wenn das Geraet nativ ist und Biometrie eingerichtet hat', async () => {

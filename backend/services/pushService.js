@@ -11,6 +11,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // 25.09.2026 fragte jede Leitungs-Meldung hier nur die Stamm-Organisation --
 // wer mehrere Gemeinden betreut, bekam aus den anderen nichts.
 const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
+const { abfragenBuendeln } = require('../utils/abfragenBuendeln');
 const { TEAM_ORGWEITE_AUDIENCES, ladeTeamDasMitmacht } = require('../utils/challengeLeitungSicht');
 const { ladeKonfisDieTerminSehen } = require('../utils/konfiTerminSicht');
 // Postfach (25.09.2026): Welche Arten neben dem Push auch einen Eintrag in
@@ -2242,8 +2243,8 @@ class PushService {
    */
   static async sendChallengeStartedToJahrgaenge(db, challengeId, challengeTitle) {
     try {
-      const [{ rows: konfis }, team, { rows: [challengeRow] }] = await Promise.all([
-        db.query(
+      const [{ rows: konfis }, team, { rows: [challengeRow] }] = await abfragenBuendeln(db, [
+        () => db.query(
           `SELECT DISTINCT kp.user_id
            FROM konfi_profiles kp
            JOIN users u ON kp.user_id = u.id
@@ -2256,10 +2257,10 @@ class PushService {
              AND u.deleted_at IS NULL`,
           [challengeId]
         ),
-        ladeTeamDasMitmacht(db, challengeId),
+        () => ladeTeamDasMitmacht(db, challengeId),
         // Content-Org der Challenge (nicht der Empfaenger) fuer den
         // Org-Wechsel beim Antippen, dazu wer sie angelegt hat.
-        db.query(
+        () => db.query(
           'SELECT organization_id, created_by FROM challenges WHERE id = $1',
           [challengeId]
         )
@@ -2492,9 +2493,9 @@ class PushService {
       const jahrgangIds = jahrgaenge.map(j => j.jahrgang_id);
 
       const orgWeit = TEAM_ORGWEITE_AUDIENCES.includes(audience);
-      const [orgAdmins, team] = await Promise.all([
-        ladeMitgliederDerOrganisation(db, organizationId, ['org_admin']),
-        orgWeit
+      const [orgAdmins, team] = await abfragenBuendeln(db, [
+        () => ladeMitgliederDerOrganisation(db, organizationId, ['org_admin']),
+        () => orgWeit
           ? ladeMitgliederDerOrganisation(db, organizationId, ['admin', 'teamer'])
           : ladeMitgliederDerOrganisation(db, organizationId, ['admin', 'teamer'], { jahrgangIds })
       ]);

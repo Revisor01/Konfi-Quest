@@ -108,6 +108,10 @@ const oeffne = async () => {
   render(<EventDetailView eventId={7} onBack={vi.fn()} />);
   await waitFor(() => expect(screen.getByText('Kim Konfi')).toBeInTheDocument());
 };
+const oeffne2 = async (name: string) => {
+  render(<EventDetailView eventId={7} onBack={vi.fn()} />);
+  await waitFor(() => expect(screen.getByText(name)).toBeInTheDocument());
+};
 const knopf = (name: string | RegExp) => screen.queryByRole('button', { name });
 const zeileVon = (name: string) => screen.getByText(name).closest('[data-testid="zeile"]') as HTMLElement;
 
@@ -186,7 +190,54 @@ describe('Konfis erreichen die Leitungsansicht nicht -- falls doch, ohne Verwalt
   });
 });
 
+// Am abgesagten Termin traegt auch die Leitung niemanden mehr ein (Simon,
+// 16.09.2026: "Nein, gar nicht."). Bis 30.09.2026 zaehlte
+// anmeldenAnAbgesagtemTermin dafuer die "hinzufuegen"-Zeilen im Quelltext;
+// hier stehen die vier Bloecke gerendert: leerer Termin (Konfi, Team,
+// Leitung), Konfi-Liste, Team-Liste, Konfi-Nachzuegler.
+const HINZUFUEGEN = ['Konfi hinzufügen', 'Team hinzufügen', 'Leitung hinzufügen'];
+const oeffneLeer = async () => {
+  render(<EventDetailView eventId={7} onBack={vi.fn()} />);
+  await waitFor(() => expect(apiGet).toHaveBeenCalledWith('/events/7'));
+  await waitFor(() => expect(screen.getAllByText('Konfi-Freizeit').length).toBeGreaterThan(0));
+};
+
+describe('Eintragen: leerer Termin und Konfi-Nachzuegler', () => {
+  it('ERLAUBT: am leeren aktiven Termin alle drei "hinzufügen"', async () => {
+    antwort = termin({ participants: [] });
+    await oeffneLeer();
+    for (const name of HINZUFUEGEN) expect(knopf(name), name).not.toBe(null);
+  });
+
+  it('ERLAUBT: nur Team angemeldet -- "Konfi hinzufügen" im Nachzuegler-Block', async () => {
+    antwort = termin({ participants: [teilnahme(2, 'Tom Teamer', { role_name: 'teamer' })] });
+    await oeffne2('Tom Teamer');
+    expect(screen.getAllByRole('button', { name: 'Konfi hinzufügen' }).length).toBeGreaterThan(0);
+  });
+});
+
 describe('Abgesagter Termin (Leitung)', () => {
+  it('leerer abgesagter Termin: keiner der drei "hinzufügen"-Knöpfe', async () => {
+    antwort = termin({ registration_status: 'cancelled', cancelled: true, participants: [] });
+    await oeffneLeer();
+    for (const name of HINZUFUEGEN) expect(knopf(name), name).toBe(null);
+  });
+
+  it('nur Team angemeldet, abgesagt: kein "Konfi hinzufügen" im Nachzuegler-Block', async () => {
+    antwort = termin({
+      registration_status: 'cancelled', cancelled: true,
+      participants: [teilnahme(2, 'Tom Teamer', { role_name: 'teamer' })],
+    });
+    await oeffne2('Tom Teamer');
+    for (const name of HINZUFUEGEN) expect(knopf(name), name).toBe(null);
+  });
+
+  it('das Entfernen von Teilnehmenden bleibt -- die Leitung muss auch am abgesagten Termin aufraeumen koennen', async () => {
+    antwort = termin({ registration_status: 'cancelled', cancelled: true });
+    await oeffne();
+    expect(screen.getAllByRole('button', { name: 'Teilnahme entfernen' }).length).toBeGreaterThan(0);
+  });
+
   it('statt "Event absagen" steht "Absage zurücknehmen"; eintragen geht nicht mehr', async () => {
     antwort = termin({ registration_status: 'cancelled', cancelled: true, cancelled_at: '2026-09-20T10:00:00Z' });
     await oeffne();

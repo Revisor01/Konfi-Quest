@@ -301,6 +301,7 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
 - **Status:** teilweise behoben 27.09.2026 — der Teil Versionsnummern: die drei `package.json` tragen die App-Version aus `frontend/version.json` (2.3.0), gesetzt und geprüft über `npm run version:setzen`/`version:pruefen`, Test `versionsnummernEineQuelle`. Undeklarierte Importe, tote Einträge und `overrides` bleiben offen (kein Paket).
 - **Nachtrag 27.09.2026 (Prüfung vor dem Merge):** Stand bestätigt; undeklarierte Importe, tote Einträge und `overrides` später.
 - **Status:** behoben 29.09.2026 — Undeklarierte Importe deklariert: Backend `validator` und `proxy-addr` (seit dem Audit dazugekommen, `utils/clientIp.js`) in `dependencies`, `ws` (Test-Hilfe) in `devDependencies` (`~8.21.0` wie engine.io, eine Kopie); Frontend `@ionic/core` (heute vier Dateien, neu `services/writeQueue.ts`) in `dependencies`, `lightningcss` und `plist` (Tests) in `devDependencies`; Wurzel `playwright` (`scripts/screenshots.mjs`). `@types/qrcode` nach `devDependencies`. Alle auf den schon installierten Ständen, die Lockfiles ändern sich nur in den Deklarationen. Overrides `protobufjs` und `websocket-driver` gestrichen — mit npm 11 nachgeprüft: ohne sie derselbe Lockfile, eine frische Auflösung landet auf protobufjs 7.6.6 und websocket-driver 0.7.5; `uuid` bleibt in beiden Projekten (wirkt: Backend gegen gaxios `^9.0.1`, Frontend gegen xcode `^7.0.3`, je `overridden` in `npm ls uuid`). Wächter: `backend/tests/utils/abhaengigkeitenDeklariert.test.js` (Betriebscode lädt nur aus `dependencies`, weil das Image ohne devDependencies installiert; Tests nur Deklariertes) und `frontend/src/__tests__/config/abhaengigkeitenDeklariert.test.ts` (dasselbe, dazu keine `@types/*` zur Laufzeit und genau eine `@ionic/core` im Lockfile, dieselbe, die `@ionic/react` verlangt). Gegenproben: Pakete aus `package.json` genommen bzw. `multer` nach devDependencies verschoben bzw. eine zweite `@ionic/core` in den Lockfile geschrieben — die Fälle fallen und nennen Datei und Paket. **Nicht umgesetzt:** `@capacitor/status-bar` entfernen. Kein toter Eintrag: Das Plugin wirkt beim Laden, auch ohne Aufruf im Code (Android `StatusBarPlugin.load()` setzt Hintergrund `#000000`, Symbolstil `DEFAULT` und `overlaysWebView = true`; iOS `load()` liest dieselben Werte). Entfernen änderte die Statusleiste nativ neben dem eingebauten SystemBars und ist nur am Gerät zu prüfen — Frage an Simon. Versionsnummern: seit dem 27.09. erledigt (s. o.).
+- **Nachtrag 30.09.2026:** `@capacitor/status-bar` geprüft, **nicht entfernt** — die Annahme „steht nur in `frontend/package.json`, ungenutzt“ hält nicht. Eingetragen ist es auch in `includePlugins` (`capacitor.config.ts`), `android/capacitor.settings.gradle`, `android/app/capacitor.build.gradle`, `ios/App/Podfile` und `Podfile.lock` (CocoaPods, kein `CapApp-SPM`); im Web-Code wird es nie importiert. Es wirkt aber beim Laden, am Plugin-Code 8.0.3 nachgelesen: **iOS** — nur dieses Plugin macht aus dem Antippen der Statusleiste (`capacitorStatusBarTapped` aus dem Capacitor-Kern) das JS-Ereignis `statusTap`; darauf scrollt Ionic (`ion-app`, `startStatusTap`) den Inhalt nach oben. Ohne das Plugin bliebe das Antippen wirkungslos — sonst löst niemand `statusTap` aus (Capacitor-Kern, Ionic und die übrigen Plugins durchsucht). Stil und Überlagerung setzt es auf iOS nur auf die Werte, die ohnehin gelten. **Android 7–14** (minSdk 24) — `StatusBar`-Konstruktor: Leiste `#000000` und dann transparent, `LAYOUT_FULLSCREEN` (Oberfläche hinter der Leiste) und Symbolfarbe nach dem Telefonmodus; der Capacitor-Kern setzt selbst keine Edge-to-Edge-Flags, randlos ist die App dort nur durch dieses Plugin. Ab Android 15 greift ohnehin die Edge-to-Edge-Pflicht (targetSdk 36), dort bleibt nur die Symbolfarbe, die SystemBars gleich setzt. Entfernen änderte also sichtbar Verhalten auf iOS und älteren Android-Geräten und ist nur am Gerät zu prüfen; die Frage an Simon bleibt. Wer es doch entfernt: `includePlugins`, beide Gradle-Dateien, Podfile/Podfile.lock und den Kommentar in `android/app/proguard-rules.pro` mitziehen und `statusTap` auf iOS ersetzen.
 - **Fundstelle:** `backend/routes/auth.js:7`; `frontend/src/components/chat/useChatVerwaltung.ts`,
   `frontend/src/components/konfi/views/EventDetailView.tsx`, `frontend/src/contexts/ModalContext.tsx`
   (Import `@ionic/core`); `frontend/package.json:25,33,38` (`@types/qrcode` in `dependencies`,
@@ -501,6 +502,26 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
     offene Abfragen): vor dem Fix 3 rot (6, 5 und 6 statt 1), Gegenprobe nur das Eintragen
     zurückgedreht → 1 rot (2 statt 1). Anwesenheits-, Termin- und Abzeichen-Suites danach
     ohne die Warnung.
+  - **Nachtrag 30.09.2026:** behoben — die übrigen Hilfsfunktionen mit Parameter `db`, die
+    Abfragen per `Promise.all` bündelten, laufen über `utils/abfragenBuendeln.js` (auf einem
+    Client nacheinander, über den Pool weiter parallel): `terminLeitungSicht` (2 Stellen),
+    `antragLeitungSicht`, `jahrgangLeitungSicht`, `orgMitglieder` (`ladeMitgliedschaftenVieler`),
+    `appIconBadge` (`summenBerechnen`), `punkteHistorie`, `abzeichenKandidaten`, zwei Stellen im
+    `pushService` (Empfänger von Challenge-Start und -Beitrag) und zusätzlich die im Befund nicht
+    genannten `konfiBadgeProgress` und `teamerBadgeProgress` (dasselbe Muster, 11 bzw. 10
+    Abfragen). Heute ruft keine Route sie mit einem Client (geprüft). Gemessen dabei: pg 8.23
+    warnt erst ab der dritten gleichzeitigen Abfrage, zwei bleiben still. Test
+    `tests/utils/abfragenNacheinanderAufClient.test.js` (12; Client-Attrappe, die bei einer
+    zweiten offenen Abfrage wirft; Ergebnis über Pool und Client gleich): vor dem Fix 12 rot.
+    Nicht angefasst, an die Koordination gemeldet: `routes/events/serien.js` bündelt beim
+    Anlegen einer Serie die Zuordnungen eines Termins per `Promise.all` auf dem
+    Transaktions-Client (`relationPromises`) — dort heute schon mehrere gleichzeitig.
+  - **Nachtrag 30.09.2026 (Folgeauftrag J1, C):** behoben — `routes/events/serien.js` legt die
+    Zuordnungen je Termin (Kategorien, Jahrgänge, jedes Zeitfenster) über `abfragenBuendeln`
+    nacheinander an; vorher bei Kategorie + Jahrgang + zwei Zeitfenstern vier gleichzeitige Abfragen
+    auf dem Transaktions-Client. Test `tests/routes/serieZuordnungenNacheinander.test.js` (1, über die
+    Route mit einem `db`-Stellvertreter, dessen Clients bei einer zweiten offenen Abfrage werfen):
+    vor dem Fix 500 statt 201, also 1 rot. Serien-Suites (7 Dateien, 250 Tests) grün.
 - **Typprüfung:** `npx tsc --noEmit` im Frontend 0 Fehler (25,5 s); `strict: true`,
   `skipLibCheck: true` (üblich), `isolatedModules`, `moduleResolution: bundler`.
   `noUncheckedIndexedAccess`/`noUnusedLocals` fehlen (Hinweis, kein Befund).

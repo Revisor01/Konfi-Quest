@@ -419,6 +419,14 @@ Einladungscode wählen Konfis ihren Benutzernamen dagegen selbst.
 Beim Anmelden ist **Groß- und Kleinschreibung egal**: `Noemi.Burau`
 funktioniert genauso wie `noemi.burau`.
 
+Deshalb gibt es jeden Benutzernamen im ganzen System nur einmal, ohne
+Unterschied zwischen Groß- und Kleinschreibung und über alle Gemeinden
+hinweg. Das gilt auch, wenn die Leitung einen Benutzernamen unter
+**Mehr › Benutzer:innen** ändert: Ist der neue Name schon vergeben, meldet die
+App „Benutzername existiert bereits" und lässt alles beim Alten. Die
+Schreibweise des eigenen Namens lässt sich dagegen jederzeit ändern
+(`anna` zu `Anna`).
+
 ## Die Meldung beim Anmelden einordnen
 
 Klappt die Anmeldung nicht, steht unter dem Knopf „Anmeldung fehlgeschlagen"

@@ -40,8 +40,10 @@ Reihenfolge nach Nutzen:
    können jetzt gezogen werden; danach der Handbuch-Generator.
 6. **[09 Backend-Container](09-backend-container.md)** — Healthcheck ohne curl,
    Backend ohne root.
-7. **[05 Sicherung und Notfall](05-sicherung-und-notfall.md)** — erst den
-   Probelauf des Notfall-Deploys, dann einen echten, idempotenten Lauf.
+7. **[05 Sicherung und Notfall](05-sicherung-und-notfall.md)** — der Probelauf
+   des Notfall-Deploys ist am 30.09. gelaufen (Rückrollweg grün; leerer Tag
+   brach sicher ab, der Fix dafür ist im Repo). Nach dessen Merge den Probelauf
+   mit leerem Tag wiederholen, dann einen echten, idempotenten Lauf.
 8. **[02 Portainer-Stack](02-portainer-stack.md)** — die offenen Beobachtungen
    (genau ein Backend startet die Hintergrund-Jobs, Vortags-Erinnerung kommt
    einmal), `RUN_BACKGROUND_JOBS=false` bei `backend2` entfernen (entscheidet

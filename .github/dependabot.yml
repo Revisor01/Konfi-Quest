@@ -83,9 +83,13 @@ updates:
         patterns:
           - "*"
     # Hauptversionen kommen einzeln und werden bewusst gemergt. Die
-    # vitest-Hauptversion Backend und Frontend GEMEINSAM anheben (PR #167
-    # hier, #158 im Frontend), damit nicht zwei Hauptversionen desselben
-    # Testwerkzeugs nebeneinander laufen (Release-Audit Toolchain BF-09).
+    # vitest-Hauptversion Backend und Frontend GEMEINSAM anheben, damit nicht
+    # zwei Hauptversionen desselben Testwerkzeugs nebeneinander laufen
+    # (Release-Audit Toolchain BF-09). Vitest 5 kam so am 30.09.2026 in einem
+    # Commit fuer beide (statt PR #167 hier und #158 im Frontend); im
+    # Frontend brauchte es dafuer die Matcher-Typen in
+    # frontend/src/__tests__/jestDomMatcher.d.ts -- bei der naechsten
+    # Hauptversion dort zuerst nachsehen.
 
   - package-ecosystem: npm
     directory: /

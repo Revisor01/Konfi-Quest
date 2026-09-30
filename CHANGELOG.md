@@ -517,6 +517,13 @@ iOS-Build 235 · Android versionCode 129
   unter „Fehler".
 
 ### Behoben
+- Ein Benutzername lässt sich beim Bearbeiten nicht mehr auf einen Namen ändern,
+  den es schon gibt — auch nicht in anderer Schreibweise oder aus einer anderen
+  Gemeinde; die Anmeldung bleibt so eindeutig.
+- Der Systemname einer Gemeinde behält Umlaute (aus „Büsum“ wird „buesum“ statt
+  „bsum“) und bleibt beim Speichern unverändert, solange ihr Name gleich bleibt.
+- Legen zwei Personen im selben Moment ein Konto mit demselben Benutzernamen
+  an, entsteht nur eines; die andere Anlage meldet, dass der Name vergeben ist.
 - Die Badges einer Konfi, die nur über eine weitere Gemeinde dazugehört, lassen
   sich in der Leitung öffnen; bisher kam dort „nicht gefunden".
 - Karten, Store-, Musik- und Weblinks aus der App lösen die App-Sperre nicht
@@ -1307,13 +1314,19 @@ iOS-Build 235 · Android versionCode 129
   Fehler ab.
 
 ### Sonstiges
+- Das Mitglieder-Fenster im Chat lädt die Personenlisten zum Hinzufügen nur
+  noch für die Leitung; bei Konfis lief dabei bisher jedes Mal eine
+  abgelehnte Anfrage ins Leere.
+- Mehr Tests prüfen das Verhalten der App statt ihres Quelltexts.
 - Sicherheitsupdate für die Echtzeitverbindung von Chat und Live-Aktualisierung:
   Eine fehlerhafte Anfrage kann den Server nicht mehr ausbremsen.
 - Server, Web-Version und alle automatischen Prüfungen laufen auf derselben
   Fassung der Laufzeitumgebung, einer mit Langzeitunterstützung.
 - Der Notfallweg zum schnellen Ausrollen oder Zurückdrehen eines Stands tauscht
   die Server nacheinander wie jede reguläre Auslieferung und lässt sich
-  gefahrlos proben, ohne etwas zu ändern.
+  gefahrlos proben, ohne etwas zu ändern. Ohne Angabe eines Stands nimmt er den
+  jüngsten, der fertig gebaut ist, auch wenn danach nur Dokumentation geändert
+  wurde.
 - Die Web-Version gibt beim Öffnen fremder Links nur noch ihre Adresse weiter,
   nie Einladungscodes oder Passwort-Links, und erlaubt Kamera und Mikrofon
   nur sich selbst. Eine Schutzregel gegen eingeschleuste Skripte ist in

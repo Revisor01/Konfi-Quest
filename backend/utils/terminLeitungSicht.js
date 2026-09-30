@@ -40,6 +40,7 @@
 // verwalten ist Sache der Leitung.
 
 const { ladeMitgliederDerOrganisation } = require('./orgMitglieder');
+const { abfragenBuendeln } = require('./abfragenBuendeln');
 
 /**
  * Sieht diese Person ALLE Termine ihrer aktiven Gemeinde?
@@ -183,9 +184,10 @@ async function ladeLeitungZumTermin(db, eventId, { ausser = null } = {}) {
   );
   if (!termin) return [];
 
-  const [orgWeit, admins] = await Promise.all([
-    ladeMitgliederDerOrganisation(db, termin.organization_id, ['org_admin']),
-    ladeMitgliederDerOrganisation(db, termin.organization_id, ['admin'])
+  // Auf dem Client einer Transaktion nacheinander (utils/abfragenBuendeln.js).
+  const [orgWeit, admins] = await abfragenBuendeln(db, [
+    () => ladeMitgliederDerOrganisation(db, termin.organization_id, ['org_admin']),
+    () => ladeMitgliederDerOrganisation(db, termin.organization_id, ['admin'])
   ]);
 
   // Die Rolle admin durch DIESELBE Bedingung wie Liste und Zaehler. Ein
@@ -233,9 +235,9 @@ async function zaehleWartendeTermineJeLeitung(db, orgIds) {
   // Gemeinden den ganzen Pool (20 Plaetze, database.js).
   const personen = [];
   for (const orgId of orgIds) {
-    const [orgWeit, admins] = await Promise.all([
-      ladeMitgliederDerOrganisation(db, orgId, ['org_admin']),
-      ladeMitgliederDerOrganisation(db, orgId, ['admin'])
+    const [orgWeit, admins] = await abfragenBuendeln(db, [
+      () => ladeMitgliederDerOrganisation(db, orgId, ['org_admin']),
+      () => ladeMitgliederDerOrganisation(db, orgId, ['admin'])
     ]);
     const voll = new Set(orgWeit.map(Number));
     for (const id of voll) personen.push({ id, orgId, voll: true });

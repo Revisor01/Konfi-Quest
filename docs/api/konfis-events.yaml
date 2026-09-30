@@ -3656,6 +3656,14 @@ paths:
         Transaktion wie das Anlegen: Scheitern sie, entsteht kein Konto und
         die Antwort ist 500 (vorher 201, Konto ohne Pflicht-Events, Fehler
         nur im Log). Antwortform unveraendert.
+        BENUTZERNAME: aus dem Namen erzeugt und systemweit frei (ohne
+        Gross/klein), bei Kollision mit angehaengter Zahl (anna.muster2).
+        Seit 30.09.2026 unter pg_advisory_xact_lock je Namen
+        (backend/utils/benutzernameSperre.js, dieselbe Sperre wie bei allen
+        anderen Anlagen): Eine gleichzeitige Anlage mit demselben Namen
+        wartet bis zum COMMIT der ersten und nimmt dann den naechsten freien
+        -- kein 409. Vorher entstanden in zwei Gemeinden zwei Konten
+        "anna.muster".
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCreateKonfi]
@@ -3684,7 +3692,7 @@ paths:
                 jahrgang_id: { type: integer }
                 confirm: { type: boolean, description: Bestaetigung beim Ueberschreiten weicher Grenzen }
       responses:
-        "201": { description: "Angelegter Konfi inkl. Startpasswort" }
+        "201": { description: "Angelegter Konfi inkl. Startpasswort: {id, username, temporaryPassword, message}; username ist der erzeugte, systemweit freie Name" }
         "400": { description: Validierung fehlgeschlagen }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }

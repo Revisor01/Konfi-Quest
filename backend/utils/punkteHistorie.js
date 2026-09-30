@@ -27,6 +27,8 @@
 // hier a.points: Änderte die Leitung den Punktwert, zeigte die Historie
 // Punkte, die nie gutgeschrieben wurden, und summierte sich nicht mehr zu
 // totals (Audit BF-02). Bestand ohne Wert fällt auf a.points zurück.
+const { abfragenBuendeln } = require('./abfragenBuendeln');
+
 const ACTIVITIES_QUERY = `
   SELECT
     ka.id,
@@ -76,7 +78,7 @@ const EVENT_POINTS_QUERY = `
 /**
  * Liefert Verlauf und Gesamtstaende der Punkte eines Users.
  *
- * @param {object} db - pg Pool
+ * @param {object} db - Pool oder Client (auf einem Client nacheinander, utils/abfragenBuendeln.js)
  * @param {number} userId - users.id
  * @param {number} organizationId - Mandant; filtert ALLE vier Queries
  * @returns {Promise<{history: object[], totals: {gottesdienst:number, gemeinde:number, total:number}}>}
@@ -87,14 +89,14 @@ async function getPunkteHistorie(db, userId, organizationId) {
     { rows: bonusPoints },
     { rows: eventPoints },
     { rows: [konfiProfile] }
-  ] = await Promise.all([
-    db.query(ACTIVITIES_QUERY, [userId, organizationId]),
-    db.query(BONUS_QUERY, [userId, organizationId]),
-    db.query(EVENT_POINTS_QUERY, [userId, organizationId]),
+  ] = await abfragenBuendeln(db, [
+    () => db.query(ACTIVITIES_QUERY, [userId, organizationId]),
+    () => db.query(BONUS_QUERY, [userId, organizationId]),
+    () => db.query(EVENT_POINTS_QUERY, [userId, organizationId]),
     // konfi_profiles enthaelt bereits alle Punkte (Aktivitaeten + Events +
     // Bonus) — Single Source of Truth, direkt verwenden statt nachzurechnen.
     // Der organization_id-Filter fehlte im Teamer-Pfad (Befund M1).
-    db.query(
+    () => db.query(
       'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1 AND organization_id = $2',
       [userId, organizationId]
     )

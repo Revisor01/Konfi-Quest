@@ -14,6 +14,17 @@
 // nach der anderen ab; parallel bringt dort nichts. Der Pool verteilt auf
 // mehrere Verbindungen -- dort bleibt es parallel, die Latenz der Routen
 // aendert sich nicht.
+//
+// WER ES NUTZT (30.09.2026): jede Hilfsfunktion, die `db` entgegennimmt und
+// mehrere Abfragen buendelt -- die Leitungs-Sichten (Termin, Antrag,
+// Jahrgang), ladeMitgliedschaftenVieler, die App-Symbol-Summe, die
+// Punkte-Historie, die Abzeichen-Fingerabdruecke, der Abzeichen-Fortschritt
+// fuer Konfis und Team und die Empfaenger zweier Challenge-Pushes. Heute ruft
+// sie keine Route mit einem Client; Test
+// tests/utils/abfragenNacheinanderAufClient.test.js haelt fest, dass es ginge.
+// Pg 8 warnt erst ab der dritten gleichzeitigen Abfrage (die zweite wird
+// sofort aktiv, erst die dritte wartet in der Schlange) -- zwei gleichzeitige
+// bleiben still und sind trotzdem falsch.
 
 /** Ist `db` ein einzelner Client (statt des Pools)? */
 function istClient(db) {

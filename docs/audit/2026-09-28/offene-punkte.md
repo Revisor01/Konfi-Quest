@@ -13,6 +13,9 @@ Nachtragszeilen aller 15 Bereichsberichte und des Audits „Wer bekommt was", sa
 dem Pfeil seinen Stand; Einzelheiten, Messwerte und Tests stehen in der Status-Zeile des Befunds im
 verlinkten Bericht.
 
+Simon, 30.09.2026, nach dem Merge der Aufträge: „Gibt es irgendwas das du erledigen könntest." — Paket
+J (Code-Nachzügler, Tests, Dependabot, Notfall-Probelauf); Ergebnis unten unter „Paket J".
+
 ## Stand 29.09.2026, abends
 
 | | Anzahl | behoben | teilweise | offen |
@@ -31,7 +34,8 @@ verlinkten Bericht.
   (Auftrag 09), erster echter Notfall-Deploy (Auftrag 05), `password_plain` entfernen (Frage an
   Simon), 33 Präfix-Indizes und 24 Zeitspalten (erst nach Messung in Produktion, Auftrag 11), 55
   Fremdschlüssel (bleiben begründet), 150 Quelltext-Tests und 12 Komponenten ohne Test (Leitplanke
-  verhindert neue).
+  verhindert neue). *Stand 30.09.:* 117 Quelltext-Tests, 0 Komponenten ohne Test (Paket J); der
+  Notfall-Deploy ist geprobt (Probelauf grün), der echte Lauf steht aus.
 - **Messungen in Produktion und am Gerät** (Abschnitt unten) und die **Fragen an Simon**
   (Abschnitt „Bei Simon").
 
@@ -43,7 +47,7 @@ verlinkten Bericht.
 - BF-06: Backend-Image läuft als root, enthält Dev-Abhängigkeiten, Tests, Schema-Dump und Compiler (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **teilweise** — Image aus dem Lockfile, ohne Dev-Pakete, Tests und Compiler (1,92 GB → 486 MB); der Prozess läuft weiter als root (Auftrag 09)
 - BF-07: Typprüfung und Web-Build laufen erst nach dem Merge — Build-Brüche erreichen `main` und stoppen still den Deploy (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** — ein roter `main` öffnet ein GitHub-Issue
 - BF-09: Versionsstände widersprechen sich; ein Store-Build ist nicht sicher einem Commit zuzuordnen (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** — Versionen aus einer Quelle, Git-Tag je Store-Upload
-- BF-10: Notfall-Deploy wurde nie ausgeführt — der Rückrollweg ist ungeprobt (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **teilweise** — rollt wie der CI-Deploy und hat einen Probelauf; der erste echte Lauf liegt beim Betrieb (Auftrag 05)
+- BF-10: Notfall-Deploy wurde nie ausgeführt — der Rückrollweg ist ungeprobt (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **teilweise** — rollt wie der CI-Deploy und hat einen Probelauf; der erste echte Lauf liegt beim Betrieb (Auftrag 05). *30.09.:* Probelauf auf GitHub grün (Rückrollweg auf `67c03dc`, nichts geändert); leerer Tag brach sicher ab und nimmt jetzt den jüngsten Stand mit Images (`0edb010f`)
 - BF-11: E2E-Job auf Node 20 (EOL) und Actions v4; Produktions-Image auf Node 26 (kein LTS) (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** — eine Node-Linie (24) aus `.nvmrc`
 - BF-13: `sitemap.xml` wird aus Datei-Änderungszeiten erzeugt — nicht reproduzierbar und vom Frischecheck nicht erfasst (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.**
 - BF-14: Web-Frontend ohne CSP/Referrer-Policy/Permissions-Policy; veralteter `X-XSS-Protection` (NIEDRIG) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** — CSP scharf
@@ -76,11 +80,11 @@ verlinkten Bericht.
 
 ## Paket 7: Tests
 
-- BF-02: 46 % der Frontend-Tests prüfen Quelltext statt Verhalten (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **teilweise** — 42,4 → 38,7 % der Dateien, die riskanten zuerst; eine Leitplanke lässt keine neuen zu
+- BF-02: 46 % der Frontend-Tests prüfen Quelltext statt Verhalten (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **teilweise** — 42,4 → 38,7 % der Dateien, die riskanten zuerst; eine Leitplanke lässt keine neuen zu. *30.09.:* weitere 33 umgestellt, Leitplanke 150 → 117 (28,2 % der Dateien); die 41 verbliebenen mit Verhaltensversprechen stehen mit Grund im Bericht
 - BF-03: E2E-Datenbank startet mit leerem Migrationsstand — 51 Migrationen laufen doppelt, 2 scheitern bei jedem Start (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
 - BF-04: 15 Backend-Routen ohne einen einzigen Test (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
 - BF-09: E2E-Suite ist zu 85 % Smoke; der Punkte-Test prüft „irgendeine Ziffer“ (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
-- BF-10: 49 Frontend-Komponenten ohne Bezug in irgendeinem Test — darunter Termin-Detail, Chat-Übersicht, Chat-Socket und  (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **teilweise** — 49 → 12 Komponenten ohne Test
+- BF-10: 49 Frontend-Komponenten ohne Bezug in irgendeinem Test — darunter Termin-Detail, Chat-Übersicht, Chat-Socket und  (MITTEL) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **teilweise** — 49 → 12 Komponenten ohne Test. *30.09.:* 0 von 243 Komponenten ohne Test (die zehn übrigen gerendert, je mit Gegenprobe); offen bleiben 3 Utils, 1 Hook, 1 Service
 - BF-11: Doku- und Kommentar-Drift in der Testinfrastruktur (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
 - BF-12: Node-Versionen uneinheitlich — CI 26, Docker-Images 26, `engines` ≥ 22, lokal 22, E2E-Job 20 (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
 - BF-13: E2E-Compose weicht von Produktion und Backend-Tests ab — Postgres 16 statt 15, keine Zeitzone, fehlende Schlüssel (NIEDRIG) — [tests-testinfrastruktur](../2026-09-26/tests-testinfrastruktur.md) → **behoben 29.09.**
@@ -217,18 +221,62 @@ dem Pfeil (Commit in Klammern).
 - **nodemailer 10** (Simon: „Ja, jetzt übernehmen"). → **übernommen 29.09.** (`132afaaf`; `npm
   audit` im Backend danach 0)
 
-### Neue Nebenbefunde aus dem Großpaket (nur genannt, nicht geändert)
+### Neue Nebenbefunde aus dem Großpaket — alle behoben 30.09. (Paket J)
 
 - Weitere Hilfsfunktionen mit Parameter `db` bündeln Abfragen per `Promise.all`
   (`terminLeitungSicht`, `antragLeitungSicht`, `jahrgangLeitungSicht`, `orgMitglieder`,
   `appIconBadge`, `punkteHistorie`, `abzeichenKandidaten`, zwei Stellen im `pushService`). Heute
   ruft sie niemand mit dem Client einer Transaktion; täte es jemand, käme dieselbe pg-Warnung.
+  → **behoben 30.09.** (`437e28d4`, dazu `konfiBadgeProgress`/`teamerBadgeProgress`; 12 Tests mit
+  einem Client, der bei einer zweiten offenen Abfrage wirft)
 - Die Ausfüllhilfe der App (`generateSystemName`) verliert weiter Umlaute; der Server fängt das beim
   Anlegen ab. Schriebe die App künftig selbst um, benennte `PUT` bestehende Gemeinden um.
+  → **behoben 30.09.** (`eb733c55`): dieselbe Umschrift wie der Server; beim Bearbeiten bleibt der
+  gespeicherte Systemname, solange der Anzeigename gleich bleibt
 - `POST /users`, `/:id/admins` und `/organizations` prüfen den Benutzernamen ohne Sperre — zwei
-  gleichzeitige Anlagen mit demselben Namen kämen durch.
+  gleichzeitige Anlagen mit demselben Namen kämen durch. → **behoben 30.09.** (`6b34776f`):
+  gemessen kamen sie durch (201/201 über Gemeinden und Schreibweisen hinweg); jetzt eine Sperre je
+  Namen, die zweite Anlage bekommt 409
 - `verwaltung-auth.yaml`, `POST /organizations`: `admin_password` „nur min 6 Zeichen" (die
   Passwort-Regel gilt seit 22.08.), die Zusammenfassung nennt veraltete Zahlen zum Startbestand.
+  → **behoben 30.09.** (`432b08fb`, `07242a73`)
+
+## Paket J (30.09.2026)
+
+Vier Stränge, drei davon als Agenten parallel; alles in einem PR. Einzelheiten mit Tests und
+Gegenproben stehen in den Commit-Nachrichten und als Nachtrag vom 30.09. am jeweiligen Befund.
+
+- **Notfall-Probelauf** (Auftrag 05, CI BF-10): siehe Paket 5. Die erwartete Zahl der
+  Stack-Variablen im Auftrag war falsch (0 ist richtig, die Werte stehen in der Stack-Datei).
+- **Code-Nachzügler:** die vier Nebenbefunde oben. Dazu, beim Prüfen gefunden und behoben:
+  - `PUT /users/:id` benannte ohne jede Prüfung um — auf einen Namen aus einer anderen Gemeinde oder
+    „ADMIN1" neben „admin1" (gemessen: 200), danach war die Anmeldung mehrdeutig. → **behoben**
+    (`eda772b6`); unveränderter Name und eigene Schreibweise geben weiter 200, weil die Store-Apps
+    beim Speichern den Namen immer mitschicken.
+  - `POST /admin/konfis` und `POST /auth/register-konfi` ohne die Sperre (gemessen: zwei
+    gleichzeitige Konfis „Anna Muster" in zwei Gemeinden bekamen beide `anna.muster`). → **behoben**
+    (`d2882121`); die Konfi-Anlage weicht auf den nächsten freien Namen aus.
+  - Serienanlage bündelte Abfragen per `Promise.all` auf dem Transaktions-Client — heute schon
+    aktiv. → **behoben** (`5359e80a`)
+  - Mitglieder-Fenster im Chat holte für jedes Mitglied die Personenlisten; Konfis bekamen jedes Mal
+    ein 403. → **behoben** (`1c729431`)
+  - `@capacitor/status-bar` ist **nicht** ungenutzt: Es ist nativ eingebunden (`includePlugins`,
+    Gradle, Podfile) und wirkt ohne Import — iOS scrollt beim Antippen der Statusleiste nach oben,
+    Android legt die Oberfläche hinter die transparente Statusleiste. → **bleibt**, bis es am Gerät
+    geprüft ist (`a4d29ac2`).
+- **Tests:** siehe Paket 7 (BF-02, BF-10). Gefunden: `mailMassenversand` wackelte (Abstände
+  364–404 ms gegen eine Schwelle von 390) → **behoben** (`f41a1460`, 10 von 10 grün).
+- **Dependabot:** sieben offene PRs geprüft und lokal getestet. Sechs sind in diesem PR enthalten,
+  mit den nötigen Anpassungen (vitest 5 braucht eine Typdatei für die jest-dom-Matcher, js-yaml 5 zwei
+  Kommentarzeilen, file-type 22.1.1 einen Test): #158, #167 (vitest 5), #169 (js-yaml 5), #192
+  (Playwright), #193 (Backend minor/patch, darunter firebase-admin 14.5.0), #194 (setup-java 6).
+  Das Web-Bundle bleibt byte-gleich. **#195** (Frontend minor/patch mit Capacitor 8.5.2, Ionic 9.0.5,
+  biometric 8.6.11) bringt nativen Code, den die Gerätetests auf Build 235/129 nicht abdecken —
+  **zurückgehalten** bis nach dem Store-Release 2.3.0 (Simon). Die zwei moderaten Meldungen auf
+  `main` sind react-router 6.30.6 (kein Update möglich, App nicht betroffen) → [offene Befunde
+  Nr. 15](../../offene-befunde.md).
+- **Beobachtet, nicht geändert:** Der erste E2E-Test direkt nach dem Stack-Start kann an
+  `ERR_NETWORK_CHANGED` scheitern (einmal bei #195); ein Aufwärmschritt im E2E-Setup würde helfen.
 
 ## Mehrfach-Konten (Gespräch mit Simon)
 
@@ -284,5 +332,16 @@ Teamer-Badges gelten je Gemeinde.
   - Absage: Eine Selbstabgemeldete, die die Leitung als *abwesend* verbucht hatte, gilt nach der
     Absage ebenfalls als entschuldigt (wie die als anwesend verbuchte) — so recht? Und sie bekommt
     wie bisher keine Absage-Mitteilung — so lassen?
+- **Aus Paket J (30.09.):**
+  - Dependabot #195 (Capacitor/Ionic/biometric) erst nach dem Store-Upload 2.3.0 mergen — oder
+    jetzt, dann mit neuen Testbuilds?
+  - Die zwei react-router-Alerts auf GitHub mit „Risk is tolerable" schließen (Begründung in
+    [offene Befunde Nr. 15](../../offene-befunde.md)).
+  - Am Gerät: Scrollt ein Tipp auf die Statusleiste (iPhone) nach oben? Dann bleibt
+    `@capacitor/status-bar`.
+  - Benutzernamen: Sperre statt eindeutigem Index (kein Migrationsrisiko bei Altbestand-Dubletten);
+    beim Bearbeiten wird nur ein wirklich neuer Name geprüft; die Store-App 2.2.x setzt beim
+    Speichern einer Gemeinde den Systemnamen weiter ohne Umlaute — eine Serverregel dagegen ist nicht
+    gebaut. So lassen?
 - **Mehrfach-Konten:** die acht Fragen in [mehrfach-konten.md](mehrfach-konten.md).
 - **Feature-Empfehlungen:** die zehn offenen Produktfragen; danach die Features.

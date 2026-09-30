@@ -44,7 +44,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Image-Tag (7 Zeichen, z.B. 712263d). Leer = aktueller main-Stand"
+        description: "Image-Tag (7 Zeichen, z.B. 712263d). Leer = juengster main-Stand mit gebauten Images"
         required: false
         default: ""
       grund:
@@ -85,43 +85,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EINGABE_TAG: ${{ inputs.image_tag }}
           AKTEUR: ${{ github.actor }}
+        # Leer = juengster Stand MIT gebauten Images, nicht blind HEAD: Ein
+        # Commit nur an docs/ baut keine (30.09.2026, Probelauf). Logik und
+        # Tests: deploy/notfall-tag.sh, frontend/src/__tests__/betrieb/notfallTag.test.ts.
         run: |
           set -euo pipefail
-          if [ -z "$EINGABE_TAG" ]; then
-            TAG=$(git rev-parse --short=7 HEAD)
-            echo "Kein Tag angegeben -> aktueller Stand: $TAG"
-          else
-            TAG=$(printf '%s' "$EINGABE_TAG" | cut -c1-7)
-            echo "Angegebener Tag: $TAG"
-          fi
-          if ! printf '%s' "$TAG" | grep -Eq '^[0-9a-f]{7}$'; then
-            echo "::error::'$TAG' ist kein 7-stelliger Commit-Tag."; exit 1
-          fi
-          # Voller Commit fuer den Verify: /api/status meldet den vollen SHA,
-          # der beim Bau ins Image kam. Mehrdeutig oder unbekannt -> Abbruch.
-          if ! VOLL=$(git rev-parse --verify --quiet "${TAG}^{commit}"); then
-            echo "::error::Zu $TAG gibt es keinen (eindeutigen) Commit im Repo. Abbruch — Produktion bleibt unveraendert."; exit 1
-          fi
-          echo "Commit: $VOLL"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "voll=$VOLL" >> "$GITHUB_OUTPUT"
-
-          # Vorab pruefen statt blind deployen: Liegt das Image nicht auf ghcr,
-          # zieht der Redeploy sonst den alten Stand und meldet trotzdem Erfolg.
           echo "$GH_TOKEN" | docker login ghcr.io -u "$AKTEUR" --password-stdin
-          fehlt=0
-          for repo in backend frontend; do
-            if docker manifest inspect "ghcr.io/revisor01/konfi-quest-$repo:$TAG" >/dev/null 2>&1; then
-              echo "  ok: konfi-quest-$repo:$TAG"
-            else
-              echo "::error::Image konfi-quest-$repo:$TAG existiert nicht auf ghcr."
-              fehlt=1
-            fi
-          done
-          if [ "$fehlt" = "1" ]; then
-            echo "::error::Abbruch — Produktion bleibt unveraendert. Erst den regulaeren Build abwarten."
-            exit 1
-          fi
+          bash deploy/notfall-tag.sh
 
       - name: Rollend ausrollen (deploy/rollend.sh) + Verify
         env:

@@ -28,6 +28,8 @@
 // filtert getTokensForUser das seit dem 28.08.2026 ohnehin zentral; fuer die
 // In-App-Mitteilungen und die E-Mail gab es diesen zentralen Filter nicht.
 
+const { abfragenBuendeln } = require('./abfragenBuendeln');
+
 /**
  * @param {object} db
  * @param {number} organizationId  Organisation des INHALTS
@@ -155,8 +157,8 @@ async function ladeMitgliedschaftenVieler(db, userIds) {
   const jePerson = new Map();
   if (ids.length === 0) return jePerson;
 
-  const [{ rows: zeilen }, { rows: jahrgaenge }] = await Promise.all([
-    db.query(
+  const [{ rows: zeilen }, { rows: jahrgaenge }] = await abfragenBuendeln(db, [
+    () => db.query(
       `
       SELECT m.user_id, m.organization_id, m.role_name, m.is_primary, m.org_aktiv
         FROM (
@@ -179,7 +181,7 @@ async function ladeMitgliedschaftenVieler(db, userIds) {
       `,
       [ids]
     ),
-    db.query(
+    () => db.query(
       `SELECT uja.user_id, uja.jahrgang_id AS id, uja.can_view, uja.can_edit, j.organization_id
          FROM user_jahrgang_assignments uja
          JOIN jahrgaenge j ON j.id = uja.jahrgang_id

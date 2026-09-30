@@ -68,6 +68,7 @@ import { generateStrongPassword } from '../../../utils/passwortVorschlag';
 import { tageBis } from '../../shared/eventFormatting';
 import { datumKurz } from '../../../utils/dateUtils';
 import { rollenName } from '../../../utils/rollenNamen';
+import { systemnameZumSpeichern } from '../../../utils/gemeindeSystemname';
 
 interface Organization {
   id: number;
@@ -295,16 +296,6 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       .substring(0, 2);
   };
 
-  // Systemname automatisch aus display_name generieren
-  const generateSystemName = (displayName: string) => {
-    return displayName
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-  };
-
   useEffect(() => {
     if (isEditMode) {
       loadOrganization().then(() => {
@@ -411,7 +402,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
     await guard(async () => {
       try {
-        const systemName = generateSystemName(formData.display_name);
+        // Systemname (name, slug) aus dem Anzeigenamen, mit Umlauten als
+        // ae/oe/ue/ss wie der Server. Beim Bearbeiten bleibt der gespeicherte,
+        // solange der Anzeigename gleich bleibt (utils/gemeindeSystemname.ts).
+        const systemName = systemnameZumSpeichern(
+          formData.display_name,
+          isEditMode ? organization : null
+        );
 
         // Konfi-Limit (Tarif) — nur super_admin setzt es. NULL = unbegrenzt.
         let limitValue: number | null = null;
@@ -449,8 +446,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           admin_password?: string;
           admin_display_name?: string;
         } = {
-          name: systemName,
-          slug: systemName,
+          name: systemName.name,
+          slug: systemName.slug,
           display_name: formData.display_name.trim(),
           description: formData.description.trim() || null,
           contact_name: formData.contact_name.trim() || null,

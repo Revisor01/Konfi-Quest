@@ -332,6 +332,13 @@ describe('Notfall-Deploy-Workflow', () => {
     expect(nf).toMatch(/GIT_SHA: \$\{\{ steps\.tag\.outputs\.voll \}\}/);
     expect(nf).toMatch(/BACKEND_CHANGED: "1"/);
   });
+
+  it('bestimmt den Stand ueber deploy/notfall-tag.sh, nach dem Login auf ghcr (30.09.2026)', () => {
+    // Das Verhalten des Skripts pruefen notfallTag.test.ts; hier nur, dass
+    // der Workflow es aufruft und nicht wieder eine eigene Kopie der Logik traegt.
+    expect(nf).toMatch(/docker login ghcr\.io[^\n]*\n {10}bash deploy\/notfall-tag\.sh\n/);
+    expect(nf).not.toMatch(/git rev-parse --short=7 HEAD/);
+  });
 });
 
 describe('Deploy-Job in ci.yml', () => {

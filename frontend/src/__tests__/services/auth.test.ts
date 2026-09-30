@@ -228,16 +228,7 @@ describe('sitzungUebernehmen — Login und Registrierung speichern dieselbe Sitz
     expect(tokenStore.setRefreshToken).toHaveBeenCalledWith('ref-2');
   });
 
-  // Quelltest (Projektkonvention, vgl. rollenGleichbehandlung.test.ts): Der
-  // Fehlerfall ist "jemand schreibt die Uebernahme in der Seite wieder selbst
-  // und vergisst das refresh_token" -- genau das faengt ein Blick in die Quelle.
-  it('die Registrierungsseite nutzt die gemeinsame Uebernahme statt eigener Token-Aufrufe', async () => {
-    const { readFileSync } = await import('fs');
-    const { resolve } = await import('path');
-    const seite = readFileSync(resolve(process.cwd(), 'src/components/auth/KonfiRegisterPage.tsx'), 'utf8');
-
-    expect(seite).toContain('await sitzungUebernehmen(response.data)');
-    expect(seite).not.toMatch(/\bsetToken\(/);
-    expect(seite).not.toContain("from '../../services/tokenStore'");
-  });
+  // Dass die Registrierungsseite ueber dieselbe Uebernahme laeuft und das
+  // refresh_token speichert, prueft die gerenderte Seite:
+  // components/konfiRegistrierung.test.tsx (bis 30.09.2026 hier am Quelltext).
 });

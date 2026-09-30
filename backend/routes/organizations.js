@@ -16,6 +16,7 @@ const { nachAntwort } = require('../utils/nachAntwort');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 const { systemnameFuerNeueGemeinde } = require('../utils/gemeindeSystemname');
+const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
 
 // Organizations routes
 // ============================================
@@ -358,14 +359,13 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     try {
       await client.query('BEGIN');
 
-      // Benutzername systemweit eindeutig -- wie POST /users und /:id/admins.
-      const { rows: [vorhanden] } = await client.query(
-        'SELECT id FROM users WHERE LOWER(username) = LOWER($1)',
-        [admin_username]
-      );
-      if (vorhanden) {
+      // Benutzername systemweit eindeutig -- wie POST /users und /:id/admins,
+      // unter derselben Sperre (utils/benutzernameSperre.js): Eine
+      // gleichzeitige Anlage mit demselben Namen wartet bis zum COMMIT und
+      // bekommt dann 409.
+      if (await benutzernameSperrenUndPruefen(client, admin_username)) {
         await client.query('ROLLBACK');
-        fruehAntwort = { status: 409, body: { error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' } };
+        fruehAntwort = { status: 409, body: { error: MELDUNG_VERGEBEN } };
       } else {
 
       // 1. Create Organization
@@ -691,7 +691,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         default_categories_created: defaultCategories.length,
         default_activities_created: defaultActivities.length + defaultTeamerActivities.length,
         default_challenges_created: defaultChallenges.length,
-        message: `Gemeinde erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length + defaultTeamerBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
+        message: `Gemeinde erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length + defaultTeamerBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length + defaultTeamerActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
       };
       }
     } catch (err) {
@@ -1216,25 +1216,35 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         return res.status(500).json({ error: 'Rolle der Gemeindeleitung für die Gemeinde nicht gefunden' });
       }
 
-      // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig!)
-      const { rows: [existingUser] } = await db.query(
-        "SELECT id, organization_id FROM users WHERE LOWER(username) = LOWER($1)",
-        [username]
-      );
-
-      if (existingUser) {
-        return res.status(409).json({ error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' });
-      }
-
-      // Neuen Admin erstellen
+      // Benutzername GLOBAL eindeutig (ohne Gross/klein). Pruefen und Anlegen
+      // in EINER Transaktion unter einer Sperre je Namen
+      // (utils/benutzernameSperre.js) -- bis 30.09.2026 ohne: Zwei
+      // gleichzeitige Anlagen desselben Namens kamen beide durch. Das Passwort
+      // wird vorher gehasht, damit die Verbindung nicht waehrend bcrypt belegt
+      // ist.
       const hashedPassword = await bcrypt.hash(password, 10);
-      const { rows: [newAdmin] } = await db.query(`
-        INSERT INTO users (organization_id, role_id, username, email, password_hash, display_name, is_active)
-        VALUES ($1, $2, $3, $4, $5, $6, true)
-        RETURNING id, username, display_name, email, is_active, created_at
-      `, [id, role.id, username, email || null, hashedPassword, display_name]);
-      // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
-      await kontoSperreAufheben(db, newAdmin.id);
+      const client = await db.getClient();
+      let newAdmin;
+      try {
+        await client.query('BEGIN');
+        if (await benutzernameSperrenUndPruefen(client, username)) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: MELDUNG_VERGEBEN });
+        }
+        ({ rows: [newAdmin] } = await client.query(`
+          INSERT INTO users (organization_id, role_id, username, email, password_hash, display_name, is_active)
+          VALUES ($1, $2, $3, $4, $5, $6, true)
+          RETURNING id, username, display_name, email, is_active, created_at
+        `, [id, role.id, username, email || null, hashedPassword, display_name]));
+        // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
+        await kontoSperreAufheben(client, newAdmin.id);
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw txErr;
+      } finally {
+        client.release();
+      }
 
       res.status(201).json(newAdmin);
     } catch (err) {
