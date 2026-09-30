@@ -115,6 +115,9 @@ Schritt 5 erst, wenn der neue Code auf **beiden** Backends läuft.
       **Zwischenstand 27.09.2026:** `max_connections` 200; 26 Verbindungen
       direkt nach dem Neustart (Sonntagnachmittag). Die Messung am Abend
       steht noch aus.
+      **Zwischenstand 01.10.2026:** 30 Verbindungen nachts (00:33 MESZ, vor
+      dem Postgres-Neustart), keine aktive Abfrage, keine wartende Sperre.
+      Die Messung am Abend steht weiter aus.
 
 ## 4. Den ersten zweistufigen Deploy beobachten
 
@@ -123,11 +126,21 @@ Der Deploy-Job tauscht die Backends seit 2.3.0 nacheinander
 dann `backend2`, danach mehrfach `/api/status` prüfen. Beim ersten Push nach
 `main` läuft das zum ersten Mal in Produktion.
 
-- [ ] Während des Deploys im Sekundentakt `GET /api/status` abfragen und
+- [x] Während des Deploys im Sekundentakt `GET /api/status` abfragen und
       zählen, wie viele Anfragen fehlschlagen und wie lange (vorher: 10–20 s
       ohne API, alle Sockets getrennt — Betrieb BF-12, CI BF-05).
-- [ ] Log des Deploy-Jobs: Stufe 1, Stufe 2, Verify — alle grün? Dauer je Stufe.
-- [ ] `Migration FAILED` im Log der Backends: erwartet 0.
+      **Ergebnis 01.10.2026:** nicht während eines Pushs, sondern nachts mit
+      demselben Portainer-Aufruf nachgestellt (Auftrag 10): so wie die
+      Deploys bis zum 30.09. liefen, 25 s ohne 200 auf `/api/status`, weil
+      Portainer mit `pullImage: true` alle Dienste neu erstellt; mit dem
+      Umbau aus Auftrag 10 beim Tausch einer Replica 0 s.
+- [x] Log des Deploy-Jobs: Stufe 1, Stufe 2, Verify — alle grün? Dauer je Stufe.
+      **Ergebnis 01.10.2026:** sechs rollende Deploys (29./30.09.): Stufe 1
+      29–35 s, Stufe 2 25–28 s; Verify fünfmal grün, einmal rot (`4145114`,
+      erste Abfrage ohne Antwort — seitdem der Anlauf, Auftrag 10).
+- [x] `Migration FAILED` im Log der Backends: erwartet 0.
+      **Ergebnis 01.10.2026:** 0 in allen drei Backends (Logs seit dem
+      letzten Neuaufbau).
 
 ## 5. Hintergrund-Jobs auf beiden Backends (erst nach dem Deploy!)
 
@@ -137,14 +150,37 @@ App-Icon-Zähler, Aufräumen) fahren; `backend2` hatte deshalb
 Datenbank-Sperre einen Cron-Leader (`backend/utils/cronLeader.js`) — fällt er
 aus, übernimmt der andere.
 
-- [ ] Erst wenn beide Backends den neuen Stand fahren (`/api/status` →
+- [x] Erst wenn beide Backends den neuen Stand fahren (`/api/status` →
       `commit` auf beiden gleich): `RUN_BACKGROUND_JOBS=false` bei `backend2`
       entfernen. Bei `backend-test` bleibt es stehen.
-- [ ] Prüfen: Genau **ein** Backend loggt „Hintergrund-Jobs gestartet (diese
+      **Ergebnis 28.09.2026:** entfernt. **Nachgeprüft 01.10.2026:** In der
+      Umgebung der laufenden Container fehlt die Variable bei `backend` und
+      `backend2`, `backend-test` hat `RUN_BACKGROUND_JOBS=false`; die
+      CI-Deploys haben daran nichts geändert (sie ersetzen nur Image-Tags).
+      `backend-test` steht auf `test-latest` (gebaut von `test-backend.yml`
+      aus `main`, meldet derzeit Commit `674bd8e` vom 28.09.).
+- [x] Prüfen: Genau **ein** Backend loggt „Hintergrund-Jobs gestartet (diese
       Replica ist der Cron-Leader)", beide „Cron-Leader-Wahl gestartet".
       Dann den Leader neu starten und messen, nach wie vielen Sekunden der
       andere übernimmt.
-- [ ] Eine Vortags-Erinnerung beobachten: kommt sie genau einmal an?
+      **Ergebnis 28.09.2026:** genau eine Replica bekam den Lock,
+      `backend-test` nimmt nicht teil. **Ergebnis 01.10.2026:** nach jedem der
+      Neustarts der Nacht wieder genau ein Leader. Leader (`backend2`) über
+      die Docker-API neu gestartet: SIGTERM 22:46:55,6 UTC, Rolle nach dem
+      Drain abgegeben 22:47:01,63, `backend` hat den Lock 22:47:01,84 —
+      **0,21 s** nach der Abgabe, 6,2 s nach dem Stopp-Signal; nie zwei
+      Leader zugleich. Beim Neustart von Postgres holte sich der Leader den
+      Lock nach 4,9 s zurück. Von außen dabei 0 Antworten ≠ 200.
+- [x] Eine Vortags-Erinnerung beobachten: kommt sie genau einmal an?
+      **Ergebnis 01.10.2026:** ja. `event_reminders` (`sent_at` in UTC ohne
+      Zone) seit dem 28.09.: fünf Termine mit Vortags-Erinnerung (41, 5, 6,
+      6 und 8 Empfänger:innen), je Termin **ein** Zeitstempel — ein einziger
+      Lauf hat vorgemerkt und gesendet, 24,03–24,24 h vor Beginn. Doppelte
+      Zeilen je Person und Termin: 0 (dazu hält der UNIQUE-Index, und der
+      Versand geht nur an die per `INSERT … ON CONFLICT DO NOTHING RETURNING`
+      neu vorgemerkten). Die Push-Protokolle dieser Läufe sind mit den
+      Containern neu erstellt worden und nicht mehr lesbar; das Postfach
+      führt die Erinnerung nicht.
 
 ## 6. Referenz nachziehen
 
