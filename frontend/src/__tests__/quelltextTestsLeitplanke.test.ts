@@ -25,8 +25,8 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 30.09.2026: 136 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
-const OBERGRENZE = 136;
+/** Stand 30.09.2026: 132 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
+const OBERGRENZE = 132;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -50,8 +50,6 @@ const BEKANNT: string[] = [
   '__tests__/components/abzeichenZaehlerTeamer.test.ts',
   '__tests__/components/adminKonfiDetailOffline.test.ts',
   '__tests__/components/adminOhneJahrgangHinweis.test.ts',
-  '__tests__/components/alleBestaetigenTeamer.test.ts',
-  '__tests__/components/anwesenheitZuruecksetzen.test.ts',
   '__tests__/components/appAbdeckung.test.ts',
   '__tests__/components/beruehrungsziele.test.ts',
   '__tests__/components/bewegungsreduktion.test.ts',
@@ -105,7 +103,6 @@ const BEKANNT: string[] = [
   '__tests__/components/rankingFeldnamen.test.ts',
   '__tests__/components/reiterUnterlaengen.test.ts',
   '__tests__/components/rollenGleichbehandlung.test.ts',
-  '__tests__/components/ruecknahmeKnopfImTermin.test.ts',
   '__tests__/components/shared/hinweisKartenOhnePfeil.test.ts',
   '__tests__/components/statuswortVerbucht.test.ts',
   '__tests__/components/stempelEineStelle.test.ts',
@@ -119,7 +116,6 @@ const BEKANNT: string[] = [
   '__tests__/components/terminEndeVorBeginn.test.ts',
   '__tests__/components/terminKopieren.test.ts',
   '__tests__/components/terminModalDatumsfelder.test.ts',
-  '__tests__/components/terminStatusDetailansicht.test.ts',
   '__tests__/components/typografieTokens.test.ts',
   '__tests__/components/umlauteUndZurueckIcon.test.ts',
   '__tests__/components/umschalterInDetailansichten.test.ts',
