@@ -501,6 +501,20 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
     offene Abfragen): vor dem Fix 3 rot (6, 5 und 6 statt 1), Gegenprobe nur das Eintragen
     zurückgedreht → 1 rot (2 statt 1). Anwesenheits-, Termin- und Abzeichen-Suites danach
     ohne die Warnung.
+  - **Nachtrag 30.09.2026:** behoben — die übrigen Hilfsfunktionen mit Parameter `db`, die
+    Abfragen per `Promise.all` bündelten, laufen über `utils/abfragenBuendeln.js` (auf einem
+    Client nacheinander, über den Pool weiter parallel): `terminLeitungSicht` (2 Stellen),
+    `antragLeitungSicht`, `jahrgangLeitungSicht`, `orgMitglieder` (`ladeMitgliedschaftenVieler`),
+    `appIconBadge` (`summenBerechnen`), `punkteHistorie`, `abzeichenKandidaten`, zwei Stellen im
+    `pushService` (Empfänger von Challenge-Start und -Beitrag) und zusätzlich die im Befund nicht
+    genannten `konfiBadgeProgress` und `teamerBadgeProgress` (dasselbe Muster, 11 bzw. 10
+    Abfragen). Heute ruft keine Route sie mit einem Client (geprüft). Gemessen dabei: pg 8.23
+    warnt erst ab der dritten gleichzeitigen Abfrage, zwei bleiben still. Test
+    `tests/utils/abfragenNacheinanderAufClient.test.js` (12; Client-Attrappe, die bei einer
+    zweiten offenen Abfrage wirft; Ergebnis über Pool und Client gleich): vor dem Fix 12 rot.
+    Nicht angefasst, an die Koordination gemeldet: `routes/events/serien.js` bündelt beim
+    Anlegen einer Serie die Zuordnungen eines Termins per `Promise.all` auf dem
+    Transaktions-Client (`relationPromises`) — dort heute schon mehrere gleichzeitig.
 - **Typprüfung:** `npx tsc --noEmit` im Frontend 0 Fehler (25,5 s); `strict: true`,
   `skipLibCheck: true` (üblich), `isolatedModules`, `moduleResolution: bundler`.
   `noUncheckedIndexedAccess`/`noUnusedLocals` fehlen (Hinweis, kein Befund).

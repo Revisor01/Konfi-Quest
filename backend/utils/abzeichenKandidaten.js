@@ -51,6 +51,8 @@
 // Anzahl — derselbe Gedanke wie bei `appIconSummenFuerAlle`
 // (utils/appIconBadge.js).
 
+const { abfragenBuendeln } = require('./abfragenBuendeln');
+
 /**
  * Fingerabdruck je Person: alles, woran ein Vergabe-Kriterium hängen kann,
  * zu einer Zeichenkette zusammengefasst. Ändert sie sich nicht, kann auch
@@ -88,11 +90,11 @@ async function abzeichenFingerabdruecke(db, personen) {
     { rows: abzeichen },
     { rows: katalog },
     { rows: teamerSeit }
-  ] = await Promise.all([
+  ] = await abfragenBuendeln(db, [
     // Aktivitäten: Anzahl und jüngstes Datum. Das jüngste Datum fängt den
     // Fall ab, dass ein Eintrag gelöscht und ein anderer angelegt wurde —
     // die Anzahl bliebe dann gleich.
-    db.query(
+    () => db.query(
       `SELECT user_id, COUNT(*)::int AS anzahl,
               COALESCE(MAX(completed_date)::text, '-') AS neuestes,
               COALESCE(MAX(id), 0)::text AS hoechste_id
@@ -102,21 +104,21 @@ async function abzeichenFingerabdruecke(db, personen) {
     // Buchungen: nur die ANWESENDEN zählen für Abzeichen. Damit fängt der
     // Fingerabdruck auch das blosse Setzen der Anwesenheit ein, das keinen
     // Zeitstempel hinterlässt.
-    db.query(
+    () => db.query(
       `SELECT eb.user_id, COUNT(*)::int AS anzahl, COALESCE(MAX(eb.id), 0)::text AS hoechste_id
        FROM event_bookings eb
        WHERE eb.user_id = ANY($1::int[]) AND eb.attendance_status = 'present'
        GROUP BY eb.user_id`,
       [ids]
     ),
-    db.query(
+    () => db.query(
       `SELECT konfi_id AS user_id, COALESCE(SUM(points), 0)::text AS summe, COUNT(*)::int AS anzahl
        FROM bonus_points WHERE konfi_id = ANY($1::int[]) GROUP BY konfi_id`,
       [ids]
     ),
     // Punktestände und die Jahrgangs-Schalter, an denen total_points,
     // gottesdienst_points, gemeinde_points und both_categories hängen.
-    db.query(
+    () => db.query(
       `SELECT kp.user_id, kp.gottesdienst_points::text AS gd, kp.gemeinde_points::text AS gm,
               COALESCE(j.gottesdienst_enabled::text, '-') AS gd_an,
               COALESCE(j.gemeinde_enabled::text, '-') AS gm_an
@@ -127,7 +129,7 @@ async function abzeichenFingerabdruecke(db, personen) {
     ),
     // Bereits vergebene Abzeichen: Nimmt jemand ein Abzeichen zurück, muss
     // es erneut vergeben werden können.
-    db.query(
+    () => db.query(
       `SELECT user_id, COUNT(*)::int AS anzahl FROM user_badges
        WHERE user_id = ANY($1::int[]) GROUP BY user_id`,
       [ids]
@@ -141,7 +143,7 @@ async function abzeichenFingerabdruecke(db, personen) {
     // zusammenfassen: Anzahl, Summe der Schwellen und eine Prüfsumme über
     // Typ und Zusatzbedingung. Wer ein Kriterium ändert, ändert damit den
     // Abdruck — auch wenn die Schwelle gleich bleibt.
-    db.query(
+    () => db.query(
       `SELECT organization_id, COUNT(*)::int AS anzahl,
               COALESCE(SUM(criteria_value), 0)::text AS summe,
               COALESCE(SUM(hashtext(
@@ -155,7 +157,7 @@ async function abzeichenFingerabdruecke(db, personen) {
       [orgIds]
     ),
     // teamer_since bestimmt bei teamer_year das Startjahr.
-    db.query(
+    () => db.query(
       `SELECT id AS user_id, COALESCE(teamer_since::text, '-') AS seit
        FROM users WHERE id = ANY($1::int[])`,
       [ids]

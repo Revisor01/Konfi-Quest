@@ -33,6 +33,7 @@ const { leitungSiehtChallengeSql } = require('./challengeLeitungSicht');
 const { gebundeneLeitungSiehtAntragSql } = require('./antragLeitungSicht');
 const { ladeMitgliedschaftenVieler } = require('./orgMitglieder');
 const { gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('./terminLeitungSicht');
+const { abfragenBuendeln } = require('./abfragenBuendeln');
 
 /**
  * Die Bausteine der Summe -- jeder als EINE Abfrage ueber viele
@@ -455,24 +456,24 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   // Team seit 27.09.2026 mit der schlankeren aus challengeNeuigkeiten.js.
   const konfis = empfaenger.filter((p) => p.type === 'konfi');
 
-  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, leitungsNeuigkeiten] = await Promise.all([
-    chatZaehler(db, empfaenger),
-    antragZaehlerProOrg(db, leitungsOrgs),
-    terminZaehlerProOrg(db, leitungsOrgs),
-    freigabeZaehlerProOrg(db, leitungsOrgs),
+  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, leitungsNeuigkeiten] = await abfragenBuendeln(db, [
+    () => chatZaehler(db, empfaenger),
+    () => antragZaehlerProOrg(db, leitungsOrgs),
+    () => terminZaehlerProOrg(db, leitungsOrgs),
+    () => freigabeZaehlerProOrg(db, leitungsOrgs),
     // Teamer:innen und gebundene Admins teilen sich die Freigaben-Regel
     // (nur_team immer, sonst zugewiesene Jahrgaenge).
-    teamerFreigabeZaehler(db, [...teamer, ...leitungGebunden]),
-    antragZaehlerGebunden(db, leitungGebunden),
-    terminZaehlerGebunden(db, leitungGebunden),
-    abzeichenZaehler(db, mitAbzeichen),
+    () => teamerFreigabeZaehler(db, [...teamer, ...leitungGebunden]),
+    () => antragZaehlerGebunden(db, leitungGebunden),
+    () => terminZaehlerGebunden(db, leitungGebunden),
+    () => abzeichenZaehler(db, mitAbzeichen),
     // Dieselbe SQL-Fassung wie badge-counts.challengeUpdates -- die Zeilen
     // kommen je Challenge, hier werden sie je Person aufsummiert.
-    challengeNeuigkeitenJeChallenge(db, konfis),
+    () => challengeNeuigkeitenJeChallenge(db, konfis),
     // Kein Postfach mehr (28.09.2026, siehe "POSTFACH ZAEHLT NICHT MIT").
     // Challenge-Neuigkeiten fuer Leitung und Team (27.09.2026) -- dieselbe
     // SQL-Fassung wie badge-counts.challengeUpdates fuer diese Rollen.
-    challengeNeuigkeitenLeitungJeChallenge(db, [...leitung, ...teamer])
+    () => challengeNeuigkeitenLeitungJeChallenge(db, [...leitung, ...teamer])
   ]);
 
   // Zwei Summen in einem Durchgang (27.09.2026, Kompatibilitaet mit den
