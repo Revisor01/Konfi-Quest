@@ -26,11 +26,13 @@ import {
   removeDeliveredById,
   removeDeliveredForChatRoom,
   removeDeliveredForEvents,
+  aufraeumenNachholen,
 } from '../../services/notifications';
 
 // Nur die Felder, die der Code auswertet — die Tests liefern bewusst
-// unvollstaendige Notifications (u.a. ganz ohne data).
-type TestNotification = { id: string; data?: Record<string, unknown> };
+// unvollstaendige Notifications (u.a. ganz ohne data). Auf Android ist die id
+// eine Zahl und der tag gesetzt (PushNotificationsPlugin.java).
+type TestNotification = { id: string | number; tag?: string; data?: Record<string, unknown> };
 
 const delivered = (notifications: TestNotification[]) => {
   getDeliveredNotifications.mockResolvedValue({ notifications });
@@ -148,6 +150,116 @@ describe('removeDeliveredForEvents', () => {
     isNative = false;
     await removeDeliveredForEvents();
     expect(getDeliveredNotifications).not.toHaveBeenCalled();
+  });
+});
+
+// Tester-Rueckmeldung Build 130 (30.09.2026): Die Mitteilung zu einem Chat
+// blieb in der Leiste, nachdem der Chat gelesen war. Simon: "Das ist ein Bug."
+//
+// Auf Android liefert getDeliveredNotifications als `data` NICHT den
+// Push-Inhalt, sondern die Notification.extras (android.title, android.text
+// ...). Den Push-Inhalt legt das FCM-SDK nur in den Intent zum Antippen. Der
+// Vergleich auf data.type/data.roomId traf deshalb nie. Lesbar bleibt der tag:
+// Der Server schreibt Art und Raum hinein (backend/utils/mitteilungsKennung.js,
+// "kq:<art>:<raum>:<eindeutig>"). Die Formen unten sind die, die das Plugin
+// auf Android tatsaechlich liefert: id 0, tag, extras.
+describe('Android: Art und Raum stehen im tag, nicht in data', () => {
+  const extras = (titel: string) => ({ 'android.title': titel, 'android.text': 'Neue Nachricht von Anna' });
+
+  beforeEach(() => {
+    plattform = 'android';
+  });
+
+  it('entfernt die Mitteilungen des gelesenen Chats und gibt sie mit id UND tag zurueck', async () => {
+    delivered([
+      { id: 0, tag: 'kq:chat:62:4711', data: extras('Jahrgang 2026') },
+      { id: 0, tag: 'kq:chat:62:4712', data: extras('Jahrgang 2026') },
+      { id: 0, tag: 'kq:chat:99:4713', data: extras('Team') },
+      { id: 0, tag: 'kq:event_reminder::a1b2c3d4', data: extras('Morgen') },
+    ]);
+    await removeDeliveredForChatRoom(62);
+    expect(removeDeliveredNotifications).toHaveBeenCalledTimes(1);
+    // Das Plugin raeumt per cancel(tag, id) -- beides muss zurueckkommen.
+    expect(removeDeliveredNotifications.mock.calls[0][0]).toEqual({
+      notifications: [
+        { id: 0, tag: 'kq:chat:62:4711', data: extras('Jahrgang 2026') },
+        { id: 0, tag: 'kq:chat:62:4712', data: extras('Jahrgang 2026') },
+      ],
+    });
+  });
+
+  it('Raum 6 ist nicht Raum 62', async () => {
+    delivered([{ id: 0, tag: 'kq:chat:62:1', data: extras('A') }]);
+    await removeDeliveredForChatRoom(6);
+    expect(removeDeliveredNotifications).not.toHaveBeenCalled();
+  });
+
+  it('laesst fremde tags liegen: FCM ohne Kennung und die Zahl-Mitteilung auf Samsung', async () => {
+    // FCM-Notification:<Zeit> -- Mitteilungen von Servern vor dieser Aenderung.
+    // konfi_app_symbol -- auf Samsung/Xiaomi traegt diese EINE Mitteilung die
+    // Zahl am Symbol (utils/appSymbolWeg.js); sie geht erst bei 0 (AppSymbolZahl).
+    delivered([
+      { id: 0, tag: 'FCM-Notification:123456', data: extras('A') },
+      { id: 0, tag: 'konfi_app_symbol', data: extras('B') },
+      { id: 0, data: extras('C') },
+    ]);
+    await removeDeliveredForChatRoom(62);
+    await removeDeliveredForEvents();
+    expect(removeDeliveredNotifications).not.toHaveBeenCalled();
+  });
+
+  it('entfernt beim Oeffnen der Events die Event-Mitteilungen, nicht den Chat', async () => {
+    delivered([
+      { id: 0, tag: 'kq:event_reminder::a1b2c3d4', data: extras('Morgen') },
+      { id: 0, tag: 'kq:new_event::e5f6a7b8', data: extras('Neu') },
+      { id: 0, tag: 'kq:chat:62:4711', data: extras('Chat') },
+      { id: 0, tag: 'kq:badge_earned::0a0b0c0d', data: extras('Badge') },
+    ]);
+    await removeDeliveredForEvents();
+    const arg = removeDeliveredNotifications.mock.calls[0][0] as { notifications: { tag: string }[] };
+    expect(arg.notifications.map((n) => n.tag)).toEqual(['kq:event_reminder::a1b2c3d4', 'kq:new_event::e5f6a7b8']);
+  });
+});
+
+// iOS: Das Plugin verweigert getDeliveredNotifications, bis die App fuer
+// Pushes registriert ist ("event capacitorDidRegisterForRemoteNotifications
+// not called", PushNotificationsPlugin.swift). Genau das passiert, wenn ein
+// Push die App kalt startet und sie gleich in den Chat springt: Der Raum wird
+// gelesen, bevor die Registrierung durch ist. Das Aufraeumen ging dabei
+// verloren -- die uebrigen Mitteilungen des Chats blieben liegen.
+describe('iOS: Aufraeumen vor der Registrierung wird nachgeholt', () => {
+  it('holt einen verweigerten Chat nach, sobald die Registrierung da ist', async () => {
+    getDeliveredNotifications.mockRejectedValueOnce(
+      new Error('event capacitorDidRegisterForRemoteNotifications not called.'),
+    );
+    await removeDeliveredForChatRoom(62);
+    expect(removeDeliveredNotifications).not.toHaveBeenCalled();
+
+    delivered([
+      { id: 'A', data: { type: 'chat', roomId: '62' } },
+      { id: 'B', data: { type: 'chat', roomId: '7' } },
+    ]);
+    await aufraeumenNachholen();
+    expect(removeDeliveredNotifications).toHaveBeenCalledTimes(1);
+    expect(removeDeliveredNotifications.mock.calls[0][0]).toEqual({
+      notifications: [{ id: 'A', data: { type: 'chat', roomId: '62' } }],
+    });
+  });
+
+  it('holt nur einmal nach -- danach ist nichts mehr offen', async () => {
+    getDeliveredNotifications.mockRejectedValueOnce(new Error('not called'));
+    await removeDeliveredForEvents();
+    delivered([{ id: 'E', data: { type: 'event_reminder' } }]);
+    await aufraeumenNachholen();
+    await aufraeumenNachholen();
+    expect(getDeliveredNotifications).toHaveBeenCalledTimes(2);
+  });
+
+  it('merkt sich nichts, wenn das Aufraeumen gelingt', async () => {
+    delivered([]);
+    await removeDeliveredForChatRoom(62);
+    await aufraeumenNachholen();
+    expect(getDeliveredNotifications).toHaveBeenCalledTimes(1);
   });
 });
 

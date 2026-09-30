@@ -534,11 +534,16 @@ so lange steht am Symbol eine 1.
 > es beim Punkt.
 
 Die App nimmt eine Mitteilung aus der Leiste, sobald du sie antippst oder den
-Bereich öffnest, zu dem sie gehört — etwa den Chat. Alles andere bleibt
-liegen, bis du es wegwischst. Das gilt für jede Rolle, auch für die Leitung,
-auf iPhone und Android: Beim Öffnen der App verschwindet keine Mitteilung.
-Die eine Ausnahme ist die Mitteilung auf Samsung und Xiaomi, an der die Zahl
-hängt, wenn nichts mehr offen ist (siehe oben).
+Bereich öffnest, zu dem sie gehört: Öffnest du einen Chat, verschwinden alle
+Mitteilungen dieses Chats, öffnest du die Events, alle Event-Mitteilungen.
+Alles andere bleibt liegen, bis du es wegwischst. Das gilt für jede Rolle,
+auch für die Leitung, auf iPhone und Android: Beim Öffnen der App allein
+verschwindet keine Mitteilung.
+
+Auf Samsung und Xiaomi liegt nur die eine Mitteilung, an der die Zahl am
+Symbol hängt (siehe oben). Sie bleibt beim Lesen eines Chats liegen, solange
+noch etwas offen ist — sonst verschwände die Zahl mit ihr —, und geht, wenn
+nichts mehr offen ist.
 
 ## Benachrichtigungen wieder zum Laufen bringen
 

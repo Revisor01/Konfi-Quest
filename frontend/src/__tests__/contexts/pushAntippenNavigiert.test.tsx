@@ -79,9 +79,14 @@ vi.mock('../../services/api', () => ({
   },
 }));
 const entferneZugestellte = vi.fn();
+const nachholen = vi.fn();
 vi.mock('../../services/notifications', async () => {
   const echt = await vi.importActual<Record<string, unknown>>('../../services/notifications');
-  return { ...echt, removeDeliveredById: (id: unknown) => entferneZugestellte(id) };
+  return {
+    ...echt,
+    removeDeliveredById: (id: unknown) => entferneZugestellte(id),
+    aufraeumenNachholen: () => nachholen(),
+  };
 });
 
 import { AppProvider, useApp } from '../../contexts/AppContext';
@@ -141,5 +146,29 @@ describe('Push antippen', () => {
     expect(ziele).toEqual(['/konfi/requests']);
     expect(empfangen).toHaveBeenCalledTimes(1);
     expect(entferneZugestellte).toHaveBeenCalledWith('n-1');
+  });
+});
+
+// Tester-Rueckmeldung Build 130/236 (30.09.2026): Die Mitteilungen eines
+// gelesenen Chats blieben liegen. Auf dem iPhone verweigert das Plugin das
+// Aufraeumen, bis die Registrierung da ist; ein vorher gelesener Chat wird
+// deshalb nachgeholt (services/notifications.ts, aufraeumenNachholen).
+describe('Aufraeumen nach der Registrierung nachholen', () => {
+  async function angemeldet() {
+    await act(async () => { render(<AppProvider><Anmelden /></AppProvider>); });
+    await vi.waitFor(() => expect(pushLauscher.has('registration')).toBe(true));
+  }
+
+  it('holt nach, sobald der Token da ist', async () => {
+    await angemeldet();
+    expect(nachholen).not.toHaveBeenCalled();
+    await act(async () => { pushLauscher.get('registration')!({ value: 'token-1' }); });
+    expect(nachholen).toHaveBeenCalledTimes(1);
+  });
+
+  it('holt auch nach, wenn die Registrierung scheitert -- auch das hebt die Sperre auf', async () => {
+    await angemeldet();
+    await act(async () => { pushLauscher.get('registrationError')!({ error: 'kein APNs' }); });
+    expect(nachholen).toHaveBeenCalledTimes(1);
   });
 });

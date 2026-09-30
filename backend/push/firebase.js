@@ -45,6 +45,7 @@ const KANAL_JE_TYP = GRUPPE_JE_ART;
 const KANAL_STANDARD = GRUPPE_STANDARD;
 const kanalFuerTyp = gruppeFuerArt;
 const { APP_SYMBOL_WEGE, MITTEILUNG_TAG } = require('../utils/appSymbolWeg');
+const { mitteilungsKennung } = require('../utils/mitteilungsKennung');
 
 // Firebase Admin initialisieren (Service Account wird später hinzugefügt)
 let firebaseApp = null;
@@ -123,9 +124,16 @@ const sendFirebasePushNotification = async (deviceToken, notificationData) => {
           // 3, 4 und 5 offenen Dingen am Symbol 12. Ohne das Feld zaehlt jede
           // Mitteilung als eine; die Zahl der App selbst setzt auf Android
           // die App (AppSymbolZahl). Test: pushKanaele.test.js.
+          //
+          // Alle anderen Geraete bekommen eine Kennung, an der die App die
+          // Mitteilung beim Lesen des Chats oder beim Oeffnen der Events
+          // wiederfindet (30.09.2026, utils/mitteilungsKennung.js): Auf
+          // Android ist nur der tag zuruecklesbar, nicht data. Jede Kennung
+          // ist einmalig -- in der Leiste liegt weiter jede Mitteilung
+          // einzeln, wie ohne tag.
           ...(zahlInDerMitteilung
             ? { tag: MITTEILUNG_TAG, notificationCount: Math.max(0, Math.floor(Number(notificationData.badge) || 0)) }
-            : {}),
+            : { tag: mitteilungsKennung(notificationData.data || {}) }),
         },
       },
       apns: {

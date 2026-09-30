@@ -517,6 +517,11 @@ iOS-Build 236 · Android versionCode 130
   unter „Fehler".
 
 ### Behoben
+- Wer einen Chat öffnet, findet dessen Mitteilungen danach nicht mehr in der
+  Leiste — auf Android ging das bisher nie, auf dem iPhone nicht, wenn ein
+  Push die App gestartet hatte. Beim Öffnen der Events gilt dasselbe für die
+  Event-Mitteilungen. Auf Samsung und Xiaomi bleibt die eine Mitteilung, an
+  der die Zahl am App-Symbol hängt, bis nichts mehr offen ist.
 - Im Event-Formular trägt „Jahrgänge“ das Pflicht-Sternchen nur noch bei
   Pflicht-Events; ohne Auswahl steht dort, dass das Event der ganzen Gemeinde
   gilt.

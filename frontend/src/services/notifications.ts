@@ -178,28 +178,97 @@ export const removeDeliveredById = async (id: string | number): Promise<void> =>
   }
 };
 
+// ---------------------------------------------------------------------------
+// Art und Raum einer liegenden Mitteilung (30.09.2026)
+//
+// Tester-Rueckmeldung Build 130: Die Mitteilung zu einem Chat blieb in der
+// Leiste, nachdem der Chat gelesen war. Auf dem iPhone ist `data` hier der
+// Push-Inhalt (userInfo). Auf Android NICHT: Das Plugin gibt dort die
+// Notification.extras zurueck (android.title, android.text ...), den
+// Push-Inhalt legt das FCM-SDK nur in den Intent zum Antippen. Der Vergleich
+// auf data.type/data.roomId traf auf Android deshalb nie.
+//
+// Lesbar ist dort der tag. Der Server schreibt Art und Raum hinein
+// (backend/utils/mitteilungsKennung.js): "kq:<art>:<raum>:<eindeutig>". Wer
+// das Format aendert, aendert es an beiden Stellen; der Backend-Test
+// mitteilungsKennung.test.js liest diese Datei mit.
+//
+// Nicht erkannt und deshalb nie weggeraeumt: Mitteilungen von Servern vor
+// dieser Aenderung ("FCM-Notification:<Zeit>") und die EINE Mitteilung, an
+// der auf Samsung und Xiaomi die Zahl am Symbol haengt (konfi_app_symbol) --
+// die geht erst, wenn die Zahl auf 0 sinkt (AppSymbolZahl.java).
+// ---------------------------------------------------------------------------
+export const TAG_PRAEFIX = 'kq';
+
+/** Art und Raum aus dem tag "kq:<art>:<raum>:<eindeutig>", sonst null. */
+export const nutzdatenAusTag = (tag: unknown): PushNutzdaten | null => {
+  if (typeof tag !== 'string') return null;
+  const [praefix, art, raum] = tag.split(':');
+  if (praefix !== TAG_PRAEFIX || !art) return null;
+  return raum ? { type: art, roomId: raum } : { type: art };
+};
+
+/** Die Nutzdaten einer liegenden Mitteilung -- auf jeder Plattform dieselbe Form. */
+const nutzdatenVon = (n: PushNotificationSchema): PushNutzdaten => {
+  const daten = (n.data ?? {}) as PushNutzdaten;
+  if (typeof daten.type === 'string') return daten;
+  return nutzdatenAusTag((n as { tag?: unknown }).tag) ?? daten;
+};
+
+// ---------------------------------------------------------------------------
+// Nachholen, was vor der Registrierung verweigert wurde (nur iOS)
+//
+// Das iOS-Plugin verweigert getDeliveredNotifications und
+// removeDeliveredNotifications, bis die App fuer Pushes registriert ist
+// ("event capacitorDidRegisterForRemoteNotifications not called",
+// PushNotificationsPlugin.swift). Startet ein Push die App kalt und springt sie
+// gleich in den Chat, wird der Raum gelesen, bevor die Registrierung durch
+// ist -- das Aufraeumen ging dabei verloren. Deshalb merkt sich ein
+// gescheitertes Aufraeumen seinen Bereich und laeuft noch einmal, sobald die
+// Registrierung da ist (AppContext, Ereignis 'registration' bzw.
+// 'registrationError' -- beide heben die Sperre im Plugin auf).
+//
+// Je Bereich hoechstens ein Eintrag (Schluessel "chat:62", "events"); die
+// Liste waechst also nicht, wie oft der Raum auch geoeffnet wird.
+// ---------------------------------------------------------------------------
+const offeneAufraeumen = new Map<string, (n: PushNotificationSchema) => boolean>();
+
 // Alle zugestellten Notifications entfernen, die ein Praedikat erfuellen.
 // Das Praedikat bekommt das vom Plugin gelieferte PushNotificationSchema
-// (inkl. data-Payload). Liefert getDeliveredNotifications keine data (kommt
-// auf manchen iOS-Versionen vor), wird die Notification NICHT entfernt
-// (lieber liegen lassen als faelschlich löschen).
+// mit den Nutzdaten in `data` -- auf Android aus dem tag gelesen (oben).
+// Liefert getDeliveredNotifications keine (kommt auf manchen iOS-Versionen
+// vor), wird die Notification NICHT entfernt (lieber liegen lassen als
+// faelschlich löschen). Zurueck ans Plugin geht die Mitteilung unveraendert:
+// Android raeumt per cancel(tag, id), iOS per id.
 export const removeDeliveredWhere = async (
-  predicate: (n: PushNotificationSchema) => boolean
+  predicate: (n: PushNotificationSchema) => boolean,
+  bereich?: string
 ): Promise<void> => {
   if (!Capacitor.isNativePlatform()) return;
   try {
     const delivered = await PushNotifications.getDeliveredNotifications();
     const match = (delivered.notifications || []).filter((n) => {
       try {
-        return predicate(n);
+        return predicate({ ...n, data: nutzdatenVon(n) });
       } catch {
         return false;
       }
     });
+    if (bereich) offeneAufraeumen.delete(bereich);
     if (match.length === 0) return;
     await PushNotifications.removeDeliveredNotifications({ notifications: match });
   } catch (error) {
+    if (bereich) offeneAufraeumen.set(bereich, predicate);
     console.warn('notifications: removeDeliveredWhere fehlgeschlagen:', error);
+  }
+};
+
+/** Holt jedes verweigerte Aufraeumen einmal nach (siehe oben). */
+export const aufraeumenNachholen = async (): Promise<void> => {
+  const offen = [...offeneAufraeumen.entries()];
+  offeneAufraeumen.clear();
+  for (const [bereich, praedikat] of offen) {
+    await removeDeliveredWhere(praedikat, bereich);
   }
 };
 
@@ -211,7 +280,7 @@ export const removeDeliveredForChatRoom = (roomId: number): Promise<void> =>
     if (data.type !== 'chat') return false;
     const rid = data.roomId ?? data.room_id;
     return rid != null && String(rid) === String(roomId);
-  });
+  }, `chat:${roomId}`);
 
 // Bequemer Wrapper: alle event-bezogenen Notifications entfernen
 // (wird beim Oeffnen der Events-Seite genutzt).
@@ -234,4 +303,4 @@ export const removeDeliveredForEvents = (): Promise<void> =>
   removeDeliveredWhere((n) => {
     const typ = (n.data as PushNutzdaten | undefined)?.type;
     return typeof typ === 'string' && EVENT_NOTIFICATION_TYPES.has(typ);
-  });
+  }, 'events');

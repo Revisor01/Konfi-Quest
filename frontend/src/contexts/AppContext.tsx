@@ -9,7 +9,7 @@ import { ensureSocketConnected, reconnectWithToken } from '../services/websocket
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { FirebaseMessaging } from '@capacitor-firebase/messaging';
-import { removeDeliveredById, benachrichtigungskanaeleAnlegen } from '../services/notifications';
+import { removeDeliveredById, benachrichtigungskanaeleAnlegen, aufraeumenNachholen } from '../services/notifications';
 import { appSymbolAngaben } from '../services/appSymbolZahl';
 import { writeQueue } from '../services/writeQueue';
 import { offlineCache } from '../services/offlineCache';
@@ -1185,10 +1185,17 @@ useEffect(() => {
         PushNotifications.addListener('registration', (token) => {
           // Token an Server senden
           sendTokenToServer(token.value);
+          // Erst jetzt gibt das iOS-Plugin die liegenden Mitteilungen heraus.
+          // Was vorher verweigert wurde -- etwa ein per Push kalt gestarteter
+          // und sofort gelesener Chat --, wird hier nachgeholt
+          // (services/notifications.ts, 30.09.2026).
+          aufraeumenNachholen();
         });
 
         PushNotifications.addListener('registrationError', (error) => {
           console.error('Push registration error:', error);
+          // Auch der Fehlschlag hebt die Sperre im iOS-Plugin auf.
+          aufraeumenNachholen();
         });
 
         // Registriere Listener

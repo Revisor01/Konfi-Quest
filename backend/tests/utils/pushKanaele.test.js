@@ -233,22 +233,29 @@ describe('Zahl am App-Symbol auf Android: kommt aus den liegenden Mitteilungen',
     });
 
     expect(gesendet.length).toBe(1);
+    // Seit dem 30.09.2026 traegt jede sichtbare Mitteilung eine einmalige
+    // Kennung als tag (utils/mitteilungsKennung.js, tests/utils/
+    // mitteilungsKennung.test.js) -- NICHT den festen tag des Wegs
+    // "mitteilungen", und weiter ohne Zahl.
     expect(Object.keys(gesendet[0].android.notification).sort()).toEqual(
-      ['channelId', 'defaultSound', 'sound']
+      ['channelId', 'defaultSound', 'sound', 'tag']
     );
+    expect(gesendet[0].android.notification.tag).toMatch(/^kq:chat:96:[0-9a-f]{8}$/);
     expect(gesendet[0].android.notification.notificationCount).toBeUndefined();
     // iOS bleibt, wie es ist: dort setzt aps.badge die Zahl direkt.
     expect(gesendet[0].apns.payload.aps.badge).toBe(7);
   });
 
-  it('schickt auch Geraeten mit Weg "anbieter" keinen tag und keine Zahl', async () => {
+  it('schickt auch Geraeten mit Weg "anbieter" keinen festen tag und keine Zahl', async () => {
     // Dort setzt die App die Zahl selbst (stilles badge_update hinterher);
-    // die Mitteilungen bleiben einzeln in der Leiste wie auf dem iPhone.
+    // die Mitteilungen bleiben einzeln in der Leiste wie auf dem iPhone. Der
+    // tag ist die einmalige Kennung (30.09.2026), nicht konfi_app_symbol.
     await firebaseModul.sendFirebasePushNotification('token-x', {
       title: 'Neue Nachricht', body: 'B', badge: 7, appSymbolWeg: 'anbieter', data: { type: 'chat' }
     });
 
-    expect(Object.keys(gesendet[0].android.notification).sort()).toEqual(['channelId', 'defaultSound', 'sound']);
+    expect(Object.keys(gesendet[0].android.notification).sort()).toEqual(['channelId', 'defaultSound', 'sound', 'tag']);
+    expect(gesendet[0].android.notification.tag).toMatch(/^kq:chat::[0-9a-f]{8}$/);
   });
 });
 
