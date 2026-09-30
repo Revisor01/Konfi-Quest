@@ -37,11 +37,11 @@ import {
   ICON_TEXT,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
-import { Filesystem, Directory } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { writeQueue, QueueBody } from '../../../services/writeQueue';
+import { warteschlangenDateiSichern } from '../../../services/warteschlangenDatei';
 import { AktivitaetMelden } from '../../../types/request';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
@@ -213,12 +213,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
               reader.readAsDataURL(formData.photo_file!);
             });
             const fileName = `queue_${clientId}_photo.jpg`;
-            await Filesystem.writeFile({
-              path: `queue-uploads/${fileName}`,
-              data: base64,
-              directory: Directory.Data,
-            });
-            queueBody._localPhotoPath = `queue-uploads/${fileName}`;
+            queueBody._localPhotoPath = await warteschlangenDateiSichern(fileName, base64);
             queueBody._photoFileName = formData.photo_file.name;
           } catch (fehler) {
             fotoNichtGesichert = true;

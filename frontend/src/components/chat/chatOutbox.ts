@@ -1,5 +1,6 @@
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { writeQueue, QueueBody, QueueItem, FailedChatMessage } from '../../services/writeQueue';
+import { warteschlangenDateiSichern } from '../../services/warteschlangenDatei';
 import { Message, ChatUserType } from '../../types/chat';
 
 /**
@@ -127,12 +128,7 @@ export async function chatNachrichtEinreihen(
       reader.readAsDataURL(opts.file as File);
     });
     const fileName = `queue_${opts.clientId}_${opts.file.name}`;
-    await Filesystem.writeFile({
-      path: `queue-uploads/${fileName}`,
-      data: base64,
-      directory: Directory.Data,
-    });
-    queueBody._localFilePath = `queue-uploads/${fileName}`;
+    queueBody._localFilePath = await warteschlangenDateiSichern(fileName, base64);
     queueBody._fileName = opts.file.name;
     queueBody._fileType = opts.file.type;
   }

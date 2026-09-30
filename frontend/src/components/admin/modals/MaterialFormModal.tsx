@@ -130,6 +130,11 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
   );
   const [existingFiles, setExistingFiles] = useState<MaterialFile[]>(material?.files || []);
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  // Das beim Speichern NEU angelegte Material (30.09.2026). Das Formular legt
+  // zuerst den Eintrag an und laedt danach die Dateien hoch. Scheitert der
+  // Upload, steht das Material schon -- ohne diese Merkstelle legte jedes
+  // weitere Speichern ein weiteres an, jeweils ohne Datei.
+  const angelegtRef = useRef<number | null>(null);
   // MEHRERE LINKS UND DATEIEN PARALLEL (Entscheidung Simon, 01.09.2026):
   // Das Entweder-Oder vom 31.08. ist weg, beide Bereiche sind immer
   // sichtbar und beide optional. Ein gecachter Eintrag von vorher traegt
@@ -300,6 +305,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
     }
 
     await guard(async () => {
+      // Steht das Material, fehlen nur noch die Dateien: dann sagt die Meldung
+      // genau das, statt "Fehler beim Speichern".
+      let dateienStehenAus = false;
       try {
         const payload = {
           title: title.trim(),
@@ -317,18 +325,20 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
 
         if (networkMonitor.isOnline) {
           // Online-Pfad: direkt senden
-          let materialId = material?.id;
+          let materialId = material?.id ?? angelegtRef.current ?? undefined;
 
-          if (material) {
-            await api.put(`/material/${material.id}`, payload);
+          if (materialId) {
+            await api.put(`/material/${materialId}`, payload);
           } else {
             const res = await api.post('/material', payload);
             materialId = res.data.id;
+            angelegtRef.current = res.data.id;
           }
 
           // Neue Dateien hochladen -- unabhaengig von den Links, beides
           // ist parallel erlaubt (01.09.2026).
           if (newFiles.length > 0 && materialId) {
+            dateienStehenAus = true;
             const formData = new FormData();
             newFiles.forEach(file => {
               formData.append('files', file);
@@ -343,6 +353,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                 if (event.total) setSendeProzent(Math.round((event.loaded * 100) / event.total));
               }
             });
+            dateienStehenAus = false;
           }
 
           // Anonyme Messung, erst wenn ALLE Aufrufe des Online-Zweigs durch
@@ -380,7 +391,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
 
         onSuccess();
       } catch (err) {
-        setError(fehlerText(err, 'Fehler beim Speichern'));
+        setError(fehlerText(err, dateienStehenAus
+          ? 'Das Material ist gespeichert, die Dateien noch nicht. Tippe noch einmal auf Speichern.'
+          : 'Fehler beim Speichern'));
       } finally {
         setSendeProzent(0);
       }

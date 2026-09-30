@@ -517,6 +517,16 @@ iOS-Build 236 · Android versionCode 130
   unter „Fehler".
 
 ### Behoben
+- PDF-, Word- und andere Dokumente lassen sich vom Android-Handy wieder in den
+  Chat und ins Material hochladen, auch aus Google Drive oder dem
+  Download-Ordner. Bisher brach das Hochladen dort ohne Grund ab.
+- Eine Chat-Nachricht mit Datei, die wegen einer abgerissenen Verbindung nicht
+  rausging, bleibt in der Warteschlange und geht später los, statt als
+  fehlgeschlagen stehen zu bleiben. Dasselbe gilt für einen Antrag mit Foto,
+  der ohne Netz gestellt wird.
+- Kommt beim Speichern eines neuen Materials die Datei nicht an, legt ein
+  zweites Speichern kein weiteres Material an, sondern lädt die Datei in das
+  schon gespeicherte. Die Meldung sagt, dass nur die Dateien fehlen.
 - Wer einen Chat öffnet, findet dessen Mitteilungen danach nicht mehr in der
   Leiste — auf Android ging das bisher nie, auf dem iPhone nicht, wenn ein
   Push die App gestartet hatte. Beim Öffnen der Events gilt dasselbe für die

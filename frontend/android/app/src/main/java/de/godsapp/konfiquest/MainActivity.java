@@ -50,6 +50,12 @@ public class MainActivity extends BridgeActivity {
         // (services/appSymbolZahl.ts, 29.09.2026).
         registerPlugin(AppSymbolZahlPlugin.class);
         super.onCreate(savedInstanceState);
+        // Dateiauswahl: Dokumente als stabile Kopie ans WebView (30.09.2026,
+        // PDF/Word gingen vom Android-Handy nicht hoch -- DateiAuswahlChromeClient).
+        // Muss hier in onCreate stehen: Der Client meldet beim Anlegen seine
+        // ActivityResult-Starter an, und das geht nur, bevor die Activity
+        // gestartet ist. super.onCreate hat die Bruecke samt WebView gebaut.
+        bridge.getWebView().setWebChromeClient(new DateiAuswahlChromeClient(bridge));
     }
 
     @Override

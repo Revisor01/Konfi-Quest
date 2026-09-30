@@ -281,7 +281,12 @@ nennt, geht wie dort nach ihrer Endung
 ([Verstehen, was mit der Datei passiert](90-chat.md#verstehen-was-mit-der-datei-passiert)).
 Ein Format, das das Material nicht kennt, lehnt der Server mit „Dieser
 Dateityp kann nicht hochgeladen werden." ab — dann wird keine der gewählten
-Dateien gespeichert.
+Dateien gespeichert. Reißt beim Hochladen die Verbindung ab, ist das Material
+selbst trotzdem gespeichert, nur die Dateien fehlen noch. Die App sagt das
+(„Das Material ist gespeichert, die Dateien noch nicht. Tippe noch einmal auf
+Speichern."), und ein zweites Tippen auf Speichern lädt sie in dasselbe
+Material — es entsteht kein zweites. Wie Dokumente vom Android-Handy
+hochgehen, steht beim [Chat](90-chat.md#verstehen-was-mit-der-datei-passiert).
 Beim Speichern steht unter der Kopfzeile,
 wie weit das Hochladen ist — „Wird gesendet… 40 %", zuletzt „Wird
 verarbeitet…". Wie die Dateien danach auf den Geräten liegen und wieder

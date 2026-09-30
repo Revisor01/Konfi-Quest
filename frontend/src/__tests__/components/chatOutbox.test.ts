@@ -176,6 +176,30 @@ describe('chatOutbox — chatNachrichtEinreihen persistiert die Nachricht', () =
     expect(item.body._fileName).toBe('bild.png');
     expect(item.body._fileType).toBe('image/png');
   });
+
+  // Tester-Rueckmeldung Build 130 (30.09.2026): Eine PDF im Chat ging vom
+  // Android-Handy nicht raus. Scheitert der Versand ohne Antwort des Servers,
+  // wird die Nachricht samt Datei in die Warteschlange gesichert -- nach
+  // queue-uploads/. Diesen Ordner legte nie jemand an, und writeFile ohne
+  // recursive bricht dann ab ("Missing parent directory", @capacitor/filesystem
+  // auf Android und iOS). Jede Datei, die nicht sofort durchging, stand damit
+  // als Fehler da. Der Nachbau hier verhaelt sich wie das echte Plugin.
+  it('legt den Ordner der Warteschlange mit an -- wie das echte Plugin geprueft', async () => {
+    const ordner = new Set<string>();
+    mockWriteFile.mockImplementationOnce(async (...args: unknown[]) => {
+      const { path, recursive } = args[0] as { path: string; recursive?: boolean };
+      const eltern = path.split('/').slice(0, -1).join('/');
+      if (eltern && !ordner.has(eltern) && !recursive) {
+        throw new Error('Missing parent directory – possibly recursive=false was passed or parent directory creation failed.');
+      }
+      if (eltern) ordner.add(eltern);
+      return undefined;
+    });
+    const pdf = new File(['%PDF-1.7'], 'Elternbrief.pdf', { type: 'application/pdf' });
+    await expect(chatNachrichtEinreihen(1, { clientId: 'c-pdf', content: '', file: pdf })).resolves.toBeUndefined();
+    expect(mockEnqueue).toHaveBeenCalledTimes(1);
+    expect(mockEnqueue.mock.calls[0][0].body._localFilePath).toBe('queue-uploads/queue_c-pdf_Elternbrief.pdf');
+  });
 });
 
 // Beim Aufteilen von ChatRoom.tsx hierher gezogen — die Faelle stammen aus dem
