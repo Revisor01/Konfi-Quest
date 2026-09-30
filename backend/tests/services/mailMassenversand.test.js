@@ -96,9 +96,19 @@ describe('Versand von zehn Mails an den Attrappen-Server', () => {
   });
 
   it('Massentransport: eine Verbindung fuer alle, und die Drosselung haelt die Grenze', async () => {
-    // Zeitfenster fuer den Test verkuerzt: 4 Mails je 400 ms statt 20 je Minute.
+    // Zeitfenster fuer den Test verkuerzt: 4 Mails je 1000 ms statt 20 je Minute.
+    //
+    // Fenster und Schwelle gemessen (30.09.2026): Die Pruefung stand bei
+    // 4 je 400 ms und verlangte >= 390 ms zwischen Mail i und i+4. Gemessen
+    // sind das 364-404 ms -- nodemailer zaehlt die Fenster nach seiner eigenen
+    // Uhr ab Sendebeginn, die Attrappe stempelt beim Empfang des Mailendes, und
+    // das schwankt je Mail um einige zehn Millisekunden. Der Test fiel dadurch
+    // lokal in 4 von 15 Laeufen. OHNE Drosselung liegen dieselben Abstaende
+    // bei 176-184 ms (eine Verbindung, Mails nacheinander). Mit 1000 ms
+    // Fenster und 800 ms Schwelle bleiben 200 ms Spiel nach unten und ein
+    // Vierfaches Abstand zum ungedrosselten Fall.
     const t = nodemailer.createTransport(smtpMassenKonfiguration(
-      umgebung(attrappe.port, { SMTP_MASSEN_JE_MINUTE: '4' }), { zeitfensterMs: 400 }
+      umgebung(attrappe.port, { SMTP_MASSEN_JE_MINUTE: '4' }), { zeitfensterMs: 1000 }
     ));
     const beginn = Date.now();
     await Promise.all(Array.from({ length: 10 }, (_, i) => t.sendMail(mail(i))));
@@ -108,11 +118,11 @@ describe('Versand von zehn Mails an den Attrappen-Server', () => {
     expect(attrappe.stand.mails).toBe(10);
     expect(attrappe.stand.verbindungen).toBe(1);
     // 10 Mails bei 4 je Fenster brauchen mindestens zwei volle Fenster.
-    expect(dauer).toBeGreaterThanOrEqual(800);
-    // In keinem Fenster von 400 ms mehr als 4 Mails.
+    expect(dauer).toBeGreaterThanOrEqual(2000);
+    // Zwischen Mail i und Mail i+4 liegt jeweils (fast) ein ganzes Fenster.
     const zeiten = attrappe.stand.zeiten;
     for (let i = 0; i + 4 < zeiten.length; i++) {
-      expect(zeiten[i + 4] - zeiten[i]).toBeGreaterThanOrEqual(390);
+      expect(zeiten[i + 4] - zeiten[i]).toBeGreaterThanOrEqual(800);
     }
   }, 10000);
 });
