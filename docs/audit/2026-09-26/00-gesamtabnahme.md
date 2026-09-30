@@ -408,7 +408,7 @@ Die wichtigsten, in dieser Reihenfolge:
 10. `EXPLAIN (ANALYZE, BUFFERS)` der Terminliste mit echter Org-ID — läuft die View über alle Buchungen? Nachtrag 26.09.: nur relevant, falls das Betriebsmodell eine gemeinsame Instanz bleibt (Punkt 25).
 11. Traefik-Access-Log: `grep -c 'chat/files/[a-f0-9]*?token='` (Token in URLs) und `DELETE /api/events/<id>/book` durch Konfi-Konten.
 12. `SELECT COUNT(*) FROM users WHERE deleted_at IS NOT NULL AND last_login_at > deleted_at;` — soft-gelöschte, weiter aktive Konten.
-13. `SELECT user_id, COUNT(*) FROM refresh_tokens WHERE revoked_at IS NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 20;` — Wiederverwendung der Gnadenfrist.
+13. `SELECT user_id, COUNT(*) FROM refresh_tokens WHERE revoked_at IS NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 20;` — Wiederverwendung der Gnadenfrist. → **gemessen und behoben 01.10.2026:** 1.281 offene Tokens auf 133 Konten, das größte mit 208; jetzt höchstens zehn je Konto und eines je Gerät, Bestand über Migration 186 nachgezogen (812 beendet). Einzelheiten: Sicherheit BF-08, Nachtrag 01.10.2026.
 14. Dauer eines FCM-`send()` und Anteil „Keine Push-Tokens" im Log; Dauer und Push-Zahl des Zähler-Laufs nach dem nächsten Deploy.
 15. `curl -s https://konfi-quest.de/api/status | jq .version` (erwartet fälschlich `1.0.1`) und `docker exec … node -v`.
 16. Sicherung: Alter und Größe des letzten Dumps, Rückspielprobe in eine leere Datenbank, Überwachung aus `offene-befunde.md` #3.

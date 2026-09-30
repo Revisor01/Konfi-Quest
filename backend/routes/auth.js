@@ -29,6 +29,7 @@ const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { erzeugeKontoSperre, kontoSperreAufheben } = require('../utils/kontoSperre');
 const { benutzernameSperrenUndPruefen } = require('../utils/benutzernameSperre');
+const { refreshTokensBegrenzen } = require('../utils/refreshTokenGrenze');
 const router = express.Router();
 
 // Die beiden Reset-Grenzen entstehen erst in der Fabrik unten, weil ihr
@@ -267,6 +268,18 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     return kennung.length > 0 && kennung.length <= 255 ? kennung : null;
   };
 
+  // Nach JEDER Ausgabe eines Refresh-Tokens: hoechstens zehn offene je Konto,
+  // eines je Geraet (utils/refreshTokenGrenze.js, 01.10.2026). Ein Fehler hier
+  // darf die Anmeldung nicht scheitern lassen -- das neue Token steht schon;
+  // schlimmstenfalls bleibt ein altes Token bis zur naechsten Ausgabe offen.
+  const grenzeDurchsetzen = async (dbConn, userId, neuId, geraet) => {
+    try {
+      await refreshTokensBegrenzen(dbConn, userId, { neuId, geraet });
+    } catch (err) {
+      console.error(`Refresh-Token-Grenze fuer User ${userId} nicht durchgesetzt:`, err.message);
+    }
+  };
+
   // Frisches Token-Paar für einen User erzeugen. Wird nach dem Passwortwechsel
   // gebraucht: dort werden alle Sitzungen invalidiert, und ohne neues Paar
   // wuerde der eigene Client sofort mitfliegen.
@@ -307,10 +320,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       }, JWT_SECRET, { expiresIn: '15m' });
 
       const refreshToken = generateRefreshToken();
-      await dbConn.query(
-        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+      const { rows: [neu] } = await dbConn.query(
+        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3) RETURNING id',
         [u.id, hashToken(refreshToken), new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)]
       );
+      await grenzeDurchsetzen(dbConn, u.id, neu.id, null);
 
       return { token: accessToken, refresh_token: refreshToken };
     } catch (err) {
@@ -475,10 +489,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const refreshTokenHash = hashToken(refreshToken);
       const refreshExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 Tage
       // An das Geraet gebunden, wenn die App ihre Kennung mitschickt (BF-08).
-      await db.query(
-        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, device_id) VALUES ($1, $2, $3, $4)',
-        [user.id, refreshTokenHash, refreshExpiresAt, geraeteKennung(req)]
+      const loginGeraet = geraeteKennung(req);
+      const { rows: [neuesToken] } = await db.query(
+        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, device_id) VALUES ($1, $2, $3, $4) RETURNING id',
+        [user.id, refreshTokenHash, refreshExpiresAt, loginGeraet]
       );
+      await grenzeDurchsetzen(db, user.id, neuesToken.id, loginGeraet);
 
       const responseUser = {
         id: user.id,
@@ -1447,10 +1463,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         const refreshTokenHash = hashToken(refreshToken);
         const refreshExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 Tage
         // An das Geraet gebunden, wenn die App ihre Kennung mitschickt (BF-08).
-        await db.query(
-          'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, device_id) VALUES ($1, $2, $3, $4)',
-          [newUser.id, refreshTokenHash, refreshExpiresAt, geraeteKennung(req)]
+        const registrierGeraet = geraeteKennung(req);
+        const { rows: [neuesToken] } = await db.query(
+          'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, device_id) VALUES ($1, $2, $3, $4) RETURNING id',
+          [newUser.id, refreshTokenHash, refreshExpiresAt, registrierGeraet]
         );
+        await grenzeDurchsetzen(db, newUser.id, neuesToken.id, registrierGeraet);
 
         res.json({
           message: 'Registrierung erfolgreich',
@@ -1793,6 +1811,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     if (vorgaengerId) {
       await db.query('UPDATE refresh_tokens SET ersetzt_durch = $1 WHERE id = $2', [neu.id, vorgaengerId]);
     }
+    // Das rotierte Token ist schon widerrufen und zaehlt nicht mit; die
+    // Gnadenfrist (oben) bleibt davon unberuehrt.
+    await grenzeDurchsetzen(db, user.id, neu.id, geraet);
 
     return res.json({ token: newAccessToken, refresh_token: newRefreshToken });
   }

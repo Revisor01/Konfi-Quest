@@ -509,6 +509,10 @@ iOS-Build 236 · Android versionCode 130
   was verschwindet: Punkte, Badges, Stempel, Anträge samt Fotos,
   Event-Anmeldungen, Challenge-Beiträge, Chat-Nachrichten und
   Zweiergespräche; beim Team auch, was der Gemeinde bleibt.
+- Ein Konto bleibt auf höchstens zehn Geräten oder Browsern gleichzeitig
+  angemeldet, auf jedem Gerät mit einer Anmeldung. Kommt eine weitere dazu,
+  endet die Anmeldung, die am längsten nicht benutzt wurde; auf Geräten, die
+  lange nicht genutzt wurden, ist dann eine neue Anmeldung nötig.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
@@ -1541,6 +1545,11 @@ iOS-Build 236 · Android versionCode 130
   selbst.
 - Beim Öffnen der Konfi-Liste lädt die App keine Angaben zur Gemeinde mehr,
   die sie gar nicht anzeigt.
+- Alte, nicht mehr benutzte Anmeldungen werden einmalig beendet, damit kein
+  Konto mehr als zehn offen hat; wer die App gerade benutzt, bleibt angemeldet.
+- Das Server-Protokoll hält wiederkehrende Routinemeldungen nur noch bei einer
+  Änderung oder gebündelt je Viertelstunde fest und reicht damit auch bei
+  vielen Gemeinden länger zurück.
 
 ## [2.2.0] - 2026-09-18
 

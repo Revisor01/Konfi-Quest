@@ -51,6 +51,24 @@ describe('Refresh-Tokens aufraeumen', () => {
     expect(await uebrig()).toEqual(['gueltig', 'widerrufen-frisch']);
   });
 
+  it('Tokens, die die Obergrenze beendet hat, verschwinden beim naechsten Lauf; die zehn juengsten bleiben', async () => {
+    const { refreshTokensBegrenzen } = require('../../utils/refreshTokenGrenze');
+    await db.query('DELETE FROM refresh_tokens');
+    for (let i = 1; i <= 12; i += 1) {
+      await db.query(
+        `INSERT INTO refresh_tokens (user_id, token_hash, expires_at, created_at)
+         VALUES ($1, $2, NOW() + INTERVAL '90 days', NOW() - make_interval(days => $3))`,
+        [USERS.konfi1.id, `t${String(i).padStart(2, '0')}`, i]
+      );
+    }
+    const beendet = await refreshTokensBegrenzen(db, USERS.konfi1.id);
+    expect(beendet).toEqual({ geraet: 0, ueberGrenze: 2 });
+    expect(await BackgroundService.cleanupRefreshTokens(db)).toBe(2);
+    expect(await uebrig()).toEqual(
+      Array.from({ length: 10 }, (_, i) => `t${String(i + 1).padStart(2, '0')}`)
+    );
+  });
+
   it('laeuft beim Start des Dienstes sofort, nicht erst nach Stunden', async () => {
     BackgroundService.startTokenCleanupService(db);
     const bis = Date.now() + 5000;

@@ -293,6 +293,21 @@ paths:
         mit derselben (siehe POST /api/auth/refresh). Ohne device_id -- die
         Store-Apps 2.2.x und 2.3.0 senden sie hier nie -- bleibt es
         ungebunden wie bisher. Antwortform unveraendert.
+
+
+        OBERGRENZE seit 01.10.2026 (backend/utils/refreshTokenGrenze.js,
+        Migration 186): Nach jeder Ausgabe eines Refresh-Tokens -- hier, bei
+        POST /api/auth/register-konfi, /api/auth/refresh und
+        /api/auth/change-password -- bleiben je Konto hoechstens die ZEHN
+        juengsten offenen Refresh-Tokens; aeltere werden beendet
+        (revoked_at + expires_at = NOW(), wie beim Logout: keine Gnadenfrist,
+        kein Diebstahl-Signal). Mit device_id endet zusaetzlich jedes andere
+        offene Token desselben Kontos auf DEMSELBEN Geraet. Ein beendetes
+        Token bekommt beim Refresh ein schlichtes 401; die App (auch 2.2.x und
+        2.3.0) leert die Sitzung und zeigt die Anmeldeseite mit "Sitzung
+        abgelaufen". Antwortform unveraendert. Gemessen 01.10.2026: 1.281
+        offene Tokens auf 133 Konten, das groesste mit 208; echte Konten
+        hatten hoechstens fuenf Tokens aus den letzten sieben Tagen.
       requestBody:
         required: true
         content:
@@ -1004,6 +1019,10 @@ paths:
         device_id ist das ausgestellte Refresh-Token an das Geraet gebunden,
         ohne bleibt es ungebunden (siehe POST /api/auth/login und
         /api/auth/refresh). Antwortform unveraendert.
+
+
+        OBERGRENZE seit 01.10.2026: hoechstens zehn offene Refresh-Tokens je
+        Konto, eines je Geraet (siehe POST /api/auth/login).
       requestBody:
         required: true
         content:
@@ -1082,6 +1101,13 @@ paths:
     post:
       tags: ["Anmeldung & Konto"]
       summary: Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window genau einmal)
+      description: >
+        OBERGRENZE seit 01.10.2026: Nach der Rotation bleiben je Konto
+        hoechstens die zehn juengsten offenen Refresh-Tokens, eines je Geraet
+        (siehe POST /api/auth/login). Das gerade rotierte Token ist dann schon
+        widerrufen und zaehlt nicht mit; die Gnadenfrist gilt unveraendert,
+        auch wenn das Konto an der Grenze steht
+        (backend/tests/routes/refreshTokenGrenze.test.js).
       parameters:
         - { name: X-Active-Organization, in: header, required: false, schema: { type: integer }, description: "Aktive Multi-Org — wird nach Mitgliedschafts-Pruefung als Claim uebernommen" }
       requestBody:
@@ -1130,6 +1156,15 @@ paths:
         # meldete org_trial_expired statt user_inactive. Jetzt eine Quelle fuer
         # beide Routen. Form unveraendert (403 { error, error_code }).
         # Tests: backend/tests/routes/refreshSperrGrund.test.js.
+        # BEHOBEN 01.10.2026 (Produktionsmessung Nr. 13 der Gesamtabnahme,
+        # Nachtrag zu BF-08): keine Obergrenze fuer offene Refresh-Tokens --
+        # 1.281 offene auf 133 Konten, das groesste mit 208, jedes ein
+        # 90-Tage-Schluessel. Jetzt zehn je Konto, eines je Geraet, bei jeder
+        # Ausgabe durchgesetzt; Migration 186 zieht den Bestand einmal nach
+        # (812 Tokens auf 12 Konten, 714 davon Demo-, Review- und
+        # Testkonten). Antwortform unveraendert. Tests:
+        # backend/tests/routes/refreshTokenGrenze.test.js,
+        # backend/tests/utils/migration186Bestand.test.js.
 
   /api/auth/logout:
     post:

@@ -700,29 +700,6 @@ module.exports = (db, verifyTokenRBAC) => {
     const appSymbolWeg = wegAusAnmeldung(req.body.app_symbol_weg);
     const startbildschirm = startbildschirmAusAnmeldung(req.body.startbildschirm);
 
-    /*
-     * JEDE Registrierung wird protokolliert (23.09.2026).
-     *
-     * Vorher loggte diese Route NUR Fehler. Ein erfolgreicher POST hinterliess
-     * keine Spur, und "die App hat sich nie gemeldet" war von "die App hat
-     * sich gemeldet und es lief" nicht zu unterscheiden. Bei der Fehlersuche
-     * am 23.09.2026 hat genau das Stunden gekostet: drei Anmeldungen eines
-     * Testers, kein Eintrag, und keine Moeglichkeit zu sagen, ob die App
-     * ueberhaupt fragt.
-     *
-     * Absichtlich OHNE den Token selbst -- der ist ein Zugangsschluessel zum
-     * Zustellen von Nachrichten und gehoert in kein Protokoll. Die letzten
-     * sechs Zeichen genuegen, um zwei Registrierungen zu unterscheiden.
-     */
-    console.log(
-      '[PUSH] Registrierung: user=%s (%s) platform=%s app=%s/%s geraet=%s token=…%s symbol=%s start=%s',
-      userId, userType, platform,
-      app_version || 'unbekannt', app_build || '?',
-      (device_id || 'ohne').slice(0, 12),
-      String(token).slice(-6),
-      appSymbolWeg || '-', startbildschirm || '-'
-    );
-
     if (!token || !platform) {
       return res.status(400).json({ error: 'Token und Plattform erforderlich' });
     }
@@ -735,11 +712,16 @@ module.exports = (db, verifyTokenRBAC) => {
       // User (Account-Wechsel) noch beim selben User unter anderer device_id
       // (z.B. neue identifierForVendor nach App-Neuinstallation) — sonst wird
       // derselbe Push mehrfach an dasselbe Geraet gesendet.
-      await db.query(
+      const { rowCount: uebernommen } = await db.query(
         `DELETE FROM push_tokens
          WHERE token = $1
            AND NOT (user_id = $2 AND platform = $3 AND device_id = $4)`,
         [token, userId, platform, finalDeviceId]
+      );
+      // Stand VOR der Meldung, nur fuer das Protokoll unten.
+      const { rows: [vorher] } = await db.query(
+        'SELECT token, app_version, app_build FROM push_tokens WHERE user_id = $1 AND platform = $2 AND device_id = $3',
+        [userId, platform, finalDeviceId]
       );
 
       // Upsert: Token speichern oder aktualisieren
@@ -766,6 +748,48 @@ module.exports = (db, verifyTokenRBAC) => {
          platform === 'android' ? startbildschirm : null]
       );
 
+      /*
+       * PROTOKOLL NUR BEI EINEM WECHSEL (01.10.2026).
+       *
+       * Seit dem 23.09.2026 stand hier JEDE Meldung im Protokoll -- damals
+       * gegen die Stille bei der Android-Fehlersuche ("meldet sich die App
+       * ueberhaupt?"). Die App meldet ihr Token aber bei jedem Start und jeder
+       * Rueckkehr in den Vordergrund, fast immer unveraendert: Am Abend des
+       * 30.09.2026 waren es 71 von 179 Zeilen eines Backends (40 %), die
+       * Sequenz der Tabelle stand bei 26.371 Meldungen fuer 132 Zeilen. Bei
+       * EKD-Groesse haette allein diese Zeile die Aufbewahrung des Protokolls
+       * unter eine Woche gedrueckt.
+       *
+       * Jetzt eine Zeile, wenn sich etwas aendert: neues Geraet (neu), neues
+       * Token (Tokenwechsel), andere App-Fassung (App-Wechsel) oder ein Token,
+       * das von einem anderen Konto oder Geraeteeintrag herueberkommt
+       * (übernommen). Ob sich ein Geraet ueberhaupt meldet, zeigt
+       * push_tokens.updated_at -- es steigt bei jeder Meldung.
+       *
+       * Absichtlich OHNE den Token selbst -- der ist ein Zugangsschluessel zum
+       * Zustellen von Nachrichten und gehoert in kein Protokoll. Die letzten
+       * sechs Zeichen genuegen, um zwei Registrierungen zu unterscheiden.
+       */
+      const gruende = [];
+      if (!vorher) gruende.push('neu');
+      else {
+        if (vorher.token !== token) gruende.push('Tokenwechsel');
+        const fassungNeu = (app_version && app_version !== vorher.app_version)
+          || (app_build && app_build !== vorher.app_build);
+        if (fassungNeu) gruende.push('App-Wechsel');
+      }
+      if (uebernommen > 0) gruende.push('übernommen');
+      if (gruende.length > 0) {
+        console.log(
+          '[PUSH] Registrierung (%s): user=%s (%s) platform=%s app=%s/%s geraet=%s token=…%s symbol=%s start=%s',
+          gruende.join(', '),
+          userId, userType, platform,
+          app_version || 'unbekannt', app_build || '?',
+          String(finalDeviceId).slice(0, 12),
+          String(token).slice(-6),
+          appSymbolWeg || '-', startbildschirm || '-'
+        );
+      }
 
       res.json({ success: true, message: 'Token erfolgreich gespeichert' });
 

@@ -88,6 +88,12 @@ class BackgroundService {
   // Zaehler-Takt ist zuerst registriert und startet zuerst. Wuerde der
   // Stundenlauf dann uebersprungen, liefe die Abzeichen-Pruefung nie.
   static badgeLauf = null;
+  // Ist der laufende Lauf der volle Stundenlauf (Zaehler UND Abzeichen)?
+  // Dann weicht ein Zaehler-Takt still aus: Der Stundenlauf aktualisiert die
+  // Zaehler selbst. Gemessen 30.09./01.10.2026 stand die Warnung sonst jede
+  // Stunde im Protokoll -- die Takte treffen sich jede zwoelfte Runde, und wer
+  // zuerst startet, haengt an Millisekunden.
+  static badgeLaufVoll = false;
   // Fingerabdruck der Datenlage je Person beim letzten Abzeichen-Lauf. Wer
   // denselben Abdruck hat wie vorher, kann kein Abzeichen neu verdient haben
   // und wird uebersprungen (Begruendung in utils/abzeichenKandidaten.js).
@@ -209,7 +215,11 @@ class BackgroundService {
     const { nurZaehler = false } = optionen;
     while (this.badgeLauf) {
       if (nurZaehler) {
-        console.warn('updateAllUserBadges: vorheriger Lauf noch aktiv — Zähler-Takt übersprungen');
+        // Nur ein Zaehler-Takt, der noch nach fuenf Minuten laeuft, ist ein
+        // Befund (Handlungsbedarf: der Lauf ist zu langsam geworden).
+        if (!this.badgeLaufVoll) {
+          console.warn('updateAllUserBadges: vorheriger Lauf noch aktiv — Zähler-Takt übersprungen');
+        }
         return { updated: 0, total: 0, geprueft: 0, uebersprungen: true };
       }
       // Stundenlauf: warten, nicht ueberspringen (Begruendung an badgeLauf).
@@ -217,10 +227,14 @@ class BackgroundService {
     }
     const lauf = this.zaehlerUndAbzeichenLauf(db, nurZaehler);
     this.badgeLauf = lauf;
+    this.badgeLaufVoll = !nurZaehler;
     try {
       return await lauf;
     } finally {
-      if (this.badgeLauf === lauf) this.badgeLauf = null;
+      if (this.badgeLauf === lauf) {
+        this.badgeLauf = null;
+        this.badgeLaufVoll = false;
+      }
     }
   }
 

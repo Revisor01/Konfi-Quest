@@ -139,6 +139,15 @@ eigenen Gerät noch jemand — dann beendet die App zur Sicherheit alle
 Anmeldungen des Kontos, auf jedem Gerät. Neu anmelden genügt; wer sich das
 nicht erklären kann, ändert danach das Passwort.
 
+**Auf einem alten Gerät abgemeldet?** Ein Konto bleibt auf höchstens **zehn**
+Geräten oder Browsern gleichzeitig angemeldet, auf jedem Gerät mit einer
+Anmeldung. Kommt eine elfte dazu, endet die, die am längsten nicht benutzt
+wurde — meist ein altes Handy oder ein Browser, in dem man sich einmal
+angemeldet hat. Wer die App regelmäßig benutzt, ist davon nicht betroffen:
+Jede Nutzung frischt die Anmeldung auf. Unabhängig davon endet eine Anmeldung
+nach 90 Tagen ohne Nutzung. In beiden Fällen zeigt die App „Deine Sitzung ist
+abgelaufen", und neu anmelden genügt.
+
 ## Die Bestätigung nach einer Passwortänderung einordnen
 
 Wird das Passwort eines Kontos geändert, geht eine Mail „Passwort geändert" an
