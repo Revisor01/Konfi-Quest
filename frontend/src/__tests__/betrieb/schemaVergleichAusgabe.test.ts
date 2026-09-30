@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 // backend/scripts/schemaVergleich.js: Die Ausgabe muss vollstaendig ankommen,
 // auch wenn sie in eine Pipe geht (01.10.2026, Auftrag 11, Abschnitt 3).
 //
-// Der Messweg im Auftrag ist `docker exec <backend> node scripts/schemaVergleich.js
+// Der Messweg im Auftrag ist `docker exec <backend> node /app/scripts/schemaVergleich.js
 // erfassen > prod-schema.json`. In Produktion kam dabei eine Datei von genau
 // 65.536 Byte an -- abgeschnitten mitten in einer Index-Zeile, kein gueltiges
 // JSON. Ursache: Das Skript beendete sich mit process.exit(), waehrend Node den
