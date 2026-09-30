@@ -42,39 +42,58 @@ Reihenfolge nach Nutzen:
    versendeten Mitteilungen mit dem Vortag vergleichen (gleiche Tageszeit).
    Ein Fehler hier geht sofort an Simon — Rückweg ist der Notfall-Deploy auf
    `76178ec` (Auftrag 05; vorher Probelauf).
-2. **[10 Deploy-Lücke](10-deploy-luecke.md)** — der einzige offene Befund, den
+2. **Uploads vom Android-Handy nachzählen (neu, 10 Minuten, nur Anzahlen):**
+   Tester-Rückmeldung zu Build 130: PDF und Word gehen vom Android-Handy weder
+   in den Chat noch ins Material. Die Ursache im Repo (behoben auf dem Zweig
+   von PR #202, noch nicht in Produktion) ist ein Abbruch im WebView, **bevor**
+   die Anfrage den Server erreicht. Das lässt sich bestätigen: in den
+   Access-Logs des Proxys und den Logs beider Backends seit dem 28.09. die
+   Zahl der Antworten **413** und **415** auf `POST /api/chat/rooms/*/messages`
+   und `POST /api/material/*/files` zählen, dazu die Zeilen `Datei abgelehnt`.
+   Keine Dateinamen, keine Personen, nur Zahlen je Route und Status. Wenige
+   oder keine Treffer bestätigen den Befund; viele 415 hießen, dass der Server
+   PDFs ablehnt — dann sofort an Simon.
+3. **[10 Deploy-Lücke](10-deploy-luecke.md)** — der einzige offene Befund, den
    Nutzer:innen spüren: Jeder Deploy erstellt beide Backends zugleich neu.
    Heute gab es drei Deploys; der von `4145114` wurde deshalb rot (erste
    Verify-Abfrage ohne Antwort, Stand trotzdem live). Seit PR #200 steht bei
    jedem Deploy die Zeile `Nach dem Tausch N Fehlantwort(en) in X s` im Log —
    auswerten, dann die Ursache messen (Auftrag 10, Nachtrag 30.09.).
-3. **[05 Sicherung und Notfall](05-sicherung-und-notfall.md), Abschnitt 3** —
+4. **[05 Sicherung und Notfall](05-sicherung-und-notfall.md), Abschnitt 3** —
    der Probelauf mit **leerem Tag** jetzt wiederholen (der Fix ist auf `main`):
    erwartet grün und als Stand der zuletzt gebaute `main`-Commit. Danach, mit
    Ansage an Simon, der echte idempotente Lauf. Abschnitte 1–2 (Sicherung,
    Rückspielprobe) wie beschrieben.
-4. **[03 nach dem Deploy](03-nach-dem-deploy.md)** — Abschnitte 1–3 (Stand,
+5. **[03 nach dem Deploy](03-nach-dem-deploy.md)** — Abschnitte 1–3 (Stand,
    Nachher-Messungen, Log-Volumen) und 6 (Umami bereinigen). Abschnitt 4
    (Screenshots) ist Auftrag 08.
-5. **[11 Datenbank](11-schema-und-rueckspielprobe.md)** — Abschnitt 1 ist
+6. **[11 Datenbank](11-schema-und-rueckspielprobe.md)** — Abschnitt 1 ist
    überholt (siehe dort), 2–4 gelten: Schema gegen das Repo, Zeitzone im
    Stack, SMTP-Grenze, Rückspielprobe mit dem echten Dump.
-6. **[07 Client-Adresse](07-client-adresse-hinter-dem-proxy.md)** und
+7. **[07 Client-Adresse](07-client-adresse-hinter-dem-proxy.md)** und
    **[06 Mischkonten](06-mischkonten.md)** — reine Messungen.
-7. **[08 Screenshots](08-screenshots-2.3.md)** — der Stand ist live, die Bilder
+8. **[08 Screenshots](08-screenshots-2.3.md)** — der Stand ist live, die Bilder
    können gezogen werden; danach der Handbuch-Generator.
-8. **[09 Backend-Container](09-backend-container.md)** — Healthcheck ohne curl,
+9. **[09 Backend-Container](09-backend-container.md)** — Healthcheck ohne curl,
    Backend ohne root.
-9. **[02 Portainer-Stack](02-portainer-stack.md)** — die offenen Beobachtungen
+10. **[02 Portainer-Stack](02-portainer-stack.md)** — die offenen Beobachtungen
    (genau ein Backend startet die Hintergrund-Jobs, Vortags-Erinnerung kommt
    einmal), `RUN_BACKGROUND_JOBS=false` bei `backend2` entfernen (entscheidet
    seit 2.3.0 nur noch, ob sich eine Replica als Leader bewirbt) und
    `backend-test` in Portainer auf `test-latest` stellen.
-10. **[04 CI](04-ci.md)** — im Repo fast alles erledigt (siehe dort); offen nur
+11. **[04 CI](04-ci.md)** — im Repo fast alles erledigt (siehe dort); offen nur
     der Blick in die Browser-Konsole unter der öffentlichen Adresse (CSP).
 
 Nicht für den lokalen Agenten, sondern bei Simon:
 
+- **Nächste Testbuilds (Android 131, iOS 237) nach PR #202** — am Gerät
+  prüfen: eine PDF und eine Word-Datei vom Android-Handy in den Chat und ins
+  Material (auch aus Google Drive und dem Download-Ordner); einen Chat mit
+  mehreren liegenden Mitteilungen öffnen — sie verschwinden (auf Samsung und
+  Xiaomi bleibt die eine mit der Zahl, solange noch etwas offen ist); auf dem
+  iPhone die App über einen Chat-Push kalt starten — die übrigen Mitteilungen
+  des Chats gehen ebenfalls. Die Mitteilungen auf Android brauchen dazu auch
+  den Server-Stand von PR #202.
 - **Gerätetests mit Android 130 und iOS 236** — die Liste in
   `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Messen in Produktion und
   am Gerät", dazu wegen der neuen Bibliotheken: Anmelden mit Gesicht bzw.
