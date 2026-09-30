@@ -1313,7 +1313,9 @@ iOS-Build 235 · Android versionCode 129
   Fassung der Laufzeitumgebung, einer mit Langzeitunterstützung.
 - Der Notfallweg zum schnellen Ausrollen oder Zurückdrehen eines Stands tauscht
   die Server nacheinander wie jede reguläre Auslieferung und lässt sich
-  gefahrlos proben, ohne etwas zu ändern.
+  gefahrlos proben, ohne etwas zu ändern. Ohne Angabe eines Stands nimmt er den
+  jüngsten, der fertig gebaut ist, auch wenn danach nur Dokumentation geändert
+  wurde.
 - Die Web-Version gibt beim Öffnen fremder Links nur noch ihre Adresse weiter,
   nie Einladungscodes oder Passwort-Links, und erlaubt Kamera und Mikrofon
   nur sich selbst. Eine Schutzregel gegen eingeschleuste Skripte ist in
