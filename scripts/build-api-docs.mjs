@@ -86,10 +86,10 @@ function e(text) {
 /**
  * YAML einlesen. js-yaml steht in frontend/package.json (devDependencies) und
  * wird ueber die Paketaufloesung des Frontends geladen, mit verstaendlichem
- * Hinweis, falls es fehlt. Bis 29.09.2026 stand hier ein fester Pfad auf
- * `frontend/node_modules/js-yaml/index.js`; die Datei gibt es ab js-yaml 5
- * nicht mehr (Einstieg dist/js-yaml.cjs.js), und der Dependabot-PR #169 liess
- * den Generator damit scheitern.
+ * Hinweis, falls es fehlt. Bis 29.09.2026 stand hier ein fester Pfad auf die
+ * frueher vorhandene Datei `frontend/node_modules/js-yaml/index.js`; ab
+ * js-yaml 5 gibt es sie nicht mehr (Einstieg dist/js-yaml.cjs.js), und der
+ * Dependabot-PR #169 liess den Generator damit scheitern.
  */
 async function ladeYamlParser() {
   try {

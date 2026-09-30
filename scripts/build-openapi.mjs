@@ -41,9 +41,10 @@ const DATEIEN = [
 
 // js-yaml steht in frontend/package.json (devDependencies) und wird ueber die
 // Paketaufloesung des Frontends geladen -- nicht ueber einen festen Dateipfad.
-// Bis 29.09.2026 stand hier `frontend/node_modules/js-yaml/index.js`; die Datei
-// gibt es ab js-yaml 5 nicht mehr (Einstieg dist/js-yaml.cjs.js), und der
-// Dependabot-PR #169 liess den Generator damit scheitern.
+// Bis 29.09.2026 stand hier ein fester Pfad auf die Datei, die js-yaml 4
+// frueher hatte (`frontend/node_modules/js-yaml/index.js`); ab js-yaml 5 gibt
+// es sie nicht mehr (Einstieg dist/js-yaml.cjs.js), und der Dependabot-PR #169
+// liess den Generator damit scheitern.
 async function ladeYamlParser() {
   try {
     return createRequire(join(WURZEL, 'frontend', 'package.json'))('js-yaml').load;
