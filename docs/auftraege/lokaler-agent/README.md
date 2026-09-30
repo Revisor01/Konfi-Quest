@@ -15,7 +15,7 @@ Produktions-Deploy; den Merge gibt Simon frei.
 
 Release 2.3.0 und das Großpaket vom 29.09. sind in Produktion (Deploy vom
 29.09.2026, 19:02 UTC, Commit `67c03dca`; Sicherheitsupdate `engine.io` vom
-30.09. mit Merge `76178ec0`). Die Migrationen bis `185_push_tokens_app_symbol_weg.sql`
+30.09., Deploy 06:51 UTC, Merge `76178ec0`). Die Migrationen bis `185_push_tokens_app_symbol_weg.sql`
 sind gelaufen. Testbuilds: Android versionCode 129 (intern), iOS-Build 235
 (TestFlight). Was im Repo erledigt ist, steht an den Befunden in
 `docs/audit/2026-09-28/offene-punkte.md`; hier bleibt, was nur am Server oder
@@ -27,7 +27,7 @@ Reihenfolge nach Nutzen:
 
 1. **[10 Deploy-Lücke](10-deploy-luecke.md)** — der einzige offene Befund, den
    Nutzer:innen spüren: Jeder Deploy erstellt beide Backends zugleich neu
-   (Warnung im Deploy-Log vom 29.09.2026). Beim nächsten Deploy messen.
+   (Warnung im Deploy-Log vom 29.09. und 30.09.2026). Beim nächsten Deploy messen.
 2. **[03 nach dem Deploy](03-nach-dem-deploy.md)** — Abschnitte 1–3 (Stand,
    Nachher-Messungen, Log-Volumen) und 6 (Umami bereinigen). Abschnitt 4
    (Screenshots) ist jetzt Auftrag 08.
