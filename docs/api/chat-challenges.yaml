@@ -2672,6 +2672,11 @@ paths:
         korrigierte Fassung lief oder noch die alte — beides sah serverseitig
         identisch aus. Jede Registrierung wird seither auch protokolliert
         (ohne den Token selbst, nur dessen letzte sechs Zeichen).
+        GEAENDERT 01.10.2026: protokolliert wird nur noch ein Wechsel -- neues
+        Geraet, neues Token, andere App-Fassung oder ein von einem anderen
+        Konto uebernommenes Token (Grund in Klammern). Die App meldet ihr
+        Token bei jedem Start; die unveraenderte Meldung machte 40 % aller
+        Zeilen aus. Ob sich ein Geraet meldet, zeigt push_tokens.updated_at.
         ADDITIV 29.09.2026: app_symbol_weg und startbildschirm (Migration 185,
         nur Android) — die Zahl am App-Symbol soll auf Android dieselbe sein
         wie auf dem iPhone; welcher Weg dorthin fuehrt, haengt am

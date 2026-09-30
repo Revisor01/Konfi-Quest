@@ -17,6 +17,15 @@
 // (utils/chatRoomAccess.js, 'userTyping') schickte `userName: undefined`.
 // Er kommt aus derselben Abfrage, eine weitere gibt es nicht.
 const jwt = require('jsonwebtoken');
+const { Sammelzeile } = require('./sammelzeile');
+
+// Abgelehnte Tokens beim Verbindungsaufbau (01.10.2026): gebuendelt je
+// Viertelstunde statt eine Zeile je Versuch. Der haeufigste Grund ist
+// "jwt expired" -- eine App, die nach der Pause mit dem alten Token
+// wiederverbindet, bevor sie es erneuert hat. Routine, aber ein Muster wie
+// "invalid signature" soll sichtbar bleiben: Die Zeile nennt die Anzahl je
+// Grund (utils/sammelzeile.js).
+const abgelehnteAnmeldungen = new Sammelzeile('Socket.io Auth fehlgeschlagen');
 
 /**
  * @param {object} db
@@ -35,7 +44,7 @@ function socketAnmeldung(db, jwtSecret) {
     try {
       decoded = jwt.verify(token, jwtSecret);
     } catch (err) {
-      console.warn('Socket.io Auth fehlgeschlagen:', err.message);
+      abgelehnteAnmeldungen.zaehle(err.message);
       return next(new Error('Invalid token'));
     }
 
@@ -97,4 +106,4 @@ function socketAnmeldung(db, jwtSecret) {
   };
 }
 
-module.exports = { socketAnmeldung };
+module.exports = { socketAnmeldung, abgelehnteAnmeldungen };

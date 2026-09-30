@@ -26,6 +26,7 @@ if (!JWT_SECRET) {
 const db = require('./database');
 const { socketRaumEreignisse } = require('./utils/chatRoomAccess');
 const { socketAnmeldung } = require('./utils/socketAnmeldung');
+const { Sammelzeile, sammelzeilenAusgeben } = require('./utils/sammelzeile');
 
 // Gemeinsamer Zaehler-Speicher fuer die Rate-Limiter (Audit 26.09.2026,
 // Betrieb BF-09 / S-10): Ohne `store` zaehlte express-rate-limit je Prozess
@@ -105,8 +106,13 @@ io.adapter(createPgAdapter(adapterVerbindung, {
 }));
 
 // Engine-Level Events
+//
+// Gebuendelt je Viertelstunde (01.10.2026, utils/sammelzeile.js): "3 Bad
+// request" stand am Abend des 30.09.2026 37-mal in neun Stunden je Backend
+// (21 % der Zeilen) -- Routine, die mit jeder offenen App waechst.
+const engineFehler = new Sammelzeile('Socket.io Engine connection_error');
 io.engine.on('connection_error', (err) => {
-  console.warn('Socket.io Engine connection_error:', err.code, err.message);
+  engineFehler.zaehle(`${err.code} ${err.message}`);
 });
 
 // Socket.io JWT Authentication Middleware -- Pruefung gegen die Datenbank,
@@ -567,6 +573,7 @@ const gracefulShutdown = async (signal, exitCode = 0) => {
     console.error('Fehler beim Schliessen des Adapter-Pools:', err.message);
   }
 
+  sammelzeilenAusgeben();
   console.warn(`Shutdown abgeschlossen nach ${Date.now() - begonnen} ms (Exit ${exitCode}).`);
   process.exit(exitCode);
 };
