@@ -13,6 +13,7 @@ import type { Event } from '../../types/event';
 
 let rolle = 'org_admin';
 let termine: Event[] = [];
+let abgesagteTermine: Event[] = [];
 
 vi.mock('../../services/api', () => ({
   default: { get: vi.fn().mockResolvedValue({ data: [], headers: {} }), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -26,7 +27,8 @@ vi.mock('../../contexts/LiveUpdateContext', () => ({ useLiveUpdate: () => ({ tri
 vi.mock('../../navigation/useAppLocation', () => ({ useAppLocation: () => ({ search: '', pathname: '/admin/events' }) }));
 vi.mock('../../hooks/useOfflineQuery', () => ({
   useOfflineQuery: (schluessel: string) => ({
-    data: schluessel.startsWith('admin:events:') ? termine : [],
+    data: schluessel.startsWith('admin:events:') ? termine
+      : schluessel.startsWith('admin:events-cancelled:') ? abgesagteTermine : [],
     loading: false, refresh: vi.fn().mockResolvedValue(undefined), refreshLive: vi.fn().mockResolvedValue(undefined),
   }),
 }));
@@ -64,6 +66,7 @@ vi.mock('@ionic/react', () => {
 });
 
 import AdminEventsPage from '../../components/admin/pages/AdminEventsPage';
+import KonfiEventsView from '../../components/konfi/views/EventsView';
 
 // Feste Uhr, nur Date: Die Termine liegen sicher in der Zukunft, unabhaengig
 // vom Tag, an dem der Test laeuft (BF-15).
@@ -72,6 +75,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(JETZT);
   rolle = 'org_admin';
+  abgesagteTermine = [];
   termine = [{
     id: 31, name: 'Konfi-Freizeit', description: '', event_date: '2026-10-10T08:00:00.000Z', location: '',
     points: 2, type: 'event', max_participants: 20, registered_count: 3, registration_status: 'open',
@@ -101,5 +105,49 @@ describe('VERBOTEN: Teamer:innen', () => {
     expect(within(zeile).getByText('Konfi-Freizeit')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Neues Event anlegen' })).toBe(null);
     for (const name of WISCH) expect(within(zeile).queryByRole('button', { name })).toBe(null);
+  });
+});
+
+// Am ABGESAGTEN Termin (teamerTerminAbsagen, bis 30.09.2026 am Quelltext
+// geprueft): Die Rechte sind nicht weggefallen, nur auf die Leitung
+// zusammengezogen -- sie bietet Absagegrund, Zuruecknehmen und Loeschen an.
+const WISCH_ABGESAGT = ['Absagegrund bearbeiten', 'Absage zurücknehmen', 'Event löschen'];
+// Abgesagte Termine laedt die Seite ueber einen eigenen Abruf (/events/cancelled).
+const abgesagt = () => {
+  abgesagteTermine = [{ ...termine[0], registration_status: 'cancelled', cancelled: true, cancelled_reason: 'Sturm' } as Event];
+  termine = [];
+};
+
+describe.each(['org_admin', 'admin'])('ERLAUBT: %s am abgesagten Termin', (leitung) => {
+  it('sieht Absagegrund bearbeiten, Absage zuruecknehmen und Loeschen -- aber nicht noch einmal "Event absagen"', () => {
+    rolle = leitung;
+    abgesagt();
+    render(<AdminEventsPage />);
+    const zeile = screen.getByTestId('termin');
+    for (const name of WISCH_ABGESAGT) expect(within(zeile).getByRole('button', { name })).toBeInTheDocument();
+    expect(within(zeile).queryByRole('button', { name: 'Event absagen' })).toBe(null);
+  });
+});
+
+describe('VERBOTEN: Teamer:innen am abgesagten Termin', () => {
+  it('sehen keine der drei Wischaktionen', () => {
+    rolle = 'teamer';
+    abgesagt();
+    render(<AdminEventsPage />);
+    for (const name of WISCH_ABGESAGT) expect(screen.queryByRole('button', { name })).toBe(null);
+  });
+});
+
+describe('Konfi-Liste', () => {
+  it('hat gar keine Wischaktionen -- weder am aktiven noch am abgesagten Termin', () => {
+    const aktiv = termine[0];
+    const weg = { ...aktiv, id: 32, name: 'Konfi-Tag', registration_status: 'cancelled', cancelled: true } as Event;
+    render(
+      <KonfiEventsView events={[aktiv, weg]} activeTab="alle" onTabChange={() => undefined} onSelectEvent={() => undefined} />
+    );
+    expect(screen.getByText('Konfi-Freizeit')).toBeInTheDocument();
+    expect(screen.getByText('Konfi-Tag')).toBeInTheDocument();
+    expect(screen.queryAllByTestId('termin')).toHaveLength(0);
+    for (const name of [...WISCH, ...WISCH_ABGESAGT]) expect(screen.queryByRole('button', { name })).toBe(null);
   });
 });

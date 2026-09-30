@@ -25,8 +25,8 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 29.09.2026: 150. Nur nach unten anpassen, ausser mit Begruendung. */
-const OBERGRENZE = 150;
+/** Stand 30.09.2026: 146 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
+const OBERGRENZE = 146;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -125,10 +125,6 @@ const BEKANNT: string[] = [
   '__tests__/components/teamerKonfiHistorieOhneJahrgang.test.ts',
   '__tests__/components/teamerKontingentStatus.test.ts',
   '__tests__/components/teamerSiehtGrundUndNotiz.test.ts',
-  '__tests__/components/teamerTeilnehmerlisteNurLesend.test.ts',
-  '__tests__/components/teamerTerminAbsagen.test.ts',
-  '__tests__/components/teamerZusageKarteAbgesagt.test.ts',
-  '__tests__/components/teamerZusageKnoepfe.test.ts',
   '__tests__/components/terminDetailDreiAnsichten.test.ts',
   '__tests__/components/terminEndeVorBeginn.test.ts',
   '__tests__/components/terminKopieren.test.ts',
