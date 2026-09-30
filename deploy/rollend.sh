@@ -43,6 +43,7 @@
 #   COMPOSE_PROJECT       Compose-Projektname der Container-Labels (Standard konfi_quest)
 #   WARTE_S / WARTE_MAX   Abstand und Anzahl der Gesundheitsabfragen je Stufe (5 s x 36 = 3 min)
 #   VERIFY_PAUSE_S        Abstand der Verify-Abfragen (2 s)
+#   VERIFY_ANLAUF_MAX     Abfragen, bis der neue Stand zum ersten Mal antworten muss (30 x 2 s = 1 min)
 #   FEHLER_PAUSE_S        Pause nach einem update_stack ohne 200 (15 s)
 #   NUR_VORWAERTS         1 = nicht ausrollen, wenn schon ein NEUERER Stand live ist
 #                         (CI-Deploy; siehe nur_vorwaerts unten). Der Notfall-Deploy
@@ -58,6 +59,7 @@ WARTE_S="${WARTE_S:-5}"
 WARTE_MAX="${WARTE_MAX:-36}"
 VERIFY_ABFRAGEN="${VERIFY_ABFRAGEN:-6}"
 VERIFY_PAUSE_S="${VERIFY_PAUSE_S:-2}"
+VERIFY_ANLAUF_MAX="${VERIFY_ANLAUF_MAX:-30}"
 FEHLER_PAUSE_S="${FEHLER_PAUSE_S:-15}"
 NUR_VORWAERTS="${NUR_VORWAERTS:-0}"
 PROBELAUF="${PROBELAUF:-0}"
@@ -295,11 +297,21 @@ grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rew
 grep -q "konfi-quest-frontend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
 
 # Verify ueber die oeffentliche Adresse -- mehrfach, weil Traefik verteilt.
-echo "== Verify ($VERIFY_ABFRAGEN Abfragen) =="
-treffer=0
-for i in $(seq 1 "$VERIFY_ABFRAGEN"); do
+#
+# ANLAUF (30.09.2026): Direkt nach dem Tausch kann die erste Antwort fehlen.
+# Beim Deploy von 4145114 kam die erste Abfrage 1 s nach "backend2 gesund"
+# ohne Antwort, die fuenf folgenden meldeten den neuen Stand -- der Lauf war
+# rot, obwohl der Stand live war, und ein roter Lauf sperrt die Store-Builds
+# (Release-Tor). Ursache ist die Deploy-Luecke: Portainer erstellt alle Dienste
+# neu (Warnung oben, Auftrag 10). Deshalb erst warten, bis eine Abfrage den
+# erwarteten Stand meldet (hoechstens VERIFY_ANLAUF_MAX Versuche im Abstand
+# VERIFY_PAUSE_S), dann STRENG VERIFY_ABFRAGEN gueltige Antworten in Folge.
+# Fehlantworten im Anlauf werden nicht verschluckt: Sie stehen als Warnung mit
+# Zahl und Dauer im Lauf -- das ist zugleich die Messung fuer Auftrag 10.
+pruefe_status() {  # eine Abfrage; setzt s/db/live; 0 = erwarteter Stand
   s="$(curl -sS "$STATUS_URL" || echo "")"
   db="$(printf '%s' "$s"   | python3 -c "import sys,json;print(json.load(sys.stdin).get('checks',{}).get('database',''))" 2>/dev/null || echo "")"
+  local mig
   mig="$(printf '%s' "$s"  | python3 -c "import sys,json;print(json.load(sys.stdin).get('checks',{}).get('migrations','ok'))" 2>/dev/null || echo "ok")"
   live="$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('commit',''))" 2>/dev/null || echo "")"
   # Migrationsstand (Audit Datenbank BF-04): eine uebersprungene Migration
@@ -307,12 +319,35 @@ for i in $(seq 1 "$VERIFY_ABFRAGEN"); do
   if [ "$mig" = "fehler" ] && [ "$live" = "$GIT_SHA" ]; then
     echo "::error::Migration beim Start uebersprungen -- Schema und Code passen nicht zusammen: $s"; exit 1
   fi
-  if [ "$db" = "ok" ] && { [ "$BACKEND_CHANGED" = "0" ] || [ "$live" = "$GIT_SHA" ]; }; then
+  [ "$db" = "ok" ] && { [ "$BACKEND_CHANGED" = "0" ] || [ "$live" = "$GIT_SHA" ]; }
+}
+
+echo "== Anlauf (hoechstens $VERIFY_ANLAUF_MAX Abfragen) =="
+fehl=0
+anlauf_beginn=$SECONDS
+until pruefe_status; do
+  fehl=$((fehl + 1))
+  echo "  Anlauf $fehl: db=$db commit=${live:0:12} (erwarte ${GIT_SHA:0:12})"
+  if [ "$fehl" -ge "$VERIFY_ANLAUF_MAX" ]; then
+    echo "::error::Deploy nicht verifiziert: nach $fehl Abfragen ($((SECONDS - anlauf_beginn)) s) meldet /api/status den erwarteten Stand nicht."
+    exit 1
+  fi
+  sleep "$VERIFY_PAUSE_S"
+done
+if [ "$fehl" -gt 0 ]; then
+  echo "::warning::Nach dem Tausch $fehl Fehlantwort(en) in $((SECONDS - anlauf_beginn)) s, bevor der neue Stand antwortete -- Deploy-Luecke, Auftrag 10."
+fi
+
+echo "== Verify ($VERIFY_ABFRAGEN Abfragen in Folge) =="
+treffer=1
+echo "  1: ok (commit ${live:0:12})"
+for i in $(seq 2 "$VERIFY_ABFRAGEN"); do
+  sleep "$VERIFY_PAUSE_S"
+  if pruefe_status; then
     treffer=$((treffer + 1)); echo "  $i: ok (commit ${live:0:12})"
   else
     echo "  $i: db=$db commit=${live:0:12} (erwarte ${GIT_SHA:0:12})"
   fi
-  sleep "$VERIFY_PAUSE_S"
 done
 if [ "$treffer" = "$VERIFY_ABFRAGEN" ]; then
   echo "OK Rollender Deploy verifiziert: $s"; exit 0

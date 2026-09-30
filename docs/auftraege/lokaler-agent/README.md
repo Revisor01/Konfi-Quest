@@ -44,9 +44,10 @@ Reihenfolge nach Nutzen:
    `76178ec` (Auftrag 05; vorher Probelauf).
 2. **[10 Deploy-Lücke](10-deploy-luecke.md)** — der einzige offene Befund, den
    Nutzer:innen spüren: Jeder Deploy erstellt beide Backends zugleich neu.
-   Heute gab es drei Deploys; ihre Logs (CI-Läufe auf `main`, Job `deploy`)
-   zeigen je die Warnung oder nicht — auswerten, dann beim nächsten Deploy
-   messen.
+   Heute gab es drei Deploys; der von `4145114` wurde deshalb rot (erste
+   Verify-Abfrage ohne Antwort, Stand trotzdem live). Seit PR #200 steht bei
+   jedem Deploy die Zeile `Nach dem Tausch N Fehlantwort(en) in X s` im Log —
+   auswerten, dann die Ursache messen (Auftrag 10, Nachtrag 30.09.).
 3. **[05 Sicherung und Notfall](05-sicherung-und-notfall.md), Abschnitt 3** —
    der Probelauf mit **leerem Tag** jetzt wiederholen (der Fix ist auf `main`):
    erwartet grün und als Stand der zuletzt gebaute `main`-Commit. Danach, mit
