@@ -157,11 +157,12 @@
 # BEKANNT (dokumentiert, nicht neu): Multi-Org-Claim-Nachwirkung nach
 # Mitgliedschafts-Entzug (Access-Token bis 15 Min + 30s-User-Cache) --
 # clientseitig BEHOBEN 26.09.2026 (Audit Grundgeruest BF-05): die App holt
-# beim ersten 403 ein Token ohne Claim, siehe DELETE /organizations/{id}/members/{userId};
-# Passwort-Reset-Token unhashed in password_resets; org_admin darf is_active
-# der eigenen Org setzen (PUT /organizations/:id); Org-Anlage erlaubt
-# 6-Zeichen-Admin-Passwoerter -- BEHOBEN 22.08.2026 (N6), hier und an der
-# Route bis 30.09.2026 noch als offen beschrieben.
+# beim ersten 403 ein Token ohne Claim, siehe DELETE /organizations/{id}/members/{userId}.
+# Die drei folgenden standen hier bis 30.09.2026 noch als bekannt und sind
+# alle BEHOBEN 22.08.2026 (714b5013): Passwort-Reset-Token unhashed in
+# password_resets (seitdem nur der SHA-256-Hash); org_admin durfte is_active
+# der eigenen Org setzen (PUT /organizations/:id, seitdem nur super_admin);
+# Org-Anlage erlaubte 6-Zeichen-Admin-Passwoerter (N6, seitdem volle Policy).
 # ============================================================================
 
 openapi: 3.1.0
@@ -1389,7 +1390,7 @@ paths:
                 address: { type: string }
                 website_url: { type: string }
                 kirchenkreis: { type: string }
-                is_active: { type: boolean, description: "BEKANNT: auch org_admin darf die eigene Org (de)aktivieren" }
+                is_active: { type: boolean, description: "Nur super_admin; von anderen wird das Feld stillschweigend uebergangen (200, is_active unveraendert). BEHOBEN 22.08.2026 (714b5013, Test organizations.test.js 'PUT /api/organizations/:id — is_active'): vorher durfte auch org_admin die eigene Gemeinde (de)aktivieren und sich damit selbst aussperren -- hier bis 30.09.2026 noch als BEKANNT beschrieben" }
                 trial_ends_at: { type: [string, "null"], format: date-time, description: "nur super_admin; setzt license_reminder_sent_at zurueck. Bei bezahlter Lizenz (is_trial=false) geht 14 Tage vor Ablauf einmal eine Erinnerungs-Mail an alle org_admin der Gemeinde, ueber beide Quellen der Zugehoerigkeit (users.organization_id und user_organizations) -- GEAENDERT 27.09.2026 (Audit wer-bekommt-was BF-09, F-15): vorher nur an die Stamm-Leitung, dafuer auch an Admins" }
                 is_trial: { type: boolean, description: "nur super_admin" }
       responses:
@@ -1656,9 +1657,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [username, display_name, password, role_id]
+              required: [display_name, password, role_id]
               properties:
-                username: { type: string, minLength: 3, maxLength: 50, pattern: "^[a-zA-Z0-9.-]+$" }
+                username: { type: string, minLength: 3, maxLength: 50, pattern: "^[a-zA-Z0-9.-]+$", description: "Optional (seit 23.08.2026; hier bis 30.09.2026 als Pflicht gefuehrt): fehlt er oder ist leer, erzeugt der Server ihn aus display_name wie bei Konfis (Umlaute ausgeschrieben, bei Kollision mit Zahl: anna.muster2) und gibt ihn in der Antwort zurueck. Mitgeschickt muss er systemweit frei sein, ohne Gross/klein -- sonst 409" }
                 email: { type: string }
                 display_name: { type: string }
                 role_title: { type: string }
