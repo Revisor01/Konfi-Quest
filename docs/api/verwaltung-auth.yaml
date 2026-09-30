@@ -1021,7 +1021,7 @@ paths:
         "200": { description: "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an die Leitung des Jahrgangs (die Gemeindeleitung immer, Admins mit can_view auf den Jahrgang)" }
         "403": { description: "Konfi-Limit der Org erreicht (limit_exceeded)" }
         "404": { description: "Code existiert nicht" }
-        "409": { description: "Username vergeben" }
+        "409": { description: "\"Benutzername bereits vergeben\" -- systemweit, ohne Gross/klein. Seit 30.09.2026 auch bei gleichzeitiger Registrierung: die verbindliche Pruefung steht in der Transaktion unter pg_advisory_xact_lock je Namen (utils/benutzernameSperre.js, dieselbe Sperre wie POST /users, /organizations und /admin/konfis); die Pruefung davor spart nur das Hashen. Vorher kamen zwei gleichzeitige Registrierungen mit \"Anna\"/\"anna\" beide durch (200/200)" }
         "410": { description: "Code abgelaufen" }
         "429": { description: "registerLimiter: 200/h pro IP (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09)" }
       x-berechtigung:

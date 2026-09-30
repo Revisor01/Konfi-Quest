@@ -5,6 +5,7 @@ const { handleValidationErrors, commonValidations, getPointField } = require('..
 const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
+const { benutzernameSperrenUndPruefen } = require('../utils/benutzernameSperre');
 const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { deletePhotoFile } = require('../utils/photoStorage');
@@ -258,7 +259,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Global freien Username generieren (Kollision -> anna.musterfrau2 usw.),
             // sonst knallt der UNIQUE-Index (organization_id, username) mit 500.
-            const username = await generateUniqueUsername(client, name);
+            // Unter der Sperre je Namen (utils/benutzernameSperre.js, 30.09.2026):
+            // Legt eine gleichzeitige Anlage denselben Namen an, wartet diese
+            // bis zu deren COMMIT und nimmt dann den naechsten freien -- vorher
+            // entstanden in zwei Gemeinden zwei Konten "anna.muster".
+            let username = await generateUniqueUsername(client, name);
+            while (await benutzernameSperrenUndPruefen(client, username)) {
+                username = await generateUniqueUsername(client, name);
+            }
 
             // First verify that the jahrgang exists
             const jahrgangCheckQuery = "SELECT id FROM jahrgaenge WHERE id = $1 AND organization_id = $2";

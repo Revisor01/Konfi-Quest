@@ -28,6 +28,7 @@ const { invalidateUserCache } = require('../middleware/rbac');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { erzeugeKontoSperre, kontoSperreAufheben } = require('../utils/kontoSperre');
+const { benutzernameSperrenUndPruefen } = require('../utils/benutzernameSperre');
 const router = express.Router();
 
 // Die beiden Reset-Grenzen entstehen erst in der Fabrik unten, weil ihr
@@ -1350,6 +1351,15 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const client = await db.getClient();
       try {
         await client.query('BEGIN');
+
+        // Die Pruefung oben spart bei einem vergebenen Namen das Hashen; die
+        // verbindliche steht hier, unter der Sperre je Namen
+        // (utils/benutzernameSperre.js, 30.09.2026). Vorher kamen zwei
+        // gleichzeitige Registrierungen mit "Anna"/"anna" beide durch.
+        if (await benutzernameSperrenUndPruefen(client, username)) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'Benutzername bereits vergeben' });
+        }
 
         // Konfi-Limit-Prüfung (Weg 2, D-08b): NUR Hard-Block ablehnen. Grace und
         // under_limit laufen unverändert durch — der sich selbst anmeldende Konfi

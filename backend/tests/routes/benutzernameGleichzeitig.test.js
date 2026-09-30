@@ -18,7 +18,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, ORGS, ROLES } = require('../helpers/seed');
+const { seed, ORGS, ROLES, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 const VERGEBEN = { error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' };
@@ -211,6 +211,110 @@ describe('Benutzernamen bei gleichzeitiger Anlage', () => {
       ]);
       expect(antworten.map((r) => r.status)).toEqual([201, 201]);
       expect(await gemeindenMitSlug(['gemeinde-eins', 'gemeinde-zwei'])).toBe(2);
+    });
+  });
+
+  // --- Konfi-Konten (30.09.2026, Folgeauftrag J1) -------------------------
+
+  describe('POST /admin/konfis (der Server erzeugt den Namen)', () => {
+    const konfiAnlegen = (token, name, jahrgang_id) =>
+      request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name, jahrgang_id });
+
+    // Kein 409 fuer einen Namen, den niemand eingegeben hat: Die zweite Anlage
+    // weicht auf den naechsten freien Namen aus.
+    it('derselbe Name in zwei Gemeinden gleichzeitig: beide 201, verschiedene Benutzernamen', async () => {
+      const antworten = await Promise.all([
+        konfiAnlegen(orgAdmin1Token, 'Anna Muster', JAHRGAENGE.jahrgang1.id),
+        konfiAnlegen(orgAdmin2Token, 'Anna Muster', JAHRGAENGE.jahrgang2.id),
+      ]);
+
+      expect(antworten.map((r) => r.status)).toEqual([201, 201]);
+      expect(antworten.map((r) => r.body.username).sort()).toEqual(['anna.muster', 'anna.muster2']);
+      expect(await kontenMitNamen('anna.muster')).toBe(1);
+      expect(await kontenMitNamen('anna.muster2')).toBe(1);
+    });
+
+    it('verschiedene Namen gleichzeitig: beide 201 mit ihrem Namen', async () => {
+      const antworten = await Promise.all([
+        konfiAnlegen(orgAdmin1Token, 'Erste Konfi', JAHRGAENGE.jahrgang1.id),
+        konfiAnlegen(orgAdmin2Token, 'Zweite Konfi', JAHRGAENGE.jahrgang2.id),
+      ]);
+
+      expect(antworten.map((r) => r.status)).toEqual([201, 201]);
+      expect(antworten.map((r) => r.body.username)).toEqual(['erste.konfi', 'zweite.konfi']);
+    });
+  });
+
+  describe('POST /auth/register-konfi (Konfis waehlen den Namen selbst)', () => {
+    // Die normale Pruefung dieser Route meldet "Benutzername bereits
+    // vergeben" -- dieselbe Meldung bekommt die zweite gleichzeitige Anlage.
+    const SELBST_VERGEBEN = { error: 'Benutzername bereits vergeben' };
+
+    const einladungscode = async (token, jahrgang_id) => (await request(app)
+      .post('/api/auth/invite-code')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ jahrgang_id })).body.invite_code;
+
+    const registrieren = (invite_code, username) =>
+      request(app)
+        .post('/api/auth/register-konfi')
+        .send({ invite_code, display_name: `Konfi ${username}`, username, password: 'Sicher!Passwort1' });
+
+    it('derselbe Name in anderer Schreibweise gleichzeitig: einer 200, einer 409', async () => {
+      const [code1, code2] = [
+        await einladungscode(orgAdmin1Token, JAHRGAENGE.jahrgang1.id),
+        await einladungscode(orgAdmin2Token, JAHRGAENGE.jahrgang2.id),
+      ];
+
+      const antworten = await Promise.all([
+        registrieren(code1, 'Selbst.Gewaehlt'),
+        registrieren(code2, 'selbst.gewaehlt'),
+      ]);
+
+      expect(antworten.map((r) => r.status).sort()).toEqual([200, 409]);
+      expect(antworten.find((r) => r.status === 409).body).toEqual(SELBST_VERGEBEN);
+      expect(await kontenMitNamen('selbst.gewaehlt')).toBe(1);
+    });
+
+    it('verschiedene Namen gleichzeitig: beide 200', async () => {
+      const [code1, code2] = [
+        await einladungscode(orgAdmin1Token, JAHRGAENGE.jahrgang1.id),
+        await einladungscode(orgAdmin2Token, JAHRGAENGE.jahrgang2.id),
+      ];
+
+      const antworten = await Promise.all([
+        registrieren(code1, 'erste.eigene'),
+        registrieren(code2, 'zweite.eigene'),
+      ]);
+
+      expect(antworten.map((r) => r.status)).toEqual([200, 200]);
+      expect(await kontenMitNamen('erste.eigene')).toBe(1);
+      expect(await kontenMitNamen('zweite.eigene')).toBe(1);
+    });
+
+    it('gleichzeitig mit einem neuen Teammitglied desselben Namens: einer kommt durch', async () => {
+      const code = await einladungscode(orgAdmin2Token, JAHRGAENGE.jahrgang2.id);
+
+      const [registrierung, team] = await Promise.all([
+        registrieren(code, 'quer.konfi'),
+        teamerAnlegen(orgAdmin1Token, 'Quer.Konfi', ROLES.teamer.id),
+      ]);
+
+      // Genau einer durch: entweder die Registrierung (200) und das Team 409,
+      // oder das Team (201) und die Registrierung 409 -- jeweils mit der
+      // Meldung der eigenen Route.
+      if (registrierung.status === 200) {
+        expect(team.status).toBe(409);
+        expect(team.body).toEqual(VERGEBEN);
+      } else {
+        expect(registrierung.status).toBe(409);
+        expect(registrierung.body).toEqual(SELBST_VERGEBEN);
+        expect(team.status).toBe(201);
+      }
+      expect(await kontenMitNamen('quer.konfi')).toBe(1);
     });
   });
 
