@@ -129,6 +129,10 @@ services:
   # --- Backend-Replica 1 ---
   backend:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
+    # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
+    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
+    # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+    user: "1000:1000"
     environment: &backend_env
       NODE_ENV: production
       # TZ NICHT uebernehmen, solange nicht geklaert (27.09.2026). Seit dem
@@ -229,7 +233,7 @@ services:
     # bis zu 30s Zeit, bevor Docker hart killt.
     stop_grace_period: 30s
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "node", "healthcheck.js"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -278,6 +282,10 @@ services:
   # und Co. unbemerkt. Die Variable bleibt NUR bei backend-test (nie Jobs).
   backend2:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
+    # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
+    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
+    # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+    user: "1000:1000"
     environment:
       <<: *backend_env
     volumes:
@@ -291,7 +299,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "node", "healthcheck.js"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -352,6 +360,10 @@ services:
   # mitbringt.
   backend-test:
     image: ghcr.io/revisor01/konfi-quest-backend:test-latest
+    # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
+    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
+    # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+    user: "1000:1000"
     environment:
       <<: *backend_env
       RUN_BACKGROUND_JOBS: "false"
@@ -367,7 +379,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "node", "healthcheck.js"]
       interval: 15s
       timeout: 10s
       retries: 3

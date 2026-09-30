@@ -136,15 +136,35 @@ describe('Backend-Image: Laufzeit-Stufe ohne Werkzeug und ohne Tests', () => {
   });
 
   it('der Healthcheck des Stacks findet sein Werkzeug im Image', () => {
-    // deploy/compose.konfi_quest.yml prueft die Backends mit curl. Das
-    // Slim-Image hat kein curl: ohne Installation waere jeder neue Container
-    // "unhealthy", und deploy/rollend.sh wartet genau auf "healthy".
+    // Seit dem 01.10.2026 pruefen alle drei Backends im Stack wie das Image
+    // selbst mit `node healthcheck.js` -- curl wird nicht mehr nachinstalliert.
+    // Fehlte das Werkzeug, waere jeder neue Container "unhealthy", und
+    // deploy/rollend.sh wartet genau auf "healthy".
     const compose = lies('deploy/compose.konfi_quest.yml');
-    const pruefungen = [...compose.matchAll(/test: \[("CMD"[^\]]*)\]/g)].map((m) => m[1]);
-    const backendPruefungen = pruefungen.filter((p) => p.includes('5000'));
-    expect(backendPruefungen.length).toBe(3);
-    if (backendPruefungen.some((p) => p.includes('"curl"'))) {
-      expect(laufzeit).toMatch(/apt-get install[^\n]*\bcurl\b/);
+    const backendBloecke = ['backend', 'backend2', 'backend-test'].map((d) => {
+      const start = compose.indexOf(`\n  ${d}:\n`);
+      expect(start, `Dienst ${d}`).toBeGreaterThan(-1);
+      const rest = compose.slice(start + 1);
+      const ende = rest.slice(3).search(/\n {2}[a-z0-9-]+:\n/);
+      return ende < 0 ? rest : rest.slice(0, ende + 3);
+    });
+    for (const block of backendBloecke) {
+      expect(block).toContain('test: ["CMD", "node", "healthcheck.js"]');
     }
+    // Die Datei liegt im Image (nicht in .dockerignore) und prueft /api/health.
+    expect(dockerignore).not.toContain('healthcheck.js');
+    expect(lies('backend/healthcheck.js')).toContain("path: '/api/health'");
+    // Wer den Stack wieder auf curl stellt, muss es auch wieder installieren.
+    const mitCurl = backendBloecke.filter((b) => /test: \[[^\]]*"curl"/.test(b));
+    expect(mitCurl).toEqual([]);
+    expect(laufzeit).not.toMatch(/\bcurl\b/);
+  });
+
+  it('der Stack laesst die Backends als uid 1000 laufen, nicht als root (CI BF-06)', () => {
+    const compose = lies('deploy/compose.konfi_quest.yml');
+    const nutzer = [...compose.matchAll(/^ {4}user: "(\d+):(\d+)"$/gm)].map((m) => `${m[1]}:${m[2]}`);
+    expect(nutzer).toEqual(['1000:1000', '1000:1000', '1000:1000']);
+    // uid 1000 ist `node` im Basis-Image; ihm gehoert das Upload-Verzeichnis.
+    expect(laufzeit).toMatch(/chown node:node \/app\/uploads/);
   });
 });
