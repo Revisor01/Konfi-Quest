@@ -22,7 +22,7 @@ Diese Konten überspringt die Auto-Löschung nach der Konfirmation seit dem
 28.09.2026 (Tag 60 und 120) und schreibt dazu je Lauf eine Log-Zeile
 „Auto-Deletion: Konto <id> übersprungen …".
 
-- [ ] Abfrage:
+- [x] Abfrage:
 
 ```sql
 SELECT u.id, o_stamm.id AS stamm_gemeinde, uo.organization_id AS weitere_gemeinde,
@@ -36,14 +36,16 @@ SELECT u.id, o_stamm.id AS stamm_gemeinde, uo.organization_id AS weitere_gemeind
  ORDER BY u.id, uo.organization_id;
 ```
 
-- [ ] **Ergebnis:** Anzahl Konten, Anzahl Zeilen, je Rolle dort die Anzahl.
+- [x] **Ergebnis:** Anzahl Konten, Anzahl Zeilen, je Rolle dort die Anzahl.
+      **Gemessen 01.10.2026:** 0 Konten, 0 Zeilen — kein Konfi-Konto hat eine
+      weitere Gemeinde.
 
 ## 2. Team-Konten mit einer Konfi-Zeile in einer anderen Gemeinde
 
 Der Fall aus dem Produktionsbefund vom 27.09.2026 (Leitung zuhause, Konfi in
 einer Testgemeinde).
 
-- [ ] Abfrage:
+- [x] Abfrage:
 
 ```sql
 SELECT u.id, u.organization_id AS stamm_gemeinde, r_stamm.name AS rolle_zuhause,
@@ -57,9 +59,13 @@ SELECT u.id, u.organization_id AS stamm_gemeinde, r_stamm.name AS rolle_zuhause,
  ORDER BY u.id;
 ```
 
-- [ ] **Ergebnis:** Anzahl Konten; je Konto, ob es in der Konfi-Gemeinde ein
+- [x] **Ergebnis:** Anzahl Konten; je Konto, ob es in der Konfi-Gemeinde ein
       Konfi-Profil gibt (`SELECT user_id, organization_id FROM konfi_profiles
       WHERE user_id = ANY(<Kennungen>)`).
+      **Gemessen 01.10.2026:** 1 Konto — ID 41 (Stamm-Gemeinde 1,
+      `org_admin`, Merkmal `is_super_admin`), Konfi in Gemeinde 14; ein
+      Konfi-Profil in Gemeinde 14 gibt es (`konfi_profiles` 41/14). Das ist
+      der Produktionsbefund vom 27.09.2026.
 
 ## 3. Stamm-Gemeinde in `user_organizations` mit anderer Rolle
 
@@ -68,7 +74,7 @@ in `user_organizations` die alte Rolle stehen (seit dem 28.09.2026 ziehen
 Beförderung und Rollenwechsel die Zeile mit). Wer dort noch `konfi` steht
 hat, zählt für jede Abfrage über diese Tabelle weiter als Konfi.
 
-- [ ] Abfrage:
+- [x] Abfrage:
 
 ```sql
 SELECT r_stamm.name AS rolle_am_konto, r_zeile.name AS rolle_in_zeile, COUNT(*) AS anzahl
@@ -83,14 +89,16 @@ SELECT r_stamm.name AS rolle_am_konto, r_zeile.name AS rolle_in_zeile, COUNT(*) 
  ORDER BY 3 DESC;
 ```
 
-- [ ] **Ergebnis:** die Tabelle (Rolle am Konto, Rolle in der Zeile, Anzahl).
+- [x] **Ergebnis:** die Tabelle (Rolle am Konto, Rolle in der Zeile, Anzahl).
+      **Gemessen 01.10.2026:** 0 Zeilen — bei keinem aktiven Konto weicht die
+      Rolle der Stamm-Zeile in `user_organizations` von der am Konto ab.
 
 ## 4. Offene Einladungen an Konfis oder mit der Konfi-Rolle
 
 Vor dem 26.09.2026 (Sicherheit BF-03) möglich. Seit dem 28.09.2026 lehnt die
 Annahme sie mit 409 ab; sie laufen nach 14 Tagen ab.
 
-- [ ] Abfrage:
+- [x] Abfrage:
 
 ```sql
 SELECT e.id, e.organization_id, e.user_id, r_angebot.name AS angebotene_rolle,
@@ -103,7 +111,9 @@ SELECT e.id, e.organization_id, e.user_id, r_angebot.name AS angebotene_rolle,
    AND (r_angebot.name = 'konfi' OR r_konto.name = 'konfi');
 ```
 
-- [ ] **Ergebnis:** Anzahl.
+- [x] **Ergebnis:** Anzahl.
+      **Gemessen 01.10.2026:** 0. Einladungen insgesamt: 1 offen, 1
+      angenommen, keine davon an ein Konfi-Konto oder mit der Konfi-Rolle.
 
 ## 5. Verschiedene Team-Rollen je Gemeinde
 
@@ -111,7 +121,7 @@ Keine Mischkonten, aber Grundlage für die Gesprächsvorlage
 `docs/audit/2026-09-28/mehrfach-konten.md` (etwa zuhause Org-Admin, woanders
 Teamer:in).
 
-- [ ] Abfrage:
+- [x] Abfrage:
 
 ```sql
 SELECT r_stamm.name AS rolle_zuhause, r_dort.name AS rolle_dort, COUNT(DISTINCT u.id) AS konten
@@ -126,8 +136,17 @@ SELECT r_stamm.name AS rolle_zuhause, r_dort.name AS rolle_dort, COUNT(DISTINCT 
  ORDER BY 3 DESC;
 ```
 
-- [ ] **Ergebnis:** die Tabelle. Dazu die Gesamtzahl der Konten mit mindestens
+- [x] **Ergebnis:** die Tabelle. Dazu die Gesamtzahl der Konten mit mindestens
       einer weiteren Gemeinde.
+      **Gemessen 01.10.2026:**
+
+      | Rolle zuhause | Rolle dort | Konten |
+      |---|---|---|
+      | admin | org_admin | 1 |
+      | org_admin | org_admin | 1 |
+      | org_admin | teamer | 1 |
+
+      Konten mit mindestens einer weiteren Gemeinde (aktiv): 2.
 
 ## Rückmeldung
 
