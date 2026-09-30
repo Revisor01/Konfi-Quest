@@ -519,8 +519,8 @@ behoben, 8 teilweise (Rest begründet), 3 offen; Einzelheiten in
   App. Ein eigenes App-Verzeichnis nimmt aus `public/` nur, was die App lädt, und der Build bricht
   über 11 MB ab; die Release-Workflows prüfen die Kopie im nativen Projekt. Web-Inhalt der App
   45,7 → 9,2 MB (gemessen mit `cap copy`). Das Android-Paket fiel von 41,2 MB (versionCode 128)
-  auf 9,2 MB (versionCode 129, gemessen im Release-Lauf, −77,6 %); die IPA misst der nächste
-  TestFlight-Lauf. Handbuch-Bilder als WebP, nur
+  auf 9,2 MB (versionCode 129, gemessen im Release-Lauf, −77,6 %), das iPhone-Paket ebenso von
+  41,2 auf 9,2 MB (Build 235, −77,6 %). Handbuch-Bilder als WebP, nur
   die eingebundenen; Symbole verlustfrei kleiner; der Build läuft ohne Warnungen.
 - **Build, CI, Deploy:** Backend-Image aus dem Lockfile, ohne Dev-Pakete, Tests und Compiler
   (1,92 GB → 486 MB); eine Node-Linie (24 LTS) für CI, Images und `engines`; Backend-Lint und
