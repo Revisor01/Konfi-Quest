@@ -1305,6 +1305,8 @@ iOS-Build 234 · Android versionCode 128
   App, sie sei bereits gestartet.
 
 ### Sonstiges
+- Sicherheitsupdate für die Echtzeitverbindung von Chat und Live-Aktualisierung:
+  Eine fehlerhafte Anfrage kann den Server nicht mehr ausbremsen.
 - Server, Web-Version und alle automatischen Prüfungen laufen auf derselben
   Fassung der Laufzeitumgebung, einer mit Langzeitunterstützung.
 - Der Notfallweg zum schnellen Ausrollen oder Zurückdrehen eines Stands tauscht
