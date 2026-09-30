@@ -18,6 +18,14 @@ Was die Migrationen tun, steht in ihren Kopfkommentaren:
 
 ## 1. Vor dem Deploy zählen
 
+> **Überholt (30.09.2026):** Die Migrationen 174–178 sind beim Deploy vom
+> 29.09.2026, 19:01 UTC gelaufen (CI-Lauf 1002, `/api/status`:
+> `migrations ok`, keine fehlgeschlagen). Vorher-Zählungen gehen nicht mehr.
+> Weiter sinnvoll aus diesem Abschnitt: die Abfrage der **Index-Zugriffe**
+> (unverändert gültig) und die Refresh-Token-Zählung — die aber nur noch als
+> Nachher-Wert (`abgelaufen` und `alt_widerrufen` müssen 0 sein). Die übrigen
+> Zählungen stehen als Nachher-Prüfung in Abschnitt 2.
+
 - [ ] Sicherung nach [docs/betrieb/sicherung.md](../../betrieb/sicherung.md).
 - [ ] `settings` ohne Gemeinde (174 entfernt sie; kein Code liest sie):
       `SELECT key, count(*) FROM settings WHERE organization_id IS NULL GROUP BY key;`
@@ -62,7 +70,7 @@ Was die Migrationen tun, steht in ihren Kopfkommentaren:
 
 - [ ] `GET /api/status` mehrfach (beide Backends): `checks.migrations: ok`,
       keine `fehlgeschlagen`; `SELECT max(name), count(*) FROM schema_migrations;`
-      nennt `178_sequenzen_nach_tabellen.sql` (oder später). `Migration FAILED`
+      nennt `185_push_tokens_app_symbol_weg.sql` (Stand 30.09.2026; oder später). `Migration FAILED`
       im Log: 0.
 - [ ] Zählungen aus Abschnitt 1 wiederholen: `settings` ohne Gemeinde 0,
       `password_plain` 0; `SELECT data_type FROM information_schema.columns
