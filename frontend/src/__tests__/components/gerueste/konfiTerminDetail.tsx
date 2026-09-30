@@ -20,7 +20,12 @@ export const zustand = {
   events: [] as Event[],
   teilnehmer: [] as Array<Record<string, unknown>>,
   zeitfenster: [] as Array<Record<string, unknown>>,
+  /** Lädt die Terminliste noch (useOfflineQuery.loading)? */
+  laedt: false,
 };
+
+/** Unter welchem Schlüssel die Ansicht ihre Terminliste liest. */
+export const querySchluessel: string[] = [];
 
 export const api = { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() };
 export const setSuccess = vi.fn();
@@ -45,10 +50,13 @@ vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ setSuccess, setError, isOnline: zustand.online, user: { id: 7, type: 'konfi', role_name: 'konfi' } }),
 }));
 vi.mock('../../../hooks/useOfflineQuery', () => ({
-  useOfflineQuery: () => ({
-    data: zustand.events, loading: false, isOffline: !zustand.online,
+  useOfflineQuery: (schluessel: string) => {
+    querySchluessel.push(schluessel);
+    return {
+    data: zustand.laedt ? null : zustand.events, loading: zustand.laedt, isOffline: !zustand.online,
     refresh: vi.fn(async () => undefined), refreshLive: vi.fn(),
-  }),
+    };
+  },
 }));
 vi.mock('../../../services/writeQueue', () => ({ writeQueue: { enqueue: (...a: unknown[]) => enqueue(...a) } }));
 vi.mock('../../../services/networkMonitor', () => ({
@@ -58,7 +66,9 @@ vi.mock('../../../services/analytics', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../services/analytics')>()),
   track: vi.fn(),
 }));
-vi.mock('../../../components/common/LoadingSpinner', () => ({ default: () => <div>Wird geladen</div> }));
+vi.mock('../../../components/common/LoadingSpinner', () => ({
+  default: ({ message }: { message?: string }) => <div data-testid="ladeanzeige">{message}</div>,
+}));
 vi.mock('../../../components/shared/AppKopfzeile', () => ({ default: () => null, AppKopfzeileGross: () => null }));
 vi.mock('../../../components/konfi/modals/UnregisterModal', () => leer('UnregisterModal'));
 vi.mock('../../../components/konfi/modals/QRScannerModal', () => leer('QRScannerModal'));
@@ -129,6 +139,8 @@ export const zuruecksetzen = () => {
   zustand.events = [];
   zustand.teilnehmer = [];
   zustand.zeitfenster = [];
+  zustand.laedt = false;
+  querySchluessel.length = 0;
   for (const f of [api.get, api.post, api.put, api.delete, setSuccess, setError, enqueue, presentAlert]) f.mockReset();
   modale.geoeffnet.length = 0;
   api.get.mockImplementation(async (pfad: string) => {

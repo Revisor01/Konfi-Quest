@@ -25,8 +25,8 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 30.09.2026: 139 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
-const OBERGRENZE = 139;
+/** Stand 30.09.2026: 136 (29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung. */
+const OBERGRENZE = 136;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -48,11 +48,8 @@ const BEKANNT: string[] = [
   '__tests__/components/abstaendeTokens.test.ts',
   '__tests__/components/abzeichenTypNullbarkeit.test.ts',
   '__tests__/components/abzeichenZaehlerTeamer.test.ts',
-  '__tests__/components/adminEigeneZusage.test.ts',
-  '__tests__/components/adminEventDetailOffline.test.ts',
   '__tests__/components/adminKonfiDetailOffline.test.ts',
   '__tests__/components/adminOhneJahrgangHinweis.test.ts',
-  '__tests__/components/adminZusageAusBookingStatus.test.ts',
   '__tests__/components/alleBestaetigenTeamer.test.ts',
   '__tests__/components/anwesenheitZuruecksetzen.test.ts',
   '__tests__/components/appAbdeckung.test.ts',
