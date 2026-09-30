@@ -15,7 +15,7 @@ steht im Jahrgangs-Kapitel. Fehlt sie, setzt die Leitung sie nach.
 
 ## Auf der Startseite nachsehen, was ansteht
 
-![Die Startseite einer Teamer:in: Begrüßung, die Karte für Challenges und die eigenen Zertifikate.](/docs/bilder/iphone/teamer-startseite.png)
+![Die Startseite einer Teamer:in: Begrüßung, Tageslosung und die Karte mit den laufenden Challenges.](/docs/bilder/iphone/teamer-startseite.png)
 
 Die Bereiche, die deine Gemeinde freigeschaltet hat: deine **Zertifikate**,
 deine **Events**, die **Tageslosung** und deine **Badges**. Läuft gerade eine

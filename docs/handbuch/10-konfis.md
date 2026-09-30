@@ -15,7 +15,7 @@ oben rechts.
 
 ## Auf der Startseite nachsehen, wo du stehst
 
-![Die Startseite eines Konfis: die drei Punkte-Ringe, darunter das nächste Level und die Badges.](/docs/bilder/iphone/konfi-startseite.png)
+![Die Startseite eines Konfis: die drei Punkte-Ringe, darunter die Badges und das nächste Level.](/docs/bilder/iphone/konfi-startseite.png)
 
 Ganz oben stehen deine [Punkte](40-punkte.md) als drei Ringe: **Gesamt**,
 **Gottesdienst** und **Gemeinde**. Tippe sie an, dann siehst du, woher jeder
@@ -41,7 +41,7 @@ und in welcher Reihenfolge, stellt deine Gemeinde ein:
 
 ## Mit deinem Team schreiben
 
-![Die Chat-Übersicht mit Gruppen und Einzelgesprächen.](/docs/bilder/iphone/konfi-chat.png)
+![Die Chat-Übersicht mit dem Chat des Jahrgangs und den Chats zu Events.](/docs/bilder/iphone/konfi-chat.png)
 
 Im Reiter **Chat** liegen Gruppen für deinen Jahrgang und für Events, dazu
 Einzelgespräche. Du kannst antworten, reagieren, Bilder und Dateien schicken
@@ -132,7 +132,7 @@ im Kapitel [Badges](60-badges.md#die-passende-bedingung-waehlen).
 
 ## Dein Profil öffnen
 
-![Das eigene Profil mit Konfispruch, Jahrgang und Zugangsdaten.](/docs/bilder/iphone/konfi-profil.png)
+![Das eigene Profil: oben Punkte, Badges und Challenges, darunter die Hinweise auf Neues, die Rückblicke und die Konto-Einstellungen.](/docs/bilder/iphone/konfi-profil.png)
 
 Über das Personen-Symbol oben rechts auf der Startseite. Dort findest du:
 
