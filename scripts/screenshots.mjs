@@ -145,7 +145,7 @@ const AUFNAHMEN = {
         name: 'challenge-feed',
         pfad: '/konfi/challenges',
         aktion: async (page) => {
-          await challengeOeffnen(page, 2);
+          await challengeMitBeitraegenOeffnen(page, 2);
           await zumFeedScrollen(page);
         },
       },
@@ -176,6 +176,32 @@ async function challengeOeffnen(page, welche) {
   await karte.click();
   await page.locator('ion-modal ion-segment-button').first().waitFor({ state: 'visible', timeout: 15_000 });
   await page.waitForTimeout(1_200);
+}
+
+/**
+ * Ab Position "ab" die erste Challenge oeffnen, deren Feed Beitraege hat.
+ *
+ * Das Feed-Bild soll Beitraege zeigen. Am 01.10.2026 stand an Position 2
+ * eine Challenge ohne geteilte Beitraege — das Bild zeigte nur den leeren
+ * Hinweis "Noch keine geteilten Beiträge". Welche Challenge Beitraege hat,
+ * haengt am Datenstand, deshalb wird gesucht statt fest verdrahtet. Findet
+ * sich keine, bleibt die letzte der Liste offen (lieber ein leeres Feed als
+ * gar kein Bild).
+ */
+async function challengeMitBeitraegenOeffnen(page, ab) {
+  const anzahl = await page.locator('.app-list-item--challenges').count();
+  for (let pos = ab; pos <= anzahl; pos++) {
+    await challengeOeffnen(page, pos);
+    const leer = await page
+      .locator('ion-modal:visible')
+      .getByText('Noch keine geteilten Beiträge')
+      .first()
+      .isVisible()
+      .catch(() => false);
+    if (!leer || pos === anzahl) return;
+    await modalSchliessen(page);
+    await page.waitForTimeout(600);
+  }
 }
 
 /**
@@ -392,9 +418,13 @@ async function stoererSchliessen(page) {
 
 /** Ein offenes Detail wieder zumachen, damit das nächste Bild sauber anfängt. */
 async function modalSchliessen(page) {
-  const modal = page.locator('ion-modal').first();
+  // Nur das SICHTBARE Modal: Die App haelt inzwischen ein zweites, verborgenes
+  // ion-modal im Baum. Mit ".first()" traf die Pruefung am 01.10.2026 dieses
+  // verborgene, meldete "nichts offen" — das Challenge-Detail blieb stehen und
+  // verdeckte die drei folgenden Konfi-Aufnahmen (Klick lief in die Zeitgrenze).
+  const modal = page.locator('ion-modal:visible').first();
   if (!(await modal.isVisible().catch(() => false))) return;
-  await page.locator('ion-modal .app-modal-close-btn').first().click().catch(() => {});
+  await modal.locator('.app-modal-close-btn').first().click().catch(() => {});
   await modal.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {});
 }
 
