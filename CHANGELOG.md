@@ -9,7 +9,7 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.3.0
 
-iOS-Build 235 · Android versionCode 129
+iOS-Build 236 · Android versionCode 130
 
 ### Hinzugefügt
 - Im Profil lassen sich die Absturzberichte abschalten: Der Schalter
@@ -1314,6 +1314,8 @@ iOS-Build 235 · Android versionCode 129
   Fehler ab.
 
 ### Sonstiges
+- Die Bausteine der App für Oberfläche, Gerätefunktionen und die Anmeldung per
+  Gesicht oder Fingerabdruck sind auf dem aktuellen Stand der Hersteller.
 - Das Mitglieder-Fenster im Chat lädt die Personenlisten zum Hinzufügen nur
   noch für die Leitung; bei Konfis lief dabei bisher jedes Mal eine
   abgelehnte Anfrage ins Leere.

@@ -225,6 +225,36 @@ describe('rollender Deploy: der Normalfall', () => {
   });
 });
 
+describe('Verify: erst der Anlauf, dann streng (30.09.2026)', () => {
+  // Beim Deploy von 4145114 kam die erste Abfrage 1 s nach "backend2 gesund"
+  // ohne Antwort, die fuenf folgenden meldeten den neuen Stand. Der Lauf war
+  // rot, obwohl der Stand live war -- und ein roter Lauf sperrt die Store-Builds.
+  it('eine Fehlantwort direkt nach dem Tausch: gruen, aber mit Warnung samt Zahl', async () => {
+    portainer.anfang(kurz(A));
+    portainer.statusVorgabe = [null];
+    const { code, aus } = await rolle(B);
+    expect(code, aus).toBe(0);
+    expect(aus).toContain('OK Rollender Deploy verifiziert');
+    expect(aus).toContain('::warning::Nach dem Tausch 1 Fehlantwort(en)');
+  });
+
+  it('meldet der neue Stand sich im ganzen Anlauf nicht: rot', async () => {
+    portainer.anfang(kurz(A));
+    portainer.statusVorgabe = [A, A, A, A, A, A];
+    const { code, aus } = await rolle(B, { VERIFY_ANLAUF_MAX: '4' });
+    expect(code).toBe(1);
+    expect(aus).toContain('Deploy nicht verifiziert: nach 4 Abfragen');
+  });
+
+  it('nach dem Anlauf bleibt es streng: eine Fehlantwort mittendrin ist rot', async () => {
+    portainer.anfang(kurz(A));
+    portainer.statusVorgabe = [B, null];
+    const { code, aus } = await rolle(B);
+    expect(code).toBe(1);
+    expect(aus).toContain('Deploy nicht verifiziert (2 von 3 Abfragen ok)');
+  });
+});
+
 describe('rollender Deploy: nur vorwaerts (NUR_VORWAERTS=1)', () => {
   it('ein neuerer Stand ist live, der diesen enthaelt: kein update_stack, Lauf endet gruen mit Hinweis', async () => {
     portainer.anfang(kurz(C));

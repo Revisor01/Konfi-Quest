@@ -7,6 +7,21 @@ steht. Das setzt voraus, dass Portainers `update_stack` nur Dienste mit
 geänderter Konfiguration neu erstellt. Das Skript prüft genau das und warnt
 sonst.
 
+## Nachtrag 30.09.2026: Der Deploy von `4145114` wurde rot
+
+Wieder dieselbe Warnung (`backend2 wurde in Stufe 1 mit neu erstellt`,
+12:29:05 UTC). Diesmal kam dazu: Die erste Verify-Abfrage, 1 s nach „backend2
+gesund", bekam **keine Antwort**; die fünf folgenden meldeten `4145114`. Der
+Stand war live, der Lauf aber rot (Verify verlangt 6 von 6) — und ein roter
+Lauf sperrt die Store-Builds. Das ist die Lücke, wie Nutzer:innen sie sehen.
+
+Seit PR #200 wartet `deploy/rollend.sh` vor dem strengen Verify, bis der neue
+Stand zum ersten Mal antwortet (höchstens 1 min), und schreibt die
+Fehlantworten als Warnung mit Zahl und Dauer ins Log: `Nach dem Tausch N
+Fehlantwort(en) in X s`. **Diese Zeile ist die Messung:** Bei jedem Deploy im
+Log des Jobs `deploy` nachsehen und festhalten — sie verschwindet erst, wenn
+die Lücke geschlossen ist.
+
 ## Was der erste echte Lauf zeigt (29.09.2026, Deploy von `beb745e`)
 
 Aus dem Log des Deploy-Jobs (Actions, Lauf 992, Job `deploy`), ohne Zugriff

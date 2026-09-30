@@ -578,7 +578,11 @@ Beide sind am Code geprüft und kein Geheimnis; es gibt nichts zu widerrufen.
   Ende des Laufs gelöscht.
 
 Frühere Meldungen derselben Art (Release-PR 2.3.0): `konfi1` und das
-Beispiel-Passwort im Bibelvers-Format sind Testwerte der Test-Datenbank. In
+Beispiel-Passwort im Bibelvers-Format sind Testwerte der Test-Datenbank.
+Am 30.09.2026 (PR #198) meldete GitGuardian „Username Password" in
+`frontend/src/__tests__/components/konfiRegistrierung.test.tsx`: das Testkonto
+`mia.neu` mit einem Beispiel-Passwort im Bibelvers-Format gegen eine
+nachgebaute API — ebenfalls ein Fehlalarm. In
 GitGuardian lassen sich die Fundstellen als Fehlalarm markieren; der Check
 ist „neutral" und blockiert den Merge nicht.
 
