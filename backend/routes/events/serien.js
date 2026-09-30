@@ -7,6 +7,7 @@ const { formatDatum } = require('../../utils/zeitformat');
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { darfJahrgang } = require('../../utils/jahrgangsZugriff');
 const { validateTeamerQuota, pruefeAnmeldeschluss, pruefeEndeNachBeginn } = require('./validierung');
+const { abfragenBuendeln } = require('../../utils/abfragenBuendeln');
 
 //
 // TERMINVERWALTUNG IST LEITUNGSSACHE (16.09.2026, Simon woertlich):
@@ -275,16 +276,19 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           eventId = newEvent.id;
         }
 
-        // IMPORTANT: Create relationPromises array INSIDE the loop for each event
-        // This prevents promises from previous events being executed again
-        const relationPromises = [];
+        // Zuordnungen DIESES Termins. Als Aufgaben gesammelt und ueber
+        // abfragenBuendeln ausgefuehrt -- auf dem Client der Transaktion eine
+        // nach der anderen (30.09.2026). Bis dahin liefen sie per Promise.all
+        // gleichzeitig auf einer Verbindung: pg 8 reiht das ein und warnt ab
+        // der dritten, pg 9 nicht mehr.
+        const zuordnungen = [];
         if (category_ids && category_ids.length) {
           const catQuery = "INSERT INTO event_categories (event_id, category_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
-          relationPromises.push(client.query(catQuery, [eventId, category_ids]));
+          zuordnungen.push(() => client.query(catQuery, [eventId, category_ids]));
         }
         if (jahrgang_ids && jahrgang_ids.length) {
           const jahrQuery = "INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
-          relationPromises.push(client.query(jahrQuery, [eventId, jahrgang_ids]));
+          zuordnungen.push(() => client.query(jahrQuery, [eventId, jahrgang_ids]));
         }
         if (has_timeslots && timeslots && timeslots.length) {
           const tsQuery = "INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES ($1, $2, $3, $4, $5)";
@@ -298,7 +302,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
             adjustedStart.setHours(slotStart.getHours(), slotStart.getMinutes(), 0, 0);
             adjustedEnd.setHours(slotEnd.getHours(), slotEnd.getMinutes(), 0, 0);
 
-            relationPromises.push(client.query(tsQuery, [
+            zuordnungen.push(() => client.query(tsQuery, [
               eventId,
               adjustedStart.toISOString(),
               adjustedEnd.toISOString(),
@@ -307,8 +311,8 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
             ]));
           });
         }
-        // Wait for all relations of THIS event to be created before moving to next event
-        await Promise.all(relationPromises);
+        // Alle Zuordnungen DIESES Termins, bevor der naechste kommt.
+        await abfragenBuendeln(client, zuordnungen);
 
         // Auto-Enrollment für Pflicht-Events — wie in POST / (dort Z. 858ff).
         // Fehlte hier komplett: eine Pflicht-SERIE hatte in keinem Termin

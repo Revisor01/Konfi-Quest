@@ -516,6 +516,12 @@ App-Bundle, `npm ci` im Backend-Dockerfile, E2E-Job weg von Node 20).
     Nicht angefasst, an die Koordination gemeldet: `routes/events/serien.js` bündelt beim
     Anlegen einer Serie die Zuordnungen eines Termins per `Promise.all` auf dem
     Transaktions-Client (`relationPromises`) — dort heute schon mehrere gleichzeitig.
+  - **Nachtrag 30.09.2026 (Folgeauftrag J1, C):** behoben — `routes/events/serien.js` legt die
+    Zuordnungen je Termin (Kategorien, Jahrgänge, jedes Zeitfenster) über `abfragenBuendeln`
+    nacheinander an; vorher bei Kategorie + Jahrgang + zwei Zeitfenstern vier gleichzeitige Abfragen
+    auf dem Transaktions-Client. Test `tests/routes/serieZuordnungenNacheinander.test.js` (1, über die
+    Route mit einem `db`-Stellvertreter, dessen Clients bei einer zweiten offenen Abfrage werfen):
+    vor dem Fix 500 statt 201, also 1 rot. Serien-Suites (7 Dateien, 250 Tests) grün.
 - **Typprüfung:** `npx tsc --noEmit` im Frontend 0 Fehler (25,5 s); `strict: true`,
   `skipLibCheck: true` (üblich), `isolatedModules`, `moduleResolution: bundler`.
   `noUncheckedIndexedAccess`/`noUnusedLocals` fehlen (Hinweis, kein Befund).
