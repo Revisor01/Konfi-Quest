@@ -48,8 +48,10 @@ describe('Compose-Vorlage: eine neue Instanz verhaelt sich wie die Produktion', 
     expect(vorlageDb).toMatch(/- "-c"\n\s+- "timezone=UTC"/);
   });
 
-  it('Postgres 15 wie die Produktion', () => {
-    expect(imageVon(vorlageDb)).toBe('postgres:15-alpine');
+  it('Postgres 15 wie die Produktion, per Digest festgehalten (01.10.2026, CI BF-05)', () => {
+    // Ohne Digest zog jedes Stack-Update mit pullImage:true ein neueres Image
+    // unter demselben Tag und startete die Datenbank neu.
+    expect(imageVon(vorlageDb)).toMatch(/^postgres:15-alpine@sha256:[0-9a-f]{64}$/);
   });
 });
 

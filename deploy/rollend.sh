@@ -21,18 +21,27 @@
 # 503, bevor der alte Container schliesst) gibt es keinen Moment mehr, in dem
 # keine gesunde Replica im Traefik-Pool steht.
 #
-# ANNAHME, nur in Produktion pruefbar: Portainers update_stack laeuft als
-# `docker compose up -d` OHNE --force-recreate, d. h. ein unveraenderter Dienst
-# wird nicht angefasst. Das Skript prueft das: Hat backend2 nach Stufe 1 eine
-# andere Container-ID als davor, wurde es mit neu erstellt -- dann steht eine
-# Warnung im Lauf, und der Deploy war NICHT lueckenlos (aber auch nicht
-# schlechter als vorher).
-#
-# STAND 29.09.2026: Im ersten echten Lauf (Deploy von beb745e) kam genau diese
-# Warnung -- backend2 wurde in Stufe 1 mit neu erstellt, die Annahme gilt so
-# nicht. Die neuen Container standen zudem 13-20 s auf "created", was zu einem
-# mit neu erstellten Postgres passt (depends_on: service_healthy). Messung und
-# Gegenmittel: docs/auftraege/lokaler-agent/10-deploy-luecke.md.
+# VORAUSSETZUNG: update_stack darf nur Dienste mit geaenderter Konfiguration
+# neu erstellen. Das gilt NUR mit pullImage:false (gemessen 01.10.2026,
+# Portainer EE 2.45.1, Compose v2.40.3; Auftrag
+# docs/auftraege/lokaler-agent/10-deploy-luecke.md):
+#   - pullImage:true erstellte bei JEDEM Update ALLE Dienste neu, auch Postgres
+#     und den gerade getauschten Dienst der Vorstufe. Bei allen sechs Deploys
+#     vom 29./30.09. kam die Warnung "backend2 wurde in Stufe 1 mit neu
+#     erstellt"; nach dem Deploy von e6a3d38 trugen alle fuenf Container
+#     dieselbe Startzeit (Stufe 2). Beide Backends waren zugleich weg, die neuen
+#     standen 13-20 s auf "created", weil sie auf das neue Postgres warteten.
+#     Nachgemessen mit unveraenderter Datei: alle 5 Container neu, von aussen
+#     25 s lang keine Antwort 200 von /api/status, 19 s kein Frontend.
+#   - pullImage:false mit unveraenderter Datei: kein Container neu (0 von 5).
+#     Mit geaendertem Dienst: nur dieser Dienst neu; Messung im 0,3-s-Takt
+#     ueber die oeffentliche Adresse: 0 Fehlantworten auf /api/status.
+# Deshalb zieht das Skript die Images der Stufe VORAB ueber die Docker-API des
+# Endpoints (ziehe_images) und ruft update_stack mit pullImage:false. Ein
+# frisch gezogener Tag ist damit lokal da; Compose erstellt einen Dienst auch
+# dann neu, wenn sein Tag lokal auf ein anderes Image zeigt (test-latest).
+# Das Skript prueft die Voraussetzung weiter: Erstellt eine Stufe einen
+# anderen Dienst als ihre eigenen neu, steht eine Warnung mit Namen im Lauf.
 #
 # Umgebung (kommt aus dem Workflow; keine Werte hier, das Repo ist oeffentlich):
 #   P_URL, P_KEY          Portainer-Adresse und API-Key
@@ -165,7 +174,9 @@ try:
     env = json.load(urllib.request.urlopen(req, timeout=30)).get("Env") or []
 except Exception:
     print("000"); raise SystemExit(0)
-body = json.dumps({"stackFileContent": compose, "env": env, "prune": False, "pullImage": True}).encode()
+# pullImage False (01.10.2026): True erstellte ALLE Dienste neu, auch Postgres
+# (Kopf dieser Datei). Die Images hat ziehe_images vorher geholt.
+body = json.dumps({"stackFileContent": compose, "env": env, "prune": False, "pullImage": False}).encode()
 req = urllib.request.Request(f"{url}/api/stacks/{sid}?endpointId={eid}", data=body, method="PUT")
 req.add_header("X-API-Key", key); req.add_header("Content-Type", "application/json")
 try:
@@ -175,6 +186,30 @@ except urllib.error.HTTPError as e:
 except Exception:
     print("000")
 PY
+}
+
+# Images vorab ziehen (01.10.2026, Auftrag 10): POST images/create ueber die
+# Docker-API des Endpoints -- Portainer reicht die Registry-Anmeldung durch.
+# Ein fehlender Tag kommt als HTTP 404 ("manifest unknown"), ein Fehler
+# mitten im Ziehen als 200 mit "error" im Datenstrom; beides zaehlt als
+# gescheitert. Referenzen mit Digest (@sha256:) liegen fest und werden
+# uebersprungen. $@ = Dienste; gezogen wird deren image-Zeile aus compose.yml.
+ziehe_images() {
+  local d ref code
+  for d in "$@"; do
+    ref="$(image_von "$d")"
+    [ -n "$ref" ] || continue
+    case "$ref" in *@*) continue ;; esac
+    code="$(curl -sS -o zieh.log -w '%{http_code}' -X POST -H "X-API-Key: $P_KEY" \
+      "$P_URL/api/endpoints/$ENDPOINT_ID/docker/images/create?fromImage=${ref%:*}&tag=${ref##*:}" || echo 000)"
+    if [ "$code" != "200" ] || grep -q '"error"' zieh.log; then
+      echo "::warning::Image $ref nicht gezogen (HTTP $code): $(head -c 200 zieh.log 2>/dev/null)"
+      rm -f zieh.log
+      return 1
+    fi
+    echo "  gezogen: $ref"
+  done
+  rm -f zieh.log
 }
 
 # Container eines Compose-Dienstes: "ID<TAB>Image<TAB>Health" (oder leer).
@@ -207,6 +242,40 @@ print('%s\t%s\t%s' % (c['Id'], c.get('Config', {}).get('Image', ''),
 
 container_id() { container_zustand "$1" | cut -f1; }
 
+# Alle Dienste des Projekts: "dienst id" je Zeile (juengster Container je
+# Dienst), sortiert -- fuer den Vergleich vor/nach einer Stufe.
+ids_alle() {
+  api "$P_URL/api/endpoints/$ENDPOINT_ID/docker/containers/json?all=1" \
+    | python3 -c "
+import sys, json
+projekt = sys.argv[1]
+juengster = {}
+for c in json.load(sys.stdin):
+    l = c.get('Labels', {})
+    if l.get('com.docker.compose.project', projekt) != projekt or 'com.docker.compose.service' not in l:
+        continue
+    s = l['com.docker.compose.service']
+    if s not in juengster or c.get('Created', 0) > juengster[s].get('Created', 0):
+        juengster[s] = c
+for s in sorted(juengster):
+    print(s, juengster[s]['Id'])
+" "$COMPOSE_PROJECT"
+}
+
+# Welche Dienste hat die Stufe neu erstellt, die sie nicht anfassen sollte?
+# $1 = Stand vorher (ids_alle), $2 = erlaubte Dienste als Alternation.
+fremd_neu() {
+  local vorher="$1" erlaubt="$2" nachher
+  nachher="$(ids_alle)"
+  python3 -c "
+import re, sys
+vorher = dict(z.split() for z in sys.argv[1].splitlines() if z.strip())
+nachher = dict(z.split() for z in sys.argv[2].splitlines() if z.strip())
+erlaubt = re.compile('^(?:' + sys.argv[3] + ')$')
+print(' '.join(s for s in sorted(vorher) if s in nachher and nachher[s] != vorher[s] and not erlaubt.match(s)))
+" "$vorher" "$nachher" "$erlaubt"
+}
+
 # Warten, bis der Container des Dienstes den NEUEN Tag traegt und gesund ist.
 warte_gesund() {
   local svc="$1"
@@ -224,11 +293,16 @@ warte_gesund() {
 # Eine Stufe: Tags schreiben, update_stack, auf Gesundheit warten. Bis zu drei
 # Runden faengt das ghcr-Propagations-Race ab (Image evtl. erst Sekunden nach
 # dem Build da -> erster Pull zieht altes / scheitert).
-stufe() {  # <dienste-alternation> <zu-pruefender-dienst>
-  local dienste="$1" pruefe="$2"
+stufe() {  # <dienste-alternation> <zu-pruefender-dienst> [weitere zu ziehende Dienste ...]
+  local dienste="$1" pruefe="$2"; shift 2
+  local ziehen; IFS='|' read -r -a ziehen <<< "$dienste"
   for runde in 1 2 3; do
     echo "== Stufe '$dienste', Runde $runde =="
     schreibe_tags "$dienste"
+    # Erst ziehen, dann update_stack ohne Pull. Ein Image, das ghcr noch
+    # nicht ausliefert (Propagation direkt nach dem Build), faellt hier auf --
+    # die Runde endet, BEVOR der Stack angefasst wird.
+    if ! ziehe_images "${ziehen[@]}" "$@"; then sleep "$FEHLER_PAUSE_S"; continue; fi
     local code; code="$(update_stack)"; echo "update_stack HTTP $code"
     if [ "$code" != "200" ]; then echo "::warning::update_stack HTTP $code"; sleep "$FEHLER_PAUSE_S"; continue; fi
     if warte_gesund "$pruefe"; then echo "OK $pruefe gesund auf :$IMG_TAG"; return 0; fi
@@ -270,19 +344,29 @@ if [ "$PROBELAUF" = "1" ]; then
   exit 0
 fi
 
-b2_vorher="$(container_id backend2)"
-echo "backend2 vor Stufe 1: ${b2_vorher:-<kein Container>}"
+# Nach jeder Stufe: Hat sie Dienste neu erstellt, die sie nicht anfassen
+# sollte? Stufe 1 darf backend, frontend und backend-test (test-latest wird mit
+# gezogen und bei neuem Image neu erstellt), Stufe 2 nur backend2. Alles andere
+# -- besonders postgres und die jeweils andere Replica -- heisst: Der Tausch
+# war nicht lueckenlos (Auftrag 10, Stand bis 30.09.2026).
+pruefe_stufe() {  # <name> <stand-vorher> <erlaubte-dienste>
+  local fremd; fremd="$(fremd_neu "$2" "$3")"
+  if [ -n "$fremd" ]; then
+    echo "::warning::Stufe $1 hat auch $fremd mit neu erstellt -- der Tausch war nicht lueckenlos (Auftrag 10)."
+  else
+    echo "Stufe $1: keine anderen Dienste neu erstellt."
+  fi
+}
 
 # Stufe 1: backend (+ frontend) -- backend2 traegt den Traffic.
-stufe "backend|frontend" backend
-
-b2_zwischen="$(container_id backend2)"
-if [ -n "$b2_vorher" ] && [ "$b2_vorher" != "$b2_zwischen" ]; then
-  echo "::warning::backend2 wurde in Stufe 1 mit neu erstellt (${b2_vorher:0:12} -> ${b2_zwischen:0:12}). Portainer scheint alle Dienste neu zu erstellen -- der Tausch war nicht lueckenlos."
-fi
+vorher="$(ids_alle)"
+stufe "backend|frontend" backend backend-test
+pruefe_stufe 1 "$vorher" "backend|frontend|backend-test"
 
 # Stufe 2: backend2 -- das frische backend traegt den Traffic.
+vorher="$(ids_alle)"
 stufe "backend2" backend2
+pruefe_stufe 2 "$vorher" "backend2"
 
 # Gegenprobe: backend-test unveraendert, sonst hat der Rewrite zu weit gegriffen.
 bt_nachher="$(image_von backend-test)"

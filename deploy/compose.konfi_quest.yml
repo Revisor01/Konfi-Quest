@@ -18,10 +18,21 @@
 # bis der neue Container gesund ist, dann backend2. Dazu der Drain in server.js
 # (SHUTDOWN_DRAIN_MS unten). Der fruehere Entwurf deploy/rolling-deploy.sh ist damit
 # ersetzt.
+#
+# Seit dem 01.10.2026 zieht rollend.sh die Images VORAB und ruft update_stack mit
+# pullImage:false. Mit pullImage:true erstellte Portainer bei JEDEM Update alle
+# Dienste neu, auch Postgres -- beide Backends waren trotz zweier Stufen zugleich
+# weg (Auftrag docs/auftraege/lokaler-agent/10-deploy-luecke.md). Ohne das
+# Schalter erstellt Compose nur Dienste mit geaenderter Konfiguration neu.
 # <TAG> wird beim Deploy durch den aktuellen Commit-SHA ersetzt.
 services:
   postgres:
-    image: postgres:15-alpine
+    # Per Digest festgehalten (01.10.2026, Audit CI BF-05): Ein Update mit
+    # pullImage:true zog sonst jedes neuere Image unter demselben Tag und
+    # startete die Datenbank neu. Der Digest ist der Index von postgres:15-alpine,
+    # den Produktion an diesem Tag fuhr. Anheben nur bewusst, mit Sicherung
+    # vorher (docs/betrieb/sicherung.md) -- es ist ein Datenbank-Neustart.
+    image: postgres:15-alpine@sha256:f7d23353e1b15400d22ebe31189f4d314b87a4c129cc400c8c2d8d4ca127bf81
     # Verbindungsgrenze und Speicher angehoben (14.09.2026). Drei Backends
     # teilen sich diese Datenbank, jedes mit eigenem Pool (3x20 = 60). Gemessen
     # vorher: 28 Verbindungen offen von 100 erlaubt, 106 MB von 256 MB belegt.
@@ -69,6 +80,11 @@ services:
       - "maintenance_work_mem=128MB"
       - "-c"
       - "shared_preload_libraries=pg_stat_statements"
+      # Server-Zeitzone fest auf UTC (01.10.2026): lief vorher nur ueber die
+      # Konfigurationsdatei im Datenverzeichnis auf UTC; eine neu aufgesetzte
+      # Instanz haette wegen TZ/PGTZ=Europe/Berlin Berliner Zeit bekommen.
+      - "-c"
+      - "timezone=UTC"
       # Server-Zeitzone fest auf UTC (29.09.2026, Audit Datenbank "Erst-
       # Einrichtung" / BF-11). Die Produktion laeuft so (gemessen 27.09.2026:
       # postgresql.conf timezone = 'UTC', Sitzungen der Backends in UTC) --
@@ -118,6 +134,10 @@ services:
   # --- Backend-Replica 1 ---
   backend:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
+    # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
+    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
+    # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+    user: "10001:10001"
     environment: &backend_env
       NODE_ENV: production
       # TZ NICHT uebernehmen, solange nicht geklaert (27.09.2026). Seit dem
@@ -218,7 +238,7 @@ services:
     # bis zu 30s Zeit, bevor Docker hart killt.
     stop_grace_period: 30s
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "node", "healthcheck.js"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -267,6 +287,10 @@ services:
   # und Co. unbemerkt. Die Variable bleibt NUR bei backend-test (nie Jobs).
   backend2:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
+    # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
+    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
+    # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+    user: "10001:10001"
     environment:
       <<: *backend_env
     volumes:
@@ -280,7 +304,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "node", "healthcheck.js"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -341,6 +365,10 @@ services:
   # mitbringt.
   backend-test:
     image: ghcr.io/revisor01/konfi-quest-backend:test-latest
+    # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
+    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
+    # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+    user: "10001:10001"
     environment:
       <<: *backend_env
       RUN_BACKGROUND_JOBS: "false"
@@ -356,7 +384,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "node", "healthcheck.js"]
       interval: 15s
       timeout: 10s
       retries: 3
