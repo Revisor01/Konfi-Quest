@@ -691,7 +691,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         default_categories_created: defaultCategories.length,
         default_activities_created: defaultActivities.length + defaultTeamerActivities.length,
         default_challenges_created: defaultChallenges.length,
-        message: `Gemeinde erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length + defaultTeamerBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
+        message: `Gemeinde erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length + defaultTeamerBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length + defaultTeamerActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
       };
       }
     } catch (err) {

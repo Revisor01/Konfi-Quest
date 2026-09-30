@@ -369,8 +369,15 @@ describe('Organizations Routes', () => {
       expect(await zaehle('certificate_types')).toBe(res.body.default_certificates_created);
       expect(await zaehle('activities')).toBe(res.body.default_activities_created);
       expect(await zaehle('challenges')).toBe(res.body.default_challenges_created);
-      expect(res.body.default_categories_created).toBeGreaterThanOrEqual(10);
+      expect(res.body.default_categories_created).toBe(14);
       expect(res.body.default_certificates_created).toBe(4);
+      // 5 Aktivitaeten fuer Konfis und 4 fuer das Team. Die Meldung nannte
+      // bis zum 30.09.2026 nur die 5 fuer Konfis, der Zaehler daneben 9.
+      expect(res.body.default_activities_created).toBe(9);
+      expect(res.body.message).toBe(
+        'Gemeinde erfolgreich erstellt (Standard-Rollen, Admin, 36 Badges, 4 Zertifikate, '
+        + '6 Levels, 14 Kategorien, 9 Aktivitäten, 3 Beispiel-Challenges)'
+      );
 
       // Drei Beispiel-Challenges als Entwuerfe, ohne Jahrgangs-Zuweisung
       // (neue Org hat noch keine Jahrgänge).
@@ -455,6 +462,57 @@ describe('Organizations Routes', () => {
         });
 
       expect(res.status).toBe(400);
+    });
+
+    // Die API-Doku nannte bis zum 30.09.2026 fuer admin_password "nur min 6
+    // Zeichen, keine Policy". Seit dem 22.08.2026 gilt die volle Policy
+    // (validateCreateOrg -> validatePassword); diese Tests halten sie fest.
+    const gemeindeMitSchwachemPasswort = (admin_password) =>
+      request(app)
+        .post('/api/organizations')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          name: 'schwach-gemeinde',
+          slug: 'schwach-gemeinde',
+          display_name: 'Schwach Gemeinde',
+          admin_username: 'schwach_leitung',
+          admin_password,
+          admin_display_name: 'Schwache Leitung'
+        });
+
+    const gemeindeUndKontoZaehlen = async () => {
+      const { rows: [r] } = await db.query(
+        `SELECT (SELECT COUNT(*)::int FROM organizations WHERE slug = 'schwach-gemeinde') AS gemeinden,
+                (SELECT COUNT(*)::int FROM users WHERE username = 'schwach_leitung') AS konten`
+      );
+      return r;
+    };
+
+    it('admin_password mit 7 Zeichen (ueber der alten 6er-Grenze) -> 400, nichts angelegt', async () => {
+      const res = await gemeindeMitSchwachemPasswort('Ab1!xyz');
+
+      expect(res.status).toBe(400);
+      expect(res.body.details).toEqual([
+        { field: 'admin_password', message: 'Passwort muss mindestens 8 Zeichen lang sein' }
+      ]);
+      expect(await gemeindeUndKontoZaehlen()).toEqual({ gemeinden: 0, konten: 0 });
+    });
+
+    it('admin_password ohne Sonderzeichen -> 400, nichts angelegt', async () => {
+      const res = await gemeindeMitSchwachemPasswort('Langgenug123');
+
+      expect(res.status).toBe(400);
+      expect(res.body.details).toEqual([
+        { field: 'admin_password', message: 'Passwort muss mindestens ein Sonderzeichen enthalten' }
+      ]);
+      expect(await gemeindeUndKontoZaehlen()).toEqual({ gemeinden: 0, konten: 0 });
+    });
+
+    it('admin_password nach der Policy -> 201', async () => {
+      const res = await gemeindeMitSchwachemPasswort('Ab1!xyzw');
+
+      expect(res.status).toBe(201);
+      expect(await gemeindeUndKontoZaehlen()).toEqual({ gemeinden: 1, konten: 1 });
     });
 
     it('Duplikat-Slug -> 409', async () => {
