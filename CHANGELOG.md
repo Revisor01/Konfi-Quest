@@ -1314,6 +1314,9 @@ iOS-Build 236 · Android versionCode 130
   Fehler ab.
 
 ### Sonstiges
+- Die Datenschutzerklärung beschreibt die Reichweitenmessung genauer:
+  Sitzungen werden innerhalb eines Kalendermonats zusammengefasst, und der
+  ungefähre Standort umfasst Land, Region und Stadt.
 - Die Bausteine der App für Oberfläche, Gerätefunktionen und die Anmeldung per
   Gesicht oder Fingerabdruck sind auf dem aktuellen Stand der Hersteller.
 - Das Mitglieder-Fenster im Chat lädt die Personenlisten zum Hinzufügen nur
