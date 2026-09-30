@@ -517,6 +517,9 @@ iOS-Build 235 · Android versionCode 129
   unter „Fehler".
 
 ### Behoben
+- Ein Benutzername lässt sich beim Bearbeiten nicht mehr auf einen Namen ändern,
+  den es schon gibt — auch nicht in anderer Schreibweise oder aus einer anderen
+  Gemeinde; die Anmeldung bleibt so eindeutig.
 - Der Systemname einer Gemeinde behält Umlaute (aus „Büsum“ wird „buesum“ statt
   „bsum“) und bleibt beim Speichern unverändert, solange ihr Name gleich bleibt.
 - Legen zwei Personen im selben Moment ein Konto mit demselben Benutzernamen

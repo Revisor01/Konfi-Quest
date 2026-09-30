@@ -1709,7 +1709,7 @@ paths:
             schema:
               type: object
               properties:
-                username: { type: string, minLength: 3, maxLength: 50, pattern: "^[a-zA-Z0-9.-]+$" }
+                username: { type: string, minLength: 3, maxLength: 50, pattern: "^[a-zA-Z0-9.-]+$", description: "Seit 30.09.2026: Ein NEUER Name (ohne Gross/klein verglichen mit dem bisherigen) muss systemweit frei sein, ohne Gross/klein, das eigene Konto ausgenommen -- sonst 409. Geprueft in der Transaktion des Updates unter pg_advisory_xact_lock je Namen (utils/benutzernameSperre.js, dieselbe Sperre wie beim Anlegen). Der unveraenderte Name (so schicken ihn die Store-Apps 2.2.x und 2.3.0 bei jedem Speichern mit) und eine reine Aenderung der Schreibweise des eigenen Namens (anna -> Anna) werden nicht geprueft und gehen wie bisher durch -- auch neben einer Dublette im Altbestand. BEHOBEN 30.09.2026: vorher ohne jede Pruefung; Umbenennen auf den Namen eines Kontos einer anderen Gemeinde oder auf 'ADMIN1' neben 'admin1' gab 200, die Anmeldung wurde mehrdeutig" }
                 email: { type: string }
                 display_name: { type: string }
                 role_title: { type: string }
@@ -1721,7 +1721,7 @@ paths:
         "400": { description: "Rolle nicht in eigener Org / keine Felder" }
         "403": { description: "Hierarchie verletzt (Ziel-User oder neue Rolle)" }
         "404": { $ref: "#/components/responses/NotFound" }
-        "409": { description: "Username/E-Mail existiert bereits; seit 28.09.2026 auch: der Rollenwechsel machte das Konto zugleich Konfi und Team (error_code konfi_und_team)" }
+        "409": { description: "\"Benutzername existiert bereits (muss systemweit eindeutig sein)\" -- neuer username vergeben (seit 30.09.2026, siehe username), nichts wird geaendert; \"Benutzername oder E-Mail existiert bereits\" bei einem Konflikt am Index (organization_id, email); seit 28.09.2026 auch: der Rollenwechsel machte das Konto zugleich Konfi und Team (error_code konfi_und_team)" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateUpdateUser]

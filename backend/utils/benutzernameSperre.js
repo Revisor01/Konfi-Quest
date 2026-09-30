@@ -3,7 +3,9 @@
 //
 // Die Anmeldung sucht per LOWER(username) ueber alle Gemeinden. Deshalb
 // pruefen POST /users, POST /organizations/:id/admins und POST /organizations
-// vor dem Anlegen, ob der Name schon vergeben ist. Bis zum 30.09.2026 lief
+// vor dem Anlegen, ob der Name schon vergeben ist -- seit dem 30.09.2026
+// ebenso PUT /users/:id beim Umbenennen, POST /admin/konfis (erzeugter Name,
+// weicht aus) und POST /auth/register-konfi. Bis zum 30.09.2026 lief
 // diese Pruefung ohne Sperre: Zwischen SELECT und INSERT liegt das Hashen des
 // Passworts, zwei gleichzeitige Anlagen sahen beide "frei" und legten beide an.
 //
@@ -37,16 +39,22 @@ const MELDUNG_VERGEBEN = 'Benutzername existiert bereits (muss systemweit eindeu
  * schon gibt (systemweit, ohne Gross/klein).
  * @param {import('pg').PoolClient} client - Client mit offener Transaktion
  * @param {string} username
+ * @param {object} [opt]
+ * @param {number|string|null} [opt.ausser] - dieses Konto zaehlt nicht mit
+ *   (Umbenennen: der eigene Name ist nicht "vergeben")
  * @returns {Promise<boolean>} true, wenn der Name vergeben ist
  */
-async function benutzernameSperrenUndPruefen(client, username) {
+async function benutzernameSperrenUndPruefen(client, username, { ausser = null } = {}) {
   await client.query(
     'SELECT pg_advisory_xact_lock($1, hashtext(LOWER($2)))',
     [BENUTZERNAME_SPERRE, username]
   );
   const { rows: [vorhanden] } = await client.query(
-    'SELECT id FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1',
-    [username]
+    `SELECT id FROM users
+      WHERE LOWER(username) = LOWER($1)
+        AND ($2::bigint IS NULL OR id <> $2::bigint)
+      LIMIT 1`,
+    [username, ausser]
   );
   return Boolean(vorhanden);
 }

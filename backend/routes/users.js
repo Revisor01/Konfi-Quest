@@ -476,6 +476,24 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         const client = await db.getClient();
         try {
           await client.query('BEGIN');
+
+          // NEUER BENUTZERNAME: systemweit frei, ohne Gross/klein, unter der
+          // Sperre je Namen (utils/benutzernameSperre.js) -- wie beim Anlegen.
+          // Bis 30.09.2026 ohne jede Pruefung: Umbenennen auf den Namen eines
+          // Kontos einer anderen Gemeinde oder auf "ADMIN1" neben "admin1"
+          // gab 200, die Anmeldung wurde mehrdeutig.
+          // Geprueft wird nur ein WIRKLICH neuer Name: Die Store-Apps
+          // schicken beim Speichern den unveraenderten Namen mit, und eine
+          // reine Aenderung der Schreibweise des eigenen Namens (anna -> Anna)
+          // schafft keine neue Dublette -- auch nicht neben einer, die der
+          // Altbestand schon hat.
+          const neuerName = username !== undefined && username !== null
+            && String(username).toLowerCase() !== String(user.username || '').toLowerCase();
+          if (neuerName && await benutzernameSperrenUndPruefen(client, username, { ausser: id })) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: MELDUNG_VERGEBEN });
+          }
+
           ({ rowCount } = await client.query(updateQuery, updateParams));
           if (rowCount > 0 && neueRolle) {
             await client.query(
