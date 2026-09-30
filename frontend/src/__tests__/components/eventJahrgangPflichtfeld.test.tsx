@@ -37,8 +37,13 @@ function abschnitt(teil: Partial<EventFormData>, teamerAccess = 'normal') {
       jahrgaenge={JAHRGAENGE as never} teamerAccess={teamerAccess} loading={false} />,
   );
   // textContent liefert an Ionic-Elementen in jsdom nichts (Stencil ueberschreibt
-  // es fuer die Slot-Nachbildung) -- deshalb der Text aus dem Markup.
-  const text = (el: Element) => el.innerHTML.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&');
+  // es fuer die Slot-Nachbildung) -- deshalb die Textknoten selbst einsammeln.
+  const text = (el: Element) => {
+    const gang = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let t = '';
+    while (gang.nextNode()) t += gang.currentNode.nodeValue ?? '';
+    return t;
+  };
   const ueberschrift = [...document.querySelectorAll('ion-label')]
     .map(text).find((t) => t.startsWith('Jahrgänge'));
   return { ueberschrift: ueberschrift ?? '', seite: text(document.body) };
