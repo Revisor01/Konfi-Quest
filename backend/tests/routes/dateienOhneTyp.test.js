@@ -67,12 +67,19 @@ describe('Dateien ohne Typ vom Geraet: die Endung entscheidet, die Kopfbytes pru
 
   describe('file-type erkennt eine Word-Datei an ihren ersten 4.100 Bytes', () => {
     // Die Route prueft nur die Kopfbytes (leseKopfBytes). Belegt, was file-type
-    // dort je nach Bauweise sieht: docx -- oder application/zip, wenn der
-    // entscheidende Eintrag hinter den 4.100 Bytes liegt. Beides steht auf der
-    // Liste der Route.
+    // dort je nach Bauweise sieht: docx -- oder application/zip, wenn in den
+    // 4.100 Bytes nichts die Word-Datei verraet. Beides steht auf der Liste der
+    // Route.
+    //
+    // Liegt [Content_Types].xml hinter den Kopfbytes, schliesst file-type seit
+    // 22.1.1 aus den Verzeichnisnamen: Ein Eintrag unter word/ im Kopf reicht
+    // fuer docx (Bauweise libreoffice; mit 22.0.2 kam dort application/zip).
+    // Steht vorn nur ein grosses Vorschaubild ausserhalb von word/, bleibt es
+    // bei application/zip (Bauweise vorschau) -- dieser Fall haelt den
+    // ZIP-Weg der Route unter Test.
     it.each([
       ['word', DOCX_TYP],
-      ['libreoffice', 'application/zip'],
+      ['libreoffice', DOCX_TYP],
       ['vorschau', 'application/zip'],
     ])('Bauweise %s -> %s', async (bauweise, erwartet) => {
       const pfad = path.join(os.tmpdir(), `kopfbytes-${crypto.randomBytes(6).toString('hex')}.docx`);
@@ -118,7 +125,7 @@ describe('Dateien ohne Typ vom Geraet: die Endung entscheidet, die Kopfbytes pru
       expect(res.body.file_name).toBe('Einladung.docx');
     });
 
-    it.each(['libreoffice', 'vorschau'])('ERLAUBT: Word-Datei in Bauweise %s (Kopf erkennt nur ZIP) -> 200', async (bauweise) => {
+    it.each(['libreoffice', 'vorschau'])('ERLAUBT: Word-Datei in Bauweise %s ([Content_Types].xml hinter dem Kopf) -> 200', async (bauweise) => {
       const res = await imChat(wordDatei(bauweise), 'Plan.docx', 'application/octet-stream');
       expect(res.status).toBe(200);
     });
