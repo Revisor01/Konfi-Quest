@@ -1268,6 +1268,10 @@ paths:
         werden ebenso umgeschrieben (utils/gemeindeSystemname.js). Nur beim
         Anlegen -- bestehende Gemeinden werden nicht umbenannt, PUT speichert
         weiter, was geschickt wird. Antwortform unveraendert.
+        NACHTRAG 30.09.2026: Die App ab 2.3.0 bildet name/slug selbst mit
+        derselben Umschrift (frontend/src/utils/gemeindeSystemname.ts, Test
+        gegen diese Funktion); der Server behaelt, was sie schickt. Die
+        Store-App 2.2.x schickt weiter die verlustbehaftete Form.
 
         STARTBESTAND (nachgezaehlt 30.09.2026; die Zusammenfassung nannte
         bis dahin 27 Badges, 5 Kategorien und 5 Aktivitaeten): 4 Rollen
@@ -1375,8 +1379,8 @@ paths:
               type: object
               required: [name, slug, display_name]
               properties:
-                name: { type: string }
-                slug: { type: string }
+                name: { type: string, description: "Systemname; wird wie geschickt gespeichert. Die App ab 2.3.0 schickt den gespeicherten Wert, solange display_name gleich bleibt, sonst den neu gebildeten mit ae/oe/ue/ss (utils/gemeindeSystemname.ts). Die Store-App 2.2.x bildet ihn bei jedem Speichern ohne Umlaute neu und benennt damit eine seit dem 29.09.2026 angelegte Gemeinde wie 'buesum' auf 'bsum' zurueck" }
+                slug: { type: string, description: "wie name" }
                 display_name: { type: string }
                 description: { type: string }
                 contact_name: { type: string }

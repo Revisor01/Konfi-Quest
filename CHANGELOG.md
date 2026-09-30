@@ -517,6 +517,8 @@ iOS-Build 235 · Android versionCode 129
   unter „Fehler".
 
 ### Behoben
+- Der Systemname einer Gemeinde behält Umlaute (aus „Büsum“ wird „buesum“ statt
+  „bsum“) und bleibt beim Speichern unverändert, solange ihr Name gleich bleibt.
 - Legen zwei Personen im selben Moment ein Konto mit demselben Benutzernamen
   an, entsteht nur eines; die andere Anlage meldet, dass der Name vergeben ist.
 - Die Badges einer Konfi, die nur über eine weitere Gemeinde dazugehört, lassen

@@ -33,6 +33,11 @@ Laufzeit und Limit lassen sich später in derselben Ansicht ändern
 (`PUT /organizations/:id`, `PATCH /organizations/:id/limit`, beides nur
 Super-Admin).
 
+Der Systemname bleibt beim späteren Speichern, solange der Name der Gemeinde
+gleich bleibt. Wer den Namen ändert, bekommt den Systemnamen neu gebildet,
+nach derselben Regel wie beim Anlegen. Die App bis 2.2 bildet ihn dagegen bei
+jedem Speichern neu und ohne Umlaute — dort wird aus `buesum` wieder `bsum`.
+
 ## Was beim Anlegen entsteht
 
 Gemessen am 29.09.2026 (Antwort von `POST /organizations` an einer lokalen
