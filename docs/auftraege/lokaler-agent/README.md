@@ -107,8 +107,9 @@ cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
       dem Gruß steht die Selbstbezeichnung wie im Profil, sonst „Teamer:in"
       (`greeting.role_title`, additiv). Befund war: Unter dem Gruß stand fest
       „Teamer:in", im Profil die Selbstbezeichnung (`role_title`).
-- [ ] **Datenschutzerklärung:** Abschnitt 9a und der Satz zur Obergrenze der
-      Anmeldungen sind live (Stand 1. Oktober 2026); Simon liest gegen.
+- [x] **Datenschutzerklärung:** Abschnitt 9a und der Satz zur Obergrenze der
+      Anmeldungen sind live (Stand 1. Oktober 2026); Simon hat gegengelesen
+      (01.10.2026 abends: „erledigt").
 - [ ] **Testbuild:** Die App-Änderungen seit iOS 236 / Android 130 (Punkt-
       Plural, Selbstbezeichnung, Eventdatum) brauchen einen neuen Build —
       nur auf Simons Ansage.
@@ -192,6 +193,82 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       min vorher, 17 Empfänger:innen) und 13:57:51 für 17:00 (62 min,
       7). Raster: Deploy 11:02:29 → Takt 11:02 … 12:47; Container-start
       13:27:49 → 13:42, 13:57. Alle Abstände zwischen 45 und 75 min.
+
+### Neu aus der Cloud, 01.10.2026 abends
+
+- [x] **Uploads nach dem Update auf Build 132 (lokaler Agent, 15 Minuten,
+      Ergebnis an Simon).** Simon nach dem Update: „Word & PDF in Material /
+      Chat hochladen/senden geht immer noch nicht. Haben wir was in den
+      Logs?" Zu messen seit dem 01.10.2026, 17:00 MESZ:
+      1. **Proxy-Zugriffslog:** `POST /api/material/*/files` und
+         `POST /api/chat/rooms/*/messages` — Anzahl je Status; wenn das Log die
+         Größe der Anfrage führt, getrennt nach „mit Datei" (über 50 kB) und
+         „ohne". Erreicht **keine** Material-Anfrage den Server, bricht die App
+         vorher ab (wie bis zum 01.10.).
+      2. **Umami**, Ereignis `fehler`: Einträge mit der Stelle „Das Material
+         ist gespeichert, die Dateien noch nicht. Tippe noch einmal auf
+         Speichern." oder „Fehler beim Speichern" — je `art` (`netz`,
+         `timeout`, `http-…`, `intern`) und Gerät (Android/iOS) zählen. `netz`
+         heißt: Die Anfrage ist in der App gescheitert, bevor der Server
+         antwortete. **Nachtrag:** In Build 132 kommt diese Meldung noch
+         **ohne** `art` an (der Ersatztext trägt keine Ursache); die Zahl der
+         Einträge zählt trotzdem. Der Chat meldet in 132 gar nichts — die
+         Nachricht steht nur mit „!“ da.
+      3. **Für das Konto, das Simon nennt** (Tester:in): ob seit 17:00
+         eine dieser Anfragen von diesem Konto ankam und mit welchem Status. Das
+         Ergebnis **nur an Simon**, keine Namen und keine Kennungen hier ins
+         Repo — hier nur die Zahlen aus 1 und 2.
+      Hintergrund: Die Kopie im Cache der Android-App (Build 131/132) hat den
+      Fehler am Gerät nicht behoben. Die App liest Dokumente ab dem nächsten
+      Build zusätzlich gleich bei der Auswahl in den Speicher
+      (`services/systemDialoge.ts`, `imSpeicher`), wie Fotos. Die Zahlen
+      zeigen, ob die Anfrage den Server überhaupt erreicht.
+      **Ergebnis 01.10.2026 abends:** Fünf Meldungen „Das Material ist
+      gespeichert, die Dateien noch nicht …“, alle von einem Android-Handy in
+      der App, ohne `art` und `ort` (Build 132 gibt sie noch nicht mit).
+      Am Server kam heute **kein** `POST /api/material/*/files` an. Zu jedem
+      Versuch sah der Server das Anlegen (201) bzw. Speichern der Angaben
+      (PUT, 200) und zweimal die **Vorabfrage des Uploads (OPTIONS, 204)** —
+      der Upload selbst kam nie. Er bricht also auf dem Handy ab, nach der
+      Vorabfrage und vor dem Senden des Bodys. Simon: nur PDF und Word,
+      Bilder gehen. Das passt genau zur Prüfung der Änderungszeit beim
+      Upload einer Datei aus der Auswahl im WebView; die Kopie im Speicher
+      (`imSpeicher`, PR #213) umgeht sie — Begründung im Kommentar dort.
+- [ ] **Nach dem Gerätetest des nächsten Builds (Android 133): Upload-Schritte
+      in Umami zählen (lokaler Agent, 10 Minuten, nur Zahlen).** Simons
+      Gerätetest 01.10. abends: Im Chat steht eine Nachricht mit PDF danach mit
+      „!“ und nur dem Dateinamen da, ohne Meldung; im Material ist das Material
+      angelegt, die Datei nicht, und erneutes Speichern hilft nicht. Ab dem
+      nächsten Build meldet jeder Schritt beim Hochladen einen eigenen `ort`
+      (Ereignis `fehler`, Liste in `docs/messung/umami.md`). Ab dem Zeitpunkt
+      des Tests je `ort` und `art` zählen, getrennt nach Android und iOS:
+      - `dateiauswahl-nicht-lesbar` / `-nicht-gefunden` / `-kein-zugriff` /
+        `-lesefehler`: Das WebView kann das gewählte Dokument nicht lesen —
+        dann hilft kein Weg über das WebView, sondern nur ein nativer.
+      - `chat-datei-direkt` und `material-dateien-hochladen` mit `netz`, aber
+        **kein** `dateiauswahl-…`: Die Datei war lesbar und lag im Speicher,
+        der Versand scheitert trotzdem — dann liegt es nicht an der Datei,
+        sondern an der Anfrage.
+      - `chat-datei-sichern`: Die Datei ließ sich auch für die Warteschlange
+        nicht lesen.
+      - `chat-datei-warteschlange`: Auch der zweite Versuch aus der eigenen
+        Kopie scheiterte (mit Status).
+      Dazu wie oben das Proxy-Log der beiden Upload-Routen im selben Zeitraum.
+      Keine Dateinamen, keine Konten, nur Zahlen je Ort und Art.
+- [ ] **Nach dem Deploy von PR #213: Dateinamen mit Umlauten (lokaler Agent,
+      5 Minuten, nur Zahlen).** Simon: „GebetswÃ¼rfel Vorlage.pdf“ statt
+      „Gebetswürfel …“ im Chat. Der Server liest Dateinamen jetzt als UTF-8,
+      Migration 189 repariert den Bestand in `chat_messages.file_name`,
+      `material_files.original_name` und `challenge_submissions.file_name`.
+      1. Vor dem Deploy: `SHOW server_encoding;` in der Produktions-DB — muss
+         `UTF8` sein, sonst ändert die Migration nichts (sie bricht dann auch
+         nicht ab).
+      2. Vor und nach dem Deploy je Spalte zählen:
+         `SELECT count(*) FROM chat_messages WHERE file_name ~ 'Ã|Â|â\u0080';`
+         (entsprechend für die beiden anderen). Nach dem Deploy sollte 0
+         stehen; was bleibt, ist ein richtiger Name mit diesen Zeichen oder
+         eine Zeile, die sich nicht umwandeln ließ — dann die Zahl an Simon,
+         keine Namen.
 
 ### Bleibt beim lokalen Agenten
 

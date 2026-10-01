@@ -18,6 +18,7 @@ import {
 } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
+import { konfisInReihenfolge } from '../../../utils/teilnehmerReihenfolge';
 import { bestaetigenMitRueckfrage, type UeberbuchenFrage } from '../../../utils/ueberbuchen';
 import { darfTermineVerwalten } from '../../../utils/terminRechte';
 import { kopiereTermin } from '../../../utils/terminVorbelegung';
@@ -1649,7 +1650,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
         {/* Participants List */}
         {(() => {
-          const konfiParticipants = participants.filter(p => p.role_name === 'konfi');
+          // Pflicht-Termin: nach Vornamen, sonst Anmeldereihenfolge
+          // (01.10.2026, utils/teilnehmerReihenfolge.ts). Alle Listen
+          // darunter filtern hieraus und behalten die Reihenfolge.
+          const konfiParticipants = konfisInReihenfolge(
+            participants.filter(p => p.role_name === 'konfi'),
+            eventData?.mandatory
+          );
           // Team-Seite: Teamer:innen UND zugeordnete Leitung. Ein '!== konfi'
           // statt '=== teamer', sonst landet zugeordnete Leitung in der
           // Konfi-Liste und wird als Kind gezaehlt.

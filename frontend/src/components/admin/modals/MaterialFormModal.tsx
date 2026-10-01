@@ -391,9 +391,14 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
 
         onSuccess();
       } catch (err) {
+        // Mit Ort und Fehlerobjekt: Die Messung sieht sonst nur den
+        // Ersatztext, nicht WARUM der Upload scheiterte (Netz, Zeitgrenze,
+        // Status) -- genau das fehlte beim Android-Befund 01.10.2026
+        // (services/uploadDiagnose.ts).
         setError(fehlerText(err, dateienStehenAus
           ? 'Das Material ist gespeichert, die Dateien noch nicht. Tippe noch einmal auf Speichern.'
-          : 'Fehler beim Speichern'));
+          : 'Fehler beim Speichern'),
+        { ort: dateienStehenAus ? 'material-dateien-hochladen' : 'material-speichern', fehler: err });
       } finally {
         setSendeProzent(0);
       }

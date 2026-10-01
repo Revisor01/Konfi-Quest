@@ -1,39 +1,54 @@
 # Store-Texte 2.3.0
 
-Quelle: Abschnitt `## [Unreleased] - 2.3.0` in `CHANGELOG.md`.
+Quelle: Abschnitt `## [Unreleased] - 2.3.0` in `CHANGELOG.md`, Stand
+01.10.2026 abends (neu gefasst; die erste Fassung stammte vom Stand
+Build 231/125 und kannte alles ab dem 29.09. nicht).
 Beide Texte sind getrennt zu verwenden — niemals mischen.
 
-Versionsstände aus `frontend/version.json` (die eine Quelle, aus der beide
-Release-Workflows lesen): **2.3.0**, Android versionCode **125**, iOS-Build
-**231**. Auf beiden Plattformen ist 2.2.0 die Vorgängerin (iOS-Build 206,
-Android versionCode 113) — anders als bei 2.2.0 laufen die Stände diesmal
-nicht auseinander, beide Texte beschreiben also dieselbe Spanne.
+Versionsstände stehen in `frontend/version.json` (die eine Quelle, aus der
+beide Release-Workflows lesen). Zuletzt hochgeladen: **2.3.0**, iOS-Build
+**238**, Android versionCode **132**. Der Store-Build bekommt die nächste
+Nummer — beim Einreichen dort ablesen, nicht hier. Auf beiden Plattformen ist
+2.2.0 die Vorgängerin (iOS-Build 206, Android versionCode 113); beide Texte
+beschreiben also dieselbe Spanne.
 
 ---
 
 ## Was in dieser Version für alle sichtbar ist
 
-Aus den 108 Einträgen des CHANGELOG bleiben für die Store-Texte die, die
-Nutzer:innen ohne Vorwissen bemerken. Der Rest (Betriebs-Überblick, Abstände,
-Symbol-Marken, Reglerraster, interne Aufräumarbeiten) bleibt draußen — wer es
-genau wissen will, findet es im CHANGELOG und in der Übersicht „Was ist neu?"
-in der App.
+Aus über 400 Einträgen des CHANGELOG bleiben für die Store-Texte die, die
+Nutzer:innen ohne Vorwissen bemerken. Der Rest (Betriebs-Überblick,
+Abstände, Symbol-Marken, Begriffe, interne Aufräumarbeiten) bleibt draußen —
+wer es genau wissen will, findet es im CHANGELOG und in der Übersicht „Was
+ist neu?" in der App.
 
-1. **Postfach mit Glocke** — für alle Rollen die auffälligste Änderung; sie
-   fehlte in den bisherigen Play-Notizen.
-2. **Auswählen, welche Mitteilungen aufs Handy kommen** — in der App, nicht in
-   den Systemeinstellungen.
-3. **In mehreren Gemeinden mitarbeiten** — eigene Rolle je Gemeinde,
-   Umschalter oben links, Einladung bestehender Konten durch die Leitung.
-4. **Team-Rückblick je Gemeinde.**
-5. **Dunkelmodus** folgt dem Gerät.
-6. **Übersicht „Was ist neu?"** nach dem Update.
-7. **Behoben**, plattformübergreifend: laufendes Event unter „Verbuchen",
-   mehrtägige Events mit beiden Tagen, Event-Mitteilung führt zum Event,
-   Zähler beim Gemeindewechsel, App-Sperre „Sofort" aus der App-Übersicht,
-   Mitteilungen an große Gruppen.
-8. **Behoben, nur Android:** keine Mitteilungen mehr nach Update oder
-   Neuanmeldung, Absturz beim Antippen einer Mitteilung, App-Links.
+1. **Postfach mit Glocke** — für alle Rollen die auffälligste Änderung.
+2. **Auswählen, welche Mitteilungen aufs Handy kommen** — in der App, nicht
+   in den Systemeinstellungen.
+3. **Rote und orange Zahlen**: neue Challenge-Beiträge wie im Chat; offene
+   Freigaben, zu verbuchende Events und Anträge in den Umschaltern oben; die
+   Zahl am App-Symbol zählt mit.
+4. **In mehreren Gemeinden mitarbeiten** — eigene Rolle je Gemeinde,
+   Umschalter oben links, Einladung bestehender Konten mit Rückmeldung.
+5. **Material und Challenge-Bilder bleiben auf dem Gerät.**
+6. **Kleinere Dinge, die viele merken:** Konfi-Liste bei Pflicht-Events nach
+   Vornamen, Mitteilung beim Austragen aus einem Event, Bestätigungs-Mail nach
+   Passwortänderung, Einladungscodes 7 bis 90 Tage, Konfi-Zeit bleibt bei der
+   Beförderung erhalten.
+7. **Dunkelmodus, eigene Farbe der Leitung, „Was ist neu?"**, Absturzberichte
+   abschaltbar.
+8. **Behoben**, plattformübergreifend: Erinnerung „Gleich" eine Stunde
+   vorher, laufendes Event unter „Verbuchen", mehrtägige Events, Event-
+   Mitteilung führt zum Event, App-Sperre „Sofort", Mitteilungen an große
+   Gruppen.
+9. **Behoben, nur Android:** Mitteilungen nach Update oder Neuanmeldung und
+   bei offener App, App-Links.
+
+**Bewusst nicht drin:** der Upload von PDF und Word vom Android-Handy. Er ist
+im CHANGELOG als behoben eingetragen, scheiterte aber noch im Gerätetest mit
+Build 132 (01.10.2026). Erst wenn ein Build ihn am Gerät bestätigt, darf er in
+den Play-Text. Die Sortierung bei Pflicht-Events kommt mit PR #213; wird ohne
+ihn eingereicht, fällt der Halbsatz im iOS-Text weg.
 
 ---
 
@@ -55,22 +70,26 @@ in der App.
 > Mitteilungen durchgehend an. Sie zu erwähnen wäre ein Plattform-Verweis und
 > zugleich sachlich falsch.
 
-> **Höchstens 4.000 Zeichen.** Der Text unten hat 1.775.
+> **Höchstens 4.000 Zeichen.** Der Text unten hat 2.231.
 
 ```
-Ein Postfach für alles, was die App dir mitteilen will: Oben rechts steht jetzt eine Glocke. Dahinter sammeln sich verliehene Badges, eingereichte Anträge und die Entscheidungen dazu, Punkte, Level-Aufstiege, Anmeldungen und Änderungen an Events – auch das, was du als Push verpasst hast. Ungelesenes ist markiert, Antippen führt an die passende Stelle, „Alle gelesen“ räumt auf. Die Zahl am App-Symbol zählt die ungelesenen Mitteilungen mit.
+Ein Postfach für alles, was die App dir mitteilen will: Oben rechts steht jetzt eine Glocke. Dahinter sammeln sich Badges, Anträge und die Entscheidungen dazu, Punkte, Level-Aufstiege, Anmeldungen und Änderungen an Events – auch das, was du als Push verpasst hast. Antippen führt an die passende Stelle, „Alle gelesen“ räumt auf.
 
-Du wählst selbst, welche Mitteilungen aufs Handy kommen: Unter „Benachrichtigungen“ im Profil beziehungsweise unter „Mehr“ lassen sich „Nachrichten“, „Events“ und „Punkte und Badges“ einzeln ab- und anschalten, dazu ein Hauptschalter für alles. Im Postfach steht jede Mitteilung weiterhin.
+Du wählst selbst, welche Mitteilungen aufs Handy kommen: „Nachrichten“, „Events“ und „Punkte und Badges“ lassen sich in der App einzeln ab- und anschalten. Im Postfach steht jede Mitteilung weiterhin.
 
-In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde: Wer in der einen die Leitung stellt, kann in der anderen Teamer:in sein. Der Umschalter oben links steht auf den Hauptseiten und zeigt je Gemeinde, wo etwas offen ist. Die Gemeindeleitung lädt Personen mit bestehendem Konto direkt ein – die eingeladene Person entscheidet selbst, ob sie zusagt.
+Neues auf einen Blick: Eine rote Zahl am Reiter und an der einzelnen Challenge zeigt neue Beiträge, bis du sie gesehen hast – wie im Chat. Eine orange Zahl in den Umschaltern oben zeigt, wo Freigaben warten, bei der Leitung auch zu verbuchende Events und offene Anträge. Die Zahl am App-Symbol zählt mit.
 
-Der Jahresrückblick fürs Team wird je Gemeinde erstellt.
+In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde: Wer in der einen die Leitung stellt, kann in der anderen Teamer:in sein. Der Umschalter oben links zeigt je Gemeinde, wo etwas offen ist. Die Gemeindeleitung lädt Personen mit bestehendem Konto direkt ein und erfährt, ob sie zusagen.
 
-Die App folgt dem Dunkelmodus des Geräts.
+Dateien im Material und Bilder in Challenges bleiben nach dem ersten Öffnen auf dem Gerät und öffnen beim nächsten Mal sofort.
 
-Nach dem Update zeigt eine Übersicht, was sich geändert hat – jederzeit nachlesbar unter „Was ist neu?“ im Profil beziehungsweise unter „Mehr“.
+Bei Pflicht-Events steht die Konfi-Liste nach Vornamen. Wer von der Leitung aus einem Event ausgetragen wird, bekommt eine Mitteilung. Nach jeder Passwortänderung kommt eine Bestätigung per E-Mail. Einladungscodes gelten wahlweise 7 bis 90 Tage.
 
-Behoben: Ein laufendes Event steht schon unter „Verbuchen“, nicht erst nach seinem Ende. Mehrtägige Events zeigen beide Tage. Eine Mitteilung zu einem Event führt direkt zum Event. Beim Wechsel der Gemeinde fallen die Zähler an den Reitern sofort auf null und laden frisch. Die App-Sperre auf „Sofort“ greift auch, wenn die App aus der App-Übersicht zurückkommt. Mitteilungen an ganze Gemeinden oder Jahrgänge kommen zuverlässig an.
+Bei der Beförderung ins Team bleibt die Konfi-Zeit erhalten: besuchte Events, Punkte, Badges und der Konfispruch.
+
+Die App folgt dem Dunkelmodus des Geräts, und die Leitung hat eine eigene Farbe. Nach dem Update zeigt eine Übersicht, was sich geändert hat – jederzeit nachlesbar unter „Was ist neu?“. Absturzberichte lassen sich im Profil abschalten.
+
+Behoben: Die Erinnerung „Gleich“ kommt eine Stunde vor Beginn. Ein laufendes Event steht schon unter „Verbuchen“. Mehrtägige Events zeigen beide Tage. Eine Mitteilung zu einem Event führt direkt zum Event. Die App-Sperre auf „Sofort“ greift auch, wenn die App aus der App-Übersicht zurückkommt. Mitteilungen an ganze Gemeinden oder Jahrgänge kommen zuverlässig an.
 ```
 
 ---
@@ -80,7 +99,7 @@ Behoben: Ein laufendes Event steht schon unter „Verbuchen“, nicht erst nach 
 > **Dieser Text steht in `frontend/release-notes-de.txt`.** Der Play-Upload
 > liest ausschließlich diese Datei. **Maximal 500 Zeichen**, sonst bricht der
 > Upload ab — messen mit `wc -m` (Zeichen) und zur Sicherheit `wc -c` (Bytes,
-> Umlaute zählen doppelt; die Datei unten hat 437 Zeichen, 443 Bytes).
+> Umlaute zählen doppelt; die Datei unten hat 460 Zeichen, 465 Bytes).
 > Wer den Text hier ändert, ändert die Datei mit.
 
 > **Hier gehört die Push-Reparatur an die erste Stelle der Behoben-Zeile.**
@@ -90,25 +109,21 @@ Behoben: Ein laufendes Event steht schon unter „Verbuchen“, nicht erst nach 
 > bisherigen Notizen ganz.
 
 ```
-Neu: Ein Postfach hinter der Glocke oben rechts sammelt alles, was die App dir mitteilt. Du wählst, welche Mitteilungen aufs Handy kommen.
+Neu: Ein Postfach hinter der Glocke sammelt alles, was die App dir mitteilt; du wählst, was aufs Handy kommt. Rote Zahlen zeigen neue Challenge-Beiträge, orange Zahlen offene Freigaben, das App-Symbol zählt mit. In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde. Dunkelmodus folgt dem Gerät.
 
-In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde. Team-Rückblick je Gemeinde. Dunkelmodus folgt dem Gerät.
-
-Behoben: Nach Update oder Neuanmeldung kamen keine Mitteilungen mehr. Antippen einer Mitteilung ließ die App abstürzen. Einladungs- und Passwort-Links öffnen direkt die App.
+Behoben: Mitteilungen kommen nach Update oder Neuanmeldung wieder an, auch bei offener App. Links aus Einladung und Passwort-Mail öffnen direkt die App.
 ```
 
 ---
 
-## Screenshots, die vor dem Einreichen neu gezogen werden müssen
+## Screenshots
 
-Alle 42 Bilder unter `docs/screenshots/` stammen vom 10.09.2026 und zeigen
-2.2.x: keine Glocke, kein Gemeinde-Umschalter, Banner „Version 2.1". Dieselben
-Bilder dienen als Store-Bilder — sie würden 2.3.0 mit der alten Oberfläche
-bewerben (Audit 26.09.2026, UI BF-09 / Sammelbefund S-17).
-
-Reihenfolge, wie `CLAUDE.md` sie verlangt: **erst deployen, dann ziehen**, und
-jedes Bild ansehen (Glocke oben rechts, Banner „Version 2.3", kein Ladezustand,
-keine 404-Seite).
+Neu gezogen am 01.10.2026 gegen Produktion (Commit `9dd6cb97`, „Bilder für
+2.3 neu gezogen"): je Gerät 21 Bilder mit Glocke und Gemeinde-Umschalter.
+Vor dem Einreichen noch einmal ansehen, ob sich seither etwas Sichtbares
+geändert hat. Wer neu zieht, hält die Reihenfolge aus `CLAUDE.md` ein:
+**erst deployen, dann ziehen**, und jedes Bild ansehen (Glocke oben rechts,
+Banner „Version 2.3", kein Ladezustand, keine 404-Seite).
 
 ```bash
 KONFI_DEMO_PASSWORT=… node scripts/screenshots.mjs                 # iPhone, 21 Bilder
@@ -139,10 +154,10 @@ Was sich mit 2.3.0 ändert und beim Einreichen abgefragt wird. Hier steht nur,
 
 ### App Store Connect
 
-- **Version 2.3.0, Build 231** (aus `frontend/version.json`; der Workflow
-  setzt beides).
+- **Version 2.3.0** mit dem Build aus `frontend/version.json` (der Workflow
+  setzt beides; zuletzt 238).
 - **„Neues in dieser Version"**: der iOS-Text oben, ohne Plattform-Wörter.
-- **Screenshots**: die neu gezogenen iPhone-Bilder (siehe oben).
+- **Screenshots**: die iPhone-Bilder vom 01.10.2026 (siehe oben).
 - **App-Datenschutz (Nährwerttabelle)** — die App erhebt seit dieser Version
   mehr als bisher deklariert sein könnte. Abzugleichen mit
   `frontend/ios/App/App/PrivacyInfo.xcprivacy` und Abschnitt 9b der
@@ -164,19 +179,20 @@ Was sich mit 2.3.0 ändert und beim Einreichen abgefragt wird. Hier steht nur,
     Empfängern innerhalb des Dienstes; ob eine Angabe nötig wird, ist eine
     Rechtsfrage.
 - **Datenschutz-URL**: zeigt auf `konfi-quest.de/datenschutz`. Die Erklärung
-  trägt „Stand: Juni 2026" und kennt weder Crashlytics-Datum noch
-  Multi-Gemeinde — vor dem Einreichen nachziehen (Doku BF-08).
+  trägt „Stand: 1. Oktober 2026" und beschreibt Crashlytics (9b) und die
+  Reichweitenmessung (9a); Simon hat 9a am 01.10.2026 gegengelesen. Offen
+  bleibt nur die Frage oben zur Sichtbarkeit in einer zweiten Gemeinde.
 
 ### Play Console
 
-- **versionCode 125**, Version 2.3.0 (aus `frontend/version.json`;
-  `build.gradle` liest die Datei direkt).
+- **versionCode** und Version 2.3.0 aus `frontend/version.json` (zuletzt
+  132; `build.gradle` liest die Datei direkt).
 - **„Was ist neu"**: kommt aus `frontend/release-notes-de.txt` — der Text oben.
 - **Track**: Der `android-release`-Workflow reicht ohne ausdrückliche Angabe
   nur in die Testkanäle ein (seit dem 15.09.2026, als versionCode 102
   versehentlich in die Produktion ging). Für die Veröffentlichung muss
   `production` gesetzt werden.
-- **Screenshots**: die neu gezogenen Play-Bilder (1080 × 2160).
+- **Screenshots**: die Play-Bilder vom 01.10.2026 (1080 × 2160).
 - **Datensicherheit** — abzugleichen mit Abschnitt 9a/9b der
   Datenschutzerklärung:
   - **Absturzprotokolle** (Firebase Crashlytics, neu in 2.3.0) unter „App-
@@ -198,6 +214,6 @@ Was sich mit 2.3.0 ändert und beim Einreichen abgefragt wird. Hier steht nur,
 3. Beide Texte gegen den CHANGELOG lesen: Steht darin etwas, das gar nicht
    ausgeliefert wird? Insbesondere: Ist „Was ist neu?" für alle drei Rollen
    in der Fassung enthalten, die eingereicht wird?
-4. Screenshots neu gezogen und angesehen (siehe oben) — erst nach dem Deploy.
+4. Screenshots angesehen (siehe oben); neu ziehen nur nach einem Deploy.
 5. Datenschutz-Angaben in beiden Konsolen gegen `PrivacyInfo.xcprivacy` und
    die Datenschutzerklärung geprüft; Erklärung auf dem Stand von 2.3.0.

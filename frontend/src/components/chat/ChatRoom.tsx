@@ -34,6 +34,7 @@ import {
   SENDEFEHLER_ABGELEHNT,
 } from './sendeFehler';
 import { fehlerStatus } from '../../utils/fehler';
+import { uploadFehlerMelden, warteschlangenFehlerMelden } from '../../services/uploadDiagnose';
 import { safeUUID } from '../../utils/uuid';
 import { networkMonitor } from '../../services/networkMonitor';
 import { ChatHeader, MessageInput, autoCapitalize } from './ChatRoomSections';
@@ -128,6 +129,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       if (item.metadata.type !== 'chat') return;
       if (room?.id && item.metadata.roomId !== room.id) return;
       const clientId = item.metadata.clientId;
+      // Mit Datei: fuer die Messung, ob auch der Versand aus der eigenen
+      // Kopie der Warteschlange scheitert (services/uploadDiagnose.ts).
+      if (item.body?._localFilePath) warteschlangenFehlerMelden(item.error.status);
       // Mit dem Status: Bei einer endgueltigen Ablehnung (413, 415 ...) steht
       // der Grund an der Nachricht, und das Menue bietet kein "Erneut senden".
       setMessages(prev => prev.map(m =>
@@ -593,6 +597,11 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           }
           return;
         }
+        // Mit Datei: melden, dass schon der direkte Versand scheiterte --
+        // ohne das sah die Messung den Android-Befund vom 01.10.2026 gar
+        // nicht, die Nachricht steht dabei nur mit "!" da
+        // (services/uploadDiagnose.ts).
+        if (file) uploadFehlerMelden('chat-datei-direkt', err);
         // Fehlgeschlagener Online-Versand: Die Nachricht lebte bisher NUR im
         // React-State — Raum verlassen oder App neu gestartet, und sie war
         // weg (verschwundene Nachricht). Jetzt wird sie in die Queue
@@ -604,6 +613,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           if (networkMonitor.isOnline) writeQueue.flush();
         } catch (queueErr) {
           console.error('Nachricht konnte nicht in die Queue gesichert werden:', queueErr);
+          if (file) uploadFehlerMelden('chat-datei-sichern', queueErr);
           setMessages(prev => prev.map(m =>
             m.localId === localId ? { ...m, queueStatus: 'error' as const } : m
           ));

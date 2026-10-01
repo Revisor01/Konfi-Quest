@@ -7,9 +7,9 @@ App-Symbol mitzählen" entfällt damit.
 
 ## Anlass
 
-Rückmeldung eines Testers (Gerätetest Build 130/236): Am App-Symbol stand 52,
-obwohl in seiner Gemeinde nur eine Person (Marisa) Anträge entscheidet und
-Events verbucht. Die Zahl zählt bei der Leitung die offene Arbeit mit, und wer
+Rückmeldung aus dem Gerätetest (Build 130/236): Am App-Symbol stand 52,
+obwohl in der Gemeinde nur eine Person Anträge entscheidet und Events
+verbucht. Die Zahl zählt bei der Leitung die offene Arbeit mit, und wer
 alles sieht, bekommt alles in die Zahl.
 
 ## Was heute gilt

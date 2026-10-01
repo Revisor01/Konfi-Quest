@@ -88,7 +88,8 @@ lässt sich daran nichts.
 
 Unter **„Wer kommt"** steht die Teilnehmerliste: erst die Konfis, dann das
 Team, jeweils mit Jahrgang und dem Stand der Teilnahme (gebucht, Warteliste,
-anwesend, abgemeldet). So weißt du vor einer Freizeit, wen du erwartest. Die
+anwesend, abgemeldet). Bei Pflicht-Events stehen die Konfis nach Vornamen,
+sonst in der Reihenfolge der Anmeldung. So weißt du vor einer Freizeit, wen du erwartest. Die
 Liste ist zum Nachsehen da — verbucht und geändert wird sie von der Leitung.
 
 Ist jemand abgemeldet, steht der **Grund** darunter. Ebenso **Notizen** wie

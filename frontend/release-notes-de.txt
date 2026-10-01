@@ -1,5 +1,3 @@
-Neu: Ein Postfach hinter der Glocke oben rechts sammelt alles, was die App dir mitteilt. Du wählst, welche Mitteilungen aufs Handy kommen.
+Neu: Ein Postfach hinter der Glocke sammelt alles, was die App dir mitteilt; du wählst, was aufs Handy kommt. Rote Zahlen zeigen neue Challenge-Beiträge, orange Zahlen offene Freigaben, das App-Symbol zählt mit. In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde. Dunkelmodus folgt dem Gerät.
 
-In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde. Team-Rückblick je Gemeinde. Dunkelmodus folgt dem Gerät.
-
-Behoben: Nach Update oder Neuanmeldung kamen keine Mitteilungen mehr. Antippen einer Mitteilung ließ die App abstürzen. Einladungs- und Passwort-Links öffnen direkt die App.
+Behoben: Mitteilungen kommen nach Update oder Neuanmeldung wieder an, auch bei offener App. Links aus Einladung und Passwort-Mail öffnen direkt die App.

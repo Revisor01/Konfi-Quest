@@ -2,6 +2,7 @@ import { Share } from '@capacitor/share';
 import type { ShareOptions } from '@capacitor/share';
 import { ohneSperre, ausflugStarten, ausflugBeenden } from './appSperre';
 import { mitTypAusEndung } from '../utils/dateiTypen';
+import { lesefehlerMelden } from './uploadDiagnose';
 
 // ---------------------------------------------------------------------------
 // Systemdialoge, die die App in den Hintergrund schicken.
@@ -142,6 +143,64 @@ export const AUSWAHL_RUECKKEHR_HINWEIS_MS = 1200;
 /** Nachlauf nach Auswahl oder Abbruch — dieselbe Spanne wie beim Öffnen einer Datei. */
 export const AUSWAHL_NACHLAUF_MS = DATEI_NACHLAUF_MS;
 
+/**
+ * Bis zu dieser Größe kommt ein Dokument gleich nach der Auswahl in den
+ * Speicher (imSpeicher). Größer erlaubt die App nirgends (Material 20 MB, Chat
+ * 5 MB, services/mediaCompression.ts) — dort meldet die Größenprüfung wie
+ * bisher „zu groß", statt dass hier still viel Speicher belegt wird. Dieselbe
+ * Grenze wie die Kopie auf Android (DateiKopie.HOECHSTENS_BYTES).
+ */
+export const IM_SPEICHER_HOECHSTENS_BYTES = 25 * 1024 * 1024;
+
+/**
+ * Ein Dokument gleich nach der Auswahl in den Speicher lesen (01.10.2026).
+ *
+ * Simon nach dem Update auf Build 132: „Word & PDF in Material / Chat
+ * hochladen/senden geht immer noch nicht." Bis 01.10. 16:35 kam keine
+ * einzige Datei-Anfrage des Materials am Server an (Proxy-Log, Auftrag des
+ * lokalen Agenten). Eine gewählte Datei verweist auf Android auf den
+ * Speicherort ihres Anbieters (Google Drive, Downloads). Das WebView liest
+ * sie erst beim Senden und bricht ab, wenn sich Größe oder Zeit dort anders
+ * lesen als bei der Auswahl (Chromium-Fehler 40123366) — die Anfrage geht
+ * dann nie hinaus. Fotos gingen immer: Die Verkleinerung liest sie sofort in
+ * den Speicher und schickt diese Kopie. Dasselbe jetzt für Dokumente, gleich
+ * bei der Auswahl, solange die Datei sicher lesbar ist. Die Kopie im Cache
+ * der Android-App (DateiAuswahlChromeClient) bleibt als erste Stufe.
+ *
+ * WARUM DAS HILFT (Chromium-Quelltext, nachgelesen 01.10.2026): Eine Datei
+ * aus der Auswahl hat im WebView eine „Datei dahinter“. FormData schickt sie
+ * mit der Änderungszeit, die das WebView beim ersten Blick auf die Datei
+ * festgehalten hat (form_data.cc: AppendFile(path, LastModifiedTime())), und
+ * beim Senden vergleicht es diese Zeit mit der aktuellen
+ * (upload_file_element_reader.cc → ERR_UPLOAD_FILE_CHANGED). Genau so sah es
+ * der lokale Agent am Server: Die Vorabfrage (OPTIONS, 204) kam an, der
+ * Upload selbst nie — er bricht beim Lesen der Datei für den Body ab. Das
+ * Lesen über `arrayBuffer()` vergleicht dagegen keine Zeit (der Blob einer
+ * gewählten Datei trägt keine erwartete Änderungszeit, file.cc), und eine
+ * File aus diesen Bytes hat keine Datei dahinter: FormData schickt sie als
+ * Blob aus dem Speicher, ohne Vergleich — wie die verkleinerten Fotos, die
+ * immer gingen.
+ *
+ * Fotos und Videos bleiben unberührt (Fotos verkleinert die App ohnehin,
+ * Videos können groß sein), ebenso alles über der Grenze. Lässt sich ein
+ * Dokument nicht lesen, geht das Original weiter — nicht schlechter als
+ * vorher; der Fehler zeigt sich dann beim Senden. Gemeldet wird er schon hier
+ * (services/uploadDiagnose.ts): Dann zeigt die Messung, ob es am Lesen der
+ * Datei liegt oder erst am Versand.
+ */
+export const imSpeicher = async (datei: File): Promise<File> => {
+  const typ = (datei.type || '').toLowerCase();
+  if (typ.startsWith('image/') || typ.startsWith('video/')) return datei;
+  if (datei.size > IM_SPEICHER_HOECHSTENS_BYTES) return datei;
+  try {
+    const daten = await datei.arrayBuffer();
+    return new File([daten], datei.name, { type: datei.type, lastModified: datei.lastModified });
+  } catch (fehler) {
+    lesefehlerMelden(fehler);
+    return datei;
+  }
+};
+
 export interface DateiAuswahlOptionen {
   /** Wie das `accept` einer Datei-Eingabe, z. B. 'image/*'. */
   accept?: string;
@@ -167,6 +226,8 @@ const offeneAuswahlen = new Set<HTMLInputElement>();
  * Das Versprechen löst mit den gewählten Dateien auf, oder mit `null`, wenn
  * nichts gewählt wurde (Abbruch). Es wirft nie. Jede Datei trägt einen Typ:
  * Fehlt er oder ist er allgemein, kommt er aus der Endung (mitTypAusEndung).
+ * Dokumente kommen als Kopie im Speicher (imSpeicher), Fotos und Videos so,
+ * wie das System sie liefert.
  *
  * DER AUSFLUG beginnt, bevor die Auswahl aufgeht, und endet genau einmal:
  *   - nach der Auswahl (`change`) oder dem Abbruch (`cancel`, wo das WebView
@@ -230,7 +291,9 @@ export const dateiAuswaehlen = ({
       }
       offeneAuswahlen.delete(feld);
       setTimeout(ausflugEnde, AUSWAHL_NACHLAUF_MS);
-      aufloesen(dateien.length > 0 ? dateien : null);
+      // Dokumente gleich in den Speicher (imSpeicher). imSpeicher wirft nie,
+      // das Versprechen also auch nicht.
+      aufloesen(dateien.length > 0 ? Promise.all(dateien.map(imSpeicher)) : null);
     };
 
     const beiRueckkehr = () => {

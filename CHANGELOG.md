@@ -199,6 +199,9 @@ iOS-Build 237 · Android versionCode 131
   Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
 
 ### Geändert
+- Bei Pflicht-Events steht die Konfi-Liste eines Events nach Vornamen
+  sortiert, wie in der Konfi-Ansicht — für die Leitung und unter „Wer kommt"
+  für das Team. Bei anderen Events bleibt die Reihenfolge der Anmeldung.
 - Mitteilungen an die Leitung über einzelne Konfis aus der Zeit vor dem
   27. September (Abmeldungen mit Grund, neue Registrierungen, Beiträge, Zu-
   und Absagen des Teams) sind aus dem Postfach entfernt. Sie ließen sich
@@ -531,6 +534,9 @@ iOS-Build 237 · Android versionCode 131
   unter „Fehler".
 
 ### Behoben
+- Dateinamen mit Umlauten stehen in Chat, Material und Challenges richtig da:
+  aus „Gebetswürfel.pdf“ wurde bisher „GebetswÃ¼rfel.pdf“. Das gilt auch für
+  die Dateien, die schon hochgeladen sind.
 - Auf Samsung- und Xiaomi-Handys bleibt keine 1 mehr am App-Symbol stehen,
   wenn nichts offen ist: Eine Mitteilung wie eine Event-Erinnerung, die kam,
   als nichts zu tun war, verschwindet beim Öffnen der App.
@@ -546,7 +552,8 @@ iOS-Build 237 · Android versionCode 131
   Beschreibung gilt dort sofort.
 - PDF-, Word- und andere Dokumente lassen sich vom Android-Handy wieder in den
   Chat und ins Material hochladen, auch aus Google Drive oder dem
-  Download-Ordner. Bisher brach das Hochladen dort ohne Grund ab.
+  Download-Ordner. Bisher brach das Hochladen dort ohne Grund ab. Die App
+  liest ein gewähltes Dokument dafür gleich bei der Auswahl ein, wie Fotos.
 - Eine Chat-Nachricht mit Datei, die wegen einer abgerissenen Verbindung nicht
   rausging, bleibt in der Warteschlange und geht später los, statt als
   fehlgeschlagen stehen zu bleiben. Dasselbe gilt für einen Antrag mit Foto,
@@ -1512,6 +1519,10 @@ iOS-Build 237 · Android versionCode 131
   dabei: die Bibelstelle, Titel, Namen oder ein Ablehnungsgrund. Der
   Material-Reiter des Teams zählt als Material statt als Profil. Die
   Datenschutzerklärung nennt die neuen Arten.
+- Scheitert das Hochladen einer Datei, hält die anonyme Fehlermessung fest,
+  an welchem Schritt (Lesen der Datei, Senden, zweiter Versuch) und aus
+  welchem groben Grund (Netz, Zeitgrenze, Antwort des Servers) — ohne
+  Dateiname, Größe oder Typ.
 - Die iPhone-App ist auf das Startverfahren umgestellt, das neuere
   iOS-Fassungen verlangen. Für die Bedienung ändert sich nichts — ohne die
   Umstellung ließe sich die App künftig aber nicht mehr öffnen.
