@@ -86,9 +86,10 @@ cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
       `docs/handbuch/20-teamer.md` beschrieb „Deine Stempel"
       im eigenen Profil; den Abschnitt gibt es dort laut Code seit dem
       14.09.2026 nicht mehr.
-- [ ] **Teamer-Startseite:** Unter dem Gruß steht fest „Teamer:in", im Profil
-      die Selbstbezeichnung (`role_title`). Mit Simon klären, ob angeglichen
-      wird.
+- [x] **Teamer-Startseite** — erledigt 01.10.2026 (Simon: angleichen): Unter
+      dem Gruß steht die Selbstbezeichnung wie im Profil, sonst „Teamer:in"
+      (`greeting.role_title`, additiv). Befund war: Unter dem Gruß stand fest
+      „Teamer:in", im Profil die Selbstbezeichnung (`role_title`).
 - [ ] **Datenschutzerklärung:** Abschnitt 9a und der Satz zur Obergrenze der
       Anmeldungen sind live (Stand 1. Oktober 2026); Simon liest gegen.
 - [ ] **Testbuild:** Die App-Änderungen seit iOS 236 / Android 130 (Punkt-

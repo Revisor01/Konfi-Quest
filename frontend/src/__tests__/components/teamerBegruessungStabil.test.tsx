@@ -28,7 +28,7 @@ vi.mock('../../contexts/LiveUpdateContext', () => ({
   useLiveRefresh: vi.fn(),
 }));
 
-const dashboardData = {
+const dashboardData: { greeting: { display_name: string; hour: number; role_title?: string | null } } & Record<string, unknown> = {
   greeting: { display_name: 'Test Teamer', hour: 9 },
   certificates: [],
   events: [],
@@ -134,5 +134,35 @@ describe('Teamer-Startseite: Begrüßung springt beim Neuzeichnen nicht um', () 
     rerender(<TeamerDashboardPage />);
 
     expect(begruessung(container)).toBe(vorher);
+  });
+});
+
+// Rückmeldung des lokalen Agenten (01.10.2026), Simon: angleichen. Unter dem
+// Gruß stand fest „Teamer:in", im Profil die selbst gewählte Bezeichnung
+// (role_title). Jetzt an beiden Stellen dieselbe Regel
+// (utils/rollenNamen.selbstbezeichnung): eigene Bezeichnung, sonst
+// „Teamer:in". Der Server liefert sie in greeting.role_title mit (additiv).
+describe('Teamer-Startseite: unter dem Gruß die eigene Bezeichnung', () => {
+  const unterzeile = (container: HTMLElement) =>
+    container.querySelector('.app-dashboard-subtitle')?.textContent;
+
+  afterEach(() => {
+    delete dashboardData.greeting.role_title;
+  });
+
+  it('zeigt die eigene Bezeichnung', async () => {
+    dashboardData.greeting.role_title = 'Jugendmitarbeiter';
+    const { container } = render(<TeamerDashboardPage />);
+    await waitFor(() => expect(unterzeile(container)).toBe('Jugendmitarbeiter'));
+  });
+
+  it('ohne Bezeichnung, nur aus Leerzeichen oder von einem älteren Server: „Teamer:in"', async () => {
+    for (const wert of [null, '   ', undefined]) {
+      if (wert === undefined) delete dashboardData.greeting.role_title;
+      else dashboardData.greeting.role_title = wert;
+      const { container, unmount } = render(<TeamerDashboardPage />);
+      await waitFor(() => expect(unterzeile(container)).toBe('Teamer:in'));
+      unmount();
+    }
   });
 });

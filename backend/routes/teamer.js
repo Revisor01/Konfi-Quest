@@ -768,7 +768,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const now = new Date();
       const greeting = {
         display_name: req.user.display_name,
-        hour: now.getHours()
+        hour: now.getHours(),
+        // ADDITIV 01.10.2026: die Selbstbezeichnung fuer die Zeile unter dem
+        // Gruss -- wie im Profil, sonst "Teamer:in" (App, rollenNamen.ts).
+        role_title: req.user.role_title || null
       };
 
       // 2. Certificates: Alle Typen der Org mit LEFT JOIN user_certificates

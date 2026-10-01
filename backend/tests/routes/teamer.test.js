@@ -1140,8 +1140,10 @@ describe('Teamer Routes', () => {
       expect(res.status).toBe(200);
       // Form der Antwort, nicht nur Existenz der Felder: null oder {} kamen
       // frueher mit toBeDefined() durch (Audit 26.09.2026, Tests BF-06).
-      expect(Object.keys(res.body.greeting)).toEqual(['display_name', 'hour']);
+      // role_title kam am 01.10.2026 dazu (additiv, Zeile unter dem Gruss).
+      expect(Object.keys(res.body.greeting)).toEqual(['display_name', 'hour', 'role_title']);
       expect(res.body.greeting.display_name).toBe(USERS.teamer1.display_name);
+      expect(res.body.greeting.role_title).toBe(null);
       // Seed: keine Zertifikat-Typen, keine Team-Termine, keine Team-Badges.
       expect(res.body.certificates).toEqual([]);
       expect(res.body.events).toEqual([]);
@@ -1155,6 +1157,27 @@ describe('Teamer Routes', () => {
         show_losung: true,
         section_order: ['losung', 'challenges', 'events', 'konfispruch', 'zertifikate', 'badges'],
       });
+    });
+
+    it('liefert die eigene Bezeichnung in greeting.role_title -- gleich nach dem Ändern', async () => {
+      // Wie in der App: Startseite offen (die Anmeldung liegt 30 s im
+      // Zwischenspeicher von rbac.js), Bezeichnung im Profil ändern, zurück.
+      const dashboard = () => request(app)
+        .get('/api/teamer/dashboard')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      try {
+        expect((await dashboard()).body.greeting.role_title).toBe(null);
+        const aendern = await request(app)
+          .post('/api/auth/update-role-title')
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ role_title: 'Jugendmitarbeiter' });
+        expect(aendern.status).toBe(200);
+        const res = await dashboard();
+        expect(res.status).toBe(200);
+        expect(res.body.greeting.role_title).toBe('Jugendmitarbeiter');
+      } finally {
+        await db.query('UPDATE users SET role_title = NULL WHERE id = $1', [USERS.teamer1.id]);
+      }
     });
 
     // Befund H2 (26.08.2026): Die Events-Abfrage hatte zusaetzlich

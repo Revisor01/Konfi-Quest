@@ -31,6 +31,7 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { Preferences } from '@capacitor/preferences';
 import { useApp } from '../../../contexts/AppContext';
+import { selbstbezeichnung } from '../../../utils/rollenNamen';
 import api from '../../../services/api';
 import type { KonfiChallenge } from '../../../types/challenges';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
@@ -150,7 +151,9 @@ const getChallengeTypeIcon = (type?: string): string =>
 const DEFAULT_TEAMER_ORDER = DEFAULT_TEAMER_SECTION_ORDER;
 
 interface DashboardData {
-  greeting: { display_name: string; hour: number };
+  // role_title: additiv seit 01.10.2026 (Server liefert die Selbstbezeichnung
+  // mit); ein älterer Server schickt sie nicht -- dann gilt „Teamer:in".
+  greeting: { display_name: string; hour: number; role_title?: string | null };
   certificates: Certificate[];
   events: DashboardEvent[];
   badges: { recent: Badge[]; earned_count: number; total_count: number };
@@ -593,7 +596,9 @@ const TeamerDashboardPage: React.FC = () => {
                 <h2 className="app-dashboard-greeting">
                   {getGreeting(dashboardData.greeting.display_name)}
                 </h2>
-                <p className="app-dashboard-subtitle">Teamer:in</p>
+                <p className="app-dashboard-subtitle">
+                  {selbstbezeichnung(dashboardData.greeting.role_title, 'Teamer:in')}
+                </p>
               </div>
             </div>
           )}

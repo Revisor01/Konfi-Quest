@@ -525,6 +525,9 @@ iOS-Build 236 · Android versionCode 130
   unter „Fehler".
 
 ### Behoben
+- Auf der Startseite der Teamer:innen steht unter der Begrüßung die eigene
+  Funktionsbeschreibung wie im Profil, statt immer „Teamer:in". Eine geänderte
+  Beschreibung gilt dort sofort.
 - PDF-, Word- und andere Dokumente lassen sich vom Android-Handy wieder in den
   Chat und ins Material hochladen, auch aus Google Drive oder dem
   Download-Ordner. Bisher brach das Hochladen dort ohne Grund ab.
