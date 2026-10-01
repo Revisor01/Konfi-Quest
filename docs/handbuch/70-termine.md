@@ -94,6 +94,11 @@ Gemeinde — alle Konfis sehen es und können sich anmelden, auch Konfis ohne
 Jahrgang. Nur wer das Event sieht, bekommt die
 [Mitteilung zum Anmeldestart](#den-anmeldung-moeglich-push-einordnen).
 
+Auswählen musst du einen Jahrgang nur bei einem
+[Pflicht-Event](#ein-pflicht-event-einrichten) — nur dann trägt das Feld das
+Sternchen. Solange keiner gewählt ist, steht darunter, dass das Event der
+ganzen Gemeinde gilt.
+
 ### Die Voreinstellungen kennen
 
 | Feld | Voreinstellung |

@@ -76,6 +76,7 @@ export const BEKANNTE_FEHLERTEXTE: readonly string[] = [
   'Das geht nur mit Internetverbindung. Bitte versuche es später noch einmal.',
   'Das Ende liegt vor dem Beginn',
   'Das Konfi-Limit muss eine Zahl ab 0 oder leer sein',
+  'Das Material ist gespeichert, die Dateien noch nicht. Tippe noch einmal auf Speichern.',
   'Das neue Passwort erfüllt nicht alle Anforderungen',
   'Das Passwort darf keine Leerzeichen enthalten',
   'Das Passwort erfüllt nicht alle Anforderungen',

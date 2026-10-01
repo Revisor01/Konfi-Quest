@@ -525,6 +525,24 @@ iOS-Build 236 · Android versionCode 130
   unter „Fehler".
 
 ### Behoben
+- PDF-, Word- und andere Dokumente lassen sich vom Android-Handy wieder in den
+  Chat und ins Material hochladen, auch aus Google Drive oder dem
+  Download-Ordner. Bisher brach das Hochladen dort ohne Grund ab.
+- Eine Chat-Nachricht mit Datei, die wegen einer abgerissenen Verbindung nicht
+  rausging, bleibt in der Warteschlange und geht später los, statt als
+  fehlgeschlagen stehen zu bleiben. Dasselbe gilt für einen Antrag mit Foto,
+  der ohne Netz gestellt wird.
+- Kommt beim Speichern eines neuen Materials die Datei nicht an, legt ein
+  zweites Speichern kein weiteres Material an, sondern lädt die Datei in das
+  schon gespeicherte. Die Meldung sagt, dass nur die Dateien fehlen.
+- Wer einen Chat öffnet, findet dessen Mitteilungen danach nicht mehr in der
+  Leiste — auf Android ging das bisher nie, auf dem iPhone nicht, wenn ein
+  Push die App gestartet hatte. Beim Öffnen der Events gilt dasselbe für die
+  Event-Mitteilungen. Auf Samsung und Xiaomi bleibt die eine Mitteilung, an
+  der die Zahl am App-Symbol hängt, bis nichts mehr offen ist.
+- Im Event-Formular trägt „Jahrgänge“ das Pflicht-Sternchen nur noch bei
+  Pflicht-Events; ohne Auswahl steht dort, dass das Event der ganzen Gemeinde
+  gilt.
 - Bei genau einem Punkt heißt es überall „1 Punkt" statt „1 Punkte" — etwa
   beim Fortschritt zum nächsten Level auf der Startseite der Konfis, in der
   Rangliste, bei Levels und Badges und im Rückblick.
@@ -1331,6 +1349,9 @@ iOS-Build 236 · Android versionCode 130
   Fehler ab.
 
 ### Sonstiges
+- Das Startprotokoll des Servers meldet die Hintergrund-Jobs nicht mehr pauschal
+  als gestartet: Es steht dort „Deaktiviert" oder „Leader-Wahl", je nachdem,
+  ob der Server sie übernehmen darf.
 - Die Datenschutzerklärung beschreibt die Reichweitenmessung genauer:
   Sitzungen werden innerhalb eines Kalendermonats zusammengefasst, und der
   ungefähre Standort umfasst Land, Region und Stadt.

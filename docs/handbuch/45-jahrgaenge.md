@@ -342,7 +342,8 @@ Zwei Dinge laufen anders als beim Löschen eines einzelnen Events:
   wenn es jemanden betrifft.
 
 **Stempel bleiben.** Stempel, die Teamer:innen und Leitung in einer gelöschten
-Challenge bekommen haben, stehen danach weiter unter **„Deine Stempel“** und in
+Challenge bekommen haben, stehen danach weiter im Challenges-Reiter unter
+**„Deine Stempel“** und in
 der Detailansicht der Person — mit Name, Symbol, Beschreibung und dem Tag, an
 dem sie verliehen wurden. Konfis behalten ihre [Badges](60-badges.md); die
 Stempel ihrer Challenges gehen mit dem Jahrgang.

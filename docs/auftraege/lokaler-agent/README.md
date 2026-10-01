@@ -74,11 +74,16 @@ cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
 
 ### Für den Agenten in der Cloud (nur Repo)
 
-- [ ] **Startbanner:** Das Backend meldet „Background: Gestartet", auch wenn
+- [x] **Startbanner** — erledigt 01.10.2026 (PR #202): Das Banner zeigt
+      „Deaktiviert (RUN_BACKGROUND_JOBS=false)" bzw. „Leader-Wahl (Jobs laufen
+      auf dem Cron-Leader)"; `tests/utils/startbanner.test.js` startet
+      `server.js` und liest die Zeile. Befund war: Das Backend meldete „Background: Gestartet", auch wenn
       `RUN_BACKGROUND_JOBS=false` gesetzt ist (gemessen am Test-Backend: die
-      Zeile steht direkt unter „Hintergrund-Jobs DEAKTIVIERT"). Mit Test
-      korrigieren.
-- [ ] **Handbuch:** `docs/handbuch/20-teamer.md` beschreibt „Deine Stempel"
+      Zeile steht direkt unter „Hintergrund-Jobs DEAKTIVIERT").
+- [x] **Handbuch** — erledigt 01.10.2026 (PR #202): Eintrag aus der
+      Profil-Liste gestrichen; „Deine Stempel" ist der Abschnitt im
+      Challenges-Reiter (so jetzt auch in `45-jahrgaenge.md`). Befund war:
+      `docs/handbuch/20-teamer.md` beschrieb „Deine Stempel"
       im eigenen Profil; den Abschnitt gibt es dort laut Code seit dem
       14.09.2026 nicht mehr.
 - [ ] **Teamer-Startseite:** Unter dem Gruß steht fest „Teamer:in", im Profil
@@ -89,6 +94,31 @@ cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
 - [ ] **Testbuild:** Die App-Änderungen seit iOS 236 / Android 130 (Punkt-
       Plural, Selbstbezeichnung, Eventdatum) brauchen einen neuen Build —
       nur auf Simons Ansage.
+
+### Neu aus der Cloud seit dieser Rückmeldung (PR #202, noch nicht gemergt)
+
+PR #202 behebt drei Rückmeldungen aus dem Gerätetest 130/236 — Einzelheiten
+in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
+130/236". Zwei Dinge daraus gehen nur am Server oder am Gerät:
+
+- [ ] **Uploads vom Android-Handy nachzählen (lokaler Agent, 10 Minuten, nur
+      Anzahlen):** PDF und Word gingen vom Android-Handy weder in den Chat
+      noch ins Material. Die vermutete Ursache ist ein Abbruch im WebView,
+      **bevor** die Anfrage den Server erreicht. Gegenprobe: in den
+      Access-Logs des Proxys und den Logs beider Backends seit dem 28.09. die
+      Antworten **413** und **415** auf `POST /api/chat/rooms/*/messages` und
+      `POST /api/material/*/files` zählen, dazu die Zeilen `Datei abgelehnt`.
+      Keine Dateinamen, keine Personen, nur Zahlen je Route und Status. Wenige
+      oder keine Treffer bestätigen den Befund; viele 415 hießen, dass der
+      Server PDFs ablehnt — dann sofort an Simon.
+- [ ] **Gerätetest der nächsten Builds (Simon):** eine PDF und eine Word-Datei
+      vom Android-Handy in den Chat und ins Material (auch aus Google Drive und
+      dem Download-Ordner); einen Chat mit mehreren liegenden Mitteilungen
+      öffnen — sie verschwinden (auf Samsung und Xiaomi bleibt die eine mit
+      der Zahl, solange noch etwas offen ist); auf dem iPhone die App über
+      einen Chat-Push kalt starten — die übrigen Mitteilungen des Chats gehen
+      ebenfalls. Die Mitteilungen auf Android brauchen den Server-Stand von
+      PR #202 **und** den neuen Build.
 
 ### Bleibt beim lokalen Agenten
 

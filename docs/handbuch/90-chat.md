@@ -384,6 +384,13 @@ wie sie sind — für ein längeres Video ist der Chat zu knapp.
   und bleibt mit dem roten Warnsymbol und dem Grund stehen (*„Nicht gesendet:
   Dieser Dateityp kann nicht gesendet werden."*) — lösch sie und schick die
   Datei in einem der Formate oben.
+- Auf Android legt die App ein gewähltes Dokument — alles außer Fotos und
+  Videos — zuerst als Kopie auf dem Gerät ab und schickt diese Kopie. So geht
+  es auch aus Google Drive oder dem Download-Ordner verlässlich durch. Die
+  Kopie verschwindet nach drei Tagen von selbst.
+- Kommt die Datei nicht an, weil die Verbindung abreißt, bleibt die Nachricht
+  samt Datei in der Warteschlange und geht los, sobald es wieder geht — wie
+  eine Nachricht ohne Netz.
 - Sie liegt danach **verschlüsselt** auf dem Server, unter einem zufälligen
   Namen ohne Bezug zu Inhalt oder Absender.
 - Abrufen kann sie nur, wer angemeldet ist und den Chat öffnen darf. Es gibt

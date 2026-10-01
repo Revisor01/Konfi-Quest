@@ -162,11 +162,6 @@ auch vom Gerät. Mehr dazu unter
 - **Badges** — deine Badges; welche
   [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen-zaehlen) gelten,
   steht im Badge-Kapitel
-- **Deine Stempel** — die [Challenge-Stempel](80-challenges.md#den-stempel-vergeben),
-  die du selbst gesammelt hast. Was es noch zu holen gibt, steht grau daneben.
-  Ein Tipp auf einen Stempel zeigt, wofür er steht und wann du ihn bekommen
-  hast. Gibt es weder erhaltene noch offene Stempel, steht der Abschnitt nicht
-  da.
 - **Konfi-Historie** — wenn du früher selbst Konfi warst, in der Gemeinde, in
   der du gerade arbeitest: deine damaligen Punkte und Badges und unter **„Events der Konfi-Zeit“** die Events, bei
   denen du dabei oder angemeldet warst, mit den Punkten dafür. Diese Liste

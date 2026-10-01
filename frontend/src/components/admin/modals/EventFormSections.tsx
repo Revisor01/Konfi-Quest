@@ -485,7 +485,10 @@ export const CategoriesTargetSection = React.memo<CategoriesTargetSectionProps>(
         {teamerAccess !== 'teamer_only' && (<>
         <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: 'var(--app-abstand-eng)', paddingTop: 'var(--app-abstand-basis)' }}>
           <IonLabel style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: formData.mandatory && formData.jahrgang_ids.length === 0 ? 'var(--app-color-danger)' : 'var(--app-text-secondary)' }}>
-            Jahrgänge (mehrere möglich) *{formData.mandatory && formData.jahrgang_ids.length === 0 ? ' (Pflicht bei Pflicht-Events)' : ''}
+            {/* Das Sternchen nur bei Pflicht-Events (Tester-Rueckmeldung 30.09.2026):
+                Nur dort verlangen App und Server einen Jahrgang; ein normales
+                Event ohne Jahrgang gilt der ganzen Gemeinde. */}
+            Jahrgänge (mehrere möglich){formData.mandatory ? ' *' : ''}{formData.mandatory && formData.jahrgang_ids.length === 0 ? ' (Pflicht bei Pflicht-Events)' : ''}
             {formData.jahrgang_ids.length > 0 && (
               <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-jahrgang)', fontWeight: 'var(--app-schrift-normal)' }}>
                 ({formData.jahrgang_ids.length} ausgewählt)
@@ -493,6 +496,11 @@ export const CategoriesTargetSection = React.memo<CategoriesTargetSectionProps>(
             )}
           </IonLabel>
         </IonItem>
+        {!formData.mandatory && formData.jahrgang_ids.length === 0 && (
+          <p style={{ margin: '0 0 var(--app-abstand-eng)', paddingInline: 'var(--app-abstand-basis)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-secondary)' }}>
+            Ohne Auswahl gilt das Event für die ganze Gemeinde.
+          </p>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
           {jahrgaenge.map((jahrgang) => {
             const isSelected = formData.jahrgang_ids.includes(jahrgang.id);

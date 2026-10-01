@@ -278,6 +278,33 @@ Gegenproben stehen in den Commit-Nachrichten und als Nachtrag vom 30.09. am jewe
 - **Beobachtet, nicht geändert:** Der erste E2E-Test direkt nach dem Stack-Start kann an
   `ERR_NETWORK_CHANGED` scheitern (einmal bei #195); ein Aufwärmschritt im E2E-Setup würde helfen.
 
+## Gerätetest Build 130/236 (30.09.2026, Tester)
+
+Bestätigt am Gerät: Mitteilungen tragen das Symbol, die Zahl am App-Symbol stimmt, nach dem
+Wechsel in eine andere App und zurück kommt keine Fingerabdruck-Abfrage. Gemeldet und im Zweig von
+PR #202 behoben (noch nicht in Produktion, nicht in 130/236):
+
+- **Mitteilungen eines Chats verschwinden beim Lesen nicht** (Simon: „Das ist ein Bug").
+  Android: `getDeliveredNotifications` liefert als `data` die `Notification.extras`, nicht den
+  Push-Inhalt — der Abgleich auf Art und Raum traf nie. iOS: Das Plugin verweigert das Aufräumen,
+  bis die Registrierung durch ist; ein per Push kalt gestarteter Chat verlor es. → **behoben**
+  (`e0ec503b`): Server-tag `kq:<art>:<raum>:<eindeutig>`, App liest ihn; Nachholen nach der
+  Registrierung. Braucht Server **und** neuen Build. Samsung/Xiaomi (Weg „mitteilungen") bleibt
+  bewusst: Die eine Mitteilung trägt die Zahl und geht erst bei 0.
+- **PDF und Word gehen vom Android-Handy nicht hoch** (Chat und Material; vom iPhone ja).
+  Wahrscheinlichste Ursache: Das WebView liest die `content://`-Auswahl erst beim Senden und bricht
+  mit `ERR_UPLOAD_FILE_CHANGED` ab, wenn der Anbieter eine andere Änderungszeit meldet
+  (Chromium 40123366) — die Anfrage erreicht den Server nie. Am Gerät nicht nachgestellt, deshalb
+  als Hypothese geführt; Gegenprobe über die Log-Zählung (Aufträge des lokalen Agenten, Abschnitt „Neu aus der Cloud"). → **behoben**
+  (`76e2758b`): Dokumente gehen als Kopie im App-Cache über den FileProvider ans WebView.
+  Beim Prüfen gefunden und mit behoben:
+  - Chat-Dateien und Offline-Anträge mit Foto landeten nie in der Warteschlange: `queue-uploads/`
+    wurde ohne `recursive` beschrieben und nie angelegt („Missing parent directory").
+  - Neues Material, dessen Datei-Upload scheiterte, entstand bei jedem weiteren Speichern neu.
+- **Anregungen, nicht umgesetzt:** Inhalt einer Chat-Nachricht im Push (Simon prüft Datenschutz);
+  Zahl am Symbol nur aus Chat und Glocke, oder ein Schalter „darf freigeben" am Konto (Simons
+  Vorschlag; Empfehlung: Schalter, weil er Liste, Mitteilung und Zahl zusammen regelt).
+
 ## Mehrfach-Konten (Gespräch mit Simon)
 
 Simon, 28.09.: „Das mit den Multi Accounts müssen wir besprechen." Die übrigen Stellen der Tabelle
