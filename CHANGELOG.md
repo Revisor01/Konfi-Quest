@@ -546,7 +546,8 @@ iOS-Build 237 · Android versionCode 131
   Beschreibung gilt dort sofort.
 - PDF-, Word- und andere Dokumente lassen sich vom Android-Handy wieder in den
   Chat und ins Material hochladen, auch aus Google Drive oder dem
-  Download-Ordner. Bisher brach das Hochladen dort ohne Grund ab.
+  Download-Ordner. Bisher brach das Hochladen dort ohne Grund ab. Die App
+  liest ein gewähltes Dokument dafür gleich bei der Auswahl ein, wie Fotos.
 - Eine Chat-Nachricht mit Datei, die wegen einer abgerissenen Verbindung nicht
   rausging, bleibt in der Warteschlange und geht später los, statt als
   fehlgeschlagen stehen zu bleiben. Dasselbe gilt für einen Antrag mit Foto,

@@ -13,6 +13,7 @@ import {
   AUSWAHL_RUECKKEHR_FRIST_MS,
   AUSWAHL_RUECKKEHR_HINWEIS_MS,
   DATEI_AUSFLUG_HOECHSTENS_MS,
+  IM_SPEICHER_HOECHSTENS_BYTES,
 } from '../../services/systemDialoge';
 import { laeuftAusflug, ausflugStarten, ausflugBeenden } from '../../services/appSperre';
 
@@ -110,8 +111,10 @@ describe('Auswahl: die Dateien kommen an, der Ausflug endet nach dem Nachlauf', 
 
     const dateien = await auswahl;
     expect(dateien).toHaveLength(2);
-    expect(dateien![0]).toBe(a);
-    expect(dateien![1]).toBe(b);
+    // Dokumente kommen als Kopie im Speicher zurueck (01.10.2026, Abschnitt
+    // unten) -- verglichen wird deshalb Name und Inhalt, nicht das Objekt.
+    expect(dateien!.map((d) => d.name)).toEqual(['a.pdf', 'b.txt']);
+    expect(await dateien![1].text()).toBe('x');
   });
 
   it('das Feld wird erst ausgelesen, dann geleert', async () => {
@@ -312,5 +315,85 @@ describe('Zwei Auswahlen nacheinander zählen sauber', () => {
     await zweite;
     vi.advanceTimersByTime(AUSWAHL_NACHLAUF_MS);
     expect(laeuftAusflug()).toBe(false);
+  });
+});
+
+describe('Dokumente liegen nach der Auswahl im Speicher (01.10.2026)', () => {
+  // Simon nach dem Update auf Build 132: "Word & PDF in Material / Chat
+  // hochladen/senden geht immer noch nicht." Bis 01.10. 16:35 kam keine
+  // einzige Datei-Anfrage des Materials am Server an (Proxy-Log). Auf Android
+  // verweist eine gewaehlte Datei auf den Speicherort des Anbieters (Drive,
+  // Downloads); das WebView liest sie erst beim Senden und bricht ab, wenn
+  // sich Groesse oder Zeit dort inzwischen anders lesen. Fotos gingen immer:
+  // Die Verkleinerung liest sie sofort in den Speicher. Dasselbe jetzt fuer
+  // Dokumente -- gleich bei der Auswahl.
+  const lesbar = (inhalt: string, name: string, typ: string) => {
+    const f = new File([inhalt], name, { type: typ, lastModified: 1700000000000 });
+    return f;
+  };
+
+  it('eine PDF kommt als eigene Kopie mit Name, Typ, Zeit und Inhalt', async () => {
+    const auswahl = dateiAuswaehlen({ accept: '.pdf' });
+    const plan = lesbar('%PDF-1.7 Inhalt', 'Freizeitplan.pdf', 'application/pdf');
+
+    waehlen(geoeffnet[0], [plan]);
+
+    const [kopie] = (await auswahl)!;
+    expect(kopie).not.toBe(plan);
+    expect([kopie.name, kopie.type, kopie.size, kopie.lastModified])
+      .toEqual(['Freizeitplan.pdf', 'application/pdf', plan.size, 1700000000000]);
+    expect(await kopie.text()).toBe('%PDF-1.7 Inhalt');
+  });
+
+  it('die Kopie bleibt lesbar, auch wenn das Original es danach nicht mehr ist', async () => {
+    const auswahl = dateiAuswaehlen();
+    const brief = lesbar('PK-Word', 'Brief.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    // Genau einmal lesbar -- so verhaelt sich eine Datei, deren Anbieter beim
+    // zweiten Lesen eine andere Zeit meldet.
+    const echt = brief.arrayBuffer.bind(brief);
+    let gelesen = 0;
+    brief.arrayBuffer = () => (gelesen++ === 0 ? echt() : Promise.reject(new DOMException('geaendert', 'NotReadableError')));
+
+    waehlen(geoeffnet[0], [brief]);
+
+    const [kopie] = (await auswahl)!;
+    await expect(brief.arrayBuffer()).rejects.toThrow('geaendert');
+    expect(await kopie.text()).toBe('PK-Word');
+  });
+
+  it('Fotos und Videos bleiben unberuehrt -- Fotos verkleinert die App ohnehin, Videos koennen gross sein', async () => {
+    const auswahl = dateiAuswaehlen({ multiple: true });
+    const foto = lesbar('jpg', 'IMG_1.jpg', 'image/jpeg');
+    const film = lesbar('mp4', 'VID_1.mp4', 'video/mp4');
+
+    waehlen(geoeffnet[0], [foto, film]);
+
+    const dateien = (await auswahl)!;
+    expect(dateien[0]).toBe(foto);
+    expect(dateien[1]).toBe(film);
+  });
+
+  it('laesst sich ein Dokument nicht lesen, geht das Original weiter (nicht schlechter als vorher)', async () => {
+    const auswahl = dateiAuswaehlen();
+    const kaputt = lesbar('x', 'Liste.pdf', 'application/pdf');
+    kaputt.arrayBuffer = () => Promise.reject(new DOMException('weg', 'NotReadableError'));
+
+    waehlen(geoeffnet[0], [kaputt]);
+
+    expect((await auswahl)![0]).toBe(kaputt);
+  });
+
+  it('ueber der Grenze bleibt das Original -- die Groessenpruefung meldet "zu gross" wie bisher', async () => {
+    const auswahl = dateiAuswaehlen();
+    const riesig = lesbar('x', 'Archiv.pdf', 'application/pdf');
+    Object.defineProperty(riesig, 'size', { value: IM_SPEICHER_HOECHSTENS_BYTES + 1 });
+    const lesen = vi.fn();
+    riesig.arrayBuffer = lesen;
+
+    waehlen(geoeffnet[0], [riesig]);
+
+    expect((await auswahl)![0]).toBe(riesig);
+    expect(lesen).not.toHaveBeenCalled();
   });
 });

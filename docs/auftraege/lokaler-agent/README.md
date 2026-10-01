@@ -193,6 +193,33 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       7). Raster: Deploy 11:02:29 → Takt 11:02 … 12:47; Container-start
       13:27:49 → 13:42, 13:57. Alle Abstände zwischen 45 und 75 min.
 
+### Neu aus der Cloud, 01.10.2026 abends
+
+- [ ] **Uploads nach dem Update auf Build 132 (lokaler Agent, 15 Minuten,
+      Ergebnis an Simon).** Simon nach dem Update: „Word & PDF in Material /
+      Chat hochladen/senden geht immer noch nicht. Haben wir was in den Logs
+      von Malte in Heide?" Zu messen seit dem 01.10.2026, 17:00 MESZ:
+      1. **Proxy-Zugriffslog:** `POST /api/material/*/files` und
+         `POST /api/chat/rooms/*/messages` — Anzahl je Status; wenn das Log die
+         Größe der Anfrage führt, getrennt nach „mit Datei" (über 50 kB) und
+         „ohne". Erreicht **keine** Material-Anfrage den Server, bricht die App
+         vorher ab (wie bis zum 01.10.).
+      2. **Umami**, Ereignis `fehler`: Einträge mit der Stelle „Das Material
+         ist gespeichert, die Dateien noch nicht. Tippe noch einmal auf
+         Speichern." oder „Fehler beim Speichern" — je `art` (`netz`,
+         `timeout`, `http-…`, `intern`) und Gerät (Android/iOS) zählen. `netz`
+         heißt: Die Anfrage ist in der App gescheitert, bevor der Server
+         antwortete.
+      3. **Für das Konto, das Simon nennt** (Tester in Heide): ob seit 17:00
+         eine dieser Anfragen von ihm ankam und mit welchem Status. Das
+         Ergebnis **nur an Simon**, keine Namen und keine Kennungen hier ins
+         Repo — hier nur die Zahlen aus 1 und 2.
+      Hintergrund: Die Kopie im Cache der Android-App (Build 131/132) hat den
+      Fehler am Gerät nicht behoben. Die App liest Dokumente ab dem nächsten
+      Build zusätzlich gleich bei der Auswahl in den Speicher
+      (`services/systemDialoge.ts`, `imSpeicher`), wie Fotos. Die Zahlen
+      zeigen, ob die Anfrage den Server überhaupt erreicht.
+
 ### Bleibt beim lokalen Agenten
 
 - [ ] Postgres und Log-Zusammensetzung an einem Abend unter Last messen.
