@@ -38,7 +38,9 @@ import type { UseIonModalResult } from '@ionic/react';
 import type { AxiosInstance } from 'axios';
 import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { punkteAnzeigeDatum, nachAnzeigeDatumAbsteigend } from '../../../utils/punkteDatum';
 import { datumKurz, datumLang, uhrzeit } from '../../../utils/dateUtils';
+import { punkteText } from '../../../utils/punkteText';
 
 /**
  * Die "present"-Funktion aus useIonModal — erste Haelfte des Rueckgabepaars.
@@ -549,7 +551,9 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {eventPoints.map((eventPoint, index) => {
+            {/* Eventdatum statt Verbuchungsdatum, danach geordnet
+                (Simon, 01.10.2026; utils/punkteDatum.ts). */}
+            {nachAnzeigeDatumAbsteigend(eventPoints).map((eventPoint, index) => {
               const isEventTypeDisabled = (eventPoint.point_type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
                 || (eventPoint.point_type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false);
               return (
@@ -587,8 +591,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
                       <div className="app-list-item__meta">
                         <span className="app-list-item__meta-item">
                           <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-icon-color--events" />
-                          {eventPoint.awarded_date &&
-                            datumKurz(eventPoint.awarded_date, { ohneJahr: true })}
+                          {datumKurz(punkteAnzeigeDatum(eventPoint), { ohneJahr: true })}
                         </span>
                         <span className="app-list-item__meta-item">
                           <IonIcon icon={ICON_PERSON} className="app-icon-color--konfis" />
@@ -1087,7 +1090,7 @@ export const TeamerSinceSection = React.memo<TeamerSinceSectionProps>(({
 
 interface KonfiHistorySectionProps {
   konfiHistory: {
-    history: Array<{ id: number; title: string; points: number; category: string; date: string; source_type: string }>;
+    history: Array<{ id: number; title: string; points: number; category: string; date: string; source_type: string; event_date?: string | null }>;
     totals: { gottesdienst: number; gemeinde: number; total: number };
   };
   formatDate: (dateString: string) => string;
@@ -1102,7 +1105,9 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
   // unvollstaendige Antwort), wirft ein Zugriff hier den ganzen Render — und
   // die ErrorBoundary leert dann Auth + Cache, was sich als "ploetzlich
   // ausgeloggt" zeigt (User-Hinweis 11.08.).
-  const history = Array.isArray(konfiHistory?.history) ? konfiHistory.history : [];
+  // Geordnet nach dem angezeigten Datum (bei Events der Termin,
+  // utils/punkteDatum.ts) -- der Server sortiert nach Verbuchung.
+  const history = Array.isArray(konfiHistory?.history) ? nachAnzeigeDatumAbsteigend(konfiHistory.history) : [];
   const totals = konfiHistory?.totals || { gottesdienst: 0, gemeinde: 0, total: 0 };
   const visibleCount = expanded ? history.length : 3;
   return (
@@ -1111,7 +1116,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
       <div className="app-section-icon app-section-icon--purple">
         <IonIcon icon={ICON_UHRZEIT} />
       </div>
-      <IonLabel>Konfi-Historie ({totals.total} Punkte)</IonLabel>
+      <IonLabel>Konfi-Historie ({punkteText(totals.total)})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
       <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
@@ -1214,7 +1219,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
                             14.09.2026). */}
                         <div className={`app-list-item__title ${typeBadgeColor ? 'app-list-item__title--punkte-badge-doppelt' : 'app-list-item__title--punkte-badge'}`}>{entry.title}</div>
                         <div className="app-list-item__meta">
-                          <span className="app-list-item__meta-item">{formatDate(entry.date)}</span>
+                          <span className="app-list-item__meta-item">{formatDate(punkteAnzeigeDatum(entry))}</span>
                         </div>
                       </div>
                     </div>

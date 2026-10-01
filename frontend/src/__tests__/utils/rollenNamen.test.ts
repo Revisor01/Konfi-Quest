@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { rollenName, ROLLEN_NAMEN } from '../../utils/rollenNamen';
+import { rollenName, ROLLEN_NAMEN, selbstbezeichnung } from '../../utils/rollenNamen';
 
 // Simon, 28.09.2026: Die Rolle `admin` heißt „Leitung", `org_admin`
 // „Org-Leitung" -- auch Ehrenamtliche haben diese Rollen. Jede Ansicht, die
@@ -77,5 +77,28 @@ describe('Alle Rollen-Beschriftungen lesen rollenName', () => {
       .toContain('rollenName(einladung.role_name, einladung.role_display_name ?? undefined)');
     expect(lies('src/components/shared/EinladungenKarte.tsx'))
       .toContain('rollenName(e.role_name, e.role_display_name)');
+  });
+});
+
+// Simon, 01.10.2026: Unter dem Namen steht die Selbstbezeichnung
+// (users.role_title), sonst der Rollenname. Leerzeichen allein zaehlen nicht.
+describe('selbstbezeichnung', () => {
+  it('nimmt die eigene Bezeichnung, getrimmt', () => {
+    expect(selbstbezeichnung('Teamerin', 'Teamer:in')).toBe('Teamerin');
+    expect(selbstbezeichnung('  Jugendleiterin ', 'Teamer:in')).toBe('Jugendleiterin');
+  });
+
+  it('faellt ohne Bezeichnung auf den Rueckfall zurueck', () => {
+    expect(selbstbezeichnung('', 'Teamer:in')).toBe('Teamer:in');
+    expect(selbstbezeichnung(null, 'Teamer:in')).toBe('Teamer:in');
+    expect(selbstbezeichnung(undefined, 'Teamer:in')).toBe('Teamer:in');
+  });
+
+  it('faellt bei lauter Leerzeichen auf den Rueckfall zurueck', () => {
+    expect(selbstbezeichnung('   ', 'Teamer:in')).toBe('Teamer:in');
+  });
+
+  it('liefert ohne Rueckfall einen leeren Text statt Leerzeichen', () => {
+    expect(selbstbezeichnung('  ')).toBe('');
   });
 });

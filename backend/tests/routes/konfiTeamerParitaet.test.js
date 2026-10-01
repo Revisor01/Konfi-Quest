@@ -107,7 +107,9 @@ describe('Konfi/Teamer-Paritaet (zusammengelegte Logik)', () => {
       await gleicheAusgangslage(USERS.konfi1.id, ORGS.testGemeinde.id);
       await gleicheAusgangslage(USERS.teamer1.id, ORGS.testGemeinde.id);
 
-      const felder = ['id', 'title', 'points', 'category', 'date', 'comment', 'source_type'];
+      // event_date kam am 01.10.2026 ADDITIV dazu (Datum des Termins, bei
+      // Nicht-Events null) — die sieben alten Felder bleiben alle erhalten.
+      const felder = ['id', 'title', 'points', 'category', 'date', 'comment', 'source_type', 'event_date'];
 
       for (const [pfad, token] of [
         ['/api/konfi/points-history', konfiToken],

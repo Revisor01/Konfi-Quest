@@ -11,6 +11,120 @@ liegt und **womit** man sich anmeldet, steht nicht hier — dieses Repo ist
 Reihenfolge von Sicherung bis Testbuild. Ein Merge nach `main` ist der
 Produktions-Deploy; den Merge gibt Simon frei.
 
+## Rückmeldung des lokalen Agenten, 01.10.2026
+
+Alle Punkte 1–10 aus „Stand 30.09.2026" (unten) sind abgearbeitet; die
+Ergebnisse stehen mit Datum und Messwert in den einzelnen Auftragsdateien.
+`main` steht auf `688d0959` und ist live (`/api/status`: database, migrations,
+cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
+
+### Erledigt (mit Messwert)
+
+- **Push nach dem Paket-Update:** 0 Fehlerzeilen in beiden Backends, 0 neue
+  Token-Fehler bei 132 Tokens; Zustellung belegt (Token 0,3 s nach der
+  Mitteilung als erreichbar markiert). Weniger Mitteilungen als am Vortag lag
+  am Betrieb (Nachbeantragung in einer Gemeinde am 29.09.).
+- **Deploy-Lücke (10):** Ursache war `pullImage: true` — Portainer erstellte
+  bei jedem Update alle Dienste neu, auch Postgres (25 s ohne API). Jetzt:
+  Images vorab ziehen, Update ohne Pull, nur geänderte Dienste werden neu
+  erstellt. Postgres lief über die Deploys vom 01.10. ohne Neustart durch.
+  Postgres per Digest festgehalten.
+- **Backend-Container (09):** Healthcheck ohne curl; Backends laufen ohne
+  root als eigene uid `10001` (am Host unbelegt — uid 1000 gehört dort einem
+  bestehenden Systemnutzer). Uploads und Push-Schlüssel sind für andere
+  Nutzer am Host gesperrt. Ob die uid fest ins Image kommt, frühestens
+  08.10.2026 (eine Woche ohne `EACCES`).
+- **Stack (02):** genau ein Cron-Leader, Übernahme nach 0,2 s; Vortags-
+  Erinnerung je Termin genau einmal (24,0–24,2 h vor Beginn).
+- **Sicherung und Notfall (05):** nächtliche Sicherung jetzt im Format `-Fc`
+  mit Lesbarkeitsprüfung (`pg_restore --list`, mindestens 50 Tabellen);
+  Rückspielprobe 1,25 s, 0 Fehler; Notfall-Probelauf mit leerem Tag grün;
+  Stand 2.2.0 läuft gegen die Datenbank von 2.3.0.
+- **Datenbank (11):** Schema der Produktion gleich dem Repo (einzige Ausnahme
+  `pg_stat_statements`, bewusst nur Betrieb); Postgres-Server fest auf UTC
+  über die Befehlszeile; SMTP-Grenze 300/h und 1.000/Tag gilt jetzt für die
+  tatsächliche Absenderadresse des Stacks.
+- **Messungen (03, 06, 07, 04):** schlechteste Route im Median 1.259 → 211 ms;
+  Client-Adresse kommt korrekt an; CSP 0 Verstöße auf 34 Seiten; Umami
+  bereinigt.
+- **Screenshots (08):** 42 Bilder neu, jedes angesehen.
+- **Refresh-Tokens:** höchstens 10 je Konto, 1 je Gerät; Bestand 1.281 → 469.
+- **Logs:** Push-Registrierung nur bei Änderung, Socket-Fehler gebündelt;
+  hochgerechnet reicht die Aufbewahrung bei EKD-Größe ~11 statt 4,4 Tage.
+- **App:** „noch 1 Punkt" (alle Stellen über `utils/punkteText.ts`);
+  Selbstbezeichnung im Profil getrimmt; Eventdatum statt Verbuchungsdatum bei
+  Event-Punkten (`event_date` additiv).
+
+### Entschieden (Simon, 01.10.2026)
+
+- Echter Notfall-Lauf entfällt, der Probelauf genügt.
+- Rund 4 s Lücke der Web-App beim Frontend-Tausch sind in Ordnung, keine
+  zweite Frontend-Instanz.
+- Umami bleibt eingestellt wie es ist; Kommentar in `analytics.ts` und
+  Datenschutzerklärung (9a) sind richtiggestellt (Sitzung je Kalendermonat,
+  Ort bis zur Stadt).
+- Das Mischkonto (Org-Leitung und Konfi in einer Testgemeinde) bleibt.
+- „Kategorie-Meister 0 von 8" unter „Erreichte Badges" ist richtig so.
+- Getrennte Kästen unter „Suche & Filter" auf Android bleiben.
+- „Teamer" im Teamer-Profil ist die selbst gewählte Bezeichnung der Person,
+  kein Fehler.
+- `pg_stat_statements` wird keine Migration: Die Erweiterung braucht
+  Superuser-Rechte und würde auf einer Instanz ohne sie (Notfall-Rückweg)
+  jeden Deploy blockieren.
+
+### Für den Agenten in der Cloud (nur Repo)
+
+- [ ] **Startbanner:** Das Backend meldet „Background: Gestartet", auch wenn
+      `RUN_BACKGROUND_JOBS=false` gesetzt ist (gemessen am Test-Backend: die
+      Zeile steht direkt unter „Hintergrund-Jobs DEAKTIVIERT"). Mit Test
+      korrigieren.
+- [ ] **Handbuch:** `docs/handbuch/20-teamer.md` beschreibt „Deine Stempel"
+      im eigenen Profil; den Abschnitt gibt es dort laut Code seit dem
+      14.09.2026 nicht mehr.
+- [ ] **Teamer-Startseite:** Unter dem Gruß steht fest „Teamer:in", im Profil
+      die Selbstbezeichnung (`role_title`). Mit Simon klären, ob angeglichen
+      wird.
+- [ ] **Datenschutzerklärung:** Abschnitt 9a und der Satz zur Obergrenze der
+      Anmeldungen sind live (Stand 1. Oktober 2026); Simon liest gegen.
+- [ ] **Testbuild:** Die App-Änderungen seit iOS 236 / Android 130 (Punkt-
+      Plural, Selbstbezeichnung, Eventdatum) brauchen einen neuen Build —
+      nur auf Simons Ansage.
+
+### Neu aus der Cloud seit dieser Rückmeldung (PR #202, noch nicht gemergt)
+
+PR #202 behebt drei Rückmeldungen aus dem Gerätetest 130/236 — Einzelheiten
+in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
+130/236". Zwei Dinge daraus gehen nur am Server oder am Gerät:
+
+- [ ] **Uploads vom Android-Handy nachzählen (lokaler Agent, 10 Minuten, nur
+      Anzahlen):** PDF und Word gingen vom Android-Handy weder in den Chat
+      noch ins Material. Die vermutete Ursache ist ein Abbruch im WebView,
+      **bevor** die Anfrage den Server erreicht. Gegenprobe: in den
+      Access-Logs des Proxys und den Logs beider Backends seit dem 28.09. die
+      Antworten **413** und **415** auf `POST /api/chat/rooms/*/messages` und
+      `POST /api/material/*/files` zählen, dazu die Zeilen `Datei abgelehnt`.
+      Keine Dateinamen, keine Personen, nur Zahlen je Route und Status. Wenige
+      oder keine Treffer bestätigen den Befund; viele 415 hießen, dass der
+      Server PDFs ablehnt — dann sofort an Simon.
+- [ ] **Gerätetest der nächsten Builds (Simon):** eine PDF und eine Word-Datei
+      vom Android-Handy in den Chat und ins Material (auch aus Google Drive und
+      dem Download-Ordner); einen Chat mit mehreren liegenden Mitteilungen
+      öffnen — sie verschwinden (auf Samsung und Xiaomi bleibt die eine mit
+      der Zahl, solange noch etwas offen ist); auf dem iPhone die App über
+      einen Chat-Push kalt starten — die übrigen Mitteilungen des Chats gehen
+      ebenfalls. Die Mitteilungen auf Android brauchen den Server-Stand von
+      PR #202 **und** den neuen Build.
+
+### Bleibt beim lokalen Agenten
+
+- [ ] Postgres und Log-Zusammensetzung an einem Abend unter Last messen.
+- [ ] `pg_stat_statements` ab dem 04.10.2026 auswerten (dann ist die Woche voll).
+- [ ] Ab 08.10.2026: uid fest ins Image (Nutzer 10001 anlegen) oder `user:` im
+      Stack belassen (Auftrag 09).
+- [ ] Anfang November die Umami-Bereinigung wiederholen (Auftrag 03).
+- [ ] Beim nächsten Gerätetest den Bildversand im Chat prüfen (neue
+      Dateirechte).
+
 ## Stand 30.09.2026, nachmittags — was jetzt ansteht
 
 Seit dem Vormittag sind drei weitere Stände auf `main` und damit in Produktion
@@ -42,58 +156,39 @@ Reihenfolge nach Nutzen:
    versendeten Mitteilungen mit dem Vortag vergleichen (gleiche Tageszeit).
    Ein Fehler hier geht sofort an Simon — Rückweg ist der Notfall-Deploy auf
    `76178ec` (Auftrag 05; vorher Probelauf).
-2. **Uploads vom Android-Handy nachzählen (neu, 10 Minuten, nur Anzahlen):**
-   Tester-Rückmeldung zu Build 130: PDF und Word gehen vom Android-Handy weder
-   in den Chat noch ins Material. Die Ursache im Repo (behoben auf dem Zweig
-   von PR #202, noch nicht in Produktion) ist ein Abbruch im WebView, **bevor**
-   die Anfrage den Server erreicht. Das lässt sich bestätigen: in den
-   Access-Logs des Proxys und den Logs beider Backends seit dem 28.09. die
-   Zahl der Antworten **413** und **415** auf `POST /api/chat/rooms/*/messages`
-   und `POST /api/material/*/files` zählen, dazu die Zeilen `Datei abgelehnt`.
-   Keine Dateinamen, keine Personen, nur Zahlen je Route und Status. Wenige
-   oder keine Treffer bestätigen den Befund; viele 415 hießen, dass der Server
-   PDFs ablehnt — dann sofort an Simon.
-3. **[10 Deploy-Lücke](10-deploy-luecke.md)** — der einzige offene Befund, den
+2. **[10 Deploy-Lücke](10-deploy-luecke.md)** — der einzige offene Befund, den
    Nutzer:innen spüren: Jeder Deploy erstellt beide Backends zugleich neu.
    Heute gab es drei Deploys; der von `4145114` wurde deshalb rot (erste
    Verify-Abfrage ohne Antwort, Stand trotzdem live). Seit PR #200 steht bei
    jedem Deploy die Zeile `Nach dem Tausch N Fehlantwort(en) in X s` im Log —
    auswerten, dann die Ursache messen (Auftrag 10, Nachtrag 30.09.).
-4. **[05 Sicherung und Notfall](05-sicherung-und-notfall.md), Abschnitt 3** —
+3. **[05 Sicherung und Notfall](05-sicherung-und-notfall.md), Abschnitt 3** —
    der Probelauf mit **leerem Tag** jetzt wiederholen (der Fix ist auf `main`):
    erwartet grün und als Stand der zuletzt gebaute `main`-Commit. Danach, mit
    Ansage an Simon, der echte idempotente Lauf. Abschnitte 1–2 (Sicherung,
    Rückspielprobe) wie beschrieben.
-5. **[03 nach dem Deploy](03-nach-dem-deploy.md)** — Abschnitte 1–3 (Stand,
+4. **[03 nach dem Deploy](03-nach-dem-deploy.md)** — Abschnitte 1–3 (Stand,
    Nachher-Messungen, Log-Volumen) und 6 (Umami bereinigen). Abschnitt 4
    (Screenshots) ist Auftrag 08.
-6. **[11 Datenbank](11-schema-und-rueckspielprobe.md)** — Abschnitt 1 ist
+5. **[11 Datenbank](11-schema-und-rueckspielprobe.md)** — Abschnitt 1 ist
    überholt (siehe dort), 2–4 gelten: Schema gegen das Repo, Zeitzone im
    Stack, SMTP-Grenze, Rückspielprobe mit dem echten Dump.
-7. **[07 Client-Adresse](07-client-adresse-hinter-dem-proxy.md)** und
+6. **[07 Client-Adresse](07-client-adresse-hinter-dem-proxy.md)** und
    **[06 Mischkonten](06-mischkonten.md)** — reine Messungen.
-8. **[08 Screenshots](08-screenshots-2.3.md)** — der Stand ist live, die Bilder
+7. **[08 Screenshots](08-screenshots-2.3.md)** — der Stand ist live, die Bilder
    können gezogen werden; danach der Handbuch-Generator.
-9. **[09 Backend-Container](09-backend-container.md)** — Healthcheck ohne curl,
+8. **[09 Backend-Container](09-backend-container.md)** — Healthcheck ohne curl,
    Backend ohne root.
-10. **[02 Portainer-Stack](02-portainer-stack.md)** — die offenen Beobachtungen
+9. **[02 Portainer-Stack](02-portainer-stack.md)** — die offenen Beobachtungen
    (genau ein Backend startet die Hintergrund-Jobs, Vortags-Erinnerung kommt
    einmal), `RUN_BACKGROUND_JOBS=false` bei `backend2` entfernen (entscheidet
    seit 2.3.0 nur noch, ob sich eine Replica als Leader bewirbt) und
    `backend-test` in Portainer auf `test-latest` stellen.
-11. **[04 CI](04-ci.md)** — im Repo fast alles erledigt (siehe dort); offen nur
+10. **[04 CI](04-ci.md)** — im Repo fast alles erledigt (siehe dort); offen nur
     der Blick in die Browser-Konsole unter der öffentlichen Adresse (CSP).
 
 Nicht für den lokalen Agenten, sondern bei Simon:
 
-- **Nächste Testbuilds (Android 131, iOS 237) nach PR #202** — am Gerät
-  prüfen: eine PDF und eine Word-Datei vom Android-Handy in den Chat und ins
-  Material (auch aus Google Drive und dem Download-Ordner); einen Chat mit
-  mehreren liegenden Mitteilungen öffnen — sie verschwinden (auf Samsung und
-  Xiaomi bleibt die eine mit der Zahl, solange noch etwas offen ist); auf dem
-  iPhone die App über einen Chat-Push kalt starten — die übrigen Mitteilungen
-  des Chats gehen ebenfalls. Die Mitteilungen auf Android brauchen dazu auch
-  den Server-Stand von PR #202.
 - **Gerätetests mit Android 130 und iOS 236** — die Liste in
   `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Messen in Produktion und
   am Gerät", dazu wegen der neuen Bibliotheken: Anmelden mit Gesicht bzw.

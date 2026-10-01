@@ -4,6 +4,7 @@ import { TEXTE, stufeFuer } from '../slides/kategorieSeitenTexte';
 import { tageBis } from '../../shared/eventFormatting';
 import { hintergrundFuer } from '../hintergrundbilder';
 import './ShareCard.css';
+import { punkteText } from '../../../utils/punkteText';
 
 interface ShareCardProps {
   slideKey: string;
@@ -845,7 +846,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 {geschafft
                   ? 'Alles, was jetzt noch kommt, machst du, weil du willst — nicht, weil du musst.'
                   : nahDran
-                    ? `Noch ${fehlend} ${fehlend === 1 ? 'Punkt' : 'Punkte'}.`
+                    ? `Noch ${punkteText(fehlend)}.`
                     : 'Es ist noch Zeit. Und es zählt nicht, wie schnell du bist — sondern dass du da bist.'}
               </div>
             </>

@@ -57,6 +57,8 @@ lassen kannst.
   begründet
 - **Aktivitäten** [hinzufügen](40-punkte.md#eine-aktivitaet-direkt-zuschreiben)
   oder [entfernen](40-punkte.md#punkte-wieder-wegnehmen)
+- **Events** — die Punkte aus Events, jeweils mit dem
+  [Datum des Events](40-punkte.md#ueber-ein-event)
 - [**Badges**](60-badges.md) ansehen
 - [**Challenge-Stempel**](80-challenges.md) ansehen — direkt unter den
   Badges. Es erscheinen nur Stempel aus eigenen, freigegebenen Beiträgen;

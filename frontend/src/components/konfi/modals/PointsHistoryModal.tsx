@@ -30,6 +30,7 @@ import api from '../../../services/api';
 import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import { datumKurz } from '../../../utils/dateUtils';
+import { punkteAnzeigeDatum, nachAnzeigeDatumAbsteigend } from '../../../utils/punkteDatum';
 
 interface PointsHistoryModalProps {
   onClose: () => void;
@@ -55,6 +56,8 @@ interface PointEntry {
   date: string;
   comment?: string;
   source_type: 'activity' | 'bonus' | 'event';
+  /** Datum des Termins (nur Events; seit 01.10.2026, ältere Server ohne). */
+  event_date?: string | null;
 }
 
 const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointConfig, apiEndpoint, profileTotals }) => {
@@ -87,9 +90,10 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     return datumKurz(date);
   };
 
-  // Gefilterte Historie: deaktivierte Typen ausblenden
+  // Gefilterte Historie: deaktivierte Typen ausblenden. Geordnet nach dem
+  // angezeigten Datum (bei Events der Termin, utils/punkteDatum.ts).
   const filteredHistory = useMemo(() => {
-    return history.filter(entry => {
+    return nachAnzeigeDatumAbsteigend(history).filter(entry => {
       if (entry.category === 'gottesdienst' && !gottesdienstEnabled) return false;
       if (entry.category === 'gemeinde' && !gemeindeEnabled) return false;
       return true;
@@ -257,7 +261,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
                                       <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-text-events)' }} />
-                                      {formatDate(entry.date)}
+                                      {formatDate(punkteAnzeigeDatum(entry))}
                                     </span>
                                   </div>
                                 </div>

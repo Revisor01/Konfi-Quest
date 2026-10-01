@@ -19,6 +19,13 @@
 // Jeder Eintrag in history: id, title, points, category, date, comment,
 // source_type. Ausgelieferte Store-Apps lesen genau diese Felder — nichts
 // darf wegfallen oder umbenannt werden.
+//
+// event_date (seit 01.10.2026, ADDITIV): bei Event-Punkten das Datum des
+// Termins (events.event_date; jede Serie ist eine eigene Zeile, also der
+// konkrete Termin), sonst null. `date` bleibt bei Events das
+// Verbuchungsdatum (awarded_date) — die Store-Apps zeigen es weiter an, die
+// neue Oberflaeche zeigt event_date (Simon, 01.10.2026: „damit ich weiß, wo
+// ich nach dem Event suchen müsste"). Sortierung unveraendert nach `date`.
 
 // Aktivitaeten (Gottesdienst- & Gemeinde-Punkte)
 //
@@ -37,7 +44,8 @@ const ACTIVITIES_QUERY = `
     a.type as category,
     ka.completed_date as date,
     ka.comment,
-    'activity' as source_type
+    'activity' as source_type,
+    NULL::timestamptz as event_date
   FROM user_activities ka
   JOIN activities a ON ka.activity_id = a.id
   WHERE ka.user_id = $1 AND ka.organization_id = $2
@@ -53,7 +61,8 @@ const BONUS_QUERY = `
     type as category,
     completed_date as date,
     NULL as comment,
-    'bonus' as source_type
+    'bonus' as source_type,
+    NULL::timestamptz as event_date
   FROM bonus_points
   WHERE konfi_id = $1 AND organization_id = $2
   ORDER BY completed_date DESC
@@ -68,7 +77,8 @@ const EVENT_POINTS_QUERY = `
     ep.point_type as category,
     ep.awarded_date as date,
     ep.description as comment,
-    'event' as source_type
+    'event' as source_type,
+    e.event_date
   FROM event_points ep
   JOIN events e ON ep.event_id = e.id
   WHERE ep.konfi_id = $1 AND ep.organization_id = $2

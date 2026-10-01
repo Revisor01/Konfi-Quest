@@ -25,15 +25,10 @@ RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 FROM node:24-bookworm-slim
 WORKDIR /app
 
-# curl NUR fuer den Healthcheck des Stacks: deploy/compose.konfi_quest.yml
-# (und damit der Portainer-Stack) prueft backend, backend2 und backend-test mit
-# `curl -f http://localhost:5000/api/health`. Das Slim-Image hat kein curl --
-# ohne diese Zeile waere jeder neue Container "unhealthy", und deploy/rollend.sh
-# wartet genau auf "healthy". Kann weg, sobald der Stack wie dieses Image
-# `node healthcheck.js` benutzt (Auftrag docs/auftraege/lokaler-agent/08).
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+# Kein curl (01.10.2026): Der Stack prueft backend, backend2 und backend-test
+# seitdem wie dieses Image mit `node healthcheck.js` (Auftrag
+# docs/auftraege/lokaler-agent/09-backend-container.md). Bis dahin wurde curl
+# eigens fuer den Healthcheck des Stacks nachinstalliert.
 
 COPY --from=abhaengigkeiten /app/node_modules ./node_modules
 COPY . .
@@ -43,10 +38,12 @@ ARG GIT_SHA=unknown
 ENV GIT_SHA=$GIT_SHA
 
 # Upload-Verzeichnis. Dem Nutzer `node` (uid 1000) gehoerig, damit das Image
-# auch ohne root laufen kann; der Prozess laeuft vorerst weiter als root, weil
-# das gemountete Upload-Verzeichnis in Produktion root gehoert (Umstellung:
-# Auftrag docs/auftraege/lokaler-agent/08). Mit Mount gilt der Besitzer des
-# Host-Verzeichnisses, ohne Mount (E2E, lokal) dieser hier.
+# auch ohne root laeuft (E2E, lokal: ohne Mount gilt dieser Besitz). In
+# Produktion laeuft der Prozess seit dem 01.10.2026 als eigene uid
+# 10001:10001 (`user:` im Stack); Upload-Verzeichnis und Push-Schluessel
+# gehoeren am Host 10001, fuer andere Nutzer gesperrt. Bewusst nicht 1000:
+# die gehoert am Host einem bestehenden Systemnutzer (Auftrag
+# docs/auftraege/lokaler-agent/09-backend-container.md).
 RUN mkdir -p /app/uploads && chown node:node /app/uploads
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

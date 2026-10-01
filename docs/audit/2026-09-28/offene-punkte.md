@@ -295,7 +295,7 @@ PR #202 behoben (noch nicht in Produktion, nicht in 130/236):
   Wahrscheinlichste Ursache: Das WebView liest die `content://`-Auswahl erst beim Senden und bricht
   mit `ERR_UPLOAD_FILE_CHANGED` ab, wenn der Anbieter eine andere Änderungszeit meldet
   (Chromium 40123366) — die Anfrage erreicht den Server nie. Am Gerät nicht nachgestellt, deshalb
-  als Hypothese geführt; Gegenprobe über die Log-Zählung (lokaler Agent, Punkt 2). → **behoben**
+  als Hypothese geführt; Gegenprobe über die Log-Zählung (Aufträge des lokalen Agenten, Abschnitt „Neu aus der Cloud"). → **behoben**
   (`76e2758b`): Dokumente gehen als Kopie im App-Cache über den FileProvider ans WebView.
   Beim Prüfen gefunden und mit behoben:
   - Chat-Dateien und Offline-Anträge mit Foto landeten nie in der Warteschlange: `queue-uploads/`

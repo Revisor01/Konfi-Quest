@@ -53,6 +53,7 @@ import 'swiper/css/pagination';
 import 'swiper/css/effect-creative';
 import './WrappedModal.css';
 import './share/ShareCard.css';
+import { punkteText } from '../../utils/punkteText';
 
 interface WrappedModalProps {
   onClose: () => void;
@@ -188,7 +189,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     if (wrappedType === 'konfi') {
       const k = data as KonfiWrappedData;
       switch (slideKey) {
-        case 'punkte': return { ...base, slideValue: `${k.slides.punkte.total} Punkte gesammelt` };
+        case 'punkte': return { ...base, slideValue: `${punkteText(k.slides.punkte.total)} gesammelt` };
         case 'events': return { ...base, slideValue: `${k.slides.events.total_attended} Events besucht` };
         case 'badges': return { ...base, slideValue: `${k.slides.badges.total_earned} Badges verdient` };
         case 'aktivster-monat': return { ...base, slideValue: `Aktivster Monat: ${k.slides.aktivster_monat.monat_name}` };
@@ -217,11 +218,11 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
           };
           return { ...base, slideValue: highlightTexte[h?.type || ''] || 'Mein Highlight' };
         }
-        case 'endspurt': return { ...base, slideValue: `Noch ${k.slides.endspurt.fehlende_punkte} Punkte bis zum Ziel` };
+        case 'endspurt': return { ...base, slideValue: `Noch ${punkteText(k.slides.endspurt.fehlende_punkte)} bis zum Ziel` };
         case 'kategorie': return { ...base, slideValue: `Dein Bereich: ${k.slides.kategorie?.top_kategorie || '-'}` };
         case 'konfirmation': return { ...base, slideValue: `Konfirmation: ${konfirmationsTermin(k) || ''}` };
-        case 'ueber-das-ziel': return { ...base, slideValue: `${(k.slides.endspurt.aktuell_total - k.slides.endspurt.ziel_total)} Punkte über dem Ziel!` };
-        case 'abschluss': return { ...base, slideValue: `${k.slides.punkte.total} Punkte, ${k.slides.events.total_attended} Events, ${k.slides.badges.total_earned} Badges` };
+        case 'ueber-das-ziel': return { ...base, slideValue: `${punkteText(k.slides.endspurt.aktuell_total - k.slides.endspurt.ziel_total)} über dem Ziel!` };
+        case 'abschluss': return { ...base, slideValue: `${punkteText(k.slides.punkte.total)}, ${k.slides.events.total_attended} Events, ${k.slides.badges.total_earned} Badges` };
         default: return base;
       }
     } else {

@@ -225,6 +225,37 @@ describe('App-Icon-Lauf: Neustart, Ueberlappung, Sammelversand', () => {
     expect(ergebnis.geprueft).toBeGreaterThan(0);
   });
 
+  it('N8: ein Zaehler-Takt waehrend des Stundenlaufs weicht still aus -- der Stundenlauf traegt die Zaehler mit', async () => {
+    // Gemessen 30.09./01.10.2026: Die Zeile "vorheriger Lauf noch aktiv"
+    // stand jede Stunde zur selben Sekunde im Protokoll -- beide Takte treffen
+    // sich jede zwoelfte Runde, und wer zuerst startet, haengt an Millisekunden.
+    // Laeuft der volle Lauf, ist das kein Befund: Er aktualisiert die Zaehler
+    // selbst. Die Warnung bleibt fuer den Fall N4 (Zaehler-Takt ueber fuenf
+    // Minuten -- das waere ein Handlungsbedarf).
+    await BackgroundService.updateAllUserBadges(db, { nurZaehler: true });
+    await neueNachricht();
+
+    let freigeben;
+    const schranke = new Promise((r) => { freigeben = r; });
+    firebase.sendFirebaseSilentPush.mockImplementation(async () => { await schranke; return { success: true }; });
+
+    const stundenlauf = BackgroundService.updateAllUserBadges(db);
+    await vi.waitFor(() => expect(firebase.sendFirebaseSilentPush.mock.calls.length).toBeGreaterThan(0));
+
+    let zaehlerTakt;
+    try {
+      zaehlerTakt = await BackgroundService.updateAllUserBadges(zaehlDb(), { nurZaehler: true });
+    } finally {
+      // Immer freigeben -- sonst haengt der Stundenlauf in die naechsten Faelle.
+      freigeben();
+    }
+    const ergebnis = await stundenlauf;
+    expect(zaehlerTakt.uebersprungen).toBe(true);
+    expect(zaehler).toBe(0);
+    expect(warnungen.filter((z) => /vorheriger Lauf noch aktiv/.test(z))).toEqual([]);
+    expect(ergebnis.uebersprungen).toBeUndefined();
+  });
+
   it('N6: nach einem abgebrochenen Lauf ist der Merker wieder frei', async () => {
     const kaputt = { query: async () => { throw new Error('DB weg (simuliert)'); } };
     await expect(BackgroundService.updateAllUserBadges(kaputt, { nurZaehler: true })).rejects.toThrow('DB weg (simuliert)');

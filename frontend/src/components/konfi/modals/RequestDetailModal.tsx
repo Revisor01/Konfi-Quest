@@ -27,6 +27,7 @@ import {
 } from '../../shared/icons';
 import NachweisFoto from '../../shared/NachweisFoto';
 import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
+import { punkteText } from '../../../utils/punkteText';
 
 export interface ActivityRequest {
   id: number;
@@ -142,7 +143,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                   <IonItem lines="inset">
                     <IonLabel>
                       <p>Punkte</p>
-                      <h2>{request.activity_points ?? 0} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}</h2>
+                      <h2>{punkteText(request.activity_points ?? 0)}</h2>
                     </IonLabel>
                   </IonItem>
                 )}

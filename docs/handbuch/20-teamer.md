@@ -15,7 +15,7 @@ steht im Jahrgangs-Kapitel. Fehlt sie, setzt die Leitung sie nach.
 
 ## Auf der Startseite nachsehen, was ansteht
 
-![Die Startseite einer Teamer:in: Begrüßung, die Karte für Challenges und die eigenen Zertifikate.](/docs/bilder/iphone/teamer-startseite.png)
+![Die Startseite einer Teamer:in: Begrüßung, Tageslosung und die Karte mit den laufenden Challenges.](/docs/bilder/iphone/teamer-startseite.png)
 
 Die Bereiche, die deine Gemeinde freigeschaltet hat: deine **Zertifikate**,
 deine **Events**, die **Tageslosung** und deine **Badges**. Läuft gerade eine
@@ -148,7 +148,9 @@ auch vom Gerät. Mehr dazu unter
 Über das Personen-Symbol oben rechts. Dort findest du:
 
 - **Funktionsbeschreibung** — wie du in der App genannt wirst, etwa „Teamerin"
-  oder „Jugendmitarbeiter". Sie steht neben deinem Namen im Chat.
+  oder „Jugendmitarbeiter". Sie steht oben im Profil unter deinem Namen und
+  neben deinem Namen im Chat; ohne eigene Funktionsbeschreibung steht dort
+  „Teamer:in".
 - **E-Mail-Adresse ändern** und **Passwort ändern**
 - **Bibelübersetzung** für die Tageslosung
 - **Benachrichtigungen** — welche Mitteilungen aufs Handy kommen; siehe

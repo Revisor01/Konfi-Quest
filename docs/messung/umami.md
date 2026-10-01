@@ -198,6 +198,11 @@ Wie:
   [docs/auftraege/lokaler-agent/03-nach-dem-deploy.md](../auftraege/lokaler-agent/03-nach-dem-deploy.md),
   Abschnitt 6. Store-Fassungen ohne diese Korrektur schicken bis zu ihrem
   Update weiter den vollen Text — die Bereinigung ist deshalb zu wiederholen.
+  **Bereinigt am 01.10.2026:** 31 Einträge mit 14 verschiedenen Werten
+  (11.08.–28.09.2026) durch `andere-meldung` ersetzt, danach 0; die Zahl der
+  `stelle`-Einträge blieb 160. Seit dem Deploy von 2.3.0 kam kein Wert
+  außerhalb der Liste an. Sicherung mit den Namen nach der Prüfung gelöscht.
+  Absturzberichte in Crashlytics noch nicht geprüft (Konsole, bei Simon).
 
 Tests: `fehlerMessungOhneNamen.test.tsx` (echte Nutzlast an Umami und
 Wegmarke: verboten — die fünf Texte der vier Fundstellen, direkt und über
@@ -233,6 +238,12 @@ Rückgang.
 
 ### B4 — Wie lange eine Umami-Sitzung lebt, ist ungeklärt
 
+> **Erledigt 01.10.2026 — Texte richtiggestellt (Simons Entscheidung).**
+> Am Server gemessen: Umami 3.4.0, `SALT_ROTATION` nicht gesetzt, also
+> monatlicher Wechsel; in 30 Tagen 5.817 Sitzungen, 93,9 % mit Region,
+> 92,4 % mit Stadt. Die Einstellung bleibt; `analytics.ts` und die
+> Datenschutzerklärung (Abschnitt 9a) beschreiben jetzt Monat und Ortsangaben.
+
 `analytics.ts` schreibt von einem „täglich wechselnden Hash". Im aktuellen
 Umami-Quelltext (`src/app/api/send/route.ts`, `src/lib/crypto.ts`) wechselt das
 Salz der Sitzung dagegen standardmäßig **monatlich** (Umgebungsvariable
@@ -253,6 +264,13 @@ Fassung auf dem Server läuft, ist damit nicht geklärt. Der Auftrag dafür
 steht in
 [docs/auftraege/lokaler-agent/03-nach-dem-deploy.md](../auftraege/lokaler-agent/03-nach-dem-deploy.md),
 Abschnitt 6.
+
+**Am Server gemessen am 01.10.2026:** Es läuft Umami 3.4.0; die Fassung kennt
+`SALT_ROTATION`, gesetzt ist es nicht — das Salz wechselt also monatlich.
+Von 3.185 Sitzungen der App (seit 11.08.2026) tragen 3.113 eine Region
+(97,7 %) und 3.011 eine Stadt (94,5 %). Kommentar in `analytics.ts` und
+Datenschutzerklärung (9a) stimmen damit nicht; ob `SALT_ROTATION=day` und
+weniger Ortsangaben oder eine richtiggestellte Erklärung, entscheidet Simon.
 
 ## Von Simon beauftragt (27.09.2026)
 

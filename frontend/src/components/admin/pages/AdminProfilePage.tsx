@@ -40,7 +40,7 @@ import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import { datumKurz } from '../../../utils/dateUtils';
-import { rollenName } from '../../../utils/rollenNamen';
+import { rollenName, selbstbezeichnung } from '../../../utils/rollenNamen';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
@@ -163,8 +163,9 @@ const AdminProfilePage: React.FC = () => {
             <h1 className="app-detail-header__title">{user?.display_name || rollenName(user?.role_name, 'Leitung')}</h1>
             <p className="app-detail-header__subtitle">
               {/* Rolle nach role_name (utils/rollenNamen), wie ueberall in der App. */}
-              {profileData?.role_title
-                ? `${rollenName(user?.role_name, 'Leitung')} · ${profileData.role_title}`
+              {/* Dahinter die Selbstbezeichnung, getrimmt; nur Leerzeichen zaehlen nicht. */}
+              {selbstbezeichnung(profileData?.role_title)
+                ? `${rollenName(user?.role_name, 'Leitung')} · ${selbstbezeichnung(profileData?.role_title)}`
                 : rollenName(user?.role_name, 'Leitung')}
             </p>
             <div className="app-detail-header__info-row" style={{ justifyContent: 'center' }}>

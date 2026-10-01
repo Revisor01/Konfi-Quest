@@ -46,6 +46,7 @@ import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
 import { linkOeffnen } from '../../../services/systemDialoge';
+import { punkteText } from '../../../utils/punkteText';
 
 interface KonfiProfile {
   id: number;
@@ -544,7 +545,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                     <div className="app-list-item__content">
                       <div className="app-list-item__title">Punkte-Übersicht</div>
                       <div className="app-list-item__meta">
-                        <span className="app-list-item__meta-item">{profile.total_points || 0} Punkte gesamt</span>
+                        <span className="app-list-item__meta-item">{punkteText(profile.total_points || 0)} gesamt</span>
                       </div>
                     </div>
                   </div>

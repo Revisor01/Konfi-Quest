@@ -44,12 +44,26 @@ function imagesAus(text: string): Record<string, string> {
 
 type Container = { id: string; image: string; created: number };
 
-/** Nachgebaute Portainer-API samt /api/status der Backends. */
+/**
+ * Nachgebaute Portainer-API samt /api/status der Backends.
+ *
+ * Das Neuerstellen folgt dem, was in Produktion gemessen ist (01.10.2026,
+ * Auftrag 10): pullImage:true erstellt ALLE Dienste neu, auch Postgres;
+ * pullImage:false nur die Dienste, deren Image-Zeile sich geaendert hat.
+ */
 class Portainer {
   stack = '';
   env = [{ name: 'SMTP_HOST', value: 'mail.example' }];
   puts: Array<{ compose: string; env: unknown; pullImage: unknown }> = [];
   container = new Map<string, Container>();
+  /** Gezogene Images, mit der Zahl der update_stack-Aufrufe davor. */
+  pulls: Array<{ ref: string; putsDavor: number }> = [];
+  /** Tags, die ghcr (noch) nicht ausliefert: Rest-Anzahl der 404-Antworten. */
+  fehlt = new Map<string, number>();
+  /** Gegenprobe: Portainer erstellt trotz pullImage:false alles neu. */
+  alleNeu = false;
+  /** Jede Neuerstellung nach anfang(): Dienstname. */
+  neuErstellt: string[] = [];
   /** Kurz-Tag -> voller Commit, fuer die Antwort von /api/status. */
   commits = new Map<string, string>();
   /** Erzwungene Antworten fuer die ersten Status-Abfragen (null = 502). */
@@ -64,14 +78,19 @@ class Portainer {
     this.container.clear();
     this.statusVorgabe = [];
     this.statusAbfragen = 0;
-    this.uebernehme(this.stack);
+    this.pulls = [];
+    this.fehlt.clear();
+    this.alleNeu = false;
+    this.uebernehme(this.stack, false);
+    this.neuErstellt = [];
   }
 
-  private uebernehme(text: string) {
+  private uebernehme(text: string, alle: boolean) {
     for (const [dienst, image] of Object.entries(imagesAus(text))) {
       const alt = this.container.get(dienst);
-      if (!alt || alt.image !== image) {
+      if (alle || !alt || alt.image !== image) {
         this.container.set(dienst, { id: `c${this.naechsteId++}`, image, created: this.naechsteId });
+        this.neuErstellt.push(dienst);
       }
     }
   }
@@ -105,8 +124,20 @@ class Portainer {
       const daten = JSON.parse(koerper);
       this.puts.push({ compose: daten.stackFileContent, env: daten.env, pullImage: daten.pullImage });
       this.stack = daten.stackFileContent;
-      this.uebernehme(this.stack);
+      this.uebernehme(this.stack, daten.pullImage === true || this.alleNeu);
       return json(200, { Id: 249 });
+    }
+    if (url.pathname === '/api/endpoints/1/docker/images/create' && req.method === 'POST') {
+      const ref = `${url.searchParams.get('fromImage')}:${url.searchParams.get('tag')}`;
+      const rest = this.fehlt.get(ref) ?? 0;
+      if (rest > 0) {
+        this.fehlt.set(ref, rest - 1);
+        return json(404, { message: 'manifest unknown' });
+      }
+      this.pulls.push({ ref, putsDavor: this.puts.length });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(`{"status":"Status: Downloaded newer image for ${ref}"}\n`);
+      return;
     }
     if (url.pathname === '/api/endpoints/1/docker/containers/json') {
       return json(200, [...this.container.entries()].map(([dienst, c]) => ({
@@ -209,10 +240,9 @@ describe('rollender Deploy: der Normalfall', () => {
     expect(stufe2.backend2).toBe(`ghcr.io/revisor01/konfi-quest-backend:${kurz(B)}`);
     for (const put of portainer.puts) {
       expect(imagesAus(put.compose)['backend-test']).toBe('ghcr.io/revisor01/konfi-quest-backend:test-latest');
-      expect(imagesAus(put.compose).postgres).toBe('postgres:15-alpine');
+      expect(imagesAus(put.compose).postgres).toBe(imagesAus(REFERENZ).postgres);
       // Stack-Variablen gehen unveraendert zurueck ("env": [] loeschte sie).
       expect(put.env).toEqual([{ name: 'SMTP_HOST', value: 'mail.example' }]);
-      expect(put.pullImage).toBe(true);
     }
   });
 
@@ -222,6 +252,70 @@ describe('rollender Deploy: der Normalfall', () => {
     expect(code, aus).toBe(0);
     expect(aus).toContain('ist schon live -> erneut ausrollen');
     expect(portainer.puts).toHaveLength(2);
+  });
+});
+
+describe('Deploy-Luecke: nur die Dienste der Stufe werden neu erstellt (01.10.2026, Auftrag 10)', () => {
+  // Bis zum 30.09.2026 rief das Skript update_stack mit pullImage:true -- und
+  // Portainer erstellte bei jeder Stufe ALLE Dienste neu, auch Postgres und die
+  // Replica, die gerade den Traffic tragen sollte. Gemessen am 01.10.2026:
+  // pullImage:false erstellt nur geaenderte Dienste neu.
+  it('zieht die Images der Stufe vorab und ruft update_stack mit pullImage:false', async () => {
+    portainer.anfang(kurz(A));
+    const { code, aus } = await rolle(B);
+    expect(code, aus).toBe(0);
+    expect(portainer.puts.map((p) => p.pullImage)).toEqual([false, false]);
+    // Stufe 1 zieht backend, frontend und test-latest, bevor der Stack
+    // angefasst wird; Stufe 2 zieht backend2 zwischen den beiden Aufrufen.
+    expect(portainer.pulls).toEqual([
+      { ref: `ghcr.io/revisor01/konfi-quest-backend:${kurz(B)}`, putsDavor: 0 },
+      { ref: `ghcr.io/revisor01/konfi-quest-frontend:${kurz(B)}`, putsDavor: 0 },
+      { ref: 'ghcr.io/revisor01/konfi-quest-backend:test-latest', putsDavor: 0 },
+      { ref: `ghcr.io/revisor01/konfi-quest-backend:${kurz(B)}`, putsDavor: 1 },
+    ]);
+    // Postgres (per Digest) wird nie gezogen.
+    expect(portainer.pulls.some((p) => p.ref.startsWith('postgres'))).toBe(false);
+  });
+
+  it('Postgres, backend-test und die jeweils andere Replica bleiben stehen', async () => {
+    portainer.anfang(kurz(A));
+    const { code, aus } = await rolle(B);
+    expect(code, aus).toBe(0);
+    expect([...portainer.neuErstellt].sort()).toEqual(['backend', 'backend2', 'frontend']);
+    expect(aus).toContain('Stufe 1: keine anderen Dienste neu erstellt.');
+    expect(aus).toContain('Stufe 2: keine anderen Dienste neu erstellt.');
+    expect(aus).not.toContain('mit neu erstellt');
+  });
+
+  it('Gegenprobe: erstellt Portainer trotzdem alles neu, nennt die Warnung die Dienste', async () => {
+    portainer.anfang(kurz(A));
+    portainer.alleNeu = true;
+    const { code, aus } = await rolle(B);
+    // Der Stand ist live -- der Lauf bleibt gruen, aber die Luecke steht im Log.
+    expect(code, aus).toBe(0);
+    expect(aus).toContain('::warning::Stufe 1 hat auch backend2 postgres mit neu erstellt');
+    expect(aus).toContain('::warning::Stufe 2 hat auch backend backend-test frontend postgres mit neu erstellt');
+  });
+
+  it('ein Image, das ghcr noch nicht ausliefert: Runde endet VOR update_stack, die naechste klappt', async () => {
+    portainer.anfang(kurz(A));
+    portainer.fehlt.set(`ghcr.io/revisor01/konfi-quest-frontend:${kurz(B)}`, 1);
+    const { code, aus } = await rolle(B);
+    expect(code, aus).toBe(0);
+    expect(aus).toContain(`::warning::Image ghcr.io/revisor01/konfi-quest-frontend:${kurz(B)} nicht gezogen (HTTP 404)`);
+    expect(aus).toContain("== Stufe 'backend|frontend', Runde 2 ==");
+    expect(portainer.puts).toHaveLength(2);
+  });
+
+  it('bleibt das Image aus: rot nach drei Runden, der Stack wurde nie angefasst', async () => {
+    portainer.anfang(kurz(A));
+    portainer.fehlt.set(`ghcr.io/revisor01/konfi-quest-backend:${kurz(B)}`, 99);
+    const stackVorher = portainer.stack;
+    const { code, aus } = await rolle(B);
+    expect(code).toBe(1);
+    expect(aus).toContain('::error::backend wurde nach 3 Runden nicht gesund');
+    expect(portainer.puts).toHaveLength(0);
+    expect(portainer.stack).toBe(stackVorher);
   });
 });
 

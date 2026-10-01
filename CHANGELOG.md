@@ -199,6 +199,10 @@ iOS-Build 236 · Android versionCode 130
   Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
 
 ### Geändert
+- Bei Event-Punkten steht in der Punkte-Übersicht, in der Konfi-Ansicht der
+  Leitung und in der Konfi-Historie jetzt das Datum des Events statt des Tages
+  der Verbuchung — so findet man das Event wieder, wie bei Aktivitäten mit
+  ihrem Datum. Die Listen sind danach geordnet.
 - Chat-Benachrichtigungen nennen nur noch, wer geschrieben hat und was es ist
   („Neue Nachricht von Anna", „Neues Foto von Anna"). Text, Dateinamen und
   Umfragefragen zeigt erst die App — sie stehen damit weder auf dem
@@ -509,6 +513,10 @@ iOS-Build 236 · Android versionCode 130
   was verschwindet: Punkte, Badges, Stempel, Anträge samt Fotos,
   Event-Anmeldungen, Challenge-Beiträge, Chat-Nachrichten und
   Zweiergespräche; beim Team auch, was der Gemeinde bleibt.
+- Ein Konto bleibt auf höchstens zehn Geräten oder Browsern gleichzeitig
+  angemeldet, auf jedem Gerät mit einer Anmeldung. Kommt eine weitere dazu,
+  endet die Anmeldung, die am längsten nicht benutzt wurde; auf Geräten, die
+  lange nicht genutzt wurden, ist dann eine neue Anmeldung nötig.
 
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
@@ -535,6 +543,15 @@ iOS-Build 236 · Android versionCode 130
 - Im Event-Formular trägt „Jahrgänge“ das Pflicht-Sternchen nur noch bei
   Pflicht-Events; ohne Auswahl steht dort, dass das Event der ganzen Gemeinde
   gilt.
+- Bei genau einem Punkt heißt es überall „1 Punkt" statt „1 Punkte" — etwa
+  beim Fortschritt zum nächsten Level auf der Startseite der Konfis, in der
+  Rangliste, bei Levels und Badges und im Rückblick.
+- Im Profil steht unter dem Namen die eigene Funktionsbeschreibung; besteht
+  sie nur aus Leerzeichen, steht dort bei Teamer:innen „Teamer:in" und bei der
+  Leitung nur die Rolle statt einer leeren Angabe.
+- Ein Update des Servers unterbricht die App nicht mehr; bisher war sie dabei
+  rund eine halbe Minute nicht erreichbar. Nur die Web-Version kann während
+  eines Updates wenige Sekunden lang nicht laden.
 - Ein Benutzername lässt sich beim Bearbeiten nicht mehr auf einen Namen ändern,
   den es schon gibt — auch nicht in anderer Schreibweise oder aus einer anderen
   Gemeinde; die Anmeldung bleibt so eindeutig.
@@ -1332,6 +1349,9 @@ iOS-Build 236 · Android versionCode 130
   Fehler ab.
 
 ### Sonstiges
+- Die Datenschutzerklärung beschreibt die Reichweitenmessung genauer:
+  Sitzungen werden innerhalb eines Kalendermonats zusammengefasst, und der
+  ungefähre Standort umfasst Land, Region und Stadt.
 - Die Bausteine der App für Oberfläche, Gerätefunktionen und die Anmeldung per
   Gesicht oder Fingerabdruck sind auf dem aktuellen Stand der Hersteller.
 - Das Mitglieder-Fenster im Chat lädt die Personenlisten zum Hinzufügen nur
@@ -1559,6 +1579,11 @@ iOS-Build 236 · Android versionCode 130
   selbst.
 - Beim Öffnen der Konfi-Liste lädt die App keine Angaben zur Gemeinde mehr,
   die sie gar nicht anzeigt.
+- Alte, nicht mehr benutzte Anmeldungen werden einmalig beendet, damit kein
+  Konto mehr als zehn offen hat; wer die App gerade benutzt, bleibt angemeldet.
+- Das Server-Protokoll hält wiederkehrende Routinemeldungen nur noch bei einer
+  Änderung oder gebündelt je Viertelstunde fest und reicht damit auch bei
+  vielen Gemeinden länger zurück.
 
 ## [2.2.0] - 2026-09-18
 

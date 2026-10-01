@@ -79,7 +79,7 @@ export const LevelPopoverContent: React.FC<{
             color: 'var(--app-text-secondary)',
             lineHeight: '1.3'
           }}>
-            {level.points_required} Punkte erforderlich
+            {punkteText(level.points_required)} erforderlich
           </p>
         </div>
       </div>
@@ -289,6 +289,7 @@ import { getIconFromString } from '../../../utils/badgeIcons';
 import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopoverContent';
 import { formatTimeUntil } from '../../shared/eventFormatting';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { punkteText } from '../../../utils/punkteText';
 // Re-Export für bestehende Verwender (Wrapped-Slides, KonfiDetailSections).
 export { getIconFromString };
 
@@ -500,7 +501,7 @@ export const RankingSection = React.memo<RankingSectionProps>(({
                   }}>
                     {entry.points === null || entry.points === undefined
                       ? `Platz ${entry.actualRank}`
-                      : `${entry.points} Punkte`}
+                      : punkteText(entry.points)}
                   </div>
                 </div>
               </div>
@@ -592,7 +593,7 @@ export const LevelProgress = React.memo<LevelProgressProps>(({ nextLevel, progre
         Nächstes Level: {nextLevel.title}
       </span>
       <span style={{ fontSize: 'var(--app-text-sekundaer)', color: 'rgba(255, 255, 255, 0.9)' }}>
-        {pointsToNextLevel ? `noch ${pointsToNextLevel} Punkte` : `${progressPercentage}%`}
+        {pointsToNextLevel ? `noch ${punkteText(pointsToNextLevel)}` : `${progressPercentage}%`}
       </span>
     </div>
     <IonProgressBar

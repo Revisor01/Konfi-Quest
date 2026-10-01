@@ -12,8 +12,14 @@
  * taugt, nicht was einzelne Personen tun. Bewusst auch KEINE Organisation:
  * bei einer Gemeinde mit drei Teamern wäre das faktisch personenbezogen.
  *
- * Umami setzt keine Cookies und speichert keine IP-Adressen; die Zuordnung
- * einer Sitzung passiert serverseitig über einen täglich wechselnden Hash.
+ * Umami setzt keine Cookies und speichert keine IP-Adressen. Die Zuordnung
+ * einer Sitzung passiert serverseitig über einen Hash aus IP-Adresse,
+ * Browserkennung und einem Salz, das MONATLICH wechselt (Umami 3.4.0 ohne
+ * SALT_ROTATION, Vorgabe "month"; nachgemessen 01.10.2026). Aus der
+ * IP-Adresse leitet Umami zudem Land, Region und Stadt ab und speichert sie
+ * zur Sitzung (30 Tage: 93,9 % mit Region, 92,4 % mit Stadt). So steht es
+ * auch in der Datenschutzerklärung, Abschnitt 9a (Simon, 01.10.2026: Texte
+ * richtigstellen statt Einstellung ändern).
  *
  * In der nativen App gibt es keine Domain, an der das Umami-Script hängen
  * könnte — deshalb sprechen wir die /api/send-Schnittstelle direkt an.

@@ -598,13 +598,16 @@ paths:
         Vergabe gutgeschriebene Wert (user_activities.points, Migration 163),
         nicht mehr der aktuelle Wert der Aktivität (Punkte/Termine BF-02,
         behoben).
+        ERGAENZT 01.10.2026, additiv: `event_date` je Eintrag (Termin bei
+        Event-Punkten, sonst null); `date` und Sortierung unveraendert —
+        Einzelheiten unter GET /api/konfi/points-history.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
         org-scope: true
         objekt-pruefung: "nur eigene Daten (user_id = Token) und nur die eigene Organisation"
       responses:
-        "200": { description: "history[] (id, title, points, category, date, comment, source_type activity|bonus|event) + totals {gottesdienst, gemeinde, total}" }
+        "200": { description: "history[] (id, title, points, category, date, comment, source_type activity|bonus|event, event_date — Termin bei event, sonst null; seit 01.10.2026) + totals {gottesdienst, gemeinde, total}" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer" }
         "500": { $ref: '#/components/responses/ServerError' }
