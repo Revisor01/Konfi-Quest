@@ -205,9 +205,18 @@ function createApp(db, options = {}) {
   // abgewiesene Datei 415 bekommt, statt still zu verschwinden (Simons Befund
   // 29.09.2026: eine .docx aus Android liess sich nicht senden).
 
+  // Dateinamen als UTF-8 lesen (01.10.2026). Browser und Apps schicken den
+  // Namen im Multipart-Kopf als UTF-8 ohne Angabe des Zeichensatzes; multer
+  // liest ihn dann als Latin-1 (Vorgabe 'latin1'). Aus „Gebetswürfel.pdf"
+  // wurde so „GebetswÃ¼rfel.pdf" -- in Chat, Material und Challenges
+  // (Simons Geraetetest; tests/routes/dateinameUmlaute.test.js). Den alten
+  // Bestand repariert Migration 189.
+  const DATEINAME_ZEICHENSATZ = 'utf8';
+
   // Chat Upload Config (verschluesselte Dateinamen)
   const chatUpload = multer({
     storage: zwischenlager,
+    defParamCharset: DATEINAME_ZEICHENSATZ,
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: dateiFilter('chat'),
   });
@@ -215,6 +224,7 @@ function createApp(db, options = {}) {
   // Material Upload Config (20MB Limit)
   const materialUpload = multer({
     storage: zwischenlager,
+    defParamCharset: DATEINAME_ZEICHENSATZ,
     limits: { fileSize: 20 * 1024 * 1024 },
     fileFilter: dateiFilter('material'),
   });
@@ -222,6 +232,7 @@ function createApp(db, options = {}) {
   // Request Upload Config (nur Bilder, 5MB)
   const requestUpload = multer({
     storage: zwischenlager,
+    defParamCharset: DATEINAME_ZEICHENSATZ,
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: dateiFilter('antrag'),
   });
@@ -230,6 +241,7 @@ function createApp(db, options = {}) {
   // und kurze Videoclips ein, nicht nur Fotos).
   const challengeUpload = multer({
     storage: zwischenlager,
+    defParamCharset: DATEINAME_ZEICHENSATZ,
     limits: { fileSize: CHALLENGE_UPLOAD_LIMIT },
     fileFilter: dateiFilter('challenge'),
   });

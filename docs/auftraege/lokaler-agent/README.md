@@ -255,6 +255,20 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
         Kopie scheiterte (mit Status).
       Dazu wie oben das Proxy-Log der beiden Upload-Routen im selben Zeitraum.
       Keine Dateinamen, keine Konten, nur Zahlen je Ort und Art.
+- [ ] **Nach dem Deploy von PR #213: Dateinamen mit Umlauten (lokaler Agent,
+      5 Minuten, nur Zahlen).** Simon: „GebetswÃ¼rfel Vorlage.pdf“ statt
+      „Gebetswürfel …“ im Chat. Der Server liest Dateinamen jetzt als UTF-8,
+      Migration 189 repariert den Bestand in `chat_messages.file_name`,
+      `material_files.original_name` und `challenge_submissions.file_name`.
+      1. Vor dem Deploy: `SHOW server_encoding;` in der Produktions-DB — muss
+         `UTF8` sein, sonst ändert die Migration nichts (sie bricht dann auch
+         nicht ab).
+      2. Vor und nach dem Deploy je Spalte zählen:
+         `SELECT count(*) FROM chat_messages WHERE file_name ~ 'Ã|Â|â\u0080';`
+         (entsprechend für die beiden anderen). Nach dem Deploy sollte 0
+         stehen; was bleibt, ist ein richtiger Name mit diesen Zeichen oder
+         eine Zeile, die sich nicht umwandeln ließ — dann die Zahl an Simon,
+         keine Namen.
 
 ### Bleibt beim lokalen Agenten
 

@@ -534,6 +534,9 @@ iOS-Build 237 · Android versionCode 131
   unter „Fehler".
 
 ### Behoben
+- Dateinamen mit Umlauten stehen in Chat, Material und Challenges richtig da:
+  aus „Gebetswürfel.pdf“ wurde bisher „GebetswÃ¼rfel.pdf“. Das gilt auch für
+  die Dateien, die schon hochgeladen sind.
 - Auf Samsung- und Xiaomi-Handys bleibt keine 1 mehr am App-Symbol stehen,
   wenn nichts offen ist: Eine Mitteilung wie eine Event-Erinnerung, die kam,
   als nichts zu tun war, verschwindet beim Öffnen der App.
