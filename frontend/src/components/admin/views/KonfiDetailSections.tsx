@@ -39,6 +39,7 @@ import type { AxiosInstance } from 'axios';
 import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz, datumLang, uhrzeit } from '../../../utils/dateUtils';
+import { punkteText } from '../../../utils/punkteText';
 
 /**
  * Die "present"-Funktion aus useIonModal — erste Haelfte des Rueckgabepaars.
@@ -1111,7 +1112,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
       <div className="app-section-icon app-section-icon--purple">
         <IonIcon icon={ICON_UHRZEIT} />
       </div>
-      <IonLabel>Konfi-Historie ({totals.total} Punkte)</IonLabel>
+      <IonLabel>Konfi-Historie ({punkteText(totals.total)})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
       <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>

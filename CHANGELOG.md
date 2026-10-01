@@ -521,6 +521,12 @@ iOS-Build 236 · Android versionCode 130
   unter „Fehler".
 
 ### Behoben
+- Bei genau einem Punkt heißt es überall „1 Punkt" statt „1 Punkte" — etwa
+  beim Fortschritt zum nächsten Level auf der Startseite der Konfis, in der
+  Rangliste, bei Levels und Badges und im Rückblick.
+- Im Profil steht unter dem Namen die eigene Funktionsbeschreibung; besteht
+  sie nur aus Leerzeichen, steht dort bei Teamer:innen „Teamer:in" und bei der
+  Leitung nur die Rolle statt einer leeren Angabe.
 - Ein Update des Servers unterbricht die App nicht mehr; bisher war sie dabei
   rund eine halbe Minute nicht erreichbar. Nur die Web-Version kann während
   eines Updates wenige Sekunden lang nicht laden.

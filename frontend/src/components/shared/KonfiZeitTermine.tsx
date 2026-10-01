@@ -4,6 +4,7 @@ import { ICON_TERMIN, ICON_TERMIN_GEFUELLT } from './icons';
 import { datumKurz } from '../../utils/dateUtils';
 import { konfiZeitTerminStatus } from '../../utils/konfiZeit';
 import type { KonfiZeitTermin } from '../../types/konfiZeit';
+import { punkteText } from '../../utils/punkteText';
 
 /**
  * Die Events der Konfi-Zeit einer befoerderten Person -- aus der
@@ -56,7 +57,7 @@ const KonfiZeitTermine: React.FC<KonfiZeitTermineProps> = ({ termine, titel = 'E
                         <span className="app-list-item__meta-item">{konfiZeitTerminStatus(termin)}</span>
                         {(termin.punkte ?? 0) > 0 && (
                           <span className="app-list-item__meta-item">
-                            {termin.punkte === 1 ? '1 Punkt' : `${termin.punkte} Punkte`}
+                            {punkteText(termin.punkte ?? 0)}
                           </span>
                         )}
                       </div>

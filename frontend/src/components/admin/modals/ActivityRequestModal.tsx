@@ -36,6 +36,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
 import { trackHandlung } from '../../../services/analytics';
+import { punkteText } from '../../../utils/punkteText';
 // triggerRefresh nicht direkt nutzen — Modal rendert via useIonModal außerhalb des Provider-Trees
 // Stattdessen onSuccess Callback nutzen, Parent-Page hat useLiveRefresh
 
@@ -275,7 +276,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   <IonItem lines="inset">
                     <IonLabel>
                       <p>Punkte</p>
-                      <h2>{request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}</h2>
+                      <h2>{punkteText(request.activity_points)}</h2>
                     </IonLabel>
                   </IonItem>
                 )}

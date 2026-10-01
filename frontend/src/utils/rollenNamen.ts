@@ -30,6 +30,16 @@ export const rollenName = (name?: string | null, rueckfall?: string): string => 
 };
 
 /**
+ * Selbstbezeichnung unter dem Namen (Simon, 01.10.2026): „Da soll die
+ * Selbstbezeichnung stehen, die man sich geben kann." Das ist
+ * `users.role_title`, im eigenen Profil unter „Funktionsbeschreibung"
+ * gesetzt. Getrimmt; leer oder nur Leerzeichen gilt als nicht gesetzt, dann
+ * steht der Rueckfall (im Teamer-Profil „Teamer:in" wie auf der Startseite).
+ */
+export const selbstbezeichnung = (roleTitle?: string | null, rueckfall = ''): string =>
+  roleTitle?.trim() || rueckfall;
+
+/**
  * Farbe einer Rolle -- ebenfalls an EINER Stelle (29.09.2026).
  *
  * Simon, TestFlight 233: "Es braucht noch eine dritte Farbe. Es gibt die

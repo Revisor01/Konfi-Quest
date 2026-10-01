@@ -35,6 +35,7 @@ import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { getIconFromString } from '../../utils/badgeIcons';
 import { getCriteriaIcon as getCriteriaTypeIcon } from '../../utils/badgeCriteria';
 import type { BadgeKriteriumExtra } from '../../utils/badgeCriteria';
+import { punkteText } from '../../utils/punkteText';
 
 
 
@@ -166,9 +167,9 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       case 'gottesdienst_points':
       case 'gemeinde_points':
       case 'bonus_points':
-        return `${badge.criteria_value} Punkte`;
+        return punkteText(badge.criteria_value);
       case 'both_categories':
-        return `${badge.criteria_value} Punkte pro Kategorie`;
+        return `${punkteText(badge.criteria_value)} pro Kategorie`;
       case 'specific_activity': {
         // Seit dem 23.08.2026 speichert das Formular den NAMEN
         // (required_activity_name) — die Wertung liest ihn so. Diese Liste las

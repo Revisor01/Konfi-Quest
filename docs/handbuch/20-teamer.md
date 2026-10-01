@@ -148,7 +148,9 @@ auch vom Gerät. Mehr dazu unter
 Über das Personen-Symbol oben rechts. Dort findest du:
 
 - **Funktionsbeschreibung** — wie du in der App genannt wirst, etwa „Teamerin"
-  oder „Jugendmitarbeiter". Sie steht neben deinem Namen im Chat.
+  oder „Jugendmitarbeiter". Sie steht oben im Profil unter deinem Namen und
+  neben deinem Namen im Chat; ohne eigene Funktionsbeschreibung steht dort
+  „Teamer:in".
 - **E-Mail-Adresse ändern** und **Passwort ändern**
 - **Bibelübersetzung** für die Tageslosung
 - **Benachrichtigungen** — welche Mitteilungen aufs Handy kommen; siehe

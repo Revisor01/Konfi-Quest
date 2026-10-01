@@ -69,6 +69,7 @@ import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
+import { selbstbezeichnung } from '../../../utils/rollenNamen';
 
 interface TeamerProfile {
   user: {
@@ -337,7 +338,9 @@ const TeamerProfilePage: React.FC = () => {
             </div>
             <h1 className="app-detail-header__title">{profile.user.display_name}</h1>
             <p className="app-detail-header__subtitle">
-              {profile.user.role_title || 'Teamer:in'}
+              {/* Selbstbezeichnung (Funktionsbeschreibung unten), sonst
+                  „Teamer:in" wie auf der Startseite. */}
+              {selbstbezeichnung(profile.user.role_title, 'Teamer:in')}
             </p>
             <div className="app-detail-header__info-row" style={{ justifyContent: 'center' }}>
               {profile.user.email && (
