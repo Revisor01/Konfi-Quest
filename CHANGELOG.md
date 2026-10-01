@@ -199,6 +199,10 @@ iOS-Build 236 · Android versionCode 130
   Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
 
 ### Geändert
+- Bei Event-Punkten steht in der Punkte-Übersicht, in der Konfi-Ansicht der
+  Leitung und in der Konfi-Historie jetzt das Datum des Events statt des Tages
+  der Verbuchung — so findet man das Event wieder, wie bei Aktivitäten mit
+  ihrem Datum. Die Listen sind danach geordnet.
 - Chat-Benachrichtigungen nennen nur noch, wer geschrieben hat und was es ist
   („Neue Nachricht von Anna", „Neues Foto von Anna"). Text, Dateinamen und
   Umfragefragen zeigt erst die App — sie stehen damit weder auf dem

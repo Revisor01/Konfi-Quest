@@ -999,7 +999,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 // Activities aus der Konfi-Zeit
                 const histActivities = `
                     SELECT ka.id, a.name as title, COALESCE(ka.points, a.points) AS points, a.type as category,
-                           ka.completed_date as date, 'activity' as source_type
+                           ka.completed_date as date, 'activity' as source_type,
+                           NULL::timestamptz as event_date
                     FROM user_activities ka
                     JOIN activities a ON ka.activity_id = a.id
                     WHERE ka.user_id = $1 AND ka.organization_id = $2
@@ -1009,16 +1010,21 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
                 const histBonus = `
                     SELECT id, description as title, points, type as category,
-                           completed_date as date, 'bonus' as source_type
+                           completed_date as date, 'bonus' as source_type,
+                           NULL::timestamptz as event_date
                     FROM bonus_points
                     WHERE konfi_id = $1 AND organization_id = $2
                     ORDER BY completed_date DESC
                 `;
                 const { rows: histBon } = await db.query(histBonus, [konfiId, req.user.organization_id]);
 
+                // event_date (01.10.2026, additiv): Datum des Termins; `date`
+                // bleibt das Verbuchungsdatum, das die Store-Apps zeigen.
+                // Gleiche Regel wie utils/punkteHistorie.js.
                 const histEvents = `
                     SELECT ep.id, e.name as title, ep.points, ep.point_type as category,
-                           ep.awarded_date as date, 'event' as source_type
+                           ep.awarded_date as date, 'event' as source_type,
+                           e.event_date
                     FROM event_points ep
                     JOIN events e ON ep.event_id = e.id
                     WHERE ep.konfi_id = $1 AND ep.organization_id = $2

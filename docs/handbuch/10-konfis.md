@@ -136,7 +136,8 @@ im Kapitel [Badges](60-badges.md#die-passende-bedingung-waehlen).
 
 Über das Personen-Symbol oben rechts auf der Startseite. Dort findest du:
 
-- **Punkte-Übersicht** — jeder Punkt einzeln aufgelistet
+- **Punkte-Übersicht** — jeder Punkt einzeln aufgelistet, mit dem Datum der
+  Aktivität oder des Events
 - **Meine Rückblicke** — dein [Jahresrückblick](95-wrapped.md), sobald er
   freigegeben ist
 - **E-Mail-Adresse ändern** und **Passwort ändern**

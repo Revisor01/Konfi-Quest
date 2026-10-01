@@ -130,6 +130,7 @@ export interface EventPunkteEintrag {
   created_at?: string;
   admin_id?: number;
   event_name?: string;
+  /** Datum des Termins -- angezeigt wird DIESES, nicht awarded_date (01.10.2026). */
   event_date?: string;
   admin_name?: string;
 }

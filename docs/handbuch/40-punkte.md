@@ -52,6 +52,13 @@ Welche fünf Bedingungen dafür alle erfüllt sein müssen — unter anderem, da
 keine Punkte geben —, steht unter
 [Wann es Punkte gibt](70-termine.md#punkte-fuer-ein-event-vergeben).
 
+In den Punktelisten — der Punkte-Übersicht der Konfis, der Detailansicht und
+der Konfi-Historie — steht bei Event-Punkten das **Datum des Events**, nicht
+der Tag, an dem die Anwesenheit verbucht wurde. So findest du das Event im
+Kalender wieder, genauso wie eine Aktivität mit ihrem Datum dasteht. Die Listen
+sind nach diesem Datum geordnet, das jüngste zuerst. Bei Event-Punkten, deren
+Event-Datum die App nicht kennt, steht der Tag der Verbuchung.
+
 ### Über Bonuspunkte
 
 Bonuspunkte vergibst du frei von Hand — für alles, was in kein Raster passt.

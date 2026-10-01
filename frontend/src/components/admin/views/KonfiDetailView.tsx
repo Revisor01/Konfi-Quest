@@ -147,7 +147,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // waeren.
   const [konfiZeit, setKonfiZeit] = useState<KonfiZeit | null>(null);
   const [konfiHistory, setKonfiHistory] = useState<{
-    history: Array<{ id: number; title: string; points: number; category: string; date: string; source_type: string }>;
+    history: Array<{ id: number; title: string; points: number; category: string; date: string; source_type: string; event_date?: string | null }>;
     totals: { gottesdienst: number; gemeinde: number; total: number };
   } | null>(null);
   const [certificates, setCertificates] = useState<Array<{
