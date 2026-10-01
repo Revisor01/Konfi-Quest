@@ -199,6 +199,12 @@ iOS-Build 237 · Android versionCode 131
   Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
 
 ### Geändert
+- Mitteilungen an die Leitung über einzelne Konfis aus der Zeit vor dem
+  27. September (Abmeldungen mit Grund, neue Registrierungen, Beiträge, Zu-
+  und Absagen des Teams) sind aus dem Postfach entfernt. Sie ließen sich
+  keinem Konto zuordnen und wären sonst ein Jahr lang stehen geblieben, auch
+  nach dem Löschen der Person. Die Vorgänge selbst stehen weiter an Event und
+  Challenge.
 - Bei Event-Punkten steht in der Punkte-Übersicht, in der Konfi-Ansicht der
   Leitung und in der Konfi-Historie jetzt das Datum des Events statt des Tages
   der Verbuchung — so findet man das Event wieder, wie bei Aktivitäten mit
