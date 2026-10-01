@@ -352,6 +352,26 @@ Teamer-Badges gelten je Gemeinde.
   „darf freigeben" in der nächsten Version, als größere Sache zu planen —
   Fragen in [darf-freigeben.md](darf-freigeben.md).
 
+**Antworten auf „Wirklich offen" (Simon, 01.10.2026 abends):**
+
+- Gerätetest 238/132: getestet. **PDF und Word vom Android-Handy gehen
+  weiter nicht** — im Chat steht die Nachricht danach mit „!" und nur dem
+  Dateinamen, ohne Meldung; im Material ist das Material angelegt, die Datei
+  nicht, und erneutes Speichern hilft nicht. Der nächste Build liest Dokumente
+  bei der Auswahl in den Speicher und meldet jeden Upload-Schritt mit festem
+  Ort an die Fehlermessung (`services/uploadDiagnose.ts`); Auszählung als
+  Auftrag im README des lokalen Agenten.
+- Store-Texte: „erledige das bitte" — neu gefasst in
+  `docs/store-texte-2.3.0.md` und `frontend/release-notes-de.txt` (ohne den
+  Android-Upload, solange er am Gerät nicht bestätigt ist).
+- Datenschutzerklärung 9a: gegengelesen, erledigt.
+- Universal Links: Rückfrage („was ist das") — erklärt; Entscheidung offen.
+- Firebase-Schlüssel und Crashlytics: erledigt, bleibt so.
+- Schritte beim Release selbst (Datum im CHANGELOG, Tag `2.3.0`, Track
+  `production`): „machen wir, wenn es dran ist".
+- Bestätigt: Mail „Passwort vergessen" kam an, Geheimnisse gesichert, Label
+  und Erwähnung im Issue bei rotem `main` (lokaler Agent), `timezone=UTC`.
+
 - **Store und Konten:** Git-Tag `2.3.0` für den schon ausgelieferten Stand (die automatischen Tags
   gelten ab dem nächsten Upload); Store-Texte 2.3.0 (CI BF-08); Universal Links einschalten
   (Entitlement `applinks:konfi-quest.de`); Firebase-Schlüssel in der Google-Cloud-Konsole
