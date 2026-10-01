@@ -337,6 +337,20 @@ Teamer-Badges gelten je Gemeinde.
 
 ## Bei Simon
 
+**Entschieden 01.10.2026 (Simon, „Alles für 2.3.0"):**
+- Android, Mitteilung mit Zahl 0: „eine 0 muss doch weg" — sie geht jetzt beim
+  Öffnen der App (Samsung/Xiaomi), siehe Handbuch „Bedienung".
+- Absage bei Selbstabgemeldeten: „wer sich vorher abgemeldet hat, wird nicht
+  informiert" — bleibt wie gebaut (entschuldigt, keine Absage-Mitteilung).
+- Postfach-Altbestand ohne Kennung: „ja" — Migration 188.
+- `password_plain`: „ja" — Migration 187 (Voraussetzung: `backend-test` neu
+  gebaut, Auftrag im README des lokalen Agenten).
+- react-router-Alerts schließen: „ja" — beim lokalen Agenten (kein Zugriff aus
+  der Cloud).
+- Node 26: „jetzt" statt ab 28.10. — `.nvmrc`, Dockerfiles, `engines`.
+- Persönlicher Schalter „am App-Symbol mitzählen": noch offen, Simon hat
+  nachgefragt, was gemeint ist.
+
 - **Store und Konten:** Git-Tag `2.3.0` für den schon ausgelieferten Stand (die automatischen Tags
   gelten ab dem nächsten Upload); Store-Texte 2.3.0 (CI BF-08); Universal Links einschalten
   (Entitlement `applinks:konfi-quest.de`); Firebase-Schlüssel in der Google-Cloud-Konsole

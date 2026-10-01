@@ -132,6 +132,18 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       den PR mergen. Der Notfall-Rückweg zu 2.2.x geht danach weiter, nur
       „Einmalpasswort erzeugen" scheitert dort (500, nichts geändert) — in
       [05](05-sicherung-und-notfall.md) vermerkt.
+- [ ] **Zwei react-router-Alerts schließen (lokaler Agent, 5 Minuten).**
+      Simon, 01.10.2026: „ja". GHSA-wrjc-x8rr-h8h6 und GHSA-337j-9hxr-rhxg
+      auf `react-router` 6.30.6 (Begründung: [offene Befunde
+      Nr. 15](../../offene-befunde.md)). Die Nummern der offenen Alerts:
+      `gh api 'repos/Revisor01/Konfi-Quest/dependabot/alerts?state=open' --jq
+      '.[] | select(.dependency.package.name=="react-router") | .number'`;
+      je Nummer `gh api -X PATCH
+      repos/Revisor01/Konfi-Quest/dependabot/alerts/<nr> -f state=dismissed
+      -f dismissed_reason=tolerable_risk -f dismissed_comment="Kein SSR,
+      Navigationsziele nur aus festen Pfaden; Fix nur in 7, @ionic/react-router
+      verlangt <7. docs/offene-befunde.md Nr. 15"`. Danach zeigt GitHub auf
+      main 0 offene Alerts; das Ergebnis mit Datum in Nr. 15 eintragen.
 - [ ] **Erinnerung „Gleich" nachmessen (lokaler Agent, 5 Minuten, nur
       Zeiten):** Simon bekam am 01.10.2026 um 14:47 Uhr die Erinnerung „In 1
       Stunde" zu einem Event um 16:00 Uhr. Der Code erklärt es (Fenster ±15
