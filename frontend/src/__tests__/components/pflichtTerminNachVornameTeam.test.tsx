@@ -1,6 +1,6 @@
 // Konfis eines Pflicht-Termins nach Vornamen (01.10.2026), Teamer-Ansicht
 // "Wer kommt". Dieselbe Regel wie in der Leitungsansicht
-// (pflichtTerminNachVornameLeitung.test.tsx, Marisas Wunsch): Pflicht ->
+// (pflichtTerminNachVornameLeitung.test.tsx, Wunsch einer Gemeinde): Pflicht ->
 // nach Name, sonst Anmeldereihenfolge. Das Team darunter bleibt, wie es ist.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { zustand, zuruecksetzen, termin, teilnehmer, oeffneTermin, abschnitt } from './gerueste/teamerTerminSeite';

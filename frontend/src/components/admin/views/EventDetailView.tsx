@@ -1651,7 +1651,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {/* Participants List */}
         {(() => {
           // Pflicht-Termin: nach Vornamen, sonst Anmeldereihenfolge
-          // (Marisa, 01.10.2026; utils/teilnehmerReihenfolge.ts). Alle Listen
+          // (01.10.2026, utils/teilnehmerReihenfolge.ts). Alle Listen
           // darunter filtern hieraus und behalten die Reihenfolge.
           const konfiParticipants = konfisInReihenfolge(
             participants.filter(p => p.role_name === 'konfi'),

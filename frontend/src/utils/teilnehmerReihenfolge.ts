@@ -1,10 +1,10 @@
 // In welcher Reihenfolge die Konfis eines Termins stehen (01.10.2026).
 //
-// Marisa (Heide), über Simon: "bei Pflichtevents, bei anderen könnte ja die
-// Anmeldereihenfolge im Zweifel relevant sein - kann da die Konfiliste nach
-// Vornamen sortiert sein? Wie in der Konfiansicht?" Sie gleicht die Liste mit
-// einer händischen ab und sucht beim Nachtragen einer Abmeldung gezielt nach
-// dem Vornamen.
+// Rückmeldung aus einer Gemeinde, über Simon: "bei Pflichtevents, bei anderen
+// könnte ja die Anmeldereihenfolge im Zweifel relevant sein - kann da die
+// Konfiliste nach Vornamen sortiert sein? Wie in der Konfiansicht?" Die
+// Leitung dort gleicht die Liste mit einer händischen ab und sucht beim
+// Nachtragen einer Abmeldung gezielt nach dem Vornamen.
 //
 // Regel, eine Stelle für Leitung (admin/views/EventDetailView samt
 // Zeitfenstern) und Team ("Wer kommt", TeamerEventsPage):

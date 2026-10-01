@@ -1,10 +1,10 @@
 // Konfis eines Pflicht-Termins nach Vornamen (01.10.2026), Leitungsansicht.
 //
-// Marisa (Heide), über Simon: "bei Pflichtevents, bei anderen könnte ja die
-// Anmeldereihenfolge im Zweifel relevant sein - kann da die Konfiliste nach
-// Vornamen sortiert sein? Wie in der Konfiansicht? Marisa gleicht aktuell
-// häufig ihre Liste noch mit einer händischen ab & aktuell ist es viel
-// suchen." Bis dahin stand die Liste in der Reihenfolge der Buchungen.
+// Rückmeldung aus einer Gemeinde, über Simon: "bei Pflichtevents, bei anderen
+// könnte ja die Anmeldereihenfolge im Zweifel relevant sein - kann da die
+// Konfiliste nach Vornamen sortiert sein? Wie in der Konfiansicht?" Die
+// Leitung gleicht die Liste häufig mit einer händischen ab, und das Suchen
+// kostete Zeit. Bis dahin stand die Liste in der Reihenfolge der Buchungen.
 //
 // Regel: Pflicht-Termin -> nach Name (wie die Konfi-Liste, Name beginnt mit
 // dem Vornamen); sonst bleibt die Anmeldereihenfolge (Warteliste, "wer war
