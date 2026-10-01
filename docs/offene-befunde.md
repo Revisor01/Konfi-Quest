@@ -588,6 +588,9 @@ ist „neutral" und blockiert den Merge nicht.
 
 ## 15. Zwei moderate Dependabot-Meldungen zu react-router (30.09.2026) — GEPRÜFT, TRIFFT UNS NICHT
 
+> **Geschlossen 01.10.2026:** Alerts #213 und #214 auf GitHub als
+> „tolerable risk" geschlossen, danach 0 offene Dependabot-Alerts.
+>
 > **Stand 01.10.2026:** Simon: „ja" zum Schließen als „tolerable risk".
 > Geschlossen werden sie vom lokalen Agenten (die Cloud hat keinen Zugriff
 > auf Dependabot-Alerts), Auftrag in `docs/auftraege/lokaler-agent/README.md`.

@@ -102,7 +102,7 @@ PR #202 behebt drei Rückmeldungen aus dem Gerätetest 130/236 — Einzelheiten
 in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
 130/236". Zwei Dinge daraus gehen nur am Server oder am Gerät:
 
-- [ ] **Uploads vom Android-Handy nachzählen (lokaler Agent, 10 Minuten, nur
+- [x] **Uploads vom Android-Handy nachzählen (lokaler Agent, 10 Minuten, nur
       Anzahlen):** PDF und Word gingen vom Android-Handy weder in den Chat
       noch ins Material. Die vermutete Ursache ist ein Abbruch im WebView,
       **bevor** die Anfrage den Server erreicht. Gegenprobe: in den
@@ -112,6 +112,14 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       Keine Dateinamen, keine Personen, nur Zahlen je Route und Status. Wenige
       oder keine Treffer bestätigen den Befund; viele 415 hießen, dass der
       Server PDFs ablehnt — dann sofort an Simon.
+      **Ergebnis 01.10.2026:** Befund bestätigt. Proxy-Zugriffslog
+      lückenlos vom 28.09. 00:00 bis 01.10. 16:35: 0 Antworten 413/415
+      auf den Upload-Routen und 0 überhaupt; `POST
+      /api/chat/rooms/*/messages` 53× 200, `POST /api/material/*/files`
+      0 Anfragen (die Anfrage erreicht den Server nicht). Backend-Logs
+      reichen wegen der Deploys nur bis 13:27 UTC zurück: 0 Zeilen
+      „Datei abgelehnt". Nebenbei: `POST /api/chat/rooms/*/mark-read` 1×
+      500 bei 718× 200.
 - [ ] **Gerätetest der nächsten Builds (Simon):** eine PDF und eine Word-Datei
       vom Android-Handy in den Chat und ins Material (auch aus Google Drive und
       dem Download-Ordner); einen Chat mit mehreren liegenden Mitteilungen
@@ -120,7 +128,7 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       einen Chat-Push kalt starten — die übrigen Mitteilungen des Chats gehen
       ebenfalls. Die Mitteilungen auf Android brauchen den Server-Stand von
       PR #202 **und** den neuen Build.
-- [ ] **Vor dem Merge des PR nach #211: `backend-test` auf den neuen
+- [x] **Vor dem Merge des PR nach #211: `backend-test` auf den neuen
       `test-latest` ziehen (lokaler Agent, 5 Minuten).** Der PR entfernt
       `konfi_profiles.password_plain` (Migration 187, Simon: „ja"). Das
       Test-Backend hängt an derselben Datenbank und meldet laut Übergabe
@@ -132,7 +140,13 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       den PR mergen. Der Notfall-Rückweg zu 2.2.x geht danach weiter, nur
       „Einmalpasswort erzeugen" scheitert dort (500, nichts geändert) — in
       [05](05-sicherung-und-notfall.md) vermerkt.
-- [ ] **Zwei react-router-Alerts schließen (lokaler Agent, 5 Minuten).**
+      **Ergebnis 01.10.2026:** Der PR war beim Lesen schon gemergt und
+      deployt (`4a8fb422`, 111 Migrationen, 0 fehlgeschlagen). Kein
+      Ausfall: Der zuvor laufende Test-Stand `9f39d293` schrieb
+      `password_plain` an keiner Stelle mehr. `test-backend.yml` auf
+      `4a8fb422` gebaut; der Deploy hat `backend-test` mit dem neuen
+      Image erstellt, `/api/status` des Test-Backends meldet `4a8fb422`.
+- [x] **Zwei react-router-Alerts schließen (lokaler Agent, 5 Minuten).**
       Simon, 01.10.2026: „ja". GHSA-wrjc-x8rr-h8h6 und GHSA-337j-9hxr-rhxg
       auf `react-router` 6.30.6 (Begründung: [offene Befunde
       Nr. 15](../../offene-befunde.md)). Die Nummern der offenen Alerts:
@@ -144,7 +158,10 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       Navigationsziele nur aus festen Pfaden; Fix nur in 7, @ionic/react-router
       verlangt <7. docs/offene-befunde.md Nr. 15"`. Danach zeigt GitHub auf
       main 0 offene Alerts; das Ergebnis mit Datum in Nr. 15 eintragen.
-- [ ] **Erinnerung „Gleich" nachmessen (lokaler Agent, 5 Minuten, nur
+      **Ergebnis 01.10.2026:** Alerts #213 (GHSA-337j-9hxr-rhxg) und
+      #214 (GHSA-wrjc-x8rr-h8h6) als „tolerable risk" geschlossen,
+      danach 0 offene Dependabot-Alerts.
+- [x] **Erinnerung „Gleich" nachmessen (lokaler Agent, 5 Minuten, nur
       Zeiten):** Simon bekam am 01.10.2026 um 14:47 Uhr die Erinnerung „In 1
       Stunde" zu einem Event um 16:00 Uhr. Der Code erklärt es (Fenster ±15
       Minuten, Takt ab dem Containerstart, behoben im PR nach #211). Gegenprobe
@@ -153,6 +170,11 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       Minute von `sent_at`. Erwartet: Abstände zwischen 45 und 75 Minuten, der
       fragliche bei rund 73, und die Sendeminuten zwischen zwei Deploys im
       selben Viertelstunden-Raster wie der Start des Containers. Keine Namen, nur Zeiten. Weicht es ab, an Simon.
+      **Ergebnis 01.10.2026:** bestätigt. Drei Versandzeitpunkte am
+      01.10. (UTC): 12:47:06 für Events um 15:58 und 16:00 (71 bzw. 73
+      min vorher, 17 Empfänger:innen) und 13:57:51 für 17:00 (62 min,
+      7). Raster: Deploy 11:02:29 → Takt 11:02 … 12:47; Container-start
+      13:27:49 → 13:42, 13:57. Alle Abstände zwischen 45 und 75 min.
 
 ### Bleibt beim lokalen Agenten
 
