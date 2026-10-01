@@ -42,6 +42,7 @@ import {
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { zeitraumText } from '../../shared/eventFormatting';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { konfisInReihenfolge } from '../../../utils/teilnehmerReihenfolge';
 import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
 import { teilnahmeDarstellung, listItemKlasse, iconKreisKlasse, eckBadgeKlasse } from '../../../utils/teilnahmeStatus';
 import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
@@ -824,9 +825,11 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
           // Zeile daraufhin ganz aus dem Zeitfenster -- der Platz sah frei
           // aus, und die Abmeldung samt Grund war nirgends mehr zu sehen.
           // Die Liste OHNE Zeitfenster zeigt beide Zustaende seit jeher.
-          const slotParticipants = participants.filter(
+          // Pflicht-Termin: nach Vornamen wie die Liste ohne Zeitfenster
+          // (utils/teilnehmerReihenfolge.ts, 01.10.2026).
+          const slotParticipants = konfisInReihenfolge(participants.filter(
             p => ['confirmed', 'excused', 'opted_out'].includes(p.status || '') && matchesSlot(p)
-          );
+          ), eventMandatory);
           const slotWaitlist = participants.filter(p => p.status === 'waitlist' && matchesSlot(p));
           const isFull = (timeslot.registered_count || 0) >= timeslot.max_participants;
           const waitlistCount = timeslot.waitlist_count || 0;

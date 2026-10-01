@@ -31,6 +31,7 @@ import {
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
+import { konfisInReihenfolge } from '../../../utils/teilnehmerReihenfolge';
 import { hatAbgesagt, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
@@ -1470,7 +1471,12 @@ const TeamerEventsPage: React.FC = () => {
               Leitung -- deshalb steht hier bewusst kein IonItemSliding, kein
               onClick und kein Knopf, nur die Zeile. */}
           {eventTeilnehmer.length > 0 && (() => {
-            const konfis = eventTeilnehmer.filter(p => p.role_name === 'konfi');
+            // Pflicht-Termin: nach Vornamen, sonst Anmeldereihenfolge -- wie
+            // bei der Leitung (utils/teilnehmerReihenfolge.ts, 01.10.2026).
+            const konfis = konfisInReihenfolge(
+              eventTeilnehmer.filter(p => p.role_name === 'konfi'),
+              selectedEvent.mandatory
+            );
             const team = eventTeilnehmer.filter(p => p.role_name !== 'konfi');
 
             const Zeile = (p: Participant) => {

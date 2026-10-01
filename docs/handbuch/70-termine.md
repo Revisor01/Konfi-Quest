@@ -571,6 +571,13 @@ Ein Badge, das durch diese Punkte ausgelöst wurde, bleibt bestehen —
 Nach dem Event trägst du ein, wer da war. Es gibt drei Wege: einzeln, alle auf
 einmal, oder die Leute checken sich selbst per QR-Code ein.
 
+Bei Pflicht-Events stehen die Konfis in der Teilnehmerliste nach Vornamen
+sortiert, wie in der Konfi-Ansicht — so findest du jemanden schnell, etwa
+beim Abgleich mit einer Liste auf Papier oder beim Nachtragen einer
+Abmeldung. Bei allen anderen Events stehen sie in der Reihenfolge der
+Anmeldung, denn dort kann sie zählen (Warteliste, wer zuerst da war). Das
+gilt auch innerhalb der Zeitfenster.
+
 **Einzeln** geht es in der Teilnehmerliste: Tipp auf den Eintrag, dann
 **Anwesend**, **Abwesend** oder **Abgemeldet**. Punkte werden sofort vergeben
 oder abgezogen, und bei „Anwesend" und „Abwesend" bekommt die Person einen

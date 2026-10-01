@@ -199,6 +199,9 @@ iOS-Build 237 · Android versionCode 131
   Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
 
 ### Geändert
+- Bei Pflicht-Events steht die Konfi-Liste eines Events nach Vornamen
+  sortiert, wie in der Konfi-Ansicht — für die Leitung und unter „Wer kommt"
+  für das Team. Bei anderen Events bleibt die Reihenfolge der Anmeldung.
 - Mitteilungen an die Leitung über einzelne Konfis aus der Zeit vor dem
   27. September (Abmeldungen mit Grund, neue Registrierungen, Beiträge, Zu-
   und Absagen des Teams) sind aus dem Postfach entfernt. Sie ließen sich
