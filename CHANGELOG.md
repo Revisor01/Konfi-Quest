@@ -1516,6 +1516,10 @@ iOS-Build 237 · Android versionCode 131
   dabei: die Bibelstelle, Titel, Namen oder ein Ablehnungsgrund. Der
   Material-Reiter des Teams zählt als Material statt als Profil. Die
   Datenschutzerklärung nennt die neuen Arten.
+- Scheitert das Hochladen einer Datei, hält die anonyme Fehlermessung fest,
+  an welchem Schritt (Lesen der Datei, Senden, zweiter Versuch) und aus
+  welchem groben Grund (Netz, Zeitgrenze, Antwort des Servers) — ohne
+  Dateiname, Größe oder Typ.
 - Die iPhone-App ist auf das Startverfahren umgestellt, das neuere
   iOS-Fassungen verlangen. Für die Bedienung ändert sich nichts — ohne die
   Umstellung ließe sich die App künftig aber nicht mehr öffnen.

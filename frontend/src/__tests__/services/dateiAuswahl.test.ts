@@ -16,6 +16,13 @@ import {
   IM_SPEICHER_HOECHSTENS_BYTES,
 } from '../../services/systemDialoge';
 import { laeuftAusflug, ausflugStarten, ausflugBeenden } from '../../services/appSperre';
+import { trackFehler } from '../../services/analytics';
+
+// Nur die Fehlermessung wird beobachtet; alles andere bleibt echt.
+vi.mock('../../services/analytics', async (original) => ({
+  ...(await original<typeof import('../../services/analytics')>()),
+  trackFehler: vi.fn(),
+}));
 
 const echterKlick = HTMLInputElement.prototype.click;
 let geoeffnet: HTMLInputElement[] = [];
@@ -331,6 +338,7 @@ describe('Dokumente liegen nach der Auswahl im Speicher (01.10.2026)', () => {
     const f = new File([inhalt], name, { type: typ, lastModified: 1700000000000 });
     return f;
   };
+  beforeEach(() => { vi.mocked(trackFehler).mockClear(); });
 
   it('eine PDF kommt als eigene Kopie mit Name, Typ, Zeit und Inhalt', async () => {
     const auswahl = dateiAuswaehlen({ accept: '.pdf' });
@@ -343,6 +351,8 @@ describe('Dokumente liegen nach der Auswahl im Speicher (01.10.2026)', () => {
     expect([kopie.name, kopie.type, kopie.size, kopie.lastModified])
       .toEqual(['Freizeitplan.pdf', 'application/pdf', plan.size, 1700000000000]);
     expect(await kopie.text()).toBe('%PDF-1.7 Inhalt');
+    // Gelesen -- nichts zu melden.
+    expect(trackFehler).not.toHaveBeenCalled();
   });
 
   it('die Kopie bleibt lesbar, auch wenn das Original es danach nicht mehr ist', async () => {
@@ -382,6 +392,21 @@ describe('Dokumente liegen nach der Auswahl im Speicher (01.10.2026)', () => {
     waehlen(geoeffnet[0], [kaputt]);
 
     expect((await auswahl)![0]).toBe(kaputt);
+  });
+
+  it('laesst sich ein Dokument nicht lesen, meldet die Messung es mit festem Ort -- ohne Dateiname', async () => {
+    // Android, 01.10.2026: Ob es am Lesen der Datei liegt oder erst am
+    // Versand, war ohne diese Meldung nicht zu sehen (services/uploadDiagnose.ts).
+    const auswahl = dateiAuswaehlen();
+    const kaputt = lesbar('x', 'Elternbrief Meier.pdf', 'application/pdf');
+    kaputt.arrayBuffer = () => Promise.reject(new DOMException('weg', 'NotReadableError'));
+
+    waehlen(geoeffnet[0], [kaputt]);
+    await auswahl;
+
+    expect(trackFehler).toHaveBeenCalledTimes(1);
+    expect(trackFehler).toHaveBeenCalledWith('andere-meldung', 'intern', 'dateiauswahl-nicht-lesbar');
+    expect(JSON.stringify(vi.mocked(trackFehler).mock.calls)).not.toContain('Meier');
   });
 
   it('ueber der Grenze bleibt das Original -- die Groessenpruefung meldet "zu gross" wie bisher', async () => {

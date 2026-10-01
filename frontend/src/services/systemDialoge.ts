@@ -2,6 +2,7 @@ import { Share } from '@capacitor/share';
 import type { ShareOptions } from '@capacitor/share';
 import { ohneSperre, ausflugStarten, ausflugBeenden } from './appSperre';
 import { mitTypAusEndung } from '../utils/dateiTypen';
+import { lesefehlerMelden } from './uploadDiagnose';
 
 // ---------------------------------------------------------------------------
 // Systemdialoge, die die App in den Hintergrund schicken.
@@ -169,7 +170,9 @@ export const IM_SPEICHER_HOECHSTENS_BYTES = 25 * 1024 * 1024;
  * Fotos und Videos bleiben unberührt (Fotos verkleinert die App ohnehin,
  * Videos können groß sein), ebenso alles über der Grenze. Lässt sich ein
  * Dokument nicht lesen, geht das Original weiter — nicht schlechter als
- * vorher; der Fehler zeigt sich dann beim Senden.
+ * vorher; der Fehler zeigt sich dann beim Senden. Gemeldet wird er schon hier
+ * (services/uploadDiagnose.ts): Dann zeigt die Messung, ob es am Lesen der
+ * Datei liegt oder erst am Versand.
  */
 export const imSpeicher = async (datei: File): Promise<File> => {
   const typ = (datei.type || '').toLowerCase();
@@ -178,7 +181,8 @@ export const imSpeicher = async (datei: File): Promise<File> => {
   try {
     const daten = await datei.arrayBuffer();
     return new File([daten], datei.name, { type: datei.type, lastModified: datei.lastModified });
-  } catch {
+  } catch (fehler) {
+    lesefehlerMelden(fehler);
     return datei;
   }
 };

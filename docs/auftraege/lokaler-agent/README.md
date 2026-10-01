@@ -107,8 +107,9 @@ cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
       dem Gruß steht die Selbstbezeichnung wie im Profil, sonst „Teamer:in"
       (`greeting.role_title`, additiv). Befund war: Unter dem Gruß stand fest
       „Teamer:in", im Profil die Selbstbezeichnung (`role_title`).
-- [ ] **Datenschutzerklärung:** Abschnitt 9a und der Satz zur Obergrenze der
-      Anmeldungen sind live (Stand 1. Oktober 2026); Simon liest gegen.
+- [x] **Datenschutzerklärung:** Abschnitt 9a und der Satz zur Obergrenze der
+      Anmeldungen sind live (Stand 1. Oktober 2026); Simon hat gegengelesen
+      (01.10.2026 abends: „erledigt").
 - [ ] **Testbuild:** Die App-Änderungen seit iOS 236 / Android 130 (Punkt-
       Plural, Selbstbezeichnung, Eventdatum) brauchen einen neuen Build —
       nur auf Simons Ansage.
@@ -209,7 +210,10 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
          Speichern." oder „Fehler beim Speichern" — je `art` (`netz`,
          `timeout`, `http-…`, `intern`) und Gerät (Android/iOS) zählen. `netz`
          heißt: Die Anfrage ist in der App gescheitert, bevor der Server
-         antwortete.
+         antwortete. **Nachtrag:** In Build 132 kommt diese Meldung noch
+         **ohne** `art` an (der Ersatztext trägt keine Ursache); die Zahl der
+         Einträge zählt trotzdem. Der Chat meldet in 132 gar nichts — die
+         Nachricht steht nur mit „!“ da.
       3. **Für das Konto, das Simon nennt** (Tester:in): ob seit 17:00
          eine dieser Anfragen von diesem Konto ankam und mit welchem Status. Das
          Ergebnis **nur an Simon**, keine Namen und keine Kennungen hier ins
@@ -219,6 +223,27 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       Build zusätzlich gleich bei der Auswahl in den Speicher
       (`services/systemDialoge.ts`, `imSpeicher`), wie Fotos. Die Zahlen
       zeigen, ob die Anfrage den Server überhaupt erreicht.
+- [ ] **Nach dem Gerätetest des nächsten Builds (Android 133): Upload-Schritte
+      in Umami zählen (lokaler Agent, 10 Minuten, nur Zahlen).** Simons
+      Gerätetest 01.10. abends: Im Chat steht eine Nachricht mit PDF danach mit
+      „!“ und nur dem Dateinamen da, ohne Meldung; im Material ist das Material
+      angelegt, die Datei nicht, und erneutes Speichern hilft nicht. Ab dem
+      nächsten Build meldet jeder Schritt beim Hochladen einen eigenen `ort`
+      (Ereignis `fehler`, Liste in `docs/messung/umami.md`). Ab dem Zeitpunkt
+      des Tests je `ort` und `art` zählen, getrennt nach Android und iOS:
+      - `dateiauswahl-nicht-lesbar` / `-nicht-gefunden` / `-kein-zugriff` /
+        `-lesefehler`: Das WebView kann das gewählte Dokument nicht lesen —
+        dann hilft kein Weg über das WebView, sondern nur ein nativer.
+      - `chat-datei-direkt` und `material-dateien-hochladen` mit `netz`, aber
+        **kein** `dateiauswahl-…`: Die Datei war lesbar und lag im Speicher,
+        der Versand scheitert trotzdem — dann liegt es nicht an der Datei,
+        sondern an der Anfrage.
+      - `chat-datei-sichern`: Die Datei ließ sich auch für die Warteschlange
+        nicht lesen.
+      - `chat-datei-warteschlange`: Auch der zweite Versuch aus der eigenen
+        Kopie scheiterte (mit Status).
+      Dazu wie oben das Proxy-Log der beiden Upload-Routen im selben Zeitraum.
+      Keine Dateinamen, keine Konten, nur Zahlen je Ort und Art.
 
 ### Bleibt beim lokalen Agenten
 

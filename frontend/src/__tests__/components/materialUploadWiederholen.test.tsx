@@ -120,14 +120,34 @@ describe('Material: Datei kam nicht an', () => {
     const { speichern } = await neuesMaterialMitDatei();
     await speichern();
     await waitFor(() => expect(setError).toHaveBeenCalledTimes(1));
-    expect(setError).toHaveBeenCalledWith('Das Material ist gespeichert, die Dateien noch nicht. Tippe noch einmal auf Speichern.');
+    expect(setError).toHaveBeenCalledWith(
+      'Das Material ist gespeichert, die Dateien noch nicht. Tippe noch einmal auf Speichern.',
+      { ort: 'material-dateien-hochladen', fehler: expect.objectContaining({ code: 'ERR_NETWORK' }) },
+    );
+  });
+
+  it('gibt der Messung Ort und Fehler mit -- daraus wird die Ursache (netz, timeout, Status)', async () => {
+    // Android, 01.10.2026: Ohne Fehlerobjekt kam nur der Ersatztext an, nicht
+    // WARUM der Upload scheiterte (services/uploadDiagnose.ts).
+    const zeitgrenze = Object.assign(new Error('timeout of 180000ms exceeded'), { isAxiosError: true, code: 'ECONNABORTED' });
+    apiPost.mockImplementation(async (route: string) => {
+      if (route === '/material') return { data: { id: 9 } };
+      throw zeitgrenze;
+    });
+    const { speichern } = await neuesMaterialMitDatei();
+    await speichern();
+    await waitFor(() => expect(setError).toHaveBeenCalledTimes(1));
+    expect(setError.mock.calls[0][1]).toEqual({ ort: 'material-dateien-hochladen', fehler: zeitgrenze });
   });
 
   it('scheitert schon das Anlegen, bleibt es bei "Fehler beim Speichern" -- und es gibt nichts zu merken', async () => {
     apiPost.mockImplementationOnce(async () => { throw netzabbruch(); });
     const { speichern } = await neuesMaterialMitDatei();
     await speichern();
-    await waitFor(() => expect(setError).toHaveBeenCalledWith('Fehler beim Speichern'));
+    await waitFor(() => expect(setError).toHaveBeenCalledWith(
+      'Fehler beim Speichern',
+      { ort: 'material-speichern', fehler: expect.objectContaining({ code: 'ERR_NETWORK' }) },
+    ));
 
     apiPost.mockImplementation(async (route: string) => (route === '/material' ? { data: { id: 11 } } : { data: [] }));
     await speichern();

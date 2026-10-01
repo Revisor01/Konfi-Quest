@@ -153,7 +153,15 @@ vi.mock('../../components/chat/ChatMessagesList', () => ({
   ),
 }));
 
+// Die Fehlermessung der Upload-Schritte (services/uploadDiagnose.ts): nur beobachtet.
+const diagnose = vi.hoisted(() => ({ upload: vi.fn(), warteschlange: vi.fn() }));
+vi.mock('../../services/uploadDiagnose', () => ({
+  uploadFehlerMelden: diagnose.upload,
+  warteschlangenFehlerMelden: diagnose.warteschlange,
+}));
+
 import ChatRoom from '../../components/chat/ChatRoom';
+import { Filesystem } from '@capacitor/filesystem';
 
 const serverfehler = (status: number, error?: string) => ({ response: { status, data: error ? { error } : '<html>413</html>' } });
 
@@ -172,6 +180,8 @@ beforeEach(() => {
   for (const f of Object.values(warteschlange)) f.mockClear();
   letztesMenue = null;
   online = true;
+  diagnose.upload.mockClear();
+  diagnose.warteschlange.mockClear();
 });
 afterEach(() => cleanup());
 
@@ -291,5 +301,59 @@ describe('Chat: Ablehnung erst beim Nachsenden aus der Warteschlange (offline ge
     fireEvent.click(screen.getByText('antippen'));
     expect(letztesMenue!.subHeader).toBe('Die Datei ist zu groß.');
     expect(letztesMenue!.buttons.map((b) => b.text)).toEqual(['Nachricht löschen', 'Abbrechen']);
+  });
+});
+
+describe('Chat: welcher Schritt beim Senden einer Datei scheitert, geht an die Messung (01.10.2026)', () => {
+  // Android: Word und PDF gingen nicht, die Nachricht stand nur mit "!" da,
+  // ohne Meldung -- und ohne Spur in der Messung. Jetzt meldet jeder Schritt
+  // seinen festen Ort; die Ursache (netz, timeout, Status) liest die Messung
+  // aus dem Fehler.
+  const netzabbruch = () => Object.assign(new Error('Network Error'), { code: 'ERR_NETWORK' });
+
+  it('direkter Versand ohne Antwort: chat-datei-direkt mit dem Fehler', async () => {
+    const fehler = netzabbruch();
+    await sendenMit(fehler);
+
+    await waitFor(() => expect(warteschlange.enqueue).toHaveBeenCalledTimes(1));
+    expect(diagnose.upload).toHaveBeenCalledTimes(1);
+    expect(diagnose.upload).toHaveBeenCalledWith('chat-datei-direkt', fehler);
+  });
+
+  it('vom Server abgelehnt (413): keine Upload-Meldung -- das meldet schon der Hinweis', async () => {
+    await sendenMit(serverfehler(413, 'Datei ist zu groß (max. 5 MB).'));
+
+    await waitFor(() => expect(nachrichten()).toEqual(['Plakat.pdf|error|413']));
+    expect(diagnose.upload).not.toHaveBeenCalled();
+  });
+
+  it('Sichern für die Warteschlange scheitert: chat-datei-sichern, Nachricht sofort mit "!"', async () => {
+    const schreibfehler = new Error('Speicher voll');
+    vi.mocked(Filesystem.writeFile).mockRejectedValueOnce(schreibfehler);
+    await sendenMit(netzabbruch());
+
+    await waitFor(() => expect(nachrichten()).toEqual(['Plakat.pdf|error|']));
+    expect(diagnose.upload.mock.calls.map((c) => c[0])).toEqual(['chat-datei-direkt', 'chat-datei-sichern']);
+    expect(diagnose.upload.mock.calls[1][1]).toBe(schreibfehler);
+  });
+
+  it('Warteschlange gibt bei einer Nachricht mit Datei auf: chat-datei-warteschlange mit Status', async () => {
+    await sendenMit(netzabbruch());
+    await waitFor(() => expect(warteschlange.enqueue).toHaveBeenCalledTimes(1));
+    const clientId = (warteschlange.enqueue.mock.calls[0] as unknown as [{ metadata: { clientId: string } }])[0].metadata.clientId;
+
+    act(() => meldeFehlschlag.an?.({
+      metadata: { type: 'chat', clientId, roomId: 7 },
+      body: { _localFilePath: 'queue-uploads/queue_x_Plakat.pdf' },
+      error: { status: 0, message: 'Network Error' },
+    }));
+
+    await waitFor(() => expect(diagnose.warteschlange).toHaveBeenCalledWith(0));
+  });
+
+  it('Warteschlange gibt bei reinem Text auf: keine Upload-Meldung', async () => {
+    render(<ChatRoom room={RAUM} onBack={vi.fn()} presentingElement={null} />);
+    act(() => meldeFehlschlag.an?.({ metadata: { type: 'chat', clientId: 'c1', roomId: 7 }, body: { content: 'Hallo' }, error: { status: 0, message: 'x' } }));
+    expect(diagnose.warteschlange).not.toHaveBeenCalled();
   });
 });
