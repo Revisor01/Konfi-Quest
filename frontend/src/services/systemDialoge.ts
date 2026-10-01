@@ -167,6 +167,20 @@ export const IM_SPEICHER_HOECHSTENS_BYTES = 25 * 1024 * 1024;
  * bei der Auswahl, solange die Datei sicher lesbar ist. Die Kopie im Cache
  * der Android-App (DateiAuswahlChromeClient) bleibt als erste Stufe.
  *
+ * WARUM DAS HILFT (Chromium-Quelltext, nachgelesen 01.10.2026): Eine Datei
+ * aus der Auswahl hat im WebView eine „Datei dahinter“. FormData schickt sie
+ * mit der Änderungszeit, die das WebView beim ersten Blick auf die Datei
+ * festgehalten hat (form_data.cc: AppendFile(path, LastModifiedTime())), und
+ * beim Senden vergleicht es diese Zeit mit der aktuellen
+ * (upload_file_element_reader.cc → ERR_UPLOAD_FILE_CHANGED). Genau so sah es
+ * der lokale Agent am Server: Die Vorabfrage (OPTIONS, 204) kam an, der
+ * Upload selbst nie — er bricht beim Lesen der Datei für den Body ab. Das
+ * Lesen über `arrayBuffer()` vergleicht dagegen keine Zeit (der Blob einer
+ * gewählten Datei trägt keine erwartete Änderungszeit, file.cc), und eine
+ * File aus diesen Bytes hat keine Datei dahinter: FormData schickt sie als
+ * Blob aus dem Speicher, ohne Vergleich — wie die verkleinerten Fotos, die
+ * immer gingen.
+ *
  * Fotos und Videos bleiben unberührt (Fotos verkleinert die App ohnehin,
  * Videos können groß sein), ebenso alles über der Grenze. Lässt sich ein
  * Dokument nicht lesen, geht das Original weiter — nicht schlechter als

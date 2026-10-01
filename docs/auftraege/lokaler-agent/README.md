@@ -196,7 +196,7 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
 
 ### Neu aus der Cloud, 01.10.2026 abends
 
-- [ ] **Uploads nach dem Update auf Build 132 (lokaler Agent, 15 Minuten,
+- [x] **Uploads nach dem Update auf Build 132 (lokaler Agent, 15 Minuten,
       Ergebnis an Simon).** Simon nach dem Update: „Word & PDF in Material /
       Chat hochladen/senden geht immer noch nicht. Haben wir was in den
       Logs?" Zu messen seit dem 01.10.2026, 17:00 MESZ:
@@ -223,6 +223,17 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       Build zusätzlich gleich bei der Auswahl in den Speicher
       (`services/systemDialoge.ts`, `imSpeicher`), wie Fotos. Die Zahlen
       zeigen, ob die Anfrage den Server überhaupt erreicht.
+      **Ergebnis 01.10.2026 abends:** Fünf Meldungen „Das Material ist
+      gespeichert, die Dateien noch nicht …“, alle von einem Android-Handy in
+      der App, ohne `art` und `ort` (Build 132 gibt sie noch nicht mit).
+      Am Server kam heute **kein** `POST /api/material/*/files` an. Zu jedem
+      Versuch sah der Server das Anlegen (201) bzw. Speichern der Angaben
+      (PUT, 200) und zweimal die **Vorabfrage des Uploads (OPTIONS, 204)** —
+      der Upload selbst kam nie. Er bricht also auf dem Handy ab, nach der
+      Vorabfrage und vor dem Senden des Bodys. Simon: nur PDF und Word,
+      Bilder gehen. Das passt genau zur Prüfung der Änderungszeit beim
+      Upload einer Datei aus der Auswahl im WebView; die Kopie im Speicher
+      (`imSpeicher`, PR #213) umgeht sie — Begründung im Kommentar dort.
 - [ ] **Nach dem Gerätetest des nächsten Builds (Android 133): Upload-Schritte
       in Umami zählen (lokaler Agent, 10 Minuten, nur Zahlen).** Simons
       Gerätetest 01.10. abends: Im Chat steht eine Nachricht mit PDF danach mit
