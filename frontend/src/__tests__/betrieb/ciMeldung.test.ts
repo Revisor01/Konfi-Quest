@@ -119,6 +119,8 @@ describe('CI-Meldung: rotes main', () => {
     expect(issue.body).toContain('Übersprungen: `build-and-push`, `deploy`');
     expect(issue.body).not.toContain('`backend-test`');
     expect(issue.body).toContain('<!-- ci-lauf:9012:1 -->');
+    // Erwaehnung des Repo-Inhabers, damit GitHub benachrichtigt (Simon, 01.10.2026).
+    expect(issue.body.startsWith('@Revisor01 ')).toBe(true);
   });
 
   it('ein weiterer roter Lauf ergaenzt das offene Issue, statt ein neues zu oeffnen', () => {
@@ -135,6 +137,8 @@ describe('CI-Meldung: rotes main', () => {
     expect(z.issues[0].comments[0]).toContain('Weiterer roter Lauf');
     expect(z.issues[0].comments[0]).toContain('`backend-test` — failure');
     expect(z.issues[0].comments[0]).toContain('<!-- ci-lauf:9013:1 -->');
+    // Erwaehnt wird nur beim Anlegen, nicht bei jedem weiteren Lauf.
+    expect(z.issues[0].comments[0]).not.toContain('@Revisor01');
   });
 
   it('derselbe Lauf wird nur einmal gemeldet (erneuter Meldungslauf)', () => {

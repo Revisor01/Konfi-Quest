@@ -96,8 +96,12 @@ def text_rot(repo, server, lauf, jobs, erster):
     uebersprungen = [j["name"] for j in jobs if j.get("conclusion") == "skipped"]
     zeilen = []
     if erster:
+        # Erwaehnung des Repo-Inhabers (Simon, 01.10.2026): Ein Issue des
+        # Actions-Bots allein benachrichtigt nur, wer das Repo beobachtet. Nur
+        # beim Anlegen, nicht bei jedem weiteren roten Lauf.
+        inhaber = repo.split("/")[0]
         zeilen += [
-            "**Die CI auf `main` ist rot.** Solange das so bleibt, baut und deployt sie nicht: "
+            f"@{inhaber} **Die CI auf `main` ist rot.** Solange das so bleibt, baut und deployt sie nicht: "
             "Produktion bleibt auf dem letzten grünen Stand, und das Release-Tor lässt für diesen "
             "Commit keinen Store-Build zu.",
             "",

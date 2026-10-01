@@ -55,6 +55,23 @@ cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
   Selbstbezeichnung im Profil getrimmt; Eventdatum statt Verbuchungsdatum bei
   Event-Punkten (`event_date` additiv).
 
+### Nachtrag 01.10.2026, abends (Rückfragen)
+
+- **Mail „Passwort vergessen":** kam bei Simon an (Mailserver: `status=sent`).
+- **Geheimnisse:** Alle Werte aus dem Stack liegen beim lokalen Agenten in
+  der Secrets-Ablage, auch `ACTIVITY_PHOTO_ENCRYPTION_KEY`, Losungs-Schlüssel,
+  Doku-Passwort und das Firebase-Dienstkonto als Datei; per Prüfsumme mit dem
+  Stack abgeglichen. Simon überträgt sie nach Bitwarden.
+- **Issue bei rotem `main`:** Das Label `ci-rot-main` existiert auf GitHub. Das
+  Issue erwähnt beim Anlegen den Repo-Inhaber (`@<inhaber>` aus `GH_REPO`),
+  damit GitHub benachrichtigt; weitere rote Läufe erwähnen nicht erneut
+  (`.github/scripts/ci-meldung.py`, Test `ciMeldung.test.ts`).
+- **Stack:** `timezone=UTC` steht in der Postgres-Befehlszeile; alle fünf
+  Dienste rotieren ihre Logs (`json-file`, 10 MB × 3), im Stack und an den
+  laufenden Containern gemessen.
+- **Testbuilds:** iOS 238 (TestFlight, Testinfos gesetzt) und Android 132
+  (interner Testtrack, nach grünem Probelauf) aus `a7f48d84`.
+
 ### Entschieden (Simon, 01.10.2026)
 
 - Echter Notfall-Lauf entfällt, der Probelauf genügt.
