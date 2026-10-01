@@ -120,6 +120,18 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       einen Chat-Push kalt starten — die übrigen Mitteilungen des Chats gehen
       ebenfalls. Die Mitteilungen auf Android brauchen den Server-Stand von
       PR #202 **und** den neuen Build.
+- [ ] **Vor dem Merge des PR nach #211: `backend-test` auf den neuen
+      `test-latest` ziehen (lokaler Agent, 5 Minuten).** Der PR entfernt
+      `konfi_profiles.password_plain` (Migration 187, Simon: „ja"). Das
+      Test-Backend hängt an derselben Datenbank und meldet laut Übergabe
+      Commit `674bd8e` vom 28.09.; dieser Stand setzt beim „Einmalpasswort
+      erzeugen" die Spalte noch auf NULL und bekäme ohne sie eine 500.
+      `test-backend.yml` ist am 01.10.2026 auf `main` angestoßen (baut nur das
+      Image, rollt nichts aus). Danach: Image ziehen, `backend-test` neu
+      erstellen, `/api/status` → `commit` ist der heutige `main`. Erst dann
+      den PR mergen. Der Notfall-Rückweg zu 2.2.x geht danach weiter, nur
+      „Einmalpasswort erzeugen" scheitert dort (500, nichts geändert) — in
+      [05](05-sicherung-und-notfall.md) vermerkt.
 - [ ] **Erinnerung „Gleich" nachmessen (lokaler Agent, 5 Minuten, nur
       Zeiten):** Simon bekam am 01.10.2026 um 14:47 Uhr die Erinnerung „In 1
       Stunde" zu einem Event um 16:00 Uhr. Der Code erklärt es (Fenster ±15

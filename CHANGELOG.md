@@ -1359,6 +1359,8 @@ iOS-Build 237 · Android versionCode 131
   Fehler ab.
 
 ### Sonstiges
+- Die Datenbank hat keine Spalte für Klartext-Passwörter von Konfis mehr. Sie
+  stammte aus der Anfangszeit der App und war seit Ende September leer.
 - Das Startprotokoll des Servers meldet die Hintergrund-Jobs nicht mehr pauschal
   als gestartet: Es steht dort „Deaktiviert" oder „Leader-Wahl", je nachdem,
   ob der Server sie übernehmen darf.
