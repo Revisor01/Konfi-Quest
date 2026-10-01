@@ -120,6 +120,15 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       einen Chat-Push kalt starten — die übrigen Mitteilungen des Chats gehen
       ebenfalls. Die Mitteilungen auf Android brauchen den Server-Stand von
       PR #202 **und** den neuen Build.
+- [ ] **Erinnerung „Gleich" nachmessen (lokaler Agent, 5 Minuten, nur
+      Zeiten):** Simon bekam am 01.10.2026 um 14:47 Uhr die Erinnerung „In 1
+      Stunde" zu einem Event um 16:00 Uhr. Der Code erklärt es (Fenster ±15
+      Minuten, Takt ab dem Containerstart, behoben im PR nach #211). Gegenprobe
+      in der Datenbank: für die `event_reminders`-Zeilen mit `reminder_type =
+      '1_hour'` vom 01.10. den Abstand `events.event_date - sent_at` und die
+      Minute von `sent_at`. Erwartet: Abstände zwischen 45 und 75 Minuten, der
+      fragliche bei rund 73, und die Sendeminuten zwischen zwei Deploys im
+      selben Viertelstunden-Raster wie der Start des Containers. Keine Namen, nur Zeiten. Weicht es ab, an Simon.
 
 ### Bleibt beim lokalen Agenten
 

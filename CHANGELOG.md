@@ -525,6 +525,13 @@ iOS-Build 237 · Android versionCode 131
   unter „Fehler".
 
 ### Behoben
+- Die Erinnerung „Gleich: …" kommt nicht mehr bis zu 75 Minuten vor Beginn,
+  sondern eine Stunde vorher und nennt die Uhrzeit des Events („Gleich:
+  Konfistunde um 16:00 Uhr") statt „In 1 Stunde". Beginnt ein Event nicht zur
+  vollen oder Viertelstunde, kommt sie bis zu einer Viertelstunde später, nie
+  früher. Dasselbe gilt für „Morgen: …" 24 Stunden vorher; ein Event kurz nach
+  Mitternacht wird nicht mehr am Abend zwei Tage davor als „morgen"
+  angekündigt.
 - Auf der Startseite der Teamer:innen steht unter der Begrüßung die eigene
   Funktionsbeschreibung wie im Profil, statt immer „Teamer:in". Eine geänderte
   Beschreibung gilt dort sofort.
