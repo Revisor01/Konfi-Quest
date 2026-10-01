@@ -9,7 +9,7 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.3.0
 
-iOS-Build 236 · Android versionCode 130
+iOS-Build 237 · Android versionCode 131
 
 ### Hinzugefügt
 - Im Profil lassen sich die Absturzberichte abschalten: Der Schalter
