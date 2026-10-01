@@ -781,6 +781,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const titleValue = role_title?.trim() || null;
 
       await db.query(`UPDATE users SET role_title = $1 WHERE id = $2`, [titleValue, userId]);
+      // req.user liegt 30 s im Zwischenspeicher (rbac.js). Ohne das hier zeigte
+      // die Startseite (greeting.role_title, 01.10.2026) nach dem Ändern noch
+      // bis zu 30 s die alte Bezeichnung.
+      invalidateUserCache(userId);
 
       res.json({
         message: 'Funktionsbeschreibung erfolgreich aktualisiert',

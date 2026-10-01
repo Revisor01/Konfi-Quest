@@ -1102,6 +1102,11 @@ paths:
         "kein Grund angegeben", bei den Namen "unbekannt". Kein bestehendes
         Feld entfaellt oder aendert Form; ausgelieferte Fassungen lesen die
         neuen Schluessel nicht und verhalten sich unveraendert.
+        ADDITIV 01.10.2026: greeting.role_title -- die Selbstbezeichnung
+        (users.role_title, null ohne Eintrag) fuer die Zeile unter dem Gruss;
+        die App zeigt ohne Wert "Teamer:in". POST /api/auth/update-role-title
+        leert dafuer den 30-s-Zwischenspeicher der Anmeldung, sonst kaeme die
+        alte Bezeichnung noch bis zu 30 s.
         GEAENDERT 28.09.2026 (Screens Konfi/Teamer BF-07, behoben): ADDITIV
         wrapped_ausgabe_id und wrapped_titel, wie im Konfi-Dashboard
         (GET /api/konfi/dashboard) — die Ausgabe, die GET /api/wrapped/me
@@ -1134,7 +1139,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  greeting: { type: object, description: "display_name, hour" }
+                  greeting: { type: object, description: "display_name, hour; ADDITIV 01.10.2026: role_title (Selbstbezeichnung, null ohne Eintrag)" }
                   certificates: { type: array, items: { type: object }, description: "id, name, icon, issued_date, expiry_date, status" }
                   events: { type: array, items: { type: object }, description: "id, title, event_date, event_end_time, location, type, teamer_only, teamer_needed, bring_items, cancelled, is_registered, booking_status; ADDITIV 15.09.2026: cancelled_reason, cancelled_by, cancelled_at, cancelled_by_name, cancelled_reason_set_by_name (alle NULL, wenn nicht abgesagt bzw. ohne Grund/Urheber)" }
                   badges: { type: object, description: "recent[], earned_count, total_count" }
