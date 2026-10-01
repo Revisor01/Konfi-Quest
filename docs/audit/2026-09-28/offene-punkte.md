@@ -348,8 +348,9 @@ Teamer-Badges gelten je Gemeinde.
 - react-router-Alerts schließen: „ja" — beim lokalen Agenten (kein Zugriff aus
   der Cloud).
 - Node 26: „jetzt" statt ab 28.10. — `.nvmrc`, Dockerfiles, `engines`.
-- Persönlicher Schalter „am App-Symbol mitzählen": noch offen, Simon hat
-  nachgefragt, was gemeint ist.
+- Persönlicher Schalter „am App-Symbol mitzählen": entfällt. Stattdessen
+  „darf freigeben" in der nächsten Version, als größere Sache zu planen —
+  Fragen in [darf-freigeben.md](darf-freigeben.md).
 
 - **Store und Konten:** Git-Tag `2.3.0` für den schon ausgelieferten Stand (die automatischen Tags
   gelten ab dem nächsten Upload); Store-Texte 2.3.0 (CI BF-08); Universal Links einschalten
