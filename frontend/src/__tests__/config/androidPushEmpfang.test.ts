@@ -202,7 +202,7 @@ describe('Zahl am App-Symbol: eine Stelle fuer offene und geschlossene App', () 
     expect(bau).toContain('implementation "me.leolin:ShortcutBadger:$shortcutBadgerVersion@aar"');
   });
 
-  const nachfuehren = zahl.slice(zahl.indexOf('static void mitteilungNachfuehren('), zahl.indexOf('static void ausNachricht('));
+  const nachfuehren = zahl.slice(zahl.indexOf('static void mitteilungNachfuehren('), zahl.indexOf('static void beimOeffnen('));
 
   it('Weg "mitteilungen": die liegende Mitteilung bekommt die neue Zahl -- still', () => {
     // Samsung und Xiaomi rechnen die Zahl aus den liegenden Mitteilungen.
@@ -236,10 +236,33 @@ describe('Zahl am App-Symbol: eine Stelle fuer offene und geschlossene App', () 
     expect(filter).toBeGreaterThan(0);
     expect(gleich).toBeGreaterThan(filter);
     expect(beiNull).toBeGreaterThan(gleich);
-    // Genau EIN Wegnehmen in der ganzen Klasse, kein cancelAll: Alle anderen
-    // Mitteilungen raeumt die App weiter nicht ab.
-    expect(zahl.match(/\.cancel\w*\(/g)).toEqual(['.cancel(']);
+    // Kein cancelAll: Alle anderen Mitteilungen raeumt die App weiter nicht
+    // ab. Weggenommen wird an genau zwei Stellen, beide Male nur die eine
+    // Sammel-Mitteilung: hier (auf 0 gesunken) und beim Oeffnen der App, wenn
+    // sie schon mit 0 kam (beimOeffnen, 01.10.2026, Test unten).
+    expect(zahl.match(/\.cancel\w*\(/g)).toEqual(['.cancel(', '.cancel(']);
+    expect(zahl.match(/\.cancel\(MITTEILUNG_TAG, MITTEILUNG_ID\)/g)).toHaveLength(2);
     expect(nachfuehren.match(/\.cancel\(/g)).toHaveLength(1);
+  });
+
+  it('Weg "mitteilungen": beim Oeffnen geht die Sammel-Mitteilung, die mit 0 kam', () => {
+    // Simon, 01.10.2026: "eine 0 muss doch weg oder nicht?" Eine Mitteilung,
+    // die schon mit 0 kam (etwa eine Event-Erinnerung bei nichts Offenem),
+    // zaehlt der Startbildschirm als 1. Sie geht beim Oeffnen der App --
+    // vorher wuerde sie niemand sehen. Die Entscheidung (number 0 und
+    // gemerkte Zahl 0) steht in AppSymbolNull und ist dort mit JUnit
+    // geprueft (AppSymbolNullTest); hier nur, dass sie angewandt wird.
+    const oeffnen = zahl.slice(zahl.indexOf('static void beimOeffnen('), zahl.indexOf('static void ausNachricht('));
+    expect(oeffnen).toMatch(/if \(!WEG_MITTEILUNGEN\.equals\(weg\(app\)\)\) return;/);
+    expect(oeffnen).toContain('if (!MITTEILUNG_TAG.equals(liegend.getTag()) || liegend.getId() != MITTEILUNG_ID) continue;');
+    expect(oeffnen).toMatch(/if \(n != null && AppSymbolNull\.beimOeffnenWegnehmen\(n\.number, gemerkt\)\) \{\s*verwalter\.cancel\(MITTEILUNG_TAG, MITTEILUNG_ID\);/);
+    // Gerufen in onResume -- beim Kaltstart und bei jeder Rueckkehr.
+    const activity = javaDerApp('MainActivity');
+    const resume = activity.slice(activity.indexOf('public void onResume()'));
+    expect(resume).toContain('AppSymbolZahl.beimOeffnen(this);');
+    // Die Regel selbst: nur 0 bei 0.
+    const regel = javaDerApp('AppSymbolNull');
+    expect(regel).toContain('return nummerDerMitteilung == 0 && gemerkteZahl <= 0;');
   });
 
   it('das Wegnehmen gibt es nur auf Weg "mitteilungen" -- nie bei "anbieter" oder "punkt"', () => {

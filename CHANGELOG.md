@@ -531,6 +531,9 @@ iOS-Build 237 · Android versionCode 131
   unter „Fehler".
 
 ### Behoben
+- Auf Samsung- und Xiaomi-Handys bleibt keine 1 mehr am App-Symbol stehen,
+  wenn nichts offen ist: Eine Mitteilung wie eine Event-Erinnerung, die kam,
+  als nichts zu tun war, verschwindet beim Öffnen der App.
 - Die Erinnerung „Gleich: …" kommt nicht mehr bis zu 75 Minuten vor Beginn,
   sondern eine Stunde vorher und nennt die Uhrzeit des Events („Gleich:
   Konfistunde um 16:00 Uhr") statt „In 1 Stunde". Beginnt ein Event nicht zur

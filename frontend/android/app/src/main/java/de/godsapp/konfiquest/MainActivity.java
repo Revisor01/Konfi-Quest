@@ -65,6 +65,10 @@ public class MainActivity extends BridgeActivity {
         // geaendert worden sein, seit die Activity zuletzt sichtbar war.
         // onResume laeuft vor dem ersten Bild und ist damit frueh genug.
         sichtschutzAnwenden();
+        // Samsung/Xiaomi: die Sammel-Mitteilung mit Zahl 0 beim Oeffnen
+        // wegnehmen, sonst steht eine 1 am Symbol (01.10.2026,
+        // AppSymbolZahl.beimOeffnen). Laeuft auch beim Kaltstart.
+        AppSymbolZahl.beimOeffnen(this);
     }
 
     /** Setzt oder entfernt FLAG_SECURE nach der aktuellen Einstellung. */
