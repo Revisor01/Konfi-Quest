@@ -290,12 +290,15 @@ ein Push. Pflicht-Events haben ihren eigenen Push beim Anlegen.
 ### Event-Erinnerungen einordnen
 
 Wer für ein Event angemeldet ist, bekommt zwei Erinnerungen aufs Handy:
-**„Morgen: …" genau 24 Stunden vor Beginn** und **„Gleich: …" eine Stunde vor
-Beginn**. Ein Gottesdienst am Sonntag um 10:00 Uhr wird also am Samstag um
-10:00 Uhr angekündigt und am Sonntag um 9:00 Uhr noch einmal — nicht mitten
-in der Nacht. Beide kommen von einem Hintergrundlauf, der alle 15 Minuten
-prüft; die Erinnerung kann deshalb bis zu einer Viertelstunde vor oder nach
-der genauen Marke eintreffen, aber nie doppelt.
+**„Morgen: …" 24 Stunden vor Beginn** und **„Gleich: …" eine Stunde vor
+Beginn**, beide mit der Uhrzeit des Events. Ein Gottesdienst am Sonntag um
+10:00 Uhr wird also am Samstag um 10:00 Uhr angekündigt und am Sonntag um
+9:00 Uhr noch einmal („Gleich: Gottesdienst um 10:00 Uhr") — nicht mitten in
+der Nacht. Beide kommen von einem Hintergrundlauf zur vollen Viertelstunde.
+Beginnt ein Event zur vollen oder Viertelstunde, kommt die Erinnerung
+pünktlich, sonst bis zu einer Viertelstunde später; fällt ein Lauf aus,
+holt der nächste sie nach. Früher als angekündigt kommt sie nie, und doppelt
+auch nicht.
 
 Keine Erinnerung bekommt, wer auf der Warteliste steht, wer schon [verbucht
 oder abgemeldet ist](#eine-abmeldung-nachtragen), niemand zu einem abgesagten

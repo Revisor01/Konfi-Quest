@@ -73,11 +73,12 @@ describe('Schema-Drift: Test-DB gegen Produktion', () => {
     expect(await spalteExistiert('activities', 'category')).toBe(true);
   });
 
-  it('konfi_profiles.password_plain existiert', async () => {
+  it('konfi_profiles.password_plain gibt es nicht mehr (Migration 187)', async () => {
     // Wurde früher von einem Test per ALTER TABLE zur Laufzeit selbst
     // angelegt — ein Workaround, der das Schema von der Testreihenfolge
-    // abhaengig machte.
-    expect(await spalteExistiert('konfi_profiles', 'password_plain')).toBe(true);
+    // abhaengig machte. Seit 01.10.2026 entfernt (Klartext-Passwoerter aus
+    // der SQLite-Zeit, Audit Datenbank BF-06).
+    expect(await spalteExistiert('konfi_profiles', 'password_plain')).toBe(false);
   });
 
   it('users.token_invalidated_at existiert (Soft-Revoke)', async () => {

@@ -3927,6 +3927,10 @@ paths:
         365-Tage-Aufraeumen bei der Leitung (Audit A13: 5 Reste bei 5
         Personen). Bestandszeilen ohne Kennung werden nicht ueber den Namen
         geraten; sie gehen mit Termin bzw. Challenge oder nach 365 Tagen.
+        BEHOBEN 01.10.2026 (Simon: "ja" zum Loeschen des Altbestands):
+        Migration 188 hat die Bestandszeilen dieser neun Arten ohne
+        konfi_id und user_id geloescht; seit dem 27.09.2026 entsteht keine
+        neue.
         Dieselbe Funktion laeuft bei POST /auth/delete-account, in der
         Auto-Loeschung und in DELETE /users/{id} (Fall 3).
         GEAENDERT 28.09.2026 (Simon: "konto löschen muss wirklich alles

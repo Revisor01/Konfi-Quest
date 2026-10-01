@@ -71,7 +71,7 @@ describe('Erstlauf der Hintergrund-Dienste ueberlebt einen DB-Fehler', () => {
 
   afterEach(() => {
     console.error = originalError;
-    // Intervalle wieder abraeumen, sonst haelt der Timer die Suite offen.
+    // Takte wieder abraeumen, sonst haelt der Timer die Suite offen.
     BackgroundService.stopEventReminderService();
     BackgroundService.stopTokenCleanupService();
   });
@@ -114,8 +114,9 @@ describe('Erstlauf der Hintergrund-Dienste ueberlebt einen DB-Fehler', () => {
 
       expect(abgelehnt).toHaveLength(0);
       expect(fehlerLog).toHaveLength(0);
-      // Der Takt laeuft: Intervall ist gesetzt.
-      expect(BackgroundService.eventReminderInterval).not.toBeNull();
+      // Der Takt laeuft: die Cron-Aufgabe ist gesetzt (zur vollen
+      // Viertelstunde seit 01.10.2026, vorher ein Intervall).
+      expect(BackgroundService.eventReminderCronTask).not.toBeNull();
     });
 
     it('startTokenCleanupService laeuft ohne Fehler still durch', async () => {

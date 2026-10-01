@@ -19,6 +19,14 @@ const { WOANDERS_MITGLIED_SQL } = require('../utils/konfiOderTeam');
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
 
+// Termin-Erinnerungen (Befund 01.10.2026, siehe sendEventReminders): Vorlauf
+// je Art und der Spielraum danach. Der Takt laeuft zur vollen Viertelstunde;
+// der Spielraum von zwei Takten faengt einen ausgefallenen Takt auf.
+const MINUTE_MS = 60 * 1000;
+const ERINNERUNG_VORLAUF_MS = { '1_day': 24 * 60 * MINUTE_MS, '1_hour': 60 * MINUTE_MS };
+const ERINNERUNG_SPIELRAUM_MS = 30 * MINUTE_MS;
+const ERINNERUNG_TAKT = '*/15 * * * *';
+
 // GESPERRTE GEMEINDEN BEKOMMEN NICHTS VON ALLEIN (27.09.2026, Audit "Wer
 // bekommt was", BF-22). Ist organizations.is_active = false -- Testphase
 // oder Lizenz abgelaufen (runTrialExpiry) oder vom Betrieb gesperrt --, kann
@@ -43,7 +51,7 @@ const NUR_AKTIVE_GEMEINDE = (alias) => `COALESCE(${alias}.is_active, true) = tru
 
 class BackgroundService {
   static badgeUpdateInterval = null;
-  static eventReminderInterval = null;
+  static eventReminderCronTask = null;
   // Laufmerker fuer sendEventReminders: Der 15-Minuten-Takt startet, ob der
   // letzte Lauf fertig ist oder nicht. Dauert ein Lauf laenger als einen Takt
   // (tausende Empfaenger, FCM-Latenz je Geraet), faende der naechste dieselben
@@ -571,14 +579,22 @@ class BackgroundService {
   // ====================================================================
 
   /**
-   * Startet den Event-Erinnerungs-Service (alle 15 Minuten)
+   * Startet den Event-Erinnerungs-Service (zur vollen Viertelstunde).
+   *
+   * Bis zum 01.10.2026 lief der Takt per setInterval ab dem Start des
+   * Servers -- nach einem Deploy um 12:02 Uhr also um :02, :17, :32, :47. Zur
+   * vollen Viertelstunde trifft der Takt die Uhrzeiten, zu denen Termine
+   * beginnen: Ein Termin um 16:00 Uhr wird um 15:00 Uhr erinnert, nicht um
+   * 15:02 oder (mit dem alten Fenster) um 14:47 Uhr. Der Erstlauf beim Start
+   * bleibt: Er holt nach, was waehrend eines Neustarts faellig wurde, und
+   * kann wegen des Fensters nie zu frueh erinnern.
    */
   static startEventReminderService(db) {
-    if (this.eventReminderInterval) {
+    if (this.eventReminderCronTask) {
       return;
     }
 
-    // Sofort einmal ausfuehren, dann alle 15 Minuten.
+    // Sofort einmal ausfuehren, dann zur vollen Viertelstunde.
     // .catch() ist Pflicht: sendEventReminders wirft den Fehler weiter (rethrow),
     // ein nackter Aufruf ohne await/catch wuerde als unhandled rejection den
     // Prozess beenden — und mit `restart: unless-stopped` eine Neustartschleife
@@ -587,23 +603,24 @@ class BackgroundService {
     this.sendEventReminders(db).catch(err =>
       console.error('Event reminder (initial) failed:', err));
 
-    const FIFTEEN_MINUTES = 15 * 60 * 1000;
-    this.eventReminderInterval = setInterval(async () => {
+    this.eventReminderCronTask = cron.schedule(ERINNERUNG_TAKT, async () => {
       try {
         await this.sendEventReminders(db);
       } catch (error) {
         console.error('Event reminder service failed:', error);
       }
-    }, FIFTEEN_MINUTES);
+    }, {
+      timezone: 'Europe/Berlin'
+    });
   }
 
   /**
    * Stoppt den Event-Erinnerungs-Service
    */
   static stopEventReminderService() {
-    if (this.eventReminderInterval) {
-      clearInterval(this.eventReminderInterval);
-      this.eventReminderInterval = null;
+    if (this.eventReminderCronTask) {
+      this.eventReminderCronTask.stop();
+      this.eventReminderCronTask = null;
     }
   }
 
@@ -843,6 +860,29 @@ class BackgroundService {
   }
 
   /**
+   * Das Fenster einer Erinnerung als [von, bis) fuer event_date (01.10.2026).
+   *
+   * Erinnert wird, wessen Beginn -- auf die Minute gerechnet -- hoechstens den
+   * Vorlauf und mehr als den Vorlauf minus 30 Minuten nach der laufenden
+   * Minute liegt. Fuer die Ein-Stunden-Erinnerung um 15:00 Uhr also Beginn
+   * 15:31 bis 16:00 Uhr, um 15:15 Uhr 15:46 bis 16:15 Uhr. Nie frueher als
+   * angekuendigt, hoechstens eine halbe Stunde spaeter; mit dem Takt zur
+   * vollen Viertelstunde in der Regel genau puenktlich.
+   *
+   * "Auf die Minute": Sekunden im Beginn (16:00:30) und der Takt, der ein paar
+   * Millisekunden nach 15:00:00 laeuft, verschieben nichts.
+   *
+   * @param {Date} jetzt
+   * @param {'1_day'|'1_hour'} typ
+   * @returns {{von: Date, bis: Date}}
+   */
+  static erinnerungsFenster(jetzt, typ) {
+    const minute = Math.floor(jetzt.getTime() / MINUTE_MS) * MINUTE_MS;
+    const bis = minute + ERINNERUNG_VORLAUF_MS[typ] + MINUTE_MS;
+    return { von: new Date(bis - ERINNERUNG_SPIELRAUM_MS), bis: new Date(bis) };
+  }
+
+  /**
    * Sendet Event-Erinnerungen (1 Tag und 1 Stunde vorher)
    *
    * Befund H1, 27.08.2026: Beide Queries filtern abgesagte Termine aus. Eine
@@ -877,6 +917,17 @@ class BackgroundService {
    * NOT EXISTS auf event_reminders verhindert den Doppelversand im zweiten.
    * Dazu der Laufmerker eventReminderLaeuft (siehe Feld oben): Ein Takt, der
    * einen noch laufenden Vorgaenger trifft, wird uebersprungen.
+   *
+   * Befund 01.10.2026 (Simon): "Ich hab um 14:47 einen Push bekommen. Konfi
+   * Stunde Vaterunser in einer Stunde. Aber das waeren noch 1:13." Das
+   * Fenster ±15 Minuten liess die Erinnerung bis zu 75 Minuten vorher zu, und
+   * der Takt lief ab dem Serverstart (:02, :17, :32, :47). Ein Termin um
+   * 16:00 Uhr fiel um 14:47 Uhr gerade hinein. Seitdem: nie frueher als der
+   * Vorlauf, hoechstens 30 Minuten spaeter (erinnerungsFenster), Takt zur
+   * vollen Viertelstunde (startEventReminderService), und der Text nennt die
+   * Uhrzeit (PushService.sendEventReminderToKonfi). Dieselbe Regel fuer die
+   * Vortags-Erinnerung -- dort fiel ein Termin um 00:10 Uhr sonst schon um
+   * 23:55 Uhr zwei Abende vorher ins Fenster ("Morgen", obwohl uebermorgen).
    */
   static async sendEventReminders(db) {
     if (this.eventReminderLaeuft) {
@@ -887,10 +938,8 @@ class BackgroundService {
     try {
       const now = new Date();
 
-      // 1. Events, die in 24 Stunden (±15 Minuten) beginnen — Vortags-Erinnerung
-      const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      const oneDayWindowStart = new Date(oneDayFromNow.getTime() - 15 * 60 * 1000);
-      const oneDayWindowEnd = new Date(oneDayFromNow.getTime() + 15 * 60 * 1000);
+      // 1. Events, die in 24 Stunden beginnen (bis 30 Minuten Spielraum) — Vortags-Erinnerung
+      const vortag = this.erinnerungsFenster(now, '1_day');
 
       const oneDayQuery = `
         SELECT DISTINCT e.id, e.name, e.event_date, e.organization_id, eb.user_id
@@ -900,7 +949,7 @@ class BackgroundService {
         WHERE eb.status = 'confirmed'
           AND eb.attendance_status IS NULL
           AND e.cancelled IS NOT TRUE
-          AND e.event_date BETWEEN $1 AND $2
+          AND e.event_date >= $1 AND e.event_date < $2
           AND NOT EXISTS (
             SELECT 1 FROM event_reminders er
             WHERE er.event_id = e.id
@@ -909,7 +958,7 @@ class BackgroundService {
           )
       `;
 
-      const { rows: oneDayEvents } = await db.query(oneDayQuery, [oneDayWindowStart, oneDayWindowEnd]);
+      const { rows: oneDayEvents } = await db.query(oneDayQuery, [vortag.von, vortag.bis]);
 
       // Je Termin: erst alle Empfaenger:innen in EINEM INSERT vormerken, dann
       // EIN Sammel-Push an genau die, deren Zeile neu war (Begruendung an
@@ -933,10 +982,8 @@ class BackgroundService {
         }
       }
 
-      // 2. Events die in ca. 1 Stunde stattfinden
-      const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
-      const oneHourWindowStart = new Date(oneHourFromNow.getTime() - 15 * 60 * 1000);
-      const oneHourWindowEnd = new Date(oneHourFromNow.getTime() + 15 * 60 * 1000);
+      // 2. Events, die in einer Stunde beginnen (bis 30 Minuten Spielraum)
+      const gleich = this.erinnerungsFenster(now, '1_hour');
 
       const oneHourQuery = `
         SELECT DISTINCT e.id, e.name, e.event_date, e.organization_id, eb.user_id
@@ -946,7 +993,7 @@ class BackgroundService {
         WHERE eb.status = 'confirmed'
           AND eb.attendance_status IS NULL
           AND e.cancelled IS NOT TRUE
-          AND e.event_date BETWEEN $1 AND $2
+          AND e.event_date >= $1 AND e.event_date < $2
           AND NOT EXISTS (
             SELECT 1 FROM event_reminders er
             WHERE er.event_id = e.id
@@ -955,7 +1002,7 @@ class BackgroundService {
           )
       `;
 
-      const { rows: oneHourEvents } = await db.query(oneHourQuery, [oneHourWindowStart, oneHourWindowEnd]);
+      const { rows: oneHourEvents } = await db.query(oneHourQuery, [gleich.von, gleich.bis]);
 
       for (const { event, empfaenger } of await this.erinnerungenVormerken(db, oneHourEvents, '1_hour')) {
         try {

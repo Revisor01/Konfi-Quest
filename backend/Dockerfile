@@ -17,12 +17,12 @@
 #   2. Laufzeit: das schlanke Image, node_modules aus Stufe 1, der Code ohne
 #      Tests und Doku (backend/.dockerignore).
 
-FROM node:24-bookworm AS abhaengigkeiten
+FROM node:26-bookworm AS abhaengigkeiten
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 
-FROM node:24-bookworm-slim
+FROM node:26-bookworm-slim
 WORKDIR /app
 
 # Kein curl (01.10.2026): Der Stack prueft backend, backend2 und backend-test

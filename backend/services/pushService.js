@@ -1812,9 +1812,13 @@ class PushService {
       const isOneDay = reminderType === '1_day';
       const notification = {
         title: isOneDay ? 'Morgen: Event!' : 'Gleich: Event!',
+        // Die Ein-Stunden-Erinnerung nennt die Uhrzeit statt "In 1 Stunde"
+        // (01.10.2026): Der Text stimmt dann auch, wenn der Push spaeter
+        // ankommt -- Takt, Spielraum (backgroundService.erinnerungsFenster)
+        // oder ein Handy im Ruhemodus.
         body: isOneDay
           ? `Morgen: ${eventName}${eventTime ? ` um ${eventTime} Uhr` : ''}`
-          : `In 1 Stunde: ${eventName}`,
+          : `Gleich: ${eventName}${eventTime ? ` um ${eventTime} Uhr` : ''}`,
         data: {
           type: 'event_reminder',
           reminder_type: reminderType,

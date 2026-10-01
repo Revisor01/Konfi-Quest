@@ -1,0 +1,31 @@
+-- konfi_profiles.password_plain entfaellt (01.10.2026)
+--
+-- BEFUND (Audit 26.09.2026, Datenbank BF-06 / Sicherheit BF-06): Die Spalte
+-- stammt aus der SQLite-Zeit, als Passwoerter von Konfis im Klartext
+-- gespeichert und der Leitung angezeigt wurden. Migration 165 hat die Werte
+-- geleert, 176 laesst nur noch NULL zu. Simon, 01.10.2026: "ja" zu "die
+-- Spalte mit dem naechsten Release entfernen".
+--
+-- WER SIE NOCH NENNT: Keine Code-Stelle seit dem 29.09.2026 (Waechter:
+-- tests/schema/migration176KeinKlartext.test.js). Die Store-App liest sie
+-- nicht; keine API-Antwort gab sie seit Maerz 2026 zurueck. Eine einzige
+-- Server-Stelle aus der Zeit davor schreibt sie noch: "Einmalpasswort
+-- erzeugen" (POST /konfis/:id/regenerate-password) setzt sie auf NULL, in
+-- einer Transaktion mit dem neuen Passwort. Ohne Spalte scheitert dort die
+-- ganze Transaktion -- 500, nichts geaendert, das alte Passwort gilt weiter.
+-- Das betrifft nur einen Server mit Stand vor dem 29.09.2026 an dieser
+-- Datenbank:
+--   - backend-test (test-latest) MUSS vorher neu gebaut und gezogen sein
+--     (test-backend.yml auf main) -- er haengt an derselben Datenbank;
+--   - der Notfall-Rueckweg auf 2.2.x: dort geht dieser eine Schreibweg nicht
+--     mehr, alles andere wie gemessen (Auftrag 05).
+-- Beim rollenden Deploy laeuft auf der zweiten Replica der Stand von
+-- main vor diesem Commit -- der nennt die Spalte nicht.
+--
+-- SPERRE: DROP COLUMN aendert nur den Katalog (ACCESS EXCLUSIVE fuer
+-- Millisekunden), die Zeilen werden nicht umgeschrieben. Der CHECK aus 176
+-- haengt an der Spalte und geht mit.
+--
+-- IDEMPOTENT: IF EXISTS.
+
+ALTER TABLE konfi_profiles DROP COLUMN IF EXISTS password_plain;

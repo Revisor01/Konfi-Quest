@@ -12,6 +12,10 @@ import { join, resolve } from 'node:path';
 // die Fassung aus .nvmrc: 24, Active LTS bis 20.10.2026, danach Maintenance
 // bis 30.04.2028. Beide Test-Suiten liefen vor der Umstellung auf 24 gruen.
 //
+// 01.10.2026: Linie 26 (Simon zu "ab dem 28.10. auf Node 26?": "jetzt").
+// 26 lief bis zum 29.09. schon in CI und Produktion und wird am 28.10.2026
+// LTS. Vorher beide Suiten lokal unter 26.10.0.
+//
 // Wer die Linie hebt, aendert .nvmrc, beide Dockerfiles und engines im selben
 // Commit -- dieser Test schlaegt sonst an.
 

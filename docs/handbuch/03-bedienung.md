@@ -521,8 +521,9 @@ und erledigt hast, in der App oder im Browser —, nimmt die App diese eine
 Mitteilung aus der Leiste, und am Symbol steht nichts mehr. Bei geschlossener
 App geschieht das, sobald die Zahl nachgezogen wird, spätestens nach fünf
 Minuten. Kam die Mitteilung, als ohnehin nichts offen war — etwa eine
-Event-Erinnerung —, bleibt sie liegen, bis du sie antippst oder wegwischst;
-so lange steht am Symbol eine 1.
+Event-Erinnerung —, bleibt sie liegen, bis du sie antippst, wegwischst oder
+die App öffnest; so lange steht am Symbol eine 1, und beim Öffnen der App
+verschwinden beide.
 
 > **Noch nicht an jedem Gerät geprüft.** Sony: Die App spricht Sonys
 > Zahl-Schnittstelle direkt an; ob jedes Xperia-Modell sie anbietet, zeigt
@@ -538,12 +539,14 @@ Bereich öffnest, zu dem sie gehört: Öffnest du einen Chat, verschwinden alle
 Mitteilungen dieses Chats, öffnest du die Events, alle Event-Mitteilungen.
 Alles andere bleibt liegen, bis du es wegwischst. Das gilt für jede Rolle,
 auch für die Leitung, auf iPhone und Android: Beim Öffnen der App allein
-verschwindet keine Mitteilung.
+verschwindet keine Mitteilung — mit einer Ausnahme auf Samsung und Xiaomi
+(siehe unten).
 
 Auf Samsung und Xiaomi liegt nur die eine Mitteilung, an der die Zahl am
 Symbol hängt (siehe oben). Sie bleibt beim Lesen eines Chats liegen, solange
 noch etwas offen ist — sonst verschwände die Zahl mit ihr —, und geht, wenn
-nichts mehr offen ist.
+nichts mehr offen ist. Kam sie, als nichts offen war, geht sie beim Öffnen
+der App, damit am Symbol keine 1 stehen bleibt.
 
 ## Benachrichtigungen wieder zum Laufen bringen
 

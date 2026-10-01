@@ -69,7 +69,7 @@ J (Code-Nachzügler, Tests, Dependabot, Notfall-Probelauf); Ergebnis unten unter
 
 - BF-11: Log-Volumen bei Zielgröße überrollt die Aufbewahrung binnen Stunden (MITTEL) — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md) → **behoben 29.09.** (Menge je Vorgang); Rotation und strukturierte Zeilen beim Betrieb
 - BF-05: Wiederherstellung aus der Sicherung ist nirgends beschrieben und scheitert auf einer frisch aufgesetzten Instanz (MITTEL) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **behoben 29.09.** im Repo; Rhythmus, zweiter Ort und die Probe mit einem echten Dump beim Betrieb (Auftrag 11)
-- BF-06: `konfi_profiles.password_plain` — eine Spalte für Klartext-Passwörter Minderjähriger existiert weiter und wird nu (MITTEL) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **teilweise** — kein Code liest oder schreibt die Spalte, in Produktion 0 Werte; die Spalte selbst entfernen (Frage an Simon)
+- BF-06: `konfi_profiles.password_plain` — eine Spalte für Klartext-Passwörter Minderjähriger existiert weiter und wird nu (MITTEL) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **behoben 01.10.** (Migration 187 entfernt die Spalte; Simon: „ja“)
 - BF-08: Fünf von 89 Migrationen sind nicht idempotent — entgegen ihren eigenen Kommentaren (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **behoben 29.09.**
 - BF-09: 42 redundante Indizes, davon 9 exakte Doppelgänger (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **teilweise** — die 9 Doppelgänger sind weg; die 33 präfix-redundanten erst nach `idx_scan` aus Produktion (Auftrag 11)
 - BF-10: `settings` hat keinen Primärschlüssel; mit `organization_id = NULL` sind Duplikate möglich (NIEDRIG) — [datenbank-migrationen](../2026-09-26/datenbank-migrationen.md) → **behoben 29.09.**
@@ -117,7 +117,7 @@ Meist Messungen in Produktion oder Fragen, die bei Simon liegen. Stand hinter de
 - Sammelverbuchung prüft weder `cancelled` noch … — [punkte-termine](../2026-09-26/backend-fachlogik-punkte-termine.md) → **kein Befund mehr:** am Code geklärt, die Sammelverbuchung erreicht abgesagte Buchungen nicht.
 - Chat-Texte im Push an Firebase und Apple — [sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md) → **behoben 29.09.** nach Simons Entscheidung („Absender, ohne Inhalt"); Datenschutzerklärung nachgezogen.
 - `X-Real-IP` in Produktion (zweimal gemeldet: Sicherheit und Betrieb) — [sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md), [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md) → **offen bis zur Messung:** im Code geschlossen, ob der Proxy den Header setzt, misst Auftrag 07.
-- Namen anderer Personen in `notifications.data` — [sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md) → **behoben 29.09. bis auf den Altbestand** (Einträge vor dem 27.09.2026 ohne Kennung; spätestens am 27.09.2027 durch die Frist weg — Frage an Simon, ob früher).
+- Namen anderer Personen in `notifications.data` — [sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md) → **behoben 29.09., der Altbestand 01.10.** (Einträge vor dem 27.09.2026 ohne Kennung; Simon: „ja“, Migration 188 löscht sie).
 - Datenexport nach Art. 15 DSGVO — [sicherheit-datenschutz](../2026-09-26/backend-sicherheit-datenschutz.md) → **offen:** Feature E-21 „Selbstauskunft".
 - Firebase-Zustellrate und -Latenz — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md) → **offen:** nach dem Deploy messen.
 - SMTP-Grenzen — [betrieb-skalierung](../2026-09-26/betrieb-skalierung.md) → **im Code behoben 29.09.** (Massenversand gepoolt und gedrosselt, Vorgabe 20 Mails je Minute); die Grenze des Anbieters erfragt der Betrieb (Auftrag 11).
@@ -336,6 +336,21 @@ Teamer-Badges gelten je Gemeinde.
   Links ohne Biometrie-Abfrage; `aps-environment` am nächsten IPA.
 
 ## Bei Simon
+
+**Entschieden 01.10.2026 (Simon, „Alles für 2.3.0"):**
+- Android, Mitteilung mit Zahl 0: „eine 0 muss doch weg" — sie geht jetzt beim
+  Öffnen der App (Samsung/Xiaomi), siehe Handbuch „Bedienung".
+- Absage bei Selbstabgemeldeten: „wer sich vorher abgemeldet hat, wird nicht
+  informiert" — bleibt wie gebaut (entschuldigt, keine Absage-Mitteilung).
+- Postfach-Altbestand ohne Kennung: „ja" — Migration 188.
+- `password_plain`: „ja" — Migration 187 (Voraussetzung: `backend-test` neu
+  gebaut, Auftrag im README des lokalen Agenten).
+- react-router-Alerts schließen: „ja" — beim lokalen Agenten (kein Zugriff aus
+  der Cloud).
+- Node 26: „jetzt" statt ab 28.10. — `.nvmrc`, Dockerfiles, `engines`.
+- Persönlicher Schalter „am App-Symbol mitzählen": entfällt. Stattdessen
+  „darf freigeben" in der nächsten Version, als größere Sache zu planen —
+  Fragen in [darf-freigeben.md](darf-freigeben.md).
 
 - **Store und Konten:** Git-Tag `2.3.0` für den schon ausgelieferten Stand (die automatischen Tags
   gelten ab dem nächsten Upload); Store-Texte 2.3.0 (CI BF-08); Universal Links einschalten

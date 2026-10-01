@@ -45,7 +45,8 @@ import me.leolin.shortcutbadger.ShortcutBadger;
  *                 Mitteilungen (Samsung One UI, Xiaomi). Der Server schickt
  *                 dafuer jede Mitteilung mit festem tag und der Gesamtzahl;
  *                 sinkt sie auf 0, nimmt die App diese eine Mitteilung weg
- *                 (mitteilungNachfuehren).
+ *                 (mitteilungNachfuehren), ebenso beim Oeffnen der App, wenn
+ *                 sie schon mit 0 kam (beimOeffnen).
  *   punkt         Kein bekannter Weg zu einer Zahl (Pixel u. a.).
  *
  * Alles hier faengt seine Fehler selbst: Eine Zahl, die nicht ankommt, ist
@@ -198,6 +199,34 @@ final class AppSymbolZahl {
     }
 
     /**
+     * Beim Oeffnen der App (MainActivity.onResume, 01.10.2026): Liegt die
+     * Sammel-Mitteilung mit Zahl 0 und ist nichts offen, nimmt die App sie
+     * weg (AppSymbolNull). Simon: "eine 0 muss doch weg oder nicht?" -- der
+     * Startbildschirm zaehlt sie als 1, auf dem iPhone steht dort nichts. Wer
+     * die App oeffnet, hat sie vor sich; weggenommen wird wie in
+     * mitteilungNachfuehren nur diese eine Mitteilung (MITTEILUNG_TAG,
+     * MITTEILUNG_ID) und nur auf Weg "mitteilungen".
+     */
+    static void beimOeffnen(Context context) {
+        try {
+            Context app = context.getApplicationContext();
+            if (!WEG_MITTEILUNGEN.equals(weg(app))) return;
+            NotificationManager verwalter = (NotificationManager) app.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (verwalter == null) return;
+            int gemerkt = gemerkt(app);
+            for (StatusBarNotification liegend : verwalter.getActiveNotifications()) {
+                if (!MITTEILUNG_TAG.equals(liegend.getTag()) || liegend.getId() != MITTEILUNG_ID) continue;
+                Notification n = liegend.getNotification();
+                if (n != null && AppSymbolNull.beimOeffnenWegnehmen(n.number, gemerkt)) {
+                    verwalter.cancel(MITTEILUNG_TAG, MITTEILUNG_ID);
+                }
+            }
+        } catch (Throwable fehler) {
+            Log.w(LOG, "Mitteilung mit 0 nicht weggeraeumt", fehler);
+        }
+    }
+
+    /**
      * Aus einer Push-Nachricht: Ist sie ein stilles badge_update mit gueltiger
      * Zahl, wird die Zahl gesetzt. Alles andere bleibt unberuehrt.
      */
@@ -220,6 +249,16 @@ final class AppSymbolZahl {
             return zahl < 0 ? null : zahl;
         } catch (NumberFormatException e) {
             return null;
+        }
+    }
+
+    /** Die zuletzt gesetzte Zahl, oder -1, wenn keine bekannt ist. */
+    private static int gemerkt(Context context) {
+        try {
+            return context.getSharedPreferences(BADGE_TOPF, Context.MODE_PRIVATE)
+                .getInt(BADGE_SCHLUESSEL, -1);
+        } catch (ClassCastException fehler) {
+            return -1;
         }
     }
 

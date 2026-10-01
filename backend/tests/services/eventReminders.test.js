@@ -271,13 +271,14 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
   // ------------------------------------------------------------------
   // Vortags-Erinnerung an die Uhrzeit gebunden (Befund 26.09.2026, Chat BF-03)
   //
-  // Regel: 24 Stunden vor Beginn, mit ±15 Minuten Toleranz — dasselbe Fenster
-  // wie beim Ein-Stunden-Zweig. Ein Termin um 18:00 Uhr wird also am Vortag
-  // um 18:00 Uhr angekuendigt, nicht um 00:05 Uhr nachts.
+  // Regel: 24 Stunden vor Beginn — nie frueher, hoechstens eine halbe Stunde
+  // spaeter (Befund 01.10.2026, siehe unten; bis dahin ±15 Minuten). Ein
+  // Termin um 18:00 Uhr wird also am Vortag um 18:00 Uhr angekuendigt, nicht
+  // um 00:05 Uhr nachts.
   // vi.setSystemTime mockt nur Date; die Datenbank laeuft mit echter Uhr, die
   // Abfrage bekommt ihre Fenstergrenzen aber aus der JS-Zeit.
   // ------------------------------------------------------------------
-  describe('Zeitfenster der Vortags-Erinnerung (24 Stunden, ±15 Minuten)', () => {
+  describe('Zeitfenster der Vortags-Erinnerung (24 Stunden vorher, bis 30 Minuten spaeter)', () => {
     // Mittwoch, 12.05.2027, 18:00 Uhr Berlin (Sommerzeit, UTC+2)
     const TERMIN_SQL = "'2027-05-12 18:00:00+02'::timestamptz";
 
@@ -319,36 +320,53 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
       expect(await countReminders(eventId, '1_day')).toBe(0);
     });
 
-    it('F4: Knapp vor dem Fenster (17:40 Uhr) und knapp danach (18:20 Uhr) passiert nichts', async () => {
+    it('F4: Eine Minute zu frueh (17:59 Uhr) und eine halbe Stunde zu spaet (18:30 Uhr) passiert nichts', async () => {
+      // 17:59 Uhr waeren 24 Stunden und eine Minute vorher -- frueher als
+      // angekuendigt. Bis zum 01.10.2026 traf das Fenster schon ab 17:45 Uhr.
       const eventId = await terminMitBuchung();
 
-      await laufUm('2027-05-11T17:40:00+02:00');
+      await laufUm('2027-05-11T17:59:00+02:00');
       expect(await countReminders(eventId, '1_day')).toBe(0);
 
-      await laufUm('2027-05-11T18:20:00+02:00');
+      await laufUm('2027-05-11T18:30:00+02:00');
       expect(await countReminders(eventId, '1_day')).toBe(0);
     });
 
-    it('F5: Fensterrand — 17:45 Uhr und 18:15 Uhr treffen noch (zwei Takte je Termin)', async () => {
+    it('F5: Fensterrand — 18:00 Uhr und 18:29 Uhr treffen noch (zwei Takte je Termin)', async () => {
       // Das Fenster ist 30 Minuten breit bei 15 Minuten Takt: Faellt ein Takt
       // aus (Neustart, langer Vorlauf), faengt der naechste den Termin noch.
       const frueh = await terminMitBuchung();
-      await laufUm('2027-05-11T17:45:00+02:00');
+      await laufUm('2027-05-11T18:00:00+02:00');
       expect(await countReminders(frueh, '1_day')).toBe(1);
 
       const spaet = await createEventWithBooking({
         eventDateSql: TERMIN_SQL, cancelled: false, userId: USERS.konfi2.id
       });
-      await laufUm('2027-05-11T18:15:00+02:00');
+      await laufUm('2027-05-11T18:29:00+02:00');
       expect(await countReminders(spaet, '1_day')).toBe(1);
     });
 
     it('F6: Zweiter Lauf im selben Fenster schickt nicht noch einmal', async () => {
       const eventId = await terminMitBuchung();
 
-      await laufUm('2027-05-11T17:50:00+02:00');
-      await laufUm('2027-05-11T18:05:00+02:00');
+      await laufUm('2027-05-11T18:00:00+02:00');
+      await laufUm('2027-05-11T18:15:00+02:00');
 
+      expect(await countReminders(eventId, '1_day')).toBe(1);
+    });
+
+    it('F8: Termin kurz nach Mitternacht — "Morgen" kommt nicht schon am Abend davor', async () => {
+      // Donnerstag, 13.05.2027, 00:10 Uhr. Mit ±15 Minuten traf der Takt um
+      // 23:55 Uhr am Dienstag -- "Morgen: ... um 00:10 Uhr", obwohl der
+      // Termin erst uebermorgen war.
+      const eventId = await createEventWithBooking({
+        eventDateSql: "'2027-05-13 00:10:00+02'::timestamptz", cancelled: false
+      });
+
+      await laufUm('2027-05-11T23:55:00+02:00');
+      expect(await countReminders(eventId, '1_day')).toBe(0);
+
+      await laufUm('2027-05-12T00:15:00+02:00');
       expect(await countReminders(eventId, '1_day')).toBe(1);
     });
 
@@ -359,6 +377,117 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
 
       expect(await countReminders(eventId, '1_hour')).toBe(1);
       expect(await countReminders(eventId, '1_day')).toBe(0);
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // Ein-Stunden-Erinnerung nie frueher als eine Stunde (Befund 01.10.2026)
+  //
+  // Simon: "Ich hab um 14:47 einen Push bekommen. Konfi Stunde Vaterunser in
+  // einer Stunde. Aber das waeren noch 1:13." Der Termin begann um 16:00 Uhr.
+  // Das Fenster lag bei 60 Minuten ±15, der 15-Minuten-Takt zaehlte ab dem
+  // Start des Servers (setInterval). Lag ein Takt um :47, fiel der Termin dort
+  // gerade ins Fenster: 73 Minuten vorher, Text "In 1 Stunde".
+  //
+  // Jetzt: Das Fenster reicht von 60 bis 31 Minuten vor Beginn (auf die
+  // Minute), der Takt laeuft zur vollen Viertelstunde, und der Text nennt die
+  // Uhrzeit. Ein Termin zur vollen oder Viertelstunde wird also genau eine
+  // Stunde vorher erinnert, jeder andere hoechstens 15 Minuten spaeter.
+  // ------------------------------------------------------------------
+  describe('Zeitfenster der Ein-Stunden-Erinnerung (60 Minuten vorher, bis 30 Minuten spaeter)', () => {
+    // Donnerstag, 01.10.2026, 16:00 Uhr Berlin (Sommerzeit, UTC+2)
+    const TERMIN_SQL = "'2026-10-01 16:00:00+02'::timestamptz";
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    async function terminMitBuchung(eventDateSql = TERMIN_SQL) {
+      return createEventWithBooking({ eventDateSql, cancelled: false });
+    }
+
+    async function laufUm(isoBerlin) {
+      vi.setSystemTime(new Date(isoBerlin));
+      await BackgroundService.sendEventReminders(db);
+    }
+
+    it('E1: Simons Fall — um 14:47 Uhr geht fuer 16:00 Uhr noch nichts hinaus', async () => {
+      const eventId = await terminMitBuchung();
+
+      await laufUm('2026-10-01T14:47:00+02:00');
+
+      expect(await countReminders(eventId, '1_hour')).toBe(0);
+    });
+
+    it('E2: auch nicht um 14:45 Uhr (Takt zur Viertelstunde, 75 Minuten vorher)', async () => {
+      const eventId = await terminMitBuchung();
+
+      await laufUm('2026-10-01T14:45:00+02:00');
+
+      expect(await countReminders(eventId, '1_hour')).toBe(0);
+    });
+
+    it('E3: um 15:00 Uhr, genau eine Stunde vorher, geht sie hinaus', async () => {
+      const eventId = await terminMitBuchung();
+
+      await laufUm('2026-10-01T15:00:00+02:00');
+
+      expect(await reminderEmpfaenger(eventId, '1_hour')).toEqual([USERS.konfi1.id]);
+    });
+
+    it('E4: faellt der Takt um 15:00 Uhr aus, faengt der naechste den Termin (bis 15:29 Uhr)', async () => {
+      const eventId = await terminMitBuchung();
+      await laufUm('2026-10-01T15:29:00+02:00');
+      expect(await countReminders(eventId, '1_hour')).toBe(1);
+
+      const zuSpaet = await createEventWithBooking({
+        eventDateSql: TERMIN_SQL, cancelled: false, userId: USERS.konfi2.id
+      });
+      await laufUm('2026-10-01T15:30:00+02:00');
+      expect(await countReminders(zuSpaet, '1_hour')).toBe(0);
+    });
+
+    it('E5: Sekunden im Beginn zaehlen nicht — 16:00:30 Uhr wird um 15:00 Uhr erinnert', async () => {
+      const eventId = await terminMitBuchung("'2026-10-01 16:00:30+02'::timestamptz");
+
+      await laufUm('2026-10-01T15:00:00+02:00');
+
+      expect(await countReminders(eventId, '1_hour')).toBe(1);
+    });
+
+    it('E6: der Text nennt die Uhrzeit statt "In 1 Stunde"', async () => {
+      const versand = vi.spyOn(PushService, 'sendToMultipleUsers').mockResolvedValue([]);
+      await createEventWithBooking({ eventDateSql: TERMIN_SQL, cancelled: false });
+
+      await laufUm('2026-10-01T15:00:00+02:00');
+
+      expect(versand).toHaveBeenCalledTimes(1);
+      const [, empfaenger, mitteilung] = versand.mock.calls[0];
+      expect(empfaenger).toEqual([USERS.konfi1.id]);
+      expect(mitteilung.title).toBe('Gleich: Event!');
+      expect(mitteilung.body).toBe('Gleich: Testtermin um 16:00 Uhr');
+      expect(mitteilung.data.reminder_type).toBe('1_hour');
+    });
+
+    it('E7: der Takt laeuft zur vollen Viertelstunde, nicht ab dem Serverstart', () => {
+      // Mit setInterval lag der Takt dort, wo der Server startete (:02, :17,
+      // :32, :47) -- ein Termin um 16:00 Uhr kam dann erst um 15:02 Uhr dran.
+      const cron = require('node-cron');
+      const plan = vi.spyOn(cron, 'schedule').mockReturnValue({ stop: () => {} });
+      const lauf = vi.spyOn(BackgroundService, 'sendEventReminders').mockResolvedValue();
+      try {
+        BackgroundService.startEventReminderService(db);
+
+        expect(plan).toHaveBeenCalledTimes(1);
+        expect(plan.mock.calls[0][0]).toBe('*/15 * * * *');
+        expect(plan.mock.calls[0][2]).toEqual({ timezone: 'Europe/Berlin' });
+        // Der Erstlauf beim Start bleibt: Er holt nach, was waehrend eines
+        // Neustarts faellig wurde.
+        expect(lauf).toHaveBeenCalledTimes(1);
+      } finally {
+        BackgroundService.stopEventReminderService();
+      }
     });
   });
 

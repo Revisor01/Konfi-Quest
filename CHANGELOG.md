@@ -199,6 +199,12 @@ iOS-Build 237 · Android versionCode 131
   Gemeindeleitung, geht die Mitteilung an die Gemeindeleitung.
 
 ### Geändert
+- Mitteilungen an die Leitung über einzelne Konfis aus der Zeit vor dem
+  27. September (Abmeldungen mit Grund, neue Registrierungen, Beiträge, Zu-
+  und Absagen des Teams) sind aus dem Postfach entfernt. Sie ließen sich
+  keinem Konto zuordnen und wären sonst ein Jahr lang stehen geblieben, auch
+  nach dem Löschen der Person. Die Vorgänge selbst stehen weiter an Event und
+  Challenge.
 - Bei Event-Punkten steht in der Punkte-Übersicht, in der Konfi-Ansicht der
   Leitung und in der Konfi-Historie jetzt das Datum des Events statt des Tages
   der Verbuchung — so findet man das Event wieder, wie bei Aktivitäten mit
@@ -525,6 +531,16 @@ iOS-Build 237 · Android versionCode 131
   unter „Fehler".
 
 ### Behoben
+- Auf Samsung- und Xiaomi-Handys bleibt keine 1 mehr am App-Symbol stehen,
+  wenn nichts offen ist: Eine Mitteilung wie eine Event-Erinnerung, die kam,
+  als nichts zu tun war, verschwindet beim Öffnen der App.
+- Die Erinnerung „Gleich: …" kommt nicht mehr bis zu 75 Minuten vor Beginn,
+  sondern eine Stunde vorher und nennt die Uhrzeit des Events („Gleich:
+  Konfistunde um 16:00 Uhr") statt „In 1 Stunde". Beginnt ein Event nicht zur
+  vollen oder Viertelstunde, kommt sie bis zu einer Viertelstunde später, nie
+  früher. Dasselbe gilt für „Morgen: …" 24 Stunden vorher; ein Event kurz nach
+  Mitternacht wird nicht mehr am Abend zwei Tage davor als „morgen"
+  angekündigt.
 - Auf der Startseite der Teamer:innen steht unter der Begrüßung die eigene
   Funktionsbeschreibung wie im Profil, statt immer „Teamer:in". Eine geänderte
   Beschreibung gilt dort sofort.
@@ -1352,6 +1368,8 @@ iOS-Build 237 · Android versionCode 131
   Fehler ab.
 
 ### Sonstiges
+- Die Datenbank hat keine Spalte für Klartext-Passwörter von Konfis mehr. Sie
+  stammte aus der Anfangszeit der App und war seit Ende September leer.
 - Das Startprotokoll des Servers meldet die Hintergrund-Jobs nicht mehr pauschal
   als gestartet: Es steht dort „Deaktiviert" oder „Leader-Wahl", je nachdem,
   ob der Server sie übernehmen darf.

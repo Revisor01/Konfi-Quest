@@ -103,7 +103,7 @@ fassen jede Version zusammen.
 ## Selbst betreiben
 
 Zum Ausprobieren auf dem eigenen Rechner — die Lizenz erlaubt das. Nötig
-sind Node 24 (die Fassung steht in `.nvmrc`), npm und PostgreSQL 15 oder 16.
+sind Node 26 (die Fassung steht in `.nvmrc`), npm und PostgreSQL 15 oder 16.
 
 ```bash
 git clone https://github.com/Revisor01/Konfi-Quest.git
@@ -182,7 +182,7 @@ Konfi-Quest
 │   │   └── __tests__/   — 3.788 Tests (Stand 26.09.2026)
 │   ├── ios/ · android/  — Capacitor 8
 │   └── public/docs/     — erzeugtes Handbuch und API-Referenz
-├── backend/           — Node 24 und Express 5, PostgreSQL 15
+├── backend/           — Node 26 und Express 5, PostgreSQL 15
 │   ├── routes/          — nach Bereich getrennt, RBAC je Route
 │   ├── services/        — Push, Abzeichen, Rückblick, E-Mail
 │   ├── migrations/      — additiv, nie zerstörend

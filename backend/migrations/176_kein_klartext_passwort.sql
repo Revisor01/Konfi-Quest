@@ -26,14 +26,20 @@
 -- IDEMPOTENT: UPDATE findet beim zweiten Lauf nichts, der CHECK wird nur
 -- angelegt, wenn es ihn nicht gibt.
 
-UPDATE konfi_profiles SET password_plain = NULL WHERE password_plain IS NOT NULL;
-
+-- Seit Migration 187 (01.10.2026) gibt es die Spalte nicht mehr; ein zweiter
+-- Lauf der Kette trifft dann nichts (migrationenIdempotent.test.js).
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint
-                 WHERE conrelid = 'public.konfi_profiles'::regclass
-                   AND conname = 'konfi_profiles_password_plain_leer') THEN
-    ALTER TABLE konfi_profiles
-      ADD CONSTRAINT konfi_profiles_password_plain_leer CHECK (password_plain IS NULL);
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'konfi_profiles'
+               AND column_name = 'password_plain') THEN
+    UPDATE konfi_profiles SET password_plain = NULL WHERE password_plain IS NOT NULL;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                   WHERE conrelid = 'public.konfi_profiles'::regclass
+                     AND conname = 'konfi_profiles_password_plain_leer') THEN
+      ALTER TABLE konfi_profiles
+        ADD CONSTRAINT konfi_profiles_password_plain_leer CHECK (password_plain IS NULL);
+    END IF;
   END IF;
 END $$;

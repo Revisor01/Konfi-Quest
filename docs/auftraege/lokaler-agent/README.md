@@ -120,6 +120,39 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       einen Chat-Push kalt starten — die übrigen Mitteilungen des Chats gehen
       ebenfalls. Die Mitteilungen auf Android brauchen den Server-Stand von
       PR #202 **und** den neuen Build.
+- [ ] **Vor dem Merge des PR nach #211: `backend-test` auf den neuen
+      `test-latest` ziehen (lokaler Agent, 5 Minuten).** Der PR entfernt
+      `konfi_profiles.password_plain` (Migration 187, Simon: „ja"). Das
+      Test-Backend hängt an derselben Datenbank und meldet laut Übergabe
+      Commit `674bd8e` vom 28.09.; dieser Stand setzt beim „Einmalpasswort
+      erzeugen" die Spalte noch auf NULL und bekäme ohne sie eine 500.
+      `test-backend.yml` ist am 01.10.2026 auf `main` angestoßen (baut nur das
+      Image, rollt nichts aus). Danach: Image ziehen, `backend-test` neu
+      erstellen, `/api/status` → `commit` ist der heutige `main`. Erst dann
+      den PR mergen. Der Notfall-Rückweg zu 2.2.x geht danach weiter, nur
+      „Einmalpasswort erzeugen" scheitert dort (500, nichts geändert) — in
+      [05](05-sicherung-und-notfall.md) vermerkt.
+- [ ] **Zwei react-router-Alerts schließen (lokaler Agent, 5 Minuten).**
+      Simon, 01.10.2026: „ja". GHSA-wrjc-x8rr-h8h6 und GHSA-337j-9hxr-rhxg
+      auf `react-router` 6.30.6 (Begründung: [offene Befunde
+      Nr. 15](../../offene-befunde.md)). Die Nummern der offenen Alerts:
+      `gh api 'repos/Revisor01/Konfi-Quest/dependabot/alerts?state=open' --jq
+      '.[] | select(.dependency.package.name=="react-router") | .number'`;
+      je Nummer `gh api -X PATCH
+      repos/Revisor01/Konfi-Quest/dependabot/alerts/<nr> -f state=dismissed
+      -f dismissed_reason=tolerable_risk -f dismissed_comment="Kein SSR,
+      Navigationsziele nur aus festen Pfaden; Fix nur in 7, @ionic/react-router
+      verlangt <7. docs/offene-befunde.md Nr. 15"`. Danach zeigt GitHub auf
+      main 0 offene Alerts; das Ergebnis mit Datum in Nr. 15 eintragen.
+- [ ] **Erinnerung „Gleich" nachmessen (lokaler Agent, 5 Minuten, nur
+      Zeiten):** Simon bekam am 01.10.2026 um 14:47 Uhr die Erinnerung „In 1
+      Stunde" zu einem Event um 16:00 Uhr. Der Code erklärt es (Fenster ±15
+      Minuten, Takt ab dem Containerstart, behoben im PR nach #211). Gegenprobe
+      in der Datenbank: für die `event_reminders`-Zeilen mit `reminder_type =
+      '1_hour'` vom 01.10. den Abstand `events.event_date - sent_at` und die
+      Minute von `sent_at`. Erwartet: Abstände zwischen 45 und 75 Minuten, der
+      fragliche bei rund 73, und die Sendeminuten zwischen zwei Deploys im
+      selben Viertelstunden-Raster wie der Start des Containers. Keine Namen, nur Zeiten. Weicht es ab, an Simon.
 
 ### Bleibt beim lokalen Agenten
 

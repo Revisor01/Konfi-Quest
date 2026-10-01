@@ -160,3 +160,9 @@ Portainer-API getestet (`frontend/src/__tests__/betrieb/rollenderDeploy.test.ts`
       Code: 174 (Schlüssel `(organization_id, key)`) nutzt 2.2 schon so, 185
       ist additiv. Schreibwege nicht probiert. Rückrollen auf 2.2.x nach den
       Migrationen 156–185 geht demnach.
+      **Nachtrag 01.10.2026 (Cloud):** Migration 187 entfernt
+      `konfi_profiles.password_plain`. Der Stand 2.2.x setzt die Spalte beim
+      „Einmalpasswort erzeugen" auf NULL; nach 187 scheitert auf dem Rückweg
+      genau dieser Schreibweg (500, die Transaktion rollt zurück, das alte
+      Passwort gilt weiter). Lesen und alle anderen gemessenen Wege
+      betrifft es nicht.

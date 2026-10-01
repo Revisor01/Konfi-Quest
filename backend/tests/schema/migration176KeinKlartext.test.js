@@ -19,7 +19,8 @@ const path = require('path');
 const {
   dbAnlegen, dbWegraeumen, produktionAufbauen, migrationLesen,
 } = require('../helpers/schemaAufbau');
-const { getTestPool, closePool } = require('../helpers/db');
+// Fuer die Typen der Ergebnisse (bigint als Zahl), wie in jeder Suite.
+require('../helpers/db');
 
 const MIGRATION = '176_kein_klartext_passwort.sql';
 const DB = 'konfi_test_mig176';
@@ -113,15 +114,6 @@ describe('Keine Code-Stelle fasst password_plain mehr an', () => {
   });
 });
 
-describe('Migration 176 im Test-Schema (Deploy-Weg)', () => {
-  let db;
-  beforeAll(() => { db = getTestPool(); });
-  afterAll(async () => { await closePool(); });
-
-  it('der CHECK steht', async () => {
-    const { rows } = await db.query(`
-      SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint
-      WHERE conname = 'konfi_profiles_password_plain_leer'`);
-    expect(rows).toEqual([{ def: 'CHECK ((password_plain IS NULL))' }]);
-  });
-});
+// Im gemeinsamen Test-Schema ist die Spalte seit Migration 187 (01.10.2026)
+// samt CHECK weg; das prueft migration187PasswordPlainEntfernt.test.js. Der
+// CHECK selbst ist oben auf dem Stand vor 176 geprueft.
