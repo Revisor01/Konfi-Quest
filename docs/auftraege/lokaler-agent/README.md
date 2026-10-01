@@ -11,6 +11,95 @@ liegt und **womit** man sich anmeldet, steht nicht hier — dieses Repo ist
 Reihenfolge von Sicherung bis Testbuild. Ein Merge nach `main` ist der
 Produktions-Deploy; den Merge gibt Simon frei.
 
+## Rückmeldung des lokalen Agenten, 01.10.2026
+
+Alle Punkte 1–10 aus „Stand 30.09.2026" (unten) sind abgearbeitet; die
+Ergebnisse stehen mit Datum und Messwert in den einzelnen Auftragsdateien.
+`main` steht auf `688d0959` und ist live (`/api/status`: database, migrations,
+cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
+
+### Erledigt (mit Messwert)
+
+- **Push nach dem Paket-Update:** 0 Fehlerzeilen in beiden Backends, 0 neue
+  Token-Fehler bei 132 Tokens; Zustellung belegt (Token 0,3 s nach der
+  Mitteilung als erreichbar markiert). Weniger Mitteilungen als am Vortag lag
+  am Betrieb (Nachbeantragung in einer Gemeinde am 29.09.).
+- **Deploy-Lücke (10):** Ursache war `pullImage: true` — Portainer erstellte
+  bei jedem Update alle Dienste neu, auch Postgres (25 s ohne API). Jetzt:
+  Images vorab ziehen, Update ohne Pull, nur geänderte Dienste werden neu
+  erstellt. Postgres lief über die Deploys vom 01.10. ohne Neustart durch.
+  Postgres per Digest festgehalten.
+- **Backend-Container (09):** Healthcheck ohne curl; Backends laufen ohne
+  root als eigene uid `10001` (am Host unbelegt — uid 1000 gehört dort einem
+  bestehenden Systemnutzer). Uploads und Push-Schlüssel sind für andere
+  Nutzer am Host gesperrt. Ob die uid fest ins Image kommt, frühestens
+  08.10.2026 (eine Woche ohne `EACCES`).
+- **Stack (02):** genau ein Cron-Leader, Übernahme nach 0,2 s; Vortags-
+  Erinnerung je Termin genau einmal (24,0–24,2 h vor Beginn).
+- **Sicherung und Notfall (05):** nächtliche Sicherung jetzt im Format `-Fc`
+  mit Lesbarkeitsprüfung (`pg_restore --list`, mindestens 50 Tabellen);
+  Rückspielprobe 1,25 s, 0 Fehler; Notfall-Probelauf mit leerem Tag grün;
+  Stand 2.2.0 läuft gegen die Datenbank von 2.3.0.
+- **Datenbank (11):** Schema der Produktion gleich dem Repo (einzige Ausnahme
+  `pg_stat_statements`, bewusst nur Betrieb); Postgres-Server fest auf UTC
+  über die Befehlszeile; SMTP-Grenze 300/h und 1.000/Tag gilt jetzt für die
+  tatsächliche Absenderadresse des Stacks.
+- **Messungen (03, 06, 07, 04):** schlechteste Route im Median 1.259 → 211 ms;
+  Client-Adresse kommt korrekt an; CSP 0 Verstöße auf 34 Seiten; Umami
+  bereinigt.
+- **Screenshots (08):** 42 Bilder neu, jedes angesehen.
+- **Refresh-Tokens:** höchstens 10 je Konto, 1 je Gerät; Bestand 1.281 → 469.
+- **Logs:** Push-Registrierung nur bei Änderung, Socket-Fehler gebündelt;
+  hochgerechnet reicht die Aufbewahrung bei EKD-Größe ~11 statt 4,4 Tage.
+- **App:** „noch 1 Punkt" (alle Stellen über `utils/punkteText.ts`);
+  Selbstbezeichnung im Profil getrimmt; Eventdatum statt Verbuchungsdatum bei
+  Event-Punkten (`event_date` additiv).
+
+### Entschieden (Simon, 01.10.2026)
+
+- Echter Notfall-Lauf entfällt, der Probelauf genügt.
+- Rund 4 s Lücke der Web-App beim Frontend-Tausch sind in Ordnung, keine
+  zweite Frontend-Instanz.
+- Umami bleibt eingestellt wie es ist; Kommentar in `analytics.ts` und
+  Datenschutzerklärung (9a) sind richtiggestellt (Sitzung je Kalendermonat,
+  Ort bis zur Stadt).
+- Das Mischkonto (Org-Leitung und Konfi in einer Testgemeinde) bleibt.
+- „Kategorie-Meister 0 von 8" unter „Erreichte Badges" ist richtig so.
+- Getrennte Kästen unter „Suche & Filter" auf Android bleiben.
+- „Teamer" im Teamer-Profil ist die selbst gewählte Bezeichnung der Person,
+  kein Fehler.
+- `pg_stat_statements` wird keine Migration: Die Erweiterung braucht
+  Superuser-Rechte und würde auf einer Instanz ohne sie (Notfall-Rückweg)
+  jeden Deploy blockieren.
+
+### Für den Agenten in der Cloud (nur Repo)
+
+- [ ] **Startbanner:** Das Backend meldet „Background: Gestartet", auch wenn
+      `RUN_BACKGROUND_JOBS=false` gesetzt ist (gemessen am Test-Backend: die
+      Zeile steht direkt unter „Hintergrund-Jobs DEAKTIVIERT"). Mit Test
+      korrigieren.
+- [ ] **Handbuch:** `docs/handbuch/20-teamer.md` beschreibt „Deine Stempel"
+      im eigenen Profil; den Abschnitt gibt es dort laut Code seit dem
+      14.09.2026 nicht mehr.
+- [ ] **Teamer-Startseite:** Unter dem Gruß steht fest „Teamer:in", im Profil
+      die Selbstbezeichnung (`role_title`). Mit Simon klären, ob angeglichen
+      wird.
+- [ ] **Datenschutzerklärung:** Abschnitt 9a und der Satz zur Obergrenze der
+      Anmeldungen sind live (Stand 1. Oktober 2026); Simon liest gegen.
+- [ ] **Testbuild:** Die App-Änderungen seit iOS 236 / Android 130 (Punkt-
+      Plural, Selbstbezeichnung, Eventdatum) brauchen einen neuen Build —
+      nur auf Simons Ansage.
+
+### Bleibt beim lokalen Agenten
+
+- [ ] Postgres und Log-Zusammensetzung an einem Abend unter Last messen.
+- [ ] `pg_stat_statements` ab dem 04.10.2026 auswerten (dann ist die Woche voll).
+- [ ] Ab 08.10.2026: uid fest ins Image (Nutzer 10001 anlegen) oder `user:` im
+      Stack belassen (Auftrag 09).
+- [ ] Anfang November die Umami-Bereinigung wiederholen (Auftrag 03).
+- [ ] Beim nächsten Gerätetest den Bildversand im Chat prüfen (neue
+      Dateirechte).
+
 ## Stand 30.09.2026, nachmittags — was jetzt ansteht
 
 Seit dem Vormittag sind drei weitere Stände auf `main` und damit in Produktion
