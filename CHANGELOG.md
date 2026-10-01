@@ -1349,6 +1349,9 @@ iOS-Build 236 · Android versionCode 130
   Fehler ab.
 
 ### Sonstiges
+- Das Startprotokoll des Servers meldet die Hintergrund-Jobs nicht mehr pauschal
+  als gestartet: Es steht dort „Deaktiviert" oder „Leader-Wahl", je nachdem,
+  ob der Server sie übernehmen darf.
 - Die Datenschutzerklärung beschreibt die Reichweitenmessung genauer:
   Sitzungen werden innerhalb eines Kalendermonats zusammengefasst, und der
   ungefähre Standort umfasst Land, Region und Stadt.

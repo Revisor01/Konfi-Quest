@@ -74,11 +74,16 @@ cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
 
 ### Für den Agenten in der Cloud (nur Repo)
 
-- [ ] **Startbanner:** Das Backend meldet „Background: Gestartet", auch wenn
+- [x] **Startbanner** — erledigt 01.10.2026 (PR #202): Das Banner zeigt
+      „Deaktiviert (RUN_BACKGROUND_JOBS=false)" bzw. „Leader-Wahl (Jobs laufen
+      auf dem Cron-Leader)"; `tests/utils/startbanner.test.js` startet
+      `server.js` und liest die Zeile. Befund war: Das Backend meldete „Background: Gestartet", auch wenn
       `RUN_BACKGROUND_JOBS=false` gesetzt ist (gemessen am Test-Backend: die
-      Zeile steht direkt unter „Hintergrund-Jobs DEAKTIVIERT"). Mit Test
-      korrigieren.
-- [ ] **Handbuch:** `docs/handbuch/20-teamer.md` beschreibt „Deine Stempel"
+      Zeile steht direkt unter „Hintergrund-Jobs DEAKTIVIERT").
+- [x] **Handbuch** — erledigt 01.10.2026 (PR #202): Eintrag aus der
+      Profil-Liste gestrichen; „Deine Stempel" ist der Abschnitt im
+      Challenges-Reiter (so jetzt auch in `45-jahrgaenge.md`). Befund war:
+      `docs/handbuch/20-teamer.md` beschrieb „Deine Stempel"
       im eigenen Profil; den Abschnitt gibt es dort laut Code seit dem
       14.09.2026 nicht mehr.
 - [ ] **Teamer-Startseite:** Unter dem Gruß steht fest „Teamer:in", im Profil

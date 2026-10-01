@@ -431,7 +431,8 @@ server.on('request', (req, res) => {
 // Alles andere heisst: an der Wahl teilnehmen. Sichtbar in /api/status als
 // `cron_leader` (diese Replica) und `checks.cron_leader` (irgendjemand).
 const BackgroundService = require('./services/backgroundService');
-if (process.env.RUN_BACKGROUND_JOBS !== 'false') {
+const hintergrundJobsErlaubt = process.env.RUN_BACKGROUND_JOBS !== 'false';
+if (hintergrundJobsErlaubt) {
   const { starteCronLeaderWahl } = require('./utils/cronLeader');
   cronLeader = starteCronLeaderWahl({
     beiUebernahme: () => {
@@ -477,7 +478,12 @@ server.listen(PORT, () => {
   console.log('  Services:');
   console.log(`  - SMTP:       ${smtpStatus}`);
   console.log(`  - Firebase:   ${firebaseStatus}`);
-  console.log('  - Background: Gestartet');
+  // Nicht "Gestartet" (Rueckmeldung lokaler Agent, 01.10.2026): Das stand
+  // auch unter "Hintergrund-Jobs DEAKTIVIERT", und auf allen anderen Replicas
+  // starten die Jobs erst, wenn sie Cron-Leader werden (siehe oben).
+  console.log(hintergrundJobsErlaubt
+    ? '  - Background: Leader-Wahl (Jobs laufen auf dem Cron-Leader)'
+    : '  - Background: Deaktiviert (RUN_BACKGROUND_JOBS=false)');
   console.log('========================================');
 });
 
