@@ -27,7 +27,7 @@ vi.mock('../../contexts/AppContext', () => ({
 const apiGet = vi.fn();
 vi.mock('../../services/api', () => ({ default: { get: (...a: unknown[]) => apiGet(...a) } }));
 // JSDOM reicht ionInput nicht an React durch (wie ionChange, siehe
-// biometrieSchalter.test.tsx): das Suchfeld wird ein schlichtes <input>.
+// pushAuswahl.test.tsx): das Suchfeld wird ein schlichtes <input>.
 vi.mock('@ionic/react', async () => {
   const echt = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
   const ReactEcht = await vi.importActual<typeof import('react')>('react');

@@ -125,9 +125,6 @@ const config: CapacitorConfig = {
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"]
     },
-    FCM: {
-      // Native FCM Plugin für APNS/FCM Token Management
-    }
   }
 };
 

@@ -29,7 +29,7 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
 
-// Farbvariante der jeweiligen Rolle — dasselbe Muster wie BiometrieSchalter:
+// Farbvariante der jeweiligen Rolle — dasselbe Muster wie AppSperreSchalter:
 // EINE gemeinsame Komponente fuer alle drei Profil-Ansichten, die Seiten geben
 // nur ihre Farbe mit. Vorher lag dieses Modal doppelt vor (admin/ und konfi/,
 // das Teamer-Profil importierte quer aus dem Konfi-Baum) — funktional

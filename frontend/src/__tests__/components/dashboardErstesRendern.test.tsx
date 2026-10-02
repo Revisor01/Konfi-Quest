@@ -87,7 +87,6 @@ vi.mock('../../components/shared/BibleTranslationModal', () => ({
 vi.mock('../../components/shared/NeuerungenBanner', () => ({ default: () => null }));
 vi.mock('../../components/shared/MitmachenErklaerungModal', () => ({ default: () => null }));
 vi.mock('../../components/teamer/modals/TeamerOnboardingModal', () => ({ default: () => null }));
-vi.mock('../../components/teamer/modals/TeamerUpdate220WalkthroughModal', () => ({ default: () => null }));
 vi.mock('../../components/konfi/modals/KonfiOnboardingModal', () => ({ default: () => null }));
 vi.mock('../../components/konfi/modals/KonfispruchSelectModal', () => ({ default: () => null }));
 vi.mock('../../hooks/useOnboardingOnce', () => ({

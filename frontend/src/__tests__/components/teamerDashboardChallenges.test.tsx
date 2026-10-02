@@ -106,7 +106,6 @@ vi.mock('../../components/shared/NeuerungenBanner', () => ({ default: () => null
 vi.mock('../../components/shared/MitmachenErklaerungModal', () => ({ default: () => null }));
 vi.mock('../../components/konfi/modals/KonfispruchSelectModal', () => ({ default: () => null }));
 vi.mock('../../components/teamer/modals/TeamerOnboardingModal', () => ({ default: () => null }));
-vi.mock('../../components/teamer/modals/TeamerUpdateWalkthroughModal', () => ({ default: () => null }));
 vi.mock('../../hooks/useOnboardingOnce', () => ({
   useOnboardingWithUpdateOnce: () => ({
     showOnboarding: false,

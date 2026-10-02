@@ -35,7 +35,7 @@ function sammleDateien(verzeichnis: string): string[] {
   return gefunden;
 }
 
-// Aus '2_1' wird '211' im Dateinamen (KonfiUpdate211WalkthroughModal).
+// Aus '2_3' wird '230' im Dateinamen (KonfiUpdate230WalkthroughModal).
 // Die Modale tragen die Patch-Version, der Schluessel nur Major/Minor.
 const alleDateien = sammleDateien(wurzel);
 const modalDateien = alleDateien.filter(p => /Update\d*WalkthroughModal\.tsx$/.test(p));

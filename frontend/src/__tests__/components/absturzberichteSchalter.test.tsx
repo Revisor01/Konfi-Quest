@@ -28,9 +28,9 @@ vi.mock('../../services/absturzdiagnose', () => ({
   diagnoseSchalten: (...a: unknown[]) => mockSchalten(...(a as [])),
 }));
 
-// JSDOM reicht ionChange nicht an React durch (siehe biometrieSchalter.test.tsx,
-// pushAuswahl.test.tsx): der Schalter wird durch ein schlichtes
-// Kontrollkaestchen mit denselben Props ersetzt.
+// JSDOM reicht ionChange nicht an React durch (siehe pushAuswahl.test.tsx):
+// der Schalter wird durch ein schlichtes Kontrollkaestchen mit denselben
+// Props ersetzt.
 vi.mock('@ionic/react', async () => {
   const echt = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
   const ReactEcht = await vi.importActual<typeof import('react')>('react');
