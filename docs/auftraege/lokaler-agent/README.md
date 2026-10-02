@@ -18,6 +18,10 @@ schätzen, nichts Geheimes ins Repo, im Zweifel Simon fragen. Ein Merge nach
 
 ## Aktuell
 
+- **[13-store-freigabe-2.3.0.md](13-store-freigabe-2.3.0.md)** — jetzt
+  (02.10.2026): Versions-Tag `2.3.0` setzen, Deploy prüfen, Android-Lauf
+  verfolgen, iOS-Build 240 in App Store Connect einreichen, beide Prüfungen
+  verfolgen.
 - **Umami bereinigen, Anfang November 2026** — monatliche Routine nach
   [docs/betrieb/routinen.md](../../betrieb/routinen.md#umami-bereinigen).
 

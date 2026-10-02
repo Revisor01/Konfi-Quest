@@ -188,7 +188,9 @@ Stand: 02.10.2026, gegen den Code geprüft.
   (Merge-Commit `dac246eb`, Tag `2.3.0`): Android versionCode 134 in
   Produktion gestaffelt mit 10 %, iOS-Build 240 in App Store Connect. Offen:
   die Prüfung beider Stores abwarten, danach den Android-Anteil in der Play
-  Console auf 100 % heben. Ablauf: [betrieb/release.md](betrieb/release.md).
+  Console auf 100 % heben. Beim lokalen Agenten:
+  [auftraege/lokaler-agent/13-store-freigabe-2.3.0.md](auftraege/lokaler-agent/13-store-freigabe-2.3.0.md);
+  Ablauf: [betrieb/release.md](betrieb/release.md).
 
 ## Bei Simon zu entscheiden
 

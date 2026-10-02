@@ -32,7 +32,7 @@ Stand 02.10.2026, abends. Simon hat den Release freigegeben („Go").
       hin: nicht überschreiben, Simon fragen.
 
 - [ ] **2. Deploy prüfen**, sobald #1065 grün ist
-      ([03-nach-dem-deploy.md](03-nach-dem-deploy.md) gilt sinngemäß).
+      ([Nach jedem Deploy](../../betrieb/routinen.md#nach-jedem-deploy)).
       `GET /api/status` mehrmals, damit beide Backends antworten:
       - `version` `2.3.0`, `commit` beginnt mit `dac246e`;
       - `checks.database`, `checks.migrations` und `checks.cron_leader` `ok`;
