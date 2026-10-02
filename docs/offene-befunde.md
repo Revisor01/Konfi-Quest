@@ -184,10 +184,11 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ### Release
 
-- **Store-Release 2.3.0.** Die Testbuilds iOS 240 und Android 133 sind am
-  Gerät geprüft (02.10.2026). Offen: Einreichen in beiden Stores,
-  Versionsüberschrift mit Datum und Build-Zeile im CHANGELOG, Git-Tag
-  `2.3.0`. Ablauf: [betrieb/release.md](betrieb/release.md).
+- **Store-Release 2.3.0 freigeben lassen.** Eingereicht am 02.10.2026
+  (Merge-Commit `dac246eb`, Tag `2.3.0`): Android versionCode 134 in
+  Produktion gestaffelt mit 10 %, iOS-Build 240 in App Store Connect. Offen:
+  die Prüfung beider Stores abwarten, danach den Android-Anteil in der Play
+  Console auf 100 % heben. Ablauf: [betrieb/release.md](betrieb/release.md).
 
 ## Bei Simon zu entscheiden
 
