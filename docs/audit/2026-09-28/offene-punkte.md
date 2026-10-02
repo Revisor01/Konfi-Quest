@@ -388,6 +388,9 @@ Teamer-Badges gelten je Gemeinde.
   Antragsweg, Ebenen Landeskirche → Kirchenkreis → Gemeinde, keine
   Elternrolle, keine Arbeitsblätter, kein CSV-Import, Chat bleibt immer an,
   eine Support-Person mit Support-Dashboard, Ranking bleibt an.
+- Web-Version: moderne, web-typische Oberfläche mit ein- und ausklappbarer
+  Navigation links; Verwaltung und Support-Dashboard als eine Support-Ansicht
+  darin, ausgehend von einem Super-Admin-Konto ohne Gemeinde.
 - „darf freigeben": wird gebaut ([darf-freigeben](darf-freigeben.md)).
 - Mehrfach-Konten: noch einmal prüfen, Ziel ein sauberer Stand für
   Einzelfälle, auch Admin in einer und Teamer:in in einer anderen Gemeinde

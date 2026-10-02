@@ -986,6 +986,22 @@ für die Empfehlungen oben):
     feature, es ist ja abschaltbar und im handbuch erklärt." — bleibt in
     neuen Gemeinden an (E-06 entfällt als Opt-in).
 
+**Nachtrag Simon 02.10.2026 zu Frage 3 und 9 — Web-Version:** „ich gerne ein
+moderne web version hätte mit einer navi an der linken seite. die so ein und
+ausklappbar ist. das es sich auf web nativ anfühlt. [...] und ein superadmin
+account ohne gemeinden müsste doch auch schon fast das admin feature sein das
+wir brauchen. aber wie gesagt da hätte ich lieber eine echte support ansicht,
+die ich auch sehen kann und die in einer nativen web version integriert ist."
+
+- Die Web-Version bekommt eine eigene, web-typische Oberfläche: Navigation
+  als ein- und ausklappbare Leiste links statt der Reiterleiste unten. Sie
+  ergänzt E-09 (Sprache und Barrierefreiheit der Web-Variante).
+- Die Verwaltung (Frage 3) und das Support-Dashboard (Frage 9) sind **eine
+  Support-Ansicht in dieser Web-Version**, kein getrenntes Werkzeug. Ein
+  Super-Admin-Konto ohne Gemeinde ist der Ausgangspunkt dafür — die Rechte
+  dafür gibt es heute schon (`requireSuperAdmin`, `POST /organizations`,
+  Mitglieder verwalten); was fehlt, ist die Ansicht.
+
 **Stand 27.09.2026 (vor dem Merge):** Frage 10 ist zum Teil beantwortet — das Ranking bleibt
 und das Handbuch beschreibt es, wie es ist (Entscheidung Simon 27.09.2026, Screens
 Konfi/Teamer BF-03); ob neue Gemeinden es ausgeschaltet bekommen und ob die Antwort Klarnamen
