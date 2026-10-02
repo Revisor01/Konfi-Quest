@@ -65,7 +65,7 @@ describe('Neuerungs-Karten stehen auf ALLEN drei Startseiten', () => {
     // eigenen Walkthrough; die Mitmachen-Erklaerung ist fuer alle dieselbe.
     expect(quelle).toMatch(/setShowUpdateWalkthrough\(true\)/);
     // Der Walkthrough traegt seit 2.1.1 die Version im Namen
-    // (KonfiUpdate211WalkthroughModal). Das Muster nimmt beide Formen mit,
+    // (KonfiUpdate230WalkthroughModal). Das Muster nimmt beide Formen mit,
     // damit die naechste Version hier nicht wieder haengen bleibt.
     expect(quelle).toMatch(/Update\d*WalkthroughModal/);
     expect(quelle).toContain('MitmachenErklaerungModal');

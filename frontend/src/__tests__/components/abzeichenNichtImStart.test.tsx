@@ -132,7 +132,6 @@ vi.mock('../../components/konfi/views/BadgesView', () => ({ default: () => null 
 vi.mock('../../components/konfi/modals/PointsHistoryModal', () => ({ default: () => null }));
 vi.mock('../../components/konfi/modals/KonfispruchSelectModal', () => ({ default: () => null }));
 vi.mock('../../components/konfi/modals/KonfiOnboardingModal', () => ({ default: () => null }));
-vi.mock('../../components/konfi/modals/KonfiUpdateWalkthroughModal', () => ({ default: () => null }));
 vi.mock('../../components/wrapped/WrappedModal', () => ({ default: () => null }));
 vi.mock('../../components/shared/NeuerungenBanner', () => ({ default: () => null }));
 vi.mock('../../components/shared/MitmachenErklaerungModal', () => ({ default: () => null }));
