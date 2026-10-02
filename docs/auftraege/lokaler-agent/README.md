@@ -255,7 +255,7 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
         Kopie scheiterte (mit Status).
       Dazu wie oben das Proxy-Log der beiden Upload-Routen im selben Zeitraum.
       Keine Dateinamen, keine Konten, nur Zahlen je Ort und Art.
-- [ ] **Nach dem Deploy von PR #213: Dateinamen mit Umlauten (lokaler Agent,
+- [x] **Nach dem Deploy von PR #213: Dateinamen mit Umlauten (lokaler Agent,
       5 Minuten, nur Zahlen).** Simon: „GebetswÃ¼rfel Vorlage.pdf“ statt
       „Gebetswürfel …“ im Chat. Der Server liest Dateinamen jetzt als UTF-8,
       Migration 189 repariert den Bestand in `chat_messages.file_name`,
@@ -269,13 +269,28 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
          stehen; was bleibt, ist ein richtiger Name mit diesen Zeichen oder
          eine Zeile, die sich nicht umwandeln ließ — dann die Zahl an Simon,
          keine Namen.
+      **Ergebnis 02.10.2026:** `server_encoding` = UTF8; Migration 189 beim
+      Deploy angewendet. Nach dem Deploy 0 Zeilen mit „Ã|Â|â\u0080“ in allen
+      drei Spalten; 2 Dateinamen im Chat tragen richtige Umlaute. Die Zählung
+      vor dem Deploy fehlt (Deploy war schon durch).
 
 ### Bleibt beim lokalen Agenten
 
-- [ ] Postgres und Log-Zusammensetzung an einem Abend unter Last messen.
-- [ ] `pg_stat_statements` ab dem 04.10.2026 auswerten (dann ist die Woche voll).
-- [ ] Ab 08.10.2026: uid fest ins Image (Nutzer 10001 anlegen) oder `user:` im
-      Stack belassen (Auftrag 09).
+- [x] Postgres und Log-Zusammensetzung an einem Abend unter Last messen.
+      **Ergebnis 02.10.2026 (Abend 01.10., 17–22 Uhr):** 5.527 Anfragen von
+      82 Adressen (29.09.: 12.690 von 144); stärkste Stunde 1.577 Anfragen;
+      einziger Fehler abends ein 502 am Websocket. Die 29 Antworten 503 am
+      01.10. lagen nachts während Neustarts. Backends 75–81 MB von 512 MB,
+      Postgres 164 MB, CPU unter 0,2 %. Backend-Logs seit dem Deploy um 21:03:
+      27 bzw. 39 Zeilen in 12 h; Postgres schreibt fast nur Checkpoints.
+- [x] `pg_stat_statements` auswerten. **Ergebnis 02.10.2026** (erfasst seit
+      27.09., 16:26): 631.000 Abfragen, zusammen 128 s. Teuerste: Terminliste,
+      1.749 Aufrufe, Mittel 8,1 ms, max. 81 ms; übrige 1–13 ms. Seltene
+      Ausreißer 0,2–0,5 s (Refresh-Token anlegen, Advisory-Lock,
+      Push-Token-Aufräumen) ohne Muster. Trefferquote Puffer 99,96 %,
+      42 von 200 Verbindungen, 0 Deadlocks, DB 24 MB. Kein Handlungsbedarf.
+- [x] uid fest ins Image (Nutzer 10001 anlegen) — Simon, 02.10.2026:
+      „kommt ins Image“; Umsetzung als eigener PR (Auftrag 09).
 - [ ] Anfang November die Umami-Bereinigung wiederholen (Auftrag 03).
 - [ ] Beim nächsten Gerätetest den Bildversand im Chat prüfen (neue
       Dateirechte).
