@@ -15,10 +15,6 @@ docker-compose.test.yml
 # Notizen und Doku
 *.md
 
-# Alte Einzel-SQL, zur Laufzeit ungenutzt (das Schema kommt aus init-scripts/
-# im Repo-Wurzelverzeichnis und aus migrations/)
-init-scripts
-
 # Geheimnisse und Laufzeitdaten: kommen in Produktion als Variable bzw.
 # Volume (compose), nie ueber das Image
 .env
