@@ -6,9 +6,6 @@ export const USERNAME_REGEX = /^[a-zA-Z0-9.-]+$/;
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 50;
 
-export const USERNAME_RULES_MESSAGE =
-  'Nur Buchstaben, Zahlen, Punkt (.) und Bindestrich (-) — keine Leerzeichen oder Umlaute';
-
 export function hasValidUsernameChars(username: string): boolean {
   return USERNAME_REGEX.test(username);
 }
