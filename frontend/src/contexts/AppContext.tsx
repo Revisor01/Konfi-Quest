@@ -253,7 +253,7 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
 
   // Gespeicherte Device ID nutzen (wird bei App-Start einmalig persistiert).
   //
-  // WETTRENNEN BEIM ERSTEN START (10.09.2026, Fall Malte, Android):
+  // WETTRENNEN BEIM ERSTEN START (10.09.2026, Gerätetest, Android):
   // Die Device-ID beschafft ein eigener Effect ueber `await Device.getId()`.
   // Bei einer Neuinstallation ist sie beim Start leer, und auf Android feuert
   // `registration` sofort, sobald FCM den Token hat — oft frueher. Hier stand
@@ -829,7 +829,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try { await clearMediaCache(); } catch { /* ignore */ }
     }
     /*
-     * Push-Sperren raeumen (23.09.2026, Fall Malte, Android).
+     * Push-Sperren raeumen (23.09.2026, Gerätetest, Android).
      *
      * Der Logout loescht den Token serverseitig (auth.ts, DELETE
      * /device-token) — die App hielt sich danach aber weiter fuer registriert:
@@ -1154,7 +1154,7 @@ useEffect(() => {
   }, [user]);
 
   // App Links: Ein Link auf konfi-quest.de (Einladung, Passwort-Reset, Login)
-  // oeffnet die App, Android liefert die Adresse ueber 'appUrlOpen'. Bewusst
+  // oeffnet die App, Android und iOS liefern die Adresse ueber 'appUrlOpen'. Bewusst
   // OHNE [user]-Abhaengigkeit und ausserhalb des Push-Effekts: Die Einladung
   // wird gerade von denen angetippt, die noch NICHT angemeldet sind. Das Ziel
   // geht ueber pushZielMelden an den Router (siehe utils/deepLinks.ts).
@@ -1215,7 +1215,7 @@ useEffect(() => {
           const notificationData = action.notification.data as Record<string, unknown> | undefined;
           const notificationType = action.notification.data?.type;
 
-          // KEIN setTimeout mehr (Maltes Befund 23.09.2026, Android: "Da
+          // KEIN setTimeout mehr (Befund aus dem Gerätetest 23.09.2026, Android: "Da
           // oeffnet sich die App fuer ganz kurz und stuerzt direkt ab").
           //
           // Hier stand ein `setTimeout(..., 100)` mit der Begruendung, die

@@ -91,7 +91,7 @@ const config: CapacitorConfig = {
   plugins: {
     // Systemleisten auf Android (Status- und Navigationsleiste, 25.09.2026).
     //
-    // MALTES BEFUND (Android, Telefon im Dunkelmodus): "unten das Android
+    // BEFUND AUS DEM GERÄTETEST (Android, Telefon im Dunkelmodus): "unten das Android
     // Menue ist im Handy Darkmode unsichtbar. In einem Chat lustigerweise
     // leicht sichtbar."
     //

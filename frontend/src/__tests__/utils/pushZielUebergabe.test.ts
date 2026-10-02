@@ -1,4 +1,4 @@
-// Absturz beim Antippen einer Push-Nachricht auf Android (Malte, 23.09.2026):
+// Absturz beim Antippen einer Push-Nachricht auf Android (Gerätetest 23.09.2026):
 // "Da oeffnet sich die App fuer ganz kurz und stuerzt direkt ab. Aus'm
 // Hintergrund wo sie dann noch laeuft holen geht nicht, direkt Absturz. Muss
 // sie einmal schliessen um sie dann neu zu oeffnen um reinzukommen dann."

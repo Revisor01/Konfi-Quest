@@ -186,7 +186,7 @@ const AppContent: React.FC = () => {
   // ---------------------------------------------------------------------------
   // EIN EINZIGER EINHAENGEPUNKT fuer Sperrbildschirm und Abdeckung.
   //
-  // WARUM (Maltes Befund 23.09.2026, Android, App 2.3.0/118: "Der erste Login
+  // WARUM (Befund aus dem Gerätetest 23.09.2026, Android, App 2.3.0/118: "Der erste Login
   // der automatisch das Android Fingerabdruck hoch holt hat aber in 2 von 2
   // Versuchen fehlgeschlagen ... wenn ich nach dem Fehlschlag haendisch
   // jeweils dann mit Biometrie entsperren gedrueckt habe ... ging's durch."):
@@ -215,7 +215,7 @@ const AppContent: React.FC = () => {
   // zaehlt 15 (SYSTEM_CANCEL) zu den Abbruch-Codes: Der Sperrbildschirm zeigte
   // daraufhin "Nicht erkannt. Tippe noch einmal." — obwohl niemand abgebrochen
   // hatte. Der haendische Versuch danach war der einzige laufende und ging
-  // durch, genau Maltes Bild.
+  // durch, genau das Bild aus dem Gerätetest.
   // Auf iOS haengt der Prompt an der laufenden Activity, dort fiel es nicht auf.
   //
   // Nur der INHALT wechselt jetzt den Zweig, die Huelle steht fest. Damit
@@ -271,7 +271,7 @@ const AppContent: React.FC = () => {
               useIonRouter den Router-Kontext braucht — und NEBEN dem Outlet,
               nicht darin: Es ist keine Seite und darf im Seiten-Stack nichts
               verdraengen. Rendert null. Der frueher in AppContext stehende
-              harte Reload war Maltes Absturz beim Antippen (23.09.2026).
+              harte Reload war der Absturz beim Antippen aus dem Gerätetest (23.09.2026).
               Der Login-Router oben hat dieselbe Komponente: Ueber den Merker
               kommen auch App-Links an (Einladung, Passwort-Reset), und die
               zielen auf Seiten VOR der Anmeldung. */}
@@ -339,7 +339,7 @@ const AppContent: React.FC = () => {
           vollstaendig und deckend, es scheint nichts durch.
 
           Er steht hier GENAU EINMAL, ausserhalb der Zweigwahl — die Begruendung
-          steht oben bei `inhalt` (Maltes Befund 23.09.2026). Wer ihn zurueck in
+          steht oben bei `inhalt` (Befund aus dem Gerätetest 23.09.2026). Wer ihn zurueck in
           die Zweige schiebt, holt die doppelte Abfrage zurueck;
           __tests__/components/appSperreErsterVersuch.test.tsx bewacht das. */}
       {gesperrt && (

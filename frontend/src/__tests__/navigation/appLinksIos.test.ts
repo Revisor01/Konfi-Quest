@@ -4,11 +4,23 @@
 // Bis dahin lag die Datei mit dem woertlichen Platzhalter "TEAMID"
 // oeffentlich auf konfi-quest.de, als application/octet-stream, mit einer
 // Pfadliste (/konfi/*, /admin/*), die keine Seite der App oeffnen kann. Kein
-// iPhone hat sie je gelesen, weil der App das Entitlement fehlt -- sie
-// behauptete aber etwas Falsches. Jetzt steht darin, was stimmt: Team- und
-// Bundle-ID aus dem Xcode-Projekt, dieselben Pfade wie bei Android. Das
-// Entitlement (applinks:konfi-quest.de) ist Simons Entscheidung; sobald es
-// eingetragen ist, gilt der letzte Test unten.
+// iPhone hat sie je gelesen, weil der App das Entitlement fehlte -- sie
+// behauptete aber etwas Falsches. Seitdem steht darin, was stimmt: Team- und
+// Bundle-ID aus dem Xcode-Projekt, dieselben Pfade wie bei Android.
+//
+// Eingeschaltet am 02.10.2026 (Simon: „noch in 2.3.0"): Beide
+// Entitlement-Dateien tragen applinks:konfi-quest.de. Geprueft werden BEIDE --
+// der Store-Build signiert mit AppRelease.entitlements, Xcode am Geraet mit
+// App.entitlements. Eine Pruefung nur der Debug-Datei liesse den Store-Build
+// ohne Universal Links durch.
+//
+// KEIN webcredentials: im Entitlement, obwohl die Datei den Abschnitt hat.
+// Gespeicherte Passwoerter einer Domain bietet iOS in einer WebView nur an,
+// wenn die Seite selbst von dieser Domain kommt (Capacitor-Anleitung
+// "Autofill Credentials": hostname auf die Domain stellen); die App laeuft
+// aber auf capacitor://localhost (capacitor.config.ts). Den Ursprung umzustellen
+// hiesse, alles im Geraetespeicher der App zu verlieren -- Anmeldung,
+// Zwischenspeicher, Warteschlange. Der Eintrag waere also wirkungslos.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -16,7 +28,8 @@ import { APP_LINK_HOSTS, APP_LINK_PFADE } from '../../utils/deepLinks';
 
 const aasaText = readFileSync(join(process.cwd(), 'public/.well-known/apple-app-site-association'), 'utf8');
 const pbxproj = readFileSync(join(process.cwd(), 'ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
-const entitlements = readFileSync(join(process.cwd(), 'ios/App/App/App.entitlements'), 'utf8');
+const ENTITLEMENTS = ['App.entitlements', 'AppRelease.entitlements'] as const;
+const entitlements = (datei: string) => readFileSync(join(process.cwd(), 'ios/App/App', datei), 'utf8');
 const nginx = readFileSync(join(process.cwd(), 'nginx.conf'), 'utf8');
 
 /** Alle Werte einer Build-Einstellung im Projekt (Debug und Release). */
@@ -66,11 +79,22 @@ describe('apple-app-site-association', () => {
     expect(block).not.toMatch(/\breturn\b|\brewrite\b/);
   });
 
-  it('traegt die App Associated Domains, dann fuer genau die Hosts aus dem Code', () => {
-    // Heute (29.09.2026) ohne Eintrag -- dann prueft dieser Test nichts.
-    // Sobald Simon applinks: eintraegt, muss er zu APP_LINK_HOSTS passen.
-    if (!entitlements.includes('com.apple.developer.associated-domains')) return;
-    const eintraege = [...entitlements.matchAll(/<string>applinks:([^<]+)<\/string>/g)].map((m) => m[1]);
-    expect(eintraege.sort()).toEqual([...APP_LINK_HOSTS].sort());
+  /** Die Eintraege unter com.apple.developer.associated-domains. */
+  const domains = (datei: string) => {
+    const block = entitlements(datei).match(
+      /<key>com\.apple\.developer\.associated-domains<\/key>\s*<array>([\s\S]*?)<\/array>/,
+    )?.[1];
+    if (block === undefined) throw new Error(`${datei}: kein associated-domains-Eintrag`);
+    return [...block.matchAll(/<string>([^<]+)<\/string>/g)].map((m) => m[1]);
+  };
+
+  it.each(ENTITLEMENTS)('%s: Associated Domains genau applinks: fuer die Hosts aus dem Code', (datei) => {
+    expect(domains(datei).sort()).toEqual(APP_LINK_HOSTS.map((h) => `applinks:${h}`).sort());
+  });
+
+  it('kein Entwickler-Modus im Eintrag', () => {
+    // ?mode=developer umgeht Apples CDN und gilt nur fuer Geraete im
+    // Entwicklermodus -- im Store-Build wirkungslos.
+    for (const datei of ENTITLEMENTS) expect(entitlements(datei)).not.toContain('mode=');
   });
 });

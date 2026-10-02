@@ -6,7 +6,7 @@ import { PUSH_ZIEL_EVENT, pushZielAbholen, PushZiel } from '../utils/pushNavigat
  * Navigiert dorthin, wohin ein angetippter Push zeigt — ueber den Router,
  * nicht ueber einen Neuaufbau der App.
  *
- * WARUM ES DIESE KOMPONENTE GIBT (Maltes Befund 23.09.2026, Android):
+ * WARUM ES DIESE KOMPONENTE GIBT (Befund aus dem Gerätetest 23.09.2026, Android):
  * "Da oeffnet sich die App fuer ganz kurz und stuerzt direkt ab. Aus'm
  * Hintergrund wo sie dann noch laeuft holen geht nicht, direkt Absturz."
  *
@@ -53,7 +53,7 @@ const PushZielNavigation: React.FC = () => {
         return;
       }
       // Angetippter Push: Stack leeren, damit im WebView keine gecachte
-      // Seite stehenbleibt (Maltes Absturzbefund, siehe Kopfkommentar).
+      // Seite stehenbleibt (Absturzbefund aus dem Gerätetest, siehe Kopfkommentar).
       router.push(eintrag.ziel, 'root', 'replace');
     };
 

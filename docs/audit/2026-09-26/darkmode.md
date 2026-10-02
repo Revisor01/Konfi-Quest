@@ -525,7 +525,7 @@ Einzelfix erreicht, weil sie an 2 bzw. 234 Stellen sitzen.
 - `variables.css:3708-3741` (26.09.2026, Karte `#242426`, „iOS dL* 14,27“) → **weiter offen auf iOS**:
   gerendert `#1c1c1d`, dL* 10,30 (BF-03); auf Android behoben bestätigt.
 - `PostfachModal.tsx:309-320` (25.09.2026, „liess sich im CSS nicht belegen“) → Ursache jetzt belegt (BF-03).
-- `capacitor.config.ts` SystemBars (25.09.2026, Maltes Befund) → **behoben bestätigt** (`style: 'DEFAULT'`, Test grün).
+- `capacitor.config.ts` SystemBars (25.09.2026, Befund aus dem Gerätetest) → **behoben bestätigt** (`style: 'DEFAULT'`, Test grün).
 - CHANGELOG „Sprechblasen deckend“ (a9815de) → Badge-Popover im Bild `dark-ios-konfi-m-badge-popover.png`
   dunkel und deckend, Pfeilspitze mitgefärbt: **behoben bestätigt**.
 

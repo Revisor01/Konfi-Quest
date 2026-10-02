@@ -91,8 +91,8 @@ ist.
 1. Auf der Anmeldeseite auf **„Passwort vergessen"**
 2. E-Mail-Adresse eingeben
 3. Die Mail enthält einen Link zu einem Formular für das neue Passwort. Auf
-   einem Android-Gerät mit installierter App öffnet der Link direkt die App,
-   sonst den Browser.
+   einem Handy mit installierter App — Android wie iPhone — öffnet der Link
+   direkt die App, sonst den Browser.
 
 **Die Antwort ist immer gleich.** Ob die Adresse bekannt ist oder nicht — die
 App sagt dasselbe. Sonst könnte man ausprobieren, welche Adressen ein Konto
@@ -380,8 +380,8 @@ registriert hat, behält sein Konto.
 ### Sich als Konfi registrieren
 
 1. **QR-Code scannen** — die normale Kamera reicht, die Registrierungsseite
-   öffnet sich im Browser. Ist auf einem Android-Gerät die App schon
-   installiert, öffnet sich stattdessen direkt die App mit der
+   öffnet sich im Browser. Ist die App auf dem Handy schon installiert
+   (Android wie iPhone), öffnet sich stattdessen direkt die App mit der
    Registrierung. Wer nur den Code als Text hat: auf der Anmeldeseite
    auf **„Mit Einladungscode registrieren"** tippen und ihn dort eingeben.
 2. Die Seite zeigt zur Kontrolle **Jahrgang und Gemeinde** an.

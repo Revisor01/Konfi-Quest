@@ -643,10 +643,12 @@ dazu jeder Weg, auf dem ein Ziel von außen hereinkommt:
   `frontend/src/navigation/PushZielNavigation.tsx`. Auch ein `..` in einer
   Kennung ändert nichts: Das Ziel beginnt mit `/` und einem Buchstaben,
   `pushState` bleibt auf derselben Adresse.
-- **App-Links (Android):** `deepLinkZiel` (`frontend/src/utils/deepLinks.ts`)
+- **App-Links (Android) und Universal Links (iOS, seit 02.10.2026):**
+  `deepLinkZiel` (`frontend/src/utils/deepLinks.ts`)
   nimmt nur `https://konfi-quest.de` und nur Pfade, die mit `/login`,
   `/register` oder `/reset-password` beginnen — geprüft nach `new URL()`, das
-  Backslashes schon in `/` umwandelt.
+  Backslashes schon in `/` umwandelt. Beide Systeme liefern über dasselbe
+  Ereignis `appUrlOpen`, es gibt keinen zweiten Weg.
 - **Umleitungen alter Adressen:** `umleitungsZiel`
   (`frontend/src/components/layout/MainTabs.tsx`) füllt Werte aus der
   Adresszeile nur in feste Vorlagen aus
@@ -676,3 +678,35 @@ stehen (Merksatz in Nr. 2).
 
 Erwartet: feste Pfade, Kennungen nur hinter einem festen Präfix, und die drei
 Einstiege oben (Push, App-Link, Umleitung) unverändert.
+
+---
+
+## 16. Upload aus Nextcloud scheitert auf Android (02.10.2026) — ZURÜCKGESTELLT, SONDERFALL
+
+> **Stand 02.10.2026:** Simon, Gerätetest mit Android 133 / iOS 239: „Alle
+> Tests sind positiv. Einzig das Laden aus einem Cloud-Speicher klappt nicht.
+> Nextcloud. Legen wir zur Seite. Sonderfall."
+
+**Was geht:** PDF und Word vom Android-Handy in Chat und Material, aus dem
+Download-Ordner und aus Google Drive (seit Build 133: Dokumente werden bei
+der Auswahl in den Speicher gelesen, `services/systemDialoge.ts`,
+`imSpeicher`). Fotos gingen schon vorher.
+
+**Was nicht geht:** Eine Datei, die über die Nextcloud-App ausgewählt wird.
+
+**Vermutung, nicht gemessen:** Die Nextcloud-App liefert die Datei als
+Verweis auf ihren eigenen Anbieter und lädt sie erst beim Lesen vom Server
+herunter. Wenn sie dabei noch nicht auf dem Gerät liegt, scheitert schon das
+Lesen bei der Auswahl. Die Fehlermessung je Upload-Schritt
+(`services/uploadDiagnose.ts`) zeigt das an: ein `fehler` mit `ort`
+`dateiauswahl-…` statt `chat-datei-direkt` oder
+`material-dateien-hochladen`.
+
+**Ausweg für Nutzer:innen:** Die Datei in der Nextcloud-App zuerst auf das
+Gerät laden („Herunterladen" bzw. „Offline verfügbar") und dann aus dem
+Download-Ordner wählen.
+
+**Wieder aufnehmen,** wenn sich weitere Gemeinden melden. Dann zuerst die
+Fehlermessung für diesen Fall auswerten (lokaler Agent, Umami `fehler` mit
+`ort` `dateiauswahl-…`), danach entscheiden, ob ein nativer Leseweg am
+WebView vorbei nötig ist.

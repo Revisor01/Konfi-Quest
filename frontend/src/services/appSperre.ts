@@ -252,7 +252,7 @@ export type EntsperrAusgang = 'ok' | 'abgebrochen' | 'fehler';
 /**
  * Die gerade laufende Abfrage, oder null.
  *
- * WOFÜR (Maltes Befund 23.09.2026, Android, App 2.3.0/118): "Der erste Login
+ * WOFÜR (Befund aus dem Gerätetest 23.09.2026, Android, App 2.3.0/118): "Der erste Login
  * der automatisch das Android Fingerabdruck hoch holt hat aber in 2 von 2
  * Versuchen fehlgeschlagen (Tippe nochmal um es erneut zu versuchen oder so),
  * wenn ich nach dem Fehlschlag händisch jeweils dann mit Biometrie entsperren

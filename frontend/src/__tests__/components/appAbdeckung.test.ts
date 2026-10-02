@@ -71,7 +71,7 @@ describe('Die Abdeckung wiederholt den weissen-Startbildschirm-Fehler nicht', ()
       .map((z, i) => ({ z: z.trim(), nr: i }))
       .filter((e) => e.z === '{verdeckt && <AppAbdeckung />}');
 
-    // GENAU EINMAL — und das deckt seit Maltes Befund (23.09.2026) MEHR ab als
+    // GENAU EINMAL — und das deckt seit dem Befund aus dem Gerätetest (23.09.2026) MEHR ab als
     // die frueheren drei Einbindungen, nicht weniger.
     //
     // Vorher hatte App.tsx drei Ausstiege (Anmeldeseite, Ladezustand,

@@ -110,9 +110,11 @@ cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
 - [x] **Datenschutzerklärung:** Abschnitt 9a und der Satz zur Obergrenze der
       Anmeldungen sind live (Stand 1. Oktober 2026); Simon hat gegengelesen
       (01.10.2026 abends: „erledigt").
-- [ ] **Testbuild:** Die App-Änderungen seit iOS 236 / Android 130 (Punkt-
+- [x] **Testbuild:** Die App-Änderungen seit iOS 236 / Android 130 (Punkt-
       Plural, Selbstbezeichnung, Eventdatum) brauchen einen neuen Build —
-      nur auf Simons Ansage.
+      nur auf Simons Ansage. **Erledigt:** iOS 238 / Android 132 (01.10.,
+      `a7f48d84`), danach iOS 239 / Android 133 (01.10. abends, `66b4ecc0`,
+      Tags `2.3.0+ios.239` und `2.3.0+android.133`).
 
 ### Neu aus der Cloud seit dieser Rückmeldung (PR #202, noch nicht gemergt)
 
@@ -138,7 +140,7 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       reichen wegen der Deploys nur bis 13:27 UTC zurück: 0 Zeilen
       „Datei abgelehnt". Nebenbei: `POST /api/chat/rooms/*/mark-read` 1×
       500 bei 718× 200.
-- [ ] **Gerätetest der nächsten Builds (Simon):** eine PDF und eine Word-Datei
+- [x] **Gerätetest der nächsten Builds (Simon):** eine PDF und eine Word-Datei
       vom Android-Handy in den Chat und ins Material (auch aus Google Drive und
       dem Download-Ordner); einen Chat mit mehreren liegenden Mitteilungen
       öffnen — sie verschwinden (auf Samsung und Xiaomi bleibt die eine mit
@@ -146,6 +148,10 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       einen Chat-Push kalt starten — die übrigen Mitteilungen des Chats gehen
       ebenfalls. Die Mitteilungen auf Android brauchen den Server-Stand von
       PR #202 **und** den neuen Build.
+      **Ergebnis 02.10.2026 (Android 133 / iOS 239), Simon:** „Alle Tests
+      sind positiv. Einzig das Laden aus einem Cloud-Speicher klappt nicht.
+      Nextcloud." Nextcloud ist zurückgestellt (`docs/offene-befunde.md`
+      Nr. 16).
 - [x] **Vor dem Merge des PR nach #211: `backend-test` auf den neuen
       `test-latest` ziehen (lokaler Agent, 5 Minuten).** Der PR entfernt
       `konfi_profiles.password_plain` (Migration 187, Simon: „ja"). Das
@@ -234,8 +240,11 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
       Bilder gehen. Das passt genau zur Prüfung der Änderungszeit beim
       Upload einer Datei aus der Auswahl im WebView; die Kopie im Speicher
       (`imSpeicher`, PR #213) umgeht sie — Begründung im Kommentar dort.
-- [ ] **Nach dem Gerätetest des nächsten Builds (Android 133): Upload-Schritte
-      in Umami zählen (lokaler Agent, 10 Minuten, nur Zahlen).** Simons
+- [x] **Nach dem Gerätetest des nächsten Builds (Android 133): Upload-Schritte
+      in Umami zählen (lokaler Agent, 10 Minuten, nur Zahlen).** **Entfällt
+      (02.10.2026):** Simons Test war positiv. Nur der zurückgestellte
+      Nextcloud-Fall bleibt; ausgewertet wird er erst, wenn er wieder
+      aufgenommen wird (`docs/offene-befunde.md` Nr. 16). Simons
       Gerätetest 01.10. abends: Im Chat steht eine Nachricht mit PDF danach mit
       „!“ und nur dem Dateinamen da, ohne Meldung; im Material ist das Material
       angelegt, die Datei nicht, und erneutes Speichern hilft nicht. Ab dem
@@ -292,8 +301,8 @@ in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt „Gerätetest Build
 - [x] uid fest ins Image (Nutzer 10001 anlegen) — Simon, 02.10.2026:
       „kommt ins Image“; Umsetzung als eigener PR (Auftrag 09).
 - [ ] Anfang November die Umami-Bereinigung wiederholen (Auftrag 03).
-- [ ] Beim nächsten Gerätetest den Bildversand im Chat prüfen (neue
-      Dateirechte).
+- [x] Beim nächsten Gerätetest den Bildversand im Chat prüfen (neue
+      Dateirechte). Simon, 02.10.2026: alle Tests positiv.
 
 ## Stand 30.09.2026, nachmittags — was jetzt ansteht
 
@@ -366,7 +375,8 @@ Nicht für den lokalen Agenten, sondern bei Simon:
   teilen, auf dem iPhone ein Tipp auf die Statusleiste scrollt nach oben
   (entscheidet, ob `@capacitor/status-bar` bleibt).
 - Store-Release 2.3.0 mit Store-Texten und Git-Tag `2.3.0`, Universal Links
-  (Entitlement), die Firebase-Schlüssel in der Google-Cloud-Konsole, die zwei
+  (Entitlement im Repo seit 02.10., Fähigkeit und Profil im Apple-Konto bei
+  Simon), die Firebase-Schlüssel in der Google-Cloud-Konsole, die zwei
   react-router-Alerts auf GitHub schließen (`docs/offene-befunde.md` Nr. 15)
   und die offenen Fragen in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt
   „Bei Simon".

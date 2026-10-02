@@ -3,7 +3,7 @@
 // (Audit Tests 26.09.2026, BF-02). Bis hierher sicherte das ein Quelltext-
 // Test ("AppContext enthaelt kein window.location.href =").
 //
-// Hintergrund (Maltes Befund 23.09.2026, Android): Der Push-Handler setzte
+// Hintergrund (Befund aus dem Gerätetest 23.09.2026, Android): Der Push-Handler setzte
 // nach 100 ms window.location.href -- ein harter Reload, der die gerade
 // hochfahrende App abraeumte ("oeffnet sich ganz kurz und stuerzt ab").
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
