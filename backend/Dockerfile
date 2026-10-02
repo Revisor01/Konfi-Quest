@@ -37,14 +37,25 @@ COPY . .
 ARG GIT_SHA=unknown
 ENV GIT_SHA=$GIT_SHA
 
-# Upload-Verzeichnis. Dem Nutzer `node` (uid 1000) gehoerig, damit das Image
-# auch ohne root laeuft (E2E, lokal: ohne Mount gilt dieser Besitz). In
-# Produktion laeuft der Prozess seit dem 01.10.2026 als eigene uid
-# 10001:10001 (`user:` im Stack); Upload-Verzeichnis und Push-Schluessel
-# gehoeren am Host 10001, fuer andere Nutzer gesperrt. Bewusst nicht 1000:
-# die gehoert am Host einem bestehenden Systemnutzer (Auftrag
-# docs/auftraege/lokaler-agent/09-backend-container.md).
-RUN mkdir -p /app/uploads && chown node:node /app/uploads
+# Eigener Nutzer konfi mit fester uid/gid 10001 (02.10.2026, Simon: fest ins
+# Image). In Produktion lief der Prozess seit dem 01.10.2026 mit
+# `user: "10001:10001"` im Stack; seitdem gehoeren Upload-Verzeichnis und
+# Push-Schluessel am Host 10001, fuer andere Nutzer gesperrt. Jetzt bringt das
+# Image denselben Nutzer selbst mit -- ein Stack ohne `user:` faellt nicht
+# mehr auf root zurueck. Bewusst nicht `node` (uid 1000): die gehoert am Host
+# einem bestehenden Systemnutzer, und weitere Container laufen dort als 1000
+# (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+#
+# Geschrieben wird nur unter /app/uploads (Unterordner und Zwischenlager legt
+# createApp.js beim Start an). Ohne Mount (E2E, lokal) gilt der Besitz hier;
+# mit Mount der am Host. Der Code unter /app gehoert root und bleibt fuer den
+# Prozess nur lesbar.
+RUN groupadd --system --gid 10001 konfi \
+  && useradd --system --uid 10001 --gid 10001 --no-create-home \
+     --home-dir /app --shell /usr/sbin/nologin konfi \
+  && mkdir -p /app/uploads && chown 10001:10001 /app/uploads
+
+USER 10001:10001
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node healthcheck.js || exit 1

@@ -122,11 +122,21 @@ und den Stand der Stack-Definition exportieren.
       uid 1000 und der Hosting-Nutzer kommen nicht mehr an die Uploads; alle
       drei Backends laufen als 10001, Schreibprobe und Schlüssel ok,
       0 `EACCES`, Firebase verbunden, genau ein Cron-Leader.
-- [ ] Wenn alles eine Woche ohne `EACCES` lief (frühestens 08.10.2026):
+- [x] Wenn alles eine Woche ohne `EACCES` lief (frühestens 08.10.2026):
       entweder `user: "10001:10001"` im Stack so lassen oder einen Nutzer
       10001 im `backend/Dockerfile` anlegen und `USER 10001` setzen (dann
       `user:` im Stack entfernen). `USER node` (uid 1000) scheidet aus,
       siehe oben.
+      **Entschieden 02.10.2026 (Simon): fest ins Image**, ohne die Woche
+      abzuwarten. `backend/Dockerfile` legt den Nutzer `konfi` mit uid/gid
+      10001 an, `/app/uploads` gehört ihm, `USER 10001:10001`. Lokal gebaut:
+      `id` → `uid=10001(konfi) gid=10001(konfi)`, Schreiben in
+      `uploads/tmp` ok, Code unter `/app` für den Prozess nur lesbar.
+- [ ] Nach dem ersten Deploy mit diesem Image: je Backend `id` → 10001,
+      0 `EACCES` im Log. Danach darf `user: "10001:10001"` im Stack
+      bleiben (gleiche uid, schadet nicht) oder entfallen — dann im selben
+      Zug in `deploy/compose.konfi_quest.yml` und im Wächter
+      `backendImage.test.ts`.
 
 **Ergebnis** je Punkt mit Datum und Messwert eintragen, im Befund CI BF-06 die
 Status-Zeile fortschreiben.
