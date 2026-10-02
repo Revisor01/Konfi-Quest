@@ -6,17 +6,29 @@
 // kannten nur requests, chat und material. Eine Datei ohne Zeile in
 // challenge_submissions ist nicht mehr auslieferbar (GET /challenges/files
 // sucht die Zeile), bleibt aber auf der Platte liegen.
+//
+// Aufgeraeumt wird seit 02.10.2026 mit scripts/verwaisteDateien.js (vorher
+// scripts/cleanupOrphanPhotos.js); dessen allgemeines Verhalten -- nur mit
+// --loeschen, nur alte Waisen -- prueft verwaisteDateien.test.js.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS } = require('../helpers/seed');
-const { zieleFuer, cleanupTarget } = require('../../scripts/cleanupOrphanPhotos');
+const { BEREICHE, bereichPruefen } = require('../../scripts/verwaisteDateien');
 const { verzeichnisseFuer, migrateDir } = require('../../scripts/encryptExistingPhotos');
 const { isEncrypted } = require('../../utils/photoCrypto');
 
 const REFERENZIERT = 'a'.repeat(64);
 const VERWAIST = 'b'.repeat(64);
+const challenges = BEREICHE.find((b) => b.name === 'challenges');
+
+// Alt genug fuer das Mindestalter des Aufraeumskripts (7 Tage).
+function alteDatei(pfad, inhalt) {
+  fs.writeFileSync(pfad, inhalt);
+  const vorEinemMonat = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  fs.utimesSync(pfad, vorEinemMonat, vorEinemMonat);
+}
 
 describe('Aufraeum- und Verschluesselungsskript: uploads/challenges/', () => {
   let db;
@@ -59,21 +71,22 @@ describe('Aufraeum- und Verschluesselungsskript: uploads/challenges/', () => {
     );
   }
 
-  describe('Aufraeumen (cleanupOrphanPhotos)', () => {
+  describe('Aufraeumen (verwaisteDateien)', () => {
     it('kennt uploads/challenges/ mit challenge_submissions.file_path', () => {
-      const ziel = zieleFuer(uploadsDir).find((z) => z.dir === challengesDir);
-      expect(ziel.query).toBe('SELECT file_path AS f FROM challenge_submissions WHERE file_path IS NOT NULL');
+      expect(challenges.abfrage.replace(/\s+/g, ' ').trim()).toBe(
+        "SELECT file_path AS datei FROM challenge_submissions WHERE file_path IS NOT NULL AND file_path <> ''"
+      );
     });
 
-    it('VERBOTEN (bleibt nicht liegen): eine verwaiste Challenge-Datei wird geloescht', async () => {
+    it('VERBOTEN (bleibt nicht liegen): eine verwaiste Challenge-Datei wird mit --loeschen geloescht', async () => {
       await beitragMitDatei(REFERENZIERT);
-      fs.writeFileSync(path.join(challengesDir, REFERENZIERT), 'KQPHOTO1-inhalt');
-      fs.writeFileSync(path.join(challengesDir, VERWAIST), 'KQPHOTO1-waise');
+      alteDatei(path.join(challengesDir, REFERENZIERT), 'KQPHOTO1-inhalt');
+      alteDatei(path.join(challengesDir, VERWAIST), 'KQPHOTO1-waise');
 
-      const ziel = zieleFuer(uploadsDir).find((z) => z.dir === challengesDir);
-      const ergebnis = await cleanupTarget(db, ziel);
+      const ergebnis = await bereichPruefen(db, challenges, { uploads: uploadsDir, loeschen: true });
 
-      expect(ergebnis).toEqual({ deleted: 1, kept: 1 });
+      expect(ergebnis.geloescht).toEqual([VERWAIST]);
+      expect(ergebnis.benutzt).toBe(1);
       expect(fs.readdirSync(challengesDir)).toEqual([REFERENZIERT]);
     });
 
@@ -89,19 +102,18 @@ describe('Aufraeum- und Verschluesselungsskript: uploads/challenges/', () => {
          VALUES ($1, $2, 2, 'photo', $3, 'approved')`,
         [c2.id, USERS.konfi3.id, VERWAIST]
       );
-      fs.writeFileSync(path.join(challengesDir, REFERENZIERT), 'x');
-      fs.writeFileSync(path.join(challengesDir, VERWAIST), 'y');
+      alteDatei(path.join(challengesDir, REFERENZIERT), 'x');
+      alteDatei(path.join(challengesDir, VERWAIST), 'y');
 
-      const ziel = zieleFuer(uploadsDir).find((z) => z.dir === challengesDir);
-      const ergebnis = await cleanupTarget(db, ziel);
+      const ergebnis = await bereichPruefen(db, challenges, { uploads: uploadsDir, loeschen: true });
 
-      expect(ergebnis).toEqual({ deleted: 0, kept: 2 });
+      expect(ergebnis.geloescht).toEqual([]);
+      expect(ergebnis.benutzt).toBe(2);
       expect(fs.readdirSync(challengesDir).sort()).toEqual([REFERENZIERT, VERWAIST]);
     });
 
-    it('die bisherigen drei Ziele bleiben unveraendert', () => {
-      expect(zieleFuer(uploadsDir).map((z) => path.basename(z.dir)))
-        .toEqual(['requests', 'chat', 'material', 'challenges']);
+    it('die bisherigen drei Bereiche bleiben, challenges kommt dazu', () => {
+      expect(BEREICHE.map((b) => b.name)).toEqual(['requests', 'chat', 'material', 'challenges']);
     });
   });
 
