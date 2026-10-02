@@ -55,11 +55,12 @@ CHECK-Constraint Werte, die der Code laengst schreibt. Aufgefallen ist das
 keinem Test, weil die Tests aus dem Dump bauen und diese Datei nie anfassten.
 
 Die Migrationskette kann die Luecke nicht schliessen: Sie beginnt erst bei
-`064`, und fuer `konfi_profiles.password_plain` existiert nirgends im Repo
-ein DDL — die Spalte wurde in Produktion von Hand angelegt
-(`daily_verses` und `activities.category`, frueher ebenso, liefert seit dem
-22.08.2026 Migration 124). Das Repo kann die Produktion also nicht allein
-aus Migrationen reproduzieren; der Dump ist der einzige ehrliche Startpunkt.
+`064`; was davor lag, entstand in der SQLite-Zeit und teils von Hand in
+Produktion (so `konfi_profiles.password_plain`, die erst Migration 187 am
+01.10.2026 entfernt hat; `daily_verses` und `activities.category` liefert
+seit dem 22.08.2026 Migration 124). Das Repo kann die Produktion also nicht
+allein aus Migrationen reproduzieren; der Dump ist der einzige ehrliche
+Startpunkt.
 
 ## Ablauf bei einer Neuinstallation
 
