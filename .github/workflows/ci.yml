@@ -21,6 +21,12 @@ on:
       - 'scripts/**'
       - 'docs/api/**'
       - 'docs/handbuch/**'
+      # Die Bildschirmfotos (02.10.2026): build-handbuch.mjs spiegelt
+      # docs/screenshots/ nach frontend/public/docs/bilder/, und "Handbuch
+      # aktuell?" vergleicht genau das. Ein Commit, der nur neue Bilder
+      # brachte, loeste keinen Lauf aus -- die Pruefung lief nicht, und das
+      # Release-Tor fand fuer den Commit keinen gruenen Lauf.
+      - 'docs/screenshots/**'
       # Die E2E-Specs selbst: Eine Aenderung nur hier loeste bis 05.09.2026
       # KEINEN Lauf aus. Aufgefallen, als der Fix fuer einen roten E2E-Test
       # (Teamer-Tabs) gepusht wurde und schlicht nichts passierte -- waehrend
@@ -41,6 +47,19 @@ on:
       - 'docker-compose.e2e.yml'
       - 'deploy/**'
       - '.github/scripts/**'
+      # Die .gitignore der Wurzel (02.10.2026): dateiverweiseImCode.test.ts
+      # verlangt, dass jede bewusst fehlende Datei dort ausgenommen ist.
+      - '.gitignore'
+      # Bewusst NICHT im Filter: CHANGELOG.md, README.md und die uebrige Doku
+      # unter docs/. Sie gehen in kein Image; ein Lauf hiesse Build und
+      # Deploy fuer reinen Text. Zwei Tests lesen dort trotzdem mit:
+      # versionsnummernEineQuelle die Versionsnummer der ersten
+      # CHANGELOG-Ueberschrift (sie aendert sich nur mit version:setzen, also
+      # zusammen mit frontend/version.json), dateiverweiseImCode, ob jede im
+      # Code genannte Datei unter docs/ noch existiert. Wer eine solche Datei
+      # loescht oder verschiebt, faengt das erst beim naechsten Lauf.
+      # Der Android-Job braucht keinen eigenen Eintrag: frontend/** schliesst
+      # frontend/android/ und die Lockfiles des Frontends ein.
   pull_request:
     branches:
       - main
