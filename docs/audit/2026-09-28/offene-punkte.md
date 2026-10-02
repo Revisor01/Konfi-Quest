@@ -372,6 +372,14 @@ Teamer-Badges gelten je Gemeinde.
 - Bestätigt: Mail „Passwort vergessen" kam an, Geheimnisse gesichert, Label
   und Erwähnung im Issue bei rotem `main` (lokaler Agent), `timezone=UTC`.
 
+**Gerätetest Android 133 / iOS 239 (Simon, 02.10.2026):** „Alle Tests sind
+positiv. Einzig das Laden aus einem Cloud-Speicher klappt nicht. Nextcloud.
+Legen wir zur Seite. Sonderfall." — Nextcloud zurückgestellt
+([offene-befunde](../../offene-befunde.md) Nr. 16); PDF/Word steht jetzt im
+Play-Text. Personennamen von Testern im Repo: „neutral" — alle Stellen
+ersetzt (Kommentare, Tests, Audit-Berichte). Offen bleiben nur
+Produktentscheidungen und das Store-Release selbst.
+
 - **Store und Konten:** Git-Tag `2.3.0` für den schon ausgelieferten Stand (die automatischen Tags
   gelten ab dem nächsten Upload); Store-Texte 2.3.0 (CI BF-08); Universal Links einschalten
   (Entitlement `applinks:konfi-quest.de`); Firebase-Schlüssel in der Google-Cloud-Konsole

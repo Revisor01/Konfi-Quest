@@ -42,13 +42,14 @@ ist neu?" in der App.
    Mitteilung führt zum Event, App-Sperre „Sofort", Mitteilungen an große
    Gruppen.
 9. **Behoben, nur Android:** Mitteilungen nach Update oder Neuanmeldung und
-   bei offener App, App-Links.
+   bei offener App, PDF und Word in Chat und Material, App-Links.
 
-**Bewusst nicht drin:** der Upload von PDF und Word vom Android-Handy. Er ist
-im CHANGELOG als behoben eingetragen, scheiterte aber noch im Gerätetest mit
-Build 132 (01.10.2026). Erst wenn ein Build ihn am Gerät bestätigt, darf er in
-den Play-Text. Die Sortierung bei Pflicht-Events kommt mit PR #213; wird ohne
-ihn eingereicht, fällt der Halbsatz im iOS-Text weg.
+**Upload von PDF und Word vom Android-Handy:** im Gerätetest mit Build 133
+am 02.10.2026 bestätigt (Download-Ordner und Google Drive, Chat und
+Material) und deshalb im Play-Text. Nicht aus der Nextcloud-App — ein
+zurückgestellter Sonderfall (`docs/offene-befunde.md` Nr. 16), der im
+Store-Text nicht vorkommt. Die Sortierung bei Pflicht-Events ist seit PR
+#213 auf main.
 
 ---
 
@@ -99,7 +100,7 @@ Behoben: Die Erinnerung „Gleich“ kommt eine Stunde vor Beginn. Ein laufendes
 > **Dieser Text steht in `frontend/release-notes-de.txt`.** Der Play-Upload
 > liest ausschließlich diese Datei. **Maximal 500 Zeichen**, sonst bricht der
 > Upload ab — messen mit `wc -m` (Zeichen) und zur Sicherheit `wc -c` (Bytes,
-> Umlaute zählen doppelt; die Datei unten hat 460 Zeichen, 465 Bytes).
+> Umlaute zählen doppelt; die Datei unten hat 488 Zeichen, 493 Bytes).
 > Wer den Text hier ändert, ändert die Datei mit.
 
 > **Hier gehört die Push-Reparatur an die erste Stelle der Behoben-Zeile.**
@@ -111,7 +112,7 @@ Behoben: Die Erinnerung „Gleich“ kommt eine Stunde vor Beginn. Ein laufendes
 ```
 Neu: Ein Postfach hinter der Glocke sammelt alles, was die App dir mitteilt; du wählst, was aufs Handy kommt. Rote Zahlen zeigen neue Challenge-Beiträge, orange Zahlen offene Freigaben, das App-Symbol zählt mit. In mehreren Gemeinden mitarbeiten, mit eigener Rolle je Gemeinde. Dunkelmodus folgt dem Gerät.
 
-Behoben: Mitteilungen kommen nach Update oder Neuanmeldung wieder an, auch bei offener App. Links aus Einladung und Passwort-Mail öffnen direkt die App.
+Behoben: Mitteilungen kommen nach Update oder Neuanmeldung wieder an. PDF und Word lassen sich in Chat und Material hochladen. Links aus Einladung und Passwort-Mail öffnen die App.
 ```
 
 ---

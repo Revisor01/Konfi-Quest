@@ -676,3 +676,35 @@ stehen (Merksatz in Nr. 2).
 
 Erwartet: feste Pfade, Kennungen nur hinter einem festen Präfix, und die drei
 Einstiege oben (Push, App-Link, Umleitung) unverändert.
+
+---
+
+## 16. Upload aus Nextcloud scheitert auf Android (02.10.2026) — ZURÜCKGESTELLT, SONDERFALL
+
+> **Stand 02.10.2026:** Simon, Gerätetest mit Android 133 / iOS 239: „Alle
+> Tests sind positiv. Einzig das Laden aus einem Cloud-Speicher klappt nicht.
+> Nextcloud. Legen wir zur Seite. Sonderfall."
+
+**Was geht:** PDF und Word vom Android-Handy in Chat und Material, aus dem
+Download-Ordner und aus Google Drive (seit Build 133: Dokumente werden bei
+der Auswahl in den Speicher gelesen, `services/systemDialoge.ts`,
+`imSpeicher`). Fotos gingen schon vorher.
+
+**Was nicht geht:** Eine Datei, die über die Nextcloud-App ausgewählt wird.
+
+**Vermutung, nicht gemessen:** Die Nextcloud-App liefert die Datei als
+Verweis auf ihren eigenen Anbieter und lädt sie erst beim Lesen vom Server
+herunter. Wenn sie dabei noch nicht auf dem Gerät liegt, scheitert schon das
+Lesen bei der Auswahl. Die Fehlermessung je Upload-Schritt
+(`services/uploadDiagnose.ts`) zeigt das an: ein `fehler` mit `ort`
+`dateiauswahl-…` statt `chat-datei-direkt` oder
+`material-dateien-hochladen`.
+
+**Ausweg für Nutzer:innen:** Die Datei in der Nextcloud-App zuerst auf das
+Gerät laden („Herunterladen" bzw. „Offline verfügbar") und dann aus dem
+Download-Ordner wählen.
+
+**Wieder aufnehmen,** wenn sich weitere Gemeinden melden. Dann zuerst die
+Fehlermessung für diesen Fall auswerten (lokaler Agent, Umami `fehler` mit
+`ort` `dateiauswahl-…`), danach entscheiden, ob ein nativer Leseweg am
+WebView vorbei nötig ist.
