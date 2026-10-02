@@ -52,10 +52,18 @@ Dump).
 
 ## Rhythmus und Aufbewahrung
 
-Stand laut `docs/offene-befunde.md` Nr. 3: ein nächtlicher Dump um 2:30 mit
-`pg_dump | gzip`, seit dem 10.09.2026 mit `pipefail`, Vorabprüfung der
-Datenbank, Größenprüfung (unter 1 kB gilt als Fehlschlag) und Löschen
-unbrauchbarer Dateien. Das Skript liegt außerhalb des Repos.
+Stand (01.10.2026, vom lokalen Agenten gemessen): ein nächtlicher Dump um
+2:30 per Cron am Host, seit dem 01.10.2026 im Format `-Fc` mit
+Lesbarkeitsprüfung (`pg_restore --list`, mindestens 50 Tabellen), dazu
+Vorabprüfung der Datenbank, `pipefail`, Größenprüfung und Löschen
+unbrauchbarer Dateien. Laufzeit 1–2 s. Am Host bleiben die letzten 14 Dumps;
+das tägliche Datei-Backup des Hosts nimmt Dumps **und** Uploads mit, ein
+zweites Ziel wöchentlich. Eine tägliche Prüfung meldet per Push, wenn kein
+Dump jünger als 36 h ist, ein frischer Dump unter 2 kB liegt oder das
+Datei-Backup zu alt ist. Das Skript liegt außerhalb des Repos. Offen sind
+die Wochen- und Jahresstände des Solls unten
+([docs/offene-befunde.md](../offene-befunde.md), „Aufbewahrung der
+Sicherungen").
 
 Soll (Vorschlag, bis der Betrieb es anders festlegt):
 
@@ -100,6 +108,26 @@ Die Überwachung (Uptime Kuma oder was der Betrieb nutzt) prüft **Alter und
 Größe** der jüngsten Datei — nicht nur, ob eine Datei da ist. Genau daran
 scheiterte die Prüfung am 10.09.2026: „OK, 2 frische Dateien", eine davon
 20 Byte.
+
+## Der leere Dump vom 10.09.2026
+
+In der Nacht des Ausfalls vom 09./10.09.2026 lief der nächtliche Dump, während
+die Container fehlten. Er hinterließ 20 Byte — den leeren gzip-Rahmen — und
+meldete trotzdem „Backup ok". Zwei Fehler verdeckten sich gegenseitig:
+
+1. **Ohne `pipefail`** bestimmt in `pg_dump | gzip` der letzte Befehl den
+   Rückgabewert: `gzip` gelingt, auch wenn `pg_dump` gar nicht startet.
+2. **Die Überwachung prüfte am Fall vorbei:** Für Konfi Quest sah sie nur, ob
+   eine Datei jung genug ist, nicht ob Inhalt darin steht — „OK, 2 frische
+   Dateien", eine davon leer.
+
+Seitdem gilt, und `deploy/sicherung.sh` setzt es um: vorher prüfen, ob die
+Datenbank antwortet; `set -o pipefail`; das Ergebnis auf Größe und
+Lesbarkeit prüfen und eine unbrauchbare Datei löschen statt liegen lassen;
+Exit 1 bei jedem Fehler. Die Überwachung prüft **Alter und Größe**. Gegenprobe
+am 10.09.2026: Datenbank läuft → Dump, Exit 0; Container fehlt → keine Datei,
+Exit 1; `pg_dump` liefert nichts → Datei gelöscht, Exit 1; leere Datei im
+Verzeichnis → die Überwachung schlägt an.
 
 ## Wiederherstellung in eine leere Datenbank
 
@@ -211,10 +239,10 @@ verschlüsselten Dateien lassen sich mit dem Schlüssel der Stack-Umgebung
 öffnen. Die Dauer wächst mit dem Bestand; bei der EKD-weiten Ausrollung
 neu messen.
 
-**Nächtliche Sicherung als reines SQL.** Die nächtliche Sicherung des
-Betriebs schreibt (Stand 01.10.2026) `pg_dump --clean --if-exists | gzip`,
-also SQL statt `-Fc`. `deploy/wiederherstellung.sh` liest nur `-Fc`. Für so
-einen Dump ist der Weg: leere Datenbank wie im Skript anlegen (Schritt 3),
+**Ältere Sicherungen als reines SQL.** Bis zum 30.09.2026 schrieb die
+nächtliche Sicherung `pg_dump --clean --if-exists | gzip`, also SQL statt
+`-Fc`; `deploy/wiederherstellung.sh` liest nur `-Fc`. Für so einen Dump ist
+der Weg: leere Datenbank wie im Skript anlegen (Schritt 3),
 dann
 
 ```bash
@@ -225,8 +253,6 @@ zcat konfi_db_<stempel>.sql.gz \
 
 `ON_ERROR_STOP` bricht beim ersten Fehler ab, `pipefail` macht einen
 kaputten Dump zum Fehlschlag. Danach die Zählungen wie am Ende des Skripts.
-Einheitlich wird es erst, wenn die nächtliche Sicherung auf
-`deploy/sicherung.sh` umgestellt ist (Entscheidung beim Betrieb).
 
 Die Postgres-Version des Zielsystems muss mindestens der des Dumps
 entsprechen (`pg_restore` ist abwärts-, nicht aufwärtskompatibel). Der Stack
@@ -238,23 +264,27 @@ läuft auf `postgres:15-alpine`; ein Test mit einer 16er-Instanz spielt einen
 Was das Repo nicht wissen kann und der Betrieb in seiner Betriebsdoku
 festhält:
 
-- [ ] Wo liegt das produktive Sicherungsskript, und stimmt es mit
-      `deploy/sicherung.sh` in Vorabprüfung, `pipefail`, Größen- und
-      Lesbarkeitsprüfung überein?
-- [ ] Ablageordner der Dumps und der Upload-Archive; zweiter Ort (extern);
-      wie die Kopie dorthin kommt.
-- [ ] Uhrzeit des Laufs (nicht 02:00–03:30) und tatsächliche Aufbewahrung
-      (Tage / Wochen / Jahresende).
-- [ ] Werden die **Uploads** überhaupt gesichert? Wie oft, wohin?
-- [ ] Wo liegen die Geheimnisse (alle sieben Variablen aus der Tabelle) und
-      die Firebase-Datei — und wer kommt im Notfall daran?
-- [ ] Welche Überwachung prüft Alter **und** Größe der jüngsten Sicherung,
-      und wen benachrichtigt sie?
+- [x] Das produktive Sicherungsskript stimmt mit `deploy/sicherung.sh` in
+      Vorabprüfung, `pipefail`, Größen- und Lesbarkeitsprüfung überein
+      (01.10.2026); wo es liegt, steht in der Betriebsdoku.
+- [x] Zweiter Ort: das tägliche Datei-Backup des Hosts und ein wöchentliches
+      zweites Ziel (01.10.2026); Ablageorte in der Betriebsdoku.
+- [ ] Uhrzeit 02:30 liegt im Fenster 02:00–03:30 — bei 1–2 s Laufzeit
+      folgenlos gemessen; Aufbewahrung 14 Tage am Host, Wochen- und
+      Jahresstände fehlen ([offene Befunde](../offene-befunde.md),
+      „Aufbewahrung der Sicherungen").
+- [x] Die **Uploads** sichert das tägliche Datei-Backup des Hosts, nicht das
+      nächtliche Skript.
+- [x] Geheimnisse und Firebase-Datei liegen in der Geheimnis-Ablage des
+      Betriebs, per Prüfsumme mit dem Stack abgeglichen; Simon hat sie
+      zusätzlich gesichert (01.10.2026).
+- [x] Überwachung: tägliche Prüfung am Host, Push an Simon bei fehlendem oder
+      zu kleinem Dump und bei zu altem Datei-Backup.
 - [x] Datum der letzten Rückspielprobe: 01.10.2026 · Ergebnis: fehlerfrei,
       zeilen- und schemagleich (Tabelle oben)
 - [x] Größe des jüngsten Dumps: 686.954 Byte (nächtlich, SQL gepackt,
       30.09.2026); `-Fc` 931.258 Byte (Vergleichswert für die nächste Prüfung)
 
 Verwandt: `init-scripts/README.md` (Neuinstallation ohne Daten),
-`docs/offene-befunde.md` Nr. 3 (leerer Dump am 10.09.2026),
+[routinen.md](routinen.md) (Rückspielprobe vor jedem Release, Notfall-Deploy),
 `deploy/compose.konfi_quest.yml` (Ressourcen und Variablen des Stacks).

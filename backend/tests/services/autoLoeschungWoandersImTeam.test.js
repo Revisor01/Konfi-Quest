@@ -13,7 +13,7 @@
 // und Team geht nicht parallel", utils/konfiOderTeam.js). Fuer den
 // Altbestand ueberspringt der Lauf solche Konten und protokolliert sie NUR mit
 // Kennung, ohne Namen; was mit ihnen geschieht, entscheidet ein Mensch
-// (docs/auftraege/lokaler-agent/06-mischkonten.md).
+// (docs/planung/mehrfach-konten.md).
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ROLES, JAHRGAENGE } = require('../helpers/seed');
 const BackgroundService = require('../../services/backgroundService');

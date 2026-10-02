@@ -22,7 +22,7 @@
 # Seit dem 01.10.2026 zieht rollend.sh die Images VORAB und ruft update_stack mit
 # pullImage:false. Mit pullImage:true erstellte Portainer bei JEDEM Update alle
 # Dienste neu, auch Postgres -- beide Backends waren trotz zweier Stufen zugleich
-# weg (Auftrag docs/auftraege/lokaler-agent/10-deploy-luecke.md). Ohne das
+# weg (Auftrag 10 des lokalen Agenten, erledigt; docs/README.md). Ohne den
 # Schalter erstellt Compose nur Dienste mit geaenderter Konfiguration neu.
 # <TAG> wird beim Deploy durch den aktuellen Commit-SHA ersetzt.
 services:
@@ -134,9 +134,10 @@ services:
   # --- Backend-Replica 1 ---
   backend:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
-    # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
-    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
-    # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+    # Ohne root (01.10.2026, Audit CI BF-06): eigene uid/gid 10001, seit dem
+    # 02.10.2026 als Nutzer `konfi` auch im Image (backend/Dockerfile).
+    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 10001
+    # (Auftrag 09 des lokalen Agenten, erledigt; docs/README.md).
     user: "10001:10001"
     environment: &backend_env
       NODE_ENV: production
@@ -287,9 +288,10 @@ services:
   # und Co. unbemerkt. Die Variable bleibt NUR bei backend-test (nie Jobs).
   backend2:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
-    # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
-    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
-    # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+    # Ohne root (01.10.2026, Audit CI BF-06): eigene uid/gid 10001, seit dem
+    # 02.10.2026 als Nutzer `konfi` auch im Image (backend/Dockerfile).
+    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 10001
+    # (Auftrag 09 des lokalen Agenten, erledigt; docs/README.md).
     user: "10001:10001"
     environment:
       <<: *backend_env
@@ -365,9 +367,10 @@ services:
   # mitbringt.
   backend-test:
     image: ghcr.io/revisor01/konfi-quest-backend:test-latest
-    # Ohne root (01.10.2026, Audit CI BF-06): uid/gid 1000 ist `node` im Image.
-    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 1000 bzw.
-    # Gruppe 1000 (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+    # Ohne root (01.10.2026, Audit CI BF-06): eigene uid/gid 10001, seit dem
+    # 02.10.2026 als Nutzer `konfi` auch im Image (backend/Dockerfile).
+    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 10001
+    # (Auftrag 09 des lokalen Agenten, erledigt; docs/README.md).
     user: "10001:10001"
     environment:
       <<: *backend_env

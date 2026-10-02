@@ -12,7 +12,7 @@
 // WARUM: Jede Stelle, die "Rolle je Gemeinde" liest, muesste sonst beide
 // Welten zugleich bedienen -- Punkte, Kontingente, Chat-Typ, Auto-Loeschung
 // nach der Konfirmation, Abzeichen (Tabelle "Rolle je Gemeinde" im Audit
-// docs/audit/2026-09-26/backend-fachlogik-punkte-termine.md). Mit der Regel
+// Punkte/Termine, docs/README.md#befundkennungen). Mit der Regel
 // entfallen die Zeilen, die Konfis einer weiteren Gemeinde betreffen.
 //
 // HIER STEHT DIE REGEL EINMAL. Jeder Schreibweg, der eine Rolle vergibt
@@ -22,8 +22,8 @@
 // ALTBESTAND wird hier nicht repariert, nur nicht verschlimmert: Die Pruefung
 // lehnt ab, was einen Mischzustand NEU entstehen liesse. Eine Aenderung, die
 // einen bestehenden Mischzustand aufloest (etwa Konfi -> Teamer:in in der
-// weiteren Gemeinde), geht durch. Wie viele Mischkonten es gibt, misst
-// docs/auftraege/lokaler-agent/06-mischkonten.md.
+// weiteren Gemeinde), geht durch. Gemessen am 01.10.2026: ein Mischkonto im
+// Altbestand, es bleibt (docs/planung/mehrfach-konten.md).
 
 const KONFI = 'konfi';
 
