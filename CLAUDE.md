@@ -89,6 +89,23 @@ npm --prefix frontend run docs:handbuch
 laufen lassen. Ein sauberes `git status` direkt nach dem Commit beweist nichts,
 wenn danach noch Bilder erneuert wurden.
 
+## Wo Doku hingehört
+
+Jede Sorte hat **eine** Stelle; die Übersicht steht in `docs/README.md`.
+
+- **Offenes** — Fehler, Entscheidungen bei Simon, Zurückgestelltes — in die
+  eine Liste `docs/offene-befunde.md`, keine zweite daneben. Erledigtes wird
+  dort gestrichen; womit, sagt die Commit-Message.
+- **Was als Nächstes gebaut wird** nach `docs/planung/`, **wie der Betrieb
+  läuft** nach `docs/betrieb/` (ohne Adressen und Zugangsdaten, siehe unten),
+  Hintergrundwissen nach `docs/wissen/`.
+- **Aufträge an den lokalen Agenten** nach `docs/auftraege/lokaler-agent/`.
+  Ein erledigter Auftrag wird entfernt; sein Ergebnis steht in der
+  Git-Historie und, wenn es den Betrieb ändert, in `docs/betrieb/`.
+- **Prüfberichte, Audits und Analysen bleiben nicht als Dateien im Repo.**
+  Was daraus folgt, landet in `docs/offene-befunde.md` oder der Planung;
+  der Bericht selbst gehört in den Pull Request oder die Commit-Message.
+
 ## Tests
 
 Jede Änderung an Verhalten bekommt Tests im selben Commit.
