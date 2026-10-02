@@ -110,9 +110,11 @@ cron_leader ok; 109 Migrationen, keine fehlgeschlagen). Gemergt: #203–#209.
 - [x] **Datenschutzerklärung:** Abschnitt 9a und der Satz zur Obergrenze der
       Anmeldungen sind live (Stand 1. Oktober 2026); Simon hat gegengelesen
       (01.10.2026 abends: „erledigt").
-- [ ] **Testbuild:** Die App-Änderungen seit iOS 236 / Android 130 (Punkt-
+- [x] **Testbuild:** Die App-Änderungen seit iOS 236 / Android 130 (Punkt-
       Plural, Selbstbezeichnung, Eventdatum) brauchen einen neuen Build —
-      nur auf Simons Ansage.
+      nur auf Simons Ansage. **Erledigt:** iOS 238 / Android 132 (01.10.,
+      `a7f48d84`), danach iOS 239 / Android 133 (01.10. abends, `66b4ecc0`,
+      Tags `2.3.0+ios.239` und `2.3.0+android.133`).
 
 ### Neu aus der Cloud seit dieser Rückmeldung (PR #202, noch nicht gemergt)
 

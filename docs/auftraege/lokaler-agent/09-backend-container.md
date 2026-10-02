@@ -132,11 +132,16 @@ und den Stand der Stack-Definition exportieren.
       10001 an, `/app/uploads` gehört ihm, `USER 10001:10001`. Lokal gebaut:
       `id` → `uid=10001(konfi) gid=10001(konfi)`, Schreiben in
       `uploads/tmp` ok, Code unter `/app` für den Prozess nur lesbar.
-- [ ] Nach dem ersten Deploy mit diesem Image: je Backend `id` → 10001,
+- [x] Nach dem ersten Deploy mit diesem Image: je Backend `id` → 10001,
       0 `EACCES` im Log. Danach darf `user: "10001:10001"` im Stack
       bleiben (gleiche uid, schadet nicht) oder entfallen — dann im selben
       Zug in `deploy/compose.konfi_quest.yml` und im Wächter
       `backendImage.test.ts`.
+      **Ergebnis 02.10.2026** (Deploy `2e9d0083`), für `backend` und
+      `backend2` gleich: Prozess läuft als uid 10001, der Nutzer im Image
+      ist `10001:10001`, Uploads speichern geht, `/app/server.js` ändern wird
+      verweigert, Healthcheck `healthy`, 0 `EACCES` und 0 Fehlerzeilen im
+      Log. `user:` bleibt im Stack.
 
 **Ergebnis** je Punkt mit Datum und Messwert eintragen, im Befund CI BF-06 die
 Status-Zeile fortschreiben.
