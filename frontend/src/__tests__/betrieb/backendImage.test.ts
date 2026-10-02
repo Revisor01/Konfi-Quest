@@ -168,7 +168,22 @@ describe('Backend-Image: Laufzeit-Stufe ohne Werkzeug und ohne Tests', () => {
     // Eine uid, die am Host niemandem gehoert, laesst ausser root niemanden an
     // Uploads und Push-Schluessel.
     expect(nutzer).toEqual(['10001:10001', '10001:10001', '10001:10001']);
-    // Ohne Mount (E2E, lokal) gilt der Besitz im Image.
-    expect(laufzeit).toMatch(/chown node:node \/app\/uploads/);
+  });
+
+  it('das Image selbst laeuft als uid 10001, nicht als root und nicht als node (02.10.2026)', () => {
+    // Seit dem 02.10.2026 bringt das Image den Nutzer mit (Simon: fest ins
+    // Image). Ein Stack ohne `user:` oder ein `docker run` faellt damit nicht
+    // mehr auf root zurueck.
+    const userZeilen = [...laufzeit.matchAll(/^USER\s+(\S+)\s*$/gm)].map((m) => m[1]);
+    // Genau eine USER-Zeile, und die letzte gilt: kein spaeteres `USER root`.
+    expect(userZeilen).toEqual(['10001:10001']);
+    expect(laufzeit).toMatch(/groupadd --system --gid 10001 konfi/);
+    expect(laufzeit).toMatch(/useradd --system --uid 10001 --gid 10001\b/);
+    // Ohne Mount (E2E, lokal) gilt der Besitz im Image -- derselbe Nutzer.
+    expect(laufzeit).toMatch(/chown 10001:10001 \/app\/uploads/);
+    // Die Rechte stehen VOR dem Wechsel des Nutzers (danach darf chown nicht).
+    expect(laufzeit.indexOf('chown 10001:10001 /app/uploads')).toBeLessThan(laufzeit.indexOf('USER 10001:10001'));
+    // Healthcheck und Start brauchen kein root: `node` aus dem Basis-Image.
+    expect(laufzeit.indexOf('USER 10001:10001')).toBeLessThan(laufzeit.indexOf('CMD ["node", "server.js"]'));
   });
 });
