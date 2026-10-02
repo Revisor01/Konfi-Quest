@@ -147,21 +147,3 @@ describe('Challenge-Stempel: das Handbuch zieht mit', () => {
     expect(lies('../docs/handbuch/30-leitung.md')).toContain('Stempel');
   });
 });
-
-describe('Challenge-Stempel: die Store-Texte zu 2.0.0', () => {
-  // Sie gehen vor der App raus. Steht dort ein Wort, das die App nicht mehr
-  // benutzt, liest es jemand im Store und findet es nirgends wieder.
-  const storeTexte = lies('../docs/store-texte-2.0.0.md');
-
-  it('beide Fassungen sprechen vom Stempel', () => {
-    expect(storeTexte).toContain('fürs Mitmachen gibt es einen Stempel');
-    expect(storeTexte).toContain('mit Stempel fürs Mitmachen');
-  });
-
-  it('das Wort steht dort nur noch fuer das echte Abzeichen-System', () => {
-    // Zwei Erwaehnungen bleiben zu Recht: das Handbuch-Nachschlagekapitel und
-    // die Liste der Korrekturen.
-    const treffer = storeTexte.match(/Abzeichen/g) || [];
-    expect(treffer).toHaveLength(2);
-  });
-});

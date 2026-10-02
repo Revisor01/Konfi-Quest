@@ -48,7 +48,8 @@
 // dessen Konfiguration (`RequestHeader set`, nicht "nur wenn leer") und an
 // Traefik (vorderer Proxy unter forwardedHeaders.trustedIPs, NICHT insecure --
 // Traefik ersetzt X-Real-Ip von nicht vertrauten Absendern durch die eigene
-// Sicht). Messweg: docs/auftraege/lokaler-agent/07-client-adresse-hinter-dem-proxy.md.
+// Sicht). Gemessen am 01.10.2026 (Auftrag 07 des lokalen Agenten,
+// docs/README.md): Fall A -- der vordere Proxy ueberschreibt X-Real-IP.
 const net = require('net');
 const proxyaddr = require('proxy-addr');
 

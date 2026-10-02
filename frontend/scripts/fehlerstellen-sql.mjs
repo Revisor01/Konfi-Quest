@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Die erlaubten Werte von `fehler.stelle` als SQL — fuer die Bereinigung der
-// Umami-Datenbank (docs/auftraege/lokaler-agent/03-nach-dem-deploy.md,
-// Abschnitt „Umami bereinigen").
+// Umami-Datenbank (docs/betrieb/routinen.md, Abschnitt „Umami bereinigen").
 //
 // Bis zum 27.09.2026 schickte die App den angezeigten Fehlertext als
 // `stelle` an Umami, auch Texte des Servers mit Namen, Dateinamen und

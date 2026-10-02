@@ -2,10 +2,10 @@
 
 Stand 28.09.2026. Anlass: Simon, 28.09.2026: „Das mit den Multi Accounts
 müssen wir besprechen." Grundlage ist die Tabelle „Nachtrag 27.09.2026: Rolle
-je Gemeinde" in
-[backend-fachlogik-punkte-termine.md](../2026-09-26/backend-fachlogik-punkte-termine.md).
-Hier wird nichts umgebaut; die Vorlage sammelt, was offen ist, und die Fragen
-dazu.
+je Gemeinde" im Bericht `backend-fachlogik-punkte-termine.md` des
+Release-Audits (in der Git-Historie, siehe
+[docs/README.md](../README.md#befundkennungen)). Hier wird nichts umgebaut;
+die Vorlage sammelt, was offen ist, und die Fragen dazu.
 
 **Stand 02.10.2026:** Simon: „mehrfach konten müssen wir nochmals überprüfen
 (hier gehts aber im wesentlichen um einzelfälle von teamern in mehrere
@@ -24,8 +24,13 @@ anderen Gemeinde. Die Prüfung der sieben Punkte unten steht noch aus.
   Zählung, Vergabe und Hintergrund-Lauf je aktiver Gemeinde.
 - **Auto-Löschung** überspringt Konfi-Konten mit weiterer Gemeinde
   (Altbestand) und protokolliert sie nur mit Kennung.
-- Der Umfang des Altbestands ist noch nicht gemessen:
-  [06-mischkonten.md](../../auftraege/lokaler-agent/06-mischkonten.md).
+- **Altbestand gemessen** (01.10.2026, nur lesend, lokaler Agent):
+  Konfi-Konten mit weiterer Gemeinde 0; Team-Konten mit einer Konfi-Zeile in
+  einer anderen Gemeinde 1 (Leitung zuhause, Konfi in einer Testgemeinde —
+  bleibt so, Simon 01.10.2026); Stamm-Zeilen in `user_organizations` mit
+  abweichender Rolle 0; offene Einladungen an Konfis 0. Verschiedene
+  Team-Rollen je Gemeinde: admin → org_admin 1, org_admin → org_admin 1,
+  org_admin → teamer 1; Konten mit mindestens einer weiteren Gemeinde 2.
 
 ## Was übrig ist
 
@@ -95,9 +100,11 @@ Migration 101 hat jedes damalige Konto mit seiner Stamm-Gemeinde auch in
   herabgestufte Org-Leitung bekommt dort weiter Org-Leitungs-Mitteilungen,
   und eine beförderte Teamer:in steht bei „Badge neu prüfen" für
   Konfi-Badges weiter in der Liste der Geprüften.
-- **Vorschlag:** messen (Abfrage 3 in 06), dann additive Migration: Stamm-Zeilen
-  auf `users.role_id` setzen, und `ladeMitgliederDerOrganisation` überspringt
-  Zeilen der Stamm-Gemeinde.
+- **Vorschlag:** additive Migration: Stamm-Zeilen auf `users.role_id` setzen,
+  und `ladeMitgliederDerOrganisation` überspringt Zeilen der Stamm-Gemeinde.
+  Gemessen 01.10.2026: Bei keinem aktiven Konto weicht die Stamm-Zeile ab —
+  die Migration hätte heute nichts zu tun; es bleibt die Absicherung für
+  künftige Wege.
 - **Aufwand:** klein.
 
 ### 6. Kontofelder mit Gemeinde-Bezug
@@ -132,11 +139,10 @@ Migration 101 hat jedes damalige Konto mit seiner Stamm-Gemeinde auch in
 
 ## Fragen an Simon
 
-1. **Altbestand:** Was geschieht mit Konten, die Konfi und Team zugleich sind
-   (Messung 06, Abfragen 1 und 2)? Konfi-Rolle entfernen und Team bleiben,
-   Team-Mitgliedschaft beenden oder Einzelfall? Dein eigenes Konto (Leitung,
-   dazu Konfi in einer Testgemeinde) gehört dazu — eigenes Testkonto statt
-   Ausnahme?
+1. **Altbestand:** Was geschieht mit Konten, die Konfi und Team zugleich sind?
+   Konfi-Rolle entfernen und Team bleiben, Team-Mitgliedschaft beenden oder
+   Einzelfall? **Entschieden 01.10.2026:** Gemessen gibt es genau ein solches
+   Konto (Leitung zuhause, Konfi in einer Testgemeinde); Simon: Es bleibt.
 2. **Event-Chat (1):** Teilnehmer-Typ nach der Rolle in der Gemeinde des
    Termins, mit Migration für den Bestand?
 3. **Push (2):** Soll jede Mitteilung die Gemeinde zwingend mitgeben, mit

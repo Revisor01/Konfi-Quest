@@ -9,8 +9,10 @@
  * dist/ landet im nginx-Container (frontend/Dockerfile). Die Seite ist damit
  * ohne weiteren Schritt Teil des Deployments.
  *
- * Gestaltung folgt der App (CLAUDE.md): Bebas Neue für Ueberschriften,
- * Plus Jakarta Sans für Text, Bereichsfarben aus theme/variables.css.
+ * Gestaltung angelehnt an die App (docs/wissen/gestaltung.md, Abschnitt
+ * "Doku-Seiten"): Bebas Neue für Ueberschriften und Kennzahlen, Plus Jakarta
+ * Sans für Text, JetBrains Mono für Code; die Farben von Hand nach den
+ * Bereichsfarben in frontend/src/theme/variables.css gewaehlt.
  */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';

@@ -1,5 +1,17 @@
 # Feature-Empfehlungen für die EKD-Ausrollung — 26.09.2026
 
+> **Produkt-Rückstand, laufend gepflegt.** Entstanden als Teil des
+> Release-Audits vom 26.09.2026; seit dem 02.10.2026 liegt die Datei unter
+> `docs/planung/` und trägt Simons Antworten auf die zehn Produktfragen
+> (Abschnitt „Offene Produktfragen an Simon" am Ende). Was davon als Nächstes
+> gebaut wird, steht in [web-version.md](web-version.md),
+> [darf-freigeben.md](darf-freigeben.md) und
+> [mehrfach-konten.md](mehrfach-konten.md); der Überblick über alles Offene in
+> [docs/offene-befunde.md](../offene-befunde.md). Verweise wie „Gesamtabnahme
+> Punkt 25" oder „Screens Konfi/Teamer BF-03" zielen auf die Audit-Berichte in
+> der Git-Historie ([docs/README.md](../README.md#befundkennungen));
+> `datei:zeile`-Angaben nennen den Stand vom 26./27.09.2026.
+
 Dieser Bericht enthält **Empfehlungen, keine Fehlerbefunde**. Jede Empfehlung
 ist am heutigen Code oder an der Doku belegt (Fundstelle mit `datei:zeile`).
 Wo unklar ist, ob die EKD etwas will, steht es unten als offene Frage und nicht
@@ -51,7 +63,8 @@ SMTP-Server, Tageslosung über ketiv.de, anonyme Nutzungsmessung über Umami
 `backend/services/losungService.js:20-22`, `frontend/src/services/analytics.ts:1-30`).
 Produktionsgröße, gemessen am 25.09.2026: **6 Gemeinden, 108 Konfis, 14
 Leitungskonten** (`backend/services/backgroundService.js:1104-1105`); am
-10.09.2026 zählte der Dump 111 Nutzer:innen (`docs/offene-befunde.md`, Nr. 3).
+10.09.2026 zählte der Dump 111 Nutzer:innen (früher `docs/offene-befunde.md`,
+Nr. 3; siehe [docs/README.md](../README.md#befundkennungen)).
 
 Neue Gemeinden legt ausschließlich ein super_admin an
 (`backend/routes/organizations.js:284`, `requireSuperAdmin`); die Oberfläche
@@ -689,8 +702,8 @@ unverändert.
 - **Warum jetzt:** `/api/status` liefert Version, Commit, Datenbank-Zustand
   als JSON (`createApp.js:394-413`); der Rolling-Deploy liest es
   (`deploy/rolling-deploy.sh:95-110`). Für Menschen gibt es keine Seite „Läuft
-  die App gerade?". Beim Ausfall vom 09./10.09.2026 (`offene-befunde.md`,
-  Nr. 3) hätten Leitungen nur raten können. Bei Hunderten Gemeinden ist die
+  die App gerade?". Beim Ausfall vom 09./10.09.2026 (früher
+  `offene-befunde.md`, Nr. 3) hätten Leitungen nur raten können. Bei Hunderten Gemeinden ist die
   Statusseite die erste Support-Entlastung.
 - **Was heute existiert:** `/api/health`, `/api/status`, Traefik-Healthchecks
   (`compose.konfi_quest.yml:125-129`), Betriebs-Dashboard für Super-Admins
@@ -886,7 +899,7 @@ unverändert.
 
 - **Status:** bewusst so gelassen (Entscheidung Simon 16.09.2026) — Events verwalten weiter nur Admins und Org-Admins.
 - **Begründung:** Simons Entscheidung vom 16.09.2026: Teamer:innen verwalten
-  Termine nicht (`offene-befunde.md`, Nr. 13; CHANGELOG 2.2.0 „Geändert").
+  Termine nicht (früher `offene-befunde.md`, Nr. 13; CHANGELOG 2.2.0 „Geändert").
   Für Ehrenamts-Leitungen mag der Wunsch nach Delegation kommen — dann als
   bewusste Rücknahme dieser Entscheidung, nicht als Nebenwirkung. QR-Check-in
   bleibt für Teamer:innen offen (`checkin.js:276`).

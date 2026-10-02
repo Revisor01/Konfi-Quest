@@ -13,7 +13,7 @@
 #
 # Warum ein eigenes Skript (30.09.2026, Probelauf Auftrag 05): Bis hierher
 # nahm "Tag leer" schlicht HEAD. Nicht jeder Commit auf main baut Images -- der
-# Pfadfilter in ci.yml laesst etwa reine Doku unter docs/audit/ oder
+# Pfadfilter in ci.yml laesst etwa reine Doku unter docs/betrieb/ oder
 # docs/auftraege/ aus, und ein roter Lauf baut ebenfalls nichts. Der Probelauf
 # am 30.09. mit leerem Tag brach deshalb ab ("Image konfi-quest-backend:7d8e945
 # existiert nicht"), obwohl Produktion den Stand zwei Commits davor fuhr. Sicher,

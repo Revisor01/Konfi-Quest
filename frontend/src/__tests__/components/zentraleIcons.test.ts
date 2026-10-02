@@ -79,8 +79,9 @@ describe('Zentrale Icon-Datei: eine Stelle fuer alle Icons', () => {
     // Verwender. Die gefuellte Fassung (ICON_PFEIL_WEITER_GEFUELLT) bleibt.
     // 13.09.2026: 189 -> 188. ICON_RAKETE ist entfallen: Es hing allein an
     // der Karte "Naechstes Badge" im Konfi-Profil, und die rendert nie --
-    // GET /konfi/profile liefert das Feld next_badge nicht (siehe
-    // docs/offene-befunde.md 7.1). Mit der toten Karte faellt auch das Icon.
+    // GET /konfi/profile liefert das Feld next_badge nicht (Befund vom
+    // 12.09.2026, Karte am 13.09.2026 entfernt). Mit der toten Karte faellt
+    // auch das Icon.
     // 24.09.2026: 188 -> 187. ICON_WEITER ist entfallen: Der Umriss-Pfeil hing
     // allein an den Hinweiskarten, und die zeigen seit "Pfeile aus den
     // Hinweiskarten" keinen Pfeil mehr. Die gefuellte Fassung
