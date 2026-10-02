@@ -16,8 +16,12 @@
  * Warum eingecheckt: wie bei den uebrigen Doku-Dateien — der Docker-Kontext
  * ist ./frontend, docs/ und scripts/ liegen darueber.
  *
- * Swagger UI liegt lokal unter docs/api/swagger/ statt per CDN: Die Doku soll
- * nicht von einem fremden Host abhaengen und auch offline funktionieren.
+ * Swagger UI kommt nicht per CDN: Die Doku soll nicht von einem fremden Host
+ * abhaengen und auch offline funktionieren. Die Seite laedt sie relativ aus
+ * ./swagger/; dorthin legt sie der Vite-Build aus dem npm-Paket
+ * swagger-ui-dist (frontend/scripts/swagger-ui.mjs, seit 02.10.2026 statt
+ * einer Handkopie in public/). Welche Dateien die Seite laedt, muss zu
+ * SWAGGER_DATEIEN dort passen -- swaggerUi.test.ts prueft das.
  */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';

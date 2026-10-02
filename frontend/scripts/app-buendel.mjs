@@ -38,6 +38,12 @@
  * appBuendelPruefen(); der Build bricht ab, wenn es nicht stimmt, und die
  * Release-Workflows prüfen nach `cap sync` noch einmal die Kopie im
  * nativen Projekt (scripts/app-buendel-pruefen.mjs).
+ *
+ * Das gilt auch für das, was Vite SELBST unter docs/ erzeugt: Seit dem
+ * 02.10.2026 legt swagger-ui.mjs die Swagger-UI-Dateien beim Bauen nach
+ * dist/docs/api/swagger/ (aus dem Paket swagger-ui-dist statt aus public/).
+ * appDateien() lässt sie aus, statt sie erst zu kopieren und dann zu
+ * beanstanden.
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -123,11 +129,13 @@ export function istAppDateiAusPublic(pfad) {
  * Welche Dateien aus `dist` ins App-Bündel gehören: alles, was Vite erzeugt
  * hat, plus die freigegebenen public/-Dateien. Erkannt wird eine public/-
  * Datei daran, dass sie unter demselben Pfad in `publicVerzeichnis` liegt.
+ * Was nur ins Web gehört (istNurWeb), bleibt draußen, auch wenn Vite es
+ * erzeugt hat — die Swagger-UI-Dateien unter docs/api/swagger/.
  */
 export function appDateien(distVerzeichnis, publicVerzeichnis) {
   const ausPublic = new Set(publicVerzeichnis ? alleDateien(publicVerzeichnis) : []);
   return alleDateien(distVerzeichnis).filter((pfad) =>
-    !ausPublic.has(pfad) || istAppDateiAusPublic(pfad));
+    !istNurWeb(pfad) && (!ausPublic.has(pfad) || istAppDateiAusPublic(pfad)));
 }
 
 /**
