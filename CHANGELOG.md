@@ -151,10 +151,10 @@ iOS-Build 237 · Android versionCode 131
   zählt, was seit dem letzten Öffnen dazukam: eine neue Challenge, neue
   Beiträge in der Galerie und die Entscheidung des Teams über den eigenen
   Beitrag. Öffnen setzt die Zahl zurück.
-- Android: Einladungslinks, der Link aus der Passwort-vergessen-Mail und der
-  Anmelde-Link der Webseite öffnen direkt die App, wenn sie installiert ist —
-  ohne Nachfrage und ohne Umweg über den Browser. Webseite, Datenschutz und
-  Handbuch bleiben im Browser.
+- Einladungslinks, der Link aus der Passwort-vergessen-Mail und der
+  Anmelde-Link der Webseite öffnen auf Android und auf dem iPhone direkt die
+  App, wenn sie installiert ist — ohne Nachfrage und ohne Umweg über den
+  Browser. Webseite, Datenschutz und Handbuch bleiben im Browser.
 - Die Auslastungsanzeige ist ein Betriebs-Überblick geworden. Ganz oben steht
   in einem Satz, ob gerade alles läuft. Darunter: wie viele Anfragen zügig
   genug waren, wie viele Menschen in der letzten Stunde unterwegs waren und
@@ -423,6 +423,8 @@ iOS-Build 237 · Android versionCode 131
   aller Gemeinden. An den angezeigten Zahlen ändert sich nichts.
 - Die App gibt Deutsch als ihre Sprache an. Vorlesefunktionen wie VoiceOver
   und TalkBack lesen sie deshalb mit deutscher Stimme vor statt mit englischer.
+- Auf der Anmeldeseite sind Benutzername und Passwort als solche
+  gekennzeichnet, damit Passwort-Manager und Hilfsmittel die Felder erkennen.
 - Nachrichten in großen Gruppen kommen schneller an: Die Mitteilungen aufs
   Handy werden für alle Teilnehmenden zusammen vorbereitet statt für jede
   Person einzeln. Wer die Nachricht bekommt, was darin steht und welche Zahl

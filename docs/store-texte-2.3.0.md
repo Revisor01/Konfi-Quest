@@ -42,7 +42,10 @@ ist neu?" in der App.
    Mitteilung führt zum Event, App-Sperre „Sofort", Mitteilungen an große
    Gruppen.
 9. **Behoben, nur Android:** Mitteilungen nach Update oder Neuanmeldung und
-   bei offener App, PDF und Word in Chat und Material, App-Links.
+   bei offener App, PDF und Word in Chat und Material.
+10. **Links aus Einladung und Passwort-Mail öffnen die App** — auf Android als
+   Reparatur der App-Links, auf dem iPhone neu (Universal Links, ab Build 240,
+   Simon 02.10.2026).
 
 **Upload von PDF und Word vom Android-Handy:** im Gerätetest mit Build 133
 am 02.10.2026 bestätigt (Download-Ordner und Google Drive, Chat und
@@ -66,12 +69,14 @@ Store-Text nicht vorkommt. Die Sortierung bei Pflicht-Events ist seit PR
 > sonst endet die Prüfung zu früh.
 
 > **Die Android-Reparaturen gehören hier NICHT hinein** (Mitteilungen nach
-> Update, Absturz beim Antippen, App-Links, Systemleiste, Reiterleiste). Sie
+> Update, Absturz beim Antippen, Systemleiste, Reiterleiste). Sie
 > betrafen ausschließlich das andere System; auf dem iPhone kamen die
 > Mitteilungen durchgehend an. Sie zu erwähnen wäre ein Plattform-Verweis und
-> zugleich sachlich falsch.
+> zugleich sachlich falsch. Der Satz über die Links ist keine solche
+> Reparatur: Auf dem iPhone öffnen sie die App mit 2.3.0 zum ersten Mal
+> (Universal Links, ab Build 240).
 
-> **Höchstens 4.000 Zeichen.** Der Text unten hat 2.231.
+> **Höchstens 4.000 Zeichen.** Der Text unten hat 2.343.
 
 ```
 Ein Postfach für alles, was die App dir mitteilen will: Oben rechts steht jetzt eine Glocke. Dahinter sammeln sich Badges, Anträge und die Entscheidungen dazu, Punkte, Level-Aufstiege, Anmeldungen und Änderungen an Events – auch das, was du als Push verpasst hast. Antippen führt an die passende Stelle, „Alle gelesen“ räumt auf.
@@ -87,6 +92,8 @@ Dateien im Material und Bilder in Challenges bleiben nach dem ersten Öffnen auf
 Bei Pflicht-Events steht die Konfi-Liste nach Vornamen. Wer von der Leitung aus einem Event ausgetragen wird, bekommt eine Mitteilung. Nach jeder Passwortänderung kommt eine Bestätigung per E-Mail. Einladungscodes gelten wahlweise 7 bis 90 Tage.
 
 Bei der Beförderung ins Team bleibt die Konfi-Zeit erhalten: besuchte Events, Punkte, Badges und der Konfispruch.
+
+Links aus der Einladung und aus der Mail „Passwort vergessen“ öffnen direkt die App, wenn sie installiert ist.
 
 Die App folgt dem Dunkelmodus des Geräts, und die Leitung hat eine eigene Farbe. Nach dem Update zeigt eine Übersicht, was sich geändert hat – jederzeit nachlesbar unter „Was ist neu?“. Absturzberichte lassen sich im Profil abschalten.
 

@@ -643,10 +643,12 @@ dazu jeder Weg, auf dem ein Ziel von außen hereinkommt:
   `frontend/src/navigation/PushZielNavigation.tsx`. Auch ein `..` in einer
   Kennung ändert nichts: Das Ziel beginnt mit `/` und einem Buchstaben,
   `pushState` bleibt auf derselben Adresse.
-- **App-Links (Android):** `deepLinkZiel` (`frontend/src/utils/deepLinks.ts`)
+- **App-Links (Android) und Universal Links (iOS, seit 02.10.2026):**
+  `deepLinkZiel` (`frontend/src/utils/deepLinks.ts`)
   nimmt nur `https://konfi-quest.de` und nur Pfade, die mit `/login`,
   `/register` oder `/reset-password` beginnen — geprüft nach `new URL()`, das
-  Backslashes schon in `/` umwandelt.
+  Backslashes schon in `/` umwandelt. Beide Systeme liefern über dasselbe
+  Ereignis `appUrlOpen`, es gibt keinen zweiten Weg.
 - **Umleitungen alter Adressen:** `umleitungsZiel`
   (`frontend/src/components/layout/MainTabs.tsx`) füllt Werte aus der
   Adresszeile nur in feste Vorlagen aus

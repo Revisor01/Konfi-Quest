@@ -41,7 +41,7 @@ J (Code-Nachzügler, Tests, Dependabot, Notfall-Probelauf); Ergebnis unten unter
 
 ## Paket 5: Build, CI und Werkzeug
 
-- BF-02: iOS-Deep-Links: `apple-app-site-association` ist ein Platzhalter und wird so ausgeliefert (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** (die Datei); Universal Links einschalten liegt bei Simon
+- BF-02: iOS-Deep-Links: `apple-app-site-association` ist ein Platzhalter und wird so ausgeliefert (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.** (die Datei); Universal Links **eingeschaltet 02.10.** (Entitlement, ab iOS-Build 240)
 - BF-04: Kein `concurrency`-Schutz — parallele Deploys können sich überholen (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **behoben 29.09.**
 - BF-05: Jeder Push auf `main` erzeugt tagsüber eine Deploy-Lücke; „nachts unkritisch" stimmt nicht (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **offen** — Ursache belegt: Portainer erstellt bei jedem Deploy alle Dienste neu; Messung und Umbau im Auftrag 10
 - BF-06: Backend-Image läuft als root, enthält Dev-Abhängigkeiten, Tests, Schema-Dump und Compiler (MITTEL) — [ci-deployment-store](../2026-09-26/ci-deployment-store.md) → **teilweise** — Image aus dem Lockfile, ohne Dev-Pakete, Tests und Compiler (1,92 GB → 486 MB); der Prozess läuft weiter als root (Auftrag 09)
@@ -365,7 +365,10 @@ Teamer-Badges gelten je Gemeinde.
   `docs/store-texte-2.3.0.md` und `frontend/release-notes-de.txt` (ohne den
   Android-Upload, solange er am Gerät nicht bestätigt ist).
 - Datenschutzerklärung 9a: gegengelesen, erledigt.
-- Universal Links: Rückfrage („was ist das") — erklärt; Entscheidung offen.
+- Universal Links: Rückfrage („was ist das") — erklärt. **Entschieden 02.10.:**
+  „Dann Universal Links als Erstes, noch in 2.3.0." — Entitlement
+  `applinks:konfi-quest.de` gesetzt, iOS-Build 240; vorher im Apple-Developer-Konto
+  „Associated Domains" einschalten und das Profil neu erzeugen.
 - Firebase-Schlüssel und Crashlytics: erledigt, bleibt so.
 - Schritte beim Release selbst (Datum im CHANGELOG, Tag `2.3.0`, Track
   `production`): „machen wir, wenn es dran ist".
@@ -382,7 +385,8 @@ Produktentscheidungen und das Store-Release selbst.
 
 - **Store und Konten:** Git-Tag `2.3.0` für den schon ausgelieferten Stand (die automatischen Tags
   gelten ab dem nächsten Upload); Store-Texte 2.3.0 (CI BF-08); Universal Links einschalten
-  (Entitlement `applinks:konfi-quest.de`); Firebase-Schlüssel in der Google-Cloud-Konsole
+  (Entitlement `applinks:konfi-quest.de`) — im Repo erledigt 02.10., im
+  Apple-Developer-Konto noch die Fähigkeit und das Profil; Firebase-Schlüssel in der Google-Cloud-Konsole
   einschränken; ob App Store Connect bei den Uploads 221–230 wegen des Icons gewarnt hat.
 - **Betrieb:** `backend-test` auf `test-latest` stellen; Screenshots nach dem Deploy (Auftrag 08);
   Umami bereinigen; Grenze des Mail-Anbieters erfragen.

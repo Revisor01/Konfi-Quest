@@ -1154,7 +1154,7 @@ useEffect(() => {
   }, [user]);
 
   // App Links: Ein Link auf konfi-quest.de (Einladung, Passwort-Reset, Login)
-  // oeffnet die App, Android liefert die Adresse ueber 'appUrlOpen'. Bewusst
+  // oeffnet die App, Android und iOS liefern die Adresse ueber 'appUrlOpen'. Bewusst
   // OHNE [user]-Abhaengigkeit und ausserhalb des Push-Effekts: Die Einladung
   // wird gerade von denen angetippt, die noch NICHT angemeldet sind. Das Ziel
   // geht ueber pushZielMelden an den Router (siehe utils/deepLinks.ts).

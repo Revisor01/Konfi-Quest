@@ -258,6 +258,15 @@ jobs:
           print(f'Profil installiert: {out} ({out.stat().st_size} Bytes)')
           PYEOF
 
+      # Erlaubt das Profil jede Berechtigung aus AppRelease.entitlements?
+      # Sonst bricht xcodebuild erst beim Signieren ab -- hier steht es vorher,
+      # mit dem Weg im Apple-Developer-Konto (02.10.2026, Universal Links:
+      # associated-domains braucht die eingeschaltete Faehigkeit UND ein danach
+      # neu erzeugtes Profil). Skript und Test:
+      # .github/scripts/profil-pruefen.py, betrieb/profilPruefen.test.ts.
+      - name: Profil gegen die Berechtigungen der App pruefen
+        run: python3 .github/scripts/profil-pruefen.py "$HOME/Library/MobileDevice/Provisioning Profiles/Konfi Quest AppStore CI.mobileprovision" frontend/ios/App/App/AppRelease.entitlements
+
       - name: Archiv bauen
         working-directory: frontend/ios/App
         env:

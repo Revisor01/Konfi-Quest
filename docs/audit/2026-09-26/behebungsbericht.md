@@ -730,7 +730,7 @@ Datenschutzerklärung (mehrere Gemeinden, Crashlytics), Verarbeitungsverzeichnis
 Absturzdiagnose abschaltbar; Chat-Texte im Push an Firebase/Apple klären; Datenauskunft nach
 Art. 15; Melden und Blockieren im Chat, falls die Store-Prüfung es verlangt; Sicherung mit
 Rückspielprobe üben, Notfall-Deploy proben; Lasttest (Sockets, Node-Speicher); Universal Links
-(AASA-Platzhalter); Feature-Empfehlungen E-01 bis E-04, E-06 bis E-08 und die zehn offenen
+(AASA-Platzhalter; eingeschaltet 02.10.2026, ab iOS-Build 240); Feature-Empfehlungen E-01 bis E-04, E-06 bis E-08 und die zehn offenen
 Produktfragen.
 
 ## Was bei Simon liegt
@@ -743,7 +743,8 @@ Produktfragen.
 3. **Den Merge freigeben.** Danach Phase B–D (Abschnitt oben).
 4. **Entscheidungen, die noch offen sind:** Nutzungsmessung S1–S17 (`docs/messung/umami.md`);
    Material-Bilder beim Hochladen verkleinern oder nicht; Videos (Empfehlung: so lassen); die
-   zehn Produktfragen der Feature-Empfehlungen; Universal Links. Am 28.09. gestellt und
+   zehn Produktfragen der Feature-Empfehlungen; Universal Links (entschieden 02.10.: noch in
+   2.3.0). Am 28.09. gestellt und
    **entschieden:** Das Bestätigen einer Wartenden bei vollem Event fragt nach und bestätigt dann
    trotzdem (Simon: „C bitte", Variante c) — gebaut am 28.09., siehe Abschnitt „Nacht zum 28.09."
 5. **Autorenschaft älterer Commits:** Ein Teil des Branches trägt noch „Claude" als Autor.

@@ -1,22 +1,29 @@
-// App Links (Android): Ein Link auf konfi-quest.de oeffnet die App statt des
-// Browsers. Android liefert die Adresse ueber das Capacitor-Ereignis
-// 'appUrlOpen' -- beim Kaltstart genauso wie bei laufender App
-// (BridgeActivity ruft in onCreate onNewIntent(getIntent()) auf, das
-// App-Plugin haelt das Ereignis bis zum ersten Lauscher zurueck). Ein
-// einziger Lauscher reicht deshalb, getLaunchUrl ist nicht noetig.
+// App Links (Android) und Universal Links (iOS, seit 02.10.2026): Ein Link
+// auf konfi-quest.de oeffnet die App statt des Browsers. Beide Systeme
+// liefern die Adresse ueber das Capacitor-Ereignis 'appUrlOpen' -- beim
+// Kaltstart genauso wie bei laufender App. Android: BridgeActivity ruft in
+// onCreate onNewIntent(getIntent()) auf. iOS: SceneDelegate reicht
+// scene(_:continue:) an SceneDelegateProxy weiter; beim Kaltstart stellt der
+// Proxy die userActivities aus den connectionOptions erst zu, wenn die
+// Plugins geladen sind (capacitorViewDidAppear). Auf beiden Seiten haelt das
+// App-Plugin das Ereignis bis zum ersten Lauscher zurueck
+// (retainUntilConsumed). Ein einziger Lauscher reicht deshalb, getLaunchUrl
+// ist nicht noetig.
 //
 // Der Weg zum Router ist derselbe wie beim angetippten Push: Das Ziel wird
 // ueber pushZielMelden abgelegt und PushZielNavigation navigiert -- KEIN
 // window.location.href, das im nativen WebView die App neu aufbaut und beim
 // Hochfahren der Activity abstuerzt (Befund aus dem Gerätetest 23.09.2026).
 //
-// Welche Links die App annimmt, steht hier UND im AndroidManifest
-// (intent-filter mit autoVerify). Beide Listen muessen deckungsgleich sein,
-// der Test in __tests__/navigation/appLinksAndroid.test.ts prueft das.
+// Welche Links die App annimmt, steht hier, im AndroidManifest (intent-filter
+// mit autoVerify) und in public/.well-known/apple-app-site-association. Alle
+// drei Listen muessen deckungsgleich sein; __tests__/navigation/
+// appLinksAndroid.test.ts und appLinksIos.test.ts pruefen das, der zweite
+// auch die Hosts in den iOS-Entitlements.
 import { App, type URLOpenListenerEvent } from '@capacitor/app';
 import { pushZielMelden } from './pushNavigation';
 
-/** Hosts, fuer die Android der App die Links zuweist (android:host). */
+/** Hosts, fuer die Android und iOS der App die Links zuweisen (android:host, applinks:). */
 export const APP_LINK_HOSTS: readonly string[] = ['konfi-quest.de'];
 
 /**
@@ -29,7 +36,7 @@ export const APP_LINK_HOSTS: readonly string[] = ['konfi-quest.de'];
 export const APP_LINK_PFADE: readonly string[] = ['/login', '/register', '/reset-password'];
 
 /**
- * In-App-Ziel fuer eine von Android gelieferte Adresse. Leerer String =
+ * In-App-Ziel fuer eine von Android oder iOS gelieferte Adresse. Leerer String =
  * nichts tun (fremder Host, kein https, Pfad ohne Seite in der App, Unsinn).
  *
  * Abfrage und Anker bleiben erhalten: Der Einladungscode steckt in ?code=,
@@ -45,7 +52,7 @@ export const deepLinkZiel = (url: string): string => {
   if (adresse.protocol !== 'https:') return '';
   if (!APP_LINK_HOSTS.includes(adresse.hostname.toLowerCase())) return '';
 
-  // Wie Androids pathPrefix: reiner Anfangsvergleich.
+  // Wie Androids pathPrefix und die *-Muster der AASA: reiner Anfangsvergleich.
   const pfad = adresse.pathname;
   if (!APP_LINK_PFADE.some((prefix) => pfad.startsWith(prefix))) return '';
 

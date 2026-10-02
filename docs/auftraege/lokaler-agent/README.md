@@ -375,7 +375,8 @@ Nicht für den lokalen Agenten, sondern bei Simon:
   teilen, auf dem iPhone ein Tipp auf die Statusleiste scrollt nach oben
   (entscheidet, ob `@capacitor/status-bar` bleibt).
 - Store-Release 2.3.0 mit Store-Texten und Git-Tag `2.3.0`, Universal Links
-  (Entitlement), die Firebase-Schlüssel in der Google-Cloud-Konsole, die zwei
+  (Entitlement im Repo seit 02.10., Fähigkeit und Profil im Apple-Konto bei
+  Simon), die Firebase-Schlüssel in der Google-Cloud-Konsole, die zwei
   react-router-Alerts auf GitHub schließen (`docs/offene-befunde.md` Nr. 15)
   und die offenen Fragen in `docs/audit/2026-09-28/offene-punkte.md`, Abschnitt
   „Bei Simon".

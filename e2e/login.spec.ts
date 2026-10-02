@@ -22,6 +22,20 @@ test.describe('Login-Flow', () => {
     await expect(page.locator('ion-content')).toBeVisible();
   });
 
+  // Zweck der Felder (02.10.2026, WCAG 1.3.5): ion-input setzt sonst
+  // autocomplete="off" auf das innere <input>; Passwort-Manager und
+  // Hilfsmittel erfuhren nicht, was hier hingehoert. In jsdom kommen
+  // Ionic-Props nicht am Feld an, deshalb steht der Test hier im Browser.
+  test('Benutzername und Passwort nennen ihren Zweck (autocomplete)', async ({ page }) => {
+    await page.goto('/login');
+    const usernameInput = page.locator('input[placeholder="Dein Nutzername"]');
+    const passwordInput = page.locator('input[placeholder="Dein Passwort"]');
+    await usernameInput.waitFor({ state: 'visible', timeout: 10_000 });
+
+    await expect(usernameInput).toHaveAttribute('autocomplete', 'username');
+    await expect(passwordInput).toHaveAttribute('autocomplete', 'current-password');
+  });
+
   test('Falsches Passwort zeigt Fehlermeldung', async ({ page }) => {
     await page.goto('/login');
 

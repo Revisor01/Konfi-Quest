@@ -307,7 +307,10 @@ const LoginView: React.FC = () => {
               <WartungsHinweis style={{ margin: '0 0 var(--app-abstand-basis)' }} />
 
               {/* Feldnamen per aria-label: Ionic 9 bindet das Geschwister-IonLabel nicht mehr an das Feld;
-                  das sichtbare Label bleibt fuer das Layout (Audit 26.09.2026, UI BF-01). */}
+                  das sichtbare Label bleibt fuer das Layout (Audit 26.09.2026, UI BF-01).
+                  autocomplete (02.10.2026): ion-input setzt sonst "off". "username" und
+                  "current-password" sagen Passwort-Managern und Hilfsmitteln, was hier
+                  hingehoert (WCAG 1.3.5, Zweck von Eingaben bestimmen). */}
               <IonItem lines="none" className="app-auth-input">
                 <IonIcon icon={ICON_PERSON_GEFUELLT} slot="start" color="medium" />
                 <IonLabel position="stacked" className="app-auth-input__label">
@@ -320,6 +323,7 @@ const LoginView: React.FC = () => {
                   onKeyDown={beiEnter(anmeldenPerTastatur)}
                   placeholder="Dein Nutzername"
                   className="app-auth-input__value"
+                  autocomplete="username"
                   autocapitalize="none"
                   autocorrect={false}
                   spellcheck={false}
@@ -339,6 +343,7 @@ const LoginView: React.FC = () => {
                   onKeyDown={beiEnter(anmeldenPerTastatur)}
                   placeholder="Dein Passwort"
                   className="app-auth-input__value"
+                  autocomplete="current-password"
                   autocapitalize="none"
                   autocorrect={false}
                   spellcheck={false}
