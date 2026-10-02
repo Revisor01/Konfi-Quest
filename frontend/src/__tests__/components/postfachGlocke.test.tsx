@@ -411,7 +411,7 @@ describe('Zahl an der Glocke: auf der Ecke des Symbols, Pille und Knopf beschnei
 
   // Android (MD3): Knopf 48x48 (Kreis Radius 24), .button-inner 24px hoch
   // und mittig (12px Einzug oben), Symbol 24px, Zahl 18px an .button-inner.
-  // Malte (25.09.2026): "auf android ist der blaue badge abgeschnitten."
+  // Gerätetest (25.09.2026): "auf android ist der blaue badge abgeschnitten."
   const MD = { KNOPF: 48, INNER_OBEN: 12, INNER_HOEHE: 24 };
   const mdAbstandZurKnopfmitte = (top: number, right: number): number => {
     const mitte = { x: MD.KNOPF - right - ZAHL / 2, y: MD.INNER_OBEN + top + ZAHL / 2 };

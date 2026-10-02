@@ -569,7 +569,7 @@ so nicht haltbar.
 - **Simons Befund 04.09.2026 (Logout bleibt hängen, `logoutInProgress`):**
   behoben bestätigt — `auth.ts:63-197` (try/finally), `auth.test.ts` „ein Fehler
   in clearAuth blockiert den naechsten Logout NICHT" grün.
-- **Maltes Befund 23.09.2026 (Push-Tap: Reload-Absturz):** behoben bestätigt —
+- **Befund aus dem Gerätetest 23.09.2026 (Push-Tap: Reload-Absturz):** behoben bestätigt —
   kein `window.location` mehr in `AppContext.tsx` (Suche), Ziel läuft über
   `pushZielMelden` → `PushZielNavigation` (`pushZielNavigation.test.tsx` grün).
   Verbliebene harte Navigationen: `LoginView.tsx:86` (`window.location.replace`

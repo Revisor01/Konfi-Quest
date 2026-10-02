@@ -324,7 +324,7 @@ describe('Push-Token: Nachfassen statt stillem Verlust', () => {
   });
 
   /*
-   * ABMELDEN UND WIEDER ANMELDEN (23.09.2026, Fall Malte, Android).
+   * ABMELDEN UND WIEDER ANMELDEN (23.09.2026, Gerätetest, Android).
    *
    * Der Logout loescht den Token serverseitig (auth.ts, DELETE /device-token),
    * raeumte aber keine der App-internen Sperren: `pushAlreadyRegistered` blieb
@@ -348,7 +348,7 @@ describe('Push-Token: Nachfassen statt stillem Verlust', () => {
     await act(async () => { steuerung!.setUser(NUTZER); });
     await act(async () => { await Promise.resolve(); });
     const melden = registrierungsListener();
-    await act(async () => { melden!({ value: 'fcm-token-malte' }); });
+    await act(async () => { melden!({ value: 'fcm-token-testgeraet' }); });
     await act(async () => { await vi.advanceTimersByTimeAsync(100); });
     expect(apiPost).toHaveBeenCalledTimes(1);
 
@@ -365,7 +365,7 @@ describe('Push-Token: Nachfassen statt stillem Verlust', () => {
     // Vorher: kein POST, dauerhaft kein Push. Jetzt muss der Token erneut raus.
     expect(apiPost).toHaveBeenCalledWith(
       '/notifications/device-token',
-      expect.objectContaining({ token: 'fcm-token-malte', platform: 'android' })
+      expect.objectContaining({ token: 'fcm-token-testgeraet', platform: 'android' })
     );
   });
 
@@ -479,7 +479,7 @@ describe('Push-Token: Nachfassen statt stillem Verlust', () => {
   });
 
   /*
-   * ANMELDEN, WENN 'registration' SCHWEIGT (23.09.2026, Fall Malte, Android).
+   * ANMELDEN, WENN 'registration' SCHWEIGT (23.09.2026, Gerätetest, Android).
    *
    * Der eigentliche Kern des Android-Problems: Es gab genau EINEN Weg zum
    * Token — register() aufrufen und auf das Ereignis 'registration' warten.

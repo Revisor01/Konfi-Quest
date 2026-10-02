@@ -8,7 +8,7 @@
 // Der Weg zum Router ist derselbe wie beim angetippten Push: Das Ziel wird
 // ueber pushZielMelden abgelegt und PushZielNavigation navigiert -- KEIN
 // window.location.href, das im nativen WebView die App neu aufbaut und beim
-// Hochfahren der Activity abstuerzt (Maltes Befund 23.09.2026).
+// Hochfahren der Activity abstuerzt (Befund aus dem Gerätetest 23.09.2026).
 //
 // Welche Links die App annimmt, steht hier UND im AndroidManifest
 // (intent-filter mit autoVerify). Beide Listen muessen deckungsgleich sein,

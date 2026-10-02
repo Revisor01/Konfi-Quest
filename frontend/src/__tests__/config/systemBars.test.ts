@@ -7,7 +7,7 @@ import config from '../../../capacitor.config';
  * Systemleisten auf Android: Status- und Navigationsleiste (Zurueck, Start,
  * Uebersicht) liegen seit Capacitor 8 durchsichtig ueber der App.
  *
- * Malte (Android, Telefon im Dunkelmodus, 25.09.2026): "unten das Android
+ * Gerätetest (Android, Telefon im Dunkelmodus, 25.09.2026): "unten das Android
  * Menue ist im Handy Darkmode unsichtbar. In einem Chat lustigerweise leicht
  * sichtbar."
  *
@@ -22,7 +22,7 @@ import config from '../../../capacitor.config';
  * dunkel -> App dunkel -> weisse Symbole auf dunkler App. Die dritte
  * Pruefung koppelt beides weiterhin, nur andersherum: Wer den Dunkelmodus
  * wieder abschaltet, faellt hier und muss die Leisten auf LIGHT festnageln,
- * statt dass Malte sie wieder nicht sieht.
+ * statt dass sie wieder niemand sieht.
  */
 describe('Systemleisten auf Android (SystemBars)', () => {
   it('die Symbole der Leisten folgen dem Telefon-Thema (style DEFAULT), wie die App selbst', () => {

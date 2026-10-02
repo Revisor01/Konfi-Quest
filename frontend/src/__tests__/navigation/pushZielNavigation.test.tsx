@@ -1,6 +1,6 @@
 // Gegenstueck zu pushZielUebergabe.test.ts: Dort wird das Ziel gemeldet, hier
 // wird es eingeloest — ueber den Router, nicht ueber einen Neuaufbau der App
-// (Maltes Absturz beim Antippen eines Pushes auf Android, 23.09.2026).
+// (Absturz beim Antippen eines Pushes im Gerätetest auf Android, 23.09.2026).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 
@@ -73,7 +73,7 @@ describe('PushZielNavigation', () => {
   // SIMONS BEFUND (26.09.2026): "Event aus Postfach oeffnen. Zurueck klicken
   // ohne Funktion." Ursache war 'root'/'replace' -- richtig fuer einen
   // angetippten Push (die App faehrt hoch, im WebView darf keine gecachte
-  // Seite stehenbleiben, Maltes Absturzbefund), falsch aus der laufenden App:
+  // Seite stehenbleiben, Absturzbefund aus dem Gerätetest), falsch aus der laufenden App:
   // Der geleerte Stack laesst den Zurueck-Knopf ins Leere greifen.
   it('aus der laufenden App bleibt der Seiten-Stack stehen (Rueckweg)', async () => {
     render(<PushZielNavigation />);

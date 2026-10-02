@@ -5,7 +5,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 // ---------------------------------------------------------------------------
-// Maltes Befund 23.09.2026 (Android, App 2.3.0/118):
+// Befund aus dem Gerätetest 23.09.2026 (Android, App 2.3.0/118):
 // "Der erste Login der automatisch das Android Fingerabdruck hoch holt hat aber
 // in 2 von 2 Versuchen fehlgeschlagen (Tippe nochmal um es erneut zu versuchen
 // oder so), wenn ich nach dem Fehlschlag haendisch jeweils dann mit Biometrie
@@ -40,7 +40,7 @@ import { resolve } from 'path';
 // seinen Code 15 ab, und services/biometrics.ts zaehlt 15 (SYSTEM_CANCEL) zu den
 // Abbruch-Codes: Der Sperrbildschirm zeigte "Nicht erkannt. Tippe noch einmal",
 // obwohl niemand abgebrochen hatte. Der haendische Versuch danach war der
-// einzige laufende und ging durch — genau Maltes Bild.
+// einzige laufende und ging durch — genau das Bild aus dem Gerätetest.
 // Auf iOS haengt der Prompt an der laufenden Activity, dort fiel es nicht auf.
 //
 // BEHOBEN AUF ZWEI EBENEN:
@@ -164,7 +164,7 @@ describe('Reconciliation: warum der Sperrbildschirm doppelt fragte', () => {
   });
 });
 
-describe('Der erste, automatische Versuch (Maltes Befund)', () => {
+describe('Der erste, automatische Versuch (Befund aus dem Gerätetest)', () => {
   it('fragt das Geraet GENAU EINMAL, auch wenn der Sperrbildschirm neu montiert wird', async () => {
     // DER KERN DES BEFUNDS. Der Sperrbildschirm wird hier absichtlich neu
     // montiert (verschobene Position). Trotzdem darf nur EIN Prompt beim Geraet
@@ -216,7 +216,7 @@ describe('Der erste, automatische Versuch (Maltes Befund)', () => {
   });
 
   it('zeigt nach einer verdraengten Abfrage NICHT mehr "Nicht erkannt"', async () => {
-    // Genau der falsche Text aus Maltes Befund. Er entstand, weil der zweite
+    // Genau der falsche Text aus dem Gerätetest. Er entstand, weil der zweite
     // Aufruf den ersten mit ERROR_CANCELED (Plugin-Code 15) beendete und der
     // Sperrbildschirm 15 als Abbruch las. Ohne zweiten Aufruf entsteht er nicht.
     mockVerify.mockImplementation(() => new Promise(() => {}));
@@ -242,7 +242,7 @@ describe('Der erste, automatische Versuch (Maltes Befund)', () => {
   });
 
   it('laesst den haendischen Versuch nach einem Fehlschlag weiter zu', async () => {
-    // Der Weg, der bei Malte funktioniert hat, muss offen bleiben: nach einem
+    // Der Weg, der im Gerätetest funktioniert hat, muss offen bleiben: nach einem
     // gescheiterten automatischen Versuch oeffnet der Knopf eine NEUE Abfrage
     // beim Geraet. Der Merker darf den Knopf nicht totstellen.
     const entsperrt = vi.fn();

@@ -4550,7 +4550,7 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
        begrenzt hier also nichts, was nicht schon der Kreis begrenzt; ein
        frueherer Befund ("ganzer Knopf dunkler", c409fe23) ist mit dieser
        Geometrie nicht vereinbar und wurde nicht reproduziert -- am Geraet
-       nachsehen (Malte).
+       nachsehen (Gerätetest).
 
    Damit kann die Zahl auf iOS "drueber laufen": Ihr Mittelpunkt (18px,
    Radius 9) sitzt genau auf der rechten oberen Ecke des Symbolkastens
@@ -4570,7 +4570,7 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
    unter die Symbolecke (x 366, y 76) -- praktisch dieselbe Lage wie iOS.
    Der Knopfkreis (Radius 24 um x 353 / y 87) schnitt davon 4,6 % an der
    aeusseren Spitze ab (Abstand 17,03 + 9 = 26,03 > 24, also 2,03px) --
-   Malte (25.09.2026): "auf android ist der blaue badge abgeschnitten".
+   Gerätetest (25.09.2026): "auf android ist der blaue badge abgeschnitten".
    Deshalb gibt ::part(native) jetzt auf BEIDEN Plattformen frei; die Lage
    bleibt. Verworfen: top -7 / right 4 (Abstand 14,87, 100 % im Kreis, aber
    10x11px auf dem Symbol -- Simon: "es muss ueber das Icon gehen", nicht

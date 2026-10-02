@@ -169,7 +169,7 @@ describe('Push-Token: aktiver Abruf, wenn Android nichts meldet', () => {
   });
 
   /*
-   * DER KERN DES ANDROID-PROBLEMS (23.09.2026, Fall Malte).
+   * DER KERN DES ANDROID-PROBLEMS (23.09.2026, Gerätetest).
    *
    * Es gab genau EINEN Weg zum Token: register() aufrufen und auf das
    * Ereignis 'registration' warten. Bei unveraenderter Installation feuert das
@@ -194,7 +194,7 @@ describe('Push-Token: aktiver Abruf, wenn Android nichts meldet', () => {
     await act(async () => {
       render(<AppProvider><Verbraucher /></AppProvider>);
     });
-    // Der Listener bleibt bewusst still — wie auf Maltes Geraet.
+    // Der Listener bleibt bewusst still — wie auf dem Testgeraet.
     await act(async () => { await vi.advanceTimersByTimeAsync(300); });
 
     expect(getTokenMock).toHaveBeenCalled();

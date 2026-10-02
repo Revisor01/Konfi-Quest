@@ -68,7 +68,7 @@ export const waehleRueckblick = <T extends { ausgabe_id?: number | null }>(
  * wird. Der Tap-Handler liegt in AppContext und hat dort keinen Router-Zugriff;
  * navigation/PushZielNavigation lauscht innerhalb des Routers darauf.
  *
- * WARUM NICHT window.location.href (Maltes Befund 23.09.2026, Android):
+ * WARUM NICHT window.location.href (Befund aus dem Gerätetest 23.09.2026, Android):
  * "Da oeffnet sich die App fuer ganz kurz und stuerzt direkt ab." Eine
  * Zuweisung an location.href baut die App im nativen WebView vollstaendig neu
  * auf (capacitor://localhost) — und zwar genau, waehrend Android die Activity
