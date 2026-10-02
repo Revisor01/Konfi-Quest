@@ -1002,6 +1002,39 @@ die ich auch sehen kann und die in einer nativen web version integriert ist."
   dafür gibt es heute schon (`requireSuperAdmin`, `POST /organizations`,
   Mitglieder verwalten); was fehlt, ist die Ansicht.
 
+**Zweiter Nachtrag Simon 02.10.2026 — Gemeinden, Anfragen, Einwilligung:**
+
+- **Gemeinde zuerst:** „ich möchte gerne, dass ich primär eine gemeinde
+  anlegen und dann deren zugehörigkeit auswählen kann. ich will eigentlich das
+  per gemeinde organisieren. aber gut ist zu wissen, statistiken per
+  landeskirche, per kirchenkreis, per gemeinde haben zu können." — Die
+  Gemeinde bleibt die Einheit, in der alles geschieht; Kirchenkreis und
+  Landeskirche sind Zuordnungen an der Gemeinde, vor allem für Statistiken
+  (E-10). Verwaltungsrechte für die oberen Ebenen (E-26) sind damit nicht
+  vorgesehen.
+- **Anfragen über die Homepage:** „mit einer anfragen funktion. offiziell
+  über die homepage. [...] verantwortliche person trägt alles ein. gemeinde,
+  kreis, landeskirche, mail, mobil, anzahl nutzerinnen ca., anzahl
+  teamerinnen ca. und was wir noch brauchen. damit man das schnell bearbeiten
+  kann. und support gerne möglichst professionell." — Ein Anfrageformular auf
+  konfi-quest.de; jede Anfrage landet in der Support-Ansicht und lässt sich
+  dort mit wenigen Schritten in eine Gemeinde samt Zuordnung und erster
+  Gemeindeleitung umwandeln (ersetzt den Antragsweg aus E-03).
+- **Nutzerverwaltung:** „wir bearbeiten nur die org verantwortlichen, alles
+  andere geben wir in die gemeinden ab" — Die Support-Ansicht verwaltet nur
+  die Gemeindeleitungen (Org-Admins); alle übrigen Konten verwaltet die
+  Gemeinde selbst, wie heute.
+- **Einwilligung der Eltern (Frage 1):** „das mit der einwilligung bei
+  anmeldung geht nicht, die kids wissen die mail der eltern oft nicht. [...]
+  bei uns melden die eltern sich über ein formular bei uns an, da willigen die
+  automatisch mit ein [...] ich denke, wir lassen das in den gemeinden und
+  stellen das auf unsere homepage nur zur verfügung." — Keine Bestätigung per
+  Eltern-Mail. Die Einwilligung bleibt Sache der Gemeinde (analog oder mit
+  ihrem Anmeldeformular); konfi-quest.de stellt eine Vorlage bereit. Offen:
+  ein Vermerk „Einwilligung liegt vor" am Konfi-Profil, den nur die Leitung
+  sieht (Simons eigener Gedanke: „kann ja mit in das konfiprofil bzw. die
+  anwesenheitsmatrix").
+
 **Stand 27.09.2026 (vor dem Merge):** Frage 10 ist zum Teil beantwortet — das Ranking bleibt
 und das Handbuch beschreibt es, wie es ist (Entscheidung Simon 27.09.2026, Screens
 Konfi/Teamer BF-03); ob neue Gemeinden es ausgeschaltet bekommen und ob die Antwort Klarnamen

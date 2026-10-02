@@ -391,6 +391,12 @@ Teamer-Badges gelten je Gemeinde.
 - Web-Version: moderne, web-typische Oberfläche mit ein- und ausklappbarer
   Navigation links; Verwaltung und Support-Dashboard als eine Support-Ansicht
   darin, ausgehend von einem Super-Admin-Konto ohne Gemeinde.
+- Gemeinde zuerst, Kirchenkreis und Landeskirche als Zuordnung für
+  Statistiken; Anfrageformular auf der Homepage, das in der Support-Ansicht
+  landet; die Support-Ansicht verwaltet nur Gemeindeleitungen; Einwilligung
+  der Eltern bleibt in den Gemeinden, Vorlage auf der Homepage (Vermerk am
+  Konfi-Profil noch offen). Wortlaut in feature-empfehlungen.md, „Zweiter
+  Nachtrag".
 - „darf freigeben": wird gebaut ([darf-freigeben](darf-freigeben.md)).
 - Mehrfach-Konten: noch einmal prüfen, Ziel ein sauberer Stand für
   Einzelfälle, auch Admin in einer und Teamer:in in einer anderen Gemeinde
