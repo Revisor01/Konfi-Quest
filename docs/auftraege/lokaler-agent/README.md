@@ -11,13 +11,19 @@ liegt und **womit** man sich anmeldet, steht nicht hier — dieses Repo ist
 Reihenfolge von Sicherung bis Testbuild. Ein Merge nach `main` ist der
 Produktions-Deploy; den Merge gibt Simon frei.
 
-## Neu am 02.10.2026 — dringend
+## Jetzt: Store-Freigabe 2.3.0 (02.10.2026)
 
-**[12-token-schluessel-pruefen.md](12-token-schluessel-pruefen.md):** Prüfen,
-ob Produktion noch den alten Entwicklungswert für `JWT_SECRET` benutzt, der
-in einer alten Analyse im öffentlichen Repo stand — und ihn gegebenenfalls
-sofort ersetzen. Dazu den privaten Meldeweg für Sicherheitslücken auf GitHub
-einschalten.
+**[13-store-freigabe-2.3.0.md](13-store-freigabe-2.3.0.md):** 2.3.0 ist
+gemergt (`dac246eb`), der Android-Release läuft. Versions-Tag setzen, Deploy
+prüfen, Android-Lauf verfolgen, iOS-Build 240 in App Store Connect zur
+Prüfung einreichen, beide Prüfungen verfolgen.
+
+## Erledigt am 02.10.2026
+
+**[12-token-schluessel-pruefen.md](12-token-schluessel-pruefen.md):** Alle
+drei Backend-Container tragen einen anderen Schlüssel als den alten
+Entwicklungswert; der private Meldeweg war schon eingeschaltet. Ergebnis in
+der Datei.
 
 ## Rückmeldung des lokalen Agenten, 01.10.2026
 
