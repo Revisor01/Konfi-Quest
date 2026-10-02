@@ -78,14 +78,12 @@ describe('Challenge-Stempel: das alte Wort ist weg', () => {
 describe('Challenge-Stempel: die Erklaertexte aller drei Rollen', () => {
   // Der Widerspruch stand woertlich in sechs Onboarding- und
   // Update-Texten — je zwei pro Rolle. Wird einer vergessen, erklaert die App
-  // derselben Person zwei verschiedene Dinge.
+  // derselben Person zwei verschiedene Dinge. Die Update-Texte von 2.0 sind
+  // seit 02.10.2026 entfernt; es bleiben die drei Onboardings.
   it.each([
     ['Konfi, erste Schritte', 'src/components/konfi/modals/KonfiOnboardingModal.tsx'],
-    ['Konfi, Neuerungen', 'src/components/konfi/modals/KonfiUpdateWalkthroughModal.tsx'],
     ['Teamer, erste Schritte', 'src/components/teamer/modals/TeamerOnboardingModal.tsx'],
-    ['Teamer, Neuerungen', 'src/components/teamer/modals/TeamerUpdateWalkthroughModal.tsx'],
     ['Leitung, erste Schritte', 'src/components/admin/modals/AdminOnboardingModal.tsx'],
-    ['Leitung, Neuerungen', 'src/components/admin/modals/AdminUpdateWalkthroughModal.tsx'],
   ])('%s spricht vom Stempel', (_name, pfad) => {
     const quelle = lies(pfad);
     // Zwei Formulierungen, beide gewollt: Die Texte an Konfis sind direkter

@@ -1,17 +1,20 @@
 import { describe, it, expect } from 'vitest';
 
 // Textbaustein-Test für Onboarding und Update-Walkthrough ALLER drei Rollen.
+// Die Walkthroughs sind seit 02.10.2026 die von 2.3.0; die Fassungen 2.0,
+// 2.1.1 und 2.2.0 sind entfernt, mit ihnen die Prüfungen auf deren Inhalt
+// („Neu: der Mitmachen-Tab", die Tab-Leisten von 2.0).
 // Hintergrund (24.08.2026): Der Tab unten heißt "Mitmachen" und bündelt die
 // Reiter "Events" und "Aktivitäten". Die Touren sprachen teilweise noch vom
 // "Events-Tab", als wäre das der ganze Bereich — dieser Test verhindert, dass
 // die alte Benennung zurückrutscht, und sichert den Kernunterschied
 // (Events: vorher anmelden · Aktivitäten: hinterher melden) in den Texten ab.
 import { SLIDES as konfiOnboarding } from '../../components/konfi/modals/KonfiOnboardingModal';
-import { SLIDES as konfiUpdate } from '../../components/konfi/modals/KonfiUpdateWalkthroughModal';
+import { SLIDES as konfiUpdate } from '../../components/konfi/modals/KonfiUpdate230WalkthroughModal';
 import { SLIDES as teamerOnboarding } from '../../components/teamer/modals/TeamerOnboardingModal';
-import { SLIDES as teamerUpdate } from '../../components/teamer/modals/TeamerUpdateWalkthroughModal';
+import { SLIDES as teamerUpdate } from '../../components/teamer/modals/TeamerUpdate230WalkthroughModal';
 import { SLIDES as adminOnboarding } from '../../components/admin/modals/AdminOnboardingModal';
-import { SLIDES as adminUpdate } from '../../components/admin/modals/AdminUpdateWalkthroughModal';
+import { SLIDES as adminUpdate } from '../../components/admin/modals/AdminUpdate230WalkthroughModal';
 
 type Slide = { title: string; text: string; color?: string; rgb?: string };
 
@@ -28,12 +31,6 @@ const ONBOARDINGS: [string, Slide[]][] = [
   ['Konfi-Onboarding', konfiOnboarding],
   ['Teamer-Onboarding', teamerOnboarding],
   ['Leitungs-Onboarding', adminOnboarding],
-];
-
-const WALKTHROUGHS: [string, Slide[]][] = [
-  ['Konfi-Update-Walkthrough', konfiUpdate],
-  ['Teamer-Update-Walkthrough', teamerUpdate],
-  ['Leitungs-Update-Walkthrough', adminUpdate],
 ];
 
 describe('Onboarding- und Walkthrough-Texte: Mitmachen-Tab', () => {
@@ -73,27 +70,6 @@ describe('Onboarding- und Walkthrough-Texte: Mitmachen-Tab', () => {
     expect(aktivitaeten.text).toContain('hinterher');
   });
 
-  it.each(WALKTHROUGHS)('%s stellt den Mitmachen-Tab mit beiden Reitern vor', (_name, slides) => {
-    const tabSlides = slides.filter((s) => s.title === 'Neu: der Mitmachen-Tab');
-    expect(tabSlides).toHaveLength(1);
-    const text = tabSlides[0].text;
-    expect(text).toContain('Mitmachen');
-    expect(text).toContain('Events');
-    expect(text).toContain('Aktivitäten');
-    // Kernunterschied muss auch im Was-ist-neu stehen.
-    expect(text).toContain('vorher');
-    expect(text).toContain('hinterher');
-  });
-
-  it('Teamer-Walkthrough nennt die echte Tab-Leiste', () => {
-    const text = teamerUpdate.map((s) => s.text).join(' ');
-    expect(text).toContain('Start · Chat · Mitmachen · Challenges · Badges');
-  });
-
-  it('Leitungs-Walkthrough nennt die echte Tab-Leiste', () => {
-    const text = adminUpdate.map((s) => s.text).join(' ');
-    expect(text).toContain('Konfis · Chat · Mitmachen · Challenges · Mehr');
-  });
 });
 
 // ---------------------------------------------------------------------------
