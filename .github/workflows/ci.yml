@@ -602,7 +602,7 @@ jobs:
       # des Endpoints gezogen und dann update_stack ueber die Portainer-API
       # (PUT /api/stacks/249) mit pullImage:false. Mit pullImage:true erstellte
       # Portainer bei jeder Stufe ALLE Dienste neu, auch Postgres -- gemessen
-      # 01.10.2026, Auftrag docs/auftraege/lokaler-agent/10-deploy-luecke.md.
+      # 01.10.2026 (erledigter Auftrag 10 des lokalen Agenten, Git-Historie).
       # Das Skript vergleicht nach jeder Stufe die Container-IDs aller Dienste
       # und warnt mit Namen, wenn eine Stufe mehr als ihre Dienste neu erstellt.
       - name: Rollender Deploy via Portainer-API + Commit-Verify

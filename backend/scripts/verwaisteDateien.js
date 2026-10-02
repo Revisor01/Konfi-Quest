@@ -4,10 +4,10 @@
 // entfernen. EIN Skript fuer die vier Upload-Bereiche (02.10.2026).
 //
 // Bis dahin gab es zwei, die dasselbe unterschiedlich taten:
-//   - scripts/cleanupOrphanPhotos.js (im Image) loeschte ohne Schalter
+//   - das fruehere scripts/cleanupOrphanPhotos.js (im Image) loeschte ohne Schalter
 //     SOFORT und ohne Altersschutz: Eine Datei, deren Zeile die Route gerade
 //     erst schreibt, war schon weg. Nur mit --dry-run blieb alles liegen.
-//   - scripts/verwaiste-dateien.mjs (im Repo-Wurzelverzeichnis) berichtete
+//   - das fruehere scripts/verwaiste-dateien.mjs (Repo-Wurzel) berichtete
 //     nur, schonte junge Dateien und meldete auch die Gegenrichtung -- lag
 //     aber nicht im Image und liess sich im Container gar nicht aufrufen.
 // Jetzt eines, mit dem sicheren Verhalten, im Image.

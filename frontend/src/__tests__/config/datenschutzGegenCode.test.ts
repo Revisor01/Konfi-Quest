@@ -39,14 +39,15 @@ describe('4.3 Geraete-Kennung: der Text folgt dem Code', () => {
    * Bis 29.09.2026 stand dort nur "Geraetetyp und Betriebssystem" und
    * "Push-Notification-Token". Die Kennung, die die App bei Anmeldung,
    * Registrierung und jedem Refresh schickt und die der Server zu Anmeldung
-   * (Migration 171) und Push-Token speichert, kam nicht vor -- dafuer ein
+   * (Spalte refresh_tokens.device_id, seit Migration 171 im Grundschema) und Push-Token speichert, kam nicht vor -- dafuer ein
    * Geraetemodell, das der Server gar nicht speichert.
    */
   const backend = (p: string) => readFileSync(join(process.cwd(), '..', 'backend', p), 'utf8');
 
   it('nennt die Geraete-Kennung und wofuer sie gespeichert wird', () => {
     expect(lies('src/services/geraeteKennung.ts')).toMatch(/Device\.getId\(\)/);
-    expect(backend('migrations/171_refresh_tokens_geraet.sql')).toMatch(/ADD COLUMN IF NOT EXISTS device_id/);
+    expect(readFileSync(join(process.cwd(), '..', 'init-scripts', '01-create-schema.sql'), 'utf8'))
+      .toMatch(/CREATE TABLE public\.refresh_tokens \([^;]*\bdevice_id text\b/);
     expect(text).toContain('Geräte-Kennung:');
     expect(text).toContain('Wir speichern sie zu Ihrer Anmeldung, damit diese nur auf dem Gerät gilt');
   });

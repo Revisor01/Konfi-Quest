@@ -1,9 +1,10 @@
 // backend/tests/utils/verwaisteDateien.test.js
 //
 // scripts/verwaisteDateien.js -- EIN Skript fuer verwaiste Upload-Dateien
-// (02.10.2026), zusammengefuehrt aus scripts/cleanupOrphanPhotos.js (loeschte
-// ohne Schalter sofort, ohne Altersschutz) und scripts/verwaiste-dateien.mjs
-// (sicher, aber nicht im Image).
+// (02.10.2026), zusammengefuehrt aus den frueheren Skripten
+// scripts/cleanupOrphanPhotos.js (frueher: loeschte ohne Schalter sofort, ohne
+// Altersschutz) und scripts/verwaiste-dateien.mjs (frueher: sicher, aber
+// nicht im Image).
 //
 // Die Regel, die hier haengt: Ohne --loeschen wird NICHTS geloescht, und auch
 // mit --loeschen nur eine Waise, die aelter ist als das Mindestalter. Fuer

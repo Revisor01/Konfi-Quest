@@ -26,8 +26,8 @@
 # Release, spaetestens wenn tests/schema/dumpAktualitaet.test.js anschlaegt
 # (zu viele offene Migrationen ueber dem Dump). Ob die Produktion dem
 # erneuerten Stand entspricht, misst der Betrieb mit
-# backend/scripts/schemaVergleich.js (Auftrag
-# docs/auftraege/lokaler-agent/11-schema-und-rueckspielprobe.md);
+# backend/scripts/schemaVergleich.js (docs/betrieb/routinen.md,
+# „Schema-Dump fortschreiben");
 # refresh-schema.sh holt den Dump bei Bedarf direkt aus der Produktion.
 set -euo pipefail
 # Sortierung wie der Migrationslauf (JavaScript sort = Bytefolge), nicht nach

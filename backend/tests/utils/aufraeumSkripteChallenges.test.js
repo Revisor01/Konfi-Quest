@@ -7,8 +7,8 @@
 // challenge_submissions ist nicht mehr auslieferbar (GET /challenges/files
 // sucht die Zeile), bleibt aber auf der Platte liegen.
 //
-// Aufgeraeumt wird seit 02.10.2026 mit scripts/verwaisteDateien.js (vorher
-// scripts/cleanupOrphanPhotos.js); dessen allgemeines Verhalten -- nur mit
+// Aufgeraeumt wird seit 02.10.2026 mit scripts/verwaisteDateien.js
+// (frueher scripts/cleanupOrphanPhotos.js); dessen allgemeines Verhalten -- nur mit
 // --loeschen, nur alte Waisen -- prueft verwaisteDateien.test.js.
 const fs = require('fs');
 const os = require('os');

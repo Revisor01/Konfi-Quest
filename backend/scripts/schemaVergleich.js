@@ -14,8 +14,8 @@
 // gleich, wenn alle Listen gleich sind. Genutzt von:
 //   - tests/schema/neuinstallation.test.js (init-scripts gegen Dump-Weg),
 //   - tests/schema/wiederherstellung.test.js (Sicherung zurueckgespielt),
-//   - der Messung in Produktion (Auftrag
-//     docs/auftraege/lokaler-agent/11-schema-und-rueckspielprobe.md).
+//   - der Messung in Produktion (docs/betrieb/routinen.md, „Schema-Dump
+//     fortschreiben"; der erledigte Auftrag 11 steht in der Git-Historie).
 //
 // Aufruf (eigener Pool -- NICHT database.js, das startet Migrationen):
 //   node scripts/schemaVergleich.js erfassen [DATABASE_URL] > stand.json

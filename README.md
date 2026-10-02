@@ -112,8 +112,8 @@ cd Konfi-Quest
 
 **1. Datenbank anlegen.** Das Grundschema kommt aus `init-scripts/` — ein
 Dump des Produktionsschemas, siehe [init-scripts/README.md](init-scripts/README.md).
-Die Migrationskette in `backend/migrations/` beginnt erst bei `064`; gegen
-eine leere Datenbank liefe der Server ins Leere.
+In `backend/migrations/` liegen nur die Änderungen nach dem Dump (ab `174`);
+gegen eine leere Datenbank liefe der Server ins Leere.
 
 ```bash
 createdb konfi_quest
