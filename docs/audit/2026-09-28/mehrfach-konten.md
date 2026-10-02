@@ -7,6 +7,13 @@ je Gemeinde" in
 Hier wird nichts umgebaut; die Vorlage sammelt, was offen ist, und die Fragen
 dazu.
 
+**Stand 02.10.2026:** Simon: „mehrfach konten müssen wir nochmals überprüfen
+(hier gehts aber im wesentlichen um einzelfälle von teamern in mehrere
+gemeinden eventuell mal admins, es muss nur sauber sein und auch admin -
+teamer können)". Ziel ist also kein Ausbau, sondern ein sauberer Stand für
+diese Einzelfälle — einschließlich Admin in der einen, Teamer:in in der
+anderen Gemeinde. Die Prüfung der sieben Punkte unten steht noch aus.
+
 ## Was schon gilt
 
 - **Konfi oder Team, nie beides** (28.09.2026, `backend/utils/konfiOderTeam.js`):

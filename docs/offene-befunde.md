@@ -685,7 +685,8 @@ Einstiege oben (Push, App-Link, Umleitung) unverändert.
 
 > **Stand 02.10.2026:** Simon, Gerätetest mit Android 133 / iOS 239: „Alle
 > Tests sind positiv. Einzig das Laden aus einem Cloud-Speicher klappt nicht.
-> Nextcloud. Legen wir zur Seite. Sonderfall."
+> Nextcloud. Legen wir zur Seite. Sonderfall." Am Abend: „nextcloud links auf
+> android irgendwann vielleicht" — keine Planung, kein Termin.
 
 **Was geht:** PDF und Word vom Android-Handy in Chat und Material, aus dem
 Download-Ordner und aus Google Drive (seit Build 133: Dokumente werden bei

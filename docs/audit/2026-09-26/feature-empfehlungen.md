@@ -112,7 +112,7 @@ Treffer für `/docs` in `frontend/src` außerhalb von Kommentaren).
 
 ### E-01: Rechtstexte, Einwilligung und Datenschutzhinweis in der App
 
-- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): keine Links auf Datenschutz oder Impressum in der App, kein Zustimmungsfeld bei der Registrierung. Datenschutz und Rechtstexte liegen bei Simon (Produktfrage 1); vor EKD-Ausrollung.
+- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): keine Links auf Datenschutz oder Impressum in der App, kein Zustimmungsfeld bei der Registrierung. Datenschutz und Rechtstexte liegen bei Simon (Produktfrage 1); vor EKD-Ausrollung. **Entschieden 02.10.2026:** Einwilligung der Eltern ist gewollt; das Verfahren ist zu entwerfen.
 - **Für wen:** Konfi / Leitung / Betrieb
 - **Warum jetzt:** Die Registrierung per Einladungscode nimmt `invite_code,
   display_name, username, password, email` entgegen — kein Häkchen, keine
@@ -151,7 +151,7 @@ Treffer für `/docs` in `frontend/src` außerhalb von Kommentaren).
 
 ### E-02: Löschfrist auch ohne Konfirmationstermin greifen lassen
 
-- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): `jahrgaenge.confirmation_date` liest und schreibt weiter keine Route; ohne Konfirmations-Event wird nicht gelöscht. Datenschutz (Produktfrage 2); vor EKD-Ausrollung.
+- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): `jahrgaenge.confirmation_date` liest und schreibt weiter keine Route; ohne Konfirmations-Event wird nicht gelöscht. Datenschutz (Produktfrage 2); vor EKD-Ausrollung. **Entschieden 02.10.2026:** Fristen sind gewollt; Werte und Fall ohne Termin festlegen.
 - **Für wen:** Leitung / Betrieb (Datenschutz)
 - **Warum jetzt:** Die Auto-Löschung leitet den Stichtag aus dem
   `is_konfirmation`-Event ab; fehlt er, passiert nichts — bewusst „sicherer
@@ -185,7 +185,7 @@ Treffer für `/docs` in `frontend/src` außerhalb von Kommentaren).
 
 ### E-03: Gemeinden anlegen ohne Flaschenhals — Antragsweg, EKD-Vorgaben, zweiter Org-Admin
 
-- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): `POST /organizations` nur für Super-Admins, 30-Tage-Testphase als Vorgabe. Mit Punkt 25 der Gesamtabnahme (Simon, 26.09.: alle Gemeinden in einer Datenbank, jede eine Organisation) passt der Vorschlag; wer Gemeinden beantragt, ist Produktfrage 3. Vor EKD-Ausrollung.
+- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): `POST /organizations` nur für Super-Admins, 30-Tage-Testphase als Vorgabe. Mit Punkt 25 der Gesamtabnahme (Simon, 26.09.: alle Gemeinden in einer Datenbank, jede eine Organisation) passt der Vorschlag; wer Gemeinden beantragt, ist Produktfrage 3. Vor EKD-Ausrollung. **Entschieden 02.10.2026:** Gemeinden legt Simon in einer eigenen Verwaltungsoberfläche im Browser an, nicht per Antrag.
 - **Für wen:** Landeskirche / Betrieb / Leitung
 - **Warum jetzt:** `POST /organizations` ist `requireSuperAdmin`
   (`organizations.js:284`); jede Anlage schreibt Name, Slug, Kontakt,
@@ -221,7 +221,7 @@ Treffer für `/docs` in `frontend/src` außerhalb von Kommentaren).
 
 ### E-04: Hilfe und Support in der App
 
-- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): kein Link aufs Handbuch in der App, keine Hilfe-Seite. Vor EKD-Ausrollung (Produktfrage 9).
+- **Status:** offen 27.09.2026 — nicht begonnen (am Stand `b6a67ed1` geprüft): kein Link aufs Handbuch in der App, keine Hilfe-Seite. Vor EKD-Ausrollung (Produktfrage 9). **Entschieden 02.10.2026:** eine Support-Person; Anfragen, Mails, Verwaltung und Kennzahlen in einem Support-Dashboard.
 - **Für wen:** Konfi / Teamer:in / Leitung / Betrieb
 - **Warum jetzt:** README verspricht „Handbuch in der App" (`README.md:61`);
   tatsächlich verlinkt die App das Handbuch nirgends (grep `/docs` in
@@ -317,7 +317,7 @@ unverändert.
 
 ### E-06: Ranking als Opt-in und ohne Klarnamen in der Antwort
 
-- **Status:** offen 27.09.2026 — Simon hat am 27.09. zum Ranking entschieden, das Handbuch anzupassen statt die App (Screens Konfi/Teamer BF-03): Das Ranking bleibt eingeschaltet, und die Antwort trägt weiter Namen und Punkte der drei Besten. Voreinstellung für neue Gemeinden und Klarnamen in der Antwort sind damit nicht entschieden (Produktfrage 10); vor EKD-Ausrollung.
+- **Status:** offen 27.09.2026 — Simon hat am 27.09. zum Ranking entschieden, das Handbuch anzupassen statt die App (Screens Konfi/Teamer BF-03): Das Ranking bleibt eingeschaltet, und die Antwort trägt weiter Namen und Punkte der drei Besten. Voreinstellung für neue Gemeinden und Klarnamen in der Antwort sind damit nicht entschieden (Produktfrage 10); vor EKD-Ausrollung. **Entschieden 02.10.2026:** Das Ranking bleibt auch in neuen Gemeinden an — ein Feature, abschaltbar und im Handbuch erklärt. Kein Opt-in.
 - **Für wen:** Konfi / Leitung
 - **Warum jetzt:** Das Konfi-Dashboard zeigt „Dein Ranking" standardmäßig
   (`backend/routes/konfi.js:335`: `show_ranking` Default `true`); die Antwort
@@ -432,7 +432,7 @@ unverändert.
 
 ### E-10: Landeskirche und Kirchenkreis als Ebene über der Gemeinde, mit anonymen Kennzahlen
 
-- **Status:** offen 27.09.2026 — nicht begonnen. Mit Punkt 25 der Gesamtabnahme (Simon, 26.09.: alle Gemeinden in einer Datenbank) bleibt der Vorschlag innerhalb einer Datenbank umsetzbar; wer lesen darf, ist Produktfrage 4. Später.
+- **Status:** offen 27.09.2026 — nicht begonnen. Mit Punkt 25 der Gesamtabnahme (Simon, 26.09.: alle Gemeinden in einer Datenbank) bleibt der Vorschlag innerhalb einer Datenbank umsetzbar; wer lesen darf, ist Produktfrage 4. Später. **Entschieden 02.10.2026:** Ebenen Landeskirche → Kirchenkreis → Gemeinde (Beispiel Nordkirche, Kirchenkreis Dithmarschen); bestehende Gemeinden wie der Dom Schwerin werden eingeordnet. Rechte der oberen Ebenen offen.
 - **Für wen:** Landeskirche / Betrieb
 - **Warum jetzt:** Es gibt genau zwei Ebenen: Nutzer:in und Organisation.
   `kirchenkreis` ist Freitext (`prod-schema.sql:1521`,
@@ -499,7 +499,7 @@ unverändert.
 
 ### E-12: CSV-Import von Konfis mit Passwortliste
 
-- **Status:** offen 27.09.2026 — nicht begonnen (Produktfrage 7). Später.
+- **Status:** entfällt 02.10.2026 (Simon, Produktfrage 7: „zu komplex, mit selber anmelden ist alles getan").
 - **Für wen:** Leitung
 - **Warum jetzt:** Konfis entstehen einzeln (`konfi-management.js:208-216`:
   `name, jahrgang_id`, generiertes Bibel-Passwort) oder per Einladungscode
@@ -523,7 +523,7 @@ unverändert.
 
 ### E-13: Kalender-Export (ICS) und Termin-Abo — auch als Elterninformation
 
-- **Status:** offen 27.09.2026 — nicht begonnen. Später.
+- **Status:** entfällt 02.10.2026 als Elterninformation (Simon, Produktfrage 5: „konfi soll selbstverwaltetes lernen befördern"). Ein Kalender-Export für die Konfis selbst wäre eine neue, eigene Frage.
 - **Für wen:** Konfi / Teamer:in / Eltern (indirekt)
 - **Warum jetzt:** Termine leben nur in der App; es gibt kein ICS, keinen
   Kalender-Abo-Link (grep `ics|ical|text/calendar` ohne Treffer). Erinnerungen
@@ -634,7 +634,7 @@ unverändert.
 
 ### E-17: Feature-Schalter je Gemeinde
 
-- **Status:** offen 27.09.2026 — nicht begonnen (Produktfrage 8). Später.
+- **Status:** offen 27.09.2026 — nicht begonnen (Produktfrage 8). Später. **Entschieden 02.10.2026:** Der Chat ist Kernfunktion und bleibt immer an; ein Chat-Schalter je Gemeinde entfällt.
 - **Für wen:** Leitung / Landeskirche / Betrieb
 - **Warum jetzt:** `settings` kennt 15 Schlüssel, alle Dashboard-Kacheln und
   deren Reihenfolge (`settings.js:11-26`); es gibt keinen Schalter, der einen
@@ -661,7 +661,7 @@ unverändert.
 
 ### E-18: Fehler melden aus der App
 
-- **Status:** offen 27.09.2026 — nicht begonnen (Produktfrage 9). Später.
+- **Status:** offen 27.09.2026 — nicht begonnen (Produktfrage 9). Später. **Entschieden 02.10.2026:** Meldungen laufen ins Support-Dashboard (siehe E-04).
 - **Für wen:** alle Rollen / Betrieb
 - **Warum jetzt:** Abstürze werden automatisch und ohne Personenbezug gemeldet
   (`absturzdiagnose.ts`, CHANGELOG Unreleased „Sonstiges"); Fehler mit Art und
@@ -758,7 +758,7 @@ unverändert.
 
 ### E-22: Material und Aufgaben für Konfis
 
-- **Status:** offen 27.09.2026 — nicht begonnen (Produktfrage 6). Später.
+- **Status:** entfällt 02.10.2026 (Simon, Produktfrage 6: „nein, es sei denn uns fällt da was ein").
 - **Für wen:** Konfi / Leitung
 - **Warum:** Material ist ausschließlich Teamsache (`material.js:260`
   `requireTeamer`; `30-leitung.md`: „Konfis sehen Material nicht"). Konfis
@@ -844,7 +844,7 @@ unverändert.
 
 ### E-27: Eltern-Konten oder Elternrolle
 
-- **Status:** bewusst so gelassen 27.09.2026 (Empfehlung dieses Berichts; Produktfrage 5 liegt bei Simon) — keine Elternrolle eingebaut.
+- **Status:** bewusst so gelassen 27.09.2026, bestätigt 02.10.2026 (Simon: „konfi soll selbstverwaltetes lernen befördern") — keine Elternrolle.
 - **Begründung:** Eine sechste Rolle, die Chats, Beiträge oder Punkte eines
   Kindes einsieht, widerspricht der Datenminimierung, die die App an vielen
   Stellen bewusst verfolgt (anonyme Beiträge, deren Name „den Server gar nicht
@@ -901,7 +901,7 @@ unverändert.
 
 ### E-33: Direkte Schnittstellen zu Kirchenbuch- oder Meldewesen-Systemen
 
-- **Status:** bewusst so gelassen 27.09.2026 (Empfehlung dieses Berichts; Produktfrage 7 liegt bei Simon) — keine Direktanbindung.
+- **Status:** bewusst so gelassen 27.09.2026, bestätigt 02.10.2026 (Produktfrage 7) — keine Direktanbindung.
 - **Begründung:** Welche Systeme die Gemeinden der EKD-Landeskirchen nutzen
   und ob deren Anbieter Schnittstellen freigeben, ist aus dem Repo nicht
   ersichtlich und mir nicht bekannt. Ein CSV-Import (E-12) deckt den Bedarf
@@ -943,6 +943,48 @@ der Gesamtabnahme (Punkt 31) eine Produktentscheidung statt einer Auflage. Die �
 sind offen.
 
 ## Offene Produktfragen an Simon
+
+**Antworten Simon 02.10.2026** (wörtlich in Anführungszeichen, danach die Folge
+für die Empfehlungen oben):
+
+1. **Einwilligung der Eltern:** „ja gerne, aber wie?" — gewollt (E-01). Das
+   Verfahren ist noch zu entwerfen; die Rechtsfrage (wer verantwortlich ist,
+   ab welchem Alter Konfis selbst einwilligen) klärt die Datenschutzstelle der
+   Landeskirche.
+2. **Löschfristen:** „wir brauchen solche fristen, ja" — gewollt (E-02). Die
+   Fristen selbst (heute 60/120 Tage nach der Konfirmation) und der Fall ohne
+   Konfirmationstermin sind noch festzulegen.
+3. **Wer legt Gemeinden an?** „ich hätte gerne ein backend zur verwaltung am
+   besten im web. da kann ich das dann alles anlegen. vielleicht eine ganz
+   andere oberfläche." — eine eigene Verwaltungsoberfläche im Browser statt
+   des Gemeinde-Antragswegs aus E-03. Umfang noch zu entwerfen, zusammen mit
+   Frage 9.
+4. **Verbandsebene:** „wir brauchen landeskirche z.B. nordkirche die
+   wiederrum hat kirchenkreise: kirchenkreis dithmarschen und andere. da haben
+   wir schon die dom schwerin. die gehört in die struktur." — Ebenen
+   Landeskirche → Kirchenkreis → Gemeinde (E-10); die bestehenden Gemeinden,
+   auch der Dom Schwerin, werden darin eingeordnet. Welche Rechte die oberen
+   Ebenen bekommen (nur Zahlen oder auch Verwaltung, E-26), ist offen.
+5. **Eltern:** „nein, konfi soll selbstverwaltetes lernen befördern" — keine
+   Elternrolle (E-27 bleibt bewusst weg), kein Kalender-Abo als
+   Elterninformation (E-13 entfällt in dieser Form).
+6. **Material für Konfis:** „nein, es sei denn uns fällt da was ein" — E-22
+   entfällt.
+7. **Datenaustausch:** „nein - das ist mir zu komplex mit selber anmelden ist
+   alles getan" — kein CSV-Import (E-12 entfällt), keine Schnittstelle (E-33
+   bleibt weg).
+8. **Chat je Gemeinde abschaltbar?** „nein ist eine kernfunktion, soll ja
+   gerade nicht nach whatsapp wandern" — der Chat bleibt immer an; E-17 ohne
+   Chat-Schalter.
+9. **Support-Modell:** „es wird eine support person geben, wir sollten
+   supportanfragen, mails, und die verwaltung in einem support dashboard
+   zusammenführen und darin auch saubere auswertung zu anzahl der user etc
+   vornehmen" — ein Support-Dashboard für Anfragen, Mails, Verwaltung und
+   Kennzahlen (E-04, E-18, E-20); gehört mit Frage 3 in dieselbe
+   Verwaltungsoberfläche.
+10. **Ranking:** „ranking mag ich, ich finde es sollte an sein, es ist ein
+    feature, es ist ja abschaltbar und im handbuch erklärt." — bleibt in
+    neuen Gemeinden an (E-06 entfällt als Opt-in).
 
 **Stand 27.09.2026 (vor dem Merge):** Frage 10 ist zum Teil beantwortet — das Ranking bleibt
 und das Handbuch beschreibt es, wie es ist (Entscheidung Simon 27.09.2026, Screens

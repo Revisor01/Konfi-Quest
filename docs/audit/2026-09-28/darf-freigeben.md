@@ -5,6 +5,9 @@ Diese Einstellung geben wir für die nächste Version auf. Das ist eine größer
 Sache, die wir planen müssen." Der persönliche Schalter „Offene Aufgaben am
 App-Symbol mitzählen" entfällt damit.
 
+**Entschieden 02.10.2026:** Simon: „darf freigeben werden wir bauen". Die
+sechs Fragen unter „Was zu entscheiden ist" sind die nächsten Schritte.
+
 ## Anlass
 
 Rückmeldung aus dem Gerätetest (Build 130/236): Am App-Symbol stand 52,

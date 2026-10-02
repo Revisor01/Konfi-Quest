@@ -375,6 +375,26 @@ Teamer-Badges gelten je Gemeinde.
 - Bestätigt: Mail „Passwort vergessen" kam an, Geheimnisse gesichert, Label
   und Erwähnung im Issue bei rotem `main` (lokaler Agent), `timezone=UTC`.
 
+**Simon, 02.10.2026 abends — Produktfragen und Planung:**
+
+- Universal Links: „noch in 2.3.0" — gemergt mit #215, iOS-Build 240
+  gestartet; Profil „Konfi Quest AppStore CI" neu erzeugt (erlaubt
+  `associated-domains`, gilt wie das Distribution-Zertifikat bis 28.11.2026;
+  die Erinnerung zum Erneuern hat Simon selbst).
+- Die zehn Produktfragen beantwortet — wörtlich mit Folgen in
+  [feature-empfehlungen](../2026-09-26/feature-empfehlungen.md), Abschnitt
+  „Offene Produktfragen an Simon". Kurz: Einwilligung der Eltern ja (Verfahren
+  offen), Löschfristen ja, eigene Verwaltungsoberfläche im Web statt
+  Antragsweg, Ebenen Landeskirche → Kirchenkreis → Gemeinde, keine
+  Elternrolle, keine Arbeitsblätter, kein CSV-Import, Chat bleibt immer an,
+  eine Support-Person mit Support-Dashboard, Ranking bleibt an.
+- „darf freigeben": wird gebaut ([darf-freigeben](darf-freigeben.md)).
+- Mehrfach-Konten: noch einmal prüfen, Ziel ein sauberer Stand für
+  Einzelfälle, auch Admin in einer und Teamer:in in einer anderen Gemeinde
+  ([mehrfach-konten](mehrfach-konten.md)).
+- Nextcloud auf Android: „irgendwann vielleicht" ([offene-befunde](../../offene-befunde.md) Nr. 16).
+- Als Nächstes: das Repo aufräumen.
+
 **Gerätetest Android 133 / iOS 239 (Simon, 02.10.2026):** „Alle Tests sind
 positiv. Einzig das Laden aus einem Cloud-Speicher klappt nicht. Nextcloud.
 Legen wir zur Seite. Sonderfall." — Nextcloud zurückgestellt
