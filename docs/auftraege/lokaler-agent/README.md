@@ -18,11 +18,6 @@ schätzen, nichts Geheimes ins Repo, im Zweifel Simon fragen. Ein Merge nach
 
 ## Aktuell
 
-- **[12-token-schluessel-pruefen.md](12-token-schluessel-pruefen.md)** —
-  dringend (02.10.2026): prüfen, ob Produktion noch den alten
-  Entwicklungswert für `JWT_SECRET` benutzt, und den privaten Meldeweg für
-  Sicherheitslücken auf GitHub einschalten (siehe
-  [SECURITY.md](../../../SECURITY.md)).
 - **Umami bereinigen, Anfang November 2026** — monatliche Routine nach
   [docs/betrieb/routinen.md](../../betrieb/routinen.md#umami-bereinigen).
 
@@ -34,7 +29,7 @@ Rückspielprobe, Prüfung nach dem Deploy, Notfall-Deploy — steht in
 [docs/betrieb/routinen.md](../../betrieb/routinen.md), der Release-Ablauf in
 [docs/betrieb/release.md](../../betrieb/release.md).
 
-Die erledigten Aufträge 00–11 (27.09.–02.10.2026) liegen mit allen Messwerten
+Die erledigten Aufträge 00–12 (27.09.–02.10.2026) liegen mit allen Messwerten
 in der Git-Historie ([docs/README.md](../../README.md#erledigte-aufträge-und-frühere-listen)).
 
 ## Rückmeldung

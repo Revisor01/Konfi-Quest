@@ -97,11 +97,11 @@ mehr vergeben — neue Befunde kommen als Eintrag mit Titel in
 
 Ebenfalls im Stand `e90d3e729229f0acbea59b1043be1f6fc330b172`:
 
-- **Aufträge des lokalen Agenten 00–11** (`docs/auftraege/lokaler-agent/`,
+- **Aufträge des lokalen Agenten 00–12** (`docs/auftraege/lokaler-agent/`,
   27.09.–02.10.2026: Release 2.3.0, Portainer-Stack, Messungen nach dem
   Deploy, CI, Sicherung und Notfall, Mischkonten, Client-Adresse hinter dem
   Proxy, Screenshots, Backend-Container, Deploy-Lücke, Schema und
-  Rückspielprobe) mit allen Messwerten. Code-Kommentare nennen sie als
+  Rückspielprobe, Token-Schlüssel) mit allen Messwerten. Code-Kommentare nennen sie als
   „Auftrag 05" usw. Was davon regelmäßig wiederkommt, steht in
   [betrieb/routinen.md](betrieb/routinen.md).
 - **Die alte Liste `docs/offene-befunde.md`** mit den Nummern 1–16

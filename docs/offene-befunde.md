@@ -188,9 +188,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
   Gerät geprüft (02.10.2026). Offen: Einreichen in beiden Stores,
   Versionsüberschrift mit Datum und Build-Zeile im CHANGELOG, Git-Tag
   `2.3.0`. Ablauf: [betrieb/release.md](betrieb/release.md).
-- **Token-Schlüssel prüfen und privaten Meldeweg einschalten.** Dringend,
-  beim lokalen Agenten:
-  [auftraege/lokaler-agent/12-token-schluessel-pruefen.md](auftraege/lokaler-agent/12-token-schluessel-pruefen.md).
 
 ## Bei Simon zu entscheiden
 
