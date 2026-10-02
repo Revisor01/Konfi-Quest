@@ -28,8 +28,6 @@ const { ladeRolleInGemeinde, istMitgliedDerOrganisation } = require('../utils/or
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
 
-  // Schema: siehe backend/migrations/064_consolidate_inline_schemas.sql
-
   // Validierungsregeln
   const validateCreateCertificateType = [
     body('name').notEmpty().trim().isLength({ min: 1, max: 100 }).withMessage('Name erforderlich (1-100 Zeichen)'),

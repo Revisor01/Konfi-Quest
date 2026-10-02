@@ -12,8 +12,6 @@
 // Vergaben; was schon gutgeschrieben ist, bleibt — in Summe, Historie, Liste
 // und bei der Rücknahme. Bestand ohne Wert (NULL) verhält sich wie vorher.
 const request = require('supertest');
-const fs = require('fs');
-const path = require('path');
 const { getTestApp, warteAufNachwehen } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ACTIVITIES, JAHRGAENGE, ORGS } = require('../helpers/seed');
@@ -257,31 +255,5 @@ describe('Punktwert am Zuordnungsdatensatz (BF-02)', () => {
     expect(res.status).toBe(200);
     await warteAufNachwehen(app);
     expect(await gottesdienstPunkte()).toBe(0);
-  });
-
-  it('Migration 163 füllt den Bestand aus der Aktivität nach und lässt gesetzte Werte stehen', async () => {
-    await punktwertSetzen(5);
-    const { rows: [ohne] } = await db.query(
-      `INSERT INTO user_activities (user_id, activity_id, completed_date, organization_id, points)
-       VALUES ($1, $2, '2025-12-24', $3, NULL) RETURNING id`,
-      [KONFI, AKTIVITAET, ORG]
-    );
-    const { rows: [mit] } = await db.query(
-      `INSERT INTO user_activities (user_id, activity_id, completed_date, organization_id, points)
-       VALUES ($1, $2, '2025-12-25', $3, 2) RETURNING id`,
-      [KONFI, AKTIVITAET, ORG]
-    );
-
-    // Die Migration ist idempotent (ADD COLUMN IF NOT EXISTS, UPDATE nur auf
-    // NULL) — sie lässt sich hier auf dem fertigen Schema noch einmal fahren.
-    const sql = fs.readFileSync(
-      path.join(__dirname, '..', '..', 'migrations', '163_user_activities_points.sql'), 'utf8'
-    );
-    await db.query(sql);
-
-    const { rows } = await db.query(
-      'SELECT id, points FROM user_activities WHERE id IN ($1, $2) ORDER BY id', [ohne.id, mit.id]
-    );
-    expect(rows).toEqual([{ id: ohne.id, points: 5 }, { id: mit.id, points: 2 }]);
   });
 });

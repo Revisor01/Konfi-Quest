@@ -17,8 +17,6 @@ const { adresseFuersProtokoll } = require('../utils/protokoll');
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten, NUR org_admin darf anlegen
 module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeamer }) => {
 
-  // Schema-Migrationen: siehe backend/migrations/064_consolidate_inline_schemas.sql
-
   // Validierungsregeln
   //
   // Punkteziele ab 1 (28.09.2026, Audit Fachlogik Punkte/Termine BF-10): Der
