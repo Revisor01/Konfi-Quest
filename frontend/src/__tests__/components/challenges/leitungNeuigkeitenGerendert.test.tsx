@@ -16,6 +16,11 @@ vi.mock('../../../contexts/AppContext', () => ({
 }));
 
 const tag = 24 * 60 * 60 * 1000;
+// EIN Zeitpunkt fuer alle Fixtures: Die Liste sortiert laufende Challenges
+// nach starts_at (neueste zuerst). Mit Date.now() je Aufruf lag der Start der
+// zweiten Challenge gelegentlich eine Millisekunde spaeter, und die
+// Reihenfolge kippte (in der vollen Suite gesehen, 02.10.2026).
+const jetzt = Date.now();
 const laufend = (id: number, title: string): AdminChallenge => ({
   id,
   title,
@@ -28,8 +33,8 @@ const laufend = (id: number, title: string): AdminChallenge => ({
   allow_multiple: true,
   badge_icon: 'flag',
   badge_name: 'A',
-  starts_at: new Date(Date.now() - tag).toISOString(),
-  ends_at: new Date(Date.now() + 7 * tag).toISOString(),
+  starts_at: new Date(jetzt - tag).toISOString(),
+  ends_at: new Date(jetzt + 7 * tag).toISOString(),
   is_draft: false,
 } as unknown as AdminChallenge);
 
