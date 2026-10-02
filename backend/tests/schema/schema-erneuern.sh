@@ -8,21 +8,26 @@
 # anwenden -- je Datei in einer Transaktion samt Eintrag in
 # schema_migrations, wie backend/utils/migrationslauf.js --, dann
 # pg_dump --schema-only mit denselben Optionen wie refresh-schema.sh.
-# Zum Schluss spiegelt init-scripts-spiegeln.sh beides nach init-scripts/.
+# Dann spiegelt init-scripts-spiegeln.sh beides nach init-scripts/, und zum
+# Schluss verschwinden die Dateien, die jetzt im Dump stehen, aus
+# backend/migrations/ (Grenze seit 02.10.2026: dort liegt nur, was NACH dem
+# Dump kam; Waechter tests/schema/dumpAktualitaet.test.js).
 #
-# Aufruf:  bash backend/tests/schema/schema-erneuern.sh [BIS]
-#   BIS  Dateiname der letzten Migration, die in den Dump eingeht
-#        (Standard: alle in backend/migrations/). Nur Migrationen nehmen,
-#        die in der Produktion schon gelaufen sind -- sonst sieht der
-#        Deploy-Weg der Tests sie nie mehr als offen.
+# Aufruf:  bash backend/tests/schema/schema-erneuern.sh BIS
+#   BIS  Dateiname der letzten Migration, die in den Dump eingeht. PFLICHT,
+#        und nur eine Migration, die in der Produktion schon gelaufen ist:
+#        Ihre Datei wird danach entfernt -- eine Migration, die die
+#        Produktion noch nicht hatte, liefe dort nie mehr. (Bis 02.10.2026
+#        nahm das Skript ohne BIS alle Dateien; das ging nur, solange nichts
+#        geloescht wurde.)
 # Braucht Docker. Keine Ports, keine Adressen: alles ueber docker exec.
 #
 # Rhythmus (Audit Datenbank BF-17 / Tests BF-14, 29.09.2026): mit jedem
 # Release, spaetestens wenn tests/schema/dumpAktualitaet.test.js anschlaegt
 # (zu viele offene Migrationen ueber dem Dump). Ob die Produktion dem
 # erneuerten Stand entspricht, misst der Betrieb mit
-# backend/scripts/schemaVergleich.js (Auftrag
-# docs/auftraege/lokaler-agent/11-schema-und-rueckspielprobe.md);
+# backend/scripts/schemaVergleich.js (docs/betrieb/routinen.md,
+# „Schema-Dump fortschreiben");
 # refresh-schema.sh holt den Dump bei Bedarf direkt aus der Produktion.
 set -euo pipefail
 # Sortierung wie der Migrationslauf (JavaScript sort = Bytefolge), nicht nach
@@ -33,7 +38,8 @@ HIER="$(cd "$(dirname "$0")" && pwd)"
 MIGRATIONEN="$(cd "$HIER/../../migrations" && pwd)"
 SCHEMA="$HIER/prod-schema.sql"
 STAND="$HIER/prod-migrations.txt"
-BIS="${1:-$(ls "$MIGRATIONEN" | grep '\.sql$' | sort | tail -1)}"
+BIS="${1:-}"
+[ -n "$BIS" ] || { echo "FEHLER: BIS fehlt -- Dateiname der letzten Migration, die in der Produktion gelaufen ist." >&2; exit 1; }
 [ -f "$MIGRATIONEN/$BIS" ] || { echo "FEHLER: $MIGRATIONEN/$BIS gibt es nicht." >&2; exit 1; }
 
 C="kq-schema-erneuern-$$"
@@ -91,3 +97,14 @@ mv "$STAND.neu" "$STAND"
 echo "OK: $SCHEMA ($ZEILEN Zeilen), $STAND ($(grep -c . "$STAND") Migrationen)"
 
 bash "$HIER/init-scripts-spiegeln.sh"
+
+# Was jetzt im Dump steht, laeuft nirgends mehr als Datei: in der Produktion
+# ist es vermerkt, eine neue Instanz bekommt es aus init-scripts/.
+entfernt=0
+while IFS= read -r name; do
+  [ -n "$name" ] && [ -f "$MIGRATIONEN/$name" ] || continue
+  rm "$MIGRATIONEN/$name"
+  echo "entfernt (steht jetzt im Dump): backend/migrations/$name"
+  entfernt=$((entfernt + 1))
+done < "$STAND"
+echo "OK: $entfernt Migrationsdatei(en) entfernt -- mit Dump und init-scripts/ zusammen committen."

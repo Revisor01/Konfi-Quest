@@ -32,11 +32,11 @@ module.exports = async function globalSetup() {
   //    die Suite gruen war (Audit 22.08.2026).
   //
   //    Warum ein Dump und nicht die Migrationen? Das Repo KANN Produktion
-  //    nicht allein aus Migrationen reproduzieren: Die Kette beginnt erst bei
-  //    064, und fuer konfi_profiles.password_plain gibt es nirgends ein DDL
-  //    (daily_verses und activities.category liefert seit dem 22.08.2026
-  //    Migration 124). Wer aus den Migrationen baut, testet ein Schema, das
-  //    es so nie gab.
+  //    nicht allein aus Migrationen reproduzieren: Die Kette begann schon
+  //    frueher erst bei 064, manches entstand in Produktion von Hand, und seit
+  //    dem 02.10.2026 liegen in backend/migrations/ nur noch die Migrationen
+  //    NACH dem Dump (Stand 173; die aelteren stehen in der Git-Historie,
+  //    init-scripts/README.md). Der Dump ist der einzige Startpunkt.
   //
   //    Aktualisieren (mit jedem Release, Waechter dumpAktualitaet.test.js):
   //      bash backend/tests/schema/schema-erneuern.sh <letzte Migration der Produktion>

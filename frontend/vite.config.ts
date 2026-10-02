@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react'
 // nicht mehr ein, `tsc -p tsconfig.test.json` meldete den Block als Fehler.
 import { defineConfig } from 'vitest/config'
 import { appBuendelPlugin } from './scripts/app-buendel.mjs'
+import { swaggerUiPlugin } from './scripts/swagger-ui.mjs'
 
 // Version aus version.json zur Bauzeit einsetzen (__APP_VERSION__).
 // Gebraucht von utils/appVersion.ts als Browser-Rueckfallebene: Dort gibt es
@@ -25,6 +26,11 @@ export default defineConfig({
     // (capacitor.config.ts, webDir). dist/ bleibt die Web-Auslieferung.
     // Was hinein darf und warum: scripts/app-buendel.mjs.
     appBuendelPlugin(),
+    // Swagger UI der API-Referenz aus dem Paket swagger-ui-dist: beim Bauen
+    // nach dist/docs/api/swagger/, im Entwicklungsserver aus node_modules
+    // (02.10.2026; vorher eine Handkopie in public/, die Dependabot nicht
+    // sah). Warum und wie: scripts/swagger-ui.mjs.
+    swaggerUiPlugin(),
   ],
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),

@@ -3,7 +3,7 @@
 // Stellen (27.09.2026).
 //
 // Die Regel (CLAUDE.md "Wer sieht und bekommt was", Simon 27.09.2026; Audit
-// docs/audit/2026-09-27/wer-bekommt-was.md, BF-01/BF-10/BF-11, F-10):
+// wer-bekommt-was BF-01/BF-10/BF-11, F-10; docs/README.md#befundkennungen):
 //
 //   org_admin, super_admin    jeder Termin der Gemeinde
 //   (Rolle ODER Merkmal

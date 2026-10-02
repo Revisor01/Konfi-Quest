@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'fs';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 // Der ANMELDE-Schalter (Biometrie statt Passwort auf der Anmeldeseite) ist am
@@ -15,10 +15,51 @@ import { resolve } from 'path';
 // etwas anderes als der Anmelde-Weg hier und steht in allen drei Ansichten —
 // festgehalten in appSperreSchalter.test.tsx.
 //
-// Die Komponente (shared/BiometrieSchalter.tsx) und der Dienst
-// (services/biometrics.ts) BLEIBEN bestehen: die App-Sperre nutzt aus dem
-// Dienst die Verfuegbarkeitspruefung. Dieser Test haelt beides fest — keine
-// Einbindung des Anmelde-Schalters, aber die Bausteine sind da.
+// Die Komponente des Anmelde-Schalters ist seit dem 02.10.2026 geloescht
+// (Simon: "Biometrie ist voll drin" -- naemlich in der App-Sperre). Der Dienst
+// services/biometrics.ts BLEIBT: Die App-Sperre fragt ueber ihn, ob das Geraet
+// Biometrie eingerichtet hat. Dieser Test haelt beides fest -- keine
+// Einbindung des Anmelde-Schalters, und die App-Sperre steht auf dem Dienst.
+
+const mockIsAvailable = vi.fn();
+
+vi.mock('@capacitor/core', () => ({
+  Capacitor: { isNativePlatform: () => true, getPlatform: () => 'ios' },
+}));
+vi.mock('@capacitor/preferences', () => ({
+  Preferences: {
+    get: vi.fn(async () => ({ value: null })),
+    set: vi.fn(async () => undefined),
+    remove: vi.fn(async () => undefined),
+  },
+}));
+// Nur das Plugin ist ersetzt, NICHT services/biometrics: Geprueft wird der
+// echte Weg App-Sperre -> Biometrie-Dienst -> Geraet.
+vi.mock('@capgo/capacitor-native-biometric', () => ({
+  NativeBiometric: {
+    isAvailable: (...a: unknown[]) => mockIsAvailable(...(a as [])),
+    verifyIdentity: vi.fn(async () => undefined),
+  },
+  AccessControl: { NONE: 0, BIOMETRY_CURRENT_SET: 1, BIOMETRY_ANY: 2 },
+  BiometryType: {
+    NONE: 0, TOUCH_ID: 1, FACE_ID: 2, FINGERPRINT: 3,
+    FACE_AUTHENTICATION: 4, IRIS_AUTHENTICATION: 5, MULTIPLE: 6, DEVICE_CREDENTIAL: 7,
+  },
+  BiometricAuthError: {
+    UNKNOWN_ERROR: 0, BIOMETRICS_UNAVAILABLE: 1, USER_LOCKOUT: 2,
+    BIOMETRICS_NOT_ENROLLED: 3, USER_TEMPORARY_LOCKOUT: 4,
+    AUTHENTICATION_FAILED: 10, APP_CANCEL: 11, INVALID_CONTEXT: 12,
+    NOT_INTERACTIVE: 13, PASSCODE_NOT_SET: 14, SYSTEM_CANCEL: 15,
+    USER_CANCEL: 16, USER_FALLBACK: 17, NO_PROTECTED_CREDENTIALS_FOUND: 21,
+  },
+}));
+vi.mock('../../services/tokenStore', () => ({
+  getRefreshToken: () => null,
+  getUser: () => null,
+  setRefreshToken: vi.fn(),
+}));
+
+import { sperreVerfuegbar } from '../../services/appSperre';
 
 const profilSeiten: { rolle: string; datei: string }[] = [
   { rolle: 'Leitung', datei: 'src/components/admin/pages/AdminProfilePage.tsx' },
@@ -35,15 +76,26 @@ describe('Der Anmelde-Schalter bleibt ueberall ausgebaut', () => {
       expect(inhalt).not.toMatch(/(?<!App)(?<!AppSperre)\bBiometrieSchalter\b/);
     });
   }
+});
 
-  it('die Bausteine bleiben fuer 2.1.0 erhalten', () => {
-    // Gegenprobe: Der Test darf nicht auch dann gruen sein, wenn jemand
-    // Komponente und Dienst gleich mitgeloescht hat.
-    for (const pfad of [
-      'src/components/shared/BiometrieSchalter.tsx',
-      'src/services/biometrics.ts',
-    ]) {
-      expect(existsSync(resolve(__dirname, '../../..', pfad))).toBe(true);
-    }
+describe('Die App-Sperre fragt ueber den Biometrie-Dienst', () => {
+  beforeEach(() => {
+    mockIsAvailable.mockReset();
+  });
+
+  it('bietet sich an, wenn das Geraet Biometrie eingerichtet hat', async () => {
+    mockIsAvailable.mockResolvedValue({ isAvailable: true, biometryType: 2 });
+    expect(await sperreVerfuegbar()).toBe(true);
+    // Die Frage geht durch biometrieVerfuegbar(): Nur dort steht
+    // useFallback: false -- die Geraete-PIN zaehlt nicht als Biometrie.
+    expect(mockIsAvailable).toHaveBeenCalledTimes(1);
+    expect(mockIsAvailable).toHaveBeenCalledWith({ useFallback: false });
+  });
+
+  it('bietet sich NICHT an, wenn das Geraet keine Biometrie hat', async () => {
+    // Gegenprobe: Ohne diese Pruefung waere die Sperre ein Schalter ins Leere.
+    mockIsAvailable.mockResolvedValue({ isAvailable: false, biometryType: 0 });
+    expect(await sperreVerfuegbar()).toBe(false);
+    expect(mockIsAvailable).toHaveBeenCalledTimes(1);
   });
 });

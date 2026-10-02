@@ -195,15 +195,16 @@ Wie:
 - **Absturzprotokoll.** Die Wegmarke (`wegmarke`, Firebase Crashlytics, nur
   iOS und Android, steht im nächsten Absturz- oder Fehlerbericht) trägt
   denselben Wert.
-- **Altbestand.** Bereinigung der Umami-Datenbank:
-  [docs/auftraege/lokaler-agent/03-nach-dem-deploy.md](../auftraege/lokaler-agent/03-nach-dem-deploy.md),
-  Abschnitt 6. Store-Fassungen ohne diese Korrektur schicken bis zu ihrem
-  Update weiter den vollen Text — die Bereinigung ist deshalb zu wiederholen.
+- **Altbestand.** Bereinigung der Umami-Datenbank als monatliche Routine:
+  [docs/betrieb/routinen.md](../betrieb/routinen.md#umami-bereinigen).
+  Store-Fassungen ohne diese Korrektur schicken bis zu ihrem Update weiter den
+  vollen Text — die Bereinigung ist deshalb zu wiederholen.
   **Bereinigt am 01.10.2026:** 31 Einträge mit 14 verschiedenen Werten
   (11.08.–28.09.2026) durch `andere-meldung` ersetzt, danach 0; die Zahl der
   `stelle`-Einträge blieb 160. Seit dem Deploy von 2.3.0 kam kein Wert
   außerhalb der Liste an. Sicherung mit den Namen nach der Prüfung gelöscht.
-  Absturzberichte in Crashlytics noch nicht geprüft (Konsole, bei Simon).
+  Absturzberichte in Crashlytics lagen bei Simon; seine Antwort am
+  01.10.2026: „Firebase-Schlüssel und Crashlytics: erledigt, bleibt so".
 
 Tests: `fehlerMessungOhneNamen.test.tsx` (echte Nutzlast an Umami und
 Wegmarke: verboten — die fünf Texte der vier Fundstellen, direkt und über
@@ -261,10 +262,8 @@ Am Umami-Quelltext nachgesehen am 27.09.2026 (Hauptzweig, Fassung 3.4.0):
 `SALT_ROTATION` mit Vorgabe `month` in `src/app/api/send/route.ts`,
 `getSalt` in `src/lib/crypto.ts` kennt `day`, `week` und sonst Monat; die
 Tabelle `session` hat die Spalten `country`, `region` und `city`. Welche
-Fassung auf dem Server läuft, ist damit nicht geklärt. Der Auftrag dafür
-steht in
-[docs/auftraege/lokaler-agent/03-nach-dem-deploy.md](../auftraege/lokaler-agent/03-nach-dem-deploy.md),
-Abschnitt 6.
+Fassung auf dem Server läuft, war damit nicht geklärt; das hat der lokale
+Agent am Server gemessen (unten).
 
 **Am Server gemessen am 01.10.2026:** Es läuft Umami 3.4.0; die Fassung kennt
 `SALT_ROTATION`, gesetzt ist es nicht — das Salz wechselt also monatlich.

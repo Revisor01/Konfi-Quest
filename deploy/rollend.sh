@@ -23,8 +23,8 @@
 #
 # VORAUSSETZUNG: update_stack darf nur Dienste mit geaenderter Konfiguration
 # neu erstellen. Das gilt NUR mit pullImage:false (gemessen 01.10.2026,
-# Portainer EE 2.45.1, Compose v2.40.3; Auftrag
-# docs/auftraege/lokaler-agent/10-deploy-luecke.md):
+# Portainer EE 2.45.1, Compose v2.40.3; Auftrag 10 des lokalen Agenten,
+# erledigt, docs/README.md):
 #   - pullImage:true erstellte bei JEDEM Update ALLE Dienste neu, auch Postgres
 #     und den gerade getauschten Dienst der Vorstufe. Bei allen sechs Deploys
 #     vom 29./30.09. kam die Warnung "backend2 wurde in Stufe 1 mit neu

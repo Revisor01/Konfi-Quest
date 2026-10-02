@@ -25,7 +25,7 @@ Mitarbeiten in der Gemeinde. Konfi Quest hält fest, wer wobei dabei war —
 nicht als Pflichtheft, sondern als etwas, das man gern in die Hand nimmt.
 
 Konfis sammeln zwei Arten von Punkten: für Gottesdienste und für die Gemeinde.
-Sie melden sich zu Terminen an, stellen sich Challenges, sammeln Abzeichen und
+Sie melden sich zu Events an, stellen sich Challenges, sammeln Badges und
 bekommen am Ende des Jahres einen Rückblick auf ihre Konfizeit.
 
 Teamer:innen begleiten ihre Gruppen, tragen Punkte ein und bekommen einen
@@ -36,9 +36,9 @@ den Überblick — auch über mehrere Gemeinden hinweg, sauber voneinander getre
 
 ### Für Konfis
 - **Punkte** — Gottesdienst und Gemeinde getrennt, mit Zielen je Jahrgang
-- **Termine** — anmelden, abmelden, Warteliste, Check-in per QR-Code
+- **Events** — anmelden, abmelden, Warteliste, Check-in per QR-Code
 - **Challenges** — Aufgaben mit Foto, Video oder Text, sichtbar im Jahrgangs-Feed
-- **Abzeichen** — für Meilensteine, Serien und besondere Anlässe
+- **Badges** — für Meilensteine, Serien und besondere Anlässe
 - **Rückblick** — der eigene Jahresrückblick, teilbar wie eine Story
 - **Chat** — Jahrgang, Gruppen, Termine und Direktnachrichten
 
@@ -51,12 +51,12 @@ den Überblick — auch über mehrere Gemeinden hinweg, sauber voneinander getre
 ### Für die Leitung
 - Jahrgänge, Konfis und Team verwalten
 - Aktivitäten, Kategorien und Punkteziele festlegen
-- Anträge freigeben, Abzeichen gestalten, Termine anlegen
+- Anträge freigeben, Badges gestalten, Events anlegen
 - Mehrere Gemeinden in einer Anmeldung, streng getrennte Daten
 
 ### Überall
 - **Ohne Netz nutzbar** — Eingetragenes wird gespeichert und später gesendet
-- **Benachrichtigungen** — für Nachrichten, Termine, Punkte und Freigaben
+- **Benachrichtigungen** — für Nachrichten, Events, Punkte und Freigaben
 - **Anmeldung per Face ID, Touch ID oder Fingerabdruck**
 - **Handbuch** für alle drei Rollen — [konfi-quest.de/docs](https://konfi-quest.de/docs/),
   erreichbar über die Website; Quelle ist `docs/handbuch/`, ausgeliefert wird
@@ -87,7 +87,7 @@ Konfi Quest lässt sich für die eigene Gemeinde nutzen. Schreib einfach an
   <img src="docs/screenshots/iphone/konfi-startseite.png" width="200" alt="Startseite">
   <img src="docs/screenshots/iphone/konfi-challenges.png" width="200" alt="Challenges">
   <img src="docs/screenshots/iphone/konfi-chat.png" width="200" alt="Chat">
-  <img src="docs/screenshots/iphone/konfi-abzeichen.png" width="200" alt="Abzeichen">
+  <img src="docs/screenshots/iphone/konfi-abzeichen.png" width="200" alt="Badges">
 </p>
 
 Weitere Ansichten für alle drei Rollen liegen in
@@ -112,8 +112,8 @@ cd Konfi-Quest
 
 **1. Datenbank anlegen.** Das Grundschema kommt aus `init-scripts/` — ein
 Dump des Produktionsschemas, siehe [init-scripts/README.md](init-scripts/README.md).
-Die Migrationskette in `backend/migrations/` beginnt erst bei `064`; gegen
-eine leere Datenbank liefe der Server ins Leere.
+In `backend/migrations/` liegen nur die Änderungen nach dem Dump (ab `174`);
+gegen eine leere Datenbank liefe der Server ins Leere.
 
 ```bash
 createdb konfi_quest
@@ -168,7 +168,9 @@ Wer den ganzen Stack samt Datenbank, Schema und Seed in Containern will,
 nimmt `docker-compose.e2e.yml` — so laufen auch die Playwright-Tests.
 
 Die Mitarbeit am Projekt beschreibt [CLAUDE.md](CLAUDE.md) — vor allem die
-Regel, dass ausgelieferte App-Versionen niemals brechen dürfen.
+Regel, dass ausgelieferte App-Versionen niemals brechen dürfen. Wie die Teile
+zusammenhängen, steht in [docs/architektur.md](docs/architektur.md); was wo
+dokumentiert ist, in [docs/README.md](docs/README.md).
 
 ## Aufbau
 
@@ -177,20 +179,24 @@ Konfi-Quest
 ├── frontend/          — Ionic 9 + React 19, TypeScript
 │   ├── src/
 │   │   ├── components/  — nach Rolle getrennt: konfi, teamer, admin, shared
-│   │   ├── contexts/    — App-Zustand, Abzeichen, Anmeldung
+│   │   ├── contexts/    — App-Zustand, Badges, Anmeldung
 │   │   ├── services/    — API, Offline-Warteschlange, Biometrie, Push
-│   │   └── __tests__/   — 3.788 Tests (Stand 26.09.2026)
+│   │   └── __tests__/   — 452 Testdateien, 4.240 Tests (Stand 02.10.2026)
 │   ├── ios/ · android/  — Capacitor 8
 │   └── public/docs/     — erzeugtes Handbuch und API-Referenz
 ├── backend/           — Node 26 und Express 5, PostgreSQL 15
 │   ├── routes/          — nach Bereich getrennt, RBAC je Route
-│   ├── services/        — Push, Abzeichen, Rückblick, E-Mail
+│   ├── services/        — Push, Badges, Rückblick, E-Mail
 │   ├── migrations/      — additiv, nie zerstörend
-│   └── tests/           — 3.399 Tests gegen eine echte Datenbank (Stand 26.09.2026)
+│   └── tests/           — 290 Testdateien, 4.778 Tests gegen eine echte Datenbank (Stand 02.10.2026)
 ├── init-scripts/      — Grundschema einer neuen Instanz (Produktions-Dump)
-├── docs/              — Quelle für Handbuch, API-Doku und Store-Texte
-└── e2e/               — Playwright, gegen den vollen Stack
+├── docs/              — Handbuch, API-Doku, Betrieb, Planung, offene Punkte (Übersicht: docs/README.md)
+└── e2e/               — Playwright, gegen den vollen Stack (8 Testdateien, 16 Tests)
 ```
+
+Die Testzahlen sind am 02.10.2026 gezählt: Testdateien und `it`-/`test`-Aufrufe
+im Quelltext; ein parametrisierter Test (`it.each`) zählt einmal, auch wenn er
+mehrfach läuft.
 
 **Worauf es beim Bauen ankommt:**
 - **Ausgelieferte Apps nie brechen.** Antwortformen sind ein Vertrag: Aus einem
@@ -206,7 +212,12 @@ Konfi-Quest
 ## Mitmachen
 
 Fehlermeldungen und Vorschläge sind willkommen — gern als
-[Issue](https://github.com/Revisor01/Konfi-Quest/issues).
+[Issue](https://github.com/Revisor01/Konfi-Quest/issues), dafür gibt es
+Vorlagen. Was schon offen, geplant oder bewusst zurückgestellt ist, steht in
+[docs/offene-befunde.md](docs/offene-befunde.md).
+
+**Sicherheitslücken bitte nicht als Issue**, sondern vertraulich melden — wie,
+steht in [SECURITY.md](SECURITY.md).
 
 ## Lizenz
 
@@ -218,8 +229,8 @@ mit den Daten von Jugendlichen umgeht, muss nachprüfbar sein: Jede und
 jeder soll nachlesen können, was gespeichert wird und wie es gesichert ist.
 
 - **Ohne Weiteres erlaubt:** lesen, herunterladen, studieren, zu Lern- und
-  Prüfzwecken auf eigenen Geräten ausführen, Sicherheitslücken melden,
-  darüber berichten.
+  Prüfzwecken auf eigenen Geräten ausführen, Sicherheitslücken melden
+  (vertraulich, siehe [SECURITY.md](SECURITY.md)), darüber berichten.
 - **Braucht eine Vereinbarung:** der Betrieb für echte Nutzer:innen, die
   Weitergabe an Dritte, die Verwendung von Teilen des Codes in anderer
   Software — unabhängig davon, ob damit Geld verdient wird.

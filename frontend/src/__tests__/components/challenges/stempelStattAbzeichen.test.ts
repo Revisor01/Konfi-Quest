@@ -78,14 +78,12 @@ describe('Challenge-Stempel: das alte Wort ist weg', () => {
 describe('Challenge-Stempel: die Erklaertexte aller drei Rollen', () => {
   // Der Widerspruch stand woertlich in sechs Onboarding- und
   // Update-Texten — je zwei pro Rolle. Wird einer vergessen, erklaert die App
-  // derselben Person zwei verschiedene Dinge.
+  // derselben Person zwei verschiedene Dinge. Die Update-Texte von 2.0 sind
+  // seit 02.10.2026 entfernt; es bleiben die drei Onboardings.
   it.each([
     ['Konfi, erste Schritte', 'src/components/konfi/modals/KonfiOnboardingModal.tsx'],
-    ['Konfi, Neuerungen', 'src/components/konfi/modals/KonfiUpdateWalkthroughModal.tsx'],
     ['Teamer, erste Schritte', 'src/components/teamer/modals/TeamerOnboardingModal.tsx'],
-    ['Teamer, Neuerungen', 'src/components/teamer/modals/TeamerUpdateWalkthroughModal.tsx'],
     ['Leitung, erste Schritte', 'src/components/admin/modals/AdminOnboardingModal.tsx'],
-    ['Leitung, Neuerungen', 'src/components/admin/modals/AdminUpdateWalkthroughModal.tsx'],
   ])('%s spricht vom Stempel', (_name, pfad) => {
     const quelle = lies(pfad);
     // Zwei Formulierungen, beide gewollt: Die Texte an Konfis sind direkter
@@ -145,23 +143,5 @@ describe('Challenge-Stempel: das Handbuch zieht mit', () => {
     // statt die Erklaerung zu wiederholen (Simons Stilvorgabe). Die Sache --
     // Challenges geben Stempel, keine Abzeichen -- steht weiterhin da.
     expect(lies('../docs/handbuch/30-leitung.md')).toContain('Stempel');
-  });
-});
-
-describe('Challenge-Stempel: die Store-Texte zu 2.0.0', () => {
-  // Sie gehen vor der App raus. Steht dort ein Wort, das die App nicht mehr
-  // benutzt, liest es jemand im Store und findet es nirgends wieder.
-  const storeTexte = lies('../docs/store-texte-2.0.0.md');
-
-  it('beide Fassungen sprechen vom Stempel', () => {
-    expect(storeTexte).toContain('fürs Mitmachen gibt es einen Stempel');
-    expect(storeTexte).toContain('mit Stempel fürs Mitmachen');
-  });
-
-  it('das Wort steht dort nur noch fuer das echte Abzeichen-System', () => {
-    // Zwei Erwaehnungen bleiben zu Recht: das Handbuch-Nachschlagekapitel und
-    // die Liste der Korrekturen.
-    const treffer = storeTexte.match(/Abzeichen/g) || [];
-    expect(treffer).toHaveLength(2);
   });
 });

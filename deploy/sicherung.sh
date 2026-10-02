@@ -14,7 +14,8 @@
 #   ZIEL           Ablageordner der Sicherungen (Pflicht)
 #   TAGE           Aufbewahrung in Tagen (Standard: 30)
 #
-# Lehren aus docs/offene-befunde.md Nr. 3 (10.09.2026, leerer Dump):
+# Lehren aus dem leeren Dump vom 10.09.2026 (docs/betrieb/sicherung.md,
+# Abschnitt "Der leere Dump vom 10.09.2026"):
 #   - set -o pipefail, sonst meldet `pg_dump | gzip` Erfolg, wenn pg_dump
 #     gar nicht startet.
 #   - Vorher pruefen, ob die Datenbank antwortet.

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { BAEUME, ladeRolleVor } from './rollenBaeume';
+import { ladeRolleVor } from './rollenBaeume';
 import type { Rolle } from './routes';
 
 // Ist der Seitenbaum der angemeldeten Rolle bereit, um den Router zu montieren?
@@ -55,8 +55,5 @@ export function useSeitenBereit(): boolean {
 
   return bereit;
 }
-
-/** Nur fuer Tests: Gibt es fuer diese Rolle ueberhaupt einen Baum? */
-export const hatBaum = (rolle: Rolle): boolean => Boolean(BAEUME[rolle]);
 
 export default useSeitenBereit;

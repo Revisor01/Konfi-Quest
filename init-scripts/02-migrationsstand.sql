@@ -5,9 +5,10 @@
 -- Quelle: backend/tests/schema/prod-migrations.txt
 -- Erneuern mit: bash backend/tests/schema/init-scripts-spiegeln.sh
 --
--- Das Schema oben enthaelt diese Migrationen bereits. Ohne die Eintraege
--- hier wuerde backend/database.js sie beim ersten Backend-Start erneut
--- anwenden. Alles, was danach kommt, laeuft regulaer nach.
+-- Das Schema oben enthaelt diese Migrationen bereits; ihre Dateien liegen
+-- deshalb nicht mehr in backend/migrations/ (init-scripts/README.md). Die
+-- Eintraege halten den Stand fest wie in der Produktion. Alles, was danach
+-- kommt, laeuft beim ersten Backend-Start regulaer nach.
 -- ====================================================================
 
 CREATE TABLE IF NOT EXISTS schema_migrations (

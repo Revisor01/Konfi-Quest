@@ -617,7 +617,8 @@ unabhängig vom Reiter.
 ### Den Ungelesen-Zähler verstehen
 
 Neben jedem Chat steht, wie viele Nachrichten du dort noch nicht gesehen hast —
-pro Raum getrennt, für jede Person eigen.
+pro Raum getrennt, für jede Person eigen. Deine eigenen Nachrichten zählen
+nicht mit, weder neben dem Chat noch am Chat-Reiter unten.
 
 Zurückgesetzt wird beim Öffnen des Chats. Es gibt keinen Knopf „alles als
 gelesen markieren" und kein Wieder-auf-ungelesen-Setzen.
@@ -625,8 +626,3 @@ gelesen markieren" und kein Wieder-auf-ungelesen-Setzen.
 > **Achtung:** Kurz in einen Chat hineinschauen setzt den Zähler zurück, auch
 > wenn du nicht bis nach unten gescrollt hast. Wer eine Nachricht später
 > beantworten will, sollte sie sich anders merken.
-
-> **Achtung, verwirrende Kleinigkeit:** In der Chat-Liste zählen auch **deine
-> eigenen** Nachrichten mit. Wer etwas schreibt und den Chat sofort verlässt,
-> sieht dort eine „1" — die Zahl am Chat-Symbol in der unteren Leiste zählt sie
-> dagegen nicht mit. Einmal öffnen räumt beides weg.

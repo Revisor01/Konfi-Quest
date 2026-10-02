@@ -1,713 +1,302 @@
 # Offene Befunde
 
-Gemeldete und geprüfte Befunde, mit dem, was jeweils nachgemessen wurde —
-damit die nächste Sitzung nicht bei null anfängt. Behobene und als
-gegenstandslos erwiesene Befunde bleiben stehen und werden im Titel als
-solche markiert; sonst liest sich die Liste wie eine Reihe offener Lücken,
-die längst zu sind.
-
-Zuletzt gegen den Code geprüft: **26.09.2026** im Release-Audit
-(`docs/audit/2026-09-26/`, je Bereich ein Abschnitt „Alte Befunde
-nachgeprüft"). Jeder Eintrag trägt den dort festgestellten Stand als erste
-Zeile.
-
----
-
-## 1. Chat: Ungelesen-Markierung verschwindet nicht (02.09.2026) — BEHOBEN
-
-> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt — `BadgeContext`
-> verwirft den Raumlisten-Cache beim Lesen (Doku-Bericht, „Alte Befunde").
-
-> **Behoben am 02.09.2026.** Zwei Fehler in
-> `BadgeContext.markRoomAsRead`, beide im Frontend:
->
-> 1. Der Cache der Raumliste (`chat:rooms:<userId>`) wurde nach dem Lesen nie
->    verworfen. Beim nächsten App-Start kam das alte `unread_count` zurück und
->    erzeugte erneut Badge und roten Trenner.
-> 2. `setChatUnreadTotal` las den abzuziehenden Wert aus der Closure statt aus
->    dem aktuellen Zustand — deshalb blieb der Badge auch live stehen.
->
-> Fünf Tests halten beides fest. Der Befund unten bleibt als Beschreibung
-> stehen, damit die Messung nachvollziehbar ist.
-
-**Simons Beobachtung**, in Organisation 4 (Review-Gemeinde) reproduzierbar:
-
-> „Zumindest in der aktuellen Version wird das Chat-Badge pro Chat nicht
-> gelöscht, und nach Neuladen erscheint auch der rote Strich bei neuen
-> Nachrichten wieder."
-
-Also zwei zusammenhängende Symptome:
-- Die Zahl am einzelnen Chat bleibt stehen, obwohl der Chat geöffnet wurde.
-- Der rote Trenner „Neue Nachrichten" kommt nach dem Neuladen zurück.
-
-### Was nachgemessen ist (02.09.2026)
-
-`chat_read_status` der drei Review-Konten in Raum 96 (Jahrgangs-Chat):
-
-| Konto | last_read_at | Nachrichten danach |
-|---|---|---|
-| review-konfi (58) | 29.08.2026 13:42 | 16 |
-| review-teamer (57) | 03.08.2026 20:46 | 32 |
-| review-admin (56) | 03.08.2026 20:53 | 29 |
-
-Der Lesestand steht bei zwei Konten auf dem **3. August**, obwohl die Konten
-seither benutzt wurden (letzte Anmeldung 31.08.). Das Öffnen eines Chats
-schreibt `last_read_at` also nicht zuverlässig fort.
-
-**Ehrlicher Hinweis zur Zahl 16:** Davon stammen 16 Nachrichten aus dem
-Befüllen der Demo-Daten am 02.09.2026 (Chat-Nachrichten für den
-Jahresrückblick). Der Befund ist davon unabhängig — die Lesestände vom
-3. August und die 29/32 ungelesenen Nachrichten der beiden anderen Konten
-sind älter als dieser Eingriff.
-
-### WICHTIG: Der Fehler sitzt im Frontend, nicht im Backend
-
-Simon hat es live gegengeprüft (02.09.2026, angemeldet als `simonluthe`,
-Nutzer 41, Organisation 1 — die echte Gemeinde, nicht die Demo):
-
-> „Ich gehe in den Jahrgangschat und es ändert sich nicht."
-
-Dazu die Datenbank in genau diesem Moment:
-
-| Raum | last_read_at | ungelesen laut Datenbank |
-|---|---|---|
-| 62 „Jahrgang 2026/27" | 01.09.2026 22:53 | **0** |
-
-**Das Backend hält den Lesestand also korrekt.** Der Server meldet null
-ungelesene Nachrichten, die Oberfläche zeigt trotzdem eine Markierung. Der
-Fehler liegt damit in der Anzeige: Sie räumt das Badge nicht ab bzw. holt
-den Stand nicht neu.
-
-Das verschiebt die Suche: **Zuerst im Frontend nachsehen**, nicht in den
-SQL-Abfragen. Die früher gemessenen alten Lesestände der Review-Konten
-(3. August) sind eine andere Sache — dort wurden die Chats vermutlich
-schlicht nie geöffnet.
-
-Die vier Dateien, die den Ungelesen-Zustand anfassen:
-
-- `frontend/src/contexts/BadgeContext.tsx` — die Zahl an der Tab-Leiste
-- `frontend/src/components/chat/ChatOverview.tsx` — die Zahl pro Chat in der
-  Liste
-- `frontend/src/components/chat/ChatRoom.tsx` — hier müsste das Markieren
-  als gelesen ausgelöst werden
-- `frontend/src/components/chat/useChatScroll.ts` — der rote Trenner „Neue
-  Nachrichten"
-
-Zu klären: Ruft `ChatRoom` beim Öffnen den Endpunkt auf, der `last_read_at`
-setzt? Und falls ja — wird danach der `BadgeContext` bzw. die Übersicht neu
-geladen, oder behält die Oberfläche ihren alten Stand im Speicher?
-
-### Wo im Backend zu suchen ist (nachrangig)
-
-- `backend/routes/chat.js:1287` — der einzige `INSERT INTO chat_read_status`.
-  Prüfen: Wird er beim Öffnen eines Raums wirklich aufgerufen, und
-  aktualisiert er `last_read_at` bei einem bestehenden Eintrag (UPSERT) oder
-  läuft er ins Leere?
-- `backend/routes/chat.js:791` — `unread_count` pro Raum.
-- `backend/routes/chat.js:1216` und `:2027` — `total_unread` für das Badge
-  an der Tab-Leiste.
-- Im Frontend: Wo wird das Markieren als gelesen ausgelöst? Beim Öffnen des
-  Raums, beim Verlassen, oder gar nicht?
-
-### Was ein Test abdecken muss
-
-- Raum öffnen -> `last_read_at` steht danach auf „jetzt".
-- Danach `unread_count` für diesen Raum = 0.
-- Neue Nachricht von jemand anderem -> Zähler wieder 1, roter Trenner
-  erscheint genau einmal.
-- Neuladen ohne neue Nachricht -> kein roter Trenner, Zähler bleibt 0.
-
-Weiche Erwartungen sind hier ein Fehler: `toBeGreaterThanOrEqual(0)` würde
-den Fehler durchlassen. Auf den konkreten Wert prüfen.
-
----
-
-## 2. Sicherheitsmeldungen zu react-router (07.09.2026) — GEPRÜFT, TRIFFT UNS NICHT
-
-> **Stand 30.09.2026:** unverändert offen, trifft weiter nicht; neu geprüft
-> mit `@ionic/react-router` 9.0.5 und allen Navigationszielen, siehe Nr. 15.
->
-> **Stand 26.09.2026 (Release-Audit):** weiter offen, trifft weiter nicht —
-> `npm audit` zeigt dieselben zwei Meldungen für react-router 6.30.6, der Fix
-> liegt nur in 7 und 8, `@ionic/react-router@9.0.3` verlangt weiter `<7`.
-> Präzisierung zur Gegenprobe unten: Push-Ziele setzen Kennungen **mittig**
-> in feste Pfade ein (`utils/pushNavigation.ts`), App-Links laufen durch eine
-> Erlaubnisliste (`utils/deepLinks.ts`); kein Ziel beginnt mit Nutzerdaten
-> (Grundgerüst- und Toolchain-Bericht).
-
-Zwei Meldungen zu `react-router` 6.30.6 stehen offen und lassen sich nicht
-durch ein Update schließen. Nachgemessen am 07.09.2026:
-
-**Warum kein Update möglich ist.** Der Fix existiert ausschließlich in
-7.18.0; für den 6er-Zweig gibt es keinen. Ein Sprung auf 7 ist mit Ionic
-ausgeschlossen — `@ionic/react-router` deklariert als Peer:
-
-    "react-router":     ">=6.4.0 <7"
-    "react-router-dom": ">=6.4.0 <7"
-
-Das gilt für die installierte 9.0.1, für die neueste 9.0.2 und auch für die
-Nightly 9.0.3. Es ist eine harte Obergrenze, keine Empfehlung. Die Meldungen
-bleiben also offen, bis Ionic nachzieht — das liegt nicht bei uns.
-
-**Beide Lücken greifen bei uns nicht:**
-
-| Meldung | Trifft zu? | Begründung |
-|---|---|---|
-| Constructor Injection in `deserializeErrors()` (SSR-Hydration) | nein | Wir haben kein SSR. Die App ist eine Vite-SPA in einer Capacitor-Hülle; der betroffene Pfad läuft nie. |
-| Open Redirect via Backslash in `<Link>` / `useNavigate` | nein | Alle Navigationsziele sind feste Pfade mit eingesetzter ID (`/konfi/events/${event.id}`, `/admin/chat/room/${room.id}`). Nirgends fließt ein nutzergesteuerter Pfad oder eine ganze Adresse in ein Ziel. |
-
-Die zweite Zeile ist der Punkt, der bei jedem Umbau neu gilt: **Sobald
-irgendwo ein Ziel aus Nutzereingaben, einer API-Antwort oder einem
-Push-Datenfeld gebaut wird, ist die Lücke wieder da.** Wer so etwas
-einführt, prüft das Ziel gegen eine Erlaubnisliste, statt es direkt
-weiterzureichen.
-
-**Zum Gegenprüfen** (die Suche, die den Befund trägt):
-
-    grep -rn 'navigate(`\|push(`\|routerLink={`' frontend/src
-
-Erwartet: ausschließlich feste Pfade mit eingesetzten IDs.
-
----
-
-## 3. Nächtlicher Datenbank-Dump war leer (10.09.2026) — BEHOBEN
-
-> **Stand 26.09.2026 (Release-Audit):** aus dem Repo nicht prüfbar —
-> Sicherungsskript und Überwachung liegen auf dem Server. Was im Repo fehlt,
-> ist eine Beschreibung von Sicherung und Wiederherstellung (Datenbank-Bericht
-> BF-05, Betrieb BF-13).
-
-In der Nacht des Ausfalls vom 09./10.09. lief der nächtliche Dump um 2:30,
-während die Container verschwunden waren. Er hinterließ eine Datei von
-**20 Byte** — das ist der leere gzip-Rahmen, ausgepackt 0 Byte. Der Lauf
-davor (09.09., 448 kB) war der letzte brauchbare Stand.
-
-### Warum der Fehlschlag still blieb
-
-Zwei Fehler, die sich gegenseitig verdeckten:
-
-1. **Im Sicherungsskript fehlte `pipefail`.** In einer Pipe bestimmt der
-   letzte Befehl den Rückgabewert. `pg_dump | gzip` endet deshalb
-   erfolgreich, auch wenn `pg_dump` gar nicht startet — `gzip` gelingt ja,
-   es packt nur nichts ein. Das Skript meldete „Backup ok".
-2. **Die Backup-Überwachung prüfte am Fall vorbei.** Sie kennt einen
-   eigenen Schritt für verdächtig kleine Dumps, sah aber nur eines der
-   beiden Dump-Verzeichnisse — ausgerechnet nicht das von Konfi Quest.
-   Für Konfi Quest prüfte sie nur, ob eine Datei jung genug ist, nicht ob
-   Inhalt darin steht. Um 7:30 meldete sie „OK, 2 frische Dateien" — eine
-   davon war die leere.
-
-Dazu kam ein dritter, davon unabhängiger Punkt: Das übergreifende
-Sicherungsskript für alle Datenbanken führte noch die **Staging-Datenbank**,
-die es seit dem 24.08.2026 nicht mehr gibt. Es meldete jede Nacht folgenlos
-„SKIP" und sah dabei aus, als sei Konfi Quest dort abgedeckt. Die Produktion
-hat einen eigenen Weg und war nie gemeint.
-
-### Was geändert wurde
-
-- Das Sicherungsskript prüft jetzt **vorher**, ob die Datenbank überhaupt
-  läuft, setzt `pipefail`, prüft das Ergebnis auf Inhalt (unter 1 kB gilt als
-  Fehlschlag — der kleinste je gemessene echte Dump war 236 kB) und **löscht**
-  eine unbrauchbare Datei, statt sie liegen zu lassen. Bricht mit Exit 1 ab.
-- Die Überwachung prüft beide Dump-Verzeichnisse auf leere Dateien.
-- Die tote Staging-Zeile ist durch einen Verweis ersetzt, der sagt, wo die
-  Produktion tatsächlich gesichert wird.
-
-### Gegenprobe (alle drei am 10.09.2026 gelaufen)
-
-| Fall | Erwartet | Gemessen |
-|---|---|---|
-| Datenbank läuft | Dump entsteht, Exit 0 | 468 kB, Exit 0 |
-| Container fehlt | kein Dump, Exit 1 | keine Datei, Exit 1 |
-| `pg_dump` liefert nichts | Datei gelöscht, Exit 1 | gelöscht, Exit 1 |
-| Leere Datei im Verzeichnis | Überwachung schlägt an | „PROBLEM: Leere Dumps" |
-
-Der leere Dump wurde ersetzt; der neue Stand enthält **111 Nutzer** und deckt
-sich mit der Zählung in der laufenden Datenbank.
-
-### Was daraus für andere Sicherungen folgt
-
-`pg_dump | gzip > datei` ohne `set -o pipefail` meldet Erfolg, auch wenn nichts
-ankommt. Wer so etwas schreibt, prüft danach die Dateigröße — sonst merkt es
-niemand, bis die Sicherung gebraucht wird.
-
----
-
-## 4. Screenshots zeigten die falsche Seite (10.09.2026) — BEHOBEN
-
-> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt — 42 Bilder,
-> 0 Dubletten, kein Ladezustand, die Android-Kennung greift. Die Bilder
-> zeigen aber den Stand vom 10.09. (ohne Glocke und Gemeinde-Umschalter) und
-> müssen vor 2.3.0 neu gezogen werden (UI-Bericht BF-09; Liste in
-> `docs/store-texte-2.3.0.md`).
-
-Drei Fehler im Aufnahmeskript, alle **am Bild** aufgefallen und keiner am
-Protokoll — das meldete durchweg Erfolg.
-
-### 4.1 Ladeseiten als gelungene Aufnahme
-
-`teamer-chat.png` zeigte „Chaträume werden geladen…", `teamer-profil.png`
-„Profil wird geladen…". Beide waren rund 40 kB groß statt der üblichen 500 kB.
-
-Das Skript wartet auf das Verschwinden des Ladebalkens, schluckte einen
-Zeitüberlauf dabei aber still — obwohl der Kommentar an der Stelle genau das
-Gegenteil versprach („Ohne das landen halb aufgebaute Listen auf den Bildern").
-Jetzt folgt die Gegenprobe: Dreht danach noch etwas, fällt die Aufnahme durch.
-
-### 4.2 Zwei Namen, ein Bild
-
-`teamer-abzeichen.png` und `teamer-mitmachen.png` waren **Byte für Byte
-identisch** — beide zeigten die Events-Seite, eine davon unter falschem Namen.
-An der Dateigröße fiel das nicht auf: beide 525 kB, beide für sich genommen
-tadellos.
-
-**Gemessen:** Kommt der Seitenwechsel über die Verlaufssteuerung, während auf
-der vorigen Seite noch ein Hinweis weggeklickt wird, verwirft die Oberfläche ihn
-still. Die Adresse zeigt das neue Ziel, im Bild steht die alte Seite. Längeres
-Warten hilft nicht — auch nach zehn Sekunden bleibt sie stehen.
-
-Was trägt, ist der Weg, den auch ein Mensch nimmt: **den Reiter antippen.** Im
-Test wechselten so alle Reiter fehlerfrei, während derselbe Wechsel über die
-Verlaufssteuerung hängen blieb.
-
-**Betroffen war jede Rolle und beide Gerätegrößen** — auch die Bilder für den
-App Store, dort ebenfalls dreimal (Leitung, Team, Konfi).
-
-### 4.3 Ein Netz darunter
-
-Jede Aufnahme bekommt einen Fingerabdruck. Gleicht sie einer früheren derselben
-Rolle, fällt sie durch und nennt den Doppelgänger beim Namen. Verglichen wird
-gegen **alle** vorherigen, nicht nur die letzte — zwischen den beiden
-Doppelgängern lag noch eine dritte Seite.
-
-### Die App ist nicht betroffen
-
-Mit echten Klicks wechselt jeder Reiter sauber (gemessen für alle fünf). Zu den
-Abzeichen führt für Team und Leitung ohnehin nur der Weg über das Profil, und
-der trägt — einen eigenen Reiter gibt es dort nicht. Der Fehler traf allein die
-Automatik.
-
-### Ergebnis
-
-Alle 42 Bilder neu gezogen (21 je Gerät). Keine Duplikate, keine Datei unter
-100 kB, jedes angesehen.
-
-### Was daraus folgt
-
-Ein `.catch(() => {})` um eine Wartebedingung hebt genau die Prüfung auf, für
-die sie gedacht war. Wo eine Aufnahme fehlschlagen *soll*, muss sie es auch
-dürfen — ein Bild, das niemand ansieht, ist kein Beleg. Und Dateigröße allein
-beweist nichts: Zwei identische Bilder waren beide „richtig groß".
-
----
-
-## 5. CodeQL-Meldungen vor dem Release (11.09.2026) — GEPRÜFT, KEINE BLOCKIERT
-
-> **Stand 26.09.2026 (Release-Audit):** weiter zutreffend — `linkifyText`
-> erzwingt `https://`, `mediaPreview` kommt aus `URL.createObjectURL`, der
-> globale Limiter steht vor allen Routen (Doku-Bericht, „Alte Befunde").
->
-> **Stand 28.09.2026 — ALLE GESCHLOSSEN.** Alle 12 offenen Meldungen gegen
-> Release 2.3.0 einzeln am Code geprüft (Datenfluss aus der SARIF-Datei) und in
-> GitHub geschlossen: acht als „False positive", vier als „Used in tests".
-> Neu gegenüber der Tabelle unten: `js/path-injection` in `createApp.js:313` und
-> `utils/photoCrypto.js:114`/`:190` — greift nicht, der Pfad ist `req.file.path`
-> aus multer mit vom Server gewähltem Zwischenablage-Namen (24 Zufallsbytes,
-> `createApp.js:193-196`). Richtigstellung zu CORS: Die Liste hat einen
-> Standardwert (`server.js:56`), sie wird in Produktion nur nicht übergeben, weil
-> `CORS_ORIGINS` dort nicht gesetzt ist (`server.js:402`). Live gemessen: fremde
-> Origin ohne CORS-Header, beide Limiter-Routen mit `ratelimit-policy: 2000;w=900`.
->
-> **Stand 29.09.2026 — PR mit den Paketen vom 28./29.09.:** drei neue hohe
-> Meldungen. Zwei im Code behoben: `js/path-injection` in `utils/textDatei.js`
-> (die Textprüfung liest jetzt nur, was im Upload-Zwischenlager liegt) und
-> `js/incomplete-multi-character-sanitization` in
-> `androidAppSymbolZahl.test.ts` (Manifest geparst statt per Regex entkommentiert).
-> Die dritte greift nicht: `js/missing-rate-limiting` an
-> `POST /challenges/konfi/:id/submissions` (`routes/challenges.js`, Ende des
-> Handlers). Die Route hat den Upload-Limiter (`createApp.js:645`, 100 je
-> 15 Minuten je Konto oder Adresse, in `server.js` übergeben) und den globalen
-> Limiter. CodeQL sieht beide nicht, weil sie in `createApp.js` hängen, nicht an
-> der Route — dieselbe Lage wie bei `events/checkin.js` unten. Neu gemeldet,
-> weil der Handler seit dem 28.09. selbst eine Datei löscht (abgelegte Datei
-> eines doppelten Beitrags, 409). In GitHub als „False positive" zu schließen.
-
-Acht offene Code-Scanning-Meldungen, vor dem Release Build 182 einzeln am Code
-nachgesehen. Keine hält einer Prüfung stand; die Liste steht hier, damit die
-nächste Sitzung nicht von vorn anfängt.
-
-| Meldung | Ort | Befund |
-|---|---|---|
-| `js/xss-through-dom` | `chat/MessageBubble.tsx:59` | Greift nicht. `linkifyText` erzwingt `https?://` im `href`, unabhängig von der Regex davor. Der Kommentar an der Stelle begründet es. |
-| `js/xss-through-dom` | `konfi/modals/ChallengeSubmitModal.tsx:672` | Greift nicht. `mediaPreview` ist eine Blob-Adresse aus `URL.createObjectURL()` der eigenen Kamera-/Dateiauswahl — kein Fremdwert. |
-| `js/missing-rate-limiting` | `events/checkin.js:39`, `events/verwaltung.js:672` | Greift nicht. Ein globaler Limiter hängt vor allen Routen (`createApp.js:121`): 2000 Anfragen je 15 Minuten pro Konto oder Adresse. CodeQL sieht ihn nicht, weil er nicht an der einzelnen Route steht. |
-| `js/cors-permissive-configuration` | `createApp.js:57` | Greift nicht. Der Block läuft nur, wenn `corsOrigins` gesetzt ist — das ist allein im E2E-Stack der Fall. In Produktion liegen Oberfläche und API auf derselben Domain, die Liste bleibt leer. |
-| `js/incomplete-sanitization` (3×) | `e2e/…`, `__tests__/…` | Testdateien, nicht ausgeliefert. |
-
-### Zum Gegenprüfen
-
-    gh api "repos/Revisor01/konfi-quest/code-scanning/alerts?state=open&per_page=50" \
-      --jq '.[] | "\(.rule.security_severity_level)\t\(.rule.id)\t\(.most_recent_instance.location.path)"'
-
-Kommt eine Meldung an einer **neuen** Stelle dazu, ist sie ungeprüft — die
-Tabelle oben gilt nur für die genannten Orte.
-
----
-
-## 6. Rückblick las die falsche Kategorie-Quelle (02.09.2026) — BEHOBEN
-
-> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt —
-> `tests/utils/wrappedKategorien.test.js` sichert die Quelle ab.
-
-> **Behoben.** `routes/wrapped.js` liest die Kategorien seit dem Umbau aus
-> `activity_categories` bzw. `event_categories`; die Begründung steht als
-> Kommentar an der Abfrage (`wrapped.js:415 ff.`). Abgesichert durch
-> `tests/utils/wrappedKategorien.test.js`.
-
-Der Befund stand im Konzeptpapier zum Wrapped-Umbau, das mit dessen Abschluss
-entfallen ist. Die Messung bleibt hier, weil sie eine Falle beschreibt, die
-sich wiederholen kann.
-
-**Gemessen am 02.09.2026:** Die Abfrage las die Kategorie über
-`COALESCE(a.category, a.type)` — also das Textfeld `activities.category`.
-Dieses Feld war bei **allen 48 Aktivitäten NULL** und wurde nirgends befüllt.
-Der Rückblick fiel deshalb immer auf `a.type` zurück und kannte nur
-„gottesdienst" und „gemeinde". Die echten Zuordnungen lagen in
-`activity_categories` (35 Zuordnungen: Kasualien 12, Gottesdienst 6,
-Gemeinde 5, Sonntag 5, Konfitreff 2).
-
-**Was daraus folgt:** Ein Feld, das es gibt, heißt nicht, dass es gefüllt ist.
-Wer eine Spalte in eine Abfrage nimmt, zählt einmal nach, wie viele Zeilen
-darin nicht NULL sind — sonst liefert die Abfrage stillschweigend den
-Rückfallwert.
-
-**Verwandt, ebenfalls geprüft:** Gelöschte Kategorien brechen den Rückblick
-nicht. `activity_categories` und `event_categories` hängen mit
-`ON DELETE CASCADE` an `categories`; beim Löschen verschwinden nur die
-Zuordnungen, die Aktivitäten und Termine bleiben. Eine Kategorie-Seite prüft
-deshalb auf **Inhalt**, nicht auf die Existenz der Kategorie.
-
----
-
-## 7. Zwei tote Stellen im Konfi- und Teamer-Profil (12.09.2026) — BEHOBEN
-
-> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt — `next_badge` und
-> `recent_activities` haben in `frontend/src` 0 Treffer.
-
-Beim Einbau der Stempel ins Profil aufgefallen, beide am Code nachgesehen.
-Keiner davon ist ein Fehler, den jemand gemeldet hat — aber beide führen dazu,
-dass etwas nicht erscheint, das erscheinen soll.
-
-### 7.1 Die Karte „Nächstes Badge" rendert nie — BEHOBEN 13.09.2026
-
-`ProfileView.tsx:471` prüft `profile.progress_overview?.next_badge`.
-`GET /konfi/profile` (`konfi.js:521 ff.`) baut `progress_overview` aber
-ausschließlich aus `achievements` — das Feld `next_badge` gibt es dort nicht.
-Der Kommentar im Backend nennt den Block selbst „Mock progress overview".
-Ebenso ist `recent_activities` an derselben Stelle fest `[]`.
-
-**Folge:** Die Karte ist seit ihrer Entstehung unsichtbar. Entweder das
-Backend liefert `next_badge` (die Abzeichen-Logik dafür gibt es in
-`services/badgeService.js`), oder die Karte im Frontend entfällt.
-
-**Behoben am 13.09.2026:** Die Karte ist entfernt, ebenso der Block „Letzte
-Aktivitäten" — beide hingen an Feldern, die das Backend nie geliefert hat.
-Niemand hat die Funktion vermisst, weil sie nie sichtbar war; das Backend
-wurde deshalb bewusst NICHT erweitert. Mit den Blöcken sind auch die toten
-Typen, Hilfsfunktionen und Symbol-Importe gefallen.
-
-**Zum Gegenprüfen:**
-
-    grep -rn 'next_badge\|recent_activities' frontend/src
-
-### 7.2 Der Einstieg „Konfi-Historie" hängt am Jahrgangsnamen — BEHOBEN 13.09.2026
-
-`TeamerProfilePage.tsx:606` zeigt den Einstieg nur, wenn
-`profile.konfi_data?.jahrgang_name` gesetzt ist. Ist der Jahrgang einer
-früheren Konfizeit gelöscht, verschwindet der Einstieg — obwohl die Abzeichen
-aus dieser Zeit weiter existieren. Ein Kommentar in `teamer.js:82-86` warnt
-ausdrücklich davor, sich auf den Jahrgang zu verlassen.
-
-**Folge:** Wer als Teamer:in einen gelöschten Jahrgang hatte, kommt an die
-eigene Konfi-Historie nicht mehr heran. Die Bedingung müsste an den Daten
-hängen (gibt es Badges/Punkte?), nicht am Namen des Jahrgangs.
-
-**Behoben am 13.09.2026:** Der Einstieg hängt jetzt an `profile.konfi_data` —
-also daran, ob es überhaupt eine Konfi-Vergangenheit gibt. Genau das Kriterium,
-das das Backend schon benutzt (`isPromotedKonfi`, `teamer.js`), inklusive seiner
-Warnung an derselben Stelle. Reine Teamer:innen ohne Konfi-Vergangenheit haben
-weiter `konfi_data: null` und sehen den Einstieg nicht; für sie führte er ins
-Leere. Die Zielseite kannte den leeren Namen bereits und überschreibt dann mit
-„Konfi-Zeit" statt „Jahrgang …". In beiden Dateien ist `jahrgang_name` jetzt
-auch im Typ optional, damit sich die nächste Änderung nicht wieder darauf
-verlässt.
-
-**Zum Gegenprüfen:**
-
-    grep -n 'konfi_data' frontend/src/components/teamer/pages/TeamerProfilePage.tsx
-
----
-
-## 8. Erinnerungen gingen an Abgemeldete (15.09.2026) — BEHOBEN
-
-> **Stand 26.09.2026 (Release-Audit):** laut API-Doku behoben
-> (`konfis-events.yaml`, Erinnerungen); das Verhalten selbst wurde im Audit
-> nicht erneut ausgeführt.
-
-Wer sich von einem Termin abgemeldet hatte, bekam die Erinnerung trotzdem.
-Die Abmeldung war damit folgenlos für alles, was danach noch verschickt wurde.
-
-**Behoben am 15.09.2026.** Die Erinnerung geht nur noch an die, die
-tatsächlich zugesagt haben.
-
----
-
-## 9. Warteliste rückte an sechs Stellen nicht nach (15.09.2026) — BEHOBEN
-
-> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt — `rueckeNach` an
-> allen sechs Wegen, `nachrueckenLuecken.test.js` grün. Dabei eine **siebte**
-> Lücke gefunden: Wird die Konfi-Kapazität eines Termins auf „unbegrenzt"
-> gesetzt, bleibt die Warteliste stehen (Punkte/Termine-Bericht BF-06, offen).
-
-Wurde ein Platz frei, blieb er frei: Die Warteliste rückte nicht
-selbstständig nach. Betroffen waren sechs verschiedene Wege, auf denen ein
-Platz frei werden kann — je nachdem, wie abgemeldet wurde, rückte mal jemand
-nach und mal nicht.
-
-**Behoben am 15.09.2026.** An allen sechs Stellen rückt die Warteliste jetzt
-gleich nach.
-
----
-
-## 10. Abgesagte Termine fielen aus allen drei Reitern (15.09.2026) — BEHOBEN
-
-> **Stand 26.09.2026 (Release-Audit):** behoben bestätigt — abgesagte Termine
-> bleiben in den Listen (`konfi.js`, `events/lesen.js`); Handbuch und
-> CHANGELOG 2.2.0 decken sich damit.
-
-Ein abgesagter Termin verschwand vollständig aus der Liste — für Konfis,
-Teamer:innen und Leitung gleichermaßen. Wer angemeldet war, sah nur, dass
-der Termin weg war, nicht dass er abgesagt wurde.
-
-**Behoben am 15.09.2026.** Abgesagte Termine bleiben sichtbar und sind als
-abgesagt gekennzeichnet.
-
----
-
-## 11. Absage ließ bereits Verbuchte unangetastet (16.09.2026) — GEÄNDERT
-
-> **Stand 26.09.2026 (Release-Audit):** bestätigt — die Absage nimmt Punkte,
-> Beleg und Zähler in einer Transaktion zurück (`utils/bookingUtils.js`,
-> `absageMeldetAb.test.js`). Offener Randfall: abgemeldet **und** trotzdem als
-> anwesend verbucht (Punkte/Termine-Bericht, „Unklar").
-
-Wurde ein Termin abgesagt, blieben bereits verbuchte Punkte und
-Teilnahmen stehen. Simon hat am 16.09.2026 entschieden, dass das nicht so
-bleiben soll.
-
-**Geändert am 16.09.2026** auf Simons Entscheidung.
-
----
-
-## 12. init-scripts weicht vom Produktionsschema ab (16.09.2026) — BEHOBEN 16.09.2026
-
-Das Schema in `init-scripts/` deckte sich nicht mit dem, was in Produktion
-steht. Das traf jeden, der die Datenbank frisch aufsetzt: Er bekam einen
-anderen Stand als den, gegen den die App läuft — 25 Tabellen statt 57,
-darunter drei, die es in Produktion längst nicht mehr gab.
-
-**Behoben am 16.09.2026.** `init-scripts/01-create-schema.sql` ist seither
-der `pg_dump --schema-only` der Produktion — dieselbe Datei, aus der auch die
-Testsuite ihre Datenbank baut —, `02-migrationsstand.sql` trägt die darin
-schon enthaltenen Migrationen ein, und der Wächter
-`backend/tests/schema/neuinstallation.test.js` baut bei jedem Testlauf eine
-Wegwerf-Datenbank aus beiden Dateien, lässt die Migrationen laufen und
-vergleicht das Ergebnis mit dem Produktionsschema. Der Weg steht in
-`init-scripts/README.md`.
-
-**Nachgemessen im Release-Audit 26.09.2026** (Datenbank-Bericht):
-Neuinstallation und Deploy-Weg ergeben identische Schemata — `diff`
-**0 Zeilen**, 59 Tabellen, 1 View. Am 26.09.2026 noch einmal gegengeprüft:
-`init-scripts/01-create-schema.sql` und `backend/tests/schema/prod-schema.sql`
-sind ohne Kommentarzeilen identisch (0 Diff-Zeilen). Dieser Eintrag stand bis
-dahin auf „in Arbeit" (Doku-Bericht BF-12).
-
----
-
-## 13. Teamer-Oberfläche bot 9 von 17 erlaubten Termin-Aktionen nicht an (16.09.2026) — BEHOBEN 16.09.2026
-
-Die Berechtigungen erlaubten Teamer:innen 17 Aktionen an Terminen, die
-Oberfläche bot davon nur 8 an. Die übrigen 9 waren serverseitig offen, aber
-nirgends erreichbar.
-
-**Aufgelöst am 16.09.2026** durch Simons Entscheidung, dass Teamer:innen
-Termine gar nicht verwalten sollen. Damit entfällt die Lücke, statt
-geschlossen zu werden: Die Rechte wurden auf das eingeschränkt, was die
-Oberfläche anbietet.
-
-**Umgesetzt, bestätigt im Release-Audit 26.09.2026** (Sicherheits- und
-Punkte/Termine-Bericht): Alle Schreibwege an Terminen — anlegen, ändern,
-absagen, löschen, Teilnehmende ein- und austragen, Anwesenheit, Serien —
-verlangen `requireAdmin` (`routes/events/verwaltung.js`, `teilnehmer.js`,
-`anwesenheit.js`, `serien.js`; Test `rbacTermine.test.js`, sieben Aktionen
-als Teamer:in ergeben 403). Die Teamer-Oberfläche bindet den Absage-Dialog
-nicht mehr ein; CHANGELOG 2.2.0 nennt es unter „Geändert". Dieser Eintrag
-stand bis zum 26.09.2026 auf „Der Umbau läuft" (Doku-Bericht BF-12).
-
-**Rest, zu entscheiden:** `POST /events/:id/generate-qr` und der Live-Zähler
-`attendance-count` stehen Teamer:innen weiter offen (`routes/events/checkin.js`,
-`requireTeamer`). Ob der Check-in vor Ort bewusst beim Team bleibt, ist
-nirgends festgehalten (Sicherheits-Bericht BF-21).
-
-**Entschieden 27.09.2026 (Simon):** Der Check-in vor Ort bleibt beim Team —
-Teamer:innen erzeugen QR-Codes, damit mehrere gleichzeitig einchecken lassen
-können. Das Handbuch (`70-termine.md`) nennt den Grund.
-
-## 14. GitGuardian meldet „Generic Password" in Tests (29.09.2026) — GEPRÜFT, FEHLALARM
-
-Der GitGuardian-Check am Release-PR meldete zwei Fundstellen als Passwort.
-Beide sind am Code geprüft und kein Geheimnis; es gibt nichts zu widerrufen.
-
-- `backend/tests/utils/passwordUtils.test.js` (Commit `004b4fe9`): die
-  Konstante `SONDERZEICHEN` — die Liste der Zeichen, die `validatePassword`
-  als Sonderzeichen zählt. Der Block hält fest, dass die Liste beim
-  Einführen des Backend-Lints gleich geblieben ist.
-- `backend/tests/schema/schema-erneuern.sh` (Commit `ee95e49e`):
-  `POSTGRES_PASSWORD=wegwerf` für den Wegwerf-Container, in dem das Skript den
-  Schema-Dump erneuert. Der Container ist nur lokal erreichbar und wird am
-  Ende des Laufs gelöscht.
-
-Frühere Meldungen derselben Art (Release-PR 2.3.0): `konfi1` und das
-Beispiel-Passwort im Bibelvers-Format sind Testwerte der Test-Datenbank.
-Am 30.09.2026 (PR #198) meldete GitGuardian „Username Password" in
-`frontend/src/__tests__/components/konfiRegistrierung.test.tsx`: das Testkonto
-`mia.neu` mit einem Beispiel-Passwort im Bibelvers-Format gegen eine
-nachgebaute API — ebenfalls ein Fehlalarm. In
-GitGuardian lassen sich die Fundstellen als Fehlalarm markieren; der Check
-ist „neutral" und blockiert den Merge nicht.
-
-## 15. Zwei moderate Dependabot-Meldungen zu react-router (30.09.2026) — GEPRÜFT, TRIFFT UNS NICHT
-
-> **Geschlossen 01.10.2026:** Alerts #213 und #214 auf GitHub als
-> „tolerable risk" geschlossen, danach 0 offene Dependabot-Alerts.
->
-> **Stand 01.10.2026:** Simon: „ja" zum Schließen als „tolerable risk".
-> Geschlossen werden sie vom lokalen Agenten (die Cloud hat keinen Zugriff
-> auf Dependabot-Alerts), Auftrag in `docs/auftraege/lokaler-agent/README.md`.
-> Die Begründung unten bleibt gültig, solange `@ionic/react-router`
-> `react-router <7` verlangt.
->
-> **Stand 30.09.2026:** offen und ohne Update schließbar, trifft die App
-> nicht. Die beiden Alerts auf GitHub lassen sich mit der Begründung unten
-> als „tolerable risk" schließen. Ergänzt Nr. 2 um den heutigen Stand und
-> die vollständige Suche nach Navigationszielen.
-
-GitHub meldet auf main „2 vulnerabilities (2 moderate)". Gemessen mit
-`npm audit` auf 7d8e945f: Wurzel 0, Backend 0, Frontend 3 moderate. Dahinter
-stehen genau zwei Advisories, beide auf `react-router` 6.30.6, einer direkten
-Laufzeitabhängigkeit in `frontend/package.json`; `react-router-dom` und
-`@ionic/react-router` zählt npm nur mit, weil sie davon abhängen.
-
-| Advisory | Was | Betroffen | Behoben in |
-|---|---|---|---|
-| GHSA-wrjc-x8rr-h8h6 | Open Redirect über Backslash in `<Link>` und `useNavigate` (Umgehung von CVE-2025-68470) | >= 6.0.0 < 7.18.0 | 7.18.0 |
-| GHSA-337j-9hxr-rhxg | Constructor Injection über `deserializeErrors()` bei SSR-Hydration (CVSS 6.1) | >= 6.4.0 < 7.18.0 | 7.18.0 |
-
-**Warum kein Update möglich ist.** 6.30.6 ist die letzte Fassung der Reihe 6,
-einen Fix dort gibt es nicht. `@ionic/react-router` verlangt auch in der
-neuesten Fassung 9.0.5 `react-router >=6.4.0 <7` (CLAUDE.md,
-„Abhängigkeiten"). `npm audit fix` ohne `--force` hebt nur Ionic 9.0.3 → 9.0.5
-und lässt beide Meldungen stehen (30.09.2026 gemessen: 3 Pakete im Lockfile
-geändert, danach weiter 3 moderate); `--force` würde `@ionic/react-router` auf
-8.8.19 herabsetzen bzw. react-router 8.4.0 einsetzen — beides mit Ionic 9
-unvereinbar. `.github/dependabot.yml` schließt react-router ab 7 deshalb für
-Versions- und Sicherheits-Updates aus.
-
-**Constructor Injection trifft nicht:** kein SSR, keine Hydration. Die App ist
-eine Vite-SPA mit `IonReactRouter`; `frontend/src` ruft weder
-`createBrowserRouter` noch einen Static Router auf und übergibt nirgends
-`hydrationData` (0 Treffer außerhalb der Tests).
-
-**Open Redirect trifft nicht.** Er greift nur, wenn ein Navigationsziel mit
-`//` oder `/\` beginnt: Dann scheitert `pushState` an der fremden Adresse, und
-React Router weicht auf `window.location.assign` aus. Am 30.09.2026 geprüft:
-jede Stelle in `frontend/src`, die navigiert (87 Fundstellen, Suche unten),
-dazu jeder Weg, auf dem ein Ziel von außen hereinkommt:
-
-- **Push-Tap und Postfach:** `buildPushTargetUrl`
-  (`frontend/src/utils/pushNavigation.ts`) baut jedes Ziel aus einem festen
-  Präfix (`/admin`, `/teamer`, `/konfi`) und setzt Kennungen aus den
-  Push-Daten nur mittig ein (`${routePrefix}/chat/room/${data.roomId}`); die
-  Rückblick-Ausgabe geht mit `encodeURIComponent` in die Abfrage, ein
-  unbekannter Typ ergibt kein Ziel. Weiter über `pushZielMelden` an
-  `frontend/src/navigation/PushZielNavigation.tsx`. Auch ein `..` in einer
-  Kennung ändert nichts: Das Ziel beginnt mit `/` und einem Buchstaben,
-  `pushState` bleibt auf derselben Adresse.
-- **App-Links (Android) und Universal Links (iOS, seit 02.10.2026):**
-  `deepLinkZiel` (`frontend/src/utils/deepLinks.ts`)
-  nimmt nur `https://konfi-quest.de` und nur Pfade, die mit `/login`,
-  `/register` oder `/reset-password` beginnen — geprüft nach `new URL()`, das
-  Backslashes schon in `/` umwandelt. Beide Systeme liefern über dasselbe
-  Ereignis `appUrlOpen`, es gibt keinen zweiten Weg.
-- **Umleitungen alter Adressen:** `umleitungsZiel`
-  (`frontend/src/components/layout/MainTabs.tsx`) füllt Werte aus der
-  Adresszeile nur in feste Vorlagen aus
-  `frontend/src/navigation/rollenBaeume.ts`; der einzige Platzhalter landet in
-  einem Abfragewert (`/teamer/events?eventId=:id`). Die Zurück-Ziele
-  (`elternPfad`) kommen aus den Routendefinitionen.
-- **Abfrageparameter** (`segment`, `eventId`, `punkte`, `rueckblick`,
-  `token`, `code`) wählen nur Ansichten oder gehen an die API; keiner wird
-  Navigationsziel.
-- **Alles Übrige** sind feste Zeichenketten (Anmeldung, Startseiten der
-  Rollen, Einstellungen) oder feste Pfade mit eingesetzter ID aus API-Daten
-  (`/admin/events/${event.id}`).
-
-Ergebnis: Kein Pfad aus Nutzereingabe, Push-Daten, App-Link oder Abfrage
-steht am Anfang eines Navigationsziels.
-
-**Auf GitHub:** Simon kann beide Dependabot-Alerts mit „Dismiss alert" →
-„Risk is tolerable to this project" schließen und auf diesen Eintrag
-verweisen. Wieder prüfen, sobald `@ionic/react-router` react-router 7
-zulässt oder ein Navigationsziel aus Daten gebaut wird, die nicht im Code
-stehen (Merksatz in Nr. 2).
-
-**Zum Gegenprüfen:**
-
-    grep -rnE "useNavigate|navigate\(|useHistory|history\.(push|replace|go)\(|router\.(push|navigate|back)\(|<Redirect|<Navigate|<Link[ >]|routerLink=|window\.location\.(href|assign|replace)|location\.href\s*=" \
-      --include=*.ts --include=*.tsx frontend/src | grep -v __tests__ | grep -v "window.history.back()"
-
-Erwartet: feste Pfade, Kennungen nur hinter einem festen Präfix, und die drei
-Einstiege oben (Push, App-Link, Umleitung) unverändert.
-
----
-
-## 16. Upload aus Nextcloud scheitert auf Android (02.10.2026) — ZURÜCKGESTELLT, SONDERFALL
-
-> **Stand 02.10.2026:** Simon, Gerätetest mit Android 133 / iOS 239: „Alle
-> Tests sind positiv. Einzig das Laden aus einem Cloud-Speicher klappt nicht.
-> Nextcloud. Legen wir zur Seite. Sonderfall." Am Abend: „nextcloud links auf
-> android irgendwann vielleicht" — keine Planung, kein Termin.
-
-**Was geht:** PDF und Word vom Android-Handy in Chat und Material, aus dem
-Download-Ordner und aus Google Drive (seit Build 133: Dokumente werden bei
-der Auswahl in den Speicher gelesen, `services/systemDialoge.ts`,
-`imSpeicher`). Fotos gingen schon vorher.
-
-**Was nicht geht:** Eine Datei, die über die Nextcloud-App ausgewählt wird.
-
-**Vermutung, nicht gemessen:** Die Nextcloud-App liefert die Datei als
-Verweis auf ihren eigenen Anbieter und lädt sie erst beim Lesen vom Server
-herunter. Wenn sie dabei noch nicht auf dem Gerät liegt, scheitert schon das
-Lesen bei der Auswahl. Die Fehlermessung je Upload-Schritt
-(`services/uploadDiagnose.ts`) zeigt das an: ein `fehler` mit `ort`
-`dateiauswahl-…` statt `chat-datei-direkt` oder
-`material-dateien-hochladen`.
-
-**Ausweg für Nutzer:innen:** Die Datei in der Nextcloud-App zuerst auf das
-Gerät laden („Herunterladen" bzw. „Offline verfügbar") und dann aus dem
-Download-Ordner wählen.
-
-**Wieder aufnehmen,** wenn sich weitere Gemeinden melden. Dann zuerst die
-Fehlermessung für diesen Fall auswerten (lokaler Agent, Umami `fehler` mit
-`ort` `dateiauswahl-…`), danach entscheiden, ob ein nativer Leseweg am
-WebView vorbei nötig ist.
+Die eine Stelle für alles, was offen ist: Fehler und Lücken, Entscheidungen
+bei Simon, Geplantes und Zurückgestelltes. Was erledigt ist, wird hier
+gestrichen — es bleibt in der Git-Historie und in der Commit-Nachricht.
+
+- **Erledigt?** Eintrag löschen, im Commit sagen, womit er erledigt ist.
+- **Neu?** Eine Zeile mit Was, Warum und Seit wann; dazu genug Kontext, dass
+  die nächste Sitzung ohne Vorwissen anfangen kann.
+- **Keine Nummern.** Verweise aus Code und Doku nennen den Titel eines
+  Eintrags, nicht seine Stelle in der Liste.
+- Kennungen wie „Sicherheit BF-10" verweisen auf das Release-Audit vom
+  26.–28.09.2026; wo es steht, erklärt
+  [docs/README.md](README.md#befundkennungen).
+
+Stand: 02.10.2026, gegen den Code geprüft.
+
+## Offen
+
+### Code
+
+- **Challenge-Urheber:innen nur aus der Stamm-Gemeinde.** `GET
+  /challenges/admin/authors` und die Urheber-Prüfung beim Anlegen und Ändern
+  lesen nur `users.organization_id`; wer als Teamer:in in einer weiteren
+  Gemeinde mitarbeitet, steht dort nicht zur Auswahl (gesetzt über die
+  Kennung: 400). Seit 27.09.2026; Gruppenchats und Lizenz-Mail sind schon
+  umgestellt. Teil der Prüfung in
+  [planung/mehrfach-konten.md](planung/mehrfach-konten.md), Punkt 3
+  (Chat BF-08, Rest).
+- **Punktart steht nicht am Beleg.** Seit Migration 163 speichert
+  `user_activities` den Punktwert zum Zeitpunkt der Vergabe, die Art
+  (Gottesdienst/Gemeinde) aber nicht. Ändert die Leitung die Art einer
+  Aktivität, landen Rücknahme, Detailliste und Historie in der anderen Säule
+  (`konfi-management.js` liest `a.type`); die Summe stimmt, die Verteilung
+  nicht. Seit 27.09.2026 (Punkte/Termine BF-02, Rest).
+- **Sperre wirkt auf der zweiten Replica erst nach 30 s.** Deaktivieren und
+  Löschen leeren den Rechte-Zwischenspeicher nur auf der Replica, die die
+  Anfrage bearbeitet; die andere arbeitet bis zu 30 s mit dem alten Stand
+  (`USER_CACHE_TTL` in `backend/middleware/rbac.js`). Ein gemeinsamer Merker
+  (etwa über `token_invalidated_at`) fehlt. Seit 26.09.2026 (Sicherheit
+  BF-10).
+- **Sprühangriff über viele Konten.** Die Kontosperre zählt je Konto (10
+  Fehlversuche je Stunde); wer viele Konten mit je wenigen Versuchen
+  durchprobiert, wird nur von der IP-Grenze gebremst (300 je 15 Minuten).
+  Seit 27.09.2026, „später" (Sicherheit BF-04, Rest).
+- **Testlücke Super-Admin-Konten.** `backend/tests/routes/users.test.js`
+  prüft alle vier verbotenen Wege (Org-Leitung verwaltet ein Konto mit
+  Super-Admin-Merkmal), aber den erlaubten Fall nur für Passwort und
+  Bearbeiten; für Löschen und Jahrgangszuweisung durch einen Super-Admin fehlt
+  er. Seit 27.09.2026 (Sicherheit BF-01, Testlücke).
+- **Gemeinde-Rückfall lässt Rolle und Namen stehen.** Wird einer Person die
+  aktive Gemeinde entzogen, wechselt die App per `auth:org-fallback`
+  (`frontend/src/contexts/AppContext.tsx`) Token, Zwischenspeicher und Socket
+  zur Stamm-Gemeinde, nicht aber Rolle und Gemeindenamen im Nutzer-Zustand —
+  bis zum nächsten Start zeigt sie womöglich die Oberfläche der entzogenen
+  Rolle. Seit 27.09.2026 (Grundgerüst BF-05, Nebenbefund).
+- **Anlegen ohne Wiederholungsschutz.** POST und PATCH werden seit 26.09.2026
+  nie automatisch wiederholt, Doppelbuchungen entstehen nicht mehr. Damit
+  Bonuspunkte, Event- und Konfi-Anlage nach einem Netzabbruch sicher
+  wiederholbar wären, bräuchten sie eine `client_id` nach dem Muster
+  `backend/utils/antragIdempotenz.js` (Grundgerüst BF-02, Rest).
+- **Laufzeiten im Hintergrund nicht sichtbar.** `/api/metrics/local` zeigt den
+  Cron-Leader, aber nicht, wann welcher Job zuletzt lief und wie lange; auch
+  die Dauer eines Push-Versands und des Zähler-Laufs steht in keiner
+  Log-Zeile (01.10.2026: „nicht messbar ohne Code"). Seit 27.09.2026
+  (Betrieb BF-10, Rest).
+- **Zähler-Abruf nach jeder Nachricht (optional).** Jede `newMessage` löst im
+  `BadgeContext` einen Abruf der Zähler aus; eine Entprellung wäre billiger.
+  Seit 27.09.2026, optional (Betrieb BF-08, Rest).
+- **Veraltete Kommentare zum Schema.** `backend/tests/globalSetup.js` und
+  `backend/tests/schema/refresh-schema.sh` begründen den Dump mit der Spalte
+  `konfi_profiles.password_plain`, die Migration 187 am 01.10.2026 entfernt
+  hat; `backend/init-scripts/007_levels.sql` wird nirgends eingebunden.
+  Seit 26.09.2026 (Datenbank BF-13, Rest).
+- **Unerklärtes 500 an `mark-read`.** `POST /api/chat/rooms/*/mark-read`
+  antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200);
+  die Ursache ist nicht untersucht.
+- **CodeQL-Meldung schließen.** `js/missing-rate-limiting` an
+  `POST /challenges/konfi/:id/submissions` greift nicht (Upload-Limiter und
+  globaler Limiter hängen in `backend/createApp.js`, nicht an der Route);
+  am 29.09.2026 begründet, in GitHub als „False positive" zu schließen —
+  ob es geschehen ist, ist nicht vermerkt.
+- **Doku und Bilder ein Jahr im Zwischenspeicher.** In `frontend/nginx.conf`
+  gilt die Regel für Dateiendungen (`location ~* \.(js|css|png|…)$`, „expires
+  1y", `immutable`) auch unter `/docs/` — reguläre Ausdrücke gehen in nginx
+  vor `location /docs/`. Handbuch-Bilder, Swagger UI und Bilder der
+  Homepage tragen aber keine Prüfsumme im Namen: Nach einem Update sehen
+  Nutzer:innen weiter die alten. Gefunden 02.10.2026; vorgesehen für 2.4.0.
+- **Biometrie einschalten hat keinen Aufrufer mehr.** `biometrieAktivieren`
+  und `biometrieAusschalten` (`frontend/src/services/biometrics.ts`) ruft nur
+  `BiometrieSchalter.tsx`, und den bindet seit dem 27.08.2026 keine Seite
+  mehr ein. Die Anmeldung per Biometrie auf der Anmeldeseite gibt es damit
+  nur noch auf Geräten, die sie vorher eingeschaltet hatten. Behalten (und
+  den Schalter zurückholen) oder entfernen? Gefunden 02.10.2026.
+
+### Tests und CI
+
+- **Dunkelmodus-Messung nicht in der CI.** `npm run dunkelmodus:messen`
+  ([wissen/dunkelmodus-pruefen.md](wissen/dunkelmodus-pruefen.md)) läuft nur
+  von Hand gegen eine lokale Vorschau; die CI prüft das Stylesheet als Text.
+  Eine Farbänderung kann den Dunkelmodus zurückwerfen, ohne dass die CI rot
+  wird. Seit 27.09.2026 (Dunkelmodus-Audit BF-09, Rest).
+- **Quelltext-Tests.** 117 Frontend-Testdateien lesen Quelltext statt
+  Verhalten (Stand 30.09.2026, Leitplanke
+  `frontend/src/__tests__/quelltextTestsLeitplanke.test.ts` lässt keine neuen
+  zu); 41 davon versprechen Verhalten und sollten gerendert prüfen (Tests
+  BF-02, Rest).
+- **Ohne Test.** 3 Utils, 2 Hooks und 1 Service kommen in keinem Test vor
+  (30.09.2026); gegen neue Komponenten ohne Test gibt es keine Leitplanke
+  (Tests BF-10, Rest).
+- **E2E-Aufwärmen.** Der erste E2E-Test direkt nach dem Start des Stacks kann
+  an `ERR_NETWORK_CHANGED` scheitern (beobachtet 30.09.2026); ein
+  Aufwärmschritt im E2E-Setup würde helfen.
+- **Erste echte Fälle beobachten.** Die Vorwärts-Prüfung des Deploys
+  (`NUR_VORWAERTS` in `deploy/rollend.sh`) und die Meldung bei rotem `main`
+  (`ci-meldung.yml`) sind nur gegen Nachbauten geprüft. Beim ersten echten
+  Überholfall bzw. roten `main` das Log und das Issue ansehen (CI BF-04,
+  BF-07, Rest).
+- **`armv7` in der Info.plist.** `UIRequiredDeviceCapabilities` nennt noch
+  `armv7`; beim nächsten Umbau mit Xcode entfernen (CI BF-15, Rest).
+- **Android-Build bricht ohne Firebase-Datei ab.** In
+  `frontend/android/app/build.gradle` steht der Block `firebaseCrashlytics`
+  außerhalb der Bedingung, die das Crashlytics-Plugin nur mit
+  `google-services.json` anwendet. Fehlt die Datei (lokaler Bau, Fork),
+  scheitert Gradle schon beim Konfigurieren statt ohne Push und
+  Absturzberichte zu bauen. Gefunden 02.10.2026.
+- **Text der CI-Meldung stimmt nicht bei rotem Android-Test.**
+  `.github/scripts/ci-meldung.py` schreibt in das Issue bei rotem `main`, die
+  CI „baut und deployt" dann nicht. Der Job `android-test` gehört aber nicht
+  zu den Voraussetzungen von Build und Deploy — ist nur er rot, wird trotzdem
+  gebaut und ausgerollt; nur das Release-Tor sperrt den Store-Build.
+  Gefunden 02.10.2026.
+
+### Betrieb
+
+- **Referenz-Compose nachziehen.** `deploy/compose.konfi_quest.yml` fehlen
+  die gewollten Abweichungen des Live-Stacks (Abgleich 27.09.2026): Router
+  auch für den `www.`-Host, die Middlewares für Kompression und
+  Wiederholung beim Deploy, das Sticky-Cookie am API-Dienst und der eigene
+  Router für `/docs/api`. Wer die Referenz kopiert, verliert sie.
+- **Aufbewahrung der Sicherungen.** Am Host bleiben 14 tägliche Dumps; die
+  Wochen- und Jahresstände aus
+  [betrieb/sicherung.md](betrieb/sicherung.md#rhythmus-und-aufbewahrung)
+  gibt es dort nicht, und ob das Datei-Backup des Hosts sie abdeckt, ist
+  nicht gemessen (01.10.2026).
+- **Drossel des Massenversands über der Mailgrenze.** Das Absenderkonto darf
+  300 Mails je Stunde; `SMTP_MASSEN_JE_MINUTE` ist im Stack nicht gesetzt,
+  also 20 je Minute (1.200 je Stunde). Ein großer nächtlicher Lauf
+  (Lizenz-Erinnerung, Löschwarnung) liefe nach rund 15 Minuten in
+  vorübergehende Ablehnungen. Im Stack auf höchstens 4 setzen (Messung
+  01.10.2026).
+- **Uploads wachsen ohne Aufräumen und Wächter.**
+  `backend/scripts/cleanupOrphanPhotos.js` und `scripts/verwaiste-dateien.mjs`
+  laufen nur von Hand; eine Überwachung des Plattenplatzes gibt es im Repo
+  nicht. Heute 237 MB; mit Challenge-Videos (bis 50 MB je Beitrag) wächst
+  es bei EKD-Größe schnell (Betrieb, „Nicht geprüft").
+- **Lasttest vor der EKD-Ausrollung.** Die Kapazitätsaussage ist aus
+  gemessenen Einzelkosten gerechnet. Nicht gemessen: Tausende gleichzeitige
+  Sockets (Speicher je Replica bei 512 MB Grenze), Zustellrate und Dauer bei
+  Firebase unter Last, Postgres unter Parallellast (Betrieb, „Unklar" und
+  „Nicht geprüft").
+- **Vier Zählungen „Wer bekommt was".** In Produktion zu zählen: Admins mit
+  und ohne Jahrgangszuweisung, Gemeinden ohne Gemeindeleitung in der
+  Stamm-Gemeinde, Zuweisungen mit `can_view = false` und Leitungs-Mitteilungen
+  über Konfis, die es nicht mehr gibt. Sie zeigen, wie viele die Fixes vom
+  27.09.2026 betrafen. Seit 27.09.2026.
+- **Übrige Bestandszählungen.** Konfis ohne Jahrgang, aktive Pflicht-Events
+  ohne Jahrgang, Push-Tokens ohne `app_version`, ungelesene Mitteilungen je
+  Person — als Grundlage für spätere Aufräum-Migrationen nie gemessen
+  (Behebungsbericht, „Nach dem Deploy").
+
+### Am Gerät
+
+- **Sicherheitsregeln des Browsers (CSP) am Gerät.** In Chrome unter der
+  öffentlichen Adresse 0 Meldungen auf 34 Seiten der Leitung (01.10.2026).
+  Nicht geprüft: Safari auf dem iPhone, die Ansichten von Konfi und Team,
+  QR-Scanner, Sprachaufnahme, Rückblick als Bild (CI BF-14, Rest).
+- **Bedienung am Gerät.** Funkloch (Flugmodus; Abmeldung von einem Event ohne
+  Netz), VoiceOver und TalkBack je Rolle auf Anmeldeseite und im Chat,
+  Systemschrift „Größt", Kaltstart; ein Tipp auf die Statusleiste des
+  iPhones scrollt nach oben (sonst kann `@capacitor/status-bar` weg);
+  `aps-environment = production` im nächsten IPA (Gesamtabnahme,
+  Messung 17; Feature E-09 und Toolchain BF-10, Rest).
+
+### Release
+
+- **Store-Release 2.3.0 freigeben lassen.** Eingereicht am 02.10.2026
+  (Merge-Commit `dac246eb`, Tag `2.3.0`): Android versionCode 134 in
+  Produktion gestaffelt mit 10 %, iOS-Build 240 in App Store Connect. Offen:
+  die Prüfung beider Stores abwarten, danach den Android-Anteil in der Play
+  Console auf 100 % heben. Ablauf: [betrieb/release.md](betrieb/release.md).
+
+## Bei Simon zu entscheiden
+
+- **Test-Backend teilt Datenbank und Schlüssel mit Produktion.**
+  `backend-test` (eigener Hostname, für TestFlight- und Testbuilds) hängt an
+  der Produktionsdatenbank, an denselben Uploads und am selben `JWT_SECRET`
+  (`deploy/compose.konfi_quest.yml`, Anker `backend_env`): Ungetesteter Code
+  arbeitet mit echten Daten, und ein Token des einen Backends gilt beim
+  anderen. So gewollt, damit Simon am Gerät seine echten Daten sieht
+  (31.08.2026). Eigener Testbereich mit eigener Datenbank und eigenem
+  Schlüssel? Gefunden 02.10.2026.
+- **Zeitspalten ohne Zeitzone.** 24 Spalten stehen auf `timestamp without
+  time zone`, Produktion schreibt UTC; Stellen mit `CURRENT_DATE` nehmen
+  zwischen 0 und 2 Uhr Berliner Zeit den Vortag. Ob sie sich eindeutig auf
+  `timestamptz` umstellen lassen, hängt an einer Frage: Wurde seit der
+  SQLite-Zeit je per `psql` in Berliner Zeit in diese Tabellen geschrieben
+  (`notifications`, `refresh_tokens`, `users.deleted_at` …)? Danach eine
+  Migration nach dem Muster von 138. Seit 27.09.2026 (Datenbank BF-11, Rest).
+- **Rechenschaft vor der EKD-Ausrollung.** Die Datenschutzerklärung sagt
+  nichts zur Mitarbeit in mehreren Gemeinden (wer sieht was, wer stimmt zu);
+  ein Verzeichnis der Verarbeitungstätigkeiten, TOM und AVV — oder ein
+  Verweis, wo sie liegen — fehlen (Doku BF-08, Rest). Eine Datenauskunft nach
+  DSG-EKD (Art. 15 DSGVO) gibt es nicht als Route; ob der Rückblick als
+  Auskunft genügt, ist offen. Geplant als E-21 „Selbstauskunft"
+  (Sicherheit, „Unklar: Auskunftsroute").
+- **Chat-Inhalt im Push.** Seit 29.09.2026 tragen Chat-Mitteilungen nur
+  Absender und Art, keinen Text (Simons Entscheidung). Im Gerätetest vom
+  30.09. kam der Wunsch nach dem Inhalt wieder auf; Simon prüft den
+  Datenschutz.
+- **Meldeweg im Chat.** Konfis erreichen einander nur in Räumen, die die
+  Leitung liest. Ob die Store-Prüfung für nutzergenerierte Inhalte trotzdem
+  „Nachricht melden" verlangt, ist vor der EKD-Ausrollung zu klären
+  (Feature E-15).
+- **Hochformat und Tablets.** Die App ist auf beiden Plattformen auf
+  Hochformat gesperrt (Simon, 19.09.2026: „Will ich nicht auf phones"). Das
+  Handbuch nennt die Einschränkung nicht, und ob Tablets freigegeben werden,
+  ist nicht entschieden (UI BF-06).
+- **Benutzernamen und Systemnamen.** Gleichzeitiges Anlegen desselben
+  Benutzernamens schützt eine Sperre statt eines eindeutigen Index (kein
+  Migrationsrisiko bei Altbestand-Dubletten); die Store-App 2.2.x setzt beim
+  Speichern einer Gemeinde den Systemnamen weiter ohne Umlaute, eine
+  Serverregel dagegen gibt es nicht. So lassen? (30.09.2026)
+- **Meldungen der Sicherheitsregeln (CSP).** Ein Endpunkt, an den der Browser
+  Verstöße meldet, existiert nicht; gewünscht? (29.09.2026)
+- **Nutzungsmessung.** Die Vorschläge S1–S17 in
+  [messung/umami.md](messung/umami.md#vorschläge--simon-entscheidet) warten
+  auf Simons Entscheidung.
+
+## Geplant
+
+- **Version 2.4.0** — Challenges als eigene Seiten wie Events, damit
+  Push, Postfach und Links direkt in die Challenge führen; die drei
+  Rollenfarben in allen Personenlisten; dazu „darf freigeben",
+  Mehrfach-Konten, Beginn der Web-Version und kleinere Punkte:
+  [planung/2.4.0.md](planung/2.4.0.md).
+- **Web-Version mit Support-Ansicht** — Seitennavigation links, eine
+  Support-Ansicht für Simon und eine Support-Person, Anfrageformular auf der
+  Homepage, Gemeinde zuerst mit Zuordnung zu Kirchenkreis und Landeskirche:
+  [planung/web-version.md](planung/web-version.md).
+- **„Darf freigeben"** — ein Recht, Anträge zu entscheiden, Events zu
+  verbuchen und Beiträge freizugeben, statt dass jede Leitung alles in die
+  Zahl bekommt; sechs Fragen offen:
+  [planung/darf-freigeben.md](planung/darf-freigeben.md).
+- **Mehrfach-Konten sauber** — Team-Rollen je Gemeinde für Einzelfälle, auch
+  Admin in der einen und Teamer:in in der anderen Gemeinde; sieben Stellen
+  und acht Fragen: [planung/mehrfach-konten.md](planung/mehrfach-konten.md).
+- **Feature-Empfehlungen** mit Simons Antworten vom 02.10.2026 —
+  vor der EKD-Ausrollung Einwilligung (E-01, Vermerk am Konfi-Profil),
+  Löschfristen (E-02), Selbstauskunft (E-21) und Hilfe und Support (E-04,
+  E-18, E-20, in der Support-Ansicht); danach Vorlagenkatalog, Jahrgangsabschluss,
+  Nachtruhe, Feature-Schalter ohne Chat, Statusseite, Ehrenamtsnachweis,
+  Mehrjahresvergleich, Objektspeicher:
+  [planung/feature-empfehlungen.md](planung/feature-empfehlungen.md).
+
+## Zurückgestellt
+
+- **Upload aus Nextcloud auf Android.** PDF und Word gehen vom Android-Handy
+  aus dem Download-Ordner und aus Google Drive (Build 133, Gerätetest
+  02.10.2026), nicht aber über die Nextcloud-App. Vermutung, nicht gemessen:
+  Die Nextcloud-App liefert einen Verweis auf ihren eigenen Anbieter und lädt
+  erst beim Lesen; liegt die Datei nicht auf dem Gerät, scheitert schon die
+  Auswahl. Die Fehlermessung zeigt das als `fehler` mit `ort`
+  `dateiauswahl-…` (`frontend/src/services/uploadDiagnose.ts`). Ausweg für
+  Nutzer:innen: die Datei in Nextcloud erst herunterladen. Simon, 02.10.2026:
+  „nextcloud links auf android irgendwann vielleicht". Wieder aufnehmen, wenn
+  sich weitere Gemeinden melden — dann zuerst diese Fehlermessung auswerten.
+- **Kontrast im Hellmodus.** Bereichsfarben als Schrift erreichen im Hellen
+  teils nur 2,15:1 (Badges), dazu weiße Symbole auf den Eck-Marken und die
+  Kopfbanner der Event-Details. Simon, 29.09.2026: „Der Kontrast ist uns
+  erstmal egal." Alle Textstellen hängen an den Tokens `--app-text-<bereich>`;
+  ein hellerer Wert lässt sich je Bereich an einer Stelle setzen (UI BF-04,
+  Rest).
+- **react-router 6.** Zwei moderate Meldungen (Open Redirect über Backslash,
+  Constructor Injection bei SSR-Hydration) treffen die App nicht: kein SSR,
+  Navigationsziele nur aus festen Pfaden mit eingesetzten Kennungen; Push-,
+  App-Link- und Umleitungsziele laufen über `buildPushTargetUrl`,
+  `deepLinkZiel` und `umleitungsZiel`. Ein Update ist nicht möglich,
+  `@ionic/react-router` verlangt `react-router <7`. Auf GitHub am 01.10.2026
+  als „tolerable risk" geschlossen. Wieder prüfen, sobald Ionic react-router 7
+  zulässt oder ein Navigationsziel aus Nutzereingaben, API-Antworten oder
+  Push-Daten gebaut wird.
+- **Präfix-redundante Indizes.** 33 Einzelspalten-Indizes neben einem
+  längeren hatten am 01.10.2026 keinen einzigen Zugriff — bei 169 Konten liest
+  der Planer kleine Tabellen aber ohnehin ganz. Bei deutlich größerem Bestand
+  `pg_stat_user_indexes.idx_scan` neu messen, dann entscheiden (Datenbank
+  BF-09, Rest).
+- **Fremdschlüssel `integer` statt `bigint`.** 55 Fremdschlüssel bleiben: Die
+  Umstellung schriebe große Tabellen unter Sperre neu, ohne dass eine App
+  oder Abfrage es merkt; neue Migrationen nehmen `BIGINT` (Wächter
+  `migrationenKonventionen.test.js`). Wieder aufnehmen, falls ein Wert 2³¹
+  nahekommt (Datenbank BF-12, Rest).

@@ -13,7 +13,7 @@ import {
 import { biometrieVerfuegbar } from '../../services/biometrics';
 import { tastaturKlick } from '../../utils/tastatur';
 
-// Farbvariante der jeweiligen Rolle — dasselbe Muster wie BiometrieSchalter,
+// Farbvariante der jeweiligen Rolle — dasselbe Muster wie AbsturzberichteSchalter,
 // damit sich der Eintrag in die "Konto-Einstellungen" aller drei Ansichten
 // einfuegt.
 export type SchalterVariante = 'users' | 'teamer' | 'purple';

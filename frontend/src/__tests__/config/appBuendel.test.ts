@@ -16,6 +16,7 @@ import {
   istAppDateiAusPublic,
   istNurWeb,
 } from '../../../scripts/app-buendel.mjs';
+import { SWAGGER_DATEIEN, SWAGGER_ZIEL } from '../../../scripts/swagger-ui.mjs';
 
 /**
  * Das App-Bündel (29.09.2026, Toolchain-Audit BF-02).
@@ -145,7 +146,7 @@ describe('App-Bündel: was draußen bleibt', () => {
   it.each([
     'docs/index.html',
     'docs/bilder/iphone/konfi-startseite.png',
-    'docs/api/swagger/swagger-ui-bundle.js',
+    'docs/api/openapi.json',
     'landing.html',
     'datenschutz.html',
     'impressum.html',
@@ -209,6 +210,17 @@ describe('App-Bündel: Anlegen und Prüfen', () => {
     expect(existsSync(join(ziel, 'landing.html'))).toBe(false);
     const summe = alleDateien(ziel).reduce((s, p) => s + statSync(join(ziel, p)).size, 0);
     expect(bytes).toBe(summe);
+  });
+
+  it('was Vite selbst unter docs/ erzeugt (Swagger UI), bleibt draußen', () => {
+    // Seit dem 02.10.2026 legt scripts/swagger-ui.mjs die Swagger-UI-Dateien
+    // beim Bauen nach dist/docs/api/swagger/ -- sie stehen nicht in public/,
+    // zaehlen also als Vite-Erzeugnis. Ohne den Ausschluss kaemen sie ins
+    // Buendel, und appBuendelErzeugen braeche den Build ab.
+    for (const datei of SWAGGER_DATEIEN) schreibe(join(wurzel, 'dist'), `${SWAGGER_ZIEL}/${datei}`);
+    expect(appDateien(join(wurzel, 'dist'), join(wurzel, 'public')).filter((p) => p.startsWith('docs/'))).toEqual([]);
+    const { ziel } = appBuendelErzeugen(join(wurzel, 'dist'), join(wurzel, 'public'));
+    expect(existsSync(join(ziel, 'docs'))).toBe(false);
   });
 
   it('ein sauberes Bündel hat keinen Befund', () => {

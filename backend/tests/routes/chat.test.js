@@ -305,33 +305,6 @@ describe('Chat Routes', () => {
         .set('Authorization', `Bearer ${admin1Token}`);
       expect(adminOhneJahrgang.status).toBe(403);
     });
-
-    // Der Bestand: Migration 164 macht aus 'direct'-Raeumen mit mehr als zwei
-    // Personen Gruppen. Raeume mit zwei oder einer Person (Partner:in hat
-    // das Konto geloescht) bleiben private Zweiergespraeche.
-    it('Migration 164 stellt nur direct-Raeume mit mehr als zwei Personen auf group', async () => {
-      const anlegen = async (teilnehmer) => {
-        const { rows: [r] } = await db.query(
-          "INSERT INTO chat_rooms (name, type, created_by, organization_id) VALUES ('Bestand', 'direct', $1, $2) RETURNING id",
-          [USERS.teamer1.id, ORGS.testGemeinde.id]
-        );
-        for (const [userId, userType] of teilnehmer) {
-          await db.query('INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)', [r.id, userId, userType]);
-        }
-        return r.id;
-      };
-      const drei = await anlegen([[USERS.teamer1.id, 'teamer'], [USERS.konfi1.id, 'konfi'], [USERS.konfi2.id, 'konfi']]);
-      const zwei = await anlegen([[USERS.teamer1.id, 'teamer'], [USERS.konfi1.id, 'konfi']]);
-      const eins = await anlegen([[USERS.konfi1.id, 'konfi']]);
-
-      const sql = fs.readFileSync(path.join(__dirname, '../../migrations/164_direct_raeume_nur_zu_zweit.sql'), 'utf8');
-      await db.query(sql);
-
-      const typ = async (id) => (await db.query('SELECT type FROM chat_rooms WHERE id = $1', [id])).rows[0].type;
-      expect(await typ(drei)).toBe('group');
-      expect(await typ(zwei)).toBe('direct');
-      expect(await typ(eins)).toBe('direct');
-    });
   });
 
   // Admins und Teamer:innen duerfen nur Konfis ihrer zugewiesenen Jahrgaenge

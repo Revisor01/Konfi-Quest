@@ -18,8 +18,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireAdmin, requireOrgAdmin } = roleHelpers;
   const PushService = require('../services/pushService');
 
-  // Schema-Migrationen: siehe backend/migrations/075_wrapped.sql
-
   // Deutsche Monatsnamen
   // Wochentage, indiziert wie EXTRACT(DOW): 0 = Sonntag.
   const WOCHENTAG_NAMEN = [

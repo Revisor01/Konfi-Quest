@@ -34,8 +34,8 @@
  * `andere-meldung` an, nie im Wortlaut.
  *
  * Die Umami-Bereinigung liest diese Datei mit
- * `node scripts/fehlerstellen-sql.mjs` (docs/auftraege/lokaler-agent/
- * 03-nach-dem-deploy.md) — deshalb stehen hier nur Literale, ein Text je
+ * `node scripts/fehlerstellen-sql.mjs` (docs/betrieb/routinen.md,
+ * „Umami bereinigen") — deshalb stehen hier nur Literale, ein Text je
  * Zeile, in einfachen Hochkommas.
  */
 

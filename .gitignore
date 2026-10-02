@@ -104,14 +104,13 @@ Thumbs.db
 # Capacitor
 # android/ wird seit 01.08.2026 getrackt (CI-Release-Builds brauchen das native
 # Projekt; frontend/android/.gitignore filtert Builds/Generiertes selbst).
-ios/App/build/
-ios/App/Pods/
-ios/App/public/
-ios/App/Podfile.lock
+# Dasselbe gilt fuer iOS: frontend/ios/.gitignore filtert Build, Pods und
+# public/. frontend/ios/App/Podfile.lock ist mit Absicht versioniert.
+
+# Push-Schluessel des Backends (geheim)
+backend/push/firebase-service-account.json
 
 # Claude settings
-.claude/backend/push/firebase-service-account.json
-backend/push/firebase-service-account.json
 **/.claude/settings.local.json
 
 # Bundle-Analyse von rollup-plugin-visualizer. Lag bis zum 10.09.2026 als
