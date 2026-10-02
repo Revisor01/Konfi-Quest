@@ -242,8 +242,9 @@ Stand: 02.10.2026, gegen den Code geprüft.
 ## Geplant
 
 - **Version 2.4.0** — Challenges als eigene Seiten wie Events, damit
-  Push, Postfach und Links direkt in die Challenge führen; dazu „darf
-  freigeben", Mehrfach-Konten, Beginn der Web-Version und kleinere Punkte:
+  Push, Postfach und Links direkt in die Challenge führen; die drei
+  Rollenfarben in allen Personenlisten; dazu „darf freigeben",
+  Mehrfach-Konten, Beginn der Web-Version und kleinere Punkte:
   [planung/2.4.0.md](planung/2.4.0.md).
 - **Web-Version mit Support-Ansicht** — Seitennavigation links, eine
   Support-Ansicht für Simon und eine Support-Person, Anfrageformular auf der
