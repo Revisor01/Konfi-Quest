@@ -142,6 +142,11 @@ Migrationen); zuletzt am 01.10.2026: gleich, bis auf die Erweiterung
   (Ursache bis 01.10.2026: Portainer erstellte mit `pullImage: true` alle
   Dienste neu, auch Postgres).
 - In den Logs beider Backends `Migration FAILED`: erwartet 0.
+- `migrationen.gesamt` zählt die Dateien in `backend/migrations/` — seit dem
+  Dump-Stand 173 nur die danach (ab `174`), nicht alle, die die Datenbank je
+  bekommen hat. Eine kleine Zahl ist also kein Fehler. Ob die Datenbank
+  vollständig ist, zeigt der Abgleich mit `schema_migrations` in
+  [`init-scripts/README.md`](../../init-scripts/README.md#was-in-backendmigrations-liegt--und-was-nicht).
 
 ## Test-Backend nachziehen
 

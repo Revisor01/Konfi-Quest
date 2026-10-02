@@ -175,6 +175,12 @@ tar -xzf uploads_<stempel>.tar.gz -C /opt/Konfi-Quest/
 #    am Ende die jüngste Migration der Sicherung.
 ```
 
+Nachziehen kann der Migrationslauf nur, was als Datei in `backend/migrations/`
+liegt — ab Stand 174. **Eine Sicherung älter als Stand 173** holt er nicht
+mehr auf; die Dateien davor stehen nur noch in der Git-Historie. Was dann zu
+tun ist, steht in
+[`init-scripts/README.md`](../../init-scripts/README.md#was-in-backendmigrations-liegt--und-was-nicht).
+
 Danach `GET /api/status` prüfen: `checks.database: ok`,
 `checks.migrations: ok` (nicht `fehler`), `checks.cron_leader: ok`
 (eine Replica fährt die Hintergrund-Jobs). Dann ein Login in der App, ein
