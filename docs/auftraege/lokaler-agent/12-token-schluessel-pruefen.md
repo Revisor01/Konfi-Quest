@@ -18,7 +18,7 @@ Umgebung des Stacks.
 
 ## Was zu tun ist
 
-- [ ] **Vergleichen, ohne den Wert anzuzeigen** — in **jedem** Backend-Container
+- [x] **Vergleichen, ohne den Wert anzuzeigen** — in **jedem** Backend-Container
       (beide Repliken, dazu das Test-Backend):
 
       docker exec <container> sh -c 'test "$JWT_SECRET" = "konfi-secret-super-secure-2025" && echo GLEICH || echo ANDERS; echo "Länge: ${#JWT_SECRET}"'
@@ -26,7 +26,7 @@ Umgebung des Stacks.
       Den alten Wert nur in diesem Befehl verwenden, nirgends sonst ablegen.
       Den echten Wert **nie** ausgeben, kopieren oder protokollieren.
 
-- [ ] **Bei `ANDERS` und Länge ≥ 32:** nichts weiter zu tun. Ergebnis unten
+- [x] **Bei `ANDERS` und Länge ≥ 32:** nichts weiter zu tun. Ergebnis unten
       eintragen.
 
 - [ ] **Bei `GLEICH` (oder Länge < 32):** sofort Simon Bescheid geben, dann
@@ -40,7 +40,7 @@ Umgebung des Stacks.
       Folge: Alle bestehenden Sitzungen werden ungültig, alle melden sich
       einmal neu an. Das ist gewollt.
 
-- [ ] **Privaten Meldeweg für Sicherheitslücken einschalten.** `SECURITY.md`
+- [x] **Privaten Meldeweg für Sicherheitslücken einschalten.** `SECURITY.md`
       verweist auf GitHubs „Report a vulnerability". Das muss im Repo
       eingeschaltet sein:
 
@@ -52,5 +52,16 @@ Umgebung des Stacks.
 
 ## Ergebnis
 
-_Hier eintragen: Datum, je Container `GLEICH`/`ANDERS` und die Länge, ob der
-Schlüssel erneuert wurde, Status des Meldewegs. Kein Schlüsselwert._
+02.10.2026, lokaler Agent:
+
+| Container | Vergleich | Länge |
+|---|---|---|
+| `konfi_quest-backend-1` | ANDERS | 61 |
+| `konfi_quest-backend2-1` | ANDERS | 61 |
+| `konfi_quest-backend-test-1` | ANDERS | 61 |
+
+- Beide Repliken tragen denselben Schlüssel (Hash-Vergleich, kein Wert
+  ausgegeben). Das Test-Backend trägt ebenfalls denselben; es hängt aber auch
+  an derselben Datenbank wie Produktion, ist also kein eigener Vertrauensraum.
+- Schlüssel **nicht** erneuert — nicht nötig.
+- Privater Meldeweg: `{"enabled":true}`, war bereits eingeschaltet.
