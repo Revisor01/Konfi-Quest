@@ -12,8 +12,10 @@
  * ./frontend, docs/ und scripts/ liegen darueber und sind im Build nicht
  * erreichbar. Deshalb wird das Ergebnis eingecheckt.
  *
- * Gestaltung folgt der App (CLAUDE.md): Bebas Neue für Ueberschriften,
- * Plus Jakarta Sans für Text, Bereichsfarben aus theme/variables.css.
+ * Gestaltung angelehnt an die App (docs/wissen/gestaltung.md, Abschnitt
+ * "Doku-Seiten"): Bebas Neue für Ueberschriften und Kennzahlen, Plus Jakarta
+ * Sans für Text, JetBrains Mono für Code; die Farben von Hand nach den
+ * Bereichsfarben in frontend/src/theme/variables.css gewaehlt.
  *
  * Kein Markdown-Paket: Die Quellen sind bewusst einfach gehalten (Überschrift,
  * Absatz, Liste, Tabelle, Zitat, Betonung, Code). Ein eigener kleiner Renderer
