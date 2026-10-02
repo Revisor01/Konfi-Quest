@@ -50,6 +50,19 @@ kommen per Mail.
 8. **Einwilligung der Eltern bleibt in den Gemeinden.** Keine Bestätigung per
    Eltern-Mail in der App; die Gemeinde holt sie ein (analog oder mit ihrem
    Anmeldeformular). konfi-quest.de stellt eine Vorlage bereit.
+9. **Bauweise: dieselbe App mit breitem Layout** (Simon, 02.10.2026). Die
+   bestehende App bekommt für breite Bildschirme eine ein- und ausklappbare
+   Leiste links statt der Reiterleiste unten. Eine Codebasis; die Apps auf
+   iPhone und Android bleiben, wie sie sind. Ionic bringt dafür
+   `IonSplitPane` und `IonMenu` mit, heute ungenutzt. Die API bleibt eine;
+   neue Routen und Felder nur additiv.
+10. **Die Support-Person hat dieselben Rechte wie ein Super-Admin** (Simon,
+    02.10.2026) — kein eigenes, engeres Merkmal.
+11. **Super-Admin mit und ohne Gemeinde** (Simon, 02.10.2026: „Ohne Gemeinde
+    eigentlich gut einmal prüfen, was das heißt. Es soll ja beides gehen."):
+    Ein Super-Admin kann Mitglied in Gemeinden sein (wie heute) oder ein
+    Support-Konto ganz ohne Gemeinde haben. Wie das technisch geht, wird am
+    Code geprüft (unten, „Offen").
 
 ## Vorschlag
 
@@ -107,16 +120,13 @@ oder Support-Fälle gibt es im Schema nicht. Mails verschickt
 
 ## Offen
 
-- **Konto ohne Gemeinde.** `users.organization_id` ist `NOT NULL`. Ein
-  Super-Admin ohne Gemeinde braucht entweder eine eigene „Betrieb"-Gemeinde,
-  die nirgends als Gemeinde erscheint, oder eine nullable Spalte — dann jede
-  Stelle prüfen, die die Gemeinde des Kontos liest (Token, `rbac.js`,
-  Umschalter, Zähler). Ausgelieferte Apps dürfen daran nicht brechen
+- **Konto ohne Gemeinde — wie genau.** Entschieden ist, dass beides gehen
+  soll (Punkt 11). `users.organization_id` ist `NOT NULL`. Möglich sind eine
+  nullable Spalte — dann jede Stelle, die die Gemeinde des Kontos liest
+  (Token, `rbac.js`, Umschalter, Zähler, Cron-Jobs), absichern — oder eine
+  versteckte technische Gemeinde. Die Prüfung am Code läuft (02.10.2026);
+  ihr Ergebnis kommt hierher. Ausgelieferte Apps dürfen daran nicht brechen
   (CLAUDE.md).
-- **Bauweise der Web-Version.** Dieselbe React-App mit eigenem Layout für
-  breite Bildschirme (Ionic bringt dafür `IonSplitPane` und `IonMenu` mit,
-  heute ungenutzt) oder ein eigenes Frontend. Die API bleibt eine; neue
-  Routen und Felder nur additiv.
 - **Datenmodell Kirchenkreis und Landeskirche.** Eigene Tabellen mit
   Zuordnung an der Gemeinde; der Freitext `kirchenkreis` bleibt, bis die
   Bestände übertragen sind (Migration additiv). Die bestehenden Gemeinden,
@@ -126,10 +136,6 @@ oder Support-Fälle gibt es im Schema nicht. Mails verschickt
   abgelehnter Anfragen.
 - **Mails im Support.** Ob eingehende Mails (etwa an die Kontaktadresse) in
   der Ansicht landen sollen und auf welchem Weg.
-- **Rechte der Support-Person.** Heute darf ein Super-Admin Mitglieder jeder
-  Rolle in jede Gemeinde eintragen (`POST /:id/members`). Nach Punkt 5 der
-  Entscheidungen braucht die Support-Person nur die Gemeindeleitungen —
-  eigenes Merkmal mit engeren Rechten, oder dasselbe Merkmal?
 - **Statistik.** Welche Kennzahlen, und ab welcher Größe eine Zahl
   ausgewiesen wird (kleine Gemeinden sind sonst personenbezogen, wie bei der
   Nutzungsmessung, [messung/umami.md](../messung/umami.md)).
