@@ -27,7 +27,7 @@ Stand 02.10.2026, abends. Simon hat den Release freigegeben („Go").
 
 ## Was zu tun ist
 
-- [ ] **1. Versions-Tag `2.3.0` setzen.** Die Cloud-Umgebung darf keine Tags
+- [x] **1. Versions-Tag `2.3.0` setzen.** Die Cloud-Umgebung darf keine Tags
       pushen; deshalb hier.
 
       git fetch origin
@@ -38,7 +38,7 @@ Stand 02.10.2026, abends. Simon hat den Release freigegeben („Go").
       `dac246eb…`. Gibt es `2.3.0` auf GitHub schon und zeigt er woanders
       hin: nicht überschreiben, Simon fragen.
 
-- [ ] **2. Deploy prüfen.** 2.3.0 ist schon geprüft: #1065 grün, um
+- [x] **2. Deploy prüfen.** 2.3.0 ist schon geprüft: #1065 grün, um
       23:05 UTC meldeten beide Backends `version` 2.3.0, `commit` `dac246eb`,
       alle drei Checks `ok`, `migrationen.gesamt` 112, nichts
       fehlgeschlagen (aus der Cloud-Sitzung gemessen). Zu prüfen bleibt der
@@ -61,7 +61,7 @@ Stand 02.10.2026, abends. Simon hat den Release freigegeben („Go").
       bleibt auf 2.3.0. Dann den roten Job und die Fehlerzeile ins Ergebnis,
       Simon Bescheid geben, nichts neu anstoßen.
 
-- [ ] **3. Android-Lauf #66 verfolgen.** Erwartet: grün; Tag
+- [x] **3. Android-Lauf #66 verfolgen.** Erwartet: grün; Tag
       `2.3.0+android.134` auf `dac246eb`; in der Play Console steht
       2.3.0 (134) in internem Test und Alpha, in Produktion mit 10 % und
       dem Status „In Prüfung".
@@ -70,7 +70,7 @@ Stand 02.10.2026, abends. Simon hat den Release freigegeben („Go").
       Rücksprache neu starten** — war der Upload schon durch, ist
       versionCode 134 verbraucht, und ein zweiter Lauf scheitert daran.
 
-- [ ] **4. iOS zur Prüfung einreichen** (App Store Connect):
+- [x] **4. iOS zur Prüfung einreichen** (App Store Connect):
       1. Version 2.3.0 öffnen oder anlegen und **Build 240** zuordnen.
       2. „Neues in dieser Version": der Text unter der iOS-Überschrift in
          [docs/store-texte-2.3.0.md](../../store-texte-2.3.0.md) bis zur
@@ -95,7 +95,7 @@ Stand 02.10.2026, abends. Simon hat den Release freigegeben („Go").
         heben.
       - iOS: Bei „manuell veröffentlichen" mit Simons Okay veröffentlichen.
 
-- [ ] **7. Alte Branches löschen.** Gemessen am 02.10.2026: Diese 13
+- [x] **7. Alte Branches löschen.** Gemessen am 02.10.2026: Diese 13
       Branches haben keinen Commit, der nicht schon auf `main` liegt.
 
       git fetch --prune origin
@@ -126,3 +126,29 @@ Stand 02.10.2026, abends. Simon hat den Release freigegeben („Go").
 
 <!-- Je Punkt Datum, Messwert oder Status; keine Namen, Adressen oder
      Zugangsdaten. -->
+
+03.10.2026, lokaler Agent (Zeiten UTC):
+
+- **1. Tag:** `2.3.0` (annotiert) auf `dac246eb` gepusht, `ls-remote` bestätigt.
+  Dazu GitHub-Release `2.3.0` mit Kurzfassung und Verweis auf den CHANGELOG.
+- **2. Deploy von #217** (`4cc24f0e`, CI grün, alle sieben Jobs): 8 Abfragen
+  von `/api/status` alle `version` 2.4.0, `commit` `4cc24f0e`, drei Checks
+  `ok`, `migrationen.gesamt` 10, `fehlgeschlagen` leer. Gegenprobe mit
+  `comm`: leer (102 Namen der Liste, 112 in der Datenbank). Beide Backends
+  `healthy`, 0 `Migration FAILED`, 0 Fehlerzeilen seit dem Start. Deploy-Log:
+  „Stufe 1: keine anderen Dienste neu erstellt." und dasselbe für Stufe 2;
+  Postgres läuft unverändert seit 30.09., 23:27.
+- **3. Android:** Lauf #66 grün, Tag `2.3.0+android.134` auf `dac246eb`.
+  Play-API: 134 in `internal` und `alpha` `completed`, in `production`
+  `inProgress` mit 10 %. Prüfstatus zeigt nur die Console.
+  **Auf 100 % gehoben** (Simon, 03.10.: „100% ausrollen"): `production` jetzt
+  2.3.0 (134) `completed`, Release-Notizen (488 Zeichen) erhalten.
+- **4. iOS:** Version 2.3.0 angelegt, Build 240 (`VALID`, keine
+  Verschlüsselung) zugeordnet, „Neues in dieser Version" = iOS-Text
+  (2.343 Zeichen, keine Plattform-Wörter), Veröffentlichung „nach Freigabe
+  automatisch" wie 2.2.0. Eingereicht 02.10., 23:25: `WAITING_FOR_REVIEW`.
+- **5./6.** offen — Prüfungen bei Apple und Google laufen.
+- **7. Branches:** alle 13 mit 0 Commits vor `main`, gelöscht.
+  `delete_branch_on_merge` = `true`. Folge: Beim Merge von #217 wurde auch
+  `claude/fervent-edison-wp5yfj` gelöscht (lag vollständig auf `main`);
+  wiederherstellbar unter dem PR.
