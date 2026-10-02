@@ -39,7 +39,7 @@ import api from '../../services/api';
 import { KontoModalVariante, KONTO_MODAL_STIL } from './ChangeEmailModal';
 
 // EINE gemeinsame Komponente fuer alle drei Profil-Ansichten (Muster:
-// BiometrieSchalter) — vorher lag dieses Modal funktional identisch doppelt
+// AppSperreSchalter) — vorher lag dieses Modal funktional identisch doppelt
 // vor, nur die CSS-Klassen unterschieden sich. Die Seiten geben ueber
 // `variante` ihre Rollenfarbe mit.
 interface ChangePasswordModalProps {
