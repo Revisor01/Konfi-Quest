@@ -7,9 +7,15 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [Unreleased] - 2.3.0
+## [2.3.0] - 2026-10-02
 
-iOS-Build 237 · Android versionCode 131
+iOS-Build 240 · Android versionCode 134
+
+Ein großes Dankeschön an Ron31: Er hat diese Version über Wochen
+ausdauernd getestet, Fehler gemeldet und viele Verbesserungen vorgeschlagen —
+von den Mitteilungen nach einem Update über die App-Sperre, den Dunkelmodus
+und die Links aus Einladung und Passwort-Mail bis zum Hochladen von PDF und
+Word.
 
 ### Hinzugefügt
 - Im Profil lassen sich die Absturzberichte abschalten: Der Schalter

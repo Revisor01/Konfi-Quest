@@ -11,6 +11,14 @@ liegt und **womit** man sich anmeldet, steht nicht hier — dieses Repo ist
 Reihenfolge von Sicherung bis Testbuild. Ein Merge nach `main` ist der
 Produktions-Deploy; den Merge gibt Simon frei.
 
+## Neu am 02.10.2026 — dringend
+
+**[12-token-schluessel-pruefen.md](12-token-schluessel-pruefen.md):** Prüfen,
+ob Produktion noch den alten Entwicklungswert für `JWT_SECRET` benutzt, der
+in einer alten Analyse im öffentlichen Repo stand — und ihn gegebenenfalls
+sofort ersetzen. Dazu den privaten Meldeweg für Sicherheitslücken auf GitHub
+einschalten.
+
 ## Rückmeldung des lokalen Agenten, 01.10.2026
 
 Alle Punkte 1–10 aus „Stand 30.09.2026" (unten) sind abgearbeitet; die

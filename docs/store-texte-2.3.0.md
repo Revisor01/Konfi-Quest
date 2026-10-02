@@ -6,11 +6,13 @@ Build 231/125 und kannte alles ab dem 29.09. nicht).
 Beide Texte sind getrennt zu verwenden — niemals mischen.
 
 Versionsstände stehen in `frontend/version.json` (die eine Quelle, aus der
-beide Release-Workflows lesen). Zuletzt hochgeladen: **2.3.0**, iOS-Build
-**238**, Android versionCode **132**. Der Store-Build bekommt die nächste
-Nummer — beim Einreichen dort ablesen, nicht hier. Auf beiden Plattformen ist
-2.2.0 die Vorgängerin (iOS-Build 206, Android versionCode 113); beide Texte
-beschreiben also dieselbe Spanne.
+beide Release-Workflows lesen). **Eingereicht am 02.10.2026:** iOS-Build
+**240** (TestFlight, aus `d99346fe`) und Android versionCode **134** (vom
+Release-Commit, Produktion gestaffelt). Auf beiden Plattformen ist 2.2.0 die
+Vorgängerin (iOS-Build 206, Android versionCode 113, seit 18.09.2026 zu
+100 Prozent live); beide Texte beschreiben also dieselbe Spanne. Android hat
+2.1 übersprungen — das haben schon die 2.2.0-Texte aufgefangen, die alles
+seit 2.0 zusammenfassten.
 
 ---
 
@@ -193,8 +195,8 @@ Was sich mit 2.3.0 ändert und beim Einreichen abgefragt wird. Hier steht nur,
 
 ### Play Console
 
-- **versionCode** und Version 2.3.0 aus `frontend/version.json` (zuletzt
-  132; `build.gradle` liest die Datei direkt).
+- **versionCode** und Version 2.3.0 aus `frontend/version.json` (134 für
+  die Produktion; `build.gradle` liest die Datei direkt).
 - **„Was ist neu"**: kommt aus `frontend/release-notes-de.txt` — der Text oben.
 - **Track**: Der `android-release`-Workflow reicht ohne ausdrückliche Angabe
   nur in die Testkanäle ein (seit dem 15.09.2026, als versionCode 102
