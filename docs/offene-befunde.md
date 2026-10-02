@@ -80,6 +80,18 @@ Stand: 02.10.2026, gegen den Code geprüft.
   globaler Limiter hängen in `backend/createApp.js`, nicht an der Route);
   am 29.09.2026 begründet, in GitHub als „False positive" zu schließen —
   ob es geschehen ist, ist nicht vermerkt.
+- **Doku und Bilder ein Jahr im Zwischenspeicher.** In `frontend/nginx.conf`
+  gilt die Regel für Dateiendungen (`location ~* \.(js|css|png|…)$`, „expires
+  1y", `immutable`) auch unter `/docs/` — reguläre Ausdrücke gehen in nginx
+  vor `location /docs/`. Handbuch-Bilder, Swagger UI und Bilder der
+  Homepage tragen aber keine Prüfsumme im Namen: Nach einem Update sehen
+  Nutzer:innen weiter die alten. Gefunden 02.10.2026; vorgesehen für 2.4.0.
+- **Biometrie einschalten hat keinen Aufrufer mehr.** `biometrieAktivieren`
+  und `biometrieAusschalten` (`frontend/src/services/biometrics.ts`) ruft nur
+  `BiometrieSchalter.tsx`, und den bindet seit dem 27.08.2026 keine Seite
+  mehr ein. Die Anmeldung per Biometrie auf der Anmeldeseite gibt es damit
+  nur noch auf Geräten, die sie vorher eingeschaltet hatten. Behalten (und
+  den Schalter zurückholen) oder entfernen? Gefunden 02.10.2026.
 
 ### Tests und CI
 
@@ -106,6 +118,18 @@ Stand: 02.10.2026, gegen den Code geprüft.
   BF-07, Rest).
 - **`armv7` in der Info.plist.** `UIRequiredDeviceCapabilities` nennt noch
   `armv7`; beim nächsten Umbau mit Xcode entfernen (CI BF-15, Rest).
+- **Android-Build bricht ohne Firebase-Datei ab.** In
+  `frontend/android/app/build.gradle` steht der Block `firebaseCrashlytics`
+  außerhalb der Bedingung, die das Crashlytics-Plugin nur mit
+  `google-services.json` anwendet. Fehlt die Datei (lokaler Bau, Fork),
+  scheitert Gradle schon beim Konfigurieren statt ohne Push und
+  Absturzberichte zu bauen. Gefunden 02.10.2026.
+- **Text der CI-Meldung stimmt nicht bei rotem Android-Test.**
+  `.github/scripts/ci-meldung.py` schreibt in das Issue bei rotem `main`, die
+  CI „baut und deployt" dann nicht. Der Job `android-test` gehört aber nicht
+  zu den Voraussetzungen von Build und Deploy — ist nur er rot, wird trotzdem
+  gebaut und ausgerollt; nur das Release-Tor sperrt den Store-Build.
+  Gefunden 02.10.2026.
 
 ### Betrieb
 
@@ -170,6 +194,14 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ## Bei Simon zu entscheiden
 
+- **Test-Backend teilt Datenbank und Schlüssel mit Produktion.**
+  `backend-test` (eigener Hostname, für TestFlight- und Testbuilds) hängt an
+  der Produktionsdatenbank, an denselben Uploads und am selben `JWT_SECRET`
+  (`deploy/compose.konfi_quest.yml`, Anker `backend_env`): Ungetesteter Code
+  arbeitet mit echten Daten, und ein Token des einen Backends gilt beim
+  anderen. So gewollt, damit Simon am Gerät seine echten Daten sieht
+  (31.08.2026). Eigener Testbereich mit eigener Datenbank und eigenem
+  Schlüssel? Gefunden 02.10.2026.
 - **Zeitspalten ohne Zeitzone.** 24 Spalten stehen auf `timestamp without
   time zone`, Produktion schreibt UTC; Stellen mit `CURRENT_DATE` nehmen
   zwischen 0 und 2 Uhr Berliner Zeit den Vortag. Ob sie sich eindeutig auf
@@ -209,6 +241,10 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ## Geplant
 
+- **Version 2.4.0** — Challenges als eigene Seiten wie Events, damit
+  Push, Postfach und Links direkt in die Challenge führen; dazu „darf
+  freigeben", Mehrfach-Konten, Beginn der Web-Version und kleinere Punkte:
+  [planung/2.4.0.md](planung/2.4.0.md).
 - **Web-Version mit Support-Ansicht** — Seitennavigation links, eine
   Support-Ansicht für Simon und eine Support-Person, Anfrageformular auf der
   Homepage, Gemeinde zuerst mit Zuordnung zu Kirchenkreis und Landeskirche:
