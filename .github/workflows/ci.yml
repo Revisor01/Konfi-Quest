@@ -21,6 +21,12 @@ on:
       - 'scripts/**'
       - 'docs/api/**'
       - 'docs/handbuch/**'
+      # Die Bildschirmfotos (02.10.2026): build-handbuch.mjs spiegelt
+      # docs/screenshots/ nach frontend/public/docs/bilder/, und "Handbuch
+      # aktuell?" vergleicht genau das. Ein Commit, der nur neue Bilder
+      # brachte, loeste keinen Lauf aus -- die Pruefung lief nicht, und das
+      # Release-Tor fand fuer den Commit keinen gruenen Lauf.
+      - 'docs/screenshots/**'
       # Die E2E-Specs selbst: Eine Aenderung nur hier loeste bis 05.09.2026
       # KEINEN Lauf aus. Aufgefallen, als der Fix fuer einen roten E2E-Test
       # (Teamer-Tabs) gepusht wurde und schlicht nichts passierte -- waehrend
@@ -41,6 +47,19 @@ on:
       - 'docker-compose.e2e.yml'
       - 'deploy/**'
       - '.github/scripts/**'
+      # Die .gitignore der Wurzel (02.10.2026): dateiverweiseImCode.test.ts
+      # verlangt, dass jede bewusst fehlende Datei dort ausgenommen ist.
+      - '.gitignore'
+      # Bewusst NICHT im Filter: CHANGELOG.md, README.md und die uebrige Doku
+      # unter docs/. Sie gehen in kein Image; ein Lauf hiesse Build und
+      # Deploy fuer reinen Text. Zwei Tests lesen dort trotzdem mit:
+      # versionsnummernEineQuelle die Versionsnummer der ersten
+      # CHANGELOG-Ueberschrift (sie aendert sich nur mit version:setzen, also
+      # zusammen mit frontend/version.json), dateiverweiseImCode, ob jede im
+      # Code genannte Datei unter docs/ noch existiert. Wer eine solche Datei
+      # loescht oder verschiebt, faengt das erst beim naechsten Lauf.
+      # Der Android-Job braucht keinen eigenen Eintrag: frontend/** schliesst
+      # frontend/android/ und die Lockfiles des Frontends ein.
   pull_request:
     branches:
       - main
@@ -358,12 +377,75 @@ jobs:
             playwright-report/
           retention-days: 7
 
+  android-test:
+    # Die JVM-Unit-Tests der nativen Android-App (02.10.2026). Unter
+    # frontend/android/app/src/test/ liegen echte Tests (AppSymbolNullTest,
+    # DateiKopieTest), aber bis hierher fuehrte sie kein Workflow aus:
+    # android-release.yml ruft nur bundleRelease, und das startet keine Tests.
+    #
+    # Was Gradle braucht, bevor es das Projekt ueberhaupt konfiguriert:
+    #   - frontend/node_modules: capacitor.settings.gradle bindet Capacitor
+    #     und die Plugins aus ../node_modules ein (npm ci);
+    #   - android/capacitor-cordova-android-plugins/: gitignored, erst
+    #     `npx cap sync android` legt es an, settings.gradle und
+    #     app/capacitor.build.gradle verlangen es;
+    #   - cap sync verlangt das Web-Verzeichnis dist-app/ (vite build; die
+    #     Typpruefung davor laeuft schon in frontend-test);
+    #   - app/google-services.json (prepare-android.sh kopiert die getrackte
+    #     Fassung aus frontend/config/). Ohne sie wendet app/build.gradle das
+    #     Crashlytics-Plugin nicht an, der firebaseCrashlytics-Block am
+    #     Dateiende bricht dann schon das Konfigurieren ab ("Could not find
+    #     method firebaseCrashlytics()", lokal nachgestellt am 02.10.2026).
+    # Also derselbe Weg wie in android-release.yml, nur ohne Keystore und
+    # Upload. Das Android-SDK bringt der Runner mit (ANDROID_HOME).
+    #
+    # NICHT in den needs von build-and-push: Die Tests pruefen nativen
+    # Java-Code, der nicht ins Web-Image geht. Ein roter Test hier oder eine
+    # Stoerung beim Gradle-Download soll den Web-Deploy nicht anhalten. Rot
+    # wird trotzdem der ganze Lauf -- und das Release-Tor
+    # (.github/scripts/release-gate.py) verlangt einen GRUENEN ci.yml-Lauf
+    # fuer genau den Commit. Ein roter Android-Test sperrt also die
+    # Store-Builds (iOS wie Android), und der Workflow "CI-Meldung" legt das
+    # Issue zum roten main an.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: JDK 21 einrichten
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Web-Build, Capacitor-Sync, Firebase-Config
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npx vite build --logLevel warn
+          npx cap sync android
+          ./scripts/prepare-android.sh
+
+      - name: Unit-Tests (JVM)
+        working-directory: frontend/android
+        run: ./gradlew testDebugUnitTest
+
   build-and-push:
     needs: [backend-test, frontend-test, e2e-test]
     # KEIN always() — Build+Deploy laufen NUR wenn backend-test, frontend-test
     # UND e2e-test gruen sind (Default-needs-Verhalten). Das ist das
     # eigentliche Test-Gate: Tests rot -> kein Build -> kein Webhook -> kein
-    # Deploy. E2E haengt seit dem 31.08.2026 mit drin.
+    # Deploy. E2E haengt seit dem 31.08.2026 mit drin. android-test bewusst
+    # nicht -- die Begruendung steht dort.
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     runs-on: ubuntu-latest
