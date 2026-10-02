@@ -278,7 +278,6 @@ async function beantworteTageslosung(db, req, res, einstellungsSchluessel) {
 
 module.exports = {
   fetchTageslosung,
-  tageslosungFallback,
   beantworteTageslosung,
   _resetNegativCache: () => gescheiterteAbrufe.clear()
 };
