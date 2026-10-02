@@ -43,8 +43,9 @@ describe('Node-Linie aus .nvmrc', () => {
       expect(text, datei).not.toMatch(/^\s*node-version:\s/m);
       einrichtungen += setupNode;
     }
-    // ci.yml (drei Test-Jobs), Android- und iOS-Release
-    expect(einrichtungen).toBe(5);
+    // ci.yml (vier Test-Jobs, seit 02.10.2026 mit android-test), Android-
+    // und iOS-Release
+    expect(einrichtungen).toBe(6);
   });
 
   it('beide Images bauen auf derselben Hauptversion', () => {

@@ -100,12 +100,19 @@ def text_rot(repo, server, lauf, jobs, erster):
         # Actions-Bots allein benachrichtigt nur, wer das Repo beobachtet. Nur
         # beim Anlegen, nicht bei jedem weiteren roten Lauf.
         inhaber = repo.split("/")[0]
-        zeilen += [
-            f"@{inhaber} **Die CI auf `main` ist rot.** Solange das so bleibt, baut und deployt sie nicht: "
-            "Produktion bleibt auf dem letzten grünen Stand, und das Release-Tor lässt für diesen "
-            "Commit keinen Store-Build zu.",
-            "",
-        ]
+        # Ob deployt wurde, steht am deploy-Job selbst -- nicht an einer Liste
+        # von Jobs. android-test haengt nicht in den needs von build-and-push
+        # (02.10.2026): Ist nur er rot, laeuft der Web-Deploy, gesperrt sind
+        # allein die Store-Builds.
+        deployt = any(j.get("name") == "deploy" and j.get("conclusion") == "success" for j in jobs)
+        if deployt:
+            folge = ("Der Web-Deploy ist trotzdem gelaufen, Produktion steht auf diesem Commit. "
+                     "Gesperrt sind die Store-Builds: Das Release-Tor lässt für diesen Commit keinen zu.")
+        else:
+            folge = ("Solange das so bleibt, baut und deployt sie nicht: Produktion bleibt auf dem "
+                     "letzten grünen Stand, und das Release-Tor lässt für diesen Commit keinen "
+                     "Store-Build zu.")
+        zeilen += [f"@{inhaber} **Die CI auf `main` ist rot.** {folge}", ""]
     else:
         zeilen += ["**Weiterer roter Lauf auf `main`.**", ""]
     zeilen += [

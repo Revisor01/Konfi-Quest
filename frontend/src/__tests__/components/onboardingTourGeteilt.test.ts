@@ -13,9 +13,9 @@ const tourModale = [
   'src/components/admin/modals/AdminOnboardingModal.tsx',
   'src/components/teamer/modals/TeamerOnboardingModal.tsx',
   'src/components/konfi/modals/KonfiOnboardingModal.tsx',
-  'src/components/admin/modals/AdminUpdateWalkthroughModal.tsx',
-  'src/components/teamer/modals/TeamerUpdateWalkthroughModal.tsx',
-  'src/components/konfi/modals/KonfiUpdateWalkthroughModal.tsx',
+  'src/components/admin/modals/AdminUpdate230WalkthroughModal.tsx',
+  'src/components/teamer/modals/TeamerUpdate230WalkthroughModal.tsx',
+  'src/components/konfi/modals/KonfiUpdate230WalkthroughModal.tsx',
 ];
 
 const lies = (datei: string) =>

@@ -262,17 +262,6 @@ function sendToKonfi(konfiId, updateType, action = 'refresh', data = null) {
 }
 
 /**
- * Convenience-Funktion: Sendet ein Live-Update an einen spezifischen Admin
- * @param {number} adminId - Admin User ID
- * @param {string} updateType - z.B. 'konfis', 'events', 'requests'
- * @param {string} action - 'refresh', 'update', 'delete', 'create'
- * @param {object} data - Optionale zusätzliche Daten
- */
-function sendToAdmin(adminId, updateType, action = 'refresh', data = null) {
-  sendToUser('admin', adminId, updateType, action, data);
-}
-
-/**
  * Sendet ein Live-Update an einen User anhand seiner DB-Rolle in den KORREKTEN
  * Socket-Raum. Notwendig, weil ein Empfaenger sowohl Konfi als auch Teamer:in
  * oder Admin sein kann und die Sockets je nach Typ in verschiedenen Räumen
@@ -392,7 +381,6 @@ module.exports = {
   disconnectUserSockets,
   raeumeGeaendert,
   sendToKonfi,
-  sendToAdmin,
   sendToUserByRole,
   // Die send*-Funktionen laufen durch _merken: Im Test wird ihr Nachlauf
   // mitgeschrieben, in Produktion ist es ein durchgereichter Aufruf.

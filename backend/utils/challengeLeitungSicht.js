@@ -47,21 +47,6 @@ function leitungSiehtChallengeSql({ rolle, jahrgaenge, c = 'c' }) {
   )`;
 }
 
-/**
- * Dieselbe Regel in JavaScript, fuer Stellen ohne passende Abfrage.
- *
- * @param {string} rolle
- * @param {string} audience
- * @param {number[]} challengeJahrgaenge  Jahrgaenge der Challenge
- * @param {number[]} eigeneJahrgaenge     can_view-Jahrgaenge der Person
- */
-function leitungSiehtChallenge(rolle, audience, challengeJahrgaenge, eigeneJahrgaenge) {
-  if (rolle === 'org_admin') return true;
-  if (audience === 'nur_team') return true;
-  const eigene = new Set((eigeneJahrgaenge || []).map(Number));
-  return (challengeJahrgaenge || []).some((id) => eigene.has(Number(id)));
-}
-
 // --------------------------------------------------------------------
 // WER AUS DEM TEAM MITMACHT (27.09.2026, Audit "Wer bekommt was", BF-07 /
 // F-04).
@@ -150,7 +135,6 @@ async function ladeTeamDasMitmacht(db, challengeId) {
 
 module.exports = {
   leitungSiehtChallengeSql,
-  leitungSiehtChallenge,
   TEAM_ORGWEITE_AUDIENCES,
   TEAM_MACHT_MIT_AUDIENCES,
   teamMachtMitSql,

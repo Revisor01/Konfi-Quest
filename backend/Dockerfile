@@ -26,9 +26,9 @@ FROM node:26-bookworm-slim
 WORKDIR /app
 
 # Kein curl (01.10.2026): Der Stack prueft backend, backend2 und backend-test
-# seitdem wie dieses Image mit `node healthcheck.js` (Auftrag
-# docs/auftraege/lokaler-agent/09-backend-container.md). Bis dahin wurde curl
-# eigens fuer den Healthcheck des Stacks nachinstalliert.
+# seitdem wie dieses Image mit `node healthcheck.js` (Auftrag 09 des lokalen
+# Agenten, erledigt; docs/README.md, "Erledigte Auftraege"). Bis dahin wurde
+# curl eigens fuer den Healthcheck des Stacks nachinstalliert.
 
 COPY --from=abhaengigkeiten /app/node_modules ./node_modules
 COPY . .
@@ -44,7 +44,7 @@ ENV GIT_SHA=$GIT_SHA
 # Image denselben Nutzer selbst mit -- ein Stack ohne `user:` faellt nicht
 # mehr auf root zurueck. Bewusst nicht `node` (uid 1000): die gehoert am Host
 # einem bestehenden Systemnutzer, und weitere Container laufen dort als 1000
-# (Auftrag docs/auftraege/lokaler-agent/09-backend-container.md).
+# (Auftrag 09 des lokalen Agenten, 01.10.2026; docs/README.md).
 #
 # Geschrieben wird nur unter /app/uploads (Unterordner und Zwischenlager legt
 # createApp.js beim Start an). Ohne Mount (E2E, lokal) gilt der Besitz hier;

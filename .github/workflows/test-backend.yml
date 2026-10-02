@@ -53,7 +53,9 @@ jobs:
       - name: Auf neue Migrationen pruefen
         run: |
           git fetch --no-tags origin main
-          NEU=$(git diff --name-only origin/main...HEAD -- backend/migrations/ || true)
+          # --diff-filter=d: geloeschte Dateien sind keine neuen Migrationen
+          # (am 02.10.2026 wurden 064-173 entfernt, sie stehen im Dump).
+          NEU=$(git diff --name-only --diff-filter=d origin/main...HEAD -- backend/migrations/ || true)
           if [ -n "$NEU" ]; then
             echo "::error::Dieser Branch bringt neue Migrationen mit:"
             echo "$NEU"

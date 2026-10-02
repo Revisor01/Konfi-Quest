@@ -143,24 +143,6 @@ describe('Challenge-Neuigkeiten fuer Leitung und Team', () => {
     expect((await zaehler('orgAdmin1')).challengeUpdates.total).toBe(1);
   });
 
-  it('Migration 168: am Tag des Updates ist nichts Bestehendes neu, Spaeteres schon', async () => {
-    const c = await challenge();
-    await beitrag('konfi1', c.id);
-    expect((await zaehler('orgAdmin1')).challengeUpdates.total).toBe(1);
-    const sql = require('fs').readFileSync(
-      require('path').join(__dirname, '../../migrations/168_challenge_lesestand_leitung.sql'), 'utf8');
-    await db.query(sql);
-    await db.query(sql); // zweimal laufen lassen: idempotent
-    expect((await zaehler('orgAdmin1')).challengeUpdates.total).toBe(0);
-    expect((await zaehler('teamer1')).challengeUpdates.total).toBe(0);
-    // Konfis bekommen keine Zeile -- ihre Neuigkeiten bleiben unberuehrt.
-    const { rows } = await db.query(
-      "SELECT COUNT(*)::int AS n FROM challenge_read_status WHERE user_type = 'konfi'");
-    expect(rows[0].n).toBe(0);
-    await beitrag('konfi2', c.id);
-    expect((await zaehler('orgAdmin1')).challengeUpdates.total).toBe(1);
-  });
-
   it('eine beendete Challenge traegt keine Zahl mehr', async () => {
     const c = await challenge();
     await db.query(

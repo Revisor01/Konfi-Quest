@@ -52,9 +52,9 @@ ist neu?" in der App.
 **Upload von PDF und Word vom Android-Handy:** im Gerätetest mit Build 133
 am 02.10.2026 bestätigt (Download-Ordner und Google Drive, Chat und
 Material) und deshalb im Play-Text. Nicht aus der Nextcloud-App — ein
-zurückgestellter Sonderfall (`docs/offene-befunde.md` Nr. 16), der im
-Store-Text nicht vorkommt. Die Sortierung bei Pflicht-Events ist seit PR
-#213 auf main.
+zurückgestellter Sonderfall (`docs/offene-befunde.md`, „Upload aus Nextcloud
+auf Android"), der im Store-Text nicht vorkommt. Die Sortierung bei
+Pflicht-Events ist seit PR #213 auf main.
 
 ---
 

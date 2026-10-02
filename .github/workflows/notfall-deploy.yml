@@ -32,7 +32,7 @@ name: Notfall-Deploy
 # unmittelbar vor update_stack (Image auf ghcr, Portainer-Zugang,
 # Tag-Umschreibung auf einer Kopie, Gegenprobe auf backend-test, Status) und
 # aendert nichts. So laesst sich der Rueckrollweg jederzeit gefahrlos proben
-# (Auftrag docs/auftraege/lokaler-agent/05-sicherung-und-notfall.md).
+# (docs/betrieb/routinen.md, „Notfall-Deploy").
 #
 # RUECKROLLEN UND MIGRATIONEN: Zurueckgedreht wird nur der Code. Migrationen
 # bleiben (sie laufen additiv, CLAUDE.md) -- der aeltere Code muss mit dem

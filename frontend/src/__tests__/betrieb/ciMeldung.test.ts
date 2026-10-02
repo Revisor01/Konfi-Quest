@@ -121,6 +121,30 @@ describe('CI-Meldung: rotes main', () => {
     expect(issue.body).toContain('<!-- ci-lauf:9012:1 -->');
     // Erwaehnung des Repo-Inhabers, damit GitHub benachrichtigt (Simon, 01.10.2026).
     expect(issue.body.startsWith('@Revisor01 ')).toBe(true);
+    expect(issue.body).toContain('Solange das so bleibt, baut und deployt sie nicht');
+    expect(issue.body).not.toContain('Web-Deploy ist trotzdem gelaufen');
+  });
+
+  it('ist nur android-test rot, sagt das Issue: Web-Deploy gelaufen, Store-Builds gesperrt', () => {
+    // android-test haengt nicht in den needs von build-and-push (02.10.2026).
+    // Der Satz "baut und deployt sie nicht" waere dann falsch: Produktion
+    // steht schon auf dem Commit, nur das Release-Tor sperrt.
+    setze({
+      runs: [lauf(14, 'failure'), lauf(13, 'success')],
+      jobs: { 9014: [
+        { name: 'backend-test', conclusion: 'success', html_url: 'u1' },
+        { name: 'frontend-test', conclusion: 'success', html_url: 'u2' },
+        { name: 'android-test', conclusion: 'failure', html_url: 'u5' },
+        { name: 'build-and-push', conclusion: 'success', html_url: 'u3' },
+        { name: 'deploy', conclusion: 'success', html_url: 'u4' },
+      ] },
+    });
+    expect(melde().code).toBe(0);
+    const [issue] = lies().issues;
+    expect(issue.body.startsWith('@Revisor01 **Die CI auf `main` ist rot.** Der Web-Deploy ist trotzdem gelaufen')).toBe(true);
+    expect(issue.body).toContain('Das Release-Tor lässt für diesen Commit keinen zu.');
+    expect(issue.body).not.toContain('baut und deployt sie nicht');
+    expect(issue.body).toContain('`android-test` — failure');
   });
 
   it('ein weiterer roter Lauf ergaenzt das offene Issue, statt ein neues zu oeffnen', () => {

@@ -3,11 +3,14 @@
 #
 # Warum ein Dump und nicht die Migrationen?
 # Das Repo KANN Produktion nicht allein aus Migrationen reproduzieren: Die
-# Kette beginnt erst bei 064, und fuer konfi_profiles.password_plain existiert
-# nirgends ein DDL -- die Spalte wurde in Produktion von Hand angelegt
-# (daily_verses und activities.category liefert seit dem 22.08.2026
-# Migration 124). Wer aus den Migrationen baut, testet ein Schema, das es so
-# nie gab.
+# Kette begann schon frueher erst bei 064, manches entstand in Produktion von
+# Hand, und seit dem 02.10.2026 liegen in backend/migrations/ nur noch die
+# Migrationen NACH dem Dump (init-scripts/README.md). Der Dump ist der
+# einzige Startpunkt.
+#
+# Danach gilt dieselbe Grenze wie nach schema-erneuern.sh: Was der neue
+# Migrationsstand nennt, gehoert aus backend/migrations/ entfernt -- sonst
+# schlaegt tests/schema/dumpAktualitaet.test.js an.
 #
 # Der regelmaessige Weg ist schema-erneuern.sh (fortschreiben aus dem
 # Migrationsstand, ohne Produktionszugang). Dieses Skript holt den Dump

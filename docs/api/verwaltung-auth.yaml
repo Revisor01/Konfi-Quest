@@ -2327,6 +2327,12 @@ paths:
         getrennt und bricht ab. Beide Felder fehlen, wenn der Prozess keinen
         Migrationslauf kennt (Testaufbau).
 
+        `gesamt` zaehlt die Dateien in backend/migrations/ (02.10.2026): Seit
+        die Dateien bis Stand 173 im Schema-Dump aufgegangen sind, liegen dort
+        nur die danach. Die Zahl sagt also nichts darueber, wie viele
+        Migrationen die Datenbank insgesamt hat; Form und Typ des Feldes
+        bleiben gleich.
+
         CRON-LEADER (26.09.2026, Audit Betrieb BF-10, additiv): Die Replicas
         waehlen die Replica, die die Hintergrund-Jobs faehrt, per
         Postgres-Advisory-Lock (vorher fest per Umgebungsvariable, ohne

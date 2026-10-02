@@ -7,6 +7,23 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.4.0
+
+### Sonstiges
+- Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und
+  erledigte Aufträge sind aus dem Repo genommen. Planung, Betrieb und offene
+  Punkte stehen jeweils an einer Stelle.
+- Eine neue Installation entsteht allein aus dem gesicherten Datenbankschema;
+  die über hundert älteren Datenbank-Änderungen, die darin längst enthalten
+  sind, liegen nicht mehr daneben.
+- Die API-Dokumentation im Browser nutzt eine gepflegte, aktuelle Fassung
+  ihrer Anzeige statt einer eingefrorenen Kopie.
+- Die automatischen Prüfungen testen auch den nativen Teil der Android-App.
+  Ist nur dieser Teil rot, sagt die Meldung zur roten Prüfung, dass die
+  Web-Version trotzdem ausgeliefert wurde und nur die Store-Builds warten.
+- Verwaiste Upload-Dateien werden nur noch aufgelistet; gelöscht wird erst auf
+  ausdrücklichen Wunsch und nur, was mindestens eine Woche alt ist.
+
 ## [2.3.0] - 2026-10-02
 
 iOS-Build 240 · Android versionCode 134

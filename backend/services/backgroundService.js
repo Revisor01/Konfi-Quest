@@ -1831,8 +1831,8 @@ class BackgroundService {
         // allem, was daran haengt (Audit Punkte/Termine, Tabelle "Rolle je
         // Gemeinde", die schwerste Zeile). Deshalb ueberspringen beide
         // Schritte diese Konten. Protokolliert wird NUR die Kennung, kein
-        // Name: Das Log verlaesst den Server. Wie viele es sind, misst
-        // docs/auftraege/lokaler-agent/06-mischkonten.md.
+        // Name: Das Log verlaesst den Server. Gemessen am 01.10.2026: kein
+        // Konfi-Konto mit weiterer Gemeinde (docs/planung/mehrfach-konten.md).
         const { rows: uebersprungen } = await db.query(
           `SELECT u.id, (CURRENT_DATE - $2::date) AS tag
              FROM users u

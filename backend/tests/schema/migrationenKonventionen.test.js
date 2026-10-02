@@ -1,7 +1,7 @@
 // backend/tests/schema/migrationenKonventionen.test.js
 //
-// Zwei Regeln fuer NEUE Migrationen (ab 174, 29.09.2026) -- damit die
-// Altlasten nicht weiterwachsen:
+// Zwei Regeln fuer jede Migration in backend/migrations/ (seit 29.09.2026,
+// ab Migration 174) -- damit die Altlasten nicht weiterwachsen:
 //
 // 1. Zeitspalten mit Zeitzone (timestamptz), nie `TIMESTAMP` ohne
 //    (Audit Datenbank BF-11). 24 Spalten sind noch ohne Zone; ihre Werte
@@ -14,13 +14,13 @@
 //    zeigen als integer darauf, zuletzt 159 (`INTEGER REFERENCES users(id)`).
 //    Funktional folgenlos, aber jede neue Tabelle setzte die Mischung fort.
 //
-// Aeltere Migrationen bleiben, wie sie sind: In der Produktion gelaufen,
-// werden sie nie wieder ausgefuehrt.
+// Die aelteren Migrationen (064 bis 173) stehen seit dem 02.10.2026 nur noch
+// im Schema-Dump; im Verzeichnis liegt nichts mehr, das vor diesen Regeln
+// entstand. Die Grenze zum Dump haelt dumpAktualitaet.test.js.
 const fs = require('fs');
 const path = require('path');
 
 const MIGRATIONS_DIR = path.join(__dirname, '..', '..', 'migrations');
-const AB = 174;
 
 // SQL ohne Kommentare und ohne Zeichenketten -- ein Wort in einem Kommentar
 // oder Text ist keine Spaltendefinition.
@@ -32,7 +32,7 @@ function nurCode(sql) {
 }
 
 const neue = fs.readdirSync(MIGRATIONS_DIR)
-  .filter((f) => f.endsWith('.sql') && parseInt(f, 10) >= AB)
+  .filter((f) => f.endsWith('.sql'))
   .sort()
   .map((f) => ({ datei: f, code: nurCode(fs.readFileSync(path.join(MIGRATIONS_DIR, f), 'utf8')) }));
 
@@ -41,7 +41,7 @@ const neue = fs.readdirSync(MIGRATIONS_DIR)
 const OHNE_ZONE = /\bTIMESTAMP\b(?!\s+WITH\s+TIME\s+ZONE)|\bTIMESTAMP\s+WITHOUT\s+TIME\s+ZONE\b/gi;
 const INTEGER_FK = /\b(INTEGER|INT|INT4|SERIAL)\b(\s+NOT\s+NULL)?\s+REFERENCES\b/gi;
 
-describe(`Neue Migrationen (ab ${AB}) folgen den Schema-Regeln`, () => {
+describe('Die Migrationen folgen den Schema-Regeln', () => {
   it('es gibt neue Migrationen zu pruefen', () => {
     expect(neue.length).toBeGreaterThan(0);
   });

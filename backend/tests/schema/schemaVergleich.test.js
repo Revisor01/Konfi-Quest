@@ -2,7 +2,7 @@
 //
 // Die Kommandozeile von scripts/schemaVergleich.js -- mit ihr misst der
 // Betrieb, ob die Produktion dem Repo entspricht (Audit Datenbank BF-17,
-// Auftrag docs/auftraege/lokaler-agent/11-schema-und-rueckspielprobe.md).
+// docs/betrieb/routinen.md, „Schema-Dump fortschreiben").
 // Sie muss bei Gleichheit 0 und bei einer Abweichung 1 liefern, sonst meldet
 // ein Messlauf "gleich", wo er es nicht ist.
 const { execFileSync, spawnSync } = require('child_process');

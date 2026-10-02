@@ -1,0 +1,32 @@
+# Einheitliche Grundeinstellungen für Editoren — https://editorconfig.org
+# Gibt den bestehenden Stil wieder; Zeilenenden und Binärdateien regelt
+# zusätzlich .gitattributes.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Zwei Leerzeichen am Zeilenende sind in Markdown ein Zeilenumbruch.
+[*.md]
+trim_trailing_whitespace = false
+
+# Python, Android (Java, Gradle, XML), Swift und nginx rücken mit vier ein.
+[*.{py,java,kt,kts,gradle,swift,xml,conf}]
+indent_size = 4
+
+# SQL folgt dem Dump bzw. der jeweiligen Migration; keine feste Vorgabe.
+[*.sql]
+indent_size = unset
+
+# Von Xcode erzeugt: Tabulatoren.
+[*.{plist,pbxproj,entitlements,xcprivacy}]
+indent_style = tab
+
+# Windows-Skript des Gradle-Wrappers.
+[*.bat]
+end_of_line = crlf

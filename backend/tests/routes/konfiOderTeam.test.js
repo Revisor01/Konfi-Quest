@@ -17,9 +17,9 @@
 //    user_organizations mit (Altbestand aus Migration 101)
 //  - Registrierung mit Einladungscode: legt immer ein NEUES Konto an
 //
-// Die Tabelle "Rolle je Gemeinde" im Audit
-// (docs/audit/2026-09-26/backend-fachlogik-punkte-termine.md) nennt, was die
-// Regel erledigt.
+// Die Tabelle "Rolle je Gemeinde" im Audit Punkte/Termine (in der Historie,
+// docs/README.md#befundkennungen) nennt, was die Regel erledigt; was offen
+// ist, steht in docs/planung/mehrfach-konten.md.
 
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');

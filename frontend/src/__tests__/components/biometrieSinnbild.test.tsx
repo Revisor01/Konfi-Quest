@@ -10,16 +10,18 @@ import { fingerPrintOutline, scanOutline, lockClosedOutline } from 'ionicons/ico
 // FINGERABDRUCK-Symbol. Die Bezeichnung war laengst richtig ("Mit Face ID
 // entsperren"), nur das Symbol hing an drei Stellen fest verdrahtet daneben.
 //
-// Diese Tests pruefen beides gemeinsam — Symbol UND Text — an allen drei
-// Oberflaechen, an denen das Verfahren benannt wird. Ein Test nur auf den Text
-// haette den Fehler nicht gesehen: der Text stimmte ja.
+// Diese Tests pruefen beides gemeinsam — Symbol UND Text. Ein Test nur auf
+// den Text haette den Fehler nicht gesehen: der Text stimmte ja. Gerendert
+// wird der Sperrbildschirm; die Anmeldeseite holt ihr Symbol aus derselben
+// Quelle (biometrieIcon). Der dritte Ort, der Anmelde-Schalter in den
+// Konto-Einstellungen, ist seit dem 27.08.2026 ausgebaut und seit dem
+// 02.10.2026 auch als Datei geloescht (biometrieAlleDreiAnsichten.test.ts).
 //
 // Der wichtigste Fall ist der letzte: Ohne verlaessliche Auskunft darf NICHT
 // stillschweigend der Finger stehen. Genau das war der gemeldete Fehler.
 // ---------------------------------------------------------------------------
 
 const mockVerfuegbar = vi.fn();
-const mockIstAktiv = vi.fn();
 const mockOeffnen = vi.fn();
 
 vi.mock('../../services/biometrics', async () => {
@@ -29,16 +31,12 @@ vi.mock('../../services/biometrics', async () => {
   return {
     ...echt,
     biometrieVerfuegbar: (...a: unknown[]) => mockVerfuegbar(...(a as [])),
-    istBiometrieAktiv: (...a: unknown[]) => mockIstAktiv(...(a as [])),
-    biometrieAktivieren: vi.fn(async () => true),
-    biometrieVergessen: vi.fn(async () => undefined),
   };
 });
 vi.mock('../../services/appSperre', () => ({
   sperreOeffnen: (...a: unknown[]) => mockOeffnen(...(a as [])),
 }));
 
-import BiometrieSchalter from '../../components/shared/BiometrieSchalter';
 import AppSperrbildschirm from '../../components/common/AppSperrbildschirm';
 import { biometrieIcon } from '../../components/shared/biometrieSymbol';
 
@@ -50,7 +48,6 @@ const iconVon = (element: Element | null): string | null =>
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockIstAktiv.mockResolvedValue(false);
   // Der Sperrbildschirm fragt beim Erscheinen von selbst; "abgebrochen" laesst
   // ihn stehen, damit der Knopf mit Symbol und Text ueberhaupt sichtbar ist.
   mockOeffnen.mockResolvedValue('abgebrochen');
@@ -70,67 +67,6 @@ describe('biometrieIcon — die eine Quelle fuer das Symbol', () => {
     // Auch wenn gar nichts uebergeben wird: niemals stillschweigend der Finger.
     expect(biometrieIcon(undefined)).toBe(lockClosedOutline);
     expect(biometrieIcon(undefined)).not.toBe(fingerPrintOutline);
-  });
-});
-
-describe('Der Schalter in den Konto-Einstellungen', () => {
-  it('zeigt bei Face ID ein Gesichts-Symbol und "Face ID"', async () => {
-    mockVerfuegbar.mockResolvedValue({
-      verfuegbar: true, art: 'faceId', bezeichnung: 'Face ID', sinnbild: 'gesicht',
-    });
-    const { container } = render(<BiometrieSchalter variante="purple" />);
-
-    expect(await screen.findByText('Anmelden mit Face ID')).toBeInTheDocument();
-    const icon = container.querySelector('.app-icon-circle ion-icon');
-    expect(iconVon(icon)).toBe(scanOutline);
-    // Genau der gemeldete Fehler: Face ID, aber Fingerabdruck-Symbol.
-    expect(iconVon(icon)).not.toBe(fingerPrintOutline);
-  });
-
-  it('zeigt bei Touch ID ein Finger-Symbol und "Touch ID"', async () => {
-    mockVerfuegbar.mockResolvedValue({
-      verfuegbar: true, art: 'touchId', bezeichnung: 'Touch ID', sinnbild: 'finger',
-    });
-    const { container } = render(<BiometrieSchalter variante="users" />);
-
-    expect(await screen.findByText('Anmelden mit Touch ID')).toBeInTheDocument();
-    expect(iconVon(container.querySelector('.app-icon-circle ion-icon'))).toBe(fingerPrintOutline);
-  });
-
-  it('zeigt beim Fingerabdruck ein Finger-Symbol und "Fingerabdruck"', async () => {
-    mockVerfuegbar.mockResolvedValue({
-      verfuegbar: true, art: 'fingerabdruck', bezeichnung: 'Fingerabdruck', sinnbild: 'finger',
-    });
-    const { container } = render(<BiometrieSchalter variante="teamer" />);
-
-    expect(await screen.findByText('Anmelden mit Fingerabdruck')).toBeInTheDocument();
-    expect(iconVon(container.querySelector('.app-icon-circle ion-icon'))).toBe(fingerPrintOutline);
-  });
-
-  it('zeigt bei Android-Gesichtserkennung ein Gesichts-Symbol und den deutschen Text', async () => {
-    mockVerfuegbar.mockResolvedValue({
-      verfuegbar: true,
-      art: 'gesichtserkennung',
-      bezeichnung: 'Gesichtserkennung',
-      sinnbild: 'gesicht',
-    });
-    const { container } = render(<BiometrieSchalter variante="purple" />);
-
-    expect(await screen.findByText('Anmelden mit Gesichtserkennung')).toBeInTheDocument();
-    expect(iconVon(container.querySelector('.app-icon-circle ion-icon'))).toBe(scanOutline);
-  });
-
-  it('faellt bei unbekanntem Verfahren auf das Schloss zurueck — NICHT auf den Finger', async () => {
-    mockVerfuegbar.mockResolvedValue({
-      verfuegbar: true, art: 'biometrie', bezeichnung: 'Biometrie', sinnbild: 'schloss',
-    });
-    const { container } = render(<BiometrieSchalter variante="purple" />);
-
-    expect(await screen.findByText('Anmelden mit Biometrie')).toBeInTheDocument();
-    const icon = container.querySelector('.app-icon-circle ion-icon');
-    expect(iconVon(icon)).toBe(lockClosedOutline);
-    expect(iconVon(icon)).not.toBe(fingerPrintOutline);
-    expect(iconVon(icon)).not.toBe(scanOutline);
   });
 });
 

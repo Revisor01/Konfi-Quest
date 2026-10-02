@@ -251,8 +251,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
     handleValidationErrors
   ];
 
-  // Schema: siehe backend/migrations/064_consolidate_inline_schemas.sql
-
   // ====================================================================
   // MATERIAL ENDPOINTS
   // ====================================================================

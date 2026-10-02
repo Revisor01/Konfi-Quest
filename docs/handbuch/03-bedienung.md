@@ -32,7 +32,9 @@ für Team und Leitung neue Beiträge und solche, die auf Freigabe warten (siehe
 Summe aller Reiter steht als Zahl am App-Symbol. Wer mehreren Gemeinden
 angehört, sieht dort die Summe **aller** Gemeinden — die Reiter zeigen nur
 die, in der man gerade arbeitet (siehe
-[Sehen, wo etwas offen ist](05-rollen.md#sehen-wo-etwas-offen-ist)).
+[Sehen, wo etwas offen ist](05-rollen.md#sehen-wo-etwas-offen-ist)). In der
+Chat-Liste steht die Zahl zusätzlich neben jedem einzelnen Chat (siehe
+[Den Ungelesen-Zähler verstehen](90-chat.md#den-ungelesen-zaehler-verstehen)).
 
 Daten schreibt die App überall gleich: kurz als 14.09.2026 in Listen und auf
 Karten, ausgeschrieben als „Montag, 14. September 2026" in den Einzelansichten,

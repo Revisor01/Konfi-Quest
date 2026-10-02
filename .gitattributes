@@ -1,0 +1,26 @@
+# Zeilenenden und Binärdateien. Ein "git add --renormalize ." ändert mit
+# diesen Regeln nichts am Bestand.
+
+# Skripte: immer LF, sonst laufen sie im Container nicht.
+*.sh  text eol=lf
+
+# Windows-Skript des Gradle-Wrappers: CRLF. Es liegt schon mit CRLF im Repo;
+# "text eol=crlf" würde es beim nächsten Einchecken auf LF umschreiben (mit
+# "git add --renormalize ." nachgeprüft). Deshalb unverändert durchreichen.
+*.bat -text
+
+# Binärdateien: kein Textvergleich, keine Zeilenend-Umwandlung.
+*.png            binary
+*.jpg            binary
+*.jpeg           binary
+*.webp           binary
+*.gif            binary
+*.ico            binary
+*.pdf            binary
+*.jar            binary
+*.keystore       binary
+*.p12            binary
+*.mobileprovision binary
+*.ttf            binary
+*.woff           binary
+*.woff2          binary

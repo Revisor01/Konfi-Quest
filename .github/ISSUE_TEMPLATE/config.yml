@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Sicherheitslücke melden
+    url: https://github.com/Revisor01/Konfi-Quest/security/policy
+    about: Bitte vertraulich über „Report a vulnerability" melden, nie als öffentliches Issue (SECURITY.md).
+  - name: Handbuch
+    url: https://konfi-quest.de/docs/
+    about: Wie die App gedacht ist — für Konfis, Team und Leitung.
+  - name: Konfi Quest für die eigene Gemeinde
+    url: https://konfi-quest.de
+    about: Anfragen zur Nutzung gehen nicht über Issues.
