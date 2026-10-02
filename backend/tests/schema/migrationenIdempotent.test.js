@@ -12,11 +12,14 @@
 // laufen soll. Fuenf Dateien, die sich selbst idempotent nannten,
 // scheiterten dabei: 064_add_missing_fks und 064_add_missing_indexes (Spalte
 // konfi_id, von 077 umbenannt), 128 und 136 ("cannot drop columns from
-// view" nach 154), 132 (liest die Spalte, die sie selbst entfernt).
+// view" nach 154), 132 (liest die Spalte, die sie selbst entfernt). Diese
+// Dateien stehen seit dem 02.10.2026 nur noch im Schema-Dump (Stand 173);
+// backend/migrations/ haelt die Migrationen danach.
 //
-// Der Test baut den Deploy-Weg auf, fuehrt danach die GANZE Kette noch
-// einmal aus -- jede Datei in einer eigenen Transaktion wie der
-// Migrationslauf -- und verlangt: kein Fehler, gleicher Fingerabdruck.
+// Der Test baut den Deploy-Weg auf, fuehrt danach jede Datei aus
+// backend/migrations/ noch einmal aus -- jede in einer eigenen Transaktion
+// wie der Migrationslauf -- und verlangt: kein Fehler, gleicher
+// Fingerabdruck.
 const fs = require('fs');
 const path = require('path');
 const { schemaFingerabdruck, vergleiche } = require('../../scripts/schemaVergleich');
@@ -30,6 +33,7 @@ describe('Migrationen: ein zweiter Lauf der ganzen Kette', () => {
   let pool;
   let vorher;
   const fehler = [];
+  const ausgefuehrt = [];
 
   beforeAll(async () => {
     pool = await dbAnlegen(DB);
@@ -44,6 +48,7 @@ describe('Migrationen: ein zweiter Lauf der ganzen Kette', () => {
           await client.query('BEGIN');
           await client.query(sql);
           await client.query('COMMIT');
+          ausgefuehrt.push(datei);
         } catch (err) {
           await client.query('ROLLBACK');
           fehler.push(`${datei}: ${err.message}`);
@@ -68,6 +73,7 @@ describe('Migrationen: ein zweiter Lauf der ganzen Kette', () => {
 
   it('es wurden wirklich alle Dateien ausgefuehrt', () => {
     // Schutz gegen einen leeren Lauf: Ohne Dateien waere "keine Fehler" wertlos.
-    expect(migrationsDateien().length).toBeGreaterThan(100);
+    expect(migrationsDateien().length).toBeGreaterThan(0);
+    expect(ausgefuehrt).toEqual(migrationsDateien());
   });
 });

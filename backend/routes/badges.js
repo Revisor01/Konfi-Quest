@@ -823,8 +823,6 @@ async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds,
 }
 
 
-// Schema-Migrationen: siehe backend/migrations/076_badges_rename_migrations.sql
-
 // Badges: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 

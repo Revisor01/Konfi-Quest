@@ -1,25 +1,25 @@
-// backend/tests/schema/migration160ChatIndizes.test.js
+// backend/tests/schema/chatNachrichtenIndizes.test.js
 //
-// Waechter fuer 160_chat_messages_fk_indizes.sql (Audit 26.09.2026,
-// Datenbank BF-01): Die Fremdschluessel chat_messages.reply_to (ON DELETE SET
-// NULL, Migration 102) und chat_messages.user_id (ON DELETE CASCADE, Migration
-// 114) brauchen einen fuehrenden Index. Ohne ihn ist jeder RI-Trigger beim
-// harten Loeschen einer Nachricht ein Seq Scan ueber die ganze Tabelle --
-// gemessen 32,1 s fuer 1000 Nachrichten bei 490.400 Zeilen, mit Index 12 ms.
+// Waechter fuer die beiden Indizes auf chat_messages.reply_to und user_id
+// (Audit 26.09.2026, Datenbank BF-01): Die Fremdschluessel
+// chat_messages.reply_to (ON DELETE SET NULL) und chat_messages.user_id
+// (ON DELETE CASCADE) brauchen einen fuehrenden Index. Ohne ihn ist jeder
+// RI-Trigger beim harten Loeschen einer Nachricht ein Seq Scan ueber die
+// ganze Tabelle -- gemessen 32,1 s fuer 1000 Nachrichten bei 490.400 Zeilen,
+// mit Index 12 ms.
 //
-// Die Test-DB entsteht aus dem Produktions-Dump plus allen offenen
-// Migrationen (globalSetup). Fehlt die Migrationsdatei, fehlen die Indizes,
-// und beide Existenz-Tests fallen. Der Plan-Test prueft zusaetzlich, dass der
-// Planer den partiellen Index fuer genau die Bedingung des RI-Triggers
-// (`reply_to = $1`) auch verwenden KANN -- ein Index, der da ist, aber nicht
-// zum Praedikat passt, waere ebenso wertlos wie keiner.
-const fs = require('fs');
-const path = require('path');
+// Angelegt hat sie Migration 160; seit dem 02.10.2026 stehen sie im
+// Schema-Dump (init-scripts/01-create-schema.sql, Stand 173), die Datei
+// selbst liegt nur noch in der Git-Historie. Geprueft wird deshalb das
+// Schema, aus dem die Test-DB entsteht (globalSetup: Dump plus die Migrationen
+// danach): Verliert ein erneuerter Dump oder eine spaetere Migration einen der
+// beiden Indizes, fallen die Existenz-Tests. Die Plan-Tests pruefen
+// zusaetzlich, dass der Planer den partiellen Index fuer genau die Bedingung
+// des RI-Triggers (`reply_to = $1`) auch verwenden KANN -- ein Index, der da
+// ist, aber nicht zum Praedikat passt, waere ebenso wertlos wie keiner.
 const { getTestPool, closePool } = require('../helpers/db');
 
-const MIGRATION = path.join(__dirname, '..', '..', 'migrations', '160_chat_messages_fk_indizes.sql');
-
-describe('Migration 160: Indizes auf chat_messages.reply_to und user_id', () => {
+describe('Indizes auf chat_messages.reply_to und user_id', () => {
   let db;
 
   beforeAll(() => {
@@ -83,25 +83,6 @@ describe('Migration 160: Indizes auf chat_messages.reply_to und user_id', () => 
       const plan = rows.map(r => r['QUERY PLAN']).join('\n');
       expect(plan).toContain('idx_chat_messages_user_id');
       expect(plan).not.toContain('Seq Scan');
-      await client.query('ROLLBACK');
-    } finally {
-      client.release();
-    }
-  });
-
-  it('die Migrationsdatei ist idempotent (zweiter Lauf ohne Fehler) und nutzt kein CONCURRENTLY', async () => {
-    // database.js fuehrt jede Datei in einer Transaktion aus; CREATE INDEX
-    // CONCURRENTLY ist dort nicht erlaubt und wuerde die Datei scheitern
-    // lassen -- der nicht-blockierende Laeufer uebersprünge sie stumm.
-    const sql = fs.readFileSync(MIGRATION, 'utf8');
-    const ohneKommentare = sql.replace(/--.*$/gm, '');
-    expect(ohneKommentare).not.toMatch(/CONCURRENTLY/i);
-    expect(ohneKommentare.match(/CREATE INDEX IF NOT EXISTS/g)).toHaveLength(2);
-
-    const client = await db.getClient();
-    try {
-      await client.query('BEGIN');
-      await client.query(sql);
       await client.query('ROLLBACK');
     } finally {
       client.release();

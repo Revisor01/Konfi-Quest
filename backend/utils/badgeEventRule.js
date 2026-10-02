@@ -6,16 +6,16 @@
 //   (events.is_konfirmation) zählen NIE für Badges. Nur freiwillig besuchte,
 //   bestaetigte Events.
 // - TEAMER: ALLE bestaetigten Events zählen (sie arbeiten bei Pflicht/
-//   Konfirmation mit -> legitime Zählung).
+//   Konfirmation mit -> legitime Zählung). Dafuer genuegt
+//   eb.attendance_status = 'present' -- ohne eigene Konstante, die
+//   Teamer-Wertung in badges.js schreibt die Bedingung direkt.
 //
-// Diese Bedingung MUSS in der Wertung (badges.js) UND der Fortschrittsanzeige
-// (konfi.js) identisch verwendet werden, sonst laufen Wertung und Progress
-// auseinander. Voraussetzung im SQL: event_bookings als "eb", events als "e".
+// Die Konfi-Bedingung MUSS in der Wertung (badges.js) UND der
+// Fortschrittsanzeige (konfi.js) identisch verwendet werden, sonst laufen
+// Wertung und Progress auseinander. Voraussetzung im SQL: event_bookings als
+// "eb", events als "e".
 
 const KONFI_BADGE_EVENT_CONDITION =
   "eb.attendance_status = 'present' AND e.mandatory = false AND e.is_konfirmation = false";
 
-const TEAMER_BADGE_EVENT_CONDITION =
-  "eb.attendance_status = 'present'";
-
-module.exports = { KONFI_BADGE_EVENT_CONDITION, TEAMER_BADGE_EVENT_CONDITION };
+module.exports = { KONFI_BADGE_EVENT_CONDITION };
