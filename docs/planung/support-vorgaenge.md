@@ -50,17 +50,19 @@ Stand: 03.10.2026. Baut auf [support-mail.md](support-mail.md) und
    **Dringlichkeit:** normal · dringend („wir können gerade nicht
    weiterarbeiten"). **Status:** Neu · In Arbeit · Wartet auf Rückmeldung ·
    Erledigt.
-4. **Support-Formular** („Hilfe und Support", unter „Mehr" in App und Browser)
-   für **Gemeindeleitung und Leitung** (org_admin, admin) der aktiven
-   Gemeinde. Felder: Art, Bereich, Dringlichkeit, Betreff, Beschreibung;
-   Rückmeldung an die Mail-Adresse des Kontos (ohne Adresse am Konto: Pflicht­
-   feld); Häkchen „App-Version und Gerätetyp mitsenden" (nur Version und
-   ios/android/web). Nach dem Absenden: Bestätigung mit Vorgangsnummer auf dem
-   Bildschirm und als Mail von support@ mit `[Vorgang N]` im Betreff.
-   Darunter „Unsere Anliegen": die Vorgänge der Gemeinde mit Betreff, Art,
-   Status und Datum — die Gemeindeleitung sieht alle ihrer Gemeinde, die
-   Leitung ihre eigenen. Interne Notizen sieht nur der Support. Höchstens 10
-   Anliegen je Konto und Stunde.
+4. **Support-Formular auf der Homepage** (Simon, 03.10.2026: „Support kommt
+   auf die HP"). Auf konfi-quest.de neben dem Anfrageformular, offen für alle,
+   gebaut wie das Anfrageformular (Einwilligung, Schutz gegen Spam, Grenze je
+   Absender, Bestätigungsmail mit festem Text ohne Eingaben aus dem Formular).
+   Felder: Gemeinde (Freitext, Pflicht), Name (Pflicht), E-Mail (Pflicht),
+   Funktion (optional), Art, Bereich, Dringlichkeit, Betreff, Beschreibung,
+   Einwilligung. Gehört die E-Mail zu genau einem aktiven Konto (nicht Konfi)
+   einer Gemeinde, ordnet der Server den Vorgang dieser Gemeinde zu; sonst
+   bleibt die Gemeinde leer und der Support ordnet sie im Vorgang zu. Die
+   Bestätigung kommt von support@ mit `[Vorgang N]` im Betreff, damit
+   Antworten im Vorgang landen. „Hilfe und Support" unter „Mehr" in App und
+   Browser führt zu diesem Formular (Link nach draußen); ein eigenes Formular
+   in der App gibt es nicht.
 5. **Archivieren und Löschen.**
    - Ein Vorgang lässt sich **archivieren** (verschwindet aus den offenen
      Listen, bleibt unter „Archiv" mit Suche, lässt sich wiederherstellen)
@@ -69,19 +71,21 @@ Stand: 03.10.2026. Baut auf [support-mail.md](support-mail.md) und
      — Konfi Quest liest die Postfächer weiter nur lesend.
    - Eine Mail im Posteingang lässt sich **archivieren** und **löschen**.
    - Beides auch für mehrere auf einmal (Auswahl in der Tabelle).
-6. **Aufbewahrung.** Erledigte Vorgänge werden **730 Tage nach dem
-   Abschluss** gelöscht, wenn sie sich seitdem nicht geändert haben
-   (archivierte ebenso). Anfrage-Vorgänge folgen weiter den Fristen der
-   Anfrage (abgelehnt 180 Tage, unbewegt 365 Tage). Archivierte Mails im
+6. **Archiv und Aufbewahrung** (Simon: „gut, aber Archiv"). Wer einen
+   Vorgang auf „Erledigt" setzt, legt ihn ins **Archiv**; eine neue Mail im
+   Vorgang holt ihn zurück (Status „In Arbeit", ungelesen). Archivierte
+   Vorgänge werden **730 Tage nach dem Archivieren** gelöscht, wenn sie sich
+   seitdem nicht geändert haben. Anfrage-Vorgänge folgen weiter den Fristen
+   der Anfrage (abgelehnt 180 Tage, unbewegt 365 Tage). Archivierte Mails im
    Posteingang: 180 Tage wie bisher. Mit der Gemeinde gehen ihre Vorgänge.
-   Wird ein Konto gelöscht, bleibt sein Vorgang ohne Personenbezug am Konto
-   (`erstellt_von` wird leer). Die Datenschutzerklärung beschreibt das
-   Formular (Abschnitt 9e).
+   Die Datenschutzerklärung beschreibt das Formular und die Fristen
+   (Abschnitt 9e).
 7. **Ansicht im Browser.**
    - **Vorgänge** ist der Eingang des Supports: Tabelle mit Nr., Betreff,
      Art, Gemeinde, Status, Dringlichkeit, letzte Aktivität, ungelesen;
      Filter Offen (neu, in Arbeit, wartet) · Neu · In Arbeit · Wartet ·
-     Erledigt · Archiv; Auswahl nach Art und Gemeinde; Suche; Sammelaktionen.
+     Archiv (darin auch die erledigten); Auswahl nach Art und Gemeinde;
+     Suche; Sammelaktionen.
    - **Ein Vorgang:** Kopf mit Nummer, Betreff, Status; links der Verlauf und
      die Antwort mit Textbausteinen; rechts „Einordnen" (Art, Bereich,
      Dringlichkeit, Status, Gemeinde — Auswahlfelder, sofort gespeichert),
@@ -104,8 +108,8 @@ Stand: 03.10.2026. Baut auf [support-mail.md](support-mail.md) und
    hören darauf; dazu neu laden beim Zurückkehren auf eine Seite und beim
    Wiederaufnehmen des Fensters.
 9. **Ausgelieferte Apps:** Alle bisherigen Routen und Antwortformen bleiben
-   (Felder nur hinzu). Das Formular gibt es in den Apps ab der nächsten
-   Version; der Browser hat es sofort.
+   (Felder nur hinzu). Der Eintrag „Hilfe und Support" kommt mit der nächsten
+   App-Version; das Formular auf der Homepage gilt sofort für alle.
 
 ## Datenmodell (Migration 195, additiv)
 
@@ -122,9 +126,10 @@ support_vorgaenge (
   quelle TEXT NOT NULL,         -- anfrage | formular | mail | support
   organization_id INT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   anfrage_id INT NULL UNIQUE REFERENCES gemeinde_anfragen(id) ON DELETE CASCADE,
-  erstellt_von INT NULL REFERENCES users(id) ON DELETE SET NULL,
-  rueckmeldung_an TEXT NULL,    -- nur wenn das Konto keine Adresse hat
-  app_version TEXT NULL, plattform TEXT NULL,
+  erstellt_von INT NULL REFERENCES users(id) ON DELETE SET NULL,  -- Support-Konto, das ihn anlegte
+  kontakt_name TEXT NULL, kontakt_email TEXT NULL, kontakt_funktion TEXT NULL,
+  gemeinde_angabe TEXT NULL,    -- Freitext aus dem Formular
+  einwilligung_am TIMESTAMPTZ NULL,
   notiz TEXT NULL,              -- intern, nur Support
   archiviert_am TIMESTAMPTZ NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -150,7 +155,7 @@ GET    /vorgaenge?filter=offen|neu|in_arbeit|wartet|erledigt|archiv&art=&gemeind
        -> [ { id, art, bereich, dringlichkeit, status, betreff, quelle, organization_id,
               gemeinde_name, anfrage_id, ungelesen, letzte_aktivitaet, created_at, archiviert_am } ]
 POST   /vorgaenge            { art, bereich?, dringlichkeit?, betreff, organization_id?, text?, an? }
-GET    /vorgaenge/:id        -> { ...vorgang, notiz, beschreibung, erstellt_von_name, app_version, plattform,
+GET    /vorgaenge/:id        -> { ...vorgang, notiz, beschreibung, kontakt_name, kontakt_email, kontakt_funktion, gemeinde_angabe,
                                    verlauf: [mails], anfrage: {…}|null, gemeinde: {…}|null, leitung: [...] }
 PATCH  /vorgaenge/:id        { art?, bereich?, dringlichkeit?, status?, betreff?, organization_id?, notiz? }
 POST   /vorgaenge/:id/antworten     { betreff, text, an? }   -> Mail mit [Vorgang N]
@@ -165,13 +170,15 @@ GET    /mail/zaehler         + vorgaenge, + posteingang (zusätzliche Felder)
 GET    /mail/eingang         + archiv=1 (nur archivierte), ohne: nicht archivierte
 ```
 
-Gemeinde (angemeldet, org_admin oder admin der aktiven Gemeinde):
+Öffentlich (ohne Anmeldung, wie `POST /api/anfragen`):
 
 ```
-POST /api/hilfe/anliegen   { art, bereich?, dringlichkeit, betreff, beschreibung, rueckmeldung_an?, technik: bool }
-                           -> 201 { id, nummer }
-GET  /api/hilfe/anliegen   -> [ { id, art, bereich, status, betreff, created_at, updated_at } ]
+POST /api/anliegen   { gemeinde, name, email, funktion?, art, bereich?, dringlichkeit, betreff,
+                       beschreibung, einwilligung: true }   -> 201 { ok: true }
 ```
+
+Die Antwort nennt keine Vorgangsnummer und keine Zuordnung (öffentliche
+Route); die Nummer steht in der Bestätigungsmail.
 
 `POST /api/anfragen` legt den Vorgang der Anfrage in derselben Transaktion an.
 
