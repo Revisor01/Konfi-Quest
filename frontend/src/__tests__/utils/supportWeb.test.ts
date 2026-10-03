@@ -210,16 +210,18 @@ describe('Suche: Umlaute, Hervorheben, Felder', () => {
 
 describe('gemeindenGruppieren: Landeskirche -> Kirchenkreis -> Gemeinde', () => {
   const liste = [
-    gemeinde(1, 'Zeta', { landeskirche_id: 2, landeskirche: 'Nordlandkirche', kirchenkreis_id: 21, kirchenkreis: 'Marschen', konfi_count: 30 }),
-    gemeinde(2, 'Alpha', { landeskirche_id: 2, landeskirche: 'Nordlandkirche', kirchenkreis_id: 20, kirchenkreis: 'Küstenland', konfi_count: 20 }),
-    gemeinde(3, 'Beta', { landeskirche_id: 2, landeskirche: 'Nordlandkirche', kirchenkreis_id: 20, kirchenkreis: 'Küstenland', konfi_count: 5 }),
+    gemeinde(1, 'Zeta', { landeskirche_id: 2, landeskirche: 'Zukunftskirche', kirchenkreis_id: 21, kirchenkreis: 'Marschen', konfi_count: 30 }),
+    gemeinde(2, 'Alpha', { landeskirche_id: 2, landeskirche: 'Zukunftskirche', kirchenkreis_id: 20, kirchenkreis: 'Küstenland', konfi_count: 20 }),
+    gemeinde(3, 'Beta', { landeskirche_id: 2, landeskirche: 'Zukunftskirche', kirchenkreis_id: 20, kirchenkreis: 'Küstenland', konfi_count: 5 }),
     gemeinde(4, 'Gamma', { landeskirche_id: 1, landeskirche: 'Mittellandkirche', kirchenkreis_id: 10, kirchenkreis: 'Hügelland', konfi_count: 7 }),
     gemeinde(5, 'Ohne', { konfi_count: 2 }),
   ];
 
+  // "Zukunftskirche" kommt im Alphabet NACH "Ohne Zuordnung": nur so beweist der Test, dass die Gruppe ohne Zuordnung
+  // wirklich zuletzt steht und nicht zufaellig durch die Sortierung nach Namen.
   it('Landeskirchen und Kirchenkreise alphabetisch, "Ohne Zuordnung" zuletzt, Gemeinden nach Namen', () => {
     const gruppen = gemeindenGruppieren(liste);
-    expect(gruppen.map((g) => g.name)).toEqual(['Mittellandkirche', 'Nordlandkirche', 'Ohne Zuordnung']);
+    expect(gruppen.map((g) => g.name)).toEqual(['Mittellandkirche', 'Zukunftskirche', 'Ohne Zuordnung']);
     const nord = gruppen[1];
     expect(nord.kirchenkreise.map((k) => k.name)).toEqual(['Küstenland', 'Marschen']);
     expect(nord.kirchenkreise[0].gemeinden.map((g) => g.display_name)).toEqual(['Alpha', 'Beta']);

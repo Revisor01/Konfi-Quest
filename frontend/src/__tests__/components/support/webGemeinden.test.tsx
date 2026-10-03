@@ -75,7 +75,7 @@ const gemeinde = (id: number, name: string, extra: Record<string, unknown>) => (
   ...extra,
 });
 
-const NORD = { landeskirche_id: 2, landeskirche: 'Nordlandkirche' };
+const NORD = { landeskirche_id: 2, landeskirche: 'Zukunftskirche' };
 const GEMEINDEN = [
   gemeinde(1, 'Kirchengemeinde Musterdorf', {
     ...NORD, kirchenkreis_id: 20, kirchenkreis: 'Kirchenkreis Küstenland', max_konfis: 50, konfi_count: 38, team_count: 9,
@@ -113,7 +113,7 @@ const antworten = (daten: unknown = GEMEINDEN) => {
 const zeigen = async () => {
   render(<AdminOrganizationsPage />);
   await screen.findByRole('heading', { level: 1, name: 'Gemeinden' });
-  await screen.findByRole('button', { name: /Nordlandkirche/ });
+  await screen.findByRole('button', { name: /Zukunftskirche/ });
 };
 
 /** Die Koepfe der Akkordeons in Dokumentreihenfolge (Landeskirchen und Kirchenkreise). */
@@ -151,7 +151,7 @@ describe('Gemeinden (Web): Aufbau', () => {
     const k = koepfe();
     expect(k.map((b) => b.querySelector('.web-akkordeon__titel')?.textContent)).toEqual([
       'Kirche im Mittelland', 'Kirchenkreis Hügelland',
-      'Nordlandkirche', 'Kirchenkreis Küstenland', 'Kirchenkreis Marschen',
+      'Zukunftskirche', 'Kirchenkreis Küstenland', 'Kirchenkreis Marschen',
       'Ohne Zuordnung',
     ]);
     expect(k[0]).toHaveTextContent('1 Gemeinde · 5 Konfis');
@@ -351,13 +351,13 @@ describe('Gemeinden (Web): Live-Suche', () => {
     antworten();
     await zeigen();
     suchen('muster');
-    const nord = koepfe().find((b) => b.textContent?.includes('Nordlandkirche'))!;
+    const nord = koepfe().find((b) => b.textContent?.includes('Zukunftskirche'))!;
     expect(nord).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(nord);
-    expect(koepfe().find((b) => b.textContent?.includes('Nordlandkirche'))).toHaveAttribute('aria-expanded', 'false');
+    expect(koepfe().find((b) => b.textContent?.includes('Zukunftskirche'))).toHaveAttribute('aria-expanded', 'false');
     expect(window.localStorage.getItem(SCHLUESSEL_GEMEINDEN_ZU)).toBeNull();
     suchen('');
-    expect(koepfe().find((b) => b.textContent?.includes('Nordlandkirche'))).toHaveAttribute('aria-expanded', 'true');
+    expect(koepfe().find((b) => b.textContent?.includes('Zukunftskirche'))).toHaveAttribute('aria-expanded', 'true');
   });
 });
 
@@ -378,7 +378,7 @@ describe('Gemeinden (Web): Aufklappen und Merken', () => {
     window.localStorage.setItem(SCHLUESSEL_GEMEINDEN_ZU, JSON.stringify(['lk-2']));
     antworten();
     await zeigen();
-    const nord = () => koepfe().find((b) => b.textContent?.includes('Nordlandkirche'))!;
+    const nord = () => koepfe().find((b) => b.textContent?.includes('Zukunftskirche'))!;
     expect(nord()).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText('Kirchengemeinde Musterdorf')).toBeNull();
     expect(screen.getByText('Kirchengemeinde Lindenau')).toBeInTheDocument();
@@ -414,7 +414,7 @@ describe('Gemeinden (Web): Laden, Fehler, leer', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Die Gemeinden konnten nicht geladen werden.');
     antworten();
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' })); });
-    expect(await screen.findByRole('button', { name: /Nordlandkirche/ })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Zukunftskirche/ })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
