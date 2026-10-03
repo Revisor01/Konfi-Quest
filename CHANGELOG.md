@@ -9,6 +9,11 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.4.0
 
+### Behoben
+- Nach einem Update zeigt die Web-Version sofort die neuen Bilder der
+  Startseite, des Rückblicks und die neue Fassung der API-Referenz; bisher
+  konnte der Browser bis zu ein Jahr lang die alten zeigen.
+
 ### Sonstiges
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und
   erledigte Aufträge sind aus dem Repo genommen. Planung, Betrieb und offene
@@ -23,6 +28,8 @@ Versionsüberschrift.
   Web-Version trotzdem ausgeliefert wurde und nur die Store-Builds warten.
 - Verwaiste Upload-Dateien werden nur noch aufgelistet; gelöscht wird erst auf
   ausdrücklichen Wunsch und nur, was mindestens eine Woche alt ist.
+- Der Bau der Android-App bricht ohne die Zugangsdatei für Mitteilungen und
+  Absturzberichte nicht mehr gleich zu Beginn ab; er läuft dann ohne beides.
 
 ## [2.3.0] - 2026-10-02
 

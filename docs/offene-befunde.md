@@ -80,18 +80,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
   globaler Limiter hängen in `backend/createApp.js`, nicht an der Route);
   am 29.09.2026 begründet, in GitHub als „False positive" zu schließen —
   ob es geschehen ist, ist nicht vermerkt.
-- **Doku und Bilder ein Jahr im Zwischenspeicher.** In `frontend/nginx.conf`
-  gilt die Regel für Dateiendungen (`location ~* \.(js|css|png|…)$`, „expires
-  1y", `immutable`) auch unter `/docs/` — reguläre Ausdrücke gehen in nginx
-  vor `location /docs/`. Handbuch-Bilder, Swagger UI und Bilder der
-  Homepage tragen aber keine Prüfsumme im Namen: Nach einem Update sehen
-  Nutzer:innen weiter die alten. Gefunden 02.10.2026; vorgesehen für 2.4.0.
-- **Biometrie einschalten hat keinen Aufrufer mehr.** `biometrieAktivieren`
-  und `biometrieAusschalten` (`frontend/src/services/biometrics.ts`) ruft nur
-  `BiometrieSchalter.tsx`, und den bindet seit dem 27.08.2026 keine Seite
-  mehr ein. Die Anmeldung per Biometrie auf der Anmeldeseite gibt es damit
-  nur noch auf Geräten, die sie vorher eingeschaltet hatten. Behalten (und
-  den Schalter zurückholen) oder entfernen? Gefunden 02.10.2026.
 
 ### Tests und CI
 
@@ -118,18 +106,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
   BF-07, Rest).
 - **`armv7` in der Info.plist.** `UIRequiredDeviceCapabilities` nennt noch
   `armv7`; beim nächsten Umbau mit Xcode entfernen (CI BF-15, Rest).
-- **Android-Build bricht ohne Firebase-Datei ab.** In
-  `frontend/android/app/build.gradle` steht der Block `firebaseCrashlytics`
-  außerhalb der Bedingung, die das Crashlytics-Plugin nur mit
-  `google-services.json` anwendet. Fehlt die Datei (lokaler Bau, Fork),
-  scheitert Gradle schon beim Konfigurieren statt ohne Push und
-  Absturzberichte zu bauen. Gefunden 02.10.2026.
-- **Text der CI-Meldung stimmt nicht bei rotem Android-Test.**
-  `.github/scripts/ci-meldung.py` schreibt in das Issue bei rotem `main`, die
-  CI „baut und deployt" dann nicht. Der Job `android-test` gehört aber nicht
-  zu den Voraussetzungen von Build und Deploy — ist nur er rot, wird trotzdem
-  gebaut und ausgerollt; nur das Release-Tor sperrt den Store-Build.
-  Gefunden 02.10.2026.
 
 ### Betrieb
 
@@ -194,6 +170,30 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ## Bei Simon zu entscheiden
 
+- **Biometrie einschalten hat keinen Aufrufer mehr.** Am Code geprüft
+  03.10.2026. Was die App heute mit Face ID, Touch ID oder Fingerabdruck
+  anbietet, ist die App-Sperre: Profil → „Konto-Einstellungen" → „App
+  sperren" in allen drei Rollen (`AppSperreSchalter`), entsperrt wird per
+  `verifyIdentity` ohne jeden Token (`frontend/src/services/appSperre.ts`).
+  Die biometrische *Anmeldung* auf der Anmeldeseite lässt sich dagegen
+  nirgends einschalten: `biometrieAktivieren` und `biometrieAusschalten`
+  (`frontend/src/services/biometrics.ts`) ruft nur noch ein Test. Der
+  Schalter stand nur vom 26. bis 27.08.2026 in den Profilen (iOS-Build 148,
+  Android versionCode 80 — dort meldete er „nicht verfügbar"); die
+  Komponente ist mit #217 gelöscht. Wo er auf Build 148 eingeschaltet
+  wurde, liegt der Anmeldeschlüssel nur im Schlüsselbund des Geräts: Läuft
+  die kurze Anmeldung ab, landet man auf der Anmeldeseite und kommt über
+  „Mit Face ID anmelden" wieder hinein. Abschalten geht nur durch Abmelden;
+  90 Tage nach dem Einschalten verfällt die gespeicherte Anmeldung, die App
+  räumt sie selbst ab, einmal Passwort — wer gleich auf 2.1.0 (29.08.2026)
+  aktualisiert hat, ist Ende November 2026 durch. Wie viele Geräte das
+  betrifft, misst nichts. Das Handbuch nennt den Knopf auf der Anmeldeseite
+  und die Anmeldung mit Face ID (`docs/handbuch/35-passwoerter.md`), sagt
+  aber nicht, wie man sie einschaltet — es geht nicht. Schalter zurückholen
+  (dann zwei Face-ID-Einträge im Profil) oder Einschalten und Ausschalten
+  entfernen und den Anmeldeweg ab Dezember 2026 abbauen (wer dann noch
+  daran hängt, gibt einmal das Passwort ein)? Empfehlung: entfernen, die
+  App-Sperre deckt „Face ID beim Öffnen" ab. Gefunden 02.10.2026.
 - **Test-Backend teilt Datenbank und Schlüssel mit Produktion.**
   `backend-test` (eigener Hostname, für TestFlight- und Testbuilds) hängt an
   der Produktionsdatenbank, an denselben Uploads und am selben `JWT_SECRET`

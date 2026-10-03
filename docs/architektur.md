@@ -78,6 +78,9 @@ absichtlich nicht hier.
 - **Web:** Das Frontend-Image ist nginx (`frontend/Dockerfile`,
   `frontend/nginx.conf`) und liefert die Web-App, die Homepage, Handbuch und
   API-Referenz aus `frontend/public/` samt den Sicherheits-Headern (CSP).
+  Ein Jahr im Browser-Zwischenspeicher bleiben nur die Dateien mit Prüfsumme
+  im Namen (`/assets/<name>-<prüfsumme>.js` u. ä. aus dem Build); alles
+  andere fragt jedes Mal nach und bekommt bei unverändertem Stand ein 304.
   Davor verteilt Traefik nach Pfad: `/api` und `/socket.io` an die Backends,
   der Rest an das Frontend.
 
