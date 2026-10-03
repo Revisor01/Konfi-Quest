@@ -35,8 +35,8 @@ export function useTeamerListe(aktiv: boolean): TeamerListe {
 
   // Die Meldung soll `holen` nicht jedes Mal neu erzeugen: Der Effekt unten
   // laedt sonst bei jedem Zeichnen erneut.
-  const meldeFehler = useRef(setError);
-  useEffect(() => { meldeFehler.current = setError; }, [setError]);
+  const meldeFehler = useRef(() => setError('Das Team konnte nicht geladen werden'));
+  useEffect(() => { meldeFehler.current = () => setError('Das Team konnte nicht geladen werden'); }, [setError]);
 
   // Erst warten, dann Zustand setzen: Im Effekt unten soll kein Zustand
   // synchron wechseln (dasselbe Muster wie components/web/useWebDaten.ts).
@@ -49,7 +49,7 @@ export function useTeamerListe(aktiv: boolean): TeamerListe {
       console.error('Error loading teamers:', err);
       setListe([]);
       setFehler(true);
-      meldeFehler.current('Das Team konnte nicht geladen werden');
+      meldeFehler.current();
     },
   ), []);
 

@@ -893,3 +893,197 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* --- Betrieb: Urteil, Anteile, Vergleich und Last --- */
+.web-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text);
+}
+
+.web-zustand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-basis) var(--app-abstand-gross);
+  border: 1px solid var(--web-linie);
+  border-left: 4px solid var(--app-color-success-klassisch);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-karte-flaeche);
+}
+
+.web-zustand--auffaellig {
+  border-left-color: var(--app-color-ampel-maessig);
+}
+
+.web-zustand--stoerung {
+  border-left-color: var(--app-color-danger);
+}
+
+.web-zustand__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-zustand__punkt {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-success-klassisch);
+}
+
+.web-zustand--auffaellig .web-zustand__punkt {
+  background: var(--app-color-ampel-maessig);
+}
+
+.web-zustand--stoerung .web-zustand__punkt {
+  background: var(--app-color-danger);
+}
+
+.web-zustand__titel {
+  margin: 0;
+  color: var(--web-text);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-zustand__satz {
+  margin: 0;
+  color: var(--web-text);
+}
+
+.web-zustand__fuss {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-mittel);
+  padding-top: var(--app-abstand-eng);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-apdex {
+  display: flex;
+  align-items: baseline;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-mittel);
+}
+
+.web-grosszahl {
+  font-size: var(--app-text-ueberschrift-gross);
+  font-weight: var(--app-schrift-fett);
+  line-height: 1;
+}
+
+.web-karte__text--unten {
+  margin: var(--app-abstand-mittel) 0 0;
+}
+
+.web-anteile__balken {
+  display: flex;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--app-radius-fein);
+  background: var(--web-linie-leise);
+}
+
+.web-anteile__teil {
+  display: block;
+  height: 100%;
+}
+
+.web-anteile__legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng) var(--app-abstand-mittel);
+  margin: var(--app-abstand-eng) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-anteile__legende li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+}
+
+.web-anteile__punkt {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--app-radius-kreis);
+}
+
+.web-vergleiche {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-vergleich {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+}
+
+.web-vergleich__links {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--web-text);
+}
+
+.web-vergleich__rechts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: 0 0 auto;
+}
+
+.web-vergleich__jetzt {
+  color: var(--web-text);
+  font-size: var(--app-text-gross);
+}
+
+.web-vergleich__delta {
+  font-size: var(--app-text-hinweis);
+}
+
+.web-last {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-last__kopf {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-mini);
+}
+
+.web-last__spur {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--app-radius-fein);
+  background: var(--web-linie-leise);
+}
+
+.web-last__fuellung {
+  display: block;
+  height: 100%;
+  border-radius: var(--app-radius-fein);
+  background: var(--app-color-chat);
+}
