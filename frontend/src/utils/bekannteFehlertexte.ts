@@ -99,6 +99,7 @@ export const BEKANNTE_FEHLERTEXTE: readonly string[] = [
   'Der Link konnte nicht geöffnet werden',
   'Der Link muss mit http:// oder https:// beginnen',
   'Die Aktion konnte nicht ausgeführt werden',
+  'Der Text konnte nicht kopiert werden',
   'Die Datei ist zu groß.',
   'Die Einladung konnte nicht beantwortet werden',
   'Die Einladung konnte nicht gesendet werden',
