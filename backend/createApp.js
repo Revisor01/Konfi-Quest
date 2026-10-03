@@ -635,6 +635,10 @@ function createApp(db, options = {}) {
     app.use('/api/organizations', require('./routes/organizations')(db, rbacVerifier, roleHelpers));
   }
 
+  // Support-Ansicht der Web-Version (nur Super-Admin): Anfragen vom Formular,
+  // Landeskirchen und Kirchenkreise, Statistik (routes/support.js).
+  app.use('/api/support', require('./routes/support')(db, rbacVerifier, roleHelpers));
+
   app.use('/api/levels', require('./routes/levels')(db, rbacVerifier, roleHelpers));
   app.use('/api/teamer', require('./routes/teamer')(db, rbacVerifier, roleHelpers));
 

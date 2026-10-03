@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n278 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n290 Operationen."
   },
   "servers": [
     {
@@ -1478,9 +1478,10 @@
           "Organisationen"
         ],
         "summary": "Alle Organisationen mit Team-/Konfi-Zaehlern (nur Super-Admin)",
+        "description": "Seit 03.10.2026 (Migration 191, nur neue Felder): kirchenkreis_id (aus organizations.*), dazu landeskirche_id und landeskirche aus dem zugeordneten Kirchenkreis (sonst null). Alle bisherigen Felder bleiben, auch die Textspalte kirchenkreis.\n",
         "responses": {
           "200": {
-            "description": "Array aller Orgs inkl. user_count/konfi_count"
+            "description": "Array aller Orgs: organizations.* (seit 03.10.2026 mit kirchenkreis_id) inkl. user_count/konfi_count/event_count, dazu landeskirche_id und landeskirche"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -1503,7 +1504,7 @@
           "Organisationen"
         ],
         "summary": "Gemeinde anlegen inkl. erster Gemeindeleitung und Standard-Daten (4 Rollen, 36 Badges, 4 Zertifikat-Typen, 6 Levels, 14 Kategorien, 9 Aktivitäten, 3 Beispiel-Challenges)",
-        "description": "Standardrollen (display_name): org_admin \"Org-Leitung\", admin \"Leitung\", teamer \"Teamer:in\", konfi \"Konfirmand:in\" (seit 28.09.2026; vorher \"Organisations-Admin\" und \"Hauptamt\"). Bestehende Gemeinden behalten ihre display_name-Werte -- keine Migration; die App beschriftet Rollen nach role_name.\nBEHOBEN 29.09.2026 (Nebenbefund Screens/Leitung BF-15): (1) GANZ ODER GAR NICHT: Gemeinde, Rollen, erste Gemeindeleitung und alle Vorlagen entstehen in EINER Transaktion; scheitert ein Schritt, bleibt nichts stehen (500) -- vorher eine halbe Gemeinde mit belegtem Systemnamen. (2) admin_username wird SYSTEMWEIT und ohne Gross/klein geprueft wie in POST /api/users und POST /api/organizations/{id}/admins: 409 \"Benutzername existiert bereits (muss systemweit eindeutig sein)\", nichts wird angelegt. Vorher griff nur der Index (organization_id, username) -- in einer neuen Gemeinde nie; die Anmeldung per LOWER(username) wurde mehrdeutig. (3) SYSTEMNAME MIT UMLAUTEN: Die App bildet name/slug aus dem Anzeigenamen und verliert dabei Umlaute (\"Büsum\" -> \"bsum\"). Entspricht ein geschickter Wert genau dieser Bildung, bildet der Server ihn neu mit ä->ae, ö->oe, ü->ue, ß->ss (\"buesum\"); ein eigener Wert bleibt, nur Umlaute darin werden ebenso umgeschrieben (utils/gemeindeSystemname.js). Nur beim Anlegen -- bestehende Gemeinden werden nicht umbenannt, PUT speichert weiter, was geschickt wird. Antwortform unveraendert. NACHTRAG 30.09.2026: Die App ab 2.3.0 bildet name/slug selbst mit derselben Umschrift (frontend/src/utils/gemeindeSystemname.ts, Test gegen diese Funktion); der Server behaelt, was sie schickt. Die Store-App 2.2.x schickt weiter die verlustbehaftete Form.\nSTARTBESTAND (nachgezaehlt 30.09.2026; die Zusammenfassung nannte bis dahin 27 Badges, 5 Kategorien und 5 Aktivitaeten): 4 Rollen (org_admin, admin, teamer, konfi); 36 Badges -- 27 fuer Konfis und 9 fuers Team (target_role 'teamer'); 4 Zertifikat-Typen; 6 Levels; 14 Kategorien; 9 Aktivitaeten -- 5 fuer Konfis mit Punkten und 4 fuers Team ohne Punkte und Punktetyp; 3 Beispiel-Challenges als Entwurf ohne Jahrgang. Die Zaehler der Antwort nennen dieselben Zahlen.\nBEHOBEN 30.09.2026: Das Feld message nannte nur die 5 Aktivitaeten fuer Konfis, default_activities_created daneben 9. Jetzt nennen beide 9. Die App liest message nicht.\n",
+        "description": "Standardrollen (display_name): org_admin \"Org-Leitung\", admin \"Leitung\", teamer \"Teamer:in\", konfi \"Konfirmand:in\" (seit 28.09.2026; vorher \"Organisations-Admin\" und \"Hauptamt\"). Bestehende Gemeinden behalten ihre display_name-Werte -- keine Migration; die App beschriftet Rollen nach role_name.\nBEHOBEN 29.09.2026 (Nebenbefund Screens/Leitung BF-15): (1) GANZ ODER GAR NICHT: Gemeinde, Rollen, erste Gemeindeleitung und alle Vorlagen entstehen in EINER Transaktion; scheitert ein Schritt, bleibt nichts stehen (500) -- vorher eine halbe Gemeinde mit belegtem Systemnamen. (2) admin_username wird SYSTEMWEIT und ohne Gross/klein geprueft wie in POST /api/users und POST /api/organizations/{id}/admins: 409 \"Benutzername existiert bereits (muss systemweit eindeutig sein)\", nichts wird angelegt. Vorher griff nur der Index (organization_id, username) -- in einer neuen Gemeinde nie; die Anmeldung per LOWER(username) wurde mehrdeutig. (3) SYSTEMNAME MIT UMLAUTEN: Die App bildet name/slug aus dem Anzeigenamen und verliert dabei Umlaute (\"Büsum\" -> \"bsum\"). Entspricht ein geschickter Wert genau dieser Bildung, bildet der Server ihn neu mit ä->ae, ö->oe, ü->ue, ß->ss (\"buesum\"); ein eigener Wert bleibt, nur Umlaute darin werden ebenso umgeschrieben (utils/gemeindeSystemname.js). Nur beim Anlegen -- bestehende Gemeinden werden nicht umbenannt, PUT speichert weiter, was geschickt wird. Antwortform unveraendert. NACHTRAG 30.09.2026: Die App ab 2.3.0 bildet name/slug selbst mit derselben Umschrift (frontend/src/utils/gemeindeSystemname.ts, Test gegen diese Funktion); der Server behaelt, was sie schickt. Die Store-App 2.2.x schickt weiter die verlustbehaftete Form.\nSTARTBESTAND (nachgezaehlt 30.09.2026; die Zusammenfassung nannte bis dahin 27 Badges, 5 Kategorien und 5 Aktivitaeten): 4 Rollen (org_admin, admin, teamer, konfi); 36 Badges -- 27 fuer Konfis und 9 fuers Team (target_role 'teamer'); 4 Zertifikat-Typen; 6 Levels; 14 Kategorien; 9 Aktivitaeten -- 5 fuer Konfis mit Punkten und 4 fuers Team ohne Punkte und Punktetyp; 3 Beispiel-Challenges als Entwurf ohne Jahrgang. Die Zaehler der Antwort nennen dieselben Zahlen.\nBEHOBEN 30.09.2026: Das Feld message nannte nur die 5 Aktivitaeten fuer Konfis, default_activities_created daneben 9. Jetzt nennen beide 9. Die App liest message nicht.\nSEIT 03.10.2026: Die Anlage steht in utils/gemeindeAnlegen.js; dieselbe Funktion ruft POST /api/support/anfragen/{id}/anlegen. Fuer dieselbe Anfrage legt die Route Stueck fuer Stueck dasselbe an wie vorher (tests/routes/gemeindeAnlegenGemeinsam.test.js, Pruefsumme vom Stand davor). Neu und optional: kirchenkreis_id -- dann steht dessen Name in der Textspalte kirchenkreis, ein geschickter Freitext zaehlt nicht.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -1547,7 +1548,15 @@
                     "type": "string"
                   },
                   "kirchenkreis": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Freitext; mit kirchenkreis_id uebergangen"
+                  },
+                  "kirchenkreis_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "seit 03.10.2026, optional: Zuordnung zu einem Kirchenkreis (GET /api/support/kirchenkreise); unbekannt 400 'Kirchenkreis nicht gefunden', kein Verweis 400 'Ungültiger Kirchenkreis' -- nichts angelegt"
                   },
                   "max_konfis": {
                     "type": [
@@ -2093,7 +2102,15 @@
                     "type": "string"
                   },
                   "kirchenkreis": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Freitext wie bisher (alle Apps bis 2.3.0). Seit 03.10.2026: Ist die Gemeinde einem Kirchenkreis zugeordnet und weicht der Text von dessen Namen ab (ohne Gross/klein und Randleerzeichen), endet die Zuordnung (kirchenkreis_id NULL); derselbe Text laesst sie stehen. Mit kirchenkreis_id uebergangen"
+                  },
+                  "kirchenkreis_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "Seit 03.10.2026, nur super_admin (von anderen stillschweigend uebergangen, wie is_active). Setzt die Zuordnung und schreibt den Namen des Kirchenkreises in die Textspalte kirchenkreis; null hebt beides auf. Unbekannt 400 'Kirchenkreis nicht gefunden', kein Verweis 400 'Ungültiger Kirchenkreis' -- dann aendert sich nichts. Regel: utils/kirchenkreisZuordnung.js"
                   },
                   "is_active": {
                     "type": "boolean",
@@ -2118,7 +2135,10 @@
         },
         "responses": {
           "200": {
-            "description": "Aktualisiert"
+            "description": "{ message: 'Gemeinde erfolgreich aktualisiert' } (unveraendert)"
+          },
+          "400": {
+            "description": "seit 03.10.2026: kirchenkreis_id unbekannt ('Kirchenkreis nicht gefunden') oder kein Verweis ('Ungültiger Kirchenkreis'), nur fuer super_admin; daneben Validierungsfehler der Stammdaten"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -2750,6 +2770,849 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "keine; Tests: backend/tests/routes/anfragen.test.js, tests/services/anfragenAufraeumen.test.js"
+        }
+      }
+    },
+    "/api/support/anfragen": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Anfragen vom Formular, neueste zuerst",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "neu",
+                "in_arbeit",
+                "angelegt",
+                "abgelehnt"
+              ]
+            },
+            "description": "filtert; ein anderer Wert 400"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array, nach created_at absteigend",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GemeindeAnfrage"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "unbekannter status"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine (alle Anfragen)"
+        }
+      }
+    },
+    "/api/support/anfragen/{id}": {
+      "patch": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Status und Notiz einer Anfrage setzen",
+        "description": "Aendert sich der Status, beginnt status_seit neu (die 180-Tage-Frist abgelehnter Anfragen zaehlt ab dort); derselbe Status noch einmal laesst sie stehen. bearbeitet_von = aufrufendes Konto. Eine Anfrage, aus der eine Gemeinde entstanden ist (angelegt mit organization_id), behaelt den Status: ein anderer gibt 409; die Notiz bleibt aenderbar. \"angelegt\" laesst sich auch von Hand setzen (Gemeinde auf anderem Weg angelegt) -- dann ohne organization_id.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "neu",
+                      "in_arbeit",
+                      "angelegt",
+                      "abgelehnt"
+                    ]
+                  },
+                  "notiz": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 5000,
+                    "description": "getrimmt; leer = null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Die Anfrage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GemeindeAnfrage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "weder status noch notiz ('Nichts zu ändern: status oder notiz angeben'), unbekannter status, Notiz zu lang"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Anfrage nicht gefunden' }"
+          },
+          "409": {
+            "description": "{ error: 'Aus dieser Anfrage ist schon eine Gemeinde entstanden. Der Status bleibt „angelegt\".' }"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Existenz der Anfrage, Zeile gesperrt (FOR UPDATE)"
+        }
+      }
+    },
+    "/api/support/anfragen/{id}/anlegen": {
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Aus einer Anfrage eine Gemeinde samt erster Gemeindeleitung anlegen",
+        "description": "DIESELBE Anlage wie POST /api/organizations (utils/gemeindeAnlegen.js: Rollen, erste Gemeindeleitung, 36 Abzeichen, 4 Zertifikatsarten, 6 Stufen, 14 Kategorien, 9 Aktivitaeten, 3 Beispiel-Challenges, Benutzername systemweit unter derselben Sperre, Laufzeit und Konfi-Limit nach denselben Regeln) -- in EINER Transaktion mit der Anfrage: Danach status angelegt, organization_id gesetzt, bearbeitet_von = aufrufendes Konto. Scheitert die Anlage, bleibt die Anfrage unveraendert und es entsteht nichts.\nSYSTEMNAME: Ohne display_name ist `name` der Name der Gemeinde, wie er im Formular steht; der Systemname (name/slug) entsteht daraus mit Umlauten als ae/oe/ue/ss (\"Kirchengemeinde Büsum\" -> kirchengemeinde-buesum). Mit display_name ist `name` der Systemname wie bei POST /organizations (dieselbe Regel); sieht er nicht wie einer aus (Leerzeichen, Grossbuchstaben ...), entsteht er aus display_name.\nKIRCHENKREIS nur ueber kirchenkreis_id; dessen Name steht dann auch in der Textspalte kirchenkreis (Apps bis 2.3.0). Die Freitexte der Anfrage (kirchenkreis, landeskirche) werden nicht uebernommen. Kontakt- und Leitungsangaben nur aus dem Koerper (die Oberflaeche fuellt sie aus der Anfrage vor); E-Mail der Gemeindeleitung: admin_email, sonst contact_email.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Kennung der Anfrage"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "admin_username",
+                  "admin_display_name",
+                  "admin_password"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "display_name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "kirchenkreis_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "contact_name": {
+                    "type": "string"
+                  },
+                  "contact_email": {
+                    "type": "string"
+                  },
+                  "contact_phone": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "website_url": {
+                    "type": "string"
+                  },
+                  "max_konfis": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "description": "wie POST /organizations; leer = unbegrenzt"
+                  },
+                  "trial_ends_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time",
+                    "description": "wie POST /organizations: fehlt das Feld, 30 Tage Testphase; null = unbegrenzt"
+                  },
+                  "is_trial": {
+                    "type": "boolean",
+                    "description": "nur zusammen mit trial_ends_at"
+                  },
+                  "admin_username": {
+                    "type": "string"
+                  },
+                  "admin_display_name": {
+                    "type": "string"
+                  },
+                  "admin_email": {
+                    "type": "string",
+                    "description": "gueltige Adresse; fehlt sie, contact_email"
+                  },
+                  "admin_password": {
+                    "type": "string",
+                    "description": "volle validatePassword-Policy"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Angelegt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organization_id": {
+                      "type": "integer"
+                    },
+                    "admin_id": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validierungsfehler (details je Feld), 'Konfi-Limit muss eine Zahl ab 0 oder leer sein', 'Kirchenkreis nicht gefunden', 'Ungültiger Kirchenkreis', 'Aus diesem Namen lässt sich kein Systemname bilden'"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Anfrage nicht gefunden' }"
+          },
+          "409": {
+            "description": "'Benutzername existiert bereits (muss systemweit eindeutig sein)', 'Gemeinde-Slug existiert bereits' (wie POST /organizations) oder 'Aus dieser Anfrage ist schon eine Gemeinde entstanden.'"
+          },
+          "500": {
+            "description": "{ error: 'Datenbankfehler' } -- nichts angelegt, Anfrage unveraendert"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Anfrage existiert und ist nicht angelegt (FOR UPDATE)"
+        }
+      }
+    },
+    "/api/support/landeskirchen": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Landeskirchen mit ihren Kirchenkreisen",
+        "responses": {
+          "200": {
+            "description": "Array nach Name (ohne Gross/klein); kirchenkreise ebenso sortiert",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Landeskirche"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine"
+        }
+      },
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Landeskirche anlegen",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "getrimmt, nicht leer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Die Landeskirche, kirchenkreise: []",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Landeskirche"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Name fehlt oder zu lang"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "409": {
+            "description": "{ error: 'Diese Landeskirche gibt es schon' } (Name ohne Gross/klein)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine"
+        }
+      }
+    },
+    "/api/support/landeskirchen/{id}": {
+      "put": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Landeskirche umbenennen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Die Landeskirche samt Kirchenkreisen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Landeskirche"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Name fehlt oder zu lang"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Landeskirche nicht gefunden' }"
+          },
+          "409": {
+            "description": "{ error: 'Diese Landeskirche gibt es schon' }"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Existenz"
+        }
+      },
+      "delete": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Landeskirche loeschen -- nur ohne Kirchenkreise",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ message: 'Landeskirche gelöscht' }"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Landeskirche nicht gefunden' }"
+          },
+          "409": {
+            "description": "{ error: 'An dieser Landeskirche hängen noch N Kirchenkreise. Ordne sie zuerst einer anderen zu oder lösche sie.' } -- nichts geloescht"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Existenz, keine Kirchenkreise (FOR UPDATE)"
+        }
+      }
+    },
+    "/api/support/kirchenkreise": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Kirchenkreise mit Landeskirche und Zahl der zugeordneten Gemeinden",
+        "responses": {
+          "200": {
+            "description": "Array: zuerst die ohne Landeskirche, dann nach Landeskirche und Name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Kirchenkreis"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine"
+        }
+      },
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Kirchenkreis anlegen",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "landeskirche_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "darf fehlen"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Der Kirchenkreis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kirchenkreis"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Name fehlt oder zu lang; 'Ungültige Landeskirche'; { error: 'Landeskirche nicht gefunden' }"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "409": {
+            "description": "{ error: 'Diesen Kirchenkreis gibt es in dieser Landeskirche schon' } (eindeutig je Landeskirche und Name ohne Gross/klein, auch ohne Landeskirche)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Landeskirche existiert"
+        }
+      }
+    },
+    "/api/support/kirchenkreise/{id}": {
+      "put": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Kirchenkreis umbenennen oder einer Landeskirche zuordnen",
+        "description": "landeskirche_id nur, wenn mitgeschickt (null loest die Zuordnung); fehlt das Feld, bleibt sie. Der neue Name zieht in die Textspalte organizations.kirchenkreis aller zugeordneten Gemeinden (utils/kirchenkreisZuordnung.js), in derselben Transaktion.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "landeskirche_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Der Kirchenkreis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kirchenkreis"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "wie POST"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Kirchenkreis nicht gefunden' }"
+          },
+          "409": {
+            "description": "{ error: 'Diesen Kirchenkreis gibt es in dieser Landeskirche schon' }"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Existenz"
+        }
+      },
+      "delete": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Kirchenkreis loeschen -- die Gemeinden bleiben, ohne Zuordnung",
+        "description": "Setzt organizations.kirchenkreis_id UND die gespiegelte Textspalte kirchenkreis der zugeordneten Gemeinden auf NULL, dann loeschen -- in einer Transaktion.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Geloescht",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "'Kirchenkreis gelöscht'"
+                    },
+                    "gemeinden_ohne_zuordnung": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Kirchenkreis nicht gefunden' }"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Existenz (FOR UPDATE)"
+        }
+      }
+    },
+    "/api/support/statistik": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Statistik je Gemeinde -- Konten je Rolle, aktive Konten, Jahrgaenge; ohne Namen von Personen",
+        "description": "Alle Gemeinden (auch gesperrte und solche ohne Konten), nach Name. Zusammenfassen je Kirchenkreis und Landeskirche macht die Oberflaeche. KONTEN je Gemeinde aus beiden Quellen der Zugehoerigkeit (utils/orgMitglieder.js, zaehleKontenJeGemeinde): Rolle je Gemeinde (Stamm users.role_id, weitere user_organizations.role_id; steht die Stamm-Gemeinde in beiden, zaehlt die Person einmal mit der Rolle am Konto); geloeschte und gesperrte Konten nicht; Support-Konten ohne Gemeinde nicht, auch nicht als Gast. AKTIV_30_TAGE: davon die Konten mit Anmeldung (last_login_at) oder erneuerter Anmeldung (Refresh-Token) in den letzten 30 Tagen -- je Konto, wer in zwei Gemeinden mitarbeitet, zaehlt in beiden. KIRCHENKREIS und LANDESKIRCHE aus der Zuordnung (kirchenkreis_id), nicht aus dem Freitext.\n",
+        "responses": {
+          "200": {
+            "description": "{ stand, gemeinden }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "stand": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "gemeinden": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Anzeigename (organizations.display_name, sonst name)"
+                          },
+                          "systemname": {
+                            "type": "string",
+                            "description": "organizations.name (zusaetzlich zum Vertrag)"
+                          },
+                          "is_active": {
+                            "type": "boolean"
+                          },
+                          "kirchenkreis_id": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "kirchenkreis": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "landeskirche_id": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "landeskirche": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "konten": {
+                            "type": "object",
+                            "properties": {
+                              "konfi": {
+                                "type": "integer"
+                              },
+                              "teamer": {
+                                "type": "integer"
+                              },
+                              "admin": {
+                                "type": "integer"
+                              },
+                              "org_admin": {
+                                "type": "integer"
+                              }
+                            }
+                          },
+                          "aktiv_30_tage": {
+                            "type": "integer"
+                          },
+                          "jahrgaenge": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine (alle Gemeinden); keine Personennamen in der Antwort"
         }
       }
     },
@@ -16342,6 +17205,150 @@
         "properties": {
           "error": {
             "type": "string"
+          }
+        }
+      },
+      "GemeindeAnfrage": {
+        "type": "object",
+        "description": "Eine Anfrage vom Formular (gemeinde_anfragen, Migration 191). Genau diese Felder.",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "gemeinde": {
+            "type": "string"
+          },
+          "kirchenkreis": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Freitext aus dem Formular"
+          },
+          "landeskirche": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Freitext aus dem Formular"
+          },
+          "kontakt_name": {
+            "type": "string"
+          },
+          "funktion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": "string"
+          },
+          "mobil": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "anzahl_konfis": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "anzahl_teamer": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "nachricht": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "neu",
+              "in_arbeit",
+              "angelegt",
+              "abgelehnt"
+            ]
+          },
+          "notiz": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organization_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "die daraus entstandene Gemeinde"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Landeskirche": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kirchenkreise": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Kirchenkreis": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "landeskirche_id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "landeskirche": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "anzahl_gemeinden": {
+            "type": "integer",
+            "description": "zugeordnete Gemeinden (zusaetzlich zum Vertrag)"
           }
         }
       },

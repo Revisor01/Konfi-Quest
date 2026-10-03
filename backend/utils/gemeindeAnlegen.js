@@ -27,6 +27,7 @@
 
 const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('./benutzernameSperre');
 const { kontoSperreAufheben } = require('./kontoSperre');
+const { kirchenkreisFinden, MELDUNG_KIRCHENKREIS_FEHLT } = require('./kirchenkreisZuordnung');
 
 // ---------------------------------------------------------------------------
 // Vorlagen (aus POST /organizations, Nummern wie dort)
@@ -300,7 +301,9 @@ function fehlerAlsAntwort(err) {
  * @param {string} [g.contact_phone]
  * @param {string} [g.address]
  * @param {string} [g.website_url]
- * @param {string} [g.kirchenkreis]  Freitext (Textspalte)
+ * @param {string} [g.kirchenkreis]  Freitext (Textspalte), ohne kirchenkreis_id
+ * @param {number|string|null} [g.kirchenkreis_id]  Zuordnung (Migration 191);
+ *   unbekannt -> fehler 400 "Kirchenkreis nicht gefunden"
  * @param {number|null} g.max_konfis  schon gelesen (konfiLimitLesen)
  * @param {Date|string|null} g.trial_ends_at  schon gelesen (laufzeitLesen)
  * @param {boolean} g.is_trial
@@ -309,7 +312,8 @@ function fehlerAlsAntwort(err) {
  *   {organizationId: number, adminId: number, anzahl: {abzeichen: number,
  *    zertifikate: number, stufen: number, kategorien: number,
  *    aktivitaeten: number, challenges: number}}>}
- *   fehler: der Benutzername ist vergeben -- der Aufrufer rollt zurueck.
+ *   fehler: Benutzername vergeben (409) oder Kirchenkreis unbekannt (400) --
+ *   der Aufrufer rollt zurueck.
  */
 async function gemeindeAnlegen(client, g) {
   // Benutzername systemweit eindeutig -- wie POST /users und /:id/admins,
@@ -320,15 +324,32 @@ async function gemeindeAnlegen(client, g) {
     return { fehler: { status: 409, body: { error: MELDUNG_VERGEBEN } } };
   }
 
+  // Kirchenkreis als Zuordnung (Migration 191, utils/kirchenkreisZuordnung.js):
+  // Mit kirchenkreis_id steht dessen Name auch in der Textspalte, ein
+  // geschickter Freitext zaehlt dann nicht. Ohne kirchenkreis_id bleibt es
+  // beim Freitext wie bisher.
+  let kirchenkreisText = g.kirchenkreis || null;
+  let kirchenkreisId = null;
+  if (g.kirchenkreis_id !== undefined && g.kirchenkreis_id !== null) {
+    const kk = await kirchenkreisFinden(client, g.kirchenkreis_id);
+    if (!kk) {
+      return { fehler: { status: 400, body: { error: MELDUNG_KIRCHENKREIS_FEHLT } } };
+    }
+    kirchenkreisId = kk.id;
+    kirchenkreisText = kk.name;
+  }
+
   // 1. Create Organization
   const orgQuery = `INSERT INTO organizations (
     name, slug, display_name, description, contact_name, contact_email,
-    contact_phone, address, website_url, kirchenkreis, max_konfis, trial_ends_at, is_trial
-  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`;
+    contact_phone, address, website_url, kirchenkreis, max_konfis, trial_ends_at, is_trial,
+    kirchenkreis_id
+  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`;
 
   const { rows: [newOrg] } = await client.query(orgQuery, [
     g.name, g.slug, g.display_name, g.description, g.contact_name || null, g.contact_email, g.contact_phone,
-    g.address, g.website_url, g.kirchenkreis || null, g.max_konfis, g.trial_ends_at, g.is_trial
+    g.address, g.website_url, kirchenkreisText, g.max_konfis, g.trial_ends_at, g.is_trial,
+    kirchenkreisId
   ]);
   const organizationId = newOrg.id;
 

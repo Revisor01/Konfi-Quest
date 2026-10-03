@@ -18,6 +18,9 @@ const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 const { systemnameFuerNeueGemeinde } = require('../utils/gemeindeSystemname');
 const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
 const { gemeindeAnlegen, konfiLimitLesen, laufzeitLesen, fehlerAlsAntwort } = require('../utils/gemeindeAnlegen');
+const { kirchenkreisFinden, kirchenkreisIdGueltig, MELDUNG_KIRCHENKREIS_FEHLT } = require('../utils/kirchenkreisZuordnung');
+
+const MELDUNG_KIRCHENKREIS_UNGUELTIG = 'Ungültiger Kirchenkreis';
 
 // Organizations routes
 // ============================================
@@ -58,6 +61,9 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     body('admin_username').trim().notEmpty().withMessage('Admin-Benutzername ist erforderlich'),
     passwortPolicy('admin_password'),
     body('admin_display_name').trim().notEmpty().withMessage('Admin-Anzeigename ist erforderlich'),
+    // Zuordnung zu einem Kirchenkreis (seit 03.10.2026, additiv): fehlt sie,
+    // bleibt alles wie vorher.
+    body('kirchenkreis_id').optional({ values: 'null' }).custom(kirchenkreisIdGueltig).withMessage(MELDUNG_KIRCHENKREIS_UNGUELTIG),
     handleValidationErrors
   ];
 
@@ -90,8 +96,15 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       // über DISTINCT dedupliziert (ein User, der primaer + Mapping in derselben
       // Org hängt, zählt nur einmal). Als Sub-Query, damit der konfi_count-JOIN
       // die Zählung nicht verzerrt.
+      //
+      // Zuordnung (Migration 191, 03.10.2026, nur neue Felder): o.* bringt
+      // kirchenkreis_id mit, dazu landeskirche_id und landeskirche aus dem
+      // Kirchenkreis. Als Subselects, damit GROUP BY o.id bleibt.
       const query = `
         SELECT o.*,
+               (SELECT k.landeskirche_id FROM kirchenkreise k WHERE k.id = o.kirchenkreis_id) AS landeskirche_id,
+               (SELECT l.name FROM kirchenkreise k JOIN landeskirchen l ON l.id = k.landeskirche_id
+                 WHERE k.id = o.kirchenkreis_id) AS landeskirche,
                (
                  SELECT COUNT(*) FROM (
                    SELECT u.id
@@ -339,6 +352,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         slug: systemnameFuerNeueGemeinde(slug, display_name),
         display_name, description, contact_name, contact_email, contact_phone,
         address, website_url, kirchenkreis,
+        kirchenkreis_id: req.body.kirchenkreis_id,
         max_konfis: konfiLimit.wert,
         trial_ends_at: trialEndsAt,
         is_trial: isTrial,
@@ -400,6 +414,30 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         return res.status(403).json({ error: 'Keine Berechtigung' });
       }
 
+      // KIRCHENKREIS ALS ZUORDNUNG (Migration 191, 03.10.2026; Regel in
+      // utils/kirchenkreisZuordnung.js). kirchenkreis_id setzt nur der
+      // Super-Admin -- wie Sperre und Laufzeit; von anderen wird das Feld
+      // uebergangen. Mit kirchenkreis_id steht dessen Name in der Textspalte
+      // (die Apps bis 2.3.0 lesen nur sie), ein geschickter Text zaehlt dann
+      // nicht; null hebt die Zuordnung auf und leert den Text.
+      let kirchenkreisText = kirchenkreis || null;
+      const setztZuordnung = isSuperAdmin && Object.prototype.hasOwnProperty.call(req.body, 'kirchenkreis_id');
+      let kirchenkreisId = null;
+      if (setztZuordnung) {
+        if (!kirchenkreisIdGueltig(req.body.kirchenkreis_id)) {
+          return res.status(400).json({ error: MELDUNG_KIRCHENKREIS_UNGUELTIG });
+        }
+        kirchenkreisText = null;
+        if (req.body.kirchenkreis_id !== null) {
+          const kk = await kirchenkreisFinden(db, req.body.kirchenkreis_id);
+          if (!kk) {
+            return res.status(400).json({ error: MELDUNG_KIRCHENKREIS_FEHLT });
+          }
+          kirchenkreisId = kk.id;
+          kirchenkreisText = kk.name;
+        }
+      }
+
       // Basis-Felder (von super_admin UND org_admin editierbar)
       const setClauses = [
         'name = $1', 'slug = $2', 'display_name = $3', 'description = $4',
@@ -408,8 +446,20 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       ];
       const params = [
         name, slug, display_name, description, contact_name || null, contact_email, contact_phone,
-        address, website_url, kirchenkreis || null
+        address, website_url, kirchenkreisText
       ];
+
+      if (setztZuordnung) {
+        params.push(kirchenkreisId);
+        setClauses.push(`kirchenkreis_id = $${params.length}`);
+      } else {
+        // Nur Text (alle Apps bis 2.3.0): Weicht er vom Namen des
+        // zugeordneten Kirchenkreises ab, endet die Zuordnung; derselbe Text
+        // (ohne Gross/klein und Randleerzeichen) laesst sie stehen.
+        setClauses.push(`kirchenkreis_id = CASE
+          WHEN lower(btrim(COALESCE($10::text, ''))) = (SELECT lower(btrim(k.name)) FROM kirchenkreise k WHERE k.id = organizations.kirchenkreis_id)
+          THEN kirchenkreis_id ELSE NULL END`);
+      }
 
       // is_active darf NUR der super_admin setzen (Audit 22.08.2026).
       // Eine inaktive Organisation fuehrt in rbac.js:177 für JEDEN Zugang zu

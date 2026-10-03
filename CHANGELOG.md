@@ -22,6 +22,13 @@ Versionsüberschrift.
   anfragen: Die anfragende Adresse bekommt eine Bestätigung, das
   Support-Team einen Hinweis ohne Kontaktdaten; abgelehnte Anfragen werden
   180 Tage nach der Ablehnung gelöscht.
+- Der Support kann Anfragen bearbeiten und mit einem Schritt in eine Gemeinde
+  samt erster Gemeindeleitung umwandeln — mit denselben Vorlagen wie beim
+  Anlegen einer Gemeinde.
+- Gemeinden lassen sich einem Kirchenkreis und einer Landeskirche zuordnen;
+  die bisher eingetragenen Kirchenkreise werden dabei übernommen.
+- Eine Statistik für den Support zeigt je Gemeinde die Konten je Rolle, die
+  in den letzten 30 Tagen aktiven Konten und die Jahrgänge — ohne Namen.
 
 ### Geändert
 - Die Datenschutzerklärung beschreibt das Anfrageformular: welche Angaben,

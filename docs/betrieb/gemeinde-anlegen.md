@@ -21,10 +21,14 @@ Als Super-Admin: Reiter **„Mehr"** › oben rechts das **Gebäude-Symbol**
 („Gemeinden verwalten") › oben rechts **Plus**. Das Formular öffnet sich
 direkt zum Ausfüllen.
 
+Kam die Gemeinde über das Anfrageformular auf konfi-quest.de, geht es auch
+aus der Anfrage heraus — mit derselben Anlage, siehe
+[support-ansicht.md](support-ansicht.md#eine-anfrage-in-eine-gemeinde-umwandeln).
+
 | Abschnitt | Feld | Pflicht | Wirkung |
 |---|---|---|---|
 | Gemeinde | Name der Gemeinde | ja | Anzeigename überall in der App. Daraus entsteht der **Systemname** (Kleinbuchstaben, Umlaute als ae/oe/ue/ss, Leerzeichen zu Bindestrichen, alles andere fällt weg: aus „Büsum" wird `buesum`). Er muss eindeutig sein, sonst meldet der Server „Gemeinde-Slug existiert bereits". Gemeinden, die vor dem 29.09.2026 angelegt wurden, behalten ihren Systemnamen ohne Umlaut. |
-| Gemeinde | Beschreibung, Kirchenkreis | nein | nur Anzeige |
+| Gemeinde | Beschreibung, Kirchenkreis | nein | Beschreibung nur Anzeige. Der Kirchenkreis ist hier ein Freitext; die Zuordnung zu Kirchenkreis und Landeskirche für die Statistik setzt die Support-Ansicht ([support-ansicht.md](support-ansicht.md)) und schreibt dabei den Namen in dieses Feld. |
 | Kontakt | Ansprechpartner:in, E-Mail, Telefon, Adresse, Website | nein | Die **E-Mail** wird zugleich die E-Mail-Adresse des ersten Gemeindeleitungs-Kontos — dorthin gehen „Passwort vergessen" und der Hinweis 14 Tage vor Ablauf der Laufzeit. |
 | Gemeindeleitung | Name, Login-Benutzername, Passwort | ja | das erste Konto mit der Rolle Gemeindeleitung (`org_admin`). Der Benutzername muss im ganzen System frei sein, ohne Unterschied zwischen Groß- und Kleinschreibung; sonst meldet der Server „Benutzername existiert bereits (muss systemweit eindeutig sein)" und legt nichts an. Passwort nach der Richtlinie (8 Zeichen, Groß- und Kleinbuchstabe, Ziffer, Sonderzeichen, keine Leerzeichen); „Sicheres Passwort vorschlagen" erzeugt eines. |
 | Laufzeit | 30 Tage (Testphase), 1 Jahr, Unbegrenzt, eigenes Datum | vorbelegt: 30 Tage | Nach dem Datum ist die Anmeldung für alle außer Super-Admins gesperrt. „Testphase" zeigt den Hinweis „Testphase: noch … Tage" auf den Startseiten; eine Lizenz mit Datum läuft still ab. |
