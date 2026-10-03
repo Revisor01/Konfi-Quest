@@ -108,7 +108,8 @@ const WebChatInhalt: React.FC<WebChatProps> = ({ roomId }) => {
   // Zur Liste, ohne dass der Verlauf den geschlossenen Raum als Schritt zurueck behaelt.
   const schliessen = () => router.push(chatListeAdresse(typ), 'none', 'replace');
 
-  const merker = listenMerkerFuer(user?.id);
+  // Konto UND Gemeinde: Raeume und Entwuerfe gehoeren zu beiden.
+  const merker = listenMerkerFuer(user ? `${user.id}:${user.organization_id ?? ''}` : undefined);
   const uebersicht = useChatUebersicht({
     onSelectRoom: (room) => oeffnen(room.id),
     anfang: { suche: merker.suche, filter: merker.filter, raeume: merker.raeume },

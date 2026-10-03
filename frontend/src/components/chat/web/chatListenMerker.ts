@@ -29,8 +29,8 @@ export interface ListenMerker {
    * Eingabe des Raums (Wahl per Maus). null: nichts tun.
    */
   fokus: { ziel: 'zeile' | 'eingabe'; raumId: number } | null;
-  /** Wem das alles gehoert: Wer sich anders anmeldet, beginnt von vorn. */
-  nutzerId: number | null;
+  /** Wem das alles gehoert (Konto und Gemeinde): Wer sich anders anmeldet oder die Gemeinde wechselt, beginnt von vorn. */
+  nutzerId: string | null;
 }
 
 const merker: ListenMerker = { suche: '', filter: 'alle', scroll: 0, raeume: null, fokus: null, nutzerId: null };
@@ -50,11 +50,12 @@ export const listenMerkerZuruecksetzen = (): void => {
 };
 
 /**
- * Der Stand fuer dieses Konto. Meldet sich in demselben Browserfenster jemand
- * anderes an (ohne dass die Seite neu geladen wird), sind die Raeume und
- * Entwuerfe der Vorgaengerin nicht seine -- dann beginnt alles von vorn.
+ * Der Stand fuer dieses Konto in dieser Gemeinde. Meldet sich in demselben
+ * Browserfenster jemand anderes an (ohne dass die Seite neu geladen wird) oder
+ * wechselt die Gemeinde, sind die Raeume und Entwuerfe von vorher nicht die
+ * von jetzt -- dann beginnt alles von vorn.
  */
-export const listenMerkerFuer = (nutzerId: number | undefined): ListenMerker => {
+export const listenMerkerFuer = (nutzerId: string | undefined): ListenMerker => {
   if (nutzerId !== undefined && merker.nutzerId !== nutzerId) {
     listenMerkerZuruecksetzen();
     merker.nutzerId = nutzerId;

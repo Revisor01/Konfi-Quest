@@ -581,6 +581,18 @@ describe('Chat (Web): die Liste bleibt ueber den Seitenwechsel stehen', () => {
     expect(screen.getByRole('searchbox', { name: 'Chats durchsuchen' })).toHaveValue('');
     expect(within(liste()).queryAllByRole('link')).toEqual([]);
   });
+
+  it('wechselt dasselbe Konto die Gemeinde, gilt das auch: Die Raeume der anderen Gemeinde sind nicht die dieser', async () => {
+    h.user = { id: 5, type: 'konfi', role_name: 'konfi', display_name: 'Mika Beispiel', organization_id: 1 };
+    const erste = await zeigenListe();
+    erste.unmount();
+
+    h.user = { id: 5, type: 'konfi', role_name: 'konfi', display_name: 'Mika Beispiel', organization_id: 2 };
+    h.raeumeLaden = true;
+    render(<ChatOverviewPage />);
+    expect(await screen.findByText('Chats werden geladen')).toBeInTheDocument();
+    expect(within(liste()).queryAllByRole('link')).toEqual([]);
+  });
 });
 
 describe('Chat (Web): keine Seitenuebergaenge, auch nicht mit der Zurueck-Taste', () => {
