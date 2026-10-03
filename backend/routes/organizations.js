@@ -663,7 +663,14 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       await client.query('DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM roles WHERE organization_id = $1', [id]);
 
-      // 13. Organisation selbst
+      // 13. Die Anfrage vom Formular, aus der die Gemeinde entstanden ist
+      // (03.10.2026): Sie bleibt, solange die Gemeinde besteht, und geht mit
+      // ihr -- ohne Gemeinde gibt es keinen Grund mehr, die Kontaktdaten der
+      // anfragenden Person zu halten (Datenschutzerklaerung 9c). Der
+      // Fremdschluessel (ON DELETE SET NULL) liesse sie sonst ohne Bezug stehen.
+      await client.query('DELETE FROM gemeinde_anfragen WHERE organization_id = $1', [id]);
+
+      // 14. Organisation selbst
       const { rowCount } = await client.query('DELETE FROM organizations WHERE id = $1', [id]);
       if (rowCount === 0) {
         await client.query('ROLLBACK');

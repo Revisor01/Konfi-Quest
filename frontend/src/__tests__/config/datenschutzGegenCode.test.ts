@@ -150,3 +150,76 @@ describe('9b Absturzberichte: der Text folgt dem Code', () => {
     expect(text).toContain('Das Sammeln durch den Dienst selbst endet mit dem nächsten Start der App');
   });
 });
+
+describe('9c Anfrageformular: der Text folgt dem Code', () => {
+  /*
+   * POST /api/anfragen (backend/routes/anfragen.js, 03.10.2026): Was das
+   * Formular auf konfi-quest.de speichert, welche Mails hinausgehen und wie
+   * lange eine Anfrage bleibt. Wer ein Feld, eine Frist oder den Inhalt einer
+   * Mail aendert, muss Abschnitt 9c mitziehen -- und umgekehrt.
+   */
+  const backend = (p: string) => readFileSync(join(process.cwd(), '..', 'backend', p), 'utf8');
+  const route = backend('routes/anfragen.js');
+
+  // Je gespeichertem Feld die Worte, unter denen der Text es nennt.
+  const BEZEICHNUNG: Record<string, string> = {
+    gemeinde: 'Name der Gemeinde',
+    kirchenkreis: 'Kirchenkreis',
+    landeskirche: 'Landeskirche',
+    kontakt_name: 'Name der verantwortlichen Person',
+    funktion: 'ihre Funktion',
+    email: 'E-Mail-Adresse',
+    mobil: 'Mobilnummer',
+    anzahl_konfis: 'ungefähre Zahl der Konfis',
+    anzahl_teamer: 'der Teamer:innen',
+    nachricht: 'eine Nachricht',
+  };
+
+  it('nennt jedes Feld, das die Route speichert -- und kein anderes', () => {
+    const block = route.match(/const FELDER = \{([\s\S]*?)\};/)?.[1] ?? '';
+    const felder = [...block.matchAll(/^\s*([a-z_]+):/gm)].map((m) => m[1]);
+    expect(felder).toEqual(Object.keys(BEZEICHNUNG));
+    for (const wort of Object.values(BEZEICHNUNG)) expect(text).toContain(wort);
+    // Dazu der Zeitpunkt der Einwilligung (Spalte einwilligung_am).
+    expect(route).toContain('einwilligung_am');
+    expect(text).toContain('den Zeitpunkt Ihrer Einwilligung');
+  });
+
+  it('nennt die Pflichtfelder aus dem Code', () => {
+    expect(route).toContain("const PFLICHT = ['gemeinde', 'kontakt_name', 'email'];");
+    expect(text).toContain('Pflicht sind nur Gemeinde, Name und E-Mail-Adresse');
+  });
+
+  it('die Bestätigung trägt keine Angaben, der Hinweis ans Support-Team keine Kontaktdaten', () => {
+    const mail = backend('services/emailService.js');
+    // Die Bestaetigung bekommt nur die Adresse, nichts aus dem Formular.
+    expect(mail).toMatch(/const sendAnfrageBestaetigungEmail = async \(email, \{ protokoll \}\) =>/);
+    expect(text).toContain('eine Bestätigung mit festem Text — ohne Ihre Angaben');
+    // Der Hinweis liest aus der Anfrage nur id, gemeinde, kirchenkreis, landeskirche.
+    const hinweis = mail.slice(mail.indexOf('const sendAnfrageHinweisEmail'), mail.indexOf('module.exports'));
+    const gelesen = [...new Set([...hinweis.matchAll(/anfrage\.([a-z_]+)/g)].map((m) => m[1]))].sort();
+    expect(gelesen).toEqual(['gemeinde', 'id', 'kirchenkreis', 'landeskirche']);
+    expect(text).toContain('der nur Gemeinde, Kirchenkreis und Landeskirche nennt, nicht Ihre Kontaktdaten und nicht Ihre Nachricht');
+  });
+
+  it('nennt die Zähler gegen Missbrauch aus dem Code', () => {
+    expect(route).toContain('windowMs: 60 * 60 * 1000,');
+    expect(route).toContain('windowMs: 24 * 60 * 60 * 1000,');
+    expect(route).toMatch(/createHash\('sha256'\)/);
+    expect(text).toContain('je IP-Adresse eine Stunde lang und je E-Mail-Adresse einen Tag lang; für die E-Mail-Adresse speichern wir dabei nur einen Prüfwert');
+    // Abgelaufene Zaehler raeumt der Store eine Stunde nach Ablauf weg, alle zehn Minuten.
+    const store = backend('utils/rateLimitStore.js');
+    expect(store).toContain("ablauf < NOW() - interval '1 hour'");
+    expect(store).toContain('const AUFRAEUM_INTERVALL_MS = 10 * 60 * 1000;');
+    expect(text).toContain('Danach löscht der Server den Zähler binnen gut einer Stunde');
+  });
+
+  it('nennt die Fristen aus dem Code', () => {
+    const tage = Number(backend('services/backgroundService.js').match(/const ABGELEHNTE_ANFRAGEN_TAGE = (\d+);/)?.[1]);
+    expect(tage).toBe(180);
+    expect(text).toContain(`Eine abgelehnte Anfrage löschen wir automatisch ${tage} Tage nach der Ablehnung`);
+    // Mit der Gemeinde geht ihre Anfrage (DELETE /organizations/:id).
+    expect(backend('routes/organizations.js')).toContain('DELETE FROM gemeinde_anfragen WHERE organization_id = $1');
+    expect(text).toContain('bleibt sie gespeichert, solange die Gemeinde besteht, und wird mit ihr gelöscht');
+  });
+});

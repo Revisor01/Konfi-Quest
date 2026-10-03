@@ -64,8 +64,13 @@ const transporteSchliessen = () => {
  * @param {string} options.subject - Betreff
  * @param {string} options.text - Klartext-Inhalt
  * @param {string} options.html - HTML-Inhalt (optional)
+ * @param {string} [options.protokoll] - Kennung fuer das Protokoll im
+ *   Fehlerfall (etwa "Anfrage 12"). Steht sie da, nennt das Protokoll nur sie
+ *   und den Fehlercode -- weder die Domain der Adresse noch die Meldung des
+ *   Mailservers, die die Adresse woertlich enthalten kann (03.10.2026, fuer
+ *   die Anfragen vom Formular: keine Daten der Anfrage im Protokoll).
  */
-const sendEmail = async ({ to, subject, text, html, massenversand = false }) => {
+const sendEmail = async ({ to, subject, text, html, massenversand = false, protokoll = null }) => {
   const transporter = getTransporter({ massenversand });
 
   // Absender aus SMTP_FROM, sonst der SMTP-Nutzer -- kein eingebauter
@@ -84,8 +89,12 @@ const sendEmail = async ({ to, subject, text, html, massenversand = false }) => 
     const info = await transporter.sendMail(mailOptions);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    // Nur die Domain der Adresse (Audit Sicherheit BF-14, 29.09.2026).
-    console.error('Fehler beim Senden der E-Mail an %s:', adresseFuersProtokoll(to), error);
+    if (protokoll) {
+      console.error('Fehler beim Senden der E-Mail (%s): %s', protokoll, error.code || error.responseCode || 'ohne Code');
+    } else {
+      // Nur die Domain der Adresse (Audit Sicherheit BF-14, 29.09.2026).
+      console.error('Fehler beim Senden der E-Mail an %s:', adresseFuersProtokoll(to), error);
+    }
     // Transporter-Cache invalidieren bei Verbindungsfehler
     if (error.code === 'ECONNECTION' || error.code === 'EAUTH' || error.code === 'ESOCKET') {
       if (massenversand) {
@@ -525,9 +534,102 @@ Dein Konfi Quest Team
   return sendEmail({ to: email, subject, text, html });
 };
 
+// ====================================================================
+// ANFRAGEN VOM FORMULAR AUF konfi-quest.de (03.10.2026)
+// ====================================================================
+
+const KONTAKT_ADRESSE = 'moin@konfi-quest.de';
+
+/**
+ * Bestaetigung an die Adresse, die im Anfrageformular stand.
+ *
+ * BEWUSST OHNE JEDE EINGABE AUS DEM FORMULAR -- kein Name, keine Gemeinde,
+ * keine Nachricht: Das Formular ist oeffentlich, die Adresse kann jemand
+ * Fremdes eintragen. Mit eingesetzten Feldern liesse sich ueber unseren
+ * Server beliebiger Text an beliebige Adressen schicken. So bekommt eine
+ * fremde Adresse hoechstens diesen festen Text (und hoechstens drei am Tag,
+ * routes/anfragen.js).
+ *
+ * @param {string} email
+ * @param {{protokoll: string}} opt  Kennung fuers Protokoll ("Anfrage 12")
+ */
+const sendAnfrageBestaetigungEmail = async (email, { protokoll }) => {
+  const subject = 'Eure Anfrage bei Konfi Quest';
+
+  const text = `
+Hallo,
+
+vielen Dank für eure Anfrage! Sie ist bei uns angekommen. Wir melden uns in den nächsten Tagen bei euch und richten eure Gemeinde ein.
+
+Habt ihr bis dahin Fragen, schreibt uns an ${KONTAKT_ADRESSE}.
+
+Diese Mail ging an die Adresse, die im Anfrageformular auf konfi-quest.de eingetragen wurde. Habt ihr keine Anfrage gestellt, sagt uns bitte kurz Bescheid; dann löschen wir sie.
+
+Viele Grüße,
+Euer Konfi Quest Team
+  `.trim();
+
+  const html = wrapHtml(`
+      <h2>Vielen Dank für eure Anfrage!</h2>
+      <p>Sie ist bei uns angekommen. Wir melden uns in den nächsten Tagen bei euch und richten eure Gemeinde ein.</p>
+      <p>Habt ihr bis dahin Fragen, schreibt uns an <a href="mailto:${escapeHtml(KONTAKT_ADRESSE)}">${escapeHtml(KONTAKT_ADRESSE)}</a>.</p>
+      <p style="color: #666; font-size: 14px;">Diese Mail ging an die Adresse, die im Anfrageformular auf konfi-quest.de eingetragen wurde. Habt ihr keine Anfrage gestellt, sagt uns bitte kurz Bescheid; dann löschen wir sie.</p>
+  `, { headerGradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' });
+
+  return sendEmail({ to: email, subject, text, html, protokoll });
+};
+
+/**
+ * Hinweis an ein Super-Admin-Konto: Eine neue Anfrage liegt in der
+ * Support-Ansicht.
+ *
+ * NUR GEMEINDE, KIRCHENKREIS, LANDESKIRCHE UND KENNUNG -- keine Kontaktdaten
+ * der anfragenden Person (Name, Funktion, E-Mail, Mobilnummer, Nachricht).
+ * Die stehen in der Support-Ansicht; ein Postfach muss sie nicht noch einmal
+ * halten. Die Datenschutzerklaerung (Abschnitt 9c) sagt das so.
+ *
+ * @param {string} email   Adresse des Super-Admin-Kontos
+ * @param {string} name    Anzeigename des Kontos
+ * @param {{id: number, gemeinde: string, kirchenkreis?: string|null, landeskirche?: string|null}} anfrage
+ */
+const sendAnfrageHinweisEmail = async (email, name, anfrage) => {
+  const einzeilig = (wert) => String(wert == null ? '' : wert).replace(/[\r\n]+/g, ' ').trim();
+  const gemeinde = einzeilig(anfrage.gemeinde);
+  const ort = [einzeilig(anfrage.kirchenkreis), einzeilig(anfrage.landeskirche)].filter(Boolean).join(', ');
+  const subject = `Neue Anfrage: ${gemeinde} - Konfi Quest`;
+
+  const text = `
+Hallo ${name},
+
+eine neue Anfrage ist über das Formular auf konfi-quest.de eingegangen:
+
+Anfrage ${anfrage.id}: ${gemeinde}${ort ? ` (${ort})` : ''}
+
+Kontaktdaten und Nachricht stehen in der Support-Ansicht auf ${WEBSITE_URL}.
+
+Viele Grüße,
+Dein Konfi Quest Team
+  `.trim();
+
+  const html = wrapHtml(`
+      <h2>Hallo ${escapeHtml(name)}!</h2>
+      <p>Eine neue Anfrage ist über das Formular auf konfi-quest.de eingegangen:</p>
+      <div class="date">Anfrage ${escapeHtml(anfrage.id)}: ${escapeHtml(gemeinde)}</div>
+      ${ort ? `<p style="text-align: center;">${escapeHtml(ort)}</p>` : ''}
+      <p>Kontaktdaten und Nachricht stehen in der Support-Ansicht.</p>
+      <p style="text-align: center;">
+        <a href="${escapeHtml(WEBSITE_URL)}" class="button">Zur Support-Ansicht</a>
+      </p>
+  `);
+
+  return sendEmail({ to: email, subject, text, html, protokoll: `Hinweis zu Anfrage ${anfrage.id}` });
+};
+
 module.exports = {
   sendEmail,
   transporteSchliessen,
+  sendAnfrageBestaetigungEmail,
+  sendAnfrageHinweisEmail,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
   sendLicenseExpiryReminderEmail,

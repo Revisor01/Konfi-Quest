@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n277 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n278 Operationen."
   },
   "servers": [
     {
@@ -39,6 +39,10 @@
     {
       "name": "System & Monitoring",
       "description": "Health-Check, Status und Metriken des Servers."
+    },
+    {
+      "name": "Support",
+      "description": "Support-Ansicht der Web-Version: das öffentliche Anfrageformular (POST /api/anfragen) und unter /api/support Anfragen, Landeskirchen und Kirchenkreise, Statistik (nur Super-Admin)."
     },
     {
       "name": "Abzeichen",
@@ -2144,7 +2148,7 @@
           "Organisationen"
         ],
         "summary": "Organisation vollstaendig löschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)",
-        "description": "Konten der Gemeinde (users.organization_id = id), 29.09.2026:\n- auch in einer anderen Gemeinde Mitglied (user_organizations): das Konto zieht um,\n  wie DELETE /api/users/{id} Fall 2 (aktive Gemeinde vor gesperrter, dann die älteste\n  Mitgliedschaft; Rolle von dort). Anmeldungen, Geräte und die Arbeit in der anderen\n  Gemeinde bleiben.\n- nur hier Mitglied: gemeinsame Kontolöschung wie auf allen Löschwegen\n  (utils/kontoLoeschen.js, für alle Konten in einem Durchgang) — auch Anträge,\n  Dateien, Zweiergespräche und Buchungen in anderen Gemeinden (Nachrücken dort).\nBehoben 29.09.2026: Vorher `DELETE FROM users WHERE organization_id` — Spuren eines\nKontos in einer anderen Gemeinde (Antrag, angelegter Termin) ließen die Löschung am\nFremdschlüssel mit 500 scheitern, Dateien und Zweiergespräche dort blieben liegen, und\nKonten mit weiterer Mitgliedschaft verschwanden ganz.\n\nBehoben 29.09.2026 (Nebenbefund Paket E): Die eigene Stamm-Gemeinde\n(users.organization_id des Aufrufers, nicht die aktive) lässt sich nicht löschen,\nsolange das Konto nirgends sonst Mitglied ist — 409, nichts wird gelöscht. Vorher\nlöschte der Super-Admin dabei sein eigenes Konto mit und sperrte sich aus. Mit einer\nweiteren Mitgliedschaft bleibt es erlaubt: Das Konto zieht um und behält\nis_super_admin. Eine andere Person mit Super-Admin-Recht darf die Gemeinde löschen.\n",
+        "description": "Konten der Gemeinde (users.organization_id = id), 29.09.2026:\n- auch in einer anderen Gemeinde Mitglied (user_organizations): das Konto zieht um,\n  wie DELETE /api/users/{id} Fall 2 (aktive Gemeinde vor gesperrter, dann die älteste\n  Mitgliedschaft; Rolle von dort). Anmeldungen, Geräte und die Arbeit in der anderen\n  Gemeinde bleiben.\n- nur hier Mitglied: gemeinsame Kontolöschung wie auf allen Löschwegen\n  (utils/kontoLoeschen.js, für alle Konten in einem Durchgang) — auch Anträge,\n  Dateien, Zweiergespräche und Buchungen in anderen Gemeinden (Nachrücken dort).\nBehoben 29.09.2026: Vorher `DELETE FROM users WHERE organization_id` — Spuren eines\nKontos in einer anderen Gemeinde (Antrag, angelegter Termin) ließen die Löschung am\nFremdschlüssel mit 500 scheitern, Dateien und Zweiergespräche dort blieben liegen, und\nKonten mit weiterer Mitgliedschaft verschwanden ganz.\n\nBehoben 29.09.2026 (Nebenbefund Paket E): Die eigene Stamm-Gemeinde\n(users.organization_id des Aufrufers, nicht die aktive) lässt sich nicht löschen,\nsolange das Konto nirgends sonst Mitglied ist — 409, nichts wird gelöscht. Vorher\nlöschte der Super-Admin dabei sein eigenes Konto mit und sperrte sich aus. Mit einer\nweiteren Mitgliedschaft bleibt es erlaubt: Das Konto zieht um und behält\nis_super_admin. Eine andere Person mit Super-Admin-Recht darf die Gemeinde löschen.\n\nSeit 03.10.2026: Die Anfrage vom Formular, aus der die Gemeinde entstanden ist\n(gemeinde_anfragen.organization_id), geht mit — Datenschutzerklärung Abschnitt 9c.\nAntwortform unverändert.\n",
         "parameters": [
           {
             "name": "id",
@@ -2613,6 +2617,139 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: is_super_admin ODER eigene Org"
+        }
+      }
+    },
+    "/api/anfragen": {
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Anfrage einer Gemeinde vom Formular auf konfi-quest.de (OEFFENTLICH, ohne Anmeldung)",
+        "description": "NEU 03.10.2026. Speichert die Anfrage (gemeinde_anfragen, Status neu, einwilligung_am = jetzt) und antwortet 201 { ok: true } -- ohne Kennung. NACH der Antwort: eine Bestaetigung mit festem Text an `email` (keine Eingabe aus dem Formular darin -- sonst liesse sich ueber den Server beliebiger Text an fremde Adressen schicken) und ein Hinweis an jedes aktive Super-Admin-Konto mit Adresse (Merkmal oder Rolle, mit oder ohne Gemeinde; utils/superAdminKonten.js) mit Kennung, Gemeinde, Kirchenkreis und Landeskirche, ohne Kontaktdaten. Scheitert eine Mail, bleibt die Anfrage.\nHONIGTOPF: Ist `website` nicht leer, antwortet die Route ebenfalls 201 { ok: true } -- auch bei sonst ungueltigen Feldern --, speichert aber nichts und schickt nichts.\nGRENZEN (Zaehler im gemeinsamen Store beider Replicas): 5 angenommene Anfragen je Stunde und Client-IP (clientIp: X-Real-IP nur aus dem Docker-Netz), danach 429; abgewiesene (400) zaehlen nicht, der Honigtopf zaehlt mit. Dazu 3 angenommene Anfragen je Tag und E-Mail-Adresse (ohne Gross/klein und Leerraum, ueber alle Client-Adressen; gezaehlt wird ein SHA-256-Pruefwert der Adresse).\nPROTOKOLL: nur die Kennung der Anfrage (\"Gemeinde-Anfrage 12 eingegangen\"), bei Fehlern Kennung und Fehlercode -- keine Daten der Anfrage, auch nicht die Domain der Adresse.\nAUFBEWAHRUNG: abgelehnte Anfragen loescht der 02:00-Lauf 180 Tage nach der Ablehnung (BackgroundService.cleanupAbgelehnteAnfragen, gezaehlt ab status_seit); eine angelegte geht mit ihrer Gemeinde (DELETE /organizations/{id}). Datenschutzerklaerung Abschnitt 9c.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "gemeinde",
+                  "kontakt_name",
+                  "email",
+                  "einwilligung"
+                ],
+                "properties": {
+                  "gemeinde": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "getrimmt, nicht leer"
+                  },
+                  "kirchenkreis": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "landeskirche": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "kontakt_name": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "verantwortliche Person; getrimmt, nicht leer"
+                  },
+                  "funktion": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "description": "gueltige Adresse; dorthin geht die Bestaetigung"
+                  },
+                  "mobil": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 40,
+                    "description": "nur Ziffern, Leerzeichen und + ( ) / -"
+                  },
+                  "anzahl_konfis": {
+                    "type": [
+                      "integer",
+                      "string",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 100000,
+                    "description": "ungefaehr; Zahl oder Ziffernfolge, leer = null"
+                  },
+                  "anzahl_teamer": {
+                    "type": [
+                      "integer",
+                      "string",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "nachricht": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 5000
+                  },
+                  "einwilligung": {
+                    "type": "boolean",
+                    "const": true,
+                    "description": "muss genau true sein (nicht \"true\", nicht 1)"
+                  },
+                  "website": {
+                    "type": "string",
+                    "description": "Honigtopf: muss leer sein oder fehlen"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "{ ok: true } -- gespeichert, oder Honigtopf gefuellt (dann nichts gespeichert)"
+          },
+          "400": {
+            "description": "{ error: 'Validierungsfehler', details: [{ field, message }] } -- ohne die Eingaben; nichts gespeichert, keine Mail"
+          },
+          "429": {
+            "description": "{ error } -- 'Zu viele Anfragen von dieser Verbindung. ...' (je Client-IP) oder 'Für diese E-Mail-Adresse sind heute schon mehrere Anfragen eingegangen. ...' (je Adresse)"
+          },
+          "500": {
+            "description": "{ error: 'Die Anfrage konnte nicht gespeichert werden. Bitte versucht es später erneut.' }"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "oeffentlich"
+          ],
+          "middleware": [
+            "ipGrenze",
+            "honigtopf",
+            "adressGrenze",
+            "express-validator"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine; Tests: backend/tests/routes/anfragen.test.js, tests/services/anfragenAufraeumen.test.js"
         }
       }
     },

@@ -559,6 +559,11 @@ function createApp(db, options = {}) {
   }
   app.use('/api/docs-auth', require('./routes/docsAuth')());
 
+  // Anfrageformular auf konfi-quest.de -- OEFFENTLICH, ohne Anmeldung, mit
+  // Honigtopf und eigenen Grenzen je Client-Adresse und je E-Mail-Adresse
+  // (routes/anfragen.js). Bearbeitet werden die Anfragen unter /api/support.
+  app.use('/api/anfragen', require('./routes/anfragen')(db));
+
   app.use('/api/auth', require('./routes/auth')(db, verifyToken, transporterOrDummy, smtpConfig, {
     authLimiter: rateLimiters.authLimiter,
     registerLimiter: rateLimiters.registerLimiter,

@@ -1,7 +1,8 @@
 # ============================================================================
 # Konfi Quest API — Block 3: Verwaltung & Auth
 # Dokumentiert: auth, docs-auth, health/status/app-version, metrics,
-# organizations, users (beide Mounts), einladungen — 67 Operationen,
+# organizations, users (beide Mounts), einladungen, anfragen und support
+# (seit 03.10.2026) — 67 Operationen,
 # gezaehlt am 26.09.2026 (die Generatoren zaehlen bei jedem Lauf nach).
 # teamer, material und wrapped stehen in teamer-material.yaml; jahrgaenge,
 # badges, levels, categories, roles und settings in stammdaten.yaml.
@@ -71,6 +72,11 @@
 #                                     und Client-IP, danach 429; freie Namen
 #                                     zaehlen nicht (Audit Sicherheit BF-18)
 #      GET  /validate-invite/:code    NUR General-Limiter
+#    Dazu seit 03.10.2026 ausserhalb von /api/auth:
+#      POST /api/anfragen             Anfrageformular auf konfi-quest.de:
+#                                     5 angenommene je Stunde und Client-IP,
+#                                     3 je Tag und E-Mail-Adresse, Honigtopf
+#                                     (Abschnitt SUPPORT unten)
 #    # LÜCKE (N3, teilweise BEHOBEN 29.09.2026): validate-invite,
 #    # reset-password und refresh haben keinen eigenen (strengeren)
 #    # Rate-Limiter — Invite-Code-Bruteforce (nur 8 Hex-Zeichen = 4 Byte
@@ -237,6 +243,8 @@ tags:
     description: "Passwort vergessen und zurücksetzen, Einladungs-Codes, Konfi-Registrierung."
   - name: "System & Monitoring"
     description: "Health-Check, Status und Metriken des Servers."
+  - name: "Support"
+    description: "Support-Ansicht der Web-Version: das öffentliche Anfrageformular (POST /api/anfragen) und unter /api/support Anfragen, Landeskirchen und Kirchenkreise, Statistik (nur Super-Admin)."
 components:
   securitySchemes:
     bearerAuth:
@@ -1649,6 +1657,10 @@ paths:
         löschte der Super-Admin dabei sein eigenes Konto mit und sperrte sich aus. Mit einer
         weiteren Mitgliedschaft bleibt es erlaubt: Das Konto zieht um und behält
         is_super_admin. Eine andere Person mit Super-Admin-Recht darf die Gemeinde löschen.
+
+        Seit 03.10.2026: Die Anfrage vom Formular, aus der die Gemeinde entstanden ist
+        (gemeinde_anfragen.organization_id), geht mit — Datenschutzerklärung Abschnitt 9c.
+        Antwortform unverändert.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
@@ -1851,6 +1863,76 @@ paths:
         objekt-pruefung: "Inline: is_super_admin ODER eigene Org"
         # BEHOBEN 22.08.2026 (war N5): Rollen-Check ergaenzt; Konfis
         # erhalten 403. rollen-Zeile nachgezogen am 26.09.2026.
+
+  # ==========================================================================
+  # SUPPORT (seit 03.10.2026; docs/planung/web-version.md, Entscheidungen
+  # 3 bis 7). Das oeffentliche Anfrageformular: backend/routes/anfragen.js,
+  # Mount /api/anfragen. Betrieb: docs/betrieb/support-ansicht.md.
+  # ==========================================================================
+  /api/anfragen:
+    post:
+      tags: ["Support"]
+      summary: Anfrage einer Gemeinde vom Formular auf konfi-quest.de (OEFFENTLICH, ohne Anmeldung)
+      description: >
+        NEU 03.10.2026. Speichert die Anfrage (gemeinde_anfragen, Status neu,
+        einwilligung_am = jetzt) und antwortet 201 { ok: true } -- ohne
+        Kennung. NACH der Antwort: eine Bestaetigung mit festem Text an
+        `email` (keine Eingabe aus dem Formular darin -- sonst liesse sich
+        ueber den Server beliebiger Text an fremde Adressen schicken) und ein
+        Hinweis an jedes aktive Super-Admin-Konto mit Adresse (Merkmal oder
+        Rolle, mit oder ohne Gemeinde; utils/superAdminKonten.js) mit
+        Kennung, Gemeinde, Kirchenkreis und Landeskirche, ohne Kontaktdaten.
+        Scheitert eine Mail, bleibt die Anfrage.
+
+        HONIGTOPF: Ist `website` nicht leer, antwortet die Route ebenfalls 201
+        { ok: true } -- auch bei sonst ungueltigen Feldern --, speichert aber
+        nichts und schickt nichts.
+
+        GRENZEN (Zaehler im gemeinsamen Store beider Replicas): 5 angenommene
+        Anfragen je Stunde und Client-IP (clientIp: X-Real-IP nur aus dem
+        Docker-Netz), danach 429; abgewiesene (400) zaehlen nicht, der
+        Honigtopf zaehlt mit. Dazu 3 angenommene Anfragen je Tag und
+        E-Mail-Adresse (ohne Gross/klein und Leerraum, ueber alle
+        Client-Adressen; gezaehlt wird ein SHA-256-Pruefwert der Adresse).
+
+        PROTOKOLL: nur die Kennung der Anfrage ("Gemeinde-Anfrage 12
+        eingegangen"), bei Fehlern Kennung und Fehlercode -- keine Daten der
+        Anfrage, auch nicht die Domain der Adresse.
+
+        AUFBEWAHRUNG: abgelehnte Anfragen loescht der 02:00-Lauf 180 Tage nach
+        der Ablehnung (BackgroundService.cleanupAbgelehnteAnfragen, gezaehlt ab
+        status_seit); eine angelegte geht mit ihrer Gemeinde
+        (DELETE /organizations/{id}). Datenschutzerklaerung Abschnitt 9c.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gemeinde, kontakt_name, email, einwilligung]
+              properties:
+                gemeinde: { type: string, maxLength: 200, description: "getrimmt, nicht leer" }
+                kirchenkreis: { type: [string, "null"], maxLength: 200 }
+                landeskirche: { type: [string, "null"], maxLength: 200 }
+                kontakt_name: { type: string, maxLength: 200, description: "verantwortliche Person; getrimmt, nicht leer" }
+                funktion: { type: [string, "null"], maxLength: 200 }
+                email: { type: string, maxLength: 254, description: "gueltige Adresse; dorthin geht die Bestaetigung" }
+                mobil: { type: [string, "null"], maxLength: 40, description: "nur Ziffern, Leerzeichen und + ( ) / -" }
+                anzahl_konfis: { type: [integer, string, "null"], minimum: 0, maximum: 100000, description: "ungefaehr; Zahl oder Ziffernfolge, leer = null" }
+                anzahl_teamer: { type: [integer, string, "null"], minimum: 0, maximum: 100000 }
+                nachricht: { type: [string, "null"], maxLength: 5000 }
+                einwilligung: { type: boolean, const: true, description: "muss genau true sein (nicht \"true\", nicht 1)" }
+                website: { type: string, description: "Honigtopf: muss leer sein oder fehlen" }
+      responses:
+        "201": { description: "{ ok: true } -- gespeichert, oder Honigtopf gefuellt (dann nichts gespeichert)" }
+        "400": { description: "{ error: 'Validierungsfehler', details: [{ field, message }] } -- ohne die Eingaben; nichts gespeichert, keine Mail" }
+        "429": { description: "{ error } -- 'Zu viele Anfragen von dieser Verbindung. ...' (je Client-IP) oder 'Für diese E-Mail-Adresse sind heute schon mehrere Anfragen eingegangen. ...' (je Adresse)" }
+        "500": { description: "{ error: 'Die Anfrage konnte nicht gespeichert werden. Bitte versucht es später erneut.' }" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: [ipGrenze, honigtopf, adressGrenze, express-validator]
+        org-scope: false
+        objekt-pruefung: "keine; Tests: backend/tests/routes/anfragen.test.js, tests/services/anfragenAufraeumen.test.js"
 
   # ==========================================================================
   # USERS (backend/routes/users.js — 9 Routen, Mount /api/users UND

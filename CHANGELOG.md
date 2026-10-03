@@ -18,8 +18,14 @@ Versionsüberschrift.
   und kommen nur als sichtbare Gemeindeleitung in eine Gemeinde.
 - Das letzte aktive Konto mit Super-Admin-Recht lässt sich weder sperren noch
   löschen.
+- Eine Gemeinde kann Konfi Quest über ein Formular auf konfi-quest.de
+  anfragen: Die anfragende Adresse bekommt eine Bestätigung, das
+  Support-Team einen Hinweis ohne Kontaktdaten; abgelehnte Anfragen werden
+  180 Tage nach der Ablehnung gelöscht.
 
 ### Geändert
+- Die Datenschutzerklärung beschreibt das Anfrageformular: welche Angaben,
+  wozu und wie lange.
 - Eine Challenge öffnet sich als eigene Seite statt in einem Fenster über der
   Liste — für Konfis, Team und Leitung; der Pfeil oben führt zurück in die
   Liste.
