@@ -27,6 +27,31 @@ Stand: 02.10.2026, gegen den Code geprüft.
   umgestellt. Teil der Prüfung in
   [planung/mehrfach-konten.md](planung/mehrfach-konten.md), Punkt 3
   (Chat BF-08, Rest).
+- **Rolle aus der Stamm-Gemeinde in Termin-Teilnehmern und Chat-Nachrichten.**
+  `GET /events/:id` (Teilnehmerliste, `backend/routes/events/lesen.js`) und
+  `GET /chat/rooms/:roomId/messages` (`sender_role_name`) lesen die Rolle über
+  `users.role_id`. Wer eine Gemeinde zusätzlich betreut, steht dort mit der
+  Rolle der Stamm-Gemeinde: In der Teilnehmerliste hängen daran das Wort
+  „Leitung", die Trennung Konfi/Team und die Zähler, in der Nachricht das
+  Rollenwort hinter dem Namen. Die Chat-Mitgliederliste zieht die Rolle seit
+  02.10.2026 je Gemeinde (Regel wie `ladeRolleInGemeinde`,
+  `backend/utils/orgMitglieder.js`). Gefunden 02.10.2026 beim Nachstellen der
+  Rollenfarben; Teil der Prüfung in
+  [planung/mehrfach-konten.md](planung/mehrfach-konten.md).
+- **Gemeindeleitung beim Bearbeiten einer Gemeinde nur aus der
+  Stamm-Gemeinde.** `GET /organizations/:id/admins` fragt
+  `u.organization_id = $1`; wer die Gemeinde über `user_organizations` als
+  Gemeindeleitung betreut, fehlt im Abschnitt „Gemeindeleitung" — in
+  Produktion hat Organisation 2 ihre ganze Leitung nur dort (gemessen
+  25.09.2026). Gefunden 02.10.2026.
+- **Rollenfarbe auch in Termin-Teilnehmern, Chat-Nachrichten und
+  Chat-Übersicht?** Seit 02.10.2026 tragen alle Personenlisten die drei
+  Rollenfarben. Bewusst nicht umgestellt, weil die Farbe dort etwas anderes
+  sagt: die Teilnehmerliste eines Termins färbt nach Stand der Teilnahme
+  (`frontend/src/utils/teilnahmeStatus.ts`), Absenderkreis und Name in der
+  Nachricht tragen die Chat-Farbe, die Chat-Übersicht färbt nach Raumtyp
+  (Direktchat mit dem Team: Beere). Entscheidung bei Simon; Empfehlung:
+  so lassen, im Termin höchstens das Rollenwort in der Rollenfarbe.
 - **Punktart steht nicht am Beleg.** Seit Migration 163 speichert
   `user_activities` den Punktwert zum Zeitpunkt der Vergabe, die Art
   (Gottesdienst/Gemeinde) aber nicht. Ändert die Leitung die Art einer
@@ -242,8 +267,7 @@ Stand: 02.10.2026, gegen den Code geprüft.
 ## Geplant
 
 - **Version 2.4.0** — Challenges als eigene Seiten wie Events, damit
-  Push, Postfach und Links direkt in die Challenge führen; die drei
-  Rollenfarben in allen Personenlisten; dazu „darf freigeben",
+  Push, Postfach und Links direkt in die Challenge führen; dazu „darf freigeben",
   Mehrfach-Konten, Beginn der Web-Version und kleinere Punkte:
   [planung/2.4.0.md](planung/2.4.0.md).
 - **Web-Version mit Support-Ansicht** — Seitennavigation links, eine
