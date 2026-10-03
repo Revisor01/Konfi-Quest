@@ -471,9 +471,9 @@ section.block{padding:6rem 0}
 .anfrage-feld.breit{grid-column:1/-1}
 .anfrage label{font-weight:600;font-size:.92rem;color:var(--ink)}
 .anfrage .pflicht{color:#b91c1c}
-.anfrage input[type=text],.anfrage input[type=email],.anfrage input[type=tel],.anfrage input[type=number],.anfrage textarea{width:100%;font:inherit;font-size:1rem;color:var(--ink);background:#fff;border:1.5px solid #cbd5e1;border-radius:12px;padding:.7rem .85rem;transition:border-color .2s,box-shadow .2s}
+.anfrage input[type=text],.anfrage input[type=email],.anfrage input[type=tel],.anfrage input[type=number],.anfrage select,.anfrage textarea{width:100%;font:inherit;font-size:1rem;color:var(--ink);background:#fff;border:1.5px solid #cbd5e1;border-radius:12px;padding:.7rem .85rem;transition:border-color .2s,box-shadow .2s}
 .anfrage textarea{min-height:7rem;resize:vertical}
-.anfrage input:focus,.anfrage textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(124,58,237,.22)}
+.anfrage input:focus,.anfrage select:focus,.anfrage textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(124,58,237,.22)}
 .anfrage [aria-invalid=true]{border-color:#b91c1c}
 .final .anfrage .feld-fehler{color:#b91c1c;font-size:.86rem;font-weight:600;margin:0;max-width:none}
 .final .anfrage .feld-hinweis{color:var(--ink-soft);font-size:.84rem;margin:0;max-width:none}
@@ -1187,7 +1187,7 @@ footer a:hover{color:#fff}
     </fieldset>
 
     <fieldset>
-     <legend>Ungefähre Größe</legend>
+     <legend>Größe und Lizenz</legend>
      <div class="anfrage-felder">
       <div class="anfrage-feld">
        <label for="anfrage-konfis">Konfis (ungefähr)</label>
@@ -1198,6 +1198,21 @@ footer a:hover{color:#fff}
        <label for="anfrage-teamer">Teamer:innen (ungefähr)</label>
        <input type="number" id="anfrage-teamer" name="anzahl_teamer" min="0" max="100000" step="1" inputmode="numeric" aria-describedby="anfrage-fehler-anzahl_teamer">
        <p class="feld-fehler" id="anfrage-fehler-anzahl_teamer" hidden></p>
+      </div>
+      <!-- Wunschlizenz (Simon, 03.10.2026): Werte wie backend/utils/lizenzen.js;
+           backend/tests/utils/lizenzen.test.js haelt Auswahl und Preise gleich. -->
+      <div class="anfrage-feld breit">
+       <label for="anfrage-lizenz">Gewünschte Lizenz</label>
+       <select id="anfrage-lizenz" name="wunsch_lizenz" aria-describedby="anfrage-hinweis-lizenz anfrage-fehler-wunsch_lizenz">
+        <option value="">Noch offen</option>
+        <option value="klein">Klein – bis 15 Konfis, 49&nbsp;€ pro Jahr</option>
+        <option value="standard">Standard – bis 50 Konfis, 99&nbsp;€ pro Jahr</option>
+        <option value="plus">Plus – bis 75 Konfis, 139&nbsp;€ pro Jahr</option>
+        <option value="gross">Groß – bis 100 Konfis, 179&nbsp;€ pro Jahr</option>
+        <option value="verbund">Verbund – bis 4 Gemeinden, 390&nbsp;€ pro Jahr</option>
+       </select>
+       <p class="feld-hinweis" id="anfrage-hinweis-lizenz">Ihr testet zuerst 30 Tage kostenlos mit 5 Konfis. Danach gilt die Lizenz, die ihr hier wählt.</p>
+       <p class="feld-fehler" id="anfrage-fehler-wunsch_lizenz" hidden></p>
       </div>
       <div class="anfrage-feld breit">
        <label for="anfrage-nachricht">Nachricht</label>
@@ -1339,9 +1354,9 @@ document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
   };
   // Felder mit eigener Fehlerzeile; auch die, die der Server benennen kann
   // (400, details[].field).
-  var FELDER = ['gemeinde', 'kontakt_name', 'email', 'mobil', 'anzahl_konfis', 'anzahl_teamer', 'nachricht', 'einwilligung'];
+  var FELDER = ['gemeinde', 'kontakt_name', 'email', 'mobil', 'anzahl_konfis', 'anzahl_teamer', 'wunsch_lizenz', 'nachricht', 'einwilligung'];
   var MOBIL = /^[0-9+()\/ -]+$/;
-  var OPTIONAL = ['kirchenkreis', 'landeskirche', 'funktion', 'mobil', 'nachricht'];
+  var OPTIONAL = ['kirchenkreis', 'landeskirche', 'funktion', 'mobil', 'wunsch_lizenz', 'nachricht'];
 
   function feld(name){ return formular.elements.namedItem(name); }
   function wert(name){
@@ -1385,6 +1400,7 @@ document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
       mobil: !wert('mobil') || MOBIL.test(wert('mobil')) ? '' : TEXTE.mobil,
       anzahl_konfis: Number.isNaN(anzahl('anzahl_konfis')) ? TEXTE.anzahl : '',
       anzahl_teamer: Number.isNaN(anzahl('anzahl_teamer')) ? TEXTE.anzahl : '',
+      wunsch_lizenz: '',
       nachricht: '',
       einwilligung: feld('einwilligung').checked ? '' : TEXTE.einwilligung
     };

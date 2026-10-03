@@ -262,7 +262,8 @@ Weiter geht es in dieser Reihenfolge:
 **Laufzeit und Konfi-Zahl** vereinbart die Gemeinde mit dem Betrieb. Ohne
 andere Absprache beginnt eine Gemeinde mit **30 Tagen Testphase** und bis zu
 **5 Konfis**; solange steht auf den Startseiten „Testphase: noch … Tage". Mit
-der Lizenz entfällt die Grenze von 5, wenn nichts anderes vereinbart ist.
+der Lizenz gilt die Konfi-Zahl der Lizenz, die die Gemeinde gewählt hat —
+etwa bis 50 Konfis mit der Lizenz Standard.
 Läuft die Testphase ohne Lizenz aus, kann sich in der
 Gemeinde niemand mehr anmelden, bis der Betrieb die Laufzeit verlängert (siehe
 [Die Meldung beim Anmelden einordnen](35-passwoerter.md#die-meldung-beim-anmelden-einordnen)).

@@ -27,7 +27,8 @@ Versionsüberschrift.
   Tagen aktive Konten, Jahrgänge — ohne Namen), die Anfragen von Gemeinden,
   die Zuordnung zu Kirchenkreisen und Landeskirchen und die Support-Konten.
 - Eine Gemeinde kann Konfi Quest über ein Formular auf konfi-quest.de
-  anfragen: Die anfragende Adresse bekommt eine Bestätigung, der Support
+  anfragen und dabei ihre Wunschlizenz wählen: Die anfragende Adresse bekommt
+  eine Bestätigung, der Support
   einen Hinweis ohne Kontaktdaten. Der Support macht daraus mit wenigen
   Schritten die Gemeinde samt erster Gemeindeleitung — mit denselben
   Vorlagen wie beim Anlegen einer Gemeinde. Abgelehnte Anfragen werden 180
@@ -40,8 +41,8 @@ Versionsüberschrift.
 
 ### Geändert
 - Eine neue Gemeinde startet in der Testphase mit einem Limit von 5 Konfis;
-  endet die Testphase, steht das Limit auf unbegrenzt. Die Tarife 15, 50, 75
-  und 100 bleiben wählbar.
+  danach gilt die Lizenz, die sie gewählt hat. Die Tarife 15, 50, 75 und 100
+  bleiben wählbar.
 - Unter „Mehr" führt das Symbol oben rechts Konten mit Super-Admin-Recht in
   die Support-Ansicht statt direkt zu den Gemeinden.
 - Die Datenschutzerklärung beschreibt das Anfrageformular: welche Angaben,

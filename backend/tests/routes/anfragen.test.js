@@ -35,6 +35,7 @@ const VOLL = Object.freeze({
   mobil: '+49 151 2345678',
   anzahl_konfis: '24',
   anzahl_teamer: 6,
+  wunsch_lizenz: 'standard',
   nachricht: 'Wir möchten im Januar starten.',
   einwilligung: true,
   website: '',
@@ -105,6 +106,7 @@ describe('POST /api/anfragen', () => {
         mobil: '+49 151 2345678',
         anzahl_konfis: 24,
         anzahl_teamer: 6,
+        wunsch_lizenz: 'standard',
         nachricht: 'Wir möchten im Januar starten.',
         status: 'neu',
         notiz: null,
@@ -124,15 +126,24 @@ describe('POST /api/anfragen', () => {
       const [a] = await anfragen();
       expect(a).toMatchObject({
         gemeinde: 'Kirchengemeinde Wesselburen', kirchenkreis: null, landeskirche: null, funktion: null,
-        mobil: null, anzahl_konfis: null, anzahl_teamer: null, nachricht: null,
+        mobil: null, anzahl_konfis: null, anzahl_teamer: null, wunsch_lizenz: null, nachricht: null,
       });
     });
 
+    // Simon, 03.10.2026: Die Gemeinde waehlt ihre Wunschlizenz.
+    it.each(['klein', 'standard', 'plus', 'gross', 'verbund'])('Wunschlizenz %s wird gespeichert', async (lizenz) => {
+      const res = await senden({ wunsch_lizenz: lizenz });
+      await warteAufNachwehen(app);
+      expect(res.status).toBe(201);
+      const [a] = await anfragen();
+      expect(a.wunsch_lizenz).toBe(lizenz);
+    });
+
     it('leere Texte und Zahlen werden zu leer, nicht zu ""', async () => {
-      await senden({ kirchenkreis: '', funktion: '   ', anzahl_konfis: '', nachricht: '' });
+      await senden({ kirchenkreis: '', funktion: '   ', anzahl_konfis: '', wunsch_lizenz: '', nachricht: '' });
       await warteAufNachwehen(app);
       const [a] = await anfragen();
-      expect(a).toMatchObject({ kirchenkreis: null, funktion: null, anzahl_konfis: null, nachricht: null });
+      expect(a).toMatchObject({ kirchenkreis: null, funktion: null, anzahl_konfis: null, wunsch_lizenz: null, nachricht: null });
     });
   });
 
@@ -232,6 +243,9 @@ describe('POST /api/anfragen', () => {
       ['Zahl der Konfis negativ', { anzahl_konfis: -1 }, 'anzahl_konfis'],
       ['Zahl der Teamer:innen kein Zahlwert', { anzahl_teamer: 'viele' }, 'anzahl_teamer'],
       ['Zahl über 100.000', { anzahl_konfis: 100001 }, 'anzahl_konfis'],
+      ['Wunschlizenz nicht aus der Liste', { wunsch_lizenz: 'unbegrenzt' }, 'wunsch_lizenz'],
+      ['Wunschlizenz in anderer Schreibweise', { wunsch_lizenz: 'Standard' }, 'wunsch_lizenz'],
+      ['Wunschlizenz kein Text', { wunsch_lizenz: ['klein'] }, 'wunsch_lizenz'],
     ])('%s -> 400, nichts gespeichert, keine Mail', async (_fall, felder, feld) => {
       await abgelehnt(felder, feld);
     });

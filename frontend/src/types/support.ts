@@ -6,6 +6,8 @@
 // docs/api/verwaltung-auth.yaml). Felder, die der Server leer lassen darf,
 // sind hier `| null`.
 
+import type { LizenzSchluessel } from '../utils/lizenzen';
+
 /** Status einer Anfrage aus dem Formular der Homepage. */
 export type AnfrageStatus = 'neu' | 'in_arbeit' | 'angelegt' | 'abgelehnt';
 
@@ -27,6 +29,8 @@ export interface GemeindeAnfrage {
   organization_id: number | null;
   created_at: string;
   updated_at: string;
+  /** Wunschlizenz aus dem Formular (Migration 192); null = keine Angabe. */
+  wunsch_lizenz?: LizenzSchluessel | null;
 }
 
 /** POST /support/anfragen/:id/anlegen — Koerper. */

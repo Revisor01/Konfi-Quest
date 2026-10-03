@@ -18,6 +18,7 @@ const { SUPPORT, supportKontoAnlegen, supportToken, refreshTokenAnlegen } = requ
 const ANFRAGE_FELDER = [
   'id', 'gemeinde', 'kirchenkreis', 'landeskirche', 'kontakt_name', 'funktion', 'email', 'mobil',
   'anzahl_konfis', 'anzahl_teamer', 'nachricht', 'status', 'notiz', 'organization_id', 'created_at', 'updated_at',
+  'wunsch_lizenz',
 ];
 
 describe('/api/support', () => {

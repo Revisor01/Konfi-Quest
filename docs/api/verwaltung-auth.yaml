@@ -285,6 +285,10 @@ components:
         organization_id: { type: [integer, "null"], description: "die daraus entstandene Gemeinde" }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+        wunsch_lizenz:
+          type: [string, "null"]
+          enum: [klein, standard, plus, gross, verbund, null]
+          description: "Wunschlizenz aus dem Formular (Migration 192, seit 03.10.2026); null = keine Angabe. Werte wie backend/utils/lizenzen.js."
     Landeskirche:
       type: object
       properties:
@@ -1644,7 +1648,7 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
-        "200": { description: "SELECT * + user/teamer/admin/konfi/... counts" }
+        "200": { description: "SELECT * + user/teamer/admin/konfi/... counts; dazu wunsch_lizenz (seit 03.10.2026, Migration 192) -- die Wunschlizenz aus der juengsten Anfrage, aus der die Gemeinde entstanden ist, sonst null" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
@@ -1961,8 +1965,10 @@ paths:
 
         AUFBEWAHRUNG: abgelehnte Anfragen loescht der 02:00-Lauf 180 Tage nach
         der Ablehnung (BackgroundService.cleanupAbgelehnteAnfragen, gezaehlt ab
-        status_seit); eine angelegte geht mit ihrer Gemeinde
-        (DELETE /organizations/{id}). Datenschutzerklaerung Abschnitt 9c.
+        status_seit); neue und in Arbeit befindliche nach 365 Tagen ohne
+        Aenderung (cleanupUnbewegteAnfragen, gezaehlt ab updated_at); eine
+        angelegte geht mit ihrer Gemeinde (DELETE /organizations/{id}).
+        Datenschutzerklaerung Abschnitt 9c.
       requestBody:
         required: true
         content:
@@ -1980,6 +1986,10 @@ paths:
                 mobil: { type: [string, "null"], maxLength: 40, description: "nur Ziffern, Leerzeichen und + ( ) / -" }
                 anzahl_konfis: { type: [integer, string, "null"], minimum: 0, maximum: 100000, description: "ungefaehr; Zahl oder Ziffernfolge, leer = null" }
                 anzahl_teamer: { type: [integer, string, "null"], minimum: 0, maximum: 100000 }
+                wunsch_lizenz:
+                  type: [string, "null"]
+                  enum: [klein, standard, plus, gross, verbund, "", null]
+                  description: "Wunschlizenz (seit 03.10.2026, Migration 192); leer = keine Angabe. Anderes -> 400 'Bitte eine Lizenz aus der Liste wählen'."
                 nachricht: { type: [string, "null"], maxLength: 5000 }
                 einwilligung: { type: boolean, const: true, description: "muss genau true sein (nicht \"true\", nicht 1)" }
                 website: { type: string, description: "Honigtopf: muss leer sein oder fehlen" }

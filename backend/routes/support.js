@@ -44,7 +44,7 @@ const STATUS = ['neu', 'in_arbeit', 'angelegt', 'abgelehnt'];
 // Die Felder einer Anfrage in der Antwort (Vertrag der Pakete, 03.10.2026).
 const ANFRAGE = `a.id, a.gemeinde, a.kirchenkreis, a.landeskirche, a.kontakt_name, a.funktion,
   a.email, a.mobil, a.anzahl_konfis, a.anzahl_teamer, a.nachricht, a.status, a.notiz,
-  a.organization_id, a.created_at, a.updated_at`;
+  a.organization_id, a.created_at, a.updated_at, a.wunsch_lizenz`;
 
 const NICHT_GEFUNDEN = { error: 'Anfrage nicht gefunden' };
 const MELDUNG_SCHON_ANGELEGT = 'Aus dieser Anfrage ist schon eine Gemeinde entstanden.';

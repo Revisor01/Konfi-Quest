@@ -50,8 +50,8 @@ nicht der Personen. Der Stand steht unter dem Baum.
 Die verantwortliche Person einer Gemeinde füllt das Formular auf
 konfi-quest.de aus. Pflicht sind **Gemeinde, Name und E-Mail-Adresse** und
 das Häkchen zur Einwilligung; dazu können Kirchenkreis, Landeskirche,
-Funktion, Mobilnummer, die ungefähre Zahl der Konfis und der Teamer:innen und
-eine Nachricht kommen. Der Server (`POST /api/anfragen`, ohne Anmeldung)
+Funktion, Mobilnummer, die ungefähre Zahl der Konfis und der Teamer:innen, die
+**gewünschte Lizenz** und eine Nachricht kommen. Der Server (`POST /api/anfragen`, ohne Anmeldung)
 speichert die Anfrage mit dem Status **neu** und dem Zeitpunkt der
 Einwilligung.
 
@@ -90,7 +90,17 @@ Anfrage bleibt, steht in der API-Doku und in der Datenschutzerklärung,
 Abschnitt 9c.
 
 **Liste** (Bereich Anfragen): Filter **Neu**, **In Arbeit**, **Angelegt**,
-**Abgelehnt**, **Alle**; neueste zuerst. Ein Eintrag öffnet die Anfrage.
+**Abgelehnt**, **Alle**; neueste zuerst; die Wunschlizenz steht am Eintrag.
+Ein Eintrag öffnet die Anfrage.
+
+**Die Wunschlizenz** (Simon, 03.10.2026: „die Leute wählen ihre
+Wunschlizenz"): Im Formular wählt die Gemeinde Klein (bis 15 Konfis),
+Standard (50), Plus (75), Groß (100), Verbund (bis 4 Gemeinden) oder „Noch
+offen". Die Testphase läuft trotzdem mit 5 Konfis; danach steht das Limit auf
+der Konfi-Zahl der gewählten Lizenz — beim Verbund und ohne Wahl auf
+unbegrenzt ([gemeinde-anlegen.md](gemeinde-anlegen.md#konfi-limit-testphase-5-danach-die-wunschlizenz)).
+Die Werte stehen einmal in `backend/utils/lizenzen.js`; Migration 192 hält sie
+mit einem CHECK fest.
 
 **Eine Anfrage** zeigt alle Angaben (E-Mail und Telefon als Verweis), darunter:
 
@@ -104,7 +114,7 @@ Abschnitt 9c.
 | Name der Gemeinde | die Gemeinde aus der Anfrage; daraus entsteht der Systemname wie beim Anlegen unter Gemeinden ([gemeinde-anlegen.md](gemeinde-anlegen.md)) |
 | Kirchenkreis | gesucht in der Struktur, ohne Groß/klein und ohne vorangestelltes „Kirchenkreis" („Dithmarschen" findet „Kirchenkreis Dithmarschen"); gibt es den Namen in zwei Landeskirchen, entscheidet die Landeskirche der Anfrage. Steht er noch nicht in der Struktur, legt **„Als Kirchenkreis anlegen"** ihn an (mit der Landeskirche, wenn es sie gibt) und wählt ihn aus. |
 | Ansprechperson, E-Mail, Telefon | Name, E-Mail und Mobilnummer aus der Anfrage |
-| Konfi-Limit | 5, wie auf der Startseite für die Testphase zugesagt. Schaltet man die Testphase aus, wird daraus unbegrenzt (leer) und beim Wiedereinschalten wieder 5 — ein selbst eingetragener Wert bleibt stehen. Regel wie unter Gemeinden: [gemeinde-anlegen.md](gemeinde-anlegen.md#konfi-limit-testphase-5-danach-unbegrenzt) |
+| Konfi-Limit | 5, wie auf der Startseite für die Testphase zugesagt. Schaltet man die Testphase aus, wird daraus die Konfi-Zahl der Wunschlizenz (ohne Wunsch und beim Verbund: unbegrenzt) und beim Wiedereinschalten wieder 5 — ein selbst eingetragener Wert bleibt stehen. Regel wie unter Gemeinden: [gemeinde-anlegen.md](gemeinde-anlegen.md#konfi-limit-testphase-5-danach-die-wunschlizenz) |
 | Testphase (30 Tage) | an: Zugang 30 Tage ab heute mit Hinweis auf den Startseiten; aus: ohne Ablaufdatum |
 | Erste Gemeindeleitung | Benutzername als Vorschlag aus dem Namen („Anna Müller" → `anna.mueller`), Anzeigename und E-Mail aus der Anfrage; das Passwort trägt man ein oder lässt es vorschlagen |
 

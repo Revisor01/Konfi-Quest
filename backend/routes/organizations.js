@@ -280,9 +280,19 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         badge_count: "SELECT COUNT(*)::int as count FROM custom_badges WHERE organization_id = $1"
       };
 
+      // Wunschlizenz aus der Anfrage, aus der die Gemeinde entstanden ist
+      // (Simon, 03.10.2026; Migration 192). Das Formular "Gemeinde" belegt
+      // damit das Konfi-Limit nach der Testphase vor. NULL ohne Anfrage oder
+      // ohne Angabe. Nur ein zusaetzliches Feld -- die Antwort bleibt sonst,
+      // wie sie war.
+      const wunschQuery = `SELECT wunsch_lizenz FROM gemeinde_anfragen
+                            WHERE organization_id = $1
+                            ORDER BY status_seit DESC, id DESC LIMIT 1`;
+
       // Alle Queries parallel ausführen
-      const [orgResult, ...countResults] = await Promise.all([
+      const [orgResult, wunschResult, ...countResults] = await Promise.all([
         db.query(orgQuery, [id]),
+        db.query(wunschQuery, [id]),
         ...Object.values(countQueries).map(q => db.query(q, [id]))
       ]);
 
@@ -297,6 +307,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       countResults.forEach((result, index) => {
         organization[countKeys[index]] = result.rows[0]?.count || 0;
       });
+      organization.wunsch_lizenz = wunschResult.rows[0]?.wunsch_lizenz ?? null;
 
       res.json(organization);
     } catch (err) {

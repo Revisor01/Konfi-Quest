@@ -210,6 +210,34 @@ describe('Anfrage: Gemeinde anlegen', () => {
     expect(h.apiPost.mock.calls[0][1]).toMatchObject({ trial_ends_at: null, is_trial: false, max_konfis: null });
   });
 
+  // Wunschlizenz (Simon, 03.10.2026): Die Gemeinde waehlt sie im Formular;
+  // die Testphase laeuft mit 5 Konfis, danach steht das Limit auf der Lizenz.
+  it('zeigt die Wunschlizenz; Testphase aus stellt das Limit auf ihre Konfi-Zahl, wieder an auf 5', async () => {
+    anfragen = [{ ...ANFRAGE, wunsch_lizenz: 'standard' }];
+    await oeffnen();
+    expect(screen.getByText('Standard — bis 50 Konfis, 99 € pro Jahr')).toBeInTheDocument();
+    expect(feld('Konfi-Limit').value).toBe('5');
+    fireEvent.click(screen.getByLabelText('Testphase (30 Tage)'));
+    expect(feld('Konfi-Limit').value).toBe('50');
+    fireEvent.click(screen.getByLabelText('Testphase (30 Tage)'));
+    expect(feld('Konfi-Limit').value).toBe('5');
+  });
+
+  it('ohne Wunschlizenz: „Noch offen“; Testphase aus stellt das Limit auf unbegrenzt', async () => {
+    await oeffnen();
+    expect(screen.getByText('Noch offen')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Testphase (30 Tage)'));
+    expect(feld('Konfi-Limit').value).toBe('');
+  });
+
+  it('Verbund: keine feste Konfi-Zahl, Testphase aus stellt das Limit auf unbegrenzt', async () => {
+    anfragen = [{ ...ANFRAGE, wunsch_lizenz: 'verbund' }];
+    await oeffnen();
+    expect(screen.getByText('Verbund — bis 4 Gemeinden, 390 € pro Jahr')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Testphase (30 Tage)'));
+    expect(feld('Konfi-Limit').value).toBe('');
+  });
+
   it('Benutzername vergeben (409): die Meldung des Servers, das Formular bleibt', async () => {
     await oeffnen();
     fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });

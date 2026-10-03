@@ -172,6 +172,7 @@ describe('9c Anfrageformular: der Text folgt dem Code', () => {
     mobil: 'Mobilnummer',
     anzahl_konfis: 'ungefähre Zahl der Konfis',
     anzahl_teamer: 'der Teamer:innen',
+    wunsch_lizenz: 'die gewünschte Lizenz',
     nachricht: 'eine Nachricht',
   };
 

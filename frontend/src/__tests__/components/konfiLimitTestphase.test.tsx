@@ -49,9 +49,11 @@ vi.mock('@ionic/react', async () => {
       checked: !!p.checked,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => p.onIonChange?.({ detail: { checked: e.target.checked } })
     });
-  const IonSelect = (p: { value?: unknown; 'aria-label'?: string }) =>
-    ReactEcht.createElement('div', { 'aria-label': p['aria-label'], 'data-wert': String(p.value ?? '') });
-  return { ...echt, IonToggle, IonSelect };
+  const IonSelect = (p: { value?: unknown; 'aria-label'?: string; children?: React.ReactNode }) =>
+    ReactEcht.createElement('div', { 'aria-label': p['aria-label'], 'data-wert': String(p.value ?? '') }, p.children);
+  const IonSelectOption = (p: { value?: unknown; children?: React.ReactNode }) =>
+    ReactEcht.createElement('span', { 'data-option': String(p.value ?? '') }, p.children);
+  return { ...echt, IonToggle, IonSelect, IonSelectOption };
 });
 
 vi.mock('../../hooks/useActionGuard', () => ({
@@ -118,6 +120,42 @@ describe('Konfi-Limit: Testphase 5, danach unbegrenzt', () => {
     await bearbeiten({ trial_ends_at: IN_30_TAGEN, is_trial: false, max_konfis: null });
     testphaseSchalten(true);
     expect(await gespeichertesLimit()).toBe(5);
+  }, 30000);
+
+  // Wunschlizenz aus der Anfrage (Simon, 03.10.2026; GET /organizations/:id).
+  it('Testphase aus mit Wunschlizenz Standard: das Limit 5 wird 50; der Hinweis nennt die Lizenz', async () => {
+    await bearbeiten({ trial_ends_at: IN_30_TAGEN, is_trial: true, max_konfis: 5, wunsch_lizenz: 'standard' });
+    expect(screen.getByTestId('wunschlizenz').textContent)
+      .toBe('Wunschlizenz aus der Anfrage: Standard — bis 50 Konfis. Nach der Testphase steht das Limit darauf.');
+    testphaseSchalten(false);
+    expect(await gespeichertesLimit()).toBe(50);
+  }, 30000);
+
+  it('Testphase aus mit Wunschlizenz Verbund: unbegrenzt, Limit nach Absprache', async () => {
+    await bearbeiten({ trial_ends_at: IN_30_TAGEN, is_trial: true, max_konfis: 5, wunsch_lizenz: 'verbund' });
+    expect(screen.getByTestId('wunschlizenz').textContent).toContain('Das Limit wird abgesprochen.');
+    testphaseSchalten(false);
+    expect(await gespeichertesLimit()).toBeNull();
+  }, 30000);
+
+  it('ohne Wunschlizenz kein Hinweis', async () => {
+    await bearbeiten({ trial_ends_at: IN_30_TAGEN, is_trial: true, max_konfis: 5, wunsch_lizenz: null });
+    expect(screen.queryByTestId('wunschlizenz')).toBeNull();
+  }, 30000);
+
+  it('die Tarife bleiben wählbar: Testphase, Klein, Standard, Plus, Groß, Unbegrenzt, eigenes Limit', async () => {
+    render(<OrganizationManagementModal organizationId={null} onClose={vi.fn()} onSuccess={vi.fn()} />);
+    const tarif = await screen.findByLabelText('Tarif', undefined, { timeout: 15000 });
+    const optionen = [...tarif.querySelectorAll('[data-option]')].map((o) => [o.getAttribute('data-option'), o.textContent]);
+    expect(optionen).toEqual([
+      ['5', 'Testphase — bis 5 Konfis'],
+      ['15', 'Klein — bis 15 Konfis'],
+      ['50', 'Standard — bis 50 Konfis'],
+      ['75', 'Plus — bis 75 Konfis'],
+      ['100', 'Groß — bis 100 Konfis'],
+      ['', 'Unbegrenzt — unbegrenzt'],
+      ['__custom__', 'Eigenes Limit…'],
+    ]);
   }, 30000);
 
   it('ohne Umschalten bleibt das Limit, wie es war', async () => {

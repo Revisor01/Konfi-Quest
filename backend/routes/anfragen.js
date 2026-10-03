@@ -24,6 +24,9 @@
 //   - EINWILLIGUNG: einwilligung muss genau true sein; der Zeitpunkt steht
 //     in gemeinde_anfragen.einwilligung_am.
 //   - LAENGEN begrenzt (FELDER unten), Zahlen 0 bis 100.000.
+//   - WUNSCHLIZENZ (Simon, 03.10.2026): leer oder einer der Schluessel aus
+//     utils/lizenzen.js; die Gemeinde waehlt, welche Lizenz sie nach der
+//     Testphase moechte.
 //   - PROTOKOLL: nur die Kennung der Anfrage, keine Daten daraus -- auch
 //     nicht bei Fehlern der Datenbank (deren detail nennt die Zeile) oder
 //     des Mailservers (sendEmail mit `protokoll`).
@@ -36,7 +39,9 @@
 // Aufbewahrung (docs/betrieb/support-ansicht.md, Datenschutzerklaerung 9c):
 // abgelehnte Anfragen loescht der naechtliche Lauf 180 Tage nach der
 // Ablehnung (BackgroundService.cleanupAbgelehnteAnfragen); aus einer
-// angelegten wird die Gemeinde, die Anfrage geht mit ihr.
+// angelegten wird die Gemeinde, die Anfrage geht mit ihr. Neue und in Arbeit
+// befindliche gehen nach 365 Tagen ohne Aenderung
+// (BackgroundService.cleanupUnbewegteAnfragen).
 
 const crypto = require('crypto');
 const express = require('express');
@@ -49,6 +54,7 @@ const { PostgresRateLimitStore } = require('../utils/rateLimitStore');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { aktiveSuperAdminAdressen } = require('../utils/superAdminKonten');
 const emailService = require('../services/emailService');
+const { LIZENZ_SCHLUESSEL } = require('../utils/lizenzen');
 
 const ANFRAGEN_JE_STUNDE = 5;
 const ANFRAGEN_JE_ADRESSE_UND_TAG = 3;
@@ -66,10 +72,13 @@ const FELDER = {
   mobil: 40,
   anzahl_konfis: null,
   anzahl_teamer: null,
+  wunsch_lizenz: null,
   nachricht: 5000,
 };
 const PFLICHT = ['gemeinde', 'kontakt_name', 'email'];
 const ZAHLEN = ['anzahl_konfis', 'anzahl_teamer'];
+// Felder mit eigener Pruefung statt der fuer freien Text.
+const EIGENE_PRUEFUNG = ['email', 'wunsch_lizenz', ...ZAHLEN];
 const ZAHL_MAX = 100000;
 
 const OK = { ok: true };
@@ -135,13 +144,18 @@ module.exports = (db) => {
   };
 
   const pruefung = [
-    ...Object.keys(FELDER).filter((f) => !ZAHLEN.includes(f) && f !== 'email').map(textFeld),
+    ...Object.keys(FELDER).filter((f) => !EIGENE_PRUEFUNG.includes(f)).map(textFeld),
     body('email')
       .isString().withMessage(MELDUNG_EMAIL).bail()
       .trim().isLength({ min: 3, max: FELDER.email }).withMessage(MELDUNG_EMAIL).bail()
       .isEmail().withMessage(MELDUNG_EMAIL),
     body('mobil').optional({ values: 'falsy' }).matches(/^[0-9+()/ -]+$/).withMessage('Nur Ziffern, Leerzeichen und + ( ) / -'),
     ...ZAHLEN.map(zahlFeld),
+    // Ausdruecklich ein Text: isIn allein prueft bei einer Liste jedes
+    // Element und liesse ['klein'] durch (danach 500 beim Speichern).
+    body('wunsch_lizenz').optional({ values: 'falsy' })
+      .custom((wert) => typeof wert === 'string' && LIZENZ_SCHLUESSEL.includes(wert))
+      .withMessage('Bitte eine Lizenz aus der Liste wählen'),
     body('einwilligung').custom((wert) => wert === true).withMessage('Die Einwilligung ist erforderlich'),
     handleValidationErrors,
   ];

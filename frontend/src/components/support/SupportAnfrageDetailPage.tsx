@@ -69,6 +69,7 @@ import { fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { generateStrongPassword } from '../../utils/passwortVorschlag';
 import { datumUhrzeit } from '../../utils/dateUtils';
+import { lizenzFinden, lizenzLimit, lizenzText } from '../../utils/lizenzen';
 import { Abschnitt, Feld, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
 
@@ -263,6 +264,7 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
   }
 
   const statusInfo = ANFRAGE_STATUS[anfrage.status] ?? ANFRAGE_STATUS.neu;
+  const wunsch = lizenzFinden(anfrage.wunsch_lizenz);
   const gemeindeId = angelegt?.organization_id ?? anfrage.organization_id;
   const kkGefunden = kirchenkreisFinden(anfrage.kirchenkreis, anfrage.landeskirche, kirchenkreise);
   const geaendert = status !== anfrage.status || (notiz.trim() || null) !== (anfrage.notiz?.trim() || null);
@@ -318,6 +320,9 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
           </Angabe>
           <Angabe icon={ICON_GRUPPE} label="Ungefähre Zahl">
             {anfrage.anzahl_konfis ?? '–'} Konfis · {anfrage.anzahl_teamer ?? '–'} Teamer:innen
+          </Angabe>
+          <Angabe icon={ICON_ZUSAGE_GEFUELLT} label="Wunschlizenz">
+            {wunsch ? `${lizenzText(wunsch)}, ${wunsch.euro} € pro Jahr` : 'Noch offen'}
           </Angabe>
           <Angabe icon={ICON_TEXTDOKUMENT} label="Nachricht">
             <span style={{ whiteSpace: 'pre-wrap' }}>{anfrage.nachricht || '–'}</span>
@@ -414,7 +419,9 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
                 typ="number"
                 wert={formular.maxKonfis}
                 onWert={(w) => aendern({ maxKonfis: w })}
-                hinweis={`In der Testphase ${TESTPHASE_KONFIS}, ohne Testphase leer = unbegrenzt. Tarife wie 15, 50, 75 oder 100 gehen auch.`}
+                hinweis={wunsch && wunsch.konfis !== null
+                  ? `In der Testphase ${TESTPHASE_KONFIS}, danach ${wunsch.konfis} (Wunschlizenz ${wunsch.name}). Leer = unbegrenzt.`
+                  : `In der Testphase ${TESTPHASE_KONFIS}, danach leer = unbegrenzt${wunsch ? ' (Verbund: Limit nach Absprache)' : ''}. Tarife 15, 50, 75 oder 100.`}
               />
               <IonItem lines="full" style={{ '--background': 'transparent' }}>
                 <IonToggle
@@ -422,7 +429,7 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
                   checked={formular.testphase}
                   onIonChange={(e) => {
                     const an = e.detail.checked;
-                    setFormular((f) => (f ? testphaseUmschalten(f, an) : f));
+                    setFormular((f) => (f ? testphaseUmschalten(f, an, lizenzLimit(anfrage.wunsch_lizenz)) : f));
                   }}
                 >
                   Testphase ({TESTPHASE_TAGE} Tage)

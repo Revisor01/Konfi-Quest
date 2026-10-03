@@ -30,6 +30,7 @@ import { triggerPullHaptic } from '../../utils/haptics';
 import { SUPPORT_START } from '../../navigation/supportMenue';
 import { Abschnitt, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
+import { lizenzFinden } from '../../utils/lizenzen';
 
 type Filter = AnfrageStatus | 'alle';
 
@@ -118,6 +119,7 @@ const Anfragen: React.FC = () => {
               {anfragen.map((a) => {
                 const status = ANFRAGE_STATUS[a.status] ?? ANFRAGE_STATUS.neu;
                 const zuordnung = [a.kirchenkreis, a.landeskirche].filter(Boolean).join(' · ');
+                const wunsch = lizenzFinden(a.wunsch_lizenz);
                 return (
                   <div
                     key={a.id}
@@ -141,6 +143,7 @@ const Anfragen: React.FC = () => {
                               {a.kontakt_name}{a.funktion ? ` (${a.funktion})` : ''}
                             </span>
                             {zuordnung && <span className="app-list-item__meta-item">{zuordnung}</span>}
+                            {wunsch && <span className="app-list-item__meta-item">Lizenz {wunsch.name}</span>}
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={ICON_UHRZEIT} style={{ color: 'var(--app-text-users)' }} />
                               {datumUhrzeit(a.created_at)}

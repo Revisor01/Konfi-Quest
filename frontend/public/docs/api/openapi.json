@@ -2020,7 +2020,7 @@
         ],
         "responses": {
           "200": {
-            "description": "SELECT * + user/teamer/admin/konfi/... counts"
+            "description": "SELECT * + user/teamer/admin/konfi/... counts; dazu wunsch_lizenz (seit 03.10.2026, Migration 192) -- die Wunschlizenz aus der juengsten Anfrage, aus der die Gemeinde entstanden ist, sonst null"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -2646,7 +2646,7 @@
           "Support"
         ],
         "summary": "Anfrage einer Gemeinde vom Formular auf konfi-quest.de (OEFFENTLICH, ohne Anmeldung)",
-        "description": "NEU 03.10.2026. Speichert die Anfrage (gemeinde_anfragen, Status neu, einwilligung_am = jetzt) und antwortet 201 { ok: true } -- ohne Kennung. NACH der Antwort: eine Bestaetigung mit festem Text an `email` (keine Eingabe aus dem Formular darin -- sonst liesse sich ueber den Server beliebiger Text an fremde Adressen schicken) und ein Hinweis an jedes aktive Super-Admin-Konto mit Adresse (Merkmal oder Rolle, mit oder ohne Gemeinde; utils/superAdminKonten.js) mit Kennung, Gemeinde, Kirchenkreis und Landeskirche, ohne Kontaktdaten. Scheitert eine Mail, bleibt die Anfrage.\nHONIGTOPF: Ist `website` nicht leer, antwortet die Route ebenfalls 201 { ok: true } -- auch bei sonst ungueltigen Feldern --, speichert aber nichts und schickt nichts.\nGRENZEN (Zaehler im gemeinsamen Store beider Replicas): 5 angenommene Anfragen je Stunde und Client-IP (clientIp: X-Real-IP nur aus dem Docker-Netz), danach 429; abgewiesene (400) zaehlen nicht, der Honigtopf zaehlt mit. Dazu 3 angenommene Anfragen je Tag und E-Mail-Adresse (ohne Gross/klein und Leerraum, ueber alle Client-Adressen; gezaehlt wird ein SHA-256-Pruefwert der Adresse).\nPROTOKOLL: nur die Kennung der Anfrage (\"Gemeinde-Anfrage 12 eingegangen\"), bei Fehlern Kennung und Fehlercode -- keine Daten der Anfrage, auch nicht die Domain der Adresse.\nAUFBEWAHRUNG: abgelehnte Anfragen loescht der 02:00-Lauf 180 Tage nach der Ablehnung (BackgroundService.cleanupAbgelehnteAnfragen, gezaehlt ab status_seit); eine angelegte geht mit ihrer Gemeinde (DELETE /organizations/{id}). Datenschutzerklaerung Abschnitt 9c.\n",
+        "description": "NEU 03.10.2026. Speichert die Anfrage (gemeinde_anfragen, Status neu, einwilligung_am = jetzt) und antwortet 201 { ok: true } -- ohne Kennung. NACH der Antwort: eine Bestaetigung mit festem Text an `email` (keine Eingabe aus dem Formular darin -- sonst liesse sich ueber den Server beliebiger Text an fremde Adressen schicken) und ein Hinweis an jedes aktive Super-Admin-Konto mit Adresse (Merkmal oder Rolle, mit oder ohne Gemeinde; utils/superAdminKonten.js) mit Kennung, Gemeinde, Kirchenkreis und Landeskirche, ohne Kontaktdaten. Scheitert eine Mail, bleibt die Anfrage.\nHONIGTOPF: Ist `website` nicht leer, antwortet die Route ebenfalls 201 { ok: true } -- auch bei sonst ungueltigen Feldern --, speichert aber nichts und schickt nichts.\nGRENZEN (Zaehler im gemeinsamen Store beider Replicas): 5 angenommene Anfragen je Stunde und Client-IP (clientIp: X-Real-IP nur aus dem Docker-Netz), danach 429; abgewiesene (400) zaehlen nicht, der Honigtopf zaehlt mit. Dazu 3 angenommene Anfragen je Tag und E-Mail-Adresse (ohne Gross/klein und Leerraum, ueber alle Client-Adressen; gezaehlt wird ein SHA-256-Pruefwert der Adresse).\nPROTOKOLL: nur die Kennung der Anfrage (\"Gemeinde-Anfrage 12 eingegangen\"), bei Fehlern Kennung und Fehlercode -- keine Daten der Anfrage, auch nicht die Domain der Adresse.\nAUFBEWAHRUNG: abgelehnte Anfragen loescht der 02:00-Lauf 180 Tage nach der Ablehnung (BackgroundService.cleanupAbgelehnteAnfragen, gezaehlt ab status_seit); neue und in Arbeit befindliche nach 365 Tagen ohne Aenderung (cleanupUnbewegteAnfragen, gezaehlt ab updated_at); eine angelegte geht mit ihrer Gemeinde (DELETE /organizations/{id}). Datenschutzerklaerung Abschnitt 9c.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -2722,6 +2722,22 @@
                     ],
                     "minimum": 0,
                     "maximum": 100000
+                  },
+                  "wunsch_lizenz": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "klein",
+                      "standard",
+                      "plus",
+                      "gross",
+                      "verbund",
+                      "",
+                      null
+                    ],
+                    "description": "Wunschlizenz (seit 03.10.2026, Migration 192); leer = keine Angabe. Anderes -> 400 'Bitte eine Lizenz aus der Liste wählen'."
                   },
                   "nachricht": {
                     "type": [
@@ -17297,6 +17313,21 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "wunsch_lizenz": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "klein",
+              "standard",
+              "plus",
+              "gross",
+              "verbund",
+              null
+            ],
+            "description": "Wunschlizenz aus dem Formular (Migration 192, seit 03.10.2026); null = keine Angabe. Werte wie backend/utils/lizenzen.js."
           }
         }
       },

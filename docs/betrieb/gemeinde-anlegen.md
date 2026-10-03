@@ -39,30 +39,40 @@ aus der Anfrage heraus — mit derselben Anlage, siehe
 | Kontakt | Ansprechpartner:in, E-Mail, Telefon, Adresse, Website | nein | Die **E-Mail** wird zugleich die E-Mail-Adresse des ersten Gemeindeleitungs-Kontos — dorthin gehen „Passwort vergessen" und der Hinweis 14 Tage vor Ablauf der Laufzeit. |
 | Gemeindeleitung | Name, Login-Benutzername, Passwort | ja | das erste Konto mit der Rolle Gemeindeleitung (`org_admin`). Der Benutzername muss im ganzen System frei sein, ohne Unterschied zwischen Groß- und Kleinschreibung; sonst meldet der Server „Benutzername existiert bereits (muss systemweit eindeutig sein)" und legt nichts an. Passwort nach der Richtlinie (8 Zeichen, Groß- und Kleinbuchstabe, Ziffer, Sonderzeichen, keine Leerzeichen); „Sicheres Passwort vorschlagen" erzeugt eines. |
 | Laufzeit | 30 Tage (Testphase), 1 Jahr, Unbegrenzt, eigenes Datum | vorbelegt: 30 Tage | Nach dem Datum ist die Anmeldung für alle außer Super-Admins gesperrt. „Testphase" zeigt den Hinweis „Testphase: noch … Tage" auf den Startseiten; eine Lizenz mit Datum läuft still ab. |
-| Konfi-Limit | Tarif (Testphase 5, 15, 50, 75, 100, Unbegrenzt) oder eigenes Limit | vorbelegt: 5 (Testphase) | Ab dem Limit fragt die App die Leitung beim Anlegen, ob trotzdem; bis 5 über dem Limit geht es nach Bestätigung, danach nicht mehr. Selbstregistrierung per Einladungscode läuft bis zu dieser festen Grenze ohne Rückfrage. |
+| Konfi-Limit | Tarif (Testphase 5, Klein 15, Standard 50, Plus 75, Groß 100, Unbegrenzt) oder eigenes Limit | vorbelegt: 5 (Testphase) | Ab dem Limit fragt die App die Leitung beim Anlegen, ob trotzdem; bis 5 über dem Limit geht es nach Bestätigung, danach nicht mehr. Selbstregistrierung per Einladungscode läuft bis zu dieser festen Grenze ohne Rückfrage. |
 
 Laufzeit und Limit lassen sich später in derselben Ansicht ändern
 (`PUT /organizations/:id`, `PATCH /organizations/:id/limit`, beides nur
 Super-Admin).
 
-### Konfi-Limit: Testphase 5, danach unbegrenzt
+### Konfi-Limit: Testphase 5, danach die Wunschlizenz
 
 Festgelegt von Simon am 03.10.2026: „Testphase 5 danach unbegrenzt. Das
-andere als Optionen solange es noch nicht von der EKD gekauft ist."
+andere als Optionen solange es noch nicht von der EKD gekauft ist." Und
+gleich danach: „Die anderen Limits müssen aber erhalten bleiben. […] Am
+Anfang dürfen die die Limits auch auswählen. Bis die EKD wirklich zahlt. Also
+die Leute wählen ihre Wunschlizenz!"
 
 - **In der Testphase** (Laufzeit mit Datum und „Als Testphase kennzeichnen")
   steht das Limit auf **5**, wie auf der Startseite zugesagt.
 - **Danach** — Testphase ausgeschaltet oder Laufzeit „Unbegrenzt" — steht es
-  auf **unbegrenzt**.
+  auf der Konfi-Zahl der **Wunschlizenz**, die die Gemeinde im Anfrageformular
+  gewählt hat (Klein 15, Standard 50, Plus 75, Groß 100). Ohne Wunsch und
+  beim Verbund (bis 4 Gemeinden, Limit nach Absprache) steht es auf
+  **unbegrenzt**.
 - Die Tarife 15, 50, 75 und 100 und ein eigenes Limit bleiben wählbar. Wer
   einen davon eingetragen hat, behält ihn beim Umschalten; nur ein Limit,
   das noch auf der Vorgabe steht, folgt.
 
+Unter dem Tarif steht die Wunschlizenz aus der Anfrage, wenn es eine gibt
+(`GET /organizations/:id` liefert sie als `wunsch_lizenz`).
+
 Es ist eine Vorgabe im Formular, keine Regel des Servers: Gespeichert wird,
 was beim Speichern im Formular steht. Beide Formulare — dieses und das
 Anlegen aus einer Anfrage in der Support-Ansicht — lesen dieselbe Stelle
-(`frontend/src/utils/konfiLimitVorgabe.ts`). Bestehende Gemeinden ändern sich
-dadurch nicht; ihr Limit wechselt erst, wenn jemand die Testphase umschaltet
+(`frontend/src/utils/konfiLimitVorgabe.ts`, die Lizenzen aus
+`frontend/src/utils/lizenzen.ts`). Bestehende Gemeinden ändern sich dadurch
+nicht; ihr Limit wechselt erst, wenn jemand die Testphase umschaltet
 und speichert.
 
 Der Systemname bleibt beim späteren Speichern, solange der Name der Gemeinde

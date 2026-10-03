@@ -80,6 +80,19 @@ describe('Anfrageformular: Aufbau und Barrierefreiheit', () => {
     for (const [label, name] of felder) expect(feld(label).name, label).toBe(name);
   });
 
+  // Wunschlizenz (Simon, 03.10.2026): eine Auswahl mit Beschriftung,
+  // vorbelegt mit "Noch offen", mit Hinweis auf die Testphase.
+  it('die Wunschlizenz ist eine beschriftete Auswahl, vorbelegt mit „Noch offen“', () => {
+    const auswahl = screen.getByLabelText('Gewünschte Lizenz') as HTMLSelectElement;
+    expect(auswahl.tagName).toBe('SELECT');
+    expect(auswahl.name).toBe('wunsch_lizenz');
+    expect(auswahl.value).toBe('');
+    expect(auswahl.options[auswahl.selectedIndex].textContent).toBe('Noch offen');
+    expect(auswahl.getAttribute('aria-describedby')).toContain('anfrage-hinweis-lizenz');
+    expect(document.getElementById('anfrage-hinweis-lizenz')?.textContent)
+      .toBe('Ihr testet zuerst 30 Tage kostenlos mit 5 Konfis. Danach gilt die Lizenz, die ihr hier wählt.');
+  });
+
   it('Pflichtfelder tragen aria-required; Fehlerzeilen haengen per aria-describedby am Feld', () => {
     for (const label of ['Gemeinde', 'Name', 'E-Mail', 'Ich bin einverstanden']) {
       const f = feld(label);
@@ -195,6 +208,27 @@ describe('Anfrageformular: Senden und Antworten des Servers', () => {
     expect(danke.hidden).toBe(false);
     expect(document.activeElement).toBe(danke);
     expect(within(danke).getByRole('link', { name: 'Vorlage zum Ausdrucken' })).toHaveAttribute('href', '/einwilligung');
+  });
+
+  it('eine gewählte Wunschlizenz geht als Schlüssel mit', () => {
+    fetchAttrappe.mockReturnValue(new Promise(() => {}));
+    ausfuellen();
+    fireEvent.change(screen.getByLabelText('Gewünschte Lizenz'), { target: { value: 'plus' } });
+    absenden();
+    expect(JSON.parse(fetchAttrappe.mock.calls[0][1].body).wunsch_lizenz).toBe('plus');
+  });
+
+  it('400 zur Wunschlizenz: die Meldung des Servers steht an der Auswahl', async () => {
+    fetchAttrappe.mockResolvedValue(antwort(400, {
+      error: 'Validierungsfehler',
+      details: [{ field: 'wunsch_lizenz', message: 'Bitte eine Lizenz aus der Liste wählen' }],
+    }));
+    ausfuellen();
+    absenden();
+    const zeile = document.getElementById('anfrage-fehler-wunsch_lizenz') as HTMLElement;
+    await waitFor(() => expect(zeile.hidden).toBe(false));
+    expect(zeile.textContent).toBe('Bitte eine Lizenz aus der Liste wählen');
+    expect(screen.getByLabelText('Gewünschte Lizenz').getAttribute('aria-invalid')).toBe('true');
   });
 
   it('429: zu viele Anfragen -- verstaendlich, mit Mail als Ausweg; Formular bleibt', async () => {

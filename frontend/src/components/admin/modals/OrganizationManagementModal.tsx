@@ -72,6 +72,7 @@ import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
 import { systemnameZumSpeichern } from '../../../utils/gemeindeSystemname';
 import { kirchenkreisFinden } from '../../../utils/supportAnfragen';
 import { TESTPHASE_KONFIS, limitNachUmschalten, limitVorgabe } from '../../../utils/konfiLimitVorgabe';
+import { LIZENZEN, lizenzFinden, lizenzLimit, lizenzText } from '../../../utils/lizenzen';
 import type { Kirchenkreis } from '../../../types/support';
 
 interface Organization {
@@ -99,6 +100,8 @@ interface Organization {
   konfi_count: number;
   event_count: number;
   max_konfis?: number | null;
+  /** Wunschlizenz aus der Anfrage, aus der die Gemeinde entstanden ist (Migration 192). */
+  wunsch_lizenz?: string | null;
 }
 
 interface OrgAdmin {
@@ -145,14 +148,12 @@ interface OrganizationManagementModalProps {
 
 // Tarif-Stufen wie auf der Website (landing.html / marketing-copy.md).
 // value als String für direkten Vergleich mit dem maxKonfis-Feld; '' = unbegrenzt.
-// Vorgabe: Testphase 5, danach unbegrenzt (utils/konfiLimitVorgabe.ts); die
-// Stufen dazwischen bleiben waehlbar.
+// Vorgabe: Testphase 5, danach die Wunschlizenz aus der Anfrage, ohne sie
+// unbegrenzt (utils/konfiLimitVorgabe.ts). Die Stufen kommen aus der einen
+// Liste der Lizenzen (utils/lizenzen.ts); der Verbund hat keine feste Zahl.
 const KONFI_TARIFE: { label: string; value: string }[] = [
   { label: 'Testphase', value: String(TESTPHASE_KONFIS) },
-  { label: 'Klein', value: '15' },
-  { label: 'Standard', value: '50' },
-  { label: 'Plus', value: '75' },
-  { label: 'Groß', value: '100' },
+  ...LIZENZEN.filter((l) => l.konfis !== null).map((l) => ({ label: l.name, value: String(l.konfis) })),
   { label: 'Unbegrenzt', value: '' }
 ];
 
@@ -275,7 +276,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   // Limit folgt der Vorgabe -- Testphase 5, danach unbegrenzt --, solange es
   // noch darauf steht. Ein gewaehlter Tarif bleibt (utils/konfiLimitVorgabe.ts).
   const limitFolgtTestphase = (warTestphase: boolean, istTestphase: boolean) => {
-    const neu = limitNachUmschalten(maxKonfis, warTestphase, istTestphase);
+    const neu = limitNachUmschalten(maxKonfis, warTestphase, istTestphase, lizenzLimit(organization?.wunsch_lizenz));
     if (neu !== maxKonfis) {
       setMaxKonfis(neu);
       setIsCustomLimit(false);
@@ -1438,6 +1439,17 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     </IonItem>
                   )}
                 </IonList>
+
+                {/* Wunschlizenz aus der Anfrage: nach der Testphase die Vorgabe */}
+                {(() => {
+                  const wunsch = lizenzFinden(organization?.wunsch_lizenz);
+                  return wunsch ? (
+                    <p data-testid="wunschlizenz" style={{ margin: 'var(--app-abstand-eng) 0 0', fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-body)' }}>
+                      Wunschlizenz aus der Anfrage: <strong>{lizenzText(wunsch)}</strong>.{' '}
+                      {wunsch.konfis === null ? 'Das Limit wird abgesprochen.' : 'Nach der Testphase steht das Limit darauf.'}
+                    </p>
+                  ) : null;
+                })()}
 
                 <IonItem lines="none" style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-eng)' }}>
                   <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-text-users)' }} />

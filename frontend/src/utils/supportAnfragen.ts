@@ -133,11 +133,12 @@ export function anlegenVorbelegen(anfrage: GemeindeAnfrage, kirchenkreise: Kirch
 }
 
 /**
- * Testphase an oder aus. Das Limit folgt der Vorgabe (Testphase 5, sonst
- * unbegrenzt), solange es noch darauf steht; ein gewaehlter Tarif bleibt.
+ * Testphase an oder aus. Das Limit folgt der Vorgabe -- Testphase 5, sonst
+ * das Limit der Wunschlizenz (`lizenzLimit`, utils/lizenzen.ts) --, solange
+ * es noch darauf steht; ein gewaehlter Tarif bleibt.
  */
-export function testphaseUmschalten(f: AnlegenFormular, testphase: boolean): AnlegenFormular {
-  return { ...f, testphase, maxKonfis: limitNachUmschalten(f.maxKonfis, f.testphase, testphase) };
+export function testphaseUmschalten(f: AnlegenFormular, testphase: boolean, lizenzLimit = ''): AnlegenFormular {
+  return { ...f, testphase, maxKonfis: limitNachUmschalten(f.maxKonfis, f.testphase, testphase, lizenzLimit) };
 }
 
 const EMAIL_MUSTER = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

@@ -105,6 +105,12 @@ describe('testphaseUmschalten (Testphase 5, danach unbegrenzt)', () => {
   it('ein gewählter Tarif bleibt beim Umschalten stehen', () => {
     expect(testphaseUmschalten(gueltig({ maxKonfis: '50' }), false)).toMatchObject({ testphase: false, maxKonfis: '50' });
   });
+
+  it('mit Wunschlizenz: Testphase aus stellt auf ihre Konfi-Zahl, wieder an auf 5', () => {
+    const aus = testphaseUmschalten(gueltig(), false, '75');
+    expect(aus).toMatchObject({ testphase: false, maxKonfis: '75' });
+    expect(testphaseUmschalten(aus, true, '75')).toMatchObject({ testphase: true, maxKonfis: '5' });
+  });
 });
 
 describe('anlegenFehler', () => {

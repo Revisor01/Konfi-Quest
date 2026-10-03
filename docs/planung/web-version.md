@@ -79,13 +79,18 @@ kommen per Mail.
 
 ### Antworten nach dem Bau (Simon, 03.10.2026)
 
-16. **Konfi-Limit: Testphase 5, danach unbegrenzt.** Wörtlich: „Testphase 5
-    danach unbegrenzt. Das andere als Optionen solange es noch nicht von der
-    EKD gekauft ist." Beide Formulare (Gemeinde anlegen, Anlage aus einer
-    Anfrage) belegen in der Testphase 5 vor und stellen beim Ausschalten auf
-    unbegrenzt; die Tarife 15/50/75/100 bleiben wählbar. Gebaut:
-    `frontend/src/utils/konfiLimitVorgabe.ts`, beschrieben in
-    [betrieb/gemeinde-anlegen.md](../betrieb/gemeinde-anlegen.md).
+16. **Konfi-Limit: Testphase 5, danach die Wunschlizenz.** Wörtlich:
+    „Testphase 5 danach unbegrenzt. Das andere als Optionen solange es noch
+    nicht von der EKD gekauft ist." Und gleich danach: „Die anderen Limits
+    müssen aber erhalten bleiben. […] Am Anfang dürfen die die Limits auch
+    auswählen. Bis die EKD wirklich zahlt. Also die Leute wählen ihre
+    Wunschlizenz!" Gebaut: Auswahl „Gewünschte Lizenz" im Anfrageformular
+    (Migration 192, `backend/utils/lizenzen.js`); beide Formulare belegen in
+    der Testphase 5 vor und stellen beim Ausschalten auf die Konfi-Zahl der
+    Wunschlizenz, ohne Wunsch und beim Verbund auf unbegrenzt; die Tarife
+    15/50/75/100 bleiben wählbar (`frontend/src/utils/konfiLimitVorgabe.ts`,
+    [betrieb/gemeinde-anlegen.md](../betrieb/gemeinde-anlegen.md)).
+    „Unbegrenzt für alle" kommt erst, wenn die EKD zahlt.
 17. **Kleine Zahlen in der Statistik** werden ungefiltert gezeigt; nur
     Super-Admins sehen sie. Bleibt so.
 18. **Anfragen „neu" oder „in Arbeit" ohne Bewegung** gehen nach 365 Tagen
