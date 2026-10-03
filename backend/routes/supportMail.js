@@ -26,6 +26,7 @@ const {
 } = require('../utils/mailNachrichten');
 const { lizenzText } = require('../utils/lizenzen');
 const { formatDatum } = require('../utils/zeitformat');
+const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
 const { antwortSenden, VersandFehler, versandAufDiesemServer } = require('../services/mailVersand');
 
 const TEXT_MAX = 20000;
@@ -79,31 +80,28 @@ async function ersteGemeindeleitung(db, organizationId) {
 }
 
 /**
- * Moegliche Empfaenger einer Mail an eine Gemeinde: Gemeindeleitungen und
- * Leitung mit Adresse (beide Quellen der Zugehoerigkeit, aktiv, ohne
- * Super-Admins), dazu die Absender aus dem Verlauf der Gemeinde. Jede
- * Adresse einmal (klein geschrieben), in dieser Reihenfolge.
- * @returns {Promise<Array<{adresse: string, name: string|null, herkunft: 'gemeindeleitung'|'leitung'|'verlauf'}>>}
+ * Moegliche Empfaenger einer Mail an eine Gemeinde (Abgleich mit der
+ * Oberflaeche, 03.10.2026):
+ *
+ *   'leitung'  aktive Konten mit der Rolle org_admin oder admin IN DIESER
+ *              Gemeinde und mit E-Mail-Adresse -- beide Quellen der
+ *              Zugehoerigkeit, dieselbe Regel-Stelle wie die Leitungs-
+ *              Meldungen (utils/orgMitglieder.js, ladeLeitungDerOrganisation);
+ *   'verlauf'  Absender eingehender Mails dieser Gemeinde, die nicht schon
+ *              als Leitung dastehen (zuletzt geschrieben zuerst).
+ *
+ * Jede Adresse einmal (klein geschrieben, ohne Unterschied Gross/klein
+ * verglichen), Leitung zuerst.
+ * @returns {Promise<Array<{adresse: string, name: string|null, herkunft: 'leitung'|'verlauf'}>>}
  */
 async function empfaengerLaden(db, organizationId) {
+  const leitungIds = await ladeLeitungDerOrganisation(db, organizationId);
   const [{ rows: konten }, { rows: verlauf }] = await Promise.all([
     db.query(
-      `SELECT lower(btrim(x.email)) AS adresse, x.display_name AS name, x.rolle FROM (
-         SELECT u.id, u.email, u.display_name, r.name AS rolle
-           FROM users u JOIN roles r ON r.id = u.role_id
-          WHERE u.organization_id = $1
-         UNION
-         SELECT u.id, u.email, u.display_name, r.name AS rolle
-           FROM user_organizations uo
-           JOIN users u ON u.id = uo.user_id
-           JOIN roles r ON r.id = uo.role_id
-          WHERE uo.organization_id = $1
-       ) x
-       JOIN users u ON u.id = x.id
-      WHERE x.rolle IN ('org_admin', 'admin')
-        AND NULLIF(btrim(x.email), '') IS NOT NULL
-        AND u.is_active = true AND u.deleted_at IS NULL AND COALESCE(u.is_super_admin, false) = false
-      ORDER BY CASE x.rolle WHEN 'org_admin' THEN 0 ELSE 1 END, lower(x.display_name), x.id`, [organizationId]),
+      `SELECT lower(btrim(u.email)) AS adresse, u.display_name AS name
+         FROM users u
+        WHERE u.id = ANY($1::bigint[]) AND NULLIF(btrim(u.email), '') IS NOT NULL
+        ORDER BY lower(u.display_name), u.id`, [leitungIds]),
     db.query(
       `SELECT m.von_adresse AS adresse, m.von_name AS name, MAX(m.gesendet_am) AS zuletzt
          FROM mail_nachrichten m
@@ -116,7 +114,7 @@ async function empfaengerLaden(db, organizationId) {
   for (const k of konten) {
     if (gesehen.has(k.adresse)) continue;
     gesehen.add(k.adresse);
-    ergebnis.push({ adresse: k.adresse, name: k.name || null, herkunft: k.rolle === 'org_admin' ? 'gemeindeleitung' : 'leitung' });
+    ergebnis.push({ adresse: k.adresse, name: k.name || null, herkunft: 'leitung' });
   }
   for (const v of verlauf) {
     const adresse = String(v.adresse).trim().toLowerCase();

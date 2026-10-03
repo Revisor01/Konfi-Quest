@@ -381,33 +381,37 @@ describe('/api/support -- Support-Mail', () => {
   });
 
   describe('GET /gemeinden/:id/empfaenger', () => {
-    it('Gemeindeleitungen und Leitung mit Adresse (beide Quellen, aktiv, ohne Super-Admins), dann Absender aus dem Verlauf; jede Adresse einmal', async () => {
+    it('Leitung (org_admin und admin dieser Gemeinde mit Adresse, beide Quellen, aktiv), dann Absender aus dem Verlauf; jede Adresse einmal', async () => {
       const setze = (id, email) => db.query('UPDATE users SET email = $2 WHERE id = $1', [id, email]);
       await setze(USERS.orgAdmin2.id, 'Leitung@Andere.example');
       await setze(USERS.admin2.id, 'hauptamt@andere.example');
       await setze(USERS.teamer2.id, 'team@andere.example'); // Teamer:in: nicht dabei
+      await setze(USERS.orgAdmin1.id, 'leitung1@test.example'); // Leitung einer ANDEREN Gemeinde: nicht dabei
       // Leitung aus Gemeinde 1, in Gemeinde 2 weitere Gemeindeleitung
       await setze(USERS.admin1.id, 'zweitgemeinde@test.example');
       await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, 2, $2)', [USERS.admin1.id, ROLES.orgAdmin2.id]);
-      // Super-Admin als Gast: nicht dabei
+      // Support-Konto als Gast mit Rolle Gemeindeleitung: zaehlt wie jede Leitung der Gemeinde
       await db.query("UPDATE users SET email = 'support@betrieb.example' WHERE id = $1", [SUPPORT.id]);
       await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, 2, $2)', [SUPPORT.id, ROLES.orgAdmin2.id]);
-      // gesperrte Leitung: nicht dabei
-      const { rows: [{ id: gesperrt }] } = await db.query(
+      // gesperrte Leitung und Leitung ohne Adresse: nicht dabei
+      await db.query(
         `INSERT INTO users (username, display_name, role_id, organization_id, is_active, email)
-         VALUES ('gesperrt2', 'Gesperrt', $1, 2, false, 'gesperrt@andere.example') RETURNING id`, [ROLES.admin2.id]);
-      expect(gesperrt).toBeGreaterThan(0);
-      // Verlauf: ein Absender neu, einer schon als Leitung bekannt, eine ausgehende Mail
+         VALUES ('gesperrt2', 'Gesperrt', $1, 2, false, 'gesperrt@andere.example'),
+                ('ohneadresse2', 'Ohne Adresse', $1, 2, true, '  ')`, [ROLES.admin2.id]);
+      // Verlauf: ein Absender neu, einer schon als Leitung bekannt (andere
+      // Schreibweise), eine ausgehende Mail
       await mail({ organization_id: 2, postfach: 'support', von_adresse: 'kuesterin@andere.example', von_name: 'Küsterin' });
-      await mail({ organization_id: 2, postfach: 'support', von_adresse: 'leitung@andere.example' });
+      await mail({ organization_id: 2, postfach: 'support', von_adresse: 'LEITUNG@andere.EXAMPLE' });
       await mail({ organization_id: 2, postfach: 'support', richtung: 'aus', von_adresse: 'support@konfi-quest.de' });
+      await mail({ organization_id: 1, postfach: 'support', von_adresse: 'fremd@test.example' }); // andere Gemeinde
 
       const res = await als(SUPER()).get('/api/support/gemeinden/2/empfaenger');
       expect(res.status).toBe(200);
       expect(res.body).toEqual([
-        { adresse: 'zweitgemeinde@test.example', name: 'Test Admin 1', herkunft: 'gemeindeleitung' },
-        { adresse: 'leitung@andere.example', name: 'Test Org-Admin 2', herkunft: 'gemeindeleitung' },
+        { adresse: 'zweitgemeinde@test.example', name: 'Test Admin 1', herkunft: 'leitung' },
         { adresse: 'hauptamt@andere.example', name: 'Test Admin 2', herkunft: 'leitung' },
+        { adresse: 'leitung@andere.example', name: 'Test Org-Admin 2', herkunft: 'leitung' },
+        { adresse: 'support@betrieb.example', name: 'Test Support', herkunft: 'leitung' },
         { adresse: 'kuesterin@andere.example', name: 'Küsterin', herkunft: 'verlauf' },
       ]);
       expect((await als(SUPER()).get('/api/support/gemeinden/999999/empfaenger')).status).toBe(404);

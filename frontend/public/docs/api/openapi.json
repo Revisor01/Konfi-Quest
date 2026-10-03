@@ -4348,7 +4348,7 @@
           "Support"
         ],
         "summary": "Moegliche Empfaenger einer Mail an eine Gemeinde",
-        "description": "Gemeindeleitungen (org_admin) und Leitung (admin) dieser Gemeinde mit Adresse -- beide Quellen der Zugehoerigkeit, Rolle je Gemeinde, nur aktive, ohne Super-Admins --, dann die Absender eingehender Mails aus dem Verlauf der Gemeinde (zuletzt geschrieben zuerst). Jede Adresse einmal, klein geschrieben. Form zusaetzlich zum Vertrag, der sie nicht festlegt.\n",
+        "description": "herkunft 'leitung': aktive Konten mit der Rolle org_admin oder admin IN DIESER Gemeinde und mit E-Mail-Adresse -- beide Quellen der Zugehoerigkeit, Rolle je Gemeinde (utils/orgMitglieder.js, ladeLeitungDerOrganisation), nach Name. herkunft 'verlauf': Absender eingehender Mails dieser Gemeinde, die nicht schon als Leitung dastehen (zuletzt geschrieben zuerst). Jede Adresse einmal, klein geschrieben, ohne Unterschied Gross/klein verglichen; Leitung zuerst. Form abgeglichen mit der Oberflaeche (03.10.2026).\n",
         "parameters": [
           {
             "name": "id",
@@ -4381,7 +4381,6 @@
                       "herkunft": {
                         "type": "string",
                         "enum": [
-                          "gemeindeleitung",
                           "leitung",
                           "verlauf"
                         ]
