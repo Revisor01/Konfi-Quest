@@ -28,6 +28,14 @@ Stand: 02.10.2026, gegen den Code geprüft.
   gehen. Fix: `can_edit` zusätzlich nach `istSuperAdminKonto`
   (`utils/roleHierarchy.js`), dafür `is_super_admin` in die Abfrage.
   Gefunden 03.10.2026.
+- **Benutzername einer Gemeindeleitung ohne Zeichenregel.** `POST
+  /organizations` (erste Gemeindeleitung), `POST /organizations/:id/admins`
+  und `POST /support/anfragen/:id/anlegen` prüfen den Benutzernamen nur auf
+  „nicht leer" und systemweit frei; Leerzeichen und Sonderzeichen gehen
+  durch. Überall sonst gilt `commonValidations.username` (3 bis 50 Zeichen,
+  Buchstaben, Ziffern, Punkt, Bindestrich), auch für Support-Konten. Fix:
+  dieselbe Regel an den drei Stellen (für Bestandskonten folgenlos). Am Code
+  gefunden 03.10.2026.
 - **Mail nach „Passwort setzen" für Support-Konten.** `PUT
   /users/:id/reset-password` schickt einem Support-Konto „die Leitung deiner
   Gemeinde hat ein neues Passwort gesetzt"; `PUT
