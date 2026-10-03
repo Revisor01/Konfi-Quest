@@ -227,7 +227,9 @@ oben: eingerichtet, zuletzt abgeholt, letzter Fehler.
    oder antwortet direkt.
 
 Neue, noch nicht angesehene Mails stehen als rote Zahl am Bereich
-**Anfragen** (je Anfrage) und am **Posteingang**. Eine Mail zu einer Anfrage
+**Anfragen** (je Anfrage) und am **Posteingang** (nicht zugeordnete und solche
+von Gemeinden). Die Zahl holt die Leiste alle zwei Minuten, nur für
+Super-Admins und nicht im verborgenen Tab. Eine Mail zu einer Anfrage
 zählt als Bewegung: Die 365-Tage-Frist beginnt neu.
 
 **Antworten.** In der Anfrage (Abschnitt „Antworten"), im Schriftwechsel
