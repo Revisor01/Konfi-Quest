@@ -16,7 +16,7 @@ import { ICON_ANHANG, ICON_AUFKLAPPEN, ICON_MAIL, ICON_SENDEN, ICON_ZUKLAPPEN } 
 import type { MailNachricht } from '../../../types/support';
 import { POSTFACH_INFO, zitateTrennen } from '../../../utils/supportMail';
 import { datumUhrzeit } from '../../../utils/dateUtils';
-import WebPill from './WebPill';
+import WebPill from '../../web/WebPill';
 
 /** Ein Zitat: eingeklappt, mit Knopf zum Aufklappen. */
 const WebZitat: React.FC<{ text: string }> = ({ text }) => {

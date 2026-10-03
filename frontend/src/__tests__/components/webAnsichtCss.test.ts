@@ -103,10 +103,18 @@ describe('Bausteine der Web-Fassung: Ionic nur, wo es Arbeit leistet', () => {
       const p = join(ordner, n);
       return statSync(p).isDirectory() ? alle(p) : p.endsWith('.tsx') || p.endsWith('.ts') ? [p] : [];
     });
-  const dateien = alle(resolve(process.cwd(), 'src/components/support/web'));
+  // Die allgemeinen Bausteine (components/web/, seit 03.10.2026 fuer alle
+  // Bereiche) und jede Web-Fassung eines Bereichs (components/<bereich>/web/).
+  const webOrdner = (ordner: string): string[] =>
+    readdirSync(ordner).flatMap((n) => {
+      const p = join(ordner, n);
+      if (!statSync(p).isDirectory()) return [];
+      return n === 'web' ? [p] : webOrdner(p);
+    });
+  const dateien = webOrdner(resolve(process.cwd(), 'src/components')).flatMap(alle);
 
   it('keine IonList, IonItem, IonCard, IonListHeader in den Web-Varianten', () => {
-    expect(dateien.length).toBeGreaterThan(15);
+    expect(dateien.length).toBeGreaterThan(30);
     const funde: string[] = [];
     for (const d of dateien) {
       const text = readFileSync(d, 'utf8');
@@ -116,10 +124,46 @@ describe('Bausteine der Web-Fassung: Ionic nur, wo es Arbeit leistet', () => {
   });
 
   it('Links sind echte <a href> mit dem Router-Muster der Leiste (useIonRouter, kein onClick auf Nicht-Links)', () => {
-    const link = readFileSync(resolve(process.cwd(), 'src/components/support/web/WebLink.tsx'), 'utf8');
+    const link = readFileSync(resolve(process.cwd(), 'src/components/web/WebLink.tsx'), 'utf8');
     expect(link).toContain('<a href={href}');
     expect(link).toContain('useIonRouter');
     expect(link).toContain("router.push(href, 'none', 'push')");
     expect(link).toMatch(/ereignis\.button !== 0 \|\| ereignis\.metaKey \|\| ereignis\.ctrlKey/);
+  });
+});
+
+// Stylesheets der Bereiche (theme/web/<bereich>.css, Web-Fassung aller
+// Bereiche, docs/planung/web-alle-bereiche.md): dieselben Regeln wie
+// web-ansicht.css -- Praefix web-, nur Tokens, keine Bewegung, kein Eingriff
+// in Ionic. Ihre --web-Tokens kommen aus web-ansicht.css oder aus der Datei
+// selbst.
+describe('theme/web/*.css: Stylesheets der Bereiche', () => {
+  const ordner = resolve(process.cwd(), 'src/theme/web');
+  const dateien = (() => {
+    try {
+      return readdirSync(ordner).filter((n) => n.endsWith('.css')).map((n) => join(ordner, n));
+    } catch {
+      return [];
+    }
+  })();
+  const basisTokens = new Set([...rein.matchAll(/(--web-[\w-]+)\s*:/g)].map((m) => m[1]));
+
+  it.each(dateien.length ? dateien : ['(keine)'])('%s haelt die Regeln ein', (datei) => {
+    if (datei === '(keine)') return;
+    const text = ohneKommentare(readFileSync(datei, 'utf8'));
+    const klassen = new Set([...text.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((m) => m[1]));
+    expect([...klassen].filter((k) => !k.startsWith('web-'))).toEqual([]);
+    expect(text.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).toEqual([]);
+    expect(text.match(/\b(?:rgb|rgba|hsl|hsla)\(/g) ?? []).toEqual([]);
+    const fremdeVars = [...text.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]).filter((v) => !/^--(?:app|ion|web)-/.test(v));
+    expect(fremdeVars).toEqual([]);
+    const eigene = new Set([...text.matchAll(/(--web-[\w-]+)\s*:/g)].map((m) => m[1]));
+    const gelesen = [...text.matchAll(/var\((--web-[\w-]+)/g)].map((m) => m[1]);
+    expect(gelesen.filter((t) => !basisTokens.has(t) && !eigene.has(t))).toEqual([]);
+    expect(text).not.toMatch(/(?:^|[\s;{])(?:transition|animation)(?:-[a-z]+)?\s*:/);
+    expect(text).not.toContain('@keyframes');
+    const ionRegeln = regeln(text).filter(([selektor]) => /(^|[\s,>+~(])ion-[a-z]/.test(selektor));
+    expect(ionRegeln.map(([sel]) => sel)).toEqual([]);
+    expect(text.split('\n').filter((z) => /^\s*font-size\s*:\s*[\d.]+(?:px|rem|em)\b/.test(z))).toEqual([]);
   });
 });

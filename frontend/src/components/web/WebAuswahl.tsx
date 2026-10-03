@@ -4,7 +4,7 @@
 
 import React, { useId } from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_AUFKLAPPEN } from '../../shared/icons';
+import { ICON_AUFKLAPPEN } from '../shared/icons';
 
 export interface WebOption {
   wert: string;

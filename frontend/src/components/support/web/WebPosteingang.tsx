@@ -32,15 +32,15 @@ import {
   type EingangFilter,
   type MailEingangWeb,
 } from '../../../utils/supportWeb';
-import WebSeite from './WebSeite';
-import WebKnopf from './WebKnopf';
-import WebLink from './WebLink';
-import WebPill from './WebPill';
-import WebChips from './WebChips';
-import WebTabelle, { type WebSpalte } from './WebTabelle';
-import { WebFehler, WebLaden, WebLeer } from './WebZustaende';
-import { useWebDaten } from './useWebDaten';
-import { useFilterAusAdresse } from './useFilterAusAdresse';
+import WebSeite from '../../web/WebSeite';
+import WebKnopf from '../../web/WebKnopf';
+import WebLink from '../../web/WebLink';
+import WebPill from '../../web/WebPill';
+import WebChips from '../../web/WebChips';
+import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
+import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
+import { useWebDaten } from '../../web/useWebDaten';
+import { useFilterAusAdresse } from '../../web/useFilterAusAdresse';
 
 interface PosteingangDaten {
   mails: MailEingangWeb[];

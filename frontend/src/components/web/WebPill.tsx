@@ -2,7 +2,7 @@
 // Farben aus den Status-Tokens der App, im Dunkeln mit eigenen Werten.
 
 import React from 'react';
-import type { PillTon } from '../../../utils/supportWeb';
+import type { PillTon } from '../../utils/supportWeb';
 
 export interface WebPillProps {
   ton?: PillTon;

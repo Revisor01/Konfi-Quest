@@ -15,7 +15,7 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { IonIcon } from '@ionic/react';
-import { ICON_SCHLIESSEN } from '../../shared/icons';
+import { ICON_SCHLIESSEN } from '../shared/icons';
 
 export interface WebDialogProps {
   titel: string;

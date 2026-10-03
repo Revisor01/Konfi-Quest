@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_WARNHINWEIS } from '../../shared/icons';
+import { ICON_WARNHINWEIS } from '../shared/icons';
 import WebKnopf from './WebKnopf';
 
 /** Leerer Zustand: Symbol, Titel, ein Satz -- optional mit Aktion. */

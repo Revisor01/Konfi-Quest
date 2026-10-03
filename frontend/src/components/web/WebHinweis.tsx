@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_INFO, ICON_WARNHINWEIS, ICON_ZUSAGE_GEFUELLT } from '../../shared/icons';
+import { ICON_INFO, ICON_WARNHINWEIS, ICON_ZUSAGE_GEFUELLT } from '../shared/icons';
 
 export interface WebHinweisProps {
   art: 'hinweis' | 'warnung' | 'fehler' | 'erfolg';

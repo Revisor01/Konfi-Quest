@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_SCHLIESSEN, ICON_SUCHE } from '../../shared/icons';
+import { ICON_SCHLIESSEN, ICON_SUCHE } from '../shared/icons';
 import WebKnopf from './WebKnopf';
 
 export interface WebSucheProps {

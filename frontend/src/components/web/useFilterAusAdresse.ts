@@ -11,8 +11,8 @@
 // stehen, ihr Standort zeigt dann schon auf die naechste.
 
 import { useState } from 'react';
-import { useAppLocation } from '../../../navigation/useAppLocation';
-import { filterAusAdresse } from '../../../utils/supportWeb';
+import { useAppLocation } from '../../navigation/useAppLocation';
+import { filterAusAdresse } from '../../utils/supportWeb';
 
 export function useFilterAusAdresse<W extends string>(
   pfad: string,

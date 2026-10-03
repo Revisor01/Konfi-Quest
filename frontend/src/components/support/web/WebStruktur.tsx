@@ -22,14 +22,14 @@ import { ICON_BEARBEITEN, ICON_HINZUFUEGEN, ICON_LOESCHEN, ICON_NETZWERK } from 
 import type { Kirchenkreis, Landeskirche } from '../../../types/support';
 import { mitEinheit } from '../../../utils/supportStatistik';
 import { useStruktur } from '../useStruktur';
-import WebSeite from './WebSeite';
-import WebKarte from './WebKarte';
-import WebKnopf from './WebKnopf';
-import WebDialog from './WebDialog';
-import WebFeld from './WebFeld';
-import WebAuswahl from './WebAuswahl';
-import WebTabelle, { type WebSpalte } from './WebTabelle';
-import { WebFehler, WebLaden, WebLeer } from './WebZustaende';
+import WebSeite from '../../web/WebSeite';
+import WebKarte from '../../web/WebKarte';
+import WebKnopf from '../../web/WebKnopf';
+import WebDialog from '../../web/WebDialog';
+import WebFeld from '../../web/WebFeld';
+import WebAuswahl from '../../web/WebAuswahl';
+import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
+import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 
 const OHNE = 'ohne';
 

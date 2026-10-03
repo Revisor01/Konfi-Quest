@@ -1,6 +1,6 @@
 // Rechnen fuer die Diagramme der Web-Fassung (03.10.2026): runde Teilstriche,
 // Pfade fuer Balken und Linien. Rein, ohne DOM -- die Diagramme in
-// components/support/web/ zeichnen nur, was hier berechnet ist.
+// components/web/ zeichnen nur, was hier berechnet ist.
 
 /** Zahl in deutscher Schreibweise (1.234), fuer Achsen und Tooltips. */
 export const zahlText = (n: number): string => n.toLocaleString('de-DE');

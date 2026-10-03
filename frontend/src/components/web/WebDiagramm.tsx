@@ -18,7 +18,7 @@
 // Zusammenfassung. Der Tooltip erweitert nur -- nichts ist allein dort zu lesen.
 
 import React, { useState } from 'react';
-import { balkenPfad, flaechenPfad, linienPfad, schoeneSkala, stapelSegmente, zahlText } from '../../../utils/webDiagramm';
+import { balkenPfad, flaechenPfad, linienPfad, schoeneSkala, stapelSegmente, zahlText } from '../../utils/webDiagramm';
 import { useElementBreite } from './useElementBreite';
 
 export interface WebReihe {

@@ -26,16 +26,16 @@ import { zeitpunktText } from '../../../utils/postfach';
 import { mitEinheit } from '../../../utils/supportStatistik';
 import { gemeindenLesen, laufzeitAngabe, limitAnteil, type SupportGemeinde } from '../../../utils/supportWeb';
 import { useGemeindePost } from '../useGemeindePost';
-import WebSeite from './WebSeite';
-import WebSpalten from './WebSpalten';
-import WebKarte from './WebKarte';
-import WebKnopf from './WebKnopf';
-import WebPill from './WebPill';
-import WebAngaben from './WebAngaben';
+import WebSeite from '../../web/WebSeite';
+import WebSpalten from '../../web/WebSpalten';
+import WebKarte from '../../web/WebKarte';
+import WebKnopf from '../../web/WebKnopf';
+import WebPill from '../../web/WebPill';
+import WebAngaben from '../../web/WebAngaben';
 import WebAntwortEditor from './WebAntwortEditor';
 import { WebMailVerlauf } from './WebMailVerlauf';
-import { WebFehler, WebLeer } from './WebZustaende';
-import { useWebDaten } from './useWebDaten';
+import { WebFehler, WebLeer } from '../../web/WebZustaende';
+import { useWebDaten } from '../../web/useWebDaten';
 
 const ZURUECK = { href: '/admin/support/post', text: 'Posteingang' };
 

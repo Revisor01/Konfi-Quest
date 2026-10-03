@@ -9,9 +9,9 @@
 
 import React from 'react';
 import { IonContent, IonIcon, IonPage } from '@ionic/react';
-import AppKopfzeile from '../../shared/AppKopfzeile';
-import WartungsHinweis from '../../shared/WartungsHinweis';
-import { ICON_ZURUECK } from '../../shared/icons';
+import AppKopfzeile from '../shared/AppKopfzeile';
+import WartungsHinweis from '../shared/WartungsHinweis';
+import { ICON_ZURUECK } from '../shared/icons';
 import WebLink from './WebLink';
 
 export interface WebSeiteProps {

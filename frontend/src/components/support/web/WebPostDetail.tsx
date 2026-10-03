@@ -22,16 +22,16 @@ import { ANFRAGE_STATUS } from '../../../utils/supportAnfragen';
 import { POSTFACH_INFO, gemeindeName } from '../../../utils/supportMail';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import { usePostDetail } from '../usePostDetail';
-import WebSeite from './WebSeite';
-import WebSpalten from './WebSpalten';
-import WebKarte from './WebKarte';
-import WebKnopf from './WebKnopf';
-import WebChips from './WebChips';
-import WebHinweis from './WebHinweis';
-import WebAuswahlSuche from './WebAuswahlSuche';
+import WebSeite from '../../web/WebSeite';
+import WebSpalten from '../../web/WebSpalten';
+import WebKarte from '../../web/WebKarte';
+import WebKnopf from '../../web/WebKnopf';
+import WebChips from '../../web/WebChips';
+import WebHinweis from '../../web/WebHinweis';
+import WebAuswahlSuche from '../../web/WebAuswahlSuche';
 import WebAntwortEditor from './WebAntwortEditor';
 import { WebMailEintrag, WebMailVerlauf } from './WebMailVerlauf';
-import { WebFehler, WebLaden, WebLeer } from './WebZustaende';
+import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 
 const ZURUECK = { href: '/admin/support/post', text: 'Posteingang' };
 

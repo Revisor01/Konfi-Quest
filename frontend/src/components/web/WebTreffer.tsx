@@ -3,7 +3,7 @@
 // Umschreibung), damit hervorgehoben wird, was gefunden wurde.
 
 import React from 'react';
-import { suchSegmente } from '../../../utils/supportWeb';
+import { suchSegmente } from '../../utils/supportWeb';
 
 const WebTreffer: React.FC<{ text: string; suche: string }> = ({ text, suche }) => (
   <>

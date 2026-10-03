@@ -34,17 +34,17 @@ import {
   type SupportUebersicht,
   type UebersichtAnfrage,
 } from '../../../utils/supportWeb';
-import WebSeite from './WebSeite';
-import WebKarte from './WebKarte';
-import WebKachel from './WebKachel';
-import WebKnopf from './WebKnopf';
-import WebLink from './WebLink';
-import WebPill from './WebPill';
-import WebSpark from './WebSpark';
-import WebDiagramm from './WebDiagramm';
-import WebBalkenListe from './WebBalkenListe';
-import { WebFehler, WebLaden, WebLeer } from './WebZustaende';
-import { useWebDaten } from './useWebDaten';
+import WebSeite from '../../web/WebSeite';
+import WebKarte from '../../web/WebKarte';
+import WebKachel from '../../web/WebKachel';
+import WebKnopf from '../../web/WebKnopf';
+import WebLink from '../../web/WebLink';
+import WebPill from '../../web/WebPill';
+import WebSpark from '../../web/WebSpark';
+import WebDiagramm from '../../web/WebDiagramm';
+import WebBalkenListe from '../../web/WebBalkenListe';
+import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
+import { useWebDaten } from '../../web/useWebDaten';
 
 interface UebersichtDaten {
   uebersicht: SupportUebersicht;

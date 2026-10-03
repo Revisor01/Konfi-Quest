@@ -6,7 +6,7 @@
 // Die Werte stehen zusaetzlich als Tabelle fuer Vorleseprogramme da.
 
 import React from 'react';
-import { zahlText } from '../../../utils/webDiagramm';
+import { zahlText } from '../../utils/webDiagramm';
 import { useElementBreite } from './useElementBreite';
 
 export interface WebBalkenEintrag {

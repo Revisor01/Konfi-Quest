@@ -9,8 +9,8 @@
 
 import React, { useId, useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_SUCHE } from '../../shared/icons';
-import { suchTreffer, suchbegriff } from '../../../utils/supportWeb';
+import { ICON_SUCHE } from '../shared/icons';
+import { suchTreffer, suchbegriff } from '../../utils/supportWeb';
 
 export interface WebWahlEintrag {
   wert: string;

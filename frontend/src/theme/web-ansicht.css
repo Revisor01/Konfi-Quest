@@ -8,7 +8,7 @@
    Diese Datei gilt NUR fuer die Web-Fassungen der Seiten (Browser ab
    992 px Breite, navigation/breitesLayout.ts). Alle Klassen tragen das
    Praefix web-; die App und das schmale Fenster rendern ohne sie, wie
-   bisher. Gebaut wird aus den Bausteinen in components/support/web/ --
+   bisher. Gebaut wird aus den Bausteinen in components/web/ (allgemein) und components/support/web/ (Support) --
    Tabellen mit Kopfzeile, Kennzahl-Kacheln, Karten im Raster, Filter-Chips,
    Akkordeons, Diagramme in eigenem SVG.
 

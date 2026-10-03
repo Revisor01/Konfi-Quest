@@ -1,4 +1,4 @@
-// Die Bausteine der Web-Fassung (components/support/web/): Diagramme in
+// Die Bausteine der Web-Fassung (components/web/): Diagramme in
 // eigenem SVG (Tooltip, Tastatur, Tabelle fuer Vorleseprogramme), Chips,
 // Akkordeon, Tabelle, Marken, Links.
 import { describe, it, expect, vi } from 'vitest';
@@ -11,14 +11,14 @@ vi.mock('@ionic/react', async () => (await import('./ionicAttrappe')).ionicAttra
   router: { push: h.push, goBack: vi.fn(), canGoBack: () => false },
 }));
 
-import WebDiagramm from '../../../components/support/web/WebDiagramm';
-import WebBalkenListe from '../../../components/support/web/WebBalkenListe';
-import WebSpark from '../../../components/support/web/WebSpark';
-import WebChips from '../../../components/support/web/WebChips';
-import WebAkkordeon from '../../../components/support/web/WebAkkordeon';
-import WebTabelle from '../../../components/support/web/WebTabelle';
-import WebPill from '../../../components/support/web/WebPill';
-import WebKachel from '../../../components/support/web/WebKachel';
+import WebDiagramm from '../../../components/web/WebDiagramm';
+import WebBalkenListe from '../../../components/web/WebBalkenListe';
+import WebSpark from '../../../components/web/WebSpark';
+import WebChips from '../../../components/web/WebChips';
+import WebAkkordeon from '../../../components/web/WebAkkordeon';
+import WebTabelle from '../../../components/web/WebTabelle';
+import WebPill from '../../../components/web/WebPill';
+import WebKachel from '../../../components/web/WebKachel';
 import { monatKurz, monatLang } from '../../../utils/supportWeb';
 
 const MONATE = ['2026-07', '2026-08', '2026-09', '2026-10'];

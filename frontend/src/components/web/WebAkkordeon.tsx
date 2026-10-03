@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_WEITER_GEFUELLT } from '../../shared/icons';
+import { ICON_WEITER_GEFUELLT } from '../shared/icons';
 
 export interface WebAkkordeonProps {
   /** Eindeutig auf der Seite -- bildet die Kennung des Inhalts. */

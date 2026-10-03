@@ -4,7 +4,7 @@
 // aria-hidden.
 
 import React from 'react';
-import { linienPfad } from '../../../utils/webDiagramm';
+import { linienPfad } from '../../utils/webDiagramm';
 
 export interface WebSparkProps {
   werte: readonly number[];
