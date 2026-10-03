@@ -77,8 +77,12 @@ const hatTitel = (text: string): boolean =>
 describe('Per useIonModal geoeffnete Modale haben einen Namen (UI BF-16, Nebenbefund)', () => {
   const aufrufe = alleAufrufe();
 
-  it('findet die Hook-Modale der App (Plausibilitaet der Zaehlung: 92 am 27.09.2026)', () => {
-    expect(aufrufe.length).toBeGreaterThanOrEqual(90);
+  // 88 seit 02.10.2026 (2.4.0): Das Challenge-Detail der Konfis und die
+  // Challenge-Ansicht der Leitung sind eigene Seiten statt Dialoge; das
+  // Formular zum Bearbeiten oeffnen Liste und Seite ueber einen Hook statt je
+  // fuer sich. Die Grenze bleibt zwei unter dem gezaehlten Stand.
+  it('findet die Hook-Modale der App (Plausibilitaet der Zaehlung: 92 am 27.09.2026, 88 am 02.10.2026)', () => {
+    expect(aufrufe.length).toBeGreaterThanOrEqual(86);
   });
 
   it('jede Komponente ist auffindbar', () => {

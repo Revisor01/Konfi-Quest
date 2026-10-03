@@ -113,8 +113,9 @@ gestartete Challenges (die Challenge-Liste zählt selbst) und Chat-Nachrichten
 Im Postfach steht Ungelesenes fett und mit einem **blauen Punkt** in der
 Ecke. **Antippen**
 markiert die Mitteilung als gelesen und führt an die passende Stelle: zum
-Badges, in die Antragsliste, an das Event, bei einem Stempel zu den
-Challenges, bei einem Level-Aufstieg auf die Startseite. Punkte — aus einem
+Badges, in die Antragsliste, an das Event, bei einem Stempel, einem neuen
+oder ausgeblendeten Beitrag in die Challenge, bei einem Level-Aufstieg auf
+die Startseite. Punkte — aus einem
 Event, als Bonus oder für eine eingetragene Aktivität — öffnen die
 Punkte-Übersicht im Profil; der Jahresrückblick öffnet genau die Ausgabe, um
 die es geht. **„Alle gelesen"** räumt auf einmal auf.

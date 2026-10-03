@@ -428,7 +428,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       <IonContent className="app-gradient-background">
 
         {/* Challenge-Kopf. Der Behandlungs-Hinweis steht als Untertitel DIREKT
-            in der Überschrift (Muster: ChallengeDetailModal-Banner) statt in
+            in der Überschrift (Muster: Banner der Challenge-Seite, KonfiChallengeDetailPage) statt in
             einem eigenen Hinweis-Kasten darüber — er erscheint weiterhin in
             JEDER Sichtbarkeits-Konstellation (Nutzerentscheid 24.08.2026). */}
         <div className="app-header-banner app-header-banner--challenges">

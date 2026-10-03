@@ -92,7 +92,10 @@ export const elternPfad = (routenPfad: string): string => {
   return '/' + ohneParameter.slice(0, 2).join('/');
 };
 
-const ParamSeite: React.FC<{
+// Exportiert fuer __tests__/navigation/challengeSeiten.test.tsx: Dort wird
+// geprueft, dass eine Detailroute ihre Kennung als Zahl unter dem Prop-Namen
+// aus rollenBaeume.ts bekommt.
+export const ParamSeite: React.FC<{
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any --
   Props sind kontravariant: Eine Tabelle, die Seiten mit UND ohne
   Parameter-Props traegt, laesst sich nur ueber any gemeinsam typisieren

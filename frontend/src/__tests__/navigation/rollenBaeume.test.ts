@@ -160,18 +160,21 @@ describe('Code-Splitting: Seiten sind faul und vorladbar', () => {
   // eng genug, um einen ECHTEN Haenger (nie aufloesender Import) zu fangen.
   const LADE_GRENZE = 30_000;
 
-  it('konfi: ladeRolleVor laedt alle 8 Seiten-Module', async () => {
-    await expect(ladeRolleVor('konfi')).resolves.toBe(8);
+  // Je eine mehr seit 2.4.0: die Seite einer Challenge
+  // (KonfiChallengeDetailPage, bei Team und Leitung ChallengeLeitungPage).
+  it('konfi: ladeRolleVor laedt alle 9 Seiten-Module', async () => {
+    await expect(ladeRolleVor('konfi')).resolves.toBe(9);
   }, LADE_GRENZE);
 
-  it('teamer: ladeRolleVor laedt alle 9 Seiten-Module', async () => {
-    await expect(ladeRolleVor('teamer')).resolves.toBe(9);
+  it('teamer: ladeRolleVor laedt alle 10 Seiten-Module', async () => {
+    await expect(ladeRolleVor('teamer')).resolves.toBe(10);
   }, LADE_GRENZE);
 
   // 22 seit dem 03.09.2026: AdminWrappedPage ist dazugekommen (Verwaltung
-  // der Rueckblick-Ausgaben, ersetzt den Schalter im Jahrgang).
-  it('admin: ladeRolleVor laedt alle 22 Seiten-Module', async () => {
-    await expect(ladeRolleVor('admin')).resolves.toBe(22);
+  // der Rueckblick-Ausgaben, ersetzt den Schalter im Jahrgang); 23 seit
+  // 2.4.0 mit der Seite einer Challenge.
+  it('admin: ladeRolleVor laedt alle 23 Seiten-Module', async () => {
+    await expect(ladeRolleVor('admin')).resolves.toBe(23);
   }, LADE_GRENZE);
 
   it('super_admin: ladeRolleVor laedt alle 2 Seiten-Module', async () => {

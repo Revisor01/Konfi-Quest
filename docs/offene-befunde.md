@@ -266,8 +266,7 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ## Geplant
 
-- **Version 2.4.0** — Challenges als eigene Seiten wie Events, damit
-  Push, Postfach und Links direkt in die Challenge führen; dazu „darf freigeben",
+- **Version 2.4.0** — „darf freigeben",
   Mehrfach-Konten, Beginn der Web-Version und kleinere Punkte:
   [planung/2.4.0.md](planung/2.4.0.md).
 - **Web-Version mit Support-Ansicht** — Seitennavigation links, eine

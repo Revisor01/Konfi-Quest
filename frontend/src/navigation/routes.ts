@@ -58,7 +58,7 @@ export type RouteDef =
       /** Name des Parameters in der URL. */
       param: 'id' | 'roomId';
       /** Unter welchem Prop-Namen die Seite den Wert erwartet (als Zahl). */
-      propName: 'konfiId' | 'eventId' | 'roomId';
+      propName: 'konfiId' | 'eventId' | 'roomId' | 'challengeId';
     };
 
 export interface RedirectDef {

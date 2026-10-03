@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../../../contexts/AppContext';
 import ChallengesPage from '../../shared/ChallengesPage';
+import { leitungChallengeListe } from '../../../utils/challengeListen';
 
 // Befund N7 (27.08.2026): Der Inhalt dieser Seite lag Zeile für Zeile auch in
 // TeamerChallengesPage. Er steht jetzt einmal in shared/ChallengesPage; hier
@@ -11,8 +12,9 @@ const AdminChallengesPage: React.FC = () => {
 
   return (
     <ChallengesPage
-      cacheKey={'admin:challenges:' + user?.organization_id}
+      cacheKey={leitungChallengeListe(user)}
       modalPageId="admin-challenges"
+      listenPfad="/admin/challenges"
     />
   );
 };

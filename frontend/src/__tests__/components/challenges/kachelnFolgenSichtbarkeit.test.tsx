@@ -1,12 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
-import ChallengeLeitungModal from '../../../components/admin/modals/ChallengeLeitungModal';
+import ChallengeLeitungView from '../../../components/admin/views/ChallengeLeitungView';
 
 // Die Kachelleiste (headerStats) las challenge?.visibility, hatte die
 // Sichtbarkeit aber nicht in den useMemo-Abhaengigkeiten. Der Randfall ist
-// erreichbar: Im offenen Modal laesst sich ueber den Bearbeiten-Knopf die
-// Sichtbarkeit auf "nur Leitung" stellen; die ChallengesPage spiegelt die
-// frisch geladene Challenge in das offene Modal zurueck. Aendert sich dabei
+// erreichbar: In der offenen Challenge laesst sich ueber den Bearbeiten-Knopf
+// die Sichtbarkeit auf "nur Leitung" stellen; die Seite drumherum
+// (shared/ChallengeLeitungPage, bis 2.3 die Liste unter dem Dialog) reicht
+// die frisch geladene Challenge an die Ansicht weiter. Aendert sich dabei
 // weder counts noch der Filter, blieb die "Abgelehnt"-Kachel stehen, obwohl
 // es bei "nur Leitung" keine Gruppen-Galerie (und damit kein Abgelehnt) gibt.
 
@@ -45,10 +46,10 @@ const challenge = (visibility: string) => ({
   ends_at: inEinerWoche
 });
 
-describe('ChallengeLeitungModal: Kacheln folgen der Sichtbarkeit', () => {
+describe('ChallengeLeitungView: Kacheln folgen der Sichtbarkeit', () => {
   it('nach Umstellen auf "nur Leitung" verschwindet die Abgelehnt-Kachel', async () => {
     const { container, rerender } = render(
-      <ChallengeLeitungModal challenge={challenge('public') as never} onClose={vi.fn()} />
+      <ChallengeLeitungView challenge={challenge('public') as never} onBack={vi.fn()} />
     );
 
     await waitFor(() => {
@@ -58,7 +59,7 @@ describe('ChallengeLeitungModal: Kacheln folgen der Sichtbarkeit', () => {
     // Sichtbarkeit aendert sich im offenen Modal (Bearbeiten-Formular +
     // Rueckspiegelung durch die Page) — counts und Filter bleiben gleich.
     rerender(
-      <ChallengeLeitungModal challenge={challenge('private') as never} onClose={vi.fn()} />
+      <ChallengeLeitungView challenge={challenge('private') as never} onBack={vi.fn()} />
     );
 
     await waitFor(() => {

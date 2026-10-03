@@ -1835,6 +1835,59 @@ paths:
         objekt-pruefung: "jahrgang_ids müssen zur Org UND (bei admin/teamer) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
 
   /api/challenges/admin/{id}:
+    get:
+      tags: ["Challenges (Leitung)"]
+      summary: "Eine Challenge der Leitungsliste (NEU 2026-10-02, 2.4.0)"
+      description: >
+        Fuer die eigene Seite einer Challenge bei Team und Leitung
+        (/admin/challenges/:id, /teamer/challenges/:id), auf die Push,
+        Postfach und Listen fuehren (Simon, 02.10.2026: "challenge nicht in
+        modal öffnen, sondern in unterseite, damit man direkt auf die
+        challenge linken kann aus einem push"). ADDITIV: Die Antwort ist
+        genau ein Eintrag aus GET /api/challenges/admin -- dieselbe Abfrage,
+        dieselben Felder (status, locked, Zaehler, eigene Teilnahme,
+        jahrgaenge) --, und sie kommt genau dann, wenn die Liste diese
+        Challenge fuehrt: dieselbe Regel (utils/challengeLeitungSicht.js),
+        org_admin jede Challenge der Gemeinde (auch Entwuerfe ohne
+        Jahrgang), admin und teamer 'nur_team' immer, sonst nur ueber einen
+        zugewiesenen Jahrgang mit can_view. Liste, Beitraege und alle
+        bestehenden Antwortformen bleiben unveraendert; aeltere Apps rufen
+        die Route nicht.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 }, description: "ID der Challenge" }
+      responses:
+        '200':
+          description: "Ein Objekt (kein Array) -- Feld fuer Feld wie ein Eintrag aus GET /api/challenges/admin"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  title: { type: string }
+                  status: { type: string, enum: [draft, scheduled, active, ended] }
+                  locked: { type: boolean }
+                  submission_count: { type: integer }
+                  pending_count: { type: integer }
+                  own_submission_count: { type: integer }
+                  has_badge: { type: boolean }
+                  earned_at: { type: [string, "null"], format: date-time }
+                  jahrgaenge:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        name: { type: string }
+        '400': { description: Ungueltige ID }
+        '403': { description: "requireTeamer ODER die Challenge gehoert zu keinem zugewiesenen Jahrgang (error_code 'jahrgang_nicht_zugewiesen'); die Seite nennt den Grund" }
+        '404': { description: "Challenge nicht in eigener Gemeinde oder geloescht" }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [rbacVerifier, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Dieselbe Abfrage wie GET /api/challenges/admin mit zusaetzlichem c.id-Filter (leitungsChallenges): 200 genau dann, wenn die Liste die Challenge fuehrt (Test challengeLeitungDetail.test.js)"
     put:
       tags: ["Challenges (Leitung)"]
       summary: Challenge bearbeiten (Konsens-Felder nach Start eingefroren)

@@ -97,7 +97,7 @@ describe('Klickbare Elemente sind Schaltflaechen oder ausdruecklich keine (UI BF
   it('role="presentation" nur, wo der Klick nur gestoppt wird oder der Knopf im Inneren steckt', () => {
     // Abschliessende Liste: Wer eine Stelle hinzufuegt, begruendet sie hier.
     const erlaubt = [
-      'admin/modals/ChallengeLeitungModal.tsx',   // Wrapper stoppt den Klick zur Karte
+      'admin/views/ChallengeLeitungView.tsx',   // Wrapper stoppt den Klick zur Karte
       'admin/pages/AdminSettingsPage.tsx',        // Zeilen mit Info-Knopf: Knopf ist .app-list-item__main
       'chat/MessageBubble.tsx',                   // Blase (Gesten, geschachtelt), Aktionsleiste, Reaktions-Picker
       'konfi/modals/ActivityRequestModal.tsx',    // Foto-Flaeche mit Loeschen-Knopf: Knopf ist der Text

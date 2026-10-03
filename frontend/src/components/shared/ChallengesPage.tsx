@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   IonPage,
   IonContent,
@@ -6,8 +6,7 @@ import {
   IonRefresherContent,
   IonButton,
   IonIcon,
-  useIonModal,
-  useIonAlert
+  useIonRouter
 } from '@ionic/react';
 import { ICON_HINZUFUEGEN_GEFUELLT } from './icons';
 import AppKopfzeile, { AppKopfzeileGross } from './AppKopfzeile';
@@ -20,8 +19,7 @@ import { useChallengeDelete } from '../../hooks/useChallengeDelete';
 import { CACHE_TTL } from '../../services/offlineCache';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ChallengesManageView, { getChallengeStatus } from '../admin/views/ChallengesManageView';
-import ChallengeManageModal from '../admin/modals/ChallengeManageModal';
-import ChallengeLeitungModal from '../admin/modals/ChallengeLeitungModal';
+import { useChallengeFormular } from '../../hooks/useChallengeFormular';
 import { triggerPullHaptic } from '../../utils/haptics';
 import type { AdminChallenge, ChallengeMark } from '../../types/challenges';
 import { mitBewahrtenStempeln } from '../../utils/bewahrteStempel';
@@ -44,6 +42,9 @@ interface ChallengesPageProps {
   cacheKey: string;
   // Eigene Modal-Seiten-ID je Rolle (useModalPage verwaltet den Stapel).
   modalPageId: string;
+  // Pfad der Liste dieser Rolle ('/admin/challenges', '/teamer/challenges').
+  // Eine Challenge oeffnet sich darunter als eigene Seite (2.4.0).
+  listenPfad: string;
 }
 
 /**
@@ -75,25 +76,25 @@ export const gehoertInsStempelraster = (
   return status === 'active' || status === 'ended';
 };
 
-const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }) => {
+const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId, listenPfad }) => {
   // pendingChallengesByChallenge: offene Freigaben je Challenge fuer das
   // orange Eck-Badge am Listeneintrag (25.09.2026) -- dieselbe Quelle wie
   // der Reiter, statt pending_count aus der nur bei Aktion neu geladenen Liste.
   // challengeNeueBeitraegeByChallenge: neue Beitraege seit dem letzten
   // Oeffnen, wartende eingeschlossen (29.09.2026) -- die rote Kugel am
-  // Symbol; markChallengeAsRead setzt sie beim Oeffnen und Schliessen der
-  // Challenge zurueck. challengeUpdatesByChallenge (neue freigegebene) nur
-  // noch fuer den Rueckfall, wenn der Server das neue Feld nicht liefert.
+  // Symbol; die Seite der Challenge (shared/ChallengeLeitungPage) setzt sie
+  // beim Aufgehen und Verlassen zurueck. challengeUpdatesByChallenge (neue
+  // freigegebene) nur noch fuer den Rueckfall, wenn der Server das neue Feld
+  // nicht liefert.
   const {
-    refreshAllCounts,
     pendingChallengesByChallenge,
     challengeUpdatesByChallenge,
     challengeNeueBeitraegeByChallenge,
-    challengeNeueWartendByChallenge,
-    markChallengeAsRead
+    challengeNeueWartendByChallenge
   } = useBadge();
   const { pageRef, presentingElement } = useModalPage(modalPageId);
   const { user } = useApp();
+  const router = useIonRouter();
 
   // Admin/Teamer ohne Jahrgangs-Zuweisung bekommt vom Server eine leere
   // Liste -- gueltig (Simons Entscheidung 31.08.2026), aber ohne Erklaerung
@@ -113,8 +114,6 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
     },
     { ttl: CACHE_TTL.REQUESTS }
   );
-
-  const [presentAlert] = useIonAlert();
 
   // Stempel aus Challenges, die es nicht mehr gibt (28.09.2026): Loescht die
   // Leitung einen Jahrgang, gehen seine Challenges mit -- die Stempel des
@@ -183,112 +182,25 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
     [challenges]
   );
 
-  // Aktuell im Modal bearbeitete/moderierte Challenge
-  const [editChallenge, setEditChallenge] = useState<AdminChallenge | null>(null);
-  const [moderationChallenge, setModerationChallenge] = useState<AdminChallenge | null>(null);
-
-  // "Ungespeicherte Änderungen"-Stand des Formular-Modals, damit canDismiss
-  // auch Swipe-/Backdrop-Schliessen abfangen kann.
-  const manageDirtyRef = useRef(false);
-
-  // WICHTIG: Beim Schliessen wird der Challenge-State NICHT auf null gesetzt.
-  // useIonModal rendert das Modal während der Dismiss-Animation weiter — ein
-  // null-Render liefe dort in die ErrorBoundary (clearAuth => "Rauswurf zur
-  // Anmeldung"). Der State wird beim nächsten Oeffnen ohnehin neu gesetzt.
-  const [presentManageModal, dismissManageModal] = useIonModal(ChallengeManageModal, {
-    challenge: editChallenge,
-    onDirtyChange: (dirty: boolean) => { manageDirtyRef.current = dirty; },
-    onClose: () => { dismissManageModal(); },
-    onSuccess: () => {
-      dismissManageModal();
-      refreshChallenges();
-    }
+  // Anlegen (Plus oben) und Bearbeiten (Wisch) -- dasselbe Formular wie auf
+  // der Seite einer Challenge, samt Rueckfrage bei ungespeicherten
+  // Aenderungen (hooks/useChallengeFormular).
+  const { anlegen: openCreate, bearbeiten: openEdit } = useChallengeFormular({
+    presentingElement: () => presentingElement,
+    onGespeichert: () => { refreshChallenges(); }
   });
-
-  // Bearbeiten-Knopf oben im geöffneten Challenge-Modal (Nutzerwunsch
-  // 24.08.2026): öffnet dasselbe Formular wie der Wisch in der Liste — als
-  // gestapeltes Modal über der Beitrags-Ansicht.
-  const [presentModerationModal, dismissModerationModal] = useIonModal(ChallengeLeitungModal, {
-    challenge: moderationChallenge,
-    onEdit: (challenge: AdminChallenge) => openEdit(challenge),
-    // Für die Card-Optik des Einreichen-Modals (schiebt die Seite nach hinten).
-    get presentingElement() { return pageRef.current || presentingElement; },
-    onClose: () => {
-      dismissModerationModal();
-      // Was waehrend des Ansehens hereinkam, hat man gesehen -- wie im Chat
-      // beim Verlassen des Raums.
-      if (moderationChallenge) void gesehen(moderationChallenge);
-    },
-    onChanged: () => {
-      refreshChallenges();
-      // Tab-Badge (offene Freigaben) direkt nachziehen.
-      refreshAllCounts();
-    }
-  });
-
-  const manageCanDismiss = async (): Promise<boolean> => {
-    if (!manageDirtyRef.current) return true;
-    return new Promise<boolean>((resolve) => {
-      let decided = false;
-      const decide = (v: boolean) => { decided = true; resolve(v); };
-      presentAlert({
-        header: 'Ungespeicherte Änderungen',
-        message: 'Möchtest du die Änderungen verwerfen?',
-        backdropDismiss: false,
-        buttons: [
-          { text: 'Abbrechen', role: 'cancel', handler: () => decide(false) },
-          { text: 'Verwerfen', role: 'destructive', handler: () => decide(true) }
-        ],
-        onDidDismiss: () => { if (!decided) resolve(false); }
-      });
-    });
-  };
 
   useLiveRefresh('challenges', refreshChallengesLive);
   useLiveRefresh('challenges', refreshBewahrteLive);
 
-  // Die geöffnete Beitrags-Ansicht hält ihre Challenge als eigenen State.
-  // Nach einem Bearbeiten (oder Live-Refresh) käme sonst weiter der alte
-  // Stand (Titel, Beschreibung, Sperr-Urteil) zur Anzeige — deshalb hier mit
-  // der frisch geladenen Liste abgleichen.
-  useEffect(() => {
-    if (!moderationChallenge || !Array.isArray(challenges)) return;
-    const fresh = challenges.find((c) => c.id === moderationChallenge.id);
-    if (fresh && fresh !== moderationChallenge) setModerationChallenge(fresh);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [challenges]);
-
-  const openCreate = () => {
-    setEditChallenge(null);
-    presentManageModal({
-      presentingElement: presentingElement,
-      canDismiss: manageCanDismiss,
-      backdropDismiss: false
-    });
-  };
-
-  const openEdit = (challenge: AdminChallenge) => {
-    setEditChallenge(challenge);
-    presentManageModal({
-      presentingElement: presentingElement,
-      canDismiss: manageCanDismiss,
-      backdropDismiss: false
-    });
-  };
-
-  // Eine gestartete Challenge als gesehen melden und die Zaehler nachziehen.
-  // Entwuerfe und geplante haben keine Beitraege; dort gibt es nichts zu melden.
-  const gesehen = async (challenge: AdminChallenge) => {
-    const status = getChallengeStatus(challenge);
-    if (status !== 'active' && status !== 'ended') return;
-    await markChallengeAsRead(challenge.id);
-    refreshAllCounts();
-  };
-
-  const openModeration = (challenge: AdminChallenge) => {
-    setModerationChallenge(challenge);
-    presentModerationModal({ presentingElement: presentingElement });
-    void gesehen(challenge);
+  // Eine Challenge oeffnet sich als eigene Seite, nicht mehr im Dialog
+  // (2.4.0, Simon 02.10.2026: "challenge nicht in modal öffnen, sondern in
+  // unterseite, damit man direkt auf die challenge linken kann aus einem
+  // push"). Dieselbe Adresse fuehrt aus Push und Postfach hinein
+  // (utils/pushNavigation.ts). Gelesen-Melden, Moderation, eigener Beitrag
+  // und Bearbeiten stehen jetzt dort (shared/ChallengeLeitungPage).
+  const openChallenge = (challenge: AdminChallenge) => {
+    router.push(`${listenPfad}/${challenge.id}`);
   };
 
   const { handleDelete } = useChallengeDelete({ onDeleted: refreshChallenges });
@@ -326,7 +238,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
             neuigkeiten={challengeUpdatesByChallenge}
             neueBeitraege={challengeNeueBeitraegeByChallenge ?? undefined}
             neueWartend={challengeNeueWartendByChallenge}
-            onSelectChallenge={openModeration}
+            onSelectChallenge={openChallenge}
             onEditChallenge={openEdit}
             onDeleteChallenge={handleDelete}
             presentingElement={pageRef.current || presentingElement}

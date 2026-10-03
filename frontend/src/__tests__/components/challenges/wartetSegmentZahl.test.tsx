@@ -43,7 +43,7 @@ vi.mock('@ionic/react', async (original) => ({
   useIonActionSheet: () => [vi.fn()],
 }));
 
-import ChallengeLeitungModal from '../../../components/admin/modals/ChallengeLeitungModal';
+import ChallengeLeitungView from '../../../components/admin/views/ChallengeLeitungView';
 
 const vorZweiWochen = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
 const inEinerWoche = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString();
@@ -79,7 +79,7 @@ const knopf = (container: HTMLElement, wert: string) =>
     .find((k) => k.textContent?.startsWith(BESCHRIFTUNG[wert])) as HTMLElement;
 
 const oeffnen = async () => {
-  const ansicht = render(<ChallengeLeitungModal challenge={challenge as never} onClose={vi.fn()} />);
+  const ansicht = render(<ChallengeLeitungView challenge={challenge as never} onBack={vi.fn()} />);
   await waitFor(() => expect(knopf(ansicht.container, 'pending').querySelector('.app-segment-zahl')).not.toBeNull());
   return ansicht;
 };
@@ -101,7 +101,7 @@ describe('Reiter „Wartet": orange Zahl der wartenden Beitraege', () => {
 
   it('bei 0 wartenden keine Zahl', async () => {
     beitraege = [beitrag(3, 'approved'), beitrag(4, 'hidden')];
-    const { container } = render(<ChallengeLeitungModal challenge={challenge as never} onClose={vi.fn()} />);
+    const { container } = render(<ChallengeLeitungView challenge={challenge as never} onBack={vi.fn()} />);
     await waitFor(() => expect(container.textContent).toContain('Beitrag 3'));
     expect(knopf(container, 'pending').textContent).toBe('Wartet');
     expect(knopf(container, 'pending').querySelector('.app-segment-zahl')).toBeNull();
@@ -109,7 +109,7 @@ describe('Reiter „Wartet": orange Zahl der wartenden Beitraege', () => {
 
   it('dasselbe Bauteil wie der Umschalter Aktuell/Geplant/Archiv, keine Abschrift', () => {
     const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
-    const modal = lies('src/components/admin/modals/ChallengeLeitungModal.tsx');
+    const modal = lies('src/components/admin/views/ChallengeLeitungView.tsx');
     const liste = lies('src/components/admin/views/ChallengesManageView.tsx');
     expect(modal).toContain("import SegmentZahl from '../../shared/SegmentZahl'");
     expect(liste).toContain("import SegmentZahl from '../../shared/SegmentZahl'");
