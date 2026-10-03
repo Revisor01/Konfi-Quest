@@ -63,6 +63,19 @@ kommen per Mail.
     Ein Super-Admin kann Mitglied in Gemeinden sein (wie heute) oder ein
     Support-Konto ganz ohne Gemeinde haben. Wie das technisch geht, wird am
     Code geprüft (unten, „Offen").
+12. **Konto ohne Gemeinde: die Gemeinde am Konto wird optional** (Simon,
+    03.10.2026, nach der Prüfung unten): `users.organization_id` nullable,
+    nur für Super-Admins, mit einer gemeindefreien Systemrolle — keine
+    versteckte Betriebs-Gemeinde.
+13. **Support arbeitet nur im Browser.** Meldet sich ein Konto ohne Gemeinde
+    in einer App an, alt oder neu, kommt ein klarer Hinweis auf die
+    Support-Ansicht im Browser.
+14. **Support darf als Gast in eine Gemeinde**, nur auf ausdrücklichen
+    Schritt und für die Gemeinde sichtbar: Das Konto steht dann als
+    Gemeindeleitung in ihrer Benutzerliste, solange es eingetragen ist.
+15. **Simons eigenes Konto bleibt, wie es ist** (Gemeindeleitung in seiner
+    Gemeinde mit Super-Admin-Merkmal). Das Support-Konto ist ein zweites,
+    eigenes Konto.
 
 ## Vorschlag
 
