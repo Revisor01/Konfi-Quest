@@ -167,3 +167,19 @@ export const antwortVorschau = (
   if (art === 'poll') return 'Umfrage';
   return inhalt || '';
 };
+
+/**
+ * Setzt diese Nachricht die vorige desselben Absenders fort (Web-Fassung:
+ * dann steht Name und Kreis nur einmal)? Ja, wenn derselbe Absender am
+ * selben Tag innerhalb von fuenf Minuten weiterschreibt. Geloeschte
+ * Nachrichten (Platzhalter-Zeile) setzen nichts fort.
+ */
+export const setztFort = (vorige: Message | undefined, nachricht: Message): boolean => {
+  if (!vorige || vorige.deleted || nachricht.deleted) return false;
+  if (vorige.sender_id !== nachricht.sender_id || vorige.sender_type !== nachricht.sender_type) return false;
+  const von = new Date(vorige.created_at);
+  const bis = new Date(nachricht.created_at);
+  if (isNaN(von.getTime()) || isNaN(bis.getTime())) return false;
+  if (von.toDateString() !== bis.toDateString()) return false;
+  return bis.getTime() - von.getTime() < 5 * 60 * 1000;
+};

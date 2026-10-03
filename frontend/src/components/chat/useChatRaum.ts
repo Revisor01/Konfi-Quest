@@ -66,9 +66,11 @@ interface ChatRaumDeps {
   lesenNurSichtbar?: boolean;
   /** Klasse fuer die Fenster Mitglieder und Umfrage (die Web-Fassung macht sie breiter). */
   modalKlasse?: string;
+  /** Text, mit dem die Eingabe beginnt (Web: der Entwurf dieses Raums). */
+  anfangsText?: string;
 }
 
-export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar = false, modalKlasse }: ChatRaumDeps) {
+export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar = false, modalKlasse, anfangsText = '' }: ChatRaumDeps) {
   const { user, setError, isOnline } = useApp();
   const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts, chatUnreadByRoom } = useBadge();
   // Anzahl ungelesener Nachrichten beim Oeffnen EINMAL einfrieren (bevor
@@ -173,7 +175,7 @@ export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar 
     return () => { aktiv = false; };
   }, [room?.id]);
 
-  const [messageText, setMessageText] = useState('');
+  const [messageText, setMessageText] = useState(anfangsText);
   // Datei-Auswahl (Kamera, Galerie, Kompression, 10MB-Grenze) und das Oeffnen
   // empfangener Dateien liegen gebuendelt in useChatDateien.
   const {
@@ -774,6 +776,11 @@ export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar 
     isOnline,
     setError,
     messages,
+    // Sind die Nachrichten schon angekommen (aus Cache oder vom Server) UND in
+    // die Liste uebernommen? Davor ist "noch keine Nachrichten" keine Aussage:
+    // Zwischen dem Eintreffen und dem Uebernehmen liegt ein Durchgang mit leerer Liste.
+    nachrichtenGeladen: initialMessages !== null && initialMessages !== undefined
+      && (initialMessages.length === 0 || messages.length > 0),
     loadMessages,
     // Verlauf oben
     anfangBei,

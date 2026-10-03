@@ -1,0 +1,1234 @@
+/* ===================================================================
+   Chat in der Web-Fassung (03.10.2026, docs/planung/web-alle-bereiche.md,
+   Entscheidung 6): ein Messenger wie WhatsApp Web -- links die Raeume,
+   rechts der geoeffnete Raum.
+
+   Gilt nur fuer die Web-Komponenten in components/chat/web/ (Browser ab
+   992 px, navigation/breitesLayout.ts); die App und das schmale Fenster
+   rendern ihren Chat ohne diese Klassen. Es gelten die Regeln von
+   web-ansicht.css: Praefix web-, nur Tokens (--app-, --ion-, --web-),
+   der Dunkelmodus kommt ueber die Tokens, keine Uebergaenge und
+   Animationen, kein Eingriff in Ionic-Bausteine.
+
+   Tinten (die eigene Blase, der Hinweis am Rand) entstehen per
+   color-mix aus dem Chat-Token -- im Dunkeln mischt es sich mit der
+   dunklen Karte, ohne eigenen Farbwert.
+   =================================================================== */
+
+/* --- Die Seite: Liste links, Raum rechts, ohne eigenen Scroll --- */
+.web-chat-seite {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  background: var(--web-grund);
+  color: var(--web-text);
+  font-size: var(--app-text-sekundaer);
+  line-height: 1.45;
+}
+
+.web-chat {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.web-chat *,
+.web-chat *::before,
+.web-chat *::after {
+  box-sizing: border-box;
+}
+
+/* --- Die Raumliste links --- */
+.web-chat-liste {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--web-karte);
+  border-right: 1px solid var(--web-linie);
+}
+
+.web-chat-liste__kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-mittelweit) var(--app-abstand-basis) var(--app-abstand-eng);
+}
+
+.web-chat-liste__titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-untertitel);
+  font-weight: var(--app-schrift-fett);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.web-chat-liste__werkzeuge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  padding: 0 var(--app-abstand-basis) var(--app-abstand-mittel);
+  border-bottom: 1px solid var(--web-linie-leise);
+}
+
+/* Das Suchfeld der Web-Fassung ist fuer eine Werkzeugleiste gebaut (360 bis
+   560 px); in der schmalen Spalte fuellt es sie. */
+.web-chat-liste .web-suche {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: none;
+}
+
+.web-chat-liste .web-chips {
+  gap: var(--app-abstand-kompakt);
+}
+
+.web-chat-liste .web-chip {
+  min-height: 30px;
+  padding: 0 var(--app-abstand-mittel);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-chat-liste__raeume {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.web-chat-liste__eintraege {
+  margin: 0;
+  padding: var(--app-abstand-eng);
+  list-style: none;
+}
+
+.web-chat-liste__laden {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-basis);
+}
+
+.web-chat-liste__skelett {
+  height: 56px;
+  border-radius: var(--app-radius-karte);
+}
+
+/* Eine Zeile der Liste: ein echter Link. */
+a.web-chat-zeile {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-mittel) var(--app-abstand-mittel);
+  border-radius: var(--app-radius-karte);
+  color: var(--web-text);
+  text-decoration: none;
+}
+
+a.web-chat-zeile:hover {
+  background: var(--web-hover);
+  text-decoration: none;
+}
+
+a.web-chat-zeile.web-chat-zeile--offen {
+  background: color-mix(in srgb, var(--ion-color-primary) 12%, var(--web-karte));
+}
+
+a.web-chat-zeile:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
+.web-chat-zeile__text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--app-abstand-winzig);
+  min-width: 0;
+}
+
+.web-chat-zeile__oben,
+.web-chat-zeile__unten {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+}
+
+.web-chat-zeile__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-halbfett);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-chat-zeile--ungelesen .web-chat-zeile__name {
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-chat-zeile__zeit {
+  flex: 0 0 auto;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-klein);
+  font-variant-numeric: tabular-nums;
+}
+
+.web-chat-zeile--ungelesen .web-chat-zeile__zeit {
+  color: var(--app-text-chat);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-chat-zeile__vorschau {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Die Art des Raums (Gruppe, Direkt, Team ...) steht vor der Vorschau, damit
+   sie nicht nur an der Farbe des Kreises hing. */
+.web-chat-zeile__art {
+  margin-right: var(--app-abstand-kompakt);
+  padding: 0 var(--app-abstand-kompakt);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-fein);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-mini);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.web-chat-zeile__absender {
+  color: var(--web-text);
+  font-weight: var(--app-schrift-mittel);
+}
+
+/* Die rote Zahl: wie die an den Reitern der Leiste. */
+.web-chat-zahl {
+  flex: 0 0 auto;
+  min-width: 22px;
+  padding: 0 var(--app-abstand-kompakt);
+  border-radius: var(--app-radius-gross);
+  background: var(--app-color-danger);
+  color: var(--app-weiss);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-fett);
+  line-height: 22px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Der Kreis eines Raums: Symbol auf der Farbe seiner Art -- dieselben
+   Farben wie die Kreise der App-Liste. */
+.web-chat-kreis {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-konfis);
+  color: var(--app-weiss);
+  font-size: var(--app-text-titel);
+}
+
+.web-chat-kreis--events { background: var(--app-color-events); }
+.web-chat-kreis--chat-jahrgang { background: var(--app-color-chat-dunkel); }
+.web-chat-kreis--team { background: var(--app-color-teamer); }
+.web-chat-kreis--group { background: var(--app-color-bonus-hover); }
+.web-chat-kreis--konfi { background: var(--app-color-konfis); }
+
+/* --- Rechts: der Raum oder der Hinweis "Chat auswaehlen" --- */
+.web-chat-haupt {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--web-grund);
+}
+
+.web-chat-haupt__leer {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.web-chat-haupt__zustand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--app-abstand-basis);
+  padding: var(--app-abstand-gross);
+}
+
+.web-chat-haupt__skelett {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--app-radius-karte);
+}
+
+.web-chat-raum {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.web-chat-raum__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
+  background: var(--web-karte);
+  border-bottom: 1px solid var(--web-linie);
+}
+
+.web-chat-raum__titel {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.web-chat-raum__name {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-fett);
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-chat-raum__untertitel {
+  margin: 0;
+  overflow: hidden;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-chat-raum__aktionen {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  font-size: var(--app-text-titel);
+}
+
+.web-chat-raum__aktionen .web-knopf--symbol,
+.web-chat-eingabe .web-knopf--symbol {
+  font-size: var(--app-text-titel);
+}
+
+/* Ein Menue hinter einem Knopf (WebMenue). */
+.web-menue {
+  position: relative;
+}
+
+.web-menue__liste {
+  position: absolute;
+  top: calc(100% + var(--app-abstand-mini));
+  right: 0;
+  z-index: 20;
+  min-width: 240px;
+  margin: 0;
+  padding: var(--app-abstand-mini);
+  list-style: none;
+  background: var(--web-karte);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  box-shadow: var(--app-schatten-schwebend);
+}
+
+.web-menue__eintrag {
+  display: block;
+  width: 100%;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 0;
+  border-radius: var(--app-radius-klein);
+  background: transparent;
+  color: var(--web-text);
+  font: inherit;
+  font-size: var(--app-text-sekundaer);
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-menue__eintrag:hover:not([disabled]),
+.web-menue__eintrag:focus-visible {
+  background: var(--web-hover);
+}
+
+.web-menue__eintrag:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
+.web-menue__eintrag[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.web-menue__eintrag--gefahr {
+  color: var(--app-text-fehler);
+}
+
+/* --- Der Verlauf: ein eigener Scrollbereich zwischen Kopf und Eingabe --- */
+.web-chat-verlauf {
+  flex: 1 1 auto;
+  min-height: 0;
+  --background: transparent;
+  --padding-start: var(--app-abstand-gross);
+  --padding-end: var(--app-abstand-gross);
+  /* Oben und unten kein Innenabstand der Seite: Der klebende Tages-Trenner
+     misst von der Innenkante, sein Abstand nach oben soll null sein. Den
+     Abstand traegt die Liste selbst. */
+  --padding-top: 0;
+  --padding-bottom: 0;
+  /* Die Leiste links deckelt Inhalte auf --app-lesebreite (Seitenleiste.css);
+     der Verlauf nutzt die ganze Breite des Raums. */
+  --app-lesebreite: 100000px;
+}
+
+.web-chat-verlaufsliste {
+  position: relative;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding-bottom: var(--app-abstand-basis);
+}
+
+/* Kopf des Verlaufs: behaelt seine Hoehe, damit nichts springt. */
+.web-chat-anfang {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  text-align: center;
+}
+
+.web-chat-anfang__knopf {
+  padding: var(--app-abstand-mini) var(--app-abstand-eng);
+  border: 0;
+  background: transparent;
+  color: var(--web-text);
+  font: inherit;
+  font-weight: var(--app-schrift-halbfett);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.web-chat-anfang__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Tages-Trenner: klebt oben, solange der Tag auf dem Bildschirm steht. */
+.web-chat-tag {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding: var(--app-abstand-eng) 0;
+  pointer-events: none;
+}
+
+.web-chat-tag span {
+  padding: var(--app-abstand-mini) var(--app-abstand-mittelweit);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-gross);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-fein);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-chat-neu {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin: var(--app-abstand-schmal) 0;
+  color: var(--app-text-events);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-chat-neu::before,
+.web-chat-neu::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--app-color-events);
+}
+
+.web-chat-leer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-block) var(--app-abstand-gross);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-sekundaer);
+  text-align: center;
+}
+
+.web-chat-leer__symbol {
+  font-size: var(--app-anzeige-basis);
+}
+
+.web-chat-leer p {
+  margin: 0;
+}
+
+/* "Nach unten" */
+.web-chat-runter {
+  position: absolute;
+  right: var(--app-abstand-gross);
+  bottom: var(--app-abstand-gross);
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.web-chat-runter--sichtbar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.web-chat-runter__knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-kreis);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-karte);
+  color: var(--web-text);
+  font-size: var(--app-text-titel);
+  cursor: pointer;
+}
+
+.web-chat-runter__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* --- Eine Nachricht --- */
+.web-chat-nachricht {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--app-abstand-eng);
+  margin-top: var(--app-abstand-eng);
+  outline: none;
+}
+
+.web-chat-nachricht--fortsetzung {
+  margin-top: var(--app-abstand-winzig);
+}
+
+.web-chat-nachricht--eigene {
+  flex-direction: row-reverse;
+}
+
+.web-chat-nachricht--wartet .web-chat-blase {
+  opacity: 0.7;
+}
+
+.web-chat-nachricht--hervorgehoben .web-chat-blase {
+  border-color: var(--app-color-chat);
+  box-shadow: var(--app-schatten-karte);
+}
+
+.web-chat-spalte {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-width: min(75%, 640px);
+  min-width: 0;
+}
+
+.web-chat-nachricht--eigene .web-chat-spalte {
+  align-items: flex-end;
+}
+
+.web-chat-blase {
+  max-width: 100%;
+  min-width: 0;
+  padding: var(--app-abstand-schmal) var(--app-abstand-mittelweit);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-gross);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-fein);
+  color: var(--web-text);
+}
+
+.web-chat-nachricht--eigene .web-chat-blase {
+  border-color: color-mix(in srgb, var(--app-color-chat) 35%, var(--web-karte));
+  background: color-mix(in srgb, var(--app-color-chat) 16%, var(--web-karte));
+}
+
+.web-chat-avatar {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-konfis);
+  color: var(--app-weiss);
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-chat-avatar--teamer { background: var(--app-color-teamer); }
+.web-chat-avatar--admin { background: var(--app-color-leitung); }
+.web-chat-avatar--platz { background: transparent; }
+
+.web-chat-absender {
+  margin-bottom: var(--app-abstand-mini);
+  color: var(--app-text-chat);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-chat-absender__rolle {
+  margin-left: var(--app-abstand-kompakt);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-meta);
+  font-weight: var(--app-schrift-normal);
+}
+
+.web-chat-text {
+  font-size: var(--app-text-basis);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.web-chat-text--vor-datei {
+  margin-bottom: var(--app-abstand-eng);
+}
+
+.web-chat-text--geloescht {
+  color: var(--web-text-leise);
+  font-style: italic;
+}
+
+.web-chat-link {
+  color: inherit;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.web-chat-link:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-chat-geloescht {
+  display: flex;
+  justify-content: center;
+  margin: var(--app-abstand-eng) 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-sekundaer);
+  font-style: italic;
+}
+
+.web-chat-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--app-abstand-mini);
+  margin-top: var(--app-abstand-mini);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.web-chat-meta__symbol {
+  font-size: var(--app-text-klein);
+}
+
+/* Bezug auf eine beantwortete Nachricht */
+.web-chat-bezug {
+  display: block;
+  width: 100%;
+  margin-bottom: var(--app-abstand-eng);
+  padding: var(--app-abstand-kompakt) var(--app-abstand-schmal);
+  border: 0;
+  border-left: 3px solid var(--app-color-chat);
+  border-radius: var(--app-radius-klein);
+  background: color-mix(in srgb, var(--app-color-chat) 10%, var(--web-karte));
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-chat-bezug:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-chat-bezug__name {
+  display: block;
+  color: var(--app-text-chat);
+  font-size: var(--app-text-meta);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-chat-bezug__text {
+  display: block;
+  overflow: hidden;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Bild, Video und Datei in der Blase */
+.web-chat-bild__name {
+  margin-top: var(--app-abstand-mini);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-klein);
+}
+
+.web-chat-datei {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-schmal);
+  width: 100%;
+  min-width: 220px;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-klein);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-chat-datei:hover {
+  background: var(--web-hover);
+}
+
+.web-chat-datei:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-chat-datei__text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-chat-datei__name {
+  overflow: hidden;
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-halbfett);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-chat-datei__groesse {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-klein);
+}
+
+/* Nicht gesendet: der Grund und der Weg weiter, direkt an der Nachricht */
+.web-chat-fehler {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin-top: var(--app-abstand-mini);
+  color: var(--app-text-fehler);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-chat-fehler__text {
+  font-weight: var(--app-schrift-mittel);
+}
+
+.web-chat-fehler__knopf {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--app-schrift-halbfett);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.web-chat-fehler__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Reaktionen unter der Blase */
+.web-chat-reaktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-mini);
+  margin-top: var(--app-abstand-mini);
+}
+
+.web-chat-nachricht--eigene .web-chat-reaktionen {
+  justify-content: flex-end;
+}
+
+.web-chat-reaktion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  padding: var(--app-abstand-winzig) var(--app-abstand-eng);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-mittel);
+  cursor: pointer;
+}
+
+.web-chat-reaktion[aria-pressed='true'] {
+  border-color: var(--app-color-chat);
+  background: color-mix(in srgb, var(--app-color-chat) 14%, var(--web-karte));
+}
+
+.web-chat-reaktion:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Aktionsleiste: erscheint beim Ueberfahren und bei Fokus -- per Tastatur und
+   auf dem iPad (Fokus durch Antippen) ohne Mausueberfahren erreichbar. */
+.web-chat-aktionen {
+  position: absolute;
+  top: calc(var(--app-abstand-gross) * -1);
+  right: var(--app-abstand-eng);
+  z-index: 2;
+  display: flex;
+  gap: var(--app-abstand-winzig);
+  padding: var(--app-abstand-winzig);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-flach);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.web-chat-nachricht--eigene .web-chat-aktionen {
+  right: auto;
+  left: var(--app-abstand-eng);
+}
+
+.web-chat-nachricht:hover .web-chat-aktionen,
+.web-chat-nachricht:focus-within .web-chat-aktionen,
+.web-chat-aktionen--offen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.web-chat-aktion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--app-radius-klein);
+  background: transparent;
+  color: var(--web-text);
+  font-size: var(--app-text-gross);
+  cursor: pointer;
+}
+
+.web-chat-aktion:hover {
+  background: var(--web-hover);
+}
+
+.web-chat-aktion:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
+.web-chat-aktion--gefahr {
+  color: var(--app-text-fehler);
+}
+
+/* Reaktions-Picker unter der Blase */
+.web-chat-picker {
+  display: flex;
+  gap: var(--app-abstand-winzig);
+  margin-top: var(--app-abstand-eng);
+  padding: var(--app-abstand-kompakt) var(--app-abstand-schmal);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-gross);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-schwebend);
+}
+
+.web-chat-picker__knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--app-radius-kreis);
+  background: transparent;
+  font-size: var(--app-text-untertitel);
+  cursor: pointer;
+}
+
+.web-chat-picker__knopf:hover {
+  background: var(--web-hover);
+}
+
+.web-chat-picker__knopf[aria-pressed='true'] {
+  border-color: var(--app-color-chat);
+}
+
+.web-chat-picker__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* --- Umfrage in der Blase --- */
+.web-chat-umfrage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  min-width: min(360px, 100%);
+}
+
+.web-chat-umfrage__frage {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-eng);
+  font-size: var(--app-text-standard);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-chat-umfrage__symbol {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-chat-dunkel);
+  color: var(--app-weiss);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-chat-umfrage__ablauf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border-radius: var(--app-radius-klein);
+  background: color-mix(in srgb, var(--app-color-chat) 12%, var(--web-karte));
+  color: var(--app-text-chat);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-chat-umfrage__ablauf--beendet {
+  background: var(--app-flaeche-fehler);
+  color: var(--app-text-fehler);
+  font-weight: var(--app-schrift-mittel);
+}
+
+.web-chat-umfrage__optionen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-chat-option {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  padding: var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-chat-option:hover:not(.web-chat-option--vergeben) {
+  background: var(--web-hover);
+}
+
+.web-chat-option:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-chat-option--gewaehlt {
+  border-color: var(--app-color-chat);
+  box-shadow: inset 0 0 0 1px var(--app-color-chat);
+  background: color-mix(in srgb, var(--app-color-chat) 12%, var(--web-karte));
+}
+
+.web-chat-option--vergeben {
+  background: var(--app-surface-muted);
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Anteil der Stimmen als Balken hinter dem Text (die Breite setzt die Antwort). */
+.web-chat-option__balken {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: color-mix(in srgb, var(--app-color-chat) 14%, transparent);
+}
+
+.web-chat-option__zeile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-chat-option__text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-mittel);
+}
+
+.web-chat-option--gewaehlt .web-chat-option__text {
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-chat-option__stand {
+  flex: 0 0 auto;
+  color: var(--app-text-chat);
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  font-variant-numeric: tabular-nums;
+}
+
+.web-chat-option--vergeben .web-chat-option__stand {
+  color: var(--web-text-leise);
+}
+
+.web-chat-option__namen {
+  position: relative;
+  display: block;
+  margin-top: var(--app-abstand-kompakt);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-klein);
+  line-height: 1.4;
+}
+
+.web-chat-umfrage__fuss {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-mittel);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-klein);
+}
+
+.web-chat-umfrage__fuss span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+}
+
+/* --- Die Eingabe unten --- */
+.web-chat-eingabe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross) var(--app-abstand-eng);
+  background: var(--web-karte);
+  border-top: 1px solid var(--web-linie);
+}
+
+.web-chat-eingabe > * {
+  width: 100%;
+  max-width: 880px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.web-chat-eingabe__zeile {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--app-abstand-eng);
+}
+
+.web-chat-eingabe__feld {
+  flex: 1 1 auto;
+  min-height: 40px;
+  max-height: 200px;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-grund);
+  color: var(--web-text);
+  font: inherit;
+  /* Mindestens 1rem: kleinere Felder zoomt iOS beim Antippen heran. */
+  font-size: var(--app-text-standard);
+  line-height: 1.4;
+  resize: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-chat-eingabe__feld::placeholder {
+  color: var(--web-text-leise);
+}
+
+.web-chat-eingabe__feld:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 1px;
+}
+
+.web-chat-eingabe__hinweis {
+  margin: 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-meta);
+  text-align: right;
+}
+
+.web-chat-eingabe .web-knopf--symbol {
+  flex: 0 0 auto;
+  width: 40px;
+  min-height: 40px;
+  border-radius: var(--app-radius-kreis);
+}
+
+/* Antwort-Bezug und gewaehlte Datei ueber dem Feld */
+.web-chat-streifen {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border-left: 3px solid var(--app-color-chat);
+  border-radius: var(--app-radius-klein);
+  background: color-mix(in srgb, var(--app-color-chat) 10%, var(--web-karte));
+}
+
+.web-chat-streifen__text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-chat-streifen__titel {
+  overflow: hidden;
+  color: var(--app-text-chat);
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-chat-streifen__inhalt {
+  overflow: hidden;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-chat-streifen__bild {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--app-radius-klein);
+  object-fit: cover;
+}
+
+.web-chat-streifen__symbol {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--app-radius-klein);
+  background: color-mix(in srgb, var(--app-color-chat) 15%, var(--web-karte));
+  color: var(--app-text-chat);
+  font-size: var(--app-text-titel-gross);
+}
+
+/* Eine Datei ueber den Raum ziehen */
+.web-chat-ablage {
+  position: absolute;
+  top: var(--app-abstand-eng);
+  right: var(--app-abstand-eng);
+  bottom: var(--app-abstand-eng);
+  left: var(--app-abstand-eng);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--ion-color-primary);
+  border-radius: var(--app-radius-karte);
+  background: color-mix(in srgb, var(--web-karte) 88%, transparent);
+  color: var(--web-text);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-halbfett);
+  pointer-events: none;
+}
+
+/* Die Fenster Mitglieder, Umfrage und Neuer Chat: auf dem breiten Bildschirm
+   ein Dialog in lesbarer Groesse (Ionic setzt sonst 600 x 500). Die Klasse
+   steht am Fenster selbst (cssClass). */
+.web-chat-modal {
+  --width: 640px;
+  --height: min(82vh, 780px);
+}

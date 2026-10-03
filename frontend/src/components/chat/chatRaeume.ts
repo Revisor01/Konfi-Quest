@@ -1,4 +1,4 @@
-import type { ChatRoomOverview } from '../../types/chat';
+import type { ChatParticipant, ChatRoomOverview } from '../../types/chat';
 import { istTeamTyp } from '../../utils/chatRoles';
 import { datumKurz, uhrzeit } from '../../utils/dateUtils';
 import {
@@ -182,9 +182,56 @@ export const zeitImMessenger = (dateString: string | undefined, jetzt: Date = ne
   return datumKurz(date, { ohneJahr: date.getFullYear() === jetzt.getFullYear() });
 };
 
-/** Was in der Raumliste unter dem Namen steht: "Kim: Bis morgen!" bzw. der Dateiname. */
-export const letzteNachrichtText = (room: ChatRoomOverview): { absender: string; text: string } | null => {
+/**
+ * Was in der Raumliste unter dem Namen steht: der Absender und der Text bzw.
+ * der Dateiname der letzten Nachricht.
+ *
+ * App-Liste: immer mit Absendernamen. Messenger-Fassung (`eigenerName` gesetzt):
+ * die eigene Nachricht als "Du", in Direktchats nur der Text der anderen Person
+ * -- dort steht der Name ohnehin darueber.
+ */
+export const letzteNachrichtText = (
+  room: ChatRoomOverview,
+  eigenerName?: string,
+): { absender: string; text: string } | null => {
   const letzte = room.last_message;
   if (!letzte || !(letzte.content || letzte.file_name)) return null;
-  return { absender: letzte.sender_name, text: letzte.content || letzte.file_name || 'Datei' };
+  const text = letzte.content || letzte.file_name || 'Datei';
+  if (eigenerName === undefined) return { absender: letzte.sender_name, text };
+  if (eigenerName !== '' && letzte.sender_name === eigenerName) return { absender: 'Du', text };
+  return { absender: room.type === 'direct' ? '' : letzte.sender_name, text };
+};
+
+/**
+ * Die Art eines Raums in der Raumliste der Web-Fassung: Team-Chats tragen das
+ * Wort "Team" (ein Team-Direktchat "Team · Direkt"), alle anderen ihre Art.
+ * So sind Gruppen, Direktchats und Team auf einen Blick zu unterscheiden --
+ * nicht nur an der Farbe des Kreises.
+ */
+export const raumArtMessenger = (room: ChatRoomOverview): string => {
+  if (istTeamChat(room)) return room.type === 'direct' ? 'Team · Direkt' : 'Team';
+  return raumArt(room);
+};
+
+/**
+ * Die Zeile unter dem Namen im Kopf des Raums: die Art und wer dabei ist --
+ * "Gruppe · Kim, Sam, Robin und 11 weitere". Ohne Namen (sie kommen nicht
+ * mit jeder Antwort) steht die Zahl da; Direktchats nennen keine
+ * Mitglieder, dort weiss man, mit wem man schreibt.
+ */
+export const mitgliederText = (
+  room: { type: string; participants?: ChatParticipant[]; participant_count?: number },
+  userId: number | undefined,
+  art: string,
+): string => {
+  if (room.type === 'direct') return art;
+  const andere = (room.participants ?? []).filter(p => p.user_id !== userId);
+  const gesamt = Math.max(room.participant_count ?? 0, (room.participants ?? []).length);
+  if (andere.length === 0) {
+    return gesamt > 0 ? `${art} · ${gesamt} ${gesamt === 1 ? 'Mitglied' : 'Mitglieder'}` : art;
+  }
+  const namen = andere.slice(0, 3).map(p => p.display_name || p.name || 'Unbekannt');
+  // Wer fehlt in der Aufzaehlung: die uebrigen anderen plus man selbst.
+  const weitere = gesamt - namen.length - 1;
+  return `${art} · ${namen.join(', ')}${weitere > 0 ? ` und ${weitere} weitere` : ''}`;
 };

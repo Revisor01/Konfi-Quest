@@ -14,6 +14,8 @@ import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebChat from '../web/WebChat';
 // Derselbe Raum-Typ, den ChatRoom erwartet. Der fruehere eigene Typ kannte
 // als user_type nur 'admin' | 'konfi' -- Teamer:innen fehlten (Audit
 // 26.09.2026, Screens Konfi/Teamer BF-12).
@@ -24,7 +26,16 @@ interface ChatRoomViewProps {
   onBack: () => void;
 }
 
+// Der Chatraum der App: eine Seite mit Raum und Eingabe. Im Browser ab 992 px
+// zeigt dieselbe Adresse die zweigeteilte Ansicht (Liste links, Raum rechts,
+// web/WebChat) -- dort laedt der rechte Teil den Raum selbst.
 const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
+  const breit = useBreitesLayout();
+  if (breit) return <WebChat roomId={roomId} />;
+  return <ChatRoomAppView roomId={roomId} onBack={onBack} />;
+};
+
+const ChatRoomAppView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
   // Raum-Metadaten per Offline-Cache laden: offline (oder bei Reconnect) zeigt
   // der Cache sofort den Raum, sodass ChatRoom mit seinem Nachrichten-Cache
   // gerendert wird. Vorher war das ein ungecachter api.get -> offline blieb der

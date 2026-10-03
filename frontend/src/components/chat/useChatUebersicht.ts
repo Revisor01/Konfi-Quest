@@ -27,9 +27,17 @@ import { bereinigeRaeume, raeumeFiltern } from './chatRaeume';
 interface ChatUebersichtDeps {
   /** Wird mit dem Raum aufgerufen, der nach "Neuer Chat" geoeffnet werden soll. */
   onSelectRoom: (room: ChatRoomOverview) => void;
+  /**
+   * Womit die Liste beginnt (Web: der Stand vor dem Seitenwechsel): Suchbegriff,
+   * Reiter und die zuletzt geladenen Raeume. Mit ihnen steht die Liste sofort
+   * da, auch wenn der Zwischenspeicher gerade geleert wurde (nach dem Lesen
+   * eines Raums, BadgeContext.markRoomAsRead) -- sonst blitzte sie bei jedem
+   * Raumwechsel kurz als Ladezustand auf.
+   */
+  anfang?: { suche: string; filter: string; raeume?: ChatRoomOverview[] | null };
 }
 
-export function useChatUebersicht({ onSelectRoom }: ChatUebersichtDeps) {
+export function useChatUebersicht({ onSelectRoom, anfang }: ChatUebersichtDeps) {
   const { user, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
   const { chatUnreadByRoom } = useBadge();
@@ -37,8 +45,8 @@ export function useChatUebersicht({ onSelectRoom }: ChatUebersichtDeps) {
   // Objekt -> Listener am frischen Socket neu binden (gleiches Muster wie im
   // BadgeContext).
   const { socketEpoch } = useLiveUpdate();
-  const [searchText, setSearchText] = useState('');
-  const [filterType, setFilterType] = useState<string>('alle');
+  const [searchText, setSearchText] = useState(anfang?.suche ?? '');
+  const [filterType, setFilterType] = useState<string>(anfang?.filter ?? 'alle');
 
   // Loeschrecht: nur Leitung/Admins (so prueft es auch das Backend,
   // DELETE /chat/rooms/:roomId verlangt type === 'admin').
@@ -48,11 +56,14 @@ export function useChatUebersicht({ onSelectRoom }: ChatUebersichtDeps) {
   // hier auf 'admin' geprueft wurde (gleiche Verwechslung wie in chatRoles).
   const gehoertZumTeam = istTeamTyp(user?.type);
 
-  const { data: rooms, loading, refresh } = useOfflineQuery<ChatRoomOverview[]>(
+  const { data: geladeneRaeume, loading: laedt, refresh } = useOfflineQuery<ChatRoomOverview[]>(
     'chat:rooms:' + user?.id,
     () => api.get('/chat/rooms').then(r => r.data),
     { ttl: CACHE_TTL.CHAT_ROOMS, select: bereinigeRaeume }
   );
+  // Ohne Anfangsstand (die App) ist das genau das, was geladen wurde.
+  const rooms = geladeneRaeume ?? anfang?.raeume ?? null;
+  const loading = laedt && !anfang?.raeume;
 
   // Live-Update der Chat-Raeume, wenn Badge Count sich aendert.
   // Das ist der EINZIGE newMessage-getriebene Refresh-Trigger der Uebersicht:
