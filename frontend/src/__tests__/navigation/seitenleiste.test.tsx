@@ -333,10 +333,12 @@ describe('Eintraege je Rolle aus den Rollenbaeumen', () => {
     ]);
   });
 
-  it('super_admin (ohne Reiter): Gemeinden und Betrieb, kein Profil', () => {
+  it('super_admin (ohne Reiter): die Bereiche der Support-Ansicht, kein Profil', () => {
+    // Nach dem Zusammenfuehren mit der Support-Ansicht (Paket C, 03.10.2026)
+    // traegt der Baum super_admin die sechs Bereiche aus supportMenue.ts.
     zustand.konto = KONTEN.super_admin;
-    zeigeLeiste('/admin/organizations');
-    expect(linkNamen(leiste()!)).toEqual(['Gemeinden', 'Betrieb']);
+    zeigeLeiste('/admin/support');
+    expect(linkNamen(leiste()!)).toEqual(['Übersicht', 'Anfragen', 'Gemeinden', 'Struktur', 'Support-Konten', 'Betrieb']);
   });
 
   it('Eintraege mit Gruppe stehen unter ihrer Ueberschrift, ohne Gruppe direkt unter den Reitern', () => {
