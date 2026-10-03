@@ -15,12 +15,12 @@ bleibt das aus; die Support-Ansicht sagt dann „noch nicht eingerichtet".
 
 ## Was zu tun ist
 
-- [ ] **1. Postfächer prüfen.** Sind `moin@` und `support@` echte Postfächer
+- [x] **1. Postfächer prüfen.** Sind `moin@` und `support@` echte Postfächer
       mit eigener IMAP-Anmeldung (nicht nur Weiterleitungen oder Aliase)?
       Ins Ergebnis: je Ja/Nein. Ist eines nur eine Weiterleitung: Simon
       fragen, bevor etwas umgestellt wird.
 
-- [ ] **2. IMAP-Server ermitteln.** Liegt IMAP auf demselben Server wie der
+- [x] **2. IMAP-Server ermitteln.** Liegt IMAP auf demselben Server wie der
       bisherige Versand (`SMTP_HOST`)? Dann ist `MAIL_IMAP_HOST` derselbe
       Name, und der `extra_hosts`-Eintrag der Backends deckt ihn schon ab.
       Sonst braucht jeder Backend-Dienst eine weitere `extra_hosts`-Zeile
@@ -30,7 +30,7 @@ bleibt das aus; die Support-Ansicht sagt dann „noch nicht eingerichtet".
 
       Ins Ergebnis: gleicher Server ja/nein, Zertifikat passt ja/nein.
 
-- [ ] **3. Stack-Variablen in Portainer setzen** (Stack 249):
+- [x] **3. Stack-Variablen in Portainer setzen** (Stack 249):
       `MAIL_IMAP_HOST`, `MAIL_IMAP_PORT` (nur wenn nicht 993),
       `MAIL_MOIN_USER`, `MAIL_MOIN_PASS`, `MAIL_SUPPORT_USER`,
       `MAIL_SUPPORT_PASS`. SMTP braucht nichts Eigenes: Antworten gehen über
@@ -40,13 +40,13 @@ bleibt das aus; die Support-Ansicht sagt dann „noch nicht eingerichtet".
       SMTP-Server oder Port nennt, zusätzlich `MAIL_SMTP_HOST` und
       `MAIL_SMTP_PORT`. Ins Ergebnis: ob das nötig war (ja/nein).
 
-- [ ] **4. Stack-Datei ergänzen.** In der Stack-Datei in Portainer im Block
+- [x] **4. Stack-Datei ergänzen.** In der Stack-Datei in Portainer im Block
       `environment: &backend_env` dieselben Zeilen eintragen wie in der
       Referenzkopie [deploy/compose.konfi_quest.yml](../../../deploy/compose.konfi_quest.yml)
       (Abschnitt „Support-Mail"). Erst nach dem Merge des PRs „Support-Mail"
       aktiv; vorher schaden die Zeilen nicht.
 
-- [ ] **5. Anmeldung prüfen, ohne Mails zu lesen.** Mit `EXAMINE` statt
+- [x] **5. Anmeldung prüfen, ohne Mails zu lesen.** Mit `EXAMINE` statt
       `SELECT` (nur lesen, keine Flags):
 
           openssl s_client -quiet -connect <MAIL_IMAP_HOST>:993 -servername <MAIL_IMAP_HOST>
@@ -67,4 +67,26 @@ bleibt das aus; die Support-Ansicht sagt dann „noch nicht eingerichtet".
 
 ## Ergebnis
 
-(vom lokalen Agenten auszufüllen)
+03.10.2026 (lokaler Agent):
+
+1. moin@ ja, support@ ja — beide echte Postfächer mit eigener
+   IMAP-Anmeldung, je 1 GB, kein Alias. team@ leitet an moin@ weiter.
+2. IMAP liegt auf demselben Server wie `SMTP_HOST` (`MAIL_IMAP_HOST` =
+   `SMTP_HOST`, `extra_hosts` deckt ihn ab). Zertifikat auf 993 passt.
+3. Gesetzt: `MAIL_IMAP_HOST`, `MAIL_MOIN_USER`, `MAIL_MOIN_PASS`,
+   `MAIL_SUPPORT_USER`, `MAIL_SUPPORT_PASS`. `MAIL_IMAP_PORT` nicht nötig;
+   `MAIL_SMTP_HOST`/`MAIL_SMTP_PORT` nicht nötig. Die Anmeldung von moin@
+   ist dieselbe wie `SMTP_USER`/`SMTP_PASS`.
+4. Stack-Datei: Block „Support-Mail" in `&backend_env`, in zwei Stufen
+   ausgerollt (erst backend2, dann backend und backend-test), ohne Lücke;
+   Postgres und Frontend unberührt. Alle drei Backends tragen die acht
+   `MAIL_`-Variablen, auch backend-test.
+5. Anmeldung mit `EXAMINE`: moin@ ok, support@ ok. moin@ hat einen Ordner
+   „Sent" **ohne** `\Sent`-Markierung; support@ hat noch keinen
+   Gesendet-Ordner.
+6. Offen bis zum Deploy.
+
+Für den Code daraus (eingeflossen in den PR „Support-Mail"): Gesendet-Ordner
+über `\Sent`, sonst über den Namen suchen, fehlt er, anlegen; Abholen nur
+auf dem Cron-Leader; auf backend-test (`RUN_BACKGROUND_JOBS=false`) weder
+Abholen noch Versand.
