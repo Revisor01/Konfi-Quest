@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n309 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n311 Operationen."
   },
   "servers": [
     {
@@ -42,7 +42,7 @@
     },
     {
       "name": "Support",
-      "description": "Support-Ansicht der Web-Version: das öffentliche Anfrageformular (POST /api/anfragen) und unter /api/support Anfragen, Landeskirchen und Kirchenkreise, Statistik und die Support-Mail -- Posteingang, Verlauf, Antworten, Textbausteine, Fußzeile (nur Super-Admin)."
+      "description": "Support-Ansicht der Web-Version: das öffentliche Anfrageformular (POST /api/anfragen) und unter /api/support Anfragen, Landeskirchen und Kirchenkreise, Statistik, die Übersicht (Dashboard) und die Gemeindeliste mit Gemeindeleitung sowie die Support-Mail -- Posteingang, Verlauf, Antworten, Textbausteine, Fußzeile (nur Super-Admin). Interne Gemeinden (organizations.intern) stehen in keiner Liste und keiner Zahl."
     },
     {
       "name": "Abzeichen",
@@ -1478,10 +1478,10 @@
           "Organisationen"
         ],
         "summary": "Alle Organisationen mit Team-/Konfi-Zaehlern (nur Super-Admin)",
-        "description": "Seit 03.10.2026 (Migration 191, nur neue Felder): kirchenkreis_id (aus organizations.*), dazu landeskirche_id und landeskirche aus dem zugeordneten Kirchenkreis (sonst null). Alle bisherigen Felder bleiben, auch die Textspalte kirchenkreis.\n",
+        "description": "Seit 03.10.2026 (Migration 191, nur neue Felder): kirchenkreis_id (aus organizations.*), dazu landeskirche_id und landeskirche aus dem zugeordneten Kirchenkreis (sonst null). Alle bisherigen Felder bleiben, auch die Textspalte kirchenkreis.\nINTERNE GEMEINDEN AUSGENOMMEN (seit 03.10.2026, Migration 194): Gemeinden mit organizations.intern = true -- die Review- und Test-Gemeinden fuer die Stores -- stehen nicht in der Liste. Sie ist die Gemeinde-Auswahl der Support-Ansicht (Mails zuordnen, Posteingang) und der Verwaltung. Die Antwortform bleibt GLEICH: nur weniger Eintraege, kein neues Feld (intern waere hier immer false und wird weggelassen). Zugriff ueber die Kennung (GET und PUT /organizations/{id}) bleibt moeglich; GET zeigt intern.\n",
         "responses": {
           "200": {
-            "description": "Array aller Orgs: organizations.* (seit 03.10.2026 mit kirchenkreis_id) inkl. user_count/konfi_count/event_count, dazu landeskirche_id und landeskirche"
+            "description": "Array aller Orgs ausser den internen: organizations.* (seit 03.10.2026 mit kirchenkreis_id, ohne intern) inkl. user_count/konfi_count/event_count, dazu landeskirche_id und landeskirche"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -2020,7 +2020,7 @@
         ],
         "responses": {
           "200": {
-            "description": "SELECT * + user/teamer/admin/konfi/... counts; dazu wunsch_lizenz (seit 03.10.2026, Migration 192) -- die Wunschlizenz aus der juengsten Anfrage, aus der die Gemeinde entstanden ist, sonst null"
+            "description": "SELECT * + user/teamer/admin/konfi/... counts; dazu wunsch_lizenz (seit 03.10.2026, Migration 192) -- die Wunschlizenz aus der juengsten Anfrage, aus der die Gemeinde entstanden ist, sonst null; intern (Migration 194, additiv) gehoert zu organizations.*: auch eine interne Gemeinde ist ueber die Kennung lesbar"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -3293,6 +3293,7 @@
           "Support"
         ],
         "summary": "Kirchenkreise mit Landeskirche und Zahl der zugeordneten Gemeinden",
+        "description": "anzahl_gemeinden zaehlt keine internen Gemeinden (organizations.intern).",
         "responses": {
           "200": {
             "description": "Array: zuerst die ohne Landeskirche, dann nach Landeskirche und Name",
@@ -3471,7 +3472,7 @@
           "Support"
         ],
         "summary": "Kirchenkreis loeschen -- die Gemeinden bleiben, ohne Zuordnung",
-        "description": "Setzt organizations.kirchenkreis_id UND die gespiegelte Textspalte kirchenkreis der zugeordneten Gemeinden auf NULL, dann loeschen -- in einer Transaktion.\n",
+        "description": "Setzt organizations.kirchenkreis_id UND die gespiegelte Textspalte kirchenkreis der zugeordneten Gemeinden auf NULL, dann loeschen -- in einer Transaktion. gemeinden_ohne_zuordnung meldet die sichtbaren Gemeinden; interne verlieren die Zuordnung ebenfalls, zaehlen aber nicht mit.\n",
         "parameters": [
           {
             "name": "id",
@@ -3495,7 +3496,8 @@
                       "description": "'Kirchenkreis gelöscht'"
                     },
                     "gemeinden_ohne_zuordnung": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "Gemeinden, die die Zuordnung verlieren, ohne interne"
                     }
                   }
                 }
@@ -3528,7 +3530,7 @@
           "Support"
         ],
         "summary": "Statistik je Gemeinde -- Konten je Rolle, aktive Konten, Jahrgaenge; ohne Namen von Personen",
-        "description": "Alle Gemeinden (auch gesperrte und solche ohne Konten), nach Name. Zusammenfassen je Kirchenkreis und Landeskirche macht die Oberflaeche. KONTEN je Gemeinde aus beiden Quellen der Zugehoerigkeit (utils/orgMitglieder.js, zaehleKontenJeGemeinde): Rolle je Gemeinde (Stamm users.role_id, weitere user_organizations.role_id; steht die Stamm-Gemeinde in beiden, zaehlt die Person einmal mit der Rolle am Konto); geloeschte und gesperrte Konten nicht; Support-Konten ohne Gemeinde nicht, auch nicht als Gast. AKTIV_30_TAGE: davon die Konten mit Anmeldung (last_login_at) oder erneuerter Anmeldung (Refresh-Token) in den letzten 30 Tagen -- je Konto, wer in zwei Gemeinden mitarbeitet, zaehlt in beiden. KIRCHENKREIS und LANDESKIRCHE aus der Zuordnung (kirchenkreis_id), nicht aus dem Freitext.\n",
+        "description": "Alle Gemeinden (auch gesperrte und solche ohne Konten), nach Name -- ausser den internen (organizations.intern, seit 03.10.2026; Migration 194). Zusammenfassen je Kirchenkreis und Landeskirche macht die Oberflaeche. KONTEN je Gemeinde aus beiden Quellen der Zugehoerigkeit (utils/orgMitglieder.js, zaehleKontenJeGemeinde): Rolle je Gemeinde (Stamm users.role_id, weitere user_organizations.role_id; steht die Stamm-Gemeinde in beiden, zaehlt die Person einmal mit der Rolle am Konto); geloeschte und gesperrte Konten nicht; Support-Konten ohne Gemeinde nicht, auch nicht als Gast. AKTIV_30_TAGE: davon die Konten mit Anmeldung (last_login_at) oder erneuerter Anmeldung (Refresh-Token) in den letzten 30 Tagen -- je Konto, wer in zwei Gemeinden mitarbeitet, zaehlt in beiden. KIRCHENKREIS und LANDESKIRCHE aus der Zuordnung (kirchenkreis_id), nicht aus dem Freitext.\n",
         "responses": {
           "200": {
             "description": "{ stand, gemeinden }",
@@ -3628,7 +3630,86 @@
             "requireSuperAdmin"
           ],
           "org-scope": false,
-          "objekt-pruefung": "keine (alle Gemeinden); keine Personennamen in der Antwort"
+          "objekt-pruefung": "keine (alle Gemeinden ausser den internen); keine Personennamen in der Antwort"
+        }
+      }
+    },
+    "/api/support/uebersicht": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Übersicht (Dashboard) -- Kennzahlen, Entwicklung über 12 Monate, Aktivität über 12 Wochen, neueste Anfragen und Mails, Testphasen",
+        "description": "Das Dashboard der Web-Ansicht (docs/planung/support-web.md, routes/supportUebersicht.js). INTERNE GEMEINDEN (organizations.intern) zaehlen nirgends mit; Mails werden nicht nach intern gefiltert.\nZEITRAEUME: Kalendermonate und ISO-Wochen (Montag bis Sonntag) in der Zeitzone Europe/Berlin, die laufende eingeschlossen, aeltester bzw. aelteste zuerst, lueckenlos mit 0 -- immer genau 12. Ausgangspunkt ist der Zeitpunkt der Anfrage; weder die Uhr noch die Sitzungszone der Datenbank spielen eine Rolle. Zeilen um Mitternacht Berlin liegen im Berliner Monat bzw. in der Berliner Woche (nicht im UTC-Nachbarn); Wochen tragen das ISO-Jahr (29.12.2025 bis 04.01.2026 ist 2026-W01).\nWELCHE TABELLEN: Antraege = activity_requests (created_at), Buchungen = event_bookings (booking_date, alle Status), Nachrichten = chat_messages (created_at; die Gemeinde kommt vom Raum, chat_rooms). Die Gemeinde einer Zeile ist ihre organization_id; eine Zeile ohne Gemeinde zaehlt nicht.\nKONTEN, einheitlich mit GET /support/statistik: Rolle je Gemeinde ueber beide Quellen der Zugehoerigkeit (utils/orgMitglieder.js, MITGLIEDSCHAFTEN_SQL). In der Entwicklung zaehlt jedes Konto einmal (team oder konfi), sodass konten_gesamt je Monat um konten_neu.konfi + konten_neu.team waechst, solange kein Konto wegfaellt.\nAcht Abfragen fuer die ganze Antwort, keine Schleife ueber Gemeinden. Tests: backend/tests/routes/supportUebersicht.test.js, supportInterneGemeinden.test.js.\n",
+        "responses": {
+          "200": {
+            "description": "{ kennzahlen, entwicklung, aktivitaet, neueste_anfragen, neueste_mails, testphase_endet }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportUebersicht"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine (alle Gemeinden ausser den internen); keine Personennamen ausser Kontaktname und Absender der Anfragen und Mails"
+        }
+      }
+    },
+    "/api/support/gemeinden": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Gemeindeliste mit Zuordnung, Laufzeit, Zählern und Gemeindeleitung",
+        "description": "Alle Gemeinden ausser den internen (organizations.intern), auch gesperrte; sortiert nach Landeskirche, Kirchenkreis und Anzeigename ohne Unterschied zwischen Gross und Klein, Gemeinden ohne Zuordnung zuletzt (ein Kirchenkreis ohne Landeskirche steht nach denen mit Landeskirche, vor Gemeinden ganz ohne Zuordnung). Je Gemeinde die Gemeindeleitung direkt dabei (leitung), damit die Support-Ansicht sofort zum Admin der Gemeinde kommt. Drei Abfragen, keine Schleife ueber Gemeinden. Kollidiert nicht mit /api/support/gemeinden/{id}/... der Support-Mail. Tests: backend/tests/routes/supportGemeinden.test.js, supportInterneGemeinden.test.js.\n",
+        "responses": {
+          "200": {
+            "description": "Array",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SupportGemeinde"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine (alle Gemeinden ausser den internen); Name, Benutzername und E-Mail der Gemeindeleitung in der Antwort"
         }
       }
     },
@@ -3776,8 +3857,8 @@
         "tags": [
           "Support"
         ],
-        "summary": "Posteingang -- nicht zugeordnete eingehende Mails, neueste zuerst",
-        "description": "Nur eingehende Mails ohne Anfrage und Gemeinde, hoechstens 1.000 (die neuesten). auszug: Text ohne zitierte Zeilen, Leerraum zusammengefasst, hoechstens 200 Zeichen. Nicht zugeordnete Mails loescht der naechtliche Lauf nach 180 Tagen (im Postfach bleiben sie).\n",
+        "summary": "Posteingang -- eingehende Mails, nicht zugeordnete (Vorgabe) oder alle, neueste zuerst",
+        "description": "Nur eingehende Mails, hoechstens 1.000 (die neuesten). zuordnung=offen (Vorgabe, wie bisher) liefert nur die ohne Anfrage und Gemeinde -- den Posteingang der App; zuordnung=alle (seit 03.10.2026, additiv) auch die zu einer Anfrage oder Gemeinde -- der Posteingang der Web-Ansicht. Je Mail anfrage_id, organization_id und gemeinde_name (seit 03.10.2026, additiv): bei Zuordnung zu einer Gemeinde deren Anzeigename (display_name, sonst name), bei Zuordnung zu einer Anfrage der Gemeindename aus der Anfrage, sonst null; ohne zuordnung bleiben anfrage_id, organization_id und gemeinde_name null. Mails werden NICHT nach organizations.intern gefiltert: auch Mails zu einer internen Gemeinde stehen da, mit deren Namen. auszug: Text ohne zitierte Zeilen, Leerraum zusammengefasst, hoechstens 200 Zeichen. Nicht zugeordnete Mails loescht der naechtliche Lauf nach 180 Tagen (im Postfach bleiben sie).\n",
         "parameters": [
           {
             "name": "postfach",
@@ -3791,11 +3872,25 @@
               ]
             },
             "description": "filtert; ein anderer Wert 400"
+          },
+          {
+            "name": "zuordnung",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "offen",
+                "alle"
+              ],
+              "default": "offen"
+            },
+            "description": "offen = nur nicht zugeordnete (Vorgabe), alle = alle eingehenden; ein anderer Wert 400"
           }
         ],
         "responses": {
           "200": {
-            "description": "Array",
+            "description": "Array, neueste zuerst",
             "content": {
               "application/json": {
                 "schema": {
@@ -3847,6 +3942,27 @@
                         "items": {
                           "type": "object"
                         }
+                      },
+                      "anfrage_id": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "description": "zugeordnete Anfrage (seit 03.10.2026, additiv)"
+                      },
+                      "organization_id": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "description": "zugeordnete Gemeinde, auch eine interne (seit 03.10.2026, additiv)"
+                      },
+                      "gemeinde_name": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Anzeigename der Gemeinde bzw. Gemeindename der Anfrage; null ohne Zuordnung (seit 03.10.2026, additiv)"
                       }
                     }
                   }
@@ -3855,7 +3971,7 @@
             }
           },
           "400": {
-            "description": "unbekanntes Postfach"
+            "description": "unbekanntes Postfach oder unbekannter Wert fuer zuordnung"
           },
           "403": {
             "description": "Kein Super-Admin"
@@ -18887,7 +19003,421 @@
           },
           "anzahl_gemeinden": {
             "type": "integer",
-            "description": "zugeordnete Gemeinden (zusaetzlich zum Vertrag)"
+            "description": "zugeordnete Gemeinden, interne ausgenommen (zusaetzlich zum Vertrag)"
+          }
+        }
+      },
+      "SupportReiheMonate": {
+        "type": "array",
+        "description": "genau 12 Werte, ein Wert je Monat aus entwicklung.monate, gleiche Reihenfolge (aeltester zuerst), Monate ohne Eintraege als 0",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "SupportReiheWochen": {
+        "type": "array",
+        "description": "genau 12 Werte, ein Wert je Woche aus aktivitaet.wochen, gleiche Reihenfolge (aelteste zuerst), Wochen ohne Eintraege als 0",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "SupportUebersicht": {
+        "type": "object",
+        "description": "GET /api/support/uebersicht -- das Dashboard der Support-Ansicht. Interne Gemeinden (organizations.intern) zaehlen nirgends mit.",
+        "properties": {
+          "kennzahlen": {
+            "type": "object",
+            "properties": {
+              "gemeinden": {
+                "type": "object",
+                "description": "gesperrte Gemeinden (is_active false) stehen nur unter gesperrt; die uebrigen sind testphase, lizenz oder unbegrenzt, sodass gesamt = testphase + lizenz + unbegrenzt + gesperrt",
+                "properties": {
+                  "gesamt": {
+                    "type": "integer"
+                  },
+                  "testphase": {
+                    "type": "integer",
+                    "description": "nicht gesperrt, trial_ends_at gesetzt, is_trial true"
+                  },
+                  "lizenz": {
+                    "type": "integer",
+                    "description": "nicht gesperrt, trial_ends_at gesetzt, is_trial false (Lizenz mit Ablaufdatum)"
+                  },
+                  "unbegrenzt": {
+                    "type": "integer",
+                    "description": "nicht gesperrt, trial_ends_at NULL"
+                  },
+                  "gesperrt": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "konten": {
+                "type": "object",
+                "description": "Konten je Rolle in den Gemeinden: die Rolle gilt je Gemeinde, ueber beide Quellen der Zugehoerigkeit (users.organization_id und user_organizations); ein Konto zaehlt je Rolle hoechstens einmal -- Teamer:in in zwei Gemeinden einmal, Leitung in einer und Teamer:in in einer anderen je einmal. Gesperrte und geloeschte Konten und Support-Konten ohne Gemeinde zaehlen nicht (wie /support/statistik); ein Konto zaehlt, sobald es in mindestens einer nicht internen Gemeinde Mitglied ist.",
+                "properties": {
+                  "konfi": {
+                    "type": "integer"
+                  },
+                  "teamer": {
+                    "type": "integer"
+                  },
+                  "admin": {
+                    "type": "integer"
+                  },
+                  "org_admin": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "aktiv_30_tage": {
+                "type": "integer",
+                "description": "Konten mit Anmeldung oder erneuerter Anmeldung in den letzten 30 Tagen, ueber alle Gemeinden je Konto einmal (die Statistik je Gemeinde zaehlt ein Konto in jeder seiner Gemeinden)"
+              },
+              "anfragen_offen": {
+                "type": "integer",
+                "description": "Anfragen mit Status neu oder in_arbeit"
+              },
+              "mails_ungelesen": {
+                "type": "integer",
+                "description": "alle eingehenden Mails mit gelesen_am NULL, auch zugeordnete und solche zu internen Gemeinden"
+              }
+            }
+          },
+          "entwicklung": {
+            "type": "object",
+            "description": "die letzten 12 Kalendermonate in Berliner Zeit, der laufende eingeschlossen, aeltester zuerst, lueckenlos mit 0",
+            "properties": {
+              "monate": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}$"
+                },
+                "description": "z. B. ['2025-11', ..., '2026-10']"
+              },
+              "gemeinden_neu": {
+                "$ref": "#/components/schemas/SupportReiheMonate"
+              },
+              "konten_neu": {
+                "type": "object",
+                "description": "users.created_at je Monat; jedes Konto genau einmal: team, sobald es in irgendeiner Gemeinde Teamer:in, Admin oder Gemeindeleitung ist, sonst konfi",
+                "properties": {
+                  "konfi": {
+                    "$ref": "#/components/schemas/SupportReiheMonate"
+                  },
+                  "team": {
+                    "$ref": "#/components/schemas/SupportReiheMonate"
+                  }
+                }
+              },
+              "konten_gesamt": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/SupportReiheMonate"
+                  }
+                ],
+                "description": "heute vorhandene Konten (Mitglied einer nicht internen Gemeinde, nicht gesperrt oder geloescht) mit created_at bis zum Monatsende, kumuliert"
+              },
+              "anfragen_neu": {
+                "$ref": "#/components/schemas/SupportReiheMonate"
+              }
+            }
+          },
+          "aktivitaet": {
+            "type": "object",
+            "description": "die letzten 12 ISO-Wochen (Montag bis Sonntag) in Berliner Zeit, die laufende eingeschlossen, aelteste zuerst, lueckenlos mit 0; Gemeinde ueber organization_id der Zeile, interne ausgenommen",
+            "properties": {
+              "wochen": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-W\\d{2}$"
+                },
+                "description": "ISO-Jahr und -Woche, z. B. ['2026-W29', ..., '2026-W40']; die Woche vom 29.12.2025 ist 2026-W01"
+              },
+              "antraege": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/SupportReiheWochen"
+                  }
+                ],
+                "description": "activity_requests (Antraege der Konfis auf Punkte fuer eine Aktivitaet), Zeitpunkt created_at, Gemeinde activity_requests.organization_id"
+              },
+              "buchungen": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/SupportReiheWochen"
+                  }
+                ],
+                "description": "event_bookings (Anmeldungen zu Terminen), Zeitpunkt booking_date, alle Status, auch die automatischen Buchungen bei Pflichtterminen, Gemeinde event_bookings.organization_id"
+              },
+              "nachrichten": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/SupportReiheWochen"
+                  }
+                ],
+                "description": "chat_messages (Chat-Nachrichten, auch Umfragen, auch spaeter geloeschte), Zeitpunkt created_at, Gemeinde chat_rooms.organization_id des Raums"
+              }
+            }
+          },
+          "neueste_anfragen": {
+            "type": "array",
+            "description": "die 5 neuesten Anfragen aller Status, nach created_at absteigend, bei gleichem Zeitpunkt die mit der groesseren Kennung",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "gemeinde": {
+                  "type": "string"
+                },
+                "kontakt_name": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "neu",
+                    "in_arbeit",
+                    "angelegt",
+                    "abgelehnt"
+                  ]
+                },
+                "wunsch_lizenz": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "klein",
+                    "standard",
+                    "plus",
+                    "gross",
+                    "verbund",
+                    null
+                  ]
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "ungelesen": {
+                  "type": "integer",
+                  "description": "ungelesene eingehende Mails zu dieser Anfrage, wie in GET /api/support/anfragen"
+                }
+              }
+            }
+          },
+          "neueste_mails": {
+            "type": "array",
+            "description": "die 5 neuesten EINGEHENDEN Mails, zugeordnet oder nicht, nach gesendet_am absteigend; nicht nach intern gefiltert",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "postfach": {
+                  "type": "string",
+                  "enum": [
+                    "moin",
+                    "support"
+                  ]
+                },
+                "von_name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "von_adresse": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "betreff": {
+                  "type": "string"
+                },
+                "gesendet_am": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "gelesen_am": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "anfrage_id": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "organization_id": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "gemeinde_name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "wie in GET /api/support/mail/eingang"
+                }
+              }
+            }
+          },
+          "testphase_endet": {
+            "type": "array",
+            "description": "laufende Testphasen (is_trial true) nicht gesperrter, nicht interner Gemeinden, die in den naechsten 14 Tagen enden (nach jetzt, bis jetzt + 14 Tage einschliesslich), fruehestes Ende zuerst; Lizenzen mit Ablaufdatum stehen hier nicht",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "display_name": {
+                  "type": "string",
+                  "description": "Anzeigename, sonst Systemname"
+                },
+                "trial_ends_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        }
+      },
+      "SupportGemeinde": {
+        "type": "object",
+        "description": "Eine Gemeinde in GET /api/support/gemeinden (nicht intern).",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string",
+            "description": "organizations.name (Systemname)"
+          },
+          "display_name": {
+            "type": "string",
+            "description": "Anzeigename; ist keiner gesetzt, der Name"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "false = gesperrt"
+          },
+          "is_trial": {
+            "type": "boolean"
+          },
+          "trial_ends_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "null = unbegrenzt"
+          },
+          "max_konfis": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "konfi_count": {
+            "type": "integer",
+            "description": "Konfis, die auf das Konfi-Limit zaehlen (Rolle konfi, Stamm-Gemeinde, nicht geloescht -- wie utils/konfiLimit.js), auch gesperrte"
+          },
+          "team_count": {
+            "type": "integer",
+            "description": "aktive Konten mit der Rolle Teamer:in, Admin oder Gemeindeleitung in dieser Gemeinde, beide Quellen der Zugehoerigkeit (wie /support/statistik: konten.teamer + admin + org_admin)"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "kirchenkreis_id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "kirchenkreis": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "aus der Zuordnung (kirchenkreis_id), nicht aus dem Freitext"
+          },
+          "landeskirche_id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "landeskirche": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wunsch_lizenz": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "klein",
+              "standard",
+              "plus",
+              "gross",
+              "verbund",
+              null
+            ],
+            "description": "aus der neuesten Anfrage, aus der die Gemeinde entstanden ist (wie GET /api/organizations/{id}); sonst null"
+          },
+          "leitung": {
+            "type": "array",
+            "description": "Gemeindeleitung: Konten mit der Rolle org_admin in DIESER Gemeinde, beide Quellen der Zugehoerigkeit (users.organization_id und user_organizations); gesperrte stehen drin (is_active), geloeschte und Support-Konten ohne Gemeinde nicht; nach Anzeigename. Ein Super-Admin-Konto mit Gemeinde steht dort, wo es org_admin ist, wie jedes Konto.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "display_name": {
+                  "type": "string"
+                },
+                "username": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "is_active": {
+                  "type": "boolean"
+                },
+                "last_login_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                }
+              }
+            }
           }
         }
       },

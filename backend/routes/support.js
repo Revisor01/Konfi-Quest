@@ -22,6 +22,15 @@
 //   - SUPPORT-MAIL (routes/supportMail.js, hier eingehaengt): Posteingang,
 //     Verlauf und Antworten zu Anfragen und Gemeinden, Textbausteine,
 //     Fusszeile (docs/planung/support-mail.md).
+//   - UEBERSICHT und GEMEINDEN (routes/supportUebersicht.js, hier
+//     eingehaengt): das Dashboard der Web-Ansicht und die Liste der Gemeinden
+//     mit ihrer Gemeindeleitung (docs/planung/support-web.md).
+//
+// INTERNE GEMEINDEN (organizations.intern, Migration 194): Die Review- und
+// Test-Gemeinden fuer die Stores erscheinen in keiner Liste und keiner Zahl
+// der Support-Ansicht -- Statistik, Zaehlungen an den Kirchenkreisen, Uebersicht
+// und Gemeindeliste lassen sie weg. Zugriffe ueber die Kennung bleiben
+// moeglich; Mails werden nicht nach `intern` gefiltert.
 //
 // NUR SUPER-ADMINS (requireSuperAdmin: Rolle oder Merkmal, mit oder ohne
 // Gemeinde). Jede andere Rolle bekommt 403, auch die Gemeindeleitung.
@@ -41,6 +50,7 @@ const {
 } = require('../utils/gemeindeSystemname');
 const { kirchenkreisIdGueltig } = require('../utils/kirchenkreisZuordnung');
 const { zaehleKontenJeGemeinde } = require('../utils/orgMitglieder');
+const { UNGELESEN_JE_ANFRAGE_SQL } = require('../utils/mailNachrichten');
 
 const STATUS = ['neu', 'in_arbeit', 'angelegt', 'abgelehnt'];
 
@@ -50,8 +60,7 @@ const STATUS = ['neu', 'in_arbeit', 'angelegt', 'abgelehnt'];
 const ANFRAGE = `a.id, a.gemeinde, a.kirchenkreis, a.landeskirche, a.kontakt_name, a.funktion,
   a.email, a.mobil, a.anzahl_konfis, a.anzahl_teamer, a.nachricht, a.status, a.notiz,
   a.organization_id, a.created_at, a.updated_at, a.wunsch_lizenz,
-  (SELECT COUNT(*)::int FROM mail_nachrichten m
-    WHERE m.anfrage_id = a.id AND m.richtung = 'ein' AND m.gelesen_am IS NULL) AS ungelesen`;
+  ${UNGELESEN_JE_ANFRAGE_SQL} AS ungelesen`;
 
 const NICHT_GEFUNDEN = { error: 'Anfrage nicht gefunden' };
 const MELDUNG_SCHON_ANGELEGT = 'Aus dieser Anfrage ist schon eine Gemeinde entstanden.';
@@ -83,6 +92,9 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
   // Support-Mail -- hinter derselben Pruefung (nur Super-Admin).
   router.use(require('./supportMail')(db));
+
+  // Uebersicht und Gemeindeliste -- ebenso (nur Super-Admin).
+  router.use(require('./supportUebersicht')(db));
 
   const id = param('id').isInt({ min: 1 }).withMessage('Ungültige ID');
   const nameFeld = (feld = 'name') => body(feld)
@@ -382,7 +394,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   const kirchenkreiseLaden = async (dbOderClient, nurId = null) => {
     const { rows } = await dbOderClient.query(
       `SELECT k.id, k.name, k.landeskirche_id, l.name AS landeskirche,
-              (SELECT COUNT(*)::int FROM organizations o WHERE o.kirchenkreis_id = k.id) AS anzahl_gemeinden
+              (SELECT COUNT(*)::int FROM organizations o WHERE o.kirchenkreis_id = k.id AND NOT o.intern) AS anzahl_gemeinden
          FROM kirchenkreise k
          LEFT JOIN landeskirchen l ON l.id = k.landeskirche_id
         ${nurId === null ? '' : 'WHERE k.id = $1'}
@@ -479,9 +491,15 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Kirchenkreis nicht gefunden' });
       }
-      const { rowCount: gemeinden } = await client.query(
-        `UPDATE organizations SET kirchenkreis_id = NULL, kirchenkreis = NULL, updated_at = NOW()
-          WHERE kirchenkreis_id = $1`, [kreisId]);
+      // Alle Gemeinden verlieren die Zuordnung; gemeldet werden die sichtbaren
+      // (interne zaehlen nirgends mit).
+      const { rows: [{ gemeinden }] } = await client.query(
+        `WITH geloest AS (
+           UPDATE organizations SET kirchenkreis_id = NULL, kirchenkreis = NULL, updated_at = NOW()
+            WHERE kirchenkreis_id = $1
+        RETURNING intern
+         )
+         SELECT COUNT(*) FILTER (WHERE NOT intern)::int AS gemeinden FROM geloest`, [kreisId]);
       await client.query('DELETE FROM kirchenkreise WHERE id = $1', [kreisId]);
       await client.query('COMMIT');
       res.json({ message: 'Kirchenkreis gelöscht', gemeinden_ohne_zuordnung: gemeinden });
@@ -500,7 +518,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
   // GET /statistik -- je Gemeinde: Zuordnung, Konten je Rolle, aktive
   // Konten, Jahrgaenge. Keine Namen von Personen. Alle Gemeinden, auch
-  // gesperrte (is_active) und solche ohne Konten (dann Nullen).
+  // gesperrte (is_active) und solche ohne Konten (dann Nullen) -- ausser den
+  // internen (organizations.intern).
   router.get('/statistik', async (req, res) => {
     try {
       const [{ rows: gemeinden }, konten] = await Promise.all([
@@ -515,6 +534,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
              FROM organizations o
              LEFT JOIN kirchenkreise k ON k.id = o.kirchenkreis_id
              LEFT JOIN landeskirchen l ON l.id = k.landeskirche_id
+            WHERE NOT o.intern
             ORDER BY lower(COALESCE(NULLIF(btrim(o.display_name), ''), o.name)), o.id`),
         zaehleKontenJeGemeinde(db),
       ]);

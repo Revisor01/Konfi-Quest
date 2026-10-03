@@ -22,7 +22,7 @@ const { nachAntwort } = require('../utils/nachAntwort');
 const { allePostfaecher, POSTFAECHER } = require('../utils/mailPostfaecher');
 const { einstellungenLesen, STANDARD_EINSTELLUNGEN } = require('../utils/mailEinstellungen');
 const {
-  auszug, fadenIds, nachrichtLaden, nachrichtenLaden, verlaufLaden,
+  auszug, fadenIds, nachrichtLaden, nachrichtenLaden, verlaufLaden, ZUORDNUNG_SPALTEN, ZUORDNUNG_JOINS,
 } = require('../utils/mailNachrichten');
 const { lizenzText } = require('../utils/lizenzen');
 const { formatDatum } = require('../utils/zeitformat');
@@ -39,6 +39,9 @@ const GELESEN_MAX = 1000;
 // zugeordnete Mails bleiben 180 Tage; bei Werbung im Postfach "support"
 // koennen das viele werden.
 const EINGANG_MAX = 1000;
+// Welche eingehenden Mails der Posteingang zeigt: nur die nicht zugeordneten
+// (Vorgabe, wie die App sie kennt) oder alle.
+const ZUORDNUNGEN = ['offen', 'alle'];
 
 /** Fehler ins Protokoll: nur Code und Meldung. */
 const protokolliere = (wo, err) => console.error(`${wo}: %s %s`, err.code || '', err.message);
@@ -210,23 +213,33 @@ module.exports = (db) => {
   // POSTEINGANG UND MAILS
   // ==========================================================================
 
-  // GET /mail/eingang?postfach= -- nicht zugeordnete eingehende Mails,
-  // neueste zuerst (hoechstens EINGANG_MAX).
+  // GET /mail/eingang?postfach=&zuordnung= -- eingehende Mails, neueste
+  // zuerst (hoechstens EINGANG_MAX). zuordnung: `offen` (Vorgabe) nur die
+  // nicht zugeordneten -- der Posteingang der App --, `alle` auch die zu einer
+  // Anfrage oder Gemeinde (Posteingang der Web-Ansicht, 03.10.2026). Je Mail
+  // anfrage_id, organization_id und gemeinde_name (utils/mailNachrichten.js,
+  // ZUORDNUNG_SPALTEN). Nicht nach `intern` gefiltert.
   router.get('/mail/eingang', [
     query('postfach').optional().isIn(POSTFAECHER).withMessage(`postfach: ${POSTFAECHER.join(', ')}`),
+    query('zuordnung').optional().isIn(ZUORDNUNGEN).withMessage(`zuordnung: ${ZUORDNUNGEN.join(', ')}`),
     handleValidationErrors,
   ], async (req, res) => {
     try {
       const params = [EINGANG_MAX];
       let filter = '';
+      if (req.query.zuordnung !== 'alle') {
+        filter += ' AND m.anfrage_id IS NULL AND m.organization_id IS NULL';
+      }
       if (req.query.postfach) {
         params.push(req.query.postfach);
-        filter = 'AND m.postfach = $2';
+        filter += ' AND m.postfach = $2';
       }
       const { rows } = await db.query(
-        `SELECT m.id, m.postfach, m.von_adresse, m.von_name, m.betreff, m.text, m.gesendet_am, m.gelesen_am, m.anhaenge
+        `SELECT m.id, m.postfach, m.von_adresse, m.von_name, m.betreff, m.text, m.gesendet_am, m.gelesen_am, m.anhaenge,
+                ${ZUORDNUNG_SPALTEN}
            FROM mail_nachrichten m
-          WHERE m.anfrage_id IS NULL AND m.organization_id IS NULL AND m.richtung = 'ein' ${filter}
+           ${ZUORDNUNG_JOINS}
+          WHERE m.richtung = 'ein'${filter}
           ORDER BY m.gesendet_am DESC, m.id DESC
           LIMIT $1`, params);
       res.json(rows.map(({ text, ...m }) => ({
@@ -239,6 +252,9 @@ module.exports = (db) => {
         gesendet_am: m.gesendet_am,
         gelesen_am: m.gelesen_am,
         anhaenge: m.anhaenge,
+        anfrage_id: m.anfrage_id,
+        organization_id: m.organization_id,
+        gemeinde_name: m.gemeinde_name,
       })));
     } catch (err) {
       protokolliere('GET /support/mail/eingang', err);
