@@ -47,6 +47,8 @@ import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
 import { linkOeffnen } from '../../../services/systemDialoge';
 import { punkteText } from '../../../utils/punkteText';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebKonfiProfil from '../web/WebKonfiProfil';
 
 interface KonfiProfile {
   id: number;
@@ -103,6 +105,8 @@ interface ProfileViewProps {
 const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presentingElement, pageRef }) => {
   const { user, setUser, setError, signOut } = useApp();
   const [presentAlert] = useIonAlert();
+  // Browser ab 992 px: die Web-Fassung (web/WebKonfiProfil), zweispaltig.
+  const breit = useBreitesLayout();
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
   // Die eigenen Challenge-Stempel (marks). Schlanker Zusatzabruf — faellt er
@@ -331,6 +335,43 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     if (isNaN(date.getTime())) return 'Ungültiges Datum';
     return datumKurz(date);
   };
+
+  // Web-Fassung: dieselben Handgriffe (Modale, Abmelden, Rückblicke), anders gezeigt.
+  if (breit) {
+    const seite = () => pageRef?.current || presentingElement || undefined;
+    return (
+      <>
+        <WebKonfiProfil
+          profil={profile}
+          email={profile.email || user?.email || ''}
+          challengeAnzahl={challengeMarks.length}
+          uebersetzung={getTranslationName(selectedTranslation)}
+          cacheLabel={cacheLabel}
+          rueckblicke={wrappedHistory}
+          presentingElement={() => seite() ?? null}
+          onRueckblick={openWrapped}
+          onPunkte={() => presentPointsModal({ presentingElement: seite() })}
+          onTour={() => setShowOnboarding(true)}
+          onEmail={() => presentEmailModal({ presentingElement: seite() })}
+          onPasswort={() => presentPasswordModal({ presentingElement: seite() })}
+          onUebersetzung={() => presentBibleModal({ presentingElement: seite() })}
+          onCache={handleClearMediaCache}
+          onAbmelden={handleLogout}
+          onLoeschen={() => presentDeleteAccount({ presentingElement: seite() })}
+          onNeuerungen={() => setShowUpdateWalkthrough(true)}
+          onMitmachen={() => setShowMitmachenErklaerung(true)}
+        />
+        {showOnboarding && (
+          <KonfiOnboardingModal
+            onClose={() => setShowOnboarding(false)}
+            displayName={(user?.display_name || profile.display_name || '').split(' ')[0]}
+          />
+        )}
+        {showUpdateWalkthrough && <KonfiUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />}
+        {showMitmachenErklaerung && <MitmachenErklaerungModal rolle="konfi" onClose={() => setShowMitmachenErklaerung(false)} />}
+      </>
+    );
+  }
 
   return (
     <div>

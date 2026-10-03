@@ -48,6 +48,11 @@ import { SectionHeader } from '../../shared';
 import { datumKurz } from '../../../utils/dateUtils';
 import KonfiZeitTermine from '../../shared/KonfiZeitTermine';
 import { alsKonfiZeit } from '../../../utils/konfiZeit';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebSeite from '../../web/WebSeite';
+import WebKnopf from '../../web/WebKnopf';
+import { WebLaden, WebLeer } from '../../web/WebZustaende';
+import WebKonfiHistorie from '../web/WebKonfiHistorie';
 
 interface KonfiBadge {
   badge_id: number;
@@ -85,6 +90,8 @@ import { tastaturKlick } from '../../../utils/tastatur';
 const TeamerKonfiStatsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('teamer-konfi-stats');
   const { user } = useApp();
+  // Browser ab 992 px: die Web-Fassung (web/WebKonfiHistorie).
+  const breit = useBreitesLayout();
 
   const badgePopoverRef = useRef<BadgePopoverData | null>({ badge: null });
 
@@ -160,6 +167,37 @@ const TeamerKonfiStatsPage: React.FC = () => {
       presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
     }
   }, [wrappedModalData]);
+
+  if (breit) {
+    return (
+      <WebSeite
+        bereich="Profil"
+        titel="Konfi-Historie"
+        untertitel={konfiData ? (konfiData.jahrgang_name ? `Jahrgang ${konfiData.jahrgang_name}` : 'Konfi-Zeit') : undefined}
+        zurueck={{ href: '/teamer/profile', text: 'Profil' }}
+        aktionen={konfiData ? <WebKnopf onClick={() => presentPointsModal({ presentingElement: presentingElement || undefined })}>Punkte-Übersicht</WebKnopf> : undefined}
+        pageRef={pageRef}
+      >
+        {loading && <WebLaden kacheln={4} karten={2} text="Die Konfi-Historie wird geladen." />}
+        {!loading && !konfiData && (
+          <WebLeer icon={ICON_JAHRGANG} titel="Keine Konfi-Daten vorhanden" text="Zu diesem Konto gibt es keine Konfi-Zeit." />
+        )}
+        {!loading && konfiData && (
+          <WebKonfiHistorie
+            punkte={{
+              gesamt: (konfiData.gottesdienst_points || 0) + (konfiData.gemeinde_points || 0),
+              gottesdienst: konfiData.gottesdienst_points || 0,
+              gemeinde: konfiData.gemeinde_points || 0,
+            }}
+            badges={konfiData.badges}
+            termine={konfiZeit?.termine ?? []}
+            rueckblick={konfiWrapped}
+            onRueckblick={setWrappedModalData}
+          />
+        )}
+      </WebSeite>
+    );
+  }
 
   if (loading) {
     return <LoadingSpinner message="Konfi-Historie wird geladen..." />;
