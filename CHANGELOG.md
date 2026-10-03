@@ -53,6 +53,8 @@ Versionsüberschrift.
   bisher kam die Anmeldung durch, und erst jede weitere Anfrage scheiterte.
 
 ### Sonstiges
+- Sicherheitsupdate für eine Bibliothek, die der Server für den Versand von
+  Mitteilungen mitbringt.
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und
   erledigte Aufträge sind aus dem Repo genommen. Planung, Betrieb und offene
   Punkte stehen jeweils an einer Stelle.
