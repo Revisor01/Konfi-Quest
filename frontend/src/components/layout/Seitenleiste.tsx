@@ -2,8 +2,8 @@ import React, { useCallback, useState } from 'react';
 import { IonBadge, IonIcon, useIonAlert, useIonRouter } from '@ionic/react';
 import { useApp } from '../../contexts/AppContext';
 import { BAEUME } from '../../navigation/rollenBaeume';
-import { aktiverPfad } from '../../navigation/routes';
-import type { BadgeKey, MenueEintrag } from '../../navigation/routes';
+import { SUPPORT_MAIL_ZAEHLER, aktiverPfad } from '../../navigation/routes';
+import type { MenueEintrag } from '../../navigation/routes';
 import { useReiterZaehler, zaehlerText } from '../../navigation/reiterZaehler';
 import { useAppLocation } from '../../navigation/useAppLocation';
 import { rolleVonUser } from '../../navigation/useSeitenBereit';
@@ -50,15 +50,10 @@ const merkeEingeklappt = (eingeklappt: boolean): void => {
   }
 };
 
-interface Eintrag extends MenueEintrag {
-  badge?: BadgeKey;
-}
-
 const Seitenleiste: React.FC = () => {
   const { user, signOut } = useApp();
   const router = useIonRouter();
   const location = useAppLocation();
-  const zaehler = useReiterZaehler();
   const [presentAlert] = useIonAlert();
   const [eingeklappt, setEingeklappt] = useState<boolean>(leseEingeklappt);
 
@@ -66,13 +61,18 @@ const Seitenleiste: React.FC = () => {
   // Leiste die Eintraege einer anderen Rolle als das Outlet daneben.
   const rolle = rolleVonUser(user, user?.role_name === 'super_admin');
   const baum = BAEUME[rolle];
+  // Die Zahlen der Support-Mail holt die Leiste nur, wenn sie sie zeigt
+  // (Baum super_admin, Anfragen und Posteingang).
+  const zaehler = useReiterZaehler({
+    supportMailLaden: (baum.menue ?? []).some((e) => e.badge !== undefined && SUPPORT_MAIL_ZAEHLER.includes(e.badge)),
+  });
 
-  const oben: Eintrag[] = [
+  const oben: MenueEintrag[] = [
     ...baum.tabs.map(({ href, label, icon, badge }) => ({ path: href, label, icon, badge })),
     ...(baum.menue ?? []).filter((e) => !e.gruppe),
   ];
   // Gruppen in der Reihenfolge ihres ersten Auftretens in `menue`.
-  const gruppen: Array<{ name: string; eintraege: Eintrag[] }> = [];
+  const gruppen: Array<{ name: string; eintraege: MenueEintrag[] }> = [];
   for (const e of baum.menue ?? []) {
     if (!e.gruppe) continue;
     let gruppe = gruppen.find((g) => g.name === e.gruppe);
@@ -118,7 +118,7 @@ const Seitenleiste: React.FC = () => {
     });
   };
 
-  const link = (e: Eintrag) => {
+  const link = (e: MenueEintrag) => {
     const istAktiv = e.path === aktiv;
     const n = e.badge ? zaehler[e.badge] : 0;
     return (

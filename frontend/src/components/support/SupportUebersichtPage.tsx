@@ -5,7 +5,8 @@
 //   - die Kennzahlen aus GET /support/statistik, zusammengefasst gesamt, je
 //     Landeskirche, je Kirchenkreis und je Gemeinde (aufklappbar), dazu die
 //     Zahl der Gemeinden ohne Zuordnung (utils/supportStatistik.ts);
-//   - die neuen Anfragen als Zahl;
+//   - die neuen Anfragen als Zahl, dazu die ungelesenen Mails als rote Kugel
+//     an Anfragen und Posteingang (navigation/supportMailZaehler.ts);
 //   - den Weg zu allen Bereichen und das Abmelden. Breit zeigt beides auch die
 //     Seitenleiste der Web-Version; auf schmalen Bildschirmen gibt es im
 //     Baum super_admin keine Reiter -- ohne diese Seite kaeme man dort weder
@@ -25,6 +26,7 @@ import {
 import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
 import { SectionHeader } from '../shared';
 import EmptyState from '../shared/EmptyState';
+import ZaehlerKugel from '../shared/ZaehlerKugel';
 import LoadingSpinner from '../common/LoadingSpinner';
 import WartungsHinweis from '../shared/WartungsHinweis';
 import {
@@ -48,6 +50,7 @@ import { datumUhrzeit } from '../../utils/dateUtils';
 import { tastaturKlick } from '../../utils/tastatur';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { SUPPORT_BEREICHE, SUPPORT_START } from '../../navigation/supportMenue';
+import { supportMailZahl, useSupportMailZaehler } from '../../navigation/supportMailZaehler';
 import { Abschnitt, Kennzahl, KennzahlReihe, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
 
@@ -129,6 +132,7 @@ const Uebersicht: React.FC = () => {
   // Im Baum super_admin ist diese Seite die Startseite -- dort gibt es kein
   // Zurueck. Simons Konto kommt ueber "Mehr" und geht dorthin zurueck.
   const istStartseite = user?.role_name === 'super_admin';
+  const mailZaehler = useSupportMailZaehler(true);
 
   const [statistik, setStatistik] = useState<SupportStatistik | null>(null);
   const [neueAnfragen, setNeueAnfragen] = useState<number | null>(null);
@@ -211,7 +215,9 @@ const Uebersicht: React.FC = () => {
 
         <Abschnitt icon={ICON_SUPPORT} titel="Bereiche" farbe="organizations">
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {bereiche.map((b) => (
+            {bereiche.map((b) => {
+              const ungelesen = b.badge === 'supportAnfragen' || b.badge === 'supportPost' ? supportMailZahl(mailZaehler, b.badge) : 0;
+              return (
               <div
                 key={b.path}
                 role="button"
@@ -222,8 +228,11 @@ const Uebersicht: React.FC = () => {
               >
                 <div className="app-list-item__row">
                   <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations">
-                      <IonIcon icon={b.icon} />
+                    <div className="app-zaehler-anker">
+                      <div className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations">
+                        <IonIcon icon={b.icon} />
+                      </div>
+                      <ZaehlerKugel anzahl={ungelesen} label="ungelesene Mails" />
                     </div>
                     <div className="app-list-item__content">
                       <div className="app-list-item__title">{b.label}</div>
@@ -237,7 +246,8 @@ const Uebersicht: React.FC = () => {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </Abschnitt>
 

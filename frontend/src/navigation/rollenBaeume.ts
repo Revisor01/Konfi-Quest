@@ -189,6 +189,12 @@ const SupportAnfragenPage = faul(() => import('../components/support/SupportAnfr
 const SupportAnfrageDetailPage = faul(() => import('../components/support/SupportAnfrageDetailPage'));
 const SupportStrukturPage = faul(() => import('../components/support/SupportStrukturPage'));
 const SupportKontenPage = faul(() => import('../components/support/SupportKontenPage'));
+// Support-Mail (03.10.2026, docs/planung/support-mail.md): Posteingang, eine
+// Mail, Schriftwechsel einer Gemeinde, Textbausteine.
+const SupportPosteingangPage = faul(() => import('../components/support/SupportPosteingangPage'));
+const SupportPostDetailPage = faul(() => import('../components/support/SupportPostDetailPage'));
+const SupportGemeindePostPage = faul(() => import('../components/support/SupportGemeindePostPage'));
+const SupportTextbausteinePage = faul(() => import('../components/support/SupportTextbausteinePage'));
 
 // Die Routen der Support-Ansicht, in zwei Baeumen gleich: im Baum super_admin
 // (Support-Konto ohne Gemeinde) und im Baum der Leitung, weil Simons Konto --
@@ -196,10 +202,23 @@ const SupportKontenPage = faul(() => import('../components/support/SupportKonten
 // "Mehr" erreicht (AdminSettingsPage). Andere Leitungen sehen keinen Weg
 // dorthin; wer die Adresse eintippt, bekommt den Hinweis "Nur fuer den
 // Support", und der Server antwortet ohnehin 403 (requireSuperAdmin).
+// Der Schriftwechsel einer Gemeinde haengt am Posteingang
+// (/admin/support/post/gemeinde/:id, Pfad aus docs/planung/support-mail.md);
+// ohne Kennung fuehrt die Adresse dorthin statt auf eine Mail „gemeinde".
+const SUPPORT_UMLEITUNGEN: RollenBaum['redirects'] = [
+  { from: '/admin/support/post/gemeinde', to: '/admin/support/post' },
+];
+
 const SUPPORT_ROUTEN: RollenBaum['routes'] = [
   { path: '/admin/support', page: SupportUebersichtPage },
   { path: '/admin/support/anfragen/:id', page: SupportAnfrageDetailPage, param: 'id', propName: 'anfrageId' },
   { path: '/admin/support/anfragen', page: SupportAnfragenPage },
+  // /post/gemeinde/:id vor /post/:id -- sonst laese die Mail-Seite
+  // "gemeinde" als Kennung.
+  { path: '/admin/support/post/gemeinde/:id', page: SupportGemeindePostPage, param: 'id', propName: 'organizationId' },
+  { path: '/admin/support/post/:id', page: SupportPostDetailPage, param: 'id', propName: 'nachrichtId' },
+  { path: '/admin/support/post', page: SupportPosteingangPage },
+  { path: '/admin/support/bausteine', page: SupportTextbausteinePage },
   { path: '/admin/support/struktur', page: SupportStrukturPage },
   { path: '/admin/support/konten', page: SupportKontenPage },
 ];
@@ -249,6 +268,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       // Aktivitäten sind ein Segment im Mitmachen-Tab. Die alte Route bleibt
       // wegen bestehender Deep-Links aus Push-Nachrichten erhalten.
       { from: '/admin/requests', to: '/admin/events?segment=antraege' },
+      ...SUPPORT_UMLEITUNGEN,
     ],
     tabs: [
       { tab: 'admin-konfis', href: '/admin/konfis', icon: ICON_GRUPPE_GEFUELLT, label: 'Konfis' },
@@ -353,8 +373,8 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { path: '/admin/organizations', page: AdminOrganizationsPage },
       { path: '/admin/metrics', page: AdminMetricsPage },
     ],
-    redirects: [{ from: '/admin', to: '/admin/support' }],
+    redirects: [{ from: '/admin', to: '/admin/support' }, ...SUPPORT_UMLEITUNGEN],
     tabs: [],
-    menue: SUPPORT_BEREICHE.map(({ path, label, icon, gruppe }) => ({ path, label, icon, gruppe })),
+    menue: SUPPORT_BEREICHE.map(({ path, label, icon, gruppe, badge }) => ({ path, label, icon, gruppe, badge })),
   },
 };

@@ -88,6 +88,53 @@ describe('Anfragen: Liste und Filter', () => {
   });
 });
 
+// Support-Mail (03.10.2026): rote Zahl je Anfrage aus `ungelesen`, und ein
+// Filter ueber alle Status -- sonst stuende eine Mail zu einer Anfrage „in
+// Arbeit" hinter der roten Zahl in der Leiste, aber nicht im Filter „Neu".
+describe('Anfragen: ungelesene Mails', () => {
+  it('rote Zahl am Symbol und im Namen des Eintrags; ohne ungelesene keine Zahl', async () => {
+    h.apiGet.mockResolvedValue({ data: [anfrage(4, 'Heide', 'neu', { ungelesen: 2 }), anfrage(5, 'Büsum', 'neu', { ungelesen: 0 })] });
+    render(<SupportAnfragenPage />);
+    const heide = await screen.findByRole('button', { name: 'Anfrage Heide, Neu, 2 ungelesene Mails' });
+    expect(heide.querySelector('.app-zaehler-kugel')?.textContent).toBe('2');
+    const buesum = screen.getByRole('button', { name: 'Anfrage Büsum, Neu' });
+    expect(buesum.querySelector('.app-zaehler-kugel')).toBeNull();
+  });
+
+  it('eine ungelesene Mail heisst im Singular so; aeltere Server ohne Feld: keine Zahl', async () => {
+    h.apiGet.mockResolvedValue({ data: [anfrage(4, 'Heide', 'neu', { ungelesen: 1 }), anfrage(6, 'Wöhrden', 'neu')] });
+    render(<SupportAnfragenPage />);
+    expect(await screen.findByRole('button', { name: 'Anfrage Heide, Neu, 1 ungelesene Mail' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Anfrage Wöhrden, Neu' }).querySelector('.app-zaehler-kugel')).toBeNull();
+  });
+
+  it('Filter „Ungelesen": alle Status, nur Anfragen mit ungelesenen Mails', async () => {
+    h.apiGet.mockResolvedValue({ data: [] });
+    render(<SupportAnfragenPage />);
+    await screen.findByText('Keine neuen Anfragen.');
+    h.apiGet.mockResolvedValue({ data: [
+      anfrage(4, 'Heide', 'in_arbeit', { ungelesen: 3 }),
+      anfrage(5, 'Büsum', 'neu', { ungelesen: 0 }),
+      anfrage(7, 'Meldorf', 'angelegt', { ungelesen: 1 }),
+    ] });
+    await act(async () => { fireEvent.click(screen.getByRole('tab', { name: 'Ungelesen' })); });
+    expect(h.apiGet).toHaveBeenLastCalledWith('/support/anfragen', undefined);
+    expect(await screen.findByText('2 Anfragen')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /^Anfrage / }).map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Anfrage Heide, In Arbeit, 3 ungelesene Mails',
+      'Anfrage Meldorf, Angelegt, 1 ungelesene Mail',
+    ]);
+  });
+
+  it('Filter „Ungelesen" ohne Treffer: eigener Satz', async () => {
+    h.apiGet.mockResolvedValue({ data: [anfrage(5, 'Büsum', 'neu')] });
+    render(<SupportAnfragenPage />);
+    await screen.findByRole('button', { name: 'Anfrage Büsum, Neu' });
+    await act(async () => { fireEvent.click(screen.getByRole('tab', { name: 'Ungelesen' })); });
+    expect(await screen.findByText('Keine Anfrage hat ungelesene Mails.')).toBeInTheDocument();
+  });
+});
+
 describe('Anfragen: nur fuer Super-Admin', () => {
   it('eine Leitung ohne Merkmal sieht den Hinweis, ohne Abruf', () => {
     h.user = { id: 5, role_name: 'admin', is_super_admin: false };

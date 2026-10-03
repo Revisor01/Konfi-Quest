@@ -4,8 +4,15 @@
 // Jede Anfrage aus dem Formular der Homepage (POST /api/anfragen) landet hier,
 // gefiltert nach Status. Die neuen stehen vorne; ein Antippen oeffnet die
 // Anfrage mit allen Angaben, Status, Notiz und "Gemeinde anlegen".
+//
+// Support-Mail (03.10.2026): Jede Anfrage traegt die Zahl ihrer ungelesenen
+// Mails als rote Kugel (Feld `ungelesen` aus GET /support/anfragen). Der
+// Filter „Ungelesen" zeigt alle Anfragen mit ungelesenen Mails, gleich in
+// welchem Status -- sonst stuende eine Mail zu einer Anfrage „in Arbeit"
+// hinter der roten Zahl in der Leiste, aber nicht im voreingestellten
+// Filter „Neu".
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   IonContent,
   IonIcon,
@@ -16,9 +23,11 @@ import {
   IonSegment,
   IonSegmentButton,
   useIonRouter,
+  useIonViewWillEnter,
 } from '@ionic/react';
 import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
 import EmptyState from '../shared/EmptyState';
+import ZaehlerKugel from '../shared/ZaehlerKugel';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { ICON_GRUPPE, ICON_MAIL, ICON_ORGANISATION, ICON_UHRZEIT, ICON_WEITER_GEFUELLT } from '../shared/icons';
 import api from '../../services/api';
@@ -32,7 +41,10 @@ import { Abschnitt, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
 import { lizenzFinden } from '../../utils/lizenzen';
 
-type Filter = AnfrageStatus | 'alle';
+type Filter = AnfrageStatus | 'alle' | 'ungelesen';
+
+/** Die Filter der Liste: die Status, „Alle" und „Ungelesen" (holt alle und behaelt die mit ungelesenen Mails). */
+const FILTER: Array<{ wert: Filter; label: string }> = [...STATUS_FILTER, { wert: 'ungelesen', label: 'Ungelesen' }];
 
 const LEER_TEXT: Record<Filter, string> = {
   neu: 'Keine neuen Anfragen.',
@@ -40,7 +52,11 @@ const LEER_TEXT: Record<Filter, string> = {
   angelegt: 'Noch keine Anfrage wurde zur Gemeinde.',
   abgelehnt: 'Keine abgelehnten Anfragen.',
   alle: 'Noch keine Anfragen über die Homepage.',
+  ungelesen: 'Keine Anfrage hat ungelesene Mails.',
 };
+
+/** Ungelesene Mails einer Anfrage; aeltere Server liefern das Feld nicht (dann 0). */
+const ungelesenVon = (a: GemeindeAnfrage): number => (typeof a.ungelesen === 'number' && a.ungelesen > 0 ? a.ungelesen : 0);
 
 const Anfragen: React.FC = () => {
   const router = useIonRouter();
@@ -56,9 +72,10 @@ const Anfragen: React.FC = () => {
     try {
       const antwort = await api.get(
         '/support/anfragen',
-        welcher === 'alle' ? undefined : { params: { status: welcher } }
+        welcher === 'alle' || welcher === 'ungelesen' ? undefined : { params: { status: welcher } }
       );
-      setAnfragen(Array.isArray(antwort.data) ? antwort.data : []);
+      const liste: GemeindeAnfrage[] = Array.isArray(antwort.data) ? antwort.data : [];
+      setAnfragen(welcher === 'ungelesen' ? liste.filter((a) => ungelesenVon(a) > 0) : liste);
       setFehler(false);
     } catch {
       setAnfragen(null);
@@ -69,6 +86,18 @@ const Anfragen: React.FC = () => {
   }, []);
 
   useEffect(() => { void holen(filter); }, [filter, holen]);
+
+  // Zurueck aus einer Anfrage: still neu laden, damit Status und rote
+  // Zahl stimmen (gelesene Mails, gesendete Antwort). Beim ersten Eintritt
+  // laedt schon der Effekt.
+  const ersterEintritt = useRef(true);
+  useIonViewWillEnter(() => {
+    if (ersterEintritt.current) {
+      ersterEintritt.current = false;
+      return;
+    }
+    void holen(filter);
+  });
 
   const laden = (welcher: Filter) => {
     setLaedt(true);
@@ -99,7 +128,7 @@ const Anfragen: React.FC = () => {
             aria-label="Status"
             onIonChange={(e) => filterWechseln((e.detail.value as Filter) ?? 'neu')}
           >
-            {STATUS_FILTER.map((f) => (
+            {FILTER.map((f) => (
               <IonSegmentButton key={f.wert} value={f.wert}>
                 <IonLabel>{f.label}</IonLabel>
               </IonSegmentButton>
@@ -120,6 +149,7 @@ const Anfragen: React.FC = () => {
                 const status = ANFRAGE_STATUS[a.status] ?? ANFRAGE_STATUS.neu;
                 const zuordnung = [a.kirchenkreis, a.landeskirche].filter(Boolean).join(' · ');
                 const wunsch = lizenzFinden(a.wunsch_lizenz);
+                const ungelesen = ungelesenVon(a);
                 return (
                   <div
                     key={a.id}
@@ -128,12 +158,15 @@ const Anfragen: React.FC = () => {
                     onKeyDown={tastaturKlick}
                     onClick={() => router.push(`/admin/support/anfragen/${a.id}`)}
                     className="app-list-item app-list-item--organizations"
-                    aria-label={`Anfrage ${a.gemeinde}, ${status.label}`}
+                    aria-label={`Anfrage ${a.gemeinde}, ${status.label}${ungelesen > 0 ? `, ${ungelesen} ungelesene ${ungelesen === 1 ? 'Mail' : 'Mails'}` : ''}`}
                   >
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations">
-                          <IonIcon icon={ICON_ORGANISATION} />
+                        <div className="app-zaehler-anker">
+                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations">
+                            <IonIcon icon={ICON_ORGANISATION} />
+                          </div>
+                          <ZaehlerKugel anzahl={ungelesen} label="ungelesene Mails" />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">{a.gemeinde}</div>

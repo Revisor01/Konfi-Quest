@@ -20,8 +20,15 @@ import { BAEUME } from './rollenBaeume';
 
 export type Rolle = 'admin' | 'teamer' | 'konfi' | 'super_admin';
 
-/** Welcher Zähler am Tab hängt. Die Werte kommen aus dem BadgeContext. */
-export type BadgeKey = 'chat' | 'events' | 'challenges' | 'badges';
+/**
+ * Welcher Zähler am Tab hängt. Die ersten vier kommen aus dem BadgeContext,
+ * die zwei der Support-Ansicht aus GET /support/mail/zaehler
+ * (navigation/supportMailZaehler.ts) -- beide über navigation/reiterZaehler.ts.
+ */
+export type BadgeKey = 'chat' | 'events' | 'challenges' | 'badges' | 'supportAnfragen' | 'supportPost';
+
+/** Die Zähler der Support-Mail (rote Zahl in der Support-Ansicht, kein Push). */
+export const SUPPORT_MAIL_ZAEHLER: readonly BadgeKey[] = ['supportAnfragen', 'supportPost'];
 
 /**
  * Eine Route. Entweder ohne Parameter, oder mit — dann gehören `param` (wie
@@ -58,7 +65,7 @@ export type RouteDef =
       /** Name des Parameters in der URL. */
       param: 'id' | 'roomId';
       /** Unter welchem Prop-Namen die Seite den Wert erwartet (als Zahl). */
-      propName: 'konfiId' | 'eventId' | 'roomId' | 'challengeId' | 'anfrageId';
+      propName: 'konfiId' | 'eventId' | 'roomId' | 'challengeId' | 'anfrageId' | 'nachrichtId' | 'organizationId';
     };
 
 export interface RedirectDef {
@@ -89,6 +96,8 @@ export interface MenueEintrag {
   label: string;
   icon: string;
   gruppe?: string;
+  /** Rote Zahl am Eintrag, wie `badge` am Reiter. */
+  badge?: BadgeKey;
 }
 
 export interface RollenBaum {
