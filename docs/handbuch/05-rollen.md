@@ -195,10 +195,19 @@ Rollenwechsel mit einer Erklärung ab. Aus einer Konfi wird Team über die
 Hilft der Support von Konfi Quest in eurer Gemeinde, steht sein Konto für
 diese Zeit unter **Mehr › Benutzer:innen** — als Gemeindeleitung aus einer
 weiteren Gemeinde. Es kommt nur auf ausdrücklichen Schritt des Supports
-hinein und steht dann sichtbar in dieser Liste. Bearbeiten oder aus der
-Gemeinde nehmen kann es nur der Support selbst; wie bei jedem Konto mit
-Super-Admin-Rechten ist das für die Gemeindeleitung gesperrt ([Passwörter
-und Zugänge](35-passwoerter.md)).
+hinein und steht dann sichtbar in dieser Liste.
+
+Braucht ihr die Hilfe nicht mehr, nimmt die **Gemeindeleitung** das Konto
+selbst wieder heraus: in der Liste wegwischen, die App fragt **„Mitgliedschaft
+beenden"**. Damit endet nur seine Mitgliedschaft in eurer Gemeinde, samt
+Jahrgängen und Chat-Plätzen dort — wie bei jeder Person aus einer anderen
+Gemeinde ([Mitglieder aus anderen Gemeinden
+verwalten](#mitglieder-aus-anderen-gemeinden-verwalten)); das Konto des
+Supports bleibt. Bearbeiten, ein Passwort setzen oder Jahrgänge zuweisen kann
+die Gemeindeleitung bei diesem Konto nicht; wie bei jedem Konto mit
+Super-Admin-Rechten ist das gesperrt ([Passwörter und
+Zugänge](35-passwoerter.md)). Leitung und Team können den Support nicht
+herausnehmen.
 
 ### Jemanden in die eigene Gemeinde einladen
 

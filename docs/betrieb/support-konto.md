@@ -69,6 +69,14 @@ Gemeinden, in denen sie Gast sind.
 Benutzername und Passwort auf einem sicheren Weg weitergeben — nicht beides in
 derselben Mail. Nach der ersten Anmeldung das Passwort ändern.
 
+**Auf einer neuen Instanz** gibt es noch kein Super-Admin-Konto, das ein
+anderes anlegen könnte. Dafür legt `scripts/ersteinrichtung.js` im
+Backend-Container das erste Support-Konto an — ohne Gemeinde, mit denselben
+Regeln für Benutzername und Passwort, nur auf einer leeren Datenbank. Aufruf
+und Ablauf: [init-scripts/README.md](../../init-scripts/README.md),
+„Ablauf bei einer Neuinstallation", Schritt 4. Danach im Browser anmelden und
+die Gemeinden anlegen.
+
 ## Anmelden — nur im Browser
 
 Ein Support-Konto meldet sich in der **Web-Version** an (konfi-quest.de).
@@ -91,9 +99,13 @@ Danach steht das Konto in der Benutzerliste der Gemeinde (Mehr ›
 Benutzer:innen) als Gemeindeleitung aus einer weiteren Gemeinde. Wechseln
 kann es dorthin über `POST /api/auth/switch-org`; einen Umschalter hat die
 Support-Ansicht noch nicht ([planung/web-version.md](../planung/web-version.md)).
-Bearbeiten oder entfernen kann
-es dort nur ein Super-Admin; Herausnehmen geht über denselben Abschnitt
-„Mitglieder & Zuweisungen" (`DELETE /api/organizations/<id>/members/<userId>`).
+Bearbeiten kann
+es dort nur ein Super-Admin. Herausnehmen geht über denselben Abschnitt
+„Mitglieder & Zuweisungen" (`DELETE /api/organizations/<id>/members/<userId>`)
+— oder die Gemeindeleitung tut es selbst unter Mehr › Benutzer:innen
+(„Mitgliedschaft beenden", `DELETE /api/users/<id>`; Simon, 03.10.2026). In
+beiden Fällen endet nur die Mitgliedschaft in dieser Gemeinde, das
+Support-Konto bleibt.
 Wird die Gemeinde gelöscht, endet die Mitgliedschaft; das Support-Konto
 bleibt.
 

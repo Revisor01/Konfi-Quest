@@ -123,6 +123,11 @@ Routen in `backend/routes/organizations.js` (eingehängt unter
 | `GET /current`, `GET /:id`, `GET /:id/stats` | Super-Admin oder Team der Gemeinde | Gemeinde lesen, Kennzahlen |
 | `GET /support-konten`, `POST /support-konten`, `PATCH /support-konten/:id`, `PUT /support-konten/:id/passwort`, `DELETE /support-konten/:id` | Super-Admin | Support-Konten ohne Gemeinde (seit 03.10.2026) |
 
+Dazu seit dem 03.10.2026 `POST /api/anfragen` (öffentlich, das
+Anfrageformular) und unter `/api/support` (nur Super-Admin) Anfragen,
+Landeskirchen, Kirchenkreise und Statistik — unten, „Support-Ansicht,
+Backend".
+
 Dazu `GET /api/metrics`, `/api/metrics/history` und `/api/metrics/local`
 (nur Super-Admin, `backend/createApp.js`): Serverzeiten, Fehler,
 Lastverteilung je Replica.
@@ -152,8 +157,13 @@ Betrieb: [betrieb/support-konto.md](../betrieb/support-konto.md)):
 - **Als Gast in einer Gemeinde** über `POST /organizations/:id/members`
   (Super-Admin, Rolle Gemeindeleitung): Die Gemeinde sieht das Konto in ihrer
   Benutzerliste als Gemeindeleitung aus einer weiteren Gemeinde; bearbeiten
-  oder entfernen kann es dort nur ein Super-Admin. Gemeindewechsel und
-  Rückweg über `switch-org` und den Refresh wie bei jedem Konto.
+  kann es dort nur ein Super-Admin, aus der Gemeinde nehmen auch die
+  Gemeindeleitung selbst (seit 03.10.2026, nur die Mitgliedschaft endet).
+  Gemeindewechsel und Rückweg über `switch-org` und den Refresh wie bei
+  jedem Konto.
+- **Erster Zugang einer neuen Instanz** (seit 03.10.2026):
+  `scripts/ersteinrichtung.js` legt ein Support-Konto ohne Gemeinde an statt
+  einer Gemeinde „Betrieb" ([init-scripts/README.md](../../init-scripts/README.md)).
 - **Behoben auf dem Weg:** die acht Stellen, die bei `organization_id` NULL
   falsch rechneten (Benutzerliste, Detail, Hierarchieprüfung, Rückblick,
   Passwort setzen, `POST /chat/rooms`, `is_primary`), und die Anmeldung
@@ -172,18 +182,43 @@ Betrieb: [betrieb/support-konto.md](../betrieb/support-konto.md)):
 - Inhalt je Rolle aus `navigation/rollenBaeume.ts`: die Reiter, dazu das
   optionale Feld `menue` (Einträge mit `path`, `label`, `icon`, `gruppe`),
   unten `profil`, Gemeinde-Umschalter und Abmelden. Der Baum `super_admin`
-  hat keine Reiter; seine Leiste zeigt `menue` (Gemeinden, Betrieb) und
-  Abmelden.
+  hat keine Reiter; seine Leiste zeigt `menue` (die sechs Bereiche der
+  Support-Ansicht aus `navigation/supportMenue.ts`) und Abmelden.
 - Im Browser steht um das Outlet immer eine `IonSplitPane`; die Breite
   schaltet nur ihr `when`. So wird das Outlet beim Ziehen des Fensters nie
   neu montiert. In den Apps gibt es den Rahmen nicht. Die E2E-Specs laufen
   mit 960 px Fensterbreite (`playwright.config.ts`), die Leiste prüft
   `e2e/seitenleiste.spec.ts`.
 
-**Daten:** `organizations` kennt `kirchenkreis` als Freitext (Migration 086),
-dazu Ansprechperson, E-Mail, Telefon, Adresse, Website, Laufzeit
-(`trial_ends_at`, `is_trial`) und `max_konfis`. Eine Landeskirche, Anfragen
-oder Support-Fälle gibt es im Schema nicht. Mails verschickt
+**Support-Ansicht, Backend** (gebaut am 03.10.2026, Entscheidungen 3 bis 7;
+Betrieb: [betrieb/support-ansicht.md](../betrieb/support-ansicht.md)):
+
+- **Daten** (Migration 191): `landeskirchen`, `kirchenkreise` (Landeskirche
+  darf fehlen), `organizations.kirchenkreis_id`; die vorhandenen Freitexte
+  sind als Kirchenkreise ohne Landeskirche übernommen und verknüpft, die
+  Textspalte bleibt für die Apps bis 2.3.0 und trägt den Namen des
+  zugeordneten Kirchenkreises (`utils/kirchenkreisZuordnung.js`).
+  `gemeinde_anfragen` mit den Feldern des Formulars, Status
+  neu/in_arbeit/angelegt/abgelehnt, Zeitpunkt der Einwilligung.
+- **Anfrageformular** `POST /api/anfragen`: Honigtopf, Pflichtfelder,
+  Einwilligung, 5 Anfragen je Stunde und Client-IP, 3 je Tag und
+  E-Mail-Adresse; Bestätigung mit festem Text an die Adresse, Hinweis ohne
+  Kontaktdaten an die aktiven Super-Admin-Konten; im Protokoll nur die
+  Kennung. Abgelehnte Anfragen gehen 180 Tage nach der Ablehnung, angelegte
+  mit ihrer Gemeinde (Datenschutzerklärung 9c).
+- **Support-Routen** `/api/support`: Anfragen auflisten, Status und Notiz,
+  „Anlegen" mit derselben Funktion wie `POST /organizations`
+  (`utils/gemeindeAnlegen.js`, in einer Transaktion mit der Anfrage);
+  Landeskirchen und Kirchenkreise; Statistik je Gemeinde (Konten je Rolle aus
+  beiden Quellen der Zugehörigkeit, aktive Konten in 30 Tagen, Jahrgänge,
+  ohne Personennamen, ohne Support-Konten ohne Gemeinde).
+- `PUT /organizations/:id` nimmt `kirchenkreis_id` (nur Super-Admin),
+  `GET /organizations` liefert `kirchenkreis_id`, `landeskirche_id`,
+  `landeskirche` zusätzlich, `POST /organizations` nimmt `kirchenkreis_id`.
+
+**Weitere Daten:** `organizations` trägt Ansprechperson, E-Mail, Telefon,
+Adresse, Website, Laufzeit (`trial_ends_at`, `is_trial`) und `max_konfis`.
+Support-Fälle über Anfragen hinaus gibt es im Schema nicht. Mails verschickt
 `backend/services/emailService.js`; eingehende Mails verarbeitet nichts.
 
 **Support-Ansicht und Anfrageformular** (gebaut am 03.10.2026,
@@ -215,7 +250,7 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
   als druckbare Seite `/einwilligung` (nginx, robots.txt, Sitemap), verlinkt
   von Fußzeile, Datenschutz-Frage und Dank.
 - **Backend** dafür, mit Abschnitt 9c der Datenschutzerklärung und der
-  Aufbewahrung der Anfragen: Paket B desselben Tages (Routen unter
+  Aufbewahrung der Anfragen: oben, „Support-Ansicht, Backend" (Routen unter
   `/api/support` und `/api/anfragen`, Migration 191).
 
 ## Offen
@@ -230,19 +265,22 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
   [offene-befunde.md](../offene-befunde.md), „Bearbeiten-Knopf bei
   Super-Admin-Konten"); für eine eigene Kennzeichnung bräuchte `GET /users`
   ein zusätzliches Feld.
-- **Datenmodell Kirchenkreis und Landeskirche.** Eigene Tabellen mit
-  Zuordnung an der Gemeinde; der Freitext `kirchenkreis` bleibt, bis die
-  Bestände übertragen sind (Migration additiv). Die bestehenden Gemeinden,
-  auch der Dom Schwerin, werden eingeordnet.
+- **Bestände einordnen.** Die Tabellen stehen (oben, „Support-Ansicht,
+  Backend"); nach dem Deploy die übernommenen Kirchenkreise ihren
+  Landeskirchen zuordnen, Tippvarianten zusammenführen und die Gemeinden
+  ohne Angabe einordnen, auch den Dom Schwerin
+  ([betrieb/support-ansicht.md](../betrieb/support-ansicht.md)).
 - **Anfragen.** Eine Route für eine einzelne Anfrage (die Seite einer
   Anfrage holt heute die ganze Liste) und ein Knopf, eine Anfrage auf Wunsch
   sofort zu löschen.
 - **Mails im Support.** Ob eingehende Mails (etwa an die Kontaktadresse) in
   der Ansicht landen sollen und auf welchem Weg.
-- **Statistik.** Gebaut sind Gemeinden, Konten je Rolle, aktive Konten (30
-  Tage) und Jahrgänge. Offen: Speicher, und ab welcher Größe eine Zahl
+- **Statistik.** Gebaut sind Konten je Rolle, aktive Konten in 30 Tagen und
+  Jahrgänge je Gemeinde, nur für Super-Admins. Offen: weitere Kennzahlen
+  (Speicher, Termine) und ob eine Zahl erst ab einer Mindestgröße
   ausgewiesen wird (kleine Gemeinden sind sonst personenbezogen, wie bei der
-  Nutzungsmessung, [messung/umami.md](../messung/umami.md)).
+  Nutzungsmessung, [messung/umami.md](../messung/umami.md)) — heute steht
+  jede Zahl da.
 - **Einwilligung am Profil.** Ein Vermerk „Einwilligung liegt vor" am
   Konfi-Profil, den nur die Leitung sieht. Simons Gedanke: „kann ja mit in
   das konfiprofil bzw. die anwesenheitsmatrix" (E-01). Die Vorlage auf der

@@ -57,6 +57,29 @@ async function bleibtEinSuperAdmin(client, userId) {
 }
 
 /**
+ * Die Adressen aller aktiven Super-Admin-Konten -- fuer Hinweise aus dem
+ * Betrieb, etwa eine neue Anfrage vom Formular (routes/anfragen.js).
+ * Dieselbe Bestimmung wie oben: Merkmal oder Rolle, mit oder ohne Gemeinde,
+ * nicht gesperrt, nicht geloescht. Ohne Adresse faellt ein Konto heraus;
+ * dieselbe Adresse an zwei Konten bekommt eine Mail (ohne Gross/klein).
+ *
+ * @returns {Promise<Array<{email: string, display_name: string}>>}
+ */
+async function aktiveSuperAdminAdressen(db) {
+  const { rows } = await db.query(
+    `SELECT DISTINCT ON (lower(btrim(u.email))) btrim(u.email) AS email, u.display_name
+       FROM users u
+       LEFT JOIN roles r ON r.id = u.role_id
+      WHERE u.deleted_at IS NULL
+        AND COALESCE(u.is_active, true) = true
+        AND (u.is_super_admin IS TRUE OR r.name = 'super_admin')
+        AND NULLIF(btrim(u.email), '') IS NOT NULL
+      ORDER BY lower(btrim(u.email)), u.id`
+  );
+  return rows;
+}
+
+/**
  * Die gemeindefreie Systemrolle super_admin (Migration 190).
  * @returns {Promise<number|null>} ihre ID, null wenn sie fehlt
  */
@@ -67,4 +90,4 @@ async function systemrolleSuperAdmin(db) {
   return rolle ? Number(rolle.id) : null;
 }
 
-module.exports = { SUPER_ADMIN_SPERRE, MELDUNG_LETZTER, bleibtEinSuperAdmin, systemrolleSuperAdmin };
+module.exports = { SUPER_ADMIN_SPERRE, MELDUNG_LETZTER, bleibtEinSuperAdmin, aktiveSuperAdminAdressen, systemrolleSuperAdmin };

@@ -212,6 +212,103 @@ describe('Konto ohne Gemeinde', () => {
     });
   });
 
+  // Simon, 03.10.2026: Die Gemeindeleitung darf einen Support-Gast selbst
+  // aus IHRER Gemeinde nehmen. Es endet nur die Mitgliedschaft
+  // (user_organizations), das Konto bleibt; bearbeiten, Passwort und
+  // Loeschen bleiben gesperrt. Bis dahin lehnte checkUserHierarchy
+  // DELETE /users/:id mit 403 "Super-Admin-Konten kann nur ein Super-Admin
+  // bearbeiten." ab -- herausnehmen konnte den Gast nur ein Super-Admin.
+  describe('Support-Gast aus der Gemeinde nehmen (DELETE /users/:id)', () => {
+    const entfernen = (token, userId = SUPPORT.id) => request(app)
+      .delete(`/api/users/${userId}`)
+      .set('Authorization', `Bearer ${token}`);
+    const mitgliedschaften = async (userId = SUPPORT.id) => (await db.query(
+      'SELECT organization_id FROM user_organizations WHERE user_id = $1 ORDER BY organization_id', [userId]
+    )).rows.map((r) => Number(r.organization_id));
+    const konto = async (userId = SUPPORT.id) => (await db.query(
+      'SELECT id, organization_id, is_active, deleted_at, is_super_admin FROM users WHERE id = $1', [userId]
+    )).rows[0];
+
+    it('erlaubt: die Gemeindeleitung der Gastgemeinde -- nur die Mitgliedschaft endet, das Konto bleibt', async () => {
+      await alsGast(ORGS.testGemeinde.id);
+      await alsGast(ORGS.andereGemeinde.id);
+      const res = await entfernen(generateToken('orgAdmin1'));
+      await warteAufNachwehen(app);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ message: 'Mitgliedschaft in dieser Gemeinde beendet', konto_bleibt: true });
+      expect(await mitgliedschaften()).toEqual([ORGS.andereGemeinde.id]);
+      expect(await konto()).toEqual({ id: SUPPORT.id, organization_id: null, is_active: true, deleted_at: null, is_super_admin: true });
+    });
+
+    it('danach: Konto unverändert -- die Anmeldung im Browser geht weiter, die Benutzerliste der Gemeinde zeigt es nicht mehr', async () => {
+      await alsGast(ORGS.testGemeinde.id);
+      expect((await entfernen(generateToken('orgAdmin1'))).status).toBe(200);
+      await warteAufNachwehen(app);
+      invalidateUserCache(SUPPORT.id);
+      const login = await request(app).post('/api/auth/login')
+        .send({ username: SUPPORT.username, password: 'Support-Passwort1!', kann_ohne_gemeinde: true });
+      expect(login.status).toBe(200);
+      const liste = await request(app).get('/api/users').set('Authorization', `Bearer ${generateToken('orgAdmin1')}`);
+      expect(liste.body.map((u) => u.id)).not.toContain(SUPPORT.id);
+    });
+
+    it('verboten: die Gemeindeleitung einer fremden Gemeinde (404, Mitgliedschaft bleibt)', async () => {
+      await alsGast(ORGS.testGemeinde.id);
+      const res = await entfernen(generateToken('orgAdmin2'));
+      expect(res.status).toBe(404);
+      expect(await mitgliedschaften()).toEqual([ORGS.testGemeinde.id]);
+    });
+
+    it.each([
+      ['Leitung (admin)', 'admin1', 403],
+      ['Teamer:in', 'teamer1', 403],
+    ])('verboten: %s der Gastgemeinde (%i, Mitgliedschaft bleibt)', async (_wer, nutzer, status) => {
+      await alsGast(ORGS.testGemeinde.id);
+      const res = await entfernen(generateToken(nutzer));
+      expect(res.status).toBe(status);
+      expect(await mitgliedschaften()).toEqual([ORGS.testGemeinde.id]);
+    });
+
+    it('verboten: die Leitung (admin), auch wenn der Gast dort nur Teamer:in ist (403, Mitgliedschaft bleibt)', async () => {
+      // Ohne die Grenze auf die Gemeindeleitung duerfte eine Leitung eine
+      // Teamer:in verwalten -- und damit auch den Support-Gast in dieser Rolle.
+      await alsGast(ORGS.testGemeinde.id, 'teamer');
+      const res = await entfernen(generateToken('admin1'));
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe(SUPER_ADMIN_TEXT);
+      expect(await mitgliedschaften()).toEqual([ORGS.testGemeinde.id]);
+    });
+
+    it('verboten: ein Super-Admin-Konto MIT Gemeinde, das in einer anderen Gemeinde mitarbeitet (403, Mitgliedschaft bleibt)', async () => {
+      // Simons Konstellation: Gemeindeleitung mit Merkmal in Gemeinde 1, dazu
+      // Gemeindeleitung in Gemeinde 2.
+      await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.orgAdminSuper.id, ORGS.andereGemeinde.id, ROLES.orgAdmin2.id]);
+      const res = await entfernen(generateToken('orgAdmin2'), USERS.orgAdminSuper.id);
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe(SUPER_ADMIN_TEXT);
+      expect(await mitgliedschaften(USERS.orgAdminSuper.id)).toEqual([ORGS.andereGemeinde.id]);
+    });
+
+    it('verboten: bearbeiten und Passwort setzen bleiben für die Gemeindeleitung gesperrt, auch nach dem Entfernen kein Löschen', async () => {
+      await alsGast(ORGS.testGemeinde.id);
+      const token = generateToken('orgAdmin1');
+      const bearbeiten = await request(app).put(`/api/users/${SUPPORT.id}`).set('Authorization', `Bearer ${token}`)
+        .send({ display_name: 'Übernommen' });
+      expect(bearbeiten.status).toBe(403);
+      const passwort = await request(app).put(`/api/users/${SUPPORT.id}/reset-password`).set('Authorization', `Bearer ${token}`)
+        .send({ password: 'Neues-Passwort2!' });
+      expect(passwort.status).toBe(403);
+      expect((await entfernen(token)).status).toBe(200);
+      await warteAufNachwehen(app);
+      // Ein zweites Entfernen findet den Gast nicht mehr -- und loescht nichts.
+      expect((await entfernen(token)).status).toBe(404);
+      expect(await konto()).toMatchObject({ id: SUPPORT.id, is_active: true, deleted_at: null });
+      const { rows: [{ display_name: name }] } = await db.query('SELECT display_name FROM users WHERE id = $1', [SUPPORT.id]);
+      expect(name).toBe(SUPPORT.display_name);
+    });
+  });
+
   describe('Passwort setzen (PUT /users/:id/reset-password)', () => {
     const setze = (token) => request(app)
       .put(`/api/users/${SUPPORT.id}/reset-password`)

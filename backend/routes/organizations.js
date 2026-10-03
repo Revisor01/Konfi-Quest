@@ -17,6 +17,10 @@ const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 const { systemnameFuerNeueGemeinde } = require('../utils/gemeindeSystemname');
 const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
+const { gemeindeAnlegen, konfiLimitLesen, laufzeitLesen, fehlerAlsAntwort } = require('../utils/gemeindeAnlegen');
+const { kirchenkreisFinden, kirchenkreisIdGueltig, MELDUNG_KIRCHENKREIS_FEHLT } = require('../utils/kirchenkreisZuordnung');
+
+const MELDUNG_KIRCHENKREIS_UNGUELTIG = 'Ungültiger Kirchenkreis';
 
 // Organizations routes
 // ============================================
@@ -57,6 +61,9 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     body('admin_username').trim().notEmpty().withMessage('Admin-Benutzername ist erforderlich'),
     passwortPolicy('admin_password'),
     body('admin_display_name').trim().notEmpty().withMessage('Admin-Anzeigename ist erforderlich'),
+    // Zuordnung zu einem Kirchenkreis (seit 03.10.2026, additiv): fehlt sie,
+    // bleibt alles wie vorher.
+    body('kirchenkreis_id').optional({ values: 'null' }).custom(kirchenkreisIdGueltig).withMessage(MELDUNG_KIRCHENKREIS_UNGUELTIG),
     handleValidationErrors
   ];
 
@@ -89,8 +96,15 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       // über DISTINCT dedupliziert (ein User, der primaer + Mapping in derselben
       // Org hängt, zählt nur einmal). Als Sub-Query, damit der konfi_count-JOIN
       // die Zählung nicht verzerrt.
+      //
+      // Zuordnung (Migration 191, 03.10.2026, nur neue Felder): o.* bringt
+      // kirchenkreis_id mit, dazu landeskirche_id und landeskirche aus dem
+      // Kirchenkreis. Als Subselects, damit GROUP BY o.id bleibt.
       const query = `
         SELECT o.*,
+               (SELECT k.landeskirche_id FROM kirchenkreise k WHERE k.id = o.kirchenkreis_id) AS landeskirche_id,
+               (SELECT l.name FROM kirchenkreise k JOIN landeskirchen l ON l.id = k.landeskirche_id
+                 WHERE k.id = o.kirchenkreis_id) AS landeskirche,
                (
                  SELECT COUNT(*) FROM (
                    SELECT u.id
@@ -293,18 +307,11 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
 
   // Create new organization (super admin only)
   //
-  // GANZ ODER GAR NICHT (29.09.2026, Nebenbefund Screens/Leitung BF-15):
-  // Gemeinde, Rollen, erste Gemeindeleitung und alle Vorlagen entstehen in
-  // EINER Transaktion. Bis dahin liefen die rund hundert Einfuegungen einzeln
-  // ueber den Pool; scheiterte eine mittendrin, blieb eine halbe Gemeinde
-  // stehen -- mit belegtem Systemnamen, sodass schon der zweite Versuch an
-  // "Gemeinde-Slug existiert bereits" scheiterte. Das Passwort wird VOR dem
-  // Holen der Verbindung gehasht, damit bcrypt keine Pool-Verbindung belegt.
-  //
-  // DER BENUTZERNAME DER ERSTEN GEMEINDELEITUNG wird systemweit geprueft,
-  // genau wie in POST /users und POST /:id/admins (gleicher Text, 409): Die
-  // Anmeldung sucht per LOWER(username), der Index ist nur
-  // (organization_id, username) und greift in einer neuen Gemeinde nie.
+  // Die Anlage selbst -- Gemeinde, Rollen, erste Gemeindeleitung und alle
+  // Vorlagen in EINER Transaktion, Benutzername systemweit geprueft -- steht
+  // seit dem 03.10.2026 in utils/gemeindeAnlegen.js. Dieselbe Funktion ruft
+  // die Support-Ansicht, wenn sie eine Gemeinde aus einer Anfrage anlegt
+  // (routes/support.js); Begruendungen dort.
   //
   // DER SYSTEMNAME behaelt Umlaute als ae/oe/ue/ss (utils/gemeindeSystemname.js).
   router.post('/', rbacVerifier, requireSuperAdmin, validateCreateOrg, async (req, res) => {
@@ -322,32 +329,11 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       return res.status(400).json({ error: 'Admin-Benutzername, Passwort und Anzeigename sind erforderlich' });
     }
 
-    // max_konfis: nur gueltige Zahl >= 0 oder NULL (unbegrenzt)
-    let konfiLimit = null;
-    if (max_konfis !== null && max_konfis !== undefined && max_konfis !== '') {
-      const parsed = parseInt(max_konfis, 10);
-      if (isNaN(parsed) || parsed < 0) {
-        return res.status(400).json({ error: 'Konfi-Limit muss eine Zahl ab 0 oder leer sein' });
-      }
-      konfiLimit = parsed;
+    const konfiLimit = konfiLimitLesen(max_konfis);
+    if (konfiLimit.fehler) {
+      return res.status(konfiLimit.fehler.status).json(konfiLimit.fehler.body);
     }
-
-    // Zeitraum (trial_ends_at) + Trial-Kennzeichnung (is_trial). Explizite Werte
-    // haben Vorrang; fehlen sie, startet eine neue Org als 30-Tage-Testphase.
-    //   trial_ends_at: NULL = unbegrenzt; Datum = Zugang bis dahin (dann Sperre).
-    //   is_trial:      true = Dashboard-Hinweis; false = stiller Lizenz-Ablauf.
-    let trialEndsAt;
-    let isTrial;
-    if (Object.prototype.hasOwnProperty.call(req.body, 'trial_ends_at')) {
-      trialEndsAt = req.body.trial_ends_at || null;
-      isTrial = req.body.is_trial === true;
-    } else {
-      trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      isTrial = true;
-    }
-
-    const systemName = systemnameFuerNeueGemeinde(name, display_name);
-    const systemSlug = systemnameFuerNeueGemeinde(slug, display_name);
+    const { trialEndsAt, isTrial } = laufzeitLesen(req.body);
 
     let hashedPassword;
     try {
@@ -358,350 +344,27 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     }
 
     const client = await db.getClient();
-    let fruehAntwort = null;
-    let antwort = null;
+    let ergebnis;
     try {
       await client.query('BEGIN');
-
-      // Benutzername systemweit eindeutig -- wie POST /users und /:id/admins,
-      // unter derselben Sperre (utils/benutzernameSperre.js): Eine
-      // gleichzeitige Anlage mit demselben Namen wartet bis zum COMMIT und
-      // bekommt dann 409.
-      if (await benutzernameSperrenUndPruefen(client, admin_username)) {
-        await client.query('ROLLBACK');
-        fruehAntwort = { status: 409, body: { error: MELDUNG_VERGEBEN } };
-      } else {
-
-      // 1. Create Organization
-      const orgQuery = `INSERT INTO organizations (
-        name, slug, display_name, description, contact_name, contact_email,
-        contact_phone, address, website_url, kirchenkreis, max_konfis, trial_ends_at, is_trial
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`;
-
-      const { rows: [newOrg] } = await client.query(orgQuery, [
-        systemName, systemSlug, display_name, description, contact_name || null, contact_email, contact_phone, address, website_url, kirchenkreis || null, konfiLimit, trialEndsAt, isTrial
-      ]);
-      const organizationId = newOrg.id;
-        
-      // 2. Create default roles for the organization
-      // WICHTIG: inkl. 'konfi' — konfi-management sucht die Rolle org-gescopt;
-      // ohne sie kann die neue Organisation keine Konfis anlegen.
-      // Namen wie in utils/rollenNamen.js (Simon, 28.09.2026): 'admin' heisst
-      // "Leitung", 'org_admin' "Org-Leitung". Bestehende Gemeinden behalten
-      // ihre alten display_name-Werte, die Oberflaeche beschriftet nach name.
-      const defaultRoles = [
-        { name: 'org_admin', display_name: 'Gemeindeleitung', description: 'Vollzugriff auf alle Jahrgänge der Gemeinde', is_system_role: true },
-        { name: 'admin', display_name: 'Leitung', description: 'Vollzugriff mit Jahrgangs-Beschränkungen', is_system_role: true },
-        { name: 'teamer', display_name: 'Teamer:in', description: 'Kann Anträge bearbeiten und zugewiesene Jahrgänge verwalten', is_system_role: true },
-        { name: 'konfi', display_name: 'Konfirmand:in', description: 'Konfirmand:innen haben Zugriff auf eigene Daten und können Aktivitäten beantragen', is_system_role: true }
-      ];
-      
-      let orgAdminRoleId = null;
-      const roleQuery = `INSERT INTO roles (organization_id, name, display_name, description, is_system_role) 
-                         VALUES ($1, $2, $3, $4, $5) RETURNING id`;
-      
-      for (const role of defaultRoles) {
-          const { rows: [newRole] } = await client.query(roleQuery, [
-              organizationId, role.name, role.display_name, role.description, role.is_system_role
-          ]);
-          if (role.name === 'org_admin') {
-              orgAdminRoleId = newRole.id;
-          }
-      }
-      
-      // 3. Create the admin user for the organization (Passwort oben gehasht)
-      const userQuery = `INSERT INTO users (organization_id, role_id, username, email, password_hash, display_name, is_active)
-                         VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING id`;
-      const { rows: [newAdmin] } = await client.query(userQuery, [
-        organizationId, orgAdminRoleId, admin_username, contact_email, hashedPassword, admin_display_name
-      ]);
-      // Ein vorher durchprobierter Benutzername startet frei (utils/kontoSperre.js).
-      // Mit dem Client: Das Konto ist ausserhalb der Transaktion noch unsichtbar.
-      await kontoSperreAufheben(client, newAdmin.id);
-
-      // 4. Create default badges for the organization
-      const defaultBadges = [
-        { name: "Erster Schritt", icon: "footsteps-outline", description: "Herzlich willkommen! Du hast deine ersten Punkte gesammelt.", criteria_type: "total_points", criteria_value: 1 },
-        { name: "Auf dem Weg", icon: "walk-outline", description: "Du sammelst fleißig Punkte!", criteria_type: "total_points", criteria_value: 5 },
-        { name: "Fleißiger Sammler", icon: "flag-outline", description: "10 Punkte gesammelt - super gemacht!", criteria_type: "total_points", criteria_value: 10 },
-        { name: "Punktesammler", icon: "diamond-outline", description: "15 Punkte erreicht - du bist auf einem guten Weg!", criteria_type: "total_points", criteria_value: 15 },
-        { name: "Punkteprofi", icon: "trophy-outline", description: "20 Punkte geschafft - großartig!", criteria_type: "total_points", criteria_value: 20 },
-        { name: "Punktemeister", icon: "ribbon-outline", description: "25 Punkte erreicht - du bist spitze!", criteria_type: "total_points", criteria_value: 25 },
-        { name: "Gottesdienst-Neuling", icon: "home-outline", description: "Du warst zum ersten Mal im Gottesdienst - toll!", criteria_type: "gottesdienst_points", criteria_value: 1 },
-        { name: "Gottesdienst-Fan", icon: "book-outline", description: "5 Gottesdienst-Punkte gesammelt!", criteria_type: "gottesdienst_points", criteria_value: 5 },
-        { name: "Gottesdienst-Profi", icon: "star-outline", description: "10 Gottesdienst-Punkte erreicht!", criteria_type: "gottesdienst_points", criteria_value: 10 },
-        { name: "Gottesdienst-Experte", icon: "heart-outline", description: "15 Gottesdienst-Punkte geschafft!", criteria_type: "gottesdienst_points", criteria_value: 15 },
-        { name: "Gemeinde-Neuling", icon: "people-outline", description: "Du hast dich zum ersten Mal in der Gemeinde engagiert!", criteria_type: "gemeinde_points", criteria_value: 1 },
-        { name: "Gemeinde-Helfer", icon: "hand-left-outline", description: "5 Gemeinde-Punkte gesammelt - danke für dein Engagement!", criteria_type: "gemeinde_points", criteria_value: 5 },
-        { name: "Gemeinde-Unterstützer", icon: "sunny-outline", description: "10 Gemeinde-Punkte erreicht!", criteria_type: "gemeinde_points", criteria_value: 10 },
-        { name: "Gemeinde-Champion", icon: "medal-outline", description: "15 Gemeinde-Punkte geschafft - du bist eine große Hilfe!", criteria_type: "gemeinde_points", criteria_value: 15 },
-        { name: "Ausgewogen", icon: "git-compare-outline", description: "Du sammelst in beiden Bereichen Punkte - sehr gut!", criteria_type: "both_categories", criteria_value: 3 },
-        { name: "Harmonisch", icon: "musical-notes-outline", description: "5 Punkte in beiden Bereichen - perfekte Balance!", criteria_type: "both_categories", criteria_value: 5 },
-        { name: "Aktiv dabei", icon: "fitness-outline", description: "Du hast schon 3 verschiedene Aktivitäten gemacht!", criteria_type: "activity_count", criteria_value: 3 },
-        { name: "Vielfalts-Fan", icon: "color-palette-outline", description: "5 Aktivitäten absolviert - du probierst gerne Neues!", criteria_type: "activity_count", criteria_value: 5 },
-        { name: "Aktivitäts-Sammler", icon: "stats-chart-outline", description: "10 Aktivitäten geschafft - beeindruckend!", criteria_type: "activity_count", criteria_value: 10 },
-        { name: "Bonuspunkte-Gewinner", icon: "gift-outline", description: "Du hast Bonuspunkte erhalten - weiter so!", criteria_type: "bonus_points", criteria_value: 1 },
-        { name: "Event-Entdecker", icon: "calendar-outline", description: "Du warst bei 3 Events dabei!", criteria_type: "event_count", criteria_value: 3 },
-        { name: "Event-Stammgast", icon: "calendar-number-outline", description: "7 Events besucht - du bist richtig dabei!", criteria_type: "event_count", criteria_value: 7 },
-        { name: "Zuverlässig", icon: "checkmark-done-outline", description: "Bei 5 Pflicht-Events anwesend - darauf ist Verlass!", criteria_type: "mandatory_event_count", criteria_value: 5 },
-        { name: "Neugierig", icon: "compass-outline", description: "3 verschiedene Aktivitäten ausprobiert!", criteria_type: "unique_activities", criteria_value: 3 },
-        { name: "Vielseitig", icon: "telescope-outline", description: "6 verschiedene Aktivitäten ausprobiert - stark!", criteria_type: "unique_activities", criteria_value: 6 },
-        { name: "Dranbleiber", icon: "flame-outline", description: "3 Wochen in Folge aktiv gewesen!", criteria_type: "streak", criteria_value: 3 },
-        { name: "Durchstarter", icon: "flash-outline", description: "6 Wochen am Stück aktiv - was für eine Serie!", criteria_type: "streak", criteria_value: 6 }
-      ];
-
-      // TEAMER-ABZEICHEN. Sie brauchen einen eigenen Satz: custom_badges.
-      // target_role steht per DEFAULT auf 'konfi' (Migration 076), und die
-      // Teamer-Ansicht fragt ausschliesslich target_role = 'teamer' ab. Ohne
-      // diese Zeilen startet eine neue Gemeinde mit einer leeren Abzeichen-
-      // Seite fuer ihr Team, waehrend die bestehenden Gemeinden welche haben.
-      //
-      // Nur Kriterien, die OHNE weitere Einrichtung rechnen: Der Teamer-Zweig
-      // (routes/badges.js) kennt zehn Typen, aber specific_activity,
-      // category_activities, category_combination und activity_combination
-      // verlangen konkrete Aktivitaeten oder Kategorien -- die es in einer
-      // frischen Gemeinde noch nicht gibt. Uebrig bleiben activity_count
-      // (Aktivitaeten UND Termine), event_count, unique_activities,
-      // teamer_year und streak.
-      const defaultTeamerBadges = [
-        { name: "Willkommen im Team", icon: "hand-right-outline", description: "Dein erster Einsatz als Teamer:in ist eingetragen.", criteria_type: "activity_count", criteria_value: 1 },
-        { name: "Mit dabei", icon: "people-circle-outline", description: "5 Einsätze als Teamer:in.", criteria_type: "activity_count", criteria_value: 5 },
-        { name: "Feste Größe", icon: "shield-checkmark-outline", description: "15 Einsätze als Teamer:in.", criteria_type: "activity_count", criteria_value: 15 },
-        { name: "Erste Begleitung", icon: "calendar-outline", description: "Du warst bei deinem ersten Event dabei.", criteria_type: "event_count", criteria_value: 1 },
-        { name: "Verlässlich dabei", icon: "calendar-number-outline", description: "Bei 10 Events dabei gewesen.", criteria_type: "event_count", criteria_value: 10 },
-        { name: "Vielseitig im Einsatz", icon: "color-palette-outline", description: "5 verschiedene Aktivitäten begleitet.", criteria_type: "unique_activities", criteria_value: 5 },
-        { name: "Ein Jahr im Team", icon: "ribbon-outline", description: "Ein Jahr als Teamer:in aktiv gewesen.", criteria_type: "teamer_year", criteria_value: 1 },
-        { name: "Drei Jahre im Team", icon: "trophy-outline", description: "Drei Jahre als Teamer:in aktiv gewesen.", criteria_type: "teamer_year", criteria_value: 3 },
-        { name: "Am Ball geblieben", icon: "flame-outline", description: "3 Wochen in Folge im Einsatz.", criteria_type: "streak", criteria_value: 3 }
-      ];
-
-      const badgeQuery = `INSERT INTO custom_badges (
-        organization_id, name, icon, description, criteria_type, criteria_value, 
-        is_active, is_hidden, created_by, target_role
-      ) VALUES ($1, $2, $3, $4, $5, $6, true, false, $7, $8)`;
-
-      for (const badge of defaultBadges) {
-        await client.query(badgeQuery, [
-          organizationId, badge.name, badge.icon, badge.description,
-          badge.criteria_type, badge.criteria_value, newAdmin.id, 'konfi'
-        ]);
-      }
-
-      for (const badge of defaultTeamerBadges) {
-        await client.query(badgeQuery, [
-          organizationId, badge.name, badge.icon, badge.description,
-          badge.criteria_type, badge.criteria_value, newAdmin.id, 'teamer'
-        ]);
-      }
-
-      // 5. Create default certificate types for the organization
-      const defaultCertificates = [
-        { name: 'Teamer-Card', icon: 'card' },
-        { name: 'JuLeiCa', icon: 'ribbon' },
-        { name: 'Rettungsschwimmer', icon: 'water' },
-        { name: 'Erste Hilfe', icon: 'medkit' }
-      ];
-
-      const certQuery = `INSERT INTO certificate_types (name, icon, organization_id)
-                         VALUES ($1, $2, $3)`;
-      for (const cert of defaultCertificates) {
-        await client.query(certQuery, [cert.name, cert.icon, organizationId]);
-      }
-
-      // 6. Create default levels (Startpunkt zum Anpassen — Werte wie Referenz-Org)
-      //
-      // Titel, Punkte, Icons und Farben sind die von Kirchspiel West (Org 1),
-      // gemessen am 25.09.2026. Die Titel sind geschlechtsneutral (Noviz:in,
-      // Expert:in), wie die uebrige App. Anlass: Hennstedt (Org 2, angelegt am
-      // 05.12.2025) hatte KEINE Level -- die Org ist aelter als dieser Block
-      // (11.06.2026). Simon: "Die muessen standardmaessig in jeder Org angelegt
-      // werden." Der Test zur Org-Anlage prueft seither die konkrete Liste.
-      const defaultLevels = [
-        { name: 'novize', title: 'Noviz:in', points_required: 2, icon: 'pin', color: '#f5b981' },
-        { name: 'lehrling', title: 'Lehrling', points_required: 5, icon: 'hammer', color: '#3b82f6' },
-        { name: 'gehilfe', title: 'Unterstützung', points_required: 10, icon: 'personAdd', color: '#8b5cf6' },
-        { name: 'experte', title: 'Expert:in', points_required: 15, icon: 'school', color: '#f59e0b' },
-        { name: 'meister', title: 'Meisterschaft', points_required: 20, icon: 'construct', color: '#ef4444' },
-        { name: 'legende', title: 'Legende', points_required: 30, icon: 'medal', color: '#7c3aed' }
-      ];
-
-      const levelQuery = `INSERT INTO levels (organization_id, name, title, points_required, icon, color, is_active, created_by)
-                          VALUES ($1, $2, $3, $4, $5, $6, true, $7)`;
-      for (const level of defaultLevels) {
-        await client.query(levelQuery, [
-          organizationId, level.name, level.title, level.points_required, level.icon, level.color, newAdmin.id
-        ]);
-      }
-
-      // 7. Create default categories (Startpunkt zum Anpassen). type:
-      // 'activity' | 'event' | 'both'. key dient nur der Verknuepfung unten.
-      //
-      // NEU SORTIERT AM 03.09.2026 (Simons Entscheidung). Zwei Aenderungen:
-      //
-      // 1. "Unterricht" ist RAUS. Woertlich: "Es heisst bewusst Konfi Zeit!"
-      //    Konfi-Arbeit ist keine Schule. Der Begriff wird auch nicht ersetzt,
-      //    er faellt ersatzlos weg.
-      //
-      // 2. "Gottesdienst" und "Gemeinde" sind RAUS als Kategorie. Sie sind der
-      //    TYP einer Aktivitaet (activities.type -- die Punkte-Achse
-      //    gottesdienst/gemeinde), nicht die Art des Anlasses. Als Kategorie
-      //    waren sie eine Doppelung: Jede Aktivitaet ist ohnehin das eine oder
-      //    das andere, das steht schon auf der Punkte-Seite des Rueckblicks.
-      //    Kategorien beantworten eine andere Frage -- WAS FUER EIN ANLASS war
-      //    das (Fest, Konzert, Freizeit) -- und nur die traegt eigene Seiten.
-      //
-      // BESTAND BLEIBT UNANGETASTET: Diese Liste gilt nur beim ANLEGEN einer
-      // neuen Gemeinde. Bestehende Organisationen behalten jede Kategorie, die
-      // sie haben, inklusive "Gottesdienst", "Gemeinde" und "Unterricht".
-      // Niemandes Daten aendern sich durch diese Zeilen.
-      const defaultCategories = [
-        { key: 'fest', name: 'Fest', description: 'Gemeindefest, Feiern', type: 'both' },
-        { key: 'senioren', name: 'Senior:innen', description: 'Besuche, Seniorenkreis', type: 'both' },
-        { key: 'jugend', name: 'Jugend', description: 'Jugendgruppe, Jugendtreff', type: 'both' },
-        { key: 'oeffentlichkeit', name: 'Öffentlichkeitsarbeit', description: 'Gemeindebrief, Aushang, Social Media', type: 'both' },
-        { key: 'freizeit', name: 'Freizeit', description: 'Fahrten und Freizeiten', type: 'both' },
-        { key: 'weihnachten', name: 'Weihnachten', description: 'Adventszeit, Christvesper, Krippenspiel', type: 'both' },
-        // Fuer die Teamer:innen -- taucht im Teamer-Rueckblick auf, nicht im
-        // Konfi-Rueckblick.
-        { key: 'teamtreff', name: 'Teamtreff', description: 'Treffen des Teams', type: 'both' },
-        { key: 'konzert', name: 'Konzert', description: 'Konzerte und Musik', type: 'both' },
-        { key: 'kinder', name: 'Kinder', description: 'Kindergottesdienst, Kindergruppe', type: 'both' },
-        { key: 'kreativ', name: 'Kreativ', description: 'Basteln, Gestalten, Werkstatt', type: 'both' },
-        { key: 'seelsorge', name: 'Seelsorge', description: 'Besuche, Gespräche, Begleitung', type: 'both' },
-        // Kasualien bleibt: Die Standard-Aktivitaeten Taufe, Hochzeit und
-        // Beerdigung haengen daran (defaultActivities unten). Ohne diese
-        // Kategorie liefe das Anlegen einer Gemeinde auf einen leeren
-        // Kategorie-Verweis.
-        { key: 'kasualien', name: 'Kasualien', description: 'Taufe, Hochzeit, Beerdigung', type: 'activity' },
-        // Gottesdienst und Gemeinde bleiben als Kategorie erhalten -- sie
-        // schaden hier nicht und viele Gemeinden erwarten sie. Sie tragen nur
-        // KEINE eigene Wrapped-Seite, weil sie die Punkte-Achse doppeln
-        // (activities.type). Siehe utils/wrappedKategorien.js.
-        { key: 'gottesdienst', name: 'Gottesdienst', description: '', type: 'both' },
-        { key: 'gemeinde', name: 'Gemeinde', description: '', type: 'both' }
-      ];
-
-      const categoryIdByKey = {};
-      const categoryQuery = `INSERT INTO categories (name, description, type, organization_id)
-                             VALUES ($1, $2, $3, $4) RETURNING id`;
-      for (const cat of defaultCategories) {
-        const { rows: [newCat] } = await client.query(categoryQuery,[cat.name, cat.description, cat.type, organizationId]);
-        categoryIdByKey[cat.key] = newCat.id;
-      }
-
-      // 8. Create default activities (Startpunkt zum Anpassen) + Kategorie-Verknuepfung.
-      // type: 'gottesdienst' | 'gemeinde'. categoryKey verweist auf defaultCategories.
-      const defaultActivities = [
-        { name: 'Gottesdienstbesuch', points: 1, type: 'gottesdienst', categoryKey: 'gottesdienst' },
-        { name: 'Taufe', points: 1, type: 'gottesdienst', categoryKey: 'kasualien' },
-        { name: 'Hochzeit', points: 1, type: 'gottesdienst', categoryKey: 'kasualien' },
-        { name: 'Beerdigung', points: 2, type: 'gottesdienst', categoryKey: 'kasualien' },
-        { name: 'Küsterdienst', points: 1, type: 'gemeinde', categoryKey: 'gemeinde' }
-      ];
-
-      // Aktivitaeten fuers Team (Simons Standard, 07.09.2026). Bewusst OHNE
-      // Punkte und ohne Punktetyp: Teamer:innen sammeln keine Gottesdienst-
-      // oder Gemeindepunkte. Ein Typ hier waere nicht nur sinnlos, sondern
-      // schaedlich -- die Loeschroute rief bis heute getPointField() darauf
-      // und brach mit "Ungueltiger Punktetyp" ab.
-      // Was NICHT hierher gehoert: "Kirchenuebernachtung" und "SFZ Norwegen"
-      // sind Eigenheiten einzelner Gemeinden und werden dort von Hand
-      // angelegt.
-      const defaultTeamerActivities = [
-        { name: 'Andacht halten', categoryKey: 'gottesdienst' },
-        { name: 'Gottesdienst mitgestalten', categoryKey: 'gottesdienst' },
-        { name: 'Team-Schulung', categoryKey: 'teamtreff' },
-        { name: 'Team-Sitzung', categoryKey: 'teamtreff' }
-      ];
-
-      const activityQuery = `INSERT INTO activities (name, points, type, organization_id)
-                             VALUES ($1, $2, $3, $4) RETURNING id`;
-      const activityCategoryQuery = `INSERT INTO activity_categories (activity_id, category_id)
-                                     VALUES ($1, $2)`;
-      for (const act of defaultActivities) {
-        const { rows: [newAct] } = await client.query(activityQuery, [act.name, act.points, act.type, organizationId]);
-        const catId = categoryIdByKey[act.categoryKey];
-        if (catId) {
-          await client.query(activityCategoryQuery, [newAct.id, catId]);
-        }
-      }
-
-      const teamerActivityQuery = `INSERT INTO activities (name, points, type, target_role, organization_id)
-                                   VALUES ($1, 0, NULL, 'teamer', $2) RETURNING id`;
-      for (const act of defaultTeamerActivities) {
-        const { rows: [newAct] } = await client.query(teamerActivityQuery, [act.name, organizationId]);
-        const catId = categoryIdByKey[act.categoryKey];
-        if (catId) {
-          await client.query(activityCategoryQuery, [newAct.id, catId]);
-        }
-      }
-
-      // 9. Beispiel-Challenges (Startpunkt zum Anpassen). Je eine pro
-      // challenge_type, als Entwuerfe (is_draft=true) angelegt, damit nichts
-      // ungewollt live geht — die Leitung passt Inhalte an und veroeffentlicht
-      // selbst. Platzhalter-Zeitraum (7 bis 14 Tage ab jetzt), da eine neue Org
-      // noch keine Jahrgänge hat und die Challenges daher bewusst OHNE
-      // Jahrgangs-Zuweisung starten (challenge_jahrgang_assignments bleibt leer;
-      // routes/challenges.js zeigt Entwuerfe ohne Zuweisung über LEFT JOIN /
-      // COALESCE sauber an).
-      const defaultChallenges = [
-        {
-          title: 'Unbezahlbar — Momente, die man nicht kaufen kann',
-          description: 'Eine Woche lang achtest du auf Momente, die nichts kosten und dir trotzdem wichtig sind — ein Lachen, ein Sonnenuntergang, ein gutes Gespräch. Teile so einen Moment als Foto oder Text.',
-          challenge_type: 'wahrnehmung',
-          visibility: 'konfi_choice',
-          moderated: true,
-          badge_name: 'Unbezahlbar'
-        },
-        {
-          title: 'Dein Song',
-          description: 'Es gibt bestimmt einen Song, der etwas mit dir macht — der dich runterholt, aufbaut oder einfach zu dir passt. Teile ihn als Link und schreib in einem Satz, warum genau dieser Song.',
-          challenge_type: 'beitrag',
-          visibility: 'konfi_choice',
-          moderated: false,
-          badge_name: 'Dein Song'
-        },
-        {
-          title: 'Eine Woche ein guter Vorsatz',
-          description: 'Zieh eine Woche lang etwas Kleines durch, das dir guttut — zum Beispiel morgens an eine Sache denken, für die du dankbar bist, oder jeden Tag einen freundlichen Satz zu jemandem sagen. Schreib am Ende kurz auf, wie es für dich war. Das lesen nur wir.',
-          challenge_type: 'praxis',
-          visibility: 'private',
-          moderated: false,
-          badge_name: 'Guter Vorsatz'
-        }
-      ];
-
-      const challengeQuery = `INSERT INTO challenges (
-        organization_id, title, description, challenge_type, visibility, moderated,
-        badge_name, created_by, starts_at, ends_at, is_draft
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW() + INTERVAL '7 days', NOW() + INTERVAL '14 days', true)`;
-
-      for (const challenge of defaultChallenges) {
-        await client.query(challengeQuery, [
-          organizationId, challenge.title, challenge.description, challenge.challenge_type,
-          challenge.visibility, challenge.moderated, challenge.badge_name, newAdmin.id
-        ]);
-      }
-
-      await client.query('COMMIT');
-
-      antwort = {
-        id: organizationId,
-        admin_user_id: newAdmin.id,
-        // Wie bei den Aktivitaeten: Konfi- und Teamer-Vorlagen zusammen.
-        default_badges_created: defaultBadges.length + defaultTeamerBadges.length,
-        default_certificates_created: defaultCertificates.length,
-        default_levels_created: defaultLevels.length,
-        default_categories_created: defaultCategories.length,
-        default_activities_created: defaultActivities.length + defaultTeamerActivities.length,
-        default_challenges_created: defaultChallenges.length,
-        message: `Gemeinde erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length + defaultTeamerBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length + defaultTeamerActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
-      };
-      }
+      ergebnis = await gemeindeAnlegen(client, {
+        name: systemnameFuerNeueGemeinde(name, display_name),
+        slug: systemnameFuerNeueGemeinde(slug, display_name),
+        display_name, description, contact_name, contact_email, contact_phone,
+        address, website_url, kirchenkreis,
+        kirchenkreis_id: req.body.kirchenkreis_id,
+        max_konfis: konfiLimit.wert,
+        trial_ends_at: trialEndsAt,
+        is_trial: isTrial,
+        // Die erste Gemeindeleitung bekommt die Kontakt-Adresse der Gemeinde.
+        admin: { username: admin_username, email: contact_email, display_name: admin_display_name, passwortHash: hashedPassword },
+      });
+      await client.query(ergebnis.fehler ? 'ROLLBACK' : 'COMMIT');
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
-      if (err.code === '23505') { // unique_violation
-        return res.status(409).json({ error: 'Gemeinde-Slug existiert bereits' });
+      const antwort = fehlerAlsAntwort(err);
+      if (antwort) {
+        return res.status(antwort.status).json(antwort.body);
       }
       console.error('Error creating organization:', err);
       return res.status(500).json({ error: 'Datenbankfehler' });
@@ -709,11 +372,22 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       client.release();
     }
 
-    if (fruehAntwort) {
-      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    if (ergebnis.fehler) {
+      return res.status(ergebnis.fehler.status).json(ergebnis.fehler.body);
     }
 
-    res.status(201).json(antwort);
+    const { anzahl } = ergebnis;
+    res.status(201).json({
+      id: ergebnis.organizationId,
+      admin_user_id: ergebnis.adminId,
+      default_badges_created: anzahl.abzeichen,
+      default_certificates_created: anzahl.zertifikate,
+      default_levels_created: anzahl.stufen,
+      default_categories_created: anzahl.kategorien,
+      default_activities_created: anzahl.aktivitaeten,
+      default_challenges_created: anzahl.challenges,
+      message: `Gemeinde erfolgreich erstellt (Standard-Rollen, Admin, ${anzahl.abzeichen} Badges, ${anzahl.zertifikate} Zertifikate, ${anzahl.stufen} Levels, ${anzahl.kategorien} Kategorien, ${anzahl.aktivitaeten} Aktivitäten, ${anzahl.challenges} Beispiel-Challenges)`
+    });
 
     // Live-Update NACH der Response: nur an den ausfuehrenden Super-Admin selbst
     // (Multi-Device-Sync seiner eigenen Sitzung). Die Organisations-Verwaltung ist
@@ -740,6 +414,30 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         return res.status(403).json({ error: 'Keine Berechtigung' });
       }
 
+      // KIRCHENKREIS ALS ZUORDNUNG (Migration 191, 03.10.2026; Regel in
+      // utils/kirchenkreisZuordnung.js). kirchenkreis_id setzt nur der
+      // Super-Admin -- wie Sperre und Laufzeit; von anderen wird das Feld
+      // uebergangen. Mit kirchenkreis_id steht dessen Name in der Textspalte
+      // (die Apps bis 2.3.0 lesen nur sie), ein geschickter Text zaehlt dann
+      // nicht; null hebt die Zuordnung auf und leert den Text.
+      let kirchenkreisText = kirchenkreis || null;
+      const setztZuordnung = isSuperAdmin && Object.prototype.hasOwnProperty.call(req.body, 'kirchenkreis_id');
+      let kirchenkreisId = null;
+      if (setztZuordnung) {
+        if (!kirchenkreisIdGueltig(req.body.kirchenkreis_id)) {
+          return res.status(400).json({ error: MELDUNG_KIRCHENKREIS_UNGUELTIG });
+        }
+        kirchenkreisText = null;
+        if (req.body.kirchenkreis_id !== null) {
+          const kk = await kirchenkreisFinden(db, req.body.kirchenkreis_id);
+          if (!kk) {
+            return res.status(400).json({ error: MELDUNG_KIRCHENKREIS_FEHLT });
+          }
+          kirchenkreisId = kk.id;
+          kirchenkreisText = kk.name;
+        }
+      }
+
       // Basis-Felder (von super_admin UND org_admin editierbar)
       const setClauses = [
         'name = $1', 'slug = $2', 'display_name = $3', 'description = $4',
@@ -748,8 +446,20 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       ];
       const params = [
         name, slug, display_name, description, contact_name || null, contact_email, contact_phone,
-        address, website_url, kirchenkreis || null
+        address, website_url, kirchenkreisText
       ];
+
+      if (setztZuordnung) {
+        params.push(kirchenkreisId);
+        setClauses.push(`kirchenkreis_id = $${params.length}`);
+      } else {
+        // Nur Text (alle Apps bis 2.3.0): Weicht er vom Namen des
+        // zugeordneten Kirchenkreises ab, endet die Zuordnung; derselbe Text
+        // (ohne Gross/klein und Randleerzeichen) laesst sie stehen.
+        setClauses.push(`kirchenkreis_id = CASE
+          WHEN lower(btrim(COALESCE($10::text, ''))) = (SELECT lower(btrim(k.name)) FROM kirchenkreise k WHERE k.id = organizations.kirchenkreis_id)
+          THEN kirchenkreis_id ELSE NULL END`);
+      }
 
       // is_active darf NUR der super_admin setzen (Audit 22.08.2026).
       // Eine inaktive Organisation fuehrt in rbac.js:177 für JEDEN Zugang zu
@@ -1003,7 +713,14 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       await client.query('DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM roles WHERE organization_id = $1', [id]);
 
-      // 13. Organisation selbst
+      // 13. Die Anfrage vom Formular, aus der die Gemeinde entstanden ist
+      // (03.10.2026): Sie bleibt, solange die Gemeinde besteht, und geht mit
+      // ihr -- ohne Gemeinde gibt es keinen Grund mehr, die Kontaktdaten der
+      // anfragenden Person zu halten (Datenschutzerklaerung 9c). Der
+      // Fremdschluessel (ON DELETE SET NULL) liesse sie sonst ohne Bezug stehen.
+      await client.query('DELETE FROM gemeinde_anfragen WHERE organization_id = $1', [id]);
+
+      // 14. Organisation selbst
       const { rowCount } = await client.query('DELETE FROM organizations WHERE id = $1', [id]);
       if (rowCount === 0) {
         await client.query('ROLLBACK');

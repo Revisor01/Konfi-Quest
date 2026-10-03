@@ -281,7 +281,90 @@ async function ladeRolleInGemeinde(db, userId, organizationId) {
   return z ? z.role_name : null;
 }
 
+const STATISTIK_ROLLEN = ['konfi', 'teamer', 'admin', 'org_admin'];
+
+/**
+ * Konten je Gemeinde und Rolle -- fuer die Statistik der Support-Ansicht
+ * (GET /support/statistik, 03.10.2026). Dieselbe Regel wie oben, fuer alle
+ * Gemeinden in EINER Abfrage:
+ *
+ *   - beide Quellen der Zugehoerigkeit; die Rolle gilt je Gemeinde
+ *     (Stamm-Gemeinde users.role_id, jede weitere user_organizations.role_id);
+ *     fuehrt user_organizations die Stamm-Gemeinde noch einmal, zaehlt die
+ *     Person dort einmal, mit der Rolle am Konto;
+ *   - geloeschte und gesperrte Konten zaehlen nicht (wie ueberall hier);
+ *   - Support-Konten OHNE Gemeinde zaehlen nicht, auch nicht dort, wo sie
+ *     Gast sind -- sie gehoeren zum Betrieb, nicht zur Gemeinde. Ein
+ *     Super-Admin-Konto MIT Gemeinde (Simons) zaehlt wie jedes Konto;
+ *   - gezaehlt werden die vier Rollen einer Gemeinde.
+ *
+ * aktiv_30_tage: davon die Konten, die sich in den letzten 30 Tagen
+ * angemeldet oder ihre Anmeldung verlaengert haben (users.last_login_at
+ * oder ein Refresh-Token aus dieser Zeit -- die App erneuert ihn bei jedem
+ * Start und alle 15 Minuten). Je Konto, nicht je Gemeinde: Wer in zwei
+ * Gemeinden mitarbeitet und in einer aktiv war, zaehlt in beiden.
+ *
+ * @param {object} db
+ * @returns {Promise<Map<number, {konten: {konfi: number, teamer: number,
+ *   admin: number, org_admin: number}, aktiv_30_tage: number}>>}
+ *   nur Gemeinden mit mindestens einem Konto
+ */
+async function zaehleKontenJeGemeinde(db) {
+  const { rows } = await db.query(
+    `
+    WITH mitglied AS (
+      SELECT DISTINCT ON (m.user_id, m.organization_id) m.user_id, m.organization_id, m.rolle
+        FROM (
+          -- Stamm-Gemeinde: Rolle am Konto
+          SELECT u.id AS user_id, u.organization_id, r.name AS rolle, true AS stamm
+            FROM users u
+            JOIN roles r ON r.id = u.role_id
+           WHERE u.organization_id IS NOT NULL
+             AND u.deleted_at IS NULL AND COALESCE(u.is_active, true) = true
+          UNION ALL
+          -- weitere Gemeinden: Rolle DORT; Konten ohne Gemeinde nicht
+          SELECT u.id, uo.organization_id, r.name, false
+            FROM user_organizations uo
+            JOIN users u ON u.id = uo.user_id
+            JOIN roles r ON r.id = uo.role_id
+           WHERE u.organization_id IS NOT NULL
+             AND u.deleted_at IS NULL AND COALESCE(u.is_active, true) = true
+        ) m
+       ORDER BY m.user_id, m.organization_id, m.stamm DESC
+    ),
+    aktiv AS (
+      SELECT u.id AS user_id
+        FROM users u
+       WHERE u.last_login_at > NOW() - interval '30 days'
+          OR EXISTS (SELECT 1 FROM refresh_tokens rt
+                      WHERE rt.user_id = u.id AND rt.created_at > NOW() - interval '30 days')
+    )
+    SELECT m.organization_id,
+           COUNT(*) FILTER (WHERE m.rolle = 'konfi')::int     AS konfi,
+           COUNT(*) FILTER (WHERE m.rolle = 'teamer')::int    AS teamer,
+           COUNT(*) FILTER (WHERE m.rolle = 'admin')::int     AS admin,
+           COUNT(*) FILTER (WHERE m.rolle = 'org_admin')::int AS org_admin,
+           COUNT(a.user_id)::int                              AS aktiv_30_tage
+      FROM mitglied m
+      LEFT JOIN aktiv a ON a.user_id = m.user_id
+     WHERE m.rolle = ANY($1::text[])
+     GROUP BY m.organization_id
+    `,
+    [STATISTIK_ROLLEN]
+  );
+  const jeGemeinde = new Map();
+  for (const z of rows) {
+    jeGemeinde.set(Number(z.organization_id), {
+      konten: { konfi: z.konfi, teamer: z.teamer, admin: z.admin, org_admin: z.org_admin },
+      aktiv_30_tage: z.aktiv_30_tage,
+    });
+  }
+  return jeGemeinde;
+}
+
 module.exports = {
+  zaehleKontenJeGemeinde,
+  STATISTIK_ROLLEN,
   istMitgliedDerOrganisation,
   ladeRolleInGemeinde,
   ladeMitgliederDerOrganisation,

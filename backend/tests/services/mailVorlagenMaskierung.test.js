@@ -83,6 +83,19 @@ describe('Mail-Vorlagen maskieren alle eingesetzten Werte', () => {
       pruefeMaskiert(gesendet().html, 3);
     });
 
+    it('Hinweis auf eine Anfrage: Name, Gemeinde, Kirchenkreis und Landeskirche', async () => {
+      await mail.sendAnfrageHinweisEmail('a@example.test', BOESE, {
+        id: 7, gemeinde: BOESE, kirchenkreis: BOESE, landeskirche: BOESE,
+      });
+      // Name und Gemeinde je einmal, Kirchenkreis und Landeskirche in einer Zeile.
+      pruefeMaskiert(gesendet().html, 4);
+    });
+
+    it('Hinweis auf eine Anfrage: kein Zeilenumbruch aus dem Gemeindenamen im Betreff', async () => {
+      await mail.sendAnfrageHinweisEmail('a@example.test', 'Support', { id: 7, gemeinde: 'G\r\nBcc: x@example.test' });
+      expect(gesendet().subject).toBe('Neue Anfrage: G Bcc: x@example.test - Konfi Quest');
+    });
+
     it('Anwesenheit und Konfisprüche: Leitung, Jahrgang und jede Zeile', async () => {
       await mail.sendKonfiMatrixEmail('a@example.test', BOESE, BOESE, 'anwesenheit', [
         { display_name: BOESE, present_count: 1, total_count: 2 },

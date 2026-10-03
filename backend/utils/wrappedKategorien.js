@@ -145,13 +145,13 @@ function datumsFenster(datum) {
  * genannt haetten.
  *
  * Stattdessen haengen die Seiten an den Standardkategorien, die die App bei
- * jeder neuen Gemeinde selbst anlegt (routes/organizations.js,
+ * jeder neuen Gemeinde selbst anlegt (utils/gemeindeAnlegen.js,
  * defaultCategories). Wer sie behaelt, bekommt die Seiten. Wer eigene Namen
  * vergibt, faellt auf die allgemeine Schwerpunkt-Seite ("Deine haeufigste
  * Kategorie: Kreativ") -- niemand geht leer aus, aber wir erfinden auch
  * keine Seite fuer fremdes Vokabular.
  *
- * DIESE LISTE MUSS ZU defaultCategories IN routes/organizations.js PASSEN.
+ * DIESE LISTE MUSS ZU defaultCategories IN utils/gemeindeAnlegen.js PASSEN.
  * Ein Test haelt beide zusammen (wrappedKategorien.test.js).
  *
  * Toleriert wird nur Normalisierung derselben Begriffe: Gross-/Klein-
@@ -268,7 +268,7 @@ function orgHatSommerfreizeit(orgId) {
  * Traegt dieser Kategoriename die Sommerfreizeit?
  *
  * NICHT in STANDARD_SEITEN aufgenommen: Diese Liste muss zu
- * defaultCategories in routes/organizations.js passen (ein Test haelt beide
+ * defaultCategories in utils/gemeindeAnlegen.js passen (ein Test haelt beide
  * zusammen), und "Sommerfreizeit" soll NICHT bei jeder neuen Gemeinde
  * angelegt werden. Es ist eine Sonderseite fuer eine einzelne Fahrt, kein
  * Standardvokabular.

@@ -23,19 +23,27 @@ Versionsüberschrift.
   und Zahlen, dazu Profil und Abmelden; im schmalen Fenster und in den Apps
   bleibt alles, wie es ist.
 - Eine Support-Ansicht im Browser bündelt für den Betrieb Kennzahlen je
-  Landeskirche, Kirchenkreis und Gemeinde, die Anfragen von Gemeinden, die
-  Zuordnung zu Kirchenkreisen und Landeskirchen und die Support-Konten.
-- Auf konfi-quest.de fragt eine Gemeinde Konfi Quest mit einem Formular an;
-  der Support macht daraus mit wenigen Schritten die Gemeinde samt erster
-  Gemeindeleitung.
+  Landeskirche, Kirchenkreis und Gemeinde (Konten je Rolle, in den letzten 30
+  Tagen aktive Konten, Jahrgänge — ohne Namen), die Anfragen von Gemeinden,
+  die Zuordnung zu Kirchenkreisen und Landeskirchen und die Support-Konten.
+- Eine Gemeinde kann Konfi Quest über ein Formular auf konfi-quest.de
+  anfragen: Die anfragende Adresse bekommt eine Bestätigung, der Support
+  einen Hinweis ohne Kontaktdaten. Der Support macht daraus mit wenigen
+  Schritten die Gemeinde samt erster Gemeindeleitung — mit denselben
+  Vorlagen wie beim Anlegen einer Gemeinde. Abgelehnte Anfragen werden 180
+  Tage nach der Ablehnung gelöscht.
 - Gemeinden lassen sich einem Kirchenkreis und darüber einer Landeskirche
-  zuordnen.
+  zuordnen; die bisher eingetragenen Kirchenkreise werden dabei übernommen.
 - Auf konfi-quest.de steht eine Vorlage zur Einwilligung der Eltern zum
   Ausdrucken bereit.
 
 ### Geändert
 - Unter „Mehr" führt das Symbol oben rechts Konten mit Super-Admin-Recht in
   die Support-Ansicht statt direkt zu den Gemeinden.
+- Die Datenschutzerklärung beschreibt das Anfrageformular: welche Angaben,
+  wozu und wie lange.
+- Die Gemeindeleitung kann ein Konto des Supports, das als Gast in ihrer
+  Gemeinde ist, selbst wieder herausnehmen; das Konto des Supports bleibt.
 - Eine Challenge öffnet sich als eigene Seite statt in einem Fenster über der
   Liste — für Konfis, Team und Leitung; der Pfeil oben führt zurück in die
   Liste.
@@ -71,6 +79,8 @@ Versionsüberschrift.
   dort keinen Weg hinaus.
 
 ### Sonstiges
+- Eine neue Installation bekommt als ersten Zugang ein Support-Konto ohne
+  Gemeinde statt einer eigenen Gemeinde für den Betrieb.
 - Sicherheitsupdate für eine Bibliothek, die der Server für den Versand von
   Mitteilungen mitbringt.
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und

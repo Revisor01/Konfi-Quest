@@ -45,6 +45,37 @@ Gezählt werden Konten je Gemeinde und Rolle, ohne Namen. Wer in zwei Gemeinden
 mitarbeitet, zählt in beiden — die Summe ist die Zahl der Mitgliedschaften,
 nicht der Personen. Der Stand steht unter dem Baum.
 
+## Eine Anfrage kommt an
+
+Die verantwortliche Person einer Gemeinde füllt das Formular auf
+konfi-quest.de aus. Pflicht sind **Gemeinde, Name und E-Mail-Adresse** und
+das Häkchen zur Einwilligung; dazu können Kirchenkreis, Landeskirche,
+Funktion, Mobilnummer, die ungefähre Zahl der Konfis und der Teamer:innen und
+eine Nachricht kommen. Der Server (`POST /api/anfragen`, ohne Anmeldung)
+speichert die Anfrage mit dem Status **neu** und dem Zeitpunkt der
+Einwilligung.
+
+Danach gehen zwei Mails hinaus:
+
+- **an die anfragende Adresse** eine Bestätigung mit festem Text — ohne
+  irgendeine Eingabe aus dem Formular. Das Formular ist öffentlich; mit
+  eingesetzten Feldern ließe sich über unseren Server beliebiger Text an
+  fremde Adressen schicken.
+- **an jedes aktive Super-Admin-Konto mit E-Mail-Adresse** ein Hinweis mit
+  Kennung, Gemeinde, Kirchenkreis und Landeskirche — ohne Kontaktdaten und
+  ohne Nachricht. Die stehen in der Support-Ansicht.
+
+Scheitert eine Mail, bleibt die Anfrage gespeichert. Im Server-Protokoll
+steht nur „Gemeinde-Anfrage 12 eingegangen" und bei Fehlern die Kennung mit
+dem Fehlercode — keine Daten der Anfrage.
+
+**Gegen Missbrauch:** Höchstens 5 angenommene Anfragen je Stunde von einer
+Verbindung (Client-IP) und 3 je Tag für dieselbe E-Mail-Adresse, danach
+antwortet der Server mit 429 und dem Hinweis auf moin@konfi-quest.de. Ein
+unsichtbares Feld (`website`) fängt Programme ab: Ist es gefüllt, bekommt der
+Absender dieselbe Antwort wie ein Mensch, gespeichert und verschickt wird
+nichts.
+
 ## Anfragen bearbeiten
 
 **Woher sie kommen:** Auf konfi-quest.de steht im Schlussabschnitt das
@@ -110,6 +141,30 @@ Bearbeiten › **Kirchenkreis** (Auswahl aus der Struktur); die Landeskirche
 ergibt sich daraus. Der Name wird zugleich in die alte Textspalte geschrieben,
 die ältere Apps lesen.
 
+**Die alte Textspalte.** Die Apps bis 2.3.0 kennen nur den Freitext
+`organizations.kirchenkreis`. Damit sie weiter das Richtige zeigen, steht
+dort immer der Name des zugeordneten Kirchenkreises: beim Zuordnen, beim
+Umbenennen des Kirchenkreises für alle seine Gemeinden, beim Lösen und Löschen
+wird er leer. Schickt eine alte App beim Speichern einer Gemeinde einen
+anderen Text, gilt der Text, und die Zuordnung endet — derselbe Text (ohne
+Groß/klein) lässt sie stehen.
+
+**Übernahme der vorhandenen Angaben** (Migration 191, einmal beim Deploy):
+Jeder Freitext wird ein Kirchenkreis ohne Landeskirche, gleiche
+Schreibweisen ohne Groß/klein und Randleerzeichen werden einer, und die
+Gemeinden werden verknüpft. Danach die Kirchenkreise in der Support-Ansicht
+ihrer Landeskirche zuordnen, Tippvarianten zusammenführen (Gemeinden dem
+richtigen Kirchenkreis zuordnen, den doppelten löschen) und Gemeinden ohne
+Angabe einordnen — auch den Dom Schwerin.
+
+Vor dem Deploy in Produktion lesend prüfen, welche Kirchenkreise entstehen:
+
+```sql
+SELECT id, display_name, kirchenkreis FROM organizations ORDER BY id;
+SELECT lower(btrim(kirchenkreis)) AS k, COUNT(*) FROM organizations
+ WHERE NULLIF(btrim(kirchenkreis), '') IS NOT NULL GROUP BY 1 ORDER BY 1;
+```
+
 ## Support-Konten verwalten
 
 Im Bereich **Support-Konten** stehen alle Konten ohne Gemeinde mit Status,
@@ -126,3 +181,21 @@ Das **eigene Konto** bietet die Ansicht weder zum Sperren noch zum Löschen an.
 Das **letzte aktive Super-Admin-Konto** lässt sich weder sperren noch löschen;
 dann bleibt ein Hinweis „Nicht möglich" mit dem Satz des Servers stehen, bis
 man ihn wegdrückt. Regeln und API stehen in [support-konto.md](support-konto.md).
+
+## Aufbewahrung
+
+Festgehalten in der Datenschutzerklärung, Abschnitt 9c
+(`frontend/public/datenschutz.html`); `datenschutzGegenCode.test.ts` hält
+Text und Code zusammen.
+
+| Stand der Anfrage | Wie lange |
+|---|---|
+| neu, in Arbeit | bis zur Entscheidung |
+| abgelehnt | **180 Tage nach der Ablehnung**, dann löscht sie der nächtliche Lauf um 02:00 Uhr (`cleanupAbgelehnteAnfragen`, gezählt ab `status_seit`, nicht ab dem Eingang) |
+| angelegt | solange die Gemeinde besteht; mit der Gemeinde wird die Anfrage gelöscht |
+
+Möchte jemand die Löschung vorher, wird die Anfrage abgelehnt und — bis es
+dafür einen Knopf gibt — in der Datenbank gelöscht
+(`DELETE FROM gemeinde_anfragen WHERE id = …`). Den Zähler gegen Missbrauch
+hält der Server je IP-Adresse eine Stunde, je E-Mail-Adresse einen Tag (als
+Prüfwert, nicht die Adresse) und löscht ihn danach binnen gut einer Stunde.
