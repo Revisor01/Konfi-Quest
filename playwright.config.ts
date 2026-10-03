@@ -10,6 +10,13 @@ export default defineConfig({
   workers: 1, // Sequentiell -- gleiche DB
   use: {
     baseURL: 'http://localhost:5556',
+    // Unter 992 px (03.10.2026): Ab dieser Breite zeigt die Web-Version die
+    // Leiste links statt der Reiterleiste unten. Die Specs bedienen die
+    // Reiterleiste wie in den Apps; Playwrights Vorgabe (1280 x 720) laege
+    // darueber. 960 statt Telefonbreite, damit sich sonst nichts aendert
+    // (Ionics Dialog-Modale ab 768 px bleiben, wie sie waren). Die Leiste
+    // selbst prueft seitenleiste.spec.ts mit eigener Fensterbreite.
+    viewport: { width: 960, height: 720 },
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',

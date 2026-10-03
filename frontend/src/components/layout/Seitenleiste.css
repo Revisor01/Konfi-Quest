@@ -1,0 +1,285 @@
+/* ===================================================================
+   Leiste links der Web-Version (03.10.2026, planung/web-version.md,
+   Entscheidungen 1 und 9). Nur im Browser ab 992 px Breite; in den Apps
+   und im schmalen Fenster gibt es weder die Leiste noch diese Regeln
+   im Einsatz (alles haengt an .app-seitenleiste bzw. an der sichtbaren
+   Split-Pane).
+
+   Farben ausschliesslich ueber vorhandene Tokens: Flaeche wie die
+   Kopfzeile (--app-glasleiste-rgb, im Dunkeln dunkel), Schrift wie die
+   Reiterleiste, der aktive Eintrag in der Farbe des aktiven Reiters.
+   Dunkelmodus kommt damit von selbst.
+   =================================================================== */
+
+.app-seitenleisten-rahmen {
+  --app-seitenleiste-breite: 256px;
+  --app-seitenleiste-breite-eingeklappt: 72px;
+  /* Groesste Breite des Inhalts neben der Leiste. Listen und Formulare
+     sind fuers Telefon gebaut; auf einem breiten Bildschirm liefen
+     Zeilen sonst ueber die ganze Breite. */
+  --app-lesebreite: 960px;
+}
+
+/* --- Inhalt neben der Leiste: mittig, hoechstens --app-lesebreite ---
+   Nur auf der Scrollflaeche der Seiten: Kopfzeile und Hintergrund reichen
+   weiter ueber die ganze Breite. Der eigene Innenabstand einer Seite
+   (--padding-start/-end) bleibt die Untergrenze. Modale haengen an
+   ion-app, nicht in der Split-Pane -- sie bleiben unberuehrt. */
+.app-seitenleisten-rahmen.split-pane-visible ion-content::part(scroll) {
+  padding-left: max(var(--padding-start, 0px), calc((100% - var(--app-lesebreite)) / 2));
+  padding-right: max(var(--padding-end, 0px), calc((100% - var(--app-lesebreite)) / 2));
+}
+
+/* --- Die Leiste --- */
+.app-seitenleiste {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: var(--app-seitenleiste-breite);
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: rgb(var(--app-glasleiste-rgb));
+  border-right: 1px solid var(--ion-border-color, rgba(var(--app-text-system-rgb), 0.2));
+  color: var(--ion-text-color);
+  padding-top: var(--ion-safe-area-top, 0px);
+  transition: width 0.2s ease;
+  z-index: 1;
+}
+
+.app-seitenleiste--eingeklappt {
+  width: var(--app-seitenleiste-breite-eingeklappt);
+}
+
+.app-seitenleiste ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.app-seitenleiste li + li {
+  margin-top: var(--app-abstand-winzig);
+}
+
+/* Kopf: Name der App und der Knopf zum Ein- und Ausklappen */
+.app-seitenleiste__kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  min-height: 56px;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  box-sizing: border-box;
+}
+
+.app-seitenleiste__marke {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  padding-left: var(--app-abstand-mini);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-fett);
+}
+
+/* Die weisse Lutherrose auf dem Verlauf der Anmeldeseite -- auf der hellen
+   Leiste allein waere sie unsichtbar. */
+.app-seitenleiste__marke img {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  padding: var(--app-abstand-mini);
+  border-radius: var(--app-radius-klein);
+  background: var(--app-gradient-aurora);
+}
+
+.app-seitenleiste__umschalter {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--app-radius-knopf);
+  background: transparent;
+  color: var(--app-text-system);
+  font-size: var(--app-text-titel-gross);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Ein Pfeil fuer beide Richtungen: eingeklappt zeigt er nach rechts.
+   Uebergaenge haengen an app-Klassen, damit „Bewegung reduzieren" sie
+   ueber den globalen Block in barrierefreiheit.css abschaltet. */
+.app-seitenleiste__pfeil {
+  transition: transform 0.2s ease;
+}
+
+.app-seitenleiste--eingeklappt .app-seitenleiste__pfeil {
+  transform: rotate(180deg);
+}
+
+/* Mittelteil: Reiter, `menue`, Gruppen -- scrollt, wenn das Fenster
+   niedrig ist; Kopf und Fuss bleiben stehen. */
+.app-seitenleiste__liste {
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--app-abstand-mini) var(--app-abstand-eng);
+}
+
+.app-seitenleiste__gruppe {
+  margin-top: var(--app-abstand-basis);
+}
+
+.app-seitenleiste__gruppenname {
+  margin: 0 0 var(--app-abstand-mini);
+  padding: 0 var(--app-abstand-mittel);
+  font-size: var(--app-text-meta);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--app-text-system);
+}
+
+/* Fuss: Gemeinde-Umschalter, Profil, Abmelden */
+.app-seitenleiste__fuss {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--ion-border-color, rgba(var(--app-text-system-rgb), 0.2));
+  padding: var(--app-abstand-eng);
+  padding-bottom: calc(var(--app-abstand-eng) + var(--ion-safe-area-bottom, 0px));
+}
+
+.app-seitenleiste__gemeinde ion-buttons {
+  display: flex;
+}
+
+.app-seitenleiste__gemeinde .app-org-switcher-btn {
+  flex: 1 1 auto;
+  min-height: 44px;
+}
+
+/* --- Ein Eintrag (Link oder Knopf) --- */
+.app-seitenleiste__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 0;
+  border-radius: var(--app-radius-knopf);
+  background: transparent;
+  color: var(--ion-tab-bar-color, var(--app-text-system));
+  font: inherit;
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-mittel);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.app-seitenleiste__link:hover,
+.app-seitenleiste__umschalter:hover {
+  background: rgba(var(--app-text-system-rgb), 0.12);
+  color: var(--ion-text-color);
+}
+
+/* Aktiver Eintrag: dieselbe Farbe wie der aktive Reiter unten. */
+.app-seitenleiste__link--aktiv,
+.app-seitenleiste__link--aktiv:hover {
+  background: rgba(var(--ion-color-primary-rgb), 0.12);
+  color: var(--ion-tab-bar-color-selected, var(--ion-color-primary));
+  font-weight: var(--app-schrift-halbfett);
+}
+
+/* Sichtbarer Fokus, nur bei Tastaturbedienung -- innen, damit der Ring
+   nicht von der Leiste abgeschnitten wird. */
+.app-seitenleiste__link:focus-visible,
+.app-seitenleiste__umschalter:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
+.app-seitenleiste__symbol {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: var(--app-text-titel-gross);
+}
+
+/* Die rote Zahl am Symbol, wie am Reiter unten. */
+.app-seitenleiste__zahl {
+  position: absolute;
+  top: -6px;
+  right: -12px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 var(--app-abstand-mini);
+  border-radius: var(--app-radius-klein);
+  font-size: var(--app-text-mini);
+  line-height: 16px;
+}
+
+.app-seitenleiste__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Fuer Vorleseprogramme: die Zahl als Wort ("Chat, 3 offen"). Sichtbar
+   steht sie als rote Zahl am Symbol. */
+.app-seitenleiste__vorlesen,
+.app-seitenleiste--eingeklappt .app-seitenleiste__text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Eingeklappt: nur Symbole, mittig --- */
+.app-seitenleiste--eingeklappt .app-seitenleiste__kopf {
+  justify-content: center;
+}
+
+.app-seitenleiste--eingeklappt .app-seitenleiste__marke {
+  display: none;
+}
+
+.app-seitenleiste--eingeklappt .app-seitenleiste__link {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Statt der Gruppenueberschrift eine Trennlinie. */
+.app-seitenleiste--eingeklappt .app-seitenleiste__gruppenname {
+  height: 1px;
+  margin: 0 var(--app-abstand-mittel) var(--app-abstand-mini);
+  padding: 0;
+  background: rgba(var(--app-text-system-rgb), 0.2);
+}
+
+.app-seitenleiste.app-seitenleiste--eingeklappt .app-org-switcher-btn .app-org-switcher-btn__name {
+  display: none;
+}
+
+/* Beim Drucken (QR-Code, Urkunden) nur der Inhalt. */
+@media print {
+  .app-seitenleiste {
+    display: none !important;
+  }
+}

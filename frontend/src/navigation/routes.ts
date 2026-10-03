@@ -75,10 +75,14 @@ export interface TabDef {
 }
 
 /**
- * Ein zusaetzlicher Eintrag der Seitenleiste in der Web-Version (neben den
- * Reitern `tabs`), Vertrag der Web-Version vom 03.10.2026. `icon` ist wie bei
- * den Reitern eine Konstante aus components/shared/icons.ts; `gruppe` fasst
- * Eintraege unter einer Ueberschrift zusammen.
+ * Ein Eintrag der Seitenleiste, der kein Reiter ist (Web-Version, 03.10.2026).
+ *
+ * Die Seitenleiste links zeigt die Reiter (`tabs`) und danach diese
+ * Eintraege. `path` muss eine Route desselben Baums sein, sonst landet der
+ * Klick im Catch-all auf der Startseite (rollenBaeume.test.ts prueft das).
+ * `icon` ist ein Symbol aus components/shared/icons.ts, wie bei den Reitern.
+ * `gruppe` fasst Eintraege unter einer Ueberschrift zusammen; Eintraege ohne
+ * Gruppe stehen direkt unter den Reitern.
  */
 export interface MenueEintrag {
   path: string;
@@ -93,8 +97,14 @@ export interface RollenBaum {
   routes: RouteDef[];
   redirects: RedirectDef[];
   tabs: TabDef[];
-  /** Weitere Eintraege der Seitenleiste (Web-Version, breite Bildschirme). */
+  /** Weitere Eintraege der Seitenleiste (nur Web-Version, breites Fenster). */
   menue?: MenueEintrag[];
+  /**
+   * Das eigene Profil, unten in der Seitenleiste ueber „Abmelden". Ohne
+   * Angabe steht dort kein Profil-Eintrag (Support-Konto ohne Gemeinde: es
+   * hat keine Profilseite).
+   */
+  profil?: MenueEintrag;
 }
 
 /**
@@ -103,6 +113,22 @@ export interface RollenBaum {
  * Gelegenheit, eine Rolle zu vergessen.
  */
 export const rollenStart = (rolle: Rolle): string => BAEUME[rolle].home;
+
+/**
+ * Der eine aktive Eintrag der Seitenleiste: der mit dem längsten passenden
+ * Pfad (Pfad gleich oder darunter, wie bei Ionics Reiterleiste). Beim Team
+ * liegen „Material" (/teamer/profile/material) und „Profil"
+ * (/teamer/profile) ineinander -- auf der Materialseite darf nur „Material"
+ * hervorgehoben sein. Ohne Treffer: null.
+ */
+export const aktiverPfad = (pathname: string, pfade: readonly string[]): string | null => {
+  let bester: string | null = null;
+  for (const pfad of pfade) {
+    const passt = pathname === pfad || pathname.startsWith(pfad.endsWith('/') ? pfad : `${pfad}/`);
+    if (passt && (bester === null || pfad.length > bester.length)) bester = pfad;
+  }
+  return bester;
+};
 
 /** Tab-Leiste verstecken: in Chat-Räumen aller Rollen. */
 export const istTabLeisteVersteckt = (pfad: string): boolean =>

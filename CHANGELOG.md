@@ -18,6 +18,10 @@ Versionsüberschrift.
   und kommen nur als sichtbare Gemeindeleitung in eine Gemeinde.
 - Das letzte aktive Konto mit Super-Admin-Recht lässt sich weder sperren noch
   löschen.
+- Im breiten Browserfenster zeigt die Web-Version links eine ein- und
+  ausklappbare Leiste statt der Reiterleiste unten — mit denselben Bereichen
+  und Zahlen, dazu Profil und Abmelden; im schmalen Fenster und in den Apps
+  bleibt alles, wie es ist.
 - Eine Support-Ansicht im Browser bündelt für den Betrieb Kennzahlen je
   Landeskirche, Kirchenkreis und Gemeinde, die Anfragen von Gemeinden, die
   Zuordnung zu Kirchenkreisen und Landeskirchen und die Support-Konten.

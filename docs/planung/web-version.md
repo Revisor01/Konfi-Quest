@@ -160,6 +160,26 @@ Betrieb: [betrieb/support-konto.md](../betrieb/support-konto.md)):
   eines gesperrten Super-Admin-Kontos (Login 200, danach jede Anfrage 401).
   Für bestehende Konten ändert sich keine Antwortform (Vertragstest).
 
+**Breites Layout** (gebaut am 03.10.2026, Entscheidungen 1 und 9; Handbuch:
+[Im Browser mit der Leiste links arbeiten](../handbuch/03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)):
+
+- In der Web-Version ab 992 px Breite eine Leiste links statt der
+  Reiterleiste (`frontend/src/components/layout/Seitenleiste.tsx`), ein- und
+  ausklappbar, der Zustand je Browser in `localStorage`. Darunter und in den
+  Apps bleibt die Reiterleiste; die Frage „Leiste oder Reiter" beantwortet
+  eine Stelle (`navigation/breitesLayout.ts`), die Zahlen an beiden rechnet
+  `navigation/reiterZaehler.ts`.
+- Inhalt je Rolle aus `navigation/rollenBaeume.ts`: die Reiter, dazu das
+  optionale Feld `menue` (Einträge mit `path`, `label`, `icon`, `gruppe`),
+  unten `profil`, Gemeinde-Umschalter und Abmelden. Der Baum `super_admin`
+  hat keine Reiter; seine Leiste zeigt `menue` (Gemeinden, Betrieb) und
+  Abmelden.
+- Im Browser steht um das Outlet immer eine `IonSplitPane`; die Breite
+  schaltet nur ihr `when`. So wird das Outlet beim Ziehen des Fensters nie
+  neu montiert. In den Apps gibt es den Rahmen nicht. Die E2E-Specs laufen
+  mit 960 px Fensterbreite (`playwright.config.ts`), die Leiste prüft
+  `e2e/seitenleiste.spec.ts`.
+
 **Daten:** `organizations` kennt `kirchenkreis` als Freitext (Migration 086),
 dazu Ansprechperson, E-Mail, Telefon, Adresse, Website, Laufzeit
 (`trial_ends_at`, `is_trial`) und `max_konfis`. Eine Landeskirche, Anfragen

@@ -6,6 +6,7 @@ import {
   ICON_DATEI_GEFUELLT,
   ICON_GRUPPE_GEFUELLT,
   ICON_MEHR,
+  ICON_PERSON_GEFUELLT,
   ICON_STARTSEITE_GEFUELLT,
   ICON_ABZEICHEN_GEFUELLT,
   ICON_TERMIN_GEFUELLT,
@@ -259,6 +260,8 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { tab: 'admin-challenges', href: '/admin/challenges', icon: ICON_CHALLENGE_GEFUELLT, label: 'Challenges', badge: 'challenges' },
       { tab: 'admin-settings', href: '/admin/settings', icon: ICON_MEHR, label: 'Mehr' },
     ],
+    // Unten in der Seitenleiste der Web-Version, ueber „Abmelden".
+    profil: { path: '/admin/profile', label: 'Profil', icon: ICON_PERSON_GEFUELLT },
   },
 
   teamer: {
@@ -307,6 +310,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       // gelegentlich an.
       { tab: 'teamer-material', href: '/teamer/profile/material', icon: ICON_DATEI_GEFUELLT, label: 'Material' },
     ],
+    profil: { path: '/teamer/profile', label: 'Profil', icon: ICON_PERSON_GEFUELLT },
   },
 
   konfi: {
@@ -334,6 +338,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { tab: 'events', href: '/konfi/events', icon: ICON_TERMIN_GEFUELLT, label: 'Mitmachen' },
       { tab: 'badges', href: '/konfi/badges', icon: ICON_ABZEICHEN_GEFUELLT, label: 'Badges', badge: 'badges' },
     ],
+    profil: { path: '/konfi/profile', label: 'Profil', icon: ICON_PERSON_GEFUELLT },
   },
 
   // Support-Konto ohne Gemeinde (Systemrolle super_admin): die

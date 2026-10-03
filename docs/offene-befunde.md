@@ -257,9 +257,9 @@ Stand: 02.10.2026, gegen den Code geprüft.
   legt auf einer neuen Instanz ein Support-Konto ohne Gemeinde an statt der
   Gemeinde „Betrieb" („wird aber nie vorkommen"). Kommt mit der
   Web-Version.
-- **Web-Version mit Support-Ansicht** — Seitennavigation links, eine
-  Support-Ansicht für Simon und eine Support-Person, Anfrageformular auf der
-  Homepage, Gemeinde zuerst mit Zuordnung zu Kirchenkreis und Landeskirche:
+- **Web-Version mit Support-Ansicht** — eine Support-Ansicht für Simon und
+  eine Support-Person, Anfrageformular auf der Homepage, Gemeinde zuerst mit
+  Zuordnung zu Kirchenkreis und Landeskirche:
   [planung/web-version.md](planung/web-version.md).
 - **„Darf freigeben"** — ein Recht, Anträge zu entscheiden, Events zu
   verbuchen und Beiträge freizugeben, statt dass jede Leitung alles in die
