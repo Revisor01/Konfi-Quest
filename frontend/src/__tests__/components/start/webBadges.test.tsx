@@ -4,6 +4,7 @@
 // Karten, Einzelheiten im Dialog -- fuer Konfis und fuers Team. Im schmalen
 // Fenster bleibt die Darstellung der App mit ihren Filtern.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import './zeitrahmen';
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 

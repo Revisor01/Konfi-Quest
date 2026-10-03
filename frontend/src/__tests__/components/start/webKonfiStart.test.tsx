@@ -5,6 +5,7 @@
 // der Reihenfolge, die die Leitung eingestellt hat. Im schmalen Fenster bleibt
 // die Darstellung der App.
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
+import './zeitrahmen';
 import React from 'react';
 import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import type { ModalAufruf } from './ionicStart';

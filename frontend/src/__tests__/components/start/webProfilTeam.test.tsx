@@ -5,6 +5,7 @@
 // Verlauf, Events der Konfi-Zeit, Badges und den Rueckblick der Person. Alle
 // Handgriffe sind die der App -- dieselben Modale mit denselben Eigenschaften.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import './zeitrahmen';
 import React from 'react';
 import { render, screen, fireEvent, within, waitFor, act } from '@testing-library/react';
 import type { ModalAufruf } from './ionicStart';

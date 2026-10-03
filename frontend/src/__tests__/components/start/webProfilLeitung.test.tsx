@@ -5,6 +5,7 @@
 // sind die der App: dieselben Modale mit denselben Eigenschaften. Die Farbe
 // folgt der Rolle: Gemeindeleitung indigo, Leitung petrol.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import './zeitrahmen';
 import React from 'react';
 import { render, screen, fireEvent, within, waitFor, act } from '@testing-library/react';
 import type { ModalAufruf } from './ionicStart';

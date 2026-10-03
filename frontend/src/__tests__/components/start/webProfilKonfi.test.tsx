@@ -6,6 +6,7 @@
 // Team und Leitung nutzen (Einladungen, Benachrichtigungen, Verlauf), werden
 // hier mit durchgespielt.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import './zeitrahmen';
 import React from 'react';
 import { render, screen, fireEvent, within, waitFor, act } from '@testing-library/react';
 import type { ModalAufruf } from './ionicStart';
@@ -31,6 +32,7 @@ const h = vi.hoisted(() => ({
   pushAnfordern: vi.fn(),
   antworten: {} as Record<string, unknown>,
   suche: '',
+  linkOeffnen: vi.fn(),
 }));
 
 vi.mock('@ionic/react', async () => (await import('./ionicStart')).ionicStart(h as never));
@@ -65,7 +67,7 @@ vi.mock('../../../services/api', () => ({ default: { get: h.apiGet, post: h.apiP
 vi.mock('../../../services/writeQueue', () => ({ writeQueue: { enqueue: vi.fn() } }));
 vi.mock('../../../services/networkMonitor', () => ({ networkMonitor: { isOnline: true } }));
 vi.mock('../../../services/tokenStore', () => ({ setUser: vi.fn() }));
-vi.mock('../../../services/systemDialoge', () => ({ linkOeffnen: vi.fn() }));
+vi.mock('../../../services/systemDialoge', () => ({ linkOeffnen: h.linkOeffnen }));
 vi.mock('../../../navigation/useAppLocation', () => ({ useAppLocation: () => ({ pathname: '/konfi/profile', search: h.suche }) }));
 vi.mock('../../../contexts/LiveUpdateContext', () => ({ useLiveRefresh: vi.fn() }));
 vi.mock('../../../contexts/ModalContext', () => ({ useModalPage: () => ({ pageRef: { current: h.seite }, presentingElement: h.seite }) }));
@@ -208,6 +210,16 @@ describe('Profil der Konfis (Web): Kopf und Person', () => {
     expect(ort).toHaveAttribute('href', 'https://www.google.com/maps/search/?api=1&query=St.-Marien-Kirche%2C%20Beispielstadt');
     expect(ort).toHaveAttribute('target', '_blank');
     expect(ort).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('ein einfacher Klick auf den Ort oeffnet die Karte ueber die Huelle der App; Strg-Klick bleibt dem Browser', async () => {
+    await zeige();
+    const ort = screen.getByRole('link', { name: /auf der Karte öffnen/ });
+    expect(fireEvent.click(ort)).toBe(false);
+    expect(h.linkOeffnen).toHaveBeenCalledTimes(1);
+    expect(h.linkOeffnen).toHaveBeenCalledWith('https://www.google.com/maps/search/?api=1&query=St.-Marien-Kirche%2C%20Beispielstadt');
+    expect(fireEvent.click(ort, { ctrlKey: true })).toBe(true);
+    expect(h.linkOeffnen).toHaveBeenCalledTimes(1);
   });
 
   it('ohne Konfirmationsdatum entfaellt die Karte', async () => {

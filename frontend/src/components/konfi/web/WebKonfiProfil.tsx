@@ -20,6 +20,7 @@ import {
 } from '../../shared/icons';
 import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
 import { punkteText } from '../../../utils/punkteText';
+import { linkOeffnen } from '../../../services/systemDialoge';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import WebKarte from '../../web/WebKarte';
@@ -83,6 +84,8 @@ export interface WebKonfiProfilProps {
   onMitmachen: () => void;
 }
 
+const kartenAdresse = (ort: string): string => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ort)}`;
+
 const WebKonfiProfil: React.FC<WebKonfiProfilProps> = (props) => {
   const p = props.profil;
   const gottesdienst = p.gottesdienst_enabled !== false;
@@ -116,10 +119,17 @@ const WebKonfiProfil: React.FC<WebKonfiProfilProps> = (props) => {
                   ? (
                     <a
                       className="web-link web-konfirmation-karte__ort"
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.confirmation_location)}`}
+                      href={kartenAdresse(p.confirmation_location)}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`${p.confirmation_location} auf der Karte öffnen`}
+                      onClick={(e) => {
+                        // Ein einfacher Klick geht wie in der App über die Hülle (App-Sperre);
+                        // Mittelklick und Strg-Klick öffnen den Link im Browser.
+                        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        linkOeffnen(kartenAdresse(p.confirmation_location as string));
+                      }}
                     >
                       <IonIcon icon={ICON_ORT} aria-hidden="true" /> {p.confirmation_location}
                     </a>
