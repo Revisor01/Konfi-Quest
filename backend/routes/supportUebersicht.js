@@ -46,8 +46,9 @@
 //   geht als Parameter in jede Abfrage -- die Datenbank-Uhr und die
 //   Sitzungszone der Datenbank spielen keine Rolle (Produktion laeuft in UTC).
 //
-// WENIGE ABFRAGEN: die Uebersicht acht, die Gemeindeliste drei -- keine
-// Schleife ueber Gemeinden.
+// WENIGE ABFRAGEN: die Uebersicht acht (auf einer Verbindung, in einer
+// schreibgeschuetzten Transaktion ohne JIT, Begruendung bei der Route), die
+// Gemeindeliste drei -- keine Schleife ueber Gemeinden.
 //
 // PROTOKOLL: Fehler nur mit Code und Meldung, nie err.detail.
 
@@ -122,8 +123,8 @@ module.exports = (db) => {
   // ==========================================================================
 
   /** Gemeinden: gesamt, nach Laufzeit und gesperrt (ohne interne). */
-  const gemeindenKennzahlen = async () => {
-    const { rows: [z] } = await db.query(
+  const gemeindenKennzahlen = async (c) => {
+    const { rows: [z] } = await c.query(
       `SELECT COUNT(*)::int AS gesamt,
               COUNT(*) FILTER (WHERE COALESCE(o.is_active, true) AND o.trial_ends_at IS NOT NULL AND o.is_trial)::int AS testphase,
               COUNT(*) FILTER (WHERE COALESCE(o.is_active, true) AND o.trial_ends_at IS NOT NULL AND NOT o.is_trial)::int AS lizenz,
@@ -135,8 +136,8 @@ module.exports = (db) => {
   };
 
   /** Konten je Rolle und aktive Konten ueber alle Gemeinden, je Konto einmal. */
-  const kontenKennzahlen = async (jetzt) => {
-    const { rows: [z] } = await db.query(
+  const kontenKennzahlen = async (c, jetzt) => {
+    const { rows: [z] } = await c.query(
       `WITH ${mitgliedSql('$1')},
             aktiv AS (${aktiv30TageSql('$2::timestamptz')})
        SELECT COUNT(DISTINCT m.user_id) FILTER (WHERE m.rolle = 'konfi')::int     AS konfi,
@@ -151,16 +152,16 @@ module.exports = (db) => {
   };
 
   /** Offene Anfragen und ungelesene eingehende Mails (alle, auch zugeordnete). */
-  const offenesZaehlen = async () => {
-    const { rows: [z] } = await db.query(
+  const offenesZaehlen = async (c) => {
+    const { rows: [z] } = await c.query(
       `SELECT (SELECT COUNT(*)::int FROM gemeinde_anfragen WHERE status IN ('neu', 'in_arbeit')) AS anfragen_offen,
               (SELECT COUNT(*)::int FROM mail_nachrichten WHERE richtung = 'ein' AND gelesen_am IS NULL) AS mails_ungelesen`);
     return z;
   };
 
   /** Neue Gemeinden, Anfragen und Konten je Monat, dazu die Konten gesamt. */
-  const entwicklungLaden = async (jetzt) => {
-    const { rows } = await db.query(
+  const entwicklungLaden = async (c, jetzt) => {
+    const { rows } = await c.query(
       `WITH ${MONATE_SQL},
             ${mitgliedSql('$2')},
             konto AS (
@@ -197,9 +198,9 @@ module.exports = (db) => {
    * einmal ueber das ganze Fenster gelesen und nach Woche gezaehlt, nicht
    * zwoelfmal; erst danach fuellt der Join die leeren Wochen mit 0.
    */
-  const aktivitaetLaden = async (jetzt) => {
+  const aktivitaetLaden = async (c, jetzt) => {
     const woche = (spalte) => `to_char(${spalte} AT TIME ZONE ${ZONE}, ${WOCHEN_LABEL})`;
-    const { rows } = await db.query(
+    const { rows } = await c.query(
       `WITH ${WOCHEN_SQL},
             fenster AS (SELECT MIN(von) AS von, MAX(bis) AS bis FROM wochen),
             antraege AS (
@@ -247,8 +248,8 @@ module.exports = (db) => {
   };
 
   /** Die neuesten Anfragen, alle Status. */
-  const neuesteAnfragen = async () => {
-    const { rows } = await db.query(
+  const neuesteAnfragen = async (c) => {
+    const { rows } = await c.query(
       `SELECT a.id, a.gemeinde, a.kontakt_name, a.status, a.wunsch_lizenz, a.created_at,
               ${UNGELESEN_JE_ANFRAGE_SQL} AS ungelesen
          FROM gemeinde_anfragen a
@@ -258,8 +259,8 @@ module.exports = (db) => {
   };
 
   /** Die neuesten eingehenden Mails, zugeordnet oder nicht (nicht nach intern gefiltert). */
-  const neuesteMails = async () => {
-    const { rows } = await db.query(
+  const neuesteMails = async (c) => {
+    const { rows } = await c.query(
       `SELECT m.id, m.postfach, m.von_name, m.von_adresse, m.betreff, m.gesendet_am, m.gelesen_am,
               ${ZUORDNUNG_SPALTEN}
          FROM mail_nachrichten m
@@ -271,9 +272,9 @@ module.exports = (db) => {
   };
 
   /** Laufende Testphasen, die in den naechsten 14 Tagen enden (nicht gesperrte, nicht interne). */
-  const testphasenEndenBald = async (jetzt) => {
+  const testphasenEndenBald = async (c, jetzt) => {
     const bis = new Date(jetzt.getTime() + TESTPHASE_TAGE * TAG_MS);
-    const { rows } = await db.query(
+    const { rows } = await c.query(
       `SELECT o.id, COALESCE(NULLIF(btrim(o.display_name), ''), o.name) AS display_name, o.trial_ends_at
          FROM organizations o
         WHERE NOT o.intern AND COALESCE(o.is_active, true) AND o.is_trial
@@ -285,21 +286,45 @@ module.exports = (db) => {
   // GET /uebersicht -- Kennzahlen, Entwicklung ueber 12 Monate, Aktivitaet
   // ueber 12 Wochen, neueste Anfragen und Mails, Testphasen, die bald enden
   // (docs/planung/support-web.md, Vertrag; die Regeln stehen oben).
+  // Die Abfragen der Uebersicht laufen auf EINER Verbindung in einer
+  // schreibgeschuetzten Transaktion (REPEATABLE READ: alle Zahlen aus
+  // demselben Stand) und OHNE JIT. GEMESSEN (03.10.2026, PostgreSQL 16, 150
+  // Gemeinden, 6.000 Konten, 300.000 Nachrichten, 80.000 Buchungen, 40.000
+  // Antraege): Die Wochenabfrage brauchte mit JIT 1.150 ms, ohne 58 ms -- der
+  // Planer schaetzt die Kosten ueber jit_above_cost, und das Uebersetzen
+  // kostet hier mehr als die ganze Abfrage. SET LOCAL gilt nur bis zum Ende
+  // der Transaktion.
+  const mitEinerVerbindung = async (arbeit) => {
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+      await client.query('SET LOCAL jit = off');
+      const ergebnis = await arbeit(client);
+      await client.query('COMMIT');
+      return ergebnis;
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw err;
+    } finally {
+      client.release();
+    }
+  };
+
   router.get('/uebersicht', async (req, res) => {
     try {
       const jetzt = new Date();
       const [
         gemeinden, konten, offen, entwicklung, aktivitaet, anfragen, mails, testphase,
-      ] = await abfragenBuendeln(db, [
-        () => gemeindenKennzahlen(),
-        () => kontenKennzahlen(jetzt),
-        () => offenesZaehlen(),
-        () => entwicklungLaden(jetzt),
-        () => aktivitaetLaden(jetzt),
-        () => neuesteAnfragen(),
-        () => neuesteMails(),
-        () => testphasenEndenBald(jetzt),
-      ]);
+      ] = await mitEinerVerbindung((c) => abfragenBuendeln(c, [
+        () => gemeindenKennzahlen(c),
+        () => kontenKennzahlen(c, jetzt),
+        () => offenesZaehlen(c),
+        () => entwicklungLaden(c, jetzt),
+        () => aktivitaetLaden(c, jetzt),
+        () => neuesteAnfragen(c),
+        () => neuesteMails(c),
+        () => testphasenEndenBald(c, jetzt),
+      ]));
       const { aktiv_30_tage: aktiv, ...kontenJeRolle } = konten;
       res.json({
         kennzahlen: {

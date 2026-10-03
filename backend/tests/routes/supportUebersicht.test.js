@@ -130,6 +130,47 @@ describe('GET /api/support/uebersicht', () => {
   });
 
   // ==========================================================================
+  // Abfragen
+  // ==========================================================================
+  describe('Abfragen', () => {
+    /** Alle Anweisungen, die die Route auf Verbindungen aus dem Pool absetzt, in der Reihenfolge. */
+    const anweisungen = async () => {
+      const aufrufe = [];
+      const echt = db.getClient;
+      const spaeh = vi.spyOn(db, 'getClient').mockImplementation(async () => {
+        const client = await echt();
+        const query = client.query.bind(client);
+        client.query = (text, ...rest) => { aufrufe.push(String(text).replace(/\s+/g, ' ').trim()); return query(text, ...rest); };
+        return client;
+      });
+      try {
+        await uebersicht();
+      } finally {
+        spaeh.mockRestore();
+      }
+      return aufrufe;
+    };
+
+    it('acht Abfragen in einer schreibgeschützten Transaktion ohne JIT -- unabhängig von der Zahl der Gemeinden', async () => {
+      // Ohne JIT: Mit JIT brauchte die Wochenabfrage auf 300.000 Nachrichten 1.150 ms statt 58 ms (siehe Route).
+      const wenige = await anweisungen();
+      expect(wenige).toHaveLength(11);
+      expect(wenige[0]).toBe('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+      expect(wenige[1]).toBe('SET LOCAL jit = off');
+      expect(wenige[10]).toBe('COMMIT');
+      expect(wenige.slice(2, 10).every((a) => /^(WITH|SELECT) /.test(a))).toBe(true);
+
+      for (let id = 3; id < 28; id += 1) {
+        const r = await d.gemeinde({ id });
+        await d.konto({ id: 100 + id, organization_id: id, role_id: r.org_admin });
+        await d.konto({ id: 200 + id, organization_id: id, role_id: r.konfi });
+      }
+      expect(await anweisungen()).toHaveLength(11);
+      expect((await uebersicht()).kennzahlen.gemeinden.gesamt).toBe(27);
+    });
+  });
+
+  // ==========================================================================
   // Entwicklung: 12 Kalendermonate in Berliner Zeit
   // ==========================================================================
   describe('Entwicklung: Kalendermonate', () => {
